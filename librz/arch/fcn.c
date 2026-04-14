@@ -103,11 +103,11 @@ RZ_API int rz_analysis_function_resize(RzAnalysisFunction *fcn, int newsize) {
 			rz_analysis_block_set_size(bb, eof - bb->addr);
 			rz_analysis_block_update_hash(bb);
 		}
-		if (bb->jump != UT64_MAX && bb->jump >= eof) {
-			bb->jump = UT64_MAX;
+		if (rz_analysis_block_jump(bb) != UT64_MAX && rz_analysis_block_jump(bb) >= eof) {
+			rz_analysis_block_set_jump(bb, UT64_MAX);
 		}
-		if (bb->fail != UT64_MAX && bb->fail >= eof) {
-			bb->fail = UT64_MAX;
+		if (rz_analysis_block_fail(bb) != UT64_MAX && rz_analysis_block_fail(bb) >= eof) {
+			rz_analysis_block_set_fail(bb, UT64_MAX);
 		}
 		i++;
 	}
@@ -250,7 +250,7 @@ static ut64 try_get_cmpval_from_parents(RzAnalysis *analysis, RzAnalysisFunction
 	void **it;
 	rz_pvector_foreach (fcn->bbs, it) {
 		tmp_bb = (RzAnalysisBlock *)*it;
-		if (tmp_bb->jump != my_bb->addr && tmp_bb->fail != my_bb->addr) {
+		if (rz_analysis_block_jump(tmp_bb) != my_bb->addr && rz_analysis_block_fail(tmp_bb) != my_bb->addr) {
 			continue;
 		}
 		if (tmp_bb->cmpreg != cmp_reg) {
@@ -540,8 +540,8 @@ static int analyze_function_locally(RzAnalysis *analysis, RzAnalysisFunction *fc
 }
 
 static inline void set_bb_branches(RZ_OUT RzAnalysisBlock *bb, const ut64 jump, const ut64 fail) {
-	bb->jump = jump;
-	bb->fail = fail;
+	rz_analysis_block_set_jump(bb, jump);
+	rz_analysis_block_set_fail(bb, fail);
 }
 
 /**
@@ -795,7 +795,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		if (idx > 0 && !overlapped) {
 			bbg = bbget(analysis, at, can_jmpmid);
 			if (bbg && bbg != bb) {
-				bb->jump = at;
+				rz_analysis_block_set_jump(bb, at);
 				if (can_jmpmid) {
 					// This happens when we purposefully walked over another block and overlapped it
 					// and now we hit an offset where the instructions match again.
@@ -821,7 +821,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				}
 				// If previous instruction was a jump there would already be a split.
 				// So setting jump here shouldn't overwrite any real jumps.
-				bb->jump = at;
+				rz_analysis_block_set_jump(bb, at);
 				item->block = bb = next;
 				next->sp_entry = sp;
 				newbbsize = bb->size + oplen;
@@ -845,16 +845,16 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					if (filter_addr) {
 						rz_analysis_xrefs_set(analysis, op.addr, filter_addr, RZ_ANALYSIS_XREF_TYPE_CALL);
 					}
-					bb->jump = at + oplen;
+					rz_analysis_block_set_jump(bb, at + oplen);
 					if (from_addr != bb->addr) {
-						bb->fail = handle_addr;
+						rz_analysis_block_set_fail(bb, handle_addr);
 						ret = analyze_function_locally(analysis, fcn, handle_addr);
 						if (bb->size == 0) {
 							rz_analysis_function_remove_block(fcn, bb);
 						}
 						rz_analysis_block_update_hash(bb);
 						rz_analysis_block_unref(bb);
-						bb = fcn_append_basic_block(analysis, fcn, bb->jump);
+						bb = fcn_append_basic_block(analysis, fcn, rz_analysis_block_jump(bb));
 						if (!bb) {
 							gotoBeach(RZ_ANALYSIS_RET_ERROR);
 						}
@@ -1240,8 +1240,8 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			if (!continue_after_jump) {
 				if (op.jump < fcn->addr) {
 					if (!overlapped) {
-						bb->jump = op.jump;
-						bb->fail = UT64_MAX;
+						rz_analysis_block_set_jump(bb, op.jump);
+						rz_analysis_block_set_fail(bb, UT64_MAX);
 					}
 					gotoBeach(RZ_ANALYSIS_RET_END);
 				}
@@ -1469,7 +1469,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			if (last_is_push && analysis->opt.pushret) {
 				op.type = RZ_ANALYSIS_OP_TYPE_JMP;
 				op.jump = last_push_addr;
-				bb->jump = op.jump;
+				rz_analysis_block_set_jump(bb, op.jump);
 				rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump, sp);
 				goto beach;
 			}
@@ -1814,8 +1814,8 @@ RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 
 	rz_analysis_block_analyze_ops(block);
 	rz_analysis_function_add_block(fcn, block);
 
-	block->jump = jump;
-	block->fail = fail;
+	rz_analysis_block_set_jump(block, jump);
+	rz_analysis_block_set_fail(block, fail);
 	rz_analysis_block_unref(block);
 	return true;
 }
@@ -1830,10 +1830,10 @@ RZ_API ut32 rz_analysis_function_loops(RzAnalysisFunction *fcn) {
 	void **it;
 	rz_pvector_foreach (fcn->bbs, it) {
 		bb = (RzAnalysisBlock *)*it;
-		if (bb->jump != UT64_MAX && bb->jump < bb->addr) {
+		if (rz_analysis_block_jump(bb) != UT64_MAX && rz_analysis_block_jump(bb) < bb->addr) {
 			loops++;
 		}
-		if (bb->fail != UT64_MAX && bb->fail < bb->addr) {
+		if (rz_analysis_block_fail(bb) != UT64_MAX && rz_analysis_block_fail(bb) < bb->addr) {
 			loops++;
 		}
 	}
@@ -1861,14 +1861,14 @@ RZ_API ut32 rz_analysis_function_complexity(RzAnalysisFunction *fcn) {
 	rz_pvector_foreach (fcn->bbs, it) {
 		bb = (RzAnalysisBlock *)*it;
 		N++; // nodes
-		if (!analysis && bb->jump == UT64_MAX && bb->fail != UT64_MAX) {
+		if (!analysis && rz_analysis_block_jump(bb) == UT64_MAX && rz_analysis_block_fail(bb) != UT64_MAX) {
 			RZ_LOG_DEBUG("invalid bb jump/fail pair at 0x%08" PFMT64x " (fcn 0x%08" PFMT64x "\n", bb->addr, fcn->addr);
 		}
-		if (bb->jump == UT64_MAX && bb->fail == UT64_MAX) {
+		if (rz_analysis_block_jump(bb) == UT64_MAX && rz_analysis_block_fail(bb) == UT64_MAX) {
 			P++; // exit nodes
 		} else {
 			E++; // edges
-			if (bb->fail != UT64_MAX) {
+			if (rz_analysis_block_fail(bb) != UT64_MAX) {
 				E++;
 			}
 		}
@@ -2190,13 +2190,13 @@ RZ_API ut32 rz_analysis_function_count_edges(const RzAnalysisFunction *fcn, RZ_N
 	void **it;
 	rz_pvector_foreach (fcn->bbs, it) {
 		bb = (RzAnalysisBlock *)*it;
-		if (ebbs && bb->jump == UT64_MAX && bb->fail == UT64_MAX) {
+		if (ebbs && rz_analysis_block_jump(bb) == UT64_MAX && rz_analysis_block_fail(bb) == UT64_MAX) {
 			*ebbs = *ebbs + 1;
 		} else {
-			if (bb->jump != UT64_MAX) {
+			if (rz_analysis_block_jump(bb) != UT64_MAX) {
 				edges++;
 			}
-			if (bb->fail != UT64_MAX) {
+			if (rz_analysis_block_fail(bb) != UT64_MAX) {
 				edges++;
 			}
 		}

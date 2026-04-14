@@ -80,8 +80,8 @@ bool test_analysis_block_save() {
 	rz_analysis_create_block(analysis, 1337, 42);
 
 	RzAnalysisBlock *block = rz_analysis_create_block(analysis, 1234, 32);
-	block->jump = 0x1313;
-	block->fail = 0x4213;
+	rz_analysis_block_set_jump(block, 0x1313);
+	rz_analysis_block_set_fail(block, 0x4213);
 	block->traced = true;
 	block->colorize = 0xff0000;
 	block->switch_op = rz_analysis_switch_op_new(49232, 3, 5, 7);
@@ -132,8 +132,8 @@ bool test_analysis_block_load() {
 
 	mu_assert_notnull(a, "block a");
 	mu_assert_eq(a->size, 42, "size");
-	mu_assert_eq(a->jump, UT64_MAX, "jump");
-	mu_assert_eq(a->fail, UT64_MAX, "fail");
+	mu_assert_eq(rz_analysis_block_jump(a), UT64_MAX, "jump");
+	mu_assert_eq(rz_analysis_block_fail(a), UT64_MAX, "fail");
 	mu_assert("traced", !a->traced);
 	mu_assert_eq(a->colorize, 0, "colorize");
 	mu_assert_null(a->switch_op, "switch op");
@@ -144,8 +144,8 @@ bool test_analysis_block_load() {
 
 	mu_assert_notnull(b, "block b");
 	mu_assert_eq(b->size, 32, "size");
-	mu_assert_eq(b->jump, 0x1313, "jump");
-	mu_assert_eq(b->fail, 0x4213, "fail");
+	mu_assert_eq(rz_analysis_block_jump(b), 0x1313, "jump");
+	mu_assert_eq(rz_analysis_block_fail(b), 0x4213, "fail");
 	mu_assert("traced", b->traced);
 	mu_assert_eq(b->colorize, 0xff0000, "colorize");
 	mu_assert_notnull(b->switch_op, "switch op");

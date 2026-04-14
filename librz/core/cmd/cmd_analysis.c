@@ -5569,11 +5569,11 @@ RZ_IPI RzCmdStatus rz_analysis_basic_block_list_handler(RzCore *core, int argc, 
 			pj_kb(pj, "traced", block->traced);
 			pj_kn(pj, "ninstr", block->ninstr);
 			pj_kn(pj, "size", block->size);
-			if (block->jump != UT64_MAX) {
-				pj_kn(pj, "jump", block->jump);
+			if (rz_analysis_block_jump(block) != UT64_MAX) {
+				pj_kn(pj, "jump", rz_analysis_block_jump(block));
 			}
-			if (block->fail != UT64_MAX) {
-				pj_kn(pj, "fail", block->fail);
+			if (rz_analysis_block_fail(block) != UT64_MAX) {
+				pj_kn(pj, "fail", rz_analysis_block_fail(block));
 			}
 			if (xrefs) {
 				pj_ka(pj, "xrefs");
@@ -5603,8 +5603,8 @@ RZ_IPI RzCmdStatus rz_analysis_basic_block_list_handler(RzCore *core, int argc, 
 			pj_end(pj);
 			break;
 		case RZ_OUTPUT_MODE_TABLE: {
-			char *jump = block->jump != UT64_MAX ? rz_str_newf("0x%08" PFMT64x, block->jump) : rz_str_dup("");
-			char *fail = block->fail != UT64_MAX ? rz_str_newf("0x%08" PFMT64x, block->fail) : rz_str_dup("");
+			char *jump = rz_analysis_block_jump(block) != UT64_MAX ? rz_str_newf("0x%08" PFMT64x, rz_analysis_block_jump(block)) : rz_str_dup("");
+			char *fail = rz_analysis_block_fail(block) != UT64_MAX ? rz_str_newf("0x%08" PFMT64x, rz_analysis_block_fail(block)) : rz_str_dup("");
 			char *call = ut64join(calls);
 			char *xref = ut64join(calls);
 			char *fcns = fcnjoin(block->fcns);
@@ -5629,11 +5629,11 @@ RZ_IPI RzCmdStatus rz_analysis_basic_block_list_handler(RzCore *core, int argc, 
 			break;
 		case RZ_OUTPUT_MODE_STANDARD:
 			rz_cons_printf("0x%08" PFMT64x, block->addr);
-			if (block->jump != UT64_MAX) {
-				rz_cons_printf(" .j 0x%08" PFMT64x, block->jump);
+			if (rz_analysis_block_jump(block) != UT64_MAX) {
+				rz_cons_printf(" .j 0x%08" PFMT64x, rz_analysis_block_jump(block));
 			}
-			if (block->fail != UT64_MAX) {
-				rz_cons_printf(" .f 0x%08" PFMT64x, block->fail);
+			if (rz_analysis_block_fail(block) != UT64_MAX) {
+				rz_cons_printf(" .f 0x%08" PFMT64x, rz_analysis_block_fail(block));
 			}
 			if (xrefs) {
 				RzListIter *iter2;

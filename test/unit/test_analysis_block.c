@@ -227,8 +227,8 @@ bool test_rz_analysis_block_split() {
 	RzAnalysisBlock *block = rz_analysis_create_block(analysis, 0x1337, 42);
 	assert_block_invariants(analysis);
 	mu_assert_eq(blocks_count(analysis), 1, "count after create");
-	block->jump = 0xdeadbeef;
-	block->fail = 0xc0ffee;
+	rz_analysis_block_set_jump(block, 0xdeadbeef);
+	rz_analysis_block_set_fail(block, 0xc0ffee);
 	block->ninstr = 5;
 	rz_analysis_block_set_op_offset(block, 0, 0);
 	rz_analysis_block_set_op_offset(block, 1, 1);
@@ -259,10 +259,10 @@ bool test_rz_analysis_block_split() {
 	mu_assert_eq(second->addr, 0x1339, "first addr after split");
 	mu_assert_eq(second->size, 40, "first size after split");
 
-	mu_assert_eq(block->jump, second->addr, "first jump");
-	mu_assert_eq(block->fail, UT64_MAX, "first fail");
-	mu_assert_eq(second->jump, 0xdeadbeef, "second jump");
-	mu_assert_eq(second->fail, 0xc0ffee, "second fail");
+	mu_assert_eq(rz_analysis_block_jump(block), second->addr, "first jump");
+	mu_assert_eq(rz_analysis_block_fail(block), UT64_MAX, "first fail");
+	mu_assert_eq(rz_analysis_block_jump(second), 0xdeadbeef, "second jump");
+	mu_assert_eq(rz_analysis_block_fail(second), 0xc0ffee, "second fail");
 
 	mu_assert_eq(block->ninstr, 2, "first ninstr after split");
 	mu_assert_eq(rz_analysis_block_get_op_offset(block, 0), 0, "first op_pos[0]");
@@ -336,8 +336,8 @@ bool test_rz_analysis_block_merge() {
 	RzAnalysisBlock *second = rz_analysis_create_block(analysis, 0x1337 + 42, 624);
 	assert_block_invariants(analysis);
 	mu_assert_eq(blocks_count(analysis), 2, "count after create");
-	second->jump = 0xdeadbeef;
-	second->fail = 0xc0ffee;
+	rz_analysis_block_set_jump(second, 0xdeadbeef);
+	rz_analysis_block_set_fail(second, 0xc0ffee);
 
 	first->ninstr = 3;
 	rz_analysis_block_set_op_offset(first, 0, 0);
@@ -356,8 +356,8 @@ bool test_rz_analysis_block_merge() {
 	mu_assert_eq(blocks_count(analysis), 1, "count after merge");
 	mu_assert_eq(first->addr, 0x1337, "addr after merge");
 	mu_assert_eq(first->size, 666, "size after merge");
-	mu_assert_eq(first->jump, 0xdeadbeef, "jump after merge");
-	mu_assert_eq(first->fail, 0xc0ffee, "fail after merge");
+	mu_assert_eq(rz_analysis_block_jump(first), 0xdeadbeef, "jump after merge");
+	mu_assert_eq(rz_analysis_block_fail(first), 0xc0ffee, "fail after merge");
 
 	mu_assert_eq(first->ninstr, 3 + 4, "ninstr after merge");
 	mu_assert_eq(rz_analysis_block_get_op_offset(first, 0), 0, "offset 0 after merge");
@@ -675,11 +675,11 @@ bool test_rz_analysis_block_successors() {
 	blocks[9] = rz_analysis_create_block(analysis, 0xc0, 0x10);
 	assert_block_invariants(analysis);
 
-	blocks[0]->jump = 0x30;
-	blocks[0]->fail = 0x50;
-	blocks[1]->jump = 0x10;
-	blocks[1]->fail = 0x50;
-	blocks[2]->jump = 0x10;
+	rz_analysis_block_set_jump(blocks[0], 0x30);
+	rz_analysis_block_set_fail(blocks[0], 0x50);
+	rz_analysis_block_set_jump(blocks[1], 0x10);
+	rz_analysis_block_set_fail(blocks[1], 0x50);
+	rz_analysis_block_set_jump(blocks[2], 0x10);
 
 	RzAnalysisSwitchOp *sop = rz_analysis_switch_op_new(0x55, 0x13, 0x15, 0x42);
 	mu_assert_eq(sop->addr, 0x55, "addr");
@@ -748,20 +748,20 @@ bool test_rz_analysis_block_automerge() {
 		RzAnalysisBlock *a = rz_analysis_create_block(analysis, 0x100, 0x10);
 
 		RzAnalysisBlock *b = rz_analysis_create_block(analysis, 0x110, 0x10);
-		a->jump = b->addr;
+		rz_analysis_block_set_jump(a, b->addr);
 
 		RzAnalysisBlock *c = rz_analysis_create_block(analysis, 0x120, 0x10);
-		b->jump = c->addr;
-		c->fail = b->addr;
+		rz_analysis_block_set_jump(b, c->addr);
+		rz_analysis_block_set_fail(c, b->addr);
 
 		RzAnalysisBlock *d = rz_analysis_create_block(analysis, 0x130, 0x10);
-		c->jump = d->addr;
+		rz_analysis_block_set_jump(c, d->addr);
 
 		RzAnalysisBlock *e = rz_analysis_create_block(analysis, 0x140, 0x10);
-		d->jump = e->addr;
+		rz_analysis_block_set_jump(d, e->addr);
 
 		RzAnalysisBlock *f = rz_analysis_create_block(analysis, 0x150, 0x10);
-		e->jump = f->addr;
+		rz_analysis_block_set_jump(e, f->addr);
 
 		RzAnalysisFunction *fa = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
 		rz_analysis_function_add_block(fa, a);
@@ -825,8 +825,8 @@ bool test_rz_analysis_block_chop_noreturn(void) {
 	RzAnalysisBlock *a = rz_analysis_create_block(analysis, 0x100, 0x10);
 	RzAnalysisBlock *b = rz_analysis_create_block(analysis, 0x110, 0x10);
 	RzAnalysisBlock *c = rz_analysis_create_block(analysis, 0x120, 0x10);
-	a->jump = c->addr;
-	b->jump = c->addr;
+	rz_analysis_block_set_jump(a, c->addr);
+	rz_analysis_block_set_jump(b, c->addr);
 
 	RzAnalysisFunction *fa = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
 	rz_analysis_function_add_block(fa, a);

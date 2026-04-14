@@ -51,8 +51,6 @@ static RzAnalysisBlock *block_new(RzAnalysis *a, ut64 addr, ut64 size) {
 	block->size = size;
 	block->analysis = a;
 	block->ref = 1;
-	block->jump = UT64_MAX;
-	block->fail = UT64_MAX;
 	block->op_pos = RZ_NEWS0(ut16, DFLT_NINSTR);
 	block->op_pos_size = DFLT_NINSTR;
 	block->sp_entry = ST32_MAX;
@@ -413,15 +411,15 @@ RZ_API RzAnalysisBlock *rz_analysis_block_split(RzAnalysisBlock *bbi, ut64 addr)
 	if (!bb) {
 		return NULL;
 	}
-	bb->jump = rz_analysis_block_jump(bbi);
-	bb->fail = bbi->fail;
+	rz_analysis_block_set_jump(bb, rz_analysis_block_jump(bbi));
+	rz_analysis_block_set_fail(bb, rz_analysis_block_fail(bbi));
 	bb->sp_entry = rz_analysis_block_get_sp_at(bbi, addr);
 	bb->switch_op = bbi->switch_op;
 
 	// resize the first block
 	rz_analysis_block_set_size(bbi, addr - bbi->addr);
-	bbi->jump = addr;
-	bbi->fail = UT64_MAX;
+	rz_analysis_block_set_jump(bbi, addr);
+	rz_analysis_block_set_fail(bbi, UT64_MAX);
 	bbi->switch_op = NULL;
 	rz_analysis_block_update_hash(bbi);
 
@@ -499,8 +497,8 @@ RZ_API bool rz_analysis_block_merge(RzAnalysisBlock *a, RzAnalysisBlock *b) {
 
 	// merge everything else into a
 	a->size += b->size;
-	a->jump = b->jump;
-	a->fail = b->fail;
+	rz_analysis_block_set_jump(a, rz_analysis_block_jump(b));
+	rz_analysis_block_set_fail(a, rz_analysis_block_fail(b));
 	if (a->switch_op) {
 		RZ_LOG_DEBUG("Dropping switch table at 0x%" PFMT64x " of block at 0x%" PFMT64x "\n", a->switch_op->addr, a->addr);
 		rz_analysis_switch_op_free(a->switch_op);
@@ -545,8 +543,8 @@ RZ_API bool rz_analysis_block_successor_addrs_foreach(RzAnalysisBlock *block, Rz
 		} \
 	} while (0);
 
-	CB_ADDR(block->jump);
-	CB_ADDR(block->fail);
+	CB_ADDR(rz_analysis_block_jump(block));
+	CB_ADDR(rz_analysis_block_fail(block));
 	if (block->switch_op && block->switch_op->cases) {
 		RzListIter *iter;
 		RzAnalysisCaseOp *caseop;
@@ -663,10 +661,12 @@ RZ_API bool rz_analysis_block_recurse_depth_first(RzAnalysisBlock *block, RzAnal
 	do {
 		RecurseDepthFirstCtx *cur_ctx = rz_vector_index_ptr(&path, path.len - 1);
 		cur_bb = cur_ctx->bb;
-		if (rz_analysis_block_jump(cur_bb) != UT64_MAX && !ht_up_find_kv(visited, cur_bb->jump, NULL)) {
-			cur_bb = rz_analysis_get_block_at(analysis, rz_analysis_block_jump(cur_bb));
-		} else if (cur_bb->fail != UT64_MAX && !ht_up_find_kv(visited, cur_bb->fail, NULL)) {
-			cur_bb = rz_analysis_get_block_at(analysis, cur_bb->fail);
+		ut64 fail = rz_analysis_block_fail(cur_bb);
+		ut64 jump = rz_analysis_block_jump(cur_bb);
+		if (jump != UT64_MAX && !ht_up_find_kv(visited, jump, NULL)) {
+			cur_bb = rz_analysis_get_block_at(analysis, jump);
+		} else if (fail != UT64_MAX && !ht_up_find_kv(visited, fail, NULL)) {
+			cur_bb = rz_analysis_get_block_at(analysis, fail);
 		} else {
 			if (cur_bb->switch_op && !cur_ctx->switch_it) {
 				cur_ctx->switch_it = rz_list_head(cur_bb->switch_op->cases);
@@ -933,8 +933,8 @@ RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, 
 	// Chop the block. Resize and remove all destination addrs
 	rz_analysis_block_set_size(block, addr - block->addr);
 	rz_analysis_block_update_hash(block);
-	block->jump = UT64_MAX;
-	block->fail = UT64_MAX;
+	rz_analysis_block_set_jump(block, UT64_MAX);
+	rz_analysis_block_set_fail(block, UT64_MAX);
 	rz_analysis_switch_op_free(block->switch_op);
 	block->switch_op = NULL;
 

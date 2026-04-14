@@ -33,9 +33,9 @@ static bool test_analysis_fcn_large() {
 	RzAnalysisBlock *block = rz_analysis_fcn_bbget_at(core->analysis, f, 0);
 	while (block) {
 		end = RZ_MAX(end, block->addr + block->size);
-		if (block->jump != UT64_MAX) {
-			mu_assert_eq(block->jump, block->addr + block->size, "blocks aren't chained");
-			block = rz_analysis_fcn_bbget_at(core->analysis, f, block->jump);
+		if (rz_analysis_block_jump(block) != UT64_MAX) {
+			mu_assert_eq(rz_analysis_block_jump(block), block->addr + block->size, "blocks aren't chained");
+			block = rz_analysis_fcn_bbget_at(core->analysis, f, rz_analysis_block_jump(block));
 		} else {
 			block = NULL;
 		}

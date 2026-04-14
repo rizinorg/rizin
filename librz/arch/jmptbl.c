@@ -519,19 +519,20 @@ RZ_API bool rz_analysis_get_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 	void **iter;
 	rz_pvector_foreach (fcn->bbs, iter) {
 		tmp_bb = (RzAnalysisBlock *)*iter;
-		if (tmp_bb->jump == block->addr || tmp_bb->fail == block->addr) {
+		if (rz_analysis_block_jump(tmp_bb) == block->addr || rz_analysis_block_fail(tmp_bb) == block->addr) {
 			prev_bb = tmp_bb;
 			break;
 		}
 	}
 	// predecessor must be a conditional jump
-	if (!prev_bb || !prev_bb->jump || !prev_bb->fail) {
+	if (!prev_bb || !rz_analysis_block_jump(prev_bb) || !rz_analysis_block_fail(prev_bb)) {
 		RZ_LOG_DEBUG("Missing predecesessor on basic block conditional jump at 0x%08" PFMT64x ", required by jump table\n", jmp_address);
 		return false;
 	}
 
 	// default case is the jump target of the unconditional jump
-	params->default_case = prev_bb->jump == block->addr ? prev_bb->fail : prev_bb->jump;
+	ut64 jump = rz_analysis_block_jump(prev_bb);
+	params->default_case = jump == block->addr ? rz_analysis_block_fail(prev_bb) : jump;
 
 	RzAnalysisOp tmp_aop = { 0 };
 	ut8 *bb_buf = calloc(1, prev_bb->size);

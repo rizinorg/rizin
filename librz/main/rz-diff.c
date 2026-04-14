@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2021 deroad <wargiof@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_analysis.h"
 #include <rz_core.h>
 #include <rz_io.h>
 #include <rz_bin.h>
@@ -1653,24 +1654,24 @@ static void graphviz_dot_edges(RzCore *core, RzAnalysisFunction *fcn) {
 
 	rz_pvector_foreach (fcn->bbs, iter) {
 		bbi = (RzAnalysisBlock *)*iter;
-		if (bbi->jump != UT64_MAX) {
+		if (rz_analysis_block_jump(bbi) != UT64_MAX) {
 			rz_cons_printf("\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"%s\"];\n",
-				bbi->addr, bbi->jump,
-				bbi->fail != UT64_MAX ? PAL_TRUE : PAL_JUMP);
+				bbi->addr, rz_analysis_block_jump(bbi),
+				rz_analysis_block_fail(bbi) != UT64_MAX ? PAL_TRUE : PAL_JUMP);
 			print_color_node(core, bbi);
 		}
-		if (bbi->fail != UT64_MAX) {
+		if (rz_analysis_block_fail(bbi) != UT64_MAX) {
 			rz_cons_printf("\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"" PAL_FAIL "\"];\n",
-				bbi->addr, bbi->fail);
+				bbi->addr, rz_analysis_block_fail(bbi));
 			print_color_node(core, bbi);
 		}
 		if (bbi->switch_op) {
 			RzAnalysisCaseOp *caseop;
 			RzListIter *iter2;
 
-			if (bbi->fail != UT64_MAX) {
+			if (rz_analysis_block_fail(bbi) != UT64_MAX) {
 				rz_cons_printf("\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"" PAL_FAIL "\"];\n",
-					bbi->addr, bbi->fail);
+					bbi->addr, rz_analysis_block_fail(bbi));
 				print_color_node(core, bbi);
 			}
 			rz_list_foreach (bbi->switch_op->cases, iter2, caseop) {
@@ -1699,11 +1700,11 @@ static void graphviz_dot_graph(RzCore *core_a, RzAnalysisFunction *fcn_a, RzCore
 static void graph_basic_block_json(const char *name, RzAnalysisBlock *bbi, PJ *pj) {
 	pj_ko(pj, name); // "<name>": { -- object begin
 	pj_kn(pj, "address", bbi->addr);
-	if (bbi->jump != UT64_MAX) {
-		pj_kn(pj, "jump", bbi->jump);
+	if (rz_analysis_block_jump(bbi) != UT64_MAX) {
+		pj_kn(pj, "jump", rz_analysis_block_jump(bbi));
 	}
-	if (bbi->fail != UT64_MAX) {
-		pj_kn(pj, "fail", bbi->fail);
+	if (rz_analysis_block_fail(bbi) != UT64_MAX) {
+		pj_kn(pj, "fail", rz_analysis_block_fail(bbi));
 	}
 	if (!bbi->switch_op) {
 		pj_end(pj); // } -- object end

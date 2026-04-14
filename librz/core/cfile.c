@@ -202,11 +202,11 @@ static void __rebase_everything(RzCore *core, RzPVector /*<RzBinSection *>*/ *ol
 					continue;
 				}
 				rz_analysis_block_relocate(bb, bb->addr + diff, bb->size);
-				if (bb->jump != UT64_MAX) {
-					bb->jump += diff;
+				if (rz_analysis_block_jump(bb) != UT64_MAX) {
+					rz_analysis_block_set_jump(bb, rz_analysis_block_jump(bb) + diff);
 				}
-				if (bb->fail != UT64_MAX) {
-					bb->fail += diff;
+				if (rz_analysis_block_fail(bb) != UT64_MAX) {
+					rz_analysis_block_set_fail(bb, rz_analysis_block_fail(bb) + diff);
 				}
 			}
 			break;

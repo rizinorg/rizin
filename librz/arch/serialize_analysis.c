@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "analysis_private.h"
+#include "rz_analysis.h"
 #include <rz_core.h>
 
 #include <errno.h>
@@ -133,11 +134,11 @@ static void block_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisBlock *bl
 	pj_o(j);
 
 	pj_kn(j, "size", block->size);
-	if (block->jump != UT64_MAX) {
-		pj_kn(j, "jump", block->jump);
+	if (rz_analysis_block_jump(block) != UT64_MAX) {
+		pj_kn(j, "jump", rz_analysis_block_jump(block));
 	}
-	if (block->fail != UT64_MAX) {
-		pj_kn(j, "fail", block->fail);
+	if (rz_analysis_block_fail(block) != UT64_MAX) {
+		pj_kn(j, "fail", rz_analysis_block_fail(block));
 	}
 	if (block->traced) {
 		pj_kb(j, "traced", true);
@@ -245,8 +246,6 @@ static bool block_load_cb(void *user, const SdbKv *kv) {
 	}
 
 	RzAnalysisBlock proto = { 0 };
-	proto.jump = UT64_MAX;
-	proto.fail = UT64_MAX;
 	proto.size = UT64_MAX;
 	proto.sp_entry = RZ_STACK_ADDR_INVALID;
 	proto.cmpval = UT64_MAX;
@@ -262,13 +261,13 @@ static bool block_load_cb(void *user, const SdbKv *kv) {
 			if (child->type != RZ_JSON_INTEGER) {
 				break;
 			}
-			proto.jump = child->num.u_value;
+			rz_analysis_block_set_jump(&proto, child->num.u_value);
 			break;
 		case BLOCK_FIELD_FAIL:
 			if (child->type != RZ_JSON_INTEGER) {
 				break;
 			}
-			proto.fail = child->num.u_value;
+			rz_analysis_block_set_fail(&proto, child->num.u_value);
 			break;
 		case BLOCK_FIELD_TRACED:
 			if (child->type != RZ_JSON_BOOLEAN) {
@@ -364,8 +363,8 @@ static bool block_load_cb(void *user, const SdbKv *kv) {
 	if (!block) {
 		goto error;
 	}
-	block->jump = proto.jump;
-	block->fail = proto.fail;
+	rz_analysis_block_set_jump(block, rz_analysis_block_jump(&proto));
+	rz_analysis_block_set_fail(block, rz_analysis_block_fail(&proto));
 	block->traced = proto.traced;
 	block->colorize = proto.colorize;
 	block->switch_op = proto.switch_op;

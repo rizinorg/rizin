@@ -338,7 +338,7 @@ RZ_IPI void rz_core_analysis_fcn_returns(RzCore *core, RzAnalysisFunction *fcn) 
 	void **iter;
 	rz_pvector_foreach (fcn->bbs, iter) {
 		b = (RzAnalysisBlock *)*iter;
-		if (b->jump == UT64_MAX) {
+		if (rz_analysis_block_jump(b) == UT64_MAX) {
 			ut64 retaddr = rz_analysis_block_get_op_addr(b, b->ninstr - 1);
 			if (retaddr == UT64_MAX) {
 				break;
@@ -372,14 +372,14 @@ static ut64 __opaddr(RzAnalysisBlock *b, ut64 addr) {
 static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *bb,
 	ut64 addr, RzOutputMode mode, PJ *pj, RzTable *t) {
 	RzDebugTracepoint *tp = NULL;
-	int outputs = (bb->jump != UT64_MAX) + (bb->fail != UT64_MAX);
+	int outputs = (rz_analysis_block_jump(bb) != UT64_MAX) + (rz_analysis_block_fail(bb) != UT64_MAX);
 	int inputs = 0;
 
 	void **iter;
 	RzAnalysisBlock *bb2;
 	rz_pvector_foreach (fcn->bbs, iter) {
 		bb2 = (RzAnalysisBlock *)*iter;
-		inputs += (bb2->jump == bb->addr) + (bb2->fail == bb->addr);
+		inputs += (rz_analysis_block_jump(bb2) == bb->addr) + (rz_analysis_block_fail(bb2) == bb->addr);
 	}
 	if (bb->switch_op) {
 		RzList *unique_cases = rz_list_uniq(bb->switch_op->cases, casecmp, NULL);
@@ -395,11 +395,11 @@ static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock
 			bb->addr, bb->addr + bb->size,
 			tp ? tp->times : 0, tp ? tp->count : 0,
 			bb->size);
-		if (bb->jump != UT64_MAX) {
-			rz_cons_printf(" j 0x%08" PFMT64x, bb->jump);
+		if (rz_analysis_block_jump(bb) != UT64_MAX) {
+			rz_cons_printf(" j 0x%08" PFMT64x, rz_analysis_block_jump(bb));
 		}
-		if (bb->fail != UT64_MAX) {
-			rz_cons_printf(" f 0x%08" PFMT64x, bb->fail);
+		if (rz_analysis_block_fail(bb) != UT64_MAX) {
+			rz_cons_printf(" f 0x%08" PFMT64x, rz_analysis_block_fail(bb));
 		}
 		if (bb->switch_op) {
 			RzAnalysisCaseOp *cop;
@@ -414,11 +414,11 @@ static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock
 		break;
 	case RZ_OUTPUT_MODE_JSON: {
 		pj_o(pj);
-		if (bb->jump != UT64_MAX) {
-			pj_kn(pj, "jump", bb->jump);
+		if (rz_analysis_block_jump(bb) != UT64_MAX) {
+			pj_kn(pj, "jump", rz_analysis_block_jump(bb));
 		}
-		if (bb->fail != UT64_MAX) {
-			pj_kn(pj, "fail", bb->fail);
+		if (rz_analysis_block_fail(bb) != UT64_MAX) {
+			pj_kn(pj, "fail", rz_analysis_block_fail(bb));
 		}
 		if (bb->switch_op) {
 			pj_k(pj, "switch_op");
@@ -454,17 +454,17 @@ static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock
 		break;
 	}
 	case RZ_OUTPUT_MODE_TABLE:
-		rz_table_add_rowf(t, "xdxx", bb->addr, bb->size, bb->jump, bb->fail);
+		rz_table_add_rowf(t, "xdxx", bb->addr, bb->size, rz_analysis_block_jump(bb), rz_analysis_block_fail(bb));
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
 		rz_cons_printf("0x%08" PFMT64x "\n", bb->addr);
 		break;
 	case RZ_OUTPUT_MODE_LONG: {
-		if (bb->jump != UT64_MAX) {
-			rz_cons_printf("jump: 0x%08" PFMT64x "\n", bb->jump);
+		if (rz_analysis_block_jump(bb) != UT64_MAX) {
+			rz_cons_printf("jump: 0x%08" PFMT64x "\n", rz_analysis_block_jump(bb));
 		}
-		if (bb->fail != UT64_MAX) {
-			rz_cons_printf("fail: 0x%08" PFMT64x "\n", bb->fail);
+		if (rz_analysis_block_fail(bb) != UT64_MAX) {
+			rz_cons_printf("fail: 0x%08" PFMT64x "\n", rz_analysis_block_fail(bb));
 		}
 		rz_cons_printf("opaddr: 0x%08" PFMT64x "\n", opaddr);
 		rz_cons_printf("addr: 0x%08" PFMT64x "\nsize: %" PFMT64d "\ninputs: %d\noutputs: %d\nninstr: %d\ntraced: %s\n",
@@ -1648,12 +1648,12 @@ static bool analysis_path_exists(RzCore *core, ut64 from, ut64 to, RzList /*<RzA
 
 	// try to find the target in the current function
 	if (rz_analysis_block_contains(bb, to) ||
-		((!ht_up_find(avoid, bb->jump, NULL) &&
-			!ht_up_find(state, bb->jump, NULL) &&
-			analysis_path_exists(core, bb->jump, to, bbs, depth - 1, state, avoid))) ||
-		((!ht_up_find(avoid, bb->fail, NULL) &&
-			!ht_up_find(state, bb->fail, NULL) &&
-			analysis_path_exists(core, bb->fail, to, bbs, depth - 1, state, avoid)))) {
+		((!ht_up_find(avoid, rz_analysis_block_jump(bb), NULL) &&
+			!ht_up_find(state, rz_analysis_block_jump(bb), NULL) &&
+			analysis_path_exists(core, rz_analysis_block_jump(bb), to, bbs, depth - 1, state, avoid))) ||
+		((!ht_up_find(avoid, rz_analysis_block_fail(bb), NULL) &&
+			!ht_up_find(state, rz_analysis_block_fail(bb), NULL) &&
+			analysis_path_exists(core, rz_analysis_block_fail(bb), to, bbs, depth - 1, state, avoid)))) {
 		rz_list_prepend(bbs, bb);
 		return true;
 	}
@@ -3120,8 +3120,8 @@ static void analPaths(RzCoreAnalPaths *p, PJ *pj) {
 		}
 	} else {
 		RzAnalysisBlock *c = cur;
-		ut64 j = cur->jump;
-		ut64 f = cur->fail;
+		ut64 j = rz_analysis_block_jump(cur);
+		ut64 f = rz_analysis_block_fail(cur);
 		analPathFollow(p, j, pj);
 		cur = c;
 		analPathFollow(p, f, pj);
