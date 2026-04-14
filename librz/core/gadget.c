@@ -1082,6 +1082,7 @@ static void gadget_print_long_mode(const RzCore *core, const RzGadgetInfo *gadge
 		free(asm_str);
 		free(hex);
 		rz_analysis_op_fini(&aop);
+		rz_asm_op_fini(&asmop);
 	}
 	print_gadget_long_info(gadget_info, lens, add, asm_strs, hex_strs, high_pad, utf8, colorize);
 	free(rep_str);
