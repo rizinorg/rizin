@@ -114,7 +114,7 @@ jobs:
         run: |
           tar czvf lsan_reports.tgz $LSAN_LOGS_DIR
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: lsan_logs
           path: lsan_reports.tgz
