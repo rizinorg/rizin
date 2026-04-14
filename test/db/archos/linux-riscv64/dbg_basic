@@ -9,9 +9,9 @@ dc
 dr PC; pdf @ sym.imp.printf
 EOF
 EXPECT=<<EOF
-     start        end size perm hwsw type  state   valid cmd cond name           module                                          
----------------------------------------------------------------------------------------------------------------------------------
-0x00010440 0x00010444    4 --x  sw   break enabled valid          sym.imp.printf /home/ubuntu/rizin/test/bins/elf/riscv_bitmanip
+     start        end size perm hwsw type  state   valid cmd cond name           module                        
+---------------------------------------------------------------------------------------------------------------
+0x00010440 0x00010444    4 --x  sw   break enabled valid          sym.imp.printf /test/bins/elf/riscv_bitmanip
 pc = 0x0000000000010440
             ; XREFS(22)
             ;-- pc:
@@ -37,9 +37,9 @@ dbl
 dc
 EOF
 EXPECT=<<EOF
-     start        end size perm hwsw type  state   valid cmd cond name           module                                          
----------------------------------------------------------------------------------------------------------------------------------
-0x00010440 0x00010444    4 --x  sw   break enabled valid          sym.imp.printf /home/ubuntu/rizin/test/bins/elf/riscv_bitmanip
+     start        end size perm hwsw type  state   valid cmd cond name           module                        
+---------------------------------------------------------------------------------------------------------------
+0x00010440 0x00010444    4 --x  sw   break enabled valid          sym.imp.printf /test/bins/elf/riscv_bitmanip
 pc = 0x0000000000010440
             ; XREFS(22)
             ;-- pc:
@@ -47,9 +47,9 @@ pc = 0x0000000000010440
 |           0x00010440 b    auipc t3, 2
 |           0x00010444      ld    t3, -0x438(t3)
 \           0x00010448      jalr  t1, t3
-     start        end size perm hwsw type  state    valid cmd cond name           module                                          
-----------------------------------------------------------------------------------------------------------------------------------
-0x00010440 0x00010444    4 --x  sw   break disabled valid          sym.imp.printf /home/ubuntu/rizin/test/bins/elf/riscv_bitmanip
+     start        end size perm hwsw type  state    valid cmd cond name           module                        
+----------------------------------------------------------------------------------------------------------------
+0x00010440 0x00010444    4 --x  sw   break disabled valid          sym.imp.printf /test/bins/elf/riscv_bitmanip
 32-bit rotate left 8:  0x34567812
 32-bit rotate right 12: 0x67812345
 32-bit rotate left var: 0x1A2B3C09
@@ -83,7 +83,7 @@ aaa
 db @ sym.imp.printf
 dc
 dr PC; pdf @ sym.imp.printf
-dbt
+dbt~[0,1,4,5,6]
 EOF
 EXPECT=<<EOF
 pc = 0x0000000000010440
@@ -93,10 +93,10 @@ pc = 0x0000000000010440
 |           0x00010440 b    auipc t3, 2
 |           0x00010444      ld    t3, -0x438(t3)
 \           0x00010448      jalr  t1, t3
-0  0x10440            sp: 0x0                 0    [sym.imp.printf]  sym.imp.printf
-1  0x105fa            sp: 0x0                 0    [sym.demonstrate_all_operations]  sym.demonstrate_all_operations+22
-2  0x10458            sp: 0x7ffff15a6458      8    [main]  main+8
-3  0x10480            sp: 0x7ffff15a65f8      416  [??]  entry0+32
+0 0x10440 0 [sym.imp.printf] sym.imp.printf
+1 0x105fa 0 [sym.demonstrate_all_operations] sym.demonstrate_all_operations+22
+2 0x10458 8 [main] main+8
+3 0x10480 416 [??] entry0+32
 EOF
 RUN
 

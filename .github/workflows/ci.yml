@@ -932,13 +932,13 @@ jobs:
       - name: Setup RISC-V QEMU environment
         run: |
           cd ..
-          sh rizin/.github/riscv-qemu-setup-all.sh /rizin -hh
+          sh rizin/.github/riscv-qemu-setup-all.sh
 
       - name: Run inside RISC-V QEMU
         run: |
           cd ..
           qemu-system-riscv64 \
-            -machine virt -cpu rv64 -m 512M \
+            -machine virt -cpu rv64 -m 2G \
             -kernel linux-image/boot/vmlinux-6.12.73+deb13-riscv64 \
             -initrd initrd.cpio.gz \
             -append "console=ttyS0,115200 earlycon" \
