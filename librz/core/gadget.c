@@ -444,10 +444,9 @@ RZ_API RZ_OWN RzGadgetRegInfo *rz_core_gadget_reg_info_dup(RZ_BORROW RZ_NONNULL 
 
 /**
  * \brief Find the Gadget Register information for the given register
- * \param gadget_info Pointer to the RzGadgetInfo
- * \param name Register to filter the dependencies
- *
- * \return Pvector of register gadget information
+ * \param gadget_info RZ_NONNULL Pointer to the RzGadgetInfo object.
+ * \param name RZ_NONNULL Pointer to the name of the register to filter dependencies.
+ * \return RZ_OUT A pointer to an RzPVector of RzGadgetRegInfo objects matching the given name.
  */
 RZ_API RZ_OWN RzPVector /*<RzGadgetRegInfo *>*/ *rz_core_gadget_reg_info_find(const RZ_NONNULL RzGadgetInfo *gadget_info, const RZ_NONNULL char *name) {
 	rz_return_val_if_fail(gadget_info && name, NULL);
@@ -571,10 +570,10 @@ RZ_API RZ_OWN RzPVector /*<RzGadgetRegInfo *>*/ *rz_core_gadget_get_reg_info_by_
 /**
  * \brief Find all registers with specific names in the modified registers of a RzGadgetInfo object.
  * \param gadget_info RZ_NONNULL Pointer to the RzGadgetInfo object.
- * \param registers RZ_NONNULL Pointer to a RzPvector of register names.
- * \return RZ_OUT A pointer to a RzPvector of RzGadgetRegInfo objects matching the given names, or NULL if none are found or if gadget_info is NULL.
+ * \param registers RZ_NONNULL Pointer to a RzPVector of register names to search for.
+ * \return RZ_OUT A pointer to a RzPVector of RzGadgetRegInfo objects matching the given names, or NULL if none are found or if gadget_info is NULL.
  *
- * Searches the modified registers in the RzGadgetInfo object for all registers with the given registers and returns their info in a vector.
+ * Searches the modified registers in the RzGadgetInfo object for all registers matching the given register names and returns their info in a vector.
  */
 RZ_API RZ_OWN RzPVector /*<RzGadgetRegInfo *>*/ *rz_core_gadget_get_reg_info_by_reg_names(const RZ_NONNULL RzGadgetInfo *gadget_info,
 	const RZ_NONNULL RzPVector /*<char *>*/ *registers) {
@@ -1444,10 +1443,11 @@ static RzGadgetInfo *perform_gadget_analysis(const RzGadgetType type, RzCore *co
  * \brief Perform Gadget operations based on the given \p context and \p hitlist.
  * \param core Pointer to the RzCore structure.
  * \param context Pointer to the RzGadgetSearchContext structure.
- * \param hitlist Pointer to the RzList structure containing the gadgets.
+ * \param hitlist Pointer to the RzPVector structure containing the gadget instructions.
+ * \param delay_size Number of delay-slot instructions following the terminator; used to locate the actual gadget terminator in delay-slot architectures (0 for non-delay-slot archs).
  * \return true if the operation was successful, false otherwise.
  *
- * This function performs Gadget operations based on the given \p context and \p hitlist.
+ * This function performs Gadget operations based on the given \p context and \p hitlist, including printing and analyzing the gadget sequence.
  */
 
 RZ_API bool rz_core_handle_gadget_request_type(RZ_NONNULL RzCore *core, RZ_NONNULL RzGadgetSearchContext *context,
