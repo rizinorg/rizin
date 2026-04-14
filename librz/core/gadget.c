@@ -822,6 +822,7 @@ static bool analyze_gadget(RzCore *core, const RzCoreAsmHit *hit, RzGadgetInfo *
 	rz_config_set(core->config, "io.cache", "true");
 	rz_core_il_step(core, 1);
 
+	RzPVector vec = { 0 };
 	RzILVM *vm = il_vm->vm;
 	if (!vm) {
 		ret = false;
@@ -829,8 +830,8 @@ static bool analyze_gadget(RzCore *core, const RzCoreAsmHit *hit, RzGadgetInfo *
 	}
 	void **it;
 
-	RzPVector vec;
-	rz_pvector_init(&vec, (RzPVectorFree)rz_il_event_free);
+	// vec only borrows ptrs from vm->events.
+	rz_pvector_init(&vec, NULL);
 	rz_pvector_foreach (vm->events, it) {
 		RzILEvent *evt = *it;
 		if (!fill_gadget_info_from_events(core, gadget_info, NULL, evt,
@@ -840,7 +841,7 @@ static bool analyze_gadget(RzCore *core, const RzCoreAsmHit *hit, RzGadgetInfo *
 	}
 
 cleanup:
-	rz_pvector_flush(&vec);
+	rz_pvector_fini(&vec);
 	rz_core_seek(core, old_addr, true);
 	return ret;
 }
