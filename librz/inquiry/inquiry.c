@@ -114,8 +114,9 @@ RZ_API RZ_OWN char *rz_inquiry_function_str(const RzInquiryFunction *fcn) {
 	}
 	rz_strbuf_append(buf, " ]\n");
 	RzIterator *iter = rz_graph_get_nodes(fcn->bb_cfg->graph);
-	RzInquiryBB *bb;
-	rz_iterator_foreach(iter, bb) {
+	RzGraphNode *n;
+	rz_iterator_foreach(iter, n) {
+		const RzInquiryBB *bb = rz_graph_node_get_data(n);
 		rz_strbuf_appendf(buf, "\t0x%" PFMT64x ":0x%" PFMT64x "\n", bb->addr, bb->size);
 	}
 	rz_iterator_free(iter);
@@ -833,8 +834,9 @@ static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry
 	// Add all discovered binary blocks to analysis
 
 	RzIterator *iter = rz_graph_get_nodes(inquiry->bb_cfg->graph);
-	RzInquiryBB *bb;
-	rz_iterator_foreach(iter, bb) {
+	RzGraphNode *n;
+	rz_iterator_foreach(iter, n) {
+		const RzInquiryBB *bb = rz_graph_node_get_data(n);
 		rz_analysis_add_bb(analysis, bb->addr, bb->size);
 	}
 	rz_iterator_free(iter);
@@ -864,8 +866,9 @@ static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry
 		}
 
 		RzIterator *iter = rz_graph_get_nodes(fcn->bb_cfg->graph);
-		RzInquiryBB *bb;
-		rz_iterator_foreach(iter, bb) {
+		RzGraphNode *n;
+		rz_iterator_foreach(iter, n) {
+			const RzInquiryBB *bb = rz_graph_node_get_data(n);
 			RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, bb->addr);
 			if (!abb && !(abb = rz_analysis_create_block(analysis, bb->addr, bb->size))) {
 				rz_warn_if_reached();
