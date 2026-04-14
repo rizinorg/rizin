@@ -37,7 +37,7 @@ static bool gadget_is_valid_terminator(const RzGadgetType gadget_type, const RzC
 	return status;
 }
 
-static RzCoreAsmHit *find_gadget_terminator(const RzPVector *hitlist, int delay_size) {
+static RzCoreAsmHit *find_gadget_terminator(const RzPVector /*<RzCoreAsmHit *>*/ *hitlist, int delay_size) {
 	if (!hitlist || delay_size < 0) {
 		return NULL;
 	}
