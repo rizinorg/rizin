@@ -80,24 +80,74 @@ static ut64 uclibc_get_heap_base(RzCore *core, RzDebugMap *map) {
  * \return Heap pointer value, or UT64_MAX if not found
  */
 static ut64 uclibc_find_heap_ptr(RzCore *core) {
-	if (rz_config_get_b(core->config, "cfg.debug")) {
-		RzListIter *iter;
-		RzDebugMap *map;
-		rz_debug_map_sync(core->dbg);
-		rz_list_foreach (core->dbg->maps, iter, map) {
-			if (map->name && (strstr(map->name, "uClibc") || strstr(map->name, "libuClibc-ng") || strstr(map->name, "libuClibc") || (strstr(map->name, "libc.so.0")))) {
-				ut64 heap_sym = uclibc_get_heap_base(core, map);
-				if (heap_sym != UT64_MAX) {
-					ut64 heap_ptr = 0;
-					ut8 ptr_size = uclibc_ptr_size(core);
-					if (rz_io_read_at_mapped(core->io, heap_sym, (ut8 *)&heap_ptr, ptr_size)) {
-						return heap_ptr;
-					}
-				}
+	if (!rz_config_get_b(core->config, "cfg.debug")) {
+		return UT64_MAX;
+	}
+
+	RzListIter *iter;
+	RzDebugMap *map;
+	rz_debug_map_sync(core->dbg);
+	rz_list_foreach (core->dbg->maps, iter, map) {
+		if (!map->name) {
+			continue;
+		}
+		if (strstr(map->name, "uClibc") || strstr(map->name, "libuClibc-ng") || strstr(map->name, "libuClibc") || strstr(map->name, "libc.so.0")) {
+			ut64 heap_sym = uclibc_get_heap_base(core, map);
+			if (heap_sym == UT64_MAX) {
+				continue;
+			}
+			ut64 heap_ptr = 0;
+			ut8 ptr_size = uclibc_ptr_size(core);
+			if (rz_io_read_at_mapped(core->io, heap_sym, (ut8 *)&heap_ptr, ptr_size)) {
+				return heap_ptr;
 			}
 		}
 	}
 	return UT64_MAX;
+}
+
+/**
+ * \brief Get heap boundaries from debug maps.
+ *
+ * \param core RzCore instance
+ * \param brk_start Pointer to store heap start address
+ * \param brk_end Pointer to store heap end address
+ * \return true if found, false otherwise
+ */
+static bool uclibc_get_heap_bounds_from_debug_maps(RzCore *core, ut64 *brk_start, ut64 *brk_end) {
+	RzListIter *iter;
+	RzDebugMap *map;
+	rz_debug_map_sync(core->dbg);
+	rz_list_foreach (core->dbg->maps, iter, map) {
+		if (map->name && strstr(map->name, "[heap]")) {
+			*brk_start = map->addr;
+			*brk_end = map->addr_end;
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * \brief Get heap boundaries from IO maps.
+ *
+ * \param core RzCore instance
+ * \param brk_start Pointer to store heap start address
+ * \param brk_end Pointer to store heap end address
+ * \return true if found, false otherwise
+ */
+static bool uclibc_get_heap_bounds_from_io_maps(RzCore *core, ut64 *brk_start, ut64 *brk_end) {
+	void **it;
+	RzPVector *maps = rz_io_maps(core->io);
+	rz_pvector_foreach (maps, it) {
+		RzIOMap *map = *it;
+		if (map->name && strstr(map->name, "[heap]")) {
+			*brk_start = map->itv.addr;
+			*brk_end = map->itv.addr + map->itv.size;
+			return true;
+		}
+	}
+	return false;
 }
 
 /**
@@ -112,33 +162,9 @@ static ut64 uclibc_find_heap_ptr(RzCore *core) {
  */
 static bool uclibc_get_heap_bounds(RzCore *core, ut64 *brk_start, ut64 *brk_end) {
 	if (rz_config_get_b(core->config, "cfg.debug")) {
-		RzListIter *iter;
-		RzDebugMap *map;
-		rz_debug_map_sync(core->dbg);
-		rz_list_foreach (core->dbg->maps, iter, map) {
-			if (map->name) {
-				if (strstr(map->name, "[heap]")) {
-					*brk_start = map->addr;
-					*brk_end = map->addr_end;
-					return true;
-				}
-			}
-		}
-	} else {
-		void **it;
-		RzPVector *maps = rz_io_maps(core->io);
-		rz_pvector_foreach (maps, it) {
-			RzIOMap *map = *it;
-			if (map->name) {
-				if (strstr(map->name, "[heap]")) {
-					*brk_start = map->itv.addr;
-					*brk_end = map->itv.addr + map->itv.size;
-					return true;
-				}
-			}
-		}
+		return uclibc_get_heap_bounds_from_debug_maps(core, brk_start, brk_end);
 	}
-	return false;
+	return uclibc_get_heap_bounds_from_io_maps(core, brk_start, brk_end);
 }
 
 /**
