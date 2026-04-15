@@ -138,10 +138,9 @@ RZ_IPI bool rz_inquiry_bb_cfg_complement(RzInquiry *iq, RzVector /*<RzAnalysisXR
 	// Add the instruction to instruction edges.
 	RzAnalysisXRef *i2i_edge;
 	rz_vector_foreach (insn_to_insn_edges, i2i_edge) {
-
 		// First check if the edge is already in the CFG.
 		// If so (not unlikely), skip the step where it iterates over all BBs.
-		RzIterator *incoming = rz_inquiry_bb_cfg_get_neighbours_to(iq->bb_cfg, i2i_edge->to);
+		RzIterator *incoming = rz_inquiry_bb_cfg_get_incoming_nodes(iq->bb_cfg, i2i_edge->to);
 		if (!incoming) {
 			// Basic block not present.
 			continue;
@@ -653,18 +652,18 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 				rz_th_queue_close(iset->il_queue);
 				iset_map[i].next_run_state = RZ_INTP_RUN_STATE_TERM;
 				intpr_terminated++;
-				RZ_LOG_DEBUG("Next: TERM\n");
+				// RZ_LOG_DEBUG("Next: TERM\n");
 				continue;
 			}
 			if (send_next_il_bb(core, iset->il_queue, il_cache, entry_points, &branch)) {
 				// Successfully lifted and pushed the entry point's basic block into the queue.
 				// Expect the interpreter to emulate now.
 				iset_map[i].next_run_state = RZ_INTP_RUN_STATE_EMU;
-				RZ_LOG_DEBUG("Next: EMU\n");
+				// RZ_LOG_DEBUG("Next: EMU\n");
 			} else {
 				iset_map[i].next_run_state = RZ_INTP_RUN_STATE_CLEAN;
 				rz_th_queue_close(iset->il_queue);
-				RZ_LOG_DEBUG("Next: CLEAN\n");
+				// RZ_LOG_DEBUG("Next: CLEAN\n");
 			}
 			break;
 		}
@@ -697,7 +696,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 						// Signal interpreter the lifting failed.
 						rz_th_queue_close(iset->il_queue);
 						iset_map[i].next_run_state = RZ_INTP_RUN_STATE_CLEAN;
-						RZ_LOG_DEBUG("Next: CLEAN\n");
+						// RZ_LOG_DEBUG("Next: CLEAN\n");
 					} else {
 						RZ_LOG_DEBUG("Pushed: il_bb: 0x%llx\n", branch.target_addr);
 					}
@@ -742,7 +741,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			if (!handle_yields(core, iset->yield_rbufs)) {
 				iset_map[i].next_run_state = RZ_INTP_RUN_STATE_TERM;
 				intpr_terminated++;
-				RZ_LOG_DEBUG("Next: TERM\n");
+				// RZ_LOG_DEBUG("Next: TERM\n");
 			}
 			break;
 		}
@@ -754,7 +753,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			open_ipc_obj(iset);
 			rz_th_sem_post(iset->run_state_sync);
 			iset_map[i].next_run_state = RZ_INTP_RUN_STATE_INIT;
-			RZ_LOG_DEBUG("Next: INIT\n");
+			// RZ_LOG_DEBUG("Next: INIT\n");
 			break;
 		}
 		case RZ_INTP_RUN_STATE_TERM: {
@@ -762,7 +761,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 				iset_map[i].next_run_state = RZ_INTP_RUN_STATE_TERM;
 				intpr_terminated++;
 			}
-			RZ_LOG_DEBUG("Next: TERM\n");
+			// RZ_LOG_DEBUG("Next: TERM\n");
 			break;
 		}
 		}
@@ -874,7 +873,7 @@ static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry
 				rz_warn_if_reached();
 				continue;
 			}
-			RzIterator *successors = rz_inquiry_bb_cfg_get_neighbours_from(inquiry->bb_cfg, bb->addr);
+			RzIterator *successors = rz_inquiry_bb_cfg_get_outgoing_nodes(inquiry->bb_cfg, bb->addr);
 			RzGraphNode *n;
 			size_t i = 0;
 			rz_iterator_foreach(successors, n) {

@@ -70,12 +70,18 @@ RZ_IPI bool rz_inquiry_bb_cfg_get_basic_block(const RzInquiryBBCFG *cfg, ut64 bb
 	return true;
 }
 
-RZ_API RZ_OWN RzIterator /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours_from(const RzInquiryBBCFG *cfg, ut64 bb_addr) {
+/**
+ * \brief Neighbors of outgoing edges.
+ */
+RZ_API RZ_OWN RzIterator /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_outgoing_nodes(const RzInquiryBBCFG *cfg, ut64 bb_addr) {
 	rz_return_val_if_fail(cfg, NULL);
 	return rz_graph_out_neighbors_by_id(cfg->graph, bb_addr);
 }
 
-RZ_API RZ_OWN RzIterator /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours_to(const RzInquiryBBCFG *cfg, ut64 bb_addr) {
+/**
+ * \brief Neighbors of incoming edges.
+ */
+RZ_API RZ_OWN RzIterator /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_incoming_nodes(const RzInquiryBBCFG *cfg, ut64 bb_addr) {
 	rz_return_val_if_fail(cfg, NULL);
 	return rz_graph_in_neighbors_by_id(cfg->graph, bb_addr);
 }
