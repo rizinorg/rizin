@@ -1020,6 +1020,7 @@ static bool cb_str_unprintable(void *user, void *data) {
 		return true;
 	}
 
+	RzVector *custom = NULL;
 	char *list = rz_str_dup(node->value);
 	if (!list) {
 		return false;
@@ -1027,37 +1028,29 @@ static bool cb_str_unprintable(void *user, void *data) {
 
 	int argc = rz_str_split(list, ',');
 	if (argc < 1) {
-		free(list);
-		return false;
+		goto error_free;
 	}
 
-	RzVector *custom = rz_vector_new(sizeof(RzCodePoint), NULL, NULL);
+	custom = rz_vector_new(sizeof(RzCodePoint), NULL, NULL);
 	if (!custom) {
-		free(list);
-		return false;
+		goto error_free;
 	}
 
 	for (int i = 0; i < argc; i++) {
 		const char *word = rz_str_word_get0(list, i);
 		if (RZ_STR_ISEMPTY(word) || !rz_is_valid_input_num_value(core->num, word)) {
 			RZ_LOG_ERROR("Invalid value for str.unprintable (%s).\n", word ? word : "");
-			rz_vector_free(custom);
-			free(list);
-			return false;
+			goto error_free;
 		}
 		ut64 cp = rz_num_math(core->num, word);
 		if (cp > RZ_UNICODE_LAST_CODE_POINT) {
 			RZ_LOG_ERROR("str.unprintable code point out of range (%s).\n", word);
-			rz_vector_free(custom);
-			free(list);
-			return false;
+			goto error_free;
 		}
 		RzCodePoint point = (RzCodePoint)cp;
 		if (!rz_vector_push(custom, &point)) {
 			RZ_LOG_ERROR("Cannot append code point to str.unprintable (%s).\n", word);
-			rz_vector_free(custom);
-			free(list);
-			return false;
+			goto error_free;
 		}
 	}
 	free(list);
@@ -1066,6 +1059,11 @@ static bool cb_str_unprintable(void *user, void *data) {
 	core->bin->str_search_cfg.user_unprintable = custom;
 	check_reload_bin_str_search(core);
 	return true;
+
+error_free:
+	rz_vector_free(custom);
+	free(list);
+	return false;
 }
 
 static bool cb_str_search_mode(void *user, void *data) {
