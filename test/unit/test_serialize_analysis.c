@@ -70,7 +70,7 @@ bool test_analysis_switch_op_load() {
 Sdb *blocks_ref_db() {
 	Sdb *db = sdb_new0();
 	sdb_set(db, "0x539", "{\"size\":42}");
-	sdb_set(db, "0x4d2", "{\"size\":32,\"jump\":4883,\"fail\":16915,\"traced\":true,\"colorize\":16711680,\"switch_op\":{\"addr\":49232,\"min\":3,\"max\":5,\"def\":7,\"cases\":[]},\"ninstr\":3,\"op_pos\":[4,7],\"sp_delta\":[8,-8,16],\"sp\":256,\"cmpval\":262254561,\"cmpreg\":\"rax\"}");
+	sdb_set(db, "0x4d2", "{\"size\":32,\"succ_addrs\":[{\"addr\":4883,\"cond\":17},{\"addr\":16915,\"cond\":18}],\"traced\":true,\"colorize\":16711680,\"switch_op\":{\"addr\":49232,\"min\":3,\"max\":5,\"def\":7,\"cases\":[]},\"ninstr\":3,\"op_pos\":[4,7],\"sp_delta\":[8,-8,16],\"sp\":256,\"cmpval\":262254561,\"cmpreg\":\"rax\"}");
 	return db;
 }
 

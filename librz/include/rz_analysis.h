@@ -891,7 +891,7 @@ struct rz_analysis_bb_t {
 
 	ut64 addr;
 	ut64 size;
-	RzVector /*<RzAnalysisSuccAddr>*/ _succ_addrs;
+	RzVector /*<RzAnalysisSuccAddr>*/ succ_addrs;
 	bool traced;
 	ut32 colorize;
 	RzAnalysisCond *cond;
@@ -2164,6 +2164,8 @@ typedef struct {
 
 RZ_API void rz_serialize_analysis_case_op_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalysisCaseOp *op);
 RZ_API void rz_serialize_analysis_switch_op_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalysisSwitchOp *op);
+RZ_API void rz_serialize_analysis_succ_addr_save(RZ_NONNULL PJ *j, const RZ_NONNULL RzAnalysisSuccAddr *succ_addr);
+RZ_API bool rz_serialize_analysis_succ_addr_load(RZ_NONNULL const RzJson *json, RZ_OUT RZ_NONNULL RzAnalysisSuccAddr *succ_addr);
 RZ_API RzAnalysisSwitchOp *rz_serialize_analysis_switch_op_load(RZ_NONNULL const RzJson *json);
 
 RZ_API void rz_serialize_analysis_blocks_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis);
