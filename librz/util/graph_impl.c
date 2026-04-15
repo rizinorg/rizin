@@ -565,7 +565,7 @@ static bool rz_graph_matrix_impl_require_capacity(RzGraphMatrixImpl *impl, ut64 
 	}
 	ut64 new_cap = impl->capacity;
 	while (new_cap < required) {
-		new_cap *= 2;
+		new_cap += new_cap / 4;
 	}
 
 	RzGraphEdge **new_matrix = RZ_NEWS0(RzGraphEdge *, new_cap * new_cap);
