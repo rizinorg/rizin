@@ -4038,7 +4038,6 @@ RUN
 NAME=consistency check between /R and /Rg
 FILE=bins/elf/analysis/mips64r2-busybox
 CMDS=<<EOF
-aaa
 /R~Gadget~?
 /Rg~Gadget~?
 EOF
