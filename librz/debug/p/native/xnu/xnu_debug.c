@@ -842,13 +842,18 @@ static uid_t uidFromPid(pid_t pid) {
 }
 
 static size_t xnu_get_argmax_cached(void) {
+	// TODO: consider moving this to a context in the future
 	static size_t argmax = 0;
-	if (argmax == 0) {
-		size_t argmax_size = sizeof(argmax);
-		int mib[2] = { CTL_KERN, KERN_ARGMAX };
-		if (sysctl(mib, RZ_ARRAY_SIZE(mib), &argmax, &argmax_size, NULL, 0) == -1 || argmax == 0) {
-			argmax = 4096;
-		}
+	size_t argmax_size = sizeof(argmax);
+	int mib[2] = { CTL_KERN, KERN_ARGMAX };
+
+	if (argmax != 0) {
+		return argmax;
+	}
+	if (sysctl(mib, RZ_ARRAY_SIZE(mib), &argmax, &argmax_size, NULL, 0) == -1 || argmax == 0) {
+		const size_t default_argmax = 4096;
+		RZ_LOG_WARN("sysctl(): failed to get argmax, defaulting to %" PFMTSZu " - %d\n", default_argmax, errno);
+		argmax = default_argmax;
 	}
 	return argmax;
 }
@@ -948,8 +953,7 @@ RzDebugPid *xnu_get_pid(int pid) {
 	// Allocate space for the arguments.
 	procargs = RZ_NEWS0(char, argmax);
 	if (!procargs) {
-		RZ_LOG_WARN("getcmdargs(): insufficient memory for procargs %d\n",
-			(int)(size_t)argmax);
+		RZ_LOG_WARN("getcmdargs(): insufficient memory for procargs %" PFMTSZu "\n ", argmax);
 		return NULL;
 	}
 
