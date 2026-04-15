@@ -418,7 +418,6 @@ e cfg.bigendian=false
 e scr.color=false
 wx 80e190e2089560e570e6089580e790e208958ae19be208950895a0e3b0e4c0e5d0e608956de071e00895
 /R ldi
-q
 EOF
 EXPECT=<<EOF
   0x00000000               80e1  ldi r24, 0x10
