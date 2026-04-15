@@ -1370,8 +1370,8 @@ RZ_API RZ_BORROW HtUP *rz_analysis_get_xrefs_from(RZ_NONNULL RzAnalysis *analysi
 RZ_API void rz_analysis_set_xrefs_from(RZ_NONNULL RzAnalysis *analysis, HtUP *xrefs_from);
 RZ_API RZ_BORROW HtUP *rz_analysis_get_xrefs_to(RZ_NONNULL RzAnalysis *analysis);
 RZ_API void rz_analysis_set_xrefs_to(RZ_NONNULL RzAnalysis *analysis, HtUP *xrefs_to);
-RZ_API RZ_BORROW HtUP *rz_analysis_get_rop_semantics(RZ_NONNULL RzAnalysis *analysis);
-RZ_API void rz_analysis_set_rop_semantics(RZ_NONNULL RzAnalysis *analysis, HtUP *rop_semantics);
+RZ_API RZ_BORROW HtUP *rz_analysis_get_gadget_semantics(RZ_NONNULL RzAnalysis *analysis);
+RZ_API void rz_analysis_set_gadget_semantics(RZ_NONNULL RzAnalysis *analysis, HtUP *rop_semantics);
 RZ_API RZ_BORROW RzAnalysisCallbacks *rz_analysis_get_callbacks(RZ_NONNULL RzAnalysis *analysis);
 RZ_API void rz_analysis_set_os(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *os);
 RZ_API const char *rz_analysis_get_os(RZ_NONNULL RzAnalysis *analysis);
