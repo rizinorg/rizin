@@ -42,7 +42,7 @@ static RzCoreAsmHit *find_gadget_terminator(const RzPVector /*<RzCoreAsmHit *>*/
 		return NULL;
 	}
 	const size_t len = rz_pvector_len(hitlist);
-	if ((size_t)delay_size >= len) {
+	if (((size_t)delay_size + 1) > len) {
 		return NULL;
 	}
 	return rz_pvector_at(hitlist, len - 1 - (size_t)delay_size);
