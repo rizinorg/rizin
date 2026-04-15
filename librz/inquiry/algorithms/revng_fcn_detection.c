@@ -119,7 +119,7 @@ static void recurse_into_fcn_bbs(
 	//
 	// Visit neighbors
 	//
-	RzIterator *successors = rz_inquiry_bb_cfg_get_neighbours_from(binary_bb_cfg, this_bb_addr);
+	RzIterator *successors = rz_inquiry_bb_cfg_get_outgoing_nodes(binary_bb_cfg, this_bb_addr);
 	if (!successors) {
 		rz_warn_if_reached();
 		goto err_return;
@@ -176,7 +176,7 @@ static void fill_cfep_and_ret_addresses(
 	rz_iterator_foreach(iter, it) {
 		RzAnalysisCallCandidate *cc = *it;
 		ut64 ret_addr = cc->npc;
-		RzIterator *predecessor = rz_inquiry_bb_cfg_get_neighbours_to(binary_bb_cfg, ret_addr);
+		RzIterator *predecessor = rz_inquiry_bb_cfg_get_incoming_nodes(binary_bb_cfg, ret_addr);
 		if (rz_iterator_next(predecessor)) {
 			rz_set_u_add(return_addresses, ret_addr);
 		}
