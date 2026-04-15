@@ -59,8 +59,8 @@
 #define SPARC64_OPENBSD_REG_OFFSET 0x0
 
 // linux/arch/alpha/kernel/process.c: dump_elf_thread() dest[0..30]=r0..r30, dest[31]=pc, dest[32]=unique; ELF_NGREG=33; sp=r30 at byte 240
-#define ALPHA_REGS_SIZE (33 * 8)
-#define ALPHA_PR_STATUS_REG_OFFSET 0x70
+#define ALPHA_REGS_SIZE               (33 * 8)
+#define ALPHA_PR_STATUS_REG_OFFSET    0x70
 #define ALPHA_PR_STATUS_REG_OFFSET_SP 240
 
 // The ones for Linux coredumps.
