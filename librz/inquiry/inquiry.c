@@ -162,7 +162,7 @@ RZ_IPI bool rz_inquiry_bb_cfg_complement(RzInquiry *iq, RzVector /*<RzAnalysisXR
 		RzIterator *bb_iter = rz_graph_get_nodes(iq->bb_cfg->graph);
 		rz_iterator_foreach(bb_iter, n) {
 			const RzInquiryBB *bb = rz_graph_node_get_data(n);
-			if (RZ_BETWEEN_EXCL(bb->addr, i2i_edge->from, bb->addr + bb->size)) {
+			if (!RZ_BETWEEN_EXCL(bb->addr, i2i_edge->from, bb->addr + bb->size)) {
 				continue;
 			}
 			if (!rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, i2i_edge->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP)) {
