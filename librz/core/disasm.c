@@ -2706,17 +2706,9 @@ static void ds_print_lines_right(RzDisasmState *ds) {
 }
 
 static void printCol(RzDisasmState *ds, char *sect, int cols, const char *color) {
-	int pre;
 	if (cols < 8) {
 		cols = 8;
 	}
-	int outsz = cols + 32;
-	char *out = malloc(outsz);
-	if (!out) {
-		return;
-	}
-	memset(out, ' ', outsz);
-	out[outsz - 1] = 0;
 	int sect_len = strlen(sect);
 
 	if (sect_len > cols) {
@@ -2724,15 +2716,25 @@ static void printCol(RzDisasmState *ds, char *sect, int cols, const char *color)
 		sect[cols - 1] = '.';
 		sect[cols] = 0;
 	}
+	int outsz = 0;
+	char *out = NULL;
 	if (ds->show_color) {
-		pre = strlen(color) + 1;
-		snprintf(out, outsz - pre, "%s %s", color, sect);
-		strcat(out, COLOR_RESET(ds));
-		out[outsz - 1] = 0;
+		outsz = snprintf(NULL, 0, "%s %s%s ", color, sect, COLOR_RESET(ds));
 	} else {
-		rz_str_ncpy(out + 1, sect, outsz - 2);
+		outsz = snprintf(NULL, 0, " %s ", sect);
 	}
-	strcat(out, " ");
+	if (outsz < 0) {
+		return;
+	}
+	out = malloc((size_t)outsz + 1);
+	if (!out) {
+		return;
+	}
+	if (ds->show_color) {
+		snprintf(out, (size_t)outsz + 1, "%s %s%s ", color, sect, COLOR_RESET(ds));
+	} else {
+		snprintf(out, (size_t)outsz + 1, " %s ", sect);
+	}
 	rz_cons_strcat(out);
 	free(out);
 }

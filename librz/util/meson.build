@@ -72,6 +72,7 @@ rz_util_common_sources = [
   'thread_lock.c',
   'thread_pool.c',
   'thread_queue.c',
+  'thread_ring_buf.c',
   'thread_sem.c',
   'thread_types.c',
   'time.c',

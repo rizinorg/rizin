@@ -655,6 +655,42 @@ static bool test_migrate_v17_v18_rop_config() {
 	mu_end;
 }
 
+static bool test_migrate_v21_v22_gadget_config() {
+	RzProject *prj = rz_project_load_file_raw("prj/v20-debase64.rzdb");
+	mu_assert_notnull(prj, "load raw project");
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+
+	// get to v21 state
+	bool s_20_21 = rz_project_migrate_v20_v21(prj, res);
+	mu_assert_true(s_20_21, "v20->v21 migrate success");
+
+	// actual test
+	bool s_21_22 = rz_project_migrate_v21_v22(prj, res);
+	mu_assert_true(s_21_22, "v21->v22 migrate success");
+
+	Sdb *core_db = sdb_ns(prj, "core", false);
+	Sdb *config_db = sdb_ns(core_db, "config", false);
+
+	mu_assert_null(sdb_get(config_db, "rop.len"), "old rop.len deleted");
+	mu_assert_streq_free(sdb_get(config_db, "gadget.len"), "5", "new gadget.len added");
+
+	mu_assert_null(sdb_get(config_db, "rop.cache"), "old rop.cache deleted");
+	mu_assert_streq_free(sdb_get(config_db, "gadget.cache"), "false", "new gadget.cache added");
+
+	mu_assert_null(sdb_get(config_db, "rop.subchains"), "old rop.subchains deleted");
+	mu_assert_streq_free(sdb_get(config_db, "gadget.subchains"), "false", "new gadget.subchains added");
+
+	mu_assert_null(sdb_get(config_db, "rop.conditional"), "old rop.conditional deleted");
+	mu_assert_streq_free(sdb_get(config_db, "gadget.conditional"), "false", "new gadget.conditional added");
+
+	mu_assert_null(sdb_get(config_db, "rop.comments"), "old rop.comments deleted");
+	mu_assert_streq_free(sdb_get(config_db, "gadget.comments"), "false", "new gadget.comments added");
+
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
+
 /// Load project of given version from file into core and check the log for migration success messages
 #define BEGIN_LOAD_TEST(core, version, file) \
 	do { \
@@ -1055,6 +1091,18 @@ static bool test_load_v17() {
 	mu_end;
 }
 
+static bool test_load_v22_gadget_config() {
+	RzCore *core = rz_core_new();
+	BEGIN_LOAD_TEST(core, 17, "prj/v17-rop-config.rzdb");
+	mu_assert_eq(rz_config_get_i(core->config, "gadget.len"), 5, "gadget.len");
+	mu_assert_eq(rz_config_get_b(core->config, "gadget.cache"), false, "gadget.cache");
+	mu_assert_eq(rz_config_get_b(core->config, "gadget.subchains"), false, "gadget.subchains");
+	mu_assert_eq(rz_config_get_b(core->config, "gadget.conditional"), false, "gadget.conditional");
+	mu_assert_eq(rz_config_get_b(core->config, "gadget.comments"), false, "gadget.comments");
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_migrate_v1_v2_noreturn);
 	mu_run_test(test_migrate_v1_v2_noreturn_empty);
@@ -1078,6 +1126,7 @@ int all_tests() {
 	mu_run_test(test_migrate_v17_v18_rop_config);
 	mu_run_test(test_migrate_v18_v19_str_config);
 	mu_run_test(test_migrate_v20_v21_debase64);
+	mu_run_test(test_migrate_v21_v22_gadget_config);
 	mu_run_test(test_load_v1_noreturn);
 	mu_run_test(test_load_v1_noreturn_empty);
 	mu_run_test(test_load_v1_unknown_type);
@@ -1101,6 +1150,7 @@ int all_tests() {
 	mu_run_test(test_load_v15_19_str_config);
 	mu_run_test(test_load_v16);
 	mu_run_test(test_load_v17);
+	mu_run_test(test_load_v22_gadget_config);
 	return tests_passed != tests_run;
 }
 
