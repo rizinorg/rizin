@@ -4,25 +4,28 @@
 
 #include "rz_vector.h"
 
-// Optimize memory usage on glibc
-#if __WORDSIZE == 32
-// Chunk size 24, minus 4 (chunk header), minus 8 for capacity and len, 12 bytes remaining for 3 void *
-#define INITIAL_VECTOR_LEN 3
-#else
-// For __WORDSIZE == 64
-// Chunk size 48, minus 8 (chunk header), minus 8 for capacity and len, 32 bytes remaining for 4 void *
-#define INITIAL_VECTOR_LEN 4
-#endif
+#define INITIAL_VECTOR_LEN 8
 
 #define NEXT_VECTOR_CAPACITY (vec->capacity < INITIAL_VECTOR_LEN \
 		? INITIAL_VECTOR_LEN \
-		: vec->capacity <= 12 ? vec->capacity * 2 \
-				      : vec->capacity + (vec->capacity >> 1))
+		: vec->capacity + (vec->capacity >> 1))
 
 #define RESIZE_OR_RETURN_VAL(next_capacity, retval) \
 	do { \
 		size_t new_capacity = next_capacity; \
-		void **new_a = realloc(vec->a, vec->elem_size * new_capacity); \
+		void *new_a; \
+		if (vec->a == vec->inline_buf) { \
+			if (new_capacity <= sizeof(vec->inline_buf) / vec->elem_size) { \
+				vec->capacity = new_capacity; \
+				return retval; \
+			} \
+			new_a = malloc(vec->elem_size * new_capacity); \
+			if (new_a) { \
+				memcpy(new_a, vec->inline_buf, vec->elem_size * vec->len); \
+			} \
+		} else { \
+			new_a = realloc(vec->a, vec->elem_size * new_capacity); \
+		} \
 		if (!new_a && new_capacity) { \
 			return retval; \
 		} \
@@ -35,10 +38,17 @@
 
 RZ_API void rz_vector_init(RzVector *vec, size_t elem_size, RzVectorFree free, void *free_user) {
 	rz_return_if_fail(vec);
-	vec->a = NULL;
-	vec->reverse_sorted = false;
-	vec->capacity = vec->len = 0;
 	vec->elem_size = elem_size;
+	size_t inline_capacity = sizeof(vec->inline_buf) / elem_size;
+	if (inline_capacity > 0) {
+		vec->a = vec->inline_buf;
+		vec->capacity = inline_capacity;
+	} else {
+		vec->a = NULL;
+		vec->capacity = 0;
+	}
+	vec->len = 0;
+	vec->reverse_sorted = false;
 	vec->free = free;
 	vec->free_user = free_user;
 }
@@ -72,8 +82,11 @@ RZ_API void rz_vector_fini(RzVector *vec) {
 RZ_API void rz_vector_clear(RzVector *vec) {
 	rz_return_if_fail(vec);
 	vector_free_elems(vec);
-	RZ_FREE(vec->a);
-	vec->capacity = 0;
+	if (vec->a != vec->inline_buf) {
+		free(vec->a);
+		vec->a = vec->inline_buf;
+	}
+	vec->capacity = sizeof(vec->inline_buf) / vec->elem_size;
 }
 
 RZ_API void rz_vector_free(RzVector *vec) {
@@ -212,6 +225,27 @@ RZ_API void rz_vector_remove_range(RzVector *vec, size_t index, size_t count, vo
 	if (index < vec->len) {
 		memmove(p, (char *)p + vec->elem_size * count, vec->elem_size * (vec->len - index));
 	}
+}
+
+RZ_API void rz_vector_remove_if(RZ_NONNULL RzVector *vec,
+	RZ_NONNULL bool (*pred)(const void *elem, void *user),
+	void *user) {
+	rz_return_if_fail(vec && pred);
+	size_t write = 0;
+	for (size_t read = 0; read < vec->len; read++) {
+		void *elem = (char *)vec->a + vec->elem_size * read;
+		if (pred(elem, user)) {
+			if (vec->free) {
+				vec->free(elem, vec->free_user);
+			}
+		} else {
+			if (write != read) {
+				memcpy((char *)vec->a + vec->elem_size * write, elem, vec->elem_size);
+			}
+			write++;
+		}
+	}
+	vec->len = write;
 }
 
 RZ_API void *rz_vector_insert(RzVector *vec, size_t index, void *x) {
@@ -364,13 +398,20 @@ RZ_API void rz_vector_pop_front(RzVector *vec, void *into) {
 }
 
 RZ_API void *rz_vector_push(RzVector *vec, void *x) {
-	rz_return_val_if_fail(vec, NULL);
-	if (vec->len >= vec->capacity) {
-		RESIZE_OR_RETURN_NULL(NEXT_VECTOR_CAPACITY);
+	if (RZ_UNLIKELY(!vec)) {
+		return NULL;
 	}
-	void *p = rz_vector_index_ptr(vec, vec->len++);
+	if (RZ_LIKELY(vec->len < vec->capacity)) {
+		void *p = (char *)vec->a + vec->elem_size * vec->len++;
+		if (x) {
+			memcpy(p, x, vec->elem_size);
+		}
+		return p;
+	}
+	RESIZE_OR_RETURN_NULL(NEXT_VECTOR_CAPACITY);
+	void *p = (char *)vec->a + vec->elem_size * vec->len++;
 	if (x) {
-		rz_vector_assign(vec, p, x);
+		memcpy(p, x, vec->elem_size);
 	}
 	return p;
 }
@@ -388,30 +429,93 @@ RZ_API void *rz_vector_push_front(RzVector *vec, void *x) {
  *
  * \return True if the vector contains the element, false otherwise.
  */
+#if defined(__SSE2__) && (defined(__GNUC__) || defined(__clang__))
+#include <emmintrin.h>
+
 RZ_API bool rz_vector_contains(const RZ_NONNULL RzVector *vec, const RZ_NONNULL void *elem) {
 	rz_return_val_if_fail(vec && elem, false);
-	for (size_t i = 0; i < vec->len; i++) {
-		// Casts to make Windows happy.
-		char *elem_v = ((char *)vec->a) + (vec->elem_size * i);
-		if (memcmp(elem_v, (char *)elem, vec->elem_size) == 0) {
+	char *base = (char *)vec->a;
+	size_t len = vec->len;
+	size_t elem_size = vec->elem_size;
+
+	if (elem_size == 4) {
+		int32_t val = *(const int32_t *)elem;
+		__m128i needle = _mm_set1_epi32(val);
+		size_t i = 0;
+		for (; i + 4 <= len; i += 4) {
+			__m128i hay = _mm_loadu_si128((const __m128i *)(base + elem_size * i));
+			__m128i eq = _mm_cmpeq_epi32(hay, needle);
+			if (_mm_movemask_epi8(eq) != 0) {
+				return true;
+			}
+		}
+		for (; i < len; i++) {
+			if (*(const int32_t *)(base + elem_size * i) == val) {
+				return true;
+			}
+		}
+		return false;
+	} else if (elem_size == 8) {
+		int64_t val = *(const int64_t *)elem;
+		__m128i needle = _mm_set1_epi64x(val);
+		size_t i = 0;
+		for (; i + 2 <= len; i += 2) {
+			__m128i hay = _mm_loadu_si128((const __m128i *)(base + elem_size * i));
+			__m128i eq = _mm_cmpeq_epi32(hay, needle);
+			__m128i shuffled = _mm_shuffle_epi32(eq, _MM_SHUFFLE(2, 3, 0, 1));
+			__m128i match = _mm_and_si128(eq, shuffled);
+			if (_mm_movemask_epi8(match) != 0) {
+				return true;
+			}
+		}
+		for (; i < len; i++) {
+			if (*(const int64_t *)(base + elem_size * i) == val) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	for (size_t i = 0; i < len; i++) {
+		if (memcmp(base + elem_size * i, elem, elem_size) == 0) {
 			return true;
 		}
 	}
 	return false;
 }
 
+#else
+
+RZ_API bool rz_vector_contains(const RZ_NONNULL RzVector *vec, const RZ_NONNULL void *elem) {
+	rz_return_val_if_fail(vec && elem, false);
+	for (size_t i = 0; i < vec->len; i++) {
+		if (memcmp((char *)vec->a + vec->elem_size * i, elem, vec->elem_size) == 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+#endif
+
 RZ_API bool rz_vector_swap(RzVector *vec, size_t index_a, size_t index_b) {
 	rz_return_val_if_fail(vec && index_a < vec->len && index_b < vec->len, false);
-	ut8 *tmp = malloc(vec->elem_size);
-	if (!tmp) {
-		return false;
+	if (index_a == index_b) {
+		return true;
 	}
 	void *elem_a = rz_vector_index_ptr(vec, index_a);
 	void *elem_b = rz_vector_index_ptr(vec, index_b);
+	ut8 stack_tmp[256];
+	void *tmp = vec->elem_size <= sizeof(stack_tmp) ? (void *)stack_tmp : malloc(vec->elem_size);
+	if (RZ_UNLIKELY(!tmp)) {
+		return false;
+	}
 	memcpy(tmp, elem_a, vec->elem_size);
 	memcpy(elem_a, elem_b, vec->elem_size);
 	memcpy(elem_b, tmp, vec->elem_size);
-	free(tmp);
+	if (tmp != (void *)stack_tmp) {
+		free(tmp);
+	}
 	return true;
 }
 
@@ -426,6 +530,13 @@ RZ_API void *rz_vector_reserve(RzVector *vec, size_t capacity) {
 RZ_API void *rz_vector_shrink(RzVector *vec) {
 	rz_return_val_if_fail(vec, NULL);
 	if (vec->len < vec->capacity) {
+		if (vec->a == vec->inline_buf) {
+			size_t inline_cap = sizeof(vec->inline_buf) / vec->elem_size;
+			if (vec->len <= inline_cap) {
+				vec->capacity = vec->len;
+				return vec->a;
+			}
+		}
 		RESIZE_OR_RETURN_NULL(vec->len);
 	}
 	return vec->a;
@@ -440,30 +551,20 @@ RZ_API void *rz_vector_flush(RzVector *vec) {
 	return r;
 }
 
-// CLRS Quicksort. It is slow, but simple.
 #define VEC_INDEX(a, i) (char *)a + elem_size *(i)
-static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzVectorComparator cmp, bool reverse, void *user) {
-	rz_return_if_fail(a);
+#define SORT_STACK_BUF 256
+
+static void vector_quick_sort_impl(void *a, size_t elem_size, size_t len,
+	RzVectorComparator cmp, bool reverse, void *user, void *t, void *pivot) {
 	if (len <= 1) {
 		return;
 	}
 	size_t i = rand() % len, j = 0;
-	void *t, *pivot;
-
-	t = (void *)malloc(elem_size);
-	pivot = (void *)malloc(elem_size);
-	if (!t || !pivot) {
-		free(t);
-		free(pivot);
-		RZ_LOG_ERROR("Failed to allocate memory\n");
-		return;
-	}
-
 	memcpy(pivot, VEC_INDEX(a, i), elem_size);
 	memcpy(VEC_INDEX(a, i), VEC_INDEX(a, len - 1), elem_size);
 	for (i = 0; i < len - 1; i++) {
-		if ((cmp(VEC_INDEX(a, i), pivot, user) < 0 && !reverse) ||
-			(cmp(VEC_INDEX(a, i), pivot, user) > 0 && reverse)) {
+		int c = cmp(VEC_INDEX(a, i), pivot, user);
+		if ((!reverse && c < 0) || (reverse && c > 0)) {
 			memcpy(t, VEC_INDEX(a, i), elem_size);
 			memcpy(VEC_INDEX(a, i), VEC_INDEX(a, j), elem_size);
 			memcpy(VEC_INDEX(a, j), t, elem_size);
@@ -472,12 +573,36 @@ static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzVectorCom
 	}
 	memcpy(VEC_INDEX(a, len - 1), VEC_INDEX(a, j), elem_size);
 	memcpy(VEC_INDEX(a, j), pivot, elem_size);
-	RZ_FREE(t);
-	RZ_FREE(pivot);
-	vector_quick_sort(a, elem_size, j, cmp, reverse, user);
-	vector_quick_sort(VEC_INDEX(a, j + 1), elem_size, len - j - 1, cmp, reverse, user);
+	vector_quick_sort_impl(a, elem_size, j, cmp, reverse, user, t, pivot);
+	vector_quick_sort_impl(VEC_INDEX(a, j + 1), elem_size, len - j - 1, cmp, reverse, user, t, pivot);
+}
+
+static void vector_quick_sort(void *a, size_t elem_size, size_t len,
+	RzVectorComparator cmp, bool reverse, void *user) {
+	rz_return_if_fail(a);
+	if (len <= 1) {
+		return;
+	}
+	ut8 stack_buf[SORT_STACK_BUF * 2];
+	bool use_stack = elem_size <= SORT_STACK_BUF;
+	void *t     = use_stack ? (void *)stack_buf                  : malloc(elem_size);
+	void *pivot = use_stack ? (void *)(stack_buf + SORT_STACK_BUF) : malloc(elem_size);
+	if (RZ_UNLIKELY(!t || !pivot)) {
+		if (!use_stack) {
+			free(t);
+			free(pivot);
+		}
+		RZ_LOG_ERROR("Failed to allocate memory\n");
+		return;
+	}
+	vector_quick_sort_impl(a, elem_size, len, cmp, reverse, user, t, pivot);
+	if (!use_stack) {
+		free(t);
+		free(pivot);
+	}
 }
 #undef VEC_INDEX
+#undef SORT_STACK_BUF
 
 /**
  * \brief Sort function for RzVector
@@ -558,16 +683,47 @@ RZ_API void rz_pvector_free(RzPVector *vec) {
  *
  * \return Returns the pointer to the \p x pointer in the vector if found. NULL otherwise.
  */
+#if defined(__AVX2__) && INTPTR_MAX == INT64_MAX && (defined(__GNUC__) || defined(__clang__))
+#include <immintrin.h>
+
 RZ_API void **rz_pvector_contains(RzPVector *vec, const void *x) {
 	rz_return_val_if_fail(vec, NULL);
-	size_t i;
-	for (i = 0; i < vec->v.len; i++) {
-		if (((void **)vec->v.a)[i] == x) {
-			return &((void **)vec->v.a)[i];
+	void **arr = (void **)vec->v.a;
+	size_t len = vec->v.len;
+	size_t i = 0;
+
+	__m256i needle = _mm256_set1_epi64x((int64_t)x);
+	for (; i + 4 <= len; i += 4) {
+		__m256i hay = _mm256_loadu_si256((const __m256i *)(arr + i));
+		__m256i eq = _mm256_cmpeq_epi64(hay, needle);
+		int mask = _mm256_movemask_epi8(eq);
+		if (mask) {
+			return &arr[i + (__builtin_ctz((unsigned)mask) >> 3)];
+		}
+	}
+	for (; i < len; i++) {
+		if (arr[i] == x) {
+			return &arr[i];
 		}
 	}
 	return NULL;
 }
+
+#else
+
+RZ_API void **rz_pvector_contains(RzPVector *vec, const void *x) {
+	rz_return_val_if_fail(vec, NULL);
+	void **arr = (void **)vec->v.a;
+	size_t len = vec->v.len;
+	for (size_t i = 0; i < len; i++) {
+		if (arr[i] == x) {
+			return &arr[i];
+		}
+	}
+	return NULL;
+}
+
+#endif
 
 /**
  * \brief Find the \p element in the \p vec
@@ -579,10 +735,16 @@ RZ_API void **rz_pvector_contains(RzPVector *vec, const void *x) {
 RZ_API RZ_BORROW void **rz_pvector_find(RZ_NONNULL const RzPVector *vec, RZ_NONNULL const void *value, RZ_NONNULL RzPVectorComparator cmp, void *user) {
 	rz_return_val_if_fail(vec, NULL);
 
-	void **iter;
-	rz_pvector_foreach (vec, iter) {
-		if (!cmp(value, *iter, user)) {
-			return iter;
+	void **arr = (void **)vec->v.a;
+	size_t len = vec->v.len;
+	for (size_t i = 0; i < len; i++) {
+#if defined(__GNUC__) || defined(__clang__)
+		if (RZ_LIKELY(i + 32 < len)) {
+			__builtin_prefetch(&arr[i + 32], 0, 0);
+		}
+#endif
+		if (!cmp(value, arr[i], user)) {
+			return &arr[i];
 		}
 	}
 	return NULL;
@@ -598,10 +760,15 @@ RZ_API RZ_BORROW void **rz_pvector_find(RZ_NONNULL const RzPVector *vec, RZ_NONN
 RZ_API size_t rz_pvector_find_index(RZ_NONNULL const RzPVector *vec, RZ_NONNULL const void *value, RZ_NONNULL RzPVectorComparator cmp, void *user) {
 	rz_return_val_if_fail(vec, SZT_MAX);
 
-	void **iter = NULL;
-	size_t i = 0;
-	rz_pvector_enumerate (vec, iter, i) {
-		if (!cmp(value, *iter, user)) {
+	void **arr = (void **)vec->v.a;
+	size_t len = vec->v.len;
+	for (size_t i = 0; i < len; i++) {
+#if defined(__GNUC__) || defined(__clang__)
+		if (RZ_LIKELY(i + 32 < len)) {
+			__builtin_prefetch(&arr[i + 32], 0, 0);
+		}
+#endif
+		if (!cmp(value, arr[i], user)) {
 			return i;
 		}
 	}
@@ -668,8 +835,7 @@ RZ_API void rz_pvector_remove_data(RzPVector *vec, void *x) {
 	if (!el) {
 		return;
 	}
-
-	size_t index = (el - (void **)vec->v.a) * sizeof(void **) / vec->v.elem_size;
+	size_t index = el - (void **)vec->v.a;
 	rz_vector_remove_at(&vec->v, index, NULL);
 }
 
@@ -687,7 +853,8 @@ RZ_API void *rz_pvector_pop_front(RzPVector *vec) {
 	return r;
 }
 
-// CLRS Quicksort. It is slow, but simple.
+#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__NetBSD__)
+// Fallback quicksort for non-glibc platforms (Windows, etc.)
 static void quick_sort(void **a, size_t n, RzPVectorComparator cmp, void *user) {
 	if (n <= 1) {
 		return;
@@ -708,7 +875,49 @@ static void quick_sort(void **a, size_t n, RzPVectorComparator cmp, void *user) 
 	quick_sort(a, j, cmp, user);
 	quick_sort(a + j + 1, n - j - 1, cmp, user);
 }
+#endif
 
+#if defined(__GLIBC__)
+struct pvec_sort_ctx {
+	RzPVectorComparator cmp;
+	void *user;
+};
+
+static int pvec_qsort_cmp_gnu(const void *a, const void *b, void *ctx_) {
+	struct pvec_sort_ctx *ctx = ctx_;
+	return ctx->cmp(*(void *const *)a, *(void *const *)b, ctx->user);
+}
+
+RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp, void *user) {
+	rz_return_if_fail(vec && cmp);
+	if (rz_pvector_empty(vec)) {
+		return;
+	}
+	struct pvec_sort_ctx ctx = { cmp, user };
+	qsort_r(vec->v.a, vec->v.len, sizeof(void *), pvec_qsort_cmp_gnu, &ctx);
+}
+
+#elif defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__)
+struct pvec_sort_ctx {
+	RzPVectorComparator cmp;
+	void *user;
+};
+
+static int pvec_qsort_cmp_bsd(void *ctx_, const void *a, const void *b) {
+	struct pvec_sort_ctx *ctx = ctx_;
+	return ctx->cmp(*(void *const *)a, *(void *const *)b, ctx->user);
+}
+
+RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp, void *user) {
+	rz_return_if_fail(vec && cmp);
+	if (rz_pvector_empty(vec)) {
+		return;
+	}
+	struct pvec_sort_ctx ctx = { cmp, user };
+	qsort_r(vec->v.a, vec->v.len, sizeof(void *), &ctx, pvec_qsort_cmp_bsd);
+}
+
+#else
 RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp, void *user) {
 	rz_return_if_fail(vec && cmp);
 	if (rz_pvector_empty(vec)) {
@@ -716,6 +925,7 @@ RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp, void *user)
 	}
 	quick_sort(vec->v.a, vec->v.len, cmp, user);
 }
+#endif
 
 /**
  * \brief Find the unique values in the \p vec and push it in a new RzPVector.
@@ -727,25 +937,46 @@ RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp, void *user)
 RZ_API RZ_OWN RzPVector *rz_pvector_uniq(RZ_NONNULL const RzPVector *vec, RZ_NONNULL RzPVectorComparator cmp, void *user) {
 	rz_return_val_if_fail(vec && cmp, NULL);
 
-	RzPVector *npv = rz_pvector_new(NULL);
-	if (!npv) {
+	RzPVector *result = rz_pvector_new(NULL);
+	if (!result) {
 		return NULL;
 	}
+	if (rz_pvector_empty(vec)) {
+		return result;
+	}
+
+	RzPVector *sorted = rz_pvector_new(NULL);
+	if (!sorted) {
+		rz_pvector_free(result);
+		return NULL;
+	}
+
 	void **it;
 	rz_pvector_foreach (vec, it) {
-		bool found = false;
-		void **it2;
-		void *item = *it;
-		rz_pvector_foreach (npv, it2) {
-			void *item2 = *it2;
-			if (cmp(item, item2, user) == 0) {
-				found = true;
-				break;
-			}
-		}
-		if (!found) {
-			rz_pvector_push(npv, item);
+		if (!rz_pvector_push(sorted, *it)) {
+			rz_pvector_free(sorted);
+			rz_pvector_free(result);
+			return NULL;
 		}
 	}
-	return npv;
+	rz_pvector_sort(sorted, cmp, user);
+
+	void **arr = (void **)sorted->v.a;
+	if (!rz_pvector_push(result, arr[0])) {
+		rz_pvector_free(sorted);
+		rz_pvector_free(result);
+		return NULL;
+	}
+	for (size_t i = 1; i < sorted->v.len; i++) {
+		if (cmp(arr[i - 1], arr[i], user) != 0) {
+			if (!rz_pvector_push(result, arr[i])) {
+				rz_pvector_free(sorted);
+				rz_pvector_free(result);
+				return NULL;
+			}
+		}
+	}
+
+	rz_pvector_free(sorted);
+	return result;
 }

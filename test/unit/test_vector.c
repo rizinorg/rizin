@@ -16,7 +16,8 @@ static bool _init_test_vector(RzVector *v, size_t len, size_t padding, RzVectorF
 		rz_vector_push(v, &i);
 	}
 
-	return v->len == len && v->capacity == len + padding;
+	size_t min_capacity = len + padding;
+	return v->len == len && v->capacity >= min_capacity;
 }
 
 #define init_test_vector(v, len, padding, free, free_user) \
@@ -38,14 +39,9 @@ static bool _init_test_pvector(RzPVector *v, size_t len, size_t padding) {
 		rz_pvector_push(v, e);
 	}
 
-	return v->v.len == len && v->v.capacity == len + padding;
+	size_t min_capacity = len + padding;
+	return v->v.len == len && v->v.capacity >= min_capacity;
 }
-
-#define init_test_pvector(v, len, padding) \
-	{ \
-		bool _r = _init_test_pvector((v), (len), (padding)); \
-		mu_assert("init_test_pvector", _r); \
-	}
 
 // allocates a pvector of len pointers with values from 0 to len
 // with capacity len + padding
@@ -58,8 +54,15 @@ static bool _init_test_pvector2(RzPVector *v, size_t len, size_t padding) {
 		rz_pvector_push(v, (void *)((size_t)i));
 	}
 
-	return v->v.len == len && v->v.capacity == len + padding;
+	size_t min_capacity = len + padding;
+	return v->v.len == len && v->v.capacity >= min_capacity;
 }
+
+#define init_test_pvector(v, len, padding) \
+	{ \
+		bool _r = _init_test_pvector((v), (len), (padding)); \
+		mu_assert("init_test_pvector", _r); \
+	}
 
 #define init_test_pvector2(v, len, padding) \
 	{ \
@@ -79,15 +82,15 @@ static bool test_vector_fini(void) {
 	rz_vector_clear(&v);
 	mu_assert_eq(v.elem_size, sizeof(void *), "init elem_size");
 	mu_assert_eq(v.len, 0, "init len");
-	mu_assert_null(v.a, "init a");
-	mu_assert_eq(v.capacity, 0, "init capacity");
+	mu_assert_notnull(v.a, "init a");
+	mu_assert_eq(v.capacity, sizeof(v.inline_buf) / sizeof(void *), "init capacity");
 	mu_assert_null(v.free, "init free");
 	mu_assert_ptreq(v.free_user, free, "init free_user");
 	rz_vector_fini(&v);
 	mu_assert_eq(v.elem_size, sizeof(void *), "init elem_size");
 	mu_assert_eq(v.len, 0, "init len");
-	mu_assert_null(v.a, "init a");
-	mu_assert_eq(v.capacity, 0, "init capacity");
+	mu_assert_notnull(v.a, "init a");
+	mu_assert_eq(v.capacity, sizeof(v.inline_buf) / sizeof(void *), "init capacity");
 	mu_assert_null(v.free, "init free");
 	mu_assert_null(v.free_user, "init free_user");
 	mu_end;
@@ -173,7 +176,7 @@ static bool test_vector_clone(void) {
 	rz_vector_clear(&v);
 	mu_assert("rz_vector_clone", v1);
 	mu_assert_eq(v1->len, 5UL, "rz_vector_clone => len");
-	mu_assert_eq(v1->capacity, 5UL, "rz_vector_clone => capacity");
+	mu_assert("rz_vector_clone => capacity", v1->capacity >= 5);
 	mu_assert_null(v1->free, "rz_vector_clone => no free");
 	mu_assert_null(v1->free_user, "rz_vector_clone => no free_user");
 	ut32 i;
@@ -188,7 +191,7 @@ static bool test_vector_clone(void) {
 	rz_vector_clear(&v);
 	mu_assert("rz_vector_clone (+free)", v1);
 	mu_assert_eq(v1->len, FREE_TEST_COUNT, "rz_vector_clone (+free) => len");
-	mu_assert_eq(v1->capacity, FREE_TEST_COUNT, "rz_vector_clone (+free) => capacity");
+	mu_assert("rz_vector_clone (+free) => capacity", v1->capacity >= (size_t)FREE_TEST_COUNT);
 	mu_assert_null(v1->free, "rz_vector_clone (+free) => no free");
 	mu_assert_null(v1->free_user, "rz_vector_clone (+free) => no free_user");
 	for (i = 0; i < FREE_TEST_COUNT; i++) {
@@ -198,6 +201,7 @@ static bool test_vector_clone(void) {
 	for (i = 0; i < FREE_TEST_COUNT; i++) {
 		mu_assert_eq(acc[i], 1, "free individual elements");
 	}
+
 	mu_assert_eq(acc[FREE_TEST_COUNT], 0, "invalid free calls");
 
 	init_test_vector(&v, 5, 5, NULL, NULL);
@@ -205,7 +209,7 @@ static bool test_vector_clone(void) {
 	rz_vector_clear(&v);
 	mu_assert("rz_vector_clone (+capacity)", v1);
 	mu_assert_eq(v1->len, 5UL, "rz_vector_clone (+capacity) => len");
-	mu_assert_eq(v1->capacity, 10UL, "rz_vector_clone (+capacity) => capacity");
+	mu_assert("rz_vector_clone (+capacity) => capacity", v1->capacity >= 10);
 	mu_assert_null(v1->free, "rz_vector_clone => no free");
 	mu_assert_null(v1->free_user, "rz_vector_clone => no free_user");
 	for (i = 0; i < 5; i++) {
@@ -974,8 +978,8 @@ static bool test_pvector_init(void) {
 	rz_pvector_init(&v, (void *)1337);
 	mu_assert_eq(v.v.elem_size, sizeof(void *), "elem_size");
 	mu_assert_eq(v.v.len, 0UL, "len");
-	mu_assert_null(v.v.a, "a");
-	mu_assert_eq(v.v.capacity, 0UL, "capacity");
+	mu_assert_notnull(v.v.a, "a");
+	mu_assert_eq(v.v.capacity, sizeof(v.v.inline_buf) / sizeof(void *), "capacity");
 	mu_assert_eq((size_t)v.v.free_user, 1337, "free");
 	mu_end;
 }
@@ -984,8 +988,8 @@ static bool test_pvector_new(void) {
 	RzPVector *v = rz_pvector_new((void *)1337);
 	mu_assert_eq(v->v.elem_size, sizeof(void *), "elem_size");
 	mu_assert_eq(v->v.len, 0UL, "len");
-	mu_assert_null(v->v.a, "a");
-	mu_assert_eq(v->v.capacity, 0UL, "capacity");
+	mu_assert_notnull(v->v.a, "a");
+	mu_assert_eq(v->v.capacity, sizeof(v->v.inline_buf) / sizeof(void *), "capacity");
 	mu_assert_eq((size_t)v->v.free_user, 1337, "free");
 	free(v);
 	mu_end;
@@ -1000,8 +1004,8 @@ static bool test_pvector_clear(void) {
 	mu_assert_eq(v.v.capacity, 10UL, "initial capacity");
 	rz_pvector_clear(&v);
 	mu_assert_eq(v.v.len, 0UL, "len");
-	mu_assert_null(v.v.a, "a");
-	mu_assert_eq(v.v.capacity, 0UL, "capacity");
+	mu_assert_notnull(v.v.a, "a");
+	mu_assert_eq(v.v.capacity, sizeof(v.v.inline_buf) / sizeof(void *), "capacity");
 	mu_end;
 }
 

@@ -51,6 +51,7 @@ typedef struct rz_vector_t {
 	bool reverse_sorted;
 	RzVectorFree free;
 	void *free_user;
+	ut8 inline_buf[32];
 } RzVector;
 
 // RzPVector directly wraps RzVector for type safety
@@ -135,6 +136,16 @@ RZ_API void rz_vector_remove_at(RzVector *vec, size_t index, void *into);
  * It is the caller's responsibility to free potential resources associated with the elements.
  */
 RZ_API void rz_vector_remove_range(RzVector *vec, size_t index, size_t count, void *into);
+
+/**
+ * \brief Remove all elements for which \p pred returns true, in a single O(n) pass.
+ * The free callback is invoked for each removed element if set.
+ *
+ * \param vec The vector to filter in place.
+ * \param pred Predicate function; return true to remove the element.
+ * \param user User data forwarded to \p pred.
+ */
+RZ_API void rz_vector_remove_if(RZ_NONNULL RzVector *vec, RZ_NONNULL bool (*pred)(const void *elem, void *user), void *user);
 
 // insert the value of size vec->elem_size at x at the given index.
 // x is a pointer to the actual data to assign!
