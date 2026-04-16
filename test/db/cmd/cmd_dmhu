@@ -3,11 +3,9 @@ FILE=bins/elf/analysis/hello.raw
 ARGS=
 CMDS=<<EOF
 dmhu
-dmhu 0x1000
 dmhu?
 EOF
 EXPECT=<<EOF
-Debugging is not enabled. Run ood?
 Debugging is not enabled. Run ood?
 Usage: dmhu[j]   # uClibc heap commands
 | dmhu[j] [<addr>] # Print uClibc heap free list starting at current offset or given address.

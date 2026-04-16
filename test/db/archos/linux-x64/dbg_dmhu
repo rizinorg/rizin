@@ -1,0 +1,85 @@
+NAME=dmhu error without debug session
+FILE=bins/elf/analysis/hello.raw
+ARGS=
+CMDS=<<EOF
+dmhu
+EOF
+EXPECT=<<EOF
+Debugging is not enabled. Run ood?
+EOF
+RUN
+
+NAME=dmhu help command
+FILE=bins/elf/analysis/hello.raw
+ARGS=
+CMDS=<<EOF
+dmhu?
+EOF
+EXPECT=<<EOF
+Usage: dmhu[j]   # uClibc heap commands
+| dmhu[j] [<addr>] # Print uClibc heap free list starting at current offset or given address.
+EOF
+RUN
+
+NAME=dmhu with uClibc core dump and explicit heap address
+FILE=bins/heap/uclibc/segfault-uclibc-1.0-amd64-core
+CMDS=<<EOF
+dmhu 0x55b203b48000~?Total free areas
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=dmhu JSON output with core dump
+FILE=bins/heap/uclibc/segfault-uclibc-1.0-amd64-core
+CMDS=<<EOF
+dmhuj 0x55b203b48000~?total
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=dmhu with malloc mock heap
+FILE=
+ARGS=
+CMDS=<<EOF
+o malloc://512 0x20000 rwx
+omn 0x20000 [heap]
+dmhu 0x20000~?Total
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN
+
+NAME=dmhu with core dump checks output format
+FILE=bins/heap/uclibc/segfault-uclibc-1.0-amd64-core
+CMDS=<<EOF
+dmhu 0x55b203b48000~?uClibc Heap
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=dmhu JSON structure verification
+FILE=bins/heap/uclibc/segfault-uclibc-1.0-amd64-core
+CMDS=<<EOF
+dmhuj 0x55b203b48000~?free_areas
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=dmhu with larger address range
+FILE=bins/heap/uclibc/segfault-uclibc-1.0-amd64-core
+CMDS=<<EOF
+dmhu 0x55b203b48000~?Total size
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
