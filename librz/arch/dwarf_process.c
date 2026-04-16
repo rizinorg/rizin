@@ -1689,7 +1689,7 @@ static bool try_create_var_global(
 	RzBinDwarfLine *dw_line = rz_bin_dwarf_line(ctx->dw);
 	RzBinDwarfLineUnit *lu = ctx->unit && dw_line ? rz_pvector_at(dw_line->units, ctx->unit->index) : NULL;
 	ut64 file_index = attr ? rz_bin_dwarf_attr_udata(attr) : UT64_MAX;
-	const char *file = file_index != 0 && lu ? rz_bin_dwarf_file_path(ctx->dw, lu, file_index) : NULL;
+	char *file = file_index != 0 && lu ? rz_bin_dwarf_file_path(ctx->dw, lu, file_index) : NULL;
 
 	attr = rz_bin_dwarf_die_get_attr(die, DW_AT_decl_line);
 	ut32 line = attr ? rz_bin_dwarf_attr_udata(attr) : UT32_MAX;
@@ -1700,6 +1700,7 @@ static bool try_create_var_global(
 	result = rz_analysis_var_global_create_with_sourceline(
 		ctx->analysis, v->prefer_name, v->type, v->location->address,
 		file, line, column);
+	free(file);
 
 	v->type = NULL;
 beach:
