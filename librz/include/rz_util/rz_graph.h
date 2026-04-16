@@ -31,6 +31,11 @@ typedef bool (*RzGraphEdgeChooser)(const RzGraphEdge *data, void *cb_data);
 
 typedef enum {
 	RZ_GRAPH_IMPL_LIST,
+	/**
+	 * \brief A n x n adjacency matrix.
+	 * Should only be used for known small graphs. Otherwise it can quickly
+	 * lead to OOM events because its size is `O(n x n x sizeof(void *))`
+	 */
 	RZ_GRAPH_IMPL_MATRIX
 } RzGraphImplType;
 

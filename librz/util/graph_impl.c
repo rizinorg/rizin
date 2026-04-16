@@ -13,7 +13,6 @@ typedef struct rz_graph_list_edge_impl_t {
 
 typedef struct rz_graph_matrix_edge_impl_t {
 	RzGraphEdge **matrix; // index by matrix[from_vec_id][to_vec_id]
-	RzVector /*<ut64>*/ *edge_offsets; ///< Stores the offsets into the matrix where edges are present.
 	ut64 capacity;
 } RzGraphMatrixImpl;
 
@@ -587,15 +586,6 @@ static bool rz_graph_matrix_impl_require_capacity(RzGraphMatrixImpl *impl, ut64 
 	return true;
 }
 
-static int cmp(ut64 *a, ut64 *b, void *user) {
-	if (*a < *b) {
-		return -1;
-	} else if (*a > *b) {
-		return 1;
-	}
-	return 0;
-}
-
 /**
  * \brief Add a directed edge (from -> to) in the matrix implementation.
  *
@@ -620,8 +610,6 @@ static bool rz_graph_matrix_impl_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *
 	if (!e) {
 		return false;
 	}
-	ut64 ptr_off = cell - impl->matrix;
-	rz_vector_insert_sorted(impl->edge_offsets, &ptr_off, (RzVectorComparator)cmp, NULL);
 	*cell = e;
 	return true;
 }
@@ -629,23 +617,19 @@ static bool rz_graph_matrix_impl_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *
 static bool rz_graph_matrix_impl_del_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data) {
 	rz_return_val_if_fail(g, false);
 	RzGraphMatrixImpl *impl = g->impl;
-	size_t i = 0;
-	while (i < rz_vector_len(impl->edge_offsets)) {
-		ut64 *cell_offset = rz_vector_index_ptr(impl->edge_offsets, i);
-		RzGraphEdge **cell = impl->matrix + *cell_offset;
-		if (cb && !cb(*cell, cb_data)) {
-			i++;
-			continue;
+	for (size_t i = 0; i < rz_pvector_len(g->node_vec); ++i) {
+		for (size_t j = 0; j < rz_pvector_len(g->node_vec); ++j) {
+			RzGraphEdge **cell = matrix_cell(impl, i, j);
+			if (!*cell || (cb && !cb(*cell, cb_data))) {
+				continue;
+			}
+			if (g->edge_data_free) {
+				g->edge_data_free(*cell);
+			}
+			edge_free(*cell);
+			*cell = NULL;
+			g->n_edges--;
 		}
-		if (g->edge_data_free) {
-			g->edge_data_free(*cell);
-		}
-		ut64 ptr_off = cell - impl->matrix;
-		size_t i = rz_vector_find_sorted(impl->edge_offsets, &ptr_off, (RzVectorComparator)cmp, NULL);
-		rz_vector_remove_at(impl->edge_offsets, i, NULL);
-		edge_free(*cell);
-		*cell = NULL;
-		g->n_edges--;
 	}
 	return true;
 }
@@ -673,9 +657,6 @@ static bool rz_graph_matrix_impl_del_edge(RzGraph /*<NodeType *, EdgeType *>*/ *
 	if (g->edge_data_free && (*cell)->data) {
 		g->edge_data_free((*cell)->data);
 	}
-	ut64 ptr_off = cell - impl->matrix;
-	size_t i = rz_vector_find_sorted(impl->edge_offsets, &ptr_off, (RzVectorComparator)cmp, NULL);
-	rz_vector_remove_at(impl->edge_offsets, i, NULL);
 
 	edge_free(*cell);
 	*cell = NULL;
@@ -897,7 +878,6 @@ static void rz_matrix_fini(void *impl) {
 		}
 	}
 	free(matrix_impl->matrix);
-	rz_vector_free(matrix_impl->edge_offsets);
 	free(matrix_impl);
 }
 
@@ -916,9 +896,8 @@ static RzGraphMatrixImpl *rz_graph_matrix_impl_init(ut64 capacity) {
 		return NULL;
 	}
 	impl->capacity = capacity ? capacity : MATRIX_DEFAULT_CAPACITY;
-	impl->edge_offsets = rz_vector_new(sizeof(RzGraphEdge *), NULL, NULL);
 	impl->matrix = RZ_NEWS0(RzGraphEdge *, impl->capacity * impl->capacity);
-	if (!impl->matrix || !impl->edge_offsets) {
+	if (!impl->matrix) {
 		RZ_LOG_WARN("Failed to init graph matrix with capacity %" PFMT64u "\n", impl->capacity)
 		rz_matrix_fini(impl);
 		return NULL;
@@ -1051,9 +1030,9 @@ RZ_API const RzGraphNode *rz_graph_edge_get_to(RZ_NONNULL const RzGraphEdge *edg
  * \param impl_type RZ_GRAPH_IMPL_LIST or RZ_GRAPH_IMPL_MATRIX
  * \param id_hash_fcn Hash function to generate the unique id for a node.
  *                    If it is NULL, then the graph will use the pointers as hash ids.
- *                    In the common case that the nodes should be integers only and without any data at all,
- *                    the user can initialize the graph with id_hash_fcn == NULL.
- *                    Then pass `RZ_GRAPH_INT_AS_DATA(<node_int_id>)` to the `const void *node_data` parameter of API functions.
+ *                    In the common case that the nodes should be identified by integers and have no data at all,
+ *                    the user must initialize the graph with id_hash_fcn == NULL.
+ *                    Then pass `RZ_GRAPH_INT_AS_DATA(<node_int_id>)` to the `const void *identifier` parameter of API functions.
  * \param node_free callback to free node user data, or NULL
  * \param edge_free callback to free edge user data, or NULL
  * \return A new RzGraphNew, or NULL on failure.
