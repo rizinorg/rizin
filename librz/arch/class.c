@@ -1196,7 +1196,9 @@ RZ_API RzAnalysisClassErr rz_analysis_class_vtable_set(RzAnalysis *analysis, con
 		return err;
 	}
 
-	rz_analysis_class_set_flag(analysis, flagname_vtable(class_name, vtable->id), vtable->addr, vtable->size);
+	char *flagname = flagname_vtable(class_name, vtable->id);
+	rz_analysis_class_set_flag(analysis, flagname, vtable->addr, vtable->size);
+	free(flagname);
 
 	return RZ_ANALYSIS_CLASS_ERR_SUCCESS;
 }
