@@ -1161,12 +1161,7 @@ RZ_API RZ_BORROW const char *rz_type_identifier(RZ_NONNULL const RzType *type) {
 	return NULL;
 }
 
-/**
- * \brief Creates an exact clone of the RzType
- *
- * \param type RzType pointer
- */
-RZ_API RZ_OWN RzType *rz_type_clone(RZ_BORROW RZ_NONNULL const RzType *type) {
+static RZ_OWN RzType *type_clone(RZ_BORROW RZ_NONNULL const RzType *type, const bool clone_callable) {
 	rz_return_val_if_fail(type, NULL);
 	RzType *newtype = RZ_NEW0(RzType);
 	if (!newtype) {
@@ -1182,19 +1177,34 @@ RZ_API RZ_OWN RzType *rz_type_clone(RZ_BORROW RZ_NONNULL const RzType *type) {
 	case RZ_TYPE_KIND_ARRAY:
 		newtype->kind = RZ_TYPE_KIND_ARRAY;
 		newtype->array.count = type->array.count;
-		newtype->array.type = rz_type_clone(type->array.type);
+		newtype->array.type = type_clone(type->array.type, clone_callable);
 		break;
 	case RZ_TYPE_KIND_POINTER:
 		newtype->kind = RZ_TYPE_KIND_POINTER;
 		newtype->pointer.is_const = type->pointer.is_const;
-		newtype->pointer.type = rz_type_clone(type->pointer.type);
+		newtype->pointer.type = type_clone(type->pointer.type, clone_callable);
 		break;
 	case RZ_TYPE_KIND_CALLABLE:
 		newtype->kind = RZ_TYPE_KIND_CALLABLE;
-		newtype->callable = rz_type_callable_clone(type->callable);
+		newtype->callable = clone_callable ? rz_type_callable_clone(type->callable) : type->callable;
 		break;
 	}
 	return newtype;
+}
+
+RZ_API RZ_OWN RzType *rz_type_clone_shallow(RZ_BORROW RZ_NONNULL const RzType *type) {
+	rz_return_val_if_fail(type, NULL);
+	return type_clone(type, false);
+}
+
+/**
+ * \brief Creates an exact clone of the RzType
+ *
+ * \param type RzType pointer
+ */
+RZ_API RZ_OWN RzType *rz_type_clone(RZ_BORROW RZ_NONNULL const RzType *type) {
+	rz_return_val_if_fail(type, NULL);
+	return type_clone(type, true);
 }
 
 /**
