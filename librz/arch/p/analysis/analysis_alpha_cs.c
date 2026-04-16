@@ -13,7 +13,7 @@
 
 static char *get_reg_profile(RzAnalysis *_) {
 	const char *p =
-		"=PC	pc\n"
+		"=PC	r31\n"
 		"=SP	r30\n"
 		"=R0	r0\n"
 		"=A0	r16\n"
@@ -53,6 +53,7 @@ static char *get_reg_profile(RzAnalysis *_) {
 		"gpr	r28	.64	224	0\n" // at
 		"gpr	r29	.64	232	0\n" // gp
 		"gpr	r30	.64	240	0\n" // sp
+		"gpr	r31 .64	248	0\n" // linux/arch/alpha/kernel/process.c: dump_elf_thread() dest[31] = pt->pc
 		"fpu	f0	.64	256	0\n"
 		"fpu	f1	.64	264	0\n"
 		"fpu	f2	.64	272	0\n"
@@ -87,8 +88,7 @@ static char *get_reg_profile(RzAnalysis *_) {
 		"fpu	f31	.64	504	0\n"
 		"gpr	lr0	.64	512	0\n"
 		"gpr	lr1	.64	520	0\n"
-		"flg	fpcr .64	528	0\n"
-		"gpr	pc .64	248	0\n"; // linux/arch/alpha/kernel/process.c: dump_elf_thread() dest[31] = pt->pc
+		"flg	fpcr .64	528	0\n";
 	return strdup(p);
 }
 
