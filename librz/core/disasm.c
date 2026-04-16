@@ -4727,7 +4727,7 @@ static void ds_print_esil_analysis(RzDisasmState *ds) {
 		rz_analysis_esil_parse(esil, esilstr);
 	}
 	rz_analysis_esil_stack_free(esil);
-	rz_config_hold_i(hc, "io.cache", NULL);
+	rz_config_hold_var(hc, "io.cache", NULL);
 	rz_config_set(core->config, "io.cache", "true");
 	if (!ds->show_comments) {
 		goto beach;
@@ -5263,8 +5263,7 @@ RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL u
 	if (!rch) {
 		return 0;
 	}
-	rz_config_hold_s(rch, "asm.arch", NULL);
-	rz_config_hold_i(rch, "asm.bits", NULL);
+	rz_config_hold_var(rch, "asm.arch", "asm.bits", NULL);
 
 	// TODO: All those ds must be print flags
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
@@ -6457,7 +6456,7 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, RzCmdStateOutput *st
 	}
 	rz_reg_arena_push(reg);
 	RzConfigHold *chold = rz_config_hold_new(core->config);
-	rz_config_hold_i(chold, "io.cache", "asm.lines", NULL);
+	rz_config_hold_var(chold, "io.cache", "asm.lines", NULL);
 	rz_config_set_i(core->config, "io.cache", true);
 	rz_config_set_i(core->config, "asm.lines", false);
 	const char *strip = rz_config_get(core->config, "asm.strip");

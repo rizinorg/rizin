@@ -4417,7 +4417,9 @@ void __init_menu_disasm_settings_layout(void *_core, const char *parent) {
 		} else {
 			rz_strbuf_set(rsb, pos);
 			rz_strbuf_append(rsb, ": ");
-			rz_strbuf_append(rsb, rz_config_get(core->config, pos));
+			char *val = rz_config_get_as_string(core->config, pos);
+			rz_strbuf_append(rsb, val);
+			free(val);
 			__add_menu(core, parent, rz_strbuf_get(rsb), __config_toggle_cb);
 		}
 	}
@@ -4434,7 +4436,9 @@ static void __init_menu_disasm_asm_settings_layout(void *_core, const char *pare
 		char *pos = *iter;
 		rz_strbuf_set(rsb, pos);
 		rz_strbuf_append(rsb, ": ");
-		rz_strbuf_append(rsb, rz_config_get(core->config, pos));
+		char *val = rz_config_get_as_string(core->config, pos);
+		rz_strbuf_append(rsb, val);
+		free(val);
 		if (!strcmp(pos, "asm.var.summary") ||
 			!strcmp(pos, "asm.arch") ||
 			!strcmp(pos, "asm.bits") ||
@@ -4456,7 +4460,9 @@ static void __init_menu_screen_settings_layout(void *_core, const char *parent) 
 		const char *menu = menus_settings_screen[i];
 		rz_strbuf_set(rsb, menu);
 		rz_strbuf_append(rsb, ": ");
-		rz_strbuf_append(rsb, rz_config_get(core->config, menu));
+		char *val = rz_config_get_as_string(core->config, menu);
+		rz_strbuf_append(rsb, val);
+		free(val);
 		if (!strcmp(menus_settings_screen[i], "scr.color")) {
 			__add_menu(core, parent, rz_strbuf_get(rsb), __config_value_cb);
 		} else {

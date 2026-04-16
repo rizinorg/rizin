@@ -15,52 +15,52 @@ static int _6520_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int le
 	return op->size = RZ_MAX(dlen, 0);
 }
 
-RzConfig *_6502_get_config(void *plugin_data) {
-	rz_return_val_if_fail(plugin_data, NULL);
-	_6502State *state = (_6502State *)plugin_data;
-	return rz_config_clone(state->cfg);
+static bool _6520_config_magic_get(void *user, void *data) {
+	ut64 *value = data;
+	_6502State *state = user;
+	if (!state) {
+		return false;
+	}
+	*value = state->magic;
+	return true;
 }
 
-static bool _6502_cfg_set(void *user, void *data) {
-	rz_return_val_if_fail(user && data, false);
+static bool _6520_config_magic_set(void *user, const void *data) {
+	const ut64 *value = data;
 	_6502State *state = user;
-	RzConfig *pcfg = state->cfg;
+	if (!state) {
+		return false;
+	}
+	state->magic = *value;
+	return true;
+}
 
-	RzConfigNode *cnode = (RzConfigNode *)data; // Config node from core.
-	RzConfigNode *pnode = rz_config_node_get(pcfg, cnode->name); // Config node of plugin.
-	if (pnode == cnode) {
-		return true;
+static RzConfig *_6502_get_config(void *plugin_data) {
+	rz_return_val_if_fail(plugin_data, NULL);
+	_6502State *state = (_6502State *)plugin_data;
+
+	RzConfig *cfg = rz_config_new(NULL);
+	if (!cfg) {
+		return NULL;
 	}
-	if (cnode) {
-		pnode->i_value = cnode->i_value;
-		free(pnode->value);
-		pnode->value = rz_str_dup(cnode->value);
-		return true;
-	}
-	return false;
+
+	// Add nodes
+	rz_config_add_integer_bind(cfg, "plugins.6502.magic", "Determines the magic number certain illegal opcodes use.", _6520_config_magic_get, _6520_config_magic_set, NULL, state);
+
+	return cfg;
 }
 
 static bool _6502_init(void **user) {
-	_6502State *state = _6502_state_new();
-	rz_return_val_if_fail(state, false);
-	RzConfig *cfg = state->cfg = rz_config_new(state);
-	rz_return_val_if_fail(state->cfg, false);
-
-	SETICB("plugins.6502.magic", 0xee, &_6502_cfg_set, "Determines the magic number certain illegal opcodes use.");
+	_6502State *state = RZ_NEW0(_6502State);
+	if (!state) {
+		return false;
+	}
+	state->magic = 0xee;
 	*user = state;
 	return true;
 }
 
-void _6502State_fini(_6502State *state) {
-	if (!state) {
-		return;
-	}
-	rz_config_free(state->cfg);
-	return;
-}
-
 static bool _6502_fini(void *user) {
-	_6502State_fini(user);
 	free(user);
 	return true;
 }

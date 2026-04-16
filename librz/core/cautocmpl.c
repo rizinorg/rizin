@@ -549,22 +549,33 @@ static void autocmplt_cmd_arg_choices(RzCore *core, RzLineNSCompletionResult *re
 	}
 }
 
-static void autocmplt_cmd_arg_eval_key(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
-	RzListIter *iter;
-	RzConfigNode *bt;
-	rz_list_foreach (core->config->nodes, iter, bt) {
-		if (!strncmp(bt->name, s, len)) {
-			rz_line_ns_completion_result_add(res, bt->name);
-		}
+typedef struct autocmplt_context_s {
+	RzLineNSCompletionResult *res;
+	const char *s;
+	size_t len;
+} autocmplt_ctx_t;
+
+static bool autocmplt_cmd_arg_eval_key_iterator(const RzConfigEntry *entry, void *user) {
+	autocmplt_ctx_t *ctx = user;
+	const char *e_name = rz_config_entry_get_name(entry);
+	if (!strncmp(ctx->s, e_name, ctx->len)) {
+		rz_line_ns_completion_result_add(ctx->res, e_name);
 	}
+	return true;
+}
+
+static void autocmplt_cmd_arg_eval_key(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	autocmplt_ctx_t ctx = {
+		res,
+		s,
+		len,
+	};
+	rz_config_iterate_over(core->config, autocmplt_cmd_arg_eval_key_iterator, &ctx);
+
 	RzConfig **plugin_cfg;
 	RzIterator *it = ht_sp_as_iter(core->plugin_configs);
 	rz_iterator_foreach(it, plugin_cfg) {
-		rz_list_foreach ((*plugin_cfg)->nodes, iter, bt) {
-			if (!strncmp(bt->name, s, len)) {
-				rz_line_ns_completion_result_add(res, bt->name);
-			}
-		}
+		rz_config_iterate_over((*plugin_cfg), autocmplt_cmd_arg_eval_key_iterator, &ctx);
 	}
 	rz_iterator_free(it);
 }
@@ -580,25 +591,26 @@ static void autocmplt_cmd_arg_eval_full(RzCore *core, RzLineNSCompletionResult *
 
 	char *k = rz_str_ndup(s, eq - s);
 	char *v = NULL;
-	RzConfigNode *node = rz_config_node_get(core->config, k);
-	if (!node) {
+	const RzList *options = rz_config_get_options(core->config, k);
+	if (!options) {
 		goto err;
 	}
+	const ut32 flags = rz_config_get_flags(core->config, k);
 
 	v = rz_str_ndup(eq + 1, len - (eq - s) - 1);
 	len = strlen(v);
 
 	res->start += strlen(k) + 1;
 
-	if (node->options && rz_list_length(node->options)) {
-		RzListIter *iter;
-		char *opt;
-		rz_list_foreach (node->options, iter, opt) {
+	if (rz_list_length(options) > 0) {
+		const RzListIter *iter;
+		const char *opt;
+		rz_list_foreach (options, iter, opt) {
 			if (!strncmp(opt, v, len)) {
 				rz_line_ns_completion_result_add(res, opt);
 			}
 		}
-	} else if (rz_config_node_is_bool(node)) {
+	} else if (flags & RZ_CONFIG_VAR_BOOL) {
 		if (!strncmp("true", v, len)) {
 			rz_line_ns_completion_result_add(res, "true");
 		}

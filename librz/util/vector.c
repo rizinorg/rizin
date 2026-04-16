@@ -380,7 +380,9 @@ static bool bin_search_range(RZ_NONNULL RzVector *vec, RZ_NONNULL void *elem, Rz
  */
 RZ_API void *rz_vector_insert_sorted(RZ_NONNULL RzVector *vec, RZ_NONNULL void *elem, RzVectorComparator cmp, void *user) {
 	rz_return_val_if_fail(vec && elem, NULL);
-	if (rz_vector_empty(vec)) {
+
+	size_t len = rz_vector_len(vec);
+	if (len < 1) {
 		return rz_vector_push(vec, elem);
 	}
 

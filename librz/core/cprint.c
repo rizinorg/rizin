@@ -629,7 +629,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 		rz_config_hold_free(hc);
 		return NULL;
 	}
-	rz_config_hold_i(hc,
+	rz_config_hold_var(hc,
 		"asm.offset",
 		"asm.debuginfo",
 		"asm.tabs",

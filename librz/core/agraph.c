@@ -2844,7 +2844,7 @@ static char *get_body(RzCore *core, ut64 addr, int size, int opts) {
 	if (!hc) {
 		return NULL;
 	}
-	rz_config_hold_i(hc, "asm.lines", "asm.bytes",
+	rz_config_hold_var(hc, "asm.lines", "asm.bytes",
 		"asm.cmt.col", "asm.marks", "asm.offset",
 		"asm.comments", "asm.cmt.right", "asm.bb.line", NULL);
 	const bool o_comments = rz_config_get_i(core->config, "graph.comments");
@@ -5103,7 +5103,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 	if (!hc) {
 		return false;
 	}
-	rz_config_hold_i(hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
+	rz_config_hold_var(hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
 
 	int h, w = rz_cons_get_size(&h);
 	can = rz_cons_canvas_new(w, h);

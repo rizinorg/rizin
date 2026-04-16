@@ -363,7 +363,7 @@ static RZ_OWN RzGraph /*<RzGraphNodeInfo *, None *>*/ *rz_core_graph_function_bb
 		goto fail;
 	}
 
-	rz_config_hold_i(hc, "asm.xrefs.max", "asm.lines", "asm.lines.fcn", "asm.bytes", "asm.debuginfo", "asm.offset", "asm.marks",
+	rz_config_hold_var(hc, "asm.xrefs.max", "asm.lines", "asm.lines.fcn", "asm.bytes", "asm.debuginfo", "asm.offset", "asm.marks",
 		"asm.cmt.right", "asm.cmt.col", "asm.bb.middle", NULL);
 	rz_config_set_i(core->config, "asm.xrefs.max", 3);
 	rz_config_set_i(core->config, "asm.lines", 0);

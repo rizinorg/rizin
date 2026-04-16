@@ -248,7 +248,7 @@ RZ_IPI int __core_visual_view_graph_update(RzCore *core, RzCoreVisualViewGraph *
 	if (!hc) {
 		return 0;
 	}
-	rz_config_hold_i(hc, "asm.flags", NULL);
+	rz_config_hold_var(hc, "asm.flags", NULL);
 	rz_config_set_i(core->config, "asm.flags", 0);
 	char *output1 = rz_core_print_cons_disassembly(core, status->addr, 32, 0);
 	rz_config_hold_restore(hc);

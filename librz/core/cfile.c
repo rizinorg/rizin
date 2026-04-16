@@ -617,7 +617,7 @@ RZ_API void rz_core_sysenv_begin(RzCore *core) {
 	}
 
 	Sdb *config_sdb = sdb_new(NULL, config_sdb_path, 0);
-	rz_config_serialize(core->config, config_sdb);
+	rz_serialize_config_save(config_sdb, core->config);
 	sdb_sync(config_sdb);
 	sdb_free(config_sdb);
 	rz_sys_setenv("RZ_CONFIG", config_sdb_path);

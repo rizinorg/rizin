@@ -439,6 +439,7 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	_6502ILAddr il_addr = { 0 };
 	_6502ILAddr *il_addr_ptr = (mask & RZ_ANALYSIS_OP_MASK_IL) ? &il_addr : NULL;
 	_6502State *cfg_state = (_6502State *)analysis->plugin_data;
+	ut8 magic = cfg_state ? cfg_state->magic : 0xee;
 
 	switch (data[0]) {
 	// SLO
@@ -838,12 +839,8 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->cycles = 2;
 		op->size = 2;
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			ut8 magic = 0xee;
 			_6502ILAddr addr;
 			_6502_il_immediate(&addr, data[1]);
-			if (cfg_state && cfg_state->cfg) {
-				magic = (ut8)rz_config_get_i(cfg_state->cfg, "plugins.6502.magic");
-			}
 			op->il_op = _6502_il_op_laximm(&addr, magic);
 		}
 		break;
@@ -1132,12 +1129,8 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->size = 2;
 		op->cycles = 2;
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			ut8 magic = 0xee;
 			_6502ILAddr addr;
 			_6502_il_immediate(&addr, data[1]);
-			if (cfg_state && cfg_state->cfg) {
-				magic = (ut8)rz_config_get_i(cfg_state->cfg, "plugins.6502.magic");
-			}
 			op->il_op = _6502_il_op_ane(&addr, magic);
 		}
 		break;

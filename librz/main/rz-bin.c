@@ -736,7 +736,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	if ((tmp = rz_sys_getenv("RZ_CONFIG"))) {
 		Sdb *config_sdb = sdb_new(NULL, tmp, 0);
 		if (config_sdb) {
-			rz_config_unserialize(core.config, config_sdb, NULL);
+			rz_serialize_config_load(config_sdb, core.config, NULL);
 			sdb_free(config_sdb);
 		} else {
 			eprintf("Cannot open file specified in RZ_CONFIG\n");

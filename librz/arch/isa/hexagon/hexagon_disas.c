@@ -36562,9 +36562,9 @@ static int get_jmp_target_imm_op_index(const HexInsnTemplate *tpl) {
 }
 
 static void hex_disasm_with_templates(const HexInsnTemplate *tpl, HexState *state, ut32 hi_u32, RZ_INOUT HexInsn *hi, HexInsnContainer *hic, ut64 addr, HexPkt *pkt) {
-	bool print_reg_alias = rz_config_get_b(state->cfg, "plugins.hexagon.reg.alias");
-	bool show_hash = rz_config_get_b(state->cfg, "plugins.hexagon.imm.hash");
-	bool sign_nums = rz_config_get_b(state->cfg, "plugins.hexagon.imm.sign");
+	bool print_reg_alias = state->reg_alias;
+	bool show_hash = state->imm_hash;
+	bool sign_nums = state->imm_sign;
 	char signed_imm[HEX_MAX_OPERANDS][32];
 	// Find the right template
 	for (; tpl->id; tpl++) {
