@@ -98,8 +98,8 @@ RZ_API bool rz_vector_clone_intof(
 	dst->capacity = src->capacity;
 	dst->len = src->len;
 	dst->elem_size = src->elem_size;
-	dst->free = NULL;
-	dst->free_user = NULL;
+	dst->free = src->free;
+	dst->free_user = src->free_user;
 	if (!dst->len) {
 		dst->a = NULL;
 	} else {

@@ -714,6 +714,7 @@ RZ_API void rz_bin_dwarf_evaluation_free(RZ_OWN RzBinDwarfEvaluation *self) {
 	rz_vector_fini(&self->stack);
 	rz_vector_fini(&self->expression_stack);
 	rz_vector_fini(&self->result);
+	memset(self, 0, sizeof(RzBinDwarfEvaluation));
 	free(self);
 }
 
@@ -734,6 +735,7 @@ RZ_API void RzBinDwarfEvaluationResult_free(RZ_OWN RzBinDwarfEvaluationResult *s
 	if (!self) {
 		return;
 	}
+	memset(self, 0, sizeof(RzBinDwarfEvaluationResult));
 	free(self);
 }
 
@@ -847,12 +849,12 @@ static bool Evaluation_evaluate_one_operation(
 			goto err;
 		}
 		Value clone = { 0 };
-		if (!Value_clone_into(value, &clone) &&
+		if (Value_clone_into(value, &clone) &&
 			Evaluation_push(self, &clone)) {
-			Value_fini(&clone);
-			goto err;
+			break;
 		}
-		break;
+		Value_fini(&clone);
+		goto err;
 	}
 	case OPERATION_KIND_SWAP: {
 		Value a = { 0 };
@@ -1092,6 +1094,7 @@ static bool Evaluation_evaluate_one_operation(
 		out->kind = OperationEvaluationResult_COMPLETE;
 		if (val1.type == RzBinDwarfValueType_LOCATION) {
 			MEM_CPY(Location, &out->complete, val1.location);
+			rz_bin_dwarf_location_free(val1.location);
 		} else {
 			out->complete.kind = RzBinDwarfLocationKind_VALUE;
 			MEM_CPY(Value, &out->complete.value, &val1);
@@ -1412,6 +1415,7 @@ RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_from_block(
 	}
 
 	RzBinDwarfEvaluation *eval = NULL;
+	RzBinDwarfEvaluationResult *result = NULL;
 	Location *loc = RZ_NEW0(Location);
 	if (!loc) {
 		return NULL;
@@ -1424,23 +1428,27 @@ RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_from_block(
 	if (rz_bin_dwarf_block_empty(block)) {
 		loc->kind = RzBinDwarfLocationKind_EMPTY;
 	} else {
-		RzBinDwarfEvaluationResult *result = RZ_NEW0(RzBinDwarfEvaluationResult);
-		RET_NULL_IF_FAIL(result);
+		result = RZ_NEW0(RzBinDwarfEvaluationResult);
+		ERR_IF_FAIL(result);
 		eval = rz_bin_dwarf_evaluation_new_from_block(&R, dw, unit, die);
 		ERR_IF_FAIL(eval);
 		if (!(rz_bin_dwarf_evaluation_evaluate(eval, result) &&
 			    RzBinDwarfEvaluationResult_to_loc(eval, result, loc))) {
 			goto err;
-		};
+		}
 	}
 	return loc;
 err:
-	if (eval && eval->state.kind == EVALUATION_STATE_DECODE_ERROR) {
-		loc->kind = RzBinDwarfLocationKind_DECODE_ERROR;
+	if (eval) {
+		if (eval->state.kind == EVALUATION_STATE_DECODE_ERROR) {
+			loc->kind = RzBinDwarfLocationKind_DECODE_ERROR;
+		}
 	} else {
 		rz_bin_dwarf_location_free(loc);
 		loc = NULL;
 	}
+	rz_bin_dwarf_evaluation_free(eval);
+	RzBinDwarfEvaluationResult_free(result);
 	return loc;
 }
 
