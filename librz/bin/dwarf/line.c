@@ -263,7 +263,7 @@ static char *full_file_path(
  * \param index the index of the file
  * \return the full path or NULL if the file index is invalid
  */
-RZ_API char *rz_bin_dwarf_file_path(RZ_NONNULL RZ_BORROW RzBinDWARF *dw,
+RZ_API RZ_OWN char *rz_bin_dwarf_file_path(RZ_NONNULL RZ_BORROW RzBinDWARF *dw,
 	RZ_NONNULL RZ_BORROW RzBinDwarfLineUnit *lu, ut64 index) {
 	rz_return_val_if_fail(dw && lu, NULL);
 	return full_file_path(dw, &lu->hdr, index);
