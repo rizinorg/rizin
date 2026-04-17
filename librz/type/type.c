@@ -1192,6 +1192,11 @@ static RZ_OWN RzType *type_clone(RZ_BORROW RZ_NONNULL const RzType *type, const 
 	return newtype;
 }
 
+/**
+ * \brief Creates a shallow clone of the RzType, i.e. the callables are shared between the original and the cloned type
+ * \param type RzType pointer
+ * \return clone of the RzType
+ */
 RZ_API RZ_OWN RzType *rz_type_clone_shallow(RZ_BORROW RZ_NONNULL const RzType *type) {
 	rz_return_val_if_fail(type, NULL);
 	return type_clone(type, false);

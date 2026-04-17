@@ -870,6 +870,7 @@ static void RzType_from_base_type(RzType *t, RzBaseType *b) {
 		break;
 	}
 }
+
 /**
  * \brief Recursively parses type entry of a certain offset and saves type size into *size
  *

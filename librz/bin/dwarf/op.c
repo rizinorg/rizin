@@ -714,7 +714,6 @@ RZ_API void rz_bin_dwarf_evaluation_free(RZ_OWN RzBinDwarfEvaluation *self) {
 	rz_vector_fini(&self->stack);
 	rz_vector_fini(&self->expression_stack);
 	rz_vector_fini(&self->result);
-	memset(self, 0, sizeof(RzBinDwarfEvaluation));
 	free(self);
 }
 
@@ -735,7 +734,6 @@ RZ_API void RzBinDwarfEvaluationResult_free(RZ_OWN RzBinDwarfEvaluationResult *s
 	if (!self) {
 		return;
 	}
-	memset(self, 0, sizeof(RzBinDwarfEvaluationResult));
 	free(self);
 }
 
