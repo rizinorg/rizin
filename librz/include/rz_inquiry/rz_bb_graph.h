@@ -50,7 +50,7 @@ typedef struct {
 RZ_IPI RZ_OWN RzInquiryBB *rz_inquiry_bb_new(ut64 addr, ut64 size);
 RZ_IPI void rz_inquiry_bb_free(RZ_NULLABLE RZ_OWN RzInquiryBB *bb);
 
-RZ_IPI RZ_OWN RzInquiryBBCFG *rz_inquiry_bb_cfg_new();
+RZ_IPI RZ_OWN RzInquiryBBCFG *rz_inquiry_bb_cfg_new(RzGraphImplType impl_type);
 RZ_IPI void rz_inquiry_bb_cfg_free(RZ_NULLABLE RZ_OWN RzInquiryBBCFG *bb_cfg);
 RZ_IPI bool rz_inquiry_bb_cfg_add_basic_block(RzInquiryBBCFG *cfg, ut64 addr, ut64 size);
 RZ_IPI bool rz_inquiry_bb_cfg_add_xrefs(RzInquiryBBCFG *cfg, RzVector /*<RzAnalysisXRef>*/ *xrefs);
