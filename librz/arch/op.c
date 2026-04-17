@@ -38,7 +38,7 @@ RZ_API bool rz_analysis_op_fini(RzAnalysisOp *op) {
 	if (!op) {
 		return false;
 	}
-	for (int i = 0; i < RZ_ARRAY_SIZE(op->src); ++i) {
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(op->src); ++i) {
 		rz_analysis_value_free(op->src[i]);
 		op->src[i] = NULL;
 	}
