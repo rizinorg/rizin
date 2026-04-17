@@ -552,7 +552,7 @@ RZ_API void *rz_vector_flush(RzVector *vec) {
 }
 
 #define VEC_INDEX(a, i) (char *)a + elem_size *(i)
-#define SORT_STACK_BUF 256
+#define SORT_STACK_BUF  256
 
 static void vector_quick_sort_impl(void *a, size_t elem_size, size_t len,
 	RzVectorComparator cmp, bool reverse, void *user, void *t, void *pivot) {
@@ -585,7 +585,7 @@ static void vector_quick_sort(void *a, size_t elem_size, size_t len,
 	}
 	ut8 stack_buf[SORT_STACK_BUF * 2];
 	bool use_stack = elem_size <= SORT_STACK_BUF;
-	void *t     = use_stack ? (void *)stack_buf                  : malloc(elem_size);
+	void *t = use_stack ? (void *)stack_buf : malloc(elem_size);
 	void *pivot = use_stack ? (void *)(stack_buf + SORT_STACK_BUF) : malloc(elem_size);
 	if (RZ_UNLIKELY(!t || !pivot)) {
 		if (!use_stack) {
