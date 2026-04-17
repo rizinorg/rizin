@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2017-2020 maskray <i@maskray.me>
 // SPDX-FileCopyrightText: 2017-2020 thestr4ng3r <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2026 abdallh <abdallhdawi3@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_vector.h"

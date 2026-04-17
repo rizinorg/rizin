@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2018 Florian Märkl <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2026 abdallh <abdallhdawi3@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
