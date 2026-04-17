@@ -36,8 +36,8 @@
 // Floating point register layout.
 #define ARCH_LEN (FP_LAYOUT | 0xf)
 
-#define RISCV_32    10
-#define RISCV_64    11
+#define RISCV_32    13
+#define RISCV_64    14
 #define RISCV_32_FP (FP_LAYOUT | RISCV_32)
 #define RISCV_64_FP (FP_LAYOUT | RISCV_64)
 

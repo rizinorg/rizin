@@ -11,7 +11,6 @@
 #include <rz_socket.h>
 #include <rz_cmp.h>
 #include <rz_util.h>
-#include <asm_private.h>
 #if __UNIX__
 #include <signal.h>
 #endif
@@ -1535,8 +1534,7 @@ static RzStrBuf *bp_get_sw_breakpoint_at(ut64 addr, void *user) {
 	rz_asm_op_init(&op);
 	rz_asm_op_init(&original);
 
-	RzAsm *asmplugin = core->rasm;
-	(void)asmplugin->cur->disassemble(asmplugin, &original, bytes, sizeof(bytes));
+	(void)rz_asm_disassemble(core->rasm, &original, bytes, sizeof(bytes));
 	if (rz_asm_software_breakpoint(core->rasm, addr, &original, &op) &&
 		(opcode = rz_strbuf_new(NULL))) {
 		rz_strbuf_copy(opcode, &op.buf);
@@ -1561,8 +1559,7 @@ static size_t bp_get_sw_breakpoint_size_at(ut64 addr, void *user) {
 	rz_asm_op_init(&op);
 	rz_asm_op_init(&original);
 
-	RzAsm *asmplugin = core->rasm;
-	(void)asmplugin->cur->disassemble(asmplugin, &original, bytes, sizeof(bytes));
+	(void)rz_asm_disassemble(core->rasm, &original, bytes, sizeof(bytes));
 	if (rz_asm_software_breakpoint(core->rasm, addr, &original, &op)) {
 		length = rz_strbuf_length(&op.buf);
 	}

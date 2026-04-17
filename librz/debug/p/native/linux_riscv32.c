@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 mostafa <ubermenchun@gmail.com>
+// SPDX-FileCopyrightText: 2024-2026 mostafa <ubermenchun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_util/rz_log.h"
@@ -12,7 +12,7 @@
 #endif
 
 #include "linux_riscv_common.c"
-
+#include "bt.c"
 static char *rz_debug_native_reg_profile(RzDebug *dbg) {
 #include "reg/linux-riscv32.h"
 }
@@ -93,7 +93,7 @@ RzDebugPlugin rz_debug_plugin_native = {
 	.license = "LGPL3",
 	.arch = "riscv",
 	.bits = RZ_SYS_BITS_32,
-	.canstep = 1,
+	.canstep = 0,
 	.init = &rz_debug_native_init,
 	.fini = &rz_debug_native_fini,
 	.step = &rz_debug_native_step,

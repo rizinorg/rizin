@@ -988,10 +988,12 @@ jobs:
       - name: Run Rizin on RISCV32 inside QEMU
         run: |
           cd .. 
-          qemu-system-riscv32 -machine virt -m 512M \
+          qemu-system-riscv32 -machine virt -m 2G \
             -bios rv32-fw_dynamic.bin \
             -kernel rv32-Image \
             -initrd initrd_rv32.cpio \
+            -drive file=rootfs-rv32.ext4,format=raw,id=hd0,if=none \
+            -device virtio-blk-device,drive=hd0 \
             -append "earlycon console=hvc0" \
             -nographic
 

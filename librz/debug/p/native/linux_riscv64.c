@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 mostafa <ubermenchun@gmail.com>
+// SPDX-FileCopyrightText: 2024-2026 mostafa <ubermenchun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_util/rz_log.h"

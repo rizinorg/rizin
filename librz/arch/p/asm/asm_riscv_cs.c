@@ -70,7 +70,7 @@ static bool riscv_sw_breakpoint(const RzAsm *a, ut64 addr, const RzAsmOp *origin
 	} else if (original->size == 4) {
 		rz_asm_op_set_buf(breakpoint, a->big_endian ? (const ut8 *)"\x00\x10\x00\x73" : (const ut8 *)"\x73\x00\x10\x00", 4);
 	} else {
-		RZ_LOG_ERROR("Can't set breakpoint at 0x%llx : bad size (%ld bytes) of the instruction there, RISC-V instructions are expected to either be 2 or 4 bytes\n", addr, original->buf.len);
+		RZ_LOG_ERROR("Can't set breakpoint at 0x%" PFMT64x " : bad size (%ld bytes) of the instruction there, RISC-V instructions are expected to either be 2 or 4 bytes\n", addr, original->buf.len);
 		return false;
 	}
 	return true;
