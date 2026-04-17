@@ -130,6 +130,8 @@ RZ_API void rz_vector_remove_at(RzVector *vec, size_t index, void *into);
  */
 RZ_API void rz_vector_remove_range(RzVector *vec, size_t index, size_t count, void *into);
 
+RZ_API void rz_vector_purge(RZ_BORROW RzVector *vec);
+
 // insert the value of size vec->elem_size at x at the given index.
 // x is a pointer to the actual data to assign!
 RZ_API void *rz_vector_insert(RzVector *vec, size_t index, void *x);
@@ -340,6 +342,14 @@ RZ_API void *rz_pvector_assign_at(RZ_BORROW RZ_NONNULL RzPVector *vec, size_t in
 
 // removes and returns the pointer at the given index. Does not call free.
 RZ_API void *rz_pvector_remove_at(RzPVector *vec, size_t index);
+
+/**
+ * \brief Deletes all pointers in the vector. Capacity stays the same.
+ */
+static inline void rz_pvector_purge(RZ_BORROW RzPVector *vec) {
+	rz_return_if_fail(vec);
+	rz_vector_purge(&vec->v);
+}
 
 // removes the element x, if present. Does not call free.
 RZ_API void rz_pvector_remove_data(RzPVector *vec, void *x);

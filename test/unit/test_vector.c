@@ -1142,6 +1142,10 @@ static bool test_pvector_assign_at(void) {
 	mu_assert_memeq(v.v.a + sizeof(ut32 *) * 7, (ut8 *)zeroed, sizeof(ut32 *), "Memory was not zeroed");
 	mu_assert_memeq(v.v.a + sizeof(ut32 *) * 8, (ut8 *)zeroed, sizeof(ut32 *), "Memory was not zeroed");
 
+	rz_pvector_purge(&v);
+	mu_assert_eq(rz_pvector_len(&v), 0, "Length after purge.");
+	mu_assert_eq(rz_pvector_capacity(&v), 10, "Capacity stays the same after purge.");
+
 	rz_pvector_clear(&v);
 	mu_end;
 }

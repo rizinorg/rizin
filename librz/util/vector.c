@@ -248,6 +248,13 @@ RZ_API void rz_vector_remove_range(RzVector *vec, size_t index, size_t count, vo
 	}
 }
 
+/**
+ * \brief Deletes all elements in the vector. Capacity stays the same.
+ */
+RZ_API void rz_vector_purge(RZ_BORROW RzVector *vec) {
+	vector_free_elems(vec);
+}
+
 RZ_API void *rz_vector_insert(RzVector *vec, size_t index, void *x) {
 	rz_return_val_if_fail(vec && index <= vec->len, NULL);
 	if (vec->len >= vec->capacity) {
