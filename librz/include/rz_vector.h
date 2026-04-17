@@ -168,13 +168,6 @@ RZ_API void *rz_vector_reserve(RzVector *vec, size_t capacity);
 // shrink capacity to len.
 RZ_API void *rz_vector_shrink(RzVector *vec);
 
-/**
- * \brief Turn the vector into a fixed-size array.
- * This will clear the vector and return an array of its original contents whose
- * ownership is transferred to the caller.
- * This is useful when RzVector is used for its dynamically growing functionality as an
- * intermediate step to generate a fixed-size array in the end.
- */
 RZ_API void *rz_vector_flush(RzVector *vec);
 
 // sort vector
@@ -391,7 +384,14 @@ static inline void **rz_pvector_shrink(RzPVector *vec) {
 	return (void **)rz_vector_shrink(&vec->v);
 }
 
-static inline void **rz_pvector_flush(RzPVector *vec) {
+/**
+ * \brief Turn the vector into a fixed-size array.
+ * This will clear the vector and return an array of its original contents whose
+ * ownership is transferred to the caller.
+ * This is useful when RzPVector is used for its dynamically growing functionality as an
+ * intermediate step to generate a fixed-size array in the end.
+ */
+static inline void **rz_pvector_flush(RZ_BORROW RzPVector *vec) {
 	return (void **)rz_vector_flush(&vec->v);
 }
 
