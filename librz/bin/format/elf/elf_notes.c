@@ -30,6 +30,8 @@
 #define MIPS_FP32 (FP_LAYOUT | MIPS_32)
 #define MIPS_FP64 (FP_LAYOUT | MIPS_64)
 #define ALPHA     10
+#define HPPA32    11
+#define HPPA64    12
 // Floating point register layout.
 #define ARCH_LEN (FP_LAYOUT | 0xf)
 
@@ -62,6 +64,16 @@
 #define ALPHA_REGS_SIZE               (33 * 8)
 #define ALPHA_PR_STATUS_REG_OFFSET    0x70
 #define ALPHA_PR_STATUS_REG_OFFSET_SP 240
+// linux/arch/parisc/include/uapi/asm/ptrace.h: user_regs_struct (80 unsigned longs * 4 = 320 bytes)
+// arch/parisc/include/asm/ptrace.h: sp = gr[30]
+#define HPPA32_REGS_SIZE 320
+#define HPPA32_PR_STATUS_REG_OFFSET 0x48
+#define HPPA32_PR_STATUS_REG_OFFSET_SP 120
+
+// linux/arch/parisc/include/uapi/asm/ptrace.h: user_regs_struct (80 unsigned longs * 8 = 640 bytes)
+#define HPPA64_REGS_SIZE 640
+#define HPPA64_PR_STATUS_REG_OFFSET 0x70
+#define HPPA64_PR_STATUS_REG_OFFSET_SP 240
 
 // The ones for Linux coredumps.
 // linux/arch/sparc/include/asm/elf_64.h or elf_32.h
@@ -131,6 +143,8 @@ static RzBinElfPrStatusLayout prstatus_layouts[ARCH_LEN] = {
 	[MIPS_64] = { MIPS64_REGS_SIZE, MIPS_GPR64_STATUS_OFFSET, 0, 0 },
 
 	[ALPHA] = { ALPHA_REGS_SIZE, ALPHA_PR_STATUS_REG_OFFSET, 64, ALPHA_PR_STATUS_REG_OFFSET_SP },
+	[HPPA32] = { HPPA32_REGS_SIZE, HPPA32_PR_STATUS_REG_OFFSET, 32, HPPA32_PR_STATUS_REG_OFFSET_SP },
+	[HPPA64] = { HPPA64_REGS_SIZE, HPPA64_PR_STATUS_REG_OFFSET, 64, HPPA64_PR_STATUS_REG_OFFSET_SP },
 
 	[SPARC32_FP] = { SPARC32_FPREGS_SIZE, SPARC32_FPREG_OFFSET, 0, 0 },
 	[SPARC64_FP] = { SPARC64_FPREGS_SIZE, SPARC32_FPREG_OFFSET, 0, 0 },
@@ -375,6 +389,14 @@ RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNUL
 		return prstatus_layouts + elf_get_prstatus_layout_mips(bin, false);
 	case EM_ALPHA:
 		return prstatus_layouts + ALPHA;
+	case EM_PARISC:
+		if (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64) {
+			return prstatus_layouts + HPPA64;
+		}
+		if (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS32) {
+			return prstatus_layouts + HPPA32;
+		}
+		return NULL;
 	}
 
 	return NULL;
