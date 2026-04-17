@@ -83,9 +83,7 @@ static bool test_graph_edges(void) {
 	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1);
 	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2);
 	RzGraphNode *n3 = rz_graph_add_node(g, (ut8 *)3);
-	RzGraphNode *n4 = rz_graph_add_node(g, (ut8 *)4);
-	RzGraphNode *n5 = rz_graph_add_node(g, (ut8 *)5);
-	RzGraphNode *n6 = rz_graph_add_node(g, (ut8 *)6);
+	RzGraphNode *arr[16] = { 0 };
 
 	// Add edges
 	bool success = rz_graph_add_edge(g, n1, n2, NULL);
@@ -109,6 +107,30 @@ static bool test_graph_edges(void) {
 
 	has_edge = rz_graph_has_edge(g, n1, n3);
 	mu_assert_true(has_edge, "has_edge.1->3");
+
+	// Add 16 more nodes (more than LIST_IMPL_DEFAULT_NODE_VEC_SIZE)
+	// then add an edge and check if it fails somehow.
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(arr); ++i) {
+		arr[i] = rz_graph_add_node(g, (ut8 *)i+4);
+		mu_assert_notnull(arr[i], "Was NULL, should not.");
+	}
+	success = rz_graph_add_edge(g, arr[8], n3, NULL);
+	mu_assert_true(success, "add_edge.11->3");
+	mu_assert_eq(rz_graph_count_edges(g), 4, "n_edges.4");
+	has_edge = rz_graph_has_edge(g, arr[8], n3);
+	mu_assert_true(has_edge, "has_edge.11->3");
+
+	mu_assert_true(rz_graph_del_node(g, arr[8]), "Del failed");
+	has_edge = rz_graph_has_edge(g, arr[8], n3);
+	mu_assert_false(has_edge, "has_edge.11->3 fail");
+
+	// Node should be placed at the edge list index of just deleted node 11.
+	RzGraphNode *nx = rz_graph_add_node(g, (ut8 *)0xffff);
+	success = rz_graph_add_edge(g, nx, n3, NULL);
+	mu_assert_true(success, "add_edge.0xffff->3");
+	mu_assert_eq(rz_graph_count_edges(g), 4, "n_edges.4");
+	has_edge = rz_graph_has_edge(g, nx, n3);
+	mu_assert_true(has_edge, "has_edge.0xffff->3");
 
 	rz_graph_free(g);
 	mu_end;

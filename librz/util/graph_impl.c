@@ -454,7 +454,7 @@ static RZ_OWN bool rz_graph_list_impl_del_node(RzGraph /*<NodeType *, EdgeType *
 
 			g->n_edges -= 1;
 		}
-		rz_pvector_clear(out_vec);
+		rz_pvector_purge(out_vec);
 	}
 
 	// remove all src -> node
@@ -486,7 +486,7 @@ static RZ_OWN bool rz_graph_list_impl_del_node(RzGraph /*<NodeType *, EdgeType *
 			rz_pvector_remove_at(in_vec, i);
 			g->n_edges -= 1;
 		}
-		rz_pvector_clear(in_vec);
+		rz_pvector_purge(in_vec);
 	}
 
 	return true;
