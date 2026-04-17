@@ -70,7 +70,10 @@ RZ_API void rz_vector_fini(RzVector *vec) {
 	vec->free_user = NULL;
 }
 
-RZ_API void rz_vector_clear(RzVector *vec) {
+/**
+ * \brief Removes all elements and frees the internal buffer.
+ */
+RZ_API void rz_vector_clear(RZ_BORROW RzVector *vec) {
 	rz_return_if_fail(vec);
 	vector_free_elems(vec);
 	RZ_FREE(vec->a);
@@ -563,7 +566,10 @@ RZ_API RzPVector *rz_pvector_new_with_len(RzPVectorFree free, size_t length) {
 	return v;
 }
 
-RZ_API void rz_pvector_clear(RzPVector *vec) {
+/**
+ * \brief Removes all elements and frees the internal buffer.
+ */
+RZ_API void rz_pvector_clear(RZ_BORROW RzPVector *vec) {
 	rz_return_if_fail(vec);
 	rz_vector_clear(&vec->v);
 }

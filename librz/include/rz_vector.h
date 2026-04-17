@@ -90,7 +90,7 @@ static inline bool rz_vector_empty(RZ_NULLABLE const RzVector *vec) {
 	return vec ? vec->len == 0 : true;
 }
 
-RZ_API void rz_vector_clear(RzVector *vec);
+RZ_API void rz_vector_clear(RZ_BORROW RzVector *vec);
 
 // returns the length of the vector
 static inline size_t rz_vector_len(RZ_NULLABLE const RzVector *vec) {
@@ -262,8 +262,7 @@ RZ_API RzPVector *rz_pvector_new(RzPVectorFree free);
 
 RZ_API RzPVector *rz_pvector_new_with_len(RzPVectorFree free, size_t length);
 
-// clear the vector and call vec->v.free on every element.
-RZ_API void rz_pvector_clear(RzPVector *vec);
+RZ_API void rz_pvector_clear(RZ_BORROW RzPVector *vec);
 
 // free the vector and call vec->v.free on every element.
 RZ_API void rz_pvector_free(RzPVector *vec);
