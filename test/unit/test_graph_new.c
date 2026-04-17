@@ -75,12 +75,17 @@ static bool test_graph_nodes(void) {
 	mu_end;
 }
 
+// TODO: Add test for removing nodes and checking that nodes_vec is never larger than n.
+
 static bool test_graph_edges(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash_base, NULL, NULL);
 
 	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1);
 	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2);
 	RzGraphNode *n3 = rz_graph_add_node(g, (ut8 *)3);
+	RzGraphNode *n4 = rz_graph_add_node(g, (ut8 *)4);
+	RzGraphNode *n5 = rz_graph_add_node(g, (ut8 *)5);
+	RzGraphNode *n6 = rz_graph_add_node(g, (ut8 *)6);
 
 	// Add edges
 	bool success = rz_graph_add_edge(g, n1, n2, NULL);

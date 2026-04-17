@@ -5,10 +5,21 @@
 
 #include <rz_util/rz_graph.h>
 #include "graph_priv.h"
+#include "rz_types.h"
+#include "rz_vector.h"
+
+/**
+ * \brief Default size of the edge vector in a list based graph implementation.
+ */
+#define LIST_IMPL_DEFAULT_EDGE_VEC_SIZE 4
+/**
+ * \brief Default size of the nodes' edge vectors in a list based graph implementation.
+ */
+#define LIST_IMPL_DEFAULT_NODE_VEC_SIZE 16
 
 typedef struct rz_graph_list_edge_impl_t {
-	HtUP /*<RzPVector<RzGraphEdge *>*/ *in_edges; ///< maps node hash_id to its incoming edge vector
-	HtUP /*<RzPVector<RzGraphEdge *>*/ *out_edges; ///< maps node hash_id to its outgoing edge vector
+	RzPVector /*<RzPVector<RzGraphEdge *>*/ *in_edges; ///< maps node hash_id to its incoming edge vector
+	RzPVector /*<RzPVector<RzGraphEdge *>*/ *out_edges; ///< maps node hash_id to its outgoing edge vector
 } RzGraphListImpl;
 
 typedef struct rz_graph_matrix_edge_impl_t {
@@ -57,7 +68,12 @@ static inline void edge_free(RzGraphEdge *e) {
  * \return A new RzPVector or NULL on failure
  */
 static inline RZ_OWN RzPVector /*<RzGraphEdge *>*/ *edge_vec_new(RzGraphEdgeDataFree edge_data_free) {
-	return rz_pvector_new(edge_data_free);
+	RzPVector *edge_vec = rz_pvector_new(edge_data_free);
+	if (!edge_vec) {
+		return NULL;
+	}
+	rz_pvector_reserve(edge_vec, LIST_IMPL_DEFAULT_EDGE_VEC_SIZE);
+	return edge_vec;
 }
 
 /**
@@ -103,16 +119,15 @@ static bool rz_graph_list_impl_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g,
 	RzGraphListImpl *impl = (RzGraphListImpl *)g->impl;
 
 	// check output edge of from exist
-	bool found = false;
-	RzPVector /*<RzGraphEdge *>*/ *out_vec = ht_up_find(impl->out_edges, from->hash_id, &found);
+	RzPVector /*<RzGraphEdge *>*/ *out_vec = rz_pvector_at(impl->out_edges, from->_vec_id);
 
 	// no output, cold boot to build output
-	if (!found) {
+	if (!out_vec) {
 		out_vec = edge_vec_new((RzGraphEdgeDataFree)edge_free);
 		if (!out_vec) {
 			return false;
 		}
-		ht_up_insert(impl->out_edges, from->hash_id, out_vec);
+		rz_pvector_assign_at(impl->out_edges, from->_vec_id, out_vec);
 	}
 
 	// search edge in graph, skip if already exist
@@ -121,13 +136,13 @@ static bool rz_graph_list_impl_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g,
 	}
 
 	// check input
-	RzPVector /*<RzGraphEdge *>*/ *in_vec = ht_up_find(impl->in_edges, to->hash_id, &found);
-	if (!found) {
+	RzPVector /*<RzGraphEdge *>*/ *in_vec = rz_pvector_at(impl->in_edges, to->_vec_id);
+	if (!in_vec) {
 		in_vec = edge_vec_new((RzGraphEdgeDataFree)edge_free);
 		if (!in_vec) {
 			return false;
 		}
-		ht_up_insert(impl->in_edges, to->hash_id, in_vec);
+		rz_pvector_assign_at(impl->in_edges, to->_vec_id, in_vec);
 	}
 
 	// build out edge and in edge, and maintain the edge table
@@ -167,9 +182,8 @@ static bool rz_graph_list_impl_del_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g,
 	RzGraphListImpl *impl = g->impl;
 
 	// remove from out edges
-	bool found = false;
-	RzPVector /*<RzGraphEdge *>*/ *out_vec = ht_up_find(impl->out_edges, from->hash_id, &found);
-	if (!found || !out_vec) {
+	RzPVector /*<RzGraphEdge *>*/ *out_vec = rz_pvector_at(impl->out_edges, from->_vec_id);
+	if (!out_vec || rz_pvector_empty(out_vec)) {
 		return false;
 	}
 	ut64 eid = edge_vec_find_eid(out_vec, from, to);
@@ -179,8 +193,8 @@ static bool rz_graph_list_impl_del_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g,
 	remove_free_edge_list(g, out_vec, eid, true);
 
 	// remove in edge
-	RzPVector /*<RzGraphEdge *>*/ *in_vec = ht_up_find(impl->in_edges, to->hash_id, &found);
-	if (found && in_vec) {
+	RzPVector /*<RzGraphEdge *>*/ *in_vec = rz_pvector_at(impl->in_edges, to->_vec_id);
+	if (in_vec) {
 		eid = edge_vec_find_eid(in_vec, from, to);
 		if (eid != -1) {
 			remove_free_edge_list(g, in_vec, eid, false);
@@ -193,36 +207,39 @@ static bool rz_graph_list_impl_del_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g,
 static bool rz_graph_list_impl_del_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data) {
 	rz_return_val_if_fail(g, false);
 	RzGraphListImpl *impl = g->impl;
-	RzIterator *iter = ht_up_as_iter(impl->in_edges);
 	size_t removed = 0;
-	RzPVector **node_in_edges;
-	rz_iterator_foreach(iter, node_in_edges) {
+	void **it;
+	rz_pvector_foreach (impl->in_edges, it) {
+		RzPVector *node_in_edges = *it;
+		if (RZ_UNLIKELY(!node_in_edges)) {
+			continue;
+		}
 		size_t i = 0;
-		while (i < rz_pvector_len(*node_in_edges)) {
-			RzGraphEdge *edge = rz_pvector_at(*node_in_edges, i);
+		while (i < rz_pvector_len(node_in_edges)) {
+			RzGraphEdge *edge = rz_pvector_at(node_in_edges, i);
 			if (cb && !cb(edge, cb_data)) {
 				++i;
 				continue;
 			}
-			remove_free_edge_list(g, *node_in_edges, i, true);
+			remove_free_edge_list(g, node_in_edges, i, true);
 			removed++;
 		}
 	}
-	rz_iterator_free(iter);
 
-	iter = ht_up_as_iter(impl->out_edges);
-	RzPVector **node_out_edges;
-	rz_iterator_foreach(iter, node_out_edges) {
+	rz_pvector_foreach (impl->out_edges, it) {
+		RzPVector *node_out_edges = *it;
+		if (RZ_UNLIKELY(!node_out_edges)) {
+			continue;
+		}
 		size_t i = 0;
-		while (i < rz_pvector_len(*node_out_edges)) {
-			if (cb && !cb(rz_pvector_at(*node_out_edges, i), cb_data)) {
+		while (i < rz_pvector_len(node_out_edges)) {
+			if (cb && !cb(rz_pvector_at(node_out_edges, i), cb_data)) {
 				++i;
 				continue;
 			}
-			remove_free_edge_list(g, *node_out_edges, i, false);
+			remove_free_edge_list(g, node_out_edges, i, false);
 		}
 	}
-	rz_iterator_free(iter);
 	g->n_edges -= removed;
 	return true;
 }
@@ -239,9 +256,8 @@ static bool rz_graph_list_impl_has_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g,
 	rz_return_val_if_fail(g && from && to, false);
 	RzGraphListImpl *impl = (RzGraphListImpl *)g->impl;
 
-	bool found = false;
-	RzPVector /*<RzGraphEdge *>*/ *out_vec = ht_up_find(impl->out_edges, from->hash_id, &found);
-	if (!found || !out_vec) {
+	RzPVector /*<RzGraphEdge *>*/ *out_vec = rz_pvector_at(impl->out_edges, from->_vec_id);
+	if (!out_vec || rz_pvector_empty(out_vec)) {
 		return false;
 	}
 
@@ -261,9 +277,8 @@ static RzGraphEdge *rz_graph_list_impl_find_edge(RzGraph /*<NodeType *, EdgeType
 	rz_return_val_if_fail(g && from && to, NULL);
 	RzGraphListImpl *impl = (RzGraphListImpl *)g->impl;
 
-	bool found = false;
-	RzPVector /*<RzGraphEdge *>*/ *out_vec = ht_up_find(impl->out_edges, from->hash_id, &found);
-	if (!found || !out_vec) {
+	RzPVector /*<RzGraphEdge *>*/ *out_vec = rz_pvector_at(impl->out_edges, from->_vec_id);
+	if (!out_vec || rz_pvector_empty(out_vec)) {
 		return NULL;
 	}
 
@@ -341,9 +356,8 @@ static RZ_OWN RzIterator *pvector_as_iter(RzPVector /*<RzGraphEdge *>*/ *vec) {
 static RZ_OWN RzIterator *rz_graph_list_impl_get_out_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
 	rz_return_val_if_fail(g, NULL);
 	RzGraphListImpl *impl = (RzGraphListImpl *)g->impl;
-	bool found = false;
-	RzPVector /*<RzGraphEdge *>*/ *out_vec = ht_up_find(impl->out_edges, node->hash_id, &found);
-	if (!found || !out_vec) {
+	RzPVector /*<RzGraphEdge *>*/ *out_vec = rz_pvector_at(impl->out_edges, node->_vec_id);
+	if (!out_vec || rz_pvector_empty(out_vec)) {
 		return NULL;
 	}
 	RzIterator *iter = pvector_as_iter(out_vec);
@@ -360,9 +374,8 @@ static RZ_OWN RzIterator *rz_graph_list_impl_get_out_edges(RzGraph /*<NodeType *
 static RZ_OWN RzIterator *rz_graph_list_impl_get_in_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
 	rz_return_val_if_fail(g, NULL);
 	RzGraphListImpl *impl = (RzGraphListImpl *)g->impl;
-	bool found = false;
-	RzPVector /*<RzGraphEdge *>*/ *in_vec = ht_up_find(impl->in_edges, node->hash_id, &found);
-	if (!found || !in_vec) {
+	RzPVector /*<RzGraphEdge *>*/ *in_vec = rz_pvector_at(impl->in_edges, node->_vec_id);
+	if (!in_vec || rz_pvector_empty(in_vec)) {
 		return NULL;
 	}
 	RzIterator *iter = pvector_as_iter(in_vec);
@@ -384,6 +397,13 @@ static inline RZ_OWN bool rz_graph_list_impl_add_node(RzGraph /*<NodeType *, Edg
 	// no explicit node in list-based
 	// all leaved to graph to manage nodes
 	// an orphan node will not have any edge in list edge table
+	RzGraphListImpl *impl = (RzGraphListImpl *)g->impl;
+	// in_edges and out_edges are kept in sync.
+	size_t max_node_capacity = rz_pvector_capacity(impl->in_edges);
+	if (rz_pvector_len(g->node_vec) > max_node_capacity) {
+		rz_pvector_reserve(impl->in_edges, max_node_capacity + LIST_IMPL_DEFAULT_NODE_VEC_SIZE);
+		rz_pvector_reserve(impl->out_edges, max_node_capacity + LIST_IMPL_DEFAULT_NODE_VEC_SIZE);
+	}
 	return true;
 }
 
@@ -404,16 +424,15 @@ static RZ_OWN bool rz_graph_list_impl_del_node(RzGraph /*<NodeType *, EdgeType *
 	RzGraphListImpl *impl = (RzGraphListImpl *)g->impl;
 
 	// remove all node -> dest
-	bool found = false;
-	RZ_BORROW RzPVector /*<RzGraphEdge *>*/ *out_vec = ht_up_find(impl->out_edges, node->hash_id, &found);
-	if (found && out_vec) {
+	RZ_BORROW RzPVector /*<RzGraphEdge *>*/ *out_vec = rz_pvector_at(impl->out_edges, node->_vec_id);
+	if (out_vec && !rz_pvector_empty(out_vec)) {
 		ut64 i = rz_pvector_len(out_vec);
 		while (i-- > 0) {
 			RzGraphEdge *node_to_dest_as_oe = (RzGraphEdge *)rz_pvector_at(out_vec, i);
 			RzGraphNode *dest_node = node_to_dest_as_oe->to;
 			// remove related neighbour (mirror) nodes' in-edges
-			RzPVector /*<RzGraphEdge *>*/ *in_edges_of_dest = ht_up_find(impl->in_edges, dest_node->hash_id, &found);
-			if (found && in_edges_of_dest) {
+			RzPVector /*<RzGraphEdge *>*/ *in_edges_of_dest = rz_pvector_at(impl->in_edges, dest_node->_vec_id);
+			if (in_edges_of_dest && !rz_pvector_empty(in_edges_of_dest)) {
 				// find id of node_to_dest_as_ie
 				ut64 eid = edge_vec_find_eid(in_edges_of_dest, node, dest_node);
 				if (eid != -1) {
@@ -435,19 +454,19 @@ static RZ_OWN bool rz_graph_list_impl_del_node(RzGraph /*<NodeType *, EdgeType *
 
 			g->n_edges -= 1;
 		}
-		ht_up_delete(impl->out_edges, node->hash_id);
+		rz_pvector_clear(out_vec);
 	}
 
 	// remove all src -> node
-	RzPVector /*<RzGraphEdge *>*/ *in_vec = ht_up_find(impl->in_edges, node->hash_id, &found);
-	if (found && in_vec) {
+	RzPVector /*<RzGraphEdge *>*/ *in_vec = rz_pvector_at(impl->in_edges, node->_vec_id);
+	if (in_vec && !rz_pvector_empty(in_vec)) {
 		ut64 i = rz_pvector_len(in_vec);
 		while (i-- > 0) {
 			RzGraphEdge *src_to_node_as_ie = (RzGraphEdge *)rz_pvector_at(in_vec, i);
 			RzGraphNode *src_node = src_to_node_as_ie->from;
 			// remove related neighbour (mirror) nodes' out-edges
-			RzPVector /*<RzGraphEdge *>*/ *out_edges_of_src = ht_up_find(impl->out_edges, src_node->hash_id, &found);
-			if (found && out_edges_of_src) {
+			RzPVector /*<RzGraphEdge *>*/ *out_edges_of_src = rz_pvector_at(impl->out_edges, src_node->_vec_id);
+			if (out_edges_of_src) {
 				// find src_to_node_as_oe in out edge vec of src node
 				ut64 eid = edge_vec_find_eid(out_edges_of_src, src_node, node);
 				if (eid != -1) {
@@ -467,7 +486,7 @@ static RZ_OWN bool rz_graph_list_impl_del_node(RzGraph /*<NodeType *, EdgeType *
 			rz_pvector_remove_at(in_vec, i);
 			g->n_edges -= 1;
 		}
-		ht_up_delete(impl->in_edges, node->hash_id);
+		rz_pvector_clear(in_vec);
 	}
 
 	return true;
@@ -486,8 +505,8 @@ static void rz_graph_list_impl_fini(void *impl) {
 	}
 
 	RzGraphListImpl *list_impl = impl;
-	ht_up_free(list_impl->out_edges);
-	ht_up_free(list_impl->in_edges);
+	rz_pvector_free(list_impl->out_edges);
+	rz_pvector_free(list_impl->in_edges);
 	free(list_impl);
 }
 
@@ -516,8 +535,11 @@ static RzGraphListImpl *rz_graph_list_impl_init(void) {
 	if (!impl) {
 		return NULL;
 	}
-	impl->out_edges = ht_up_new(NULL, edge_vec_free_cb);
-	impl->in_edges = ht_up_new(NULL, edge_vec_free_cb);
+	impl->out_edges = rz_pvector_new(edge_vec_free_cb);
+	impl->in_edges = rz_pvector_new(edge_vec_free_cb);
+	rz_pvector_reserve(impl->in_edges, LIST_IMPL_DEFAULT_NODE_VEC_SIZE);
+	rz_pvector_reserve(impl->out_edges, LIST_IMPL_DEFAULT_NODE_VEC_SIZE);
+
 	if (!impl->out_edges || !impl->in_edges) {
 		rz_graph_list_impl_fini(impl);
 		return NULL;
@@ -1052,8 +1074,11 @@ RZ_API RZ_OWN RzGraph /*<NodeType *, EdgeType *>*/ *rz_graph_new(RzGraphImplType
 	}
 
 	// reference of g->nodes, but ordered
+	g->free_vec_ids = rz_vector_new(sizeof(size_t), NULL, NULL);
 	g->node_vec = rz_pvector_new(NULL);
-	if (!g->node_vec) {
+	if (!g->node_vec || !g->free_vec_ids) {
+		rz_vector_free(g->free_vec_ids);
+		rz_pvector_free(g->node_vec);
 		ht_up_free(g->nodes);
 		free(g);
 		return NULL;
@@ -1093,6 +1118,7 @@ RZ_API RZ_OWN RzGraph /*<NodeType *, EdgeType *>*/ *rz_graph_new(RzGraphImplType
 		goto fail_clean;
 	}
 fail_clean:
+	rz_vector_free(g->free_vec_ids);
 	rz_pvector_free(g->node_vec);
 	ht_up_free(g->nodes);
 	free(g);
@@ -1166,6 +1192,10 @@ RZ_API void rz_graph_free(RZ_NULLABLE RZ_OWN RzGraph /*<NodeType *, EdgeType *>*
 		rz_pvector_free(g->node_vec);
 		g->node_vec = NULL;
 	}
+	if (g->free_vec_ids) {
+		rz_vector_free(g->free_vec_ids);
+		g->free_vec_ids = NULL;
+	}
 
 	free(g);
 }
@@ -1234,12 +1264,16 @@ RZ_API void rz_graph_reset(RzGraph /*<NodeType *, EdgeType *>*/ *g) {
 		rz_pvector_free(g->node_vec);
 		g->node_vec = NULL;
 	}
+	if (g->free_vec_ids) {
+		rz_vector_free(g->free_vec_ids);
+	}
 
 	// re-init
 	g->nodes = ht_up_new(NULL, NULL);
 	g->n_nodes = 0;
 	g->n_edges = 0;
 	g->node_vec = rz_pvector_new(NULL);
+	g->free_vec_ids = rz_vector_new(sizeof(size_t), NULL, NULL);
 
 	switch (g->impl_type) {
 	case RZ_GRAPH_IMPL_LIST:
@@ -1280,10 +1314,17 @@ static RzGraphNode *internal_add(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OWN
 	}
 
 	// push node reference into vec and update
-	node->_vec_id = rz_pvector_len(g->node_vec);
-	rz_pvector_push(g->node_vec, node);
+	if (rz_vector_len(g->free_vec_ids) > 0) {
+		rz_vector_pop_front(g->free_vec_ids, &node->_vec_id);
+		rz_pvector_assign_at(g->node_vec, node->_vec_id, node);
+	} else {
+		node->_vec_id = rz_pvector_len(g->node_vec);
+		rz_pvector_push(g->node_vec, node);
+	}
 
-	// dispatch to impl to maintain edge data structure if needed
+	// g->nodes_vec must be updated before calling the implementation specific function.
+	// The vector length is the source of maximum nodes in the graph.
+	// Implementation specifics might need it.
 	if (!g->impl_ops->add_node(g, node)) {
 		// revert if failed
 		rz_pvector_pop(g->node_vec);
@@ -1374,6 +1415,7 @@ RZ_API bool rz_graph_del_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OWN Rz
 
 	// set node reference as NULL
 	rz_pvector_set(g->node_vec, node->_vec_id, NULL);
+	rz_vector_push(g->free_vec_ids, &node->_vec_id);
 
 	// clean user data
 	if (g->node_data_free && node->data) {
@@ -1940,3 +1982,5 @@ RZ_API RZ_NULLABLE RZ_BORROW RzGraphNode *rz_graph_nth_neighbour_by_id(const RzG
 	}
 	return rz_graph_nth_neighbour(g, node, nth, out_neighbor);
 }
+
+#undef LIST_IMPL_DEFAULT_EDGE_VEC_SIZE

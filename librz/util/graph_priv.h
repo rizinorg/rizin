@@ -7,8 +7,21 @@
 #include <rz_util/rz_graph.h>
 
 struct rz_graph_node_t_new {
+	/**
+	 * \brief The unique ID of the node. Determined by hashing the node data.
+	 */
 	ut64 hash_id;
+	/**
+	 * \brief The offset into the RzGraph->node_vec.
+	 * This offset DOES NOT change after the node was created.
+	 * It is always in the range of `[0, m)` where `m` is the maximum number of nodes
+	 * the graph had at any given time.
+	 * It can be used as index in implementation specific arrays.
+	 */
 	ut64 _vec_id; // for matrix graph and DFS, by building hash_id <-> vec_id map
+	/**
+	 * \brief The node data pointer.
+	 */
 	void *data;
 };
 
@@ -41,11 +54,26 @@ struct rz_graph_impl_ops_t {
 };
 
 struct rz_graph_t_new {
+	/**
+	 * \brief Number of nodes in the graph.
+	 * ATTENTION: Never use this for iteration over nodes. Always use node_vec directly.
+	 */
 	ut64 n_nodes;
 	ut64 n_edges;
 
 	HtUP /*<hash_id, RzGraphNode *>*/ *nodes;
-	RzPVector /*<RzGraphNode *>*/ *node_vec; // Indexed by vec_id for DFS
+	/**
+	 * \brief Offsets in the node_vec which are unused (because a node was deleted before).
+	 * On node deletion it will push the freed _vec_id to the tail.
+	 * On node creation it will check the head of the vector and, if there is any, use that id.
+	 * Otherwise it will push a new node to the tail of node_vec.
+	 */
+	RzVector /*<size_t>*/ *free_vec_ids;
+	/**
+	 * \brief The vector of all graph nodes. Indexed by RzGraphNode->_vec_id.
+	 * It might contain NULL at offsets where a node was deleted.
+	 */
+	RzPVector /*<RzGraphNode *>*/ *node_vec;
 	const RzGraphImplOps *impl_ops; // graph implementation ops
 	void *impl; // graph implementation specific data
 	RzGraphImplType impl_type;
