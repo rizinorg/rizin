@@ -95,7 +95,7 @@ RZ_IPI RZ_OWN RzInquiryFunction *rz_inquiry_function_new() {
 	if (!fcn) {
 		return NULL;
 	}
-	fcn->bb_cfg = rz_inquiry_bb_cfg_new();
+	fcn->bb_cfg = rz_inquiry_bb_cfg_new(RZ_GRAPH_IMPL_LIST);
 	fcn->entry_points = rz_vector_new(sizeof(ut64), NULL, NULL);
 	if (!fcn->bb_cfg || !fcn->entry_points) {
 		rz_inquiry_function_free(fcn);
@@ -185,7 +185,7 @@ RZ_API RZ_OWN RzInquiry *rz_inquiry_new(void) {
 	iq->plugins_data = ht_sp_new(HT_STR_CONST, NULL, NULL);
 	iq->call_candidates = ht_up_new(NULL, free);
 	iq->xrefs = rz_vector_new(sizeof(RzAnalysisXRef), NULL, NULL);
-	iq->bb_cfg = rz_inquiry_bb_cfg_new();
+	iq->bb_cfg = rz_inquiry_bb_cfg_new(RZ_GRAPH_IMPL_LIST);
 	if (!iq->plugins || !iq->plugins_data || !iq->bb_cfg) {
 		ht_sp_free(iq->plugins);
 		ht_sp_free(iq->plugins_data);
@@ -883,7 +883,8 @@ static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry
 					abb->fail = rz_graph_node_get_id(n);
 				} else {
 					RZ_LOG_WARN("The basic block at 0x%" PFMT64x " has more than two outgoing edges. "
-						"Rizin can't model this currently :(\n", rz_graph_node_get_id(n));
+						    "Rizin can't model this currently :(\n",
+						rz_graph_node_get_id(n));
 					break;
 				}
 				i++;

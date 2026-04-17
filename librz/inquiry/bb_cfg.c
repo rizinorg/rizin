@@ -13,12 +13,12 @@ static ut64 hash_node(const void *data) {
 	return bb->addr;
 }
 
-RZ_IPI RZ_OWN RzInquiryBBCFG *rz_inquiry_bb_cfg_new() {
+RZ_IPI RZ_OWN RzInquiryBBCFG *rz_inquiry_bb_cfg_new(RzGraphImplType impl_type) {
 	RzInquiryBBCFG *bb_cfg = RZ_NEW0(RzInquiryBBCFG);
 	if (!bb_cfg) {
 		return NULL;
 	}
-	bb_cfg->graph = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, hash_node, free, NULL);
+	bb_cfg->graph = rz_graph_new(impl_type, hash_node, free, NULL);
 	if (!bb_cfg->graph) {
 		rz_inquiry_bb_cfg_free(bb_cfg);
 		return NULL;
