@@ -1010,7 +1010,29 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, 
 		dst = getarg(a, &gop, 0, 1, NULL, DST_AR, NULL, zydx->addr);
 		esilprintf(op, "%s,%s", src, dst);
 	} break;
-	// pushal, popal - push/pop EAX,EBX,ECX,EDX,ESP,EBP,ESI,EDI
+	// pusha - push AX, CX, DX, BX, original SP, BP, SI, and DI
+	case X86_INS_PUSHA: {
+		esilprintf(op,
+			"0,%s,+,"
+			"%" PFMT32d ",%s,-=,%s,%s,=[%" PFMT32d "],"
+			"%" PFMT32d ",%s,-=,%s,%s,=[%" PFMT32d "],"
+			"%" PFMT32d ",%s,-=,%s,%s,=[%" PFMT32d "],"
+			"%" PFMT32d ",%s,-=,%s,%s,=[%" PFMT32d "],"
+			"%" PFMT32d ",%s,-=,%s,=[%" PFMT32d "],"
+			"%" PFMT32d ",%s,-=,%s,%s,=[%" PFMT32d "],"
+			"%" PFMT32d ",%s,-=,%s,%s,=[%" PFMT32d "],"
+			"%" PFMT32d ",%s,-=,%s,%s,=[%" PFMT32d "]",
+			sp,
+			rs, sp, "ax", sp, rs,
+			rs, sp, "cx", sp, rs,
+			rs, sp, "dx", sp, rs,
+			rs, sp, "bx", sp, rs,
+			rs, sp, "sp", rs,
+			rs, sp, "bp", sp, rs,
+			rs, sp, "si", sp, rs,
+			rs, sp, "di", sp, rs);
+	} break;
+	// pushad - push EAX, ECX, EDX, EBX, original ESP, EBP, ESI, and EDI
 	case X86_INS_PUSHAD: {
 		esilprintf(op,
 			"0,%s,+,"
@@ -1047,26 +1069,45 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, 
 		esilprintf(op, "%s,%s,=,%s,[%" PFMT32d "],%s,=,%" PFMT32d ",%s,+=",
 			bp, sp, sp, rs, bp, rs, sp);
 		break;
+	// popa - pop DI, SI, BP, BX, DX, CX, and AX
+	case X86_INS_POPA: {
+		esilprintf(op,
+			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,%s,=,"
+			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,%s,=,"
+			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,%s,=,"
+			"%" PFMT32d ",%s,+=,"
+			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,%s,=,"
+			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,%s,=,"
+			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,%s,=,"
+			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,%s,=",
+			sp, rs, rs, sp, "di",
+			sp, rs, rs, sp, "si",
+			sp, rs, rs, sp, "bp",
+			rs, sp,
+			sp, rs, rs, sp, "bx",
+			sp, rs, rs, sp, "dx",
+			sp, rs, rs, sp, "cx",
+			sp, rs, rs, sp, "ax");
+	} break;
+	// popad - pop EDI, ESI, EBP, EBX, EDX, ECX, and EAX
 	case X86_INS_POPAD: {
 		esilprintf(op,
 			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,%s,=,"
 			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,%s,=,"
 			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,%s,=,"
-			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,"
+			"%" PFMT32d ",%s,+=,"
 			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,%s,=,"
 			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,%s,=,"
 			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,%s,=,"
-			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,%s,=,"
-			"%s,=",
+			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,%s,=",
 			sp, rs, rs, sp, "edi",
 			sp, rs, rs, sp, "esi",
 			sp, rs, rs, sp, "ebp",
-			sp, rs, rs, sp,
+			rs, sp,
 			sp, rs, rs, sp, "ebx",
 			sp, rs, rs, sp, "edx",
 			sp, rs, rs, sp, "ecx",
-			sp, rs, rs, sp, "eax",
-			sp);
+			sp, rs, rs, sp, "eax");
 	} break;
 	case X86_INS_POP: {
 		switch (INSOP(0).type) {
@@ -1945,7 +1986,68 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, const X86ZYDISContext 
 		val->memref = INSOP(0).size;
 		rz_list_append(ret, val);
 		break;
-	case X86_INS_PUSHAD:
+	// pusha - push AX, CX, DX, BX, original SP, BP, SI, and DI
+	case X86_INS_PUSHA: {
+		// mem info
+		val = rz_analysis_value_new();
+		val->type = RZ_ANALYSIS_VAL_MEM;
+		val->access = RZ_ANALYSIS_ACC_W;
+		val->reg = zydis_reg2reg(reg, sp);
+		val->delta = -16; // 8regs * 2B
+		val->memref = 16;
+		rz_list_append(ret, val);
+
+		// reg info
+		ZydisRegister pusha_regs[] = {
+			X86_REG_AX,
+			X86_REG_CX,
+			X86_REG_DX,
+			X86_REG_BX,
+			X86_REG_SP,
+			X86_REG_BP,
+			X86_REG_SI,
+			X86_REG_DI
+		};
+		for (int i = 0; i < 8; i++) {
+			val = rz_analysis_value_new();
+			val->type = RZ_ANALYSIS_VAL_REG;
+			val->access = RZ_ANALYSIS_ACC_R;
+			val->reg = zydis_reg2reg(reg, pusha_regs[i]);
+			rz_list_append(ret, val);
+		}
+		break;
+	}
+	// pushad - push EAX, ECX, EDX, EBX, original ESP, EBP, ESI, and EDI
+	case X86_INS_PUSHAD: {
+		// mem info
+		val = rz_analysis_value_new();
+		val->type = RZ_ANALYSIS_VAL_MEM;
+		val->access = RZ_ANALYSIS_ACC_W;
+		val->reg = zydis_reg2reg(reg, sp);
+		val->delta = -32; // 8regs * 4B
+		val->memref = 32;
+		rz_list_append(ret, val);
+
+		// reg info
+		ZydisRegister pushad_regs[] = {
+			X86_REG_EAX,
+			X86_REG_ECX,
+			X86_REG_EDX,
+			X86_REG_EBX,
+			X86_REG_ESP,
+			X86_REG_EBP,
+			X86_REG_ESI,
+			X86_REG_EDI
+		};
+		for (int i = 0; i < 8; i++) {
+			val = rz_analysis_value_new();
+			val->type = RZ_ANALYSIS_VAL_REG;
+			val->access = RZ_ANALYSIS_ACC_R;
+			val->reg = zydis_reg2reg(reg, pushad_regs[i]);
+			rz_list_append(ret, val);
+		}
+		break;
+	}
 	case X86_INS_PUSHF:
 		val = rz_analysis_value_new();
 		val->type = RZ_ANALYSIS_VAL_MEM;
@@ -1982,6 +2084,70 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, const X86ZYDISContext 
 		val->memref = regsz;
 		rz_list_append(ret, val);
 		break;
+
+	// popa - pop DI, SI, BP, BX, DX, CX, and AX
+	case X86_INS_POPA: {
+		// mem info
+		val = rz_analysis_value_new();
+		val->type = RZ_ANALYSIS_VAL_MEM;
+		val->access = RZ_ANALYSIS_ACC_R;
+		val->reg = zydis_reg2reg(reg, sp);
+		val->delta = 0;
+		val->memref = 16;
+		rz_list_append(ret, val);
+
+		// reg info
+		// the value on the stack for the SP register is ignored (intel docs)
+		ZydisRegister popa_regs[] = {
+			X86_REG_DI,
+			X86_REG_SI,
+			X86_REG_BP,
+			X86_REG_BX,
+			X86_REG_DX,
+			X86_REG_CX,
+			X86_REG_AX
+		};
+		for (int i = 0; i < 7; i++) {
+			val = rz_analysis_value_new();
+			val->type = RZ_ANALYSIS_VAL_REG;
+			val->access = RZ_ANALYSIS_ACC_W;
+			val->reg = zydis_reg2reg(reg, popa_regs[i]);
+			rz_list_append(ret, val);
+		}
+		break;
+	}
+	// popad - pop EDI, ESI, EBP, EBX, EDX, ECX, and EAX
+	case X86_INS_POPAD: {
+
+		// mem info
+		val = rz_analysis_value_new();
+		val->type = RZ_ANALYSIS_VAL_MEM;
+		val->access = RZ_ANALYSIS_ACC_R;
+		val->reg = zydis_reg2reg(reg, sp);
+		val->delta = 0;
+		val->memref = 32;
+		rz_list_append(ret, val);
+
+		// reg info
+		// the value on the stack for the ESP register is ignored (intel docs)
+		ZydisRegister popad_regs[] = {
+			X86_REG_EDI,
+			X86_REG_ESI,
+			X86_REG_EBP,
+			X86_REG_EBX,
+			X86_REG_EDX,
+			X86_REG_ECX,
+			X86_REG_EAX
+		};
+		for (int i = 0; i < 7; i++) {
+			val = rz_analysis_value_new();
+			val->type = RZ_ANALYSIS_VAL_REG;
+			val->access = RZ_ANALYSIS_ACC_W;
+			val->reg = zydis_reg2reg(reg, popad_regs[i]);
+			rz_list_append(ret, val);
+		}
+		break;
+	}
 	default:
 		break;
 	}
@@ -2611,8 +2777,6 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, X86ZY
 			break;
 		}
 		break;
-	// pushal, popal - push/pop EAX,EBX,ECX,EDX,ESP,EBP,ESI,EDI
-	case X86_INS_PUSHAD:
 	case X86_INS_ENTER:
 	case X86_INS_PUSH:
 	case X86_INS_PUSHF:
@@ -2645,6 +2809,15 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, X86ZY
 		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = regsz;
 		break;
+	// pusha - push AX, CX, DX, BX, original SP, BP, SI, and DI
+	// pushad - push EAX, ECX, EDX, EBX, original ESP, EBP, ESI, and EDI
+	case X86_INS_PUSHA:
+	case X86_INS_PUSHAD:
+		op->ptr = UT64_MAX;
+		op->type = RZ_ANALYSIS_OP_TYPE_RPUSH;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
+		op->stackptr = regsz * 8;
+		break;
 	case X86_INS_LEAVE:
 		op->type = RZ_ANALYSIS_OP_TYPE_POP;
 		// leave is mov rsp, rbp; pop rbp
@@ -2660,7 +2833,15 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, X86ZY
 		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = -regsz;
 		break;
+	// popa - pop DI, SI, BP, BX, DX, CX, and AX
+	// popad - pop EDI, ESI, EBP, EBX, EDX, ECX, and EAX
+	case X86_INS_POPA:
 	case X86_INS_POPAD:
+		op->ptr = UT64_MAX;
+		op->type = RZ_ANALYSIS_OP_TYPE_POP;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
+		op->stackptr = -regsz * 8;
+		break;
 	case X86_INS_IRET:
 	case X86_INS_IRETD:
 	case X86_INS_IRETQ:
