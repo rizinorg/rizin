@@ -186,6 +186,14 @@ RZ_API void *rz_vector_flush(RzVector *vec);
 // sort vector
 RZ_API void rz_vector_sort(RzVector *vec, RzVectorComparator cmp, bool reverse, void *user);
 
+/**
+ * \brief Return the capacity of the vector.
+ */
+static inline size_t rz_vector_capacity(RzVector *vec) {
+	rz_return_val_if_fail(vec, 0);
+	return vec->capacity;
+}
+
 /*
  * example:
  *
@@ -279,6 +287,13 @@ static inline void *rz_pvector_at(const RzPVector *vec, size_t index) {
 		return NULL;
 	}
 	return ((void **)vec->v.a)[index];
+}
+
+/**
+ * \brief Return the capacity of the pvector.
+ */
+static inline size_t rz_pvector_capacity(RzPVector *vec) {
+	return rz_vector_capacity(&vec->v);
 }
 
 static inline void rz_pvector_set(RzPVector *vec, size_t index, void *e) {

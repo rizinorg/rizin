@@ -817,18 +817,18 @@ static bool test_vector_reserve(void) {
 	rz_vector_init(&v, 4, NULL, NULL);
 
 	rz_vector_reserve(&v, 42);
-	mu_assert_eq(v.capacity, 42UL, "rz_vector_reserve (empty) => capacity");
+	mu_assert_eq(rz_vector_capacity(&v), 42UL, "rz_vector_reserve (empty) => capacity");
 	mu_assert("rz_vector_reserve (empty) => a", v.a);
 	size_t i;
-	for (i = 0; i < v.capacity; i++) {
+	for (i = 0; i < rz_vector_capacity(&v); i++) {
 		*((ut32 *)rz_vector_index_ptr(&v, i)) = 1337;
 	}
 	v.len = 20;
 
 	rz_vector_reserve(&v, 100);
-	mu_assert_eq(v.capacity, 100UL, "rz_vector_reserve => capacity");
+	mu_assert_eq(rz_vector_capacity(&v), 100UL, "rz_vector_reserve => capacity");
 	mu_assert("rz_vector_reserve => a", v.a);
-	for (i = 0; i < v.capacity; i++) {
+	for (i = 0; i < rz_vector_capacity(&v); i++) {
 		*((ut32 *)rz_vector_index_ptr(&v, i)) = 1337;
 	}
 
@@ -843,14 +843,14 @@ static bool test_vector_shrink(void) {
 	void *a = rz_vector_shrink(&v);
 	mu_assert_ptreq(a, v.a, "rz_vector_shrink ret");
 	mu_assert_eq(v.len, 5UL, "rz_vector_shrink => len");
-	mu_assert_eq(v.capacity, 5UL, "rz_vector_shrink => capacity");
+	mu_assert_eq(rz_vector_capacity(&v), 5UL, "rz_vector_shrink => capacity");
 	rz_vector_fini(&v);
 
 	init_test_vector(&v, 5, 0, NULL, NULL);
 	a = rz_vector_shrink(&v);
 	mu_assert_ptreq(a, v.a, "rz_vector_shrink (already minimal) ret");
 	mu_assert_eq(v.len, 5UL, "rz_vector_shrink (already minimal) => len");
-	mu_assert_eq(v.capacity, 5UL, "rz_vector_shrink (already minimal) => capacity");
+	mu_assert_eq(rz_vector_capacity(&v), 5UL, "rz_vector_shrink (already minimal) => capacity");
 	rz_vector_fini(&v);
 
 	init_test_vector(&v, 0, 8, NULL, NULL);
@@ -975,7 +975,7 @@ static bool test_pvector_init(void) {
 	mu_assert_eq(v.v.elem_size, sizeof(void *), "elem_size");
 	mu_assert_eq(v.v.len, 0UL, "len");
 	mu_assert_null(v.v.a, "a");
-	mu_assert_eq(v.v.capacity, 0UL, "capacity");
+	mu_assert_eq(rz_pvector_capacity(&v), 0UL, "capacity");
 	mu_assert_eq((size_t)v.v.free_user, 1337, "free");
 	mu_end;
 }
@@ -997,11 +997,11 @@ static bool test_pvector_clear(void) {
 	init_test_pvector(&v, 5, 5);
 	mu_assert_eq(v.v.len, 5UL, "initial len");
 	mu_assert("initial a", v.v.a);
-	mu_assert_eq(v.v.capacity, 10UL, "initial capacity");
+	mu_assert_eq(rz_pvector_capacity(&v), 10UL, "initial capacity");
 	rz_pvector_clear(&v);
 	mu_assert_eq(v.v.len, 0UL, "len");
 	mu_assert_null(v.v.a, "a");
-	mu_assert_eq(v.v.capacity, 0UL, "capacity");
+	mu_assert_eq(rz_pvector_capacity(&v), 0UL, "capacity");
 	mu_end;
 }
 
@@ -1154,7 +1154,7 @@ static bool test_pvector_insert(void) {
 	init_test_pvector2(&v, 4, 0);
 	e = (void *)1337;
 	e = *rz_pvector_insert(&v, 1, e);
-	mu_assert("insert (resize) => capacity", v.v.capacity >= 5);
+	mu_assert("insert (resize) => capacity", rz_pvector_capacity(&v) >= 5);
 	mu_assert_eq(v.v.len, 5UL, "insert (resize) => len");
 	mu_assert_eq((size_t)e, 1337, "insert (resize) => content at returned ptr");
 	mu_assert_null(*((void **)rz_vector_index_ptr(&v.v, 0)), "insert (resize) => old content");
@@ -1179,7 +1179,7 @@ static bool test_pvector_insert(void) {
 	init_test_pvector2(&v, 4, 2);
 	e = (void *)1337;
 	e = *rz_pvector_insert(&v, 4, e);
-	mu_assert("rz_vector_insert (resize, resize) => capacity", v.v.capacity >= 5);
+	mu_assert("rz_vector_insert (resize, resize) => capacity", rz_pvector_capacity(&v) >= 5);
 	mu_assert_eq(v.v.len, 5UL, "rz_vector_insert (end, resize) => len");
 	mu_assert_eq((size_t)e, 1337, "rz_vector_insert (end, resize) => content at returned ptr");
 	mu_assert_null(*((void **)rz_vector_index_ptr(&v.v, 0)), "rz_vector_insert (end, resize) => old content");
@@ -1329,7 +1329,7 @@ static bool test_pvector_push(void) {
 	init_test_pvector2(&v, 5, 0);
 	e = (void *)1337;
 	e = *rz_pvector_push(&v, e);
-	mu_assert("push (resize) => capacity", v.v.capacity >= 6);
+	mu_assert("push (resize) => capacity", rz_pvector_capacity(&v) >= 6);
 	mu_assert_eq(v.v.len, 6UL, "push (resize) => len");
 	mu_assert_eq((size_t)e, 1337, "push (empty) => content at returned ptr");
 
@@ -1382,7 +1382,7 @@ static bool test_pvector_push_front(void) {
 	init_test_pvector2(&v, 5, 0);
 	e = (void *)1337;
 	e = *rz_pvector_push_front(&v, e);
-	mu_assert("push_front (resize) => capacity", v.v.capacity >= 6);
+	mu_assert("push_front (resize) => capacity", rz_pvector_capacity(&v) >= 6);
 	mu_assert_eq(v.v.len, 6UL, "push_front (resize) => len");
 	mu_assert_eq((size_t)e, 1337, "push_front (empty) => content at returned ptr");
 
