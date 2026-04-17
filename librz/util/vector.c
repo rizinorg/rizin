@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2017-2020 thestr4ng3r <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_util/rz_assert.h"
 #include "rz_vector.h"
 
 // Optimize memory usage on glibc
@@ -81,6 +82,19 @@ RZ_API void rz_vector_free(RzVector *vec) {
 		rz_vector_fini(vec);
 		free(vec);
 	}
+}
+
+static void rz_vector_assign(RzVector *vec, void *p, const void *elem) {
+	rz_return_if_fail(vec && p && elem);
+	memcpy(p, elem, vec->elem_size);
+}
+
+/**
+ * \brief Set \p n elements, starting at element \p i to \p c.
+ */
+static void rz_vector_memset(RzVector *vec, size_t i, size_t n, ut8 c) {
+	rz_return_if_fail(vec);
+	memset(vec->a + (vec->elem_size * i), c, vec->elem_size * n);
 }
 
 /**
@@ -175,15 +189,32 @@ RZ_API RZ_OWN RzVector *rz_vector_clone(
 	return dst;
 }
 
-RZ_API void rz_vector_assign(RzVector *vec, void *p, void *elem) {
-	rz_return_if_fail(vec && p && elem);
-	memcpy(p, elem, vec->elem_size);
-}
-
-RZ_API void *rz_vector_assign_at(RzVector *vec, size_t index, void *elem) {
+/**
+ * \brief Assign the element \p elem at \p index in the vector.
+ *
+ * NOTE: This function can update the length of the vector. If the index
+ * points after the last element, but not beyond the vector's capacity, it
+ * sets the vector length to \p index + 1. Elements at [len, index) are set to zero.
+ * Use rz_vector_set() if you need sideeffect-less manipulation of the vector slots.
+ *
+ * \param vec The vector to assign to.
+ * \param index The index to assign the element to.
+ * \param elem Pointer to the element to assign. If NULL, only the vector length is updated under the above condition.
+ *
+ * \return Pointer to the element at \p index. Or NULL in case of failure.
+ */
+RZ_API void *rz_vector_assign_at(RZ_BORROW RzVector *vec, size_t index, RZ_NULLABLE const void *elem) {
+	rz_return_val_if_fail(vec && index < vec->capacity, NULL);
 	void *p = rz_vector_index_ptr(vec, index);
 	if (elem) {
 		rz_vector_assign(vec, p, elem);
+	}
+	if (index >= rz_vector_len(vec)) {
+		size_t len = rz_vector_len(vec);
+		// Also zero the slot at index, if no element is assigned to it.
+		size_t n = index - len + (!elem ? 1 : 0);
+		rz_vector_memset(vec, len, n, 0);
+		vec->len = index + 1;
 	}
 	return p;
 }
@@ -633,26 +664,32 @@ RZ_API bool rz_pvector_join(RZ_NONNULL RzPVector *pvec1, RZ_NONNULL RzPVector *p
 }
 
 /**
- * \brief Assign the pointer \p ptr at \p index in the pvector.
+ * \brief Assign the pointer \p ptr at \p index into the pvector.
+ *
+ * NOTE: This function can update the length of the vector. If the index
+ * points after the last element, but not beyond the vector's capacity, it
+ * sets the vector length to \p index + 1. Elements at [len, index) are set to zero.
+ * Use rz_pvector_set() if you need sideeffect-less manipulation of the vector slots.
  *
  * \param vec The pvector to assign to.
  * \param index The index to assign the pointer to.
  * \param ptr The pointer to assign.
  *
- * \return The pointer stored at \p index before. Or NULL in case of failure.
+ * \return The pointer stored at \p index before. NULL if index >= vec->len or in case of failure.
  */
-RZ_API void *rz_pvector_assign_at(RZ_BORROW RZ_NONNULL RzPVector *vec, size_t index, RZ_OWN RZ_NONNULL void *ptr) {
-	rz_return_val_if_fail(vec && ptr, NULL);
-	void **p = rz_vector_index_ptr(&vec->v, index);
-	if (!p) {
-		if (vec->v.free_user) {
+RZ_API void *rz_pvector_assign_at(RZ_BORROW RZ_NONNULL RzPVector *vec, size_t index, RZ_OWN RZ_NULLABLE void *ptr) {
+	rz_return_val_if_fail(vec, NULL);
+	if (index >= rz_pvector_capacity(vec)) {
+		if (vec->v.free_user && ptr) {
 			RzPVectorFree free_fn = (RzPVectorFree)vec->v.free_user;
 			free_fn(ptr);
 		}
 		return NULL;
 	}
-	void *prev = *p;
-	rz_vector_assign_at(&vec->v, index, ptr);
+	bool increased_len = index >= rz_pvector_len(vec);
+	void **p = rz_vector_index_ptr(&vec->v, index);
+	void *prev = !p || increased_len ? NULL : *p;
+	rz_vector_assign_at(&vec->v, index, &ptr);
 	return prev;
 }
 

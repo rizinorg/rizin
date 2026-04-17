@@ -1107,7 +1107,7 @@ static bool test_pvector_assign_at(void) {
 	init_test_pvector(&v, 5, 0);
 	ut32 *x = malloc(sizeof(ut32));
 	*x = 123467890;
-	ut32 *e = rz_pvector_assign_at(&v, 3, &x);
+	ut32 *e = rz_pvector_assign_at(&v, 3, x);
 	mu_assert_eq(*e, 3, "assign_at ret");
 	free(e);
 	mu_assert_eq(v.v.len, 5UL, "assign_at => len");
@@ -1116,6 +1116,32 @@ static bool test_pvector_assign_at(void) {
 	mu_assert_eq(*((ut32 **)v.v.a)[2], 2, "assign_at => content at 2");
 	mu_assert_eq(*((ut32 **)v.v.a)[3], 123467890, "assign_at => content at 3");
 	mu_assert_eq(*((ut32 **)v.v.a)[4], 4, "assign_at => content at 4");
+
+	x = malloc(sizeof(ut32));
+	e = rz_pvector_assign_at(&v, 5, x);
+	mu_assert_null(e, "Was not NULL");
+
+	rz_pvector_reserve(&v, 10);
+	mu_assert_eq(rz_pvector_capacity(&v), 10, "Reserve failed");
+	// Test lengthening the vector.
+	rz_pvector_assign_at(&v, 6, NULL);
+	mu_assert_eq(rz_pvector_len(&v), 7, "Length was not updated.");
+
+	ut32 *zeroed[1] = { 0 };
+	mu_assert_memeq(v.v.a + sizeof(ut32 *) * 5, (ut8 *)zeroed, sizeof(ut32 *), "Memory was not zeroed");
+	// If this line fails on a machine, it might be because NULL != 0 on it.
+	mu_assert_memeq(v.v.a + sizeof(ut32 *) * 6, (ut8 *)zeroed, sizeof(ut32 *), "Memory was not zeroed");
+
+	x = malloc(sizeof(ut32));
+	*x = 9;
+	e = rz_pvector_assign_at(&v, 9, x);
+	mu_assert_null(e, "No element at this index before, should be NULL.");
+	mu_assert_eq(rz_pvector_len(&v), 10, "Length was not updated.");
+	mu_assert_eq(*((ut32 **)v.v.a)[9], 9, "Value was not set.");
+
+	mu_assert_memeq(v.v.a + sizeof(ut32 *) * 7, (ut8 *)zeroed, sizeof(ut32 *), "Memory was not zeroed");
+	mu_assert_memeq(v.v.a + sizeof(ut32 *) * 8, (ut8 *)zeroed, sizeof(ut32 *), "Memory was not zeroed");
+
 	rz_pvector_clear(&v);
 	mu_end;
 }
