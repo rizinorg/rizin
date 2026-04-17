@@ -66,13 +66,13 @@
 #define ALPHA_PR_STATUS_REG_OFFSET_SP 240
 // linux/arch/parisc/include/uapi/asm/ptrace.h: user_regs_struct (80 unsigned longs * 4 = 320 bytes)
 // arch/parisc/include/asm/ptrace.h: sp = gr[30]
-#define HPPA32_REGS_SIZE 320
-#define HPPA32_PR_STATUS_REG_OFFSET 0x48
+#define HPPA32_REGS_SIZE               320
+#define HPPA32_PR_STATUS_REG_OFFSET    0x48
 #define HPPA32_PR_STATUS_REG_OFFSET_SP 120
 
 // linux/arch/parisc/include/uapi/asm/ptrace.h: user_regs_struct (80 unsigned longs * 8 = 640 bytes)
-#define HPPA64_REGS_SIZE 640
-#define HPPA64_PR_STATUS_REG_OFFSET 0x70
+#define HPPA64_REGS_SIZE               640
+#define HPPA64_PR_STATUS_REG_OFFSET    0x70
 #define HPPA64_PR_STATUS_REG_OFFSET_SP 240
 
 // The ones for Linux coredumps.
