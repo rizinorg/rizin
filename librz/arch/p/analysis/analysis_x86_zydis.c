@@ -469,7 +469,10 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, 
 	case X86_INS_FXCH:
 		break;
 	case X86_INS_FTST:
+	case X86_INS_FCOMI:
+	case X86_INS_FCOMIP:
 	case X86_INS_FUCOMI:
+	case X86_INS_FUCOMIP:
 	case X86_INS_FUCOMPP:
 	case X86_INS_FUCOMP:
 	case X86_INS_FUCOM:
@@ -2418,6 +2421,9 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, X86ZY
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		break;
 	case X86_INS_FTST:
+	case X86_INS_FCOMIP:
+	case X86_INS_FUCOMIP:
+	case X86_INS_FCOMI:
 	case X86_INS_FUCOMI:
 	case X86_INS_FUCOMPP:
 	case X86_INS_FUCOMP:

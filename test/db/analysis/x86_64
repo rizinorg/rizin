@@ -4420,6 +4420,7 @@ EXPECT=<<EOF
 |           0x001b9b32      push  r14
 EOF
 RUN
+
 NAME=global variables populated from ELF OBJ symbols without DWARF
 FILE=bins/elf/dectest64
 CMDS=<<EOF
@@ -4430,5 +4431,108 @@ EOF
 EXPECT=<<EOF
 global uint8_t [4] global_var @ 0x404050
 global uint8_t [8] global_array @ 0x404058
+EOF
+RUN
+
+NAME=fcomip and fucomip analysis and rzil
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+wx dff1
+ao
+echo "============================================================"
+wx dff2
+ao
+echo "============================================================"
+wx dfea
+ao
+EOF
+EXPECT=<<EOF
+address: 0x0
+opcode: fcomip st0, st1
+disasm: fcomip st0, st1
+pseudo: fcomip st0,st1 
+mnemonic: fcomip
+description: compare floating point values and set eflags and pop
+mask: ffff
+prefix: 0
+id: 188
+bytes: dff1
+refptr: 0
+size: 2
+sign: false
+type: cmp
+cycles: 1
+rzil: (seq (set swd (| (<< (ite false (bv 16 0x1) (bv 16 0x0)) (bv 8 0x9) false) (& (bv 16 0xfdff) (var swd)))) (set zf (! (|| (|| (is_nan (float 2 (var st0) )) (is_nan (float 2 (var st1) ))) (|| (<. (float 2 (var st0) ) (float 2 (var st1) )) (<. (float 2 (var st1) ) (float 2 (var st0) )))))) (set pf false) (set cf (&& (! (|| (is_nan (float 2 (var st0) )) (is_nan (float 2 (var st1) )))) (<. (float 2 (var st0) ) (float 2 (var st1) )))) (set swd (| (<< (cast 16 false (+ (cast 3 false (>> (var swd) (bv 8 0xb) false)) (bv 3 0x1))) (bv 8 0xb) false) (& (bv 16 0xc7ff) (var swd)))) (set st0 (fbits (float 2 (var st1) ))) (set st1 (fbits (float 2 (var st2) ))) (set st2 (fbits (float 2 (var st3) ))) (set st3 (fbits (float 2 (var st4) ))) (set st4 (fbits (float 2 (var st5) ))) (set st5 (fbits (float 2 (var st6) ))) (set st6 (fbits (float 2 (var st7) ))) (set swd (| (<< (ite (== (cast 3 false (>> (var swd) (bv 8 0xb) false)) (bv 3 0x0)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x9) false) (& (bv 16 0xfdff) (var swd)))))
+opex:
+  operands:
+    - type: "reg"
+      value: "st0"
+      read: true
+      nbits: 80
+    - type: "reg"
+      value: "st1"
+      read: true
+      nbits: 80
+  modrm: true
+family: fpu
+============================================================
+address: 0x0
+opcode: fcomip st0, st2
+disasm: fcomip st0, st2
+pseudo: fcomip st0,st2 
+mnemonic: fcomip
+description: compare floating point values and set eflags and pop
+mask: ffff
+prefix: 0
+id: 188
+bytes: dff2
+refptr: 0
+size: 2
+sign: false
+type: cmp
+cycles: 1
+rzil: (seq (set swd (| (<< (ite false (bv 16 0x1) (bv 16 0x0)) (bv 8 0x9) false) (& (bv 16 0xfdff) (var swd)))) (set zf (! (|| (|| (is_nan (float 2 (var st0) )) (is_nan (float 2 (var st2) ))) (|| (<. (float 2 (var st0) ) (float 2 (var st2) )) (<. (float 2 (var st2) ) (float 2 (var st0) )))))) (set pf false) (set cf (&& (! (|| (is_nan (float 2 (var st0) )) (is_nan (float 2 (var st2) )))) (<. (float 2 (var st0) ) (float 2 (var st2) )))) (set swd (| (<< (cast 16 false (+ (cast 3 false (>> (var swd) (bv 8 0xb) false)) (bv 3 0x1))) (bv 8 0xb) false) (& (bv 16 0xc7ff) (var swd)))) (set st0 (fbits (float 2 (var st1) ))) (set st1 (fbits (float 2 (var st2) ))) (set st2 (fbits (float 2 (var st3) ))) (set st3 (fbits (float 2 (var st4) ))) (set st4 (fbits (float 2 (var st5) ))) (set st5 (fbits (float 2 (var st6) ))) (set st6 (fbits (float 2 (var st7) ))) (set swd (| (<< (ite (== (cast 3 false (>> (var swd) (bv 8 0xb) false)) (bv 3 0x0)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x9) false) (& (bv 16 0xfdff) (var swd)))))
+opex:
+  operands:
+    - type: "reg"
+      value: "st0"
+      read: true
+      nbits: 80
+    - type: "reg"
+      value: "st2"
+      read: true
+      nbits: 80
+  modrm: true
+family: fpu
+============================================================
+address: 0x0
+opcode: fucomip st0, st2
+disasm: fucomip st0, st2
+pseudo: fucomip st0,st2 
+mnemonic: fucomip
+description: unordered compare floating point values and set eflags and pop
+mask: ffff
+prefix: 0
+id: 255
+bytes: dfea
+refptr: 0
+size: 2
+sign: false
+type: cmp
+cycles: 1
+rzil: (seq (set swd (| (<< (ite false (bv 16 0x1) (bv 16 0x0)) (bv 8 0x9) false) (& (bv 16 0xfdff) (var swd)))) (set zf (! (|| (|| (is_nan (float 2 (var st0) )) (is_nan (float 2 (var st2) ))) (|| (<. (float 2 (var st0) ) (float 2 (var st2) )) (<. (float 2 (var st2) ) (float 2 (var st0) )))))) (set pf false) (set cf (&& (! (|| (is_nan (float 2 (var st0) )) (is_nan (float 2 (var st2) )))) (<. (float 2 (var st0) ) (float 2 (var st2) )))) (set swd (| (<< (cast 16 false (+ (cast 3 false (>> (var swd) (bv 8 0xb) false)) (bv 3 0x1))) (bv 8 0xb) false) (& (bv 16 0xc7ff) (var swd)))) (set st0 (fbits (float 2 (var st1) ))) (set st1 (fbits (float 2 (var st2) ))) (set st2 (fbits (float 2 (var st3) ))) (set st3 (fbits (float 2 (var st4) ))) (set st4 (fbits (float 2 (var st5) ))) (set st5 (fbits (float 2 (var st6) ))) (set st6 (fbits (float 2 (var st7) ))) (set swd (| (<< (ite (== (cast 3 false (>> (var swd) (bv 8 0xb) false)) (bv 3 0x0)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x9) false) (& (bv 16 0xfdff) (var swd)))))
+opex:
+  operands:
+    - type: "reg"
+      value: "st0"
+      read: true
+      nbits: 80
+    - type: "reg"
+      value: "st2"
+      read: true
+      nbits: 80
+  modrm: true
+family: fpu
 EOF
 RUN

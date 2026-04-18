@@ -625,7 +625,15 @@ IL_LIFTER(ficomp) {
 
 RzILOpEffect *fcomi_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *st0 = x86_il_get_st_reg(X86_REG_ST0);
-	RzILOpPure *sti = x86_il_get_floating_op(0);
+	RzILOpPure *sti;
+
+	if (ins->structure->operand_count_visible == 2) {
+		sti = x86_il_get_floating_op(1);
+	} else if (ins->structure->operand_count_visible == 1) {
+		sti = x86_il_get_floating_op(0);
+	} else {
+		sti = x86_il_get_st_reg(X86_REG_ST1);
+	}
 
 	// TODO: Set the ZF, PF, CF depending on invalid arithmetic operand exception (#IA).
 	return SEQ4(
@@ -641,6 +649,14 @@ RzILOpEffect *fcomi_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
  */
 IL_LIFTER(fcomi) {
 	return fcomi_helper(ins, pc, analysis);
+}
+
+/**
+ * FCOMIP
+ * Compare ST(0) with ST(i), set status flags accordingly, and pop register stack.
+ */
+IL_LIFTER(fcomip) {
+	return SEQ2(fcomi_helper(ins, pc, analysis), x86_il_st_pop());
 }
 
 /**
