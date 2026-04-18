@@ -1617,6 +1617,7 @@ IL_LIFTER(popa) {
 	pop = SEQ2(pop, SEQ2(x86_il_set_reg(X86_REG_BP, pop_bp.val), pop_bp.eff));
 
 	PopHelper pop_sp = x86_pop_helper(2);
+	rz_il_op_pure_free(pop_sp.val);
 	pop = SEQ2(pop, pop_sp.eff);
 
 	PopHelper pop_bx = x86_pop_helper(2);
@@ -1656,6 +1657,7 @@ IL_LIFTER(popad) {
 	pop = SEQ2(pop, SEQ2(x86_il_set_reg(X86_REG_EBP, pop_ebp.val), pop_ebp.eff));
 
 	PopHelper pop_esp = x86_pop_helper(4);
+	rz_il_op_pure_free(pop_esp.val);
 	pop = SEQ2(pop, pop_esp.eff);
 
 	PopHelper pop_ebx = x86_pop_helper(4);
