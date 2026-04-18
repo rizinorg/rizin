@@ -1163,6 +1163,12 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 			} else {
 				RZ_LOG_INFO("Setting up coredump: Registers have been set\n");
 			}
+			if (!RZ_STR_ISEMPTY(rreg->reg_profile_str)) {
+				rz_reg_set_profile_string(r->dbg->reg, rreg->reg_profile_str);
+				if (rz_reg_arena_set_bytes(r->dbg->reg, binfile->o->regstate)) {
+					RZ_LOG_WARN("Setting up coredump: Problem while setting debug registers\n");
+				}
+			}
 		}
 	}
 	return true;
