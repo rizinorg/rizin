@@ -489,6 +489,72 @@ static void core_colorify_il_statement_unicode(RzConsContext *ctx, const char *i
 	rz_cons_newline();
 }
 
+RZ_API void rz_core_il_print_rzil(RZ_NONNULL RzCore *core, RZ_NONNULL RzPVector *vec, bool pretty, bool unicode, bool colorize) {
+	RzAnalysisFunction *f = rz_analysis_first_function_in(core->analysis, core->offset);
+	rz_return_if_fail(f);
+	RzIterator *iter = rz_core_analysis_op_function_iter(core, f, RZ_ANALYSIS_OP_MASK_IL);
+	rz_return_if_fail(core && iter);
+	const char *il_stmt = NULL;
+	const char delim = pretty ? '\n' : ' ';
+	RzStrBuf sb;
+
+	RzAnalysisILVM *vm = rz_analysis_il_vm_new(core->analysis, NULL);
+	RzILValidateGlobalContext *ctx = vm ? rz_il_validate_global_context_new_from_vm(vm->vm)
+					    : NULL;
+
+	RzAnalysisOp *op = NULL;
+	rz_iterator_foreach(iter, op) {
+		RzAnalysisDisasmText *dst = RZ_NEW0(RzAnalysisDisasmText);
+		if (!op->il_op) {
+			RZ_LOG_DEBUG("Empty IL at 0x%08" PFMT64x "...\n", op->addr);
+			break;
+		}
+
+		rz_strbuf_init(&sb);
+		if (unicode) {
+			const int addr_len = snprintf(NULL, 0, "0x%" PFMT64x, op->addr);
+			RzILStringifyCtx ctx = { .indent = addr_len + 1, .indent_inc = 2 };
+			if (!rz_il_op_effect_stringify_unicode(&ctx, op->il_op, &sb)) {
+				RZ_LOG_ERROR("Failed to stringify IL at 0x%08" PFMT64x "\n", op->addr);
+				rz_strbuf_fini(&sb);
+				break;
+			}
+		} else {
+			rz_il_op_effect_stringify(op->il_op, &sb, pretty);
+		}
+
+		il_stmt = rz_strbuf_get(&sb);
+		if (colorize) {
+			if (unicode) {
+				core_colorify_il_statement_unicode(core->cons->context, il_stmt, delim, op->addr);
+			} else {
+				core_colorify_il_statement(core->cons->context, il_stmt, delim, op->addr);
+			}
+		} else {
+			rz_cons_printf("0x%" PFMT64x "%c%s\n", op->addr, delim, il_stmt);
+		}
+
+		if (ctx) {
+			RzILTypeEffect t;
+			char *report;
+			rz_il_validate_effect(op->il_op, ctx, NULL, &t, &report);
+			if (report) {
+				rz_cons_println(report);
+				free(report);
+			}
+		}
+		dst->offset = op->addr;
+		dst->arrow = UT64_MAX;
+		dst->text = rz_str_dup(rz_cons_get_buffer());
+		rz_pvector_push(vec, dst);
+		rz_cons_reset();
+		rz_strbuf_fini(&sb);
+	}
+	rz_analysis_il_vm_free(vm);
+	rz_il_validate_global_context_free(ctx);
+	rz_iterator_free(iter);
+}
+
 RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzIterator *iter, bool pretty, bool unicode) {
 	rz_return_if_fail(core && iter);
 	bool colorize = rz_config_get_i(core->config, "scr.color") > 0;

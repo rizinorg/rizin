@@ -965,6 +965,8 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_bwdisassemble(RzCore *core, ut64
 RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble_instr(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble_byte(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 RZ_API ut32 rz_core_asm_bwdis_len(RzCore *core, int *len, ut64 *start_addr, ut32 l);
+RZ_API void rz_core_il_print_rzil(RZ_NONNULL RzCore *core, RZ_NONNULL RzPVector *vec, bool pretty, bool unicode, bool colorize);
+
 RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL ut8 *buf, int len, int nlines, RZ_NULLABLE RzCmdStateOutput *state, RZ_NULLABLE RzCoreDisasmOptions *options);
 RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int len, int lines, PJ *pj);
 RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address, ut8 *buf, int nb_bytes, int nb_opcodes);
