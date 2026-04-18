@@ -3960,9 +3960,13 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 		return;
 	}
 	const int opType = ds->analysis_op.type & RZ_ANALYSIS_OP_TYPE_MASK;
-	bool canHaveChar = opType == RZ_ANALYSIS_OP_TYPE_MOV;
-	if (!canHaveChar) {
-		canHaveChar = opType == RZ_ANALYSIS_OP_TYPE_PUSH;
+	bool canHaveChar = false;
+	switch (opType) {
+	case RZ_ANALYSIS_OP_TYPE_PUSH:
+	case RZ_ANALYSIS_OP_TYPE_MOV:
+	case RZ_ANALYSIS_OP_TYPE_CMP:
+		canHaveChar = true;
+		break;
 	}
 
 	ds->chref = 0;
