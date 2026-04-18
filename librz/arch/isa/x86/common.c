@@ -686,7 +686,7 @@ RZ_IPI RzILOpPure *x86_il_get_memaddr_segment_bits(X86Mem mem, X86Reg segment, i
 	}
 
 	/* Segmentation not present in x86-64 */
-	if (bits != 64 && segment != X86_REG_NONE) {
+	if (bits == 16 && segment != X86_REG_NONE) {
 		// TODO: Implement segmentation
 		/* Currently the segmentation is only implemented for real mode
 		 Address = Segment * 0x10 + Offset */
