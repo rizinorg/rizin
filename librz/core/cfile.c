@@ -1026,7 +1026,6 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 	if (cf && binfile && desc) {
 		binfile->fd = desc->fd;
 	}
-	// rz_core_bin_apply_all_info (r, binfile);
 	plugin = rz_bin_file_cur_plugin(binfile);
 	if (plugin) {
 		if (plugin->strfilter) {
@@ -1074,7 +1073,7 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 			}
 		}
 	} else {
-		if (desc) {
+		if (desc && (!binfile || !binfile->curxtr)) {
 			rz_io_map_new(r->io, desc->fd, desc->perm, 0, laddr, rz_io_desc_size(desc));
 		}
 		if (binfile) {
