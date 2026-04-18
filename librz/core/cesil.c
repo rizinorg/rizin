@@ -1174,9 +1174,11 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 					rz_list_push(ctx->switch_path, bb->switch_op->cases->head);
 				}
 			} else {
-				bbit = rz_list_find(ctx->bbl, &bb->jump, (RzListComparator)find_bb, NULL);
-				if (!bbit && bb->fail != UT64_MAX) {
-					bbit = rz_list_find(ctx->bbl, &bb->fail, (RzListComparator)find_bb, NULL);
+				ut64 jump = rz_analysis_block_jump(bb);
+				ut64 fail = rz_analysis_block_fail(bb);
+				bbit = rz_list_find(ctx->bbl, &jump, (RzListComparator)find_bb, NULL);
+				if (!bbit && fail != UT64_MAX) {
+					bbit = rz_list_find(ctx->bbl, &fail, (RzListComparator)find_bb, NULL);
 				}
 			}
 			if (!bbit) {
@@ -1185,8 +1187,9 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 				do {
 					rz_reg_arena_pop(rreg);
 					prev_bb = rz_list_pop(ctx->path);
-					if (prev_bb->fail != UT64_MAX) {
-						bbit = rz_list_find(ctx->bbl, &prev_bb->fail, (RzListComparator)find_bb, NULL);
+					if (rz_analysis_block_fail(prev_bb) != UT64_MAX) {
+						ut64 fail = rz_analysis_block_fail(prev_bb);
+						bbit = rz_list_find(ctx->bbl, &fail, (RzListComparator)find_bb, NULL);
 						if (bbit) {
 							rz_reg_arena_push(rreg);
 							rz_list_push(ctx->path, prev_bb);

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "analysis_private.h"
+#include "rz_analysis.h"
 #include <rz_core.h>
 
 #include <errno.h>
@@ -76,6 +77,38 @@ RZ_API void rz_serialize_analysis_switch_op_save(RZ_NONNULL PJ *j, RZ_NONNULL Rz
 	pj_end(j);
 }
 
+RZ_API void rz_serialize_analysis_succ_addr_save(RZ_NONNULL PJ *j, const RZ_NONNULL RzAnalysisSuccAddr *succ_addr) {
+	pj_o(j);
+	pj_kn(j, "addr", succ_addr->addr);
+	pj_kn(j, "cond", succ_addr->cond);
+	pj_end(j);
+}
+
+RZ_API bool rz_serialize_analysis_succ_addr_load(RZ_NONNULL const RzJson *json, RZ_OUT RZ_NONNULL RzAnalysisSuccAddr *succ_addr) {
+	rz_return_val_if_fail(json && succ_addr, false);
+	if (json->type != RZ_JSON_OBJECT) {
+		rz_warn_if_reached();
+		return false;
+	}
+	RzJson *child;
+	for (child = json->children.first; child; child = child->next) {
+		switch (child->type) {
+		default:
+			// Unhandled new field.
+			rz_warn_if_reached();
+			break;
+		case RZ_JSON_INTEGER:
+			if (RZ_STR_EQ(child->key, "addr")) {
+				succ_addr->addr = child->num.u_value;
+			} else if (RZ_STR_EQ(child->key, "cond")) {
+				succ_addr->cond = child->num.u_value;
+			}
+			break;
+		}
+	}
+	return true;
+}
+
 RZ_API RzAnalysisSwitchOp *rz_serialize_analysis_switch_op_load(RZ_NONNULL const RzJson *json) {
 	if (json->type != RZ_JSON_OBJECT) {
 		return NULL;
@@ -133,11 +166,14 @@ static void block_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisBlock *bl
 	pj_o(j);
 
 	pj_kn(j, "size", block->size);
-	if (block->jump != UT64_MAX) {
-		pj_kn(j, "jump", block->jump);
-	}
-	if (block->fail != UT64_MAX) {
-		pj_kn(j, "fail", block->fail);
+	if (rz_vector_len(&block->succ_addrs) > 0) {
+		pj_k(j, "succ_addrs");
+		pj_a(j);
+		RzAnalysisSuccAddr *sa;
+		rz_vector_foreach (&block->succ_addrs, sa) {
+			rz_serialize_analysis_succ_addr_save(j, sa);
+		}
+		pj_end(j);
 	}
 	if (block->traced) {
 		pj_kb(j, "traced", true);
@@ -213,8 +249,7 @@ RZ_API void rz_serialize_analysis_blocks_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzA
 
 enum {
 	BLOCK_FIELD_SIZE,
-	BLOCK_FIELD_JUMP,
-	BLOCK_FIELD_FAIL,
+	BLOCK_FIELD_SUCC_ADDRS,
 	BLOCK_FIELD_TRACED,
 	BLOCK_FIELD_COLORIZE,
 	BLOCK_FIELD_SWITCH_OP,
@@ -245,11 +280,10 @@ static bool block_load_cb(void *user, const SdbKv *kv) {
 	}
 
 	RzAnalysisBlock proto = { 0 };
-	proto.jump = UT64_MAX;
-	proto.fail = UT64_MAX;
 	proto.size = UT64_MAX;
 	proto.sp_entry = RZ_STACK_ADDR_INVALID;
 	proto.cmpval = UT64_MAX;
+	rz_vector_init(&proto.succ_addrs, sizeof(RzAnalysisSuccAddr), NULL, NULL);
 	rz_vector_init(&proto.sp_delta, sizeof(st16), NULL, NULL);
 	RZ_KEY_PARSER_JSON(ctx->parser, json, child, {
 		case BLOCK_FIELD_SIZE:
@@ -258,17 +292,21 @@ static bool block_load_cb(void *user, const SdbKv *kv) {
 			}
 			proto.size = child->num.u_value;
 			break;
-		case BLOCK_FIELD_JUMP:
-			if (child->type != RZ_JSON_INTEGER) {
+		case BLOCK_FIELD_SUCC_ADDRS:
+			if (child->type != RZ_JSON_ARRAY) {
 				break;
 			}
-			proto.jump = child->num.u_value;
-			break;
-		case BLOCK_FIELD_FAIL:
-			if (child->type != RZ_JSON_INTEGER) {
-				break;
+			rz_vector_clear(&proto.succ_addrs);
+			rz_vector_reserve(&proto.succ_addrs, child->children.count);
+			RzJson *baby;
+			for (baby = child->children.first; baby; baby = baby->next) {
+				if (baby->type != RZ_JSON_OBJECT) {
+					break;
+				}
+				RzAnalysisSuccAddr sa = { 0 };
+				rz_serialize_analysis_succ_addr_load(baby, &sa);
+				rz_vector_push(&proto.succ_addrs, &sa);
 			}
-			proto.fail = child->num.u_value;
 			break;
 		case BLOCK_FIELD_TRACED:
 			if (child->type != RZ_JSON_BOOLEAN) {
@@ -364,8 +402,11 @@ static bool block_load_cb(void *user, const SdbKv *kv) {
 	if (!block) {
 		goto error;
 	}
-	block->jump = proto.jump;
-	block->fail = proto.fail;
+	RzAnalysisSuccAddr *sa;
+	rz_vector_foreach (&proto.succ_addrs, sa) {
+		rz_vector_push(&block->succ_addrs, sa);
+	}
+	rz_vector_fini(&proto.succ_addrs);
 	block->traced = proto.traced;
 	block->colorize = proto.colorize;
 	block->switch_op = proto.switch_op;
@@ -396,8 +437,7 @@ RZ_API bool rz_serialize_analysis_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzA
 		return false;
 	}
 	rz_key_parser_add(ctx.parser, "size", BLOCK_FIELD_SIZE);
-	rz_key_parser_add(ctx.parser, "jump", BLOCK_FIELD_JUMP);
-	rz_key_parser_add(ctx.parser, "fail", BLOCK_FIELD_FAIL);
+	rz_key_parser_add(ctx.parser, "succ_addrs", BLOCK_FIELD_SUCC_ADDRS);
 	rz_key_parser_add(ctx.parser, "traced", BLOCK_FIELD_TRACED);
 	rz_key_parser_add(ctx.parser, "colorize", BLOCK_FIELD_COLORIZE);
 	rz_key_parser_add(ctx.parser, "switch_op", BLOCK_FIELD_SWITCH_OP);

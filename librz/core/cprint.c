@@ -873,7 +873,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 				RzAnalysisBlock *bb;
 				rz_pvector_foreach (fcn->bbs, vit) {
 					bb = (RzAnalysisBlock *)*vit;
-					if (addr == bb->jump) {
+					if (addr == rz_analysis_block_jump(bb)) {
 						if (show_offset) {
 							rz_strbuf_appendf(sb, "%s0x%08" PFMT64x ":\n", use_color ? Color_YELLOW : "", addr);
 						}
@@ -891,15 +891,15 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 						if (addr >= bb->addr && addr < bb->addr + bb->size) {
 							const char *op;
 							if (use_color) {
-								op = (bb->fail == UT64_MAX) ? Color_GREEN "jmp" : Color_GREEN "cjmp";
+								op = (rz_analysis_block_fail(bb) == UT64_MAX) ? Color_GREEN "jmp" : Color_GREEN "cjmp";
 							} else {
-								op = (bb->fail == UT64_MAX) ? "jmp" : "cjmp";
+								op = (rz_analysis_block_fail(bb) == UT64_MAX) ? "jmp" : "cjmp";
 							}
 							if (show_offset) {
 								rz_strbuf_appendf(sb, "%s0x%08" PFMT64x " " Color_RESET, use_color ? pal->offset : "", addr);
 							}
 							rz_strbuf_appendf(sb, "%s 0x%08" PFMT64x "%s\n",
-								op, bb->jump, use_color ? Color_RESET : "");
+								op, rz_analysis_block_jump(bb), use_color ? Color_RESET : "");
 							break;
 						}
 					}

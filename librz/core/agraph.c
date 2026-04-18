@@ -2914,8 +2914,8 @@ static char *get_bb_body(RzCore *core, RzAnalysisBlock *b, int opts, RzAnalysisF
 		}
 	}
 	char *body = get_body(core, b->addr, b->size, opts);
-	if (b->jump != UT64_MAX && b->jump > b->addr) {
-		RzAnalysisBlock *jumpbb = rz_analysis_get_block_at(b->analysis, b->jump);
+	if (rz_analysis_block_jump(b) != UT64_MAX && rz_analysis_block_jump(b) > b->addr) {
+		RzAnalysisBlock *jumpbb = rz_analysis_get_block_at(b->analysis, rz_analysis_block_jump(b));
 		if (jumpbb && rz_list_contains(jumpbb->fcns, fcn)) {
 			ut8 *last_disasm_reg = rz_analysis_get_last_disasm_reg(core->analysis);
 			if (emu && last_disasm_reg != NULL && !jumpbb->parent_reg_arena) {
@@ -2923,8 +2923,8 @@ static char *get_bb_body(RzCore *core, RzAnalysisBlock *b, int opts, RzAnalysisF
 			}
 		}
 	}
-	if (b->fail != UT64_MAX && b->fail > b->addr) {
-		RzAnalysisBlock *failbb = rz_analysis_get_block_at(b->analysis, b->fail);
+	if (rz_analysis_block_fail(b) != UT64_MAX && rz_analysis_block_fail(b) > b->addr) {
+		RzAnalysisBlock *failbb = rz_analysis_get_block_at(b->analysis, rz_analysis_block_fail(b));
 		if (failbb && rz_list_contains(failbb->fcns, fcn)) {
 			ut8 *last_disasm_reg = rz_analysis_get_last_disasm_reg(core->analysis);
 			if (emu && last_disasm_reg != NULL && !failbb->parent_reg_arena) {
@@ -3066,7 +3066,7 @@ static void delete_dup_edges(RzAGraph *g) {
 }
 
 static bool isbbfew(RzAnalysisBlock *curbb, RzAnalysisBlock *bb) {
-	if (bb->addr == curbb->addr || bb->addr == curbb->jump || bb->addr == curbb->fail) {
+	if (bb->addr == curbb->addr || bb->addr == rz_analysis_block_jump(curbb) || bb->addr == rz_analysis_block_fail(curbb)) {
 		// do nothing
 		return true;
 	}
@@ -3153,20 +3153,20 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 		RzANode *u = rz_agraph_get_node(g, title);
 		RzANode *v;
 		free(title);
-		if (bb->jump != UT64_MAX) {
-			title = get_title(bb->jump);
+		if (rz_analysis_block_jump(bb) != UT64_MAX) {
+			title = get_title(rz_analysis_block_jump(bb));
 			v = rz_agraph_get_node(g, title);
 			free(title);
 			rz_agraph_add_edge_at(g, u, v, 0);
 			set_edge_kind(agraph_find_graph_edge(g, u->gnode, v->gnode), AGRAPH_EDGE_KIND_TRUE);
 		}
-		if (bb->fail != UT64_MAX) {
-			title = get_title(bb->fail);
+		if (rz_analysis_block_fail(bb) != UT64_MAX) {
+			title = get_title(rz_analysis_block_fail(bb));
 			v = rz_agraph_get_node(g, title);
 			free(title);
 			rz_agraph_add_edge_at(g, u, v, 1);
 			set_edge_kind(agraph_find_graph_edge(g, u->gnode, v->gnode), AGRAPH_EDGE_KIND_FALSE);
-			if (bb->jump != UT64_MAX && u->title && v->title) {
+			if (rz_analysis_block_jump(bb) != UT64_MAX && u->title && v->title) {
 				char buf[384] = { 0 };
 				rz_strf(buf, "agraph.nodes.%s.neighbours", u->title);
 				char *db_val = rz_str_newf(",%s", v->title);

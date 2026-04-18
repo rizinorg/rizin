@@ -302,15 +302,15 @@ static void core_graph_fn_bbs(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*<
 			continue;
 		}
 
-		if (bbi->jump != UT64_MAX) {
-			RzGraphNode *node = graph_add_cached(core, cache, NULL, bbi->jump, graph, body_fn);
+		if (rz_analysis_block_jump(bbi) != UT64_MAX) {
+			RzGraphNode *node = graph_add_cached(core, cache, NULL, rz_analysis_block_jump(bbi), graph, body_fn);
 			if (node) {
 				rz_graph_add_edge(graph, bb_node, node, NULL);
 			}
 		}
 
-		if (bbi->fail != UT64_MAX) {
-			RzGraphNode *node = graph_add_cached(core, cache, NULL, bbi->fail, graph, body_fn);
+		if (rz_analysis_block_fail(bbi) != UT64_MAX) {
+			RzGraphNode *node = graph_add_cached(core, cache, NULL, rz_analysis_block_fail(bbi), graph, body_fn);
 			if (node) {
 				rz_graph_add_edge(graph, bb_node, node, NULL);
 			}

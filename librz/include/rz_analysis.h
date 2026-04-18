@@ -877,14 +877,21 @@ typedef struct rz_analysis_cond_t {
 	RzAnalysisValue *arg[2]; // filled by CMP opcode
 } RzAnalysisCond;
 
+/**
+ * \brief A successor address of a basic block.
+ */
+typedef struct rz_analysis_succ_addr_t {
+	ut64 addr; ///< The successor address.
+	RzTypeCond cond; ///< The condition under which the control flow changes to this address.
+} RzAnalysisSuccAddr;
+
 struct rz_analysis_bb_t {
 	RBNode _rb; // private, node in the RBTree
 	ut64 _max_end; // private, augmented value for RBTree
 
 	ut64 addr;
 	ut64 size;
-	ut64 jump;
-	ut64 fail;
+	RzVector /*<RzAnalysisSuccAddr>*/ succ_addrs;
 	bool traced;
 	ut32 colorize;
 	RzAnalysisCond *cond;
@@ -1188,6 +1195,14 @@ RZ_API void rz_analysis_block_set_size(RzAnalysisBlock *block, ut64 size);
 // Set the address and size of the block.
 // This can fail (and return false) if there is already another block at the new address
 RZ_API bool rz_analysis_block_relocate(RzAnalysisBlock *block, ut64 addr, ut64 size);
+
+RZ_DEPRECATE RZ_API ut64 rz_analysis_block_fail(const RZ_NONNULL RzAnalysisBlock *block);
+RZ_DEPRECATE RZ_API ut64 rz_analysis_block_jump(const RZ_NONNULL RzAnalysisBlock *block);
+RZ_DEPRECATE RZ_API void rz_analysis_block_set_jump(RZ_BORROW RZ_NONNULL RzAnalysisBlock *block, ut64 addr);
+RZ_DEPRECATE RZ_API void rz_analysis_block_set_fail(RZ_BORROW RZ_NONNULL RzAnalysisBlock *block, ut64 addr);
+RZ_API void rz_analysis_block_add_succ(RZ_BORROW RZ_NONNULL RzAnalysisBlock *block, ut64 addr, RzTypeCond cond);
+RZ_API const RzVector /*<RzAnalysisSuccAddr>*/ *rz_analysis_block_succ(const RZ_NONNULL RzAnalysisBlock *block);
+RZ_API RZ_BORROW RzVector /*<RzAnalysisSuccAddr>*/ *rz_analysis_block_succ_mut(RZ_NONNULL RzAnalysisBlock *block);
 
 RZ_API RzAnalysisBlock *rz_analysis_get_block_at(RzAnalysis *analysis, ut64 addr);
 RZ_API bool rz_analysis_blocks_foreach_in(RzAnalysis *analysis, ut64 addr, RzAnalysisBlockCb cb, void *user);
@@ -2149,6 +2164,8 @@ typedef struct {
 
 RZ_API void rz_serialize_analysis_case_op_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalysisCaseOp *op);
 RZ_API void rz_serialize_analysis_switch_op_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalysisSwitchOp *op);
+RZ_API void rz_serialize_analysis_succ_addr_save(RZ_NONNULL PJ *j, const RZ_NONNULL RzAnalysisSuccAddr *succ_addr);
+RZ_API bool rz_serialize_analysis_succ_addr_load(RZ_NONNULL const RzJson *json, RZ_OUT RZ_NONNULL RzAnalysisSuccAddr *succ_addr);
 RZ_API RzAnalysisSwitchOp *rz_serialize_analysis_switch_op_load(RZ_NONNULL const RzJson *json);
 
 RZ_API void rz_serialize_analysis_blocks_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis);

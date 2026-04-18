@@ -70,7 +70,7 @@ bool test_analysis_switch_op_load() {
 Sdb *blocks_ref_db() {
 	Sdb *db = sdb_new0();
 	sdb_set(db, "0x539", "{\"size\":42}");
-	sdb_set(db, "0x4d2", "{\"size\":32,\"jump\":4883,\"fail\":16915,\"traced\":true,\"colorize\":16711680,\"switch_op\":{\"addr\":49232,\"min\":3,\"max\":5,\"def\":7,\"cases\":[]},\"ninstr\":3,\"op_pos\":[4,7],\"sp_delta\":[8,-8,16],\"sp\":256,\"cmpval\":262254561,\"cmpreg\":\"rax\"}");
+	sdb_set(db, "0x4d2", "{\"size\":32,\"succ_addrs\":[{\"addr\":4883,\"cond\":17},{\"addr\":16915,\"cond\":18}],\"traced\":true,\"colorize\":16711680,\"switch_op\":{\"addr\":49232,\"min\":3,\"max\":5,\"def\":7,\"cases\":[]},\"ninstr\":3,\"op_pos\":[4,7],\"sp_delta\":[8,-8,16],\"sp\":256,\"cmpval\":262254561,\"cmpreg\":\"rax\"}");
 	return db;
 }
 
@@ -80,8 +80,8 @@ bool test_analysis_block_save() {
 	rz_analysis_create_block(analysis, 1337, 42);
 
 	RzAnalysisBlock *block = rz_analysis_create_block(analysis, 1234, 32);
-	block->jump = 0x1313;
-	block->fail = 0x4213;
+	rz_analysis_block_set_jump(block, 0x1313);
+	rz_analysis_block_set_fail(block, 0x4213);
 	block->traced = true;
 	block->colorize = 0xff0000;
 	block->switch_op = rz_analysis_switch_op_new(49232, 3, 5, 7);
@@ -132,8 +132,8 @@ bool test_analysis_block_load() {
 
 	mu_assert_notnull(a, "block a");
 	mu_assert_eq(a->size, 42, "size");
-	mu_assert_eq(a->jump, UT64_MAX, "jump");
-	mu_assert_eq(a->fail, UT64_MAX, "fail");
+	mu_assert_eq(rz_analysis_block_jump(a), UT64_MAX, "jump");
+	mu_assert_eq(rz_analysis_block_fail(a), UT64_MAX, "fail");
 	mu_assert("traced", !a->traced);
 	mu_assert_eq(a->colorize, 0, "colorize");
 	mu_assert_null(a->switch_op, "switch op");
@@ -144,8 +144,8 @@ bool test_analysis_block_load() {
 
 	mu_assert_notnull(b, "block b");
 	mu_assert_eq(b->size, 32, "size");
-	mu_assert_eq(b->jump, 0x1313, "jump");
-	mu_assert_eq(b->fail, 0x4213, "fail");
+	mu_assert_eq(rz_analysis_block_jump(b), 0x1313, "jump");
+	mu_assert_eq(rz_analysis_block_fail(b), 0x4213, "fail");
 	mu_assert("traced", b->traced);
 	mu_assert_eq(b->colorize, 0xff0000, "colorize");
 	mu_assert_notnull(b->switch_op, "switch op");

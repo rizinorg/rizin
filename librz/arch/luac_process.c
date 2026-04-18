@@ -121,8 +121,8 @@ RZ_API bool rz_core_bin_apply_luac_debug(RzCore *core, RzBinFile *binfile) {
 			// fcn = rz_analysis_create_function(core->analysis, pname, meta_addr, RZ_ANALYSIS_FCN_TYPE_IMP);
 			// RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, PROTO_VADDRESS(proto->index));
 			RzAnalysisBlock *bb = rz_analysis_create_block(core->analysis, faddr, proto->code_size - proto->code_skipped);
-			bb->jump = UT64_MAX;
-			bb->fail = UT64_MAX;
+			rz_analysis_block_set_jump(bb, UT64_MAX);
+			rz_analysis_block_set_fail(bb, UT64_MAX);
 
 			rz_analysis_function_add_block(fcn, bb);
 		}

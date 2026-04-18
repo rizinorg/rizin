@@ -543,7 +543,7 @@ static ut64 bbJump(RzAnalysisFunction *fcn, ut64 addr) {
 	rz_pvector_foreach (fcn->bbs, vit) {
 		bb = (RzAnalysisBlock *)*vit;
 		if (RZ_BETWEEN(bb->addr, addr, bb->addr + bb->size - 1)) {
-			return bb->jump;
+			return rz_analysis_block_jump(bb);
 		}
 	}
 	return UT64_MAX;
@@ -555,7 +555,7 @@ static ut64 bbFail(RzAnalysisFunction *fcn, ut64 addr) {
 	rz_pvector_foreach (fcn->bbs, vit) {
 		bb = (RzAnalysisBlock *)*vit;
 		if (RZ_BETWEEN(bb->addr, addr, bb->addr + bb->size - 1)) {
-			return bb->fail;
+			return rz_analysis_block_fail(bb);
 		}
 	}
 	return UT64_MAX;

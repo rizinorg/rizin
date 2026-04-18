@@ -1334,9 +1334,10 @@ static void pr_bb(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *b, boo
 		: rz_core_cmdf(core, "pI %" PFMT64u " @ 0x%" PFMT64x, b->size, b->addr);
 	rz_config_set_b(core->config, "asm.bb.middle", orig_bb_middle);
 
-	if (b->jump != UT64_MAX) {
-		if (b->jump > b->addr) {
-			RzAnalysisBlock *jumpbb = rz_analysis_get_block_at(b->analysis, b->jump);
+	ut64 jump = rz_analysis_block_jump(b);
+	if (jump != UT64_MAX) {
+		if (jump > b->addr) {
+			RzAnalysisBlock *jumpbb = rz_analysis_get_block_at(core->analysis, jump);
 			if (jumpbb && rz_list_contains(jumpbb->fcns, fcn)) {
 				ut8 *last_disasm_reg = rz_analysis_get_last_disasm_reg(core->analysis);
 				if (emu && last_disasm_reg && !jumpbb->parent_reg_arena) {
@@ -1345,12 +1346,13 @@ static void pr_bb(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *b, boo
 			}
 		}
 		if (p_type == 'D' && show_flags) {
-			rz_cons_printf("| ----------- true: 0x%08" PFMT64x, b->jump);
+			rz_cons_printf("| ----------- true: 0x%08" PFMT64x, jump);
 		}
 	}
-	if (b->fail != UT64_MAX) {
-		if (b->fail > b->addr) {
-			RzAnalysisBlock *failbb = rz_analysis_get_block_at(b->analysis, b->fail);
+	ut64 fail = rz_analysis_block_fail(b);
+	if (fail != UT64_MAX) {
+		if (fail > b->addr) {
+			RzAnalysisBlock *failbb = rz_analysis_get_block_at(core->analysis, fail);
 			if (failbb && rz_list_contains(failbb->fcns, fcn)) {
 				ut8 *last_disasm_reg = rz_analysis_get_last_disasm_reg(core->analysis);
 				if (emu && last_disasm_reg && !failbb->parent_reg_arena) {
@@ -1359,7 +1361,7 @@ static void pr_bb(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *b, boo
 			}
 		}
 		if (p_type == 'D' && show_flags) {
-			rz_cons_printf("  false: 0x%08" PFMT64x, b->fail);
+			rz_cons_printf("  false: 0x%08" PFMT64x, fail);
 		}
 	}
 	if (p_type == 'D' && show_flags) {
