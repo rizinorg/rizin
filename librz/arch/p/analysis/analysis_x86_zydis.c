@@ -933,7 +933,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, 
 	case X86_INS_SHR:
 	case X86_INS_SHRD:
 	case X86_INS_SHRX:
-		// TODO: Set CF: See case X86_INS_SAL for more details.
+		// TODO: Set CF: See case X86_INS_SHL for more details.
 		{
 			ut32 bitsize = 0;
 			src = getarg(a, &gop, 1, 0, NULL, SRC_AR, NULL, zydx->addr);
@@ -2683,7 +2683,7 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, X86ZY
 	case X86_INS_SHR:
 	case X86_INS_SHRD:
 	case X86_INS_SHRX:
-		// TODO: Set CF: See case X86_INS_SAL for more details.
+		// TODO: Set CF: See case X86_INS_SHL for more details.
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
 		op->val = get_imm_reg_value(&INSOP(1), zydx->addr, zydx->zydecode->length, a->bits);
 		// XXX this should be op->imm
