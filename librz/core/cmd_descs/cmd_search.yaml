@@ -478,7 +478,7 @@ commands:
     summary: Search, List, Query for ROP Gadgets
     subcommands:
       - name: "/R"
-        cname: cmd_info_gadget
+        cname: cmd_info_rop_gadget
         summary: List ROP Gadgets
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
@@ -491,7 +491,7 @@ commands:
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
       - name: "/R/"
-        cname: cmd_search_gadget
+        cname: cmd_search_rop_gadget
         summary: List ROP Gadgets [regular expression]
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
@@ -504,7 +504,7 @@ commands:
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
       - name: "/Rk"
-        cname: cmd_query_gadget
+        cname: cmd_query_rop_gadget
         summary: Query ROP Gadgets by providing constraints
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
@@ -553,7 +553,7 @@ commands:
               - text: "Find gadgets with multiple constraints"
                 comment: "/Rk rax=0,rbx=rcx"
       - name: "/Rg"
-        cname: cmd_detail_gadget
+        cname: cmd_detail_rop_gadget
         summary: Gadget detail info
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
@@ -583,7 +583,7 @@ commands:
               - text: "Search ROP gadgets with 0x100 stack changes"
                 comment: "/Rs =0x100"
       - name: "/Rl"
-        cname: cmd_gadget_search_size
+        cname: cmd_rop_gadget_search_size
         summary: Search rop gadgets given gadget size
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
