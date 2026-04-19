@@ -688,6 +688,7 @@ static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
 					sym_addr = symbol->vaddr;
 					if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(bin) && Elf_(rz_bin_elf_is_thumb_addr)(sym_addr)) {
 						Elf_(rz_bin_elf_fix_arm_thumb_addr)(&sym_addr);
+						reloc->thumb = 1;
 					}
 					sym_size = symbol->size;
 				} else {
@@ -697,7 +698,7 @@ static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
 		}
 		if(reloc->mode == DT_REL){
 			if(!Elf_(rz_bin_elf_reloc_get_addend)(bin, reloc)){
-				RZ_LOG_ERROR("Failed to fetch addend for relocation at %llx\n", reloc->paddr);
+	//			RZ_LOG_WARN("Immediate value extraction not implemented for %x\n", reloc->type);
 			}
 		}
 		Elf_(rz_bin_elf_patch_relocation)(bin, reloc, sym_addr, sym_size, baddr, sym_addr, got_addr, &mips_AHL);

@@ -162,6 +162,10 @@ typedef struct rz_bin_elf_reloc_t {
 	 * \brief Sparc specific ELF relocation value.
 	 */
 	ut64 sparc_secondary_addend;
+	/**
+	 * \brief ARM Thumb Mode bit - Check out https://github.com/ARM-software/abi-aa/blob/main/aaelf32/aaelf32.rst#5612relocation-types
+	 */
+	bool thumb;
 } RzBinElfReloc;
 
 typedef struct rz_bin_elf_dt_dynamic_t RzBinElfDtDynamic; // elf_dynamic.h
