@@ -3153,10 +3153,19 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 		RzANode *u = rz_agraph_get_node(g, title);
 		RzANode *v;
 		free(title);
+		if (!u) {
+			RZ_LOG_WARN("Failed to find node for block 0x%08" PFMT64x, bb->addr);
+			continue;
+		}
+
 		if (bb->jump != UT64_MAX) {
 			title = get_title(bb->jump);
 			v = rz_agraph_get_node(g, title);
 			free(title);
+			if (!v) {
+				RZ_LOG_WARN("Failed to find node for jump target 0x%08" PFMT64x, bb->jump);
+				continue;
+			}
 			rz_agraph_add_edge_at(g, u, v, 0);
 			set_edge_kind(agraph_find_graph_edge(g, u->gnode, v->gnode), AGRAPH_EDGE_KIND_TRUE);
 		}
@@ -3164,6 +3173,10 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 			title = get_title(bb->fail);
 			v = rz_agraph_get_node(g, title);
 			free(title);
+			if (!v) {
+				RZ_LOG_WARN("Failed to find node for fail target 0x%08" PFMT64x, bb->fail);
+				continue;
+			}
 			rz_agraph_add_edge_at(g, u, v, 1);
 			set_edge_kind(agraph_find_graph_edge(g, u->gnode, v->gnode), AGRAPH_EDGE_KIND_FALSE);
 			if (bb->jump != UT64_MAX && u->title && v->title) {
@@ -3183,6 +3196,10 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 				title = get_title(cop->addr);
 				v = rz_agraph_get_node(g, title);
 				free(title);
+				if (!v) {
+					RZ_LOG_WARN("Failed to find node for switch case target 0x%08" PFMT64x, cop->addr);
+					continue;
+				}
 				rz_agraph_add_edge(g, u, v);
 			}
 		}

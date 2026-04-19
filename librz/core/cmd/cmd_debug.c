@@ -1921,7 +1921,8 @@ RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_i_handler(RzCore *core, int argc, co
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
-	rz_analysis_esil_trace_op(esil, op);
+	const char *eexpr = rz_strbuf_get(&op->esil);
+	rz_analysis_esil_trace_op(esil, op->addr, eexpr);
 	rz_analysis_op_free(op);
 	return RZ_CMD_STATUS_OK;
 }
@@ -3097,6 +3098,16 @@ RZ_IPI RzCmdStatus rz_cmd_debug_thread_list_handler(RzCore *core, int argc, cons
 
 RZ_IPI RzCmdStatus rz_cmd_debug_pid_attach_handler(RzCore *core, int argc, const char **argv) {
 	int pid = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
+	if (pid < 0) {
+		RZ_LOG_ERROR("Invalid PID %d\n", pid);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	bool has_active_session = rz_core_is_debug(core) ||
+		(core->dbg->cur && core->dbg->cur->pids && core->dbg->pid != -1);
+	if (has_active_session && rz_cons_is_interactive() &&
+		!rz_cons_yesno('n', "core: A debug session is already active. Do you want to attach to another process? (y/N) ")) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	rz_core_debug_attach(core, pid);
 	return RZ_CMD_STATUS_OK;
 }

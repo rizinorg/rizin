@@ -3797,21 +3797,6 @@ static RzList /*<RzSearchKeyword *>*/ *analysis_preludes(RzAnalysis *analysis) {
 	return l;
 }
 
-static int esil_x86_zydis_init(RzAnalysisEsil *esil) {
-	if (!esil) {
-		return false;
-	}
-	// XXX. this depends on kernel
-	// rz_analysis_esil_set_interrupt (esil, 0x80, x86_int_0x80);
-	/* disable by default */
-	//	rz_analysis_esil_set_interrupt (esil, 0x80, NULL,addr);	// this is stupid, don't do this
-	return true;
-}
-
-static int esil_x86_zydis_fini(RzAnalysisEsil *esil) {
-	return true;
-}
-
 RzAnalysisPlugin rz_analysis_plugin_x86_zydis = {
 	.name = "x86",
 	.desc = "Zydis X86 analysis",
@@ -3825,8 +3810,6 @@ RzAnalysisPlugin rz_analysis_plugin_x86_zydis = {
 	.get_reg_profile = &get_reg_profile,
 	.init = x86_init,
 	.fini = x86_fini,
-	.esil_init = esil_x86_zydis_init,
-	.esil_fini = esil_x86_zydis_fini,
 	.il_config = rz_x86_il_config
 };
 

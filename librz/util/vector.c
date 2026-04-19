@@ -98,8 +98,13 @@ RZ_API bool rz_vector_clone_intof(
 	dst->capacity = src->capacity;
 	dst->len = src->len;
 	dst->elem_size = src->elem_size;
-	dst->free = NULL;
-	dst->free_user = NULL;
+	if (item_cpy) {
+		dst->free = src->free;
+		dst->free_user = src->free_user;
+	} else {
+		dst->free = NULL;
+		dst->free_user = NULL;
+	}
 	if (!dst->len) {
 		dst->a = NULL;
 	} else {
@@ -167,6 +172,9 @@ RZ_API bool rz_vector_clone_into(
 RZ_API RZ_OWN RzVector *rz_vector_clone(
 	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *vec) {
 	RzVector *dst = rz_vector_clonef(vec, NULL);
+	if (!dst) {
+		return NULL;
+	}
 	dst->free = NULL;
 	dst->free_user = NULL;
 	return dst;
@@ -256,6 +264,44 @@ RZ_API void *rz_vector_insert_range(RzVector *vec, size_t index, RZ_NULLABLE voi
 	return p;
 }
 
+static bool bin_search_range(RZ_NONNULL RzVector *vec, RZ_NONNULL void *elem, RzVectorComparator cmp, void *user, RZ_OUT size_t *i) {
+	size_t vlen = rz_vector_len(vec);
+	if (vlen == 0) {
+		*i = 0;
+		return false;
+	}
+
+	size_t left = 0;
+	size_t right = vlen;
+
+	while (left < right) {
+		size_t mid = left + (right - left) / 2;
+		int cmp_res = cmp(elem, rz_vector_index_ptr(vec, mid), user);
+
+		if (cmp_res == 0) {
+			*i = mid;
+			return true;
+		}
+
+		if (vec->reverse_sorted) {
+			if (cmp_res > 0) {
+				right = mid;
+			} else {
+				left = mid + 1;
+			}
+		} else {
+			if (cmp_res > 0) {
+				left = mid + 1;
+			} else {
+				right = mid;
+			}
+		}
+	}
+
+	*i = left;
+	return false;
+}
+
 /**
  * \brief Inserts an element into a sorted vector keeping the order.
  * NOTE: This function assumes the vector is already sorted!
@@ -274,21 +320,35 @@ RZ_API void *rz_vector_insert_sorted(RZ_NONNULL RzVector *vec, RZ_NONNULL void *
 	if (rz_vector_empty(vec)) {
 		return rz_vector_push(vec, elem);
 	}
-	size_t i = vec->reverse_sorted ? rz_vector_len(vec) - 1 : 0;
-	int inc = vec->reverse_sorted ? -1 : 1;
 
-	do {
-		void *velem = ((char *)vec->a) + (vec->elem_size * i);
-		if (cmp(velem, elem, user) >= 0) {
-			return rz_vector_insert(vec, vec->reverse_sorted ? i + 1 : i, elem);
-		}
-		if (i == 0 && inc == -1) {
-			// Overflow is undefined. So lets not depend on it.
-			break;
-		}
-		i += inc;
-	} while (i >= 0 && i < rz_vector_len(vec));
-	return vec->reverse_sorted ? rz_vector_push_front(vec, elem) : rz_vector_push(vec, elem);
+	size_t insert_index = 0;
+
+	bin_search_range(vec, elem, cmp, user, &insert_index);
+
+	return rz_vector_insert(vec, insert_index, elem);
+}
+
+/**
+ * \brief Finds an element in the sorted vector via binary search.
+ * NOTE: This function assumes the vector is already sorted!
+ * If it isn't the result is undefined!
+ *
+ * \param vec A sorted vector to find the element in.
+ * \param elem Pointer to the element to find in the vector.
+ * \param cmp The comparator for the elements.
+ * \param user The user data passed to the comparator.
+ *
+ * \return Index into the vector where the element is located.
+ * Or SZT_MAX in case of failure or if no element was found.
+ */
+RZ_API size_t rz_vector_find_sorted(RZ_NONNULL RzVector *vec, RZ_NONNULL void *elem, RzVectorComparator cmp, void *user) {
+	rz_return_val_if_fail(vec && elem, SZT_MAX);
+
+	size_t i;
+	if (!bin_search_range(vec, elem, cmp, user, &i)) {
+		return SZT_MAX;
+	}
+	return i;
 }
 
 RZ_API void rz_vector_pop(RzVector *vec, void *into) {

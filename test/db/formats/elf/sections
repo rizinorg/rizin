@@ -164,7 +164,9 @@ WARNING: Failed to read ELF header (e_shentsize).
 WARNING: Failed to read ELF header (e_shnum).
 WARNING: Failed to read ELF header (e_shstrndx).
 WARNING: The binary seems to be a tiny elf (45 bytes). Reload e_phnum value.
-WARNING: Failed to initialize section header.
+WARNING: Number of sections is 0.
+WARNING: ELF header e_shstrndx value (0) >= number of sections (0).
+WARNING: Failed to initialize section string table.
 EOF
 RUN
 

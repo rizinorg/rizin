@@ -144,6 +144,7 @@ RZ_API void *rz_vector_insert(RzVector *vec, size_t index, void *x);
 RZ_API void *rz_vector_insert_range(RzVector *vec, size_t index, RZ_NULLABLE void *first, size_t count);
 
 RZ_API void *rz_vector_insert_sorted(RZ_NONNULL RzVector *vec, RZ_NONNULL void *elem, RzVectorComparator cmp, void *user);
+RZ_API size_t rz_vector_find_sorted(RZ_NONNULL RzVector *vec, RZ_NONNULL void *elem, RzVectorComparator cmp, void *user);
 
 // like rz_vector_remove_at for the last element
 RZ_API void rz_vector_pop(RzVector *vec, void *into);

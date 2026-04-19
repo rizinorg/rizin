@@ -561,6 +561,7 @@ static void RzBinSourceLineCacheItem_free(RzBinSourceLineCacheItem *x) {
 }
 
 static RzDisasmState *ds_init(RzCore *core) {
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
 	RzDisasmState *ds = RZ_NEW0(RzDisasmState);
 	if (!ds) {
 		return NULL;
@@ -669,15 +670,14 @@ static RzDisasmState *ds_init(RzCore *core) {
 	ds->show_emu_ssa = rz_config_get_b(core->config, "emu.ssa");
 	ds->show_emu_stack = rz_config_get_b(core->config, "emu.stack");
 	ds->stackFd = -1;
-	if (ds->show_emu_stack) {
+	if (ds->show_emu_stack && esil) {
 		// TODO: initialize fake stack in here
 		const char *uri = "malloc://32K";
 		ut64 size = rz_num_get(core->num, "32K");
 		RzReg *rreg = rz_analysis_get_reg(core->analysis);
-		RzAnalysisEsilInterState *estate = rz_analysis_get_esil_inter_state(core->analysis);
 		ut64 addr = rz_reg_getv(rreg, "SP") - (size / 2);
-		estate->emustack_min = addr;
-		estate->emustack_max = addr + size;
+		esil->esilinterstate->emustack_min = addr;
+		esil->esilinterstate->emustack_max = addr + size;
 		ds->stackFd = rz_io_fd_open(core->io, uri, RZ_PERM_RW, 0);
 		RzIOMap *map = rz_io_map_add(core->io, ds->stackFd, RZ_PERM_RW, 0LL, addr, size);
 		if (!map) {
@@ -2706,17 +2706,9 @@ static void ds_print_lines_right(RzDisasmState *ds) {
 }
 
 static void printCol(RzDisasmState *ds, char *sect, int cols, const char *color) {
-	int pre;
 	if (cols < 8) {
 		cols = 8;
 	}
-	int outsz = cols + 32;
-	char *out = malloc(outsz);
-	if (!out) {
-		return;
-	}
-	memset(out, ' ', outsz);
-	out[outsz - 1] = 0;
 	int sect_len = strlen(sect);
 
 	if (sect_len > cols) {
@@ -2724,15 +2716,25 @@ static void printCol(RzDisasmState *ds, char *sect, int cols, const char *color)
 		sect[cols - 1] = '.';
 		sect[cols] = 0;
 	}
+	int outsz = 0;
+	char *out = NULL;
 	if (ds->show_color) {
-		pre = strlen(color) + 1;
-		snprintf(out, outsz - pre, "%s %s", color, sect);
-		strcat(out, COLOR_RESET(ds));
-		out[outsz - 1] = 0;
+		outsz = snprintf(NULL, 0, "%s %s%s ", color, sect, COLOR_RESET(ds));
 	} else {
-		rz_str_ncpy(out + 1, sect, outsz - 2);
+		outsz = snprintf(NULL, 0, " %s ", sect);
 	}
-	strcat(out, " ");
+	if (outsz < 0) {
+		return;
+	}
+	out = malloc((size_t)outsz + 1);
+	if (!out) {
+		return;
+	}
+	if (ds->show_color) {
+		snprintf(out, (size_t)outsz + 1, "%s %s%s ", color, sect, COLOR_RESET(ds));
+	} else {
+		snprintf(out, (size_t)outsz + 1, " %s ", sect);
+	}
 	rz_cons_strcat(out);
 	free(out);
 }
@@ -3958,9 +3960,13 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 		return;
 	}
 	const int opType = ds->analysis_op.type & RZ_ANALYSIS_OP_TYPE_MASK;
-	bool canHaveChar = opType == RZ_ANALYSIS_OP_TYPE_MOV;
-	if (!canHaveChar) {
-		canHaveChar = opType == RZ_ANALYSIS_OP_TYPE_PUSH;
+	bool canHaveChar = false;
+	switch (opType) {
+	case RZ_ANALYSIS_OP_TYPE_PUSH:
+	case RZ_ANALYSIS_OP_TYPE_MOV:
+	case RZ_ANALYSIS_OP_TYPE_CMP:
+		canHaveChar = true;
+		break;
 	}
 
 	ds->chref = 0;
@@ -4296,7 +4302,7 @@ static int mymemwrite1(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len)
 }
 
 static int mymemwrite2(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) {
-	RzAnalysisEsilInterState *estate = rz_analysis_get_esil_inter_state(esil->analysis);
+	RzAnalysisEsilInterState *estate = esil->esilinterstate;
 	return (addr >= estate->emustack_min && addr < estate->emustack_max);
 }
 
@@ -4332,7 +4338,7 @@ static int myregread(RzAnalysisEsil *esil, const char *name, ut64 *res, int *siz
 
 static int myregwrite(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 	char str[64], *msg = NULL;
-	RzCore *core = esil->core;
+	RzCore *core = esil->pcore;
 	bool big_endian = core ? rz_asm_is_big_endian_set(core->rasm) : false;
 	RzDisasmState *ds = esil->user;
 	if (!ds) {

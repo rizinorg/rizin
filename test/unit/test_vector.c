@@ -305,6 +305,62 @@ static bool test_vector_insert_sorted(void) {
 	mu_end;
 }
 
+static bool test_vector_find_sorted(void) {
+	RzVector *v = rz_vector_new(sizeof(ut64), NULL, NULL);
+	for (size_t i = 1; i < 13; i++) {
+		rz_vector_push(v, &i);
+	}
+	ut64 i = UT64_MAX;
+	rz_vector_push(v, &i);
+
+	rz_vector_sort(v, (RzVectorComparator)uint_cmp, false, NULL);
+
+	i = 5;
+	mu_assert_eq(rz_vector_find_sorted(v, &i, (RzVectorComparator)uint_cmp, NULL), 4, "Not found");
+	i = 6;
+	mu_assert_eq(rz_vector_find_sorted(v, &i, (RzVectorComparator)uint_cmp, NULL), 5, "Not found");
+	i = 7;
+	mu_assert_eq(rz_vector_find_sorted(v, &i, (RzVectorComparator)uint_cmp, NULL), 6, "Not found");
+	i = 8;
+	mu_assert_eq(rz_vector_find_sorted(v, &i, (RzVectorComparator)uint_cmp, NULL), 7, "Not found");
+	i = 12;
+	mu_assert_eq(rz_vector_find_sorted(v, &i, (RzVectorComparator)uint_cmp, NULL), 11, "Not found");
+	i = UT64_MAX;
+	mu_assert_eq(rz_vector_find_sorted(v, &i, (RzVectorComparator)uint_cmp, NULL), 12, "Not found");
+
+	i = 0;
+	mu_assert_eq(rz_vector_find_sorted(v, &i, (RzVectorComparator)uint_cmp, NULL), SZT_MAX, "Not failed");
+	i = 13;
+	mu_assert_eq(rz_vector_find_sorted(v, &i, (RzVectorComparator)uint_cmp, NULL), SZT_MAX, "Not failed");
+	i = UT64_MAX - 1;
+	mu_assert_eq(rz_vector_find_sorted(v, &i, (RzVectorComparator)uint_cmp, NULL), SZT_MAX, "Not failed");
+
+	rz_vector_sort(v, (RzVectorComparator)uint_cmp, true, NULL);
+
+	i = 5;
+	mu_assert_eq(rz_vector_find_sorted(v, &i, (RzVectorComparator)uint_cmp, NULL), 8, "Not found");
+	i = 6;
+	mu_assert_eq(rz_vector_find_sorted(v, &i, (RzVectorComparator)uint_cmp, NULL), 7, "Not found");
+	i = 7;
+	mu_assert_eq(rz_vector_find_sorted(v, &i, (RzVectorComparator)uint_cmp, NULL), 6, "Not found");
+	i = 8;
+	mu_assert_eq(rz_vector_find_sorted(v, &i, (RzVectorComparator)uint_cmp, NULL), 5, "Not found");
+	i = 12;
+	mu_assert_eq(rz_vector_find_sorted(v, &i, (RzVectorComparator)uint_cmp, NULL), 1, "Not found");
+	i = UT64_MAX;
+	mu_assert_eq(rz_vector_find_sorted(v, &i, (RzVectorComparator)uint_cmp, NULL), 0, "Not found");
+
+	i = 0;
+	mu_assert_eq(rz_vector_find_sorted(v, &i, (RzVectorComparator)uint_cmp, NULL), SZT_MAX, "Not failed");
+	i = 13;
+	mu_assert_eq(rz_vector_find_sorted(v, &i, (RzVectorComparator)uint_cmp, NULL), SZT_MAX, "Not failed");
+	i = UT64_MAX - 1;
+	mu_assert_eq(rz_vector_find_sorted(v, &i, (RzVectorComparator)uint_cmp, NULL), SZT_MAX, "Not failed");
+
+	rz_vector_free(v);
+	mu_end;
+}
+
 static bool test_vector_empty(void) {
 	RzVector v;
 	rz_vector_init(&v, 1, NULL, NULL);
@@ -1562,6 +1618,7 @@ static int all_tests(void) {
 	mu_run_test(test_vector_insert);
 	mu_run_test(test_vector_insert_range);
 	mu_run_test(test_vector_insert_sorted);
+	mu_run_test(test_vector_find_sorted);
 	mu_run_test(test_vector_pop);
 	mu_run_test(test_vector_pop_front);
 	mu_run_test(test_vector_push);

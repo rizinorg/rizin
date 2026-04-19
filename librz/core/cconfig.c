@@ -1549,7 +1549,7 @@ static bool cb_iopcachewrite(void *user, void *data) {
 
 RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut64 a2) {
 	if (cmd && *cmd) {
-		RzCore *core = esil->core;
+		RzCore *core = (RzCore *)esil->pcore;
 		rz_core_cmdf(core, "%s %" PFMT64d " %" PFMT64d, cmd, a1, a2);
 		return core->num->value;
 	}
@@ -2029,27 +2029,33 @@ static bool scr_vtmode(void *user, void *data) {
 
 	DWORD mode;
 	HANDLE input = GetStdHandle(STD_INPUT_HANDLE);
-	GetConsoleMode(input, &mode);
-	if (node->i_value == RZ_VIRT_TERM_MODE_COMPLETE) {
-		SetConsoleMode(input, mode & ENABLE_VIRTUAL_TERMINAL_INPUT);
-		cons->term_raw |= ENABLE_VIRTUAL_TERMINAL_INPUT;
-	} else {
-		SetConsoleMode(input, mode & ~ENABLE_VIRTUAL_TERMINAL_INPUT);
-		cons->term_raw &= ~ENABLE_VIRTUAL_TERMINAL_INPUT;
+	if (GetConsoleMode(input, &mode)) {
+		if (node->i_value == RZ_VIRT_TERM_MODE_COMPLETE) {
+			// Enabling VT input must preserve the rest of the console input flags.
+			SetConsoleMode(input, mode | ENABLE_VIRTUAL_TERMINAL_INPUT);
+			cons->term_raw |= ENABLE_VIRTUAL_TERMINAL_INPUT;
+		} else {
+			SetConsoleMode(input, mode & ~ENABLE_VIRTUAL_TERMINAL_INPUT);
+			cons->term_raw &= ~ENABLE_VIRTUAL_TERMINAL_INPUT;
+		}
 	}
 	HANDLE streams[] = { GetStdHandle(STD_OUTPUT_HANDLE), GetStdHandle(STD_ERROR_HANDLE) };
 	int i;
 	if (node->i_value > RZ_VIRT_TERM_MODE_DISABLE) {
 		for (i = 0; i < RZ_ARRAY_SIZE(streams); i++) {
-			GetConsoleMode(streams[i], &mode);
-			SetConsoleMode(streams[i],
-				mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+			if (GetConsoleMode(streams[i], &mode)) {
+				// Output VT mode is an additive toggle on the current console output state.
+				SetConsoleMode(streams[i],
+					mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+			}
 		}
 	} else {
 		for (i = 0; i < RZ_ARRAY_SIZE(streams); i++) {
-			GetConsoleMode(streams[i], &mode);
-			SetConsoleMode(streams[i],
-				mode & ~ENABLE_VIRTUAL_TERMINAL_PROCESSING & ~ENABLE_WRAP_AT_EOL_OUTPUT);
+			if (GetConsoleMode(streams[i], &mode)) {
+				// Disabling VT output should only clear the bits enabled by this callback.
+				SetConsoleMode(streams[i],
+					mode & ~(ENABLE_VIRTUAL_TERMINAL_PROCESSING | ENABLE_WRAP_AT_EOL_OUTPUT));
+			}
 		}
 	}
 	return true;
@@ -3626,12 +3632,12 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETDESC(n, "Set grep(~) as case smart/sensitive/insensitive");
 	SETOPTIONS(n, "smart", "sensitive", "insensitive", NULL);
 
-	/* rop */
-	SETI("rop.len", 5, "Maximum ROP gadget length");
-	SETBPREF("rop.cache", "false", "Cache rop gadget results(experimental)");
-	SETBPREF("rop.subchains", "false", "Display every length gadget from rop.len=X to 2 in /Rl");
-	SETBPREF("rop.conditional", "false", "Include conditional jump, calls and returns in ropsearch");
-	SETBPREF("rop.comments", "false", "Display comments in rop search output");
+	/* gadget */
+	SETI("gadget.len", 5, "Maximum number of instructions per gadget");
+	SETBPREF("gadget.cache", "false", "Cache gadget results(experimental)");
+	SETBPREF("gadget.subchains", "false", "Display every length gadget from gadget.len=X to 2");
+	SETBPREF("gadget.conditional", "false", "Include conditional jump, calls and returns in gadget search");
+	SETBPREF("gadget.comments", "false", "Display comments in gadget search output");
 
 	/* io */
 	SETCB("io.cache", "false", &cb_io_cache, "Change both of io.cache.{read,write}");
