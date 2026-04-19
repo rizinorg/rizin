@@ -125,6 +125,18 @@ RZ_IPI RzCmdStatus rz_cmd_cop_gadget_search_size_handler(RzCore *core, int argc,
 RZ_IPI RzCmdStatus rz_cmd_search_deltified_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "/F"
 RZ_IPI RzCmdStatus rz_cmd_search_file_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/J"
+RZ_IPI RzCmdStatus rz_cmd_info_jop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/J/"
+RZ_IPI RzCmdStatus rz_cmd_search_jop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Jk"
+RZ_IPI RzCmdStatus rz_cmd_query_jop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Jg"
+RZ_IPI RzCmdStatus rz_cmd_detail_jop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Js"
+RZ_IPI RzCmdStatus rz_cmd_jop_search_stack_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Jl"
+RZ_IPI RzCmdStatus rz_cmd_jop_gadget_search_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/o"
 RZ_IPI RzCmdStatus rz_cmd_search_insn_offset_backwards_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "/O"

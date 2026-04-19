@@ -477,6 +477,133 @@ commands:
             comment: "Offset into <file> to read the search data from."
           - text: "<size>"
             comment: "Number of bytes to read from the <file>."
+  - name: "/J"
+    summary: Search, List, Query for JOP Gadgets
+    subcommands:
+      - name: "/J"
+        cname: cmd_info_jop_gadget
+        summary: List JOP Gadgets
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_TABLE
+        args:
+          - name: filter-by-string
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: "/J/"
+        cname: cmd_search_jop_gadget
+        summary: List JOP Gadgets [regular expression]
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_TABLE
+        args:
+          - name: filter-by-regex
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: "/Jk"
+        cname: cmd_query_jop_gadget
+        summary: Query JOP Gadgets by providing constraints
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_TABLE
+        args_str: " <key>[=<val>] [<key>[=<val>] ...]]"
+        args:
+          - name: key=value
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false
+        details:
+          - name: Constraint types
+            entries:
+              - text: "reg=const"
+                comment: "Find gadgets that set a register to a constant value"
+              - text: "reg=reg"
+                comment: "Find gadgets that copy one register to another"
+              - text: "reg=reg OP const"
+                comment: "Find gadgets with register and constant arithmetic"
+              - text: "reg=reg OP reg"
+                comment: "Find gadgets with register-register operations"
+          - name: Supported operations
+            entries:
+              - text: "+ - * / %"
+                comment: "Arithmetic operations (add, sub, mul, div, mod)"
+              - text: "& | ^"
+                comment: "Bitwise operations (AND, OR, XOR)"
+              - text: "<< >>"
+                comment: "Shift operations (left, right)"
+          - name: Compound operators
+            entries:
+              - text: "reg++ or reg--"
+                comment: "Increment or decrement register"
+              - text: "reg+=val, reg-=val"
+                comment: "Compound assignment operators"
+          - name: Usage example
+            entries:
+              - text: "Find gadgets setting rax to 0"
+                comment: "/Jk rax=0"
+              - text: "Find gadgets copying rbx to rax"
+                comment: "/Jk rax=rbx"
+              - text: "Find gadgets with rax = rbx + 8"
+                comment: "/Jk rax=rbx+8"
+              - text: "Find gadgets with multiple constraints"
+                comment: "/Jk rax=0,rbx=rcx"
+      - name: "/Jg"
+        cname: cmd_detail_jop_gadget
+        summary: Gadget detail info
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_LONG
+        args:
+          - name: Gadget address
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: "/Js"
+        cname: cmd_jop_search_stack
+        summary: Search jop gadgets given stack changes
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: Stack changes
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false
+        details:
+          - name: Usage example
+            entries:
+              - text: "Search JOP gadgets with less than 0x200 stack changes"
+                comment: "/Js \"<0x200\""
+              - text: "Search JOP gadgets with 0x100 stack changes"
+                comment: "/Js =0x100"
+      - name: "/Jl"
+        cname: cmd_jop_gadget_search_size
+        summary: Search JOP gadgets given gadget size
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: Gadget size
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false
+        details:
+          - name: Usage example
+            entries:
+              - text: "Search JOP gadgets with the size less than 0x20"
+                comment: "/Jl \"<0x20\""
+              - text: "Search JOP gadgets with the size 0x10"
+                comment: "/Jl =0x10"
+
   - name: "/o"
     summary: Show offset of n instructions backward.
     cname: cmd_search_insn_offset_backwards

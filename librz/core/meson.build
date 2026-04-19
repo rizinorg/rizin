@@ -66,6 +66,7 @@ rz_core_sources = [
   'gadget.c',
   'gadget_rop.c',
   'gadget_cop.c',
+  'gadget_jop.c',
   'rtr.c',
   #'rtr_http.c',
   #'rtr_shell.c',
