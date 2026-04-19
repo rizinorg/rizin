@@ -7,15 +7,15 @@
 #include <rz_util.h>
 
 static inline bool red(RBNode *x) {
-	return x && x->red;
+	return x && rb_is_red(x);
 }
 
 static inline RBNode *zag(RBNode *x, int dir, RBNodeSum sum) {
-	RBNode *y = x->child[dir];
-	x->child[dir] = y->child[!dir];
-	y->child[!dir] = x;
-	x->red = true;
-	y->red = false;
+	RBNode *y = rb_child(x, dir);
+	rb_set_child(x, dir, rb_child(y, !dir));
+	rb_set_child(y, !dir, x);
+	rb_set_red(x, true);
+	rb_set_red(y, false);
 	if (sum) {
 		sum(x);
 	}
@@ -23,13 +23,14 @@ static inline RBNode *zag(RBNode *x, int dir, RBNodeSum sum) {
 }
 
 static inline RBNode *zig_zag(RBNode *x, int dir, RBNodeSum sum) {
-	RBNode *y = x->child[dir], *z = y->child[!dir];
-	y->child[!dir] = z->child[dir];
-	z->child[dir] = y;
-	x->child[dir] = z->child[!dir];
-	z->child[!dir] = x;
-	x->red = y->red = true;
-	z->red = false;
+	RBNode *y = rb_child(x, dir), *z = rb_child(y, !dir);
+	rb_set_child(y, !dir, rb_child(z, dir));
+	rb_set_child(z, dir, y);
+	rb_set_child(x, dir, rb_child(z, !dir));
+	rb_set_child(z, !dir, x);
+	rb_set_red(y, true);
+	rb_set_red(x, true);
+	rb_set_red(z, false);
 	if (sum) {
 		sum(x);
 		sum(y);
@@ -51,12 +52,12 @@ static inline RBIter bound_iter(RBNode *x, void *data, RBComparator cmp, bool up
 			if (!upper) {
 				it.path[it.len++] = x;
 			}
-			x = x->child[0];
+			x = rb_child(x, 0);
 		} else {
 			if (upper) {
 				it.path[it.len++] = x;
 			}
-			x = x->child[1];
+			x = rb_child(x, 1);
 		}
 	}
 
@@ -65,24 +66,26 @@ static inline RBIter bound_iter(RBNode *x, void *data, RBComparator cmp, bool up
 
 /// Returns true if a node with an equal key is deleted
 RZ_API bool rz_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void *cmp_user, RBNodeFree freefn, void *free_user, RBNodeSum sum) {
-	RBNode head, *del = NULL, **del_link = NULL, *g = NULL, *p = NULL, *q = &head, *path[RZ_RBTREE_MAX_HEIGHT];
+	RBNode head = {{0}}; RBNode *del = NULL, *del_parent = NULL, *g = NULL, *p = NULL, *q = &head, *path[RZ_RBTREE_MAX_HEIGHT];
+	int del_dir = 0;
 	int d = 1, d2, dep = 0;
-	head.child[0] = NULL;
-	head.child[1] = *root;
-	while (q->child[d]) {
+	rb_set_child(&head, 0, NULL);
+	rb_set_child(&head, 1, *root);
+	while (rb_child(q, d)) {
 		d2 = d;
 		g = p;
 		p = q;
-		if (del_link) {
+		if (del_parent) {
 			d = 1;
 		} else {
-			d = cmp(data, q->child[d2], cmp_user);
+			d = cmp(data, rb_child(q, d2), cmp_user);
 			if (d < 0) {
 				d = 0;
 			} else if (d > 0) {
 				d = 1;
 			} else {
-				del_link = &q->child[d2];
+				del_parent = q;
+				del_dir = d2;
 			}
 		}
 		if (q != &head) {
@@ -92,57 +95,63 @@ RZ_API bool rz_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, vo
 			}
 			path[dep++] = q;
 		}
-		q = q->child[d2];
-		if (q->red || red(q->child[d])) {
+		q = rb_child(q, d2);
+		if (rb_is_red(q) || red(rb_child(q, d))) {
 			continue;
 		}
-		if (red(q->child[!d])) {
-			if (del_link && *del_link == q) {
-				del_link = &q->child[!d]->child[d];
+		if (red(rb_child(q, !d))) {
+			if (del_parent && rb_child(del_parent, del_dir) == q) {
+				del_parent = rb_child(q, !d);
+				del_dir = d;
 			}
-			p->child[d2] = zag(q, !d, sum);
-			p = p->child[d2];
+			rb_set_child(p, d2, zag(q, !d, sum));
+			p = rb_child(p, d2);
 			if (dep >= RZ_RBTREE_MAX_HEIGHT) {
 				RZ_LOG_ERROR("Red-black tree depth is too big\n");
 				break;
 			}
 			path[dep++] = p;
 		} else {
-			RBNode *s = p->child[!d2];
+			RBNode *s = rb_child(p, !d2);
 			if (!s) {
 				continue;
 			}
-			if (!red(s->child[0]) && !red(s->child[1])) {
-				p->red = false;
-				q->red = s->red = true;
+			if (!red(rb_child(s, 0)) && !red(rb_child(s, 1))) {
+				rb_set_red(p, false);
+				rb_set_red(s, true);
+	rb_set_red(q, true);
 			} else {
-				int d3 = g->child[0] != p;
+				int d3 = rb_child(g, 0) != p;
 				RBNode *t;
-				if (red(s->child[d2])) {
-					if (del_link && *del_link == p) {
-						del_link = &s->child[d2]->child[d2];
+				if (red(rb_child(s, d2))) {
+					if (del_parent && rb_child(del_parent, del_dir) == p) {
+						del_parent = rb_child(s, d2);
+						del_dir = d2;
 					}
 					t = zig_zag(p, !d2, sum);
 				} else {
-					if (del_link && *del_link == p) {
-						del_link = &s->child[d2];
+					if (del_parent && rb_child(del_parent, del_dir) == p) {
+						del_parent = s;
+						del_dir = d2;
 					}
 					t = zag(p, !d2, sum);
 				}
-				t->red = q->red = true;
-				t->child[0]->red = t->child[1]->red = false;
-				g->child[d3] = t;
+				rb_set_red(q, true);
+	rb_set_red(t, true);
+				rb_set_red(rb_child(t, 1), false);
+				rb_set_red(rb_child(t, 0), false);
+				rb_set_child(g, d3, t);
 				path[dep - 1] = t;
 				path[dep++] = p;
 			}
 		}
 	}
-	if (del_link) {
-		del = *del_link;
-		p->child[q != p->child[0]] = q->child[q->child[0] == NULL];
+	if (del_parent) {
+		del = rb_child(del_parent, del_dir);
+		rb_set_child(p, q != rb_child(p, 0), rb_child(q, rb_child(q, 0) == NULL ? 1 : 0));
 		if (del != q) {
 			*q = *del;
-			*del_link = q;
+			rb_set_child(del_parent, del_dir, q);
 		}
 		if (freefn) {
 			freefn(del, free_user);
@@ -153,18 +162,19 @@ RZ_API bool rz_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, vo
 			sum(path[dep] == del ? q : path[dep]);
 		}
 	}
-	if ((*root = head.child[1])) {
-		(*root)->red = false;
+	if ((*root = rb_child(&head, 1))) {
+		rb_set_red(*root, false);
 	}
 	return del;
 }
 
 /// Returns true if the node was inserted successfully
 RZ_API bool rz_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBComparator cmp, void *cmp_user, RBNodeSum sum) {
-	node->child[0] = node->child[1] = NULL;
+	rb_set_child(node, 1, NULL);
+	rb_set_child(node, 0, NULL);
 	if (!*root) {
 		*root = node;
-		node->red = false;
+		rb_set_red(node, false);
 		if (sum) {
 			sum(node);
 		}
@@ -177,18 +187,19 @@ RZ_API bool rz_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBComp
 	for (;;) {
 		if (!q) {
 			q = node;
-			q->red = true;
-			p->child[d] = q;
+			rb_set_red(q, true);
+			rb_set_child(p, d, q);
 			done = true;
-		} else if (red(q->child[0]) && red(q->child[1])) {
-			q->child[0]->red = q->child[1]->red = false;
+		} else if (red(rb_child(q, 0)) && red(rb_child(q, 1))) {
+			rb_set_red(rb_child(q, 1), false);
+			rb_set_red(rb_child(q, 0), false);
 			if (q != *root) {
-				q->red = true;
+				rb_set_red(q, true);
 			}
 		}
-		if (q->red && p && p->red) {
-			int d3 = t ? t->child[0] != g : -1, d2 = g->child[0] != p;
-			if (p->child[d2] == q) {
+		if (rb_is_red(q) && p && rb_is_red(p)) {
+			int d3 = t ? rb_child(t, 0) != g : -1, d2 = rb_child(g, 0) != p;
+			if (rb_child(p, d2) == q) {
 				g = zag(g, d2, sum);
 				dep--;
 				path[dep - 1] = g;
@@ -197,7 +208,7 @@ RZ_API bool rz_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBComp
 				dep -= 2;
 			}
 			if (t) {
-				t->child[d3] = g;
+				rb_set_child(t, d3, g);
 			} else {
 				*root = g;
 			}
@@ -216,10 +227,10 @@ RZ_API bool rz_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBComp
 		path[dep++] = q;
 		if (d < 0) {
 			d = 0;
-			q = q->child[0];
+			q = rb_child(q, 0);
 		} else {
 			d = 1;
-			q = q->child[1];
+			q = rb_child(q, 1);
 		}
 	}
 	if (sum) {
@@ -250,7 +261,7 @@ RZ_API bool rz_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBC
 			break;
 		}
 		int d = cmp(data, cur, cmp_user);
-		cur = cur->child[(d < 0) ? 0 : 1];
+		cur = rb_child(cur, (d < 0) ? 0 : 1);
 	}
 
 	for (; dep > 0; dep--) {
@@ -268,9 +279,9 @@ RZ_API RBNode *rz_rbtree_find(RBNode *x, void *data, RBComparator cmp, void *use
 	while (x) {
 		int d = cmp(data, x, user);
 		if (d < 0) {
-			x = x->child[0];
+			x = rb_child(x, 0);
 		} else if (d > 0) {
-			x = x->child[1];
+			x = rb_child(x, 1);
 		} else {
 			return x;
 		}
@@ -282,8 +293,8 @@ RZ_API void rz_rbtree_free(RZ_NULLABLE RBNode *x, RBNodeFree freefn, void *user)
 	if (!x) {
 		return;
 	}
-	rz_rbtree_free(x->child[0], freefn, user);
-	rz_rbtree_free(x->child[1], freefn, user);
+	rz_rbtree_free(rb_child(x, 0), freefn, user);
+	rz_rbtree_free(rb_child(x, 1), freefn, user);
 	freefn(x, user);
 }
 
@@ -298,9 +309,9 @@ RZ_API RBNode *rz_rbtree_lower_bound(RBNode *x, void *data, RBComparator cmp, vo
 		int d = cmp(data, x, user);
 		if (d <= 0) {
 			ret = x;
-			x = x->child[0];
+			x = rb_child(x, 0);
 		} else {
-			x = x->child[1];
+			x = rb_child(x, 1);
 		}
 	}
 	return ret;
@@ -315,10 +326,10 @@ RZ_API RBNode *rz_rbtree_upper_bound(RBNode *x, void *data, RBComparator cmp, vo
 	while (x) {
 		int d = cmp(data, x, user);
 		if (d < 0) {
-			x = x->child[0];
+			x = rb_child(x, 0);
 		} else {
 			ret = x;
-			x = x->child[1];
+			x = rb_child(x, 1);
 		}
 	}
 	return ret;
@@ -331,7 +342,7 @@ RZ_API RBIter rz_rbtree_upper_bound_backward(RBNode *root, void *data, RBCompara
 static RBIter _first(RBNode *x, int dir) {
 	RBIter it;
 	it.len = 0;
-	for (; x; x = x->child[dir]) {
+	for (; x; x = rb_child(x, dir)) {
 		it.path[it.len++] = x;
 	}
 	return it;
@@ -347,7 +358,7 @@ RZ_API RBIter rz_rbtree_last(RBNode *tree) {
 
 static inline void _next(RBIter *it, int dir) {
 	RBNode *x = it->path[--it->len];
-	for (x = x->child[!dir]; x; x = x->child[dir]) {
+	for (x = rb_child(x, !dir); x; x = rb_child(x, dir)) {
 		it->path[it->len++] = x;
 	}
 }
@@ -445,7 +456,9 @@ RZ_API bool rz_rbtree_cont_delete(RContRBTree *tree, void *data, RContRBCmp cmp,
 		return false;
 	}
 	RCRBCmpWrap cmp_wrap = { cmp, tree->free, user };
-	RContRBNode data_wrap = { { { NULL, NULL }, false }, data };
+	RContRBNode data_wrap;
+	memset(&data_wrap, 0, sizeof(RContRBNode));
+	data_wrap.data = data;
 	RBNode *root_node = &tree->root->node;
 	const bool ret = rz_rbtree_aug_delete(&root_node, &data_wrap, cont_rbtree_free_cmp_wrapper, &cmp_wrap, cont_node_free, NULL, NULL);
 	if (root_node != (&tree->root->node)) {

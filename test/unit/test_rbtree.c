@@ -34,8 +34,8 @@ static void size(RBNode *a_) {
 	struct Node *a = container_of(a_, struct Node, rb);
 	a->size = 1;
 	for (i = 0; i < 2; i++) {
-		if (a_->child[i]) {
-			a->size += container_of(a_->child[i], struct Node, rb)->size;
+		if (rb_child(a_, i)) {
+			a->size += container_of(rb_child(a_, i), struct Node, rb)->size;
 		}
 	}
 }
@@ -53,21 +53,21 @@ static struct Node *make(int key) {
 static bool check1(RBNode *x, int dep, int black, bool leftmost) {
 	static int black_;
 	if (x) {
-		black += !x->red;
-		if (x->red && ((x->child[0] && x->child[0]->red) || (x->child[1] && x->child[1]->red))) {
+		black += !rb_is_red(x);
+		if (rb_is_red(x) && ((rb_child(x, 0) && rb_is_red(rb_child(x, 0))) || (rb_child(x, 1) && rb_is_red(rb_child(x, 1))))) {
 			printf("error: red violation\n");
 			return false;
 		}
-		if ((x->child[0] ? container_of(x->child[0], struct Node, rb)->size : 0) +
-				(x->child[1] ? container_of(x->child[1], struct Node, rb)->size : 0) + 1 !=
+		if ((rb_child(x, 0) ? container_of(rb_child(x, 0), struct Node, rb)->size : 0) +
+				(rb_child(x, 1) ? container_of(rb_child(x, 1), struct Node, rb)->size : 0) + 1 !=
 			container_of(x, struct Node, rb)->size) {
 			printf("error: size violation\n");
 			return false;
 		}
-		if (!check1(x->child[0], dep + 1, black, leftmost)) {
+		if (!check1(rb_child(x, 0), dep + 1, black, leftmost)) {
 			return false;
 		}
-		if (!check1(x->child[1], dep + 1, black, false)) {
+		if (!check1(rb_child(x, 1), dep + 1, black, false)) {
 			return false;
 		}
 	} else if (leftmost) {
