@@ -444,14 +444,14 @@ static RzAnalysisVarStorage *composite_stor(RzAnalysisVarStorage *stor) {
 		.storage = RZ_NEW0(RzAnalysisVarStorage)
 	};
 	p1.storage->type = RZ_ANALYSIS_VAR_STORAGE_REG;
-	p1.storage->reg = strdup("rax");
+	p1.storage->reg = "rax";
 	RzAnalysisVarStoragePiece p2 = {
 		.offset_in_bits = 32,
 		.size_in_bits = 32,
 		.storage = RZ_NEW0(RzAnalysisVarStorage)
 	};
 	p2.storage->type = RZ_ANALYSIS_VAR_STORAGE_REG;
-	p2.storage->reg = strdup("rbx");
+	p2.storage->reg = "rbx";
 	rz_vector_push(stor->composite, &p1);
 	rz_vector_push(stor->composite, &p2);
 	return stor;
@@ -521,6 +521,10 @@ bool test_analysis_var_save() {
 	sdb_free(db);
 	sdb_free(expected);
 
+	rz_type_free(t_int64_t);
+	rz_type_free(t_uint64_t);
+	rz_type_free(t_struct_something);
+	rz_type_free(t_const_char_ptr);
 	rz_analysis_free(analysis);
 	mu_end;
 }
@@ -543,10 +547,13 @@ bool test_analysis_var_load() {
 
 	RzType *t_int64_t = rz_type_identifier_of_base_type_str(analysis->typedb, "int64_t");
 	mu_assert_notnull(t_int64_t, "has int64_t type");
+	rz_type_free(t_int64_t);
 	RzType *t_uint64_t = rz_type_identifier_of_base_type_str(analysis->typedb, "uint64_t");
 	mu_assert_notnull(t_uint64_t, "has uint64_t type");
+	rz_type_free(t_uint64_t);
 	RzType *t_const_char_ptr = rz_type_pointer_of_base_type_str(analysis->typedb, "char", true);
 	mu_assert_notnull(t_const_char_ptr, "has \"const char *\" type");
+	rz_type_free(t_const_char_ptr);
 
 	RzAnalysisVar *v = rz_analysis_function_get_reg_var_at(f, "rax");
 	mu_assert_notnull(v, "var");

@@ -3632,12 +3632,12 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETDESC(n, "Set grep(~) as case smart/sensitive/insensitive");
 	SETOPTIONS(n, "smart", "sensitive", "insensitive", NULL);
 
-	/* rop */
-	SETI("rop.len", 5, "Maximum ROP gadget length");
-	SETBPREF("rop.cache", "false", "Cache rop gadget results(experimental)");
-	SETBPREF("rop.subchains", "false", "Display every length gadget from rop.len=X to 2 in /Rl");
-	SETBPREF("rop.conditional", "false", "Include conditional jump, calls and returns in ropsearch");
-	SETBPREF("rop.comments", "false", "Display comments in rop search output");
+	/* gadget */
+	SETI("gadget.len", 5, "Maximum number of instructions per gadget");
+	SETBPREF("gadget.cache", "false", "Cache gadget results(experimental)");
+	SETBPREF("gadget.subchains", "false", "Display every length gadget from gadget.len=X to 2");
+	SETBPREF("gadget.conditional", "false", "Include conditional jump, calls and returns in gadget search");
+	SETBPREF("gadget.comments", "false", "Display comments in gadget search output");
 
 	/* io */
 	SETCB("io.cache", "false", &cb_io_cache, "Change both of io.cache.{read,write}");

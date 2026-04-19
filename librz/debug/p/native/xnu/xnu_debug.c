@@ -841,6 +841,23 @@ static uid_t uidFromPid(pid_t pid) {
 	return uid;
 }
 
+static size_t xnu_get_argmax_cached(void) {
+	// TODO: consider moving this to a context in the future
+	static size_t argmax = 0;
+	size_t argmax_size = sizeof(argmax);
+	int mib[2] = { CTL_KERN, KERN_ARGMAX };
+
+	if (argmax != 0) {
+		return argmax;
+	}
+	if (sysctl(mib, RZ_ARRAY_SIZE(mib), &argmax, &argmax_size, NULL, 0) == -1 || argmax == 0) {
+		const size_t default_argmax = 4096;
+		RZ_LOG_WARN("sysctl(): failed to get argmax, defaulting to %" PFMTSZu " - %d\n", default_argmax, errno);
+		argmax = default_argmax;
+	}
+	return argmax;
+}
+
 bool xnu_generate_corefile(RzDebug *dbg, RzBuffer *dest) {
 	rz_return_val_if_fail(dbg && dbg->plugin_data, false);
 	RzXnuDebug *ctx = dbg->plugin_data;
@@ -924,91 +941,81 @@ cleanup:
 }
 
 RzDebugPid *xnu_get_pid(int pid) {
-	int psnamelen, foo, nargs, mib[3], uid;
-	size_t size, argmax = 4096;
-	char *curr_arg, *start_args, *iter_args, *end_args;
-	char *procargs = NULL;
-	char psname[4096];
+	char *iter_args, *start_args, *procargs = NULL;
+	size_t size, argmax = xnu_get_argmax_cached() + 1;
+	RzDebugPid *rpid = NULL;
+	int mib[3], uid;
+	const char *end_args;
+	ut32 nargs;
+
 	uid = uidFromPid(pid);
 
-	/* Allocate space for the arguments. */
-	procargs = (char *)malloc(argmax);
+	// Allocate space for the arguments.
+	procargs = RZ_NEWS0(char, argmax);
 	if (!procargs) {
-		eprintf("getcmdargs(): insufficient memory for procargs %d\n",
-			(int)(size_t)argmax);
+		RZ_LOG_WARN("getcmdargs(): insufficient memory for procargs %" PFMTSZu "\n ", argmax);
 		return NULL;
 	}
 
-	/*
-	 * Make a sysctl() call to get the raw argument space of the process.
-	 */
+	// Make a sysctl() call to get the raw argument space of the process.
 	mib[0] = CTL_KERN;
 	mib[1] = KERN_PROCARGS2;
 	mib[2] = pid;
 
 	size = argmax;
-	procargs[0] = 0;
-	if (sysctl(mib, 3, procargs, &size, NULL, 0) == -1) {
-		if (EINVAL == errno) { // invalid == access denied for some reason
-			// eprintf("EINVAL returned fetching argument space\n");
-			free(procargs);
-			return NULL;
+	if (sysctl(mib, RZ_ARRAY_SIZE(mib), procargs, &size, NULL, 0) == -1) {
+		if (errno == EINVAL) {
+			// Some processes do not allow KERN_PROCARGS2, just skip them
+			goto err;
 		}
-		eprintf("sysctl(): unspecified sysctl error - %i\n", errno);
-		free(procargs);
-		return NULL;
+		RZ_LOG_WARN("sysctl(): unspecified sysctl error - %d\n", errno);
+		goto err;
 	}
+	// KERN_PROCARGS2 returns a flat byte buffer with this layout:
+	// [argc][exec_path][\0 (1 or more)][argv[0]][\0][argv[1]][\0]...[argv[argc-1]]
 
-	// copy the number of argument to nargs
+	if (size < sizeof(nargs)) {
+		goto err;
+	}
+	procargs[size] = 0;
 	memcpy(&nargs, procargs, sizeof(nargs));
-	iter_args = procargs + sizeof(nargs);
-	end_args = &procargs[size - 30]; // end of the argument space
-	if (iter_args >= end_args) {
-		eprintf("getcmdargs(): argument length mismatch");
-		free(procargs);
-		return NULL;
+	if (nargs <= 0 || nargs > size) {
+		RZ_LOG_WARN("getcmdargs(): invalid nargs %d\n", nargs);
+		goto err;
 	}
 
-	if (iter_args == end_args) {
-		free(procargs);
-		return NULL;
+	start_args = procargs + sizeof(nargs);
+	end_args = &procargs[size];
+
+	if (start_args >= end_args) {
+		RZ_LOG_WARN("getcmdargs(): no arguments found\n");
+		goto err;
 	}
-	curr_arg = iter_args;
-	start_args = iter_args; // reset start position to beginning of cmdline
-	foo = 1;
-	*psname = 0;
-	psnamelen = 0;
+
+	// Skip exec_path and the NULL separators to reach argv
+	start_args = (char *)rz_str_word_get_next0(start_args);
+	while (start_args < end_args && *start_args == '\0') {
+		start_args++;
+	}
+
+	iter_args = start_args;
+	nargs--;
 	while (iter_args < end_args && nargs > 0) {
-		if (*iter_args++ == '\0') {
-			int alen = strlen(curr_arg);
-			if (foo) {
-				memcpy(psname, curr_arg, alen + 1);
-				foo = 0;
-			} else {
-				psname[psnamelen] = ' ';
-				memcpy(psname + psnamelen + 1, curr_arg, alen + 1);
-			}
-			psnamelen += alen;
-			// printf("arg[%i]: %s\n", iter_args, curr_arg);
-			/* Fetch next argument */
-			curr_arg = iter_args;
+		if (*iter_args == '\0') {
+			*iter_args = ' ';
 			nargs--;
 		}
+		iter_args++;
 	}
-#if 1
-	/*
-	 * curr_arg position should be further than the start of the argspace
-	 * and number of arguments should be 0 after iterating above. Otherwise
-	 * we had an empty argument space or a missing terminating \0 etc.
-	 */
-	if (curr_arg == start_args || nargs > 0) {
-		psname[0] = 0;
-		//		eprintf ("getcmdargs(): argument parsing failed");
-		free(procargs);
-		return NULL;
+	if (nargs > 0) {
+		RZ_LOG_WARN("getcmdargs(): argument length mismatch");
+		goto err;
 	}
-#endif
-	return rz_debug_pid_new(psname, pid, uid, 's', 0); // XXX 's' ??, 0?? must set correct values
+
+	rpid = rz_debug_pid_new(start_args, pid, uid, 's', 0); // XXX 's' ??, 0?? must set correct values
+err:
+	RZ_FREE(procargs);
+	return rpid;
 }
 
 kern_return_t mach_vm_region_recurse(
