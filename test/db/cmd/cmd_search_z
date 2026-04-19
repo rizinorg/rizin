@@ -1457,7 +1457,7 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=String Search - Encoding: utf16le - Armenian - Fast on LE systems
+NAME=String Search - Encoding: utf16le - Armenian - Fast search, aligned to code point width
 FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf16le
 CMDS=<<EOF
 # Align to UTF16 code point width
@@ -1489,23 +1489,6 @@ EOF
 EXPECT=<<EOF
 0x00000270 96 hit.string.utf32le.0 24
 ا الأوضاع, لم بوابة المبرمة عرض. إبّان اسبوعين البشريةً تعد في. كنقطة إيطاليا قام بل, أضف أن وبغطاء الباهضة.
-EOF
-EXPECT_ERR=
-RUN
-
-NAME=String Search - Encoding: utf16le - Armenian - Fast search, aligned to code point width
-FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf16le
-CMDS=<<EOF
-e search.align=2
-/z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" l utf16le
-# Requires increasing the block size because -.-
-b 0x1000
-# Check string is actually at offset of the hit.
-ps utf16le unprintable @ hit.string.utf16le.0
-EOF
-EXPECT=<<EOF
-0x0000020c 66 hit.string.utf16le.0 33
-դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
 EOF
 EXPECT_ERR=
 RUN
