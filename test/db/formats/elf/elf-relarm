@@ -753,12 +753,7 @@ EXPECT=<<EOF
             ;-- foo:
             ;-- .text:
             ;-- _start:
-<<<<<<< HEAD
-        ,=< 0x08000034      b.w   foo                                  ; RELOC 24 foo ; [01] -r-x section size 4 named .text
----
-=======
         ,=< 0x08000034      b.w   reloc.target.foo                     ; RELOC 24 foo ; [01] -r-x section size 4 named .text
->>>>>>> 2c0209db15 (Fix relocation patching for arm and add immediate value fetching for different relocations)
 0x08000034 = 0xf000
 EOF
 RUN
