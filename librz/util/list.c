@@ -18,21 +18,15 @@ static void rz_list_pool_free(RzListPool *pool) {
 	free(pool);
 }
 
-static inline RzListPool *_pool_of(RzList *list) {
-	if (RZ_UNLIKELY(!list)) {
-		return NULL;
-	}
-	return list->pool;
-}
-
 /**
  * \brief Allocates an RzListIter from the pool, growing by one slab if needed.
+ *        If \p pool is NULL, falls back to a plain heap allocation.
  */
-static inline RzListIter *pool_alloc(RzListPool *pool) {
-	if (RZ_UNLIKELY(!pool)) {
+static inline RzListIter *pool_alloc_node(RzListPool *pool) {
+	if (!pool) {
 		return RZ_NEW0(RzListIter);
 	}
-	if (RZ_UNLIKELY(!pool->freelist)) {
+	if (!pool->freelist) {
 		RzListSlab *slab = RZ_NEW0(RzListSlab);
 		if (!slab) {
 			return NULL;
@@ -54,13 +48,15 @@ static inline RzListIter *pool_alloc(RzListPool *pool) {
 }
 
 /**
- * \brief Returns an RzListIter back to the pool freelist.
+ * \brief Returns an RzListIter node back to the pool freelist so it can be
+ *        reused, without freeing any heap memory.
+ *        If \p pool is NULL, the node was heap-allocated and is freed directly.
  */
-static inline void pool_free(RzListPool *pool, RzListIter *node) {
-	if (RZ_UNLIKELY(!node)) {
+static inline void pool_return_node(RzListPool *pool, RzListIter *node) {
+	if (!node) {
 		return;
 	}
-	if (RZ_UNLIKELY(!pool)) {
+	if (!pool) {
 		free(node);
 		return;
 	}
@@ -132,7 +128,7 @@ RZ_API bool rz_list_iter_swap_data(RZ_NONNULL RzListIter *iter0, RZ_NONNULL RzLi
 }
 
 /**
- * \brief returns the first RzList iterator int the list
+ * \brief returns the first RzList iterator in the list
  *
  **/
 RZ_API RZ_BORROW RzListIter *rz_list_iterator(RZ_NONNULL const RzList *list) {
@@ -193,23 +189,23 @@ RZ_API ut32 rz_list_length(RZ_NONNULL const RzList *list) {
 }
 
 static void _list_purge_with_free(RzList *list) {
-	RzListPool *pool = _pool_of(list);
+	RzListPool *pool = list->pool;
 	RzListIter *it = list->head;
 	RzListFree fn = list->free;
 	while (it) {
 		RzListIter *next = it->next;
 		fn(it->val);
-		pool_free(pool, it);
+		pool_return_node(pool, it);
 		it = next;
 	}
 }
 
 static void _list_purge_no_free(RzList *list) {
-	RzListPool *pool = _pool_of(list);
+	RzListPool *pool = list->pool;
 	RzListIter *it = list->head;
 	while (it) {
 		RzListIter *next = it->next;
-		pool_free(pool, it);
+		pool_return_node(pool, it);
 		it = next;
 	}
 }
@@ -281,12 +277,16 @@ RZ_API void rz_list_delete(RZ_NONNULL RzList *list, RZ_OWN RZ_NONNULL RzListIter
 		list->free(iter->val);
 	}
 	iter->val = NULL;
-	pool_free(_pool_of(list), iter);
+	pool_return_node(list->pool, iter);
 }
 
 /**
- * \brief Joins 2 list into one (list2 pointer needs to be freed by the user)
+ * \brief Joins list2 into list1 by copying all values; list2 is left empty
+ *        but its structure (pool, free pointer) is preserved.
+ *        The caller is responsible for freeing list2 afterward.
  *
+ * \note  list2's free callback is NOT called during the join so that values
+ *        transferred to list1 are not prematurely destroyed.
  **/
 RZ_API bool rz_list_join(RZ_NONNULL RzList *list1, RZ_NONNULL RzList *list2) {
 	rz_return_val_if_fail(list1 && list2, false);
@@ -294,10 +294,10 @@ RZ_API bool rz_list_join(RZ_NONNULL RzList *list1, RZ_NONNULL RzList *list2) {
 		return false;
 	}
 
-	RzListPool *pool1 = _pool_of(list1);
+	RzListPool *pool1 = list1->pool;
 	RzListIter *it = list2->head;
 	while (it) {
-		RzListIter *n = pool_alloc(pool1);
+		RzListIter *n = pool_alloc_node(pool1);
 		if (!n) {
 			return false;
 		}
@@ -317,7 +317,21 @@ RZ_API bool rz_list_join(RZ_NONNULL RzList *list1, RZ_NONNULL RzList *list2) {
 
 	list1->sorted = false;
 
-	rz_list_purge(list2);
+	/*
+	 * Walk list2's nodes and return each one to list2's pool (or free them
+	 * if list2 has no pool).  We must NOT call list2->free on the values
+	 * because ownership of the values has just been transferred to list1.
+	 */
+	RzListIter *cur = list2->head;
+	while (cur) {
+		RzListIter *next = cur->next;
+		pool_return_node(list2->pool, cur);
+		cur = next;
+	}
+	list2->head = NULL;
+	list2->tail = NULL;
+	list2->length = 0;
+
 	return true;
 }
 
@@ -389,7 +403,7 @@ RZ_API RZ_OWN RzList *rz_list_new_from_iterator(RZ_BORROW RZ_NONNULL RzIterator 
  *
  **/
 RZ_API RZ_OWN RzListIter *rz_list_item_new(RZ_NULLABLE void *data) {
-	RzListIter *item = pool_alloc(NULL);
+	RzListIter *item = pool_alloc_node(NULL);
 	if (item) {
 		item->val = data;
 	}
@@ -405,7 +419,7 @@ RZ_API RZ_BORROW RzListIter *rz_list_append(RZ_NONNULL RzList *list, RZ_NONNULL 
 
 	rz_return_val_if_fail(list, NULL);
 
-	item = pool_alloc(_pool_of(list));
+	item = pool_alloc_node(list->pool);
 	if (!item) {
 		return item;
 	}
@@ -431,7 +445,7 @@ RZ_API RZ_BORROW RzListIter *rz_list_append(RZ_NONNULL RzList *list, RZ_NONNULL 
 RZ_API RZ_BORROW RzListIter *rz_list_prepend(RZ_NONNULL RzList *list, RZ_NONNULL void *data) {
 	rz_return_val_if_fail(list, NULL);
 
-	RzListIter *item = pool_alloc(_pool_of(list));
+	RzListIter *item = pool_alloc_node(list->pool);
 	if (!item) {
 		return NULL;
 	}
@@ -463,7 +477,7 @@ RZ_API RZ_BORROW RzListIter *rz_list_insert(RZ_NONNULL RzList *list, ut32 n, RZ_
 	if (!it) {
 		return rz_list_append(list, data);
 	}
-	RzListIter *item = pool_alloc(_pool_of(list));
+	RzListIter *item = pool_alloc_node(list->pool);
 	if (!item) {
 		return NULL;
 	}
@@ -500,7 +514,7 @@ RZ_API RZ_OWN void *rz_list_pop(RZ_NONNULL RzList *list) {
 			list->tail->next = NULL;
 		}
 		data = iter->val;
-		pool_free(_pool_of(list), iter);
+		pool_return_node(list->pool, iter);
 		list->length--;
 	}
 	return data;
@@ -524,7 +538,7 @@ RZ_API RZ_OWN void *rz_list_pop_head(RZ_NONNULL RzList *list) {
 			list->head->prev = NULL;
 		}
 		data = iter->val;
-		pool_free(_pool_of(list), iter);
+		pool_return_node(list->pool, iter);
 		list->length--;
 	}
 	return data;
@@ -596,7 +610,7 @@ RZ_API RZ_BORROW RzListIter *rz_list_add_sorted(RZ_NONNULL RzList *list, RZ_NONN
 	for (it = list->head; it && it->val && cmp(data, it->val, user) > 0; it = it->next) {
 	}
 	if (it) {
-		item = pool_alloc(_pool_of(list));
+		item = pool_alloc_node(list->pool);
 		if (!item) {
 			return NULL;
 		}
@@ -855,7 +869,7 @@ RZ_API void rz_list_sorted_uniq(RZ_NONNULL RzList *list, RZ_NONNULL RzListCompar
 }
 
 /**
- * \brief Casts a RzList containg strings into a concatenated string
+ * \brief Casts a RzList containing strings into a concatenated string
  *
  * \param list The list of strings to concatenate.
  * \param ch char to separate the match strings.
