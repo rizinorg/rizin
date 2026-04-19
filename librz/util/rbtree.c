@@ -66,7 +66,8 @@ static inline RBIter bound_iter(RBNode *x, void *data, RBComparator cmp, bool up
 
 /// Returns true if a node with an equal key is deleted
 RZ_API bool rz_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void *cmp_user, RBNodeFree freefn, void *free_user, RBNodeSum sum) {
-	RBNode head = {{0}}; RBNode *del = NULL, *del_parent = NULL, *g = NULL, *p = NULL, *q = &head, *path[RZ_RBTREE_MAX_HEIGHT];
+	RBNode head = { { 0 } };
+	RBNode *del = NULL, *del_parent = NULL, *g = NULL, *p = NULL, *q = &head, *path[RZ_RBTREE_MAX_HEIGHT];
 	int del_dir = 0;
 	int d = 1, d2, dep = 0;
 	rb_set_child(&head, 0, NULL);
@@ -119,7 +120,7 @@ RZ_API bool rz_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, vo
 			if (!red(rb_child(s, 0)) && !red(rb_child(s, 1))) {
 				rb_set_red(p, false);
 				rb_set_red(s, true);
-	rb_set_red(q, true);
+				rb_set_red(q, true);
 			} else {
 				int d3 = rb_child(g, 0) != p;
 				RBNode *t;
@@ -137,7 +138,7 @@ RZ_API bool rz_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, vo
 					t = zag(p, !d2, sum);
 				}
 				rb_set_red(q, true);
-	rb_set_red(t, true);
+				rb_set_red(t, true);
 				rb_set_red(rb_child(t, 1), false);
 				rb_set_red(rb_child(t, 0), false);
 				rb_set_child(g, d3, t);
