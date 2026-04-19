@@ -933,38 +933,38 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 	case R_ARM_NONE:
 		return;
 	case R_ARM_THM_JUMP24:
-	/* fall-thru */
-    case R_ARM_THM_CALL:
-        rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		/* fall-thru */
+	case R_ARM_THM_CALL:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 
-        // val = S + A - P
-        val = ((fs->S + fs->A) | T) - fs->P;
+		// val = S + A - P
+		val = ((fs->S + fs->A) | T) - fs->P;
 
-        keephw1 = rz_read_ble16(&buf[0], big_endian);
-        keephw2 = rz_read_ble16(&buf[2], big_endian);
+		keephw1 = rz_read_ble16(&buf[0], big_endian);
+		keephw2 = rz_read_ble16(&buf[2], big_endian);
 
-        ut32 s  = (val >> 24) & 1;
-        ut32 i1 = (val >> 23) & 1;
-        ut32 i2 = (val >> 22) & 1;
+		ut32 s = (val >> 24) & 1;
+		ut32 i1 = (val >> 23) & 1;
+		ut32 i2 = (val >> 22) & 1;
 
-        ut32 j1 = (!(i1 ^ s)) & 1;
-        ut32 j2 = (!(i2 ^ s)) & 1;
+		ut32 j1 = (!(i1 ^ s)) & 1;
+		ut32 j2 = (!(i2 ^ s)) & 1;
 
-        rz_write_ble16(&buf[0],
-            (keephw1 & 0xF800) | 
-            (s << 10) | 
-            ((val >> 12) & 0x03FF), 
-            big_endian);
+		rz_write_ble16(&buf[0],
+			(keephw1 & 0xF800) |
+				(s << 10) |
+				((val >> 12) & 0x03FF),
+			big_endian);
 
-        rz_write_ble16(&buf[2],
-            (keephw2 & 0xD000) | 
-            (j1 << 13) | 
-            (j2 << 11) | 
-            ((val >> 1) & 0x07FF), 
-            big_endian);
+		rz_write_ble16(&buf[2],
+			(keephw2 & 0xD000) |
+				(j1 << 13) |
+				(j2 << 11) |
+				((val >> 1) & 0x07FF),
+			big_endian);
 
-        rz_buf_write_at(buf_patched, patch_addr, buf, 4);
-        break;
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
 
 	case R_ARM_ABS32:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
@@ -995,77 +995,77 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		break;
 
 	case R_ARM_THM_MOVW_PREL_NC:
-        rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-        
-        val = ((fs->S + fs->A) | T)- fs->P;
-        
-        keephw1 = rz_read_ble16(&buf[0], big_endian);
-        keephw2 = rz_read_ble16(&buf[2], big_endian);
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 
-        keephw1 = (keephw1 & 0xFBF0) |
-            ((val >> 12) & 0x000F) |// imm4
-            (((val >> 11) & 0x1) << 10);// i
+		val = ((fs->S + fs->A) | T) - fs->P;
 
-        keephw2 = (keephw2 & 0x8F00) |
-            (((val >> 8) & 0x7) << 12) |// imm3
-            (val & 0x00FF);// imm8
+		keephw1 = rz_read_ble16(&buf[0], big_endian);
+		keephw2 = rz_read_ble16(&buf[2], big_endian);
 
-        rz_write_ble16(&buf[0], keephw1, big_endian);
-        rz_write_ble16(&buf[2], keephw2, big_endian);
-        
-        rz_buf_write_at(buf_patched, patch_addr, buf, 4);
-        break;
+		keephw1 = (keephw1 & 0xFBF0) |
+			((val >> 12) & 0x000F) | // imm4
+			(((val >> 11) & 0x1) << 10); // i
+
+		keephw2 = (keephw2 & 0x8F00) |
+			(((val >> 8) & 0x7) << 12) | // imm3
+			(val & 0x00FF); // imm8
+
+		rz_write_ble16(&buf[0], keephw1, big_endian);
+		rz_write_ble16(&buf[2], keephw2, big_endian);
+
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
 
 	case R_ARM_THM_JUMP19:
-        rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-        
-        val = ((fs->S + fs->A) | T)- fs->P;
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 
-        keephw1 = rz_read_ble16(&buf[0], big_endian);
-        keephw2 = rz_read_ble16(&buf[2], big_endian);
+		val = ((fs->S + fs->A) | T) - fs->P;
 
-        keephw1 = (keephw1 & 0xFB80) |
-                  ((val >> 10) & 0x0400) | // S
-                  ((val >> 12) & 0x003F); // imm6
+		keephw1 = rz_read_ble16(&buf[0], big_endian);
+		keephw2 = rz_read_ble16(&buf[2], big_endian);
 
-        keephw2 = (keephw2 & 0xD000) |
-                  (((val >> 18) & 1) << 13) | // J1
-                  (((val >> 19) & 1) << 11) | // J2
-                  ((val >> 1) & 0x07FF);      // imm11
+		keephw1 = (keephw1 & 0xFB80) |
+			((val >> 10) & 0x0400) | // S
+			((val >> 12) & 0x003F); // imm6
 
-        rz_write_ble16(&buf[0], keephw1, big_endian);
-        rz_write_ble16(&buf[2], keephw2, big_endian);
-        rz_buf_write_at(buf_patched, patch_addr, buf, 4);
-        break;
+		keephw2 = (keephw2 & 0xD000) |
+			(((val >> 18) & 1) << 13) | // J1
+			(((val >> 19) & 1) << 11) | // J2
+			((val >> 1) & 0x07FF); // imm11
+
+		rz_write_ble16(&buf[0], keephw1, big_endian);
+		rz_write_ble16(&buf[2], keephw2, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
 
 	case R_ARM_THM_ALU_PREL_11_0:
-    val = fs->S + fs->A - (fs->P & 0xFFFFFFFC);
-	        rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-        keephw1 = rz_read_ble16(&buf[0], big_endian);
-        keephw2 = rz_read_ble16(&buf[2], big_endian);
-    abs_val = val;
-    ut32 add_sub_hw1;
-    if (abs_val >> 63) {
-        abs_val = ~abs_val + 1;
-        add_sub_hw1 = 0xf2af;  // SUB form
-    } else {
-        add_sub_hw1 = 0xf20f;  // ADD form
-    }
+		val = fs->S + fs->A - (fs->P & 0xFFFFFFFC);
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		keephw1 = rz_read_ble16(&buf[0], big_endian);
+		keephw2 = rz_read_ble16(&buf[2], big_endian);
+		abs_val = val;
+		ut32 add_sub_hw1;
+		if (abs_val >> 63) {
+			abs_val = ~abs_val + 1;
+			add_sub_hw1 = 0xf2af; // SUB form
+		} else {
+			add_sub_hw1 = 0xf20f; // ADD form
+		}
 
-    ut32 Rd = keephw2 & 0x0F00;
+		ut32 Rd = keephw2 & 0x0F00;
 
-    ut32 i    = (abs_val >> 11) & 1;
-    ut32 imm3 = (abs_val >> 8) & 0x7;
-    ut32 imm8 = abs_val & 0xFF;
+		ut32 i = (abs_val >> 11) & 1;
+		ut32 imm3 = (abs_val >> 8) & 0x7;
+		ut32 imm8 = abs_val & 0xFF;
 
-    keephw1 = add_sub_hw1 | (i << 10);
-    keephw2 = (imm3 << 12) | Rd | imm8;
+		keephw1 = add_sub_hw1 | (i << 10);
+		keephw2 = (imm3 << 12) | Rd | imm8;
 
-    ut8 out[4];
-    rz_write_ble16(out, keephw1, big_endian);
-    rz_write_ble16(out + 2, keephw2, big_endian);
-    rz_buf_write_at(buf_patched, patch_addr, out, 4);
-    break;
+		ut8 out[4];
+		rz_write_ble16(out, keephw1, big_endian);
+		rz_write_ble16(out + 2, keephw2, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, out, 4);
+		break;
 
 	case R_ARM_ABS16:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
@@ -1184,30 +1184,30 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
 		break;
 
-case R_ARM_THM_MOVT_ABS:
-    case R_ARM_THM_MOVT_PREL:
-        rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-        keephw1 = rz_read_ble16(&buf[0], big_endian);
-        keephw2 = rz_read_ble16(&buf[2], big_endian);
+	case R_ARM_THM_MOVT_ABS:
+	case R_ARM_THM_MOVT_PREL:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		keephw1 = rz_read_ble16(&buf[0], big_endian);
+		keephw2 = rz_read_ble16(&buf[2], big_endian);
 
-        if (rel->type == R_ARM_THM_MOVT_PREL) {
-            val = (fs->S + fs->A - fs->P) >> 16;
-        } else {
-            val = (fs->S + fs->A) >> 16;
-        }
+		if (rel->type == R_ARM_THM_MOVT_PREL) {
+			val = (fs->S + fs->A - fs->P) >> 16;
+		} else {
+			val = (fs->S + fs->A) >> 16;
+		}
 
-        keephw1 = (keephw1 & 0xFBF0) | 
-                  (((val >> 11) & 1) << 10) | 
-                  ((val >> 12) & 0x000F);
+		keephw1 = (keephw1 & 0xFBF0) |
+			(((val >> 11) & 1) << 10) |
+			((val >> 12) & 0x000F);
 
-        keephw2 = (keephw2 & 0x8F00) | 
-                  (((val >> 8) & 0x7) << 12) | 
-                  (val & 0x00FF);
+		keephw2 = (keephw2 & 0x8F00) |
+			(((val >> 8) & 0x7) << 12) |
+			(val & 0x00FF);
 
-        rz_write_ble16(&buf[0], keephw1, big_endian);
-        rz_write_ble16(&buf[2], keephw2, big_endian);
-        rz_buf_write_at(buf_patched, patch_addr, buf, 4);
-        break;
+		rz_write_ble16(&buf[0], keephw1, big_endian);
+		rz_write_ble16(&buf[2], keephw2, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
 
 	case R_ARM_THM_JUMP6:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
@@ -1222,25 +1222,25 @@ case R_ARM_THM_MOVT_ABS:
 		break;
 
 	case R_ARM_THM_PC12:
-        rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-        keephw1 = rz_read_ble16(&buf[0], big_endian);
-        keephw2 = rz_read_ble16(&buf[2], big_endian);
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		keephw1 = rz_read_ble16(&buf[0], big_endian);
+		keephw2 = rz_read_ble16(&buf[2], big_endian);
 
-        val = fs->S + fs->A - (fs->P & 0xFFFFFFFC);
+		val = fs->S + fs->A - (fs->P & 0xFFFFFFFC);
 
-        u_bit = 0x80;
+		u_bit = 0x80;
 
-        if (val >> 63) {
-            u_bit = 0;
-            val = ~val + 1;
-        }
-        keephw1 = (keephw1 & 0xFF7F) | u_bit;
-        keephw2 = (keephw2 & 0xF000) | (val & 0x0FFF);
+		if (val >> 63) {
+			u_bit = 0;
+			val = ~val + 1;
+		}
+		keephw1 = (keephw1 & 0xFF7F) | u_bit;
+		keephw2 = (keephw2 & 0xF000) | (val & 0x0FFF);
 
-        rz_write_ble16(&buf[0], keephw1, big_endian);
-        rz_write_ble16(&buf[2], keephw2, big_endian);
-        rz_buf_write_at(buf_patched, patch_addr, buf, 4);
-        break;
+		rz_write_ble16(&buf[0], keephw1, big_endian);
+		rz_write_ble16(&buf[2], keephw2, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
 
 	case R_ARM_ABS32_NOI:
 		/* fall through */
@@ -1683,44 +1683,44 @@ case R_ARM_THM_MOVT_ABS:
 		break;
 
 	case R_ARM_THM_ALU_ABS_G0_NC:
-        val = (fs->S + fs->A) | T;
-        rz_buf_read_at(buf_patched, patch_addr, buf, 2);
-        keep = rz_read_ble16(buf, big_endian);
+		val = (fs->S + fs->A) | T;
+		rz_buf_read_at(buf_patched, patch_addr, buf, 2);
+		keep = rz_read_ble16(buf, big_endian);
 
-        keep = (keep & 0xFF00) | (val & 0xFF);
-        rz_write_ble16(buf, (ut16)keep, big_endian);
-        rz_buf_write_at(buf_patched, patch_addr, buf, 2);
-        break;
+		keep = (keep & 0xFF00) | (val & 0xFF);
+		rz_write_ble16(buf, (ut16)keep, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 2);
+		break;
 
-    case R_ARM_THM_ALU_ABS_G1_NC:
-        val = (fs->S + fs->A) | T;
-        rz_buf_read_at(buf_patched, patch_addr, buf, 2);
-        keep = rz_read_ble16(buf, big_endian);
+	case R_ARM_THM_ALU_ABS_G1_NC:
+		val = (fs->S + fs->A) | T;
+		rz_buf_read_at(buf_patched, patch_addr, buf, 2);
+		keep = rz_read_ble16(buf, big_endian);
 
-        keep = (keep & 0xFF00) | ((val >> 8) & 0xFF);
-        rz_write_ble16(buf, (ut16)keep, big_endian);
-        rz_buf_write_at(buf_patched, patch_addr, buf, 2);
-        break;
+		keep = (keep & 0xFF00) | ((val >> 8) & 0xFF);
+		rz_write_ble16(buf, (ut16)keep, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 2);
+		break;
 
-    case R_ARM_THM_ALU_ABS_G2_NC:
-        val = (fs->S + fs->A) | T;
-        rz_buf_read_at(buf_patched, patch_addr, buf, 2);
-        keep = rz_read_ble16(buf, big_endian);
+	case R_ARM_THM_ALU_ABS_G2_NC:
+		val = (fs->S + fs->A) | T;
+		rz_buf_read_at(buf_patched, patch_addr, buf, 2);
+		keep = rz_read_ble16(buf, big_endian);
 
-        keep = (keep & 0xFF00) | ((val >> 16) & 0xFF);
-        rz_write_ble16(buf, (ut16)keep, big_endian);
-        rz_buf_write_at(buf_patched, patch_addr, buf, 2);
-        break;
+		keep = (keep & 0xFF00) | ((val >> 16) & 0xFF);
+		rz_write_ble16(buf, (ut16)keep, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 2);
+		break;
 
-    case R_ARM_THM_ALU_ABS_G3:
-        val = (fs->S + fs->A) | T;
-        rz_buf_read_at(buf_patched, patch_addr, buf, 2);
-        keep = rz_read_ble16(buf, big_endian);
+	case R_ARM_THM_ALU_ABS_G3:
+		val = (fs->S + fs->A) | T;
+		rz_buf_read_at(buf_patched, patch_addr, buf, 2);
+		keep = rz_read_ble16(buf, big_endian);
 
-        keep = (keep & 0xFF00) | ((val >> 24) & 0xFF);
-        rz_write_ble16(buf, (ut16)keep, big_endian);
-        rz_buf_write_at(buf_patched, patch_addr, buf, 2);
-        break;
+		keep = (keep & 0xFF00) | ((val >> 24) & 0xFF);
+		rz_write_ble16(buf, (ut16)keep, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 2);
+		break;
 
 	/*
 		The following relocations are for Branch Future instructions in Armv8.1-M Mainline.

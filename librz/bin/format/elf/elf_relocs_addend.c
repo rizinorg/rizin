@@ -229,18 +229,18 @@ static bool get_reloc_addend_arm(RzBuffer *buf, RzBinElfReloc *reloc, ut64 patch
 		reloc->addend = signed_imm;
 		break;
 
-    case R_ARM_THM_ALU_ABS_G0_NC:
+	case R_ARM_THM_ALU_ABS_G0_NC:
 		/* fall-thru */
-    case R_ARM_THM_ALU_ABS_G1_NC:
+	case R_ARM_THM_ALU_ABS_G1_NC:
 		/* fall-thru */
-    case R_ARM_THM_ALU_ABS_G2_NC:
+	case R_ARM_THM_ALU_ABS_G2_NC:
 		/* fall-thru */
-    case R_ARM_THM_ALU_ABS_G3:
-        rz_buf_read_at(buf, patch_addr, b, 2);
-        opcode = rz_read_ble16(b, big_endian);
+	case R_ARM_THM_ALU_ABS_G3:
+		rz_buf_read_at(buf, patch_addr, b, 2);
+		opcode = rz_read_ble16(b, big_endian);
 
-        reloc->addend = (ut64)(opcode & 0xFF);
-        break;
+		reloc->addend = (ut64)(opcode & 0xFF);
+		break;
 
 	default:
 		return false;

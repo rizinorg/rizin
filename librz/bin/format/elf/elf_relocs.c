@@ -100,8 +100,8 @@ static void fix_elf_rel_mipsel64(ELFOBJ *bin, Elf_(Rela) * tmp) {
 	tmp->r_info = info;
 }
 
-static bool get_arm_thumb_mode_bit(ELFOBJ *bin, ut64 sym){
-	if(bin->ehdr.e_machine != EM_ARM){
+static bool get_arm_thumb_mode_bit(ELFOBJ *bin, ut64 sym) {
+	if (bin->ehdr.e_machine != EM_ARM) {
 		return 0;
 	}
 	RzBinElfSymbol *symbol = Elf_(rz_bin_elf_get_symbol)(bin, sym);
