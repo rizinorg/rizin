@@ -65,6 +65,7 @@ rz_core_sources = [
   'project_migrate.c',
   'gadget.c',
   'gadget_rop.c',
+  'gadget_cop.c',
   'rtr.c',
   #'rtr_http.c',
   #'rtr_shell.c',

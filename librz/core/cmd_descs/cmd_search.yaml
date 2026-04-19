@@ -313,6 +313,132 @@ commands:
               comment: "Searches for DER/BER encoded SafeCurves keys (see RFC 8410)."
             - text: x509
               comment: "Searches for DER/BER encoded X.509 certificates."
+  - name: "/C"
+    summary: Search, List, Query for COP Gadgets
+    subcommands:
+      - name: "/C"
+        cname: cmd_info_cop_gadget
+        summary: List COP Gadgets
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_TABLE
+        args:
+          - name: filter-by-string
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: "/C/"
+        cname: cmd_search_cop_gadget
+        summary: List COP Gadgets [regular expression]
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_TABLE
+        args:
+          - name: filter-by-regex
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: "/Ck"
+        cname: cmd_query_cop_gadget
+        summary: Query COP Gadgets by providing constraints
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_TABLE
+        args_str: " <key>[=<val>] [<key>[=<val>] ...]]"
+        args:
+          - name: key=value
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false
+        details:
+          - name: Constraint types
+            entries:
+              - text: "reg=const"
+                comment: "Find gadgets that set a register to a constant value"
+              - text: "reg=reg"
+                comment: "Find gadgets that copy one register to another"
+              - text: "reg=reg OP const"
+                comment: "Find gadgets with register and constant arithmetic"
+              - text: "reg=reg OP reg"
+                comment: "Find gadgets with register-register operations"
+          - name: Supported operations
+            entries:
+              - text: "+ - * / %"
+                comment: "Arithmetic operations (add, sub, mul, div, mod)"
+              - text: "& | ^"
+                comment: "Bitwise operations (AND, OR, XOR)"
+              - text: "<< >>"
+                comment: "Shift operations (left, right)"
+          - name: Compound operators
+            entries:
+              - text: "reg++ or reg--"
+                comment: "Increment or decrement register"
+              - text: "reg+=val, reg-=val"
+                comment: "Compound assignment operators"
+          - name: Usage example
+            entries:
+              - text: "Find gadgets setting rax to 0"
+                comment: "/Ck rax=0"
+              - text: "Find gadgets copying rbx to rax"
+                comment: "/Ck rax=rbx"
+              - text: "Find gadgets with rax = rbx + 8"
+                comment: "/Ck rax=rbx+8"
+              - text: "Find gadgets with multiple constraints"
+                comment: "/Ck rax=0,rbx=rcx"
+      - name: "/Cg"
+        cname: cmd_detail_cop_gadget
+        summary: Gadget detail info
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_LONG
+        args:
+          - name: Gadget address
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: "/Cs"
+        cname: cmd_cop_search_stack
+        summary: Search cop gadgets given stack changes
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: Stack changes
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false
+        details:
+          - name: Usage example
+            entries:
+              - text: "Search COP gadgets with less than 0x200 stack changes"
+                comment: "/Cs \"<0x200\""
+              - text: "Search COP gadgets with 0x100 stack changes"
+                comment: "/Cs =0x100"
+      - name: "/Cl"
+        cname: cmd_cop_gadget_search_size
+        summary: Search cop gadgets given gadget size
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: Gadget size
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false
+        details:
+          - name: Usage example
+            entries:
+              - text: "Search COP gadgets with the size less than 0x20"
+                comment: "/Cl \"<0x20\""
+              - text: "Search COP gadgets with the size 0x10"
+                comment: "/Cl =0x10"
   - name: "/d"
     summary: Search for a deltified sequence of bytes.
     cname: cmd_search_deltified

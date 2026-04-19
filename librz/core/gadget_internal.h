@@ -9,4 +9,7 @@
 // ROP (Return-Oriented Programming)
 RZ_IPI bool rz_gadget_rop_is_valid_terminator(const RzAnalysisOp *aop, const bool allow_conditional);
 
+// COP (Call-Oriented Programming)
+RZ_IPI bool rz_gadget_cop_is_valid_terminator(const RzAnalysisOp *aop, const bool allow_conditional);
+
 #endif

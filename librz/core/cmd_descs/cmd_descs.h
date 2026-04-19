@@ -109,6 +109,18 @@ RZ_IPI RzCmdStatus rz_cmd_search_hash_entropy_handler(RzCore *core, int argc, co
 RZ_IPI RzCmdStatus rz_cmd_search_hash_entropy_fractional_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/cm"
 RZ_IPI RzCmdStatus rz_cmd_search_cryptographic_material_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/C"
+RZ_IPI RzCmdStatus rz_cmd_info_cop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/C/"
+RZ_IPI RzCmdStatus rz_cmd_search_cop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Ck"
+RZ_IPI RzCmdStatus rz_cmd_query_cop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Cg"
+RZ_IPI RzCmdStatus rz_cmd_detail_cop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Cs"
+RZ_IPI RzCmdStatus rz_cmd_cop_search_stack_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Cl"
+RZ_IPI RzCmdStatus rz_cmd_cop_gadget_search_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/d"
 RZ_IPI RzCmdStatus rz_cmd_search_deltified_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "/F"

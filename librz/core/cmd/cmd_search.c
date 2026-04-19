@@ -62,6 +62,11 @@ RZ_IPI RzCmdStatus rz_cmd_info_rop_gadget_handler(RzCore *core, int argc, const 
 	return gadget_info(core, argc, argv, state, gadget_type);
 }
 
+RZ_IPI RzCmdStatus rz_cmd_info_cop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_COP;
+	return gadget_info(core, argc, argv, state, gadget_type);
+}
+
 static RzCmdStatus query_gadget(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state, RzGadgetType gadget_type) {
 	RzPVector /*<RzGadgetConstraint *>*/ *constraints = rz_core_gadget_constraint_map_parse(core, argc, argv);
 	if (!constraints) {
@@ -89,6 +94,11 @@ RZ_IPI RzCmdStatus rz_cmd_query_rop_gadget_handler(RzCore *core, int argc, const
 	return query_gadget(core, argc, argv, state, gadget_type);
 }
 
+RZ_IPI RzCmdStatus rz_cmd_query_cop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_COP;
+	return query_gadget(core, argc, argv, state, gadget_type);
+}
+
 static RzCmdStatus search_gadget(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state, RzGadgetType gadget_type) {
 	const char *input = argc > 1 ? argv[1] : "";
 	if (!input) {
@@ -106,6 +116,11 @@ RZ_IPI RzCmdStatus rz_cmd_search_rop_gadget_handler(RzCore *core, int argc, cons
 	return search_gadget(core, argc, argv, state, gadget_type);
 }
 
+RZ_IPI RzCmdStatus rz_cmd_search_cop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_COP;
+	return search_gadget(core, argc, argv, state, gadget_type);
+}
+
 static RzCmdStatus detail_gadget(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state, RzGadgetType gadget_type) {
 	const char *input = argc > 1 ? argv[1] : "";
 
@@ -120,12 +135,26 @@ RZ_IPI RzCmdStatus rz_cmd_detail_rop_gadget_handler(RzCore *core, int argc, cons
 	return detail_gadget(core, argc, argv, state, gadget_type);
 }
 
-RZ_IPI RzCmdStatus rz_cmd_rop_search_stack_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	RzGadgetType gadget_type = RZ_GADGET_TYPE_ROP;
+RZ_IPI RzCmdStatus rz_cmd_detail_cop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_COP;
+	return detail_gadget(core, argc, argv, state, gadget_type);
+}
+
+static RzCmdStatus gadget_search_stack_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state, RzGadgetType gadget_type) {
 	RzGadgetSearchContext *context = rz_core_gadget_search_context_new(core, gadget_type, argv[1], false, RZ_GADGET_PRINT_DETAIL | RZ_GADGET_ANALYZE, RZ_GADGET_DETAIL_SEARCH_STACK, state);
 	RzCmdStatus status = rz_core_gadget_info(core, context);
 	rz_core_gadget_search_context_free(context);
 	return status;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_rop_search_stack_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_ROP;
+	return gadget_search_stack_handler(core, argc, argv, state, gadget_type);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_cop_search_stack_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_COP;
+	return gadget_search_stack_handler(core, argc, argv, state, gadget_type);
 }
 
 static RzCmdStatus gadget_search_size(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state, RzGadgetType gadget_type) {
@@ -137,6 +166,11 @@ static RzCmdStatus gadget_search_size(RzCore *core, int argc, const char **argv,
 
 RZ_IPI RzCmdStatus rz_cmd_rop_gadget_search_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzGadgetType gadget_type = RZ_GADGET_TYPE_ROP;
+	return gadget_search_size(core, argc, argv, state, gadget_type);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_cop_gadget_search_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_COP;
 	return gadget_search_size(core, argc, argv, state, gadget_type);
 }
 

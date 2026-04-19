@@ -28,6 +28,9 @@ static bool gadget_is_valid_terminator(const RzGadgetType gadget_type, const RzC
 	case RZ_GADGET_TYPE_ROP:
 		status = rz_gadget_rop_is_valid_terminator(&aop, allow_conditional);
 		break;
+	case RZ_GADGET_TYPE_COP:
+		status = rz_gadget_cop_is_valid_terminator(&aop, allow_conditional);
+		break;
 	default:
 		break;
 	}
@@ -56,6 +59,8 @@ static bool gadget_is_valid_end_gadget(const RzGadgetType gadget_type, const RzA
 	switch (gadget_type) {
 	case RZ_GADGET_TYPE_ROP:
 		return rz_gadget_rop_is_valid_terminator(aop, allow_conditional);
+	case RZ_GADGET_TYPE_COP:
+		return rz_gadget_cop_is_valid_terminator(aop, allow_conditional);
 	default:
 		return false;
 	}
