@@ -776,8 +776,6 @@ fpcr = 0x0000000000000000
 EOF
 RUN
 
-
-
 NAME=core regs linux hppa
 FILE=bins/elf/core/core-linux-hppa
 CMDS=<<EOF

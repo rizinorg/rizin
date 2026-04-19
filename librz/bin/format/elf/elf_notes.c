@@ -64,6 +64,7 @@
 #define ALPHA_REGS_SIZE               (33 * 8)
 #define ALPHA_PR_STATUS_REG_OFFSET    0x70
 #define ALPHA_PR_STATUS_REG_OFFSET_SP 240
+
 // linux/arch/parisc/include/uapi/asm/ptrace.h: user_regs_struct (80 unsigned longs * 4 = 320 bytes)
 // arch/parisc/include/asm/ptrace.h: sp = gr[30]
 #define HPPA32_REGS_SIZE               320
