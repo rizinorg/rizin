@@ -79,38 +79,44 @@ static void bench_append(RzTable *t_out) {
 static void bench_prepend(RzTable *t_out) {
 	RZ_BENCH_RUN_I("[prepend] v1 - 10k", i, t_out, 1000, {
 		RzList *l = _v1_list_new();
-		for (int j = 0; j < 10000; j++)
+		for (int j = 0; j < 10000; j++){
 			rz_list_prepend(l, (void *)(intptr_t)j);
+		}
 		rz_list_free(l);
 	});
 	RZ_BENCH_RUN_I("[prepend] v2 - 10k", i, t_out, 1000, {
 		RzList *l = _v2_list_new();
-		for (int j = 0; j < 10000; j++)
+		for (int j = 0; j < 10000; j++){
 			rz_list_prepend(l, (void *)(intptr_t)j);
+		}
 		rz_list_free(l);
 	});
 	RZ_BENCH_RUN_I("[prepend] v1 - 100k", i, t_out, 100, {
 		RzList *l = _v1_list_new();
-		for (int j = 0; j < 100000; j++)
+		for (int j = 0; j < 100000; j++){
 			rz_list_prepend(l, (void *)(intptr_t)j);
+		}
 		rz_list_free(l);
 	});
 	RZ_BENCH_RUN_I("[prepend] v2 - 100k", i, t_out, 100, {
 		RzList *l = _v2_list_new();
-		for (int j = 0; j < 100000; j++)
+		for (int j = 0; j < 100000; j++){
 			rz_list_prepend(l, (void *)(intptr_t)j);
+		}
 		rz_list_free(l);
 	});
 	RZ_BENCH_RUN_I("[prepend] v1 - 1m", i, t_out, 10, {
 		RzList *l = _v1_list_new();
-		for (int j = 0; j < 1000000; j++)
+		for (int j = 0; j < 1000000; j++){
 			rz_list_prepend(l, (void *)(intptr_t)j);
+		}
 		rz_list_free(l);
 	});
 	RZ_BENCH_RUN_I("[prepend] v2 - 1m", i, t_out, 10, {
 		RzList *l = _v2_list_new();
-		for (int j = 0; j < 1000000; j++)
+		for (int j = 0; j < 1000000; j++){
 			rz_list_prepend(l, (void *)(intptr_t)j);
+		}
 		rz_list_free(l);
 	});
 }
@@ -119,43 +125,49 @@ static void bench_pop(RzTable *t_out) {
 	RZ_BENCH_RUN_I("[pop] v1 - 1k", i, t_out, 1000, {
 		RzList *l = _v1_list_new();
 		_fill(l, 1000);
-		while (l->length)
+		while (l->length){
 			rz_list_pop(l);
+		}
 		rz_list_free(l);
 	});
 	RZ_BENCH_RUN_I("[pop] v2 - 1k", i, t_out, 1000, {
 		RzList *l = _v2_list_new();
 		_fill(l, 1000);
-		while (l->length)
+		while (l->length){
 			rz_list_pop(l);
+		}
 		rz_list_free(l);
 	});
 	RZ_BENCH_RUN_I("[pop] v1 - 100k", i, t_out, 100, {
 		RzList *l = _v1_list_new();
 		_fill(l, 100000);
-		while (l->length)
+		while (l->length){
 			rz_list_pop(l);
+		}
 		rz_list_free(l);
 	});
 	RZ_BENCH_RUN_I("[pop] v2 - 100k", i, t_out, 100, {
 		RzList *l = _v2_list_new();
 		_fill(l, 100000);
-		while (l->length)
+		while (l->length){
 			rz_list_pop(l);
+		}
 		rz_list_free(l);
 	});
 	RZ_BENCH_RUN_I("[pop] v1 - 1m", i, t_out, 10, {
 		RzList *l = _v1_list_new();
 		_fill(l, 1000000);
-		while (l->length)
+		while (l->length){
 			rz_list_pop(l);
+		}
 		rz_list_free(l);
 	});
 	RZ_BENCH_RUN_I("[pop] v2 - 1m", i, t_out, 10, {
 		RzList *l = _v2_list_new();
 		_fill(l, 1000000);
-		while (l->length)
+		while (l->length){
 			rz_list_pop(l);
+		}
 		rz_list_free(l);
 	});
 }
@@ -164,43 +176,49 @@ static void bench_pop_head(RzTable *t_out) {
 	RZ_BENCH_RUN_I("[pop_head] v1 - 1k", i, t_out, 1000, {
 		RzList *l = _v1_list_new();
 		_fill(l, 1000);
-		while (l->length)
+		while (l->length){
 			rz_list_pop_head(l);
+		}
 		rz_list_free(l);
 	});
 	RZ_BENCH_RUN_I("[pop_head] v2 - 1k", i, t_out, 1000, {
 		RzList *l = _v2_list_new();
 		_fill(l, 1000);
-		while (l->length)
+		while (l->length){
 			rz_list_pop_head(l);
+		}
 		rz_list_free(l);
 	});
 	RZ_BENCH_RUN_I("[pop_head] v1 - 100k", i, t_out, 100, {
 		RzList *l = _v1_list_new();
 		_fill(l, 100000);
-		while (l->length)
+		while (l->length){
 			rz_list_pop_head(l);
+		}
 		rz_list_free(l);
 	});
 	RZ_BENCH_RUN_I("[pop_head] v2 - 100k", i, t_out, 100, {
 		RzList *l = _v2_list_new();
 		_fill(l, 100000);
-		while (l->length)
+		while (l->length){
 			rz_list_pop_head(l);
+		}
 		rz_list_free(l);
 	});
 	RZ_BENCH_RUN_I("[pop_head] v1 - 1m", i, t_out, 10, {
 		RzList *l = _v1_list_new();
 		_fill(l, 1000000);
-		while (l->length)
+		while (l->length){
 			rz_list_pop_head(l);
+		}
 		rz_list_free(l);
 	});
 	RZ_BENCH_RUN_I("[pop_head] v2 - 1m", i, t_out, 10, {
 		RzList *l = _v2_list_new();
 		_fill(l, 1000000);
-		while (l->length)
+		while (l->length){
 			rz_list_pop_head(l);
+		}
 		rz_list_free(l);
 	});
 }
@@ -209,29 +227,33 @@ static void bench_del_n(RzTable *t_out) {
 	RZ_BENCH_RUN_I("[del_n@0] v1 - 100k", i, t_out, 10, {
 		RzList *l = _v1_list_new();
 		_fill(l, 100000);
-		for (int j = 0; j < 100000; j++)
+		for (int j = 0; j < 100000; j++){
 			rz_list_del_n(l, 0);
+		}
 		rz_list_free(l);
 	});
 	RZ_BENCH_RUN_I("[del_n@0] v2 - 100k", i, t_out, 10, {
 		RzList *l = _v2_list_new();
 		_fill(l, 100000);
-		for (int j = 0; j < 100000; j++)
+		for (int j = 0; j < 100000; j++){
 			rz_list_del_n(l, 0);
+		}
 		rz_list_free(l);
 	});
 	RZ_BENCH_RUN_I("[del_n@tail] v2 - 100k", i, t_out, 10, {
 		RzList *l = _v2_list_new();
 		_fill(l, 100000);
-		while (l->length)
+		while (l->length){
 			rz_list_del_n(l, l->length - 1);
+		}
 		rz_list_free(l);
 	});
 	RZ_BENCH_RUN_I("[del_n@mid] v2 - 10k", i, t_out, 10, {
 		RzList *l = _v2_list_new();
 		_fill(l, 10000);
-		while (l->length)
+		while (l->length){
 			rz_list_del_n(l, l->length / 2);
+		}
 		rz_list_free(l);
 	});
 }
