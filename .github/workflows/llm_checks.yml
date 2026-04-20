@@ -45,18 +45,26 @@ jobs:
           fi
 
       - name: Check for AI usage and label
+        id: check_authorship
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          NUMBER: ${{ github.event.number }}
-          BASE_SHA: ${{ needs.real_pr_shas.outputs.BASE_SHA }}
-          HEAD_SHA: ${{ needs.real_pr_shas.outputs.HEAD_SHA }}
           COMMIT_MSGS: ${{ needs.real_pr_shas.outputs.COMMIT_MSGS }}
         run: |
-          LABEL_NAME="AI/LLM"
           NEEDLE="Co-authored-by agent"
 
           if echo "$COMMIT_MSGS" | grep -q "$NEEDLE"; then
             echo "Authored by AI agent"
+            echo "AI_CO_AUTHORED=1" >> $GITHUB_OUTPUT
+          else
+            echo "AI_CO_AUTHORED=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set AI/LLM label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.number }}
+        run: |
+          LABEL_NAME="AI/LLM"
+          if [ "${{ steps.check_authorship.outputs.AI_CO_AUTHORED }}" -eq 1 ]; then
             gh pr --repo $REPO edit $NUMBER --add-label "$LABEL_NAME"
           fi
