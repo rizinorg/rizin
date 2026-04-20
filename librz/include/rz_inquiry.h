@@ -34,7 +34,7 @@ typedef struct {
 	HtSP /*<void *>*/ *plugins_data;
 
 	HtUP /*<RzAnalysisCallCandidate *>*/ *call_candidates; ///< Indexed by address of basic block with the call candidate.
-	RzVector /*<RzAnalysisXRef>*/ *xrefs; ///< All xrefs it detected.
+	RzVector /*<RzAnalysisXRef>*/ *xrefs; ///< All xrefs the interpreter detected.
 	RzInquiryBBCFG *bb_cfg; ///< The control flow graph all the basic blocks build.
 } RzInquiry;
 
@@ -69,6 +69,7 @@ RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis,
  */
 typedef struct {
 	RzVector /*<ut64>*/ *entry_points;
+	RzVector /*<RzAnalysisCallCandidate>*/ *call_candidates;
 	RzInquiryBBCFG *bb_cfg;
 } RzInquiryFunction;
 

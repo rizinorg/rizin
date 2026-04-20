@@ -22,6 +22,11 @@ typedef enum {
 	 */
 	RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP,
 	/**
+	 * \brief An control flow change via a RzIL JMP but by a call candidate.
+	 * The "from" BB ends with a jump, very likely to a procedure.
+	 */
+	RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL,
+	/**
 	 * \brief A control flow edge between two blocks where the "from" block does not end with a JUMP.
 	 * It is between two blocks, if they were split from a single one.
 	 */
@@ -57,8 +62,8 @@ RZ_IPI bool rz_inquiry_bb_cfg_add_xrefs(RzInquiryBBCFG *cfg, RzVector /*<RzAnaly
 RZ_IPI bool rz_inquiry_bb_cfg_get_basic_block(const RzInquiryBBCFG *cfg, ut64 bb_addr, RZ_OUT RzInquiryBB *bb);
 RZ_IPI bool rz_inquiry_bb_cfg_del_out_edges(RzInquiryBBCFG *cfg, ut64 bb_addr);
 RZ_IPI bool rz_inquiry_bb_cfg_add_edge(RzInquiryBBCFG *cfg, ut64 from_bb, ut64 to_bb, RzInquiryBBCFGEdgeType type);
-RZ_API RZ_OWN RzIterator /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_outgoing_nodes(const RzInquiryBBCFG *cfg, ut64 bb_addr);
-RZ_API RZ_OWN RzIterator /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_incoming_nodes(const RzInquiryBBCFG *cfg, ut64 bb_addr);
+RZ_API RZ_OWN RzIterator /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_outgoing_edges(const RzInquiryBBCFG *cfg, ut64 bb_addr);
+RZ_API RZ_OWN RzIterator /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_incoming_edges(const RzInquiryBBCFG *cfg, ut64 bb_addr);
 
 RZ_IPI bool rz_inquiry_bb_cfg_reduce(RzInquiryBBCFG *cfg);
 

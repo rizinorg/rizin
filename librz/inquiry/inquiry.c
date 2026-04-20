@@ -87,6 +87,7 @@ RZ_API void rz_inquiry_function_free(RZ_NULLABLE RZ_OWN RzInquiryFunction *fcn) 
 	}
 	rz_inquiry_bb_cfg_free(fcn->bb_cfg);
 	rz_vector_free(fcn->entry_points);
+	rz_vector_free(fcn->call_candidates);
 	free(fcn);
 }
 
@@ -97,6 +98,7 @@ RZ_IPI RZ_OWN RzInquiryFunction *rz_inquiry_function_new() {
 	}
 	fcn->bb_cfg = rz_inquiry_bb_cfg_new(RZ_GRAPH_IMPL_LIST);
 	fcn->entry_points = rz_vector_new(sizeof(ut64), NULL, NULL);
+	fcn->call_candidates = rz_vector_new(sizeof(RzAnalysisCallCandidate), NULL, NULL);
 	if (!fcn->bb_cfg || !fcn->entry_points) {
 		rz_inquiry_function_free(fcn);
 		return NULL;
@@ -140,14 +142,14 @@ RZ_IPI bool rz_inquiry_bb_cfg_complement(RzInquiry *iq, RzVector /*<RzAnalysisXR
 	rz_vector_foreach (insn_to_insn_edges, i2i_edge) {
 		// First check if the edge is already in the CFG.
 		// If so (not unlikely), skip the step where it iterates over all BBs.
-		RzIterator *incoming = rz_inquiry_bb_cfg_get_incoming_nodes(iq->bb_cfg, i2i_edge->to);
+		RzIterator *incoming = rz_inquiry_bb_cfg_get_incoming_edges(iq->bb_cfg, i2i_edge->to);
 		if (!incoming) {
 			// Basic block not present.
 			continue;
 		}
-		RzGraphNode *gn;
-		rz_iterator_foreach(incoming, gn) {
-			const RzInquiryBB *bb = rz_graph_node_get_data(gn);
+		RzGraphEdge *in_e;
+		rz_iterator_foreach(incoming, in_e) {
+			const RzInquiryBB *bb = rz_graph_node_get_data(rz_graph_edge_get_from(in_e));
 			if (RZ_BETWEEN_EXCL(bb->addr, i2i_edge->from, bb->addr + bb->size)) {
 				rz_iterator_free(incoming);
 				// This edge was already covered.
@@ -165,8 +167,26 @@ RZ_IPI bool rz_inquiry_bb_cfg_complement(RzInquiry *iq, RzVector /*<RzAnalysisXR
 			if (!RZ_BETWEEN_EXCL(bb->addr, i2i_edge->from, bb->addr + bb->size)) {
 				continue;
 			}
-			if (!rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, i2i_edge->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP)) {
+			switch (i2i_edge->type) {
+			default:
 				rz_warn_if_reached();
+				break;
+			case RZ_ANALYSIS_XREF_TYPE_CALL:
+				if (!rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, i2i_edge->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL)) {
+					rz_warn_if_reached();
+				}
+				break;
+			case RZ_ANALYSIS_XREF_TYPE_CODE:
+				eprintf("Add i2i jump: 0x%llx -> 0x%llx\n", bb->addr, i2i_edge->to);
+				if (!rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, i2i_edge->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP)) {
+					rz_warn_if_reached();
+				}
+				break;
+			case RZ_ANALYSIS_XREF_TYPE_CALL_RET:
+				if (!rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, i2i_edge->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL_RET)) {
+					rz_warn_if_reached();
+				}
+				break;
 			}
 		}
 		rz_iterator_free(bb_iter);
@@ -335,7 +355,6 @@ static bool handle_yields(RzCore *core, RzInterpreterYieldRBuf *yield_rbufs[RZ_I
 			return false;
 		} else if (r == RZ_THREAD_RING_BUF_OK) {
 			rz_inquiry_add_xref(core->inquiry, &xref);
-			rz_analysis_xrefs_set(core->analysis, xref.from, xref.to, xref.type);
 			RZ_LOG_DEBUG("Added xref: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n", xref.from, xref.to, rz_analysis_ref_type_tostring(xref.type));
 		}
 	}
@@ -431,9 +450,6 @@ static bool send_next_il_bb(RzCore *core,
 		// Add a dummy basic block at the address the call originally jumped to.
 		// This is the basic block for the imported function.
 		rz_inquiry_bb_cfg_add_basic_block(core->inquiry->bb_cfg, branch->target_addr, 1);
-	}
-	if (RZ_LIKELY(branch->branching_bb_addr)) {
-		rz_inquiry_bb_cfg_add_edge(core->inquiry->bb_cfg, branch->branching_bb_addr, branch->target_addr, RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP);
 	}
 	rz_th_queue_push(il_queue, (void *)bb, true);
 	return true;
@@ -799,10 +815,10 @@ fatal_error:
 	if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
 		eprintf("\n");
 	}
-	if (!rz_inquiry_bb_cfg_reduce(core->inquiry->bb_cfg)) {
+	if (!rz_inquiry_bb_cfg_add_xrefs(core->inquiry->bb_cfg, core->inquiry->xrefs)) {
 		rz_warn_if_reached();
 	}
-	if (!rz_inquiry_bb_cfg_add_xrefs(core->inquiry->bb_cfg, core->inquiry->xrefs)) {
+	if (!rz_inquiry_bb_cfg_reduce(core->inquiry->bb_cfg)) {
 		rz_warn_if_reached();
 	}
 	if (!user_sent_signal) {
@@ -840,69 +856,90 @@ static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry
 	}
 	rz_iterator_free(iter);
 
-	// Convert the Inquiry functions to analysis function.
+
+	iter = ht_up_as_iter(inquiry->call_candidates);
 	void **it;
-	rz_pvector_foreach (fcns, it) {
-		RzInquiryFunction *fcn = *it;
+	rz_iterator_foreach (iter, it) {
+		RzAnalysisCallCandidate *cc = *it;
+		rz_analysis_xrefs_set(analysis, cc->candidate_addr, cc->target, RZ_ANALYSIS_XREF_TYPE_CALL);
+	}
+	rz_iterator_free(iter);
 
-		ut64 fcn_addr = *(ut64 *)rz_vector_head(fcn->entry_points);
-		char new_fcn_name[64] = { 0 };
-		void **it;
-		rz_pvector_foreach (symbols, it) {
-			RzBinSymbol *s = *it;
-			if (s->vaddr == fcn_addr && RZ_STR_EQ(s->type, RZ_BIN_TYPE_FUNC_STR)) {
-				rz_strf(new_fcn_name, "sym.%s", s->name);
-				break;
-			}
-		}
-		if (new_fcn_name[0] == '\0') {
-			rz_strf(new_fcn_name, "fcn_0x%" PFMT64x, fcn_addr);
-		}
-		RzAnalysisFunction *afcn = rz_analysis_create_function(analysis, new_fcn_name, fcn_addr, RZ_ANALYSIS_FCN_TYPE_FCN);
-		if (!afcn) {
-			rz_warn_if_reached();
-			continue;
-		}
-
-		RzIterator *iter = rz_graph_get_nodes(fcn->bb_cfg->graph);
-		RzGraphNode *n;
-		rz_iterator_foreach(iter, n) {
-			const RzInquiryBB *bb = rz_graph_node_get_data(n);
-			RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, bb->addr);
-			if (!abb && !(abb = rz_analysis_create_block(analysis, bb->addr, bb->size))) {
-				rz_warn_if_reached();
+	RzAnalysisXRef *xref;
+	rz_vector_foreach(inquiry->xrefs, xref) {
+		rz_analysis_xrefs_set(analysis, xref->from, xref->to, xref->type != RZ_ANALYSIS_XREF_TYPE_CALL_RET ? xref->type : RZ_ANALYSIS_XREF_TYPE_CODE);
+		RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, xref->bb_addr);
+			RzIterator *out_edges = rz_inquiry_bb_cfg_get_outgoing_edges(inquiry->bb_cfg, xref->bb_addr);
+			if (!out_edges) {
 				continue;
 			}
-			RzIterator *successors = rz_inquiry_bb_cfg_get_outgoing_nodes(inquiry->bb_cfg, bb->addr);
-			RzGraphNode *n;
-			size_t i = 0;
-			rz_iterator_foreach(successors, n) {
-				if (i == 0) {
-					abb->jump = rz_graph_node_get_id(n);
-				} else if (i == 1) {
-					abb->fail = rz_graph_node_get_id(n);
-				} else {
-					RZ_LOG_WARN("The basic block at 0x%" PFMT64x " has more than two outgoing edges. "
-						    "Rizin can't model this currently :(\n",
-						rz_graph_node_get_id(n));
+			RzGraphEdge *e;
+			rz_iterator_foreach(out_edges, e) {
+				RzInquiryBBCFGEdgeType type = (RzInquiryBBCFGEdgeType)(utptr)rz_graph_edge_get_data(e);
+				switch (type) {
+				case RZ_INQUIRY_BB_CFG_EDGE_TYPE_NONE:
+					rz_warn_if_reached();
+					// fall through
+				case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF:
+				case RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP: {
+					ut64 target = rz_graph_node_get_id(rz_graph_edge_get_to(e));
+					if (abb->jump == UT64_MAX || abb->jump == target) {
+						abb->jump = target;
+						eprintf("Add jump = 0x%llx -> 0x%llx (%d)\n", xref->bb_addr, target, type);
+					} else if (abb->fail == UT64_MAX || abb->fail == target) {
+						abb->fail = target;
+						eprintf("Add fail = 0x%llx -> 0x%llx (%d)\n", xref->bb_addr, target, type);
+					} else if (abb->fail != target && abb->jump != target) {
+						RZ_LOG_WARN("The basic block at 0x%" PFMT64x " has more than two outgoing edges.\n"
+							    "\t\tHas jump = 0x%llx fail = 0x%llx. Will miss = 0x%llx (%d)\n", xref->bb_addr, abb->jump, abb->fail,
+							target, type);
+					}
 					break;
 				}
-				i++;
+				case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL_RET:
+				case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL:
+					break;
+				}
 			}
-			rz_iterator_free(successors);
-
-			RzAnalysisCallCandidate *cc;
-			if ((cc = ht_up_find(inquiry->call_candidates, bb->addr, NULL))) {
-				// Calls need an edge between the call instruction and its return address.
-				// That is technically wrong, because the call could be a tail call.
-				// But the prototype doesn't model this.
-				// So just add an edge.
-				abb->jump = cc->npc;
-			}
-			rz_analysis_function_add_block(afcn, abb);
-		}
-		rz_iterator_free(iter);
+			rz_iterator_free(out_edges);
 	}
+
+	// // Convert the Inquiry functions to analysis function.
+	// rz_pvector_foreach (fcns, it) {
+	// 	RzInquiryFunction *fcn = *it;
+
+	// 	ut64 fcn_addr = *(ut64 *)rz_vector_head(fcn->entry_points);
+	// 	char new_fcn_name[64] = { 0 };
+	// 	void **it;
+	// 	rz_pvector_foreach (symbols, it) {
+	// 		RzBinSymbol *s = *it;
+	// 		if (s->vaddr == fcn_addr && RZ_STR_EQ(s->type, RZ_BIN_TYPE_FUNC_STR)) {
+	// 			rz_strf(new_fcn_name, "sym.%s", s->name);
+	// 			break;
+	// 		}
+	// 	}
+	// 	if (new_fcn_name[0] == '\0') {
+	// 		rz_strf(new_fcn_name, "fcn_0x%" PFMT64x, fcn_addr);
+	// 	}
+	// 	RzAnalysisFunction *afcn = rz_analysis_create_function(analysis, new_fcn_name, fcn_addr, RZ_ANALYSIS_FCN_TYPE_FCN);
+	// 	if (!afcn) {
+	// 		rz_warn_if_reached();
+	// 		continue;
+	// 	}
+
+	// 	RzIterator *iter = rz_graph_get_nodes(fcn->bb_cfg->graph);
+	// 	RzGraphNode *n;
+	// 	rz_iterator_foreach(iter, n) {
+	// 		const RzInquiryBB *bb = rz_graph_node_get_data(n);
+	// 		RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, bb->addr);
+	// 		if (!abb && !(abb = rz_analysis_create_block(analysis, bb->addr, bb->size))) {
+	// 			rz_warn_if_reached();
+	// 			continue;
+	// 		}
+	// 		rz_analysis_function_add_block(afcn, abb);
+	// 	}
+	// 	rz_iterator_free(iter);
+	// }
 	rz_pvector_free(fcns);
 	return true;
 }
