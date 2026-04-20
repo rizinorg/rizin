@@ -1858,6 +1858,44 @@ end:
 	return list;
 }
 
+/**
+ * \brief Read thread uid, gid and status from /proc/<pid>/task/<tid>/status via vFile.
+ * Falls back to defaults if the remote does not support vFile or is not Linux.
+ */
+static void gdbr_fill_thread_info(libgdbr_t *g, int pid, int tid, RzDebugPid *dpid) {
+	char proc_path[64];
+	rz_strf(proc_path, "/proc/%d/task/%d/status", pid, tid);
+	if (gdbr_open_file(g, proc_path, O_RDONLY, 0) != 0) {
+		return;
+	}
+	char status_buf[1024] = { 0 }; /* matches gdbr_parse_processes_xml buffer size */
+	if (gdbr_read_file(g, (ut8 *)status_buf, sizeof(status_buf) - 1) <= 0) {
+		gdbr_close_file(g);
+		return;
+	}
+	char *sptr = strstr(status_buf, "Uid:");
+	if (sptr) {
+		dpid->uid = atoi(sptr + 5);
+	}
+	sptr = strstr(status_buf, "Gid:");
+	if (sptr) {
+		dpid->gid = atoi(sptr + 5);
+	}
+	sptr = strstr(status_buf, "State:");
+	if (sptr) {
+		switch (*(sptr + 7)) {
+		case 'R': dpid->status = RZ_DBG_PROC_RUN; break;
+		case 'S': dpid->status = RZ_DBG_PROC_SLEEP; break;
+		case 'T':
+		case 't': dpid->status = RZ_DBG_PROC_STOP; break;
+		case 'Z': dpid->status = RZ_DBG_PROC_ZOMBIE; break;
+		case 'X': dpid->status = RZ_DBG_PROC_DEAD; break;
+		default: dpid->status = RZ_DBG_PROC_SLEEP; break;
+		}
+	}
+	gdbr_close_file(g);
+}
+
 RzList /*<RzDebugPid *>*/ *gdbr_threads_list(libgdbr_t *g, int pid) {
 	int ret = -1;
 	RzList *list = NULL;
@@ -1909,13 +1947,11 @@ RzList /*<RzDebugPid *>*/ *gdbr_threads_list(libgdbr_t *g, int pid) {
 				ret = -1;
 				goto end;
 			}
-			dpid->uid = dpid->gid = -1; // TODO
+			dpid->uid = dpid->gid = -1;
 			dpid->pid = ttid;
 			dpid->runnable = true;
-			// This is what linux native does as fallback, but
-			// probably not correct.
-			// TODO: Implement getting correct thread status from GDB
 			dpid->status = RZ_DBG_PROC_STOP;
+			gdbr_fill_thread_info(g, pid, ttid, dpid);
 			rz_list_append(list, dpid);
 			ptr = ptr2;
 		}

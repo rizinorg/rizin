@@ -26,3 +26,19 @@ EXPECT=<<EOF
 s bins/elf/analysis/pie
 EOF
 RUN
+
+NAME=gdbserver dpt threaded
+FILE=bins/elf/gdbserver/threaded
+CMDS=<<EOF
+!scripts/gdbserver.py --port 12348 --binary bins/elf/gdbserver/threaded
+oodf gdb://127.0.0.1:12348
+dc
+dptj
+doc
+EOF
+REGEXP_FILTER_OUT="status":"\w"
+EXPECT=<<EOF
+"status":"t"
+"status":"t"
+EOF
+RUN
