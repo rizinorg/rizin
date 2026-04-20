@@ -479,7 +479,7 @@ RZ_API void *rz_vector_shrink(RzVector *vec) {
  * This is useful when RzVector is used for its dynamically growing functionality as an
  * intermediate step to generate a fixed-size array in the end.
  */
-RZ_API void *rz_vector_flush(RZ_BORROW RzVector *vec) {
+RZ_API RZ_OWN void *rz_vector_take_array(RZ_BORROW RzVector *vec) {
 	rz_return_val_if_fail(vec, NULL);
 	rz_vector_shrink(vec);
 	void *r = vec->a;

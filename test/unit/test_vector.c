@@ -863,7 +863,7 @@ static bool test_vector_shrink(void) {
 static bool test_vector_flush(void) {
 	RzVector v;
 	init_test_vector(&v, 5, 5, NULL, NULL);
-	ut32 *r = rz_vector_flush(&v);
+	ut32 *r = rz_vector_take_array(&v);
 	rz_vector_fini(&v);
 	for (size_t i = 0; i < 5; i++) {
 		mu_assert_eq(r[i], i, "flushed contents");

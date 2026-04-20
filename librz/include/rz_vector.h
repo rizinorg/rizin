@@ -170,7 +170,7 @@ RZ_API void *rz_vector_reserve(RzVector *vec, size_t capacity);
 // shrink capacity to len.
 RZ_API void *rz_vector_shrink(RzVector *vec);
 
-RZ_API void *rz_vector_flush(RzVector *vec);
+RZ_API RZ_OWN void *rz_vector_take_array(RzVector *vec);
 
 // sort vector
 RZ_API void rz_vector_sort(RzVector *vec, RzVectorComparator cmp, bool reverse, void *user);
@@ -402,7 +402,7 @@ static inline void **rz_pvector_shrink(RzPVector *vec) {
  * intermediate step to generate a fixed-size array in the end.
  */
 static inline void **rz_pvector_flush(RZ_BORROW RzPVector *vec) {
-	return (void **)rz_vector_flush(&vec->v);
+	return (void **)rz_vector_take_array(&vec->v);
 }
 
 /*
