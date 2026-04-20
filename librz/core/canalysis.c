@@ -1579,7 +1579,6 @@ static bool analysis_block_cb(RzAnalysisBlock *bb, BlockRecurseCtx *ctx) {
 		}
 		RzAnalysisOp *op = rz_core_analysis_op(core, pos, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_HINT);
 		if (!op) {
-			// eprintf ("Cannot get op\n");
 			break;
 		}
 		rz_analysis_extract_rarg(core->analysis, op, fcn, reg_set, &ctx->count);

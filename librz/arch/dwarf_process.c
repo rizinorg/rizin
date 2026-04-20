@@ -886,7 +886,7 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 	RZ_BORROW RZ_IN RZ_NONNULL RzSetU *visited) {
 	RzType *type = ht_up_find(ctx->analysis->debug_info->type_by_offset, offset, NULL);
 	if (type) {
-		return rz_type_clone(type);
+		return rz_type_clone_shallow(type);
 	}
 
 	if (rz_set_u_contains(visited, offset)) {
@@ -1021,7 +1021,7 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 		break;
 	}
 
-	RzType *copy = type ? rz_type_clone(type) : NULL;
+	RzType *copy = type ? rz_type_clone_shallow(type) : NULL;
 	if (copy && ht_up_insert(ctx->analysis->debug_info->type_by_offset, offset, copy)) {
 #if RZ_BUILD_DEBUG
 		char *tstring = rz_type_as_string(ctx->analysis->typedb, type);
@@ -1513,7 +1513,7 @@ static bool function_children_parse(
 		}
 		if (v.kind == RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER) {
 			RzCallableArg *arg = rz_type_callable_arg_new(
-				ctx->analysis->typedb, v.prefer_name, rz_type_clone(v.type));
+				ctx->analysis->typedb, v.prefer_name, rz_type_clone_shallow(v.type));
 			rz_type_callable_arg_add(callable, arg);
 		}
 		RzAnalysisDwarfVariable *ptr = rz_vector_push(&fn->variables, &v);
@@ -1632,7 +1632,7 @@ static bool function_from_die(
 	}
 
 	RzCallable *callable = rz_type_callable_new(fcn->prefer_name);
-	callable->ret = fcn->ret_type ? rz_type_clone(fcn->ret_type) : NULL;
+	callable->ret = fcn->ret_type ? rz_type_clone_shallow(fcn->ret_type) : NULL;
 	rz_vector_init(&fcn->variables, sizeof(RzAnalysisDwarfVariable), (RzVectorFree)variable_fini, NULL);
 	function_children_parse(ctx, die, callable, fcn);
 
@@ -1690,7 +1690,7 @@ static bool try_create_var_global(
 	RzBinDwarfLine *dw_line = rz_bin_dwarf_line(ctx->dw);
 	RzBinDwarfLineUnit *lu = ctx->unit && dw_line ? rz_pvector_at(dw_line->units, ctx->unit->index) : NULL;
 	ut64 file_index = attr ? rz_bin_dwarf_attr_udata(attr) : UT64_MAX;
-	const char *file = file_index != 0 && lu ? rz_bin_dwarf_file_path(ctx->dw, lu, file_index) : NULL;
+	char *file = file_index != 0 && lu ? rz_bin_dwarf_file_path(ctx->dw, lu, file_index) : NULL;
 
 	attr = rz_bin_dwarf_die_get_attr(die, DW_AT_decl_line);
 	ut32 line = attr ? rz_bin_dwarf_attr_udata(attr) : UT32_MAX;
@@ -1701,6 +1701,7 @@ static bool try_create_var_global(
 	result = rz_analysis_var_global_create_with_sourceline(
 		ctx->analysis, v->prefer_name, v->type, v->location->address,
 		file, line, column);
+	free(file);
 
 	v->type = NULL;
 beach:
@@ -1803,26 +1804,26 @@ RZ_API void rz_analysis_dwarf_preprocess_info(
 		b = temp; \
 	} while (0)
 
-static inline void update_base_type(const RzTypeDB *typedb, RzBaseType *type) {
-	RzBaseType *t = rz_type_db_get_base_type(typedb, type->name);
-	if (t && t == type) {
+static inline void update_base_type(const RzTypeDB *typedb, RzBaseType *bt) {
+	RzBaseType *db_bt = rz_type_db_get_base_type(typedb, bt->name);
+	if (db_bt && db_bt == bt) {
 		return;
 	}
-	rz_type_db_update_base_type(typedb, rz_base_type_clone(type));
+	rz_type_db_update_base_type(typedb, rz_base_type_clone(bt));
 }
 
-static void db_save_renamed(RzTypeDB *db, RzBaseType *b, char *name) {
-	if (!name) {
+static void db_save_renamed(RzTypeDB *db, RzBaseType *bt, char *new_name) {
+	if (!new_name) {
 		rz_warn_if_reached();
 		return;
 	}
-	RzBaseType *t = rz_type_db_get_base_type(db, b->name);
-	if (t == b) {
+	RzBaseType *db_bt = rz_type_db_get_base_type(db, bt->name);
+	if (db_bt == bt) {
 		return;
 	}
-	free(b->name);
-	b->name = name;
-	rz_type_db_update_base_type(db, b);
+	free(bt->name);
+	bt->name = new_name;
+	rz_type_db_update_base_type(db, bt);
 }
 
 static bool store_base_type(void *u, const char *k, const void *v) {
@@ -2053,7 +2054,7 @@ static bool RzAnalysisDwarfVariable_as_RzAnalysisVar(RzAnalysis *a, RzAnalysisFu
 	if (!loc) {
 		return false;
 	}
-	var->type = DW_var->type ? rz_type_clone(DW_var->type) : rz_type_new_default(a->typedb);
+	var->type = DW_var->type ? rz_type_clone_shallow(DW_var->type) : rz_type_new_default(a->typedb);
 	var->name = rz_str_dup(DW_var->prefer_name ? DW_var->prefer_name : "");
 	var->kind = DW_var->kind;
 	var->fcn = f;
@@ -2120,6 +2121,7 @@ RZ_API RzAnalysisDebugInfo *rz_analysis_debug_info_new() {
 	debug_info->type_by_offset = ht_up_new(NULL, (HtUPFreeValue)rz_type_free);
 	debug_info->callable_by_offset = ht_up_new(NULL, (HtUPFreeValue)rz_type_callable_free);
 	debug_info->base_type_by_offset = ht_up_new(NULL, (HtUPFreeValue)rz_type_base_type_free);
+	// just for by name lookup, we don't store the same base type pointer here, so no need to free value
 	debug_info->base_types_by_name = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_pvector_free);
 	debug_info->visited = rz_set_u_new();
 	return debug_info;

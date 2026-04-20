@@ -130,7 +130,7 @@ static void RzTypeStructMember_cpy(RzTypeStructMember *dst, RzTypeStructMember *
 	}
 	memcpy(dst, src, sizeof(RzTypeStructMember));
 	dst->name = rz_str_dup(src->name);
-	dst->type = rz_type_clone(src->type);
+	dst->type = rz_type_clone_shallow(src->type);
 }
 
 static void RzTypeEnumCase_cpy(RzTypeEnumCase *dst, RzTypeEnumCase *src) {
@@ -147,7 +147,7 @@ static void RzTypeUnionMember_cpy(RzTypeUnionMember *dst, RzTypeUnionMember *src
 	}
 	memcpy(dst, src, sizeof(RzTypeUnionMember));
 	dst->name = rz_str_dup(src->name);
-	dst->type = rz_type_clone(src->type);
+	dst->type = rz_type_clone_shallow(src->type);
 }
 
 /**
@@ -162,7 +162,7 @@ RZ_API bool rz_base_type_clone_into(
 	rz_return_val_if_fail(src && dst, false);
 	rz_mem_copy(dst, sizeof(RzBaseType), src, sizeof(RzBaseType));
 	dst->name = rz_str_dup(src->name);
-	dst->type = src->type ? rz_type_clone(src->type) : NULL;
+	dst->type = src->type ? rz_type_clone_shallow(src->type) : NULL;
 
 	switch (src->kind) {
 	case RZ_BASE_TYPE_KIND_ENUM:
@@ -191,15 +191,15 @@ RZ_API RZ_OWN RzBaseType *rz_base_type_clone(RZ_NULLABLE RZ_BORROW RzBaseType *b
 	if (!b) {
 		return NULL;
 	}
-	RzBaseType *type = RZ_NEW0(RzBaseType);
-	if (!type) {
+	RzBaseType *bt = RZ_NEW0(RzBaseType);
+	if (!bt) {
 		return NULL;
 	}
-	if (!rz_base_type_clone_into(type, b)) {
-		rz_type_base_type_free(type);
+	if (!rz_base_type_clone_into(bt, b)) {
+		rz_type_base_type_free(bt);
 		return NULL;
 	}
-	return type;
+	return bt;
 }
 
 /**
