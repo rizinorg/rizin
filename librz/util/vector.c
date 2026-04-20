@@ -71,7 +71,10 @@ RZ_API void rz_vector_fini(RzVector *vec) {
 }
 
 /**
- * \brief Removes all elements and frees the internal buffer.
+ * \brief Removes all elements, frees the internal buffer, and
+ * sets the vector's capacity to 0.
+ *
+ * Use rz_vector_purge() if the buffer's capacity should not change.
  */
 RZ_API void rz_vector_clear(RZ_BORROW RzVector *vec) {
 	rz_return_if_fail(vec);
@@ -249,7 +252,10 @@ RZ_API void rz_vector_remove_range(RzVector *vec, size_t index, size_t count, vo
 }
 
 /**
- * \brief Deletes all elements in the vector. Capacity stays the same.
+ * \brief Deletes all elements in the vector. The internal buffer is not freed
+ * so the vector's capacity stays the same.
+ *
+ * Use rz_vector_clear() if the buffer should be freed.
  */
 RZ_API void rz_vector_purge(RZ_BORROW RzVector *vec) {
 	vector_free_elems(vec);
