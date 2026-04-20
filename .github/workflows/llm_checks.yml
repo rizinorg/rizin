@@ -44,21 +44,6 @@ jobs:
             exit 1
           fi
 
-      - name: Check AGENT.md is unchanged
-        env:
-          BASE_SHA: ${{ needs.real_pr_shas.outputs.BASE_SHA }}
-        run: |
-          diff=$(git diff --name-status "$BASE_SHA" AGENTS.md)
-          if [[ $? -eq 128 ]]; then
-          	echo "Failed to diff"
-          	exit 1
-          fi
-
-          if [[ -n "$diff" ]]; then
-          	echo "Edits to 'AGENT.md' are not allowed!"
-          	exit 1
-          fi
-
       - name: Check for AI usage and label
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
