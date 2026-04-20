@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "analysis_private.h"
+#include "rz_analysis.h"
+#include "rz_util/rz_assert.h"
 #include <rz_cons.h>
 
 /*
@@ -310,6 +312,10 @@ RZ_API const char *rz_analysis_ref_type_tostring(RzAnalysisXRefType t) {
 		return "string";
 	case RZ_ANALYSIS_XREF_TYPE_MEM_WRITE:
 		return "write";
+	case RZ_ANALYSIS_XREF_TYPE_CALL_RET:
+		return "call_ret_pt";
+	case RZ_ANALYSIS_XREF_TYPE_RETURN:
+		return "return";
 	}
 	return "unknown";
 }
@@ -369,15 +375,18 @@ RZ_API bool rz_analysis_get_all_branch_targets(RzAnalysis *analysis,
 				continue;
 			}
 			// Only add jump targets going to executable regions.
-			if ((rz_analysis_op_is_direct_call(&op) ||
-				    rz_analysis_op_is_direct_jump(&op)) &&
-				op.jump != UT64_MAX) {
+			bool op_is_call = rz_analysis_op_is_direct_call(&op);
+			bool op_is_jump = rz_analysis_op_is_direct_jump(&op);
+			if ((op_is_call || op_is_jump) && op.jump != UT64_MAX) {
 				rz_set_u_add(branch_targets, op.jump);
 
 				RzAnalysisXRef edge = { .from = addr, .to = op.jump };
+				op.type = op_is_call ? RZ_ANALYSIS_XREF_TYPE_CALL : RZ_ANALYSIS_XREF_TYPE_CODE;
 				rz_vector_push(insn_to_insn_edges, &edge);
+
 				if (op.fail != UT64_MAX) {
-					if (rz_analysis_op_is_direct_jump(&op)) {
+					if (op_is_jump) {
+						op.type = RZ_ANALYSIS_XREF_TYPE_CODE;
 						rz_set_u_add(branch_targets, op.fail);
 
 						RzAnalysisXRef edge = { .from = addr, .to = op.fail };
@@ -385,10 +394,13 @@ RZ_API bool rz_analysis_get_all_branch_targets(RzAnalysis *analysis,
 					}
 				}
 			}
-			if (include_call_return_pts && rz_analysis_op_is_call(&op)) {
+			if (include_call_return_pts && op_is_call) {
 				// If it is a call, also add the following instruction as reference.
 				// Because it is likely a return point.
 				rz_set_u_add(branch_targets, op.addr + op.size);
+				op.type = RZ_ANALYSIS_XREF_TYPE_CALL_RET;
+				RzAnalysisXRef edge = { .from = addr, .to = op.fail };
+				rz_vector_push(insn_to_insn_edges, &edge);
 			}
 			addr += op.size;
 			rz_analysis_op_fini(&op);

@@ -35,7 +35,7 @@ RZ_IPI void rz_inquiry_bb_cfg_free(RZ_NULLABLE RZ_OWN RzInquiryBBCFG *bb_cfg) {
 }
 
 static bool edge_from(const RzGraphEdge *e, void *addr) {
-	ut64 from_addr = (utptr) addr;
+	ut64 from_addr = (utptr)addr;
 	return rz_graph_node_get_id(rz_graph_edge_get_from(e)) == from_addr;
 }
 
@@ -73,17 +73,17 @@ RZ_IPI bool rz_inquiry_bb_cfg_get_basic_block(const RzInquiryBBCFG *cfg, ut64 bb
 /**
  * \brief Neighbors of outgoing edges.
  */
-RZ_API RZ_OWN RzIterator /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_outgoing_nodes(const RzInquiryBBCFG *cfg, ut64 bb_addr) {
+RZ_API RZ_OWN RzIterator /*<RzGraphEdge *>*/ *rz_inquiry_bb_cfg_get_outgoing_edges(const RzInquiryBBCFG *cfg, ut64 bb_addr) {
 	rz_return_val_if_fail(cfg, NULL);
-	return rz_graph_out_neighbors_by_id(cfg->graph, bb_addr);
+	return rz_graph_out_edges_by_id(cfg->graph, bb_addr);
 }
 
 /**
  * \brief Neighbors of incoming edges.
  */
-RZ_API RZ_OWN RzIterator /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_incoming_nodes(const RzInquiryBBCFG *cfg, ut64 bb_addr) {
+RZ_API RZ_OWN RzIterator /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_incoming_edges(const RzInquiryBBCFG *cfg, ut64 bb_addr) {
 	rz_return_val_if_fail(cfg, NULL);
-	return rz_graph_in_neighbors_by_id(cfg->graph, bb_addr);
+	return rz_graph_in_edges_by_id(cfg->graph, bb_addr);
 }
 
 /**
@@ -102,10 +102,10 @@ RZ_IPI bool rz_inquiry_bb_cfg_add_basic_block(RzInquiryBBCFG *cfg, ut64 addr, ut
 	if (!n) {
 		return false;
 	}
-	const RzInquiryBB *nbb = rz_graph_node_get_data(n);
-	if (nbb->size != size) {
-		rz_warn_if_reached();
-	}
+	// const RzInquiryBB *nbb = rz_graph_node_get_data(n);
+	// if (nbb->size != size) {
+	// 	rz_warn_if_reached();
+	// }
 	if (existed) {
 		free(bb);
 	}
@@ -115,11 +115,28 @@ RZ_IPI bool rz_inquiry_bb_cfg_add_basic_block(RzInquiryBBCFG *cfg, ut64 addr, ut
 RZ_IPI bool rz_inquiry_bb_cfg_add_xrefs(RzInquiryBBCFG *cfg, RzVector /*<RzAnalysisXRef>*/ *xrefs) {
 	RzAnalysisXRef *xref;
 	rz_vector_foreach (xrefs, xref) {
-		if (xref->type != RZ_ANALYSIS_XREF_TYPE_CODE) {
+		switch (xref->type) {
+		default:
 			continue;
-		}
-		if (!rz_inquiry_bb_cfg_add_edge(cfg, xref->bb_addr, xref->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP)) {
-			RZ_LOG_DEBUG("Did not add edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", xref->bb_addr, xref->to);
+		case RZ_ANALYSIS_XREF_TYPE_CODE:
+			if (!rz_inquiry_bb_cfg_add_edge(cfg, xref->bb_addr, xref->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP)) {
+				RZ_LOG_DEBUG("Did not add JMP edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", xref->bb_addr, xref->to);
+			}
+			break;
+		case RZ_ANALYSIS_XREF_TYPE_CALL:
+			if (!rz_inquiry_bb_cfg_add_edge(cfg, xref->bb_addr, xref->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL)) {
+				RZ_LOG_DEBUG("Did not add CALL edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", xref->bb_addr, xref->to);
+			}
+			RzInquiryBB bb = { 0 };
+			if (!rz_inquiry_bb_cfg_get_basic_block(cfg, xref->bb_addr, &bb)) {
+				rz_warn_if_reached();
+				break;
+			}
+			ut64 ret_addr = bb.addr + bb.size;
+			if (!rz_inquiry_bb_cfg_add_edge(cfg, xref->bb_addr, ret_addr, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL_RET)) {
+				RZ_LOG_DEBUG("Did not add CALL_RET edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", xref->bb_addr, ret_addr);
+			}
+			break;
 		}
 	}
 	return true;

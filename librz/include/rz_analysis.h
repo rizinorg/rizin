@@ -969,6 +969,9 @@ typedef enum {
 	 */
 	RZ_ANALYSIS_XREF_TYPE_MEM_READ = RZ_ANALYSIS_XREF_TYPE_DATA,
 	RZ_ANALYSIS_XREF_TYPE_MEM_WRITE = 'w', ///< Memory write reference
+
+	RZ_ANALYSIS_XREF_TYPE_CALL_RET = 'r', // Call return point (next pc after a call).
+	RZ_ANALYSIS_XREF_TYPE_RETURN = 'R', // A returning jump
 } RzAnalysisXRefType;
 
 typedef struct rz_analysis_ref_t {
