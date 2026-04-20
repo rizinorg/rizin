@@ -698,7 +698,7 @@ static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
 		}
 		if (reloc->mode == DT_REL) {
 			if (!Elf_(rz_bin_elf_reloc_get_addend)(bin, reloc)) {
-				RZ_LOG_WARN("Immediate value extraction not implemented for %x\n", reloc->type);
+				RZ_LOG_INFO("Immediate value extraction not implemented for %x\n", reloc->type);
 			}
 		}
 		Elf_(rz_bin_elf_patch_relocation)(bin, reloc, sym_addr, sym_size, baddr, sym_addr, got_addr, &mips_AHL);

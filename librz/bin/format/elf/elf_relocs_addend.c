@@ -203,11 +203,11 @@ static bool get_reloc_addend_arm(RzBuffer *buf, RzBinElfReloc *reloc, ut64 patch
 		j2 = (w2 >> 11) & 1;
 		imm11 = (w2 & 0x07FF);
 
-		i1 = (!(j1 ^ s)) & 1;
-		i2 = (!(j2 ^ s)) & 1;
+		i1 = (j1 == s);
+		i2 = (j2 == s);
 
 		unsigned_imm = (s << 24) | (i1 << 23) | (i2 << 22) | (imm10 << 12) | (imm11 << 1);
-		signed_imm = (st32)(unsigned_imm << 8) >> 8;
+		signed_imm = (st32)(unsigned_imm << 7) >> 7;
 		reloc->addend = (st64)signed_imm;
 		break;
 
