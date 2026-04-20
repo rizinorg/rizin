@@ -95,7 +95,7 @@ static void rz_vector_assign(RzVector *vec, void *p, const void *elem) {
 /**
  * \brief Set \p n elements, starting at element \p i to \p c.
  */
-static void rz_vector_memset_zero(RzVector *vec, size_t i, size_t n) {
+static void rz_vector_zeroize(RzVector *vec, size_t i, size_t n) {
 	rz_return_if_fail(vec);
 	memset(vec->a + (vec->elem_size * i), 0, vec->elem_size * n);
 }
@@ -216,7 +216,7 @@ RZ_API void *rz_vector_assign_at(RZ_BORROW RzVector *vec, size_t index, RZ_NULLA
 		size_t len = rz_vector_len(vec);
 		// Also zero the slot at index, if no element is assigned to it.
 		size_t n = index - len + (!elem ? 1 : 0);
-		rz_vector_memset_zero(vec, len, n);
+		rz_vector_zeroize(vec, len, n);
 		vec->len = index + 1;
 	}
 	return p;
@@ -575,7 +575,7 @@ RZ_API RzPVector *rz_pvector_new_with_len(RzPVectorFree free, size_t length) {
 		rz_pvector_free(v);
 		return NULL;
 	}
-	memset(p, 0, v->v.elem_size * v->v.capacity);
+	rz_vector_zeroize(&v->v, 0, v->v.capacity);
 	v->v.len = length;
 	return v;
 }
