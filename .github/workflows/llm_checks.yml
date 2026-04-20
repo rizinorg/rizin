@@ -25,25 +25,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: real_pr_shas
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0  # Full history needed for commit scanning
-
-      - name: Validate input hashes
-        env:
-          BASE_SHA: ${{ needs.real_pr_shas.outputs.BASE_SHA }}
-          HEAD_SHA: ${{ needs.real_pr_shas.outputs.HEAD_SHA }}
-        run: |
-          if echo "$BASE_SHA" | grep -q "[^a-f0-9]"; then
-            echo "BASE_SHA is malformed: $BASE_SHA"
-            exit 1
-          fi
-          if echo "$HEAD_SHA" | grep -q "[^a-f0-9]"; then
-            echo "HEAD_SHA is malformed: $HEAD_SHA"
-            exit 1
-          fi
-
       - name: Check for AI usage and label
         id: check_authorship
         env:
