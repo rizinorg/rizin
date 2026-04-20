@@ -351,15 +351,27 @@ static inline void emit_span(const char *s, size_t n, const char *color) {
 	}
 }
 
-/**
- * \brief Colorize a stringified RzIL effect body to the cons buffer.
- *
- * Emits only the body (no address prefix, no newline) with the same palette
- * as \c plf. A NULL or empty \p il_stmt emits nothing.
- */
-RZ_IPI void rz_core_il_colorize_body(RZ_NONNULL RzConsContext *ctx, RZ_NULLABLE const char *il_stmt) {
-	rz_return_if_fail(ctx);
+static inline void emit_span_to_strbuf(const char *s, size_t n, const char *color, RzStrBuf *sb) {
+	if (n < 1) {
+		return;
+	}
+	if (color) {
+		rz_strbuf_appendf(sb, "%s%.*s" Color_RESET, color, (int)n, s);
+	} else {
+		rz_strbuf_appendf(sb, "%.*s", (int)n, s);
+	}
+}
+
+static void core_colorify_il_statement(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr) {
+	rz_cons_printf("%s0x%" PFMT64x Color_RESET "%c", ctx->pal.label, addr, delim);
+	rz_core_il_colorize_body(ctx, il_stmt);
+	rz_cons_newline();
+}
+
+static void core_colorify_il_statement_to_strbuf(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr, RzStrBuf *sb) {
+	rz_strbuf_appendf(sb, "%s0x%" PFMT64x Color_RESET "%c", ctx->pal.label, addr, delim);
 	if (RZ_STR_ISEMPTY(il_stmt)) {
+		rz_strbuf_appendf(sb, "\n");
 		return;
 	}
 
@@ -370,13 +382,13 @@ RZ_IPI void rz_core_il_colorize_body(RZ_NONNULL RzConsContext *ctx, RZ_NULLABLE 
 		const char ch = il_stmt[i];
 
 		if (ch == '(' || ch == ')') {
-			emit_span(il_stmt + prev, i - prev, color);
-			rz_cons_printf("%s%c" Color_RESET, ctx->pal.meta, ch);
+			emit_span_to_strbuf(il_stmt + prev, i - prev, color, sb);
+			rz_strbuf_appendf(sb, "%s%c" Color_RESET, ctx->pal.meta, ch);
 			prev = i + 1;
 			color = (ch == '(') ? ctx->pal.flow : NULL;
 		} else if (ch == ' ') {
-			emit_span(il_stmt + prev, i - prev, color);
-			rz_cons_printf(" ");
+			emit_span_to_strbuf(il_stmt + prev, i - prev, color, sb);
+			rz_strbuf_appendf(sb, " ");
 			prev = i + 1;
 			color = NULL;
 		} else if (i == prev && prev > 0 && il_stmt[prev - 1] == ' ') {
@@ -384,13 +396,8 @@ RZ_IPI void rz_core_il_colorize_body(RZ_NONNULL RzConsContext *ctx, RZ_NULLABLE 
 		}
 	}
 
-	emit_span(il_stmt + prev, len - prev, color);
-}
-
-static void core_colorify_il_statement(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr) {
-	rz_cons_printf("%s0x%" PFMT64x Color_RESET "%c", ctx->pal.label, addr, delim);
-	rz_core_il_colorize_body(ctx, il_stmt);
-	rz_cons_newline();
+	emit_span_to_strbuf(il_stmt + prev, len - prev, color, sb);
+	rz_strbuf_appendf(sb, "\n");
 }
 
 static bool unicode_colorify_state_is_varname(RzILUnicodeColorifyState state) {
@@ -489,11 +496,77 @@ static void core_colorify_il_statement_unicode(RzConsContext *ctx, const char *i
 	rz_cons_newline();
 }
 
-RZ_API void rz_core_il_print_rzil(RZ_NONNULL RzCore *core, RZ_NONNULL RzPVector *vec, bool pretty, bool unicode, bool colorize) {
-	RzAnalysisFunction *f = rz_analysis_first_function_in(core->analysis, core->offset);
-	rz_return_if_fail(f);
-	RzIterator *iter = rz_core_analysis_op_function_iter(core, f, RZ_ANALYSIS_OP_MASK_IL);
-	rz_return_if_fail(core && iter);
+static void core_colorify_il_statement_unicode_to_strbuf(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr, RzStrBuf *sb) {
+	rz_return_if_fail(sb);
+	rz_strbuf_appendf(sb, "%s0x%" PFMT64x Color_RESET "%c", ctx->pal.label, addr, delim);
+	if (RZ_STR_ISEMPTY(il_stmt)) {
+		rz_strbuf_appendf(sb, "\n");
+		return;
+	}
+	size_t prev_i = 0;
+	const size_t len = strlen(il_stmt);
+	const char *color = NULL;
+	RzILUnicodeColorifyState prev_state = UNICODE_COLORIFY_STATE_DEFAULT;
+	for (size_t i = 0; i < len;) {
+		RzCodePoint cp = 0;
+		const size_t utf_size = rz_utf8_decode((const ut8 *)il_stmt + i, len - i, &cp, false);
+		RzILUnicodeColorifyState state = unicode_colorify_state_next(prev_state, cp);
+		if (state != prev_state) {
+			const int plen = i - prev_i;
+			if (color) {
+				rz_strbuf_appendf(sb, "%s%.*s" Color_RESET, color, plen, il_stmt + prev_i);
+			} else {
+				rz_strbuf_appendf(sb, "%.*s", plen, il_stmt + prev_i);
+			}
+			switch (state) {
+			default: break;
+			case UNICODE_COLORIFY_STATE_DEFAULT:
+				color = NULL;
+				break;
+			case UNICODE_COLORIFY_STATE_PARENTHESIS:
+				color = ctx->pal.meta;
+				break;
+			case UNICODE_COLORIFY_STATE_VARNAME:
+				color = ctx->pal.comment;
+				break;
+			case UNICODE_COLORIFY_STATE_NUMBER:
+				color = ctx->pal.num;
+				break;
+			case UNICODE_COLORIFY_STATE_IL_OP:
+				color = ctx->pal.flow;
+				break;
+			}
+
+			prev_state = state;
+			prev_i = i;
+		}
+		i += utf_size > 0 ? utf_size : 1;
+	}
+	if (prev_i < len) {
+		const int plen = len - prev_i;
+		if (color) {
+			rz_strbuf_appendf(sb, "%s%.*s" Color_RESET, color, plen, il_stmt + prev_i);
+		} else {
+			rz_strbuf_appendf(sb, "%.*s", plen, il_stmt + prev_i);
+		}
+	}
+	rz_strbuf_appendf(sb, "\n");
+}
+
+/* @brief formatted rzil from a starting RVA to a RzPVector of DisasmTexts
+ * @param core - rz core
+ * @param vec - allocated rzpvector pointer with free function for disasm_text
+ * @param addr - starting address of instructions
+ * @param n_lines - number of lines to be represented as rzil
+ * @param pretty - whether add delimitter or not
+ * @param unicode - whether enable unicode formatting or not
+ * @param colorize - color the text
+ */
+
+RZ_API void rz_core_il_print_rzil(RZ_NONNULL RzCore *core, RZ_NONNULL RzPVector *vec, ut64 addr, int n_lines, bool pretty, bool unicode, bool colorize) {
+	rz_return_if_fail(core && vec);
+	RzIterator *iter = rz_core_analysis_op_chunk_iter(core, addr, 0, n_lines, RZ_ANALYSIS_OP_MASK_IL);
+	rz_return_if_fail(iter);
 	const char *il_stmt = NULL;
 	const char delim = pretty ? '\n' : ' ';
 	RzStrBuf sb;
@@ -504,48 +577,52 @@ RZ_API void rz_core_il_print_rzil(RZ_NONNULL RzCore *core, RZ_NONNULL RzPVector 
 
 	RzAnalysisOp *op = NULL;
 	rz_iterator_foreach(iter, op) {
+		rz_strbuf_init(&sb);
 		RzAnalysisDisasmText *dst = RZ_NEW0(RzAnalysisDisasmText);
 		if (!op->il_op) {
 			RZ_LOG_DEBUG("Empty IL at 0x%08" PFMT64x "...\n", op->addr);
-			break;
+			rz_strbuf_appendf(&sb, "0x%" PFMT64x "%cempty il\n", op->addr, delim);
+			goto togo;
 		}
 
-		rz_strbuf_init(&sb);
 		if (unicode) {
 			const int addr_len = snprintf(NULL, 0, "0x%" PFMT64x, op->addr);
 			RzILStringifyCtx ctx = { .indent = addr_len + 1, .indent_inc = 2 };
 			if (!rz_il_op_effect_stringify_unicode(&ctx, op->il_op, &sb)) {
 				RZ_LOG_ERROR("Failed to stringify IL at 0x%08" PFMT64x "\n", op->addr);
-				rz_strbuf_fini(&sb);
-				break;
+				rz_strbuf_appendf(&sb, "0x%" PFMT64x "%cstringify failed\n", op->addr, delim);
+				goto togo;
 			}
 		} else {
 			rz_il_op_effect_stringify(op->il_op, &sb, pretty);
 		}
 
-		il_stmt = rz_strbuf_get(&sb);
+		il_stmt = rz_str_dup(rz_strbuf_get(&sb));
+		rz_strbuf_fini(&sb);
+		rz_strbuf_init(&sb);
 		if (colorize) {
 			if (unicode) {
-				core_colorify_il_statement_unicode(core->cons->context, il_stmt, delim, op->addr);
+				core_colorify_il_statement_unicode_to_strbuf(core->cons->context, il_stmt, delim, op->addr, &sb);
 			} else {
-				core_colorify_il_statement(core->cons->context, il_stmt, delim, op->addr);
+				core_colorify_il_statement_to_strbuf(core->cons->context, il_stmt, delim, op->addr, &sb);
 			}
 		} else {
-			rz_cons_printf("0x%" PFMT64x "%c%s\n", op->addr, delim, il_stmt);
+			rz_strbuf_appendf(&sb, "0x%" PFMT64x "%c%s\n", op->addr, delim, il_stmt);
 		}
 
-		if (ctx) {
-			RzILTypeEffect t;
-			char *report;
-			rz_il_validate_effect(op->il_op, ctx, NULL, &t, &report);
-			if (report) {
-				rz_cons_println(report);
-				free(report);
-			}
-		}
+	// if (ctx) {
+	// 	RzILTypeEffect t;
+	// 	char *report;
+	// 	rz_il_validate_effect(op->il_op, ctx, NULL, &t, &report);
+	// 	if (report) {
+	// 		rz_cons_println(report);
+	// 		free(report);
+	// 	}
+	// }
+	togo:
 		dst->offset = op->addr;
 		dst->arrow = UT64_MAX;
-		dst->text = rz_str_dup(rz_cons_get_buffer());
+		dst->text = rz_str_dup(rz_strbuf_get(&sb));
 		rz_pvector_push(vec, dst);
 		rz_cons_reset();
 		rz_strbuf_fini(&sb);
