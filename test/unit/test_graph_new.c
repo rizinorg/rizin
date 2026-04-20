@@ -111,7 +111,7 @@ static bool test_graph_edges(void) {
 	// Add 16 more nodes (more than LIST_IMPL_DEFAULT_NODE_VEC_SIZE)
 	// then add an edge and check if it fails somehow.
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(arr); ++i) {
-		arr[i] = rz_graph_add_node(g, (ut8 *)i+4);
+		arr[i] = rz_graph_add_node(g, (ut8 *)i + 4);
 		mu_assert_notnull(arr[i], "Was NULL, should not.");
 	}
 	success = rz_graph_add_edge(g, arr[8], n3, NULL);
