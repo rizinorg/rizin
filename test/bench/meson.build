@@ -23,8 +23,7 @@ if get_option('enable_benchmarks')
     'il',
     'ht',
     'util',
-    'list',
-    'list2'
+    'list'
   ]
 
   # Create benchmark executables
