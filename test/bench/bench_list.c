@@ -258,14 +258,6 @@ static void bench_set_n(RzTable *t_out) {
 		}
 		rz_list_free(l);
 	});
-	RZ_BENCH_RUN_I("[set_n] 100k", i, t_out, 10, {
-		RzList *l = rz_list_new();
-		_fill(l, 100000);
-		for (int j = 0; j < 100000; j++) {
-			rz_list_set_n(l, j, (void *)(intptr_t)(j + 1));
-		}
-		rz_list_free(l);
-	});
 }
 
 int main(void) {
