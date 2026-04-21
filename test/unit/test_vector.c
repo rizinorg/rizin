@@ -1603,7 +1603,7 @@ static bool test_array_bounds_fuzz(void) {
 
 static int all_tests(void) {
 	time_t seed = time(0);
-	printf("Gillian Seed: %llu\n", (unsigned long long)seed);
+	printf("Gillian Seed: %" PFMT64u "\n", (unsigned long long)seed);
 	srand(seed);
 	mu_run_test(test_vector_init);
 	mu_run_test(test_vector_new);

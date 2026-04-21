@@ -103,7 +103,7 @@ RZ_API bool rz_core_bin_apply_luac_debug(RzCore *core, RzBinFile *binfile) {
 		const LuaProto *proto = *it_p;
 		rz_pvector_foreach (proto->const_entries, it_c) {
 			const LuaConstEntry *current_entry = *it_c;
-			RZ_LOG_DEBUG("[LuaConstEntry] proto: %d, offset: 0x%llx === tag: %d, offset: 0x%llx, prev_offset: 0x%llx, string_start: 0x%llx, current_entry->voffset: 0x%llx, `%s` (%d)\n",
+			RZ_LOG_DEBUG("[LuaConstEntry] proto: %d, offset: 0x%" PFMT64x " === tag: %d, offset: 0x%" PFMT64x ", prev_offset: 0x%" PFMT64x ", string_start: 0x%" PFMT64x ", current_entry->voffset: 0x%" PFMT64x ", `%s` (%d)\n",
 				proto->index, proto->offset, current_entry->tag, current_entry->offset, current_entry->prev_offset,
 				current_entry->string_start,
 				current_entry->voffset, (char *)current_entry->data, current_entry->data_len);
@@ -133,7 +133,7 @@ RZ_API bool rz_core_bin_apply_luac_debug(RzCore *core, RzBinFile *binfile) {
 		int i = 0;
 		rz_pvector_foreach (proto->local_var_info_entries, it_v) {
 			const LuaLocalVarEntry *var = *it_v;
-			RZ_LOG_DEBUG("[LuaLocalVarEntry] [%d] params: %d, pname: `%s` proto->is_vararg: %d, reg_offset: %d ---- %d === varname: `%s`, offset: 0x%llx, voffset: 0x%llx, start_pc: %d, end_pc: %d, varname_len: %d\n",
+			RZ_LOG_DEBUG("[LuaLocalVarEntry] [%d] params: %d, pname: `%s` proto->is_vararg: %d, reg_offset: %d ---- %d === varname: `%s`, offset: 0x%" PFMT64x ", voffset: 0x%" PFMT64x ", start_pc: %d, end_pc: %d, varname_len: %d\n",
 				i, proto->num_params, pname, proto->is_vararg, reg_offset,
 				proto->index, (char *)var->varname, var->offset, var->voffset, var->start_pc, var->end_pc, var->varname_len);
 
@@ -181,7 +181,7 @@ RZ_API bool rz_core_bin_apply_luac_debug(RzCore *core, RzBinFile *binfile) {
 		const LuaProto *proto = *it_p;
 		rz_pvector_foreach (proto->upvalue_entries, it_u) {
 			const LuaUpvalueEntry *upvalue = *it_u;
-			RZ_LOG_DEBUG("[LuaUpvalueEntry] proto: %d, offset: 0x%llx === idx: `%d`, upvalue->poffset: 0x%llx, voffset: 0x%llx, instack: %d, kind: %d, upvalue_name: `%s`, offset: 0x%llx, upvalue_len: %d\n",
+			RZ_LOG_DEBUG("[LuaUpvalueEntry] proto: %d, offset: 0x%" PFMT64x " === idx: `%d`, upvalue->poffset: 0x%" PFMT64x ", voffset: 0x%" PFMT64x ", instack: %d, kind: %d, upvalue_name: `%s`, offset: 0x%" PFMT64x ", upvalue_len: %d\n",
 				proto->index, proto->offset, upvalue->idx, upvalue->offset, upvalue->voffset, upvalue->instack, upvalue->kind,
 				(char *)upvalue->upvalue_name, upvalue->name_offset, upvalue->name_len);
 			rz_meta_set(core->analysis, RZ_META_TYPE_DATA, upvalue->voffset, sizeof(upvalue), "LuaUpvalue");
@@ -194,7 +194,7 @@ RZ_API bool rz_core_bin_apply_luac_debug(RzCore *core, RzBinFile *binfile) {
 		rz_pvector_foreach (proto->dbg_upvalue_entries, it_u) {
 			const LuaDbgUpvalueEntry *upvalue = *it_u;
 			(void)upvalue;
-			RZ_LOG_DEBUG("[LuaUpvalueEntry] proto: %d, offset: 0x%llx === dbg_upvalue_name: `%s`, offset: 0x%llx, upvalue_len: %d\n",
+			RZ_LOG_DEBUG("[LuaUpvalueEntry] proto: %d, offset: 0x%" PFMT64x " === dbg_upvalue_name: `%s`, offset: 0x%" PFMT64x ", upvalue_len: %d\n",
 				proto->index, proto->offset, (char *)upvalue->upvalue_name, upvalue->offset, upvalue->name_len);
 		}
 	}

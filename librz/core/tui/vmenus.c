@@ -169,7 +169,7 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 			if (show) {
 				char *tmp;
 				if (color) {
-					var_functions = rz_str_newf("%c%c %s0x%08" PFMT64x "" Color_RESET " %4" PFMT64d " %s%s" Color_RESET "",
+					var_functions = rz_str_newf("%c%c %s0x%08" PFMT64x Color_RESET " %4" PFMT64d " %s%s" Color_RESET "",
 						(seek == fcn->addr) ? '>' : ' ',
 						(idx == i) ? '*' : ' ',
 						color_addr, fcn->addr, rz_analysis_function_realsize(fcn),
@@ -424,7 +424,7 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 		if (color) {
 			rz_cons_strcat(core->cons->context->pal.prompt);
 		}
-		rz_cons_printf("-[ variables ]----- 0x%08" PFMT64x "", addr);
+		rz_cons_printf("-[ variables ]----- 0x%08" PFMT64x, addr);
 		if (color) {
 			rz_cons_strcat("\n" Color_RESET);
 		}

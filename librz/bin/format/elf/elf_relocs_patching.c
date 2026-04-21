@@ -2346,7 +2346,7 @@ static const ut16 RISCV_CI_TYPE_IMM_MASK = (1 << 12) | (0x1f << 2);
 
 #define RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, type) \
 	if (!success) { \
-		RZ_LOG_ERROR("Failed to successfully patch a %s reloc at %llx (S: %llx, A: %llx, B: %llx, P: %llx)", type, patch_addr, S, A, B, P); \
+		RZ_LOG_ERROR("Failed to successfully patch a %s reloc at %" PFMT64x " (S: %" PFMT64x ", A: %" PFMT64x ", B: %" PFMT64x ", P: %" PFMT64x ")", type, patch_addr, S, A, B, P); \
 		return; \
 	}
 

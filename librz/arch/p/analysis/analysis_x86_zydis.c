@@ -924,7 +924,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, 
 		src = getarg(a, &gop, 1, 0, NULL, SRC_AR, NULL, zydx->addr);
 		dst = getarg(a, &gop, 0, 0, NULL, DST_AR, NULL, zydx->addr);
 		dst2 = getarg(a, &gop, 0, 1, "<<", DST2_AR, &bitsize, zydx->addr);
-		esilprintf(op, "0,%s,!,!,?{,1,%s,-,%s,<<,0x%llx,&,!,!,^,},%s,%s,$z,zf,:=,$p,pf,:=,%" PFMT32d ",$s,sf,:=,cf,=",
+		esilprintf(op, "0,%s,!,!,?{,1,%s,-,%s,<<,0x%" PFMT64x ",&,!,!,^,},%s,%s,$z,zf,:=,$p,pf,:=,%" PFMT32d ",$s,sf,:=,cf,=",
 			src, src, dst, val, src, dst2, bitsize - 1);
 	} break;
 	case X86_INS_SALC:

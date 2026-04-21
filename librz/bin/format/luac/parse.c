@@ -100,7 +100,7 @@ static ut64 lua_parse_number(RzBuffer *buffer, st32 *size, ut64 offset, ut64 dat
 	if (minor <= 3) {
 		const size_t size_offset = sizeof(LUA_INT);
 		if (size_offset + offset > data_size) {
-			RZ_LOG_ERROR("file truncated, offset: %llu, data size: %llu\n", offset, data_size);
+			RZ_LOG_ERROR("file truncated, offset: %" PFMT64u ", data size: %" PFMT64u "\n", offset, data_size);
 			return 0;
 		}
 		*size = (st32)lua_load_int(buffer, offset);
@@ -219,7 +219,7 @@ static ut64 lua_parse_code(LuaProto *proto, RzBuffer *buffer, ut64 offset, ut64 
 	const ut8 instruction_size = (minor == 0) ? 8 : 4;
 	const ut64 total_size = code_size * instruction_size + size_offset;
 	if (total_size + offset > data_size) {
-		RZ_LOG_ERROR("Truncated Code at [0x%llx]\n", offset);
+		RZ_LOG_ERROR("Truncated Code at [0x%" PFMT64x "]\n", offset);
 		return 0;
 	}
 
@@ -471,7 +471,7 @@ static ut64 lua_parse_debug(LuaProto *proto, RzBuffer *buffer, ut64 offset, ut64
 		/* parse absline info */
 		delta_offset = lua_parse_szint(buffer, &entries_cnt, offset, data_size, minor);
 		lua_check_error_offset(delta_offset);
-		RZ_LOG_DEBUG("abs_info_entry entries_cnt: %d (offset: 0x%llx)\n", entries_cnt, offset);
+		RZ_LOG_DEBUG("abs_info_entry entries_cnt: %d (offset: 0x%" PFMT64x ")\n", entries_cnt, offset);
 		offset += delta_offset;
 		for (int i = 0; i < entries_cnt; ++i) {
 			LuaAbsLineinfoEntry *abs_info_entry = lua_new_abs_lineinfo_entry();
