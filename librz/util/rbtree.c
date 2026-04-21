@@ -279,13 +279,10 @@ RZ_API bool rz_rbtree_delete(RBNode **root, void *data, RBComparator cmp, void *
 RZ_API RBNode *rz_rbtree_find(RBNode *x, void *data, RBComparator cmp, void *user) {
 	while (x) {
 		int d = cmp(data, x, user);
-		if (d < 0) {
-			x = rb_child(x, 0);
-		} else if (d > 0) {
-			x = rb_child(x, 1);
-		} else {
-			return x;
-		}
+		if (!d) return x;
+		int dir = (d > 0);
+		x = rb_child(x, dir);
+		__builtin_prefetch(x);
 	}
 	return NULL;
 }
@@ -308,12 +305,10 @@ RZ_API RBNode *rz_rbtree_lower_bound(RBNode *x, void *data, RBComparator cmp, vo
 	RBNode *ret = NULL;
 	while (x) {
 		int d = cmp(data, x, user);
-		if (d <= 0) {
-			ret = x;
-			x = rb_child(x, 0);
-		} else {
-			x = rb_child(x, 1);
-		}
+		if (d <= 0) ret = x;
+		int dir = (d > 0);
+		x = rb_child(x, dir);
+		__builtin_prefetch(x);
 	}
 	return ret;
 }
@@ -323,15 +318,13 @@ RZ_API RBIter rz_rbtree_lower_bound_forward(RBNode *root, void *data, RBComparat
 }
 
 RZ_API RBNode *rz_rbtree_upper_bound(RBNode *x, void *data, RBComparator cmp, void *user) {
-	void *ret = NULL;
+	RBNode *ret = NULL;
 	while (x) {
 		int d = cmp(data, x, user);
-		if (d < 0) {
-			x = rb_child(x, 0);
-		} else {
-			ret = x;
-			x = rb_child(x, 1);
-		}
+		if (d >= 0) ret = x;
+		int dir = (d >= 0);
+		x = rb_child(x, dir);
+		__builtin_prefetch(x);
 	}
 	return ret;
 }
@@ -446,10 +439,15 @@ RZ_API bool rz_rbtree_cont_insert(RContRBTree *tree, void *data, RContRBCmp cmp,
 
 static void cont_node_free(RBNode *node, void *user) {
 	RContRBNode *contnode = container_of(node, RContRBNode, node);
-	if (user) {
-		((RContRBFree)user)(contnode->data);
+	RContRBTree *tree = (RContRBTree *)user;
+	if (tree && tree->free) {
+		tree->free(contnode->data);
 	}
-	free(contnode);
+	if (tree && tree->pool) {
+		rb_pool_release(tree->pool, contnode);
+	} else {
+		free(contnode);
+	}
 }
 
 RZ_API bool rz_rbtree_cont_delete(RContRBTree *tree, void *data, RContRBCmp cmp, void *user) {
@@ -484,7 +482,7 @@ RZ_API void *rz_rbtree_cont_find(RContRBTree *tree, void *data, RContRBCmp cmp, 
 
 RZ_API void rz_rbtree_cont_free(RContRBTree *tree) {
 	if (tree && tree->root) {
-		rz_rbtree_free(&tree->root->node, cont_node_free, tree->free);
+		rz_rbtree_free(&tree->root->node, cont_node_free, tree);
 	}
 	free(tree);
 }

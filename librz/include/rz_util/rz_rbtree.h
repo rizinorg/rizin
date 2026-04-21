@@ -4,6 +4,7 @@
 #include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 #include "rz_list.h"
 
@@ -58,13 +59,12 @@ typedef struct rz_rb_iter_t {
 	// current depth
 	// if len == 0, the iterator is at the end/empty
 	// else path[len-1] is the current node
-	// int len;
+	int len;
 
 	// current path from root to the current node
 	// excluding nodes into whose right (or left, for reverse iteration) branch the iterator has descended
 	// (these nodes are before the current)
-	// RBNode *path[RZ_RBTREE_MAX_HEIGHT];
-	RBNode *current;
+	RBNode *path[RZ_RBTREE_MAX_HEIGHT];
 } RBIter;
 
 typedef int (*RContRBCmp)(void *incoming, void *in, void *user);
@@ -74,9 +74,73 @@ typedef struct rz_containing_rb_node_t {
 	void *data;
 } RContRBNode;
 
+// typedef struct rb_pool_t {
+// 	struct rb_pool_t *next;
+// } RBPool;
+
+// static inline RContRBNode *rb_pool_alloc(RBPool *pool) {
+// 	if (pool && pool->next) {
+// 		RContRBNode *node = (RContRBNode *)pool->next;
+// 		pool->next = *(struct rb_pool_t **)node;
+// 		memset(node, 0, sizeof(RContRBNode));
+// 		return node;
+// 	}
+// 	return RZ_NEW0(RContRBNode);
+// }
+
+// static inline void rb_pool_release(RBPool *pool, RContRBNode *node) {
+// 	if (pool) {
+// 		*(struct rb_pool_t **)node = pool->next;
+// 		pool->next = (struct rb_pool_t *)node;
+// 	} else {
+// 		free(node);
+// 	}
+// }
+
+
+#define RB_SLAB_SIZE 128
+
+typedef struct rb_slab_t {
+	unsigned char *nodes;
+	struct rb_slab_t *next;
+} RBSlab;
+
+typedef struct rb_pool_t {
+	size_t node_size;
+	RBSlab *slabs;
+	void *freelist;
+} RBPool;
+
+static inline void *rb_pool_alloc(RBPool *pool) {
+	if (!pool->freelist) {
+		RBSlab *slab = (RBSlab *)malloc(sizeof(RBSlab));
+		if (!slab) return NULL;
+		slab->nodes = (unsigned char *)calloc(RB_SLAB_SIZE, pool->node_size);
+		if (!slab->nodes) { free(slab); return NULL; }
+		slab->next = pool->slabs;
+		pool->slabs = slab;
+		size_t i;
+		for (i = 0; i < RB_SLAB_SIZE; i++) {
+			void *node = slab->nodes + i * pool->node_size;
+			*(void **)node = pool->freelist;
+			pool->freelist = node;
+		}
+	}
+	void *n = pool->freelist;
+	pool->freelist = *(void **)n;
+	memset(n, 0, pool->node_size);
+	return n;
+}
+
+static inline void rb_pool_release(RBPool *pool, void *node) {
+	*(void **)node = pool->freelist;
+	pool->freelist = node;
+}
+
 typedef struct rz_containing_rb_tree_t {
 	RContRBNode *root;
 	RContRBFree free;
+	RBPool *pool;
 } RContRBTree;
 
 // Routines for augmented red-black trees. The user should provide an aggregation (monoid sum) callback `sum`
