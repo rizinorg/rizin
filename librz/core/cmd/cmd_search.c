@@ -1443,7 +1443,7 @@ reread:
 				RzListIter *iter;
 				RzIOMap *map;
 				rz_list_foreach (param.boundaries, iter, map) {
-					eprintf("-- %llx %llx\n", map->itv.addr, rz_itv_end(map->itv));
+					eprintf("-- %" PFMT64x " %" PFMT64x "\n", map->itv.addr, rz_itv_end(map->itv));
 					rz_cons_break_push(NULL, NULL);
 					rz_search_pattern_size(core->search, ps);
 					rz_search_pattern(core->search, map->itv.addr, rz_itv_end(map->itv));
@@ -2156,7 +2156,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_pattern_handler(RzCore *core, int argc, const c
 	RzListIter *iter;
 	RzIOMap *map;
 	rz_list_foreach (param.boundaries, iter, map) {
-		eprintf("-- %llx %llx\n", map->itv.addr, rz_itv_end(map->itv));
+		eprintf("-- %" PFMT64x " %" PFMT64x "\n", map->itv.addr, rz_itv_end(map->itv));
 		rz_cons_break_push(NULL, NULL);
 		rz_search_pattern_size(core->search, ps);
 		if (!rz_search_pattern(core->search, map->itv.addr, rz_itv_end(map->itv))) {

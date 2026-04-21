@@ -487,14 +487,14 @@ const ut8 blu64[32] = {
 // clang-format on
 #define check_offset(endianness, size, offset, prev_offset, expected) \
 	ut##size val##size = rz_read_##endianness##size##_offset(blu64, &offset); \
-	mu_assert_eq_fmt(val##size, expected, "wrong value of read " #endianness #size, "0x%04llx"); \
+	mu_assert_eq_fmt(val##size, expected, "wrong value of read " #endianness #size, "0x%04" PFMT64x ""); \
 	prev_offset += sizeof(val##size); \
 	mu_assert_eq(offset, prev_offset, "wrong offset after read " #endianness #size);
 
 #define check_offset128(endianness, offset, prev_offset, expected) \
 	ut128 val128 = rz_read_##endianness##128_offset(blu64, &offset); \
-	mu_assert_eq_fmt(val128.High, expected.High, "wrong High value of read " #endianness "128", "0x%04llx"); \
-	mu_assert_eq_fmt(val128.Low, expected.Low, "wrong Low value of read " #endianness "128", "0x%04llx"); \
+	mu_assert_eq_fmt(val128.High, expected.High, "wrong High value of read " #endianness "128", "0x%04" PFMT64x ""); \
+	mu_assert_eq_fmt(val128.Low, expected.Low, "wrong Low value of read " #endianness "128", "0x%04" PFMT64x ""); \
 	prev_offset += sizeof(val128); \
 	mu_assert_eq(offset, prev_offset, "wrong offset after read " #endianness "128");
 

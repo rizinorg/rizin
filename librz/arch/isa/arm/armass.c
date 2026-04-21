@@ -1153,7 +1153,7 @@ static st32 thumb_getoffset(char *label, ut64 cur) {
 	st32 res = rz_num_math(NULL, label);
 	res -= 4;
 	res -= cur; // possible integer underflow
-	// printf("thumb_getoffset: %s, %lld, %lld\n", label, res, cur);
+	// printf("thumb_getoffset: %s, %" PFMT64d ", %" PFMT64d "\n", label, res, cur);
 	return res;
 }
 

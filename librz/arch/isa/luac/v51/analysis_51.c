@@ -175,7 +175,7 @@ int lua51_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContex
 	case OP_TFORLOOP: /*  A sBx   if R(A+1) ~= nil then { R(A)=R(A+1); pc += sBx }*/
 		TYPE_DST_REG(RZ_ANALYSIS_OP_TYPE_CJMP, a);
 		JUMP_FAIL_ABS(addr + 4 + (sbx * 4), addr + 4);
-		rz_strf(comment, "to 0x%llx", op->jump);
+		rz_strf(comment, "to 0x%" PFMT64x "", op->jump);
 		break;
 	case OP_VARARG: /*    A B     R(A), R(A+1), ..., R(A+B-2) = vararg            */
 		break;

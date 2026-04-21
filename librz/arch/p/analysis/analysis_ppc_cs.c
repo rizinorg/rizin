@@ -1314,7 +1314,7 @@ static int ppc_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 
 				op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 				op->val = IMM(2);
 				op->val <<= 16;
-				esilprintf(op, "0x%llx0000,%s,=", IMM(2), ARG(0));
+				esilprintf(op, "0x%" PFMT64x "0000,%s,=", IMM(2), ARG(0));
 				break;
 			}
 #else
