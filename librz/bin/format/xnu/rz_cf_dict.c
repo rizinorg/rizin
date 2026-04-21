@@ -595,7 +595,7 @@ static void rz_cf_value_integer_free(RzCFValueInteger *integer) {
 }
 
 static void rz_cf_value_integer_print(RzCFValueInteger *integer) {
-	printf("%" PFMT64u "", integer->value);
+	printf("%" PFMT64u, integer->value);
 }
 
 static RzCFValueData *rz_cf_value_data_new(char *string) {

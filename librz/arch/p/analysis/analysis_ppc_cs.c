@@ -72,7 +72,7 @@ static const char *cmask64(RzAnalysis *a, const char *mb_c, const char *me_c) {
 	if (me_c) {
 		me = strtol(me_c, NULL, 16);
 	}
-	snprintf(ctx->cmask1, sizeof(ctx->cmask1), "0x%" PFMT64x "", mask64(mb, me));
+	snprintf(ctx->cmask1, sizeof(ctx->cmask1), "0x%" PFMT64x, mask64(mb, me));
 	return ctx->cmask1;
 }
 

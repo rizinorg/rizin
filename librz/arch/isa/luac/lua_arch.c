@@ -683,7 +683,7 @@ RZ_IPI bool analysis_op_4_5(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuac
 	      if not to run then pc+=Bx+1;			*/
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		JUMP_FAIL_ABS(addr + 4 + 4 * (bx + 1), addr + 4);
-		rz_strf(comment, "to 0x%" PFMT64x "", op->jump);
+		rz_strf(comment, "to 0x%" PFMT64x, op->jump);
 		break;
 	case OP_VARARG: /*	A C	R[A], R[A+1], ..., R[A+C-2] = vararg		*/ {
 		TYPE_DST_REG(RZ_ANALYSIS_OP_TYPE_LOAD, a);

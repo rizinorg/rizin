@@ -1313,7 +1313,7 @@ static void ds_show_refs(RzDisasmState *ds) {
 				if (fcn) {
 					ds_comment(ds, true, "; %s", fcn->name);
 				} else {
-					ds_comment(ds, true, "; 0x%" PFMT64x "", xref->to);
+					ds_comment(ds, true, "; 0x%" PFMT64x, xref->to);
 				}
 			}
 		}

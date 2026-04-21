@@ -1058,22 +1058,22 @@ RZ_API char *rz_analysis_var_get_constraints_readable(RzAnalysisVar *var) {
 			if (high) {
 				rz_strbuf_append(&sb, " && ");
 			}
-			rz_strbuf_appendf(&sb, "<= 0x%" PFMT64x "", constr->val);
+			rz_strbuf_appendf(&sb, "<= 0x%" PFMT64x, constr->val);
 			low = true;
 			break;
 		case RZ_TYPE_COND_LT:
 			if (high) {
 				rz_strbuf_append(&sb, " && ");
 			}
-			rz_strbuf_appendf(&sb, "< 0x%" PFMT64x "", constr->val);
+			rz_strbuf_appendf(&sb, "< 0x%" PFMT64x, constr->val);
 			low = true;
 			break;
 		case RZ_TYPE_COND_GE:
-			rz_strbuf_appendf(&sb, ">= 0x%" PFMT64x "", constr->val);
+			rz_strbuf_appendf(&sb, ">= 0x%" PFMT64x, constr->val);
 			high = true;
 			break;
 		case RZ_TYPE_COND_GT:
-			rz_strbuf_appendf(&sb, "> 0x%" PFMT64x "", constr->val);
+			rz_strbuf_appendf(&sb, "> 0x%" PFMT64x, constr->val);
 			high = true;
 			break;
 		default:

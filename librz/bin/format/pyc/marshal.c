@@ -156,7 +156,7 @@ static pyc_object *get_int64_object(RzBuffer *buffer) {
 		return NULL;
 	}
 	ret->type = TYPE_INT64;
-	ret->data = rz_str_newf("%" PFMT64d "", i);
+	ret->data = rz_str_newf("%" PFMT64d, i);
 	if (!ret->data) {
 		RZ_FREE(ret);
 	}

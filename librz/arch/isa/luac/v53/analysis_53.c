@@ -144,7 +144,7 @@ int lua53_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContex
 	case OP_FORPREP: /*   A sBx   R(A)-=R(A+2); pc+=sBx                           */
 		TYPE_DST_REG(RZ_ANALYSIS_OP_TYPE_CJMP, a);
 		JUMP_FAIL_ABS(addr + 4 + (sbx * 4), addr + 4);
-		rz_strf(comment, "to 0x%" PFMT64x "", op->jump);
+		rz_strf(comment, "to 0x%" PFMT64x, op->jump);
 		break;
 	case OP_LOADKX: /*    A       R(A) := Kst(extra arg)                          */
 		TYPE_DST_REG(RZ_ANALYSIS_OP_TYPE_LOAD, a);
@@ -197,7 +197,7 @@ int lua53_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContex
 	case OP_TFORLOOP: /*  A sBx   if R(A+1) ~= nil then { R(A)=R(A+1); pc += sBx }*/
 		TYPE_DST_REG(RZ_ANALYSIS_OP_TYPE_CJMP, a);
 		JUMP_FAIL_ABS(addr + 4 + (sbx * 4), addr + 4);
-		rz_strf(comment, "to 0x%" PFMT64x "", op->jump);
+		rz_strf(comment, "to 0x%" PFMT64x, op->jump);
 		break;
 	case OP_VARARG: /*    A B     R(A), R(A+1), ..., R(A+B-2) = vararg            */
 	case OP_EXTRAARG: /*   Ax      extra (larger) argument for previous opcode     */

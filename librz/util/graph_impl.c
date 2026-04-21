@@ -531,7 +531,7 @@ static bool rz_graph_matrix_impl_require_capacity(RzGraphMatrixImpl *impl, ut64 
 
 	RzGraphEdge **new_matrix = RZ_NEWS0(RzGraphEdge *, new_cap * new_cap);
 	if (!new_matrix) {
-		RZ_LOG_WARN("Failed to adjust matrix capacity to %" PFMT64u "", new_cap);
+		RZ_LOG_WARN("Failed to adjust matrix capacity to %" PFMT64u, new_cap);
 		return false;
 	}
 
@@ -839,7 +839,7 @@ static RzGraphMatrixImpl *rz_graph_matrix_impl_init(ut64 capacity) {
 	impl->capacity = capacity ? capacity : MATRIX_DEFAULT_CAPACITY;
 	impl->matrix = RZ_NEWS0(RzGraphEdge *, impl->capacity * impl->capacity);
 	if (!impl->matrix) {
-		RZ_LOG_WARN("Failed to init graph matrix with capacity %" PFMT64u "", impl->capacity)
+		RZ_LOG_WARN("Failed to init graph matrix with capacity %" PFMT64u, impl->capacity)
 		rz_matrix_fini(impl);
 		return NULL;
 	}

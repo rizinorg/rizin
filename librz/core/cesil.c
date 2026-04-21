@@ -442,7 +442,7 @@ static void initialize_stack(RzCore *core, ut64 addr, ut64 size) {
 		ut64 i;
 		for (i = 0; i < size; i += bs) {
 			ut64 left = RZ_MIN(bs, size - i);
-			//	rz_core_cmdf (core, "wx 10203040 @ 0x%" PFMT64x "", addr);
+			//	rz_core_cmdf (core, "wx 10203040 @ 0x%" PFMT64x, addr);
 			switch (*mode) {
 			case 'd': { // "debrujn"
 				ut8 *buf = (ut8 *)rz_debruijn_pattern(left, 0, NULL);

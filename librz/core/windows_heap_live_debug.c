@@ -1338,7 +1338,7 @@ static void w32_list_heaps_blocks(RzCore *core, RzOutputMode mode, bool flag) {
 				ut64 address = (ut64)block->dwAddress - granularity;
 				ut64 unusedBytes = block->extraInfo ? block->extraInfo->unusedBytes : 0;
 				if (flag) {
-					char *name = rz_str_newf("alloc.%" PFMT64x "", address);
+					char *name = rz_str_newf("alloc.%" PFMT64x, address);
 					if (!rz_flag_set(core->flags, name, address, block->dwSize)) {
 						RZ_LOG_ERROR("core: flag cannot be set for block at 0x%" PFMT64x, address);
 					}
