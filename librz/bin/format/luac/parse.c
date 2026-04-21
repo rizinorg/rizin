@@ -321,16 +321,29 @@ static ut64 lua_parse_const_entry(const LuaProto *proto, RzBuffer *buffer, int i
 			current_entry->tag = LUA_VSTRING_IDX;
 		}
 		break;
-	case LUA_TBOOLEAN:
-		if (!rz_buf_read8_at(buffer, offset, &tmp)) {
+	case LUA_VFALSE:
+	case LUA_VTRUE:
+		recv_data = RZ_NEWS(ut8, 1);
+		data_len = 1;
+		delta_offset = 0;
+		if (minor == 4 || minor == 5) {
+			*recv_data = current_entry->tag == LUA_VTRUE ? 1 : 0;
+		} else {
+			if (!rz_buf_read8_at(buffer, offset, (ut8 *)recv_data)) {
+				return 0;
+			}
+			delta_offset++;
+		}
+		break;
+	case LUA_OPENWRT_INT32:
+		data_len = 4;
+		recv_data = RZ_NEWS(ut8, data_len);
+		rz_buf_read_le16_at(buffer, offset, (ut16 *)recv_data);
+		if (offset + data_len > data_size) {
+			RZ_FREE(recv_data);
 			return 0;
 		}
-		current_entry->tag = tmp == 0 ? LUA_VFALSE : LUA_VTRUE;
-		recv_data = NULL;
-		data_len = 0;
-		delta_offset = 0;
-		if (minor == 3)
-			delta_offset++;
+		delta_offset += data_len;
 		break;
 	case LUA_TNIL:
 	default:

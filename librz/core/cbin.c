@@ -1766,7 +1766,8 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 		RzStrBuf sb = { 0 };
 		rz_strbuf_init(&sb);
 		rz_bin_dwarf_dump(dw, &sb);
-		rz_cons_strcat(rz_strbuf_drain_nofree(&sb));
+		rz_cons_strcat(rz_strbuf_get(&sb));
+		rz_strbuf_fini(&sb);
 	}
 	RzBinDwarfLine *line = rz_bin_dwarf_line(dw);
 	if (line && line->lines) {
