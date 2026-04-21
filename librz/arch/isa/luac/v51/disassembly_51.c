@@ -71,6 +71,10 @@ bool get_asm_string51(LuaOpCode51 opcode1, const ut32 instruction, RzStrBuf *buf
 	case OP_LE: /*        A B C   if ((RK(B) <= RK(C)) ~= A) then pc++            */
 		rz_strf(tmp_asm_string, "%s %" PFMT32d " %s %s", opnames[opcode], a, ISRKBi, ISRKCi);
 		break;
+	case OP_TAILCALL: /*  A B C   return R(A)(R(A+1), ... ,R(A+B-1))              */
+		rz_strf(tmp_asm_string, "%s r%" PFMT32d " %" PFMT32d " %" PFMT32d,
+			opnames[opcode], a, b, c);
+		break;
 	case OP_JMP: /*       A sBx   pc+=sBx; if (A) close all upvalues >= R(A - 1)  */
 		rz_strf(tmp_asm_string, "%s %" PFMT32d " %" PFMT32d, opnames[opcode], a, sbx);
 		break;
