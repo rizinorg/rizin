@@ -104,7 +104,7 @@ static char **luac_cpu_descriptions() {
 		"5.4", "Official 5.4 Lua compiler",
 		"5.5", "Official 5.5 Lua compiler",
 		"openwrt-5.1", "5.1 version of Lua compiler, modified by OpenWRT project",
-		"TP-Link-5.1", "5.1 version of Lua compiler, modified by OpenWRT project and TP-Link vendor",
+		"tp-link-5.1", "5.1 version of Lua compiler, modified by OpenWRT project and TP-Link vendor",
 		NULL
 	};
 	return cpu_desc;
@@ -126,7 +126,7 @@ RzAsmPlugin rz_asm_plugin_luac = {
 		"5.3,"
 		"5.4,"
 		"5.5,"
-		"OpenWRT-5.1,"
+		"openwrt-5.1,"
 		"tp-link-5.1",
 	.get_cpu_desc = luac_cpu_descriptions,
 };
