@@ -1764,7 +1764,7 @@ static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bo
 		}
 		const ut64 io_size = rz_io_size(core->io);
 		if (io_size != UT64_MAX && io_size > str_off) {
-			len = RZ_MIN(len, io_size - str_off);
+			len = io_size - str_off;
 		}
 	} else {
 		buf = rz_buf_new_with_pointers(core->block, core->blocksize, false);
