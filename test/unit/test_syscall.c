@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "minunit.h"
+#include <rz_core.h>
 #include <rz_syscall.h>
 
 bool test_rz_syscall_get_num(void) {
@@ -117,6 +118,30 @@ bool test_rz_syscall_arm64_linux(void) {
 	mu_end;
 }
 
+bool test_rz_core_syscall_as_string_valid_number(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "rz_core_new should succeed");
+
+	RzSyscall *sc = rz_syscall_new();
+	mu_assert_notnull(sc, "rz_syscall_new should succeed");
+
+	sdb_set(sc->db, "_", "0");
+	sdb_set(sc->db, "0.3", "read");
+	sdb_set(sc->db, "read", "0,3,3,fd,buf,count");
+	sdb_set(sc->db, "0.4", "write");
+	sdb_set(sc->db, "write", "0,4,3,fd,buf,count");
+
+	rz_analysis_set_syscall(core->analysis, sc);
+
+	char *result = rz_core_syscall_as_string(core, 3, 0);
+	mu_assert_notnull(result, "rz_core_syscall_as_string should return a result");
+	mu_assert_strcontains(result, "read", "result should contain 'read'");
+
+	free(result);
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_syscall_get_num);
 	mu_run_test(test_rz_syscall_get_num_negative_base);
@@ -124,6 +149,7 @@ int all_tests() {
 	mu_run_test(test_rz_syscall_arm_linux);
 	mu_run_test(test_rz_syscall_arm64_linux);
 	mu_run_test(test_rz_syscall_mips_linux);
+	mu_run_test(test_rz_core_syscall_as_string_valid_number);
 	return tests_passed != tests_run;
 }
 
