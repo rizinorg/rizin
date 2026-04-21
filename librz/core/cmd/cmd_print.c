@@ -1772,7 +1772,7 @@ static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bo
 			return RZ_CMD_STATUS_ERROR;
 		}
 	}
-	len = RZ_MIN(len, (ut64)UT32_MAX);
+	len = RZ_MIN(len, (ut64)0x100000);
 
 	if (!len) {
 		rz_buf_free(buf);
