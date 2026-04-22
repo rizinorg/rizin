@@ -213,53 +213,6 @@ static void bench_mixed_purge_refill(RzTable *t_out) {
 	});
 }
 
-static void bench_join(RzTable *t_out) {
-	RZ_BENCH_RUN_I("[join] 10k", i, t_out, 1000, {
-		RzList *l1 = rz_list_new();
-		RzList *l2 = rz_list_new();
-		_fill(l1, 5000);
-		_fill(l2, 5000);
-		rz_list_join(l1, l2);
-		rz_list_free(l1);
-		rz_list_free(l2);
-	});
-	RZ_BENCH_RUN_I("[join] 100k", i, t_out, 100, {
-		RzList *l1 = rz_list_new();
-		RzList *l2 = rz_list_new();
-		_fill(l1, 50000);
-		_fill(l2, 50000);
-		rz_list_join(l1, l2);
-		rz_list_free(l1);
-		rz_list_free(l2);
-	});
-}
-
-static void bench_item_new(RzTable *t_out) {
-	RZ_BENCH_RUN_I("[item_new] 10k", i, t_out, 1000, {
-		for (int j = 0; j < 10000; j++) {
-			RzListIter *it = rz_list_item_new((void *)(intptr_t)j);
-			free(it);
-		}
-	});
-	RZ_BENCH_RUN_I("[item_new] 100k", i, t_out, 100, {
-		for (int j = 0; j < 100000; j++) {
-			RzListIter *it = rz_list_item_new((void *)(intptr_t)j);
-			free(it);
-		}
-	});
-}
-
-static void bench_set_n(RzTable *t_out) {
-	RZ_BENCH_RUN_I("[set_n] 10k", i, t_out, 100, {
-		RzList *l = rz_list_new();
-		_fill(l, 10000);
-		for (int j = 0; j < 10000; j++) {
-			rz_list_set_n(l, j, (void *)(intptr_t)(j + 1));
-		}
-		rz_list_free(l);
-	});
-}
-
 int main(void) {
 	RzTable *t = rz_table_new();
 	RZ_BENCH_TABLE_INIT(t);
@@ -272,10 +225,6 @@ int main(void) {
 	bench_purge(t);
 	bench_mixed_append_pop(t);
 	bench_mixed_purge_refill(t);
-	bench_join(t);
-	bench_item_new(t);
-	bench_set_n(t);
-
 	RZ_BENCH_TABLE_PRINT_AND_FREE(t);
 	return 0;
 }

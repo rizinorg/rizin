@@ -47,11 +47,27 @@ bool test_rz_list_join(void) {
 	RzList *list2 = rz_list_new();
 	intptr_t test1 = 0x12345;
 	intptr_t test2 = 0x88888;
-	rz_list_append(list1, (void *)test1);
+	intptr_t test3 = 0x99999;
+
+	mu_assert_eq(rz_list_join(list1, list2), false, "join empty");
+
 	rz_list_append(list2, (void *)test2);
-	int joined = rz_list_join(list1, list2);
-	mu_assert_eq(joined, 1, "rz_list_join of two lists");
-	mu_assert_eq(rz_list_length(list1), 2, "rz_list_join two single element lists result length is 1");
+	mu_assert_eq(rz_list_join(list1, list2), true, "join empty list1");
+	mu_assert_eq(rz_list_length(list1), 1, "len 1");
+	mu_assert_ptreq(rz_list_get_n(list1, 0), (void *)test2, "val test2");
+
+	mu_assert_eq(rz_list_join(list1, list2), false, "join list2 empty");
+
+	rz_list_append(list1, (void *)test1);
+	rz_list_append(list2, (void *)test3);
+	mu_assert_eq(rz_list_join(list1, list2), true, "join non-empty");
+	mu_assert_eq(rz_list_length(list1), 3, "len 3");
+	mu_assert_ptreq(rz_list_get_n(list1, 0), (void *)test2, "val 0");
+	mu_assert_ptreq(rz_list_get_n(list1, 1), (void *)test1, "val 1");
+	mu_assert_ptreq(rz_list_get_n(list1, 2), (void *)test3, "val 2");
+
+	mu_assert_eq(rz_list_length(list2), 0, "list2 empty");
+
 	rz_list_free(list1);
 	rz_list_free(list2);
 	mu_end;
@@ -68,14 +84,29 @@ bool test_rz_list_del_n(void) {
 	RzList *list = rz_list_new();
 	intptr_t test1 = 0x12345;
 	intptr_t test2 = 0x88888;
+	intptr_t test3 = 0x99999;
 	rz_list_append(list, (void *)test1);
 	rz_list_append(list, (void *)test2);
-	mu_assert_eq(rz_list_length(list), 2,
-		"list is of length 2 when adding 2 values");
+	rz_list_append(list, (void *)test3);
+
+	// Delete head
 	rz_list_del_n(list, 0);
-	int top1 = (intptr_t)rz_list_pop(list);
-	mu_assert_eq(top1, 0x88888,
-		"error, first value not 0x88888");
+	mu_assert_eq(rz_list_length(list), 2, "len 2");
+	mu_assert_ptreq(rz_list_get_n(list, 0), (void *)test2, "val 0");
+
+	// Delete tail
+	rz_list_del_n(list, 1);
+	mu_assert_eq(rz_list_length(list), 1, "len 1");
+	mu_assert_ptreq(rz_list_get_n(list, 0), (void *)test2, "val 0 is test2");
+
+	// Delete mid
+	rz_list_append(list, (void *)test1);
+	rz_list_append(list, (void *)test3);
+	rz_list_del_n(list, 1);
+	mu_assert_eq(rz_list_length(list), 2, "len 2 mid");
+	mu_assert_ptreq(rz_list_get_n(list, 0), (void *)test2, "val 0 mid");
+	mu_assert_ptreq(rz_list_get_n(list, 1), (void *)test3, "val 1 mid");
+
 	rz_list_free(list);
 	mu_end;
 }
@@ -118,7 +149,7 @@ bool test_rz_list_sort2(void) {
 	mu_end;
 }
 
-static int cmp_range(const void *a, const void *b) {
+static int cmp_range(const void *a, const void *b, void *user) {
 	int ra = *(int *)a;
 	int rb = *(int *)b;
 	return ra - rb;
@@ -211,7 +242,7 @@ bool test_rz_list_sort5(void) {
 	for (i = 0; i < 26; i++) {
 		rz_list_append(list, (void *)upper[i]);
 	}
-	// add more than 43 elements to trigger merge sort
+	// 52 elements: exceeds the 43-element threshold, triggering merge sort
 	rz_list_sort(list, (RzListComparator)strcmp, NULL);
 	mu_assert_streq((char *)list->head->val, upper[0], "First element");
 	mu_assert_streq((char *)list->tail->val, lower[25], "Last element");
@@ -314,7 +345,7 @@ bool test_rz_list_sort4(void) {
 		mu_assert_streq((char *)next->val, exp_tests_odd[i], buf);
 		next = next->next;
 	}
-
+	
 #if 0 // Debug Print
 	char *data;
 
@@ -329,7 +360,7 @@ bool test_rz_list_sort4(void) {
 	// Add test6 to make the length even
 	rz_list_append(list, (void *)test6_later);
 
-#if 0 // Debug Printing
+	#if 0 // Debug Printing
 	printf("after adding FFFF \n");
 	rz_list_foreach (list, next, data) {
 		printf("l -> %s\n", data);
@@ -339,7 +370,7 @@ bool test_rz_list_sort4(void) {
 	// Sort
 	rz_list_merge_sort(list, (RzListComparator)strcmp, NULL);
 
-#if 0 // Debug Printing
+	#if 0 // Debug Printing
 	printf("after sorting 2 \n");
 	rz_list_foreach (list, next, data) {
 		printf("l -> %s\n", data);
@@ -401,8 +432,7 @@ bool test_rz_list_append_prepend(void) {
 	mu_end;
 }
 
-bool test_rz_list_set_get(void) {
-
+bool test_rz_list_set_n(void) {
 	char *test[] = { "aa", "bb", "cc", "dd", "ee", "ff" };
 
 	RzList *list = rz_list_new();
@@ -411,22 +441,12 @@ bool test_rz_list_set_get(void) {
 	for (i = 0; i < RZ_ARRAY_SIZE(test); ++i) {
 		rz_list_append(list, test[i]);
 	}
-
-	char *str;
-	rz_list_set_n(list, 2, "CC");
-	str = (char *)rz_list_get_n(list, 2);
-	mu_assert_streq(str, "CC", "value after set");
-
+	mu_assert_eq(rz_list_set_n(list, 2, "CC"), 1, "set 2");
+	mu_assert_streq((char *)rz_list_get_n(list, 2), "CC", "val 2");
 	rz_list_prepend(list, "AA0");
-	str = (char *)rz_list_get_n(list, 3);
-	mu_assert_streq(str, "CC", "value after prepend");
-
-	bool s;
-	s = rz_list_set_n(list, 100, "ZZZZ");
-	mu_assert_eq(s, false, "set out of bound");
-	s = rz_list_get_n(list, 100);
-	mu_assert_eq(s, false, "get out of bound");
-
+	mu_assert_streq((char *)rz_list_get_n(list, 3), "CC", "val 3");
+	mu_assert_eq(rz_list_set_n(list, 100, "ZZZZ"), 0, "set 100");
+	mu_assert_null(rz_list_get_n(list, 100), "get 100");
 	rz_list_free(list);
 	mu_end;
 }
@@ -520,6 +540,71 @@ bool test_rz_list_sorted_uniq() {
 	rz_list_free(list);
 	mu_end;
 }
+bool test_rz_list_item_new(void) {
+	intptr_t data = 0x1234;
+	RzListIter *it = rz_list_item_new((void *)data);
+	mu_assert_notnull(it, "item_new");
+	mu_assert_ptreq(it->val, (void *)data, "val");
+	mu_assert_null(it->next, "next null");
+	mu_assert_null(it->prev, "prev null");
+	free(it);
+
+	RzListIter *it_null = rz_list_item_new(NULL);
+	mu_assert_notnull(it_null, "item_new(NULL)");
+	mu_assert_null(it_null->val, "val null");
+	mu_assert_null(it_null->next, "next null");
+	mu_assert_null(it_null->prev, "prev null");
+	free(it_null);
+
+	mu_end;
+}
+
+bool test_rz_list_pool_slab_growth(void) {
+	RzList *list = rz_list_new();
+	mu_assert_notnull(list, "list alloc");
+
+	const int count = RZ_LIST_SLAB_SIZE * 2;
+	for (int i = 0; i < count; i++) {
+		RzListIter *it = rz_list_append(list, (void *)(intptr_t)(i + 1));
+		mu_assert_notnull(it, "append slab growth");
+	}
+	mu_assert_eq(rz_list_length(list), count, "len after growth");
+
+	RzListIter *iter = list->head;
+	for (int i = 0; i < count; i++) {
+		mu_assert_notnull(iter, "walk slab");
+		mu_assert_ptreq(iter->val, (void *)(intptr_t)(i + 1), "val");
+		iter = iter->next;
+	}
+	mu_assert_null(iter, "end null");
+
+	rz_list_free(list);
+	mu_end;
+}
+
+bool test_rz_list_insert_head_update(void) {
+	RzList *list = rz_list_new();
+	char *a = "AAA";
+	char *b = "BBB";
+	char *c = "CCC";
+
+	rz_list_append(list, b);
+	rz_list_append(list, c);
+
+	RzListIter *it = rz_list_insert(list, 0, a);
+	mu_assert_notnull(it, "insert at 0");
+	mu_assert_ptreq(list->head, it, "head updated");
+	mu_assert_streq((char *)list->head->val, "AAA", "head val");
+	mu_assert_null(list->head->prev, "head->prev null");
+	mu_assert_notnull(list->head->next, "head->next");
+	mu_assert_streq((char *)list->head->next->val, "BBB", "second val");
+	mu_assert_ptreq(list->head->next->prev, list->head, "backlink");
+	mu_assert_streq((char *)list->tail->val, "CCC", "tail unchanged");
+	mu_assert_eq(rz_list_length(list), 3, "len 3");
+
+	rz_list_free(list);
+	mu_end;
+}
 
 int all_tests() {
 	mu_run_test(test_rz_list_size);
@@ -535,12 +620,15 @@ int all_tests() {
 	mu_run_test(test_rz_list_mergesort_pint);
 	mu_run_test(test_rz_list_length);
 	mu_run_test(test_rz_list_append_prepend);
-	mu_run_test(test_rz_list_set_get);
+	mu_run_test(test_rz_list_set_n);
 	mu_run_test(test_rz_list_reverse);
 	mu_run_test(test_rz_list_clone);
 	mu_run_test(test_rz_list_find_val);
 	mu_run_test(test_rz_list_from_iter);
 	mu_run_test(test_rz_list_sorted_uniq);
+	mu_run_test(test_rz_list_item_new);
+	mu_run_test(test_rz_list_pool_slab_growth);
+	mu_run_test(test_rz_list_insert_head_update);
 	return tests_passed != tests_run;
 }
 
