@@ -852,6 +852,7 @@ static bool analyze_gadget(RzCore *core, const RzCoreAsmHit *hit, RzGadgetInfo *
 
 cleanup:
 	rz_pvector_fini(&vec);
+	rz_analysis_il_vm_cleanup(core->analysis);
 	rz_core_seek(core, old_addr, true);
 	return ret;
 }
