@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2017-2020 thestr4ng3r <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_util/rz_assert.h"
 #include "rz_vector.h"
 
 // Optimize memory usage on glibc
@@ -69,7 +70,13 @@ RZ_API void rz_vector_fini(RzVector *vec) {
 	vec->free_user = NULL;
 }
 
-RZ_API void rz_vector_clear(RzVector *vec) {
+/**
+ * \brief Removes all elements, frees the internal buffer, and
+ * sets the vector's capacity to 0.
+ *
+ * Use rz_vector_purge() if the buffer's capacity should not change.
+ */
+RZ_API void rz_vector_clear(RZ_BORROW RzVector *vec) {
 	rz_return_if_fail(vec);
 	vector_free_elems(vec);
 	RZ_FREE(vec->a);
@@ -81,6 +88,19 @@ RZ_API void rz_vector_free(RzVector *vec) {
 		rz_vector_fini(vec);
 		free(vec);
 	}
+}
+
+static void rz_vector_assign(RzVector *vec, void *p, const void *elem) {
+	rz_return_if_fail(vec && p && elem);
+	memcpy(p, elem, vec->elem_size);
+}
+
+/**
+ * \brief Set \p n elements, starting at element \p i to \p c.
+ */
+static void rz_vector_zeroize(RzVector *vec, size_t i, size_t n) {
+	rz_return_if_fail(vec);
+	memset(vec->a + (vec->elem_size * i), 0, vec->elem_size * n);
 }
 
 /**
@@ -180,15 +200,32 @@ RZ_API RZ_OWN RzVector *rz_vector_clone(
 	return dst;
 }
 
-RZ_API void rz_vector_assign(RzVector *vec, void *p, void *elem) {
-	rz_return_if_fail(vec && p && elem);
-	memcpy(p, elem, vec->elem_size);
-}
-
-RZ_API void *rz_vector_assign_at(RzVector *vec, size_t index, void *elem) {
+/**
+ * \brief Assign the element \p elem at \p index in the vector.
+ *
+ * NOTE: This function can update the length of the vector. If the index
+ * points after the last element, but not beyond the vector's capacity, it
+ * sets the vector length to \p index + 1. Elements at [len, index) are set to zero.
+ * Use rz_vector_set() if you need sideeffect-less manipulation of the vector slots.
+ *
+ * \param vec The vector to assign to.
+ * \param index The index to assign the element to.
+ * \param elem Pointer to the element to assign. If NULL, only the vector length is updated under the above condition.
+ *
+ * \return Pointer to the element at \p index. Or NULL in case of failure.
+ */
+RZ_API void *rz_vector_assign_at(RZ_BORROW RzVector *vec, size_t index, RZ_NULLABLE const void *elem) {
+	rz_return_val_if_fail(vec && index < vec->capacity, NULL);
 	void *p = rz_vector_index_ptr(vec, index);
 	if (elem) {
 		rz_vector_assign(vec, p, elem);
+	}
+	if (index >= rz_vector_len(vec)) {
+		size_t len = rz_vector_len(vec);
+		// Also zero the slot at index, if no element is assigned to it.
+		size_t n = index - len + (!elem ? 1 : 0);
+		rz_vector_zeroize(vec, len, n);
+		vec->len = index + 1;
 	}
 	return p;
 }
@@ -217,6 +254,16 @@ RZ_API void rz_vector_remove_range(RzVector *vec, size_t index, size_t count, vo
 	if (index < vec->len) {
 		memmove(p, (char *)p + vec->elem_size * count, vec->elem_size * (vec->len - index));
 	}
+}
+
+/**
+ * \brief Deletes all elements in the vector. The internal buffer is not freed
+ * so the vector's capacity stays the same.
+ *
+ * Use rz_vector_clear() if the buffer should be freed.
+ */
+RZ_API void rz_vector_purge(RZ_BORROW RzVector *vec) {
+	vector_free_elems(vec);
 }
 
 RZ_API void *rz_vector_insert(RzVector *vec, size_t index, void *x) {
@@ -436,7 +483,14 @@ RZ_API void *rz_vector_shrink(RzVector *vec) {
 	return vec->a;
 }
 
-RZ_API void *rz_vector_flush(RzVector *vec) {
+/**
+ * \brief Turn the vector into a fixed-size array.
+ * This will clear the vector and return an array of its original contents whose
+ * ownership is transferred to the caller.
+ * This is useful when RzVector is used for its dynamically growing functionality as an
+ * intermediate step to generate a fixed-size array in the end.
+ */
+RZ_API RZ_OWN void *rz_vector_take_array(RZ_BORROW RzVector *vec) {
 	rz_return_val_if_fail(vec, NULL);
 	rz_vector_shrink(vec);
 	void *r = vec->a;
@@ -532,12 +586,15 @@ RZ_API RzPVector *rz_pvector_new_with_len(RzPVectorFree free, size_t length) {
 		rz_pvector_free(v);
 		return NULL;
 	}
-	memset(p, 0, v->v.elem_size * v->v.capacity);
+	rz_vector_zeroize(&v->v, 0, v->v.capacity);
 	v->v.len = length;
 	return v;
 }
 
-RZ_API void rz_pvector_clear(RzPVector *vec) {
+/**
+ * \brief Removes all elements and frees the internal buffer.
+ */
+RZ_API void rz_pvector_clear(RZ_BORROW RzPVector *vec) {
 	rz_return_if_fail(vec);
 	rz_vector_clear(&vec->v);
 }
@@ -638,26 +695,32 @@ RZ_API bool rz_pvector_join(RZ_NONNULL RzPVector *pvec1, RZ_NONNULL RzPVector *p
 }
 
 /**
- * \brief Assign the pointer \p ptr at \p index in the pvector.
+ * \brief Assign the pointer \p ptr at \p index into the pvector.
+ *
+ * NOTE: This function can update the length of the vector. If the index
+ * points after the last element, but not beyond the vector's capacity, it
+ * sets the vector length to \p index + 1. Elements at [len, index) are set to zero.
+ * Use rz_pvector_set() if you need sideeffect-less manipulation of the vector slots.
  *
  * \param vec The pvector to assign to.
  * \param index The index to assign the pointer to.
  * \param ptr The pointer to assign.
  *
- * \return The pointer stored at \p index before. Or NULL in case of failure.
+ * \return The pointer stored at \p index before. NULL if index >= vec->len or in case of failure.
  */
-RZ_API void *rz_pvector_assign_at(RZ_BORROW RZ_NONNULL RzPVector *vec, size_t index, RZ_OWN RZ_NONNULL void *ptr) {
-	rz_return_val_if_fail(vec && ptr, NULL);
-	void **p = rz_vector_index_ptr(&vec->v, index);
-	if (!p) {
-		if (vec->v.free_user) {
+RZ_API void *rz_pvector_assign_at(RZ_BORROW RZ_NONNULL RzPVector *vec, size_t index, RZ_OWN RZ_NULLABLE void *ptr) {
+	rz_return_val_if_fail(vec, NULL);
+	if (index >= rz_pvector_capacity(vec)) {
+		if (vec->v.free_user && ptr) {
 			RzPVectorFree free_fn = (RzPVectorFree)vec->v.free_user;
 			free_fn(ptr);
 		}
 		return NULL;
 	}
-	void *prev = *p;
-	rz_vector_assign_at(&vec->v, index, ptr);
+	bool increased_len = index >= rz_pvector_len(vec);
+	void **p = rz_vector_index_ptr(&vec->v, index);
+	void *prev = !p || increased_len ? NULL : *p;
+	rz_vector_assign_at(&vec->v, index, &ptr);
 	return prev;
 }
 
