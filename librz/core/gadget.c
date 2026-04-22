@@ -317,7 +317,7 @@ RZ_API RZ_OWN RzGadgetRegInfo *rz_core_gadget_reg_info_new(RZ_NONNULL const RzCo
 /**
  * \brief Create a new RzGadgetInfo object.
  * \param address The address of the gadget.
- * \return RZ_OUT A pointer to the newly created RzGadgetInfo object, or NULL if memory allocation fails.
+ * \return A pointer to the newly created RzGadgetInfo object, or NULL if memory allocation fails.
  *
  * This function allocates and initializes a new RzGadgetInfo object with the given address.
  */
@@ -341,7 +341,7 @@ RZ_API RZ_OWN RzGadgetInfo *rz_core_gadget_info_new(const ut64 address) {
 
 /**
  * \brief Free an RzGadgetInfo object.
- * \param gadget_info RZ_NULLABLE Pointer to the RzGadgetInfo object to free.
+ * \param gadget_info Pointer to the RzGadgetInfo object to free.
  *
  * Frees the memory allocated for an RzGadgetInfo object, including its modified registers and dependencies.
  */
@@ -357,8 +357,8 @@ RZ_API void rz_core_gadget_info_free(RZ_NULLABLE RzGadgetInfo *gadget_info) {
 
 /**
  * \brief Add a register info to an RzGadgetInfo object.
- * \param gadget_info RZ_NONNULL Pointer to the RzGadgetInfo object.
- * \param reg_info RZ_NONNULL Pointer to the RzGadgetRegInfo object.
+ * \param gadget_info Pointer to the RzGadgetInfo object.
+ * \param reg_info Pointer to the RzGadgetRegInfo object.
  * \param is_dependency Boolean indicating whether the register is a dependency.
  *
  * Adds the given register info to the modified registers of the RzGadgetInfo object if it is not a dependency.
@@ -374,9 +374,9 @@ RZ_API void rz_core_gadget_info_add_register(const RZ_NONNULL RZ_OUT RzGadgetInf
 
 /**
  * \brief Get the modified register info by name.
- * \param gadget_info RZ_NONNULL Pointer to the RzGadgetInfo object.
- * \param name RZ_NONNULL Pointer to the name of the register.
- * \return RZ_OUT A pointer to the RzGadgetRegInfo object if found, or NULL if not found or if gadget_info is NULL.
+ * \param gadget_info Pointer to the RzGadgetInfo object.
+ * \param name Pointer to the name of the register.
+ * \return A pointer to the RzGadgetRegInfo object if found, or NULL if not found or if gadget_info is NULL.
  *
  * Searches the modified registers in the RzGadgetInfo object for the register with the given name and returns its info.
  */
@@ -444,9 +444,9 @@ RZ_API RZ_OWN RzGadgetRegInfo *rz_core_gadget_reg_info_dup(RZ_BORROW RZ_NONNULL 
 
 /**
  * \brief Find the Gadget Register information for the given register
- * \param gadget_info RZ_NONNULL Pointer to the RzGadgetInfo object.
- * \param name RZ_NONNULL Pointer to the name of the register to filter dependencies.
- * \return RZ_OUT A pointer to an RzPVector of RzGadgetRegInfo objects matching the given name.
+ * \param gadget_info Pointer to the RzGadgetInfo object.
+ * \param name Pointer to the name of the register to filter dependencies.
+ * \return A pointer to an RzPVector of RzGadgetRegInfo objects matching the given name.
  */
 RZ_API RZ_OWN RzPVector /*<RzGadgetRegInfo *>*/ *rz_core_gadget_reg_info_find(const RZ_NONNULL RzGadgetInfo *gadget_info, const RZ_NONNULL char *name) {
 	rz_return_val_if_fail(gadget_info && name, NULL);
@@ -466,8 +466,8 @@ RZ_API RZ_OWN RzPVector /*<RzGadgetRegInfo *>*/ *rz_core_gadget_reg_info_find(co
 
 /**
  * \brief Check if a register with a specific name exists in the modified registers of a RzGadgetInfo object.
- * \param gadget_info RZ_NONNULL Pointer to the RzGadgetInfo object.
- * \param name RZ_NONNULL Pointer to the name of the register.
+ * \param gadget_info Pointer to the RzGadgetInfo object.
+ * \param name Pointer to the name of the register.
  * \return true if a register with the given name exists, false otherwise.
  *
  * Checks the modified registers in the RzGadgetInfo object to see if a register with the given name exists.
@@ -514,7 +514,7 @@ rz_gadget_event_check_fn rz_gadget_event_functions[RZ_GADGET_EVENT_COUNT] = {
 
 /**
  * \brief Check if a given event dependency is present for a register
- * \param gadget_info RZ_NONNULL Pointer to the RzGadgetInfo object.
+ * \param gadget_info Pointer to the RzGadgetInfo object.
  * \param event The RzGadgetEvent to check.
  * \param reg_name Name of the register
  * \return True if there is an \p event which uses \p reg_name. False otherwise.
@@ -543,9 +543,9 @@ RZ_API bool rz_core_gadget_reg_info_has_event(const RZ_NONNULL RzGadgetInfo *gad
 
 /**
  * \brief Find all dependencies based on a specific event in the dependencies of a RzGadgetInfo object.
- * \param gadget_info RZ_NONNULL Pointer to the RzGadgetInfo object.
+ * \param gadget_info Pointer to the RzGadgetInfo object.
  * \param event The RzGadgetEvent to check.
- * \return RZ_OUT A pointer to a list of RzGadgetRegInfo objects matching the given event, or NULL if none are found or if gadget_info is NULL.
+ * \return A pointer to a list of RzGadgetRegInfo objects matching the given event, or NULL if none are found or if gadget_info is NULL.
  */
 RZ_API RZ_OWN RzPVector /*<RzGadgetRegInfo *>*/ *rz_core_gadget_get_reg_info_by_event(const RZ_NONNULL RzGadgetInfo *gadget_info,
 	const RzGadgetEvent event) {
@@ -569,9 +569,9 @@ RZ_API RZ_OWN RzPVector /*<RzGadgetRegInfo *>*/ *rz_core_gadget_get_reg_info_by_
 
 /**
  * \brief Find all registers with specific names in the modified registers of a RzGadgetInfo object.
- * \param gadget_info RZ_NONNULL Pointer to the RzGadgetInfo object.
- * \param registers RZ_NONNULL Pointer to a RzPVector of register names to search for.
- * \return RZ_OUT A pointer to a RzPVector of RzGadgetRegInfo objects matching the given names, or NULL if none are found or if gadget_info is NULL.
+ * \param gadget_info Pointer to the RzGadgetInfo object.
+ * \param registers Pointer to a RzPVector of register names to search for.
+ * \return A pointer to a RzPVector of RzGadgetRegInfo objects matching the given names, or NULL if none are found or if gadget_info is NULL.
  *
  * Searches the modified registers in the RzGadgetInfo object for all registers matching the given register names and returns their info in a vector.
  */
