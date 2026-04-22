@@ -70,5 +70,6 @@ RZ_API RZ_OWN RzIterator /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_outgoing_edg
 RZ_API RZ_OWN RzIterator /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_incoming_edges(const RzInquiryBBCFG *cfg, ut64 bb_addr);
 
 RZ_IPI bool rz_inquiry_bb_cfg_reduce(RzInquiryBBCFG *cfg);
+RZ_IPI RZ_OWN char *rz_inquiry_bb_cfg_as_dot(const RzInquiryBBCFG *bb_cfg, RZ_NULLABLE const char *name);
 
 #endif // RZ_INQUIRY_BB_GRAPH_H
