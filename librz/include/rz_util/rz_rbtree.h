@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 // max height <= 2 * floor(log2(n + 1))
-#define RZ_RBTREE_MAX_HEIGHT 40  // supports up to ~2^20 = 1M nodes with 2× margin
+#define RZ_RBTREE_MAX_HEIGHT 40 // supports up to ~2^20 = 1M nodes with 2× margin
 
 // Singleton can be zero initialized
 typedef struct rz_rb_node_t {
@@ -97,7 +97,6 @@ typedef struct rz_containing_rb_node_t {
 // 	}
 // }
 
-
 #define RB_SLAB_SIZE 128
 
 typedef struct rb_slab_t {
@@ -114,9 +113,13 @@ typedef struct rb_pool_t {
 static inline void *rb_pool_alloc(RBPool *pool) {
 	if (!pool->freelist) {
 		RBSlab *slab = (RBSlab *)malloc(sizeof(RBSlab));
-		if (!slab) return NULL;
+		if (!slab)
+			return NULL;
 		slab->nodes = (unsigned char *)calloc(RB_SLAB_SIZE, pool->node_size);
-		if (!slab->nodes) { free(slab); return NULL; }
+		if (!slab->nodes) {
+			free(slab);
+			return NULL;
+		}
 		slab->next = pool->slabs;
 		pool->slabs = slab;
 		size_t i;

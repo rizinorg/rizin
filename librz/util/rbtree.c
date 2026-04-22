@@ -279,7 +279,8 @@ RZ_API bool rz_rbtree_delete(RBNode **root, void *data, RBComparator cmp, void *
 RZ_API RBNode *rz_rbtree_find(RBNode *x, void *data, RBComparator cmp, void *user) {
 	while (x) {
 		int d = cmp(data, x, user);
-		if (!d) return x;
+		if (!d)
+			return x;
 		int dir = (d > 0);
 		x = rb_child(x, dir);
 		__builtin_prefetch(x);
@@ -305,7 +306,8 @@ RZ_API RBNode *rz_rbtree_lower_bound(RBNode *x, void *data, RBComparator cmp, vo
 	RBNode *ret = NULL;
 	while (x) {
 		int d = cmp(data, x, user);
-		if (d <= 0) ret = x;
+		if (d <= 0)
+			ret = x;
 		int dir = (d > 0);
 		x = rb_child(x, dir);
 		__builtin_prefetch(x);
@@ -321,7 +323,8 @@ RZ_API RBNode *rz_rbtree_upper_bound(RBNode *x, void *data, RBComparator cmp, vo
 	RBNode *ret = NULL;
 	while (x) {
 		int d = cmp(data, x, user);
-		if (d >= 0) ret = x;
+		if (d >= 0)
+			ret = x;
 		int dir = (d >= 0);
 		x = rb_child(x, dir);
 		__builtin_prefetch(x);
