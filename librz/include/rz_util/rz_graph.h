@@ -52,6 +52,8 @@ RZ_API RZ_BORROW RzGraphNode *rz_graph_find_node(RzGraph *g, ut64 id);
 
 // Edges
 RZ_API bool rz_graph_add_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, void *edge_data);
+RZ_API bool rz_graph_update_edge(RZ_BORROW RzGraph *g, RZ_OWN RzGraphNode *from, RZ_OWN RzGraphNode *to, RZ_OWN void *edge_data, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data);
+RZ_API bool rz_graph_update_edge_by_id(RZ_NONNULL RZ_BORROW RzGraph *g, ut64 from_id, ut64 to_id, RZ_NULLABLE RZ_OWN void *edge_data, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data);
 RZ_API bool rz_graph_del_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to);
 RZ_API bool rz_graph_del_edges(RZ_BORROW RzGraph *g, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data);
 RZ_API bool rz_graph_has_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to);

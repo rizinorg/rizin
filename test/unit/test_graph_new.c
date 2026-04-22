@@ -199,6 +199,44 @@ static bool test_graph_edge_deletion_multi(void) {
 	mu_end;
 }
 
+static bool is_from_one(const RzGraphEdge *e, void *user_data) {
+	ut64 num = (utptr)rz_graph_edge_get_data(e);
+	return (num >> 4) == 1;
+}
+
+static bool test_graph_edges_data_update(void) {
+	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash, NULL, NULL);
+
+	RzGraphNode *n1 = rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1));
+	RzGraphNode *n2 = rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2));
+	RzGraphNode *n3 = rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3));
+	RzGraphNode *n4 = rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(4));
+
+	rz_graph_add_edge(g, n1, n2, RZ_GRAPH_INT_AS_DATA(0x12));
+	rz_graph_add_edge(g, n1, n3, RZ_GRAPH_INT_AS_DATA(0x13));
+	rz_graph_add_edge(g, n1, n4, RZ_GRAPH_INT_AS_DATA(0x14));
+	rz_graph_add_edge(g, n2, n3, RZ_GRAPH_INT_AS_DATA(0x23));
+	mu_assert_eq(rz_graph_count_edges(g), 4, "n_edges.initial");
+
+	mu_assert_true(rz_graph_update_edge(g, n3, n3, RZ_GRAPH_INT_AS_DATA(0x33), NULL, NULL), "Did not add edge");
+	mu_assert_eq(rz_graph_count_edges(g), 5, "n_edges.added");
+
+	mu_assert_true(rz_graph_update_edge_by_id(g, 2, 3, RZ_GRAPH_INT_AS_DATA(0xff), is_from_one, NULL), "Should return true for not updated");
+	RzGraphEdge *e = rz_graph_find_edge(g, n2, n3);
+	mu_assert_notnull(e, "Not NULL");
+	ut64 edge_data = (utptr)rz_graph_edge_get_data(e);
+	mu_assert_eq(edge_data, 0x23, "Edge data changed.");
+
+	mu_assert_true(rz_graph_update_edge_by_id(g, 1, 3, RZ_GRAPH_INT_AS_DATA(0xff), is_from_one, NULL), "Should return true for updated");
+	e = rz_graph_find_edge(g, n1, n3);
+	mu_assert_notnull(e, "Not NULL");
+	edge_data = (utptr)rz_graph_edge_get_data(e);
+	mu_assert_eq(edge_data, 0xff, "Edge data did not change.");
+
+	rz_graph_free(g);
+	mu_end;
+}
+
 // Test out-edges iterator
 static bool test_graph_in_out_edges(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash_base, NULL, NULL);
@@ -626,6 +664,39 @@ static bool test_graph_edge_deletion_multi_matrix(void) {
 	mu_end;
 }
 
+static bool test_graph_edges_data_update_matrix(void) {
+	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash, NULL, NULL);
+
+	RzGraphNode *n1 = rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1));
+	RzGraphNode *n2 = rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2));
+	RzGraphNode *n3 = rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3));
+	RzGraphNode *n4 = rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(4));
+
+	rz_graph_add_edge(g, n1, n2, RZ_GRAPH_INT_AS_DATA(0x12));
+	rz_graph_add_edge(g, n1, n3, RZ_GRAPH_INT_AS_DATA(0x13));
+	rz_graph_add_edge(g, n1, n4, RZ_GRAPH_INT_AS_DATA(0x14));
+	rz_graph_add_edge(g, n2, n3, RZ_GRAPH_INT_AS_DATA(0x23));
+	mu_assert_eq(rz_graph_count_edges(g), 4, "n_edges.initial");
+
+	mu_assert_true(rz_graph_update_edge(g, n3, n3, RZ_GRAPH_INT_AS_DATA(0x33), NULL, NULL), "Did not add edge");
+	mu_assert_eq(rz_graph_count_edges(g), 5, "n_edges.added");
+
+	mu_assert_true(rz_graph_update_edge_by_id(g, 2, 3, RZ_GRAPH_INT_AS_DATA(0xff), is_from_one, NULL), "Should return true for not updated");
+	RzGraphEdge *e = rz_graph_find_edge(g, n2, n3);
+	mu_assert_notnull(e, "Not NULL");
+	ut64 edge_data = (utptr)rz_graph_edge_get_data(e);
+	mu_assert_eq(edge_data, 0x23, "Edge data changed.");
+
+	mu_assert_true(rz_graph_update_edge_by_id(g, 1, 3, RZ_GRAPH_INT_AS_DATA(0xff), is_from_one, NULL), "Should return true for updated");
+	e = rz_graph_find_edge(g, n1, n3);
+	mu_assert_notnull(e, "Not NULL");
+	edge_data = (utptr)rz_graph_edge_get_data(e);
+	mu_assert_eq(edge_data, 0xff, "Edge data did not change.");
+
+	rz_graph_free(g);
+	mu_end;
+}
+
 // Test out-edges iterator
 static bool test_graph_in_out_edges_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash_base, NULL, NULL);
@@ -996,6 +1067,7 @@ static int all_tests(void) {
 	mu_run_test(test_graph_edges);
 	mu_run_test(test_graph_edge_deletion);
 	mu_run_test(test_graph_edge_deletion_multi);
+	mu_run_test(test_graph_edges_data_update);
 	mu_run_test(test_graph_in_out_edges);
 	mu_run_test(test_graph_in_out_neighbors);
 	mu_run_test(test_graph_node_deletion);
@@ -1011,6 +1083,7 @@ static int all_tests(void) {
 	mu_run_test(test_graph_edges_matrix);
 	mu_run_test(test_graph_edge_deletion_matrix);
 	mu_run_test(test_graph_edge_deletion_multi_matrix);
+	mu_run_test(test_graph_edges_data_update_matrix);
 	mu_run_test(test_graph_in_out_edges_matrix);
 	mu_run_test(test_graph_in_out_neighbors_matrix);
 	mu_run_test(test_graph_node_deletion_matrix);

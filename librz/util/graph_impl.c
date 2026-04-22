@@ -1461,6 +1461,69 @@ RZ_API bool rz_graph_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNo
 }
 
 /**
+ * \brief Updates a directed edge between two nodes with the given \p edge_data.
+ * If the edge doesn't exist it creates it.
+ *
+ * \param g The graph.
+ * \param from source node
+ * \param to destination node
+ * \param edge_data user data attached to the edge
+ * \param cb An optional callback which returns true if the edge should be updated, and false if it shouldn't.
+ * \param cb_data The callback data.
+ * \return False in case of failure. True otherwise.
+ */
+RZ_API bool rz_graph_update_edge(
+	RZ_NONNULL RZ_BORROW RzGraph *g,
+	RZ_NONNULL RZ_OWN RzGraphNode *from,
+	RZ_NONNULL RZ_OWN RzGraphNode *to,
+	RZ_NULLABLE RZ_OWN void *edge_data,
+	RZ_NULLABLE RzGraphEdgeChooser cb,
+	void *cb_data) {
+	rz_return_val_if_fail(g && from && to, false);
+	RzGraphEdge *e = rz_graph_find_edge(g, from, to);
+	if (e && (!cb || cb(e, cb_data))) {
+		if (g->edge_data_free) {
+			g->edge_data_free(e->data);
+		}
+		e->data = edge_data;
+		return true;
+	} else if (g->impl_ops->add_edge(g, from, to, edge_data)) {
+		// Edge is newly added.
+		g->n_edges += 1;
+		return true;
+	}
+	return true;
+}
+
+/**
+ * \brief Updates a directed edge between two nodes with the given \p edge_data.
+ * If the edge doesn't exist it creates it.
+ *
+ * \param g The graph.
+ * \param from_id Source node id.
+ * \param to_id Destination node id.
+ * \param edge_data user data attached to the edge
+ * \param cb An optional callback which returns true if the edge should be updated, and false if it shouldn't.
+ * \param cb_data The callback data.
+ * \return False in case of failure or if one of the nodes doesn't exist. True otherwise.
+ */
+RZ_API bool rz_graph_update_edge_by_id(
+	RZ_NONNULL RZ_BORROW RzGraph *g,
+	ut64 from_id,
+	ut64 to_id,
+	RZ_NULLABLE RZ_OWN void *edge_data,
+	RZ_NULLABLE RzGraphEdgeChooser cb,
+	void *cb_data) {
+	rz_return_val_if_fail(g, false);
+	RzGraphNode *from = rz_graph_find_node(g, from_id);
+	RzGraphNode *to = rz_graph_find_node(g, to_id);
+	if (!from || !to) {
+		return false;
+	}
+	return rz_graph_update_edge(g, from, to, edge_data, cb, cb_data);
+}
+
+/**
  * \brief Delete a directed edge between two nodes.
  *
  * Dispatches to the impl backend to remove the edge and free its data.
