@@ -1442,7 +1442,7 @@ bool test_rz_buf_negative(bool use_slice) {
 
 int all_tests() {
 	time_t seed = time(0);
-	printf("Jamie Seed: %llu\n", (unsigned long long)seed);
+	printf("Jamie Seed: %" PFMT64u "\n", (unsigned long long)seed);
 	srand(seed);
 	mu_run_test(test_rz_buf_file);
 	mu_run_test(test_rz_buf_bytes);
