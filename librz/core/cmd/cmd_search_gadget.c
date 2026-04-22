@@ -69,7 +69,7 @@ static const RzRegItem *parse_register(const RzCore *core, const char *str, ut64
 	return rz_reg_get(areg, reg, RZ_REG_TYPE_ANY);
 }
 
-static bool parse_constant(const char *str, RZ_NONNULL ut64 *idx, unsigned long long *value) {
+static bool parse_constant(const char *str, RZ_NONNULL ut64 *idx, ut64 *value) {
 	rz_return_val_if_fail(idx, false);
 	int neg = 0;
 	int len = strlen(str);

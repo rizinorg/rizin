@@ -299,7 +299,7 @@ RZ_IPI int rz_arm_cs_analysis_op_32_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 	case ARM_INS_BXJ:
 	case ARM_INS_B:
 		if (ISREG(0) && REGID(0) == ARM_REG_PC) {
-			rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",pc,=", (addr & ~3LL) + pcdelta);
+			rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",pc,=", (addr & ~(ut64)3) + pcdelta);
 		} else {
 			if (ISIMM(0)) {
 				rz_strbuf_appendf(&op->esil, "%s,pc,=", ARG(0));

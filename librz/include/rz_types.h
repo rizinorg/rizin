@@ -510,6 +510,7 @@ static inline void *rz_new_copy(int size, const void *data) {
 
 #if __WINDOWS__
 #define PFMT64x  "I64x"
+#define PFMT64X  "I64X"
 #define PFMT64d  "I64d"
 #define PFMT64u  "I64u"
 #define PFMT64o  "I64o"
@@ -521,10 +522,11 @@ static inline void *rz_new_copy(int size, const void *data) {
 #define LDBLFMTf "f"
 #define HHXFMT   "x"
 #else
-#define PFMT64x  "llx"
-#define PFMT64d  "lld"
-#define PFMT64u  "llu"
-#define PFMT64o  "llo"
+#define PFMT64x  "lx"
+#define PFMT64X  "lX"
+#define PFMT64d  "ld"
+#define PFMT64u  "lu"
+#define PFMT64o  "lo"
 #define PFMTSZx  "zx"
 #define PFMTSZd  "zd"
 #define PFMTSZu  "zu"
