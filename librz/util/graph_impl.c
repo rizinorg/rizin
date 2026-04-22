@@ -2049,6 +2049,15 @@ RZ_API RZ_NULLABLE RZ_BORROW RzGraphNode *rz_graph_nth_neighbour_by_id(const RzG
 	return rz_graph_nth_neighbour(g, node, nth, out_neighbor);
 }
 
+/**
+ * \brief Build a dotgraph representation of the graph.
+ *
+ * \param name An optional name of the graph.
+ * \param node_formatter An optional callback to get the node formatting.
+ * \param edge_formatter An optional callback to get the edge formatting.
+ *
+ * \return The dot graph string or NULL in case of failure.
+ */
 RZ_API RZ_OWN char *rz_graph_as_dot_str(const RzGraph *g,
 	RZ_NULLABLE const char *name,
 	RZ_NULLABLE RzGraphNodeFormatter node_formatter,

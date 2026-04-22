@@ -70,11 +70,15 @@ RZ_API ut64 rz_graph_count_edges(const RzGraph *g);
 RZ_API RZ_OWN RzIterator *rz_graph_get_nodes(const RzGraph *g);
 
 /**
- * Get a label for an edge.
+ * Get a label for a dot graph edge.
+ * Can return NULL if the default arrow should be used.
+ * Otherwise it must return a string of the form: [<formatting options>]
  */
 typedef RZ_OWN char *(*RzGraphEdgeFormatter)(const RzGraphEdge *e);
 /**
- * Get a label for an node.
+ * Get a label for a dot graph node.
+ * Can return NULL if the node's hash id should be used as label.
+ * Otherwise it must return a string of the form: [<formatting options>]
  */
 typedef RZ_OWN char *(*RzGraphNodeFormatter)(const RzGraphNode *n);
 
