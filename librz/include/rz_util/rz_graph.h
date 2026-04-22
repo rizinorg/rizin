@@ -69,6 +69,20 @@ RZ_API ut64 rz_graph_count_nodes(const RzGraph *g);
 RZ_API ut64 rz_graph_count_edges(const RzGraph *g);
 RZ_API RZ_OWN RzIterator *rz_graph_get_nodes(const RzGraph *g);
 
+/**
+ * Get a label for an edge.
+ */
+typedef RZ_OWN char *(*RzGraphEdgeFormatter)(const RzGraphEdge *e);
+/**
+ * Get a label for an node.
+ */
+typedef RZ_OWN char *(*RzGraphNodeFormatter)(const RzGraphNode *n);
+
+RZ_API RZ_OWN char *rz_graph_as_dot_str(const RzGraph *g,
+	RZ_NULLABLE const char *name,
+	RZ_NULLABLE RzGraphNodeFormatter node_formatter,
+	RZ_NULLABLE RzGraphEdgeFormatter edge_formatter);
+
 // DFS and visitor mode
 typedef struct rz_graph_visitor_t_new RzGraphVisitor;
 struct rz_graph_visitor_t_new {

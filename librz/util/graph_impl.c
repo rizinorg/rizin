@@ -4,9 +4,12 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_graph.h>
+#include <rz_types.h>
+#include <rz_util/rz_str.h>
+#include <rz_util/rz_strbuf.h>
+#include <rz_vector.h>
+
 #include "graph_priv.h"
-#include "rz_types.h"
-#include "rz_vector.h"
 
 /**
  * \brief Default size of the edge vector in a list based graph implementation.
@@ -2044,6 +2047,61 @@ RZ_API RZ_NULLABLE RZ_BORROW RzGraphNode *rz_graph_nth_neighbour_by_id(const RzG
 		return NULL;
 	}
 	return rz_graph_nth_neighbour(g, node, nth, out_neighbor);
+}
+
+RZ_API RZ_OWN char *rz_graph_as_dot_str(const RzGraph *g,
+	RZ_NULLABLE const char *name,
+	RZ_NULLABLE RzGraphNodeFormatter node_formatter,
+	RZ_NULLABLE RzGraphEdgeFormatter edge_formatter) {
+	rz_return_val_if_fail(g, NULL);
+
+	RzStrBuf *sb = rz_strbuf_new("digraph ");
+	if (!sb) {
+		return NULL;
+	}
+	if (name) {
+		rz_strbuf_appendf(sb, "\"%s\" \{\n", name);
+	} else {
+		rz_strbuf_appendf(sb, "\{\n");
+	}
+
+#define INDENT "   "
+
+	RzIterator *nodes = rz_graph_get_nodes(g);
+	RzGraphNode *n;
+	rz_iterator_foreach(nodes, n) {
+		char node_name[64] = { 0 };
+		rz_strf(node_name, "%" PFMT64d, rz_graph_node_get_id(n));
+
+		char *node_format = NULL;
+		if (node_formatter && (node_format = node_formatter(n))) {
+			rz_strbuf_appendf(sb, INDENT "%s %s\n", node_name, node_format);
+			free(node_format);
+		}
+
+		RzIterator *out_edges = rz_graph_out_edges((RzGraph *)g, n);
+		if (!out_edges) {
+			continue;
+		}
+		RzGraphEdge *e;
+		rz_iterator_foreach(out_edges, e) {
+			rz_strbuf_appendf(sb, INDENT "%s -> %" PFMT64d,
+				node_name,
+				rz_graph_node_get_id(rz_graph_edge_get_to(e)));
+
+			char *edge_format = NULL;
+			if (edge_formatter && (edge_format = edge_formatter(e))) {
+				rz_strbuf_appendf(sb, " %s\n", edge_format);
+				free(edge_format);
+			} else {
+				rz_strbuf_append(sb, "\n");
+			}
+		}
+		rz_iterator_free(out_edges);
+	}
+	rz_iterator_free(nodes);
+	rz_strbuf_append(sb, "}\n");
+	return rz_strbuf_drain(sb);
 }
 
 #undef LIST_IMPL_DEFAULT_EDGE_VEC_SIZE

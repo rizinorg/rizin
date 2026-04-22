@@ -1060,6 +1060,52 @@ static bool test_graph_impl_equivalence(void) {
 	mu_end;
 }
 
+static RZ_OWN char *node_formatter(const RzGraphNode *n) {
+	return rz_str_newf("[label=\"0x%" PFMT64x "\"]", rz_graph_node_get_id(n));
+}
+
+static RZ_OWN char *edge_formatter(const RzGraphEdge *e) {
+	ut64 d = (utptr)rz_graph_edge_get_data(e);
+	return rz_str_newf("[label=%" PFMT64d "]", d);
+}
+
+static bool test_graph_as_dot_str(void) {
+	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, NULL, NULL);
+	RzGraphNode *n1 = rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1));
+	RzGraphNode *n2 = rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2));
+	RzGraphNode *n3 = rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3));
+
+	rz_graph_add_edge(g, n1, n1, RZ_GRAPH_INT_AS_DATA(100));
+	rz_graph_add_edge(g, n2, n1, RZ_GRAPH_INT_AS_DATA(200));
+	rz_graph_add_edge(g, n3, n1, RZ_GRAPH_INT_AS_DATA(400));
+
+	char *ul_dot = rz_graph_as_dot_str(g, NULL, NULL, NULL);
+	const char *ul_expected =
+		"digraph {\n"
+		"   1 -> 1\n"
+		"   2 -> 1\n"
+		"   3 -> 1\n"
+		"}\n";
+	mu_assert_streq(ul_dot, ul_expected, "Mismatch in unlabeled graph result.");
+	free(ul_dot);
+
+	char *l_dot = rz_graph_as_dot_str(g, "test", node_formatter, edge_formatter);
+	const char *l_expected =
+		"digraph \"test\" {\n"
+		"   1 [label=\"0x1\"]\n"
+		"   1 -> 1 [label=100]\n"
+		"   2 [label=\"0x2\"]\n"
+		"   2 -> 1 [label=200]\n"
+		"   3 [label=\"0x3\"]\n"
+		"   3 -> 1 [label=400]\n"
+		"}\n";
+	mu_assert_streq(l_dot, l_expected, "Mismatch in unlabeled graph result.");
+	free(l_dot);
+
+	rz_graph_free(g);
+	mu_end;
+}
+
 static int all_tests(void) {
 	mu_run_test(test_graph_basic);
 	// list impl
@@ -1095,6 +1141,8 @@ static int all_tests(void) {
 	mu_run_test(test_graph_complex_matrix);
 
 	mu_run_test(test_graph_impl_equivalence);
+
+	mu_run_test(test_graph_as_dot_str);
 
 	return tests_passed != tests_run;
 }
