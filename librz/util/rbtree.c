@@ -283,7 +283,7 @@ RZ_API RBNode *rz_rbtree_find(RBNode *x, void *data, RBComparator cmp, void *use
 			return x;
 		int dir = (d > 0);
 		x = rb_child(x, dir);
-		__builtin_prefetch(x);
+		RZ_PREFETCH(x);
 	}
 	return NULL;
 }
@@ -310,7 +310,7 @@ RZ_API RBNode *rz_rbtree_lower_bound(RBNode *x, void *data, RBComparator cmp, vo
 			ret = x;
 		int dir = (d > 0);
 		x = rb_child(x, dir);
-		__builtin_prefetch(x);
+		RZ_PREFETCH(x);
 	}
 	return ret;
 }
@@ -327,7 +327,7 @@ RZ_API RBNode *rz_rbtree_upper_bound(RBNode *x, void *data, RBComparator cmp, vo
 			ret = x;
 		int dir = (d >= 0);
 		x = rb_child(x, dir);
-		__builtin_prefetch(x);
+		RZ_PREFETCH(x);
 	}
 	return ret;
 }
