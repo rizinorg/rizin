@@ -508,12 +508,27 @@ static inline void *rz_new_copy(int size, const void *data) {
 		x = NULL; \
 	}
 
-#if __WINDOWS__
+#if HAVE_HEADER_INTTYPES_H
+#define PFMT64x PRIx64
+#define PFMT64X PRIX64
+#define PFMT64d PRId64
+#define PFMT64u PRIu64
+#define PFMT64o PRIo64
+#elif __WINDOWS__
 #define PFMT64x  "I64x"
 #define PFMT64X  "I64X"
 #define PFMT64d  "I64d"
 #define PFMT64u  "I64u"
 #define PFMT64o  "I64o"
+#else
+#define PFMT64x "lx"
+#define PFMT64X "lX"
+#define PFMT64d "ld"
+#define PFMT64u "lu"
+#define PFMT64o "lo"
+#endif
+
+#if __WINDOWS__
 #define PFMTSZx  "Ix"
 #define PFMTSZd  "Id"
 #define PFMTSZu  "Iu"
@@ -522,11 +537,6 @@ static inline void *rz_new_copy(int size, const void *data) {
 #define LDBLFMTf "f"
 #define HHXFMT   "x"
 #else
-#define PFMT64x  "lx"
-#define PFMT64X  "lX"
-#define PFMT64d  "ld"
-#define PFMT64u  "lu"
-#define PFMT64o  "lo"
 #define PFMTSZx  "zx"
 #define PFMTSZd  "zd"
 #define PFMTSZu  "zu"
