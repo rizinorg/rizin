@@ -185,11 +185,16 @@ static inline size_t rz_vector_capacity(RzVector *vec) {
 
 /**
  * \brief Set element at \p index.
+ * This is a simple memcpy. Vector length is not updated.
+ * Use rz_vector_assign_at() if this is needed.
+ *
  * \param vec The vector to update.
+ * \param index Index where to write the element to.
+ * \param elem Pointer to the element to copy.
  */
 static inline void rz_vector_set(RZ_BORROW RzVector *vec, size_t index, const RZ_NONNULL void *elem) {
 	rz_return_if_fail(vec && index < rz_vector_capacity(vec) && elem);
-	rz_vector_assign_at(vec, index, elem);
+	memcpy((ut8 *)vec->a + (index * vec->elem_size), elem, vec->elem_size);
 }
 
 /*
