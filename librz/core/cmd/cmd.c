@@ -1564,10 +1564,13 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_blksz_op) {
 		return RZ_CMD_STATUS_INVALID;
 	}
 	ut64 orig_blksz = state->core->blocksize;
+	bool o_fixedblock = state->core->fixedblock;
 	RZ_LOG_DEBUG("tmp_blksz_op, changing blksz to %s\n", blksz_string);
 	rz_core_block_size(state->core, rz_num_math(state->core->num, blksz_string));
+	state->core->fixedblock = true;
 	TSNode next = tmp_get_next_node(node);
 	RzCmdStatus res = handle_ts_stmt(state, next);
+	state->core->fixedblock = o_fixedblock;
 	rz_core_block_size(state->core, orig_blksz);
 	free(blksz_string);
 	return res;
