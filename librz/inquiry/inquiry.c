@@ -458,6 +458,9 @@ static bool send_next_il_bb(RzCore *core,
 		// This is the basic block for the imported function.
 		rz_inquiry_bb_cfg_add_basic_block(core->inquiry->bb_cfg, branch->target_addr, 1);
 	}
+	// Add a simple control flow edge here.
+	// It gets later updated to another type if a reported xref has it.
+	rz_inquiry_bb_cfg_add_edge(core->inquiry->bb_cfg, branch->branching_bb_addr, bb->bb_addr, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF);
 	rz_th_queue_push(il_queue, (void *)bb, true);
 	return true;
 }

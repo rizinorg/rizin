@@ -50,11 +50,34 @@ RZ_IPI bool rz_inquiry_bb_cfg_del_out_edges(RzInquiryBBCFG *cfg, ut64 bb_addr) {
  * \param from_bb The address of the basic block with the branch.
  *                Not the address of the branch instruction!
  * \param to_bb The address of the basic block the branch leads to.
+ * \param type The type of the edge.
  *
  * \return True if edge was added. False for error or if a node doesn't exist.
  */
 RZ_IPI bool rz_inquiry_bb_cfg_add_edge(RzInquiryBBCFG *cfg, ut64 from_bb, ut64 to_bb, RzInquiryBBCFGEdgeType type) {
 	return rz_graph_add_edge_by_id(cfg->graph, from_bb, to_bb, RZ_GRAPH_INT_AS_DATA(type));
+}
+
+static bool is_cf_edge(const RzGraphEdge *e, void *unused) {
+	RzInquiryBBCFGEdgeType type = (utptr)rz_graph_edge_get_data(e);
+	return type == RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF;
+}
+
+/**
+ * \brief Updates or adds an edge to the basic block CFG.
+ * Only edges of type RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF are updated to \p type.
+ * Otherwise the edge is not updated.
+ *
+ * \param cfg The basic block CFG to edit.
+ * \param from_bb The address of the basic block with the branch.
+ *                Not the address of the branch instruction!
+ * \param to_bb The address of the basic block the branch leads to.
+ * \param type The type of the edge.
+ *
+ * \return True if edge was added. False in case of error.
+ */
+RZ_IPI bool rz_inquiry_bb_cfg_update_edge(RzInquiryBBCFG *cfg, ut64 from_bb, ut64 to_bb, RzInquiryBBCFGEdgeType type) {
+	return rz_graph_update_edge_by_id(cfg->graph, from_bb, to_bb, RZ_GRAPH_INT_AS_DATA(type), is_cf_edge, NULL);
 }
 
 RZ_IPI bool rz_inquiry_bb_cfg_get_basic_block(const RzInquiryBBCFG *cfg, ut64 bb_addr, RZ_OUT RzInquiryBB *bb) {
@@ -117,12 +140,12 @@ RZ_IPI bool rz_inquiry_bb_cfg_add_xrefs(RzInquiryBBCFG *cfg, RzVector /*<RzAnaly
 	rz_vector_foreach (xrefs, xref) {
 		switch (xref->type) {
 		case RZ_ANALYSIS_XREF_TYPE_CODE:
-			if (!rz_inquiry_bb_cfg_add_edge(cfg, xref->bb_addr, xref->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP)) {
+			if (!rz_inquiry_bb_cfg_update_edge(cfg, xref->bb_addr, xref->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP)) {
 				RZ_LOG_DEBUG("Did not add JMP edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", xref->bb_addr, xref->to);
 			}
 			break;
 		case RZ_ANALYSIS_XREF_TYPE_CALL:
-			if (!rz_inquiry_bb_cfg_add_edge(cfg, xref->bb_addr, xref->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL)) {
+			if (!rz_inquiry_bb_cfg_update_edge(cfg, xref->bb_addr, xref->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL)) {
 				RZ_LOG_DEBUG("Did not add CALL edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", xref->bb_addr, xref->to);
 			}
 			RzInquiryBB bb = { 0 };
@@ -131,12 +154,12 @@ RZ_IPI bool rz_inquiry_bb_cfg_add_xrefs(RzInquiryBBCFG *cfg, RzVector /*<RzAnaly
 				break;
 			}
 			ut64 ret_addr = bb.addr + bb.size;
-			if (!rz_inquiry_bb_cfg_add_edge(cfg, xref->bb_addr, ret_addr, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL_RET)) {
+			if (!rz_inquiry_bb_cfg_update_edge(cfg, xref->bb_addr, ret_addr, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL_RET)) {
 				RZ_LOG_DEBUG("Did not add CALL_RET edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", xref->bb_addr, ret_addr);
 			}
 			break;
 		case RZ_ANALYSIS_XREF_TYPE_RETURN:
-			if (!rz_inquiry_bb_cfg_add_edge(cfg, xref->bb_addr, xref->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_RETURN)) {
+			if (!rz_inquiry_bb_cfg_update_edge(cfg, xref->bb_addr, xref->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_RETURN)) {
 				RZ_LOG_DEBUG("Did not add RETURN edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", xref->bb_addr, xref->to);
 			}
 			break;
