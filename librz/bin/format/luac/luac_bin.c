@@ -204,7 +204,7 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info) {
 	// 1.0 set section name as function_name.code
 	current_offset = proto->code_offset + proto->code_skipped;
 	current_size = proto->code_size;
-	proto_name = rz_str_newf("fcn.%08llx", (ut64)proto_vaddr);
+	proto_name = rz_str_newf("fcn.%08" PFMT64x, (ut64)proto_vaddr);
 	section_name = rz_str_newf("%s.code", proto_name);
 	luac_add_section(info->section_vec, section_name, current_offset, proto_vaddr, current_size, true);
 

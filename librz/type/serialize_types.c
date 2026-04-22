@@ -483,10 +483,10 @@ static void save_enum(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type) 
 		char *case_sname = rz_str_sanitize_sdb_key(cas->name);
 		sdb_set(sdb,
 			rz_strbuf_setf(&param_key, "enum.%s.%s", sname, case_sname),
-			rz_strbuf_setf(&param_val, "0x%" PFMT64x "", cas->val));
+			rz_strbuf_setf(&param_val, "0x%" PFMT64x, cas->val));
 
 		sdb_set(sdb,
-			rz_strbuf_setf(&param_key, "enum.%s.0x%" PFMT64x "", sname, cas->val),
+			rz_strbuf_setf(&param_key, "enum.%s.0x%" PFMT64x, sname, cas->val),
 			case_sname);
 		free(case_sname);
 
@@ -522,7 +522,7 @@ static void save_atomic_type(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType 
 
 	sdb_set(sdb,
 		rz_strbuf_setf(&key, "type.%s.size", sname),
-		rz_strbuf_setf(&val, "%" PFMT64u "", type->size));
+		rz_strbuf_setf(&val, "%" PFMT64u, type->size));
 	sdb_set(sdb,
 		rz_strbuf_setf(&key, "type.%s.typeclass", sname),
 		rz_type_typeclass_as_string(get_base_type_typeclass(type)));

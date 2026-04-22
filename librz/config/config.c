@@ -403,9 +403,9 @@ RZ_API void rz_config_node_value_format_i(RZ_OUT char *buf, size_t buf_size, con
 		return;
 	}
 	if (i < 1024) {
-		snprintf(buf, buf_size, "%" PFMT64d "", i);
+		snprintf(buf, buf_size, "%" PFMT64d, i);
 	} else {
-		snprintf(buf, buf_size, "0x%08" PFMT64x "", i);
+		snprintf(buf, buf_size, "0x%08" PFMT64x, i);
 	}
 }
 

@@ -1534,7 +1534,7 @@ static void asciiart_backtrace(RzCore *core, RzList /*<RzDebugFrame *>*/ *frames
 		rz_cons_printf("                    |            ...         |\n");
 		rz_cons_printf("0x%016" PFMT64x "  |%4s 0x%016" PFMT64x " | %s\n", b, bp, f->addr, "; return address");
 		rz_cons_printf("                    )------------------------(\n");
-		// eprintf ("0x%08llx 0x%08llx 0x%08llx\n", f->addr, s, b);
+		// eprintf ("0x%08" PFMT64x " 0x%08" PFMT64x " 0x%08" PFMT64x "\n", f->addr, s, b);
 		n++;
 	}
 	rz_cons_printf("                    |           ...          |\n");

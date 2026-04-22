@@ -494,7 +494,7 @@ static int magic_test_type_quad(RzMagicLine *ml, RzMagicState *ms) {
 
 	result = magic_test_signed(ml, value, (int64_t)ml->test_signed);
 	if (result == !ml->test_not && ml->result != NULL) {
-		magic_add_result(ms, ml, "%lld", (long long)value);
+		magic_add_result(ms, ml, "%" PFMT64d, (long long)value);
 		ms->offset += sizeof value;
 	}
 	return (result);
@@ -626,7 +626,7 @@ static int magic_test_type_uquad(RzMagicLine *ml, RzMagicState *ms) {
 
 	result = magic_test_unsigned(ml, value, (uint64_t)ml->test_unsigned);
 	if (result == !ml->test_not && ml->result != NULL) {
-		magic_add_result(ms, ml, "%llu", (unsigned long long)value);
+		magic_add_result(ms, ml, "%" PFMT64u, (unsigned long long)value);
 		ms->offset += sizeof value;
 	}
 	return (result);

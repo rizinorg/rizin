@@ -195,7 +195,7 @@ static void v850_esil(RzStrBuf *out, V850_Inst *x) {
 			rz_strbuf_appendf(out, "s,ov,^,z,|,!");
 			break;
 		}
-		rz_strbuf_appendf(out, ",?{,$$,%llu,+,pc,=,}", x->addr + x->disp);
+		rz_strbuf_appendf(out, ",?{,$$,%" PFMT64u ",+,pc,=,}", x->addr + x->disp);
 		break;
 	case V850_CLR1:
 		bitmask = (1 << viii_bit(x));

@@ -162,7 +162,7 @@ static RzStructuredData *get_structured_data_protos(RzStructuredData *parent, Lu
 	const size_t const_length = rz_pvector_len(proto->const_entries);
 #ifndef RZ_DEBUG
 	char name[16] = { 0 };
-	rz_strf(name, "fcn.%08llx", proto->offset);
+	rz_strf(name, "fcn.%08" PFMT64x, proto->offset);
 
 	char pnd[16] = { 0 };
 	rz_strf(pnd, "%s", proto->proto_name ? (char *)proto->proto_name + 1 : name);
