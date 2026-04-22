@@ -78,7 +78,7 @@ static bool test_graph_nodes(void) {
 // TODO: Add test for removing nodes and checking that nodes_vec is never larger than n.
 
 static bool test_graph_edges(void) {
-	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash_base, NULL, NULL);
+	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, NULL, NULL);
 
 	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1);
 	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2);
@@ -115,14 +115,16 @@ static bool test_graph_edges(void) {
 		mu_assert_notnull(arr[i], "Was NULL, should not.");
 	}
 	success = rz_graph_add_edge(g, arr[8], n3, NULL);
-	mu_assert_true(success, "add_edge.11->3");
+	mu_assert_true(success, "add_edge.12->3");
 	mu_assert_eq(rz_graph_count_edges(g), 4, "n_edges.4");
-	has_edge = rz_graph_has_edge(g, arr[8], n3);
-	mu_assert_true(has_edge, "has_edge.11->3");
+	has_edge = rz_graph_has_edge_by_id(g, 8 + 4, 3);
+	mu_assert_true(has_edge, "has_edge.12->3");
 
 	mu_assert_true(rz_graph_del_node(g, arr[8]), "Del failed");
-	has_edge = rz_graph_has_edge(g, arr[8], n3);
-	mu_assert_false(has_edge, "has_edge.11->3 fail");
+	// Node pointer is freed by del.
+	arr[8] = NULL;
+	has_edge = rz_graph_has_edge_by_id(g, 8 + 4, 3);
+	mu_assert_false(has_edge, "has_edge.12->3 fail");
 
 	// Node should be placed at the edge list index of just deleted node 11.
 	RzGraphNode *nx = rz_graph_add_node(g, (ut8 *)0xffff);
@@ -534,7 +536,7 @@ static bool test_graph_nodes_matrix(void) {
 }
 
 static bool test_graph_edges_matrix(void) {
-	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash_base, NULL, NULL);
+	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, NULL, NULL, NULL);
 
 	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1);
 	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2);
