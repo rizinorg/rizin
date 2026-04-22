@@ -13,6 +13,34 @@ static ut64 hash_node(const void *data) {
 	return bb->addr;
 }
 
+static RZ_OWN char *node_formatter(const RzGraphNode *n) {
+	return rz_str_newf("[label=\"0x%" PFMT64x "\"]", rz_graph_node_get_id(n));
+}
+
+static RZ_OWN char *edge_formatter(const RzGraphEdge *e) {
+	RzInquiryBBCFGEdgeType type = (utptr)rz_graph_edge_get_data(e);
+	switch (type) {
+	case RZ_INQUIRY_BB_CFG_EDGE_TYPE_NONE:
+		return rz_str_dup("[label=Unknown]");
+	case RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP:
+	case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF:
+		return NULL;
+	case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL_RET:
+		return rz_str_dup("[style=dotted label=npc]");
+	case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL:
+		return rz_str_dup("[style=dotted label=call]");
+	case RZ_INQUIRY_BB_CFG_EDGE_TYPE_RETURN:
+		return rz_str_dup("[style=dotted label=ret]");
+	}
+	rz_warn_if_reached();
+	return NULL;
+}
+
+RZ_IPI RZ_OWN char *rz_inquiry_bb_cfg_as_dot(const RzInquiryBBCFG *bb_cfg, RZ_NULLABLE const char *name) {
+	rz_return_val_if_fail(bb_cfg, NULL);
+	return rz_graph_as_dot_str(bb_cfg->graph, name, node_formatter, edge_formatter);
+}
+
 RZ_IPI RZ_OWN RzInquiryBBCFG *rz_inquiry_bb_cfg_new(RzGraphImplType impl_type) {
 	RzInquiryBBCFG *bb_cfg = RZ_NEW0(RzInquiryBBCFG);
 	if (!bb_cfg) {
