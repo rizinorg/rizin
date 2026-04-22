@@ -1761,6 +1761,7 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzGadgetS
 	if (context->detail_mask) {
 		RzGadgetInfo *gadget_info = perform_gadget_analysis(context->type, core, context->allow_conditional, hitlist, end_gadget->delay_size);
 		if (!gadget_info) {
+			rz_pvector_free(hitlist);
 			goto fini;
 		}
 		if (context->detail_mask & (RZ_GADGET_DETAIL_SEARCH_STACK | RZ_GADGET_DETAIL_SEARCH_SIZE)) {
@@ -1769,9 +1770,11 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzGadgetS
 			// RZ_GADGET_DETAIL_SEARCH_STACK -> stack_change, RZ_GADGET_DETAIL_SEARCH_SIZE -> size
 			ut64 search_val = context->detail_mask & RZ_GADGET_DETAIL_SEARCH_STACK ? gadget_info->stack_change : gadget_info->size;
 			if (!parse_detail_search_arg(core, context->greparg, &cmp_op, &target)) {
+				rz_pvector_free(hitlist);
 				goto fini;
 			}
 			if (!match_detail_search(search_val, cmp_op, target)) {
+				rz_pvector_free(hitlist);
 				goto fini;
 			}
 		}
