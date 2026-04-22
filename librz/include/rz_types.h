@@ -515,11 +515,11 @@ static inline void *rz_new_copy(int size, const void *data) {
 #define PFMT64u PRIu64
 #define PFMT64o PRIo64
 #elif __WINDOWS__
-#define PFMT64x  "I64x"
-#define PFMT64X  "I64X"
-#define PFMT64d  "I64d"
-#define PFMT64u  "I64u"
-#define PFMT64o  "I64o"
+#define PFMT64x "I64x"
+#define PFMT64X "I64X"
+#define PFMT64d "I64d"
+#define PFMT64u "I64u"
+#define PFMT64o "I64o"
 #else
 #define PFMT64x "lx"
 #define PFMT64X "lX"
