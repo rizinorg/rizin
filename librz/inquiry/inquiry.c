@@ -863,26 +863,21 @@ static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry
 	rz_iterator_foreach(iter, n) {
 		const RzInquiryBB *bb = rz_graph_node_get_data(n);
 		rz_analysis_add_bb(analysis, bb->addr, bb->size);
-	}
-	rz_iterator_free(iter);
-
-	RzAnalysisXRef *xref;
-	rz_vector_foreach (inquiry->xrefs, xref) {
-		RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, xref->bb_addr);
-		RzIterator *out_edges = rz_inquiry_bb_cfg_get_outgoing_edges(inquiry->bb_cfg, xref->bb_addr);
+		RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, bb->addr);
+		RzIterator *out_edges = rz_inquiry_bb_cfg_get_outgoing_edges(inquiry->bb_cfg, bb->addr);
 		if (!out_edges) {
 			continue;
 		}
 		RzGraphEdge *e;
 		rz_iterator_foreach(out_edges, e) {
+			ut64 target = rz_graph_node_get_id(rz_graph_edge_get_to(e));
 			RzInquiryBBCFGEdgeType type = (RzInquiryBBCFGEdgeType)(utptr)rz_graph_edge_get_data(e);
 			switch (type) {
-			case RZ_INQUIRY_BB_CFG_EDGE_TYPE_NONE:
-				rz_warn_if_reached();
-				break;
+			default:
+				continue;
+			case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL_RET:
 			case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF:
 			case RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP: {
-				ut64 target = rz_graph_node_get_id(rz_graph_edge_get_to(e));
 				if (abb->jump == UT64_MAX && abb->fail != target) {
 					abb->jump = target;
 				} else if (abb->fail == UT64_MAX && abb->jump != target) {
@@ -890,27 +885,23 @@ static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry
 				} else if (abb->fail != target && abb->jump != target) {
 					RZ_LOG_WARN("The basic block at 0x%" PFMT64x " has more than two outgoing edges.\n"
 						    "\t\tHas jump = 0x%llx fail = 0x%llx. Will miss = 0x%llx (%d)\n",
-						xref->bb_addr, abb->jump, abb->fail,
+						bb->addr, abb->jump, abb->fail,
 						target, type);
 				}
-				rz_analysis_xrefs_set(analysis, xref->from, xref->to, RZ_ANALYSIS_XREF_TYPE_CODE);
 				break;
 			}
-			case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL_RET:
-				rz_analysis_xrefs_set(analysis, xref->from, xref->to, RZ_ANALYSIS_XREF_TYPE_CODE);
-				break;
-			case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL:
-				rz_analysis_xrefs_set(analysis, xref->from, xref->to, RZ_ANALYSIS_XREF_TYPE_CALL);
-				break;
-			case RZ_INQUIRY_BB_CFG_EDGE_TYPE_RETURN:
-				rz_analysis_xrefs_set(analysis, xref->from, xref->to, RZ_ANALYSIS_XREF_TYPE_RETURN);
-				break;
 			}
 		}
 		rz_iterator_free(out_edges);
 	}
+	rz_iterator_free(iter);
 
-	// // Convert the Inquiry functions to analysis function.
+	RzAnalysisXRef *xref;
+	rz_vector_foreach (inquiry->xrefs, xref) {
+		rz_analysis_xrefs_set(analysis, xref->from, xref->to, xref->type);
+	}
+
+	// Convert the Inquiry functions to analysis function.
 	void **it;
 	rz_pvector_foreach (fcns, it) {
 		RzInquiryFunction *fcn = *it;
