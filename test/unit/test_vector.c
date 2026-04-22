@@ -1128,9 +1128,9 @@ static bool test_pvector_assign_at(void) {
 	mu_assert_eq(rz_pvector_len(&v), 7, "Length was not updated.");
 
 	ut32 *zeroed[1] = { 0 };
-	mu_assert_memeq(v.v.a + sizeof(ut32 *) * 5, (ut8 *)zeroed, sizeof(ut32 *), "Memory was not zeroed");
+	mu_assert_memeq((ut8 *)v.v.a + sizeof(ut32 *) * 5, (ut8 *)zeroed, sizeof(ut32 *), "Memory was not zeroed");
 	// If this line fails on a machine, it might be because NULL != 0 on it.
-	mu_assert_memeq(v.v.a + sizeof(ut32 *) * 6, (ut8 *)zeroed, sizeof(ut32 *), "Memory was not zeroed");
+	mu_assert_memeq((ut8 *)v.v.a + sizeof(ut32 *) * 6, (ut8 *)zeroed, sizeof(ut32 *), "Memory was not zeroed");
 
 	x = malloc(sizeof(ut32));
 	*x = 9;
@@ -1139,8 +1139,8 @@ static bool test_pvector_assign_at(void) {
 	mu_assert_eq(rz_pvector_len(&v), 10, "Length was not updated.");
 	mu_assert_eq(*((ut32 **)v.v.a)[9], 9, "Value was not set.");
 
-	mu_assert_memeq(v.v.a + sizeof(ut32 *) * 7, (ut8 *)zeroed, sizeof(ut32 *), "Memory was not zeroed");
-	mu_assert_memeq(v.v.a + sizeof(ut32 *) * 8, (ut8 *)zeroed, sizeof(ut32 *), "Memory was not zeroed");
+	mu_assert_memeq((ut8 *)v.v.a + sizeof(ut32 *) * 7, (ut8 *)zeroed, sizeof(ut32 *), "Memory was not zeroed");
+	mu_assert_memeq((ut8 *)v.v.a + sizeof(ut32 *) * 8, (ut8 *)zeroed, sizeof(ut32 *), "Memory was not zeroed");
 
 	rz_pvector_purge(&v);
 	mu_assert_eq(rz_pvector_len(&v), 0, "Length after purge.");
