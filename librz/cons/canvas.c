@@ -148,8 +148,7 @@ RZ_API void rz_cons_canvas_free(RzConsCanvas *c) {
 		return;
 	}
 	if (c->b) {
-		int y;
-		for (y = 0; y < c->h; y++) {
+		for (int y = 0; y < c->h; y++) {
 			free(c->b[y]);
 		}
 		free(c->b);

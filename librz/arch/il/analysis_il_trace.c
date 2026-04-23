@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 
 /**
  * IL trace should also these info
@@ -17,10 +17,10 @@
  * \param rzil RZ_IL instance
  * \return pointer to RzilTrace
  */
-RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *rzil) {
+RZ_API RzAnalysisILTrace *rz_analysis_il_trace_new(RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *rzil) {
 	rz_return_val_if_fail(rzil, NULL);
 	size_t i;
-	RzAnalysisEsilTrace *trace = RZ_NEW0(RzAnalysisEsilTrace);
+	RzAnalysisILTrace *trace = RZ_NEW0(RzAnalysisILTrace);
 	if (!trace) {
 		return NULL;
 	}
@@ -59,7 +59,7 @@ RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RZ_
 	}
 	return trace;
 error:
-	rz_analysis_esil_trace_free(trace);
+	rz_analysis_il_trace_free(trace);
 	return NULL;
 }
 
@@ -67,7 +67,7 @@ error:
  * Free an IL trace
  * \param trace trace to be free
  */
-RZ_API void rz_analysis_rzil_trace_free(RzAnalysisEsilTrace *trace) {
+RZ_API void rz_analysis_il_trace_free(RzAnalysisILTrace *trace) {
 	size_t i;
 	if (!trace) {
 		return;
@@ -90,6 +90,6 @@ RZ_API void rz_analysis_rzil_trace_free(RzAnalysisEsilTrace *trace) {
  * \param rzil IL instance
  * \param op RzAnalysisRzilOp, a general IL op structure (Designed for switching between different implementations of IL op struct)
  */
-RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *rzil, RZ_NONNULL RzAnalysisLiftedILOp op) {
+RZ_API void rz_analysis_il_trace_op(RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *rzil, RZ_NONNULL RzAnalysisLiftedILOp op) {
 	// TODO : rewrite this file when migrate to new op structure
 }

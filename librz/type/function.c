@@ -36,7 +36,7 @@ RZ_API RZ_OWN RzCallable *rz_type_callable_clone(RZ_BORROW RZ_NONNULL const RzCa
 	if (!newcallable) {
 		return NULL;
 	}
-	newcallable->ret = callable->ret ? rz_type_clone(callable->ret) : NULL;
+	newcallable->ret = callable->ret ? rz_type_clone_shallow(callable->ret) : NULL;
 	newcallable->name = rz_str_dup(callable->name);
 	newcallable->args = rz_pvector_new((RzPVectorFree)rz_type_callable_arg_free);
 	void **it;
@@ -90,7 +90,7 @@ RZ_API RZ_OWN RzCallableArg *rz_type_callable_arg_clone(RZ_BORROW RZ_NONNULL con
 		return NULL;
 	}
 	newarg->name = rz_str_dup(arg->name);
-	newarg->type = rz_type_clone(arg->type);
+	newarg->type = rz_type_clone_shallow(arg->type);
 	return newarg;
 }
 
@@ -366,7 +366,7 @@ RZ_API bool rz_type_func_ret_set(RzTypeDB *typedb, const char *name, RZ_BORROW R
 		return false;
 	}
 	rz_type_free(callable->ret);
-	callable->ret = rz_type_clone(type);
+	callable->ret = rz_type_clone_shallow(type);
 	return true;
 }
 
@@ -502,7 +502,7 @@ static inline char *callable_name_or_ptr(RZ_NONNULL const RzCallable *callable, 
 				if (array_len == 0) {
 					array_str = rz_str_newf("[%s]", zero_vla ? "0" : "");
 				} else {
-					array_str = rz_str_newf("[%lld]", array_len);
+					array_str = rz_str_newf("[%" PFMT64d "]", array_len);
 				}
 
 				rz_return_val_if_fail(array_str, NULL);

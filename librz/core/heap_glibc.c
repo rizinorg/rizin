@@ -15,6 +15,24 @@
 #include <math.h>
 #include "core_private.h"
 
+#define PRINTF_A(color, fmt, ...) rz_cons_printf("%s" fmt "%s", \
+	rz_config_get_i(core->config, "scr.color") > 0 ? color : "", \
+	__VA_ARGS__, \
+	rz_config_get_i(core->config, "scr.color") > 0 ? Color_RESET : "")
+#define PRINTF_YA(fmt, ...) PRINTF_A(pal->offset, fmt, __VA_ARGS__)
+#define PRINTF_GA(fmt, ...) PRINTF_A(pal->args, fmt, __VA_ARGS__)
+#define PRINTF_BA(fmt, ...) PRINTF_A(pal->num, fmt, __VA_ARGS__)
+#define PRINTF_RA(fmt, ...) PRINTF_A(pal->invalid, fmt, __VA_ARGS__)
+
+#define PRINT_A(color, msg) rz_cons_printf("%s%s%s", \
+	rz_config_get_i(core->config, "scr.color") > 0 ? color : "", \
+	msg, \
+	rz_config_get_i(core->config, "scr.color") > 0 ? Color_RESET : "")
+#define PRINT_YA(msg) PRINT_A(pal->offset, msg)
+#define PRINT_GA(msg) PRINT_A(pal->args, msg)
+#define PRINT_BA(msg) PRINT_A(pal->num, msg)
+#define PRINT_RA(msg) PRINT_A(pal->invalid, msg)
+
 void print_heap_chunk_simple(RzCore *core, ut64 chunk, const char *status, PJ *pj, const RzHeapConfig *config);
 static bool rz_heap_get_brks(RzCore *core, ut64 *brk_start, ut64 *brk_end);
 static inline bool init_glibc_config(RzCore *core, RzHeapConfig *config);
@@ -2502,6 +2520,8 @@ RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, cons
 		rz_config_hold_free(hc);
 		return RZ_CMD_STATUS_ERROR;
 	}
+	// RzConsCanvas is now owned by RzAGraph
+	can = NULL;
 	RzANode *top = RZ_EMPTY, *chunk_node = RZ_EMPTY, *prev_node = RZ_EMPTY;
 	char *top_title = NULL, *top_data = NULL, *node_title = NULL, *node_data = NULL;
 	bool first_node = true;
@@ -2518,8 +2538,8 @@ RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, cons
 		PRINTF_YA("0x%" PFMT64x, (ut64)m_state);
 		rz_cons_newline();
 	} else if (mode == RZ_OUTPUT_MODE_LONG_JSON) {
-		can->linemode = rz_config_get_i(core->config, "graph.linemode");
-		can->color = rz_config_get_i(core->config, "scr.color");
+		g->can->linemode = rz_config_get_i(core->config, "graph.linemode");
+		g->can->color = rz_config_get_i(core->config, "scr.color");
 		core->cons->use_utf8 = rz_config_get_i(core->config, "scr.utf8");
 		g->layout = rz_config_get_i(core->config, "graph.layout");
 		rz_agraph_set_title(g, "Heap Layout");
@@ -2588,7 +2608,7 @@ RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, cons
 	}
 end:
 	rz_cons_newline();
-	free(g);
+	rz_agraph_free(g);
 	free(top_data);
 	free(top_title);
 	rz_list_free(chunks);

@@ -44,7 +44,7 @@ cc = meson.get_compiler('c')
 cc_native = meson.get_compiler('c', native: true)
 
 platform_deps = []
-platform_inc = ['.', 'librz', 'librz/include', 'subprojects/rzheap']
+platform_inc = ['.', 'librz', 'librz/include']
 if host_machine.system() == 'windows'
   add_project_arguments('-DPSAPI_VERSION=1', language: 'c')
   platform_deps = [
@@ -513,6 +513,7 @@ foreach it : ccs
       ['__builtin_bswap64', '', []],
       ['__builtin_clzll', '', []],
       ['__builtin_ctzll', '', []],
+      ['__builtin_expect', '', []],
       ['posix_memalign', '#include <stdlib.h>', []],
       ['_aligned_malloc', '#include <malloc.h>', []],
     ]

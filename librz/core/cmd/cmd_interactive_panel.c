@@ -9,6 +9,9 @@
 
 #include "../core_private.h"
 
+RZ_IPI void rz_save_panels_layout(RzCore *core, const char *_name);
+RZ_IPI bool rz_load_panels_layout(RzCore *core, const char *_name);
+
 RZ_IPI RzCmdStatus rz_interactive_panel_handler(RzCore *core, int argc, const char **argv) {
 	if (core->vmode) {
 		RZ_LOG_ERROR("core->vmode == false.\n");

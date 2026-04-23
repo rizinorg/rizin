@@ -13,6 +13,7 @@ rz_il_sources = [
    'theory_mem.c',
    'il_events.c',
    'il_export_string.c',
+   'il_export_string_unicode.c',
    'il_export_json.c',
    'il_graph.c',
    'il_opcodes.c',

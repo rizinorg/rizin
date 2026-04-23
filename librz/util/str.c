@@ -270,7 +270,7 @@ RZ_API ut64 rz_str_bits_from_string(const char *buf, const char *bitz) {
 	ut64 out = 0LL;
 	/* return the numeric value associated to a string (rflags) */
 	for (; *buf; buf++) {
-		char *ch = strchr(bitz, toupper((const unsigned char)*buf));
+		const char *ch = strchr(bitz, toupper((const unsigned char)*buf));
 		if (!ch) {
 			ch = strchr(bitz, tolower((const unsigned char)*buf));
 		}
@@ -1270,6 +1270,90 @@ RZ_API RZ_OWN char *rz_str_replace(RZ_OWN char *str, const char *key, const char
 		}
 	}
 	return str;
+}
+
+/**
+ *  Replace regex matches in a string.
+ *
+ * \param str Input string to transform.
+ * \param pattern Regular expression pattern to match.
+ * \param val Replacement string.
+ * \param global If true, replace all matches; otherwise replace only the first.
+ * \param icase If true, perform case-insensitive matching.
+ *
+ * \return New allocated string with replacements. And NULL in case of failure
+ */
+RZ_API RZ_OWN char *rz_str_replace_regex(const char *str, const char *pattern, const char *val, bool global, bool icase) {
+	rz_return_val_if_fail(str && pattern && val, NULL);
+
+	RzRegexFlags cflags = RZ_REGEX_DEFAULT;
+	if (icase) {
+		cflags |= RZ_REGEX_CASELESS;
+	}
+
+	RzRegex *regex = rz_regex_new(pattern, cflags, RZ_REGEX_DEFAULT, NULL);
+	if (!regex) {
+		return NULL;
+	}
+
+	const size_t str_len = strlen(str);
+	const size_t val_len = strlen(val);
+	const char *src = str;
+
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+
+	RzRegexSize search_off = 0;
+
+	while (search_off < str_len) {
+		RzPVector *matches = rz_regex_match_first(regex, src, str_len, search_off, RZ_REGEX_DEFAULT);
+
+		if (!matches || rz_pvector_empty(matches)) {
+			rz_pvector_free(matches);
+			break;
+		}
+
+		RzRegexMatch *m = rz_pvector_head(matches);
+		const RzRegexSize match_start = m->start;
+		const RzRegexSize match_len = m->len;
+
+		if (match_start > search_off) {
+			rz_strbuf_append_n(&sb, src + search_off, match_start - search_off);
+		}
+
+		if (val_len > 0) {
+			rz_strbuf_append_n(&sb, val, val_len);
+		}
+
+		rz_pvector_free(matches);
+
+		search_off = match_start + match_len;
+
+		if (!global) {
+			break;
+		}
+
+		if (match_len == 0) {
+			if (search_off < str_len) {
+				rz_strbuf_append_n(&sb, src + search_off, 1);
+				search_off++;
+			} else {
+				break;
+			}
+		}
+	}
+
+	if (search_off < str_len) {
+		rz_strbuf_append_n(&sb, src + search_off, str_len - search_off);
+	}
+
+	rz_regex_free(regex);
+
+	char *res = rz_strbuf_drain_nofree(&sb);
+	if (!res) {
+		return NULL;
+	}
+	return res;
 }
 
 RZ_API char *rz_str_replace_icase(char *str, const char *key, const char *val, int g, int keep_case) {
@@ -2476,7 +2560,7 @@ RZ_API bool rz_str_glob(const char *str, const char *glob) {
 	if (!glob) {
 		return true;
 	}
-	char *begin = strchr(glob, '^');
+	const char *begin = strchr(glob, '^');
 	if (begin) {
 		glob = ++begin;
 	}
@@ -2543,7 +2627,9 @@ RZ_API char *rz_str_arg_escape(const char *arg) {
 		}
 	}
 	str[dest_i] = '\0';
-	return realloc(str, (strlen(str) + 1) * sizeof(char));
+	char *trimmed = realloc(str, (strlen(str) + 1) * sizeof(char));
+	// keep the valid oversized buffer if realloc fails.
+	return trimmed ? trimmed : str;
 }
 
 // Unescape the string arg to its original format
@@ -2594,7 +2680,9 @@ RZ_API char *rz_str_path_escape(const char *path) {
 	}
 
 	str[dest_i] = '\0';
-	return realloc(str, (strlen(str) + 1) * sizeof(char));
+	char *trimmed = realloc(str, (strlen(str) + 1) * sizeof(char));
+	// same as above, logic is similar to rz_str_uri_encode.
+	return trimmed ? trimmed : str;
 }
 
 RZ_API int rz_str_path_unescape(char *path) {
@@ -3250,14 +3338,14 @@ RZ_API char *rz_str_prefix_all(const char *s, const char *pfx) {
 #define HASCH(x) strchr(input_value, x)
 #define CAST     (void *)(size_t)
 RZ_API ut8 rz_str_contains_macro(const char *input_value) {
-	char *has_tilde = input_value ? HASCH('~') : NULL,
-	     *has_bang = input_value ? HASCH('!') : NULL,
-	     *has_brace = input_value ? CAST(HASCH('[') || HASCH(']')) : NULL,
-	     *has_paren = input_value ? CAST(HASCH('(') || HASCH(')')) : NULL,
-	     *has_cbrace = input_value ? CAST(HASCH('{') || HASCH('}')) : NULL,
-	     *has_qmark = input_value ? HASCH('?') : NULL,
-	     *has_colon = input_value ? HASCH(':') : NULL,
-	     *has_at = input_value ? strchr(input_value, '@') : NULL;
+	const char *has_tilde = input_value ? HASCH('~') : NULL,
+		   *has_bang = input_value ? HASCH('!') : NULL,
+		   *has_brace = input_value ? CAST(HASCH('[') || HASCH(']')) : NULL,
+		   *has_paren = input_value ? CAST(HASCH('(') || HASCH(')')) : NULL,
+		   *has_cbrace = input_value ? CAST(HASCH('{') || HASCH('}')) : NULL,
+		   *has_qmark = input_value ? HASCH('?') : NULL,
+		   *has_colon = input_value ? HASCH(':') : NULL,
+		   *has_at = input_value ? strchr(input_value, '@') : NULL;
 
 	return has_tilde || has_bang || has_brace || has_cbrace || has_qmark || has_paren || has_colon || has_at;
 }
@@ -3439,7 +3527,7 @@ RZ_API RZ_OWN char *rz_str_repeat(const char *str, ut16 times) {
 }
 
 RZ_API char *rz_str_between(const char *cmt, const char *prefix, const char *suffix) {
-	char *c0, *c1;
+	const char *c0, *c1;
 	if (!cmt || !prefix || !suffix || !*cmt) {
 		return NULL;
 	}
@@ -3742,7 +3830,7 @@ RZ_API bool rz_str_isnumber(const char *str) {
 
 /* TODO: optimize to start searching by the end of the string */
 RZ_API const char *rz_str_last(const char *str, const char *ch) {
-	char *ptr, *end = NULL;
+	const char *ptr, *end = NULL;
 	if (!str || !ch) {
 		return NULL;
 	}

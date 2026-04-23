@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_annotated_code.h>
-#include <rz_core.h>
 #include <rz_util.h>
 
 RZ_API RzAnnotatedCode *rz_annotated_code_new(char *code) {

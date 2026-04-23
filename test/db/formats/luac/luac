@@ -1,32 +1,960 @@
-NAME=LUAC: none.luac
+NAME=LUAC: plugin load 5.0 version
+FILE=bins/luac/class50.luac
+CMDS=<<EOF
+e asm.arch=luac
+e asm.bytes=true
+iH
+EOF
+EXPECT=<<EOF
+luac-info:
+  version:
+    major: 5
+    minor: 0
+  compiler: "Official Lua Compiler"
+  source_file_name: "class.lua"
+  header_size: 21
+  body_size: 810
+  file_size: 831
+  protos:
+    fcn.00000016:
+      proto_name: "main.00000016"
+      start_line: 0
+      last_line: 0
+      instructions: 21
+      num_params: 0
+      slots: 3
+      functions: 2
+      locals: 0
+      upvalues: 0
+      constants_count: 7
+      constants:
+        - "Account"
+        - "__index"
+        - "create"
+        - "withdraw"
+        - "acc"
+        - 1000
+        - 100
+    fcn.000000fc:
+      proto_name: "fcn.000000fc"
+      start_line: 4
+      last_line: 0
+      instructions: 8
+      num_params: 2
+      slots: 6
+      functions: 0
+      locals: 3
+      upvalues: 0
+      constants_count: 3
+      constants:
+        - "setmetatable"
+        - "Account"
+        - "balance"
+    fcn.000001fe:
+      proto_name: "fcn.000001fe"
+      start_line: 11
+      last_line: 0
+      instructions: 4
+      num_params: 2
+      slots: 3
+      functions: 0
+      locals: 2
+      upvalues: 0
+      constants_count: 1
+      constants:
+        - "balance"
+
+EOF
+RUN
+
+NAME=LUAC: plugin load 5.1 version
+FILE=bins/luac/class51.luac
+CMDS=<<EOF
+e asm.arch=luac
+e asm.bytes=true
+iH
+EOF
+EXPECT=<<EOF
+luac-info:
+  version:
+    major: 5
+    minor: 1
+  compiler: "Official Lua Compiler"
+  header_size: 11
+  body_size: 690
+  file_size: 701
+  protos:
+    fcn.0000000c:
+      proto_name: "main.0000000c"
+      start_line: 0
+      last_line: 0
+      instructions: 21
+      num_params: 0
+      slots: 3
+      functions: 2
+      locals: 0
+      upvalues: 0
+      constants_count: 7
+      constants:
+        - "Account"
+        - "__index"
+        - "create"
+        - "withdraw"
+        - "acc"
+        - 1000
+        - 100
+    fcn.000000ee:
+      proto_name: "fcn.000000ee"
+      start_line: 4
+      last_line: 9
+      instructions: 8
+      num_params: 2
+      slots: 6
+      functions: 0
+      locals: 3
+      upvalues: 0
+      constants_count: 3
+      constants:
+        - "setmetatable"
+        - "Account"
+        - "balance"
+    fcn.000001d4:
+      proto_name: "fcn.000001d4"
+      start_line: 11
+      last_line: 13
+      instructions: 4
+      num_params: 2
+      slots: 3
+      functions: 0
+      locals: 2
+      upvalues: 0
+      constants_count: 1
+      constants:
+        - "balance"
+
+EOF
+RUN
+
+NAME=LUAC: plugin load 5.2 version
+FILE=bins/luac/class52.luac
+CMDS=<<EOF
+e asm.arch=luac
+e asm.bytes=true
+iH
+EOF
+EXPECT=<<EOF
+luac-info:
+  version:
+    major: 5
+    minor: 2
+  compiler: "Official Lua Compiler"
+  header_size: 17
+  body_size: 751
+  file_size: 768
+  protos:
+    fcn.00000012:
+      proto_name: "main.00000012"
+      start_line: 0
+      last_line: 0
+      instructions: 21
+      num_params: 0
+      slots: 3
+      functions: 2
+      locals: 0
+      upvalues: 1
+      constants_count: 7
+      constants:
+        - "Account"
+        - "__index"
+        - "create"
+        - "withdraw"
+        - "acc"
+        - 1000
+        - 100
+    fcn.000000e0:
+      proto_name: "fcn.000000e0"
+      start_line: 4
+      last_line: 9
+      instructions: 8
+      num_params: 2
+      slots: 6
+      functions: 0
+      locals: 3
+      upvalues: 1
+      constants_count: 3
+      constants:
+        - "setmetatable"
+        - "Account"
+        - "balance"
+    fcn.000001e3:
+      proto_name: "fcn.000001e3"
+      start_line: 11
+      last_line: 13
+      instructions: 4
+      num_params: 2
+      slots: 3
+      functions: 0
+      locals: 2
+      upvalues: 0
+      constants_count: 1
+      constants:
+        - "balance"
+
+EOF
+RUN
+
+NAME=LUAC: plugin load 5.3 version
+FILE=bins/luac/class53.luac
+CMDS=<<EOF
+e asm.arch=luac
+e asm.bytes=true
+iH
+EOF
+EXPECT=<<EOF
+luac-info:
+  version:
+    major: 5
+    minor: 3
+  compiler: "Official Lua Compiler"
+  source_file_name: "class.lua"
+  header_size: 33
+  body_size: 588
+  file_size: 621
+  protos:
+    fcn.00000022:
+      proto_name: "main.00000022"
+      start_line: 0
+      last_line: 0
+      instructions: 21
+      num_params: 0
+      slots: 3
+      functions: 2
+      locals: 0
+      upvalues: 1
+      constants_count: 8
+      constants:
+        - "Account"
+        - "__index"
+        - "create"
+        - "Account"
+        - "withdraw"
+        - "acc"
+        - 1000
+        - 100
+    fcn.000000e2:
+      proto_name: "fcn.000000e2"
+      start_line: 4
+      last_line: 9
+      instructions: 8
+      num_params: 2
+      slots: 6
+      functions: 0
+      locals: 3
+      upvalues: 1
+      constants_count: 3
+      constants:
+        - "setmetatable"
+        - "Account"
+        - "balance"
+    fcn.0000019b:
+      proto_name: "fcn.0000019b"
+      start_line: 11
+      last_line: 13
+      instructions: 4
+      num_params: 2
+      slots: 3
+      functions: 0
+      locals: 2
+      upvalues: 0
+      constants_count: 1
+      constants:
+        - "balance"
+
+EOF
+RUN
+
+NAME=LUAC: plugin load 5.3 version SimpleStats53 (wrong!!!)
+FILE=bins/luac/SimpleStats53.luac
+CMDS=<<EOF
+e asm.arch=luac
+e asm.bytes=true
+iH
+EOF
+EXPECT=<<EOF
+luac-info:
+  version:
+    major: 5
+    minor: 3
+  compiler: "Official Lua Compiler"
+  source_file_name: "SimpleStats.lua"
+  header_size: 33
+  body_size: 2964
+  file_size: 2997
+  protos:
+    fcn.00000022:
+      proto_name: "main.00000022"
+      start_line: 0
+      last_line: 0
+      instructions: 18
+      num_params: 0
+      slots: 2
+      functions: 5
+      locals: 0
+      upvalues: 1
+      constants_count: 7
+      constants:
+        - "stats"
+        - "mean"
+        - "mode"
+        - "median"
+        - "standardDeviation"
+        - "stats"
+        - "maxmin"
+    fcn.000000d5:
+      proto_name: "fcn.000000d5"
+      start_line: 13
+      last_line: 25
+      instructions: 18
+      num_params: 1
+      slots: 10
+      functions: 0
+      locals: 8
+      upvalues: 1
+      constants_count: 5
+      constants:
+        - 0
+        - "pairs"
+        - "type"
+        - "number"
+        - 1
+    fcn.00000235:
+      proto_name: "fcn.00000235"
+      start_line: 29
+      last_line: 57
+      instructions: 41
+      num_params: 1
+      slots: 12
+      functions: 0
+      locals: 19
+      upvalues: 1
+      constants_count: 6
+      constants:
+        - "pairs"
+        - "NIL"
+        - 1
+        - 0
+        - "table"
+        - "insert"
+    fcn.00000512:
+      proto_name: "fcn.00000512"
+      start_line: 60
+      last_line: 81
+      instructions: 47
+      num_params: 1
+      slots: 10
+      functions: 0
+      locals: 7
+      upvalues: 1
+      constants_count: 12
+      constants:
+        - "pairs"
+        - "type"
+        - "number"
+        - "table"
+        - "insert"
+        - "sort"
+        - "math"
+        - "fmod"
+        - 2
+        - 0
+        - 1
+        - "ceil"
+    fcn.0000077d:
+      proto_name: "fcn.0000077d"
+      start_line: 85
+      last_line: 105
+      instructions: 32
+      num_params: 1
+      slots: 13
+      functions: 0
+      locals: 11
+      upvalues: 1
+      constants_count: 9
+      constants:
+        - 0
+        - "stats"
+        - "mean"
+        - "pairs"
+        - "type"
+        - "number"
+        - 1
+        - "math"
+        - "sqrt"
+    fcn.0000098a:
+      proto_name: "fcn.0000098a"
+      start_line: 108
+      last_line: 120
+      instructions: 32
+      num_params: 1
+      slots: 11
+      functions: 0
+      locals: 8
+      upvalues: 1
+      constants_count: 7
+      constants:
+        - "math"
+        - "huge"
+        - "pairs"
+        - "type"
+        - "number"
+        - "max"
+        - "min"
+
+EOF
+RUN
+
+NAME=LUAC: plugin load 5.4 version
+FILE=bins/luac/class54.luac
+CMDS=<<EOF
+e asm.arch=luac
+e asm.bytes=true
+iH
+EOF
+EXPECT=<<EOF
+luac-info:
+  version:
+    major: 5
+    minor: 4
+  compiler: "Official Lua Compiler"
+  source_file_name: "class.lua"
+  header_size: 31
+  body_size: 385
+  file_size: 416
+  protos:
+    fcn.00000020:
+      proto_name: "main.00000020"
+      start_line: 0
+      last_line: 0
+      instructions: 23
+      num_params: 0
+      slots: 3
+      functions: 2
+      locals: 0
+      upvalues: 1
+      constants_count: 6
+      constants:
+        - "Account"
+        - "__index"
+        - "create"
+        - "Account"
+        - "withdraw"
+        - "acc"
+    fcn.000000c5:
+      proto_name: "fcn.000000c5"
+      start_line: 4
+      last_line: 9
+      instructions: 9
+      num_params: 2
+      slots: 6
+      functions: 0
+      locals: 3
+      upvalues: 1
+      constants_count: 3
+      constants:
+        - "setmetatable"
+        - "Account"
+        - "balance"
+    fcn.00000140:
+      proto_name: "fcn.00000140"
+      start_line: 11
+      last_line: 13
+      instructions: 5
+      num_params: 2
+      slots: 3
+      functions: 0
+      locals: 2
+      upvalues: 0
+      constants_count: 1
+      constants:
+        - "balance"
+
+EOF
+RUN
+
+NAME=LUAC: plugin load 5.5 version
+FILE=bins/luac/class55.luac
+CMDS=<<EOF
+e asm.arch=luac
+e asm.bytes=true
+iH
+iI~?luac
+EOF
+EXPECT=<<EOF
+luac-info:
+  version:
+    major: 5
+    minor: 5
+  compiler: "Official Lua Compiler"
+  source_file_name: "class.lua"
+  header_size: 40
+  body_size: 370
+  file_size: 410
+  protos:
+    fcn.00000029:
+      proto_name: "main.00000029"
+      start_line: 0
+      last_line: 0
+      instructions: 23
+      num_params: 0
+      slots: 3
+      functions: 2
+      locals: 0
+      upvalues: 1
+      constants_count: 5
+      constants:
+        - "Account"
+        - "__index"
+        - "create"
+        - "withdraw"
+        - "acc"
+    fcn.000000c0:
+      proto_name: "fcn.000000c0"
+      start_line: 4
+      last_line: 9
+      instructions: 9
+      num_params: 2
+      slots: 6
+      functions: 0
+      locals: 3
+      upvalues: 1
+      constants_count: 3
+      constants:
+        - "setmetatable"
+        - "Account"
+        - "balance"
+    fcn.00000141:
+      proto_name: "fcn.00000141"
+      start_line: 11
+      last_line: 13
+      instructions: 5
+      num_params: 2
+      slots: 3
+      functions: 0
+      locals: 2
+      upvalues: 0
+      constants_count: 1
+      constants:
+        - "Account"
+
+2
+EOF
+RUN
+
+NAME=LUAC: plugin load long string check 5.0 version
+FILE=bins/luac/test_long_string50.luac
+CMDS=<<EOF
+e asm.arch=luac
+e asm.bytes=true
+iH~hello
+iH~?hello
+EOF
+EXPECT=<<EOF
+        - "Hello long string long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_"
+1
+EOF
+RUN
+
+NAME=LUAC: plugin load long string check 5.1 version
+FILE=bins/luac/test_long_string51.luac
+CMDS=<<EOF
+e asm.arch=luac
+e asm.bytes=true
+iH~hello
+iH~?hello
+EOF
+EXPECT=<<EOF
+        - "Hello long string long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_"
+1
+EOF
+RUN
+
+NAME=LUAC: plugin load long string check 5.2 version
+FILE=bins/luac/test_long_string52.luac
+CMDS=<<EOF
+e asm.arch=luac
+e asm.bytes=true
+iH~hello
+iH~?hello
+EOF
+EXPECT=<<EOF
+        - "Hello long string long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_"
+1
+EOF
+RUN
+
+NAME=LUAC: plugin load long string check 5.3 version
+FILE=bins/luac/test_long_string53.luac
+CMDS=<<EOF
+e asm.arch=luac
+e asm.bytes=true
+iH~hello
+iH~?hello
+EOF
+EXPECT=<<EOF
+        - "Hello long string long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_"
+1
+EOF
+RUN
+
+NAME=LUAC: plugin load 5.4 version
+FILE=bins/luac/test_long_string54.luac
+CMDS=<<EOF
+e asm.arch=luac
+e asm.bytes=true
+iH~hello
+iH~?hello
+EOF
+EXPECT=<<EOF
+        - "Hello long string long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_long_string_"
+1
+EOF
+RUN
+
+NAME=LUAC: plugin load big 5.3 version
+FILE=bins/luac/big53.luac
+CMDS=<<EOF
+e asm.arch=luac
+e asm.bytes=true
+iH
+EOF
+EXPECT=<<EOF
+luac-info:
+  version:
+    major: 5
+    minor: 3
+  compiler: "Official Lua Compiler"
+  source_file_name: "/home/heersin/blackhole/src_code/learnlua.lua"
+  header_size: 33
+  body_size: 5364
+  file_size: 5397
+  protos:
+    fcn.00000022:
+      proto_name: "main.00000022"
+      start_line: 0
+      last_line: 0
+      instructions: 273
+      num_params: 0
+      slots: 10
+      functions: 13
+      locals: 20
+      upvalues: 1
+      constants_count: 96
+      constants:
+        - "num"
+        - 42
+        - "s"
+        - "walternate"
+        - "t"
+        - "double-quotes are also fine"
+        - "u"
+        - |
+           Double brackets
+                 start and end
+                 multi-line strings.
+        - "NIL"
+        - 50
+        - 1
+        - 40
+        - "print"
+        - "over 40"
+        - "io"
+        - "write"
+        - "not over 40\n"
+        - "thisIsGlobal"
+        - 5
+        - "read"
+        - "Winter is coming, "
+        - "foo"
+        - "anUnknownVariable"
+        - "aBoolValue"
+        - false
+        - "twas false"
+        - "ans"
+        - "yes"
+        - "no"
+        - "karlSum"
+        - 0
+        - 100
+        - "fredSum"
+        - -1
+        - "the way of the future"
+        - "fib"
+        - "adder"
+        - "a1"
+        - 9
+        - "a2"
+        - 36
+        - 16
+        - 64
+        - "x"
+        - "y"
+        - "z"
+        - 1
+        - 2
+        - 3
+        - 4
+        - "bar"
+        - "zaphod"
+        - "f"
+        - "print"
+        - "hello"
+        - "key1"
+        - "value1"
+        - "key2"
+        - "newKey"
+        - "@!#"
+        - "qbert"
+        - 1729
+        - 6.280000
+        - "tau"
+        - "a"
+        - "b"
+        - "h"
+        - "key1"
+        - "Sonmi~451"
+        - "pairs"
+        - "print"
+        - "_G"
+        - "v"
+        - "value2"
+        - 1.210000
+        - "gigawatts"
+        - "f1"
+        - "f2"
+        - "metafraction"
+        - "__add"
+        - "setmetatable"
+        - "defaultFavs"
+        - "animal"
+        - "gru"
+        - "food"
+        - "donuts"
+        - "myFavs"
+        - "pizza"
+        - "__index"
+        - "eatenBy"
+        - "Dog"
+        - "new"
+        - "makeSound"
+        - "mrDog"
+        - "LoudDog"
+        - "seymour"
+    fcn.000007dd:
+      proto_name: "fcn.000007dd"
+      start_line: 81
+      last_line: 84
+      instructions: 13
+      num_params: 1
+      slots: 4
+      functions: 0
+      locals: 1
+      upvalues: 1
+      constants_count: 3
+      constants:
+        - 2
+        - 1
+        - "fib"
+    fcn.00000895:
+      proto_name: "fcn.00000895"
+      start_line: 87
+      last_line: 91
+      instructions: 3
+      num_params: 1
+      slots: 2
+      functions: 1
+      locals: 1
+      upvalues: 0
+      constants_count: 0
+    fcn.00000935:
+      proto_name: "fcn.00000935"
+      start_line: 105
+      last_line: 108
+      instructions: 13
+      num_params: 3
+      slots: 9
+      functions: 0
+      locals: 3
+      upvalues: 1
+      constants_count: 7
+      constants:
+        - "print"
+        - 4
+        - 8
+        - 15
+        - 16
+        - 23
+        - 42
+    fcn.00000a27:
+      proto_name: "fcn.00000a27"
+      start_line: 115
+      last_line: 115
+      instructions: 3
+      num_params: 1
+      slots: 2
+      functions: 0
+      locals: 1
+      upvalues: 0
+      constants_count: 0
+    fcn.00000a71:
+      proto_name: "fcn.00000a71"
+      start_line: 116
+      last_line: 116
+      instructions: 3
+      num_params: 1
+      slots: 2
+      functions: 0
+      locals: 1
+      upvalues: 0
+      constants_count: 0
+    fcn.00000abb:
+      proto_name: "fcn.00000abb"
+      start_line: 119
+      last_line: 119
+      instructions: 6
+      num_params: 1
+      slots: 3
+      functions: 0
+      locals: 1
+      upvalues: 1
+      constants_count: 2
+      constants:
+        - "math"
+        - "sin"
+    fcn.00000b2f:
+      proto_name: "fcn.00000b2f"
+      start_line: 120
+      last_line: 120
+      instructions: 6
+      num_params: 1
+      slots: 3
+      functions: 0
+      locals: 1
+      upvalues: 1
+      constants_count: 2
+      constants:
+        - "math"
+        - "sin"
+    fcn.00000ba3:
+      proto_name: "fcn.00000ba3"
+      start_line: 162
+      last_line: 162
+      instructions: 4
+      num_params: 1
+      slots: 3
+      functions: 0
+      locals: 1
+      upvalues: 1
+      constants_count: 2
+      constants:
+        - "print"
+        - "key1"
+    fcn.00000c09:
+      proto_name: "fcn.00000c09"
+      start_line: 197
+      last_line: 202
+      instructions: 19
+      num_params: 2
+      slots: 6
+      functions: 0
+      locals: 2
+      upvalues: 1
+      constants_count: 3
+      constants:
+        - "sum"
+        - "b"
+        - "a"
+    fcn.00000cf1:
+      proto_name: "fcn.00000cf1"
+      start_line: 260
+      last_line: 264
+      instructions: 10
+      num_params: 1
+      slots: 4
+      functions: 0
+      locals: 1
+      upvalues: 1
+      constants_count: 5
+      constants:
+        - "newObj"
+        - "sound"
+        - "woof"
+        - "__index"
+        - "setmetatable"
+    fcn.00000da9:
+      proto_name: "fcn.00000da9"
+      start_line: 266
+      last_line: 268
+      instructions: 6
+      num_params: 1
+      slots: 4
+      functions: 0
+      locals: 1
+      upvalues: 1
+      constants_count: 3
+      constants:
+        - "print"
+        - "I say "
+        - "sound"
+    fcn.00000e2b:
+      proto_name: "fcn.00000e2b"
+      start_line: 295
+      last_line: 298
+      instructions: 11
+      num_params: 1
+      slots: 5
+      functions: 0
+      locals: 1
+      upvalues: 1
+      constants_count: 4
+      constants:
+        - "s"
+        - "sound"
+        - " "
+        - "print"
+    fcn.00000ed3:
+      proto_name: "fcn.00000ed3"
+      start_line: 316
+      last_line: 321
+      instructions: 9
+      num_params: 1
+      slots: 4
+      functions: 0
+      locals: 1
+      upvalues: 1
+      constants_count: 3
+      constants:
+        - "newObj"
+        - "__index"
+        - "setmetatable"
+
+EOF
+RUN
+
+NAME=LUAC: plugin load
 FILE=bins/luac/none.luac
 CMDS=<<EOF
 iI~?luac
-echo ---
 i~guid,machine
-echo ---
-iS~none
-echo ---
-is~UPVALUE
-echo ---
+iS~fcn
 ie~program
 EOF
 EXPECT=<<EOF
 2
----
-guid     @none.lua
+guid     none.lua
 machine  Lua 5.4 VM
----
-0x00000020 0x2a 0x00000020  0x2a   0x0 -r-- none.lua.header        
-0x0000002f  0x8 0x0000002f   0x8   0x0 -r-x none.lua.code          
-0x00000038  0x2 0x00000038   0x2   0x0 -r-- none.lua.const         
-0x00000039  0x5 0x00000039   0x5   0x0 -r-- none.lua.upvalues      
-0x0000003d  0x1 0x0000003d   0x1   0x0 -r-- none.lua.protos        
-0x0000003e  0xc 0x0000003e   0xc   0x0 -r-- none.lua.debug         
----
-  0 0x0000003a 0x0000003a NONE UPVALUE    3     @none.lua_upvalue__ENV
----
-0x00000030 0x00000030 ---------- ---------- program
+0x00000030  0x8 0x00000000   0x8   0x0 -r-x fcn.00000000.code          
+0x00000039  0x5 0x00000c00   0x5   0x0 -r-- fcn.00000000.upvalues      
+0x00000000 0x00000000 ---------- ---------- program
 EOF
 RUN
 
@@ -40,54 +968,72 @@ compiler Unofficial Lua Compiler
 EOF
 RUN
 
-NAME=LUAC: big.luac
+NAME=LUAC: big file
 FILE=bins/luac/big.luac
 CMDS=<<EOF
-iS~header
-echo ---
-is~twas
-echo ---
-is~1729,1.21
-echo ---
-is~CONST_NUM
-echo ---
+iS
 pd 10 >/dev/null
-echo ---
 iz~?print
 EOF
 EXPECT=<<EOF
-0x00000020 0xe44 0x00000020 0xe44   0x0 -r-- learnlua.lua.header        
-0x000007ab  0x70 0x000007ab  0x70   0x0 -r-- fcn.000007ab.header        
-0x0000081a  0x52 0x0000081a  0x52   0x0 -r-- fcn.0000081a.header        
-0x00000830  0x31 0x00000830  0x31   0x0 -r-- fcn.00000830.header        
-0x0000086b  0x6b 0x0000086b  0x6b   0x0 -r-- fcn.0000086b.header        
-0x000008d5  0x27 0x000008d5  0x27   0x0 -r-- fcn.000008d5.header        
-0x000008fb  0x27 0x000008fb  0x27   0x0 -r-- fcn.000008fb.header        
-0x00000921  0x44 0x00000921  0x44   0x0 -r-- fcn.00000921.header        
-0x00000964  0x44 0x00000964  0x44   0x0 -r-- fcn.00000964.header        
-0x000009a7  0x3e 0x000009a7  0x3e   0x0 -r-- fcn.000009a7.header        
-0x000009e4  0xa6 0x000009e4  0xa6   0x0 -r-- fcn.000009e4.header        
-0x00000a89  0x83 0x00000a89  0x83   0x0 -r-- fcn.00000a89.header        
-0x00000b0b  0x54 0x00000b0b  0x54   0x0 -r-- fcn.00000b0b.header        
-0x00000b5e  0x6b 0x00000b5e  0x6b   0x0 -r-- fcn.00000b5e.header        
-0x00000bc8  0x71 0x00000bc8  0x71   0x0 -r-- fcn.00000bc8.header        
----
-  0 0x000005d8 0x000005d8 NONE CONST_STRING   10     @learnlua.lua_const_twas false
----
-  0 0x00000687 0x00000687 NONE CONST_NUM       8     @learnlua.lua_const_1729
-  0 0x000006d5 0x000006d5 NONE CONST_NUM       8     @learnlua.lua_const_1.210000
----
-  0 0x000004db 0x000004db NONE CONST_NUM       8     @learnlua.lua_const_42
-  0 0x00000590 0x00000590 NONE CONST_NUM       8     @learnlua.lua_const_5
-  0 0x000005fb 0x000005fb NONE CONST_NUM       8     @learnlua.lua_const_0
-  0 0x00000687 0x00000687 NONE CONST_NUM       8     @learnlua.lua_const_1729
-  0 0x00000690 0x00000690 NONE CONST_NUM       8     @learnlua.lua_const_6.280000
-  0 0x000006d5 0x000006d5 NONE CONST_NUM       8     @learnlua.lua_const_1.210000
-  0 0x000006ed 0x000006ed NONE CONST_NUM       8     @learnlua.lua_const_1
-  0 0x000006f6 0x000006f6 NONE CONST_NUM       8     @learnlua.lua_const_2
-  0 0x00000703 0x00000703 NONE CONST_NUM       8     @learnlua.lua_const_3
----
----
+     paddr  size      vaddr vsize align perm name                  type flags 
+------------------------------------------------------------------------------
+0x00000035 0x4a0 0x00000000 0x4a0   0x0 -r-x fcn.00000000.code          
+0x000004d6 0x2d0 0x00000800 0x2d0   0x0 -r-- fcn.00000000.const         
+0x000007a6   0x5 0x00000c00   0x5   0x0 -r-- fcn.00000000.upvalues      
+0x000007b2  0x40 0x00001000  0x40   0x0 -r-x fcn.00001000.code          
+0x000007f3   0x5 0x00001800   0x5   0x0 -r-- fcn.00001000.const         
+0x000007f8   0x5 0x00001c00   0x5   0x0 -r-- fcn.00001000.upvalues      
+0x00000810   0x4 0x00001e00   0x4   0x0 -r-- fcn.00001000.lvars         
+0x00000821   0xc 0x00002000   0xc   0x0 -r-x fcn.00002000.code          
+0x0000082e   0x2 0x00002c00   0x2   0x0 -r-- fcn.00002000.upvalues      
+0x00000837  0x14 0x00003000  0x14   0x0 -r-x fcn.00003000.code          
+0x0000084c   0x5 0x00003c00   0x5   0x0 -r-- fcn.00003000.upvalues      
+0x00000859   0x4 0x00003e00   0x4   0x0 -r-- fcn.00003000.lvars         
+0x00000866   0x4 0x00002e00   0x4   0x0 -r-- fcn.00002000.lvars         
+0x00000872  0x34 0x00004000  0x34   0x0 -r-x fcn.00004000.code          
+0x000008a7   0x7 0x00004800   0x7   0x0 -r-- fcn.00004000.const         
+0x000008ae   0x5 0x00004c00   0x5   0x0 -r-- fcn.00004000.upvalues      
+0x000008c3   0xc 0x00004e00   0xc   0x0 -r-- fcn.00004000.lvars         
+0x000008dc  0x10 0x00005000  0x10   0x0 -r-x fcn.00005000.code          
+0x000008ed   0x2 0x00005c00   0x2   0x0 -r-- fcn.00005000.upvalues      
+0x000008f6   0x4 0x00005e00   0x4   0x0 -r-- fcn.00005000.lvars         
+0x00000902  0x10 0x00006000  0x10   0x0 -r-x fcn.00006000.code          
+0x00000913   0x2 0x00006c00   0x2   0x0 -r-- fcn.00006000.upvalues      
+0x0000091c   0x4 0x00006e00   0x4   0x0 -r-- fcn.00006000.lvars         
+0x00000928  0x18 0x00007000  0x18   0x0 -r-x fcn.00007000.code          
+0x00000941   0xb 0x00007800   0xb   0x0 -r-- fcn.00007000.const         
+0x0000094c   0x5 0x00007c00   0x5   0x0 -r-- fcn.00007000.upvalues      
+0x0000095a   0x4 0x00007e00   0x4   0x0 -r-- fcn.00007000.lvars         
+0x0000096b  0x18 0x00008000  0x18   0x0 -r-x fcn.00008000.code          
+0x00000984   0xb 0x00008800   0xb   0x0 -r-- fcn.00008000.const         
+0x0000098f   0x5 0x00008c00   0x5   0x0 -r-- fcn.00008000.upvalues      
+0x0000099d   0x4 0x00008e00   0x4   0x0 -r-- fcn.00008000.lvars         
+0x000009b0  0x10 0x00009000  0x10   0x0 -r-x fcn.00009000.code          
+0x000009c1   0xd 0x00009800   0xd   0x0 -r-- fcn.00009000.const         
+0x000009ce   0x5 0x00009c00   0x5   0x0 -r-- fcn.00009000.upvalues      
+0x000009da   0x4 0x00009e00   0x4   0x0 -r-- fcn.00009000.lvars         
+0x000009ed  0x60 0x0000a000  0x60   0x0 -r-x fcn.0000a000.code          
+0x00000a4e   0xb 0x0000a800   0xb   0x0 -r-- fcn.0000a000.const         
+0x00000a59   0x5 0x0000ac00   0x5   0x0 -r-- fcn.0000a000.upvalues      
+0x00000a79   0xa 0x0000ae00   0xa   0x0 -r-- fcn.0000a000.lvars         
+0x00000a92  0x2c 0x0000b000  0x2c   0x0 -r-x fcn.0000b000.code          
+0x00000abf  0x2c 0x0000b800  0x2c   0x0 -r-- fcn.0000b000.const         
+0x00000aeb   0x5 0x0000bc00   0x5   0x0 -r-- fcn.0000b000.upvalues      
+0x00000afe   0x7 0x0000be00   0x7   0x0 -r-- fcn.0000b000.lvars         
+0x00000b14  0x18 0x0000c000  0x18   0x0 -r-x fcn.0000c000.code          
+0x00000b2d  0x16 0x0000c800  0x16   0x0 -r-- fcn.0000c000.const         
+0x00000b43   0x5 0x0000cc00   0x5   0x0 -r-- fcn.0000c000.upvalues      
+0x00000b51   0x7 0x0000ce00   0x7   0x0 -r-- fcn.0000c000.lvars         
+0x00000b67  0x2c 0x0000d000  0x2c   0x0 -r-x fcn.0000d000.code          
+0x00000b94  0x14 0x0000d800  0x14   0x0 -r-- fcn.0000d000.const         
+0x00000ba8   0x5 0x0000dc00   0x5   0x0 -r-- fcn.0000d000.upvalues      
+0x00000bbb   0x7 0x0000de00   0x7   0x0 -r-- fcn.0000d000.lvars         
+0x00000bd1  0x28 0x0000e000  0x28   0x0 -r-x fcn.0000e000.code          
+0x00000bfa  0x1f 0x0000e800  0x1f   0x0 -r-- fcn.0000e000.const         
+0x00000c19   0x5 0x0000ec00   0x5   0x0 -r-- fcn.0000e000.upvalues      
+0x00000c2b   0x7 0x0000ee00   0x7   0x0 -r-- fcn.0000e000.lvars         
+0x00000d6a  0xf3 0x00000e00  0xf3   0x0 -r-- fcn.00000000.lvars         
 7
 EOF
 RUN
@@ -103,6 +1049,118 @@ ERROR:.+
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Truncated Code at [0x2f]
-ERROR: Invalid luac file
+ERROR: Invalid luac proto
+EOF
+RUN
+
+NAME=LUAC: constants 5.0
+FILE=bins/luac/constants50.luac
+CMDS=<<EOF
+iH~ -
+EOF
+EXPECT=<<EOF
+        - "is_true"
+        - "is_false"
+        - "field1"
+        - "field2"
+        - "field3"
+        - "NIL"
+        - "print"
+        - "type"
+EOF
+RUN
+
+NAME=LUAC: constants 5.1
+FILE=bins/luac/constants51.luac
+CMDS=<<EOF
+iH~ -
+EOF
+EXPECT=<<EOF
+        - true
+        - "is_true"
+        - false
+        - "is_false"
+        - "field1"
+        - "field2"
+        - "field3"
+        - "NIL"
+        - "print"
+        - "type"
+EOF
+RUN
+
+NAME=LUAC: constants 5.2
+FILE=bins/luac/constants52.luac
+CMDS=<<EOF
+iH~ -
+EOF
+EXPECT=<<EOF
+        - true
+        - "is_true"
+        - false
+        - "is_false"
+        - "field1"
+        - "field2"
+        - "field3"
+        - "NIL"
+        - "print"
+        - "type"
+EOF
+RUN
+
+NAME=LUAC: constants 5.3
+FILE=bins/luac/constants53.luac
+CMDS=<<EOF
+iH~ -
+EOF
+EXPECT=<<EOF
+        - true
+        - "is_true"
+        - false
+        - "is_false"
+        - "field1"
+        - "field2"
+        - "field3"
+        - "NIL"
+        - "print"
+        - "type"
+EOF
+RUN
+
+NAME=LUAC: constants 5.4
+FILE=bins/luac/constants54.luac
+CMDS=<<EOF
+iH~ -
+EOF
+EXPECT=<<EOF
+        - "is_true"
+        - "is_false"
+        - "field1"
+        - true
+        - "field2"
+        - false
+        - "field3"
+        - "NIL"
+        - "print"
+        - "type"
+EOF
+RUN
+
+NAME=LUAC: constants 5.5
+FILE=bins/luac/constants55.luac
+CMDS=<<EOF
+iH~ -
+EOF
+EXPECT=<<EOF
+        - "is_true"
+        - "is_false"
+        - "field1"
+        - true
+        - "field2"
+        - false
+        - "field3"
+        - "NIL"
+        - "print"
+        - "type"
 EOF
 RUN

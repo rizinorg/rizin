@@ -4862,7 +4862,7 @@ static Register parseReg(const RzAsm *a, const char *str, size_t *pos, ut32 *typ
 static void parse_segment_offset(const RzAsm *a, const char *str, size_t *pos,
 	Operand *op, int reg_index) {
 	int nextpos = *pos;
-	char *c = strchr(str + nextpos, ':');
+	const char *c = strchr(str + nextpos, ':');
 	if (c) {
 		nextpos++; // Skip the ':'
 		c = strchr(str + nextpos, '[');
@@ -4874,7 +4874,7 @@ static void parse_segment_offset(const RzAsm *a, const char *str, size_t *pos,
 		op->regs[reg_index] = op->reg;
 		op->type |= OT_MEMORY;
 		op->offset_sign = 1;
-		char *p = strchr(str + nextpos, '-');
+		const char *p = strchr(str + nextpos, '-');
 		if (p) {
 			op->offset_sign = -1;
 			nextpos++;
@@ -5019,7 +5019,7 @@ static int parseOperand(const RzAsm *a, const char *str, Operand *op, bool isrep
 					op->type = 0; // Make the result invalid
 				}
 			} else {
-				char *p = strchr(str, '+');
+				const char *p = strchr(str, '+');
 				op->offset_sign = 1;
 				if (!p) {
 					p = strchr(str, '-');
@@ -5028,9 +5028,9 @@ static int parseOperand(const RzAsm *a, const char *str, Operand *op, bool isrep
 					}
 				}
 				// with SIB notation, we need to consider the right sign
-				char *plus = strchr(str, '+');
-				char *minus = strchr(str, '-');
-				char *closeB = strchr(str, ']');
+				const char *plus = strchr(str, '+');
+				const char *minus = strchr(str, '-');
+				const char *closeB = strchr(str, ']');
 				if (plus && minus && plus < closeB && minus < closeB) {
 					op->offset_sign = -1;
 				}
@@ -5077,7 +5077,7 @@ static int parseOperand(const RzAsm *a, const char *str, Operand *op, bool isrep
 		// We don't know the size, so let's just set no size flag.
 		op->type = OT_CONSTANT;
 		op->sign = 1;
-		char *p = strchr(str, '-');
+		const char *p = strchr(str, '-');
 		if (p) {
 			op->sign = -1;
 			str = ++p;
@@ -5095,7 +5095,7 @@ static int parseOpcode(const RzAsm *a, const char *op, Opcode *out) {
 		out->has_bnd = true;
 		op += 4;
 	}
-	char *args = strchr(op, ' ');
+	const char *args = strchr(op, ' ');
 	out->mnemonic = args ? rz_str_ndup(op, args - op) : rz_str_dup(op);
 	out->operands[0].type = out->operands[1].type = 0;
 	out->operands[0].extended = out->operands[1].extended = false;

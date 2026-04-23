@@ -1,12 +1,8 @@
 // SPDX-FileCopyrightText: 2018 thestr4ng3r <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
-#include <rz_vector.h>
+#include "analysis_private.h"
 #include <rz_util/rz_graph_drawable.h>
-#include <rz_util/rz_table.h>
-#include "../include/rz_analysis.h"
-#include "../include/rz_util/rz_graph.h"
 
 static void rz_analysis_class_base_delete_class(RzAnalysis *analysis, const char *class_name);
 static void rz_analysis_class_method_delete_class(RzAnalysis *analysis, const char *class_name);
@@ -543,32 +539,32 @@ static char *flagname_attr(const char *attr_type, const char *class_name, const 
 }
 
 static void rz_analysis_class_set_flag(RzAnalysis *analysis, const char *name, ut64 addr, ut32 size) {
-	if (!name || !analysis->flg_class_set) {
+	if (!name || !analysis->cb.flg_class_set) {
 		return;
 	}
-	analysis->flg_class_set(analysis->flb.f, name, addr, size);
+	analysis->cb.flg_class_set(analysis->flb.f, name, addr, size);
 }
 
 static void rz_analysis_class_unset_flag(RzAnalysis *analysis, const char *name) {
-	if (!name || !analysis->flb.unset_name || !analysis->flg_class_get) {
+	if (!name || !analysis->flb.unset_name || !analysis->cb.flg_class_get) {
 		return;
 	}
-	if (analysis->flg_class_get(analysis->flb.f, name)) {
+	if (analysis->cb.flg_class_get(analysis->flb.f, name)) {
 		analysis->flb.unset_name(analysis->flb.f, name);
 	}
 }
 
 static void rz_analysis_class_rename_flag(RzAnalysis *analysis, const char *old_name, const char *new_name) {
-	if (!old_name || !new_name || !analysis->flb.unset || !analysis->flg_class_get || !analysis->flg_class_set) {
+	if (!old_name || !new_name || !analysis->flb.unset || !analysis->cb.flg_class_get || !analysis->cb.flg_class_set) {
 		return;
 	}
-	RzFlagItem *flag = analysis->flg_class_get(analysis->flb.f, old_name);
+	RzFlagItem *flag = analysis->cb.flg_class_get(analysis->flb.f, old_name);
 	if (!flag) {
 		return;
 	}
 	ut64 addr = flag->offset;
 	analysis->flb.unset(analysis->flb.f, flag);
-	analysis->flg_class_set(analysis->flb.f, new_name, addr, 0);
+	analysis->cb.flg_class_set(analysis->flb.f, new_name, addr, 0);
 }
 
 static RzAnalysisClassErr rz_analysis_class_add_attr_unique_raw(RzAnalysis *analysis, const char *class_name, RzAnalysisClassAttrType attr_type, const char *content, char *attr_id_out, size_t attr_id_out_size) {
@@ -1200,7 +1196,9 @@ RZ_API RzAnalysisClassErr rz_analysis_class_vtable_set(RzAnalysis *analysis, con
 		return err;
 	}
 
-	rz_analysis_class_set_flag(analysis, flagname_vtable(class_name, vtable->id), vtable->addr, vtable->size);
+	char *flagname = flagname_vtable(class_name, vtable->id);
+	rz_analysis_class_set_flag(analysis, flagname, vtable->addr, vtable->size);
+	free(flagname);
 
 	return RZ_ANALYSIS_CLASS_ERR_SUCCESS;
 }
@@ -1273,9 +1271,9 @@ RZ_API RzAnalysisClassErr rz_analysis_class_vtable_delete(RzAnalysis *analysis, 
  * \param analysis
  * \return RzGraph* NULL if failure
  */
-RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_analysis_class_get_inheritance_graph(RzAnalysis *analysis) {
+RZ_API RzGraph /*<RzGraphNodeInfo *, None *>*/ *rz_analysis_class_get_inheritance_graph(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
-	RzGraph *class_graph = rz_graph_new();
+	RzGraph *class_graph = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, rz_graph_free_node_info, NULL);
 	if (!class_graph) {
 		return NULL;
 	}
@@ -1316,7 +1314,7 @@ RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_analysis_class_get_inheritance_graph(
 				}
 				ht_sp_insert(hashmap, base->class_name, base_node);
 			}
-			rz_graph_add_edge(class_graph, base_node, curr_node);
+			rz_graph_add_edge(class_graph, base_node, curr_node, NULL);
 		}
 		rz_vector_free(bases);
 	}

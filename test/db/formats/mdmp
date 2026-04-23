@@ -24,7 +24,6 @@ baddr    ----------
 binsz    0x00008f74
 bintype  mdmp
 bits     64
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -45,18 +44,22 @@ rpath    NONE
 streams  13
 subsys   
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
----
+pie      false
+relrocs  false
+nx       false
+EOF
+RUN
+
+NAME=mdmp sections
+FILE=bins/mdmp/calc.dmp
+CMDS=iS
+EXPECT=<<EOF
      paddr     size         vaddr    vsize align perm name                                  type flags 
 -------------------------------------------------------------------------------------------------------
 0x00000000  0xe3000    0xfffe0000  0xe3000   0x0 ---- C:_Windows_System32_calc.exe               

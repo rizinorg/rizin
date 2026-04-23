@@ -84,27 +84,27 @@ RZ_API void rz_graph_free_node_info(RZ_NULLABLE void *ptr);
 RZ_API RzGraphNodeInfo *rz_graph_create_node_info_default(const char *title, const char *body, ut64 offset);
 RZ_API RzGraphNodeInfo *rz_graph_create_node_info_icfg(ut64 address, RzGraphNodeType type, RzGraphNodeSubType subtype);
 RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(ut64 address, ut64 call_target_addr, RzGraphNodeType type, RzGraphNodeSubType subtype);
-RZ_API RzGraphNode *rz_graph_add_node_info(RzGraph /*<RzGraphNodeInfo *>*/ *graph, const char *title, const char *body, ut64 offset);
+RZ_API RzGraphNode *rz_graph_add_node_info(RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph, const char *title, const char *body, ut64 offset);
 
 /**
- * @brief Convert graph to Graphviz dot format.
+ * \brief Convert graph to Graphviz dot format.
  *
- * @param graph Graph with RzGraphNodeInfo used as node user data
- * @param node_properties List node styling attributes. Can be set to NULL.
- * @param edge_properties List edge styling attributes. Can be set to NULL.
+ * \param graph Graph with RzGraphNodeInfo used as node user data
+ * \param node_properties List node styling attributes. Can be set to NULL.
+ * \param edge_properties List edge styling attributes. Can be set to NULL.
  */
-RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph, RZ_NULLABLE const char *node_properties, RZ_NULLABLE const char *edge_properties);
+RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph, RZ_NULLABLE const char *node_properties, RZ_NULLABLE const char *edge_properties);
 /**
- * @brief Convert graph to JSON.
+ * \brief Convert graph to JSON.
  *
- * @param[in] graph Graph to convert
- * @param[out] pj Json output structure. Can be used to include the resulting JSON value inside bigger JSON.
- * @param[in] use_offset Set this to true if graph uses \ref RzGraphNodeInfo::offset offset field.
+ * \param[in] graph Graph to convert
+ * \param[out] pj Json output structure. Can be used to include the resulting JSON value inside bigger JSON.
+ * \param[in] use_offset Set this to true if graph uses \ref RzGraphNodeInfo::offset offset field.
  */
-RZ_API void rz_graph_drawable_to_json(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph, RZ_NONNULL PJ *pj, bool use_offset);
-RZ_API RZ_OWN char *rz_graph_drawable_to_json_str(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph, bool use_offset);
-RZ_API RZ_OWN char *rz_graph_drawable_to_cmd(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph);
-RZ_API RZ_OWN char *rz_graph_drawable_to_gml(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph);
+RZ_API void rz_graph_drawable_to_json(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph, RZ_NONNULL PJ *pj, bool use_offset);
+RZ_API RZ_OWN char *rz_graph_drawable_to_json_str(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph, bool use_offset);
+RZ_API RZ_OWN char *rz_graph_drawable_to_cmd(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph);
+RZ_API RZ_OWN char *rz_graph_drawable_to_gml(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph);
 
 #ifdef __cplusplus
 }

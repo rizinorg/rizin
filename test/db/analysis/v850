@@ -448,39 +448,39 @@ pdf @@F~:..33
 plf @@F~:..33
 EOF
 EXPECT=<<EOF
-            ;-- section..text:
-            ;-- segment.LOAD0:
-            ;-- segment.ehdr:
-            ;-- .text:
-            ;-- _start:
-            ;-- pc:
+  ;-- section..text:
+  ;-- segment.LOAD0:
+  ;-- segment.ehdr:
+  ;-- .text:
+  ;-- _start:
+  ;-- pc:
 / entry0();
-|           0x00100000      movea 0xff, r0, r20                        ; [00] -r-x section size 30816 named .text
-|           0x00100004      mov   0xffff, r21
-|           0x0010000a      mov   loc._stack, sp
-|           0x00100010      mov   loc.___dtors, ep
-|           0x00100016      mov   loc.__gp, gp
-|           0x0010001c      mov   loc._etext, r6
-|           0x00100022      ldsr  r6, CTBP, 0
-|           0x00100026      stsr  PSW, r6, 0
-|           0x0010002a      movhi 1, r0, r7
-|           0x0010002e      or    r7, r6
-|           0x00100030      ldsr  r6, PSW, 0
-|           0x00100034      movhi 2, r0, r6
-|           0x00100038      ldsr  r6, FPSR, 0
-|           0x0010003c      mov   obj._initialized___901, r6
-|           0x00100042      mov   loc._heap_start, r7
-|       .-> 0x00100048      st.w  r0, 0[r6]
-|       :   0x0010004c      addi  4, r6, r6
-|       :   0x00100050      cmp   r7, r6
-|       `=< 0x00100052      bl    0x100048
-|           0x00100054      jarl  dbg.__main, lp                       ;  __main(void)
-|           0x00100058      addi  -16, sp, sp
-|           0x0010005c      mov   0, r6
-|           0x0010005e      mov   0, r7
-|           0x00100060      mov   0, r8
-|           0x00100062      jarl  main, lp                             ; int main(int argc, char **argv, char **envp)
-|           0x00100066      mov   r10, r6
+| 0x00100000      movea 0xff, r0, r20                                  ; [00] -r-x section size 30816 named .text
+| 0x00100004      mov   0xffff, r21
+| 0x0010000a      mov   loc._stack, sp
+| 0x00100010      mov   loc.___dtors, ep
+| 0x00100016      mov   loc.__gp, gp
+| 0x0010001c      mov   loc._etext, r6
+| 0x00100022      ldsr  r6, CTBP, 0
+| 0x00100026      stsr  PSW, r6, 0
+| 0x0010002a      movhi 1, r0, r7
+| 0x0010002e      or    r7, r6
+| 0x00100030      ldsr  r6, PSW, 0
+| 0x00100034      movhi 2, r0, r6
+| 0x00100038      ldsr  r6, FPSR, 0
+| 0x0010003c      mov   obj._initialized___901, r6
+| 0x00100042      mov   loc._heap_start, r7
+| 0x00100048      st.w  r0, 0[r6]
+| 0x0010004c      addi  4, r6, r6
+| 0x00100050      cmp   r7, r6
+| 0x00100052      bl    0x100048
+| 0x00100054      jarl  dbg.__main, lp                                 ;  __main(void)
+| 0x00100058      addi  -16, sp, sp
+| 0x0010005c      mov   0, r6
+| 0x0010005e      mov   0, r7
+| 0x00100060      mov   0, r8
+| 0x00100062      jarl  main, lp                                       ; int main(int argc, char **argv, char **envp)
+| 0x00100066      mov   r10, r6
 0x100000 (set r20 (+ (var r0) (bv 32 0xff)))
 0x100004 (set r21 (bv 32 0xffff))
 0x10000a (set sp (bv 32 0x200000))

@@ -1184,8 +1184,9 @@ static void tricore_fillvals(RzAsmTriCoreContext *ctx, RzAnalysis *a, RzAnalysis
 			av->access |= RZ_ANALYSIS_ACC_W;
 			if (op->dst) {
 				rz_warn_if_reached();
+				continue;
 			}
-			if (srci > 0 && av == op->src[srci - 1]) {
+			if (top->access & CS_AC_READ) {
 				av = rz_mem_dup(av, sizeof(RzAnalysisValue));
 			}
 			op->dst = av;

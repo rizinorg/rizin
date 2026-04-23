@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2026 MrQuantum1915 <darshanpatelgdh@gmail.com>
 // SPDX-FileCopyrightText: 2010-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -9,7 +10,7 @@
 #include <rz_search.h>
 #include <rz_types_base.h>
 
-#include "cmd_search_rop.c"
+#include "cmd_search_gadget.c"
 #include "rz_cons.h"
 #include <rz_config.h>
 #include <rz_flag.h>
@@ -44,19 +45,34 @@ struct search_parameters {
 	bool regex_search;
 };
 
+static RzGadgetType gadget_type_from_cmd(const char *cmd_name) {
+	rz_return_val_if_fail(cmd_name && cmd_name[0] && cmd_name[1], RZ_GADGET_TYPE_ROP);
+	switch (cmd_name[1]) {
+	case 'J':
+		return RZ_GADGET_TYPE_JOP;
+	case 'C':
+		return RZ_GADGET_TYPE_COP;
+	case 'R':
+	default:
+		return RZ_GADGET_TYPE_ROP;
+	}
+}
+
 RZ_IPI RzCmdStatus rz_cmd_info_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	const char *input = argc > 1 ? argv[1] : "";
 	if (!input) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	RzRopSearchContext *context = rz_core_rop_search_context_new(core, argv[1], false, RZ_ROP_GADGET_PRINT, RZ_ROP_DETAIL_SEARCH_NON, state);
-	RzCmdStatus status = rz_core_rop_gadget_info(core, context);
+	RzGadgetType gadget_type = gadget_type_from_cmd(argv[0]);
+
+	RzGadgetSearchContext *context = rz_core_gadget_search_context_new(core, gadget_type, input, false, RZ_GADGET_PRINT, RZ_GADGET_DETAIL_SEARCH_NON, state);
+	RzCmdStatus status = rz_core_gadget_info(core, context);
 	return status;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_query_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	RzPVector /*<RzRopConstraint *>*/ *constraints = rop_constraint_map_parse(core, argc, argv);
+	RzPVector /*<RzGadgetConstraint *>*/ *constraints = rz_core_gadget_constraint_map_parse(core, argc, argv);
 	if (!constraints) {
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -65,15 +81,17 @@ RZ_IPI RzCmdStatus rz_cmd_query_gadget_handler(RzCore *core, int argc, const cha
 		return RZ_CMD_STATUS_INVALID;
 	}
 
-	RzRopSearchContext *context = rz_core_rop_search_context_new(core, NULL, false,
-		RZ_ROP_GADGET_PRINT | RZ_ROP_GADGET_ANALYZE, RZ_ROP_DETAIL_SEARCH_NON, state);
+	RzGadgetType gadget_type = gadget_type_from_cmd(argv[0]);
+
+	RzGadgetSearchContext *context = rz_core_gadget_search_context_new(core, gadget_type, NULL, false,
+		RZ_GADGET_PRINT | RZ_GADGET_ANALYZE, RZ_GADGET_DETAIL_SEARCH_NON, state);
 	if (!context) {
 		rz_pvector_free(constraints);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	context->constraints = constraints;
-	const RzCmdStatus cmd_status = rz_core_rop_search(core, context);
-	rz_core_rop_search_context_free(context);
+	const RzCmdStatus cmd_status = rz_core_gadget_search(core, context);
+	rz_core_gadget_search_context_free(context);
 	return cmd_status;
 }
 
@@ -82,29 +100,39 @@ RZ_IPI RzCmdStatus rz_cmd_search_gadget_handler(RzCore *core, int argc, const ch
 	if (!input) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzRopSearchContext *context = rz_core_rop_search_context_new(core, input, true, RZ_ROP_GADGET_PRINT, RZ_ROP_DETAIL_SEARCH_NON, state);
-	RzCmdStatus status = rz_core_rop_search(core, context);
-	rz_core_rop_search_context_free(context);
+
+	RzGadgetType gadget_type = gadget_type_from_cmd(argv[0]);
+
+	RzGadgetSearchContext *context = rz_core_gadget_search_context_new(core, gadget_type, input, true, RZ_GADGET_PRINT, RZ_GADGET_DETAIL_SEARCH_NON, state);
+	RzCmdStatus status = rz_core_gadget_search(core, context);
+	rz_core_gadget_search_context_free(context);
 	return status;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_detail_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	const char *input = argc > 1 ? argv[1] : "";
-	RzRopSearchContext *context = rz_core_rop_search_context_new(core, input, false, RZ_ROP_GADGET_PRINT_DETAIL | RZ_ROP_GADGET_ANALYZE, RZ_ROP_DETAIL_SEARCH_NON, state);
-	RzCmdStatus status = rz_core_rop_search(core, context);
-	rz_core_rop_search_context_free(context);
+
+	RzGadgetType gadget_type = gadget_type_from_cmd(argv[0]);
+
+	RzGadgetSearchContext *context = rz_core_gadget_search_context_new(core, gadget_type, input, false, RZ_GADGET_PRINT_DETAIL | RZ_GADGET_ANALYZE, RZ_GADGET_DETAIL_SEARCH_NON, state);
+	RzCmdStatus status = rz_core_gadget_search(core, context);
+	rz_core_gadget_search_context_free(context);
 	return status;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_rop_search_stack_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	RzRopSearchContext *context = rz_core_rop_search_context_new(core, argv[1], false, RZ_ROP_GADGET_PRINT_DETAIL | RZ_ROP_GADGET_ANALYZE, RZ_ROP_DETAIL_SEARCH_STACK, state);
-	RzCmdStatus status = rz_core_rop_gadget_info(core, context);
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_ROP;
+	RzGadgetSearchContext *context = rz_core_gadget_search_context_new(core, gadget_type, argv[1], false, RZ_GADGET_PRINT_DETAIL | RZ_GADGET_ANALYZE, RZ_GADGET_DETAIL_SEARCH_STACK, state);
+	RzCmdStatus status = rz_core_gadget_info(core, context);
 	return status;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_rop_search_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	RzRopSearchContext *context = rz_core_rop_search_context_new(core, argv[1], false, RZ_ROP_GADGET_PRINT_DETAIL | RZ_ROP_GADGET_ANALYZE, RZ_ROP_DETAIL_SEARCH_SIZE, state);
-	RzCmdStatus status = rz_core_rop_gadget_info(core, context);
+RZ_IPI RzCmdStatus rz_cmd_gadget_search_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+
+	RzGadgetType gadget_type = gadget_type_from_cmd(argv[0]);
+
+	RzGadgetSearchContext *context = rz_core_gadget_search_context_new(core, gadget_type, argv[1], false, RZ_GADGET_PRINT_DETAIL | RZ_GADGET_ANALYZE, RZ_GADGET_DETAIL_SEARCH_SIZE, state);
+	RzCmdStatus status = rz_core_gadget_info(core, context);
 	return status;
 }
 
@@ -113,7 +141,8 @@ static void cmd_search_bin(RzCore *core, RzInterval itv) {
 	int size; // , sz = sizeof (buf);
 
 	int fd = core->file->fd;
-	RzBuffer *b = rz_buf_new_with_io_fd(&core->analysis->iob, fd);
+	RzIOBind *iob = rz_analysis_get_io_bind(core->analysis);
+	RzBuffer *b = rz_buf_new_with_io_fd(iob, fd);
 	rz_cons_break_push(NULL, NULL);
 	while (from < to) {
 		if (rz_cons_is_breaked()) {
@@ -462,6 +491,9 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 	const int minopcode = RZ_MAX(1, mininstrsz);
 	RzAnalysisEsil *esil;
 	int align = core->search->align;
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	RzSyscall *sysc = rz_analysis_get_syscall(core->analysis);
+	int bits = rz_asm_get_bits(core->rasm);
 	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
 	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
 	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
@@ -484,11 +516,11 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 	ut64 oldoff = core->offset;
 	int syscallNumber = 0;
 	rz_cons_break_push(NULL, NULL);
-	const char *a0 = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SN);
+	const char *a0 = rz_reg_get_name(rreg, RZ_REG_NAME_SN);
 	char *esp = rz_str_newf("%s,=", a0);
 	char *esp32 = NULL;
-	if (core->analysis->bits == 64) {
-		const char *reg = rz_reg_64_to_32(core->analysis->reg, a0);
+	if (bits == 64) {
+		const char *reg = rz_reg_64_to_32(rreg, a0);
 		if (reg) {
 			esp32 = rz_str_newf("%s,=", reg);
 		}
@@ -538,7 +570,7 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 				int scNumber = 0; // r0/eax/...
 				scNumber = syscallNumber;
 				scVector = (aop.val > 0) ? aop.val : -1; // int 0x80 (aop.val = 0x80)
-				RzSyscallItem *item = rz_syscall_get(core->analysis->syscall, scNumber, scVector);
+				RzSyscallItem *item = rz_syscall_get(sysc, scNumber, scVector);
 				if (item) {
 					rz_cons_printf("0x%08" PFMT64x " %s\n", at, item->name);
 				}
@@ -662,7 +694,8 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 			case 's': { // "/als"
 				RzListIter *iter;
 				RzSyscallItem *si;
-				RzList *list = rz_syscall_list(core->analysis->syscall);
+				RzSyscall *sysc = rz_analysis_get_syscall(core->analysis);
+				RzList *list = rz_syscall_list(sysc);
 				rz_list_foreach (list, iter, si) {
 					if (si->num > SYSCALL_HEX_LIMIT) {
 						rz_cons_printf("%s = 0x%02x.%x\n", si->name, si->swi, si->num);
@@ -824,7 +857,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 	bool regexp = input[0] == '/'; // "/c/"
 	bool everyByte = regexp && input[1] == 'a';
 	char tmpbuf[128];
-	char *end_cmd = strchr(input, ' ');
+	const char *end_cmd = strchr(input, ' ');
 	switch ((end_cmd ? *(end_cmd - 1) : input[0])) {
 	case 'j':
 		param->outmode = RZ_OUTPUT_MODE_JSON;
@@ -1410,7 +1443,7 @@ reread:
 				RzListIter *iter;
 				RzIOMap *map;
 				rz_list_foreach (param.boundaries, iter, map) {
-					eprintf("-- %llx %llx\n", map->itv.addr, rz_itv_end(map->itv));
+					eprintf("-- %" PFMT64x " %" PFMT64x "\n", map->itv.addr, rz_itv_end(map->itv));
 					rz_cons_break_push(NULL, NULL);
 					rz_search_pattern_size(core->search, ps);
 					rz_search_pattern(core->search, map->itv.addr, rz_itv_end(map->itv));
@@ -2123,7 +2156,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_pattern_handler(RzCore *core, int argc, const c
 	RzListIter *iter;
 	RzIOMap *map;
 	rz_list_foreach (param.boundaries, iter, map) {
-		eprintf("-- %llx %llx\n", map->itv.addr, rz_itv_end(map->itv));
+		eprintf("-- %" PFMT64x " %" PFMT64x "\n", map->itv.addr, rz_itv_end(map->itv));
 		rz_cons_break_push(NULL, NULL);
 		rz_search_pattern_size(core->search, ps);
 		if (!rz_search_pattern(core->search, map->itv.addr, rz_itv_end(map->itv))) {

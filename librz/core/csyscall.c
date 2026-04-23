@@ -29,20 +29,22 @@ RZ_API RZ_OWN char *rz_core_syscall_as_string(RzCore *core, st64 n, ut64 addr) {
 	bool is_x86 = rz_asm_is_arch(core->rasm, "x86");
 	int bits = rz_asm_get_bits(core->rasm);
 	st64 N = n;
-	int defVector = rz_syscall_get_swi(core->analysis->syscall);
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	RzSyscall *sysc = rz_analysis_get_syscall(core->analysis);
+	int defVector = rz_syscall_get_swi(sysc);
 	if (defVector > 0) {
 		n = -1;
 	}
 	if (n == -1 || defVector > 0) {
 		n = (int)rz_core_reg_getv_by_role_or_name(core, "oeax");
 		if (!n || n == -1) {
-			const char *a0 = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SN);
+			const char *a0 = rz_reg_get_name(rreg, RZ_REG_NAME_SN);
 			n = (a0 == NULL) ? -1 : (int)rz_core_reg_getv_by_role_or_name(core, a0);
 		}
 	}
-	RzSyscallItem *item = rz_syscall_get(core->analysis->syscall, n, defVector);
+	RzSyscallItem *item = rz_syscall_get(sysc, n, defVector);
 	if (!item) {
-		item = rz_syscall_get(core->analysis->syscall, N, -1);
+		item = rz_syscall_get(sysc, N, -1);
 	}
 	if (!item) {
 		const char *syscallnum = rz_strf(tmpbuf, syscallNumberFmt(n), n);
@@ -65,10 +67,10 @@ RZ_API RZ_OWN char *rz_core_syscall_as_string(RzCore *core, st64 n, ut64 addr) {
 		if (item->sargs) {
 			switch (item->sargs[i]) {
 			case 'p': // pointer
-				res = rz_str_appendf(res, "0x%08" PFMT64x "", arg);
+				res = rz_str_appendf(res, "0x%08" PFMT64x, arg);
 				break;
 			case 'i':
-				res = rz_str_appendf(res, "%" PFMT64u "", arg);
+				res = rz_str_appendf(res, "%" PFMT64u, arg);
 				break;
 			case 'z':
 				memset(str, 0, sizeof(str));
@@ -89,11 +91,11 @@ RZ_API RZ_OWN char *rz_core_syscall_as_string(RzCore *core, st64 n, ut64 addr) {
 				res = rz_str_appendf(res, "\"%s\"", str);
 			} break;
 			default:
-				res = rz_str_appendf(res, "0x%08" PFMT64x "", arg);
+				res = rz_str_appendf(res, "0x%08" PFMT64x, arg);
 				break;
 			}
 		} else {
-			res = rz_str_appendf(res, "0x%08" PFMT64x "", arg);
+			res = rz_str_appendf(res, "0x%08" PFMT64x, arg);
 		}
 		if (i + 1 < item->args) {
 			res = rz_str_appendf(res, ", ");

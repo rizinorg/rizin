@@ -124,14 +124,15 @@ static RzList /*<RzCoreVisualViewGraphItem *>*/ *__fcns(RzCore *core) {
 	RzList *r = rz_list_newf(free);
 	RzListIter *iter;
 	RzAnalysisFunction *fcn;
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	RzList *fcns = rz_analysis_function_list(core->analysis);
+	rz_list_foreach (fcns, iter, fcn) {
 		RzCoreVisualViewGraphItem *item = RZ_NEW0(RzCoreVisualViewGraphItem);
 		item->addr = fcn->addr;
 		item->name = fcn->name;
 		item->fcn = fcn;
 		rz_list_append(r, item);
 	}
-	return r; // core->analysis->fcns;
+	return r;
 }
 
 static void __seek_cursor(RzCoreVisualViewGraph *status) {
@@ -234,7 +235,7 @@ RZ_IPI int __core_visual_view_graph_update(RzCore *core, RzCoreVisualViewGraph *
 	/* 	__reset_status (status); */
 	/* } */
 
-	char *title = rz_str_newf("[rz-visual-browser] addr=0x%08" PFMT64x " faddr=0x%08" PFMT64x "", status->addr, status->fcn ? status->fcn->addr : 0);
+	char *title = rz_str_newf("[rz-visual-browser] addr=0x%08" PFMT64x " faddr=0x%08" PFMT64x, status->addr, status->fcn ? status->fcn->addr : 0);
 	if (title) {
 		rz_cons_strcat_at(title, 0, 0, w - 1, 2);
 		free(title);

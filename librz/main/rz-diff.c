@@ -1888,7 +1888,8 @@ static RzAnalysisFunction *find_best_matching_function(RzAnalysis *analysis_a, R
 	opts.analysis_a = analysis_a;
 	opts.analysis_b = analysis_b;
 
-	result = rz_analysis_match_functions(list_a, analysis_b->fcns, &opts);
+	RzList *fcns_b = rz_analysis_function_list(analysis_b);
+	result = rz_analysis_match_functions(list_a, fcns_b, &opts);
 	if (result && rz_list_length(result->matches) > 0) {
 		pair = (RzAnalysisMatchPair *)rz_list_first_val(result->matches);
 		match = (RzAnalysisFunction *)pair->pair_b;
@@ -2138,8 +2139,8 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, const char *addr_a, D
 	}
 
 	rz_list_sort(result->matches, (RzListComparator)comparePairFunctions, NULL);
-	rz_list_sort(result->unmatch_a, core_a->analysis->columnSort, NULL);
-	rz_list_sort(result->unmatch_b, core_b->analysis->columnSort, NULL);
+	rz_list_sort(result->unmatch_a, rz_analysis_get_column_sort(core_a->analysis), NULL);
+	rz_list_sort(result->unmatch_b, rz_analysis_get_column_sort(core_b->analysis), NULL);
 
 	if (mode == DIFF_MODE_JSON) {
 		pj = pj_new();
@@ -2868,18 +2869,41 @@ static void rz_diff_resize_buffer(DiffHexView *hview) {
 	st64 video_size = width;
 	video_size *= height;
 
-	hview->line = realloc(hview->line, video_size);
-	hview->buffer_a = realloc(hview->buffer_a, size_a);
-	hview->buffer_b = realloc(hview->buffer_b, size_b);
+	// build the replacement view state first so resize is like all-or-nothing.
+	char *new_line = malloc(video_size);
+	ut8 *new_buf_a = malloc(size_a);
+	ut8 *new_buf_b = malloc(size_b);
+	if (!new_line || !new_buf_a || !new_buf_b) {
+		free(new_line);
+		free(new_buf_a);
+		free(new_buf_b);
+		return;
+	}
+
+	RzConsCanvas *new_canvas = rz_cons_canvas_new(width, height);
+	if (!new_canvas) {
+		free(new_line);
+		free(new_buf_a);
+		free(new_buf_b);
+		return;
+	}
+
+	new_canvas->color = true;
+	new_canvas->linemode = 1;
+
+	// swap only after every replacement alloc succeeded.
+	free(hview->line);
+	free(hview->buffer_a);
+	free(hview->buffer_b);
+	rz_cons_canvas_free(hview->canvas);
+	hview->line = new_line;
+	hview->buffer_a = new_buf_a;
+	hview->buffer_b = new_buf_b;
 	hview->size_a = size_a;
 	hview->size_b = size_b;
 	hview->screen.width = width;
 	hview->screen.height = height;
-
-	rz_cons_canvas_free(hview->canvas);
-	hview->canvas = rz_cons_canvas_new(width, height);
-	hview->canvas->color = true;
-	hview->canvas->linemode = 1;
+	hview->canvas = new_canvas;
 
 	rz_diff_draw_tui(hview, false);
 }

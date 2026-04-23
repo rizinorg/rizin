@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2014-2019 dso <dso@rice.edu>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 
 static RzAnalysisSwitchOp *__switch_op_new(void) {
 	RzAnalysisSwitchOp *swop = RZ_NEW0(RzAnalysisSwitchOp);

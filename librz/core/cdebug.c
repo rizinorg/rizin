@@ -293,18 +293,42 @@ RZ_API void rz_core_debug_bp_add_noreturn_func(RzCore *core) {
 }
 
 RZ_IPI void rz_core_debug_attach(RzCore *core, int pid) {
-	char buf[20];
-
-	if (pid > 0) {
-		rz_debug_attach(core->dbg, pid);
-	} else {
-		if (core->file && core->io) {
-			rz_debug_attach(core->dbg, rz_io_fd_get_pid(core->io, core->file->fd));
+	RzIODesc *fd = core->file ? rz_io_desc_get(core->io, core->file->fd) : NULL;
+	char uri[64];
+	int fd_pid = -1;
+	if (pid == 0) {
+		// When pid is not provided, get it from the file descriptor.
+		if (!fd) {
+			RZ_LOG_ERROR("core: no pid provided and not attached to any file descriptor\n");
+			return;
+		}
+		fd_pid = rz_io_desc_get_pid(fd);
+		if (fd_pid == pid) {
+			RZ_LOG_ERROR("core: already attached to pid %d\n", pid);
+			return;
 		}
 	}
-	rz_debug_select(core->dbg, core->dbg->pid, core->dbg->tid);
-	rz_config_set_i(core->config, "dbg.swstep", (core->dbg->cur && !core->dbg->cur->canstep));
-	rz_io_system(core->io, rz_strf(buf, "pid %d", core->dbg->pid));
+
+	rz_core_debug_process_detach(core);
+	rz_debug_use(core->dbg, NULL);
+
+	pid = pid > 0 ? pid : fd_pid;
+	if (pid > 0) {
+		rz_strf(uri, "dbg://%d", pid);
+		RzCoreFile *cfile = rz_core_file_open(core, uri, RZ_PERM_RW, 0);
+		if (!cfile) {
+			RZ_LOG_ERROR("core: Failed to open file for pid %d\n", pid);
+			return;
+		}
+		// Create an IO map covering the full address space so memory
+		// reads/writes are routed through this debug descriptor.
+		RzIODesc *iod = core->io ? rz_io_desc_get(core->io, cfile->fd) : NULL;
+		rz_io_map_new(core->io, iod->fd, iod->perm, 0LL, 0LL, rz_io_desc_size(iod));
+	} else {
+		RZ_LOG_WARN("core: No pid provided and not attached to any file descriptor, IO mapping will not be set up\n");
+	}
+	const char *debugbackend = rz_config_get(core->config, "dbg.backend");
+	rz_core_setup_debugger(core, debugbackend, true);
 }
 
 static void bits_to_string(ut32 bits, char output[32]) {
@@ -812,11 +836,44 @@ RZ_API bool rz_core_debug_process_close(RzCore *core) {
 			rz_debug_kill(dbg, dbg->pid, dbg->pid, SIGKILL);
 			rz_debug_detach(dbg, dbg->pid);
 		}
+		rz_list_free(list);
 	}
 	// Remove the target's registers from the flag list
 	rz_core_debug_clear_register_flags(core);
 	// Reopen and rebase the original file
 	rz_core_io_file_open(core, core->io->desc->fd);
+	return true;
+}
+
+/**
+ * \brief Detach debug process (Detach debugee and all child processes)
+ * \param core The RzCore instance
+ * \return success
+ */
+RZ_API bool rz_core_debug_process_detach(RzCore *core) {
+	rz_return_val_if_fail(core && core->dbg, false);
+	RzDebug *dbg = core->dbg;
+	// Stop trace session
+	if (dbg->session) {
+		rz_debug_session_free(dbg->session);
+		dbg->session = NULL;
+	}
+	// Detach debugee and all child processes
+	if (dbg->cur && dbg->cur->pids && dbg->pid != -1) {
+		RzList *list = dbg->cur->pids(dbg, dbg->pid);
+		RzListIter *iter;
+		RzDebugPid *p;
+		if (list) {
+			rz_list_foreach (list, iter, p) {
+				rz_debug_detach(dbg, p->pid);
+			}
+		} else {
+			rz_debug_detach(dbg, dbg->pid);
+		}
+		rz_list_free(list);
+	}
+	// Remove the target's registers from the flag list
+	rz_core_debug_clear_register_flags(core);
 	return true;
 }
 
@@ -927,7 +984,8 @@ RZ_API bool rz_core_debug_step_skip(RzCore *core, int times) {
 		rz_analysis_op_fini(&aop);
 	}
 	rz_debug_reg_set(core->dbg, "PC", addr);
-	rz_reg_setv(core->analysis->reg, "PC", addr);
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	rz_reg_setv(rreg, "PC", addr);
 	rz_core_reg_update_flags(core);
 	if (bpi) {
 		(void)rz_debug_bp_add(core->dbg, addr, 0, hwbp, false, 0, NULL, 0);

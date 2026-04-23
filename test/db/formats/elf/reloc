@@ -317,7 +317,7 @@ EXPECT=<<EOF
 |           0x08000040      movzx eax, byte [rdi]                      ; RELOC TARGET 32 .text @ 0x08000040 - 0x8004d08 ; arg1 ; [01] -r-x section size 6641 named .text
 |           0x08000043      and   eax, 0x7f                            ; 127
 |           0x08000046      sub   eax, 0x04
-|           0x08000049      cmp   al, 0x73                             ; 115
+|           0x08000049      cmp   al, 0x73                             ; 's' ; 115
 |       ,=< 0x0800004b      jnbe  case.0x800005e.5
 |       |   0x0800004d      lea   rdx, qword reloc.target..rodata      ; 0x8001a34 ; "4\xe6\xff\xff,\xe6\xff\xff4\xe6\xff\xff,\xe6\xff\xff4\xe6\xff\xffD\xe6\xff\xff4\xe6\xff\xffD\xe6\xff\xff4\xe6\xff\xff,\xe6\xff\x"; RELOC 32 .rodata @ 0x08001a34 - 0x8000054
 |       |   0x08000054      movzx eax, al

@@ -2,6 +2,7 @@ NAME=ELF: x86 relocs patching test
 FILE=bins/elf/x86_relocs.o
 CMDS=<<EOF
 ir
+echo ---
 px 2 @ 0x08000053
 px 1 @ 0x08000057
 px 4 @ 0x0800005a
@@ -17,6 +18,7 @@ EXPECT=<<EOF
 0x08000053 0x00000053 0x08000067 R_386_16   .data
 0x08000057 0x00000057 0x08000067 R_386_8    .data
 0x0800005a 0x0000005a 0x08000067 R_386_32   .data
+---
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x08000053  6700                                     g.
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF

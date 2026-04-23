@@ -1028,40 +1028,31 @@ static void lookup_symbols(RzBinFile *bf, RzBinInfo *ret) {
 	RzPVector *symbols_vec = symbols(bf);
 	void **iter;
 	RzBinSymbol *symbol;
-	bool is_rust = false;
-	if (symbols_vec) {
-		rz_pvector_foreach (symbols_vec, iter) {
-			symbol = *iter;
-			if (ret->has_canary && is_rust) {
-				break;
-			}
-			if (!strcmp(symbol->name, "_NSConcreteGlobalBlock")) {
-				ret->lang = (ret->lang && !strcmp(ret->lang, "c++")) ? "c++ blocks ext." : "c blocks ext.";
-			}
-			if (!ret->has_canary) {
-				if (strstr(symbol->name, "__stack_chk_fail") || strstr(symbol->name, "__stack_smash_handler")) {
-					ret->has_canary = true;
-				}
-			}
-			if (!is_rust && !strcmp(symbol->name, "__rust_oom")) {
-				is_rust = true;
-				ret->lang = "rust";
-			}
-		}
-		rz_pvector_free(symbols_vec);
+	if (!symbols_vec) {
+		return;
 	}
+
+	rz_pvector_foreach (symbols_vec, iter) {
+		symbol = *iter;
+		if (!strcmp(symbol->name, "_NSConcreteGlobalBlock")) {
+			ret->lang = (ret->lang && !strcmp(ret->lang, "c++")) ? "c++ blocks ext." : "c blocks ext.";
+		} else if (!strcmp(symbol->name, "__rust_oom")) {
+			ret->lang = "rust";
+			break;
+		}
+	}
+	rz_pvector_free(symbols_vec);
 }
 
 static void lookup_sections(RzBinFile *bf, RzBinInfo *ret) {
+	if (ret->has_retguard) {
+		return;
+	}
 	RzPVector *sections_vec = sections(bf);
 	void **iter;
 	RzBinSection *section;
-	ret->has_retguard = -1;
 	rz_pvector_foreach (sections_vec, iter) {
 		section = *iter;
-		if (ret->has_retguard != -1) {
-			break;
-		}
 #define RZ_BIN_RANDOMDATA_RETGUARD_SZ 48
 		if (!strcmp(section->name, ".openbsd.randomdata")) {
 			// The retguard cookie adds 8 per return function inst.
@@ -1070,26 +1061,6 @@ static void lookup_sections(RzBinFile *bf, RzBinInfo *ret) {
 		}
 	}
 	rz_pvector_free(sections_vec);
-}
-
-static bool has_sanitizers(RzBinFile *bf) {
-	bool ret = false;
-	RzPVector *imports_vec = imports(bf);
-	if (!imports_vec) {
-		return ret;
-	}
-	void **iter;
-	RzBinImport *import;
-	rz_pvector_foreach (imports_vec, iter) {
-		import = *iter;
-		if (strstr(import->name, "__sanitizer") ||
-			strstr(import->name, "__ubsan")) {
-			ret = true;
-			break;
-		}
-	}
-	rz_pvector_free(imports_vec);
-	return ret;
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
@@ -1112,8 +1083,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 		return NULL;
 	}
 	ret->type = str;
-	ret->has_pi = (strstr(str, "DYN")) ? 1 : 0;
-	ret->has_sanitizers = has_sanitizers(bf);
+	ret->has_pie = (strstr(str, "DYN")) ? 1 : 0;
 	if (!(str = Elf_(rz_bin_elf_get_elf_class)(obj))) {
 		free(ret);
 		return NULL;
@@ -1150,9 +1120,9 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 	if ((str = Elf_(rz_bin_elf_get_abi)(obj))) {
 		ret->features = str;
-		if (!ret->has_pi) {
+		if (!ret->has_pie) {
 			// Elf MIPS PIE flag is in features.
-			ret->has_pi = (strstr(str, "pic ")) ? 1 : 0;
+			ret->has_pie = (strstr(str, "pic ")) ? 1 : 0;
 		}
 	}
 

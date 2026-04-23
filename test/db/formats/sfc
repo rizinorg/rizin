@@ -19,7 +19,6 @@ baddr    ----------
 binsz    0x00010000
 bintype  N/A
 bits     16
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -38,18 +37,15 @@ pcalign  1
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
----
+pie      false
+relrocs  false
+nx       false
 snes_rom:
   game_title: "SA-1 Support Test    "
   speed: "slow"
@@ -645,7 +641,6 @@ baddr    ----------
 binsz    0x00008000
 bintype  N/A
 bits     16
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -664,18 +659,15 @@ pcalign  1
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
----
+pie      false
+relrocs  false
+nx       false
 snes_rom:
   game_title: "CX4 TEST PROGRAM"
   speed: "slow"

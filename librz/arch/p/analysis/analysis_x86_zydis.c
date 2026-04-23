@@ -924,7 +924,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, 
 		src = getarg(a, &gop, 1, 0, NULL, SRC_AR, NULL, zydx->addr);
 		dst = getarg(a, &gop, 0, 0, NULL, DST_AR, NULL, zydx->addr);
 		dst2 = getarg(a, &gop, 0, 1, "<<", DST2_AR, &bitsize, zydx->addr);
-		esilprintf(op, "0,%s,!,!,?{,1,%s,-,%s,<<,0x%llx,&,!,!,^,},%s,%s,$z,zf,:=,$p,pf,:=,%" PFMT32d ",$s,sf,:=,cf,=",
+		esilprintf(op, "0,%s,!,!,?{,1,%s,-,%s,<<,0x%" PFMT64x ",&,!,!,^,},%s,%s,$z,zf,:=,$p,pf,:=,%" PFMT32d ",$s,sf,:=,cf,=",
 			src, src, dst, val, src, dst2, bitsize - 1);
 	} break;
 	case X86_INS_SALC:
@@ -993,7 +993,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, 
 			esilprintf(op,
 				"%s,%s,==,$z,zf,:=,%u,$b,cf,:=,$p,pf,:=,%u,$s,sf,:=,"
 				"%s,0x%" PFMT64x ",-,!,%u,$o,^,of,:=,3,$b,af,:=",
-				src, dst, bitsize, bitsize - 1, src, 1ULL << (bitsize - 1), bitsize - 1);
+				src, dst, bitsize, bitsize - 1, src, (ut64)1 << (bitsize - 1), bitsize - 1);
 		} else {
 			const char *rsrc = ZydisRegisterGetString(INSOP(1).mem.base);
 			const char *rdst = ZydisRegisterGetString(INSOP(0).mem.base);
@@ -1001,7 +1001,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, 
 			esilprintf(op,
 				"%s,%s,==,$z,zf,:=,%u,$b,cf,:=,$p,pf,:=,%u,$s,sf,:=,%s,0x%" PFMT64x ","
 				"-,!,%u,$o,^,of,:=,3,$b,af,:=,df,?{,%" PFMT32d ",%s,-=,%" PFMT32d ",%s,-=,}{,%" PFMT32d ",%s,+=,%" PFMT32d ",%s,+=,}",
-				src, dst, bitsize, bitsize - 1, src, 1ULL << (bitsize - 1), bitsize - 1,
+				src, dst, bitsize, bitsize - 1, src, (ut64)1 << (bitsize - 1), bitsize - 1,
 				width, rsrc, width, rdst, width, rsrc, width, rdst);
 		}
 	} break;
@@ -1239,9 +1239,9 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, 
 			}
 			break;
 		}
-		if (a->read_at && a->bits != 16) {
+		if (a->cb.read_at && a->bits != 16) {
 			ut8 thunk[4] = { 0 };
-			if (a->read_at(a, (ut64)get_imm_reg_value(&INSOP(0), zydx->addr, zydx->zydecode->length, a->bits), thunk, sizeof(thunk))) {
+			if (a->cb.read_at(a, (ut64)get_imm_reg_value(&INSOP(0), zydx->addr, zydx->zydecode->length, a->bits), thunk, sizeof(thunk))) {
 				/* 8b xx x4    mov <reg>, dword [esp]
 					   c3          ret
 					*/
@@ -1472,7 +1472,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, 
 		// We use $b rather than $c here as the carry flag really
 		// represents a "borrow"
 		esilprintf(op, "%s,%s,%s,0x%" PFMT64x ",-,!,%u,$o,^,of,:=,%u,$s,sf,:=,$z,zf,:=,$p,pf,:=,%u,$b,cf,:=,3,$b,af,:=",
-			src, dst, src, 1ULL << (bitsize - 1), bitsize - 1, bitsize - 1, bitsize);
+			src, dst, src, (ut64)1 << (bitsize - 1), bitsize - 1, bitsize - 1, bitsize);
 	} break;
 	case X86_INS_SBB:
 		// dst = dst - (src + cf)
@@ -3797,21 +3797,6 @@ static RzList /*<RzSearchKeyword *>*/ *analysis_preludes(RzAnalysis *analysis) {
 	return l;
 }
 
-static int esil_x86_zydis_init(RzAnalysisEsil *esil) {
-	if (!esil) {
-		return false;
-	}
-	// XXX. this depends on kernel
-	// rz_analysis_esil_set_interrupt (esil, 0x80, x86_int_0x80);
-	/* disable by default */
-	//	rz_analysis_esil_set_interrupt (esil, 0x80, NULL,addr);	// this is stupid, don't do this
-	return true;
-}
-
-static int esil_x86_zydis_fini(RzAnalysisEsil *esil) {
-	return true;
-}
-
 RzAnalysisPlugin rz_analysis_plugin_x86_zydis = {
 	.name = "x86",
 	.desc = "Zydis X86 analysis",
@@ -3825,8 +3810,6 @@ RzAnalysisPlugin rz_analysis_plugin_x86_zydis = {
 	.get_reg_profile = &get_reg_profile,
 	.init = x86_init,
 	.fini = x86_fini,
-	.esil_init = esil_x86_zydis_init,
-	.esil_fini = esil_x86_zydis_fini,
 	.il_config = rz_x86_il_config
 };
 

@@ -58,6 +58,12 @@ you used to build Rizin).
 
 Running a specific set of benchmarks (e.g. `bitvector`) can be done with `ninja -C build test bitvector --benchmark`.
 
+To see the detailed benchmark results (iterations, average time per operation, and throughput), you must use the verbose flag:
+
+`meson test -C build <benchmark_name> --benchmark -v`
+
+**Note**: Without the -v flag, Meson will only report if the benchmark process finished successfully, but it will not display the timing data table.
+
 # Failure Levels
 
 A test can have one of the following results:

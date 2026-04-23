@@ -33,8 +33,8 @@ static bool set_chunk_size(RZ_NONNULL RzSearchOpt *opt, ut64 chunk_size) {
 	rz_return_val_if_fail(opt, false);
 	if (chunk_size < RZ_SEARCH_MIN_CHUNK_SIZE || chunk_size > RZ_SEARCH_MAX_CHUNK_SIZE) {
 		RZ_LOG_ERROR("search: Chunk size is not in range of %#" PFMT64x "-%#" PFMT64x " bytes.\n",
-			RZ_SEARCH_MIN_CHUNK_SIZE,
-			RZ_SEARCH_MAX_CHUNK_SIZE);
+			(ut64)RZ_SEARCH_MIN_CHUNK_SIZE,
+			(ut64)RZ_SEARCH_MAX_CHUNK_SIZE);
 		return false;
 	}
 	opt->chunk_size = chunk_size;

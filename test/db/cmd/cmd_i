@@ -128,17 +128,15 @@ relro    no
 rpath    NONE
 subsys   linux
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   false
 linenum  true
 lsyms    true
 canary   false
-PIE      false
-RELROCS  true
-NX       true
+pie      false
+relrocs  true
+nx       true
 EOF
 RUN
 
@@ -213,7 +211,6 @@ baddr    0x00000000
 binsz    0x00000400
 bintype  class
 bits     32
-retguard false
 class    Java SE 1.6
 compiler N/A
 dbg_file N/A
@@ -232,17 +229,15 @@ pcalign  1
 rpath    N/A
 subsys   any
 stripped false
-crypto   false
 havecode true
 va       false
-sanitiz  false
 static   false
 linenum  true
 lsyms    true
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
   ;-- entry1:
   ;-- section.class.methods.TestMultipleVariable.attr.0.code:
   ;-- sym.TestVariableSwitchUp.void_TestMultipleVariable:
@@ -1637,17 +1632,15 @@ relro    no
 rpath    NONE
 subsys   linux
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   false
 linenum  true
 lsyms    true
 canary   false
-PIE      false
-RELROCS  true
-NX       true
+pie      false
+relrocs  true
+nx       true
 --------
 {
   "arch": "x86",
@@ -1670,17 +1663,15 @@ NX       true
   "rpath": "NONE",
   "subsys": "linux",
   "stripped": false,
-  "crypto": false,
   "havecode": true,
   "va": true,
-  "sanitiz": false,
   "static": false,
   "linenum": true,
   "lsyms": true,
   "canary": false,
-  "PIE": false,
-  "RELROCS": true,
-  "NX": true
+  "pie": false,
+  "relrocs": true,
+  "nx": true
 }
 --------
      vaddr      paddr     hvaddr      haddr type    
@@ -3114,17 +3105,15 @@ relro    no
 rpath    NONE
 subsys   linux
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   false
 linenum  true
 lsyms    true
 canary   false
-PIE      false
-RELROCS  true
-NX       true
+pie      false
+relrocs  true
+nx       true
 ---
     offset size arch bits machine                 big_endian 
 -------------------------------------------------------------
@@ -3190,17 +3179,15 @@ relro    no
 rpath    NONE
 subsys   linux
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   false
 linenum  true
 lsyms    true
 canary   false
-PIE      false
-RELROCS  true
-NX       true
+pie      false
+relrocs  true
+nx       true
 ---
      paddr  size      vaddr vsize align perm name               type       flags         
 -----------------------------------------------------------------------------------------
@@ -3920,8 +3907,6 @@ nth      paddr      vaddr bind   type   size lib name
 0x00000034 288 segment.PHDR
 0x00000154 19 segment.INTERP
 0x00000168 68 segment.NOTE
-0x00000364 72 section..rel.dyn
-0x000003ac 16 section..rel.plt
 0x000003f0 16 sym.imp.puts
 0x00000400 16 sym.imp.__libc_start_main
 0x00000420 1 entry0
@@ -3939,7 +3924,6 @@ nth      paddr      vaddr bind   type   size lib name
 0x00001ff0 4 reloc.__gmon_start
 0x00001ff8 4 reloc._Jv_RegisterClasses
 0x00001ffc 4 reloc._ITM_registerTMCloneTable
-0x00002000 0 section..got.plt
 0x0000200c 4 reloc.puts
 0x00002010 4 reloc.__libc_start_main
 0x00002028 4 reloc.target.puts

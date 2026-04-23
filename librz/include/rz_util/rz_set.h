@@ -30,6 +30,7 @@ typedef HtUP RzSetU;
 RZ_API RZ_OWN RzSetU *rz_set_u_new(void);
 RZ_API void rz_set_u_free(RZ_NULLABLE RzSetU *set);
 RZ_API void rz_set_u_add(RZ_NONNULL RzSetU *set, ut64 u);
+RZ_API ut64 rz_set_u_take(RZ_NONNULL RzSetU *set);
 RZ_API bool rz_set_u_contains(const RZ_NONNULL RzSetU *set, ut64 u);
 RZ_API void rz_set_u_delete(RZ_NONNULL RzSetU *set, ut64 u);
 RZ_API void rz_set_u_clear(RZ_NONNULL RzSetU *set);

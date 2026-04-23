@@ -93,7 +93,7 @@ RzILOpEffect *bf_in() {
  * Search matching [ or ] starting at addr in direction given by dir (-1 or 1)
  */
 static ut64 find_matching_bracket(RzAnalysis *analysis, ut64 addr, int dir) {
-	if (!analysis->read_at) {
+	if (!analysis->cb.read_at) {
 		return UT64_MAX;
 	}
 	static const ut64 max_dist = 2048; // some upper bound to avoid (almost) infinite loops
@@ -106,7 +106,7 @@ static ut64 find_matching_bracket(RzAnalysis *analysis, ut64 addr, int dir) {
 			break;
 		}
 		ut8 c;
-		analysis->read_at(analysis, addr, &c, 1);
+		analysis->cb.read_at(analysis, addr, &c, 1);
 		switch (c) {
 		case '[':
 			lev++;

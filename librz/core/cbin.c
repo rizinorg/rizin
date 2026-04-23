@@ -13,6 +13,7 @@
 #include <rz_util/rz_iterator.h>
 
 #include "../bin/dwarf/dwarf_private.h"
+#include "../bin/format/luac/luac_common.h"
 #include "core_private.h"
 
 #define is_invalid_address_va(va, vaddr, paddr)  (((va) && (vaddr) == UT64_MAX) || (!(va) && (paddr) == UT64_MAX))
@@ -113,7 +114,7 @@ RZ_API void rz_core_bin_set_export_info(RZ_NONNULL RzCore *core) {
 		if (strstr(dup, ".cparse")) {
 			char *code = rz_str_newf("%s;", v);
 			char *error_msg = NULL;
-			RzTypeDB *typedb = core->analysis->typedb;
+			RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 			int result = rz_type_parse_string_stateless(typedb->parser, code, &error_msg);
 			if (result && error_msg) {
 				rz_str_trim_tail(error_msg);
@@ -132,7 +133,8 @@ RZ_API void rz_core_bin_set_export_info(RZ_NONNULL RzCore *core) {
 		if ((flagname = strstr(dup, ".format"))) {
 			*flagname = 0;
 			flagname = dup;
-			rz_type_db_format_set(core->analysis->typedb, flagname, v);
+			RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+			rz_type_db_format_set(typedb, flagname, v);
 		}
 		free(dup);
 	}
@@ -203,6 +205,9 @@ RZ_API bool rz_core_bin_apply_info(RzCore *r, RzBinFile *binfile, ut32 mask) {
 	}
 	if (mask & RZ_CORE_BIN_ACC_DWARF) {
 		rz_core_bin_apply_dwarf(r, binfile);
+	}
+	if (mask & RZ_CORE_BIN_ACC_LUAC_DEBUG) {
+		rz_core_bin_apply_luac_debug(r, binfile);
 	}
 	if (mask & RZ_CORE_BIN_ACC_ENTRIES) {
 		rz_core_bin_apply_entry(r, binfile, va);
@@ -414,7 +419,8 @@ RZ_API bool rz_core_bin_print(RzCore *core, RZ_NONNULL RzBinFile *bf, ut32 mask,
 				rz_cmd_state_output_free(st);
 				return false;
 			}
-			rz_core_pdb_info_print(core, core->analysis->typedb, pdb, st);
+			RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+			rz_core_pdb_info_print(core, typedb, pdb, st);
 			rz_bin_pdb_free(pdb);
 			add_footer(state, st);
 		}
@@ -563,7 +569,8 @@ RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile) {
 	char *spath = rz_file_path_join(types_dir, "spec.sdb");
 	free(types_dir);
 	if (spath && rz_file_exists(spath)) {
-		sdb_concat_by_path(r->analysis->sdb_fmts, spath);
+		Sdb *sdb_fmts = rz_analysis_get_sdb_formats(r->analysis);
+		sdb_concat_by_path(sdb_fmts, spath);
 	}
 	free(spath);
 	return true;
@@ -652,17 +659,20 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
 		return false;
 	}
 
-	rz_type_db_purge(core->analysis->typedb);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzAnalysisDebugInfo *debug_info = rz_analysis_get_debug_info(core->analysis);
+	rz_type_db_purge(typedb);
 	char *types_dir = rz_path_system(core->sys_path, RZ_SDB_TYPES);
 	if (!types_dir) {
 		return false;
 	}
-	rz_type_db_reload(core->analysis->typedb, types_dir);
+	rz_type_db_reload(typedb, types_dir);
 	free(types_dir);
 
-	rz_analysis_debug_info_free(core->analysis->debug_info);
-	core->analysis->debug_info = rz_analysis_debug_info_new();
-	core->analysis->debug_info->dw = dw;
+	rz_analysis_debug_info_free(debug_info);
+	debug_info = rz_analysis_debug_info_new();
+	debug_info->dw = dw;
+	rz_analysis_set_debug_info(core->analysis, debug_info);
 	if (dw->info) {
 		rz_analysis_dwarf_process_info(core->analysis, dw);
 	}
@@ -1444,7 +1454,8 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 	bool demangle = rz_config_get_b(core->config, "bin.demangle");
 	bool is_arm = info && info->arch && !strncmp(info->arch, "arm", 3);
 
-	rz_spaces_push(&core->analysis->meta_spaces, "bin");
+	RzSpaces *meta_spaces = rz_analysis_get_meta_spaces(core->analysis);
+	rz_spaces_push(meta_spaces, "bin");
 	rz_flag_space_push(core->flags, RZ_FLAGS_FS_SYMBOLS);
 
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
@@ -1549,7 +1560,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 		}
 	}
 
-	rz_spaces_pop(&core->analysis->meta_spaces);
+	rz_spaces_pop(meta_spaces);
 	rz_flag_space_pop(core->flags);
 	return true;
 }
@@ -1741,9 +1752,12 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 	if (!rz_config_get_i(core->config, "bin.dbginfo") || !binfile->o) {
 		return false;
 	}
-
-	RzBinDWARF *dw = (core->analysis && core->analysis->debug_info && core->analysis->debug_info->dw)
-		? core->analysis->debug_info->dw
+	RzAnalysisDebugInfo *debug_info = NULL;
+	if (core->analysis) {
+		debug_info = rz_analysis_get_debug_info(core->analysis);
+	}
+	RzBinDWARF *dw = debug_info && debug_info->dw
+		? debug_info->dw
 		: load_dwarf(core, binfile);
 	if (!dw) {
 		return false;
@@ -1752,13 +1766,14 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 		RzStrBuf sb = { 0 };
 		rz_strbuf_init(&sb);
 		rz_bin_dwarf_dump(dw, &sb);
-		rz_cons_strcat(rz_strbuf_drain_nofree(&sb));
+		rz_cons_strcat(rz_strbuf_get(&sb));
+		rz_strbuf_fini(&sb);
 	}
 	RzBinDwarfLine *line = rz_bin_dwarf_line(dw);
 	if (line && line->lines) {
 		rz_core_bin_print_source_line_info(core, line->lines, state);
 	}
-	if (dw != core->analysis->debug_info->dw) {
+	if (dw != debug_info->dw) {
 		rz_bin_dwarf_free(dw);
 	}
 	return true;
@@ -2350,7 +2365,7 @@ static ut64 get_section_addr(RzCore *core, RzBinObject *o, RzBinSection *section
 	return rva(o, section->paddr, section->vaddr, va);
 }
 
-static bool digests_pj_cb(void *user, const char *k, const char *v) {
+static bool map_as_pj_cb(void *user, const char *k, const char *v) {
 	rz_return_val_if_fail(user && k && v, false);
 	PJ *pj = user;
 	pj_ks(pj, k, v);
@@ -2398,7 +2413,7 @@ static void sections_print_json(RzCore *core, PJ *pj, RzBinObject *o, RzBinSecti
 			pj_end(pj);
 			return;
 		}
-		ht_ss_foreach(digests, digests_pj_cb, pj);
+		ht_ss_foreach(digests, map_as_pj_cb, pj);
 		ht_ss_free(digests);
 	}
 	pj_end(pj);
@@ -3210,6 +3225,13 @@ static const char *core_bin_info_color_selector(const char *value, const char *c
 	return column_n ? ctx->pal.diff_match : ctx->pal.label;
 }
 
+static bool map_as_table_row_cb(void *user, const char *k, const char *v) {
+	rz_return_val_if_fail(user && k && v, false);
+	RzTable *t = user;
+	rz_table_add_rowf(t, "ss", k, v);
+	return true;
+}
+
 RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core && state, false);
 
@@ -3278,9 +3300,6 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 			pj_ks(pj, "bintype", info->rclass);
 		}
 		pj_ki(pj, "bits", bits);
-		if (info->has_retguard != -1) {
-			pj_kb(pj, "retguard", info->has_retguard);
-		}
 		if (RZ_STR_ISNOTEMPTY(info->bclass)) {
 			pj_ks(pj, "class", info->bclass);
 		}
@@ -3352,11 +3371,6 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 		if (info->rpath) {
 			pj_ks(pj, "rpath", info->rpath);
 		}
-		if (info->rclass && !strcmp(info->rclass, "pe")) {
-			// this should be moved if added to mach0 (or others)
-			pj_kb(pj, "signed", info->signature);
-		}
-
 		if (info->rclass && !strcmp(info->rclass, "mdmp")) {
 			v = sdb_num_get(bf->sdb, "mdmp.streams");
 			if (v != -1) {
@@ -3367,20 +3381,55 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 			pj_ks(pj, "subsys", info->subsystem);
 		}
 		pj_kb(pj, "stripped", RZ_BIN_DBG_STRIPPED & info->dbg_info);
-		pj_kb(pj, "crypto", info->has_crypto);
 		pj_kb(pj, "havecode", havecode);
 		pj_kb(pj, "va", info->has_va);
-		pj_kb(pj, "sanitiz", info->has_sanitizers);
 		pj_kb(pj, "static", rz_bin_is_static(core->bin));
 		pj_kb(pj, "linenum", RZ_BIN_DBG_LINENUMS & info->dbg_info);
 		pj_kb(pj, "lsyms", RZ_BIN_DBG_SYMS & info->dbg_info);
 		pj_kb(pj, "canary", info->has_canary);
+		pj_kb(pj, "pie", info->has_pie);
+		pj_kb(pj, "relrocs", RZ_BIN_DBG_RELOCS & info->dbg_info);
+		pj_kb(pj, "nx", info->has_nx);
+		if (info->is_encrypted) {
+			pj_kb(pj, "encrypted", true);
+		}
+		if (info->is_signed) {
+			pj_kb(pj, "signed", true);
+		}
+		if (info->has_objc_arc) {
+			pj_kb(pj, "objc_arc", true);
+		}
+		if (info->has_ptr_auth) {
+			pj_kb(pj, "ptr_auth", true);
+		}
+		if (info->has_fortify_source) {
+			pj_kb(pj, "fortify_source", true);
+		}
+		if (info->has_retguard) {
+			pj_kb(pj, "retguard", true);
+		}
 		if (info->has_nobtcfi) {
 			pj_kb(pj, "nobtcfi", true);
 		}
-		pj_kb(pj, "PIE", info->has_pi);
-		pj_kb(pj, "RELROCS", RZ_BIN_DBG_RELOCS & info->dbg_info);
-		pj_kb(pj, "NX", info->has_nx);
+		if (info->sanitizers) {
+			pj_ka(pj, "sanitizers");
+			if (info->sanitizers & RZ_BIN_SANITIZER_UBSAN) {
+				pj_s(pj, "ubsan");
+			}
+			if (info->sanitizers & RZ_BIN_SANITIZER_ASAN) {
+				pj_s(pj, "asan");
+			}
+			if (info->sanitizers & RZ_BIN_SANITIZER_TSAN) {
+				pj_s(pj, "tsan");
+			}
+			if (info->sanitizers & RZ_BIN_SANITIZER_MSAN) {
+				pj_s(pj, "msan");
+			}
+			if (!(info->sanitizers & ~RZ_BIN_SANITIZER_GENERIC)) {
+				pj_s(pj, "generic");
+			}
+			pj_end(pj);
+		}
 		for (i = 0; info->sum[i].type; i++) {
 			RzBinHash *h = &info->sum[i];
 			pj_ko(pj, h->type);
@@ -3396,6 +3445,9 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 			free(buf);
 			pj_end(pj);
 		}
+		if (info->extra_dict) {
+			ht_ss_foreach(info->extra_dict, map_as_pj_cb, pj);
+		}
 		pj_end(pj);
 
 		break;
@@ -3409,9 +3461,6 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 		rz_table_add_rowf(t, "sX", "binsz", rz_bin_get_size(core->bin));
 		rz_table_add_rowf(t, "ss", "bintype", str2na(info->rclass));
 		rz_table_add_rowf(t, "sd", "bits", bits);
-		if (info->has_retguard != -1) {
-			table_add_row_bool(t, "retguard", info->has_retguard);
-		}
 		rz_table_add_rowf(t, "ss", "class", str2na(info->bclass));
 		if (info->actual_checksum) {
 			/* computed checksum */
@@ -3461,11 +3510,6 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 			free(tmp_buf);
 		}
 		rz_table_add_rowf(t, "ss", "rpath", str2na(info->rpath));
-		if (info->rclass && !strcmp(info->rclass, "pe")) {
-			// this should be moved if added to mach0 (or others)
-			table_add_row_bool(t, "signed", info->signature);
-		}
-
 		if (info->rclass && !strcmp(info->rclass, "mdmp")) {
 			v = sdb_num_get(bf->sdb, "mdmp.streams");
 			if (v != -1) {
@@ -3474,26 +3518,74 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 		}
 		rz_table_add_rowf(t, "ss", "subsys", info->subsystem);
 		table_add_row_bool(t, "stripped", RZ_BIN_DBG_STRIPPED & info->dbg_info);
-		table_add_row_bool(t, "crypto", info->has_crypto);
 		table_add_row_bool(t, "havecode", havecode);
 		table_add_row_bool(t, "va", info->has_va);
-		table_add_row_bool(t, "sanitiz", info->has_sanitizers);
 		table_add_row_bool(t, "static", rz_bin_is_static(core->bin));
 		table_add_row_bool(t, "linenum", RZ_BIN_DBG_LINENUMS & info->dbg_info);
 		table_add_row_bool(t, "lsyms", RZ_BIN_DBG_SYMS & info->dbg_info);
 		table_add_row_bool(t, "canary", info->has_canary);
+		table_add_row_bool(t, "pie", info->has_pie);
+		table_add_row_bool(t, "relrocs", RZ_BIN_DBG_RELOCS & info->dbg_info);
+		table_add_row_bool(t, "nx", info->has_nx);
+		if (info->is_encrypted) {
+			table_add_row_bool(t, "encrypted", true);
+		}
+		if (info->is_signed) {
+			table_add_row_bool(t, "signed", true);
+		}
 		if (info->has_nobtcfi) {
 			table_add_row_bool(t, "nobtcfi", true);
 		}
-		table_add_row_bool(t, "PIE", info->has_pi);
-		table_add_row_bool(t, "RELROCS", RZ_BIN_DBG_RELOCS & info->dbg_info);
-		table_add_row_bool(t, "NX", info->has_nx);
-
+		if (info->has_objc_arc) {
+			table_add_row_bool(t, "objc_arc", true);
+		}
+		if (info->has_ptr_auth) {
+			table_add_row_bool(t, "ptr_auth", true);
+		}
+		if (info->has_fortify_source) {
+			table_add_row_bool(t, "fortify_source", true);
+		}
+		if (info->has_retguard) {
+			table_add_row_bool(t, "retguard", true);
+		}
+		if (info->sanitizers) {
+			RzStrBuf sb;
+			rz_strbuf_init(&sb);
+			if (info->sanitizers & RZ_BIN_SANITIZER_UBSAN) {
+				rz_strbuf_append(&sb, "ubsan");
+			}
+			if (info->sanitizers & RZ_BIN_SANITIZER_ASAN) {
+				if (rz_strbuf_length(&sb) > 0) {
+					rz_strbuf_append(&sb, ",");
+				}
+				rz_strbuf_append(&sb, "asan");
+			}
+			if (info->sanitizers & RZ_BIN_SANITIZER_TSAN) {
+				if (rz_strbuf_length(&sb) > 0) {
+					rz_strbuf_append(&sb, ",");
+				}
+				rz_strbuf_append(&sb, "tsan");
+			}
+			if (info->sanitizers & RZ_BIN_SANITIZER_MSAN) {
+				if (rz_strbuf_length(&sb) > 0) {
+					rz_strbuf_append(&sb, ",");
+				}
+				rz_strbuf_append(&sb, "msan");
+			}
+			if (rz_strbuf_length(&sb) < 1) {
+				rz_strbuf_append(&sb, "generic");
+			}
+			rz_table_add_rowf(t, "ss", "sanitizers", rz_strbuf_get(&sb));
+			rz_strbuf_fini(&sb);
+		}
 		for (i = 0; info->sum[i].type; i++) {
 			RzBinHash *h = &info->sum[i];
 			char *buf = rz_hex_bin2strdup(h->buf, h->len);
 			rz_table_add_rowf(t, "ss", h->type, buf);
 			free(buf);
+		}
+		if (info->extra_dict) {
+			ht_ss_foreach(info->extra_dict, map_as_table_row_cb, t);
 		}
 		break;
 	default:
@@ -4338,37 +4430,6 @@ RZ_API bool rz_core_bin_fields_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 		}
 	}
 	rz_cmd_state_output_array_end(state);
-	return true;
-}
-
-RZ_API bool rz_core_bin_structured_data_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RzOutputMode mode) {
-	rz_return_val_if_fail(core && bf, false);
-
-	RzBinObject *obj = rz_bin_cur_object(core->bin);
-	const RzStructuredData *sf = obj ? rz_bin_object_get_structured_data(obj) : NULL;
-	if (!sf) {
-		if (mode == RZ_OUTPUT_MODE_JSON) {
-			rz_cons_print("{}\n");
-		}
-		return true;
-	}
-
-	char *output = NULL;
-	switch (mode) {
-	case RZ_OUTPUT_MODE_JSON:
-		output = rz_structured_data_to_json(sf);
-		break;
-	case RZ_OUTPUT_MODE_STANDARD:
-		output = rz_structured_data_to_yaml(sf);
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
-	}
-
-	rz_cons_printf("%s\n", output);
-	free(output);
-
 	return true;
 }
 

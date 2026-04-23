@@ -32,16 +32,29 @@ ut8 reverse_lt_8bits(ut8 x, ut8 w) {
 /**
  * \brief Resize or allocate bv->large_a to \p new_size bytes.
  */
-static void resize_large_a(RzBitVector *bv, size_t n_bytes) {
+static bool resize_large_a(RzBitVector *bv, size_t n_bytes) {
 	if (bv->stack_alloc) {
-		bv->bits.large_a = RZ_NEWS0(ut8, n_bytes);
+		ut8 *tmp = RZ_NEWS0(ut8, n_bytes);
+		// dont drop stack backed contents unless heap alloc succeeded.
+		if (!tmp) {
+			return false;
+		}
+		bv->bits.large_a = tmp;
 		bv->stack_alloc = false;
 	} else if (!bv->bits.large_a) {
 		bv->bits.large_a = RZ_NEWS0(ut8, n_bytes);
+		if (!bv->bits.large_a) {
+			return false;
+		}
 	} else {
-		bv->bits.large_a = realloc(bv->bits.large_a, n_bytes);
+		ut8 *tmp = realloc(bv->bits.large_a, n_bytes);
+		if (!tmp) {
+			return false;
+		}
+		bv->bits.large_a = tmp;
 	}
 	bv->_elem_len = n_bytes;
+	return true;
 }
 
 /**
@@ -1744,6 +1757,10 @@ RZ_API bool rz_bv_set_from_ut64(RZ_NONNULL RzBitVector *bv, ut64 value) {
 		bv->bits.small_u &= (UT64_MAX >> (64 - bv->len));
 		return true;
 	}
+	if (value == 0) {
+		memset(bv->bits.large_a, 0, bv->_elem_len);
+		return true;
+	}
 
 	for (ut32 i = 0; i < bv->len; ++i) {
 		rz_bv_set(bv, i, value & 1);
@@ -1762,6 +1779,10 @@ RZ_API bool rz_bv_set_from_st64(RZ_NONNULL RzBitVector *bv, st64 value) {
 	if (bv->len <= 64) {
 		bv->bits.small_u = *((ut64 *)&value);
 		bv->bits.small_u &= (UT64_MAX >> (64 - bv->len));
+		return true;
+	}
+	if (value == 0) {
+		memset(bv->bits.large_a, 0, bv->_elem_len);
 		return true;
 	}
 
@@ -2250,13 +2271,22 @@ RZ_API bool rz_bv_cast_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 to_size
 		return true;
 	}
 	if (bv->len <= 64 && to_size <= 64) {
-		rz_bv_set_range(bv, to_size, bv->len - 1, fill_bit);
+		ut32 old_size = bv->len;
 		bv->len = to_size;
+		if (to_size > old_size) {
+			rz_bv_set_range(bv, old_size, to_size - 1, fill_bit);
+		} else {
+			bv->bits.small_u &= (1ULL << to_size) - 1;
+		}
 		return true;
 	}
 	if (NELEM(to_size, BV_ELEM_SIZE) > bv->_elem_len) {
 		// The bit vector needs a larger buffer.
-		resize_large_a(bv, NELEM(to_size, BV_ELEM_SIZE));
+		// warn and abort the cast if the backing storage cant be extended.
+		if (!resize_large_a(bv, NELEM(to_size, BV_ELEM_SIZE))) {
+			rz_warn_if_reached();
+			return false;
+		}
 	}
 	size_t old_size = bv->len;
 	if (bv->len <= 64) {
@@ -2301,12 +2331,32 @@ RZ_API RzBitVector *rz_bv_cast(RZ_NONNULL RzBitVector *bv, ut32 to_size, bool fi
 
 /**
  * signed cast of bv, (signed_cast x n) = (cast x n (msb x))
+ * \param bv The vector which is cast in place. Its length changes.
+ * \param to_size cast bitvector length
+ * \return True if casting succeeded, false in case of failure.
+ */
+RZ_API bool rz_bv_signed_cast_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 to_size) {
+	return rz_bv_cast_inplace(bv, to_size, rz_bv_msb(bv));
+}
+
+/**
+ * signed cast of bv, (signed_cast x n) = (cast x n (msb x))
  * \param bv
  * \param to_size cast bitvector length
  * \return new bv with length (to_size)
  */
 RZ_API RZ_OWN RzBitVector *rz_bv_signed_cast(RZ_NONNULL RzBitVector *bv, ut32 to_size) {
 	return rz_bv_cast(bv, to_size, rz_bv_msb(bv));
+}
+
+/**
+ * unsigned cast of bv, (signed_cast x n) = (cast x n 0)
+ * \param bv The vector which is cast in place. Its length changes.
+ * \param to_size cast bitvector length
+ * \return True if casting succeeded, false in case of failure.
+ */
+RZ_API bool rz_bv_unsigned_cast_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 to_size) {
+	return rz_bv_cast_inplace(bv, to_size, false);
 }
 
 /**

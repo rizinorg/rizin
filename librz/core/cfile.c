@@ -95,7 +95,8 @@ static void loadGP(RzCore *core) {
 			rz_core_seek_opt(core, addr, true, false);
 			rz_core_debug_step_one(core, 10);
 			rz_config_set(core->config, "analysis.roregs", "zero,gp");
-			gp = rz_reg_getv(core->analysis->reg, "gp");
+			RzReg *rreg = rz_analysis_get_reg(core->analysis);
+			gp = rz_reg_getv(rreg, "gp");
 		}
 		// RZ_LOG_DEBUG("[mips] gp: 0x%08"PFMT64x"\n", gp);
 		rz_config_set_i(core->config, "analysis.gp", gp);
@@ -181,7 +182,8 @@ static void __rebase_everything(RzCore *core, RzPVector /*<RzBinSection *>*/ *ol
 		return;
 	}
 	// FUNCTIONS
-	rz_list_foreach (core->analysis->fcns, it, fcn) {
+	RzList *fcns = rz_analysis_function_list(core->analysis);
+	rz_list_foreach (fcns, it, fcn) {
 		void **iter;
 		rz_pvector_foreach (old_sections, iter) {
 			old_section = *iter;
@@ -224,10 +226,10 @@ static void __rebase_everything(RzCore *core, RzPVector /*<RzBinSection *>*/ *ol
 	rz_meta_rebase(core->analysis, diff);
 
 	// XREFS
-	HtUP *xrefs_from = core->analysis->ht_xrefs_from;
-	HtUP *xrefs_to = core->analysis->ht_xrefs_to;
-	core->analysis->ht_xrefs_from = NULL;
-	core->analysis->ht_xrefs_to = NULL;
+	HtUP *xrefs_from = rz_analysis_get_xrefs_from(core->analysis);
+	HtUP *xrefs_to = rz_analysis_get_xrefs_to(core->analysis);
+	rz_analysis_set_xrefs_from(core->analysis, NULL);
+	rz_analysis_set_xrefs_to(core->analysis, NULL);
 	rz_analysis_xrefs_init(core->analysis);
 	ht_up_foreach(xrefs_from, __rebase_xrefs, &reb);
 	ht_up_free(xrefs_from);
@@ -527,7 +529,8 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 		loadGP(core);
 	}
 	// update analysis io bind
-	rz_io_bind(core->io, &(core->analysis->iob));
+	RzIOBind *iob = rz_analysis_get_io_bind(core->analysis);
+	rz_io_bind(core->io, iob);
 	if (core->file && core->file->fd >= 0) {
 		rz_core_file_close_all_but(core);
 	}
@@ -1023,7 +1026,6 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 	if (cf && binfile && desc) {
 		binfile->fd = desc->fd;
 	}
-	// rz_core_bin_apply_all_info (r, binfile);
 	plugin = rz_bin_file_cur_plugin(binfile);
 	if (plugin) {
 		if (plugin->strfilter) {
@@ -1071,7 +1073,7 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 			}
 		}
 	} else {
-		if (desc) {
+		if (desc && (!binfile || !binfile->curxtr)) {
 			rz_io_map_new(r->io, desc->fd, desc->perm, 0, laddr, rz_io_desc_size(desc));
 		}
 		if (binfile) {
@@ -1155,7 +1157,8 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 			rz_bin_info_free(inf);
 		}
 		if (binfile->o->regstate) {
-			if (rz_reg_arena_set_bytes(r->analysis->reg, binfile->o->regstate)) {
+			RzReg *rreg = rz_analysis_get_reg(r->analysis);
+			if (rz_reg_arena_set_bytes(rreg, binfile->o->regstate)) {
 				RZ_LOG_WARN("Setting up coredump: Problem while setting the registers\n");
 			} else {
 				RZ_LOG_INFO("Setting up coredump: Registers have been set\n");

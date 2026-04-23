@@ -174,12 +174,12 @@ RZ_API int rz_debug_trace_pc(RzDebug *dbg, ut64 pc) {
 	ut8 buf[32];
 	RzAnalysisOp op = { 0 };
 	if (!dbg->iob.is_valid_offset(dbg->iob.io, pc, 0)) {
-		eprintf("trace_pc: cannot read memory at 0x%" PFMT64x "\n", pc);
+		RZ_LOG_ERROR("trace_pc: cannot read memory at 0x%" PFMT64x "\n", pc);
 		return false;
 	}
 	(void)dbg->iob.read_at(dbg->iob.io, pc, buf, sizeof(buf));
 	if (rz_analysis_op(dbg->analysis, &op, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ESIL) < 1) {
-		eprintf("trace_pc: cannot get opcode size at 0x%" PFMT64x "\n", pc);
+		RZ_LOG_ERROR("trace_pc: cannot get opcode size at 0x%" PFMT64x "\n", pc);
 		return false;
 	}
 	rz_debug_trace_op(dbg, &op);
@@ -190,11 +190,13 @@ RZ_API int rz_debug_trace_pc(RzDebug *dbg, ut64 pc) {
 RZ_API void rz_debug_trace_op(RzDebug *dbg, RzAnalysisOp *op) {
 	static ut64 oldpc = UT64_MAX; // Must trace the previously traced instruction
 	if (dbg->trace->enabled) {
-		if (dbg->analysis->esil) {
-			rz_analysis_esil_trace_op(dbg->analysis->esil, op);
+		RzAnalysisEsil *esil = rz_analysis_get_esil(dbg->analysis);
+		if (esil) {
+			const char *eexpr = rz_strbuf_get(&op->esil);
+			rz_analysis_esil_trace_op(esil, op->addr, eexpr);
 		} else {
 			if (dbg->verbose) {
-				eprintf("Run aeim to get dbg->analysis->esil initialized\n");
+				RZ_LOG_WARN("debug: Run aeim to get esil initialized\n");
 			}
 		}
 	}

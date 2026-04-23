@@ -740,7 +740,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 		goto beach;
 	}
 	if (filters) {
-		char *p = strchr(filters, ':');
+		char *p = (char *)strchr(filters, ':');
 		if (p) {
 			*p = 0;
 			if (*filters) {
@@ -879,7 +879,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 					free(usrstr);
 					goto beach;
 				}
-				// eprintf ("SKIP (%s) (%lld)\n", usrstr, skip);
+				// eprintf ("SKIP (%s) (%" PFMT64d ")\n", usrstr, skip);
 				memmove(usrstr, usrstr + skip, len - skip);
 				len -= skip;
 				usrstr[len] = 0;

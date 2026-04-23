@@ -37,17 +37,15 @@ pcalign  1
 rpath    NONE
 subsys   linux
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  true
 lsyms    true
 canary   false
-PIE      false
-RELROCS  true
-NX       true
+pie      false
+relrocs  true
+nx       true
 EOF
 RUN
 

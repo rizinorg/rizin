@@ -12,8 +12,8 @@
 #include <rz_types.h>
 #include <rz_util.h>
 #include <rz_list.h>
-#include <rz_asm.h>
-#include <rz_analysis.h>
+#include "asm_private.h"
+#include "analysis_private.h"
 #include <rz_util.h>
 #include <rz_vector.h>
 #include "asm_private.h"
@@ -854,7 +854,7 @@ static void print_state_pkt(const HexState *state, st32 index, HexBufferAction a
 		} else if (i == newest) {
 			time_ind = "new";
 		}
-		rz_strbuf_appendf(pkt_line, "│  %d  │ 0x%010x │ %s │ %016llu │ ", i, pkt->pkt_addr, time_ind, pkt->last_access);
+		rz_strbuf_appendf(pkt_line, "│  %d  │ 0x%010x │ %s │ %016" PFMT64u " │ ", i, pkt->pkt_addr, time_ind, pkt->last_access);
 		HexInsnContainer *hic = NULL;
 		for (int j = 0; j < 4; ++j) {
 			hic = rz_list_get_n(pkt->bin, j);

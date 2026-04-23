@@ -1,8 +1,7 @@
 // SPDX-FileCopyrightText: 2021 Basstorm <basstorm@nyist.edu.cn>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
-#include <rz_list.h>
+#include "analysis_private.h"
 
 /**
  * \brief Create a new instance of global variable
@@ -404,22 +403,22 @@ RZ_API RZ_OWN char *rz_analysis_var_global_get_constraints_readable(RzAnalysisVa
 			if (high) {
 				rz_strbuf_append(&sb, " && ");
 			}
-			rz_strbuf_appendf(&sb, "<= 0x%" PFMT64x "", constr->val);
+			rz_strbuf_appendf(&sb, "<= 0x%" PFMT64x, constr->val);
 			low = true;
 			break;
 		case RZ_TYPE_COND_LT:
 			if (high) {
 				rz_strbuf_append(&sb, " && ");
 			}
-			rz_strbuf_appendf(&sb, "< 0x%" PFMT64x "", constr->val);
+			rz_strbuf_appendf(&sb, "< 0x%" PFMT64x, constr->val);
 			low = true;
 			break;
 		case RZ_TYPE_COND_GE:
-			rz_strbuf_appendf(&sb, ">= 0x%" PFMT64x "", constr->val);
+			rz_strbuf_appendf(&sb, ">= 0x%" PFMT64x, constr->val);
 			high = true;
 			break;
 		case RZ_TYPE_COND_GT:
-			rz_strbuf_appendf(&sb, "> 0x%" PFMT64x "", constr->val);
+			rz_strbuf_appendf(&sb, "> 0x%" PFMT64x, constr->val);
 			high = true;
 			break;
 		default:

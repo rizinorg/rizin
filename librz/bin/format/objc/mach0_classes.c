@@ -293,7 +293,7 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 				goto error;
 			}
 			char *name;
-			if (bin->has_crypto) {
+			if (bin->is_encrypted) {
 				name = rz_str_dup("some_encrypted_data");
 				left = strlen(name) + 1;
 			} else {
@@ -315,7 +315,6 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 		r = va2pa(i.type, NULL, &left, bf);
 		if (r) {
 			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)bf->o->bin_obj;
-			int is_crypted = bin->has_crypto;
 			if (r + left < r) {
 				goto error;
 			}
@@ -323,7 +322,7 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 				goto error;
 			}
 			char *type = NULL;
-			if (is_crypted == 1) {
+			if (bin->is_encrypted) {
 				type = rz_str_dup("some_encrypted_data");
 				// 	left = strlen (name) + 1;
 			} else {
@@ -448,7 +447,7 @@ static void get_objc_property_list(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzB
 			if (r + left < r) {
 				goto error;
 			}
-			if (bin->has_crypto) {
+			if (bin->is_encrypted) {
 				name = rz_str_dup("some_encrypted_data");
 				left = strlen(name) + 1;
 			} else {
@@ -606,7 +605,7 @@ static void get_method_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, char *cl
 			if (r > bf->size || r + MAX_CLASS_NAME_LEN > bf->size) {
 				goto error;
 			}
-			if (bin->has_crypto) {
+			if (bin->is_encrypted) {
 				name = rz_str_dup("some_encrypted_data");
 				left = strlen(name) + 1;
 			} else {
@@ -631,7 +630,7 @@ static void get_method_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, char *cl
 			if (r + left < r || r > bf->size || r + left > bf->size) {
 				goto error;
 			}
-			if (bin->has_crypto) {
+			if (bin->is_encrypted) {
 				rtype = rz_str_dup("some_encrypted_data");
 				left = strlen(rtype) + 1;
 			} else {
@@ -795,7 +794,7 @@ static void get_protocol_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinC
 			if (r > bf->size || r + left > bf->size) {
 				return;
 			}
-			if (bin->has_crypto) {
+			if (bin->is_encrypted) {
 				name = rz_str_dup("some_encrypted_data");
 				left = strlen(name) + 1;
 			} else {
@@ -945,7 +944,7 @@ static char *get_class_name(mach0_ut p, RzBinFile *bf, RzBuffer *buf) {
 		if (r > bf->size || r + MAX_CLASS_NAME_LEN > bf->size) {
 			return NULL;
 		}
-		if (bin->has_crypto) {
+		if (bin->is_encrypted) {
 			return rz_str_dup("some_encrypted_data");
 		} else {
 			int name_len = RZ_MIN(MAX_CLASS_NAME_LEN, left);
@@ -1039,7 +1038,7 @@ static void get_class_ro_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, ut32 *is_me
 		if (r > bf->size || r + left > bf->size) {
 			return;
 		}
-		if (bin->has_crypto) {
+		if (bin->is_encrypted) {
 			klass->name = rz_str_dup("some_encrypted_data");
 			left = strlen(klass->name) + 1;
 		} else {

@@ -91,7 +91,7 @@ struct rz_diff_t {
 	const void *b;
 	ut32 a_size;
 	ut32 b_size;
-	HtPP *b_hits;
+	HtPP /*<void *, RzList *>*/ *b_hits;
 	MethodsInternal methods;
 };
 

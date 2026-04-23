@@ -558,6 +558,10 @@ typedef struct rz_cons_t {
 	struct termios term_raw, term_buf;
 #elif __WINDOWS__
 	unsigned long term_raw, term_buf, term_pty;
+	void *saved_input_handle;
+	void *saved_output_handle;
+	bool saved_input_console;
+	bool saved_output_console;
 	unsigned long old_input_mode, old_output_mode;
 	ut32 old_cp;
 	ut32 old_ocp;
@@ -1146,7 +1150,7 @@ typedef struct rz_line_ns_completion_t RzLineNSCompletion;
  */
 typedef struct rz_line_ns_completion_result_t {
 	RzPVector /*<char *>*/ options; ///< Vector of options that can be used for autocompletion
-	HtPP *options_ht; ///< Hash table to keep track of duplicated autocompletion suggestions
+	HtPP /*<char *, char *>*/ *options_ht; ///< Hash table to keep track of duplicated autocompletion suggestions
 	size_t start; ///< First byte that was considered for autocompletion. Everything before this will be left intact.
 	size_t end; ///< Last byte that was considered for autocompletion. Everything after this will be left intact.
 	const char *end_string; ///< String to place after the only option available is autocompleted. By default a space is used.
