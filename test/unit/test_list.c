@@ -345,7 +345,7 @@ bool test_rz_list_sort4(void) {
 		mu_assert_streq((char *)next->val, exp_tests_odd[i], buf);
 		next = next->next;
 	}
-	
+
 #if 0 // Debug Print
 	char *data;
 
@@ -360,7 +360,7 @@ bool test_rz_list_sort4(void) {
 	// Add test6 to make the length even
 	rz_list_append(list, (void *)test6_later);
 
-	#if 0 // Debug Printing
+#if 0 // Debug Printing
 	printf("after adding FFFF \n");
 	rz_list_foreach (list, next, data) {
 		printf("l -> %s\n", data);
@@ -370,7 +370,7 @@ bool test_rz_list_sort4(void) {
 	// Sort
 	rz_list_merge_sort(list, (RzListComparator)strcmp, NULL);
 
-	#if 0 // Debug Printing
+#if 0 // Debug Printing
 	printf("after sorting 2 \n");
 	rz_list_foreach (list, next, data) {
 		printf("l -> %s\n", data);
