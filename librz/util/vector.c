@@ -100,7 +100,7 @@ static void rz_vector_assign(RzVector *vec, void *p, const void *elem) {
  */
 static void rz_vector_zeroize(RzVector *vec, size_t i, size_t n) {
 	rz_return_if_fail(vec);
-	memset(vec->a + (vec->elem_size * i), 0, vec->elem_size * n);
+	memset((ut8 *)vec->a + (vec->elem_size * i), 0, vec->elem_size * n);
 }
 
 /**
