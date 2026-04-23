@@ -17,7 +17,7 @@
  * https://www.qualcomm.com/content/dam/qcomm-martech/dm-assets/documents/secure-boot-and-image-authentication-version_final.pdf
  */
 typedef struct sbl_header {
-	ut32 /*<RzMBNImageId>*/ image_id; ///< Identifies the type of image this header represents (OEM SBL, AMSS, Apps boot loader, etc.).
+	ut32 image_id; ///< Identifies the type of image this header represents (RzMBNImageId, e.g. OEM SBL, AMSS, Apps boot loader, etc.).
 	ut32 version; ///< Header version
 	ut32 paddr; ///< Offset from the _end of the header_ where the image starts.
 	ut32 vaddr; ///< Memory address it is loaded at.
