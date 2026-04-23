@@ -2,10 +2,12 @@ NAME=Menuet: Open/iI/iH
 FILE=bins/menuet/dosbox
 CMDS=<<EOF
 iI~?MenuetOS
+echo ---
 iH
 EOF
 EXPECT=<<EOF
 1
+---
 menuet:
   magic: "4d 45 4e 55 45 54 30 31                         |MENUET01        |"
   version: 1
@@ -17,12 +19,5 @@ menuet:
   parameters: 0x11f000
   path: 0x0
 
-EOF
-EXPECT=<<EOF
-1
----
- 1 fd: 3 +0x00000024 0x00000024 * 0x0011b023 r-x fmap.text
- 2 fd: 4 +0x00000000 0xffb8000c - 0xffb80817 r-- mmap.idata
- 3 fd: 3 +0x0dfde800 0x0dfde800 - 0xffb8000b r-- fmap.idata
 EOF
 RUN

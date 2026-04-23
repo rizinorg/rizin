@@ -40,6 +40,7 @@ canary   false
 pie      false
 relrocs  false
 nx       false
+---
 elf:
   e_ident:
     bytes: "7f 43 47 43 01 01 01 43 01 4d 65 72 69 6e 6f 00"

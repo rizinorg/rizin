@@ -46,6 +46,7 @@ canary   false
 pie      false
 relrocs  false
 nx       false
+---
 snes_rom:
   game_title: "SA-1 Support Test    "
   speed: "slow"
@@ -668,6 +669,7 @@ canary   false
 pie      false
 relrocs  false
 nx       false
+---
 snes_rom:
   game_title: "CX4 TEST PROGRAM"
   speed: "slow"

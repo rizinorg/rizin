@@ -5,8 +5,6 @@ i~format
 echo ---
 iI
 echo ---
-iS
-echo ---
 oml
 echo ---
 ie
@@ -53,6 +51,21 @@ canary   false
 pie      false
 relrocs  false
 nx       false
+---
+ 1 fd: 3 +0x000043ac 0x0398f9b8 - 0x0398ffff r-- fmap.memory.0x398f9b8
+ 2 fd: 3 +0x000049f4 0x77639dea - 0x77639ee9 r-- fmap.memory.0x77639dea
+ 3 fd: 3 +0x00004af4 0x032cf638 - 0x032cffff r-- fmap.memory.0x32cf638
+ 4 fd: 3 +0x000054bc 0x0367f868 - 0x0367ffff r-- fmap.memory.0x367f868
+ 5 fd: 3 +0x00005c54 0x000bd0d8 - 0x000bffff r-- fmap.memory.0xbd0d8
+ 6 fd: 3 +0x00008b7c 0x03a7ff08 - 0x03a7ffff r-- fmap.memory.0x3a7ff08
+ 7 fd: 3 +0x00008c74 0x7776ad90 - 0x7776ae8f r-- fmap.memory.0x7776ad90
+ 8 fd: 3 +0x00008d74 0x7776bafa - 0x7776bbf9 r-- fmap.memory.0x7776bafa
+ 9 fd: 3 +0x00008e74 0x7776c06a - 0x7776c169 r-- fmap.memory.0x7776c06a
+---
+vaddr paddr hvaddr haddr type 
+------------------------------
+---
+ok
 EOF
 RUN
 
@@ -88,21 +101,6 @@ EXPECT=<<EOF
 0x00000000   0xf000 0x7fefd2b0000   0xf000   0x0 ---- C:_Windows_System32_CRYPTBASE.dll          
 0x00000000  0x99000 0x7fefddb0000  0x99000   0x0 ---- C:_Windows_System32_clbcatq.dll            
 0x00000000  0x54000 0x7fef62b0000  0x54000   0x0 ---- C:_Windows_System32_oleacc.dll             
----
- 1 fd: 3 +0x000043ac 0x0398f9b8 - 0x0398ffff r-- fmap.memory.0x398f9b8
- 2 fd: 3 +0x000049f4 0x77639dea - 0x77639ee9 r-- fmap.memory.0x77639dea
- 3 fd: 3 +0x00004af4 0x032cf638 - 0x032cffff r-- fmap.memory.0x32cf638
- 4 fd: 3 +0x000054bc 0x0367f868 - 0x0367ffff r-- fmap.memory.0x367f868
- 5 fd: 3 +0x00005c54 0x000bd0d8 - 0x000bffff r-- fmap.memory.0xbd0d8
- 6 fd: 3 +0x00008b7c 0x03a7ff08 - 0x03a7ffff r-- fmap.memory.0x3a7ff08
- 7 fd: 3 +0x00008c74 0x7776ad90 - 0x7776ae8f r-- fmap.memory.0x7776ad90
- 8 fd: 3 +0x00008d74 0x7776bafa - 0x7776bbf9 r-- fmap.memory.0x7776bafa
- 9 fd: 3 +0x00008e74 0x7776c06a - 0x7776c169 r-- fmap.memory.0x7776c06a
----
-vaddr paddr hvaddr haddr type 
-------------------------------
----
-ok
 EOF
 RUN
 

@@ -48,13 +48,7 @@ canary   false
 pie      false
 relrocs  false
 nx       false
-EOF
-RUN
-
-NAME=: DMP header & bmp header
-FILE=bins/dmp/bmp.dmp
-CMDS=iH
-EXPECT=<<EOF
+---
 dmp64:
   MajorVersion: 0xf
   MinorVersion: 0x47ba
@@ -341,7 +335,6 @@ FILE=dmp://bins/dmp/bmp.dmp
 CMDS=<<EOF
 env RZ_CURL=1
 e pdb.server=https://raw.githubusercontent.com/rizinorg/test-pdb-repository/main/
-iH
 dl dmp
 dpa
 e cfg.debug=1
@@ -353,31 +346,6 @@ dbt
 oml
 EOF
 EXPECT=<<EOF
-dmp64:
-  MajorVersion: 0xf
-  MinorVersion: 0x47ba
-  DirectoryTableBase: 0x6d4002
-  PfnDataBase: 0xfffff80510c22468
-  PsLoadedModuleList: 0xfffff80510af62f0
-  PsActiveProcessHead: 0xfffff80510ae6980
-  MachineImageType: 0x8664
-  NumberProcessors: 0x1
-  BugCheckCode:
-    Value: 0x0
-    Meaning: "Not a crash"
-  BugCheckParameter1: 0x0
-  BugCheckParameter2: 0x0
-  BugCheckParameter3: 0x0
-  BugCheckParameter4: 0x0
-  KdDebuggerDataBlock: 0xfffff80510ad45e0
-  SecondaryDataState: 0x45474150
-  ProductType: 0x45474150
-  SuiteMask: 0x45474150
-  Bitmap:
-    HeaderSize: 0xa038
-    BitmapSize: 0x40000
-    Pages: 0x544b
-
 mxcsr = 0x00001f80
 rflags = 0x0000000000040202
 rax = 0x0000000000000003
