@@ -1082,8 +1082,8 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		}
-		if (ISIMM64(1)) {
-			op->val = IMM64(1);
+		if (ISIMM64(2)) {
+			op->val = IMM64(2);
 		}
 		break;
 	case ARM64_INS_SUBS:
@@ -1092,8 +1092,8 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		}
-		if (ISIMM64(1)) {
-			op->val = IMM64(1);
+		if (ISIMM64(2)) {
+			op->val = IMM64(2);
 		}
 		break;
 	case ARM64_INS_ANDS:
@@ -1102,8 +1102,8 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		}
-		if (ISIMM64(1)) {
-			op->val = IMM64(1);
+		if (ISIMM64(2)) {
+			op->val = IMM64(2);
 		}
 		break;
 	case ARM64_INS_ADDG:

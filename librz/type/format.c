@@ -80,10 +80,10 @@ static void rz_type_format_u128(RzStrBuf *outbuf, int endian, int mode,
 		rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = (uint128_t)", seeki);
 	}
 	if (endian) {
-		rz_strbuf_appendf(outbuf, "0x%016" PFMT64x "", low);
+		rz_strbuf_appendf(outbuf, "0x%016" PFMT64x, low);
 		rz_strbuf_appendf(outbuf, "%016" PFMT64x, hig);
 	} else {
-		rz_strbuf_appendf(outbuf, "0x%016" PFMT64x "", hig);
+		rz_strbuf_appendf(outbuf, "0x%016" PFMT64x, hig);
 		rz_strbuf_appendf(outbuf, "%016" PFMT64x, low);
 	}
 	if (MUSTSEEJSON) {

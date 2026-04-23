@@ -892,7 +892,7 @@ static bool read_node_variant_mask(RzFlirtNode *node, ParseStatus *b) {
 		}
 	}
 
-	sig_dbg("dbg: variant_mask %08llx\n", node->variant_mask);
+	sig_dbg("dbg: variant_mask %08" PFMT64x "\n", node->variant_mask);
 	return true;
 }
 

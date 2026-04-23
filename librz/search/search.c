@@ -648,7 +648,7 @@ static bool perform_sanity_checks(
 	}
 
 	if (opt->chunk_size < RZ_SEARCH_MIN_CHUNK_SIZE) {
-		RZ_LOG_ERROR("search: cannot search when buffer size is less than %#" PFMT64x " bytes.\n", RZ_SEARCH_MIN_CHUNK_SIZE);
+		RZ_LOG_ERROR("search: cannot search when buffer size is less than %#" PFMT64x " bytes.\n", (ut64)RZ_SEARCH_MIN_CHUNK_SIZE);
 		return false;
 	}
 

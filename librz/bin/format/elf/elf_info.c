@@ -807,7 +807,7 @@ static riscv_attr_type get_riscv_attribute_from_section(RzBuffer *sec, ut64 attr
 		curr += num_bytes_read;
 
 		if (num_bytes_read > 8) {
-			RZ_LOG_WARN("Can't interpret tag value between offsets %llu-%llu: "
+			RZ_LOG_WARN("Can't interpret tag value between offsets %" PFMT64u "-%" PFMT64u ": "
 				    "tag is too large at %d bytes, parser can only represent 64-bit tags (skipped)\n",
 				curr - num_bytes_read, curr, num_bytes_read);
 			continue;
@@ -829,7 +829,7 @@ static riscv_attr_type get_riscv_attribute_from_section(RzBuffer *sec, ut64 attr
 			while (curr < rz_buf_size(sec) && result_curr < result_maxlen) {
 				bool succeeded = rz_buf_read8_offset(sec, &curr, &result[result_curr++]);
 				if (!succeeded) {
-					RZ_LOG_ERROR("Can't read the null-terminated string for tag %lld, starting at offset %d\n", tag, string_starts_at);
+					RZ_LOG_ERROR("Can't read the null-terminated string for tag %" PFMT64d ", starting at offset %d\n", tag, string_starts_at);
 					break;
 				}
 				// done
@@ -852,7 +852,7 @@ static riscv_attr_type get_riscv_attribute_from_section(RzBuffer *sec, ut64 attr
 			while (curr < rz_buf_size(sec) && result_curr < result_maxlen) {
 				bool succeeded = rz_buf_read8_offset(sec, &curr, &result[result_curr++]);
 				if (!succeeded) {
-					RZ_LOG_ERROR("Can't read the ULEB128 value for tag %lld, starting at offset %d\n", tag, uleb_starts_at);
+					RZ_LOG_ERROR("Can't read the ULEB128 value for tag %" PFMT64d ", starting at offset %d\n", tag, uleb_starts_at);
 					break;
 				}
 				// last byte in the variable encoding, most-significant bit not set

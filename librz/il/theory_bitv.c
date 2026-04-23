@@ -353,6 +353,7 @@ void *rz_il_handler_cast(RzILVM *vm, RzILOpBitVector *op, RzILTypePure *type) {
 	}
 	RzBitVector *bv = rz_il_evaluate_bitv(vm, op_cast->val);
 	if (!bv) {
+		rz_il_bool_free(fill);
 		return NULL;
 	}
 

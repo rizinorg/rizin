@@ -583,7 +583,7 @@ commands:
               - text: "Search ROP gadgets with 0x100 stack changes"
                 comment: "/Rs =0x100"
       - name: "/Rl"
-        cname: cmd_rop_search_size
+        cname: cmd_gadget_search_size
         summary: Search rop gadgets given gadget size
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:

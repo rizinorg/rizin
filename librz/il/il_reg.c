@@ -139,7 +139,7 @@ RZ_API RzILRegBinding *rz_il_reg_binding_derive(RZ_NONNULL RzReg *reg) {
 	}
 	// from now on, the array should be treated immutable, so we deliberately don't use RzVector anymore.
 	rb->regs_count = rz_vector_len(&regs);
-	rb->regs = rz_vector_flush(&regs);
+	rb->regs = rz_vector_take_array(&regs);
 	rz_vector_fini(&regs);
 	return rb;
 err:

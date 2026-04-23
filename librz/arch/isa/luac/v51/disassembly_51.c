@@ -5,8 +5,8 @@
 
 #include "arch_51.h"
 
-bool get_asm_string51(const LuaOpCode51 opcode, const ut32 instruction, RzStrBuf *buf_asm) {
-	LuaOpNameList opnames = get_lua51_opnames();
+bool get_asm_string51(LuaOpCode51 opcode1, const ut32 instruction, RzStrBuf *buf_asm, const Lua51Versions version) {
+	LuaOpNameList opnames = get_lua51_opnames(version);
 	/* Pre fetch some args */
 	const int a = GETARG_A1(instruction);
 	const int b = GETARG_B1(instruction);
@@ -15,6 +15,8 @@ bool get_asm_string51(const LuaOpCode51 opcode, const ut32 instruction, RzStrBuf
 	const int sbx = GETARG_sBx1(instruction);
 
 	char tmp_asm_string[DISASM_BUF_SIZE] = { 0 };
+
+	const LuaOpCode51 opcode = get_lua51_shuffled_opcode_by_index(opcode1, version);
 
 	switch (opcode) {
 	case OP_UNM: /*       A B     R(A) := -R(B)                                   */
@@ -69,6 +71,10 @@ bool get_asm_string51(const LuaOpCode51 opcode, const ut32 instruction, RzStrBuf
 	case OP_LE: /*        A B C   if ((RK(B) <= RK(C)) ~= A) then pc++            */
 		rz_strf(tmp_asm_string, "%s %" PFMT32d " %s %s", opnames[opcode], a, ISRKBi, ISRKCi);
 		break;
+	case OP_TAILCALL: /*  A B C   return R(A)(R(A+1), ... ,R(A+B-1))              */
+		rz_strf(tmp_asm_string, "%s r%" PFMT32d " %" PFMT32d " %" PFMT32d,
+			opnames[opcode], a, b, c);
+		break;
 	case OP_JMP: /*       A sBx   pc+=sBx; if (A) close all upvalues >= R(A - 1)  */
 		rz_strf(tmp_asm_string, "%s %" PFMT32d " %" PFMT32d, opnames[opcode], a, sbx);
 		break;
@@ -89,4 +95,8 @@ bool get_asm_string51(const LuaOpCode51 opcode, const ut32 instruction, RzStrBuf
 	return true;
 }
 
-DISASM(51)
+int lua51_disasm(RzAsmOp *op, ut32 instruction, const int version) {
+	const LuaOpCode51 opcode = GET_OPCODE51(instruction);
+	get_asm_string51(opcode, instruction, &op->buf_asm, version);
+	return op->size;
+}

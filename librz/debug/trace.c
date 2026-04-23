@@ -192,7 +192,8 @@ RZ_API void rz_debug_trace_op(RzDebug *dbg, RzAnalysisOp *op) {
 	if (dbg->trace->enabled) {
 		RzAnalysisEsil *esil = rz_analysis_get_esil(dbg->analysis);
 		if (esil) {
-			rz_analysis_esil_trace_op(esil, op);
+			const char *eexpr = rz_strbuf_get(&op->esil);
+			rz_analysis_esil_trace_op(esil, op->addr, eexpr);
 		} else {
 			if (dbg->verbose) {
 				RZ_LOG_WARN("debug: Run aeim to get esil initialized\n");
