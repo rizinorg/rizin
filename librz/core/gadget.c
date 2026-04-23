@@ -1975,12 +1975,11 @@ cleanup:
  * Displays gadgets from the gadgetSdb.
  * If unavailable, performs a gadget search with the input.
  */
-RZ_API RzCmdStatus rz_core_gadget_info(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_OWN RzGadgetSearchContext *context) {
+RZ_API RzCmdStatus rz_core_gadget_info(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzGadgetSearchContext *context) {
 	rz_return_val_if_fail(core && core->analysis && context, RZ_CMD_STATUS_ERROR);
 
 	// TODO: resolve this logic later.
 	RzCmdStatus status = rz_core_gadget_search(core, context);
-	rz_core_gadget_search_context_free(context);
 	return status;
 }
 
