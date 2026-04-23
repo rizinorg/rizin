@@ -1224,10 +1224,9 @@ static bool print_gadget_hitlist(const RzCore *core, RzPVector /*<RzCoreAsmHit *
 }
 
 static bool handle_gadget_list(RzStrBuf *sb, const RzGadgetSearchContext *context,
-	const RzGadgetEndListPair *end_gadget, RZ_OWN RzPVector /*<RzCoreAsmHit *>*/ *hitlist) {
+	const RzGadgetEndListPair *end_gadget, RZ_BORROW RzPVector /*<RzCoreAsmHit *>*/ *hitlist) {
 	rz_return_val_if_fail(sb && context && context->unique_hitlists, false);
 	if (end_gadget->delay_size && rz_pvector_len(hitlist) < 1 + end_gadget->delay_size) {
-		rz_pvector_free(hitlist);
 		return false;
 	}
 
@@ -1240,7 +1239,6 @@ static bool handle_gadget_list(RzStrBuf *sb, const RzGadgetSearchContext *contex
 	if (!is_found && asm_op_hex) {
 		ht_su_insert(context->unique_hitlists, asm_op_hex, 1);
 	} else {
-		rz_pvector_free(hitlist);
 		return false;
 	}
 	return true;
@@ -1396,6 +1394,7 @@ cleanup:
 		return NULL;
 	}
 	if (!handle_gadget_list(sb, context, end_gadget, hitlist)) {
+		rz_pvector_free(hitlist);
 		rz_strbuf_free(sb);
 		return NULL;
 	}
