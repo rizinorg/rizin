@@ -3248,7 +3248,7 @@ Gadget 0x8048342 (size 17 bytes)
 
 Gadget 0x8048345 (size 14 bytes)
 ------------------------------------------------------------------------------------------------------
-  0x08048345  0000             add byte [eax], al | Stack change: 0xffffffff00000008
+  0x08048345  0000             add byte [eax], al | Stack change: 0x8
   0x08048347  e804010000       call 0x8048450     | Modified regs: esp ebp
   0x0804834c  e8cf020000       call 0x8048620     | Dependencies:  eax eax eax esp esp ebp esp esp esp esp
   0x08048351  c9               leave              | 
@@ -3263,7 +3263,7 @@ Gadget 0x8048347 (size 12 bytes)
 
 Gadget 0x8048348 (size 11 bytes)
 ------------------------------------------------------------------------------------------------------
-  0x08048348  0401             add al, 0x01       | Stack change: 0xffffffff00000008
+  0x08048348  0401             add al, 0x01       | Stack change: 0x8
   0x0804834a  0000             add byte [eax], al | Modified regs: eax esp ebp
   0x0804834c  e8cf020000       call 0x8048620     | Dependencies:  eax eax eax eax esp ebp esp esp esp esp
   0x08048351  c9               leave              | 
@@ -3302,7 +3302,7 @@ Gadget 0x804840a (size 11 bytes)
 
 Gadget 0x804840c (size 9 bytes)
 ------------------------------------------------------------------------------------------------------
-  0x0804840c  c07402ffd0       shl byte [edx+eax*1-0x01], 0xd0 | Stack change: 0xffffffff00000010
+  0x0804840c  c07402ffd0       shl byte [edx+eax*1-0x01], 0xd0 | Stack change: 0x10
   0x08048411  58               pop eax                         | Modified regs: eax esp ebx ebp
   0x08048412  5b               pop ebx                         | Dependencies:  eax edx eax edx esp esp esp esp ebp esp esp esp esp
   0x08048413  c9               leave                           | 
@@ -3325,7 +3325,7 @@ Gadget 0x804840f (size 6 bytes)
 
 Gadget 0x8048410 (size 5 bytes)
 ------------------------------------------------------------------------------------------------------
-  0x08048410  d0585b           rcr byte [eax+0x5b], 0x01 | Stack change: 0xffffffff00000008
+  0x08048410  d0585b           rcr byte [eax+0x5b], 0x01 | Stack change: 0x8
   0x08048413  c9               leave                     | Modified regs: esp ebp
   0x08048414  c3               ret                       | Dependencies:  eax eax ebp esp esp esp esp
 
@@ -3367,7 +3367,7 @@ Gadget 0x8048442 (size 13 bytes)
 
 Gadget 0x8048443 (size 12 bytes)
 ------------------------------------------------------------------------------------------------------
-  0x08048443  d275eb           shl byte [ebp-0x15], cl    | Stack change: 0xffffffff00000008
+  0x08048443  d275eb           shl byte [ebp-0x15], cl    | Stack change: 0x8
   0x08048446  c60524a0040801   mov byte [0x804a024], 0x01 | Modified regs: esp ebp
   0x0804844d  c9               leave                      | Dependencies:  ebp ebp ecx ebp esp esp esp esp
   0x0804844e  c3               ret                        | 
@@ -3429,7 +3429,7 @@ Gadget 0x804844c (size 3 bytes)
 
 Gadget 0x804846f (size 19 bytes)
 ------------------------------------------------------------------------------------------------------
-  0x0804846f  e88c7bfbf7       call 0x0             | Stack change: 0xffffffff00000008
+  0x0804846f  e88c7bfbf7       call 0x0             | Stack change: 0x8
   0x08048474  8db600000000     lea esi, dword [esi] | Modified regs: esp esi edi ebp
   0x0804847a  8dbf00000000     lea edi, dword [edi] | Dependencies:  esp esi edi ebp esp esp esp esp
   0x08048480  c9               leave                | 
@@ -3503,7 +3503,7 @@ Gadget 0x8048479 (size 9 bytes)
 
 Gadget 0x804847a (size 8 bytes)
 ------------------------------------------------------------------------------------------------------
-  0x0804847a  8dbf00000000     lea edi, dword [edi] | Stack change: 0xffffffff00000008
+  0x0804847a  8dbf00000000     lea edi, dword [edi] | Stack change: 0x8
   0x08048480  c9               leave                | Modified regs: edi esp ebp
   0x08048481  c3               ret                  | Dependencies:  edi ebp esp esp esp esp
 
@@ -3536,7 +3536,7 @@ Gadget 0x80484b5 (size 19 bytes)
 
 Gadget 0x80484ba (size 14 bytes)
 ------------------------------------------------------------------------------------------------------
-  0x080484ba  c7042400000000   mov dword [esp], 0x00 | Stack change: 0xffffffff00000008
+  0x080484ba  c7042400000000   mov dword [esp], 0x00 | Stack change: 0x8
   0x080484c1  e8eefeffff       call 0x80483b4        | Modified regs: esp ebp
   0x080484c6  c9               leave                 | Dependencies:  esp esp ebp esp esp esp esp
   0x080484c7  c3               ret                   | 
@@ -3577,7 +3577,7 @@ Gadget 0x8048530 (size 16 bytes)
 
 Gadget 0x8048531 (size 15 bytes)
 ------------------------------------------------------------------------------------------------------
-  0x08048531  aa               stosb                      | Stack change: 0xffffffff00000008
+  0x08048531  aa               stosb                      | Stack change: 0x8
   0x08048532  c7042479860408   mov dword [esp], 0x8048679 | Modified regs: edi esp ebp
   0x08048539  e856feffff       call 0x8048394             | Dependencies:  eax edi edi esp esp ebp esp esp esp esp
   0x0804853e  c9               leave                      | 
@@ -3615,7 +3615,7 @@ Gadget 0x8048536 (size 10 bytes)
 
 Gadget 0x8048537 (size 9 bytes)
 ------------------------------------------------------------------------------------------------------
-  0x08048537  0408             add al, 0x08   | Stack change: 0xffffffff00000008
+  0x08048537  0408             add al, 0x08   | Stack change: 0x8
   0x08048539  e856feffff       call 0x8048394 | Modified regs: eax esp ebp
   0x0804853e  c9               leave          | Dependencies:  eax esp ebp esp esp esp esp
   0x0804853f  c3               ret            | 
@@ -3669,7 +3669,7 @@ Gadget 0x80485fa (size 9 bytes)
 
 Gadget 0x80485fc (size 7 bytes)
 ------------------------------------------------------------------------------------------------------
-  0x080485fc  c41c5b           les ebx, fword [ebx+ebx*2] | Stack change: 0xffffffff00000010
+  0x080485fc  c41c5b           les ebx, fword [ebx+ebx*2] | Stack change: 0x10
   0x080485ff  5e               pop esi                    | Modified regs: ebx esi esp edi ebp
   0x08048600  5f               pop edi                    | Dependencies:  ebx esp esp esp esp ebp esp esp esp esp
   0x08048601  c9               leave                      | 
@@ -3728,7 +3728,7 @@ Gadget 0x804860d (size 8 bytes)
 
 Gadget 0x804860e (size 7 bytes)
 ------------------------------------------------------------------------------------------------------
-  0x0804860e  0000             add byte [eax], al | Stack change: 0xffffffffaa6f6fa3
+  0x0804860e  0000             add byte [eax], al | Stack change: 0xaa6f6fa3
   0x08048610  55               push ebp           | Modified regs: esp ebp
   0x08048611  89e5             mov ebp, esp       | Dependencies:  eax eax eax ebp esp esp ebp esp esp esp esp
   0x08048613  c9               leave              | 
@@ -3742,14 +3742,14 @@ Gadget 0x804860f (size 6 bytes)
 
 Gadget 0x8048610 (size 5 bytes)
 ------------------------------------------------------------------------------------------------------
-  0x08048610  55               push ebp     | Stack change: 0xffffffff0000003c
+  0x08048610  55               push ebp     | Stack change: 0x3c
   0x08048611  89e5             mov ebp, esp | Modified regs: esp ebp
   0x08048613  c9               leave        | Dependencies:  ebp esp esp ebp esp esp esp esp
   0x08048614  c3               ret          | 
 
 Gadget 0x8048611 (size 4 bytes)
 ------------------------------------------------------------------------------------------------------
-  0x08048611  89e5             mov ebp, esp | Stack change: 0xffffffff00000044
+  0x08048611  89e5             mov ebp, esp | Stack change: 0x44
   0x08048613  c9               leave        | Modified regs: ebp esp
   0x08048614  c3               ret          | Dependencies:  esp ebp esp esp esp esp
 
@@ -3820,7 +3820,7 @@ Gadget 0x8048641 (size 2 bytes)
 
 Gadget 0x8048655 (size 9 bytes)
 ------------------------------------------------------------------------------------------------------
-  0x08048655  e8c6fdffff       call 0x8048420 | Stack change: 0xffffffff00000010
+  0x08048655  e8c6fdffff       call 0x8048420 | Stack change: 0x10
   0x0804865a  59               pop ecx        | Modified regs: esp ecx ebx ebp
   0x0804865b  5b               pop ebx        | Dependencies:  esp esp esp esp esp ebp esp esp esp esp
   0x0804865c  c9               leave          | 
@@ -3852,7 +3852,7 @@ Gadget 0x8048677 (size 4 bytes)
 
 Gadget 0x804868d (size 9 bytes)
 ------------------------------------------------------------------------------------------------------
-  0x0804868d  00494f           add byte [ecx+0x4f], cl | Stack change: 0xffffffffffffffff
+  0x0804868d  00494f           add byte [ecx+0x4f], cl | Stack change: 0xffffffff
   0x08048690  4c               dec esp                 | Modified regs: esp ecx
   0x08048691  49               dec ecx                 | Dependencies:  ecx ecx ecx esp ecx ebx ebx eax
   0x08048692  204372           and byte [ebx+0x72], al | 
@@ -3860,7 +3860,7 @@ Gadget 0x804868d (size 9 bytes)
 
 Gadget 0x804868f (size 7 bytes)
 ------------------------------------------------------------------------------------------------------
-  0x0804868f  4f               dec edi                 | Stack change: 0xffffffffffffffff
+  0x0804868f  4f               dec edi                 | Stack change: 0xffffffff
   0x08048690  4c               dec esp                 | Modified regs: edi esp ecx
   0x08048691  49               dec ecx                 | Dependencies:  edi esp ecx ebx ebx eax
   0x08048692  204372           and byte [ebx+0x72], al | 
@@ -3868,7 +3868,7 @@ Gadget 0x804868f (size 7 bytes)
 
 Gadget 0x8048690 (size 6 bytes)
 ------------------------------------------------------------------------------------------------------
-  0x08048690  4c               dec esp                 | Stack change: 0xffffffffffffffff
+  0x08048690  4c               dec esp                 | Stack change: 0xffffffff
   0x08048691  49               dec ecx                 | Modified regs: esp ecx
   0x08048692  204372           and byte [ebx+0x72], al | Dependencies:  esp ecx ebx ebx eax
   0x08048695  61               popad                   | 
