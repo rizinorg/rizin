@@ -625,7 +625,7 @@ typedef enum {
 #endif
 
 #if defined(__GNUC__) || defined(__clang__)
-#define RZ_PREFETCH(addr) __builtin_prefetch((addr), 0, 3)
+#define RZ_PREFETCH(addr)        __builtin_prefetch((addr), 0, 3)
 #define RZ_PREFETCH_STRONG(addr) __builtin_prefetch(addr, 0, 1)
 #elif defined(_MSC_VER)
 #include <intrin.h>
