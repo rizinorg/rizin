@@ -46,7 +46,6 @@ static inline void rb_set_red(RBNode *node, bool red) {
 		node->child[0] &= ~(uintptr_t)1;
 	}
 }
-
 // incoming < in_tree  => return < 0
 // incoming == in_tree => return == 0
 // incoming > in_tree  => return > 0

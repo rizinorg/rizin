@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2017 MaskRay
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include "rz_types.h"
 #include <stdio.h>
 
 #include <rz_util/rz_rbtree.h>
@@ -277,15 +278,15 @@ RZ_API bool rz_rbtree_delete(RBNode **root, void *data, RBComparator cmp, void *
 }
 
 RZ_API RBNode *rz_rbtree_find(RBNode *x, void *data, RBComparator cmp, void *user) {
+	RBNode *result = NULL;
 	while (x) {
 		int d = cmp(data, x, user);
-		if (!d)
-			return x;
+		if (d == 0)
+			result = x;
 		int dir = (d > 0);
 		x = rb_child(x, dir);
-		RZ_PREFETCH(x);
 	}
-	return NULL;
+	return result;
 }
 
 RZ_API void rz_rbtree_free(RZ_NULLABLE RBNode *x, RBNodeFree freefn, void *user) {
@@ -310,7 +311,6 @@ RZ_API RBNode *rz_rbtree_lower_bound(RBNode *x, void *data, RBComparator cmp, vo
 			ret = x;
 		int dir = (d > 0);
 		x = rb_child(x, dir);
-		RZ_PREFETCH(x);
 	}
 	return ret;
 }
@@ -327,7 +327,6 @@ RZ_API RBNode *rz_rbtree_upper_bound(RBNode *x, void *data, RBComparator cmp, vo
 			ret = x;
 		int dir = (d >= 0);
 		x = rb_child(x, dir);
-		RZ_PREFETCH(x);
 	}
 	return ret;
 }
