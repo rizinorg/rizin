@@ -3979,6 +3979,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 wx 0080bd08
 pi 1
 /R
@@ -4000,6 +4001,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
+e cfg.bigendian=false
 wa "addiu sp, sp, 0x20; jr ra; nop"
 pi 3
 echo "================================================"
