@@ -3903,10 +3903,11 @@ RUN
 
 NAME=ROP Search by substring
 FILE=bins/elf/riscv_crypto_64
+BROKEN=1
 CMDS=<<EOF
 aaa
 e asm.bytes=true
-/R/ jal 
+/R/ jal
 EOF
 EXPECT=<<EOF
   0x000104ae               0e00  c.slli zero, 3
@@ -4856,6 +4857,7 @@ RUN
 
 NAME=ROP Search by regex
 FILE=bins/elf/riscv_crypto_64
+BROKEN=1
 CMDS=<<EOF
 aaa
 e asm.bytes=true

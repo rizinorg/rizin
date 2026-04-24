@@ -892,7 +892,7 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 					oPrintValue = printValue;
 					j += step - 1;
 				} else if (base == -8) {
-					long long w = rz_read_ble64(buf + j, p->big_endian);
+					st64 w = rz_read_ble64(buf + j, p->big_endian);
 					print_cursor_l(sb, p, j, 8);
 					rz_strbuf_appendf(sb, "%23" PFMT64d " ", w);
 					print_cursor_r(sb, p, j, 8);

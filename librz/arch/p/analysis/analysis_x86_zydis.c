@@ -993,7 +993,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, 
 			esilprintf(op,
 				"%s,%s,==,$z,zf,:=,%u,$b,cf,:=,$p,pf,:=,%u,$s,sf,:=,"
 				"%s,0x%" PFMT64x ",-,!,%u,$o,^,of,:=,3,$b,af,:=",
-				src, dst, bitsize, bitsize - 1, src, 1ULL << (bitsize - 1), bitsize - 1);
+				src, dst, bitsize, bitsize - 1, src, (ut64)1 << (bitsize - 1), bitsize - 1);
 		} else {
 			const char *rsrc = ZydisRegisterGetString(INSOP(1).mem.base);
 			const char *rdst = ZydisRegisterGetString(INSOP(0).mem.base);
@@ -1001,7 +1001,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, 
 			esilprintf(op,
 				"%s,%s,==,$z,zf,:=,%u,$b,cf,:=,$p,pf,:=,%u,$s,sf,:=,%s,0x%" PFMT64x ","
 				"-,!,%u,$o,^,of,:=,3,$b,af,:=,df,?{,%" PFMT32d ",%s,-=,%" PFMT32d ",%s,-=,}{,%" PFMT32d ",%s,+=,%" PFMT32d ",%s,+=,}",
-				src, dst, bitsize, bitsize - 1, src, 1ULL << (bitsize - 1), bitsize - 1,
+				src, dst, bitsize, bitsize - 1, src, (ut64)1 << (bitsize - 1), bitsize - 1,
 				width, rsrc, width, rdst, width, rsrc, width, rdst);
 		}
 	} break;
@@ -1472,7 +1472,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, 
 		// We use $b rather than $c here as the carry flag really
 		// represents a "borrow"
 		esilprintf(op, "%s,%s,%s,0x%" PFMT64x ",-,!,%u,$o,^,of,:=,%u,$s,sf,:=,$z,zf,:=,$p,pf,:=,%u,$b,cf,:=,3,$b,af,:=",
-			src, dst, src, 1ULL << (bitsize - 1), bitsize - 1, bitsize - 1, bitsize);
+			src, dst, src, (ut64)1 << (bitsize - 1), bitsize - 1, bitsize - 1, bitsize);
 	} break;
 	case X86_INS_SBB:
 		// dst = dst - (src + cf)
