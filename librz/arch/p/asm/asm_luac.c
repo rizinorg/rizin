@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 // SPDX-FileCopyrightText: 2025-2026 Sergey Sharshunov <s.sharshunov@gmail.com>
 
+#include <asm_private.h>
 #include "rz_asm.h"
 #include "arch/isa/luac/lua_arch.h"
 
@@ -24,7 +25,11 @@ int rz_luac_disasm(const RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 	if (RZ_STR_EQ(a->cpu, "5.0")) {
 		r = lua50_disasm(opstruct, instruction);
 	} else if (RZ_STR_EQ(a->cpu, "5.1")) {
-		r = lua51_disasm(opstruct, instruction);
+		r = lua51_disasm(opstruct, instruction, LUA_51_VERSION_VANILLA);
+	} else if (RZ_STR_EQ(a->cpu, "openwrt-5.1")) {
+		r = lua51_disasm(opstruct, instruction, LUA_51_VERSION_OPENWRT);
+	} else if (RZ_STR_EQ(a->cpu, "tp-link-5.1")) {
+		r = lua51_disasm(opstruct, instruction, LUA_51_VERSION_TPLINK);
 	} else if (RZ_STR_EQ(a->cpu, "5.2")) {
 		r = lua52_disasm(opstruct, instruction);
 	} else if (RZ_STR_EQ(a->cpu, "5.3")) {
@@ -65,7 +70,11 @@ int rz_luac_asm(const RzAsm *a, RzAsmOp *opstruct, const char *str) {
 	if (RZ_STR_EQ(a->cpu, "5.0")) {
 		instruction = lua50_assembly(arg_start, opcode_len, opcode_start);
 	} else if (RZ_STR_EQ(a->cpu, "5.1")) {
-		instruction = lua51_assembly(arg_start, opcode_len, opcode_start);
+		instruction = lua51_assembly(arg_start, opcode_len, opcode_start, LUA_51_VERSION_VANILLA);
+	} else if (RZ_STR_EQ(a->cpu, "openwrt-5.1")) {
+		instruction = lua51_assembly(arg_start, opcode_len, opcode_start, LUA_51_VERSION_OPENWRT);
+	} else if (RZ_STR_EQ(a->cpu, "tp-link-5.1")) {
+		instruction = lua51_assembly(arg_start, opcode_len, opcode_start, LUA_51_VERSION_TPLINK);
 	} else if (RZ_STR_EQ(a->cpu, "5.2")) {
 		instruction = lua52_assembly(arg_start, opcode_len, opcode_start);
 	} else if (RZ_STR_EQ(a->cpu, "5.3")) {
@@ -86,6 +95,21 @@ int rz_luac_asm(const RzAsm *a, RzAsmOp *opstruct, const char *str) {
 	return 4;
 }
 
+static char **luac_cpu_descriptions() {
+	static char *cpu_desc[] = {
+		"5.0", "Official 5.0 Lua compiler",
+		"5.1", "Official 5.1 Lua compiler",
+		"5.2", "Official 5.2 Lua compiler",
+		"5.3", "Official 5.3 Lua compiler",
+		"5.4", "Official 5.4 Lua compiler",
+		"5.5", "Official 5.5 Lua compiler",
+		"openwrt-5.1", "5.1 version of Lua compiler, modified by OpenWRT project",
+		"tp-link-5.1", "5.1 version of Lua compiler, modified by OpenWRT project and TP-Link vendor",
+		NULL
+	};
+	return cpu_desc;
+}
+
 RzAsmPlugin rz_asm_plugin_luac = {
 	.name = "luac",
 	.arch = "luac",
@@ -95,6 +119,16 @@ RzAsmPlugin rz_asm_plugin_luac = {
 	.desc = "Lua bytecode (LUAC) disassembler",
 	.disassemble = &rz_luac_disasm,
 	.assemble = &rz_luac_asm,
+	.cpus =
+		"5.0,"
+		"5.1,"
+		"5.2,"
+		"5.3,"
+		"5.4,"
+		"5.5,"
+		"openwrt-5.1,"
+		"tp-link-5.1",
+	.get_cpu_desc = luac_cpu_descriptions,
 };
 
 #ifndef RZ_PLUGIN_INCORE

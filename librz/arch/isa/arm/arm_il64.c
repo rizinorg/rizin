@@ -1262,6 +1262,7 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 	}
 	RzILOpEffect *eff1 = load_effect(loadsz, is_signed, dst_reg, addr);
 	if (!eff1) {
+		rz_il_op_effect_free(eff);
 		return NULL;
 	}
 	eff = eff ? SEQ2(eff, eff1) : eff1;

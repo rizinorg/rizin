@@ -90,7 +90,7 @@ static inline bool rz_vector_empty(RZ_NULLABLE const RzVector *vec) {
 	return vec ? vec->len == 0 : true;
 }
 
-RZ_API void rz_vector_clear(RzVector *vec);
+RZ_API void rz_vector_clear(RZ_BORROW RzVector *vec);
 
 // returns the length of the vector
 static inline size_t rz_vector_len(RZ_NULLABLE const RzVector *vec) {
@@ -118,13 +118,7 @@ static inline void *rz_vector_tail(RzVector *vec) {
 	return (char *)vec->a + vec->elem_size * (vec->len - 1);
 }
 
-// helper function to assign an element of size vec->elem_size from elem to p.
-// elem is a pointer to the actual data to assign!
-RZ_API void rz_vector_assign(RzVector *vec, void *p, void *elem);
-
-// assign the value of size vec->elem_size at elem to vec at the given index.
-// elem is a pointer to the actual data to assign!
-RZ_API void *rz_vector_assign_at(RzVector *vec, size_t index, void *elem);
+RZ_API void *rz_vector_assign_at(RZ_BORROW RzVector *vec, size_t index, RZ_NULLABLE const void *elem);
 
 // remove the element at the given index and write the content to into.
 // It is the caller's responsibility to free potential resources associated with the element.
@@ -135,6 +129,8 @@ RZ_API void rz_vector_remove_at(RzVector *vec, size_t index, void *into);
  * It is the caller's responsibility to free potential resources associated with the elements.
  */
 RZ_API void rz_vector_remove_range(RzVector *vec, size_t index, size_t count, void *into);
+
+RZ_API void rz_vector_purge(RZ_BORROW RzVector *vec);
 
 // insert the value of size vec->elem_size at x at the given index.
 // x is a pointer to the actual data to assign!
@@ -174,17 +170,27 @@ RZ_API void *rz_vector_reserve(RzVector *vec, size_t capacity);
 // shrink capacity to len.
 RZ_API void *rz_vector_shrink(RzVector *vec);
 
-/**
- * \brief Turn the vector into a fixed-size array.
- * This will clear the vector and return an array of its original contents whose
- * ownership is transferred to the caller.
- * This is useful when RzVector is used for its dynamically growing functionality as an
- * intermediate step to generate a fixed-size array in the end.
- */
-RZ_API void *rz_vector_flush(RzVector *vec);
+RZ_API RZ_OWN void *rz_vector_take_array(RzVector *vec);
 
 // sort vector
 RZ_API void rz_vector_sort(RzVector *vec, RzVectorComparator cmp, bool reverse, void *user);
+
+/**
+ * \brief Return the capacity of the vector.
+ */
+static inline size_t rz_vector_capacity(RzVector *vec) {
+	rz_return_val_if_fail(vec, 0);
+	return vec->capacity;
+}
+
+/**
+ * \brief Set element at \p index.
+ * \param vec The vector to update.
+ */
+static inline void rz_vector_set(RZ_BORROW RzVector *vec, size_t index, const RZ_NONNULL void *elem) {
+	rz_return_if_fail(vec && index < rz_vector_capacity(vec) && elem);
+	rz_vector_assign_at(vec, index, elem);
+}
 
 /*
  * example:
@@ -251,8 +257,7 @@ RZ_API RzPVector *rz_pvector_new(RzPVectorFree free);
 
 RZ_API RzPVector *rz_pvector_new_with_len(RzPVectorFree free, size_t length);
 
-// clear the vector and call vec->v.free on every element.
-RZ_API void rz_pvector_clear(RzPVector *vec);
+RZ_API void rz_pvector_clear(RZ_BORROW RzPVector *vec);
 
 // free the vector and call vec->v.free on every element.
 RZ_API void rz_pvector_free(RzPVector *vec);
@@ -281,8 +286,15 @@ static inline void *rz_pvector_at(const RzPVector *vec, size_t index) {
 	return ((void **)vec->v.a)[index];
 }
 
+/**
+ * \brief Return the capacity of the pvector.
+ */
+static inline size_t rz_pvector_capacity(RzPVector *vec) {
+	return rz_vector_capacity(&vec->v);
+}
+
 static inline void rz_pvector_set(RzPVector *vec, size_t index, void *e) {
-	rz_return_if_fail(vec && index < vec->v.len);
+	rz_return_if_fail(vec && index < rz_pvector_capacity(vec));
 	((void **)vec->v.a)[index] = e;
 }
 
@@ -326,10 +338,18 @@ RZ_API size_t rz_pvector_find_index(RZ_NONNULL const RzPVector *vec, RZ_NONNULL 
 // join two pvector into one, pvec1 should free the joined element in pvec2
 RZ_API bool rz_pvector_join(RZ_NONNULL RzPVector *pvec1, RZ_NONNULL RzPVector *pvec2);
 
-RZ_API void *rz_pvector_assign_at(RZ_BORROW RZ_NONNULL RzPVector *vec, size_t index, RZ_OWN RZ_NONNULL void *ptr);
+RZ_API void *rz_pvector_assign_at(RZ_BORROW RZ_NONNULL RzPVector *vec, size_t index, RZ_OWN RZ_NULLABLE void *ptr);
 
 // removes and returns the pointer at the given index. Does not call free.
 RZ_API void *rz_pvector_remove_at(RzPVector *vec, size_t index);
+
+/**
+ * \brief Deletes all pointers in the vector. Capacity stays the same.
+ */
+static inline void rz_pvector_purge(RZ_BORROW RzPVector *vec) {
+	rz_return_if_fail(vec);
+	rz_vector_purge(&vec->v);
+}
 
 // removes the element x, if present. Does not call free.
 RZ_API void rz_pvector_remove_data(RzPVector *vec, void *x);
@@ -374,8 +394,15 @@ static inline void **rz_pvector_shrink(RzPVector *vec) {
 	return (void **)rz_vector_shrink(&vec->v);
 }
 
-static inline void **rz_pvector_flush(RzPVector *vec) {
-	return (void **)rz_vector_flush(&vec->v);
+/**
+ * \brief Turn the vector into a fixed-size array.
+ * This will clear the vector and return an array of its original contents whose
+ * ownership is transferred to the caller.
+ * This is useful when RzPVector is used for its dynamically growing functionality as an
+ * intermediate step to generate a fixed-size array in the end.
+ */
+static inline void **rz_pvector_flush(RZ_BORROW RzPVector *vec) {
+	return (void **)rz_vector_take_array(&vec->v);
 }
 
 /*

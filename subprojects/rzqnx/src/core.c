@@ -175,7 +175,7 @@ int qnxr_connect(libqnxr_t *g, const char *host, int port) {
 	nto_send(g, sizeof(g->tran.pkt.connect), 0);
 
 	if (g->recv.pkt.hdr.cmd == DSrMsg_err) {
-		eprintf("%s: connection failed: %lld\n", __func__,
+		eprintf("%s: connection failed: %" PFMT64d "\n", __func__,
 			EXTRACT_SIGNED_INTEGER(&g->recv.pkt.err.err, 4));
 		return -1;
 	}
@@ -195,7 +195,7 @@ int qnxr_connect(libqnxr_t *g, const char *host, int port) {
 		g->target_proto_major = (g->target_proto_major >> 8) & DSMSG_PROTOVER_MAJOR;
 		g->target_proto_minor = g->target_proto_minor & DSMSG_PROTOVER_MINOR;
 	} else {
-		eprintf("Connection failed (Protocol Version Query): %lld\n",
+		eprintf("Connection failed (Protocol Version Query): %" PFMT64d "\n",
 			EXTRACT_SIGNED_INTEGER(&g->recv.pkt.err.err, 4));
 		return -1;
 	}
