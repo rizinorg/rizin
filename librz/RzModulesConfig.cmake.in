@@ -35,6 +35,7 @@ set_and_check(@RIZIN_MODULE@_LIBRARY_DIRS "${PACKAGE_PREFIX_DIR}/@INSTALL_LIBDIR
 find_library(@RIZIN_MODULE@_LIBRARY NAMES @RIZIN_MODULE@ HINTS "${@RIZIN_MODULE@_LIBRARY_DIRS}" NO_DEFAULT_PATH REQUIRED)
 set(@RIZIN_MODULE@_LIBRARIES "${@RIZIN_MODULE@_LIBRARY}")
 set(_@RIZIN_MODULE@_DEPENDENCIES @RIZIN_MODULE_DEPS@)
+set(_@RIZIN_MODULE@_EXTERNAL_CMAKE_DEPS "@RIZIN_MODULE_EXTERNAL_CMAKE_DEPS@")
 set(@RIZIN_MODULE@_PLUGINDIR @INSTALL_PLUGDIR@)
 
 include(CMakeFindDependencyMacro)
@@ -53,6 +54,31 @@ foreach(_module_dep ${_@RIZIN_MODULE@_DEPENDENCIES})
   list(APPEND @RIZIN_MODULE@_INCLUDE_DIRS "${${_module_dep}_INCLUDE_DIRS}")
   list(APPEND @RIZIN_MODULE@_LIBRARIES "${${_module_dep}_LIBRARIES}")
   list(APPEND _@RIZIN_MODULE@_DEPENDENCY_TARGETS "${_module_dep}::${_module_dep}")
+endforeach()
+
+foreach(_rizin_external_cmake_dep ${_@RIZIN_MODULE@_EXTERNAL_CMAKE_DEPS})
+  string(REPLACE "|" ";" _rizin_external_cmake_dep_parts "${_rizin_external_cmake_dep}")
+  list(GET _rizin_external_cmake_dep_parts 0 _rizin_external_cmake_dep_package)
+  list(GET _rizin_external_cmake_dep_parts 1 _rizin_external_cmake_dep_target)
+
+  if (NOT ${_rizin_external_cmake_dep_package}_FOUND)
+    find_dependency(${_rizin_external_cmake_dep_package})
+  endif()
+
+  if (NOT ${_rizin_external_cmake_dep_package}_FOUND)
+    set(@RIZIN_MODULE@_FOUND False)
+    return()
+  endif()
+
+  list(APPEND @RIZIN_MODULE@_LIBRARIES "${_rizin_external_cmake_dep_target}")
+  list(APPEND _@RIZIN_MODULE@_DEPENDENCY_TARGETS "${_rizin_external_cmake_dep_target}")
+
+  if(TARGET "${_rizin_external_cmake_dep_target}")
+    get_target_property(_rizin_external_cmake_dep_include_dirs "${_rizin_external_cmake_dep_target}" INTERFACE_INCLUDE_DIRECTORIES)
+    if(_rizin_external_cmake_dep_include_dirs AND NOT _rizin_external_cmake_dep_include_dirs STREQUAL "_rizin_external_cmake_dep_include_dirs-NOTFOUND")
+      list(APPEND @RIZIN_MODULE@_INCLUDE_DIRS "${_rizin_external_cmake_dep_include_dirs}")
+    endif()
+  endif()
 endforeach()
 
 list(REMOVE_DUPLICATES @RIZIN_MODULE@_INCLUDE_DIRS)

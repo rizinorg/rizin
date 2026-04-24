@@ -104,6 +104,8 @@ rz_util_common_sources = [
 rz_util_sources = rz_util_common_sources
 
 rz_util_deps = [ldl, lrt, mth, th, utl, pcre2_dep, softfloat_dep] + platform_deps
+rz_util_public_deps = []
+rz_util_public_cmake_deps = []
 if zlib_dep.found()
   rz_util_deps += [zlib_dep]
 endif
@@ -124,6 +126,8 @@ endif
 
 if sys_openssl.found()
   rz_util_deps += [sys_openssl]
+  rz_util_public_deps += [sys_openssl]
+  rz_util_public_cmake_deps += ['OpenSSL|OpenSSL::Crypto']
   rz_util_sources += ['big-ssl.c']
 else
   rz_util_sources += ['big.c']
@@ -145,6 +149,7 @@ rz_util = library('rz_util', rz_util_sources, libsdb_sources,
 
 rz_util_dep = declare_dependency(
   link_with: rz_util,
+  dependencies: rz_util_public_deps,
   include_directories: rz_util_includes,
 )
 meson.override_dependency('rz_util', rz_util_dep)
@@ -204,6 +209,7 @@ endif
 modules += { 'rz_util': {
     'target': rz_util,
     'dependencies': [],
+    'cmake_external_deps': rz_util_public_cmake_deps,
     'include_subdirs_extra': ['librz/sdb']
 }}
 
