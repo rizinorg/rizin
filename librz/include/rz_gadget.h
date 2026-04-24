@@ -181,11 +181,11 @@ extern rz_gadget_event_check_fn rz_gadget_event_functions[RZ_GADGET_EVENT_COUNT]
 
 // Command APIs
 RZ_API RzCmdStatus rz_core_gadget_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzGadgetSearchContext *context);
-RZ_API RzCmdStatus rz_core_gadget_info(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_OWN RzGadgetSearchContext *context);
+RZ_API RzCmdStatus rz_core_gadget_info(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzGadgetSearchContext *context);
 RZ_API bool rz_core_gadget_analyze_constraint(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *str,
 	RZ_NULLABLE RZ_OUT RzGadgetConstraint *gadget_constraint);
 RZ_API RZ_OWN RzPVector /*<RzGadgetConstraint *>*/ *rz_core_gadget_constraint_map_parse(const RZ_NONNULL RzCore *core, int argc, const char **argv);
-RZ_API bool rz_core_handle_gadget_request_type(RZ_NONNULL RzCore *core, RZ_NONNULL RzGadgetSearchContext *context, RZ_NONNULL RzPVector /*<RzCoreAsmHit *>*/ *hitlist);
+RZ_API bool rz_core_handle_gadget_request_type(RZ_NONNULL RzCore *core, RZ_NONNULL RzGadgetSearchContext *context, RZ_NONNULL RzPVector /*<RzCoreAsmHit *>*/ *hitlist, int delay_size);
 RZ_API RZ_NULLABLE RZ_OWN RzList /*<char *>*/ *rz_core_gadget_handle_grep_args(RZ_NULLABLE const char *greparg, const bool regexp);
 
 // Gadget Search Context APIs
