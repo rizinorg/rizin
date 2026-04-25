@@ -1,4 +1,4 @@
-NAME=LUAC: info
+NAME=LUAC: none53.luac
 FILE=bins/luac/none53.luac
 CMDS=<<EOF
 i~guid,machine
@@ -12,7 +12,7 @@ machine  Lua 5.3 VM
 EOF
 RUN
 
-NAME=LUAC: big file
+NAME=LUAC: big53.luac
 FILE=bins/luac/big53.luac
 CMDS=<<EOF
 iS~code
