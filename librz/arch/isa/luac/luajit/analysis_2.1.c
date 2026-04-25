@@ -8,7 +8,6 @@ int luajit_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 		return 0;
 	}
 
-	memset(op, 0, sizeof(RzAnalysisOp));
 	op->jump = UT64_MAX; // TODO: Supress WARNING of invalid address, 0x0 (op initialized from memeset above) will be invalid address for JMP.
 	op->fail = UT64_MAX;
 	op->ptr = UT64_MAX;
@@ -26,199 +25,199 @@ int luajit_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 
 	switch (LUAJIT_GET_OPCODE(instr)) {
 	// Comparison ops
-	case OP_ISLT:
-	case OP_ISGE:
-	case OP_ISLE:
-	case OP_ISGT:
-	case OP_ISEQV:
-	case OP_ISNEV:
-	case OP_ISEQS:
-	case OP_ISNES:
-	case OP_ISEQN:
-	case OP_ISNEN:
-	case OP_ISEQP:
-	case OP_ISNEP:
+	case LUAJIT_OP_ISLT:
+	case LUAJIT_OP_ISGE:
+	case LUAJIT_OP_ISLE:
+	case LUAJIT_OP_ISGT:
+	case LUAJIT_OP_ISEQV:
+	case LUAJIT_OP_ISNEV:
+	case LUAJIT_OP_ISEQS:
+	case LUAJIT_OP_ISNES:
+	case LUAJIT_OP_ISEQN:
+	case LUAJIT_OP_ISNEN:
+	case LUAJIT_OP_ISEQP:
+	case LUAJIT_OP_ISNEP:
 	// Unary test and copy ops
-	case OP_ISTC:
-	case OP_ISFC:
-	case OP_IST:
-	case OP_ISF:
-	case OP_ISTYPE:
-	case OP_ISNUM:
+	case LUAJIT_OP_ISTC:
+	case LUAJIT_OP_ISFC:
+	case LUAJIT_OP_IST:
+	case LUAJIT_OP_ISF:
+	case LUAJIT_OP_ISTYPE:
+	case LUAJIT_OP_ISNUM:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->eob = true;
 		op->jump = addr + 8;
 		op->fail = addr + 4;
 		break;
 	// Unary ops
-	case OP_MOV:
+	case LUAJIT_OP_MOV:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
-	case OP_NOT:
+	case LUAJIT_OP_NOT:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOT;
 		break;
-	case OP_UNM:
+	case LUAJIT_OP_UNM:
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		break;
-	case OP_LEN:
+	case LUAJIT_OP_LEN:
 		op->type = RZ_ANALYSIS_OP_TYPE_LENGTH;
 		break;
 	// Binary ops
-	case OP_ADDVN:
-	case OP_ADDNV:
-	case OP_ADDVV:
+	case LUAJIT_OP_ADDVN:
+	case LUAJIT_OP_ADDNV:
+	case LUAJIT_OP_ADDVV:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
-	case OP_SUBVN:
-	case OP_SUBNV:
-	case OP_SUBVV:
+	case LUAJIT_OP_SUBVN:
+	case LUAJIT_OP_SUBNV:
+	case LUAJIT_OP_SUBVV:
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		break;
-	case OP_MULVN:
-	case OP_MULNV:
-	case OP_MULVV:
+	case LUAJIT_OP_MULVN:
+	case LUAJIT_OP_MULNV:
+	case LUAJIT_OP_MULVV:
 		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 		break;
-	case OP_DIVVN:
-	case OP_DIVNV:
-	case OP_DIVVV:
+	case LUAJIT_OP_DIVVN:
+	case LUAJIT_OP_DIVNV:
+	case LUAJIT_OP_DIVVV:
 		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
 		break;
-	case OP_MODVN:
-	case OP_MODNV:
-	case OP_MODVV:
+	case LUAJIT_OP_MODVN:
+	case LUAJIT_OP_MODNV:
+	case LUAJIT_OP_MODVV:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOD;
 		break;
-	case OP_POW:
+	case LUAJIT_OP_POW:
 		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 		break;
-	case OP_CAT:
+	case LUAJIT_OP_CAT:
 		op->type = RZ_ANALYSIS_OP_TYPE_REDUCE;
 		break;
 	// Constant loads
-	case OP_KSTR:
-	case OP_KCDATA:
-	case OP_KNUM:
+	case LUAJIT_OP_KSTR:
+	case LUAJIT_OP_KCDATA:
+	case LUAJIT_OP_KNUM:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->eob = false;
 		break;
-	case OP_KSHORT:
-	case OP_KPRI:
-	case OP_KNIL:
+	case LUAJIT_OP_KSHORT:
+	case LUAJIT_OP_KPRI:
+	case LUAJIT_OP_KNIL:
 		// Moving an embedded value directly into a register
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->eob = false;
 		break;
 	// Upvalue and proto
-	case OP_UGET:
+	case LUAJIT_OP_UGET:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->eob = false;
 		break;
-	case OP_USETV:
-	case OP_USETS:
-	case OP_USETN:
-	case OP_USETP:
+	case LUAJIT_OP_USETV:
+	case LUAJIT_OP_USETS:
+	case LUAJIT_OP_USETN:
+	case LUAJIT_OP_USETP:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		op->eob = false;
 		break;
-	case OP_UCLO:
+	case LUAJIT_OP_UCLO:
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		op->eob = true;
 		op->jump = addr + 4 + (jump_offset * 4);
 		break;
-	case OP_FNEW:
+	case LUAJIT_OP_FNEW:
 		op->type = RZ_ANALYSIS_OP_TYPE_NEW;
 		op->eob = false;
 		break;
 	// Table ops
-	case OP_TNEW:
-	case OP_TDUP:
+	case LUAJIT_OP_TNEW:
+	case LUAJIT_OP_TDUP:
 		op->type = RZ_ANALYSIS_OP_TYPE_NEW;
 		op->eob = false;
 		break;
-	case OP_GGET:
-	case OP_TGETV:
-	case OP_TGETS:
-	case OP_TGETB:
-	case OP_TGETR:
+	case LUAJIT_OP_GGET:
+	case LUAJIT_OP_TGETV:
+	case LUAJIT_OP_TGETS:
+	case LUAJIT_OP_TGETB:
+	case LUAJIT_OP_TGETR:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->eob = false;
 		break;
-	case OP_GSET:
-	case OP_TSETV:
-	case OP_TSETS:
-	case OP_TSETB:
-	case OP_TSETM:
-	case OP_TSETR:
+	case LUAJIT_OP_GSET:
+	case LUAJIT_OP_TSETV:
+	case LUAJIT_OP_TSETS:
+	case LUAJIT_OP_TSETB:
+	case LUAJIT_OP_TSETM:
+	case LUAJIT_OP_TSETR:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		op->eob = false;
 		break;
 	// Calls and vararg handling
-	case OP_CALL:
-	case OP_CALLM:
-	case OP_ITERC:
-	case OP_ITERN:
+	case LUAJIT_OP_CALL:
+	case LUAJIT_OP_CALLM:
+	case LUAJIT_OP_ITERC:
+	case LUAJIT_OP_ITERN:
 		op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
 		op->eob = false;
 		// To jump no hardcoded address can be fount in bytecode (It will be in registers).
 		break;
-	case OP_CALLT:
-	case OP_CALLMT:
+	case LUAJIT_OP_CALLT:
+	case LUAJIT_OP_CALLMT:
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		op->eob = true;
 		break;
-	case OP_VARG:
+	case LUAJIT_OP_VARG:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->eob = false;
 		break;
-	case OP_ISNEXT:
+	case LUAJIT_OP_ISNEXT:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->eob = true;
 		op->jump = addr + 4 + (jump_offset * 4);
 		op->fail = addr + 4;
 		break;
 	// Returns
-	case OP_RETM:
-	case OP_RET:
-	case OP_RET0:
-	case OP_RET1:
+	case LUAJIT_OP_RETM:
+	case LUAJIT_OP_RET:
+	case LUAJIT_OP_RET0:
+	case LUAJIT_OP_RET1:
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		op->eob = true;
 		break;
 	// Loop Initialization and Steps
-	case OP_FORI:
-	case OP_JFORI:
-	case OP_FORL:
-	case OP_IFORL:
-	case OP_JFORL:
-	case OP_ITERL:
-	case OP_IITERL:
-	case OP_JITERL:
+	case LUAJIT_OP_FORI:
+	case LUAJIT_OP_JFORI:
+	case LUAJIT_OP_FORL:
+	case LUAJIT_OP_IFORL:
+	case LUAJIT_OP_JFORL:
+	case LUAJIT_OP_ITERL:
+	case LUAJIT_OP_IITERL:
+	case LUAJIT_OP_JITERL:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->eob = true;
 		// Note: PC already points to the next instruction (addr + 4) when jumping
 		op->jump = addr + 4 + (jump_offset * 4);
 		op->fail = addr + 4;
 		break;
-	case OP_JMP:
+	case LUAJIT_OP_JMP:
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		op->eob = true;
 		op->jump = addr + 4 + (jump_offset * 4);
 		break;
 	// Function headers
-	case OP_FUNCF:
-	case OP_IFUNCF:
-	case OP_JFUNCF:
-	case OP_FUNCV:
-	case OP_IFUNCV:
-	case OP_JFUNCV:
-	case OP_FUNCC:
-	case OP_FUNCCW:
+	case LUAJIT_OP_FUNCF:
+	case LUAJIT_OP_IFUNCF:
+	case LUAJIT_OP_JFUNCF:
+	case LUAJIT_OP_FUNCV:
+	case LUAJIT_OP_IFUNCV:
+	case LUAJIT_OP_JFUNCV:
+	case LUAJIT_OP_FUNCC:
+	case LUAJIT_OP_FUNCCW:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		op->eob = false;
 		break;
 	// The maximum opcode
-	case OP__MAX:
+	case LUAJIT_OP__MAX:
 	default:
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		break;

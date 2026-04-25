@@ -8,6 +8,7 @@
 #include <rz_types.h>
 #include <rz_asm.h>
 #include <luac/luac_common.h>
+#include "luajit/arch_2.1.h"
 
 #define DISASM_BUF_SIZE 64
 #define DISASM_BUF      (char[DISASM_BUF_SIZE]){ 0 }

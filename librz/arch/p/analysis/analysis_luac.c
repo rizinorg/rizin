@@ -1,12 +1,18 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 // SPDX-FileCopyrightText: 2026 Sergey Sharshunov <s.sharshunov@gmail.com>
+// SPDX-FileCopyrightText: 2026 Arya-1-HR
 
 #include <rz_types.h>
 #include <analysis_private.h>
 #include <rz_analysis.h>
 
 #include <luac/lua_arch.h>
+
+int rz_luajit_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
+	LuaJITInstructions instr = rz_read_ble32(data, analysis->big_endian);
+	return luajit_analysis_op(analysis, op, addr, data, len, instr);
+}
 
 int rz_lua_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	if (!analysis->cpu) {
@@ -16,6 +22,10 @@ int rz_lua_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 
 	if (!op || len < 4) {
 		return 0;
+	}
+
+	if (rz_str_startswith(analysis->cpu, "luajit")) {
+		return rz_luajit_analysis_op(analysis, op, addr, data, len, mask);
 	}
 
 	if (!rz_type_db_format_get(analysis->typedb, "LuaConstant")) {

@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "luajit.h"
-#include <rz_util/rz_str.h>
 
 static ut64 luajit_get_flag(RzBuffer *b, ut64 off_at) {
 	if (!b) {
@@ -37,10 +36,10 @@ RZ_IPI RzBinInfo *luajit_header_parser(RzBinFile *bf, LuaJITBinInfo *bin_info, i
 	info->type = rz_str_newf("luajit 2.%d compiled file", min);
 	info->bclass = rz_str_dup("luajit compiled file");
 	info->rclass = rz_str_dup("luajit");
-	info->arch = rz_str_newf("luajit");
 	info->bits = 32;
-	info->cpu = rz_str_newf("2.%d", min);
 	info->lang = "lua";
+	info->arch = rz_str_dup("luac");
+	info->cpu = rz_str_newf("luajit 2.%d", min);
 	info->compiler = rz_str_newf("luajit 2.%d compiler", min);
 
 	ut64 flag = luajit_get_flag(r_buffer, LUAJIT_FLAG_OFFSET_AT);
@@ -69,7 +68,7 @@ RZ_IPI RzBinInfo *luajit_header_parser(RzBinFile *bf, LuaJITBinInfo *bin_info, i
 			info->guid = rz_str_dup("stripped");
 			bin_info->file_name = rz_str_dup("stripped");
 		}
-		// Header is not fixed size due to (ULEB128)
+		/* Header is not fixed size due to (ULEB128) */
 		bin_info->header_end = LUAJIT_FILE_LEN_START + end_len + name_len; // File Len start + uleb128 len of name length + name length
 		RZ_FREE(file_name);
 	}
@@ -91,7 +90,7 @@ static ut64 handle_value_type(RzBuffer *buff, LuaJITValue *value, ut64 offset, L
 	case LUAJIT_TINT:
 		end_len = rz_buf_uleb128_at(buff, offset, &_val);
 		if (check_malformed_ULEB128(end_len)) {
-			free_luajit_value(value);
+			luajit_value_free(value);
 			return offset;
 		}
 		offset += end_len;
@@ -107,7 +106,7 @@ static ut64 handle_value_type(RzBuffer *buff, LuaJITValue *value, ut64 offset, L
 	case LUAJIT_TFLT:
 		end_len = rz_buf_uleb128_at(buff, offset, &lo_val);
 		if (check_malformed_ULEB128(end_len)) {
-			free_luajit_value(value);
+			luajit_value_free(value);
 			return offset;
 		}
 		offset += end_len;
@@ -115,7 +114,7 @@ static ut64 handle_value_type(RzBuffer *buff, LuaJITValue *value, ut64 offset, L
 
 		end_len = rz_buf_uleb128_at(buff, offset, &hi_val);
 		if (check_malformed_ULEB128(end_len)) {
-			free_luajit_value(value);
+			luajit_value_free(value);
 			return offset;
 		}
 		offset += end_len;
@@ -150,7 +149,7 @@ static ut64 luajit_parse_table(LuaJITProto *proto, LuaJITKgcObj *kgc_obj, RzBuff
 	table->offset = offset;
 	end_len = rz_buf_uleb128_at(buf, offset, &ret);
 	if (check_malformed_ULEB128(end_len)) {
-		luajit_free_table(table);
+		luajit_table_free(table);
 		return offset;
 	}
 	table->narray = ret;
@@ -159,7 +158,7 @@ static ut64 luajit_parse_table(LuaJITProto *proto, LuaJITKgcObj *kgc_obj, RzBuff
 
 	end_len = rz_buf_uleb128_at(buf, offset, &ret);
 	if (check_malformed_ULEB128(end_len)) {
-		luajit_free_table(table);
+		luajit_table_free(table);
 		return offset;
 	}
 	table->nhash = ret;
@@ -169,7 +168,7 @@ static ut64 luajit_parse_table(LuaJITProto *proto, LuaJITKgcObj *kgc_obj, RzBuff
 	for (i = 0; i < table->narray; i++) {
 		end_len = rz_buf_uleb128_at(buf, offset, &ret);
 		if (check_malformed_ULEB128(end_len)) {
-			luajit_free_table(table);
+			luajit_table_free(table);
 			return offset;
 		}
 		offset += end_len;
@@ -185,7 +184,7 @@ static ut64 luajit_parse_table(LuaJITProto *proto, LuaJITKgcObj *kgc_obj, RzBuff
 	for (i = 0; i < table->nhash; i++) {
 		end_len = rz_buf_uleb128_at(buf, offset, &ret);
 		if (check_malformed_ULEB128(end_len)) {
-			luajit_free_table(table);
+			luajit_table_free(table);
 			return offset;
 		}
 		offset += end_len;
@@ -198,7 +197,7 @@ static ut64 luajit_parse_table(LuaJITProto *proto, LuaJITKgcObj *kgc_obj, RzBuff
 
 		end_len = rz_buf_uleb128_at(buf, offset, &ret);
 		if (check_malformed_ULEB128(end_len)) {
-			luajit_free_table(table);
+			luajit_table_free(table);
 			return offset;
 		}
 		offset += end_len;
@@ -220,7 +219,7 @@ static ut64 read_split_64(RzBuffer *buf, ut64 offset, LuaJITKgcObj *kgc_obj, ut6
 
 	len = rz_buf_uleb128_at(buf, offset, &lo_val);
 	if (check_malformed_ULEB128(len)) {
-		luajit_free_kgc_obj(kgc_obj);
+		luajit_kgc_obj_free(kgc_obj);
 		return offset;
 	}
 	offset += len;
@@ -228,7 +227,7 @@ static ut64 read_split_64(RzBuffer *buf, ut64 offset, LuaJITKgcObj *kgc_obj, ut6
 
 	len = rz_buf_uleb128_at(buf, offset, &hi_val);
 	if (check_malformed_ULEB128(len)) {
-		luajit_free_kgc_obj(kgc_obj);
+		luajit_kgc_obj_free(kgc_obj);
 		return offset;
 	}
 	offset += len;
@@ -302,7 +301,7 @@ static ut64 parse_kgc_objects(RzBuffer *buff, LuaJITProto *proto, RzList /*<LuaJ
 		kgc_obj->offset = off;
 		end_len = rz_buf_uleb128_at(buff, off, &ret);
 		if (check_malformed_ULEB128(end_len)) {
-			luajit_free_kgc_obj(kgc_obj);
+			luajit_kgc_obj_free(kgc_obj);
 			return off;
 		}
 		off += end_len;
@@ -457,7 +456,9 @@ RZ_IPI LuaJITProto *luajit_parse_proto(RzBuffer *buff, RzList /*<LuaJITProto *>*
 	} else {
 		bytes_read_rem = byte_rd;
 	}
-	rz_list_append(proto_list, proto); // The nested proto is added to the list which will be attached to parent proto while parsing KGC object
+	/* The nested proto is added to the list which will be attached
+	to parent proto while parsing KGC object */
+	rz_list_append(proto_list, proto);
 
 	// Proto Header
 	offset = base_offset;
@@ -467,7 +468,8 @@ RZ_IPI LuaJITProto *luajit_parse_proto(RzBuffer *buff, RzList /*<LuaJITProto *>*
 		return NULL;
 	}
 	proto->hdr_size += end_len;
-	bytes_read_rem = bytes_read_rem - (U_ret + end_len); // reamaining_bytes_to_read - (size_of_proto + number of bytes holding size)
+	/* Remaining_bytes_to_read - (size_of_proto + number of bytes holding size) */
+	bytes_read_rem = bytes_read_rem - (U_ret + end_len);
 	if (bytes_read_rem < 0) {
 		return NULL;
 	}

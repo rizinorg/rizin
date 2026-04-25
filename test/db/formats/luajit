@@ -68,12 +68,12 @@ EXPECT=<<EOF
 0x0000011d 0x0000011d   4    4 fcn.0x1a.kgcobj   utf8 text
 0x00000122 0x00000122   4    4 fcn.0x1a.kgcobj   utf8 find
 0x00000127 0x00000127   6    6 fcn.0x1a.kgcobj   utf8 string
-0x00000151 0x00000151   5    5 fcn.0x1a.localvar utf8 start
-0x00000159 0x00000159   6    6 fcn.0x1a.localvar utf8 finish
-0x00000162 0x00000162   5    5 fcn.0x1a.localvar utf8 start
-0x0000016a 0x0000016a   6    6 fcn.0x1a.localvar utf8 finish
-0x00000173 0x00000173   5    5 fcn.0x1a.localvar utf8 start
-0x0000017b 0x0000017b   6    6 fcn.0x1a.localvar utf8 finish
+0x00000151 0x00000151   5    6 fcn.0x1a.localvar utf8 start
+0x00000159 0x00000159   6    7 fcn.0x1a.localvar utf8 finish
+0x00000162 0x00000162   5    6 fcn.0x1a.localvar utf8 start
+0x0000016a 0x0000016a   6    7 fcn.0x1a.localvar utf8 finish
+0x00000173 0x00000173   5    6 fcn.0x1a.localvar utf8 start
+0x0000017b 0x0000017b   6    7 fcn.0x1a.localvar utf8 finish
 EOF
 RUN
 
@@ -128,48 +128,48 @@ EXPECT=<<EOF
 0x00000685 0x00000685   8    8 fcn.0x5d7.kgcobj   utf8 is_alive
 0x0000068f 0x0000068f   2    2 fcn.0x5d7.kgcobj   utf8 mp
 0x00000680 0x00000680   4    4 fcn.0x5d7.kgcobj   utf8 Hero
-0x000006e6 0x000006e6   6    6 fcn.0x5d7.localvar utf8 dummy1
-0x000006ef 0x000006ef   6    6 fcn.0x5d7.localvar utf8 dummy2
-0x000006f8 0x000006f8   6    6 fcn.0x5d7.localvar utf8 dummy3
-0x00000701 0x00000701   6    6 fcn.0x5d7.localvar utf8 dummy4
-0x0000070a 0x0000070a  10   10 fcn.0x5d7.localvar utf8 base_stats
-0x00000717 0x00000717  10   10 fcn.0x5d7.localvar utf8 calculator
-0x00000724 0x00000724   4    4 fcn.0x5d7.localvar utf8 calc
-0x0000072b 0x0000072b   4    4 fcn.0x5d7.localvar utf8 hit1
-0x00000732 0x00000732  10   10 fcn.0x5d7.localvar utf8 hits_total
-0x0000073f 0x0000073f   4    4 fcn.0x5d7.localvar utf8 hit2
-0x00000746 0x00000746  11   11 fcn.0x5d7.localvar utf8 hits_total2
-0x00000754 0x00000754   4    4 fcn.0x5d7.localvar utf8 math
-0x0000075b 0x0000075b  16   16 fcn.0x5d7.localvar utf8 inventory_system
-0x0000076e 0x0000076e   4    4 fcn.0x5d7.localvar utf8 loop
-0x00000775 0x00000775  10   10 fcn.0x5d7.localvar utf8 comparison
-0x00000782 0x00000782  16   16 fcn.0x5d7.localvar utf8 tail_call_target
-0x00000795 0x00000795  19   19 fcn.0x5d7.localvar utf8 vararg_and_tailcall
-0x000007ab 0x000007ab   4    4 fcn.0x5d7.localvar utf8 main
+0x000006e6 0x000006e6   6    7 fcn.0x5d7.localvar utf8 dummy1
+0x000006ef 0x000006ef   6    7 fcn.0x5d7.localvar utf8 dummy2
+0x000006f8 0x000006f8   6    7 fcn.0x5d7.localvar utf8 dummy3
+0x00000701 0x00000701   6    7 fcn.0x5d7.localvar utf8 dummy4
+0x0000070a 0x0000070a  10   11 fcn.0x5d7.localvar utf8 base_stats
+0x00000717 0x00000717  10   11 fcn.0x5d7.localvar utf8 calculator
+0x00000724 0x00000724   4    5 fcn.0x5d7.localvar utf8 calc
+0x0000072b 0x0000072b   4    5 fcn.0x5d7.localvar utf8 hit1
+0x00000732 0x00000732  10   11 fcn.0x5d7.localvar utf8 hits_total
+0x0000073f 0x0000073f   4    5 fcn.0x5d7.localvar utf8 hit2
+0x00000746 0x00000746  11   12 fcn.0x5d7.localvar utf8 hits_total2
+0x00000754 0x00000754   4    5 fcn.0x5d7.localvar utf8 math
+0x0000075b 0x0000075b  16   17 fcn.0x5d7.localvar utf8 inventory_system
+0x0000076e 0x0000076e   4    5 fcn.0x5d7.localvar utf8 loop
+0x00000775 0x00000775  10   11 fcn.0x5d7.localvar utf8 comparison
+0x00000782 0x00000782  16   17 fcn.0x5d7.localvar utf8 tail_call_target
+0x00000795 0x00000795  19   20 fcn.0x5d7.localvar utf8 vararg_and_tailcall
+0x000007ab 0x000007ab   4    5 fcn.0x5d7.localvar utf8 main
 0x0000053a 0x0000053a  12   12 fcn.0x4d3.kgcobj   utf8 DEBUG_OUTPUT
 0x00000547 0x00000547   2    2 fcn.0x4d3.kgcobj   utf8 _G
 0x0000054a 0x0000054a   6    6 fcn.0x4d3.kgcobj   utf8 Result
-0x0000059f 0x0000059f   2    2 fcn.0x4d3.localvar utf8 m1
-0x000005a4 0x000005a4   2    2 fcn.0x4d3.localvar utf8 m2
-0x000005a9 0x000005a9   2    2 fcn.0x4d3.localvar utf8 m3
-0x000005ae 0x000005ae   3    3 fcn.0x4d3.localvar utf8 inv
-0x000005b4 0x000005b4   8    8 fcn.0x4d3.localvar utf8 loop_res
-0x000005bf 0x000005bf   8    8 fcn.0x4d3.localvar utf8 comp_res
-0x000005ca 0x000005ca   9    9 fcn.0x4d3.localvar utf8 final_val
-0x000004c2 0x000004c2   6    6 fcn.0x45d.localvar utf8 prefix
-0x000004cb 0x000004cb   4    4 fcn.0x45d.localvar utf8 args
-0x00000450 0x00000450   1    1 fcn.0x436.localvar utf8 a
-0x00000454 0x00000454   1    1 fcn.0x436.localvar utf8 b
-0x00000458 0x00000458   1    1 fcn.0x436.localvar utf8 c
+0x0000059f 0x0000059f   2    3 fcn.0x4d3.localvar utf8 m1
+0x000005a4 0x000005a4   2    3 fcn.0x4d3.localvar utf8 m2
+0x000005a9 0x000005a9   2    3 fcn.0x4d3.localvar utf8 m3
+0x000005ae 0x000005ae   3    4 fcn.0x4d3.localvar utf8 inv
+0x000005b4 0x000005b4   8    9 fcn.0x4d3.localvar utf8 loop_res
+0x000005bf 0x000005bf   8    9 fcn.0x4d3.localvar utf8 comp_res
+0x000005ca 0x000005ca   9   10 fcn.0x4d3.localvar utf8 final_val
+0x000004c2 0x000004c2   6    7 fcn.0x45d.localvar utf8 prefix
+0x000004cb 0x000004cb   4    5 fcn.0x45d.localvar utf8 args
+0x00000450 0x00000450   1    2 fcn.0x436.localvar utf8 a
+0x00000454 0x00000454   1    2 fcn.0x436.localvar utf8 b
+0x00000458 0x00000458   1    2 fcn.0x436.localvar utf8 c
 0x00000412 0x00000412   5    5 fcn.0x3aa.kgcobj   utf8 admin
-0x0000042f 0x0000042f   3    3 fcn.0x3aa.localvar utf8 val
+0x0000042f 0x0000042f   3    4 fcn.0x3aa.localvar utf8 val
 0x0000032a 0x0000032a   5    5 fcn.0x29e.kgcobj   utf8 pairs
 0x00000330 0x00000330   1    1 fcn.0x29e.kgcobj   utf8  blocks=
 0x00000335 0x00000335   1    1 fcn.0x29e.kgcobj   utf8 c
 0x00000339 0x00000339   1    1 fcn.0x29e.kgcobj   utf8 a
 0x0000033d 0x0000033d   1    1                    utf8 b
-0x00000361 0x00000361   3    3 fcn.0x29e.localvar utf8 sum
-0x00000367 0x00000367   4    4 fcn.0x29e.localvar utf8 \U00000001\U00000003\U00000003\U00000002
+0x00000361 0x00000361   3    4 fcn.0x29e.localvar utf8 sum
+0x00000367 0x00000367   4    5 fcn.0x29e.localvar utf8 \U00000001\U00000003\U00000003\U00000002
 0x00000226 0x00000226  12   12 fcn.0x1da.kgcobj   utf8 Steel Shield
 0x00000233 0x00000233   6    6 fcn.0x1da.kgcobj   utf8 Elixir
 0x0000023a 0x0000023a   6    6 fcn.0x1da.kgcobj   utf8 Potion
@@ -177,42 +177,42 @@ EXPECT=<<EOF
 0x0000024f 0x0000024f   6    6 fcn.0x1da.kgcobj   utf8 shield
 0x00000256 0x00000256  10   10 fcn.0x1da.kgcobj   utf8 Iron Sword
 0x00000261 0x00000261   5    5 fcn.0x1da.kgcobj   utf8 sword
-0x00000277 0x00000277   3    3 fcn.0x1da.localvar utf8 inv
-0x0000027d 0x0000027d   6    6 fcn.0x1da.localvar utf8 weapon
-0x00000286 0x00000286   4    4 fcn.0x1da.localvar utf8 item
-0x0000028d 0x0000028d   3    3 fcn.0x1da.localvar utf8 key
-0x00000293 0x00000293   7    7 fcn.0x1da.localvar utf8 defense
+0x00000277 0x00000277   3    4 fcn.0x1da.localvar utf8 inv
+0x0000027d 0x0000027d   6    7 fcn.0x1da.localvar utf8 weapon
+0x00000286 0x00000286   4    5 fcn.0x1da.localvar utf8 item
+0x0000028d 0x0000028d   3    4 fcn.0x1da.localvar utf8 key
+0x00000293 0x00000293   7    8 fcn.0x1da.localvar utf8 defense
 0x00000173 0x00000173   3    3 fcn.0xe7.kgcobj    utf8 ing
 0x00000177 0x00000177   3    3 fcn.0xe7.kgcobj    utf8 Str
-0x000001a5 0x000001a5   1    1 fcn.0xe7.localvar  utf8 x
-0x000001a9 0x000001a9   1    1 fcn.0xe7.localvar  utf8 y
-0x000001ad 0x000001ad   1    1 fcn.0xe7.localvar  utf8 a
-0x000001b1 0x000001b1   1    1 fcn.0xe7.localvar  utf8 b
-0x000001b5 0x000001b5   1    1 fcn.0xe7.localvar  utf8 c
-0x000001b9 0x000001b9   1    1 fcn.0xe7.localvar  utf8 d
-0x000001bd 0x000001bd   1    1 fcn.0xe7.localvar  utf8 e
-0x000001c1 0x000001c1   1    1 fcn.0xe7.localvar  utf8 f
-0x000001c5 0x000001c5   1    1 fcn.0xe7.localvar  utf8 g
-0x000001c9 0x000001c9   1    1 fcn.0xe7.localvar  utf8 h
-0x000001cd 0x000001cd   1    1 fcn.0xe7.localvar  utf8 i
-0x000001d1 0x000001d1   1    1 fcn.0xe7.localvar  utf8 j
-0x000001d5 0x000001d5   1    1 fcn.0xe7.localvar  utf8 k
-0x000000c6 0x000000c6  15   15 fcn.0xa6.localvar  utf8 base_multiplier
-0x000000d8 0x000000d8  11   11 fcn.0xa6.localvar  utf8 combo_count
-0x0000007c 0x0000007c  13   13 fcn.0x12.localvar  utf8 weapon_damage
-0x0000008c 0x0000008c   7    7 fcn.0x12.localvar  utf8 is_crit
-0x00000096 0x00000096  12   12 fcn.0x12.localvar  utf8 final_damage
+0x000001a5 0x000001a5   1    2 fcn.0xe7.localvar  utf8 x
+0x000001a9 0x000001a9   1    2 fcn.0xe7.localvar  utf8 y
+0x000001ad 0x000001ad   1    2 fcn.0xe7.localvar  utf8 a
+0x000001b1 0x000001b1   1    2 fcn.0xe7.localvar  utf8 b
+0x000001b5 0x000001b5   1    2 fcn.0xe7.localvar  utf8 c
+0x000001b9 0x000001b9   1    2 fcn.0xe7.localvar  utf8 d
+0x000001bd 0x000001bd   1    2 fcn.0xe7.localvar  utf8 e
+0x000001c1 0x000001c1   1    2 fcn.0xe7.localvar  utf8 f
+0x000001c5 0x000001c5   1    2 fcn.0xe7.localvar  utf8 g
+0x000001c9 0x000001c9   1    2 fcn.0xe7.localvar  utf8 h
+0x000001cd 0x000001cd   1    2 fcn.0xe7.localvar  utf8 i
+0x000001d1 0x000001d1   1    2 fcn.0xe7.localvar  utf8 j
+0x000001d5 0x000001d5   1    2 fcn.0xe7.localvar  utf8 k
+0x000000c6 0x000000c6  15   16 fcn.0xa6.localvar  utf8 base_multiplier
+0x000000d8 0x000000d8  11   12 fcn.0xa6.localvar  utf8 combo_count
+0x0000007c 0x0000007c  13   14 fcn.0x12.localvar  utf8 weapon_damage
+0x0000008c 0x0000008c   7    8 fcn.0x12.localvar  utf8 is_crit
+0x00000096 0x00000096  12   13 fcn.0x12.localvar  utf8 final_damage
 fd       3
 file     bins/luaJIT/bin/big_2.1.ljbc
 size     0x7b4
 humansz  1.9K
 mode     r-x
-format   luaJIT
+format   luac
 iorw     false
 block    0x100
 type     luajit 2.1 compiled file
-arch     luajit
-cpu      2.1
+arch     luac
+cpu      luajit 2.1
 features N/A
 baddr    ----------
 binsz    0x000007b4
@@ -228,7 +228,8 @@ intrp    N/A
 laddr    0x00000000
 lang     lua
 machine  N/A
-minopsz  1
+maxopsz  4
+minopsz  4
 os       N/A
 cc       N/A
 pcalign  1

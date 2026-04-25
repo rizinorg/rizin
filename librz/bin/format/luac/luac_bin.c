@@ -58,15 +58,15 @@ void luac_add_entry(RzPVector /*<RzBinAddr *>*/ *entry_vec, ut64 offset, int ent
 	rz_pvector_push(entry_vec, entry);
 }
 
-void luac_add_string(RzList /*<RzBinString *>*/ *string_list, char *string, ut64 poffset, ut64 voffset, ut64 size) {
+void luac_add_string(RzList /*<RzBinString *>*/ *string_list, char *string, ut64 poffset, ut64 voffset, ut64 size, int cpu) {
 	RzBinString *bin_string = RZ_NEW0(RzBinString);
 	if (!bin_string) {
 		return;
 	}
 	bin_string->paddr = poffset;
 	bin_string->vaddr = voffset;
-	bin_string->size = size + 1;
 	bin_string->length = size;
+	bin_string->size = (cpu == LUAJIT_CPU) ? size : size + 1;
 	bin_string->string = rz_str_dup(string);
 	bin_string->type = RZ_STRING_ENC_UTF8;
 	rz_list_append(string_list, bin_string);
@@ -90,13 +90,6 @@ static void free_rz_string(RzBinString *string) {
 		RZ_FREE(string->string);
 	}
 	RZ_FREE(string);
-}
-
-static void free_rz_addr(RzBinAddr *addr) {
-	if (!addr) {
-		return;
-	}
-	RZ_FREE(addr);
 }
 
 void luac_build_info_free(LuacBinInfo *bin_info) {
@@ -138,7 +131,7 @@ LuacBinInfo *luac_build_info(RZ_NONNULL LuaProto *proto) {
 
 	ret->protos_vec = rz_pvector_new((RzPVectorFree)NULL);
 	ret->all_const_vec = rz_pvector_new((RzPVectorFree)NULL);
-	ret->entry_vec = rz_pvector_new((RzPVectorFree)free_rz_addr);
+	ret->entry_vec = rz_pvector_new((RzPVectorFree)free);
 	ret->symbol_list = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	ret->section_vec = rz_pvector_new((RzPVectorFree)free_rz_section);
 	ret->line_nums_vec = rz_pvector_new((RzPVectorFree)free_line_nums);

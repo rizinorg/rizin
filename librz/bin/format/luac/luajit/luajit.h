@@ -8,9 +8,10 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_bin.h>
+#include "../luac_common.h"
 
-#define LUAJIT_GET_INTERNAL_BIN_INFO_OBJ(bf) ((LuaJITBinInfo *)(bf)->o->bin_obj)
-#define IS_FLAG(off, flag)                   ((off) & flag)
+#define IS_FLAG(off, flag) ((off) & flag)
+#define LUAJIT_CPU         2 // Flag that the detected CPU is LuaJIT
 
 /* Header Info */
 #define LUAJIT_MAGIC           "\x1b\x4c\x4a"
@@ -67,6 +68,7 @@ typedef enum {
  * \brief Store the global binary info (majority recieved from header)
  */
 typedef struct LuaJIT_binInfo {
+	int cpu;
 	ut64 hdr_flags; ///< bitmasked header flag
 	char *file_name; ///< Source
 	ut64 header_end; ///< End offset of the header
@@ -209,6 +211,13 @@ typedef struct luajit_constant_entry {
 /* Plugin */
 RZ_IPI LuaJITProto *luajit_parse_proto(RzBuffer *buff, RzList /*<LuaJITProto *>*/ *proto_list, ut64 base_offset, ut64 byte_rd, bool last_proto);
 RZ_IPI RzBinInfo *luajit_header_parser(RzBinFile *bf, LuaJITBinInfo *bin_info, int min);
+RZ_IPI bool luajit_load_buffer(RzBinFile *b, RzBinObject *obj, RzBuffer *buf, Sdb *sdb);
+RZ_IPI RzPVector /*<RzBinString *>*/ *luajit_strings(RzBinFile *bf);
+RZ_IPI RzPVector /*<RzBinSection *>*/ *luajit_sections(RzBinFile *bf);
+RZ_IPI RzPVector /*<RzBinSymbol *>*/ *luajit_symbols(RzBinFile *bf);
+RZ_IPI RzPVector /*<RzBinAddr *>*/ *luajit_entries(RzBinFile *bf);
+RZ_IPI RzBinInfo *luajit_info(RzBinFile *bf);
+RZ_IPI void luajit_destroy(RzBinFile *bf);
 
 /* Common */
 RZ_IPI bool check_malformed_ULEB128(int val);
@@ -222,10 +231,10 @@ RZ_IPI RZ_OWN LuaJITConstEntry *luajit_new_constant();
 RZ_IPI RZ_OWN LuaJITLocalVar *luajit_new_localvar();
 RZ_IPI RZ_OWN LuaJITUpValue *luajit_new_upvalue();
 
-void luajit_free_proto_entry(LuaJITProto *proto);
-void luajit_free_kgc_obj(LuaJITKgcObj *kgc_obj);
-void free_luajit_value(LuaJITValue *value);
-void luajit_free_table(LuaJITTable *table);
+RZ_IPI void luajit_proto_entry_free(LuaJITProto *proto);
+RZ_IPI void luajit_kgc_obj_free(LuaJITKgcObj *kgc_obj);
+RZ_IPI void luajit_value_free(LuaJITValue *value);
+RZ_IPI void luajit_table_free(LuaJITTable *table);
 
 #define luajit_return_if_null(p, ret) \
 	if ((p) == NULL) { \
