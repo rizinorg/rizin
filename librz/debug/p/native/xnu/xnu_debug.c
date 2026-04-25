@@ -555,7 +555,7 @@ int xnu_get_vmmap_entries_for_pid(RzXnuDebug *ctx, pid_t pid) {
 	kern_return_t kr = KERN_SUCCESS;
 	vm_address_t address = 0;
 	vm_size_t size = 0;
-	int n = 1;
+	int n = 0;
 
 	for (;;) {
 		mach_msg_type_number_t count;
