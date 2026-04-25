@@ -14,6 +14,8 @@
 #include "analysis_riscv_utils.h"
 #include <rz_util/rz_str.h>
 
+#include <librz/arch/isa/riscv/riscv_il.h>
+
 #define OPERAND(x)  insn->detail->riscv.operands[x]
 #define REGID(x)    insn->detail->riscv.operands[x].reg
 #define REG(x)      cs_reg_name(*handle, insn->detail->riscv.operands[x].reg)
@@ -1922,6 +1924,11 @@ beach:
 		set_op_family(op, insn);
 		set_op_extra_metadata(analysis, op, ctx->hndl, insn);
 		set_stack_effect(op, insn);
+
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			RzILOpEffect *il_op = rz_riscv_lift_instr(analysis, op, insn, addr, op->size);
+			op->il_op = il_op;
+		}
 	}
 	set_opdir(op);
 	if (insn && mask & RZ_ANALYSIS_OP_MASK_OPEX) {
@@ -2148,7 +2155,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"gpr	ft9	.64	488	0\n" // =f29
 			"gpr	ft10	.64	496	0\n" // =f30
 			"gpr	ft11	.64	504	0\n" // =f31
-			"gpr	fcsr	.32	512	0\n"
+			"gpr	fcsr	.64	512	0\n"
 			// vector registers
 			// assume each register is 512 bits (64 bytes) for maximum compatibility
 			// TODO: make the width accurately reflect the exact width defined in the binary
@@ -2276,6 +2283,7 @@ RzAnalysisPlugin rz_analysis_plugin_riscv_cs = {
 	.archinfo = archinfo,
 	.bits = 32 | 64,
 	.op = &analyze_op,
+	.il_config = rz_riscv_il_config,
 	.init = riscv_init,
 	.fini = riscv_fini,
 };
