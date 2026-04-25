@@ -1,138 +1,145 @@
-d "addi sp, sp, -0x90" 7571
-d "lui a5, 0x10" c167
-d "sw a5, 0x1c(sp)" 3ece
-d "lui a5, 0x30" b7070300
-d "sw a5, 0x24(sp)" 3ed2
-d "lui a5, 0xc" b167
-d "sw a5, 0x3c(sp)" 3ede
-d "lui a5, 0xffff8" e177
-d "sw s1, 0x84(sp)" 26c3
-d "sw ra, 0x8c(sp)" 06c7
-d "sw s0, 0x88(sp)" 22c5
-d "sw s2, 0x80(sp)" 4ac1
-d "sw s3, 0x7c(sp)" cede
-d "sw s4, 0x78(sp)" d2dc
-d "sw s5, 0x74(sp)" d6da
-d "sw s6, 0x70(sp)" dad8
-d "sw s7, 0x6c(sp)" ded6
-d "sw s8, 0x68(sp)" e2d4
-d "sw s9, 0x64(sp)" e6d2
-d "sw s10, 0x60(sp)" ead0
-d "sw s11, 0x5c(sp)" eece
-d "sw zero, 0x28(sp)" 02d4
-d "sw zero, 0x20(sp)" 02d0
-d "sw zero, 0x38(sp)" 02dc
-d "sw zero, 0x30(sp)" 02d8
-d "sw a5, 0x34(sp)" 3eda
-d "sw zero, 0x18(sp)" 02cc
-d "lui s1, 0x40" b7040400 0x38
-d "lui a5, 0x10013" b7370110
-d "lw a5, 4(a5)" dc43 0x40
-d "blez a5, 0x64" 6351f002 0x42
-d "lw ra, 0x8c(sp)" ba40 0x40
-d "lw s0, 0x88(sp)" 2a44 0x40
-d "lw s1, 0x84(sp)" 9a44 0x40
-d "lw s2, 0x80(sp)" 0a49 0x40
-d "lw s3, 0x7c(sp)" f659 0x40
-d "lw s4, 0x78(sp)" 665a 0x44
-d "lw s5, 0x74(sp)" d65a 0x48
-d "lw s6, 0x70(sp)" 465b 0x40
-d "lw s7, 0x6c(sp)" b65b 0x40
-d "lw s8, 0x68(sp)" 265c 0x40
-d "lw s9, 0x64(sp)" 965c 0x40
-d "lw s10, 0x60(sp)" 065d 0x40
-d "lw s11, 0x5c(sp)" f64d 0x40
+# ----------------------------- C_ADDI16SP -----------------------------
+d "addi sp, sp, -0x90" 7571 0x0 (set sp (+ (var sp) (bv 32 0xffffff70)))
+# ----------------------------- ADDI -----------------------------
+d "addi a1, a1, 0x700" 93850570 0x0 (set a1 (+ (var a1) (bv 32 0x700)))
+# ----------------------------- C_ADDI4SPN -----------------------------
+d "addi s0, sp, 0x80" 0001 0x0 (set s0 (+ (var sp) (bv 32 0x80)))
+# ----------------------------- C_ADDI ---------------------------------
+d "addi sp, sp, -0x20" 0111 0x0 (set sp (+ (var sp) (bv 32 0xffffffe0)))
+d "lui a5, 0x10" c167 0x0 (set a5 (<< (bv 32 0x10) (bv 32 0xc) false))
+d "sw a5, 0x1c(sp)" 3ece 0x0 (storew 0 (+ (var sp) (bv 32 0x1c)) (var a5))
+d "lui a5, 0x30" b7070300 0x0 (set a5 (<< (bv 32 0x30) (bv 32 0xc) false))
+d "sw a5, 0x24(sp)" 3ed2 0x0 (storew 0 (+ (var sp) (bv 32 0x24)) (var a5))
+d "lui a5, 0xc" b167 0x0 (set a5 (<< (bv 32 0xc) (bv 32 0xc) false))
+d "sw a5, 0x3c(sp)" 3ede 0x0 (storew 0 (+ (var sp) (bv 32 0x3c)) (var a5))
+d "lui a5, 0xffff8" e177 0x0 (set a5 (<< (bv 32 0xffff8) (bv 32 0xc) false))
+d "sw s1, 0x84(sp)" 26c3 0x0 (storew 0 (+ (var sp) (bv 32 0x84)) (var s1))
+d "sw ra, 0x8c(sp)" 06c7 0x0 (storew 0 (+ (var sp) (bv 32 0x8c)) (var ra))
+d "sw s0, 0x88(sp)" 22c5 0x0 (storew 0 (+ (var sp) (bv 32 0x88)) (var s0))
+d "sw s2, 0x80(sp)" 4ac1 0x0 (storew 0 (+ (var sp) (bv 32 0x80)) (var s2))
+d "sw s3, 0x7c(sp)" cede 0x0 (storew 0 (+ (var sp) (bv 32 0x7c)) (var s3))
+d "sw s4, 0x78(sp)" d2dc 0x0 (storew 0 (+ (var sp) (bv 32 0x78)) (var s4))
+d "sw s5, 0x74(sp)" d6da 0x0 (storew 0 (+ (var sp) (bv 32 0x74)) (var s5))
+d "sw s6, 0x70(sp)" dad8 0x0 (storew 0 (+ (var sp) (bv 32 0x70)) (var s6))
+d "sw s7, 0x6c(sp)" ded6 0x0 (storew 0 (+ (var sp) (bv 32 0x6c)) (var s7))
+d "sw s8, 0x68(sp)" e2d4 0x0 (storew 0 (+ (var sp) (bv 32 0x68)) (var s8))
+d "sw s9, 0x64(sp)" e6d2 0x0 (storew 0 (+ (var sp) (bv 32 0x64)) (var s9))
+d "sw s10, 0x60(sp)" ead0 0x0 (storew 0 (+ (var sp) (bv 32 0x60)) (var s10))
+d "sw s11, 0x5c(sp)" eece 0x0 (storew 0 (+ (var sp) (bv 32 0x5c)) (var s11))
+d "sw zero, 0x28(sp)" 02d4 0x0 (storew 0 (+ (var sp) (bv 32 0x28)) (bv 32 0x0))
+d "sw zero, 0x20(sp)" 02d0 0x0 (storew 0 (+ (var sp) (bv 32 0x20)) (bv 32 0x0))
+d "sw zero, 0x38(sp)" 02dc 0x0 (storew 0 (+ (var sp) (bv 32 0x38)) (bv 32 0x0))
+d "sw zero, 0x30(sp)" 02d8 0x0 (storew 0 (+ (var sp) (bv 32 0x30)) (bv 32 0x0))
+d "sw a5, 0x34(sp)" 3eda 0x0 (storew 0 (+ (var sp) (bv 32 0x34)) (var a5))
+d "sw zero, 0x18(sp)" 02cc 0x0 (storew 0 (+ (var sp) (bv 32 0x18)) (bv 32 0x0))
+d "lui s1, 0x40" b7040400 0x38 (set s1 (<< (bv 32 0x40) (bv 32 0xc) false))
+d "lui a5, 0x10013" b7370110 0x0 (set a5 (<< (bv 32 0x10013) (bv 32 0xc) false))
+d "lw a5, 4(a5)" dc43 0x40 (set a5 (loadw 0 32 (+ (var a5) (bv 32 0x4))))
+d "blez a5, 0x64" 6351f002 0x42 (branch (|| (! (sle (bv 32 0x0) (var a5))) (== (bv 32 0x0) (var a5))) (jmp (bv 32 0x64)) (jmp (bv 32 0x46)))
+d "lw ra, 0x8c(sp)" ba40 0x40 (set ra (loadw 0 32 (+ (var sp) (bv 32 0x8c))))
+d "lw s0, 0x88(sp)" 2a44 0x40 (set s0 (loadw 0 32 (+ (var sp) (bv 32 0x88))))
+d "lw s1, 0x84(sp)" 9a44 0x40 (set s1 (loadw 0 32 (+ (var sp) (bv 32 0x84))))
+d "lw s2, 0x80(sp)" 0a49 0x40 (set s2 (loadw 0 32 (+ (var sp) (bv 32 0x80))))
+d "lw s3, 0x7c(sp)" f659 0x40 (set s3 (loadw 0 32 (+ (var sp) (bv 32 0x7c))))
+d "lw s4, 0x78(sp)" 665a 0x44 (set s4 (loadw 0 32 (+ (var sp) (bv 32 0x78))))
+d "lw s5, 0x74(sp)" d65a 0x48 (set s5 (loadw 0 32 (+ (var sp) (bv 32 0x74))))
+d "lw s6, 0x70(sp)" 465b 0x40 (set s6 (loadw 0 32 (+ (var sp) (bv 32 0x70))))
+d "lw s7, 0x6c(sp)" b65b 0x40 (set s7 (loadw 0 32 (+ (var sp) (bv 32 0x6c))))
+d "lw s8, 0x68(sp)" 265c 0x40 (set s8 (loadw 0 32 (+ (var sp) (bv 32 0x68))))
+d "lw s9, 0x64(sp)" 965c 0x40 (set s9 (loadw 0 32 (+ (var sp) (bv 32 0x64))))
+d "lw s10, 0x60(sp)" 065d 0x40 (set s10 (loadw 0 32 (+ (var sp) (bv 32 0x60))))
+d "lw s11, 0x5c(sp)" f64d 0x40 (set s11 (loadw 0 32 (+ (var sp) (bv 32 0x5c))))
 d "addi sp, sp, 0x90" 4961 0x40
-d "ret" 8280 0x40
-d "lw a5, 0x18(sp)" e247 0x40
+d "ret" 8280 0x40 NONE
+d "lw a5, 0x18(sp)" e247 0x40 (set a5 (loadw 0 32 (+ (var sp) (bv 32 0x18))))
 d "beqz a5, 0x2d8" 63890726 0x66
-d "lw s0, 0x1c(sp)" 7244 0x40
-d "lw a0, 0x24(sp)" 1255 0x40
-d "lw a6, 0x28(sp)" 2258 0x40
-d "lw t3, 0x38(sp)" 625e 0x40
+d "lw s0, 0x1c(sp)" 7244 0x40 (set s0 (loadw 0 32 (+ (var sp) (bv 32 0x1c))))
+d "lw a0, 0x24(sp)" 1255 0x40 (set a0 (loadw 0 32 (+ (var sp) (bv 32 0x24))))
+d "lw a6, 0x28(sp)" 2258 0x40 (set a6 (loadw 0 32 (+ (var sp) (bv 32 0x28))))
+d "lw t3, 0x38(sp)" 625e 0x40 (set t3 (loadw 0 32 (+ (var sp) (bv 32 0x38))))
 d "srai a5, s0, 0x1f" 9357f441 0x40
-d "lw a2, 0x20(sp)" 0256 0x40
-d "andi a5, a5, 0xf" bd8b 0x40
+d "lw a2, 0x20(sp)" 0256 0x40 (set a2 (loadw 0 32 (+ (var sp) (bv 32 0x20))))
+d "andi a5, a5, 0xf" bd8b 0x40 (set a5 (& (var a5) (bv 32 0xf)))
 d "srai a4, a0, 0x1f" 1357f541 0x40
-d "lw a7, 0x30(sp)" c258 0x40
-d "add a3, a5, a6" b3860701 0x80
-d "sub s2, t3, a6" 33090e41 0x80
-d "andi a4, a4, 0x3f" 1377f703 0x80
-d "lw a6, 0x34(sp)" 5258 0x80
-d "add a1, a4, a2" b305c700 0x80
-d "sltu a4, a1, a4" 33b7e500 0x80
-d "sub a2, a7, a2" 3386c840 0x80
-d "sltu s7, a3, a5" b3bbf600 0x80
-d "sltu a7, a7, a2" b3b8c800 0x80
-d "add a5, a4, a0" b307a700 0x80
-d "mv a4, a2" 3287 0x80
-d "sub a2, a6, a0" 3306a840 0x80
-d "sltu a6, t3, s2" 33382e01 0x80
-d "lw t3, 0x3c(sp)" 725e 0x80
-d "mv t1, a0" 2a83 0x80
-d "srli a1, a1, 6" 9981 0x80
-d "slli a0, a5, 0x1a" 1395a701 0x80
-d "sw a4, 0x40(sp)" bac0 0x80
-d "sub a4, a2, a7" 33071641 0x80
-d "add s7, s7, s0" a29b 0xc0
-d "sw a4, 0x44(sp)" bac2 0xc0
-d "srai a5, a5, 6" 9987 0xc0
-d "or a4, a0, a1" 3367b500 0xc0
-d "slli s8, s7, 0x1c" 139ccb01 0xc0
-d "sub s0, t3, s0" 33048e40 0xc0
-d "srli a3, a3, 4" 9182 0xc0
-d "sw a4, 0x10(sp)" 3ac8 0xc0
-d "sw a5, 0x14(sp)" 3eca 0xc0
-d "lui a4, 1" 0567 0xc0
-d "sub s0, s0, a6" 33040441 0xc0
-d "or s8, s8, a3" 336cdc00 0xc0
-d "srai s7, s7, 4" 93db4b40 0xc0
-d "blt t1, a4, 0x2d4" 6347e31e 0xe6
-d "lw a5, 0x1c(sp)" f247 0xc0
-d "lui a4, 1" 0567 0xc0
-d "blt a5, a4, 0x2d4" 63c3e71e 0xee
-d "srli a5, s8, 0x1d" 9357dc01 0xc0
-d "slli a4, s7, 3" 13973b00 0xc0
-d "or a5, a5, a4" d98f 0xc0
-d "sw a5, 0x4c(sp)" bec6 0xc0
-d "slli a5, s8, 3" 93173c00 0xc0
-d "addi a5, sp, 8" 3c00 0x100
-d "li s11, 0xff" 930df00f 0x100
-d "sw a5, 0x48(sp)" bec4 0x100
-d "sw s2, 0xc(sp)" 4ac6 0x100
-d "li a5, 4" 9147 0x100
-d "li s2, 0" 0149 0x100
-d "mv s3, s11" ee89 0x100
-d "sw a5, 0x2c(sp)" 3ed6 0x100
-d "li s6, 0x10" 414b 0x100
-d "li s9, 8" a14c 0x100
-d "mv s11, s2" ca8d 0x100
-d "lw s10, 0x40(sp)" 064d 0x100
-d "lw s5, 0x44(sp)" 964a 0x100
-d "li s2, 0x80" 13090008 0x100
-d "mv s4, s3" 4e8a 0x100
-d "mv s3, s2" ca89 0x100
-d "lw t2, 0xc(sp)" b243 0x100
-d "mv t6, s0" a28f 0x100
-d "li ra, 0" 8140 0x100
-d "li s2, 0" 0149 0x100
-d "li a1, 0" 8145 0x100
-d "li a4, 0" 0147 0x100
-d "li t3, 0" 014e 0x100
-d "li a6, 0" 0148 0x100
-d "li a5, 0" 8147 0x100
-d "li a3, 0" 8146 0x100
-d "li t1, 0" 0143 0x100
-d "li a2, 0" 0146 0x100
-d "li a0, 0" 0145 0x100
-d "j 0x176" 25a8 0x13e
+d "lw a7, 0x30(sp)" c258 0x40 (set a7 (loadw 0 32 (+ (var sp) (bv 32 0x30))))
+d "add a3, a5, a6" b3860701 0x80 (set a3 (+ (var a5) (var a6)))
+d "sub s2, t3, a6" 33090e41 0x80 (set s2 (- (var t3) (var a6)))
+d "andi a4, a4, 0x3f" 1377f703 0x80 (set a4 (& (var a4) (bv 32 0x3f)))
+d "lw a6, 0x34(sp)" 5258 0x80 (set a6 (loadw 0 32 (+ (var sp) (bv 32 0x34))))
+d "add a1, a4, a2" b305c700 0x80 (set a1 (+ (var a4) (var a2)))
+d "sltu a4, a1, a4" 33b7e500 0x80 (set a4 (ite (&& (ule (var a1) (var a4)) (! (== (var a1) (var a4)))) (bv 32 0x1) (bv 32 0x0)))
+d "sub a2, a7, a2" 3386c840 0x80 (set a2 (- (var a7) (var a2)))
+d "sltu s7, a3, a5" b3bbf600 0x80 (set s7 (ite (&& (ule (var a3) (var a5)) (! (== (var a3) (var a5)))) (bv 32 0x1) (bv 32 0x0)))
+d "sltu a7, a7, a2" b3b8c800 0x80 (set a7 (ite (&& (ule (var a7) (var a2)) (! (== (var a7) (var a2)))) (bv 32 0x1) (bv 32 0x0)))
+d "add a5, a4, a0" b307a700 0x80 (set a5 (+ (var a4) (var a0)))
+d "mv a4, a2" 3287 0x80 (set a4 (var a2))
+d "sub a2, a6, a0" 3306a840 0x80 (set a2 (- (var a6) (var a0)))
+d "sltu a6, t3, s2" 33382e01 0x80 (set a6 (ite (&& (ule (var t3) (var s2)) (! (== (var t3) (var s2)))) (bv 32 0x1) (bv 32 0x0)))
+d "lw t3, 0x3c(sp)" 725e 0x80 (set t3 (loadw 0 32 (+ (var sp) (bv 32 0x3c))))
+d "mv t1, a0" 2a83 0x80 (set t1 (var a0))
+d "srli a1, a1, 6" 9981 0x80 (set a1 (>> (var a1) (bv 32 0x6) false))
+d "slli a0, a5, 0x1a" 1395a701 0x80 (set a0 (<< (var a5) (bv 32 0x1a) false))
+d "sw a4, 0x40(sp)" bac0 0x80 (storew 0 (+ (var sp) (bv 32 0x40)) (var a4))
+d "sub a4, a2, a7" 33071641 0x80 (set a4 (- (var a2) (var a7)))
+d "add s7, s7, s0" a29b 0xc0 NONE
+d "sw a4, 0x44(sp)" bac2 0xc0 (storew 0 (+ (var sp) (bv 32 0x44)) (var a4))
+d "srai a5, a5, 6" 9987 0xc0 (set a5 (>> (var a5) (bv 32 0x6) (msb (var a5))))
+d "or a4, a0, a1" 3367b500 0xc0 (set a4 (| (var a0) (var a1)))
+d "slli s8, s7, 0x1c" 139ccb01 0xc0 (set s8 (<< (var s7) (bv 32 0x1c) false))
+d "sub s0, t3, s0" 33048e40 0xc0 (set s0 (- (var t3) (var s0)))
+d "srli a3, a3, 4" 9182 0xc0 (set a3 (>> (var a3) (bv 32 0x4) false))
+d "sw a4, 0x10(sp)" 3ac8 0xc0 (storew 0 (+ (var sp) (bv 32 0x10)) (var a4))
+d "sw a5, 0x14(sp)" 3eca 0xc0 (storew 0 (+ (var sp) (bv 32 0x14)) (var a5))
+d "lui a4, 1" 0567 0xc0 (set a4 (<< (bv 32 0x1) (bv 32 0xc) false))
+d "sub s0, s0, a6" 33040441 0xc0 (set s0 (- (var s0) (var a6)))
+d "or s8, s8, a3" 336cdc00 0xc0 (set s8 (| (var s8) (var a3)))
+d "srai s7, s7, 4" 93db4b40 0xc0 (set s7 (>> (var s7) (bv 32 0x4) (msb (var s7))))
+d "blt t1, a4, 0x2d4" 6347e31e 0xe6 (branch (&& (sle (var t1) (var a4)) (! (== (var t1) (var a4)))) (jmp (bv 32 0x2d4)) (jmp (bv 32 0xea)))
+d "lw a5, 0x1c(sp)" f247 0xc0 (set a5 (loadw 0 32 (+ (var sp) (bv 32 0x1c))))
+d "lui a4, 1" 0567 0xc0 (set a4 (<< (bv 32 0x1) (bv 32 0xc) false))
+d "blt a5, a4, 0x2d4" 63c3e71e 0xee (branch (&& (sle (var a5) (var a4)) (! (== (var a5) (var a4)))) (jmp (bv 32 0x2d4)) (jmp (bv 32 0xf2)))
+d "srli a5, s8, 0x1d" 9357dc01 0xc0 (set a5 (>> (var s8) (bv 32 0x1d) false))
+d "slli a4, s7, 3" 13973b00 0xc0 (set a4 (<< (var s7) (bv 32 0x3) false))
+d "or a5, a5, a4" d98f 0xc0 NONE
+d "sw a5, 0x4c(sp)" bec6 0xc0 (storew 0 (+ (var sp) (bv 32 0x4c)) (var a5))
+d "slli a5, s8, 3" 93173c00 0xc0 (set a5 (<< (var s8) (bv 32 0x3) false))
+d "addi a5, sp, 8" 3c00 0x100 (set a5 (+ (var sp) (bv 32 0x8)))
+d "li s11, 0xff" 930df00f 0x100 (set s11 (+ (bv 32 0x0) (bv 32 0xff)))
+d "sw a5, 0x48(sp)" bec4 0x100 (storew 0 (+ (var sp) (bv 32 0x48)) (var a5))
+d "sw s2, 0xc(sp)" 4ac6 0x100 (storew 0 (+ (var sp) (bv 32 0xc)) (var s2))
+d "li a5, 4" 9147 0x100 (set a5 (bv 32 0x4))
+d "li s2, 0" 0149 0x100 (set s2 (bv 32 0x0))
+d "mv s3, s11" ee89 0x100 (set s3 (var s11))
+d "sw a5, 0x2c(sp)" 3ed6 0x100 (storew 0 (+ (var sp) (bv 32 0x2c)) (var a5))
+d "li s6, 0x10" 414b 0x100 (set s6 (bv 32 0x10))
+d "li s9, 8" a14c 0x100 (set s9 (bv 32 0x8))
+d "mv s11, s2" ca8d 0x100 (set s11 (var s2))
+d "lw s10, 0x40(sp)" 064d 0x100 (set s10 (loadw 0 32 (+ (var sp) (bv 32 0x40))))
+d "lw s5, 0x44(sp)" 964a 0x100 (set s5 (loadw 0 32 (+ (var sp) (bv 32 0x44))))
+d "li s2, 0x80" 13090008 0x100 (set s2 (+ (bv 32 0x0) (bv 32 0x80)))
+d "mv s4, s3" 4e8a 0x100 (set s4 (var s3))
+d "mv s3, s2" ca89 0x100 (set s3 (var s2))
+d "lw t2, 0xc(sp)" b243 0x100 (set t2 (loadw 0 32 (+ (var sp) (bv 32 0xc))))
+d "mv t6, s0" a28f 0x100 (set t6 (var s0))
+d "li ra, 0" 8140 0x100 (set ra (bv 32 0x0))
+d "li s2, 0" 0149 0x100 (set s2 (bv 32 0x0))
+d "li a1, 0" 8145 0x100 (set a1 (bv 32 0x0))
+d "li a4, 0" 0147 0x100 (set a4 (bv 32 0x0))
+d "li t3, 0" 014e 0x100 (set t3 (bv 32 0x0))
+d "li a6, 0" 0148 0x100 (set a6 (bv 32 0x0))
+d "li a5, 0" 8147 0x100 (set a5 (bv 32 0x0))
+d "li a3, 0" 8146 0x100 (set a3 (bv 32 0x0))
+d "li t1, 0" 0143 0x100 (set t1 (bv 32 0x0))
+d "li a2, 0" 0146 0x100 (set a2 (bv 32 0x0))
+d "li a0, 0" 0145 0x100 (set a0 (bv 32 0x0))
+d "j 0x176" 25a8 0x13e (jmp (bv 32 0x176))
 d "mul a4, a0, a2" 3307c502 0x140
 d "mulhu t1, a2, a2" 3333c602 0x140
-d "slli a4, a4, 1" 0607 0x140
+d "slli a4, a4, 1" 0607 0x140 (set a4 (<< (var a4) (bv 32 0x1) false))
 d "mul a7, a5, a6" b3880703 0x140
 d "add t1, t1, a4" 3a93 0x140
 d "mul a3, a2, a2" b306c602 0x140
-d "slli a7, a7, 1" 8608 0x140
+d "slli a7, a7, 1" 8608 0x140 (set a7 (<< (var a7) (bv 32 0x1) false))
 d "mulhu t3, a6, a6" 333e0803 0x140
 d "mul a4, a6, a6" 33070803 0x140
 d "add t3, t3, a7" 469e 0x140
@@ -140,8 +147,8 @@ d "add t5, t1, t3" 330fc301 0x140
 d "add t4, a3, a4" b38ee600 0x140
 d "sltu a7, t4, a3" b3b8de00 0x140
 d "add a7, a7, t5" fa98 0x140
-d "blt s1, a7, 0x2c6" 63cc1415 0x16e
-d "beq a7, s1, 0x2c2" 63889814 0x172
+d "blt s1, a7, 0x2c6" 63cc1415 0x16e (branch (&& (sle (var s1) (var a7)) (! (== (var s1) (var a7)))) (jmp (bv 32 0x2c6)) (jmp (bv 32 0x172)))
+d "beq a7, s1, 0x2c2" 63889814 0x172 (branch (== (var a7) (var s1)) (jmp (bv 32 0x2c2)) (jmp (bv 32 0x176)))
 d "sub a4, a3, a4" 3387e640 0x140
 d "sub t3, t1, t3" 330ec341 0x140
 d "sltu a3, ra, zero" b3b60000 0x140
@@ -151,35 +158,44 @@ d "sltu a4, a7, a4" 33b7e800 0x180
 d "add a3, a3, s5" d696 0x180
 d "add a3, a3, a4" ba96 0x180
 d "mul a5, a5, a2" b387c702 0x180
-d "slli t1, a3, 8" 13938600 0x180
-d "addi a1, a1, 1" 8505 0x180
+d "slli t1, a3, 8" 13938600 0x180 (set t1 (<< (var a3) (bv 32 0x8) false))
+d "addi a1, a1, 1" 8505 0x180 (set a1 (+ (var a1) (bv 32 0x1)))
 d "mul a4, a0, a6" 33070503 0x180
-d "srai a0, a3, 0x18" 13d58641 0x180
+d "srai a0, a3, 0x18" 13d58641 0x180 (set a0 (>> (var a3) (bv 32 0x18) (msb (var a3))))
 d "mulhu a3, a6, a2" b336c802 0x180
 d "add a4, a4, a5" 3e97 0x180
 d "mul a6, a6, a2" 3308c802 0x180
 d "add a4, a4, a3" 3697 0x180
-d "srli a2, a7, 0x18" 13d68801 0x180
-d "slli a4, a4, 1" 0607 0x180
+d "srli a2, a7, 0x18" 13d68801 0x180 (set a2 (>> (var a7) (bv 32 0x18) false))
+d "slli a4, a4, 1" 0607 0x180 (set a4 (<< (var a4) (bv 32 0x1) false))
 d "or a2, t1, a2" 3366c300 0x180
-d "slli a7, a6, 1" 93181800 0x180
-d "srli a3, a6, 0x1f" 9356f801 0x180
+d "slli a7, a6, 1" 93181800 0x180 (set a7 (<< (var a6) (bv 32 0x1) false))
+d "srli a3, a6, 0x1f" 9356f801 0x180 (set a3 (>> (var a6) (bv 32 0x1f) false))
 d "add a5, a7, t2" b3877800 0x1c0
 d "or a4, a4, a3" 558f 0x1c0
-d "srli a6, a5, 0x18" 13d88701 0x1c0
+d "srli a6, a5, 0x18" 13d88701 0x1c0 (set a6 (>> (var a5) (bv 32 0x18) false))
 d "add a4, a4, t6" 7e97 0x1c0
 d "sltu a5, a5, a7" b3b71701 0x1c0
 d "add a4, a4, a5" 3e97 0x1c0
-d "slli a5, a4, 8" 93178700 0x1c0
+d "slli a5, a4, 8" 93178700 0x1c0 (set a5 (<< (var a4) (bv 32 0x8) false))
 d "or a6, a5, a6" 33e80701 0x1c0
 d "srai a5, a4, 0x18" 93578741 0x1c0
-d "bne a1, s6, 0x140" e39065f7 0x1e0
+d "bne a1, s6, 0x140" e39065f7 0x1e0 (branch (! (== (var a1) (var s6))) (jmp (bv 32 0x140)) (jmp (bv 32 0x1e4)))
 d "li a5, 0" 8147 0x1c0
 d "add a4, t2, s8" 33878301 0x1c0
 d "sltu a3, a4, t2" b3367700 0x1c0
 d "or s2, a5, s2" 33e92701 0x1c0
 d "add t6, t6, s7" de9f 0x1c0
-d "addi ra, ra, 1" 8500 0x1c0
-d "andi s2, s2, 0xff" 1379f90f 0x1c0
+d "addi ra, ra, 1" 8500 0x1c0 (set ra (+ (var ra) (bv 32 0x1)))
+d "andi s2, s2, 0xff" 1379f90f 0x1c0 (set s2 (& (var s2) (bv 32 0xff)))
 d "mv t2, a4" ba83 0x1c0
 d "add t6, t6, a3" b69f 0x1c0
+d "ori a5, a5, 0x89" 93e79708 0x0 (set a5 (| (var a5) (bv 32 0x89)))
+d "xori a5, a5, 0x431" 93c71743 0x0 (set a5 (^ (var a5) (bv 32 0x431)))
+d "jalr ra" e7800000 0x30 (seq (set ra (bv 32 0x34)) (jmp (& (+ (var ra) (bv 32 0x0)) (bv 32 0xfffffffe))))
+d "slti zero, ra, 0xc" 13a0c000 0x0 nop
+d "sltiu zero, ra, 0xc" 13b0c000 0x0 nop
+d "slti t0, ra, 0xc" 93a2c000 0x0 (set t0 (ite (&& (sle (var ra) (bv 32 0xc)) (! (== (var ra) (bv 32 0xc)))) (bv 32 0x1) (bv 32 0x0)))
+d "sltiu t1, sp, 0x14" 13334101 0x0 (set t1 (ite (&& (ule (var sp) (bv 32 0x14)) (! (== (var sp) (bv 32 0x14)))) (bv 32 0x1) (bv 32 0x0)))
+d "jal t0, 0x14" ef024001 0x0 (seq (set t0 (bv 32 0x4)) (jmp (bv 32 0x14)))
+d "jal t0, 0x4a" ef024001 0x36 (seq (set t0 (bv 32 0x3a)) (jmp (bv 32 0x4a)))

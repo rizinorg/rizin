@@ -140,6 +140,7 @@ static RzILRegBinding *setup_reg_binding(RzAnalysis *a, RzAnalysisILConfig *cfg)
 		goto new_real;
 	}
 	succ = rz_reg_set_profile_string(reg, profile);
+
 	free(profile);
 	if (!succ) {
 		goto new_real;
