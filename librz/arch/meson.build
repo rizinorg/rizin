@@ -302,6 +302,7 @@ arch_isa_sources = [
   'isa/pyc/opcode_analysis.c',
   'isa/pyc/opcode_arg_fmt.c',
   'isa/pyc/pyc_dis.c',
+  'isa/riscv/riscv_il.c',
   'isa/rl78/rl78.c',
   'isa/rl78/rl78_instr.c',
   'isa/rl78/rl78_maps.c',

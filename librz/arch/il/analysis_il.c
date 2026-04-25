@@ -193,6 +193,7 @@ static bool setup_regs(RzAnalysis *a, RzAnalysisILVM *vm, RzAnalysisILConfig *cf
 		goto new_real;
 	}
 	succ = rz_reg_set_profile_string(reg, profile);
+
 	free(profile);
 	if (!succ) {
 		goto new_real;
