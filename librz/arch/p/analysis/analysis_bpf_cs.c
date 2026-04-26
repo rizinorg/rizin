@@ -13,7 +13,7 @@ typedef struct {
 } BPFContext;
 
 static char *bpf_get_reg_profile(RzAnalysis *analysis) {
-	const char *ebpg_reg_profile =
+	const char *ebpf_reg_profile =
 		"=PC pc\n"
 		"=SP R10\n"
 		"=R0 R0\n"
@@ -35,7 +35,7 @@ static char *bpf_get_reg_profile(RzAnalysis *analysis) {
 		"gpr    R8   .64  80  0\n"
 		"gpr    R9   .64  88  0\n";
 
-	return rz_str_dup(ebpg_reg_profile);
+	return rz_str_dup(ebpf_reg_profile);
 }
 
 static RzStructuredData *bpf_opex(csh handle, cs_insn *insn) {
