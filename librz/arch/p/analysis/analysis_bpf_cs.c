@@ -22,18 +22,18 @@ static char *bpf_get_reg_profile(RzAnalysis *analysis) {
 		"=A2 R3\n"
 		"=A3 R4\n"
 		"=A4 R5\n"
-		"gpr    pc   .64  0  0\n" // program counter
-		"gpr    sp   .64  8  0\n" // stack pointer
-		"gpr    R0   .64  16  0\n"
-		"gpr    R1   .64  24  0\n"
-		"gpr    R2   .64  32  0\n"
-		"gpr    R3   .64  40  0\n"
-		"gpr    R4   .64  48  0\n"
-		"gpr    R5   .64  56  0\n"
-		"gpr    R6   .64  64  0\n"
-		"gpr    R7   .64  72  0\n"
-		"gpr    R8   .64  80  0\n"
-		"gpr    R9   .64  88  0\n";
+		"gpr    pc   .64  0   0\n" // program counter
+		"gpr    R0   .64  8   0\n"
+		"gpr    R1   .64  16  0\n"
+		"gpr    R2   .64  24  0\n"
+		"gpr    R3   .64  32  0\n"
+		"gpr    R4   .64  40  0\n"
+		"gpr    R5   .64  48  0\n"
+		"gpr    R6   .64  56  0\n"
+		"gpr    R7   .64  64  0\n"
+		"gpr    R8   .64  72  0\n"
+		"gpr    R9   .64  80  0\n"
+		"gpr    R10  .64  88  0\n"; // stack pointer
 
 	return rz_str_dup(ebpf_reg_profile);
 }
