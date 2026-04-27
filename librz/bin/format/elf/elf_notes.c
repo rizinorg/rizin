@@ -38,6 +38,8 @@
 #define RISCV_64_FP (FP_LAYOUT | RISCV_64)
 #define PPC64       15
 #define S390X       17
+#define LOONGARCH32 18
+#define LOONGARCH64 19
 // Floating point register layout.
 #define ARCH_LEN (FP_LAYOUT | 0xf)
 
@@ -103,6 +105,16 @@
 #define S390X_REGS_SIZE               216
 #define S390X_PR_STATUS_REG_OFFSET    0x70
 #define S390X_PR_STATUS_REG_OFFSET_SP 136
+
+// linux/arch/loongarch/include/uapi/asm/ptrace.h: user_pt_regs { regs[32](128) + orig_a0(4) + csr_era(4) + csr_badv(4) + reserved[10](40) } = 180 bytes; sp = regs[3] at byte 12
+#define LOONGARCH32_REGS_SIZE               180
+#define LOONGARCH32_PR_STATUS_REG_OFFSET    0x48
+#define LOONGARCH32_PR_STATUS_REG_OFFSET_SP 12
+
+// linux/arch/loongarch/include/uapi/asm/ptrace.h: user_pt_regs { regs[32](256) + orig_a0(8) + csr_era(8) + csr_badv(8) + reserved[10](80) } = 360 bytes; sp = regs[3] at byte 24
+#define LOONGARCH64_REGS_SIZE               360
+#define LOONGARCH64_PR_STATUS_REG_OFFSET    0x70
+#define LOONGARCH64_PR_STATUS_REG_OFFSET_SP 24
 
 // The ones for Linux coredumps.
 // linux/arch/sparc/include/asm/elf_64.h or elf_32.h
@@ -189,6 +201,8 @@ static RzBinElfPrStatusLayout prstatus_layouts[ARCH_LEN] = {
 	[PPC64] = { PPC64_REGS_SIZE, PPC64_PR_STATUS_REG_OFFSET, 64, PPC64_PR_STATUS_REG_OFFSET_SP },
 
 	[S390X] = { S390X_REGS_SIZE, S390X_PR_STATUS_REG_OFFSET, 64, S390X_PR_STATUS_REG_OFFSET_SP },
+	[LOONGARCH32] = { LOONGARCH32_REGS_SIZE, LOONGARCH32_PR_STATUS_REG_OFFSET, 32, LOONGARCH32_PR_STATUS_REG_OFFSET_SP },
+	[LOONGARCH64] = { LOONGARCH64_REGS_SIZE, LOONGARCH64_PR_STATUS_REG_OFFSET, 64, LOONGARCH64_PR_STATUS_REG_OFFSET_SP },
 
 	[SPARC32_FP] = { SPARC32_FPREGS_SIZE, SPARC32_FPREG_OFFSET, 0, 0 },
 	[SPARC64_FP] = { SPARC64_FPREGS_SIZE, SPARC32_FPREG_OFFSET, 0, 0 },
@@ -452,6 +466,13 @@ RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNUL
 	case EM_S390:
 		if (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64) {
 			return prstatus_layouts + S390X;
+		}
+	case EM_LOONGARCH:
+		if (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64) {
+			return prstatus_layouts + LOONGARCH64;
+		}
+		if (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS32) {
+			return prstatus_layouts + LOONGARCH32;
 		}
 		return NULL;
 	}
