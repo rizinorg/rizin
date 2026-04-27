@@ -60,7 +60,7 @@ static char *loongarch_get_reg_profile(RzAnalysis *analysis) {
 			"gpr	s6	.32	116	0\n" // Static registers
 			"gpr	s7	.32	120	0\n" // Static registers
 			"gpr	s8	.32	124	0\n" // Static registers
-			"gpr	s8	.32	128	0\n" // Static registers
+			"gpr	orig_a0	.32	128	0\n" // Static registers
 			"gpr	pc	.32	132	0\n";
 		break;
 	case 64:
@@ -111,7 +111,7 @@ static char *loongarch_get_reg_profile(RzAnalysis *analysis) {
 			"gpr	s6	.64	232	0\n" // Static registers
 			"gpr	s7	.64	240	0\n" // Static registers
 			"gpr	s8	.64	248	0\n" // Static registers
-			"gpr	s8	.64	256	0\n" // Static registers
+			"gpr	orig_a0	.64	256	0\n" // Static registers
 			"gpr	pc	.64	264	0\n";
 		break;
 	}
