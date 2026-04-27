@@ -178,6 +178,80 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=wtf writes memory region to file
+FILE==
+CMDS=<<EOF
+wx aabbccddeeff
+wtf 0 2 .rz-wtf.test
+wtf 3 2 .rz-wtf.test
+wff .rz-wtf.test @ 0
+p8 2
+rm .rz-wtf.test
+EOF
+EXPECT=<<EOF
+ddee
+EOF
+RUN
+
+NAME=wtfa appends memory region to end of file
+FILE==
+CMDS=<<EOF
+wx 010203040506
+wtf 0 2 .rz-wtfa.test
+wtfa 4 2 .rz-wtfa.test
+wff .rz-wtfa.test 4 @ 0
+p8 4
+rm .rz-wtfa.test
+EOF
+EXPECT=<<EOF
+01020506
+EOF
+RUN
+
+NAME=wtf creates and writes exact bytes
+FILE==
+CMDS=<<EOF
+wx 0102030405060708
+wtf 0 4 .rz-wtf-basic.test
+wff .rz-wtf-basic.test @ 0
+p8 4
+rm .rz-wtf-basic.test
+EOF
+EXPECT=<<EOF
+01020304
+EOF
+RUN
+
+NAME=wtfa appends to end of existing file
+FILE==
+CMDS=<<EOF
+wx 4142434445464748
+wtf 0 4 .rz-wtfa-gap.test
+wtfa 4 4 .rz-wtfa-gap.test
+wff .rz-wtfa-gap.test @ 0
+p8 8
+rm .rz-wtfa-gap.test
+EOF
+EXPECT=<<EOF
+41424344454647484142434445464748
+EOF
+RUN
+
+NAME=wtf second write truncates
+FILE==
+CMDS=<<EOF
+wx 0102030405060708
+wtf 0 6 .rz-wtf-trunc.test
+wtf 0 2 .rz-wtf-trunc.test
+wff .rz-wtf-trunc.test @ 0
+p8 2
+rm .rz-wtf-trunc.test
+EOF
+EXPECT=<<EOF
+0102
+EOF
+RUN
+
 NAME=wf
 FILE==
 CMDS=<<EOF
