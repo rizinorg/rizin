@@ -2940,31 +2940,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_skip_handler(RzCore *core, int argc, const 
 #define CMD_REGS_PREFIX   debug
 #define CMD_REGS_REG_PATH core->dbg->reg
 static bool cmd_regs_sync(RzCore *core, RzRegisterType type, bool write) {
-	if (!core || !core->dbg) {
-		return false;
-	}
-
-	if (write) {
-		return rz_debug_reg_sync(core->dbg, type, write);
-	}
-
-	if (rz_debug_reg_sync(core->dbg, type, false)) {
-		return true;
-	}
-
-	RzBinFile *bf = rz_bin_cur(core->bin);
-	if (!bf || !bf->o || !bf->o->regstate) {
-		return false;
-	}
-
-	RzReg *areg = core->analysis ? rz_analysis_get_reg(core->analysis) : NULL;
-	const char *profile = areg ? areg->reg_profile_str : NULL;
-
-	if (!RZ_STR_ISEMPTY(profile)) {
-		rz_reg_set_profile_string(core->dbg->reg, profile);
-	}
-
-	return rz_reg_arena_set_bytes(core->dbg->reg, bf->o->regstate) == 0;
+	return rz_debug_reg_sync(core->dbg, type, write);
 }
 #define CMD_REGS_SYNC cmd_regs_sync
 #include "cmd_regs_meta.inc"
