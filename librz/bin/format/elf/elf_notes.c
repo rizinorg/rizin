@@ -37,6 +37,7 @@
 #define RISCV_32_FP (FP_LAYOUT | RISCV_32)
 #define RISCV_64_FP (FP_LAYOUT | RISCV_64)
 #define PPC64       15
+#define S390X       17
 // Floating point register layout.
 #define ARCH_LEN (FP_LAYOUT | 0xf)
 
@@ -65,6 +66,7 @@
 // hence an extra buffer (not shared with PRSTATUS)
 #define SPARC64_OPENBSD_REG_OFFSET 0x0
 
+// linux/arch/alpha/kernel/process.c: dump_elf_thread() dest[0..30]=r0..r30, dest[31]=pc, dest[32]=unique; ELF_NGREG=33; sp=r30 at byte 240
 #define ALPHA_REGS_SIZE               (33 * 8)
 #define ALPHA_PR_STATUS_REG_OFFSET    0x70
 #define ALPHA_PR_STATUS_REG_OFFSET_SP 240
@@ -95,6 +97,12 @@
 #define RISCV64_REGS_SIZE               256
 #define RISCV64_PR_STATUS_REG_OFFSET    0x70
 #define RISCV64_PR_STATUS_REG_OFFSET_SP 16
+
+// linux/arch/s390/include/uapi/asm/ptrace.h: s390_regs { psw(16) + gprs[16](128) + acrs[16](64) + orig_gpr2(8) } = 216 bytes
+// linux/arch/s390/include/asm/ptrace.h: sp = r15 at byte 136
+#define S390X_REGS_SIZE               216
+#define S390X_PR_STATUS_REG_OFFSET    0x70
+#define S390X_PR_STATUS_REG_OFFSET_SP 136
 
 // The ones for Linux coredumps.
 // linux/arch/sparc/include/asm/elf_64.h or elf_32.h
@@ -180,8 +188,11 @@ static RzBinElfPrStatusLayout prstatus_layouts[ARCH_LEN] = {
 
 	[PPC64] = { PPC64_REGS_SIZE, PPC64_PR_STATUS_REG_OFFSET, 64, PPC64_PR_STATUS_REG_OFFSET_SP },
 
+	[S390X] = { S390X_REGS_SIZE, S390X_PR_STATUS_REG_OFFSET, 64, S390X_PR_STATUS_REG_OFFSET_SP },
+
 	[SPARC32_FP] = { SPARC32_FPREGS_SIZE, SPARC32_FPREG_OFFSET, 0, 0 },
 	[SPARC64_FP] = { SPARC64_FPREGS_SIZE, SPARC32_FPREG_OFFSET, 0, 0 },
+
 	[OPENBSD_SPARC_V9_FP] = { SPARC64_OPENBSD_FPREGS_SIZE, SPARC64_OPENBSD_FPREG_OFFSET, 0, 0 },
 
 	[MIPS_FP32] = { MIPS_FP32_REGS_SIZE, 4, 0, 0 },
@@ -438,6 +449,11 @@ RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNUL
 		return NULL;
 	case EM_PPC64:
 		return prstatus_layouts + PPC64;
+	case EM_S390:
+		if (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64) {
+			return prstatus_layouts + S390X;
+		}
+		return NULL;
 	}
 
 	return NULL;
