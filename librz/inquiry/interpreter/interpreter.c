@@ -351,14 +351,14 @@ static bool choose_next_pc(RzInterpreterSet *iset,
 	// Request the successor effects over the queue.
 	while (!rz_vector_empty(tmp_succ_addr)) {
 		RzInterpreterBranch branch = { 0 };
-		rz_vector_pop_front(tmp_succ_addr, &branch.target_addr);
+		rz_vector_pop_front(tmp_succ_addr, &branch);
 		if (branch.target_addr == UT64_MAX || branch.target_addr == 0) {
 			RZ_LOG_DEBUG("interpreter: Quit due to invalid PC.\n");
 			// Obviously wrong address.
 			return false;
 		}
 		branch.branching_bb_addr = il_bb->bb_addr;
-		if (jumps_to_ignored_code(iset->ignored_code, branch.target_addr)) {
+		if (jumps_to_ignored_code(iset->ignored_code, branch.target_addr) && !branch.alt_target) {
 			RZ_LOG_DEBUG("interpreter: tried to jump to ignored code region at 0x%" PFMT64x "\n", branch.target_addr);
 			// Ignored code is mostly dynamically linked functions.
 			// Skip to the next following address after the jump.
@@ -395,7 +395,7 @@ static bool reset_intrpr_state(
 		return false;
 	}
 
-	*tmp_succ_addr = rz_vector_new(sizeof(ut64), NULL, NULL);
+	*tmp_succ_addr = rz_vector_new(sizeof(RzInterpreterBranch), NULL, NULL);
 	*succ_states = rz_vector_new(sizeof(SuccessorState), NULL, NULL);
 	*reachable_states = rz_set_u_new();
 	if (!tmp_succ_addr || !succ_states || !reachable_states) {

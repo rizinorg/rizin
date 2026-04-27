@@ -69,7 +69,12 @@ typedef struct {
 } RzInterpreterAbstrVal;
 
 typedef struct {
-	ut64 branching_bb_addr; ///< The address of the bb which branches.
+	/**
+	 * \brief The address of the bb which branches.
+	 * This might be UT64_MAX, if there was no jump that branch occurred on.
+	 * For example, if the interpreter was just initialized.
+	 */
+	ut64 branching_bb_addr;
 	ut64 target_addr; ///< The target address it branches to.
 	/**
 	 * \brief Set after a attempted jump to an ignored code region.
@@ -196,7 +201,7 @@ typedef struct {
 	 * True otherwise.
 	 */
 	bool (*successors)(RZ_NONNULL const RzInterpreterAbstrState *state,
-		RZ_NONNULL RZ_OUT RzVector /*<ut64>*/ *successors,
+		RZ_NONNULL RZ_OUT RzVector /*<RzInterpreterBranch>*/ *successors,
 		void *plugin_data);
 
 	/**

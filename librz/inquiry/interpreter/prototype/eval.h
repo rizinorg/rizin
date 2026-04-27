@@ -55,6 +55,7 @@ typedef struct {
 	HtUU *bb_invocation_count;
 	RzAnalysisCallCandidate call_cand; ///< Data of a call candidate.
 	RzVector /*<ProtoInterprAbstrStackFrame>*/ stack; ///< The call frame stack.
+	ut64 prev_pc; ///< Previous PC. Set to UT64_MAX if it was invalid.
 } ProtoIntrprPluginData;
 
 /**
@@ -128,6 +129,9 @@ bool report_yield_call_candiate(
 	ProtoIntrprPluginData *plugin_data);
 
 bool set_pc(RzInterpreterAbstrState *state, ut64 pc,
+	void *plugin_data);
+
+bool set_abstr_pc(RzInterpreterAbstrState *state, ProtoIntrprAbstrData *pc,
 	void *plugin_data);
 
 void stack_frame_fini(ProtoInterprAbstrStackFrame *frame, void *unused);
