@@ -53,7 +53,6 @@ static LuaInstruction encode_instruction(const ut8 opcode, const char *arg_start
 		break;
 	}
 
-	SET_OPCODE51(instruction, opcode);
 	if (has_param_flag(flag, PARAM_A)) {
 		SETARG_A1(instruction, args[cur_cnt++]);
 	}
@@ -78,7 +77,7 @@ static LuaInstruction encode_instruction(const ut8 opcode, const char *arg_start
 	return instruction;
 }
 
-ut32 get_instruction51(const ut8 opcode, const char *arg_start) {
+ut32 get_instruction51(const ut8 opcode, const char *arg_start, const int version) {
 	LuaInstruction instruction = 0x00;
 	/* Encode opcode and args */
 	switch (opcode) {
@@ -136,7 +135,12 @@ ut32 get_instruction51(const ut8 opcode, const char *arg_start) {
 		rz_warn_if_reached();
 		return LUA_INVALID_INSTRUCTION;
 	}
+	const LuaOpCode51 opcode2 = get_lua51_opcode_shuffled_index_by_id(opcode, version);
+	SET_OPCODE51(instruction, opcode2);
 	return instruction;
 }
 
-ASM(51)
+ut32 lua51_assembly(const char *arg_start, st32 opcode_len, const char *opcode_start, const int version) {
+	const ut8 opcode = get_lua51_opcode_by_name(opcode_start, opcode_len);
+	return get_instruction51(opcode, arg_start, version);
+}

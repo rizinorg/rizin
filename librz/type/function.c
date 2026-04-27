@@ -502,7 +502,7 @@ static inline char *callable_name_or_ptr(RZ_NONNULL const RzCallable *callable, 
 				if (array_len == 0) {
 					array_str = rz_str_newf("[%s]", zero_vla ? "0" : "");
 				} else {
-					array_str = rz_str_newf("[%lld]", array_len);
+					array_str = rz_str_newf("[%" PFMT64d "]", array_len);
 				}
 
 				rz_return_val_if_fail(array_str, NULL);

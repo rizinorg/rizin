@@ -107,7 +107,7 @@ static RzList /*<RzDebugFrame *>*/ *backtrace_fuzzy(RzDebug *dbg, ut64 at) {
 			frame->size = cursp - oldsp;
 			frame->sp = cursp;
 			frame->bp = oldsp; // addr + (i * wordsize); // -4 || -8
-			// eprintf ("--------------> 0x%llx (%d)\n", addr, frame->size);
+			// eprintf ("--------------> 0x%" PFMT64x " (%d)\n", addr, frame->size);
 			rz_list_append(list, frame);
 			oldsp = cursp;
 		}

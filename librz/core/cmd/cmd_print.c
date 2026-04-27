@@ -1374,10 +1374,10 @@ static void handle_default_disasm_print_mode(const RzCore *core, const ut64 addr
 	if (show_color) {
 		const char *offsetColor = rz_cons_singleton()->context->pal.offset;
 		if (!ret_val) {
-			rz_cons_printf("%s0x%08" PFMT64x "" Color_RESET "  %10s %s\n",
+			rz_cons_printf("%s0x%08" PFMT64x Color_RESET "  %10s %s\n",
 				offsetColor, addr, "", m_intr);
 		} else {
-			rz_strbuf_appendf(buf, "%s0x%08" PFMT64x "" Color_RESET "  %10s %s\n",
+			rz_strbuf_appendf(buf, "%s0x%08" PFMT64x Color_RESET "  %10s %s\n",
 				offsetColor, addr, "", m_intr);
 		}
 	} else {

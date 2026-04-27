@@ -5,94 +5,165 @@
 
 #include "arch_51.h"
 
-LuaOpNameList get_lua51_opnames(void) {
+static const char *op_names[] = {
+	"move",
+	"loadk",
+	"loadbool",
+	"loadnil",
+	"getupval",
+	"getglobal",
+	"gettable",
+	"setglobal",
+	"setupval",
+	"settable",
+	"newtable",
+	"self",
+	"add",
+	"sub",
+	"mul",
+	"div",
+	"mod",
+	"pow",
+	"unm",
+	"not",
+	"len",
+	"concat",
+	"jmp",
+	"eq",
+	"lt",
+	"le",
+	"test",
+	"testset",
+	"call",
+	"tailcall",
+	"return",
+	"forloop",
+	"forprep",
+	"tforloop",
+	"setlist",
+	"close",
+	"closure",
+	"vararg"
+};
+
+static ut8 OP_SHUFFLE_ARRAY[2][LUA_NUM_OPCODES51] = {
+	{
+		///> VANILA, OPENWRT
+		0, ///< move
+		1, ///< loadk
+		2, ///< loadbool
+		3, ///< loadnil
+		4, ///< getupval
+		5, ///< getglobal
+		6, ///< gettable
+		7, ///< setglobal
+		8, ///< setupval
+		9, ///< settable
+		10, ///< newtable
+		11, ///< self
+		12, ///< add
+		13, ///< sub
+		14, ///< mul
+		15, ///< div
+		16, ///< mod
+		17, ///< pow
+		18, ///< unm
+		19, ///< not
+		20, ///< len
+		21, ///< concat
+		22, ///< jmp
+		23, ///< eq
+		24, ///< lt
+		25, ///< le
+		26, ///< test
+		27, ///< testset
+		28, ///< call
+		29, ///< tailcall
+		30, ///< return
+		31, ///< forloop
+		32, ///< forprep
+		33, ///< tforloop
+		34, ///< setlist
+		35, ///< close
+		36, ///< closure
+		37 ///< vararg
+	},
+	{
+		///< TPLINK
+		6, ///< gettable
+		5, ///< getglobal
+		7, ///< setglobal
+		8, ///< setupval
+		9, ///< settable
+		10, ///< newtable
+		11, ///< self
+		3, ///< loadnil
+		1, ///< loadk
+		2, ///< loadbool
+		4, ///< getupval
+		24, ///< lt
+		25, ///< le
+		23, ///< eq
+		15, ///< div
+		14, ///< mul
+		13, ///< sub
+		12, ///< add
+		16, ///< mod
+		17, ///< pow
+		18, ///< unm
+		19, ///< not
+		20, ///< len
+		21, ///< concat
+		22, ///< jmp
+		26, ///< test
+		27, ///< testset
+		0, ///< move
+		31, ///< forloop
+		32, ///< forprep
+		33, ///< tforloop
+		34, ///< setlist
+		35, ///< close
+		36, ///< closure
+		28, ///< call
+		30, ///< return
+		29, ///< tailcall
+		37 ///< vararg
+	}
+};
+
+LuaOpNameList get_lua51_opnames(const int version) {
 	LuaOpNameList list = RZ_NEWS(char *, LUA_NUM_OPCODES51 + 1);
 	if (list == NULL) {
 		RZ_LOG_ERROR("Cannot allocate lua51 opcode list.\n");
 		return NULL;
 	}
 
-	// Do not free the const string
-	list[OP_MOVE] = "move";
-	list[OP_LOADK] = "loadk";
-	list[OP_LOADBOOL] = "loadbool";
-	list[OP_LOADNIL] = "loadnil";
-	list[OP_GETUPVAL] = "getupval";
-	list[OP_GETGLOBAL] = "getglobal";
-	list[OP_GETTABLE] = "gettable";
-	list[OP_SETGLOBAL] = "setglobal";
-	list[OP_SETUPVAL] = "setupval";
-	list[OP_SETTABLE] = "settable";
-	list[OP_NEWTABLE] = "newtable";
-	list[OP_SELF] = "self";
-	list[OP_ADD] = "add";
-	list[OP_SUB] = "sub";
-	list[OP_MUL] = "mul";
-	list[OP_DIV] = "div";
-	list[OP_MOD] = "mod";
-	list[OP_POW] = "pow";
-	list[OP_UNM] = "unm";
-	list[OP_NOT] = "not";
-	list[OP_LEN] = "len";
-	list[OP_CONCAT] = "concat";
-	list[OP_JMP] = "jmp";
-	list[OP_EQ] = "eq";
-	list[OP_LT] = "lt";
-	list[OP_LE] = "le";
-	list[OP_TEST] = "test";
-	list[OP_TESTSET] = "testset";
-	list[OP_CALL] = "call";
-	list[OP_TAILCALL] = "tailcall";
-	list[OP_RETURN] = "return";
-	list[OP_FORLOOP] = "forloop";
-	list[OP_FORPREP] = "forprep";
-	list[OP_TFORLOOP] = "tforloop";
-	list[OP_SETLIST] = "setlist";
-	list[OP_CLOSE] = "close";
-	list[OP_CLOSURE] = "closure";
-	list[OP_VARARG] = "vararg";
+	for (int i = 0; i <= OP_VARARG; i++) {
+		list[i] = (char *)op_names[i];
+	}
 	return list;
 }
 
 ut8 get_lua51_opcode_by_name(const char *name, int limit) {
-	lua_strcase("move") return OP_MOVE;
-	lua_strcase("loadk") return OP_LOADK;
-	lua_strcase("loadbool") return OP_LOADBOOL;
-	lua_strcase("loadnil") return OP_LOADNIL;
-	lua_strcase("getupval") return OP_GETUPVAL;
-	lua_strcase("getglobal") return OP_GETGLOBAL;
-	lua_strcase("setglobal") return OP_SETGLOBAL;
-	lua_strcase("gettable") return OP_GETTABLE;
-	lua_strcase("setupval") return OP_SETUPVAL;
-	lua_strcase("settable") return OP_SETTABLE;
-	lua_strcase("newtable") return OP_NEWTABLE;
-	lua_strcase("self") return OP_SELF;
-	lua_strcase("add") return OP_ADD;
-	lua_strcase("sub") return OP_SUB;
-	lua_strcase("mul") return OP_MUL;
-	lua_strcase("div") return OP_DIV;
-	lua_strcase("mod") return OP_MOD;
-	lua_strcase("pow") return OP_POW;
-	lua_strcase("unm") return OP_UNM;
-	lua_strcase("not") return OP_NOT;
-	lua_strcase("len") return OP_LEN;
-	lua_strcase("concat") return OP_CONCAT;
-	lua_strcase("jmp") return OP_JMP;
-	lua_strcase("eq") return OP_EQ;
-	lua_strcase("lt") return OP_LT;
-	lua_strcase("le") return OP_LE;
-	lua_strcase("test") return OP_TEST;
-	lua_strcase("testset") return OP_TESTSET;
-	lua_strcase("call") return OP_CALL;
-	lua_strcase("tailcall") return OP_TAILCALL;
-	lua_strcase("return") return OP_RETURN;
-	lua_strcase("forloop") return OP_FORLOOP;
-	lua_strcase("forprep") return OP_FORPREP;
-	lua_strcase("tforloop") return OP_TFORLOOP;
-	lua_strcase("setlist") return OP_SETLIST;
-	lua_strcase("close") return OP_CLOSE;
-	lua_strcase("closure") return OP_CLOSURE;
-	lua_strcase("vararg") return OP_VARARG;
-
+	for (int i = 0; i <= OP_VARARG; i++) {
+		lua_strcase(op_names[i]) return i;
+	}
 	return OP_VARARG + 1; // invalid
+}
+
+ut8 get_lua51_shuffled_opcode_by_index(const int opcode, const int version) {
+	return OP_SHUFFLE_ARRAY[version][opcode];
+}
+
+ut8 get_lua51_opcode_shuffled_index_by_id(const int opcode, const int version) {
+	for (int i = 0; i <= OP_VARARG; i++) {
+		if (OP_SHUFFLE_ARRAY[version][i] == opcode) {
+			return i;
+		}
+	}
+	return OP_VARARG + 1; // invalid
+}
+
+char *get_lua51_opcode_name(const int opcode) {
+	return (char *)op_names[opcode];
 }
