@@ -42,53 +42,51 @@ static bool eval(RZ_NONNULL RzInterpreterSet *iset,
 	// Now execute the actual effects of the BB.
 	void **it;
 	rz_pvector_foreach (il_bb->il_ops, it) {
-		ut64 pc = rz_bv_to_ut64(AD(iset->astate->pc->abstr_data)->bv);
+		ProtoIntrprAbstrData *apc = AD(iset->astate->pc->abstr_data);
+		ut64 pc = rz_bv_to_ut64(apc->bv);
 		RZ_LOG_DEBUG("Eval PC = 0x%" PFMT64x "\n", pc);
 		RzInterpreterInsnPkt *pkt = *it;
 		if (!interpreter_prototype_eval_effect(iset, pkt->effect, pkt->insn_pkt_size, plugin_data)) {
 			return false;
 		}
-		if (pc == rz_bv_to_ut64(AD(iset->astate->pc->abstr_data)->bv) && AD(iset->astate->pc->abstr_data)->is_concrete) {
+		if (pc == rz_bv_to_ut64(apc->bv) && apc->is_concrete) {
 			// Instruction did not manipulate the PC. Set it to the next instruction (packet).
 			set_pc(iset->astate, pc + pkt->insn_pkt_size, plugin_data);
 		}
 	}
-	// TODO: Clean up local variables.
-	// Or maybe not? Just costs performance. And the uplifted instructions should
-	// always set it before reading, otherwise the tests wouldn't pass.
 	return true;
 }
 
 bool successors(RZ_NONNULL const RzInterpreterAbstrState *state,
-	RZ_NONNULL RZ_OUT RzVector /*<ut64>*/ *successors,
+	RZ_NONNULL RZ_OUT RzVector /*<RzInterpreterBranch>*/ *successors,
 	void *plugin_data) {
 	rz_return_val_if_fail(state && successors, false);
-
-	RzInterpreterAbstrVal *pc = state->pc;
-	if (!pc || !pc->abstr_data) {
-		RZ_LOG_ERROR("No PC found.\n");
-		return false;
-	}
-	ProtoIntrprAbstrData *adata = pc->abstr_data;
-	if (!adata->is_concrete) {
+	ProtoIntrprPluginData *pdata = plugin_data;
+	ProtoIntrprAbstrData *apc = state->pc->abstr_data;
+	if (!apc->is_concrete) {
 		// The PC is not a concrete value.
 		// This prototype can't estimate a reasonable concretization for it.
 		return true;
 	}
-	if (rz_bv_len(adata->bv) > 64) {
+	if (rz_bv_len(apc->bv) > 64) {
 		RZ_LOG_WARN("PC has a length of more than 64 bits!\n");
 		return true;
 	}
 
-	ut64 next_pc = rz_bv_to_ut64(adata->bv);
-	rz_vector_push(successors, &next_pc);
+	ut64 next_pc = rz_bv_to_ut64(apc->bv);
+	RzInterpreterBranch branch = { 0 };
+	branch.target_addr = next_pc;
+	branch.branching_bb_addr = pdata->prev_pc;
+	rz_vector_push(successors, &branch);
 	return true;
 }
 
 static bool init_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_data) {
 	state->pc->abstr_data = RZ_NEW0(ProtoIntrprAbstrData);
-	AD(state->pc->abstr_data)->bv = rz_bv_new_from_ut64(state->il_config->mem_key_size, 0);
-	AD(state->pc->abstr_data)->is_concrete = true;
+	ProtoIntrprAbstrData *apc = AD(state->pc->abstr_data);
+	apc->bv = rz_bv_new_from_ut64(state->il_config->mem_key_size, 0);
+	apc->is_concrete = true;
+
 	RzIterator *it = ht_up_as_iter_keys(state->globals);
 	ut64 *k;
 	rz_iterator_foreach(it, k) {
@@ -123,8 +121,9 @@ static bool init_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_da
 }
 
 static bool reset_state(RZ_BORROW RzInterpreterAbstrState *state, ut64 entry_point, void *plugin_data) {
-	rz_bv_set_from_ut64(AD(state->pc->abstr_data)->bv, entry_point);
-	AD(state->pc->abstr_data)->is_concrete = true;
+	ProtoIntrprAbstrData *apc = AD(state->pc->abstr_data);
+	rz_bv_set_from_ut64(apc->bv, entry_point);
+	apc->is_concrete = true;
 
 	RzIterator *it = ht_up_as_iter_keys(state->globals);
 	ut64 *k;
@@ -286,6 +285,7 @@ bool reset(void *plugin_data) {
 	}
 	RZ_LOG_DEBUG("prototype: reset()\n");
 	ProtoIntrprPluginData *pdata = plugin_data;
+	pdata->prev_pc = UT64_MAX;
 	ht_uu_clear(pdata->bb_invocation_count);
 	memset(&pdata->call_cand, 0, sizeof(RzAnalysisCallCandidate));
 	rz_vector_purge(&pdata->stack);

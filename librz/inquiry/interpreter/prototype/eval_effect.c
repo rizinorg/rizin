@@ -32,25 +32,17 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterSet *iset,
 			// This plugin has no addition for it defined.
 			break;
 		}
-		STACK_ABSTR_DATA_OUT(inc);
+		STACK_ABSTR_DATA_OUT(npc);
 		// First cast the bitvector, then set it.
 		// This is performance critical. Since the stack allocated bv is >64 bit
 		// the rz_bv_set_from_ut64() will set its whole memory, eating a lot of runtime.
 		// If we cast before, it is simply an assignment to bv->small_bits.
-		rz_bv_cast_inplace(inc.bv, rz_bv_len(pc->bv), false);
-		rz_bv_set_from_ut64(inc.bv, insn_pkt_size);
-#if RZ_BUILD_DEBUG
-		ut64 old_pc = rz_bv_to_ut64(pc->bv);
-#endif
-		if (!rz_bv_add_inplace(pc->bv, inc.bv, NULL)) {
+		rz_bv_cast_inplace(npc.bv, rz_bv_len(pc->bv), false);
+		rz_bv_set_from_ut64(npc.bv, insn_pkt_size);
+		if (!rz_bv_add_inplace(npc.bv, pc->bv, NULL)) {
 			goto error;
 		}
-#if RZ_BUILD_DEBUG
-		RZ_LOG_DEBUG("Prototype: NOP - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
-			old_pc,
-			rz_bv_to_ut64(pc->bv),
-			pc->is_concrete ? "Concrete" : "Abstract");
-#endif
+		set_abstr_pc(iset->astate, &npc, plugin_data);
 		break;
 	}
 	case RZ_IL_OP_SEQ: {
@@ -126,7 +118,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterSet *iset,
 
 		// Setting the PC to a bottom value is allowed here!
 		// The successor function will handle this case.
-		copy_abstr_data(iset->astate->pc->abstr_data, &eval_out);
+		set_abstr_pc(iset->astate, &eval_out, plugin_data);
 		break;
 	}
 	case RZ_IL_OP_BRANCH: {

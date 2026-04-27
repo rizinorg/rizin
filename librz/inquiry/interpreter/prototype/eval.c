@@ -219,14 +219,37 @@ bool load_abstr_data(
 	return true;
 }
 
+bool set_abstr_pc(RzInterpreterAbstrState *state, ProtoIntrprAbstrData *pc,
+	void *plugin_data) {
+	rz_return_val_if_fail(state && pc, false);
+	ProtoIntrprPluginData *pdata = plugin_data;
+	ProtoIntrprAbstrData *apc = AD(state->pc->abstr_data);
+	if (!apc->is_concrete || rz_bv_len(apc->bv) > 64) {
+		pdata->prev_pc = UT64_MAX;
+	} else {
+		pdata->prev_pc = rz_bv_to_ut64(apc->bv);
+	}
+	copy_abstr_data(state->pc->abstr_data, pc);
+	RZ_LOG_DEBUG("Prototype: set_abstr_pc() - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
+		pdata->prev_pc, rz_bv_to_ut64(apc->bv), apc->is_concrete ? "Concrete" : "Abstract");
+	return true;
+}
+
 bool set_pc(RzInterpreterAbstrState *state, ut64 pc,
 	void *plugin_data) {
 	rz_return_val_if_fail(state, false);
-	AD(state->pc->abstr_data)->is_concrete = true;
+	ProtoIntrprPluginData *pdata = plugin_data;
+	ProtoIntrprAbstrData *apc = AD(state->pc->abstr_data);
+	if (!apc->is_concrete || rz_bv_len(apc->bv) > 64) {
+		pdata->prev_pc = UT64_MAX;
+	} else {
+		pdata->prev_pc = rz_bv_to_ut64(apc->bv);
+	}
+
+	apc->is_concrete = true;
 	RZ_LOG_DEBUG("Prototype: set_pc() - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (Concrete)\n",
-		rz_bv_to_ut64(AD(state->pc->abstr_data)->bv),
-		pc);
-	return rz_bv_set_from_ut64(AD(state->pc->abstr_data)->bv, pc);
+		rz_bv_to_ut64(apc->bv), pc);
+	return rz_bv_set_from_ut64(apc->bv, pc);
 }
 
 void stack_frame_fini(ProtoInterprAbstrStackFrame *frame, void *unused) {
