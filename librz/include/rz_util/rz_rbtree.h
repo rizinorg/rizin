@@ -13,7 +13,8 @@ extern "C" {
 #endif
 
 // max height <= 2 * floor(log2(n + 1))
-#define RZ_RBTREE_MAX_HEIGHT 40 // supports up to ~2^20 = 1M nodes with 2× margin
+// We use `int` for size, so <= 2 * 31
+#define RZ_RBTREE_MAX_HEIGHT 40
 
 // Singleton can be zero initialized
 typedef struct rz_rb_node_t {
@@ -137,6 +138,19 @@ static inline void *rb_pool_alloc(RBPool *pool) {
 static inline void rb_pool_release(RBPool *pool, void *node) {
 	*(void **)node = pool->freelist;
 	pool->freelist = node;
+}
+
+static inline void rb_pool_free(RBPool *pool) {
+	if (!pool)
+		return;
+	RBSlab *slab = pool->slabs;
+	while (slab) {
+		RBSlab *next = slab->next;
+		free(slab->nodes);
+		free(slab);
+		slab = next;
+	}
+	free(pool);
 }
 
 typedef struct rz_containing_rb_tree_t {

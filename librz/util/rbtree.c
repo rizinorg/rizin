@@ -285,6 +285,10 @@ RZ_API RBNode *rz_rbtree_find(RBNode *x, void *data, RBComparator cmp, void *use
 			result = x;
 		int dir = (d > 0);
 		x = rb_child(x, dir);
+		if (RZ_LIKELY(x != NULL)) {
+			RZ_PREFETCH(rb_child(x, 0));
+			RZ_PREFETCH(rb_child(x, 1));
+		}
 	}
 	return result;
 }
@@ -311,6 +315,10 @@ RZ_API RBNode *rz_rbtree_lower_bound(RBNode *x, void *data, RBComparator cmp, vo
 			ret = x;
 		int dir = (d > 0);
 		x = rb_child(x, dir);
+		if (RZ_LIKELY(x != NULL)) {
+			RZ_PREFETCH(rb_child(x, 0));
+			RZ_PREFETCH(rb_child(x, 1));
+		}
 	}
 	return ret;
 }
@@ -327,6 +335,10 @@ RZ_API RBNode *rz_rbtree_upper_bound(RBNode *x, void *data, RBComparator cmp, vo
 			ret = x;
 		int dir = (d >= 0);
 		x = rb_child(x, dir);
+		if (RZ_LIKELY(x != NULL)) {
+			RZ_PREFETCH(rb_child(x, 0));
+			RZ_PREFETCH(rb_child(x, 1));
+		}
 	}
 	return ret;
 }
@@ -368,7 +380,17 @@ RZ_API void rz_rbtree_iter_prev(RBIter *it) {
 }
 
 RZ_API RZ_OWN RContRBTree *rz_rbtree_cont_new(void) {
-	return RZ_NEW0(RContRBTree);
+	RContRBTree *tree = RZ_NEW0(RContRBTree);
+	if (tree) {
+		tree->pool = RZ_NEW0(RBPool);
+		if (tree->pool) {
+			tree->pool->node_size = sizeof(RContRBNode);
+		} else {
+			free(tree);
+			return NULL;
+		}
+	}
+	return tree;
 }
 
 RZ_API RZ_OWN RContRBTree *rz_rbtree_cont_newf(RContRBFree f) {
@@ -398,20 +420,10 @@ static int cont_rbtree_search_cmp_wrapper(const void *incoming, const RBNode *in
 	return cmp_wrap->cmp((void *)incoming, in_tree_node->data, cmp_wrap->user);
 }
 
-static int cont_rbtree_free_cmp_wrapper(const void *data, const RBNode *in_tree, void *user) {
-	RCRBCmpWrap *cmp_wrap = (RCRBCmpWrap *)user;
-	const int ret = cont_rbtree_cmp_wrapper((void *)data, in_tree, user);
-	if (!ret && cmp_wrap->free) { // this is for deleting
-		RContRBNode *in_tree_node = container_of((void *)in_tree, RContRBNode, node);
-		cmp_wrap->free(in_tree_node->data);
-	}
-	return ret;
-}
-
 RZ_API bool rz_rbtree_cont_insert(RContRBTree *tree, void *data, RContRBCmp cmp, void *user) {
 	rz_return_val_if_fail(tree && cmp, false);
 	if (!tree->root) {
-		tree->root = RZ_NEW0(RContRBNode);
+		tree->root = tree->pool ? rb_pool_alloc(tree->pool) : RZ_NEW0(RContRBNode);
 		if (!tree->root) {
 			RZ_LOG_ERROR("Failed to allocate new red-black tree root\n");
 			return false;
@@ -419,7 +431,7 @@ RZ_API bool rz_rbtree_cont_insert(RContRBTree *tree, void *data, RContRBCmp cmp,
 		tree->root->data = data;
 		return true;
 	}
-	RContRBNode *incoming_node = RZ_NEW0(RContRBNode);
+	RContRBNode *incoming_node = tree->pool ? rb_pool_alloc(tree->pool) : RZ_NEW0(RContRBNode);
 	if (!incoming_node) {
 		RZ_LOG_ERROR("Failed to allocate new red-black tree node\n");
 		return false;
@@ -434,7 +446,11 @@ RZ_API bool rz_rbtree_cont_insert(RContRBTree *tree, void *data, RContRBCmp cmp,
 	}
 	if (!ret) {
 		RZ_LOG_ERROR("Failed to insert new red-black tree node\n");
-		free(incoming_node);
+		if (tree->pool) {
+			rb_pool_release(tree->pool, incoming_node);
+		} else {
+			free(incoming_node);
+		}
 	}
 	return ret;
 }
@@ -461,7 +477,7 @@ RZ_API bool rz_rbtree_cont_delete(RContRBTree *tree, void *data, RContRBCmp cmp,
 	memset(&data_wrap, 0, sizeof(RContRBNode));
 	data_wrap.data = data;
 	RBNode *root_node = &tree->root->node;
-	const bool ret = rz_rbtree_aug_delete(&root_node, &data_wrap, cont_rbtree_free_cmp_wrapper, &cmp_wrap, cont_node_free, NULL, NULL);
+	const bool ret = rz_rbtree_aug_delete(&root_node, &data_wrap, cont_rbtree_cmp_wrapper, &cmp_wrap, cont_node_free, tree, NULL);
 	if (root_node != (&tree->root->node)) {
 		tree->root = container_of(root_node, RContRBNode, node);
 	}
@@ -483,8 +499,14 @@ RZ_API void *rz_rbtree_cont_find(RContRBTree *tree, void *data, RContRBCmp cmp, 
 }
 
 RZ_API void rz_rbtree_cont_free(RContRBTree *tree) {
-	if (tree && tree->root) {
+	if (!tree) {
+		return;
+	}
+	if (tree->root) {
 		rz_rbtree_free(&tree->root->node, cont_node_free, tree);
+	}
+	if (tree->pool) {
+		rb_pool_free(tree->pool);
 	}
 	free(tree);
 }
