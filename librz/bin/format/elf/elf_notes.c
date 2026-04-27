@@ -467,6 +467,7 @@ RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNUL
 		if (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64) {
 			return prstatus_layouts + S390X;
 		}
+		return NULL;
 	case EM_LOONGARCH:
 		if (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64) {
 			return prstatus_layouts + LOONGARCH64;
