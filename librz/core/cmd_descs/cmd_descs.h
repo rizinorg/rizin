@@ -2635,6 +2635,10 @@ RZ_IPI RzCmdStatus rz_write_from_io_xchg_handler(RzCore *core, int argc, const c
 RZ_IPI RzCmdStatus rz_write_from_file_handler(RzCore *core, int argc, const char **argv);
 // "wfs"
 RZ_IPI RzCmdStatus rz_write_from_socket_handler(RzCore *core, int argc, const char **argv);
+// "wtf"
+RZ_IPI RzCmdStatus rz_write_to_file_handler(RzCore *core, int argc, const char **argv);
+// "wtfa"
+RZ_IPI RzCmdStatus rz_write_to_file_append_handler(RzCore *core, int argc, const char **argv);
 // "ww"
 RZ_IPI RzCmdStatus rz_write_wide_string_handler(RzCore *core, int argc, const char **argv);
 // "wx"

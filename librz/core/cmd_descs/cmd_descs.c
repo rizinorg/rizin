@@ -920,6 +920,8 @@ static const RzCmdDescArg write_from_io_args[3];
 static const RzCmdDescArg write_from_io_xchg_args[3];
 static const RzCmdDescArg write_from_file_args[4];
 static const RzCmdDescArg write_from_socket_args[3];
+static const RzCmdDescArg write_to_file_args[4];
+static const RzCmdDescArg write_to_file_append_args[4];
 static const RzCmdDescArg write_wide_string_args[2];
 static const RzCmdDescArg write_hex_args[2];
 static const RzCmdDescArg write_hex_from_file_args[2];
@@ -20289,6 +20291,54 @@ static const RzCmdDescHelp write_from_socket_help = {
 	.args = write_from_socket_args,
 };
 
+static const RzCmdDescArg write_to_file_args[] = {
+	{
+		.name = "start",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_to_file_help = {
+	.summary = "Write memory region to file (overwrite/create)",
+	.description = "Copy raw bytes from mapped memory range [<start>, <start> + <size>) into <file>. If the file exists, it is truncated first.",
+	.args = write_to_file_args,
+};
+
+static const RzCmdDescArg write_to_file_append_args[] = {
+	{
+		.name = "start",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_to_file_append_help = {
+	.summary = "Write memory region to file (append to end of file)",
+	.description = "Copy raw bytes from mapped memory range [<start>, <start> + <size>) into <file>. The file is appended to if it already exists.",
+	.args = write_to_file_append_args,
+};
+
 static const RzCmdDescArg write_wide_string_args[] = {
 	{
 		.name = "string",
@@ -25494,6 +25544,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *write_from_socket_cd = rz_cmd_desc_argv_new(core->rcmd, wf_cd, "wfs", rz_write_from_socket_handler, &write_from_socket_help);
 	rz_warn_if_fail(write_from_socket_cd);
+
+	RzCmdDesc *write_to_file_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "wtf", rz_write_to_file_handler, &write_to_file_help);
+	rz_warn_if_fail(write_to_file_cd);
+
+	RzCmdDesc *write_to_file_append_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "wtfa", rz_write_to_file_append_handler, &write_to_file_append_help);
+	rz_warn_if_fail(write_to_file_append_cd);
 
 	RzCmdDesc *write_wide_string_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "ww", rz_write_wide_string_handler, &write_wide_string_help);
 	rz_warn_if_fail(write_wide_string_cd);
