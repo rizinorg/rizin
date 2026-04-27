@@ -92,7 +92,6 @@ typedef struct {
 static bool avr_device_in_list(const char *name, const char *const *devices, size_t n_devices);
 static char *avr_legacy_device_name(const char *name);
 static char *avr_best_family_device(const char *name);
-static char *avr_fixup_device_name(const char *match, size_t devlen);
 static char *avr_detect_device_name(RzBinFile *bf);
 static RzAvrSvdDevice *avr_svd_create_dummy_device(const char *name);
 static RzAvrSvdDevice *avr_svd_extract_device(const char *device_name, ut8 pc_width);
@@ -237,23 +236,6 @@ static char *avr_best_family_device(const char *name) {
 	return rz_str_dup(name);
 }
 
-static char *avr_fixup_device_name(const char *match, size_t devlen) {
-	if (!match || !devlen) {
-		return NULL;
-	}
-
-	char *device_name = rz_str_ndup(match, devlen);
-	if (!device_name) {
-		return NULL;
-	}
-	// Uppercase the first two chars (e.g., "at" -> "AT")
-	device_name[0] = toupper((unsigned char)device_name[0]);
-	if (devlen > 1) {
-		device_name[1] = toupper((unsigned char)device_name[1]);
-	}
-	return device_name;
-}
-
 /**
  * Detect device name from multiple sources:
  * 1. Filename heuristics
@@ -290,18 +272,18 @@ static char *avr_detect_device_name(RzBinFile *bf) {
 		if (!match) {
 			continue;
 		}
-		char *candidate = rz_str_dup(match);
+		size_t match_offset = (size_t)(match - lower_filename);
+		char *candidate = rz_str_dup(filename + match_offset);
 		if (!candidate) {
 			break;
 		}
-		candidate = rz_str_replace_regex(candidate, "[^[:alnum:]].*$", "", 0);
+		candidate = rz_str_replace_regex(candidate, "[^[:alnum:]].*$", "", 0, false);
 		if (!candidate) {
 			break;
 		}
 		size_t devlen = strlen(candidate);
 		if (devlen > 0 && devlen < 32) {
-			device_name = avr_fixup_device_name(candidate, devlen);
-			free(candidate);
+			device_name = candidate;
 			break;
 		}
 		free(candidate);

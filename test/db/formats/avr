@@ -1,4 +1,3 @@
-
 NAME=ATmega640/1280/1281/2560/2561
 FILE=ihex://bins/avr/nRF24L01_ATmega640.hex
 CMDS=<<EOF
