@@ -2,10 +2,12 @@ NAME=CaRT: iI and extractor info
 FILE=bins/cart/sample.cart
 CMDS=<<EOF
 iI~binsz
+echo ---
 i~packet
 EOF
 EXPECT=<<EOF
 binsz    0x00000039
+---
 packet  xtr.cart
 EOF
 RUN

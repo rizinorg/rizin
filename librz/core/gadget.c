@@ -651,7 +651,9 @@ static void gadget_info_add_dependency(const RzCore *core, RzGadgetInfo *gadget_
 		}
 		reg_info_dup->new_val = rz_bv_to_ut64(new_val);
 		if (rz_reg_is_role(rreg, reg_info->name, RZ_REG_NAME_SP)) {
-			gadget_info->stack_change += rz_bv_to_ut64(new_val) - rz_bv_to_ut64(init_val);
+			RzBitVector *temp = rz_bv_sub(new_val, init_val, NULL);
+			gadget_info->stack_change += rz_bv_to_ut64(temp);
+			rz_bv_free(temp);
 		}
 		rz_bv_free(init_val);
 		rz_bv_free(new_val);

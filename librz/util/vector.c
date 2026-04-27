@@ -96,6 +96,22 @@ static void rz_vector_assign(RzVector *vec, void *p, const void *elem) {
 }
 
 /**
+ * \brief Set element at \p index.
+ * This is a simple memcpy. Vector length is not updated.
+ * Use rz_vector_assign_at() if this is needed.
+ *
+ * \param vec The vector to update.
+ * \param index Index where to write the element to.
+ * \param elem Pointer to the element to copy.
+ */
+RZ_API void rz_vector_set(RZ_BORROW RzVector *vec, size_t index, const RZ_NONNULL void *elem) {
+	rz_return_if_fail(vec && index < rz_vector_capacity(vec) && elem);
+	void *p = rz_vector_index_ptr(vec, index);
+	rz_return_if_fail(p);
+	rz_vector_assign(vec, p, elem);
+}
+
+/**
  * \brief Set \p n elements, starting at element \p i to \p c.
  */
 static void rz_vector_zeroize(RzVector *vec, size_t i, size_t n) {

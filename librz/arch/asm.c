@@ -946,17 +946,19 @@ RZ_API void rz_asm_list_directives(void) {
 /**
  * \brief      Returns the software breakpoint instruction (binary encoded) of the current selected arch
  *
- * \param      a     The RzAsm structure to use
+ * \param      a     The RzAsm structure to use.
+ * \param      addr  The address where the software breakpoint is to be inserted.
+ * \param      original The original RzAsmOp at addr.
  * \param      op    The RzAsmOp to fill.
  *
  * \return     On success true, otherwise false.
  */
-RZ_API bool rz_asm_software_breakpoint(RZ_NONNULL const RzAsm *a, RZ_NONNULL RzAsmOp *op) {
+RZ_API bool rz_asm_software_breakpoint(RZ_NONNULL const RzAsm *a, ut64 addr, const RZ_NONNULL RzAsmOp *original, RZ_NONNULL RzAsmOp *op) {
 	rz_return_val_if_fail(a && op, false);
 	memset(op, 0, sizeof(RzAsmOp));
 
 	if (a->cur && a->cur->sw_breakpoint) {
-		return a->cur->sw_breakpoint(a, op);
+		return a->cur->sw_breakpoint(a, addr, original, op);
 	}
 
 	return false;

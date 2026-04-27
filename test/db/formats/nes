@@ -1,4 +1,4 @@
-NAME=NES: Pong - open
+NAME=NES: Pong analysis
 FILE=bins/nes/Pong.nes
 ARGS=-A
 CMDS=q!

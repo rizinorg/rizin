@@ -183,14 +183,7 @@ static inline size_t rz_vector_capacity(RzVector *vec) {
 	return vec->capacity;
 }
 
-/**
- * \brief Set element at \p index.
- * \param vec The vector to update.
- */
-static inline void rz_vector_set(RZ_BORROW RzVector *vec, size_t index, const RZ_NONNULL void *elem) {
-	rz_return_if_fail(vec && index < rz_vector_capacity(vec) && elem);
-	rz_vector_assign_at(vec, index, elem);
-}
+RZ_API void rz_vector_set(RZ_BORROW RzVector *vec, size_t index, const RZ_NONNULL void *elem);
 
 /*
  * example:
