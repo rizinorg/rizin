@@ -25,21 +25,20 @@
 #define OPENBSD_SPARC_V9_FP (FP_LAYOUT | OPENBSD_SPARC_V9)
 // MIPS related constants.
 // The size of the pr status depends on the ABI
-#define MIPS_32   8
-#define MIPS_64   9
-#define MIPS_FP32 (FP_LAYOUT | MIPS_32)
-#define MIPS_FP64 (FP_LAYOUT | MIPS_64)
-#define ALPHA     10
-#define HPPA32    11
-#define HPPA64    12
-#define PPC64     15
-// Floating point register layout.
-#define ARCH_LEN (FP_LAYOUT | 0xf)
-
+#define MIPS_32     8
+#define MIPS_64     9
+#define MIPS_FP32   (FP_LAYOUT | MIPS_32)
+#define MIPS_FP64   (FP_LAYOUT | MIPS_64)
+#define ALPHA       10
+#define HPPA32      11
+#define HPPA64      12
 #define RISCV_32    13
 #define RISCV_64    14
 #define RISCV_32_FP (FP_LAYOUT | RISCV_32)
 #define RISCV_64_FP (FP_LAYOUT | RISCV_64)
+#define PPC64       15
+// Floating point register layout.
+#define ARCH_LEN (FP_LAYOUT | 0xf)
 
 // See elf.c::elfcore_grok_solaris_note_impl() of binutil's bfd
 // https://sourceware.org/git/?p=binutils-gdb.git;a=blob;f=bfd/elf.c;h=6ef603010918f14eda69f0d0dc1637b4d51e8157;hb=HEAD#l11777
@@ -66,7 +65,6 @@
 // hence an extra buffer (not shared with PRSTATUS)
 #define SPARC64_OPENBSD_REG_OFFSET 0x0
 
-// linux/arch/alpha/kernel/process.c: dump_elf_thread() dest[0..30]=r0..r30, dest[31]=pc, dest[32]=unique; ELF_NGREG=33; sp=r30 at byte 240
 #define ALPHA_REGS_SIZE               (33 * 8)
 #define ALPHA_PR_STATUS_REG_OFFSET    0x70
 #define ALPHA_PR_STATUS_REG_OFFSET_SP 240
@@ -87,6 +85,16 @@
 #define PPC64_REGS_SIZE               384
 #define PPC64_PR_STATUS_REG_OFFSET    0x70
 #define PPC64_PR_STATUS_REG_OFFSET_SP 8
+
+// linux/arch/riscv/include/uapi/asm/ptrace.h: user_regs_struct { pc, ra, sp, ... } 32*4 = 128 bytes; sp at byte 8
+#define RISCV32_REGS_SIZE               128
+#define RISCV32_PR_STATUS_REG_OFFSET    0x48
+#define RISCV32_PR_STATUS_REG_OFFSET_SP 8
+
+// linux/arch/riscv/include/uapi/asm/ptrace.h: user_regs_struct { pc, ra, sp, ... } 32*8 = 256 bytes; sp at byte 16
+#define RISCV64_REGS_SIZE               256
+#define RISCV64_PR_STATUS_REG_OFFSET    0x70
+#define RISCV64_PR_STATUS_REG_OFFSET_SP 16
 
 // The ones for Linux coredumps.
 // linux/arch/sparc/include/asm/elf_64.h or elf_32.h
@@ -166,8 +174,10 @@ static RzBinElfPrStatusLayout prstatus_layouts[ARCH_LEN] = {
 	[MIPS_64] = { MIPS64_REGS_SIZE, MIPS_GPR64_STATUS_OFFSET, 0, 0 },
 
 	[ALPHA] = { ALPHA_REGS_SIZE, ALPHA_PR_STATUS_REG_OFFSET, 64, ALPHA_PR_STATUS_REG_OFFSET_SP },
+
 	[HPPA32] = { HPPA32_REGS_SIZE, HPPA32_PR_STATUS_REG_OFFSET, 32, HPPA32_PR_STATUS_REG_OFFSET_SP },
 	[HPPA64] = { HPPA64_REGS_SIZE, HPPA64_PR_STATUS_REG_OFFSET, 64, HPPA64_PR_STATUS_REG_OFFSET_SP },
+
 	[PPC64] = { PPC64_REGS_SIZE, PPC64_PR_STATUS_REG_OFFSET, 64, PPC64_PR_STATUS_REG_OFFSET_SP },
 
 	[SPARC32_FP] = { SPARC32_FPREGS_SIZE, SPARC32_FPREG_OFFSET, 0, 0 },
