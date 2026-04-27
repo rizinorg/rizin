@@ -25,23 +25,20 @@
 #define OPENBSD_SPARC_V9_FP (FP_LAYOUT | OPENBSD_SPARC_V9)
 // MIPS related constants.
 // The size of the pr status depends on the ABI
-#define MIPS_32   8
-#define MIPS_64   9
-#define MIPS_FP32 (FP_LAYOUT | MIPS_32)
-#define MIPS_FP64 (FP_LAYOUT | MIPS_64)
-#define ALPHA     10
-#define HPPA32    11
-#define HPPA64    12
-#define RISCV32   13
-#define RISCV64   14
-#define PPC64     15
-// Floating point register layout.
-#define ARCH_LEN (FP_LAYOUT | 0xf)
-
+#define MIPS_32     8
+#define MIPS_64     9
+#define MIPS_FP32   (FP_LAYOUT | MIPS_32)
+#define MIPS_FP64   (FP_LAYOUT | MIPS_64)
+#define ALPHA       10
+#define HPPA32      11
+#define HPPA64      12
 #define RISCV_32    13
 #define RISCV_64    14
 #define RISCV_32_FP (FP_LAYOUT | RISCV_32)
 #define RISCV_64_FP (FP_LAYOUT | RISCV_64)
+#define PPC64       15
+// Floating point register layout.
+#define ARCH_LEN (FP_LAYOUT | 0xf)
 
 // See elf.c::elfcore_grok_solaris_note_impl() of binutil's bfd
 // https://sourceware.org/git/?p=binutils-gdb.git;a=blob;f=bfd/elf.c;h=6ef603010918f14eda69f0d0dc1637b4d51e8157;hb=HEAD#l11777
@@ -182,9 +179,6 @@ static RzBinElfPrStatusLayout prstatus_layouts[ARCH_LEN] = {
 	[HPPA64] = { HPPA64_REGS_SIZE, HPPA64_PR_STATUS_REG_OFFSET, 64, HPPA64_PR_STATUS_REG_OFFSET_SP },
 
 	[PPC64] = { PPC64_REGS_SIZE, PPC64_PR_STATUS_REG_OFFSET, 64, PPC64_PR_STATUS_REG_OFFSET_SP },
-
-	[RISCV32] = { RISCV32_REGS_SIZE, RISCV32_PR_STATUS_REG_OFFSET, 32, RISCV32_PR_STATUS_REG_OFFSET_SP },
-	[RISCV64] = { RISCV64_REGS_SIZE, RISCV64_PR_STATUS_REG_OFFSET, 64, RISCV64_PR_STATUS_REG_OFFSET_SP },
 
 	[SPARC32_FP] = { SPARC32_FPREGS_SIZE, SPARC32_FPREG_OFFSET, 0, 0 },
 	[SPARC64_FP] = { SPARC64_FPREGS_SIZE, SPARC32_FPREG_OFFSET, 0, 0 },
@@ -440,13 +434,6 @@ RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNUL
 		}
 		if (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS32) {
 			return prstatus_layouts + HPPA32;
-		}
-	case EM_RISCV:
-		if (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64) {
-			return prstatus_layouts + RISCV64;
-		}
-		if (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS32) {
-			return prstatus_layouts + RISCV32;
 		}
 		return NULL;
 	case EM_PPC64:
