@@ -30,7 +30,6 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 	}
 
 	if (!write && (!dbg->cur || (!dbg->cur->reg_read && !dbg->cur->sync_registers) || rz_debug_is_dead(dbg))) {
-
 		if (rz_debug_reg_sync_from_regstate(dbg)) {
 			return true;
 		}
