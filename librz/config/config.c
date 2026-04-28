@@ -648,33 +648,30 @@ RZ_API RZ_OWN char *rz_config_var_flags_as_string(ut32 flags) {
 	RzStrBuf sb;
 	rz_strbuf_init(&sb);
 
-	if (flags & RZ_CONFIG_VAR_TYPE_BOOL) {
+	ut32 types = flags & RZ_CONFIG_VAR_TYPE_MASK;
+	flags &= RZ_CONFIG_VAR_FLAGS_MASK;
+
+	switch (types) {
+	case RZ_CONFIG_VAR_TYPE_BOOL:
 		rz_strbuf_append(&sb, "bool");
-	}
-	if (flags & RZ_CONFIG_VAR_TYPE_INT) {
-		if (rz_strbuf_length(&sb) > 0) {
-			rz_strbuf_append(&sb, ",");
-		}
+		break;
+	case RZ_CONFIG_VAR_TYPE_INT:
 		rz_strbuf_append(&sb, "integer");
-	}
-	if (flags & RZ_CONFIG_VAR_TYPE_STR) {
-		if (rz_strbuf_length(&sb) > 0) {
-			rz_strbuf_append(&sb, ",");
-		}
+		break;
+	case RZ_CONFIG_VAR_TYPE_STR:
 		rz_strbuf_append(&sb, "string");
-	}
-	if (flags & RZ_CONFIG_VAR_TYPE_LIST) {
-		if (rz_strbuf_length(&sb) > 0) {
-			rz_strbuf_append(&sb, ",");
-		}
+		break;
+	case RZ_CONFIG_VAR_TYPE_LIST:
 		rz_strbuf_append(&sb, "list");
-	}
-	if (flags & RZ_CONFIG_VAR_TYPE_ITV) {
-		if (rz_strbuf_length(&sb) > 0) {
-			rz_strbuf_append(&sb, ",");
-		}
+		break;
+	case RZ_CONFIG_VAR_TYPE_ITV:
 		rz_strbuf_append(&sb, "interval");
+		break;
+	default:
+		rz_strbuf_appendf(&sb, "type_%u", types);
+		break;
 	}
+
 	if (flags & RZ_CONFIG_VAR_FLAG_BIND) {
 		if (rz_strbuf_length(&sb) > 0) {
 			rz_strbuf_append(&sb, ",");
