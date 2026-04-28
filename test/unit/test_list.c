@@ -55,7 +55,7 @@ bool test_rz_list_join(void) {
 	rz_list_append(list2, (void *)test2);
 	int joined = rz_list_join(list1, list2);
 	mu_assert_eq(joined, 1, "rz_list_join of two lists");
-	mu_assert_eq(rz_list_length(list1), 2, "rz_list_join two single element lists result length is 1");
+	mu_assert_eq(rz_list_length(list1), 2, "rz_list_join two single element lists result length is 2");
 	rz_list_free(list1);
 	rz_list_free(list2);
 	mu_end;
