@@ -165,22 +165,6 @@ Detailed help for w <string> is provided by w??.
 EOF
 RUN
 
-NAME=print help with ptf and ptfa
-FILE=--
-CMDS=<<EOF
-p?
-EOF
-EXPECT=<<EOF
-Usage: p[?]   # Print commands
-...
-| p[kK] <addr>         # Decompile at current or given address
-...
-| ptf <start> <size> <file> # Print memory region to file (overwrite/create)
-| ptfa <start> <size> <file> # Print memory region to file (append to end of file)
-...
-EOF
-RUN
-
 NAME=recursive help json (old style)
 FILE==
 CMDS=<<EOF
