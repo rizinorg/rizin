@@ -6,7 +6,7 @@
 #define config_var_assert_return(expr, name, val) \
 	do { \
 		if (RZ_UNLIKELY(!(expr))) { \
-			H_LOG_(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d); variable %s\n", RZ_FUNCTION, #expr, __LINE__, name); \
+			RZ_LOG_WARN("%s: assertion '%s' failed (line %d); variable %s\n", RZ_FUNCTION, #expr, __LINE__, name); \
 			return (val); \
 		} \
 	} while (0)
