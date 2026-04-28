@@ -10,6 +10,9 @@ coverage:
         threshold: 0.5%
     patch:
       default:
+        branches:
+          - "!dev"
+          - "!stable"
         if_not_found: success
         target: auto
         threshold: 0.5%
