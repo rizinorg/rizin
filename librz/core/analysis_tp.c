@@ -9,7 +9,7 @@
 #include <rz_core.h>
 #define LOOP_MAX 10
 
-static bool analysis_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt, RzAnalysisEsilTrace **et, RzAnalysisRzilTrace **rt) {
+static bool analysis_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt, RzAnalysisEsilTrace **et, RzAnalysisILTrace **rt) {
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
 	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
 	if (!esil) {
@@ -37,7 +37,7 @@ static bool analysis_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt
 	return (core->dbg->trace && esil->trace);
 }
 
-static void analysis_emul_restore(RzCore *core, RzConfigHold *hc, RzDebugTrace *dt, RzAnalysisEsilTrace *et, RzAnalysisRzilTrace *rt) {
+static void analysis_emul_restore(RzCore *core, RzConfigHold *hc, RzDebugTrace *dt, RzAnalysisEsilTrace *et, RzAnalysisILTrace *rt) {
 	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
 	rz_config_hold_restore(hc);
 	rz_config_hold_free(hc);
@@ -847,7 +847,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	}
 	RzDebugTrace *dt = NULL;
 	RzAnalysisEsilTrace *et = NULL;
-	RzAnalysisRzilTrace *rt = NULL;
+	RzAnalysisILTrace *rt = NULL;
 	if (!analysis_emul_init(core, hc, &dt, &et, &rt) || !fcn) {
 		analysis_emul_restore(core, hc, dt, et, rt);
 		return;

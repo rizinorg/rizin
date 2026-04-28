@@ -339,3 +339,18 @@ EXPECT=<<EOF
 \       ,=< 0x00401aea      jmp   fcn.00402f40
 EOF
 RUN
+
+NAME=aarch64 cmn/cmp/tst show char comment for printable immediate
+FILE=malloc://1024
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e cfg.bigendian=false
+wx 3f0401b13f0401f13f1440f2
+pd 3
+EOF
+EXPECT=<<EOF
+            0x00000000      cmn   x1, 0x41                             ; 'A'
+            0x00000004      cmp   x1, 0x41                             ; 'A'
+            0x00000008      tst   x1, 0x3f                             ; '?'
+EOF
+RUN

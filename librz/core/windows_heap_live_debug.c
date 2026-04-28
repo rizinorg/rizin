@@ -3,6 +3,7 @@
 
 #include <rz_windows.h>
 #include <rz_core.h>
+#include <rz_windows_heap.h>
 #include <TlHelp32.h>
 #include <windows_heap.h>
 #include "..\..\debug\p\native\maps\windows_maps.h"
@@ -307,7 +308,7 @@ static bool GetHeapGlobalsOffset(RzDebug *dbg, HANDLE h_proc) {
 	RzDebugMap *map;
 	bool found = false;
 	rz_list_foreach (modules, it, map) {
-		if (!strcmp(map->name, "ntdll.dll")) {
+		if (RZ_STR_EQ(map->name, "ntdll.dll")) {
 			found = true;
 			break;
 		}
@@ -1337,7 +1338,7 @@ static void w32_list_heaps_blocks(RzCore *core, RzOutputMode mode, bool flag) {
 				ut64 address = (ut64)block->dwAddress - granularity;
 				ut64 unusedBytes = block->extraInfo ? block->extraInfo->unusedBytes : 0;
 				if (flag) {
-					char *name = rz_str_newf("alloc.%" PFMT64x "", address);
+					char *name = rz_str_newf("alloc.%" PFMT64x, address);
 					if (!rz_flag_set(core->flags, name, address, block->dwSize)) {
 						RZ_LOG_ERROR("core: flag cannot be set for block at 0x%" PFMT64x, address);
 					}
@@ -1450,18 +1451,18 @@ RZ_IPI RzList *rz_heap_blocks_list(RzCore *core) {
 				ut64 unusedBytes = block->extraInfo ? block->extraInfo->unusedBytes : 0;
 
 				// add blocks to list
-				RzWindowsHeapBlock *heap_block = RZ_NEW0(RzWindowsHeapBlock);
+				RzWindowsHeapEntry *heap_block = RZ_NEW0(RzWindowsHeapEntry);
 				if (!heap_block) {
 					rz_list_free(blocks_list);
 					RtlDestroyQueryDebugBuffer(db);
 					return NULL;
 				}
-				heap_block->headerAddress = address;
-				heap_block->userAddress = (ut64)block->dwAddress;
+				heap_block->header_address = address;
+				heap_block->user_address = (ut64)block->dwAddress;
 				heap_block->size = block->dwSize;
-				strcpy(heap_block->type, type);
-				heap_block->unusedBytes = unusedBytes;
-				heap_block->granularity = granularity;
+				heap_block->flags = (ut8)block->dwFlags;
+				heap_block->unused_bytes = (ut8)unusedBytes;
+				heap_block->is_busy = (block->dwFlags & 0xFFFF) == LF32_FIXED;
 
 				rz_list_append(blocks_list, heap_block);
 			} while (GetNextHeapBlock(&heapInfo->heaps[i], block));
@@ -1502,10 +1503,8 @@ RZ_IPI RzList *rz_heap_list(RzCore *core) {
 			RtlDestroyQueryDebugBuffer(db);
 			return NULL;
 		}
-		rzHeapInfo->base = (ut64)heap.Base;
-		rzHeapInfo->blockCount = (ut64)heap.BlockCount;
-		rzHeapInfo->allocated = (ut64)heap.Allocated;
-		rzHeapInfo->committed = (ut64)heap.Committed;
+		rzHeapInfo->base_address = (ut64)heap.Base;
+		rzHeapInfo->total_blocks = (ut32)heap.BlockCount;
 
 		rz_list_append(heaps_list, rzHeapInfo);
 

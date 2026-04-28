@@ -2,10 +2,9 @@
 // SPDX-FileCopyrightText: 2014-2021 condret <condr3t@protonmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_esil/rz_esil.h>
 #include "analysis_private.h"
-#include <rz_types.h>
-#include <rz_util.h>
-#include <rz_bind.h>
+#define EANALYSIS(e) ((RzAnalysis *)(esil->panalysis))
 
 #define FLG(x) RZ_ANALYSIS_ESIL_FLAG_##x
 #define cpuflag(x, y) \
@@ -51,7 +50,7 @@ static bool isnum(RzAnalysisEsil *esil, const char *str, ut64 *num) {
 }
 
 static bool ispackedreg(RzAnalysisEsil *esil, const char *str) {
-	RzRegItem *ri = rz_reg_get(esil->analysis->reg, str, -1);
+	RzRegItem *ri = rz_reg_get(EANALYSIS(esil)->reg, str, -1);
 	return ri ? ri->packed_size > 0 : false;
 }
 
@@ -100,6 +99,7 @@ RZ_API RzAnalysisEsil *rz_analysis_esil_new(int stacksize, int iotrap, unsigned 
 	rz_analysis_esil_interrupts_init(esil);
 	esil->addrmask = genmask(addrsize - 1);
 	rz_strbuf_init(&esil->current_opstr);
+	esil->esilinterstate = RZ_NEW0(RzAnalysisEsilInterState);
 	return esil;
 }
 
@@ -132,14 +132,6 @@ static bool rz_analysis_esil_fire_trap(RzAnalysisEsil *esil, int trap_type, int 
 			return true;
 		}
 	}
-	if (esil->analysis) {
-		RzAnalysisPlugin *ap = esil->analysis->cur;
-		if (ap && ap->esil_trap) {
-			if (ap->esil_trap(esil, trap_type, trap_code)) {
-				return true;
-			}
-		}
-	}
 	return false;
 }
 
@@ -155,8 +147,8 @@ RZ_API void rz_analysis_esil_free(RzAnalysisEsil *esil) {
 	if (!esil) {
 		return;
 	}
-	if (esil->analysis && esil == esil->analysis->esil) {
-		esil->analysis->esil = NULL;
+	if (EANALYSIS(esil) && esil == EANALYSIS(esil)->esil) {
+		EANALYSIS(esil)->esil = NULL;
 	}
 	ht_sp_free(esil->ops);
 	esil->ops = NULL;
@@ -166,8 +158,8 @@ RZ_API void rz_analysis_esil_free(RzAnalysisEsil *esil) {
 	esil->stats = NULL;
 	rz_analysis_esil_stack_free(esil);
 	free(esil->stack);
-	if (esil->analysis && esil->analysis->cur && esil->analysis->cur->esil_fini) {
-		esil->analysis->cur->esil_fini(esil);
+	if (EANALYSIS(esil) && EANALYSIS(esil)->cur && EANALYSIS(esil)->cur->esil_fini) {
+		EANALYSIS(esil)->cur->esil_fini(esil);
 	}
 	rz_strbuf_fini(&esil->current_opstr);
 	rz_analysis_esil_trace_free(esil->trace);
@@ -179,17 +171,18 @@ RZ_API void rz_analysis_esil_free(RzAnalysisEsil *esil) {
 	free(esil->cmd_step);
 	free(esil->cmd_step_out);
 	free(esil->cmd_ioer);
+	free(esil->esilinterstate);
 	free(esil);
 }
 
 static ut8 esil_internal_sizeof_reg(RzAnalysisEsil *esil, const char *r) {
-	rz_return_val_if_fail(esil && esil->analysis && esil->analysis->reg && r, 0);
-	RzRegItem *ri = rz_reg_get(esil->analysis->reg, r, -1);
+	rz_return_val_if_fail(esil && EANALYSIS(esil) && EANALYSIS(esil)->reg && r, 0);
+	RzRegItem *ri = rz_reg_get(EANALYSIS(esil)->reg, r, -1);
 	return ri ? ri->size : 0;
 }
 
 static int internal_esil_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len) {
-	rz_return_val_if_fail(esil && esil->analysis && esil->analysis->iob.io, 0);
+	rz_return_val_if_fail(esil && EANALYSIS(esil) && EANALYSIS(esil)->iob.io, 0);
 
 	addr &= esil->addrmask;
 	if (esil->cmd_mdev && esil->mdev_range) {
@@ -200,10 +193,10 @@ static int internal_esil_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int
 		}
 	}
 	// TODO: Check if error return from read_at.(on previous version of r2 this call always return len)
-	(void)esil->analysis->iob.read_at(esil->analysis->iob.io, addr, buf, len);
+	(void)EANALYSIS(esil)->iob.read_at(EANALYSIS(esil)->iob.io, addr, buf, len);
 	// check if request address is mapped , if don't fire trap and esil ioer callback
 	// now with siol, read_at return true/false can't be used to check error vs len
-	if (!esil->analysis->iob.is_valid_offset(esil->analysis->iob.io, addr, false)) {
+	if (!EANALYSIS(esil)->iob.is_valid_offset(EANALYSIS(esil)->iob.io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = RZ_ANALYSIS_TRAP_READ_ERR;
 			esil->trap_code = addr;
@@ -216,14 +209,14 @@ static int internal_esil_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int
 }
 
 static int internal_esil_mem_read_no_null(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len) {
-	rz_return_val_if_fail(esil && esil->analysis && esil->analysis->iob.io, 0);
+	rz_return_val_if_fail(esil && EANALYSIS(esil) && EANALYSIS(esil)->iob.io, 0);
 
 	addr &= esil->addrmask;
 	// TODO: Check if error return from read_at.(on previous version of r2 this call always return len)
-	(void)esil->analysis->iob.read_at(esil->analysis->iob.io, addr, buf, len);
+	(void)EANALYSIS(esil)->iob.read_at(EANALYSIS(esil)->iob.io, addr, buf, len);
 	// check if request address is mapped , if don't fire trap and esil ioer callback
 	// now with siol, read_at return true/false can't be used to check error vs len
-	if (!esil->analysis->iob.is_valid_offset(esil->analysis->iob.io, addr, false)) {
+	if (!EANALYSIS(esil)->iob.is_valid_offset(EANALYSIS(esil)->iob.io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = RZ_ANALYSIS_TRAP_READ_ERR;
 			esil->trap_code = addr;
@@ -253,7 +246,7 @@ RZ_API int rz_analysis_esil_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, 
 
 static int internal_esil_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	int ret = 0;
-	if (!esil || !esil->analysis || !esil->analysis->iob.io || esil->nowrite) {
+	if (!esil || !EANALYSIS(esil) || !EANALYSIS(esil)->iob.io || esil->nowrite) {
 		return 0;
 	}
 	addr &= esil->addrmask;
@@ -264,12 +257,12 @@ static int internal_esil_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *b
 			}
 		}
 	}
-	if (esil->analysis->iob.write_at(esil->analysis->iob.io, addr, buf, len)) {
+	if (EANALYSIS(esil)->iob.write_at(EANALYSIS(esil)->iob.io, addr, buf, len)) {
 		ret = len;
 	}
 	// check if request address is mapped , if don't fire trap and esil ioer callback
 	// now with siol, write_at return true/false can't be used to check error vs len
-	if (!esil->analysis->iob.is_valid_offset(esil->analysis->iob.io, addr, false)) {
+	if (!EANALYSIS(esil)->iob.is_valid_offset(EANALYSIS(esil)->iob.io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = RZ_ANALYSIS_TRAP_WRITE_ERR;
 			esil->trap_code = addr;
@@ -283,19 +276,19 @@ static int internal_esil_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *b
 
 static int internal_esil_mem_write_no_null(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	int ret = 0;
-	if (!esil || !esil->analysis || !esil->analysis->iob.io || !addr) {
+	if (!esil || !EANALYSIS(esil) || !EANALYSIS(esil)->iob.io || !addr) {
 		return 0;
 	}
 	if (esil->nowrite) {
 		return 0;
 	}
 	addr &= esil->addrmask;
-	if (esil->analysis->iob.write_at(esil->analysis->iob.io, addr, buf, len)) {
+	if (EANALYSIS(esil)->iob.write_at(EANALYSIS(esil)->iob.io, addr, buf, len)) {
 		ret = len;
 	}
 	// check if request address is mapped , if don't fire trap and esil ioer callback
 	// now with siol, write_at return true/false can't be used to check error vs len
-	if (!esil->analysis->iob.is_valid_offset(esil->analysis->iob.io, addr, false)) {
+	if (!EANALYSIS(esil)->iob.is_valid_offset(EANALYSIS(esil)->iob.io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = RZ_ANALYSIS_TRAP_WRITE_ERR;
 			esil->trap_code = addr;
@@ -318,13 +311,13 @@ RZ_API int rz_analysis_esil_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8
 }
 
 static int internal_esil_reg_read(RzAnalysisEsil *esil, const char *regname, ut64 *num, int *size) {
-	RzRegItem *reg = rz_reg_get(esil->analysis->reg, regname, -1);
+	RzRegItem *reg = rz_reg_get(EANALYSIS(esil)->reg, regname, -1);
 	if (reg) {
 		if (size) {
 			*size = reg->size;
 		}
 		if (num) {
-			*num = rz_reg_get_value(esil->analysis->reg, reg);
+			*num = rz_reg_get_value(EANALYSIS(esil)->reg, reg);
 		}
 		return true;
 	}
@@ -332,10 +325,10 @@ static int internal_esil_reg_read(RzAnalysisEsil *esil, const char *regname, ut6
 }
 
 static int internal_esil_reg_write(RzAnalysisEsil *esil, const char *regname, ut64 num) {
-	if (esil && esil->analysis) {
-		RzRegItem *reg = rz_reg_get(esil->analysis->reg, regname, -1);
+	if (esil && EANALYSIS(esil)) {
+		RzRegItem *reg = rz_reg_get(EANALYSIS(esil)->reg, regname, -1);
 		if (reg) {
-			rz_reg_set_value(esil->analysis->reg, reg, num);
+			rz_reg_set_value(EANALYSIS(esil)->reg, reg, num);
 			return true;
 		}
 	}
@@ -343,12 +336,12 @@ static int internal_esil_reg_write(RzAnalysisEsil *esil, const char *regname, ut
 }
 
 static int internal_esil_reg_write_no_null(RzAnalysisEsil *esil, const char *regname, ut64 num) {
-	rz_return_val_if_fail(esil && esil->analysis && esil->analysis->reg, false);
+	rz_return_val_if_fail(esil && EANALYSIS(esil) && EANALYSIS(esil)->reg, false);
 
-	RzRegItem *reg = rz_reg_get(esil->analysis->reg, regname, -1);
-	const char *pc = rz_reg_get_name(esil->analysis->reg, RZ_REG_NAME_PC);
-	const char *sp = rz_reg_get_name(esil->analysis->reg, RZ_REG_NAME_SP);
-	const char *bp = rz_reg_get_name(esil->analysis->reg, RZ_REG_NAME_BP);
+	RzRegItem *reg = rz_reg_get(EANALYSIS(esil)->reg, regname, -1);
+	const char *pc = rz_reg_get_name(EANALYSIS(esil)->reg, RZ_REG_NAME_PC);
+	const char *sp = rz_reg_get_name(EANALYSIS(esil)->reg, RZ_REG_NAME_SP);
+	const char *bp = rz_reg_get_name(EANALYSIS(esil)->reg, RZ_REG_NAME_BP);
 
 	if (!pc) {
 		RZ_LOG_WARN("RzReg profile does not contain PC register\n");
@@ -363,7 +356,7 @@ static int internal_esil_reg_write_no_null(RzAnalysisEsil *esil, const char *reg
 		return false;
 	}
 	if (reg && reg->name && ((strcmp(reg->name, pc) && strcmp(reg->name, sp) && strcmp(reg->name, bp)) || num)) { // I trust k-maps
-		rz_reg_set_value(esil->analysis->reg, reg, num);
+		rz_reg_set_value(EANALYSIS(esil)->reg, reg, num);
 		return true;
 	}
 	return false;
@@ -410,7 +403,7 @@ RZ_API int rz_analysis_esil_get_parm_type(RzAnalysisEsil *esil, const char *str)
 	}
 	return RZ_ANALYSIS_ESIL_PARM_NUM;
 not_a_number:
-	if (rz_reg_get(esil->analysis->reg, str, -1)) {
+	if (rz_reg_get(EANALYSIS(esil)->reg, str, -1)) {
 		return RZ_ANALYSIS_ESIL_PARM_REG;
 	}
 	return RZ_ANALYSIS_ESIL_PARM_INVALID;
@@ -428,7 +421,7 @@ RZ_API int rz_analysis_esil_get_parm_size(RzAnalysisEsil *esil, const char *str,
 	case RZ_ANALYSIS_ESIL_PARM_NUM:
 		*num = rz_num_get(NULL, str);
 		if (size) {
-			*size = esil->analysis->bits;
+			*size = EANALYSIS(esil)->bits;
 		}
 		return true;
 	case RZ_ANALYSIS_ESIL_PARM_REG:
@@ -479,7 +472,7 @@ RZ_API int rz_analysis_esil_reg_read(RzAnalysisEsil *esil, const char *regname, 
 	}
 	*num = 0LL;
 	if (size) {
-		*size = esil->analysis->bits;
+		*size = EANALYSIS(esil)->bits;
 	}
 	if (esil->cb.hook_reg_read) {
 		ret = esil->cb.hook_reg_read(esil, regname, num, size);
@@ -688,8 +681,8 @@ static bool esil_js(RzAnalysisEsil *esil) {
 
 // TODO: this should be deprecated because it is not accurate
 static bool esil_rs(RzAnalysisEsil *esil) {
-	rz_return_val_if_fail(esil && esil->analysis, false);
-	return rz_analysis_esil_pushnum(esil, esil->analysis->bits >> 3);
+	rz_return_val_if_fail(esil && EANALYSIS(esil), false);
+	return rz_analysis_esil_pushnum(esil, EANALYSIS(esil)->bits >> 3);
 }
 
 // TODO: this should be deprecated because plugins should know their current address
@@ -699,7 +692,7 @@ static bool esil_address(RzAnalysisEsil *esil) {
 }
 
 static bool esil_weak_eq(RzAnalysisEsil *esil) {
-	rz_return_val_if_fail(esil && esil->analysis, false);
+	rz_return_val_if_fail(esil && EANALYSIS(esil), false);
 	char *dst = rz_analysis_esil_pop(esil);
 	char *src = rz_analysis_esil_pop(esil);
 
@@ -881,8 +874,8 @@ static bool esil_trap(RzAnalysisEsil *esil) {
 static bool esil_bits(RzAnalysisEsil *esil) {
 	ut64 s;
 	if (popRN(esil, &s)) {
-		if (esil->analysis && esil->analysis->coreb.setab) {
-			esil->analysis->coreb.setab(esil->analysis->coreb.core, NULL, s);
+		if (EANALYSIS(esil) && EANALYSIS(esil)->coreb.setab) {
+			EANALYSIS(esil)->coreb.setab(EANALYSIS(esil)->coreb.core, NULL, s);
 		}
 		return true;
 	}
@@ -909,9 +902,9 @@ static bool esil_cmp(RzAnalysisEsil *esil) {
 			esil->old = num;
 			esil->cur = num - num2;
 			ret = true;
-			if (rz_reg_get(esil->analysis->reg, dst, -1)) {
+			if (rz_reg_get(EANALYSIS(esil)->reg, dst, -1)) {
 				esil->lastsz = esil_internal_sizeof_reg(esil, dst);
-			} else if (rz_reg_get(esil->analysis->reg, src, -1)) {
+			} else if (rz_reg_get(EANALYSIS(esil)->reg, src, -1)) {
 				esil->lastsz = esil_internal_sizeof_reg(esil, src);
 			} else {
 				// default size is set to 64 as internally operands are ut64
@@ -1702,9 +1695,9 @@ static bool esil_poke_n(RzAnalysisEsil *esil, int bits) {
 			if (bits == 128) {
 				src2 = rz_analysis_esil_pop(esil);
 				if (src2 && rz_analysis_esil_get_parm(esil, src2, &num2)) {
-					rz_write_ble(b, num, esil->analysis->big_endian, 64);
+					rz_write_ble(b, num, EANALYSIS(esil)->big_endian, 64);
 					rz_analysis_esil_mem_write(esil, addr, b, bytes);
-					rz_write_ble(b, num2, esil->analysis->big_endian, 64);
+					rz_write_ble(b, num2, EANALYSIS(esil)->big_endian, 64);
 					rz_analysis_esil_mem_write(esil, addr + 8, b, bytes);
 					ret = true;
 					goto out;
@@ -1718,12 +1711,12 @@ static bool esil_poke_n(RzAnalysisEsil *esil, int bits) {
 			esil->cb.hook_mem_read = NULL;
 			rz_analysis_esil_mem_read(esil, addr, b, bytes);
 			esil->cb.hook_mem_read = oldhook;
-			n = rz_read_ble64(b, esil->analysis->big_endian);
+			n = rz_read_ble64(b, EANALYSIS(esil)->big_endian);
 			esil->old = n;
 			esil->cur = num;
 			esil->lastsz = bits;
 			num = num & bitmask;
-			rz_write_ble(b, num, esil->analysis->big_endian, bits);
+			rz_write_ble(b, num, EANALYSIS(esil)->big_endian, bits);
 			rz_analysis_esil_mem_write(esil, addr, b, bytes);
 			ret = true;
 		}
@@ -1760,7 +1753,7 @@ static bool esil_poke16(RzAnalysisEsil *esil) {
 }
 
 static bool esil_poke(RzAnalysisEsil *esil) {
-	return esil_poke_n(esil, esil->analysis->bits);
+	return esil_poke_n(esil, EANALYSIS(esil)->bits);
 }
 
 static bool esil_poke_some(RzAnalysisEsil *esil) {
@@ -1788,7 +1781,7 @@ static bool esil_poke_some(RzAnalysisEsil *esil) {
 					}
 					rz_analysis_esil_get_parm_size(esil, foo, &tmp, &regsize);
 					isregornum(esil, foo, &num64);
-					rz_write_ble(b, num64, esil->analysis->big_endian, regsize);
+					rz_write_ble(b, num64, EANALYSIS(esil)->big_endian, regsize);
 					const int size_bytes = regsize / 8;
 					const ut32 written = rz_analysis_esil_mem_write(esil, ptr, b, size_bytes);
 					if (written != size_bytes) {
@@ -1826,8 +1819,8 @@ static bool esil_peek_n(RzAnalysisEsil *esil, int bits) {
 		if (bits == 128) {
 			ut8 a[sizeof(ut64) * 2] = { 0 };
 			rz_analysis_esil_mem_read(esil, addr, a, bytes);
-			ut64 b = rz_read_ble(a, esil->analysis->big_endian, bits);
-			ut64 c = rz_read_ble(a + 8, esil->analysis->big_endian, bits);
+			ut64 b = rz_read_ble(a, EANALYSIS(esil)->big_endian, bits);
+			ut64 c = rz_read_ble(a + 8, EANALYSIS(esil)->big_endian, bits);
 			rz_strf(res, "0x%" PFMT64x, b);
 			rz_analysis_esil_push(esil, res);
 			rz_strf(res, "0x%" PFMT64x, c);
@@ -1838,7 +1831,7 @@ static bool esil_peek_n(RzAnalysisEsil *esil, int bits) {
 		ut64 bitmask = genmask(bits - 1);
 		ut8 a[sizeof(ut64)] = { 0 };
 		rz_analysis_esil_mem_read(esil, addr, a, bytes);
-		ut64 b = rz_read_ble(a, esil->analysis->big_endian, bits);
+		ut64 b = rz_read_ble(a, EANALYSIS(esil)->big_endian, bits);
 		rz_strf(res, "0x%" PFMT64x, b & bitmask);
 		rz_analysis_esil_push(esil, res);
 		esil->lastsz = bits;
@@ -1878,7 +1871,7 @@ static bool esil_stack(RzAnalysisEsil *esil) {
 }
 
 static bool esil_peek(RzAnalysisEsil *esil) {
-	return esil_peek_n(esil, esil->analysis->bits);
+	return esil_peek_n(esil, EANALYSIS(esil)->bits);
 };
 
 static bool esil_peek_some(RzAnalysisEsil *esil) {
@@ -1905,7 +1898,7 @@ static bool esil_peek_some(RzAnalysisEsil *esil) {
 					}
 					const ut32 read = rz_analysis_esil_mem_read(esil, ptr, a, 4);
 					if (read == 4) { // this is highly questionabla
-						num32 = rz_read_ble32(a, esil->analysis->big_endian);
+						num32 = rz_read_ble32(a, EANALYSIS(esil)->big_endian);
 						rz_analysis_esil_reg_write(esil, foo, num32);
 					} else {
 						ESIL_LOG("Cannot peek from 0x%08" PFMT64x "\n", ptr);
@@ -1966,7 +1959,7 @@ static bool esil_mem_oreq8(RzAnalysisEsil *esil) {
 	return esil_mem_oreq_n(esil, 64);
 }
 static bool esil_mem_oreq(RzAnalysisEsil *esil) {
-	return esil_mem_oreq_n(esil, esil->analysis->bits);
+	return esil_mem_oreq_n(esil, EANALYSIS(esil)->bits);
 }
 
 /* XOREQ */
@@ -2012,7 +2005,7 @@ static bool esil_mem_xoreq8(RzAnalysisEsil *esil) {
 	return esil_mem_xoreq_n(esil, 64);
 }
 static bool esil_mem_xoreq(RzAnalysisEsil *esil) {
-	return esil_mem_xoreq_n(esil, esil->analysis->bits);
+	return esil_mem_xoreq_n(esil, EANALYSIS(esil)->bits);
 }
 
 /* ANDEQ */
@@ -2058,7 +2051,7 @@ static bool esil_mem_andeq8(RzAnalysisEsil *esil) {
 	return esil_mem_andeq_n(esil, 64);
 }
 static bool esil_mem_andeq(RzAnalysisEsil *esil) {
-	return esil_mem_andeq_n(esil, esil->analysis->bits);
+	return esil_mem_andeq_n(esil, EANALYSIS(esil)->bits);
 }
 
 /* ADDEQ */
@@ -2104,7 +2097,7 @@ static bool esil_mem_addeq8(RzAnalysisEsil *esil) {
 	return esil_mem_addeq_n(esil, 64);
 }
 static bool esil_mem_addeq(RzAnalysisEsil *esil) {
-	return esil_mem_addeq_n(esil, esil->analysis->bits);
+	return esil_mem_addeq_n(esil, EANALYSIS(esil)->bits);
 }
 
 /* SUBEQ */
@@ -2150,7 +2143,7 @@ static bool esil_mem_subeq8(RzAnalysisEsil *esil) {
 	return esil_mem_subeq_n(esil, 64);
 }
 static bool esil_mem_subeq(RzAnalysisEsil *esil) {
-	return esil_mem_subeq_n(esil, esil->analysis->bits);
+	return esil_mem_subeq_n(esil, EANALYSIS(esil)->bits);
 }
 
 /* MODEQ */
@@ -2203,7 +2196,7 @@ static bool esil_mem_modeq8(RzAnalysisEsil *esil) {
 	return esil_mem_modeq_n(esil, 64);
 }
 static bool esil_mem_modeq(RzAnalysisEsil *esil) {
-	return esil_mem_modeq_n(esil, esil->analysis->bits);
+	return esil_mem_modeq_n(esil, EANALYSIS(esil)->bits);
 }
 
 /* DIVEQ */
@@ -2255,7 +2248,7 @@ static bool esil_mem_diveq8(RzAnalysisEsil *esil) {
 	return esil_mem_diveq_n(esil, 64);
 }
 static bool esil_mem_diveq(RzAnalysisEsil *esil) {
-	return esil_mem_diveq_n(esil, esil->analysis->bits);
+	return esil_mem_diveq_n(esil, EANALYSIS(esil)->bits);
 }
 
 /* MULEQ */
@@ -2302,7 +2295,7 @@ static bool esil_mem_muleq8(RzAnalysisEsil *esil) {
 }
 
 static bool esil_mem_muleq(RzAnalysisEsil *esil) {
-	switch (esil->analysis->bits) {
+	switch (EANALYSIS(esil)->bits) {
 	case 64: return esil_mem_muleq8(esil);
 	case 32: return esil_mem_muleq4(esil);
 	case 16: return esil_mem_muleq2(esil);
@@ -2355,7 +2348,7 @@ static bool esil_mem_inceq8(RzAnalysisEsil *esil) {
 	return esil_mem_inceq_n(esil, 64);
 }
 static bool esil_mem_inceq(RzAnalysisEsil *esil) {
-	return esil_mem_inceq_n(esil, esil->analysis->bits);
+	return esil_mem_inceq_n(esil, EANALYSIS(esil)->bits);
 }
 
 /* DECEQ */
@@ -2399,7 +2392,7 @@ static bool esil_mem_deceq8(RzAnalysisEsil *esil) {
 	return esil_mem_deceq_n(esil, 64);
 }
 static bool esil_mem_deceq(RzAnalysisEsil *esil) {
-	return esil_mem_deceq_n(esil, esil->analysis->bits);
+	return esil_mem_deceq_n(esil, EANALYSIS(esil)->bits);
 }
 
 /* LSLEQ */
@@ -2453,7 +2446,7 @@ static bool esil_mem_lsleq8(RzAnalysisEsil *esil) {
 	return esil_mem_lsleq_n(esil, 64);
 }
 static bool esil_mem_lsleq(RzAnalysisEsil *esil) {
-	return esil_mem_lsleq_n(esil, esil->analysis->bits);
+	return esil_mem_lsleq_n(esil, EANALYSIS(esil)->bits);
 }
 
 /* LSREQ */
@@ -2499,7 +2492,7 @@ static bool esil_mem_lsreq8(RzAnalysisEsil *esil) {
 	return esil_mem_lsreq_n(esil, 64);
 }
 static bool esil_mem_lsreq(RzAnalysisEsil *esil) {
-	return esil_mem_lsreq_n(esil, esil->analysis->bits);
+	return esil_mem_lsreq_n(esil, EANALYSIS(esil)->bits);
 }
 
 /* get value of register or memory reference and push the value */
@@ -2582,9 +2575,9 @@ static bool esil_smaller(RzAnalysisEsil *esil) { // 'dst < src' => 'src,dst,<'
 			esil->old = num;
 			esil->cur = num - num2;
 			ret = true;
-			if (rz_reg_get(esil->analysis->reg, dst, -1)) {
+			if (rz_reg_get(EANALYSIS(esil)->reg, dst, -1)) {
 				esil->lastsz = esil_internal_sizeof_reg(esil, dst);
-			} else if (rz_reg_get(esil->analysis->reg, src, -1)) {
+			} else if (rz_reg_get(EANALYSIS(esil)->reg, src, -1)) {
 				esil->lastsz = esil_internal_sizeof_reg(esil, src);
 			} else {
 				// default size is set to 64 as internally operands are ut64
@@ -2608,9 +2601,9 @@ static bool esil_bigger(RzAnalysisEsil *esil) { // 'dst > src' => 'src,dst,>'
 			esil->old = num;
 			esil->cur = num - num2;
 			ret = true;
-			if (rz_reg_get(esil->analysis->reg, dst, -1)) {
+			if (rz_reg_get(EANALYSIS(esil)->reg, dst, -1)) {
 				esil->lastsz = esil_internal_sizeof_reg(esil, dst);
-			} else if (rz_reg_get(esil->analysis->reg, src, -1)) {
+			} else if (rz_reg_get(EANALYSIS(esil)->reg, src, -1)) {
 				esil->lastsz = esil_internal_sizeof_reg(esil, src);
 			} else {
 				// default size is set to 64 as internally operands are ut64
@@ -2634,9 +2627,9 @@ static bool esil_smaller_equal(RzAnalysisEsil *esil) { // 'dst <= src' => 'src,d
 			esil->old = num;
 			esil->cur = num - num2;
 			ret = true;
-			if (rz_reg_get(esil->analysis->reg, dst, -1)) {
+			if (rz_reg_get(EANALYSIS(esil)->reg, dst, -1)) {
 				esil->lastsz = esil_internal_sizeof_reg(esil, dst);
-			} else if (rz_reg_get(esil->analysis->reg, src, -1)) {
+			} else if (rz_reg_get(EANALYSIS(esil)->reg, src, -1)) {
 				esil->lastsz = esil_internal_sizeof_reg(esil, src);
 			} else {
 				// default size is set to 64 as internally operands are ut64
@@ -2660,9 +2653,9 @@ static bool esil_bigger_equal(RzAnalysisEsil *esil) { // 'dst >= src' => 'src,ds
 			esil->old = num;
 			esil->cur = num - num2;
 			ret = true;
-			if (rz_reg_get(esil->analysis->reg, dst, -1)) {
+			if (rz_reg_get(EANALYSIS(esil)->reg, dst, -1)) {
 				esil->lastsz = esil_internal_sizeof_reg(esil, dst);
-			} else if (rz_reg_get(esil->analysis->reg, src, -1)) {
+			} else if (rz_reg_get(EANALYSIS(esil)->reg, src, -1)) {
 				esil->lastsz = esil_internal_sizeof_reg(esil, src);
 			} else {
 				// default size is set to 64 as internally operands are ut64
@@ -2889,8 +2882,8 @@ repeat:
 	wordi = 0;
 	while (*str) {
 		if (str == hashbang) {
-			if (esil->analysis && esil->analysis->coreb.setab) {
-				esil->analysis->coreb.cmd(esil->analysis->coreb.core, str + 2);
+			if (EANALYSIS(esil) && EANALYSIS(esil)->coreb.setab) {
+				EANALYSIS(esil)->coreb.cmd(EANALYSIS(esil)->coreb.core, str + 2);
 			}
 			break;
 		}
@@ -3158,11 +3151,11 @@ static void rz_analysis_esil_setup_ops(RzAnalysisEsil *esil) {
 }
 
 /* register callbacks using this analysis module. */
-RZ_API bool rz_analysis_esil_setup(RzAnalysisEsil *esil, RzAnalysis *analysis, int romem, int stats, int nonull, RzCore *core) {
+RZ_API bool rz_analysis_esil_setup(RzAnalysisEsil *esil, void /*RzAnalysis*/ *panalysis, int romem, int stats, int nonull, void /*RzCore*/ *pcore) {
 	rz_return_val_if_fail(esil, false);
-	// esil->debug = 0;
-	esil->core = core;
-	esil->analysis = analysis;
+
+	esil->pcore = pcore;
+	esil->panalysis = panalysis;
 	esil->parse_goto_count = RZ_ANALYSIS_ESIL_GOTO_LIMIT;
 	esil->trap = 0;
 	esil->trap_code = 0;
@@ -3187,7 +3180,9 @@ RZ_API bool rz_analysis_esil_setup(RzAnalysisEsil *esil, RzAnalysis *analysis, i
 	rz_analysis_esil_stats(esil, stats);
 	rz_analysis_esil_setup_ops(esil);
 
-	return (analysis->cur && analysis->cur->esil_init)
-		? analysis->cur->esil_init(esil)
-		: true;
+	RzAnalysis *analysis = panalysis;
+	if (analysis->cur && analysis->cur->esil_init) {
+		return analysis->cur->esil_init(esil);
+	}
+	return true;
 }

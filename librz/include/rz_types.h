@@ -25,6 +25,14 @@ extern "C" {
 #undef __UNIX__
 #undef __WINDOWS__
 
+#if HAVE___BUILTIN_EXPECT
+#define RZ_LIKELY(x)   __builtin_expect(x, 1)
+#define RZ_UNLIKELY(x) __builtin_expect(x, 0)
+#else
+#define RZ_LIKELY(x)   (x)
+#define RZ_UNLIKELY(x) (x)
+#endif
+
 #define RZ_IN    /* do not use, implicit */
 #define RZ_OUT   /* parameter is written, not read */
 #define RZ_INOUT /* parameter is read and written / return value is copy of RZ_INOUT parameter */
@@ -500,11 +508,27 @@ static inline void *rz_new_copy(int size, const void *data) {
 		x = NULL; \
 	}
 
+#if HAVE_HEADER_INTTYPES_H
+#define PFMT64x PRIx64
+#define PFMT64X PRIX64
+#define PFMT64d PRId64
+#define PFMT64u PRIu64
+#define PFMT64o PRIo64
+#elif __WINDOWS__
+#define PFMT64x "I64x"
+#define PFMT64X "I64X"
+#define PFMT64d "I64d"
+#define PFMT64u "I64u"
+#define PFMT64o "I64o"
+#else
+#define PFMT64x "lx"
+#define PFMT64X "lX"
+#define PFMT64d "ld"
+#define PFMT64u "lu"
+#define PFMT64o "lo"
+#endif
+
 #if __WINDOWS__
-#define PFMT64x  "I64x"
-#define PFMT64d  "I64d"
-#define PFMT64u  "I64u"
-#define PFMT64o  "I64o"
 #define PFMTSZx  "Ix"
 #define PFMTSZd  "Id"
 #define PFMTSZu  "Iu"
@@ -513,10 +537,6 @@ static inline void *rz_new_copy(int size, const void *data) {
 #define LDBLFMTf "f"
 #define HHXFMT   "x"
 #else
-#define PFMT64x  "llx"
-#define PFMT64d  "lld"
-#define PFMT64u  "llu"
-#define PFMT64o  "llo"
 #define PFMTSZx  "zx"
 #define PFMTSZd  "zd"
 #define PFMTSZu  "zu"

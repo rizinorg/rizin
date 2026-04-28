@@ -472,7 +472,7 @@ static RzPVector /*<RzBinClass *>*/ *dyldcache_classes(RzBinFile *bf) {
 				bf->o->bin_obj = cache;
 
 				if (!klass->name) {
-					RZ_LOG_ERROR("CLASS ERROR AT 0x%llx, is_classlist %d\n", pointer_to_class, is_classlist);
+					RZ_LOG_ERROR("CLASS ERROR AT 0x%" PFMT64x ", is_classlist %d\n", pointer_to_class, is_classlist);
 					klass->name = rz_str_newf("UnnamedClass%u", num_of_unnamed_class);
 					if (!klass->name) {
 						RZ_FREE(klass);

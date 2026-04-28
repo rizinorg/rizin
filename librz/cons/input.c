@@ -397,13 +397,15 @@ static int __cons_readchar_w32(ut32 usec) {
 	void *bed;
 	I->mouse_event = MOUSE_NONE;
 	h = GetStdHandle(STD_INPUT_HANDLE);
-	GetConsoleMode(h, &mode);
+	const bool has_input_console = GetConsoleMode(h, &mode);
 	DWORD newmode = ENABLE_WINDOW_INPUT;
 	if (I->vtmode == RZ_VIRT_TERM_MODE_COMPLETE) {
 		newmode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
 	}
-	newmode |= mode;
-	SetConsoleMode(h, newmode);
+	if (has_input_console) {
+		// Only toggle temporary read modes when stdin is a real console handle.
+		SetConsoleMode(h, newmode | mode);
+	}
 	do {
 		bed = rz_cons_sleep_begin();
 		if (usec) {
@@ -545,7 +547,10 @@ static int __cons_readchar_w32(ut32 usec) {
 			resizeWin();
 		}
 	} while (ch == 0 && !do_break);
-	SetConsoleMode(h, mode);
+	if (has_input_console) {
+		// Restore the temporary read mode only when we successfully captured one.
+		SetConsoleMode(h, mode);
+	}
 	return ch;
 }
 #endif

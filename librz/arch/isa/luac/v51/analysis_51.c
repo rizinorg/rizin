@@ -3,12 +3,13 @@
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 // SPDX-FileCopyrightText: 2025-2026 Sergey Sharshunov <s.sharshunov@gmail.com>
 
+#include "analysis_private.h"
 #include "arch_51.h"
 
 int lua51_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContext *ctx, const ut8 *data, int len) {
 	const LuaInstruction instruction = ctx->instruction;
 	const ut64 addr = ctx->addr;
-	const LuaOpCode51 opcode = GET_OPCODE51(instruction);
+	LuaOpCode51 opcode = GET_OPCODE51(instruction);
 
 	char comment[128] = { 0 };
 
@@ -30,7 +31,17 @@ int lua51_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContex
 	const int sbx = GETARG_sBx1(instruction);
 
 	op->jump = addr + 4;
-
+	/**
+	 * This is required for TP-Link Archer routers,
+	 * as their firmware/LuCI environment relies on
+	 * this version for backward compatibility and
+	 * performance on MIPS/ARM architectures.
+	 */
+	if (RZ_STR_EQ(analysis->cpu, "tp-link-5.1")) {
+		opcode = get_lua51_shuffled_opcode_by_index(opcode, LUA_51_VERSION_TPLINK);
+	} else {
+		opcode = get_lua51_opcode_shuffled_index_by_id(opcode, LUA_51_VERSION_VANILLA);
+	}
 	switch (opcode) {
 	case OP_MOVE: /*	A B	R[A] := R[B]					*/
 		TYPE_CFMT_DST_SRC0_REG(RZ_ANALYSIS_OP_TYPE_MOV, "r%d = r%d", a, b);
@@ -164,7 +175,7 @@ int lua51_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContex
 	case OP_TFORLOOP: /*  A sBx   if R(A+1) ~= nil then { R(A)=R(A+1); pc += sBx }*/
 		TYPE_DST_REG(RZ_ANALYSIS_OP_TYPE_CJMP, a);
 		JUMP_FAIL_ABS(addr + 4 + (sbx * 4), addr + 4);
-		rz_strf(comment, "to 0x%llx", op->jump);
+		rz_strf(comment, "to 0x%" PFMT64x, op->jump);
 		break;
 	case OP_VARARG: /*    A B     R(A), R(A+1), ..., R(A+B-2) = vararg            */
 		break;

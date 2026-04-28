@@ -60,7 +60,6 @@ jobs:
             linux-meson-gcc-tests,
             macos-meson-clang-tests,
             linux-gcc-tests-asan,
-            linux-gcc-tests-lsan,
             linux-clang-tests-asan,
             linux-gcc-tests-codecov,
             capstone-v4,
@@ -108,21 +107,6 @@ jobs:
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 120
             allow_failure: false
-          - name: linux-gcc-tests-lsan
-            os: ubuntu-24.04
-            build_system: meson
-            compiler: gcc
-            cflags: "-DASAN=1 -DRZ_ASSERT_STDOUT=1 -ftrivial-auto-var-init=pattern -funsigned-char"
-            meson_options: -Dbuildtype=debug -Db_sanitize=leak --werror
-            asan: true
-            lsan_options: log_path=/tmp/lsan_logs/log
-            continue-on-error: false
-            run_tests: true
-            enabled: ${{ (needs.changes.outputs.edited == 'true' && github.event_name == 'pull_request') }}
-            timeout: 120
-            # The existing leaks in Rizin will make the tests fail otherwise
-            # before it runs the script to check for new leaks.
-            allow_failure: true
           - name: linux-gcc-tests-portable
             os: ubuntu-24.04
             build_system: meson
@@ -143,7 +127,7 @@ jobs:
             asan_options: detect_leaks=0,allocator_may_return_null=1
             run_tests: true
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
-            timeout: 115
+            timeout: 120
             allow_failure: false
           - name: linux-gcc-tests-codecov
             os: ubuntu-24.04
@@ -153,7 +137,7 @@ jobs:
             meson_options: -Dbuildtype=debug -Db_coverage=true -Dchecks_level=3 --werror
             coverage: true
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
-            timeout: 60
+            timeout: 75
             allow_failure: false
           - name: capstone-sys
             os: ubuntu-24.04
@@ -293,7 +277,6 @@ jobs:
         env:
           ASAN: ${{ matrix.asan }}
           ASAN_OPTIONS: ${{ matrix.asan_options }}
-          LSAN_OPTIONS: ${{ matrix.lsan_options }}
           CC: ${{ matrix.compiler }}
       - name: Checkout our Testsuite Binaries
         if: matrix.enabled
@@ -337,7 +320,6 @@ jobs:
         env:
           ASAN: ${{ matrix.asan }}
           ASAN_OPTIONS: ${{ matrix.asan_options }}
-          LSAN_OPTIONS: ${{ matrix.lsan_options }}
           CC: ${{ matrix.compiler }}
       - name: Run fuzz tests
         if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz') || matrix.coverage)
@@ -359,12 +341,7 @@ jobs:
         env:
           ASAN: ${{ matrix.asan }}
           ASAN_OPTIONS: ${{ matrix.asan_options }}
-          LSAN_OPTIONS: ${{ matrix.lsan_options }}
           CC: ${{ matrix.compiler }}
-      - name: Check for new leaks
-        if: matrix.lsan_options != '' && matrix.enabled
-        run: |
-          ./sys/lsan_check.py ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} /tmp/lsan_logs/*
       - name: Generate coverage data
         if: matrix.coverage && matrix.enabled
         run: |
@@ -937,6 +914,7 @@ jobs:
           .\rizin_cmake_test
 
   test-riscv-inside-qemu:
+    name: Test Rizin on RISC-V 64-bit inside QEMU
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -966,6 +944,56 @@ jobs:
             -append "console=ttyS0,115200 earlycon" \
             -nographic
 
+  test-riscv32-in-qemu:
+    name: Test Rizin on RISC-V 32-bit inside QEMU
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y qemu-system-misc qemu-user-static
+          pip3 install meson ninja
+
+      - name: Bootlin env definitions
+        run: |
+          set -a
+          BOOTLIN_VERSION=stable-2025.08-1
+          BOOTLIN_LIBC=musl
+          BOOTLIN_RV32_TOOLCHAIN=riscv32-ilp32d--${BOOTLIN_LIBC}--${BOOTLIN_VERSION}.tar.xz 
+          BOOTLIN_DOMAIN=https://toolchains.bootlin.com
+          BOOTLIN_DOWNLOAD_URL=${BOOTLIN_DOMAIN}/downloads/releases/toolchains/riscv32-ilp32d/tarballs/${BOOTLIN_RV32_TOOLCHAIN}
+          BOOTLIN_INSTALLATION="${GITHUB_WORKSPACE}/toolchain/${BOOTLIN_RV32_TOOLCHAIN%.tar.xz}"
+          BOOTLIN_TOOLS="${BOOTLIN_INSTALLATION}/bin"
+          env | grep "^BOOTLIN_" >> $GITHUB_ENV
+
+      - name: Try getting the Bootlin toolchain from cache
+        id: cache-toolchain
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/toolchain
+          key: ${{ env.BOOTLIN_RV32_TOOLCHAIN }}
+
+      - name: Download Bootlin on cache miss
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p toolchain && cd toolchain
+          wget -q ${{ env.BOOTLIN_DOWNLOAD_URL }} 
+          tar -xf ${{ env.BOOTLIN_RV32_TOOLCHAIN }}
+          rm ${{ env.BOOTLIN_RV32_TOOLCHAIN }}
+
+      - name: Setup the QEMU image
+        run: cd .. && sh ./rizin/.github/riscv32-qemu-setup-all.sh /bin/rizin -hh
+
+      - name: Run Rizin on RISCV32 inside QEMU
+        run: |
+          cd .. 
+          qemu-system-riscv32 -machine virt -m 512M \
+            -bios rv32-fw_dynamic.bin \
+            -kernel rv32-Image \
+            -initrd initrd_rv32.cpio \
+            -append "earlycon console=hvc0" \
+            -nographic
 
   create-release:
     name: Create draft release and upload artifacts

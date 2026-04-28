@@ -38,12 +38,10 @@ RZ_API bool rz_analysis_op_fini(RzAnalysisOp *op) {
 	if (!op) {
 		return false;
 	}
-	rz_analysis_value_free(op->src[0]);
-	rz_analysis_value_free(op->src[1]);
-	rz_analysis_value_free(op->src[2]);
-	op->src[0] = NULL;
-	op->src[1] = NULL;
-	op->src[2] = NULL;
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(op->src); ++i) {
+		rz_analysis_value_free(op->src[i]);
+		op->src[i] = NULL;
+	}
 	rz_analysis_value_free(op->dst);
 	op->dst = NULL;
 	rz_list_free(op->access);

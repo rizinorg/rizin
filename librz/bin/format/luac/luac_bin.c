@@ -160,6 +160,7 @@ LuacBinInfo *luac_build_info(RZ_NONNULL LuaProto *proto) {
 		const_entry = *it;
 		if (const_entry->tag == LUA_VSTRING_IDX) {
 			const LuaConstEntry *tmp_const = rz_pvector_at(ret->all_const_vec, *(ut8 *)const_entry->data);
+			rz_warn_if_fail(tmp_const);
 			RZ_FREE(const_entry->data);
 			const int new_len = tmp_const->data_len + 1;
 			const_entry->data = RZ_NEWS(ut8, new_len);
@@ -203,7 +204,7 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info) {
 	// 1.0 set section name as function_name.code
 	current_offset = proto->code_offset + proto->code_skipped;
 	current_size = proto->code_size;
-	proto_name = rz_str_newf("fcn.%08llx", (ut64)proto_vaddr);
+	proto_name = rz_str_newf("fcn.%08" PFMT64x, (ut64)proto_vaddr);
 	section_name = rz_str_newf("%s.code", proto_name);
 	luac_add_section(info->section_vec, section_name, current_offset, proto_vaddr, current_size, true);
 

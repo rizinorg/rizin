@@ -3,6 +3,7 @@
 // SPDX-FileCopyrightText: 2026 Sergey Sharshunov <s.sharshunov@gmail.com>
 
 #include <rz_types.h>
+#include <analysis_private.h>
 #include <rz_analysis.h>
 
 #include <luac/lua_arch.h>
@@ -46,7 +47,7 @@ int rz_lua_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 
 	if (RZ_STR_EQ(analysis->cpu, "5.0")) {
 		ret = lua50_analysis_op(analysis, op, ctx, data, len);
-	} else if (RZ_STR_EQ(analysis->cpu, "5.1")) {
+	} else if (RZ_STR_EQ(analysis->cpu, "5.1") || RZ_STR_EQ(analysis->cpu, "openwrt-5.1") || RZ_STR_EQ(analysis->cpu, "tp-link-5.1")) {
 		ret = lua51_analysis_op(analysis, op, ctx, data, len);
 	} else if (RZ_STR_EQ(analysis->cpu, "5.2")) {
 		ret = lua52_analysis_op(analysis, op, ctx, data, len);

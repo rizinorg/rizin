@@ -733,6 +733,27 @@ RZ_API bool rz_project_migrate_v20_v21(RzProject *prj, RzSerializeResultInfo *re
 	return true;
 }
 
+// --
+// Migration 21 -> 22
+//
+// Changes from <TODO:AT-LAST>:
+// Renamed ROP search configs to gadget search for generalization:
+//	- `rop.X` to `gadget.X`
+
+RZ_API bool rz_project_migrate_v21_v22(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *config_db;
+	RZ_SERIALIZE_SUB(core_db, config_db, res, "config", return false;);
+	sdb_rename(config_db, "rop.len", "gadget.len");
+	sdb_rename(config_db, "rop.cache", "gadget.cache");
+	sdb_rename(config_db, "rop.subchains", "gadget.subchains");
+	sdb_rename(config_db, "rop.conditional", "gadget.conditional");
+	sdb_rename(config_db, "rop.comments", "gadget.comments");
+
+	return true;
+}
+
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
 	rz_project_migrate_v2_v3,
@@ -754,6 +775,7 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v18_v19,
 	rz_project_migrate_v19_v20,
 	rz_project_migrate_v20_v21,
+	rz_project_migrate_v21_v22,
 };
 
 /// Migrate the given project to the current version in-place

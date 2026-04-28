@@ -574,6 +574,108 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_var_byname(RzAnalysisFu
 	return NULL;
 }
 
+static void piece_storage_fini(void *p, void *user) {
+	RzAnalysisVarStoragePiece *piece = (RzAnalysisVarStoragePiece *)p;
+	rz_return_if_fail(piece);
+	free(piece->storage);
+}
+
+static void build_stack_storage(RzAnalysisVarStorage *str, const char *ret_location) {
+	str->type = RZ_ANALYSIS_VAR_STORAGE_STACK;
+	st64 offset = 0;
+	if (rz_str_ansi_len(ret_location) > 5 && ret_location[5] == '+') {
+		offset = (st64)rz_num_math(NULL, ret_location + 5);
+	}
+	str->stack_off = offset;
+}
+
+static ut32 build_reg_storage(RzAnalysis *analysis, RzAnalysisVarStorage *str, const char *ret_location) {
+	str->type = RZ_ANALYSIS_VAR_STORAGE_REG;
+	RzRegItem *reg = rz_reg_get(analysis->reg, ret_location, -1);
+	if (reg) {
+		str->reg = reg->name;
+		return reg->size;
+	}
+	str->reg = rz_str_constpool_get(&analysis->constpool, ret_location);
+	return analysis->bits;
+}
+
+static RzAnalysisVarStoragePiece build_storage_piece(RzAnalysis *analysis, const char *token_var, ut32 offset_bits) {
+	RzAnalysisVarStoragePiece str_piece = RZ_EMPTY;
+	str_piece.storage = RZ_NEW0(RzAnalysisVarStorage);
+	rz_return_val_if_fail(str_piece.storage, str_piece);
+	str_piece.offset_in_bits = offset_bits;
+	ut32 piece_size_bits = 0;
+	if (rz_str_startswith(token_var, "stack")) {
+		build_stack_storage(str_piece.storage, token_var);
+		piece_size_bits = analysis->bits;
+	} else {
+		piece_size_bits = build_reg_storage(analysis, str_piece.storage, token_var);
+	}
+	str_piece.size_in_bits = piece_size_bits;
+	return str_piece;
+}
+
+static RzVector /*<RzAnalysisVarStoragePiece>*/ *parse_composite_storage(RzAnalysis *analysis, const char *ret_location) {
+	RzVector *composite = rz_vector_new(sizeof(RzAnalysisVarStoragePiece), piece_storage_fini, NULL);
+	char *local_ret_loc = rz_str_dup(ret_location);
+	RzList *tokens = rz_str_split_list(local_ret_loc, ",", 0);
+	RzListIter *it;
+	char *token_var;
+	ut32 current_offset_bits = 0;
+
+	rz_list_foreach (tokens, it, token_var) {
+		RzAnalysisVarStoragePiece str_piece = build_storage_piece(analysis, token_var, current_offset_bits);
+		if (!str_piece.storage) {
+			break;
+		}
+		current_offset_bits += str_piece.size_in_bits;
+		rz_vector_push(composite, &str_piece);
+	}
+	rz_list_free(tokens);
+	free(local_ret_loc);
+	return composite;
+}
+
+static RzAnalysisVarStorage build_ret_var_storage(RzAnalysis *analysis, const char *ret_location) {
+	RzAnalysisVarStorage str = RZ_EMPTY;
+
+	if (rz_str_strchr(ret_location, ",")) {
+		str.type = RZ_ANALYSIS_VAR_STORAGE_COMPOSITE;
+		str.composite = parse_composite_storage(analysis, ret_location);
+	} else if (rz_str_startswith(ret_location, "stack")) {
+		build_stack_storage(&str, ret_location);
+	} else {
+		build_reg_storage(analysis, &str, ret_location);
+	}
+	return str;
+}
+
+/**
+ * \brief Retrieves the storage info of a function's return value.
+ * \param fcn The analysis function to inspect
+ *
+ * \return type RzAnalysisVar with function return info in it or NULL on fail.
+ */
+RZ_API RZ_OWN RzAnalysisVar *rz_analysis_function_get_ret_var(RzAnalysisFunction *fcn) {
+	rz_return_val_if_fail(fcn && fcn->analysis, NULL);
+
+	if (!fcn->cc) {
+		return NULL;
+	}
+
+	const char *ret_location = rz_analysis_cc_ret(fcn->analysis, fcn->cc);
+	if (!ret_location) {
+		return NULL;
+	}
+	RzAnalysisVar *var = rz_analysis_var_new();
+	rz_return_val_if_fail(var, NULL);
+	var->kind = RZ_ANALYSIS_VAR_KIND_VARIABLE;
+	RzAnalysisVarStorage str = build_ret_var_storage(fcn->analysis, ret_location);
+	var->storage = str;
+	return var;
+}
+
 /**
  * \return the variable that is located exactly at \p stor, or NULL if no such variable exists
  */
@@ -901,7 +1003,7 @@ RZ_API void rz_analysis_var_remove_access_at(RzAnalysisVar *var, ut64 address) {
 RZ_API void rz_analysis_var_clear_accesses(RzAnalysisVar *var) {
 	rz_return_if_fail(var);
 	RzAnalysisFunction *fcn = var->fcn;
-	if (fcn->inst_vars) {
+	if (fcn && fcn->inst_vars) {
 		// remove all inverse references to the var's accesses
 		RzAnalysisVarAccess *acc;
 		rz_vector_foreach (&var->accesses, acc) {
@@ -956,22 +1058,22 @@ RZ_API char *rz_analysis_var_get_constraints_readable(RzAnalysisVar *var) {
 			if (high) {
 				rz_strbuf_append(&sb, " && ");
 			}
-			rz_strbuf_appendf(&sb, "<= 0x%" PFMT64x "", constr->val);
+			rz_strbuf_appendf(&sb, "<= 0x%" PFMT64x, constr->val);
 			low = true;
 			break;
 		case RZ_TYPE_COND_LT:
 			if (high) {
 				rz_strbuf_append(&sb, " && ");
 			}
-			rz_strbuf_appendf(&sb, "< 0x%" PFMT64x "", constr->val);
+			rz_strbuf_appendf(&sb, "< 0x%" PFMT64x, constr->val);
 			low = true;
 			break;
 		case RZ_TYPE_COND_GE:
-			rz_strbuf_appendf(&sb, ">= 0x%" PFMT64x "", constr->val);
+			rz_strbuf_appendf(&sb, ">= 0x%" PFMT64x, constr->val);
 			high = true;
 			break;
 		case RZ_TYPE_COND_GT:
-			rz_strbuf_appendf(&sb, "> 0x%" PFMT64x "", constr->val);
+			rz_strbuf_appendf(&sb, "> 0x%" PFMT64x, constr->val);
 			high = true;
 			break;
 		default:
