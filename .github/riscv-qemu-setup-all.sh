@@ -9,7 +9,7 @@ LIB_PATH=/usr/riscv64-linux-gnu/lib
 LIB_C=libc.so.6
 LIB_M=libm.so.6
 DYN_LD=ld-linux-riscv64-lp64d.so.1
-
+TEST_BIN_URL=https://raw.githubusercontent.com/rizinorg/rizin-testbins/master/elf/riscv_bitmanip
 # Fetch the kernel package
 wget "$DEBIAN_SERVER/$LINUX_IMG"
 # Extract
@@ -27,15 +27,13 @@ cd ..
 
 # Create a rootfs
 mkdir -p rootfs 
-mkdir -p rootfs/lib rootfs/tmp rootfs/proc rootfs/etc
+mkdir -p rootfs/bin rootfs/lib rootfs/tmp rootfs/proc rootfs/etc rootfs/test/bins/elf rootfs/test/db/archos/linux-riscv64
 
-# Copy all .so files from the build directory to rootfs/lib (only the real ones, not shorthand symlinks)
-find rizin/build/librz/ -name "*.so.[0-9].[0-9].[0-9]" -type f \
- -exec cp {} rootfs/lib/ \; \
- -exec sh -c 'echo "linking $(basename "${1%.*}") -> $(basename "$1")"; ln -sf "$(basename "$1")" "rootfs/lib/$(basename "${1%.*}")"' _ {} \; # symlinking all *.so.0.9 to *.so.0.9.0
-
-# Copy rizin binary
-cp rizin/build/binrz/rizin/rizin rootfs/rizin
+# Simple copying of rizin binaries and .so libs doesn't work, as it skips sdb generaton and other important steps
+# Install to a custom prefix instead
+cd rizin && DESTDIR=../../rootfs/ meson install -C build && cd ..
+wget ${TEST_BIN_URL} && cp riscv_bitmanip rootfs/test/bins/elf/riscv_bitmanip && chmod +x rootfs/test/bins/elf/riscv_bitmanip
+cp rizin/test/db/archos/linux-riscv64/dbg_basic rootfs/test/db/archos/linux-riscv64/dbg_basic
 
 # libc and libm, dynamic linker
 cp "$LIB_PATH/$LIB_C" "$LIB_PATH/$LIB_M" "$LIB_PATH/$DYN_LD" rootfs/lib/
@@ -43,22 +41,23 @@ cp "$LIB_PATH/$LIB_C" "$LIB_PATH/$LIB_M" "$LIB_PATH/$DYN_LD" rootfs/lib/
 # Copy busybox to rootfs
 cp "busybox/$BUSYBOX_PATH/busybox" rootfs/bb
 
-# Make busybox the init launcher, poweroff, and mount
+# Make busybox the init launcher, poweroff, the shell, and mount
 ln -s bb rootfs/init
 ln -s bb rootfs/poweroff
 ln -s bb rootfs/mount
+ln -s ../bb rootfs/bin/sh
 
 # Make the inittab
 cat << EOF > rootfs/etc/inittab
+::sysinit:/mount -t tmpfs -o size=128M,nodev,nosuid tmpfs /tmp
 ::sysinit:/mount -t proc proc /proc
-::wait:$@
+::wait:/bin/sh -c "export PATH=/usr/local/bin && cd /test && rz-test db/archos/linux-riscv64"
 ::once:/poweroff -f
 EOF
 
 # filesystem state 
 # rootfs
 # /
-# ├── rizin
 # ├── bb
 # ├── init -> bb
 # ├── poweroff -> bb
@@ -67,17 +66,36 @@ EOF
 # │   ├── libc.so.6
 # │   ├── libm.so.6
 # │   ├── ld-linux-riscv64-lp64d.so.1
-# │   ├── librz_arch.so.0.9.0
-# │   ├── librz_arch.so.0.9 -> librz_arch.so.0.9.0
-# │   ├── librz_bin.so.0.9.0
-# │   ├── librz_bin.so.0.9 -> librz_bin.so.0.9.0
-# │   └── ... (*.so.0.9.0 objs + *.so.0.9 symlinks)
 # ├── tmp/
-# │   └── (empty)
+# │   └── (mounted by kernel)
 # ├── proc/
 # │   └── (mounted by kernel)
 # └── etc/
-#     └── inittab
+# |   └── inittab
+# ├── test
+# │   ├── bins
+# │   │   └── elf
+# │   └── db
+# │       └── archos
+# │           └── linux-riscv64
+# └── usr
+#    └── local
+#        ├── bin
+#        │   ├── rizin
+#        │   ├── rz-ar
+#        │   ├── rz-asm
+#        │   ├── rz-ax
+#        │   ├── rz-bin
+#        │   ├── rz-diff
+#        │   ├── rz-find
+#        │   ├── rz-gg
+#        │   ├── rz-hash
+#        │   ├── rz-run
+#        │   ├── rz-sign
+#        │   └── rz-test
+#        ├── include 
+#        | ....
+#        | ....
 echo "#########################################################################"
 # for debugging, always check the output tree against the intended tree above
 tree rootfs
@@ -86,4 +104,3 @@ echo "#########################################################################"
 # Package the whole thing into an initrd archive
 cd rootfs
 find . | cpio -o -H newc | gzip > ../initrd.cpio.gz
-cd ..

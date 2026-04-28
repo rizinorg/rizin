@@ -1,15 +1,25 @@
-NAME=rz =
+NAME=file.(last)path for rz =
 FILE==
 CMDS=<<EOF
 e file.path
 echo ---
-e file.path
-echo ---
-e file.path
+e file.lastpath
 EOF
 EXPECT=<<EOF
 
 ---
+
+EOF
+RUN
+
+NAME=file.(last)path for rz --
+FILE=--
+CMDS=<<EOF
+e file.path
+echo ---
+e file.lastpath
+EOF
+EXPECT=<<EOF
 
 ---
 
