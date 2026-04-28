@@ -151,8 +151,6 @@ Usage: w[?]   # Write commands
 │ wc[j-+ip?]                # Write cache commands
 │ wz <string>               # Write zero-terminated string
 │ wf[xfs]                   # Write data from file, socket, offset
-│ ptf <start> <size> <file> # Print memory region to file (overwrite/create)
-│ ptfa <start> <size> <file> # Print memory region to file (append to end)
 │ ww <string>               # Write wide (16-bit) little-endian string
 │ wx[f]                     # Write hexadecimal data
 │ wa[ifo]                   # Write opcodes
@@ -198,8 +196,6 @@ Usage: w[?]   # Write commands
 | wc[j-+ip?]                # Write cache commands
 | wz <string>               # Write zero-terminated string
 | wf[xfs]                   # Write data from file, socket, offset
-| ptf <start> <size> <file> # Print memory region to file (overwrite/create)
-| ptfa <start> <size> <file> # Print memory region to file (append to end)
 | ww <string>               # Write wide (16-bit) little-endian string
 | wx[f]                     # Write hexadecimal data
 | wa[ifo]                   # Write opcodes
