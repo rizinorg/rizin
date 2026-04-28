@@ -84,7 +84,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	if (!ro->quiet && !ro->json) {
 		printf("File: %s\n", ctx->filename);
 	}
-	char _str[128];
+	char _str[256];
 	char *str = _str;
 	*_str = 0;
 	if (ro->showstr) {
