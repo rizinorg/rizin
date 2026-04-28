@@ -1708,8 +1708,10 @@ RZ_API ut64 rz_debug_get_baddr(RzDebug *dbg, const char *file) {
 	if (pid < 0 || tid < 0) {
 		return 0LL;
 	}
-	if (rz_debug_attach(dbg, pid) == -1) {
-		return 0LL;
+	if (dbg->pid != pid) {
+		if (rz_debug_attach(dbg, pid) == -1) {
+			return 0LL;
+		}
 	}
 #if __WINDOWS__
 	ut64 base;
