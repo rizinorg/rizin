@@ -232,6 +232,20 @@ static inline bool config_init_var_itv(RzConfigVar *var, const char *name, const
 	return true;
 }
 
+static inline bool config_var_bind_set_options(RzConfigVar *var) {
+	if (!var->bind.get_options) {
+		return true;
+	}
+
+	RzList *options = NULL;
+	if (!var->bind.get_options(var->bind.user, &options)) {
+		return false;
+	}
+	rz_list_free(var->options);
+	var->options = options;
+	return true;
+}
+
 static inline bool config_init_var_bind(RzConfigVar *var, const char *name, const char *desc, ut32 flags, RzConfigBindGet get, RzConfigBindSet set, RzConfigBindOpts opts, void *user) {
 	var->name = rz_str_dup(name);
 	if (!name) {
@@ -243,7 +257,7 @@ static inline bool config_init_var_bind(RzConfigVar *var, const char *name, cons
 	var->bind.get_value = get;
 	var->bind.set_value = set;
 	var->bind.get_options = opts;
-	return true;
+	return config_var_bind_set_options(var);
 }
 
 RZ_API bool rz_config_add_bool(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, bool value) {
@@ -536,20 +550,6 @@ static inline bool config_var_bind_get_value(const RzConfigVar *var, void *value
 
 static inline bool config_var_bind_set_value(const RzConfigVar *var, const void *value) {
 	return var->bind.set_value(var->bind.user, value);
-}
-
-static inline bool config_var_bind_set_options(RzConfigVar *var) {
-	if (!var->bind.get_options) {
-		return true;
-	}
-
-	RzList *options = NULL;
-	if (!var->bind.get_options(var->bind.user, &options)) {
-		return false;
-	}
-	rz_list_free(var->options);
-	var->options = options;
-	return true;
 }
 
 RZ_API bool rz_config_var_get_bool(RZ_NONNULL const RzConfigVar *var) {
