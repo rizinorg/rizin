@@ -448,32 +448,6 @@ commands:
           - name: size
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
-  - name: wtf
-    cname: write_to_file
-    summary: Write memory region to file (overwrite/create)
-    description: >
-      Copy raw bytes from mapped memory range [<start>, <start> + <size>) into
-      <file>. If the file exists, it is truncated first.
-    args:
-      - name: start
-        type: RZ_CMD_ARG_TYPE_RZNUM
-      - name: size
-        type: RZ_CMD_ARG_TYPE_RZNUM
-      - name: file
-        type: RZ_CMD_ARG_TYPE_FILE
-  - name: wtfa
-    cname: write_to_file_append
-    summary: Write memory region to file (append to end of file)
-    description: >
-      Copy raw bytes from mapped memory range [<start>, <start> + <size>) into
-      <file>. The file is appended to if it already exists.
-    args:
-      - name: start
-        type: RZ_CMD_ARG_TYPE_RZNUM
-      - name: size
-        type: RZ_CMD_ARG_TYPE_RZNUM
-      - name: file
-        type: RZ_CMD_ARG_TYPE_FILE
   - name: ww
     cname: write_wide_string
     summary: Write wide (16-bit) little-endian string

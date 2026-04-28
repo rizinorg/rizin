@@ -2393,6 +2393,10 @@ RZ_IPI RzCmdStatus rz_print_equal_equal_priv_visual_handler(RzCore *core, int ar
 RZ_IPI RzCmdStatus rz_print_equal_equal_z_handler(RzCore *core, int argc, const char **argv);
 // "p==zv"
 RZ_IPI RzCmdStatus rz_print_equal_equal_z_visual_handler(RzCore *core, int argc, const char **argv);
+// "ptf"
+RZ_IPI RzCmdStatus rz_write_to_file_handler(RzCore *core, int argc, const char **argv);
+// "ptfa"
+RZ_IPI RzCmdStatus rz_write_to_file_append_handler(RzCore *core, int argc, const char **argv);
 // "Ps"
 RZ_IPI RzCmdStatus rz_project_save_handler(RzCore *core, int argc, const char **argv);
 // "Po"
@@ -2635,10 +2639,6 @@ RZ_IPI RzCmdStatus rz_write_from_io_xchg_handler(RzCore *core, int argc, const c
 RZ_IPI RzCmdStatus rz_write_from_file_handler(RzCore *core, int argc, const char **argv);
 // "wfs"
 RZ_IPI RzCmdStatus rz_write_from_socket_handler(RzCore *core, int argc, const char **argv);
-// "wtf"
-RZ_IPI RzCmdStatus rz_write_to_file_handler(RzCore *core, int argc, const char **argv);
-// "wtfa"
-RZ_IPI RzCmdStatus rz_write_to_file_append_handler(RzCore *core, int argc, const char **argv);
 // "ww"
 RZ_IPI RzCmdStatus rz_write_wide_string_handler(RzCore *core, int argc, const char **argv);
 // "wx"
