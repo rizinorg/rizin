@@ -297,7 +297,7 @@ static RzCmdStatus write_memory_to_file(RzCore *core, const WriteToFileRequest *
 		}
 	}
 
-	const int perm = O_WRONLY | O_CREAT | (req->overwrite ? O_TRUNC : 0);
+	const int perm = O_RDWR | O_CREAT | (req->overwrite ? O_TRUNC : 0);
 	RzBuffer *dst = rz_buf_new_file(req->filename, perm, 0644);
 	if (!dst) {
 		RZ_LOG_ERROR("core: Cannot open file '%s'\n", req->filename);
