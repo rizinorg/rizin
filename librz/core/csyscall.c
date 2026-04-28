@@ -67,10 +67,10 @@ RZ_API RZ_OWN char *rz_core_syscall_as_string(RzCore *core, st64 n, ut64 addr) {
 		if (item->sargs) {
 			switch (item->sargs[i]) {
 			case 'p': // pointer
-				res = rz_str_appendf(res, "0x%08" PFMT64x "", arg);
+				res = rz_str_appendf(res, "0x%08" PFMT64x, arg);
 				break;
 			case 'i':
-				res = rz_str_appendf(res, "%" PFMT64u "", arg);
+				res = rz_str_appendf(res, "%" PFMT64u, arg);
 				break;
 			case 'z':
 				memset(str, 0, sizeof(str));
@@ -91,11 +91,11 @@ RZ_API RZ_OWN char *rz_core_syscall_as_string(RzCore *core, st64 n, ut64 addr) {
 				res = rz_str_appendf(res, "\"%s\"", str);
 			} break;
 			default:
-				res = rz_str_appendf(res, "0x%08" PFMT64x "", arg);
+				res = rz_str_appendf(res, "0x%08" PFMT64x, arg);
 				break;
 			}
 		} else {
-			res = rz_str_appendf(res, "0x%08" PFMT64x "", arg);
+			res = rz_str_appendf(res, "0x%08" PFMT64x, arg);
 		}
 		if (i + 1 < item->args) {
 			res = rz_str_appendf(res, ", ");

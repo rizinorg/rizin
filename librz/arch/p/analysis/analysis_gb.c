@@ -1131,7 +1131,7 @@ static inline void gb_analysis_cb_srl(RzAnalysisOpMask mask, RzReg *reg, RzAnaly
 }
 
 static bool gb_custom_daa(RzAnalysisEsil *esil) {
-	if (!esil || !esil->analysis || !esil->analysis->reg) {
+	if (!esil) {
 		return false;
 	}
 	char *v = rz_analysis_esil_pop(esil);
@@ -2005,22 +2005,25 @@ static char *gb_get_reg_profile(RzAnalysis *analysis) {
 	return rz_str_dup(p);
 }
 
-static int gb_esil_init(RzAnalysisEsil *esil) {
+static bool gb_esil_init(void *pesil) {
+	RzAnalysisEsil *esil = pesil;
+	RzAnalysis *analysis = esil->panalysis;
 	GBUser *user = RZ_NEW0(GBUser);
+
 	rz_analysis_esil_set_op(esil, "daa", gb_custom_daa, 1, 1, RZ_ANALYSIS_ESIL_OP_TYPE_MATH | RZ_ANALYSIS_ESIL_OP_TYPE_CUSTOM);
 	if (user) {
-		if (esil->analysis) {
-			esil->analysis->iob.read_at(esil->analysis->iob.io, 0x147, &user->mbc_id, 1);
-			esil->analysis->iob.read_at(esil->analysis->iob.io, 0x148, &user->romsz_id, 1);
-			esil->analysis->iob.read_at(esil->analysis->iob.io, 0x149, &user->ramsz_id, 1);
-			if (esil->analysis->reg) { // initial values
-				rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "mpc", -1), 0x100);
-				rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "sp", -1), 0xfffe);
-				rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "af", -1), 0x01b0);
-				rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "bc", -1), 0x0013);
-				rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "de", -1), 0x00d8);
-				rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "hl", -1), 0x014d);
-				rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "ime", -1), true);
+		if (analysis) {
+			analysis->iob.read_at(analysis->iob.io, 0x147, &user->mbc_id, 1);
+			analysis->iob.read_at(analysis->iob.io, 0x148, &user->romsz_id, 1);
+			analysis->iob.read_at(analysis->iob.io, 0x149, &user->ramsz_id, 1);
+			if (analysis->reg) { // initial values
+				rz_reg_set_value(analysis->reg, rz_reg_get(analysis->reg, "mpc", -1), 0x100);
+				rz_reg_set_value(analysis->reg, rz_reg_get(analysis->reg, "sp", -1), 0xfffe);
+				rz_reg_set_value(analysis->reg, rz_reg_get(analysis->reg, "af", -1), 0x01b0);
+				rz_reg_set_value(analysis->reg, rz_reg_get(analysis->reg, "bc", -1), 0x0013);
+				rz_reg_set_value(analysis->reg, rz_reg_get(analysis->reg, "de", -1), 0x00d8);
+				rz_reg_set_value(analysis->reg, rz_reg_get(analysis->reg, "hl", -1), 0x014d);
+				rz_reg_set_value(analysis->reg, rz_reg_get(analysis->reg, "ime", -1), true);
 			}
 		}
 		esil->cb.user = user;
@@ -2028,7 +2031,8 @@ static int gb_esil_init(RzAnalysisEsil *esil) {
 	return true;
 }
 
-static int gb_esil_fini(RzAnalysisEsil *esil) {
+static bool gb_esil_fini(void *pesil) {
+	RzAnalysisEsil *esil = pesil;
 	RZ_FREE(esil->cb.user);
 	return true;
 }

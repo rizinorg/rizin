@@ -245,14 +245,6 @@ RZ_IPI void rz_core_print_hexdiff(RZ_NONNULL RzCore *core, ut64 aa, RZ_NONNULL c
 // cmd_help.c
 RZ_IPI void rz_core_clippy_print(RzCore *core, const char *msg);
 
-#if __WINDOWS__
-/* windows_heap.c */
-RZ_IPI RzList *rz_heap_blocks_list(RzCore *core);
-RZ_IPI RzList *rz_heap_list(RzCore *core);
-RZ_IPI void rz_heap_debug_block_win(RzCore *core, const char *addr, RzOutputMode mode, bool flag);
-RZ_IPI void rz_heap_list_w32(RzCore *core, RzOutputMode mode);
-#endif
-
 RZ_IPI bool rz_core_cmd_lastcmd_repeat(RzCore *core, bool next);
 
 static inline RzCmdStatus bool2status(bool val) {

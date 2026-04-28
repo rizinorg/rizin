@@ -298,6 +298,7 @@ RZ_API RZ_BORROW RzType *rz_type_db_base_type_unwrap_typedef(RZ_NONNULL const Rz
 // Compound types
 
 RZ_API RZ_OWN RzType *rz_type_clone(RZ_BORROW RZ_NONNULL const RzType *type);
+RZ_API RZ_OWN RzType *rz_type_clone_shallow(RZ_BORROW RZ_NONNULL const RzType *type);
 RZ_API RZ_BORROW const char *rz_type_identifier(RZ_NONNULL const RzType *type);
 RZ_API bool rz_types_equal(RZ_NONNULL const RzType *type1, RZ_NONNULL const RzType *type2);
 RZ_API RZ_OWN char *rz_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);

@@ -2627,7 +2627,9 @@ RZ_API char *rz_str_arg_escape(const char *arg) {
 		}
 	}
 	str[dest_i] = '\0';
-	return realloc(str, (strlen(str) + 1) * sizeof(char));
+	char *trimmed = realloc(str, (strlen(str) + 1) * sizeof(char));
+	// keep the valid oversized buffer if realloc fails.
+	return trimmed ? trimmed : str;
 }
 
 // Unescape the string arg to its original format
@@ -2678,7 +2680,9 @@ RZ_API char *rz_str_path_escape(const char *path) {
 	}
 
 	str[dest_i] = '\0';
-	return realloc(str, (strlen(str) + 1) * sizeof(char));
+	char *trimmed = realloc(str, (strlen(str) + 1) * sizeof(char));
+	// same as above, logic is similar to rz_str_uri_encode.
+	return trimmed ? trimmed : str;
 }
 
 RZ_API int rz_str_path_unescape(char *path) {

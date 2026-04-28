@@ -52,7 +52,6 @@ struct rz_analysis_t {
 	int maxreflines; // asm.lines.maxref
 	ut32 pcalign; // asm.pcalign
 	RzAnalysisEsil *esil;
-	RzAnalysisEsilInterState *esilinterstate;
 	RzAnalysisILVM *il_vm; ///< user-faced VM, NEVER use this for any analysis passes!
 	RzAnalysisPlugin *cur;
 	RzInterval limit; // analysis.from, analysis.to
@@ -88,8 +87,8 @@ struct rz_analysis_t {
 	RzPlatformTarget *arch_target;
 	RzPlatformTargetIndex *platform_target;
 	HtSP *ht_global_var; // global variables
-	HtUP *ht_rop_semantics; ///< cache rop gadget semantic information
-	HtUP *ht_rop; ///< cache rop gadget address list
+	HtUP *ht_gadget_semantics; ///< cache gadget semantic information
+	HtUP *ht_gadget; ///< cache gadget address list
 	RBTree global_var_tree; // global variables by address. must not overlap
 	RzHash *hash;
 	RzAnalysisDebugInfo *debug_info; ///< store all debug info parsed from DWARF, etc..

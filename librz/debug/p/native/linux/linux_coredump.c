@@ -10,14 +10,14 @@
 #include "linux_ptrace.h"
 
 /* For compatibility */
-#if __x86_64__ || __aarch64__
+#if __x86_64__ || __aarch64__ || (__riscv && __riscv_xlen == 64)
 typedef Elf64_auxv_t elf_auxv_t;
 typedef Elf64_Ehdr elf_hdr_t;
 typedef Elf64_Phdr elf_phdr_t;
 typedef Elf64_Shdr elf_shdr_t;
 typedef Elf64_Nhdr elf_nhdr_t;
 typedef ut32 elf_offset_t;
-#elif __i386__ || __arm__
+#elif __i386__ || __arm__ || (__riscv && __riscv_xlen == 32)
 typedef Elf32_auxv_t elf_auxv_t;
 typedef Elf32_Ehdr elf_hdr_t;
 typedef Elf32_Phdr elf_phdr_t;
@@ -225,6 +225,14 @@ static prstatus_t *linux_get_prstatus(RzDebug *dbg, int pid, int tid, proc_conte
 #if __aarch64__
 	if (rz_debug_ptrace(dbg, PTRACE_GETREGSET, tid, (void *)NT_PRSTATUS, &regs) < 0) {
 		perror("PTRACE_GETREGSET & NT_PRSTATUS");
+#elif __riscv
+	memset(&regs, 0, sizeof(regs));
+	struct iovec io = {
+		.iov_base = &regs,
+		.iov_len = sizeof(regs),
+	};
+	if (rz_debug_ptrace(dbg, PTRACE_GETREGSET, pid, (void *)(size_t)NT_PRSTATUS, &io) < 0) {
+		perror("PTRACE_GETREGSET & NT_PRSTATUS");
 #else
 	if (rz_debug_ptrace(dbg, PTRACE_GETREGS, tid, NULL, &regs) < 0) {
 		perror("PTRACE_GETREGS");
@@ -243,7 +251,7 @@ static elf_fpregset_t *linux_get_fp_regset(RzDebug *dbg, int pid) {
 	if (!p) {
 		return NULL;
 	}
-#if __aarch64__
+#if __aarch64__ || __riscv
 	if (rz_debug_ptrace(dbg, PTRACE_GETREGSET, pid, (void *)NT_PRFPREG, p) < 0) {
 		perror("PTRACE_GETREGSET & NT_PRFREG");
 #else
@@ -611,9 +619,9 @@ static elf_hdr_t *build_elf_hdr(int n_segments) {
 	h->e_ident[EI_MAG1] = ELFMAG1;
 	h->e_ident[EI_MAG2] = ELFMAG2;
 	h->e_ident[EI_MAG3] = ELFMAG3;
-#if __x86_64__ || __aarch64__
+#if __x86_64__ || __aarch64__ || (__riscv && __riscv_xlen == 64)
 	h->e_ident[EI_CLASS] = ELFCLASS64; /*64bits */
-#elif __i386__ || __arm__
+#elif __i386__ || __arm__ || (__riscv && __riscv_xlen == 32)
 	h->e_ident[EI_CLASS] = ELFCLASS32;
 #endif
 	h->e_ident[EI_DATA] = ELFDATA2LSB;
@@ -633,6 +641,8 @@ static elf_hdr_t *build_elf_hdr(int n_segments) {
 	h->e_machine = EM_ARM;
 #elif __aarch64__
 	h->e_machine = EM_AARCH64;
+#elif __riscv
+	h->e_machine = EM_RISCV;
 #endif
 	h->e_version = EV_CURRENT;
 	h->e_entry = 0x0;
