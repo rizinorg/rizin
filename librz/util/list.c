@@ -794,15 +794,21 @@ RZ_API void rz_list_sorted_uniq(RZ_NONNULL RzList *list, RZ_NONNULL RzListCompar
  *
  * \return The concatenated string.
  **/
-RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList *list, char ch) {
+RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList /*<const char *>*/ *list, char ch) {
+	rz_return_val_if_fail(list && ch > 0, NULL);
+
 	RzListIter *iter;
 	RzStrBuf *buf = rz_strbuf_new("");
 	if (!buf) {
 		return NULL;
 	}
-	char *item;
+	const char *item;
 	rz_list_foreach (list, iter, item) {
-		rz_strbuf_appendf(buf, "%s%c", item, ch);
+		if (rz_strbuf_length(buf) > 0) {
+			rz_strbuf_appendf(buf, "%c%s", ch, item);
+		} else {
+			rz_strbuf_append(buf, item);
+		}
 	}
 	return rz_strbuf_drain(buf);
 }

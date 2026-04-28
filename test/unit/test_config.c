@@ -80,6 +80,10 @@ bool test_config_strings() {
 	bla = rz_config_get_string(cfg, "foo.options");
 	mu_assert_streq(bla, "option3", "options variable 3");
 
+	char *s = rz_config_get_as_string(cfg, "foo.options");
+	mu_assert_streq(s, "option3", "get as string foo.options");
+	free(s);
+
 	rz_config_free(cfg);
 	mu_end;
 }
@@ -118,6 +122,10 @@ bool test_config_intergers() {
 
 	answer = rz_config_get_integer(cfg, "universe.question");
 	mu_assert_eq(answer, 2000, "Integer variable 3");
+
+	char *s = rz_config_get_as_string(cfg, "universe.question");
+	mu_assert_streq(s, "2000", "get as string universe.question");
+	free(s);
 
 	rz_config_free(cfg);
 	mu_end;
@@ -170,6 +178,10 @@ bool test_config_booleans() {
 	what = rz_config_get_bool(cfg, "true.or.false");
 	mu_assert_true(what, "Boolean variable 2");
 
+	char *s = rz_config_get_as_string(cfg, "true.or.false");
+	mu_assert_streq(s, "true", "get as string true.or.false");
+	free(s);
+
 	rz_config_free(cfg);
 	mu_end;
 }
@@ -178,7 +190,7 @@ bool test_config_lists() {
 	RzConfig *cfg = rz_config_new(NULL);
 	bool ret = false;
 	const char *elem = NULL;
-	const RzList *list = NULL;
+	RzList *list = NULL;
 	RzListIter *it;
 
 	// list variables
@@ -200,6 +212,7 @@ bool test_config_lists() {
 	it = rz_list_next(it);
 	elem = rz_list_val(it);
 	mu_assert_streq(elem, "r3", "list[2] is r3");
+	rz_list_free(list);
 
 	ret = rz_config_set_list2(cfg, "thy.list", "x0", "x1", "x2", "x3", "x4", NULL);
 	mu_assert_true(ret, "set thy.list");
@@ -208,11 +221,16 @@ bool test_config_lists() {
 	mu_assert_notnull(list, "List is not null variable");
 	mu_assert_eq(rz_list_length(list), 5, "List size is 5");
 
+	char *s = rz_config_get_as_string(cfg, "thy.list");
+	mu_assert_streq(s, "x0,x1,x2,x3,x4", "get as string thy.list");
+	free(s);
+
 	elem = rz_list_first_val(list);
 	mu_assert_streq(elem, "x0", "list[first] is x0");
 
 	elem = rz_list_last_val(list);
 	mu_assert_streq(elem, "x4", "list[last] is x4");
+	rz_list_free(list);
 
 	ret = rz_config_set_list3(cfg, "thy.list", "rax,rbx");
 	mu_assert_true(ret, "set thy.list as string");
@@ -220,6 +238,7 @@ bool test_config_lists() {
 	list = rz_config_get_list(cfg, "thy.list");
 	mu_assert_notnull(list, "List is not null variable");
 	mu_assert_eq(rz_list_length(list), 2, "List size is 2");
+	rz_list_free(list);
 
 	ret = rz_config_set_list(cfg, "thy.list", NULL);
 	mu_assert_true(ret, "set thy.list as string");
@@ -227,6 +246,7 @@ bool test_config_lists() {
 	list = rz_config_get_list(cfg, "thy.list");
 	mu_assert_notnull(list, "List is not null variable");
 	mu_assert_eq(rz_list_length(list), 0, "List is empty");
+	rz_list_free(list);
 
 	rz_config_free(cfg);
 	mu_end;
@@ -303,6 +323,10 @@ bool test_config_itv() {
 
 	ret = rz_config_add_interval(cfg, "bad.limit", NULL, 0x9999, 0);
 	mu_assert_false(ret, "cannot set bad.limit [0x9999, 0]");
+
+	char *s = rz_config_get_as_string(cfg, "this.limit");
+	mu_assert_streq(s, "[0x00011111,0x00022222]", "get as string this.limit");
+	free(s);
 
 	rz_config_free(cfg);
 	mu_end;
@@ -391,7 +415,7 @@ static bool any_set(void *user, const void *p) {
 		return true;
 	case RZ_CONFIG_VAR_TYPE_ITV: {
 		const RzInterval *itv = p;
-		RzInterval *v = bt->set_val;
+		RzInterval *v = (void *)bt->set_val;
 		*v = *itv;
 		bt->set++;
 		return true;

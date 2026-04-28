@@ -122,7 +122,7 @@ RZ_API RZ_OWN void *rz_list_pop(RZ_NONNULL RzList *list);
 RZ_API RZ_OWN void *rz_list_pop_head(RZ_NONNULL RzList *list);
 RZ_API void rz_list_reverse(RZ_NONNULL RzList *list);
 RZ_API RZ_OWN RzList *rz_list_clone(RZ_NONNULL const RzList *list);
-RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList *list, char ch);
+RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList /*<const char *>*/ *list, char ch);
 
 /* hashlike api */
 RZ_API RZ_BORROW bool rz_list_contains(RZ_NONNULL const RzList *list, RZ_NONNULL const void *val);

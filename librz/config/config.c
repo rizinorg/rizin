@@ -515,20 +515,10 @@ RZ_API RZ_OWN char *rz_config_var_as_string(RZ_NONNULL const RzConfigVar *var) {
 		const char *str = rz_config_var_get_string(var);
 		return rz_str_dup(str);
 	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_LIST)) {
-		RzStrBuf sb;
-		const char *value;
-		RzListIter *it;
 		RzList *list = rz_config_var_get_list(var);
-
-		rz_strbuf_init(&sb);
-		rz_list_foreach (list, it, value) {
-			if (rz_strbuf_length(&sb) > 0) {
-				rz_strbuf_append(&sb, ",");
-			}
-			rz_strbuf_append(&sb, value);
-		}
+		char *value = rz_list_to_str(list, ',');
 		rz_list_free(list);
-		return rz_strbuf_drain_nofree(&sb);
+		return value;
 	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_ITV)) {
 		RzInterval itv = rz_config_var_get_interval(var);
 		return rz_str_newf("[0x%08" PFMT64x ",0x%08" PFMT64x "]", rz_itv_begin(itv), rz_itv_end(itv));
@@ -599,7 +589,7 @@ RZ_API RZ_OWN RzList /*<const char *>*/ *rz_config_var_get_list(RZ_NONNULL const
 	config_var_assert_return(var && RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_LIST), var ? var->name : "(null)", false);
 
 	if (!(RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND))) {
-		return var->value.list;
+		return rz_list_clone(var->value.list);
 	}
 
 	RzList /*<char *>*/ *value = NULL;
@@ -1104,7 +1094,7 @@ RZ_API const char *rz_config_get_string(RZ_NONNULL const RzConfig *cfg, RZ_NONNU
 	return rz_config_var_get_string(&entry->var);
 }
 
-RZ_API const RzList /*<char *>*/ *rz_config_get_list(RZ_NONNULL const RzConfig *cfg, RZ_NONNULL const char *name) {
+RZ_API RZ_OWN RzList /*<const char *>*/ *rz_config_get_list(RZ_NONNULL const RzConfig *cfg, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
 
 	const RzConfigEntry *entry = config_find_entry_ro(cfg, name);
