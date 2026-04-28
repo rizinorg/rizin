@@ -7,7 +7,6 @@
 #include <rz_core.h>
 #include <rz_io.h>
 #include <rz_socket.h>
-#include <errno.h>
 #include <fcntl.h>
 #include "../core_private.h"
 
@@ -285,24 +284,14 @@ static bool parse_write_to_file_request(RzCore *core, const char **argv, bool wi
 static RzCmdStatus write_memory_to_file(RzCore *core, const WriteToFileRequest *req) {
 	rz_return_val_if_fail(core && req && req->filename, RZ_CMD_STATUS_ERROR);
 
-	ut64 file_offset = req->file_offset;
-	if (!req->overwrite) {
-		RzBuffer *tmp = rz_buf_new_file(req->filename, O_RDONLY, 0);
-		if (tmp) {
-			file_offset = rz_buf_size(tmp);
-			rz_buf_free(tmp);
-		} else if (errno != ENOENT) {
-			RZ_LOG_ERROR("core: Cannot probe file '%s' size\n", req->filename);
-			return RZ_CMD_STATUS_ERROR;
-		}
-	}
-
 	const int perm = O_RDWR | O_CREAT | (req->overwrite ? O_TRUNC : 0);
 	RzBuffer *dst = rz_buf_new_file(req->filename, perm, 0644);
 	if (!dst) {
 		RZ_LOG_ERROR("core: Cannot open file '%s'\n", req->filename);
 		return RZ_CMD_STATUS_ERROR;
 	}
+
+	ut64 file_offset = req->overwrite ? req->file_offset : rz_buf_size(dst);
 
 	ut8 *buf = RZ_NEWS(ut8, 0x10000);
 	if (!buf) {
