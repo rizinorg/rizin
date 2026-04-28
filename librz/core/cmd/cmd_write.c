@@ -7,6 +7,7 @@
 #include <rz_core.h>
 #include <rz_io.h>
 #include <rz_socket.h>
+#include <errno.h>
 #include <fcntl.h>
 #include "../core_private.h"
 
@@ -290,6 +291,9 @@ static RzCmdStatus write_memory_to_file(RzCore *core, const WriteToFileRequest *
 		if (tmp) {
 			file_offset = rz_buf_size(tmp);
 			rz_buf_free(tmp);
+		} else if (errno != ENOENT) {
+			RZ_LOG_ERROR("core: Cannot probe file '%s' size\n", req->filename);
+			return RZ_CMD_STATUS_ERROR;
 		}
 	}
 
