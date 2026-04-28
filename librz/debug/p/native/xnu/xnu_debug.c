@@ -151,6 +151,11 @@ int xnu_attach(RzDebug *dbg, int pid) {
 	rz_return_val_if_fail(dbg && dbg->plugin_data, -1);
 	RzXnuDebug *ctx = dbg->plugin_data;
 
+	if (ctx->task_dbg != 0 && ctx->old_pid == pid) {
+		dbg->pid = pid;
+		return pid;
+	}
+
 	dbg->pid = pid;
 
 	ctx->cpu = xnu_get_cpu_type(pid);
