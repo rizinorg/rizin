@@ -516,7 +516,7 @@ RZ_API RZ_OWN char *rz_config_var_as_string(RZ_NONNULL const RzConfigVar *var) {
 		return rz_str_dup(str);
 	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_LIST)) {
 		RzList *list = rz_config_var_get_list(var);
-		char *value = rz_list_to_str(list, ',');
+		char *value = rz_list_to_str(list, ',', false);
 		rz_list_free(list);
 		return value;
 	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_ITV)) {

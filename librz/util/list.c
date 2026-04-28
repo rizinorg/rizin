@@ -789,12 +789,13 @@ RZ_API void rz_list_sorted_uniq(RZ_NONNULL RzList *list, RZ_NONNULL RzListCompar
 /**
  * \brief Casts a RzList containg strings into a concatenated string
  *
- * \param list The list of strings to concatenate.
- * \param ch char to separate the match strings.
+ * \param list         The list of strings to concatenate.
+ * \param ch           Char to separate the match strings.
+ * \param append_last  When true appends `ch` at the end.
  *
  * \return The concatenated string.
  **/
-RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList /*<const char *>*/ *list, char ch) {
+RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList /*<const char *>*/ *list, char ch, bool append_last) {
 	rz_return_val_if_fail(list && ch > 0, NULL);
 
 	RzListIter *iter;
@@ -809,6 +810,9 @@ RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList /*<const char *>*/ *list, c
 		} else {
 			rz_strbuf_append(buf, item);
 		}
+	}
+	if (append_last) {
+		rz_strbuf_appendf(buf, "%c", ch);
 	}
 	return rz_strbuf_drain(buf);
 }
