@@ -30,7 +30,7 @@ typedef struct config_visual_ctx {
 
 static void config_visual_hit_i(RzCore *core, const char *name, int delta) {
 	const ut32 flags = rz_config_get_flags(core->config, name);
-	if (!(flags & RZ_CONFIG_VAR_INT)) {
+	if (!(RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_INT))) {
 		return;
 	}
 
@@ -48,7 +48,7 @@ static void config_visual_hit(RzCore *core, const char *name, int editor) {
 		return;
 	}
 
-	if ((flags & RZ_CONFIG_VAR_BOOL)) {
+	if ((RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_BOOL))) {
 		rz_config_toggle_bool(core->config, name);
 		return;
 	}

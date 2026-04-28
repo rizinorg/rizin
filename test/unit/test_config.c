@@ -232,15 +232,278 @@ bool test_config_lists() {
 	mu_end;
 }
 
+bool test_config_itv() {
+	RzConfig *cfg = rz_config_new(NULL);
+	bool ret = false;
+	RzInterval itv = { 0 };
+
+	// interval variables
+	ret = rz_config_add_interval(cfg, "this.limit", "is this.limit desc", 0x230, 0x4fff);
+	mu_assert_true(ret, "added this.limit [0x230, 0x4fff]");
+
+	itv = rz_config_get_interval(cfg, "this.limit");
+	mu_assert_eq(rz_itv_begin(itv), 0x230, "interval starts at 0x230 (inclusive)");
+	mu_assert_eq(rz_itv_end(itv), 0x4fff, "interval ends at 0x4fff (inclusive)");
+	mu_assert_eq(rz_itv_size(itv), 0x4dcf, "interval size at 0x4dcf");
+
+	itv.addr = 0x1000;
+	itv.size = 0x4f;
+	ret = rz_config_set_interval(cfg, "this.limit", itv);
+	mu_assert_true(ret, "set this.limit [0x1000, 0x104f]");
+
+	itv = rz_config_get_interval(cfg, "this.limit");
+	mu_assert_eq(rz_itv_begin(itv), 0x1000, "interval starts at 0x1000 (inclusive)");
+	mu_assert_eq(rz_itv_end(itv), 0x104f, "interval ends at 0x104f (inclusive)");
+	mu_assert_eq(rz_itv_size(itv), 0x4f, "interval size at 0x4f");
+
+	ret = rz_config_set_interval2(cfg, "this.limit", 0x80000000, 0x8fffffff);
+	mu_assert_true(ret, "set this.limit [0x80000000, 0x8fffffff]");
+
+	itv = rz_config_get_interval(cfg, "this.limit");
+	mu_assert_eq(rz_itv_begin(itv), 0x80000000, "interval starts at 0x80000000 (inclusive)");
+	mu_assert_eq(rz_itv_end(itv), 0x8fffffff, "interval ends at 0x8fffffff (inclusive)");
+	mu_assert_eq(rz_itv_size(itv), 0xfffffff, "interval size at 0xfffffff");
+
+	ret = rz_config_is_readonly(cfg, "this.limit");
+	mu_assert_false(ret, "this.limit is not readonly");
+
+	ret = rz_config_set_readonly(cfg, "this.limit", true);
+	mu_assert_true(ret, "this.limit set as readonly");
+
+	ret = rz_config_is_readonly(cfg, "this.limit");
+	mu_assert_true(ret, "this.limit is readonly");
+
+	ret = rz_config_set_interval2(cfg, "this.limit", 0, 1);
+	mu_assert_false(ret, "set this.limit [0, 1] RO");
+
+	itv = rz_config_get_interval(cfg, "this.limit");
+	mu_assert_eq(rz_itv_begin(itv), 0x80000000, "interval starts at 0x80000000 (inclusive)");
+	mu_assert_eq(rz_itv_end(itv), 0x8fffffff, "interval ends at 0x8fffffff (inclusive)");
+	mu_assert_eq(rz_itv_size(itv), 0xfffffff, "interval size at 0xfffffff");
+
+	ret = rz_config_set_readonly(cfg, "this.limit", false);
+	mu_assert_true(ret, "this.limit set as readonly");
+
+	ret = rz_config_is_readonly(cfg, "this.limit");
+	mu_assert_false(ret, "this.limit is not readonly");
+
+	ret = rz_config_set_interval3(cfg, "this.limit", " 0x11111 , 0x22222     ");
+	mu_assert_true(ret, "set this.limit [0x11111, 0x22222]");
+
+	itv = rz_config_get_interval(cfg, "this.limit");
+	mu_assert_eq(rz_itv_begin(itv), 0x11111, "interval starts at 0x11111 (inclusive)");
+	mu_assert_eq(rz_itv_end(itv), 0x22222, "interval ends at 0x22222 (inclusive)");
+	mu_assert_eq(rz_itv_size(itv), 0x11111, "interval size at 0x11111");
+
+	ret = rz_config_set_interval2(cfg, "this.limit", 0x80000000, 0x100);
+	mu_assert_false(ret, "cannot set this.limit [0x80000000, 0x100]");
+
+	ret = rz_config_set_interval3(cfg, "this.limit", "0x500000,0x8888");
+	mu_assert_false(ret, "cannot set this.limit [0x500000, 0x8888]");
+
+	ret = rz_config_add_interval(cfg, "bad.limit", NULL, 0x9999, 0);
+	mu_assert_false(ret, "cannot set bad.limit [0x9999, 0]");
+
+	rz_config_free(cfg);
+	mu_end;
+}
+
 bool test_config_invalid() {
+	RzInterval itv = { 0x1000, 0x2000 };
 	RzConfig *cfg = rz_config_new(NULL);
 
 	mu_assert_null(rz_config_get_string(cfg, "string.here"), "string.here does not exist");
 	mu_assert_null(rz_config_get_list(cfg, "list.here"), "list.here does not exist");
 	mu_assert_eq(rz_config_get_integer(cfg, "int.here"), 0, "int.here does not exist");
 	mu_assert_false(rz_config_get_bool(cfg, "bool.here"), "bool.here does not exist");
+	itv = rz_config_get_interval(cfg, "itv.here");
+	mu_assert_eq(rz_itv_begin(itv), 0, "itv.here does not exist (addr = 0)");
+	mu_assert_eq(rz_itv_size(itv), 0, "itv.here does not exist (size = 0)");
 
 	rz_config_free(cfg);
+	mu_end;
+}
+
+typedef struct bind_test_s {
+	ut32 get;
+	ut32 set;
+	ut32 opts;
+	ut32 bind;
+	const void *set_val;
+	RzList *list;
+} bind_test_t;
+
+static bool any_get(void *user, void *p) {
+	bind_test_t *bt = user;
+	switch (bt->bind) {
+	case RZ_CONFIG_VAR_TYPE_BOOL: {
+		bool *value = p;
+		*value = true;
+		bt->get++;
+		return true;
+	}
+	case RZ_CONFIG_VAR_TYPE_INT: {
+		ut64 *value = p;
+		*value = 42;
+		bt->get++;
+		return true;
+	}
+	case RZ_CONFIG_VAR_TYPE_STR: {
+		const char **value = p;
+		*value = "what";
+		bt->get++;
+		return true;
+	}
+	case RZ_CONFIG_VAR_TYPE_LIST: {
+		const RzList **value = p;
+		*value = bt->list;
+		bt->get++;
+		return true;
+	}
+	case RZ_CONFIG_VAR_TYPE_ITV: {
+		RzInterval *value = p;
+		value->addr = 0x2222;
+		value->size = 0x1111;
+		bt->get++;
+		return true;
+	}
+	default:
+		return false;
+	}
+}
+
+static bool any_set(void *user, const void *p) {
+	bind_test_t *bt = user;
+	switch (bt->bind) {
+	case RZ_CONFIG_VAR_TYPE_BOOL:
+		bt->set_val = NULL;
+		bt->set++;
+		return true;
+	case RZ_CONFIG_VAR_TYPE_INT:
+		bt->set_val = (void *)5555;
+		bt->set++;
+		return true;
+	case RZ_CONFIG_VAR_TYPE_STR:
+		/* fall-thru */
+	case RZ_CONFIG_VAR_TYPE_LIST:
+		bt->set_val = p;
+		bt->set++;
+		return true;
+	case RZ_CONFIG_VAR_TYPE_ITV: {
+		const RzInterval *itv = p;
+		RzInterval *v = bt->set_val;
+		*v = *itv;
+		bt->set++;
+		return true;
+	}
+	default:
+		return false;
+	}
+}
+
+static bool any_opts(void *user, RzList /*<char *>*/ **options) {
+	bind_test_t *bt = user;
+	switch (bt->bind) {
+	case RZ_CONFIG_VAR_TYPE_STR:
+		*options = rz_str_split_duplist("foo,bar", ",", true);
+		bt->opts++;
+		return true;
+	case RZ_CONFIG_VAR_TYPE_BOOL:
+		/* fall-thru */
+	case RZ_CONFIG_VAR_TYPE_INT:
+		/* fall-thru */
+	case RZ_CONFIG_VAR_TYPE_LIST:
+		/* fall-thru */
+	case RZ_CONFIG_VAR_TYPE_ITV:
+		bt->opts++;
+		return true;
+	default:
+		return false;
+	}
+}
+
+bool test_config_binds() {
+	bool ret = false;
+	bind_test_t bt = { 0 };
+	RzInterval itv = { 0x1000, 0x2000 };
+
+	RzConfig *cfg = rz_config_new(NULL);
+	mu_assert_notnull(cfg, "alloc RzConfig");
+
+	bt.list = rz_str_split_duplist("init,fini", ",", true);
+	mu_assert_notnull(bt.list, "alloc list");
+
+	// add binds
+	bt.bind = RZ_CONFIG_VAR_TYPE_BOOL;
+	ret = rz_config_add_bool_bind(cfg, "bind.bool", "is bind.bool desc", any_get, any_set, any_opts, &bt);
+	mu_assert_true(ret, "added bind.bool");
+
+	bt.bind = RZ_CONFIG_VAR_TYPE_INT;
+	ret = rz_config_add_integer_bind(cfg, "bind.integer", "is bind.integer desc", any_get, any_set, any_opts, &bt);
+	mu_assert_true(ret, "added bind.integer");
+
+	bt.bind = RZ_CONFIG_VAR_TYPE_STR;
+	ret = rz_config_add_string_bind(cfg, "bind.string", "is bind.string desc", any_get, any_set, any_opts, &bt);
+	mu_assert_true(ret, "added bind.string");
+
+	bt.bind = RZ_CONFIG_VAR_TYPE_LIST;
+	ret = rz_config_add_list_bind(cfg, "bind.list", "is bind.list desc", any_get, any_set, any_opts, &bt);
+	mu_assert_true(ret, "added bind.list");
+
+	bt.bind = RZ_CONFIG_VAR_TYPE_ITV;
+	ret = rz_config_add_interval_bind(cfg, "bind.interval", "is bind.interval desc", any_get, any_set, any_opts, &bt);
+	mu_assert_true(ret, "added bind.interval");
+
+	bt.bind = RZ_CONFIG_VAR_TYPE_BOOL;
+	mu_assert_true(rz_config_get_bool(cfg, "bind.bool"), "get bind.bool");
+
+	bt.bind = RZ_CONFIG_VAR_TYPE_INT;
+	mu_assert_eq(rz_config_get_integer(cfg, "bind.integer"), 42, "get bind.integer");
+
+	bt.bind = RZ_CONFIG_VAR_TYPE_STR;
+	mu_assert_streq(rz_config_get_string(cfg, "bind.string"), "what", "get bind.string");
+
+	bt.bind = RZ_CONFIG_VAR_TYPE_LIST;
+	mu_assert_ptreq(rz_config_get_list(cfg, "bind.list"), bt.list, "get bind.list");
+
+	bt.bind = RZ_CONFIG_VAR_TYPE_ITV;
+	itv = rz_config_get_interval(cfg, "bind.interval");
+	mu_assert_eq(rz_itv_begin(itv), 0x2222, "bind.interval does not exist (addr = 0x2222)");
+	mu_assert_eq(rz_itv_size(itv), 0x1111, "bind.interval does not exist (size = 0x1111)");
+
+	bt.bind = RZ_CONFIG_VAR_TYPE_BOOL;
+	ret = rz_config_set_bool(cfg, "bind.bool", false);
+	mu_assert_true(ret, "set bind.bool");
+	mu_assert_null(bt.set_val, "has actually set bind.bool");
+
+	bt.bind = RZ_CONFIG_VAR_TYPE_INT;
+	ret = rz_config_set_integer(cfg, "bind.integer", 5555);
+	mu_assert_true(ret, "set bind.integer");
+	mu_assert_ptreq(bt.set_val, (void *)5555, "has actually set bind.integer");
+
+	bt.bind = RZ_CONFIG_VAR_TYPE_STR;
+	ret = rz_config_set_string(cfg, "bind.string", "foo");
+	mu_assert_true(ret, "set bind.string");
+	mu_assert_streq(bt.set_val, "foo", "has actually set bind.string");
+
+	bt.bind = RZ_CONFIG_VAR_TYPE_LIST;
+	ret = rz_config_set_list(cfg, "bind.list", bt.list);
+	mu_assert_true(ret, "set bind.list");
+	mu_assert_ptreq(bt.set_val, bt.list, "has actually set bind.list");
+
+	bt.bind = RZ_CONFIG_VAR_TYPE_ITV;
+	bt.set_val = &itv;
+	ret = rz_config_set_interval2(cfg, "bind.interval", 0x80000000, 0x8fffffff);
+	mu_assert_true(ret, "set bind.interval");
+	mu_assert_eq(rz_itv_begin(itv), 0x80000000, "bind.interval does not exist (beg = 0x80000000)");
+	mu_assert_eq(rz_itv_end(itv), 0x8fffffff, "bind.interval does not exist (end = 0x8fffffff)");
+
+	mu_assert_eq(bt.opts, 5, "called bind.get_options");
+	mu_assert_eq(bt.get, 5, "called bind.get_value");
+	mu_assert_eq(bt.set, 5, "called bind.set_value");
+
+	rz_config_free(cfg);
+	rz_list_free(bt.list);
 	mu_end;
 }
 
@@ -249,7 +512,9 @@ bool all_tests() {
 	mu_run_test(test_config_intergers);
 	mu_run_test(test_config_booleans);
 	mu_run_test(test_config_lists);
+	mu_run_test(test_config_itv);
 	mu_run_test(test_config_invalid);
+	mu_run_test(test_config_binds);
 	return tests_passed != tests_run;
 }
 

@@ -508,19 +508,19 @@ RZ_API ut32 rz_config_node_get_var_flags(RZ_NONNULL const RzConfigNode *node) {
 	ut32 flags = 0;
 
 	if (!(node->flags & CN_RO)) {
-		flags |= RZ_CONFIG_VAR_WRITABLE;
+		flags |= RZ_CONFIG_VAR_FLAG_WRITABLE;
 	}
 	if (node->flags & CN_BOOL) {
-		flags |= RZ_CONFIG_VAR_BOOL;
+		flags |= RZ_CONFIG_VAR_TYPE_BOOL;
 	}
 	if (node->flags & CN_INT) {
-		flags |= RZ_CONFIG_VAR_INT;
+		flags |= RZ_CONFIG_VAR_TYPE_INT;
 	}
 	if (node->flags & CN_STR) {
-		flags |= RZ_CONFIG_VAR_STR;
+		flags |= RZ_CONFIG_VAR_TYPE_STR;
 	}
 	if (node->setter) {
-		flags |= RZ_CONFIG_VAR_BIND;
+		flags |= RZ_CONFIG_VAR_FLAG_BIND;
 	}
 	return flags;
 }

@@ -47,14 +47,23 @@ typedef struct rz_config_node_t {
 } RzConfigNode;
 
 typedef enum {
-	RZ_CONFIG_VAR_BOOL = 0x00000001,
-	RZ_CONFIG_VAR_INT = 0x00000002,
-	RZ_CONFIG_VAR_STR = 0x00000004,
-	RZ_CONFIG_VAR_LIST = 0x00000008,
-	RZ_CONFIG_VAR_ITV = 0x00000010,
-	RZ_CONFIG_VAR_BIND = 0x40000000,
-	RZ_CONFIG_VAR_WRITABLE = 0x80000000,
+	RZ_CONFIG_VAR_TYPE_NONE = 0,
+	// these are types
+	RZ_CONFIG_VAR_TYPE_BOOL = 1,
+	RZ_CONFIG_VAR_TYPE_INT = 2,
+	RZ_CONFIG_VAR_TYPE_STR = 3,
+	RZ_CONFIG_VAR_TYPE_LIST = 4,
+	RZ_CONFIG_VAR_TYPE_ITV = 5,
+	// these are flags
+	RZ_CONFIG_VAR_FLAG_BIND = 0x40000000,
+	RZ_CONFIG_VAR_FLAG_WRITABLE = 0x80000000,
 } RzConfigVarFlags;
+
+#define RZ_CONFIG_VAR_TYPE_MASK  0x0000ffff
+#define RZ_CONFIG_VAR_FLAGS_MASK 0xffff0000
+
+#define RZ_CONFIG_VAR_IS_TYPE(flags, expected)  (((flags) & RZ_CONFIG_VAR_TYPE_MASK) == (expected))
+#define RZ_CONFIG_VAR_HAS_FLAG(flags, expected) (((flags) & RZ_CONFIG_VAR_FLAGS_MASK) & (expected))
 
 typedef bool (*RzConfigBindGet)(void *user, void *value);
 typedef bool (*RzConfigBindSet)(void *user, const void *value);
@@ -122,13 +131,13 @@ RZ_API bool rz_config_add_integer(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const cha
 RZ_API bool rz_config_add_string(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NULLABLE const char *value);
 RZ_API bool rz_config_add_options(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ...);
 RZ_API bool rz_config_add_list(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ...);
-RZ_API bool rz_config_add_itv(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ut64 from, ut64 to);
+RZ_API bool rz_config_add_interval(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ut64 from, ut64 to);
 
 RZ_API bool rz_config_add_bool_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user);
 RZ_API bool rz_config_add_integer_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user);
 RZ_API bool rz_config_add_string_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user);
 RZ_API bool rz_config_add_list_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user);
-RZ_API bool rz_config_add_itv_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user);
+RZ_API bool rz_config_add_interval_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user);
 
 RZ_API bool rz_config_set_string(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *value);
 RZ_API bool rz_config_set_integer(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, ut64 value);
@@ -138,7 +147,7 @@ RZ_API bool rz_config_set_list(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *
 RZ_API bool rz_config_set_list2(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, ...);
 RZ_API bool rz_config_set_list3(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *comma_list);
 RZ_API bool rz_config_set_interval(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RzInterval value);
-RZ_API bool rz_config_set_interval2(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, ut64 addr, ut64 size);
+RZ_API bool rz_config_set_interval2(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, ut64 from, ut64 to);
 RZ_API bool rz_config_set_interval3(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *comma_itv);
 RZ_API bool rz_config_set_any(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *value);
 RZ_API bool rz_config_set_options(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE RZ_OWN RzList /*<char *>*/ *options);
@@ -162,7 +171,8 @@ RZ_API ut64 rz_config_var_get_integer(RZ_NONNULL const RzConfigVar *var);
 RZ_API const char *rz_config_var_get_string(RZ_NONNULL const RzConfigVar *var);
 RZ_API RZ_OWN RzList /*<const char *>*/ *rz_config_var_get_list(RZ_NONNULL const RzConfigVar *var);
 RZ_API RzInterval rz_config_var_get_interval(RZ_NONNULL const RzConfigVar *var);
-RZ_API bool rz_config_var_has_flags(RZ_NONNULL const RzConfigVar *var, ut32 flags);
+RZ_API bool rz_config_var_has_type(RZ_NONNULL const RzConfigVar *var, ut32 etype);
+RZ_API bool rz_config_var_has_flags(RZ_NONNULL const RzConfigVar *var, ut32 eflags);
 RZ_API RZ_OWN char *rz_config_var_flags_as_string(ut32 flags);
 RZ_API ut32 rz_config_var_get_flags(RZ_NONNULL const RzConfigVar *var);
 RZ_API const char *rz_config_var_get_name(RZ_NONNULL const RzConfigVar *var);

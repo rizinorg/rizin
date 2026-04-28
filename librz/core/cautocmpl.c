@@ -610,7 +610,7 @@ static void autocmplt_cmd_arg_eval_full(RzCore *core, RzLineNSCompletionResult *
 				rz_line_ns_completion_result_add(res, opt);
 			}
 		}
-	} else if (flags & RZ_CONFIG_VAR_BOOL) {
+	} else if (RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_BOOL)) {
 		if (!strncmp("true", v, len)) {
 			rz_line_ns_completion_result_add(res, "true");
 		}

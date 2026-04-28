@@ -19,14 +19,14 @@ static void config_var_fini(RzConfigVar *var) {
 	free(var->name);
 	free(var->desc);
 	rz_list_free(var->options);
-	if (var->flags & RZ_CONFIG_VAR_BIND) {
+	if (RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND)) {
 		// if is bind, we do not own the value.
 		return;
 	}
 
-	if (var->flags & RZ_CONFIG_VAR_STR) {
+	if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_STR)) {
 		free(var->value.string);
-	} else if (var->flags & RZ_CONFIG_VAR_LIST) {
+	} else if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_LIST)) {
 		rz_list_free(var->value.list);
 	}
 }
@@ -43,7 +43,7 @@ static void config_entry_fini(RzConfigEntry *entry) {
 }
 
 static inline bool config_var_is_bind_without_set(const RzConfigVar *var) {
-	return var->flags & RZ_CONFIG_VAR_BIND && !var->bind.set_value;
+	return var->flags & RZ_CONFIG_VAR_FLAG_BIND && !var->bind.set_value;
 }
 
 static inline bool config_var_set_readonly(RzConfigVar *var, bool read_only) {
@@ -52,10 +52,10 @@ static inline bool config_var_set_readonly(RzConfigVar *var, bool read_only) {
 		RZ_LOG_ERROR("config: cannot unset '%s' as is an hardcoded read-only variable\n", var->name);
 		return false;
 	} else if (read_only) {
-		ut32 flags = ~RZ_CONFIG_VAR_WRITABLE;
+		ut32 flags = ~RZ_CONFIG_VAR_FLAG_WRITABLE;
 		var->flags &= flags;
 	} else {
-		var->flags |= RZ_CONFIG_VAR_WRITABLE;
+		var->flags |= RZ_CONFIG_VAR_FLAG_WRITABLE;
 	}
 
 	return true;
@@ -175,8 +175,8 @@ static inline bool config_init_var_bool(RzConfigVar *var, const char *name, cons
 	if (!name) {
 		return false;
 	}
-	var->desc = rz_str_dup(name);
-	var->flags = RZ_CONFIG_VAR_WRITABLE | RZ_CONFIG_VAR_BOOL;
+	var->desc = rz_str_dup(desc);
+	var->flags = RZ_CONFIG_VAR_FLAG_WRITABLE | RZ_CONFIG_VAR_TYPE_BOOL;
 	var->value.boolean = value;
 	return true;
 }
@@ -186,8 +186,8 @@ static inline bool config_init_var_integer(RzConfigVar *var, const char *name, c
 	if (!name) {
 		return false;
 	}
-	var->desc = rz_str_dup(name);
-	var->flags = RZ_CONFIG_VAR_WRITABLE | RZ_CONFIG_VAR_INT;
+	var->desc = rz_str_dup(desc);
+	var->flags = RZ_CONFIG_VAR_FLAG_WRITABLE | RZ_CONFIG_VAR_TYPE_INT;
 	var->value.integer = value;
 	return true;
 }
@@ -198,8 +198,8 @@ static inline bool config_init_var_string(RzConfigVar *var, const char *name, co
 	if (!var->name) {
 		return false;
 	}
-	var->desc = rz_str_dup(name);
-	var->flags = RZ_CONFIG_VAR_WRITABLE | RZ_CONFIG_VAR_STR;
+	var->desc = rz_str_dup(desc);
+	var->flags = RZ_CONFIG_VAR_FLAG_WRITABLE | RZ_CONFIG_VAR_TYPE_STR;
 	if (!var->value.string && value) {
 		return false;
 	}
@@ -212,21 +212,22 @@ static inline bool config_init_var_list(RzConfigVar *var, const char *name, cons
 	if (!var->name || !var->value.list) {
 		return false;
 	}
-	var->desc = rz_str_dup(name);
-	var->flags = RZ_CONFIG_VAR_WRITABLE | RZ_CONFIG_VAR_LIST;
+	var->desc = rz_str_dup(desc);
+	var->flags = RZ_CONFIG_VAR_FLAG_WRITABLE | RZ_CONFIG_VAR_TYPE_LIST;
 	return true;
 }
 
 static inline bool config_init_var_itv(RzConfigVar *var, const char *name, const char *desc, ut64 from, ut64 to) {
-	if (to < from) {
+	if (from > to) {
+		RZ_LOG_ERROR("config: cannot add '%s' when from > to (0x%08" PFMT64x " > 0x%08" PFMT64x ").\n", name, from, to);
 		return false;
 	}
 	var->name = rz_str_dup(name);
 	if (!name) {
 		return false;
 	}
-	var->desc = rz_str_dup(name);
-	var->flags = RZ_CONFIG_VAR_WRITABLE | RZ_CONFIG_VAR_ITV;
+	var->desc = rz_str_dup(desc);
+	var->flags = RZ_CONFIG_VAR_FLAG_WRITABLE | RZ_CONFIG_VAR_TYPE_ITV;
 	var->value.interval.addr = from;
 	var->value.interval.size = to - from;
 	return true;
@@ -252,7 +253,7 @@ static inline bool config_init_var_bind(RzConfigVar *var, const char *name, cons
 		return false;
 	}
 	var->desc = rz_str_dup(desc);
-	var->flags = RZ_CONFIG_VAR_WRITABLE | RZ_CONFIG_VAR_BIND | flags;
+	var->flags = RZ_CONFIG_VAR_FLAG_WRITABLE | RZ_CONFIG_VAR_FLAG_BIND | flags;
 	var->bind.user = user;
 	var->bind.get_value = get;
 	var->bind.set_value = set;
@@ -261,7 +262,7 @@ static inline bool config_init_var_bind(RzConfigVar *var, const char *name, cons
 }
 
 RZ_API bool rz_config_add_bool(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, bool value) {
-	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && RZ_STR_ISNOTEMPTY(desc), false);
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
 	RzConfigEntry new_entry = { 0 };
 	if (config_find_entry(cfg, name)) {
 		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
@@ -277,7 +278,7 @@ RZ_API bool rz_config_add_bool(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *
 }
 
 RZ_API bool rz_config_add_integer(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ut64 value) {
-	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && RZ_STR_ISNOTEMPTY(desc), false);
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
 	RzConfigEntry new_entry = { 0 };
 	if (config_find_entry(cfg, name)) {
 		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
@@ -293,7 +294,7 @@ RZ_API bool rz_config_add_integer(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const cha
 }
 
 RZ_API bool rz_config_add_string(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NULLABLE const char *value) {
-	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && RZ_STR_ISNOTEMPTY(desc), false);
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
 	RzConfigEntry new_entry = { 0 };
 	if (config_find_entry(cfg, name)) {
 		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
@@ -309,7 +310,7 @@ RZ_API bool rz_config_add_string(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char
 }
 
 RZ_API bool rz_config_add_options(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ...) {
-	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && RZ_STR_ISNOTEMPTY(desc), false);
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
 	RzConfigEntry new_entry = { 0 };
 	if (config_find_entry(cfg, name)) {
 		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
@@ -347,7 +348,7 @@ RZ_API bool rz_config_add_options(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const cha
 }
 
 RZ_API bool rz_config_add_list(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ...) {
-	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && RZ_STR_ISNOTEMPTY(desc), false);
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
 	RzConfigEntry new_entry = { 0 };
 	if (config_find_entry(cfg, name)) {
 		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
@@ -376,8 +377,8 @@ RZ_API bool rz_config_add_list(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *
 	return true;
 }
 
-RZ_API bool rz_config_add_itv(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ut64 from, ut64 to) {
-	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && RZ_STR_ISNOTEMPTY(desc), false);
+RZ_API bool rz_config_add_interval(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ut64 from, ut64 to) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
 	RzConfigEntry new_entry = { 0 };
 	if (config_find_entry(cfg, name)) {
 		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
@@ -393,12 +394,12 @@ RZ_API bool rz_config_add_itv(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *n
 }
 
 RZ_API bool rz_config_add_bool_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user) {
-	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && RZ_STR_ISNOTEMPTY(desc) && get, false);
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && get, false);
 	RzConfigEntry new_entry = { 0 };
 	if (config_find_entry(cfg, name)) {
 		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
 		return false;
-	} else if (!config_init_var_bind(&new_entry.var, name, desc, RZ_CONFIG_VAR_BOOL, get, set, opts, user)) {
+	} else if (!config_init_var_bind(&new_entry.var, name, desc, RZ_CONFIG_VAR_TYPE_BOOL, get, set, opts, user)) {
 		RZ_LOG_ERROR("config: failed to initialize '%s'.\n", name);
 		config_var_fini(&new_entry.var);
 		return false;
@@ -409,12 +410,12 @@ RZ_API bool rz_config_add_bool_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const c
 }
 
 RZ_API bool rz_config_add_integer_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user) {
-	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && RZ_STR_ISNOTEMPTY(desc) && get, false);
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && get, false);
 	RzConfigEntry new_entry = { 0 };
 	if (config_find_entry(cfg, name)) {
 		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
 		return false;
-	} else if (!config_init_var_bind(&new_entry.var, name, desc, RZ_CONFIG_VAR_INT, get, set, opts, user)) {
+	} else if (!config_init_var_bind(&new_entry.var, name, desc, RZ_CONFIG_VAR_TYPE_INT, get, set, opts, user)) {
 		RZ_LOG_ERROR("config: failed to initialize '%s'.\n", name);
 		config_var_fini(&new_entry.var);
 		return false;
@@ -425,12 +426,12 @@ RZ_API bool rz_config_add_integer_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL cons
 }
 
 RZ_API bool rz_config_add_string_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user) {
-	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && RZ_STR_ISNOTEMPTY(desc) && get, false);
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && get, false);
 	RzConfigEntry new_entry = { 0 };
 	if (config_find_entry(cfg, name)) {
 		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
 		return false;
-	} else if (!config_init_var_bind(&new_entry.var, name, desc, RZ_CONFIG_VAR_STR, get, set, opts, user)) {
+	} else if (!config_init_var_bind(&new_entry.var, name, desc, RZ_CONFIG_VAR_TYPE_STR, get, set, opts, user)) {
 		RZ_LOG_ERROR("config: failed to initialize '%s'.\n", name);
 		config_var_fini(&new_entry.var);
 		return false;
@@ -441,12 +442,12 @@ RZ_API bool rz_config_add_string_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const
 }
 
 RZ_API bool rz_config_add_list_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user) {
-	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && RZ_STR_ISNOTEMPTY(desc) && get, false);
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && get, false);
 	RzConfigEntry new_entry = { 0 };
 	if (config_find_entry(cfg, name)) {
 		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
 		return false;
-	} else if (!config_init_var_bind(&new_entry.var, name, desc, RZ_CONFIG_VAR_LIST, get, set, opts, user)) {
+	} else if (!config_init_var_bind(&new_entry.var, name, desc, RZ_CONFIG_VAR_TYPE_LIST, get, set, opts, user)) {
 		RZ_LOG_ERROR("config: failed to initialize '%s'.\n", name);
 		config_var_fini(&new_entry.var);
 		return false;
@@ -456,13 +457,13 @@ RZ_API bool rz_config_add_list_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const c
 	return true;
 }
 
-RZ_API bool rz_config_add_itv_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user) {
-	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && RZ_STR_ISNOTEMPTY(desc) && get, false);
+RZ_API bool rz_config_add_interval_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && get, false);
 	RzConfigEntry new_entry = { 0 };
 	if (config_find_entry(cfg, name)) {
 		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
 		return false;
-	} else if (!config_init_var_bind(&new_entry.var, name, desc, RZ_CONFIG_VAR_ITV, get, set, opts, user)) {
+	} else if (!config_init_var_bind(&new_entry.var, name, desc, RZ_CONFIG_VAR_TYPE_ITV, get, set, opts, user)) {
 		RZ_LOG_ERROR("config: failed to initialize '%s'.\n", name);
 		config_var_fini(&new_entry.var);
 		return false;
@@ -475,13 +476,13 @@ RZ_API bool rz_config_add_itv_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const ch
 RZ_API bool rz_config_var_as_json(RZ_NONNULL const RzConfigVar *var, RZ_NONNULL PJ *pj, RZ_NONNULL const char *key) {
 	rz_return_val_if_fail(var && pj && key, false);
 
-	if (rz_config_var_has_flags(var, RZ_CONFIG_VAR_BOOL)) {
+	if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_BOOL)) {
 		pj_kb(pj, key, rz_config_var_get_bool(var));
-	} else if (rz_config_var_has_flags(var, RZ_CONFIG_VAR_INT)) {
+	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_INT)) {
 		pj_kn(pj, key, rz_config_var_get_integer(var));
-	} else if (rz_config_var_has_flags(var, RZ_CONFIG_VAR_STR)) {
+	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_STR)) {
 		pj_ks(pj, key, rz_config_var_get_string(var));
-	} else if (rz_config_var_has_flags(var, RZ_CONFIG_VAR_LIST)) {
+	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_LIST)) {
 		const char *value;
 		RzListIter *it;
 		RzList *list = rz_config_var_get_list(var);
@@ -491,7 +492,7 @@ RZ_API bool rz_config_var_as_json(RZ_NONNULL const RzConfigVar *var, RZ_NONNULL 
 		}
 		pj_end(pj);
 		rz_list_free(list);
-	} else if (rz_config_var_has_flags(var, RZ_CONFIG_VAR_ITV)) {
+	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_ITV)) {
 		RzInterval itv = rz_config_var_get_interval(var);
 		pj_ko(pj, key);
 		pj_kn(pj, "addr", rz_itv_begin(itv));
@@ -504,16 +505,16 @@ RZ_API bool rz_config_var_as_json(RZ_NONNULL const RzConfigVar *var, RZ_NONNULL 
 RZ_API RZ_OWN char *rz_config_var_as_string(RZ_NONNULL const RzConfigVar *var) {
 	rz_return_val_if_fail(var, NULL);
 
-	if (rz_config_var_has_flags(var, RZ_CONFIG_VAR_BOOL)) {
+	if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_BOOL)) {
 		bool b = rz_config_var_get_bool(var);
 		return rz_str_dup(rz_str_bool(b));
-	} else if (rz_config_var_has_flags(var, RZ_CONFIG_VAR_INT)) {
+	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_INT)) {
 		ut64 i64 = rz_config_var_get_integer(var);
 		return rz_str_newf("%" PFMT64u, i64);
-	} else if (rz_config_var_has_flags(var, RZ_CONFIG_VAR_STR)) {
+	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_STR)) {
 		const char *str = rz_config_var_get_string(var);
 		return rz_str_dup(str);
-	} else if (rz_config_var_has_flags(var, RZ_CONFIG_VAR_LIST)) {
+	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_LIST)) {
 		RzStrBuf sb;
 		const char *value;
 		RzListIter *it;
@@ -528,7 +529,7 @@ RZ_API RZ_OWN char *rz_config_var_as_string(RZ_NONNULL const RzConfigVar *var) {
 		}
 		rz_list_free(list);
 		return rz_strbuf_drain_nofree(&sb);
-	} else if (rz_config_var_has_flags(var, RZ_CONFIG_VAR_ITV)) {
+	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_ITV)) {
 		RzInterval itv = rz_config_var_get_interval(var);
 		return rz_str_newf("[0x%08" PFMT64x ",0x%08" PFMT64x "]", rz_itv_begin(itv), rz_itv_end(itv));
 	}
@@ -541,7 +542,7 @@ RZ_API bool rz_config_var_is_readonly(RZ_NONNULL const RzConfigVar *var) {
 		// if set_value is not set is always considered RO
 		return true;
 	}
-	return !(var->flags & RZ_CONFIG_VAR_WRITABLE);
+	return !RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_WRITABLE);
 }
 
 static inline bool config_var_bind_get_value(const RzConfigVar *var, void *value) {
@@ -553,9 +554,9 @@ static inline bool config_var_bind_set_value(const RzConfigVar *var, const void 
 }
 
 RZ_API bool rz_config_var_get_bool(RZ_NONNULL const RzConfigVar *var) {
-	config_var_assert_return(var && var->flags & RZ_CONFIG_VAR_BOOL, var ? var->name : "(null)", false);
+	config_var_assert_return(var && RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_BOOL), var ? var->name : "(null)", false);
 
-	if (!(var->flags & RZ_CONFIG_VAR_BIND)) {
+	if (!(RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND))) {
 		return var->value.boolean;
 	}
 
@@ -567,9 +568,9 @@ RZ_API bool rz_config_var_get_bool(RZ_NONNULL const RzConfigVar *var) {
 }
 
 RZ_API ut64 rz_config_var_get_integer(RZ_NONNULL const RzConfigVar *var) {
-	config_var_assert_return(var && var->flags & RZ_CONFIG_VAR_INT, var ? var->name : "(null)", 0);
+	config_var_assert_return(var && RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_INT), var ? var->name : "(null)", 0);
 
-	if (!(var->flags & RZ_CONFIG_VAR_BIND)) {
+	if (!(RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND))) {
 		return var->value.integer;
 	}
 
@@ -581,9 +582,9 @@ RZ_API ut64 rz_config_var_get_integer(RZ_NONNULL const RzConfigVar *var) {
 }
 
 RZ_API const char *rz_config_var_get_string(RZ_NONNULL const RzConfigVar *var) {
-	config_var_assert_return(var && var->flags & RZ_CONFIG_VAR_STR, var ? var->name : "(null)", NULL);
+	config_var_assert_return(var && RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_STR), var ? var->name : "(null)", NULL);
 
-	if (!(var->flags & RZ_CONFIG_VAR_BIND)) {
+	if (!(RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND))) {
 		return rz_str_get(var->value.string);
 	}
 
@@ -595,9 +596,9 @@ RZ_API const char *rz_config_var_get_string(RZ_NONNULL const RzConfigVar *var) {
 }
 
 RZ_API RZ_OWN RzList /*<const char *>*/ *rz_config_var_get_list(RZ_NONNULL const RzConfigVar *var) {
-	config_var_assert_return(var && var->flags & RZ_CONFIG_VAR_LIST, var ? var->name : "(null)", false);
+	config_var_assert_return(var && RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_LIST), var ? var->name : "(null)", false);
 
-	if (!(var->flags & RZ_CONFIG_VAR_BIND)) {
+	if (!(RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND))) {
 		return var->value.list;
 	}
 
@@ -610,9 +611,9 @@ RZ_API RZ_OWN RzList /*<const char *>*/ *rz_config_var_get_list(RZ_NONNULL const
 
 RZ_API RzInterval rz_config_var_get_interval(RZ_NONNULL const RzConfigVar *var) {
 	RzInterval value = { 0 };
-	config_var_assert_return(var && var->flags & RZ_CONFIG_VAR_ITV, var ? var->name : "(null)", value);
+	config_var_assert_return(var && RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_ITV), var ? var->name : "(null)", value);
 
-	if (!(var->flags & RZ_CONFIG_VAR_BIND)) {
+	if (!(RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND))) {
 		return var->value.interval;
 	}
 
@@ -623,9 +624,14 @@ RZ_API RzInterval rz_config_var_get_interval(RZ_NONNULL const RzConfigVar *var) 
 	return value;
 }
 
-RZ_API bool rz_config_var_has_flags(RZ_NONNULL const RzConfigVar *var, ut32 flags) {
+RZ_API bool rz_config_var_has_type(RZ_NONNULL const RzConfigVar *var, ut32 etype) {
 	rz_return_val_if_fail(var, false);
-	return var->flags & flags;
+	return RZ_CONFIG_VAR_IS_TYPE(var->flags, etype);
+}
+
+RZ_API bool rz_config_var_has_flags(RZ_NONNULL const RzConfigVar *var, ut32 eflags) {
+	rz_return_val_if_fail(var, false);
+	return RZ_CONFIG_VAR_HAS_FLAG(var->flags, eflags);
 }
 
 RZ_API ut32 rz_config_var_get_flags(RZ_NONNULL const RzConfigVar *var) {
@@ -635,19 +641,16 @@ RZ_API ut32 rz_config_var_get_flags(RZ_NONNULL const RzConfigVar *var) {
 
 RZ_API const char *rz_config_var_get_name(RZ_NONNULL const RzConfigVar *var) {
 	rz_return_val_if_fail(var, NULL);
-
 	return rz_str_get(var->name);
 }
 
 RZ_API const char *rz_config_var_get_desc(RZ_NONNULL const RzConfigVar *var) {
 	rz_return_val_if_fail(var, NULL);
-
 	return rz_str_get(var->desc);
 }
 
 RZ_API const RzList /*<char *>*/ *rz_config_var_get_options(RZ_NONNULL const RzConfigVar *var) {
 	rz_return_val_if_fail(var, NULL);
-
 	return var->options;
 }
 
@@ -655,40 +658,40 @@ RZ_API RZ_OWN char *rz_config_var_flags_as_string(ut32 flags) {
 	RzStrBuf sb;
 	rz_strbuf_init(&sb);
 
-	if (flags & RZ_CONFIG_VAR_BOOL) {
+	if (flags & RZ_CONFIG_VAR_TYPE_BOOL) {
 		rz_strbuf_append(&sb, "bool");
 	}
-	if (flags & RZ_CONFIG_VAR_INT) {
+	if (flags & RZ_CONFIG_VAR_TYPE_INT) {
 		if (rz_strbuf_length(&sb) > 0) {
 			rz_strbuf_append(&sb, ",");
 		}
 		rz_strbuf_append(&sb, "integer");
 	}
-	if (flags & RZ_CONFIG_VAR_STR) {
+	if (flags & RZ_CONFIG_VAR_TYPE_STR) {
 		if (rz_strbuf_length(&sb) > 0) {
 			rz_strbuf_append(&sb, ",");
 		}
 		rz_strbuf_append(&sb, "string");
 	}
-	if (flags & RZ_CONFIG_VAR_LIST) {
+	if (flags & RZ_CONFIG_VAR_TYPE_LIST) {
 		if (rz_strbuf_length(&sb) > 0) {
 			rz_strbuf_append(&sb, ",");
 		}
 		rz_strbuf_append(&sb, "list");
 	}
-	if (flags & RZ_CONFIG_VAR_ITV) {
+	if (flags & RZ_CONFIG_VAR_TYPE_ITV) {
 		if (rz_strbuf_length(&sb) > 0) {
 			rz_strbuf_append(&sb, ",");
 		}
 		rz_strbuf_append(&sb, "interval");
 	}
-	if (flags & RZ_CONFIG_VAR_BIND) {
+	if (flags & RZ_CONFIG_VAR_FLAG_BIND) {
 		if (rz_strbuf_length(&sb) > 0) {
 			rz_strbuf_append(&sb, ",");
 		}
 		rz_strbuf_append(&sb, "bind");
 	}
-	if (!(flags & RZ_CONFIG_VAR_WRITABLE)) {
+	if (!(flags & RZ_CONFIG_VAR_FLAG_WRITABLE)) {
 		if (rz_strbuf_length(&sb) > 0) {
 			rz_strbuf_append(&sb, ",");
 		}
@@ -699,13 +702,13 @@ RZ_API RZ_OWN char *rz_config_var_flags_as_string(ut32 flags) {
 }
 
 RZ_IPI bool rz_config_var_set_bool(RzConfigVar *var, bool value) {
-	config_var_assert_return(var->flags & RZ_CONFIG_VAR_BOOL, var->name, false);
+	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_BOOL), var->name, false);
 	if (rz_config_var_is_readonly(var)) {
 		RZ_LOG_ERROR("config: '%s' is a read only variable\n", var->name);
 		return false;
 	}
 
-	if (var->flags & RZ_CONFIG_VAR_BIND) {
+	if (RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND)) {
 		return config_var_bind_set_value(var, &value);
 	}
 	var->value.boolean = value;
@@ -713,13 +716,13 @@ RZ_IPI bool rz_config_var_set_bool(RzConfigVar *var, bool value) {
 }
 
 RZ_IPI bool rz_config_var_set_integer(RzConfigVar *var, ut64 value) {
-	config_var_assert_return(var->flags & RZ_CONFIG_VAR_INT, var->name, false);
+	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_INT), var->name, false);
 	if (rz_config_var_is_readonly(var)) {
 		RZ_LOG_ERROR("config: '%s' is a read only variable\n", var->name);
 		return false;
 	}
 
-	if (var->flags & RZ_CONFIG_VAR_BIND) {
+	if (RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND)) {
 		return config_var_bind_set_value(var, &value);
 	}
 	var->value.integer = value;
@@ -745,7 +748,7 @@ static bool config_var_has_option(RzConfigVar *var, const char *value) {
 }
 
 RZ_IPI bool rz_config_var_set_string(RzConfigVar *var, const char *value) {
-	config_var_assert_return(var->flags & RZ_CONFIG_VAR_STR, var->name, false);
+	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_STR), var->name, false);
 	if (rz_config_var_is_readonly(var)) {
 		RZ_LOG_ERROR("config: '%s' is a read only variable\n", var->name);
 		return false;
@@ -755,7 +758,7 @@ RZ_IPI bool rz_config_var_set_string(RzConfigVar *var, const char *value) {
 		return false;
 	}
 
-	if (var->flags & RZ_CONFIG_VAR_BIND) {
+	if (RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND)) {
 		return config_var_bind_set_value(var, value);
 	}
 	free(var->value.string);
@@ -764,13 +767,13 @@ RZ_IPI bool rz_config_var_set_string(RzConfigVar *var, const char *value) {
 }
 
 RZ_IPI bool rz_config_var_set_list(RzConfigVar *var, const RzList /*<const char *>*/ *value) {
-	config_var_assert_return(var->flags & RZ_CONFIG_VAR_LIST, var->name, false);
+	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_LIST), var->name, false);
 	if (rz_config_var_is_readonly(var)) {
 		RZ_LOG_ERROR("config: '%s' is a read only variable\n", var->name);
 		return false;
 	}
 
-	if (var->flags & RZ_CONFIG_VAR_BIND) {
+	if (RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND)) {
 		return config_var_bind_set_value(var, value);
 	}
 	rz_list_free(var->value.list);
@@ -779,13 +782,13 @@ RZ_IPI bool rz_config_var_set_list(RzConfigVar *var, const RzList /*<const char 
 }
 
 RZ_IPI bool rz_config_var_set_list2(RzConfigVar *var, RZ_OWN RzList /*<char *>*/ *value) {
-	config_var_assert_return(var->flags & RZ_CONFIG_VAR_LIST, var->name, false);
+	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_LIST), var->name, false);
 	if (rz_config_var_is_readonly(var)) {
 		RZ_LOG_ERROR("config: '%s' is a read only variable\n", var->name);
 		return false;
 	}
 
-	if (var->flags & RZ_CONFIG_VAR_BIND) {
+	if (RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND)) {
 		bool ret = config_var_bind_set_value(var, value);
 		rz_list_free(value);
 		return ret;
@@ -797,13 +800,13 @@ RZ_IPI bool rz_config_var_set_list2(RzConfigVar *var, RZ_OWN RzList /*<char *>*/
 }
 
 RZ_IPI bool rz_config_var_set_interval(RzConfigVar *var, RzInterval value) {
-	config_var_assert_return(var->flags & RZ_CONFIG_VAR_ITV, var->name, false);
+	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_ITV), var->name, false);
 	if (rz_config_var_is_readonly(var)) {
 		RZ_LOG_ERROR("config: '%s' is a read only variable\n", var->name);
 		return false;
 	}
 
-	if (var->flags & RZ_CONFIG_VAR_BIND) {
+	if (RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND)) {
 		return config_var_bind_set_value(var, &value);
 	}
 	var->value.interval = value;
@@ -811,7 +814,7 @@ RZ_IPI bool rz_config_var_set_interval(RzConfigVar *var, RzInterval value) {
 }
 
 static bool config_set_var_list_from_string(RzConfigVar *var, const char *value) {
-	config_var_assert_return(var->flags & RZ_CONFIG_VAR_LIST, var->name, false);
+	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_LIST), var->name, false);
 	RzList *list = NULL;
 	if (value) {
 		list = rz_str_split_duplist(value, ",", true);
@@ -823,7 +826,7 @@ static bool config_set_var_list_from_string(RzConfigVar *var, const char *value)
 }
 
 static bool config_set_var_interval_from_string(RzConfigVar *var, const char *value) {
-	config_var_assert_return(var->flags & RZ_CONFIG_VAR_ITV, var->name, false);
+	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_ITV), var->name, false);
 
 	RzInterval itv = { 0 };
 	RzList *list = rz_str_split_duplist(value, ",", true);
@@ -831,7 +834,7 @@ static bool config_set_var_interval_from_string(RzConfigVar *var, const char *va
 		ut64 from = rz_num_get(NULL, rz_list_first_val(list));
 		ut64 to = rz_num_get(NULL, rz_list_last_val(list));
 		if (to < from) {
-			RZ_LOG_ERROR("config: interval from > to\n");
+			RZ_LOG_ERROR("config: cannot set '%s' when from > to (0x%08" PFMT64x " > 0x%08" PFMT64x ").\n", var->name, from, to);
 			rz_list_free(list);
 			return false;
 		}
@@ -843,24 +846,24 @@ static bool config_set_var_interval_from_string(RzConfigVar *var, const char *va
 }
 
 RZ_IPI bool rz_config_var_set_any(RzConfigVar *var, const char *value) {
-	if (var->flags & RZ_CONFIG_VAR_BOOL) {
+	if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_BOOL)) {
 		bool bvalue = value ? rz_str_is_true(value) : false;
 		return rz_config_var_set_bool(var, bvalue);
-	} else if (var->flags & RZ_CONFIG_VAR_INT) {
+	} else if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_INT)) {
 		ut64 ivalue = value ? rz_num_get(NULL, value) : 0;
 		return rz_config_var_set_integer(var, ivalue);
-	} else if (var->flags & RZ_CONFIG_VAR_STR) {
+	} else if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_STR)) {
 		return rz_config_var_set_string(var, value);
-	} else if (var->flags & RZ_CONFIG_VAR_LIST) {
+	} else if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_LIST)) {
 		return config_set_var_list_from_string(var, value);
-	} else if (var->flags & RZ_CONFIG_VAR_ITV) {
+	} else if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_ITV)) {
 		return config_set_var_interval_from_string(var, value);
 	}
 	return false;
 }
 
 RZ_IPI bool rz_config_toggle_var_bool(RzConfigVar *var) {
-	if (!(var->flags & RZ_CONFIG_VAR_BOOL)) {
+	if (!(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_BOOL))) {
 		RZ_LOG_ERROR("config: variable '%s' is not a boolean.\n", var->name);
 		return false;
 	}
@@ -1002,7 +1005,7 @@ RZ_API bool rz_config_set_interval(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const ch
 	return rz_config_var_set_interval(&entry->var, value);
 }
 
-RZ_API bool rz_config_set_interval2(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, ut64 addr, ut64 size) {
+RZ_API bool rz_config_set_interval2(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, ut64 from, ut64 to) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
 
 	RzConfigEntry *entry = config_find_entry(cfg, name);
@@ -1013,8 +1016,12 @@ RZ_API bool rz_config_set_interval2(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const c
 	if (!entry->is_variable) {
 		return false;
 	}
+	if (to < from) {
+		RZ_LOG_ERROR("config: cannot set '%s' when from > to (0x%08" PFMT64x " > 0x%08" PFMT64x ").\n", name, from, to);
+		return false;
+	}
 
-	RzInterval value = { .addr = addr, .size = size };
+	RzInterval value = { .addr = from, .size = to - from };
 	return rz_config_var_set_interval(&entry->var, value);
 }
 

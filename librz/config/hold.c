@@ -15,29 +15,29 @@ static RzList /*<char *>*/ *config_hold_dup_safe_list(RzConfigVar *var) {
 static void config_hold_value_init_from_node(ConfigValue *cv, RzConfigNode *node) {
 	cv->name = node->name;
 	if (rz_config_node_is_bool(node)) {
-		cv->flags = RZ_CONFIG_VAR_BOOL;
+		cv->flags = RZ_CONFIG_VAR_TYPE_BOOL;
 		cv->value.boolean = rz_str_is_true(node->value);
 		return;
 	} else if (rz_config_node_is_int(node)) {
-		cv->flags = RZ_CONFIG_VAR_INT;
+		cv->flags = RZ_CONFIG_VAR_TYPE_INT;
 		cv->value.integer = node->i_value;
 		return;
 	}
-	cv->flags = RZ_CONFIG_VAR_STR;
+	cv->flags = RZ_CONFIG_VAR_TYPE_STR;
 	cv->value.string = rz_str_dup(node->value);
 }
 
 static void config_hold_value_init_from_var(ConfigValue *cv, RzConfigVar *var) {
 	cv->name = var->name;
 	cv->flags = var->flags;
-	if (var->flags & RZ_CONFIG_VAR_BOOL) {
+	if (var->flags & RZ_CONFIG_VAR_TYPE_BOOL) {
 		cv->value.boolean = rz_config_var_get_bool(var);
-	} else if (var->flags & RZ_CONFIG_VAR_STR) {
+	} else if (var->flags & RZ_CONFIG_VAR_TYPE_STR) {
 		const char *str = rz_config_var_get_string(var);
 		cv->value.string = rz_str_dup(str);
-	} else if (var->flags & RZ_CONFIG_VAR_LIST) {
+	} else if (var->flags & RZ_CONFIG_VAR_TYPE_LIST) {
 		cv->value.list = config_hold_dup_safe_list(var);
-	} else if (var->flags & RZ_CONFIG_VAR_INT) {
+	} else if (var->flags & RZ_CONFIG_VAR_TYPE_INT) {
 		cv->value.integer = rz_config_var_get_integer(var);
 	} else {
 		cv->value.interval = rz_config_var_get_interval(var);
@@ -102,9 +102,9 @@ static void config_hold_value_fini(void *e, void *user) {
 	}
 
 	ConfigValue *cv = (ConfigValue *)e;
-	if (cv->flags & RZ_CONFIG_VAR_STR) {
+	if (cv->flags & RZ_CONFIG_VAR_TYPE_STR) {
 		free(cv->value.string);
-	} else if (cv->flags & RZ_CONFIG_VAR_LIST) {
+	} else if (cv->flags & RZ_CONFIG_VAR_TYPE_LIST) {
 		rz_list_free(cv->value.list);
 	}
 }
@@ -205,17 +205,17 @@ RZ_API void rz_config_hold_restore(RZ_NULLABLE RzConfigHold *hold) {
 			continue;
 		}
 
-		if (cv->flags & RZ_CONFIG_VAR_BOOL) {
+		if (cv->flags & RZ_CONFIG_VAR_TYPE_BOOL) {
 			config_hold_set_bool(entry, cv->value.boolean, cfg_user);
-		} else if (cv->flags & RZ_CONFIG_VAR_INT) {
+		} else if (cv->flags & RZ_CONFIG_VAR_TYPE_INT) {
 			config_hold_set_integer(entry, cv->value.integer, cfg_user);
-		} else if (cv->flags & RZ_CONFIG_VAR_STR) {
+		} else if (cv->flags & RZ_CONFIG_VAR_TYPE_STR) {
 			config_hold_set_string(entry, cv->value.string, cfg_user);
-		} else if (cv->flags & RZ_CONFIG_VAR_LIST) {
+		} else if (cv->flags & RZ_CONFIG_VAR_TYPE_LIST) {
 			// ownership of list moved to var.
 			rz_config_var_set_list(&entry->var, cv->value.list);
 			cv->value.list = NULL;
-		} else { /// RZ_CONFIG_VAR_ITV
+		} else { /// RZ_CONFIG_VAR_TYPE_ITV
 			rz_config_var_set_interval(&entry->var, cv->value.interval);
 		}
 	}

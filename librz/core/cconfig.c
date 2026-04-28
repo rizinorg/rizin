@@ -1685,24 +1685,24 @@ static void core_config_print_array_as_string(const RzList /*<char *>*/ *list, b
 }
 
 static void core_config_print_var_as_string(const RzConfigEntry *entry, ut32 flags) {
-	if (flags & RZ_CONFIG_VAR_INT) {
+	if (RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_INT)) {
 		ut64 value = rz_config_entry_get_integer(entry);
 		if (value > 0x1000) {
 			rz_cons_printf("0x%" PFMT64x, value);
 		} else {
 			rz_cons_printf("%" PFMT64u, value);
 		}
-	} else if (flags & RZ_CONFIG_VAR_BOOL) {
+	} else if (RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_BOOL)) {
 		bool value = rz_config_entry_get_bool(entry);
 		rz_cons_print(rz_str_bool(value));
-	} else if (flags & RZ_CONFIG_VAR_STR) {
+	} else if (RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_STR)) {
 		const char *value = rz_config_entry_get_string(entry);
 		rz_cons_print(value);
-	} else if (flags & RZ_CONFIG_VAR_LIST) {
+	} else if (RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_LIST)) {
 		RzList *list = rz_config_var_get_list(&entry->var);
 		core_config_print_array_as_string(list, true);
 		rz_list_free(list);
-	} else if (flags & RZ_CONFIG_VAR_ITV) {
+	} else if (RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_ITV)) {
 		RzInterval itv = rz_config_var_get_interval(&entry->var);
 		rz_cons_printf("[0x%08" PFMT64x ",0x%08" PFMT64x "]", rz_itv_begin(itv), rz_itv_end(itv));
 	}
