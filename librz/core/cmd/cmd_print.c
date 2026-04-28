@@ -12,6 +12,7 @@
 #include "../core_private.h"
 
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
+#define CMD_PRINT_IO_STRING_SCAN_MAX (1024ULL * 1024ULL)
 
 static const ut32 colormap[256] = {
 	0x000000,
@@ -1766,7 +1767,10 @@ static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bo
 		if (io_size != UT64_MAX && io_size > str_off) {
 			len = io_size - str_off;
 		}
-		len = RZ_MIN(len, (ut64)0x100000);
+		if (len > CMD_PRINT_IO_STRING_SCAN_MAX) {
+			RZ_LOG_WARN("core: limiting IO-layer string scan to %" PFMT64u " bytes.\n", (ut64)CMD_PRINT_IO_STRING_SCAN_MAX);
+			len = CMD_PRINT_IO_STRING_SCAN_MAX;
+		}
 	} else {
 		buf = rz_buf_new_with_pointers(core->block, core->blocksize, false);
 		if (!buf) {
