@@ -1768,7 +1768,9 @@ static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bo
 			len = io_size - str_off;
 		}
 		if (len > CMD_PRINT_IO_STRING_SCAN_MAX) {
-			RZ_LOG_WARN("core: limiting IO-layer string scan to %" PFMT64u " bytes.\n", (ut64)CMD_PRINT_IO_STRING_SCAN_MAX);
+			RZ_LOG_WARN(
+				"core: limiting IO-layer string scan to %" PFMT64u " bytes.\n",
+				(ut64)CMD_PRINT_IO_STRING_SCAN_MAX);
 			len = CMD_PRINT_IO_STRING_SCAN_MAX;
 		}
 	} else {
