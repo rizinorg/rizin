@@ -1,6 +1,10 @@
 NAME=hunk test
 FILE=bins/hunk/test
-CMDS=ia ; iH
+CMDS=<<EOF
+ia
+echo ---
+iH
+EOF
 EXPECT=<<EOF
 [Info]
 arch     m68k
@@ -224,6 +228,7 @@ name size address flags mirror
 paddr vaddr len size section type string 
 -----------------------------------------
 
+---
 hunks_count: 3
 hunks:
   - index: 0

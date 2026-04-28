@@ -203,7 +203,7 @@ static void linux_remove_fork_bps(RzDebug *dbg) {
  */
 RzDebugReasonType linux_ptrace_event(RzDebug *dbg, int ptid, int status, bool dowait) {
 	ut32 pt_evt;
-#if __powerpc64__ || __arm64__ || __aarch64__ || __x86_64__
+#if __powerpc64__ || __arm64__ || __aarch64__ || __x86_64__ || (__riscv && __riscv_xlen == 64)
 	ut64 data;
 #else
 	ut32 data;

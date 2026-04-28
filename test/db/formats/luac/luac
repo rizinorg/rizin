@@ -1052,3 +1052,115 @@ ERROR: Truncated Code at [0x2f]
 ERROR: Invalid luac proto
 EOF
 RUN
+
+NAME=LUAC: constants 5.0
+FILE=bins/luac/constants50.luac
+CMDS=<<EOF
+iH~ -
+EOF
+EXPECT=<<EOF
+        - "is_true"
+        - "is_false"
+        - "field1"
+        - "field2"
+        - "field3"
+        - "NIL"
+        - "print"
+        - "type"
+EOF
+RUN
+
+NAME=LUAC: constants 5.1
+FILE=bins/luac/constants51.luac
+CMDS=<<EOF
+iH~ -
+EOF
+EXPECT=<<EOF
+        - true
+        - "is_true"
+        - false
+        - "is_false"
+        - "field1"
+        - "field2"
+        - "field3"
+        - "NIL"
+        - "print"
+        - "type"
+EOF
+RUN
+
+NAME=LUAC: constants 5.2
+FILE=bins/luac/constants52.luac
+CMDS=<<EOF
+iH~ -
+EOF
+EXPECT=<<EOF
+        - true
+        - "is_true"
+        - false
+        - "is_false"
+        - "field1"
+        - "field2"
+        - "field3"
+        - "NIL"
+        - "print"
+        - "type"
+EOF
+RUN
+
+NAME=LUAC: constants 5.3
+FILE=bins/luac/constants53.luac
+CMDS=<<EOF
+iH~ -
+EOF
+EXPECT=<<EOF
+        - true
+        - "is_true"
+        - false
+        - "is_false"
+        - "field1"
+        - "field2"
+        - "field3"
+        - "NIL"
+        - "print"
+        - "type"
+EOF
+RUN
+
+NAME=LUAC: constants 5.4
+FILE=bins/luac/constants54.luac
+CMDS=<<EOF
+iH~ -
+EOF
+EXPECT=<<EOF
+        - "is_true"
+        - "is_false"
+        - "field1"
+        - true
+        - "field2"
+        - false
+        - "field3"
+        - "NIL"
+        - "print"
+        - "type"
+EOF
+RUN
+
+NAME=LUAC: constants 5.5
+FILE=bins/luac/constants55.luac
+CMDS=<<EOF
+iH~ -
+EOF
+EXPECT=<<EOF
+        - "is_true"
+        - "is_false"
+        - "field1"
+        - true
+        - "field2"
+        - false
+        - "field3"
+        - "NIL"
+        - "print"
+        - "type"
+EOF
+RUN

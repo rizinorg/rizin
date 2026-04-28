@@ -135,9 +135,11 @@ struct powerpc_regs_t {
 #include <sys/ucontext.h>
 #include <asm/ptrace.h>
 
-// typedef ut64 riscv64_regs_t [65];
-// #define RZ_DEBUG_REG_T riscv64_regs_t
-#define RZ_DEBUG_REG_T struct user_regs_struct
+#define RZ_DEBUG_REG_T      struct user_regs_struct
+#define RZ_DEBUG_FPREG32_T  __riscv_f_ext_state
+#define RZ_DEBUG_FPREG64_T  __riscv_d_ext_state
+#define RZ_DEBUG_FPREG128_T __riscv_q_ext_state
+#define RZ_DEBUG_VREG_T     __riscv_v_regset_state
 
 #elif __loongarch64
 #include <sys/ucontext.h>

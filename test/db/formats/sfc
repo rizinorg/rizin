@@ -2,9 +2,13 @@ NAME=snes speed_test_v51
 FILE=bins/snes/speed_test_v51.sfc
 CMDS=<<EOF
 iI
+echo ---
 iH
+echo ---
 im
+echo ---
 iS
+echo ---
 is
 EOF
 EXPECT=<<EOF
@@ -42,6 +46,7 @@ canary   false
 pie      false
 relrocs  false
 nx       false
+---
 snes_rom:
   game_title: "SA-1 Support Test    "
   speed: "slow"
@@ -72,6 +77,7 @@ snes_rom:
       reset: 0x8000
       irq: 0x8347
 
+---
 name         size    address flags mirror    
 ---------------------------------------------
 SRAM_70   0x10000 0x00700000 rwx   
@@ -598,12 +604,14 @@ ROM_fc     0x8000 0x00fc8000 rwx
 ROM_7c     0x8000 0x007c8000 rwx   ROM_fc
 ROM_fd     0x8000 0x00fd8000 rwx   
 ROM_7d     0x8000 0x007d8000 rwx   ROM_fd
+---
      paddr   size      vaddr  vsize align perm name      type flags 
 --------------------------------------------------------------------
 0x00000000 0x8000 0x00808000 0x8000   0x0 -r-x rom_80         
 0x00008000 0x8000 0x00818000 0x8000   0x0 -r-x rom_81         
 0x00000000 0x8000 0x00008000 0x8000   0x0 -r-x mirror_00      
 0x00008000 0x8000 0x00018000 0x8000   0x0 -r-x mirror_01      
+---
 nth              paddr      vaddr bind type size lib name                  
 ---------------------------------------------------------------------------
   0         0x00000347 0x00008347 NONE NONE    0     cop_vector_native
@@ -623,6 +631,7 @@ NAME=snes cx4test
 FILE=bins/snes/cx4test.sfc
 CMDS=<<EOF
 iI
+echo ---
 iH
 EOF
 EXPECT=<<EOF
@@ -660,6 +669,7 @@ canary   false
 pie      false
 relrocs  false
 nx       false
+---
 snes_rom:
   game_title: "CX4 TEST PROGRAM"
   speed: "slow"

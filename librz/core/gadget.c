@@ -37,6 +37,17 @@ static bool gadget_is_valid_terminator(const RzGadgetType gadget_type, const RzC
 	return status;
 }
 
+static RzCoreAsmHit *find_gadget_terminator(const RzPVector /*<RzCoreAsmHit *>*/ *hitlist, int delay_size) {
+	if (!hitlist || delay_size < 0) {
+		return NULL;
+	}
+	const size_t len = rz_pvector_len(hitlist);
+	if (((size_t)delay_size + 1) > len) {
+		return NULL;
+	}
+	return rz_pvector_at(hitlist, len - 1 - (size_t)delay_size);
+}
+
 static bool gadget_is_valid_end_gadget(const RzGadgetType gadget_type, const RzAnalysisOp *aop, const bool allow_conditional) {
 	if (aop->family == RZ_ANALYSIS_OP_FAMILY_SECURITY) {
 		return false;
@@ -44,7 +55,7 @@ static bool gadget_is_valid_end_gadget(const RzGadgetType gadget_type, const RzA
 
 	switch (gadget_type) {
 	case RZ_GADGET_TYPE_ROP:
-		return rz_gadget_rop_is_end_gadget(aop, allow_conditional);
+		return rz_gadget_rop_is_valid_terminator(aop, allow_conditional);
 	default:
 		return false;
 	}
@@ -306,7 +317,7 @@ RZ_API RZ_OWN RzGadgetRegInfo *rz_core_gadget_reg_info_new(RZ_NONNULL const RzCo
 /**
  * \brief Create a new RzGadgetInfo object.
  * \param address The address of the gadget.
- * \return RZ_OUT A pointer to the newly created RzGadgetInfo object, or NULL if memory allocation fails.
+ * \return A pointer to the newly created RzGadgetInfo object, or NULL if memory allocation fails.
  *
  * This function allocates and initializes a new RzGadgetInfo object with the given address.
  */
@@ -330,7 +341,7 @@ RZ_API RZ_OWN RzGadgetInfo *rz_core_gadget_info_new(const ut64 address) {
 
 /**
  * \brief Free an RzGadgetInfo object.
- * \param gadget_info RZ_NULLABLE Pointer to the RzGadgetInfo object to free.
+ * \param gadget_info Pointer to the RzGadgetInfo object to free.
  *
  * Frees the memory allocated for an RzGadgetInfo object, including its modified registers and dependencies.
  */
@@ -346,8 +357,8 @@ RZ_API void rz_core_gadget_info_free(RZ_NULLABLE RzGadgetInfo *gadget_info) {
 
 /**
  * \brief Add a register info to an RzGadgetInfo object.
- * \param gadget_info RZ_NONNULL Pointer to the RzGadgetInfo object.
- * \param reg_info RZ_NONNULL Pointer to the RzGadgetRegInfo object.
+ * \param gadget_info Pointer to the RzGadgetInfo object.
+ * \param reg_info Pointer to the RzGadgetRegInfo object.
  * \param is_dependency Boolean indicating whether the register is a dependency.
  *
  * Adds the given register info to the modified registers of the RzGadgetInfo object if it is not a dependency.
@@ -363,9 +374,9 @@ RZ_API void rz_core_gadget_info_add_register(const RZ_NONNULL RZ_OUT RzGadgetInf
 
 /**
  * \brief Get the modified register info by name.
- * \param gadget_info RZ_NONNULL Pointer to the RzGadgetInfo object.
- * \param name RZ_NONNULL Pointer to the name of the register.
- * \return RZ_OUT A pointer to the RzGadgetRegInfo object if found, or NULL if not found or if gadget_info is NULL.
+ * \param gadget_info Pointer to the RzGadgetInfo object.
+ * \param name Pointer to the name of the register.
+ * \return A pointer to the RzGadgetRegInfo object if found, or NULL if not found or if gadget_info is NULL.
  *
  * Searches the modified registers in the RzGadgetInfo object for the register with the given name and returns its info.
  */
@@ -433,10 +444,9 @@ RZ_API RZ_OWN RzGadgetRegInfo *rz_core_gadget_reg_info_dup(RZ_BORROW RZ_NONNULL 
 
 /**
  * \brief Find the Gadget Register information for the given register
- * \param gadget_info Pointer to the RzGadgetInfo
- * \param name Register to filter the dependencies
- *
- * \return Pvector of register gadget information
+ * \param gadget_info Pointer to the RzGadgetInfo object.
+ * \param name Pointer to the name of the register to filter dependencies.
+ * \return A pointer to an RzPVector of RzGadgetRegInfo objects matching the given name.
  */
 RZ_API RZ_OWN RzPVector /*<RzGadgetRegInfo *>*/ *rz_core_gadget_reg_info_find(const RZ_NONNULL RzGadgetInfo *gadget_info, const RZ_NONNULL char *name) {
 	rz_return_val_if_fail(gadget_info && name, NULL);
@@ -456,8 +466,8 @@ RZ_API RZ_OWN RzPVector /*<RzGadgetRegInfo *>*/ *rz_core_gadget_reg_info_find(co
 
 /**
  * \brief Check if a register with a specific name exists in the modified registers of a RzGadgetInfo object.
- * \param gadget_info RZ_NONNULL Pointer to the RzGadgetInfo object.
- * \param name RZ_NONNULL Pointer to the name of the register.
+ * \param gadget_info Pointer to the RzGadgetInfo object.
+ * \param name Pointer to the name of the register.
  * \return true if a register with the given name exists, false otherwise.
  *
  * Checks the modified registers in the RzGadgetInfo object to see if a register with the given name exists.
@@ -504,7 +514,7 @@ rz_gadget_event_check_fn rz_gadget_event_functions[RZ_GADGET_EVENT_COUNT] = {
 
 /**
  * \brief Check if a given event dependency is present for a register
- * \param gadget_info RZ_NONNULL Pointer to the RzGadgetInfo object.
+ * \param gadget_info Pointer to the RzGadgetInfo object.
  * \param event The RzGadgetEvent to check.
  * \param reg_name Name of the register
  * \return True if there is an \p event which uses \p reg_name. False otherwise.
@@ -533,9 +543,9 @@ RZ_API bool rz_core_gadget_reg_info_has_event(const RZ_NONNULL RzGadgetInfo *gad
 
 /**
  * \brief Find all dependencies based on a specific event in the dependencies of a RzGadgetInfo object.
- * \param gadget_info RZ_NONNULL Pointer to the RzGadgetInfo object.
+ * \param gadget_info Pointer to the RzGadgetInfo object.
  * \param event The RzGadgetEvent to check.
- * \return RZ_OUT A pointer to a list of RzGadgetRegInfo objects matching the given event, or NULL if none are found or if gadget_info is NULL.
+ * \return A pointer to a list of RzGadgetRegInfo objects matching the given event, or NULL if none are found or if gadget_info is NULL.
  */
 RZ_API RZ_OWN RzPVector /*<RzGadgetRegInfo *>*/ *rz_core_gadget_get_reg_info_by_event(const RZ_NONNULL RzGadgetInfo *gadget_info,
 	const RzGadgetEvent event) {
@@ -559,11 +569,11 @@ RZ_API RZ_OWN RzPVector /*<RzGadgetRegInfo *>*/ *rz_core_gadget_get_reg_info_by_
 
 /**
  * \brief Find all registers with specific names in the modified registers of a RzGadgetInfo object.
- * \param gadget_info RZ_NONNULL Pointer to the RzGadgetInfo object.
- * \param registers RZ_NONNULL Pointer to a RzPvector of register names.
- * \return RZ_OUT A pointer to a RzPvector of RzGadgetRegInfo objects matching the given names, or NULL if none are found or if gadget_info is NULL.
+ * \param gadget_info Pointer to the RzGadgetInfo object.
+ * \param registers Pointer to a RzPVector of register names to search for.
+ * \return A pointer to a RzPVector of RzGadgetRegInfo objects matching the given names, or NULL if none are found or if gadget_info is NULL.
  *
- * Searches the modified registers in the RzGadgetInfo object for all registers with the given registers and returns their info in a vector.
+ * Searches the modified registers in the RzGadgetInfo object for all registers matching the given register names and returns their info in a vector.
  */
 RZ_API RZ_OWN RzPVector /*<RzGadgetRegInfo *>*/ *rz_core_gadget_get_reg_info_by_reg_names(const RZ_NONNULL RzGadgetInfo *gadget_info,
 	const RZ_NONNULL RzPVector /*<char *>*/ *registers) {
@@ -641,7 +651,9 @@ static void gadget_info_add_dependency(const RzCore *core, RzGadgetInfo *gadget_
 		}
 		reg_info_dup->new_val = rz_bv_to_ut64(new_val);
 		if (rz_reg_is_role(rreg, reg_info->name, RZ_REG_NAME_SP)) {
-			gadget_info->stack_change += rz_bv_to_ut64(new_val) - rz_bv_to_ut64(init_val);
+			RzBitVector *temp = rz_bv_sub(new_val, init_val, NULL);
+			gadget_info->stack_change += rz_bv_to_ut64(temp);
+			rz_bv_free(temp);
 		}
 		rz_bv_free(init_val);
 		rz_bv_free(new_val);
@@ -842,6 +854,7 @@ static bool analyze_gadget(RzCore *core, const RzCoreAsmHit *hit, RzGadgetInfo *
 
 cleanup:
 	rz_pvector_fini(&vec);
+	rz_analysis_il_vm_cleanup(core->analysis);
 	rz_core_seek(core, old_addr, true);
 	return ret;
 }
@@ -1072,6 +1085,7 @@ static void gadget_print_long_mode(const RzCore *core, const RzGadgetInfo *gadge
 		free(asm_str);
 		free(hex);
 		rz_analysis_op_fini(&aop);
+		rz_asm_op_fini(&asmop);
 	}
 	print_gadget_long_info(gadget_info, lens, add, asm_strs, hex_strs, high_pad, utf8, colorize);
 	free(rep_str);
@@ -1212,10 +1226,9 @@ static bool print_gadget_hitlist(const RzCore *core, RzPVector /*<RzCoreAsmHit *
 }
 
 static bool handle_gadget_list(RzStrBuf *sb, const RzGadgetSearchContext *context,
-	const RzGadgetEndListPair *end_gadget, RZ_OWN RzPVector /*<RzCoreAsmHit *>*/ *hitlist) {
+	const RzGadgetEndListPair *end_gadget, RZ_BORROW RzPVector /*<RzCoreAsmHit *>*/ *hitlist) {
 	rz_return_val_if_fail(sb && context && context->unique_hitlists, false);
 	if (end_gadget->delay_size && rz_pvector_len(hitlist) < 1 + end_gadget->delay_size) {
-		rz_pvector_free(hitlist);
 		return false;
 	}
 
@@ -1228,7 +1241,6 @@ static bool handle_gadget_list(RzStrBuf *sb, const RzGadgetSearchContext *contex
 	if (!is_found && asm_op_hex) {
 		ht_su_insert(context->unique_hitlists, asm_op_hex, 1);
 	} else {
-		rz_pvector_free(hitlist);
 		return false;
 	}
 	return true;
@@ -1384,6 +1396,7 @@ cleanup:
 		return NULL;
 	}
 	if (!handle_gadget_list(sb, context, end_gadget, hitlist)) {
+		rz_pvector_free(hitlist);
 		rz_strbuf_free(sb);
 		return NULL;
 	}
@@ -1391,7 +1404,7 @@ cleanup:
 	return hitlist;
 }
 
-static RzGadgetInfo *perform_gadget_analysis(const RzGadgetType type, RzCore *core, const bool allow_conditional, const RzPVector /*<RzCoreAsmHit *>*/ *hitlist) {
+static RzGadgetInfo *perform_gadget_analysis(const RzGadgetType type, RzCore *core, const bool allow_conditional, const RzPVector /*<RzCoreAsmHit *>*/ *hitlist, int delay_size) {
 	rz_return_val_if_fail(core && core->analysis && hitlist, NULL);
 	RzGadgetInfo *gadget_info = NULL;
 
@@ -1400,8 +1413,9 @@ static RzGadgetInfo *perform_gadget_analysis(const RzGadgetType type, RzCore *co
 		ht_gadget_semantics = ht_up_new(NULL, (HtUPFreeValue)rz_core_gadget_info_free);
 		rz_analysis_set_gadget_semantics(core->analysis, ht_gadget_semantics);
 	}
-	const RzCoreAsmHit *hit_last = (RzCoreAsmHit *)rz_pvector_at(hitlist, rz_pvector_len(hitlist) - 1);
-	if (!gadget_is_valid_terminator(type, core, hit_last, allow_conditional)) {
+
+	const RzCoreAsmHit *terminator_hit = find_gadget_terminator(hitlist, delay_size);
+	if (!gadget_is_valid_terminator(type, core, terminator_hit, allow_conditional)) {
 		return gadget_info;
 	}
 	const ut64 addr_start = ((RzCoreAsmHit *)rz_pvector_at(hitlist, 0))->addr;
@@ -1432,14 +1446,15 @@ static RzGadgetInfo *perform_gadget_analysis(const RzGadgetType type, RzCore *co
  * \brief Perform Gadget operations based on the given \p context and \p hitlist.
  * \param core Pointer to the RzCore structure.
  * \param context Pointer to the RzGadgetSearchContext structure.
- * \param hitlist Pointer to the RzList structure containing the gadgets.
+ * \param hitlist Pointer to the RzPVector structure containing the gadget instructions.
+ * \param delay_size Number of delay-slot instructions following the terminator; used to locate the actual gadget terminator in delay-slot architectures (0 for non-delay-slot archs).
  * \return true if the operation was successful, false otherwise.
  *
- * This function performs Gadget operations based on the given \p context and \p hitlist.
+ * This function performs Gadget operations based on the given \p context and \p hitlist, including printing and analyzing the gadget sequence.
  */
 
 RZ_API bool rz_core_handle_gadget_request_type(RZ_NONNULL RzCore *core, RZ_NONNULL RzGadgetSearchContext *context,
-	RZ_NONNULL RzPVector /*<RzCoreAsmHit *>*/ *hitlist) {
+	RZ_NONNULL RzPVector /*<RzCoreAsmHit *>*/ *hitlist, int delay_size) {
 	rz_return_val_if_fail(core && core->analysis && hitlist && context, false);
 	if (context->mask & RZ_GADGET_PRINT) {
 		if (context->subchains) {
@@ -1460,7 +1475,7 @@ RZ_API bool rz_core_handle_gadget_request_type(RZ_NONNULL RzCore *core, RZ_NONNU
 	RzGadgetInfo *gadget_info = NULL;
 	bool is_analysis = false;
 	if (context->mask & RZ_GADGET_ANALYZE) {
-		gadget_info = perform_gadget_analysis(context->type, core, context->allow_conditional, hitlist);
+		gadget_info = perform_gadget_analysis(context->type, core, context->allow_conditional, hitlist, delay_size);
 		is_analysis = true;
 	}
 
@@ -1737,7 +1752,7 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzGadgetS
 	}
 
 	if (context->constraints && !rz_pvector_empty(context->constraints)) {
-		RzGadgetInfo *gadget_info = perform_gadget_analysis(context->type, core, context->allow_conditional, hitlist);
+		RzGadgetInfo *gadget_info = perform_gadget_analysis(context->type, core, context->allow_conditional, hitlist, end_gadget->delay_size);
 		if (!gadget_info || !match_constraints(gadget_info, context->constraints)) {
 			rz_pvector_free(hitlist);
 			goto fini;
@@ -1745,8 +1760,9 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzGadgetS
 	}
 
 	if (context->detail_mask) {
-		RzGadgetInfo *gadget_info = perform_gadget_analysis(context->type, core, context->allow_conditional, hitlist);
+		RzGadgetInfo *gadget_info = perform_gadget_analysis(context->type, core, context->allow_conditional, hitlist, end_gadget->delay_size);
 		if (!gadget_info) {
+			rz_pvector_free(hitlist);
 			goto fini;
 		}
 		if (context->detail_mask & (RZ_GADGET_DETAIL_SEARCH_STACK | RZ_GADGET_DETAIL_SEARCH_SIZE)) {
@@ -1755,9 +1771,11 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzGadgetS
 			// RZ_GADGET_DETAIL_SEARCH_STACK -> stack_change, RZ_GADGET_DETAIL_SEARCH_SIZE -> size
 			ut64 search_val = context->detail_mask & RZ_GADGET_DETAIL_SEARCH_STACK ? gadget_info->stack_change : gadget_info->size;
 			if (!parse_detail_search_arg(core, context->greparg, &cmp_op, &target)) {
+				rz_pvector_free(hitlist);
 				goto fini;
 			}
 			if (!match_detail_search(search_val, cmp_op, target)) {
+				rz_pvector_free(hitlist);
 				goto fini;
 			}
 		}
@@ -1768,7 +1786,7 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzGadgetS
 		goto fini;
 	}
 
-	if (!rz_core_handle_gadget_request_type(core, context, hitlist)) {
+	if (!rz_core_handle_gadget_request_type(core, context, hitlist, end_gadget->delay_size)) {
 		rz_pvector_free(hitlist);
 		goto fini;
 	}
@@ -1958,12 +1976,11 @@ cleanup:
  * Displays gadgets from the gadgetSdb.
  * If unavailable, performs a gadget search with the input.
  */
-RZ_API RzCmdStatus rz_core_gadget_info(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_OWN RzGadgetSearchContext *context) {
+RZ_API RzCmdStatus rz_core_gadget_info(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzGadgetSearchContext *context) {
 	rz_return_val_if_fail(core && core->analysis && context, RZ_CMD_STATUS_ERROR);
 
 	// TODO: resolve this logic later.
 	RzCmdStatus status = rz_core_gadget_search(core, context);
-	rz_core_gadget_search_context_free(context);
 	return status;
 }
 

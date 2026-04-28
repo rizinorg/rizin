@@ -437,16 +437,6 @@ std r31, -8(r1)
 EOF
 RUN
 
-NAME=rz-asm -a ppc.as -b 32 -e "mr r10, r4"
-BROKEN=1
-TOOL=rz-asm
-FILE=mr r10, r4
-ARGS=-a ppc.as -b 32 -e
-EXPECT=<<EOF
-7c8a2378
-EOF
-RUN
-
 NAME=rz-asm -a ppc -b 32 -d 78238a7c
 TOOL=rz-asm
 ARGS=-a ppc -b 32 -d 78238a7c
@@ -490,56 +480,6 @@ EXPECT=<<EOF
 48c7c0ffffffff
 EOF
 EXPECT_ERR=<<EOF
-EOF
-RUN
-
-NAME=rz-asm -a ppc.as -b 64 "std r31, -8(r1)"
-BROKEN=1
-TOOL=rz-asm
-FILE=std r31, -8(r1)
-ARGS=-a ppc.as -b 64
-EXPECT=<<EOF
-f8ffe1fb
-EOF
-RUN
-
-NAME=rz-asm -a arm.as -b 16 "wfe"
-BROKEN=1
-TOOL=rz-asm
-FILE=wfe
-ARGS=-a arm.as -b 16
-EXPECT=<<EOF
-20bf
-EOF
-RUN
-
-NAME=rz-asm -a arm.as -b 32 "add fp, sp, 0"
-BROKEN=1
-TOOL=rz-asm
-FILE=add fp, sp, 0
-ARGS=-a arm.as -b 32
-EXPECT=<<EOF
-00b08de2
-EOF
-RUN
-
-NAME=rz-asm -a arm.as -b 32 -e "ldr fp, [sp], 4"
-BROKEN=1
-TOOL=rz-asm
-FILE=ldr fp, [sp], 4
-ARGS=-a arm.as -b 32 -e
-EXPECT=<<EOF
-e49db004
-EOF
-RUN
-
-NAME=rz-asm -a arm.as -b 64 "sub sp, sp, 16"
-BROKEN=1
-TOOL=rz-asm
-FILE=sub sp, sp, 16
-ARGS=-a arm.as -b 64
-EXPECT=<<EOF
-ff4300d1
 EOF
 RUN
 

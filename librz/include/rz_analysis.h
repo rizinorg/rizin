@@ -1554,6 +1554,7 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_stack_var_at(RzAnalysis
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_reg_var_at(RzAnalysisFunction *fcn, RZ_NONNULL const char *reg);
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_stack_var_in(RzAnalysisFunction *fcn, RzStackAddr stack_off);
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_var_byname(RzAnalysisFunction *fcn, const char *name);
+RZ_API RZ_OWN RzAnalysisVar *rz_analysis_function_get_ret_var(RzAnalysisFunction *fcn);
 RZ_API void rz_analysis_function_delete_vars_by_storage_type(RzAnalysisFunction *fcn, RzAnalysisVarStorageType stor);
 RZ_API void rz_analysis_function_delete_arg_vars(RzAnalysisFunction *fcn);
 RZ_API void rz_analysis_function_delete_all_vars(RzAnalysisFunction *fcn);

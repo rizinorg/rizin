@@ -336,8 +336,8 @@
 #define has_param_flag(flag, bit) ((flag) & (bit)) ? true : false
 
 #define lua_strcase(case_str) if ( \
-	((limit) <= sizeof(case_str) - 1) && \
-	rz_str_ncasecmp((name), (case_str), sizeof(case_str) - 1) == 0)
+	((limit) <= strlen(case_str)) && \
+	rz_str_ncasecmp((name), (case_str), strlen(case_str)) == 0)
 
 #define DISASM(ver) \
 	int lua##ver##_disasm(RzAsmOp *op, ut32 instruction) { \
@@ -556,6 +556,12 @@ typedef enum {
 	TM_N /* number of elements in the enum */
 } LuaTMS54;
 
+typedef enum {
+	LUA_51_VERSION_VANILLA = 0,
+	LUA_51_VERSION_OPENWRT = 0,
+	LUA_51_VERSION_TPLINK = 1
+} Lua51Versions;
+
 RZ_IPI char *get_lua_tagnames(LuaTMS54 tms);
 
 /* convert a 4-byte ut8 buffer into a lua instruction (ut32) */
@@ -596,11 +602,14 @@ RZ_IPI LuaOpNameList get_lua52_opnames(void);
 RZ_IPI ut8 get_lua52_opcode_by_name(const char *name, int len);
 
 /* Lua 5.1 specified */
-RZ_IPI int lua51_disasm(RzAsmOp *op, ut32 instruction);
+RZ_IPI int lua51_disasm(RzAsmOp *op, ut32 instruction, int version);
 RZ_IPI int lua51_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContext *ctx, const ut8 *data, int len);
-RZ_IPI ut32 lua51_assembly(const char *arg_start, st32 opcode_len, const char *opcode_start);
-RZ_IPI LuaOpNameList get_lua51_opnames(void);
-RZ_IPI ut8 get_lua51_opcode_by_name(const char *name, int len);
+RZ_IPI ut32 lua51_assembly(const char *arg_start, st32 opcode_len, const char *opcode_start, int version);
+RZ_IPI LuaOpNameList get_lua51_opnames(int version);
+RZ_IPI ut8 get_lua51_opcode_by_name(const char *name, int limit);
+RZ_IPI ut8 get_lua51_shuffled_opcode_by_index(int opcode, int version);
+RZ_IPI ut8 get_lua51_opcode_shuffled_index_by_id(int opcode, int version);
+char *get_lua51_opcode_name(int opcode);
 
 /* Lua 5.0 specified */
 RZ_IPI int lua50_disasm(RzAsmOp *op, ut32 instruction);

@@ -54,6 +54,31 @@ stp fp, lr, [sp, -0x10]!
 EOF
 RUN
 
+NAME=dg gcore issue 3054
+FILE=bins/mach0/hello-macos-arm64
+ARGS=-d
+BROKEN=1
+TIMEOUT=10
+CMDS=<<EOF
+!rm -f .tmp/core.issue3054
+dg .tmp/core.issue3054
+!RZ_NOPLUGINS=1 rz-bin -I .tmp/core.issue3054
+!rm -f .tmp/core.issue3054
+EOF
+REGEXP_FILTER_OUT=(\[Info\]|arch\s+arm|bintype\s+mach0|bits\s+64|class\s+MACH064|os\s+darwin)
+EXPECT=<<EOF
+[Info]
+arch     arm
+bintype  mach0
+bits     64
+class    MACH064
+os       darwin
+EOF
+EXPECT_ERR=<<EOF
+WARNING: core: Writing to file '.tmp/core.issue3054'
+EOF
+RUN
+
 NAME=maps
 FILE=bins/mach0/hello-macos-arm64
 ARGS=-d

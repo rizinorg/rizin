@@ -1,13 +1,6 @@
 name: New Leaks
 
 on:
-  push:
-    paths:
-      - '**.c'
-      - '**.h'
-      - '**.in'
-      - '**.inc'
-
   pull_request:
 
 # Automatically cancel any previous workflow on new push.

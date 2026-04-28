@@ -330,7 +330,7 @@ static ut32 cb(ArmOp *op) {
 	} else {
 		return UT32_MAX;
 	}
-	// printf ("%s %d, %llu\n", op->mnemonic, op->operands[0].reg, op->operands[1].immediate);
+	// printf ("%s %d, %" PFMT64u "\n", op->mnemonic, op->operands[0].reg, op->operands[1].immediate);
 	ut32 imm = op->operands[1].immediate;
 	data = k | encode1reg(op) | ((imm & 0x1c) << 27) | ((imm & 0x1fe0) << 11);
 	data = data | ((imm & 0x1fe000) >> 5);

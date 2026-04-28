@@ -68,6 +68,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_gadget_handler(RzCore *core, int argc, const char
 
 	RzGadgetSearchContext *context = rz_core_gadget_search_context_new(core, gadget_type, input, false, RZ_GADGET_PRINT, RZ_GADGET_DETAIL_SEARCH_NON, state);
 	RzCmdStatus status = rz_core_gadget_info(core, context);
+	rz_core_gadget_search_context_free(context);
 	return status;
 }
 
@@ -124,6 +125,7 @@ RZ_IPI RzCmdStatus rz_cmd_rop_search_stack_handler(RzCore *core, int argc, const
 	RzGadgetType gadget_type = RZ_GADGET_TYPE_ROP;
 	RzGadgetSearchContext *context = rz_core_gadget_search_context_new(core, gadget_type, argv[1], false, RZ_GADGET_PRINT_DETAIL | RZ_GADGET_ANALYZE, RZ_GADGET_DETAIL_SEARCH_STACK, state);
 	RzCmdStatus status = rz_core_gadget_info(core, context);
+	rz_core_gadget_search_context_free(context);
 	return status;
 }
 
@@ -133,6 +135,7 @@ RZ_IPI RzCmdStatus rz_cmd_gadget_search_size_handler(RzCore *core, int argc, con
 
 	RzGadgetSearchContext *context = rz_core_gadget_search_context_new(core, gadget_type, argv[1], false, RZ_GADGET_PRINT_DETAIL | RZ_GADGET_ANALYZE, RZ_GADGET_DETAIL_SEARCH_SIZE, state);
 	RzCmdStatus status = rz_core_gadget_info(core, context);
+	rz_core_gadget_search_context_free(context);
 	return status;
 }
 
@@ -1443,7 +1446,7 @@ reread:
 				RzListIter *iter;
 				RzIOMap *map;
 				rz_list_foreach (param.boundaries, iter, map) {
-					eprintf("-- %llx %llx\n", map->itv.addr, rz_itv_end(map->itv));
+					eprintf("-- %" PFMT64x " %" PFMT64x "\n", map->itv.addr, rz_itv_end(map->itv));
 					rz_cons_break_push(NULL, NULL);
 					rz_search_pattern_size(core->search, ps);
 					rz_search_pattern(core->search, map->itv.addr, rz_itv_end(map->itv));
@@ -2156,7 +2159,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_pattern_handler(RzCore *core, int argc, const c
 	RzListIter *iter;
 	RzIOMap *map;
 	rz_list_foreach (param.boundaries, iter, map) {
-		eprintf("-- %llx %llx\n", map->itv.addr, rz_itv_end(map->itv));
+		eprintf("-- %" PFMT64x " %" PFMT64x "\n", map->itv.addr, rz_itv_end(map->itv));
 		rz_cons_break_push(NULL, NULL);
 		rz_search_pattern_size(core->search, ps);
 		if (!rz_search_pattern(core->search, map->itv.addr, rz_itv_end(map->itv))) {
