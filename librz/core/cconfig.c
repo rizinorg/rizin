@@ -3916,7 +3916,7 @@ RZ_API void rz_core_parse_rizinrc(RzCore *r) {
 }
 
 typedef struct cconfig_space_s {
-	RzList *list;
+	RzList /*<char *>*/ *list;
 	const char *space;
 } cconfig_space_t;
 

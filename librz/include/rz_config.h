@@ -111,7 +111,7 @@ RZ_API void rz_config_hold_free(RZ_NULLABLE RzConfigHold *h);
 RZ_API void rz_config_hold_restore_and_free(RZ_NULLABLE RzConfigHold *hold);
 
 RZ_API RZ_OWN RzConfig *rz_config_new(RZ_DEPRECATE RZ_BORROW void *user);
-RZ_API void rz_config_free(RZ_OWN RzConfig *cfg);
+RZ_API void rz_config_free(RZ_NULLABLE RzConfig *cfg);
 
 RZ_API bool rz_config_set_readonly(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, bool read_only);
 RZ_API bool rz_config_is_readonly(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name);

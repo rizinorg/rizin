@@ -246,7 +246,7 @@ static inline bool config_init_var_bind(RzConfigVar *var, const char *name, cons
 	return true;
 }
 
-RZ_API bool rz_config_add_bool(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NONNULL const char *desc, bool value) {
+RZ_API bool rz_config_add_bool(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, bool value) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && RZ_STR_ISNOTEMPTY(desc), false);
 	RzConfigEntry new_entry = { 0 };
 	if (config_find_entry(cfg, name)) {
@@ -262,7 +262,7 @@ RZ_API bool rz_config_add_bool(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *
 	return true;
 }
 
-RZ_API bool rz_config_add_integer(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NONNULL const char *desc, ut64 value) {
+RZ_API bool rz_config_add_integer(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ut64 value) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && RZ_STR_ISNOTEMPTY(desc), false);
 	RzConfigEntry new_entry = { 0 };
 	if (config_find_entry(cfg, name)) {
@@ -278,7 +278,7 @@ RZ_API bool rz_config_add_integer(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const cha
 	return true;
 }
 
-RZ_API bool rz_config_add_string(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NONNULL const char *desc, RZ_NULLABLE const char *value) {
+RZ_API bool rz_config_add_string(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NULLABLE const char *value) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && RZ_STR_ISNOTEMPTY(desc), false);
 	RzConfigEntry new_entry = { 0 };
 	if (config_find_entry(cfg, name)) {
@@ -294,7 +294,7 @@ RZ_API bool rz_config_add_string(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char
 	return true;
 }
 
-RZ_API bool rz_config_add_options(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NONNULL const char *desc, ...) {
+RZ_API bool rz_config_add_options(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ...) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && RZ_STR_ISNOTEMPTY(desc), false);
 	RzConfigEntry new_entry = { 0 };
 	if (config_find_entry(cfg, name)) {
@@ -332,7 +332,7 @@ RZ_API bool rz_config_add_options(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const cha
 	return true;
 }
 
-RZ_API bool rz_config_add_list(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NONNULL const char *desc, ...) {
+RZ_API bool rz_config_add_list(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ...) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && RZ_STR_ISNOTEMPTY(desc), false);
 	RzConfigEntry new_entry = { 0 };
 	if (config_find_entry(cfg, name)) {
