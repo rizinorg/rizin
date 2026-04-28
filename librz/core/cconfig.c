@@ -2316,14 +2316,6 @@ static bool cb_scrprompt(void *user, void *data) {
 	return true;
 }
 
-static bool cb_scrrows(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	int n = atoi(node->value);
-	core->cons->force_rows = n;
-	return true;
-}
-
 static bool cb_contiguous(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3665,8 +3657,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("scr.panelborder", "false", "Specify panels border active area (0 by default)");
 	SETICB("scr.columns", 0, &cb_scrcolumns, "Force console column count (width)");
 	SETBPREF("scr.dumpcols", "false", "Prefer pC commands before p ones");
-	SETCB("scr.rows", "0", &cb_scrrows, "Force console row count (height) ");
-	SETICB("scr.rows", 0, &cb_rows, "Force console row count (height) (duplicate?)");
+	SETICB("scr.rows", 0, &cb_rows, "Force console row count (height)");
 	SETICB("scr.fix.rows", 0, &cb_fixrows, "Workaround for Linux TTY");
 	SETICB("scr.fix.columns", 0, &cb_fixcolumns, "Workaround for Prompt iOS SSH client");
 	SETCB("scr.highlight", "", &cb_scrhighlight, "Highlight that word at RzCons level");
