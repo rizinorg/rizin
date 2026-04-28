@@ -22,7 +22,7 @@ typedef struct config_value_t {
 
 struct rz_config_hold_t {
 	RzConfig *cfg;
-	RzVector /* <ConfigValue> */ variables;
+	RzVector /*<ConfigValue>*/ variables;
 };
 
 static int find_variable(const char *a_name, const RzConfigEntry *b, void *user) {
