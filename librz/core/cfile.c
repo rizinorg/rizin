@@ -1295,7 +1295,7 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open(RZ_NONNULL RzCore *r, RZ_NONNULL 
 		if (r->dbg->cur && r->dbg->cur->canstep) {
 			swstep = false;
 		}
-		rz_config_set_i(r->config, "dbg.swstep", swstep);
+		rz_config_set_bool(r->config, "dbg.swstep", swstep);
 		// Set the correct debug handle
 		if (fd->plugin && fd->plugin->isdbg) {
 			char *dh = rz_str_ndup(file, (strstr(file, "://") - file));
