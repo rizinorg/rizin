@@ -1,7 +1,74 @@
-NAME=iH
+NAME=mdt analysis
 FILE=bins/mdt/bin-mdt/load-test.mdt
 CMDS=<<EOF
 iH
+echo ---
+oml
+echo ---
+echo "======== Sections ========"
+iS
+echo "======== Segments ========"
+iSS
+echo ---
+ie
+echo ---
+
+# This should give the same (relative) result as the reloc tests in db/analysis/hexagon.
+# The load-bin.b04 is the same binary as used for the reloc tests there.
+
+echo "==== Print relocs ===="
+ir
+echo ---
+
+# This should give the same (relative) result as the reloc tests in db/analysis/hexagon.
+# The load-bin.b04 is the same binary as used for the reloc tests there.
+
+e plugins.hexagon.imm.sign=false
+echo "==== Print instructions ===="
+s section.load_test.b04.text
+pi 30
+echo "==== Print patched bytes ===="
+s loc.r_hex_32
+px 16~[1-8]
+echo ---
+
+# The binaries in the image are test/bins/analysis/hexagon-hello-loop
+# and test/bins/elf/hexagon/relocs.
+
+# The numbers of symbols should always match the sum.
+# So it can be cross-checked.
+echo "==== symbols count hexagon-hello-loop + relocs. Expected 519 + 22 ===="
+isq~?
+echo ---
+
+# The binaries in the image are test/bins/analysis/hexagon-hello-loop
+# and test/bins/elf/hexagon/relocs.
+
+e plugins.hexagon.imm.sign=false
+echo "==== symbols vaddr correct hexagon-hello-loop ===="
+is~fputs
+is~.CONST_4197D78400000000
+echo "==== symbols vaddr correct relocs ===="
+is~test_sym
+is~r_hex_b15_pcrel
+echo ---
+
+# The binaries in the image are test/bins/analysis/hexagon-hello-loop
+# and test/bins/elf/hexagon/relocs.
+# Note that hexagon-hello-loop doesn't have relocations.
+
+e plugins.hexagon.imm.sign=false
+echo "==== hexagon-hello-loop ===="
+# One for each executable section.
+echo "== .init"
+pi 10 @ sym..init
+echo "== .text"
+pi 10 @ sym._Putfld
+echo "== .fini"
+pi 10 @ sym._fini
+echo "==== relocs ===="
+echo "== loc.r_hex_b7_pcrel_x"
+pi 10 @ loc.r_hex_b7_pcrel_x
 EOF
 EXPECT=<<EOF
 mdt_segments:
@@ -103,15 +170,7 @@ mdt_segments:
         e_shnum: 5
         e_shstrndx: 1
 
-EOF
-RUN
-
-NAME=oml
-FILE=bins/mdt/bin-mdt/load-test.mdt
-CMDS=<<EOF
-oml
-EOF
-EXPECT=<<EOF
+---
  1 fd: 4 +0x00000000 0x89201c18 - 0x89201fff --- mmap.load-test.b01
  2 fd: 5 +0x00000000 0x89200000 - 0x89201c17 --- vmap.load-test.b01
  3 fd: 6 +0x00000000 0xfe030000 - 0xfe0aefff r-x mmap.load-test.b02
@@ -126,18 +185,7 @@ EXPECT=<<EOF
 12 fd: 11 +0x0000022c 0xc00c922c - 0xc00c9387 --x vmap.load-test.b04..rela.text
 13 fd: 11 +0x000000bc 0xc00c90bc - 0xc00c922b --- vmap.load-test.b04..symtab
 14 fd: 11 +0x00000000 0xc00c9000 - 0xc00c9033 r-- vmap.load-test.b04.ehdr
-EOF
-RUN
-
-NAME=iSS - segments
-FILE=bins/mdt/bin-mdt/load-test.mdt
-CMDS=<<EOF
-echo "======== Sections ========"
-iS
-echo "======== Segments ========"
-iSS
-EOF
-EXPECT=<<EOF
+---
 ======== Sections ========
      paddr   size      vaddr  vsize align perm name                    type flags 
 ----------------------------------------------------------------------------------
@@ -175,32 +223,11 @@ EXPECT=<<EOF
 0x874af000 0x12160 0x00550000 0x1a000   0x1000 -r-x load-test.b03
 0x00000000    0x34 0xc00c9000    0x34      0x0 -rw- load-test.b04.ehdr
 0x874c9000   0x5b4 0xc00c9000  0x1000   0x1000 -r-x load-test.b04
-EOF
-RUN
-
-NAME=ie - entries
-FILE=bins/mdt/bin-mdt/load-test.mdt
-CMDS=<<EOF
-ie
-EOF
-EXPECT=<<EOF
+---
      vaddr      paddr     hvaddr      haddr type 
 -------------------------------------------------
 0xfe000000 0x00000000 ---------- ---------- init
-EOF
-RUN
-
-NAME=ir - relocs print
-FILE=bins/mdt/bin-mdt/load-test.mdt
-CMDS=<<EOF
-
-# This should give the same (relative) result as the reloc tests in db/analysis/hexagon.
-# The load-bin.b04 is the same binary as used for the reloc tests there.
-
-echo "==== Print relocs ===="
-ir
-EOF
-EXPECT=<<EOF
+---
 ==== Print relocs ====
      vaddr      paddr     target type                name                  
 ---------------------------------------------------------------------------
@@ -233,26 +260,7 @@ EXPECT=<<EOF
 0xc00c90b0 0x000000b0 0xc00c9034 R_HEX_16            test_sym
 0xc00c90b4 0x000000b4 0xc00c9034 R_HEX_8             test_sym
 0xc00c90b8 0x000000b8 0xc00c9034 R_HEX_32_PCREL      test_sym - 0xc00c90b8
-EOF
-RUN
-
-
-NAME=ir - relocs patching
-FILE=bins/mdt/bin-mdt/load-test.mdt
-CMDS=<<EOF
-
-# This should give the same (relative) result as the reloc tests in db/analysis/hexagon.
-# The load-bin.b04 is the same binary as used for the reloc tests there.
-
-e plugins.hexagon.imm.sign=false
-echo "==== Print instructions ===="
-s section.load_test.b04.text
-pi 30
-echo "==== Print patched bytes ===="
-s loc.r_hex_32
-px 16~[1-8]
-EOF
-EXPECT=<<EOF
+---
 ==== Print instructions ====
 [   nop
 [   nop
@@ -287,43 +295,10 @@ EXPECT=<<EOF
 ==== Print patched bytes ====
 offset - 0 1 2 3 4 5
 3490 0cc0 3490 0000 3400 0000 7cff ffff
-EOF
-RUN
-
-NAME=is - symbols count
-FILE=bins/mdt/bin-mdt/load-test.mdt
-CMDS=<<EOF
-
-# The binaries in the image are test/bins/analysis/hexagon-hello-loop
-# and test/bins/elf/hexagon/relocs.
-
-# The numbers of symbols should always match the sum.
-# So it can be cross-checked.
-echo "==== symbols count hexagon-hello-loop + relocs. Expected 519 + 22 ===="
-isq~?
-EOF
-EXPECT=<<EOF
+---
 ==== symbols count hexagon-hello-loop + relocs. Expected 519 + 22 ====
 541
-EOF
-RUN
-
-NAME=is - symbols vaddr
-FILE=bins/mdt/bin-mdt/load-test.mdt
-CMDS=<<EOF
-
-# The binaries in the image are test/bins/analysis/hexagon-hello-loop
-# and test/bins/elf/hexagon/relocs.
-
-e plugins.hexagon.imm.sign=false
-echo "==== symbols vaddr correct hexagon-hello-loop ===="
-is~fputs
-is~.CONST_4197D78400000000
-echo "==== symbols vaddr correct relocs ===="
-is~test_sym
-is~r_hex_b15_pcrel
-EOF
-EXPECT=<<EOF
+---
 ==== symbols vaddr correct hexagon-hello-loop ====
 425 0x0000a2d0 0x005592d0 GLOBAL FUNC    244     fputs
  61 0x00001000 0x00550000 LOCAL  FILE      0     fputs.c
@@ -332,31 +307,7 @@ EXPECT=<<EOF
  22 0x00000034 0xc00c9034 GLOBAL NOTYPE    0     test_sym
   9 0x00000078 0xc00c9078 LOCAL  NOTYPE    0     r_hex_b15_pcrel_x
   8 0x00000048 0xc00c9048 LOCAL  NOTYPE    0     r_hex_b15_pcrel
-EOF
-RUN
-
-NAME=is - symbols assembly
-FILE=bins/mdt/bin-mdt/load-test.mdt
-CMDS=<<EOF
-
-# The binaries in the image are test/bins/analysis/hexagon-hello-loop
-# and test/bins/elf/hexagon/relocs.
-# Note that hexagon-hello-loop doesn't have relocations.
-
-e plugins.hexagon.imm.sign=false
-echo "==== hexagon-hello-loop ===="
-# One for each executable section.
-echo "== .init"
-pi 10 @ sym..init
-echo "== .text"
-pi 10 @ sym._Putfld
-echo "== .fini"
-pi 10 @ sym._fini
-echo "==== relocs ===="
-echo "== loc.r_hex_b7_pcrel_x"
-pi 10 @ loc.r_hex_b7_pcrel_x
-EOF
-EXPECT=<<EOF
+---
 ==== hexagon-hello-loop ====
 == .init
 [   allocframe(SP,#0x8):raw
