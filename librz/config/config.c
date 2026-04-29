@@ -264,7 +264,7 @@ static inline bool config_var_bind_set_options(RzConfigVar *var) {
 
 static inline bool config_init_var_bind(RzConfigVar *var, const char *name, const char *desc, ut32 flags, RzConfigBindGet get, RzConfigBindSet set, RzConfigBindOpts opts, void *user) {
 	var->name = rz_str_dup(name);
-	if (!name) {
+	if (!var->name) {
 		return false;
 	}
 	var->desc = rz_str_dup(desc);
