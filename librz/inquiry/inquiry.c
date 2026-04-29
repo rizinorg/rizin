@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2025 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <bits/types/error_t.h>
 #include <rz_core.h>
 #include <rz_lib.h>
 #include <rz_inquiry.h>
@@ -11,6 +12,7 @@
 #include "rz_il/definitions/mem.h"
 #include "rz_il/rz_il_vm.h"
 #include "rz_inquiry/rz_bb_graph.h"
+#include "rz_inquiry/rz_il_cache.h"
 #include "rz_inquiry/rz_interpreter.h"
 #include "rz_inquiry_plugins.h"
 #include "rz_th.h"
@@ -123,86 +125,6 @@ RZ_API RZ_OWN char *rz_inquiry_function_str(const RzInquiryFunction *fcn) {
 	return rz_strbuf_drain(buf);
 }
 
-/**
- * \brief Add edges from \p insn_to_insn_edges to the cfg.
- * These are edges statically known by checking RzAnalysisOp->jump and fail.
- *
- * TODO: Crazy inefficient.
- * But for now it is left in here. The problem is that the graph has basic blocks as nodes.
- * But the xrefs are instruction to instruction. So we have this super expansive |bb| * |E| lookup.
- *
- * It would be way faster if we have an R-Tree to get bbs by an address it covers.
- * Or just do a better design all along.
- */
-RZ_IPI bool rz_inquiry_bb_cfg_complement(RzInquiry *iq, RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges) {
-	// Add the instruction to instruction edges.
-	RzAnalysisXRef *i2i_edge;
-	rz_vector_foreach (insn_to_insn_edges, i2i_edge) {
-		// First check if the edge is already in the CFG.
-		// If so (not unlikely), skip the step where it iterates over all BBs.
-		RzIterator *incoming = rz_inquiry_bb_cfg_get_incoming_edges(iq->bb_cfg, i2i_edge->to);
-		if (!incoming) {
-			// Basic block not present.
-			continue;
-		}
-		RzGraphEdge *in_e;
-		rz_iterator_foreach(incoming, in_e) {
-			const RzInquiryBB *bb = rz_graph_node_get_data(rz_graph_edge_get_from(in_e));
-			if (RZ_BETWEEN_EXCL(bb->addr, i2i_edge->from, bb->addr + bb->size)) {
-				rz_iterator_free(incoming);
-				// This edge was already covered.
-				goto next_i2i_edge;
-			}
-		}
-		rz_iterator_free(incoming);
-
-		// Edge isn't in the CFG yet.
-		// Now we have to do the crazy expansive |bb| * |E| search.
-		RzGraphNode *n;
-		RzIterator *bb_iter = rz_graph_get_nodes(iq->bb_cfg->graph);
-		rz_iterator_foreach(bb_iter, n) {
-			const RzInquiryBB *bb = rz_graph_node_get_data(n);
-			if (!RZ_BETWEEN_EXCL(bb->addr, i2i_edge->from, bb->addr + bb->size)) {
-				continue;
-			}
-			switch (i2i_edge->type) {
-			case RZ_ANALYSIS_XREF_TYPE_CALL:
-				if (!rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, i2i_edge->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL)) {
-					rz_warn_if_reached();
-				}
-				break;
-			case RZ_ANALYSIS_XREF_TYPE_CODE:
-				if (!rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, i2i_edge->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP)) {
-					rz_warn_if_reached();
-				}
-				break;
-			case RZ_ANALYSIS_XREF_TYPE_CALL_RET:
-				if (!rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, i2i_edge->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL_RET)) {
-					rz_warn_if_reached();
-				}
-				break;
-			case RZ_ANALYSIS_XREF_TYPE_RETURN:
-				if (!rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, i2i_edge->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_RETURN)) {
-					rz_warn_if_reached();
-				}
-				break;
-			case RZ_ANALYSIS_XREF_TYPE_NULL:
-			case RZ_ANALYSIS_XREF_TYPE_DATA:
-			case RZ_ANALYSIS_XREF_TYPE_STRING:
-			case RZ_ANALYSIS_XREF_TYPE_MEM_WRITE:
-				RZ_LOG_WARN("Xref of type %s for code edge.\n",
-					rz_analysis_xrefs_type_tostring(i2i_edge->type));
-				rz_warn_if_reached();
-				break;
-			}
-		}
-		rz_iterator_free(bb_iter);
-	next_i2i_edge:
-		continue;
-	}
-	return true;
-}
-
 RZ_API RZ_OWN RzInquiry *rz_inquiry_new(void) {
 	RzInquiry *iq = RZ_NEW0(RzInquiry);
 	if (!iq) {
@@ -211,7 +133,7 @@ RZ_API RZ_OWN RzInquiry *rz_inquiry_new(void) {
 	iq->plugins = ht_sp_new(HT_STR_CONST, NULL, NULL);
 	iq->plugins_data = ht_sp_new(HT_STR_CONST, NULL, NULL);
 	iq->call_candidates = ht_up_new(NULL, free);
-	iq->xrefs = rz_vector_new(sizeof(RzAnalysisXRef), NULL, NULL);
+	iq->dynamic_xrefs = rz_vector_new(sizeof(RzAnalysisXRef), NULL, NULL);
 	iq->bb_cfg = rz_inquiry_bb_cfg_new(RZ_GRAPH_IMPL_LIST);
 	if (!iq->plugins || !iq->plugins_data || !iq->bb_cfg) {
 		ht_sp_free(iq->plugins);
@@ -238,12 +160,12 @@ RZ_API void rz_inquiry_free(RZ_OWN RZ_NULLABLE RzInquiry *iq) {
 	ht_sp_free(iq->plugins_data);
 	ht_up_free(iq->call_candidates);
 	rz_inquiry_bb_cfg_free(iq->bb_cfg);
-	rz_vector_free(iq->xrefs);
+	rz_vector_free(iq->dynamic_xrefs);
 	free(iq);
 }
 
 RZ_IPI void rz_inquiry_add_xref(RzInquiry *iq, const RzAnalysisXRef *xref) {
-	rz_vector_push(iq->xrefs, (void *)xref);
+	rz_vector_push(iq->dynamic_xrefs, (void *)xref);
 }
 
 RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL const RzPVector /*<RzBinSection *>*/ *allowed_segments) {
@@ -261,7 +183,7 @@ RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL co
 	return false;
 }
 
-static void handle_io_request(RzCore *core, RzPVector /*<RzILMem *>*/ *il_mems, RzInterpreterIORequest *io_req, RZ_OUT RzInterpreterIOResult *io_res) {
+static void handle_io_request(RzPVector /*<RzILMem *>*/ *il_mems, RzInterpreterIORequest *io_req, RZ_OUT RzInterpreterIOResult *io_res) {
 	RZ_LOG_DEBUG("INQUIRY: Received IO %s request: mem:%" PFMTSZd " 0x%" PFMT64x "\n",
 		io_req->type == RZ_INTERPRETER_IO_WRITE ? "write" : "read",
 		io_req->mem_idx,
@@ -322,7 +244,7 @@ RZ_API bool rz_inquiry_get_fcn_symbol_addr(RzCore *core, RZ_OUT RzSetU *symbol_t
 	return true;
 }
 
-static bool get_branch_targets(RzCore *core, RzSetU *branch_targets, RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges) {
+static bool get_branch_targets(RzCore *core, RzSetU *branch_targets) {
 	RzPVector /*<RzBinSection *>*/ *sections = rz_bin_object_get_sections(core->bin->cur->o);
 	if (!sections) {
 		rz_warn_if_reached();
@@ -342,7 +264,7 @@ static bool get_branch_targets(RzCore *core, RzSetU *branch_targets, RzVector /*
 		rz_pvector_remove_at(sections, *j);
 	}
 	rz_vector_free(non_x_idx);
-	if (!rz_analysis_get_all_branch_targets(core->analysis, sections, true, branch_targets, insn_to_insn_edges)) {
+	if (!rz_analysis_get_all_branch_targets(core->analysis, sections, true, branch_targets)) {
 		RZ_LOG_ERROR("Failed to get branch targets.\n");
 		return false;
 	}
@@ -350,19 +272,46 @@ static bool get_branch_targets(RzCore *core, RzSetU *branch_targets, RzVector /*
 	return true;
 }
 
-static bool handle_yields(RzCore *core, RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM]) {
+static bool log_control_flow(RzInquiry *inquiry, RzInterpreterCtrlFlow *cf) {
+	RZ_LOG_DEBUG("INQUIRY: Received control flow: 0x%" PFMT64x " size: %" PFMTSZu " (alt: 0x%" PFMT64x ")\n",
+		cf->target_addr, cf->target_block_size, cf->alt_target);
+	rz_inquiry_bb_cfg_add_basic_block(inquiry->bb_cfg, cf->actual_target, cf->target_block_size);
+	if (cf->alt_target) {
+		// Add a dummy basic block at the address the call originally jumped to.
+		// This is the basic block for the imported function.
+		rz_inquiry_bb_cfg_add_basic_block(inquiry->bb_cfg, cf->target_addr, 1);
+	}
+	// Add a simple control flow edge here.
+	// It gets later updated to another type if a reported xref has it.
+	rz_inquiry_bb_cfg_add_edge(inquiry->bb_cfg, cf->src_block_addr, cf->actual_target, cf->type);
+	return true;
+}
+
+static bool handle_yields(RzInquiry *inquiry, RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM]) {
 	RzInterpreterYieldRBuf *rbuf_xrefs = yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF];
 	rz_return_val_if_fail(rbuf_xrefs, false);
 
 	RzAnalysisXRef xref = { 0 };
 	if (!rz_th_ring_buf_is_empty_unsafe(rbuf_xrefs->rbuf)) {
-		RzThreadRingBufResult r = rz_th_ring_buf_take_blocking(rbuf_xrefs->rbuf, &xref);
+		RzThreadRingBufResult r = rz_th_ring_buf_take(rbuf_xrefs->rbuf, &xref);
 		if (r == RZ_THREAD_RING_BUF_CLOSED) {
 			rz_warn_if_reached();
 			return false;
 		} else if (r == RZ_THREAD_RING_BUF_OK) {
-			rz_inquiry_add_xref(core->inquiry, &xref);
+			rz_inquiry_add_xref(inquiry, &xref);
 			RZ_LOG_DEBUG("Added xref: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n", xref.from, xref.to, rz_analysis_ref_type_tostring(xref.type));
+		}
+	}
+
+	RzInterpreterYieldRBuf *rbuf_cf = yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CONTROL_FLOW];
+	if (!rz_th_ring_buf_is_empty_unsafe(rbuf_cf->rbuf)) {
+		RzInterpreterCtrlFlow cf = { 0 };
+		RzThreadRingBufResult r = rz_th_ring_buf_take(rbuf_cf->rbuf, &cf);
+		if (r == RZ_THREAD_RING_BUF_CLOSED) {
+			rz_warn_if_reached();
+			return false;
+		} else if (r == RZ_THREAD_RING_BUF_OK) {
+			log_control_flow(inquiry, &cf);
 		}
 	}
 
@@ -371,14 +320,14 @@ static bool handle_yields(RzCore *core, RzInterpreterYieldRBuf *yield_rbufs[RZ_I
 
 	RzAnalysisCallCandidate cc = { 0 };
 	if (!rz_th_ring_buf_is_empty_unsafe(rbuf_calls->rbuf)) {
-		RzThreadRingBufResult r = rz_th_ring_buf_take_blocking(rbuf_calls->rbuf, &cc);
+		RzThreadRingBufResult r = rz_th_ring_buf_take(rbuf_calls->rbuf, &cc);
 		if (r == RZ_THREAD_RING_BUF_CLOSED) {
 			rz_warn_if_reached();
 			return false;
 		} else if (r == RZ_THREAD_RING_BUF_OK) {
 			RzAnalysisCallCandidate *cc_clone = RZ_NEW0(RzAnalysisCallCandidate);
 			memcpy(cc_clone, &cc, sizeof(RzAnalysisCallCandidate));
-			if (ht_up_update(core->inquiry->call_candidates, cc_clone->bb_addr, cc_clone)) {
+			if (ht_up_update(inquiry->call_candidates, cc_clone->bb_addr, cc_clone)) {
 				RZ_LOG_DEBUG("Overwrote a call candidate located at 0x%" PFMT64x "\n", cc_clone->candidate_addr);
 			} else {
 				RZ_LOG_DEBUG("Added call candidate located at 0x%" PFMT64x "\n", cc_clone->candidate_addr);
@@ -388,106 +337,44 @@ static bool handle_yields(RzCore *core, RzInterpreterYieldRBuf *yield_rbufs[RZ_I
 	return true;
 }
 
-#if 0
-static void validate_il_bb(RzCore *core, RzInterpreterILBB *bb) {
-	RzAnalysisILVM *vm = rz_analysis_il_vm_new(core->analysis, NULL);
-	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_from_vm(vm->vm);
-	void **it;
-	size_t i = 0;
-	rz_pvector_enumerate (bb->il_ops, it, i) {
-		char *report = NULL;
-		RzInterpreterInsnPkt *pkt = *it;
-		if (!rz_il_validate_effect(pkt->effect, ctx, NULL, NULL, &report)) {
-			RZ_LOG_ERROR("Validation failed for IL op %" PFMTSZu " in BB 0x%" PFMT64x " in insn packet:\n"
-				     "\t'%s'\n",
-				i, bb->bb_addr, report);
-		}
-		free(report);
-	}
-	rz_analysis_il_vm_free(vm);
-	rz_il_validate_global_context_free(ctx);
-}
-#endif
-
-static const RzInterpreterILBB *get_il_bb(RzCore *core, HtUP *il_cache, ut64 addr) {
-	RzInterpreterILBB *bb = ht_up_find(il_cache, addr, NULL);
-	if (!bb) {
-		RZ_LOG_DEBUG("INQUIRY: Lift new BB\n");
-		bb = rz_inquiry_gen_il_bb(core->analysis, core->io, addr);
-		if (!bb) {
-			RZ_LOG_DEBUG("Failed to lift basic block at 0x%" PFMT64x "\n", addr);
-			return NULL;
-		}
-
-#if 0
-		// Validate IL to catch more errors during testing.
-		validate_il_bb(core, bb);
-		// Otherwise YOLO
-#endif
-
-		RZ_LOG_DEBUG("INQUIRY: Send IL result: %p.\n", bb);
-		ht_up_insert(il_cache, bb->bb_addr, bb);
-	} else {
-		RZ_LOG_DEBUG("INQUIRY: Serve BB from cache\n");
-	}
-	return bb;
-}
-
-static bool send_next_il_bb(RzCore *core,
-	RzThreadQueue *il_queue,
-	HtUP *il_cache,
-	RzSetU *entry_points,
-	RzInterpreterBranch *branch) {
-	RZ_LOG_DEBUG("INQUIRY: Received IL request: 0x%" PFMT64x " (alt: 0x%" PFMT64x ")\n", branch->target_addr, branch->alt_target);
-	const RzInterpreterILBB *bb = get_il_bb(core, il_cache, branch->alt_target ? branch->alt_target : branch->target_addr);
-	if (!bb) {
-		// Delete the address from the branch targets.
-		// This is currently necessary as a work around, because if the interpreter
-		// fails before interpreting the address, it is added again as next entry point.
-		// Giving an endless loop.
-		// One of the design thingies to fix in the proper implementation.
-		rz_set_u_delete(entry_points, branch->target_addr);
-		if (branch->alt_target) {
-			rz_set_u_delete(entry_points, branch->alt_target);
-		}
-		return false;
-	}
-	rz_inquiry_bb_cfg_add_basic_block(core->inquiry->bb_cfg, bb->bb_addr, bb->size);
-	if (branch->alt_target) {
-		// Add a dummy basic block at the address the call originally jumped to.
-		// This is the basic block for the imported function.
-		rz_inquiry_bb_cfg_add_basic_block(core->inquiry->bb_cfg, branch->target_addr, 1);
-	}
-	// Add a simple control flow edge here.
-	// It gets later updated to another type if a reported xref has it.
-	rz_inquiry_bb_cfg_add_edge(core->inquiry->bb_cfg, branch->branching_bb_addr, bb->bb_addr, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF);
-	rz_th_queue_push(il_queue, (void *)bb, true);
-	return true;
-}
-
+/**
+ * \brief Removes entry points which were requested from the IL cache
+ * (and hence have been interpreted).
+ * Returns false if no entry points are left to interpret.
+ * True otherwise.
+ */
+// TODO: Optimize
 static bool reduce_get_entry_points(
 	RzInterpreterSet *iset,
-	HtUP *il_cache,
-	RZ_BORROW RzSetU /*<ut64>*/ *entry_points,
-	RZ_OUT ut64 *next_entry_point) {
+	RzILCache *il_cache,
+	RZ_BORROW RzSetU /*<ut64>*/ *entry_points) {
 	// Add the next entry point we need to check for executable regions the interpreters did not cover.
 	// For this we simply delete all entry points which point
 	// into the already handled basic blocks.
 	// Then add a few addresses as new entry point.
 	// The addresses we add are jump targets from jump/call instructions in the binary.
 
-	RzIterator *il_bb_iter = ht_up_as_iter_keys(il_cache);
+	RzVector to_del = { 0 };
+	rz_vector_init(&to_del, sizeof(ut64), NULL, NULL);
+
+	RzIterator *entries = rz_set_u_as_iter(entry_points);
 	ut64 *ct;
-	rz_iterator_foreach(il_bb_iter, ct) {
+	rz_iterator_foreach(entries, ct) {
 		// This call target was interpreted before (hence is in the IL cache).
+		if (rz_il_cache_was_requested(il_cache, *ct)) {
+			rz_vector_push(&to_del, ct);
+		}
+	}
+	rz_iterator_free(entries);
+
+	rz_vector_foreach (&to_del, ct) {
 		rz_set_u_delete(entry_points, *ct);
 	}
-	rz_iterator_free(il_bb_iter);
+	rz_vector_fini(&to_del);
+
 	if (rz_set_u_size(entry_points) == 0) {
 		return false;
 	}
-
-	*next_entry_point = rz_set_u_take(entry_points);
 	return true;
 }
 
@@ -496,7 +383,8 @@ static void close_reset_ipc_obj(RzInterpreterSet *iset) {
 	// This also clears the buffer and queues
 	rz_th_ring_buf_close(iset->io_request_rbuf);
 	rz_th_ring_buf_close(iset->io_result_rbuf);
-	rz_th_ring_buf_close(iset->branch_rbuf);
+	rz_th_ring_buf_close(iset->il_request_rbuf);
+	rz_th_ring_buf_close(iset->entry_points);
 	rz_th_queue_close(iset->il_queue);
 	rz_list_free(rz_th_queue_pop_all(iset->il_queue));
 }
@@ -506,16 +394,16 @@ static void open_ipc_obj(RzInterpreterSet *iset) {
 	// jump target again.
 	rz_th_ring_buf_open(iset->io_request_rbuf);
 	rz_th_ring_buf_open(iset->io_result_rbuf);
-	rz_th_ring_buf_open(iset->branch_rbuf);
+	rz_th_ring_buf_open(iset->il_request_rbuf);
+	rz_th_ring_buf_open(iset->entry_points);
 	rz_th_queue_open(iset->il_queue);
 }
 
 static bool collect_entry_points(RzCore *core,
-	RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges,
 	RzSetU *entry_points,
 	RzSetU *symbol_targets) {
 
-	if (!get_branch_targets(core, entry_points, insn_to_insn_edges) ||
+	if (!get_branch_targets(core, entry_points) ||
 		!rz_inquiry_get_fcn_symbol_addr(core, symbol_targets)) {
 		rz_warn_if_reached();
 		return false;
@@ -550,6 +438,15 @@ static bool setup_yield_rbufs(
 	}
 	yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE] = rbuf;
 
+	yield_kind = RZ_INTERPRETER_YIELD_KIND_CONTROL_FLOW;
+	rbuf = NULL;
+	rbuf = rz_interpreter_yield_rbuf_new(yield_kind, NULL, NULL);
+	if (!rbuf) {
+		rz_warn_if_reached();
+		return false;
+	}
+	yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CONTROL_FLOW] = rbuf;
+
 	yield_kind = RZ_INTERPRETER_YIELD_KIND_XREF;
 	rbuf = rz_interpreter_yield_rbuf_new(
 		yield_kind,
@@ -579,22 +476,24 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 	// All the things we need
 	bool return_code = true;
 	RzInterpreterSet *intp_iset = NULL;
-	HtUP *il_cache = NULL;
 
 	RzBuffer *io_buf = rz_buf_new_with_io(rz_analysis_get_io_bind(core->analysis));
 	RzSetU *symbol_targets = rz_set_u_new();
 	bool user_sent_signal = false;
 	struct ituple *iset_map = NULL;
-	RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges = rz_vector_new(sizeof(RzAnalysisXRef), NULL, NULL);
+	RzThread *il_cache_th = NULL;
 
 	rz_cons_push();
 
-	// The pseudo cache of IL effects.
-	// This is only a vector so we can simulate the ownership separation
-	// of the pointers.
-	il_cache = ht_up_new(NULL, (RzPVectorFree)rz_interpreter_il_bb_free);
+	RzILCache *il_cache = rz_il_cache_new(core->analysis, core->io,
+		rz_bin_object_get_sections(core->bin->cur->o),
+		RZ_IL_CACHE_CONFIG_NOP_UNLIFTED | RZ_IL_CACHE_CONFIG_SLEEP_SHORT);
+	if (!il_cache) {
+		return_code = false;
+		goto error_free;
+	}
 
-	collect_entry_points(core, insn_to_insn_edges, entry_points, symbol_targets);
+	collect_entry_points(core, entry_points, symbol_targets);
 
 	if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
 		eprintf("Total branch targets in binary: %" PFMT32d "\n", rz_set_u_size(entry_points));
@@ -621,7 +520,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		rz_warn_if_reached();
 		goto error_free;
 	}
-	size_t n_threads = 8;
+	size_t n_threads = 1;
 	iset_map = RZ_NEWS0(struct ituple, n_threads);
 
 	RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM] = { 0 };
@@ -632,11 +531,22 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		goto error_free;
 	}
 
+	//
+	// Initialize and spawn the interpreters.
+	//
 	for (size_t i = 0; i < n_threads; ++i) {
+		RzThreadRingBuf *il_req = NULL;
+		RzThreadQueue *il_queue = NULL;
+		if (!rz_il_cache_get_new_ring_buf(il_cache, &il_req, &il_queue)) {
+			return_code = false;
+			rz_warn_if_reached();
+			goto error_free;
+		}
 		intp_iset = rz_interpreter_set_new(
 			core->analysis,
 			prototype->p_interpreter,
 			RZ_INTERPRETER_ABSTRACTION_CONST,
+			il_req, il_queue,
 			yield_rbufs,
 			ignored_code);
 		if (!intp_iset) {
@@ -647,15 +557,23 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 
 		// Dispatch prototype interpreter into a thread.
 		RZ_LOG_DEBUG("INQUIRY: Start main interpretation thread.\n");
-		RzThread *interpr_th = interpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, intp_iset);
+		RzThread *interpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, intp_iset);
 		iset_map[i].ithread = interpr_th;
 		iset_map[i].iset = intp_iset;
 		iset_map[i].next_run_state = RZ_INTP_RUN_STATE_INIT;
 	}
 
+	//
+	// Spawn the IL cache.
+	//
+	il_cache_th = rz_th_new((RzThreadFunction)rz_il_cache_serve, il_cache);
+
 	ut64 intpr_terminated = 0;
 	ut64 check_signal = 0;
 
+	//
+	// Enter the loop to serve the interpreters.
+	//
 	for (ut64 i = 0;; check_signal++, i = (i + 1) % n_threads) {
 		if (check_signal % RZ_INQUIRY_CHECK_USER_SIGNAL_ITC == 0 && rz_cons_is_breaked()) {
 			user_sent_signal = true;
@@ -672,24 +590,38 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 				break;
 			}
 			// This interpreter is waiting for the next emulation task.
-			RzInterpreterBranch branch = { 0 };
-			if (!reduce_get_entry_points(iset, il_cache, entry_points, &branch.target_addr)) {
+			// TODO: Really reduce the entry points each and every time?
+			// This eats too much runtime I think.
+			// Better live with some duplicate emulation and reduce less often?
+			if (!reduce_get_entry_points(iset, il_cache, entry_points)) {
 				// None left.
+				// TODO Remove?
 				rz_th_queue_close(iset->il_queue);
 				iset_map[i].next_run_state = RZ_INTP_RUN_STATE_TERM;
 				intpr_terminated++;
 				// RZ_LOG_DEBUG("Next: TERM\n");
 				continue;
 			}
-			if (send_next_il_bb(core, iset->il_queue, il_cache, entry_points, &branch)) {
+			ut64 next_entry_point = rz_set_u_take(entry_points);
+			switch (rz_th_ring_buf_put(iset->entry_points, &next_entry_point)) {
+			case RZ_THREAD_RING_BUF_OK:
 				// Successfully lifted and pushed the entry point's basic block into the queue.
 				// Expect the interpreter to emulate now.
 				iset_map[i].next_run_state = RZ_INTP_RUN_STATE_EMU;
 				// RZ_LOG_DEBUG("Next: EMU\n");
-			} else {
-				iset_map[i].next_run_state = RZ_INTP_RUN_STATE_CLEAN;
-				rz_th_queue_close(iset->il_queue);
-				// RZ_LOG_DEBUG("Next: CLEAN\n");
+				break;
+			case RZ_THREAD_RING_BUF_FAIL:
+				// The entry point buffer is full.
+				// Insert the entry point to the todo set again.
+				rz_set_u_add(entry_points, next_entry_point);
+				break;
+			case RZ_THREAD_RING_BUF_CLOSED:
+				rz_warn_if_reached();
+				// Something went pretty wrong.
+				iset_map[i].next_run_state = RZ_INTP_RUN_STATE_TERM;
+				intpr_terminated++;
+				// RZ_LOG_DEBUG("Next: TERM\n");
+				continue;
 			}
 			break;
 		}
@@ -697,39 +629,12 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			if (expected_rs != RZ_INTP_RUN_STATE_EMU) {
 				break;
 			}
-			// From here on, the code plays the role of the cache, IO handler,
+			// From here on, the code plays the role of the IO handler,
 			// and yield consumer.
-			// - Waiting for new Effects to be requested and sending them.
 			// - Handling IO requests.
 			// - Receiving and adding the found xrefs to RzAnalysis.
 			// In the final implementation each of those roles would be split into
 			// two or more separated modules running in parallel.
-
-			// =========
-			// IL CACHE
-			// =========
-			//
-			// This block mimics the IL cache. It uplifts basic blocks and
-			// caches them.
-			if (!rz_th_ring_buf_is_empty_unsafe(iset->branch_rbuf)) {
-				RzInterpreterBranch branch = { 0 };
-				RzThreadRingBufResult r = rz_th_ring_buf_take(iset->branch_rbuf, &branch);
-				if (r == RZ_THREAD_RING_BUF_CLOSED) {
-					rz_warn_if_reached();
-					goto fatal_error;
-				} else if (r == RZ_THREAD_RING_BUF_OK) {
-					if (!send_next_il_bb(core, iset->il_queue, il_cache, entry_points, &branch)) {
-						// Signal interpreter the lifting failed.
-						rz_th_queue_close(iset->il_queue);
-						iset_map[i].next_run_state = RZ_INTP_RUN_STATE_CLEAN;
-						// RZ_LOG_DEBUG("Next: CLEAN\n");
-					} else {
-						RZ_LOG_DEBUG("Pushed: il_bb: 0x%llx\n", branch.target_addr);
-					}
-				}
-				// Else r == RZ_THREAD_RING_BUF_FAIL
-				// Due to a race condition the ring buffer was actually empty.
-			}
 
 			// ==========
 			// IO HANDLER
@@ -748,7 +653,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 					goto fatal_error;
 				} else if (r == RZ_THREAD_RING_BUF_OK) {
 					RzInterpreterIOResult io_res = { 0 };
-					handle_io_request(core, &iset->il_vm->vm->vm_memory, &io_req, &io_res);
+					handle_io_request(&iset->il_vm->vm->vm_memory, &io_req, &io_res);
 					if (rz_th_ring_buf_put(iset->io_result_rbuf, &io_res) != RZ_THREAD_RING_BUF_OK) {
 						rz_warn_if_reached();
 						goto fatal_error;
@@ -764,7 +669,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			//
 			// This part plays the role of a yield consumer.
 			// In our prototype it only receives xrefs and call candidates.
-			if (!handle_yields(core, iset->yield_rbufs)) {
+			if (!handle_yields(core->inquiry, iset->yield_rbufs)) {
 				iset_map[i].next_run_state = RZ_INTP_RUN_STATE_TERM;
 				intpr_terminated++;
 				// RZ_LOG_DEBUG("Next: TERM\n");
@@ -825,17 +730,28 @@ fatal_error:
 	if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
 		eprintf("\n");
 	}
-	if (!rz_inquiry_bb_cfg_add_xrefs(core->inquiry->bb_cfg, core->inquiry->xrefs)) {
+	RzIterator *iter = rz_il_cache_get_blocks(il_cache);
+	if (!iter) {
+		rz_warn_if_reached();
+		goto error_free;
+	}
+	void **it;
+	rz_iterator_foreach(iter, it) {
+		RzILCacheBlock *block = *it;
+		char *bstr = rz_il_cache_block_str(block);
+		RZ_LOG_DEBUG("Inquiry: Add ILCache block: %s\n", bstr);
+		free(bstr);
+		rz_inquiry_bb_cfg_add_basic_block(core->inquiry->bb_cfg, block->addr, block->size);
+	}
+	rz_iterator_free(iter);
+	if (!rz_inquiry_bb_cfg_add_xrefs(core->inquiry->bb_cfg, rz_il_cache_get_static_xrefs(il_cache))) {
+		rz_warn_if_reached();
+	}
+	if (!rz_inquiry_bb_cfg_add_xrefs(core->inquiry->bb_cfg, core->inquiry->dynamic_xrefs)) {
 		rz_warn_if_reached();
 	}
 	if (!rz_inquiry_bb_cfg_reduce(core->inquiry->bb_cfg)) {
 		rz_warn_if_reached();
-	}
-	if (!user_sent_signal) {
-		eprintf("Complement BB CFG with statically known xrefs...\n");
-		if (!rz_inquiry_bb_cfg_complement(core->inquiry, insn_to_insn_edges)) {
-			rz_warn_if_reached();
-		}
 	}
 
 	RZ_LOG_DEBUG("INQUIRY: Done\n");
@@ -845,11 +761,16 @@ fatal_error:
 error_free:
 	rz_interpreter_yield_rbuf_free(yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF]);
 	rz_interpreter_yield_rbuf_free(yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE]);
+	rz_interpreter_yield_rbuf_free(yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CONTROL_FLOW]);
 	free(iset_map);
 	rz_set_u_free(entry_points);
 	rz_buf_free(io_buf);
-	rz_vector_free(insn_to_insn_edges);
-	ht_up_free(il_cache);
+	rz_il_cache_stop_serving(il_cache);
+	if (il_cache_th) {
+		rz_th_wait(il_cache_th);
+		rz_th_free(il_cache_th);
+	}
+	rz_il_cache_free(il_cache);
 	rz_cons_pop();
 	return return_code && !user_sent_signal;
 }
@@ -897,7 +818,7 @@ static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry
 	rz_iterator_free(iter);
 
 	RzAnalysisXRef *xref;
-	rz_vector_foreach (inquiry->xrefs, xref) {
+	rz_vector_foreach (inquiry->dynamic_xrefs, xref) {
 		rz_analysis_xrefs_set(analysis, xref->from, xref->to, xref->type);
 	}
 

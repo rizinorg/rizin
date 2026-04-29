@@ -348,8 +348,7 @@ static bool read_up_to(RzAnalysis *analysis, ut64 addr, ut8 *buf, size_t buf_siz
 RZ_API bool rz_analysis_get_all_branch_targets(RzAnalysis *analysis,
 	const RzPVector /*<RzBinSection *>*/ *sections,
 	bool include_call_return_pts,
-	RZ_NONNULL RZ_OUT RzSetU *branch_targets,
-	RZ_NONNULL RZ_OUT RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges) {
+	RZ_NONNULL RZ_OUT RzSetU *branch_targets) {
 	rz_return_val_if_fail(analysis && analysis->cur && sections && branch_targets, false);
 	size_t buf_size = (analysis->cur->bits / 8) * 16;
 	ut8 *buf = RZ_NEWS0(ut8, buf_size);
@@ -381,16 +380,9 @@ RZ_API bool rz_analysis_get_all_branch_targets(RzAnalysis *analysis,
 			bool op_is_jump = rz_analysis_op_is_direct_jump(&op);
 			if ((op_is_call || op_is_jump) && op.jump != UT64_MAX) {
 				rz_set_u_add(branch_targets, op.jump);
-
-				RzAnalysisXRef edge = { .from = addr, .to = op.jump };
-				edge.type = op_is_call ? RZ_ANALYSIS_XREF_TYPE_CALL : RZ_ANALYSIS_XREF_TYPE_CODE;
-				rz_vector_push(insn_to_insn_edges, &edge);
-
 				if (op.fail != UT64_MAX) {
 					if (op_is_jump) {
-						RzAnalysisXRef edge = { .from = addr, .to = op.fail, .type = RZ_ANALYSIS_XREF_TYPE_CODE };
 						rz_set_u_add(branch_targets, op.fail);
-						rz_vector_push(insn_to_insn_edges, &edge);
 					}
 				}
 			}
@@ -398,8 +390,6 @@ RZ_API bool rz_analysis_get_all_branch_targets(RzAnalysis *analysis,
 				// If it is a call, also add the following instruction as reference.
 				// Because it is likely a return point.
 				rz_set_u_add(branch_targets, op.addr + op.size);
-				RzAnalysisXRef edge = { .from = addr, .to = op.fail, .type = RZ_ANALYSIS_XREF_TYPE_CALL_RET };
-				rz_vector_push(insn_to_insn_edges, &edge);
 			}
 			addr += op.size;
 			rz_analysis_op_fini(&op);

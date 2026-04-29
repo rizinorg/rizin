@@ -186,8 +186,7 @@
       </g>
       <path d="M48,10 L48,165 M48,10 q0,0 8,0 M48,165 q0,0 8,0" class="line"/>
       <text x="60" y="40" class="text small left" transform="rotate(90 60 40)">init</text>
-      <text x="170" y="70" class="text left">B I</text>
-      <text x="210" y="70" class="text left">basic  block</text>
+      <text x="170" y="70" class="text left">B I - Get entry point</text>
     </g>
 
     <!-- Circle -->
@@ -198,7 +197,7 @@
       <text x="170" y="45" class="text left">B II</text>
       <text x="225" y="45" class="text left">memory</text>
       <text x="170" y="100" class="text left">B III</text>
-      <text x="230" y="100" class="text left">basic  block</text>
+      <text x="230" y="100" class="text left">basic block</text>
     </g>
 
     <!-- Triangle -->

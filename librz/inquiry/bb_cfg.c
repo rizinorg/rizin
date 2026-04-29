@@ -88,7 +88,7 @@ RZ_IPI bool rz_inquiry_bb_cfg_add_edge(RzInquiryBBCFG *cfg, ut64 from_bb, ut64 t
 
 static bool is_cf_edge(const RzGraphEdge *e, void *unused) {
 	RzInquiryBBCFGEdgeType type = (utptr)rz_graph_edge_get_data(e);
-	return type == RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF;
+	return type == RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF || type == RZ_INQUIRY_BB_CFG_EDGE_TYPE_NONE;
 }
 
 /**
@@ -108,16 +108,18 @@ RZ_IPI bool rz_inquiry_bb_cfg_update_edge(RzInquiryBBCFG *cfg, ut64 from_bb, ut6
 	return rz_graph_update_edge_by_id(cfg->graph, from_bb, to_bb, RZ_GRAPH_INT_AS_DATA(type), is_cf_edge, NULL);
 }
 
-RZ_IPI bool rz_inquiry_bb_cfg_get_basic_block(const RzInquiryBBCFG *cfg, ut64 bb_addr, RZ_OUT RzInquiryBB *bb) {
-	rz_return_val_if_fail(cfg && bb, false);
+RZ_IPI bool rz_inquiry_bb_cfg_get_basic_block(const RzInquiryBBCFG *cfg, ut64 bb_addr, RZ_OUT RZ_NULLABLE RzInquiryBB *bb) {
+	rz_return_val_if_fail(cfg, false);
 	const RzGraphNode *n = rz_graph_find_node(cfg->graph, bb_addr);
 	if (!n) {
 		RZ_LOG_WARN("Could not find BB at 0x%" PFMT64x "\n", bb_addr);
 		return false;
 	}
-	const RzInquiryBB *n_data = rz_graph_node_get_data(n);
-	bb->addr = n_data->addr;
-	bb->size = n_data->size;
+	if (bb) {
+		const RzInquiryBB *n_data = rz_graph_node_get_data(n);
+		bb->addr = n_data->addr;
+		bb->size = n_data->size;
+	}
 	return true;
 }
 
@@ -163,7 +165,7 @@ RZ_IPI bool rz_inquiry_bb_cfg_add_basic_block(RzInquiryBBCFG *cfg, ut64 addr, ut
 	return true;
 }
 
-RZ_IPI bool rz_inquiry_bb_cfg_add_xrefs(RzInquiryBBCFG *cfg, RzVector /*<RzAnalysisXRef>*/ *xrefs) {
+RZ_IPI bool rz_inquiry_bb_cfg_add_xrefs(RzInquiryBBCFG *cfg, const RzVector /*<RzAnalysisXRef>*/ *xrefs) {
 	RzAnalysisXRef *xref;
 	rz_vector_foreach (xrefs, xref) {
 		switch (xref->type) {

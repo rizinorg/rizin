@@ -15,25 +15,25 @@
 #define MAX_INVOCATIONS_PER_BB 3
 
 static bool eval(RZ_NONNULL RzInterpreterSet *iset,
-	RZ_NONNULL const RzInterpreterILBB *il_bb,
+	RZ_NONNULL const RzILCacheBlock *il_bb,
 	void *plugin_data) {
 	ProtoIntrprPluginData *pdata = plugin_data;
 
 	// Check invocation count of the current address.
 	// Never execute the same address more than MAX_INVOCATIONS_PER_BB times.
 	bool found = false;
-	HtUUKv *ic_pc = ht_uu_find_kv(pdata->bb_invocation_count, il_bb->bb_addr, &found);
+	HtUUKv *ic_pc = ht_uu_find_kv(pdata->bb_invocation_count, il_bb->addr, &found);
 	if (found) {
 		ic_pc->value++;
-		RZ_LOG_DEBUG("Eval BB (ic: %" PFMT64d ") = 0x%" PFMT64x "\n", ic_pc->value, il_bb->bb_addr);
+		RZ_LOG_DEBUG("Eval BB (ic: %" PFMT64d ") = 0x%" PFMT64x "\n", ic_pc->value, il_bb->addr);
 		if (ic_pc->value > MAX_INVOCATIONS_PER_BB) {
 			// TODO: Make it configurable
-			RZ_LOG_DEBUG("Reached maximum number of invocations of basic block at 0x%" PFMT64x ". Skipping it.\n", il_bb->bb_addr)
-			set_pc(iset->astate, il_bb->bb_addr + il_bb->size, plugin_data);
+			RZ_LOG_DEBUG("Reached maximum number of invocations of basic block at 0x%" PFMT64x ". Skipping it.\n", il_bb->addr)
+			set_pc(iset->astate, il_bb->addr + il_bb->size, plugin_data);
 			return true;
 		}
 	} else {
-		ht_uu_update(pdata->bb_invocation_count, il_bb->bb_addr, 1);
+		ht_uu_update(pdata->bb_invocation_count, il_bb->addr, 1);
 	}
 
 	// Reset call candidate tracking for each basic block.
@@ -45,7 +45,7 @@ static bool eval(RZ_NONNULL RzInterpreterSet *iset,
 		ProtoIntrprAbstrData *apc = AD(iset->astate->pc->abstr_data);
 		ut64 pc = rz_bv_to_ut64(apc->bv);
 		RZ_LOG_DEBUG("Eval PC = 0x%" PFMT64x "\n", pc);
-		RzInterpreterInsnPkt *pkt = *it;
+		RzILCacheInsnPkt *pkt = *it;
 		if (!interpreter_prototype_eval_effect(iset, pkt->effect, pkt->insn_pkt_size, plugin_data)) {
 			return false;
 		}
@@ -74,9 +74,9 @@ bool successors(RZ_NONNULL const RzInterpreterAbstrState *state,
 	}
 
 	ut64 next_pc = rz_bv_to_ut64(apc->bv);
-	RzInterpreterBranch branch = { 0 };
-	branch.target_addr = next_pc;
-	branch.branching_bb_addr = pdata->prev_pc;
+	RzInterpreterCtrlFlow branch = { 0 };
+	branch.target_addr = branch.actual_target = next_pc;
+	branch.src_block_addr = pdata->prev_pc;
 	rz_vector_push(successors, &branch);
 	return true;
 }
