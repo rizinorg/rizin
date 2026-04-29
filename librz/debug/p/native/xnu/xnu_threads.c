@@ -24,6 +24,7 @@ static void xnu_thread_free(xnu_thread_t *thread) {
 RZ_IPI bool rz_xnu_thread_get_drx(RzXnuDebug *ctx, xnu_thread_t *thread) {
 	rz_return_val_if_fail(ctx && thread, false);
 	kern_return_t rc;
+	eprintf("[XNU] rz_xnu_thread_get_drx: thread.port=%d cpu=%d\n", (int)thread->port, (int)ctx->cpu);
 #if __x86_64__ || __i386__
 	thread->flavor = x86_DEBUG_STATE;
 	thread->count = x86_DEBUG_STATE_COUNT;
@@ -58,6 +59,7 @@ RZ_IPI bool rz_xnu_thread_get_drx(RzXnuDebug *ctx, xnu_thread_t *thread) {
 	rc = KERN_FAILURE;
 #endif
 	if (rc != KERN_SUCCESS) {
+		eprintf("[XNU] rz_xnu_thread_get_drx: thread_get_state failed rc=%d (%s) flavor=%d cpu=%d\n", rc, mach_error_string(rc), thread->flavor, (int)ctx->cpu);
 		LOG_MACH_ERROR("thread_get_state", rc);
 		thread->count = 0;
 		return false;
@@ -68,6 +70,7 @@ RZ_IPI bool rz_xnu_thread_get_drx(RzXnuDebug *ctx, xnu_thread_t *thread) {
 RZ_IPI bool rz_xnu_thread_set_drx(RzXnuDebug *ctx, xnu_thread_t *thread) {
 	rz_return_val_if_fail(ctx && thread, false);
 	kern_return_t rc;
+	eprintf("[XNU] rz_xnu_thread_set_drx: thread.port=%d\n", (int)thread->port);
 #if __i386__ || __x86_64__
 	x86_debug_state_t *regs = &thread->drx;
 	if (!regs) {
@@ -128,6 +131,7 @@ RZ_IPI bool rz_xnu_thread_set_drx(RzXnuDebug *ctx, xnu_thread_t *thread) {
 RZ_IPI bool rz_xnu_thread_set_gpr(RzXnuDebug *ctx, xnu_thread_t *thread) {
 	rz_return_val_if_fail(ctx && thread, false);
 	kern_return_t rc;
+	eprintf("[XNU] rz_xnu_thread_set_gpr: thread.port=%d\n", (int)thread->port);
 	RZ_REG_T *regs = (RZ_REG_T *)&thread->gpr;
 	if (!regs) {
 		return false;
@@ -185,6 +189,7 @@ RZ_IPI bool rz_xnu_thread_get_gpr(RzXnuDebug *ctx, xnu_thread_t *thread) {
 		return false;
 	}
 	kern_return_t rc;
+	eprintf("[XNU] rz_xnu_thread_get_gpr: thread.port=%d cpu=%d\n", (int)thread->port, (int)ctx->cpu);
 #if __POWERPC__
 	thread->state = regs;
 #elif __arm64 || __aarch64 || __aarch64__ || __arm64__
@@ -209,9 +214,12 @@ RZ_IPI bool rz_xnu_thread_get_gpr(RzXnuDebug *ctx, xnu_thread_t *thread) {
 	thread->count = x86_THREAD_STATE_COUNT;
 	thread->state_size = (ctx->cpu == CPU_TYPE_X86_64) ? sizeof(x86_thread_state64_t) : sizeof(x86_thread_state32_t);
 #endif
+	eprintf("[XNU] rz_xnu_thread_get_gpr: calling thread_get_state(port=%d, flavor=%d, count=%d, state_size=%zu, cpu=%d)\n",
+		(int)thread->port, thread->flavor, (int)thread->count, thread->state_size, (int)ctx->cpu);
 	rc = thread_get_state(thread->port, thread->flavor,
 		(thread_state_t)regs, &thread->count);
 	if (rc != KERN_SUCCESS) {
+		eprintf("[XNU] rz_xnu_thread_get_gpr: thread_get_state failed rc=%d (%s) flavor=%d cpu=%d\n", rc, mach_error_string(rc), thread->flavor, (int)ctx->cpu);
 		LOG_MACH_ERROR("thread_get_state", rc);
 		thread->count = 0;
 		return false;
