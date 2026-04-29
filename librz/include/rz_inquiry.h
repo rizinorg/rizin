@@ -13,6 +13,7 @@
 extern "C" {
 #endif
 
+#include <rz_inquiry/rz_il_cache.h>
 #include <rz_inquiry/rz_interpreter.h>
 #include <rz_inquiry/rz_bb_graph.h>
 
@@ -34,7 +35,7 @@ typedef struct {
 	HtSP /*<void *>*/ *plugins_data;
 
 	HtUP /*<RzAnalysisCallCandidate *>*/ *call_candidates; ///< Indexed by address of basic block with the call candidate.
-	RzVector /*<RzAnalysisXRef>*/ *xrefs; ///< All xrefs the interpreter detected.
+	RzVector /*<RzAnalysisXRef>*/ *dynamic_xrefs; ///< All xrefs the interpreter detected.
 	RzInquiryBBCFG *bb_cfg; ///< The control flow graph all the basic blocks build.
 } RzInquiry;
 
@@ -47,8 +48,6 @@ RZ_API bool rz_inquiry_plugin_del(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_NO
 
 RZ_API RZ_OWN RzInquiry *rz_inquiry_new(void);
 RZ_API void rz_inquiry_free(RZ_OWN RZ_NULLABLE RzInquiry *q);
-
-RZ_API RZ_OWN RzInterpreterILBB *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *analysis, RZ_BORROW RZ_NONNULL RzIO *io, ut64 addr);
 
 RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL const RzPVector /*<RzBinSection *>*/ *allowed_segments);
 

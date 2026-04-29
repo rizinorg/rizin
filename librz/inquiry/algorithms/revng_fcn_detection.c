@@ -132,8 +132,6 @@ static void recurse_into_fcn_bbs(
 		ut64 succ_addr = rz_graph_node_get_id(rz_graph_edge_get_to(e));
 		switch (etype) {
 		case RZ_INQUIRY_BB_CFG_EDGE_TYPE_NONE:
-			rz_warn_if_reached();
-			goto err_return;
 		case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF:
 		case RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP:
 			// Just an edge between two basic blocks.

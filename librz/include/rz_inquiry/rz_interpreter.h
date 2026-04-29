@@ -9,7 +9,8 @@
 #ifndef RZ_INTERPRETER
 #define RZ_INTERPRETER
 
-#include "rz_util/rz_bitvector.h"
+#include "rz_inquiry/rz_bb_graph.h"
+#include <rz_inquiry/rz_il_cache.h>
 #include <rz_arch.h>
 #include <rz_io.h>
 #include <rz_th.h>
@@ -19,10 +20,9 @@
 /**
  * \brief Only one IO request at a time is possible (currently).
  */
-#define RZ_INTERPRETER_IO_RBUF_SIZE    128
-#define RZ_INTERPRETER_IL_QUEUE_SIZE   128
-#define RZ_INTERPRETER_ADDR_RBUF_SIZE  1024
-#define RZ_INTERPRETER_YIELD_RBUF_SIZE 128
+#define RZ_INTERPRETER_IO_RBUF_SIZE           128
+#define RZ_INTERPRETER_YIELD_RBUF_SIZE        128
+#define RZ_INTERPRETER_ENTRY_POINTS_RBUF_SIZE 4
 
 typedef struct rz_intp_run_state RzIntpRunState;
 
@@ -69,23 +69,38 @@ typedef struct {
 } RzInterpreterAbstrVal;
 
 typedef struct {
+	RzInquiryBBCFGEdgeType cf_type; ///< Control flow type.
 	/**
-	 * \brief The address of the bb which branches.
-	 * This might be UT64_MAX, if there was no jump that branch occurred on.
-	 * For example, if the interpreter was just initialized.
+	 * \brief The address of the block which changes the control flow.
+	 * This might be UT64_MAX, if there was no jump that flow originated from.
+	 * If the interpreter was just initialized, for example.
 	 */
-	ut64 branching_bb_addr;
-	ut64 target_addr; ///< The target address it branches to.
+	ut64 src_block_addr;
+	/**
+	 * \brief The original target address a block branches to.
+	 */
+	ut64 target_addr;
 	/**
 	 * \brief Set after a attempted jump to an ignored code region.
-	 * This is almost always a call to an imported symbol.
-	 * Instead of using the target_addr above, the il_cache should serve the alt_target_addr.
-	 * target_addr should still be marked as potential cfep.
-	 *
+	 * This is almost always a call to an unloaded imported symbol.
 	 * 0 is an invalid address here.
 	 */
 	ut64 alt_target;
-} RzInterpreterBranch;
+	/**
+	 * \brief Equal to alt_target if alt_target != 0.
+	 * Otherwise equal to target_addr
+	 */
+	ut64 actual_target;
+	/**
+	 * \brief Number of bytes of the destination code block.
+	 * Only set after the IL block was provided by the cache.
+	 */
+	size_t target_block_size;
+	/**
+	 * \brief Control flow type.
+	 */
+	RzInquiryBBCFGEdgeType type;
+} RzInterpreterCtrlFlow;
 
 typedef struct {
 	RzInterpreterAbstraction kinds; ///< The abstractions of the state.
@@ -114,6 +129,12 @@ typedef enum {
 	 * it is a strong indicator that the jump is a call and the next address a return point.
 	 */
 	RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE,
+
+	/**
+	 * \brief Yield is a RzInterpreterCtrlFlow.
+	 * Reported by every interpreter.
+	 */
+	RZ_INTERPRETER_YIELD_KIND_CONTROL_FLOW,
 	RZ_INTERPRETER_YIELD_KIND_NUM,
 } RzInterpreterYieldKind;
 
@@ -136,17 +157,6 @@ typedef struct {
 	RzInterpreterYieldFilterData *filter_data;
 	RzThreadRingBuf *rbuf;
 } RzInterpreterYieldRBuf;
-
-typedef struct {
-	RzPVector *il_ops; ///< The sequence of IL operations of this basic block.
-	size_t size; ///< The number of bytes the basic block has.
-	ut64 bb_addr; ///< The address where the basic block starts.
-} RzInterpreterILBB;
-
-typedef struct {
-	RzILOpEffect *effect; ///< Vector with all instruction packets of a basic block.
-	size_t insn_pkt_size; ///< The size of the instruction packet. Used to increment the PC if no JMP occurred.
-} RzInterpreterInsnPkt;
 
 typedef struct rz_interpreter_set RzInterpreterSet;
 
@@ -192,7 +202,7 @@ typedef struct {
 	 * \brief Evaluates an effect with the mutable state.
 	 */
 	bool (*eval)(RZ_NONNULL RzInterpreterSet *iset,
-		RZ_NONNULL const RzInterpreterILBB *il_bb,
+		RZ_NONNULL const RzILCacheBlock *il_bb,
 		void *plugin_data);
 	/**
 	 * \brief Determines the next successor addresses from state.
@@ -254,10 +264,18 @@ struct rz_interpreter_set {
 	 */
 	RzThreadSemaphore *run_state_sync;
 
+	/**
+	 * \brief Entry points the interpreter starts interpreting from.
+	 */
+	RzThreadRingBuf *entry_points;
+
 	RzAnalysisILVM *il_vm; ///< The RzAnalysisILVM for memory IO.
 
-	RzThreadQueue /*<const RzInterpreterILOp *>*/ *il_queue; ///< The queue to receive the IL effects.
-	RzThreadRingBuf /*<RzInterpreterBranch>*/ *branch_rbuf; ///< The ring buffer to send requests to the cache what address to get the next IL op from.
+	RZ_LIFETIME(RzILCache)
+	RZ_BORROW RzThreadQueue /*<const RzInterpreterILOp *>*/ *il_queue; ///< The queue to receive the IL effects.
+	RZ_LIFETIME(RzILCache)
+	RZ_BORROW RzThreadRingBuf /*<RzInterpreterBranch>*/ *il_request_rbuf; ///< The ring buffer to send requests to the cache what address to get the next IL op from.
+
 	RzThreadRingBuf /*<RzInterpreterIORequest>*/ *io_request_rbuf; ///< The ring buffer for read/write requests to the IO layer.
 	RzThreadRingBuf /*<const RzInterpreterIOResult *>*/ *io_result_rbuf; ///< The ring buffer for the read/write requests' answers.
 
@@ -288,9 +306,6 @@ RZ_API const char *rz_intp_run_state_flag_str(RzIntpRunStateFlag flag);
 
 RZ_IPI void rz_intp_run_state_set(RZ_BORROW RZ_NONNULL RzIntpRunState *state, RzIntpRunStateFlag flag);
 
-RZ_API void rz_interpreter_il_bb_free(RZ_NULLABLE RZ_OWN RzInterpreterILBB *il_bb);
-RZ_API void rz_interpreter_insn_pkt_free(RZ_NULLABLE RZ_OWN RzInterpreterInsnPkt *pkt);
-
 RZ_API void rz_interpreter_yield_rbuf_free(RZ_OWN RZ_NULLABLE RzInterpreterYieldRBuf *yield_rbuf);
 
 RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
@@ -308,6 +323,8 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RzAnalysis *analysis,
 	RZ_NONNULL RZ_OWN RzInterpreterPlugin *plugin,
 	RzInterpreterAbstraction abstraction,
+	RZ_NONNULL RZ_BORROW RzThreadRingBuf *il_request_rbuf,
+	RZ_NONNULL RZ_BORROW RzThreadQueue *il_queue,
 	RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM],
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code);
 RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset);

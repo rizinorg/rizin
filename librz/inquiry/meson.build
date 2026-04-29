@@ -15,7 +15,7 @@ rz_inquiry_sources = [
   'algorithms/revng_fcn_detection.c',
   'bb_cfg.c',
   'inquiry.c',
-  'inquiry_helpers.c',
+  'il_cache.c',
 ]
 
 subdir('interpreter')
