@@ -11,7 +11,8 @@
 
 #include "../core_private.h"
 
-#define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
+#define PF_USAGE_STR \
+	"pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 #define CMD_PRINT_IO_STRING_SCAN_MAX (1024ULL * 1024ULL)
 
 static const ut32 colormap[256] = {
