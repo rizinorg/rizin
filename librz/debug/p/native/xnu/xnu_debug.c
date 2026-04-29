@@ -151,7 +151,9 @@ int xnu_attach(RzDebug *dbg, int pid) {
 	rz_return_val_if_fail(dbg && dbg->plugin_data, -1);
 	RzXnuDebug *ctx = dbg->plugin_data;
 
+	eprintf("[XNU] xnu_attach: entering for pid=%d\n", pid);
 	if (ctx->task_dbg != 0 && ctx->old_pid == pid) {
+		eprintf("[XNU] xnu_attach: already attached to pid=%d (task_dbg=%d)\n", pid, (int)ctx->task_dbg);
 		dbg->pid = pid;
 		return pid;
 	}
@@ -159,32 +161,45 @@ int xnu_attach(RzDebug *dbg, int pid) {
 	dbg->pid = pid;
 
 	ctx->cpu = xnu_get_cpu_type(pid);
+	eprintf("[XNU] xnu_attach: detected cpu type for pid %d = %d\n", pid, (int)ctx->cpu);
 	if (!ctx->cpu) {
 		RZ_LOG_ERROR("xnu_attach failed to determine cpu type of pid %d\n", pid);
 	}
 
 	// First start listening to exceptions, which will also deliver signals to us
+	eprintf("[XNU] xnu_attach: creating exception thread for pid=%d\n", pid);
 	if (!xnu_create_exception_thread(dbg)) {
 		RZ_LOG_ERROR("Failed to start listening to mach exceptions\n");
 		return -1;
 	}
+	eprintf("[XNU] xnu_attach: exception thread created (exception_port=%d)\n", (int)ctx->ex.exception_port);
 
 	// Then do the actual attach.
+	eprintf("[XNU] xnu_attach: calling ptrace(PT_ATTACHEXC) for pid=%d\n", pid);
 	int r = rz_debug_ptrace(dbg, PT_ATTACHEXC, pid, 0, 0);
 	if (r < 0) {
 		perror("ptrace(PT_ATTACHEXC)");
 		RZ_LOG_ERROR("Failed to attach to process\n");
 		return -1;
 	}
+	eprintf("[XNU] xnu_attach: ptrace returned %d\n", r);
 
 	// PT_ATTACHEXC will cause a SIGSTOP in the debuggee, so wait for it
 	// Our signal handler will also suspend the task, so no need to call xnu_stop if successful
+	eprintf("[XNU] xnu_attach: waiting for SIGSTOP from PT_ATTACHEXC (pid=%d)\n", pid);
 	RzDebugReasonType reas = xnu_wait_for_exception(dbg, pid, 1000, true);
+	eprintf("[XNU] xnu_attach: xnu_wait_for_exception returned %d, dbg->reason.signum=%d\n", (int)reas, dbg->reason.signum);
 	if (reas != RZ_DEBUG_REASON_SIGNAL || dbg->reason.signum != SIGSTOP) {
 		RZ_LOG_ERROR("SIGSTOP from PT_ATTACHEXC not observed\n");
-		xnu_stop(dbg, pid);
+		eprintf("[XNU] xnu_attach: calling xnu_stop to suspend pid=%d\n", pid);
+		if (!xnu_stop(dbg, pid)) {
+			eprintf("[XNU] xnu_attach: xnu_stop failed for pid=%d\n", pid);
+		} else {
+			eprintf("[XNU] xnu_attach: xnu_stop succeeded for pid=%d\n", pid);
+		}
 	}
 
+	eprintf("[XNU] xnu_attach: finished for pid=%d\n", pid);
 	return pid;
 }
 
@@ -520,6 +535,7 @@ task_t pid_to_task(RzXnuDebug *ctx, int pid) {
 	kern_return_t kr;
 	task_t task = -1;
 	int err;
+	eprintf("[XNU] pid_to_task: requested pid=%d old_pid=%d task_dbg=%d\n", pid, ctx->old_pid, (int)ctx->task_dbg);
 	/* it means that we are done with the task*/
 	if (ctx->task_dbg != 0 && ctx->old_pid == pid) {
 		return ctx->task_dbg;

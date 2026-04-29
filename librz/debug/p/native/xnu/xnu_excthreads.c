@@ -420,7 +420,10 @@ RZ_IPI RzDebugReasonType xnu_wait_for_exception(RzDebug *dbg, int pid, ut32 time
 	}
 	msg.hdr.msgh_local_port = ctx->ex.exception_port;
 	msg.hdr.msgh_size = sizeof(exc_msg);
+	eprintf("[XNU] xnu_wait_for_exception: pid=%d timeout_ms=%u quiet_signal=%d listening on port=%d\n",
+		pid, (unsigned)timeout_ms, (int)quiet_signal, (int)ctx->ex.exception_port);
 	for (;;) {
+		eprintf("[XNU] xnu_wait_for_exception: calling mach_msg to receive on port=%d\n", (int)ctx->ex.exception_port);
 		kr = mach_msg(
 			&msg.hdr,
 			MACH_RCV_MSG | MACH_RCV_INTERRUPT | (timeout_ms ? MACH_RCV_TIMEOUT : 0), 0,
@@ -428,20 +431,26 @@ RZ_IPI RzDebugReasonType xnu_wait_for_exception(RzDebug *dbg, int pid, ut32 time
 			timeout_ms ? timeout_ms : MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
 		if (kr == MACH_RCV_INTERRUPTED) {
 			reason = RZ_DEBUG_REASON_MACH_RCV_INTERRUPTED;
+			eprintf("[XNU] mach_msg interrupted\n");
 			break;
 		} else if (kr == MACH_RCV_TIMED_OUT) {
 			RZ_LOG_ERROR("Waiting for Mach exception timed out");
 			reason = RZ_DEBUG_REASON_UNKNOWN;
+			eprintf("[XNU] mach_msg timed out after %u ms\n", (unsigned)timeout_ms);
 			break;
 		} else if (kr != MACH_MSG_SUCCESS) {
 			RZ_LOG_ERROR("message didn't succeeded\n");
+			eprintf("[XNU] mach_msg failed with kr=%d\n", kr);
 			break;
 		}
+		eprintf("[XNU] mach_msg received: msgh_id=%d msgh_local_port=%d\n", msg.hdr.msgh_id, msg.hdr.msgh_local_port);
 		ret = validate_mach_message(ctx, dbg->pid, &msg);
+		eprintf("[XNU] validate_mach_message returned %d\n", (int)ret);
 		if (!ret) {
 			ret = handle_dead_notify(dbg, &msg);
 			if (ret) {
 				reason = RZ_DEBUG_REASON_DEAD;
+				eprintf("[XNU] handle_dead_notify -> process dead\n");
 				break;
 			}
 		}
@@ -461,6 +470,7 @@ RZ_IPI RzDebugReasonType xnu_wait_for_exception(RzDebug *dbg, int pid, ut32 time
 		}
 
 		reason = handle_exception_message(dbg, &msg, &ret_code, quiet_signal);
+		eprintf("[XNU] handle_exception_message returned reason=%d ret_code=%d\n", (int)reason, ret_code);
 		encode_reply(&reply, &msg.hdr, ret_code);
 		kr = mach_msg(&reply.Head, MACH_SEND_MSG | MACH_SEND_INTERRUPT,
 			reply.Head.msgh_size, 0,
@@ -474,6 +484,7 @@ RZ_IPI RzDebugReasonType xnu_wait_for_exception(RzDebug *dbg, int pid, ut32 time
 		break; // to avoid infinite loops
 	}
 	dbg->stopaddr = rz_debug_reg_get(dbg, "PC");
+	eprintf("[XNU] xnu_wait_for_exception: setting dbg->stopaddr = 0x%llx\n", (unsigned long long)dbg->stopaddr);
 	return reason;
 }
 
