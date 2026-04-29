@@ -46,7 +46,6 @@ dpa $(!sh -c 'cat "${TMPDIR:-/tmp}/rz-dpa-$PPID.pid"')
 pi 3 @ pc
 !sh -c 'pidfile="${TMPDIR:-/tmp}/rz-dpa-$PPID.pid"; kill "$(cat "$pidfile")" 2>/dev/null; rm -f "$pidfile"'
 EOF
-REGEXP_FILTER_OUT=((b\.lo)|(pacibsp)|(stp fp, lr, \[sp, -0x10\]!))
 EXPECT=<<EOF
 b.lo
 pacibsp
