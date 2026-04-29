@@ -973,6 +973,7 @@ RZ_IPI void rz_types_define(RzCore *core, const char *type) {
 	char *error_msg = NULL;
 	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	int result = rz_type_parse_string_stateless(typedb->parser, tmp, &error_msg);
+	free(tmp);
 	if (result && error_msg) {
 		rz_str_trim_tail(error_msg);
 		RZ_LOG_ERROR("core: %s\n", error_msg);
