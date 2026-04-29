@@ -269,10 +269,10 @@ struct coff_reloc {
 };
 
 struct coff_ti_reloc {
-	ut32 rz_vaddr; /* Reference Address */
-	ut32 rz_symndx; /* Symbol index */
-	ut16 rz_reserved; /* Reserved */
-	ut16 rz_type; /* Type of relocation */
+	ut32 rz_vaddr; ///< Reference Address
+	ut32 rz_symndx; ///< Symbol index
+	ut16 rz_reserved; ///< Reserved
+	ut16 rz_type; ///< Type of relocation
 };
 
 #define COFF_RELOC_SIZE    10
