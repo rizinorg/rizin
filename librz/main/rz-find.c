@@ -72,62 +72,48 @@ typedef struct {
 static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	RzfindContext *ctx = (RzfindContext *)user;
 	RzfindOptions *ro = ctx->opt;
-	int delta = addr - ro->cur;
-	if (ro->cur > addr && (ro->cur - addr == kw->keyword_length - 1)) {
+	ut64 delta;
+	if (addr >= ro->cur) {
+		delta = addr - ro->cur;
+	} else if (ro->cur - addr == (kw->keyword_length - 1)) {
 		// This case occurs when there is hit in search left over
-		delta = ro->cur - addr;
+		delta = 0;
+	} else {
+		eprintf("Invalid delta\n");
+		return 0;
 	}
-	if (delta < 0 || delta >= ro->bsize) {
+	if (delta >= ro->bsize) {
 		eprintf("Invalid delta\n");
 		return 0;
 	}
 	if (!ro->quiet && !ro->json) {
 		printf("File: %s\n", ctx->filename);
 	}
-	char _str[256];
-	char *str = _str;
-	*_str = 0;
-	if (ro->showstr) {
-		if (ro->widestr) {
-			str = _str;
-			int i, j = 0;
-			for (i = delta; ro->buf[i] && i < sizeof(_str); i++) {
-				char ch = ro->buf[i];
-				if (ch == '"' || ch == '\\') {
-					ch = '\'';
-				}
-				if (!IS_PRINTABLE(ch)) {
-					break;
-				}
-				str[j++] = ch;
-				i++;
-				if (j > 80) {
-					strcpy(str + j, "...");
-					j += 3;
-					break;
-				}
-				if (ro->buf[i]) {
-					break;
-				}
+	size_t maxlen = ro->bsize - delta;
+	char *str = malloc(maxlen + 1);
+	if (!str) {
+		return 0;
+	}
+	if (ro->showstr && ro->widestr) {
+		size_t j = 0;
+		for (size_t i = delta; i < ro->bsize && ro->buf[i] && j < maxlen; i++) {
+			char ch = ro->buf[i];
+			if (ch == '"' || ch == '\\') {
+				ch = '\'';
 			}
-			str[j] = 0;
-		} else {
-			size_t i;
-			for (i = 0; i < sizeof(_str) - 1; i++) {
-				char ch = ro->buf[delta + i];
-				if (ch == '"' || ch == '\\') {
-					ch = '\'';
-				}
-				if (!ch || !IS_PRINTABLE(ch)) {
-					break;
-				}
-				str[i] = ch;
+			if (!IS_PRINTABLE(ch)) {
+				break;
 			}
-			str[i] = 0;
+			str[j++] = ch;
+			i++;
+			if (i >= ro->bsize || !ro->buf[i]) {
+				break;
+			}
 		}
+		str[j] = 0;
 	} else {
 		size_t i;
-		for (i = 0; i < sizeof(_str) - 1; i++) {
+		for (i = 0; i < maxlen; i++) {
 			char ch = ro->buf[delta + i];
 			if (ch == '"' || ch == '\\') {
 				ch = '\'';
@@ -159,6 +145,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		}
 	}
 	if (ro->exec_command) {
+		free(str);
 		char *command = rz_str_newf("%s %s", ro->exec_command, ro->curfile);
 		int status = rz_sys_system(command);
 		if (status == -1) {
@@ -174,8 +161,10 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			printf("%s", output);
 			free(output);
 		}
+		free(str);
 		return 1;
 	}
+	free(str);
 	return 1;
 }
 
