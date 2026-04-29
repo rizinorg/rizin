@@ -4322,8 +4322,7 @@ static int agraph_refresh(AGraphContext *grp_ctx) {
 	// allow to change the current function during debugging
 	if (g->is_instep && core->bin->is_debugger) {
 		// seek only when the graph node changes
-		const char *pc = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_PC);
-		RzRegItem *r = rz_reg_get(core->dbg->reg, pc, -1);
+		RzRegItem *r = rz_reg_get_by_role(core->dbg->reg, RZ_REG_NAME_PC);
 		ut64 addr = rz_reg_get_value(core->dbg->reg, r);
 		RzANode *acur = get_anode(g->curnode);
 

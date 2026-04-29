@@ -314,8 +314,7 @@ static int rz_debug_gdb_reg_write(RzDebug *dbg, int type, const ut8 *buf, int si
 	int buflen = 0;
 	RzReg *rreg = rz_analysis_get_reg(dbg->analysis);
 	int bits = rz_analysis_get_bits(dbg->analysis);
-	const char *pcname = rz_reg_get_name(rreg, RZ_REG_NAME_PC);
-	RzRegItem *reg = rz_reg_get(rreg, pcname, 0);
+	RzRegItem *reg = rz_reg_get_by_role(rreg, RZ_REG_NAME_PC);
 	if (reg && bits != reg->size) {
 		bits = reg->size;
 	}

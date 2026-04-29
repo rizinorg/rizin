@@ -382,13 +382,6 @@ RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg) {
 	rz_return_val_if_fail(reg->reg_profile.alias && reg->reg_profile.defs, false);
 
 	RzListIter *it;
-	RzRegProfileAlias *alias;
-	rz_list_foreach (reg->reg_profile.alias, it, alias) {
-		if (!rz_reg_set_name(reg, alias->role, alias->reg_name)) {
-			RZ_LOG_WARN("Invalid alias gviven.\n");
-			return false;
-		}
-	}
 	RzRegProfileDef *def;
 	rz_list_foreach (reg->reg_profile.defs, it, def) {
 		RzRegItem *item = RZ_NEW0(RzRegItem);
@@ -419,6 +412,14 @@ RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg) {
 		}
 
 		add_item_to_regset(reg, item);
+	}
+	RzRegProfileAlias *alias;
+	rz_list_foreach (reg->reg_profile.alias, it, alias) {
+		RzRegItem *item = rz_reg_get(reg, alias->reg_name, RZ_REG_TYPE_ANY);
+		if (!item) {
+			RZ_LOG_WARN("Invalid alias given in register profile: %s.\n", alias->reg_name);
+		}
+		reg->by_role[alias->role] = item;
 	}
 
 	return true;

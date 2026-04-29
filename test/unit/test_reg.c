@@ -4,27 +4,15 @@
 #include <rz_reg.h>
 #include "minunit.h"
 
-bool test_rz_reg_set_name(void) {
-	RzReg *reg;
-
-	reg = rz_reg_new();
-	mu_assert_notnull(reg, "rz_reg_new () failed");
-
-	rz_reg_set_name(reg, RZ_REG_NAME_PC, "eip");
-	const char *name = rz_reg_get_name(reg, RZ_REG_NAME_PC);
-	mu_assert_streq(name, "eip", "PC register alias is eip");
-
-	rz_reg_free(reg);
-	mu_end;
-}
-
 bool test_rz_reg_set_profile_string(void) {
 	RzReg *reg;
 
 	reg = rz_reg_new();
 	mu_assert_notnull(reg, "rz_reg_new () failed");
 
-	rz_reg_set_profile_string(reg, "=PC eip");
+	rz_reg_set_profile_string(reg,
+		"=PC eip\n"
+		"gpr eip .32 0 0");
 	const char *name = rz_reg_get_name(reg, RZ_REG_NAME_PC);
 	mu_assert_streq(name, "eip", "PC register alias is eip");
 
@@ -165,6 +153,36 @@ bool test_rz_reg_get(void) {
 	r = rz_reg_get(reg, "xmm0", -1);
 	mu_assert_streq(r->name, "xmm0", "found xmm0");
 	mu_assert_eq(r->type, RZ_REG_TYPE_XMM, "xmm0 type is RZ_REG_TYPE_XMM");
+
+	rz_reg_free(reg);
+	mu_end;
+}
+
+bool test_rz_reg_get_by_role(void) {
+	RzReg *reg;
+	RzRegItem *r;
+
+	reg = rz_reg_new();
+	mu_assert_notnull(reg, "rz_reg_new () failed");
+
+	bool success = rz_reg_set_profile_string(reg,
+		"=PC eip\n"
+		"=SP esp\n"
+		"gpr	eip		.32	0	0\n"
+		"gpr	esp		.32	4	0\n"
+		"gpr	eax		.32	8	0");
+	mu_assert_eq(success, true, "load profile");
+
+	r = rz_reg_get_by_role(reg, RZ_REG_NAME_PC);
+	mu_assert_notnull(r, "rz_reg_get_by_role pc");
+	mu_assert_streq(r->name, "eip", "rz_reg_get_by_role pc");
+
+	r = rz_reg_get_by_role(reg, RZ_REG_NAME_SP);
+	mu_assert_notnull(r, "rz_reg_get_by_role sp");
+	mu_assert_streq(r->name, "esp", "rz_reg_get_by_role sp");
+
+	r = rz_reg_get_by_role(reg, RZ_REG_NAME_BP);
+	mu_assert_null(r, "rz_reg_get_by_role bp (nonexistent)");
 
 	rz_reg_free(reg);
 	mu_end;
@@ -369,11 +387,11 @@ bool test_rz_reg_set_bv(void) {
 }
 
 int all_tests() {
-	mu_run_test(test_rz_reg_set_name);
 	mu_run_test(test_rz_reg_set_profile_string);
 	mu_run_test(test_rz_reg_get_value_gpr);
 	mu_run_test(test_rz_reg_get_value_flag);
 	mu_run_test(test_rz_reg_get);
+	mu_run_test(test_rz_reg_get_by_role);
 	mu_run_test(test_rz_reg_get_list);
 	mu_run_test(test_rz_reg_get_bv);
 	mu_run_test(test_rz_reg_set_bv);

@@ -111,6 +111,23 @@ RZ_API ut64 rz_debug_reg_get(RzDebug *dbg, const char *name) {
 	return rz_reg_getv_by_role_or_name(dbg->reg, name);
 }
 
+/**
+ * Get the value of the register with the given role, including syncing first.
+ */
+RZ_API ut64 rz_debug_reg_get_by_role(RZ_NONNULL RzDebug *dbg, RzRegisterId role) {
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
+	RzRegItem *ri = rz_reg_get_by_role(dbg->reg, role);
+	if (!ri) {
+		if (role == RZ_REG_NAME_PC) {
+			// Debug generally requires the existence of a PC register,
+			// other registers may be optional.
+			RZ_LOG_ERROR("debug: no PC register known");
+		}
+		return 0;
+	}
+	return rz_reg_get_value(dbg->reg, ri);
+}
+
 RZ_API ut64 rz_debug_num_callback(RzNum *userptr, const char *str, int *ok) {
 	RzDebug *dbg = (RzDebug *)userptr;
 	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
