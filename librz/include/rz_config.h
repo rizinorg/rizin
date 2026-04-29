@@ -133,11 +133,12 @@ RZ_API bool rz_config_add_options(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const cha
 RZ_API bool rz_config_add_list(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ...);
 RZ_API bool rz_config_add_interval(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ut64 from, ut64 to);
 
-RZ_API bool rz_config_add_bool_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user);
-RZ_API bool rz_config_add_integer_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user);
-RZ_API bool rz_config_add_string_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user);
-RZ_API bool rz_config_add_list_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user);
-RZ_API bool rz_config_add_interval_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user);
+RZ_API bool rz_config_add_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ut32 type, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user);
+#define rz_config_add_bool_bind(cfg, name, desc, get, set, opts, user)     rz_config_add_bind(cfg, name, desc, RZ_CONFIG_VAR_TYPE_BOOL, get, set, opts, user)
+#define rz_config_add_integer_bind(cfg, name, desc, get, set, opts, user)  rz_config_add_bind(cfg, name, desc, RZ_CONFIG_VAR_TYPE_INT, get, set, opts, user)
+#define rz_config_add_string_bind(cfg, name, desc, get, set, opts, user)   rz_config_add_bind(cfg, name, desc, RZ_CONFIG_VAR_TYPE_STR, get, set, opts, user)
+#define rz_config_add_list_bind(cfg, name, desc, get, set, opts, user)     rz_config_add_bind(cfg, name, desc, RZ_CONFIG_VAR_TYPE_LIST, get, set, opts, user)
+#define rz_config_add_interval_bind(cfg, name, desc, get, set, opts, user) rz_config_add_bind(cfg, name, desc, RZ_CONFIG_VAR_TYPE_ITV, get, set, opts, user)
 
 RZ_API bool rz_config_set_string(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *value);
 RZ_API bool rz_config_set_integer(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, ut64 value);

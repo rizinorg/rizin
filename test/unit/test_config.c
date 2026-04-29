@@ -325,7 +325,7 @@ bool test_config_itv() {
 	mu_assert_false(ret, "cannot set bad.limit [0x9999, 0]");
 
 	char *s = rz_config_get_as_string(cfg, "this.limit");
-	mu_assert_streq(s, "[0x00011111,0x00022222]", "get as string this.limit");
+	mu_assert_streq(s, "0x00011111,0x00022222", "get as string this.limit");
 	free(s);
 
 	rz_config_free(cfg);

@@ -470,69 +470,12 @@ RZ_API bool rz_config_add_interval(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const ch
 }
 
 /**
- * \brief      Adds a boolean variable (not owned by RzConfig) bound to an external struct, if doesn't exists.
- *
- * \param      cfg   The configuration where to add the variable
- * \param[in]  name  The name of the variable to add
- * \param[in]  desc  The description of the variable (optional)
- * \param[in]  get   The callback used to get the value
- * \param[in]  set   The callback used to set the value
- * \param[in]  opts  The callback used to get the options value (optional)
- * \param[in]  user  The pointer to a user set variable (not owned by RzConfig)
- *
- * \return     On success returns true, otherwise false
- */
-RZ_API bool rz_config_add_bool_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user) {
-	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && get, false);
-	RzConfigEntry new_entry = { 0 };
-	if (config_find_entry(cfg, name)) {
-		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
-		return false;
-	} else if (!config_init_var_bind(&new_entry.var, name, desc, RZ_CONFIG_VAR_TYPE_BOOL, get, set, opts, user)) {
-		RZ_LOG_ERROR("config: failed to initialize '%s'.\n", name);
-		config_var_fini(&new_entry.var);
-		return false;
-	}
-
-	config_add_entry(cfg, name, &new_entry, true);
-	return true;
-}
-
-/**
- * \brief      Adds an unsigned integer variable (not owned by RzConfig) bound to an external struct, if doesn't exists.
- *
- * \param      cfg   The configuration where to add the variable
- * \param[in]  name  The name of the variable to add
- * \param[in]  desc  The description of the variable (optional)
- * \param[in]  get   The callback used to get the value
- * \param[in]  set   The callback used to set the value
- * \param[in]  opts  The callback used to get the options value (optional)
- * \param[in]  user  The pointer to a user set variable (not owned by RzConfig)
- *
- * \return     On success returns true, otherwise false
- */
-RZ_API bool rz_config_add_integer_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user) {
-	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && get, false);
-	RzConfigEntry new_entry = { 0 };
-	if (config_find_entry(cfg, name)) {
-		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
-		return false;
-	} else if (!config_init_var_bind(&new_entry.var, name, desc, RZ_CONFIG_VAR_TYPE_INT, get, set, opts, user)) {
-		RZ_LOG_ERROR("config: failed to initialize '%s'.\n", name);
-		config_var_fini(&new_entry.var);
-		return false;
-	}
-
-	config_add_entry(cfg, name, &new_entry, true);
-	return true;
-}
-
-/**
  * \brief      Adds a string variable (not owned by RzConfig) bound to an external struct, if doesn't exists.
  *
  * \param      cfg   The configuration where to add the variable
  * \param[in]  name  The name of the variable to add
  * \param[in]  desc  The description of the variable (optional)
+ * \param[in]  type  The type of the variable (see RzConfigVarFlags)
  * \param[in]  get   The callback used to get the value
  * \param[in]  set   The callback used to set the value
  * \param[in]  opts  The callback used to get the options value (optional)
@@ -540,71 +483,15 @@ RZ_API bool rz_config_add_integer_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL cons
  *
  * \return     On success returns true, otherwise false
  */
-RZ_API bool rz_config_add_string_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user) {
-	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && get, false);
+RZ_API bool rz_config_add_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ut32 type, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user) {
+	type &= RZ_CONFIG_VAR_TYPE_MASK;
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && get && type > 0, false);
+
 	RzConfigEntry new_entry = { 0 };
 	if (config_find_entry(cfg, name)) {
 		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
 		return false;
-	} else if (!config_init_var_bind(&new_entry.var, name, desc, RZ_CONFIG_VAR_TYPE_STR, get, set, opts, user)) {
-		RZ_LOG_ERROR("config: failed to initialize '%s'.\n", name);
-		config_var_fini(&new_entry.var);
-		return false;
-	}
-
-	config_add_entry(cfg, name, &new_entry, true);
-	return true;
-}
-
-/**
- * \brief      Adds a list variable (not owned by RzConfig) bound to an external struct, if doesn't exists.
- *
- * \param      cfg   The configuration where to add the variable
- * \param[in]  name  The name of the variable to add
- * \param[in]  desc  The description of the variable (optional)
- * \param[in]  get   The callback used to get the value
- * \param[in]  set   The callback used to set the value
- * \param[in]  opts  The callback used to get the options value (optional)
- * \param[in]  user  The pointer to a user set variable (not owned by RzConfig)
- *
- * \return     On success returns true, otherwise false
- */
-RZ_API bool rz_config_add_list_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user) {
-	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && get, false);
-	RzConfigEntry new_entry = { 0 };
-	if (config_find_entry(cfg, name)) {
-		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
-		return false;
-	} else if (!config_init_var_bind(&new_entry.var, name, desc, RZ_CONFIG_VAR_TYPE_LIST, get, set, opts, user)) {
-		RZ_LOG_ERROR("config: failed to initialize '%s'.\n", name);
-		config_var_fini(&new_entry.var);
-		return false;
-	}
-
-	config_add_entry(cfg, name, &new_entry, true);
-	return true;
-}
-
-/**
- * \brief      Adds a interval variable (not owned by RzConfig) bound to an external struct, if doesn't exists.
- *
- * \param      cfg   The configuration where to add the variable
- * \param[in]  name  The name of the variable to add
- * \param[in]  desc  The description of the variable (optional)
- * \param[in]  get   The callback used to get the value
- * \param[in]  set   The callback used to set the value
- * \param[in]  opts  The callback used to get the options value (optional)
- * \param[in]  user  The pointer to a user set variable (not owned by RzConfig)
- *
- * \return     On success returns true, otherwise false
- */
-RZ_API bool rz_config_add_interval_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user) {
-	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && get, false);
-	RzConfigEntry new_entry = { 0 };
-	if (config_find_entry(cfg, name)) {
-		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
-		return false;
-	} else if (!config_init_var_bind(&new_entry.var, name, desc, RZ_CONFIG_VAR_TYPE_ITV, get, set, opts, user)) {
+	} else if (!config_init_var_bind(&new_entry.var, name, desc, type, get, set, opts, user)) {
 		RZ_LOG_ERROR("config: failed to initialize '%s'.\n", name);
 		config_var_fini(&new_entry.var);
 		return false;
