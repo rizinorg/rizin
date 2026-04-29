@@ -80,7 +80,7 @@ typedef struct rz_config_var_t {
 	char *name; ///< Variable name
 	char *desc; ///< Description of the variable
 	RzList /*<char *>*/ *options; ///< Variable possible values
-	ut32 /*RzConfigVarFlags*/ flags; ///< Define the type of the data via RzConfigVar
+	ut32 flags; ///< Define the type of the data via RzConfigVar (see RzConfigVarFlags)
 	union {
 		union {
 			bool boolean;
