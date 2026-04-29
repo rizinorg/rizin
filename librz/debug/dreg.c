@@ -39,6 +39,9 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 	if (rz_debug_is_dead(dbg)) {
 		return false;
 	}
+	if (!dbg->cur) {
+		return false;
+	}
 	// Check if the functions needed are available
 	if (write && !dbg->cur->reg_write && !dbg->cur->sync_registers) {
 		return false;
