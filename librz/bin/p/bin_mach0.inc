@@ -96,6 +96,9 @@ static RzBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
 
 static void process_constructors(RzBinFile *bf, RzPVector /*<RzBinAddr *>*/ *ret, int bits) {
 	RzPVector *secs = mach0_sections(bf);
+	if (!secs) {
+		return;
+	}
 	void **iter;
 	RzBinSection *sec;
 	int i, type;
@@ -115,6 +118,7 @@ static void process_constructors(RzBinFile *bf, RzPVector /*<RzBinAddr *>*/ *ret
 			int read = rz_buf_read_at(bf->buf, sec->paddr, buf, sec->size);
 			if (read < sec->size) {
 				RZ_LOG_ERROR("process_constructors: cannot process section %s\n", sec->name);
+				free(buf);
 				continue;
 			}
 			if (bits == 32) {
@@ -137,6 +141,7 @@ static void process_constructors(RzBinFile *bf, RzPVector /*<RzBinAddr *>*/ *ret
 			free(buf);
 		}
 	}
+	rz_pvector_free(secs);
 }
 
 static RzPVector /*<RzBinAddr *>*/ *mach0_entries(RzBinFile *bf) {
