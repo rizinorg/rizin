@@ -8,7 +8,7 @@
 
 #define ROUND_UP_4(x) ((x) + (4 - 1)) / 4 * 4
 
-#define FP_LAYOUT 0x10
+#define FP_LAYOUT 0x80
 
 #define X86          0
 #define X86_64       1

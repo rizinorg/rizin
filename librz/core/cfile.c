@@ -1156,7 +1156,7 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 			rz_config_set_i(r->config, "asm.bits", inf->bits);
 			rz_bin_info_free(inf);
 		}
-		if (binfile->o && binfile->o->regstate) {
+		if (binfile->o->regstate) {
 			RzReg *rreg = rz_analysis_get_reg(r->analysis);
 			if (rz_reg_arena_set_bytes(rreg, binfile->o->regstate)) {
 				RZ_LOG_WARN("Setting up coredump: Problem while setting the registers\n");
@@ -1165,7 +1165,7 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 			}
 			if (!RZ_STR_ISEMPTY(rreg->reg_profile_str)) {
 				rz_reg_set_profile_string(r->dbg->reg, rreg->reg_profile_str);
-				if (rz_reg_arena_set_bytes(r->dbg->reg, binfile->o->regstate)) {
+				if (binfile->o->regstate && rz_reg_arena_set_bytes(r->dbg->reg, binfile->o->regstate)) {
 					RZ_LOG_WARN("Setting up coredump: Problem while setting debug registers\n");
 				}
 			}
