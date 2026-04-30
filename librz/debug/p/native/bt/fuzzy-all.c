@@ -84,13 +84,7 @@ static RzList /*<RzDebugFrame *>*/ *backtrace_fuzzy(RzDebug *dbg, ut64 at) {
 	if (at == UT64_MAX) {
 		RzRegItem *ri;
 		RzReg *reg = dbg->reg;
-		const char *spname = rz_reg_get_name(reg, RZ_REG_NAME_SP);
-		if (!spname) {
-			eprintf("Cannot find stack pointer register\n");
-			free(stack);
-			return NULL;
-		}
-		ri = rz_reg_get(reg, spname, RZ_REG_TYPE_GPR);
+		ri = rz_reg_get_by_role(reg, RZ_REG_NAME_SP);
 		if (!ri) {
 			eprintf("Cannot find stack pointer register\n");
 			free(stack);

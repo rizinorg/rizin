@@ -11,16 +11,16 @@
 #endif
 return rz_str_dup(
 	"=PC	pc\n"
-	"=SP	sp\n" // XXX
-	"=BP	x30\n" // XXX
+	"=SP	sp\n"
+	"=BP	x29\n"
 	"=A0	x0\n"
 	"=A1	x1\n"
 	"=A2	x2\n"
 	"=A3	x3\n"
-	"=ZF	zf\n"
+	// not yet defined: "=ZF	zf\n"
 	"=SF	nf\n"
-	"=OF	vf\n"
-	"=CF	cf\n"
+	// not yet defined: "=OF	vf\n"
+	// not yet defined: "=CF	cf\n"
 	"gpr	x0	.64	0	0\n" // r14
 	"gpr	x1	.64	8	0\n" // r14
 	"gpr	x2	.64	16	0\n" // r14

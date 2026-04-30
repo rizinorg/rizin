@@ -178,8 +178,8 @@ char *pic_midrange_get_reg_profile(RzAnalysis *a) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	stkptr\n"
-		"=A0	porta\n"
-		"=A1	portb\n"
+		// not defined: "=A0	porta\n"
+		// not defined: "=A1	portb\n"
 		"gpr	indf0	.8	0	0\n"
 		"gpr	indf1	.8	1	0\n"
 		"gpr	pcl	.8	2	0\n"

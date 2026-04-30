@@ -113,24 +113,22 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr) {
 #endif
 	ut64 pc;
 	if (!strcmp(core->dbg->btalgo, "trace") && core->dbg->arch && !strcmp(core->dbg->arch, "x86") && core->dbg->bits == 4) {
-		const char *pc_name = core->dbg->reg->name[RZ_REG_NAME_PC];
 		bool prev_call = false;
 		bool prev_ret = false;
-		const char *sp_name = core->dbg->reg->name[RZ_REG_NAME_SP];
 		ut64 old_sp, cur_sp;
 		rz_cons_break_push(NULL, NULL);
 		rz_list_free(core->dbg->call_frames);
 		core->dbg->call_frames = rz_list_new();
 		core->dbg->call_frames->free = free;
 		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
-		old_sp = rz_debug_reg_get(core->dbg, sp_name);
+		old_sp = rz_debug_reg_get_by_role(core->dbg, RZ_REG_NAME_SP);
 		while (true) {
 			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
-			pc = rz_debug_reg_get(core->dbg, pc_name);
+			pc = rz_debug_reg_get_by_role(core->dbg, RZ_REG_NAME_PC);
 			if (prev_call) {
 				ut32 ret_addr;
 				RzDebugFrame *frame = RZ_NEW0(RzDebugFrame);
-				cur_sp = rz_debug_reg_get(core->dbg, sp_name);
+				cur_sp = rz_debug_reg_get_by_role(core->dbg, RZ_REG_NAME_SP);
 				(void)core->dbg->iob.read_at(core->dbg->iob.io, cur_sp, (ut8 *)&ret_addr,
 					sizeof(ret_addr));
 				frame->addr = ret_addr;

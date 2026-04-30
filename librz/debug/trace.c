@@ -48,7 +48,7 @@ RZ_API bool rz_debug_trace_ins_before(RzDebug *dbg) {
 	ut8 buf_pc[32];
 
 	// Analyze current instruction
-	ut64 pc = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_PC]);
+	ut64 pc = rz_debug_reg_get_by_role(dbg, RZ_REG_NAME_PC);
 	if (!dbg->iob.read_at) {
 		RZ_LOG_ERROR("dbg->iob.read_at missing\n");
 		return false;
