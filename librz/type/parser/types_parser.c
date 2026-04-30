@@ -610,6 +610,11 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 	*tpair = struct_pair;
 
 srnexit:
+	if (result && struct_pair) {
+		rz_type_free(struct_pair->type);
+		rz_type_base_type_free(struct_pair->btype);
+		free(struct_pair);
+	}
 	free(real_type);
 	free(real_identifier);
 snexit:

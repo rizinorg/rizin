@@ -4263,6 +4263,24 @@ RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, 
 	return enc == RZ_STRING_ENC_GUESS ? RZ_STRING_ENC_UTF8 : enc;
 }
 
+static inline bool code_point_fits_in_buf_tail(const ut8 *buf, ut32 buflen, ut32 i, RzStrEnc enc) {
+	const size_t remaining = buflen - i;
+	switch (enc) {
+	case RZ_STRING_ENC_UTF8: {
+		ut32 sz = rz_utf8_size(buf + i);
+		return sz > 0 && sz > remaining;
+	}
+	case RZ_STRING_ENC_UTF16LE:
+	case RZ_STRING_ENC_UTF16BE:
+		return remaining < 2;
+	case RZ_STRING_ENC_UTF32LE:
+	case RZ_STRING_ENC_UTF32BE:
+		return remaining < 4;
+	default:
+		return false;
+	}
+}
+
 /**
  * \brief Converts a raw buffer to a printable string based on the selected options
  *
@@ -4273,80 +4291,99 @@ RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, 
 RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NULLABLE RZ_OUT ut32 *length) {
 	rz_return_val_if_fail(option && option->buffer && option->encoding != RZ_STRING_ENC_GUESS, NULL);
 	if (option->length < 1) {
+		if (length) {
+			*length = 0;
+		}
 		return NULL;
 	}
 
 	RzStrBuf sb;
-	const ut8 *buf = option->buffer;
+	RzBuffer *b = option->buffer;
+	ut64 offset = option->offset;
 	ut32 buflen = option->length;
 	RzStrEnc enc = option->encoding;
 	ut32 wrap_at = option->wrap_at;
-	RzCodePoint code_point;
+	RzCodePoint code_point = 0;
 	ut32 n_runes = 0;
 	int rsize = 1; // rune size
+	ut8 fetch_buf[8] = { 0 };
+	const ut8 *buf = fetch_buf; // local buffer for decoding
+	ut32 fetch_size = 0;
+	st64 r = 0;
 
 	rz_strbuf_init(&sb);
+
 	for (ut32 i = 0, line_runes = 0; i < buflen; i += rsize) {
+		fetch_size = RZ_MIN(buflen - i, (ut32)4);
+		r = rz_buf_read_at(b, offset + i, fetch_buf, fetch_size);
+		if (r < 1) {
+			break;
+		}
+		fetch_size = (ut32)r;
+
 		if (enc == RZ_STRING_ENC_UTF32LE) {
-			rsize = rz_utf32le_decode(&buf[i], buflen - i, &code_point, true);
+			rsize = rz_utf32le_decode(buf, fetch_size, &code_point, true);
 			if (rsize) {
 				rsize = 4;
 			}
 		} else if (enc == RZ_STRING_ENC_UTF16LE) {
-			rsize = rz_utf16le_decode(&buf[i], buflen - i, &code_point, true);
+			rsize = rz_utf16le_decode(buf, fetch_size, &code_point, true);
 			if (rsize == 1) {
 				rsize = 2;
 			}
 		} else if (enc == RZ_STRING_ENC_UTF32BE) {
-			rsize = rz_utf32be_decode(&buf[i], buflen - i, &code_point, true);
+			rsize = rz_utf32be_decode(buf, fetch_size, &code_point, true);
 			if (rsize) {
 				rsize = 4;
 			}
 		} else if (enc == RZ_STRING_ENC_UTF16BE) {
-			rsize = rz_utf16be_decode(&buf[i], buflen - i, &code_point, true);
+			rsize = rz_utf16be_decode(buf, fetch_size, &code_point, true);
 			if (rsize == 1) {
 				rsize = 2;
 			}
 		} else if (enc == RZ_STRING_ENC_IBM037) {
-			rsize = rz_str_ibm037_to_unicode(buf[i], &code_point);
+			rsize = rz_str_ibm037_to_unicode(buf[0], &code_point);
 		} else if (enc == RZ_STRING_ENC_IBM290) {
-			rsize = rz_str_ibm290_to_unicode(buf[i], &code_point);
+			rsize = rz_str_ibm290_to_unicode(buf[0], &code_point);
 		} else if (enc == RZ_STRING_ENC_EBCDIC_ES) {
-			rsize = rz_str_ebcdic_es_to_unicode(buf[i], &code_point);
+			rsize = rz_str_ebcdic_es_to_unicode(buf[0], &code_point);
 		} else if (enc == RZ_STRING_ENC_EBCDIC_UK) {
-			rsize = rz_str_ebcdic_uk_to_unicode(buf[i], &code_point);
+			rsize = rz_str_ebcdic_uk_to_unicode(buf[0], &code_point);
 		} else if (enc == RZ_STRING_ENC_EBCDIC_US) {
-			rsize = rz_str_ebcdic_us_to_unicode(buf[i], &code_point);
+			rsize = rz_str_ebcdic_us_to_unicode(buf[0], &code_point);
 		} else if (enc == RZ_STRING_ENC_8BIT) {
-			code_point = buf[i];
+			code_point = buf[0];
 			rsize = code_point < 0x7F ? 1 : 0;
 		} else {
-			rsize = rz_utf8_decode(&buf[i], buflen - i, &code_point, true);
+			rsize = rz_utf8_decode(buf, fetch_size, &code_point, true);
 		}
 
 		if (rsize == 0) {
 			if (option->stop_at_unprintable) {
 				break;
 			}
+			if (option->json && code_point_fits_in_buf_tail(buf, fetch_size, 0, enc)) {
+				break;
+			}
 			switch (enc) {
 			case RZ_STRING_ENC_UTF32LE:
-				rsize = RZ_MIN(4, buflen - i);
+				rsize = RZ_MIN((ut32)4, fetch_size);
 				break;
 			case RZ_STRING_ENC_UTF16LE:
-				rsize = RZ_MIN(2, buflen - i);
+				rsize = RZ_MIN((ut32)2, fetch_size);
 				break;
 			case RZ_STRING_ENC_UTF32BE:
-				rsize = RZ_MIN(4, buflen - i);
+				rsize = RZ_MIN((ut32)4, fetch_size);
 				break;
 			case RZ_STRING_ENC_UTF16BE:
-				rsize = RZ_MIN(2, buflen - i);
+				rsize = RZ_MIN((ut32)2, fetch_size);
 				break;
 			default:
 				rsize = 1;
 				break;
 			}
 			for (int j = 0; j < rsize; ++j) {
-				code_point = buf[i + j];
+				code_point = buf[j];
 				n_runes++;
 				if (option->urlencode) {
 					rz_strbuf_appendf(&sb, "%%%02x", code_point);
@@ -4403,7 +4440,7 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 				rz_strbuf_append(&sb, "\\\"");
 			} else {
 				for (int j = 0; j < rsize; ++j) {
-					code_point = buf[i + j];
+					code_point = buf[j];
 					rz_strbuf_appendf(&sb, "\\u%04x", code_point);
 				}
 				n_runes += rsize - 1;
