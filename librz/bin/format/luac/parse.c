@@ -941,7 +941,9 @@ size_t parse_header(const RzBinFile *bf, LuaHeaderInfo *header) {
 RzBinInfo *lua_parse_bin_info(const RzBinFile *bf, const LuaHeaderInfo *header) {
 	/* Common Ret */
 	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
-	rz_return_val_if_fail(ret, NULL);
+	if (!ret) {
+		return NULL;
+	}
 
 	ret->has_va = true;
 	ret->file = rz_str_dup(bf->file);
