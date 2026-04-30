@@ -299,13 +299,13 @@ int xnu_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 		memcpy(&th->drx.uds.ds32, buf, RZ_MIN(size, sizeof(th->drx)));
 #elif __i386__
 		memcpy(&th->drx.uds.ds64, buf, RZ_MIN(size, sizeof(th->drx)));
-#elif __arm64 || __aarch64
+#elif __arm64__ || __aarch64__
 		if (dbg->bits == RZ_SYS_BITS_64) {
 			memcpy(&th->debug.drx64, buf, RZ_MIN(size, sizeof(th->debug.drx64)));
 		} else {
 			memcpy(&th->debug.drx32, buf, RZ_MIN(size, sizeof(th->debug.drx32)));
 		}
-#elif __arm || __armv7 || __arm__ || __armv7__
+#elif __arm__ || __armv7__
 		memcpy(&th->debug.drx, buf, RZ_MIN(size, sizeof(th->debug.drx)));
 #endif
 		ret = rz_xnu_thread_set_drx(ctx, th);
@@ -470,7 +470,7 @@ static void xnu_free_threads_ports (RzDebugPid *p) {
 RzList *xnu_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	rz_return_val_if_fail(dbg && dbg->plugin_data, NULL);
 	RzXnuDebug *ctx = dbg->plugin_data;
-#if __arm__ || __arm64__ || __aarch_64__
+#if __arm__ || __arm64__ || __aarch64__
 #define CPU_PC (dbg->bits == RZ_SYS_BITS_64) ? state.arm64.__pc : state.arm32.__pc
 #elif __POWERPC__
 #if __DARWIN_UNIX03
@@ -555,7 +555,7 @@ int xnu_get_vmmap_entries_for_pid(RzXnuDebug *ctx, pid_t pid) {
 	kern_return_t kr = KERN_SUCCESS;
 	vm_address_t address = 0;
 	vm_size_t size = 0;
-	int n = 1;
+	int n = 0;
 
 	for (;;) {
 		mach_msg_type_number_t count;
@@ -590,15 +590,14 @@ int xnu_get_vmmap_entries_for_pid(RzXnuDebug *ctx, pid_t pid) {
 
 static void get_mach_header_sizes(size_t *mach_header_sz,
 	size_t *segment_command_sz) {
-#if __ppc64__ || __x86_64__
+#if __ppc64__ || __x86_64__ || __arm64__ || __aarch64__
 	*mach_header_sz = sizeof(struct mach_header_64);
 	*segment_command_sz = sizeof(struct segment_command_64);
-#elif __i386__ || __ppc__ || __POWERPC__
+#elif __i386__ || __ppc__ || __POWERPC__ || __arm__ || __armv7__
 	*mach_header_sz = sizeof(struct mach_header);
 	*segment_command_sz = sizeof(struct segment_command);
 #else
 #endif
-	// XXX: What about arm?
 }
 
 /**
@@ -639,7 +638,7 @@ static cpu_subtype_t xnu_get_cpu_subtype(void) {
 
 static void xnu_build_corefile_header(vm_offset_t header,
 	int segment_count, int thread_count, int command_size, pid_t pid) {
-#if __ppc64__ || __x86_64__ || (defined(TARGET_OS_MAC) && defined(__aarch64__))
+#if __ppc64__ || __x86_64__ || __arm64__ || __aarch64__
 	struct mach_header_64 *mh64;
 	mh64 = (struct mach_header_64 *)header;
 	mh64->magic = MH_MAGIC_64;
@@ -649,7 +648,7 @@ static void xnu_build_corefile_header(vm_offset_t header,
 	mh64->ncmds = segment_count + thread_count;
 	mh64->sizeofcmds = command_size;
 	mh64->reserved = 0; // 8-byte alignment
-#elif __i386__ || __ppc__ || __POWERPC__
+#elif __i386__ || __ppc__ || __POWERPC__ || __arm__ || __armv7__
 	struct mach_header *mh;
 	mh = (struct mach_header *)header;
 	mh->magic = MH_MAGIC;
@@ -686,18 +685,18 @@ static int xnu_dealloc_threads(RzXnuDebug *ctx, RzList *threads) {
 /* XXX Maybe this function needs refactoring, but I haven't come up with */
 /* XXX a better way to do it yet. */
 static int xnu_write_mem_maps_to_buffer(RzXnuDebug *ctx, RzBuffer *buffer, RzList *mem_maps, int start_offset,
-	vm_offset_t header, int header_end, int segment_command_sz, int *hoffset_out) {
+	vm_offset_t header, size_t header_end, size_t segment_command_sz, size_t *hoffset_out) {
 	RzListIter *iter, *iter2;
 	RzDebugMap *curr_map;
-	int hoffset = header_end;
+	size_t hoffset = header_end;
 	kern_return_t kr = KERN_SUCCESS;
 	int error = 0;
 	ssize_t rc = 0;
 
 #define CAST_DOWN(type, addr) (((type)((uintptr_t)(addr))))
-#if __ppc64__ || __x86_64__ || (defined(TARGET_OS_MAC) && defined(__aarch64__))
+#if __ppc64__ || __x86_64__ || __arm64__ || __aarch64__
 	struct segment_command_64 *sc64;
-#elif __i386__ || __ppc__ || __POWERPC__
+#elif __i386__ || __ppc__ || __POWERPC__ || __arm__ || __armv7__
 	struct segment_command *sc;
 	int foffset = 0; // start_offset;
 #endif
@@ -706,7 +705,7 @@ static int xnu_write_mem_maps_to_buffer(RzXnuDebug *ctx, RzBuffer *buffer, RzLis
 			curr_map->addr, curr_map->addr_end, curr_map->size);
 
 		vm_map_offset_t vmoffset = curr_map->addr;
-#if __ppc64__ || __x86_64__ || (defined(TARGET_OS_MAC) && defined(__aarch64__))
+#if __ppc64__ || __x86_64__ || __arm64__ || __aarch64__
 		sc64 = (struct segment_command_64 *)(header + hoffset);
 		sc64->cmd = LC_SEGMENT_64;
 		sc64->cmdsize = sizeof(struct segment_command_64);
@@ -716,7 +715,7 @@ static int xnu_write_mem_maps_to_buffer(RzXnuDebug *ctx, RzBuffer *buffer, RzLis
 		sc64->maxprot = xwrz_testwx(curr_map->user);
 		sc64->initprot = xwrz_testwx(curr_map->perm);
 		sc64->nsects = 0;
-#elif __i386__ || __ppc__ || __POWERPC__
+#elif __i386__ || __ppc__ || __POWERPC__ || __arm__ || __armv7__
 		sc = (struct segment_command *)(header + hoffset);
 		sc->cmd = LC_SEGMENT;
 		sc->cmdsize = sizeof(struct segment_command);
@@ -869,7 +868,7 @@ bool xnu_generate_corefile(RzDebug *dbg, RzBuffer *dest) {
 	size_t mach_header_sz;
 	size_t segment_command_sz;
 	size_t padding_sz;
-	int hoffset;
+	size_t hoffset;
 
 	RzBuffer *mem_maps_buffer;
 	vm_offset_t header;

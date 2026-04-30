@@ -166,6 +166,18 @@ static bool test_vector_free(void) {
 	mu_end;
 }
 
+static bool test_vector_set(void) {
+	RzVector *v = rz_vector_new(sizeof(ut32), NULL, NULL);
+	rz_vector_reserve(v, 10);
+	mu_assert_eq(rz_vector_len(v), 0, "Should be empty");
+	ut32 data = 0xffeeddcc;
+	rz_vector_set(v, 5, &data);
+	mu_assert_memeq((ut8 *)v->a + (v->elem_size * 5), (ut8 *)&data, sizeof(ut32), "Data was not written");
+	mu_assert_eq(rz_vector_len(v), 0, "_set should not change the length");
+	rz_vector_free(v);
+	mu_end;
+}
+
 static bool test_vector_clone(void) {
 	RzVector v;
 	init_test_vector(&v, 5, 0, NULL, NULL);
@@ -1640,6 +1652,7 @@ static int all_tests(void) {
 	mu_run_test(test_vector_fini);
 	mu_run_test(test_vector_clear);
 	mu_run_test(test_vector_free);
+	mu_run_test(test_vector_set);
 	mu_run_test(test_vector_clone);
 	mu_run_test(test_vector_empty);
 	mu_run_test(test_vector_remove_at);

@@ -932,13 +932,13 @@ jobs:
       - name: Setup RISC-V QEMU environment
         run: |
           cd ..
-          sh rizin/.github/riscv-qemu-setup-all.sh /rizin -hh
+          sh rizin/.github/riscv-qemu-setup-all.sh
 
       - name: Run inside RISC-V QEMU
         run: |
           cd ..
           qemu-system-riscv64 \
-            -machine virt -cpu rv64 -m 512M \
+            -machine virt -cpu rv64 -m 2G \
             -kernel linux-image/boot/vmlinux-6.12.73+deb13-riscv64 \
             -initrd initrd.cpio.gz \
             -append "console=ttyS0,115200 earlycon" \
@@ -969,7 +969,7 @@ jobs:
 
       - name: Try getting the Bootlin toolchain from cache
         id: cache-toolchain
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/toolchain
           key: ${{ env.BOOTLIN_RV32_TOOLCHAIN }}
@@ -988,10 +988,12 @@ jobs:
       - name: Run Rizin on RISCV32 inside QEMU
         run: |
           cd .. 
-          qemu-system-riscv32 -machine virt -m 512M \
+          qemu-system-riscv32 -machine virt -m 2G \
             -bios rv32-fw_dynamic.bin \
             -kernel rv32-Image \
             -initrd initrd_rv32.cpio \
+            -drive file=rootfs-rv32.ext4,format=raw,id=hd0,if=none \
+            -device virtio-blk-device,drive=hd0 \
             -append "earlycon console=hvc0" \
             -nographic
 
@@ -1031,7 +1033,7 @@ jobs:
           mv ./rizin_installer-clang_cl_x86-${{ steps.extract_version.outputs.branch }}/rizin.exe rizin_installer-${{ steps.extract_version.outputs.branch }}-x86.exe
       - name: Create Release
         id: create_release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ steps.extract_version.outputs.branch }}

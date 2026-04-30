@@ -550,7 +550,7 @@ static RzList /*<RzInterval *>*/ *gen_intervals(RzBinFile *bf, const RzBinString
 			}
 		}
 	} else {
-		RZ_LOG_WARN("The binary loader searches strings only in the read only sections,"
+		RZ_LOG_WARN("The binary loader searches strings only in the read only sections, "
 			    "but the binary has no sections.\n Please search strings manually with /z.\n");
 	}
 	return intervals;

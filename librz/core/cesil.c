@@ -758,10 +758,7 @@ RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val)
 	if (!r) {
 		int role = rz_reg_get_name_idx(regname);
 		if (role != -1) {
-			const char *alias = rz_reg_get_name(rreg, role);
-			if (alias) {
-				r = rz_reg_get(rreg, alias, -1);
-			}
+			r = rz_reg_get_by_role(rreg, role);
 		}
 	}
 	if (!r) {

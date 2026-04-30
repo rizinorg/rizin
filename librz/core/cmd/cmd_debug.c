@@ -363,7 +363,7 @@ static bool step_until_optype(RzCore *core, RzList /*<char *>*/ *optypes_list) {
 				break;
 			}
 			rz_debug_step(core->dbg, 1);
-			pc = rz_debug_reg_get(core->dbg, core->dbg->reg->name[RZ_REG_NAME_PC]);
+			pc = rz_debug_reg_get_by_role(core->dbg, RZ_REG_NAME_PC);
 			// 'Copy' from rz_debug_step_soft
 			if (!core->dbg->iob.read_at) {
 				RZ_LOG_ERROR("ERROR\n");

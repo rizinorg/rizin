@@ -36,10 +36,10 @@ static int assemble(const RzAsm *a, RzAsmOp *ao, const char *str) {
 	return 2;
 }
 
-static bool sh_sw_breakpoint(const RzAsm *a, RzAsmOp *op) {
+static bool sh_sw_breakpoint(const RzAsm *a, ut64 addr, const RzAsmOp *original, RzAsmOp *breakpoint) {
 	// 	{ 32, 2, 1, "\xc3\x20" }, // Big endian
 	// 	{ 32, 2, 0, "\x20\xc3" }, // Little endian
-	rz_asm_op_set_buf(op, a->big_endian ? (const ut8 *)"\xc3\x20" : (const ut8 *)"\x20\xc3", 2);
+	rz_asm_op_set_buf(breakpoint, a->big_endian ? (const ut8 *)"\xc3\x20" : (const ut8 *)"\x20\xc3", 2);
 	return true;
 }
 

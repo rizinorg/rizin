@@ -627,13 +627,9 @@ RZ_IPI RzCmdStatus rz_regs_args_handler(RzCore *core, RzReg *reg, RzCmdRegSync s
 		return RZ_CMD_STATUS_ERROR;
 	}
 	for (int i = RZ_REG_NAME_A0; i <= RZ_REG_NAME_A9; i++) {
-		const char *name = rz_reg_get_name(reg, i);
-		if (!name) {
-			break;
-		}
-		RzRegItem *item = rz_reg_get(reg, name, RZ_REG_TYPE_ANY);
+		RzRegItem *item = rz_reg_get_by_role(reg, i);
 		if (!item) {
-			continue;
+			break;
 		}
 		rz_list_push(ritems, item);
 	}
@@ -657,8 +653,9 @@ RZ_IPI RzCmdStatus rz_reg_types_handler(RzCore *core, RzReg *reg, int argc, cons
 RZ_IPI RzCmdStatus rz_reg_roles_handler(RzCore *core, RzReg *reg, int argc, const char **argv) {
 	for (int i = 0; i < RZ_REG_NAME_LAST; i++) {
 		rz_cons_print(rz_reg_get_role(i));
-		if (reg->name[i]) {
-			rz_cons_printf(" -> %s", reg->name[i]);
+		RzRegItem *ri = rz_reg_get_by_role(reg, i);
+		if (ri && ri->name) {
+			rz_cons_printf(" -> %s", ri->name);
 		}
 		rz_cons_print("\n");
 	}
@@ -724,11 +721,12 @@ RZ_IPI RzCmdStatus rz_reg_profile_handler(RzCore *core, RzReg *reg, int argc, co
 		pj_k(pj, "alias_info");
 		pj_a(pj);
 		for (i = 0; i < RZ_REG_NAME_LAST; i++) {
-			if (reg->name[i]) {
+			RzRegItem *ri = rz_reg_get_by_role(reg, i);
+			if (ri && ri->name) {
 				pj_o(pj);
 				pj_kn(pj, "role", i);
 				pj_ks(pj, "role_str", rz_reg_get_role(i));
-				pj_ks(pj, "reg", reg->name[i]);
+				pj_ks(pj, "reg", ri->name);
 				pj_end(pj);
 			}
 		}

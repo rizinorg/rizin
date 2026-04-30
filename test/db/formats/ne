@@ -1,4 +1,4 @@
-NAME=NE Symbols
+NAME=NE anim8 analysis
 FILE=bins/ne/anim8.exe
 CMDS=<<EOF
 ia
