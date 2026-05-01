@@ -827,10 +827,9 @@ jobs:
         working-directory: rz-bindgen
       - name: Test python lang plugin
         run: rizin -qc "Ll" | grep "Python SWIG"
-      - name: Test rizin.py
-        run: |
-          echo "import rizin" > testimport.py
-          python3 testimport.py
+      - name: Run rz-test
+        run: rz-test -L tests/
+        working-directory: rz-bindgen
 
   test-macos-pkg:
     name: Test macOS pkg
