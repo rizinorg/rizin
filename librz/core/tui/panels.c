@@ -44,6 +44,7 @@
 #define PANEL_CONFIG_SIDEPANEL_W 60
 #define PANEL_CONFIG_RESIZE_W    4
 #define PANEL_CONFIG_RESIZE_H    4
+#define PANEL_FILTER_LIMIT       1024
 
 #define COUNT(x) (sizeof((x)) / sizeof((*x)) - 1)
 
@@ -1146,11 +1147,11 @@ char *__apply_filter_cmd(RzCore *core, RzPanel *panel) {
 	void **iter;
 	rz_pvector_foreach (&panel->model->filter, iter) {
 		char *filter = *iter;
-		if (strlen(filter) > 1024) {
+		if (strlen(filter) > PANEL_FILTER_LIMIT) {
 			(void)__show_status(core, "filter is too big.");
 			return rz_strbuf_drain_nofree(&sb);
 		}
-		// stop if the filtered cmd cant be extended.
+		// Stop if the filtered command cannot be extended.
 		if (!rz_strbuf_append(&sb, "~") || !rz_strbuf_append(&sb, filter)) {
 			rz_strbuf_fini(&sb);
 			return NULL;
@@ -1161,7 +1162,7 @@ char *__apply_filter_cmd(RzCore *core, RzPanel *panel) {
 
 char *__handle_cmd_str_cache(RzCore *core, RzPanel *panel, bool force_cache) {
 	char *cmd = __apply_filter_cmd(core, panel);
-	// avoid failed cmd build into rz_core_cmd_str.
+	// Avoid failed cmd build into rz_core_cmd_str.
 	if (!cmd) {
 		return NULL;
 	}
