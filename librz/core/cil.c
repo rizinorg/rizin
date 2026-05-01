@@ -8,7 +8,8 @@ typedef enum rz_il_unicode_colorify_state_t {
 	UNICODE_COLORIFY_STATE_DEFAULT,
 	UNICODE_COLORIFY_STATE_VARNAME,
 	UNICODE_COLORIFY_STATE_NUMBER,
-	UNICODE_COLORIFY_STATE_IL_OP
+	UNICODE_COLORIFY_STATE_IL_OP,
+	UNICODE_COLORIFY_STATE_PARENTHESIS
 } RzILUnicodeColorifyState;
 
 typedef struct il_print_t {
@@ -339,43 +340,46 @@ RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj) {
 	return true;
 }
 
+static inline void emit_span(const char *s, size_t n, const char *color) {
+	if (n < 1) {
+		return;
+	}
+	if (color) {
+		rz_cons_printf("%s%.*s" Color_RESET, color, (int)n, s);
+	} else {
+		rz_cons_printf("%.*s", (int)n, s);
+	}
+}
+
 static void core_colorify_il_statement(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr) {
 	rz_cons_printf("%s0x%" PFMT64x Color_RESET "%c", ctx->pal.label, addr, delim);
 	if (RZ_STR_ISEMPTY(il_stmt)) {
 		rz_cons_newline();
 		return;
 	}
+
 	const char *color = NULL;
 	size_t prev = 0, len = strlen(il_stmt);
+
 	for (size_t i = 0; i < len; ++i) {
 		const char ch = il_stmt[i];
-		if (ch == '(') {
-			color = ctx->pal.flow;
-			int plen = i - prev;
-			rz_cons_printf("%.*s(", plen, il_stmt + prev);
+
+		if (ch == '(' || ch == ')') {
+			emit_span(il_stmt + prev, i - prev, color);
+			rz_cons_printf("%s%c" Color_RESET, ctx->pal.meta, ch);
 			prev = i + 1;
-		} else if (ch == ')' && color) {
-			int plen = i - prev;
-			rz_cons_printf("%s%.*s" Color_RESET, color, plen, il_stmt + prev);
-			prev = i;
+			color = (ch == '(') ? ctx->pal.flow : NULL;
+		} else if (ch == ' ') {
+			emit_span(il_stmt + prev, i - prev, color);
+			rz_cons_printf(" ");
+			prev = i + 1;
 			color = NULL;
-		} else if (ch == ' ' && color) {
-			int plen = i - prev;
-			rz_cons_printf("%s%.*s" Color_RESET, color, plen, il_stmt + prev);
-			prev = i;
-			color = NULL;
-		} else if ((i - 1) == prev && il_stmt[prev] == ' ') {
+		} else if (i == prev && prev > 0 && il_stmt[prev - 1] == ' ') {
 			color = IS_DIGIT(ch) ? ctx->pal.num : ctx->pal.comment;
 		}
 	}
-	if (prev < len) {
-		int plen = len - prev;
-		if (color) {
-			rz_cons_printf("%s%.*s" Color_RESET, color, plen, il_stmt + prev);
-		} else {
-			rz_cons_printf("%.*s", plen, il_stmt + prev);
-		}
-	}
+
+	emit_span(il_stmt + prev, len - prev, color);
 	rz_cons_newline();
 }
 
@@ -408,7 +412,10 @@ RzILUnicodeColorifyState unicode_colorify_state_next(RzILUnicodeColorifyState st
 	if (is_varname(state, c)) {
 		return UNICODE_COLORIFY_STATE_VARNAME;
 	}
-	if (IS_PARANTHESIS(c) || IS_WHITECHAR(c)) {
+	if (IS_PARANTHESIS(c)) {
+		return UNICODE_COLORIFY_STATE_PARENTHESIS;
+	}
+	if (IS_WHITECHAR(c)) {
 		return UNICODE_COLORIFY_STATE_DEFAULT;
 	}
 	return UNICODE_COLORIFY_STATE_IL_OP;
@@ -441,6 +448,9 @@ static void core_colorify_il_statement_unicode(RzConsContext *ctx, const char *i
 			default: break;
 			case UNICODE_COLORIFY_STATE_DEFAULT:
 				color = NULL;
+				break;
+			case UNICODE_COLORIFY_STATE_PARENTHESIS:
+				color = ctx->pal.meta;
 				break;
 			case UNICODE_COLORIFY_STATE_VARNAME:
 				color = ctx->pal.comment;
@@ -489,7 +499,9 @@ RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW 
 
 		rz_strbuf_init(&sb);
 		if (unicode) {
-			if (!rz_il_op_effect_stringify_unicode(op->il_op, &sb)) {
+			const int addr_len = snprintf(NULL, 0, "0x%" PFMT64x, op->addr);
+			RzILStringifyCtx ctx = { .indent = addr_len + 1, .indent_inc = 2 };
+			if (!rz_il_op_effect_stringify_unicode(&ctx, op->il_op, &sb)) {
 				RZ_LOG_ERROR("Failed to stringify IL at 0x%08" PFMT64x "\n", op->addr);
 				rz_strbuf_fini(&sb);
 				break;

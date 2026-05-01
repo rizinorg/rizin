@@ -363,7 +363,7 @@ static bool step_until_optype(RzCore *core, RzList /*<char *>*/ *optypes_list) {
 				break;
 			}
 			rz_debug_step(core->dbg, 1);
-			pc = rz_debug_reg_get(core->dbg, core->dbg->reg->name[RZ_REG_NAME_PC]);
+			pc = rz_debug_reg_get_by_role(core->dbg, RZ_REG_NAME_PC);
 			// 'Copy' from rz_debug_step_soft
 			if (!core->dbg->iob.read_at) {
 				RZ_LOG_ERROR("ERROR\n");
@@ -1534,7 +1534,7 @@ static void asciiart_backtrace(RzCore *core, RzList /*<RzDebugFrame *>*/ *frames
 		rz_cons_printf("                    |            ...         |\n");
 		rz_cons_printf("0x%016" PFMT64x "  |%4s 0x%016" PFMT64x " | %s\n", b, bp, f->addr, "; return address");
 		rz_cons_printf("                    )------------------------(\n");
-		// eprintf ("0x%08llx 0x%08llx 0x%08llx\n", f->addr, s, b);
+		// eprintf ("0x%08" PFMT64x " 0x%08" PFMT64x " 0x%08" PFMT64x "\n", f->addr, s, b);
 		n++;
 	}
 	rz_cons_printf("                    |           ...          |\n");

@@ -9,6 +9,10 @@
 #include <rz_util/ht_up.h>
 #include <rz_util/rz_iterator.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * \brief Represents a node in a graph, node should be hashable.
  * and support both list-based graph and matrix-based graph.
@@ -131,4 +135,9 @@ RZ_API RZ_OWN RzList /*<RzGraphEdge *>*/ *rz_graph_find_back_edges(RzGraph *g, R
  * Caller must free the outer vector (and each inner vector); nodes are not freed.
  */
 RZ_API RZ_OWN RzPVector /*<RzPVector<RzGraphNode *> *>*/ *rz_graph_find_sccs(RzGraph *g);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif // RZ_GRAPH_H

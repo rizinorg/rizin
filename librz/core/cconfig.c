@@ -1000,6 +1000,72 @@ static bool cb_str_encoding(void *user, void *data) {
 	return true;
 }
 
+static bool cb_str_unprintable(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->value[0] == '?') {
+		rz_cons_printf("Comma-separated list of Unicode code points treated as non-printable.\n");
+		rz_cons_printf("Examples:\n");
+		rz_cons_printf("  e str.unprintable=0x09,0x0a,0x0d,0x1b\n");
+		rz_cons_printf("  e str.unprintable=0x200B\n");
+		rz_cons_printf("  e str.unprintable=\n");
+		rz_cons_printf("    -- reset the list to empty.\n");
+		return false;
+	}
+
+	if (RZ_STR_ISEMPTY(node->value)) {
+		rz_vector_free(core->bin->str_search_cfg.user_unprintable);
+		core->bin->str_search_cfg.user_unprintable = NULL;
+		check_reload_bin_str_search(core);
+		return true;
+	}
+
+	RzVector *custom = NULL;
+	char *list = rz_str_dup(node->value);
+	if (!list) {
+		return false;
+	}
+
+	int argc = rz_str_split(list, ',');
+	if (argc < 1) {
+		goto error_free;
+	}
+
+	custom = rz_vector_new(sizeof(RzCodePoint), NULL, NULL);
+	if (!custom) {
+		goto error_free;
+	}
+
+	for (int i = 0; i < argc; i++) {
+		const char *word = rz_str_word_get0(list, i);
+		if (RZ_STR_ISEMPTY(word) || !rz_is_valid_input_num_value(core->num, word)) {
+			RZ_LOG_ERROR("Invalid value for str.unprintable (%s).\n", word ? word : "");
+			goto error_free;
+		}
+		ut64 cp = rz_num_math(core->num, word);
+		if (cp > RZ_UNICODE_LAST_CODE_POINT) {
+			RZ_LOG_ERROR("str.unprintable code point out of range (%s).\n", word);
+			goto error_free;
+		}
+		RzCodePoint point = (RzCodePoint)cp;
+		if (!rz_vector_push(custom, &point)) {
+			RZ_LOG_ERROR("Cannot append code point to str.unprintable (%s).\n", word);
+			goto error_free;
+		}
+	}
+	free(list);
+
+	rz_vector_free(core->bin->str_search_cfg.user_unprintable);
+	core->bin->str_search_cfg.user_unprintable = custom;
+	check_reload_bin_str_search(core);
+	return true;
+
+error_free:
+	rz_vector_free(custom);
+	free(list);
+	return false;
+}
+
 static bool cb_str_search_mode(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3580,6 +3646,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	n = NODECB("str.encoding", "guess", &cb_str_encoding);
 	SETDESC(n, "The default string encoding type (when set to guess, it is automatically guessed).");
 	SETOPTIONS(n, "ascii", "8bit", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "ibm037", "ibm290", "ebcdices", "ebcdicuk", "ebcdicus", "guess", NULL);
+	SETCB("str.unprintable", "", &cb_str_unprintable, "Comma-separated hex code points treated as non-printable.");
 
 	/* string search options */
 	SETB("str.search.reload", true, "When enabled, any change to any option `str.search.*` will reload the bin strings.");
@@ -3632,12 +3699,12 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETDESC(n, "Set grep(~) as case smart/sensitive/insensitive");
 	SETOPTIONS(n, "smart", "sensitive", "insensitive", NULL);
 
-	/* rop */
-	SETI("rop.len", 5, "Maximum ROP gadget length");
-	SETBPREF("rop.cache", "false", "Cache rop gadget results(experimental)");
-	SETBPREF("rop.subchains", "false", "Display every length gadget from rop.len=X to 2 in /Rl");
-	SETBPREF("rop.conditional", "false", "Include conditional jump, calls and returns in ropsearch");
-	SETBPREF("rop.comments", "false", "Display comments in rop search output");
+	/* gadget */
+	SETI("gadget.len", 5, "Maximum number of instructions per gadget");
+	SETBPREF("gadget.cache", "false", "Cache gadget results(experimental)");
+	SETBPREF("gadget.subchains", "false", "Display every length gadget from gadget.len=X to 2");
+	SETBPREF("gadget.conditional", "false", "Include conditional jump, calls and returns in gadget search");
+	SETBPREF("gadget.comments", "false", "Display comments in gadget search output");
 
 	/* io */
 	SETCB("io.cache", "false", &cb_io_cache, "Change both of io.cache.{read,write}");

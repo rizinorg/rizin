@@ -154,31 +154,16 @@ RZ_API int rz_reg_get_name_idx(const char *type) {
 	return -1;
 }
 
-RZ_API bool rz_reg_set_name(RZ_NONNULL RzReg *reg, RzRegisterId role, RZ_NONNULL const char *name) {
-	rz_return_val_if_fail(reg && name, false);
-	if (role >= 0 && role < RZ_REG_NAME_LAST) {
-		char *tmp = rz_str_dup(name);
-		free(reg->name[role]);
-		reg->name[role] = tmp;
-		return true;
-	}
-	return false;
-}
-
 RZ_API const char *rz_reg_get_name(const RzReg *reg, const int role) {
 	if (reg && role >= 0 && role < RZ_REG_NAME_LAST) {
-		return reg->name[role];
+		return reg->by_role[role] ? reg->by_role[role]->name : NULL;
 	}
 	return NULL;
 }
 
 RZ_API RzRegItem *rz_reg_get_by_role(RzReg *reg, RzRegisterId role) {
 	rz_return_val_if_fail(reg, NULL);
-	const char *name = rz_reg_get_name(reg, role);
-	if (!name) {
-		return NULL;
-	}
-	return rz_reg_get(reg, name, RZ_REG_TYPE_ANY);
+	return reg->by_role[role];
 }
 
 static const char *roles[RZ_REG_NAME_LAST + 1] = {
@@ -221,12 +206,8 @@ RZ_API void rz_reg_free_internal(RzReg *reg, bool init) {
 	rz_list_free(reg->reg_profile.defs);
 	reg->reg_profile.alias = 0;
 	reg->reg_profile.defs = 0;
+	memset(reg->by_role, 0, sizeof(reg->by_role));
 
-	for (i = 0; i < RZ_REG_NAME_LAST; i++) {
-		if (reg->name[i]) {
-			RZ_FREE(reg->name[i]);
-		}
-	}
 	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		ht_sp_free(reg->regset[i].ht_regs);
 		reg->regset[i].ht_regs = NULL;

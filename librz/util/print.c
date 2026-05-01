@@ -892,7 +892,7 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 					oPrintValue = printValue;
 					j += step - 1;
 				} else if (base == -8) {
-					long long w = rz_read_ble64(buf + j, p->big_endian);
+					st64 w = rz_read_ble64(buf + j, p->big_endian);
 					print_cursor_l(sb, p, j, 8);
 					rz_strbuf_appendf(sb, "%23" PFMT64d " ", w);
 					print_cursor_r(sb, p, j, 8);
@@ -1087,36 +1087,35 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 	return rz_strbuf_drain(sb);
 }
 
-static const char *getbytediff(RzPrint *p, char *fmt, ut8 a, ut8 b) {
+static const char *getbytediff(RzPrint *p, char *fmt, size_t fmt_sz, ut8 a, ut8 b) {
 	if (*fmt) {
 		if (a == b) {
-			sprintf(fmt, "%s%02x" Color_RESET, p->cons->context->pal.graph_true, a);
+			snprintf(fmt, fmt_sz, "%s%02x" Color_RESET, p->cons->context->pal.graph_true, a);
 		} else {
-			sprintf(fmt, "%s%02x" Color_RESET, p->cons->context->pal.graph_false, a);
+			snprintf(fmt, fmt_sz, "%s%02x" Color_RESET, p->cons->context->pal.graph_false, a);
 		}
 	} else {
-		sprintf(fmt, "%02x", a);
+		snprintf(fmt, fmt_sz, "%02x", a);
 	}
 	return fmt;
 }
 
-static const char *getchardiff(RzPrint *p, char *fmt, ut8 a, ut8 b) {
+static const char *getchardiff(RzPrint *p, char *fmt, size_t fmt_sz, ut8 a, ut8 b) {
 	char ch = IS_PRINTABLE(a) ? a : '.';
 	if (*fmt) {
 		if (a == b) {
-			sprintf(fmt, "%s%c" Color_RESET, p->cons->context->pal.graph_true, ch);
+			snprintf(fmt, fmt_sz, "%s%c" Color_RESET, p->cons->context->pal.graph_true, ch);
 		} else {
-			sprintf(fmt, "%s%c" Color_RESET, p->cons->context->pal.graph_false, ch);
+			snprintf(fmt, fmt_sz, "%s%c" Color_RESET, p->cons->context->pal.graph_false, ch);
 		}
 	} else {
-		sprintf(fmt, "%c", ch);
+		snprintf(fmt, fmt_sz, "%c", ch);
 	}
-	// else { fmt[0] = ch; fmt[1]=0; }
 	return fmt;
 }
 
-#define BD(a, b) getbytediff(p, fmt, (a)[i + j], (b)[i + j])
-#define CD(a, b) getchardiff(p, fmt, (a)[i + j], (b)[i + j])
+#define BD(a, b) getbytediff(p, fmt, sizeof(fmt), (a)[i + j], (b)[i + j])
+#define CD(a, b) getchardiff(p, fmt, sizeof(fmt), (a)[i + j], (b)[i + j])
 
 static ut8 *M(const ut8 *b, int len) {
 	ut8 *r = malloc(len + 16);
@@ -1322,18 +1321,29 @@ RZ_API void rz_print_set_rowoff(RzPrint *p, int i, ut32 offset, bool overwrite) 
 		return;
 	}
 	if (!p->row_offsets || !p->row_offsets_sz) {
-		p->row_offsets_sz = RZ_MAX(i + 1, DFLT_ROWS);
-		p->row_offsets = RZ_NEWS(ut32, p->row_offsets_sz);
+		const int initial_size = RZ_MAX(i + 1, DFLT_ROWS);
+		ut32 *row_offsets = RZ_NEWS(ut32, initial_size);
+		// keep the row offset state unchanged if first alloc fails.
+		if (!row_offsets) {
+			return;
+		}
+		p->row_offsets = row_offsets;
+		p->row_offsets_sz = initial_size;
 	}
 	if (i >= p->row_offsets_sz) {
-		size_t new_size;
-		p->row_offsets_sz *= 2;
+		int new_row_offsets_sz = p->row_offsets_sz;
 		// XXX dangerous
-		while (i >= p->row_offsets_sz) {
-			p->row_offsets_sz *= 2;
+		while (i >= new_row_offsets_sz) {
+			new_row_offsets_sz *= 2;
 		}
-		new_size = sizeof(ut32) * p->row_offsets_sz;
-		p->row_offsets = realloc(p->row_offsets, new_size);
+		size_t new_size = sizeof(ut32) * new_row_offsets_sz;
+		ut32 *tmp = realloc(p->row_offsets, new_size);
+		// only grow the metadata after the backing arr was resized successfully.
+		if (!tmp) {
+			return;
+		}
+		p->row_offsets = tmp;
+		p->row_offsets_sz = new_row_offsets_sz;
 	}
 	p->row_offsets[i] = offset;
 }

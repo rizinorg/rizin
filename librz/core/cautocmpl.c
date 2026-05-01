@@ -472,7 +472,7 @@ static void autocmplt_cmd_arg_reg_filter(RzCore *core, const RzCmdDesc *cd, RzLi
 	rz_line_ns_completion_result_propose(res, "all", s, len);
 
 	for (int role = 0; role < RZ_REG_NAME_LAST; role++) {
-		if (!reg->name[role]) {
+		if (!rz_reg_get_by_role(reg, role)) {
 			// don't autocomplete if there isn't a register with this role anyway
 			continue;
 		}

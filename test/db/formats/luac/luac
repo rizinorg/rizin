@@ -26,7 +26,6 @@ luac-info:
       functions: 2
       locals: 0
       upvalues: 0
-      constants_count: 7
       constants:
         - "Account"
         - "__index"
@@ -45,7 +44,6 @@ luac-info:
       functions: 0
       locals: 3
       upvalues: 0
-      constants_count: 3
       constants:
         - "setmetatable"
         - "Account"
@@ -60,7 +58,6 @@ luac-info:
       functions: 0
       locals: 2
       upvalues: 0
-      constants_count: 1
       constants:
         - "balance"
 
@@ -94,7 +91,6 @@ luac-info:
       functions: 2
       locals: 0
       upvalues: 0
-      constants_count: 7
       constants:
         - "Account"
         - "__index"
@@ -113,7 +109,6 @@ luac-info:
       functions: 0
       locals: 3
       upvalues: 0
-      constants_count: 3
       constants:
         - "setmetatable"
         - "Account"
@@ -128,7 +123,6 @@ luac-info:
       functions: 0
       locals: 2
       upvalues: 0
-      constants_count: 1
       constants:
         - "balance"
 
@@ -162,7 +156,6 @@ luac-info:
       functions: 2
       locals: 0
       upvalues: 1
-      constants_count: 7
       constants:
         - "Account"
         - "__index"
@@ -181,7 +174,6 @@ luac-info:
       functions: 0
       locals: 3
       upvalues: 1
-      constants_count: 3
       constants:
         - "setmetatable"
         - "Account"
@@ -196,7 +188,6 @@ luac-info:
       functions: 0
       locals: 2
       upvalues: 0
-      constants_count: 1
       constants:
         - "balance"
 
@@ -231,7 +222,6 @@ luac-info:
       functions: 2
       locals: 0
       upvalues: 1
-      constants_count: 8
       constants:
         - "Account"
         - "__index"
@@ -251,7 +241,6 @@ luac-info:
       functions: 0
       locals: 3
       upvalues: 1
-      constants_count: 3
       constants:
         - "setmetatable"
         - "Account"
@@ -266,7 +255,6 @@ luac-info:
       functions: 0
       locals: 2
       upvalues: 0
-      constants_count: 1
       constants:
         - "balance"
 
@@ -301,7 +289,6 @@ luac-info:
       functions: 5
       locals: 0
       upvalues: 1
-      constants_count: 7
       constants:
         - "stats"
         - "mean"
@@ -320,7 +307,6 @@ luac-info:
       functions: 0
       locals: 8
       upvalues: 1
-      constants_count: 5
       constants:
         - 0
         - "pairs"
@@ -337,7 +323,6 @@ luac-info:
       functions: 0
       locals: 19
       upvalues: 1
-      constants_count: 6
       constants:
         - "pairs"
         - "NIL"
@@ -355,7 +340,6 @@ luac-info:
       functions: 0
       locals: 7
       upvalues: 1
-      constants_count: 12
       constants:
         - "pairs"
         - "type"
@@ -379,7 +363,6 @@ luac-info:
       functions: 0
       locals: 11
       upvalues: 1
-      constants_count: 9
       constants:
         - 0
         - "stats"
@@ -400,7 +383,6 @@ luac-info:
       functions: 0
       locals: 8
       upvalues: 1
-      constants_count: 7
       constants:
         - "math"
         - "huge"
@@ -441,7 +423,6 @@ luac-info:
       functions: 2
       locals: 0
       upvalues: 1
-      constants_count: 6
       constants:
         - "Account"
         - "__index"
@@ -459,7 +440,6 @@ luac-info:
       functions: 0
       locals: 3
       upvalues: 1
-      constants_count: 3
       constants:
         - "setmetatable"
         - "Account"
@@ -474,7 +454,6 @@ luac-info:
       functions: 0
       locals: 2
       upvalues: 0
-      constants_count: 1
       constants:
         - "balance"
 
@@ -510,7 +489,6 @@ luac-info:
       functions: 2
       locals: 0
       upvalues: 1
-      constants_count: 5
       constants:
         - "Account"
         - "__index"
@@ -527,7 +505,6 @@ luac-info:
       functions: 0
       locals: 3
       upvalues: 1
-      constants_count: 3
       constants:
         - "setmetatable"
         - "Account"
@@ -542,7 +519,6 @@ luac-info:
       functions: 0
       locals: 2
       upvalues: 0
-      constants_count: 1
       constants:
         - "Account"
 
@@ -648,7 +624,6 @@ luac-info:
       functions: 13
       locals: 20
       upvalues: 1
-      constants_count: 96
       constants:
         - "num"
         - 42
@@ -759,7 +734,6 @@ luac-info:
       functions: 0
       locals: 1
       upvalues: 1
-      constants_count: 3
       constants:
         - 2
         - 1
@@ -774,7 +748,6 @@ luac-info:
       functions: 1
       locals: 1
       upvalues: 0
-      constants_count: 0
     fcn.00000935:
       proto_name: "fcn.00000935"
       start_line: 105
@@ -785,7 +758,6 @@ luac-info:
       functions: 0
       locals: 3
       upvalues: 1
-      constants_count: 7
       constants:
         - "print"
         - 4
@@ -804,7 +776,6 @@ luac-info:
       functions: 0
       locals: 1
       upvalues: 0
-      constants_count: 0
     fcn.00000a71:
       proto_name: "fcn.00000a71"
       start_line: 116
@@ -815,7 +786,6 @@ luac-info:
       functions: 0
       locals: 1
       upvalues: 0
-      constants_count: 0
     fcn.00000abb:
       proto_name: "fcn.00000abb"
       start_line: 119
@@ -826,7 +796,6 @@ luac-info:
       functions: 0
       locals: 1
       upvalues: 1
-      constants_count: 2
       constants:
         - "math"
         - "sin"
@@ -840,7 +809,6 @@ luac-info:
       functions: 0
       locals: 1
       upvalues: 1
-      constants_count: 2
       constants:
         - "math"
         - "sin"
@@ -854,7 +822,6 @@ luac-info:
       functions: 0
       locals: 1
       upvalues: 1
-      constants_count: 2
       constants:
         - "print"
         - "key1"
@@ -868,7 +835,6 @@ luac-info:
       functions: 0
       locals: 2
       upvalues: 1
-      constants_count: 3
       constants:
         - "sum"
         - "b"
@@ -883,7 +849,6 @@ luac-info:
       functions: 0
       locals: 1
       upvalues: 1
-      constants_count: 5
       constants:
         - "newObj"
         - "sound"
@@ -900,7 +865,6 @@ luac-info:
       functions: 0
       locals: 1
       upvalues: 1
-      constants_count: 3
       constants:
         - "print"
         - "I say "
@@ -915,7 +879,6 @@ luac-info:
       functions: 0
       locals: 1
       upvalues: 1
-      constants_count: 4
       constants:
         - "s"
         - "sound"
@@ -931,7 +894,6 @@ luac-info:
       functions: 0
       locals: 1
       upvalues: 1
-      constants_count: 3
       constants:
         - "newObj"
         - "__index"
@@ -1050,5 +1012,117 @@ EOF
 EXPECT_ERR=<<EOF
 ERROR: Truncated Code at [0x2f]
 ERROR: Invalid luac proto
+EOF
+RUN
+
+NAME=LUAC: constants 5.0
+FILE=bins/luac/constants50.luac
+CMDS=<<EOF
+iH~ -
+EOF
+EXPECT=<<EOF
+        - "is_true"
+        - "is_false"
+        - "field1"
+        - "field2"
+        - "field3"
+        - "NIL"
+        - "print"
+        - "type"
+EOF
+RUN
+
+NAME=LUAC: constants 5.1
+FILE=bins/luac/constants51.luac
+CMDS=<<EOF
+iH~ -
+EOF
+EXPECT=<<EOF
+        - true
+        - "is_true"
+        - false
+        - "is_false"
+        - "field1"
+        - "field2"
+        - "field3"
+        - "NIL"
+        - "print"
+        - "type"
+EOF
+RUN
+
+NAME=LUAC: constants 5.2
+FILE=bins/luac/constants52.luac
+CMDS=<<EOF
+iH~ -
+EOF
+EXPECT=<<EOF
+        - true
+        - "is_true"
+        - false
+        - "is_false"
+        - "field1"
+        - "field2"
+        - "field3"
+        - "NIL"
+        - "print"
+        - "type"
+EOF
+RUN
+
+NAME=LUAC: constants 5.3
+FILE=bins/luac/constants53.luac
+CMDS=<<EOF
+iH~ -
+EOF
+EXPECT=<<EOF
+        - true
+        - "is_true"
+        - false
+        - "is_false"
+        - "field1"
+        - "field2"
+        - "field3"
+        - "NIL"
+        - "print"
+        - "type"
+EOF
+RUN
+
+NAME=LUAC: constants 5.4
+FILE=bins/luac/constants54.luac
+CMDS=<<EOF
+iH~ -
+EOF
+EXPECT=<<EOF
+        - "is_true"
+        - "is_false"
+        - "field1"
+        - true
+        - "field2"
+        - false
+        - "field3"
+        - "NIL"
+        - "print"
+        - "type"
+EOF
+RUN
+
+NAME=LUAC: constants 5.5
+FILE=bins/luac/constants55.luac
+CMDS=<<EOF
+iH~ -
+EOF
+EXPECT=<<EOF
+        - "is_true"
+        - "is_false"
+        - "field1"
+        - true
+        - "field2"
+        - false
+        - "field3"
+        - "NIL"
+        - "print"
+        - "type"
 EOF
 RUN

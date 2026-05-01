@@ -381,6 +381,7 @@ static bool meta_string_guess_add(RzCore *core, ut64 addr, size_t limit, char **
 		.min_str_length = bin->str_search_cfg.min_length,
 		.prefer_big_endian = big_endian,
 		.check_ascii_freq = bin->str_search_cfg.check_ascii_freq,
+		.user_unprintable = bin->str_search_cfg.user_unprintable,
 	};
 	RzList *str_list = rz_list_new();
 	if (!str_list) {

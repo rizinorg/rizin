@@ -1374,10 +1374,10 @@ static void handle_default_disasm_print_mode(const RzCore *core, const ut64 addr
 	if (show_color) {
 		const char *offsetColor = rz_cons_singleton()->context->pal.offset;
 		if (!ret_val) {
-			rz_cons_printf("%s0x%08" PFMT64x "" Color_RESET "  %10s %s\n",
+			rz_cons_printf("%s0x%08" PFMT64x Color_RESET "  %10s %s\n",
 				offsetColor, addr, "", m_intr);
 		} else {
-			rz_strbuf_appendf(buf, "%s0x%08" PFMT64x "" Color_RESET "  %10s %s\n",
+			rz_strbuf_appendf(buf, "%s0x%08" PFMT64x Color_RESET "  %10s %s\n",
 				offsetColor, addr, "", m_intr);
 		}
 	} else {
@@ -1760,10 +1760,11 @@ static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bo
 		opt.encoding = encoding;
 		opt.stop_at_nil = stop_at_nil;
 		opt.stop_at_unprintable = stop_at_unprintable;
+		opt.user_unprintable = core->bin->str_search_cfg.user_unprintable;
 		core_print_raw_buffer(&opt);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
-		print_json_string(core, buffer, length, encoding, stop_at_nil, stop_at_nil);
+		print_json_string(core, buffer, length, encoding, stop_at_nil, stop_at_unprintable);
 		break;
 	default:
 		RZ_LOG_ERROR("core: unsupported output mode\n");

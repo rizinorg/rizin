@@ -57,8 +57,12 @@ RZ_API ut64 rz_reg_get_value(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item) 
  * \return     Value stored in the register
  */
 RZ_API ut64 rz_reg_get_value_by_role(RZ_NONNULL RzReg *reg, RzRegisterId role) {
-	// TODO use mapping from RzRegisterId to RzRegItem (via RzRegSet)
-	return rz_reg_get_value(reg, rz_reg_get(reg, rz_reg_get_name(reg, role), -1));
+	rz_return_val_if_fail(reg, 0);
+	RzRegItem *ri = rz_reg_get_by_role(reg, role);
+	if (!ri) {
+		return 0;
+	}
+	return rz_reg_get_value(reg, ri);
 }
 
 static bool reg_set_value(RzReg *reg, RzRegItem *item, ut64 value) {
@@ -179,11 +183,10 @@ RZ_API bool rz_reg_set_value(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item, 
  * \return     On success returns true, otherwise false
  */
 RZ_API bool rz_reg_set_value_by_role(RZ_NONNULL RzReg *reg, RzRegisterId role, ut64 value) {
-	// TODO use mapping from RzRegisterId to RzRegItem (via RzRegSet)
-	const char *name = rz_reg_get_name(reg, role);
-	if (!name) {
+	rz_return_val_if_fail(reg, false);
+	RzRegItem *ri = rz_reg_get_by_role(reg, role);
+	if (!ri) {
 		return false;
 	}
-	RzRegItem *r = rz_reg_get(reg, name, -1);
-	return r ? rz_reg_set_value(reg, r, value) : false;
+	return ri ? rz_reg_set_value(reg, ri, value) : false;
 }

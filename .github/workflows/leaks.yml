@@ -1,0 +1,120 @@
+name: New Leaks
+
+on:
+  pull_request:
+
+# Automatically cancel any previous workflow on new push.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  real_pr_shas:
+    uses: rizinorg/rizin/.github/workflows/get_real_pr_shas.yml@dev
+
+  build-and-check-leaks:
+    needs:
+      - real_pr_shas
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: ${{ matrix.timeout }}
+    strategy:
+      fail-fast: false
+      matrix:
+        name:
+          [
+            linux-gcc-tests-lsan,
+          ]
+        include:
+          - name: linux-gcc-tests-lsan
+            os: ubuntu-24.04
+            build_system: meson
+            compiler: gcc
+            cflags: "-DRZ_ASSERT_STDOUT=1 -ftrivial-auto-var-init=pattern -funsigned-char"
+            meson_options: -Dbuildtype=debug -Db_sanitize=leak --werror
+            timeout: 120
+
+    env:
+      CC: ${{ matrix.compiler }}
+      CFLAGS: ${{ matrix.cflags }}
+      ASAN_OPTIONS: ${{ matrix.asan_options }}
+      LOG_PREFIX: leaks
+      LSAN_LOGS_DIR: /tmp/lsan_logs/
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Install python and other dependencies
+        run: sudo apt-get --assume-yes install python3-wheel python3-setuptools libcapstone4 libcapstone-dev
+
+      - name: Install meson and ninja
+        if: matrix.build_system == 'meson'
+        run: pip3 install --user meson ninja PyYAML
+        env:
+          PIP_BREAK_SYSTEM_PACKAGES: 1
+
+      - name: Checkout rzpipe
+        uses: actions/checkout@v6
+        with:
+          repository: rizinorg/rz-pipe
+          path: test/rz-pipe
+
+      - name: Install test dependencies
+        run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python" requests
+        env:
+          PIP_BREAK_SYSTEM_PACKAGES: 1
+
+      - name: Install Linux test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get --assume-yes install libc6 libc6-i386 libc6-dev debuginfod
+
+      - name: Install gdbserver dependency
+        run: sudo apt-get --assume-yes install gdbserver
+
+      - name: Build with Meson
+        if: matrix.build_system == 'meson'
+        run: |
+          export PATH=$(python3 -m site --user-base)/bin:${HOME}/.local/bin:${PATH}
+          meson setup --prefix=${HOME} ${{ matrix.meson_options }} build && ninja -C build
+
+      - name: Install with meson
+        if: matrix.build_system == 'meson'
+        run: |
+          # Install rizin
+          export PATH=${HOME}/bin:$(python3 -m site --user-base)/bin:${HOME}/.local/bin:${PATH}
+          ninja -C build install
+
+      - name: Checkout our Testsuite Binaries
+        uses: actions/checkout@v6
+        with:
+          repository: rizinorg/rizin-testbins
+          path: test/bins
+
+      - name: Collecting leaks from unit, integration, regression tests
+        run: |
+          export PATH=${HOME}/bin:$(python3 -m site --user-base)/bin:${HOME}/.local/bin:${PATH}
+          export LSAN_OPTIONS="log_path=$LSAN_LOGS_DIR/$LOG_PREFIX"
+
+          meson test -C build --suite unit -q || true
+          meson test -C build --suite integration -q || true
+          cd test
+          rz-test -q || true
+
+      - name: Archive logs
+        run: |
+          tar czvf lsan_reports.tgz $LSAN_LOGS_DIR
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: lsan_logs
+          path: lsan_reports.tgz
+
+      - name: Check for new leaks
+        env:
+          CHANGES: ${{ needs.real_pr_shas.outputs.CHANGES }}
+        run: |
+          echo "$CHANGES" > changes.diff
+          ./sys/lsan_check.py changes.diff $LSAN_LOGS_DIR/*

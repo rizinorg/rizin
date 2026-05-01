@@ -912,16 +912,13 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			if (!r) {
 				int role = rz_reg_get_name_idx(str);
 				if (role != -1) {
-					const char *alias = rz_reg_get_name(reg, role);
-					if (alias) {
-						r = rz_reg_get(reg, alias, -1);
-						if (r) {
-							if (ok) {
-								*ok = true;
-							}
-							ret = rz_reg_get_value(reg, r);
-							return ret;
+					r = rz_reg_get_by_role(reg, role);
+					if (r) {
+						if (ok) {
+							*ok = true;
 						}
+						ret = rz_reg_get_value(reg, r);
+						return ret;
 					}
 				}
 			} else {
@@ -1523,17 +1520,24 @@ static void core_set_rz_asm_by_config(RzCore *core) {
 
 static RzStrBuf *bp_get_sw_breakpoint_at(ut64 addr, void *user) {
 	RzCore *core = (RzCore *)user;
+	ut8 bytes[16] = { 0 }; // worst-case is 15-byte instructions in x86
+	rz_io_read_at_mapped(core->io, addr, bytes, sizeof(bytes));
 	RzStrBuf *opcode = NULL;
 	RzAsmOp op = { 0 };
+	RzAsmOp original = { 0 };
 
 	core_set_rz_asm_by_hint(core, addr);
 
 	rz_asm_op_init(&op);
-	if (rz_asm_software_breakpoint(core->rasm, &op) &&
+	rz_asm_op_init(&original);
+
+	(void)rz_asm_disassemble(core->rasm, &original, bytes, sizeof(bytes));
+	if (rz_asm_software_breakpoint(core->rasm, addr, &original, &op) &&
 		(opcode = rz_strbuf_new(NULL))) {
 		rz_strbuf_copy(opcode, &op.buf);
 	}
 	rz_asm_op_fini(&op);
+	rz_asm_op_fini(&original);
 
 	core_set_rz_asm_by_config(core);
 	return opcode;
@@ -1541,16 +1545,23 @@ static RzStrBuf *bp_get_sw_breakpoint_at(ut64 addr, void *user) {
 
 static size_t bp_get_sw_breakpoint_size_at(ut64 addr, void *user) {
 	RzCore *core = (RzCore *)user;
+	ut8 bytes[16] = { 0 }; // worst-case is 15-byte instructions in x86
+	rz_io_read_at_mapped(core->io, addr, bytes, sizeof(bytes));
 	size_t length = 0;
 	RzAsmOp op = { 0 };
+	RzAsmOp original = { 0 };
 
 	core_set_rz_asm_by_hint(core, addr);
 
 	rz_asm_op_init(&op);
-	if (rz_asm_software_breakpoint(core->rasm, &op)) {
+	rz_asm_op_init(&original);
+
+	(void)rz_asm_disassemble(core->rasm, &original, bytes, sizeof(bytes));
+	if (rz_asm_software_breakpoint(core->rasm, addr, &original, &op)) {
 		length = rz_strbuf_length(&op.buf);
 	}
 	rz_asm_op_fini(&op);
+	rz_asm_op_fini(&original);
 
 	core_set_rz_asm_by_config(core);
 	return length;

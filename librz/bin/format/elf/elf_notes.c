@@ -8,7 +8,7 @@
 
 #define ROUND_UP_4(x) ((x) + (4 - 1)) / 4 * 4
 
-#define FP_LAYOUT 0x10
+#define FP_LAYOUT 0x80
 
 #define X86          0
 #define X86_64       1
@@ -25,10 +25,21 @@
 #define OPENBSD_SPARC_V9_FP (FP_LAYOUT | OPENBSD_SPARC_V9)
 // MIPS related constants.
 // The size of the pr status depends on the ABI
-#define MIPS_32   8
-#define MIPS_64   9
-#define MIPS_FP32 (FP_LAYOUT | MIPS_32)
-#define MIPS_FP64 (FP_LAYOUT | MIPS_64)
+#define MIPS_32     8
+#define MIPS_64     9
+#define MIPS_FP32   (FP_LAYOUT | MIPS_32)
+#define MIPS_FP64   (FP_LAYOUT | MIPS_64)
+#define ALPHA       10
+#define HPPA32      11
+#define HPPA64      12
+#define RISCV_32    13
+#define RISCV_64    14
+#define RISCV_32_FP (FP_LAYOUT | RISCV_32)
+#define RISCV_64_FP (FP_LAYOUT | RISCV_64)
+#define PPC64       15
+#define S390X       17
+#define LOONGARCH32 18
+#define LOONGARCH64 19
 // Floating point register layout.
 #define ARCH_LEN (FP_LAYOUT | 0xf)
 
@@ -56,6 +67,54 @@
 // OpenBSD has an extra note type for the registers and
 // hence an extra buffer (not shared with PRSTATUS)
 #define SPARC64_OPENBSD_REG_OFFSET 0x0
+
+// linux/arch/alpha/kernel/process.c: dump_elf_thread() dest[0..30]=r0..r30, dest[31]=pc, dest[32]=unique; ELF_NGREG=33; sp=r30 at byte 240
+#define ALPHA_REGS_SIZE               (33 * 8)
+#define ALPHA_PR_STATUS_REG_OFFSET    0x70
+#define ALPHA_PR_STATUS_REG_OFFSET_SP 240
+
+// linux/arch/parisc/include/uapi/asm/ptrace.h: user_regs_struct (80 unsigned longs * 4 = 320 bytes)
+// arch/parisc/include/asm/ptrace.h: sp = gr[30]
+#define HPPA32_REGS_SIZE               320
+#define HPPA32_PR_STATUS_REG_OFFSET    0x48
+#define HPPA32_PR_STATUS_REG_OFFSET_SP 120
+
+// linux/arch/parisc/include/uapi/asm/ptrace.h: user_regs_struct (80 unsigned longs * 8 = 640 bytes)
+#define HPPA64_REGS_SIZE               640
+#define HPPA64_PR_STATUS_REG_OFFSET    0x70
+#define HPPA64_PR_STATUS_REG_OFFSET_SP 240
+
+// linux/arch/powerpc/include/uapi/asm/ptrace.h: pt_regs 48*8 = 384;
+// linux/arch/powerpc/include/asm/ptrace.h: sp = r1 at byte 8
+#define PPC64_REGS_SIZE               384
+#define PPC64_PR_STATUS_REG_OFFSET    0x70
+#define PPC64_PR_STATUS_REG_OFFSET_SP 8
+
+// linux/arch/riscv/include/uapi/asm/ptrace.h: user_regs_struct { pc, ra, sp, ... } 32*4 = 128 bytes; sp at byte 8
+#define RISCV32_REGS_SIZE               128
+#define RISCV32_PR_STATUS_REG_OFFSET    0x48
+#define RISCV32_PR_STATUS_REG_OFFSET_SP 8
+
+// linux/arch/riscv/include/uapi/asm/ptrace.h: user_regs_struct { pc, ra, sp, ... } 32*8 = 256 bytes; sp at byte 16
+#define RISCV64_REGS_SIZE               256
+#define RISCV64_PR_STATUS_REG_OFFSET    0x70
+#define RISCV64_PR_STATUS_REG_OFFSET_SP 16
+
+// linux/arch/s390/include/uapi/asm/ptrace.h: s390_regs { psw(16) + gprs[16](128) + acrs[16](64) + orig_gpr2(8) } = 216 bytes
+// linux/arch/s390/include/asm/ptrace.h: sp = r15 at byte 136
+#define S390X_REGS_SIZE               216
+#define S390X_PR_STATUS_REG_OFFSET    0x70
+#define S390X_PR_STATUS_REG_OFFSET_SP 136
+
+// linux/arch/loongarch/include/uapi/asm/ptrace.h: user_pt_regs { regs[32](128) + orig_a0(4) + csr_era(4) + csr_badv(4) + reserved[10](40) } = 180 bytes; sp = regs[3] at byte 12
+#define LOONGARCH32_REGS_SIZE               180
+#define LOONGARCH32_PR_STATUS_REG_OFFSET    0x48
+#define LOONGARCH32_PR_STATUS_REG_OFFSET_SP 12
+
+// linux/arch/loongarch/include/uapi/asm/ptrace.h: user_pt_regs { regs[32](256) + orig_a0(8) + csr_era(8) + csr_badv(8) + reserved[10](80) } = 360 bytes; sp = regs[3] at byte 24
+#define LOONGARCH64_REGS_SIZE               360
+#define LOONGARCH64_PR_STATUS_REG_OFFSET    0x70
+#define LOONGARCH64_PR_STATUS_REG_OFFSET_SP 24
 
 // The ones for Linux coredumps.
 // linux/arch/sparc/include/asm/elf_64.h or elf_32.h
@@ -95,6 +154,13 @@
 #define SPARC64_OPENBSD_FPREGS_SIZE  ((4 * 64) + 8 + 4)
 #define SPARC64_OPENBSD_FPREG_OFFSET 0x0
 
+// Linux x86/x86_64 NT_FPREGSET layouts.
+// For both, the FP state begins at the start of the note description.
+#define X86_FPREGS_SIZE     108
+#define X86_64_FPREGS_SIZE  512
+#define X86_FPREG_OFFSET    0x0
+#define X86_64_FPREG_OFFSET 0x0
+
 // o6 is the stack pointer. So g0-g7,o0-5 come before it.
 // Same for OpenBSD and Linux.
 #define SPARC32_PR_STATUS_REG_OFFSET_SP (4 * 14)
@@ -110,6 +176,16 @@
 #define MIPS_GPR32_STATUS_OFFSET (96)
 #define MIPS_GPR64_STATUS_OFFSET (112)
 
+// RISCV number of registers.
+#define RISCV_32_REGS_SIZE     (4 * 32)
+#define RISCV_64_REGS_SIZE     (8 * 32)
+#define RISCV_32_REG_OFFSET    (72)
+#define RISCV_64_REG_OFFSET    (112)
+#define RISCV_FP32_REGS_SIZE   (4 * 32) // F
+#define RISCV_FP64_REGS_SIZE   (8 * 32) // D
+#define RISCV_32_REG_OFFSET_SP (8)
+#define RISCV_64_REG_OFFSET_SP (16)
+
 static RzBinElfPrStatusLayout prstatus_layouts[ARCH_LEN] = {
 	[X86] = { 160, 0x48, 32, 0x3c },
 	[X86_64] = { 216, 0x70, 64, 0x98 },
@@ -124,12 +200,31 @@ static RzBinElfPrStatusLayout prstatus_layouts[ARCH_LEN] = {
 	[MIPS_32] = { MIPS32_REGS_SIZE, MIPS_GPR32_STATUS_OFFSET, 0, 0 },
 	[MIPS_64] = { MIPS64_REGS_SIZE, MIPS_GPR64_STATUS_OFFSET, 0, 0 },
 
+	[ALPHA] = { ALPHA_REGS_SIZE, ALPHA_PR_STATUS_REG_OFFSET, 64, ALPHA_PR_STATUS_REG_OFFSET_SP },
+
+	[HPPA32] = { HPPA32_REGS_SIZE, HPPA32_PR_STATUS_REG_OFFSET, 32, HPPA32_PR_STATUS_REG_OFFSET_SP },
+	[HPPA64] = { HPPA64_REGS_SIZE, HPPA64_PR_STATUS_REG_OFFSET, 64, HPPA64_PR_STATUS_REG_OFFSET_SP },
+
+	[PPC64] = { PPC64_REGS_SIZE, PPC64_PR_STATUS_REG_OFFSET, 64, PPC64_PR_STATUS_REG_OFFSET_SP },
+
+	[S390X] = { S390X_REGS_SIZE, S390X_PR_STATUS_REG_OFFSET, 64, S390X_PR_STATUS_REG_OFFSET_SP },
+	[LOONGARCH32] = { LOONGARCH32_REGS_SIZE, LOONGARCH32_PR_STATUS_REG_OFFSET, 32, LOONGARCH32_PR_STATUS_REG_OFFSET_SP },
+	[LOONGARCH64] = { LOONGARCH64_REGS_SIZE, LOONGARCH64_PR_STATUS_REG_OFFSET, 64, LOONGARCH64_PR_STATUS_REG_OFFSET_SP },
+
 	[SPARC32_FP] = { SPARC32_FPREGS_SIZE, SPARC32_FPREG_OFFSET, 0, 0 },
 	[SPARC64_FP] = { SPARC64_FPREGS_SIZE, SPARC32_FPREG_OFFSET, 0, 0 },
+
 	[OPENBSD_SPARC_V9_FP] = { SPARC64_OPENBSD_FPREGS_SIZE, SPARC64_OPENBSD_FPREG_OFFSET, 0, 0 },
 
 	[MIPS_FP32] = { MIPS_FP32_REGS_SIZE, 4, 0, 0 },
 	[MIPS_FP64] = { MIPS_FP64_REGS_SIZE, 8, 0, 0 },
+
+	[RISCV_32] = { RISCV_32_REGS_SIZE, RISCV_32_REG_OFFSET, 32, RISCV_32_REG_OFFSET_SP },
+	[RISCV_64] = { RISCV_64_REGS_SIZE, RISCV_64_REG_OFFSET, 64, RISCV_64_REG_OFFSET_SP },
+
+	[X86 | FP_LAYOUT] = { X86_FPREGS_SIZE, X86_FPREG_OFFSET, 0, 0 },
+	[X86_64 |
+		FP_LAYOUT] = { X86_64_FPREGS_SIZE, X86_64_FPREG_OFFSET, 0, 0 },
 };
 
 static bool parse_register_note(ELFOBJ *bin, RzVector /*<RzBinElfNote>*/ *notes, Elf_(Nhdr) * note_segment_header, ut64 offset, size_t n_type) {
@@ -359,12 +454,39 @@ RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNUL
 		return prstatus_layouts + SPARC_V8PLUS;
 	case EM_SPARCV9:
 		return prstatus_layouts + SPARC_V9;
+	case EM_RISCV:
+		return prstatus_layouts + ((bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64) ? RISCV_64 : RISCV_32);
 	case EM_MIPS:
 		/* fall-thru */
 	case EM_MIPS_RS3_LE:
 		/* fall-thru */
 	case EM_MIPS_X:
 		return prstatus_layouts + elf_get_prstatus_layout_mips(bin, false);
+	case EM_ALPHA:
+		return prstatus_layouts + ALPHA;
+	case EM_PARISC:
+		if (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64) {
+			return prstatus_layouts + HPPA64;
+		}
+		if (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS32) {
+			return prstatus_layouts + HPPA32;
+		}
+		return NULL;
+	case EM_PPC64:
+		return prstatus_layouts + PPC64;
+	case EM_S390:
+		if (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64) {
+			return prstatus_layouts + S390X;
+		}
+		return NULL;
+	case EM_LOONGARCH:
+		if (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64) {
+			return prstatus_layouts + LOONGARCH64;
+		}
+		if (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS32) {
+			return prstatus_layouts + LOONGARCH32;
+		}
+		return NULL;
 	}
 
 	return NULL;
@@ -389,6 +511,22 @@ RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_regset_layout)(RZ_NONNULL 
 	switch (bin->ehdr.e_machine) {
 	default:
 		return NULL;
+	case EM_386:
+		if (n_type == NT_FPREGSET) {
+			off = FP_LAYOUT | X86;
+		} else {
+			rz_warn_if_reached();
+			return NULL;
+		}
+		break;
+	case EM_X86_64:
+		if (n_type == NT_FPREGSET) {
+			off = FP_LAYOUT | X86_64;
+		} else {
+			rz_warn_if_reached();
+			return NULL;
+		}
+		break;
 	case EM_MIPS:
 		/* fall-thru */
 	case EM_MIPS_RS3_LE:

@@ -221,7 +221,7 @@ repeat:
 		tail_return_value = 1;
 	}
 	// esil->verbose ?
-	// eprintf ("REPE 0x%llx %s => 0x%llx\n", addr, RZ_STRBUF_SAFEGET (&op.esil), rz_reg_getv (rreg, "PC"));
+	// eprintf ("REPE 0x%" PFMT64x " %s => 0x%" PFMT64x "\n", addr, RZ_STRBUF_SAFEGET (&op.esil), rz_reg_getv (rreg, "PC"));
 
 	ut64 pc = rz_reg_getv(rreg, name);
 	int pcalign = rz_analysis_get_pc_align(core->analysis);
@@ -442,7 +442,7 @@ static void initialize_stack(RzCore *core, ut64 addr, ut64 size) {
 		ut64 i;
 		for (i = 0; i < size; i += bs) {
 			ut64 left = RZ_MIN(bs, size - i);
-			//	rz_core_cmdf (core, "wx 10203040 @ 0x%llx", addr);
+			//	rz_core_cmdf (core, "wx 10203040 @ 0x%" PFMT64x, addr);
 			switch (*mode) {
 			case 'd': { // "debrujn"
 				ut8 *buf = (ut8 *)rz_debruijn_pattern(left, 0, NULL);
@@ -726,7 +726,7 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 			rz_reg_setv(rreg, "PC", aop.addr + aop.size);
 			const char *e = RZ_STRBUF_SAFEGET(&aop.esil);
 			if (e && *e) {
-				// eprintf ("   0x%08llx %d  %s\n", aop.addr, ret, aop.mnemonic);
+				// eprintf ("   0x%08" PFMT64x " %d  %s\n", aop.addr, ret, aop.mnemonic);
 				(void)rz_analysis_esil_parse(esil, e);
 			}
 		}
@@ -758,10 +758,7 @@ RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val)
 	if (!r) {
 		int role = rz_reg_get_name_idx(regname);
 		if (role != -1) {
-			const char *alias = rz_reg_get_name(rreg, role);
-			if (alias) {
-				r = rz_reg_get(rreg, alias, -1);
-			}
+			r = rz_reg_get_by_role(rreg, role);
 		}
 	}
 	if (!r) {

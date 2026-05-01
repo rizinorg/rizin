@@ -52,20 +52,38 @@ typedef ut32 LUA_INSTRUCTION;
 /* Lua Constant Tag */
 #define makevariant(t, v) ((t) | ((v) << 4))
 
-#define LUA_TNIL        0
-#define LUA_TBOOLEAN    1
-#define LUA_TNUMBER     3
-#define LUA_TSTRING     4
-#define LUA_VSTRING_IDX 10
+#define LUA_TNIL     0
+#define LUA_TBOOLEAN 1
+#define LUA_TNUMBER  3
+#define LUA_TSTRING  4
+
+/**
+ * Why OpenWrt Patches Lua's Number Handling
+ * Standard Lua 5.1 represents all numbers as double (64-bit floating point).
+ * This is wasteful on embedded/MIPS routers like the TP-Link Archer AX21, where:
+ * - Most numerical operations involve small integers (loop counters, table indices, port numbers, etc.)
+ * - Double-precision floating point is expensive on resource-constrained hardware
+ * - Memory is limited
+ *
+ * The LNUM patch modifies Lua to natively distinguish between integers and floating-point numbers, allowing the VM to:
+ * - Store integer constants in 4 bytes instead of 8
+ * - Use faster integer arithmetic when possible
+ * - Reduce memory footprint of compiled bytecode
+ *
+ * This is a well-known OpenWrt modification to Lua 5.1, as documented in Chinese-language firmware
+ * reverse engineering resources discussing OpenWrt Lua bytecode differences from vanilla Lua
+ */
+#define LUA_OPENWRT_INT32 9 ///< 4 bytes (2 - le, 2 - 00 00)
 
 /* Macros of tag */
-#define LUA_VNIL    makevariant(LUA_TNIL, 0)
-#define LUA_VFALSE  makevariant(LUA_TBOOLEAN, 0)
-#define LUA_VTRUE   makevariant(LUA_TBOOLEAN, 1)
-#define LUA_VNUMINT makevariant(LUA_TNUMBER, 0) /* integer numbers */
-#define LUA_VNUMFLT makevariant(LUA_TNUMBER, 1) /* float numbers */
-#define LUA_VSHRSTR makevariant(LUA_TSTRING, 0) /* short strings */
-#define LUA_VLNGSTR makevariant(LUA_TSTRING, 1) /* long strings */
+#define LUA_VNIL        makevariant(LUA_TNIL, 0) ///< 00
+#define LUA_VFALSE      makevariant(LUA_TBOOLEAN, 0) ///< 01
+#define LUA_VTRUE       makevariant(LUA_TBOOLEAN, 1) ///< 11
+#define LUA_VNUMINT     makevariant(LUA_TNUMBER, 0) ///< 03 - integer numbers
+#define LUA_VNUMFLT     makevariant(LUA_TNUMBER, 1) ///< 13 - float numbers
+#define LUA_VSHRSTR     makevariant(LUA_TSTRING, 0) ///< 04 - short strings
+#define LUA_VLNGSTR     makevariant(LUA_TSTRING, 1) ///< 14 - long strings
+#define LUA_VSTRING_IDX makevariant(LUA_TSTRING, 2) /* 24 - string constant index for save memory at duplicates */
 
 /**
  *  \struct lua_proto_ex
@@ -234,7 +252,6 @@ typedef struct luac_bin_info {
 	RzPVector /*<RzBinAddr *>*/ *entry_vec; ///< list of entries
 	RzPVector /*<RzBinSourceLineSample *>*/ *line_nums_vec; ///< list of line numbers
 	RzList /*<RzBinString *>*/ *string_list; ///< list of strings
-	RzBinInfo *general_info; ///< general binary info from luac header
 	LuaHeaderInfo *header;
 } LuacBinInfo;
 

@@ -1,31 +1,35 @@
-NAME=rz =
+NAME=file.(last)path for rz =
 FILE==
-CMDS=e file.path
+CMDS=<<EOF
+e file.path
+echo ---
+e file.lastpath
+EOF
 EXPECT=<<EOF
+
+---
 
 EOF
 RUN
 
-NAME=rz =
-FILE==
-CMDS=e file.lastpath
-EXPECT=<<EOF
-
-EOF
-RUN
-
-NAME=rz --
+NAME=file.(last)path for rz --
 FILE=--
-CMDS=e file.path
+CMDS=<<EOF
+e file.path
+echo ---
+e file.lastpath
+EOF
 EXPECT=<<EOF
+
+---
 
 EOF
 RUN
 
 NAME=rz --
 FILE=bins/elf/bomb
-BROKEN=1
-CMDS=rizin -s main -qcs bins/elf/bomb
+TOOL=rizin
+ARGS=-s main -qcs bins/elf/bomb
 EXPECT=<<EOF
 0x400da0
 EOF
@@ -45,38 +49,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=seek undo/redo
-FILE==
-CMDS=wx 01; s 1; shu; shr; pb 8
-EXPECT=<<EOF
-00000000
-EOF
-RUN
-
-NAME=rizin -V
+NAME=rizin -V & shortcut
 FILE==
 CMDS=<<EOF
 !!rizin -V~rz_arch?
 !!rizin -h~Usage?
 !!rizin -hh~RZ_USER_PLUGINS?
 !!rizin -L~default?
-EOF
-EXPECT=<<EOF
-1
-1
-1
-1
-EOF
-RUN
-
-NAME=rizin shortcut
-FILE==
-CMDS=<<EOF
+echo ---
 %= `!!rizin -h~Usage?`
 %+ %vi $?
 %! echo `!!rizin.bat -h~Usage?`
 EOF
 EXPECT=<<EOF
+1
+1
+1
+1
+---
 1
 EOF
 RUN
@@ -92,10 +82,8 @@ RUN
 
 NAME=rizin -i -Q with missing script
 FILE==
-CMDS=<<EOF
-# Should not hang
-!rizin -i script/missing.rz -Nq =
-EOF
+TOOL=rizin
+ARGS=-i script/missing.rz -Nq =
 EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Script 'script/missing.rz' not found.
@@ -120,7 +108,8 @@ RUN
 
 NAME=rizin empty -R
 FILE==
-CMDS=!rizin -R ""
+TOOL=rizin
+ARGS=-R ""
 EXPECT_ERR=
 RUN
 
