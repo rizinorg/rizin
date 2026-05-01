@@ -18,6 +18,7 @@
 
 #if CAPSTONE_HAS_M68K
 #include <capstone/m68k.h>
+#include "m68k/m68k_cs.h"
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/M68Kir.html
 
 #define OPERAND(x)  insn->detail->m68k.operands[x]
@@ -187,34 +188,13 @@ static int m68k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 	cs_m68k *m68k;
 	cs_detail *detail;
 
-	cs_mode mode = CS_MODE_M68K_040;
+	cs_mode mode = rz_m68k_cs_mode(a->cpu);
 
-	// mode |= (a->bits==64)? CS_MODE_64: CS_MODE_32;
 	if (mode != ctx->omode || a->bits != ctx->obits) {
 		cs_close(&ctx->handle);
 		ctx->handle = 0;
-		ctx->omode = mode;
+		ctx->omode = -1;
 		ctx->obits = a->bits;
-	}
-	// XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
-	// replace this with the asm.features?
-	if (a->cpu && strstr(a->cpu, "68000")) {
-		mode |= CS_MODE_M68K_000;
-	}
-	if (a->cpu && strstr(a->cpu, "68010")) {
-		mode |= CS_MODE_M68K_010;
-	}
-	if (a->cpu && strstr(a->cpu, "68020")) {
-		mode |= CS_MODE_M68K_020;
-	}
-	if (a->cpu && strstr(a->cpu, "68030")) {
-		mode |= CS_MODE_M68K_030;
-	}
-	if (a->cpu && strstr(a->cpu, "68040")) {
-		mode |= CS_MODE_M68K_040;
-	}
-	if (a->cpu && strstr(a->cpu, "68060")) {
-		mode |= CS_MODE_M68K_060;
 	}
 	op->size = 4;
 	if (ctx->handle == 0) {
@@ -222,6 +202,7 @@ static int m68k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 		if (ret != CS_ERR_OK) {
 			goto fin;
 		}
+		ctx->omode = mode;
 		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
 	n = cs_disasm(ctx->handle, (ut8 *)buf, len, addr, 1, &insn);
@@ -795,7 +776,7 @@ static int m68k_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
 		return 2;
 	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
-		return 4;
+		return M68K_LONGEST_INSTRUCTION;
 	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
 		return 2;
 	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
