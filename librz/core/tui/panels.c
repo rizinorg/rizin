@@ -1162,7 +1162,7 @@ char *__apply_filter_cmd(RzCore *core, RzPanel *panel) {
 
 char *__handle_cmd_str_cache(RzCore *core, RzPanel *panel, bool force_cache) {
 	char *cmd = __apply_filter_cmd(core, panel);
-	// Avoid failed cmd build into rz_core_cmd_str.
+	// Avoid failed command build into rz_core_cmd_str.
 	if (!cmd) {
 		return NULL;
 	}
