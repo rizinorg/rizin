@@ -35,18 +35,12 @@ static bool verify_phdr_entry(ELFOBJ *bin, RzBinObjectLoadOptions *options, Elf_
 
 	bool ret = true;
 
-	if (entry->p_filesz > bin->size) {
-		RZ_LOG_WARN("phdr entry: p_filesz (%" PFMTnd " bytes) > binary size (%" PFMT64d " bytes).\n",
-			entry->p_filesz, bin->size);
+	Elf_(Off) end_off;
+	if (!Elf_(rz_bin_elf_add_off)(&end_off, entry->p_offset, entry->p_filesz) || end_off > bin->size) {
+		RZ_LOG_WARN("phdr entry: p_offset (0x%" PFMTnx ") + p_filesz (%" PFMTnd " bytes) "
+			    "> binary size (%" PFMT64d " bytes).\n",
+			entry->p_offset, entry->p_filesz, bin->size);
 		ret = false;
-	} else {
-		Elf_(Off) end_off;
-		if (!Elf_(rz_bin_elf_add_off)(&end_off, entry->p_offset, entry->p_filesz) || end_off > bin->size) {
-			RZ_LOG_WARN("phdr entry: p_offset (0x%" PFMTnx ") is invalid for "
-				    "p_filesz (%" PFMTnd " bytes) and binary size (%" PFMT64d " bytes).\n",
-				entry->p_offset, entry->p_filesz, bin->size);
-			ret = false;
-		}
 	}
 
 	if (!Elf_(rz_bin_elf_add_addr)(NULL, entry->p_vaddr, entry->p_memsz)) {
