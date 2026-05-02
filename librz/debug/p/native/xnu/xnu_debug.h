@@ -275,11 +275,18 @@ typedef struct _exception_info {
 	mach_port_t exception_port;
 } xnu_exception_info;
 
+/**
+ * \brief XNU-specific debugger context.
+ *
+ * Holds XNU-specific state for a debug session and is used by the native XNU
+ * debugger implementation to track the debuggee's info
+ */
 typedef struct rz_xnu_debug_t {
-	cpu_type_t cpu; ///< CPU/Architecture of the debuggee, determined and set once after attach
-	task_t task_dbg;
-	int old_pid;
-	xnu_exception_info ex;
+	cpu_type_t cpu; ///< CPU/Architecture of the debuggee.
+	task_t task_dbg; ///< Mach task port for the process with pid `old_pid`. Cache for `pid_to_task`.
+	int old_pid; ///< Previously observed PID, related to `task_dbg`. Cache for `pid_to_task`.
+	int last_attached_pid; ///< Last PID the plugin attached to.
+	xnu_exception_info ex; ///< Exception handling state (ports, masks, flavors).
 } RzXnuDebug;
 
 RZ_IPI bool rz_xnu_debug_init(RzDebug *dbg, void **user);

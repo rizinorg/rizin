@@ -549,6 +549,7 @@ static inline void *rz_new_copy(int size, const void *data) {
 #define PFMTDPTR "td"
 
 #define PFMT32x "x"
+#define PFMT32X "X"
 #define PFMT32d "d"
 #define PFMT32u "u"
 #define PFMT32o "o"
