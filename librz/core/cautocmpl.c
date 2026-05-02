@@ -551,23 +551,23 @@ static void autocmplt_cmd_arg_choices(RzCore *core, RzLineNSCompletionResult *re
 
 typedef struct autocmplt_context_s {
 	RzLineNSCompletionResult *res;
-	const char *s;
-	size_t len;
+	const char *prefix; ///< Prefix to search
+	size_t len; ///< Prefix length
 } autocmplt_ctx_t;
 
 static bool autocmplt_cmd_arg_eval_key_iterator(const RzConfigEntry *entry, void *user) {
 	autocmplt_ctx_t *ctx = user;
 	const char *e_name = rz_config_entry_get_name(entry);
-	if (!strncmp(ctx->s, e_name, ctx->len)) {
+	if (!strncmp(ctx->prefix, e_name, ctx->len)) {
 		rz_line_ns_completion_result_add(ctx->res, e_name);
 	}
 	return true;
 }
 
-static void autocmplt_cmd_arg_eval_key(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+static void autocmplt_cmd_arg_eval_key(RzCore *core, RzLineNSCompletionResult *res, const char *prefix, size_t len) {
 	autocmplt_ctx_t ctx = {
 		res,
-		s,
+		prefix,
 		len,
 	};
 	rz_config_iterate_over(core->config, autocmplt_cmd_arg_eval_key_iterator, &ctx);

@@ -62,7 +62,6 @@ static void config_visual_hit(RzCore *core, const char *name, int editor) {
 		return;
 	}
 
-	// FGETS AND SO
 	rz_cons_printf("New value (old=%s): \n", value);
 	rz_cons_show_cursor(true);
 	rz_cons_flush();
@@ -81,7 +80,7 @@ static void show_config_options(RzCore *core, const char *name) {
 		return;
 	}
 
-	int h, w = rz_cons_get_size(&h);
+	int w = rz_cons_get_size(NULL);
 	const char *item;
 	const RzListIter *iter;
 	RzStrBuf *sb = rz_strbuf_new(" Options: ");
@@ -119,7 +118,8 @@ static bool core_visual_config_flag_space(const RzConfigEntry *entry, void *user
 		if (ctx->option == ctx->i) {
 			ctx->hit = 1;
 		}
-		if ((ctx->i >= ctx->option - ctx->delta) && ((ctx->i < ctx->option + ctx->delta) || ((ctx->option < ctx->delta) && (ctx->i < (ctx->delta << 1))))) {
+		if ((ctx->i >= ctx->option - ctx->delta) &&
+			((ctx->i < ctx->option + ctx->delta) || ((ctx->option < ctx->delta) && (ctx->i < (ctx->delta << 1))))) {
 			rz_cons_printf(" %c  %s\n", (ctx->option == ctx->i) ? '>' : ' ', ctx->old);
 			ctx->j++;
 		}
@@ -139,7 +139,8 @@ static bool core_visual_config_flag_selection(const RzConfigEntry *entry, void *
 			ctx->desc = desc;
 			ctx->hit = 1;
 		}
-		if ((ctx->i >= ctx->option - ctx->delta) && ((ctx->i < ctx->option + ctx->delta) || ((ctx->option < ctx->delta) && (ctx->i < (ctx->delta << 1))))) {
+		if ((ctx->i >= ctx->option - ctx->delta) &&
+			((ctx->i < ctx->option + ctx->delta) || ((ctx->option < ctx->delta) && (ctx->i < (ctx->delta << 1))))) {
 			// TODO: Better align
 			char *value = rz_config_get_as_string(ctx->core->config, name);
 			rz_cons_printf(" %c  %s = %s\n", (ctx->option == ctx->i) ? '>' : ' ', name, value);

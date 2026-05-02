@@ -45,7 +45,12 @@ static RzConfig *_6502_get_config(void *plugin_data) {
 	}
 
 	// Add nodes
-	rz_config_add_integer_bind(cfg, "plugins.6502.magic", "Determines the magic number certain illegal opcodes use.", _6520_config_magic_get, _6520_config_magic_set, NULL, state);
+	rz_config_add_integer_bind(cfg,
+		"plugins.6502.magic",
+		"Determines the magic number certain illegal opcodes use.",
+		_6520_config_magic_get,
+		_6520_config_magic_set,
+		NULL, state);
 
 	return cfg;
 }

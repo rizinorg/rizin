@@ -149,7 +149,7 @@ int disass_6502(ut64 pc, RzAsmOp *op, const ut8 *buf, ut64 len) {
 		int len = ops[i].len;
 		switch (len) {
 		case 1:
-			rz_asm_op_setf_asm(op, "%s", ops[i].name);
+			rz_asm_op_set_asm(op, ops[i].name);
 			break;
 		case 2:
 			if (len > 1) {

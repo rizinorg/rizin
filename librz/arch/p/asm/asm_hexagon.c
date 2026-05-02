@@ -150,10 +150,26 @@ RZ_API RZ_OWN RzConfig *hexagon_get_config(void *plugin_data) {
 	}
 
 	// Add nodes
-	rz_config_add_bool_bind(cfg, "plugins.hexagon.imm.hash", "Display ## before 32bit immediates and # before immidiates with other width.", hexagon_config_imm_hash_get, hexagon_config_imm_hash_set, NULL, state);
-	rz_config_add_bool_bind(cfg, "plugins.hexagon.imm.sign", "True: Print them with sign. False: Print signed immediates in unsigned representation.", hexagon_config_imm_sign_get, hexagon_config_imm_sign_set, NULL, state);
-	rz_config_add_bool_bind(cfg, "plugins.hexagon.sdk", "Print packet syntax in objdump style.", hexagon_config_sdk_get, hexagon_config_sdk_set, NULL, state);
-	rz_config_add_bool_bind(cfg, "plugins.hexagon.reg.alias", "Print the alias of registers (Alias from C0 = SA0).", hexagon_config_reg_alias_get, hexagon_config_reg_alias_set, NULL, state);
+	rz_config_add_bool_bind(cfg, "plugins.hexagon.imm.hash",
+		"Display ## before 32bit immediates and # before immidiates with other width.",
+		hexagon_config_imm_hash_get,
+		hexagon_config_imm_hash_set,
+		NULL, state);
+	rz_config_add_bool_bind(cfg, "plugins.hexagon.imm.sign",
+		"True: Print them with sign. False: Print signed immediates in unsigned representation.",
+		hexagon_config_imm_sign_get,
+		hexagon_config_imm_sign_set,
+		NULL, state);
+	rz_config_add_bool_bind(cfg, "plugins.hexagon.sdk",
+		"Print packet syntax in objdump style.",
+		hexagon_config_sdk_get,
+		hexagon_config_sdk_set,
+		NULL, state);
+	rz_config_add_bool_bind(cfg, "plugins.hexagon.reg.alias",
+		"Print the alias of registers (Alias from C0 = SA0).",
+		hexagon_config_reg_alias_get,
+		hexagon_config_reg_alias_set,
+		NULL, state);
 
 	return cfg;
 }
