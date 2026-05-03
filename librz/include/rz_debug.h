@@ -255,7 +255,7 @@ typedef struct rz_debug_t {
 	char *btalgo; /* select backtrace algorithm */
 	int btdepth; /* backtrace depth */
 	int regcols; /* display columns */
-	int swstep; /* steps with software traps */
+	bool swstep; /* when true, steps with software traps */
 	int stop_all_threads; /* stop all threads at any stop */
 	int trace_forks; /* stop on new children */
 	int trace_execs; /* stop on new execs */

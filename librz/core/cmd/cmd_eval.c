@@ -504,16 +504,17 @@ RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **a
 			rz_cmd_state_output_fini(&state);
 		} else if (llen == 1) {
 			// no value was set, show the value of the key
-			const char *v = rz_config_get(cfg, key);
+			char *v = rz_config_get_as_string(cfg, key);
 			if (!v) {
 				RZ_LOG_ERROR("core: Invalid config key '%s'\n", key);
 				rz_list_free(l);
 				return RZ_CMD_STATUS_ERROR;
 			}
 			rz_cons_printf("%s\n", v);
+			free(v);
 		} else if (llen == 2) {
 			char *value = rz_list_get_n(l, 1);
-			rz_config_set(cfg, key, value);
+			rz_config_set_any(cfg, key, value);
 		}
 		rz_list_free(l);
 	}
@@ -554,7 +555,7 @@ RZ_IPI RzCmdStatus rz_eval_editor_handler(RzCore *core, int argc, const char **a
 		print_all_plugin_configs(core);
 		return RZ_CMD_STATUS_OK;
 	}
-	const char *val = rz_config_get(cfg, argv[1]);
+	char *val = rz_config_get_as_string(cfg, argv[1]);
 	if (!val) {
 		RZ_LOG_ERROR("core: Invalid config key '%s'\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
@@ -564,7 +565,8 @@ RZ_IPI RzCmdStatus rz_eval_editor_handler(RzCore *core, int argc, const char **a
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_str_replace_char(p, '\n', ';');
-	rz_config_set(cfg, argv[1], p);
+	rz_config_set_any(cfg, argv[1], p);
+	free(val);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -574,7 +576,8 @@ RZ_IPI RzCmdStatus rz_eval_readonly_handler(RzCore *core, int argc, const char *
 		print_all_plugin_configs(core);
 		return RZ_CMD_STATUS_OK;
 	}
-	if (!rz_config_readonly(cfg, argv[1])) {
+
+	if (!rz_config_set_readonly(cfg, argv[1], true)) {
 		RZ_LOG_ERROR("core: Cannot make eval '%s' readonly.\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}

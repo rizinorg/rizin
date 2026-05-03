@@ -325,7 +325,6 @@ static void core_set_asm_plugin_configs(RZ_BORROW RzCore *core) {
 		return;
 	}
 
-	rz_config_lock(pcfg, 1);
 	if (!ht_sp_insert(core->plugin_configs, arch, pcfg)) {
 		RZ_LOG_WARN("core: plugin '%s' was already added.\n", arch);
 	}

@@ -4268,11 +4268,11 @@ RZ_IPI RzCmdStatus rz_print_calls_function_handler(RzCore *core, int argc, const
 
 	// store current configurations
 	RzConfigHold *hc = rz_config_hold_new(core->config);
-	rz_config_hold_i(hc, "asm.offset", NULL);
-	rz_config_hold_i(hc, "asm.comments", NULL);
-	rz_config_hold_i(hc, "asm.tabs", NULL);
-	rz_config_hold_i(hc, "asm.bytes", NULL);
-	rz_config_hold_i(hc, "emu.str", NULL);
+	rz_config_hold_var(hc, "asm.offset", NULL);
+	rz_config_hold_var(hc, "asm.comments", NULL);
+	rz_config_hold_var(hc, "asm.tabs", NULL);
+	rz_config_hold_var(hc, "asm.bytes", NULL);
+	rz_config_hold_var(hc, "emu.str", NULL);
 
 	// temporarily replace configurations
 	rz_config_set_i(core->config, "asm.offset", false);
@@ -4616,7 +4616,7 @@ RZ_IPI RzCmdStatus rz_print_columns_disassembly_handler(RzCore *core, int argc, 
 	int rows = user_rows > 0 ? user_rows : h - 2;
 
 	RzConfigHold *ch = rz_config_hold_new(core->config);
-	rz_config_hold_i(ch, "asm.offset", "asm.bytes", NULL);
+	rz_config_hold_var(ch, "asm.offset", "asm.bytes", NULL);
 	if (rz_config_get_i(core->config, "asm.minicols")) {
 		rz_config_set_b(core->config, "asm.offset", false);
 	}
@@ -4756,7 +4756,7 @@ static bool print_hexdump_columns(RzCore *core, int user_rows, bool has_header, 
 	int rows = user_rows > 0 ? user_rows : h - 2;
 
 	RzConfigHold *ch = rz_config_hold_new(core->config);
-	rz_config_hold_i(ch, "hex.cols", NULL);
+	rz_config_hold_var(ch, "hex.cols", NULL);
 	rz_config_set_i(core->config, "hex.cols", colwidth / 5);
 
 	// Add one more line for the hexdump header
@@ -5136,7 +5136,7 @@ static RzCmdStatus print_visual_bytes(RzCore *core, RZ_NONNULL const unsigned ch
 	if (!hc) {
 		return false;
 	}
-	rz_config_hold_i(hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
+	rz_config_hold_var(hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
 
 	int h, w = rz_cons_get_size(&h);
 	can = rz_cons_canvas_new(w, h);

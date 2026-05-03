@@ -1135,36 +1135,30 @@ static bool cb_scrnull(void *user, void *data) {
 	return true;
 }
 
-static bool cb_color(void *user, void *data) {
+static bool core_scr_color_set(void *user, const void *pvalue) {
 	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->i_value) {
+	ut64 value = *((const ut64 *)pvalue);
+
+	// ensure is never greater than COLOR_MODE_16M
+	value = RZ_MIN(value, COLOR_MODE_16M);
+
+	if (value > 0) {
 		core->print->flags |= RZ_PRINT_FLAGS_COLOR;
 	} else {
 		core->print->flags &= (~RZ_PRINT_FLAGS_COLOR);
 	}
-	if (!strcmp(node->value, "true")) {
-		node->i_value = 1;
-	} else if (!strcmp(node->value, "false")) {
-		node->i_value = 0;
-	}
-	rz_cons_singleton()->context->color_mode = (node->i_value > COLOR_MODE_16M)
-		? COLOR_MODE_16M
-		: node->i_value;
+
+	core->cons->context->color_mode = value;
 	rz_cons_pal_update_event();
 	rz_print_set_flags(core->print, core->print->flags);
 	return true;
 }
 
-static bool cb_color_getter(void *user, RzConfigNode *node) {
-	(void)user;
-	node->i_value = rz_cons_singleton()->context->color_mode;
-	char buf[128];
-	rz_config_node_value_format_i(buf, sizeof(buf), rz_cons_singleton()->context->color_mode, node);
-	if (!node->value || strcmp(node->value, buf) != 0) {
-		free(node->value);
-		node->value = rz_str_dup(buf);
-	}
+static bool core_scr_color_get(void *user, void *pvalue) {
+	RzCore *core = (RzCore *)user;
+	ut64 *value = (ut64 *)pvalue;
+
+	*value = core->cons->context->color_mode;
 	return true;
 }
 
@@ -1613,124 +1607,177 @@ static bool cb_iopcachewrite(void *user, void *data) {
 	return true;
 }
 
-RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut64 a2) {
-	if (cmd && *cmd) {
-		RzCore *core = (RzCore *)esil->pcore;
-		rz_core_cmdf(core, "%s %" PFMT64d " %" PFMT64d, cmd, a1, a2);
-		return core->num->value;
+static void config_print_options_as_json(PJ *pj, const RzList /*<char *>*/ *options) {
+	RzListIter *iter;
+	const char *option;
+	pj_ka(pj, "options");
+	rz_list_foreach (options, iter, option) {
+		pj_s(pj, option);
 	}
-	return false;
+	pj_end(pj);
 }
 
-static void config_print_node(RzConfig *cfg, RzConfigNode *node, RzCmdStateOutput *state) {
-	rz_return_if_fail(cfg && node && state);
-	char *option;
-	bool isFirst;
-	RzOutputMode mode = state->mode;
-	PJ *pj = state->d.pj;
-	RzListIter *iter;
-	char *es = NULL;
+static void config_print_node_value_as_json(const RzConfigNode *node, PJ *pj, const char *key) {
+	if (rz_str_isnumber(node->value)) {
+		pj_kn(pj, key, rz_num_math(NULL, node->value));
+		return;
+	} else if (rz_str_is_bool(node->value)) {
+		pj_kb(pj, key, (node->value));
+		return;
+	} else {
+		pj_ks(pj, key, node->value);
+	}
+}
+
+static void config_print_long_json(PJ *pj, const char *name, const char *desc, ut32 flags) {
+	char *s_flags = rz_config_var_flags_as_string(flags);
+	pj_ks(pj, "name", name);
+	pj_ks(pj, "desc", rz_str_get(desc));
+	pj_ks(pj, "flags", rz_str_get(s_flags));
+	free(s_flags);
+}
+
+static void config_print_node_as_long_json(const RzConfigNode *node, PJ *pj) {
+	ut32 flags = rz_config_node_get_var_flags(node);
+	pj_o(pj);
+	config_print_long_json(pj, node->name, node->desc, flags);
+	config_print_options_as_json(pj, node->options);
+	config_print_node_value_as_json(node, pj, "value");
+	pj_end(pj);
+}
+
+static void config_print_var_as_long_json(const RzConfigVar *var, PJ *pj) {
+	const char *name = rz_config_var_get_name(var);
+	const char *desc = rz_config_var_get_desc(var);
+	const RzList *options = rz_config_var_get_options(var);
+	ut32 flags = rz_config_var_get_flags(var);
+	pj_o(pj);
+	config_print_long_json(pj, name, desc, flags);
+	config_print_options_as_json(pj, options);
+	rz_config_var_as_json(var, pj, "value");
+	pj_end(pj);
+}
+
+typedef struct core_config_print_s {
+	RzCmdStateOutput *state;
+	const char *str;
+	char color_name[32];
+	char color_value[32];
+	char color_meta[32];
+	char reset_str[32];
+} CoreConfigPrint;
+
+static void core_config_print_array_as_string(const RzList /*<char *>*/ *list, bool allow_empty) {
+	const char *entry;
+	const RzListIter *it;
+	if (rz_list_empty(list) && !allow_empty) {
+		return;
+	}
+	rz_cons_print("[");
+	rz_list_foreach (list, it, entry) {
+		if (rz_list_head(list) != it) {
+			rz_cons_printf(", %s", entry);
+		} else {
+			rz_cons_print(entry);
+		}
+	}
+	rz_cons_print("]");
+}
+
+static void core_config_print_var_as_string(const RzConfigEntry *entry, ut32 flags) {
+	if (RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_INT)) {
+		ut64 value = rz_config_entry_get_integer(entry);
+		if (value > 0x1000) {
+			rz_cons_printf("0x%" PFMT64x, value);
+		} else {
+			rz_cons_printf("%" PFMT64u, value);
+		}
+	} else if (RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_BOOL)) {
+		bool value = rz_config_entry_get_bool(entry);
+		rz_cons_print(rz_str_bool(value));
+	} else if (RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_STR)) {
+		const char *value = rz_config_entry_get_string(entry);
+		rz_cons_print(value);
+	} else if (RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_LIST)) {
+		RzList *list = rz_config_var_get_list(&entry->var);
+		core_config_print_array_as_string(list, true);
+		rz_list_free(list);
+	} else if (RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_ITV)) {
+		RzInterval itv = rz_config_var_get_interval(&entry->var);
+		rz_cons_printf("[0x%08" PFMT64x ",0x%08" PFMT64x "]", rz_itv_begin(itv), rz_itv_end(itv));
+	}
+}
+
+static bool core_config_print_iterator(const RzConfigEntry *entry, void *user) {
+	CoreConfigPrint *ccp = (CoreConfigPrint *)user;
+	const char *e_name = rz_config_entry_get_name(entry);
+	if (RZ_STR_ISNOTEMPTY(ccp->str) && !rz_str_startswith(e_name, ccp->str)) {
+		return true;
+	}
+
+	const char *name = NULL;
+	const char *desc = "";
+	const RzList *options = NULL;
+	ut32 e_flags = 0;
+	RzOutputMode mode = ccp->state->mode;
+	PJ *pj = ccp->state->d.pj;
+
+	if (entry->is_variable) {
+		name = rz_config_var_get_name(&entry->var);
+		desc = rz_config_var_get_desc(&entry->var);
+		options = rz_config_var_get_options(&entry->var);
+		e_flags = rz_config_var_get_flags(&entry->var);
+	} else {
+		name = entry->node.name;
+		desc = rz_str_get(entry->node.desc);
+		options = entry->node.options;
+		e_flags = rz_config_node_get_var_flags(&entry->node);
+	}
+
+	char *s_flags = rz_config_var_flags_as_string(e_flags);
 
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON:
-		if (rz_str_isnumber(node->value)) {
-			pj_kn(pj, node->name, rz_num_math(NULL, node->value));
-			return;
-		} else if (rz_str_is_bool(node->value)) {
-			pj_kb(pj, node->name, (node->value));
-			return;
+		if (entry->is_variable) {
+			rz_config_var_as_json(&entry->var, pj, name);
 		} else {
-			pj_ks(pj, node->name, node->value);
+			config_print_node_value_as_json(&entry->node, pj, name);
 		}
 		break;
 	case RZ_OUTPUT_MODE_LONG_JSON:
-		pj_o(pj);
-		pj_ks(pj, "name", node->name);
-		if (rz_str_isnumber(node->value)) {
-			pj_kn(pj, "value", rz_num_math(NULL, node->value));
-		} else if (rz_str_is_bool(node->value)) {
-			pj_kb(pj, "value", (node->value));
+		if (entry->is_variable) {
+			config_print_var_as_long_json(&entry->var, pj);
 		} else {
-			pj_ks(pj, "value", node->value);
+			config_print_node_as_long_json(&entry->node, pj);
 		}
-		pj_ks(pj, "type", rz_config_node_type(node));
-		es = rz_str_escape(node->desc);
-		if (es) {
-			pj_ks(pj, "desc", es);
-			free(es);
-		}
-		pj_kb(pj, "ro", rz_config_node_is_ro(node));
-		if (!rz_list_empty(node->options)) {
-			pj_ka(pj, "options");
-			rz_list_foreach (node->options, iter, option) {
-				pj_s(pj, option);
-			}
-			pj_end(pj);
-		}
-		pj_end(pj);
 		break;
 	case RZ_OUTPUT_MODE_LONG: {
-		bool color_enabled = rz_config_get_i(cfg, "scr.color") > 0;
-		char color_name[32], color_value[32], color_meta[32], reset_str[32];
-
-		if (color_enabled) {
-			RzColor color_name_val = rz_cons_pal_get("label");
-			RzColor color_value_val = rz_cons_pal_get("args");
-			RzColor color_meta_val = rz_cons_pal_get("comment");
-			RzColor reset_val = rz_cons_pal_get("help");
-			rz_cons_rgb_str(color_name, sizeof(color_name), &color_name_val);
-			rz_cons_rgb_str(color_value, sizeof(color_value), &color_value_val);
-			rz_cons_rgb_str(color_meta, sizeof(color_meta), &color_meta_val);
-			rz_cons_rgb_str(reset_str, sizeof(reset_str), &reset_val);
-		} else {
-			color_name[0] = color_value[0] = color_meta[0] = reset_str[0] = '\0';
-		}
-		const char *ro_str = rz_config_node_is_ro(node) ? "(ro)" : "";
-		rz_cons_printf("%s%20s = %s%s %s%s; %s%s", color_name, node->name, color_value, node->value, color_meta, ro_str, reset_str, node->desc);
-		if (!rz_list_empty(node->options)) {
-			isFirst = true;
-			rz_cons_printf(" [");
-			rz_list_foreach (node->options, iter, option) {
-				if (isFirst) {
-					isFirst = false;
-				} else {
-					rz_cons_printf(", ");
-				}
-				rz_cons_printf("%s", option);
-			}
-			rz_cons_printf("]");
-		}
+		rz_cons_printf("%s%20s = %s", ccp->color_name, name, ccp->color_value);
+		core_config_print_var_as_string(entry, e_flags);
+		rz_cons_printf(" %s(%s); %s%s ", ccp->color_meta, s_flags, ccp->reset_str, desc);
+		core_config_print_array_as_string(options, false);
 		rz_cons_println("");
 		break;
 	}
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_printf("%s=%s\n", node->name, node->value);
+		rz_cons_printf("%s=", name);
+		core_config_print_var_as_string(entry, e_flags);
+		rz_cons_println("");
 		break;
 	case RZ_OUTPUT_MODE_STANDARD: {
-		bool color_enabled = rz_config_get_i(cfg, "scr.color") > 0;
-		char color_str[32], reset_str[32];
-
-		if (color_enabled) {
-			RzColor color_val = rz_cons_pal_get("label");
-			RzColor reset_val = rz_cons_pal_get("help");
-			rz_cons_rgb_str(color_str, sizeof(color_str), &color_val);
-			rz_cons_rgb_str(reset_str, sizeof(reset_str), &reset_val);
-		} else {
-			color_str[0] = reset_str[0] = '\0';
-		}
-
-		rz_cons_printf("%s%20s: %s%s\n", color_str, node->name, reset_str, node->desc ? node->desc : "");
+		rz_cons_printf("%s%20s: %s%s\n", ccp->color_name, name, ccp->reset_str, desc);
 		break;
 	}
 	case RZ_OUTPUT_MODE_STR_BUF:
-		rz_strbuf_appendf(state->d.sbuf, "%20s: %10s - %s\n", node->name,
-			rz_config_node_type(node),
-			node->desc ? node->desc : "");
+		rz_strbuf_appendf(ccp->state->d.sbuf, "%20s: %10s - %s\n", name, s_flags, desc);
 		break;
 	default:
 		rz_warn_if_reached();
 		break;
 	}
+
+	free(s_flags);
+	return true;
 }
 
 /**
@@ -1742,25 +1789,47 @@ static void config_print_node(RzConfig *cfg, RzConfigNode *node, RzCmdStateOutpu
  */
 RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, RzCmdStateOutput *state) {
 	rz_return_if_fail(cfg);
-	RzConfigNode *node;
-	RzListIter *iter;
-	PJ *pj = state->d.pj;
-	RzOutputMode mode = state->mode;
+	CoreConfigPrint ccp = { 0 };
+	ccp.state = state;
+	ccp.str = str;
+	const bool color_enabled = rz_config_get_i(cfg, "scr.color") > 0;
 
-	if (mode == RZ_OUTPUT_MODE_LONG_JSON) {
-		pj_a(pj);
-	} else if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj_o(pj);
-	}
-
-	rz_list_foreach (cfg->nodes, iter, node) {
-		if (rz_str_startswith(node->name, str)) {
-			config_print_node(cfg, node, state);
+	// begin
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_LONG_JSON:
+		pj_a(state->d.pj);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		pj_o(state->d.pj);
+		break;
+	case RZ_OUTPUT_MODE_LONG:
+		if (color_enabled) {
+			RzColor color_name_val = rz_cons_pal_get("label");
+			RzColor color_value_val = rz_cons_pal_get("args");
+			RzColor color_meta_val = rz_cons_pal_get("comment");
+			RzColor reset_val = rz_cons_pal_get("help");
+			rz_cons_rgb_str(ccp.color_name, sizeof(ccp.color_name), &color_name_val);
+			rz_cons_rgb_str(ccp.color_value, sizeof(ccp.color_value), &color_value_val);
+			rz_cons_rgb_str(ccp.color_meta, sizeof(ccp.color_meta), &color_meta_val);
+			rz_cons_rgb_str(ccp.reset_str, sizeof(ccp.reset_str), &reset_val);
 		}
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+		if (color_enabled) {
+			RzColor color_val = rz_cons_pal_get("label");
+			RzColor reset_val = rz_cons_pal_get("help");
+			rz_cons_rgb_str(ccp.color_name, sizeof(ccp.color_name), &color_val);
+			rz_cons_rgb_str(ccp.reset_str, sizeof(ccp.reset_str), &reset_val);
+		}
+		break;
+	default:
+		break;
 	}
 
-	if (mode == RZ_OUTPUT_MODE_LONG_JSON || mode == RZ_OUTPUT_MODE_JSON) {
-		pj_end(pj);
+	rz_config_iterate_over(cfg, core_config_print_iterator, &ccp);
+
+	if (state->mode == RZ_OUTPUT_MODE_LONG_JSON || state->mode == RZ_OUTPUT_MODE_JSON) {
+		pj_end(state->d.pj);
 	}
 }
 
@@ -2247,14 +2316,6 @@ static bool cb_scrprompt(void *user, void *data) {
 	return true;
 }
 
-static bool cb_scrrows(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	int n = atoi(node->value);
-	core->cons->force_rows = n;
-	return true;
-}
-
 static bool cb_contiguous(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -2307,10 +2368,16 @@ static bool cb_scr_prompt_popup(void *user, void *data) {
 	return true;
 }
 
-static bool cb_swstep(void *user, void *data) {
+static bool core_dbg_swstep_set(void *user, const void *pvalue) {
 	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	core->dbg->swstep = node->i_value;
+	core->dbg->swstep = *((const bool *)pvalue);
+	return true;
+}
+
+static bool core_dbg_swstep_get(void *user, void *pvalue) {
+	RzCore *core = (RzCore *)user;
+	bool *value = (bool *)pvalue;
+	*value = core->dbg->swstep;
 	return true;
 }
 
@@ -2555,12 +2622,6 @@ static bool cb_zoom_in(void *user, void *data) {
 		print_node_options(node);
 	}
 	return false;
-}
-
-static int __dbg_swstep_getter(void *user, RzConfigNode *node) {
-	RzCore *core = (RzCore *)user;
-	node->i_value = core->dbg->swstep;
-	return true;
 }
 
 static bool cb_analysis_roregs(RzCore *core, RzConfigNode *node) {
@@ -2873,7 +2934,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	if (!cfg) {
 		return 0;
 	}
-	cfg->num = core->num;
 	/* dir.prefix is used in other modules, set it first */
 	{
 		char *pfx = rz_sys_getenv("RZ_PREFIX");
@@ -3403,7 +3463,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	}
 	rz_config_desc(cfg, "dbg.follow", "Follow program counter when pc >= core->offset + dbg.follow");
 	SETBPREF("dbg.rebase", "true", "Rebase analysis/meta/comments/flags when reopening file in debugger");
-	SETCB("dbg.swstep", "false", &cb_swstep, "Force use of software steps (code analysis+breakpoint)");
+	rz_config_add_bool_bind(cfg, "dbg.swstep", "Force use of software steps (code analysis+breakpoint)", core_dbg_swstep_get, core_dbg_swstep_set, NULL, core);
 	SETBPREF("dbg.trace.inrange", "false", "While tracing, avoid following calls outside specified range");
 	SETBPREF("dbg.trace.libs", "true", "Trace library code too");
 	SETBPREF("dbg.exitkills", "true", "Kill process on exit");
@@ -3412,8 +3472,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETICB("dbg.gdb.page_size", 4096, &cb_dbg_gdb_page_size, "Page size on gdb target (useful for QEMU)");
 	SETICB("dbg.gdb.retries", 10, &cb_dbg_gdb_retries, "Number of retries before gdb packet read times out");
 	SETCB("dbg.consbreak", "false", &cb_consbreak, "SIGINT handle for attached processes");
-
-	rz_config_set_getter(cfg, "dbg.swstep", (RzConfigCallback)__dbg_swstep_getter);
 
 	SETBPREF("dbg.bpsysign", "false", "Ignore system breakpoints");
 	SETICB("dbg.btdepth", 128, &cb_dbgbtdepth, "Depth of backtrace");
@@ -3599,8 +3657,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("scr.panelborder", "false", "Specify panels border active area (0 by default)");
 	SETICB("scr.columns", 0, &cb_scrcolumns, "Force console column count (width)");
 	SETBPREF("scr.dumpcols", "false", "Prefer pC commands before p ones");
-	SETCB("scr.rows", "0", &cb_scrrows, "Force console row count (height) ");
-	SETICB("scr.rows", 0, &cb_rows, "Force console row count (height) (duplicate?)");
+	SETICB("scr.rows", 0, &cb_rows, "Force console row count (height)");
 	SETICB("scr.fix.rows", 0, &cb_fixrows, "Workaround for Linux TTY");
 	SETICB("scr.fix.columns", 0, &cb_fixcolumns, "Workaround for Prompt iOS SSH client");
 	SETCB("scr.highlight", "", &cb_scrhighlight, "Highlight that word at RzCons level");
@@ -3624,8 +3681,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("scr.prompt", "true", &cb_scrprompt, "Show user prompt (used by rizin -q)");
 	SETCB("scr.tee", "", &cb_teefile, "Pipe output to file of this name");
 	SETPREF("scr.seek", "", "Seek to the specified address on startup");
-	SETICB("scr.color", (core->print->flags & RZ_PRINT_FLAGS_COLOR) ? COLOR_MODE_16 : COLOR_MODE_DISABLED, &cb_color, "Enable colors (0: none, 1: ansi, 2: 256 colors, 3: truecolor)");
-	rz_config_set_getter(cfg, "scr.color", (RzConfigCallback)cb_color_getter);
+
+	rz_config_add_integer_bind(cfg, "scr.color", "Enable colors (0: none, 1: ansi, 2: 256 colors, 3: truecolor)", core_scr_color_get, core_scr_color_set, NULL, core);
+	rz_config_set_i(cfg, "scr.color", (core->print->flags & RZ_PRINT_FLAGS_COLOR) ? COLOR_MODE_16 : COLOR_MODE_DISABLED);
+
 	SETCB("scr.color.grep", "false", &cb_scr_color_grep, "Enable colors when using ~grep");
 	SETBPREF("scr.color.pipe", "false", "Enable colors when using pipes");
 	SETBPREF("scr.color.ops", "true", "Colorize numbers and registers in opcodes");
@@ -3803,7 +3862,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETB("flirt.sigdb.load.extra", true, "Load signatures from the extra path");
 	SETB("flirt.sigdb.load.home", true, "Load signatures from the home path");
 
-	rz_config_lock(cfg, true);
+	cfg->lock = 1;
 	return true;
 }
 
@@ -3856,6 +3915,38 @@ RZ_API void rz_core_parse_rizinrc(RzCore *r) {
 	}
 }
 
+typedef struct cconfig_space_s {
+	RzList /*<char *>*/ *list;
+	const char *space;
+} cconfig_space_t;
+
+static bool core_config_in_space(const RzConfigEntry *entry, void *user) {
+	cconfig_space_t *ctx = user;
+	const char *e_name = rz_config_entry_get_name(entry);
+
+	char *name = rz_str_dup(e_name);
+	if (!name) {
+		return false;
+	}
+
+	char *dot = strchr(name, '.');
+	if (dot) {
+		*dot = 0;
+	}
+
+	if (RZ_STR_ISNOTEMPTY(ctx->space)) {
+		if (0 == strcmp(name, ctx->space) && dot && !rz_list_find(ctx->list, dot + 1, (RzListComparator)strcmp, NULL)) {
+			rz_list_append(ctx->list, rz_str_dup(dot + 1));
+		}
+	} else {
+		if (!rz_list_find(ctx->list, name, (RzListComparator)strcmp, NULL)) {
+			rz_list_append(ctx->list, rz_str_dup(name));
+		}
+	}
+	free(name);
+	return true;
+}
+
 /**
  * \brief Get config variable spaces
  * \param core The RzCore instance
@@ -3868,28 +3959,9 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_config_in_space(RZ_NONNULL RzCore *co
 	if (!list) {
 		return NULL;
 	}
-	RzConfigNode *node;
-	RzListIter *iter;
-	rz_list_foreach (core->config->nodes, iter, node) {
-		char *name = rz_str_dup(node->name);
-		if (!name) {
-			continue;
-		}
-		char *dot = strchr(name, '.');
-		if (dot) {
-			*dot = 0;
-		}
 
-		if (RZ_STR_ISNOTEMPTY(space)) {
-			if (0 == strcmp(name, space) && dot && !rz_list_find(list, dot + 1, (RzListComparator)strcmp, NULL)) {
-				rz_list_append(list, rz_str_dup(dot + 1));
-			}
-		} else {
-			if (!rz_list_find(list, name, (RzListComparator)strcmp, NULL)) {
-				rz_list_append(list, rz_str_dup(name));
-			}
-		}
-		free(name);
-	}
+	cconfig_space_t ctx = { list, space };
+	rz_config_iterate_over(core->config, core_config_in_space, &ctx);
+
 	return list;
 }

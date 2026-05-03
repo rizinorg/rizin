@@ -204,7 +204,7 @@ RZ_API bool rz_str_cmp_list(const char *list, const char *item, char sep);
 RZ_API int rz_str_cmp(RZ_NULLABLE const char *dst, RZ_NULLABLE const char *orig, int len);
 RZ_API int rz_str_casecmp(const char *dst, const char *orig);
 RZ_API int rz_str_ncasecmp(const char *dst, const char *orig, size_t n);
-RZ_API int rz_str_ccpy(char *dst, char *orig, int ch);
+RZ_API int rz_str_ccpy(char *dst, const char *orig, int ch);
 static inline const char *rz_str_get(const char *str) {
 	return str ? str : "";
 }

@@ -141,54 +141,46 @@ static struct {
 };
 
 int disass_6502(ut64 pc, RzAsmOp *op, const ut8 *buf, ut64 len) {
-	int i;
-	for (i = 0; ops[i].name != NULL; i++) {
-		if (ops[i].op == buf[0]) {
-			int len = ops[i].len;
-			switch (ops[i].len) {
-			case 1:
-				rz_asm_op_setf_asm(op, "%s", ops[i].name);
-				break;
-			case 2:
-				if (len > 1) {
-					rz_asm_op_setf_asm(op, ops[i].name, buf[1]);
-				} else {
-					rz_asm_op_set_asm(op, "truncated");
-					len = -1;
-				}
-				break;
-			case 3:
-				if (len > 2) {
-					rz_asm_op_setf_asm(op, ops[i].name, buf[1] + 0x100 * buf[2]);
-				} else {
-					rz_asm_op_set_asm(op, "truncated");
-					len = -1;
-				}
-				break;
-			case 4:
-				if (len > 3) {
-					rz_asm_op_setf_asm(op, ops[i].name, buf[1] + 0x100 * buf[2] + 0x10000 * buf[3]);
-				} else {
-					rz_asm_op_set_asm(op, "truncated");
-					len = -1;
-				}
-				break;
-			default:
-				rz_asm_op_set_asm(op, "invalid");
-				goto beach;
-			}
-			return len;
+	for (size_t i = 0; ops[i].name != NULL; i++) {
+		if (ops[i].op != buf[0]) {
+			continue;
 		}
+
+		int len = ops[i].len;
+		switch (len) {
+		case 1:
+			rz_asm_op_set_asm(op, ops[i].name);
+			break;
+		case 2:
+			if (len > 1) {
+				rz_asm_op_setf_asm(op, ops[i].name, buf[1]);
+			} else {
+				rz_asm_op_set_asm(op, "truncated");
+				len = -1;
+			}
+			break;
+		case 3:
+			if (len > 2) {
+				rz_asm_op_setf_asm(op, ops[i].name, buf[1] + 0x100 * buf[2]);
+			} else {
+				rz_asm_op_set_asm(op, "truncated");
+				len = -1;
+			}
+			break;
+		case 4:
+			if (len > 3) {
+				rz_asm_op_setf_asm(op, ops[i].name, buf[1] + 0x100 * buf[2] + 0x10000 * buf[3]);
+			} else {
+				rz_asm_op_set_asm(op, "truncated");
+				len = -1;
+			}
+			break;
+		default:
+			rz_asm_op_set_asm(op, "invalid");
+			goto beach;
+		}
+		return len;
 	}
 beach:
 	return snesDisass(1, 1, pc, op, buf, len);
-}
-
-_6502State *_6502_state_new() {
-	_6502State *state = RZ_NEW0(_6502State);
-	if (!state) {
-		RZ_LOG_ERROR("Could not allocate memory for _6502State!");
-		return NULL;
-	}
-	return state;
 }

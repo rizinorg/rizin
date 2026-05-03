@@ -5358,7 +5358,7 @@ RZ_IPI RzCmdStatus rz_analyze_cycles_handler(RzCore *core, int argc, const char 
 	st32 ccl = 0;
 	RzConfigHold *hc = rz_config_hold_new(core->config);
 
-	rz_config_hold_i(hc, "asm.cmt.right", "asm.functions", "asm.lines", "asm.xrefs", NULL);
+	rz_config_hold_var(hc, "asm.cmt.right", "asm.functions", "asm.lines", "asm.xrefs", NULL);
 
 	if (argc > 1) {
 		ccl = (st32)rz_num_get(core->num, argv[1]);

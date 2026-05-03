@@ -617,7 +617,7 @@ RZ_API void rz_core_sysenv_begin(RzCore *core) {
 	}
 
 	Sdb *config_sdb = sdb_new(NULL, config_sdb_path, 0);
-	rz_config_serialize(core->config, config_sdb);
+	rz_serialize_config_save(config_sdb, core->config);
 	sdb_sync(config_sdb);
 	sdb_free(config_sdb);
 	rz_sys_setenv("RZ_CONFIG", config_sdb_path);
@@ -1295,7 +1295,7 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open(RZ_NONNULL RzCore *r, RZ_NONNULL 
 		if (r->dbg->cur && r->dbg->cur->canstep) {
 			swstep = false;
 		}
-		rz_config_set_i(r->config, "dbg.swstep", swstep);
+		rz_config_set_bool(r->config, "dbg.swstep", swstep);
 		// Set the correct debug handle
 		if (fd->plugin && fd->plugin->isdbg) {
 			char *dh = rz_str_ndup(file, (strstr(file, "://") - file));
