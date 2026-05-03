@@ -203,8 +203,6 @@ extern "C" {
 	#endif
 #endif
 
-static const ut32 rz_endianness_one = 1;
-
 #define RZ_SYS_ENDIAN_NONE   0
 #define RZ_SYS_ENDIAN_LITTLE 1
 #define RZ_SYS_ENDIAN_BIG    2
@@ -230,7 +228,6 @@ static const ut32 rz_endianness_one = 1;
 	#else
 		#define RZ_SYS_BITS RZ_SYS_BITS_32
 	#endif
-
 	#if defined(__BYTE_ORDER__)
 		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 			#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
@@ -240,7 +237,7 @@ static const ut32 rz_endianness_one = 1;
 			#error "Unsupported endianness"
 		#endif
 	#else
-		#define RZ_SYS_ENDIAN ((*((char *)&(rz_endianness_one)) == 1) ? RZ_SYS_ENDIAN_LITTLE : RZ_SYS_ENDIAN_BIG)
+		#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_BIG
 	#endif
 #elif __arm__
 	#define RZ_SYS_ARCH   "arm"
@@ -260,7 +257,11 @@ static const ut32 rz_endianness_one = 1;
 	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_BIG
 #elif __sparc__
 	#define RZ_SYS_ARCH   "sparc"
-	#define RZ_SYS_BITS   RZ_SYS_BITS_32
+	#ifdef __sparc64__
+		#define RZ_SYS_BITS (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+	#else
+		#define RZ_SYS_BITS RZ_SYS_BITS_32
+	#endif
 	#if defined(__BYTE_ORDER__)
 		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 			#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
@@ -270,7 +271,7 @@ static const ut32 rz_endianness_one = 1;
 			#error "Unsupported endianness"
 		#endif
 	#else
-		#define RZ_SYS_ENDIAN ((*((char *)&(rz_endianness_one)) == 1) ? RZ_SYS_ENDIAN_LITTLE : RZ_SYS_ENDIAN_BIG)
+		#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_BIG
 	#endif
 #elif __mips__
 	#define RZ_SYS_ARCH   "mips"
