@@ -44,6 +44,7 @@ rz_util_common_sources = [
   'print.c',
   'protobuf.c',
   'punycode.c',
+  'qsort_r.c',
   'rbtree.c',
   'regex.c',
   'serialize_spaces.c',

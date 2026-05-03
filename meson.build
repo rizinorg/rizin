@@ -522,6 +522,35 @@ foreach it : ccs
     it_userconf.set10('HAVE_@0@'.format(func.to_upper()), ok)
   endforeach
 
+  # qsort_r/qsort_s selection
+  has_qsort_r_gnu = cc.compiles('''
+    #define _GNU_SOURCE
+    #include <stdlib.h>
+    static int c(const void *a, const void *b, void *u){(void)a;(void)b;(void)u;return 0;}
+    int main(void){ qsort_r(0,0,0,c,0); return 0; }
+  ''', name: 'qsort_r (GNU)')
+  # NetBSD has GNU style qsort_r
+  if it_machine.system() == 'netbsd' and cc.has_function('qsort_r')
+    has_qsort_r_gnu = true
+  endif
+  has_qsort_r_bsd = cc.compiles('''
+    #include <stdlib.h>
+    static int c(void *u, const void *a, const void *b){(void)a;(void)b;(void)u;return 0;}
+    int main(void){ qsort_r(0,0,0,0,c); return 0; }
+  ''', name: 'qsort_r (BSD)')
+  has_qsort_s_ms = cc.has_header_symbol('stdlib.h', 'qsort_s')
+  # Force using qsort_s for MSVC compiler
+  if cc.get_id() == 'msvc'
+    has_qsort_s_ms = true
+    has_qsort_r_gnu = false
+    has_qsort_r_bsd = false
+  endif
+
+  # macOS compiles GNU style qsort_r but it still fails, prefer BSD style one
+  it_userconf.set10('HAVE_QSORT_R_GNU', has_qsort_r_gnu and it_machine.system() != 'darwin')
+  it_userconf.set10('HAVE_QSORT_R_BSD', has_qsort_r_bsd)
+  it_userconf.set10('HAVE_QSORT_S_MS', has_qsort_s_ms)
+
   # Try to compile a basic SSE2 code snippet to discover if SSE2 is supported for the target arch
   sse2_compiler_flag = it_cc.get_id() == 'msvc' ? '/arch:SSE2' : '-msse2'
   sse2_code = '''#include <emmintrin.h>

@@ -4,6 +4,7 @@
 
 #include "rz_util/rz_assert.h"
 #include "rz_util/rz_bits.h"
+#include "rz_util/rz_qsort_r.h"
 #include "rz_vector.h"
 
 // Optimize memory usage on glibc
@@ -923,18 +924,18 @@ typedef struct {
 	void *user;
 } PVectorSortCtx;
 
-static int pvector_introsort_cmp(const void *a, const void *b, void *user) {
+static int pvector_qsort_r_cmp(const void *a, const void *b, void *user) {
 	PVectorSortCtx *ctx = user;
 	return ctx->cmp(*(void *const *)a, *(void *const *)b, ctx->user);
 }
 
 RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp, void *user) {
 	rz_return_if_fail(vec && cmp);
-	if (rz_pvector_empty(vec)) {
+	if (vec->v.len < 2) {
 		return;
 	}
 	PVectorSortCtx ctx = { cmp, user };
-	rz_vector_sort(&vec->v, pvector_introsort_cmp, false, &ctx);
+	rz_qsort_r(vec->v.a, vec->v.len, sizeof(void *), pvector_qsort_r_cmp, &ctx);
 }
 
 /**

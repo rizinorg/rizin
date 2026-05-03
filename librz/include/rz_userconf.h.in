@@ -43,6 +43,9 @@
 #define HAVE_STRLCPY                @HAVE_STRLCPY@
 #define HAVE_STRLCAT                @HAVE_STRLCAT@
 #define HAVE_STRNLEN                @HAVE_STRNLEN@
+#define HAVE_QSORT_R_GNU            @HAVE_QSORT_R_GNU@
+#define HAVE_QSORT_R_BSD            @HAVE_QSORT_R_BSD@
+#define HAVE_QSORT_S_MS             @HAVE_QSORT_S_MS@
 #define WANT_DYLINK                 @WANT_DYLINK@
 #define WITH_GPL                    @WITH_GPL@
 #define IS_IOS                      @IS_IOS@
