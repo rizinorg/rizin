@@ -801,7 +801,7 @@ RZ_API RZ_BORROW void **rz_pvector_find(RZ_NONNULL const RzPVector *vec, RZ_NONN
 	void **arr = (void **)vec->v.a;
 	size_t len = vec->v.len;
 	for (size_t i = 0; i < len; i++) {
-		if (RZ_LIKELY(i + 32 < len) && RZ_UNLIKELY(len >= RZ_PVECTOR_PREFETCH_THRESHOLD)) {
+		if (RZ_UNLIKELY((i + 32 < len) && len >= RZ_PVECTOR_PREFETCH_THRESHOLD)) {
 			RZ_PREFETCH(&arr[i + 32]);
 		}
 		if (!cmp(value, arr[i], user)) {
@@ -824,7 +824,7 @@ RZ_API size_t rz_pvector_find_index(RZ_NONNULL const RzPVector *vec, RZ_NONNULL 
 	void **arr = (void **)vec->v.a;
 	size_t len = vec->v.len;
 	for (size_t i = 0; i < len; i++) {
-		if (RZ_LIKELY(i + 32 < len) && RZ_UNLIKELY(len < RZ_PVECTOR_PREFETCH_THRESHOLD)) {
+		if (RZ_UNLIKELY((i + 32 < len) && len >= RZ_PVECTOR_PREFETCH_THRESHOLD)) {
 			RZ_PREFETCH(&arr[i + 32]);
 		}
 		if (!cmp(value, arr[i], user)) {
