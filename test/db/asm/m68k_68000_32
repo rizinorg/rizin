@@ -1,0 +1,2 @@
+d "btst.b 0xe8, 0x1aa8(pc)" 083a00e80a54 0x1050
+d "btst.b 0x38, 0x343d(pc, d0.w)" 083b00380039 0x3400
