@@ -1593,6 +1593,26 @@ static bool test_pvector_uniq(void) {
 	mu_end;
 }
 
+static bool is_even(const void *elem, void *user) {
+	return (*(int *)elem % 2) == 0;
+}
+
+static bool test_vector_remove_if(void) {
+	RzVector v;
+	rz_vector_init(&v, sizeof(int), NULL, NULL);
+	for (int i = 0; i < 10; i++) {
+		rz_vector_push(&v, &i);
+	}
+	rz_vector_remove_if(&v, is_even, NULL);
+	mu_assert_eq(v.len, 5, "remove_if len");
+	for (size_t i = 0; i < v.len; i++) {
+		int val = *(int *)rz_vector_index_ptr(&v, i);
+		mu_assert_neq(val % 2, 0, "remove_if content");
+	}
+	rz_vector_clear(&v);
+	mu_end;
+}
+
 static size_t lower_bound_slow(st64 *a, size_t count, st64 v) {
 	size_t i;
 	for (i = 0; i < count; i++) {
@@ -1698,6 +1718,8 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_bounds);
 	mu_run_test(test_pvector_tips);
 	mu_run_test(test_pvector_uniq);
+
+	mu_run_test(test_vector_remove_if);
 
 	mu_run_test(test_array_bounds_fuzz);
 
