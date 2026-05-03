@@ -9,8 +9,8 @@
  * \brief Benchmarks for core RzList operations.
  */
 
-static void _fill(RzList *l, int count) {
-	for (int j = 0; j < count; j++) {
+static void _fill(RzList *l, size_t count) {
+	for (size_t j = 0; j < count; j++) {
 		rz_list_append(l, (void *)(intptr_t)j);
 	}
 }

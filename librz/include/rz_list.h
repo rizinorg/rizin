@@ -2,6 +2,7 @@
 #define RZ_LIST_H
 
 #include <rz_util/rz_iterator.h>
+#include <rz_vector.h>
 #include <rz_types.h>
 
 #ifdef __cplusplus
@@ -9,8 +10,6 @@ extern "C" {
 #endif
 
 typedef void (*RzListFree)(void *ptr);
-
-#define RZ_LIST_SLAB_SIZE 256
 
 typedef struct rz_list_iter_t RzListIter;
 
@@ -20,23 +19,16 @@ struct rz_list_iter_t {
 	RzListIter *prev;
 };
 
-typedef struct rz_list_slab_t {
-	RzListIter nodes[RZ_LIST_SLAB_SIZE];
-	struct rz_list_slab_t *next_slab;
-} RzListSlab;
-
-typedef struct rz_list_pool_t {
-	RzListSlab *slabs;
-	RzListIter *freelist;
-} RzListPool;
+typedef struct rz_list_slab_t RzListSlab;
 
 typedef struct rz_list_t {
-	RzListIter *head;
-	RzListIter *tail;
-	RzListFree free;
-	ut32 length;
-	bool sorted;
-	RzListPool *pool;
+	RzListIter *head; ///< List head/first element.
+	RzListIter *tail; ///< List tail/last element.
+	RzListSlab *slab; ///< Owner of all the elements.
+	RzListIter *unused; ///< List of nodes recently freed.
+	RzListFree free; ///< Free function to call when an element is removed from the list.
+	bool sorted; ///< When true, the list is sorted.
+	size_t length; ///< Number of elements in list.
 } RzList;
 
 // RzListComparator should return -1, 0, 1 to indicate "value < list_data", "value == list_data", "value > list_data".
@@ -64,9 +56,7 @@ typedef int (*RzListComparator)(const void *value, const void *list_data, void *
 #define rz_list_foreach_prev_safe(list, it, tmp, var) \
 	for (it = list->tail; it && (var = it->val, tmp = it->prev, 1); it = tmp)
 
-static inline bool rz_list_empty(RZ_NULLABLE const RzList *list) {
-	return !list || !list->length;
-}
+#define rz_list_empty(list) (rz_list_length(list) < 1)
 
 static inline RZ_BORROW RzListIter *rz_list_head(RZ_NULLABLE const RzList *list) {
 	return list ? list->head : NULL;
@@ -104,6 +94,8 @@ RZ_API RZ_OWN RzList *rz_list_new(void);
 RZ_API RZ_OWN RzList *rz_list_newf(RZ_NULLABLE RzListFree f);
 RZ_API RZ_OWN RzList *rz_list_new_from_array(const void **arr, size_t arr_size);
 RZ_API RZ_OWN RzList *rz_list_new_from_iterator(RZ_BORROW RZ_NONNULL RzIterator *iter);
+RZ_API void rz_list_set_free(RZ_NONNULL RzList *list, RZ_NULLABLE RzListFree f);
+RZ_API RzListFree rz_list_get_free(RZ_NONNULL RzList *list);
 RZ_API RZ_BORROW void *rz_list_iter_get_prev_data(RZ_NONNULL RzListIter *iter);
 RZ_API RZ_BORROW void *rz_list_iter_get_next_data(RZ_NONNULL RzListIter *iter);
 RZ_API ut32 rz_list_set_n(RZ_NONNULL RzList *list, ut32 n, RZ_NONNULL void *data);
@@ -120,22 +112,21 @@ RZ_API void rz_list_merge_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListCompara
 RZ_API void rz_list_insertion_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp, void *user);
 RZ_API RZ_OWN RzList *rz_list_uniq(RZ_NONNULL const RzList *list, RZ_NONNULL RzListComparator cmp, void *user);
 RZ_API void rz_list_sorted_uniq(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp, void *user);
-RZ_API void rz_list_init(RZ_NONNULL RzList *list);
 RZ_API void rz_list_delete(RZ_NONNULL RzList *list, RZ_OWN RZ_NONNULL RzListIter *iter);
 RZ_API bool rz_list_delete_val(RZ_NONNULL RzList *list, void *val);
 RZ_API void rz_list_purge(RZ_NONNULL RzList *list);
 RZ_API void rz_list_free(RZ_NULLABLE RzList *list);
-RZ_API RZ_OWN RzListIter *rz_list_item_new(RZ_NULLABLE void *data);
-RZ_API bool rz_list_join(RZ_NONNULL RzList *list1, RZ_NONNULL RzList *list2);
+RZ_API bool rz_list_join(RZ_NONNULL RzList *dst_list, RZ_NONNULL RzList *src_list);
 RZ_API RZ_BORROW void *rz_list_get_n(RZ_NONNULL const RzList *list, ut32 n);
 RZ_API ut32 rz_list_del_n(RZ_NONNULL RzList *list, ut32 n);
 RZ_API RZ_BORROW RzListIter *rz_list_iterator(RZ_NONNULL const RzList *list);
-RZ_API RZ_BORROW RzListIter *rz_list_push(RZ_NONNULL RzList *list, void *item);
 RZ_API RZ_OWN void *rz_list_pop(RZ_NONNULL RzList *list);
 RZ_API RZ_OWN void *rz_list_pop_head(RZ_NONNULL RzList *list);
 RZ_API void rz_list_reverse(RZ_NONNULL RzList *list);
 RZ_API RZ_OWN RzList *rz_list_clone(RZ_NONNULL const RzList *list);
 RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList /*<const char *>*/ *list, char ch, bool append_last);
+
+#define rz_list_push rz_list_append
 
 /* hashlike api */
 RZ_API RZ_BORROW bool rz_list_contains(RZ_NONNULL const RzList *list, RZ_NONNULL const void *val);

@@ -63,7 +63,7 @@ bool test_rz_list_join(void) {
 
 bool test_rz_list_free(void) {
 	RzList *list = rz_list_newf((void *)0x9999);
-	mu_assert_eq((int)(intptr_t)list->free, 0x9999, "rz_list_newf function gets set properly");
+	mu_assert_eq((int)(intptr_t)rz_list_get_free(list), 0x9999, "rz_list_newf function gets set properly");
 	rz_list_free(list);
 	mu_end;
 }
@@ -164,41 +164,41 @@ bool test_rz_list_length(void) {
 		count++;
 		iter = iter->next;
 	}
-	mu_assert_eq(list->length, 3, "First length check");
+	mu_assert_eq(rz_list_length(list), 3, "First length check");
 
 	rz_list_delete_val(list, (void *)&test1);
-	mu_assert_eq(list->length, 2, "Second length check");
+	mu_assert_eq(rz_list_length(list), 2, "Second length check");
 
 	rz_list_append(list, (void *)&test1);
-	mu_assert_eq(list->length, 3, "Third length check");
+	mu_assert_eq(rz_list_length(list), 3, "Third length check");
 
 	rz_list_pop(list);
-	mu_assert_eq(list->length, 2, "Fourth length check");
+	mu_assert_eq(rz_list_length(list), 2, "Fourth length check");
 
 	rz_list_pop_head(list);
-	mu_assert_eq(list->length, 1, "Fifth length check");
+	mu_assert_eq(rz_list_length(list), 1, "Fifth length check");
 
 	rz_list_insert(list, 2, (void *)&test2);
-	mu_assert_eq(list->length, 2, "Sixth length check");
+	mu_assert_eq(rz_list_length(list), 2, "Sixth length check");
 
 	rz_list_prepend(list, (void *)&test3);
-	mu_assert_eq(list->length, 3, "Seventh length check");
+	mu_assert_eq(rz_list_length(list), 3, "Seventh length check");
 
 	rz_list_del_n(list, 2);
-	mu_assert_eq(list->length, 2, "Eighth length check");
+	mu_assert_eq(rz_list_length(list), 2, "Eighth length check");
 
 	rz_list_append(list2, (void *)&test1);
 	rz_list_append(list2, (void *)&test3);
 	rz_list_append(list2, (void *)&test2);
 	rz_list_join(list, list2);
-	mu_assert_eq(list->length, 5, "Ninth length check");
+	mu_assert_eq(rz_list_length(list), 5, "Ninth length check");
 	iter = list->head;
 	count = 0;
 	while (iter) {
 		count++;
 		iter = iter->next;
 	}
-	mu_assert_eq(list->length, count, "Tenth length check");
+	mu_assert_eq(rz_list_length(list), count, "Tenth length check");
 	rz_list_free(list);
 	rz_list_free(list2);
 	mu_end;
@@ -551,8 +551,8 @@ bool test_rz_list_set_n_free(void) {
 	RzList *list = rz_list_newf(dummy_free);
 	rz_list_append(list, (void *)0x111);
 	rz_list_append(list, (void *)0x222);
-	mu_assert_eq(rz_list_set_n(list, 1, (void *)0x333), true, "set_n failed");
-	mu_assert_ptreq(rz_list_get_n(list, 1), (void *)0x333, "val not updated");
+	mu_assert_eq(rz_list_set_n(list, 1, (void *)0x333), true, "rz_list_set_n failed");
+	mu_assert_ptreq(rz_list_get_n(list, 1), (void *)0x333, "rz_list_get_n not updated");
 	rz_list_free(list);
 	mu_end;
 }
