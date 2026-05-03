@@ -29,7 +29,7 @@ intrp    N/A
 laddr    0x00000000
 lang     N/A
 machine  Sega Megadrive
-maxopsz  4
+maxopsz  22
 minopsz  2
 os       smd
 cc       N/A

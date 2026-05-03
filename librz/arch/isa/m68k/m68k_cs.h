@@ -7,7 +7,7 @@
 #include <string.h>
 #include <capstone/capstone.h>
 
-#define M68K_LONGEST_INSTRUCTION 10
+#define M68K_LONGEST_INSTRUCTION 22
 
 #if CS_NEXT_VERSION >= 7
 #define M68K_CPUS "68000,68010,68020,68030,68040,68060,cpu32"
