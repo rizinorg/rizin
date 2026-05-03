@@ -354,95 +354,6 @@ cleanup:
 	return version;
 }
 
-static ut64 read_val(RzCore *core, const void *src, bool is_big_endian) {
-	const ut8 ptr_size = rz_heap_ptr_size(core);
-	if (ptr_size == 2) {
-		return rz_read_ble16(src, is_big_endian);
-	} else if (ptr_size == 4) {
-		return rz_read_ble32(src, is_big_endian);
-	} else {
-		return rz_read_ble64(src, is_big_endian);
-	}
-}
-
-/**
- * \brief Fill the glibc tcache entries.
- * \param core RzCore Pointer to the Rizin's core
- * \param tcache Pointer to the tcache struct.
- * \return RzList pointer for the list of tcache bins.
- *
- * Used to fill the tcache bins for the specific tcache.
- *
- */
-static RZ_BORROW RzList /*<RzList *>*/ *fill_tcache_entries(RzCore *core, const RzHeapTcache *tcache,
-	const RzHeapConfig *config) {
-	RzList *tcache_bins_list = rz_list_newf((RzListFree)rz_heap_bin_free);
-	if (!tcache_bins_list) {
-		goto error;
-	}
-
-	// Use rz_tcache struct to get bins
-	for (ut32 i = 0; i < config->tcache.num_bins; i++) {
-		ut16 count = tcache->counts[i];
-		ut64 entry = tcache->entries[i];
-
-		RzHeapBin *bin = RZ_NEW0(RzHeapBin);
-		if (!bin) {
-			goto error;
-		}
-		bin->type = rz_str_dup("Tcache");
-		bin->bin_num = i;
-		bin->chunks = rz_list_newf((RzListFree)rz_heap_chunk_free);
-		if (!bin->chunks) {
-			rz_heap_bin_free(bin);
-			goto error;
-		}
-		rz_list_append(tcache_bins_list, bin);
-		if (count <= 0) {
-			continue;
-		}
-		bin->fd = rz_glibc_mem_to_chunk(entry, config);
-		// get first chunk
-		RzHeapChunkListItem *chunk = RZ_NEW0(RzHeapChunkListItem);
-		if (!chunk) {
-			rz_heap_bin_free(bin);
-			goto error;
-		}
-		chunk->addr = rz_glibc_mem_to_chunk(entry, config);
-		rz_list_append(bin->chunks, chunk);
-
-		if (count <= 1) {
-			continue;
-		}
-
-		// get rest of the chunks
-		ut64 tcache_fd = entry;
-		for (size_t n = 1; n < count; n++) {
-			RzHeapTcacheEntry tentry;
-			if (!rz_glibc_read_tcache_entry(core->io, tcache_fd, &tentry, config)) {
-				goto error;
-			}
-			ut64 tcache_tmp = rz_glibc_tcache_next(&tentry, tcache_fd, config);
-			if (!tcache_tmp) {
-				break;
-			}
-			chunk = RZ_NEW0(RzHeapChunkListItem);
-			if (!chunk) {
-				goto error;
-			}
-			// the base address of the chunk = address - 2 * PTR_SIZE
-			chunk->addr = rz_glibc_mem_to_chunk(tcache_tmp, config);
-			rz_list_append(bin->chunks, chunk);
-			tcache_fd = tcache_tmp;
-		}
-	}
-	return tcache_bins_list;
-
-error:
-	rz_list_free(tcache_bins_list);
-	return NULL;
-}
-
 static void print_tcache(RzCore *core, RzList /*<RzList *>*/ *bins, PJ *pj, const ut64 tid, const RzHeapConfig *config) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
@@ -932,6 +843,96 @@ RZ_API bool rz_heap_resolve_main_arena(RzCore *core, ut64 *m_arena) {
 	return false;
 }
 
+#if DEBUGGER && !defined(__serenity__)
+static ut64 read_val(RzCore *core, const void *src, bool is_big_endian) {
+	const ut8 ptr_size = rz_heap_ptr_size(core);
+	if (ptr_size == 2) {
+		return rz_read_ble16(src, is_big_endian);
+	} else if (ptr_size == 4) {
+		return rz_read_ble32(src, is_big_endian);
+	} else {
+		return rz_read_ble64(src, is_big_endian);
+	}
+}
+
+/**
+ * \brief Fill the glibc tcache entries.
+ * \param core RzCore Pointer to the Rizin's core
+ * \param tcache Pointer to the tcache struct.
+ * \return RzList pointer for the list of tcache bins.
+ *
+ * Used to fill the tcache bins for the specific tcache.
+ *
+ */
+static RZ_BORROW RzList /*<RzList *>*/ *fill_tcache_entries(RzCore *core, const RzHeapTcache *tcache,
+	const RzHeapConfig *config) {
+	RzList *tcache_bins_list = rz_list_newf((RzListFree)rz_heap_bin_free);
+	if (!tcache_bins_list) {
+		goto error;
+	}
+
+	// Use rz_tcache struct to get bins
+	for (ut32 i = 0; i < config->tcache.num_bins; i++) {
+		ut16 count = tcache->counts[i];
+		ut64 entry = tcache->entries[i];
+
+		RzHeapBin *bin = RZ_NEW0(RzHeapBin);
+		if (!bin) {
+			goto error;
+		}
+		bin->type = rz_str_dup("Tcache");
+		bin->bin_num = i;
+		bin->chunks = rz_list_newf((RzListFree)rz_heap_chunk_free);
+		if (!bin->chunks) {
+			rz_heap_bin_free(bin);
+			goto error;
+		}
+		rz_list_append(tcache_bins_list, bin);
+		if (count <= 0) {
+			continue;
+		}
+		bin->fd = rz_glibc_mem_to_chunk(entry, config);
+		// get first chunk
+		RzHeapChunkListItem *chunk = RZ_NEW0(RzHeapChunkListItem);
+		if (!chunk) {
+			rz_heap_bin_free(bin);
+			goto error;
+		}
+		chunk->addr = rz_glibc_mem_to_chunk(entry, config);
+		rz_list_append(bin->chunks, chunk);
+
+		if (count <= 1) {
+			continue;
+		}
+
+		// get rest of the chunks
+		ut64 tcache_fd = entry;
+		for (size_t n = 1; n < count; n++) {
+			RzHeapTcacheEntry tentry;
+			if (!rz_glibc_read_tcache_entry(core->io, tcache_fd, &tentry, config)) {
+				goto error;
+			}
+			ut64 tcache_tmp = rz_glibc_tcache_next(&tentry, tcache_fd, config);
+			if (!tcache_tmp) {
+				break;
+			}
+			chunk = RZ_NEW0(RzHeapChunkListItem);
+			if (!chunk) {
+				goto error;
+			}
+			// the base address of the chunk = address - 2 * PTR_SIZE
+			chunk->addr = rz_glibc_mem_to_chunk(tcache_tmp, config);
+			rz_list_append(bin->chunks, chunk);
+			tcache_fd = tcache_tmp;
+		}
+	}
+	return tcache_bins_list;
+
+error:
+	rz_list_free(tcache_bins_list);
+	return NULL;
+}
+
 /**
  * \brief Parses tcache information from the given address in the target process memory.
  * \param core RzCore Pointer to the Rizin's core
@@ -1038,7 +1039,6 @@ static bool parse_tls_data(RzCore *core, RZ_NONNULL RzDebugPid *th, ut64 tid, co
  *
  * Resolves the TLS base for every thread and parse to identify the tcache structures.
  */
-
 static void resolve_tcache_perthread(RZ_NONNULL RzCore *core, const RzHeapConfig *config) {
 	RzDebugPid *th;
 	RzListIter *it;
@@ -1061,7 +1061,6 @@ static void resolve_tcache_perthread(RZ_NONNULL RzCore *core, const RzHeapConfig
 	}
 }
 
-#if !defined(__serenity__)
 RZ_API RZ_OWN bool resolve_heap_tcache(RZ_NONNULL RzCore *core, ut64 arena_base, const RzHeapConfig *config) {
 	RzDebug *dbg = core->dbg;
 
@@ -2707,7 +2706,7 @@ RZ_IPI RzCmdStatus rz_cmd_heap_tcache_print_handler(RzCore *core, int argc, cons
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-#if !defined(__serenity__)
+#if DEBUGGER && !defined(__serenity__)
 	if (!resolve_heap_tcache(core, m_arena, &config)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
