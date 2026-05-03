@@ -65,7 +65,7 @@ static inline size_t rz_bits_trailing_zeros(ut64 v) {
  * \param x the 64-bit integer
  * \return the number of leading zeros
  */
-static inline int rz_bits_leading_zeros(ut64 x) {
+static RZ_INLINE int rz_bits_leading_zeros(ut64 x) {
 	if (x == 0) {
 		return 64;
 	}

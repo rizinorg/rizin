@@ -124,10 +124,6 @@ RZ_API void *rz_vector_assign_at(RZ_BORROW RzVector *vec, size_t index, RZ_NULLA
 // It is the caller's responsibility to free potential resources associated with the element.
 RZ_API void rz_vector_remove_at(RzVector *vec, size_t index, void *into);
 
-/**
- * remove all elements in the given range and write the contents to into (must be appropriately large).
- * It is the caller's responsibility to free potential resources associated with the elements.
- */
 RZ_API void rz_vector_remove_range(RzVector *vec, size_t index, size_t count, void *into);
 
 RZ_API void rz_vector_purge(RZ_BORROW RzVector *vec);
@@ -156,12 +152,6 @@ RZ_API void *rz_vector_push_front(RzVector *vec, void *x);
 
 RZ_API bool rz_vector_contains(const RZ_NONNULL RzVector *vec, const RZ_NONNULL void *elem);
 
-/**
- * \brief Swap two elements of the vector
- * \param index_a index of the first element to swap
- * \param index_b index of the second element to swap
- * \return true if the swap succeeded
- **/
 RZ_API bool rz_vector_swap(RzVector *vec, size_t index_a, size_t index_b);
 
 // make sure the capacity is at least capacity.
@@ -174,6 +164,8 @@ RZ_API RZ_OWN void *rz_vector_take_array(RzVector *vec);
 
 // sort vector
 RZ_API void rz_vector_sort(RzVector *vec, RzVectorComparator cmp, bool reverse, void *user);
+
+RZ_API void rz_vector_remove_if(RzVector *vec, bool (*pred)(const void *elem, void *user), void *user);
 
 /**
  * \brief Return the capacity of the vector.
