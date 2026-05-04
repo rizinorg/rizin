@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <rz_util.h>
 
-#define RZ_LIST_SLAB_SIZE 1024
+#define RZ_LIST_SLAB_SIZE 128
 
 struct rz_list_slab_t {
 	RzListIter elements[RZ_LIST_SLAB_SIZE];
