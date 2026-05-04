@@ -1,0 +1,8 @@
+d "move16 (a0)+, (a1)+" f6209000
+d "halt" 4ac8
+d "pflushn (a0)" f500
+d "pflush (a0)" f508
+d "pflushan" f510
+d "pflusha" f518
+d "plpaw (a0)" f588
+d "plpar (a0)" f5c8
