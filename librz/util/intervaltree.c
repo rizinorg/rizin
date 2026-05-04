@@ -11,8 +11,8 @@ static void node_max(RBNode *node) {
 	intervalnode->max_end = intervalnode->end;
 	int i;
 	for (i = 0; i < 2; i++) {
-		if (node->child[i]) {
-			ut64 end = unwrap(node->child[i])->max_end;
+		if (rb_child(node, i)) {
+			ut64 end = unwrap(rb_child(node, i))->max_end;
 			if (end > intervalnode->max_end) {
 				intervalnode->max_end = end;
 			}
@@ -55,9 +55,9 @@ static int cmp_exact_node(const void *incoming, const RBNode *in_tree, void *use
 		while (cur) {
 			path_cache->path[path_cache->len++] = cur;
 			if (incoming_node->start <= unwrap(cur)->start) {
-				cur = cur->child[0];
+				cur = rb_child(cur, 0);
 			} else {
-				cur = cur->child[1];
+				cur = rb_child(cur, 1);
 			}
 		}
 		// iterate through all children with the same start and stop when the pointer is identical
@@ -70,16 +70,16 @@ static int cmp_exact_node(const void *incoming, const RBNode *in_tree, void *use
 			}
 			// rz_rbtree_iter_next does not work here
 			RBNode *rbnode = &intervalnode->node;
-			if (rbnode->child[1]) {
+			if (rb_child(rbnode, 1)) {
 				// next node after the current is always the leftmost in the right branch
-				for (rbnode = rbnode->child[1]; rbnode; rbnode = rbnode->child[0]) {
+				for (rbnode = rb_child(rbnode, 1); rbnode; rbnode = rb_child(rbnode, 0)) {
 					path_cache->path[path_cache->len++] = rbnode;
 				}
 			} else {
 				// if there is no right branch, go up
 				do {
 					rbnode = path_cache->path[--path_cache->len];
-				} while (path_cache->len && path_cache->path[path_cache->len - 1]->child[1] == rbnode);
+				} while (path_cache->len && rb_child(path_cache->path[path_cache->len - 1], 1) == rbnode);
 			}
 		}
 	}
@@ -95,7 +95,7 @@ static int cmp_exact_node(const void *incoming, const RBNode *in_tree, void *use
 	}
 
 	// Determine the direction from the next child node
-	return (next_child && node->node.child[0] == next_child) ? -1 : 1;
+	return (next_child && rb_child(&node->node, 0) == next_child ? -1 : 1);
 }
 
 RZ_API void rz_interval_tree_init(RzIntervalTree *tree, RzIntervalNodeFree free) {
@@ -170,9 +170,9 @@ RZ_API RzIntervalNode *rz_interval_tree_node_at(RzIntervalTree *tree, ut64 start
 	RzIntervalNode *node = tree->root;
 	while (node) {
 		if (start < node->start) {
-			node = unwrap(node->node.child[0]);
+			node = unwrap(rb_child(&node->node, 0));
 		} else if (start > node->start) {
-			node = unwrap(node->node.child[1]);
+			node = unwrap(rb_child(&node->node, 1));
 		} else {
 			return node;
 		}
@@ -194,9 +194,9 @@ RZ_API RBIter rz_interval_tree_first_at(RzIntervalTree *tree, ut64 start) {
 	while (node) {
 		if (start <= unwrap(node)->start) {
 			it.path[it.len++] = node;
-			node = node->child[0];
+			node = rb_child(node, 0);
 		} else {
-			node = node->child[1];
+			node = rb_child(node, 1);
 		}
 	}
 
@@ -238,7 +238,7 @@ RZ_API bool rz_interval_tree_all_at(RzIntervalTree *tree, ut64 start, RzInterval
 RZ_API bool rz_interval_node_all_in(RzIntervalNode *node, ut64 value, bool end_inclusive, RzIntervalIterCb cb, void *user) {
 	while (node && value < node->start) {
 		// less than the current node, but might still be contained further down
-		node = unwrap(node->node.child[0]);
+		node = unwrap(rb_child(&node->node, 0));
 	}
 	if (!node) {
 		return true;
@@ -252,11 +252,11 @@ RZ_API bool rz_interval_node_all_in(RzIntervalNode *node, ut64 value, bool end_i
 		}
 	}
 	// This can be done more efficiently by building the stack manually
-	bool ret = rz_interval_node_all_in(unwrap(node->node.child[0]), value, end_inclusive, cb, user);
+	bool ret = rz_interval_node_all_in(unwrap(rb_child(&node->node, 0)), value, end_inclusive, cb, user);
 	if (!ret) {
 		return false;
 	}
-	return rz_interval_node_all_in(unwrap(node->node.child[1]), value, end_inclusive, cb, user);
+	return rz_interval_node_all_in(unwrap(rb_child(&node->node, 1)), value, end_inclusive, cb, user);
 }
 
 RZ_API bool rz_interval_tree_all_in(RzIntervalTree *tree, ut64 value, bool end_inclusive, RzIntervalIterCb cb, void *user) {
@@ -268,7 +268,7 @@ static bool rz_interval_node_all_intersect(RzIntervalNode *node, ut64 start, ut6
 	rz_return_val_if_fail(end >= start, true);
 	while (node && (end_inclusive ? end < node->start : end <= node->start)) {
 		// less than the current node, but might still be contained further down
-		node = unwrap(node->node.child[0]);
+		node = unwrap(rb_child(&node->node, 0));
 	}
 	if (!node) {
 		return true;
@@ -282,10 +282,10 @@ static bool rz_interval_node_all_intersect(RzIntervalNode *node, ut64 start, ut6
 		}
 	}
 	// This can be done more efficiently by building the stack manually
-	if (!rz_interval_node_all_intersect(unwrap(node->node.child[0]), start, end, end_inclusive, cb, user)) {
+	if (!rz_interval_node_all_intersect(unwrap(rb_child(&node->node, 0)), start, end, end_inclusive, cb, user)) {
 		return false;
 	}
-	return rz_interval_node_all_intersect(unwrap(node->node.child[1]), start, end, end_inclusive, cb, user);
+	return rz_interval_node_all_intersect(unwrap(rb_child(&node->node, 1)), start, end, end_inclusive, cb, user);
 }
 
 RZ_API bool rz_interval_tree_all_intersect(RzIntervalTree *tree, ut64 start, ut64 end, bool end_inclusive, RzIntervalIterCb cb, void *user) {

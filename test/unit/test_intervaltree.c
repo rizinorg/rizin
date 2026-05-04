@@ -13,10 +13,10 @@ bool check_invariants(RzIntervalNode *node) {
 	ut64 max = node->end;
 	int i;
 	for (i = 0; i < 2; i++) {
-		if (!node->node.child[i]) {
+		if (!rb_child(&node->node, i)) {
 			continue;
 		}
-		RzIntervalNode *child = container_of(node->node.child[i], RzIntervalNode, node);
+		RzIntervalNode *child = container_of(rb_child(&node->node, i), RzIntervalNode, node);
 		if (child->max_end > max) {
 			max = child->max_end;
 		}

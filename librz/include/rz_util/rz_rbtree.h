@@ -17,11 +17,34 @@ extern "C" {
 
 // Singleton can be zero initialized
 typedef struct rz_rb_node_t {
-	struct rz_rb_node_t *child[2];
-	bool red;
+	uintptr_t child[2];
 } RBNode;
 
 typedef RBNode *RBTree;
+
+static inline RBNode *rb_child(const RBNode *node, int dir) {
+	return (RBNode *)(node->child[dir] & ~(uintptr_t)1);
+}
+
+static inline void rb_set_child(RBNode *node, int dir, RBNode *child) {
+	if (dir == 0) {
+		node->child[0] = (node->child[0] & 1) | (uintptr_t)child;
+	} else {
+		node->child[1] = (uintptr_t)child;
+	}
+}
+
+static inline bool rb_is_red(const RBNode *node) {
+	return (bool)(node->child[0] & 1);
+}
+
+static inline void rb_set_red(RBNode *node, bool red) {
+	if (red) {
+		node->child[0] |= 1;
+	} else {
+		node->child[0] &= ~(uintptr_t)1;
+	}
+}
 
 // incoming < in_tree  => return < 0
 // incoming == in_tree => return == 0

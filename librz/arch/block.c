@@ -12,8 +12,8 @@ static void __max_end(RBNode *node) {
 	block->_max_end = block->addr + block->size;
 	int i;
 	for (i = 0; i < 2; i++) {
-		if (node->child[i]) {
-			ut64 end = unwrap(node->child[i])->_max_end;
+		if (rb_child(node, i)) {
+			ut64 end = unwrap(rb_child(node, i))->_max_end;
 			if (end > block->_max_end) {
 				block->_max_end = end;
 			}
@@ -93,7 +93,7 @@ RZ_API RzAnalysisBlock *rz_analysis_get_block_at(RzAnalysis *analysis, ut64 addr
 static bool all_in(RzAnalysisBlock *node, ut64 addr, RzAnalysisBlockCb cb, void *user) {
 	while (node && addr < node->addr) {
 		// less than the current node, but might still be contained further down
-		node = unwrap(node->_rb.child[0]);
+		node = unwrap(rb_child(&node->_rb, 0));
 	}
 	if (!node) {
 		return true;
@@ -107,10 +107,10 @@ static bool all_in(RzAnalysisBlock *node, ut64 addr, RzAnalysisBlockCb cb, void 
 		}
 	}
 	// This can be done more efficiently by building the stack manually
-	if (!all_in(unwrap(node->_rb.child[0]), addr, cb, user)) {
+	if (!all_in(unwrap(rb_child(&node->_rb, 0)), addr, cb, user)) {
 		return false;
 	}
-	if (!all_in(unwrap(node->_rb.child[1]), addr, cb, user)) {
+	if (!all_in(unwrap(rb_child(&node->_rb, 1)), addr, cb, user)) {
 		return false;
 	}
 	return true;
@@ -139,7 +139,7 @@ static void all_intersect(RzAnalysisBlock *node, ut64 addr, ut64 size, RzAnalysi
 	ut64 end = addr + size;
 	while (node && end <= node->addr) {
 		// less than the current node, but might still be contained further down
-		node = unwrap(node->_rb.child[0]);
+		node = unwrap(rb_child(&node->_rb, 0));
 	}
 	if (!node) {
 		return;
@@ -151,8 +151,8 @@ static void all_intersect(RzAnalysisBlock *node, ut64 addr, ut64 size, RzAnalysi
 		cb(node, user);
 	}
 	// This can be done more efficiently by building the stack manually
-	all_intersect(unwrap(node->_rb.child[0]), addr, size, cb, user);
-	all_intersect(unwrap(node->_rb.child[1]), addr, size, cb, user);
+	all_intersect(unwrap(rb_child(&node->_rb, 0)), addr, size, cb, user);
+	all_intersect(unwrap(rb_child(&node->_rb, 1)), addr, size, cb, user);
 }
 
 RZ_API void rz_analysis_blocks_foreach_intersect(RzAnalysis *analysis, ut64 addr, ut64 size, RzAnalysisBlockCb cb, void *user) {
