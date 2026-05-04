@@ -8,7 +8,7 @@
 
 #define ROUND_UP_4(x) ((x) + (4 - 1)) / 4 * 4
 
-#define FP_LAYOUT 0x10
+#define FP_LAYOUT 0x80
 
 #define X86          0
 #define X86_64       1
@@ -154,6 +154,13 @@
 #define SPARC64_OPENBSD_FPREGS_SIZE  ((4 * 64) + 8 + 4)
 #define SPARC64_OPENBSD_FPREG_OFFSET 0x0
 
+// Linux x86/x86_64 NT_FPREGSET layouts.
+// For both, the FP state begins at the start of the note description.
+#define X86_FPREGS_SIZE     108
+#define X86_64_FPREGS_SIZE  512
+#define X86_FPREG_OFFSET    0x0
+#define X86_64_FPREG_OFFSET 0x0
+
 // o6 is the stack pointer. So g0-g7,o0-5 come before it.
 // Same for OpenBSD and Linux.
 #define SPARC32_PR_STATUS_REG_OFFSET_SP (4 * 14)
@@ -214,6 +221,10 @@ static RzBinElfPrStatusLayout prstatus_layouts[ARCH_LEN] = {
 
 	[RISCV_32] = { RISCV_32_REGS_SIZE, RISCV_32_REG_OFFSET, 32, RISCV_32_REG_OFFSET_SP },
 	[RISCV_64] = { RISCV_64_REGS_SIZE, RISCV_64_REG_OFFSET, 64, RISCV_64_REG_OFFSET_SP },
+
+	[X86 | FP_LAYOUT] = { X86_FPREGS_SIZE, X86_FPREG_OFFSET, 0, 0 },
+	[X86_64 |
+		FP_LAYOUT] = { X86_64_FPREGS_SIZE, X86_64_FPREG_OFFSET, 0, 0 },
 };
 
 static bool parse_register_note(ELFOBJ *bin, RzVector /*<RzBinElfNote>*/ *notes, Elf_(Nhdr) * note_segment_header, ut64 offset, size_t n_type) {
@@ -500,6 +511,22 @@ RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_regset_layout)(RZ_NONNULL 
 	switch (bin->ehdr.e_machine) {
 	default:
 		return NULL;
+	case EM_386:
+		if (n_type == NT_FPREGSET) {
+			off = FP_LAYOUT | X86;
+		} else {
+			rz_warn_if_reached();
+			return NULL;
+		}
+		break;
+	case EM_X86_64:
+		if (n_type == NT_FPREGSET) {
+			off = FP_LAYOUT | X86_64;
+		} else {
+			rz_warn_if_reached();
+			return NULL;
+		}
+		break;
 	case EM_MIPS:
 		/* fall-thru */
 	case EM_MIPS_RS3_LE:

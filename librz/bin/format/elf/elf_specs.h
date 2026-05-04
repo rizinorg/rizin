@@ -28,6 +28,12 @@
 #define ELF_M_SYM         ELF64_M_SYM
 #define ELF_M_SIZE        ELF64_M_SIZE
 #define ELF_M_INFO        ELF64_M_INFO
+
+#define PFMTnx PFMT64x
+#define PFMTnX PFMT64X
+#define PFMTnd PFMT64d
+#define PFMTnu PFMT64u
+#define PFMTno PFMT64o
 #else
 #define Elf_(name)        Elf32_##name
 #define ELF_ST_BIND       ELF32_ST_BIND
@@ -40,6 +46,12 @@
 #define ELF_M_SYM         ELF32_M_SYM
 #define ELF_M_SIZE        ELF32_M_SIZE
 #define ELF_M_INFO        ELF32_M_INFO
+
+#define PFMTnx PFMT32x
+#define PFMTnX PFMT32X
+#define PFMTnd PFMT32d
+#define PFMTnu PFMT32u
+#define PFMTno PFMT32o
 #endif
 
 /**

@@ -81,6 +81,7 @@ static bool find_string_at(RzCore *core, RzBinObject *bobj, ut64 pointer, char *
 		.min_str_length = bin->str_search_cfg.min_length,
 		.prefer_big_endian = big_endian,
 		.check_ascii_freq = bin->str_search_cfg.check_ascii_freq,
+		.user_unprintable = bin->str_search_cfg.user_unprintable,
 	};
 
 	rz_io_pread_at(core->io, pointer, buffer, sizeof(buffer));
@@ -4558,7 +4559,7 @@ RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core) {
 		return false;
 	}
 	RzConfigHold *hold = rz_config_hold_new(core->config);
-	rz_config_hold_i(hold, "io.va", "io.pcache.write", NULL);
+	rz_config_hold_var(hold, "io.va", "io.pcache.write", NULL);
 	bool io_cache = rz_config_get_b(core->config, "io.pcache.write");
 	if (!io_cache) {
 		// XXX. we shouldnt need this, but it breaks 'rizin -c aaa -w ls'
@@ -4853,7 +4854,7 @@ static void sdb_concat_by_path(Sdb *s, const char *path) {
 }
 
 RZ_API void rz_core_analysis_cc_init_by_path(RzCore *core, RZ_NULLABLE const char *path, RZ_NULLABLE const char *homepath) {
-	const char *analysis_arch = rz_config_get(core->config, "analysis.arch");
+	const char *analysis_arch = rz_analysis_get_arch(core->analysis);
 	Sdb *cc = rz_analysis_get_sdb_cc(core->analysis);
 	if (!strcmp(analysis_arch, "null")) {
 		sdb_reset(cc);

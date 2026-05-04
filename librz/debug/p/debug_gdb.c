@@ -314,8 +314,7 @@ static int rz_debug_gdb_reg_write(RzDebug *dbg, int type, const ut8 *buf, int si
 	int buflen = 0;
 	RzReg *rreg = rz_analysis_get_reg(dbg->analysis);
 	int bits = rz_analysis_get_bits(dbg->analysis);
-	const char *pcname = rz_reg_get_name(rreg, RZ_REG_NAME_PC);
-	RzRegItem *reg = rz_reg_get(rreg, pcname, 0);
+	RzRegItem *reg = rz_reg_get_by_role(rreg, RZ_REG_NAME_PC);
 	if (reg && bits != reg->size) {
 		bits = reg->size;
 	}
@@ -394,7 +393,6 @@ static RzDebugReasonType rz_debug_gdb_wait(RzDebug *dbg, int pid) {
 static int rz_debug_gdb_attach(RzDebug *dbg, int pid) {
 	RzDebugGdbCtx *ctx = dbg->plugin_data;
 	RzIODesc *d = dbg->iob.io->desc;
-	// TODO: the core must update the dbg.swstep config var when this var is changed
 	dbg->swstep = false;
 	// eprintf ("XWJSTEP TOFALSE\n");
 	if (!(d && d->plugin && d->plugin->name && d->data)) {

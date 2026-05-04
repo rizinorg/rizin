@@ -86,13 +86,13 @@ void snprint_mem(char *out, size_t out_size, const ut8 *buf, size_t len) {
 
 #define mu_ignore \
 	do { \
-		printf(TYELLOW "IGN\n" TRESET); \
+		printf(TYELLOW "IGN" TRESET "\n"); \
 		return MU_PASSED; \
 	} while (0)
 
 #define mu_end \
 	do { \
-		printf(TGREEN "OK\n" TRESET); \
+		printf(TGREEN "OK" TRESET "\n"); \
 		return MU_PASSED; \
 	} while (0)
 

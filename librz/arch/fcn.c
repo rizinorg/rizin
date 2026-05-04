@@ -762,8 +762,8 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			gotoBeach(RZ_ANALYSIS_RET_END);
 		}
 
-		const char *bp_reg = analysis->reg->name[RZ_REG_NAME_BP];
-		const char *sp_reg = analysis->reg->name[RZ_REG_NAME_SP];
+		const char *bp_reg = rz_reg_get_name(analysis->reg, RZ_REG_NAME_BP);
+		const char *sp_reg = rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP);
 		bool has_stack_regs = bp_reg && sp_reg;
 
 		if (analysis->opt.nopskip && fcn->addr == at) {
@@ -2223,7 +2223,7 @@ static bool can_affect_bp(RzAnalysis *analysis, RzAnalysisOp *op) {
 	RzAnalysisValue *src = op->src[0];
 	const char *opdreg = (dst && dst->reg) ? dst->reg->name : NULL;
 	const char *opsreg = (src && src->reg) ? src->reg->name : NULL;
-	const char *bp_name = analysis->reg->name[RZ_REG_NAME_BP];
+	const char *bp_name = rz_reg_get_name(analysis->reg, RZ_REG_NAME_BP);
 	bool is_bp_dst = opdreg && !dst->memref && !strcmp(opdreg, bp_name);
 	bool is_bp_src = opsreg && !src->memref && !strcmp(opsreg, bp_name);
 	if (op->type == RZ_ANALYSIS_OP_TYPE_XCHG) {
@@ -2260,14 +2260,17 @@ static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction
 			}
 			switch (op.type) {
 			case RZ_ANALYSIS_OP_TYPE_MOV:
-			case RZ_ANALYSIS_OP_TYPE_LEA:
-				if (can_affect_bp(analysis, &op) && op.src[0] && op.src[0]->reg && op.src[0]->reg->name && strcmp(op.src[0]->reg->name, analysis->reg->name[RZ_REG_NAME_SP])) {
+			case RZ_ANALYSIS_OP_TYPE_LEA: {
+				const char *sp = rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP);
+				const char *srcreg = op.src[0] && op.src[0]->reg ? op.src[0]->reg->name : NULL;
+				if (can_affect_bp(analysis, &op) && srcreg && sp && strcmp(srcreg, sp)) {
 					fcn->bp_frame = false;
 					rz_analysis_op_fini(&op);
 					free(buf);
 					return;
 				}
 				break;
+			}
 			case RZ_ANALYSIS_OP_TYPE_ADD:
 			case RZ_ANALYSIS_OP_TYPE_AND:
 			case RZ_ANALYSIS_OP_TYPE_CMOV:

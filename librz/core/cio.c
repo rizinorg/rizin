@@ -28,7 +28,7 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 		rz_debug_attach(r->dbg, pid);
 		rz_debug_select(r->dbg, r->dbg->pid, r->dbg->tid);
 	}
-	rz_config_set_i(r->config, "dbg.swstep", (r->dbg->cur && !r->dbg->cur->canstep));
+	rz_config_set_bool(r->config, "dbg.swstep", (r->dbg->cur && !r->dbg->cur->canstep));
 	rz_io_system(r->io, rz_strf(buf, "pid %d", r->dbg->pid));
 
 	// this makes to attach twice showing warnings in the output

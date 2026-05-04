@@ -64,7 +64,7 @@ static int esilbreak_check_pc(RzDebug *dbg, ut64 pc) {
 	RzDebugEsilWatchpoint *ew;
 	RzListIter *iter;
 	if (!pc) {
-		pc = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_PC]);
+		pc = rz_debug_reg_get_by_role(dbg, RZ_REG_NAME_PC);
 	}
 	rz_list_foreach (EWPS, iter, ew) {
 		if (ew->rwx & RZ_PERM_X) {
@@ -222,7 +222,7 @@ RZ_API int rz_debug_esil_stepi(RzDebug *d) {
 	}
 
 	rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
-	opc = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_PC]);
+	opc = rz_debug_reg_get_by_role(dbg, RZ_REG_NAME_PC);
 	dbg->iob.read_at(dbg->iob.io, opc, obuf, sizeof(obuf));
 
 	// dbg->iob.read_at (dbg->iob.io, npc, buf, sizeof (buf));

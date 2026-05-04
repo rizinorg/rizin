@@ -6,13 +6,40 @@
 #include <rz_cons.h>
 #include <rz_reg.h>
 
-RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
-	int i, n, size;
-	if (!dbg || !dbg->reg || !dbg->cur) {
+static bool rz_debug_reg_sync_from_regstate(RzDebug *dbg) {
+	if (!dbg || !dbg->corebind.core) {
 		return false;
 	}
+	RzCore *core = (RzCore *)dbg->corebind.core;
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	if (!bf || !bf->o || !bf->o->regstate) {
+		return false;
+	}
+	RzReg *areg = core->analysis ? rz_analysis_get_reg(core->analysis) : NULL;
+	const char *profile = areg ? areg->reg_profile_str : NULL;
+	if (!RZ_STR_ISEMPTY(profile)) {
+		rz_reg_set_profile_string(dbg->reg, profile);
+	}
+	return rz_reg_arena_set_bytes(dbg->reg, bf->o->regstate) == 0;
+}
+
+RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
+	int i, n, size;
+	if (!dbg || !dbg->reg) {
+		return false;
+	}
+
+	if (!write && (!dbg->cur || (!dbg->cur->reg_read && !dbg->cur->sync_registers) || rz_debug_is_dead(dbg))) {
+		if (rz_debug_reg_sync_from_regstate(dbg)) {
+			return true;
+		}
+	}
+
 	// There's no point in syncing a dead target
 	if (rz_debug_is_dead(dbg)) {
+		return false;
+	}
+	if (!dbg->cur) {
 		return false;
 	}
 	// Check if the functions needed are available
@@ -109,6 +136,23 @@ RZ_API int rz_debug_reg_set(struct rz_debug_t *dbg, const char *name, ut64 num) 
 RZ_API ut64 rz_debug_reg_get(RzDebug *dbg, const char *name) {
 	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
 	return rz_reg_getv_by_role_or_name(dbg->reg, name);
+}
+
+/**
+ * Get the value of the register with the given role, including syncing first.
+ */
+RZ_API ut64 rz_debug_reg_get_by_role(RZ_NONNULL RzDebug *dbg, RzRegisterId role) {
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
+	RzRegItem *ri = rz_reg_get_by_role(dbg->reg, role);
+	if (!ri) {
+		if (role == RZ_REG_NAME_PC) {
+			// Debug generally requires the existence of a PC register,
+			// other registers may be optional.
+			RZ_LOG_ERROR("debug: no PC register known");
+		}
+		return 0;
+	}
+	return rz_reg_get_value(dbg->reg, ri);
 }
 
 RZ_API ut64 rz_debug_num_callback(RzNum *userptr, const char *str, int *ok) {

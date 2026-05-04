@@ -8,23 +8,26 @@
 
 #define GET_INTERNAL_BIN_INFO_OBJ(bf) ((LuacBinInfo *)(bf)->o->bin_obj)
 
-static bool check_buffer(RzBuffer *buff) {
-	if (rz_buf_size(buff) > LUAC_MAGIC_SIZE) {
-		ut8 buf[LUAC_MAGIC_SIZE];
-		rz_buf_read_at(buff, 0, buf, LUAC_MAGIC_SIZE);
-		return !memcmp(buf, LUAC_MAGIC, LUAC_MAGIC_SIZE);
+static bool luac_check_buffer(RzBuffer *b) {
+	ut8 buf[LUAC_MAGIC_SIZE] = { 0 };
+	if (rz_buf_size(b) <= LUAC_MAGIC_SIZE) {
+		return false;
 	}
-	return false;
+	rz_buf_read_at(b, 0, buf, LUAC_MAGIC_SIZE);
+	return !memcmp(buf, LUAC_MAGIC, LUAC_MAGIC_SIZE);
 }
 
-static int cmp_sections(const void *a, const void *b) {
+static int luac_cmp_sections(const void *a, const void *b) {
 	const RzBinSection *s_a = a;
 	const RzBinSection *s_b = b;
 	return s_a->paddr - s_b->paddr;
 }
 
-static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+static bool luac_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	LuaHeaderInfo *header = RZ_NEW0(LuaHeaderInfo);
+	if (!header) {
+		return false;
+	}
 	const size_t header_size = parse_header(bf, header);
 	if (header_size == 0) {
 		RZ_LOG_ERROR("Invalid or truncated luac header\n");
@@ -38,40 +41,40 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 		return false;
 	}
 
-	RzBinInfo *general_info = lua_parse_bin_info(bf, header);
-
 	LuacBinInfo *bin_info_obj = luac_build_info(proto);
 	if (!bin_info_obj) {
 		lua_free_proto_entry(proto);
-		rz_bin_info_free(general_info);
 		free(bin_info_obj);
 		return false;
 	}
 	bin_info_obj->header = header;
-	bin_info_obj->general_info = general_info;
 	bin_info_obj->proto = proto;
 
-	rz_pvector_sort(bin_info_obj->section_vec, (RzPVectorComparator)cmp_sections, NULL);
+	rz_pvector_sort(bin_info_obj->section_vec, (RzPVectorComparator)luac_cmp_sections, NULL);
 
 	obj->bin_obj = bin_info_obj;
 	return true;
 }
 
-static RzBinInfo *info(RzBinFile *bf) {
+static RzBinInfo *luac_info(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
 	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
-	rz_return_val_if_fail(bin_info_obj, NULL);
-	return bin_info_obj->general_info;
+	if (!bin_info_obj) {
+		return NULL;
+	}
+	return lua_parse_bin_info(bf, (LuaHeaderInfo *)bin_info_obj->header);
 }
 
-static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *luac_sections(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
 	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
-	rz_return_val_if_fail(bin_info_obj, NULL);
+	if (!bin_info_obj) {
+		return NULL;
+	}
 	return rz_pvector_clone(bin_info_obj->section_vec);
 }
 
-static void add_virtual_section(RzPVector /*<RzBinMap *>*/ *sections, const char *name, ut64 vaddr, ut64 size, int perm) {
+static void luac_add_virtual_section(RzPVector /*<RzBinMap *>*/ *sections, const char *name, ut64 vaddr, ut64 size, int perm) {
 	RzBinMap *map = (RzBinMap *)RZ_NEW0(RzBinMap);
 	if (!map) {
 		return;
@@ -86,7 +89,7 @@ static void add_virtual_section(RzPVector /*<RzBinMap *>*/ *sections, const char
 	}
 }
 
-static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *luac_maps(RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
@@ -116,16 +119,18 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		rz_pvector_push(ret, map);
 	}
 
-	add_virtual_section(ret, "lua.globals", 0x10000, 0x1000, RZ_PERM_RW);
-	add_virtual_section(ret, "lua.metatables", METATABLES_VOFFSET, 0x1000, RZ_PERM_R);
-	add_virtual_section(ret, "lua.stack", 0x20000, 0x10000, RZ_PERM_RW);
+	luac_add_virtual_section(ret, "lua.globals", 0x10000, 0x1000, RZ_PERM_RW);
+	luac_add_virtual_section(ret, "lua.metatables", METATABLES_VOFFSET, 0x1000, RZ_PERM_R);
+	luac_add_virtual_section(ret, "lua.stack", 0x20000, 0x10000, RZ_PERM_RW);
 	return ret;
 }
 
-static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *luac_symbols(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
 	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
-	rz_return_val_if_fail(bin_info_obj, NULL);
+	if (!bin_info_obj) {
+		return NULL;
+	}
 	RzListIter *iter;
 	RzBinSymbol *sym;
 	RzPVector *vec = rz_pvector_new(NULL);
@@ -135,14 +140,16 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return vec;
 }
 
-static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *luac_entries(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
 	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
-	rz_return_val_if_fail(bin_info_obj, NULL);
+	if (!bin_info_obj) {
+		return NULL;
+	}
 	return rz_pvector_clone(bin_info_obj->entry_vec);
 }
 
-static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *luac_strings(RzBinFile *bf) {
 	RzBinStringSearchOpt opt;
 	rz_bin_string_search_opt_init(&opt);
 	opt.mode = RZ_BIN_STRING_SEARCH_MODE_READ_ONLY_SECTIONS;
@@ -150,73 +157,22 @@ static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, &opt);
 }
 
-static void destroy(RzBinFile *bf) {
+static void luac_destroy(RzBinFile *bf) {
 	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
 	luac_build_info_free(bin_info_obj);
 }
 
-static RzStructuredData *get_structured_data_protos(RzStructuredData *parent, LuaProto *proto, st32 minor) {
+static void luac_get_structured_data_protos(RzStructuredData *parent, LuaProto *proto, st32 minor) {
 	const ut8 instruction_size = minor == 0 ? 8 : 4;
 	const size_t var_info_entries_len = rz_pvector_len(proto->local_var_info_entries);
 	const size_t upvalue_entries_len = rz_pvector_len(proto->upvalue_entries);
 	const size_t const_length = rz_pvector_len(proto->const_entries);
-#ifndef RZ_DEBUG
-	char name[16] = { 0 };
-	rz_strf(name, "fcn.%08" PFMT64x, proto->offset);
 
-	char pnd[16] = { 0 };
-	rz_strf(pnd, "%s", proto->proto_name ? (char *)proto->proto_name + 1 : name);
-	RZ_LOG_DEBUG("\n%s <%s:%" PFMT32d ",%" PFMT32d "> (%" PFMT64d " instructions at 0x%p)\n",
-		proto->line_defined == 0 ? "main" : "function",
-		pnd,
-		proto->line_defined,
-		proto->lastline_defined,
-		proto->code_size / instruction_size,
-		&proto);
-
-	RZ_LOG_DEBUG("%" PFMT32d "%s param%s, %" PFMT32d " slots, %" PFMTSZu " upvalues, %" PFMTSZu " locals, %" PFMTSZu " constants, %" PFMT32d " functions\n",
-		proto->num_params,
-		isvararg(proto->is_vararg) ? "+" : "",
-		proto->num_params > 1 ? "s" : "",
-		proto->max_stack_size,
-		upvalue_entries_len,
-		var_info_entries_len,
-		const_length,
-		proto->proto_entries->length);
-	RZ_LOG_DEBUG("constants (%" PFMTSZu ")\n", const_length);
-	st32 i = 0;
-	(void)i;
-	void **it_d;
-	rz_pvector_foreach (proto->const_entries, it_d) {
-		if (!it_d) {
-			continue;
-		}
-		const LuaConstEntry *val = (LuaConstEntry *)*it_d;
-
-		if ((val->tag & 0x0F) == LUA_TSTRING) {
-			RZ_LOG_DEBUG("%" PFMT32d "	%s\n", ++i, val->data ? (char *)val->data : "NULL");
-		} else if (val->tag == LUA_VNUMINT) {
-			RZ_LOG_DEBUG("%" PFMT32d "	%" PFMT64d "\n", ++i, *(st64 *)val->data);
-		} else if (val->tag == LUA_VNUMFLT) {
-			RZ_LOG_DEBUG("%" PFMT32d "	%f\n", ++i, *(double *)val->data);
-		} else if ((val->tag & 0x0F) == LUA_TBOOLEAN) {
-			RZ_LOG_DEBUG("%" PFMT32d "	%s\n", ++i, *(bool *)val->data == true ? "true" : "false");
-		} else if ((val->tag & 0x0F) == LUA_TNIL) {
-			RZ_LOG_DEBUG("%" PFMT32d "	%s\n", ++i, "NIL");
-		} else if (val->tag == LUA_VSTRING_IDX) {
-			RZ_LOG_DEBUG("%" PFMT32d "	%d\n", ++i, *(ut8 *)val->data);
-		} else if (val->tag == LUA_OPENWRT_INT32) {
-			RZ_LOG_DEBUG("%" PFMT32d "	%" PFMT64d "\n", ++i, *(st64 *)val->data);
-		} else {
-			rz_warn_if_reached();
-		}
-	}
-#endif
 	char key[16] = { 0 };
 	rz_strf(key, "fcn.%08" PFMT64x, proto->offset);
 	RzStructuredData *sd = rz_structured_data_map_add_map(parent, key);
 	if (!sd) {
-		return NULL;
+		return;
 	}
 	char pn[16] = { 0 };
 	rz_strf(pn, proto->line_defined ? "fcn.%08" PFMT64x : "main.%08" PFMT64x, proto->offset);
@@ -231,14 +187,14 @@ static RzStructuredData *get_structured_data_protos(RzStructuredData *parent, Lu
 	rz_structured_data_map_add_unsigned(sd, "functions", proto->proto_entries->length, false);
 	rz_structured_data_map_add_unsigned(sd, "locals", var_info_entries_len, false);
 	rz_structured_data_map_add_unsigned(sd, "upvalues", upvalue_entries_len, false);
-	if (!proto->const_entries)
-		return sd;
+	if (!proto->const_entries) {
+		return;
+	}
 
-	rz_structured_data_map_add_unsigned(sd, "constants_count", const_length, false);
 	if (const_length > 0) {
 		RzStructuredData *constants = rz_structured_data_map_add_array(sd, "constants");
 		if (!constants) {
-			return NULL;
+			return;
 		}
 		LuaConstEntry *val = NULL;
 		void **it;
@@ -259,13 +215,9 @@ static RzStructuredData *get_structured_data_protos(RzStructuredData *parent, Lu
 				rz_structured_data_array_add_string(constants, "NIL");
 			} else if (val->tag == LUA_OPENWRT_INT32) {
 				rz_structured_data_array_add_unsigned(constants, *(ut16 *)val->data, false);
-			} else if (val->tag == LUA_VSTRING_IDX) {
-			} else {
-				rz_warn_if_reached();
 			}
 		}
 	}
-	return sd;
 }
 
 static RzStructuredData *luac_structure(RzBinFile *bf) {
@@ -273,30 +225,29 @@ static RzStructuredData *luac_structure(RzBinFile *bf) {
 	const LuacBinInfo *obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
 	const LuaHeaderInfo *header_info = (LuaHeaderInfo *)obj->header;
 
-	RzStructuredData *info = rz_structured_data_new_map();
-	if (!info) {
-		return NULL;
+	RzStructuredData *info = NULL;
+	RzBinInfo *general_info = lua_parse_bin_info(bf, header_info);
+	info = rz_structured_data_new_map();
+	if (!general_info || !info) {
+		goto fail;
 	}
 
 	RzStructuredData *modinfo = rz_structured_data_map_add_map(info, "luac-info");
 	if (!modinfo) {
-		rz_structured_data_free(info);
-		return NULL;
+		goto fail;
 	}
 
 	RzStructuredData *version = rz_structured_data_map_add_map(modinfo, "version");
 	if (!version) {
-		rz_structured_data_free(modinfo);
-		rz_structured_data_free(info);
-		return NULL;
+		goto fail;
 	}
+
 	rz_structured_data_map_add_signed(version, "major", header_info->major);
 	rz_structured_data_map_add_signed(version, "minor", header_info->minor);
+	rz_structured_data_map_add_string(modinfo, "compiler", general_info->compiler);
 
-	rz_structured_data_map_add_string(modinfo, "compiler", obj->general_info->compiler);
-
-	if (obj->general_info->guid) {
-		rz_structured_data_map_add_string(modinfo, "source_file_name", obj->general_info->guid);
+	if (general_info->guid) {
+		rz_structured_data_map_add_string(modinfo, "source_file_name", general_info->guid);
 	}
 
 	rz_structured_data_map_add_unsigned(modinfo, "header_size", obj->proto->offset - 1, false);
@@ -305,25 +256,24 @@ static RzStructuredData *luac_structure(RzBinFile *bf) {
 
 	RzStructuredData *protos = rz_structured_data_map_add_map(modinfo, "protos");
 	if (!protos) {
-		rz_structured_data_free(version);
-		rz_structured_data_free(modinfo);
-		rz_structured_data_free(info);
-		return NULL;
+		goto fail;
 	}
 
-	RzStructuredData *psd = get_structured_data_protos(protos, obj->proto, obj->header->minor);
-	if (!psd) {
-		rz_structured_data_free(protos);
-		rz_structured_data_free(version);
-		rz_structured_data_free(modinfo);
-		rz_structured_data_free(info);
-	}
+	luac_get_structured_data_protos(protos, obj->proto, obj->header->minor);
+
 	RzListIter *iter;
 	LuaProto *sub_proto;
 	rz_list_foreach (obj->proto->proto_entries, iter, sub_proto) {
-		get_structured_data_protos(protos, sub_proto, obj->header->minor);
+		luac_get_structured_data_protos(protos, sub_proto, obj->header->minor);
 	}
+
+	rz_bin_info_free(general_info);
 	return info;
+
+fail:
+	rz_bin_info_free(general_info);
+	rz_structured_data_free(info);
+	return NULL;
 }
 
 RzBinPlugin rz_bin_plugin_luac = {
@@ -331,18 +281,16 @@ RzBinPlugin rz_bin_plugin_luac = {
 	.desc = "Lua compiled binary",
 	.license = "LGPL3",
 	.author = "Heersin",
-	.get_sdb = NULL,
-	.load_buffer = &load_buffer,
-	.destroy = &destroy,
-	.check_buffer = &check_buffer,
-	.baddr = NULL,
-	.entries = &entries,
-	.sections = &sections,
-	.symbols = &symbols,
-	.info = &info,
+	.load_buffer = &luac_load_buffer,
+	.destroy = &luac_destroy,
+	.check_buffer = &luac_check_buffer,
+	.entries = &luac_entries,
+	.sections = &luac_sections,
+	.symbols = &luac_symbols,
+	.info = &luac_info,
 	.bin_structure = &luac_structure,
-	.strings = &strings,
-	.maps = &maps,
+	.strings = &luac_strings,
+	.maps = &luac_maps,
 };
 
 #ifndef RZ_PLUGIN_INCORE

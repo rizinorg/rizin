@@ -87,7 +87,7 @@ RZ_API RZ_OWN char *rz_syscmd_sort_str(RZ_NONNULL const char *input) {
 
 	rz_list_sort(list, cmpstr, NULL);
 	rz_list_del_n(list, 0);
-	char *sorted_str = rz_list_to_str(list, '\n');
+	char *sorted_str = rz_list_to_str(list, '\n', true);
 
 	rz_list_free(list);
 	free(data);
@@ -224,7 +224,7 @@ RZ_API RZ_OWN char *rz_syscmd_uniq_str(RZ_NONNULL const char *input) {
 		return NULL;
 	}
 	rz_list_del_n(uniq_list, rz_list_length(uniq_list) - 1);
-	char *return_str = rz_list_to_str(uniq_list, '\n');
+	char *return_str = rz_list_to_str(uniq_list, '\n', true);
 
 	rz_list_free(uniq_list);
 	rz_list_free(list);
@@ -293,7 +293,7 @@ RZ_API RZ_OWN char *rz_syscmd_join(RZ_NONNULL const char *file1, RZ_NONNULL cons
 				}
 				free(field);
 			}
-			data = rz_list_to_str(list, '\n');
+			data = rz_list_to_str(list, '\n', true);
 			rz_list_free(list2);
 			rz_list_free(list1);
 			rz_list_free(list);

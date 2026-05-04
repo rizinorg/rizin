@@ -10,6 +10,8 @@ extern "C" {
 
 typedef void (*RzListFree)(void *ptr);
 
+#define RZ_LIST_SLAB_SIZE 256
+
 typedef struct rz_list_iter_t RzListIter;
 
 struct rz_list_iter_t {
@@ -18,12 +20,23 @@ struct rz_list_iter_t {
 	RzListIter *prev;
 };
 
+typedef struct rz_list_slab_t {
+	RzListIter nodes[RZ_LIST_SLAB_SIZE];
+	struct rz_list_slab_t *next_slab;
+} RzListSlab;
+
+typedef struct rz_list_pool_t {
+	RzListSlab *slabs;
+	RzListIter *freelist;
+} RzListPool;
+
 typedef struct rz_list_t {
 	RzListIter *head;
 	RzListIter *tail;
 	RzListFree free;
 	ut32 length;
 	bool sorted;
+	RzListPool *pool;
 } RzList;
 
 // RzListComparator should return -1, 0, 1 to indicate "value < list_data", "value == list_data", "value > list_data".
@@ -122,7 +135,7 @@ RZ_API RZ_OWN void *rz_list_pop(RZ_NONNULL RzList *list);
 RZ_API RZ_OWN void *rz_list_pop_head(RZ_NONNULL RzList *list);
 RZ_API void rz_list_reverse(RZ_NONNULL RzList *list);
 RZ_API RZ_OWN RzList *rz_list_clone(RZ_NONNULL const RzList *list);
-RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList *list, char ch);
+RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList /*<const char *>*/ *list, char ch, bool append_last);
 
 /* hashlike api */
 RZ_API RZ_BORROW bool rz_list_contains(RZ_NONNULL const RzList *list, RZ_NONNULL const void *val);

@@ -912,16 +912,13 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			if (!r) {
 				int role = rz_reg_get_name_idx(str);
 				if (role != -1) {
-					const char *alias = rz_reg_get_name(reg, role);
-					if (alias) {
-						r = rz_reg_get(reg, alias, -1);
-						if (r) {
-							if (ok) {
-								*ok = true;
-							}
-							ret = rz_reg_get_value(reg, r);
-							return ret;
+					r = rz_reg_get_by_role(reg, role);
+					if (r) {
+						if (ok) {
+							*ok = true;
 						}
+						ret = rz_reg_get_value(reg, r);
+						return ret;
 					}
 				}
 			} else {
