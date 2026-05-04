@@ -14,7 +14,7 @@ struct rz_list_slab_t {
 };
 
 static inline RzListSlab *list_slab_new(void) {
-	RzListSlab *slab = RZ_NEW(RzListSlab);
+	RzListSlab *slab = RZ_NEW0(RzListSlab);
 	if (!slab) {
 		return NULL;
 	}
