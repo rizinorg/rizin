@@ -65,6 +65,7 @@ RZ_API bool rz_project_migrate_v1_v2(RzProject *prj, RzSerializeResultInfo *res)
 		.noreturn_db = sdb_ns(analysis_db, "noreturn", true)
 	};
 	if (!ctx.moved_keys || !ctx.noreturn_db) {
+		rz_list_free(ctx.moved_keys);
 		return false;
 	}
 	sdb_foreach(types_db, v1_v2_types_foreach_cb, &ctx);
@@ -125,6 +126,7 @@ RZ_API bool rz_project_migrate_v2_v3(RzProject *prj, RzSerializeResultInfo *res)
 		.typelinks_db = sdb_ns(analysis_db, "typelinks", true)
 	};
 	if (!ctx.moved_keys || !ctx.callables_db || !ctx.typelinks_db) {
+		rz_list_free(ctx.moved_keys);
 		return false;
 	}
 	sdb_foreach(types_db, v2_v3_types_foreach_cb, &ctx);
@@ -525,6 +527,7 @@ RZ_API bool rz_project_migrate_v12_v13(RzProject *prj, RzSerializeResultInfo *re
 	};
 
 	if (!ctx.moved_keys || !ctx.global_vars_db) {
+		rz_list_free(ctx.moved_keys);
 		return false;
 	}
 	Sdb *typelinks_db = sdb_ns(analysis_db, "typelinks", true);

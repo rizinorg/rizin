@@ -899,7 +899,6 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 			const char *cmdhit = rz_config_get(core->config, "cmd.hit");
 			rz_list_foreach (hits, iter, hit) {
 				if (rz_cons_is_breaked()) {
-					rz_list_free(hits);
 					break;
 				}
 				if (cmdhit && *cmdhit) {
@@ -938,7 +937,6 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 				}
 				count++;
 			}
-			rz_list_purge(hits);
 			rz_list_free(hits);
 		}
 	}
@@ -1228,6 +1226,7 @@ static void __core_cmd_search_asm_infinite(RzCore *core, const char *arg) {
 		}
 		free(buf);
 	}
+	rz_list_free(boundaries);
 }
 
 static void __core_cmd_search_asm_byteswap(RzCore *core, int nth) {

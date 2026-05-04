@@ -29,8 +29,7 @@ RZ_API void rz_debug_trace_free(RzDebugTrace *trace) {
 	if (!trace) {
 		return;
 	}
-	rz_list_purge(trace->traces);
-	free(trace->traces);
+	rz_list_free(trace->traces);
 	ht_sp_free(trace->ht);
 	RZ_FREE(trace);
 }
@@ -279,11 +278,10 @@ RZ_API RzDebugTracepoint *rz_debug_trace_add(RzDebug *dbg, ut64 addr, int size) 
 
 RZ_API void rz_debug_trace_reset(RzDebug *dbg) {
 	RzDebugTrace *t = dbg->trace;
-	rz_list_purge(t->traces);
+	rz_list_free(t->traces);
 	ht_sp_free(t->ht);
 	t->ht = ht_sp_new(HT_STR_DUP, NULL, NULL);
-	t->traces = rz_list_new();
-	t->traces->free = free;
+	t->traces = rz_list_newf(free);
 }
 
 RZ_API RZ_OWN RzDbgListInfo *rz_debug_listinfo_new(RZ_NULLABLE const char *name, RzInterval pitv, RzInterval vitv, int perm, RZ_NULLABLE const char *extra) {

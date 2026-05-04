@@ -413,8 +413,8 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 				}
 				if (match) {
 					if (!(hit = rz_core_asm_hit_new())) {
-						rz_list_purge(hits);
-						RZ_FREE(hits);
+						rz_list_free(hits);
+						hits = NULL;
 						rz_analysis_op_fini(&aop);
 						goto beach;
 					}
@@ -488,8 +488,8 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 						tidx = idx;
 					}
 					if (!(hit = rz_core_asm_hit_new())) {
-						rz_list_purge(hits);
-						RZ_FREE(hits);
+						rz_list_free(hits);
+						hits = NULL;
 						goto beach;
 					}
 					hit->addr = tokcount == 1 ? addr : tidx;
@@ -810,17 +810,13 @@ static RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble_all(RzCore *cor
 	memset(&dummy_value, 0, sizeof(RzCoreAsmHit));
 
 	if (!hits || !buf) {
-		if (hits) {
-			rz_list_purge(hits);
-			free(hits);
-		}
+		rz_list_free(hits);
 		free(buf);
 		return NULL;
 	}
 
 	if (!rz_io_read_at_mapped(core->io, addr - (len + extra_padding), buf, len + extra_padding)) {
-		rz_list_purge(hits);
-		free(hits);
+		rz_list_free(hits);
 		free(buf);
 		return NULL;
 	}
@@ -875,17 +871,13 @@ static RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble(RzCore *core, u
 	hits = rz_core_asm_hit_list_new();
 	buf = malloc(len + extra_padding);
 	if (!hits || !buf) {
-		if (hits) {
-			rz_list_purge(hits);
-			free(hits);
-		}
+		rz_list_free(hits);
 		free(buf);
 		return NULL;
 	}
 
 	if (!rz_io_read_at_mapped(core->io, (addr + extra_padding) - len, buf, len + extra_padding)) {
-		rz_list_purge(hits);
-		free(hits);
+		rz_list_free(hits);
 		free(buf);
 		return NULL;
 	}
