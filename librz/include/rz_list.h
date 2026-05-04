@@ -10,8 +10,6 @@ extern "C" {
 
 typedef void (*RzListFree)(void *ptr);
 
-#define RZ_LIST_SLAB_SIZE 256
-
 typedef struct rz_list_iter_t RzListIter;
 
 struct rz_list_iter_t {
@@ -20,23 +18,12 @@ struct rz_list_iter_t {
 	RzListIter *prev;
 };
 
-typedef struct rz_list_slab_t {
-	RzListIter nodes[RZ_LIST_SLAB_SIZE];
-	struct rz_list_slab_t *next_slab;
-} RzListSlab;
-
-typedef struct rz_list_pool_t {
-	RzListSlab *slabs;
-	RzListIter *freelist;
-} RzListPool;
-
 typedef struct rz_list_t {
 	RzListIter *head;
 	RzListIter *tail;
 	RzListFree free;
 	ut32 length;
 	bool sorted;
-	RzListPool *pool;
 } RzList;
 
 // RzListComparator should return -1, 0, 1 to indicate "value < list_data", "value == list_data", "value > list_data".

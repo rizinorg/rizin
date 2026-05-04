@@ -1,230 +1,375 @@
 // SPDX-FileCopyrightText: 2026 Farhan-25 <shadowfinder1799@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
-
 #include "bench_utils.h"
-#include <rz_list.h>
+#include <rz_util.h>
 
 /**
  * \file bench_list.c
- * \brief Benchmarks for core RzList operations.
+ * \brief Benchmarks for `RzList` functions - comparing rz_list_purge implementations
  */
 
-static void _fill(RzList *l, int count) {
-	for (int j = 0; j < count; j++) {
-		rz_list_append(l, (void *)(intptr_t)j);
+// Helper to populate a list with n non-null elements
+static void populate_list(RzList *list, ut32 n) {
+	for (ut32 j = 0; j < n; ++j) {
+		rz_list_append(list, (void *)(size_t)(j + 1));
 	}
 }
 
-static void bench_append(RzTable *t_out) {
-	RZ_BENCH_RUN_I("[append] 10k", i, t_out, 1000, {
-		RzList *l = rz_list_new();
-		_fill(l, 10000);
-		rz_list_free(l);
-	});
-	RZ_BENCH_RUN_I("[append] 100k", i, t_out, 100, {
-		RzList *l = rz_list_new();
-		_fill(l, 100000);
-		rz_list_free(l);
-	});
-	RZ_BENCH_RUN_I("[append] 1m", i, t_out, 10, {
-		RzList *l = rz_list_new();
-		_fill(l, 1000000);
-		rz_list_free(l);
-	});
+// Helper to populate a list with n heap-allocated elements (for free fn tests)
+static void populate_list_alloc(RzList *list, ut32 n) {
+	for (ut32 j = 0; j < n; ++j) {
+		ut32 *val = malloc(sizeof(ut32));
+		*val = j;
+		rz_list_append(list, val);
+	}
 }
 
-static void bench_prepend(RzTable *t_out) {
-	RZ_BENCH_RUN_I("[prepend] 10k", i, t_out, 1000, {
-		RzList *l = rz_list_new();
-		for (int j = 0; j < 10000; j++) {
-			rz_list_prepend(l, (void *)(intptr_t)j);
-		}
-		rz_list_free(l);
-	});
-	RZ_BENCH_RUN_I("[prepend] 100k", i, t_out, 100, {
-		RzList *l = rz_list_new();
-		for (int j = 0; j < 100000; j++) {
-			rz_list_prepend(l, (void *)(intptr_t)j);
-		}
-		rz_list_free(l);
-	});
-	RZ_BENCH_RUN_I("[prepend] 1m", i, t_out, 10, {
-		RzList *l = rz_list_new();
-		for (int j = 0; j < 1000000; j++) {
-			rz_list_prepend(l, (void *)(intptr_t)j);
-		}
-		rz_list_free(l);
-	});
+/**
+ * v1: Uses rz_list_delete per node (original)
+ * Has extra overhead: unlinks node, updates prev/next, decrements length
+ */
+static void purge_v1(RzList *list) {
+	RzListIter *it = list->head;
+	while (it) {
+		RzListIter *next = it->next;
+		rz_list_delete(list, it);
+		it = next;
+	}
+	list->length = 0;
+	list->head = list->tail = NULL;
 }
 
-static void bench_pop(RzTable *t_out) {
-	RZ_BENCH_RUN_I("[pop] 1k", i, t_out, 1000, {
-		RzList *l = rz_list_new();
-		_fill(l, 1000);
-		while (l->length) {
-			rz_list_pop(l);
+/**
+ * v2: Direct free loop (new)
+ * Tight loop: calls free fn on val, then frees the iter node directly
+ */
+static void purge_v2(RzList *list) {
+	RzListIter *it = list->head;
+	RzListFree fn = list->free;
+	while (it) {
+		RzListIter *next = it->next;
+		if (fn && it->val) {
+			fn(it->val);
 		}
-		rz_list_free(l);
-	});
-	RZ_BENCH_RUN_I("[pop] 100k", i, t_out, 100, {
-		RzList *l = rz_list_new();
-		_fill(l, 100000);
-		while (l->length) {
-			rz_list_pop(l);
-		}
-		rz_list_free(l);
-	});
-	RZ_BENCH_RUN_I("[pop] 1m", i, t_out, 10, {
-		RzList *l = rz_list_new();
-		_fill(l, 1000000);
-		while (l->length) {
-			rz_list_pop(l);
-		}
-		rz_list_free(l);
-	});
+		free(it);
+		it = next;
+	}
+	list->length = 0;
+	list->head = list->tail = NULL;
 }
 
-static void bench_pop_head(RzTable *t_out) {
-	RZ_BENCH_RUN_I("[pop_head] 1k", i, t_out, 1000, {
-		RzList *l = rz_list_new();
-		_fill(l, 1000);
-		while (l->length) {
-			rz_list_pop_head(l);
+/**
+ * v3: Hoisted free loop
+ */
+static void purge_v3(RzList *list) {
+	RzListIter *it = list->head;
+	RzListFree fn = list->free;
+	if (fn) {
+		while (it) {
+			RzListIter *next = it->next;
+			fn(it->val);
+			free(it);
+			it = next;
 		}
-		rz_list_free(l);
-	});
-	RZ_BENCH_RUN_I("[pop_head] 100k", i, t_out, 100, {
-		RzList *l = rz_list_new();
-		_fill(l, 100000);
-		while (l->length) {
-			rz_list_pop_head(l);
+	} else {
+		while (it) {
+			RzListIter *next = it->next;
+			free(it);
+			it = next;
 		}
-		rz_list_free(l);
-	});
-	RZ_BENCH_RUN_I("[pop_head] 1m", i, t_out, 10, {
-		RzList *l = rz_list_new();
-		_fill(l, 1000000);
-		while (l->length) {
-			rz_list_pop_head(l);
-		}
-		rz_list_free(l);
-	});
+	}
+	list->head = NULL;
+	list->tail = NULL;
+	list->length = 0;
 }
 
-static void bench_del_n(RzTable *t_out) {
-	RZ_BENCH_RUN_I("[del_n@0] 1k", i, t_out, 1000, {
-		RzList *l = rz_list_new();
-		_fill(l, 1000);
-		for (int j = 0; j < 1000; j++) {
-			rz_list_del_n(l, 0);
-		}
-		rz_list_free(l);
-	});
-	RZ_BENCH_RUN_I("[del_n@0] 100k", i, t_out, 10, {
-		RzList *l = rz_list_new();
-		_fill(l, 100000);
-		for (int j = 0; j < 100000; j++) {
-			rz_list_del_n(l, 0);
-		}
-		rz_list_free(l);
-	});
-	RZ_BENCH_RUN_I("[del_n@0] 1m", i, t_out, 1, {
-		RzList *l = rz_list_new();
-		_fill(l, 1000000);
-		for (int j = 0; j < 1000000; j++) {
-			rz_list_del_n(l, 0);
-		}
-		rz_list_free(l);
-	});
-	RZ_BENCH_RUN_I("[del_n@tail] 100k", i, t_out, 10, {
-		RzList *l = rz_list_new();
-		_fill(l, 100000);
-		while (l->length) {
-			rz_list_del_n(l, l->length - 1);
-		}
-		rz_list_free(l);
-	});
-	RZ_BENCH_RUN_I("[del_n@mid] 10k", i, t_out, 10, {
-		RzList *l = rz_list_new();
-		_fill(l, 10000);
-		while (l->length) {
-			rz_list_del_n(l, l->length / 2);
-		}
-		rz_list_free(l);
-	});
+static void purge_v4_with_free_cb(RzList *list) {
+	RzListIter *it = list->head;
+	RzListFree fn = list->free;
+	while (it) {
+		RzListIter *next = it->next;
+		fn(it->val);
+		free(it);
+		it = next;
+	}
 }
 
-static void bench_purge(RzTable *t_out) {
-	RZ_BENCH_RUN_I("[purge] 10k", i, t_out, 1000, {
-		RzList *l = rz_list_new();
-		_fill(l, 10000);
-		rz_list_purge(l);
-		rz_list_free(l);
-	});
-	RZ_BENCH_RUN_I("[purge] 100k", i, t_out, 100, {
-		RzList *l = rz_list_new();
-		_fill(l, 100000);
-		rz_list_purge(l);
-		rz_list_free(l);
-	});
-	RZ_BENCH_RUN_I("[purge] 1m", i, t_out, 10, {
-		RzList *l = rz_list_new();
-		_fill(l, 1000000);
-		rz_list_purge(l);
-		rz_list_free(l);
-	});
+static void purge_v4_no_free_cb(RzList *list) {
+	RzListIter *it = list->head;
+	while (it) {
+		RzListIter *next = it->next;
+		free(it);
+		it = next;
+	}
 }
 
-static void bench_mixed_append_pop(RzTable *t_out) {
-	RZ_BENCH_RUN_I("[mixed append+pop] 100k", i, t_out, 100, {
-		RzList *l = rz_list_new();
-		for (int j = 0; j < 100000; j++) {
-			rz_list_append(l, (void *)(intptr_t)j);
-			if (j % 2 == 0)
-				rz_list_pop(l);
-		}
-		rz_list_free(l);
-	});
-	RZ_BENCH_RUN_I("[mixed append+pop] 1m", i, t_out, 10, {
-		RzList *l = rz_list_new();
-		for (int j = 0; j < 1000000; j++) {
-			rz_list_append(l, (void *)(intptr_t)j);
-			if (j % 2 == 0)
-				rz_list_pop(l);
-		}
-		rz_list_free(l);
-	});
+/**
+ * v4: Direct free loop with hoisted free fn check (split into helpers)
+ */
+static void purge_v4(RzList *list) {
+	if (list->free) {
+		purge_v4_with_free_cb(list);
+	} else {
+		purge_v4_no_free_cb(list);
+	}
+	list->head = NULL;
+	list->tail = NULL;
+	list->length = 0;
 }
 
-static void bench_mixed_purge_refill(RzTable *t_out) {
-	RZ_BENCH_RUN_I("[mixed purge+refill] 10k", i, t_out, 500, {
-		RzList *l = rz_list_new();
-		_fill(l, 10000);
-		rz_list_purge(l);
-		_fill(l, 10000);
-		rz_list_free(l);
+// --- No free function (pointer-only lists) ---
+
+static void bench_purge_v1_small_no_free(RzTable *t_out) {
+	RzList *list = rz_list_new();
+	RZ_BENCH_RUN("purge_v1_1k_no_free", t_out, 1000, {
+		populate_list(list, 1000);
+		purge_v1(list);
 	});
-	RZ_BENCH_RUN_I("[mixed purge+refill] 100k", i, t_out, 50, {
-		RzList *l = rz_list_new();
-		_fill(l, 100000);
-		rz_list_purge(l);
-		_fill(l, 100000);
-		rz_list_free(l);
-	});
+	rz_list_free(list);
 }
 
-int main(void) {
+static void bench_purge_v2_small_no_free(RzTable *t_out) {
+	RzList *list = rz_list_new();
+	RZ_BENCH_RUN("purge_v2_1k_no_free", t_out, 1000, {
+		populate_list(list, 1000);
+		purge_v2(list);
+	});
+	rz_list_free(list);
+}
+
+static void bench_purge_v3_small_no_free(RzTable *t_out) {
+	RzList *list = rz_list_new();
+	RZ_BENCH_RUN("purge_v3_1k_no_free", t_out, 1000, {
+		populate_list(list, 1000);
+		purge_v3(list);
+	});
+	rz_list_free(list);
+}
+
+static void bench_purge_v4_small_no_free(RzTable *t_out) {
+	RzList *list = rz_list_new();
+	RZ_BENCH_RUN("purge_v4_1k_no_free", t_out, 1000, {
+		populate_list(list, 1000);
+		purge_v4(list);
+	});
+	rz_list_free(list);
+}
+
+static void bench_purge_v1_medium_no_free(RzTable *t_out) {
+	RzList *list = rz_list_new();
+	RZ_BENCH_RUN("purge_v1_100k_no_free", t_out, 100, {
+		populate_list(list, 100000);
+		purge_v1(list);
+	});
+	rz_list_free(list);
+}
+
+static void bench_purge_v2_medium_no_free(RzTable *t_out) {
+	RzList *list = rz_list_new();
+	RZ_BENCH_RUN("purge_v2_100k_no_free", t_out, 100, {
+		populate_list(list, 100000);
+		purge_v2(list);
+	});
+	rz_list_free(list);
+}
+
+static void bench_purge_v3_medium_no_free(RzTable *t_out) {
+	RzList *list = rz_list_new();
+	RZ_BENCH_RUN("purge_v3_100k_no_free", t_out, 100, {
+		populate_list(list, 100000);
+		purge_v3(list);
+	});
+	rz_list_free(list);
+}
+
+static void bench_purge_v4_medium_no_free(RzTable *t_out) {
+	RzList *list = rz_list_new();
+	RZ_BENCH_RUN("purge_v4_100k_no_free", t_out, 100, {
+		populate_list(list, 100000);
+		purge_v4(list);
+	});
+	rz_list_free(list);
+}
+
+static void bench_purge_v1_large_no_free(RzTable *t_out) {
+	RzList *list = rz_list_new();
+	RZ_BENCH_RUN("purge_v1_1m_no_free", t_out, 10, {
+		populate_list(list, 1000000);
+		purge_v1(list);
+	});
+	rz_list_free(list);
+}
+
+static void bench_purge_v2_large_no_free(RzTable *t_out) {
+	RzList *list = rz_list_new();
+	RZ_BENCH_RUN("purge_v2_1m_no_free", t_out, 10, {
+		populate_list(list, 1000000);
+		purge_v2(list);
+	});
+	rz_list_free(list);
+}
+
+static void bench_purge_v3_large_no_free(RzTable *t_out) {
+	RzList *list = rz_list_new();
+	RZ_BENCH_RUN("purge_v3_1m_no_free", t_out, 10, {
+		populate_list(list, 1000000);
+		purge_v3(list);
+	});
+	rz_list_free(list);
+}
+
+static void bench_purge_v4_large_no_free(RzTable *t_out) {
+	RzList *list = rz_list_new();
+	RZ_BENCH_RUN("purge_v4_1m_no_free", t_out, 10, {
+		populate_list(list, 1000000);
+		purge_v4(list);
+	});
+	rz_list_free(list);
+}
+
+static void bench_purge_v1_medium_with_free(RzTable *t_out) {
+	RzList *list = rz_list_newf(free);
+	RZ_BENCH_RUN("purge_v1_100k_with_free", t_out, 100, {
+		populate_list_alloc(list, 100000);
+		purge_v1(list);
+	});
+	rz_list_free(list);
+}
+
+static void bench_purge_v2_medium_with_free(RzTable *t_out) {
+	RzList *list = rz_list_newf(free);
+	RZ_BENCH_RUN("purge_v2_100k_with_free", t_out, 100, {
+		populate_list_alloc(list, 100000);
+		purge_v2(list);
+	});
+	rz_list_free(list);
+}
+
+static void bench_purge_v3_medium_with_free(RzTable *t_out) {
+	RzList *list = rz_list_newf(free);
+	RZ_BENCH_RUN("purge_v3_100k_with_free", t_out, 100, {
+		populate_list_alloc(list, 100000);
+		purge_v3(list);
+	});
+	rz_list_free(list);
+}
+
+static void bench_purge_v4_medium_with_free(RzTable *t_out) {
+	RzList *list = rz_list_newf(free);
+	RZ_BENCH_RUN("purge_v4_100k_with_free", t_out, 100, {
+		populate_list_alloc(list, 100000);
+		purge_v4(list);
+	});
+	rz_list_free(list);
+}
+
+static void bench_purge_v1_large_with_free(RzTable *t_out) {
+	RzList *list = rz_list_newf(free);
+	RZ_BENCH_RUN("purge_v1_1m_with_free", t_out, 10, {
+		populate_list_alloc(list, 1000000);
+		purge_v1(list);
+	});
+	rz_list_free(list);
+}
+
+static void bench_purge_v2_large_with_free(RzTable *t_out) {
+	RzList *list = rz_list_newf(free);
+	RZ_BENCH_RUN("purge_v2_1m_with_free", t_out, 10, {
+		populate_list_alloc(list, 1000000);
+		purge_v2(list);
+	});
+	rz_list_free(list);
+}
+
+static void bench_purge_v3_large_with_free(RzTable *t_out) {
+	RzList *list = rz_list_newf(free);
+	RZ_BENCH_RUN("purge_v3_1m_with_free", t_out, 10, {
+		populate_list_alloc(list, 1000000);
+		purge_v3(list);
+	});
+	rz_list_free(list);
+}
+
+static void bench_purge_v4_large_with_free(RzTable *t_out) {
+	RzList *list = rz_list_newf(free);
+	RZ_BENCH_RUN("purge_v4_1m_with_free", t_out, 10, {
+		populate_list_alloc(list, 1000000);
+		purge_v4(list);
+	});
+	rz_list_free(list);
+}
+
+// --- Empty list (base overhead) ---
+
+static void bench_purge_v1_empty(RzTable *t_out) {
+	RzList *list = rz_list_new();
+	RZ_BENCH_RUN("purge_v1_empty", t_out, 10000, {
+		purge_v1(list);
+	});
+	rz_list_free(list);
+}
+
+static void bench_purge_v2_empty(RzTable *t_out) {
+	RzList *list = rz_list_new();
+	RZ_BENCH_RUN("purge_v2_empty", t_out, 10000, {
+		purge_v2(list);
+	});
+	rz_list_free(list);
+}
+
+static void bench_purge_v3_empty(RzTable *t_out) {
+	RzList *list = rz_list_new();
+	RZ_BENCH_RUN("purge_v3_empty", t_out, 10000, {
+		purge_v3(list);
+	});
+	rz_list_free(list);
+}
+
+static void bench_purge_v4_empty(RzTable *t_out) {
+	RzList *list = rz_list_new();
+	RZ_BENCH_RUN("purge_v4_empty", t_out, 10000, {
+		purge_v4(list);
+	});
+	rz_list_free(list);
+}
+
+int main() {
 	RzTable *t = rz_table_new();
 	RZ_BENCH_TABLE_INIT(t);
 
-	bench_append(t);
-	bench_prepend(t);
-	bench_pop(t);
-	bench_pop_head(t);
-	bench_del_n(t);
-	bench_purge(t);
-	bench_mixed_append_pop(t);
-	bench_mixed_purge_refill(t);
+	// Empty list - base overhead
+	bench_purge_v1_empty(t);
+	bench_purge_v2_empty(t);
+	bench_purge_v3_empty(t);
+	bench_purge_v4_empty(t);
+
+	// No free function - pointer-only lists
+	bench_purge_v1_small_no_free(t);
+	bench_purge_v2_small_no_free(t);
+	bench_purge_v3_small_no_free(t);
+	bench_purge_v4_small_no_free(t);
+
+	bench_purge_v1_medium_no_free(t);
+	bench_purge_v2_medium_no_free(t);
+	bench_purge_v3_medium_no_free(t);
+	bench_purge_v4_medium_no_free(t);
+
+	bench_purge_v1_large_no_free(t);
+	bench_purge_v2_large_no_free(t);
+	bench_purge_v3_large_no_free(t);
+	bench_purge_v4_large_no_free(t);
+
+	// With free function - heap-allocated elements
+	bench_purge_v1_medium_with_free(t);
+	bench_purge_v2_medium_with_free(t);
+	bench_purge_v3_medium_with_free(t);
+	bench_purge_v4_medium_with_free(t);
+
+	bench_purge_v1_large_with_free(t);
+	bench_purge_v2_large_with_free(t);
+	bench_purge_v3_large_with_free(t);
+	bench_purge_v4_large_with_free(t);
+
 	RZ_BENCH_TABLE_PRINT_AND_FREE(t);
 	return 0;
 }
