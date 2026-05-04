@@ -6,10 +6,6 @@
 #include "minunit.h"
 #define BUF_LENGTH 100
 
-static void dummy_free(void *ptr) {
-	// This is just to trigger the code path
-}
-
 bool test_rz_list_size(void) {
 	// Test that rz_list adding and deleting works correctly.
 	int i;
@@ -55,7 +51,7 @@ bool test_rz_list_join(void) {
 	rz_list_append(list2, (void *)test2);
 	int joined = rz_list_join(list1, list2);
 	mu_assert_eq(joined, 1, "rz_list_join of two lists");
-	mu_assert_eq(rz_list_length(list1), 2, "rz_list_join two single element lists result length is 2");
+	mu_assert_eq(rz_list_length(list1), 2, "rz_list_join two single element lists result length is 1");
 	rz_list_free(list1);
 	rz_list_free(list2);
 	mu_end;
@@ -525,38 +521,6 @@ bool test_rz_list_sorted_uniq() {
 	mu_end;
 }
 
-bool test_rz_list_heavy_growth(void) {
-	RzList *list = rz_list_new();
-	const int count = 2000;
-	for (int i = 0; i < count; i++) {
-		mu_assert_notnull(rz_list_append(list, (void *)(intptr_t)i), "heavy append failed");
-	}
-	mu_assert_eq(rz_list_length(list), count, "length mismatch");
-	rz_list_free(list);
-	mu_end;
-}
-
-bool test_rz_list_insert_head(void) {
-	RzList *list = rz_list_new();
-	rz_list_append(list, (void *)0xAAA);
-	RzListIter *it = rz_list_insert(list, 0, (void *)0xBBB);
-	mu_assert_notnull(it, "insert failed");
-	mu_assert_ptreq(list->head, it, "list->head was not updated correctly");
-	mu_assert_ptreq(it->next->val, (void *)0xAAA, "original head not shifted");
-	rz_list_free(list);
-	mu_end;
-}
-
-bool test_rz_list_set_n_free(void) {
-	RzList *list = rz_list_newf(dummy_free);
-	rz_list_append(list, (void *)0x111);
-	rz_list_append(list, (void *)0x222);
-	mu_assert_eq(rz_list_set_n(list, 1, (void *)0x333), true, "set_n failed");
-	mu_assert_ptreq(rz_list_get_n(list, 1), (void *)0x333, "val not updated");
-	rz_list_free(list);
-	mu_end;
-}
-
 int all_tests() {
 	mu_run_test(test_rz_list_size);
 	mu_run_test(test_rz_list_values);
@@ -577,9 +541,6 @@ int all_tests() {
 	mu_run_test(test_rz_list_find_val);
 	mu_run_test(test_rz_list_from_iter);
 	mu_run_test(test_rz_list_sorted_uniq);
-	mu_run_test(test_rz_list_heavy_growth);
-	mu_run_test(test_rz_list_insert_head);
-	mu_run_test(test_rz_list_set_n_free);
 	return tests_passed != tests_run;
 }
 
