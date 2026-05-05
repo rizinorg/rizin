@@ -9,7 +9,7 @@
 
 #define M68K_LONGEST_INSTRUCTION 22
 
-#if CS_NEXT_VERSION >= 7
+#ifdef RZ_CAPSTONE_HAS_M68K_CPU32
 #define M68K_CPUS "68000,68010,68020,68030,68040,68060,cpu32"
 #else
 #define M68K_CPUS "68000,68010,68020,68030,68040,68060"
@@ -19,7 +19,7 @@ static inline cs_mode rz_m68k_cs_mode(const char *cpu) {
 	if (!cpu) {
 		return CS_MODE_M68K_040;
 	}
-#if CS_NEXT_VERSION >= 7
+#ifdef RZ_CAPSTONE_HAS_M68K_CPU32
 	if (strstr(cpu, "cpu32") || strstr(cpu, "CPU32")) {
 		return CS_MODE_M68K_CPU32;
 	}
