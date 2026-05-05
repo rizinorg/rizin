@@ -103,7 +103,6 @@ typedef struct rz_config_entry_t {
 
 typedef struct rz_config_t {
 	void *user; ///< DEPRECATED
-	bool lock; ///< DEPRECATED
 	RzVector /*<RzConfigEntry>*/ sorted_vars; ///< Sorted owned variables
 } RzConfig;
 
@@ -192,6 +191,7 @@ RZ_API RZ_OWN char *rz_config_entry_get_as_string(RZ_NONNULL const RzConfigEntry
 /* old apis, deprecated */
 
 RZ_API const char *rz_config_node_type(RzConfigNode *node);
+RZ_DEPRECATE RZ_API void rz_config_lock(RZ_BORROW RzConfig *cfg, int l);
 RZ_API RZ_BORROW RzConfigNode *rz_config_set_i(RZ_BORROW RzConfig *cfg, RZ_NONNULL const char *name, const ut64 i);
 RZ_API RZ_BORROW RzConfigNode *rz_config_set_b(RZ_BORROW RzConfig *cfg, RZ_NONNULL const char *name, bool value);
 RZ_API RZ_BORROW RzConfigNode *rz_config_set_cb(RZ_BORROW RzConfig *cfg, const char *name, const char *value, bool (*callback)(void *user, void *data));

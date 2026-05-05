@@ -334,9 +334,6 @@ RZ_API RZ_BORROW RzConfigNode *rz_config_set_b(RZ_BORROW RzConfig *cfg, RZ_NONNU
 		}
 		node = &entry->node;
 	} else {
-		if (cfg->lock) {
-			return NULL;
-		}
 		RzConfigEntry new_entry = { 0 };
 		if (!config_node_init(&new_entry.node, name, rz_str_bool(value))) {
 			rz_config_node_fini(&new_entry.node);
@@ -370,9 +367,6 @@ RZ_API RZ_BORROW RzConfigNode *rz_config_set(RZ_BORROW RzConfig *cfg, RZ_NONNULL
 		}
 		node = &entry->node;
 	} else {
-		if (cfg->lock) {
-			return NULL;
-		}
 		RzConfigEntry new_entry = { 0 };
 		if (!config_node_init(&new_entry.node, name, value)) {
 			rz_config_node_fini(&new_entry.node);
@@ -423,6 +417,14 @@ RZ_API void rz_config_node_value_format_i(RZ_OUT char *buf, size_t buf_size, con
 }
 
 /**
+ * Only exists for temporary compatibility with external plugins using the old RzConfig API.
+ * It is a no-op now.
+ */
+RZ_DEPRECATE RZ_API void rz_config_lock(RZ_BORROW RzConfig *cfg, int l) {
+	(void)cfg, (void)l;
+}
+
+/**
  * Writes the integer \p value in the config variable of \p name only and only if
  * the variable is integer.
  */
@@ -438,9 +440,6 @@ RZ_API RZ_BORROW RzConfigNode *rz_config_set_i(RZ_BORROW RzConfig *cfg, RZ_NONNU
 		}
 		node = &entry->node;
 	} else {
-		if (cfg->lock) {
-			return NULL;
-		}
 		char buf[128];
 		RzConfigEntry new_entry = { 0 };
 		rz_config_node_value_format_i(buf, sizeof(buf), i, NULL);

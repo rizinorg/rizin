@@ -3862,7 +3862,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETB("flirt.sigdb.load.extra", true, "Load signatures from the extra path");
 	SETB("flirt.sigdb.load.home", true, "Load signatures from the home path");
 
-	cfg->lock = 1;
 	return true;
 }
 
