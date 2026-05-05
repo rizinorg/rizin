@@ -1800,3 +1800,15 @@ RZ_API RzDebugPid *rz_debug_get_thread(RzList /*<RzList *>*/ *th_list, int tid) 
 	}
 	return (RzDebugPid *)rz_list_val(it);
 }
+
+
+#if !DEBUGGER
+// Empty stubs are needed for compilation on s390x platform when debugger is disabled
+RZ_API ut64 rz_debug_get_tls(RZ_NONNULL RzDebug *dbg, int tid) {
+       return 0;
+}
+
+RZ_API RZ_OWN RzList /*<RzDebugPid *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid) {
+       return rz_list_new();
+}
+#endif
