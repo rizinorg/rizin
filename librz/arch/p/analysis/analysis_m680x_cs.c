@@ -12,34 +12,30 @@ static int m680xmode(const char *str) {
 		return CS_MODE_M680X_6800;
 	}
 	// replace this with the asm.features?
-	if (str && (strstr(str, "6800") || strstr(str, "6802") || strstr(str, "6808"))) {
+	else if (str && (strstr(str, "6800") || strstr(str, "6802") || strstr(str, "6808"))) {
 		return CS_MODE_M680X_6800;
-	}
-	if (str && (strstr(str, "6801") || strstr(str, "6803"))) {
+	} else if (str && (strstr(str, "6801") || strstr(str, "6803"))) {
 		return CS_MODE_M680X_6801;
 	} else if (str && strstr(str, "6805")) {
 		return CS_MODE_M680X_6805;
 	} else if (str && strstr(str, "68HC08")) {
 		return CS_MODE_M680X_6808;
-	} else if (strstr(str, "6808")) {
-		return CS_MODE_M680X_6800;
 	} else if (str && strstr(str, "6809")) {
 		return CS_MODE_M680X_6809;
 	} else if (str && strstr(str, "6811")) {
 		return CS_MODE_M680X_6811;
-	}
-	//
-	if (str && strstr(str, "cpu12")) {
+	} else if (str && strstr(str, "cpu12")) {
 		return CS_MODE_M680X_CPU12;
-	}
-	if (str && strstr(str, "6301")) {
+	} else if (str && strstr(str, "6301")) {
 		return CS_MODE_M680X_6301;
-	}
-	if (str && strstr(str, "6309")) {
+	} else if (str && strstr(str, "6309")) {
 		return CS_MODE_M680X_6309;
-	}
-	if (str && strstr(str, "hcs08")) {
+	} else if (str && strstr(str, "hcs08")) {
 		return CS_MODE_M680X_HCS08;
+	} else if (str && strstr(str, "rs08")) {
+		return CS_MODE_M680X_RS08;
+	} else if (strstr(str, "hcs12x")) {
+		return CS_MODE_M680X_HCS12X;
 	}
 	return CS_MODE_M680X_6800;
 }
@@ -120,26 +116,45 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_ADDF:
 	case M680X_INS_ADDR:
 	case M680X_INS_ADDW:
+	case M680X_INS_ADDX:
+	case M680X_INS_ADDY:
+	case M680X_INS_ADED:
+	case M680X_INS_ADEX:
+	case M680X_INS_ADEY:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
 	case M680X_INS_AIM:
 	case M680X_INS_AIS:
 	case M680X_INS_AIX:
+		break;
 	case M680X_INS_AND:
 	case M680X_INS_ANDA:
 	case M680X_INS_ANDB:
 	case M680X_INS_ANDCC:
 	case M680X_INS_ANDD:
 	case M680X_INS_ANDR:
+	case M680X_INS_ANDX:
+	case M680X_INS_ANDY:
+		op->type = RZ_ANALYSIS_OP_TYPE_AND;
+		break;
 	case M680X_INS_ASL:
 	case M680X_INS_ASLA:
 	case M680X_INS_ASLB:
 	case M680X_INS_ASLD: ///< or LSLD
+	case M680X_INS_ASLW:
+	case M680X_INS_ASLX:
+	case M680X_INS_ASLY:
+		op->type = RZ_ANALYSIS_OP_TYPE_SAL;
+		break;
 	case M680X_INS_ASR:
 	case M680X_INS_ASRA:
 	case M680X_INS_ASRB:
 	case M680X_INS_ASRD:
+	case M680X_INS_ASRW:
 	case M680X_INS_ASRX:
+	case M680X_INS_ASRY:
+		op->type = RZ_ANALYSIS_OP_TYPE_SAR;
+		break;
 	case M680X_INS_BAND:
 	case M680X_INS_BCC: ///< or BHS
 	case M680X_INS_BCLR:
@@ -156,6 +171,12 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_BITB:
 	case M680X_INS_BITD:
 	case M680X_INS_BITMD:
+	case M680X_INS_BITX:
+	case M680X_INS_BITY:
+	case M680X_INS_BTAS:
+	case M680X_INS_ORX:
+	case M680X_INS_ORY:
+		op->type = RZ_ANALYSIS_OP_TYPE_OR;
 		break;
 	case M680X_INS_BRA:
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
@@ -219,6 +240,13 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_CMPW:
 	case M680X_INS_CMPX:
 	case M680X_INS_CMPY:
+	case M680X_INS_CPS:
+	case M680X_INS_CPX: ///< M6800/1/2/3
+	case M680X_INS_CPY:
+	case M680X_INS_CPED:
+	case M680X_INS_CPES:
+	case M680X_INS_CPEX:
+	case M680X_INS_CPEY:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
 	case M680X_INS_COM:
@@ -231,9 +259,6 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_COMX:
 	case M680X_INS_CPD:
 	case M680X_INS_CPHX:
-	case M680X_INS_CPS:
-	case M680X_INS_CPX: ///< M6800/1/2/3
-	case M680X_INS_CPY:
 	case M680X_INS_CWAI:
 	case M680X_INS_DAA:
 	case M680X_INS_DBEQ:
@@ -273,6 +298,8 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_EORB:
 	case M680X_INS_EORD:
 	case M680X_INS_EORR:
+	case M680X_INS_EORX:
+	case M680X_INS_EORY:
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 		break;
 	case M680X_INS_ETBL:
@@ -295,6 +322,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_INCF:
 	case M680X_INS_INCW:
 	case M680X_INS_INCX:
+	case M680X_INS_INCY:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
 	case M680X_INS_INS: ///< M6800/1/2/3
@@ -335,15 +363,8 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_LDHX:
 	case M680X_INS_LDMD:
 	case M680X_INS_LDQ:
-	case M680X_INS_LDS:
 	case M680X_INS_LDU:
-	case M680X_INS_LDW:
-	case M680X_INS_LDX:
-	case M680X_INS_LDY:
-	case M680X_INS_LEAS:
 	case M680X_INS_LEAU:
-	case M680X_INS_LEAX:
-	case M680X_INS_LEAY:
 	case M680X_INS_LSL:
 	case M680X_INS_LSLA:
 	case M680X_INS_LSLB:
@@ -364,6 +385,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_MOV:
 	case M680X_INS_MOVB:
 	case M680X_INS_MOVW:
+	case M680X_INS_CLRY:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 	case M680X_INS_MUL:
@@ -374,7 +396,10 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_NEGA:
 	case M680X_INS_NEGB:
 	case M680X_INS_NEGD:
+	case M680X_INS_NEGW:
 	case M680X_INS_NEGX:
+	case M680X_INS_NEGY:
+	case M680X_INS_COMY:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOT;
 		break;
 	case M680X_INS_NOP:
@@ -433,6 +458,9 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_SBC:
 	case M680X_INS_SBCA:
 	case M680X_INS_SBCB:
+	case M680X_INS_SBED:
+	case M680X_INS_SBEX:
+	case M680X_INS_SBEY:
 	case M680X_INS_SBCD:
 	case M680X_INS_SBCR:
 	case M680X_INS_SEC:
@@ -440,6 +468,8 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_SEV:
 	case M680X_INS_SEX:
 	case M680X_INS_SEXW:
+	case M680X_INS_SHA: ///< RS08
+	case M680X_INS_SLA: ///< RS08
 	case M680X_INS_SLP:
 	case M680X_INS_STA:
 	case M680X_INS_STAA: ///< M6800/1/2/3
@@ -452,24 +482,26 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_STOP:
 	case M680X_INS_STHX:
 	case M680X_INS_STQ:
-	case M680X_INS_STS:
 	case M680X_INS_STU:
 	case M680X_INS_STW:
-	case M680X_INS_STX:
-	case M680X_INS_STY:
 	case M680X_INS_SUB:
 	case M680X_INS_SUBA:
 	case M680X_INS_SUBB:
 	case M680X_INS_SUBD:
+	case M680X_INS_SUBX:
+	case M680X_INS_SUBY:
 	case M680X_INS_SUBE:
 	case M680X_INS_SUBF:
 	case M680X_INS_SUBR:
 	case M680X_INS_SUBW:
+	case M680X_INS_TSTY:
+	case M680X_INS_DECY:
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		break;
 	case M680X_INS_SWI:
 	case M680X_INS_SWI2:
 	case M680X_INS_SWI3:
+	case M680X_INS_SYS:
 		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 		break;
 	case M680X_INS_SYNC:
@@ -507,6 +539,46 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_WAVR:
 	case M680X_INS_XGDX: ///< HD6301
 	case M680X_INS_XGDY:
+		break;
+	case M680X_INS_TRAP:
+		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
+		break;
+	case M680X_INS_GLDAA:
+	case M680X_INS_GLDAB:
+	case M680X_INS_GLDD:
+	case M680X_INS_GLDS:
+	case M680X_INS_GLDX:
+	case M680X_INS_GLDY:
+	case M680X_INS_LDS:
+	case M680X_INS_LDW:
+	case M680X_INS_LDX:
+	case M680X_INS_LDY:
+	case M680X_INS_LEAX:
+	case M680X_INS_LEAY:
+	case M680X_INS_LEAS:
+	case M680X_INS_PULCW:
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		break;
+	case M680X_INS_GSTS:
+	case M680X_INS_GSTD:
+	case M680X_INS_GSTX:
+	case M680X_INS_GSTY:
+	case M680X_INS_STS:
+	case M680X_INS_STX:
+	case M680X_INS_STY:
+	case M680X_INS_PSHCW:
+	case M680X_INS_GSTAB:
+	case M680X_INS_GSTAA:
+		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
+		break;
+	case M680X_INS_RORY:
+		op->type = RZ_ANALYSIS_OP_TYPE_ROR;
+		break;
+	case M680X_INS_ROLY:
+		op->type = RZ_ANALYSIS_OP_TYPE_ROL;
+		break;
+	case M680X_INS_LSRY:
+		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
 		break;
 	}
 beach:
