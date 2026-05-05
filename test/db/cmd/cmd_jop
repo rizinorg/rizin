@@ -1,0 +1,1960 @@
+NAME=jop search with(out) maxhits
+FILE=bins/elf/varsub
+CMDS=<<EOF
+echo "============ with maxhits ============="
+e search.maxhits=1
+/Jq jmp rax
+echo "============ without maxhits ============="
+e search.maxhits=0
+/Jq jmp rax
+EOF
+EXPECT=<<EOF
+============ with maxhits =============
+0x004003fa: test rax, rax; jz 0x400410; pop rbp; mov edi, 0x601028; jmp rax;
+============ without maxhits =============
+0x004003fa: test rax, rax; jz 0x400410; pop rbp; mov edi, 0x601028; jmp rax;
+0x004003fb: test eax, eax; jz 0x400410; pop rbp; mov edi, 0x601028; jmp rax;
+0x004003fd: jz 0x400410; pop rbp; mov edi, 0x601028; jmp rax;
+0x004003ff: pop rbp; mov edi, 0x601028; jmp rax;
+0x00400400: mov edi, 0x601028; jmp rax;
+0x00400402: adc byte [rax], ah; jmp rax;
+0x00400405: jmp rax;
+0x00400448: test rax, rax; jz 0x400458; pop rbp; mov edi, 0x601028; jmp rax;
+0x00400449: test eax, eax; jz 0x400458; pop rbp; mov edi, 0x601028; jmp rax;
+0x0040044b: jz 0x400458; pop rbp; mov edi, 0x601028; jmp rax;
+EOF
+RUN
+
+NAME=search all jop gadgets
+FILE=bins/elf/riscv_crypto_64
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=64
+/J
+EOF
+EXPECT=<<EOF
+  0x0001049c           130343fd  addi t1, t1, -0x2c
+  0x000104a0           938203b6  addi t0, t2, -0x4a0
+  0x000104a4           13531300  srli t1, t1, 1
+  0x000104a8           83b28200  ld t0, 8(t0)
+  0x000104ac           67000e00  jr t3
+Gadget size: 20
+
+  0x0001049e           43fd9382  fmadd.d fs10, ft7, fs1, fa6
+  0x000104a2           03b61353  ld a2, 0x531(t2)
+  0x000104a6           130083b2  addi zero, t1, -0x4d8
+  0x000104aa               8200  c.slli64 ra
+  0x000104ac           67000e00  jr t3
+Gadget size: 18
+
+  0x000104a0           938203b6  addi t0, t2, -0x4a0
+  0x000104a4           13531300  srli t1, t1, 1
+  0x000104a8           83b28200  ld t0, 8(t0)
+  0x000104ac           67000e00  jr t3
+Gadget size: 16
+
+  0x000104a2           03b61353  ld a2, 0x531(t2)
+  0x000104a6           130083b2  addi zero, t1, -0x4d8
+  0x000104aa               8200  c.slli64 ra
+  0x000104ac           67000e00  jr t3
+Gadget size: 14
+
+  0x000104a4           13531300  srli t1, t1, 1
+  0x000104a8           83b28200  ld t0, 8(t0)
+  0x000104ac           67000e00  jr t3
+Gadget size: 12
+
+  0x000104a6           130083b2  addi zero, t1, -0x4d8
+  0x000104aa               8200  c.slli64 ra
+  0x000104ac           67000e00  jr t3
+Gadget size: 10
+
+  0x000104a8           83b28200  ld t0, 8(t0)
+  0x000104ac           67000e00  jr t3
+Gadget size: 8
+
+  0x000104aa               8200  c.slli64 ra
+  0x000104ac           67000e00  jr t3
+Gadget size: 6
+
+  0x000104ac           67000e00  jr t3
+Gadget size: 4
+
+  0x0001052e           6386a700  beq a5, a0, 0x1053a
+  0x00010532           93070000  li a5, 0
+  0x00010536               91c3  beqz a5, 0x1053a
+  0x00010538               8287  jr a5
+Gadget size: 12
+
+  0x00010530           a7009307  vsuxei8.v v1, (t1), v25
+  0x00010534               0000  unimp
+  0x00010536               91c3  beqz a5, 0x1053a
+  0x00010538               8287  jr a5
+Gadget size: 10
+
+  0x00010532           93070000  li a5, 0
+  0x00010536               91c3  beqz a5, 0x1053a
+  0x00010538               8287  jr a5
+Gadget size: 8
+
+  0x00010534               0000  unimp
+  0x00010536               91c3  beqz a5, 0x1053a
+  0x00010538               8287  jr a5
+Gadget size: 6
+
+  0x00010536               91c3  beqz a5, 0x1053a
+  0x00010538               8287  jr a5
+Gadget size: 4
+
+  0x00010538               8287  jr a5
+Gadget size: 2
+
+  0x00010552               8585  srai a1, a1, 1
+  0x00010554               89c5  beqz a1, 0x1055e
+  0x00010556           93070000  li a5, 0
+  0x0001055a               91c3  beqz a5, 0x1055e
+  0x0001055c               8287  jr a5
+Gadget size: 12
+
+  0x00010554               89c5  beqz a1, 0x1055e
+  0x00010556           93070000  li a5, 0
+  0x0001055a               91c3  beqz a5, 0x1055e
+  0x0001055c               8287  jr a5
+Gadget size: 10
+
+  0x00010d56               0000  unimp
+  0x00010d58               0042  lw s0, 0(a2)
+  0x00010d5a               0e30  fld ft0, 0xe0(sp)
+  0x00010d5c               4481  lbu s1, 1(a0)
+  0x00010d5e               0288  jr a6
+Gadget size: 10
+
+  0x00010d58               0042  lw s0, 0(a2)
+  0x00010d5a               0e30  fld ft0, 0xe0(sp)
+  0x00010d5c               4481  lbu s1, 1(a0)
+  0x00010d5e               0288  jr a6
+Gadget size: 8
+
+  0x00010d5a               0e30  fld ft0, 0xe0(sp)
+  0x00010d5c               4481  lbu s1, 1(a0)
+  0x00010d5e               0288  jr a6
+Gadget size: 6
+
+  0x00010d5c               4481  lbu s1, 1(a0)
+  0x00010d5e               0288  jr a6
+Gadget size: 4
+
+  0x00010d5e               0288  jr a6
+Gadget size: 2
+
+  0x00010f86               0000  unimp
+  0x00010f88               0042  lw s0, 0(a2)
+  0x00010f8a               0e10  c.slli zero, 0x23
+  0x00010f8c               4481  lbu s1, 1(a0)
+  0x00010f8e               0288  jr a6
+Gadget size: 10
+
+  0x00010f88               0042  lw s0, 0(a2)
+  0x00010f8a               0e10  c.slli zero, 0x23
+  0x00010f8c               4481  lbu s1, 1(a0)
+  0x00010f8e               0288  jr a6
+Gadget size: 8
+
+  0x00010f8a               0e10  c.slli zero, 0x23
+  0x00010f8c               4481  lbu s1, 1(a0)
+  0x00010f8e               0288  jr a6
+Gadget size: 6
+
+  0x00010fd6               0000  unimp
+  0x00010fd8               0042  lw s0, 0(a2)
+  0x00010fda               0e20  fld ft0, 0xc0(sp)
+  0x00010fdc               4481  lbu s1, 1(a0)
+  0x00010fde               0288  jr a6
+Gadget size: 10
+
+  0x00010fd8               0042  lw s0, 0(a2)
+  0x00010fda               0e20  fld ft0, 0xc0(sp)
+  0x00010fdc               4481  lbu s1, 1(a0)
+  0x00010fde               0288  jr a6
+Gadget size: 8
+
+  0x00010fda               0e20  fld ft0, 0xc0(sp)
+  0x00010fdc               4481  lbu s1, 1(a0)
+  0x00010fde               0288  jr a6
+Gadget size: 6
+
+EOF
+RUN
+
+
+NAME=search jop gadgets with a regexp
+FILE=bins/elf/emulateme.arm32
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+/J/ ldr.*pc,.*\[ip,.*cd4\]!
+EOF
+EXPECT=<<EOF
+  0x0001032c           d40c0100  ldrdeq r0, r1, [r1], -r4
+  0x00010330           00c68fe2  add ip, pc, 0, 12
+  0x00010334           10ca8ce2  add ip, ip, 16, 20
+  0x00010338           d4fcbce5  ldr pc, [ip, 0xcd4]!
+Gadget size: 16
+
+  0x00010330           00c68fe2  add ip, pc, 0, 12
+  0x00010334           10ca8ce2  add ip, ip, 16, 20
+  0x00010338           d4fcbce5  ldr pc, [ip, 0xcd4]!
+Gadget size: 12
+
+  0x00010334           10ca8ce2  add ip, ip, 16, 20
+  0x00010338           d4fcbce5  ldr pc, [ip, 0xcd4]!
+Gadget size: 8
+
+  0x00010338           d4fcbce5  ldr pc, [ip, 0xcd4]!
+Gadget size: 4
+
+EOF
+RUN
+
+NAME=search jop gadgets and show them linearly
+FILE=bins/elf/riscv_crypto_64
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=64
+/Jq
+EOF
+EXPECT=<<EOF
+0x0001049c: addi t1, t1, -0x2c; addi t0, t2, -0x4a0; srli t1, t1, 1; ld t0, 8(t0); jr t3;
+0x0001049e: fmadd.d fs10, ft7, fs1, fa6; ld a2, 0x531(t2); addi zero, t1, -0x4d8; c.slli64 ra; jr t3;
+0x000104a0: addi t0, t2, -0x4a0; srli t1, t1, 1; ld t0, 8(t0); jr t3;
+0x000104a2: ld a2, 0x531(t2); addi zero, t1, -0x4d8; c.slli64 ra; jr t3;
+0x000104a4: srli t1, t1, 1; ld t0, 8(t0); jr t3;
+0x000104a6: addi zero, t1, -0x4d8; c.slli64 ra; jr t3;
+0x000104a8: ld t0, 8(t0); jr t3;
+0x000104aa: c.slli64 ra; jr t3;
+0x000104ac: jr t3;
+0x0001052e: beq a5, a0, 0x1053a; li a5, 0; beqz a5, 0x1053a; jr a5;
+0x00010530: vsuxei8.v v1, (t1), v25; unimp; beqz a5, 0x1053a; jr a5;
+0x00010532: li a5, 0; beqz a5, 0x1053a; jr a5;
+0x00010534: unimp; beqz a5, 0x1053a; jr a5;
+0x00010536: beqz a5, 0x1053a; jr a5;
+0x00010538: jr a5;
+0x00010552: srai a1, a1, 1; beqz a1, 0x1055e; li a5, 0; beqz a5, 0x1055e; jr a5;
+0x00010554: beqz a1, 0x1055e; li a5, 0; beqz a5, 0x1055e; jr a5;
+0x00010d56: unimp; lw s0, 0(a2); fld ft0, 0xe0(sp); lbu s1, 1(a0); jr a6;
+0x00010d58: lw s0, 0(a2); fld ft0, 0xe0(sp); lbu s1, 1(a0); jr a6;
+0x00010d5a: fld ft0, 0xe0(sp); lbu s1, 1(a0); jr a6;
+0x00010d5c: lbu s1, 1(a0); jr a6;
+0x00010d5e: jr a6;
+0x00010f86: unimp; lw s0, 0(a2); c.slli zero, 0x23; lbu s1, 1(a0); jr a6;
+0x00010f88: lw s0, 0(a2); c.slli zero, 0x23; lbu s1, 1(a0); jr a6;
+0x00010f8a: c.slli zero, 0x23; lbu s1, 1(a0); jr a6;
+0x00010fd6: unimp; lw s0, 0(a2); fld ft0, 0xc0(sp); lbu s1, 1(a0); jr a6;
+0x00010fd8: lw s0, 0(a2); fld ft0, 0xc0(sp); lbu s1, 1(a0); jr a6;
+0x00010fda: fld ft0, 0xc0(sp); lbu s1, 1(a0); jr a6;
+EOF
+RUN
+
+NAME=search jop gadgets with filter
+FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=-n
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+/J ecx
+EOF
+EXPECT=<<EOF
+  0x00000442       ff8d8308ffff  dec dword [ebp-0xf77d]
+  0x00000448               ff29  jmp far fword [ecx]
+Gadget size: 8
+
+  0x00000448               ff29  jmp far fword [ecx]
+Gadget size: 2
+
+  0x00000553             ff6100  jmp dword [ecx]
+Gadget size: 3
+
+  0x00000f23               0000  add byte [eax], al
+  0x00000f25               0000  add byte [eax], al
+  0x00000f27             000400  add byte [eax+eax*1], al
+  0x00000f2a                 f1  int1
+  0x00000f2b               ffe1  jmp ecx
+Gadget size: 10
+
+  0x00000f24               0000  add byte [eax], al
+  0x00000f26               0000  add byte [eax], al
+  0x00000f28               0400  add al, 0x00
+  0x00000f2a                 f1  int1
+  0x00000f2b               ffe1  jmp ecx
+Gadget size: 9
+
+  0x00000f25               0000  add byte [eax], al
+  0x00000f27             000400  add byte [eax+eax*1], al
+  0x00000f2a                 f1  int1
+  0x00000f2b               ffe1  jmp ecx
+Gadget size: 8
+
+  0x00000f26               0000  add byte [eax], al
+  0x00000f28               0400  add al, 0x00
+  0x00000f2a                 f1  int1
+  0x00000f2b               ffe1  jmp ecx
+Gadget size: 7
+
+  0x00000f27             000400  add byte [eax+eax*1], al
+  0x00000f2a                 f1  int1
+  0x00000f2b               ffe1  jmp ecx
+Gadget size: 6
+
+  0x00000f28               0400  add al, 0x00
+  0x00000f2a                 f1  int1
+  0x00000f2b               ffe1  jmp ecx
+Gadget size: 5
+
+  0x00000f29               00f1  add cl, dh
+  0x00000f2b               ffe1  jmp ecx
+Gadget size: 4
+
+  0x00000f2a                 f1  int1
+  0x00000f2b               ffe1  jmp ecx
+Gadget size: 3
+
+  0x00000f2b               ffe1  jmp ecx
+Gadget size: 2
+
+EOF
+RUN
+
+NAME=search jop gadgets with filter and output JSON
+FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=-n
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+/Jj ecx
+EOF
+EXPECT=<<EOF
+[{"opcodes":[{"offset":1090,"size":6,"opcode":"dec dword [ebp-0xf77d]","type":"sub"},{"offset":1096,"size":2,"opcode":"jmp far fword [ecx]","type":"irjmp"}],"retaddr":1096,"size":8},{"opcodes":[{"offset":1096,"size":2,"opcode":"jmp far fword [ecx]","type":"irjmp"}],"retaddr":1096,"size":2},{"opcodes":[{"offset":1363,"size":3,"opcode":"jmp dword [ecx]","type":"irjmp"}],"retaddr":1363,"size":3},{"opcodes":[{"offset":3875,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":3877,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":3879,"size":3,"opcode":"add byte [eax+eax*1], al","type":"add"},{"offset":3882,"size":1,"opcode":"int1","type":"swi"},{"offset":3883,"size":2,"opcode":"jmp ecx","type":"rjmp"}],"retaddr":3883,"size":10},{"opcodes":[{"offset":3876,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":3878,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":3880,"size":2,"opcode":"add al, 0x00","type":"add"},{"offset":3882,"size":1,"opcode":"int1","type":"swi"},{"offset":3883,"size":2,"opcode":"jmp ecx","type":"rjmp"}],"retaddr":3883,"size":9},{"opcodes":[{"offset":3877,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":3879,"size":3,"opcode":"add byte [eax+eax*1], al","type":"add"},{"offset":3882,"size":1,"opcode":"int1","type":"swi"},{"offset":3883,"size":2,"opcode":"jmp ecx","type":"rjmp"}],"retaddr":3883,"size":8},{"opcodes":[{"offset":3878,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":3880,"size":2,"opcode":"add al, 0x00","type":"add"},{"offset":3882,"size":1,"opcode":"int1","type":"swi"},{"offset":3883,"size":2,"opcode":"jmp ecx","type":"rjmp"}],"retaddr":3883,"size":7},{"opcodes":[{"offset":3879,"size":3,"opcode":"add byte [eax+eax*1], al","type":"add"},{"offset":3882,"size":1,"opcode":"int1","type":"swi"},{"offset":3883,"size":2,"opcode":"jmp ecx","type":"rjmp"}],"retaddr":3883,"size":6},{"opcodes":[{"offset":3880,"size":2,"opcode":"add al, 0x00","type":"add"},{"offset":3882,"size":1,"opcode":"int1","type":"swi"},{"offset":3883,"size":2,"opcode":"jmp ecx","type":"rjmp"}],"retaddr":3883,"size":5},{"opcodes":[{"offset":3881,"size":2,"opcode":"add cl, dh","type":"add"},{"offset":3883,"size":2,"opcode":"jmp ecx","type":"rjmp"}],"retaddr":3883,"size":4},{"opcodes":[{"offset":3882,"size":1,"opcode":"int1","type":"swi"},{"offset":3883,"size":2,"opcode":"jmp ecx","type":"rjmp"}],"retaddr":3883,"size":3},{"opcodes":[{"offset":3883,"size":2,"opcode":"jmp ecx","type":"rjmp"}],"retaddr":3883,"size":2}]
+EOF
+RUN
+
+NAME=search jop gadgets with a regex of the form (a|b)
+FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=-n
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+/J/ "(ecx|eax)"
+EOF
+EXPECT=<<EOF
+  0x000003f6       ff90e973ffff  call dword [eax-0x8c17]
+  0x000003fc             ff6690  jmp dword [esi-0x70]
+Gadget size: 9
+
+  0x00000442       ff8d8308ffff  dec dword [ebp-0xf77d]
+  0x00000448               ff29  jmp far fword [ecx]
+Gadget size: 8
+
+  0x00000448               ff29  jmp far fword [ecx]
+Gadget size: 2
+
+  0x000004d7             ff6800  jmp far fword [eax]
+Gadget size: 3
+
+  0x00000553             ff6100  jmp dword [ecx]
+Gadget size: 3
+
+  0x0000086e               0000  add byte [eax], al
+  0x00000870               f6ff  idiv bh
+  0x00000872             ff6f02  jmp far fword [edi+0x02]
+Gadget size: 7
+
+  0x00000f23               0000  add byte [eax], al
+  0x00000f25               0000  add byte [eax], al
+  0x00000f27             000400  add byte [eax+eax*1], al
+  0x00000f2a                 f1  int1
+  0x00000f2b               ffe1  jmp ecx
+Gadget size: 10
+
+  0x00000f24               0000  add byte [eax], al
+  0x00000f26               0000  add byte [eax], al
+  0x00000f28               0400  add al, 0x00
+  0x00000f2a                 f1  int1
+  0x00000f2b               ffe1  jmp ecx
+Gadget size: 9
+
+  0x00000f25               0000  add byte [eax], al
+  0x00000f27             000400  add byte [eax+eax*1], al
+  0x00000f2a                 f1  int1
+  0x00000f2b               ffe1  jmp ecx
+Gadget size: 8
+
+  0x00000f26               0000  add byte [eax], al
+  0x00000f28               0400  add al, 0x00
+  0x00000f2a                 f1  int1
+  0x00000f2b               ffe1  jmp ecx
+Gadget size: 7
+
+  0x00000f27             000400  add byte [eax+eax*1], al
+  0x00000f2a                 f1  int1
+  0x00000f2b               ffe1  jmp ecx
+Gadget size: 6
+
+  0x00000f28               0400  add al, 0x00
+  0x00000f2a                 f1  int1
+  0x00000f2b               ffe1  jmp ecx
+Gadget size: 5
+
+  0x00000f29               00f1  add cl, dh
+  0x00000f2b               ffe1  jmp ecx
+Gadget size: 4
+
+  0x00000f2a                 f1  int1
+  0x00000f2b               ffe1  jmp ecx
+Gadget size: 3
+
+  0x00000f2b               ffe1  jmp ecx
+Gadget size: 2
+
+EOF
+RUN
+
+NAME=search jop with sequence.
+FILE=bins/elf/mips-mozi
+CMDS=<<EOF
+e asm.arch=mips
+e asm.bits=64
+/J "jr $t9;nop"
+EOF
+EXPECT=<<EOF
+  0x00416658           0399e021  addu gp, gp, t9
+  0x0041665c           8f998348  lw t9, -0x7cb8(gp)
+  0x00416660           8f8583a0  lw a1, -0x7c60(gp)
+  0x00416664           03200008  jr t9
+  0x00416668           00000000  nop
+Gadget size: 20
+
+  0x0041665c           8f998348  lw t9, -0x7cb8(gp)
+  0x00416660           8f8583a0  lw a1, -0x7c60(gp)
+  0x00416664           03200008  jr t9
+  0x00416668           00000000  nop
+Gadget size: 16
+
+  0x00416660           8f8583a0  lw a1, -0x7c60(gp)
+  0x00416664           03200008  jr t9
+  0x00416668           00000000  nop
+Gadget size: 12
+
+  0x00416664           03200008  jr t9
+  0x00416668           00000000  nop
+Gadget size: 8
+
+  0x00416674           0399e021  addu gp, gp, t9
+  0x00416678           8f998348  lw t9, -0x7cb8(gp)
+  0x0041667c           8f858290  lw a1, -0x7d70(gp)
+  0x00416680           03200008  jr t9
+  0x00416684           00000000  nop
+Gadget size: 20
+
+  0x00416678           8f998348  lw t9, -0x7cb8(gp)
+  0x0041667c           8f858290  lw a1, -0x7d70(gp)
+  0x00416680           03200008  jr t9
+  0x00416684           00000000  nop
+Gadget size: 16
+
+  0x0041667c           8f858290  lw a1, -0x7d70(gp)
+  0x00416680           03200008  jr t9
+  0x00416684           00000000  nop
+Gadget size: 12
+
+  0x0041a27c           00402021  move a0, v0
+  0x0041a280           8f9984cc  lw t9, -0x7b34(gp)
+  0x0041a284           00000000  nop
+  0x0041a288           03200008  jr t9
+  0x0041a28c           00000000  nop
+Gadget size: 20
+
+  0x0041a280           8f9984cc  lw t9, -0x7b34(gp)
+  0x0041a284           00000000  nop
+  0x0041a288           03200008  jr t9
+  0x0041a28c           00000000  nop
+Gadget size: 16
+
+  0x0041a284           00000000  nop
+  0x0041a288           03200008  jr t9
+  0x0041a28c           00000000  nop
+Gadget size: 12
+
+  0x004239a8           0399e021  addu gp, gp, t9
+  0x004239ac           8f9984d0  lw t9, -0x7b30(gp)
+  0x004239b0           00000000  nop
+  0x004239b4           03200008  jr t9
+  0x004239b8           00000000  nop
+Gadget size: 20
+
+  0x004239ac           8f9984d0  lw t9, -0x7b30(gp)
+  0x004239b0           00000000  nop
+  0x004239b4           03200008  jr t9
+  0x004239b8           00000000  nop
+Gadget size: 16
+
+  0x004279b4           8c840008  lw a0, 8(a0)
+  0x004279b8           8f9984f0  lw t9, -0x7b10(gp)
+  0x004279bc           00000000  nop
+  0x004279c0           03200008  jr t9
+  0x004279c4           00000000  nop
+Gadget size: 20
+
+  0x004279b8           8f9984f0  lw t9, -0x7b10(gp)
+  0x004279bc           00000000  nop
+  0x004279c0           03200008  jr t9
+  0x004279c4           00000000  nop
+Gadget size: 16
+
+  0x00431320           0000f821  move ra, zero
+  0x00431324           8f998044  lw t9, -0x7fbc(gp)
+  0x00431328           00000000  nop
+  0x0043132c           03200008  jr t9
+  0x00431330           00000000  nop
+Gadget size: 20
+
+  0x00431324           8f998044  lw t9, -0x7fbc(gp)
+  0x00431328           00000000  nop
+  0x0043132c           03200008  jr t9
+  0x00431330           00000000  nop
+Gadget size: 16
+
+  0x00431394           00402021  move a0, v0
+  0x00431398           8f998048  lw t9, -0x7fb8(gp)
+  0x0043139c           00000000  nop
+  0x004313a0           03200008  jr t9
+  0x004313a4           00000000  nop
+Gadget size: 20
+
+  0x00431398           8f998048  lw t9, -0x7fb8(gp)
+  0x0043139c           00000000  nop
+  0x004313a0           03200008  jr t9
+  0x004313a4           00000000  nop
+Gadget size: 16
+
+  0x00434478           0059102d  daddu v0, v0, t9
+  0x0043447c           6442814c  daddiu v0, v0, -0x7eb4
+  0x00434480           dc598078  ld t9, -0x7f88(v0)
+  0x00434484           03200008  jr t9
+  0x00434488           00000000  nop
+Gadget size: 20
+
+  0x0043447c           6442814c  daddiu v0, v0, -0x7eb4
+  0x00434480           dc598078  ld t9, -0x7f88(v0)
+  0x00434484           03200008  jr t9
+  0x00434488           00000000  nop
+Gadget size: 16
+
+  0x00434480           dc598078  ld t9, -0x7f88(v0)
+  0x00434484           03200008  jr t9
+  0x00434488           00000000  nop
+Gadget size: 12
+
+EOF
+RUN
+
+NAME=search jop with regex sequence.
+FILE=bins/elf/mips-mozi
+CMDS=<<EOF
+e asm.arch=mips
+e asm.bits=64
+e gadget.len=4
+/J/ "move [$]a1, [$]a0;move [$]a2, [$][a-z0-9]"
+EOF
+EXPECT=<<EOF
+  0x00430e34           00802821  move a1, a0
+  0x00430e38           00403021  move a2, v0
+  0x00430e3c           03200008  jr t9
+  0x00430e40           24040fa5  addiu a0, zero, 0xfa5
+Gadget size: 16
+
+  0x00430ea8           00802821  move a1, a0
+  0x00430eac           00403021  move a2, v0
+  0x00430eb0           03200008  jr t9
+  0x00430eb4           24040fa4  addiu a0, zero, 0xfa4
+Gadget size: 16
+
+  0x00430ed0           00802821  move a1, a0
+  0x00430ed4           00403021  move a2, v0
+  0x00430ed8           03200008  jr t9
+  0x00430edc           24040fa3  addiu a0, zero, 0xfa3
+Gadget size: 16
+
+  0x0043406c           0080282d  move a1, a0
+  0x00434070           0040302d  move a2, v0
+  0x00434074           03200008  jr t9
+  0x00434078           2404138a  addiu a0, zero, 0x138a
+Gadget size: 16
+
+  0x00434094           0080282d  move a1, a0
+  0x00434098           0040302d  move a2, v0
+  0x0043409c           03200008  jr t9
+  0x004340a0           240413b1  addiu a0, zero, 0x13b1
+Gadget size: 16
+
+  0x004340bc           0080282d  move a1, a0
+  0x004340c0           0040302d  move a2, v0
+  0x004340c4           03200008  jr t9
+  0x004340c8           24041389  addiu a0, zero, 0x1389
+Gadget size: 16
+
+  0x004340e4           0080282d  move a1, a0
+  0x004340e8           0040302d  move a2, v0
+  0x004340ec           03200008  jr t9
+  0x004340f0           24041388  addiu a0, zero, 0x1388
+Gadget size: 16
+
+  0x0043410c           0080282d  move a1, a0
+  0x00434110           0040302d  move a2, v0
+  0x00434114           03200008  jr t9
+  0x00434118           240413b0  addiu a0, zero, 0x13b0
+Gadget size: 16
+
+EOF
+RUN
+
+NAME=search jop gadgets given the detailed stack change (=8)
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+/Js "=8"
+EOF
+EXPECT=<<EOF
+Gadget 0x40045c
+Stack change: 0x8
+Changed registers: rbp rsp rdi 
+Register dependencies:
+
+Gadget 0x40045d
+Stack change: 0x8
+Changed registers: rbp rsp rdi 
+Register dependencies:
+
+Gadget 0x40045f
+Stack change: 0x8
+Changed registers: rbp rsp rdi 
+Register dependencies:
+
+Gadget 0x400460
+Stack change: 0x8
+Changed registers: rbp rsp rdi 
+Register dependencies:
+
+Gadget 0x400461
+Stack change: 0x8
+Changed registers: rbp rsp rdi 
+Register dependencies:
+
+Gadget 0x40049c
+Stack change: 0x8
+Changed registers: rbp rsp rdi 
+Register dependencies:
+
+Gadget 0x40049d
+Stack change: 0x8
+Changed registers: rbp rsp rdi 
+Register dependencies:
+
+Gadget 0x40049f
+Stack change: 0x8
+Changed registers: rbp rsp rdi 
+Register dependencies:
+
+Gadget 0x4004a0
+Stack change: 0x8
+Changed registers: rbp rsp rdi 
+Register dependencies:
+
+Gadget 0x4004a1
+Stack change: 0x8
+Changed registers: rbp rsp rdi 
+Register dependencies:
+
+EOF
+RUN
+
+NAME=search jop gadgets given the detailed stack change (>=0x1)
+FILE=bins/arm/elf/hello-linux-arm64
+CMDS=<<EOF
+/Js ">=0x1"
+EOF
+EXPECT=<<EOF
+Gadget 0x4419e8
+Stack change: 0x200
+Changed registers: x29 x30 sp 
+Register dependencies:
+
+Gadget 0x4419ec
+Stack change: 0x200
+Changed registers: x29 x30 sp 
+Register dependencies:
+
+Gadget 0x4419f0
+Stack change: 0x200
+Changed registers: x29 x30 sp 
+Register dependencies:
+
+Gadget 0x4419f4
+Stack change: 0x200
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x441a98
+Stack change: 0x200
+Changed registers: x30 sp x29 
+Register dependencies:
+
+Gadget 0x441a9c
+Stack change: 0x200
+Changed registers: sp x29 
+Register dependencies:
+
+Gadget 0x441aa0
+Stack change: 0x200
+Changed registers: x29 sp 
+Register dependencies:
+
+Gadget 0x441aa4
+Stack change: 0x200
+Changed registers: sp 
+Register dependencies:
+
+EOF
+RUN
+
+NAME=search jop gadgets given the detailed gadget size (>=8)
+FILE=bins/elf/analysis/crackmips
+CMDS=<<EOF
+/Jl ">=8"
+EOF
+EXPECT=<<EOF
+Gadget 0x400230
+Stack change: 0x0
+Changed registers: zero lo 
+Register dependencies:
+Var Read: lo
+Var Read: hi
+
+Gadget 0x400234
+Stack change: 0x0
+Changed registers: zero lo 
+Register dependencies:
+Var Read: hi
+
+Gadget 0x400238
+Stack change: 0x0
+Changed registers: lo 
+Register dependencies:
+
+Gadget 0x40023c
+Stack change: 0x0
+Changed registers: 
+Register dependencies:
+
+Gadget 0x400378
+Stack change: 0x0
+Changed registers: 
+Register dependencies:
+
+Gadget 0x40083c
+Stack change: 0x0
+Changed registers: t8 t7 t9 
+Register dependencies:
+Var Read: t8
+Memory Read: t7 Value: 0x41542c
+Var Read: t7
+
+Gadget 0x400840
+Stack change: 0x0
+Changed registers: t7 t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x41542c
+Var Read: t7
+
+Gadget 0x400844
+Stack change: 0x0
+Changed registers: t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x41542c
+Var Read: t7
+
+Gadget 0x400848
+Stack change: 0x0
+Changed registers: t8 
+Register dependencies:
+Var Read: t7
+
+Gadget 0x40084c
+Stack change: 0x0
+Changed registers: t8 t7 t9 
+Register dependencies:
+Var Read: t7
+Memory Read: t7 Value: 0x415430
+Var write: t7 Initial value: 0x410000 New Value: 0x415430
+
+Gadget 0x400850
+Stack change: 0x0
+Changed registers: t7 t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x415430
+Var Read: t7
+
+Gadget 0x400854
+Stack change: 0x0
+Changed registers: t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x415430
+Var Read: t7
+
+Gadget 0x400858
+Stack change: 0x0
+Changed registers: t8 
+Register dependencies:
+Var Read: t7
+
+Gadget 0x40085c
+Stack change: 0x0
+Changed registers: t8 t7 t9 
+Register dependencies:
+Var Read: t7
+Memory Read: t7 Value: 0x415434
+Var write: t7 Initial value: 0x410000 New Value: 0x415434
+
+Gadget 0x400860
+Stack change: 0x0
+Changed registers: t7 t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x415434
+Var Read: t7
+
+Gadget 0x400864
+Stack change: 0x0
+Changed registers: t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x415434
+Var Read: t7
+
+Gadget 0x400868
+Stack change: 0x0
+Changed registers: t8 
+Register dependencies:
+Var Read: t7
+
+Gadget 0x40086c
+Stack change: 0x0
+Changed registers: t8 t7 t9 
+Register dependencies:
+Var Read: t7
+Memory Read: t7 Value: 0x415438
+Var write: t7 Initial value: 0x410000 New Value: 0x415438
+
+Gadget 0x400870
+Stack change: 0x0
+Changed registers: t7 t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x415438
+Var Read: t7
+
+Gadget 0x400874
+Stack change: 0x0
+Changed registers: t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x415438
+Var Read: t7
+
+Gadget 0x400878
+Stack change: 0x0
+Changed registers: t8 
+Register dependencies:
+Var Read: t7
+
+Gadget 0x40087c
+Stack change: 0x0
+Changed registers: t8 t7 t9 
+Register dependencies:
+Var Read: t7
+Memory Read: t7 Value: 0x41543c
+Var write: t7 Initial value: 0x410000 New Value: 0x41543c
+
+Gadget 0x400880
+Stack change: 0x0
+Changed registers: t7 t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x41543c
+Var Read: t7
+
+Gadget 0x400884
+Stack change: 0x0
+Changed registers: t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x41543c
+Var Read: t7
+
+Gadget 0x400888
+Stack change: 0x0
+Changed registers: t8 
+Register dependencies:
+Var Read: t7
+
+Gadget 0x40088c
+Stack change: 0x0
+Changed registers: t8 t7 t9 
+Register dependencies:
+Var Read: t7
+Memory Read: t7 Value: 0x415440
+Var write: t7 Initial value: 0x410000 New Value: 0x415440
+
+Gadget 0x400890
+Stack change: 0x0
+Changed registers: t7 t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x415440
+Var Read: t7
+
+Gadget 0x400894
+Stack change: 0x0
+Changed registers: t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x415440
+Var Read: t7
+
+Gadget 0x400898
+Stack change: 0x0
+Changed registers: t8 
+Register dependencies:
+Var Read: t7
+
+Gadget 0x40089c
+Stack change: 0x0
+Changed registers: t8 t7 t9 
+Register dependencies:
+Var Read: t7
+Memory Read: t7 Value: 0x415444
+Var write: t7 Initial value: 0x410000 New Value: 0x415444
+
+Gadget 0x4008a0
+Stack change: 0x0
+Changed registers: t7 t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x415444
+Var Read: t7
+
+Gadget 0x4008a4
+Stack change: 0x0
+Changed registers: t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x415444
+Var Read: t7
+
+Gadget 0x4008a8
+Stack change: 0x0
+Changed registers: t8 
+Register dependencies:
+Var Read: t7
+
+Gadget 0x4008ac
+Stack change: 0x0
+Changed registers: t8 t7 t9 
+Register dependencies:
+Var Read: t7
+Memory Read: t7 Value: 0x415448
+Var write: t7 Initial value: 0x410000 New Value: 0x415448
+
+Gadget 0x4008b0
+Stack change: 0x0
+Changed registers: t7 t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x415448
+Var Read: t7
+
+Gadget 0x4008b4
+Stack change: 0x0
+Changed registers: t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x415448
+Var Read: t7
+
+Gadget 0x4008b8
+Stack change: 0x0
+Changed registers: t8 
+Register dependencies:
+Var Read: t7
+
+Gadget 0x4008bc
+Stack change: 0x0
+Changed registers: t8 t7 t9 
+Register dependencies:
+Var Read: t7
+Memory Read: t7 Value: 0x41544c
+Var write: t7 Initial value: 0x410000 New Value: 0x41544c
+
+Gadget 0x4008c0
+Stack change: 0x0
+Changed registers: t7 t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x41544c
+Var Read: t7
+
+Gadget 0x4008c4
+Stack change: 0x0
+Changed registers: t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x41544c
+Var Read: t7
+
+Gadget 0x4008c8
+Stack change: 0x0
+Changed registers: t8 
+Register dependencies:
+Var Read: t7
+
+Gadget 0x4008cc
+Stack change: 0x0
+Changed registers: t8 t7 t9 
+Register dependencies:
+Var Read: t7
+Memory Read: t7 Value: 0x415450
+Var write: t7 Initial value: 0x410000 New Value: 0x415450
+
+Gadget 0x4008d0
+Stack change: 0x0
+Changed registers: t7 t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x415450
+Var Read: t7
+
+Gadget 0x4008d4
+Stack change: 0x0
+Changed registers: t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x415450
+Var Read: t7
+
+Gadget 0x4008d8
+Stack change: 0x0
+Changed registers: t8 
+Register dependencies:
+Var Read: t7
+
+Gadget 0x4008dc
+Stack change: 0x0
+Changed registers: t8 t7 t9 
+Register dependencies:
+Var Read: t7
+Memory Read: t7 Value: 0x415454
+Var write: t7 Initial value: 0x410000 New Value: 0x415454
+
+Gadget 0x4008e0
+Stack change: 0x0
+Changed registers: t7 t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x415454
+Var Read: t7
+
+Gadget 0x4008e4
+Stack change: 0x0
+Changed registers: t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x415454
+Var Read: t7
+
+Gadget 0x4008e8
+Stack change: 0x0
+Changed registers: t8 
+Register dependencies:
+Var Read: t7
+
+Gadget 0x4008ec
+Stack change: 0x0
+Changed registers: t8 t7 t9 
+Register dependencies:
+Var Read: t7
+Memory Read: t7 Value: 0x415458
+Var write: t7 Initial value: 0x410000 New Value: 0x415458
+
+Gadget 0x4008f0
+Stack change: 0x0
+Changed registers: t7 t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x415458
+Var Read: t7
+
+Gadget 0x4008f4
+Stack change: 0x0
+Changed registers: t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x415458
+Var Read: t7
+
+Gadget 0x4008f8
+Stack change: 0x0
+Changed registers: t8 
+Register dependencies:
+Var Read: t7
+
+Gadget 0x4008fc
+Stack change: 0x0
+Changed registers: t8 t7 t9 
+Register dependencies:
+Var Read: t7
+Memory Read: t7 Value: 0x41545c
+Var write: t7 Initial value: 0x410000 New Value: 0x41545c
+
+Gadget 0x400900
+Stack change: 0x0
+Changed registers: t7 t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x41545c
+Var Read: t7
+
+Gadget 0x400904
+Stack change: 0x0
+Changed registers: t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x41545c
+Var Read: t7
+
+Gadget 0x400908
+Stack change: 0x0
+Changed registers: t8 
+Register dependencies:
+Var Read: t7
+
+Gadget 0x40090c
+Stack change: 0x0
+Changed registers: t8 t7 t9 
+Register dependencies:
+Var Read: t7
+Memory Read: t7 Value: 0x415460
+Var write: t7 Initial value: 0x410000 New Value: 0x415460
+
+Gadget 0x400910
+Stack change: 0x0
+Changed registers: t7 t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x415460
+Var Read: t7
+
+Gadget 0x400914
+Stack change: 0x0
+Changed registers: t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x415460
+Var Read: t7
+
+Gadget 0x400918
+Stack change: 0x0
+Changed registers: t8 
+Register dependencies:
+Var Read: t7
+
+Gadget 0x40091c
+Stack change: 0x0
+Changed registers: t8 t7 t9 
+Register dependencies:
+Var Read: t7
+Memory Read: t7 Value: 0x415464
+Var write: t7 Initial value: 0x410000 New Value: 0x415464
+
+Gadget 0x400920
+Stack change: 0x0
+Changed registers: t7 t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x415464
+Var Read: t7
+
+Gadget 0x400924
+Stack change: 0x0
+Changed registers: t9 t8 
+Register dependencies:
+Memory Read: t7 Value: 0x415464
+Var Read: t7
+
+Gadget 0x400928
+Stack change: 0x0
+Changed registers: t8 
+Register dependencies:
+Var Read: t7
+
+Gadget 0x400a40
+Stack change: 0x0
+Changed registers: t9 at a0 
+Register dependencies:
+Var Read: t9
+Var Read: at
+Var Read: a0
+
+Gadget 0x400a44
+Stack change: 0x0
+Changed registers: at a0 
+Register dependencies:
+Var Read: at
+Var Read: a0
+
+Gadget 0x400a48
+Stack change: 0x0
+Changed registers: at a0 
+Register dependencies:
+Var Read: at
+Var Read: a0
+
+Gadget 0x400a4c
+Stack change: 0x0
+Changed registers: a0 
+Register dependencies:
+Var Read: a0
+
+EOF
+RUN
+
+NAME=/Jk constraint filtering
+FILE=bins/elf/analysis/crackmips
+CMDS=<<EOF
+echo ===testing reg=reg===
+/Jk t9=t7
+echo ===testing compound operator===
+/Jk t9+=t9
+EOF
+EXPECT=<<EOF
+===testing reg=reg===
+  0x0040083c           feff1827  addiu t8, t8, -2
+  0x00400840           41000f3c  lui t7, 0x41
+  0x00400844           2c54f98d  lw t9, 0x542c(t7)
+  0x00400848           08002003  jr t9
+  0x0040084c           2c54f825  addiu t8, t7, 0x542c
+Gadget size: 20
+
+  0x00400840           41000f3c  lui t7, 0x41
+  0x00400844           2c54f98d  lw t9, 0x542c(t7)
+  0x00400848           08002003  jr t9
+  0x0040084c           2c54f825  addiu t8, t7, 0x542c
+Gadget size: 16
+
+  0x00400844           2c54f98d  lw t9, 0x542c(t7)
+  0x00400848           08002003  jr t9
+  0x0040084c           2c54f825  addiu t8, t7, 0x542c
+Gadget size: 12
+
+  0x0040084c           2c54f825  addiu t8, t7, 0x542c
+  0x00400850           41000f3c  lui t7, 0x41
+  0x00400854           3054f98d  lw t9, 0x5430(t7)
+  0x00400858           08002003  jr t9
+  0x0040085c           3054f825  addiu t8, t7, 0x5430
+Gadget size: 20
+
+  0x00400850           41000f3c  lui t7, 0x41
+  0x00400854           3054f98d  lw t9, 0x5430(t7)
+  0x00400858           08002003  jr t9
+  0x0040085c           3054f825  addiu t8, t7, 0x5430
+Gadget size: 16
+
+  0x00400854           3054f98d  lw t9, 0x5430(t7)
+  0x00400858           08002003  jr t9
+  0x0040085c           3054f825  addiu t8, t7, 0x5430
+Gadget size: 12
+
+  0x0040085c           3054f825  addiu t8, t7, 0x5430
+  0x00400860           41000f3c  lui t7, 0x41
+  0x00400864           3454f98d  lw t9, 0x5434(t7)
+  0x00400868           08002003  jr t9
+  0x0040086c           3454f825  addiu t8, t7, 0x5434
+Gadget size: 20
+
+  0x00400860           41000f3c  lui t7, 0x41
+  0x00400864           3454f98d  lw t9, 0x5434(t7)
+  0x00400868           08002003  jr t9
+  0x0040086c           3454f825  addiu t8, t7, 0x5434
+Gadget size: 16
+
+  0x00400864           3454f98d  lw t9, 0x5434(t7)
+  0x00400868           08002003  jr t9
+  0x0040086c           3454f825  addiu t8, t7, 0x5434
+Gadget size: 12
+
+  0x0040086c           3454f825  addiu t8, t7, 0x5434
+  0x00400870           41000f3c  lui t7, 0x41
+  0x00400874           3854f98d  lw t9, 0x5438(t7)
+  0x00400878           08002003  jr t9
+  0x0040087c           3854f825  addiu t8, t7, 0x5438
+Gadget size: 20
+
+  0x00400870           41000f3c  lui t7, 0x41
+  0x00400874           3854f98d  lw t9, 0x5438(t7)
+  0x00400878           08002003  jr t9
+  0x0040087c           3854f825  addiu t8, t7, 0x5438
+Gadget size: 16
+
+  0x00400874           3854f98d  lw t9, 0x5438(t7)
+  0x00400878           08002003  jr t9
+  0x0040087c           3854f825  addiu t8, t7, 0x5438
+Gadget size: 12
+
+  0x0040087c           3854f825  addiu t8, t7, 0x5438
+  0x00400880           41000f3c  lui t7, 0x41
+  0x00400884           3c54f98d  lw t9, 0x543c(t7)
+  0x00400888           08002003  jr t9
+  0x0040088c           3c54f825  addiu t8, t7, 0x543c
+Gadget size: 20
+
+  0x00400880           41000f3c  lui t7, 0x41
+  0x00400884           3c54f98d  lw t9, 0x543c(t7)
+  0x00400888           08002003  jr t9
+  0x0040088c           3c54f825  addiu t8, t7, 0x543c
+Gadget size: 16
+
+  0x00400884           3c54f98d  lw t9, 0x543c(t7)
+  0x00400888           08002003  jr t9
+  0x0040088c           3c54f825  addiu t8, t7, 0x543c
+Gadget size: 12
+
+  0x0040088c           3c54f825  addiu t8, t7, 0x543c
+  0x00400890           41000f3c  lui t7, 0x41
+  0x00400894           4054f98d  lw t9, 0x5440(t7)
+  0x00400898           08002003  jr t9
+  0x0040089c           4054f825  addiu t8, t7, 0x5440
+Gadget size: 20
+
+  0x00400890           41000f3c  lui t7, 0x41
+  0x00400894           4054f98d  lw t9, 0x5440(t7)
+  0x00400898           08002003  jr t9
+  0x0040089c           4054f825  addiu t8, t7, 0x5440
+Gadget size: 16
+
+  0x00400894           4054f98d  lw t9, 0x5440(t7)
+  0x00400898           08002003  jr t9
+  0x0040089c           4054f825  addiu t8, t7, 0x5440
+Gadget size: 12
+
+  0x0040089c           4054f825  addiu t8, t7, 0x5440
+  0x004008a0           41000f3c  lui t7, 0x41
+  0x004008a4           4454f98d  lw t9, 0x5444(t7)
+  0x004008a8           08002003  jr t9
+  0x004008ac           4454f825  addiu t8, t7, 0x5444
+Gadget size: 20
+
+  0x004008a0           41000f3c  lui t7, 0x41
+  0x004008a4           4454f98d  lw t9, 0x5444(t7)
+  0x004008a8           08002003  jr t9
+  0x004008ac           4454f825  addiu t8, t7, 0x5444
+Gadget size: 16
+
+  0x004008a4           4454f98d  lw t9, 0x5444(t7)
+  0x004008a8           08002003  jr t9
+  0x004008ac           4454f825  addiu t8, t7, 0x5444
+Gadget size: 12
+
+  0x004008ac           4454f825  addiu t8, t7, 0x5444
+  0x004008b0           41000f3c  lui t7, 0x41
+  0x004008b4           4854f98d  lw t9, 0x5448(t7)
+  0x004008b8           08002003  jr t9
+  0x004008bc           4854f825  addiu t8, t7, 0x5448
+Gadget size: 20
+
+  0x004008b0           41000f3c  lui t7, 0x41
+  0x004008b4           4854f98d  lw t9, 0x5448(t7)
+  0x004008b8           08002003  jr t9
+  0x004008bc           4854f825  addiu t8, t7, 0x5448
+Gadget size: 16
+
+  0x004008b4           4854f98d  lw t9, 0x5448(t7)
+  0x004008b8           08002003  jr t9
+  0x004008bc           4854f825  addiu t8, t7, 0x5448
+Gadget size: 12
+
+  0x004008bc           4854f825  addiu t8, t7, 0x5448
+  0x004008c0           41000f3c  lui t7, 0x41
+  0x004008c4           4c54f98d  lw t9, 0x544c(t7)
+  0x004008c8           08002003  jr t9
+  0x004008cc           4c54f825  addiu t8, t7, 0x544c
+Gadget size: 20
+
+  0x004008c0           41000f3c  lui t7, 0x41
+  0x004008c4           4c54f98d  lw t9, 0x544c(t7)
+  0x004008c8           08002003  jr t9
+  0x004008cc           4c54f825  addiu t8, t7, 0x544c
+Gadget size: 16
+
+  0x004008c4           4c54f98d  lw t9, 0x544c(t7)
+  0x004008c8           08002003  jr t9
+  0x004008cc           4c54f825  addiu t8, t7, 0x544c
+Gadget size: 12
+
+  0x004008cc           4c54f825  addiu t8, t7, 0x544c
+  0x004008d0           41000f3c  lui t7, 0x41
+  0x004008d4           5054f98d  lw t9, 0x5450(t7)
+  0x004008d8           08002003  jr t9
+  0x004008dc           5054f825  addiu t8, t7, 0x5450
+Gadget size: 20
+
+  0x004008d0           41000f3c  lui t7, 0x41
+  0x004008d4           5054f98d  lw t9, 0x5450(t7)
+  0x004008d8           08002003  jr t9
+  0x004008dc           5054f825  addiu t8, t7, 0x5450
+Gadget size: 16
+
+  0x004008d4           5054f98d  lw t9, 0x5450(t7)
+  0x004008d8           08002003  jr t9
+  0x004008dc           5054f825  addiu t8, t7, 0x5450
+Gadget size: 12
+
+  0x004008dc           5054f825  addiu t8, t7, 0x5450
+  0x004008e0           41000f3c  lui t7, 0x41
+  0x004008e4           5454f98d  lw t9, 0x5454(t7)
+  0x004008e8           08002003  jr t9
+  0x004008ec           5454f825  addiu t8, t7, 0x5454
+Gadget size: 20
+
+  0x004008e0           41000f3c  lui t7, 0x41
+  0x004008e4           5454f98d  lw t9, 0x5454(t7)
+  0x004008e8           08002003  jr t9
+  0x004008ec           5454f825  addiu t8, t7, 0x5454
+Gadget size: 16
+
+  0x004008e4           5454f98d  lw t9, 0x5454(t7)
+  0x004008e8           08002003  jr t9
+  0x004008ec           5454f825  addiu t8, t7, 0x5454
+Gadget size: 12
+
+  0x004008ec           5454f825  addiu t8, t7, 0x5454
+  0x004008f0           41000f3c  lui t7, 0x41
+  0x004008f4           5854f98d  lw t9, 0x5458(t7)
+  0x004008f8           08002003  jr t9
+  0x004008fc           5854f825  addiu t8, t7, 0x5458
+Gadget size: 20
+
+  0x004008f0           41000f3c  lui t7, 0x41
+  0x004008f4           5854f98d  lw t9, 0x5458(t7)
+  0x004008f8           08002003  jr t9
+  0x004008fc           5854f825  addiu t8, t7, 0x5458
+Gadget size: 16
+
+  0x004008f4           5854f98d  lw t9, 0x5458(t7)
+  0x004008f8           08002003  jr t9
+  0x004008fc           5854f825  addiu t8, t7, 0x5458
+Gadget size: 12
+
+  0x004008fc           5854f825  addiu t8, t7, 0x5458
+  0x00400900           41000f3c  lui t7, 0x41
+  0x00400904           5c54f98d  lw t9, 0x545c(t7)
+  0x00400908           08002003  jr t9
+  0x0040090c           5c54f825  addiu t8, t7, 0x545c
+Gadget size: 20
+
+  0x00400900           41000f3c  lui t7, 0x41
+  0x00400904           5c54f98d  lw t9, 0x545c(t7)
+  0x00400908           08002003  jr t9
+  0x0040090c           5c54f825  addiu t8, t7, 0x545c
+Gadget size: 16
+
+  0x00400904           5c54f98d  lw t9, 0x545c(t7)
+  0x00400908           08002003  jr t9
+  0x0040090c           5c54f825  addiu t8, t7, 0x545c
+Gadget size: 12
+
+  0x0040090c           5c54f825  addiu t8, t7, 0x545c
+  0x00400910           41000f3c  lui t7, 0x41
+  0x00400914           6054f98d  lw t9, 0x5460(t7)
+  0x00400918           08002003  jr t9
+  0x0040091c           6054f825  addiu t8, t7, 0x5460
+Gadget size: 20
+
+  0x00400910           41000f3c  lui t7, 0x41
+  0x00400914           6054f98d  lw t9, 0x5460(t7)
+  0x00400918           08002003  jr t9
+  0x0040091c           6054f825  addiu t8, t7, 0x5460
+Gadget size: 16
+
+  0x00400914           6054f98d  lw t9, 0x5460(t7)
+  0x00400918           08002003  jr t9
+  0x0040091c           6054f825  addiu t8, t7, 0x5460
+Gadget size: 12
+
+  0x0040091c           6054f825  addiu t8, t7, 0x5460
+  0x00400920           41000f3c  lui t7, 0x41
+  0x00400924           6454f98d  lw t9, 0x5464(t7)
+  0x00400928           08002003  jr t9
+  0x0040092c           6454f825  addiu t8, t7, 0x5464
+Gadget size: 20
+
+  0x00400920           41000f3c  lui t7, 0x41
+  0x00400924           6454f98d  lw t9, 0x5464(t7)
+  0x00400928           08002003  jr t9
+  0x0040092c           6454f825  addiu t8, t7, 0x5464
+Gadget size: 16
+
+  0x00400924           6454f98d  lw t9, 0x5464(t7)
+  0x00400928           08002003  jr t9
+  0x0040092c           6454f825  addiu t8, t7, 0x5464
+Gadget size: 12
+
+===testing compound operator===
+  0x00400a40           00003927  addiu t9, t9, 0
+  0x00400a44           03002013  beqz t9, 0x400a54
+  0x00400a48           25082000  move at, at
+  0x00400a4c           08002003  jr t9
+  0x00400a50           10408424  addiu a0, a0, 0x4010
+Gadget size: 20
+
+EOF
+RUN
+
+NAME=/Jgl test
+FILE=bins/elf/analysis/crackmips
+CMDS=<<EOF
+/Jgl
+EOF
+EXPECT=<<EOF
+Gadget 0x400230 (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400230  12000000         mflo zero             | Stack change: 0x0
+  0x00400234  10000000         mfhi zero             | Modified regs: zero lo
+  0x00400238  13000000         mtlo zero             | Dependencies:  lo hi
+  0x0040023c  08000000         jr zero               | 
+  0x00400240  01000070         maddu ac0, zero, zero | 
+
+Gadget 0x400234 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400234  10000000         mfhi zero             | Stack change: 0x0
+  0x00400238  13000000         mtlo zero             | Modified regs: zero lo
+  0x0040023c  08000000         jr zero               | Dependencies:  hi
+  0x00400240  01000070         maddu ac0, zero, zero | 
+
+Gadget 0x400238 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400238  13000000         mtlo zero             | Stack change: 0x0
+  0x0040023c  08000000         jr zero               | Modified regs: lo
+  0x00400240  01000070         maddu ac0, zero, zero | Dependencies:  
+
+Gadget 0x40023c (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0040023c  08000000         jr zero               | Stack change: 0x0
+  0x00400240  01000070         maddu ac0, zero, zero | Modified regs: 
+
+Gadget 0x400378 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400378  08000000         jr zero | Stack change: 0x0
+  0x0040037c  0c000000         syscall | Modified regs: 
+
+Gadget 0x40083c (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0040083c  feff1827         addiu t8, t8, -2     | Stack change: 0x0
+  0x00400840  41000f3c         lui t7, 0x41         | Modified regs: t8 t7 t9
+  0x00400844  2c54f98d         lw t9, 0x542c(t7)    | Dependencies:  t8 t7 t7
+  0x00400848  08002003         jr t9                | 
+  0x0040084c  2c54f825         addiu t8, t7, 0x542c | 
+
+Gadget 0x400840 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400840  41000f3c         lui t7, 0x41         | Stack change: 0x0
+  0x00400844  2c54f98d         lw t9, 0x542c(t7)    | Modified regs: t7 t9 t8
+  0x00400848  08002003         jr t9                | Dependencies:  t7 t7
+  0x0040084c  2c54f825         addiu t8, t7, 0x542c | 
+
+Gadget 0x400844 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400844  2c54f98d         lw t9, 0x542c(t7)    | Stack change: 0x0
+  0x00400848  08002003         jr t9                | Modified regs: t9 t8
+  0x0040084c  2c54f825         addiu t8, t7, 0x542c | Dependencies:  t7 t7
+
+Gadget 0x400848 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400848  08002003         jr t9                | Stack change: 0x0
+  0x0040084c  2c54f825         addiu t8, t7, 0x542c | Modified regs: t8
+
+Gadget 0x40084c (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0040084c  2c54f825         addiu t8, t7, 0x542c | Stack change: 0x0
+  0x00400850  41000f3c         lui t7, 0x41         | Modified regs: t8 t7 t9
+  0x00400854  3054f98d         lw t9, 0x5430(t7)    | Dependencies:  t7 t7 t7
+  0x00400858  08002003         jr t9                | 
+  0x0040085c  3054f825         addiu t8, t7, 0x5430 | 
+
+Gadget 0x400850 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400850  41000f3c         lui t7, 0x41         | Stack change: 0x0
+  0x00400854  3054f98d         lw t9, 0x5430(t7)    | Modified regs: t7 t9 t8
+  0x00400858  08002003         jr t9                | Dependencies:  t7 t7
+  0x0040085c  3054f825         addiu t8, t7, 0x5430 | 
+
+Gadget 0x400854 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400854  3054f98d         lw t9, 0x5430(t7)    | Stack change: 0x0
+  0x00400858  08002003         jr t9                | Modified regs: t9 t8
+  0x0040085c  3054f825         addiu t8, t7, 0x5430 | Dependencies:  t7 t7
+
+Gadget 0x400858 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400858  08002003         jr t9                | Stack change: 0x0
+  0x0040085c  3054f825         addiu t8, t7, 0x5430 | Modified regs: t8
+
+Gadget 0x40085c (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0040085c  3054f825         addiu t8, t7, 0x5430 | Stack change: 0x0
+  0x00400860  41000f3c         lui t7, 0x41         | Modified regs: t8 t7 t9
+  0x00400864  3454f98d         lw t9, 0x5434(t7)    | Dependencies:  t7 t7 t7
+  0x00400868  08002003         jr t9                | 
+  0x0040086c  3454f825         addiu t8, t7, 0x5434 | 
+
+Gadget 0x400860 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400860  41000f3c         lui t7, 0x41         | Stack change: 0x0
+  0x00400864  3454f98d         lw t9, 0x5434(t7)    | Modified regs: t7 t9 t8
+  0x00400868  08002003         jr t9                | Dependencies:  t7 t7
+  0x0040086c  3454f825         addiu t8, t7, 0x5434 | 
+
+Gadget 0x400864 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400864  3454f98d         lw t9, 0x5434(t7)    | Stack change: 0x0
+  0x00400868  08002003         jr t9                | Modified regs: t9 t8
+  0x0040086c  3454f825         addiu t8, t7, 0x5434 | Dependencies:  t7 t7
+
+Gadget 0x400868 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400868  08002003         jr t9                | Stack change: 0x0
+  0x0040086c  3454f825         addiu t8, t7, 0x5434 | Modified regs: t8
+
+Gadget 0x40086c (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0040086c  3454f825         addiu t8, t7, 0x5434 | Stack change: 0x0
+  0x00400870  41000f3c         lui t7, 0x41         | Modified regs: t8 t7 t9
+  0x00400874  3854f98d         lw t9, 0x5438(t7)    | Dependencies:  t7 t7 t7
+  0x00400878  08002003         jr t9                | 
+  0x0040087c  3854f825         addiu t8, t7, 0x5438 | 
+
+Gadget 0x400870 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400870  41000f3c         lui t7, 0x41         | Stack change: 0x0
+  0x00400874  3854f98d         lw t9, 0x5438(t7)    | Modified regs: t7 t9 t8
+  0x00400878  08002003         jr t9                | Dependencies:  t7 t7
+  0x0040087c  3854f825         addiu t8, t7, 0x5438 | 
+
+Gadget 0x400874 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400874  3854f98d         lw t9, 0x5438(t7)    | Stack change: 0x0
+  0x00400878  08002003         jr t9                | Modified regs: t9 t8
+  0x0040087c  3854f825         addiu t8, t7, 0x5438 | Dependencies:  t7 t7
+
+Gadget 0x400878 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400878  08002003         jr t9                | Stack change: 0x0
+  0x0040087c  3854f825         addiu t8, t7, 0x5438 | Modified regs: t8
+
+Gadget 0x40087c (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0040087c  3854f825         addiu t8, t7, 0x5438 | Stack change: 0x0
+  0x00400880  41000f3c         lui t7, 0x41         | Modified regs: t8 t7 t9
+  0x00400884  3c54f98d         lw t9, 0x543c(t7)    | Dependencies:  t7 t7 t7
+  0x00400888  08002003         jr t9                | 
+  0x0040088c  3c54f825         addiu t8, t7, 0x543c | 
+
+Gadget 0x400880 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400880  41000f3c         lui t7, 0x41         | Stack change: 0x0
+  0x00400884  3c54f98d         lw t9, 0x543c(t7)    | Modified regs: t7 t9 t8
+  0x00400888  08002003         jr t9                | Dependencies:  t7 t7
+  0x0040088c  3c54f825         addiu t8, t7, 0x543c | 
+
+Gadget 0x400884 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400884  3c54f98d         lw t9, 0x543c(t7)    | Stack change: 0x0
+  0x00400888  08002003         jr t9                | Modified regs: t9 t8
+  0x0040088c  3c54f825         addiu t8, t7, 0x543c | Dependencies:  t7 t7
+
+Gadget 0x400888 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400888  08002003         jr t9                | Stack change: 0x0
+  0x0040088c  3c54f825         addiu t8, t7, 0x543c | Modified regs: t8
+
+Gadget 0x40088c (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0040088c  3c54f825         addiu t8, t7, 0x543c | Stack change: 0x0
+  0x00400890  41000f3c         lui t7, 0x41         | Modified regs: t8 t7 t9
+  0x00400894  4054f98d         lw t9, 0x5440(t7)    | Dependencies:  t7 t7 t7
+  0x00400898  08002003         jr t9                | 
+  0x0040089c  4054f825         addiu t8, t7, 0x5440 | 
+
+Gadget 0x400890 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400890  41000f3c         lui t7, 0x41         | Stack change: 0x0
+  0x00400894  4054f98d         lw t9, 0x5440(t7)    | Modified regs: t7 t9 t8
+  0x00400898  08002003         jr t9                | Dependencies:  t7 t7
+  0x0040089c  4054f825         addiu t8, t7, 0x5440 | 
+
+Gadget 0x400894 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400894  4054f98d         lw t9, 0x5440(t7)    | Stack change: 0x0
+  0x00400898  08002003         jr t9                | Modified regs: t9 t8
+  0x0040089c  4054f825         addiu t8, t7, 0x5440 | Dependencies:  t7 t7
+
+Gadget 0x400898 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400898  08002003         jr t9                | Stack change: 0x0
+  0x0040089c  4054f825         addiu t8, t7, 0x5440 | Modified regs: t8
+
+Gadget 0x40089c (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0040089c  4054f825         addiu t8, t7, 0x5440 | Stack change: 0x0
+  0x004008a0  41000f3c         lui t7, 0x41         | Modified regs: t8 t7 t9
+  0x004008a4  4454f98d         lw t9, 0x5444(t7)    | Dependencies:  t7 t7 t7
+  0x004008a8  08002003         jr t9                | 
+  0x004008ac  4454f825         addiu t8, t7, 0x5444 | 
+
+Gadget 0x4008a0 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008a0  41000f3c         lui t7, 0x41         | Stack change: 0x0
+  0x004008a4  4454f98d         lw t9, 0x5444(t7)    | Modified regs: t7 t9 t8
+  0x004008a8  08002003         jr t9                | Dependencies:  t7 t7
+  0x004008ac  4454f825         addiu t8, t7, 0x5444 | 
+
+Gadget 0x4008a4 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008a4  4454f98d         lw t9, 0x5444(t7)    | Stack change: 0x0
+  0x004008a8  08002003         jr t9                | Modified regs: t9 t8
+  0x004008ac  4454f825         addiu t8, t7, 0x5444 | Dependencies:  t7 t7
+
+Gadget 0x4008a8 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008a8  08002003         jr t9                | Stack change: 0x0
+  0x004008ac  4454f825         addiu t8, t7, 0x5444 | Modified regs: t8
+
+Gadget 0x4008ac (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008ac  4454f825         addiu t8, t7, 0x5444 | Stack change: 0x0
+  0x004008b0  41000f3c         lui t7, 0x41         | Modified regs: t8 t7 t9
+  0x004008b4  4854f98d         lw t9, 0x5448(t7)    | Dependencies:  t7 t7 t7
+  0x004008b8  08002003         jr t9                | 
+  0x004008bc  4854f825         addiu t8, t7, 0x5448 | 
+
+Gadget 0x4008b0 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008b0  41000f3c         lui t7, 0x41         | Stack change: 0x0
+  0x004008b4  4854f98d         lw t9, 0x5448(t7)    | Modified regs: t7 t9 t8
+  0x004008b8  08002003         jr t9                | Dependencies:  t7 t7
+  0x004008bc  4854f825         addiu t8, t7, 0x5448 | 
+
+Gadget 0x4008b4 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008b4  4854f98d         lw t9, 0x5448(t7)    | Stack change: 0x0
+  0x004008b8  08002003         jr t9                | Modified regs: t9 t8
+  0x004008bc  4854f825         addiu t8, t7, 0x5448 | Dependencies:  t7 t7
+
+Gadget 0x4008b8 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008b8  08002003         jr t9                | Stack change: 0x0
+  0x004008bc  4854f825         addiu t8, t7, 0x5448 | Modified regs: t8
+
+Gadget 0x4008bc (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008bc  4854f825         addiu t8, t7, 0x5448 | Stack change: 0x0
+  0x004008c0  41000f3c         lui t7, 0x41         | Modified regs: t8 t7 t9
+  0x004008c4  4c54f98d         lw t9, 0x544c(t7)    | Dependencies:  t7 t7 t7
+  0x004008c8  08002003         jr t9                | 
+  0x004008cc  4c54f825         addiu t8, t7, 0x544c | 
+
+Gadget 0x4008c0 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008c0  41000f3c         lui t7, 0x41         | Stack change: 0x0
+  0x004008c4  4c54f98d         lw t9, 0x544c(t7)    | Modified regs: t7 t9 t8
+  0x004008c8  08002003         jr t9                | Dependencies:  t7 t7
+  0x004008cc  4c54f825         addiu t8, t7, 0x544c | 
+
+Gadget 0x4008c4 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008c4  4c54f98d         lw t9, 0x544c(t7)    | Stack change: 0x0
+  0x004008c8  08002003         jr t9                | Modified regs: t9 t8
+  0x004008cc  4c54f825         addiu t8, t7, 0x544c | Dependencies:  t7 t7
+
+Gadget 0x4008c8 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008c8  08002003         jr t9                | Stack change: 0x0
+  0x004008cc  4c54f825         addiu t8, t7, 0x544c | Modified regs: t8
+
+Gadget 0x4008cc (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008cc  4c54f825         addiu t8, t7, 0x544c | Stack change: 0x0
+  0x004008d0  41000f3c         lui t7, 0x41         | Modified regs: t8 t7 t9
+  0x004008d4  5054f98d         lw t9, 0x5450(t7)    | Dependencies:  t7 t7 t7
+  0x004008d8  08002003         jr t9                | 
+  0x004008dc  5054f825         addiu t8, t7, 0x5450 | 
+
+Gadget 0x4008d0 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008d0  41000f3c         lui t7, 0x41         | Stack change: 0x0
+  0x004008d4  5054f98d         lw t9, 0x5450(t7)    | Modified regs: t7 t9 t8
+  0x004008d8  08002003         jr t9                | Dependencies:  t7 t7
+  0x004008dc  5054f825         addiu t8, t7, 0x5450 | 
+
+Gadget 0x4008d4 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008d4  5054f98d         lw t9, 0x5450(t7)    | Stack change: 0x0
+  0x004008d8  08002003         jr t9                | Modified regs: t9 t8
+  0x004008dc  5054f825         addiu t8, t7, 0x5450 | Dependencies:  t7 t7
+
+Gadget 0x4008d8 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008d8  08002003         jr t9                | Stack change: 0x0
+  0x004008dc  5054f825         addiu t8, t7, 0x5450 | Modified regs: t8
+
+Gadget 0x4008dc (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008dc  5054f825         addiu t8, t7, 0x5450 | Stack change: 0x0
+  0x004008e0  41000f3c         lui t7, 0x41         | Modified regs: t8 t7 t9
+  0x004008e4  5454f98d         lw t9, 0x5454(t7)    | Dependencies:  t7 t7 t7
+  0x004008e8  08002003         jr t9                | 
+  0x004008ec  5454f825         addiu t8, t7, 0x5454 | 
+
+Gadget 0x4008e0 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008e0  41000f3c         lui t7, 0x41         | Stack change: 0x0
+  0x004008e4  5454f98d         lw t9, 0x5454(t7)    | Modified regs: t7 t9 t8
+  0x004008e8  08002003         jr t9                | Dependencies:  t7 t7
+  0x004008ec  5454f825         addiu t8, t7, 0x5454 | 
+
+Gadget 0x4008e4 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008e4  5454f98d         lw t9, 0x5454(t7)    | Stack change: 0x0
+  0x004008e8  08002003         jr t9                | Modified regs: t9 t8
+  0x004008ec  5454f825         addiu t8, t7, 0x5454 | Dependencies:  t7 t7
+
+Gadget 0x4008e8 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008e8  08002003         jr t9                | Stack change: 0x0
+  0x004008ec  5454f825         addiu t8, t7, 0x5454 | Modified regs: t8
+
+Gadget 0x4008ec (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008ec  5454f825         addiu t8, t7, 0x5454 | Stack change: 0x0
+  0x004008f0  41000f3c         lui t7, 0x41         | Modified regs: t8 t7 t9
+  0x004008f4  5854f98d         lw t9, 0x5458(t7)    | Dependencies:  t7 t7 t7
+  0x004008f8  08002003         jr t9                | 
+  0x004008fc  5854f825         addiu t8, t7, 0x5458 | 
+
+Gadget 0x4008f0 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008f0  41000f3c         lui t7, 0x41         | Stack change: 0x0
+  0x004008f4  5854f98d         lw t9, 0x5458(t7)    | Modified regs: t7 t9 t8
+  0x004008f8  08002003         jr t9                | Dependencies:  t7 t7
+  0x004008fc  5854f825         addiu t8, t7, 0x5458 | 
+
+Gadget 0x4008f4 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008f4  5854f98d         lw t9, 0x5458(t7)    | Stack change: 0x0
+  0x004008f8  08002003         jr t9                | Modified regs: t9 t8
+  0x004008fc  5854f825         addiu t8, t7, 0x5458 | Dependencies:  t7 t7
+
+Gadget 0x4008f8 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008f8  08002003         jr t9                | Stack change: 0x0
+  0x004008fc  5854f825         addiu t8, t7, 0x5458 | Modified regs: t8
+
+Gadget 0x4008fc (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004008fc  5854f825         addiu t8, t7, 0x5458 | Stack change: 0x0
+  0x00400900  41000f3c         lui t7, 0x41         | Modified regs: t8 t7 t9
+  0x00400904  5c54f98d         lw t9, 0x545c(t7)    | Dependencies:  t7 t7 t7
+  0x00400908  08002003         jr t9                | 
+  0x0040090c  5c54f825         addiu t8, t7, 0x545c | 
+
+Gadget 0x400900 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400900  41000f3c         lui t7, 0x41         | Stack change: 0x0
+  0x00400904  5c54f98d         lw t9, 0x545c(t7)    | Modified regs: t7 t9 t8
+  0x00400908  08002003         jr t9                | Dependencies:  t7 t7
+  0x0040090c  5c54f825         addiu t8, t7, 0x545c | 
+
+Gadget 0x400904 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400904  5c54f98d         lw t9, 0x545c(t7)    | Stack change: 0x0
+  0x00400908  08002003         jr t9                | Modified regs: t9 t8
+  0x0040090c  5c54f825         addiu t8, t7, 0x545c | Dependencies:  t7 t7
+
+Gadget 0x400908 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400908  08002003         jr t9                | Stack change: 0x0
+  0x0040090c  5c54f825         addiu t8, t7, 0x545c | Modified regs: t8
+
+Gadget 0x40090c (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0040090c  5c54f825         addiu t8, t7, 0x545c | Stack change: 0x0
+  0x00400910  41000f3c         lui t7, 0x41         | Modified regs: t8 t7 t9
+  0x00400914  6054f98d         lw t9, 0x5460(t7)    | Dependencies:  t7 t7 t7
+  0x00400918  08002003         jr t9                | 
+  0x0040091c  6054f825         addiu t8, t7, 0x5460 | 
+
+Gadget 0x400910 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400910  41000f3c         lui t7, 0x41         | Stack change: 0x0
+  0x00400914  6054f98d         lw t9, 0x5460(t7)    | Modified regs: t7 t9 t8
+  0x00400918  08002003         jr t9                | Dependencies:  t7 t7
+  0x0040091c  6054f825         addiu t8, t7, 0x5460 | 
+
+Gadget 0x400914 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400914  6054f98d         lw t9, 0x5460(t7)    | Stack change: 0x0
+  0x00400918  08002003         jr t9                | Modified regs: t9 t8
+  0x0040091c  6054f825         addiu t8, t7, 0x5460 | Dependencies:  t7 t7
+
+Gadget 0x400918 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400918  08002003         jr t9                | Stack change: 0x0
+  0x0040091c  6054f825         addiu t8, t7, 0x5460 | Modified regs: t8
+
+Gadget 0x40091c (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0040091c  6054f825         addiu t8, t7, 0x5460 | Stack change: 0x0
+  0x00400920  41000f3c         lui t7, 0x41         | Modified regs: t8 t7 t9
+  0x00400924  6454f98d         lw t9, 0x5464(t7)    | Dependencies:  t7 t7 t7
+  0x00400928  08002003         jr t9                | 
+  0x0040092c  6454f825         addiu t8, t7, 0x5464 | 
+
+Gadget 0x400920 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400920  41000f3c         lui t7, 0x41         | Stack change: 0x0
+  0x00400924  6454f98d         lw t9, 0x5464(t7)    | Modified regs: t7 t9 t8
+  0x00400928  08002003         jr t9                | Dependencies:  t7 t7
+  0x0040092c  6454f825         addiu t8, t7, 0x5464 | 
+
+Gadget 0x400924 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400924  6454f98d         lw t9, 0x5464(t7)    | Stack change: 0x0
+  0x00400928  08002003         jr t9                | Modified regs: t9 t8
+  0x0040092c  6454f825         addiu t8, t7, 0x5464 | Dependencies:  t7 t7
+
+Gadget 0x400928 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400928  08002003         jr t9                | Stack change: 0x0
+  0x0040092c  6454f825         addiu t8, t7, 0x5464 | Modified regs: t8
+
+Gadget 0x400a40 (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400a40  00003927         addiu t9, t9, 0      | Stack change: 0x0
+  0x00400a44  03002013         beqz t9, 0x400a54    | Modified regs: t9 at a0
+  0x00400a48  25082000         move at, at          | Dependencies:  t9 at a0
+  0x00400a4c  08002003         jr t9                | 
+  0x00400a50  10408424         addiu a0, a0, 0x4010 | 
+
+Gadget 0x400a44 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400a44  03002013         beqz t9, 0x400a54    | Stack change: 0x0
+  0x00400a48  25082000         move at, at          | Modified regs: at a0
+  0x00400a4c  08002003         jr t9                | Dependencies:  at a0
+  0x00400a50  10408424         addiu a0, a0, 0x4010 | 
+
+Gadget 0x400a48 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400a48  25082000         move at, at          | Stack change: 0x0
+  0x00400a4c  08002003         jr t9                | Modified regs: at a0
+  0x00400a50  10408424         addiu a0, a0, 0x4010 | Dependencies:  at a0
+
+Gadget 0x400a4c (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400a4c  08002003         jr t9                | Stack change: 0x0
+  0x00400a50  10408424         addiu a0, a0, 0x4010 | Modified regs: a0
+
+EOF
+RUN
