@@ -541,6 +541,8 @@ RZ_API const char *rz_analysis_stackop_tostring(int s) {
 		return "nop";
 	case RZ_ANALYSIS_STACK_INC:
 		return "inc";
+	case RZ_ANALYSIS_STACK_DEC:
+		return "dec";
 	case RZ_ANALYSIS_STACK_GET:
 		return "get";
 	case RZ_ANALYSIS_STACK_SET:
@@ -560,6 +562,7 @@ RZ_API RzStackAddr rz_analysis_op_apply_sp_effect(RzAnalysisOp *op, RzStackAddr 
 	// the same effect in a textual form.
 	switch (op->stackop) {
 	case RZ_ANALYSIS_STACK_INC:
+	case RZ_ANALYSIS_STACK_DEC:
 		return sp - op->stackptr;
 	case RZ_ANALYSIS_STACK_RESET:
 		return 0;
@@ -577,6 +580,8 @@ RZ_API RZ_NULLABLE RZ_OWN char *rz_analysis_op_describe_sp_effect(RzAnalysisOp *
 	// Keep this in sync with what rz_analysis_op_apply_sp_effect() does!
 	switch (op->stackop) {
 	case RZ_ANALYSIS_STACK_INC:
+		return rz_str_newf("%c= %" PFMT64d, op->stackptr > 0 ? '-' : '+', RZ_ABS(op->stackptr));
+	case RZ_ANALYSIS_STACK_DEC:
 		return rz_str_newf("%c= %" PFMT64d, op->stackptr > 0 ? '-' : '+', RZ_ABS(op->stackptr));
 	case RZ_ANALYSIS_STACK_RESET:
 		return rz_str_dup(":= 0");

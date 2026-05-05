@@ -2296,3 +2296,23 @@ EXPECT=<<EOF
 \   ````--> 0x0000791c      pop   {r4, pc}
 EOF
 RUN
+
+NAME=stackop and stackptr for pop
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx 10bd
+ao~stackop
+ao~stackptr
+aa
+e asm.stackptr=true
+pd 1
+EOF
+EXPECT=<<EOF
+stackop: dec
+stackptr: -8
+/ fcn.00000000();
+\           0x00000000     0 += 8       pop   {r4, pc}
+EOF
+RUN
