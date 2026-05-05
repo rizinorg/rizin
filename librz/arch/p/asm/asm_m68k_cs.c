@@ -91,7 +91,7 @@ static char **m68k_cpu_descriptions() {
 		"68030", "Motorola 68030: Enhanced 32-bit microprocessor with integrated MMU",
 		"68040", "Motorola 68040: High-performance 32-bit microprocessor with integrated FPU",
 		"68060", "Motorola 68060: 32-bit microprocessor, highest performer in m68k series",
-#if CS_NEXT_VERSION >= 7
+#ifdef RZ_CAPSTONE_HAS_M68K_CPU32
 		"cpu32", "Motorola CPU32: 32-bit embedded-controller CPU core based on the 68020",
 #endif
 		NULL
