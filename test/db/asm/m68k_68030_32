@@ -1,0 +1,13 @@
+d "pmove (a0), tc" f0104000
+d "pmove tc, (a0)" f0104200
+d "pmove (a1), srp" f0114800
+d "pmove (a2), crp" f0124c00
+d "pmove (a0), mmusr" f0106000
+d "pmove (a0), tt0" f0100800
+d "pmove (a0), tt1" f0100c00
+d "pflush sfc, 0x0, (a0)" f0103800
+d "pflusha" f0002400
+d "ploadw sfc, (a0)" f0102000
+d "ploadr sfc, (a0)" f0102200
+d "ptestw sfc, (a0), 0x7" f0109c00
+d "ptestr sfc, (a0), 0x7" f0109e00
