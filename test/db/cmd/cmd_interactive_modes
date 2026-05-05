@@ -106,7 +106,7 @@ EOF
 EXPECT=<<EOF
 [?25l[0m[2J[0;0H0> |                                                                                                                   [0m[2J[0;0H0> |
  - analysis.apply.signature:       bool - enables/disables auto-applying signatures to the loaded binary (see also flirt[0J[0m
-          analysis.arch:        str - Select the architecture to use                                                    [?25h
+          analysis.arch: string,bind - Select the architecture to use                                                   [?25h
 EOF
 RUN
 

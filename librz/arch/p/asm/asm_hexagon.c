@@ -85,53 +85,51 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	return pvec;
 }
 
-/**
- * \brief Setter for the plugins RzConfig nodes.
- *
- * \param user The user of the RzConfig node. If this callback is called by Core \p user = RzCore.
- * If it is called by the plugins config setup \p user = HexState.
- * \param data The node to set. Again, if called by RzCore \p date = Node from RzCore config.
- * If it is called by the plugins config setup \p data = a plugins config node.
- * \return bool True if the config was set. False otherwise.
- */
-static bool hex_cfg_set(void *user, void *data) {
-	rz_return_val_if_fail(user && data, false);
-	HexState *state = user;
-	RzConfig *pcfg = state->cfg;
-
-	RzConfigNode *cnode = (RzConfigNode *)data; // Config node from core.
-	RzConfigNode *pnode = rz_config_node_get(pcfg, cnode->name); // Config node of plugin.
-	if (pnode == cnode) {
-		return true;
-	}
-	if (cnode) {
-		pnode->i_value = cnode->i_value;
-		free(pnode->value);
-		pnode->value = rz_str_dup(cnode->value);
-		return true;
-	}
-	return false;
-}
-
 static bool hexagon_fini(void *user) {
 	hexagon_state_fini(user);
 	free(user);
 	return true;
 }
 
+#define hexagon_getter_config(name, variable) \
+	static bool hexagon_##name(void *user, void *data) { \
+		bool *value = data; \
+		HexState *state = user; \
+		if (!state) { \
+			return false; \
+		} \
+		*value = state->variable; \
+		return true; \
+	}
+
+#define hexagon_setter_config(name, variable) \
+	static bool hexagon_##name(void *user, const void *data) { \
+		const bool *value = data; \
+		HexState *state = user; \
+		if (!state) { \
+			return false; \
+		} \
+		state->variable = *value; \
+		return true; \
+	}
+
+#define hexagon_config_callbacks(variable) \
+	hexagon_setter_config(config_##variable##_set, variable); \
+	hexagon_getter_config(config_##variable##_get, variable)
+
+hexagon_config_callbacks(imm_hash);
+hexagon_config_callbacks(imm_sign);
+hexagon_config_callbacks(sdk);
+hexagon_config_callbacks(reg_alias);
+
 static bool hexagon_init(void **plugin_data) {
 	HexState *state = hexagon_state_new();
 	rz_return_val_if_fail(state, false);
 
-	state->cfg = rz_config_new(state);
-	rz_return_val_if_fail(state->cfg, false);
-
-	RzConfig *cfg = state->cfg; // Rename for SETCB macros.
-	// Add nodes
-	SETCB("plugins.hexagon.imm.hash", "true", &hex_cfg_set, "Display ## before 32bit immediates and # before immidiates with other width.");
-	SETCB("plugins.hexagon.imm.sign", "true", &hex_cfg_set, "True: Print them with sign. False: Print signed immediates in unsigned representation.");
-	SETCB("plugins.hexagon.sdk", "false", &hex_cfg_set, "Print packet syntax in objdump style.");
-	SETCB("plugins.hexagon.reg.alias", "true", &hex_cfg_set, "Print the alias of registers (Alias from C0 = SA0).");
+	state->imm_hash = true;
+	state->imm_sign = true;
+	state->sdk = false;
+	state->reg_alias = true;
 
 	if (!state->token_patterns) {
 		state->token_patterns = get_token_patterns();
@@ -145,7 +143,35 @@ static bool hexagon_init(void **plugin_data) {
 RZ_API RZ_OWN RzConfig *hexagon_get_config(void *plugin_data) {
 	rz_return_val_if_fail(plugin_data, NULL);
 	HexState *state = plugin_data;
-	return rz_config_clone(state->cfg);
+
+	RzConfig *cfg = rz_config_new(NULL);
+	if (!cfg) {
+		return NULL;
+	}
+
+	// Add nodes
+	rz_config_add_bool_bind(cfg, "plugins.hexagon.imm.hash",
+		"Display ## before 32bit immediates and # before immidiates with other width.",
+		hexagon_config_imm_hash_get,
+		hexagon_config_imm_hash_set,
+		NULL, state);
+	rz_config_add_bool_bind(cfg, "plugins.hexagon.imm.sign",
+		"True: Print them with sign. False: Print signed immediates in unsigned representation.",
+		hexagon_config_imm_sign_get,
+		hexagon_config_imm_sign_set,
+		NULL, state);
+	rz_config_add_bool_bind(cfg, "plugins.hexagon.sdk",
+		"Print packet syntax in objdump style.",
+		hexagon_config_sdk_get,
+		hexagon_config_sdk_set,
+		NULL, state);
+	rz_config_add_bool_bind(cfg, "plugins.hexagon.reg.alias",
+		"Print the alias of registers (Alias from C0 = SA0).",
+		hexagon_config_reg_alias_get,
+		hexagon_config_reg_alias_set,
+		NULL, state);
+
+	return cfg;
 }
 
 /**

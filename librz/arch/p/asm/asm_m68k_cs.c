@@ -7,11 +7,9 @@
 #include <capstone/capstone.h>
 
 #include "cs_helper.h"
+#include "m68k/m68k_cs.h"
 
 CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(m68k_asm);
-
-// Size of the longest instruction in bytes
-#define M68K_LONGEST_INSTRUCTION 10
 
 static int m68k_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (!buf) {
@@ -21,27 +19,8 @@ static int m68k_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len
 	char *buf_asm = NULL;
 	cs_insn *insn = NULL;
 	int ret = 0, n = 0;
-	cs_mode mode = CS_MODE_M68K_040;
+	cs_mode mode = rz_m68k_cs_mode(a->cpu);
 
-	// replace this with the asm.features?
-	if (a->cpu && strstr(a->cpu, "68000")) {
-		mode |= CS_MODE_M68K_000;
-	}
-	if (a->cpu && strstr(a->cpu, "68010")) {
-		mode |= CS_MODE_M68K_010;
-	}
-	if (a->cpu && strstr(a->cpu, "68020")) {
-		mode |= CS_MODE_M68K_020;
-	}
-	if (a->cpu && strstr(a->cpu, "68030")) {
-		mode |= CS_MODE_M68K_030;
-	}
-	if (a->cpu && strstr(a->cpu, "68040")) {
-		mode |= CS_MODE_M68K_040;
-	}
-	if (a->cpu && strstr(a->cpu, "68060")) {
-		mode |= CS_MODE_M68K_060;
-	}
 	if (op) {
 		op->size = 4;
 	}
@@ -112,6 +91,9 @@ static char **m68k_cpu_descriptions() {
 		"68030", "Motorola 68030: Enhanced 32-bit microprocessor with integrated MMU",
 		"68040", "Motorola 68040: High-performance 32-bit microprocessor with integrated FPU",
 		"68060", "Motorola 68060: 32-bit microprocessor, highest performer in m68k series",
+#if CS_NEXT_VERSION >= 7
+		"cpu32", "Motorola CPU32: 32-bit embedded-controller CPU core based on the 68020",
+#endif
 		NULL
 	};
 	return cpu_desc;
@@ -120,7 +102,7 @@ static char **m68k_cpu_descriptions() {
 RzAsmPlugin rz_asm_plugin_m68k_cs = {
 	.name = "m68k",
 	.desc = "Motorola 68K Capstone-based disassembler",
-	.cpus = "68000,68010,68020,68030,68040,68060",
+	.cpus = M68K_CPUS,
 	.license = "BSD",
 	.arch = "m68k",
 	.bits = 32,

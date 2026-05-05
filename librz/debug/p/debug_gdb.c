@@ -393,7 +393,6 @@ static RzDebugReasonType rz_debug_gdb_wait(RzDebug *dbg, int pid) {
 static int rz_debug_gdb_attach(RzDebug *dbg, int pid) {
 	RzDebugGdbCtx *ctx = dbg->plugin_data;
 	RzIODesc *d = dbg->iob.io->desc;
-	// TODO: the core must update the dbg.swstep config var when this var is changed
 	dbg->swstep = false;
 	// eprintf ("XWJSTEP TOFALSE\n");
 	if (!(d && d->plugin && d->plugin->name && d->data)) {

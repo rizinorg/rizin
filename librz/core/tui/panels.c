@@ -44,6 +44,7 @@
 #define PANEL_CONFIG_SIDEPANEL_W 60
 #define PANEL_CONFIG_RESIZE_W    4
 #define PANEL_CONFIG_RESIZE_H    4
+#define PANEL_FILTER_LIMIT       1024
 
 #define COUNT(x) (sizeof((x)) / sizeof((*x)) - 1)
 
@@ -1137,27 +1138,34 @@ char *__find_cmd_str_cache(RzCore *core, RzPanel *panel) {
 }
 
 char *__apply_filter_cmd(RzCore *core, RzPanel *panel) {
-	char *out = malloc(strlen(panel->model->cmd) + 1024);
-	if (!out) {
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	if (!rz_strbuf_set(&sb, panel->model->cmd)) {
 		RZ_LOG_ERROR("Fail to allocate the memory\n");
-		return out;
+		return NULL;
 	}
-	strcpy(out, panel->model->cmd);
 	void **iter;
 	rz_pvector_foreach (&panel->model->filter, iter) {
 		char *filter = *iter;
-		if (strlen(filter) > 1024) {
+		if (strlen(filter) > PANEL_FILTER_LIMIT) {
 			(void)__show_status(core, "filter is too big.");
-			return out;
+			return rz_strbuf_drain_nofree(&sb);
 		}
-		strcat(out, "~");
-		strcat(out, filter);
+		// Stop if the filtered command cannot be extended.
+		if (!rz_strbuf_append(&sb, "~") || !rz_strbuf_append(&sb, filter)) {
+			rz_strbuf_fini(&sb);
+			return NULL;
+		}
 	}
-	return out;
+	return rz_strbuf_drain_nofree(&sb);
 }
 
 char *__handle_cmd_str_cache(RzCore *core, RzPanel *panel, bool force_cache) {
 	char *cmd = __apply_filter_cmd(core, panel);
+	// Avoid failed command build into rz_core_cmd_str.
+	if (!cmd) {
+		return NULL;
+	}
 	RzCoreVisual *visual = core->visual;
 	RzPanelsTab *tab = visual->panels_root->active_tab;
 	bool b = core->print->cur_enabled && __get_cur_panel(tab) != panel;
@@ -4417,7 +4425,9 @@ void __init_menu_disasm_settings_layout(void *_core, const char *parent) {
 		} else {
 			rz_strbuf_set(rsb, pos);
 			rz_strbuf_append(rsb, ": ");
-			rz_strbuf_append(rsb, rz_config_get(core->config, pos));
+			char *val = rz_config_get_as_string(core->config, pos);
+			rz_strbuf_append(rsb, val);
+			free(val);
 			__add_menu(core, parent, rz_strbuf_get(rsb), __config_toggle_cb);
 		}
 	}
@@ -4434,7 +4444,9 @@ static void __init_menu_disasm_asm_settings_layout(void *_core, const char *pare
 		char *pos = *iter;
 		rz_strbuf_set(rsb, pos);
 		rz_strbuf_append(rsb, ": ");
-		rz_strbuf_append(rsb, rz_config_get(core->config, pos));
+		char *val = rz_config_get_as_string(core->config, pos);
+		rz_strbuf_append(rsb, val);
+		free(val);
 		if (!strcmp(pos, "asm.var.summary") ||
 			!strcmp(pos, "asm.arch") ||
 			!strcmp(pos, "asm.bits") ||
@@ -4456,7 +4468,9 @@ static void __init_menu_screen_settings_layout(void *_core, const char *parent) 
 		const char *menu = menus_settings_screen[i];
 		rz_strbuf_set(rsb, menu);
 		rz_strbuf_append(rsb, ": ");
-		rz_strbuf_append(rsb, rz_config_get(core->config, menu));
+		char *val = rz_config_get_as_string(core->config, menu);
+		rz_strbuf_append(rsb, val);
+		free(val);
 		if (!strcmp(menus_settings_screen[i], "scr.color")) {
 			__add_menu(core, parent, rz_strbuf_get(rsb), __config_value_cb);
 		} else {

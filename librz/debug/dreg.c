@@ -6,13 +6,40 @@
 #include <rz_cons.h>
 #include <rz_reg.h>
 
-RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
-	int i, n, size;
-	if (!dbg || !dbg->reg || !dbg->cur) {
+static bool rz_debug_reg_sync_from_regstate(RzDebug *dbg) {
+	if (!dbg || !dbg->corebind.core) {
 		return false;
 	}
+	RzCore *core = (RzCore *)dbg->corebind.core;
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	if (!bf || !bf->o || !bf->o->regstate) {
+		return false;
+	}
+	RzReg *areg = core->analysis ? rz_analysis_get_reg(core->analysis) : NULL;
+	const char *profile = areg ? areg->reg_profile_str : NULL;
+	if (!RZ_STR_ISEMPTY(profile)) {
+		rz_reg_set_profile_string(dbg->reg, profile);
+	}
+	return rz_reg_arena_set_bytes(dbg->reg, bf->o->regstate) == 0;
+}
+
+RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
+	int i, n, size;
+	if (!dbg || !dbg->reg) {
+		return false;
+	}
+
+	if (!write && (!dbg->cur || (!dbg->cur->reg_read && !dbg->cur->sync_registers) || rz_debug_is_dead(dbg))) {
+		if (rz_debug_reg_sync_from_regstate(dbg)) {
+			return true;
+		}
+	}
+
 	// There's no point in syncing a dead target
 	if (rz_debug_is_dead(dbg)) {
+		return false;
+	}
+	if (!dbg->cur) {
 		return false;
 	}
 	// Check if the functions needed are available

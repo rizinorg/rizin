@@ -1243,7 +1243,7 @@ static const ut8 *parse_arm_attribute(const ut8 *data, ut32 size, arm_attribute_
 	case TAG_CPU_RAW_NAME:
 	// generic compatibility tag
 	case TAG_COMPATIBILITY:
-		n = strnlen((const char *)attribute_value_data, attribute_value_size);
+		n = rz_str_nlen((const char *)attribute_value_data, attribute_value_size);
 		if (n < attribute_value_size) {
 			attribute->value_str = (char *)attribute_value_data;
 			return attribute_value_data + n + 1; // including terminating null byte
@@ -1258,7 +1258,7 @@ static const ut8 *parse_arm_attribute(const ut8 *data, ut32 size, arm_attribute_
 	}
 
 	if (attribute->tag & 1) {
-		n = strnlen((const char *)attribute_value_data, attribute_value_size);
+		n = rz_str_nlen((const char *)attribute_value_data, attribute_value_size);
 		if (n < attribute_value_size) {
 			attribute->value_str = (char *)attribute_value_data;
 			return attribute_value_data + n + 1; // including terminating null byte
