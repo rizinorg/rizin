@@ -260,15 +260,17 @@ RZ_IPI bool rz_inquiry_bb_cfg_reduce(RzInquiryBBCFG *cfg) {
 			// add edge between big to small bb, move old edges to small_bb.
 			RzGraphEdge *e;
 			RzIterator *out_edges = rz_inquiry_bb_cfg_get_outgoing_edges(cfg, big_bb_addr);
-			rz_iterator_foreach(out_edges, e) {
-				ut64 to = rz_graph_node_get_id(rz_graph_edge_get_to(e));
-				RzInquiryBBCFGEdgeType type = (utptr)rz_graph_edge_get_data(e);
-				if (!rz_inquiry_bb_cfg_add_edge(cfg, small_bb_addr, to, type)) {
-					RZ_LOG_DEBUG("Did not add edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", big_bb_addr, small_bb_addr);
-					continue;
+			if (out_edges) {
+				rz_iterator_foreach(out_edges, e) {
+					ut64 to = rz_graph_node_get_id(rz_graph_edge_get_to(e));
+					RzInquiryBBCFGEdgeType type = (utptr)rz_graph_edge_get_data(e);
+					if (!rz_inquiry_bb_cfg_add_edge(cfg, small_bb_addr, to, type)) {
+						RZ_LOG_DEBUG("Did not add edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", big_bb_addr, small_bb_addr);
+						continue;
+					}
 				}
+				rz_iterator_free(out_edges);
 			}
-			rz_iterator_free(out_edges);
 
 			rz_inquiry_bb_cfg_del_out_edges(cfg, big_bb_addr);
 			if (!rz_inquiry_bb_cfg_add_edge(cfg, big_bb_addr, small_bb_addr, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF)) {
