@@ -33,11 +33,14 @@ static cs_mode m680x_mode(const char *str) {
 		return CS_MODE_M680X_6309;
 	} else if (strstr(str, "hcs08")) {
 		return CS_MODE_M680X_HCS08;
-	} else if (strstr(str, "rs08")) {
+	}
+#ifdef RZ_CAPSTONE_HAS_M680X_HCS12X
+	else if (strstr(str, "rs08")) {
 		return CS_MODE_M680X_RS08;
 	} else if (strstr(str, "hcs12x")) {
 		return CS_MODE_M680X_HCS12X;
 	}
+#endif
 	return CS_MODE_M680X_6800;
 }
 
