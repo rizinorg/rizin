@@ -29,53 +29,25 @@ static bool check_buffer(RzBuffer *buf) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
-	return check_buffer(buf);
+rz_bin_c166_obj *rz_bin_format_c166_load(const ut8 *buf, ut64 size) {
+	rz_bin_c166_obj *ret = RZ_NEW0(rz_bin_c166_obj);
+	rz_return_val_if_fail(ret, NULL);
+	const ut8 c = rz_read_le8(buf + 1);
+	ret->base_addr = c << 16 | 0x000000;
+	return ret;
+}
+
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
+	ut64 size;
+	const ut8 *buf = rz_buf_data(b, &size);
+	rz_return_val_if_fail(buf, false);
+	obj->bin_obj = rz_bin_format_c166_load(buf, size);
+	rz_return_val_if_fail(obj->bin_obj, false);
+	return true;
 }
 
 static void destroy(RzBinFile *bf) {
-	rz_buf_free(bf->o->bin_obj);
-	bf->o->bin_obj = NULL;
-}
-
-static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
-
-	RzPVector *ret = rz_pvector_new(NULL);
-	rz_return_val_if_fail(ret, NULL);
-
-	RzBinSection *ptr = RZ_NEW0(RzBinSection);
-	rz_return_val_if_fail(ptr, ret);
-
-	ptr->name = strdup("vectors");
-	ptr->size = 0x1FF;
-	ptr->vsize = ptr->size;
-	ptr->paddr = 0;
-	ptr->vaddr = 0;
-	ptr->perm = RZ_PERM_R; // r--
-	rz_pvector_push(ret, ptr);
-
-	if (bf->size <= 0) {
-		return ret;
-	}
-	ut8 segment = 0;
-	ut64 offset = 0;
-	while (offset < bf->size && segment < 255) {
-		RzBinSection *sec_ptr = RZ_NEW0(RzBinSection);
-		rz_return_val_if_fail(sec_ptr, ret);
-
-		sec_ptr->name = rz_str_newf("seg_%d", segment);
-		sec_ptr->size = 0x10000;
-		sec_ptr->vsize = ptr->size;
-		sec_ptr->paddr = offset;
-		sec_ptr->vaddr = offset;
-		sec_ptr->perm = RZ_PERM_RWX;
-		rz_pvector_push(ret, sec_ptr);
-		segment += 1;
-		offset += 0x10000;
-	}
-
-	return ret;
+	RZ_FREE(bf->o->bin_obj);
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
@@ -104,7 +76,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 }
 
 static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
-	printf("maps\n");
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
@@ -131,7 +102,6 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 }
 
 static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	printf("entries\n");
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
@@ -160,6 +130,28 @@ static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, &opt);
 }
 
+static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
+	RzBinAddr *ptr = NULL;
+	if (!bf || !bf->o || !bf->o->bin_obj) {
+		return NULL;
+	}
+	rz_bin_c166_obj *obj = bf->o->bin_obj;
+	switch (type) {
+	case RZ_BIN_SPECIAL_SYMBOL_ENTRY:
+		// entrypoint is always RESET vector (0xC00000)
+		if (!((ptr = RZ_NEW0(RzBinAddr)))) {
+			RZ_FREE(ptr);
+			return NULL;
+		}
+		ptr->type = RZ_BIN_SPECIAL_SYMBOL_ENTRY;
+		ptr->vaddr = obj->base_addr;
+		return ptr;
+	case RZ_BIN_SPECIAL_SYMBOL_MAIN:
+	default:
+		return NULL;
+	}
+}
+
 struct rz_bin_plugin_t rz_bin_plugin_c166 = {
 	.name = "c166",
 	.desc = "Siemens/Infineon C166 family microcontroller binary",
@@ -169,8 +161,8 @@ struct rz_bin_plugin_t rz_bin_plugin_c166 = {
 	.check_buffer = &check_buffer,
 	.entries = &entries,
 	.maps = maps,
-	// .sections = &sections,
 	.info = &info,
+	.binsym = &binsym,
 	.strings = &strings,
 };
 

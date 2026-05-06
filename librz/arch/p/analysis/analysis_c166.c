@@ -1211,8 +1211,10 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC	IP\n"
 		"=SP	SP\n"
-		"=A0	r0\n"
-		"=A1	r1\n"
+		"=A0	r8\n"
+		"=A1	r9\n"
+		"=A2	r10\n"
+		"=A3	r11\n"
 
 		"gpr	IP	.32	0	0\n"
 

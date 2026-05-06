@@ -113,8 +113,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		return NULL;
 	}
 
-	rz_bin_omf166_obj *obj = bf->o->bin_obj;
-
+	const rz_bin_omf166_obj *obj = bf->o->bin_obj;
 	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	if (!ret) {
 		return NULL;
@@ -150,7 +149,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	}
 	rz_bin_omf166_obj *obj = bf->o->bin_obj;
 
-	RzPVector *v = obj->sections_vec;
+	const RzPVector *v = obj->sections_vec;
 	void **it;
 	rz_pvector_foreach (v, it) {
 		const OMF_sections *section = (OMF_sections *)*it;
@@ -161,17 +160,25 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			return NULL;
 		}
 
-		const char *name = NULL;
 		OMF_lnames *lname = (OMF_lnames *)rz_pvector_at(obj->lnames_vec, section->index);
-		name = RZ_STR_ISNOTEMPTY(lname->name) ? lname->name : "NONE";
-		new->name = rz_str_dup(name);
-		new->size = 64 * 1024;
-		new->vsize = section->Seclen;
+		if (!lname) {
+			rz_warn_if_reached();
+			continue;
+		}
+		OMF_lnames *c_lname = (OMF_lnames *)rz_pvector_at(obj->lnames_vec, section->class_index);
+		if (!c_lname) {
+			rz_warn_if_reached();
+			continue;
+		}
+		const char *name = RZ_STR_ISNOTEMPTY(lname->name) ? lname->name : "UNKNOWN";
+		const char *class_name = RZ_STR_ISNOTEMPTY(c_lname->name) ? c_lname->name : "UNKNOWN";
+		new->name = rz_str_newf("%s_%s", name, class_name);
+		new->size = new->vsize = section->Seclen;
 		new->vaddr = (section->SegmentNumber8 << 16) + section->offset;
-		new->has_strings = false;
-		new->is_data = (section->Type == 1);
+		new->has_strings = (section->Type == 1) ? true : false;
+		new->is_data = (section->Type == 1) ? true : false;
 		new->is_segment = 0;
-		new->perm = get_perm_by_type(section->Type);
+		new->perm = c166_get_perms_from_class(section->class_index);
 		rz_pvector_push(ret, new);
 	}
 	return ret;
@@ -209,8 +216,6 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		const OMF_symbol *p = (OMF_symbol *)*it;
 		if (p->is_data)
 			continue;
-		RZ_LOG_DEBUG("p->name2 = `%s` (%d), [%" PFMT64d "], REP8: %02x, ti: 0x%02x\n",
-			p->name2, p->rec_type, p->size, p->REP8, p->ti);
 		const char *name = NULL;
 		if (p->ti == 0x4B) {
 			name = rz_str_newf("label.%s", p->name2);
@@ -226,14 +231,15 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 			name = rz_str_dup(p->name2);
 		}
 
-		// const char *name = (p->ti == 0x4B) ? rz_str_newf("label.%s", p->name2) : rz_str_dup(p->name2); ///< ?
 		RzBinSymbol *sym = rz_bin_symbol_new(name, p->offset, p->base + p->offset);
 		RZ_FREE(name);
-		// sym->ordinal = ct_sym; // ?
-		sym->forwarder = "NONE"; // ?
+		sym->forwarder = "NONE";
 		sym->size = p->size;
-		// sym->is_imported = (p->ti == 0x004e);
-		sym->bits = 16;
+		if (p->ti == 0x4D) {
+			sym->bits = 16; ///< NEAR
+		} else {
+			sym->bits = 32;
+		}
 
 		switch (p->rec_type) {
 		case OMF166_GLBDEF:

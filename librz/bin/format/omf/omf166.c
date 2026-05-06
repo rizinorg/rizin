@@ -122,7 +122,6 @@ RZ_API const char *name_of_ti(const rz_bin_omf166_obj *obj, const ut16 ti_index)
 		static char x2[255] = { 0 };
 		if (type->descriptor.pointer.attrib == 1)
 			rz_snprintf(x2, sizeof(buffer), "%s *", x); ///< "POINTER: 1 = Data pointer (PAGE:OFFSET)"
-			// rz_snprintf(x2, sizeof(buffer), "%s near *", x); ///< "POINTER: 1 = Data pointer (PAGE:OFFSET)"
 		if (type->descriptor.pointer.attrib == 2)
 			rz_snprintf(x2, sizeof(buffer), "%s *", x); ///< "POINTER: 2 = Function pointer (SEG:OFFSET)"
 		if (type->descriptor.pointer.attrib == 4)
@@ -150,42 +149,6 @@ RZ_API const char *name_of_ti(const rz_bin_omf166_obj *obj, const ut16 ti_index)
 	}
 	rz_warn_if_reached();
 }
-
-#if RZ_BUILD_DEBUG
-static const char *name_of_rep8(ut8 rep8) {
-	const ut8 rep = (rep8 & 0x70) >> 4;
-	switch (rep) {
-	case REP_BIT: {
-		return "BIT";
-	}
-	case REP_VAR: {
-		return "VAR";
-	}
-	case REP_LAB: {
-		return "LAB";
-	}
-	case REP_REGBANK: {
-		return "REGBANK";
-	}
-	case REP_INTNO: {
-		return "INTNO";
-	}
-	case REP_CONST: {
-		return "CONST";
-	}
-	case REP_REGVAR: {
-		return "REGVAR";
-	}
-	case REP_AUTO: {
-		return "AUTO R0+offset";
-	}
-	default: {
-		rz_warn_if_reached();
-		return NULL;
-	}
-	}
-}
-#endif
 
 const char *name_of_iTyp(ut8 iTyp) {
 	switch (iTyp) {
@@ -251,6 +214,41 @@ ut32 get_perm_by_type(ut8 data_type) {
 		rz_warn_if_reached();
 		return RZ_PERM_R;
 	}
+	}
+}
+
+ut32 c166_get_perms_from_class(const ut8 class_id) {
+	switch (class_id) {
+	case C166_CLASS_ICODE:
+	case C166_CLASS_FCODE:
+	case C166_CLASS_NCODE:
+		return RZ_PERM_RW;
+	case C166_CLASS_FCONST:
+	case C166_CLASS_HCONST:
+	case C166_CLASS_XCONST:
+	case C166_CLASS_NCONST:
+		return RZ_PERM_R;
+	case C166_CLASS_SDATA:
+	case C166_CLASS_SDATA0:
+	case C166_CLASS_IDATA:
+	case C166_CLASS_IDATA0:
+	case C166_CLASS_FDATA:
+	case C166_CLASS_FDATA0:
+	case C166_CLASS_HDATA:
+	case C166_CLASS_HDATA0:
+	case C166_CLASS_XDATA:
+	case C166_CLASS_XDATA0:
+	case C166_CLASS_NDATA:
+	case C166_CLASS_NDATA0:
+	case C166_CLASS_BIT:
+	case C166_CLASS_BIT0:
+	case C166_CLASS_BDATA:
+	case C166_CLASS_BDATA0:
+	case C166_CLASS_EBDATA:
+	case C166_CLASS_EBDATA0:
+		return RZ_PERM_RW;
+	default:
+		return RZ_PERM_R;
 	}
 }
 
@@ -496,6 +494,20 @@ static int load_comment_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const
 	return true;
 }
 
+static int load_grpdef_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const OMF_record *record, ut64 global_ct) {
+	rz_return_val_if_fail(obj, false);
+	rz_return_val_if_fail(obj->coments_vec, false);
+
+	/*
+	 * B1   0D 00   C0   10   FF 05   FF 0C   FF 0D   FF 0E   FF 18    33
+	 * B1   05 00   40   06   FF 0F                                    F6
+	 * B1   05 00   C0   12   FF 14                                    65
+	 */
+	RZ_LOG_DEBUG("load_omf = GRPDEF  =  [%05d] [0x%08" PFMT64x "] 0x%02x\n",
+		record->size, global_ct, record->type);
+	return true;
+}
+
 static int load_deplst_data(const ut8 *buf, const OMF_record *record) {
 #if RZ_BUILD_DEBUG
 	size_t ct = 3;
@@ -673,29 +685,25 @@ static int load_omf_secdef(rz_bin_omf166_obj *obj, const ut8 *buf, const OMF_rec
 	OMF_sections *section = RZ_NEW0(OMF_sections);
 	rz_return_val_if_fail(section, false);
 
-	const ut8 SecTyp = rz_read_le8_offset(buf, &ct);
+	const ut8 SecTyp = rz_read_le8_offset(buf, &ct); // ct = 3
 	section->Type = SecTyp >> 6; ///< 0:=BIT, 1:=DATA, 2:=CODE, 3:=CONST
 	section->X = (SecTyp & 0x20) >> 5; ///< is set if the section is of type ’xhuge’ (length 0 ... 16M).
 	section->H = (SecTyp & 0x10) >> 4; ///< is set if the section is of type ’huge’ (length 0 ... 64K).
 	section->bitpos = SecTyp & 0x0F;
-	section->SecAtr = rz_read_le8_offset(buf, &ct);
-	section->SegmentNumber8 = rz_read_le8_offset(buf, &ct);
-	section->offset = rz_read_le16_offset(buf, &ct);
-	section->Seclen = record->type == OMF166_XSECDEF ? rz_read_le32_offset(buf, &ct) : rz_read_le16_offset(buf, &ct);
+	section->SecAtr = rz_read_le8_offset(buf, &ct); // ct = 4
+	section->SegmentNumber8 = rz_read_le8_offset(buf, &ct); // ct = 5
+	ct++;
+	section->offset = rz_read_le16_offset(buf, &ct); // ct = 7
+	section->Seclen = record->type == OMF166_XSECDEF ? rz_read_le32_offset(buf, &ct) : rz_read_le16_offset(buf, &ct); // ct = 9
 	section->isXSec = (record->type == OMF166_XSECDEF);
+
 	/*
-		0xC5 |   RecLen   | SecTyp | SecAtr                         |   Seclen   |                | ChkSum
-		0xb0   0x0c 0x00    0x80    0x00      0xc0 0x00   0x8a 0x16   0x50 0x02 0x1b 0x02 0x01      0xf4
-		0xb0   0x0c 0x00    0x50    0x00      0xc0 0x00   0x4c 0x1e   0x6f 0x00 0x1c 0x04 0x01      0x3a
+		0xC5 |   RecLen   | SecTyp | SecAtr |   base |      |           |   Seclen   |                 | ChkSum
+		0xb0   0x0c 0x00     0x80     0x00      0xc0   0x00   0x8a 0x16   0x50 0x02     0x1b 0x02 0x01    0xf4
+		0xb0   0x0c 0x00     0x50     0x00      0xc0   0x00   0x4c 0x1e   0x6f 0x00     0x1c 0x04 0x01    0x3a
 	*/
-	section->index = obj->SEC_INDEX;
-	/* ???
-		ut32 secsize = 1;
-		if (H)
-			secsize = 16 * 1024;
-		if (X)
-			secsize = 16 * 1024 * 1024;
-	*/
+	section->index = rz_read_le8_offset(buf, &ct) - 1;
+	section->class_index = rz_read_le8_offset(buf, &ct) - 1;
 	rz_pvector_push(obj->sections_vec, section);
 	obj->SEC_INDEX++;
 	return true;
@@ -822,27 +830,6 @@ static int load_omf_typnew(rz_bin_omf166_obj *obj, const ut8 *buf) {
 		cct += 2;
 		newtype->descriptor.pointer.ti = rz_read_le8_offset(buf, &cct); ///< Specs bug
 		// newtype->descriptor.pointer.ti = rz_read_le16(buf + cct); ///< Specs bug
-
-#if RZ_BUILD_DEBUG
-		char *attrib_str = NULL;
-		if (newtype->descriptor.pointer.attrib == 0x01)
-			attrib_str = "1 = Data pointer (PAGE:OFFSET)";
-		if (newtype->descriptor.pointer.attrib == 0x02)
-			attrib_str = "2 = Function pointer (SEG:OFFSET)";
-		if (newtype->descriptor.pointer.attrib == 0x04)
-			attrib_str = "4 = Huge pointer (linear 32-Bit)";
-		if (newtype->descriptor.pointer.attrib == 0x05)
-			attrib_str = "5 = UNKNOWN pointer";
-		if (newtype->descriptor.pointer.attrib == 0x08)
-			attrib_str = "8 = Xhuge pointer (linear 32-Bit)";
-
-		RZ_LOG_DEBUG("POINTER Descriptor size: 0x%02x; TI16: 0x%04x (%s), attrib_str: 0x%02x `%s`\n",
-			newtype->descriptor.pointer.size,
-			newtype->descriptor.pointer.ti,
-			name_of_ti(obj, newtype->descriptor.pointer.ti),
-			newtype->descriptor.pointer.attrib,
-			attrib_str ? attrib_str : "NULL");
-#endif
 		break;
 	}
 	case ARRAY_DESCRIPTOR: {
@@ -860,14 +847,6 @@ static int load_omf_typnew(rz_bin_omf166_obj *obj, const ut8 *buf) {
 		newtype->label = rz_str_newf("%s array[%s]",
 			name_of_ti(obj, newtype->descriptor.array.ti),
 			array_length);
-#if RZ_BUILD_DEBUG
-		RZ_LOG_DEBUG("ARRAY Descriptor dims: %d, ti: 0x%02x [%s], dimsz: %d, label: `%s`\t",
-			newtype->descriptor.array.dims,
-			newtype->descriptor.array.ti,
-			name_of_ti(obj, newtype->descriptor.array.ti),
-			newtype->descriptor.array.dimsz,
-			newtype->label);
-#endif
 		break;
 	}
 	case FUNCTION_DESCRIPTOR: {
@@ -879,13 +858,6 @@ static int load_omf_typnew(rz_bin_omf166_obj *obj, const ut8 *buf) {
 		newtype->descriptor.function.attrib = rz_read_le8_offset(buf, &cct);
 		newtype->descriptor.function.rtype_ti = rz_read_le16_offset(buf, &cct);
 		newtype->descriptor.function.parmlist_ti = rz_read_le16_offset(buf, &cct);
-#if RZ_BUILD_DEBUG
-		RZ_LOG_DEBUG("FUNCTION Descriptor `%s`, ret: %s, paramlist: (0x%04x) %s\n",
-			newtype->descriptor.function.attrib == 1 ? "NEAR" : "FAR",
-			name_of_ti(obj, newtype->descriptor.function.rtype_ti),
-			newtype->descriptor.function.parmlist_ti,
-			name_of_ti(obj, newtype->descriptor.function.parmlist_ti));
-#endif
 		newtype->label = rz_str_dup(newtype->descriptor.function.attrib ? "Near-Function" : "Far-Function");
 		break;
 	}
@@ -901,24 +873,12 @@ static int load_omf_typnew(rz_bin_omf166_obj *obj, const ut8 *buf) {
 			newtype->descriptor.struct_union.tagname,
 			(const char *)&buf[cct],
 			newtype->descriptor.struct_union.n + 1);
-#if RZ_BUILD_DEBUG
-		RZ_LOG_DEBUG("STRUCT/UNION Descriptor `%s`, sizeof struct or union (%04d), MEMBER_TI16: 0x%04x ret: %s, name[%d]: `%s`\n",
-			newtype->descriptor.struct_union.is_struct == 1 ? "struct" : "union",
-			newtype->descriptor.struct_union.size,
-			newtype->descriptor.struct_union.member_ti,
-			name_of_ti(obj, newtype->descriptor.struct_union.member_ti),
-			newtype->descriptor.struct_union.n,
-			newtype->descriptor.struct_union.tagname);
-#endif
 		newtype->label = rz_str_dup(newtype->descriptor.struct_union.tagname);
 		break;
 	}
 	case BITFIELD_DESCRIPTOR: {
 		newtype->label = rz_str_dup("BITFIELD_DESCRIPTOR");
 		///< 0x25 | TI16 | OFFSET8 | WIDTH8
-#if RZ_BUILD_DEBUG
-		RZ_LOG_DEBUG("BITFIELD Descriptor \n");
-#endif
 		break;
 	}
 	default: {
@@ -995,8 +955,7 @@ static int rz_bin_format_omf166_load_content(rz_bin_omf166_obj *obj, OMF_record 
 		return load_comment_data(obj, buf, record, global_ct);
 	}
 	case OMF166_GRPDEF: {
-		RZ_LOG_DEBUG("load_omf = GRPDEF  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMT64d ")\n", record->size, global_ct, record->type, buf_size);
-		return true;
+		return load_grpdef_data(obj, buf, record, global_ct);
 	}
 	case OMF166_DEPLST: {
 		return load_deplst_data(buf, record);
@@ -1271,98 +1230,11 @@ static int rz_bin_format_omf166_load_all_records(rz_bin_omf166_obj *obj, const u
 		}
 	}
 
-#if RZ_BUILD_DEBUG
-	const size_t lc = rz_pvector_len(obj->lnames_vec);
-	RZ_LOG_DEBUG("lnames count: %" PFMT64d "\n", lc);
-	if (lc > 0) {
-		const RzPVector *v = obj->lnames_vec;
-		void **it;
-		rz_pvector_foreach (v, it) {
-			OMF_lnames *lname = (OMF_lnames *)*it;
-			RZ_LOG_DEBUG("LNAMES - index: %03d, name: `%s`\n", lname->index, lname->name);
-		}
-	}
-
-	const size_t sc = rz_pvector_len(obj->sections_vec);
-	RZ_LOG_DEBUG("sections count: %" PFMT64d "\n", sc);
-	if (sc > 0) {
-		const RzPVector *v = obj->sections_vec;
-		void **it;
-		rz_pvector_foreach (v, it) {
-			const OMF_sections *section = (OMF_sections *)*it;
-			const char *dt = get_data_type(section->Type);
-			RZ_LOG_DEBUG("sections - [%2d] %7s, seg_idx: 0x%02x, offset: 0x%04x SecTyp = %5s,   Seclen [%06d] x: %5s, h: %5s, b: 0x%x SecAtr: 0x%02x\n",
-				section->index,
-				section->isXSec ? "XSECDEF" : "SECDEF ",
-				section->SegmentNumber8,
-				section->offset,
-				dt, section->Seclen,
-				BOOL_STR(section->X),
-				BOOL_STR(section->H),
-				section->bitpos,
-				section->SecAtr);
-		}
-	}
-	size_t symlc = rz_pvector_len(obj->symbols_vec);
-	RZ_LOG_DEBUG("sym count: %" PFMT64d "\n", symlc);
-	if (symlc > 0) {
-		const RzPVector *v = obj->symbols_vec;
-		void **it;
-		rz_pvector_foreach (v, it) {
-			OMF_symbol *symbol = (OMF_symbol *)*it;
-			if (symbol->rec_type == OMF166_DEBSYM)
-				RZ_LOG_DEBUG("debsym %s base: [0x%08x] Ofs16:[0x%04x] len:[%5" PFMT64d "] Rep8:[0x%02x] [%10s V%s bpos: %d] TI:[0x%04x] {%15s} (%d)`%s`\n",
-					symbol->is_data ? "data" : "func",
-					symbol->base,
-					symbol->offset,
-					symbol->size,
-					symbol->REP8,
-					name_of_rep8(symbol->REP8), symbol->V ? "-" : "+", symbol->bpos,
-					symbol->ti,
-					name_of_ti(obj, symbol->ti),
-					symbol->n,
-					symbol->name2);
-		}
-		rz_pvector_foreach (v, it) {
-			OMF_symbol *symbol = (OMF_symbol *)*it;
-			if (symbol->rec_type != OMF166_DEBSYM)
-				RZ_LOG_DEBUG("0x%02x %s base: [0x%08x] Ofs16:[0x%04x] len:[%5" PFMT64d "] Rep8:[0x%02x] [%10s V%s bpos: %d] TI:[0x%04x] {%15s} (%d)`%s`\n",
-					symbol->rec_type,
-					symbol->is_data ? "data" : "func",
-					symbol->base,
-					symbol->offset,
-					symbol->size,
-					symbol->REP8,
-					name_of_rep8(symbol->REP8), symbol->V ? "-" : "+", symbol->bpos,
-					symbol->ti,
-					name_of_ti(obj, symbol->ti),
-					symbol->n,
-					symbol->name2);
-		}
-	}
-#endif
 	const size_t linc = rz_pvector_len(obj->linnums_vec);
-	RZ_LOG_DEBUG("linnums count: %" PFMT64d "\n", linc);
 	if (linc > 0) {
 		RzPVector *v = obj->linnums_vec;
 		rz_pvector_sort(v, line_sample_cmp, NULL);
-#if RZ_BUILD_DEBUG
-		void **it;
-		rz_pvector_foreach (v, it) {
-			OMF_linnums *linnums = (OMF_linnums *)*it;
-			RZ_LOG_DEBUG("linnums fileIndex: %d, address: 0x%08" PFMT64x ", LineNumber: %4d, filename[%3d]: `%s`\n",
-				linnums->fileIndex,
-				linnums->address,
-				linnums->LineNumber,
-				linnums->n,
-				linnums->filename);
-		}
-#endif
 	}
-#if RZ_BUILD_DEBUG
-	const size_t lec = rz_pvector_len(obj->ledatas_vec);
-	RZ_LOG_DEBUG("ledata count: %" PFMT64d "\n", lec);
-#endif
 	return true;
 }
 

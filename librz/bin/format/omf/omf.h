@@ -234,6 +234,34 @@ typedef enum omf_ityp_t {
 	 */
 } OMF_ITYP;
 
+typedef enum {
+	C166_CLASS_ICODE,
+	C166_CLASS_FCODE,
+	C166_CLASS_FCONST,
+	C166_CLASS_HCONST,
+	C166_CLASS_XCONST,
+	C166_CLASS_SDATA,
+	C166_CLASS_SDATA0,
+	C166_CLASS_IDATA,
+	C166_CLASS_IDATA0,
+	C166_CLASS_FDATA,
+	C166_CLASS_FDATA0,
+	C166_CLASS_HDATA,
+	C166_CLASS_HDATA0,
+	C166_CLASS_XDATA,
+	C166_CLASS_XDATA0,
+	C166_CLASS_NDATA,
+	C166_CLASS_NDATA0,
+	C166_CLASS_NCONST,
+	C166_CLASS_NCODE,
+	C166_CLASS_BIT,
+	C166_CLASS_BIT0,
+	C166_CLASS_BDATA,
+	C166_CLASS_BDATA0,
+	C166_CLASS_EBDATA,
+	C166_CLASS_EBDATA0,
+} c166_class_t;
+
 typedef struct OMF_record_handler {
 	OMF_record record;
 	struct OMF_record_handler *next;
@@ -373,6 +401,7 @@ typedef struct {
  */
 typedef struct {
 	ut16 index;
+	ut16 class_index;
 	ut8 Type; ///< The ’Type’ field is two bits and specifies the type of the section as follows: 0:=BIT, 1:=DATA, 2:=CODE, 3:=CONST
 	bool X; ///< The ’X’ bit is set if the section is of type ’xhuge’ (length 0 ... 16M).
 	bool H; ///< The ’H’ bit is set if the section is of type ’huge’ (length 0 ... 64K).
@@ -380,7 +409,7 @@ typedef struct {
 	ut8 SecAtr; ///< May be Alignment, always equals 0 (Absolute segment in omf51)
 	ut8 SegmentNumber8; ///< The segment number specifies the segment, which is in range 0 to 3 for the 80C166 and 0 to 256 for the 80C167.
 	ut32 offset;
-	ut16 Seclen;
+	ut32 Seclen;
 	bool isXSec; ///< XSECDEF and SECDEF is same records
 } OMF_sections;
 
@@ -550,8 +579,6 @@ typedef struct {
 
 typedef struct {
 	ut16 index;
-	// bool nopurge;
-	// bool is_filename;
 	ut8 n; ///< n max 255, so name array len is 255
 	char name[255];
 } OMF_debug_includes;
@@ -721,6 +748,10 @@ typedef struct {
 #define OMF_BASE_ADDR    0x1000
 #define OMF166_BASE_ADDR 0x00
 
+#define CPUCON1_NAME        "CPUCON1"
+#define SP_RESET_VALUE      0xFC00
+#define CPUCON1_RESET_VALUE 0x0000
+
 bool rz_bin_checksum_omf_ok(const ut8 *buf, ut64 buf_size);
 rz_bin_omf_obj *rz_bin_internal_omf_load(const ut8 *buf, ut64 size);
 void rz_bin_free_all_omf_obj(rz_bin_omf_obj *obj);
@@ -733,6 +764,7 @@ ut64 rz_bin_omf_get_vaddr_sym(rz_bin_omf_obj *obj, OMF_symbol *sym);
 RZ_API ut8 memory_model_type(ut8 modinfo);
 RZ_API char *get_memory_model(ut8 modinfo);
 ut32 get_perm_by_type(ut8 data_type);
+ut32 c166_get_perms_from_class(const ut8 class_id);
 const char *get_data_type(ut8 data_type);
 RZ_API const char *name_of_ti(const rz_bin_omf166_obj *obj, ut16 ti_index);
 rz_bin_omf166_obj *rz_bin_format_omf166_load(const ut8 *buf, ut64 size);
