@@ -3352,8 +3352,11 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	/* log */
 	// RZ_LOGLEVEL / log.level
 	p = rz_sys_getenv("RZ_LOGLEVEL");
-	SETICB("log.level", p ? atoi(p) : RZ_DEFAULT_LOGLVL, cb_log_config_level, "Target log level/severity"
-										  " (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)");
+	SETICB("log.level", p ? atoi(p) : RZ_DEFAULT_LOGLVL, cb_log_config_level, "Target log level/severity ("
+#if RZ_BUILD_DEBUG
+										  "0:DEBUG, "
+#endif
+										  "1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)");
 	free(p);
 
 #if RZ_BUILD_DEBUG
