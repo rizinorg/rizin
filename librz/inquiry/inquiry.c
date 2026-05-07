@@ -499,6 +499,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 
 	rz_cons_push();
 
+	RZ_LOG_DEBUG("Create IL Cache");
 	RzILCache *il_cache = rz_il_cache_new(core->analysis, core->io,
 		rz_bin_object_get_sections(core->bin->cur->o),
 		RZ_IL_CACHE_CONFIG_NOP_UNLIFTED | RZ_IL_CACHE_CONFIG_SLEEP_SHORT);
@@ -580,6 +581,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 	//
 	// Spawn the IL cache.
 	//
+	RZ_LOG_DEBUG("Spawn IL Cache");
 	il_cache_th = rz_th_new((RzThreadFunction)rz_il_cache_serve, il_cache);
 
 	ut64 intpr_terminated = 0;
@@ -740,6 +742,7 @@ fatal_error:
 		}
 		rz_interpreter_set_free(iset_map[i].iset);
 	}
+	rz_il_cache_stop_serving(il_cache);
 
 	if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
 		eprintf("\n");
