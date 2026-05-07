@@ -96,7 +96,7 @@ static void recurse_into_fcn_bbs(
 		rz_warn_if_reached();
 		goto err_return;
 	}
-	if (!rz_inquiry_bb_cfg_add_basic_block(fcn->bb_cfg, this_bb.addr, this_bb.size)) {
+	if (!rz_inquiry_bb_cfg_add_block(fcn->bb_cfg, this_bb.addr, this_bb.size)) {
 		rz_warn_if_reached();
 		goto err_return;
 	}
@@ -107,7 +107,7 @@ static void recurse_into_fcn_bbs(
 			rz_warn_if_reached();
 			goto err_return;
 		}
-		if (!rz_inquiry_bb_cfg_add_basic_block(fcn->bb_cfg, from_bb.addr, from_bb.size)) {
+		if (!rz_inquiry_bb_cfg_add_block(fcn->bb_cfg, from_bb.addr, from_bb.size)) {
 			rz_warn_if_reached();
 			goto err_return;
 		}
