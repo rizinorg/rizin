@@ -1861,6 +1861,8 @@ RZ_DEPRECATE RZ_API const RzPVector /*<RzGraphNode *>*/ *rz_graph_get_node_vec(R
  * \brief Delete all edges for which \p cb returns true.
  * If \p cb is NULL, it will delete all edges in the graph.
  *
+ * NOTE: This function is slow! It has a runtime of O(|E| * |E|)
+ *
  * \param g The graph.
  * \param cb The callback to decide which edge to delete. Can be NULL if all edges should be deleted.
  * \return True if deletion was successful or no edge was deleted. False in case of failure.
