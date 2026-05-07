@@ -3980,18 +3980,228 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
 e cfg.bigendian=false
-wx 0080bd08
+wx 04e02de50000a0e10110a0e10080bd081eff2fe10220a0e100f020e3
 pi 1
+echo =========Without allow_conditional==============
 /R
-echo "==============================================="
+echo ===========With allow_conditional===============
 e gadget.conditional=true
+echo ======================/R========================
 /R
+echo ======================/Rq=======================
+/Rq
+echo ======================/Rg=======================
+/Rg
+echo ======================/Rt=======================
+/Rt
+echo ======================/Rj=======================
+/Rj
+echo ======================/Rgl======================
+/Rgl
 EOF
 EXPECT=<<EOF
-ldmeq sp!, {pc}
-===============================================
-  0x00000000           0080bd08  ldmeq sp!, {pc}
+str lr, [sp, -4]!
+=========Without allow_conditional==============
+  0x00000000           04e02de5  str lr, [sp, -4]!
+  0x00000004           0000a0e1  mov r0, r0
+  0x00000008           0110a0e1  mov r1, r1
+  0x0000000c           0080bd08  ldmeq sp!, {pc}
+  0x00000010           1eff2fe1  bx lr
+Gadget size: 20
+
+  0x00000004           0000a0e1  mov r0, r0
+  0x00000008           0110a0e1  mov r1, r1
+  0x0000000c           0080bd08  ldmeq sp!, {pc}
+  0x00000010           1eff2fe1  bx lr
+Gadget size: 16
+
+  0x00000008           0110a0e1  mov r1, r1
+  0x0000000c           0080bd08  ldmeq sp!, {pc}
+  0x00000010           1eff2fe1  bx lr
+Gadget size: 12
+
+  0x0000000c           0080bd08  ldmeq sp!, {pc}
+  0x00000010           1eff2fe1  bx lr
+Gadget size: 8
+
+  0x00000010           1eff2fe1  bx lr
 Gadget size: 4
+
+===========With allow_conditional===============
+======================/R========================
+  0x00000000           04e02de5  str lr, [sp, -4]!
+  0x00000004           0000a0e1  mov r0, r0
+  0x00000008           0110a0e1  mov r1, r1
+  0x0000000c           0080bd08  ldmeq sp!, {pc}
+Gadget size: 16 [Conditional Gadget]
+
+  0x00000004           0000a0e1  mov r0, r0
+  0x00000008           0110a0e1  mov r1, r1
+  0x0000000c           0080bd08  ldmeq sp!, {pc}
+Gadget size: 12 [Conditional Gadget]
+
+  0x00000008           0110a0e1  mov r1, r1
+  0x0000000c           0080bd08  ldmeq sp!, {pc}
+Gadget size: 8 [Conditional Gadget]
+
+  0x0000000c           0080bd08  ldmeq sp!, {pc}
+Gadget size: 4 [Conditional Gadget]
+
+  0x00000000           04e02de5  str lr, [sp, -4]!
+  0x00000004           0000a0e1  mov r0, r0
+  0x00000008           0110a0e1  mov r1, r1
+  0x0000000c           0080bd08  ldmeq sp!, {pc}
+  0x00000010           1eff2fe1  bx lr
+Gadget size: 20
+
+  0x00000004           0000a0e1  mov r0, r0
+  0x00000008           0110a0e1  mov r1, r1
+  0x0000000c           0080bd08  ldmeq sp!, {pc}
+  0x00000010           1eff2fe1  bx lr
+Gadget size: 16
+
+  0x00000008           0110a0e1  mov r1, r1
+  0x0000000c           0080bd08  ldmeq sp!, {pc}
+  0x00000010           1eff2fe1  bx lr
+Gadget size: 12
+
+  0x0000000c           0080bd08  ldmeq sp!, {pc}
+  0x00000010           1eff2fe1  bx lr
+Gadget size: 8
+
+  0x00000010           1eff2fe1  bx lr
+Gadget size: 4
+
+======================/Rq=======================
+0x00000000: str lr, [sp, -4]!; mov r0, r0; mov r1, r1; ldmeq sp!, {pc}; [Conditional Gadget]
+0x00000004: mov r0, r0; mov r1, r1; ldmeq sp!, {pc}; [Conditional Gadget]
+0x00000008: mov r1, r1; ldmeq sp!, {pc}; [Conditional Gadget]
+0x0000000c: ldmeq sp!, {pc}; [Conditional Gadget]
+0x00000000: str lr, [sp, -4]!; mov r0, r0; mov r1, r1; ldmeq sp!, {pc}; bx lr;
+0x00000004: mov r0, r0; mov r1, r1; ldmeq sp!, {pc}; bx lr;
+0x00000008: mov r1, r1; ldmeq sp!, {pc}; bx lr;
+0x0000000c: ldmeq sp!, {pc}; bx lr;
+0x00000010: bx lr;
+======================/Rg=======================
+Gadget 0x0 [Conditional Gadget]
+Stack change: 0xfffffffc
+Changed registers: sp r0 r1 
+Register dependencies:
+Memory Write: lr Initial Value: 0xffffffff New Value: 0x0
+Var Read: r0
+Var Read: r1
+
+Gadget 0x4 [Conditional Gadget]
+Stack change: 0x0
+Changed registers: r0 r1 
+Register dependencies:
+Var Read: r0
+Var Read: r1
+
+Gadget 0x8 [Conditional Gadget]
+Stack change: 0x0
+Changed registers: r1 
+Register dependencies:
+Var Read: r1
+
+Gadget 0xc [Conditional Gadget]
+Stack change: 0x0
+Changed registers: 
+Register dependencies:
+
+Gadget 0x0
+Stack change: 0xfffffffc
+Changed registers: sp r0 r1 
+Register dependencies:
+Memory Write: lr Initial Value: 0xffffffff New Value: 0x0
+Var Read: r0
+Var Read: r1
+
+Gadget 0x4
+Stack change: 0x0
+Changed registers: r0 r1 
+Register dependencies:
+Var Read: r0
+Var Read: r1
+
+Gadget 0x8
+Stack change: 0x0
+Changed registers: r1 
+Register dependencies:
+Var Read: r1
+
+Gadget 0xc
+Stack change: 0x0
+Changed registers: 
+Register dependencies:
+
+Gadget 0x10
+Stack change: 0x0
+Changed registers: 
+Register dependencies:
+
+======================/Rt=======================
+      addr                                    bytes disasm                                                                                  
+--------------------------------------------------------------------------------------------------------------------------------------------
+0x00000000         04e02de50000a0e10110a0e10080bd08 [Conditional Gadget] str lr, [sp, -4]!; ; mov r0, r0; ; mov r1, r1; ; ldmeq sp!, {pc}; 
+0x00000004                 0000a0e10110a0e10080bd08 [Conditional Gadget] mov r0, r0; ; mov r1, r1; ; ldmeq sp!, {pc}; 
+0x00000008                         0110a0e10080bd08 [Conditional Gadget] mov r1, r1; ; ldmeq sp!, {pc}; 
+0x0000000c                                 0080bd08 [Conditional Gadget] ldmeq sp!, {pc}; 
+0x00000000 04e02de50000a0e10110a0e10080bd081eff2fe1 str lr, [sp, -4]!; ; mov r0, r0; ; mov r1, r1; ; ldmeq sp!, {pc}; ; bx lr; 
+0x00000004         0000a0e10110a0e10080bd081eff2fe1 mov r0, r0; ; mov r1, r1; ; ldmeq sp!, {pc}; ; bx lr; 
+0x00000008                 0110a0e10080bd081eff2fe1 mov r1, r1; ; ldmeq sp!, {pc}; ; bx lr; 
+0x0000000c                         0080bd081eff2fe1 ldmeq sp!, {pc}; ; bx lr; 
+0x00000010                                 1eff2fe1 bx lr; 
+======================/Rj=======================
+[{"opcodes":[{"offset":0,"size":4,"opcode":"str lr, [sp, -4]!","type":"store"},{"offset":4,"size":4,"opcode":"mov r0, r0","type":"mov"},{"offset":8,"size":4,"opcode":"mov r1, r1","type":"mov"},{"offset":12,"size":4,"opcode":"ldmeq sp!, {pc}","type":"cret"}],"retaddr":12,"size":16,"is_conditional":true},{"opcodes":[{"offset":4,"size":4,"opcode":"mov r0, r0","type":"mov"},{"offset":8,"size":4,"opcode":"mov r1, r1","type":"mov"},{"offset":12,"size":4,"opcode":"ldmeq sp!, {pc}","type":"cret"}],"retaddr":12,"size":12,"is_conditional":true},{"opcodes":[{"offset":8,"size":4,"opcode":"mov r1, r1","type":"mov"},{"offset":12,"size":4,"opcode":"ldmeq sp!, {pc}","type":"cret"}],"retaddr":12,"size":8,"is_conditional":true},{"opcodes":[{"offset":12,"size":4,"opcode":"ldmeq sp!, {pc}","type":"cret"}],"retaddr":12,"size":4,"is_conditional":true},{"opcodes":[{"offset":0,"size":4,"opcode":"str lr, [sp, -4]!","type":"store"},{"offset":4,"size":4,"opcode":"mov r0, r0","type":"mov"},{"offset":8,"size":4,"opcode":"mov r1, r1","type":"mov"},{"offset":12,"size":4,"opcode":"ldmeq sp!, {pc}","type":"cret"},{"offset":16,"size":4,"opcode":"bx lr","type":"ret"}],"retaddr":16,"size":20},{"opcodes":[{"offset":4,"size":4,"opcode":"mov r0, r0","type":"mov"},{"offset":8,"size":4,"opcode":"mov r1, r1","type":"mov"},{"offset":12,"size":4,"opcode":"ldmeq sp!, {pc}","type":"cret"},{"offset":16,"size":4,"opcode":"bx lr","type":"ret"}],"retaddr":16,"size":16},{"opcodes":[{"offset":8,"size":4,"opcode":"mov r1, r1","type":"mov"},{"offset":12,"size":4,"opcode":"ldmeq sp!, {pc}","type":"cret"},{"offset":16,"size":4,"opcode":"bx lr","type":"ret"}],"retaddr":16,"size":12},{"opcodes":[{"offset":12,"size":4,"opcode":"ldmeq sp!, {pc}","type":"cret"},{"offset":16,"size":4,"opcode":"bx lr","type":"ret"}],"retaddr":16,"size":8},{"opcodes":[{"offset":16,"size":4,"opcode":"bx lr","type":"ret"}],"retaddr":16,"size":4}]
+======================/Rgl======================
+Gadget 0x0 (size 16 bytes) [Conditional Gadget]
+------------------------------------------------------------------------------------------------------
+  0x00000000  04e02de5         str lr, [sp, -4]! | Stack change: 0xfffffffc
+  0x00000004  0000a0e1         mov r0, r0        | Modified regs: sp r0 r1
+  0x00000008  0110a0e1         mov r1, r1        | Dependencies:  sp lr sp r0 r1
+  0x0000000c  0080bd08         ldmeq sp!, {pc}   | 
+
+Gadget 0x4 (size 12 bytes) [Conditional Gadget]
+------------------------------------------------------------------------------------------------------
+  0x00000004  0000a0e1         mov r0, r0      | Stack change: 0x0
+  0x00000008  0110a0e1         mov r1, r1      | Modified regs: r0 r1
+  0x0000000c  0080bd08         ldmeq sp!, {pc} | Dependencies:  r0 r1
+
+Gadget 0x8 (size 8 bytes) [Conditional Gadget]
+------------------------------------------------------------------------------------------------------
+  0x00000008  0110a0e1         mov r1, r1      | Stack change: 0x0
+  0x0000000c  0080bd08         ldmeq sp!, {pc} | Modified regs: r1
+
+Gadget 0xc (size 4 bytes) [Conditional Gadget]
+------------------------------------------------------------------------------------------------------
+  0x0000000c  0080bd08         ldmeq sp!, {pc} | Stack change: 0x0
+
+Gadget 0x0 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00000000  04e02de5         str lr, [sp, -4]! | Stack change: 0xfffffffc
+  0x00000004  0000a0e1         mov r0, r0        | Modified regs: sp r0 r1
+  0x00000008  0110a0e1         mov r1, r1        | Dependencies:  sp lr sp r0 r1
+  0x0000000c  0080bd08         ldmeq sp!, {pc}   | 
+
+Gadget 0x4 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00000004  0000a0e1         mov r0, r0      | Stack change: 0x0
+  0x00000008  0110a0e1         mov r1, r1      | Modified regs: r0 r1
+  0x0000000c  0080bd08         ldmeq sp!, {pc} | Dependencies:  r0 r1
+
+Gadget 0x8 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00000008  0110a0e1         mov r1, r1      | Stack change: 0x0
+  0x0000000c  0080bd08         ldmeq sp!, {pc} | Modified regs: r1
+
+Gadget 0xc (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0000000c  0080bd08         ldmeq sp!, {pc} | Stack change: 0x0
+
+Gadget 0x10 (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00000010  1eff2fe1         bx lr | Stack change: 0x0
 
 EOF
 RUN

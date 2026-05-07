@@ -238,7 +238,7 @@ static bool gadget_hitlist_print_quiet_mode(const RzCore *core, const RzCoreAsmH
 	return true;
 }
 
-static bool gadget_hitlist_print_standard_mode(const RzCore *core, const RzCoreAsmHit *hit, ut32 *size, RzGadgetSearchContext *context) {
+static bool gadget_hitlist_print_standard_mode(const RzCore *core, const RzCoreAsmHit *hit, ut32 *size, RzGadgetSearchContext *context, bool is_conditional) {
 	rz_return_val_if_fail(core && context, false);
 	RzAnalysisOp aop = RZ_EMPTY;
 	RzAsmOp *asmop = NULL;
@@ -910,14 +910,21 @@ cleanup:
 	return ret;
 }
 
-static void gadget_print_standard_mode(const RzCore *core, const RzGadgetInfo *gadget_info) {
+static void gadget_print_standard_mode(const RzCore *core, const RzGadgetInfo *gadget_info, bool is_conditional) {
 	rz_return_if_fail(core && core->analysis && gadget_info);
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
 	if (!rreg) {
 		return;
 	}
 
-	rz_cons_printf("Gadget 0x%" PFMT64x "\n", gadget_info->address);
+	const bool colorize = rz_config_get_i(core->config, "scr.color");
+	const char *highlight_color = colorize ? Color_CYAN : "";
+	const char *reset_color = colorize ? Color_RESET : "";
+	if (is_conditional) {
+		rz_cons_printf("%sGadget 0x%" PFMT64x " [Conditional Gadget]%s\n", highlight_color, gadget_info->address, reset_color);
+	} else {
+		rz_cons_printf("Gadget 0x%" PFMT64x "\n", gadget_info->address);
+	}
 	rz_cons_printf("Stack change: 0x%" PFMT64x "\n", gadget_info->stack_change);
 
 	rz_cons_printf("Changed registers: ");
@@ -953,7 +960,7 @@ static void gadget_print_standard_mode(const RzCore *core, const RzGadgetInfo *g
 	rz_cons_printf("\n");
 }
 
-static void gadget_print_json_mode(const RzCore *core, const RzGadgetInfo *gadget_info, PJ *pj) {
+static void gadget_print_json_mode(const RzCore *core, const RzGadgetInfo *gadget_info, PJ *pj, bool is_conditional) {
 	rz_return_if_fail(gadget_info && pj);
 
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
@@ -963,6 +970,9 @@ static void gadget_print_json_mode(const RzCore *core, const RzGadgetInfo *gadge
 	pj_o(pj);
 	pj_kn(pj, "address", gadget_info->address);
 	pj_kn(pj, "stack_change", gadget_info->stack_change);
+	if (is_conditional) {
+		pj_kb(pj, "is_conditional", true);
+	}
 
 	pj_k(pj, "modified_registers");
 	pj_a(pj);
@@ -1081,7 +1091,7 @@ static void print_gadget_long_info(const RzGadgetInfo *gadget_info, RzVector /*<
 	}
 }
 
-static void gadget_print_long_mode(const RzCore *core, const RzGadgetInfo *gadget_info, const RzGadgetSearchContext *context) {
+static void gadget_print_long_mode(const RzCore *core, const RzGadgetInfo *gadget_info, const RzGadgetSearchContext *context, bool is_conditional) {
 	rz_return_if_fail(core && core->analysis);
 
 	ut64 addr = gadget_info->address;
@@ -1102,7 +1112,13 @@ static void gadget_print_long_mode(const RzCore *core, const RzGadgetInfo *gadge
 	char *rep_str = NULL;
 	bool utf8 = rz_config_get_b(core->config, "scr.utf8");
 	const bool colorize = rz_config_get_i(core->config, "scr.color");
-	rz_cons_printf("Gadget 0x%" PFMT64x " (size %d bytes)\n", addr, size);
+	const char *highlight_color = colorize ? Color_CYAN : "";
+	const char *reset_color = colorize ? Color_RESET : "";
+	if (is_conditional) {
+		rz_cons_printf("%sGadget 0x%" PFMT64x " (size %d bytes) [Conditional Gadget]%s\n", highlight_color, addr, size, reset_color);
+	} else {
+		rz_cons_printf("Gadget 0x%" PFMT64x " (size %d bytes)\n", addr, size);
+	}
 	if (utf8) {
 		rep_str = rz_str_repeat("–", req_width);
 		rz_cons_printf("%s––%s\n", rep_str, rep_str);
@@ -1149,7 +1165,7 @@ static void gadget_print_long_mode(const RzCore *core, const RzGadgetInfo *gadge
 	rz_cons_newline();
 }
 
-static void print_gadget_info(const RzCore *core, const RzGadgetInfo *gadget_info, const RzGadgetSearchContext *context) {
+static void print_gadget_info(const RzCore *core, const RzGadgetInfo *gadget_info, const RzGadgetSearchContext *context, bool is_conditional) {
 	rz_return_if_fail(gadget_info && context);
 	if (!context->state) {
 		return;
@@ -1163,13 +1179,13 @@ static void print_gadget_info(const RzCore *core, const RzGadgetInfo *gadget_inf
 
 	switch (context->state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
-		gadget_print_json_mode(core, gadget_info, context->state->d.pj);
+		gadget_print_json_mode(core, gadget_info, context->state->d.pj, is_conditional);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		gadget_print_standard_mode(core, gadget_info);
+		gadget_print_standard_mode(core, gadget_info, is_conditional);
 		break;
 	case RZ_OUTPUT_MODE_LONG:
-		gadget_print_long_mode(core, gadget_info, context);
+		gadget_print_long_mode(core, gadget_info, context, is_conditional);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -1177,7 +1193,7 @@ static void print_gadget_info(const RzCore *core, const RzGadgetInfo *gadget_inf
 	}
 }
 
-static bool print_gadget_hitlist(const RzCore *core, RzPVector /*<RzCoreAsmHit *>*/ *hitlist, size_t start_idx, RzGadgetSearchContext *context) {
+static bool print_gadget_hitlist(const RzCore *core, RzPVector /*<RzCoreAsmHit *>*/ *hitlist, size_t start_idx, RzGadgetSearchContext *context, bool is_conditional) {
 	rz_return_val_if_fail(core && hitlist && context, false);
 	RzCmdStateOutput *state = context->state;
 	if (!state) {
@@ -1188,14 +1204,24 @@ static bool print_gadget_hitlist(const RzCore *core, RzPVector /*<RzCoreAsmHit *
 	if (!hit) {
 		return false;
 	}
+
+	const bool colorize = rz_config_get_i(core->config, "scr.color");
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_o(state->d.pj);
 		pj_ka(state->d.pj, "opcodes");
 	} else if (state->mode == RZ_OUTPUT_MODE_QUIET) {
+		const char *addr_color = "";
+		const char *reset_color = "";
+		if (is_conditional) {
+			if (colorize) {
+				addr_color = Color_CYAN;
+				reset_color = Color_RESET;
+			}
+		}
 		if (context->ret_val) {
-			rz_strbuf_appendf(context->buf, "0x%08" PFMT64x ":", hit->addr);
+			rz_strbuf_appendf(context->buf, "%s0x%08" PFMT64x "%s:", addr_color, hit->addr, reset_color);
 		} else {
-			rz_cons_printf("0x%08" PFMT64x ":", hit->addr);
+			rz_cons_printf("%s0x%08" PFMT64x "%s:", addr_color, hit->addr, reset_color);
 		}
 	}
 	const ut64 addr = hit->addr;
@@ -1218,7 +1244,7 @@ static bool print_gadget_hitlist(const RzCore *core, RzPVector /*<RzCoreAsmHit *
 				result = gadget_hitlist_print_quiet_mode(core, hit, &size, context);
 				break;
 			case RZ_OUTPUT_MODE_STANDARD:
-				result = gadget_hitlist_print_standard_mode(core, hit, &size, context);
+				result = gadget_hitlist_print_standard_mode(core, hit, &size, context, is_conditional);
 				break;
 			case RZ_OUTPUT_MODE_TABLE:
 				result = gadget_hitlist_print_table_mode(core, hit, hitlist, &size, &asmop_str, &asmop_hex_str, context);
@@ -1232,6 +1258,8 @@ static bool print_gadget_hitlist(const RzCore *core, RzPVector /*<RzCoreAsmHit *
 			}
 		}
 	}
+	const char *highlight_color = colorize ? Color_CYAN : "";
+	const char *reset_color = colorize ? Color_RESET : "";
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
 		if (!state->d.pj) {
@@ -1244,19 +1272,34 @@ static bool print_gadget_hitlist(const RzCore *core, RzPVector /*<RzCoreAsmHit *
 		if (hit) {
 			pj_kn(state->d.pj, "retaddr", hit->addr);
 			pj_ki(state->d.pj, "size", size);
+			if (is_conditional) {
+				pj_kb(state->d.pj, "is_conditional", true);
+			}
 		}
 		pj_end(state->d.pj);
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
-		if (context->ret_val) {
-			rz_strbuf_append(context->buf, "\n");
-			break;
+		if (is_conditional) {
+			if (context->ret_val) {
+				rz_strbuf_appendf(context->buf, " %s[Conditional Gadget]%s\n", highlight_color, reset_color);
+			} else {
+				rz_cons_printf(" %s[Conditional Gadget]%s\n", highlight_color, reset_color);
+			}
+		} else {
+			if (context->ret_val) {
+				rz_strbuf_appendf(context->buf, "\n");
+			} else {
+				rz_cons_newline();
+			}
 		}
-		rz_cons_newline();
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
 		if (hit) {
-			rz_cons_printf("Gadget size: %d\n", (int)size);
+			if (is_conditional) {
+				rz_cons_printf("%sGadget size: %d [Conditional Gadget]%s\n", highlight_color, (int)size, reset_color);
+			} else {
+				rz_cons_printf("Gadget size: %d\n", (int)size);
+			}
 		}
 		if (context->ret_val) {
 			break;
@@ -1264,6 +1307,11 @@ static bool print_gadget_hitlist(const RzCore *core, RzPVector /*<RzCoreAsmHit *
 		rz_cons_newline();
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
+		if (is_conditional) {
+			char *new_str = rz_str_newf("%s[Conditional Gadget]%s %s", highlight_color, reset_color, asmop_str);
+			free(asmop_str);
+			asmop_str = new_str;
+		}
 		if (!context->ret_val) {
 			rz_table_add_rowf(state->d.t, "Xss", addr, asmop_hex_str, asmop_str);
 		}
@@ -1507,17 +1555,25 @@ static RzGadgetInfo *perform_gadget_analysis(const RzGadgetType type, RzCore *co
 RZ_API bool rz_core_handle_gadget_request_type(RZ_NONNULL RzCore *core, RZ_NONNULL RzGadgetSearchContext *context,
 	RZ_NONNULL RzPVector /*<RzCoreAsmHit *>*/ *hitlist, int delay_size) {
 	rz_return_val_if_fail(core && core->analysis && hitlist && context, false);
+
+	bool is_conditional = false;
+	if (context->allow_conditional) {
+		RzCoreAsmHit *terminator = find_gadget_terminator(hitlist, delay_size);
+		if (terminator) {
+			is_conditional = gadget_is_valid_terminator(context->type, core, terminator, true) && !gadget_is_valid_terminator(context->type, core, terminator, false);
+		}
+	}
 	if (context->mask & RZ_GADGET_PRINT) {
 		if (context->subchains) {
 			const size_t len = rz_pvector_len(hitlist);
 			const size_t limit = (len > 1) ? (len - 1) : 1;
 			for (size_t i = 0; i < limit; i++) {
-				if (!print_gadget_hitlist(core, hitlist, i, context)) {
+				if (!print_gadget_hitlist(core, hitlist, i, context, is_conditional)) {
 					return false;
 				}
 			}
 		} else {
-			if (!print_gadget_hitlist(core, hitlist, 0, context)) {
+			if (!print_gadget_hitlist(core, hitlist, 0, context, is_conditional)) {
 				return false;
 			}
 		}
@@ -1534,7 +1590,7 @@ RZ_API bool rz_core_handle_gadget_request_type(RZ_NONNULL RzCore *core, RZ_NONNU
 		if (!gadget_info && is_analysis) {
 			return false;
 		}
-		print_gadget_info(core, gadget_info, context);
+		print_gadget_info(core, gadget_info, context, is_conditional);
 	}
 	return true;
 }
