@@ -168,16 +168,30 @@ RZ_IPI void rz_inquiry_add_xref(RzInquiry *iq, const RzAnalysisXRef *xref) {
 	rz_vector_push(iq->dynamic_xrefs, (void *)xref);
 }
 
-RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL const RzPVector /*<RzBinSection *>*/ *allowed_segments) {
-	rz_return_val_if_fail(xref_to_addr && allowed_segments, false);
+RZ_API bool rz_inquiry_xref_interpreter_filter(RZ_NONNULL const RzAnalysisXRef *xref, RZ_NONNULL const RzPVector /*<RzBinSection *>*/ *allowed_segments) {
+	rz_return_val_if_fail(xref && allowed_segments, false);
 	void **it;
 	rz_pvector_foreach (allowed_segments, it) {
 		const RzBinSection *sec = *it;
 
 		ut64 start = sec->vaddr;
 		ut64 end = start + sec->vsize;
-		if (RZ_BETWEEN(start, *xref_to_addr, end)) {
-			return true;
+		if (RZ_BETWEEN_EXCL(start, xref->to, end)) {
+			switch (xref->type) {
+			case RZ_ANALYSIS_XREF_TYPE_CALL_RET:
+			case RZ_ANALYSIS_XREF_TYPE_CALL:
+			case RZ_ANALYSIS_XREF_TYPE_CODE:
+			case RZ_ANALYSIS_XREF_TYPE_RETURN:
+				return sec->perm & RZ_PERM_X;
+			case RZ_ANALYSIS_XREF_TYPE_MEM_WRITE:
+				return sec->perm & RZ_PERM_W;
+			case RZ_ANALYSIS_XREF_TYPE_MEM_READ:
+			case RZ_ANALYSIS_XREF_TYPE_STRING:
+				return sec->perm & RZ_PERM_R;
+			case RZ_ANALYSIS_XREF_TYPE_NULL:
+				rz_warn_if_reached();
+				return false;
+			}
 		}
 	}
 	return false;

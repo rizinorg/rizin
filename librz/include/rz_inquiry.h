@@ -49,7 +49,7 @@ RZ_API bool rz_inquiry_plugin_del(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_NO
 RZ_API RZ_OWN RzInquiry *rz_inquiry_new(void);
 RZ_API void rz_inquiry_free(RZ_OWN RZ_NULLABLE RzInquiry *q);
 
-RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL const RzPVector /*<RzBinSection *>*/ *allowed_segments);
+RZ_API bool rz_inquiry_xref_interpreter_filter(RZ_NONNULL const RzAnalysisXRef *xref, RZ_NONNULL const RzPVector /*<RzBinSection *>*/ *allowed_segments);
 
 RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzSetU /*<ut64>*/ *entry_points, RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code);
 
