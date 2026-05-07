@@ -1438,7 +1438,7 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 
 	if (core->io->va) {
 		if (!rz_io_is_valid_offset(core->io, at, !aopt->noncode)) {
-			RZ_LOG_DEBUG("address not mapped or not executable at 0x%08" PFMT64x "\n", at);
+			RZ_LOG_VERBOSE("Address not mapped or not executable at 0x%" PFMT64x ".\n", at);
 			return false;
 		}
 	}

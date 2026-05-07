@@ -4,6 +4,10 @@ CMDS=<<EOF
 %v entry0; e asm.bytes=true; pdq 4 @ entry0;
 echo ---
 oml
+echo ---
+iSS
+e log.level=1
+aF
 EOF
 EXPECT=<<EOF
 0x10020
@@ -14,5 +18,25 @@ EXPECT=<<EOF
 0x00010025                 cd80  int 0x80
 ---
  1 fd: 3 +0x00000000 0x00010000 * 0x0002001f r-- fmap.LOAD0
+---
+     paddr    size      vaddr   vsize      align perm name  
+------------------------------------------------------------
+0x00000000 0x10020 0x00010000 0x10020 0xc0312ab3 -r-- LOAD0
+0x00000000    0x2d 0x00010000    0x2d        0x0 -rw- ehdr
+EOF
+EXPECT_ERR=<<EOF
+WARNING: Failed to read ELF header (e_phnum).
+WARNING: Failed to read ELF header (e_shentsize).
+WARNING: Failed to read ELF header (e_shnum).
+WARNING: Failed to read ELF header (e_shstrndx).
+WARNING: The binary seems to be a tiny elf (45 bytes). Reload e_phnum value.
+WARNING: Number of sections is 0.
+WARNING: phdr entry: p_offset (0x0) + p_filesz (65568 bytes) > binary size (45 bytes).
+WARNING: phdr entry: p_offset (0x0) and p_vaddr (0x10000) are not congruent for p_align (0xc0312ab3).
+WARNING: The segment 0 at 0x4 seems to be invalid.
+WARNING: ELF header e_shstrndx value (0) >= number of sections (0).
+WARNING: Failed to initialize section string table.
+ERROR: Failed to read chunk of size 0x101 at 0x10020 for disassembly.
+VERBOSE: Address not mapped or not executable at 0x10020.
 EOF
 RUN
