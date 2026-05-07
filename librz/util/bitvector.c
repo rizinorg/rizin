@@ -81,6 +81,25 @@ RZ_API bool rz_bv_init(RZ_NONNULL RzBitVector *bv, ut32 length) {
 }
 
 /**
+ * \brief Initialize \p bv, assigning the value of \p src
+ * \param bv uninitialized RzBitVector structure
+ * \param src value to copy into the newly initialized bitvector
+ * \return true if succeeded
+ */
+RZ_API bool rz_bv_init_copy(RZ_NONNULL RzBitVector *bv, RZ_NONNULL const RzBitVector *src) {
+	rz_return_val_if_fail(bv && src, false);
+	bool r = rz_bv_init(bv, rz_bv_len(src));
+	if (!r) {
+		return false;
+	}
+	if (!rz_bv_copy(bv, src)) {
+		rz_bv_fini(bv);
+		return false;
+	}
+	return true;
+}
+
+/**
  * \brief Clear a RzBitVector structure
  */
 RZ_API void rz_bv_fini(RZ_NONNULL RzBitVector *bv) {
@@ -1194,8 +1213,9 @@ RZ_API RZ_OWN RzBitVector *rz_bv_sub(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBit
 RZ_API bool rz_bv_mul_inplace(RZ_NONNULL RZ_INOUT RzBitVector *x, const RZ_NONNULL RzBitVector *y) {
 	rz_return_val_if_fail(x && y, false);
 	RzBitVector dup;
-	rz_bv_init(&dup, x->len);
-	rz_bv_copy(&dup, x);
+	if (!rz_bv_init_copy(&dup, x)) {
+		return false;
+	}
 	rz_bv_set_all(x, false);
 
 	bool cur_bit = false;
@@ -1308,11 +1328,13 @@ RZ_API bool rz_bv_div_inplace(RZ_NONNULL RZ_INOUT RzBitVector *x, const RZ_NONNU
 	// dividend > divisor
 	// do typical division by shift and subtract
 	RzBitVector dend;
-	rz_bv_init(&dend, x->len);
-	rz_bv_copy(&dend, x);
+	if (!rz_bv_init_copy(&dend, x)) {
+		return false;
+	}
 	RzBitVector sor;
-	rz_bv_init(&sor, y->len);
-	rz_bv_copy(&sor, y);
+	if (!rz_bv_init_copy(&sor, y)) {
+		goto err_dend;
+	}
 
 	// shift the divisor left to align both highest bits
 	ut32 sorlz = rz_bv_clz(&sor);
@@ -1326,15 +1348,18 @@ RZ_API bool rz_bv_div_inplace(RZ_NONNULL RZ_INOUT RzBitVector *x, const RZ_NONNU
 
 			// sub_inplace() negates sor_cpy
 			RzBitVector sor_cpy;
-			rz_bv_init(&sor_cpy, y->len);
-			rz_bv_copy(&sor_cpy, &sor);
+			if (!rz_bv_init_copy(&sor_cpy, &sor)) {
+				goto err_sor;
+			}
 			rz_bv_sub_inplace(&dend, &sor_cpy, NULL);
 			rz_bv_fini(&sor_cpy);
 		}
 		rz_bv_rshift(&sor, 1);
 	}
-	rz_bv_fini(&dend);
+err_sor:
 	rz_bv_fini(&sor);
+err_dend:
+	rz_bv_fini(&dend);
 	return true;
 }
 
@@ -1372,8 +1397,9 @@ RZ_API bool rz_bv_mod_inplace(RZ_NONNULL RZ_INOUT RzBitVector *x, const RZ_NONNU
 		return true;
 	}
 	RzBitVector remul;
-	rz_bv_init(&remul, rz_bv_len(x));
-	rz_bv_copy(&remul, x);
+	if (!rz_bv_init_copy(&remul, x)) {
+		return false;
+	}
 
 	if (!rz_bv_div_inplace(&remul, y)) {
 		rz_bv_fini(&remul);

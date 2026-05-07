@@ -85,6 +85,7 @@ if get_option('enable_tests')
     'il_validate',
     'il_vm',
     'il_helpers',
+    'il_traverse',
     'intervaltree',
     'io',
     'io_ihex',
