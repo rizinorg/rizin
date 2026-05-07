@@ -1257,7 +1257,11 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 			if (*addr == ',') {
 				addr++;
 			}
-			if (!op->stackop && op->type != RZ_ANALYSIS_OP_TYPE_PUSH && op->type != RZ_ANALYSIS_OP_TYPE_POP && op->type != RZ_ANALYSIS_OP_TYPE_RET && rz_str_isnumber(addr)) {
+			if (!op->stackop &&
+				op->type != RZ_ANALYSIS_OP_TYPE_PUSH &&
+				op->type != RZ_ANALYSIS_OP_TYPE_POP &&
+				op->type != RZ_ANALYSIS_OP_TYPE_RET &&
+				rz_str_isnumber(addr)) {
 				addend = (st64)rz_num_get(NULL, addr);
 				if (addend && op->src[0] && addend == op->src[0]->imm) {
 					goto beach;
@@ -1408,7 +1412,13 @@ static inline bool op_affect_dst(RzAnalysisOp *op) {
 #define STR_EQUAL(s1, s2) (s1 && s2 && !strcmp(s1, s2))
 
 static inline bool arch_destroys_dst(const char *arch) {
-	return (STR_EQUAL(arch, "arm") || STR_EQUAL(arch, "riscv") || STR_EQUAL(arch, "ppc"));
+	if (!arch) {
+		return false;
+	}
+	return rz_str_startswith(arch, "arm") ||
+		rz_str_startswith(arch, "mips") ||
+		rz_str_startswith(arch, "ppc") ||
+		rz_str_startswith(arch, "riscv");
 }
 
 static bool is_used_like_arg(const char *regname, const char *opsreg, const char *opdreg, RzAnalysisOp *op, RzAnalysis *analysis) {
@@ -1472,6 +1482,11 @@ static size_t count_reg_arg_vars(RzAnalysisFunction *fcn) {
 	return count;
 }
 
+static inline bool is_op_call(const RzAnalysisOp *op) {
+	ut32 optype = op->type & RZ_ANALYSIS_OP_TYPE_MASK;
+	return optype == RZ_ANALYSIS_OP_TYPE_CALL || optype == RZ_ANALYSIS_OP_TYPE_UCALL;
+}
+
 RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzAnalysisFunction *fcn, int *reg_set, int *count) {
 	int i, argc = 0;
 	rz_return_if_fail(analysis && op && fcn);
@@ -1492,8 +1507,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 		argc = rz_type_func_args_count(analysis->typedb, fname);
 	}
 
-	bool is_call = (op->type & 0xf) == RZ_ANALYSIS_OP_TYPE_CALL || (op->type & 0xf) == RZ_ANALYSIS_OP_TYPE_UCALL;
-	if (is_call && *count < max_count) {
+	if (is_op_call(op) && *count < max_count) {
 		RzList *callee_rargs_l = NULL;
 		size_t callee_rargs = 0;
 		char *callee = NULL;

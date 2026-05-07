@@ -1416,6 +1416,7 @@ RZ_API void rz_analysis_set_lines_width(RZ_NONNULL RzAnalysis *analysis, int lin
 RZ_API int rz_analysis_get_lines_width(RZ_NONNULL RzAnalysis *analysis);
 RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits);
 RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu);
+RZ_API bool rz_analysis_is_cpu(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *cpu);
 RZ_API int rz_analysis_set_big_endian(RzAnalysis *analysis, int boolean);
 RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, ut32 size, const ut8 *data, ut64 at);
 RZ_API void rz_analysis_trace_bb(RzAnalysis *analysis, ut64 addr);
@@ -2031,7 +2032,7 @@ RZ_API void rz_analysis_rtti_print_all(RzAnalysis *analysis, RzOutputMode mode);
 RZ_API void rz_analysis_rtti_recover_all(RzAnalysis *analysis);
 
 RZ_API RzList /*<RzSearchKeyword *>*/ *rz_analysis_preludes(RzAnalysis *analysis);
-RZ_API bool rz_analysis_is_prelude(RzAnalysis *analysis, const ut8 *data, int len);
+RZ_API bool rz_analysis_is_prelude(RzAnalysis *analysis, const ut8 *data, size_t len);
 
 /* devirualize */
 typedef struct rz_variable_book_t {

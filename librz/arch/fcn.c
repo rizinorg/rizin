@@ -523,7 +523,12 @@ static inline bool op_is_set_bp(RzAnalysisOp *op, const char *bp_reg, const char
 }
 
 static inline bool does_arch_destroys_dst(const char *arch) {
-	return arch && (!strncmp(arch, "arm", 3) || !strcmp(arch, "riscv") || !strcmp(arch, "ppc"));
+	if (!arch) {
+		return NULL;
+	}
+	return rz_str_startswith(arch, "arm") ||
+		rz_str_startswith(arch, "riscv") ||
+		rz_str_startswith(arch, "ppc");
 }
 
 static int analyze_function_locally(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 address) {
@@ -550,7 +555,7 @@ static inline void set_bb_branches(RZ_OUT RzAnalysisBlock *bb, const ut64 jump, 
  * False otherwise.
  */
 static inline bool jumps_to_prelude(RzAnalysis *analysis, ut64 jmp_addr) {
-	ut8 buf[32] = { 0 };
+	ut8 buf[64] = { 0 };
 	(void)analysis->iob.read_at(analysis->iob.io, jmp_addr, (ut8 *)buf, sizeof(buf));
 	return rz_analysis_is_prelude(analysis, buf, sizeof(buf));
 }
