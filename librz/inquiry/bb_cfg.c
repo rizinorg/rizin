@@ -6,6 +6,7 @@
 #include "rz_util/rz_assert.h"
 #include "rz_util/rz_graph.h"
 #include "rz_util/rz_iterator.h"
+#include "rz_vector.h"
 #include <rz_inquiry/rz_bb_graph.h>
 
 static ut64 hash_node(const void *data) {
@@ -68,6 +69,7 @@ static bool edge_from(const RzGraphEdge *e, void *addr) {
 }
 
 RZ_IPI bool rz_inquiry_bb_cfg_del_out_edges(RzInquiryBBCFG *cfg, ut64 bb_addr) {
+
 	return rz_graph_del_edges(cfg->graph, edge_from, RZ_GRAPH_INT_AS_DATA(bb_addr));
 }
 
@@ -84,6 +86,10 @@ RZ_IPI bool rz_inquiry_bb_cfg_del_out_edges(RzInquiryBBCFG *cfg, ut64 bb_addr) {
  */
 RZ_IPI bool rz_inquiry_bb_cfg_add_edge(RzInquiryBBCFG *cfg, ut64 from_bb, ut64 to_bb, RzInquiryBBCFGEdgeType type) {
 	return rz_graph_add_edge_by_id(cfg->graph, from_bb, to_bb, RZ_GRAPH_INT_AS_DATA(type));
+}
+
+RZ_IPI bool rz_inquiry_bb_cfg_del_edge(RzInquiryBBCFG *cfg, ut64 from_bb, ut64 to_bb) {
+	return rz_graph_del_edge_by_id(cfg->graph, from_bb, to_bb);
 }
 
 static bool is_cf_edge(const RzGraphEdge *e, void *unused) {
@@ -262,18 +268,30 @@ RZ_IPI bool rz_inquiry_bb_cfg_reduce(RzInquiryBBCFG *cfg) {
 			RzGraphEdge *e;
 			RzIterator *out_edges = rz_inquiry_bb_cfg_get_outgoing_edges(cfg, big_bb_addr);
 			if (out_edges) {
+				RzVector big_out_addr = { 0 };
+				rz_vector_init(&big_out_addr, sizeof(ut64), NULL, NULL);
+
 				rz_iterator_foreach(out_edges, e) {
 					ut64 to = rz_graph_node_get_id(rz_graph_edge_get_to(e));
 					RzInquiryBBCFGEdgeType type = (utptr)rz_graph_edge_get_data(e);
+					if (type == RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL) {
+						// Keep call edges.
+						continue;
+					}
 					if (!rz_inquiry_bb_cfg_add_edge(cfg, small_bb_addr, to, type)) {
 						RZ_LOG_DEBUG("Did not add edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", big_bb_addr, small_bb_addr);
 						continue;
 					}
+					rz_vector_push(&big_out_addr, &to);
 				}
 				rz_iterator_free(out_edges);
+				ut64 *to;
+				rz_vector_foreach_prev (&big_out_addr, to) {
+					rz_inquiry_bb_cfg_del_edge(cfg, big_bb_addr, *to);
+				}
+				rz_vector_fini(&big_out_addr);
 			}
 
-			rz_inquiry_bb_cfg_del_out_edges(cfg, big_bb_addr);
 			if (!rz_inquiry_bb_cfg_add_edge(cfg, big_bb_addr, small_bb_addr, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF)) {
 				RZ_LOG_DEBUG("Did not add edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", big_bb_addr, small_bb_addr);
 				continue;
