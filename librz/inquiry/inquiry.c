@@ -289,11 +289,11 @@ static bool get_branch_targets(RzCore *core, RzSetU *branch_targets) {
 static bool log_control_flow(RzInquiry *inquiry, RzInterpreterCtrlFlow *cf) {
 	RZ_LOG_DEBUG("INQUIRY: Received control flow: 0x%" PFMT64x " size: %" PFMTSZu " (alt: 0x%" PFMT64x ")\n",
 		cf->target_addr, cf->target_block_size, cf->alt_target);
-	rz_inquiry_bb_cfg_add_basic_block(inquiry->bb_cfg, cf->actual_target, cf->target_block_size);
+	rz_inquiry_bb_cfg_add_block(inquiry->bb_cfg, cf->actual_target, cf->target_block_size);
 	if (cf->alt_target) {
 		// Add a dummy basic block at the address the call originally jumped to.
 		// This is the basic block for the imported function.
-		rz_inquiry_bb_cfg_add_basic_block(inquiry->bb_cfg, cf->target_addr, 1);
+		rz_inquiry_bb_cfg_add_block(inquiry->bb_cfg, cf->target_addr, 1);
 	}
 	// Add a simple control flow edge here.
 	// It gets later updated to another type if a reported xref has it.
@@ -534,7 +534,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		rz_warn_if_reached();
 		goto error_free;
 	}
-	size_t n_threads = 1;
+	size_t n_threads = 8;
 	iset_map = RZ_NEWS0(struct ituple, n_threads);
 
 	RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM] = { 0 };
@@ -755,7 +755,7 @@ fatal_error:
 		char *bstr = rz_il_cache_block_str(block);
 		RZ_LOG_DEBUG("Inquiry: Add ILCache block: %s\n", bstr);
 		free(bstr);
-		rz_inquiry_bb_cfg_add_basic_block(core->inquiry->bb_cfg, block->addr, block->size);
+		rz_inquiry_bb_cfg_add_block(core->inquiry->bb_cfg, block->addr, block->size);
 	}
 	rz_iterator_free(iter);
 	if (!rz_inquiry_bb_cfg_add_xrefs(core->inquiry->bb_cfg, rz_il_cache_get_static_xrefs(il_cache))) {

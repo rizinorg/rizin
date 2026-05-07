@@ -143,7 +143,7 @@ RZ_API RZ_OWN RzIterator /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_incoming_edg
  * \brief Does not update the BB if it is already present.
  * Returns false if it already exists.
  */
-RZ_IPI bool rz_inquiry_bb_cfg_add_basic_block(RzInquiryBBCFG *cfg, ut64 addr, ut64 size) {
+RZ_IPI bool rz_inquiry_bb_cfg_add_block(RzInquiryBBCFG *cfg, ut64 addr, ut64 size) {
 	RzInquiryBB *bb = RZ_NEW(RzInquiryBB);
 	if (!bb) {
 		return false;
@@ -214,9 +214,10 @@ static int cmp(const ut64 *a, const ut64 *b, void *user) {
 }
 
 /**
- * \brief Reduces all basic blocks in the cfg to their minimum size.
+ * \brief Reduces all blocks in the cfg to their minimum size.
  * Removing duplicates and overlapping basic blocks.
- * This function makes each basic block just have a single entry point.
+ * This function makes each block just have a single entry point.
+ * This makes each block as "basic block" in the sense of One Entry/One Exit.
  */
 RZ_IPI bool rz_inquiry_bb_cfg_reduce(RzInquiryBBCFG *cfg) {
 	// Index is end address of bb, values are starting address of bbs with that end address.
