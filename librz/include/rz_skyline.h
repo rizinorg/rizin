@@ -1,3 +1,12 @@
+// SPDX-FileCopyrightText: 2020 GustavoLCR <gugulcr@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+/**
+ * \file  RzSkyline is a data structure to store overlapping number ranges.
+ * Similar like R-Trees (but 2 dimensional) it
+ * can be used to determine intersections of ranges.
+ */
+
 #ifndef RZ_SKYLINE_H
 #define RZ_SKYLINE_H
 
