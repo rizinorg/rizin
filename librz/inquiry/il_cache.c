@@ -261,6 +261,7 @@ static bool lift_executable_maps(RzILCache *cache) {
 	}
 	return true;
 }
+
 RZ_API bool rz_il_cache_serve(RZ_NONNULL RzILCache *cache) {
 	rz_return_val_if_fail(cache, false);
 	rz_th_lock_enter(cache->n_serving_lock);

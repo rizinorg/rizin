@@ -37,12 +37,13 @@ bool report_yield_xref(
 	rz_return_val_if_fail(yrbuf, false);
 
 	ut64 to_addr = rz_bv_to_ut64(to->bv);
-	if (yrbuf->filter(&to_addr, yrbuf->filter_data->io_boundaries)) {
-		RzAnalysisXRef xref = { 0 };
-		xref.bb_addr = iset->astate->bb_addr;
-		xref.from = from;
-		xref.to = to_addr;
-		xref.type = type;
+	RzAnalysisXRef xref = { 0 };
+	xref.bb_addr = iset->astate->bb_addr;
+	xref.from = from;
+	xref.to = to_addr;
+	xref.type = type;
+	if (yrbuf->filter(&xref, yrbuf->filter_data->io_boundaries)) {
+		RZ_LOG_DEBUG("REPORT xref: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n", xref.from, xref.to, rz_analysis_ref_type_tostring(xref.type));
 		if (rz_th_ring_buf_put(yrbuf->rbuf, &xref) != RZ_THREAD_RING_BUF_OK) {
 			return false;
 		}
