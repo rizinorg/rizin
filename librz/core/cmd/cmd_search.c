@@ -1228,6 +1228,7 @@ static void __core_cmd_search_asm_infinite(RzCore *core, const char *arg) {
 		}
 		free(buf);
 	}
+	rz_list_free(boundaries);
 }
 
 static void __core_cmd_search_asm_byteswap(RzCore *core, int nth) {
