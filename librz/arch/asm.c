@@ -445,10 +445,10 @@ static ut32 asm_get_first_default_bits(RzAsmPlugin *h) {
 		return RZ_SYS_BITS << 3;
 	}
 
-	if (h->bits & 32) {
-		return 32;
-	} else if (h->bits & 64) {
+	if (h->bits & 64) {
 		return 64;
+	} else if (h->bits & 32) {
+		return 32;
 	} else if (h->bits & 16) {
 		return 16;
 	} else if (h->bits & 8) {
