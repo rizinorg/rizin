@@ -458,3 +458,15 @@ EXPECT=<<EOF
 0x00000076
 EOF
 RUN
+
+NAME=Heap use after free
+FILE==
+CMDS=<<EOF
+e search.in=section
+/x deadbeef
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: core: Invalid mode 'section' for [0x0, 0xffffffffffffffff]
+EOF
