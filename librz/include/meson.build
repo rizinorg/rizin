@@ -102,7 +102,6 @@ rz_util_files = [
   'rz_util/rz_print.h',
   'rz_util/rz_protobuf.h',
   'rz_util/rz_punycode.h',
-  'rz_util/rz_range.h',
   'rz_util/rz_rbtree.h',
   'rz_util/rz_regex.h',
   'rz_util/rz_serialize.h',

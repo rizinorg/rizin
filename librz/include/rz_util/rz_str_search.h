@@ -2,6 +2,7 @@
 #define RZ_STR_SEARCH_H
 
 #include <rz_util/rz_str.h>
+#include <rz_util/rz_unicode.h>
 #include <rz_util/rz_assert.h>
 #include <rz_util/rz_buf.h>
 #include <rz_util/rz_regex.h>
@@ -41,6 +42,7 @@ typedef struct {
 	size_t min_str_length; ///< Minimum string length
 	bool prefer_big_endian; ///< True if the preferred endianess for UTF strings is big-endian
 	bool check_ascii_freq; ///< If true, perform check on ASCII frequencies when looking for false positives
+	RzVector /*<RzCodePoint>*/ *user_unprintable; ///< Borrowed vector of user-defined non-printable code points
 } RzUtilStrScanOptions;
 
 RZ_API void rz_detected_string_free(RzDetectedString *str);

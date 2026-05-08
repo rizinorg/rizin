@@ -86,7 +86,11 @@ RZ_API bool rz_debug_add_checkpoint(RzDebug *dbg) {
 	rz_vector_push(dbg->session->checkpoints, &checkpoint);
 
 	// Add PC register change so we can check for breakpoints when continue [back]
-	RzRegItem *ripc = rz_reg_get(dbg->reg, dbg->reg->name[RZ_REG_NAME_PC], RZ_REG_TYPE_GPR);
+	RzRegItem *ripc = rz_reg_get_by_role(dbg->reg, RZ_REG_NAME_PC);
+	if (!ripc) {
+		RZ_LOG_ERROR("debug: no PC register known\n");
+		return false;
+	}
 	ut64 data = rz_reg_get_value(dbg->reg, ripc);
 	rz_debug_session_add_reg_change(dbg->session, ripc->arena, ripc->offset, data);
 

@@ -37,6 +37,7 @@ RZ_IPI bool rz_xnu_debug_init(RzDebug *dbg, void **user) {
 		return false;
 	}
 	ctx->old_pid = -1;
+	ctx->last_attached_pid = -1;
 	*user = ctx;
 	return true;
 }
@@ -152,6 +153,10 @@ int xnu_attach(RzDebug *dbg, int pid) {
 	RzXnuDebug *ctx = dbg->plugin_data;
 
 	dbg->pid = pid;
+	if (ctx->last_attached_pid == pid) {
+		RZ_LOG_INFO("Already attached to pid %d, skipping attach\n", pid);
+		return pid;
+	}
 
 	ctx->cpu = xnu_get_cpu_type(pid);
 	if (!ctx->cpu) {
@@ -180,6 +185,7 @@ int xnu_attach(RzDebug *dbg, int pid) {
 		xnu_stop(dbg, pid);
 	}
 
+	ctx->last_attached_pid = pid;
 	return pid;
 }
 
@@ -451,21 +457,6 @@ RzDebugInfo *xnu_info(RzDebug *dbg, const char *arg) {
 #endif
 	return rdi;
 }
-
-/*
-static void xnu_free_threads_ports (RzDebugPid *p) {
-	kern_return_t kr;
-	if (!p) return;
-	free (p->path);
-	if (p->pid != old_pid) {
-		kr = mach_port_deallocate (old_pid, p->pid);
-		if (kr != KERN_SUCCESS) {
-			eprintf ("error mach_port_deallocate in "
-				"xnu_free_threads ports\n");
-		}
-	}
-}
-*/
 
 RzList *xnu_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	rz_return_val_if_fail(dbg && dbg->plugin_data, NULL);

@@ -252,7 +252,6 @@ typedef struct luac_bin_info {
 	RzPVector /*<RzBinAddr *>*/ *entry_vec; ///< list of entries
 	RzPVector /*<RzBinSourceLineSample *>*/ *line_nums_vec; ///< list of line numbers
 	RzList /*<RzBinString *>*/ *string_list; ///< list of strings
-	RzBinInfo *general_info; ///< general binary info from luac header
 	LuaHeaderInfo *header;
 } LuacBinInfo;
 

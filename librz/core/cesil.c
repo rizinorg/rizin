@@ -12,6 +12,15 @@
 #include <rz_util/rz_graph_drawable.h>
 #include "core_private.h"
 
+RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut64 a2) {
+	if (cmd && *cmd) {
+		RzCore *core = (RzCore *)esil->pcore;
+		rz_core_cmdf(core, "%s %" PFMT64d " %" PFMT64d, cmd, a1, a2);
+		return core->num->value;
+	}
+	return false;
+}
+
 static ut64 initializeEsil(RzCore *core) {
 	ut64 addr = 0;
 	int romem = rz_config_get_i(core->config, "esil.romem");
@@ -758,10 +767,7 @@ RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val)
 	if (!r) {
 		int role = rz_reg_get_name_idx(regname);
 		if (role != -1) {
-			const char *alias = rz_reg_get_name(rreg, role);
-			if (alias) {
-				r = rz_reg_get(rreg, alias, -1);
-			}
+			r = rz_reg_get_by_role(rreg, role);
 		}
 	}
 	if (!r) {

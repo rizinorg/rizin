@@ -162,6 +162,10 @@ typedef struct rz_bin_elf_reloc_t {
 	 * \brief Sparc specific ELF relocation value.
 	 */
 	ut64 sparc_secondary_addend;
+	/**
+	 * \brief ARM Thumb Mode bit - Check out https://github.com/ARM-software/abi-aa/blob/main/aaelf32/aaelf32.rst#5612relocation-types
+	 */
+	bool thumb;
 } RzBinElfReloc;
 
 typedef struct rz_bin_elf_dt_dynamic_t RzBinElfDtDynamic; // elf_dynamic.h
@@ -406,5 +410,8 @@ RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_symbol)(RZ_NONNULL ELFOBJ *bin, ut
 RZ_OWN RzVector /*<RzBinElfSymbol>*/ *Elf_(rz_bin_elf_compute_symbols)(ELFOBJ *bin, RzBinElfSymbolFilter filter);
 RZ_OWN RzVector /*<RzBinElfSymbol>*/ *Elf_(rz_bin_elf_symbols_new)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_symbols)(RZ_NONNULL ELFOBJ *bin);
+
+// elf_relocs_addend.c
+RZ_BORROW bool Elf_(rz_bin_elf_reloc_get_addend)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfReloc *reloc);
 
 #endif

@@ -266,10 +266,14 @@ typedef struct {
 	bool just_init; ///< Flag indicates if IL VM was just initialized.
 	HexPkt pkts[HEXAGON_STATE_PKTS]; // buffered instructions
 	RzList /*<HexConstExt *>*/ *const_ext_l; // Constant extender values.
-	RzConfig *cfg;
 	RzPVector /*<RzAsmTokenPattern *>*/ *token_patterns; ///< PVector with token patterns. Priority ordered.
 	bool utf8_enabled; ///< If set, print UTF-8 characters.
 	bool might_have_jumped; ///< Is set if a previous IL packet was a branch. Indicates the next decoded packet is valid.
+
+	bool imm_hash; ///< Display ## before 32bit immediates and # before immidiates with other width.
+	bool imm_sign; ///< True: Print them with sign. False: Print signed immediates in unsigned representation.
+	bool sdk; ///< Print packet syntax in objdump style.
+	bool reg_alias; ///< Print the alias of registers (Alias from C0 = SA0).
 } HexState;
 
 /**

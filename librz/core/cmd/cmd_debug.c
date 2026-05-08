@@ -363,7 +363,7 @@ static bool step_until_optype(RzCore *core, RzList /*<char *>*/ *optypes_list) {
 				break;
 			}
 			rz_debug_step(core->dbg, 1);
-			pc = rz_debug_reg_get(core->dbg, core->dbg->reg->name[RZ_REG_NAME_PC]);
+			pc = rz_debug_reg_get_by_role(core->dbg, RZ_REG_NAME_PC);
 			// 'Copy' from rz_debug_step_soft
 			if (!core->dbg->iob.read_at) {
 				RZ_LOG_ERROR("ERROR\n");
@@ -2806,7 +2806,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_handler(RzCore *core, int argc, 
 		rz_list_append(list, (void *)argv[i]);
 		rz_list_free(l);
 	}
-	char *str = rz_list_to_str(list, '\n');
+	char *str = rz_list_to_str(list, '\n', true);
 	set_profile_string(core, str);
 	free(str);
 	rz_list_free(list);

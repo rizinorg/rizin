@@ -5,6 +5,7 @@
 #include "rz_assert.h"
 #include "rz_str_util.h"
 #include "rz_list.h"
+#include <rz_vector.h>
 #include "rz_types.h"
 
 #ifdef __cplusplus
@@ -203,7 +204,7 @@ RZ_API bool rz_str_cmp_list(const char *list, const char *item, char sep);
 RZ_API int rz_str_cmp(RZ_NULLABLE const char *dst, RZ_NULLABLE const char *orig, int len);
 RZ_API int rz_str_casecmp(const char *dst, const char *orig);
 RZ_API int rz_str_ncasecmp(const char *dst, const char *orig, size_t n);
-RZ_API int rz_str_ccpy(char *dst, char *orig, int ch);
+RZ_API int rz_str_ccpy(char *dst, const char *orig, int ch);
 static inline const char *rz_str_get(const char *str) {
 	return str ? str : "";
 }
@@ -288,6 +289,7 @@ typedef struct rz_str_stringify_opt_t {
 	bool stop_at_nil; ///< When enabled stops printing when '\0' is found.
 	bool stop_at_unprintable; ///< When enabled stops printing at first non-printable character.
 	bool urlencode; ///< Encodes the output following RFC 3986.
+	const RzVector /*<RzCodePoint>*/ *user_unprintable; ///< Borrowed vector of user-defined non-printable code points.
 } RzStrStringifyOpt;
 
 RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, ut32 length);

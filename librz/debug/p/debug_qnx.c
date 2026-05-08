@@ -141,8 +141,7 @@ static int debug_qnx_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size)
 	}
 	RzReg *rreg = rz_analysis_get_reg(dbg->analysis);
 	int bits = rz_analysis_get_bits(dbg->analysis);
-	const char *pcname = rz_reg_get_name(rreg, RZ_REG_NAME_PC);
-	RzRegItem *reg = rz_reg_get(rreg, pcname, 0);
+	RzRegItem *reg = rz_reg_get_by_role(rreg, RZ_REG_NAME_PC);
 	if (!ctx->reg_buf) {
 		// we cannot write registers before we once read them
 		return -1;

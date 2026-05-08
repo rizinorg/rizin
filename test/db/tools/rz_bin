@@ -1352,7 +1352,7 @@ intrp    N/A
 laddr    0x00000000
 lang     c
 machine  mc68030
-maxopsz  4
+maxopsz  22
 minopsz  2
 os       darwin
 cc       N/A

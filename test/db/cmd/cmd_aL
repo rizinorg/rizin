@@ -155,12 +155,15 @@ cpu12           Motorola 68HC12: 16-bit microcontroller (also abbreviated as 681
 6301            Hitachi 6301: 8-bit microcontroller, CMOS version of 6800
 6309            Hitachi 6309: CMOS version of 6809
 hcs08           Freescale HCS08: 8-bit microcontroller family
+RS08            Freescale RS08: Reduced-resource version of HCS08
+HCS12X          Freescale HCS12X: 16-bit microcontroller (upwards compatible with cpu12)
 68000           Motorola 68000: 16/32-bit CISC microprocessor
 68010           Motorola 68010: 16/32-bit microprocessors. Successor to Motoroloa 68000
 68020           Motorola 68020: 32-bit microprocessor with added instructions and additional addressing modes
 68030           Motorola 68030: Enhanced 32-bit microprocessor with integrated MMU
 68040           Motorola 68040: High-performance 32-bit microprocessor with integrated FPU
 68060           Motorola 68060: 32-bit microprocessor, highest performer in m68k series
+cpu32           Motorola CPU32: 32-bit embedded-controller CPU core based on the 68020
 baseline        Baseline 12-bit instruction set microcontrollers: PIC10Fxxx, PIC12Fxxx, and PIC16Fxxx
 midrange        Mid-Range 14-bit instruction set microcontrollers: PIC10Fxxx, PIC12Fxxx, and PIC16Fxxx
 highend         High-End 16-bit instruction set microcontrollers: PIC18Fxxxx, PIC18FxxJxx, and PIC18FxxKxx

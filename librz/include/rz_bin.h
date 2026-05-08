@@ -211,6 +211,7 @@ typedef struct rz_bin_string_search_opt_t {
 	 */
 	size_t raw_alignment;
 	bool check_ascii_freq; ///< If true, perform check on ASCII frequencies when looking for false positives
+	RzVector /*<RzCodePoint>*/ *user_unprintable; ///< User-defined non-printable code points
 	RzStrEnc string_encoding; ///< The default string encoding type (when set to guess, it is automatically guessed).
 	RzBinStringSearchMode mode; ///< String search mode (auto, ro sections or raw binary)
 } RzBinStringSearchOpt;

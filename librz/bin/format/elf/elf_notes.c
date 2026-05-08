@@ -8,7 +8,7 @@
 
 #define ROUND_UP_4(x) ((x) + (4 - 1)) / 4 * 4
 
-#define FP_LAYOUT 0x10
+#define FP_LAYOUT 0x80
 
 #define X86          0
 #define X86_64       1
@@ -37,11 +37,13 @@
 #define RISCV_32_FP (FP_LAYOUT | RISCV_32)
 #define RISCV_64_FP (FP_LAYOUT | RISCV_64)
 #define PPC64       15
+#define M68K        16
+#define M68K_FP     (FP_LAYOUT | M68K)
 #define S390X       17
 #define LOONGARCH32 18
 #define LOONGARCH64 19
 // Floating point register layout.
-#define ARCH_LEN (FP_LAYOUT | 0xf)
+#define ARCH_LEN (FP_LAYOUT | 0x1f)
 
 // See elf.c::elfcore_grok_solaris_note_impl() of binutil's bfd
 // https://sourceware.org/git/?p=binutils-gdb.git;a=blob;f=bfd/elf.c;h=6ef603010918f14eda69f0d0dc1637b4d51e8157;hb=HEAD#l11777
@@ -116,6 +118,14 @@
 #define LOONGARCH64_PR_STATUS_REG_OFFSET    0x70
 #define LOONGARCH64_PR_STATUS_REG_OFFSET_SP 24
 
+// Linux/m68k NT_PRSTATUS uses elf_gregset_t[20] at byte 0x46. The order is
+// d1-d7, a0-a6, d0, usp, orig_d0, sr, pc, format/vector.
+// https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/arch/m68k/include/asm/elf.h
+// https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/arch/m68k/include/asm/user.h
+#define M68K_REGS_SIZE               (20 * 4)
+#define M68K_PR_STATUS_REG_OFFSET    0x46
+#define M68K_PR_STATUS_REG_OFFSET_SP (15 * 4)
+
 // The ones for Linux coredumps.
 // linux/arch/sparc/include/asm/elf_64.h or elf_32.h
 //
@@ -153,6 +163,19 @@
 // ```
 #define SPARC64_OPENBSD_FPREGS_SIZE  ((4 * 64) + 8 + 4)
 #define SPARC64_OPENBSD_FPREG_OFFSET 0x0
+
+// Linux x86/x86_64 NT_FPREGSET layouts.
+// For both, the FP state begins at the start of the note description.
+#define X86_FPREGS_SIZE     108
+#define X86_64_FPREGS_SIZE  512
+#define X86_FPREG_OFFSET    0x0
+#define X86_64_FPREG_OFFSET 0x0
+
+// linux/arch/m68k/include/asm/user.h: user_m68kfp_struct has 8 96-bit
+// fpregs plus fpcr/fpsr/fpiar.
+// https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/arch/m68k/include/asm/user.h
+#define M68K_FPREGS_SIZE  ((8 * 3 * 4) + (3 * 4))
+#define M68K_FPREG_OFFSET 0x0
 
 // o6 is the stack pointer. So g0-g7,o0-5 come before it.
 // Same for OpenBSD and Linux.
@@ -200,6 +223,8 @@ static RzBinElfPrStatusLayout prstatus_layouts[ARCH_LEN] = {
 
 	[PPC64] = { PPC64_REGS_SIZE, PPC64_PR_STATUS_REG_OFFSET, 64, PPC64_PR_STATUS_REG_OFFSET_SP },
 
+	[M68K] = { M68K_REGS_SIZE, M68K_PR_STATUS_REG_OFFSET, 32, M68K_PR_STATUS_REG_OFFSET_SP },
+
 	[S390X] = { S390X_REGS_SIZE, S390X_PR_STATUS_REG_OFFSET, 64, S390X_PR_STATUS_REG_OFFSET_SP },
 	[LOONGARCH32] = { LOONGARCH32_REGS_SIZE, LOONGARCH32_PR_STATUS_REG_OFFSET, 32, LOONGARCH32_PR_STATUS_REG_OFFSET_SP },
 	[LOONGARCH64] = { LOONGARCH64_REGS_SIZE, LOONGARCH64_PR_STATUS_REG_OFFSET, 64, LOONGARCH64_PR_STATUS_REG_OFFSET_SP },
@@ -214,6 +239,11 @@ static RzBinElfPrStatusLayout prstatus_layouts[ARCH_LEN] = {
 
 	[RISCV_32] = { RISCV_32_REGS_SIZE, RISCV_32_REG_OFFSET, 32, RISCV_32_REG_OFFSET_SP },
 	[RISCV_64] = { RISCV_64_REGS_SIZE, RISCV_64_REG_OFFSET, 64, RISCV_64_REG_OFFSET_SP },
+
+	[X86 | FP_LAYOUT] = { X86_FPREGS_SIZE, X86_FPREG_OFFSET, 0, 0 },
+	[X86_64 |
+		FP_LAYOUT] = { X86_64_FPREGS_SIZE, X86_64_FPREG_OFFSET, 0, 0 },
+	[M68K_FP] = { M68K_FPREGS_SIZE, M68K_FPREG_OFFSET, 0, 0 },
 };
 
 static bool parse_register_note(ELFOBJ *bin, RzVector /*<RzBinElfNote>*/ *notes, Elf_(Nhdr) * note_segment_header, ut64 offset, size_t n_type) {
@@ -463,6 +493,11 @@ RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNUL
 		return NULL;
 	case EM_PPC64:
 		return prstatus_layouts + PPC64;
+	case EM_68K:
+		if (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS32) {
+			return prstatus_layouts + M68K;
+		}
+		return NULL;
 	case EM_S390:
 		if (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64) {
 			return prstatus_layouts + S390X;
@@ -500,6 +535,30 @@ RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_regset_layout)(RZ_NONNULL 
 	switch (bin->ehdr.e_machine) {
 	default:
 		return NULL;
+	case EM_386:
+		if (n_type == NT_FPREGSET) {
+			off = FP_LAYOUT | X86;
+		} else {
+			rz_warn_if_reached();
+			return NULL;
+		}
+		break;
+	case EM_X86_64:
+		if (n_type == NT_FPREGSET) {
+			off = FP_LAYOUT | X86_64;
+		} else {
+			rz_warn_if_reached();
+			return NULL;
+		}
+		break;
+	case EM_68K:
+		if (n_type == NT_FPREGSET && bin->ehdr.e_ident[EI_CLASS] == ELFCLASS32) {
+			off = M68K_FP;
+		} else {
+			rz_warn_if_reached();
+			return NULL;
+		}
+		break;
 	case EM_MIPS:
 		/* fall-thru */
 	case EM_MIPS_RS3_LE:

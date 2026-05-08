@@ -1070,7 +1070,7 @@ RZ_API int rz_str_cmp(RZ_NULLABLE const char *a, RZ_NULLABLE const char *b, int 
 }
 
 // Copies all characters from src to dst up until the character 'ch'.
-RZ_API int rz_str_ccpy(char *dst, char *src, int ch) {
+RZ_API int rz_str_ccpy(char *dst, const char *src, int ch) {
 	int i;
 	for (i = 0; src[i] && src[i] != ch; i++) {
 		dst[i] = src[i];
@@ -4263,6 +4263,35 @@ RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, 
 	return enc == RZ_STRING_ENC_GUESS ? RZ_STRING_ENC_UTF8 : enc;
 }
 
+static inline bool is_user_defined_unprintable(const RzStrStringifyOpt *option, RzCodePoint cp) {
+	if (!option || !option->user_unprintable) {
+		return false;
+	}
+	RzCodePoint *it;
+	rz_vector_foreach (option->user_unprintable, it) {
+		if (*it == cp) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static inline bool stringification_has_incomplete_tail(const ut8 *buf, ut32 buflen, ut32 i, RzStrEnc enc) {
+	const size_t remaining = buflen - i;
+	switch (enc) {
+	case RZ_STRING_ENC_UTF8:
+		return rz_utf8_size(buf + i) > remaining;
+	case RZ_STRING_ENC_UTF16LE:
+	case RZ_STRING_ENC_UTF16BE:
+		return remaining < 2;
+	case RZ_STRING_ENC_UTF32LE:
+	case RZ_STRING_ENC_UTF32BE:
+		return remaining < 4;
+	default:
+		return false;
+	}
+}
+
 /**
  * \brief Converts a raw buffer to a printable string based on the selected options
  *
@@ -4325,6 +4354,9 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 		}
 
 		if (rsize == 0) {
+			if (stringification_has_incomplete_tail(buf, buflen, i, enc)) {
+				break;
+			}
 			if (option->stop_at_unprintable) {
 				break;
 			}
@@ -4411,17 +4443,20 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 		} else {
 			if (code_point == '\\') {
 				rz_strbuf_appendf(&sb, "\\\\");
-			} else if ((code_point == '\n' && !option->escape_nl) || (rz_unicode_code_point_is_printable(code_point))) {
-				char tmp[5] = { 0 };
-				rz_utf8_encode((ut8 *)tmp, code_point);
-				rz_strbuf_appendf(&sb, "%s", tmp);
-			} else if (option->stop_at_unprintable) {
-				break;
 			} else {
-				ut8 tmp[4];
-				int n_enc = rz_utf8_encode((ut8 *)tmp, code_point);
-				for (int j = 0; j < n_enc; ++j) {
-					rz_strbuf_appendf(&sb, "\\x%02x", tmp[j]);
+				const bool user_unprintable = is_user_defined_unprintable(option, code_point);
+				if (((code_point == '\n' && !option->escape_nl) || rz_unicode_code_point_is_printable(code_point)) && !user_unprintable) {
+					char tmp[5] = { 0 };
+					rz_utf8_encode((ut8 *)tmp, code_point);
+					rz_strbuf_appendf(&sb, "%s", tmp);
+				} else if (option->stop_at_unprintable) {
+					break;
+				} else {
+					ut8 tmp[4];
+					int n_enc = rz_utf8_encode((ut8 *)tmp, code_point);
+					for (int j = 0; j < n_enc; ++j) {
+						rz_strbuf_appendf(&sb, "\\x%02x", tmp[j]);
+					}
 				}
 			}
 		}

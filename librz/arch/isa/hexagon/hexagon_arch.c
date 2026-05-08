@@ -27,7 +27,6 @@ RZ_IPI void hexagon_state_fini(RZ_NULLABLE HexState *state) {
 	if (!state) {
 		return;
 	}
-	rz_config_free(state->cfg);
 	rz_pvector_free(state->token_patterns);
 	rz_list_free(state->const_ext_l);
 	for (size_t i = 0; i < HEXAGON_STATE_PKTS; ++i) {
@@ -537,7 +536,7 @@ static void hex_set_pkt_info(RZ_INOUT HexInsnContainer *hic, const HexPkt *pkt, 
 	rz_return_if_fail(hic && pkt && state);
 	bool is_first = (k == 0);
 	HexPktInfo *hi_pi = &hic->pkt_info;
-	bool sdk_form = rz_config_get_b(state->cfg, "plugins.hexagon.sdk");
+	bool sdk_form = state->sdk;
 
 	strncpy(hi_pi->text_postfix, "", 16);
 	// Parse instr. position in pkt

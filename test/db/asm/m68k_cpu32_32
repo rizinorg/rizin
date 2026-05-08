@@ -1,0 +1,7 @@
+d "bgnd" 4afa
+d "tblu.w (a0), d0" f8100140
+d "tbls.l (a2), d3" f8123980
+d "tblun.b (a1), d2" f8112500
+d "tblsn.w (a4), d5" f8145d40
+d "tblu.w d1:d2, d3" f8013042
+d "tbls.b d4:d5, d6" f8046805
