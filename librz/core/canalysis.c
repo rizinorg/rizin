@@ -3989,6 +3989,131 @@ static void analysis_global_vars_from_symbols(RzCore *core) {
 	}
 }
 
+static int cmp_ut64s(const void *a, const void *b, RZ_UNUSED void *user) {
+	ut64 va = *(const ut64 *)a;
+	ut64 vb = *(const ut64 *)b;
+	return (va > vb) - (va < vb);
+}
+
+// rz_vector_upper_bound comparator: x is a raw ut64 key, y is a pointer to a ut64 element
+#define CMP_UT64_VAL(x, y) ((int)((x) > *(const ut64 *)(y)) - (int)((x) < *(const ut64 *)(y)))
+
+static bool collect_ht_keys_cb(void *user, const ut64 k, const void *v) {
+	RzVector *vec = user;
+	ut64 key = k;
+	rz_vector_push(vec, &key);
+	return true;
+}
+
+static void analysis_mark_xrefs_as_data(RzCore *core) {
+	int bits = rz_asm_get_bits(core->rasm);
+	ut64 ptr_size = bits == 64 ? 8 : 4;
+
+	RzList *all_xrefs = rz_analysis_xrefs_list(core->analysis);
+	if (!all_xrefs) {
+		return;
+	}
+
+	// collect every target address that has at least one CODE/CALL xref
+	RzSetU *code_call_targets = rz_set_u_new();
+	if (!code_call_targets) {
+		rz_list_free(all_xrefs);
+		return;
+	}
+	RzListIter *iter;
+	RzAnalysisXRef *xref;
+	rz_list_foreach (all_xrefs, iter, xref) {
+		if (xref->type == RZ_ANALYSIS_XREF_TYPE_CODE ||
+			xref->type == RZ_ANALYSIS_XREF_TYPE_CALL) {
+			rz_set_u_add(code_call_targets, xref->to);
+		}
+	}
+
+	// collect unique DATA/STRING targets outside functions
+	RzSetU *data_targets = rz_set_u_new();
+	if (!data_targets) {
+		rz_set_u_free(code_call_targets);
+		rz_list_free(all_xrefs);
+		return;
+	}
+	rz_list_foreach (all_xrefs, iter, xref) {
+		if (xref->type != RZ_ANALYSIS_XREF_TYPE_DATA &&
+			xref->type != RZ_ANALYSIS_XREF_TYPE_STRING) {
+			continue;
+		}
+		ut64 target = xref->to;
+		if (rz_set_u_contains(code_call_targets, target)) {
+			continue;
+		}
+		// only consider xrefs that originate from inside an analyzed function
+		if (!rz_analysis_get_fcn_in(core->analysis, xref->from, 0)) {
+			continue;
+		}
+		RzBinObject *bo = rz_bin_cur_object(core->bin);
+		RzBinSection *sec = bo ? rz_bin_get_section_at(bo, target, true) : NULL;
+		if (sec && (sec->perm & RZ_PERM_X)) {
+			continue;
+		}
+		// skip if already annotated by any other analysis
+		if (rz_meta_get_at(core->analysis, target, RZ_META_TYPE_ANY, NULL)) {
+			continue;
+		}
+		if (rz_analysis_get_fcn_in(core->analysis, target, -1)) {
+			continue;
+		}
+		rz_set_u_add(data_targets, target);
+	}
+	rz_list_free(all_xrefs);
+	rz_set_u_free(code_call_targets);
+
+	if (!rz_set_u_size(data_targets)) {
+		rz_set_u_free(data_targets);
+		return;
+	}
+
+	// convert set to sorted vector
+	RzVector *data_addrs = rz_vector_new(sizeof(ut64), NULL, NULL);
+	if (!data_addrs) {
+		rz_set_u_free(data_targets);
+		return;
+	}
+	ht_up_foreach(data_targets, collect_ht_keys_cb, data_addrs);
+	rz_set_u_free(data_targets);
+	rz_vector_sort(data_addrs, cmp_ut64s, false, NULL);
+
+	// sorted vector of function start addresses
+	RzVector *fcn_starts = rz_vector_new(sizeof(ut64), NULL, NULL);
+	if (fcn_starts) {
+		RzList *fcns = rz_analysis_function_list(core->analysis);
+		RzAnalysisFunction *fcn;
+		rz_list_foreach (fcns, iter, fcn) {
+			rz_vector_push(fcn_starts, &fcn->addr);
+		}
+		rz_vector_sort(fcn_starts, cmp_ut64s, false, NULL);
+	}
+
+	// mark each target up to the nearest of: next data target, next function, or ptr_size
+	size_t n = rz_vector_len(data_addrs);
+	for (size_t i = 0; i < n; i++) {
+		ut64 target = *(ut64 *)rz_vector_index_ptr(data_addrs, i);
+		ut64 next_data = (i + 1 < n) ? *(ut64 *)rz_vector_index_ptr(data_addrs, i + 1) : UT64_MAX;
+		ut64 next_fcn = UT64_MAX;
+		if (fcn_starts) {
+			size_t fi;
+			rz_vector_upper_bound(fcn_starts, target, fi, CMP_UT64_VAL);
+			if (fi < rz_vector_len(fcn_starts)) {
+				next_fcn = *(ut64 *)rz_vector_index_ptr(fcn_starts, fi);
+			}
+		}
+		ut64 upper = RZ_MIN(next_data, next_fcn);
+		ut64 size = (upper != UT64_MAX) ? upper - target : ptr_size;
+		rz_meta_set(core->analysis, RZ_META_TYPE_DATA, target, size, NULL);
+	}
+
+	rz_vector_free(data_addrs);
+	rz_vector_free(fcn_starts);
+}
+
 /**
  * Runs all the steps of the deep analysis.
  *
@@ -4176,6 +4301,15 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_core_analysis_resolve_pointers_to_data(core);
 		rz_core_notify_done(core, "%s", notify);
 		rz_core_task_yield(&core->tasks);
+	}
+
+	notify = "Mark data-referenced bytes outside functions";
+	rz_core_notify_begin(core, "%s", notify);
+	analysis_mark_xrefs_as_data(core);
+	rz_core_notify_done(core, "%s", notify);
+	rz_core_task_yield(&core->tasks);
+	if (rz_cons_is_breaked()) {
+		return false;
 	}
 
 	if (experimental) {
