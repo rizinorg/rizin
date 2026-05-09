@@ -3942,6 +3942,53 @@ static void core_analysis_analyze_local_var_and_arg(RzCore *core) {
 	}
 }
 
+static void analysis_global_vars_from_symbols(RzCore *core) {
+	// DWARF/PDB already enumerate globals with accurate types; only fall back
+	// to symbol-table inference when no debug info is present.
+	RzAnalysisDebugInfo *dbg_info = rz_analysis_get_debug_info(core->analysis);
+	if (dbg_info && dbg_info->dw) {
+		return;
+	}
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	if (!obj) {
+		return;
+	}
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzPVector *symbols = (RzPVector *)rz_bin_object_get_symbols(obj);
+	if (!symbols) {
+		return;
+	}
+	bool virt_addr = rz_config_get_b(core->config, "io.va");
+	void **it;
+	rz_pvector_foreach (symbols, it) {
+		RzBinSymbol *sym = *it;
+		if (!sym->name || sym->is_imported) {
+			continue;
+		}
+		if (!sym->type || strcmp(sym->type, RZ_BIN_TYPE_OBJECT_STR)) {
+			continue;
+		}
+		if (!sym->size) {
+			continue;
+		}
+		ut64 addr = virt_addr ? rz_bin_object_get_vaddr(obj, sym->paddr, sym->vaddr) : sym->paddr;
+		if (addr == UT64_MAX || addr == 0) {
+			continue;
+		}
+		if (rz_analysis_var_global_get_byaddr_in(core->analysis, addr)) {
+			continue;
+		}
+		RzType *type = sym->size == 1
+			? rz_type_identifier_of_base_type_str(typedb, "uint8_t")
+			: rz_type_array_of_base_type_str(typedb, "uint8_t", sym->size);
+		if (!type) {
+			continue;
+		}
+		// rz_analysis_var_global_create takes effective ownership of type
+		rz_analysis_var_global_create(core->analysis, sym->name, type, addr);
+	}
+}
+
 /**
  * Runs all the steps of the deep analysis.
  *
@@ -4112,6 +4159,15 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_core_notify_begin(core, "%s", notify);
 		rz_analysis_dwarf_integrate_functions(core->analysis, core->flags);
 		rz_core_notify_done(core, "%s", notify);
+	}
+
+	notify = "Recover global variables from symbols";
+	rz_core_notify_begin(core, "%s", notify);
+	analysis_global_vars_from_symbols(core);
+	rz_core_notify_done(core, "%s", notify);
+	rz_core_task_yield(&core->tasks);
+	if (rz_cons_is_breaked()) {
+		return false;
 	}
 
 	if (rz_config_get_b(core->config, "analysis.resolve.pointers")) {
