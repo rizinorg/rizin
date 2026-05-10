@@ -15,7 +15,7 @@ RUN
 NAME=avr or c166 check - DISasm: [fac08400 => jump in c166]
 FILE=bins/c166/measure_raw.bin
 CMDS=<<EOF
-e asm.bytes=true
+e cfg.bigendian=false
 ao 1~^jump[1]
 iA
 EOF
@@ -25,7 +25,6 @@ EXPECT=<<EOF
 0x00000000 7958 unk_0   64         false
 EOF
 RUN
-
 
 NAME=avr DISasm: [0e940b10 => call] - jump check
 FILE=malloc://4096
