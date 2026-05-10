@@ -17,8 +17,6 @@ export PATH="${BOOTLIN_TOOLS}:${PATH}"
 # Build Rizin
 meson setup build --cross-file doc/examples/cross_builds/meson-linux-riscv32.ini
 meson compile -C build || true # Expected to fail due to Zydis bug on RISC-V 32-bit
-# Quick and dirty fix for Zydis compilation error, remove when upstream merges a fix and we bump
-patch -p1 < patches/fix_zydis_amalgamated_riscv32_build
 # Build again
 meson compile -C build
 
