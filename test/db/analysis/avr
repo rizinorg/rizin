@@ -24,11 +24,6 @@ REGEXP_FILTER_OUT=(0x00000000\s+7958\s+unk_0)
 EXPECT=<<EOF
 0x00000000 7958 unk_0
 EOF
-EXPECT=<<EOF
-    offset size arch  bits machine big_endian 
-----------------------------------------------
-0x00000000 7958 unk_0   64         false
-EOF
 RUN
 
 NAME=avr DISasm: [0e940b10 => call] - jump check
