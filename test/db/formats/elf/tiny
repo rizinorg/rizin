@@ -36,7 +36,7 @@ WARNING: phdr entry: p_offset (0x0) and p_vaddr (0x10000) are not congruent for 
 WARNING: The segment 0 at 0x4 seems to be invalid.
 WARNING: ELF header e_shstrndx value (0) >= number of sections (0).
 WARNING: Failed to initialize section string table.
-ERROR: Failed to read chunk of size 0x101 at 0x10020 for disassembly.
+WARNING: Failed to read chunk of size 0x101 at 0x10020 from io.
 VERBOSE: Address not mapped or not executable at 0x10020.
 EOF
 RUN
