@@ -4050,9 +4050,9 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 		if (!fcn_from) {
 			continue;
 		}
-		// take bins/arm/elf/K64F-RIOT-SPI.elf for an exampls 
+		// take bins/arm/elf/K64F-RIOT-SPI.elf for an example
 		// the function dbg.sched_run at 0x00000490 has data xref with 0x000004e0
-		// we take the content of 0x000004e0 as address and check if it is in non-exec section. 
+		// we take the content of 0x000004e0 as address and check if it is in non-exec section.
 		// [0x000004be]> s 0x000004e0
 		// [0x000004e0]> pd 1
 		// ; DATA XREF from dbg.sched_run @ 0x490
