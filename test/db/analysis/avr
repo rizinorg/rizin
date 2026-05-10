@@ -15,6 +15,7 @@ RUN
 NAME=avr or c166 check - DISasm: [fac08400 => jump in c166]
 FILE=bins/c166/measure_raw.bin
 CMDS=<<EOF
+e asm.arch=avr
 e cfg.bigendian=false
 ao 1~^jump[1]
 iA
