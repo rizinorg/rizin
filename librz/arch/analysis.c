@@ -783,6 +783,14 @@ RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
 	rz_type_db_reload(analysis->typedb, analysis->sdb_types_path);
 }
 
+/**
+ * \brief      Returns true if the given cpu matches the current one.
+ *
+ * \param      analysis  The RzAnalysis structure to use
+ * \param[in]  cpu       The cpu expected
+ *
+ * \return     If the given CPU matches returns true, otherwise false.
+ */
 RZ_API bool rz_analysis_is_cpu(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *cpu) {
 	rz_return_val_if_fail(analysis, false);
 	if (!cpu) {
