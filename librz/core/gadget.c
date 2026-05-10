@@ -1404,20 +1404,67 @@ static void update_search_context(const RzGadgetSearchContext *context, const ch
 	}
 }
 
-static RzPVector /*<RzCoreAsmHit *>*/ *construct_gadget(RzCore *core, ut8 *buf, int idx, RzGadgetSearchContext *context,
-	RzList /*<char *>*/ *rx_list, RzGadgetEndListPair *end_gadget) {
+static bool filter_gadget(RzCore *core, const ut8 *buf, int start_idx, RzGadgetSearchContext *context,
+	RzList /*<char *>*/ *rx_list, RzPVector /*<RzCoreAsmHit *>*/ *hitlist) {
+
+	bool is_greparg = !(context->mask & (RZ_GADGET_PRINT_DETAIL | RZ_GADGET_ANALYZE)) && !(context->detail_mask | RZ_GADGET_DETAIL_SEARCH_NON) && context->greparg;
+	if (!is_greparg) {
+		return true;
+	}
+
 	const char *start = NULL, *end = NULL;
 	int count = 0;
 	char *rx = NULL;
 	char *grep_str = NULL;
-	bool is_greparg = !(context->mask & (RZ_GADGET_PRINT_DETAIL | RZ_GADGET_ANALYZE)) && !(context->detail_mask | RZ_GADGET_DETAIL_SEARCH_NON) && context->greparg;
-	if (is_greparg) {
-		init_grep_context(context, &grep_str, &start, &end, rx_list, &rx, &count);
+	init_grep_context(context, &grep_str, &start, &end, rx_list, &rx, &count);
+
+	ut64 delta = context->to - context->from;
+	void **it;
+	rz_pvector_foreach (hitlist, it) {
+		RzCoreAsmHit *hit = *it;
+		int buf_offset = (int)(hit->addr - context->from);
+		if (buf_offset < 0 || (ut64)buf_offset >= delta) {
+			continue;
+		}
+		RzAnalysisOp aop = { 0 };
+		rz_analysis_op_init(&aop);
+		if (rz_analysis_op(core->analysis, &aop, hit->addr, buf + buf_offset,
+			    delta - buf_offset, RZ_ANALYSIS_OP_MASK_DISASM) < 0) {
+			rz_analysis_op_fini(&aop);
+			continue;
+		}
+		const char *opst = aop.mnemonic;
+		if (opst) {
+			bool search_hit = false;
+			if (rx) {
+				int grep_find = rz_regex_contains(rx, opst, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT);
+				search_hit = end && context->greparg && grep_find;
+			} else {
+				search_hit = end && context->greparg && strstr(opst, grep_str);
+			}
+			if (search_hit) {
+				update_search_context(context, &start, &end, &grep_str, rx_list, &rx, &count);
+			}
+		}
+		rz_analysis_op_fini(&aop);
 	}
+
+	bool pass = true;
+	if (context->regexp && rx) {
+		pass = false;
+	} else if (is_greparg && end) {
+		pass = false;
+	}
+
+	free(grep_str);
+	return pass;
+}
+
+static RzPVector /*<RzCoreAsmHit *>*/ *build_gadget_hitlist_raw(RzCore *core, ut8 *buf, int idx,
+	RzGadgetSearchContext *context, RzGadgetEndListPair *end_gadget, RZ_OUT RzStrBuf **sb_out) {
 
 	RzPVector *hitlist = rz_pvector_new((RzPVectorFree)rz_core_asm_hit_free);
 	if (!hitlist) {
-		free(grep_str);
 		return NULL;
 	}
 
@@ -1467,17 +1514,6 @@ static RzPVector /*<RzCoreAsmHit *>*/ *construct_gadget(RzCore *core, ut8 *buf, 
 		idx += aop.size;
 		addr += aop.size;
 
-		bool search_hit = false;
-		if (rx) {
-			int grep_find = rz_regex_contains(rx, opst, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT);
-			search_hit = end && context->greparg && grep_find;
-		} else if (is_greparg) {
-			search_hit = end && context->greparg && strstr(opst, grep_str);
-		}
-
-		if (search_hit) {
-			update_search_context(context, &start, &end, &grep_str, rx_list, &rx, &count);
-		}
 		if (end_gadget->instr_offset <= idx - aop.size) {
 			valid = end_gadget->instr_offset == idx - aop.size;
 			goto cleanup;
@@ -1485,21 +1521,46 @@ static RzPVector /*<RzCoreAsmHit *>*/ *construct_gadget(RzCore *core, ut8 *buf, 
 		rz_analysis_op_fini(&aop);
 		nb_instr++;
 	}
-
 cleanup:
 	rz_analysis_op_fini(&aop);
-	free(grep_str);
-	if ((context->regexp && rx) || (!valid || (is_greparg && end))) {
+
+	if (!valid) {
 		rz_pvector_free(hitlist);
 		rz_strbuf_free(sb);
+		if (sb_out) {
+			*sb_out = NULL;
+		}
 		return NULL;
 	}
+	if (sb_out) {
+		*sb_out = sb;
+	} else {
+		rz_strbuf_free(sb);
+	}
+	return hitlist;
+}
+
+static RzPVector /*<RzCoreAsmHit *>*/ *construct_gadget(RzCore *core, ut8 *buf, int idx, RzGadgetSearchContext *context,
+	RzList /*<char *>*/ *rx_list, RzGadgetEndListPair *end_gadget) {
+
+	RzStrBuf *sb = NULL;
+	RzPVector *hitlist = build_gadget_hitlist_raw(core, buf, idx, context, end_gadget, &sb);
+	if (!hitlist) {
+		return NULL;
+	}
+
 	if (!handle_gadget_list(sb, context, end_gadget, hitlist)) {
 		rz_pvector_free(hitlist);
 		rz_strbuf_free(sb);
 		return NULL;
 	}
 	rz_strbuf_free(sb);
+
+	if (!filter_gadget(core, buf, idx, context, rx_list, hitlist)) {
+		rz_pvector_free(hitlist);
+		return NULL;
+	}
+
 	return hitlist;
 }
 
