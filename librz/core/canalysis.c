@@ -4046,13 +4046,39 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 			continue;
 		}
 		// only consider xrefs that originate from inside an analyzed function
-		if (!rz_analysis_get_fcn_in(core->analysis, xref->from, 0)) {
+		RzAnalysisFunction *fcn_from = rz_analysis_get_fcn_in(core->analysis, xref->from, 0);
+		if (!fcn_from) {
 			continue;
 		}
+		// take bins/arm/elf/K64F-RIOT-SPI.elf for an exampls 
+		// the function dbg.sched_run at 0x00000490 has data xref with 0x000004e0
+		// we take the content of 0x000004e0 as address and check if it is in non-exec section. 
+		// [0x000004be]> s 0x000004e0
+		// [0x000004e0]> pd 1
+		// ; DATA XREF from dbg.sched_run @ 0x490
+		// ;-- data.000004e0:
+		// 0x000004e0      .dword 0x1fff0274 ; runqueue_bitcache ; section..bss ; sym..bss ; obj.runqueue_bitcache ; loc._sbss ; loc._szero ; loc._erelocate ; sched.c:135
 		RzBinObject *bo = rz_bin_cur_object(core->bin);
-		RzBinSection *sec = bo ? rz_bin_get_section_at(bo, target, true) : NULL;
-		if (sec && (sec->perm & RZ_PERM_X)) {
+		if (!bo) {
 			continue;
+		}
+		RzBinSection *sec = rz_bin_get_section_at(bo, target, true);
+		if (sec && (sec->perm & RZ_PERM_X)) {
+			ut8 buf[8] = { 0 };
+			if (!rz_io_read_at_mapped(core->io, target, buf, ptr_size)) {
+				continue;
+			}
+			bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
+			ut64 stored_val;
+			if (ptr_size == 8) {
+				stored_val = big_endian ? rz_read_be64(buf) : rz_read_le64(buf);
+			} else {
+				stored_val = big_endian ? rz_read_be32(buf) : rz_read_le32(buf);
+			}
+			RzBinSection *val_sec = rz_bin_get_section_at(bo, stored_val, true);
+			if (!val_sec || (val_sec->perm & RZ_PERM_X)) {
+				continue;
+			}
 		}
 		// skip if already annotated by any other analysis
 		if (rz_meta_get_at(core->analysis, target, RZ_META_TYPE_ANY, NULL)) {
