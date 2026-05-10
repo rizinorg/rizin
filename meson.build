@@ -191,6 +191,8 @@ cmake_package_relative_path = run_command(py3_exe, cmake_package_prefix_dir_py, 
 subproject_clean_error_msg = 'Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.'
 
 # handle capstone dependency
+capstone_check_deps = []
+capstone_check_includes = []
 capstone_dep = dependency('capstone', version: '>=4.0.2', required: get_option('use_sys_capstone'), static: is_static_build)
 if not capstone_dep.found()
   capstone_version = get_option('use_capstone_version')
@@ -204,11 +206,43 @@ if not capstone_dep.found()
     error('Wrong capstone version selected. Please use one of the supported versions.')
   endif
   capstone_dep = capstone_proj.get_variable('capstone_dep')
+  capstone_check_includes = capstone_proj.get_variable('capstone_includes')
 else
+  capstone_check_deps = [capstone_dep]
   # Package managers CS version has no meta programming macros for AArch64 -> ARM64 renaming
   # (because it is outdated).
   # With this define we includeour copy of those macros.
   add_project_arguments(['-DUSE_SYS_CAPSTONE'], language: 'c')
+endif
+
+has_capstone_m68k_cpu32 = cc.compiles('''
+#include <capstone/capstone.h>
+int main(void) {
+	cs_mode mode = CS_MODE_M68K_CPU32;
+	return mode == 0;
+}
+''',
+  dependencies: capstone_check_deps,
+  include_directories: capstone_check_includes,
+  name: 'Capstone has M68K CPU32 mode'
+)
+if has_capstone_m68k_cpu32
+  add_project_arguments(['-DRZ_CAPSTONE_HAS_M68K_CPU32'], language: 'c')
+endif
+
+has_capstone_m680x_hcs12x = cc.compiles('''
+#include <capstone/capstone.h>
+int main(void) {
+        cs_mode mode = CS_MODE_M680X_HCS12X;
+        return mode == 0;
+}
+''',
+  dependencies: capstone_check_deps,
+  include_directories: capstone_check_includes,
+  name: 'Capstone has M680X HCS12X mode'
+)
+if has_capstone_m680x_hcs12x
+  add_project_arguments(['-DRZ_CAPSTONE_HAS_M680X_HCS12X'], language: 'c')
 endif
 
 # Handle PCRE2

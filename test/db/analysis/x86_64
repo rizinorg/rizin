@@ -4420,3 +4420,15 @@ EXPECT=<<EOF
 |           0x001b9b32      push  r14
 EOF
 RUN
+NAME=global variables populated from ELF OBJ symbols without DWARF
+FILE=bins/elf/dectest64
+CMDS=<<EOF
+aaa
+avgl~global_var
+avgl~global_array
+EOF
+EXPECT=<<EOF
+global uint8_t [4] global_var @ 0x404050
+global uint8_t [8] global_array @ 0x404058
+EOF
+RUN

@@ -3352,8 +3352,12 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	/* log */
 	// RZ_LOGLEVEL / log.level
 	p = rz_sys_getenv("RZ_LOGLEVEL");
-	SETICB("log.level", p ? atoi(p) : RZ_DEFAULT_LOGLVL, cb_log_config_level, "Target log level/severity"
-										  " (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)");
+	const char *log_level_help = "Target log level/severity ("
+#if RZ_BUILD_DEBUG
+				     "0:DEBUG, "
+#endif
+				     "1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)";
+	SETICB("log.level", p ? atoi(p) : RZ_DEFAULT_LOGLVL, cb_log_config_level, log_level_help);
 	free(p);
 
 #if RZ_BUILD_DEBUG
@@ -3862,7 +3866,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETB("flirt.sigdb.load.extra", true, "Load signatures from the extra path");
 	SETB("flirt.sigdb.load.home", true, "Load signatures from the home path");
 
-	cfg->lock = 1;
 	return true;
 }
 
