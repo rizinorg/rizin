@@ -37,7 +37,6 @@ features noreorder pic cpic o32 n32
 \           0x00080500      nop
             ; DATA XREF from sym.do_mips_start @ 0x80544
 / int main(int argc, char **argv, char **envp);
-|           ; arg int argc @ a0
 |           ; var int32_t var_10h @ stack - 0x10
 |           ; var int32_t var_8h @ stack - 0x8
 |           ; var int32_t var_4h @ stack - 0x4
@@ -51,7 +50,7 @@ features noreorder pic cpic o32 n32
 |           0x000805b8      move  fp, sp
 |           0x000805bc      sw    gp, (var_10h)
 |           0x000805c0      lw    v0, -segment.LOAD0(gp)               ; [data.0009103c:4]=0x80000 segment.ehdr
-|           0x000805c4      addiu a0, v0, 0x640                        ; 0x80640 ; "Hello World" ; argc ; str.Hello_World
+|           0x000805c4      addiu a0, v0, 0x640                        ; 0x80640 ; "Hello World" ; str.Hello_World
 |           0x000805c8      lw    v0, -sym._MIPS_STUBS(gp)             ; [data.00091048:4]=0x80600 sym.imp.puts
 |           0x000805cc      move  t9, v0
 |           0x000805d0      jalr  t9
@@ -89,7 +88,6 @@ features noreorder cpic o32 n32
             ;-- .text:
             ;-- _ftext:
 / int main(int argc, char **argv);
-|           ; arg int argc @ a0
 |           ; arg int32_t arg_10h @ stack + 0x10
 |           ; arg int32_t arg_24h @ stack + 0x24
 |           0x004000d0      lui   gp, 2                                ; [02] -r-x section size 512 named .text
@@ -101,7 +99,7 @@ features noreorder cpic o32 n32
 |           0x004000e6      sw    ra, (arg_24h)
 |           0x004000e8      addiur1sp a1, 0x18
 |           0x004000ea      jalr  t9
-|           0x004000ec      addiu a0, zero, 5                          ; argc
+|           0x004000ec      addiu a0, zero, 5
 |           0x004000f0      lw    ra, (arg_24h)
 |           0x004000f2      jraddiusp 0x28
 |           ;-- deregister_tm_clones:
@@ -138,8 +136,7 @@ features o32 n32
             ;-- __start:
             ;-- _start:
             ;-- pc:
-/ entry0(int32_t arg3, int32_t arg4);
-|           ; arg int32_t arg3 @ a2
+/ entry0(int32_t arg4);
 |           ; arg int32_t arg4 @ a3
 \           0x004003d4      move  fp, zero                             ; [08] -r-x section size 474 named .text
 |           0x004003d6      lapc.h t0, sym._start_c
@@ -975,15 +972,15 @@ EXPECT=<<EOF
 |           0x00402584      lui   gp, 0x44
 |           0x00402588      addiu gp, gp, -0x2f20
 |           0x0040258c      sw    gp, (var_40h)
-|           0x00402590      move  s0, a1
+|           0x00402590      move  s0, a1                               ; argv
 |           0x00402594      lw    t9, -sym.imp.strrchr(gp)             ; [0x4352f8:4]=0x41e910 sym.imp.strrchr
-|           0x00402598      addiu a1, zero, 0x2f                       ; argv
+|           0x00402598      addiu a1, zero, 0x2f
 |           0x0040259c      lw    s6, 0(s0)
-|           0x004025a0      move  s1, a0
+|           0x004025a0      move  s1, a0                               ; argc
 |           0x004025a4      jalr  t9
 |           0x004025a8      move  a0, s6
 |           0x004025ac      slti  v1, s1, 2
-|           0x004025b0      addiu a0, v0, 1                            ; argc
+|           0x004025b0      addiu a0, v0, 1
 |           0x004025b4      lw    gp, (var_40h)
 |       ,=< 0x004025b8      bnez  v1, 0x402708
 ..
@@ -1050,7 +1047,7 @@ EXPECT=<<EOF
 | :||||:    0x00402864      sw    v1, 0x5478(v0)
 | --------> 0x00402868      lw    t9, -sym.rtnl_open(gp)               ; [0x435300:4]=0x41a99c sym.rtnl_open
 | :||||:    0x0040286c      lui   s2, 0x43
-| :||||:    0x00402870      addiu a0, s2, 0x3c60                       ; argc
+| :||||:    0x00402870      addiu a0, s2, 0x3c60
 | :||||:    0x00402874      jalr  t9
 | :||||:    0x00402878      move  a1, zero
 | :||||:    0x0040287c      lw    gp, (var_40h)
@@ -1062,12 +1059,12 @@ EXPECT=<<EOF
 | :||||:|   0x00402894      sltiu v0, v0, 3
 | :||||:|   0x00402898      lw    gp, (var_40h)
 | ========< 0x0040289c      beqz  v0, 0x4029b4
-| :||||:|   0x004028a0      addiu a0, s6, 2                            ; argc
+| :||||:|   0x004028a0      addiu a0, s6, 2
 | :||||:|   0x004028a4      slti  v0, s1, 2
 | ========< 0x004028a8      bnez  v0, 0x402a20
 | :||||:|   0x004028ac      nop
 | :||||:|   0x004028b0      lw    a0, 4(s0)
-| :||||:|   0x004028b4      addiu a1, s1, -1                           ; argv
+| :||||:|   0x004028b4      addiu a1, s1, -1
 | :||||:|   0x004028b8      jal   fcn.00402210
 | :||||:|   0x004028bc      addiu a2, s0, 4
 | :||||:|   0x004028c0      lw    ra, (var_4h)
@@ -1105,7 +1102,7 @@ EXPECT=<<EOF
 ..
 | --------> 0x00402a20      lw    t9, -sym.rtnl_close(gp)              ; [0x4352c8:4]=0x41a9b8 sym.rtnl_close
 |  |   ||   0x00402a24      jalr  t9
-|  |   ||   0x00402a28      addiu a0, s2, 0x3c60                       ; argc
+|  |   ||   0x00402a28      addiu a0, s2, 0x3c60
 | -`...---> 0x00402a2c      jal   fcn.004022e4
 |   :::||   0x00402a30      nop
 |   :::`--> 0x00402a34      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
@@ -1138,13 +1135,13 @@ EXPECT=<<EOF
 |   :::||   0x00402aa0      sw    v1, 0x5470(v0)
 |   :::|`-> 0x00402aa4      lw    t9, -sym.imp.exit(gp)                ; [0x4351a4:4]=0x41ebb0 sym.imp.exit
 |   :::|    0x00402aa8      jalr  t9
-|   :::|    0x00402aac      addiu a0, zero, 1                          ; argc
+|   :::|    0x00402aac      addiu a0, zero, 1
 |   :::`--> 0x00402ab0      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
 |   :::     0x00402ab4      lui   a1, 0x42
-|   :::     0x00402ab8      move  a0, a2
+|   :::     0x00402ab8      move  a0, a2                               ; envp
 |   :::     0x00402abc      sw    a2, (var_2ch)
 |   :::     0x00402ac0      jalr  t9
-|   :::     0x00402ac4      addiu a1, a1, -0x102c                      ; argv
+|   :::     0x00402ac4      addiu a1, a1, -0x102c
 |   :::     0x00402ac8      lw    gp, (var_40h)
 |   :::     0x00402acc      lw    a2, (var_2ch)
 |   ::: ,=< 0x00402ad0      bnez  v0, 0x402ae8
@@ -1155,20 +1152,20 @@ EXPECT=<<EOF
 |   ::: |   0x00402ae4      sw    v1, 0x5474(v0)
 |   ::: `-> 0x00402ae8      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
 |   :::     0x00402aec      lui   a1, 0x42
-|   :::     0x00402af0      move  a0, a2
+|   :::     0x00402af0      move  a0, a2                               ; envp
 |   :::     0x00402af4      sw    a2, (var_2ch)
 |   :::     0x00402af8      jalr  t9
-|   :::     0x00402afc      addiu a1, a1, -0x1020                      ; argv
+|   :::     0x00402afc      addiu a1, a1, -0x1020
 |   :::     0x00402b00      lw    gp, (var_40h)
 |   :::     0x00402b04      lw    a2, (var_2ch)
 |   ::: ,=< 0x00402b08      beqz  v0, 0x402b48
 |   ::: |   0x00402b0c      lui   a0, 0x42
 |   ::: |   0x00402b10      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
 |   ::: |   0x00402b14      lui   a1, 0x42
-|   ::: |   0x00402b18      move  a0, a2
+|   ::: |   0x00402b18      move  a0, a2                               ; envp
 |   ::: |   0x00402b1c      sw    a2, (var_2ch)
 |   ::: |   0x00402b20      jalr  t9
-|   ::: |   0x00402b24      addiu a1, a1, -0xff8                       ; argv
+|   ::: |   0x00402b24      addiu a1, a1, -0xff8
 |   ::: |   0x00402b28      lw    gp, (var_40h)
 |   ::: |   0x00402b2c      lw    a2, (var_2ch)
 |   :::,==< 0x00402b30      bnez  v0, 0x402b6c
@@ -1179,19 +1176,19 @@ EXPECT=<<EOF
 |   :::||   0x00402b44      sw    v1, 0x5480(v0)
 |   :::|`-> 0x00402b48      lw    t9, -sym.imp.printf(gp)              ; [0x4353ec:4]=0x41e7b0 sym.imp.printf
 |   :::|    0x00402b4c      lui   a1, 0x42
-|   :::|    0x00402b50      addiu a0, a0, -0x1014                      ; argc
+|   :::|    0x00402b50      addiu a0, a0, -0x1014
 |   :::|    0x00402b54      jalr  t9
-|   :::|    0x00402b58      addiu a1, a1, -0xf20                       ; argv
+|   :::|    0x00402b58      addiu a1, a1, -0xf20
 |   :::|    0x00402b5c      lw    gp, (var_40h)
 |   :::|    0x00402b60      lw    t9, -sym.imp.exit(gp)                ; [0x4351a4:4]=0x41ebb0 sym.imp.exit
 |   :::|    0x00402b64      jalr  t9
 |   :::|    0x00402b68      move  a0, zero
 |   :::`--> 0x00402b6c      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
 |   :::     0x00402b70      lui   a1, 0x42
-|   :::     0x00402b74      move  a0, a2
+|   :::     0x00402b74      move  a0, a2                               ; envp
 |   :::     0x00402b78      sw    a2, (var_2ch)
 |   :::     0x00402b7c      jalr  t9
-|   :::     0x00402b80      addiu a1, a1, -0xff0                       ; argv
+|   :::     0x00402b80      addiu a1, a1, -0xff0
 |   :::     0x00402b84      lw    gp, (var_40h)
 |   :::     0x00402b88      lw    a2, (var_2ch)
 |   ::: ,=< 0x00402b8c      bnez  v0, 0x402bb0
@@ -1205,10 +1202,10 @@ EXPECT=<<EOF
 ..
 |    :: `-> 0x00402bb0      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
 |    ::     0x00402bb4      lui   a1, 0x42
-|    ::     0x00402bb8      move  a0, a2
+|    ::     0x00402bb8      move  a0, a2                               ; envp
 |    ::     0x00402bbc      sw    a2, (var_2ch)
 |    ::     0x00402bc0      jalr  t9
-|    ::     0x00402bc4      addiu a1, a1, -0xfe8                       ; argv
+|    ::     0x00402bc4      addiu a1, a1, -0xfe8
 |    ::     0x00402bc8      lw    gp, (var_40h)
 |    ::     0x00402bcc      lw    a2, (var_2ch)
 |    :: ,=< 0x00402bd0      bnez  v0, 0x402c14
@@ -1216,7 +1213,7 @@ EXPECT=<<EOF
 |    :: |   0x00402bd8      addiu v0, zero, 1
 |    `====< 0x00402bdc      beq   s1, v0, 0x402a2c
 |     : |   0x00402be0      addiu s0, s0, 4
-|     : |   0x00402be4      addiu a0, sp, 0x18                         ; argc
+|     : |   0x00402be4      addiu a0, sp, 0x18
 |     : |   0x00402be8      lw    t9, -sym.get_unsigned(gp)            ; [0x435178:4]=0x41bec4 sym.get_unsigned
 |     : |   0x00402bec      lw    a1, 0(s0)
 |     : |   0x00402bf0      jalr  t9
@@ -1230,10 +1227,10 @@ EXPECT=<<EOF
 |     :||   0x00402c10      sw    v1, 0(v0)
 |     :|`-> 0x00402c14      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
 |     :|    0x00402c18      lui   a1, 0x42
-|     :|    0x00402c1c      move  a0, a2
+|     :|    0x00402c1c      move  a0, a2                               ; envp
 |     :|    0x00402c20      sw    a2, (var_2ch)
 |     :|    0x00402c24      jalr  t9
-|     :|    0x00402c28      addiu a1, a1, -0xfc4                       ; argv
+|     :|    0x00402c28      addiu a1, a1, -0xfc4
 |     :|    0x00402c2c      lw    gp, (var_40h)
 |     :|    0x00402c30      lw    a2, (var_2ch)
 |     `===< 0x00402c34      beqz  v0, 0x402a2c
@@ -1241,7 +1238,7 @@ EXPECT=<<EOF
 |      |    0x00402c3c      lw    v0, -0x7efc(gp)                      ; [0x4351e4:4]=0
 |      |    0x00402c40      lui   a1, 0x42
 |      |    0x00402c44      lw    t9, -sym.imp.fprintf(gp)             ; [0x4352dc:4]=0x41e940 sym.imp.fprintf
-|      |    0x00402c48      addiu a1, a1, -0xfbc                       ; argv
+|      |    0x00402c48      addiu a1, a1, -0xfbc
 |      |    0x00402c4c      lw    a0, 0(v0)
 |      |    ; CODE XREF from main @ 0x402c7c
 |      |.-> 0x00402c50      jalr  t9
@@ -1249,7 +1246,7 @@ EXPECT=<<EOF
 |      |:   0x00402c58      lw    gp, (var_40h)
 |      |:   0x00402c5c      lw    t9, -sym.imp.exit(gp)                ; [0x4351a4:4]=0x41ebb0 sym.imp.exit
 |      |:   0x00402c60      jalr  t9
-|      |:   0x00402c64      addiu a0, zero, -1                         ; argc
+|      |:   0x00402c64      addiu a0, zero, -1
 |      `--> 0x00402c68      lw    v0, -0x7efc(gp)                      ; [0x4351e4:4]=0
 |       :   0x00402c6c      lui   a1, 0x42
 |       :   0x00402c70      lw    a2, 0(s0)
@@ -1728,5 +1725,142 @@ EXPECT=<<EOF
 0x004351b8  0041 b054 0041 eb90 0041 b760 0041 dc20  .A.T.A...A.`.A. 
 0x004351c8  0041 eb80 0041 de40                      .A...A.@
      .dword 0x00430000
+EOF
+RUN
+
+NAME=ELF: mips crash + args
+FILE=bins/elf/ld-uClibc-0.9.33.2.so
+CMDS=<<EOF
+ii
+iij
+echo ---
+# verify that the prelude is found when handling b 0x28dc
+s sym._dl_malloc
+af
+pdf
+echo ---
+# the actual alloc implementation is at 0x000028dc
+s 0x000028dc
+pdf
+EOF
+EXPECT=<<EOF
+nth vaddr bind type lib name 
+-----------------------------
+[]
+---
+/ sym._dl_malloc(int32_t arg1);
+|       :   ; arg int32_t arg1 @ a0
+|       :   ; var int32_t var_4h @ stack - 0x4
+|       :   0x00002a1c      lui   gp, 2
+|       :   0x00002a20      addiu gp, gp, -sym._dl_parse_relocation_information
+|       :   0x00002a24      addu  gp, gp, t9
+|       :   0x00002a28      lw    v0, -obj._dl_malloc_function(gp)     ; [0x17074:4]=0x17184 obj._dl_malloc_function
+|       :   0x00002a2c      addiu sp, sp, -8
+|       :   0x00002a30      lw    t9, 0(v0)
+|       :   0x00002a34      sw    fp, (var_4h)
+|      ,==< 0x00002a38      beqz  t9, 0x2a50
+|      |:   0x00002a3c      move  fp, sp
+|      |:   0x00002a40      move  sp, fp
+|      |:   0x00002a44      lw    fp, (var_4h)
+|      |:   0x00002a48      jr    t9
+..
+|      `--> 0x00002a50      move  sp, fp
+|       :   0x00002a54      lw    t9, -0x7fe4(gp)                      ; [0x1701c:4]=0
+|       :   0x00002a58      lw    fp, (var_4h)
+|       :   0x00002a5c      addiu t9, t9, fcn.000028dc
+|       `=< 0x00002a60      b     fcn.000028dc
+\           0x00002a64      addiu sp, sp, 8
+---
+            ; CALL XREF from sym._dl_malloc @ 0x2a60
+/ fcn.000028dc(int32_t arg_10h);
+|           ; var int32_t var_50h @ stack - 0x50
+|           ; var int32_t var_4ch @ stack - 0x4c
+|           ; var int32_t var_18h @ stack - 0x18
+|           ; var int32_t var_14h @ stack - 0x14
+|           ; var int32_t var_10h @ stack - 0x10
+|           ; var int32_t var_ch @ stack - 0xc
+|           ; var int32_t var_8h @ stack - 0x8
+|           ; var int32_t var_4h @ stack - 0x4
+|           ; arg int32_t arg_10h @ stack + 0x10
+|           0x000028dc      lui   gp, 2
+|           0x000028e0      addiu gp, gp, -0x38dc
+|           0x000028e4      addu  gp, gp, t9
+|           0x000028e8      addiu sp, sp, -0x30
+|           0x000028ec      lw    v0, -obj._dl_pagesize(gp)            ; [0x1702c:4]=0x1718c obj._dl_pagesize
+|           0x000028f0      sw    s3, (var_ch)
+|           0x000028f4      sw    s2, (var_10h)
+|           0x000028f8      lw    s3, -0x7fd8(gp)                      ; [0x17028:4]=0x10000
+|           0x000028fc      lw    s2, -0x7fd8(gp)                      ; [0x17028:4]=0x10000
+|           0x00002900      sw    s1, (var_14h)
+|           0x00002904      lw    v1, 0x71b8(s3)
+|           0x00002908      move  s1, a0                               ; arg1
+|           0x0000290c      lw    a0, 0x71b4(s2)
+|           0x00002910      lw    v0, 0(v0)
+|           0x00002914      subu  v1, a0, v1                           ; arg1
+|           0x00002918      addu  v1, v1, s1
+|           0x0000291c      sw    fp, (var_8h)
+|           0x00002920      sltu  v1, v0, v1
+|           0x00002924      move  fp, sp
+|           0x00002928      sw    ra, (var_4h)
+|           0x0000292c      sw    s0, (var_18h)
+|           0x00002930      sw    gp, (var_4ch + 0x2c)
+|       ,=< 0x00002934      beqz  v1, 0x29e0
+|       |   0x00002938      sltu  v1, s1, v0
+|      ,==< 0x0000293c      beqz  v1, 0x2950
+|      ||   0x00002940      move  a1, s1
+|      ||   0x00002944      addiu a1, v0, -1
+|      ||   0x00002948      addu  a1, a1, s1
+|      ||   0x0000294c      and   a1, a1, v0
+|      `--> 0x00002950      lui   a3, 0x400
+|       |   0x00002954      addiu sp, sp, -0x10
+|       |   0x00002958      move  a0, zero
+|       |   0x0000295c      addiu a2, zero, 3
+|       |   0x00002960      addiu a3, a3, 0x802
+|       |   0x00002964      move  v0, zero
+|       |   0x00002968      addiu s0, zero, -1
+|       |   0x0000296c      addiu sp, sp, -0x20
+|       |   0x00002970      sw    s0, (var_50h)
+|       |   0x00002974      sw    v0, (var_4ch)
+|       |   0x00002978      addiu v0, zero, 0xffa
+|       |   0x0000297c      syscall
+|       |   0x00002980      addiu sp, sp, 0x20
+|      ,==< 0x00002984      beqz  a3, 0x299c
+|      ||   0x00002988      addiu v1, zero, -1
+|      ||   0x0000298c      lw    v1, -obj._dl_errno(gp)               ; [0x17024:4]=0x17190 obj._dl_errno
+|      ||   0x00002990      sw    v0, 0(v1)
+|      ||   0x00002994      addiu v0, zero, -1
+|      ||   0x00002998      addiu v1, zero, -1
+|      `--> 0x0000299c      sw    v0, 0x71b4(s2)
+|      ,==< 0x000029a0      bne   v0, v1, 0x29e0
+|      ||   0x000029a4      sw    v0, 0x71b8(s3)
+|      ||   0x000029a8      lw    v0, -loc._fdata(gp)                  ; [0x17070:4]=0x17000 obj._dl_progname
+|      ||   0x000029ac      lw    a1, -0x7fe4(gp)                      ; [0x1701c:4]=0
+|      ||   0x000029b0      lw    t9, -sym._dl_dprintf(gp)             ; [0x1706c:4]=0x216c sym._dl_dprintf
+|      ||   0x000029b4      lw    a2, 0(v0)
+|      ||   0x000029b8      addiu a0, zero, 2
+|      ||   0x000029bc      bal   sym._dl_dprintf
+|      ||   0x000029c0      addiu a1, a1, 0x692c
+|      ||   0x000029c4      lw    gp, (arg_10h)
+|      ||   0x000029c8      addiu a0, zero, 0x14
+|      ||   0x000029cc      addiu v0, zero, 0xfa1
+|      ||   0x000029d0      syscall
+|     ,===< 0x000029d4      beqz  a3, 0x29e0
+|     |||   0x000029d8      lw    v1, -obj._dl_errno(gp)               ; [0x17024:4]=0x17190 obj._dl_errno
+|     |||   0x000029dc      sw    v0, 0(v1)
+|     ```-> 0x000029e0      lw    v0, 0x71b4(s2)
+|           0x000029e4      move  sp, fp
+|           0x000029e8      addu  s1, v0, s1
+|           0x000029ec      addiu v1, zero, -4
+|           0x000029f0      lw    ra, (var_4h)
+|           0x000029f4      addiu s1, s1, 3
+|           0x000029f8      and   s1, s1, v1
+|           0x000029fc      sw    s1, 0x71b4(s2)
+|           0x00002a00      lw    fp, (var_8h)
+|           0x00002a04      lw    s3, (var_ch)
+|           0x00002a08      lw    s2, (var_10h)
+|           0x00002a0c      lw    s1, (var_14h)
+|           0x00002a10      lw    s0, (var_18h)
+|           0x00002a14      jr    ra
+\           0x00002a18      addiu sp, sp, 0x30
 EOF
 RUN

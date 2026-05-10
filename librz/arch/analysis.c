@@ -783,6 +783,22 @@ RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
 	rz_type_db_reload(analysis->typedb, analysis->sdb_types_path);
 }
 
+/**
+ * \brief      Returns true if the given cpu matches the current one.
+ *
+ * \param      analysis  The RzAnalysis structure to use
+ * \param[in]  cpu       The cpu expected
+ *
+ * \return     If the given CPU matches returns true, otherwise false.
+ */
+RZ_API bool rz_analysis_is_cpu(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *cpu) {
+	rz_return_val_if_fail(analysis, false);
+	if (!cpu) {
+		return false;
+	}
+	return RZ_STR_EQ(cpu, analysis->cpu);
+}
+
 RZ_API int rz_analysis_set_big_endian(RzAnalysis *analysis, int bigend) {
 	analysis->big_endian = bigend;
 	if (analysis->reg) {
@@ -1204,20 +1220,72 @@ RZ_API RzList /*<RzSearchKeyword *>*/ *rz_analysis_preludes(RzAnalysis *analysis
 	return NULL;
 }
 
-RZ_API bool rz_analysis_is_prelude(RzAnalysis *analysis, const ut8 *data, int len) {
-	RzList *l = rz_analysis_preludes(analysis);
-	if (l) {
-		RzSearchKeyword *kw;
-		RzListIter *iter;
-		rz_list_foreach (l, iter, kw) {
-			int ks = kw->keyword_length;
-			if (len >= ks && !memcmp(data, kw->bin_keyword, ks)) {
-				rz_list_free(l);
-				return true;
-			}
-		}
-		rz_list_free(l);
+static bool is_prelude(RzSearchKeyword *kw, const ut8 *data, size_t len) {
+	if (len < kw->keyword_length) {
+		return false;
 	}
+
+	len = RZ_MIN(len, kw->keyword_length);
+	ut64 offset = 0;
+	for (offset = 0; (len - offset) >= sizeof(ut64); offset += sizeof(ut64)) {
+		ut64 bval = rz_read_at_be64(data, offset);
+		ut64 eval = rz_read_at_be64(kw->bin_keyword, offset);
+		if (kw->bin_binmask && kw->binmask_length - offset > sizeof(ut64)) {
+			ut64 mask = rz_read_at_be64(kw->bin_binmask, offset);
+			bval &= mask;
+		}
+		if (bval != eval) {
+			return false;
+		}
+	}
+	for (; (len - offset) >= sizeof(ut32); offset += sizeof(ut32)) {
+		ut32 bval = rz_read_at_be32(data, offset);
+		ut32 eval = rz_read_at_be32(kw->bin_keyword, offset);
+		if (kw->bin_binmask && kw->binmask_length - offset > sizeof(ut32)) {
+			ut32 mask = rz_read_at_be32(kw->bin_binmask, offset);
+			bval &= mask;
+		}
+		if (bval != eval) {
+			return false;
+		}
+	}
+	if ((len - offset) >= sizeof(ut16)) {
+		ut16 bval = rz_read_at_be16(data, offset);
+		ut16 eval = rz_read_at_be16(kw->bin_keyword, offset);
+		if (kw->bin_binmask && kw->binmask_length - offset > sizeof(ut16)) {
+			ut16 mask = rz_read_at_be16(kw->bin_binmask, offset);
+			bval &= mask;
+		}
+		if (bval != eval) {
+			return false;
+		}
+		offset += sizeof(ut16);
+	}
+	if ((len - offset) >= sizeof(ut8)) {
+		ut8 bval = rz_read_at_be8(data, offset);
+		ut8 eval = rz_read_at_be8(kw->bin_keyword, offset);
+		if (kw->bin_binmask && kw->binmask_length - offset > sizeof(ut8)) {
+			ut8 mask = rz_read_at_be16(kw->bin_binmask, offset);
+			bval &= mask;
+		}
+		if (bval != eval) {
+			return false;
+		}
+	}
+	return true;
+}
+
+RZ_API bool rz_analysis_is_prelude(RzAnalysis *analysis, const ut8 *data, size_t len) {
+	RzList *l = rz_analysis_preludes(analysis);
+	RzSearchKeyword *kw;
+	RzListIter *iter;
+	rz_list_foreach (l, iter, kw) {
+		if (is_prelude(kw, data, len)) {
+			rz_list_free(l);
+			return true;
+		}
+	}
+	rz_list_free(l);
 	return false;
 }
 

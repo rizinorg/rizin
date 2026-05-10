@@ -58,6 +58,18 @@
 	(op)->dst->reg = rz_reg_get(analysis->reg, REG(0), RZ_REG_TYPE_GPR); \
 	(op)->src[0]->reg = rz_reg_get(analysis->reg, REG(1), RZ_REG_TYPE_GPR);
 
+#define SET_SRC_DST_2_REG_OR_IMM(op) \
+	if (OPERAND(0).type == MIPS_OP_REG) { \
+		CREATE_SRC_DST_2(op); \
+		(op)->dst->reg = rz_reg_get(analysis->reg, REG(0), RZ_REG_TYPE_GPR); \
+		if (OPERAND(1).type == MIPS_OP_REG) { \
+			(op)->src[0]->reg = rz_reg_get(analysis->reg, REG(1), RZ_REG_TYPE_GPR); \
+		} else if (OPERAND(1).type == MIPS_OP_IMM) { \
+			(op)->src[0]->imm = IMM(1); \
+			(op)->src[0]->type = RZ_ANALYSIS_VAL_IMM; \
+		} \
+	}
+
 #define SET_SRC_DST_3_REG_OR_IMM(op) \
 	if (OPERAND(2).type == MIPS_OP_IMM) { \
 		SET_SRC_DST_3_IMM(op); \
@@ -173,11 +185,15 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh *handle, cs_i
 	case RZ_ANALYSIS_OP_TYPE_AND:
 	case RZ_ANALYSIS_OP_TYPE_ADD:
 	case RZ_ANALYSIS_OP_TYPE_OR:
-		SET_SRC_DST_3_REG_OR_IMM(op);
+		if (OPCOUNT() == 2) {
+			SET_SRC_DST_2_REG_OR_IMM(op);
+		} else {
+			SET_SRC_DST_3_REG_OR_IMM(op);
+		}
 		break;
 	case RZ_ANALYSIS_OP_TYPE_MOV:
-		if (OPCOUNT() == 2 && OPERAND(0).type == MIPS_OP_REG && OPERAND(1).type == MIPS_OP_REG) {
-			SET_SRC_DST_2_REGS(op);
+		if (OPCOUNT() == 2) {
+			SET_SRC_DST_2_REG_OR_IMM(op);
 		} else {
 			SET_SRC_DST_3_REG_OR_IMM(op);
 		}
@@ -1127,12 +1143,136 @@ static int mips_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	}
 }
 
+#define MIPS_BE_MOVE_ZERO_RA_BAL "\x03\xe0\x00\x21\x04\x11\x00\x00"
+#define MIPS_BE_LUI_GP_IMM       "\x3c\x1c\x00\x00"
+#define MIPS_BE_ADDIU_GP_GP_IMM  "\x27\x9c\x00\x00"
+#define MIPS_BE_ADDU_GP_GP_T9    "\x03\x99\xe0\x21"
+
+#define MIPS_BE_ADDIU_SP_SP_IMM "\x27\xbd\x00\x00"
+#define MIPS_BE_SD_FP_ADDR      "\xff\xbe\x00\x00"
+#define MIPS_BE_SW_FP_ADDR      "\xaf\xbe\x00\x0c"
+#define MIPS_BE_MOVE_FP_SP      "\x03\xa0\xf0\x25"
+
+#define MIPS_LE_MOVE_ZERO_RA_BAL "\x21\x00\xe0\x03\x00\x00\x11\x04"
+#define MIPS_LE_LUI_GP_IMM       "\x00\x00\x1c\x3c"
+#define MIPS_LE_ADDIU_GP_GP_IMM  "\x00\x00\x9c\x27"
+#define MIPS_LE_ADDU_GP_GP_T9    "\x21\xe0\x99\x03"
+
+#define MIPS_LE_ADDIU_SP_SP_IMM "\x00\x00\xbd\x27"
+#define MIPS_LE_SD_FP_ADDR      "\x00\x00\xbe\xff"
+#define MIPS_LE_SW_FP_ADDR      "\x0c\x00\xbe\xaf"
+#define MIPS_LE_MOVE_FP_SP      "\x25\xf0\xa0\x03"
+
+#define MICROMIPS_BE_LUI_GP_IMM      "\x41\xbc\x00\x00"
+#define MICROMIPS_BE_ADDIU_GP_GP_IMM "\x33\x9c\x00\x00"
+#define MICROMIPS_BE_ADDU_GP_GP_T9   "\x03\x3c\xe1\x50"
+
+#define MICROMIPS_LE_LUI_GP_IMM      "\x00\x00\xbc\x41"
+#define MICROMIPS_LE_ADDIU_GP_GP_IMM "\x00\x00\x9c\x33"
+#define MICROMIPS_LE_ADDU_GP_GP_T9   "\x50\xe1\x3c\x03"
+
+#define NANOMIPS_BE_SAVE_IMM_FP_RA  "\x1c\x02"
+#define NANOMIPS_BE_ADDIU_FP_SP_IMM "\x80\x00\x83\xdd"
+#define NANOMIPS_BE_SAVE_IMM_RA_GP  "\x83\xe2\x30\x04"
+
+#define NANOMIPS_LE_SAVE_IMM_FP_RA  "\x02\x1c"
+#define NANOMIPS_LE_ADDIU_FP_SP_IMM "\xdd\x83\x00\x80"
+#define NANOMIPS_LE_SAVE_IMM_RA_GP  "\xe2\x83\x04\x30"
+
+#define KW(d, m, s) rz_list_append(l, rz_search_keyword_new((const ut8 *)d, s, (const ut8 *)m, s, NULL))
+static inline void mips32_preludes(RzList /*<RzSearchKeyword *>*/ *l, bool big_endian) {
+	if (big_endian) {
+		KW(MIPS_BE_MOVE_ZERO_RA_BAL, "\xff\xff\xff\xff\xff\xff\x00\x00", 8);
+		KW(MIPS_BE_LUI_GP_IMM
+				MIPS_BE_ADDIU_GP_GP_IMM
+					MIPS_BE_ADDU_GP_GP_T9,
+			"\xff\xff\xff\x00\xff\xff\x00\x00\xff\xff\xff\xff", 12);
+		KW(MIPS_BE_ADDIU_SP_SP_IMM
+				MIPS_BE_SW_FP_ADDR
+					MIPS_BE_MOVE_FP_SP,
+			"\xff\xff\x00\x00\xff\xff\x00\x00\xff\xff\xff\xff", 12);
+		return;
+	}
+
+	KW(MIPS_LE_MOVE_ZERO_RA_BAL, "\xff\xff\xff\xff\x00\x00\xff\xff", 8);
+	KW(MIPS_LE_LUI_GP_IMM
+			MIPS_LE_ADDIU_GP_GP_IMM
+				MIPS_LE_ADDU_GP_GP_T9,
+		"\x00\xff\xff\xff\x00\x00\xff\xff\xff\xff\xff\xff", 12);
+	KW(MIPS_LE_ADDIU_SP_SP_IMM
+			MIPS_LE_SW_FP_ADDR
+				MIPS_LE_MOVE_FP_SP,
+		"\x00\x00\xff\xff\x00\x00\xff\xff\xff\xff\xff\xff", 12);
+}
+
+static inline void mips64_preludes(RzList /*<RzSearchKeyword *>*/ *l, bool big_endian) {
+	if (big_endian) {
+		KW(MIPS_BE_MOVE_ZERO_RA_BAL, "\xff\xff\xff\xff\xff\xff\x00\x00", 8);
+		KW(MIPS_BE_LUI_GP_IMM
+				MIPS_BE_ADDIU_GP_GP_IMM
+					MIPS_BE_ADDU_GP_GP_T9,
+			"\xff\xff\xff\x00\xff\xff\x00\x00\xff\xff\xff\xff", 12);
+		KW(MIPS_BE_ADDIU_SP_SP_IMM
+				MIPS_BE_SD_FP_ADDR
+					MIPS_BE_MOVE_FP_SP,
+			"\xff\xff\x00\x00\xff\xff\x00\x00\xff\xff\xff\xff", 12);
+		return;
+	}
+
+	KW(MIPS_LE_MOVE_ZERO_RA_BAL, "\xff\xff\xff\xff\x00\x00\xff\xff", 8);
+	KW(MIPS_LE_LUI_GP_IMM
+			MIPS_LE_ADDIU_GP_GP_IMM
+				MIPS_LE_ADDU_GP_GP_T9,
+		"\x00\xff\xff\xff\x00\x00\xff\xff\xff\xff\xff\xff", 12);
+	KW(MIPS_LE_ADDIU_SP_SP_IMM
+			MIPS_LE_SD_FP_ADDR
+				MIPS_LE_MOVE_FP_SP,
+		"\x00\x00\xff\xff\x00\x00\xff\xff\xff\xff\xff\xff", 12);
+}
+
+static inline void micromips_preludes(RzList /*<RzSearchKeyword *>*/ *l, bool big_endian) {
+	if (big_endian) {
+		KW(MICROMIPS_BE_LUI_GP_IMM
+				MICROMIPS_BE_ADDIU_GP_GP_IMM
+					MICROMIPS_BE_ADDU_GP_GP_T9,
+			"\xff\xff\x00\x00\xff\xff\x00\x00\xff\xff\xff\xff", 12);
+		return;
+	}
+
+	KW(MICROMIPS_LE_LUI_GP_IMM
+			MICROMIPS_LE_ADDIU_GP_GP_IMM
+				MICROMIPS_LE_ADDU_GP_GP_T9,
+		"\x00\x00\xff\xff\x00\x00\xff\xff\xff\xff\xff\xff", 12);
+}
+
+static inline void nanomips_preludes(RzList /*<RzSearchKeyword *>*/ *l, bool big_endian) {
+	if (big_endian) {
+		KW(NANOMIPS_LE_SAVE_IMM_RA_GP, "\xff\xff\xf0\x07", 4);
+		KW(NANOMIPS_LE_SAVE_IMM_FP_RA NANOMIPS_LE_ADDIU_FP_SP_IMM,
+			"\xff\xff\xf0\x00\xff\xff", 6);
+		return;
+	}
+
+	KW(NANOMIPS_LE_SAVE_IMM_RA_GP, "\xff\xff\x07\xf0", 4);
+	KW(NANOMIPS_LE_SAVE_IMM_FP_RA NANOMIPS_LE_ADDIU_FP_SP_IMM,
+		"\xff\xff\xff\xff\x00\xf0", 6);
+}
+
 static RzList /*<RzSearchKeyword *>*/ *mips_analysis_preludes(RzAnalysis *analysis) {
-#define KW(d, ds, m, ms) rz_list_append(l, rz_search_keyword_new((const ut8 *)d, ds, (const ut8 *)m, ms, NULL))
 	RzList *l = rz_list_newf((RzListFree)rz_search_keyword_free);
-	KW("\x27\xbd\x00", 3, NULL, 0);
+
+	if (rz_analysis_is_cpu(analysis, "nanomips")) {
+		nanomips_preludes(l, analysis->big_endian);
+	} else if (rz_analysis_is_cpu(analysis, "micromips")) {
+		micromips_preludes(l, analysis->big_endian);
+	} else if (analysis->bits == 32) {
+		mips32_preludes(l, analysis->big_endian);
+	} else {
+		mips64_preludes(l, analysis->big_endian);
+	}
 	return l;
 }
+#undef KW
 
 static bool mips_fini(void *user) {
 	MIPSContext *ctx = (MIPSContext *)user;
