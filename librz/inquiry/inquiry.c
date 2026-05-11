@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2025 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <bits/types/error_t.h>
 #include <rz_core.h>
 #include <rz_lib.h>
 #include <rz_inquiry.h>
@@ -502,7 +501,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 	RZ_LOG_DEBUG("Create IL Cache");
 	RzILCache *il_cache = rz_il_cache_new(core->analysis, core->io,
 		rz_bin_object_get_sections(core->bin->cur->o),
-		RZ_IL_CACHE_CONFIG_NOP_UNLIFTED | RZ_IL_CACHE_CONFIG_SLEEP_SHORT);
+		RZ_IL_CACHE_CONFIG_NOP_UNLIFTED | RZ_IL_CACHE_CONFIG_NO_SLEEP);
 	if (!il_cache) {
 		return_code = false;
 		goto error_free;
@@ -535,7 +534,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		rz_warn_if_reached();
 		goto error_free;
 	}
-	size_t n_threads = 8;
+	size_t n_threads = 32;
 	iset_map = RZ_NEWS0(struct ituple, n_threads);
 
 	RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM] = { 0 };
