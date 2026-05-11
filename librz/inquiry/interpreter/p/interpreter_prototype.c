@@ -12,7 +12,7 @@
 
 #define INITIAL_STACK_CAPACITY 8
 
-#define MAX_INVOCATIONS_PER_BB 3
+#define MAX_INVOCATIONS_PER_BLOCK 3
 
 static bool eval(RZ_NONNULL RzInterpreterSet *iset,
 	RZ_NONNULL const RzILCacheBlock *il_bb,
@@ -20,13 +20,13 @@ static bool eval(RZ_NONNULL RzInterpreterSet *iset,
 	ProtoIntrprPluginData *pdata = plugin_data;
 
 	// Check invocation count of the current address.
-	// Never execute the same address more than MAX_INVOCATIONS_PER_BB times.
+	// Never execute the same address more than MAX_INVOCATIONS_PER_BLOCK times.
 	bool found = false;
 	HtUUKv *ic_pc = ht_uu_find_kv(pdata->bb_invocation_count, il_bb->addr, &found);
 	if (found) {
 		ic_pc->value++;
-		RZ_LOG_DEBUG("Eval BB (ic: %" PFMT64d ") = 0x%" PFMT64x "\n", ic_pc->value, il_bb->addr);
-		if (ic_pc->value > MAX_INVOCATIONS_PER_BB) {
+		RZ_LOG_DEBUG("Eval BLOCK (ic: %" PFMT64d ") = 0x%" PFMT64x "\n", ic_pc->value, il_bb->addr);
+		if (ic_pc->value > MAX_INVOCATIONS_PER_BLOCK) {
 			// TODO: Make it configurable
 			RZ_LOG_DEBUG("Reached maximum number of invocations of basic block at 0x%" PFMT64x ". Skipping it.\n", il_bb->addr)
 			set_pc(iset->astate, il_bb->addr + il_bb->size, plugin_data);
@@ -39,7 +39,7 @@ static bool eval(RZ_NONNULL RzInterpreterSet *iset,
 	// Reset call candidate tracking for each basic block.
 	memset(&pdata->call_cand, 0, sizeof(pdata->call_cand));
 
-	// Now execute the actual effects of the BB.
+	// Now execute the actual effects of the BLOCK.
 	void **it;
 	rz_pvector_foreach (il_bb->il_ops, it) {
 		ProtoIntrprAbstrData *apc = AD(iset->astate->pc->abstr_data);

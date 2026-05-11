@@ -10,12 +10,12 @@
 #include <rz_inquiry/rz_bb_graph.h>
 
 static ut64 hash_node(const void *data) {
-	const RzInquiryBB *bb = data;
+	const RzInquiryBlock *bb = data;
 	return bb->addr;
 }
 
 static RZ_OWN char *node_formatter(const RzGraphNode *n) {
-	const RzInquiryBB *bb = rz_graph_node_get_data(n);
+	const RzInquiryBlock *bb = rz_graph_node_get_data(n);
 	return rz_str_newf("[label=\"0x%" PFMT64x ":%" PFMT64u "\"]",
 		bb->addr, bb->size);
 }
@@ -116,7 +116,7 @@ RZ_IPI bool rz_inquiry_bb_cfg_update_edge(RzInquiryBBCFG *cfg, ut64 from_bb, ut6
 	return rz_graph_update_edge_by_id(cfg->graph, from_bb, to_bb, RZ_GRAPH_INT_AS_DATA(type), is_cf_edge, NULL);
 }
 
-RZ_IPI bool rz_inquiry_bb_cfg_get_basic_block(const RzInquiryBBCFG *cfg, ut64 bb_addr, RZ_OUT RZ_NULLABLE RzInquiryBB *bb) {
+RZ_IPI bool rz_inquiry_bb_cfg_get_basic_block(const RzInquiryBBCFG *cfg, ut64 bb_addr, RZ_OUT RZ_NULLABLE RzInquiryBlock *bb) {
 	rz_return_val_if_fail(cfg, false);
 	const RzGraphNode *n = rz_graph_find_node(cfg->graph, bb_addr);
 	if (!n) {
@@ -124,7 +124,7 @@ RZ_IPI bool rz_inquiry_bb_cfg_get_basic_block(const RzInquiryBBCFG *cfg, ut64 bb
 		return false;
 	}
 	if (bb) {
-		const RzInquiryBB *n_data = rz_graph_node_get_data(n);
+		const RzInquiryBlock *n_data = rz_graph_node_get_data(n);
 		bb->addr = n_data->addr;
 		bb->size = n_data->size;
 	}
@@ -152,7 +152,7 @@ RZ_API RZ_OWN RzIterator /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_incoming_edg
  * Returns false if it already exists.
  */
 RZ_IPI bool rz_inquiry_bb_cfg_add_block(RzInquiryBBCFG *cfg, ut64 addr, ut64 size) {
-	RzInquiryBB *bb = RZ_NEW(RzInquiryBB);
+	RzInquiryBlock *bb = RZ_NEW(RzInquiryBlock);
 	if (!bb) {
 		return false;
 	}
@@ -186,7 +186,7 @@ RZ_IPI bool rz_inquiry_bb_cfg_add_xrefs(RzInquiryBBCFG *cfg, const RzVector /*<R
 			if (!rz_inquiry_bb_cfg_update_edge(cfg, xref->bb_addr, xref->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL)) {
 				RZ_LOG_DEBUG("Did not add CALL edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", xref->bb_addr, xref->to);
 			}
-			RzInquiryBB bb = { 0 };
+			RzInquiryBlock bb = { 0 };
 			if (!rz_inquiry_bb_cfg_get_basic_block(cfg, xref->bb_addr, &bb)) {
 				rz_warn_if_reached();
 				break;
@@ -212,7 +212,7 @@ RZ_IPI bool rz_inquiry_bb_cfg_add_xrefs(RzInquiryBBCFG *cfg, const RzVector /*<R
 	return true;
 }
 
-static int cmp(const RzInquiryBB *a, const RzInquiryBB *b, void *user) {
+static int cmp(const RzInquiryBlock *a, const RzInquiryBlock *b, void *user) {
 	if (a->addr < b->addr) {
 		return -1;
 	} else if (a->addr > b->addr) {
@@ -289,7 +289,7 @@ RZ_IPI bool rz_inquiry_bb_cfg_reduce(RzInquiryBBCFG *cfg) {
 	RzGraphNode *n;
 	RzIterator *iter = rz_graph_get_nodes(cfg->graph);
 	rz_iterator_foreach(iter, n) {
-		RzInquiryBB *b = rz_graph_node_get_data_mut(n);
+		RzInquiryBlock *b = rz_graph_node_get_data_mut(n);
 		rz_pvector_push(&blocks, b); // Cast because API is not constified.
 	}
 	rz_iterator_free(iter);
@@ -306,11 +306,11 @@ RZ_IPI bool rz_inquiry_bb_cfg_reduce(RzInquiryBBCFG *cfg) {
 
 	size_t n_blocks = rz_pvector_len(&blocks);
 	for (size_t i = 0; i < n_blocks - 1; ++i) {
-		RzInquiryBB *a = rz_pvector_at(&blocks, i);
+		RzInquiryBlock *a = rz_pvector_at(&blocks, i);
 
 		// Split of all blocks a overlaps with.
 		for (; i < n_blocks - 1; ++i) {
-			RzInquiryBB *b = rz_pvector_at(&blocks, i + 1);
+			RzInquiryBlock *b = rz_pvector_at(&blocks, i + 1);
 			if ((a->addr + a->size) != (b->addr + b->size)) {
 				// End addresses don't match => b lies not within a.
 				break;

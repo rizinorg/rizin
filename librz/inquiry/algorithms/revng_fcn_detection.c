@@ -7,14 +7,15 @@
  * chapter: "4.2 Function boundaries recovery"
  * doi: 10.1145/3033019.3033028
  *
- * The actualy algorithm is really simple.
+ * The actually algorithm is really simple.
  *
  * TERMS:
  *
- * Basic Block: A sequence of instructions ending with exactly one known entry point and one branch at the end.
+ * Basic Block (BB): A sequence of instructions having exactly one entry point and
+ * one jump/call/exit at the end.
  * Call candidate: RzAnalysisCallCandidate
  * Candidate function entry points (CFEP): Addresses of possible function entry point.
- * Return Addresses: address after a call candidate BB, with an xref to it.
+ * Return Addresses: Address after a call candidate BB, with an xref to it.
  * Basic Block CFG: Control Flow Graph with basic blocks as nodes.
  *
  * IN:
@@ -28,15 +29,14 @@
  * It simply iterates over all CFEPs.
  * For each one it follows its edges in the bb_cfg.
  * If an edge belongs to a call, it is NOT taken.
- * Instead it continues with the basic block after the call, if it is a return address.
  *
  * Every walked edge and the basic blocks are added to the function.
  *
- * Tail calls are ignored.
+ * Tail calls are not modelled.
  *
  * OUT:
  *  - List of functions
- *  - Each functions starts with one CFEP, and has a sub-graph in the bb_cfg.
+ *  - Each functions starts with one CFEP and is a sub-graph in the bb_cfg.
  */
 
 #include "rz_analysis.h"
@@ -91,7 +91,7 @@ static void recurse_into_fcn_bbs(
 	//
 	// Add edge
 	//
-	RzInquiryBB this_bb = { 0 };
+	RzInquiryBlock this_bb = { 0 };
 	if (!rz_inquiry_bb_cfg_get_basic_block(binary_bb_cfg, this_bb_addr, &this_bb)) {
 		rz_warn_if_reached();
 		goto err_return;
@@ -102,7 +102,7 @@ static void recurse_into_fcn_bbs(
 	}
 
 	if (edge_type != RZ_INQUIRY_BB_CFG_EDGE_TYPE_NONE) {
-		RzInquiryBB from_bb = { 0 };
+		RzInquiryBlock from_bb = { 0 };
 		if (!rz_inquiry_bb_cfg_get_basic_block(binary_bb_cfg, predecessor_bb_addr, &from_bb)) {
 			rz_warn_if_reached();
 			goto err_return;

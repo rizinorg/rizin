@@ -117,7 +117,7 @@ RZ_API RZ_OWN char *rz_inquiry_function_str(const RzInquiryFunction *fcn) {
 	RzIterator *iter = rz_graph_get_nodes(fcn->bb_cfg->graph);
 	RzGraphNode *n;
 	rz_iterator_foreach(iter, n) {
-		const RzInquiryBB *bb = rz_graph_node_get_data(n);
+		const RzInquiryBlock *bb = rz_graph_node_get_data(n);
 		rz_strbuf_appendf(buf, "\t0x%" PFMT64x ":0x%" PFMT64x "\n", bb->addr, bb->size);
 	}
 	rz_iterator_free(iter);
@@ -534,7 +534,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		rz_warn_if_reached();
 		goto error_free;
 	}
-	size_t n_threads = 32;
+	size_t n_threads = 1;
 	iset_map = RZ_NEWS0(struct ituple, n_threads);
 
 	RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM] = { 0 };
@@ -766,9 +766,15 @@ fatal_error:
 	if (!rz_inquiry_bb_cfg_add_xrefs(core->inquiry->bb_cfg, core->inquiry->dynamic_xrefs)) {
 		rz_warn_if_reached();
 	}
+	char *g = rz_inquiry_bb_cfg_as_dot(core->inquiry->bb_cfg, "not_reduced");
+	printf("%s\n", g);
+	free(g);
 	if (!rz_inquiry_bb_cfg_reduce(core->inquiry->bb_cfg)) {
 		rz_warn_if_reached();
 	}
+	g = rz_inquiry_bb_cfg_as_dot(core->inquiry->bb_cfg, "reduced");
+	printf("%s\n", g);
+	free(g);
 
 	RZ_LOG_DEBUG("INQUIRY: Done\n");
 
@@ -798,7 +804,7 @@ static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry
 	RzIterator *iter = rz_graph_get_nodes(inquiry->bb_cfg->graph);
 	RzGraphNode *n;
 	rz_iterator_foreach(iter, n) {
-		const RzInquiryBB *bb = rz_graph_node_get_data(n);
+		const RzInquiryBlock *bb = rz_graph_node_get_data(n);
 		rz_analysis_add_bb(analysis, bb->addr, bb->size);
 		RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, bb->addr);
 		RzIterator *out_edges = rz_inquiry_bb_cfg_get_outgoing_edges(inquiry->bb_cfg, bb->addr);
@@ -865,7 +871,7 @@ static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry
 		RzIterator *iter = rz_graph_get_nodes(fcn->bb_cfg->graph);
 		RzGraphNode *n;
 		rz_iterator_foreach(iter, n) {
-			const RzInquiryBB *bb = rz_graph_node_get_data(n);
+			const RzInquiryBlock *bb = rz_graph_node_get_data(n);
 			RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, bb->addr);
 			if (!abb && !(abb = rz_analysis_create_block(analysis, bb->addr, bb->size))) {
 				rz_warn_if_reached();
