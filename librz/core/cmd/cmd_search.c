@@ -1228,6 +1228,7 @@ static void __core_cmd_search_asm_infinite(RzCore *core, const char *arg) {
 		}
 		free(buf);
 	}
+	rz_list_free(boundaries);
 }
 
 static void __core_cmd_search_asm_byteswap(RzCore *core, int nth) {
@@ -1700,6 +1701,10 @@ static RzSearchOpt *setup_search_options(RzCore *core) {
 }
 
 static RzCmdStatus byte_pattern_search(RzCore *core, RZ_OWN RzSearchBytesPattern *pattern, RzCmdStateOutput *state) {
+	if (!pattern) {
+		RZ_LOG_ERROR("Failed to parse given pattern.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	RzSearchOpt *search_opts = setup_search_options(core);
 	RzList *hits = NULL;
 	if (!search_opts) {
@@ -1708,11 +1713,6 @@ static RzCmdStatus byte_pattern_search(RzCore *core, RZ_OWN RzSearchBytesPattern
 	}
 
 	CMD_SEARCH_BEGIN();
-
-	if (!pattern) {
-		RZ_LOG_ERROR("Failed to parse given pattern.\n");
-		goto error;
-	}
 
 	bool progress = rz_search_opt_get_show_progress(search_opts) != RZ_SEARCH_PROGRESS_DISABLED;
 	if (!rz_search_opt_set_cancel_cb(search_opts, cmd_search_progress_cancel, progress ? state : NULL)) {
@@ -1731,7 +1731,6 @@ static RzCmdStatus byte_pattern_search(RzCore *core, RZ_OWN RzSearchBytesPattern
 	return cmd_core_handle_search_hits(core, state, hits);
 
 error:
-	rz_search_bytes_pattern_free(pattern);
 	rz_list_free(hits);
 	rz_search_opt_free(search_opts);
 	CMD_SEARCH_END();
