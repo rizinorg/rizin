@@ -18,10 +18,16 @@ static const RzCmdDescDetail cmd_search_hash_block_details[3];
 static const RzCmdDescDetail cmd_search_hash_entropy_details[2];
 static const RzCmdDescDetail cmd_search_hash_entropy_fractional_details[2];
 static const RzCmdDescDetail cmd_search_cryptographic_material_details[2];
+static const RzCmdDescDetail cmd_query_cop_gadget_details[5];
+static const RzCmdDescDetail cmd_cop_search_stack_details[2];
+static const RzCmdDescDetail cmd_cop_gadget_search_size_details[2];
 static const RzCmdDescDetail cmd_search_file_details[2];
-static const RzCmdDescDetail cmd_query_gadget_details[5];
+static const RzCmdDescDetail cmd_query_jop_gadget_details[5];
+static const RzCmdDescDetail cmd_jop_search_stack_details[2];
+static const RzCmdDescDetail cmd_jop_gadget_search_size_details[2];
+static const RzCmdDescDetail cmd_query_rop_gadget_details[5];
 static const RzCmdDescDetail cmd_rop_search_stack_details[2];
-static const RzCmdDescDetail cmd_gadget_search_size_details[2];
+static const RzCmdDescDetail cmd_rop_gadget_search_size_details[2];
 static const RzCmdDescDetail cmd_search_value_details[3];
 static const RzCmdDescDetail cmd_search_hex_details[2];
 static const RzCmdDescDetail cmd_search_hex_regex_details[2];
@@ -148,8 +154,20 @@ static const RzCmdDescArg cmd_search_hash_block_args[4];
 static const RzCmdDescArg cmd_search_hash_entropy_args[4];
 static const RzCmdDescArg cmd_search_hash_entropy_fractional_args[4];
 static const RzCmdDescArg cmd_search_cryptographic_material_args[2];
+static const RzCmdDescArg cmd_info_cop_gadget_args[2];
+static const RzCmdDescArg cmd_search_cop_gadget_args[2];
+static const RzCmdDescArg cmd_query_cop_gadget_args[2];
+static const RzCmdDescArg cmd_detail_cop_gadget_args[2];
+static const RzCmdDescArg cmd_cop_search_stack_args[2];
+static const RzCmdDescArg cmd_cop_gadget_search_size_args[2];
 static const RzCmdDescArg cmd_search_deltified_args[2];
 static const RzCmdDescArg cmd_search_file_args[4];
+static const RzCmdDescArg cmd_info_jop_gadget_args[2];
+static const RzCmdDescArg cmd_search_jop_gadget_args[2];
+static const RzCmdDescArg cmd_query_jop_gadget_args[2];
+static const RzCmdDescArg cmd_detail_jop_gadget_args[2];
+static const RzCmdDescArg cmd_jop_search_stack_args[2];
+static const RzCmdDescArg cmd_jop_gadget_search_size_args[2];
 static const RzCmdDescArg cmd_search_insn_offset_backwards_args[2];
 static const RzCmdDescArg cmd_search_insn_offset_backwards_fallback_args[2];
 static const RzCmdDescArg cmd_search_pattern_args[2];
@@ -158,12 +176,12 @@ static const RzCmdDescArg cmd_search_graph_path_args[3];
 static const RzCmdDescArg cmd_search_graph_path_follow_calls_args[3];
 static const RzCmdDescArg cmd_search_magic_const_args[2];
 static const RzCmdDescArg cmd_search_reference_args[2];
-static const RzCmdDescArg cmd_info_gadget_args[2];
-static const RzCmdDescArg cmd_search_gadget_args[2];
-static const RzCmdDescArg cmd_query_gadget_args[2];
-static const RzCmdDescArg cmd_detail_gadget_args[2];
+static const RzCmdDescArg cmd_info_rop_gadget_args[2];
+static const RzCmdDescArg cmd_search_rop_gadget_args[2];
+static const RzCmdDescArg cmd_query_rop_gadget_args[2];
+static const RzCmdDescArg cmd_detail_rop_gadget_args[2];
 static const RzCmdDescArg cmd_rop_search_stack_args[2];
-static const RzCmdDescArg cmd_gadget_search_size_args[2];
+static const RzCmdDescArg cmd_rop_gadget_search_size_args[2];
 static const RzCmdDescArg cmd_search_value_args[3];
 static const RzCmdDescArg cmd_search_value_alias_v1_args[2];
 static const RzCmdDescArg cmd_search_value_alias_v2_args[2];
@@ -1902,6 +1920,156 @@ static const RzCmdDescHelp cmd_search_cryptographic_material_help = {
 	.args = cmd_search_cryptographic_material_args,
 };
 
+static const RzCmdDescHelp slash_C_help = {
+	.summary = "Search, List, Query for COP Gadgets",
+};
+static const RzCmdDescArg cmd_info_cop_gadget_args[] = {
+	{
+		.name = "filter-by-string",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_cop_gadget_help = {
+	.summary = "List COP Gadgets",
+	.args = cmd_info_cop_gadget_args,
+};
+
+static const RzCmdDescArg cmd_search_cop_gadget_args[] = {
+	{
+		.name = "filter-by-regex",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_cop_gadget_help = {
+	.summary = "List COP Gadgets [regular expression]",
+	.args = cmd_search_cop_gadget_args,
+};
+
+static const RzCmdDescDetailEntry cmd_query_cop_gadget_Constraint_space_types_detail_entries[] = {
+	{ .text = "reg=const", .arg_str = NULL, .comment = "Find gadgets that set a register to a constant value" },
+	{ .text = "reg=reg", .arg_str = NULL, .comment = "Find gadgets that copy one register to another" },
+	{ .text = "reg=reg OP const", .arg_str = NULL, .comment = "Find gadgets with register and constant arithmetic" },
+	{ .text = "reg=reg OP reg", .arg_str = NULL, .comment = "Find gadgets with register-register operations" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry cmd_query_cop_gadget_Supported_space_operations_detail_entries[] = {
+	{ .text = "+ - * / %", .arg_str = NULL, .comment = "Arithmetic operations (add, sub, mul, div, mod)" },
+	{ .text = "& | ^", .arg_str = NULL, .comment = "Bitwise operations (AND, OR, XOR)" },
+	{ .text = "<< >>", .arg_str = NULL, .comment = "Shift operations (left, right)" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry cmd_query_cop_gadget_Compound_space_operators_detail_entries[] = {
+	{ .text = "reg++ or reg--", .arg_str = NULL, .comment = "Increment or decrement register" },
+	{ .text = "reg+=val, reg-=val", .arg_str = NULL, .comment = "Compound assignment operators" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry cmd_query_cop_gadget_Usage_space_example_detail_entries[] = {
+	{ .text = "Find gadgets setting rax to 0", .arg_str = NULL, .comment = "/Ck rax=0" },
+	{ .text = "Find gadgets copying rbx to rax", .arg_str = NULL, .comment = "/Ck rax=rbx" },
+	{ .text = "Find gadgets with rax = rbx + 8", .arg_str = NULL, .comment = "/Ck rax=rbx+8" },
+	{ .text = "Find gadgets with multiple constraints", .arg_str = NULL, .comment = "/Ck rax=0,rbx=rcx" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_query_cop_gadget_details[] = {
+	{ .name = "Constraint types", .entries = cmd_query_cop_gadget_Constraint_space_types_detail_entries },
+	{ .name = "Supported operations", .entries = cmd_query_cop_gadget_Supported_space_operations_detail_entries },
+	{ .name = "Compound operators", .entries = cmd_query_cop_gadget_Compound_space_operators_detail_entries },
+	{ .name = "Usage example", .entries = cmd_query_cop_gadget_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_query_cop_gadget_args[] = {
+	{
+		.name = "key=value",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_query_cop_gadget_help = {
+	.summary = "Query COP Gadgets by providing constraints",
+	.args_str = " <key>[=<val>] [<key>[=<val>] ...]]",
+	.details = cmd_query_cop_gadget_details,
+	.args = cmd_query_cop_gadget_args,
+};
+
+static const RzCmdDescArg cmd_detail_cop_gadget_args[] = {
+	{
+		.name = "Gadget address",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_detail_cop_gadget_help = {
+	.summary = "Gadget detail info",
+	.args = cmd_detail_cop_gadget_args,
+};
+
+static const RzCmdDescDetailEntry cmd_cop_search_stack_Usage_space_example_detail_entries[] = {
+	{ .text = "Search COP gadgets with less than 0x200 stack changes", .arg_str = NULL, .comment = "/Cs \"<0x200\"" },
+	{ .text = "Search COP gadgets with 0x100 stack changes", .arg_str = NULL, .comment = "/Cs =0x100" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_cop_search_stack_details[] = {
+	{ .name = "Usage example", .entries = cmd_cop_search_stack_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_cop_search_stack_args[] = {
+	{
+		.name = "Stack changes",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cop_search_stack_help = {
+	.summary = "Search cop gadgets given stack changes",
+	.details = cmd_cop_search_stack_details,
+	.args = cmd_cop_search_stack_args,
+};
+
+static const RzCmdDescDetailEntry cmd_cop_gadget_search_size_Usage_space_example_detail_entries[] = {
+	{ .text = "Search COP gadgets with the size less than 0x20", .arg_str = NULL, .comment = "/Cl \"<0x20\"" },
+	{ .text = "Search COP gadgets with the size 0x10", .arg_str = NULL, .comment = "/Cl =0x10" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_cop_gadget_search_size_details[] = {
+	{ .name = "Usage example", .entries = cmd_cop_gadget_search_size_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_cop_gadget_search_size_args[] = {
+	{
+		.name = "Gadget size",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cop_gadget_search_size_help = {
+	.summary = "Search cop gadgets given gadget size",
+	.details = cmd_cop_gadget_search_size_details,
+	.args = cmd_cop_gadget_search_size_args,
+};
+
 static const RzCmdDescArg cmd_search_deltified_args[] = {
 	{
 		.name = "101112",
@@ -1951,6 +2119,156 @@ static const RzCmdDescHelp cmd_search_file_help = {
 	.summary = "Search the content of a file.",
 	.details = cmd_search_file_details,
 	.args = cmd_search_file_args,
+};
+
+static const RzCmdDescHelp slash_J_help = {
+	.summary = "Search, List, Query for JOP Gadgets",
+};
+static const RzCmdDescArg cmd_info_jop_gadget_args[] = {
+	{
+		.name = "filter-by-string",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_jop_gadget_help = {
+	.summary = "List JOP Gadgets",
+	.args = cmd_info_jop_gadget_args,
+};
+
+static const RzCmdDescArg cmd_search_jop_gadget_args[] = {
+	{
+		.name = "filter-by-regex",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_jop_gadget_help = {
+	.summary = "List JOP Gadgets [regular expression]",
+	.args = cmd_search_jop_gadget_args,
+};
+
+static const RzCmdDescDetailEntry cmd_query_jop_gadget_Constraint_space_types_detail_entries[] = {
+	{ .text = "reg=const", .arg_str = NULL, .comment = "Find gadgets that set a register to a constant value" },
+	{ .text = "reg=reg", .arg_str = NULL, .comment = "Find gadgets that copy one register to another" },
+	{ .text = "reg=reg OP const", .arg_str = NULL, .comment = "Find gadgets with register and constant arithmetic" },
+	{ .text = "reg=reg OP reg", .arg_str = NULL, .comment = "Find gadgets with register-register operations" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry cmd_query_jop_gadget_Supported_space_operations_detail_entries[] = {
+	{ .text = "+ - * / %", .arg_str = NULL, .comment = "Arithmetic operations (add, sub, mul, div, mod)" },
+	{ .text = "& | ^", .arg_str = NULL, .comment = "Bitwise operations (AND, OR, XOR)" },
+	{ .text = "<< >>", .arg_str = NULL, .comment = "Shift operations (left, right)" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry cmd_query_jop_gadget_Compound_space_operators_detail_entries[] = {
+	{ .text = "reg++ or reg--", .arg_str = NULL, .comment = "Increment or decrement register" },
+	{ .text = "reg+=val, reg-=val", .arg_str = NULL, .comment = "Compound assignment operators" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry cmd_query_jop_gadget_Usage_space_example_detail_entries[] = {
+	{ .text = "Find gadgets setting rax to 0", .arg_str = NULL, .comment = "/Jk rax=0" },
+	{ .text = "Find gadgets copying rbx to rax", .arg_str = NULL, .comment = "/Jk rax=rbx" },
+	{ .text = "Find gadgets with rax = rbx + 8", .arg_str = NULL, .comment = "/Jk rax=rbx+8" },
+	{ .text = "Find gadgets with multiple constraints", .arg_str = NULL, .comment = "/Jk rax=0,rbx=rcx" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_query_jop_gadget_details[] = {
+	{ .name = "Constraint types", .entries = cmd_query_jop_gadget_Constraint_space_types_detail_entries },
+	{ .name = "Supported operations", .entries = cmd_query_jop_gadget_Supported_space_operations_detail_entries },
+	{ .name = "Compound operators", .entries = cmd_query_jop_gadget_Compound_space_operators_detail_entries },
+	{ .name = "Usage example", .entries = cmd_query_jop_gadget_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_query_jop_gadget_args[] = {
+	{
+		.name = "key=value",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_query_jop_gadget_help = {
+	.summary = "Query JOP Gadgets by providing constraints",
+	.args_str = " <key>[=<val>] [<key>[=<val>] ...]]",
+	.details = cmd_query_jop_gadget_details,
+	.args = cmd_query_jop_gadget_args,
+};
+
+static const RzCmdDescArg cmd_detail_jop_gadget_args[] = {
+	{
+		.name = "Gadget address",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_detail_jop_gadget_help = {
+	.summary = "Gadget detail info",
+	.args = cmd_detail_jop_gadget_args,
+};
+
+static const RzCmdDescDetailEntry cmd_jop_search_stack_Usage_space_example_detail_entries[] = {
+	{ .text = "Search JOP gadgets with less than 0x200 stack changes", .arg_str = NULL, .comment = "/Js \"<0x200\"" },
+	{ .text = "Search JOP gadgets with 0x100 stack changes", .arg_str = NULL, .comment = "/Js =0x100" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_jop_search_stack_details[] = {
+	{ .name = "Usage example", .entries = cmd_jop_search_stack_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_jop_search_stack_args[] = {
+	{
+		.name = "Stack changes",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_jop_search_stack_help = {
+	.summary = "Search jop gadgets given stack changes",
+	.details = cmd_jop_search_stack_details,
+	.args = cmd_jop_search_stack_args,
+};
+
+static const RzCmdDescDetailEntry cmd_jop_gadget_search_size_Usage_space_example_detail_entries[] = {
+	{ .text = "Search JOP gadgets with the size less than 0x20", .arg_str = NULL, .comment = "/Jl \"<0x20\"" },
+	{ .text = "Search JOP gadgets with the size 0x10", .arg_str = NULL, .comment = "/Jl =0x10" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_jop_gadget_search_size_details[] = {
+	{ .name = "Usage example", .entries = cmd_jop_gadget_search_size_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_jop_gadget_search_size_args[] = {
+	{
+		.name = "Gadget size",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_jop_gadget_search_size_help = {
+	.summary = "Search JOP gadgets given gadget size",
+	.details = cmd_jop_gadget_search_size_details,
+	.args = cmd_jop_gadget_search_size_args,
 };
 
 static const RzCmdDescArg cmd_search_insn_offset_backwards_args[] = {
@@ -2137,7 +2455,7 @@ static const RzCmdDescHelp cmd_search_reference_execute_help = {
 static const RzCmdDescHelp slash_R_help = {
 	.summary = "Search, List, Query for ROP Gadgets",
 };
-static const RzCmdDescArg cmd_info_gadget_args[] = {
+static const RzCmdDescArg cmd_info_rop_gadget_args[] = {
 	{
 		.name = "filter-by-string",
 		.type = RZ_CMD_ARG_TYPE_STRING,
@@ -2147,12 +2465,12 @@ static const RzCmdDescArg cmd_info_gadget_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_info_gadget_help = {
+static const RzCmdDescHelp cmd_info_rop_gadget_help = {
 	.summary = "List ROP Gadgets",
-	.args = cmd_info_gadget_args,
+	.args = cmd_info_rop_gadget_args,
 };
 
-static const RzCmdDescArg cmd_search_gadget_args[] = {
+static const RzCmdDescArg cmd_search_rop_gadget_args[] = {
 	{
 		.name = "filter-by-regex",
 		.type = RZ_CMD_ARG_TYPE_STRING,
@@ -2162,12 +2480,12 @@ static const RzCmdDescArg cmd_search_gadget_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_search_gadget_help = {
+static const RzCmdDescHelp cmd_search_rop_gadget_help = {
 	.summary = "List ROP Gadgets [regular expression]",
-	.args = cmd_search_gadget_args,
+	.args = cmd_search_rop_gadget_args,
 };
 
-static const RzCmdDescDetailEntry cmd_query_gadget_Constraint_space_types_detail_entries[] = {
+static const RzCmdDescDetailEntry cmd_query_rop_gadget_Constraint_space_types_detail_entries[] = {
 	{ .text = "reg=const", .arg_str = NULL, .comment = "Find gadgets that set a register to a constant value" },
 	{ .text = "reg=reg", .arg_str = NULL, .comment = "Find gadgets that copy one register to another" },
 	{ .text = "reg=reg OP const", .arg_str = NULL, .comment = "Find gadgets with register and constant arithmetic" },
@@ -2175,34 +2493,34 @@ static const RzCmdDescDetailEntry cmd_query_gadget_Constraint_space_types_detail
 	{ 0 },
 };
 
-static const RzCmdDescDetailEntry cmd_query_gadget_Supported_space_operations_detail_entries[] = {
+static const RzCmdDescDetailEntry cmd_query_rop_gadget_Supported_space_operations_detail_entries[] = {
 	{ .text = "+ - * / %", .arg_str = NULL, .comment = "Arithmetic operations (add, sub, mul, div, mod)" },
 	{ .text = "& | ^", .arg_str = NULL, .comment = "Bitwise operations (AND, OR, XOR)" },
 	{ .text = "<< >>", .arg_str = NULL, .comment = "Shift operations (left, right)" },
 	{ 0 },
 };
 
-static const RzCmdDescDetailEntry cmd_query_gadget_Compound_space_operators_detail_entries[] = {
+static const RzCmdDescDetailEntry cmd_query_rop_gadget_Compound_space_operators_detail_entries[] = {
 	{ .text = "reg++ or reg--", .arg_str = NULL, .comment = "Increment or decrement register" },
 	{ .text = "reg+=val, reg-=val", .arg_str = NULL, .comment = "Compound assignment operators" },
 	{ 0 },
 };
 
-static const RzCmdDescDetailEntry cmd_query_gadget_Usage_space_example_detail_entries[] = {
+static const RzCmdDescDetailEntry cmd_query_rop_gadget_Usage_space_example_detail_entries[] = {
 	{ .text = "Find gadgets setting rax to 0", .arg_str = NULL, .comment = "/Rk rax=0" },
 	{ .text = "Find gadgets copying rbx to rax", .arg_str = NULL, .comment = "/Rk rax=rbx" },
 	{ .text = "Find gadgets with rax = rbx + 8", .arg_str = NULL, .comment = "/Rk rax=rbx+8" },
 	{ .text = "Find gadgets with multiple constraints", .arg_str = NULL, .comment = "/Rk rax=0,rbx=rcx" },
 	{ 0 },
 };
-static const RzCmdDescDetail cmd_query_gadget_details[] = {
-	{ .name = "Constraint types", .entries = cmd_query_gadget_Constraint_space_types_detail_entries },
-	{ .name = "Supported operations", .entries = cmd_query_gadget_Supported_space_operations_detail_entries },
-	{ .name = "Compound operators", .entries = cmd_query_gadget_Compound_space_operators_detail_entries },
-	{ .name = "Usage example", .entries = cmd_query_gadget_Usage_space_example_detail_entries },
+static const RzCmdDescDetail cmd_query_rop_gadget_details[] = {
+	{ .name = "Constraint types", .entries = cmd_query_rop_gadget_Constraint_space_types_detail_entries },
+	{ .name = "Supported operations", .entries = cmd_query_rop_gadget_Supported_space_operations_detail_entries },
+	{ .name = "Compound operators", .entries = cmd_query_rop_gadget_Compound_space_operators_detail_entries },
+	{ .name = "Usage example", .entries = cmd_query_rop_gadget_Usage_space_example_detail_entries },
 	{ 0 },
 };
-static const RzCmdDescArg cmd_query_gadget_args[] = {
+static const RzCmdDescArg cmd_query_rop_gadget_args[] = {
 	{
 		.name = "key=value",
 		.type = RZ_CMD_ARG_TYPE_STRING,
@@ -2212,14 +2530,14 @@ static const RzCmdDescArg cmd_query_gadget_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_query_gadget_help = {
+static const RzCmdDescHelp cmd_query_rop_gadget_help = {
 	.summary = "Query ROP Gadgets by providing constraints",
 	.args_str = " <key>[=<val>] [<key>[=<val>] ...]]",
-	.details = cmd_query_gadget_details,
-	.args = cmd_query_gadget_args,
+	.details = cmd_query_rop_gadget_details,
+	.args = cmd_query_rop_gadget_args,
 };
 
-static const RzCmdDescArg cmd_detail_gadget_args[] = {
+static const RzCmdDescArg cmd_detail_rop_gadget_args[] = {
 	{
 		.name = "Gadget address",
 		.type = RZ_CMD_ARG_TYPE_STRING,
@@ -2229,9 +2547,9 @@ static const RzCmdDescArg cmd_detail_gadget_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_detail_gadget_help = {
+static const RzCmdDescHelp cmd_detail_rop_gadget_help = {
 	.summary = "Gadget detail info",
-	.args = cmd_detail_gadget_args,
+	.args = cmd_detail_rop_gadget_args,
 };
 
 static const RzCmdDescDetailEntry cmd_rop_search_stack_Usage_space_example_detail_entries[] = {
@@ -2259,16 +2577,16 @@ static const RzCmdDescHelp cmd_rop_search_stack_help = {
 	.args = cmd_rop_search_stack_args,
 };
 
-static const RzCmdDescDetailEntry cmd_gadget_search_size_Usage_space_example_detail_entries[] = {
+static const RzCmdDescDetailEntry cmd_rop_gadget_search_size_Usage_space_example_detail_entries[] = {
 	{ .text = "Search ROP gadgets with the size less than 0x20", .arg_str = NULL, .comment = "/Rl \"<0x20\"" },
 	{ .text = "Search ROP gadgets with the size 0x10", .arg_str = NULL, .comment = "/Rl =0x10" },
 	{ 0 },
 };
-static const RzCmdDescDetail cmd_gadget_search_size_details[] = {
-	{ .name = "Usage example", .entries = cmd_gadget_search_size_Usage_space_example_detail_entries },
+static const RzCmdDescDetail cmd_rop_gadget_search_size_details[] = {
+	{ .name = "Usage example", .entries = cmd_rop_gadget_search_size_Usage_space_example_detail_entries },
 	{ 0 },
 };
-static const RzCmdDescArg cmd_gadget_search_size_args[] = {
+static const RzCmdDescArg cmd_rop_gadget_search_size_args[] = {
 	{
 		.name = "Gadget size",
 		.type = RZ_CMD_ARG_TYPE_STRING,
@@ -2278,10 +2596,10 @@ static const RzCmdDescArg cmd_gadget_search_size_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_gadget_search_size_help = {
+static const RzCmdDescHelp cmd_rop_gadget_search_size_help = {
 	.summary = "Search rop gadgets given gadget size",
-	.details = cmd_gadget_search_size_details,
-	.args = cmd_gadget_search_size_args,
+	.details = cmd_rop_gadget_search_size_details,
+	.args = cmd_rop_gadget_search_size_args,
 };
 
 static const RzCmdDescHelp slash_v_help = {
@@ -21797,11 +22115,45 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_search_cryptographic_material_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_c_cd, "/cm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_cryptographic_material_handler, &cmd_search_cryptographic_material_help);
 	rz_warn_if_fail(cmd_search_cryptographic_material_cd);
 
+	RzCmdDesc *slash_C_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/C", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_info_cop_gadget_handler, &cmd_info_cop_gadget_help, &slash_C_help);
+	rz_warn_if_fail(slash_C_cd);
+	RzCmdDesc *cmd_search_cop_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_C_cd, "/C/", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_cop_gadget_handler, &cmd_search_cop_gadget_help);
+	rz_warn_if_fail(cmd_search_cop_gadget_cd);
+
+	RzCmdDesc *cmd_query_cop_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_C_cd, "/Ck", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_query_cop_gadget_handler, &cmd_query_cop_gadget_help);
+	rz_warn_if_fail(cmd_query_cop_gadget_cd);
+
+	RzCmdDesc *cmd_detail_cop_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_C_cd, "/Cg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_cmd_detail_cop_gadget_handler, &cmd_detail_cop_gadget_help);
+	rz_warn_if_fail(cmd_detail_cop_gadget_cd);
+
+	RzCmdDesc *cmd_cop_search_stack_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_C_cd, "/Cs", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cop_search_stack_handler, &cmd_cop_search_stack_help);
+	rz_warn_if_fail(cmd_cop_search_stack_cd);
+
+	RzCmdDesc *cmd_cop_gadget_search_size_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_C_cd, "/Cl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cop_gadget_search_size_handler, &cmd_cop_gadget_search_size_help);
+	rz_warn_if_fail(cmd_cop_gadget_search_size_cd);
+
 	RzCmdDesc *cmd_search_deltified_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash__cd, "/d", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_deltified_handler, &cmd_search_deltified_help);
 	rz_warn_if_fail(cmd_search_deltified_cd);
 
 	RzCmdDesc *cmd_search_file_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash__cd, "/F", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_file_handler, &cmd_search_file_help);
 	rz_warn_if_fail(cmd_search_file_cd);
+
+	RzCmdDesc *slash_J_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/J", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_info_jop_gadget_handler, &cmd_info_jop_gadget_help, &slash_J_help);
+	rz_warn_if_fail(slash_J_cd);
+	RzCmdDesc *cmd_search_jop_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_J_cd, "/J/", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_jop_gadget_handler, &cmd_search_jop_gadget_help);
+	rz_warn_if_fail(cmd_search_jop_gadget_cd);
+
+	RzCmdDesc *cmd_query_jop_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_J_cd, "/Jk", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_query_jop_gadget_handler, &cmd_query_jop_gadget_help);
+	rz_warn_if_fail(cmd_query_jop_gadget_cd);
+
+	RzCmdDesc *cmd_detail_jop_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_J_cd, "/Jg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_cmd_detail_jop_gadget_handler, &cmd_detail_jop_gadget_help);
+	rz_warn_if_fail(cmd_detail_jop_gadget_cd);
+
+	RzCmdDesc *cmd_jop_search_stack_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_J_cd, "/Js", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_jop_search_stack_handler, &cmd_jop_search_stack_help);
+	rz_warn_if_fail(cmd_jop_search_stack_cd);
+
+	RzCmdDesc *cmd_jop_gadget_search_size_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_J_cd, "/Jl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_jop_gadget_search_size_handler, &cmd_jop_gadget_search_size_help);
+	rz_warn_if_fail(cmd_jop_gadget_search_size_cd);
 
 	RzCmdDesc *cmd_search_insn_offset_backwards_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash__cd, "/o", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_insn_offset_backwards_handler, &cmd_search_insn_offset_backwards_help);
 	rz_warn_if_fail(cmd_search_insn_offset_backwards_cd);
@@ -21842,22 +22194,22 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_search_reference_execute_cd = rz_cmd_desc_argv_new(core->rcmd, slash_r_cd, "/rx", rz_cmd_search_reference_execute_handler, &cmd_search_reference_execute_help);
 	rz_warn_if_fail(cmd_search_reference_execute_cd);
 
-	RzCmdDesc *slash_R_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/R", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_info_gadget_handler, &cmd_info_gadget_help, &slash_R_help);
+	RzCmdDesc *slash_R_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/R", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_info_rop_gadget_handler, &cmd_info_rop_gadget_help, &slash_R_help);
 	rz_warn_if_fail(slash_R_cd);
-	RzCmdDesc *cmd_search_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/R/", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_gadget_handler, &cmd_search_gadget_help);
-	rz_warn_if_fail(cmd_search_gadget_cd);
+	RzCmdDesc *cmd_search_rop_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/R/", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_rop_gadget_handler, &cmd_search_rop_gadget_help);
+	rz_warn_if_fail(cmd_search_rop_gadget_cd);
 
-	RzCmdDesc *cmd_query_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rk", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_query_gadget_handler, &cmd_query_gadget_help);
-	rz_warn_if_fail(cmd_query_gadget_cd);
+	RzCmdDesc *cmd_query_rop_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rk", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_query_rop_gadget_handler, &cmd_query_rop_gadget_help);
+	rz_warn_if_fail(cmd_query_rop_gadget_cd);
 
-	RzCmdDesc *cmd_detail_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_cmd_detail_gadget_handler, &cmd_detail_gadget_help);
-	rz_warn_if_fail(cmd_detail_gadget_cd);
+	RzCmdDesc *cmd_detail_rop_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_cmd_detail_rop_gadget_handler, &cmd_detail_rop_gadget_help);
+	rz_warn_if_fail(cmd_detail_rop_gadget_cd);
 
 	RzCmdDesc *cmd_rop_search_stack_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rs", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_rop_search_stack_handler, &cmd_rop_search_stack_help);
 	rz_warn_if_fail(cmd_rop_search_stack_cd);
 
-	RzCmdDesc *cmd_gadget_search_size_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_gadget_search_size_handler, &cmd_gadget_search_size_help);
-	rz_warn_if_fail(cmd_gadget_search_size_cd);
+	RzCmdDesc *cmd_rop_gadget_search_size_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_rop_gadget_search_size_handler, &cmd_rop_gadget_search_size_help);
+	rz_warn_if_fail(cmd_rop_gadget_search_size_cd);
 
 	RzCmdDesc *slash_v_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/v", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_value_handler, &cmd_search_value_help, &slash_v_help);
 	rz_warn_if_fail(slash_v_cd);

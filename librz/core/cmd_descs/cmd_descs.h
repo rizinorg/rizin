@@ -109,10 +109,34 @@ RZ_IPI RzCmdStatus rz_cmd_search_hash_entropy_handler(RzCore *core, int argc, co
 RZ_IPI RzCmdStatus rz_cmd_search_hash_entropy_fractional_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/cm"
 RZ_IPI RzCmdStatus rz_cmd_search_cryptographic_material_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/C"
+RZ_IPI RzCmdStatus rz_cmd_info_cop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/C/"
+RZ_IPI RzCmdStatus rz_cmd_search_cop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Ck"
+RZ_IPI RzCmdStatus rz_cmd_query_cop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Cg"
+RZ_IPI RzCmdStatus rz_cmd_detail_cop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Cs"
+RZ_IPI RzCmdStatus rz_cmd_cop_search_stack_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Cl"
+RZ_IPI RzCmdStatus rz_cmd_cop_gadget_search_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/d"
 RZ_IPI RzCmdStatus rz_cmd_search_deltified_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "/F"
 RZ_IPI RzCmdStatus rz_cmd_search_file_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/J"
+RZ_IPI RzCmdStatus rz_cmd_info_jop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/J/"
+RZ_IPI RzCmdStatus rz_cmd_search_jop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Jk"
+RZ_IPI RzCmdStatus rz_cmd_query_jop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Jg"
+RZ_IPI RzCmdStatus rz_cmd_detail_jop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Js"
+RZ_IPI RzCmdStatus rz_cmd_jop_search_stack_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Jl"
+RZ_IPI RzCmdStatus rz_cmd_jop_gadget_search_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/o"
 RZ_IPI RzCmdStatus rz_cmd_search_insn_offset_backwards_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "/O"
@@ -142,17 +166,17 @@ RZ_IPI RzCmdStatus rz_cmd_search_reference_write_handler(RzCore *core, int argc,
 // "/rx"
 RZ_IPI RzCmdStatus rz_cmd_search_reference_execute_handler(RzCore *core, int argc, const char **argv);
 // "/R"
-RZ_IPI RzCmdStatus rz_cmd_info_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_cmd_info_rop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/R/"
-RZ_IPI RzCmdStatus rz_cmd_search_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_cmd_search_rop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/Rk"
-RZ_IPI RzCmdStatus rz_cmd_query_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_cmd_query_rop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/Rg"
-RZ_IPI RzCmdStatus rz_cmd_detail_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_cmd_detail_rop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/Rs"
 RZ_IPI RzCmdStatus rz_cmd_rop_search_stack_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/Rl"
-RZ_IPI RzCmdStatus rz_cmd_gadget_search_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_cmd_rop_gadget_search_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/v"
 RZ_IPI RzCmdStatus rz_cmd_search_value_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/v1"
