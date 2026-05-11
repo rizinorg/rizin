@@ -706,7 +706,7 @@ bool rz_bin_omf_get_entry(rz_bin_omf_obj *obj, RzBinAddr *addr) {
 	}
 	while (ct_sym < obj->nb_symbol) {
 		if (!strcmp(obj->symbols[ct_sym]->name, "_start")) {
-			if (obj->symbols[ct_sym]->seg_idx - 1 > obj->nb_section) {
+			if (obj->symbols[ct_sym]->seg_idx - 1 >= obj->nb_section) {
 				RZ_LOG_ERROR("Invalid segment index for symbol _start\n");
 				return false;
 			}
