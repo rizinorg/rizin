@@ -78,7 +78,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterSet *iset,
 			RZ_LOG_DEBUG("PC is going to be set to an abstract value! Current PC = 0x%" PFMT64x "\n", rz_bv_to_ut64(pc->bv));
 		}
 		ut64 target = rz_bv_to_ut64(eval_out.bv);
-		RZ_LOG_DEBUG("Prototype: JMP - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
+		RZ_LOG_DEBUG("prototype: JMP - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
 			rz_bv_to_ut64(pc->bv), target,
 			eval_out.is_concrete ? "Concrete" : "Abstract");
 

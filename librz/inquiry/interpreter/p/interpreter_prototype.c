@@ -25,10 +25,10 @@ static bool eval(RZ_NONNULL RzInterpreterSet *iset,
 	HtUUKv *ic_pc = ht_uu_find_kv(pdata->bb_invocation_count, il_bb->addr, &found);
 	if (found) {
 		ic_pc->value++;
-		RZ_LOG_DEBUG("Eval BLOCK (ic: %" PFMT64d ") = 0x%" PFMT64x "\n", ic_pc->value, il_bb->addr);
+		RZ_LOG_DEBUG("prototype: Eval BLOCK (ic: %" PFMT64d ") = 0x%" PFMT64x "\n", ic_pc->value, il_bb->addr);
 		if (ic_pc->value > MAX_INVOCATIONS_PER_BLOCK) {
 			// TODO: Make it configurable
-			RZ_LOG_DEBUG("Reached maximum number of invocations of basic block at 0x%" PFMT64x ". Skipping it.\n", il_bb->addr)
+			RZ_LOG_DEBUG("prototype: Reached maximum number of invocations of basic block at 0x%" PFMT64x ". Skipping it.\n", il_bb->addr)
 			set_pc(iset->astate, il_bb->addr + il_bb->size, plugin_data);
 			return true;
 		}
@@ -44,7 +44,7 @@ static bool eval(RZ_NONNULL RzInterpreterSet *iset,
 	rz_pvector_foreach (il_bb->il_ops, it) {
 		ProtoIntrprAbstrData *apc = AD(iset->astate->pc->abstr_data);
 		ut64 pc = rz_bv_to_ut64(apc->bv);
-		RZ_LOG_DEBUG("Eval PC = 0x%" PFMT64x "\n", pc);
+		RZ_LOG_DEBUG("prototype: Eval PC = 0x%" PFMT64x "\n", pc);
 		RzILCacheInsnPkt *pkt = *it;
 		if (!interpreter_prototype_eval_effect(iset, pkt->effect, pkt->insn_pkt_size, plugin_data)) {
 			return false;
