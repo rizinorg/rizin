@@ -7,7 +7,48 @@
 #include <rz_util/rz_log.h>
 #include <rz_util/rz_regex.h>
 #include <rz_gadget.h>
-#include "gadget_internal.h"
+
+static bool rz_gadget_rop_is_valid_terminator(const RzAnalysisOp *aop, const bool allow_conditional) {
+
+	switch (aop->type & RZ_ANALYSIS_OP_TYPE_MASK) {
+	case RZ_ANALYSIS_OP_TYPE_RET:
+		return true;
+	case RZ_ANALYSIS_OP_TYPE_CRET:
+		return allow_conditional;
+	default:
+		return false;
+	}
+}
+
+static bool rz_gadget_jop_is_valid_terminator(const RzAnalysisOp *aop, const bool allow_conditional) {
+	switch (aop->type & RZ_ANALYSIS_OP_TYPE_MASK) {
+	// direct jumps not useful for JOP
+	case RZ_ANALYSIS_OP_TYPE_UJMP:
+	case RZ_ANALYSIS_OP_TYPE_RJMP:
+	case RZ_ANALYSIS_OP_TYPE_IJMP:
+	case RZ_ANALYSIS_OP_TYPE_IRJMP:
+		return true;
+	case RZ_ANALYSIS_OP_TYPE_UCJMP:
+		return allow_conditional;
+	default:
+		return false;
+	}
+}
+
+static bool rz_gadget_cop_is_valid_terminator(const RzAnalysisOp *aop, const bool allow_conditional) {
+	switch (aop->type & RZ_ANALYSIS_OP_TYPE_MASK) {
+	// direct calls not useful for COP
+	case RZ_ANALYSIS_OP_TYPE_UCALL:
+	case RZ_ANALYSIS_OP_TYPE_RCALL:
+	case RZ_ANALYSIS_OP_TYPE_ICALL:
+	case RZ_ANALYSIS_OP_TYPE_IRCALL:
+		return true;
+	case RZ_ANALYSIS_OP_TYPE_UCCALL:
+		return allow_conditional;
+	default:
+		return false;
+	}
+}
 
 static bool gadget_is_valid_terminator(const RzGadgetType gadget_type, const RzCore *core, const RzCoreAsmHit *hit, const bool allow_conditional) {
 	rz_return_val_if_fail(core && core->analysis && hit, false);
