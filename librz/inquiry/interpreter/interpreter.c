@@ -405,7 +405,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 
 	bool success = true;
 
-	RZ_LOG_DEBUG("INTERPRETER Main: Hello.\n");
+	RZ_LOG_DEBUG("interpreter: Main: Hello.\n");
 	RzInterpreterPlugin *plugin = iset->plugin;
 
 	//
@@ -436,7 +436,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 // what the interpreter does in each state.
 
 INIT: {
-	RZ_LOG_DEBUG("Enter INIT\n");
+	RZ_LOG_DEBUG("interpreter: Enter INIT\n");
 	rz_intp_run_state_set(iset->run_state, RZ_INTP_RUN_STATE_INIT);
 
 	ut64 entry_point;
@@ -466,14 +466,14 @@ INIT: {
 }
 
 EMU: {
-	RZ_LOG_DEBUG("Enter EMU\n");
+	RZ_LOG_DEBUG("interpreter: Enter EMU\n");
 	rz_intp_run_state_set(iset->run_state, RZ_INTP_RUN_STATE_EMU);
 
 	iset->astate->bb_addr = il_bb->addr;
 	iset->astate->bb_size = il_bb->size;
 	// Evaluate the effect on the abstract state.
 	if (!plugin->eval(iset, il_bb, iset->intrpr_priv)) {
-		RZ_LOG_DEBUG("Eval failed\n");
+		RZ_LOG_DEBUG("interpreter: Eval failed\n");
 		goto CLEAN;
 	}
 	astate_hash = plugin->hash_state(iset->astate, iset->intrpr_priv);
@@ -500,7 +500,7 @@ EMU: {
 	rz_vector_pop_front(succ_states, &next);
 	if (!rz_th_queue_pop(iset->il_queue, false, (void **)&il_bb) ||
 		il_bb == RZ_IL_CACHE_FAILED_LIFTING_PTR || !il_bb) {
-		RZ_LOG_DEBUG("INTPR: Getting il bb failed\n");
+		RZ_LOG_DEBUG("interpreter: Getting il bb failed\n");
 		// The il op lifting failed. Likely because the PC
 		// pointed to an unmapped region.
 		goto CLEAN;
@@ -513,7 +513,7 @@ EMU: {
 		return false;
 	}
 
-	RZ_LOG_DEBUG("INTPR: Received il_bb: 0x%" PFMT64x "\n", il_bb->addr);
+	RZ_LOG_DEBUG("interpreter: Received il_bb: 0x%" PFMT64x "\n", il_bb->addr);
 	if (!plugin->set_pc(iset->astate, next.ctrl_flow.actual_target, iset->intrpr_priv)) {
 		rz_warn_if_reached();
 		goto CLEAN;
@@ -524,7 +524,7 @@ EMU: {
 }
 
 CLEAN: {
-	RZ_LOG_DEBUG("Enter CLEAN\n");
+	RZ_LOG_DEBUG("interpreter: Enter CLEAN\n");
 	rz_intp_run_state_set(iset->run_state, RZ_INTP_RUN_STATE_CLEAN);
 
 	RZ_FREE_CUSTOM(tmp_succ_addr, rz_vector_free);
@@ -539,7 +539,7 @@ CLEAN: {
 }
 
 TERM: {
-	RZ_LOG_DEBUG("Enter TERM\n");
+	RZ_LOG_DEBUG("interpreter: Enter TERM\n");
 	rz_intp_run_state_set(iset->run_state, RZ_INTP_RUN_STATE_TERM);
 	iset->plugin->fini_state(iset->astate, iset->intrpr_priv);
 	if (iset->plugin->fini && iset->intrpr_priv) {

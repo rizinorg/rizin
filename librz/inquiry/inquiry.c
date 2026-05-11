@@ -197,7 +197,7 @@ RZ_API bool rz_inquiry_xref_interpreter_filter(RZ_NONNULL const RzAnalysisXRef *
 }
 
 static void handle_io_request(RzPVector /*<RzILMem *>*/ *il_mems, RzInterpreterIORequest *io_req, RZ_OUT RzInterpreterIOResult *io_res) {
-	RZ_LOG_DEBUG("INQUIRY: Received IO %s request: mem:%" PFMTSZd " 0x%" PFMT64x "\n",
+	RZ_LOG_DEBUG("inquiry: Received IO %s request: mem:%" PFMTSZd " 0x%" PFMT64x "\n",
 		io_req->type == RZ_INTERPRETER_IO_WRITE ? "write" : "read",
 		io_req->mem_idx,
 		rz_bv_to_ut64(io_req->addr));
@@ -218,7 +218,7 @@ static void handle_io_request(RzPVector /*<RzILMem *>*/ *il_mems, RzInterpreterI
 	} else {
 		io_res->req_ok = rz_il_mem_storew(mem, io_req->addr, io_req->st_data, io_req->big_endian);
 	}
-	RZ_LOG_DEBUG("INQUIRY: Sent IO %s result. Success = %s.\n",
+	RZ_LOG_DEBUG("inquiry: Sent IO %s result. Success = %s.\n",
 		io_req->type == RZ_INTERPRETER_IO_WRITE ? "write" : "read",
 		rz_str_bool(io_res->req_ok));
 }
@@ -286,7 +286,7 @@ static bool get_branch_targets(RzCore *core, RzSetU *branch_targets) {
 }
 
 static bool log_control_flow(RzInquiry *inquiry, RzInterpreterCtrlFlow *cf) {
-	RZ_LOG_DEBUG("INQUIRY: Received control flow: 0x%" PFMT64x " size: %" PFMTSZu " (alt: 0x%" PFMT64x ")\n",
+	RZ_LOG_DEBUG("inquiry: Received control flow: 0x%" PFMT64x " size: %" PFMTSZu " (alt: 0x%" PFMT64x ")\n",
 		cf->target_addr, cf->target_block_size, cf->alt_target);
 	rz_inquiry_bb_cfg_add_block(inquiry->bb_cfg, cf->actual_target, cf->target_block_size);
 	if (cf->alt_target) {
@@ -312,7 +312,7 @@ static bool handle_yields(RzInquiry *inquiry, RzInterpreterYieldRBuf *yield_rbuf
 			return false;
 		} else if (r == RZ_THREAD_RING_BUF_OK) {
 			rz_inquiry_add_xref(inquiry, &xref);
-			RZ_LOG_DEBUG("Added xref: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n", xref.from, xref.to, rz_analysis_ref_type_tostring(xref.type));
+			RZ_LOG_DEBUG("inquiry: Added xref: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n", xref.from, xref.to, rz_analysis_ref_type_tostring(xref.type));
 		}
 	}
 
@@ -341,9 +341,9 @@ static bool handle_yields(RzInquiry *inquiry, RzInterpreterYieldRBuf *yield_rbuf
 			RzAnalysisCallCandidate *cc_clone = RZ_NEW0(RzAnalysisCallCandidate);
 			memcpy(cc_clone, &cc, sizeof(RzAnalysisCallCandidate));
 			if (ht_up_update(inquiry->call_candidates, cc_clone->bb_addr, cc_clone)) {
-				RZ_LOG_DEBUG("Overwrote a call candidate located at 0x%" PFMT64x "\n", cc_clone->candidate_addr);
+				RZ_LOG_DEBUG("inquiry: Overwrote a call candidate located at 0x%" PFMT64x "\n", cc_clone->candidate_addr);
 			} else {
-				RZ_LOG_DEBUG("Added call candidate located at 0x%" PFMT64x "\n", cc_clone->candidate_addr);
+				RZ_LOG_DEBUG("inquiry: Added call candidate located at 0x%" PFMT64x "\n", cc_clone->candidate_addr);
 			}
 		}
 	}
@@ -498,7 +498,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 
 	rz_cons_push();
 
-	RZ_LOG_DEBUG("Create IL Cache");
+	RZ_LOG_DEBUG("inquiry: Create IL Cache");
 	RzILCache *il_cache = rz_il_cache_new(core->analysis, core->io,
 		rz_bin_object_get_sections(core->bin->cur->o),
 		RZ_IL_CACHE_CONFIG_NOP_UNLIFTED | RZ_IL_CACHE_CONFIG_NO_SLEEP);
@@ -520,7 +520,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		goto error_free;
 	}
 
-	RZ_LOG_DEBUG("INQUIRY: Enforce enabling IO cache.\n");
+	RZ_LOG_DEBUG("inquiry: Enforce enabling IO cache.\n");
 	const char *io_cache_opt = rz_config_get(core->config, "io.cache");
 	rz_config_set(core->config, "io.cache", "true");
 
@@ -570,7 +570,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		}
 
 		// Dispatch prototype interpreter into a thread.
-		RZ_LOG_DEBUG("INQUIRY: Start main interpretation thread.\n");
+		RZ_LOG_DEBUG("inquiry: Start main interpretation thread.\n");
 		RzThread *interpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, intp_iset);
 		iset_map[i].ithread = interpr_th;
 		iset_map[i].iset = intp_iset;
@@ -580,7 +580,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 	//
 	// Spawn the IL cache.
 	//
-	RZ_LOG_DEBUG("Spawn IL Cache");
+	RZ_LOG_DEBUG("inquiry: Spawn IL Cache");
 	il_cache_th = rz_th_new((RzThreadFunction)rz_il_cache_serve, il_cache);
 
 	ut64 intpr_terminated = 0;
@@ -718,7 +718,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 
 fatal_error:
 
-	RZ_LOG_DEBUG("INQUIRY: Wait for join\n");
+	RZ_LOG_DEBUG("inquiry: Wait for join\n");
 	for (size_t i = 0; i < n_threads; i++) {
 		close_reset_ipc_obj(iset_map[i].iset);
 		// Open semaphore so the interpreter can transition
@@ -755,7 +755,7 @@ fatal_error:
 	rz_iterator_foreach(iter, it) {
 		RzILCacheBlock *block = *it;
 		char *bstr = rz_il_cache_block_str(block);
-		RZ_LOG_DEBUG("Inquiry: Add ILCache block: %s\n", bstr);
+		RZ_LOG_DEBUG("inquiry: Add ILCache block: %s\n", bstr);
 		free(bstr);
 		rz_inquiry_bb_cfg_add_block(core->inquiry->bb_cfg, block->addr, block->size);
 	}
@@ -776,7 +776,7 @@ fatal_error:
 	printf("%s\n", g);
 	free(g);
 
-	RZ_LOG_DEBUG("INQUIRY: Done\n");
+	RZ_LOG_DEBUG("inquiry: inquiry: inquiry: Done\n");
 
 	rz_config_set(core->config, "io.cache", io_cache_opt);
 

@@ -43,7 +43,7 @@ bool report_yield_xref(
 	xref.to = to_addr;
 	xref.type = type;
 	if (yrbuf->filter(&xref, yrbuf->filter_data->io_boundaries)) {
-		RZ_LOG_DEBUG("REPORT xref: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n", xref.from, xref.to, rz_analysis_ref_type_tostring(xref.type));
+		RZ_LOG_DEBUG("prototype: REPORT xref: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n", xref.from, xref.to, rz_analysis_ref_type_tostring(xref.type));
 		if (rz_th_ring_buf_put(yrbuf->rbuf, &xref) != RZ_THREAD_RING_BUF_OK) {
 			return false;
 		}
@@ -171,7 +171,7 @@ bool store_abstr_data(
 	io_req.st_data = src->bv;
 
 	char *bytes = rz_bv_as_hex_string(src->bv, true);
-	RZ_LOG_DEBUG("Prototype: STORE @ mem:%" PFMT32d " 0x%" PFMT64x " : %s\n", mem_idx, rz_bv_to_ut64(io_req.addr), bytes);
+	RZ_LOG_DEBUG("pprototype: ototype: STORE @ mem:%" PFMT32d " 0x%" PFMT64x " : %s\n", mem_idx, rz_bv_to_ut64(io_req.addr), bytes);
 	free(bytes);
 
 	if (rz_th_ring_buf_put(iset->io_request_rbuf, &io_req) != RZ_THREAD_RING_BUF_OK) {
@@ -207,7 +207,7 @@ bool load_abstr_data(
 		return false;
 	}
 	if (!io_res.req_ok) {
-		RZ_LOG_WARN("Prototype: Failed to read correct number of bytes. Requested: 0x%" PFMTSZx
+		RZ_LOG_WARN("prototype: Failed to read correct number of bytes. Requested: 0x%" PFMTSZx
 			    " Received: 0x%" PFMT32x " bits.\n",
 			n_bits, rz_bv_len(out->bv));
 		return false;
@@ -215,7 +215,7 @@ bool load_abstr_data(
 	out->is_concrete = true;
 
 	char *bytes = rz_bv_as_hex_string(out->bv, true);
-	RZ_LOG_DEBUG("Prototype: READ @ mem:%" PFMT32d " 0x%" PFMT64x " : %s\n", mem_idx, rz_bv_to_ut64(io_req.addr), bytes);
+	RZ_LOG_DEBUG("prototype: READ @ mem:%" PFMT32d " 0x%" PFMT64x " : %s\n", mem_idx, rz_bv_to_ut64(io_req.addr), bytes);
 	free(bytes);
 	return true;
 }
@@ -231,7 +231,7 @@ bool set_abstr_pc(RzInterpreterAbstrState *state, ProtoIntrprAbstrData *pc,
 		pdata->prev_pc = rz_bv_to_ut64(apc->bv);
 	}
 	copy_abstr_data(state->pc->abstr_data, pc);
-	RZ_LOG_DEBUG("Prototype: set_abstr_pc() - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
+	RZ_LOG_DEBUG("prototype: set_abstr_pc() - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
 		pdata->prev_pc, rz_bv_to_ut64(apc->bv), apc->is_concrete ? "Concrete" : "Abstract");
 	return true;
 }
@@ -248,7 +248,7 @@ bool set_pc(RzInterpreterAbstrState *state, ut64 pc,
 	}
 
 	apc->is_concrete = true;
-	RZ_LOG_DEBUG("Prototype: set_pc() - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (Concrete)\n",
+	RZ_LOG_DEBUG("prototype: set_pc() - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (Concrete)\n",
 		rz_bv_to_ut64(apc->bv), pc);
 	return rz_bv_set_from_ut64(apc->bv, pc);
 }
