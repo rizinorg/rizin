@@ -704,6 +704,75 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_debug_program(RZ_NO
  * \brief      Returns a list of boundaries (as RzIOMap), based on the selected mode; see [search/analysis/zoom/[in/from/to]] for available modes.
  *
  * \param      core      The RzCore to use
+ * \param      interval  The address range of the boundaries.
+ * \param      region    The region of the boundaries. Check valid ones with `e search.in=?`.
+ *
+ * \return     On success a valid pointer (can be an empty list), otherwise NULL
+ */
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries(RZ_NONNULL RzCore *core, RzInterval interval, const char *region) {
+	rz_return_val_if_fail(core, NULL);
+	if (!strcmp(region, "raw") || !strcmp(region, "file")) {
+		return rz_core_get_boundaries_raw(core, interval);
+	} else if (!strcmp(region, "block")) {
+		return rz_core_get_boundaries_block(core, interval);
+	} else if (!strcmp(region, "dbg.map")) {
+		return rz_core_get_boundaries_current_debug_map(core, interval);
+	} else if (!strcmp(region, "io.map")) {
+		return rz_core_get_boundaries_current_io_map(core, interval);
+	} else if (!strcmp(region, "range") || !strcmp(region, "io.maps")) {
+		return rz_core_get_boundaries_all_io_maps(core, interval);
+	} else if (!strcmp(region, "io.sky")) {
+		return rz_core_get_boundaries_all_io_skyline(core, interval);
+	} else if (!strcmp(region, "code")) {
+		return rz_core_get_boundaries_code_only(core, interval);
+	} else if (!strcmp(region, "bin.segment")) {
+		return rz_core_get_boundaries_current_bin_segment(core, interval);
+	} else if (!strcmp(region, "bin.section")) {
+		return rz_core_get_boundaries_current_bin_section(core, interval);
+	} else if (!strcmp(region, "bin.segments")) {
+		return rz_core_get_boundaries_all_bin_segments(core, interval);
+	} else if (!strcmp(region, "bin.sections")) {
+		return rz_core_get_boundaries_all_bin_sections(core, interval);
+	} else if (!strcmp(region, "analysis.fcn")) {
+		return rz_core_get_boundaries_current_function(core, interval);
+	} else if (!strcmp(region, "analysis.bb")) {
+		return rz_core_get_boundaries_current_function_bb(core, interval);
+	} else if (!strcmp(region, "dbg.maps")) {
+		return rz_core_get_boundaries_all_debug_maps(core, interval);
+	} else if (!strcmp(region, "dbg.heap")) {
+		return rz_core_get_boundaries_debug_heap(core, interval);
+	} else if (!strcmp(region, "dbg.stack")) {
+		return rz_core_get_boundaries_debug_stack(core, interval);
+	} else if (!strcmp(region, "dbg.program")) {
+		return rz_core_get_boundaries_debug_program(core, interval);
+	} else if (rz_str_startswith(region, "dbg.maps.")) {
+#define PARSE_PERMS(input, mode_name) rz_str_rwx(input + strlen(mode_name))
+		int perms = PARSE_PERMS(region, "dbg.maps.");
+		return rz_core_get_boundaries_debug_maps(core, interval, perms, perms, false);
+	} else if (rz_str_startswith(region, "io.sky.")) {
+		int perms = PARSE_PERMS(region, "io.sky.");
+		return rz_core_get_boundaries_io_skyline(core, interval, perms, perms);
+	} else if (rz_str_startswith(region, "io.maps.")) {
+		int perms = PARSE_PERMS(region, "io.maps.");
+		return rz_core_get_boundaries_io_maps(core, interval, perms, perms);
+	} else if (rz_str_startswith(region, "bin.segments.")) {
+		int perms = PARSE_PERMS(region, "bin.segments.");
+		return rz_core_get_boundaries_bin_segments(core, interval, perms, perms);
+	} else if (rz_str_startswith(region, "bin.sections.")) {
+		int perms = PARSE_PERMS(region, "bin.sections.");
+		return rz_core_get_boundaries_bin_sections(core, interval, perms, perms);
+#undef PARSE_PERMS
+	}
+
+	RZ_LOG_ERROR("core: Invalid mode '%s' for [0x%" PFMT64x ", 0x%" PFMT64x "]\n",
+		region, interval.addr, interval.size);
+	return NULL;
+}
+
+/**
+ * \brief      Returns a list of boundaries (as RzIOMap), based on the selected mode; see [search/analysis/zoom/[in/from/to]] for available modes.
+ *
+ * \param      core      The RzCore to use
  * \param      from_key  The [search|analysis|zoom].from keyword to use in RzConfig
  * \param      to_key    The [search|analysis|zoom].to keyword to use in RzConfig
  * \param      in_key    The [search|analysis|zoom].in keyword to use in RzConfig
@@ -720,60 +789,5 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_select(RZ_NONNULL R
 
 	interval.addr = from;
 	interval.size = to - from;
-
-	if (!strcmp(use_mode, "raw") || !strcmp(use_mode, "file")) {
-		return rz_core_get_boundaries_raw(core, interval);
-	} else if (!strcmp(use_mode, "block")) {
-		return rz_core_get_boundaries_block(core, interval);
-	} else if (!strcmp(use_mode, "dbg.map")) {
-		return rz_core_get_boundaries_current_debug_map(core, interval);
-	} else if (!strcmp(use_mode, "io.map")) {
-		return rz_core_get_boundaries_current_io_map(core, interval);
-	} else if (!strcmp(use_mode, "range") || !strcmp(use_mode, "io.maps")) {
-		return rz_core_get_boundaries_all_io_maps(core, interval);
-	} else if (!strcmp(use_mode, "io.sky")) {
-		return rz_core_get_boundaries_all_io_skyline(core, interval);
-	} else if (!strcmp(use_mode, "code")) {
-		return rz_core_get_boundaries_code_only(core, interval);
-	} else if (!strcmp(use_mode, "bin.segment")) {
-		return rz_core_get_boundaries_current_bin_segment(core, interval);
-	} else if (!strcmp(use_mode, "bin.section")) {
-		return rz_core_get_boundaries_current_bin_section(core, interval);
-	} else if (!strcmp(use_mode, "bin.segments")) {
-		return rz_core_get_boundaries_all_bin_segments(core, interval);
-	} else if (!strcmp(use_mode, "bin.sections")) {
-		return rz_core_get_boundaries_all_bin_sections(core, interval);
-	} else if (!strcmp(use_mode, "analysis.fcn")) {
-		return rz_core_get_boundaries_current_function(core, interval);
-	} else if (!strcmp(use_mode, "analysis.bb")) {
-		return rz_core_get_boundaries_current_function_bb(core, interval);
-	} else if (!strcmp(use_mode, "dbg.maps")) {
-		return rz_core_get_boundaries_all_debug_maps(core, interval);
-	} else if (!strcmp(use_mode, "dbg.heap")) {
-		return rz_core_get_boundaries_debug_heap(core, interval);
-	} else if (!strcmp(use_mode, "dbg.stack")) {
-		return rz_core_get_boundaries_debug_stack(core, interval);
-	} else if (!strcmp(use_mode, "dbg.program")) {
-		return rz_core_get_boundaries_debug_program(core, interval);
-	} else if (rz_str_startswith(use_mode, "dbg.maps.")) {
-#define PARSE_PERMS(input, mode_name) rz_str_rwx(input + strlen(mode_name))
-		int perms = PARSE_PERMS(use_mode, "dbg.maps.");
-		return rz_core_get_boundaries_debug_maps(core, interval, perms, perms, false);
-	} else if (rz_str_startswith(use_mode, "io.sky.")) {
-		int perms = PARSE_PERMS(use_mode, "io.sky.");
-		return rz_core_get_boundaries_io_skyline(core, interval, perms, perms);
-	} else if (rz_str_startswith(use_mode, "io.maps.")) {
-		int perms = PARSE_PERMS(use_mode, "io.maps.");
-		return rz_core_get_boundaries_io_maps(core, interval, perms, perms);
-	} else if (rz_str_startswith(use_mode, "bin.segments.")) {
-		int perms = PARSE_PERMS(use_mode, "bin.segments.");
-		return rz_core_get_boundaries_bin_segments(core, interval, perms, perms);
-	} else if (rz_str_startswith(use_mode, "bin.sections.")) {
-		int perms = PARSE_PERMS(use_mode, "bin.sections.");
-		return rz_core_get_boundaries_bin_sections(core, interval, perms, perms);
-#undef PARSE_PERMS
-	}
-
-	RZ_LOG_ERROR("core: unknown mode '%s' for %s\n", use_mode, in_key);
-	return NULL;
+	return rz_core_get_boundaries(core, interval, use_mode);
 }

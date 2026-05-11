@@ -2649,7 +2649,17 @@ static ConfigOptDescr search_in_opts[] = {
 
 static bool cb_search_in(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
+	RzCore *core = (RzCore *)user;
+	RzInterval itv = {
+		.addr = rz_config_get_i(core->config, "search.from"),
+		.size = rz_config_get_i(core->config, "search.to")
+	};
 	if (node->value[0] != '?') {
+		RzList *bounds = rz_core_get_boundaries(core, itv, node->value);
+		if (!bounds) {
+			return false;
+		}
+		rz_list_free(bounds);
 		return true;
 	} else if (strlen(node->value) > 1 && node->value[1] == '?') {
 		rz_cons_printf("Valid values for search.in (depends on .from/.to and io.va):\n");

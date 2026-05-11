@@ -1002,8 +1002,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			if (asmbits) {
 				rz_config_set(r->config, "asm.bits", asmbits);
 			}
-			rz_config_set(r->config, "search.in", "dbg.map"); // implicit?
 			rz_config_set(r->config, "cfg.debug", "true");
+			rz_config_set(r->config, "search.in", "dbg.map");
 			perms = RZ_PERM_RWX;
 			if (opt.ind >= argc) {
 				RZ_LOG_ERROR("No program given to -d\n");

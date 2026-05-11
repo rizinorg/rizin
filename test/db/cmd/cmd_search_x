@@ -442,3 +442,31 @@ Alignment=16
 0x00000040
 EOF
 RUN
+
+NAME=/x on invalid UTF-8, check search works without PCRE2_NO_UTF_CHECK
+FILE=bins/cmd/search/hex_bytes_invalid_utf
+ARGS=
+CMDS=<<EOF
+# Byte search uses regex and it will fail with
+# invalid UTF characters.
+# So check here if we find bytes which would be invalid UTF-8.
+/x e1e0ff~$[0]
+/xr x99.?xff{2}~$[0]
+EOF
+EXPECT=<<EOF
+0x0000001e
+0x00000076
+EOF
+RUN
+
+NAME=Heap use after free
+FILE==
+CMDS=<<EOF
+e search.in=section
+/x deadbeef
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: core: Invalid mode 'section' for [0x0, 0xffffffffffffffff]
+EOF
