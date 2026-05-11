@@ -15,7 +15,9 @@ static ut64 hash_node(const void *data) {
 }
 
 static RZ_OWN char *node_formatter(const RzGraphNode *n) {
-	return rz_str_newf("[label=\"0x%" PFMT64x "\"]", rz_graph_node_get_id(n));
+	const RzInquiryBB *bb = rz_graph_node_get_data(n);
+	return rz_str_newf("[label=\"0x%" PFMT64x ":%" PFMT64u "\"]",
+		bb->addr, bb->size);
 }
 
 static RZ_OWN char *edge_formatter(const RzGraphEdge *e) {
@@ -210,10 +212,10 @@ RZ_IPI bool rz_inquiry_bb_cfg_add_xrefs(RzInquiryBBCFG *cfg, const RzVector /*<R
 	return true;
 }
 
-static int cmp(const ut64 *a, const ut64 *b, void *user) {
-	if (*a < *b) {
+static int cmp(const RzInquiryBB *a, const RzInquiryBB *b, void *user) {
+	if (a->addr < b->addr) {
 		return -1;
-	} else if (*a > *b) {
+	} else if (a->addr > b->addr) {
 		return 1;
 	}
 	return 0;
@@ -221,90 +223,130 @@ static int cmp(const ut64 *a, const ut64 *b, void *user) {
 
 /**
  * \brief Reduces all blocks in the cfg to their minimum size.
- * Removing duplicates and overlapping basic blocks.
+ * Removing duplicates and split overlapping blocks to basic blocks.
+ *
  * This function makes each block just have a single entry point.
- * This makes each block as "basic block" in the sense of One Entry/One Exit.
+ * So each becomes a basic block (one Entry/one Exit).
+ *
+ * Example:
+ *
+ * +-     0x1000
+ * |
+ * |
+ * | +-   0x1058
+ * | |
+ * | | +- 0x105c
+ * | | |
+ * | | |
+ * | | |
+ * +-+-+- 0x1080
+ *   |
+ *   | JUMP
+ *   v
+ * +--    0x1084
+ * |
+ * |
+ * | +-   0x108c
+ * | |
+ * | |
+ * +-+-   0x10a0
+ *
+ * Gets converted to:
+ *
+ * +--   0x1000
+ * |
+ * +--
+ *  | CTRL FLOW
+ *  v
+ * +--   0x1058
+ * |
+ * +--
+ *  | CTRL FLOW
+ *  v
+ * +--   0x105c
+ * |
+ * |
+ * |
+ * +--   0x1080
+ *   |
+ *   | JUMP
+ *   v
+ * +--   0x1084
+ * |
+ * +--
+ *  | CTRL FLOW
+ *  v
+ * +--   0x108c
+ * |
+ * |
+ * +--   0x10a0
  */
 RZ_IPI bool rz_inquiry_bb_cfg_reduce(RzInquiryBBCFG *cfg) {
-	// Index is end address of bb, values are starting address of bbs with that end address.
-	HtUP *overlapping_bbs = ht_up_new(NULL, (HtUPFreeValue)rz_vector_free);
+	RzPVector blocks = { 0 };
+	rz_pvector_init(&blocks, NULL);
+	rz_pvector_reserve(&blocks, rz_graph_get_n_nodes(cfg->graph));
 
 	RzGraphNode *n;
 	RzIterator *iter = rz_graph_get_nodes(cfg->graph);
 	rz_iterator_foreach(iter, n) {
-		const RzInquiryBB *bb = rz_graph_node_get_data(n);
-		ut64 end = bb->addr + bb->size;
-		RzVector *start_addresses = ht_up_find(overlapping_bbs, end, NULL);
-		if (!start_addresses) {
-			start_addresses = rz_vector_new(sizeof(ut64), NULL, NULL);
-			ht_up_insert(overlapping_bbs, end, start_addresses);
-		}
-		// Cast due to not constified vector API.
-		rz_vector_push(start_addresses, (void *)&bb->addr);
+		RzInquiryBB *b = rz_graph_node_get_data_mut(n);
+		rz_pvector_push(&blocks, b); // Cast because API is not constified.
 	}
 	rz_iterator_free(iter);
 
-	void **it;
-	iter = ht_up_as_iter(overlapping_bbs);
-	rz_iterator_foreach(iter, it) {
-		RzVector *addrs = *it;
-		size_t i = rz_vector_len(addrs);
-		if (i == 1) {
-			continue;
-		}
-		// Sort start addresses.
-		rz_vector_sort(addrs, (RzVectorComparator)cmp, false, NULL);
-		for (i = i - 1; i > 0; i--) {
-			ut64 small_bb_addr = *((ut64 *)rz_vector_index_ptr(addrs, i));
-			ut64 big_bb_addr = *((ut64 *)rz_vector_index_ptr(addrs, i - 1));
-			rz_goto_if_fail(small_bb_addr > big_bb_addr, fail);
+	// Sorting by starting address.
+	// Note that this means overlapping blocks (with the same end address)
+	// will lie sequentially in this vector.
+	rz_pvector_sort(&blocks, (RzPVectorComparator)cmp, NULL);
 
-			// Change size of big bb
-			RzInquiryBB *big_bb = rz_graph_node_get_data_mut(rz_graph_find_node(cfg->graph, big_bb_addr));
-			rz_goto_if_fail(big_bb, fail);
-			big_bb->size = small_bb_addr - big_bb_addr;
+	RzVector outedges = { 0 };
+	rz_vector_init(&outedges, sizeof(ut64), NULL, NULL);
+	// It is unlikely any node will have more than 8 outgoing edges.
+	rz_vector_reserve(&outedges, 8);
 
-			// add edge between big to small bb, move old edges to small_bb.
-			RzGraphEdge *e;
-			RzIterator *out_edges = rz_inquiry_bb_cfg_get_outgoing_edges(cfg, big_bb_addr);
-			if (out_edges) {
-				RzVector big_out_addr = { 0 };
-				rz_vector_init(&big_out_addr, sizeof(ut64), NULL, NULL);
+	size_t n_blocks = rz_pvector_len(&blocks);
+	for (size_t i = 0; i < n_blocks - 1; ++i) {
+		RzInquiryBB *a = rz_pvector_at(&blocks, i);
 
-				rz_iterator_foreach(out_edges, e) {
-					ut64 to = rz_graph_node_get_id(rz_graph_edge_get_to(e));
-					RzInquiryBBCFGEdgeType type = (utptr)rz_graph_edge_get_data(e);
-					if (type == RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL) {
-						// Keep call edges.
-						continue;
-					}
-					if (!rz_inquiry_bb_cfg_add_edge(cfg, small_bb_addr, to, type)) {
-						RZ_LOG_DEBUG("Did not add edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", big_bb_addr, small_bb_addr);
-						continue;
-					}
-					rz_vector_push(&big_out_addr, &to);
-				}
-				rz_iterator_free(out_edges);
-				ut64 *to;
-				rz_vector_foreach_prev (&big_out_addr, to) {
-					rz_inquiry_bb_cfg_del_edge(cfg, big_bb_addr, *to);
-				}
-				rz_vector_fini(&big_out_addr);
+		// Split of all blocks a overlaps with.
+		for (; i < n_blocks - 1; ++i) {
+			RzInquiryBB *b = rz_pvector_at(&blocks, i + 1);
+			if ((a->addr + a->size) != (b->addr + b->size)) {
+				// End addresses don't match => b lies not within a.
+				break;
 			}
-
-			if (!rz_inquiry_bb_cfg_add_edge(cfg, big_bb_addr, small_bb_addr, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF)) {
-				RZ_LOG_DEBUG("Did not add edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", big_bb_addr, small_bb_addr);
+			// b and a have the same end address => b lies within a.
+			// Shrink a.
+			a->size = b->addr - a->addr;
+			RzIterator *out_iter = rz_graph_out_edges_by_id(cfg->graph, a->addr);
+			if (!out_iter) {
+				// No edges to update.
+				// Check for blocks b overlaps with.
+				a = b;
 				continue;
 			}
+
+			// Replace a's outgoing edges with a single edge to b,
+			RzGraphEdge *e;
+			rz_iterator_foreach(out_iter, e) {
+				const RzGraphNode *to_node = rz_graph_edge_get_to(e);
+				ut64 to = rz_graph_node_get_id(to_node);
+				rz_vector_push(&outedges, &to);
+			}
+			rz_iterator_free(out_iter);
+
+			ut64 *to;
+			rz_vector_foreach (&outedges, to) {
+				rz_graph_del_edge_by_id(cfg->graph, a->addr, *to);
+			}
+			rz_vector_purge(&outedges);
+			rz_graph_add_edge_by_id(cfg->graph, a->addr, b->addr, RZ_GRAPH_INT_AS_DATA(RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF));
+			// Check for blocks b overlaps with.
+			a = b;
 		}
 	}
-	rz_iterator_free(iter);
-	ht_up_free(overlapping_bbs);
-	return true;
+	rz_vector_fini(&outedges);
+	rz_pvector_fini(&blocks);
 
-fail:
-	rz_iterator_free(iter);
-	ht_up_free(overlapping_bbs);
-	rz_warn_if_reached();
-	return false;
+	return true;
 }
