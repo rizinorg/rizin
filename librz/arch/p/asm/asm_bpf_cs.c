@@ -10,9 +10,8 @@ CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(bpf_asm);
 static int bpf_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 	cs_insn *insn;
-	int n, ret = -1;
+	int n;
 	cs_mode mode = CS_MODE_BPF_EXTENDED | (a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN);
-	memset(op, 0, sizeof(RzAsmOp));
 	op->size = 8;
 	if (ctx->omode != mode) {
 		if (ctx->handle) {
@@ -21,9 +20,9 @@ static int bpf_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len)
 		ctx->omode = mode;
 	}
 	if (!ctx->handle) {
-		ret = cs_open(CS_ARCH_BPF, mode, &ctx->handle);
-		if (ret) {
-			return ret;
+		cs_err err = cs_open(CS_ARCH_BPF, mode, &ctx->handle);
+		if (err != CS_ERR_OK) {
+			return -1;
 		}
 		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
@@ -31,24 +30,21 @@ static int bpf_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len)
 	n = cs_disasm(ctx->handle, buf, len, a->pc, 1, &insn);
 	if (n < 1) {
 		rz_asm_op_set_asm(op, "invalid");
-		ret = -1;
 		cs_free(insn, n);
-		return ret;
+		return -1;
 	}
 	if (insn->size != 8 && insn->size != 16) {
 		cs_free(insn, n);
-		ret = -1;
-		return ret;
+		return -1;
 	}
 	op->size = insn->size;
-	ret = op->size;
 	if (insn->op_str[0]) {
 		rz_asm_op_setf_asm(op, "%s %s", insn->mnemonic, insn->op_str);
 	} else {
 		rz_asm_op_set_asm(op, insn->mnemonic);
 	}
 	cs_free(insn, n);
-	return ret;
+	return op->size;
 }
 
 RzAsmPlugin rz_asm_plugin_bpf_cs = {

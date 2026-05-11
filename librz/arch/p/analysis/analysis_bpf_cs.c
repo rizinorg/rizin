@@ -1,8 +1,6 @@
 // SPDX-FileCopyrightText: 2026 Jagath-P jagathp0210@gmail.com
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_util/rz_str.h"
-#include <rz_lib.h>
 #include <rz_analysis.h>
 #include <capstone/capstone.h>
 #include <capstone/bpf.h>
@@ -68,17 +66,32 @@ static RzStructuredData *bpf_opex(csh handle, cs_insn *insn) {
 		}
 		case BPF_OP_IMM:
 			rz_structured_data_map_add_string(operand, "type", "imm");
-			rz_structured_data_map_add_unsigned(operand, "value", op->imm, true);
+			if (op->is_signed) {
+				rz_structured_data_map_add_signed(operand, "value", op->imm);
+			} else {
+				rz_structured_data_map_add_unsigned(operand, "value", op->imm, true);
+			}
 			break;
 		case BPF_OP_OFF:
 			rz_structured_data_map_add_string(operand, "type", "off");
-			rz_structured_data_map_add_unsigned(operand, "value", op->off, true);
+			if (op->is_signed) {
+				rz_structured_data_map_add_signed(operand, "value", op->off);
+			} else {
+				rz_structured_data_map_add_unsigned(operand, "value", op->off, true);
+			}
 			break;
 		case BPF_OP_MEM: {
 			const char *base_name = cs_reg_name(handle, (unsigned int)op->mem.base);
 			rz_structured_data_map_add_string(operand, "type", "mem");
 			rz_structured_data_map_add_string(operand, "base", base_name ? base_name : "unknown");
-			rz_structured_data_map_add_unsigned(operand, "disp", op->mem.disp, true);
+			if (op->is_signed) {
+				rz_structured_data_map_add_signed(operand, "disp", op->mem.disp);
+			} else {
+				rz_structured_data_map_add_unsigned(operand, "disp", op->mem.disp, true);
+			}
+			if (op->is_pkt) {
+				rz_structured_data_map_add_string(operand, "is_packet", "true");
+			}
 			break;
 		}
 		case BPF_OP_MMEM:
