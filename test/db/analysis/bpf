@@ -207,9 +207,9 @@ opex:
     - type: "reg"
       value: "r3"
     - type: "imm"
-      value: 0x0
+      value: 0
     - type: "off"
-      value: 0x3f
+      value: 63
 jump: 0x080004e0
 fail: 0x080002e8
 cond: al
@@ -226,5 +226,358 @@ R7 = 0x0000000000000000
 R8 = 0x0000000000000000
 R9 = 0x0000000000000000
 R10 = 0x0000000000000000
+EOF
+RUN
+
+NAME=ebpf covering more instructions
+FILE=
+CMDS=<<EOF
+e asm.arch=bpf
+e cfg.bigendian=false
+wx 18a35c14def0a5ff9a7e10eed8a42b2f
+ao
+echo '----------'
+wx 6128b2edb8cfb5e4
+ao
+echo '----------'
+wx 20c70c70da411aca
+ao
+echo '----------'
+wx 4095c2396be7d7c4
+ao
+echo '----------'
+wx 63772fcf76b7d3fa
+ao
+echo '----------'
+wx 4c810a66fc3261c4
+ao
+echo '----------'
+wx 54400a6a4ae8abfb
+ao
+echo '----------'
+wx 6468c1f48892d2eb
+ao
+echo '----------'
+wx 74e023232f041535
+ao
+echo '----------'
+wx 77093aa73c6efa23
+ao
+echo '----------'
+wx bf860000b26d1403
+ao
+echo '----------'
+wx c4b6e2e07c68c52b
+ao
+echo '----------'
+wx 34460000e172d4cb
+ao
+echo '----------'
+wx bf860000b26d1403
+ao
+echo '----------'
+EOF
+EXPECT=<<EOF
+address: 0x0
+opcode: lddw r3, 0x2f2ba4d8ffa5f0de
+disasm: lddw r3, 0x2f2ba4d8ffa5f0de
+mnemonic: lddw
+mask: ffffffffffffffffffffffffffffffff
+prefix: 0
+id: 48
+bytes: 18a35c14def0a5ff9a7e10eed8a42b2f
+refptr: 8
+size: 16
+sign: false
+type: load
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r3"
+    - type: "imm"
+      value: 0x2f2ba4d8ffa5f0de
+direction: read
+family: cpu
+----------
+address: 0x0
+opcode: ldxw r8, [r2-0x124e]
+disasm: ldxw r8, [r2-0x124e]
+mnemonic: ldxw
+mask: ffffffffffffffff
+prefix: 0
+id: 49
+bytes: 6128b2edb8cfb5e4
+refptr: 4
+size: 8
+sign: false
+type: load
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r8"
+    - type: "mem"
+      base: "r2"
+      disp: 60850
+direction: read
+family: cpu
+----------
+address: 0x0
+opcode: ldabsw [skb-0x35e5be26]
+disasm: ldabsw [skb-0x35e5be26]
+mnemonic: ldabsw
+mask: ffffffffffffffff
+prefix: 0
+id: 53
+bytes: 20c70c70da411aca
+refptr: 0
+size: 8
+sign: false
+type: load
+cycles: 0
+opex:
+  operands:
+    - type: "mem"
+      base: "unknown"
+      disp: 3390718426
+      is_packet: "true"
+direction: read
+family: cpu
+----------
+address: 0x0
+opcode: ldindw [skb+r9]
+disasm: ldindw [skb+r9]
+mnemonic: ldindw
+mask: ffffffffffffffff
+prefix: 0
+id: 56
+bytes: 4095c2396be7d7c4
+refptr: 0
+size: 8
+sign: false
+type: load
+cycles: 0
+opex:
+  operands:
+    - type: "mem"
+      base: "r9"
+      disp: 0
+      is_packet: "true"
+direction: read
+family: cpu
+----------
+address: 0x0
+opcode: stxw [r7-0x30d1], r7
+disasm: stxw [r7-0x30d1], r7
+mnemonic: stxw
+mask: ffffffffffffffff
+prefix: 0
+id: 63
+bytes: 63772fcf76b7d3fa
+refptr: 0
+size: 8
+sign: false
+type: store
+cycles: 0
+opex:
+  operands:
+    - type: "mem"
+      base: "r7"
+      disp: 53039
+    - type: "reg"
+      value: "r7"
+direction: write
+family: cpu
+----------
+address: 0x0
+opcode: or r1, r8
+disasm: or r1, r8
+mnemonic: or
+mask: ffffffffffffffff
+prefix: 0
+id: 6
+bytes: 4c810a66fc3261c4
+refptr: 0
+size: 8
+sign: false
+type: or
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r1"
+    - type: "reg"
+      value: "r8"
+family: cpu
+----------
+address: 0x0
+opcode: and r0, 0xfbabe84a
+disasm: and r0, 0xfbabe84a
+mnemonic: and
+mask: ffffffffffffffff
+prefix: 0
+id: 7
+bytes: 54400a6a4ae8abfb
+refptr: 0
+size: 8
+sign: false
+type: and
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r0"
+    - type: "imm"
+      value: 0xfbabe84a
+family: cpu
+----------
+address: 0x0
+opcode: lsh r8, 0xebd29288
+disasm: lsh r8, 0xebd29288
+mnemonic: lsh
+mask: ffffffffffffffff
+prefix: 0
+id: 8
+bytes: 6468c1f48892d2eb
+refptr: 0
+size: 8
+sign: false
+type: shl
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r8"
+    - type: "imm"
+      value: 0xebd29288
+family: cpu
+----------
+address: 0x0
+opcode: rsh r0, 0x3515042f
+disasm: rsh r0, 0x3515042f
+mnemonic: rsh
+mask: ffffffffffffffff
+prefix: 0
+id: 9
+bytes: 74e023232f041535
+refptr: 0
+size: 8
+sign: false
+type: shr
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r0"
+    - type: "imm"
+      value: 0x3515042f
+family: cpu
+----------
+address: 0x0
+opcode: rsh64 r9, 0x23fa6e3c
+disasm: rsh64 r9, 0x23fa6e3c
+mnemonic: rsh64
+mask: ffffffffffffffff
+prefix: 0
+id: 26
+bytes: 77093aa73c6efa23
+refptr: 0
+size: 8
+sign: false
+type: shr
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r9"
+    - type: "imm"
+      value: 0x23fa6e3c
+family: cpu
+----------
+address: 0x0
+opcode: mov64 r6, r8
+disasm: mov64 r6, r8
+mnemonic: mov64
+mask: ffffffffffffffff
+prefix: 0
+id: 31
+bytes: bf860000b26d1403
+refptr: 0
+size: 8
+sign: false
+type: mov
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r6"
+    - type: "reg"
+      value: "r8"
+family: cpu
+----------
+address: 0x0
+opcode: arsh r6, 0x2bc5687c
+disasm: arsh r6, 0x2bc5687c
+mnemonic: arsh
+mask: ffffffffffffffff
+prefix: 0
+id: 17
+bytes: c4b6e2e07c68c52b
+refptr: 0
+size: 8
+sign: true
+type: sar
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r6"
+    - type: "imm"
+      value: 0x2bc5687c
+family: cpu
+----------
+address: 0x0
+opcode: div r6, 0xcbd472e1
+disasm: div r6, 0xcbd472e1
+mnemonic: div
+mask: ffffffffffffffff
+prefix: 0
+id: 4
+bytes: 34460000e172d4cb
+refptr: 0
+size: 8
+sign: false
+type: div
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r6"
+    - type: "imm"
+      value: 0xcbd472e1
+family: cpu
+----------
+address: 0x0
+opcode: mov64 r6, r8
+disasm: mov64 r6, r8
+mnemonic: mov64
+mask: ffffffffffffffff
+prefix: 0
+id: 31
+bytes: bf860000b26d1403
+refptr: 0
+size: 8
+sign: false
+type: mov
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r6"
+    - type: "reg"
+      value: "r8"
+family: cpu
+----------
 EOF
 RUN
