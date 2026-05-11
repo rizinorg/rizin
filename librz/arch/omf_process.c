@@ -81,7 +81,7 @@ static bool types_cb(void *user, const ut64 k, const void *v) {
 	if (type->descr_type == FINAL_TYPE) {
 		RzType *ret = rz_type_identifier_of_base_type_str(omf_obj->typedb, type->label);
 		if (ret) {
-			rz_type_free(ret); // ?
+			rz_type_free(ret);
 			return true;
 		}
 		create_new_primitive_type(
@@ -105,8 +105,8 @@ static bool types_cb(void *user, const ut64 k, const void *v) {
 				RzTypeStructMember member = { 0 };
 				member.name = rz_str_dup(component->name);
 				member.type = TYPE_TI(omf_obj, component->ti);
-				member.offset = component->offset; // in bytes
-				member.size = 1; // in bits?
+				member.offset = component->offset;
+				member.size = 8;
 				rz_vector_push(&bt->struct_data.members, &member);
 			}
 		}

@@ -11,7 +11,7 @@
  * Converts machine code bytes into human-readable assembly language strings.
  *
  * \see [Datasheet](https://www.infineon.com/row/public/documents/10/44/infineon-c166-ism-v2.0-2001-03.pdf)
- * \see [Mirror](https://www.mouser.com/ds/2/196/c166sv2um-1109557.pdf?srsltid=AfmBOoow6DlS3_Y12ar_KnE1e2l6FXmmj3aVeSPU22kDOfaTFNqSgzmx)
+ * \see [Mirror](https://www.mouser.com/ds/2/196/c166sv2um-1109557.pdf)
  */
 
 #include <rz_types.h>
@@ -19,7 +19,7 @@
 #include <rz_util.h>
 #include <string.h>
 
-#include "c166_disas.h"
+#include <c166/c166_disas.h>
 
 static const char *c166_instr_name(ut8 instr) {
 	switch (instr) {
@@ -376,20 +376,16 @@ RZ_API void c166_maybe_deactivate_ext(RZ_NONNULL C166State *state, ut32 addr) {
 	state->last_addr = addr;
 }
 
-// Format a mem value into buf. Does not apply to seg or pag formats.
-// Caller must provide a buf with at least 13 characters.
+/**
+ * Format a mem value into buf. Does not apply to seg or pag formats.
+ * Caller must provide a buf with at least 13 characters.
+ */
 static const char *c166_fmt_mem(const C166ExtState *ext, char *buf, ut16 mem) {
 	const st32 i = (mem >> 14) & 0b11;
 	switch (ext->mode) {
 	case C166_EXT_MODE_NONE: {
 		const ut16 addr = BASE_SFR_ADDR + (i * 2);
-// TODO: May be lond address
-#if 0
-		printf("mem: 0x%04x, addr: 0x%04x, x: 0x%04x\n", mem, addr, (mem & 0x3FFF));
-		snprintf(buf, 16, "0x%04x", addr | (mem & 0x3FFF));
-#else
 		snprintf(buf, 16, "0x%x:0x%04x", addr, mem & 0x3FFF);
-#endif
 		break;
 	}
 	case C166_EXT_MODE_SEG: {
@@ -406,28 +402,31 @@ static const char *c166_fmt_mem(const C166ExtState *ext, char *buf, ut16 mem) {
 	return buf;
 }
 
-// Return the reg interpretation in word or byte mode.
-// Caller must provide a buf with at least 10 characters.
+/**
+ * Return the reg interpretation in word or byte mode.
+ * Caller must provide a buf with at least 10 characters.
+ */
 static const char *c166_fmt_reg(const C166ExtState *ext, char *buf, ut8 reg, bool byte) {
 	if (IS_GPR(reg)) {
 		// Short ‘reg’ addresses from F0 to FF always specify GPRs.
 		return byte ? c166_rb[L_NIB(reg)] : c166_rw[L_NIB(reg)];
-	} else {
-		const ut16 base_addr = ext->esfr ? BASE_ESFR_ADDR : BASE_SFR_ADDR;
-		const ut16 addr = base_addr + (2 * reg);
-		return print_hex_word(buf, addr);
 	}
-	rz_warn_if_reached();
-	return NULL;
+	const ut16 base_addr = ext->esfr ? BASE_ESFR_ADDR : BASE_SFR_ADDR;
+	const ut16 addr = base_addr + (2 * reg);
+	return print_hex_word(buf, addr);
 }
 
-// Format a bitoff value into buf.
-// Caller must provide a buf with at least 12 characters.
+/**
+ * Format a bitoff value into buf.
+ * Caller must provide a buf with at least 12 characters.
+ */
 static const char *c166_fmt_bitoff(const C166ExtState *ext, char *buf, ut8 bitoff) {
-	if (IS_GPR(bitoff))
+	if (IS_GPR(bitoff)) {
 		return c166_rw[L_NIB(bitoff)];
-	if (IS_RAM(bitoff))
+	}
+	if (IS_RAM(bitoff)) {
 		return print_hex_word(buf, BASE_RAM_B_ADDR + (2 * bitoff));
+	}
 	if (IS_bSFR(bitoff)) {
 		const ut16 base_addr = ext->esfr ? BASE_ESFR_B_ADDR : BASE_SFR_B_ADDR;
 		const ut16 addr = base_addr + (2 * (bitoff & 0x7F));
@@ -438,13 +437,13 @@ static const char *c166_fmt_bitoff(const C166ExtState *ext, char *buf, ut8 bitof
 }
 
 static ut8 c166_instr_rw_rw(C166_Inst *instr) {
-	ut8 reg = get_operand(instr, 1);
+	const ut8 reg = get_operand(instr, 1);
 	OPERANDS("r%i, r%i", H_NIB(reg), L_NIB(reg));
 	return C166_BYTESIZE_2;
 }
 
 static ut8 c166_instr_rw_x(C166_Inst *instr) {
-	ut8 reg = get_operand(instr, 1);
+	const ut8 reg = get_operand(instr, 1);
 	const ut8 op = L_NIB(reg);
 	if ((op & 0b1100) == 0b1100) {
 		OPERANDS("r%i, [r%i+]", H_NIB(reg), op & 0b11); // [Rw+]
@@ -457,14 +456,14 @@ static ut8 c166_instr_rw_x(C166_Inst *instr) {
 }
 
 static ut8 c166_instr_rb_rb(C166_Inst *instr) {
-	ut8 reg = get_operand(instr, 1);
+	const ut8 reg = get_operand(instr, 1);
 	OPERANDS(FMT9, c166_rb[H_NIB(reg)], c166_rb[L_NIB(reg)]);
 	return C166_BYTESIZE_2;
 }
 
 static ut8 c166_instr_mov_mem_oRw(C166_Inst *instr) {
-	ut8 op = get_operand(instr, 1);
-	ut16 mem = rz_read_at_le16(&instr->d, 2);
+	const ut8 op = get_operand(instr, 1);
+	const ut16 mem = rz_read_at_le16(&instr->d, 2);
 	const ut8 n = L_NIB(op);
 
 	bool swap = false;
@@ -485,8 +484,8 @@ static ut8 c166_instr_mov_mem_oRw(C166_Inst *instr) {
 }
 
 static ut8 c166_instr_mov_nm_data(C166_Inst *instr) {
-	ut8 op = get_operand(instr, 1);
-	ut16 mem = rz_read_at_le16(&instr->d, 2);
+	const ut8 op = get_operand(instr, 1);
+	const ut16 mem = rz_read_at_le16(&instr->d, 2);
 
 	const ut8 n = H_NIB(op);
 	const ut8 m = L_NIB(op);
@@ -530,48 +529,48 @@ static ut8 c166_instr_mov_nm(C166_Inst *instr) {
 
 	// clang-format off
 	switch (instr->id) {
-	case C166_MOV_Rwn_oRwm: // 0xA8              Rwn, [Rwm]
+	case C166_MOV_Rwn_oRwm: ///< 0xA8              Rwn, [Rwm]
 		format = FMT0;
 		break;
-	case C166_MOVB_Rbn_oRwm: // 0xA9             Rbn, [Rwm]
+	case C166_MOVB_Rbn_oRwm: ///< 0xA9             Rbn, [Rwm]
 		rb = true;
 		format = FMT0;
 		break;
-	case C166_MOV_Rwn_oRwmp: // 0x98             Rwn, [Rwm+]
+	case C166_MOV_Rwn_oRwmp: ///< 0x98             Rwn, [Rwm+]
 		format = FMT1;
 		break;
-	case C166_MOVB_Rbn_oRwmp: // 0x99            Rbn, [Rwm+]
+	case C166_MOVB_Rbn_oRwmp: ///< 0x99            Rbn, [Rwm+]
 		rb = true;
 		format = FMT1;
 		break;
-	case C166_MOV_oRwm_Rwn: // 0xB8              [Rwm], Rwn
+	case C166_MOV_oRwm_Rwn: ///< 0xB8              [Rwm], Rwn
 		format = FMT2;
 		swap = true;
 		break;
-	case C166_MOVB_oRwm_Rbn: // 0xB9             [Rwm], Rbn
+	case C166_MOVB_oRwm_Rbn: ///< 0xB9             [Rwm], Rbn
 		rb = true;
 		swap = true;
 		format = FMT2;
 		break;
-	case C166_MOV_noRwm_Rwn: // 0x88             [-Rwm], Rwn
+	case C166_MOV_noRwm_Rwn: ///< 0x88             [-Rwm], Rwn
 		format = FMT3;
 		swap = true;
 		break;
-	case C166_MOVB_noRwm_Rbn: // 0x89            [-Rwm], Rbn
+	case C166_MOVB_noRwm_Rbn: ///< 0x89            [-Rwm], Rbn
 		rb = true;
 		swap = true;
 		format = FMT3;
 		break;
-	case C166_MOV_oRwn_oRwm: // 0xC8             [Rwn], [Rwm]
-	case C166_MOVB_oRwn_oRwm: // 0xC9            [Rwn], [Rwm]
+	case C166_MOV_oRwn_oRwm: ///< 0xC8             [Rwn], [Rwm]
+	case C166_MOVB_oRwn_oRwm: ///< 0xC9            [Rwn], [Rwm]
 		format = FMT4;
 		break;
-	case C166_MOV_oRwnp_oRwm: // 0xD8            [Rwn+], [Rwm]
-	case C166_MOVB_oRwnp_oRwm: // 0xD9           [Rwn+], [Rwm]
+	case C166_MOV_oRwnp_oRwm: ///< 0xD8            [Rwn+], [Rwm]
+	case C166_MOVB_oRwnp_oRwm: ///< 0xD9           [Rwn+], [Rwm]
 		format = FMT5;
 		break;
-	case C166_MOV_oRwn_oRwmp: // 0xE8            [Rwn], [Rwm+]
-	case C166_MOVB_oRwn_oRwmp: // 0xE9           [Rwn], [Rwm+]
+	case C166_MOV_oRwn_oRwmp: ///< 0xE8            [Rwn], [Rwm+]
+	case C166_MOVB_oRwn_oRwmp: ///< 0xE9           [Rwn], [Rwm+]
 		format = FMT6;
 		break;
 	default: break;
@@ -619,13 +618,13 @@ static ut8 c166_instr_rb_x(C166_Inst *instr) {
 	const char *r = c166_rb[H_NIB(reg)];
 
 	if ((op & 0b1100) == 0b1100) {
-		// [Rb+]
+		///< [Rb+]
 		OPERANDS(FMT1, r, c166_rb[op & 0b11]);
 	} else if ((op & 0b1000) == 0b1000) {
-		// [Rb]
+		///< [Rb]
 		OPERANDS(FMT0, r, c166_rb[op & 0b11]);
 	} else {
-		// #data3
+		///< #data3
 		OPERANDS(FMT8, r, op);
 	}
 	return C166_BYTESIZE_2;
@@ -633,7 +632,7 @@ static ut8 c166_instr_rb_x(C166_Inst *instr) {
 
 static ut8 c166_instr_rw_rb(C166_Inst *instr) {
 	const ut8 reg = get_operand(instr, 1);
-	// NOTE: It is D0 mn , NOT nm, but displayed as Rwn, Rbm
+	///< NOTE: It is D0 mn , NOT nm, but displayed as Rwn, Rbm
 	OPERANDS(FMT9, c166_rw[L_NIB(reg)], c166_rb[H_NIB(reg)]);
 	return C166_BYTESIZE_2;
 }
@@ -680,7 +679,7 @@ static ut8 c166_instr_reg_mem(C166_Inst *instr, bool byte) {
 }
 
 static ut8 c166_instr_mem_reg(C166_Inst *instr, bool byte) {
-	// f6 8e fcf0  F6 RR MM MM
+	///< f6 8e fcf0  F6 RR MM MM
 	const ut8 reg = get_operand(instr, 1);
 	const ut16 mem = rz_read_at_le16(&instr->d, 2);
 	OPERANDS(FMT9,
@@ -715,9 +714,11 @@ static ut8 c166_instr_reg_data8(C166_Inst *instr, bool byte) {
 	const ut8 reg = get_operand(instr, 1);
 	const ut8 data = rz_read_at_le16(&instr->d, 2);
 
-	// 8-bit immediate constant
-	// (represented by #data8, where byte xx is not significant)
-	// rz_read_at_le16 swaps so use lower
+	/**
+	 * 8-bit immediate constant
+	 * (represented by #data8, where byte xx is not significant)
+	 * rz_read_at_le16 swaps so use lower
+	 */
 	OPERANDS(FMT8,
 		c166_fmt_reg(&instr->ext, SBUF_16, reg, byte), data & 0xFF);
 	return C166_BYTESIZE_4;
@@ -736,14 +737,16 @@ static ut8 c166_instr_cc_caddr(C166_Inst *instr) {
 	const ut32 segment = instr->addr & 0xFF0000;
 	const ut32 addr = segment | rz_read_at_le16(&instr->d, 2);
 
-	// CALLA xcc, caddr  | CA d00a MM MM | 4
-	// JMPA  xcc, caddr  | CA d00a MM MM | 4
-	// d : 5-bit condition code specification (xcc)
-	// a : 1-bit branch assumption bit
+	/**
+	 * CALLA xcc, caddr  | CA d00a MM MM | 4
+	 * JMPA  xcc, caddr  | CA d00a MM MM | 4
+	 * d : 5-bit condition code specification (xcc)
+	 * a : 1-bit branch assumption bit
+	 */
 	const ut8 d = op >> 3;
 	const ut8 a = op & 0x1;
 	INSTR("%s%s",
-		(instr->id == 0xCA) ? "calla" : "jmpa",
+		(instr->id == C166_CALLA_cc_caddr) ? "calla" : "jmpa",
 		a ? "-" : "+");
 	OPERANDS("%s, 0x%04x", conds_extended(d), addr);
 	return C166_BYTESIZE_4;
@@ -814,8 +817,10 @@ static ut8 c166_instr_call_rel(C166_Inst *instr) {
 	return C166_BYTESIZE_2;
 }
 
-// Modes ATOMIC #irang2 D1 :00##-0 2
-// Modes EXTR   #irang2 D1 :10##-0 2
+/**
+ * Modes ATOMIC #irang2 D1 :00##-0 2
+ * Modes EXTR   #irang2 D1 :10##-0 2
+ */
 static ut8 c166_instr_irang2(C166State *state, C166_Inst *instr) {
 	const ut8 op = get_operand(instr, 1);
 	const ut8 sub_op = (op >> 6) & 0b11;
@@ -824,7 +829,13 @@ static ut8 c166_instr_irang2(C166State *state, C166_Inst *instr) {
 	if (sub_op == 0b00) {
 		INSTR("%s", "atomic");
 	} else if (sub_op == 0b10) {
-		c166_activate_ext(state, instr->addr, (C166ExtState){ .esfr = true, .mode = C166_EXT_MODE_NONE, .value = (op & 3), .i = 0 });
+		const C166ExtState ex = (C166ExtState){
+			.esfr = true,
+			.mode = C166_EXT_MODE_NONE,
+			.value = (op & 3),
+			.i = 0
+		};
+		c166_activate_ext(state, instr->addr, ex);
 		INSTR("%s", "extr");
 	} else
 		INSTR("%s", "invalid");
@@ -832,14 +843,20 @@ static ut8 c166_instr_irang2(C166State *state, C166_Inst *instr) {
 	return C166_BYTESIZE_2;
 }
 
-// This modifies the ext state
+///< This modifies the ext state
 static ut8 c166_instr_rw_irang2(C166State *state, C166_Inst *instr) {
 	const ut8 op = get_operand(instr, 1);
 
 	INSTR("%s", c166_extx_names[(op >> 6) & 0b11]);
 	const ut8 m = L_NIB(op);
 	const ut8 irang2 = ((op >> 4) & 0b0011) + 1;
-	c166_activate_ext(state, instr->addr, (C166ExtState){ .esfr = true, .mode = C166_EXT_MODE_NONE, .value = 0, .i = irang2 });
+	const C166ExtState ex = (C166ExtState){
+		.esfr = true,
+		.mode = C166_EXT_MODE_NONE,
+		.value = 0,
+		.i = irang2
+	};
+	c166_activate_ext(state, instr->addr, ex);
 	OPERANDS(FMT10, c166_rw[m], irang2);
 	return C166_BYTESIZE_2;
 }
@@ -882,11 +899,13 @@ static ut8 c166_trap_instr(C166_Inst *instr) {
 	return 2;
 }
 
-// A3 nm CA rrr0:0000
-// 83 nm CA rrr0:0qqq
-// 93 Xm CA rrr0:0qqq
-
-// DSP Instruction Set
+/**
+ * A3 nm CA rrr0:0000
+ * 83 nm CA rrr0:0qqq
+ * 93 Xm CA rrr0:0qqq
+ *
+ * DSP Instruction Set
+ */
 static const char *c166_instr_extended_name(C166_Inst *instr) {
 	const ut8 opcode = instr->id;
 	const ut8 extID = get_operand(instr, 2);
@@ -920,11 +939,9 @@ static const char *c166_instr_extended_name(C166_Inst *instr) {
 	}
 
 	if ((opcode == 0xA3) && (extID == 0xB2)) {
-		return "CoASHR"; // or CoRND
+		///< or CoRND, is a shortname for CoASHR #0, rnd
+		return "CoASHR";
 	}
-
-	// if ((opcode == 0xA3) && (extID == 0xB2))
-	// 	return "CoRND"; //  CoRND is a shortname for CoASHR #0, rnd
 
 	if ((opcode == 0xA3) && (extID == 0xBA)) {
 		return "CoASHR";
@@ -1018,8 +1035,6 @@ static const char *c166_instr_extended_name(C166_Inst *instr) {
 		if (extID == 0x68) {
 			return "CoMACMsu-";
 		}
-
-		// if (extID == 0xE8) return "CoMACM-";
 	}
 	if ((opcode == 0x83) || (opcode == 0x93) || (opcode == 0xA3)) {
 		if ((extID == 0x00) || (extID == 0x01)) {
@@ -1165,22 +1180,28 @@ static const char *c166_instr_extended_name(C166_Inst *instr) {
 static const char *CoREG(ut8 bits) {
 	switch (bits) {
 	case 0b00000: {
-		return "0xffde"; ///< MAC-Unit Status Word
+		///< MAC-Unit Status Word
+		return "0xffde";
 	}
 	case 0b00001: {
-		return "0xfe5e"; ///< MAC-Unit Accumulator High Word
+		///< MAC-Unit Accumulator High Word
+		return "0xfe5e";
 	}
 	case 0b00010: {
-		return "MAS"; ///< Limited MAC-Unit Accumulator High Word
+		///< Limited MAC-Unit Accumulator High Word
+		return "MAS";
 	}
 	case 0b00100: {
-		return "0xfe5c"; ///< MAC-Unit Accumulator Low Word
+		///< MAC-Unit Accumulator Low Word
+		return "0xfe5c";
 	}
 	case 0b00101: {
-		return "0xffdc"; ///< MAC-Unit Control Word
+		///< MAC-Unit Control Word
+		return "0xffdc";
 	}
 	case 0b00110: {
-		return "0xffda"; ///< MAC-Unit Repeat Word
+		///< MAC-Unit Repeat Word
+		return "0xffda";
 	}
 	default:
 		RZ_LOG_INFO("Unknown bits: 0x%02x.\n", bits);
@@ -1285,22 +1306,18 @@ static const char *repeat_control(ut8 opt) {
 	}
 }
 
-inline static ut16 idx_addr(ut8 n) {
-	return n > 1 ? 0x0000 : (n ? IDX1 : IDX0);
-}
-
 static ut8 c166_instr_extended(C166_Inst *instr) {
-	ut8 nm = get_operand(instr, 1);
-	ut8 n = H_NIB(nm);
-	ut8 m = L_NIB(nm);
-	ut8 extID = get_operand(instr, 2);
-	ut8 opt2 = get_operand(instr, 3); ///< rrr0:0000 : 3-bit repeat control for CoXXX instructions
+	const ut8 nm = get_operand(instr, 1);
+	const ut8 n = H_NIB(nm);
+	const ut8 m = L_NIB(nm);
+	const ut8 extID = get_operand(instr, 2);
+	const ut8 opt2 = get_operand(instr, 3); ///< rrr0:0000 : 3-bit repeat control for CoXXX instructions
 	///< wwww:w : 5-bit word address CoREG
 
 	///< qqq : 3-bit addressing mode specifier for CoXXX instructions
 	///< ut8 rrr = opt2 >> 5;
 	const char *rrr = repeat_control(opt2);
-	ut8 opcode = instr->id;
+	const ut8 opcode = instr->id;
 
 	const char *instruction_name = c166_instr_extended_name(instr);
 	if (RZ_STR_EQ(instruction_name, "invalid")) {
@@ -1389,46 +1406,34 @@ static ut8 c166_instr_extended(C166_Inst *instr) {
 		OPERANDS("r%i", n); // CoSHR RWn
 		goto end;
 	} else if ((opcode == 0x93) && (L_NIB(extID) == 0x00)) {
-		// CoXXX_oIDXi_oRWm(); 93 Xm F0 rrr0:0qqq
-		// ut16 idx = IDX(nm);
-		// if (n > 1) goto err;
+		// CoXXX_oIDXi_oRWm();
 		OPERANDS("%s, [r%i]",
-			idx_formatter(SBUF_16, nm), // or extID
-			m); // CoXXX [IDXi*], [RWm*]
+			idx_formatter(SBUF_16, nm), m); // CoXXX [IDXi*], [RWm*]
 		goto end;
 	} else if ((opcode == 0x93) && (L_NIB(extID) == 0x02)) {
 		// CoXXX_RWn_oRWm();
-		// ut16 idx = IDX(nm);
-		// if (n > 1) goto err;
 		OPERANDS("%s, [r%i]",
-			idx_formatter(SBUF_16, nm), // or extID
-			m); // CoXXX [IDXi*], [RWm*]
+			idx_formatter(SBUF_16, nm), m); // CoXXX [IDXi*], [RWm*]
 		goto end;
 	} else if ((opcode == 0x93) && (L_NIB(extID) == 0x0A)) {
 		// CoXXX_RWn_oRWm();
-		// ut16 idx = IDX(nm);
-		// if (n > 1) goto err;
 		OPERANDS("%s, [r%i]",
-			idx_formatter(SBUF_16, nm), // or extID
-			m); // CoXXX [IDXi*], [RWm*]
+			idx_formatter(SBUF_16, nm), m); // CoXXX [IDXi*], [RWm*]
 		goto end;
 	} else if ((opcode == 0x93) && (L_NIB(extID) == 0x08)) {
 		// CoXXX_RWn_oRWm();
 		OPERANDS("%s, [r%i]",
-			idx_formatter(SBUF_16, nm), // or extID
-			m); // CoXXX [IDXi*], [RWm*]
+			idx_formatter(SBUF_16, nm), m); // CoXXX [IDXi*], [RWm*]
 		goto end;
 	} else if ((opcode == 0x93) && (L_NIB(extID) == 0x09)) {
 		// CoXXX_RWn_oRWm();
 		OPERANDS("%s, [r%i], rnd",
-			idx_formatter(SBUF_16, nm), // or extID
-			m); // CoXXX [IDXi*], [RWm*], rnd
+			idx_formatter(SBUF_16, nm), m); // CoXXX [IDXi*], [RWm*], rnd
 		goto end;
 	} else if ((opcode == 0x93) && (L_NIB(extID) == 0x01)) {
 		// CoXXX_RWn_oRWm();
 		OPERANDS("%s, [r%i], rnd",
-			idx_formatter(SBUF_16, nm), // or extID
-			m); // CoXXX [IDXi*], [RWm*], rnd
+			idx_formatter(SBUF_16, nm), m); // CoXXX [IDXi*], [RWm*], rnd
 		goto end;
 	} else if ((opcode == 0x83) && (L_NIB(extID) == 0x00)) {
 		// CoXXX_RWn_oRWm();
@@ -1461,7 +1466,6 @@ static ut8 c166_instr_extended(C166_Inst *instr) {
 		goto end;
 	} else if ((opcode == 0xA3) && (L_NIB(extID) == 0x00)) {
 		// CoXXX_RWn_RWm();
-
 		OPERANDS("r%i, r%i", n, m); // CoXXX RWn, RWm
 		goto end;
 	} else if ((opcode == 0xA3) && (L_NIB(extID) == 0x02)) {
@@ -1487,7 +1491,16 @@ end:
 	return C166_BYTESIZE_4;
 }
 
-RZ_API st32 c166_decode_command(RZ_NONNULL C166State *state, RZ_NONNULL C166_Inst *instr, const ut8 *bytes, st32 len) {
+/**
+ * Disassemble C166 instruction
+ *
+ * \param state Pointer to state structure
+ * \param instr Pointer to instruction structure
+ * \param bytes Buffer containing instruction bytes
+ * \param len Length of buffer
+ * \return Instruction byte size, 2 or 4 or -1 on error
+ */
+RZ_IPI st32 c166_decode_command(RZ_NONNULL C166State *state, RZ_NONNULL C166_Inst *instr, const ut8 *bytes, st32 len) {
 	rz_return_val_if_fail(state && instr && bytes, -1);
 	if (len < 2)
 		return -1;

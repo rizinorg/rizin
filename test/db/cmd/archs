@@ -73,7 +73,6 @@ e asm.arch=c166
 e asm.bytes=true
 wx 3B @ 0
 ao 1~size
-#pdq 1
 EOF
 EXPECT=<<EOF
 size: 2
@@ -89,7 +88,6 @@ wx 0012 @ 0
 wx 3B @ 2
 wx 6034 @ 3
 ao 3~size
-#pdq 3
 EOF
 EXPECT=<<EOF
 size: 2

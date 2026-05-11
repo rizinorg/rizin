@@ -56,6 +56,39 @@ static RzTypeCond c166_cc_to_cond(ut8 cc) {
 	}
 }
 
+ut64 get_reg_val(RzAnalysis *analysis, const char *name) {
+	RzReg *areg = rz_analysis_get_reg(analysis);
+	RzRegItem *reg = rz_reg_get(areg, name, RZ_REG_TYPE_GPR);
+	const ut64 value = rz_reg_get_value(areg, reg);
+	RZ_LOG_DEBUG("`%s` reg value: 0x%08" PFMT64x "\n", name, value);
+	return value;
+}
+
+bool set_reg_val(RzAnalysis *analysis, const char *name, const ut64 value) {
+	RzReg *areg = rz_analysis_get_reg(analysis);
+	RzRegItem *reg = rz_reg_get(areg, name, RZ_REG_TYPE_GPR);
+
+	RZ_LOG_DEBUG("`%s` reg new value: 0x%08" PFMT64x "\n", name, value);
+	if (!rz_reg_set_value(areg, reg, value)) {
+		RZ_LOG_ERROR("Error setting reg `%s` value `%" PFMT64u "`\n", name, value);
+		return false;
+	}
+	return true;
+}
+
+#define GET_A_SGTDIS get_reg_val(analysis, "SGTDIS")
+#define GET_A_SCINT  get_reg_val(analysis, "INTSCXT")
+
+#define GET_A_CP  get_reg_val(analysis, "CP")
+#define GET_A_CSP get_reg_val(analysis, "CSP")
+#define GET_A_IP  get_reg_val(analysis, "IP")
+#define GET_A_SP  get_reg_val(analysis, "SP")
+
+#define SET_A_CP(val)  set_reg_val(analysis, "CP", val)
+#define SET_A_CSP(val) set_reg_val(analysis, "CSP", val)
+#define SET_A_IP(val)  set_reg_val(analysis, "IP", val)
+#define SET_A_SP(val)  set_reg_val(analysis, "SP", val)
+
 static void c166_set_mimo_addr_from_reg(RzAnalysisOp *op, ut8 reg) {
 	if (reg < 0xF0) {
 		op->mmio_address = BASE_SFR_ADDR + (2 * reg);
@@ -196,84 +229,46 @@ static void c166_op_neg(RzAnalysis *analysis, RzAnalysisOp *op, const ut8 *buf) 
 }
 
 static void c166_op_ext(RzAnalysis *analysis, RzAnalysisOp *op, const ut8 *buf) {
-	const ut8 irang2 = ((buf[1] >> 4) & 0b11) + 1;
-	///< TODO: unimplemented from frmdstryr
-
-	/*const ut8 subop = (buf[1] >> 6) & 0b11;*/
-	// subop 00=exts, 01=extp, 10=extsr, 11=expr
-	// switch (buf[0]) {
-	// case C166_EXTP_or_EXTS_Rwm_irang2: // DC
-	// 	if (subop == 0 || subop == 2) {
-	// 		ctx->ext_mode = C166_ext_seg_reg;
-	// 	} else {
-	// 		ctx->ext_mode = C166_ext_page_reg;
-	// 	}
-	// 	ctx->ext_value = L_NIB(buf[1]);
-	// 	break;
-	// case C166_EXTP_or_EXTS_pag10_or_seg8_irang2: // D7
-	// 	if (subop == 0 || subop == 2) {
-	// 		ctx->ext_mode = C166_ext_seg;
-	// 	} else {
-	// 		ctx->ext_mode = C166_ext_page;
-	// 	}
-	// 	ctx->ext_value = rz_read_at_le16(buf, 2);
-	// 	break;
-	// default:
-	// 	rz_warn_if_reached();
-	// 	break;
-	// }
-	op->delay = irang2;
-	op->type = RZ_ANALYSIS_OP_TYPE_UNK; // TODO
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 }
 
 static void c166_op_atomic_or_extr(RzAnalysis *analysis, RzAnalysisOp *op, const ut8 *buf) {
-	op->type = RZ_ANALYSIS_OP_TYPE_UNK; // TODO
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 }
 
-// Used to switch contexts for any register. Switching context is a
-// push and load operation. The contents of the register specified by
-// the first operand, op1, are pushed onto the stack. That register is
-// then loaded with the value specified by the second operand, op2.
-// SCXT op1, op2
-// SCXT reg, #data16 - C6 RR ## ##
-// SCXT reg, mem - D6 RR MM MM
+/**
+ * Switches contexts of any register. Switching context is a push and load operation.
+ * The contents of the register specified by the first operand op1, are pushed onto the stack.
+ * That register is then loaded with the value specified by the second operand, op2.
+ *
+ * Syntax:
+ *	SCXT op1, op2
+ * Source Operand(s):
+ *	op1, op2 → WORD
+ * Destination Operand(s):
+ *	op1 → WORD
+ * Operation:
+ *	(tmp1) ← (op1)
+ *	(tmp2) ← (op2)
+ *	(SP) ← (SP) - 2
+ *	((SP)) ← (tmp1)
+ *	(op1) ← (tmp2)
+ *
+ * Mnemonic:
+ *	SCXT reg, #data16 - C6 RR ## ##
+ *	SCXT reg, mem - D6 RR MM MM
+ */
 static void c166_op_scxt(RzAnalysis *analysis, RzAnalysisOp *op, const ut8 *buf) {
-	// TODO: This is a register push and a register load in one instruction
-	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+	op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 	op->src[0] = c166_new_reg_value(analysis, buf[1], false);
 	if (buf[0] == C166_SCXT_reg_mem) {
 		op->val = SEG || rz_read_at_le16(buf, 2);
 	} else {
 		op->val = rz_read_at_le16(buf, 2);
 	}
+	op->stackop = RZ_ANALYSIS_STACK_INC;
+	op->stackptr = 2;
 }
-
-ut64 get_reg_val(RzAnalysis *analysis, const char *name) {
-	RzReg *areg = rz_analysis_get_reg(analysis);
-	RzRegItem *reg = rz_reg_get(areg, name, RZ_REG_TYPE_GPR);
-	const ut64 value = rz_reg_get_value(areg, reg);
-	RZ_LOG_DEBUG("`%s` reg value: 0x%08" PFMT64x "\n", name, value);
-	return value;
-}
-
-bool set_reg_val(RzAnalysis *analysis, const char *name, const ut64 value) {
-	RzReg *areg = rz_analysis_get_reg(analysis);
-	RzRegItem *reg = rz_reg_get(areg, name, RZ_REG_TYPE_GPR);
-
-	RZ_LOG_DEBUG("`%s` reg new value: 0x%08" PFMT64x "\n", name, value);
-	if (!rz_reg_set_value(areg, reg, value)) {
-		RZ_LOG_ERROR("Error setting reg `%s` value `%" PFMT64u "`\n", name, value);
-		return false;
-	}
-	return true;
-}
-#define GET_A_SGTDIS get_reg_val(analysis, "SGTDIS")
-#define GET_A_CSP    get_reg_val(analysis, "CSP")
-#define GET_A_SP     get_reg_val(analysis, "SP")
-
-#define SET_A_CSP(val) set_reg_val(analysis, "CSP", val)
-#define SET_A_IP(val)  set_reg_val(analysis, "IP", val)
-#define SET_A_SP(val)  set_reg_val(analysis, "SP", val)
 
 /**
  * Invokes a trap or interrupt routine based on the specified operand op1. The invoked
@@ -301,7 +296,7 @@ bool set_reg_val(RzAnalysis *analysis, const char *name, const ut64 value) {
  *	(CSP) ← (VSEG)
  *	(SP) ← (SP) - 2
  *	((SP)) ← (IP)
- *	(IP) ← ((op1) * 4) <<CPUCON1.SCINT
+ *	(IP) ← ((op1) * 4) <<CPUCON1.SCINT  (CPUCON1.INTSCXT)
  *
  * Mnemonic:
  *	TRAP #trap7 - 9B t:ttt0
@@ -311,6 +306,13 @@ static void c166_op_trap7(RzAnalysis *analysis, RzAnalysisOp *op, const ut8 *buf
 	const ut8 trap7 = buf[1] >> 1;
 	(void)trap7;
 	op->fail = op->addr + op->size;
+	op->stackop = RZ_ANALYSIS_STACK_INC;
+	op->stackptr = 4;
+	const ut8 SGTDIS = (ut8)GET_A_SGTDIS;
+	if (SGTDIS == 0) {
+		op->stackptr += 2;
+	}
+	SET_A_IP((buf[1] * 4) << GET_A_SCINT);
 }
 
 /**
@@ -333,20 +335,21 @@ static void c166_op_trap7(RzAnalysis *analysis, RzAnalysisOp *op, const ut8 *buf
  *	END IF
  *
  * Mnemonic:
- *	JMPI seg, caddr - FA SS MM MM
+ *	JMPI cc, [Rwn] - 9C cn
  */
 static void c166_op_jmpi_cc_orwn(RzAnalysis *analysis, RzAnalysisOp *op, const ut8 *buf) {
 	op->type = RZ_ANALYSIS_OP_TYPE_RCJMP;
 	op->cond = c166_cc_to_cond(buf[1]);
 	op->fail = op->addr + op->size;
-	// TODO: Is this correct?
-	RzRegItem *cp_reg = rz_reg_get(analysis->reg, "CP", RZ_REG_TYPE_GPR);
+
+	const ut16 cp = GET_A_CP;
 	RzRegItem *reg = rz_reg_get(analysis->reg, c166_rw[buf[1] & 0xF], RZ_REG_TYPE_GPR);
-	if (cp_reg && reg) {
-		op->ireg = reg->name;
-		const ut16 v = rz_reg_get_value(analysis->reg, reg);
-		const ut16 cp = rz_reg_get_value(analysis->reg, cp_reg);
-		op->jump = cp + 2 * v;
+	op->ireg = reg->name;
+	const ut16 v = rz_reg_get_value(analysis->reg, reg);
+	const ut8 seg = GET_A_CSP;
+	if (buf[1] == 1) {
+		op->jump = (((ut32)seg) << 16) | ((cp + 2 * v) - op->size);
+		SET_A_IP(op->jump);
 	}
 }
 
@@ -584,6 +587,10 @@ static void c166_op_call_cc_caddr(RzAnalysisOp *op, const ut8 *buf) {
 	} else {
 		op->type = RZ_ANALYSIS_OP_TYPE_CCALL;
 		FAIL;
+	}
+	if (buf[1]) {
+		op->stackop = RZ_ANALYSIS_STACK_INC;
+		op->stackptr = 2;
 	}
 	c166_set_jump_target_from_caddr(op, rz_read_at_le16(buf, 2));
 	op->eob = true;
@@ -1194,7 +1201,7 @@ static void c166_op_set_type(RZ_NONNULL C166_Inst *instr, RzAnalysis *analysis, 
 		break;
 	case C166_TRAP_trap7:
 		c166_op_trap7(analysis, op, buf);
-		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
+		op->eob = true;
 		break;
 	case C166_JB_bitaddr_rel:
 	case C166_JBC_bitaddr_rel:
@@ -1263,12 +1270,13 @@ static void c166_op_set_type(RZ_NONNULL C166_Inst *instr, RzAnalysis *analysis, 
 	case C166_SCXT_reg_mem:
 	case C166_SCXT_reg_data16:
 		c166_op_scxt(analysis, op, buf);
+		op->eob = true;
 		break;
 	case C166_PRIOR_Rwn_Rwm:
-		op->type = RZ_ANALYSIS_OP_TYPE_LOAD; // TODO ???
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		break;
 	case C166_EINIT:
-		op->type = RZ_ANALYSIS_OP_TYPE_UNK; // TODO ???
+		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 		break;
 	case C166_SBRK:
 	case C166_SRST:
@@ -1330,7 +1338,7 @@ static int c166_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		return op->size;
 	}
 
-	st32 ret = c166_decode_command(state, &instr, buf, len);
+	const st32 ret = c166_decode_command(state, &instr, buf, len);
 	if (ret <= 0) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		op->mnemonic = rz_str_dup("invalid");
@@ -1683,8 +1691,8 @@ RzAnalysisPlugin rz_analysis_plugin_c166 = {
 	.op = &c166_op,
 	.archinfo = &archinfo,
 	.get_reg_profile = &get_reg_profile,
-	.init = &init,
-	.fini = &fini,
+	.init = &c16x_init,
+	.fini = &c16x_fini,
 };
 
 #ifndef RZ_PLUGIN_INCORE

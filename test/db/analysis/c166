@@ -198,6 +198,8 @@ refptr: 0
 size: 2
 type: trap
 fail: 0x00000002
+stackop: inc
+stackptr: 6
 
 opcode: pcall 0xfe04, 0x2c10
 mnemonic: pcall

@@ -312,13 +312,25 @@ static RzStructuredData *omf166_structure(RzBinFile *bf) {
 	  +--------------------------------> DOUB
 	*/
 
-	///< The module contains double precision float operations. This bit is intended for the linker for automatic selection of libraries.
+	/**
+	 * The module contains double precision float operations.
+	 * This bit is intended for the linker for automatic selection of libraries.
+	 */
 	rz_structured_data_map_add_boolean(modinfo, "DoubleUsed", obj->modinfo >> 7);
-	///< The module contains single precision float operations. This bit is intended for the linker for automatic selection of libraries.
+	/**
+	 * The module contains single precision float operations.
+	 * This bit is intended for the linker for automatic selection of libraries.
+	 */
 	rz_structured_data_map_add_boolean(modinfo, "FloatUsed", (obj->modinfo & 0x40) >> 6);
-	///< If bit is set, then the module is intended to be executed on an 80C167 CPU, otherwise the module is for a 80C166 CPU.
+	/**
+	 * If bit is set, then the module is intended to be executed on an 80C167 CPU,
+	 * otherwise the module is for a 80C166 CPU.
+	 */
 	rz_structured_data_map_add_boolean(modinfo, "MOD167", (obj->modinfo & 0x20) >> 5);
-	///< If bit is set, then names are to be considered case sensitive. This info is intended for the linker when combining object modules.
+	/**
+	 * If bit is set, then names are to be considered case sensitive.
+	 * This info is intended for the linker when combining object modules.
+	 */
 	rz_structured_data_map_add_boolean(modinfo, "CaseSensitive", (obj->modinfo & 0x02) >> 1);
 	///< If bit is set, then the segmented cpu mode was choosen for the module.
 	rz_structured_data_map_add_boolean(modinfo, "Segmented", (obj->modinfo & 0x01));

@@ -425,7 +425,7 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	return pvec;
 }
 
-static bool init(void **user) {
+static bool c16x_init(void **user) {
 	C166State *state = RZ_NEW0(C166State);
 	if (!state) {
 		RZ_LOG_FATAL("Could not allocate memory for C166State!\n");
@@ -449,7 +449,7 @@ static bool init(void **user) {
 	return true;
 }
 
-static bool fini(void *user) {
+static bool c16x_fini(void *user) {
 	rz_return_val_if_fail(user, false);
 	C166State *state = (C166State *)user;
 	rz_pvector_free(state->token_patterns);
@@ -475,8 +475,8 @@ RzAsmPlugin rz_asm_plugin_c166 = {
 	.desc = "Siemens/Infineon C166 microcontroller disassembler",
 	.license = "LGPL3",
 	.disassemble = &disassemble,
-	.init = &init,
-	.fini = &fini,
+	.init = &c16x_init,
+	.fini = &c16x_fini,
 	.cpus =
 		"c166-generic,"
 		"c166v1,"

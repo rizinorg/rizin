@@ -499,9 +499,12 @@ static int load_grpdef_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const 
 	rz_return_val_if_fail(obj->coments_vec, false);
 
 	/*
-	 * B1   0D 00   C0   10   FF 05   FF 0C   FF 0D   FF 0E   FF 18    33
-	 * B1   05 00   40   06   FF 0F                                    F6
-	 * B1   05 00   C0   12   FF 14                                    65
+	 * Group Definition Record - Used to combine sections
+	 *
+	 * B1  | RecLen  | Seg | RESERVED8 |           CHANKS Data                  | Chks
+	 * B1  | 0D 00   | C0  |   10      | FF 05   FF 0C   FF 0D   FF 0E   FF 18  | 33
+	 * B1  | 05 00   | 40  |   06      | FF 0F                                  | F6
+	 * B1  | 05 00   | C0  |   12      | FF 14                                  | 65
 	 */
 	RZ_LOG_DEBUG("load_omf = GRPDEF  =  [%05d] [0x%08" PFMT64x "] 0x%02x\n",
 		record->size, global_ct, record->type);
@@ -518,12 +521,22 @@ static int load_deplst_data(const ut8 *buf, const OMF_record *record) {
 	rz_str_ncpy(info, (const char *)&buf[ct], info_n + 1);
 	ct += info_n;
 	while (ct < record->size) {
-		///< iTyp | Mark8 | Time32 | Name(s)
-		const ut8 iTyp = rz_read_le8_offset(buf, &ct); ///< Specifies the type of the dependency descriptor
-		const ut8 Mark8 = rz_read_le8_offset(buf, &ct); ///< Byte, required to be zero.
-		const ut32 Time32 = rz_read_le32_offset(buf, &ct); ///< File creation date in Microsoft’s ’fstat()’ format.
+		/**
+		 * iTyp | Mark8 | Time32 | Name(s)
+		 *
+		 * `iTyp` - Specifies the type of the dependency descriptor
+		 * `Mark8` - Byte, required to be zero.
+		 * `Time32` - File creation date in Microsoft’s ’fstat()’ format.
+		 * `n` - size of Pathname.
+		 * `Name` - Specifies the Pathname of one file.
+
+		In case of iTyp 4, more than one pathname may be specified.
+		*/
+		const ut8 iTyp = rz_read_le8_offset(buf, &ct);
+		const ut8 Mark8 = rz_read_le8_offset(buf, &ct);
+		const ut32 Time32 = rz_read_le32_offset(buf, &ct);
 		const ut8 n = rz_read_le8_offset(buf, &ct);
-		char pathname[255] = RZ_EMPTY; ///< Specifies the Pathname of one file. In case of iTyp 4, more than one pathname may be specified.
+		char pathname[255] = RZ_EMPTY;
 		rz_str_ncpy(pathname,
 			(const char *)&buf[ct], n + 1);
 		RZ_LOG_DEBUG("iTyp: [0x%02x] `%16s`, Mark8: 0x%02x, Time32: %d, n: %3d `%s`\n",
@@ -575,21 +588,14 @@ static int load_omf_pedata(const rz_bin_omf166_obj *obj, const ut8 *buf, const O
 	pe->isVector = (record->type == OMF166_VECTAB);
 
 	/**
-	 * 0xB9 | RecLen | ABS-Address | DatTyp | Data | Chks
-	 * ABS-Address = SegmentNumber8 | OffsetLow8 | OffsetHigh8
-	 * 0xc0  0x4c  0x1e     0x01    0x49   0x4e 0x56 0x41 0x4c 0x49 0x44 0x20 0x49 0x4e 0x54 0x45 0x52 0x56 0x41 0x4c 0x20 0x46 0x4f 0x52 0x4d 0x41 0x54 0x00 0x49 0x4e 0x56 0x41 0x4c 0x49 0x44 0x20 0x54 0x49 0x4d 0x45 0x20 0x46 0x4f 0x52 0x4d 0x41 0x54 0x00 0x25 0x62 0x64 0x3a 0x25 0x62 0x64 0x3a 0x25 0x62 0x64 0x00 0x25 0x62 0x64 0x3a 0x25 0x66 0x00 0x20 0x41 0x4e 0x25 0x64 0x3a 0x25 0x34 0x2e 0x32 0x66 0x56 0x00 0x0d 0x54 0x69 0x6d 0x65 0x3a 0x20 0x25 0x32 0x64 0x3a 0x25 0x30 0x32 0x64 0x3a 0x25 0x30 0x32 0x64 0x2e 0x25 0x30 0x33 0x64 0x20 0x20 0x50 0x32 0x3a 0x25 0x30 0x34 0x58 0x00 0x36
-	 * DatTyp	0: BIT  1: DATA  2: CODE  3: CONST
+	 * 0xB9  | RecLen     |         ABS-Address         | DatTyp |        Data        | Chks
+	 *       |            | SegmentNumber8 |  Offset16  |
+	 * 0xc0  | 0x4c 0x1e  |     0x01       |  0x49 0x4e |  0x56  |  0x41 0x4c .. 0x00 | 0x36
+	 *
+	 *    DatTyp	0: BIT  1: DATA  2: CODE  3: CONST
 	 */
 	pe->size = pe->psize = record->size - 1 - (ct - 3);
 	pe->paddr = global_ct + ct;
-	if (pe->isVector) {
-		void **it;
-		rz_pvector_foreach (obj->symbols_vec, it) {
-			const OMF_symbol *p = (OMF_symbol *)*it;
-			if (p->is_data)
-				continue;
-		}
-	}
 	rz_pvector_push(obj->pe_vec, pe);
 	return true;
 }
@@ -597,7 +603,7 @@ static int load_omf_pedata(const rz_bin_omf166_obj *obj, const ut8 *buf, const O
 static int load_omf_unk1(const rz_bin_omf166_obj *obj, const ut8 *buf, const size_t buf_size, const OMF_record *record, const ut64 global_ct) {
 	/**
 	 * 61    40 00    2C 03 9D 55 01 00
-	 * 38    43 3A 5C 4B 65 69 6C 5F 76 35 5C 63 31 36 36 5C 45 78 61 6D 70 6C 65 73 5C 58 43 31 36 78 20 44 65 76 69 63 65 73 5C 4D 45 41 53 55 52 45 5C 47 65 74 6C 69 6E 65 2E 63
+	 * 38    43 3A 5C 4B 65 69 6C ... 5C 47 65 74 6C 69 6E 65 2E 63
 	 * C:\Keil_v5\c166\Examples\XC16x Devices\MEASURE\Getline.c
 	 * CA
 	 */
@@ -607,7 +613,8 @@ static int load_omf_unk1(const rz_bin_omf166_obj *obj, const ut8 *buf, const siz
 	size_t offset = 9;
 	dip->n = rz_read_le8_offset(buf, &offset);
 	rz_str_ncpy(dip->name, (const char *)&buf[offset], dip->n + 1);
-	RZ_LOG_DEBUG("load_omf = INCLUDES  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10ld)\t `%s`\n", record->size, global_ct, record->type, buf_size, dip->name);
+	RZ_LOG_DEBUG("load_omf = INCLUDES  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10ld)\t `%s`\n",
+		record->size, global_ct, record->type, buf_size, dip->name);
 	rz_pvector_push(obj->includes_vec, dip);
 
 #endif
@@ -635,7 +642,8 @@ static int load_omf_unk3(const ut8 *buf, const size_t buf_size, const OMF_record
 	size_t offset = 7;
 	const ut8 n = rz_read_le8_offset(buf, &offset);
 	rz_str_ncpy(name, (const char *)&buf[offset], n + 1); // cct = 12
-	RZ_LOG_DEBUG("load_omf = UNKNOWN3  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10lu)\t `%s`\n", record->size, global_ct, record->type, buf_size, name);
+	RZ_LOG_DEBUG("load_omf = UNKNOWN3  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10lu)\t `%s`\n",
+		record->size, global_ct, record->type, buf_size, name);
 	RZ_LOG_DEBUG("%02x %02x %02x \n%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
 		buf[0], buf[1], buf[2],
 		buf[3], buf[4], buf[5], buf[6], buf[7],
@@ -704,7 +712,9 @@ static int load_omf_secdef(rz_bin_omf166_obj *obj, const ut8 *buf, const OMF_rec
 }
 
 /**
- * \brief The MODINF record provides module information such as memory model used in
+ * \brief The MODINF record loader
+ *
+ * \details The MODINF record provides module information such as memory model used in
  * translation. ModInf, which is a byte value, uses bits to represent the specific
  * information. The bits within the ModInf byte are as follows:
  * 7 6 5 4 3 2 1 0
@@ -757,8 +767,10 @@ static int load_omf_modinf(rz_bin_omf166_obj *obj, const ut8 *buf, const OMF_rec
 	return true;
 }
 /**
- * \brief Each compound type will force creation of a type record, which describes the type
- * of a variable or function. The layout of the type record is as shown:
+ * \brief Each compound type will force creation of a type record, which describes
+ * the type of a variable or function.
+ *
+ * \details The layout of the type record is as shown:
  * ******************************************
  * * 0xF0 | RecLen | Type-Descriptor | Chks *
  * ******************************************
@@ -773,12 +785,6 @@ static int load_omf_modinf(rz_bin_omf166_obj *obj, const ut8 *buf, const OMF_rec
  * \return True is success, false is something wrong
  */
 static int load_omf_typnew(rz_bin_omf166_obj *obj, const ut8 *buf) {
-	/*
-		F0   0F 00   24 01 06 00 00 00 83 00   05  63 6C 6F 63 6B            42
-		F0   0E 00   24 01 10 00 00 00 84 00   04  6D 72 65 63               9E
-		F0   12 00   24 01 04 00 00 00 86 00   08  69 6E 74 65 72 76 61 6C   E2
-		F0   36 00   20 04 00 43 00 00 00 00 00 00 00 04 68 6F 75 72 43 00 01 00 00 00 00 00 03 6D 69 6E 43 00 02 00 00 00 00 00 03 73 65 63 45 00 04 00 00 00 00 00 04 6D 73 65 63 AE
-	*/
 	rz_return_val_if_fail(obj->types, false);
 	obj->TI_INDEX = obj->TI_INDEX | 0x80;
 
@@ -791,7 +797,11 @@ static int load_omf_typnew(rz_bin_omf166_obj *obj, const ut8 *buf) {
 	switch (newtype->descr_type) {
 	case COMPONENT_LIST_DESCRIPTOR: {
 		newtype->is_data = true;
-		///< 0x20 | NrOfComp16 | Components [*]  { TI16 | OFFS32 | REP8 | POS8 | n,’name’ }
+		/**
+		 * \code
+		 *  0x20 | NrOfComp16 | Components [*]  { TI16 | OFFS32 | REP8 | POS8 | n,’name’ }
+		 * \endcode
+		 */
 		newtype->label = rz_str_dup("COMPONENT_LIST_DESCRIPTOR");
 		newtype->descriptor.components.index = obj->TI_INDEX;
 		newtype->descriptor.components.count = rz_read_le16_offset(buf, &cct);
@@ -807,7 +817,7 @@ static int load_omf_typnew(rz_bin_omf166_obj *obj, const ut8 *buf) {
 			component->index = obj->TI_INDEX;
 			component->ti = rz_read_le16_offset(buf, &cct);
 			component->offset = rz_read_le16_offset(buf, &cct);
-			cct += 2; ///< ? RESERVED
+			cct += 2; ///< RESERVED16
 			component->REP8 = rz_read_le8_offset(buf, &cct);
 			component->POS8 = rz_read_le8_offset(buf, &cct);
 			component->n = rz_read_le8_offset(buf, &cct);
@@ -822,13 +832,13 @@ static int load_omf_typnew(rz_bin_omf166_obj *obj, const ut8 *buf) {
 		newtype->descriptor.pointer.attrib = rz_read_le8_offset(buf, &cct);
 		///< RESERVED16
 		cct += 2;
-		newtype->descriptor.pointer.ti = rz_read_le8_offset(buf, &cct); ///< Specs bug
-		// newtype->descriptor.pointer.ti = rz_read_le16(buf + cct); ///< Specs bug
+		///< Specs bug (must be le16 by datasheet)
+		newtype->descriptor.pointer.ti = rz_read_le8_offset(buf, &cct);
 		break;
 	}
 	case ARRAY_DESCRIPTOR: {
 		newtype->is_data = true;
-		// 0x22 | DIMS8 | ATTRIB8 | TI16 | DIMSZ32 [*]
+		///< 0x22 | DIMS8 | ATTRIB8 | TI16 | DIMSZ32 [*]
 		cct = 4;
 		newtype->descriptor.array.dims = rz_read_le8_offset(buf, &cct);
 		newtype->descriptor.array.attrib = rz_read_le8_offset(buf, &cct);
@@ -845,9 +855,9 @@ static int load_omf_typnew(rz_bin_omf166_obj *obj, const ut8 *buf) {
 	}
 	case FUNCTION_DESCRIPTOR: {
 		///<  0x23 | ATTRIB8 | RTYPE-TI16 | PARMLIST-TI16
-		///<  0x23 0x01 0x44 0x00 0x82 0x00 0x1f
-		///<  0x23 0x01 0x4a 0x00 0x4a 0x00 0x51
-		///<  0x23 0x01 0x44 0x00 0x4a 0x00 0x57
+		///<  0x23   0x01       0x44 0x00    0x82 0x00 0x1f
+		///<  0x23   0x01       0x4a 0x00    0x4a 0x00 0x51
+		///<  0x23   0x01       0x44 0x00    0x4a 0x00 0x57
 		cct = 4;
 		newtype->descriptor.function.attrib = rz_read_le8_offset(buf, &cct);
 		newtype->descriptor.function.rtype_ti = rz_read_le16_offset(buf, &cct);
@@ -938,11 +948,13 @@ static int rz_bin_format_omf166_load_content(rz_bin_omf166_obj *obj, OMF_record 
 		return load_linnum_data(obj, buf, buf_size, record);
 	}
 	case OMF166_REGDEF: {
-		/*
-			E3   0F 00   00 00 FC  07  49 4E 54 52 45 47 53                              FF FF 00    F1
-			E3   18 00   00 20 FC  10  3F 43 5F 4D 41 49 4E 52 45 47 49 53 54 45 52 53   FF FF 00    1D
-		*/
-		RZ_LOG_DEBUG("load_omf = REGDEF  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMT64d ")\n", record->size, global_ct, record->type, buf_size);
+		/**
+		 *     Type | RecLen | Offset | Base | n  | NAME             | RegMask | RESERVED | Chks
+		 *      E3    0F 00    00 00     FC    07   INTREGS            FF FF      00         F1
+		 *      E3    18 00    00 20     FC    10   ?C_MAINREGISTERS   FF FF      00         1D
+		 */
+		RZ_LOG_DEBUG("load_omf = REGDEF  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMT64d ")\n",
+			record->size, global_ct, record->type, buf_size);
 		return true;
 	}
 	case OMF166_COMMENT: {
@@ -997,14 +1009,15 @@ static int rz_bin_format_omf166_load_content(rz_bin_omf166_obj *obj, OMF_record 
 	case OMF166_UNKNOWN2: {
 		return load_omf_unk2(buf, buf_size, record, global_ct);
 	}
-	case OMF166_UNKNOWN3: { // ?????
+	case OMF166_UNKNOWN3: {
 		return load_omf_unk3(buf, buf_size, record, global_ct);
 	}
 	case OMF166_UNKNOWN4: {
 		return load_omf_unk4(buf, buf_size, record, global_ct);
 	}
 	default: {
-		RZ_LOG_DEBUG("load_omf: [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMT64d ")\t", record->size, global_ct, record->type, buf_size);
+		RZ_LOG_DEBUG("load_omf: [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMT64d ")\t",
+			record->size, global_ct, record->type, buf_size);
 		rz_warn_if_reached();
 		break;
 	}
@@ -1023,7 +1036,7 @@ static OMF_record *rz_bin_format_omf166_load_record(rz_bin_omf166_obj *obj, cons
 	new->type = rz_read_le8_offset(buf, &offset);
 	new->size = rz_read_le16_offset(buf, &offset);
 
-	// at least a record have a type a size and a checksum
+	// at least a record has a type, a size and a checksum
 	if (new->size > (buf_size - offset) || buf_size < (offset + 1)) {
 		RZ_LOG_ERROR("Invalid record (too short)\n");
 		RZ_FREE(new);
@@ -1054,7 +1067,7 @@ static int line_sample_cmp(const void *a, const void *b, void *user) {
 	if (sa->LineNumber > sb->LineNumber) {
 		return 1;
 	}
-	// and eventually by file because this is the most exponsive operation
+	// and eventually by file because this is the most expensive operation
 	if (!strlen(sa->filename) && !strlen(sb->filename)) {
 		return 0;
 	}

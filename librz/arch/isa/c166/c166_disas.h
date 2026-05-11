@@ -6,6 +6,8 @@
 #ifndef C166_DISAS_H
 #define C166_DISAS_H
 
+#include <rz_types.h>
+
 #define C166_INSTR_MAXLEN    (16 + 16) // ?
 #define C166_OPERANDS_MAXLEN 32
 
@@ -812,15 +814,6 @@ static inline ut16 get_operand(const C166_Inst *i, const ut8 index) {
 	return get_byte(i, index);
 }
 
-/**
- * Disassemble C166 instruction
- *
- * @param state Pointer to state structure
- * @param instr Pointer to instruction structure
- * @param bytes Buffer containing instruction bytes
- * @param len Length of buffer
- * @return Instruction byte size, 2 or 4 or -1 on error
- */
-RZ_API st32 c166_decode_command(RZ_NONNULL C166State *state, RZ_NONNULL C166_Inst *instr, const ut8 *bytes, st32 len);
+RZ_IPI st32 c166_decode_command(RZ_NONNULL C166State *state, RZ_NONNULL C166_Inst *instr, const ut8 *bytes, st32 len);
 static bool check_unused_opcode(ut8 opcode);
 #endif /* C166_DISAS_H */
