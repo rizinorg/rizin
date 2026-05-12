@@ -148,6 +148,7 @@ RZ_API const char *name_of_ti(const rz_bin_omf166_obj *obj, const ut16 ti_index)
 	}
 	}
 	rz_warn_if_reached();
+	return NULL;
 }
 
 const char *name_of_iTyp(ut8 iTyp) {
