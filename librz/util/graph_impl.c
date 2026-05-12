@@ -1476,7 +1476,7 @@ RZ_API bool rz_graph_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNo
  * \return False in case of failure. True otherwise.
  */
 RZ_API bool rz_graph_update_edge(
-	RZ_NONNULL RZ_BORROW RzGraph *g,
+	RZ_NONNULL RZ_BORROW RzGraph /*<NodeType *, EdgeType *>*/ *g,
 	RZ_NONNULL RZ_OWN RzGraphNode *from,
 	RZ_NONNULL RZ_OWN RzGraphNode *to,
 	RZ_NULLABLE RZ_OWN void *edge_data,
@@ -1511,7 +1511,7 @@ RZ_API bool rz_graph_update_edge(
  * \return False in case of failure or if one of the nodes doesn't exist. True otherwise.
  */
 RZ_API bool rz_graph_update_edge_by_id(
-	RZ_NONNULL RZ_BORROW RzGraph *g,
+	RZ_NONNULL RZ_BORROW RzGraph /*<NodeType *, EdgeType *>*/ *g,
 	ut64 from_id,
 	ut64 to_id,
 	RZ_NULLABLE RZ_OWN void *edge_data,
@@ -2060,7 +2060,8 @@ RZ_API RZ_NULLABLE RZ_BORROW RzGraphNode *rz_graph_nth_neighbour_by_id(const RzG
  *
  * \return The dot graph string or NULL in case of failure.
  */
-RZ_API RZ_OWN char *rz_graph_as_dot_str(const RzGraph *g,
+RZ_API RZ_OWN char *rz_graph_as_dot_str(
+	const RzGraph /*<NodeType *, EdgeType *>*/ *g,
 	RZ_NULLABLE const char *name,
 	RZ_NULLABLE RzGraphNodeFormatter node_formatter,
 	RZ_NULLABLE RzGraphEdgeFormatter edge_formatter) {
