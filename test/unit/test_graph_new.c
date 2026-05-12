@@ -235,16 +235,22 @@ static bool test_graph_edges_data_update(void) {
 	rz_graph_add_edge(g, n2, n3, RZ_GRAPH_INT_AS_DATA(0x23));
 	mu_assert_eq(rz_graph_count_edges(g), 4, "n_edges.initial");
 
-	mu_assert_true(rz_graph_update_edge(g, n3, n3, RZ_GRAPH_INT_AS_DATA(0x33), NULL, NULL), "Did not add edge");
+	mu_assert_eq(rz_graph_update_edge_by_id(g, 3, 9, RZ_GRAPH_INT_AS_DATA(0x33), NULL, NULL),
+		RZ_GRAPH_STATUS_MISSING_NODE, "missing node expected");
+
+	mu_assert_eq(rz_graph_update_edge(g, n3, n3, RZ_GRAPH_INT_AS_DATA(0x33), NULL, NULL),
+		RZ_GRAPH_STATUS_OK, "add edge");
 	mu_assert_eq(rz_graph_count_edges(g), 5, "n_edges.added");
 
-	mu_assert_true(rz_graph_update_edge_by_id(g, 2, 3, RZ_GRAPH_INT_AS_DATA(0xff), is_from_one, NULL), "Should return true for not updated");
+	mu_assert_eq(rz_graph_update_edge_by_id(g, 2, 3, RZ_GRAPH_INT_AS_DATA(0xff), is_from_one, NULL),
+		RZ_GRAPH_STATUS_NOT_UPDATED, "updated");
 	RzGraphEdge *e = rz_graph_find_edge(g, n2, n3);
 	mu_assert_notnull(e, "Not NULL");
 	ut64 edge_data = (utptr)rz_graph_edge_get_data(e);
 	mu_assert_eq(edge_data, 0x23, "Edge data changed.");
 
-	mu_assert_true(rz_graph_update_edge_by_id(g, 1, 3, RZ_GRAPH_INT_AS_DATA(0xff), is_from_one, NULL), "Should return true for updated");
+	mu_assert_eq(rz_graph_update_edge_by_id(g, 1, 3, RZ_GRAPH_INT_AS_DATA(0xff), is_from_one, NULL),
+		RZ_GRAPH_STATUS_UPDATED, "updated");
 	e = rz_graph_find_edge(g, n1, n3);
 	mu_assert_notnull(e, "Not NULL");
 	edge_data = (utptr)rz_graph_edge_get_data(e);
@@ -741,16 +747,22 @@ static bool test_graph_edges_data_update_matrix(void) {
 	rz_graph_add_edge(g, n2, n3, RZ_GRAPH_INT_AS_DATA(0x23));
 	mu_assert_eq(rz_graph_count_edges(g), 4, "n_edges.initial");
 
-	mu_assert_true(rz_graph_update_edge(g, n3, n3, RZ_GRAPH_INT_AS_DATA(0x33), NULL, NULL), "Did not add edge");
+	mu_assert_eq(rz_graph_update_edge_by_id(g, 3, 9, RZ_GRAPH_INT_AS_DATA(0x33), NULL, NULL),
+		RZ_GRAPH_STATUS_MISSING_NODE, "missing node expected");
+
+	mu_assert_eq(rz_graph_update_edge(g, n3, n3, RZ_GRAPH_INT_AS_DATA(0x33), NULL, NULL),
+		RZ_GRAPH_STATUS_OK, "add edge");
 	mu_assert_eq(rz_graph_count_edges(g), 5, "n_edges.added");
 
-	mu_assert_true(rz_graph_update_edge_by_id(g, 2, 3, RZ_GRAPH_INT_AS_DATA(0xff), is_from_one, NULL), "Should return true for not updated");
+	mu_assert_eq(rz_graph_update_edge_by_id(g, 2, 3, RZ_GRAPH_INT_AS_DATA(0xff), is_from_one, NULL),
+		RZ_GRAPH_STATUS_NOT_UPDATED, "not updated");
 	RzGraphEdge *e = rz_graph_find_edge(g, n2, n3);
 	mu_assert_notnull(e, "Not NULL");
 	ut64 edge_data = (utptr)rz_graph_edge_get_data(e);
 	mu_assert_eq(edge_data, 0x23, "Edge data changed.");
 
-	mu_assert_true(rz_graph_update_edge_by_id(g, 1, 3, RZ_GRAPH_INT_AS_DATA(0xff), is_from_one, NULL), "Should return true for updated");
+	mu_assert_eq(rz_graph_update_edge_by_id(g, 1, 3, RZ_GRAPH_INT_AS_DATA(0xff), is_from_one, NULL),
+		RZ_GRAPH_STATUS_UPDATED, "updated");
 	e = rz_graph_find_edge(g, n1, n3);
 	mu_assert_notnull(e, "Not NULL");
 	edge_data = (utptr)rz_graph_edge_get_data(e);

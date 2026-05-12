@@ -1459,29 +1459,38 @@ RZ_API bool rz_graph_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNo
  * \param edge_data user data attached to the edge
  * \param cb An optional callback which returns true if the edge should be updated, and false if it shouldn't.
  * \param cb_data The callback data.
- * \return False in case of failure. True otherwise.
+ *
+ * \return RZ_GRAPH_STATUS_OK If there was no edge and a new one was added.
+ * \return RZ_GRAPH_STATUS_MISSING_NODE If there was no edge and but no edge was added,
+ *         because either of the nodes does not exist.
+ * \return RZ_GRAPH_STATUS_UPDATED If an existing edge was updated.
+ * \return RZ_GRAPH_STATUS_NOT_UPDATED If an existing edge was not updated.
+ * \return RZ_GRAPH_STATUS_ERR In case of error.
  */
-RZ_API bool rz_graph_update_edge(
+RZ_API RzGraphStatus rz_graph_update_edge(
 	RZ_NONNULL RZ_BORROW RzGraph /*<NodeType *, EdgeType *>*/ *g,
 	RZ_NONNULL RZ_OWN RzGraphNode *from,
 	RZ_NONNULL RZ_OWN RzGraphNode *to,
 	RZ_NULLABLE RZ_OWN void *edge_data,
 	RZ_NULLABLE RzGraphEdgeChooser cb,
 	void *cb_data) {
-	rz_return_val_if_fail(g && from && to, false);
+	rz_return_val_if_fail(g && from && to, RZ_GRAPH_STATUS_ERR);
 	RzGraphEdge *e = rz_graph_find_edge(g, from, to);
-	if (e && (!cb || cb(e, cb_data))) {
+	bool update = (!cb || cb(e, cb_data));
+	if (e && update) {
 		if (g->edge_data_free) {
 			g->edge_data_free(e->data);
 		}
 		e->data = edge_data;
-		return true;
-	} else if (g->impl_ops->add_edge(g, from, to, edge_data)) {
+		return RZ_GRAPH_STATUS_UPDATED;
+	} else if (e && !update) {
+		return RZ_GRAPH_STATUS_NOT_UPDATED;
+	} else if (!e && g->impl_ops->add_edge(g, from, to, edge_data)) {
 		// Edge is newly added.
 		g->n_edges += 1;
-		return true;
+		return RZ_GRAPH_STATUS_OK;
 	}
-	return true;
+	return RZ_GRAPH_STATUS_ERR;
 }
 
 /**
@@ -1494,20 +1503,26 @@ RZ_API bool rz_graph_update_edge(
  * \param edge_data user data attached to the edge
  * \param cb An optional callback which returns true if the edge should be updated, and false if it shouldn't.
  * \param cb_data The callback data.
- * \return False in case of failure or if one of the nodes doesn't exist. True otherwise.
+ *
+ * \return RZ_GRAPH_STATUS_OK If there was no edge and a new one was added.
+ * \return RZ_GRAPH_STATUS_MISSING_NODE If there was no edge and but no edge was added,
+ *         because either of the nodes does not exist.
+ * \return RZ_GRAPH_STATUS_UPDATED If an existing edge was updated.
+ * \return RZ_GRAPH_STATUS_NOT_UPDATED If an existing edge was not updated.
+ * \return RZ_GRAPH_STATUS_ERR In case of error.
  */
-RZ_API bool rz_graph_update_edge_by_id(
+RZ_API RzGraphStatus rz_graph_update_edge_by_id(
 	RZ_NONNULL RZ_BORROW RzGraph /*<NodeType *, EdgeType *>*/ *g,
 	ut64 from_id,
 	ut64 to_id,
 	RZ_NULLABLE RZ_OWN void *edge_data,
 	RZ_NULLABLE RzGraphEdgeChooser cb,
 	void *cb_data) {
-	rz_return_val_if_fail(g, false);
+	rz_return_val_if_fail(g, RZ_GRAPH_STATUS_ERR);
 	RzGraphNode *from = rz_graph_find_node(g, from_id);
 	RzGraphNode *to = rz_graph_find_node(g, to_id);
 	if (!from || !to) {
-		return false;
+		return RZ_GRAPH_STATUS_MISSING_NODE;
 	}
 	return rz_graph_update_edge(g, from, to, edge_data, cb, cb_data);
 }
