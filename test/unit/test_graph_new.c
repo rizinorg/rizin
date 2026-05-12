@@ -44,22 +44,22 @@ static bool test_graph_nodes(void) {
 
 	// Add nodes with integer data
 	RzGraphNode *n1 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
 	mu_assert_notnull(n1, "add_node.1");
 	mu_assert_eq(rz_graph_count_nodes(g), 1, "n_nodes.1");
-	mu_assert_ptreq(rz_graph_node_get_data(n1), (ut8 *)1, "node_data.1");
+	mu_assert_ptreq(rz_graph_node_get_data(n1), RZ_GRAPH_INT_AS_DATA(1), "node_data.1");
 	RzGraphNode *n1_same = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, &n1_same), RZ_GRAPH_STATUS_EXISTED, "Should exist");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1_same), RZ_GRAPH_STATUS_EXISTED, "Should exist");
 	mu_assert_eq(n1, n1_same, "Should be the same node pointer.");
 	mu_assert_eq(n1, n1_same, "rz_graph_add_get_node() did not return same node");
 
 	RzGraphNode *n2 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)2, &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
 	mu_assert_notnull(n2, "add_node.2");
 	mu_assert_eq(rz_graph_count_nodes(g), 2, "n_nodes.2");
 
 	RzGraphNode *n3 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)3, &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 	mu_assert_notnull(n3, "add_node.3");
 	mu_assert_eq(rz_graph_count_nodes(g), 3, "n_nodes.3");
 
@@ -82,11 +82,11 @@ static bool test_graph_edges(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, NULL, NULL);
 
 	RzGraphNode *n1 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n2 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)2, &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n3 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)3, &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *arr[16] = { 0 };
 
 	// Add edges
@@ -116,7 +116,7 @@ static bool test_graph_edges(void) {
 	// then add an edge and check if it fails somehow.
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(arr); ++i) {
 		arr[i] = NULL;
-		mu_assert_eq(rz_graph_add_node(g, (ut8 *)i + 4, &arr[i]), RZ_GRAPH_STATUS_OK, "Failed to add");
+		mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(i + 4), &arr[i]), RZ_GRAPH_STATUS_OK, "Failed to add");
 		mu_assert_notnull(arr[i], "Was NULL, should not.");
 	}
 	success = rz_graph_add_edge(g, arr[8], n3, NULL);
@@ -133,7 +133,7 @@ static bool test_graph_edges(void) {
 
 	// Node should be placed at the edge list index of just deleted node 11.
 	RzGraphNode *nx = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)0xffff, &nx), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(0xffff), &nx), RZ_GRAPH_STATUS_OK, "Failed to add");
 	success = rz_graph_add_edge(g, nx, n3, NULL);
 	mu_assert_true(success, "add_edge.0xffff->3");
 	mu_assert_eq(rz_graph_count_edges(g), 4, "n_edges.4");
@@ -148,11 +148,11 @@ static bool test_graph_edge_deletion(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash_base, NULL, NULL);
 
 	RzGraphNode *n1 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n2 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)2, &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n3 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)3, &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 
 	rz_graph_add_edge(g, n1, n2, NULL);
 	rz_graph_add_edge(g, n2, n3, NULL);
@@ -259,13 +259,13 @@ static bool test_graph_in_out_edges(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash_base, NULL, NULL);
 
 	RzGraphNode *n1 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n2 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)2, &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n3 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)3, &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n4 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)4, &n4), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(4), &n4), RZ_GRAPH_STATUS_OK, "Failed to add");
 
 	rz_graph_add_edge(g, n1, n2, NULL);
 	rz_graph_add_edge(g, n1, n3, NULL);
@@ -310,11 +310,11 @@ static bool test_graph_in_out_neighbors(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash_base, NULL, NULL);
 
 	RzGraphNode *n1 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n2 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)2, &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n3 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)3, &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 
 	rz_graph_add_edge(g, n1, n2, NULL);
 	rz_graph_add_edge(g, n1, n3, NULL);
@@ -395,11 +395,11 @@ static bool test_graph_node_deletion(void) {
 static bool test_graph_reset(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash_base, NULL, NULL);
 
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, NULL), RZ_GRAPH_STATUS_OK, "Failed to add");
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)2, NULL), RZ_GRAPH_STATUS_OK, "Failed to add");
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)3, NULL), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), NULL), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), NULL), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), NULL), RZ_GRAPH_STATUS_OK, "Failed to add");
 
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, NULL), RZ_GRAPH_STATUS_EXISTED, "Failed to get existed with NULL out_ptr");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), NULL), RZ_GRAPH_STATUS_EXISTED, "Failed to get existed with NULL out_ptr");
 
 	mu_assert_eq(rz_graph_count_nodes(g), 3, "n_nodes.before_reset");
 
@@ -417,13 +417,13 @@ static bool test_graph_nth_neighbor(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash_base, NULL, NULL);
 
 	RzGraphNode *n1 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n2 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)2, &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n3 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)3, &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n4 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)4, &n4), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(4), &n4), RZ_GRAPH_STATUS_OK, "Failed to add");
 
 	rz_graph_add_edge(g, n1, n2, NULL);
 	rz_graph_add_edge(g, n1, n3, NULL);
@@ -451,15 +451,15 @@ static bool test_graph_dfs(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash_base, NULL, NULL);
 
 	RzGraphNode *n1 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n2 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)2, &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n3 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)3, &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n4 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)4, &n4), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(4), &n4), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n5 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)5, &n5), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(5), &n5), RZ_GRAPH_STATUS_OK, "Failed to add");
 
 	// simple DAG
 	// n1 --> n2 -->n4 --> n5
@@ -492,11 +492,11 @@ static bool test_graph_get_nodes(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash_base, NULL, NULL);
 
 	RzGraphNode *n1 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n2 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)2, &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n3 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)3, &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 
 	RzIterator *it = rz_graph_get_nodes(g);
 	mu_assert_notnull(it, "get_nodes_iterator");
@@ -518,28 +518,28 @@ static bool test_graph_find_edge(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash_base, NULL, NULL);
 
 	RzGraphNode *n1 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n2 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)2, &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n3 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)3, &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 
-	rz_graph_add_edge(g, n1, n2, (ut8 *)100);
-	rz_graph_add_edge(g, n2, n3, (ut8 *)200);
-	rz_graph_add_edge(g, n2, n1, (ut8 *)400);
+	rz_graph_add_edge(g, n1, n2, RZ_GRAPH_INT_AS_DATA(100));
+	rz_graph_add_edge(g, n2, n3, RZ_GRAPH_INT_AS_DATA(200));
+	rz_graph_add_edge(g, n2, n1, RZ_GRAPH_INT_AS_DATA(400));
 
 	// can find edge
 	RzGraphEdge *edge = rz_graph_find_edge(g, n1, n2);
 	mu_assert_notnull(edge, "find_edge.1->2");
 	mu_assert_ptreq(rz_graph_edge_get_from(edge), n1, "edge.from");
 	mu_assert_ptreq(rz_graph_edge_get_to(edge), n2, "edge.to");
-	mu_assert_ptreq(rz_graph_edge_get_data(edge), (ut8 *)100, "edge.data");
+	mu_assert_ptreq(rz_graph_edge_get_data(edge), RZ_GRAPH_INT_AS_DATA(100), "edge.data");
 
 	edge = rz_graph_find_edge(g, n2, n1);
 	mu_assert_notnull(edge, "find_edge.2->1");
 	mu_assert_ptreq(rz_graph_edge_get_from(edge), n2, "edge.from");
 	mu_assert_ptreq(rz_graph_edge_get_to(edge), n1, "edge.to");
-	mu_assert_ptreq(rz_graph_edge_get_data(edge), (ut8 *)400, "edge.data");
+	mu_assert_ptreq(rz_graph_edge_get_data(edge), RZ_GRAPH_INT_AS_DATA(400), "edge.data");
 
 	// no such edge
 	edge = rz_graph_find_edge(g, n1, n3);
@@ -557,7 +557,7 @@ static bool test_graph_complex(void) {
 	RzGraphNode *nodes[10];
 	for (int i = 0; i < 10; i++) {
 		nodes[i] = NULL;
-		mu_assert_eq(rz_graph_add_node(g, (ut8 *)(size_t)(i + 1), &nodes[i]), RZ_GRAPH_STATUS_OK, "Failed to add");
+		mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA((i + 1)), &nodes[i]), RZ_GRAPH_STATUS_OK, "Failed to add");
 		mu_assert_notnull(nodes[i], "add_node");
 	}
 
@@ -595,18 +595,18 @@ static bool test_graph_nodes_matrix(void) {
 
 	// Add nodes with integer data
 	RzGraphNode *n1 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
 	mu_assert_notnull(n1, "add_node.1");
 	mu_assert_eq(rz_graph_count_nodes(g), 1, "n_nodes.1");
-	mu_assert_ptreq(rz_graph_node_get_data(n1), (ut8 *)1, "node_data.1");
+	mu_assert_ptreq(rz_graph_node_get_data(n1), RZ_GRAPH_INT_AS_DATA(1), "node_data.1");
 
 	RzGraphNode *n2 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)2, &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
 	mu_assert_notnull(n2, "add_node.2");
 	mu_assert_eq(rz_graph_count_nodes(g), 2, "n_nodes.2");
 
 	RzGraphNode *n3 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)3, &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 	mu_assert_notnull(n3, "add_node.3");
 	mu_assert_eq(rz_graph_count_nodes(g), 3, "n_nodes.3");
 
@@ -627,11 +627,11 @@ static bool test_graph_edges_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, NULL, NULL, NULL);
 
 	RzGraphNode *n1 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n2 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)2, &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n3 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)3, &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 
 	// Add edges
 	bool success = rz_graph_add_edge(g, n1, n2, NULL);
@@ -664,11 +664,11 @@ static bool test_graph_edge_deletion_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash_base, NULL, NULL);
 
 	RzGraphNode *n1 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n2 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)2, &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n3 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)3, &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 
 	rz_graph_add_edge(g, n1, n2, NULL);
 	rz_graph_add_edge(g, n2, n3, NULL);
@@ -766,13 +766,13 @@ static bool test_graph_in_out_edges_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash_base, NULL, NULL);
 
 	RzGraphNode *n1 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n2 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)2, &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n3 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)3, &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n4 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)4, &n4), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(4), &n4), RZ_GRAPH_STATUS_OK, "Failed to add");
 
 	rz_graph_add_edge(g, n1, n2, NULL);
 	rz_graph_add_edge(g, n1, n3, NULL);
@@ -817,11 +817,11 @@ static bool test_graph_in_out_neighbors_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash_base, NULL, NULL);
 
 	RzGraphNode *n1 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n2 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)2, &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n3 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)3, &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 
 	rz_graph_add_edge(g, n1, n2, NULL);
 	rz_graph_add_edge(g, n1, n3, NULL);
@@ -862,11 +862,11 @@ static bool test_graph_node_deletion_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash_base, NULL, NULL);
 
 	RzGraphNode *n1 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n2 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)2, &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n3 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)3, &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 
 	rz_graph_add_edge(g, n1, n2, NULL);
 	rz_graph_add_edge(g, n2, n3, NULL);
@@ -896,9 +896,9 @@ static bool test_graph_node_deletion_matrix(void) {
 static bool test_graph_reset_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash_base, NULL, NULL);
 
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, NULL), RZ_GRAPH_STATUS_OK, "Failed to add");
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)2, NULL), RZ_GRAPH_STATUS_OK, "Failed to add");
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)3, NULL), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), NULL), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), NULL), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), NULL), RZ_GRAPH_STATUS_OK, "Failed to add");
 
 	mu_assert_eq(rz_graph_count_nodes(g), 3, "n_nodes.before_reset");
 
@@ -916,13 +916,13 @@ static bool test_graph_nth_neighbor_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash_base, NULL, NULL);
 
 	RzGraphNode *n1 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n2 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)2, &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n3 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)3, &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n4 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)4, &n4), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(4), &n4), RZ_GRAPH_STATUS_OK, "Failed to add");
 
 	rz_graph_add_edge(g, n1, n2, NULL);
 	rz_graph_add_edge(g, n1, n3, NULL);
@@ -949,15 +949,15 @@ static bool test_graph_dfs_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash_base, NULL, NULL);
 
 	RzGraphNode *n1 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n2 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)2, &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n3 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)3, &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n4 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)4, &n4), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(4), &n4), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n5 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)5, &n5), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(5), &n5), RZ_GRAPH_STATUS_OK, "Failed to add");
 
 	// simple DAG
 	// n1 --> n2 -->n4 --> n5
@@ -990,11 +990,11 @@ static bool test_graph_get_nodes_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash_base, NULL, NULL);
 
 	RzGraphNode *n1 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n2 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)2, &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n3 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)3, &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 
 	RzIterator *it = rz_graph_get_nodes(g);
 	mu_assert_notnull(it, "get_nodes_iterator");
@@ -1016,28 +1016,28 @@ static bool test_graph_find_edge_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash_base, NULL, NULL);
 
 	RzGraphNode *n1 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n2 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)2, &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n3 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)3, &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 
-	rz_graph_add_edge(g, n1, n2, (ut8 *)100);
-	rz_graph_add_edge(g, n2, n3, (ut8 *)200);
-	rz_graph_add_edge(g, n2, n1, (ut8 *)400);
+	rz_graph_add_edge(g, n1, n2, RZ_GRAPH_INT_AS_DATA(100));
+	rz_graph_add_edge(g, n2, n3, RZ_GRAPH_INT_AS_DATA(200));
+	rz_graph_add_edge(g, n2, n1, RZ_GRAPH_INT_AS_DATA(400));
 
 	// can find edge
 	RzGraphEdge *edge = rz_graph_find_edge(g, n1, n2);
 	mu_assert_notnull(edge, "find_edge.1->2");
 	mu_assert_ptreq(rz_graph_edge_get_from(edge), n1, "edge.from");
 	mu_assert_ptreq(rz_graph_edge_get_to(edge), n2, "edge.to");
-	mu_assert_ptreq(rz_graph_edge_get_data(edge), (ut8 *)100, "edge.data");
+	mu_assert_ptreq(rz_graph_edge_get_data(edge), RZ_GRAPH_INT_AS_DATA(100), "edge.data");
 
 	edge = rz_graph_find_edge(g, n2, n1);
 	mu_assert_notnull(edge, "find_edge.2->1");
 	mu_assert_ptreq(rz_graph_edge_get_from(edge), n2, "edge.from");
 	mu_assert_ptreq(rz_graph_edge_get_to(edge), n1, "edge.to");
-	mu_assert_ptreq(rz_graph_edge_get_data(edge), (ut8 *)400, "edge.data");
+	mu_assert_ptreq(rz_graph_edge_get_data(edge), RZ_GRAPH_INT_AS_DATA(400), "edge.data");
 
 	// no such edge
 	edge = rz_graph_find_edge(g, n1, n3);
@@ -1055,7 +1055,7 @@ static bool test_graph_complex_matrix(void) {
 	RzGraphNode *nodes[10];
 	for (int i = 0; i < 10; i++) {
 		nodes[i] = NULL;
-		mu_assert_eq(rz_graph_add_node(g, (ut8 *)(size_t)(i + 1), &nodes[i]), RZ_GRAPH_STATUS_OK, "Failed to add");
+		mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA((i + 1)), &nodes[i]), RZ_GRAPH_STATUS_OK, "Failed to add");
 		mu_assert_notnull(nodes[i], "add_node");
 	}
 
@@ -1095,9 +1095,9 @@ static bool test_graph_impl_equivalence(void) {
 	RzGraphNode *l_nodes[5], *m_nodes[5];
 	for (int i = 0; i < 5; i++) {
 		l_nodes[i] = NULL;
-		mu_assert_eq(rz_graph_add_node(g_list, (ut8 *)(size_t)(i + 1), &l_nodes[i]), RZ_GRAPH_STATUS_OK, "Failed to add");
+		mu_assert_eq(rz_graph_add_node(g_list, RZ_GRAPH_INT_AS_DATA((i + 1)), &l_nodes[i]), RZ_GRAPH_STATUS_OK, "Failed to add");
 		m_nodes[i] = NULL;
-		mu_assert_eq(rz_graph_add_node(g_matrix, (ut8 *)(size_t)(i + 1), &m_nodes[i]), RZ_GRAPH_STATUS_OK, "Failed to add");
+		mu_assert_eq(rz_graph_add_node(g_matrix, RZ_GRAPH_INT_AS_DATA((i + 1)), &m_nodes[i]), RZ_GRAPH_STATUS_OK, "Failed to add");
 	}
 
 	mu_assert_eq(rz_graph_count_nodes(g_list), rz_graph_count_nodes(g_matrix), "same node count");

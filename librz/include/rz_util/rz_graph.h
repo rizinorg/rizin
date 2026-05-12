@@ -27,7 +27,7 @@ typedef bool (*RzGraphEdgeChooser)(const RzGraphEdge *data, void *cb_data);
  * \brief Macro to cast an integer to a void pointer.
  * Useful for graphs which use integers as node data.
  */
-#define RZ_GRAPH_INT_AS_DATA(n) ((void *)(utptr)n)
+#define RZ_GRAPH_INT_AS_DATA(n) ((void *)(utptr)(n))
 
 typedef enum {
 	RZ_GRAPH_IMPL_LIST,
