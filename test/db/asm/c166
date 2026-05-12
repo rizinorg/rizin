@@ -1,0 +1,1252 @@
+d "add r1, r2;add 0xfe02, #0x4523;addc r3, r4;sub r5, r6;subc r7, r8;mul r1, r2" 0012060123451034205630780B12
+d "and r1, r2;and 0xfe02, #0x4523;or r3, r4;xor r5, r6;.word 0x9101" 601266012345703450569101
+d "and r1, r2;and 0xfe02, #0x4523;or r3, r4;xor r5, r6;cpl r1" 601266012345703450569110
+d "mov [-r2], r1;movb [-r4], rh1;mov [r5], 0xfe00:0x0020" 8812893484052000
+d "bclr 0xfd40.0;bset 0xfd42.0;bclr 0xfd44.2;bset 0xfd46.2" 0E200F212E222F23
+
+d "add r1, r2;and r3, r4;mov [-r6], r5;jmpr cc_UC, 0x000018;mul r7, r8;sub r5, r6;bset 0xfd48.0;cmp r1, r2;jmpr cc_Z/EQ, 0x000006" 0012603488560D080B7820560F2440122DFA
+
+# If suddenly a broken byte appears instead of the opcode,
+# but the operand remains intact, disassembly will go down the wrong path
+# Expected: `add r1, r2;and r3, r4;mov [-r6], r5 ......`
+# Actual:   `add r1, r2;.byte 0x3b;subc 0xfe00:0x0d56, psw ......`
+d "add r1, r2;.word 0x3b34;mov [-r6], r5;jmpr cc_UC, 0x000018;mul r7, r8;sub r5, r6;bset 0xfd48.0;cmp r1, r2;jmpr cc_Z/EQ, 0x000006" 00123B3488560D080B7820560F2440122DFA
+
+d "add r1, r2;.word 0x3b00;and r3, r4;mov [-r6], r5;jmpr cc_UC, 0x00001a;mul r7, r8;sub r5, r6;bset 0xfd48.0;cmp r1, r2;jmpr cc_Z/EQ, 0x000008" 00123B00603488560D080B7820560F2440122DFA
+d "add r1, r2;.word 0x3b60;subc 0xfe00:0x0d56, 0xff10;add r0, [r3];or r2, #0;xor 0xfe1e, #0x4024;.word 0x122d .word 0xfa00" 00123B603488560D080B7820560F2440122DFA
+
+d ".word 0x4495" 4495
+d ".word 0x448b" 448B
+d ".word 0x9500" 9500
+d ".word 0xe500" E500
+d ".word 0x4488;.word 0x1200" 448812
+d ".word 0x4488;.word 0x12f1 .word 0x0000" 448812f1
+d ".word 0x4488;.word 0x12f1 .word 0x0100" 448812f101
+d ".word 0x4488;addc r1, 0xfe00:0x2301" 448812f10123
+d ".word 0x1200" 12
+d ".word 0x4400;mov [-r2], r1" 44008812
+
+# These are made up from the C166 manual
+d "add r6, r2" 0062
+d "add r1, #0" 0810
+d "add r3, [r2]" 083A
+d "add r2, [r0+]" 082C
+d "add r2, #0xfe00" 06F200FE
+d "add r1, 0xfe00:0x2301" 02F10123
+d "add 0xfe00:0x2301, r1" 04F10123
+
+d "addb rh1, rh0" 0131
+d "addb rl1, #0x0001" 0921
+d "addb rh1, [rh0]" 0939
+d "addb rl0, [rh1+]" 090F
+d "addb 0xfe00, #0x0011" 07001122
+d "addb 0xfe00, 0xfe00:0x2211" 03001122
+d "addb 0xfe00:0x2211, 0xfe00" 05001122
+
+d "addc r6, r2" 1062
+d "addc r1, #0" 1810
+d "addc r3, [r2]" 183A
+d "addc r2, [r0+]" 182C
+d "addc r2, #0xfe00" 16F200FE
+d "addc r1, 0xfe00:0x2301" 12F10123
+d "addc 0xfe00:0x2301, r1" 14F10123
+
+d "addcb rh1, rh0" 1131
+d "addcb rl1, #0x0001" 1921
+d "addcb rh1, [rh0]" 1939
+d "addcb rl0, [rh1+]" 190F
+d "addcb 0xfe00, #0x0011" 17001122
+d "addcb 0xfe00, 0xfe00:0x2211" 13001122
+d "addcb 0xfe00:0x2211, 0xfe00" 15001122
+
+d "and r6, r2" 6062
+d "and r1, #0" 6810
+d "and r3, [r2]" 683A
+d "and r2, [r0+]" 682C
+d "and r2, #0xfe00" 66F200FE
+d "and r1, 0xfe00:0x2301" 62F10123
+d "and 0xfe00:0x2301, r1" 64F10123
+
+d "andb rh1, rh0" 6131
+d "andb rl1, #0x0001" 6921
+d "andb rh1, [rh0]" 6939
+d "andb rl0, [rh1+]" 690F
+d "andb 0xfe00, #0x0011" 67001122
+d "andb 0xfe00, 0xfe00:0x2211" 63001122
+d "andb 0xfe00:0x2211, 0xfe00" 65001122
+
+d "ashr r7, r10" AC7A
+d "ashr r6, #0x01" BC16
+
+d "atomic #1" D100
+d "atomic #2" D110
+d "atomic #3" D120
+d "atomic #4" D130
+
+d "extr #1" D180
+d "extr #2" D190
+d "extr #3" D1A0
+d "extr #4" D1B0
+
+d "band r0.1, r0.2" 6AF0F012
+d "band r1.14, r0.7" 6AF1F0E7
+d "band r1.14, r0.7" 6AF1F0E7
+
+d "bclr r2.0" 0EF2
+d "bclr r2.1" 1EF2
+d "bclr r2.2" 2EF2
+d "bclr r2.3" 3EF2
+d "bclr r2.4" 4EF2
+d "bclr r2.5" 5EF2
+d "bclr r2.6" 6EF2
+d "bclr r2.7" 7EF2
+d "bclr r2.8" 8EF2
+d "bclr r2.9" 9EF2
+d "bclr r2.10" AEF2
+d "bclr r2.11" BEF2
+d "bclr r2.12" CEF2
+
+d "bcmp r1.14, r0.7" 2AF1F0E7
+
+d "bfldh r1, #0x80, #0xff"  1AF1FF80
+d "bfldh r1, #0xff, #0x80"  1AF180FF
+d "bfldl r1, #0x80, #0xff"  0AF180FF
+d "bfldl r1, #0xff, #0x80"  0AF1FF80
+d "bfldl 0xfd00, #0x20, #0x20"  0A002020
+
+d "bmov r1.14, r0.7" 4AF1F0E7
+d "bmovn r1.14, r0.7" 3AF1F0E7
+
+d "bor r0.1, r0.2" 5AF0F012
+d "bor r2.1, r0.7" 5AF2F017
+d "bor r1.14, 0xfd00.7" 5AF100E7
+
+d "bset r0.13" DFF0
+d "bset r0.14" EFF0
+d "bset r0.15" FFF0
+d "bset r0.1" 1FF0
+d "bset r2.3" 3FF2
+d "bset 0xfd04.7" 7F02
+d "bset 0xff02.15" FF81
+
+
+d "bxor r2.1, r0.7" 7AF2F017
+d "bxor 0xfd00.7, r1.14" 7A00F17E
+
+d "calla+ cc_Z/EQ, 0x0660" CA206006
+d "calli cc_Z/EQ, [r3]" AB23
+d "calli cc_NET, [r3]" AB13
+d "nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;callr 0x0002" CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00BBF0
+d "nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;callr 0x0026" CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00BB02
+d "callr 0x0100" BB7F
+d "nop;nop;callr 0x0104" CC00CC00BB7F
+d "nop;callr 0x0102" CC00BB7F
+d "callr 0x0022" BB10
+d "calls 0x000660" DA006006
+d "cmp r4, r8" 4048
+d "cmp r1, #6" 4816
+d "cmp r0, [r2]" 480A
+d "cmp r9, [r0+]" 489C
+d "cmp r1, #0xabcd" 46F1CDAB
+d "cmp r1, 0xfe04:0x2bcd" 42F1CDAB
+d "cmpb rl0, rh0" 4101
+d "cmpb rh0, [rl0]" 4918
+d "cmpb rl2, [rl1+]" 494E
+d "cmpb rh0, #0x0002" 4912
+d "cmpb 0xfe02, #0x00ff" 4701FF00
+d "cmpb 0xfe02, 0xfe00:0x12ff" 4301FF12
+d "cmpd1 r2, #0x03" A032
+d "cmpd1 r1, #0x1234" A6F13412
+d "cmpd1 r3, 0xfe04:0x2bcd" A2F3CDAB
+d "cmpd2 r1, #0x0a" B0A1
+d "cmpd2 r7, #0x1234" B6F73412
+d "cmpd2 r0, 0xfe04:0x2bcd" B2F0CDAB
+d "cmpi1 r2, #0x03" 8032
+d "cmpi1 r1, #0x1234" 86F13412
+d "cmpi1 r3, 0xfe04:0x2bcd" 82F3CDAB
+d "cmpi2 r1, #0x0a" 90A1
+d "cmpi2 r7, #0x1234" 96F73412
+d "cmpi2 r0, 0xfe04:0x2bcd" 92F0CDAB
+
+d "cpl r4" 9140
+d ".word 0x9142" 9142
+d "cplb rl1" B120
+
+d "diswdt" A55AA5A5
+d "div r1" 4B11
+d ".word 0x4b10" 4B10
+d "divl r0" 6B00
+d ".word 0x6b01" 6B01
+d "divlu r4" 7B44
+d ".word 0x7b45" 7B45
+d "divu r7" 5B77
+d ".word 0x5b07" 5B07
+
+d "einit" B54AB5B5
+d "exts r2, #1" DC02
+d "extp r5, #2" DC55
+
+d "extsr #0x00ab, #2" D790AB00
+d "extpr #0x01ab, #1" D7C0AB01
+
+
+d "idle" 87788787
+
+d "jb 0xfd02.3, 0x00000c" 8A010430
+d "jbc 0xfd02.3, 0x00000c" AA010430
+d "jmpa+ cc_SLE, 0x0660" EAB06006
+d "jmpa- cc_SLE, 0x0660" EAB16006
+d "jmpa- cc_UGT, 0x0660" EAE16006
+d "jmpi cc_NZ/NE, [r1]" 9C31
+d "jmpi cc_ULE, [r15]" 9CFF
+d "jmpr cc_Z/EQ, 0x000042" 2D20
+#d "nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;jmpr cc_UGT, 0x000002" CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00EDF0
+d "nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;jmpr cc_UGT, 0x000002" CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00EDE9
+d "nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;jmpr cc_UGT, 0x000000" CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00EDF0
+d "jmps 0x000660" FA006006
+d "nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;jnb 0xfd02.3, 0x000000" CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC00CC009A01E030
+d "jnb 0xfd02.3, 0x00000c" 9A010430
+d "jnbs 0xfd02.3, 0x00000c" BA010430
+
+d "mov r1, r0" F010
+d "mov r0, #0x01" E010
+d "mov r1, #0x1122" E6F12211
+d "mov r1, [r2]" A812
+d "mov r1, [r2+]" 9812
+d "mov [r2], r1" B812
+d "mov [-r2], r1" 8812
+d "mov [r1], [r2]" C812
+d "mov [r1+], [r2]" D812
+d "mov [r3], [r4+]" E834
+d "mov r0, [r1+#0x1122]" D4012211
+d "mov [r1+#0x1122], r0" C4012211
+d "mov [r2], 0xfe00:0x0660" 84026006
+d "mov 0xfe00:0x0660, [r2]" 94026006
+d "mov r0, 0xfe00:0x2211" F2F01122
+d "mov 0xfe00:0x2211, r0" F6F01122
+d "mov 0xfe06:0x3eb0, r8" F6F8B0FE
+
+d "movb rh1, rh0" F131
+d "movb rh7, #0x0003" E13F
+d "movb rl0, #0x00ff" E7F0FF00
+d "movb rh0, [r2]" A912
+d "movb rh0, [r2+]" 9912
+d "movb [r2], rl0" B902
+d "movb [-r2], rl0" 8902
+d "movb [r0], [r2]" C902
+d "movb [r0+], [r2]" D902
+d "movb [r0], [r2+]" E902
+d "movb rl0, [r1+#0x1122]" F4012211
+d "movb [r1+#0x1122], rl0" E4012211
+d "movb [r2], 0xfe00:0x0660" A4026006
+d "movb 0xfe00:0x0660, [r2]" B4026006
+d "movb rl0, 0xfe00:0x11ff" F3F0FF11
+d "movb 0xfe00:0x11ff, rl0" F7F0FF11
+
+d "movbs r0, rh0" D010
+d "movbs 0xfe06, 0xfe00:0x2211" D2031122
+d "movbs 0xfe00:0x2211, 0xfe06" D5031122
+
+d "movbz r1, rl0" C001
+d "movbz 0xfe06, 0xfe00:0x2211" C2031122
+d "movbz 0xfe00:0x2211, 0xfe06" C5031122
+
+d "mul r1, r0" 0B10
+d "mulu r2, r3" 1B23
+
+d "neg r1" 8110
+d ".word 0x8111" 8111
+d "negb rl1" A120
+d "negb rh0" A110
+d "nop" cc00
+
+d "or r5, r1" 7051
+d "or r1, #1" 7811
+d "or r0, [r1]" 7809
+d "or r4, [r3+]" 784F
+d "or 0xfe00, #0x2211" 76001122
+d "or 0xfe00, 0xfe00:0x2211" 72001122
+d "or 0xfe00:0x2211, 0xfe00" 74001122
+
+d "orb rh1, rh0" 7131
+d "orb rl1, #0x0001" 7921
+d "orb rh1, [rh0]" 7939
+d "orb rl0, [rh1+]" 790F
+d "orb 0xfe00, #0x0011" 77001122
+d "orb 0xfe00, 0xfe00:0x2211" 73001122
+d "orb 0xfe00:0x2211, 0xfe00" 75001122
+
+d "pcall r1, 0x4801" E2F10148
+d "pop r0" FCF0
+d "pop r4" FCF4
+d "pop 0xfe12" FC09
+d "prior r1, r0" 2B10
+d "push 0xfe66" EC33
+d "pwrdn" 97689797
+
+d "ret" cb00
+d "reti" fb88
+d "retp r8" EBF8
+d "retp 0xfe30" EB18
+d "rets" DB00
+
+d "rol r0, r2" 0C02
+d "rol r2, #0x0f" 1CF2
+d "ror r3, r4" 2C34
+d "ror r3, #0x04" 3C43
+
+d "scxt r1, #0x4102" C6F10241
+d "scxt r3, 0xfe00:0x3412" D6F31234
+d "shl r0, r1" 4C01
+d "shl r7, #0x01" 5C17
+d "shr r4, r5" 6C45
+d "shr r8, #0x04" 7C48
+d "srst" B748B7B7
+d "srvwdt" A758A7A7
+
+d "sub r3, #7" 2837
+d "sub r0, r2" 2002
+d "sub r0, [r1]" 2809
+d "sub r4, [r3+]" 284F
+d "sub 0xfe00, #0x2211" 26001122
+d "sub 0xfe00, 0xfe00:0x2211" 22001122
+d "sub 0xfe00:0x2211, 0xfe00" 24001122
+
+d "subb rh1, rh0" 2131
+d "subb rl1, #0x0001" 2921
+d "subb rh1, [rh0]" 2939
+d "subb rl0, [rh1+]" 290F
+d "subb 0xfe00, #0x0011" 27001122
+d "subb 0xfe00, 0xfe00:0x2211" 23001122
+d "subb 0xfe00:0x2211, 0xfe00" 25001122
+
+d "subc r3, r0" 3030
+d "subc r2, #1" 3821
+d "subc r3, [r1]" 3839
+d "subc r0, [r3+]" 380F
+d "subc 0xfe00, #0x2211" 36001122
+d "subc 0xfe00, 0xfe00:0x2211" 32001122
+d "subc 0xfe00:0x2211, 0xfe00" 34001122
+
+d "subcb rh1, rh0" 3131
+d "subcb rl1, #0x0001" 3921
+d "subcb rh1, [rh0]" 3939
+d "subcb rl0, [rh1+]" 390F
+d "subcb 0xfe00, #0x0011" 37001122
+d "subcb 0xfe00, 0xfe00:0x2211" 33001122
+d "subcb 0xfe00:0x2211, 0xfe00" 35001122
+
+d "trap #0x0004" 9B01
+d "trap #0x0008" 9B02
+
+d "xor r0, r2" 5002
+d "xor r15, #2" 58F2
+d "xor r9, [r0]" 5898
+d "xor r1, [r0+]" 581C
+d "xor r1, #0x1000" 56F10010
+d "xor r3, 0xfe00:0x1000" 52F30010
+d "xor 0xfe00:0x1000, r2" 54F20010
+
+d "xorb rl0, rh0" 5101
+d "xorb rl0, #0x0001" 5901
+d "xorb rh1, [rl0]" 5938
+d "xorb rl2, [rh1+]" 594F
+d "xorb rh7, #0x0001" 57FF0100
+d "xorb rl7, 0xfe00:0x0201" 53FE0102
+d "xorb 0xfe00:0x0201, rl7" 55FE0102
+
+# The following are from keil's c166 user guide
+# PWS=0xff10, MDL=0xfe0e
+
+# from Directives/Reference/DISABLE
+d "bfldh 0xff10, #0xf0, #0xf0" 1A88F0F0
+d "mul r8, r9" 0B89
+d "mov r4, 0xfe06:0x3e0e" F2F40EFE
+d "bfldh 0xff10, #0xf0, #0x00" 1A8800F0
+d "ret" CB00
+
+# from Directives/Reference/without NOALIAS
+d "mov r4, 0xfe00:0x0000" F2F40000
+d "mov [r4], 0xfe00:0x0002" 84040200
+d "mov r5, #0x00" E005
+d "mov [r8], r5" B858
+d "mov r5, 0xfe00:0x0002" F2F50200
+d "mov r4, 0xfe00:0x0000" F2F40000
+d "mov [r4+#0x0002], r5" C4540200
+d "mov r8, #0x0002" E6F80200
+
+# from Directives/Reference/NODdppSAVE
+# dpp0=0xfe00 dpp3=0xfe06 CP=0xfe10
+d "scxt 0xfe06, #0x0003" C6030300
+d "mov 0xfe00:0x0000, r0" F6F00000
+d "scxt 0xfe10, #0xc000" C60800C0
+d "push 0xfe00" EC00
+
+# from Directives/Reference/NOFIXdpp
+d "add r0, #0xfff6" 06F0F6FF
+d "mov r4, r0" F040
+d "and r4, #0x3fff" 66F4FF3F
+d "mov r5, 0xfe06:0x3e04" F2F504FE
+d "addc r5, #0x0000" 16F50000
+
+# from Directives/Reference/SAVESYS
+d "mov [-r0], r13" 88D0
+d "mov [-r0], r14" 88E0
+
+# from Inline asm
+d "exts r3, #1" DC03
+
+# from Directives/Reference/STATIC
+d "add r0, #0xffec" 06F0ECFF
+d "shl r4, #0x01" 5C14
+
+# from __bfld__ ref
+d "bfldh 0xff00, #0xff, #0x01" 1A8001FF
+d "bfldl 0xff00, #0xff, #0x01" 0A80FF01
+
+# from __sof__ ref
+d "mov 0xfe06:0x3de2, r4" F6F4E2FD
+d "mov r4, #0xfea0" E6F4A0FE
+
+# from using interupts
+d "bfldh 0xff10, #0xf0, #0xf0" 1A88F0F0
+d "mov 0xfe00:0x0000, 0xff1c" F68E0000
+
+d "exts #0x0004, #1;mov 0x043de2, r4;mov 0xfe06:0x3de2, r4" D7000400F6F4E2FDF6F4E2FD
+
+d "exts r9, #1" DC09
+d "or 0xffc4, #0x0400" 76E20004
+
+# ??? `or 0x93, #0x0c00` or `or 0xff26, #0x0c00`
+d "or 0xff26, #0x0c00" 7693000C
+d "subcb 0xfe00:0x3020, 0xfe40" 35202030
+
+d "jmpr cc_UC, 0x000000" 0dff
+
+d "- USR0 CoMULu r3, [r4]" 83340056
+d "- USR1 CoMULu r3, [r4]" 83340066
+d "CoMULu r3, [r4]" 83340006
+d "- USR0 CoMACu [0xff0a], [r4]" 93941056
+d "- USR1 CoMACu [0xff0a], [r4]" 93941066
+d "CoMACu [0xff0a], [r4]" 93941006
+d "- USR0 CoMACu [0xff08], [r4]" 93141056
+d "- USR1 CoMACu [0xff08], [r4]" 93141066
+d "CoMACu [0xff08], [r4]" 93141006
+d "- USR0 CoMULu r3, r4" A3340056
+d "- USR1 CoMULu r3, r4" A3340066
+d "CoMULu r3, r4" A3340006
+
+d "- USR0 CoMULu r5, [r4], rnd" 83540156
+d "- USR1 CoMULu r5, [r4], rnd" 83540166
+d "CoMULu r5, [r4], rnd" 83540106
+d "- USR0 CoMULu [0xff08], [r4], rnd" 93140156
+d "- USR1 CoMULu [0xff08], [r4], rnd" 93140166
+d "CoMULu [0xff08], [r4], rnd" 93140106
+d "- USR0 CoMULu [0xff0a], [r4], rnd" 93940156
+d "- USR1 CoMULu [0xff0a], [r4], rnd" 93940166
+d "CoMULu [0xff0a], [r4], rnd" 93940106
+d "- USR0 CoMULu r3, r4, rnd" A3340156
+d "- USR1 CoMULu r3, r4, rnd" A3340166
+d "CoMULu r3, r4, rnd" A3340106
+
+d "- USR0 CoMACu [0xff08], [r4], rnd" 93141156
+d "- USR1 CoMACu [0xff08], [r4], rnd" 93141166
+d "CoMACu [0xff08], [r4], rnd" 93141106
+d "- USR0 CoMACu [0xff0a], [r4], rnd" 93941156
+d "- USR1 CoMACu [0xff0a], [r4], rnd" 93941166
+d "CoMACu [0xff0a], [r4], rnd" 93941106
+d "- USR0 CoMACu r3, [r4], rnd" 83341156
+d "- USR1 CoMACu r3, [r4], rnd" 83341166
+d "CoMACu r3, [r4], rnd" 83341106
+d "- USR0 CoMACu r3, r4, rnd" A3341156
+d "- USR1 CoMACu r3, r4, rnd" A3341166
+d "CoMACu r3, r4, rnd" A3341106
+
+d ".word 0xa334 .word 0x2156" A3342156
+
+d "- USR0 CoMULus r3, [r4]" 83348056
+d "- USR1 CoMULus r3, [r4]" 83348066
+d "CoMULus r3, [r4]" 83348006
+d "- USR0 CoMULus [0xff08], [r4]" 93048056
+d "- USR1 CoMULus [0xff08], [r4]" 93048066
+d "CoMULus [0xff08], [r4]" 93048006
+d "- USR0 CoMULus r3, r4" A3348056
+d "- USR1 CoMULus r3, r4" A3348066
+d "CoMULus r3, r4" A3348006
+
+d "- USR0 CoMULus r3, [r4], rnd" 83348156
+d "- USR1 CoMULus r3, [r4], rnd" 83348166
+d "CoMULus r3, [r4], rnd" 83348106
+d "- USR0 CoMULus [0xff08], [r4], rnd" 93048156
+d "- USR1 CoMULus [0xff08], [r4], rnd" 93048166
+d "CoMULus [0xff08], [r4], rnd" 93048106
+d "- USR0 CoMULus r3, r4, rnd" A3348156
+d "- USR1 CoMULus r3, r4, rnd" A3348166
+d "CoMULus r3, r4, rnd" A3348106
+
+d "- USR0 CoMULu- r3, [r4]" 83340856
+d "- USR1 CoMULu- r3, [r4]" 83340866
+d "CoMULu- r3, [r4]" 83340806
+d "- USR0 CoMULu- [0xff08], [r4]" 93040856
+d "- USR1 CoMULu- [0xff08], [r4]" 93040866
+d "CoMULu- [0xff08], [r4]" 93040806
+d "- USR0 CoMULu- r3, r4" A3340856
+d "- USR1 CoMULu- r3, r4" A3340866
+d "CoMULu- r3, r4" A3340806
+
+d "- USR0 CoMULus- r3, [r4]" 83348856
+d "- USR1 CoMULus- r3, [r4]" 83348866
+d "CoMULus- r3, [r4]" 83348806
+d "- USR0 CoMULus- [0xff08 -2], [r4]" 93348856
+d "- USR1 CoMULus- [0xff08 -2], [r4]" 93348866
+d "CoMULus- [0xff08 -2], [r4]" 93348806
+d "- USR0 CoMULus- [0xff0a -2], [r4]" 93B48856
+d "- USR1 CoMULus- [0xff0a -2], [r4]" 93B48866
+d "CoMULus- [0xff0a -2], [r4]" 93B48806
+d "- USR0 CoMULus- r3, r4" A3348856
+d "- USR1 CoMULus- r3, r4" A3348866
+d "CoMULus- r3, r4" A3348806
+
+d "- USR0 CoMACsu- r3, [r4]" 83346056
+d "- USR1 CoMACsu- r3, [r4]" 83346066
+d "CoMACsu- r3, [r4]" 83346006
+d "- USR0 CoMACsu- [0xff08 - QX1], [r4]" 93746056
+d "- USR1 CoMACsu- [0xff08 - QX1], [r4]" 93746066
+d "CoMACsu- [0xff08 - QX1], [r4]" 93746006
+d "- USR0 CoMACsu- [0xff08 - QX1], [r15]" 937F6056
+d "- USR1 CoMACsu- [0xff08 - QX1], [r15]" 937F6066
+d "CoMACsu- [0xff08 - QX1], [r15]" 937F6006
+d "- USR0 CoMACsu- [0xff0a - QX1], [r4]" 93F46056
+d "- USR1 CoMACsu- [0xff0a - QX1], [r4]" 93F46066
+d "CoMACsu- [0xff0a - QX1], [r4]" 93F46006
+d "- USR0 CoMACsu- r3, r4" A3346056
+d "- USR1 CoMACsu- r3, r4" A3346066
+d "CoMACsu- r3, r4" A3346006
+
+d "- USR0 CoMACRsu r3, [r4]" 83347056
+d "- USR1 CoMACRsu r3, [r4]" 83347066
+d "CoMACRsu r3, [r4]" 83347006
+d "- USR0 CoMACRsu [0xff08], [r4]" 93047056
+d "- USR1 CoMACRsu [0xff08], [r4]" 93047066
+d "CoMACRsu [0xff08], [r4]" 93047006
+d "- USR0 CoMACRsu r3, r4" A3347056
+d "- USR1 CoMACRsu r3, r4" A3347066
+d "CoMACRsu r3, r4" A3347006
+
+d "- USR0 CoMACRsu r3, [r4], rnd" 83347156
+d "- USR1 CoMACRsu r3, [r4], rnd" 83347166
+d "CoMACRsu r3, [r4], rnd" 83347106
+d "- USR0 CoMACRsu [0xff08], [r4], rnd" 93047156
+d "- USR1 CoMACRsu [0xff08], [r4], rnd" 93047166
+d "CoMACRsu [0xff08], [r4], rnd" 93047106
+d "- USR0 CoMACRsu r3, r4, rnd" A3347156
+d "- USR1 CoMACRsu r3, r4, rnd" A3347166
+d "CoMACRsu r3, r4, rnd" A3347106
+
+d "- USR0 CoMACRus r3, [r4]" 8334B056
+d "- USR1 CoMACRus r3, [r4]" 8334B066
+d "CoMACRus r3, [r4]" 8334B006
+d "- USR0 CoMACRus [0xff08], [r4]" 9304B056
+d "- USR1 CoMACRus [0xff08], [r4]" 9304B066
+d "CoMACRus [0xff08], [r4]" 9304B006
+d "- USR0 CoMACRus r3, r4" A334B056
+d "- USR1 CoMACRus r3, r4" A334B066
+d "CoMACRus r3, r4" A334B006
+
+d "- USR0 CoMACRus r3, [r4], rnd" 8334B156
+d "- USR1 CoMACRus r3, [r4], rnd" 8334B166
+d "CoMACRus r3, [r4], rnd" 8334B106
+d "- USR0 CoMACRus [0xff08], [r4], rnd" 9304B156
+d "- USR1 CoMACRus [0xff08], [r4], rnd" 9304B166
+d "CoMACRus [0xff08], [r4], rnd" 9304B106
+d "- USR0 CoMACRus r3, r4, rnd" A334B156
+d "- USR1 CoMACRus r3, r4, rnd" A334B166
+d "CoMACRus r3, r4, rnd" A334B106
+
+d "- USR0 CoMACus- r3, [r4]" 8334A056
+d "- USR1 CoMACus- r3, [r4]" 8334A066
+d "CoMACus- r3, [r4]" 8334A006
+d "- USR0 CoMACus- [0xff08], [r4]" 9304A056
+d "- USR1 CoMACus- [0xff08], [r4]" 9304A066
+d "CoMACus- [0xff08], [r4]" 9304A006
+d "- USR0 CoMACus- r3, r4" A334A056
+d "- USR1 CoMACus- r3, r4" A334A066
+d "CoMACus- r3, r4" A334A006
+
+d "- USR0 CoMACus r3, [r4]" 83349056
+d "- USR1 CoMACus r3, [r4]" 83349066
+d "CoMACus r3, [r4]" 83349006
+d "- USR0 CoMACus [0xff08], [r4]" 93049056
+d "- USR1 CoMACus [0xff08], [r4]" 93049066
+d "CoMACus [0xff08], [r4]" 93049006
+d "- USR0 CoMACus r3, r4" A3349056
+d "- USR1 CoMACus r3, r4" A3349066
+d "CoMACus r3, r4" A3349006
+
+d "- USR0 CoMACus r3, [r4], rnd" 83349156
+d "- USR1 CoMACus r3, [r4], rnd" 83349166
+d "CoMACus r3, [r4], rnd" 83349106
+d "- USR0 CoMACus [0xff08], [r4], rnd" 93049156
+d "- USR1 CoMACus [0xff08], [r4], rnd" 93049166
+d "CoMACus [0xff08], [r4], rnd" 93049106
+d "- USR0 CoMACus r3, r4, rnd" A3349156
+d "- USR1 CoMACus r3, r4, rnd" A3349166
+d "CoMACus r3, r4, rnd" A3349106
+
+d "- USR0 CoMACRu r3, [r4]" 83343056
+d "- USR1 CoMACRu r3, [r4]" 83343066
+d "CoMACRu r3, [r4]" 83343006
+d "- USR0 CoMACRu [0xff08], [r4]" 93043056
+d "- USR1 CoMACRu [0xff08], [r4]" 93043066
+d "CoMACRu [0xff08], [r4]" 93043006
+d "- USR0 CoMACRu r3, r4" A3343056
+d "- USR1 CoMACRu r3, r4" A3343066
+d "CoMACRu r3, r4" A3343006
+
+d "- USR0 CoMACRu r3, [r4], rnd" 83343156
+d "- USR1 CoMACRu r3, [r4], rnd" 83343166
+d "CoMACRu r3, [r4], rnd" 83343106
+d "- USR0 CoMACRu [0xff08], [r4], rnd" 93043156
+d "- USR1 CoMACRu [0xff08], [r4], rnd" 93043166
+d "CoMACRu [0xff08], [r4], rnd" 93043106
+d "- USR0 CoMACRu r3, r4, rnd" A3343156
+d "- USR1 CoMACRu r3, r4, rnd" A3343166
+d "CoMACRu r3, r4, rnd" A3343106
+
+d "- USR0 CoMACu r3, [r4]" 83341056
+d "- USR1 CoMACu r3, [r4]" 83341066
+d "CoMACu r3, [r4]" 83341006
+d "- USR0 CoMACu [0xff08], [r4]" 93041056
+d "- USR1 CoMACu [0xff08], [r4]" 93041066
+d "CoMACu [0xff08], [r4]" 93041006
+d "- USR0 CoMACu r3, r4" A3341056
+d "- USR1 CoMACu r3, r4" A3341066
+d "CoMACu r3, r4" A3341006
+
+
+d "- USR0 CoMACu- r3, [r4]" 83342056
+d "- USR1 CoMACu- r3, [r4]" 83342066
+d "CoMACu- r3, [r4]" 83342006
+d "- USR0 CoMACu- [0xff08], [r4]" 93042056
+d "- USR1 CoMACu- [0xff08], [r4]" 93042066
+d "CoMACu- [0xff08], [r4]" 93042006
+d "- USR0 CoMACu- r3, r4" A3342056
+d "- USR1 CoMACu- r3, r4" A3342066
+d "CoMACu- r3, r4" A3342006
+
+d "- USR0 CoMULsu r3, [r4]" 83344056
+d "- USR1 CoMULsu r3, [r4]" 83344066
+d "CoMULsu r3, [r4]" 83344006
+d "- USR0 CoMULsu [0xff08], [r4]" 93044056
+d "- USR1 CoMULsu [0xff08], [r4]" 93044066
+d "CoMULsu [0xff08], [r4]" 93044006
+d "- USR0 CoMULsu r3, r4" A3344056
+d "- USR1 CoMULsu r3, r4" A3344066
+d "CoMULsu r3, r4" A3344006
+
+d "- USR0 CoMULsu r3, [r4], rnd" 83344156
+d "- USR1 CoMULsu r3, [r4], rnd" 83344166
+d "CoMULsu r3, [r4], rnd" 83344106
+d "- USR0 CoMULsu [0xff08], [r4], rnd" 93044156
+d "- USR1 CoMULsu [0xff08], [r4], rnd" 93044166
+d "CoMULsu [0xff08], [r4], rnd" 93044106
+d "- USR0 CoMULsu r3, r4, rnd" A3344156
+d "- USR1 CoMULsu r3, r4, rnd" A3344166
+d "CoMULsu r3, r4, rnd" A3344106
+
+d "- USR0 CoMACsu r3, [r4]" 83345056
+d "- USR1 CoMACsu r3, [r4]" 83345066
+d "CoMACsu r3, [r4]" 83345006
+d "- USR0 CoMACsu [0xff08], [r4]" 93045056
+d "- USR1 CoMACsu [0xff08], [r4]" 93045066
+d "CoMACsu [0xff08], [r4]" 93045006
+d "- USR0 CoMACsu r3, r4" A3345056
+d "- USR1 CoMACsu r3, r4" A3345066
+d "CoMACsu r3, r4" A3345006
+d "- USR0 CoMACsu r3, [r4], rnd" 83345156
+d "- USR1 CoMACsu r3, [r4], rnd" 83345166
+d "CoMACsu r3, [r4], rnd" 83345106
+d "- USR0 CoMACsu [0xff08], [r4], rnd" 93045156
+d "- USR1 CoMACsu [0xff08], [r4], rnd" 93045166
+d "CoMACsu [0xff08], [r4], rnd" 93045106
+d "- USR0 CoMACsu r3, r4, rnd" A3345156
+d "- USR1 CoMACsu r3, r4, rnd" A3345166
+d "CoMACsu r3, r4, rnd" A3345106
+d ".word 0xa334 .word 0x6156" A3346156
+d ".word 0xa334 .word 0xa156" A334A156
+d ".word 0xa334 .word 0xe156" A334E156
+
+d "- USR0 CoMUL r3, [r4]" 8334C056
+d "- USR1 CoMUL r3, [r4]" 8334C066
+d "CoMUL r3, [r4]" 8334C006
+d "- USR0 CoMUL [0xff08], [r4]" 9304C056
+d "- USR1 CoMUL [0xff08], [r4]" 9304C066
+d "CoMUL [0xff08], [r4]" 9304C006
+d "- USR0 CoMUL r3, r4" A334C056
+d "- USR1 CoMUL r3, r4" A334C066
+d "CoMUL r3, r4" A334C006
+
+d "- USR0 CoMUL r3, [r4], rnd" 8334C156
+d "- USR1 CoMUL r3, [r4], rnd" 8334C166
+d "CoMUL r3, [r4], rnd" 8334C106
+d "- USR0 CoMUL [0xff08], [r4], rnd" 9304C156
+d "- USR1 CoMUL [0xff08], [r4], rnd" 9304C166
+d "CoMUL [0xff08], [r4], rnd" 9304C106
+d "- USR0 CoMUL r3, r4, rnd" A334C156
+d "- USR1 CoMUL r3, r4, rnd" A334C166
+d "CoMUL r3, r4, rnd" A334C106
+
+d "- USR0 CoMAC r3, [r4]" 8334D056
+d "- USR1 CoMAC r3, [r4]" 8334D066
+d "CoMAC r3, [r4]" 8334D006
+d "- USR0 CoMAC [0xff08], [r4]" 9304D056
+d "- USR1 CoMAC [0xff08], [r4]" 9304D066
+d "CoMAC [0xff08], [r4]" 9304D006
+d "- USR0 CoMAC r3, r4" A334D056
+d "- USR1 CoMAC r3, r4" A334D066
+d "CoMAC r3, r4" A334D006
+
+d "- USR0 CoMAC r3, [r4], rnd" 8334D156
+d "- USR1 CoMAC r3, [r4], rnd" 8334D166
+d "CoMAC r3, [r4], rnd" 8334D106
+d "- USR0 CoMAC [0xff08], [r4], rnd" 9304D156
+d "- USR1 CoMAC [0xff08], [r4], rnd" 9304D166
+d "CoMAC [0xff08], [r4], rnd" 9304D106
+d "- USR0 CoMAC r3, r4, rnd" A334D156
+d "- USR1 CoMAC r3, r4, rnd" A334D166
+d "CoMAC r3, r4, rnd" A334D106
+
+d "- USR0 CoMAC- r3, [r4]" 8334E056
+d "- USR1 CoMAC- r3, [r4]" 8334E066
+d "CoMAC- r3, [r4]" 8334E006
+d "- USR0 CoMAC- [0xff08], [r4]" 9304E056
+d "- USR1 CoMAC- [0xff08], [r4]" 9304E066
+d "CoMAC- [0xff08], [r4]" 9304E006
+d "- USR0 CoMAC- r3, r4" A334E056
+d "- USR1 CoMAC- r3, r4" A334E066
+d "CoMAC- r3, r4" A334E006
+
+d "- USR0 CoMACR r3, [r4]" 8334F056
+d "- USR1 CoMACR r3, [r4]" 8334F066
+d "CoMACR r3, [r4]" 8334F006
+d "- USR0 CoMACR [0xff08], [r4]" 9304F056
+d "- USR1 CoMACR [0xff08], [r4]" 9304F066
+d "CoMACR [0xff08], [r4]" 9304F006
+d "- USR0 CoMACR r3, r4" A334F056
+d "- USR1 CoMACR r3, r4" A334F066
+d "CoMACR r3, r4" A334F006
+
+#d "CoMACR r3, [r4], rnd ???" 83342156
+#d "CoMACR r3, [r4], rnd ???" 83346156
+#d "CoMACR r3, [r4], rnd ???" 8334A156
+#d "CoMACR r3, [r4], rnd ???" 8334E156
+
+d "- USR0 CoMACR r3, [r4], rnd" 8334F156
+d "- USR1 CoMACR r3, [r4], rnd" 8334F166
+d "CoMACR r3, [r4], rnd" 8334F106
+d "- USR0 CoMACR [0xff08], [r4], rnd" 9304F156
+d "- USR1 CoMACR [0xff08], [r4], rnd" 9304F166
+d "CoMACR [0xff08], [r4], rnd" 9304F106
+d "- USR0 CoMACR r3, r4, rnd" A334F156
+d "- USR1 CoMACR r3, r4, rnd" A334F166
+d "CoMACR r3, r4, rnd" A334F106
+
+d ".word 0x9334 .word 0x2156" 93342156
+d ".word 0x9334 .word 0x6156" 93346156
+d ".word 0x9334 .word 0xa156" 9334A156
+d ".word 0x9334 .word 0xe156" 9334E156
+
+d "- USR0 CoADD r3, [r4]" 83340256
+d "- USR1 CoADD r3, [r4]" 83340266
+d "CoADD r3, [r4]" 83340206
+d "- USR0 CoADD [0xff08], [r4]" 93040256
+d "- USR1 CoADD [0xff08], [r4]" 93040266
+d "CoADD [0xff08], [r4]" 93040206
+d "- USR0 CoADD r3, r4" A3340256
+d "- USR1 CoADD r3, r4" A3340266
+d "CoADD r3, r4" A3340206
+
+d "- USR0 CoSUBR r3, [r4]" 83341256
+d "- USR1 CoSUBR r3, [r4]" 83341266
+d "CoSUBR r3, [r4]" 83341206
+d "- USR0 CoSUBR [0xff08], [r4]" 93041256
+d "- USR1 CoSUBR [0xff08], [r4]" 93041266
+d "CoSUBR [0xff08], [r4]" 93041206
+d "- USR0 CoSUBR r3, r4" A3341256
+d "- USR1 CoSUBR r3, r4" A3341266
+d "CoSUBR r3, r4" A3341206
+
+d "- USR0 CoLOAD r3, [r4]" 83342256
+d "- USR1 CoLOAD r3, [r4]" 83342266
+d "CoLOAD r3, [r4]" 83342206
+d "- USR0 CoLOAD [0xff08], [r4]" 93042256
+d "- USR1 CoLOAD [0xff08], [r4]" 93042266
+d "CoLOAD [0xff08], [r4]" 93042206
+d "- USR0 CoLOAD r3, r4" A3342256
+d "- USR1 CoLOAD r3, r4" A3342266
+d "CoLOAD r3, r4" A3342206
+
+d ".word 0x8334 .word 0x3256" 83343256
+
+d "- USR0 CoADD2 r3, [r4]" 83344256
+d "- USR1 CoADD2 r3, [r4]" 83344266
+d "CoADD2 r3, [r4]" 83344206
+d "- USR0 CoADD2 [0xff08], [r4]" 93044256
+d "- USR1 CoADD2 [0xff08], [r4]" 93044266
+d "CoADD2 [0xff08], [r4]" 93044206
+d "- USR0 CoADD2 r3, r4" A3344256
+d "- USR1 CoADD2 r3, r4" A3344266
+d "CoADD2 r3, r4" A3344206
+
+d "- USR0 CoSUB2R r3, [r4]" 83345256
+d "- USR1 CoSUB2R r3, [r4]" 83345266
+d "CoSUB2R r3, [r4]" 83345206
+d "- USR0 CoSUB2R [0xff08], [r4]" 93045256
+d "- USR1 CoSUB2R [0xff08], [r4]" 93045266
+d "CoSUB2R [0xff08], [r4]" 93045206
+d "- USR0 CoSUB2R r3, r4" A3345256
+d "- USR1 CoSUB2R r3, r4" A3345266
+d "CoSUB2R r3, r4" A3345206
+
+d "- USR0 CoLOAD2 r3, [r4]" 83346256
+d "- USR1 CoLOAD2 r3, [r4]" 83346266
+d "CoLOAD2 r3, [r4]" 83346206
+d "- USR0 CoLOAD2 [0xff08], [r4]" 93046256
+d "- USR1 CoLOAD2 [0xff08], [r4]" 93046266
+d "CoLOAD2 [0xff08], [r4]" 93046206
+d "- USR0 CoLOAD2 r3, r4" A3346256
+d "- USR1 CoLOAD2 r3, r4" A3346266
+d "CoLOAD2 r3, r4" A3346206
+
+d "- USR0 CoASHR #data5" A334A256
+d "- USR1 CoASHR #data5" A334A266
+d "CoASHR #data5" A334A206
+d ".word 0xa334 .word 0xd256" A334D256
+d ".word 0xa334 .word 0xe256" A334E256
+d ".word 0xa334 .word 0xf256" A334F256
+
+d "- USR0 CoCMP r3, [r4]" 8334C256
+d "- USR1 CoCMP r3, [r4]" 8334C266
+d "CoCMP r3, [r4]" 8334C206
+d "- USR0 CoCMP [0xff08], [r4]" 9304C256
+d "- USR1 CoCMP [0xff08], [r4]" 9304C266
+d "CoCMP [0xff08], [r4]" 9304C206
+d "- USR0 CoCMP r3, r4" A334C256
+d "- USR1 CoCMP r3, r4" A334C266
+d "CoCMP r3, r4" A334C206
+
+d "- USR0 CoSUB r3, [r4]" 83340A56
+d "- USR1 CoSUB r3, [r4]" 83340A66
+d "CoSUB r3, [r4]" 83340A06
+d "- USR0 CoSUB [0xff08], [r4]" 93040A56
+d "- USR1 CoSUB [0xff08], [r4]" 93040A66
+d "CoSUB [0xff08], [r4]" 93040A06
+d "- USR0 CoSUB r3, r4" A3340A56
+d "- USR1 CoSUB r3, r4" A3340A66
+d "CoSUB r3, r4" A3340A06
+
+d "- USR0 CoLOAD- r3, [r4]" 83342A56
+d "- USR1 CoLOAD- r3, [r4]" 83342A66
+d "CoLOAD- r3, [r4]" 83342A06
+d "- USR0 CoLOAD- [0xff08], [r4]" 93042A56
+d "- USR1 CoLOAD- [0xff08], [r4]" 93042A66
+d "CoLOAD- [0xff08], [r4]" 93042A06
+d "- USR0 CoLOAD- r3, r4" A3342A56
+d "- USR1 CoLOAD- r3, r4" A3342A66
+d "CoLOAD- r3, r4" A3342A06
+
+d "- USR0 CoMAX r3, [r4]" 83343A56
+d "- USR1 CoMAX r3, [r4]" 83343A66
+d "CoMAX r3, [r4]" 83343A06
+d "- USR0 CoMAX [0xff08], [r4]" 93043A56
+d "- USR1 CoMAX [0xff08], [r4]" 93043A66
+d "CoMAX [0xff08], [r4]" 93043A06
+d "- USR0 CoMAX r3, r4" A3343A56
+d "- USR1 CoMAX r3, r4" A3343A66
+d "CoMAX r3, r4" A3343A06
+
+d "- USR0 CoSUB2 r3, [r4]" 83344A56
+d "- USR1 CoSUB2 r3, [r4]" 83344A66
+d "CoSUB2 r3, [r4]" 83344A06
+d "- USR0 CoSUB2 [0xff08], [r4]" 93044A56
+d "- USR1 CoSUB2 [0xff08], [r4]" 93044A66
+d "CoSUB2 [0xff08], [r4]" 93044A06
+d "- USR0 CoSUB2 r3, r4" A3344A56
+d "- USR1 CoSUB2 r3, r4" A3344A66
+d "CoSUB2 r3, r4" A3344A06
+
+d ".word 0x8334 .word 0x5a56" 83345A56
+d "- USR0 CoLOAD2- r3, [r4]" 83346A56
+d "- USR1 CoLOAD2- r3, [r4]" 83346A66
+d "CoLOAD2- r3, [r4]" 83346A06
+d "- USR0 CoLOAD2- [0xff08], [r4]" 93046A56
+d "- USR1 CoLOAD2- [0xff08], [r4]" 93046A66
+d "CoLOAD2- [0xff08], [r4]" 93046A06
+d ".word 0xa334 .word 0x5a56" A3345A56
+d "- USR0 CoLOAD2- r3, r4" A3346A56
+d "- USR1 CoLOAD2- r3, r4" A3346A66
+d "CoLOAD2- r3, r4" A3346A06
+
+d "- USR0 CoMIN r3, [r4]" 83347A56
+d "- USR1 CoMIN r3, [r4]" 83347A66
+d "CoMIN r3, [r4]" 83347A06
+d "- USR0 CoMIN [0xff08], [r4]" 93047A56
+d "- USR1 CoMIN [0xff08], [r4]" 93047A66
+d "CoMIN [0xff08], [r4]" 93047A06
+d "- USR0 CoMIN r3, r4" A3347A56
+d "- USR1 CoMIN r3, r4" A3347A66
+d "CoMIN r3, r4" A3347A06
+d "- USR0 CoMIN r3, r4" A3347A56
+d "- USR1 CoMIN r3, r4" A3347A66
+d "CoMIN r3, r4" A3347A06
+
+d "- USR0 CoSHL [r8]" 83888A56
+d "- USR1 CoSHL [r8]" 83888A66
+d "CoSHL [r8]" 83888A06
+d "- USR0 CoSHR [r0]" 83009A56
+d "- USR1 CoSHR [r0]" 83009A66
+d "CoSHR [r0]" 83009A06
+d "- USR0 CoABS r3, [r4]" 8334CA56
+d "- USR1 CoABS r3, [r4]" 8334CA66
+d "CoABS r3, [r4]" 8334CA06
+d ".word 0x8334 .word 0xda56" 8334DA56
+d ".word 0x8334 .word 0xea56" 8334EA56
+d ".word 0x8334 .word 0xfa56" 8334FA56
+d "- USR0 CoABS [0xff08], [r4]" 9304CA56
+d "- USR1 CoABS [0xff08], [r4]" 9304CA66
+d "CoABS [0xff08], [r4]" 9304CA06
+d "- USR0 CoASHR r3, rnd" A334BA56
+d "- USR1 CoASHR r3, rnd" A334BA66
+d "CoASHR r3, rnd" A334BA06
+d ".word 0xa334 .word 0xda56" A334DA56
+d ".word 0xa334 .word 0xea56" A334EA56
+d ".word 0xa334 .word 0xfa56" A334FA56
+
+d "- USR0 CoMULsu- r3, [r4]" 83344856
+d "- USR1 CoMULsu- r3, [r4]" 83344866
+d "CoMULsu- r3, [r4]" 83344806
+d "- USR0 CoMULsu- [0xff08], [r4]" 93044856
+d "- USR1 CoMULsu- [0xff08], [r4]" 93044866
+d "CoMULsu- [0xff08], [r4]" 93044806
+d "- USR0 CoMULsu- r3, r4" A3344856
+d "- USR1 CoMULsu- r3, r4" A3344866
+d "CoMULsu- r3, r4" A3344806
+
+d "- USR0 CoMUL- r3, [r4]" 8334C856
+d "- USR1 CoMUL- r3, [r4]" 8334C866
+d "CoMUL- r3, [r4]" 8334C806
+d "- USR0 CoMUL- [0xff08], [r4]" 9304C856
+d "- USR1 CoMUL- [0xff08], [r4]" 9304C866
+d "CoMUL- [0xff08], [r4]" 9304C806
+d "- USR0 CoMUL- r3, r4" A334C856
+d "- USR1 CoMUL- r3, r4" A334C866
+d "CoMUL- r3, r4" A334C806
+
+d ".word 0x9334 .word 0xaa56" 9334AA56
+d ".word 0x9334 .word 0xba56" 9334BA56
+d ".word 0x9334 .word 0xda56" 9334DA56
+d ".word 0x9334 .word 0xea56" 9334EA56
+d ".word 0x9334 .word 0xfa56" 9334FA56
+
+
+d ".word 0xa334 .word 0x1856" A3341856
+d ".word 0x8334 .word 0x1856" 83341856
+d "- USR0 CoMACMu [0xff08], [r4]" 93041856
+d "- USR1 CoMACMu [0xff08], [r4]" 93041866
+d "CoMACMu [0xff08], [r4]" 93041806
+d ".word 0xa334 .word 0x1956" A3341956
+d ".word 0x8334 .word 0x1956" 83341956
+d "- USR0 CoMACMu [0xff08], [r4], rnd" 93041956
+d "- USR1 CoMACMu [0xff08], [r4], rnd" 93041966
+d "CoMACMu [0xff08], [r4], rnd" 93041906
+
+d ".word 0x9334 .word 0x0956" 93340956
+d ".word 0x9334 .word 0x2956" 93342956
+d ".word 0x9334 .word 0x4956" 93344956
+d ".word 0x9334 .word 0x6956" 93346956
+d ".word 0x9334 .word 0x8956" 93348956
+d ".word 0x9334 .word 0xa956" 9334a956
+d ".word 0x9334 .word 0xc956" 9334c956
+d ".word 0x9334 .word 0xe956" 9334e956
+
+d ".word 0xa334 .word 0x3856" A3343856
+d ".word 0x8334 .word 0x3856" 83343856
+d "- USR0 CoMACMRu [0xff08], [r4]" 93043856
+d "- USR1 CoMACMRu [0xff08], [r4]" 93043866
+d "CoMACMRu [0xff08], [r4]" 93043806
+d ".word 0xa334 .word 0x3956" A3343956
+d ".word 0x8334 .word 0x3956" 83343956
+d "- USR0 CoMACMRu [0xff08], [r4], rnd" 93043956
+d "- USR1 CoMACMRu [0xff08], [r4], rnd" 93043966
+d "CoMACMRu [0xff08], [r4], rnd" 93043906
+
+d ".word 0xa334 .word 0x5856" A3345856
+d ".word 0x8334 .word 0x5856" 83345856
+d "- USR0 CoMACMsu [0xff08], [r4]" 93045856
+d "- USR1 CoMACMsu [0xff08], [r4]" 93045866
+d "CoMACMsu [0xff08], [r4]" 93045806
+d ".word 0xa334 .word 0x5956" A3345956
+d ".word 0x8334 .word 0x5956" 83345956
+d "- USR0 CoMACMsu [0xff08], [r4], rnd" 93045956
+d "- USR1 CoMACMsu [0xff08], [r4], rnd" 93045966
+d "CoMACMsu [0xff08], [r4], rnd" 93045906
+
+d ".word 0xa334 .word 0x7856" A3347856
+d ".word 0x8334 .word 0x7856" 83347856
+d "- USR0 CoMACMRsu [0xff08], [r4]" 93047856
+d "- USR1 CoMACMRsu [0xff08], [r4]" 93047866
+d "CoMACMRsu [0xff08], [r4]" 93047806
+d ".word 0xa334 .word 0x7956" A3347956
+d ".word 0x8334 .word 0x7956" 83347956
+d "- USR0 CoMACMRsu [0xff08], [r4], rnd" 93047956
+d "- USR1 CoMACMRsu [0xff08], [r4], rnd" 93047966
+d "CoMACMRsu [0xff08], [r4], rnd" 93047906
+
+d ".word 0xa334 .word 0x9856" A3349856
+d ".word 0x8334 .word 0x9856" 83349856
+d "- USR0 CoMACMus [0xff08], [r4]" 93049856
+d "- USR1 CoMACMus [0xff08], [r4]" 93049866
+d "CoMACMus [0xff08], [r4]" 93049806
+d ".word 0xa334 .word 0x9956" A3349956
+d ".word 0x8334 .word 0x9956" 83349956
+d "- USR0 CoMACMus [0xff08], [r4], rnd" 93049956
+d "- USR1 CoMACMus [0xff08], [r4], rnd" 93049966
+d "CoMACMus [0xff08], [r4], rnd" 93049906
+
+d ".word 0xa334 .word 0xb856" A334B856
+d ".word 0x8334 .word 0xb856" 8334B856
+d "- USR0 CoMACMRus [0xff08], [r4]" 9314B856
+d "- USR1 CoMACMRus [0xff08], [r4]" 9314B866
+d "CoMACMRus [0xff08], [r4]" 9314B806
+d "- USR0 CoMACMRus [0xff0a], [r4]" 9394B856
+d "- USR1 CoMACMRus [0xff0a], [r4]" 9394B866
+d "CoMACMRus [0xff0a], [r4]" 9394B806
+d ".word 0xa334 .word 0xb956" A334B956
+d ".word 0x8334 .word 0xb956" 8334B956
+d "- USR0 CoMACMRus [0xff0a], [r4], rnd" 9394B956
+d "- USR1 CoMACMRus [0xff0a], [r4], rnd" 9394B966
+d "CoMACMRus [0xff0a], [r4], rnd" 9394B906
+d "- USR0 CoMACMRus [0xff08], [r4], rnd" 9314B956
+d "- USR1 CoMACMRus [0xff08], [r4], rnd" 9314B966
+d "CoMACMRus [0xff08], [r4], rnd" 9314B906
+
+d ".word 0xa334 .word 0xd856" A334D856
+d ".word 0x8334 .word 0xd856" 8334D856
+d "- USR0 CoMACM [0xff08], [r4]" 9314D856
+d "- USR1 CoMACM [0xff08], [r4]" 9314D866
+d "CoMACM [0xff08], [r4]" 9314D806
+d "- USR0 CoMACM [0xff0a], [r4]" 9394D856
+d "- USR1 CoMACM [0xff0a], [r4]" 9394D866
+d "CoMACM [0xff0a], [r4]" 9394D806
+d ".word 0xa334 .word 0xd956" A334D956
+d ".word 0x8334 .word 0xd956" 8334D956
+d "- USR0 CoMACM [0xff08], [r4], rnd" 9314D956
+d "- USR1 CoMACM [0xff08], [r4], rnd" 9314D966
+d "CoMACM [0xff08], [r4], rnd" 9314D906
+d "- USR0 CoMACM [0xff0a], [r4], rnd" 9394D956
+d "- USR1 CoMACM [0xff0a], [r4], rnd" 9394D966
+d "CoMACM [0xff0a], [r4], rnd" 9394D906
+
+d ".word 0xa334 .word 0xf856" A334F856
+d ".word 0x8334 .word 0xf856" 8334F856
+d "- USR0 CoMACMR [0xff08], [r4]" 9304F856
+d "- USR1 CoMACMR [0xff08], [r4]" 9304F866
+d "CoMACMR [0xff08], [r4]" 9304F806
+d ".word 0xa334 .word 0xf956" A334F956
+d ".word 0x8334 .word 0xf956" 8334F956
+d "- USR0 CoMACMR [0xff08], [r4], rnd" 9304F956
+d "- USR1 CoMACMR [0xff08], [r4], rnd" 9304F966
+d "CoMACMR [0xff08], [r4], rnd" 9304F906
+
+d "- USR0 CoNOP [0xff08 -2], [r4]" 93345A56
+d "- USR1 CoNOP [0xff08 -2], [r4]" 93345A66
+d "CoNOP [0xff08 -2], [r4]" 93345A06
+
+d ".word 0xa334 .word 0xa856" A334A856
+d ".word 0x8334 .word 0xa856" 8334A856
+d "- USR0 CoMACMus- [0xff08], [r4]" 9314A856
+d "- USR1 CoMACMus- [0xff08], [r4]" 9314A866
+d "CoMACMus- [0xff08], [r4]" 9314A806
+d "- USR0 CoMACMus- [0xff0a], [r4]" 9394A856
+d "- USR1 CoMACMus- [0xff0a], [r4]" 9394A866
+d "CoMACMus- [0xff0a], [r4]" 9394A806
+
+d ".word 0xa334 .word 0x2856" A3342856
+d ".word 0x8334 .word 0x2856" 83342856
+d "- USR0 CoMACMu- [0xff08], [r4]" 93042856
+d "- USR1 CoMACMu- [0xff08], [r4]" 93042866
+d "CoMACMu- [0xff08], [r4]" 93042806
+
+d ".word 0xa334 .word 0x6856" A3346856
+d ".word 0x8334 .word 0x6856" 83346856
+d "- USR0 CoMACMsu- [0xff08], [r4]" 93046856
+d "- USR1 CoMACMsu- [0xff08], [r4]" 93046866
+d "CoMACMsu- [0xff08], [r4]" 93046806
+
+d ".word 0xa334 .word 0xe856" A334E856
+d ".word 0x8334 .word 0xe856" 8334E856
+d "- USR0 CoMACM- [0xff08], [r4]" 9314E856
+d "- USR1 CoMACM- [0xff08], [r4]" 9314E866
+d "CoMACM- [0xff08], [r4]" 9314E806
+d "- USR0 CoMACM- [0xff0a], [r4]" 9394E856
+d "- USR1 CoMACM- [0xff0a], [r4]" 9394E866
+d "CoMACM- [0xff0a], [r4]" 9394E806
+
+
+d "- USR0 CoASHR [r5]" 8355AA56
+d "- USR1 CoASHR [r5]" 8355AA66
+d "CoASHR [r5]" 8355AA06
+d "- USR0 CoASHR [r3], rnd" 8333BA56
+d "- USR1 CoASHR [r3], rnd" 8333BA66
+d "CoASHR [r3], rnd" 8333BA06
+d "- USR0 CoASHR [r4], rnd" 8344BA56
+d "- USR1 CoASHR [r4], rnd" 8344BA66
+d "CoASHR [r4], rnd" 8344BA06
+
+
+
+
+d ".word 0x8334 .word 0x1a56" 83341A56
+d ".word 0x9334 .word 0x1a56" 93341A56
+d "- USR0 CoABS" A3341A56
+d "- USR1 CoABS" A3341A66
+d "CoABS" A3341A06
+
+d ".word 0x8334 .word 0x3256" 83343256
+d ".word 0x9334 .word 0x3256" 93343256
+d "- USR0 CoNEG" A3343256
+d "- USR1 CoNEG" A3343266
+d "CoNEG" A3343206
+
+d ".word 0x8334 .word 0x7256" 83347256
+d ".word 0x9334 .word 0x7256" 93347256
+d "- USR0 CoNEG rnd" A3347256
+d "- USR1 CoNEG rnd" A3347266
+d "CoNEG rnd" A3347206
+
+d ".word 0x8334 .word 0xb256" 8334B256
+d ".word 0x9334 .word 0x9256" 93349256
+d ".word 0x9334 .word 0xa256" 9334A256
+d ".word 0x9334 .word 0xd256" 9334D256
+d ".word 0x9334 .word 0xe256" 9334E256
+d ".word 0x9334 .word 0xf256" 9334F256
+d ".word 0x9334 .word 0xb256" 9334B256
+# ???? Duplicate from `CoASHR #data5, rnd`
+# d "CoRND" A334B256
+d "- USR0 CoASHR #data5, rnd" A334B256
+d "- USR1 CoASHR #data5, rnd" A334B266
+d "CoASHR #data5, rnd" A334B206
+
+d ".word 0x9334 .word 0x9a56" 93349A56
+d "- USR0 CoSHR r3" A3349A56
+d "- USR1 CoSHR r3" A3349A66
+d "CoSHR r3" A3349A06
+
+d ".word 0x8334 .word 0x9256" 83349256
+d "- USR0 CoSHR #data5" A3349256
+d "- USR1 CoSHR #data5" A3349266
+d "CoSHR #data5" A3349206
+
+d ".word 0x9334 .word 0x8a56" 93348A56
+d "- USR0 CoSHL r3" A3348A56
+d "- USR1 CoSHL r3" A3348A66
+d "CoSHL r3" A3348A06
+
+d ".word 0x8334 .word 0x8256" 83348256
+d ".word 0x9334 .word 0x8256" 93348256
+d "- USR0 CoSHL #data5" A3348256
+d "- USR1 CoSHL #data5" A3348266
+d "CoSHL #data5" A3348206
+
+d ".word 0x8334 .word 0x1a56" 83341A56
+d ".word 0x8334 .word 0xda56" 8334DA56
+d ".word 0x8334 .word 0xea56" 8334EA56
+d ".word 0x8334 .word 0xfa56" 8334FA56
+
+d "- USR0 CoSHL r3" A3348A56
+d "- USR1 CoSHL r3" A3348A66
+d "CoSHL r3" A3348A06
+d "- USR0 CoSHR r3" A3349A56
+d "- USR1 CoSHR r3" A3349A66
+d "CoSHR r3" A3349A06
+
+d ".word 0xa334 .word 0x5a56" A3345A56
+d ".word 0xa334 .word 0xda56" A334DA56
+d ".word 0xa334 .word 0xea56" A334EA56
+d ".word 0xa334 .word 0xfa56" A334FA56
+
+
+d "- USR0 CoSTORE [r3], (null)" B334FA56
+d "- USR1 CoSTORE [r3], (null)" B334FA66
+d "CoSTORE [r3], (null)" B334FA06
+d "- USR0 CoSTORE [r3], 0xffde" B3340056
+d "- USR1 CoSTORE [r3], 0xffde" B3340066
+d "CoSTORE [r3], 0xffde" B3340006
+d "- USR0 CoSTORE [r3], 0xfe5c" B3342056
+d "- USR1 CoSTORE [r3], 0xfe5c" B3342066
+d "CoSTORE [r3], 0xfe5c" B3342006
+d "- USR0 CoSTORE [r3], 0xffdc" B3342856
+d "- USR1 CoSTORE [r3], 0xffdc" B3342866
+d "CoSTORE [r3], 0xffdc" B3342806
+d "- USR0 CoSTORE [r3], (null)" B3346056
+d "- USR1 CoSTORE [r3], (null)" B3346066
+d "CoSTORE [r3], (null)" B3346006
+d "- USR0 CoSTORE [r3], 0xffda" B3343056
+d "- USR1 CoSTORE [r3], 0xffda" B3343066
+d "CoSTORE [r3], 0xffda" B3343006
+d "- USR0 CoSTORE r3, (null)" C334FA56
+d "- USR1 CoSTORE r3, (null)" C334FA66
+d "CoSTORE r3, (null)" C334FA06
+d "- USR0 CoSTORE r3, MAS" C3341056
+d "- USR1 CoSTORE r3, MAS" C3341066
+d "CoSTORE r3, MAS" C3341006
+
+# D3 Xm 00
+d ".word 0xd339 .word 0xfa56" D339FA56
+
+
+d "- USR0 CoMOV [0xff08 +2], [r4 + QR1]" D3240056
+d "- USR0 CoMOV [0xff0a +2], [r4 + QR1]" D3A40056
+d "- USR0 CoMOV [0xff08 -2], [r4 + QR1]" D3340056
+d "- USR0 CoMOV [0xff0a -2], [r4 + QR1]" D3B40056
+d "- USR0 CoMOV [0xff08], [r4 + QR1]" D3040056
+d "- USR0 CoMOV [0xff08], [r4 + QR1]" D3140056
+d "- USR0 CoMOV [0xff0a], [r4 + QR1]" D3940056
+
+# d "- USR1 CoMACM [0xff08+], [r0+]" 9320D862 # NEED UPDATE
+# d "- USR1 CoMACM [0xff08 -2], [r0+]" 9330D862 # NEED UPDATE
+
+d "- USR0 CoMOV [0xff08], [r4 + QR1]" D3040056
+d "- USR0 CoMOV [0xff08 -2], [r2]" D3320040
+d "- USR0 CoMOV [0xff0a -2], [r2]" D3B20040
+d "- USR1 CoMOV [0xff08 -2], [r2]" D3320060
+d "- USR1 CoMOV [0xff0a -2], [r2]" D3B20060
+
+d ".word 0xd334 .word 0xba56" D334BA56
+d ".word 0xd314 .word 0xba56" D314BA56
+d ".word 0xd304 .word 0xba56" D304BA56
+d "- USR0 CoMOV [0xff08 -2], [r2 + QR1]" D3320056
+d "- USR0 CoMOV [0xff0a -2], [r2 + QR1]" D3B20056
+d "CoMOV [0xff08 -2], [r2]" D3320020
+d "CoMOV [0xff0a -2], [r2]" D3B20020
+d "CoMOV [0xff08 -2], [r2]" D3320000
+d "CoMOV [0xff0a -2], [r2]" D3B20000
+
+
+d "- USR0 CoMACM [0xff08 + QX0], [r0]" 9340D842
+d "- USR0 CoMACM [0xff08 + QX0], [r0]" 9340D843
+
+
+#00C00500 CA180E5A  CALLA+   CC_NUSR1,0xC05A0E "" CA180E5A
+#    26:                 CALLA- CC_NUSR0, 0xC05A0E
+#00C00504 CA090E5A  CALLA+   CC_NUSR0,0xC05A0E "" CA090E5A
+#    27:                 CALLA- CC_USR1, 0xC05A0E
+#00C00508 CA390E5A  CALLA+   CC_USR1,0xC05A0E "" CA390E5A
+#    28:                 CALLA- CC_USR0, 0xC05A0E
+#00C0050C CA290E5A  CALLA+   CC_USR0,0xC05A0E "" CA290E5A
+
+d "calla+ cc_NUSR1, 0x5a0e" ca180e5a
+d "calla- cc_NUSR1, 0x5a0e" ca190e5a
+#00C004E8 EA18E204  JMPA+    CC_NUSR1,loop01(0xC004E2
+
+d "jmpa+ cc_NUSR1, 0x04e2" ea18e204

@@ -11,6 +11,7 @@ sdb_cpus_files = [
   'avr-ATmega168',
   'avr-ATTiny48',
   'avr-ATTiny88',
+  'c166-c166-generic'
 ]
 
 foreach file : sdb_cpus_files
