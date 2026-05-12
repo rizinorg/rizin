@@ -358,7 +358,7 @@ static inline void emit_span_to_strbuf(const char *s, size_t n, const char *colo
 	if (color) {
 		rz_strbuf_appendf(sb, "%s%.*s" Color_RESET, color, (int)n, s);
 	} else {
-		rz_strbuf_appendf(sb, "%.*s", (int)n, s);
+		rz_strbuf_append_n(sb, s, n);
 	}
 }
 
@@ -397,7 +397,6 @@ static void core_colorify_il_statement_to_strbuf(RzConsContext *ctx, const char 
 	}
 
 	emit_span_to_strbuf(il_stmt + prev, len - prev, color, sb);
-	rz_strbuf_appendf(sb, "\n");
 }
 
 static bool unicode_colorify_state_is_varname(RzILUnicodeColorifyState state) {
@@ -437,6 +436,29 @@ RzILUnicodeColorifyState unicode_colorify_state_next(RzILUnicodeColorifyState st
 	}
 	return UNICODE_COLORIFY_STATE_IL_OP;
 }
+static const char *core_il_get_token_color(RzILUnicodeColorifyState state, const char *prev_color, RZ_NONNULL RzConsContext *ctx) {
+	rz_return_val_if_fail(ctx, NULL);
+	const char *color = prev_color;
+	switch (state) {
+	default: break;
+	case UNICODE_COLORIFY_STATE_DEFAULT:
+		color = NULL;
+		break;
+	case UNICODE_COLORIFY_STATE_PARENTHESIS:
+		color = ctx->pal.meta;
+		break;
+	case UNICODE_COLORIFY_STATE_VARNAME:
+		color = ctx->pal.comment;
+		break;
+	case UNICODE_COLORIFY_STATE_NUMBER:
+		color = ctx->pal.num;
+		break;
+	case UNICODE_COLORIFY_STATE_IL_OP:
+		color = ctx->pal.flow;
+		break;
+	}
+	return color;
+}
 
 static void core_colorify_il_statement_unicode(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr) {
 	rz_cons_printf("%s0x%" PFMT64x Color_RESET "%c", ctx->pal.label, addr, delim);
@@ -461,24 +483,7 @@ static void core_colorify_il_statement_unicode(RzConsContext *ctx, const char *i
 				rz_cons_printf("%.*s", plen, il_stmt + prev_i);
 			}
 
-			switch (state) {
-			default: break;
-			case UNICODE_COLORIFY_STATE_DEFAULT:
-				color = NULL;
-				break;
-			case UNICODE_COLORIFY_STATE_PARENTHESIS:
-				color = ctx->pal.meta;
-				break;
-			case UNICODE_COLORIFY_STATE_VARNAME:
-				color = ctx->pal.comment;
-				break;
-			case UNICODE_COLORIFY_STATE_NUMBER:
-				color = ctx->pal.num;
-				break;
-			case UNICODE_COLORIFY_STATE_IL_OP:
-				color = ctx->pal.flow;
-				break;
-			}
+			color = core_il_get_token_color(state, color, ctx);
 
 			prev_state = state;
 			prev_i = i;
@@ -518,24 +523,8 @@ static void core_colorify_il_statement_unicode_to_strbuf(RzConsContext *ctx, con
 			} else {
 				rz_strbuf_appendf(sb, "%.*s", plen, il_stmt + prev_i);
 			}
-			switch (state) {
-			default: break;
-			case UNICODE_COLORIFY_STATE_DEFAULT:
-				color = NULL;
-				break;
-			case UNICODE_COLORIFY_STATE_PARENTHESIS:
-				color = ctx->pal.meta;
-				break;
-			case UNICODE_COLORIFY_STATE_VARNAME:
-				color = ctx->pal.comment;
-				break;
-			case UNICODE_COLORIFY_STATE_NUMBER:
-				color = ctx->pal.num;
-				break;
-			case UNICODE_COLORIFY_STATE_IL_OP:
-				color = ctx->pal.flow;
-				break;
-			}
+
+			color = core_il_get_token_color(state, color, ctx);
 
 			prev_state = state;
 			prev_i = i;
@@ -551,6 +540,18 @@ static void core_colorify_il_statement_unicode_to_strbuf(RzConsContext *ctx, con
 		}
 	}
 	rz_strbuf_appendf(sb, "\n");
+}
+
+static ut64 core_il_get_refline_at(ut64 vat, RZ_NONNULL RzPVector /*<RzAnalysisRefline *>*/ *reflines) {
+	rz_return_val_if_fail(reflines, UT64_MAX);
+	void **iter;
+	rz_pvector_foreach (reflines, iter) {
+		RzAnalysisRefline *ref = *iter;
+		if (ref->from == vat) {
+			return ref->to;
+		}
+	}
+	return UT64_MAX;
 }
 
 /* \brief formatted rzil from a starting RVA to a RzPVector of DisasmTexts
@@ -583,7 +584,7 @@ RZ_API int rz_core_il_print_rzil(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL 
 	const char *il_stmt = NULL;
 	const char delim = pretty ? '\n' : ' ';
 	RzStrBuf sb;
-	RzPVector *reflines;
+	RzPVector /*<RzAnalysisRefline *>*/ *reflines;
 	RzAnalysisOp op;
 	int ops_count = 0, inc = 0, idx;
 	ut64 current = addr, vat;
@@ -601,16 +602,13 @@ complete:
 		if (p) {
 			core->asmqjmps_size = RZ_CORE_ASMQJMPS_NUM;
 			core->asmqjmps = p;
-			for (int i = 0; i < RZ_CORE_ASMQJMPS_NUM; i++) {
-				core->asmqjmps[i] = UT64_MAX;
-			}
+			memset(core->asmqjmps, 0xff, RZ_CORE_ASMQJMPS_NUM * sizeof(ut64));
 		}
 	}
 	for (idx = 0; ops_count < n_lines && idx < len; ops_count++, idx += inc) {
 		current = addr + idx;
 		RzAnalysisDisasmText *dst = RZ_NEW0(RzAnalysisDisasmText);
 		dst->arrow = UT64_MAX;
-		vat = rz_core_pava(core, current);
 		rz_strbuf_init(&sb);
 		if (core->print->flags & RZ_PRINT_FLAGS_UNALLOC) {
 			if (!rz_io_is_valid_offset(core->io, current, 0)) {
@@ -636,16 +634,15 @@ complete:
 			const int addr_len = snprintf(NULL, 0, "0x%" PFMT64x, op.addr);
 			RzILStringifyCtx ctx = { .indent = addr_len + 1, .indent_inc = 2 };
 			if (!rz_il_op_effect_stringify_unicode(&ctx, op.il_op, &sb)) {
-				RZ_LOG_ERROR("Failed to stringify IL at 0x%08" PFMT64x "\n", op.addr);
-				rz_strbuf_appendf(&sb, "0x%" PFMT64x "%cstringify failed", op.addr, delim);
+				RZ_LOG_ERROR("Failed to stringify unicode IL at 0x%08" PFMT64x "\n", op.addr);
+				rz_strbuf_appendf(&sb, "0x%" PFMT64x "%c ustringify failed", op.addr, delim);
 				goto finalize;
 			}
 		} else {
 			rz_il_op_effect_stringify(op.il_op, &sb, pretty);
 		}
 
-		il_stmt = rz_str_dup(rz_strbuf_get(&sb));
-		rz_strbuf_fini(&sb);
+		il_stmt = rz_strbuf_drain_nofree(&sb);
 		rz_strbuf_init(&sb);
 		if (colorize) {
 			if (unicode) {
@@ -656,28 +653,20 @@ complete:
 		} else {
 			rz_strbuf_appendf(&sb, "0x%" PFMT64x "%c%s", op.addr, delim, il_stmt);
 		}
-		RZ_FREE(il_stmt)
-		if (reflines) {
-			void **iter;
-			rz_pvector_foreach (reflines, iter) {
-				RzAnalysisRefline *ref = *iter;
-				if (ref->from == vat) {
-					dst->arrow = ref->to;
-					break;
-				}
-			}
-		}
+		RZ_FREE(il_stmt);
+		vat = rz_core_pava(core, current);
+		dst->arrow = core_il_get_refline_at(vat, reflines);
+
 	finalize:
 		rz_analysis_op_fini(&op);
 	finish_str:
 		dst->offset = rz_core_pava(core, current);
-		dst->text = rz_str_dup(rz_strbuf_get(&sb));
+		dst->text = rz_strbuf_drain_nofree(&sb);
 		inc = inc ? inc : RZ_MAX(1, min_op_size);
 		if (!rz_pvector_push(vec, dst)) {
 			free(dst->text);
 			free(dst);
 		}
-		rz_strbuf_fini(&sb);
 	}
 	rz_analysis_set_reflines(core->analysis, NULL);
 	rz_pvector_free(reflines);

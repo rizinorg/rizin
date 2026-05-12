@@ -236,9 +236,7 @@ bool test_rz_core_il_print_rzil() {
 	RzCore *core = rz_core_new();
 	rz_io_open_at(core->io, "malloc://0x100", RZ_PERM_RX, 0644, 0, NULL); // needed to get arrow info (is_valid_offset checks)
 	rz_core_arch_configure(core, "x86", 64, NULL, NULL, NULL);
-	rz_config_set(core->config, "scr.color", "true");
-	rz_core_theme_load(core, "default");
-
+	rz_config_set(core->config, "scr.color", "1");
 	ut8 buf[128];
 	int len = rz_hex_str2bin("554889e5897dfcebf8", buf);
 	RzPVector *vec = rz_pvector_new((RzPVectorFree)rz_analysis_disasm_text_free);
