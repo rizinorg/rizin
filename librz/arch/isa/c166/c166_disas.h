@@ -775,38 +775,9 @@ typedef struct {
 	C166ExtState ext;
 } C166_Inst;
 
-static inline ut32 extract(const ut64 x, const ut8 i, const ut8 n) {
-	return (x >> i) & ((1 << n) - 1);
-}
-
-static inline ut16 C166_word(const C166_Inst *i, const unsigned index) {
-	rz_warn_if_fail(index >= 1 && index <= 4);
-	return extract(i->d, (index - 1) * 16, 16);
-}
-
-static inline ut16 get_opcode(const C166_Inst *i, unsigned l, unsigned r) {
-	return extract(i->d, l, r - l + 1);
-}
-
 static inline ut16 get_byte(const C166_Inst *i, const ut8 index) {
 	rz_warn_if_fail(index <= 3);
-	ut16 ret = 0;
-	switch (index) {
-	case 0:
-		ret = get_opcode(i, 0, 8);
-		break;
-	case 1:
-		ret = (C166_word(i, 1) & 0xFF00) >> 8;
-		break;
-	case 2:
-		ret = C166_word(i, 2) & 0x00FF;
-		break;
-	case 3:
-		ret = (C166_word(i, 2) & 0xFF00) >> 8;
-		break;
-	default: break;
-	}
-	return ret;
+	return rz_read_at_le8(&i->d, index);
 }
 
 static inline ut16 get_operand(const C166_Inst *i, const ut8 index) {

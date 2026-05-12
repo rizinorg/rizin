@@ -1510,15 +1510,10 @@ RZ_IPI st32 c166_decode_command(RZ_NONNULL C166State *state, RZ_NONNULL C166_Ins
 		return -1;
 	}
 
-	for (size_t i = 0; i < RZ_MIN(8, len) / 2; ++i) {
-		ut16 tmp;
-		if (!rz_buf_read_le16(b, &tmp)) {
-			goto err;
-		}
-		instr->d |= (ut64)(tmp) << (i * 16);
+	if (!rz_buf_read(b, (ut8 *)&instr->d, RZ_MIN(8, len))) {
+		goto err;
 	}
-
-	ut8 opcode = get_opcode(instr, 0, 8);
+	const ut8 opcode = rz_read_le8(&instr->d);
 	instr->id = opcode;
 	instr->ext = state->ext; // Copy state
 	c166_maybe_deactivate_ext(state, instr->addr);
