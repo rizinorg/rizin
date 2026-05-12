@@ -253,19 +253,22 @@ static RzGraphStatus rz_graph_list_impl_del_edges(RzGraph /*<NodeType *, EdgeTyp
  * \param g The graph.
  * \param from source node
  * \param to destination node
- * \return true if the edge exists, false otherwise
+ *
+ * \return RZ_GRAPH_STATUS_OK If edge exists.
+ * \return RZ_GRAPH_STATUS_MISSING_EDGE If edge doesn't exist.
+ * \return RZ_GRAPH_STATUS_ERR In case of error.
  */
-static bool rz_graph_list_impl_has_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to) {
-	rz_return_val_if_fail(g && from && to, false);
+static RzGraphStatus rz_graph_list_impl_has_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to) {
+	rz_return_val_if_fail(g && from && to, RZ_GRAPH_STATUS_ERR);
 	RzGraphListImpl *impl = (RzGraphListImpl *)g->impl;
 
 	RzPVector /*<RzGraphEdge *>*/ *out_vec = rz_pvector_at(impl->out_edges, from->_vec_id);
 	if (!out_vec || rz_pvector_empty(out_vec)) {
-		return false;
+		return RZ_GRAPH_STATUS_MISSING_EDGE;
 	}
 
 	bool is_exist = (edge_vec_find_eid(out_vec, from, to) != -1);
-	return is_exist;
+	return is_exist ? RZ_GRAPH_STATUS_OK : RZ_GRAPH_STATUS_MISSING_EDGE;
 }
 
 /**
@@ -696,12 +699,15 @@ static RzGraphStatus rz_graph_matrix_impl_del_edge(RzGraph /*<NodeType *, EdgeTy
  * \param g The graph.
  * \param from source node
  * \param to destination node
- * \return true if the edge exists, false otherwise
+ *
+ * \return RZ_GRAPH_STATUS_OK If edge exists.
+ * \return RZ_GRAPH_STATUS_MISSING_EDGE If edge doesn't exist.
+ * \return RZ_GRAPH_STATUS_ERR In case of error.
  */
-static bool rz_graph_matrix_has_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to) {
-	rz_return_val_if_fail(g && from && to, false);
+static RzGraphStatus rz_graph_matrix_impl_has_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to) {
+	rz_return_val_if_fail(g && from && to, RZ_GRAPH_STATUS_ERR);
 	RzGraphMatrixImpl *impl = g->impl;
-	return *matrix_cell(impl, from->_vec_id, to->_vec_id) != NULL;
+	return *matrix_cell(impl, from->_vec_id, to->_vec_id) != NULL ? RZ_GRAPH_STATUS_OK : RZ_GRAPH_STATUS_MISSING_EDGE;
 }
 
 /**
@@ -950,7 +956,7 @@ static const RzGraphImplOps matrix_impl_ops = {
 	.add_edge = rz_graph_matrix_impl_add_edge,
 	.del_edge = rz_graph_matrix_impl_del_edge,
 	.del_edges = rz_graph_matrix_impl_del_edges,
-	.has_edge = rz_graph_matrix_has_edge,
+	.has_edge = rz_graph_matrix_impl_has_edge,
 	.find_edge = rz_graph_matrix_find_edge,
 	.get_out_edges = rz_graph_matrix_impl_get_out_edges,
 	.get_in_edges = rz_graph_matrix_impl_get_in_edges,
@@ -1555,10 +1561,13 @@ RZ_API RzGraphStatus rz_graph_del_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, 
  * \param g The graph.
  * \param from source node
  * \param to destination node
- * \return true if the edge exists, false otherwise
+ *
+ * \return RZ_GRAPH_STATUS_OK If edge exists.
+ * \return RZ_GRAPH_STATUS_MISSING_EDGE If edge doesn't exist.
+ * \return RZ_GRAPH_STATUS_ERR In case of error.
  */
-RZ_API bool rz_graph_has_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to) {
-	rz_return_val_if_fail(g && from && to, false);
+RZ_API RzGraphStatus rz_graph_has_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to) {
+	rz_return_val_if_fail(g && from && to, RZ_GRAPH_STATUS_ERR);
 	return g->impl_ops->has_edge(g, from, to);
 }
 
@@ -1943,14 +1952,17 @@ RZ_API RzGraphStatus rz_graph_del_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*
  * \param g The graph.
  * \param from_id Node identifier
  * \param to_id Node identifier
- * \return True if edge exists. False if not or failure.
+ *
+ * \return RZ_GRAPH_STATUS_OK If edge exists.
+ * \return RZ_GRAPH_STATUS_MISSING_EDGE If edge doesn't exist.
+ * \return RZ_GRAPH_STATUS_ERR In case of error.
  */
-RZ_API bool rz_graph_has_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 from_id, ut64 to_id) {
-	rz_return_val_if_fail(g, false);
+RZ_API RzGraphStatus rz_graph_has_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 from_id, ut64 to_id) {
+	rz_return_val_if_fail(g, RZ_GRAPH_STATUS_ERR);
 	RzGraphNode *from = rz_graph_find_node(g, from_id);
 	RzGraphNode *to = rz_graph_find_node(g, to_id);
 	if (!from || !to) {
-		return false;
+		return RZ_GRAPH_STATUS_MISSING_EDGE;
 	}
 	return rz_graph_has_edge(g, from, to);
 }

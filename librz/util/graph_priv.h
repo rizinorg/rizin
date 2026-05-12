@@ -39,7 +39,7 @@ struct rz_graph_impl_ops_t {
 	bool (*add_edge)(RzGraph *graph, RzGraphNode *from, RzGraphNode *to, void *user_data);
 	RzGraphStatus (*del_edge)(RzGraph *graph, RzGraphNode *from, RzGraphNode *to);
 	RzGraphStatus (*del_edges)(RzGraph *graph, RzGraphEdgeChooser callback, void *cb_data);
-	bool (*has_edge)(RzGraph *graph, RzGraphNode *from, RzGraphNode *to);
+	RzGraphStatus (*has_edge)(RzGraph *graph, RzGraphNode *from, RzGraphNode *to);
 
 	// Extract edge from graph
 	RZ_BORROW RzGraphEdge *(*find_edge)(RzGraph *g, RzGraphNode *from, RzGraphNode *to);
