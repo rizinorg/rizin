@@ -195,8 +195,7 @@ static bool test_graph_edge_deletion_multi(void) {
 	rz_graph_add_edge(g, n2, n3, NULL);
 	mu_assert_eq(rz_graph_count_edges(g), 4, "n_edges.initial");
 
-	bool success = rz_graph_del_edges(g, dst_is_n3, NULL);
-	mu_assert_true(success, "del_edge x->3");
+	mu_assert_eq(rz_graph_del_edges(g, dst_is_n3, NULL), RZ_GRAPH_STATUS_EXISTED, "del_edge x->3");
 	mu_assert_eq(rz_graph_count_edges(g), 2, "n_edges.after_del");
 
 	bool has_edge = rz_graph_has_edge(g, n1, n2);
@@ -204,9 +203,10 @@ static bool test_graph_edge_deletion_multi(void) {
 	has_edge = rz_graph_has_edge(g, n1, n4);
 	mu_assert_true(has_edge, "has_edge.1->4.exists");
 
-	success = rz_graph_del_edges(g, NULL, NULL);
-	mu_assert_true(success, "del_edge all");
+	mu_assert_eq(rz_graph_del_edges(g, NULL, NULL), RZ_GRAPH_STATUS_EXISTED, "del_edge all");
 	mu_assert_eq(rz_graph_count_edges(g), 0, "n_edges.after_del");
+
+	mu_assert_eq(rz_graph_del_edges(g, NULL, NULL), RZ_GRAPH_STATUS_OK, "del_edge none");
 
 	rz_graph_free(g);
 	mu_end;
@@ -707,8 +707,7 @@ static bool test_graph_edge_deletion_multi_matrix(void) {
 	rz_graph_add_edge(g, n2, n3, NULL);
 	mu_assert_eq(rz_graph_count_edges(g), 4, "n_edges.initial");
 
-	bool success = rz_graph_del_edges(g, dst_is_n3, NULL);
-	mu_assert_true(success, "del_edge x->3");
+	mu_assert_eq(rz_graph_del_edges(g, dst_is_n3, NULL), RZ_GRAPH_STATUS_EXISTED, "del_edge x->3");
 	mu_assert_eq(rz_graph_count_edges(g), 2, "n_edges.after_del");
 
 	bool has_edge = rz_graph_has_edge(g, n1, n2);
@@ -716,9 +715,10 @@ static bool test_graph_edge_deletion_multi_matrix(void) {
 	has_edge = rz_graph_has_edge(g, n1, n4);
 	mu_assert_true(has_edge, "has_edge.1->4.exists");
 
-	success = rz_graph_del_edges(g, NULL, NULL);
-	mu_assert_true(success, "del_edge all");
+	mu_assert_eq(rz_graph_del_edges(g, NULL, NULL), RZ_GRAPH_STATUS_EXISTED, "del_edge all");
 	mu_assert_eq(rz_graph_count_edges(g), 0, "n_edges.after_del");
+
+	mu_assert_eq(rz_graph_del_edges(g, NULL, NULL), RZ_GRAPH_STATUS_OK, "del_edge none");
 
 	rz_graph_free(g);
 	mu_end;

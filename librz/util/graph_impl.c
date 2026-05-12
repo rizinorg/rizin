@@ -207,8 +207,8 @@ static bool rz_graph_list_impl_del_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g,
 	return true;
 }
 
-static bool rz_graph_list_impl_del_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data) {
-	rz_return_val_if_fail(g, false);
+static RzGraphStatus rz_graph_list_impl_del_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data) {
+	rz_return_val_if_fail(g, RZ_GRAPH_STATUS_ERR);
 	RzGraphListImpl *impl = g->impl;
 	size_t removed = 0;
 	void **it;
@@ -244,7 +244,7 @@ static bool rz_graph_list_impl_del_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g
 		}
 	}
 	g->n_edges -= removed;
-	return true;
+	return removed > 0 ? RZ_GRAPH_STATUS_EXISTED : RZ_GRAPH_STATUS_OK;
 }
 
 /**
@@ -639,8 +639,9 @@ static bool rz_graph_matrix_impl_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *
 	return true;
 }
 
-static bool rz_graph_matrix_impl_del_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data) {
-	rz_return_val_if_fail(g, false);
+static RzGraphStatus rz_graph_matrix_impl_del_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data) {
+	rz_return_val_if_fail(g, RZ_GRAPH_STATUS_ERR);
+	size_t removed = 0;
 	RzGraphMatrixImpl *impl = g->impl;
 	for (size_t i = 0; i < rz_pvector_len(g->node_vec); ++i) {
 		for (size_t j = 0; j < rz_pvector_len(g->node_vec); ++j) {
@@ -653,10 +654,11 @@ static bool rz_graph_matrix_impl_del_edges(RzGraph /*<NodeType *, EdgeType *>*/ 
 			}
 			edge_free(*cell);
 			*cell = NULL;
-			g->n_edges--;
+			removed++;
 		}
 	}
-	return true;
+	g->n_edges -= removed;
+	return removed > 0 ? RZ_GRAPH_STATUS_EXISTED : RZ_GRAPH_STATUS_OK;
 }
 
 /**
@@ -1849,10 +1851,13 @@ RZ_DEPRECATE RZ_API const RzPVector /*<RzGraphNode *>*/ *rz_graph_get_node_vec(R
  *
  * \param g The graph.
  * \param cb The callback to decide which edge to delete. Can be NULL if all edges should be deleted.
- * \return True if deletion was successful or no edge was deleted. False in case of failure.
+ *
+ * \return RZ_GRAPH_STATUS_EXISTED If at least one edge was deleted.
+ * \return RZ_GRAPH_STATUS_OK If no edge was deleted.
+ * \return RZ_GRAPH_STATUS_ERR In case of error.
  */
-RZ_API bool rz_graph_del_edges(RZ_BORROW RzGraph /*<NodeType *, EdgeTypde *>*/ *g, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data) {
-	rz_return_val_if_fail(g, false);
+RZ_API RzGraphStatus rz_graph_del_edges(RZ_BORROW RzGraph /*<NodeType *, EdgeTypde *>*/ *g, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data) {
+	rz_return_val_if_fail(g, RZ_GRAPH_STATUS_ERR);
 	return g->impl_ops->del_edges(g, cb, cb_data);
 }
 
