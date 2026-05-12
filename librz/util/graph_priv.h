@@ -36,7 +36,7 @@ struct rz_graph_edge_t_new {
 
 struct rz_graph_impl_ops_t {
 	// For edges
-	bool (*add_edge)(RzGraph *graph, RzGraphNode *from, RzGraphNode *to, void *user_data);
+	RzGraphStatus (*add_edge)(RzGraph *graph, RzGraphNode *from, RzGraphNode *to, RZ_OWN void *user_data);
 	RzGraphStatus (*del_edge)(RzGraph *graph, RzGraphNode *from, RzGraphNode *to);
 	RzGraphStatus (*del_edges)(RzGraph *graph, RzGraphEdgeChooser callback, void *cb_data);
 	RzGraphStatus (*has_edge)(RzGraph *graph, RzGraphNode *from, RzGraphNode *to);

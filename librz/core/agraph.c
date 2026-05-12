@@ -19,6 +19,7 @@
  */
 #include "../util/graph_priv.h"
 #include "rz_util/rz_assert.h"
+#include "rz_util/rz_graph.h"
 
 static const char *mousemodes[] = {
 	"canvas-y",
@@ -535,8 +536,7 @@ static bool agraph_add_graph_edge_ex(RzAGraph *g, RzGraphNode *from, RzGraphNode
 	if (!edge_data) {
 		return false;
 	}
-	if (!rz_graph_add_edge(g->graph, from, to, edge_data)) {
-		rz_agraph_edge_data_free(edge_data);
+	if (rz_graph_add_edge(g->graph, from, to, edge_data) != RZ_GRAPH_STATUS_OK) {
 		return false;
 	}
 	if (creation_order != UT64_MAX && g->next_edge_creation_order <= creation_order) {

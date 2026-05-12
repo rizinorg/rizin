@@ -90,16 +90,16 @@ static bool test_graph_edges(void) {
 	RzGraphNode *arr[16] = { 0 };
 
 	// Add edges
-	bool success = rz_graph_add_edge(g, n1, n2, NULL);
-	mu_assert_true(success, "add_edge.1->2");
+	mu_assert_eq(rz_graph_add_edge(g, n1, n2, NULL), RZ_GRAPH_STATUS_OK, "add_edge.1->2");
 	mu_assert_eq(rz_graph_count_edges(g), 1, "n_edges.1");
 
-	success = rz_graph_add_edge(g, n1, n3, NULL);
-	mu_assert_true(success, "add_edge.1->3");
+	mu_assert_eq(rz_graph_add_edge_by_id(g, 1, 9, NULL), RZ_GRAPH_STATUS_MISSING_NODE, "add_edge.1->2");
+	mu_assert_eq(rz_graph_count_edges(g), 1, "n_edges.1");
+
+	mu_assert_eq(rz_graph_add_edge_by_id(g, 1, 3, NULL), RZ_GRAPH_STATUS_OK, "add_edge.1->3");
 	mu_assert_eq(rz_graph_count_edges(g), 2, "n_edges.2");
 
-	success = rz_graph_add_edge(g, n2, n3, NULL);
-	mu_assert_true(success, "add_edge.2->3");
+	mu_assert_eq(rz_graph_add_edge(g, n2, n3, NULL), RZ_GRAPH_STATUS_OK, "add_edge.2->3");
 	mu_assert_eq(rz_graph_count_edges(g), 3, "n_edges.3");
 
 	// assert more edges
@@ -114,8 +114,7 @@ static bool test_graph_edges(void) {
 		mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(i + 4), &arr[i]), RZ_GRAPH_STATUS_OK, "Failed to add");
 		mu_assert_notnull(arr[i], "Was NULL, should not.");
 	}
-	success = rz_graph_add_edge(g, arr[8], n3, NULL);
-	mu_assert_true(success, "add_edge.12->3");
+	mu_assert_eq(rz_graph_add_edge(g, arr[8], n3, NULL), RZ_GRAPH_STATUS_OK, "add_edge.12->3");
 	mu_assert_eq(rz_graph_count_edges(g), 4, "n_edges.4");
 	mu_assert_eq(rz_graph_has_edge_by_id(g, 8 + 4, 3), RZ_GRAPH_STATUS_OK, "has_edge.12->3");
 
@@ -127,8 +126,7 @@ static bool test_graph_edges(void) {
 	// Node should be placed at the edge list index of just deleted node 11.
 	RzGraphNode *nx = NULL;
 	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(0xffff), &nx), RZ_GRAPH_STATUS_OK, "Failed to add");
-	success = rz_graph_add_edge(g, nx, n3, NULL);
-	mu_assert_true(success, "add_edge.0xffff->3");
+	mu_assert_eq(rz_graph_add_edge(g, nx, n3, NULL), RZ_GRAPH_STATUS_OK, "add_edge.0xffff->3");
 	mu_assert_eq(rz_graph_count_edges(g), 4, "n_edges.4");
 	mu_assert_eq(rz_graph_has_edge(g, nx, n3), RZ_GRAPH_STATUS_OK, "has_edge.0xffff->3");
 
@@ -627,16 +625,13 @@ static bool test_graph_edges_matrix(void) {
 	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 
 	// Add edges
-	bool success = rz_graph_add_edge(g, n1, n2, NULL);
-	mu_assert_true(success, "add_edge.1->2");
+	mu_assert_eq(rz_graph_add_edge(g, n1, n2, NULL), RZ_GRAPH_STATUS_OK, "add_edge.1->2");
 	mu_assert_eq(rz_graph_count_edges(g), 1, "n_edges.1");
 
-	success = rz_graph_add_edge(g, n1, n3, NULL);
-	mu_assert_true(success, "add_edge.1->3");
+	mu_assert_eq(rz_graph_add_edge(g, n1, n3, NULL), RZ_GRAPH_STATUS_OK, "add_edge.1->3");
 	mu_assert_eq(rz_graph_count_edges(g), 2, "n_edges.2");
 
-	success = rz_graph_add_edge(g, n2, n3, NULL);
-	mu_assert_true(success, "add_edge.2->3");
+	mu_assert_eq(rz_graph_add_edge(g, n2, n3, NULL), RZ_GRAPH_STATUS_OK, "add_edge.2->3");
 	mu_assert_eq(rz_graph_count_edges(g), 3, "n_edges.3");
 
 	// assert more edges

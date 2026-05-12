@@ -63,7 +63,7 @@ RZ_API RzGraphStatus rz_graph_del_node(RzGraph *g, RZ_OWN RzGraphNode *node);
 RZ_API RZ_BORROW RzGraphNode *rz_graph_find_node(RzGraph *g, ut64 id);
 
 // Edges
-RZ_API bool rz_graph_add_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, void *edge_data);
+RZ_API RzGraphStatus rz_graph_add_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, void *edge_data);
 RZ_API RzGraphStatus rz_graph_update_edge(RZ_BORROW RzGraph *g, RZ_OWN RzGraphNode *from, RZ_OWN RzGraphNode *to, RZ_OWN void *edge_data, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data);
 RZ_API RzGraphStatus rz_graph_update_edge_by_id(RZ_NONNULL RZ_BORROW RzGraph *g, ut64 from_id, ut64 to_id, RZ_NULLABLE RZ_OWN void *edge_data, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data);
 RZ_API RzGraphStatus rz_graph_del_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to);
@@ -144,7 +144,7 @@ RZ_API const RzGraphNode *rz_graph_edge_get_to(RZ_NONNULL const RzGraphEdge *edg
 
 // Node/edge operations by identifier object
 RZ_API RzGraphStatus rz_graph_del_node_by_id(RzGraph *g, ut64 id);
-RZ_API bool rz_graph_add_edge_by_id(RzGraph *g, ut64 from_id, ut64 to_id, void *edge_data);
+RZ_API RzGraphStatus rz_graph_add_edge_by_id(RzGraph *g, ut64 from_id, ut64 to_id, RZ_OWN void *edge_data);
 RZ_API RzGraphStatus rz_graph_del_edge_by_id(RzGraph *g, ut64 from_id, ut64 to_id);
 RZ_API RzGraphStatus rz_graph_has_edge_by_id(RzGraph *g, ut64 from_id, ut64 to_id);
 RZ_API RZ_NULLABLE RZ_BORROW RzGraphEdge *rz_graph_find_edge_by_id(RzGraph *g, ut64 from_id, ut64 to_id);

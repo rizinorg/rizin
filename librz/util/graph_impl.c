@@ -115,10 +115,13 @@ static ut64 edge_vec_find_eid(RzPVector /*<RzGraphEdge *>*/ *vec, RzGraphNode *f
  * \param from source node
  * \param to destination node
  * \param edge_data The data attached to the edge.
- * \return true on success, false if edge already exists or on failure
+ *
+ * \return RZ_GRAPH_STATUS_OK If edge was added.
+ * \return RZ_GRAPH_STATUS_EXISTED If edge existed.
+ * \return RZ_GRAPH_STATUS_ERR In case of error.
  */
-static bool rz_graph_list_impl_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to, void *edge_data) {
-	rz_return_val_if_fail(g && from && to, false);
+static RzGraphStatus rz_graph_list_impl_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to, RZ_OWN void *edge_data) {
+	rz_return_val_if_fail(g && from && to, RZ_GRAPH_STATUS_ERR);
 	RzGraphListImpl *impl = (RzGraphListImpl *)g->impl;
 
 	// check output edge of from exist
@@ -128,14 +131,20 @@ static bool rz_graph_list_impl_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g,
 	if (!out_vec) {
 		out_vec = edge_vec_new((RzGraphEdgeDataFree)edge_free);
 		if (!out_vec) {
-			return false;
+			if (g->edge_data_free) {
+				g->edge_data_free(edge_data);
+			}
+			return RZ_GRAPH_STATUS_ERR;
 		}
 		rz_pvector_assign_at(impl->out_edges, from->_vec_id, out_vec);
 	}
 
 	// search edge in graph, skip if already exist
 	if (edge_vec_find_eid(out_vec, from, to) != -1) {
-		return false;
+		if (g->edge_data_free) {
+			g->edge_data_free(edge_data);
+		}
+		return RZ_GRAPH_STATUS_EXISTED;
 	}
 
 	// check input
@@ -143,7 +152,10 @@ static bool rz_graph_list_impl_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g,
 	if (!in_vec) {
 		in_vec = edge_vec_new((RzGraphEdgeDataFree)edge_free);
 		if (!in_vec) {
-			return false;
+			if (g->edge_data_free) {
+				g->edge_data_free(edge_data);
+			}
+			return RZ_GRAPH_STATUS_ERR;
 		}
 		rz_pvector_assign_at(impl->in_edges, to->_vec_id, in_vec);
 	}
@@ -155,7 +167,7 @@ static bool rz_graph_list_impl_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g,
 
 	rz_pvector_push(out_vec, oe);
 	rz_pvector_push(in_vec, ie);
-	return true;
+	return RZ_GRAPH_STATUS_OK;
 }
 
 static void remove_free_edge_list(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzPVector /*<RzGraphEdge *>*/ *edges, size_t index, bool free_data) {
@@ -623,23 +635,32 @@ static bool rz_graph_matrix_impl_require_capacity(RzGraphMatrixImpl *impl, ut64 
  * \param from source node
  * \param to destination node
  * \param edge_data user data attached to the edge
- * \return true on success, false if edge already exists or on allocation failure
+ *
+ * \return RZ_GRAPH_STATUS_OK If edge was added.
+ * \return RZ_GRAPH_STATUS_EXISTED If edge existed.
+ * \return RZ_GRAPH_STATUS_ERR In case of error.
  */
-static bool rz_graph_matrix_impl_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to, void *edge_data) {
-	rz_return_val_if_fail(g && from && to, false);
+static RzGraphStatus rz_graph_matrix_impl_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to, RZ_OWN void *edge_data) {
+	rz_return_val_if_fail(g && from && to, RZ_GRAPH_STATUS_ERR);
 	RzGraphMatrixImpl *impl = (RzGraphMatrixImpl *)g->impl;
 	RzGraphEdge **cell = matrix_cell(impl, from->_vec_id, to->_vec_id);
 	if (*cell) {
+		if (g->edge_data_free) {
+			g->edge_data_free(edge_data);
+		}
 		// already exist edge
-		return false;
+		return RZ_GRAPH_STATUS_EXISTED;
 	}
 
 	RzGraphEdge *e = edge_new(from, to, edge_data);
 	if (!e) {
-		return false;
+		if (g->edge_data_free) {
+			g->edge_data_free(edge_data);
+		}
+		return RZ_GRAPH_STATUS_ERR;
 	}
 	*cell = e;
-	return true;
+	return RZ_GRAPH_STATUS_OK;
 }
 
 static RzGraphStatus rz_graph_matrix_impl_del_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data) {
@@ -1444,15 +1465,18 @@ RZ_API RZ_BORROW RzGraphNode *rz_graph_find_node(RzGraph /*<NodeType *, EdgeType
  * \param from source node
  * \param to destination node
  * \param edge_data user data attached to the edge
- * \return true on success, false if edge already exists or on failure
+ *
+ * \return RZ_GRAPH_STATUS_OK If edge was added.
+ * \return RZ_GRAPH_STATUS_EXISTED If edge existed.
+ * \return RZ_GRAPH_STATUS_ERR In case of error.
  */
-RZ_API bool rz_graph_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to, void *edge_data) {
-	rz_return_val_if_fail(g && from && to, false);
-	if (!g->impl_ops->add_edge(g, from, to, edge_data)) {
-		return false;
+RZ_API RzGraphStatus rz_graph_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to, RZ_OWN void *edge_data) {
+	rz_return_val_if_fail(g && from && to, RZ_GRAPH_STATUS_ERR);
+	RzGraphStatus s = g->impl_ops->add_edge(g, from, to, edge_data);
+	if (s == RZ_GRAPH_STATUS_OK) {
+		g->n_edges += 1;
 	}
-	g->n_edges += 1;
-	return true;
+	return s;
 }
 
 /**
@@ -1491,10 +1515,13 @@ RZ_API RzGraphStatus rz_graph_update_edge(
 		return RZ_GRAPH_STATUS_UPDATED;
 	} else if (e && !update) {
 		return RZ_GRAPH_STATUS_NOT_UPDATED;
-	} else if (!e && g->impl_ops->add_edge(g, from, to, edge_data)) {
+	} else if (!e) {
+		RzGraphStatus s = g->impl_ops->add_edge(g, from, to, edge_data);
 		// Edge is newly added.
-		g->n_edges += 1;
-		return RZ_GRAPH_STATUS_OK;
+		if (s == RZ_GRAPH_STATUS_OK) {
+			g->n_edges += 1;
+		}
+		return s == RZ_GRAPH_STATUS_ERR ? RZ_GRAPH_STATUS_ERR : RZ_GRAPH_STATUS_OK;
 	}
 	return RZ_GRAPH_STATUS_ERR;
 }
@@ -1913,14 +1940,18 @@ RZ_API RzGraphStatus rz_graph_del_node_by_id(RzGraph /*<NodeType *, EdgeType *>*
  * \param g The graph.
  * \param from_id Node identifier
  * \param to_id Node identifier
- * \return True if edge was added. False if one of the nodes did not exist or in case of failure.
+ *
+ * \return RZ_GRAPH_STATUS_OK If edge was added.
+ * \return RZ_GRAPH_STATUS_EXISTED If edge existed.
+ * \return RZ_GRAPH_STATUS_MISSING_NODE If either node did not exist.
+ * \return RZ_GRAPH_STATUS_ERR In case of error.
  */
-RZ_API bool rz_graph_add_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 from_id, ut64 to_id, void *edge_data) {
-	rz_return_val_if_fail(g, false);
+RZ_API RzGraphStatus rz_graph_add_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 from_id, ut64 to_id, RZ_OWN void *edge_data) {
+	rz_return_val_if_fail(g, RZ_GRAPH_STATUS_ERR);
 	RzGraphNode *from = rz_graph_find_node(g, from_id);
 	RzGraphNode *to = rz_graph_find_node(g, to_id);
 	if (!from || !to) {
-		return false;
+		return RZ_GRAPH_STATUS_MISSING_NODE;
 	}
 	return rz_graph_add_edge(g, from, to, edge_data);
 }

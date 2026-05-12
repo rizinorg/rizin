@@ -130,8 +130,7 @@ static bool test_cfg_basic(void) {
 
 	// Add edge
 	EdgeData *edge_data = create_edge_data(EDGE_TYPE_FALLTHROUGH, NULL);
-	bool success = rz_graph_add_edge(cfg, node_entry, node_ret, edge_data);
-	mu_assert_true(success, "add edge");
+	mu_assert_eq(rz_graph_add_edge(cfg, node_entry, node_ret, edge_data), RZ_GRAPH_STATUS_OK, "add edge");
 	mu_assert_eq(rz_graph_count_edges(cfg), 1, "n_edges");
 
 	// Test node lookup by name
