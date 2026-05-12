@@ -17,8 +17,10 @@ struct rz_graph_node_t_new {
 	 * It is always in the range of `[0, m)` where `m` is the maximum number of nodes
 	 * the graph had at any given time.
 	 * It can be used as index in implementation specific arrays.
+	 *
+	 * Also used in DFS and for building the hash_id <-> vec_id map.
 	 */
-	ut64 _vec_id; // for matrix graph and DFS, by building hash_id <-> vec_id map
+	ut64 _vec_id;
 	/**
 	 * \brief The node data pointer.
 	 */
@@ -56,17 +58,24 @@ struct rz_graph_impl_ops_t {
 struct rz_graph_t_new {
 	/**
 	 * \brief Number of nodes in the graph.
-	 * ATTENTION: Never use this for iteration over nodes. Always use node_vec directly.
+	 * ATTENTION: Never use this for iteration over rz_graph_t_new.node_vec!
+	 * Always use rz_pvector_len(node_vec).
 	 */
 	ut64 n_nodes;
 	ut64 n_edges;
 
+	/**
+	 * \brief Hash id to node pointer map.
+	 * The node pointers are owned by node_vec not this map.
+	 */
 	HtUP /*<hash_id, RzGraphNode *>*/ *nodes;
 	/**
-	 * \brief Offsets in the node_vec which are unused (because a node was deleted before).
+	 * \brief Unused offsets into node_vec. Offsets get unused
+	 * because a node was deleted at that offset before.
 	 * On node deletion it will push the freed _vec_id to the tail.
-	 * On node creation it will check the head of the vector and, if there is any, use that id.
-	 * Otherwise it will push a new node to the tail of node_vec.
+	 * On node creation it will check the head of the vector and, if there is any,
+	 * use that id for the new node.
+	 * If free_vec_ids is empty, it pushes to the tail of node_vec.
 	 */
 	RzVector /*<size_t>*/ *free_vec_ids;
 	/**

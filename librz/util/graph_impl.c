@@ -1054,15 +1054,24 @@ RZ_API const RzGraphNode *rz_graph_edge_get_to(RZ_NONNULL const RzGraphEdge *edg
  *
  * \param impl_type RZ_GRAPH_IMPL_LIST or RZ_GRAPH_IMPL_MATRIX
  * \param id_hash_fcn Hash function to generate the unique id for a node.
- *                    If it is NULL, then the graph will use the pointers as hash ids.
+ *                    If it is NULL, then the graph will use the node data pointers as hash ids.
+ *
  *                    In the common case that the nodes should be identified by integers and have no data at all,
  *                    the user must initialize the graph with id_hash_fcn == NULL.
  *                    Then pass `RZ_GRAPH_INT_AS_DATA(<node_int_id>)` to the `const void *identifier` parameter of API functions.
+ *
+ *                    If no identifiers are needed, initialize the graph with id_hash_fcn == NULL,
+ *                    and use the functions taking node pointers from here on.
+ *
  * \param node_free callback to free node user data, or NULL
  * \param edge_free callback to free edge user data, or NULL
  * \return A new RzGraphNew, or NULL on failure.
  */
-RZ_API RZ_OWN RzGraph /*<NodeType *, EdgeType *>*/ *rz_graph_new(RzGraphImplType impl_type, RZ_NULLABLE RzGraphIdentifierHash id_hash_fcn, RzGraphNodeDataFree node_free, RzGraphEdgeDataFree edge_free) {
+RZ_API RZ_OWN RzGraph /*<NodeType *, EdgeType *>*/ *rz_graph_new(
+	RzGraphImplType impl_type,
+	RZ_NULLABLE RzGraphIdentifierHash id_hash_fcn,
+	RzGraphNodeDataFree node_free,
+	RzGraphEdgeDataFree edge_free) {
 	RzGraph /*<NodeType *, EdgeType *>*/ *g = RZ_NEW0(RzGraph);
 	if (!g) {
 		return NULL;
@@ -1319,7 +1328,10 @@ static RzGraphStatus internal_add(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OW
 		return RZ_GRAPH_STATUS_EXISTED;
 	}
 
-	// push node reference into vec and update
+	// push node reference into vec and update.
+	// g->nodes_vec must be updated before calling the implementation specific function.
+	// The vector length is the source of maximum nodes in the graph.
+	// Implementation specifics might need it.
 	if (rz_vector_len(g->free_vec_ids) > 0) {
 		rz_vector_pop_front(g->free_vec_ids, &node->_vec_id);
 		rz_pvector_assign_at(g->node_vec, node->_vec_id, node);
@@ -1328,9 +1340,6 @@ static RzGraphStatus internal_add(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OW
 		rz_pvector_push(g->node_vec, node);
 	}
 
-	// g->nodes_vec must be updated before calling the implementation specific function.
-	// The vector length is the source of maximum nodes in the graph.
-	// Implementation specifics might need it.
 	if (!g->impl_ops->add_node(g, node)) {
 		// revert if failed
 		rz_pvector_pop(g->node_vec);
@@ -1414,7 +1423,7 @@ RZ_API RzGraphStatus rz_graph_del_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, 
  * \return the node if found (borrowed), or NULL
  */
 RZ_API RZ_BORROW RzGraphNode *rz_graph_find_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 hash_id) {
-	rz_return_val_if_fail(g && g->hash_func, NULL);
+	rz_return_val_if_fail(g, NULL);
 	return ht_up_find(g->nodes, hash_id, NULL);
 }
 
@@ -2035,6 +2044,8 @@ RZ_API RZ_NULLABLE RZ_BORROW RzGraphNode *rz_graph_nth_neighbour_by_id(const RzG
  * \param name An optional name of the graph.
  * \param node_formatter An optional callback to get the node formatting.
  * \param edge_formatter An optional callback to get the edge formatting.
+ *
+ * NOTE: The formatting string must be of the form: "[<dot graph formatting options>]"
  *
  * \return The dot graph string or NULL in case of failure.
  */
