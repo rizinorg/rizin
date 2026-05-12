@@ -121,7 +121,7 @@ EXPECT=<<EOF
             ;-- .data:
             0x08000130      adrp  x0, 0xfffffffffffff000               ; RELOC 0 .data @ 0x08000178
             ;-- .data:
-            0x08000134      ldr   x0, [x0, 0xff8]                      ; [0xff8:4]=-1 ; 4088; RELOC 0 .data @ 0x08000178
+            0x08000134      ldr   x0, [x0, 0x6000]                     ; [0x6000:4]=-1; RELOC 0 .data @ 0x08000178
             ;-- .data:
             0x08000138      ldr   x1, 0x7fffffc                        ; [0x7fffffc:4]=-1; RELOC 32 .data @ 0x08000178 - 0x8000138
 EOF
@@ -143,23 +143,23 @@ EXPECT=<<EOF
             ;-- test_ldst_abs_lo12:
             0x080000b8      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 .data @ 0x08000178 + 0x8
             ;-- .data:
-            0x080000bc      ldrb  w1, [x0, 0x180]                      ; [0x180:4]=-1 ; 384; RELOC 64 .data @ 0x08000178 + 0x8
+            0x080000bc      ldrb  w1, [x0]                             ; RELOC 64 .data @ 0x08000178 + 0x8
             ;-- .data:
             0x080000c0      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 .data @ 0x08000178 + 0xa
             ;-- .data:
-            0x080000c4      ldrh  w1, [x0, 0x182]                      ; [0x182:4]=-1 ; 386; RELOC 64 .data @ 0x08000178 + 0xa
+            0x080000c4      ldrh  w1, [x0, 0x800]                      ; [0x800:4]=-1 ; 2048; RELOC 64 .data @ 0x08000178 + 0xa
             ;-- .data:
             0x080000c8      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 .data @ 0x08000178 + 0xc
             ;-- .data:
-            0x080000cc      ldr   w1, [x0, 0x184]                      ; [0x184:4]=-1 ; 388; RELOC 64 .data @ 0x08000178 + 0xc
+            0x080000cc      ldr   w1, [x0, 0x1000]                     ; [0x1000:4]=-1; RELOC 64 .data @ 0x08000178 + 0xc
             ;-- .data:
             0x080000d0      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 .data @ 0x08000178 + 0x10
             ;-- .data:
-            0x080000d4      ldr   x1, [x0, 0x188]                      ; [0x188:4]=-1 ; 392; RELOC 64 .data @ 0x08000178 + 0x10
+            0x080000d4      ldr   x1, [x0, 0x2000]                     ; [0x2000:4]=-1; RELOC 64 .data @ 0x08000178 + 0x10
             ;-- .data:
             0x080000d8      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 .data @ 0x08000178 + 0x20
             ;-- .data:
-            0x080000dc      ldr   q0, [x0, 0x190]                      ; [0x190:4]=-1 ; 400; RELOC 64 .data @ 0x08000178 + 0x20
+            0x080000dc      ldr   q0, [x0, 0x4000]                     ; [0x4000:4]=-1; RELOC 64 .data @ 0x08000178 + 0x20
 EOF
 RUN
 
@@ -176,3 +176,48 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Jump26 relocations
+FILE=bins/elf/aarch64-plt.o
+CMDS=<<EOF
+ir
+pd 3 @ 0x08000040
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     target type             name              
+--------------------------------------------------------------------
+0x08000040 0x00000040 0x0800004c R_AARCH64_JUMP26 foo - 0x08000040
+0x08000044 0x00000044 0x08000188 R_AARCH64_JUMP26 bar - 0x08000044
+0x08000048 0x00000048 0x08000190 R_AARCH64_JUMP26 weak - 0x08000048
+            ;-- section..text:
+            ;-- foo:
+            ;-- _start:
+        ,=< 0x08000040      b     loc.foo                              ; RELOC 64 foo @ 0x0800004c - 0x8000040 ; [02] -r-x section size 12 named .text
+        |   ;-- bar:
+       ,==< 0x08000044      b     reloc.target.bar                     ; RELOC 64 bar
+       ||   ;-- weak:
+      ,===< 0x08000048      b     reloc.target.weak                    ; RELOC 64 weak
+EOF
+RUN
+
+NAME= GOT Relocatoins
+FILE= bins/elf/aarch64-gotpage.o
+CMDS=<<EOF
+ir
+pd 3 @ 0x08000040
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     target type                        name                  
+-----------------------------------------------------------------------------------
+0x08000040 0x00000040 0x08000180 R_AARCH64_ADR_PREL_PG_HI21  _GLOBAL_OFFSET_TABLE_
+0x08000044 0x00000044 0x00000008 R_AARCH64_LD64_GOTPAGE_LO15 global1
+0x08000048 0x00000048 0x00000008 R_AARCH64_LD64_GOTPAGE_LO15 global2
+            ;-- section..text:
+            ;-- _GLOBAL_OFFSET_TABLE_:
+            ;-- _start:
+            0x08000040      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 _GLOBAL_OFFSET_TABLE_ ; [02] -r-x section size 12 named .text
+            ;-- global1:
+            0x08000044      ldr   x0, [x0, 0x7ff8]                     ; [0x7ff8:4]=-1; RELOC 0 global1 @ 0x00000008
+            ;-- global2:
+            0x08000048      ldr   x1, [x0, 0x7ff8]                     ; [0x7ff8:4]=-1; RELOC 0 global2 @ 0x00000008
+EOF
+RUN

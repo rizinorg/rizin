@@ -1862,7 +1862,6 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	case R_AARCH64_P32_ABS16:
 		// S + A
 		val = fs->S + fs->A;
-		rz_buf_read_at(buf_patched, patch_addr, buf, 2);
 		rz_write_le16(buf, val);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 2);
 		break;
@@ -1871,7 +1870,6 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	case R_AARCH64_P32_ABS32:
 		// S + A
 		val = fs->S + fs->A;
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		rz_write_le32(buf, val);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
@@ -1879,7 +1877,6 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	case R_AARCH64_ABS64:
 		// S + A
 		val = fs->S + fs->A;
-		rz_buf_read_at(buf_patched, patch_addr, buf, 8);
 		rz_write_le64(buf, val);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 8);
 		break;
@@ -1888,7 +1885,6 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	case R_AARCH64_P32_PREL16:
 		// S + A - P
 		val = fs->S + fs->A - fs->P;
-		rz_buf_read_at(buf_patched, patch_addr, buf, 2);
 		rz_write_le16(buf, val);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 2);
 		break;
@@ -1897,7 +1893,6 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	case R_AARCH64_P32_PREL32:
 		// S + A - P
 		val = fs->S + fs->A - fs->P;
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		rz_write_le32(buf, val);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
@@ -1905,7 +1900,6 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	case R_AARCH64_PREL64:
 		// S + A - P
 		val = fs->S + fs->A - fs->P;
-		rz_buf_read_at(buf_patched, patch_addr, buf, 8);
 		rz_write_le64(buf, val);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 8);
 		break;
@@ -1914,7 +1908,6 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	case R_AARCH64_P32_PLT32:
 		// S + A - P
 		val = fs->S + fs->A - fs->P;
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		rz_write_le32(buf, val);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
@@ -2046,21 +2039,21 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		// Set LD/ST immediate to bits [11:0] of (S + A)
 		// LD/ST: imm12 at bits [21:10]
 		val = PG_OFFSET(fs->S + fs->A);
-		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, (val & 0xFFF) << 10);
 		break;
 
 	case R_AARCH64_LDST16_ABS_LO12_NC:
 	case R_AARCH64_P32_LDST16_ABS_LO12_NC:
 		// Set LD/ST immediate to bits [11:1] of (S + A)
 		val = PG_OFFSET(fs->S + fs->A) >> 1;
-		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, (val & 0xFFF) << 10);
 		break;
 
 	case R_AARCH64_LDST32_ABS_LO12_NC:
 	case R_AARCH64_P32_LDST32_ABS_LO12_NC:
 		// Set LD/ST immediate to bits [11:2] of (S + A)
 		val = PG_OFFSET(fs->S + fs->A) >> 2;
-		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, (val & 0xFFF) << 10);
 		break;
 
 	case R_AARCH64_LDST64_ABS_LO12_NC:
@@ -2073,14 +2066,14 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		} else {
 			val = PG_OFFSET(fs->S + fs->A) >> 3;
 		}
-		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, (val & 0xFFF) << 10);
 		break;
 
 	case R_AARCH64_LDST128_ABS_LO12_NC:
 	case R_AARCH64_P32_LDST128_ABS_LO12_NC:
 		// Set LD/ST immediate to bits [11:4] of (S + A)
 		val = PG_OFFSET(fs->S + fs->A) >> 4;
-		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, (val & 0xFFF) << 10);
 		break;
 
 	case R_AARCH64_TSTBR14:
@@ -2256,7 +2249,6 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	case R_AARCH64_GOTREL64:
 		// Set data to 64-bit offset (S + A - GOT)
 		val = fs->S + fs->A - fs->GOT;
-		rz_buf_read_at(buf_patched, patch_addr, buf, 8);
 		rz_write_le64(buf, val);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 8);
 		break;
@@ -2264,7 +2256,6 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	case R_AARCH64_GOTREL32:
 		// Set data to 32-bit offset (S + A - GOT)
 		val = fs->S + fs->A - fs->GOT;
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		rz_write_le32(buf, val);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
@@ -2314,21 +2305,18 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	case R_AARCH64_P32_JUMP_SLOT:
 		// S + A - set GOT/PLT entry
 		val = fs->S + fs->A;
-		rz_buf_read_at(buf_patched, patch_addr, buf, 8);
 		rz_write_le64(buf, val);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 8);
 		break;
 
 	case R_AARCH64_RELATIVE:
 		val = fs->B + fs->A;
-		rz_buf_read_at(buf_patched, patch_addr, buf, 8);
 		rz_write_le64(buf, val);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 8);
 		break;
 
 	case R_AARCH64_P32_RELATIVE:
 		val = fs->B + fs->A;
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		rz_write_le32(buf, (ut32)val);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
@@ -2336,13 +2324,11 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	case R_AARCH64_TLS_TPREL:
 		// TPREL(S+A) - thread pointer relative offset
 		val = fs->TLS;
-		rz_buf_read_at(buf_patched, patch_addr, buf, 8);
 		rz_write_le64(buf, val);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 8);
 		break;
 
 	case R_AARCH64_P32_TLS_TPREL:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		rz_write_le32(buf, val);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
@@ -2360,14 +2346,12 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	case R_AARCH64_IRELATIVE:
 		// Indirect(Delta(S) + A) - resolver function address
 		val = fs->B + fs->A;
-		rz_buf_read_at(buf_patched, patch_addr, buf, 8);
 		rz_write_le64(buf, val);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 8);
 		break;
 
 	case R_AARCH64_P32_IRELATIVE:
 		val = fs->B + fs->A;
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		rz_write_le32(buf, val);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
