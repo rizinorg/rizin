@@ -245,6 +245,8 @@ rz_bin_sources = [
   'format/luac/luac_common.c',
   'format/luac/luac_bin.c',
   'format/luac/parse.c',
+  'format/luac/luajit/luajit_private.c',
+  'format/luac/luajit/luajit.c',
   'format/ne/ne.c',
   'format/mz/mz.c',
   'format/nxo/nxo.c',

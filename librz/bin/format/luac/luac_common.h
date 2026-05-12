@@ -9,6 +9,10 @@
 #include <rz_lib.h>
 #include <rz_list.h>
 #include <arch/isa/luac/lua_arch.h>
+#include "luajit/luajit.h"
+
+#define LUAC_CPU                            1 // Flag that the detected CPU is Luac
+#define GET_INTERNAL_BIN_INFO_OBJ(type, bf) ((type *)(bf)->o->bin_obj)
 
 /* Macros for bin_luac.c */
 #define METATABLES_VOFFSET             0x15000
@@ -244,6 +248,7 @@ typedef struct lua_dbg_upvalue_entry {
  * \brief A context info structure for luac plugin.
  */
 typedef struct luac_bin_info {
+	int cpu;
 	LuaProto *proto;
 	RzPVector /*<LuaProto *>*/ *protos_vec; ///< list of all protos
 	RzPVector /*<LuaConstEntry *>*/ *all_const_vec; ///< list of all constants (5.4-5.5)
@@ -280,7 +285,7 @@ void lua_free_proto_entry(LuaProto *);
 void luac_add_section(RzPVector /*<RzBinSection *>*/ *section_vec, char *name, ut64 poffset, ut64 voffset, ut32 size, bool is_func);
 void luac_add_symbol(RzList /*<RzBinSymbol *>*/ *symbol_list, char *name, ut64 poffset, ut64 voffset, ut64 size, const char *type);
 void luac_add_entry(RzPVector /*<RzBinAddr *>*/ *entry_vec, ut64 offset, int entry_type);
-void luac_add_string(RzList /*<RzBinString *>*/ *string_list, char *string, ut64 poffset, ut64 voffset, ut64 size);
+void luac_add_string(RzList /*<RzBinString *>*/ *string_list, char *string, ut64 poffset, ut64 voffset, ut64 size, int cpu);
 
 LuacBinInfo *luac_build_info(RZ_NONNULL LuaProto *proto);
 void luac_build_info_free(LuacBinInfo *bin_info);

@@ -1,10 +1,18 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 // SPDX-FileCopyrightText: 2025-2026 Sergey Sharshunov <s.sharshunov@gmail.com>
+// SPDX-FileCopyrightText: 2026 Arya-1-HR
 
 #include <asm_private.h>
 #include "rz_asm.h"
 #include "arch/isa/luac/lua_arch.h"
+
+int rz_luajit_disasm(const RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
+	LuaJITInstructions instr = rz_read_ble32(buf, a->big_endian);
+	LuaJITOpCode opcode = LUAJIT_GET_OPCODE(instr);
+	LuaJITOpName opname = luajit_get_opname(opcode);
+	return luajit_disasm(opstruct, len, opname, instr, opcode);
+}
 
 int rz_luac_disasm(const RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 	int r = 0;
@@ -21,22 +29,25 @@ int rz_luac_disasm(const RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 
 	opstruct->size = 4;
 	const ut32 instruction = rz_read_at_le32(buf, 0);
+	const char *cpu = rz_asm_get_cpu(a);
 
-	if (RZ_STR_EQ(a->cpu, "5.0")) {
+	if (rz_str_startswith(cpu, "luajit")) {
+		return rz_luajit_disasm(a, opstruct, buf, len);
+	} else if (RZ_STR_EQ(cpu, "5.0")) {
 		r = lua50_disasm(opstruct, instruction);
-	} else if (RZ_STR_EQ(a->cpu, "5.1")) {
+	} else if (RZ_STR_EQ(cpu, "5.1")) {
 		r = lua51_disasm(opstruct, instruction, LUA_51_VERSION_VANILLA);
-	} else if (RZ_STR_EQ(a->cpu, "openwrt-5.1")) {
+	} else if (RZ_STR_EQ(cpu, "openwrt-5.1")) {
 		r = lua51_disasm(opstruct, instruction, LUA_51_VERSION_OPENWRT);
-	} else if (RZ_STR_EQ(a->cpu, "tp-link-5.1")) {
+	} else if (RZ_STR_EQ(cpu, "tp-link-5.1")) {
 		r = lua51_disasm(opstruct, instruction, LUA_51_VERSION_TPLINK);
-	} else if (RZ_STR_EQ(a->cpu, "5.2")) {
+	} else if (RZ_STR_EQ(cpu, "5.2")) {
 		r = lua52_disasm(opstruct, instruction);
-	} else if (RZ_STR_EQ(a->cpu, "5.3")) {
+	} else if (RZ_STR_EQ(cpu, "5.3")) {
 		r = lua53_disasm(opstruct, instruction);
-	} else if (RZ_STR_EQ(a->cpu, "5.4")) {
+	} else if (RZ_STR_EQ(cpu, "5.4")) {
 		r = lua54_disasm(opstruct, instruction);
-	} else if (RZ_STR_EQ(a->cpu, "5.5")) {
+	} else if (RZ_STR_EQ(cpu, "5.5")) {
 		r = lua55_disasm(opstruct, instruction);
 	} else {
 		RZ_LOG_ERROR("disassembler: lua: version %s is not supported\n", a->cpu);
@@ -46,6 +57,9 @@ int rz_luac_disasm(const RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 }
 
 int rz_luac_asm(const RzAsm *a, RzAsmOp *opstruct, const char *str) {
+	if (rz_str_startswith(a->cpu, "luajit")) {
+		return 0;
+	}
 	int str_len = strlen(str);
 
 	rz_return_val_if_fail(str && str_len > 0, false);
@@ -115,7 +129,7 @@ RzAsmPlugin rz_asm_plugin_luac = {
 	.arch = "luac",
 	.license = "LGPL3",
 	.bits = 32,
-	.endian = RZ_SYS_ENDIAN_LITTLE,
+	.endian = RZ_SYS_ENDIAN_BI,
 	.desc = "Lua bytecode (LUAC) disassembler",
 	.disassemble = &rz_luac_disasm,
 	.assemble = &rz_luac_asm,
