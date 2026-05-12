@@ -93,6 +93,8 @@ RZ_API void rz_analysis_rtti_recover_all(RzAnalysis *analysis) {
 	case RZ_BIN_LANGUAGE_SWIFT:
 		rz_analysis_rtti_swift(analysis);
 		break;
+	case RZ_BIN_LANGUAGE_OBJC:
+		rz_analysis_rtti_objc(analysis);
 	default: {
 		RVTableContext context;
 		rz_analysis_vtable_begin(analysis, &context);
