@@ -70,7 +70,10 @@ static RzBaseType *create_new_primitive_type(const RzTypeDB *typedb, const char 
 	bt->name = rz_str_dup(name);
 	bt->size = size;
 	const bool result = rz_type_db_save_base_type(typedb, bt);
-	rz_return_val_if_fail(result, NULL);
+	if (!result) {
+		rz_type_base_type_free(bt);
+		return NULL;
+	}
 	return bt;
 }
 
