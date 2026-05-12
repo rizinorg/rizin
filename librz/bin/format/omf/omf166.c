@@ -1030,7 +1030,9 @@ static int rz_bin_format_omf166_load_content(rz_bin_omf166_obj *obj, OMF_record 
 }
 
 static OMF_record *rz_bin_format_omf166_load_record(rz_bin_omf166_obj *obj, const ut8 *buf, ut64 global_ct, size_t buf_size) {
-	rz_return_val_if_fail((is_valid_omf166_type(*buf) && rz_bin_checksum_omf_ok(buf, buf_size)), NULL);
+	if (!is_valid_omf166_type(*buf) || !rz_bin_checksum_omf_ok(buf, buf_size)) {
+		return NULL;
+	}
 	OMF_record *new = RZ_NEW0(OMF_record);
 	rz_return_val_if_fail(new, NULL);
 	size_t offset = 0;
