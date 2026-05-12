@@ -1376,21 +1376,16 @@ RZ_API RzGraphStatus rz_graph_add_node(
  *
  * \param g The graph.
  * \param node node to delete (ownership transferred)
- * \return true on success, false if node not found or impl fails
+ *
+ * \return RZ_GRAPH_STATUS_EXISTED If node existed and was deleted.
+ * \return RZ_GRAPH_STATUS_ERR In case of error.
  */
-RZ_API bool rz_graph_del_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OWN RzGraphNode *node) {
-	rz_return_val_if_fail(g && node, false);
-	bool found = false;
-	ht_up_find(g->nodes, node->hash_id, &found);
-	if (!found) {
-		RZ_LOG_WARN("Node not exist, failed to delete\n");
-		return false;
-	}
-
+RZ_API RzGraphStatus rz_graph_del_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OWN RzGraphNode *node) {
+	rz_return_val_if_fail(g && node, RZ_GRAPH_STATUS_ERR);
 	// dispatch to impl to maintain edge data struct if needed
 	if (!g->impl_ops->del_node(g, node)) {
 		RZ_LOG_WARN("Impl failed to delete node, failed to delete\n");
-		return false;
+		return RZ_GRAPH_STATUS_ERR;
 	}
 
 	// remove from hash table
@@ -1408,7 +1403,7 @@ RZ_API bool rz_graph_del_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OWN Rz
 	free(node);
 
 	g->n_nodes -= 1;
-	return true;
+	return RZ_GRAPH_STATUS_EXISTED;
 }
 
 /**
@@ -1857,13 +1852,16 @@ RZ_API bool rz_graph_del_edges(RZ_BORROW RzGraph /*<NodeType *, EdgeTypde *>*/ *
  *
  * \param g The graph.
  * \param hash_id The node identifier.
- * \return True if node was deleted. False if no node existed or failure.
+ *
+ * \return RZ_GRAPH_STATUS_EXISTED If node existed and was deleted.
+ * \return RZ_GRAPH_STATUS_OK If node did not exist.
+ * \return RZ_GRAPH_STATUS_ERR In case of error.
  */
-RZ_API bool rz_graph_del_node_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 hash_id) {
-	rz_return_val_if_fail(g, false);
+RZ_API RzGraphStatus rz_graph_del_node_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 hash_id) {
+	rz_return_val_if_fail(g, RZ_GRAPH_STATUS_ERR);
 	RzGraphNode *node = rz_graph_find_node(g, hash_id);
 	if (!node) {
-		return false;
+		return RZ_GRAPH_STATUS_OK;
 	}
 	return rz_graph_del_node(g, node);
 }

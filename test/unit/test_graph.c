@@ -160,8 +160,8 @@ static bool test_legacy_graph(void) {
 		mu_assert_eq(count, 3, "all_neighbours.count");
 	}
 
-	rz_graph_del_node(g, gn);
-	rz_graph_del_node(g, gn2);
+	mu_assert_eq(rz_graph_del_node(g, gn), RZ_GRAPH_STATUS_EXISTED, "Wrong return value");
+	mu_assert_eq(rz_graph_del_node(g, gn2), RZ_GRAPH_STATUS_EXISTED, "Wrong return value");
 	mu_assert_eq(rz_graph_count_nodes(g), 8, "n_nodes.del_node");
 	mu_assert_eq(rz_graph_count_edges(g), 12, "n_edges.del_node");
 

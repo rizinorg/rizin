@@ -125,7 +125,7 @@ static bool test_graph_edges(void) {
 	has_edge = rz_graph_has_edge_by_id(g, 8 + 4, 3);
 	mu_assert_true(has_edge, "has_edge.12->3");
 
-	mu_assert_true(rz_graph_del_node(g, arr[8]), "Del failed");
+	mu_assert_eq(rz_graph_del_node(g, arr[8]), RZ_GRAPH_STATUS_EXISTED, "Del failed");
 	// Node pointer is freed by del.
 	arr[8] = NULL;
 	has_edge = rz_graph_has_edge_by_id(g, 8 + 4, 3);
@@ -356,13 +356,14 @@ static bool test_graph_node_deletion(void) {
 	// TODO: solve warning here
 	// capacity check failed of vec
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash_base, NULL, NULL);
+	mu_assert_eq(rz_graph_del_node_by_id(g, 1), RZ_GRAPH_STATUS_OK, "Not existing node failed");
 
 	RzGraphNode *n1 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)1, &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n2 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)2, &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
 	RzGraphNode *n3 = NULL;
-	mu_assert_eq(rz_graph_add_node(g, (ut8 *)3, &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 
 	rz_graph_add_edge(g, n1, n2, NULL);
 	rz_graph_add_edge(g, n2, n3, NULL);
@@ -372,8 +373,7 @@ static bool test_graph_node_deletion(void) {
 	mu_assert_eq(rz_graph_count_edges(g), 3, "n_edges.before_del");
 
 	// delete n2
-	bool success = rz_graph_del_node(g, n2);
-	mu_assert_true(success, "del_node.2");
+	mu_assert_eq(rz_graph_del_node(g, n2), RZ_GRAPH_STATUS_EXISTED, "del_node.2");
 	mu_assert_eq(rz_graph_count_nodes(g), 2, "n_nodes.after_del");
 	mu_assert_eq(rz_graph_count_edges(g), 1, "n_edges.after_del");
 
@@ -384,6 +384,8 @@ static bool test_graph_node_deletion(void) {
 	// edge n1->n3 still found
 	bool has_edge = rz_graph_has_edge(g, n1, n3);
 	mu_assert_true(has_edge, "has_edge.1->3.exists");
+
+	mu_assert_eq(rz_graph_del_node_by_id(g, 0x40000003), RZ_GRAPH_STATUS_EXISTED, "del failed");
 
 	rz_graph_free(g);
 	mu_end;
@@ -874,8 +876,7 @@ static bool test_graph_node_deletion_matrix(void) {
 	mu_assert_eq(rz_graph_count_edges(g), 3, "n_edges.before_del");
 
 	// delete n2
-	bool success = rz_graph_del_node(g, n2);
-	mu_assert_true(success, "del_node.2");
+	mu_assert_eq(rz_graph_del_node(g, n2), RZ_GRAPH_STATUS_EXISTED, "del_node.2");
 	mu_assert_eq(rz_graph_count_nodes(g), 2, "n_nodes.after_del");
 	mu_assert_eq(rz_graph_count_edges(g), 1, "n_edges.after_del");
 
