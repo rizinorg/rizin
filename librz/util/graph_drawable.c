@@ -5,6 +5,7 @@
 #include <rz_util.h>
 #include <rz_util/rz_graph_drawable.h>
 #include "graph_priv.h"
+#include "rz_util/rz_graph.h"
 
 /**
  * \brief Translates the \p subtype flags of a node to its annotation symbols.
@@ -159,8 +160,8 @@ RZ_API RzGraphNode *rz_graph_add_node_info(RzGraph /*<RzGraphNodeInfo *, None *>
 	if (!data) {
 		return NULL;
 	}
-	RzGraphNode *node = rz_graph_add_node(graph, data);
-	if (!node) {
+	RzGraphNode *node = NULL;
+	if (rz_graph_add_node(graph, data, &node) != RZ_GRAPH_STATUS_OK) {
 		rz_graph_free_node_info(data);
 	}
 	return node;

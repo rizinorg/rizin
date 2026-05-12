@@ -17,14 +17,16 @@ static bool test_legacy_graph(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, ptr_hash, NULL, NULL);
 
 	mu_assert_eq(rz_graph_count_nodes(g), 0, "n_nodes.start");
-	rz_graph_add_node(g, (void *)1);
+	mu_assert_eq(rz_graph_add_node(g, (void *)1, NULL), RZ_GRAPH_STATUS_OK, "Failed add");
 	mu_assert_eq(rz_graph_count_nodes(g), 1, "n_nodes.insert");
 	rz_graph_reset(g);
 	mu_assert_eq(rz_graph_count_nodes(g), 0, "n_nodes.reset");
 
-	RzGraphNode *gn = rz_graph_add_node(g, (void *)1);
+	RzGraphNode *gn = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)1, &gn), RZ_GRAPH_STATUS_OK, "Failed add");
 	mu_assert_ptreq(rz_graph_find_node(g, rz_graph_node_get_id(gn)), gn, "get_node.1");
-	RzGraphNode *gn2 = rz_graph_add_node(g, (void *)2);
+	RzGraphNode *gn2 = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)2, &gn2), RZ_GRAPH_STATUS_OK, "Failed add");
 	mu_assert_ptreq(rz_graph_find_node(g, rz_graph_node_get_id(gn2)), gn2, "get_node.2");
 	rz_graph_add_edge(g, gn, gn2, NULL);
 	mu_assert_true(rz_graph_has_edge(g, gn, gn2), "is_adjacent.1");
@@ -43,7 +45,8 @@ static bool test_legacy_graph(void) {
 		rz_iterator_free(it);
 	}
 
-	RzGraphNode *gn3 = rz_graph_add_node(g, (void *)3);
+	RzGraphNode *gn3 = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)3, &gn3), RZ_GRAPH_STATUS_OK, "Failed add");
 	rz_graph_add_edge(g, gn, gn3, NULL);
 
 	// Check out-neighbors of gn: gn2 and gn3
@@ -60,13 +63,20 @@ static bool test_legacy_graph(void) {
 		rz_iterator_free(it);
 	}
 
-	RzGraphNode *gn4 = rz_graph_add_node(g, (void *)4);
-	RzGraphNode *gn5 = rz_graph_add_node(g, (void *)5);
-	RzGraphNode *gn6 = rz_graph_add_node(g, (void *)6);
-	RzGraphNode *gn7 = rz_graph_add_node(g, (void *)7);
-	RzGraphNode *gn8 = rz_graph_add_node(g, (void *)8);
-	RzGraphNode *gn9 = rz_graph_add_node(g, (void *)9);
-	RzGraphNode *gn10 = rz_graph_add_node(g, (void *)10);
+	RzGraphNode *gn4 = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)4, &gn4), RZ_GRAPH_STATUS_OK, "Failed add");
+	RzGraphNode *gn5 = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)5, &gn5), RZ_GRAPH_STATUS_OK, "Failed add");
+	RzGraphNode *gn6 = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)6, &gn6), RZ_GRAPH_STATUS_OK, "Failed add");
+	RzGraphNode *gn7 = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)7, &gn7), RZ_GRAPH_STATUS_OK, "Failed add");
+	RzGraphNode *gn8 = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)8, &gn8), RZ_GRAPH_STATUS_OK, "Failed add");
+	RzGraphNode *gn9 = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)9, &gn9), RZ_GRAPH_STATUS_OK, "Failed add");
+	RzGraphNode *gn10 = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)10, &gn10), RZ_GRAPH_STATUS_OK, "Failed add");
 	mu_assert_eq(rz_graph_count_nodes(g), 10, "n_nodes.again");
 
 	// Check all nodes are present
@@ -166,9 +176,12 @@ static bool test_legacy_graph(void) {
 static bool test_find_back_edges_simple(void) {
 	/* A -> B -> C -> A  (single cycle, back edge = C->A) */
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, ptr_hash, NULL, NULL);
-	RzGraphNode *a = rz_graph_add_node(g, (void *)1);
-	RzGraphNode *b = rz_graph_add_node(g, (void *)2);
-	RzGraphNode *c = rz_graph_add_node(g, (void *)3);
+	RzGraphNode *a = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)1, &a), RZ_GRAPH_STATUS_OK, "Failed add");
+	RzGraphNode *b = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)2, &b), RZ_GRAPH_STATUS_OK, "Failed add");
+	RzGraphNode *c = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)3, &c), RZ_GRAPH_STATUS_OK, "Failed add");
 	rz_graph_add_edge(g, a, b, NULL);
 	rz_graph_add_edge(g, b, c, NULL);
 	rz_graph_add_edge(g, c, a, NULL);
@@ -188,10 +201,14 @@ static bool test_find_back_edges_simple(void) {
 static bool test_find_back_edges_dag(void) {
 	/* DAG: A->B, A->C, B->D, C->D — no back edges */
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, ptr_hash, NULL, NULL);
-	RzGraphNode *a = rz_graph_add_node(g, (void *)1);
-	RzGraphNode *b = rz_graph_add_node(g, (void *)2);
-	RzGraphNode *c = rz_graph_add_node(g, (void *)3);
-	RzGraphNode *d = rz_graph_add_node(g, (void *)4);
+	RzGraphNode *a = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)1, &a), RZ_GRAPH_STATUS_OK, "Failed add");
+	RzGraphNode *b = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)2, &b), RZ_GRAPH_STATUS_OK, "Failed add");
+	RzGraphNode *c = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)3, &c), RZ_GRAPH_STATUS_OK, "Failed add");
+	RzGraphNode *d = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)4, &d), RZ_GRAPH_STATUS_OK, "Failed add");
 	rz_graph_add_edge(g, a, b, NULL);
 	rz_graph_add_edge(g, a, c, NULL);
 	rz_graph_add_edge(g, b, d, NULL);
@@ -209,7 +226,8 @@ static bool test_find_back_edges_dag(void) {
 static bool test_find_back_edges_self_loop(void) {
 	/* A -> A  (self loop) */
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, ptr_hash, NULL, NULL);
-	RzGraphNode *a = rz_graph_add_node(g, (void *)1);
+	RzGraphNode *a = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)1, &a), RZ_GRAPH_STATUS_OK, "Failed add");
 	rz_graph_add_edge(g, a, a, NULL);
 
 	RzList *back = rz_graph_find_back_edges(g, NULL, NULL);
@@ -224,10 +242,14 @@ static bool test_find_back_edges_self_loop(void) {
 static bool test_find_back_edges_multiple_cycles(void) {
 	/* Two independent cycles: A->B->A and C->D->C */
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, ptr_hash, NULL, NULL);
-	RzGraphNode *a = rz_graph_add_node(g, (void *)1);
-	RzGraphNode *b = rz_graph_add_node(g, (void *)2);
-	RzGraphNode *c = rz_graph_add_node(g, (void *)3);
-	RzGraphNode *d = rz_graph_add_node(g, (void *)4);
+	RzGraphNode *a = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)1, &a), RZ_GRAPH_STATUS_OK, "Failed add");
+	RzGraphNode *b = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)2, &b), RZ_GRAPH_STATUS_OK, "Failed add");
+	RzGraphNode *c = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)3, &c), RZ_GRAPH_STATUS_OK, "Failed add");
+	RzGraphNode *d = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)4, &d), RZ_GRAPH_STATUS_OK, "Failed add");
 	rz_graph_add_edge(g, a, b, NULL);
 	rz_graph_add_edge(g, b, a, NULL);
 	rz_graph_add_edge(g, c, d, NULL);
@@ -249,10 +271,14 @@ static bool test_find_back_edges_multiple_cycles(void) {
 static bool test_find_sccs_dag(void) {
 	/* DAG: A->B->D, A->C->D — each node is its own SCC */
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, ptr_hash, NULL, NULL);
-	RzGraphNode *a = rz_graph_add_node(g, (void *)1);
-	RzGraphNode *b = rz_graph_add_node(g, (void *)2);
-	RzGraphNode *c = rz_graph_add_node(g, (void *)3);
-	RzGraphNode *d = rz_graph_add_node(g, (void *)4);
+	RzGraphNode *a = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)1, &a), RZ_GRAPH_STATUS_OK, "Failed add");
+	RzGraphNode *b = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)2, &b), RZ_GRAPH_STATUS_OK, "Failed add");
+	RzGraphNode *c = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)3, &c), RZ_GRAPH_STATUS_OK, "Failed add");
+	RzGraphNode *d = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)4, &d), RZ_GRAPH_STATUS_OK, "Failed add");
 	rz_graph_add_edge(g, a, b, NULL);
 	rz_graph_add_edge(g, a, c, NULL);
 	rz_graph_add_edge(g, b, d, NULL);
@@ -276,9 +302,12 @@ static bool test_find_sccs_dag(void) {
 static bool test_find_sccs_single_cycle(void) {
 	/* A->B->C->A forms one SCC of size 3 */
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, ptr_hash, NULL, NULL);
-	RzGraphNode *a = rz_graph_add_node(g, (void *)1);
-	RzGraphNode *b = rz_graph_add_node(g, (void *)2);
-	RzGraphNode *c = rz_graph_add_node(g, (void *)3);
+	RzGraphNode *a = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)1, &a), RZ_GRAPH_STATUS_OK, "Failed add");
+	RzGraphNode *b = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)2, &b), RZ_GRAPH_STATUS_OK, "Failed add");
+	RzGraphNode *c = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)3, &c), RZ_GRAPH_STATUS_OK, "Failed add");
 	rz_graph_add_edge(g, a, b, NULL);
 	rz_graph_add_edge(g, b, c, NULL);
 	rz_graph_add_edge(g, c, a, NULL);
@@ -313,10 +342,14 @@ static bool test_find_sccs_mixed(void) {
 	 *   A->C->D->C (SCC2={C,D}), C is also reachable from A
 	 *   Expected: SCC {A,B}, SCC {C,D} */
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, ptr_hash, NULL, NULL);
-	RzGraphNode *a = rz_graph_add_node(g, (void *)1);
-	RzGraphNode *b = rz_graph_add_node(g, (void *)2);
-	RzGraphNode *c = rz_graph_add_node(g, (void *)3);
-	RzGraphNode *d = rz_graph_add_node(g, (void *)4);
+	RzGraphNode *a = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)1, &a), RZ_GRAPH_STATUS_OK, "Failed add");
+	RzGraphNode *b = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)2, &b), RZ_GRAPH_STATUS_OK, "Failed add");
+	RzGraphNode *c = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)3, &c), RZ_GRAPH_STATUS_OK, "Failed add");
+	RzGraphNode *d = NULL;
+	mu_assert_eq(rz_graph_add_node(g, (void *)4, &d), RZ_GRAPH_STATUS_OK, "Failed add");
 	rz_graph_add_edge(g, a, b, NULL);
 	rz_graph_add_edge(g, b, a, NULL);
 	rz_graph_add_edge(g, a, c, NULL);

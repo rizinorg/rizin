@@ -39,14 +39,23 @@ typedef enum {
 	RZ_GRAPH_IMPL_MATRIX
 } RzGraphImplType;
 
+typedef enum {
+	RZ_GRAPH_STATUS_OK,
+	RZ_GRAPH_STATUS_EXISTED,
+	RZ_GRAPH_STATUS_MISSING_NODE,
+	RZ_GRAPH_STATUS_ERR,
+} RzGraphStatus;
+
 // Graph
 RZ_API RZ_OWN RzGraph *rz_graph_new(RzGraphImplType impl_type, RZ_NULLABLE RzGraphIdentifierHash user_hash, RzGraphNodeDataFree node_free, RzGraphEdgeDataFree edge_free);
 RZ_API void rz_graph_free(RzGraph *g);
 RZ_API void rz_graph_reset(RzGraph *g);
 
 // Nodes
-RZ_API RZ_BORROW RzGraphNode *rz_graph_add_node(RzGraph *g, void *node_data);
-RZ_API RZ_BORROW RzGraphNode *rz_graph_add_get_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OWN void *node_data, RZ_OUT RZ_NULLABLE bool *existed);
+RZ_API RzGraphStatus rz_graph_add_node(
+	RzGraph /*<NodeType *, EdgeType *>*/ *g,
+	RZ_NULLABLE RZ_OWN void *node_data,
+	RZ_OUT RZ_NULLABLE RZ_BORROW RzGraphNode **node_ptr);
 RZ_API bool rz_graph_del_node(RzGraph *g, RZ_OWN RzGraphNode *node);
 RZ_API RZ_BORROW RzGraphNode *rz_graph_find_node(RzGraph *g, ut64 id);
 

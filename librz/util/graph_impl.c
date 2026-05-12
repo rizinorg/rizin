@@ -1298,10 +1298,10 @@ RZ_API void rz_graph_reset(RzGraph /*<NodeType *, EdgeType *>*/ *g) {
 	}
 }
 
-static RzGraphNode *internal_add(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OWN void *node_data, ut64 hash_id) {
+static RzGraphStatus internal_add(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OWN void *node_data, ut64 hash_id, RzGraphNode **out_ptr) {
 	RzGraphNode *node = RZ_NEW0(RzGraphNode);
 	if (!node) {
-		return NULL;
+		return RZ_GRAPH_STATUS_ERR;
 	}
 	node->hash_id = hash_id;
 	node->data = node_data;
@@ -1313,7 +1313,10 @@ static RzGraphNode *internal_add(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OWN
 		}
 		node->data = NULL;
 		free(node);
-		return NULL;
+		if (out_ptr) {
+			*out_ptr = ht_up_find(g->nodes, hash_id, NULL);
+		}
+		return RZ_GRAPH_STATUS_EXISTED;
 	}
 
 	// push node reference into vec and update
@@ -1333,59 +1336,36 @@ static RzGraphNode *internal_add(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OWN
 		rz_pvector_pop(g->node_vec);
 		ht_up_delete(g->nodes, hash_id);
 		free(node);
-		return NULL;
+		return RZ_GRAPH_STATUS_ERR;
 	}
 
 	// good
 	g->n_nodes += 1;
-	return node;
-}
-
-/**
- * \brief Add a node to, or get an existing one from the graph.
- *
- * Hashes the \p node_data and checks if a node with this id already exists.
- * If so, it returns it instead.
- * If it doesn't it creates the new node, inserts it, and returns the pointer to it.
- *
- * \param g The graph.
- * \param node_data Data attached to the node. NULL is considered valid data!
- * \return The previous or new node, or NULL in case of failure.
- */
-RZ_API RZ_BORROW RzGraphNode *rz_graph_add_get_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_NULLABLE RZ_OWN void *node_data, RZ_OUT RZ_NULLABLE bool *existed) {
-	rz_return_val_if_fail(g, NULL);
-	ut64 hash_id = g->hash_func(node_data);
-
-	bool found;
-	RzGraphNode *node = ht_up_find(g->nodes, hash_id, &found);
-	if (existed) {
-		*existed = found;
+	if (out_ptr) {
+		*out_ptr = node;
 	}
-	if (node) {
-		return node;
-	}
-	return internal_add(g, node_data, hash_id);
+	return RZ_GRAPH_STATUS_OK;
 }
 
 /**
  * \brief Add a new node with user data to the graph.
- *
- * Hashes the \p node_data to create a unique node id and inserts it into the graph.
- * Fails if a node with the same hash already exists.
+ * It hashes the \p node_data to create a unique node id and inserts it into the graph.
  *
  * \param g The graph.
  * \param node_data Data attached to the node. NULL is considered valid data!
- * \return The newly created node, or NULL on failure
+ * \param node_ptr The pointer to the node.
+ *
+ * \return RZ_GRAPH_STATUS_OK If node was added.
+ * \return RZ_GRAPH_STATUS_EXISTED If node existed.
+ * \return RZ_GRAPH_STATUS_ERR In case of error. node_ptr won't be modified in this case.
  */
-RZ_API RZ_BORROW RzGraphNode *rz_graph_add_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_NULLABLE RZ_OWN void *node_data) {
-	rz_return_val_if_fail(g, NULL);
+RZ_API RzGraphStatus rz_graph_add_node(
+	RzGraph /*<NodeType *, EdgeType *>*/ *g,
+	RZ_NULLABLE RZ_OWN void *node_data,
+	RZ_OUT RZ_NULLABLE RZ_BORROW RzGraphNode **node_ptr) {
+	rz_return_val_if_fail(g, RZ_GRAPH_STATUS_ERR);
 	ut64 hash_id = g->hash_func(node_data);
-
-	if (ht_up_find(g->nodes, hash_id, NULL)) {
-		RZ_LOG_WARN("Node already exist, return NULL\n");
-		return NULL;
-	}
-	return internal_add(g, node_data, hash_id);
+	return internal_add(g, node_data, hash_id, node_ptr);
 }
 
 /**

@@ -810,10 +810,8 @@ static RzGraphNode *rz_graph_add_node_info_icfg(RzGraph /*<RzGraphNodeInfo *, No
 		rz_warn_if_reached();
 		return NULL;
 	}
-	RzGraphNode *node = rz_graph_add_node(graph, data);
-	if (!node) {
-		rz_graph_free_node_info(data);
-	}
+	RzGraphNode *node = NULL;
+	rz_graph_add_node(graph, data, &node);
 	return node;
 }
 
@@ -967,10 +965,8 @@ static RzGraphNode *add_node_info_cfg(RzGraph /*<RzGraphNodeInfo *, None *>*/ *c
 	if (!data) {
 		return NULL;
 	}
-	RzGraphNode *node = rz_graph_add_node(cfg, data);
-	if (!node) {
-		rz_graph_free_node_info(data);
-	}
+	RzGraphNode *node = NULL;
+	rz_graph_add_node(cfg, data, &node);
 	return node;
 }
 
