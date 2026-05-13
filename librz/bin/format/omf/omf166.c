@@ -563,12 +563,17 @@ static int load_linnum_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const 
 
 	while (ct < record->size) {
 		linnum = RZ_NEW0(OMF_linnums);
-		rz_return_val_if_fail(linnum, false);
+		if (!linnum) {
+			return false;
+		}
 		linnum->LineNumber = rz_read_le16_offset(buf, &ct); // start with ct = 5
 		const ut16 offset = rz_read_le16_offset(buf, &ct);
 		linnum->address = (FrameNumber << 16) | offset;
 		OMF_coments *comment = rz_pvector_tail(obj->coments_vec);
-		rz_return_val_if_fail(comment, false);
+		if (!comment) {
+			RZ_FREE(linnum);
+			return false;
+		}
 		linnum->n = comment->n;
 		rz_str_ncpy(linnum->filename, comment->text, comment->n);
 		rz_pvector_push(obj->linnums_vec, linnum);
