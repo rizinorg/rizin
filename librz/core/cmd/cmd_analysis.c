@@ -1795,7 +1795,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_del_all_handler(RzCore *core, int
 	if (!fcn) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	while (!rz_pvector_len(fcn->bbs)) {
+	while (rz_pvector_len(fcn->bbs)) {
 		rz_analysis_function_remove_block(fcn, rz_pvector_head(fcn->bbs));
 	}
 	return RZ_CMD_STATUS_OK;
