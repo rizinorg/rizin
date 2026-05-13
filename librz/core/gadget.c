@@ -2088,10 +2088,13 @@ RZ_API RzCmdStatus rz_core_gadget_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzG
 	}
 	RzList /*<char *>*/ *rx_list = rz_core_gadget_handle_grep_args(context->greparg, context->regexp);
 	int status = 0;
-	// If specific address range is provided, scan that range for gadgets.
+
+	// If specific address range is provided, constrain the search interval.
+	// This path hits only when context->from/to is set using RZ_API
+	// in normal flow of /[RJC] commands this will never be hit
 	if (context->to || context->from) {
-		status = handle_gadget_search_address(core, context, rx_list);
-		goto cleanup;
+		RzInterval custom_itv = { context->from, context->to - context->from };
+		search_itv = rz_itv_intersect(search_itv, custom_itv);
 	}
 
 	RzList *boundaries = rz_core_get_boundaries_select(core, "search.from", "search.to", "search.in");
