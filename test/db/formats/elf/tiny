@@ -2,12 +2,22 @@ NAME=ELF: corkami tiny.elf - entry0
 FILE=bins/elf/analysis/tiny.elf
 CMDS=<<EOF
 %v entry0; e asm.bytes=true; pdq 4 @ entry0;
-echo ---
+echo -- 1 --
 oml
-echo ---
+echo -- 2 --
 iSS
+echo -- 3 --
 e log.level=1
 aF
+e analysis.in=io.maps
+aF
+e log.level=3
+pd 10
+echo -- 4 --
+afb
+echo -- 5 --
+afb-*
+afb
 EOF
 EXPECT=<<EOF
 0x10020
@@ -16,13 +26,31 @@ EXPECT=<<EOF
 0x00010022                 31c0  xor eax, eax
 0x00010024                   40  inc eax
 0x00010025                 cd80  int 0x80
----
+-- 1 --
  1 fd: 3 +0x00000000 0x00010000 * 0x0002001f r-- fmap.LOAD0
----
+-- 2 --
      paddr    size      vaddr   vsize      align perm name  
 ------------------------------------------------------------
 0x00000000 0x10020 0x00010000 0x10020 0xc0312ab3 -r-- LOAD0
 0x00000000    0x2d 0x00010000    0x2d        0x0 -rw- ehdr
+-- 3 --
+/ entry0();
+|           0x00010020      b32a           mov   bl, 0x2a              ; '*' ; 42
+|           0x00010022      31c0           xor   eax, eax
+|           0x00010024      40             inc   eax
+|           0x00010025      cd80           int   0x80
+|           0x00010027      003400         add   byte [eax+eax*1], dh
+|           0x0001002a      2000           and   byte [eax], al
+|           0x0001002c      0100           add   dword [eax], eax
+|           0x0001002e      0000           add   byte [eax], al
+|           0x00010030      0000           add   byte [eax], al
+|           0x00010032      0000           add   byte [eax], al
+-- 4 --
+0x00010020 0x0001fc1e 00:0000 64510 j 0x0001fc1e
+0x0001fc1e 0x00020020 00:0000 1026
+-- 5 --
+0x00010020 0x0001fc1e 00:0000 64510 j 0x0001fc1e
+0x0001fc1e 0x00020020 00:0000 1026
 EOF
 EXPECT_ERR=<<EOF
 WARNING: Failed to read ELF header (e_phnum).
@@ -38,5 +66,6 @@ WARNING: ELF header e_shstrndx value (0) >= number of sections (0).
 WARNING: Failed to initialize section string table.
 WARNING: Failed to read chunk of size 0x101 at 0x10020 from io.
 VERBOSE: Address not mapped or not executable at 0x10020.
+WARNING: Failed to read chunk of size 0x101 at 0x10020 from io.
 EOF
 RUN
