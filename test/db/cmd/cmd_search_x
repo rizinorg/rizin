@@ -470,3 +470,4 @@ EOF
 EXPECT_ERR=<<EOF
 ERROR: core: Invalid mode 'section' for [0x0, 0xffffffffffffffff]
 EOF
+RUN
