@@ -6,6 +6,7 @@
 #ifndef C166_DISAS_H
 #define C166_DISAS_H
 
+#include "rz_vector.h"
 #include <rz_types.h>
 
 #define C166_INSTR_MAXLEN    (16 + 16) // ?
@@ -748,7 +749,7 @@ typedef enum {
 typedef struct {
 	bool esfr;  		///< Extended register sequence active
 	C166ExtMode mode; 	///< Extended page/seq mode
-	ut8 i; 				///< Number of unstructions remaining until state exits
+	ut8 i; 			///< Number of unstructions remaining until state exits
 	ut16 value; 		///< Value of ext
 } C166ExtState;
 
@@ -785,6 +786,6 @@ static inline ut16 get_operand(const C166_Inst *i, const ut8 index) {
 	return get_byte(i, index);
 }
 
-RZ_IPI st32 c166_decode_command(RZ_NONNULL C166State *state, RZ_NONNULL C166_Inst *instr, const ut8 *bytes, st32 len);
+RZ_IPI st32 c166_decode_command(RZ_NONNULL C166State *state, RZ_NONNULL C166_Inst *instr, RZ_NONNULL const ut8 *bytes, st32 len);
 static bool check_unused_opcode(ut8 opcode);
 #endif /* C166_DISAS_H */

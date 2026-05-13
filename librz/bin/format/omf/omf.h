@@ -9,10 +9,7 @@
 #include <rz_util.h>
 #include <rz_types.h>
 #include <rz_bin.h>
-
 #include "omf_specs.h"
-
-#define BOOL_STR(x) x ? "true" : "false"
 
 #define FINAL_TYPE 0x00
 /**

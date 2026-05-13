@@ -32,10 +32,14 @@ static bool _is_any_n(const char *str, size_t n, ...) {
 static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
 	ut64 size;
 	const ut8 *buf = rz_buf_data(b, &size);
-	rz_return_val_if_fail(buf, false);
+	if (!buf) {
+		return false;
+	}
 
 	obj->bin_obj = rz_bin_format_omf166_load(buf, size);
-	rz_return_val_if_fail(obj->bin_obj, false);
+	if (!obj->bin_obj) {
+		return false;
+	}
 	return true;
 }
 
@@ -51,7 +55,9 @@ static void destroy(RzBinFile *bf) {
 	}
 
 	rz_bin_omf166_obj *omf_obj = (rz_bin_omf166_obj *)bf->o->bin_obj;
-	rz_return_val_if_fail(omf_obj, (void)NULL);
+	if (omf_obj) {
+		return;
+	}
 	ht_up_free(omf_obj->ht_types);
 	rz_bin_format_omf166_fini(omf_obj);
 }
@@ -88,7 +94,6 @@ static bool check_buffer(RzBuffer *b) {
 		rz_buf_read_at(b, 0, sbuf, sizeof(sbuf));
 		return rz_bin_checksum_omf_ok(sbuf, sizeof(sbuf));
 	}
-	rz_return_val_if_fail(buf, false);
 	return rz_bin_checksum_omf_ok(buf, length);
 }
 
@@ -198,18 +203,20 @@ static int offset_cmp(const void *a, const void *b, void *user) {
 }
 
 static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
-	rz_return_val_if_fail(bf && bf->o, NULL);
+	if (!bf || !bf->o) {
+		return NULL;
+	}
 
 	const rz_bin_omf166_obj *obj = (rz_bin_omf166_obj *)bf->o->bin_obj;
-	rz_return_val_if_fail(obj, NULL);
+	if (!obj) {
+		return NULL;
+	}
 
 	if (!rz_pvector_len(obj->symbols_vec)) {
 		return NULL;
 	}
 
 	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
-	rz_return_val_if_fail(obj, ret);
-
 	rz_pvector_sort(obj->symbols_vec, offset_cmp, NULL);
 	void **it;
 	rz_pvector_foreach (obj->symbols_vec, it) {
@@ -283,11 +290,13 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 }
 
 static RzStructuredData *omf166_structure(RzBinFile *bf) {
-	rz_return_val_if_fail(bf, NULL);
-	const RzBinObject *o = bf->o;
-	rz_return_val_if_fail(o, NULL);
-	const rz_bin_omf166_obj *obj = (rz_bin_omf166_obj *)o->bin_obj;
-	rz_return_val_if_fail(obj, NULL);
+	if (!bf || !bf->o) {
+		return NULL;
+	}
+	const rz_bin_omf166_obj *obj = (rz_bin_omf166_obj *)bf->o->bin_obj;
+	if (!obj) {
+		return NULL;
+	}
 
 	RzStructuredData *info = rz_structured_data_new_map();
 	if (!info) {
@@ -343,11 +352,13 @@ static RzStructuredData *omf166_structure(RzBinFile *bf) {
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
-	rz_return_val_if_fail(bf, NULL);
-	const RzBinObject *o = bf->o;
-	rz_return_val_if_fail(o, NULL);
-	const rz_bin_omf166_obj *obj = (rz_bin_omf166_obj *)o->bin_obj;
-	rz_return_val_if_fail(obj, NULL);
+	if (!bf || !bf->o) {
+		return NULL;
+	}
+	const rz_bin_omf166_obj *obj = (rz_bin_omf166_obj *)bf->o->bin_obj;
+	if (!obj) {
+		return NULL;
+	}
 
 	RzBinInfo *ret;
 	if (!((ret = RZ_NEW0(RzBinInfo)))) {

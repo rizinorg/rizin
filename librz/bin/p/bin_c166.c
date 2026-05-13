@@ -31,7 +31,9 @@ static bool check_buffer(RzBuffer *buf) {
 
 rz_bin_c166_obj *rz_bin_format_c166_load(const ut8 *buf, ut64 size) {
 	rz_bin_c166_obj *ret = RZ_NEW0(rz_bin_c166_obj);
-	rz_return_val_if_fail(ret, NULL);
+	if (!ret) {
+		return NULL;
+	}
 	const ut8 c = rz_read_le8(buf + 1);
 	ret->base_addr = c << 16 | 0x000000;
 	return ret;
@@ -40,9 +42,13 @@ rz_bin_c166_obj *rz_bin_format_c166_load(const ut8 *buf, ut64 size) {
 static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
 	ut64 size;
 	const ut8 *buf = rz_buf_data(b, &size);
-	rz_return_val_if_fail(buf, false);
+	if (!buf) {
+		return false;
+	}
 	obj->bin_obj = rz_bin_format_c166_load(buf, size);
-	rz_return_val_if_fail(obj->bin_obj, false);
+	if (!obj->bin_obj) {
+		return false;
+	}
 	return true;
 }
 
