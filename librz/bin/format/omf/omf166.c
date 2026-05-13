@@ -814,6 +814,7 @@ static int load_omf_typnew(rz_bin_omf166_obj *obj, const ut8 *buf) {
 		newtype->descriptor.components.comp =
 			RZ_NEWS0(OMF_component, newtype->descriptor.components.count);
 		if (!newtype->descriptor.components.comp) {
+			RZ_FREE(newtype->label);
 			RZ_FREE(newtype);
 			return false;
 		}
