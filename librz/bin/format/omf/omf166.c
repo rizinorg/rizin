@@ -424,17 +424,20 @@ static int load_omf166_global_sym_record(const rz_bin_omf166_obj *obj, const OMF
 
 static int load_omf_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const size_t buf_size, const OMF_record *record) {
 	size_t ct = 4;
-	OMF_ledatas *lep = RZ_NEW0(OMF_ledatas);
-	rz_return_val_if_fail(lep, false);
-
 	if ((!(record->type & 1) && record->size < 4) || (record->size < 6)) {
 		RZ_LOG_ERROR("Invalid Ledata record (bad size)\n");
+		return false;
+	}
+
+	OMF_ledatas *lep = RZ_NEW0(OMF_ledatas);
+	if (!lep) {
 		return false;
 	}
 	lep->seg_idx = omf166_get_idx(buf + 3, buf_size - 3);
 	if (lep->seg_idx & 0xff00) {
 		if ((!(record->type & 1) && record->size < 5) || (record->size < 7)) {
 			RZ_LOG_ERROR("Invalid Ledata record (bad size)\n");
+			RZ_FREE(lep);
 			return false;
 		}
 		ct++;
@@ -563,12 +566,17 @@ static int load_linnum_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const 
 
 	while (ct < record->size) {
 		linnum = RZ_NEW0(OMF_linnums);
-		rz_return_val_if_fail(linnum, false);
+		if (!linnum) {
+			return false;
+		}
 		linnum->LineNumber = rz_read_le16_offset(buf, &ct); // start with ct = 5
 		const ut16 offset = rz_read_le16_offset(buf, &ct);
 		linnum->address = (FrameNumber << 16) | offset;
 		OMF_coments *comment = rz_pvector_tail(obj->coments_vec);
-		rz_return_val_if_fail(comment, false);
+		if (!comment) {
+			RZ_FREE(linnum);
+			return false;
+		}
 		linnum->n = comment->n;
 		rz_str_ncpy(linnum->filename, comment->text, comment->n);
 		rz_pvector_push(obj->linnums_vec, linnum);
@@ -809,6 +817,7 @@ static int load_omf_typnew(rz_bin_omf166_obj *obj, const ut8 *buf) {
 		newtype->descriptor.components.comp =
 			RZ_NEWS0(OMF_component, newtype->descriptor.components.count);
 		if (!newtype->descriptor.components.comp) {
+			RZ_FREE(newtype->label);
 			RZ_FREE(newtype);
 			return false;
 		}

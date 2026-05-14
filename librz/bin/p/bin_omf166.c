@@ -161,11 +161,13 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		OMF_lnames *lname = (OMF_lnames *)rz_pvector_at(obj->lnames_vec, section->index);
 		if (!lname) {
 			rz_warn_if_reached();
+			RZ_FREE(new);
 			continue;
 		}
 		OMF_lnames *c_lname = (OMF_lnames *)rz_pvector_at(obj->lnames_vec, section->class_index);
 		if (!c_lname) {
 			rz_warn_if_reached();
+			RZ_FREE(new);
 			continue;
 		}
 		const char *name = RZ_STR_ISNOTEMPTY(lname->name) ? lname->name : "UNKNOWN";
