@@ -7,7 +7,11 @@
 #include "riscv_il_integer.h"
 #include "riscv_il_m.h"
 #include "riscv_il_a.h"
+#include "riscv_il_f.h"
+#include "riscv_il_d.h"
 #include "riscv_il_compressed.h"
+#include "riscv_il_fd_compressed.h"
+#include "riscv_il_priv.h"
 
 static void label_ecall(RzILVM *vm, RzILOpEffect *op) {
 	// stub: ecall is handled at the analysis layer
@@ -194,6 +198,96 @@ static const RiscvInstructionLifter riscv_lifters[] = {
 	USE_LIFTER(amomaxu_d_aq, AMOMAXU_D_AQ),
 	USE_LIFTER(amomaxu_d_rl, AMOMAXU_D_RL),
 	USE_LIFTER(amomaxu_d_aqrl, AMOMAXU_D_AQRL),
+	/* ---------------------------------- F extension ---------------------------------*/
+	// Memory
+	USE_LIFTER(flw, FLW),
+	USE_LIFTER(fsw, FSW),
+	// Arithmetic
+	USE_LIFTER(fadd_s, FADD_S),
+	USE_LIFTER(fsub_s, FSUB_S),
+	USE_LIFTER(fmul_s, FMUL_S),
+	USE_LIFTER(fdiv_s, FDIV_S),
+	USE_LIFTER(fsqrt_s, FSQRT_S),
+	// Fused multiply-add
+	USE_LIFTER(fmadd_s, FMADD_S),
+	USE_LIFTER(fmsub_s, FMSUB_S),
+	USE_LIFTER(fnmadd_s, FNMADD_S),
+	USE_LIFTER(fnmsub_s, FNMSUB_S),
+	// Sign injection
+	USE_LIFTER(fsgnj_s, FSGNJ_S),
+	USE_LIFTER(fsgnjn_s, FSGNJN_S),
+	USE_LIFTER(fsgnjx_s, FSGNJX_S),
+	// Min / max
+	USE_LIFTER(fmin_s, FMIN_S),
+	USE_LIFTER(fmax_s, FMAX_S),
+	// Comparison
+	USE_LIFTER(feq_s, FEQ_S),
+	USE_LIFTER(flt_s, FLT_S),
+	USE_LIFTER(fle_s, FLE_S),
+	// Classification
+	USE_LIFTER(fclass_s, FCLASS_S),
+	// Conversions float32 → int
+	USE_LIFTER(fcvt_w_s, FCVT_W_S),
+	USE_LIFTER(fcvt_wu_s, FCVT_WU_S),
+	USE_LIFTER(fcvt_l_s, FCVT_L_S),
+	USE_LIFTER(fcvt_lu_s, FCVT_LU_S),
+	// Conversions int → float32
+	USE_LIFTER(fcvt_s_w, FCVT_S_W),
+	USE_LIFTER(fcvt_s_wu, FCVT_S_WU),
+	USE_LIFTER(fcvt_s_l, FCVT_S_L),
+	USE_LIFTER(fcvt_s_lu, FCVT_S_LU),
+	// Bit-level move
+	USE_LIFTER(fmv_x_w, FMV_X_W),
+	USE_LIFTER(fmv_w_x, FMV_W_X),
+	/* ---------------------------------- D extension ---------------------------------*/
+	// Memory
+	USE_LIFTER(fld, FLD),
+	USE_LIFTER(fsd, FSD),
+	// Arithmetic
+	USE_LIFTER(fadd_d, FADD_D),
+	USE_LIFTER(fsub_d, FSUB_D),
+	USE_LIFTER(fmul_d, FMUL_D),
+	USE_LIFTER(fdiv_d, FDIV_D),
+	USE_LIFTER(fsqrt_d, FSQRT_D),
+	// Fused multiply-add
+	USE_LIFTER(fmadd_d, FMADD_D),
+	USE_LIFTER(fmsub_d, FMSUB_D),
+	USE_LIFTER(fnmadd_d, FNMADD_D),
+	USE_LIFTER(fnmsub_d, FNMSUB_D),
+	// Sign injection
+	USE_LIFTER(fsgnj_d, FSGNJ_D),
+	USE_LIFTER(fsgnjn_d, FSGNJN_D),
+	USE_LIFTER(fsgnjx_d, FSGNJX_D),
+	// Min / max
+	USE_LIFTER(fmin_d, FMIN_D),
+	USE_LIFTER(fmax_d, FMAX_D),
+	// Comparison
+	USE_LIFTER(feq_d, FEQ_D),
+	USE_LIFTER(flt_d, FLT_D),
+	USE_LIFTER(fle_d, FLE_D),
+	// Classification
+	USE_LIFTER(fclass_d, FCLASS_D),
+	// Conversions float64 → int
+	USE_LIFTER(fcvt_w_d, FCVT_W_D),
+	USE_LIFTER(fcvt_wu_d, FCVT_WU_D),
+	USE_LIFTER(fcvt_l_d, FCVT_L_D),
+	USE_LIFTER(fcvt_lu_d, FCVT_LU_D),
+	// Conversions int → float64
+	USE_LIFTER(fcvt_d_w, FCVT_D_W),
+	USE_LIFTER(fcvt_d_wu, FCVT_D_WU),
+	USE_LIFTER(fcvt_d_l, FCVT_D_L),
+	USE_LIFTER(fcvt_d_lu, FCVT_D_LU),
+	// Precision conversions
+	USE_LIFTER(fcvt_d_s, FCVT_D_S),
+	USE_LIFTER(fcvt_s_d, FCVT_S_D),
+	// Bit-level move (RV64D only)
+	USE_LIFTER(fmv_x_d, FMV_X_D),
+	USE_LIFTER(fmv_d_x, FMV_D_X),
+	// ---------------------------------- Compressed F/D ---------------------------------
+	USE_LIFTER(c_fld, C_FLD),
+	USE_LIFTER(c_fsd, C_FSD),
+	USE_LIFTER(c_fldsp, C_FLDSP),
+	USE_LIFTER(c_fsdsp, C_FSDSP),
 	/* ---------------------------------- Compressed ---------------------------------*/
 	USE_LIFTER(c_nop, C_NOP),
 	USE_LIFTER(c_addi, C_ADDI),
@@ -229,6 +323,13 @@ static const RiscvInstructionLifter riscv_lifters[] = {
 	USE_LIFTER(c_addw, C_ADDW),
 	USE_LIFTER(c_addiw, C_ADDIW),
 	USE_LIFTER(c_subw, C_SUBW),
+	// ---------------------------------- Privileged instructions ---------------------------------
+	USE_LIFTER(csrrw, CSRRW),
+	USE_LIFTER(csrrs, CSRRS),
+	USE_LIFTER(csrrc, CSRRC),
+	USE_LIFTER(csrrwi, CSRRWI),
+	USE_LIFTER(csrrsi, CSRRSI),
+	USE_LIFTER(csrrci, CSRRCI),
 };
 
 RZ_OWN RZ_IPI RzILOpEffect *
