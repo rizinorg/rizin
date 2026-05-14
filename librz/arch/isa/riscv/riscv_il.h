@@ -9,11 +9,11 @@
 
 #include <rz_types.h>
 #include <rz_analysis.h>
-typedef RzILOpEffect *(*RiscvInstructionLifter)(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, int size);
+typedef RzILOpEffect *(*RiscvInstructionLifter)(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size);
 
 RZ_OWN RZ_IPI RzILOpEffect *
 rz_riscv_lift_instr(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, int size);
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size);
 
 RZ_IPI RzAnalysisILConfig *rz_riscv_il_config(RZ_NONNULL RzAnalysis *analysis);
 
