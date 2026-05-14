@@ -41,7 +41,17 @@ static inline RzILOpEffect *riscv_il_set_reg(uint32_t reg, RZ_OWN RZ_NONNULL RzI
 		decoder(analysis, insn); \
 		return SEQ2( \
 			riscv_il_set_reg(rd, result), \
-			jmp_effect); \
+			post_effect); \
+	}
+
+// pre_effect, then rd = result (e.g. store-conditional: store first, then write success flag)
+#define DEFINE_LIFTER_WITH_PRE_EFFECT(name, decoder, pre_effect, result) \
+	RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
+		RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
+		decoder(analysis, insn); \
+		return SEQ2( \
+			pre_effect, \
+			riscv_il_set_reg(rd, result)); \
 	}
 
 #define DEFINE_LIFTER_WITH_EFFECT(name, decoder, effect) \
