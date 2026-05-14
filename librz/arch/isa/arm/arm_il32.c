@@ -1802,6 +1802,8 @@ static RzILOpEffect *qadd16(cs_insn *insn, bool is_thumb) {
 	}
 	RzILOpEffect *eff = write_reg(REGID(0), APPEND(VARL("rh"), VARL("rl")));
 	if (!eff) {
+		rz_il_op_pure_free(a);
+		rz_il_op_pure_free(b);
 		return NULL;
 	}
 	bool is_signed = insn->id == ARM_INS_QADD16 || insn->id == ARM_INS_QSUB16 || insn->id == ARM_INS_QASX ||
