@@ -165,5 +165,9 @@ RZ_IPI RzAnalysisILConfig *rz_riscv_il_config(RZ_NONNULL RzAnalysis *analysis) {
 	ebreak_label->hook = label_ebreak;
 	rz_analysis_il_config_add_label(conf, ebreak_label);
 
+	RzILEffectLabel *ecall_label = rz_il_effect_label_new("ecall", EFFECT_LABEL_SYSCALL);
+	ecall_label->hook = label_ecall;
+	rz_analysis_il_config_add_label(conf, ecall_label);
+
 	return conf;
 }
