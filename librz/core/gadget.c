@@ -1974,6 +1974,45 @@ static bool match_constraints(const RzGadgetInfo *gadget_info, const RzPVector /
 	return true;
 }
 
+static bool apply_post_build_filters(RzCore *core, RzGadgetSearchContext *context,
+	RzPVector /*<RzCoreAsmHit *>*/ *hitlist, int delay_size, ut64 gadget_addr) {
+
+	// constraint filtering
+	if (context->constraints && !rz_pvector_empty(context->constraints)) {
+		RzGadgetInfo *gadget_info = perform_gadget_analysis(context->type, core, context->allow_conditional, hitlist, delay_size);
+		if (!gadget_info || !match_constraints(gadget_info, context->constraints)) {
+			return false;
+		}
+	}
+
+	// detail mask filtering
+	if (context->detail_mask) {
+		RzGadgetInfo *gadget_info = perform_gadget_analysis(context->type, core, context->allow_conditional, hitlist, delay_size);
+		if (!gadget_info) {
+			return false;
+		}
+		if (context->detail_mask & (RZ_GADGET_DETAIL_SEARCH_STACK | RZ_GADGET_DETAIL_SEARCH_SIZE)) {
+			RzGadgetDetailSearchCmpOp cmp_op;
+			st64 target;
+			// RZ_GADGET_DETAIL_SEARCH_STACK -> stack_change, RZ_GADGET_DETAIL_SEARCH_SIZE -> size
+			ut64 search_val = context->detail_mask & RZ_GADGET_DETAIL_SEARCH_STACK ? gadget_info->stack_change : gadget_info->size;
+			if (!parse_detail_search_arg(core, context->greparg, &cmp_op, &target)) {
+				return false;
+			}
+			if (!match_detail_search(search_val, cmp_op, target)) {
+				return false;
+			}
+		}
+	}
+
+	// alignment check
+	if (core->search->align && gadget_addr % core->search->align != 0) {
+		return false;
+	}
+
+	return true;
+}
+
 static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzGadgetSearchContext *context,
 	RzList /*<char *>*/ *rx_list, RzGadgetEndListPair *end_gadget) {
 	RzAsmOp *asmop = rz_asm_op_new();
@@ -1989,37 +2028,13 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzGadgetS
 		goto fini;
 	}
 
-	if (context->constraints && !rz_pvector_empty(context->constraints)) {
-		RzGadgetInfo *gadget_info = perform_gadget_analysis(context->type, core, context->allow_conditional, hitlist, end_gadget->delay_size);
-		if (!gadget_info || !match_constraints(gadget_info, context->constraints)) {
-			rz_pvector_free(hitlist);
-			goto fini;
-		}
+	// when caching and max_count exhausts, skip output BUT continue building cache
+	if (context->cache && context->max_count == 0) {
+		rz_pvector_free(hitlist);
+		goto fini;
 	}
 
-	if (context->detail_mask) {
-		RzGadgetInfo *gadget_info = perform_gadget_analysis(context->type, core, context->allow_conditional, hitlist, end_gadget->delay_size);
-		if (!gadget_info) {
-			rz_pvector_free(hitlist);
-			goto fini;
-		}
-		if (context->detail_mask & (RZ_GADGET_DETAIL_SEARCH_STACK | RZ_GADGET_DETAIL_SEARCH_SIZE)) {
-			RzGadgetDetailSearchCmpOp cmp_op;
-			st64 target;
-			// RZ_GADGET_DETAIL_SEARCH_STACK -> stack_change, RZ_GADGET_DETAIL_SEARCH_SIZE -> size
-			ut64 search_val = context->detail_mask & RZ_GADGET_DETAIL_SEARCH_STACK ? gadget_info->stack_change : gadget_info->size;
-			if (!parse_detail_search_arg(core, context->greparg, &cmp_op, &target)) {
-				rz_pvector_free(hitlist);
-				goto fini;
-			}
-			if (!match_detail_search(search_val, cmp_op, target)) {
-				rz_pvector_free(hitlist);
-				goto fini;
-			}
-		}
-	}
-
-	if (core->search->align && (context->from + idx) % core->search->align != 0) {
+	if (!apply_post_build_filters(core, context, hitlist, end_gadget->delay_size, context->from + idx)) {
 		rz_pvector_free(hitlist);
 		goto fini;
 	}
@@ -2033,7 +2048,7 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzGadgetS
 	if (context->max_count > 0) {
 		context->max_count--;
 		if (context->max_count < 1) {
-			status = true;
+			status = !context->cache;
 		}
 	}
 
@@ -2086,9 +2101,20 @@ static bool print_gadgets_from_cache(RzCore *core, RzGadgetCache *gadget_cache, 
 			continue;
 		}
 
+		if (!apply_post_build_filters(core, context, node->hitlist, node->delay_size, node->addr)) {
+			rz_rbtree_iter_next(&iter);
+			continue;
+		}
+
 		if (!rz_core_handle_gadget_request_type(core, context, node->hitlist, node->delay_size)) {
-			RZ_LOG_DEBUG("Fail at path 3");
 			return false;
+		}
+
+		if (context->max_count > 0) {
+			context->max_count--;
+			if (context->max_count < 1) {
+				break;
+			}
 		}
 		rz_rbtree_iter_next(&iter);
 	}
@@ -2138,7 +2164,7 @@ static int handle_gadget_search_address(RzCore *core, RzGadgetSearchContext *con
 	RzGadgetEndListPair *end_gadget = rz_list_pop(context->end_list);
 	// Start at just before the first end gadget.
 	const int next = end_gadget->instr_offset;
-	for (int i = 0; i < delta && context->max_count; i += context->increment) {
+	for (int i = 0; i < delta && (context->cache || context->max_count); i += context->increment) {
 		// TODO: Test this and check if this line is needed in x86
 		const int prev = 0;
 		if (context->increment == 1 && i < prev - max_inst_size_x86) {
