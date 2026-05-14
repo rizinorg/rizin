@@ -99,7 +99,7 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	}
 
 	op->addr = addr;
-	ret = op->size = h8300_decode_command(buf, len, &cmd, addr, analysis->cpu);
+	ret = op->size = h8300_decode_command(buf, len, &cmd, addr, rz_analysis_get_cpu(analysis));
 
 	if (ret < 0) {
 		return ret;
@@ -377,7 +377,7 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 }
 
 static char *get_reg_profile(RzAnalysis *analysis) {
-	if (h8300_cpu_type(analysis->cpu) == CPU_H8300H) {
+	if (h8300_cpu_type(rz_analysis_get_cpu(analysis)) == CPU_H8300H) {
 		char *p =
 			"=PC	pc\n"
 			"=SP	er7\n"

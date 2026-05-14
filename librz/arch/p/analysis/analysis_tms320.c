@@ -73,9 +73,10 @@ static int tms320_c55x_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, con
 int tms320_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	Tms320Context *context = (Tms320Context *)analysis->plugin_data;
 
-	if (analysis->cpu && rz_str_casecmp(analysis->cpu, "c55x+") == 0) {
+	const char *cpu = rz_analysis_get_cpu(analysis);
+	if (cpu && rz_str_casecmp(cpu, "c55x+") == 0) {
 		return tms320_c55x_plus_op(analysis, op, addr, buf, len);
-	} else if (analysis->cpu && rz_str_casecmp(analysis->cpu, "c64x") == 0) {
+	} else if (cpu && rz_str_casecmp(cpu, "c64x") == 0) {
 		return tms320_c64x_op(analysis, op, addr, buf, len, mask, context->c64x);
 	}
 	return tms320_c55x_op(analysis, op, addr, buf, len, &context->engine);
@@ -112,7 +113,7 @@ static bool is_c5000(const char *cpu) {
 
 static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 	const char *p;
-	if (is_c5000(a->cpu)) {
+	if (is_c5000(rz_analysis_get_cpu(a))) {
 		p =
 			"=PC	pc\n"
 			"=A0	ar0\n"

@@ -456,7 +456,7 @@ hppa_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, Rz
 	}
 
 	RzAsmHPPAContext *ctx = a->plugin_data;
-	if (!hppa_setup_cs_handle(ctx, a->cpu, NULL, a->big_endian)) {
+	if (!hppa_setup_cs_handle(ctx, rz_analysis_get_cpu(a), NULL, a->big_endian)) {
 		return -1;
 	}
 

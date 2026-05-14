@@ -150,9 +150,9 @@ CPU_MODEL cpu_models[] = {
 	{ .model = "ATmega8", .pc = 13, .consts = { cpu_reg_common, cpu_memsize_common, cpu_pagesize_5_bits, NULL } },
 };
 
-static CPU_MODEL *get_cpu_model(char *model);
+static CPU_MODEL *get_cpu_model(const char *model);
 
-static CPU_MODEL *__get_cpu_model_recursive(char *model) {
+static CPU_MODEL *__get_cpu_model_recursive(const char *model) {
 	if (!model) {
 		return &cpu_models[0];
 	}
@@ -175,7 +175,7 @@ static CPU_MODEL *__get_cpu_model_recursive(char *model) {
 	return cpu;
 }
 
-static CPU_MODEL *get_cpu_model(char *model) {
+static CPU_MODEL *get_cpu_model(const char *model) {
 	if (!model) {
 		return &cpu_models[0];
 	}
@@ -1179,7 +1179,7 @@ INST_HANDLER(spm) { // SPM Z+
 	ut64 spmcsr;
 
 	// read SPM Control Register (SPMCR)
-	rz_analysis_esil_reg_read(analysis->esil, "spmcsr", &spmcsr, NULL);
+	rz_analysis_esil_reg_read(rz_analysis_get_esil(analysis), "spmcsr", &spmcsr, NULL);
 
 	// clear SPMCSR
 	ESIL_A("0x7c,spmcsr,&=,");
@@ -1499,7 +1499,7 @@ static bool avr_custom_spm_page_erase(RzAnalysisEsil *esil) {
 	}
 
 	// get details about current MCU and fix input address
-	cpu = get_cpu_model(analysis->cpu);
+	cpu = get_cpu_model(rz_analysis_get_cpu(analysis));
 	page_size_bits = const_get_value(const_by_name(cpu, CPU_CONST_PARAM, "page_size"));
 
 	// align base address to page_size_bits
@@ -1544,7 +1544,7 @@ static bool avr_custom_spm_page_fill(RzAnalysisEsil *esil) {
 	r1 = i;
 
 	// get details about current MCU and fix input address
-	cpu = get_cpu_model(analysis->cpu);
+	cpu = get_cpu_model(rz_analysis_get_cpu(analysis));
 	page_size_bits = const_get_value(const_by_name(cpu, CPU_CONST_PARAM, "page_size"));
 
 	// align and crop base address
@@ -1577,7 +1577,7 @@ static bool avr_custom_spm_page_write(RzAnalysisEsil *esil) {
 
 	// get details about current MCU and fix input address and base address
 	// of the internal temporary page
-	cpu = get_cpu_model(analysis->cpu);
+	cpu = get_cpu_model(rz_analysis_get_cpu(analysis));
 	page_size_bits = const_get_value(const_by_name(cpu, CPU_CONST_PARAM, "page_size"));
 	rz_analysis_esil_reg_read(esil, "_page", &tmp_page, NULL);
 
@@ -1605,7 +1605,7 @@ static int esil_avr_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 
 	RzAnalysis *analysis = esil->panalysis;
 
 	// select cpu info
-	cpu = get_cpu_model(analysis->cpu);
+	cpu = get_cpu_model(rz_analysis_get_cpu(analysis));
 
 	// crop registers and force certain values
 	if (!strcmp(name, "pc")) {
@@ -1639,6 +1639,6 @@ RZ_IPI bool rz_avr_esil_init(void *pesil) {
 
 RZ_IPI void rz_avr_esil_opcode(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len) {
 	// select cpu info
-	CPU_MODEL *cpu = get_cpu_model(analysis->cpu);
+	CPU_MODEL *cpu = get_cpu_model(rz_analysis_get_cpu(analysis));
 	avr_op_analyze(analysis, op, addr, buf, len, cpu);
 }

@@ -120,7 +120,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		mode = CS_MODE_BIG_ENDIAN;
 	}
 
-	if (RZ_STR_EQ(a->cpu, "v9")) {
+	if (rz_analysis_is_cpu(a, "v9")) {
 		mode |= CS_MODE_V9;
 	}
 	if (a->bits == 64) {
