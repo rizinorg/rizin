@@ -96,9 +96,9 @@ static ut64 handle_value_type(RzBuffer *buff, LuaJITValue *value, ut64 offset, L
 		offset += end_len;
 		value->size += end_len;
 
-		ut64 *heap_int = RZ_NEW(ut64);
+		st32 *heap_int = RZ_NEW(st32);
 		if (heap_int) {
-			*heap_int = _val;
+			*heap_int = (st32)_val;
 			value->data = heap_int;
 		}
 		break;

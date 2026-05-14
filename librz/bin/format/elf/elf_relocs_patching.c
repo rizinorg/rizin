@@ -1825,101 +1825,540 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
  */
 static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const RzBinElfReloc *rel, const RelocFormularSymbols *fs) {
 	rz_return_if_fail(buf_patched && rel && fs);
-// AARCH64-specific defines
+
 // Take the PAGE component of an address or offset.
 #define PG(x)         ((x) & ~0xFFFULL)
 #define PG_OFFSET(x)  ((x) & 0xFFFULL)
 #define ADR_IMM_MASK1 (((1U << 2) - 1) << 29)
 #define ADR_IMM_MASK2 (((1U << 19) - 1) << 5)
 #define ADR_IMM_MASK3 (((1U << 19) - 1) << 2)
+#define ADR_IMM_MASK  (ADR_IMM_MASK1 | ADR_IMM_MASK2)
 
 	ut32 keep = 0;
-	ut32 nbytes = 4;
 	ut8 buf[8] = { 0 };
 	ut64 val = 0;
-	rz_buf_read_at(buf_patched, patch_addr, buf, 8);
+	bool big_endian = false;
+
+#define MOVW_IMM_MASK (0xFFFFU << 5) // bits [20:5]
+#define MOVW_HW_MASK  (0x3U << 21) // bits [22:21]
+#define MOVW_OPC_MASK (0x3U << 29) // bits [30:29]
+
+// Branch instruction masks
+#define BRANCH_IMM26_MASK 0x3FFFFFFU // bits [25:0]
+#define BRANCH_IMM19_MASK (0x7FFFFU << 5) // bits [23:5]
+#define BRANCH_IMM14_MASK (0x3FFFU << 5) // bits [18:5]
+
+// LD/ST instruction masks
+#define LDST_IMM12_MASK (0xFFFU << 10) // bits [21:10]
+
+// ADD instruction mask
+#define ADD_IMM12_MASK (0xFFFU << 10) // bits [21:10]
+
 	switch (rel->type) {
 	case R_AARCH64_NONE:
 		return;
+
 	case R_AARCH64_ABS16:
+	case R_AARCH64_P32_ABS16:
+		// S + A
 		val = fs->S + fs->A;
 		rz_write_le16(buf, val);
-		nbytes = 2;
+		rz_buf_write_at(buf_patched, patch_addr, buf, 2);
 		break;
+
 	case R_AARCH64_ABS32:
+	case R_AARCH64_P32_ABS32:
+		// S + A
 		val = fs->S + fs->A;
 		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
-	case R_AARCH64_GLOB_DAT:
-	/* fall-thru */
+
 	case R_AARCH64_ABS64:
-	/* fall-thru */
-	case R_AARCH64_JUMP_SLOT:
+		// S + A
 		val = fs->S + fs->A;
 		rz_write_le64(buf, val);
-		nbytes = 8;
+		rz_buf_write_at(buf_patched, patch_addr, buf, 8);
 		break;
+
 	case R_AARCH64_PREL16:
+	case R_AARCH64_P32_PREL16:
+		// S + A - P
 		val = fs->S + fs->A - fs->P;
 		rz_write_le16(buf, val);
-		nbytes = 2;
+		rz_buf_write_at(buf_patched, patch_addr, buf, 2);
 		break;
+
 	case R_AARCH64_PREL32:
+	case R_AARCH64_P32_PREL32:
+		// S + A - P
 		val = fs->S + fs->A - fs->P;
 		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
+
 	case R_AARCH64_PREL64:
+		// S + A - P
 		val = fs->S + fs->A - fs->P;
 		rz_write_le64(buf, val);
-		nbytes = 8;
+		rz_buf_write_at(buf_patched, patch_addr, buf, 8);
 		break;
-	case R_AARCH64_RELATIVE:
-		val = fs->B + fs->A;
-		rz_write_le64(buf, val);
-		nbytes = 8;
+
+	case R_AARCH64_PLT32:
+	case R_AARCH64_P32_PLT32:
+		// S + A - P
+		val = fs->S + fs->A - fs->P;
+		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
+
+	case R_AARCH64_MOVW_UABS_G0:
+	case R_AARCH64_P32_MOVW_UABS_G0:
+	case R_AARCH64_MOVW_UABS_G0_NC:
+	case R_AARCH64_P32_MOVW_UABS_G0_NC:
+		// Set MOV[KZ] immediate to bits [15:0] of (S + A)
+		val = (fs->S + fs->A) & 0xFFFF;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, MOVW_IMM_MASK, val);
+		break;
+
+	case R_AARCH64_MOVW_UABS_G1:
+	case R_AARCH64_P32_MOVW_UABS_G1:
+	case R_AARCH64_MOVW_UABS_G1_NC:
+		// Set MOV[KZ] immediate to bits [31:16] of (S + A)
+		val = ((fs->S + fs->A) >> 16) & 0xFFFF;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, MOVW_IMM_MASK, val);
+		break;
+
+	case R_AARCH64_MOVW_UABS_G2:
+	case R_AARCH64_MOVW_UABS_G2_NC:
+		// Set MOV[KZ] immediate to bits [47:32] of (S + A)
+		val = ((fs->S + fs->A) >> 32) & 0xFFFF;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, MOVW_IMM_MASK, val);
+		break;
+
+	case R_AARCH64_MOVW_UABS_G3:
+		// Set MOV[KZ] immediate to bits [63:48] of (S + A)
+		val = ((fs->S + fs->A) >> 48) & 0xFFFF;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, MOVW_IMM_MASK, val);
+		break;
+
+	case R_AARCH64_MOVW_SABS_G0:
+	case R_AARCH64_P32_MOVW_SABS_G0:
+		// Set MOV[NZ] immediate using bits [15:0] of (S + A)
+		// If X >= 0: MOVZ (opc=10), if X < 0: MOVN (opc=00) with NOT(bits)
+		val = fs->S + fs->A;
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		keep = rz_read_ble32(buf, big_endian) & ~(MOVW_IMM_MASK | MOVW_OPC_MASK);
+		if ((st64)val >= 0) {
+			// MOVZ: opc = 10
+			rz_write_ble32(buf, keep | (0x2U << 29) | (((val & 0xFFFF) << 5)), big_endian);
+		} else {
+			// MOVN: opc = 00, immediate = NOT(bits)
+			rz_write_ble32(buf, keep | (0x0U << 29) | ((((~val) & 0xFFFF) << 5)), big_endian);
+		}
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
+	case R_AARCH64_MOVW_SABS_G1:
+		// Set MOV[NZ] immediate using bits [31:16] of (S + A)
+		val = fs->S + fs->A;
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		keep = rz_read_ble32(buf, big_endian) & ~(MOVW_IMM_MASK | MOVW_OPC_MASK);
+		if ((st64)val >= 0) {
+			rz_write_ble32(buf, keep | (0x2U << 29) | ((((val >> 16) & 0xFFFF) << 5)), big_endian);
+		} else {
+			rz_write_ble32(buf, keep | (0x0U << 29) | (((((~val) >> 16) & 0xFFFF) << 5)), big_endian);
+		}
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
+	case R_AARCH64_MOVW_SABS_G2:
+		// Set MOV[NZ] immediate using bits [47:32] of (S + A)
+		val = fs->S + fs->A;
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		keep = rz_read_ble32(buf, big_endian) & ~(MOVW_IMM_MASK | MOVW_OPC_MASK);
+		if ((st64)val >= 0) {
+			rz_write_ble32(buf, keep | (0x2U << 29) | ((((val >> 32) & 0xFFFF) << 5)), big_endian);
+		} else {
+			rz_write_ble32(buf, keep | (0x0U << 29) | (((((~val) >> 32) & 0xFFFF) << 5)), big_endian);
+		}
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
+	case R_AARCH64_LD_PREL_LO19:
+	case R_AARCH64_P32_LD_PREL_LO19:
+		// Set load-literal immediate to bits [20:2] of (S + A - P)
+		// LDR literal: imm19 at bits [23:5]
+		val = ((st64)(fs->S + fs->A - fs->P)) >> 2;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, BRANCH_IMM19_MASK, val & 0x7FFFF);
+		break;
+
+	case R_AARCH64_ADR_PREL_LO21:
+	case R_AARCH64_P32_ADR_PREL_LO21:
+		// Set ADR immediate to bits [20:0] of (S + A - P)
+		// ADR: immlo=bits[30:29] (2 bits), immhi=bits[23:5] (19 bits)
+		val = fs->S + fs->A - fs->P;
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		keep = rz_read_ble32(buf, big_endian) & ~ADR_IMM_MASK;
+		// immlo = bits[1:0], immhi = bits[20:2]
+		rz_write_ble32(buf, keep | ((val & 0x3) << 29) | (((val >> 2) & 0x7FFFF) << 5), big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
 	case R_AARCH64_ADR_PREL_PG_HI21:
+	case R_AARCH64_P32_ADR_PREL_PG_HI21:
 	/* fall-thru */
 	case R_AARCH64_ADR_PREL_PG_HI21_NC:
 	/* fall-thru */
 	case R_AARCH64_ADR_GOT_PAGE:
-		// Reencode ADR imm
-		keep = rz_read_le32(buf) & ~(ADR_IMM_MASK1 | ADR_IMM_MASK2);
-		val = ((st64)(PG(fs->S + fs->A) - PG(fs->P))) >> 12;
-		rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(2, 0)) << 29) | ((val & ADR_IMM_MASK3) << 3));
+	case R_AARCH64_P32_ADR_GOT_PAGE:
+		// Set ADRP immediate to bits [32:12] of Page(S+A)-Page(P) or Page(G)-Page(P)
+		// ADRP: immlo=bits[30:29] (2 bits), immhi=bits[23:5] (19 bits)
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		keep = rz_read_ble32(buf, big_endian) & ~ADR_IMM_MASK;
+		if (rel->type == R_AARCH64_ADR_GOT_PAGE || rel->type == R_AARCH64_P32_ADR_GOT_PAGE) {
+			val = ((st64)(PG(fs->G) - PG(fs->P))) >> 12;
+		} else {
+			val = ((st64)(PG(fs->S + fs->A) - PG(fs->P))) >> 12;
+		}
+		// immlo = bits[1:0], immhi = bits[20:2]
+		rz_write_ble32(buf, keep | ((val & 0x3) << 29) | (((val >> 2) & 0x7FFFF) << 5), big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
+
+	case R_AARCH64_ADD_ABS_LO12_NC:
+	case R_AARCH64_P32_ADD_ABS_LO12_NC:
+		// Set ADD immediate to bits [11:0] of (S + A)
+		// ADD immediate: imm12 at bits [21:10]
+		val = PG_OFFSET(fs->S + fs->A);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, ADD_IMM12_MASK, val & 0xFFF);
+		break;
+
+	case R_AARCH64_LDST8_ABS_LO12_NC:
+	case R_AARCH64_P32_LDST8_ABS_LO12_NC:
+		// Set LD/ST immediate to bits [11:0] of (S + A)
+		// LD/ST: imm12 at bits [21:10]
+		val = PG_OFFSET(fs->S + fs->A);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, (val & 0xFFF) << 10);
+		break;
+
+	case R_AARCH64_LDST16_ABS_LO12_NC:
+	case R_AARCH64_P32_LDST16_ABS_LO12_NC:
+		// Set LD/ST immediate to bits [11:1] of (S + A)
+		val = PG_OFFSET(fs->S + fs->A) >> 1;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, (val & 0xFFF) << 10);
+		break;
+
+	case R_AARCH64_LDST32_ABS_LO12_NC:
+	case R_AARCH64_P32_LDST32_ABS_LO12_NC:
+		// Set LD/ST immediate to bits [11:2] of (S + A)
+		val = PG_OFFSET(fs->S + fs->A) >> 2;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, (val & 0xFFF) << 10);
+		break;
+
+	case R_AARCH64_LDST64_ABS_LO12_NC:
+	case R_AARCH64_P32_LDST64_ABS_LO12_NC:
+	/* fall-thru */
+	case R_AARCH64_LD64_GOT_LO12_NC:
+		// Set LD/ST immediate to bits [11:3] of (S + A) or G
+		if (rel->type == R_AARCH64_LD64_GOT_LO12_NC) {
+			val = PG_OFFSET(fs->G) >> 3;
+		} else {
+			val = PG_OFFSET(fs->S + fs->A) >> 3;
+		}
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, (val & 0xFFF) << 10);
+		break;
+
+	case R_AARCH64_LDST128_ABS_LO12_NC:
+	case R_AARCH64_P32_LDST128_ABS_LO12_NC:
+		// Set LD/ST immediate to bits [11:4] of (S + A)
+		val = PG_OFFSET(fs->S + fs->A) >> 4;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, (val & 0xFFF) << 10);
+		break;
+
+	case R_AARCH64_TSTBR14:
+	case R_AARCH64_P32_TSTBR14:
+		// Set TBZ/TBNZ immediate to bits [15:2] of (S + A - P)
+		// TBZ/TBNZ: imm14 at bits [18:5]
+		val = ((st64)(fs->S + fs->A - fs->P)) >> 2;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, BRANCH_IMM14_MASK, val & 0x3FFF);
+		break;
+
+	case R_AARCH64_CONDBR19:
+	case R_AARCH64_P32_CONDBR19:
+		// Set conditional branch immediate to bits [20:2] of (S + A - P)
+		// B.cond: imm19 at bits [23:5]
+		val = ((st64)(fs->S + fs->A - fs->P)) >> 2;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, BRANCH_IMM19_MASK, val & 0x7FFFF);
+		break;
+
 	case R_AARCH64_JUMP26:
+	case R_AARCH64_P32_JUMP26:
 	/* fall-thru */
 	case R_AARCH64_CALL26:
-		// Reencode 26 bits of the offset
-		keep = rz_read_le32(buf) & ~RZ_BIT_MASK32(26, 0);
+	case R_AARCH64_P32_CALL26:
+		// Set B/BL immediate to bits [27:2] of (S + A - P)
+		// B/BL: imm26 at bits [25:0]
 		val = ((st64)(fs->S + fs->A - fs->P)) >> 2;
-		rz_write_le32(buf, keep | (val & RZ_BIT_MASK32(26, 0)));
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, BRANCH_IMM26_MASK, val & 0x3FFFFFF);
 		break;
-	case R_AARCH64_LDST8_ABS_LO12_NC:
+
+	case R_AARCH64_MOVW_PREL_G0:
+	case R_AARCH64_P32_MOVW_PREL_G0:
+		// Set MOV[NZ] immediate to bits [15:0] of (S + A - P)
+		val = fs->S + fs->A - fs->P;
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		keep = rz_read_ble32(buf, big_endian) & ~(MOVW_IMM_MASK | MOVW_OPC_MASK);
+		if ((st64)val >= 0) {
+			rz_write_ble32(buf, keep | (0x2U << 29) | ((val & 0xFFFF) << 5), big_endian);
+		} else {
+			rz_write_ble32(buf, keep | (0x0U << 29) | (((~val) & 0xFFFF) << 5), big_endian);
+		}
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
+	case R_AARCH64_MOVW_PREL_G0_NC:
+	case R_AARCH64_P32_MOVW_PREL_G0_NC:
+		// Set MOVK immediate to bits [15:0] of (S + A - P)
+		val = (fs->S + fs->A - fs->P) & 0xFFFF;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, MOVW_IMM_MASK, val);
+		break;
+
+	case R_AARCH64_MOVW_PREL_G1:
+	case R_AARCH64_P32_MOVW_PREL_G1:
+		// Set MOV[NZ] immediate to bits [31:16] of (S + A - P)
+		val = fs->S + fs->A - fs->P;
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		keep = rz_read_ble32(buf, big_endian) & ~(MOVW_IMM_MASK | MOVW_OPC_MASK);
+		if ((st64)val >= 0) {
+			rz_write_ble32(buf, keep | (0x2U << 29) | (((val >> 16) & 0xFFFF) << 5), big_endian);
+		} else {
+			rz_write_ble32(buf, keep | (0x0U << 29) | ((((~val) >> 16) & 0xFFFF) << 5), big_endian);
+		}
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
+	case R_AARCH64_MOVW_PREL_G1_NC:
+		// Set MOVK immediate to bits [31:16] of (S + A - P)
+		val = ((fs->S + fs->A - fs->P) >> 16) & 0xFFFF;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, MOVW_IMM_MASK, val);
+		break;
+
+	case R_AARCH64_MOVW_PREL_G2:
+		// Set MOV[NZ] immediate to bits [47:32] of (S + A - P)
+		val = fs->S + fs->A - fs->P;
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		keep = rz_read_ble32(buf, big_endian) & ~(MOVW_IMM_MASK | MOVW_OPC_MASK);
+		if ((st64)val >= 0) {
+			rz_write_ble32(buf, keep | (0x2U << 29) | (((val >> 32) & 0xFFFF) << 5), big_endian);
+		} else {
+			rz_write_ble32(buf, keep | (0x0U << 29) | ((((~val) >> 32) & 0xFFFF) << 5), big_endian);
+		}
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
+	case R_AARCH64_MOVW_PREL_G2_NC:
+		// Set MOVK immediate to bits [47:32] of (S + A - P)
+		val = ((fs->S + fs->A - fs->P) >> 32) & 0xFFFF;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, MOVW_IMM_MASK, val);
+		break;
+
+	case R_AARCH64_MOVW_PREL_G3:
+		// Set MOV[NZ] immediate to bits [63:48] of (S + A - P)
+		val = fs->S + fs->A - fs->P;
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		keep = rz_read_ble32(buf, big_endian) & ~(MOVW_IMM_MASK | MOVW_OPC_MASK);
+		if ((st64)val >= 0) {
+			rz_write_ble32(buf, keep | (0x2U << 29) | (((val >> 48) & 0xFFFF) << 5), big_endian);
+		} else {
+			rz_write_ble32(buf, keep | (0x0U << 29) | ((((~val) >> 48) & 0xFFFF) << 5), big_endian);
+		}
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
+	case R_AARCH64_MOVW_GOTOFF_G0:
+		// Set MOV[NZ] immediate to bits [15:0] of (G(GDAT(S+A)) - GOT)
+		val = fs->G - fs->GOT;
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		keep = rz_read_ble32(buf, big_endian) & ~(MOVW_IMM_MASK | MOVW_OPC_MASK);
+		if ((st64)val >= 0) {
+			rz_write_ble32(buf, keep | (0x2U << 29) | ((val & 0xFFFF) << 5), big_endian);
+		} else {
+			rz_write_ble32(buf, keep | (0x0U << 29) | (((~val) & 0xFFFF) << 5), big_endian);
+		}
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
+	case R_AARCH64_MOVW_GOTOFF_G0_NC:
+		// Set MOVK immediate to bits [15:0] of (G(GDAT(S+A)) - GOT)
+		val = (fs->G - fs->GOT) & 0xFFFF;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, MOVW_IMM_MASK, val);
+		break;
+
+	case R_AARCH64_MOVW_GOTOFF_G1:
+		// Set MOV[NZ] immediate to bits [31:16] of (G(GDAT(S+A)) - GOT)
+		val = fs->G - fs->GOT;
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		keep = rz_read_ble32(buf, big_endian) & ~(MOVW_IMM_MASK | MOVW_OPC_MASK);
+		if ((st64)val >= 0) {
+			rz_write_ble32(buf, keep | (0x2U << 29) | (((val >> 16) & 0xFFFF) << 5), big_endian);
+		} else {
+			rz_write_ble32(buf, keep | (0x0U << 29) | ((((~val) >> 16) & 0xFFFF) << 5), big_endian);
+		}
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
+	case R_AARCH64_MOVW_GOTOFF_G1_NC:
+		// Set MOVK immediate to bits [31:16] of (G(GDAT(S+A)) - GOT)
+		val = ((fs->G - fs->GOT) >> 16) & 0xFFFF;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, MOVW_IMM_MASK, val);
+		break;
+
+	case R_AARCH64_MOVW_GOTOFF_G2:
+		// Set MOV[NZ] immediate to bits [47:32] of (G(GDAT(S+A)) - GOT)
+		val = fs->G - fs->GOT;
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		keep = rz_read_ble32(buf, big_endian) & ~(MOVW_IMM_MASK | MOVW_OPC_MASK);
+		if ((st64)val >= 0) {
+			rz_write_ble32(buf, keep | (0x2U << 29) | (((val >> 32) & 0xFFFF) << 5), big_endian);
+		} else {
+			rz_write_ble32(buf, keep | (0x0U << 29) | ((((~val) >> 32) & 0xFFFF) << 5), big_endian);
+		}
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
+	case R_AARCH64_MOVW_GOTOFF_G2_NC:
+		// Set MOVK immediate to bits [47:32] of (G(GDAT(S+A)) - GOT)
+		val = ((fs->G - fs->GOT) >> 32) & 0xFFFF;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, MOVW_IMM_MASK, val);
+		break;
+
+	case R_AARCH64_MOVW_GOTOFF_G3:
+		// Set MOV[NZ] immediate to bits [63:48] of (G(GDAT(S+A)) - GOT)
+		val = fs->G - fs->GOT;
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		keep = rz_read_ble32(buf, big_endian) & ~(MOVW_IMM_MASK | MOVW_OPC_MASK);
+		if ((st64)val >= 0) {
+			rz_write_ble32(buf, keep | (0x2U << 29) | (((val >> 48) & 0xFFFF) << 5), big_endian);
+		} else {
+			rz_write_ble32(buf, keep | (0x0U << 29) | ((((~val) >> 48) & 0xFFFF) << 5), big_endian);
+		}
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
+	case R_AARCH64_GOTREL64:
+		// Set data to 64-bit offset (S + A - GOT)
+		val = fs->S + fs->A - fs->GOT;
+		rz_write_le64(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 8);
+		break;
+
+	case R_AARCH64_GOTREL32:
+		// Set data to 32-bit offset (S + A - GOT)
+		val = fs->S + fs->A - fs->GOT;
+		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
+	case R_AARCH64_GOT_LD_PREL19:
+	case R_AARCH64_P32_GOT_LD_PREL19:
+		// Set load-literal immediate to bits [20:2] of (G(GDAT(S+A)) - P)
+		// LDR literal: imm19 at bits [23:5]
+		val = ((st64)(fs->G - fs->P)) >> 2;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, BRANCH_IMM19_MASK, val & 0x7FFFF);
+		break;
+
+	case R_AARCH64_LD64_GOTOFF_LO15:
+		// Set LD/ST immediate to bits [14:3] of (G(GDAT(S+A)) - GOT)
+		val = (fs->G - fs->GOT) >> 3;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
+		break;
+
+	case R_AARCH64_P32_LD32_GOT_LO12_NC:
+		// Set LD/ST immediate to bits [11:2] of G(GDAT(S+A))
+		val = PG_OFFSET(fs->G) >> 2;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
+		break;
+
+	case R_AARCH64_LD64_GOTPAGE_LO15:
+		// Set LD/ST immediate to bits [14:3] of (G(GDAT(S+A)) - Page(GOT))
+		val = (fs->G - PG(fs->GOT)) >> 3;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
+		break;
+
+	case R_AARCH64_P32_LD32_GOTPAGE_LO14:
+		// Set LD/ST immediate to bits [13:2] of (G(GDAT(S+A)) - Page(GOT))
+		val = (fs->G - PG(fs->GOT)) >> 2;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
+		break;
+
+	case R_AARCH64_COPY:
+	case R_AARCH64_P32_COPY:
+		// Copy relocation - handled by dynamic linker
+		// No patching needed at static link time
+		break;
+
+	case R_AARCH64_GLOB_DAT:
+	case R_AARCH64_P32_GLOB_DAT:
 	/* fall-thru */
-	case R_AARCH64_ADD_ABS_LO12_NC:
-		keep = rz_read_le32(buf) & ~(RZ_BIT_MASK32(12, 0) << 10);
-		val = PG_OFFSET(fs->S + fs->A);
-		rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(12, 0)) << 10));
+	case R_AARCH64_JUMP_SLOT:
+	case R_AARCH64_P32_JUMP_SLOT:
+		// S + A - set GOT/PLT entry
+		val = fs->S + fs->A;
+		rz_write_le64(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 8);
 		break;
-	case R_AARCH64_LD64_GOT_LO12_NC:
-	/* fall-thru */
-	case R_AARCH64_LDST64_ABS_LO12_NC:
-		// Reencode LD/ST imm
-		keep = rz_read_le32(buf) & ~(RZ_BIT_MASK32(12, 0) << 10);
-		val = PG_OFFSET(fs->S + fs->A) >> 3;
-		rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(12, 0)) << 10));
+
+	case R_AARCH64_RELATIVE:
+		val = fs->B + fs->A;
+		rz_write_le64(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 8);
 		break;
+
+	case R_AARCH64_P32_RELATIVE:
+		val = fs->B + fs->A;
+		rz_write_le32(buf, (ut32)val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
+	case R_AARCH64_TLS_TPREL:
+		// TPREL(S+A) - thread pointer relative offset
+		val = fs->TLS;
+		rz_write_le64(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 8);
+		break;
+
+	case R_AARCH64_P32_TLS_TPREL:
+		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
 	case R_AARCH64_TLSDESC:
-		// R_AARCH64_TLSDESC is a relocation type handled by the
-		// dynamic linker. We intentionally do not handle do anything.
+	case R_AARCH64_P32_TLSDESC:
+	case R_AARCH64_TLS_IMPDEF1:
+	case R_AARCH64_P32_TLS_IMPDEF1:
+	case R_AARCH64_TLS_IMPDEF2:
+	case R_AARCH64_P32_TLS_IMPDEF2:
+		// Handled by dynamic linker
+		// No static patching needed
+		break;
+
+	case R_AARCH64_IRELATIVE:
+		// Indirect(Delta(S) + A) - resolver function address
+		val = fs->B + fs->A;
+		rz_write_le64(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 8);
+		break;
+
+	case R_AARCH64_P32_IRELATIVE:
+		val = fs->B + fs->A;
+		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 	default:
-		UNHANDL_DEF("AArch64", rel->type);
+		UNHANDL_DEF("AARCH 64", rel->type);
 		return;
 	}
-	rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
 
 #undef PG
 #undef PG_OFFSET
