@@ -60,6 +60,16 @@ typedef enum {
 } RzGadgetType;
 
 /**
+ * \brief Gadget cache node
+ */
+typedef struct rz_gadget_cache_node_t {
+	RBNode rb; ///< intrusive RBTree node
+	ut64 addr; ///< gadget start address
+	RzPVector /*<RzCoreAsmHit *>*/ *hitlist; ///< cached hitlist object for one gadget
+	int delay_size; ///< delay size for delay slot archs
+} RzGadgetCacheNode;
+
+/**
  * \brief Types of IL instructions for Gadget constraints.
  */
 typedef enum rz_gadget_il_instr_type {

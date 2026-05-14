@@ -1422,14 +1422,30 @@ static bool filter_gadget(RzCore *core, const ut8 *buf, int start_idx, RzGadgetS
 	void **it;
 	rz_pvector_foreach (hitlist, it) {
 		RzCoreAsmHit *hit = *it;
-		int buf_offset = (int)(hit->addr - context->from);
-		if (buf_offset < 0 || (ut64)buf_offset >= delta) {
-			continue;
+		const ut8 *op_buf;
+		ut64 op_size;
+		ut8 local_buf[32];
+
+		if (buf) {
+			int buf_offset = (int)(hit->addr - context->from);
+			if (buf_offset < 0 || (ut64)buf_offset >= delta) {
+				continue;
+			}
+			op_buf = buf + buf_offset;
+			op_size = delta - buf_offset;
+		} else {
+			// if buf is not provided, read 32bytes (sufficient for single instruction) from hit->addr
+			if (rz_io_nread_at(core->io, hit->addr, local_buf, sizeof(local_buf)) < 0) {
+				continue;
+			}
+			op_buf = local_buf;
+			op_size = sizeof(local_buf);
 		}
+
 		RzAnalysisOp aop = { 0 };
 		rz_analysis_op_init(&aop);
-		if (rz_analysis_op(core->analysis, &aop, hit->addr, buf + buf_offset,
-			    delta - buf_offset, RZ_ANALYSIS_OP_MASK_DISASM) < 0) {
+		if (rz_analysis_op(core->analysis, &aop, hit->addr, op_buf,
+			    op_size, RZ_ANALYSIS_OP_MASK_DISASM) < 0) {
 			rz_analysis_op_fini(&aop);
 			continue;
 		}
@@ -1540,6 +1556,45 @@ cleanup:
 	return hitlist;
 }
 
+static void free_gadget_cache_node(RBNode *node, void *user) {
+	RzGadgetCacheNode *n = container_of(node, RzGadgetCacheNode, rb);
+	rz_pvector_free(n->hitlist);
+	free(n);
+}
+
+static int gadget_cache_node_cmp(const void *data, const RBNode *x, void *user) {
+	const ut64 addr = *(const ut64 *)data;
+	const RzGadgetCacheNode *node = container_of(x, const RzGadgetCacheNode, rb);
+	return addr - node->addr;
+}
+
+static RzPVector /*<RzCoreAsmHit *>*/ *deep_copy_hitlist(const RzPVector /*<RzCoreAsmHit *>*/ *hitlist) {
+	if (!hitlist) {
+		return NULL;
+	}
+	RzPVector *new_hitlist = rz_pvector_new((RzPVectorFree)rz_core_asm_hit_free);
+	if (!new_hitlist) {
+		return NULL;
+	}
+	void **it;
+	rz_pvector_foreach (hitlist, it) {
+		const RzCoreAsmHit *hit = *it;
+		RzCoreAsmHit *new_hit = rz_core_asm_hit_new();
+		if (!new_hit) {
+			rz_pvector_free(new_hitlist);
+			return NULL;
+		}
+		new_hit->addr = hit->addr;
+		new_hit->len = hit->len;
+		new_hit->valid = hit->valid;
+		if (hit->code) {
+			new_hit->code = strdup(hit->code);
+		}
+		rz_pvector_push(new_hitlist, new_hit);
+	}
+	return new_hitlist;
+}
+
 static RzPVector /*<RzCoreAsmHit *>*/ *construct_gadget(RzCore *core, ut8 *buf, int idx, RzGadgetSearchContext *context,
 	RzList /*<char *>*/ *rx_list, RzGadgetEndListPair *end_gadget) {
 
@@ -1555,6 +1610,21 @@ static RzPVector /*<RzCoreAsmHit *>*/ *construct_gadget(RzCore *core, ut8 *buf, 
 		return NULL;
 	}
 	rz_strbuf_free(sb);
+
+	if (context->cache) {
+		ut64 gadget_addr = context->from + idx;
+		RzGadgetCache *gadget_cache = rz_analysis_get_gadget_cache(core->analysis, context->type);
+		RzGadgetCacheNode *node = RZ_NEW(RzGadgetCacheNode);
+		node->addr = gadget_addr;
+		node->hitlist = deep_copy_hitlist(hitlist);
+		node->delay_size = end_gadget->delay_size;
+		void *data = &node->addr;
+		if (!rz_rbtree_insert(&gadget_cache->tree, data, &node->rb, gadget_cache_node_cmp, NULL)) {
+			// TODO: should invalidate cache? idts as this path will rarely hit, dont deserve writing extra code?
+			RZ_LOG_ERROR("Failed to cache gadget for address 0x%" PFMT64x "\n", gadget_addr);
+			free_gadget_cache_node(&node->rb, NULL);
+		}
+	}
 
 	if (!filter_gadget(core, buf, idx, context, rx_list, hitlist)) {
 		rz_pvector_free(hitlist);
@@ -1993,6 +2063,51 @@ static bool update_end_gadget(int *i, const int gadget_depth, RzGadgetEndListPai
 	return true;
 }
 
+static bool print_gadgets_from_cache(RzCore *core, RzGadgetCache *gadget_cache, RzGadgetSearchContext *context, RzList /*<char *>*/ *rx_list) {
+	void *addr = &context->from;
+	RBIter iter = rz_rbtree_lower_bound_forward(gadget_cache->tree, addr, gadget_cache_node_cmp, NULL);
+	while (rz_rbtree_iter_has(&iter)) {
+		RzGadgetCacheNode *node = rz_rbtree_iter_get(&iter, RzGadgetCacheNode, rb);
+		if (!node) {
+			rz_rbtree_iter_next(&iter);
+			continue;
+		}
+		if (node->addr > context->to) {
+			break;
+		}
+		if (node->addr < context->from || node->addr >= context->to) {
+			rz_rbtree_iter_next(&iter);
+			continue;
+		}
+
+		int start_idx = (int)(node->addr - context->from);
+		if (!filter_gadget(core, NULL, start_idx, context, rx_list, node->hitlist)) {
+			rz_rbtree_iter_next(&iter);
+			continue;
+		}
+
+		if (!rz_core_handle_gadget_request_type(core, context, node->hitlist, node->delay_size)) {
+			RZ_LOG_DEBUG("Fail at path 3");
+			return false;
+		}
+		rz_rbtree_iter_next(&iter);
+	}
+	return true;
+}
+
+static bool is_gadget_cache_valid(RzCore *core, RzGadgetCache *gadget_cache, RzGadgetSearchContext *context) {
+	if (context->from < gadget_cache->from || context->to > gadget_cache->to) {
+		return false;
+	}
+	if (context->max_instr != gadget_cache->max_instr) {
+		return false;
+	}
+	if (context->allow_conditional != gadget_cache->allow_conditional) {
+		return false;
+	}
+	return true;
+}
+
 static int handle_gadget_search_address(RzCore *core, RzGadgetSearchContext *context, RzList /*<char *>*/ *rx_list) {
 	const ut64 delta = context->to - context->from;
 	ut8 *buf = RZ_NEWS0(ut8, delta);
@@ -2095,6 +2210,41 @@ RZ_API RzCmdStatus rz_core_gadget_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzG
 	if (context->to || context->from) {
 		RzInterval custom_itv = { context->from, context->to - context->from };
 		search_itv = rz_itv_intersect(search_itv, custom_itv);
+	}
+
+	// if cache is enabled, try to print gadgets from cache first, if cache is valid, else rebuild cache
+	if (context->cache) {
+		RzGadgetCache *gadget_cache = rz_analysis_get_gadget_cache(core->analysis, context->type);
+
+		context->from = search_itv.addr;
+		context->to = search_itv.addr + search_itv.size;
+
+		// cache hit
+		if (gadget_cache) {
+			if (is_gadget_cache_valid(core, gadget_cache, context)) {
+				RZ_LOG_INFO("core: Using gadget cache\n");
+				if (print_gadgets_from_cache(core, gadget_cache, context, rx_list)) {
+					status = 0;
+					goto cleanup;
+				}
+			} else {
+				RZ_LOG_INFO("core: Parameters change detected, Rebuilding cache\n");
+			}
+		}
+
+		// cache miss
+		// delete old cache (if exist)
+		if (gadget_cache) {
+			rz_rbtree_free(gadget_cache->tree, free_gadget_cache_node, NULL);
+		}
+		RZ_LOG_DEBUG("core: Building gadget cache for address range 0x%" PFMT64x " - 0x%" PFMT64x "\n", context->from, context->to);
+		gadget_cache->tree = NULL;
+		gadget_cache->free = free_gadget_cache_node;
+		gadget_cache->from = rz_config_get_integer(core->config, "search.from");
+		gadget_cache->to = rz_config_get_integer(core->config, "search.to");
+		gadget_cache->max_instr = context->max_instr;
+		gadget_cache->allow_conditional = context->allow_conditional;
+		rz_analysis_set_gadget_cache(core->analysis, gadget_cache, context->type);
 	}
 
 	RzList *boundaries = rz_core_get_boundaries_select(core, "search.from", "search.to", "search.in");

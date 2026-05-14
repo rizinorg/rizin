@@ -88,7 +88,7 @@ struct rz_analysis_t {
 	RzPlatformTargetIndex *platform_target;
 	HtSP *ht_global_var; // global variables
 	HtUP *ht_gadget_semantics; ///< cache gadget semantic information
-	HtUP *ht_gadget; ///< cache gadget address list
+	RzGadgetCache gadget_cache[3]; ///< 3 separate caches 0=ROP, 1=JOP and 2=COP gadgets
 	RBTree global_var_tree; // global variables by address. must not overlap
 	RzHash *hash;
 	RzAnalysisDebugInfo *debug_info; ///< store all debug info parsed from DWARF, etc..

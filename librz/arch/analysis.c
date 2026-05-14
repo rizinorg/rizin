@@ -165,7 +165,9 @@ RZ_API RzAnalysis *rz_analysis_new(RZ_NULLABLE const char *sdb_types_path) {
 	}
 	analysis->ht_global_var = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_analysis_var_global_free);
 	analysis->ht_gadget_semantics = NULL;
-	analysis->ht_gadget = NULL;
+	analysis->gadget_cache[0] = (RzGadgetCache){ 0 };
+	analysis->gadget_cache[1] = (RzGadgetCache){ 0 };
+	analysis->gadget_cache[2] = (RzGadgetCache){ 0 };
 	analysis->global_var_tree = NULL;
 	analysis->il_vm = NULL;
 	analysis->hash = rz_hash_new();
@@ -221,6 +223,9 @@ RZ_API void rz_analysis_free(RZ_NULLABLE RzAnalysis *a) {
 	rz_str_constpool_fini(&a->constpool);
 	ht_sp_free(a->ht_global_var);
 	ht_up_free(a->ht_gadget_semantics);
+	rz_rbtree_free(a->gadget_cache[0].tree, a->gadget_cache[0].free, NULL);
+	rz_rbtree_free(a->gadget_cache[1].tree, a->gadget_cache[1].free, NULL);
+	rz_rbtree_free(a->gadget_cache[2].tree, a->gadget_cache[2].free, NULL);
 	ht_sp_free(a->plugins);
 	rz_analysis_debug_info_free(a->debug_info);
 	ht_sp_free(a->ht_virtual_xrefs);
@@ -511,6 +516,33 @@ RZ_API RZ_BORROW HtUP *rz_analysis_get_xrefs_to(RZ_NONNULL RzAnalysis *analysis)
 RZ_API void rz_analysis_set_xrefs_to(RZ_NONNULL RzAnalysis *analysis, HtUP *xrefs_to) {
 	rz_return_if_fail(analysis);
 	analysis->ht_xrefs_to = xrefs_to;
+}
+
+/**
+ * \brief Get the gadget cache for a specific gadget type.
+ * \param analysis Pointer to the RzAnalysis object.
+ * \param type The RzGadgetType of gadget cache to retrieve.
+ * \return A pointer to the requested RzGadgetCache, or NULL if the type is invalid.
+ */
+RZ_API RZ_BORROW RzGadgetCache *rz_analysis_get_gadget_cache(RZ_NONNULL RzAnalysis *analysis, ut8 type) {
+	rz_return_val_if_fail(analysis, NULL);
+	if (type >= 3) {
+		return NULL;
+	}
+	return &analysis->gadget_cache[type];
+}
+
+/**
+ * \brief Set the gadget cache in the analysis object for a specific gadget type.
+ * \param analysis Pointer to the RzAnalysis object.
+ * \param gadget_cache Pointer to the RzGadgetCache object to set.
+ * \param type The RzGadgetType of gadget cache to set.
+ */
+RZ_API void rz_analysis_set_gadget_cache(RZ_NONNULL RzAnalysis *analysis, RzGadgetCache *gadget_cache, ut8 type) {
+	rz_return_if_fail(analysis);
+	if (type < 3) {
+		analysis->gadget_cache[type] = *gadget_cache;
+	}
 }
 
 RZ_API RZ_BORROW HtUP *rz_analysis_get_gadget_semantics(RZ_NONNULL RzAnalysis *analysis) {
