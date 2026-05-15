@@ -9,6 +9,31 @@
 #include <string.h>
 #include "omf/omf.h"
 
+bool set_reg_val2(RzReg *areg, const char *name, const ut16 value) {
+	RzRegItem *r = rz_reg_get(areg, name, RZ_REG_TYPE_GPR);
+	return rz_reg_set_value(areg, r, (ut64)value);
+}
+
+ut64 get_flg_val(RzReg *areg, const char *name) {
+	const ut64 value = rz_reg_getv(areg, name);
+	return value;
+}
+
+ut64 get_reg_val2(RzReg *areg, const char *name) {
+	RzRegItem *reg = rz_reg_get(areg, name, RZ_REG_TYPE_GPR);
+	const ut64 value = rz_reg_get_value(areg, reg);
+	return value;
+}
+
+#define SET_CPUCON1(val) set_reg_val2(areg, CPUCON1_NAME, val)
+#define SET_SP(val)      set_reg_val2(areg, "SP", val)
+#define SET_CSP(val)     set_reg_val2(areg, "CSP", val)
+#define SET_SGTDIS(val)  set_reg_val2(areg, CPUCON1_NAME, (CPUCON1_RESET_VALUE | (val << 3)))
+
+#define GET_SGTDIS  get_flg_val(areg, "SGTDIS")
+#define GET_CPUCON1 get_reg_val2(areg, "CPUCON1")
+#define GET_SP      get_reg_val2(areg, "SP")
+
 static OMF_components *get_component_by_ti(const rz_bin_omf166_obj *omf_obj, ut16 ti) {
 	bool found = false;
 	OMF_type *type = ht_up_find(omf_obj->ht_types, ti, &found);
@@ -21,7 +46,9 @@ static OMF_components *get_component_by_ti(const rz_bin_omf166_obj *omf_obj, ut1
 static bool is_final_type(const rz_bin_omf166_obj *obj, ut16 ti_index) {
 	bool found = false;
 	const OMF_type *type = ht_up_find(obj->ht_types, ti_index, &found);
-	rz_return_val_if_fail(found, false);
+	if (!found) {
+		return false;
+	}
 	return (type->descr_type == FINAL_TYPE) ? true : false;
 }
 
@@ -30,7 +57,9 @@ static inline RzType *TYPE_TI(rz_bin_omf166_obj *omf_obj, ut16 ti) {
 	const RzTypeDB *typedb = omf_obj->typedb;
 
 	const OMF_type *type = ht_up_find(omf_obj->ht_types, ti, &found);
-	rz_return_val_if_fail(found, rz_type_identifier_of_base_type_str(typedb, "unknown_t"));
+	if (!found) {
+		return rz_type_identifier_of_base_type_str(typedb, "unknown_t");
+	}
 	if (found && type->descr_type == ARRAY_DESCRIPTOR) {
 		RzType *subtype = TYPE_TI(omf_obj, type->descriptor.array.ti);
 		const ut64 count = (type->descriptor.array.dimsz == 0xFFFFFFFF) ? 0 : type->descriptor.array.dimsz;
@@ -72,6 +101,7 @@ static RzBaseType *create_new_primitive_type(const RzTypeDB *typedb, const char 
 	const bool result = rz_type_db_save_base_type(typedb, bt);
 	if (!result) {
 		rz_type_base_type_free(bt);
+		RZ_LOG_WARN("Not found: `%s`\n", name);
 		return NULL;
 	}
 	return bt;
@@ -134,7 +164,9 @@ static bool types_cb(void *user, const ut64 k, const void *v) {
 		newtype->callable = cal;
 		cal->ret = TYPE_TI(omf_obj, type->descriptor.function.rtype_ti);
 		cal->args = rz_pvector_new((RzPVectorFree)rz_type_callable_arg_free);
-		rz_return_val_if_fail(cal->args, false);
+		if (!cal->args) {
+			return false;
+		}
 
 		const OMF_components *components = get_component_by_ti(omf_obj, type->descriptor.function.parmlist_ti);
 		if (components) {
@@ -157,32 +189,10 @@ static bool types_cb(void *user, const ut64 k, const void *v) {
 	return true;
 }
 
-bool set_reg_val2(RzReg *areg, const char *name, const ut16 value) {
-	RzRegItem *r = rz_reg_get(areg, name, RZ_REG_TYPE_GPR);
-	return rz_reg_set_value(areg, r, (ut64)value);
-}
-
-ut64 get_flg_val(RzReg *areg, const char *name) {
-	const ut64 value = rz_reg_getv(areg, name);
-	return value;
-}
-
-ut64 get_reg_val2(RzReg *areg, const char *name) {
-	RzRegItem *reg = rz_reg_get(areg, name, RZ_REG_TYPE_GPR);
-	const ut64 value = rz_reg_get_value(areg, reg);
-	return value;
-}
-#define SET_CPUCON1(val) rz_return_val_if_fail(set_reg_val2(areg, CPUCON1_NAME, val), false)
-#define SET_SP(val)      rz_return_val_if_fail(set_reg_val2(areg, "SP", val), false)
-#define SET_CSP(val)     rz_return_val_if_fail(set_reg_val2(areg, "CSP", val), false)
-#define SET_SGTDIS(val)  rz_return_val_if_fail(set_reg_val2(areg, CPUCON1_NAME, (CPUCON1_RESET_VALUE | (val << 3))), false)
-
-#define GET_SGTDIS  get_flg_val(areg, "SGTDIS")
-#define GET_CPUCON1 get_reg_val2(areg, "CPUCON1")
-#define GET_SP      get_reg_val2(areg, "SP")
-
 RZ_API bool rz_core_bin_apply_omf_debug(const RzCore *core, const RzBinFile *binfile) {
-	rz_return_val_if_fail(core, false);
+	if (!core || !binfile) {
+		return false;
+	}
 
 	const char *arch = rz_config_get(core->config, "asm.arch");
 	if (!strstr(arch, "c166")) {
@@ -200,12 +210,9 @@ RZ_API bool rz_core_bin_apply_omf_debug(const RzCore *core, const RzBinFile *bin
 	if (RZ_STR_NE(info->rclass, "OMF166")) {
 		return false;
 	}
-	rz_return_val_if_fail(binfile, false);
 
 	RzReg *areg = rz_analysis_get_reg(core->analysis);
-
 	SET_SP(SP_RESET_VALUE);
-
 	rz_bin_omf166_obj *omf_obj = (rz_bin_omf166_obj *)binfile->o->bin_obj;
 
 #ifdef RZ_BUILD_DEBUG
@@ -217,7 +224,7 @@ RZ_API bool rz_core_bin_apply_omf_debug(const RzCore *core, const RzBinFile *bin
 
 	const ut8 mm = memory_model_type(omf_obj->modinfo);
 	if (mm == OMF_MEMORY_MODEL_TINY && !(omf_obj->modinfo & 0x01)) {
-		eprintf("Wrong memory model type, segmentation cannot be enabled, if mm is TINY\n");
+		RZ_LOG_WARN("Wrong memory model type, segmentation cannot be enabled, if mm is TINY\n");
 		return false;
 	}
 

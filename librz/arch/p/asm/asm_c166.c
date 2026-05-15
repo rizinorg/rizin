@@ -332,7 +332,9 @@ static _RzAnalysisOpType c166_analysis_op_type_by_opcode(const ut8 opcode) {
  * to perform the actual disassembly.
  */
 static st32 disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, st32 len) {
-	rz_return_val_if_fail(a && op && buf, -1);
+	if (!a || !op || !buf) {
+		return -1;
+	}
 
 	if (len < 2) {
 		rz_asm_op_setf_asm(op, FMT_WORD, buf[0], 0x00);
@@ -373,9 +375,10 @@ static st32 disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, st32 len) {
 		}
 	}
 	op->asm_toks = rz_asm_tokenize_asm_regex(&op->buf_asm, state->token_patterns);
-
-	rz_return_val_if_fail(op->asm_toks, op->size);
-	op->asm_toks->op_type = c166_analysis_op_type_by_opcode(inst.id); // ???
+	if (!op->asm_toks) {
+		return op->size;
+	}
+	op->asm_toks->op_type = c166_analysis_op_type_by_opcode(inst.id);
 	return op->size;
 }
 
@@ -450,7 +453,9 @@ static bool c16x_init(void **user) {
 }
 
 static bool c16x_fini(void *user) {
-	rz_return_val_if_fail(user, false);
+	if (!user) {
+		return false;
+	}
 	C166State *state = (C166State *)user;
 	rz_pvector_free(state->token_patterns);
 	free(state);

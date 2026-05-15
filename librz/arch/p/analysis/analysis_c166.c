@@ -380,7 +380,7 @@ static void c166_op_jmps_seg_caddr(RzAnalysis *analysis, RzAnalysisOp *op, const
 	const ut8 SGTDIS = (ut8)GET_A_SGTDIS;
 	if (SGTDIS == 0) {
 		if (!SET_A_CSP((ut64)seg)) {
-			eprintf("Error setting reg value\n");
+			RZ_LOG_WARN("Error setting reg value\n");
 		}
 	}
 	c166_set_jump_target_seg_caddr(op, seg, caddr);
@@ -502,7 +502,7 @@ static void c166_op_call_seg_caddr(RzAnalysis *analysis, RzAnalysisOp *op, const
 	const ut8 SGTDIS = (ut8)GET_A_SGTDIS;
 	if (SGTDIS == 0) {
 		if (!SET_A_CSP((ut64)seg)) {
-			eprintf("Error setting reg value\n");
+			RZ_LOG_WARN("Error setting reg value\n");
 		}
 	}
 	SET_A_IP((ut64)caddr);
@@ -1299,7 +1299,7 @@ static void c166_op_set_type(RZ_NONNULL C166_Inst *instr, RzAnalysis *analysis, 
 	case C166_CoSTORE_B3:
 		break;
 	default:
-		printf("c166_op_set_type 0x%02x\n", instr->id);
+		RZ_LOG_DEBUG("c166_op_set_type 0x%02x\n", instr->id);
 		rz_warn_if_reached();
 	}
 }

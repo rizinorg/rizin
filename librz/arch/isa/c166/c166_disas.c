@@ -1500,7 +1500,7 @@ end:
  * \param len Length of buffer
  * \return Instruction byte size, 2 or 4 or -1 on error
  */
-RZ_IPI st32 c166_decode_command(RZ_NONNULL C166State *state, RZ_NONNULL C166_Inst *instr, const ut8 *bytes, st32 len) {
+RZ_IPI st32 c166_decode_command(RZ_NONNULL C166State *state, RZ_NONNULL C166_Inst *instr, RZ_NONNULL const ut8 *bytes, st32 len) {
 	rz_return_val_if_fail(state && instr && bytes, -1);
 	if (len < 2)
 		return -1;
