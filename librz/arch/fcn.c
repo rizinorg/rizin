@@ -827,6 +827,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				// If previous instruction was a jump there would already be a split.
 				// So setting jump here shouldn't overwrite any real jumps.
 				bb->jump = at;
+				rz_analysis_block_unref(bb);
 				item->block = bb = next;
 				next->sp_entry = sp;
 				newbbsize = bb->size + oplen;
