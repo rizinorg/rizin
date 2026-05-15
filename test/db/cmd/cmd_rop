@@ -4083,7 +4083,7 @@ Gadget size: 4
 0x0000000c: ldmeq sp!, {pc}; bx lr;
 0x00000010: bx lr;
 ======================/Rg=======================
-Gadget 0x0 [Conditional Gadget]
+Gadget 0x0 [Conditional]
 Stack change: 0xfffffffc
 Changed registers: sp r0 r1 
 Register dependencies:
@@ -4091,20 +4091,20 @@ Memory Write: lr Initial Value: 0xffffffff New Value: 0x0
 Var Read: r0
 Var Read: r1
 
-Gadget 0x4 [Conditional Gadget]
+Gadget 0x4 [Conditional]
 Stack change: 0x0
 Changed registers: r0 r1 
 Register dependencies:
 Var Read: r0
 Var Read: r1
 
-Gadget 0x8 [Conditional Gadget]
+Gadget 0x8 [Conditional]
 Stack change: 0x0
 Changed registers: r1 
 Register dependencies:
 Var Read: r1
 
-Gadget 0xc [Conditional Gadget]
+Gadget 0xc [Conditional]
 Stack change: 0x0
 Changed registers: 
 Register dependencies:
@@ -4155,25 +4155,25 @@ Register dependencies:
 ======================/Rj=======================
 [{"opcodes":[{"offset":0,"size":4,"opcode":"str lr, [sp, -4]!","type":"store"},{"offset":4,"size":4,"opcode":"mov r0, r0","type":"mov"},{"offset":8,"size":4,"opcode":"mov r1, r1","type":"mov"},{"offset":12,"size":4,"opcode":"ldmeq sp!, {pc}","type":"cret"}],"retaddr":12,"size":16,"is_conditional":true},{"opcodes":[{"offset":4,"size":4,"opcode":"mov r0, r0","type":"mov"},{"offset":8,"size":4,"opcode":"mov r1, r1","type":"mov"},{"offset":12,"size":4,"opcode":"ldmeq sp!, {pc}","type":"cret"}],"retaddr":12,"size":12,"is_conditional":true},{"opcodes":[{"offset":8,"size":4,"opcode":"mov r1, r1","type":"mov"},{"offset":12,"size":4,"opcode":"ldmeq sp!, {pc}","type":"cret"}],"retaddr":12,"size":8,"is_conditional":true},{"opcodes":[{"offset":12,"size":4,"opcode":"ldmeq sp!, {pc}","type":"cret"}],"retaddr":12,"size":4,"is_conditional":true},{"opcodes":[{"offset":0,"size":4,"opcode":"str lr, [sp, -4]!","type":"store"},{"offset":4,"size":4,"opcode":"mov r0, r0","type":"mov"},{"offset":8,"size":4,"opcode":"mov r1, r1","type":"mov"},{"offset":12,"size":4,"opcode":"ldmeq sp!, {pc}","type":"cret"},{"offset":16,"size":4,"opcode":"bx lr","type":"ret"}],"retaddr":16,"size":20},{"opcodes":[{"offset":4,"size":4,"opcode":"mov r0, r0","type":"mov"},{"offset":8,"size":4,"opcode":"mov r1, r1","type":"mov"},{"offset":12,"size":4,"opcode":"ldmeq sp!, {pc}","type":"cret"},{"offset":16,"size":4,"opcode":"bx lr","type":"ret"}],"retaddr":16,"size":16},{"opcodes":[{"offset":8,"size":4,"opcode":"mov r1, r1","type":"mov"},{"offset":12,"size":4,"opcode":"ldmeq sp!, {pc}","type":"cret"},{"offset":16,"size":4,"opcode":"bx lr","type":"ret"}],"retaddr":16,"size":12},{"opcodes":[{"offset":12,"size":4,"opcode":"ldmeq sp!, {pc}","type":"cret"},{"offset":16,"size":4,"opcode":"bx lr","type":"ret"}],"retaddr":16,"size":8},{"opcodes":[{"offset":16,"size":4,"opcode":"bx lr","type":"ret"}],"retaddr":16,"size":4}]
 ======================/Rgl======================
-Gadget 0x0 (size 16 bytes) [Conditional Gadget]
+Gadget 0x0 (size 16 bytes) [Conditional]
 ------------------------------------------------------------------------------------------------------
   0x00000000  04e02de5         str lr, [sp, -4]! | Stack change: 0xfffffffc
   0x00000004  0000a0e1         mov r0, r0        | Modified regs: sp r0 r1
   0x00000008  0110a0e1         mov r1, r1        | Dependencies:  sp lr sp r0 r1
   0x0000000c  0080bd08         ldmeq sp!, {pc}   | 
 
-Gadget 0x4 (size 12 bytes) [Conditional Gadget]
+Gadget 0x4 (size 12 bytes) [Conditional]
 ------------------------------------------------------------------------------------------------------
   0x00000004  0000a0e1         mov r0, r0      | Stack change: 0x0
   0x00000008  0110a0e1         mov r1, r1      | Modified regs: r0 r1
   0x0000000c  0080bd08         ldmeq sp!, {pc} | Dependencies:  r0 r1
 
-Gadget 0x8 (size 8 bytes) [Conditional Gadget]
+Gadget 0x8 (size 8 bytes) [Conditional]
 ------------------------------------------------------------------------------------------------------
   0x00000008  0110a0e1         mov r1, r1      | Stack change: 0x0
   0x0000000c  0080bd08         ldmeq sp!, {pc} | Modified regs: r1
 
-Gadget 0xc (size 4 bytes) [Conditional Gadget]
+Gadget 0xc (size 4 bytes) [Conditional]
 ------------------------------------------------------------------------------------------------------
   0x0000000c  0080bd08         ldmeq sp!, {pc} | Stack change: 0x0
 
