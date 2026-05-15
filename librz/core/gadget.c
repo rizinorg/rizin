@@ -1404,7 +1404,7 @@ static void update_search_context(const RzGadgetSearchContext *context, const ch
 	}
 }
 
-static bool filter_gadget(RzCore *core, const ut8 *buf, int start_idx, RzGadgetSearchContext *context,
+static bool filter_gadget(RzCore *core, const ut8 *buf, RzGadgetSearchContext *context,
 	RzList /*<char *>*/ *rx_list, RzPVector /*<RzCoreAsmHit *>*/ *hitlist) {
 
 	bool is_greparg = !(context->mask & (RZ_GADGET_PRINT_DETAIL | RZ_GADGET_ANALYZE)) && !(context->detail_mask | RZ_GADGET_DETAIL_SEARCH_NON) && context->greparg;
@@ -1476,7 +1476,7 @@ static bool filter_gadget(RzCore *core, const ut8 *buf, int start_idx, RzGadgetS
 	return pass;
 }
 
-static RzPVector /*<RzCoreAsmHit *>*/ *build_gadget_hitlist_raw(RzCore *core, ut8 *buf, int idx,
+static RzPVector /*<RzCoreAsmHit *>*/ *build_gadget_hitlist_raw(RzCore *core, ut8 *buf, ssize_t idx,
 	RzGadgetSearchContext *context, RzGadgetEndListPair *end_gadget, RZ_OUT RzStrBuf **sb_out) {
 
 	RzPVector *hitlist = rz_pvector_new((RzPVectorFree)rz_core_asm_hit_free);
@@ -1595,7 +1595,7 @@ static RzPVector /*<RzCoreAsmHit *>*/ *deep_copy_hitlist(const RzPVector /*<RzCo
 	return new_hitlist;
 }
 
-static RzPVector /*<RzCoreAsmHit *>*/ *construct_gadget(RzCore *core, ut8 *buf, int idx, RzGadgetSearchContext *context,
+static RzPVector /*<RzCoreAsmHit *>*/ *construct_gadget(RzCore *core, ut8 *buf, ssize_t idx, RzGadgetSearchContext *context,
 	RzList /*<char *>*/ *rx_list, RzGadgetEndListPair *end_gadget) {
 
 	RzStrBuf *sb = NULL;
@@ -1626,7 +1626,7 @@ static RzPVector /*<RzCoreAsmHit *>*/ *construct_gadget(RzCore *core, ut8 *buf, 
 		}
 	}
 
-	if (!filter_gadget(core, buf, idx, context, rx_list, hitlist)) {
+	if (!filter_gadget(core, buf, context, rx_list, hitlist)) {
 		rz_pvector_free(hitlist);
 		return NULL;
 	}
@@ -2013,7 +2013,7 @@ static bool apply_post_build_filters(RzCore *core, RzGadgetSearchContext *contex
 	return true;
 }
 
-static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzGadgetSearchContext *context,
+static bool process_disassembly(RzCore *core, ut8 *buf, const ssize_t idx, RzGadgetSearchContext *context,
 	RzList /*<char *>*/ *rx_list, RzGadgetEndListPair *end_gadget) {
 	RzAsmOp *asmop = rz_asm_op_new();
 	bool status = false;
@@ -2057,7 +2057,7 @@ fini:
 	return status;
 }
 
-static bool update_end_gadget(int *i, const int gadget_depth, RzGadgetEndListPair **end_gadget, const RzGadgetSearchContext *context) {
+static bool update_end_gadget(ssize_t *i, const int gadget_depth, RzGadgetEndListPair **end_gadget, const RzGadgetSearchContext *context) {
 	rz_return_val_if_fail(end_gadget && context, false);
 	if (*i > (*end_gadget)->instr_offset) {
 		// We've exhausted the first end-gadget section,
@@ -2095,8 +2095,7 @@ static bool print_gadgets_from_cache(RzCore *core, RzGadgetCache *gadget_cache, 
 			continue;
 		}
 
-		int start_idx = (int)(node->addr - context->from);
-		if (!filter_gadget(core, NULL, start_idx, context, rx_list, node->hitlist)) {
+		if (!filter_gadget(core, NULL, context, rx_list, node->hitlist)) {
 			rz_rbtree_iter_next(&iter);
 			continue;
 		}
@@ -2164,7 +2163,7 @@ static int handle_gadget_search_address(RzCore *core, RzGadgetSearchContext *con
 	RzGadgetEndListPair *end_gadget = rz_list_pop(context->end_list);
 	// Start at just before the first end gadget.
 	const int next = end_gadget->instr_offset;
-	for (int i = 0; i < delta && (context->cache || context->max_count); i += context->increment) {
+	for (ssize_t i = 0; i < delta && (context->cache || context->max_count); i += context->increment) {
 		// TODO: Test this and check if this line is needed in x86
 		const int prev = 0;
 		if (context->increment == 1 && i < prev - max_inst_size_x86) {
