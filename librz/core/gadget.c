@@ -921,7 +921,7 @@ static void gadget_print_standard_mode(const RzCore *core, const RzGadgetInfo *g
 	const char *highlight_color = colorize ? Color_CYAN : "";
 	const char *reset_color = colorize ? Color_RESET : "";
 	if (is_conditional) {
-		rz_cons_printf("%sGadget 0x%" PFMT64x " [Conditional Gadget]%s\n", highlight_color, gadget_info->address, reset_color);
+		rz_cons_printf("%sGadget 0x%" PFMT64x " [Conditional]%s\n", highlight_color, gadget_info->address, reset_color);
 	} else {
 		rz_cons_printf("Gadget 0x%" PFMT64x "\n", gadget_info->address);
 	}
