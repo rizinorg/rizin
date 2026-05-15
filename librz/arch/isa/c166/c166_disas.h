@@ -6,7 +6,7 @@
 #ifndef C166_DISAS_H
 #define C166_DISAS_H
 
-#include "rz_vector.h"
+#include <rz_vector.h>
 #include <rz_types.h>
 
 #define C166_INSTR_MAXLEN    (16 + 16) // ?
