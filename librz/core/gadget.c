@@ -1115,7 +1115,7 @@ static void gadget_print_long_mode(const RzCore *core, const RzGadgetInfo *gadge
 	const char *highlight_color = colorize ? Color_CYAN : "";
 	const char *reset_color = colorize ? Color_RESET : "";
 	if (is_conditional) {
-		rz_cons_printf("%sGadget 0x%" PFMT64x " (size %d bytes) [Conditional Gadget]%s\n", highlight_color, addr, size, reset_color);
+		rz_cons_printf("%sGadget 0x%" PFMT64x " (size %d bytes) [Conditional]%s\n", highlight_color, addr, size, reset_color);
 	} else {
 		rz_cons_printf("Gadget 0x%" PFMT64x " (size %d bytes)\n", addr, size);
 	}
