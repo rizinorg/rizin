@@ -1596,7 +1596,7 @@ static RzPVector /*<RzCoreAsmHit *>*/ *deep_copy_hitlist(const RzPVector /*<RzCo
 }
 
 static bool insert_gadget_in_cache(RzCore *core, RzGadgetSearchContext *context, ssize_t idx,
-	RzGadgetEndListPair *end_gadget, RzPVector *hitlist) {
+	RzGadgetEndListPair *end_gadget, RzPVector /*<RzCoreAsmHit *>*/ *hitlist) {
 
 	ut64 gadget_addr = context->from + idx;
 	RzGadgetCache *gadget_cache = rz_analysis_get_gadget_cache(core->analysis, context->type);
