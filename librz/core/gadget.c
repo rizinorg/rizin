@@ -1595,6 +1595,36 @@ static RzPVector /*<RzCoreAsmHit *>*/ *deep_copy_hitlist(const RzPVector /*<RzCo
 	return new_hitlist;
 }
 
+static bool insert_gadget_in_cache(RzCore *core, RzGadgetSearchContext *context, ssize_t idx,
+	RzGadgetEndListPair *end_gadget, RzPVector *hitlist) {
+
+	ut64 gadget_addr = context->from + idx;
+	RzGadgetCache *gadget_cache = rz_analysis_get_gadget_cache(core->analysis, context->type);
+	if (!gadget_cache) {
+		return false;
+	}
+	RzPVector *hitlist_copy = deep_copy_hitlist(hitlist);
+	if (!hitlist_copy) {
+		return false;
+	}
+
+	RzGadgetCacheNode *node = RZ_NEW0(RzGadgetCacheNode);
+	if (!node) {
+		rz_pvector_free(hitlist_copy);
+		return false;
+	}
+	node->addr = gadget_addr;
+	node->hitlist = hitlist_copy;
+	node->delay_size = end_gadget->delay_size;
+	void *data = &node->addr;
+	if (!rz_rbtree_insert(&gadget_cache->tree, data, &node->rb, gadget_cache_node_cmp, NULL)) {
+		RZ_LOG_ERROR("Failed to cache gadget for address 0x%" PFMT64x "\n", gadget_addr);
+		free_gadget_cache_node(&node->rb, NULL);
+		return false;
+	}
+	return true;
+}
+
 static RzPVector /*<RzCoreAsmHit *>*/ *construct_gadget(RzCore *core, ut8 *buf, ssize_t idx, RzGadgetSearchContext *context,
 	RzList /*<char *>*/ *rx_list, RzGadgetEndListPair *end_gadget) {
 
@@ -1612,17 +1642,9 @@ static RzPVector /*<RzCoreAsmHit *>*/ *construct_gadget(RzCore *core, ut8 *buf, 
 	rz_strbuf_free(sb);
 
 	if (context->cache) {
-		ut64 gadget_addr = context->from + idx;
-		RzGadgetCache *gadget_cache = rz_analysis_get_gadget_cache(core->analysis, context->type);
-		RzGadgetCacheNode *node = RZ_NEW(RzGadgetCacheNode);
-		node->addr = gadget_addr;
-		node->hitlist = deep_copy_hitlist(hitlist);
-		node->delay_size = end_gadget->delay_size;
-		void *data = &node->addr;
-		if (!rz_rbtree_insert(&gadget_cache->tree, data, &node->rb, gadget_cache_node_cmp, NULL)) {
-			// TODO: should invalidate cache? idts as this path will rarely hit, dont deserve writing extra code?
-			RZ_LOG_ERROR("Failed to cache gadget for address 0x%" PFMT64x "\n", gadget_addr);
-			free_gadget_cache_node(&node->rb, NULL);
+		if (!insert_gadget_in_cache(core, context, idx, end_gadget, hitlist)) {
+			rz_pvector_free(hitlist);
+			return NULL;
 		}
 	}
 
