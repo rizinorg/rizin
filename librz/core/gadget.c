@@ -1281,9 +1281,9 @@ static bool print_gadget_hitlist(const RzCore *core, RzPVector /*<RzCoreAsmHit *
 	case RZ_OUTPUT_MODE_QUIET:
 		if (is_conditional) {
 			if (context->ret_val) {
-				rz_strbuf_appendf(context->buf, " %s[Conditional Gadget]%s\n", highlight_color, reset_color);
+				rz_strbuf_appendf(context->buf, " %s[Conditional]%s\n", highlight_color, reset_color);
 			} else {
-				rz_cons_printf(" %s[Conditional Gadget]%s\n", highlight_color, reset_color);
+				rz_cons_printf(" %s[Conditional]%s\n", highlight_color, reset_color);
 			}
 		} else {
 			if (context->ret_val) {
@@ -1296,7 +1296,7 @@ static bool print_gadget_hitlist(const RzCore *core, RzPVector /*<RzCoreAsmHit *
 	case RZ_OUTPUT_MODE_STANDARD:
 		if (hit) {
 			if (is_conditional) {
-				rz_cons_printf("%sGadget size: %d [Conditional Gadget]%s\n", highlight_color, (int)size, reset_color);
+				rz_cons_printf("%sGadget size: %d [Conditional]%s\n", highlight_color, (int)size, reset_color);
 			} else {
 				rz_cons_printf("Gadget size: %d\n", (int)size);
 			}
@@ -1308,7 +1308,7 @@ static bool print_gadget_hitlist(const RzCore *core, RzPVector /*<RzCoreAsmHit *
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
 		if (is_conditional) {
-			char *new_str = rz_str_newf("%s[Conditional Gadget]%s %s", highlight_color, reset_color, asmop_str);
+			char *new_str = rz_str_newf("%s[Conditional]%s %s", highlight_color, reset_color, asmop_str);
 			free(asmop_str);
 			asmop_str = new_str;
 		}
