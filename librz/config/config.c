@@ -825,6 +825,13 @@ RZ_API RZ_OWN char *rz_config_var_flags_as_string(ut32 flags) {
 	return rz_strbuf_drain_nofree(&sb);
 }
 
+static bool config_var_is_valid_value(const RzConfigVar *var, const void *value) {
+	if (!var->value.validator) {
+		return true;
+	}
+	return var->value.validator(value);
+}
+
 RZ_IPI bool rz_config_var_set_bool(RzConfigVar *var, bool value) {
 	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_BOOL), var->name, false);
 	if (rz_config_var_is_readonly(var)) {
@@ -834,6 +841,8 @@ RZ_IPI bool rz_config_var_set_bool(RzConfigVar *var, bool value) {
 
 	if (RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND)) {
 		return config_var_bind_set_value(var, &value);
+	} else if (!config_var_is_valid_value(var, &value)) {
+		return false;
 	}
 	var->value.boolean = value;
 	return true;
@@ -848,6 +857,8 @@ RZ_IPI bool rz_config_var_set_integer(RzConfigVar *var, ut64 value) {
 
 	if (RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND)) {
 		return config_var_bind_set_value(var, &value);
+	} else if (!config_var_is_valid_value(var, &value)) {
+		return false;
 	}
 	var->value.integer = value;
 	return true;
@@ -884,6 +895,8 @@ RZ_IPI bool rz_config_var_set_string(RzConfigVar *var, const char *value) {
 
 	if (RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND)) {
 		return config_var_bind_set_value(var, value);
+	} else if (!config_var_is_valid_value(var, value)) {
+		return false;
 	}
 	free(var->value.string);
 	var->value.string = rz_str_dup(value);
@@ -899,7 +912,10 @@ RZ_IPI bool rz_config_var_set_list(RzConfigVar *var, const RzList /*<const char 
 
 	if (RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND)) {
 		return config_var_bind_set_value(var, value);
+	} else if (!config_var_is_valid_value(var, value)) {
+		return false;
 	}
+
 	rz_list_free(var->value.list);
 	var->value.list = rz_config_dup_list(value);
 	return true;
@@ -916,6 +932,9 @@ RZ_IPI bool rz_config_var_set_list2(RzConfigVar *var, RZ_OWN RzList /*<char *>*/
 		bool ret = config_var_bind_set_value(var, value);
 		rz_list_free(value);
 		return ret;
+	} else if (!config_var_is_valid_value(var, value)) {
+		rz_list_free(value);
+		return false;
 	}
 
 	rz_list_free(var->value.list);
@@ -932,7 +951,10 @@ RZ_IPI bool rz_config_var_set_interval(RzConfigVar *var, RzInterval value) {
 
 	if (RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND)) {
 		return config_var_bind_set_value(var, &value);
+	} else if (!config_var_is_valid_value(var, &value)) {
+		return false;
 	}
+
 	var->value.interval = value;
 	return true;
 }
@@ -1561,6 +1583,36 @@ RZ_API bool rz_config_set_options2(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const ch
 	}
 
 	return config_entry_set_options(entry, options);
+}
+
+/**
+ * \brief      Sets the validator callback for a given RzConfigVar (owned types).
+ *
+ * \param[in]  cfg        The RzConfig to use
+ * \param[in]  name       The name of the string type variable to update
+ * \param[in]  validator  The validator callback to set (can be NULL)
+ *
+ * \return     On success returns a true, otherwise false.
+ */
+RZ_API bool rz_config_set_validator(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE RzConfigValidator validator) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
+	RzConfigEntry *entry = config_find_entry(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return false;
+	} else if (!entry->is_variable) {
+		RZ_LOG_ERROR("config: variable '%s' is not an RzConfigVar.\n", name);
+		return false;
+	} else if (rz_config_var_has_flags(&entry->var, RZ_CONFIG_VAR_FLAG_BIND)) {
+		RZ_LOG_ERROR("config: cannot set validator when variable '%s' is a bind.\n", name);
+		return false;
+	} else if (rz_config_var_get_options(&entry->var)) {
+		RZ_LOG_ERROR("config: cannot set validator for '%s' when options are set.\n", name);
+		return false;
+	}
+
+	entry->var.value.validator = validator;
+	return true;
 }
 
 /**
