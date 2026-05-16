@@ -2297,16 +2297,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ARM Thumb literal pool after function marked as data
+NAME=ARM Thumb literal pool after function marked as data (pool entry points to ELF section)
 FILE=bins/arm/elf/K64F-RIOT-SPI.elf
 CMDS=<<EOF
 aaa
 s 0x4e0
+pd 1
+s 0xd50
 pd 1
 EOF
 EXPECT=<<EOF
             ; DATA XREF from dbg.sched_run @ 0x490
             ;-- data.000004e0:
             0x000004e0      .dword 0x1fff0274 ; runqueue_bitcache ; section..bss ; sym..bss ; obj.runqueue_bitcache ; loc._sbss ; loc._szero ; loc._erelocate ; sched.c:135
+            ; DATA XREF from dbg.bit_clear8 @ 0xd34
+            ;-- data.00000d50:
+            0x00000d50      .dword 0x01ffffe0
 EOF
 RUN

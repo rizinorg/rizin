@@ -4076,8 +4076,16 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 				stored_val = big_endian ? rz_read_be32(buf) : rz_read_le32(buf);
 			}
 			RzBinSection *val_sec = rz_bin_get_section_at(bo, stored_val, true);
-			if (!val_sec || (val_sec->perm & RZ_PERM_X)) {
+			if (val_sec && (val_sec->perm & RZ_PERM_X)) {
+				// stored value is a code pointer — skip
 				continue;
+			}
+			if (!val_sec) {
+				// address do not refer to a section in ELF
+				ut64 fcn_end = fcn_from->addr + rz_analysis_function_linear_size(fcn_from);
+				if (target < fcn_end) {
+					continue;
+				}
 			}
 		}
 		// skip if already annotated by any other analysis
