@@ -328,8 +328,9 @@ static bool load_omf166_lnames(const rz_bin_omf166_obj *obj, const OMF_record *r
 	ut32 ct_name = 0;
 
 	OMF_lnames *lname = NULL;
-	rz_return_val_if_fail((record && buf), false);
-	rz_return_val_if_fail(record->size > 3, false);
+	if (!(record && buf) || record->size <= 3) {
+		return false;
+	}
 
 	while ((int)tmp_size < (int)(record->size - 1)) {
 		const int next = buf[3 + tmp_size] + 1;
@@ -346,7 +347,9 @@ static bool load_omf166_lnames(const rz_bin_omf166_obj *obj, const OMF_record *r
 			return false;
 		}
 		lname = RZ_NEW0(OMF_lnames);
-		rz_return_val_if_fail(lname, false);
+		if (!lname) {
+			return false;
+		}
 		if ((tmp_size + 4 + cb) < buf_size) {
 			memcpy(lname->name, buf + 3 + tmp_size + 1, cb);
 			lname->index = ct_name;
@@ -364,7 +367,9 @@ static int load_omf166_global_sym_record(const rz_bin_omf166_obj *obj, const OMF
 	size_t ct = 3;
 	ut32 base = 0;
 
-	rz_return_val_if_fail(record->size > 3, false);
+	if (record->size <= 3) {
+		return false;
+	}
 	if (record->type == OMF166_DEBSYM) {
 		if ((buf[ct] == 0x02)) {
 			ct++;
@@ -385,7 +390,9 @@ static int load_omf166_global_sym_record(const rz_bin_omf166_obj *obj, const OMF
 
 	while (record->size > ct) {
 		sym = RZ_NEW0(OMF_symbol);
-		rz_return_val_if_fail(sym, false);
+		if (!sym) {
+			return false;
+		}
 		sym->rec_type = record->type;
 		sym->base = base;
 		sym->n = rz_read_le8_offset(buf, &ct);
@@ -450,7 +457,9 @@ static int load_omf_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const siz
 static int load_omf_blkdef(const rz_bin_omf166_obj *obj, const ut8 *buf, const size_t buf_size, ut64 global_ct) {
 	size_t ct = 3;
 	OMF_blocks *block = RZ_NEW0(OMF_blocks);
-	rz_return_val_if_fail(block, false);
+	if (!block) {
+		return false;
+	}
 
 	block->GroupIndex = omf166_get_idx(buf + ct, buf_size - ct);
 	ct++;
@@ -480,11 +489,14 @@ static int load_omf_blkdef(const rz_bin_omf166_obj *obj, const ut8 *buf, const s
 }
 
 static int load_comment_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const OMF_record *record, ut64 global_ct) {
-	rz_return_val_if_fail(obj, false);
-	rz_return_val_if_fail(obj->coments_vec, false);
+	if (!(obj && obj->coments_vec)) {
+		return false;
+	}
 
 	OMF_coments *comment = RZ_NEW0(OMF_coments);
-	rz_return_val_if_fail(comment, false);
+	if (!comment) {
+		return false;
+	}
 
 	size_t ct = 3;
 	const ut8 ComTyp_b2 = rz_read_le8_offset(buf, &ct);
@@ -499,8 +511,9 @@ static int load_comment_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const
 }
 
 static int load_grpdef_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const OMF_record *record, ut64 global_ct) {
-	rz_return_val_if_fail(obj, false);
-	rz_return_val_if_fail(obj->coments_vec, false);
+	if (!obj) {
+		return false;
+	}
 
 	/*
 	 * Group Definition Record - Used to combine sections
@@ -585,10 +598,14 @@ static int load_linnum_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const 
 }
 
 static int load_omf_pedata(const rz_bin_omf166_obj *obj, const ut8 *buf, const OMF_record *record, const ut64 global_ct) {
-	rz_return_val_if_fail(obj && obj->pe_vec, false);
+	if (!(obj && obj->pe_vec)) {
+		return false;
+	}
 
 	OMF_pes *pe = RZ_NEW0(OMF_pes);
-	rz_return_val_if_fail(pe, false);
+	if (!pe) {
+		return false;
+	}
 
 	size_t ct = 3;
 	pe->SegmentNumber8 = rz_read_le8_offset(buf, &ct);
@@ -618,11 +635,13 @@ static int load_omf_unk1(const rz_bin_omf166_obj *obj, const ut8 *buf, const siz
 	 */
 #if RZ_BUILD_DEBUG
 	OMF_debug_includes *dip = RZ_NEW0(OMF_debug_includes);
-	rz_return_val_if_fail(dip, false);
+	if (!dip) {
+		return false;
+	}
 	size_t offset = 9;
 	dip->n = rz_read_le8_offset(buf, &offset);
 	rz_str_ncpy(dip->name, (const char *)&buf[offset], dip->n + 1);
-	RZ_LOG_DEBUG("load_omf = INCLUDES  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10ld)\t `%s`\n",
+	RZ_LOG_DEBUG("load_omf = INCLUDES  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10" PFMT64u ")\t `%s`\n",
 		record->size, global_ct, record->type, buf_size, dip->name);
 	rz_pvector_push(obj->includes_vec, dip);
 
@@ -636,7 +655,7 @@ static int load_omf_unk2(const ut8 *buf, const size_t buf_size, const OMF_record
 	size_t offset = 7;
 	const ut8 n = rz_read_le8_offset(buf, &offset);
 	rz_str_ncpy(name, (const char *)&buf[offset], n + 1);
-	RZ_LOG_DEBUG("load_omf = UNKNOWN2  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10ld)\t 0x%02x 0x%02x 0x%02x 0x%02x  `%s`\n",
+	RZ_LOG_DEBUG("load_omf = UNKNOWN2  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10" PFMT64u ")\t 0x%02x 0x%02x 0x%02x 0x%02x  `%s`\n",
 		record->size, global_ct,
 		record->type, buf_size,
 		buf[3], buf[4], buf[5], buf[6],
@@ -651,7 +670,7 @@ static int load_omf_unk3(const ut8 *buf, const size_t buf_size, const OMF_record
 	size_t offset = 7;
 	const ut8 n = rz_read_le8_offset(buf, &offset);
 	rz_str_ncpy(name, (const char *)&buf[offset], n + 1); // cct = 12
-	RZ_LOG_DEBUG("load_omf = UNKNOWN3  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10lu)\t `%s`\n",
+	RZ_LOG_DEBUG("load_omf = UNKNOWN3  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10" PFMT64u ")\t `%s`\n",
 		record->size, global_ct, record->type, buf_size, name);
 	RZ_LOG_DEBUG("%02x %02x %02x \n%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
 		buf[0], buf[1], buf[2],
@@ -664,7 +683,7 @@ static int load_omf_unk3(const ut8 *buf, const size_t buf_size, const OMF_record
 
 static int load_omf_unk4(const ut8 *buf, const size_t buf_size, const OMF_record *record, const ut64 global_ct) {
 #if RZ_BUILD_DEBUG
-	RZ_LOG_DEBUG("load_omf = UNKNOWN4  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10lu)\n", record->size, global_ct, record->type, buf_size);
+	RZ_LOG_DEBUG("load_omf = UNKNOWN4  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10" PFMT64u ")\n", record->size, global_ct, record->type, buf_size);
 	size_t ct = 3;
 	const ut16 count = rz_read_le16_offset(buf, &ct);
 
@@ -694,7 +713,9 @@ static int load_omf_unk4(const ut8 *buf, const size_t buf_size, const OMF_record
 static int load_omf_secdef(rz_bin_omf166_obj *obj, const ut8 *buf, const OMF_record *record) {
 	size_t ct = 3;
 	OMF_sections *section = RZ_NEW0(OMF_sections);
-	rz_return_val_if_fail(section, false);
+	if (!section) {
+		return false;
+	}
 
 	const ut8 SecTyp = rz_read_le8_offset(buf, &ct); // ct = 3
 	section->Type = SecTyp >> 6; ///< 0:=BIT, 1:=DATA, 2:=CODE, 3:=CONST
@@ -794,11 +815,12 @@ static int load_omf_modinf(rz_bin_omf166_obj *obj, const ut8 *buf, const OMF_rec
  * \return True is success, false is something wrong
  */
 static int load_omf_typnew(rz_bin_omf166_obj *obj, const ut8 *buf) {
-	rz_return_val_if_fail(obj->types, false);
 	obj->TI_INDEX = obj->TI_INDEX | 0x80;
 
 	OMF_type *newtype = RZ_NEW0(OMF_type);
-	rz_return_val_if_fail(newtype, false);
+	if (!newtype) {
+		return false;
+	}
 	size_t cct = 3;
 	newtype->index = obj->TI_INDEX;
 	newtype->descr_type = rz_read_le8_offset(buf, &cct);
@@ -947,11 +969,13 @@ static int rz_bin_format_omf166_load_content(rz_bin_omf166_obj *obj, OMF_record 
 		return load_omf_modinf(obj, buf, record);
 	}
 	case OMF166_MODEND: {
-		RZ_LOG_DEBUG("load_omf = MODEND  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMT64d ")\n", record->size, global_ct, record->type, buf_size);
+		RZ_LOG_DEBUG("load_omf = MODEND  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMT64u ")\n",
+			record->size, global_ct, record->type, buf_size);
 		return true;
 	}
 	case OMF166_BLKEND: {
-		RZ_LOG_DEBUG("load_omf = BLKEND  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMT64d ")\n", record->size, global_ct, record->type, buf_size);
+		RZ_LOG_DEBUG("load_omf = BLKEND  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMT64u ")\n",
+			record->size, global_ct, record->type, buf_size);
 		return true;
 	}
 	case OMF166_LINNUM: {
@@ -963,7 +987,7 @@ static int rz_bin_format_omf166_load_content(rz_bin_omf166_obj *obj, OMF_record 
 		 *      E3    0F 00    00 00     FC    07   INTREGS            FF FF      00         F1
 		 *      E3    18 00    00 20     FC    10   ?C_MAINREGISTERS   FF FF      00         1D
 		 */
-		RZ_LOG_DEBUG("load_omf = REGDEF  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMT64d ")\n",
+		RZ_LOG_DEBUG("load_omf = REGDEF  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMT64u ")\n",
 			record->size, global_ct, record->type, buf_size);
 		return true;
 	}
@@ -1026,14 +1050,16 @@ static int rz_bin_format_omf166_load_content(rz_bin_omf166_obj *obj, OMF_record 
 		return load_omf_unk4(buf, buf_size, record, global_ct);
 	}
 	default: {
-		RZ_LOG_DEBUG("load_omf: [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMT64d ")\t",
+		RZ_LOG_DEBUG("load_omf: [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMT64u ")\t",
 			record->size, global_ct, record->type, buf_size);
 		rz_warn_if_reached();
 		break;
 	}
 	}
 	record->content = RZ_NEWS0(char, record->size);
-	rz_return_val_if_fail(record->content, false);
+	if (!record->content) {
+		return false;
+	}
 	((char *)record->content)[record->size - 1] = 0;
 	return true;
 }
@@ -1043,7 +1069,9 @@ static OMF_record *rz_bin_format_omf166_load_record(rz_bin_omf166_obj *obj, cons
 		return NULL;
 	}
 	OMF_record *new = RZ_NEW0(OMF_record);
-	rz_return_val_if_fail(new, NULL);
+	if (!new) {
+		return false;
+	}
 	size_t offset = 0;
 	new->type = rz_read_le8_offset(buf, &offset);
 	new->size = rz_read_le16_offset(buf, &offset);
@@ -1098,7 +1126,9 @@ static void omf166_linnums_free(void *it) {
 }
 
 static void typnew_free(OMF_type *type) {
-	rz_return_if_fail(type);
+	if (!type) {
+		return;
+	}
 	if (type->descr_type == FINAL_TYPE) {
 		RZ_FREE(type->descriptor.final_types.label);
 	}
@@ -1118,7 +1148,9 @@ static void typnew_free(OMF_type *type) {
 
 static int rz_bin_format_omf166_init_internal_storage(rz_bin_omf166_obj *obj) {
 	obj->ht_types = ht_up_new(NULL, (HtUPFreeValue)typnew_free);
-	rz_return_val_if_fail(obj->ht_types, false);
+	if (!obj->ht_types) {
+		return false;
+	}
 
 	const OMF_types final_types[] = {
 		{ 0x40, true, 0, "untyped" },
@@ -1146,7 +1178,9 @@ static int rz_bin_format_omf166_init_internal_storage(rz_bin_omf166_obj *obj) {
 	const int ft_count = RZ_ARRAY_SIZE(final_types);
 	for (ut8 i = 0; i < (ut8)ft_count; i++) {
 		OMF_type *newtype = RZ_NEW0(OMF_type);
-		rz_return_val_if_fail(newtype, false); ///< ????
+		if (!newtype) {
+			return false;
+		}
 		newtype->index = final_types[i].index;
 		newtype->descr_type = FINAL_TYPE;
 		newtype->is_data = final_types[i].is_data;
@@ -1194,7 +1228,9 @@ static int find_symbol_by_paddr(const void *paddr, const void *sym, void *user) 
 }
 
 static int rz_bin_format_omf166_load_all_records(rz_bin_omf166_obj *obj, const ut8 *buf, const ut64 size) {
-	rz_return_val_if_fail(obj, false);
+	if (!obj) {
+		return false;
+	}
 
 	ut64 ct = 0;
 	OMF_record *new_rec = NULL;
@@ -1203,19 +1239,20 @@ static int rz_bin_format_omf166_load_all_records(rz_bin_omf166_obj *obj, const u
 
 	while (ct < size) {
 		new_rec = rz_bin_format_omf166_load_record(obj, buf + ct, ct, size - ct);
-		rz_return_val_if_fail(new_rec, false);
+		if (!new_rec) {
+			return false;
+		}
 		ct += 3 + new_rec->size;
 		free(new_rec);
 	}
 
-	rz_return_val_if_fail(obj->blocks_vec, false);
 	const size_t bc = rz_pvector_len(obj->blocks_vec);
 	if (bc > 0) {
 		RzPVector *v = obj->blocks_vec;
 		rz_pvector_sort(v, block_cmp, NULL);
 		void **it;
 		rz_pvector_foreach (v, it) {
-			OMF_blocks *block = (OMF_blocks *)*it;
+			const OMF_blocks *block = (OMF_blocks *)*it;
 			ut32 offset = (block->FrameNumber << 16) | block->BlockOffset16;
 			void **iter = rz_pvector_find(obj->symbols_vec, &offset, find_symbol_by_paddr, NULL);
 			if (!iter) {
@@ -1250,11 +1287,14 @@ static int rz_bin_format_omf166_load_all_records(rz_bin_omf166_obj *obj, const u
 }
 
 #define PVEC_FREE(vec) \
-	if (vec) \
-		rz_pvector_free(vec);
+	if (vec) { \
+		rz_pvector_free(vec); \
+	}
 
 void rz_bin_format_omf166_free_all_records(rz_bin_omf166_obj *obj) {
-	rz_return_if_fail(obj);
+	if (!obj) {
+		return;
+	}
 	PVEC_FREE(obj->sections_vec);
 	PVEC_FREE(obj->symbols_vec);
 	PVEC_FREE(obj->blocks_vec);
@@ -1269,7 +1309,9 @@ void rz_bin_format_omf166_free_all_records(rz_bin_omf166_obj *obj) {
 
 rz_bin_omf166_obj *rz_bin_format_omf166_load(const ut8 *buf, ut64 size) {
 	rz_bin_omf166_obj *ret = RZ_NEW0(rz_bin_omf166_obj);
-	rz_return_val_if_fail(ret, NULL);
+	if (!ret) {
+		return NULL;
+	}
 
 	if (!rz_bin_format_omf166_load_all_records(ret, buf, size)) {
 		rz_bin_format_omf166_free_all_records(ret);
@@ -1284,7 +1326,9 @@ void rz_bin_format_omf166_fini(rz_bin_omf166_obj *obj) {
 }
 
 bool rz_bin_omf166_get_entry(rz_bin_omf166_obj *obj, RzBinAddr *addr) {
-	rz_return_val_if_fail(obj, false);
+	if (!obj) {
+		return false;
+	}
 
 	if (!rz_pvector_len(obj->symbols_vec))
 		return false;
