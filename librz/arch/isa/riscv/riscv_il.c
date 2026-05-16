@@ -75,9 +75,17 @@ static const RiscvInstructionLifter riscv_lifters[] = {
 	USE_LIFTER(lwu, LWU),
 	// M extension
 	USE_LIFTER(mul, MUL),
+	USE_LIFTER(mulh, MULH),
+	USE_LIFTER(mulhsu, MULHSU),
 	USE_LIFTER(mulhu, MULHU),
+	USE_LIFTER(div, DIV),
 	USE_LIFTER(divu, DIVU),
+	USE_LIFTER(rem, REM),
 	USE_LIFTER(remu, REMU),
+	USE_LIFTER(mulw, MULW),
+	USE_LIFTER(divw, DIVW),
+	USE_LIFTER(divuw, DIVUW),
+	USE_LIFTER(remw, REMW),
 	USE_LIFTER(remuw, REMUW),
 	/* ---------------------------------- Compressed ---------------------------------*/
 	USE_LIFTER(c_addi, C_ADDI),
