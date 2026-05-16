@@ -720,7 +720,6 @@ typedef struct {
 typedef struct {
 	ut8 bits;
 	ut8 modinfo;
-	OMF_typedata types[255];
 	int TI_INDEX;
 	int SEC_INDEX;
 	RzTypeDB *typedb;
