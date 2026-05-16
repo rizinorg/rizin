@@ -20,6 +20,11 @@ afb
 echo -- 6 --
 afb-*
 afb
+echo -- 7 --
+afb+ entry0 entry0 `aos 4`
+afb
+echo -- 8 --
+pdf
 EOF
 EXPECT=<<EOF
 WARNING: Failed to read ELF header (e_phnum).
@@ -66,5 +71,13 @@ WARNING: Failed to read chunk of size 0x101 at 0x10020 from io.
 0x00010020 0x0001fc1e 00:0000 64510 j 0x0001fc1e
 0x0001fc1e 0x00020020 00:0000 1026
 -- 6 --
+-- 7 --
+0x00010020 0x00010027 00:0000 7
+-- 8 --
+/ entry0();
+|           0x00010020      b32a           mov   bl, 0x2a              ; '*' ; 42
+|           0x00010022      31c0           xor   eax, eax
+|           0x00010024      40             inc   eax
+\           0x00010025      cd80           int   0x80
 EOF
 RUN
