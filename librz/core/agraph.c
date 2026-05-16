@@ -18,6 +18,7 @@
  * - Use graph API instead of accessing the private fields directly.
  */
 #include "../util/graph_priv.h"
+#include "rz_util/rz_assert.h"
 
 static const char *mousemodes[] = {
 	"canvas-y",
@@ -551,7 +552,7 @@ static bool agraph_add_graph_edge(RzAGraph *g, RzGraphNode *from, RzGraphNode *t
 
 static void agraph_del_graph_edge(const RzAGraph *g, RzGraphNode *from, RzGraphNode *to) {
 	rz_return_if_fail(g && from && to);
-	rz_graph_del_edge(g->graph, from, to, NULL);
+	rz_graph_del_edge(g->graph, from, to);
 }
 
 static bool is_offset(const RzAGraph *g) {
@@ -4679,7 +4680,11 @@ RZ_API RzANode *rz_agraph_add_node(const RzAGraph *g, const char *title, const c
 	res->klass = -1;
 	res->offset = UT64_MAX;
 	res->shortcut_w = 0;
-	res->gnode = rz_graph_add_node(g->graph, res, NULL);
+	res->gnode = NULL;
+	if (rz_graph_add_node(g->graph, res, &res->gnode) == RZ_GRAPH_STATUS_ERR) {
+		rz_warn_if_reached();
+	}
+
 	if (RZ_STR_ISNOTEMPTY(res->title) && !g->is_il) {
 		ht_sp_update(g->nodes, res->title, res);
 		char *s, *estr, *b;
