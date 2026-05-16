@@ -922,9 +922,9 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 #define RZ_MIDFLAGS_SYMALIGN 3
 
 typedef struct rz_core_asm_hit {
+	ut64 addr;
 	char *code;
 	int len;
-	ut64 addr;
 	ut8 valid;
 } RzCoreAsmHit;
 
