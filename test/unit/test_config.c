@@ -5,8 +5,9 @@
 #include <rz_config.h>
 #include "minunit.h"
 
-static bool test_config_validator_always_true(const void *) {
-	return true;
+static bool test_config_validator(void *user, const void *value) {
+	(void)value;
+	return user != NULL;
 }
 
 bool test_config_strings() {
@@ -18,7 +19,7 @@ bool test_config_strings() {
 	ret = rz_config_add_string(cfg, "foo.bar", "is foo.bar desc", "bla");
 	mu_assert_true(ret, "added foo.bar");
 
-	ret = rz_config_set_validator(cfg, "foo.bar", test_config_validator_always_true);
+	ret = rz_config_set_validator(cfg, "foo.bar", test_config_validator, &ret);
 	mu_assert_true(ret, "can set validator when options NOT are set");
 
 	ret = rz_config_is_readonly(cfg, "foo.bar");
@@ -66,7 +67,7 @@ bool test_config_strings() {
 	ret = rz_config_add_options(cfg, "foo.options", "is foo.options desc", "option1", "option2", "option3", "option4", NULL);
 	mu_assert_true(ret, "added foo.options");
 
-	ret = rz_config_set_validator(cfg, "foo.options", test_config_validator_always_true);
+	ret = rz_config_set_validator(cfg, "foo.options", test_config_validator, &ret);
 	mu_assert_false(ret, "cannot set validator when options are set");
 
 	bla = rz_config_get_string(cfg, "foo.options");
@@ -106,7 +107,7 @@ bool test_config_intergers() {
 	ret = rz_config_add_integer(cfg, "universe.question", "is universe.question desc", 42);
 	mu_assert_true(ret, "added universe.question");
 
-	ret = rz_config_set_validator(cfg, "universe.question", test_config_validator_always_true);
+	ret = rz_config_set_validator(cfg, "universe.question", test_config_validator, &ret);
 	mu_assert_true(ret, "can set validator for int");
 
 	ut64 answer = rz_config_get_integer(cfg, "universe.question");
@@ -152,7 +153,7 @@ bool test_config_booleans() {
 	ret = rz_config_add_bool(cfg, "true.or.false", "is true.or.false desc", true);
 	mu_assert_true(ret, "added true.or.false");
 
-	ret = rz_config_set_validator(cfg, "true.or.false", test_config_validator_always_true);
+	ret = rz_config_set_validator(cfg, "true.or.false", test_config_validator, &ret);
 	mu_assert_true(ret, "can set validator for bool");
 
 	bool what = rz_config_get_bool(cfg, "true.or.false");
@@ -213,7 +214,7 @@ bool test_config_lists() {
 	ret = rz_config_add_list(cfg, "thy.list", "is thy.list desc", "r1", "r2", "r3", NULL);
 	mu_assert_true(ret, "added thy.list");
 
-	ret = rz_config_set_validator(cfg, "thy.list", test_config_validator_always_true);
+	ret = rz_config_set_validator(cfg, "thy.list", test_config_validator, &ret);
 	mu_assert_true(ret, "can set validator for list");
 
 	list = rz_config_get_list(cfg, "thy.list");
@@ -280,7 +281,7 @@ bool test_config_itv() {
 	ret = rz_config_add_interval(cfg, "this.limit", "is this.limit desc", 0x230, 0x4fff);
 	mu_assert_true(ret, "added this.limit [0x230, 0x4fff]");
 
-	ret = rz_config_set_validator(cfg, "this.limit", test_config_validator_always_true);
+	ret = rz_config_set_validator(cfg, "this.limit", test_config_validator, &ret);
 	mu_assert_true(ret, "can set validator for itv");
 
 	itv = rz_config_get_interval(cfg, "this.limit");
@@ -362,7 +363,7 @@ bool test_config_invalid() {
 	mu_assert_null(rz_config_get_list(cfg, "list.here"), "list.here does not exist");
 	mu_assert_eq(rz_config_get_integer(cfg, "int.here"), 0, "int.here does not exist");
 	mu_assert_false(rz_config_get_bool(cfg, "bool.here"), "bool.here does not exist");
-	mu_assert_false(rz_config_set_validator(cfg, "self.validator", test_config_validator_always_true), "self.validator does not exist");
+	mu_assert_false(rz_config_set_validator(cfg, "self.validator", test_config_validator, &itv), "self.validator does not exist");
 	itv = rz_config_get_interval(cfg, "itv.here");
 	mu_assert_eq(rz_itv_begin(itv), 0, "itv.here does not exist (addr = 0)");
 	mu_assert_eq(rz_itv_size(itv), 0, "itv.here does not exist (size = 0)");
@@ -485,35 +486,35 @@ bool test_config_binds() {
 	ret = rz_config_add_bool_bind(cfg, "bind.bool", "is bind.bool desc", any_get, any_set, any_opts, &bt);
 	mu_assert_true(ret, "added bind.bool");
 
-	ret = rz_config_set_validator(cfg, "bind.bool", test_config_validator_always_true);
+	ret = rz_config_set_validator(cfg, "bind.bool", test_config_validator, &ret);
 	mu_assert_false(ret, "cannot set validator when bind");
 
 	bt.bind = RZ_CONFIG_VAR_TYPE_INT;
 	ret = rz_config_add_integer_bind(cfg, "bind.integer", "is bind.integer desc", any_get, any_set, any_opts, &bt);
 	mu_assert_true(ret, "added bind.integer");
 
-	ret = rz_config_set_validator(cfg, "bind.integer", test_config_validator_always_true);
+	ret = rz_config_set_validator(cfg, "bind.integer", test_config_validator, &ret);
 	mu_assert_false(ret, "cannot set validator when bind");
 
 	bt.bind = RZ_CONFIG_VAR_TYPE_STR;
 	ret = rz_config_add_string_bind(cfg, "bind.string", "is bind.string desc", any_get, any_set, any_opts, &bt);
 	mu_assert_true(ret, "added bind.string");
 
-	ret = rz_config_set_validator(cfg, "bind.string", test_config_validator_always_true);
+	ret = rz_config_set_validator(cfg, "bind.string", test_config_validator, &ret);
 	mu_assert_false(ret, "cannot set validator when bind");
 
 	bt.bind = RZ_CONFIG_VAR_TYPE_LIST;
 	ret = rz_config_add_list_bind(cfg, "bind.list", "is bind.list desc", any_get, any_set, any_opts, &bt);
 	mu_assert_true(ret, "added bind.list");
 
-	ret = rz_config_set_validator(cfg, "bind.list", test_config_validator_always_true);
+	ret = rz_config_set_validator(cfg, "bind.list", test_config_validator, &ret);
 	mu_assert_false(ret, "cannot set validator when bind");
 
 	bt.bind = RZ_CONFIG_VAR_TYPE_ITV;
 	ret = rz_config_add_interval_bind(cfg, "bind.interval", "is bind.interval desc", any_get, any_set, any_opts, &bt);
 	mu_assert_true(ret, "added bind.interval");
 
-	ret = rz_config_set_validator(cfg, "bind.interval", test_config_validator_always_true);
+	ret = rz_config_set_validator(cfg, "bind.interval", test_config_validator, &ret);
 	mu_assert_false(ret, "cannot set validator when bind");
 
 	bt.bind = RZ_CONFIG_VAR_TYPE_BOOL;

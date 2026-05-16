@@ -65,7 +65,6 @@ typedef enum {
 #define RZ_CONFIG_VAR_IS_TYPE(flags, expected)  (((flags) & RZ_CONFIG_VAR_TYPE_MASK) == (expected))
 #define RZ_CONFIG_VAR_HAS_FLAG(flags, expected) (((flags) & RZ_CONFIG_VAR_FLAGS_MASK) & (expected))
 
-typedef bool (*RzConfigValidator)(const void *value);
 typedef bool (*RzConfigBindGet)(void *user, void *value);
 typedef bool (*RzConfigBindSet)(void *user, const void *value);
 typedef bool (*RzConfigBindOpts)(void *user, RzList /*<char *>*/ **options);
@@ -78,7 +77,8 @@ typedef struct rz_config_owned_t {
 		RzList /*<char *>*/ *list; ///< Owned list of zero-terminated string (can be NULL)
 		RzInterval interval; ///< Owned interval
 	};
-	RzConfigValidator validator; ///< Validator callback
+	RzConfigBindSet validator; ///< Validator callback
+	void *validator_user; ///< Validator callback user pointer
 } RzConfigOwned;
 
 typedef struct rz_config_bind_t {
@@ -158,7 +158,7 @@ RZ_API bool rz_config_set_interval3(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const c
 RZ_API bool rz_config_set_any(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *value);
 RZ_API bool rz_config_set_options(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE RZ_OWN RzList /*<char *>*/ *options);
 RZ_API bool rz_config_set_options2(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, ...);
-RZ_API bool rz_config_set_validator(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE RzConfigValidator validator);
+RZ_API bool rz_config_set_validator(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE RzConfigBindSet validator, RZ_NULLABLE void *user);
 
 RZ_API bool rz_config_get_bool(RZ_NONNULL const RzConfig *cfg, RZ_NONNULL const char *name);
 RZ_API ut64 rz_config_get_integer(RZ_NONNULL const RzConfig *cfg, RZ_NONNULL const char *name);

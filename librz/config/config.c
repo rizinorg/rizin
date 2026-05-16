@@ -829,7 +829,7 @@ static bool config_var_is_valid_value(const RzConfigVar *var, const void *value)
 	if (!var->value.validator) {
 		return true;
 	}
-	return var->value.validator(value);
+	return var->value.validator(var->value.validator_user, value);
 }
 
 RZ_IPI bool rz_config_var_set_bool(RzConfigVar *var, bool value) {
@@ -1594,7 +1594,7 @@ RZ_API bool rz_config_set_options2(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const ch
  *
  * \return     On success returns a true, otherwise false.
  */
-RZ_API bool rz_config_set_validator(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE RzConfigValidator validator) {
+RZ_API bool rz_config_set_validator(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE RzConfigBindSet validator, RZ_NULLABLE void *user) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
 	RzConfigEntry *entry = config_find_entry(cfg, name);
 	if (!entry) {
@@ -1612,6 +1612,7 @@ RZ_API bool rz_config_set_validator(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const c
 	}
 
 	entry->var.value.validator = validator;
+	entry->var.value.validator_user = user;
 	return true;
 }
 
