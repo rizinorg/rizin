@@ -69,6 +69,18 @@ typedef bool (*RzConfigBindGet)(void *user, void *value);
 typedef bool (*RzConfigBindSet)(void *user, const void *value);
 typedef bool (*RzConfigBindOpts)(void *user, RzList /*<char *>*/ **options);
 
+typedef struct rz_config_owned_t {
+	union {
+		bool boolean; ///< Owned boolean
+		ut64 integer; ///< Owned unsigned integer
+		char *string; ///< Owned zero-terminated string (can be NULL)
+		RzList /*<char *>*/ *list; ///< Owned list of zero-terminated string (can be NULL)
+		RzInterval interval; ///< Owned interval
+	};
+	RzConfigBindSet validator; ///< Validator callback
+	void *validator_user; ///< Validator callback user pointer
+} RzConfigOwned;
+
 typedef struct rz_config_bind_t {
 	void *user;
 	RzConfigBindGet get_value;
@@ -82,13 +94,7 @@ typedef struct rz_config_var_t {
 	RzList /*<char *>*/ *options; ///< Variable possible values
 	ut32 flags; ///< Define the type of the data via RzConfigVar (see RzConfigVarFlags)
 	union {
-		union {
-			bool boolean;
-			ut64 integer;
-			char *string;
-			RzList /*<char *>*/ *list;
-			RzInterval interval;
-		} value; ///< owned value
+		RzConfigOwned value; ///< owned value
 		RzConfigBind bind; ///< bind value
 	};
 } RzConfigVar;
@@ -152,6 +158,7 @@ RZ_API bool rz_config_set_interval3(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const c
 RZ_API bool rz_config_set_any(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *value);
 RZ_API bool rz_config_set_options(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE RZ_OWN RzList /*<char *>*/ *options);
 RZ_API bool rz_config_set_options2(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, ...);
+RZ_API bool rz_config_set_validator(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE RzConfigBindSet validator, RZ_NULLABLE void *user);
 
 RZ_API bool rz_config_get_bool(RZ_NONNULL const RzConfig *cfg, RZ_NONNULL const char *name);
 RZ_API ut64 rz_config_get_integer(RZ_NONNULL const RzConfig *cfg, RZ_NONNULL const char *name);
