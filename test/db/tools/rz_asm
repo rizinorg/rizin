@@ -668,3 +668,14 @@ EXPECT=<<EOF
 tricore         Generic TriCore CPU family by Infineon
 EOF
 RUN
+
+NAME=rz-asm unknown -m arch shows error
+TOOL=rz-asm
+ARGS=-m invalidarch
+EXIT_STATUS=1
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: rz-asm: unknown architecture 'invalidarch'
+Use 'rz-asm -L' to list all available architectures.
+EOF
+RUN
