@@ -634,6 +634,11 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			goto beach;
 		}
 		case 'm': {
+			if (!rz_asm_plugin_find(as->a, opt.arg)) {
+				RZ_LOG_ERROR("rz-asm: unknown architecture '%s'\nUse 'rz-asm -L' to list all available architectures.\n", opt.arg);
+				ret = 1;
+				goto beach;
+			}
 			RzCore *core = rz_core_new();
 			RzAsm *tmp_asm = core->rasm;
 			core->rasm = as->a;
