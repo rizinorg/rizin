@@ -641,7 +641,7 @@ static int load_omf_unk1(const rz_bin_omf166_obj *obj, const ut8 *buf, const siz
 	size_t offset = 9;
 	dip->n = rz_read_le8_offset(buf, &offset);
 	rz_str_ncpy(dip->name, (const char *)&buf[offset], dip->n + 1);
-	RZ_LOG_DEBUG("load_omf = INCLUDES  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10" PFMT64u ")\t `%s`\n",
+	RZ_LOG_DEBUG("load_omf = INCLUDES  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10" PFMTSZu ")\t `%s`\n",
 		record->size, global_ct, record->type, buf_size, dip->name);
 	rz_pvector_push(obj->includes_vec, dip);
 
@@ -655,7 +655,7 @@ static int load_omf_unk2(const ut8 *buf, const size_t buf_size, const OMF_record
 	size_t offset = 7;
 	const ut8 n = rz_read_le8_offset(buf, &offset);
 	rz_str_ncpy(name, (const char *)&buf[offset], n + 1);
-	RZ_LOG_DEBUG("load_omf = UNKNOWN2  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10" PFMT64u ")\t 0x%02x 0x%02x 0x%02x 0x%02x  `%s`\n",
+	RZ_LOG_DEBUG("load_omf = UNKNOWN2  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10" PFMTSZu ")\t 0x%02x 0x%02x 0x%02x 0x%02x  `%s`\n",
 		record->size, global_ct,
 		record->type, buf_size,
 		buf[3], buf[4], buf[5], buf[6],
@@ -670,7 +670,7 @@ static int load_omf_unk3(const ut8 *buf, const size_t buf_size, const OMF_record
 	size_t offset = 7;
 	const ut8 n = rz_read_le8_offset(buf, &offset);
 	rz_str_ncpy(name, (const char *)&buf[offset], n + 1); // cct = 12
-	RZ_LOG_DEBUG("load_omf = UNKNOWN3  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10" PFMT64u ")\t `%s`\n",
+	RZ_LOG_DEBUG("load_omf = UNKNOWN3  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10" PFMTSZu ")\t `%s`\n",
 		record->size, global_ct, record->type, buf_size, name);
 	RZ_LOG_DEBUG("%02x %02x %02x \n%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
 		buf[0], buf[1], buf[2],
@@ -683,7 +683,7 @@ static int load_omf_unk3(const ut8 *buf, const size_t buf_size, const OMF_record
 
 static int load_omf_unk4(const ut8 *buf, const size_t buf_size, const OMF_record *record, const ut64 global_ct) {
 #if RZ_BUILD_DEBUG
-	RZ_LOG_DEBUG("load_omf = UNKNOWN4  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10" PFMT64u ")\n", record->size, global_ct, record->type, buf_size);
+	RZ_LOG_DEBUG("load_omf = UNKNOWN4  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10" PFMTSZu ")\n", record->size, global_ct, record->type, buf_size);
 	size_t ct = 3;
 	const ut16 count = rz_read_le16_offset(buf, &ct);
 
@@ -969,12 +969,12 @@ static int rz_bin_format_omf166_load_content(rz_bin_omf166_obj *obj, OMF_record 
 		return load_omf_modinf(obj, buf, record);
 	}
 	case OMF166_MODEND: {
-		RZ_LOG_DEBUG("load_omf = MODEND  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMT64u ")\n",
+		RZ_LOG_DEBUG("load_omf = MODEND  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
 			record->size, global_ct, record->type, buf_size);
 		return true;
 	}
 	case OMF166_BLKEND: {
-		RZ_LOG_DEBUG("load_omf = BLKEND  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMT64u ")\n",
+		RZ_LOG_DEBUG("load_omf = BLKEND  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
 			record->size, global_ct, record->type, buf_size);
 		return true;
 	}
@@ -987,7 +987,7 @@ static int rz_bin_format_omf166_load_content(rz_bin_omf166_obj *obj, OMF_record 
 		 *      E3    0F 00    00 00     FC    07   INTREGS            FF FF      00         F1
 		 *      E3    18 00    00 20     FC    10   ?C_MAINREGISTERS   FF FF      00         1D
 		 */
-		RZ_LOG_DEBUG("load_omf = REGDEF  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMT64u ")\n",
+		RZ_LOG_DEBUG("load_omf = REGDEF  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
 			record->size, global_ct, record->type, buf_size);
 		return true;
 	}
@@ -1050,7 +1050,7 @@ static int rz_bin_format_omf166_load_content(rz_bin_omf166_obj *obj, OMF_record 
 		return load_omf_unk4(buf, buf_size, record, global_ct);
 	}
 	default: {
-		RZ_LOG_DEBUG("load_omf: [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMT64u ")\t",
+		RZ_LOG_DEBUG("load_omf: [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\t",
 			record->size, global_ct, record->type, buf_size);
 		rz_warn_if_reached();
 		break;
