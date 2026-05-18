@@ -674,7 +674,7 @@ static RzGraphStatus rz_graph_matrix_impl_del_edges(RzGraph /*<NodeType *, EdgeT
 				continue;
 			}
 			if (g->edge_data_free) {
-				g->edge_data_free(*cell);
+				g->edge_data_free((*cell)->data);
 			}
 			edge_free(*cell);
 			*cell = NULL;
