@@ -15,6 +15,10 @@ static ut64 simple_hash_base(const void *data) {
 	return (ut64)(utptr)data + BASE;
 }
 
+static ut64 str_hash(RZ_NULLABLE const void *data) {
+	return rz_str_djb2_hash(data);
+}
+
 static void topo_sorting(RzGraphNode *n, RzGraphVisitor *vis) {
 	RzList *order = (RzList *)vis->visitor_data;
 	rz_list_prepend(order, rz_graph_node_get_data_mut(n));
@@ -579,6 +583,43 @@ static bool test_graph_complex(void) {
 	mu_end;
 }
 
+static bool test_graph_node_edge_data(void) {
+	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, str_hash, free, free);
+
+	char nname[2] = { 0 };
+	// 10 nodes
+	RzGraphNode *nodes[10];
+	for (int i = 0; i < 10; i++) {
+		nodes[i] = NULL;
+		rz_strf(nname, "%d", i);
+		mu_assert_eq(rz_graph_add_node(g, rz_str_dup(nname), &nodes[i]), RZ_GRAPH_STATUS_OK, "Failed to add");
+		mu_assert_notnull(nodes[i], "add_node");
+		mu_assert_eq(rz_graph_add_edge(g, nodes[i], nodes[i], malloc(16)), RZ_GRAPH_STATUS_OK, "Failed to add self-ref edge");
+	}
+
+	for (int i = 1; i < 10; i++) {
+		mu_assert_eq(rz_graph_add_edge(g, nodes[i - 1], nodes[i], malloc(16)), RZ_GRAPH_STATUS_OK, "Failed to add back edge");
+	}
+
+	for (int i = 0; i < 10; i++) {
+		rz_strf(nname, "%d", i);
+		RzGraphNode *n = rz_graph_find_node(g, str_hash(nname));
+		mu_assert_notnull(n, "find node");
+		mu_assert_streq(rz_graph_node_get_data(n), nname, "Name mismatch");
+	}
+
+	for (int i = 0; i < 10; i++) {
+		mu_assert_eq(rz_graph_has_edge(g, nodes[i], nodes[i]), RZ_GRAPH_STATUS_OK, "Failed to has self-ref edge");
+		if (i != 0) {
+			mu_assert_eq(rz_graph_has_edge(g, nodes[i - 1], nodes[i]), RZ_GRAPH_STATUS_OK, "Failed to has back edge");
+		}
+	}
+
+	rz_graph_free(g);
+
+	mu_end;
+}
+
 // Test node addition and lookup
 static bool test_graph_nodes_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash_base, NULL, NULL);
@@ -1071,6 +1112,43 @@ static bool test_graph_complex_matrix(void) {
 	mu_end;
 }
 
+static bool test_graph_node_edge_data_matrix(void) {
+	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, str_hash, free, free);
+
+	char nname[2] = { 0 };
+	// 10 nodes
+	RzGraphNode *nodes[10];
+	for (int i = 0; i < 10; i++) {
+		nodes[i] = NULL;
+		rz_strf(nname, "%d", i);
+		mu_assert_eq(rz_graph_add_node(g, rz_str_dup(nname), &nodes[i]), RZ_GRAPH_STATUS_OK, "Failed to add");
+		mu_assert_notnull(nodes[i], "add_node");
+		mu_assert_eq(rz_graph_add_edge(g, nodes[i], nodes[i], malloc(16)), RZ_GRAPH_STATUS_OK, "Failed to add self-ref edge");
+	}
+
+	for (int i = 1; i < 10; i++) {
+		mu_assert_eq(rz_graph_add_edge(g, nodes[i - 1], nodes[i], malloc(16)), RZ_GRAPH_STATUS_OK, "Failed to add back edge");
+	}
+
+	for (int i = 0; i < 10; i++) {
+		rz_strf(nname, "%d", i);
+		RzGraphNode *n = rz_graph_find_node(g, str_hash(nname));
+		mu_assert_notnull(n, "find node");
+		mu_assert_streq(rz_graph_node_get_data(n), nname, "Name mismatch");
+	}
+
+	for (int i = 0; i < 10; i++) {
+		mu_assert_eq(rz_graph_has_edge(g, nodes[i], nodes[i]), RZ_GRAPH_STATUS_OK, "Failed to has self-ref edge");
+		if (i != 0) {
+			mu_assert_eq(rz_graph_has_edge(g, nodes[i - 1], nodes[i]), RZ_GRAPH_STATUS_OK, "Failed to has back edge");
+		}
+	}
+
+	rz_graph_free(g);
+
+	mu_end;
+}
+
 static bool test_graph_impl_equivalence(void) {
 	// Create both graphs
 	RzGraph *g_list = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash_base, NULL, NULL);
@@ -1202,6 +1280,7 @@ static int all_tests(void) {
 	mu_run_test(test_graph_get_nodes);
 	mu_run_test(test_graph_find_edge);
 	mu_run_test(test_graph_complex);
+	mu_run_test(test_graph_node_edge_data);
 
 	// matrix impl
 	mu_run_test(test_graph_nodes_matrix);
@@ -1218,6 +1297,7 @@ static int all_tests(void) {
 	mu_run_test(test_graph_get_nodes_matrix);
 	mu_run_test(test_graph_find_edge_matrix);
 	mu_run_test(test_graph_complex_matrix);
+	mu_run_test(test_graph_node_edge_data_matrix);
 
 	mu_run_test(test_graph_impl_equivalence);
 
