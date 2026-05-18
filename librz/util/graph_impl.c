@@ -1361,9 +1361,11 @@ static RzGraphStatus internal_add(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OW
 	// g->nodes_vec must be updated before calling the implementation specific function.
 	// The vector length is the source of maximum nodes in the graph.
 	// Implementation specifics might need it.
+	bool used_free_slot = false;
 	if (rz_vector_len(g->free_vec_ids) > 0) {
 		rz_vector_pop_front(g->free_vec_ids, &node->_vec_id);
 		rz_pvector_assign_at(g->node_vec, node->_vec_id, node);
+		used_free_slot = true;
 	} else {
 		node->_vec_id = rz_pvector_len(g->node_vec);
 		rz_pvector_push(g->node_vec, node);
@@ -1371,7 +1373,12 @@ static RzGraphStatus internal_add(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OW
 
 	if (!g->impl_ops->add_node(g, node)) {
 		// revert if failed
-		rz_pvector_pop(g->node_vec);
+		if (used_free_slot) {
+			rz_vector_push(g->free_vec_ids, &node->_vec_id);
+			rz_pvector_assign_at(g->node_vec, node->_vec_id, NULL);
+		} else {
+			rz_pvector_pop(g->node_vec);
+		}
 		ht_up_delete(g->nodes, hash_id);
 		free(node);
 		return RZ_GRAPH_STATUS_ERR;
