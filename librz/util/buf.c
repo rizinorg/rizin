@@ -482,8 +482,7 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_slurp(const char *file) {
 RZ_API RZ_OWN RzBuffer *rz_buf_new_sparse(ut8 Oxff) {
 	RzBuffer *b = new_buffer(RZ_BUFFER_SPARSE, NULL);
 	if (b) {
-		b->Oxff_priv = Oxff;
-		b->Oxff_priv_override = true;
+		rz_buf_set_overflow_byte(b, Oxff);
 	}
 
 	return b;
