@@ -4086,6 +4086,10 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 				if (target < fcn_end) {
 					continue;
 				}
+				// not padding
+				if (target - fcn_end >= ptr_size){
+					continue;
+				}
 			}
 		}
 		// skip if already annotated by any other analysis
