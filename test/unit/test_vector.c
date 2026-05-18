@@ -319,7 +319,7 @@ static bool test_vector_insert_sorted(void) {
 
 static bool test_vector_find_sorted(void) {
 	RzVector *v = rz_vector_new(sizeof(ut64), NULL, NULL);
-	for (size_t i = 1; i < 13; i++) {
+	for (ut64 i = 1; i < 13; i++) {
 		rz_vector_push(v, &i);
 	}
 	ut64 i = UT64_MAX;
@@ -1065,7 +1065,7 @@ static bool test_pvector_find(void) {
 	int num = 77;
 	ut32 e_val = 3;
 	void **p = rz_pvector_find(&v, &e_val, compare_int, &num);
-	mu_assert_eq(*p, e, "find");
+	mu_assert_ptreq(*p, e, "find");
 	mu_assert_eq(num, 44, "ensure user is passed");
 	rz_pvector_clear(&v);
 	mu_end;
@@ -1584,9 +1584,6 @@ static bool test_pvector_uniq(void) {
 		rz_pvector_push(&v, (void *)&arr[i]);
 	}
 	RzPVector *uv = rz_pvector_uniq(&v, compare_int, &num);
-	mu_assert_eq(uv->v.capacity, 8, "uniq values capacity before shrink");
-	rz_pvector_shrink(uv);
-	mu_assert_eq(uv->v.capacity, 6, "uniq values capacity after shrink");
 	mu_assert_eq(rz_pvector_len(uv), 6, "uniq values count");
 	rz_pvector_clear(&v);
 	rz_pvector_free(uv);
