@@ -18,8 +18,6 @@
  * - Use graph API instead of accessing the private fields directly.
  */
 #include "../util/graph_priv.h"
-#include "rz_util/rz_assert.h"
-#include "rz_util/rz_graph.h"
 
 static const char *mousemodes[] = {
 	"canvas-y",
