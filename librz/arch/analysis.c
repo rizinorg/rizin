@@ -784,6 +784,18 @@ RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
 }
 
 /**
+ * \brief Get the currently selected CPU model.
+ *
+ * Prefer rz_analysis_is_cpu() when comparing this against some string.
+ *
+ * \return The current CPU model used by the analysis plugin.
+ */
+RZ_API RZ_NULLABLE const char *rz_analysis_get_cpu(RZ_NONNULL const RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->cpu;
+}
+
+/**
  * \brief      Returns true if the given cpu matches the current one.
  *
  * \param      analysis  The RzAnalysis structure to use

@@ -3,7 +3,6 @@
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 // SPDX-FileCopyrightText: 2025-2026 Sergey Sharshunov <s.sharshunov@gmail.com>
 
-#include "analysis_private.h"
 #include "arch_51.h"
 
 int lua51_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContext *ctx, const ut8 *data, int len) {
@@ -37,7 +36,7 @@ int lua51_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContex
 	 * this version for backward compatibility and
 	 * performance on MIPS/ARM architectures.
 	 */
-	if (RZ_STR_EQ(analysis->cpu, "tp-link-5.1")) {
+	if (rz_analysis_is_cpu(analysis, "tp-link-5.1")) {
 		opcode = get_lua51_shuffled_opcode_by_index(opcode, LUA_51_VERSION_TPLINK);
 	} else {
 		opcode = get_lua51_opcode_shuffled_index_by_id(opcode, LUA_51_VERSION_VANILLA);

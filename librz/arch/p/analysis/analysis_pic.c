@@ -40,17 +40,18 @@ static bool pic_fini(void *user) {
 static int analysis_pic_op(
 	RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	const ut8 *buf, int len, RzAnalysisOpMask mask) {
-	if (RZ_STR_ISEMPTY(analysis->cpu) || is_pic_highend(analysis->cpu)) {
+	const char *cpu = rz_analysis_get_cpu(analysis);
+	if (RZ_STR_ISEMPTY(cpu) || is_pic_highend(cpu)) {
 		return pic_highend_op(analysis, op, addr, buf, len, mask);
 	}
 
-	if (is_pic_baseline_or_pic_midrange(analysis->cpu)) {
+	if (is_pic_baseline_or_pic_midrange(cpu)) {
 		if (!buf || len < 2) {
 			op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 			return -1;
 		}
 		PicMidrangeOp x = { 0 };
-		if (!(is_pic_baseline(analysis->cpu) ? pic_baseline_decode_op : pic_midrange_decode_op)(&x, addr, buf, len)) {
+		if (!(is_pic_baseline(cpu) ? pic_baseline_decode_op : pic_midrange_decode_op)(&x, addr, buf, len)) {
 			return -1;
 		}
 		return pic_midrange_analysis_op(analysis, op, &x, mask);
@@ -59,28 +60,31 @@ static int analysis_pic_op(
 }
 
 static char *analysis_pic_get_reg_profile(RzAnalysis *analysis) {
-	if (RZ_STR_ISEMPTY(analysis->cpu) || is_pic_highend(analysis->cpu)) {
+	const char *cpu = rz_analysis_get_cpu(analysis);
+	if (RZ_STR_ISEMPTY(cpu) || is_pic_highend(cpu)) {
 		return pic_highend_get_reg_profile(analysis);
 	}
 
-	if (is_pic_baseline_or_pic_midrange(analysis->cpu)) {
+	if (is_pic_baseline_or_pic_midrange(rz_analysis_get_cpu(analysis))) {
 		return pic_midrange_get_reg_profile(analysis);
 	}
 	return NULL;
 }
 
 static RzAnalysisILConfig *pic_il_config(RzAnalysis *analysis) {
-	if (RZ_STR_ISEMPTY(analysis->cpu) || is_pic_highend(analysis->cpu)) {
+	const char *cpu = rz_analysis_get_cpu(analysis);
+	if (RZ_STR_ISEMPTY(cpu) || is_pic_highend(cpu)) {
 		return pic_highend_il_config(analysis);
 	}
-	if (is_pic_baseline_or_pic_midrange(analysis->cpu)) {
+	if (is_pic_baseline_or_pic_midrange(cpu)) {
 		return pic_midrange_il_config(analysis);
 	}
 	return NULL;
 }
 
 static int pic_archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
-	if (RZ_STR_ISEMPTY(analysis->cpu) || is_pic_highend(analysis->cpu)) {
+	const char *cpu = rz_analysis_get_cpu(analysis);
+	if (RZ_STR_ISEMPTY(cpu) || is_pic_highend(cpu)) {
 		switch (query) {
 		case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE: return 2;
 		case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE: return 4;
@@ -91,7 +95,7 @@ static int pic_archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
 		}
 	}
 
-	if (is_pic_baseline_or_pic_midrange(analysis->cpu)) {
+	if (is_pic_baseline_or_pic_midrange(cpu)) {
 		switch (query) {
 		case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE: return 2;
 		case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE: return 2;

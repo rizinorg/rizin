@@ -15,7 +15,8 @@ int rz_luajit_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, con
 }
 
 int rz_lua_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
-	if (!analysis->cpu) {
+	const char *cpu = rz_analysis_get_cpu(analysis);
+	if (!cpu) {
 		RZ_LOG_ERROR("Cannot get lua version\n");
 		return 0;
 	}
@@ -24,7 +25,7 @@ int rz_lua_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 		return 0;
 	}
 
-	if (rz_str_startswith(analysis->cpu, "luajit")) {
+	if (rz_str_startswith(cpu, "luajit")) {
 		return rz_luajit_analysis_op(analysis, op, addr, data, len, mask);
 	}
 
@@ -55,17 +56,17 @@ int rz_lua_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 
 	int ret = 0;
 
-	if (RZ_STR_EQ(analysis->cpu, "5.0")) {
+	if (rz_analysis_is_cpu(analysis, "5.0")) {
 		ret = lua50_analysis_op(analysis, op, ctx, data, len);
-	} else if (RZ_STR_EQ(analysis->cpu, "5.1") || RZ_STR_EQ(analysis->cpu, "openwrt-5.1") || RZ_STR_EQ(analysis->cpu, "tp-link-5.1")) {
+	} else if (rz_analysis_is_cpu(analysis, "5.1") || rz_analysis_is_cpu(analysis, "openwrt-5.1") || rz_analysis_is_cpu(analysis, "tp-link-5.1")) {
 		ret = lua51_analysis_op(analysis, op, ctx, data, len);
-	} else if (RZ_STR_EQ(analysis->cpu, "5.2")) {
+	} else if (rz_analysis_is_cpu(analysis, "5.2")) {
 		ret = lua52_analysis_op(analysis, op, ctx, data, len);
-	} else if (RZ_STR_EQ(analysis->cpu, "5.3")) {
+	} else if (rz_analysis_is_cpu(analysis, "5.3")) {
 		ret = lua53_analysis_op(analysis, op, ctx, data, len);
-	} else if (RZ_STR_EQ(analysis->cpu, "5.4")) {
+	} else if (rz_analysis_is_cpu(analysis, "5.4")) {
 		ret = lua54_analysis_op(analysis, op, ctx, data, len);
-	} else if (RZ_STR_EQ(analysis->cpu, "5.5")) {
+	} else if (rz_analysis_is_cpu(analysis, "5.5")) {
 		ret = lua55_analysis_op(analysis, op, ctx, data, len);
 	} else {
 		RZ_LOG_ERROR("Cannot find a suitable lua version to handle lua analysis.\n");

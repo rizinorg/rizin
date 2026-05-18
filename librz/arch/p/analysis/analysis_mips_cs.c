@@ -275,7 +275,7 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 	cs_insn *insn = NULL;
 	cs_mode mode = 0;
 	ut32 gpr_size = 0;
-	if (!cs_mode_from_cpu(analysis->cpu, analysis->bits, analysis->big_endian, &mode, &gpr_size)) {
+	if (!cs_mode_from_cpu(rz_analysis_get_cpu(analysis), analysis->bits, analysis->big_endian, &mode, &gpr_size)) {
 		return -1;
 	}
 
@@ -916,7 +916,7 @@ beach:
 static char *mips_get_reg_profile(RzAnalysis *analysis) {
 	cs_mode mode = 0;
 	ut32 gpr_size = 0;
-	if (!cs_mode_from_cpu(analysis->cpu, analysis->bits, analysis->big_endian, &mode, &gpr_size)) {
+	if (!cs_mode_from_cpu(rz_analysis_get_cpu(analysis), analysis->bits, analysis->big_endian, &mode, &gpr_size)) {
 		return NULL;
 	}
 
@@ -1102,16 +1102,16 @@ static char *mips_get_reg_profile(RzAnalysis *analysis) {
 }
 
 static bool mips_is_nanomips(RzAnalysis *a) {
-	return RZ_STR_EQ(a->cpu, "nanomips") ||
-		RZ_STR_EQ(a->cpu, "nms1") ||
-		RZ_STR_EQ(a->cpu, "i7200");
+	return rz_analysis_is_cpu(a, "nanomips") ||
+		rz_analysis_is_cpu(a, "nms1") ||
+		rz_analysis_is_cpu(a, "i7200");
 }
 
 static bool mips_is_op_2_byte(RzAnalysis *a) {
-	return RZ_STR_EQ(a->cpu, "mips16") ||
-		RZ_STR_EQ(a->cpu, "micromips") ||
-		RZ_STR_EQ(a->cpu, "micro32r3") ||
-		RZ_STR_EQ(a->cpu, "micro32r6") ||
+	return rz_analysis_is_cpu(a, "mips16") ||
+		rz_analysis_is_cpu(a, "micromips") ||
+		rz_analysis_is_cpu(a, "micro32r3") ||
+		rz_analysis_is_cpu(a, "micro32r6") ||
 		mips_is_nanomips(a);
 }
 

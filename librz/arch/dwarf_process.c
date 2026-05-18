@@ -1898,7 +1898,7 @@ static bool fixup_regoff_to_stackoff(RzAnalysis *a, RzAnalysisFunction *f,
 	}
 	ut16 reg = dw_var->location->register_number;
 	st64 off = dw_var->location->offset;
-	if (RZ_STR_EQ(a->cpu, "x86")) {
+	if (rz_analysis_is_cpu(a, "x86")) {
 		if (a->bits == 64) {
 			if (reg == 6) { // 6 = rbp
 				rz_analysis_var_storage_init_stack(&var->storage, off - f->bp_off);
@@ -1918,12 +1918,12 @@ static bool fixup_regoff_to_stackoff(RzAnalysis *a, RzAnalysisFunction *f,
 				return true;
 			}
 		}
-	} else if (RZ_STR_EQ(a->cpu, "ppc")) {
+	} else if (rz_analysis_is_cpu(a, "ppc")) {
 		if (reg == 1) { // 1 = r1
 			rz_analysis_var_storage_init_stack(&var->storage, off);
 			return true;
 		}
-	} else if (RZ_STR_EQ(a->cpu, "tricore")) {
+	} else if (rz_analysis_is_cpu(a, "tricore")) {
 		if (reg == 30) { // 30 = a14
 			rz_analysis_var_storage_init_stack(&var->storage, off);
 			return true;
