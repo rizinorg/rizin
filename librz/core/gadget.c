@@ -2272,26 +2272,32 @@ RZ_API RzCmdStatus rz_core_gadget_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzG
 				RZ_LOG_INFO("core: Using gadget cache\n");
 				if (print_gadgets_from_cache(core, gadget_cache, context, rx_list)) {
 					status = 0;
-					goto cleanup;
+				} else {
+					RZ_LOG_ERROR("core: Failed to print gadgets from cache\n");
+					status = -1;
 				}
+				goto cleanup;
 			} else {
 				RZ_LOG_INFO("core: Parameters change detected, Rebuilding cache\n");
 			}
 		}
 
 		// cache miss
-		// delete old cache (if exist)
-		if (gadget_cache) {
-			rz_rbtree_free(gadget_cache->tree, free_gadget_cache_node, NULL);
+		RzGadgetCache *gadget_cache_new = RZ_NEW0(RzGadgetCache);
+		if (!gadget_cache_new) {
+			RZ_LOG_ERROR("core: Failed to allocate gadget cache\n");
+			status = -1;
+			goto cleanup;
 		}
 		RZ_LOG_DEBUG("core: Building gadget cache for address range 0x%" PFMT64x " - 0x%" PFMT64x "\n", context->from, context->to);
-		gadget_cache->tree = NULL;
-		gadget_cache->free = free_gadget_cache_node;
-		gadget_cache->from = rz_config_get_integer(core->config, "search.from");
-		gadget_cache->to = rz_config_get_integer(core->config, "search.to");
-		gadget_cache->max_instr = context->max_instr;
-		gadget_cache->allow_conditional = context->allow_conditional;
-		rz_analysis_set_gadget_cache(core->analysis, gadget_cache, context->type);
+		gadget_cache_new->tree = NULL;
+		gadget_cache_new->free = free_gadget_cache_node;
+		gadget_cache_new->from = context->from;
+		gadget_cache_new->to = context->to;
+		gadget_cache_new->max_instr = context->max_instr;
+		gadget_cache_new->allow_conditional = context->allow_conditional;
+
+		rz_analysis_set_gadget_cache(core->analysis, gadget_cache_new, context->type);
 	}
 
 	RzList *boundaries = rz_core_get_boundaries_select(core, "search.from", "search.to", "search.in");
