@@ -483,6 +483,7 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_sparse(ut8 Oxff) {
 	RzBuffer *b = new_buffer(RZ_BUFFER_SPARSE, NULL);
 	if (b) {
 		b->Oxff_priv = Oxff;
+		b->Oxff_priv_override = true;
 	}
 
 	return b;
@@ -1245,8 +1246,7 @@ RZ_API st64 rz_buf_read(RZ_NONNULL RzBuffer *b, RZ_NONNULL ut8 RZ_OUT *buf, ut64
 		return -1;
 	}
 
-	// If buffer is sparse, buffer decides how to fill a gap. If not, caller decides.
-	if (len > result && b->type == RZ_BUFFER_SPARSE) {
+	if (len > result && b->Oxff_priv_override) {
 		memset(buf + result, b->Oxff_priv, len - result);
 	}
 
@@ -1402,6 +1402,7 @@ RZ_API void rz_buf_set_overflow_byte(RZ_NONNULL RzBuffer *b, ut8 Oxff) {
 	rz_return_if_fail(b);
 
 	b->Oxff_priv = Oxff;
+	b->Oxff_priv_override = true;
 }
 
 /**

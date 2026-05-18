@@ -59,6 +59,7 @@ struct rz_buf_t {
 	ut8 *whole_buf;
 	bool readonly;
 	ut8 Oxff_priv;
+	bool Oxff_priv_override;
 	int refctr;
 	int fd;
 };
