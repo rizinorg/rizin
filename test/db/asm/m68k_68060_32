@@ -1,8 +1,6 @@
-d "move16 (a0)+, (a1)+" f6209000
-d "halt" 4ac8
-d "pflushn (a0)" f500
-d "pflush (a0)" f508
-d "pflushan" f510
-d "pflusha" f518
-d "plpaw (a0)" f588
-d "plpar (a0)" f5c8
+d "halt" 4ac8 0x0 (branch (! (is_zero (& (cast 16 false (var sr)) (bv 16 0x2000)))) (seq (set system_op (bv 32 0x3)) (goto m68k_system)) (seq (set trap_op (bv 32 0x9)) (set trap_vector (bv 32 0x8)) (goto m68k_privilege)))
+d "pulse" 4acc 0x0 (branch (! (is_zero (& (cast 16 false (var sr)) (bv 16 0x2000)))) (seq (set system_op (bv 32 0x4)) (goto m68k_system)) (seq (set trap_op (bv 32 0x9)) (set trap_vector (bv 32 0x8)) (goto m68k_privilege)))
+d "plpaw (a0)" f588 0x0 (branch (! (is_zero (& (cast 16 false (var sr)) (bv 16 0x2000)))) (seq (set mmu_addr (cast 32 false (var a0))) (set mmu_op (bv 32 0x4)) (set mmu_rw (bv 32 0x1)) (goto m68k_mmu)) (seq (set trap_op (bv 32 0x9)) (set trap_vector (bv 32 0x8)) (goto m68k_privilege)))
+d "plpar (a0)" f5c8 0x0 (branch (! (is_zero (& (cast 16 false (var sr)) (bv 16 0x2000)))) (seq (set mmu_addr (cast 32 false (var a0))) (set mmu_op (bv 32 0x4)) (set mmu_rw (bv 32 0x0)) (goto m68k_mmu)) (seq (set trap_op (bv 32 0x9)) (set trap_vector (bv 32 0x8)) (goto m68k_privilege)))
+d "move16 (a0)+, (a1)+" f6209000 0x0 (seq (set src_addr (cast 32 false (var a0))) (set dst_addr (cast 32 false (var a1))) (set word0 (loadw 0 32 (var src_addr))) (set word1 (loadw 0 32 (+ (var src_addr) (bv 32 0x4)))) (set word2 (loadw 0 32 (+ (var src_addr) (bv 32 0x8)))) (set word3 (loadw 0 32 (+ (var src_addr) (bv 32 0xc)))) (storew 0 (var dst_addr) (cast 32 false (var word0))) (storew 0 (+ (var dst_addr) (bv 32 0x4)) (cast 32 false (var word1))) (storew 0 (+ (var dst_addr) (bv 32 0x8)) (cast 32 false (var word2))) (storew 0 (+ (var dst_addr) (bv 32 0xc)) (cast 32 false (var word3))) (set a0 (cast 32 false (+ (var src_addr) (bv 32 0x10)))) (set a1 (cast 32 false (+ (var dst_addr) (bv 32 0x10)))))
+d "lpstop 0x0" f80001c00000 0x0 (branch (! (is_zero (& (cast 16 false (var sr)) (bv 16 0x2000)))) (seq (set system_op (bv 32 0x2)) (set system_sr (bv 32 0x0)) (set sr (cast 16 false (bv 16 0x0))) (goto m68k_system)) (seq (set trap_op (bv 32 0x9)) (set trap_vector (bv 32 0x8)) (goto m68k_privilege)))

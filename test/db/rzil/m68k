@@ -1,0 +1,165 @@
+NAME=Testing the decryption in emulateme m68060
+FILE=bins/elf/m68k/emulateme-m68060
+TIMEOUT=30
+REGEXP_FILTER_ERR=ERROR.*\n
+CMDS=<<EOF
+e io.cache=1
+aaa
+wx 00100000 @ 0x200080
+wx 00200100 @ 0x200084
+wx 416e79436f6c6f7572596f754c696b65 @ 0x200100
+s sym.decrypt
+aezi
+aezv a7 0x200080
+aezsu 0x100194
+aezv d0
+ps @ obj.seckrit
+EOF
+EXPECT=<<EOF
+a7 = 0x200080
+ d0: 0x00000001
+Hello from RzIL!
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=m68k aez dbra taken
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+wx 51c8fffc
+ar d0=0x00000002
+aezi
+aezs
+ar d0
+ar pc
+EOF
+EXPECT=<<EOF
+d0 = 0x00000001
+pc = 0xfffffffe
+EOF
+RUN
+
+NAME=m68k aez dbra fallthrough
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+wx 51c8fffc
+ar d0=0x12340000
+aezi
+aezs
+ar d0
+ar pc
+EOF
+EXPECT=<<EOF
+d0 = 0x1234ffff
+pc = 0x00000004
+EOF
+RUN
+
+NAME=m68k aez bne taken
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+wx 6602 4e71 4e71
+aezi
+aezv sr 0x0
+aezs
+ar pc
+EOF
+EXPECT=<<EOF
+sr = 0x0
+pc = 0x00000004
+EOF
+RUN
+
+NAME=m68k aez bne fallthrough
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+wx 6602 4e71 4e71
+aezi
+aezv sr 0x4
+aezs
+ar pc
+EOF
+EXPECT=<<EOF
+sr = 0x4
+pc = 0x00000002
+EOF
+RUN
+
+NAME=m68k aez bsr and rts
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+wx 61ff00000010
+ar a7=0x40
+aezi
+aezs
+ar a7
+pxw 4 @ 0x3c
+ar pc
+wx 4e75
+s 0
+ar a7=0x20
+wx 00000012 @ 0x20
+aezi
+aezs
+ar a7
+ar pc
+EOF
+EXPECT=<<EOF
+a7 = 0x0000003c
+0x0000003c  0x00000006                                   ....
+pc = 0x00000012
+a7 = 0x00000024
+pc = 0x00000012
+EOF
+RUN
+
+NAME=m68k aez cmp.b preserves destination
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+wx b010
+ar d0=0x12
+ar a0=0x20
+wx 34 @ 0x20
+aezi
+aezs
+ar d0
+ar sr
+ar pc
+EOF
+EXPECT=<<EOF
+d0 = 0x00000012
+sr = 0x0009
+pc = 0x00000002
+EOF
+RUN
+
+NAME=Testing the decryption in emulateme cpu32
+FILE=bins/elf/m68k/emulateme-cpu32
+TIMEOUT=30
+REGEXP_FILTER_ERR=ERROR.*\n
+CMDS=<<EOF
+e io.cache=1
+aaa
+wx 00100000 @ 0x200080
+wx 00200100 @ 0x200084
+wx 416e79436f6c6f7572596f754c696b65 @ 0x200100
+s sym.decrypt
+aezi
+aezv a7 0x200080
+aezsu 0x100192
+aezv d0
+ps @ obj.seckrit
+EOF
+EXPECT=<<EOF
+a7 = 0x200080
+ d0: 0x00000001
+Hello from RzIL!
+EOF
+EXPECT_ERR=
+RUN
