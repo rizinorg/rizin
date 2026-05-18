@@ -80,7 +80,6 @@ RZ_API RZ_OWN RzThreadCond *rz_th_cond_new(void);
 RZ_API void rz_th_cond_signal(RZ_NONNULL RzThreadCond *cond);
 RZ_API void rz_th_cond_signal_all(RZ_NONNULL RzThreadCond *cond);
 RZ_API void rz_th_cond_wait(RZ_NONNULL RzThreadCond *cond, RZ_NONNULL RzThreadLock *lock);
-RZ_API void rz_th_cond_timed_wait(RZ_NONNULL RzThreadCond *cond, RZ_NONNULL RzThreadLock *lock, size_t timeout_ms);
 RZ_API void rz_th_cond_free(RZ_NULLABLE RzThreadCond *cond);
 
 RZ_API RzThreadNCores rz_th_physical_core_number();
