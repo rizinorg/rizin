@@ -140,6 +140,7 @@ static int show_analisys_info(RzAsmState *as, const char *arg, ut64 offset) {
 		rz_analysis_op_init(&aop);
 		if (rz_analysis_op(as->analysis, &aop, offset, buf + ret, len - ret, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_ESIL) < 1) {
 			eprintf("Error analyzing instruction at 0x%08" PFMT64x "\n", offset);
+			rz_analysis_op_fini(&aop);
 			break;
 		}
 		if (aop.size < 1) {
@@ -151,6 +152,7 @@ static int show_analisys_info(RzAsmState *as, const char *arg, ut64 offset) {
 			} else {
 				eprintf("Invalid\n");
 			}
+			rz_analysis_op_fini(&aop);
 			break;
 		}
 		print_analysis_info(as, &aop, offset, buf + ret, len - ret, pj);
@@ -312,6 +314,7 @@ static int print_disassembly_output(RzAsmState *as, ut64 addr, const char *buf, 
 			}
 			if (aop.size < 1) {
 				eprintf("Invalid\n");
+				rz_analysis_op_fini(&aop);
 				break;
 			}
 			ret += aop.size;
@@ -327,6 +330,7 @@ static int print_disassembly_output(RzAsmState *as, ut64 addr, const char *buf, 
 			rz_analysis_op_init(&aop);
 			if (rz_analysis_op(as->analysis, &aop, addr, data + ret, len - ret, RZ_ANALYSIS_OP_MASK_IL) <= 0) {
 				eprintf("Invalid\n");
+				rz_analysis_op_fini(&aop);
 				ret = 0;
 				break;
 			}
