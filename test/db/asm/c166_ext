@@ -1,0 +1,159 @@
+
+d "extr #1;mov 0xf1d0, #0x7889;mov 0xffaa, #0x0000;mov 0xfe16, #0xf800;mov 0xfe14, #0xf60c;bfldh 0xff10, #0x03, #0x02" d180e6e88978e6d50000e60b00f8e60a0cf61a880203
+d "extr #4;mov 0xf1d0, #0x7889;mov 0xf1aa, #0x0000;mov 0xf016, #0xf800;mov 0xf014, #0xf60c;bfldh 0xff10, #0x03, #0x02" d1B0e6e88978e6d50000e60b00f8e60a0cf61a880203
+d "mov 0xfe06, #0x0003" e6030300
+d "mov 0xfe06, #0x0003" e6030300
+
+d "sub 0xfe0a, 0xfe00:0x0404" 22050404 # as sub 0x05,DPP0:0x0404
+d "sub 0xfe00, 0xfe00:0x0404" 22000404
+d "sub 0xfe5a, 0xfe00:0x0404" 222D0404 # as sub 0x2d,DPP0:0x0404
+
+d "sub r5, 0xfe00:0x0404" 22F50404 # as sub R5, DPP0:0x0404
+
+d "exts #0x008d, #1;cmp 0xfe10, 0xfe00:0x08f6" d7038d074208f608
+d "exts #0x008d, #1" d7038d07
+d "cmp 0xfe10, 0xfe00:0x08f6" 4208f608 # right (Keil) as  CMP CP,DPP0:0x08F6
+
+d "exts #0x008d, #1" d7008d00 # right (Keil)
+d "exts #0x008d, #2" d7108d00 # right (Keil)
+d "exts #0x008d, #3" d7208d00 # right (Keil)
+d "exts #0x008d, #4" d7308d00 # right (Keil)
+
+dB "" 9AEF0260 # warning A111: ACCESS TO EXTENDED SFR OUTSIDE AN 'EXT' SEQUENCE
+d "extr #1;jnb 0xf1de.6, 0x00000a" d1809AEF0260 # as 9AEF0260 JNB 0xEF.6,0x000222
+d "jnb 0xfd02.3, 0x00000c" 9A010430
+
+d "jnb 0xff12.10, 0x00000a" 9A8903A0 # as jnb ROMEN,0x00000a
+
+d "add r12, 0xfe00:0x1ffc" 02FCFC1F # as ADD R12,DPP0:0x1FFC
+d "add r13, 0xfe00:0x1ffc" 02FDFC1F # as ADD R13,DPP0:0x1FFC
+
+d "extp #0x0000, #1;cmp r12, 0xfe00:0x1ffe" D740000042FCFE1F # as EXTP #0x0000,#1; CMP R12,DPP0:0x1FFE
+d "cmp r12, 0xfe00:0x1ffe" 42FCFE1F # as CMP R12,DPP0:0x1FFE
+
+d "add r4, r10" 004a 0 (seq (set val (var r10)) (set res (+ (var r4) (var val))) (set r4 (var res)) (set e (ite (== (var val) (bv 16 0x8000)) true false)) (set z (ite (is_zero (var res)) true false)) (set v false) (set c (ite (== (var res) (bv 16 0xffff)) true false)) (set n (msb (var res))))
+
+d "movb rl4, [r10+#0x2200]" f48a0022 0x0 nop
+d "jb r4.14, 0x000010" 8af406e0 0x0 (branch (! (is_zero (>> (& (var r4) (bv 16 0x4000)) (bv 16 0xe) false))) (jmp (bv 32 0x10)) nop)
+d "sub r2, #1" 2821 0x0 (seq (set val (var r2)) (set val (- (var val) (bv 16 0x1))) (set r2 (var val)) (set e (ite (== (bv 16 0x1) (bv 16 0x8000)) true false)) (set z (ite (is_zero (var val)) true false)) (set v false) (set c (ite (== (var val) (bv 16 0xffff)) true false)) (set n (msb (var val))))
+d "cmpb rl7, #0x0010" 47fe1000 0x0 (seq (set op1 (& (cast 8 false (var r7)) (bv 8 0xff))) (set op2 (bv 8 0x10)) (set res (ite (&& (ule (var op1) (var op2)) (! (== (var op1) (var op2)))) (- (cast 16 false (var op1)) (cast 16 false (var op2))) (cast 16 false (- (var op1) (var op2))))) (set e (ite (== (var op2) (bv 8 0x80)) true false)) (set z (== (var op1) (var op2))) (set c (&& (ule (var op1) (var op2)) (! (== (var op1) (var op2))))) (set v (== (var res) (bv 16 0xff))) (set n (msb (cast 8 false (var res)))))
+d "addb rl7, #0x0001" 09e1 0x0 (seq (set op1 (var r7)) (set r (var r7)) (set rh (& (var r) (bv 16 0xff00))) (set val (& (+ (& (var op1) (bv 16 0xff)) (bv 16 0x1)) (bv 16 0xff))) (set r7 (| (var rh) (var val))) (set e (ite (== (bv 16 0x1) (bv 16 0x8000)) true false)) (set z (ite (is_zero (+ (& (var op1) (bv 16 0xff)) (bv 16 0x1))) true false)) (set v false) (set c false) (set n (msb (+ (& (var op1) (bv 16 0xff)) (bv 16 0x1)))))
+d "movb [r3], rl5" b9a3 0 (seq (set addr (cast 32 false (var r3))) (set val (var r5)) (set reg_offset (bv 8 0x0)) (set val (ite (! (is_zero (var reg_offset))) (& (var val) (bv 16 0xff)) (var val))) (store 0 (var addr) (cast 8 false (var val))) (set src_op (bv 8 0xa)) (set e (ite (== (cast 8 false (var val)) (bv 8 0x80)) true false)) (set z (ite (is_zero (var val)) true false)) (set n (msb (var src_op))))
+d "mov r2, [r8+]" 9828 0x0 (seq (set val (var r8)) (set addr (cast 32 false (var r8))) (set src_op (load 0 (var addr))) (set r2 (cast 16 false (var src_op))) (set add (+ (var r8) (bv 16 0x2))) (set r8 (var add)) (set e (ite (== (var val) (bv 16 0x8000)) true false)) (set z (ite (is_zero (var val)) true false)) (set n (msb (var val))))
+d "extsr r0, #1;mov r2, [r8+]" dc809828 0x0 nop;(seq (set seg (cast 32 false (var r0))) (set seg (<< (var seg) (bv 16 0x10) false)) (set src_op (var r8)) (set addr (| (var seg) (cast 32 false (var src_op)))) (set load (loadw 0 16 (var addr))) (set r2 (cast 16 false (var load))) (set r8 (+ (var src_op) (bv 16 0x2))) (set e (ite (== (var load) (bv 16 0x8000)) true false)) (set z (ite (is_zero (var load)) true false)) (set n (msb (var load))))
+d "bfldl 0xff0c, #0x3f, #0x2e" 0a863f2e 0x0 nop
+d "mov r9, #0x0001" e6f90100 0x0 (seq (set r9 (bv 16 0x1)) (set e (ite (== (bv 16 0x1) (bv 16 0x8000)) true false)) (set z (ite (is_zero (bv 16 0x1)) true false)) (set n (msb (bv 16 0x1))))
+d "mov r4, r2" f042 0x0 (seq (set src (var r2)) (set r4 (var src)) (set e (ite (== (var src) (bv 16 0x8000)) true false)) (set z (ite (is_zero (var src)) true false)) (set n (msb (var src))))
+d "jbc r2.14, 0x00003a" aaf21be0 0x0 (seq (set mask (bv 16 0x4000)) (set reg (var r2)) (set _iar (& (var reg) (var mask))) (set _iar (>> (var _iar) (bv 16 0xe) false)) (set cond (! (is_zero (var _iar)))) (set e false) (set z (! (var cond))) (set v false) (set c false) (set n (var cond)) (branch (var cond) (seq (set r2 (& (var reg) (~ (bv 16 0x4000)))) (jmp (bv 32 0x3a))) nop))
+d "add r10, #0x000e" 06fa0e00 0 (seq (set op1 (var r10)) (set r10 (+ (var op1) (bv 16 0xe))) (set e (ite (== (bv 16 0xe) (bv 16 0x8000)) true false)) (set z (ite (is_zero (+ (var op1) (bv 16 0xe))) true false)) (set v false) (set c false) (set n (msb (+ (var op1) (bv 16 0xe)))))
+d "exts r9, #1;mov r2, [r8+]" dc099828 0x0 nop;(seq (set seg (cast 32 false (var r9))) (set seg (<< (var seg) (bv 16 0x10) false)) (set src_op (var r8)) (set addr (| (var seg) (cast 32 false (var src_op)))) (set load (loadw 0 16 (var addr))) (set r2 (cast 16 false (var load))) (set r8 (+ (var src_op) (bv 16 0x2))) (set e (ite (== (var load) (bv 16 0x8000)) true false)) (set z (ite (is_zero (var load)) true false)) (set n (msb (var load))))
+d "mov 0xfe06:0x3e06, r3" f6f306fe 0x0 (seq (set src (var r3)) (set e (ite (== (var src) (bv 16 0x8000)) true false)) (set z (ite (is_zero (var src)) true false)) (set n (msb (var src))) (store 0 (bv 32 0xfe06) (cast 8 false (var src))))
+d "bfldh 0xff0c, #0xd2, #0x00" 1a8600d2 0 nop
+d "movb rl1, #0x0000" e102 0x0 (seq (set val (bv 16 0x0)) (set r (var r1)) (set rh (& (var r) (bv 16 0xff00))) (set val (& (var val) (bv 16 0xff))) (set r1 (| (var rh) (var val))) (set e (ite (== (var val) (bv 16 0x8000)) true false)) (set z (ite (is_zero (var val)) true false)) (set n (msb (var val))))
+d "jnb r8.0, 0xffffffa4" 9af8d000 0x0 (branch (is_zero (>> (& (var r8) (bv 16 0x1)) (bv 16 0x0) false)) (jmp (bv 32 0xffffffa4)) nop)
+d "xor 0xff46, #0x0200" 56a30002 0x0 nop
+
+d "extp #0x0003, #1;movb rl4, [r10+#0x2200]" d7400300f48a0022 0 nop;(seq (set addr (bv 16 0xe200)) (set addr (+ (var addr) (var r10))) (set load (loadw 0 8 (cast 32 false (var addr)))) (set r (var r4)) (set rh (& (var r) (bv 16 0xff00))) (set val (& (cast 16 false (var load)) (bv 16 0xff))) (set r4 (| (var rh) (var val))) (set e (ite (== (var load) (bv 8 0x80)) true false)) (set z (ite (is_zero (var load)) true false)) (set n (msb (var load))))
+d "extp r4, #1;movb [r3], rl5" dc44b9a3 0 nop;(seq (set addr (cast 32 false (var r3))) (set val (var r5)) (set reg_offset (bv 8 0x0)) (set val (ite (! (is_zero (var reg_offset))) (<< (var val) (var reg_offset) false) (var val))) (store 0 (var addr) (cast 8 false (var val))) (set src_op (bv 8 0xa)) (set e (ite (== (cast 8 false (var val)) (bv 8 0x80)) true false)) (set z (ite (is_zero (var val)) true false)) (set n (msb (var src_op))))
+
+d "jmpr cc_N, 0x000034" 6d19 0x0 (branch (var n) (jmp (bv 32 0x34)) nop)
+d "jmpr cc_NC/UGE, 0x000032" 9d18 0x0 (branch (! (var c)) (jmp (bv 32 0x32)) nop)
+
+d "jmpr cc_NET, 0x000030" 1d17 0x0 (branch (! (&& (var z) (var e))) (jmp (bv 32 0x30)) nop)
+d "jmpr cc_V, 0x00002e" 4d16 0x0 (branch (var v) (jmp (bv 32 0x2e)) nop)
+d "jmpr cc_NV, 0x00002c" 5d15 0x0 (branch (! (var v)) (jmp (bv 32 0x2c)) nop)
+d "jmpr cc_SGT, 0x00002a" ad14 0x0 (branch (! (&& (var z) (|| (var n) (var v)))) (jmp (bv 32 0x2a)) nop)
+d "jmpr cc_SLE, 0x000028" bd13 0x0 (branch (&& (var z) (|| (var n) (var v))) (jmp (bv 32 0x28)) nop)
+d "jmpr cc_SLT, 0x000026" cd12 0x0 (branch (|| (var n) (var v)) (jmp (bv 32 0x26)) nop)
+d "jmpr cc_SGE, 0x000024" dd11 0x0 (branch (! (|| (var n) (var v))) (jmp (bv 32 0x24)) nop)
+d "jmpr cc_UGT, 0x000022" ed10 0x0 (branch (! (&& (var z) (var c))) (jmp (bv 32 0x22)) nop)
+d "jmpr cc_ULE, 0x000020" fd0f 0x0 (branch (&& (var z) (var c)) (jmp (bv 32 0x20)) nop)
+
+d "bclr r1.0" 0ef1 0x0 (seq (set reg (var r1)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x1)) (bv 16 0x0) false)))) (branch (! (var bit)) (set r1 (& (var reg) (~ (bv 16 0x1)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r2.1" 1ef2 0x0 (seq (set reg (var r2)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x2)) (bv 16 0x1) false)))) (branch (! (var bit)) (set r2 (& (var reg) (~ (bv 16 0x2)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r3.2" 2ef3 0x0 (seq (set reg (var r3)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x4)) (bv 16 0x2) false)))) (branch (! (var bit)) (set r3 (& (var reg) (~ (bv 16 0x4)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r4.3" 3ef4 0x0 (seq (set reg (var r4)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x8)) (bv 16 0x3) false)))) (branch (! (var bit)) (set r4 (& (var reg) (~ (bv 16 0x8)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r5.4" 4ef5 0x0 (seq (set reg (var r5)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x10)) (bv 16 0x4) false)))) (branch (! (var bit)) (set r5 (& (var reg) (~ (bv 16 0x10)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r6.5" 5ef6 0x0 (seq (set reg (var r6)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x20)) (bv 16 0x5) false)))) (branch (! (var bit)) (set r6 (& (var reg) (~ (bv 16 0x20)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r7.6" 6ef7 0x0 (seq (set reg (var r7)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x40)) (bv 16 0x6) false)))) (branch (! (var bit)) (set r7 (& (var reg) (~ (bv 16 0x40)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r8.7" 7ef8 0x0 (seq (set reg (var r8)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x80)) (bv 16 0x7) false)))) (branch (! (var bit)) (set r8 (& (var reg) (~ (bv 16 0x80)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r9.0" 0ef9 0x0 (seq (set reg (var r9)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x1)) (bv 16 0x0) false)))) (branch (! (var bit)) (set r9 (& (var reg) (~ (bv 16 0x1)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r10.1" 1efa 0x0 (seq (set reg (var r10)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x2)) (bv 16 0x1) false)))) (branch (! (var bit)) (set r10 (& (var reg) (~ (bv 16 0x2)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r11.2" 2efb 0x0 (seq (set reg (var r11)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x4)) (bv 16 0x2) false)))) (branch (! (var bit)) (set r11 (& (var reg) (~ (bv 16 0x4)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r12.3" 3efc 0x0 (seq (set reg (var r12)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x8)) (bv 16 0x3) false)))) (branch (! (var bit)) (set r12 (& (var reg) (~ (bv 16 0x8)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r13.4" 4efd 0x0 (seq (set reg (var r13)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x10)) (bv 16 0x4) false)))) (branch (! (var bit)) (set r13 (& (var reg) (~ (bv 16 0x10)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r14.5" 5efe 0x0 (seq (set reg (var r14)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x20)) (bv 16 0x5) false)))) (branch (! (var bit)) (set r14 (& (var reg) (~ (bv 16 0x20)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r15.6" 6eff 0x0 (seq (set reg (var r15)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x40)) (bv 16 0x6) false)))) (branch (! (var bit)) (set r15 (& (var reg) (~ (bv 16 0x40)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r15.7" 7eff 0x0 (seq (set reg (var r15)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x80)) (bv 16 0x7) false)))) (branch (! (var bit)) (set r15 (& (var reg) (~ (bv 16 0x80)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r15.8" 8eff 0x0 (seq (set reg (var r15)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x100)) (bv 16 0x8) false)))) (branch (! (var bit)) (set r15 (& (var reg) (~ (bv 16 0x100)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r15.9" 9eff 0x0 (seq (set reg (var r15)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x200)) (bv 16 0x9) false)))) (branch (! (var bit)) (set r15 (& (var reg) (~ (bv 16 0x200)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r15.10" aeff 0x0 (seq (set reg (var r15)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x400)) (bv 16 0xa) false)))) (branch (! (var bit)) (set r15 (& (var reg) (~ (bv 16 0x400)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r15.11" beff 0x0 (seq (set reg (var r15)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x800)) (bv 16 0xb) false)))) (branch (! (var bit)) (set r15 (& (var reg) (~ (bv 16 0x800)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r15.12" ceff 0x0 (seq (set reg (var r15)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x1000)) (bv 16 0xc) false)))) (branch (! (var bit)) (set r15 (& (var reg) (~ (bv 16 0x1000)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r15.13" deff 0x0 (seq (set reg (var r15)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x2000)) (bv 16 0xd) false)))) (branch (! (var bit)) (set r15 (& (var reg) (~ (bv 16 0x2000)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r15.14" eeff 0x0 (seq (set reg (var r15)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x4000)) (bv 16 0xe) false)))) (branch (! (var bit)) (set r15 (& (var reg) (~ (bv 16 0x4000)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bclr r15.15" feff 0x0 (seq (set reg (var r15)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x8000)) (bv 16 0xf) false)))) (branch (! (var bit)) (set r15 (& (var reg) (~ (bv 16 0x8000)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+
+d "bclr 0xfd00.0" 0e00 0x0 (seq (set src (loadw 0 16 (bv 32 0xfd00))) (set bit (! (is_zero (>> (& (var src) (bv 16 0x1)) (bv 16 0x0) false)))) (branch (! (var bit)) (storew 0 (bv 32 0xfd00) (& (var src) (~ (bv 16 0x1)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+
+# 00C0069A 7E80      BCLR     P0L.7
+d "bclr 0xff00.7" 7e80 0x0 (seq (set src (loadw 0 16 (bv 32 0xff00))) (set bit (! (is_zero (>> (& (var src) (bv 16 0x80)) (bv 16 0x7) false)))) (branch (! (var bit)) (storew 0 (bv 32 0xff00) (& (var src) (~ (bv 16 0x80)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+
+d "bset r1.0" 0ff1 0x0 (seq (set reg (var r1)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x1)) (bv 16 0x0) false)))) (branch (! (var bit)) (set r1 (| (var reg) (bv 16 0x1))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r2.1" 1ff2 0x0 (seq (set reg (var r2)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x2)) (bv 16 0x1) false)))) (branch (! (var bit)) (set r2 (| (var reg) (bv 16 0x2))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r3.2" 2ff3 0x0 (seq (set reg (var r3)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x4)) (bv 16 0x2) false)))) (branch (! (var bit)) (set r3 (| (var reg) (bv 16 0x4))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r4.3" 3ff4 0x0 (seq (set reg (var r4)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x8)) (bv 16 0x3) false)))) (branch (! (var bit)) (set r4 (| (var reg) (bv 16 0x8))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r5.4" 4ff5 0x0 (seq (set reg (var r5)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x10)) (bv 16 0x4) false)))) (branch (! (var bit)) (set r5 (| (var reg) (bv 16 0x10))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r6.5" 5ff6 0x0 (seq (set reg (var r6)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x20)) (bv 16 0x5) false)))) (branch (! (var bit)) (set r6 (| (var reg) (bv 16 0x20))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r7.6" 6ff7 0x0 (seq (set reg (var r7)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x40)) (bv 16 0x6) false)))) (branch (! (var bit)) (set r7 (| (var reg) (bv 16 0x40))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r8.7" 7ff8 0x0 (seq (set reg (var r8)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x80)) (bv 16 0x7) false)))) (branch (! (var bit)) (set r8 (| (var reg) (bv 16 0x80))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r9.0" 0ff9 0x0 (seq (set reg (var r9)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x1)) (bv 16 0x0) false)))) (branch (! (var bit)) (set r9 (| (var reg) (bv 16 0x1))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r10.1" 1ffa 0x0 (seq (set reg (var r10)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x2)) (bv 16 0x1) false)))) (branch (! (var bit)) (set r10 (| (var reg) (bv 16 0x2))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r11.2" 2ffb 0x0 (seq (set reg (var r11)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x4)) (bv 16 0x2) false)))) (branch (! (var bit)) (set r11 (| (var reg) (bv 16 0x4))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r12.3" 3ffc 0x0 (seq (set reg (var r12)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x8)) (bv 16 0x3) false)))) (branch (! (var bit)) (set r12 (| (var reg) (bv 16 0x8))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r13.4" 4ffd 0x0 (seq (set reg (var r13)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x10)) (bv 16 0x4) false)))) (branch (! (var bit)) (set r13 (| (var reg) (bv 16 0x10))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r14.5" 5ffe 0x0 (seq (set reg (var r14)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x20)) (bv 16 0x5) false)))) (branch (! (var bit)) (set r14 (| (var reg) (bv 16 0x20))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r15.6" 6fff 0x0 (seq (set reg (var r15)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x40)) (bv 16 0x6) false)))) (branch (! (var bit)) (set r15 (| (var reg) (bv 16 0x40))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r15.7" 7fff 0x0 (seq (set reg (var r15)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x80)) (bv 16 0x7) false)))) (branch (! (var bit)) (set r15 (| (var reg) (bv 16 0x80))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r15.8" 8fff 0x0 (seq (set reg (var r15)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x100)) (bv 16 0x8) false)))) (branch (! (var bit)) (set r15 (| (var reg) (bv 16 0x100))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r15.9" 9fff 0x0 (seq (set reg (var r15)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x200)) (bv 16 0x9) false)))) (branch (! (var bit)) (set r15 (| (var reg) (bv 16 0x200))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r15.10" afff 0x0 (seq (set reg (var r15)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x400)) (bv 16 0xa) false)))) (branch (! (var bit)) (set r15 (| (var reg) (bv 16 0x400))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r15.11" bfff 0x0 (seq (set reg (var r15)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x800)) (bv 16 0xb) false)))) (branch (! (var bit)) (set r15 (| (var reg) (bv 16 0x800))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r15.12" cfff 0x0 (seq (set reg (var r15)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x1000)) (bv 16 0xc) false)))) (branch (! (var bit)) (set r15 (| (var reg) (bv 16 0x1000))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r15.13" dfff 0x0 (seq (set reg (var r15)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x2000)) (bv 16 0xd) false)))) (branch (! (var bit)) (set r15 (| (var reg) (bv 16 0x2000))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r15.14" efff 0x0 (seq (set reg (var r15)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x4000)) (bv 16 0xe) false)))) (branch (! (var bit)) (set r15 (| (var reg) (bv 16 0x4000))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset r15.15" ffff 0x0 (seq (set reg (var r15)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x8000)) (bv 16 0xf) false)))) (branch (! (var bit)) (set r15 (| (var reg) (bv 16 0x8000))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+
+d "bclr 0xff10.2" 2e88 0x0 (seq (set src (loadw 0 16 (bv 32 0xff10))) (set bit (! (is_zero (>> (& (var src) (bv 16 0x4)) (bv 16 0x2) false)))) (branch (! (var bit)) (storew 0 (bv 32 0xff10) (& (var src) (~ (bv 16 0x4)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+d "bset 0xff10.3" 3f88 0x0 (seq (set src (loadw 0 16 (bv 32 0xff10))) (set bit (! (is_zero (>> (& (var src) (bv 16 0x8)) (bv 16 0x3) false)))) (branch (! (var bit)) (storew 0 (bv 32 0xff10) (| (var src) (bv 16 0x8))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+
+d "bset r14.5;bclr r14.5;bclr r14.5;bclr 0xff7c.5" 5ffe5efe5efe5ebe 0x0 (seq (set reg (var r14)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x20)) (bv 16 0x5) false)))) (branch (! (var bit)) (set r14 (| (var reg) (bv 16 0x20))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)));(seq (set reg (var r14)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x20)) (bv 16 0x5) false)))) (branch (! (var bit)) (set r14 (& (var reg) (~ (bv 16 0x20)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)));(seq (set reg (var r14)) (set bit (! (is_zero (>> (& (var reg) (bv 16 0x20)) (bv 16 0x5) false)))) (branch (! (var bit)) (set r14 (& (var reg) (~ (bv 16 0x20)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)));(seq (set src (loadw 0 16 (bv 32 0xff7c))) (set bit (! (is_zero (>> (& (var src) (bv 16 0x20)) (bv 16 0x5) false)))) (branch (! (var bit)) (storew 0 (bv 32 0xff7c) (& (var src) (~ (bv 16 0x20)))) nop) (set e false) (set z (! (var bit))) (set v false) (set c false) (set n (var bit)))
+
+# XOR PSW,DPP0:0x0200
+d "xor 0xff10, 0xfe00:0x0200" 52880002 0x0 nop
+
+d "cmpb rl4, #0x0000" 4980 0x0 (seq (set op1 (& (cast 8 false (var r4)) (bv 8 0xff))) (set op2 (bv 8 0x0)) (set res (ite (&& (ule (var op1) (var op2)) (! (== (var op1) (var op2)))) (- (cast 16 false (var op1)) (cast 16 false (var op2))) (cast 16 false (- (var op1) (var op2))))) (set e (ite (== (var op2) (bv 8 0x80)) true false)) (set z (== (var op1) (var op2))) (set c (&& (ule (var op1) (var op2)) (! (== (var op1) (var op2))))) (set v (== (var res) (bv 16 0xff))) (set n (msb (cast 8 false (var res)))))
+d "cmpb rl4, rh7" 418f 0x0 IL[0x41] - [0x000000] IP: [0x000000] c166_il_cmpb_rbn_rbm rl4, rh7;(seq (set op1 (& (cast 8 false (var r4)) (bv 8 0xff))) (set op2 (>> (cast 8 false (var r7)) (bv 16 0x8) false)) (set res (ite (&& (ule (var op1) (var op2)) (! (== (var op1) (var op2)))) (- (cast 16 false (var op1)) (cast 16 false (var op2))) (cast 16 false (- (var op1) (var op2))))) (set e (ite (== (var op2) (bv 8 0x80)) true false)) (set z (== (var op1) (var op2))) (set c (&& (ule (var op1) (var op2)) (! (== (var op1) (var op2))))) (set v (== (var res) (bv 16 0xff))) (set n (msb (cast 8 false (var res)))))
+d "cmpb rl4, [r0+]" 498c 0x0 IL[0x49] - [0x000000] IP: [0x000000] c166_il_cmpb_rbn_x rl4, [r0+];nop
+d "cmpb rl4, [r1+]" 498d 0x0 IL[0x49] - [0x000000] IP: [0x000000] c166_il_cmpb_rbn_x rl4, [r1+];nop
+d "cmpb rl4, [r2+]" 498e 0x0 IL[0x49] - [0x000000] IP: [0x000000] c166_il_cmpb_rbn_x rl4, [r2+];nop
+d "cmpb rl4, [r3+]" 498f 0x0 IL[0x49] - [0x000000] IP: [0x000000] c166_il_cmpb_rbn_x rl4, [r3+];nop
+d "cmpb rl4, [r1]" 4989 0x0 IL[0x49] - [0x000000] IP: [0x000000] c166_il_cmpb_rbn_x rl4, [r1];nop
+
+d "sub r3, [r1+]" 283d 0x0 (seq (set op1 (var r3)) (set addr (cast 32 false (var r1))) (set op2 (loadw 0 16 (var addr))) (set res (- (var op1) (var op2))) (set r3 (var res)) (set r1 (+ (var op2) (bv 16 0x2))) (set e (ite (== (var op2) (bv 16 0x8000)) true false)) (set z (ite (is_zero (var res)) true false)) (set c (|| (! (ule (var op1) (var op2))) (== (var op1) (var op2)))) (set v false) (set n (msb (var res))))
+d "sub r4, [r2]" 284a 0x0 (seq (set op1 (var r4)) (set addr (cast 32 false (var r2))) (set op2 (loadw 0 16 (var addr))) (set res (- (var op1) (var op2))) (set r4 (var res)) (set e (ite (== (var op2) (bv 16 0x8000)) true false)) (set z (ite (is_zero (var res)) true false)) (set c (|| (! (ule (var op1) (var op2))) (== (var op1) (var op2)))) (set v false) (set n (msb (var res))))
+
+d "jmpa- cc_NUSR0, 0x000500" EA0B0005 0x0 nop
+d "jmpa+ cc_NUSR0, 0x000500" EA0A0005 0x0 nop
+
+d "calla- cc_NUSR0, 0x000500" ca0b0005 0x0 (seq (set addr (bv 32 0x500)) (branch (! (var usr0)) (seq (set SP (var SP)) (set SP (- (var SP) (bv 16 0x2))) (set SP (var SP)) (storew 0 (cast 32 false (var SP)) (bv 16 0x4)) (jmp (var addr))) nop))
+d "calla+ cc_NUSR0, 0x000500" ca0a0005 0x0 (seq (set addr (bv 32 0x500)) (branch (! (var usr0)) (seq (set SP (var SP)) (set SP (- (var SP) (bv 16 0x2))) (set SP (var SP)) (storew 0 (cast 32 false (var SP)) (bv 16 0x4)) (jmp (var addr))) nop))
+
+d "calla- cc_NUSR0, 0x000614" ca091406 0x0 (seq (set addr (bv 32 0x614)) (branch (! (var usr0)) (seq (set SP (var SP)) (set SP (- (var SP) (bv 16 0x2))) (set SP (var SP)) (storew 0 (cast 32 false (var SP)) (bv 16 0x4)) (jmp (var addr))) nop))
+d "calla- cc_NUSR1, 0x000614" ca191406 0x0 (seq (set addr (bv 32 0x614)) (branch (! (var usr1)) (seq (set SP (var SP)) (set SP (- (var SP) (bv 16 0x2))) (set SP (var SP)) (storew 0 (cast 32 false (var SP)) (bv 16 0x4)) (jmp (var addr))) nop))
+d "calla- cc_USR0, 0x000614" ca291406 0x0 (seq (set addr (bv 32 0x614)) (branch (var usr0) (seq (set SP (var SP)) (set SP (- (var SP) (bv 16 0x2))) (set SP (var SP)) (storew 0 (cast 32 false (var SP)) (bv 16 0x4)) (jmp (var addr))) nop))
+d "calla- cc_USR1, 0x000614" ca391406 0x0 (seq (set addr (bv 32 0x614)) (branch (var usr1) (seq (set SP (var SP)) (set SP (- (var SP) (bv 16 0x2))) (set SP (var SP)) (storew 0 (cast 32 false (var SP)) (bv 16 0x4)) (jmp (var addr))) nop))
+d "calla+ cc_NUSR0, 0x000614" ca081406 0x0 (seq (set addr (bv 32 0x614)) (branch (! (var usr0)) (seq (set SP (var SP)) (set SP (- (var SP) (bv 16 0x2))) (set SP (var SP)) (storew 0 (cast 32 false (var SP)) (bv 16 0x4)) (jmp (var addr))) nop))
+d "calla+ cc_NUSR1, 0x000614" ca181406 0x0 (seq (set addr (bv 32 0x614)) (branch (! (var usr1)) (seq (set SP (var SP)) (set SP (- (var SP) (bv 16 0x2))) (set SP (var SP)) (storew 0 (cast 32 false (var SP)) (bv 16 0x4)) (jmp (var addr))) nop))
+d "calla+ cc_USR0, 0x000614" ca281406 0x0 (seq (set addr (bv 32 0x614)) (branch (var usr0) (seq (set SP (var SP)) (set SP (- (var SP) (bv 16 0x2))) (set SP (var SP)) (storew 0 (cast 32 false (var SP)) (bv 16 0x4)) (jmp (var addr))) nop))
+d "calla+ cc_USR1, 0x000614" ca381406 0x0 (seq (set addr (bv 32 0x614)) (branch (var usr1) (seq (set SP (var SP)) (set SP (- (var SP) (bv 16 0x2))) (set SP (var SP)) (storew 0 (cast 32 false (var SP)) (bv 16 0x4)) (jmp (var addr))) nop))
