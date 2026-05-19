@@ -2209,6 +2209,44 @@ static int handle_gadget_search_address(RzCore *core, RzGadgetSearchContext *con
 	return 0;
 }
 
+static int handle_gadget_cache(RzCore *core, RzGadgetSearchContext *context, RzList /*<char *>*/ *rx_list) {
+
+	RzGadgetCache *gadget_cache = rz_analysis_get_gadget_cache(core->analysis, context->type);
+
+	// cache hit
+	if (gadget_cache) {
+		if (is_gadget_cache_valid(core, gadget_cache, context)) {
+			RZ_LOG_INFO("core: Using gadget cache\n");
+			if (print_gadgets_from_cache(core, gadget_cache, context, rx_list)) {
+				return 0;
+			} else {
+				RZ_LOG_ERROR("core: Failed to print gadgets from cache\n");
+				return -1;
+			}
+		} else {
+			RZ_LOG_INFO("core: Parameters change detected, Rebuilding cache\n");
+		}
+	}
+
+	// cache miss
+	RzGadgetCache *gadget_cache_new = RZ_NEW0(RzGadgetCache);
+	if (!gadget_cache_new) {
+		RZ_LOG_ERROR("core: Failed to allocate gadget cache\n");
+		return -1;
+	}
+	RZ_LOG_DEBUG("core: Building gadget cache for address range 0x%" PFMT64x " - 0x%" PFMT64x "\n", context->from, context->to);
+	gadget_cache_new->tree = NULL;
+	gadget_cache_new->free = free_gadget_cache_node;
+	gadget_cache_new->from = context->from;
+	gadget_cache_new->to = context->to;
+	gadget_cache_new->max_instr = context->max_instr;
+	gadget_cache_new->allow_conditional = context->allow_conditional;
+
+	rz_analysis_set_gadget_cache(core->analysis, gadget_cache_new, context->type);
+
+	return 1; // set gadget cache and continue normal flow to build cache and print gadgets
+}
+
 /**
  * \brief Search for gadgets.
  * \param core Pointer to the RzCore object.
@@ -2261,43 +2299,16 @@ RZ_API RzCmdStatus rz_core_gadget_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzG
 
 	// if cache is enabled, try to print gadgets from cache first, if cache is valid, else rebuild cache
 	if (context->cache) {
-		RzGadgetCache *gadget_cache = rz_analysis_get_gadget_cache(core->analysis, context->type);
-
 		context->from = search_itv.addr;
 		context->to = search_itv.addr + search_itv.size;
-
-		// cache hit
-		if (gadget_cache) {
-			if (is_gadget_cache_valid(core, gadget_cache, context)) {
-				RZ_LOG_INFO("core: Using gadget cache\n");
-				if (print_gadgets_from_cache(core, gadget_cache, context, rx_list)) {
-					status = 0;
-				} else {
-					RZ_LOG_ERROR("core: Failed to print gadgets from cache\n");
-					status = -1;
-				}
-				goto cleanup;
-			} else {
-				RZ_LOG_INFO("core: Parameters change detected, Rebuilding cache\n");
-			}
-		}
-
-		// cache miss
-		RzGadgetCache *gadget_cache_new = RZ_NEW0(RzGadgetCache);
-		if (!gadget_cache_new) {
-			RZ_LOG_ERROR("core: Failed to allocate gadget cache\n");
+		int result = handle_gadget_cache(core, context, rx_list);
+		if (result == 0) {
+			status = 0;
+			goto cleanup;
+		} else if (result == -1) {
 			status = -1;
 			goto cleanup;
 		}
-		RZ_LOG_DEBUG("core: Building gadget cache for address range 0x%" PFMT64x " - 0x%" PFMT64x "\n", context->from, context->to);
-		gadget_cache_new->tree = NULL;
-		gadget_cache_new->free = free_gadget_cache_node;
-		gadget_cache_new->from = context->from;
-		gadget_cache_new->to = context->to;
-		gadget_cache_new->max_instr = context->max_instr;
-		gadget_cache_new->allow_conditional = context->allow_conditional;
-
-		rz_analysis_set_gadget_cache(core->analysis, gadget_cache_new, context->type);
 	}
 
 	RzList *boundaries = rz_core_get_boundaries_select(core, "search.from", "search.to", "search.in");
