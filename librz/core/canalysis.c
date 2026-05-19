@@ -4087,7 +4087,7 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 					continue;
 				}
 				// not padding
-				if (target - fcn_end >= ptr_size){
+				if (target - fcn_end >= ptr_size) {
 					continue;
 				}
 			}
