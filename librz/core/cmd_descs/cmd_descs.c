@@ -1938,6 +1938,14 @@ static const RzCmdDescHelp cmd_info_cop_gadget_help = {
 	.args = cmd_info_cop_gadget_args,
 };
 
+static const RzCmdDescArg cmd_clear_cop_gadget_cache_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_clear_cop_gadget_cache_help = {
+	.summary = "Clear COP gadget cache",
+	.args = cmd_clear_cop_gadget_cache_args,
+};
+
 static const RzCmdDescArg cmd_search_cop_gadget_args[] = {
 	{
 		.name = "filter-by-regex",
@@ -2137,6 +2145,14 @@ static const RzCmdDescArg cmd_info_jop_gadget_args[] = {
 static const RzCmdDescHelp cmd_info_jop_gadget_help = {
 	.summary = "List JOP Gadgets",
 	.args = cmd_info_jop_gadget_args,
+};
+
+static const RzCmdDescArg cmd_clear_jop_gadget_cache_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_clear_jop_gadget_cache_help = {
+	.summary = "Clear JOP gadget cache",
+	.args = cmd_clear_jop_gadget_cache_args,
 };
 
 static const RzCmdDescArg cmd_search_jop_gadget_args[] = {
@@ -2468,6 +2484,14 @@ static const RzCmdDescArg cmd_info_rop_gadget_args[] = {
 static const RzCmdDescHelp cmd_info_rop_gadget_help = {
 	.summary = "List ROP Gadgets",
 	.args = cmd_info_rop_gadget_args,
+};
+
+static const RzCmdDescArg cmd_clear_rop_gadget_cache_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_clear_rop_gadget_cache_help = {
+	.summary = "Clear ROP gadget cache",
+	.args = cmd_clear_rop_gadget_cache_args,
 };
 
 static const RzCmdDescArg cmd_search_rop_gadget_args[] = {
@@ -22117,6 +22141,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *slash_C_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/C", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_info_cop_gadget_handler, &cmd_info_cop_gadget_help, &slash_C_help);
 	rz_warn_if_fail(slash_C_cd);
+	RzCmdDesc *cmd_clear_cop_gadget_cache_cd = rz_cmd_desc_argv_new(core->rcmd, slash_C_cd, "/C-", rz_cmd_clear_cop_gadget_cache_handler, &cmd_clear_cop_gadget_cache_help);
+	rz_warn_if_fail(cmd_clear_cop_gadget_cache_cd);
+
 	RzCmdDesc *cmd_search_cop_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_C_cd, "/C/", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_cop_gadget_handler, &cmd_search_cop_gadget_help);
 	rz_warn_if_fail(cmd_search_cop_gadget_cd);
 
@@ -22140,6 +22167,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *slash_J_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/J", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_info_jop_gadget_handler, &cmd_info_jop_gadget_help, &slash_J_help);
 	rz_warn_if_fail(slash_J_cd);
+	RzCmdDesc *cmd_clear_jop_gadget_cache_cd = rz_cmd_desc_argv_new(core->rcmd, slash_J_cd, "/J-", rz_cmd_clear_jop_gadget_cache_handler, &cmd_clear_jop_gadget_cache_help);
+	rz_warn_if_fail(cmd_clear_jop_gadget_cache_cd);
+
 	RzCmdDesc *cmd_search_jop_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_J_cd, "/J/", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_jop_gadget_handler, &cmd_search_jop_gadget_help);
 	rz_warn_if_fail(cmd_search_jop_gadget_cd);
 
@@ -22196,6 +22226,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *slash_R_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/R", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_info_rop_gadget_handler, &cmd_info_rop_gadget_help, &slash_R_help);
 	rz_warn_if_fail(slash_R_cd);
+	RzCmdDesc *cmd_clear_rop_gadget_cache_cd = rz_cmd_desc_argv_new(core->rcmd, slash_R_cd, "/R-", rz_cmd_clear_rop_gadget_cache_handler, &cmd_clear_rop_gadget_cache_help);
+	rz_warn_if_fail(cmd_clear_rop_gadget_cache_cd);
+
 	RzCmdDesc *cmd_search_rop_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/R/", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_rop_gadget_handler, &cmd_search_rop_gadget_help);
 	rz_warn_if_fail(cmd_search_rop_gadget_cd);
 

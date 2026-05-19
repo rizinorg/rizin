@@ -329,6 +329,10 @@ commands:
           - name: filter-by-string
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
+      - name: "/C-"
+        cname: cmd_clear_cop_gadget_cache
+        summary: Clear COP gadget cache
+        args: []
       - name: "/C/"
         cname: cmd_search_cop_gadget
         summary: List COP Gadgets [regular expression]
@@ -493,6 +497,10 @@ commands:
           - name: filter-by-string
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
+      - name: "/J-"
+        cname: cmd_clear_jop_gadget_cache
+        summary: Clear JOP gadget cache
+        args: []
       - name: "/J/"
         cname: cmd_search_jop_gadget
         summary: List JOP Gadgets [regular expression]
@@ -743,6 +751,10 @@ commands:
           - name: filter-by-string
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
+      - name: "/R-"
+        cname: cmd_clear_rop_gadget_cache
+        summary: Clear ROP gadget cache
+        args: []
       - name: "/R/"
         cname: cmd_search_rop_gadget
         summary: List ROP Gadgets [regular expression]
