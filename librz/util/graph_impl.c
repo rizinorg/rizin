@@ -180,7 +180,7 @@ static void remove_free_edge_list(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzPVe
 	}
 	e->data = NULL;
 	edge_free(e);
-	rz_pvector_remove_at(edges, index);
+	rz_pvector_remove_at_unsorted(edges, index);
 }
 
 /**
@@ -208,7 +208,7 @@ static RzGraphStatus rz_graph_list_impl_del_edge(RzGraph /*<NodeType *, EdgeType
 		return RZ_GRAPH_STATUS_OK;
 	}
 	// Remove without free
-	rz_pvector_remove_at(out_vec, eid);
+	rz_pvector_remove_at_unsorted(out_vec, eid);
 
 	// remove in edge
 	RzPVector /*<RzGraphEdge *>*/ *in_vec = rz_pvector_at(impl->in_edges, to->_vec_id);
@@ -238,7 +238,7 @@ static RzGraphStatus rz_graph_list_impl_del_edges(RzGraph /*<NodeType *, EdgeTyp
 				++i;
 				continue;
 			}
-			rz_pvector_remove_at(node_out_edges, i);
+			rz_pvector_remove_at_unsorted(node_out_edges, i);
 		}
 	}
 
@@ -461,12 +461,12 @@ static RZ_OWN bool rz_graph_list_impl_del_node(RzGraph /*<NodeType *, EdgeType *
 					// do not free edge data
 					RzGraphEdge *node_to_dest_as_ie = rz_pvector_at(in_edges_of_dest, eid);
 					edge_free(node_to_dest_as_ie);
-					rz_pvector_remove_at(in_edges_of_dest, eid);
+					rz_pvector_remove_at_unsorted(in_edges_of_dest, eid);
 				}
 			}
 			// Only delete don't free.
 			// RzGraphEdge is owned by in-vector.
-			rz_pvector_remove_at(out_vec, i);
+			rz_pvector_remove_at_unsorted(out_vec, i);
 
 			g->n_edges -= 1;
 		}
@@ -488,7 +488,7 @@ static RZ_OWN bool rz_graph_list_impl_del_node(RzGraph /*<NodeType *, EdgeType *
 				if (eid != -1) {
 					// Only delete don't free.
 					// RzGraphEdge is owned by in-vector.
-					rz_pvector_remove_at(out_edges_of_src, eid);
+					rz_pvector_remove_at_unsorted(out_edges_of_src, eid);
 				}
 			}
 
@@ -496,7 +496,7 @@ static RZ_OWN bool rz_graph_list_impl_del_node(RzGraph /*<NodeType *, EdgeType *
 			// NOTE: reverse iteration allows safe rz_pvector_remove_at —
 			// removing from the tail does not shift earlier indices.
 			edge_free(src_to_node_as_ie);
-			rz_pvector_remove_at(in_vec, i);
+			rz_pvector_remove_at_unsorted(in_vec, i);
 			g->n_edges -= 1;
 		}
 		rz_pvector_purge(in_vec);
