@@ -422,7 +422,7 @@ static ut32 gb_get_rom_banks(const gb_header_t *hdr) {
 	}
 }
 
-static bool gb_check_buffer(RzBuffer *b) {
+bool gb_check_buffer(RzBuffer *b) {
 	ut8 nin_logo[GB_ROM_NINTENDO_LOGO_SIZE];
 
 	st32 read = rz_buf_read_at(b, GB_ROM_NINTENDO_LOGO_OFFSET, nin_logo, sizeof(nin_logo));
