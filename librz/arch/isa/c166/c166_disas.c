@@ -15,13 +15,11 @@
  */
 
 #include <rz_types.h>
-#include <rz_lib.h>
 #include <rz_util.h>
 #include <string.h>
-
 #include <c166/c166_disas.h>
 
-static const char *c166_instr_name(ut8 instr) {
+const char *c166_instr_name(ut8 instr) {
 	switch (instr) {
 	case C166_ADD_Rwn_Rwm:
 	case C166_ADD_Rwn_x:
@@ -344,20 +342,13 @@ static const char *c166_instr_name(ut8 instr) {
 	}
 }
 
-const char *c166_extx_names[] = {
-	"exts",
-	"extp",
-	"extsr",
-	"extpr"
-};
-
-RZ_API void c166_activate_ext(RZ_NONNULL C166State *state, ut32 addr, C166ExtState ext) {
+RZ_API void c166_activate_ext(RZ_NONNULL C166State *state, const ut32 addr, const C166ExtState ext) {
 	rz_return_if_fail(ext.i <= 4);
 	state->ext = ext;
 	state->last_addr = addr;
 }
 
-RZ_API void c166_maybe_deactivate_ext(RZ_NONNULL C166State *state, ut32 addr) {
+RZ_API void c166_maybe_deactivate_ext(RZ_NONNULL C166State *state, const ut32 addr) {
 	if (addr == state->last_addr) {
 		return;
 	}
@@ -379,25 +370,10 @@ RZ_API void c166_maybe_deactivate_ext(RZ_NONNULL C166State *state, ut32 addr) {
  * Format a mem value into buf. Does not apply to seg or pag formats.
  * Caller must provide a buf with at least 13 characters.
  */
-static const char *c166_fmt_mem(const C166ExtState *ext, char *buf, ut16 mem) {
+static const char *c166_fmt_mem(const C166ExtState *ext, char *buf, const ut16 mem) {
 	const st32 i = (mem >> 14) & 0b11;
-	switch (ext->mode) {
-	case C166_EXT_MODE_NONE: {
-		const ut16 addr = BASE_SFR_ADDR + (i * 2);
-		snprintf(buf, 16, "0x%x:0x%04x", addr, mem & 0x3FFF);
-		break;
-	}
-	case C166_EXT_MODE_SEG: {
-		const ut32 seg = ((ut32)(ext->value & 0xFF)) << 16;
-		snprintf(buf, 12, "0x%06x", seg | (mem & 0x3FFF));
-		break;
-	}
-	case C166_EXT_MODE_PAGE: {
-		const ut32 page = ((ut32)ext->value & 0x3FF) << 14;
-		snprintf(buf, 11, "0x%08x", page | (mem & 0x3FFF));
-		break;
-	}
-	}
+	const ut16 addr = SFR_ADDR(i);
+	snprintf(buf, FMT_DWORD_ADDR_LEN, FMT_DWORD_ADDR, addr, mem & 0x3FFF);
 	return buf;
 }
 
@@ -405,7 +381,7 @@ static const char *c166_fmt_mem(const C166ExtState *ext, char *buf, ut16 mem) {
  * Return the reg interpretation in word or byte mode.
  * Caller must provide a buf with at least 10 characters.
  */
-static const char *c166_fmt_reg(const C166ExtState *ext, char *buf, ut8 reg, bool byte) {
+static const char *c166_fmt_reg(const C166ExtState *ext, char *buf, ut8 reg, const bool byte) {
 	if (IS_GPR(reg)) {
 		// Short ‘reg’ addresses from F0 to FF always specify GPRs.
 		return byte ? c166_rb[L_NIB(reg)] : c166_rw[L_NIB(reg)];
@@ -437,7 +413,7 @@ static const char *c166_fmt_bitoff(const C166ExtState *ext, char *buf, ut8 bitof
 
 static ut8 c166_instr_rw_rw(C166_Inst *instr) {
 	const ut8 reg = get_operand(instr, 1);
-	OPERANDS("r%i, r%i", H_NIB(reg), L_NIB(reg));
+	OPERANDS(FMT11, H_NIB(reg), L_NIB(reg));
 	return C166_BYTESIZE_2;
 }
 
@@ -521,7 +497,7 @@ static ut8 c166_instr_mov_nm(C166_Inst *instr) {
 	bool rb = false;
 	const char *format = NULL;
 
-	ut8 op = get_operand(instr, 1);
+	const ut8 op = get_operand(instr, 1);
 
 	const ut8 n = H_NIB(op);
 	const ut8 m = L_NIB(op);
@@ -559,7 +535,6 @@ static ut8 c166_instr_mov_nm(C166_Inst *instr) {
 		rb = true;
 		swap = true;
 		format = FMT3;
-		break;
 		break;
 	case C166_MOV_oRwnp_oRwm: ///< 0xD8            [Rwn+], [Rwm]
 	case C166_MOVB_oRwnp_oRwm: ///< 0xD9           [Rwn+], [Rwm]
@@ -618,21 +593,21 @@ static ut8 c166_instr_rb_x(C166_Inst *instr) {
 	const char *r = c166_rb[H_NIB(reg)];
 
 	if ((op & 0b1100) == 0b1100) {
-		///< [Rb+]
-		OPERANDS(FMT1, r, c166_rb[op & 0b11]);
+		///< [Rw+]
+		OPERANDS(FMT1, r, c166_rw[op & 0b11]);
 	} else if ((op & 0b1000) == 0b1000) {
-		///< [Rb]
-		OPERANDS(FMT0, r, c166_rb[op & 0b11]);
+		///< [Rw]
+		OPERANDS(FMT0, r, c166_rw[op & 0b11]);
 	} else {
 		///< #data3
-		OPERANDS(FMT8, r, op);
+		OPERANDS(FMT8, r, op & 0x7);
 	}
 	return C166_BYTESIZE_2;
 }
 
 static ut8 c166_instr_rw_rb(C166_Inst *instr) {
 	const ut8 reg = get_operand(instr, 1);
-	///< NOTE: It is D0 mn , NOT nm, but displayed as Rwn, Rbm
+	///< NOTE: It is D0 mn, NOT nm, but displayed as Rwn, Rbm
 	OPERANDS(FMT9, c166_rw[L_NIB(reg)], c166_rb[H_NIB(reg)]);
 	return C166_BYTESIZE_2;
 }
@@ -697,20 +672,18 @@ static ut8 c166_instr_bitoff(C166_Inst *instr) {
 
 static ut8 c166_instr_reg(C166_Inst *instr) {
 	const ut8 reg = get_operand(instr, 1);
-	OPERANDS("%s",
-		c166_fmt_reg(&instr->ext, SBUF_16, reg, false));
+	OPERANDS("%s", c166_fmt_reg(&instr->ext, SBUF_16, reg, false));
 	return C166_BYTESIZE_2;
 }
 
-static ut8 c166_instr_reg_data16(C166_Inst *instr, bool byte) {
+static ut8 c166_instr_reg_data16(C166_Inst *instr) {
 	const ut8 reg = get_operand(instr, 1);
 	const ut16 data = rz_read_at_le16(&instr->d, 2);
-	OPERANDS("%s, #0x%04x",
-		c166_fmt_reg(&instr->ext, SBUF_16, reg, byte), data);
+	OPERANDS(FMT8, c166_fmt_reg(&instr->ext, SBUF_16, reg, false), data);
 	return C166_BYTESIZE_4;
 }
 
-static ut8 c166_instr_reg_data8(C166_Inst *instr, bool byte) {
+static ut8 c166_instr_reg_data8(C166_Inst *instr) {
 	const ut8 reg = get_operand(instr, 1);
 	const ut8 data = rz_read_at_le16(&instr->d, 2);
 
@@ -719,8 +692,7 @@ static ut8 c166_instr_reg_data8(C166_Inst *instr, bool byte) {
 	 * (represented by #data8, where byte xx is not significant)
 	 * rz_read_at_le16 swaps so use lower
 	 */
-	OPERANDS(FMT8,
-		c166_fmt_reg(&instr->ext, SBUF_16, reg, byte), data & 0xFF);
+	OPERANDS(FMT8, c166_fmt_reg(&instr->ext, SBUF_16, reg, true), data & 0xFF);
 	return C166_BYTESIZE_4;
 }
 
@@ -739,16 +711,18 @@ static ut8 c166_instr_cc_caddr(C166_Inst *instr) {
 
 	/**
 	 * CALLA xcc, caddr  | CA d00a MM MM | 4
-	 * JMPA  xcc, caddr  | CA d00a MM MM | 4
+	 * JMPA  xcc, caddr  | EA d0la MM MM | 4
 	 * d : 5-bit condition code specification (xcc)
+	 * l : 1-bit short backward loop bit
 	 * a : 1-bit branch assumption bit
 	 */
 	const ut8 d = op >> 3;
-	const ut8 a = op & 0x1;
-	INSTR("%s%s",
+	const bool a = op & 0x1;
+	const bool l = op >> 1 & 0x1;
+	INSTR("%s%s%s",
 		(instr->id == C166_CALLA_cc_caddr) ? "calla" : "jmpa",
-		a ? "-" : "+");
-	OPERANDS("%s, 0x%04x", conds_extended(d), addr);
+		a ? "-" : "+", l ? "" : "");
+	OPERANDS("%s, 0x%06x", conds_extended(d), addr);
 	return C166_BYTESIZE_4;
 }
 
@@ -766,7 +740,7 @@ static ut8 c166_instr_bitaddr_rel(C166_Inst *instr) {
 static ut8 c166_instr_reg_caddr(C166_Inst *instr) {
 	const ut8 reg = get_operand(instr, 1);
 	const ut16 caddr = rz_read_at_le16(&instr->d, 2);
-	OPERANDS("%s, 0x%04x",
+	OPERANDS(FMT15,
 		c166_fmt_reg(&instr->ext, SBUF_16, reg, false), caddr);
 	return C166_BYTESIZE_4;
 }
@@ -781,7 +755,7 @@ static ut8 c166_instr_rw_data16(C166_Inst *instr) {
 static ut8 c166_instr_rw_mem(C166_Inst *instr) {
 	const ut8 reg = get_operand(instr, 1);
 	const ut16 data = rz_read_at_le16(&instr->d, 2);
-	OPERANDS("r%i, %s", L_NIB(reg),
+	OPERANDS(FMT13, L_NIB(reg),
 		c166_fmt_mem(&instr->ext, SBUF_16, data));
 	return C166_BYTESIZE_4;
 }
@@ -794,8 +768,8 @@ static ut8 c166_instr_bitaddr_bitaddr(C166_Inst *instr) {
 	const ut8 q = H_NIB(qz);
 	const ut8 z = L_NIB(qz);
 	OPERANDS("%s.%i, %s.%i",
-		c166_fmt_bitoff(&instr->ext, SBUF_16, qq), q,
-		c166_fmt_bitoff(&instr->ext, SBUF_16, zz), z);
+		c166_fmt_bitoff(&instr->ext, SBUF_16, zz), z,
+		c166_fmt_bitoff(&instr->ext, SBUF_16, qq), q);
 	return C166_BYTESIZE_4;
 }
 
@@ -813,90 +787,115 @@ static ut8 c166_instr_bfld(C166_Inst *instr) {
 
 static ut8 c166_instr_call_rel(C166_Inst *instr) {
 	const ut8 rr = get_operand(instr, 1);
-	OPERANDS("0x%04x", instr->addr + C166_BYTESIZE_2 + (2 * ((st8)rr)));
+	OPERANDS(WORD_FMT, instr->addr + C166_BYTESIZE_2 + (2 * ((st8)rr)));
 	return C166_BYTESIZE_2;
 }
 
-/**
- * Modes ATOMIC #irang2 D1 :00##-0 2
- * Modes EXTR   #irang2 D1 :10##-0 2
- */
-static ut8 c166_instr_irang2(C166State *state, C166_Inst *instr) {
+static ut8 c166_instr_seg_or_pag_irang2(C166State *state, C166_Inst *instr) {
 	const ut8 op = get_operand(instr, 1);
 	const ut8 sub_op = (op >> 6) & 0b11;
 	const ut8 irang2 = ((op >> 4) & 0b0011) + 1;
 
-	if (sub_op == 0b00) {
-		INSTR("%s", "atomic");
-	} else if (sub_op == 0b10) {
+	// d    c    0    9
+	// 1101 1100 00 00 1001
+	// D    C   :00 ##-m
+	// D    7   :00 ##-0 ss 00
+	// ATOMIC #irang2	D1 :00##-0		2
+	// EXTR #irang2		D1 :10##-0		2
+
+	// EXTS #seg , #irang2	D7 :00##-0 ss 00	4
+	// EXTP #pag , #irang2	D7 :01##-0 pp 0:00pp	4
+	// EXTSR #seg , #irang2	D7 :10##-0 ss 00	4
+	// EXTPR #pag , #irang2	D7 :11##-0 pp 0:00pp	4
+
+	// EXTS Rwm , #irang2	DC :00##-m		2
+	// EXTP Rwm , #irang2	DC :01##-m		2
+	// EXTSR Rwm , #irang2	DC :10##-m		2
+	// EXTPR Rwm , #irang2	DC :11##-m		2
+
+	/**
+	 * Modes ATOMIC #irang2 D1 :00##-0 2
+	 * Modes EXTR   #irang2 D1 :10##-0 2
+	 */
+	if (instr->id == C166_ATOMIC_or_EXTR_irang2) { // D1
+		if (sub_op == 0b00) {
+			const C166ExtState ex = (C166ExtState){
+				.esfr = false,
+				.mode = C166_EXT_MODE_ATOMIC,
+				.value = 0,
+				.i = irang2
+			};
+			c166_activate_ext(state, instr->addr, ex);
+			INSTR("%s", "atomic");
+		} else if (sub_op == 0b10) {
+			const C166ExtState ex = (C166ExtState){
+				.esfr = true,
+				.mode = C166_EXT_MODE_NONE,
+				.value = 0,
+				.i = irang2
+			};
+			c166_activate_ext(state, instr->addr, ex);
+			INSTR("%s", "extr");
+		} else {
+			INSTR("%s", "invalid");
+			return C166_BYTESIZE_2;
+		}
+		OPERANDS("#%x", irang2);
+		return C166_BYTESIZE_2;
+	}
+	/**
+	 * Modes EXTS Rwm , #irang2	DC :00##-m		2
+	 * Modes EXTP Rwm , #irang2	DC :01##-m		2
+	 * Modes EXTSR Rwm , #irang2	DC :10##-m		2
+	 * Modes EXTPR Rwm , #irang2	DC :11##-m		2
+	 */
+	if (instr->id == C166_EXTP_or_EXTS_Rwm_irang2) { // DC
+		INSTR("%s", c166_extx_names[(op >> 6) & 0b11]);
+		const ut8 m = L_NIB(op);
 		const C166ExtState ex = (C166ExtState){
 			.esfr = true,
-			.mode = C166_EXT_MODE_NONE,
-			.value = (op & 3),
-			.i = 0
+			.mode = C166_EXT_MODE_REG,
+			.value = m,
+			.i = irang2
 		};
 		c166_activate_ext(state, instr->addr, ex);
-		INSTR("%s", "extr");
-	} else
-		INSTR("%s", "invalid");
-	OPERANDS("#%x", irang2);
-	return C166_BYTESIZE_2;
-}
-
-///< This modifies the ext state
-static ut8 c166_instr_rw_irang2(C166State *state, C166_Inst *instr) {
-	const ut8 op = get_operand(instr, 1);
-
-	INSTR("%s", c166_extx_names[(op >> 6) & 0b11]);
-	const ut8 m = L_NIB(op);
-	const ut8 irang2 = ((op >> 4) & 0b0011) + 1;
-	const C166ExtState ex = (C166ExtState){
-		.esfr = true,
-		.mode = C166_EXT_MODE_NONE,
-		.value = 0,
-		.i = irang2
-	};
-	c166_activate_ext(state, instr->addr, ex);
-	OPERANDS(FMT10, c166_rw[m], irang2);
-	return C166_BYTESIZE_2;
-}
-
-static ut8 c166_instr_seg_or_pag_irang2(C166State *state, C166_Inst *instr, ut16 data) {
-	const ut8 op = get_operand(instr, 1);
-	const ut8 sub_op = (op >> 6) & 0b11;
-
-	INSTR("%s", c166_extx_names[sub_op]);
-
-	bool seg = (sub_op == 0b00) || (sub_op == 0b10);
-
-	const ut8 irang2 = ((op >> 4) & 0b0011) + 1;
-	const bool esfr = (op >> 7) & 1;
-
-	C166ExtState new_state = {
-		.esfr = esfr,
-		.mode = seg ? C166_EXT_MODE_SEG : C166_EXT_MODE_PAGE,
-		.i = irang2,
-		.value = 0
-	};
-
-	if (seg) {
-		new_state.value = data & 0xFF;
-		OPERANDS("#0x%04x, #%i", data & 0xFF, irang2);
-	} else {
-		new_state.value = data & 0x3FF;
-		OPERANDS("#0x%04x, #%i", data & 0x3FF, irang2);
+		OPERANDS(FMT10, c166_rw[m], irang2);
+		return C166_BYTESIZE_2;
 	}
+	/**
+	 * Modes EXTS #seg , #irang2	D7 :00##-0 ss 00	4
+	 * Modes EXTP #pag , #irang2	D7 :01##-0 pp 0:00pp	4
+	 * Modes EXTSR #seg , #irang2	D7 :10##-0 ss 00	4
+	 * Modes EXTPR #pag , #irang2	D7 :11##-0 pp 0:00pp	4
+	 */
+	if (instr->id == C166_EXTP_or_EXTS_pag10_or_seg8_irang2) { //  0xD7
+		INSTR("%s", c166_extx_names[sub_op]);
 
-	c166_activate_ext(state, instr->addr, new_state);
-	return 4;
+		const bool seg = (sub_op == 0b00) || (sub_op == 0b10);
+
+		const ut16 data = rz_read_at_le16(&instr->d, 2);
+		const C166ExtState new_state = {
+			.esfr = seg ? false : true,
+			.mode = seg ? C166_EXT_MODE_SEG : C166_EXT_MODE_PAGE,
+			.i = irang2,
+			.value = data & (seg ? 0xFF : 0x3FF)
+		};
+		OPERANDS("#0x%04x, #%i", new_state.value, irang2);
+
+		c166_activate_ext(state, instr->addr, new_state);
+		return C166_BYTESIZE_4;
+	}
+	RZ_LOG_DEBUG("id: " BYTE_FMT ", addr: 0x%08" PFMT32x "\n", instr->id, instr->addr);
+	rz_warn_if_reached();
+	return C166_BYTESIZE_2;
 }
 
 static ut8 c166_trap_instr(C166_Inst *instr) {
-	ut8 trap7 = get_operand(instr, 1);
+	const ut8 trap7 = get_operand(instr, 1);
 	const ut16 addr = 4 * (trap7 & 0x7F);
 	INSTR("%s", "trap");
 	OPERANDS("#0x%04x", addr);
-	return 2;
+	return C166_BYTESIZE_2;
 }
 
 /**
@@ -906,7 +905,7 @@ static ut8 c166_trap_instr(C166_Inst *instr) {
  *
  * DSP Instruction Set
  */
-static const char *c166_instr_extended_name(C166_Inst *instr) {
+static const char *c166_instr_extended_name(const C166_Inst *instr) {
 	const ut8 opcode = instr->id;
 	const ut8 extID = get_operand(instr, 2);
 
@@ -1169,72 +1168,72 @@ static const char *c166_instr_extended_name(C166_Inst *instr) {
 			return "CoMUL-";
 		}
 	}
-	RZ_LOG_INFO("Unknown extID 0x%02x [0x%02x].\n", opcode, extID);
+	RZ_LOG_INFO("Unknown extID " BYTE_FMT " [" BYTE_FMT "].\n", opcode, extID);
 	return "invalid";
 }
 
-static const char *CoREG(ut8 bits) {
+static ut16 CoREG(const ut8 bits) {
 	switch (bits) {
 	case 0b00000: {
 		///< MAC-Unit Status Word
-		return "0xffde";
+		return 0xffde;
 	}
 	case 0b00001: {
 		///< MAC-Unit Accumulator High Word
-		return "0xfe5e";
+		return 0xfe5e;
 	}
 	case 0b00010: {
-		///< Limited MAC-Unit Accumulator High Word
-		return "MAS";
+		///< MAS - Limited MAC-Unit Accumulator High Word
+		return -1; ///< Not documented value
 	}
 	case 0b00100: {
 		///< MAC-Unit Accumulator Low Word
-		return "0xfe5c";
+		return 0xfe5c;
 	}
 	case 0b00101: {
 		///< MAC-Unit Control Word
-		return "0xffdc";
+		return 0xffdc;
 	}
 	case 0b00110: {
 		///< MAC-Unit Repeat Word
-		return "0xffda";
+		return 0xffda;
 	}
 	default:
-		RZ_LOG_INFO("Unknown bits: 0x%02x.\n", bits);
-		return NULL;
+		RZ_LOG_INFO("Unknown bits: " BYTE_FMT ".\n", bits);
+		return -1;
 	}
 }
 
-static const char *idx_formatter(char *buf, ut8 nm) {
-	const ut8 idx = (nm >> 7);
-	const ut16 addr = (idx ? IDX1 : IDX0);
+static const char *idx_formatter(char *buf, const ut8 nm) {
+	const ut8 idx = nm >> 7;
+	const ut16 addr = idx ? IDX1 : IDX0;
 	const ut8 idx_op = (nm >> 4) & 0x7;
 
 	const char *format = NULL;
 
 	switch (idx_op) {
 	case 0b010: { ///< IDX +2
-		format = "[0x%04x +2]";
+		format = "[0x%04x+]";
 		break;
 	}
 	case 0b011: { ///< IDX -2
-		format = "[0x%04x -2]";
+		format = "[0x%04x-]";
 		break;
 	}
 	case 0b100: { ///< IDX + QX0
-		format = "[0x%04x + QX0]";
+		format = "[0x%04x+QX0]";
 		break;
 	}
 	case 0b101: { ///< IDX - QX0
-		format = "[0x%04x - QX0]";
+		format = "[0x%04x-QX0]";
 		break;
 	}
 	case 0b110: { ///< IDX + QX1
-		format = "[0x%04x + QX1]";
+		format = "[0x%04x+QX1]";
 		break;
 	}
 	case 0b111: { ///< IDX - QX1
-		format = "[0x%04x - QX1]";
+		format = "[0x%04x-QX1]";
 		break;
 	}
 	case 0b000: ///< RESERVED
@@ -1247,32 +1246,32 @@ static const char *idx_formatter(char *buf, ut8 nm) {
 	return buf;
 }
 
-static const char *qqq_formatter(char *buf, ut8 op, ut8 n) {
-	ut8 q = op & 0x7;
+static const char *qqq_formatter(char *buf, const ut8 op, const ut8 n) {
+	const ut8 q = op & 0x7;
 	const char *format = NULL;
 	switch (q) {
 	case 0b010: { ///< Rw +2
-		format = "[r%i +2]";
+		format = "[r%i+]";
 		break;
 	}
 	case 0b011: { ///< Rw -2
-		format = "[r%i -2]";
+		format = "[r%i-]";
 		break;
 	}
 	case 0b100: { ///< Rw + QR0
-		format = "[r%i + QR0]";
+		format = "[r%i+QR0]";
 		break;
 	}
 	case 0b101: { ///< Rw - QR0
-		format = "[r%i - QR0]";
+		format = "[r%i-QR0]";
 		break;
 	}
 	case 0b110: { ///< Rw + QR1
-		format = "[r%i + QR1]";
+		format = "[r%i+QR1]";
 		break;
 	}
 	case 0b111: { ///< Rw - QR1
-		format = "[r%i - QR1]";
+		format = "[r%i-QR1]";
 		break;
 	}
 	case 0b000: ///< RESERVED
@@ -1285,8 +1284,8 @@ static const char *qqq_formatter(char *buf, ut8 op, ut8 n) {
 	return buf;
 }
 
-static const char *repeat_control(ut8 opt) {
-	ut8 rrr = opt >> 5;
+static const char *repeat_control(const ut8 opt) {
+	const ut8 rrr = opt >> 5;
 	switch (rrr) {
 	case 0b010: { // 0x40
 		return "- USR0 "; ///< ‘- USR0 CoXXX’ instruction, decrements repeat counter.
@@ -1312,7 +1311,7 @@ static ut8 c166_instr_extended(C166_Inst *instr) {
 
 	///< qqq : 3-bit addressing mode specifier for CoXXX instructions
 	///< ut8 rrr = opt2 >> 5;
-	const char *rrr = repeat_control(opt2);
+	const char *rpctl = repeat_control(opt2);
 	const ut8 opcode = instr->id;
 
 	const char *instruction_name = c166_instr_extended_name(instr);
@@ -1320,12 +1319,12 @@ static ut8 c166_instr_extended(C166_Inst *instr) {
 		goto err;
 	}
 
-	INSTR("%s%s", rrr ? rrr : "", instruction_name); ///< `- USRx` repeat control label
+	INSTR("%s%s", rpctl ? rpctl : "", instruction_name); ///< `- USRx` repeat control label
 
 	if (opcode == 0xD3) {
 		///< CoMOV [IDXi*], [Rwm*]
 		///< D3 Xm 00 rrr0:0qqq
-		OPERANDS("%s, %s",
+		OPERANDS(FMT9,
 			idx_formatter(SBUF_16, nm), // or maybe extID
 			qqq_formatter(SBUF_16, opt2, m));
 		goto end;
@@ -1335,7 +1334,7 @@ static ut8 c166_instr_extended(C166_Inst *instr) {
 		///< CoSTORE [Rwn*], CoReg
 		///< B3 nn wwww:w000 rrr0:0qqq
 		const ut8 wwwww = (extID >> 3);
-		OPERANDS("[r%i], %s", n, CoREG(wwwww));
+		OPERANDS(FMT15, qqq_formatter(SBUF_16, opt2, n), CoREG(wwwww));
 		goto end;
 	}
 
@@ -1343,17 +1342,17 @@ static ut8 c166_instr_extended(C166_Inst *instr) {
 		///< CoSTORE Rwn, CoReg
 		///< C3 nn wwww:w000 rrr0:0000
 		const ut8 wwwww = (extID >> 3);
-		OPERANDS("r%i, %s", n, CoREG(wwwww)); // CoSTORE RWn, CoReg
+		OPERANDS("r%i, 0x%04x", n, CoREG(wwwww)); // CoSTORE RWn, CoReg
 		goto end;
 	}
 
 	if ((opcode == 0x83) && (extID == 0xAA)) {
-		OPERANDS("[r%i]", m); // CoASHR [RWm*]
+		OPERANDS("%s", qqq_formatter(SBUF_16, opt2, m)); // CoASHR [RWm*]
 		goto end;
 	} else if ((opcode == 0x83) && (extID == 0xBA)) {
 		///< CoASHR [Rwm*], rnd
 		///< 83 mm BA rrr0:0qqq
-		OPERANDS("[r%i], rnd", m); // CoASHR [RWm*], rnd
+		OPERANDS("%s, rnd", qqq_formatter(SBUF_16, opt2, m)); // CoASHR [RWm*], rnd
 		goto end;
 	} else if ((opcode == 0xA3) && (extID == 0xAA)) {
 		OPERANDS("r%i", n); // CoASHR RWn
@@ -1388,62 +1387,69 @@ static ut8 c166_instr_extended(C166_Inst *instr) {
 	} else if ((opcode == 0xA3) && (extID == 0x32)) {
 		goto end;
 	} else if ((opcode == 0x83) && (extID == 0x8A)) {
-		OPERANDS("[r%i]", m); // ????? CoSHL [RWm*]
+		OPERANDS("%s", qqq_formatter(SBUF_16, opt2, m)); // ????? CoSHL [RWm*]
 		goto end;
 	} else if ((opcode == 0xA3) && (extID == 0x8A)) {
 		OPERANDS("r%i", n);
 		goto end;
 	} else if ((opcode == 0x83) && (extID == 0x9A)) {
-		OPERANDS("[r%i]", m); // ????? CoSHR [RWm*]
+		OPERANDS("%s", qqq_formatter(SBUF_16, opt2, m)); // ????? CoSHR [RWm*]
 		goto end;
 	} else if ((opcode == 0xA3) && (extID == 0x9A)) {
 		OPERANDS("r%i", n); // CoSHR RWn
 		goto end;
 	} else if ((opcode == 0x93) && (L_NIB(extID) == 0x00)) {
 		// CoXXX_oIDXi_oRWm();
-		OPERANDS("%s, [r%i]",
-			idx_formatter(SBUF_16, nm), m); // CoXXX [IDXi*], [RWm*]
+		OPERANDS(FMT9,
+			idx_formatter(SBUF_16, nm),
+			qqq_formatter(SBUF_16, opt2, m)); // CoXXX [IDXi*], [RWm*]
 		goto end;
 	} else if ((opcode == 0x93) && (L_NIB(extID) == 0x02)) {
 		// CoXXX_RWn_oRWm();
-		OPERANDS("%s, [r%i]",
-			idx_formatter(SBUF_16, nm), m); // CoXXX [IDXi*], [RWm*]
+		OPERANDS(FMT9,
+			idx_formatter(SBUF_16, nm),
+			qqq_formatter(SBUF_16, opt2, m)); // CoXXX [IDXi*], [RWm*]
 		goto end;
 	} else if ((opcode == 0x93) && (L_NIB(extID) == 0x0A)) {
 		// CoXXX_RWn_oRWm();
-		OPERANDS("%s, [r%i]",
-			idx_formatter(SBUF_16, nm), m); // CoXXX [IDXi*], [RWm*]
+		OPERANDS(FMT9,
+			idx_formatter(SBUF_16, nm),
+			qqq_formatter(SBUF_16, opt2, m)); // CoXXX [IDXi*], [RWm*]
 		goto end;
 	} else if ((opcode == 0x93) && (L_NIB(extID) == 0x08)) {
 		// CoXXX_RWn_oRWm();
-		OPERANDS("%s, [r%i]",
-			idx_formatter(SBUF_16, nm), m); // CoXXX [IDXi*], [RWm*]
+		OPERANDS(FMT9,
+			idx_formatter(SBUF_16, nm),
+			qqq_formatter(SBUF_16, opt2, m)); // CoXXX [IDXi*], [RWm*]
 		goto end;
 	} else if ((opcode == 0x93) && (L_NIB(extID) == 0x09)) {
 		// CoXXX_RWn_oRWm();
-		OPERANDS("%s, [r%i], rnd",
-			idx_formatter(SBUF_16, nm), m); // CoXXX [IDXi*], [RWm*], rnd
+		OPERANDS(FMT14,
+			idx_formatter(SBUF_16, nm),
+			qqq_formatter(SBUF_16, opt2, m)); // CoXXX [IDXi*], [RWm*], rnd
 		goto end;
 	} else if ((opcode == 0x93) && (L_NIB(extID) == 0x01)) {
 		// CoXXX_RWn_oRWm();
-		OPERANDS("%s, [r%i], rnd",
-			idx_formatter(SBUF_16, nm), m); // CoXXX [IDXi*], [RWm*], rnd
+		OPERANDS(FMT14,
+			idx_formatter(SBUF_16, nm),
+			qqq_formatter(SBUF_16, opt2, m)); // CoXXX [IDXi*], [RWm*], rnd
 		goto end;
 	} else if ((opcode == 0x83) && (L_NIB(extID) == 0x00)) {
 		// CoXXX_RWn_oRWm();
-		OPERANDS("r%i, [r%i]", n, m); // CoXXX RWn, [RWm*]
+		OPERANDS(FMT13, n, qqq_formatter(SBUF_16, opt2, m)); // CoXXX RWn, [RWm*]
 		goto end;
 	} else if ((opcode == 0x83) && (L_NIB(extID) == 0x02)) {
 		// CoXXX_RWn_oRWm();
-		OPERANDS("r%i, [r%i]", n, m); // CoXXX RWn, [RWm*]
+		OPERANDS(FMT13, n, qqq_formatter(SBUF_16, opt2, m)); // CoXXX RWn, [RWm*]
 		goto end;
 	} else if ((opcode == 0x83) && (L_NIB(extID) == 0x0A)) {
 		// CoXXX_RWn_oRWm();
-		OPERANDS("r%i, [r%i]", n, m); // CoXXX RWn, [RWm*]
+		OPERANDS(FMT13, n, qqq_formatter(SBUF_16, opt2, m)); // CoXXX RWn, [RWm*]
 		goto end;
 	} else if ((opcode == 0x83) && (L_NIB(extID) == 0x01)) {
 		// CoMULu_RWn_oRWm_rnd();
-		OPERANDS("r%i, [r%i], rnd", n, m); // CoXXX RWn, [RWm*], rnd
+		OPERANDS(FMT12, n,
+			qqq_formatter(SBUF_16, opt2, m)); // CoXXX RWn, [RWm*], rnd
 		goto end;
 	} else if (opcode == 0x83) {
 		// CoMULu_RWn_oRWm();
@@ -1451,35 +1457,37 @@ static ut8 c166_instr_extended(C166_Inst *instr) {
 			(extID == 0x48) ||
 			(extID == 0x88) ||
 			(extID == 0xC8)) {
-			OPERANDS("r%i, [r%i]", n, m); // CoXXX RWn, [RWm*]
+			OPERANDS(FMT13, n,
+				qqq_formatter(SBUF_16, opt2, m)); // CoXXX RWn, [RWm*]
 			goto end;
 		}
 	} else if ((opcode == 0xA3) && (L_NIB(extID) == 0x01)) {
 		// CoXXX_RWn_RWm_rnd();
-		OPERANDS("r%i, r%i, rnd", n, m); // CoXXX RWn, [RWm*], rnd
+		OPERANDS(FMT12, n,
+			qqq_formatter(SBUF_16, opt2, m)); // CoXXX RWn, [RWm*], rnd
 		goto end;
 	} else if ((opcode == 0xA3) && (L_NIB(extID) == 0x00)) {
 		// CoXXX_RWn_RWm();
-		OPERANDS("r%i, r%i", n, m); // CoXXX RWn, RWm
+		OPERANDS(FMT11, n, m); // CoXXX RWn, RWm
 		goto end;
 	} else if ((opcode == 0xA3) && (L_NIB(extID) == 0x02)) {
 		// CoXXX_RWn_RWm();
-		OPERANDS("r%i, r%i", n, m); // CoXXX RWn, RWm
+		OPERANDS(FMT11, n, m); // CoXXX RWn, RWm
 		goto end;
 	} else if ((opcode == 0xA3) && (L_NIB(extID) == 0x0A)) {
 		// CoXXX_RWn_RWm();
-		OPERANDS("r%i, r%i", n, m); // CoXXX RWn, RWm
+		OPERANDS(FMT11, n, m); // CoXXX RWn, RWm
 		goto end;
 	} else if (opcode == 0xA3) {
 		// CoXXX_RWn_RWm();
 		if ((extID == 0x08) || (extID == 0x48) ||
 			(extID == 0x88) || (extID == 0xC8)) {
-			OPERANDS("r%i, r%i", n, m); // CoXXX RWn, RWm
+			OPERANDS(FMT11, n, m); // CoXXX RWn, RWm
 			goto end;
 		}
 	}
 err:
-	INSTR(".word 0x%02x%02x .word 0x%02x%02x", instr->id, nm, extID, opt2);
+	INSTR(FMT_2WORD, instr->id, nm, extID, opt2);
 	memset(&instr->operands, 0, C166_INSTR_MAXLEN);
 end:
 	return C166_BYTESIZE_4;
@@ -1496,8 +1504,9 @@ end:
  */
 RZ_IPI st32 c166_decode_command(RZ_NONNULL C166State *state, RZ_NONNULL C166_Inst *instr, RZ_NONNULL const ut8 *bytes, st32 len) {
 	rz_return_val_if_fail(state && instr && bytes, -1);
-	if (len < 2)
+	if (len < 2) {
 		return -1;
+	}
 
 	RzBuffer *b = rz_buf_new_with_pointers(bytes, len, false);
 	if (!b) {
@@ -1507,10 +1516,10 @@ RZ_IPI st32 c166_decode_command(RZ_NONNULL C166State *state, RZ_NONNULL C166_Ins
 	if (!rz_buf_read(b, (ut8 *)&instr->d, RZ_MIN(8, len))) {
 		goto err;
 	}
+
 	const ut8 opcode = rz_read_le8(&instr->d);
 	instr->id = opcode;
 	instr->ext = state->ext; // Copy state
-	c166_maybe_deactivate_ext(state, instr->addr);
 
 	switch (opcode) {
 	case C166_ADD_Rwn_Rwm:
@@ -1680,47 +1689,52 @@ RZ_IPI st32 c166_decode_command(RZ_NONNULL C166State *state, RZ_NONNULL C166_Ins
 		instr->byte_size = c166_instr_mov_nm(instr);
 		break;
 	case C166_ATOMIC_or_EXTR_irang2:
-		instr->byte_size = c166_instr_irang2(state, instr);
-		goto ok;
 	case C166_EXTP_or_EXTS_Rwm_irang2:
-		instr->byte_size = c166_instr_rw_irang2(state, instr);
+	case C166_EXTP_or_EXTS_pag10_or_seg8_irang2: {
+		instr->byte_size = c166_instr_seg_or_pag_irang2(
+			state, instr);
 		goto ok;
+	}
 	case C166_TRAP_trap7:
 		instr->byte_size = c166_trap_instr(instr);
 		goto ok;
-	case C166_ADD_reg_mem:
-	case C166_ADDC_reg_mem:
-	case C166_SUB_reg_mem:
 	case C166_SUBC_reg_mem:
 	case C166_AND_reg_mem:
 	case C166_OR_reg_mem:
-	case C166_XOR_reg_mem:
-	case C166_CMP_reg_mem:
 	case C166_MOV_reg_mem:
 	case C166_SCXT_reg_mem:
 		instr->byte_size = c166_instr_reg_mem(instr, false);
 		break;
-	case C166_ADDB_reg_mem:
+	case C166_SUB_reg_mem:
+	case C166_ADD_reg_mem:
+	case C166_ADDC_reg_mem:
+	case C166_XOR_reg_mem:
+	case C166_CMP_reg_mem:
+		instr->byte_size = c166_instr_reg_mem(instr, false);
+		break;
 	case C166_ADDCB_reg_mem:
 	case C166_SUBB_reg_mem:
 	case C166_SUBCB_reg_mem:
-	case C166_ANDB_reg_mem:
 	case C166_ORB_reg_mem:
 	case C166_XORB_reg_mem:
 	case C166_CMPB_reg_mem:
 	case C166_MOVB_reg_mem:
 	case C166_MOVBS_reg_mem:
 	case C166_MOVBZ_reg_mem:
+	case C166_ADDB_reg_mem:
+	case C166_ANDB_reg_mem:
 		instr->byte_size = c166_instr_reg_mem(instr, true);
 		break;
 	case C166_ADD_mem_reg:
-	case C166_ADDC_mem_reg:
 	case C166_SUB_mem_reg:
 	case C166_SUBC_mem_reg:
-	case C166_AND_mem_reg:
 	case C166_OR_mem_reg:
-	case C166_XOR_mem_reg:
 	case C166_MOV_mem_reg:
+		instr->byte_size = c166_instr_mem_reg(instr, false);
+		break;
+	case C166_AND_mem_reg:
+	case C166_ADDC_mem_reg:
+	case C166_XOR_mem_reg:
 		instr->byte_size = c166_instr_mem_reg(instr, false);
 		break;
 	case C166_ADDB_mem_reg:
@@ -1745,7 +1759,7 @@ RZ_IPI st32 c166_decode_command(RZ_NONNULL C166State *state, RZ_NONNULL C166_Ins
 	case C166_CMP_reg_data16:
 	case C166_MOV_reg_data16:
 	case C166_SCXT_reg_data16:
-		instr->byte_size = c166_instr_reg_data16(instr, false);
+		instr->byte_size = c166_instr_reg_data16(instr);
 		break;
 	case C166_CMPD1_Rwn_data16:
 	case C166_CMPD2_Rwn_data16:
@@ -1768,7 +1782,7 @@ RZ_IPI st32 c166_decode_command(RZ_NONNULL C166State *state, RZ_NONNULL C166_Ins
 	case C166_XORB_reg_data8:
 	case C166_CMPB_reg_data8:
 	case C166_MOVB_reg_data8:
-		instr->byte_size = c166_instr_reg_data8(instr, true);
+		instr->byte_size = c166_instr_reg_data8(instr);
 		break;
 	case C166_CALLS_seg_caddr:
 	case C166_JMPS_seg_caddr:
@@ -1811,10 +1825,6 @@ RZ_IPI st32 c166_decode_command(RZ_NONNULL C166State *state, RZ_NONNULL C166_Ins
 	case C166_BFLDL_bitoff_x:
 		instr->byte_size = c166_instr_bfld(instr);
 		break;
-	case C166_EXTP_or_EXTS_pag10_or_seg8_irang2: {
-		instr->byte_size = c166_instr_seg_or_pag_irang2(state, instr, rz_read_at_le16(bytes, 2));
-		goto ok;
-	}
 	case C166_SBRK:
 	case C166_NOP:
 	case C166_RET:
@@ -1822,13 +1832,13 @@ RZ_IPI st32 c166_decode_command(RZ_NONNULL C166State *state, RZ_NONNULL C166_Ins
 	case C166_RETI:
 		instr->byte_size = C166_BYTESIZE_2;
 		break;
-	case C166_SRST: // B7 48 B7 B7
-	case C166_IDLE: // 87 78 87 87
-	case C166_PWRDN: // 97 68 97 97
-	case C166_SRVWDT: // A7 58 A7 A7
-	case C166_DISWDT: // A5 5A A5 A5
-	case C166_EINIT: // B5 4A B5 B5
-	case C166_ENWDT: // 85 7A 85 85
+	case C166_SRST: ///< B7 48 B7 B7
+	case C166_IDLE: ///< 87 78 87 87
+	case C166_PWRDN: ///< 97 68 97 97
+	case C166_SRVWDT: ///< A7 58 A7 A7
+	case C166_DISWDT: ///< A5 5A A5 A5
+	case C166_EINIT: ///< B5 4A B5 B5
+	case C166_ENWDT: ///< 85 7A 85 85
 		instr->byte_size = C166_BYTESIZE_4;
 		break;
 	case C166_CoMOV:
@@ -1840,8 +1850,20 @@ RZ_IPI st32 c166_decode_command(RZ_NONNULL C166State *state, RZ_NONNULL C166_Ins
 		instr->byte_size = c166_instr_extended(instr);
 		goto ok;
 	// case 0x3b:
-	// case 0x44:
-	// case 0x45:
+	case C166_STALLAM_44: {
+		INSTR("stallam");
+		const ut8 op1 = get_operand(instr, 1);
+		OPERANDS(BYTE_FMT, op1);
+		instr->byte_size = C166_BYTESIZE_2;
+		goto ok;
+	}
+	case C166_STALLEW_45: {
+		INSTR("stallew");
+		const ut8 op1 = get_operand(instr, 1);
+		OPERANDS(BYTE_FMT, op1);
+		instr->byte_size = C166_BYTESIZE_2;
+		goto ok;
+	}
 	// case 0x8B:
 	// case 0x95:
 	// case 0xC1:
@@ -1857,8 +1879,9 @@ RZ_IPI st32 c166_decode_command(RZ_NONNULL C166State *state, RZ_NONNULL C166_Ins
 		goto ok;
 	}
 	PRINT_INSTR;
-	if (instr->byte_size > len)
+	if (instr->byte_size > len) {
 		INSTR("invalid");
+	}
 
 ok:
 	rz_buf_free(b);
