@@ -1783,7 +1783,7 @@ RzList /*<RzDebugPid *>*/ *gdbr_pids_list(libgdbr_t *g, int pid) {
 			// Avoid adding the same pid twice(could show more than once if it has threads)
 			rz_list_foreach (list, iter, dpid) {
 				if (tpid == dpid->pid) {
-					goto next;
+					continue;
 				}
 			}
 			if (!(dpid = RZ_NEW0(RzDebugPid)) || !(dpid->path = strdup(exec_file))) {
@@ -1808,9 +1808,6 @@ RzList /*<RzDebugPid *>*/ *gdbr_pids_list(libgdbr_t *g, int pid) {
 		if (g->data[0] == 'l') {
 			break;
 		}
-
-	next:
-		continue;
 	}
 
 	ret = 0;
