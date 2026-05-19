@@ -246,6 +246,28 @@ RZ_API void *rz_vector_assign_at(RZ_BORROW RzVector *vec, size_t index, RZ_NULLA
 	return p;
 }
 
+/**
+ * \brief Removes the element at the given index.
+ * This function will not keep the order of the elements.
+ * Due to this, it won't use memmove and has much better
+ * performance than rz_vector_remove_at().
+ *
+ * \param vec The vector to remove the element from.
+ * \param index The index of the element to remove.
+ * \param into Optional pointer to copy the removed element into.
+ */
+RZ_API void rz_vector_remove_at_unsorted(RZ_BORROW RzVector *vec, size_t index, RZ_OUT RZ_NULLABLE void *into) {
+	rz_return_if_fail(vec);
+	if (rz_vector_empty(vec)) {
+		return;
+	}
+	size_t l = rz_vector_len(vec) - 1;
+	if (index < l) {
+		rz_vector_swap(vec, index, l);
+	}
+	rz_vector_pop(vec, into);
+}
+
 RZ_API void rz_vector_remove_at(RzVector *vec, size_t index, void *into) {
 	if (rz_vector_empty(vec)) {
 		return;
@@ -740,6 +762,24 @@ RZ_API void *rz_pvector_assign_at(RZ_BORROW RZ_NONNULL RzPVector *vec, size_t in
 	void *prev = !p || increased_len ? NULL : *p;
 	rz_vector_assign_at(&vec->v, index, &ptr);
 	return prev;
+}
+
+/**
+ * \brief Removes the element at the given index.
+ * This function will not keep the order of the elements.
+ * Due to this, it won't use memmove and has much better
+ * performance than rz_pvector_remove_at().
+ *
+ * \param vec The vector to remove the element from.
+ * \param index The index of the element to remove.
+ *
+ * \return The removed pointer. Or NULL in case of failure.
+ */
+RZ_API void *rz_pvector_remove_at_unsorted(RZ_BORROW RzPVector *vec, size_t index) {
+	rz_return_val_if_fail(vec, NULL);
+	void *r = rz_pvector_at(vec, index);
+	rz_vector_remove_at_unsorted(&vec->v, index, NULL);
+	return r;
 }
 
 RZ_API void *rz_pvector_remove_at(RzPVector *vec, size_t index) {
