@@ -16,6 +16,9 @@
 
 #define GET_STRING_BUFFER_SIZE 32
 
+static ut8 Oxff_global = 0xff;
+static bool Oxff_global_enabled = true;
+
 static void buf_whole_buf_free(RzBuffer *b) {
 	// free the whole_buf only if it was initially allocated by the buf types
 	if (b->methods->get_whole_buf) {
@@ -1244,9 +1247,9 @@ RZ_API st64 rz_buf_read(RZ_NONNULL RzBuffer *b, RZ_NONNULL ut8 RZ_OUT *buf, ut64
 	if (result < 0) {
 		return -1;
 	}
-
-	if (len > result && b->Oxff_priv_override) {
-		memset(buf + result, b->Oxff_priv, len - result);
+	
+	if (len > result && (b->Oxff_priv_override || Oxff_global_enabled)) {
+		memset(buf + result, b->Oxff_priv_override ? b->Oxff_priv : Oxff_global, len - result);
 	}
 
 	return result;
