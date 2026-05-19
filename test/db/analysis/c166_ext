@@ -1,0 +1,195 @@
+NAME=c166: testing vectors offsets 1
+#FILE=malloc://40
+FILE=hex://fac0da060000fffffac00605fac01405fac01605fac01805fac01a05fac01c05fac01e05fac02005fac02205fac02405
+CMDS=<<EOF
+e asm.bytes=true
+iH
+pd 10
+echo
+obl
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+cpu: "c166-generic"
+c166-bininfo:
+  isr_count: 11
+  base_addr: 0xc00000
+
+            ;-- entry0:
+            ;-- section.code:
+            ;-- isr.RESET:
+        ,=< 0x00c00000      fac0da06       jmps  0xc006da              ; [00] -r-x section size 48 named code
+        |   0x00c00004      0000           add   r0, r0
+        |   0x00c00006      ffff           bset  r15.15
+        |   ;-- isr.NMI_trap:
+       ,==< 0x00c00008      fac00605       jmps  0xc00506
+       ||   ;-- isr.user_03:
+      ,===< 0x00c0000c      fac01405       jmps  0xc00514
+      |||   ;-- isr.STKOF_trap:
+     ,====< 0x00c00010      fac01605       jmps  0xc00516
+     ||||   ;-- isr.user_05:
+    ,=====< 0x00c00014      fac01805       jmps  0xc00518
+    |||||   ;-- isr.STKUF_trap:
+   ,======< 0x00c00018      fac01a05       jmps  0xc0051a
+   ||||||   ;-- isr.user_07:
+  ,=======< 0x00c0001c      fac01c05       jmps  0xc0051c
+  |||||||   ;-- isr.user_08:
+  ========< 0x00c00020      fac01e05       jmps  0xc0051e
+
+0 3 c166-16 ba:0x00c00000 sz:48 hex://fac0da060000fffffac00605fac01405fac01605fac01805fac01a05fac01c05fac01e05fac02005fac02205fac02405
+arch     c166
+bits     16
+EOF
+RUN
+
+NAME=c166: testing vectors offsets 2
+FILE=hex://fa000002fa000400fa00540afa000c00fa006a0afa001400fa00760afa001c00fa002000fa002400
+CMDS=<<EOF
+e asm.bytes=true
+iH
+pd 10
+echo
+obl
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+cpu: "c166-generic"
+c166-bininfo:
+  isr_count: 10
+  base_addr: 0x0
+
+            ;-- entry0:
+            ;-- section.code:
+            ;-- isr.RESET:
+        ,=< 0x00000000      fa000002       jmps  0x000200              ; 0x200 ; 512 ; [00] -r-x section size 40 named code
+       @|   ;-- isr.user_01:
+       @=-> 0x00000004      fa000400       jmps  sym.isr.user_01       ; 0x4
+        |   ;-- isr.NMI_trap:
+       ,==< 0x00000008      fa00540a       jmps  0x000a54              ; 0xa54 ; 2644
+      @||   ;-- isr.user_03:
+      @==-> 0x0000000c      fa000c00       jmps  sym.isr.user_03       ; 0xc
+       ||   ;-- isr.STKOF_trap:
+      ,===< 0x00000010      fa006a0a       jmps  0x000a6a              ; 0xa6a ; 2666
+     @|||   ;-- isr.user_05:
+     @===-> 0x00000014      fa001400       jmps  sym.isr.user_05       ; 0x14
+      |||   ;-- isr.STKUF_trap:
+     ,====< 0x00000018      fa00760a       jmps  0x000a76              ; 0xa76 ; 2678
+    @||||   ;-- isr.user_07:
+    @====-> 0x0000001c      fa001c00       jmps  sym.isr.user_07       ; 0x1c
+    @||||   ;-- isr.user_08:
+    @====-> 0x00000020      fa002000       jmps  sym.isr.user_08       ; 0x20
+    @||||   ;-- isr.user_09:
+    @====-> 0x00000024      fa002400       jmps  sym.isr.user_09       ; 0x24
+
+0 3 c166-16 ba:0x00000000 sz:40 hex://fa000002fa000400fa00540afa000c00fa006a0afa001400fa00760afa001c00fa002000fa002400
+arch     c166
+bits     16
+EOF
+RUN
+
+NAME=c166: testing vectors offsets 3
+FILE=hex://fac0da060000fffffac00605fac01405fac01605fac01805fac01a05fac01c05fac01e05fac02005fac02205fac02405
+CMDS=<<EOF
+e asm.bytes=true
+iH
+pd 13
+echo
+obl
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+cpu: "c166-generic"
+c166-bininfo:
+  isr_count: 11
+  base_addr: 0xc00000
+
+            ;-- entry0:
+            ;-- section.code:
+            ;-- isr.RESET:
+        ,=< 0x00c00000      fac0da06       jmps  0xc006da              ; [00] -r-x section size 48 named code
+        |   0x00c00004      0000           add   r0, r0
+        |   0x00c00006      ffff           bset  r15.15
+        |   ;-- isr.NMI_trap:
+       ,==< 0x00c00008      fac00605       jmps  0xc00506
+       ||   ;-- isr.user_03:
+      ,===< 0x00c0000c      fac01405       jmps  0xc00514
+      |||   ;-- isr.STKOF_trap:
+     ,====< 0x00c00010      fac01605       jmps  0xc00516
+     ||||   ;-- isr.user_05:
+    ,=====< 0x00c00014      fac01805       jmps  0xc00518
+    |||||   ;-- isr.STKUF_trap:
+   ,======< 0x00c00018      fac01a05       jmps  0xc0051a
+   ||||||   ;-- isr.user_07:
+  ,=======< 0x00c0001c      fac01c05       jmps  0xc0051c
+  |||||||   ;-- isr.user_08:
+  ========< 0x00c00020      fac01e05       jmps  0xc0051e
+  |||||||   ;-- isr.user_09:
+  ========< 0x00c00024      fac02005       jmps  0xc00520
+  |||||||   ;-- isr.Class_B_trap:
+  ========< 0x00c00028      fac02205       jmps  0xc00522
+  |||||||   ;-- isr.reserved_0B:
+  ========< 0x00c0002c      fac02405       jmps  0xc00524
+
+0 3 c166-16 ba:0x00c00000 sz:48 hex://fac0da060000fffffac00605fac01405fac01605fac01805fac01a05fac01c05fac01e05fac02005fac02205fac02405
+arch     c166
+bits     16
+EOF
+RUN
+
+NAME=c166: testing vectors offsets 4
+FILE=hex://fac084000000fffffac07400fffffffffac07600fffffffffac078009ab7fe70
+CMDS=<<EOF
+e asm.bytes=true
+iH
+pd 11
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+cpu: "c166-generic"
+c166-bininfo:
+  isr_count: 4
+  base_addr: 0xc00000
+
+            ;-- entry0:
+            ;-- section.code:
+            ;-- isr.RESET:
+        ,=< 0x00c00000      fac08400       jmps  0xc00084              ; [00] -r-x section size 32 named code
+        |   0x00c00004      0000           add   r0, r0
+        |   0x00c00006      ffff           bset  r15.15
+        |   ;-- isr.NMI_trap:
+       ,==< 0x00c00008      fac07400       jmps  0xc00074
+       ||   0x00c0000c      ffff           bset  r15.15
+       ||   0x00c0000e      ffff           bset  r15.15
+       ||   ;-- isr.STKOF_trap:
+      ,===< 0x00c00010      fac07600       jmps  0xc00076
+      |||   0x00c00014      ffff           bset  r15.15
+      |||   0x00c00016      ffff           bset  r15.15
+      |||   ;-- isr.STKUF_trap:
+     ,====< 0x00c00018      fac07800       jmps  0xc00078
+    @====-> 0x00c0001c      9ab7fe70       jnb   S0RIC.7, 0xc0001c
+arch     c166
+bits     16
+EOF
+RUN
+
+NAME=c166: coverage
+FILE=hex://fac0
+CMDS=<<EOF
+e asm.bytes=true
+e asm.arch=c166
+iH
+pd 3
+obl
+EOF
+EXPECT=<<EOF
+        ,=< 0x00000000      fac0ffff       jmps  0xc0ffff
+        |   0x00000004      ffff           bset  r15.15
+        |   0x00000006      ffff           bset  r15.15
+EOF
+REGEXP_FILTER_ERR=<<EOF
+ERROR:.+
+EOF
+EXPECT_ERR=<<EOF
+ERROR: No binary object currently selected.
+EOF
+RUN
