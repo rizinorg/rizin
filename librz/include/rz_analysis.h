@@ -1416,6 +1416,7 @@ RZ_API void rz_analysis_set_lines_width(RZ_NONNULL RzAnalysis *analysis, int lin
 RZ_API int rz_analysis_get_lines_width(RZ_NONNULL RzAnalysis *analysis);
 RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits);
 RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu);
+RZ_API RZ_NULLABLE const char *rz_analysis_get_cpu(RZ_NONNULL const RzAnalysis *analysis);
 RZ_API bool rz_analysis_is_cpu(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *cpu);
 RZ_API int rz_analysis_set_big_endian(RzAnalysis *analysis, int boolean);
 RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, ut32 size, const ut8 *data, ut64 at);

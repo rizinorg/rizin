@@ -5,7 +5,7 @@
 #ifndef RZ_H8300_DISAS_H
 #define RZ_H8300_DISAS_H
 
-#include "analysis_private.h"
+#include <rz_analysis.h>
 
 enum h8300_4bit_opcodes {
 	H8300_MOV_4BIT_2 = 0x2,

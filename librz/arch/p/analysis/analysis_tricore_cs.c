@@ -263,7 +263,7 @@ static int tricore_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *dat
 	}
 
 	RzAsmTriCoreContext *ctx = a->plugin_data;
-	if (!tricore_setup_cs_handle(ctx, a->cpu, NULL)) {
+	if (!tricore_setup_cs_handle(ctx, rz_analysis_get_cpu(a), NULL)) {
 		return -1;
 	}
 

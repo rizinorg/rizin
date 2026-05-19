@@ -188,7 +188,7 @@ static int m68k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 	cs_m68k *m68k;
 	cs_detail *detail;
 
-	cs_mode mode = rz_m68k_cs_mode(a->cpu);
+	cs_mode mode = rz_m68k_cs_mode(rz_analysis_get_cpu(a));
 
 	if (mode != ctx->omode || a->bits != ctx->obits) {
 		cs_close(&ctx->handle);
