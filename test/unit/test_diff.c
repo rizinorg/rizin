@@ -151,8 +151,6 @@ bool test_rz_diff_unified_lines(void) {
 	result = rz_diff_unified_text(diff, NULL, NULL, false, false);
 	rz_diff_free(diff);
 	mu_assert_notnull(result, "rz_diff_unified result not null");
-	printf("\n\n%s\n\n", expected);
-
 	mu_assert_streq(result, expected, "rz_diff_unified on lines");
 	free(result);
 
@@ -222,32 +220,62 @@ bool test_rz_diff_unified_bytes(void) {
 			"to this document.";
 
 	const char *expected = ""
-		"--- /original\n"
-		"+++ /modified\n"
-		"@@ -1,3 +1,99 @@\n"
-		"+5468697320697320616e20696d706f7274616e740a6e6f746963652120497420\n"
-		"+73686f756c640a7468657265666f7265206265206c6f63617465642061740a74\n"
-		"+686520626567696e6e696e67206f6620746869730a646f63756d656e74210a0a\n"
-		" 546869\n"
-		"@@ -190,93 +286,6 @@\n"
-		" 2e0a0a\n"
-		"-546869732070617261677261706820636f6e7461696e730a7465787420746861\n"
-		"-74206973206f757464617465642e0a49742077696c6c2062652064656c657465\n"
-		"-6420696e207468650a6e656172206675747572652e0a0a\n"
-		" 497420\n"
-		"@@ -315,7 +324,7 @@\n"
-		" 20646f\n"
-		"-6b\n"
-		"+63\n"
-		" 756d65\n"
-		"@@ -476,3 +485,70 @@\n"
-		" 69742e\n"
-		"+0a0a546869732070617261677261706820636f6e7461696e730a696d706f7274\n"
-		"+616e74206e6577206164646974696f6e730a746f207468697320646f63756d65\n"
-		"+6e742e\n";
+			"--- /original\n"
+			"+++ /modified\n"
+			"@@ --2,287 +-2,296 @@\n"
+			" 5468697320\n"
+			"-70617274206f66207468650a646f63756d656e74206861732073746179656420\n"
+			"-7468650a73616d652066726f6d2076657273696f6e20746f0a76657273696f6e\n"
+			"-2e20204974207368\n"
+			"+697320616e20696d706f7274616e740a6e6f74696365212049742073686f756c\n"
+			"+640a7468657265666f7265206265206c6f63617465642061740a746865206265\n"
+			"+67696e6e696e6720\n"
+			" 6f\n"
+			"-756c646e2774\n"
+			"+662074686973\n"
+			" 0a\n"
+			"-62652073686f776e20696620697420646f65736e27740a6368616e67652e2020\n"
+			"-4f746865727769\n"
+			"+646f63756d656e74210a0a546869732070617274206f66207468650a646f6375\n"
+			"+6d656e74206861\n"
+			" 73\n"
+			"-652c20746861740a776f756c64206e6f742062652068656c70696e6720746f0a\n"
+			"-636f6d7072657373207468652073697a65206f66207468650a6368616e676573\n"
+			"-2e0a0a54686973207061726167726170\n"
+			"+20737461796564207468650a73616d652066726f6d2076657273696f6e20746f\n"
+			"+0a76657273696f6e2e202049742073686f756c646e27740a62652073686f776e\n"
+			"+20696620697420646f65736e27740a63\n"
+			" 68\n"
+			"-20636f6e7461696e730a7465787420746861\n"
+			"+616e67652e20204f74686572776973652c20\n"
+			" 74\n"
+			"-206973206f757464617465642e0a4974\n"
+			"+6861740a776f756c64206e6f74206265\n"
+			" 20\n"
+			"-7769\n"
+			"+6865\n"
+			" 6c\n"
+			"-6c206265\n"
+			"+70696e67\n"
+			" 20\n"
+			"-64656c6574656420696e207468650a6e656172206675747572\n"
+			"+746f0a636f6d7072657373207468652073697a65206f66207468\n"
+			" 65\n"
+			"+0a6368616e676573\n"
+			" 2e0a0a4974206973\n"
+			"@@ -310,17 +319,17 @@\n"
+			" 207468697320646f\n"
+			"-6b\n"
+			"+63\n"
+			" 756d656e742e204f\n"
+			"@@ -471,8 +480,75 @@\n"
+			" 667465722069742e\n"
+			"+0a0a546869732070617261677261706820636f6e7461696e730a696d706f7274\n"
+			"+616e74206e6577206164646974696f6e730a746f207468697320646f63756d65\n"
+			"+6e742e\n";
 	// clang-format on
 
-	diff = rz_diff_bytes_new((const ut8 *)a, strlen(a), (const ut8 *)b, strlen(b), NULL);
+	diff = rz_diff_bytes_new((const ut8 *)a, strlen(a), (const ut8 *)b, strlen(b));
 	result = rz_diff_unified_text(diff, NULL, NULL, false, false);
 	rz_diff_free(diff);
 	mu_assert_notnull(result, "rz_diff_unified result not null");
@@ -269,10 +297,6 @@ bool test_rz_diff_unified_bytes(void) {
 // ------------------------------------------------------------
 // Helpers
 // ------------------------------------------------------------
-
-static bool ignore_whitespace_byte(const ut64 b) {
-	return b == ' ' || b == '\t';
-}
 
 static bool ignore_blank_line(const char *line) {
 	if (!line) {
@@ -315,7 +339,7 @@ bool test_rz_diff_hash_data(void) {
 bool test_rz_diff_get_a_b(void) {
 	const ut8 *a = (const ut8 *)"AAAA";
 	const ut8 *b = (const ut8 *)"BBBB";
-	RzDiff *d = rz_diff_bytes_new(a, 4, b, 4, NULL);
+	RzDiff *d = rz_diff_bytes_new(a, 4, b, 4);
 	mu_assert_notnull(d, "diff created");
 	mu_assert_ptreq(rz_diff_get_a(d), a, "get_a returns the original A pointer");
 	mu_assert_ptreq(rz_diff_get_b(d), b, "get_b returns the original B pointer");
@@ -338,7 +362,7 @@ bool test_rz_diff_empty_buffers(void) {
 	// Diff of two empty buffers: should succeed, ratio = 1.0, no opcodes,
 	// no matches besides the synthetic end sentinel.
 	const ut8 empty[1] = { 0 };
-	RzDiff *d = rz_diff_bytes_new(empty, 0, empty, 0, NULL);
+	RzDiff *d = rz_diff_bytes_new(empty, 0, empty, 0);
 	mu_assert_notnull(d, "diff on (empty, empty) created");
 
 	double r = -1.0;
@@ -362,7 +386,7 @@ bool test_rz_diff_identical_buffers(void) {
 	// For identical inputs we expect a single EQUAL opcode spanning the whole
 	// buffer, ratio == 1.0, and exactly one non-sentinel match.
 	const ut8 *s = (const ut8 *)"abcdefghij";
-	RzDiff *d = rz_diff_bytes_new(s, 10, s, 10, NULL);
+	RzDiff *d = rz_diff_bytes_new(s, 10, s, 10);
 	mu_assert_notnull(d, "diff on identical created");
 
 	double r = 0.0;
@@ -390,7 +414,7 @@ bool test_rz_diff_completely_different(void) {
 	// ratio should be 0.0, single REPLACE opcode covering the full ranges.
 	const ut8 *a = (const ut8 *)"AAAAA";
 	const ut8 *b = (const ut8 *)"BBBBB";
-	RzDiff *d = rz_diff_bytes_new(a, 5, b, 5, NULL);
+	RzDiff *d = rz_diff_bytes_new(a, 5, b, 5);
 	mu_assert_notnull(d, "diff created");
 
 	double r = -1.0;
@@ -419,7 +443,7 @@ bool test_rz_diff_pure_insert_and_delete(void) {
 	{
 		const ut8 *a = (const ut8 *)"";
 		const ut8 *b = (const ut8 *)"hello";
-		RzDiff *d = rz_diff_bytes_new(a, 0, b, 5, NULL);
+		RzDiff *d = rz_diff_bytes_new(a, 0, b, 5);
 		mu_assert_notnull(d, "diff(empty A) created");
 
 		RzList *ops = rz_diff_opcodes_new(d);
@@ -443,7 +467,7 @@ bool test_rz_diff_pure_insert_and_delete(void) {
 	{
 		const ut8 *a = (const ut8 *)"hello";
 		const ut8 *b = (const ut8 *)"";
-		RzDiff *d = rz_diff_bytes_new(a, 5, b, 0, NULL);
+		RzDiff *d = rz_diff_bytes_new(a, 5, b, 0);
 		mu_assert_notnull(d, "diff(empty B) created");
 
 		RzList *ops = rz_diff_opcodes_new(d);
@@ -469,15 +493,42 @@ bool test_rz_diff_pure_insert_and_delete(void) {
 bool test_rz_diff_matches_basic(void) {
 	// Inputs reproducing the README example "ABCDEFGHI" vs "YZBCDLZNHI":
 	// matches should be (B..D, H..I) plus the synthetic end sentinel.
-	const ut8 *a = (const ut8 *)"ABCDEFGHI";
-	const ut8 *b = (const ut8 *)"YZBCDLZNHI";
-	RzDiff *d = rz_diff_bytes_new(a, 9, b, 10, NULL);
+
+	// clang-format off
+	const char *a = ""
+			"It is important to spell\n"
+			"check this document. On\n"
+			"the other hand, a\n"
+			"misspelled word isn't\n"
+			"the end of the world.\n"
+			"Nothing in the rest of\n"
+			"this paragraph needs to\n"
+			"be changed. Things can\n"
+			"be added after it.\n";
+
+	const char *b = ""
+			"It is important to spell\n"
+			"cheeeck this document. On\n"
+			"the other hand, a\n"
+			"misspelled word isn't\n"
+			"the end of the world.\n"
+			"Nothhhhing in the rest of\n"
+			"this paragraph needs to\n"
+			"be changed. Things can\n"
+			"be added after it.\n"
+			"\n"
+			"This paragraph contains\n"
+			"important new additions\n"
+			"to this document.";
+	// clang-format on
+
+	RzDiff *d = rz_diff_bytes_new((const ut8 *)a, strlen(a), (const ut8 *)b, strlen(b));
 	mu_assert_notnull(d, "diff created");
 
 	RzList *matches = rz_diff_matches_new(d);
 	mu_assert_notnull(matches, "matches not null");
 	// At least 2 real matches plus the (a_size, b_size, 0) sentinel.
-	mu_assert_true(rz_list_length(matches) >= 3, "at least two real matches + sentinel");
+	mu_assert_eq(rz_list_length(matches), 4, "at least two real matches + sentinel");
 
 	// All non-sentinel matches must point to byte-identical sub-strings of A and B.
 	RzListIter *it = NULL;
@@ -492,8 +543,8 @@ bool test_rz_diff_matches_basic(void) {
 	// The very last entry is the synthetic end sentinel at (a_size, b_size, 0).
 	RzDiffMatch *last = rz_list_last_val(matches);
 	mu_assert_eq(last->size, 0u, "last match is sentinel with size 0");
-	mu_assert_eq(last->a, 9u, "sentinel a == a_size");
-	mu_assert_eq(last->b, 10u, "sentinel b == b_size");
+	mu_assert_eq(last->a, 200u, "sentinel a == a_size");
+	mu_assert_eq(last->b, 271u, "sentinel b == b_size");
 
 	rz_list_free(matches);
 	rz_diff_free(d);
@@ -509,7 +560,7 @@ bool test_rz_diff_opcodes_grouped_identical(void) {
 	// opcode group is produced.
 	const ut8 *s = (const ut8 *)"identical content";
 	ut32 n = (ut32)strlen((const char *)s);
-	RzDiff *d = rz_diff_bytes_new(s, n, s, n, NULL);
+	RzDiff *d = rz_diff_bytes_new(s, n, s, n);
 	mu_assert_notnull(d, "diff created");
 
 	RzList *groups = rz_diff_opcodes_grouped_new(d, RZ_DIFF_DEFAULT_N_GROUPS);
@@ -524,7 +575,7 @@ bool test_rz_diff_opcodes_grouped_identical(void) {
 bool test_rz_diff_opcodes_grouped_replace(void) {
 	const ut8 *a = (const ut8 *)"AAAAAAAA";
 	const ut8 *b = (const ut8 *)"BBBBBBBB";
-	RzDiff *d = rz_diff_bytes_new(a, 8, b, 8, NULL);
+	RzDiff *d = rz_diff_bytes_new(a, 8, b, 8);
 	mu_assert_notnull(d, "diff created");
 
 	RzList *groups = rz_diff_opcodes_grouped_new(d, RZ_DIFF_DEFAULT_N_GROUPS);
@@ -560,7 +611,7 @@ bool test_rz_diff_ratio_bounds(void) {
 	const ut8 *a = (const ut8 *)"the quick brown fox";
 	const ut8 *b = (const ut8 *)"the quirky brown ox";
 	RzDiff *d = rz_diff_bytes_new(a, (ut32)strlen((const char *)a),
-		b, (ut32)strlen((const char *)b), NULL);
+		b, (ut32)strlen((const char *)b));
 	mu_assert_notnull(d, "diff created");
 
 	double r = -1.0;
@@ -579,7 +630,7 @@ bool test_rz_diff_sizes_ratio_skewed(void) {
 	// A is 4x the size of B: sizes ratio = 2*min/(a+b) = 2*1/(4+1) = 0.4
 	const ut8 *a = (const ut8 *)"aaaa";
 	const ut8 *b = (const ut8 *)"a";
-	RzDiff *d = rz_diff_bytes_new(a, 4, b, 1, NULL);
+	RzDiff *d = rz_diff_bytes_new(a, 4, b, 1);
 	mu_assert_notnull(d, "diff created");
 
 	double sr = 0.0;
@@ -593,49 +644,6 @@ bool test_rz_diff_sizes_ratio_skewed(void) {
 // ------------------------------------------------------------
 // Ignore callbacks
 // ------------------------------------------------------------
-
-bool test_rz_diff_ignore_byte(void) {
-	// The `ignore` callback in librz/diff has Python-difflib `isjunk`
-	// semantics: ignored bytes in B are not registered as anchors in the
-	// hit map, so matches are never *started* on them. They are NOT
-	// treated as equivalent to other bytes for the purpose of compare().
-	//
-	// So "ab cd" vs "ab\tcd" with whitespace ignored still produces a
-	// REPLACE for the differing byte at position 2 -- the ratio is the
-	// same as without the callback. We assert (1) the ignore call
-	// succeeds, (2) the result is in [0, 1], and (3) the ratio is no
-	// worse than the plain ratio.
-	const ut8 *a = (const ut8 *)"ab cd";
-	const ut8 *b = (const ut8 *)"ab\tcd";
-
-	RzDiff *plain = rz_diff_bytes_new(a, 5, b, 5, NULL);
-	mu_assert_notnull(plain, "plain diff created");
-	double r_plain = -1.0;
-	mu_assert_true(rz_diff_ratio(plain, &r_plain), "plain ratio ok");
-	rz_diff_free(plain);
-
-	RzDiff *ign = rz_diff_bytes_new(a, 5, b, 5, ignore_whitespace_byte);
-	mu_assert_notnull(ign, "ignore diff created");
-	double r_ign = -1.0;
-	mu_assert_true(rz_diff_ratio(ign, &r_ign), "ignore ratio ok");
-	rz_diff_free(ign);
-
-	mu_assert_true(r_ign >= 0.0 && r_ign <= 1.0, "ignore ratio is a valid ratio");
-	mu_assert_true(r_ign >= r_plain, "ignoring whitespace does not decrease the ratio");
-
-	// Sanity case: when the same whitespace appears at the same offset in
-	// both buffers, the ratio is exactly 1.0 -- with or without ignore.
-	const ut8 *a2 = (const ut8 *)"ab cd";
-	const ut8 *b2 = (const ut8 *)"ab cd";
-	RzDiff *same = rz_diff_bytes_new(a2, 5, b2, 5, ignore_whitespace_byte);
-	mu_assert_notnull(same, "same-bytes diff created");
-	double r_same = -1.0;
-	mu_assert_true(rz_diff_ratio(same, &r_same), "same ratio ok");
-	mu_assert_eqf(r_same, 1.0, "ignore-whitespace on identical buffers: ratio 1.0");
-	rz_diff_free(same);
-
-	mu_end;
-}
 
 bool test_rz_diff_ignore_line(void) {
 	const char *a =
@@ -791,7 +799,7 @@ bool test_rz_diff_unified_json_smoke(void) {
 bool test_rz_diff_ratio_byte_line_agree_on_identical(void) {
 	const char *s = "alpha\nbeta\ngamma\n";
 	RzDiff *db = rz_diff_bytes_new((const ut8 *)s, (ut32)strlen(s),
-		(const ut8 *)s, (ut32)strlen(s), NULL);
+		(const ut8 *)s, (ut32)strlen(s));
 	RzDiff *dl = rz_diff_lines_new(s, s, NULL);
 	mu_assert_notnull(db, "bytes diff created");
 	mu_assert_notnull(dl, "lines diff created");
@@ -815,7 +823,7 @@ bool test_rz_diff_single_element(void) {
 	// Single-byte identical.
 	{
 		const ut8 *a = (const ut8 *)"x";
-		RzDiff *d = rz_diff_bytes_new(a, 1, a, 1, NULL);
+		RzDiff *d = rz_diff_bytes_new(a, 1, a, 1);
 		mu_assert_notnull(d, "diff 1-byte identical");
 		double r = 0.0;
 		mu_assert_true(rz_diff_ratio(d, &r), "ratio ok");
@@ -827,7 +835,7 @@ bool test_rz_diff_single_element(void) {
 	{
 		const ut8 *a = (const ut8 *)"x";
 		const ut8 *b = (const ut8 *)"y";
-		RzDiff *d = rz_diff_bytes_new(a, 1, b, 1, NULL);
+		RzDiff *d = rz_diff_bytes_new(a, 1, b, 1);
 		mu_assert_notnull(d, "diff 1-byte different");
 		double r = 1.0;
 		mu_assert_true(rz_diff_ratio(d, &r), "ratio ok");
@@ -871,7 +879,7 @@ bool test_rz_diff_stress_medium(void) {
 		b[i] ^= 0xff;
 	}
 
-	RzDiff *d = rz_diff_bytes_new(a, size, b, size, NULL);
+	RzDiff *d = rz_diff_bytes_new(a, size, b, size);
 	mu_assert_notnull(d, "stress diff created");
 
 	RzList *matches = rz_diff_matches_new(d);
@@ -914,7 +922,7 @@ bool test_rz_diff_all_zeros_pathological(void) {
 	memset(b, 0, size);
 	b[size / 2] = 0x01;
 
-	RzDiff *d = rz_diff_bytes_new(a, size, b, size, NULL);
+	RzDiff *d = rz_diff_bytes_new(a, size, b, size);
 	mu_assert_notnull(d, "all-zeros diff created");
 
 	double r = 0.0;
@@ -981,7 +989,7 @@ bool test_rz_diff_repeating_pattern(void) {
 	b[size / 2] = 'Z';
 	b[size * 3 / 4] = 'Z';
 
-	RzDiff *d = rz_diff_bytes_new(a, size, b, size, NULL);
+	RzDiff *d = rz_diff_bytes_new(a, size, b, size);
 	mu_assert_notnull(d, "repeating-pattern diff");
 
 	double r = 0.0;
@@ -1014,7 +1022,7 @@ bool test_rz_diff_firmware_like_structure(void) {
 		v2[prefix + i] = (ut8)(0xff - i);
 	}
 
-	RzDiff *d = rz_diff_bytes_new(v1, size, v2, size, NULL);
+	RzDiff *d = rz_diff_bytes_new(v1, size, v2, size);
 	mu_assert_notnull(d, "firmware-like diff");
 
 	RzList *ops = rz_diff_opcodes_new(d);
@@ -1060,7 +1068,7 @@ bool test_rz_diff_block_shift(void) {
 	memcpy(b + 300 - 64, a + 100, 64);
 	memcpy(b + 300, a + 300, size - 300);
 
-	RzDiff *d = rz_diff_bytes_new(a, size, b, size, NULL);
+	RzDiff *d = rz_diff_bytes_new(a, size, b, size);
 	mu_assert_notnull(d, "block-shift diff");
 
 	double r = 0.0;
@@ -1095,7 +1103,7 @@ bool test_rz_diff_growing_buffer(void) {
 	const ut8 *a = (const ut8 *)"prefix_middle_suffix";
 	const ut8 *b = (const ut8 *)"prefix_middle_INSERTED_suffix";
 	RzDiff *d = rz_diff_bytes_new(a, (ut32)strlen((const char *)a),
-		b, (ut32)strlen((const char *)b), NULL);
+		b, (ut32)strlen((const char *)b));
 	mu_assert_notnull(d, "growing-buffer diff");
 
 	RzList *ops = rz_diff_opcodes_new(d);
@@ -1136,7 +1144,7 @@ bool test_rz_diff_long_common_prefix(void) {
 		b[prefix_len + i] = 0x20;
 	}
 
-	RzDiff *d = rz_diff_bytes_new(a, prefix_len + tail_len, b, prefix_len + tail_len, NULL);
+	RzDiff *d = rz_diff_bytes_new(a, prefix_len + tail_len, b, prefix_len + tail_len);
 	mu_assert_notnull(d, "long-prefix diff");
 
 	RzList *ops = rz_diff_opcodes_new(d);
@@ -1171,7 +1179,6 @@ int all_tests() {
 	mu_run_test(test_rz_diff_opcodes_grouped_replace);
 	mu_run_test(test_rz_diff_ratio_bounds);
 	mu_run_test(test_rz_diff_sizes_ratio_skewed);
-	mu_run_test(test_rz_diff_ignore_byte);
 	mu_run_test(test_rz_diff_ignore_line);
 	mu_run_test(test_rz_diff_generic_ints);
 	mu_run_test(test_rz_diff_generic_ints_modified);

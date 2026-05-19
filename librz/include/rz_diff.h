@@ -64,7 +64,6 @@ typedef struct match_p_t {
 	ut32 size;
 } RzDiffMatch;
 
-typedef bool (*RzDiffIgnoreByte)(const ut64 byte);
 typedef bool (*RzDiffIgnoreLine)(RZ_BORROW const char *line);
 
 typedef struct rz_diff_t RzDiff;
@@ -75,7 +74,7 @@ typedef struct rz_diff_t RzDiff;
  * various values, xor the results before returning the final value. */
 RZ_API ut32 rz_diff_hash_data(RZ_NULLABLE const ut8 *buffer, ut32 size);
 
-RZ_API RZ_OWN RzDiff *rz_diff_bytes_new(RZ_BORROW const ut8 *a, ut32 a_size, RZ_BORROW const ut8 *b, ut32 b_size, RZ_NULLABLE RzDiffIgnoreByte ignore);
+RZ_API RZ_OWN RzDiff *rz_diff_bytes_new(RZ_BORROW const ut8 *a, ut32 a_size, RZ_BORROW const ut8 *b, ut32 b_size);
 RZ_API RZ_OWN RzDiff *rz_diff_lines_new(RZ_BORROW const char *a, RZ_BORROW const char *b, RZ_NULLABLE RzDiffIgnoreLine ignore);
 RZ_API RZ_OWN RzDiff *rz_diff_generic_new(RZ_BORROW const void *a, ut32 a_size, RZ_BORROW const void *b, ut32 b_size, RZ_NONNULL RzDiffMethods *methods);
 RZ_API void rz_diff_free(RZ_NULLABLE RzDiff *diff);
