@@ -7,6 +7,7 @@
 #include <analysis_private.h>
 #include <rz_analysis.h>
 #include <rz_util/rz_str_util.h>
+#include "c166/c166_il.h"
 
 #include "librz/arch/isa/c166/c166_disas.h"
 
@@ -1445,7 +1446,12 @@ static int c166_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			instr.instr, RZ_STR_ISNOTEMPTY(instr.operands) ? " " : "", instr.operands);
 	}
 
+	// set RzIL
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		rz_c166_il_opcode(analysis, op, buf);
+	}
 	c166_maybe_deactivate_ext(state, instr.addr);
+
 	return op->size;
 }
 
@@ -1788,6 +1794,7 @@ RzAnalysisPlugin rz_analysis_plugin_c166 = {
 	.op = &c166_op,
 	.archinfo = &archinfo,
 	.get_reg_profile = &get_reg_profile,
+	.il_config = rz_c166_il_config,
 	.init = &c16x_init,
 	.fini = &c16x_fini,
 };
