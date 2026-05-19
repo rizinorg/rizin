@@ -363,10 +363,11 @@ static st32 disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, st32 len) {
 	} else if (op->size == 2 && len == 1) {
 		rz_asm_op_setf_asm(op, FMT_WORD, buf[0], 0x00);
 	} else if (RZ_STR_EQ(inst.instr, "invalid")) {
-		if (op->size == 2)
+		if (op->size == 2) {
 			rz_asm_op_setf_asm(op, FMT_WORD, buf[0], buf[1]);
-		else
+		} else {
 			rz_asm_op_setf_asm(op, FMT_2WORD, buf[0], buf[1], buf[2], buf[3]);
+		}
 	} else {
 		if (RZ_STR_ISNOTEMPTY(inst.operands)) {
 			rz_asm_op_setf_asm(op, FMT7, inst.instr, inst.operands);
@@ -396,8 +397,11 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 		return NULL;
 	}
 	TOKEN(META, "^(.word.*)");
-	TOKEN(SEPARATOR, "([\\s.,:]+)");
-	TOKEN(REGISTER, "\\b0x([fF][eEfF][0-9a-fA-F]{2})\\b");
+	TOKEN(REGISTER, "(0xf[a-f][0-9a-f]+)"); ///< 0xfe00:0x0246
+	// Hexadecimal numbers
+	TOKEN(SEPARATOR, "([\\s.,:#]+)");
+	TOKEN(NUMBER, "(0x[f][^a-f][0-9a-f]+)");
+	TOKEN(NUMBER, "(0x[^f][0-9a-f]+)");
 	TOKEN(MNEMONIC, "^(jmpa[+-]?)"); ///< jmpa+ jmpa-  mnemonics
 	TOKEN(MNEMONIC, "^(calla[+-]?)"); ///< calla+ calla- mnemonics
 	TOKEN(META, "^([\\- USR]+[012]?)");
@@ -405,8 +409,6 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	TOKEN(META, "([\\[\\]\\-#])");
 	// TOKEN(META, "(cc_\\w+)");
 	TOKEN(META, "(cc_[\\w\\/]+)");
-	// Hexadecimal numbers
-	TOKEN(NUMBER, "(0x[0-9a-f]+)");
 	/**
 	 * Match normal registers which start with small r, optional h or l
 	 * and a number.
@@ -415,7 +417,6 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	 */
 	TOKEN(REGISTER, "\\b(r[hl]?[0-9]{1,2}|[A-Z]+[A-Z0-9]*)\\b");
 	TOKEN(MNEMONIC, "^([\\w]+[12]?)");
-	// TOKEN(SEPARATOR, "([\\s.,:+]+)");
 	TOKEN(SEPARATOR, "(\\+)");
 	// Decimal numbers
 	TOKEN(NUMBER, "(data[2,3,4,5,8])");

@@ -180,8 +180,8 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		new->name = rz_str_newf("%s_%s", name, class_name);
 		new->size = new->vsize = section->Seclen;
 		new->vaddr = (section->SegmentNumber8 << 16) + section->offset;
-		new->has_strings = (section->Type == 1) ? true : false;
-		new->is_data = (section->Type == 1) ? true : false;
+		new->has_strings = (section->Type == 2) ? false : true;
+		new->is_data = (section->Type == 2) ? false : true;
 		new->is_segment = 0;
 		new->perm = c166_get_perms_from_class(section->class_index);
 		rz_pvector_push(ret, new);
@@ -217,6 +217,9 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	}
 
 	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
+	if (!ret) {
+		return NULL;
+	}
 	rz_pvector_sort(obj->symbols_vec, offset_cmp, NULL);
 	void **it;
 	rz_pvector_foreach (obj->symbols_vec, it) {
@@ -371,6 +374,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->rclass = rz_str_dup("OMF166");
 	ret->compiler = rz_str_dup("keil");
 	ret->os = rz_str_dup("c166");
+	ret->cpu = rz_str_dup("c166-generic");
 	ret->machine = rz_str_dup("Siemens/Infineon C166 family microcontroller");
 	ret->arch = rz_str_dup("c166");
 	ret->big_endian = false;

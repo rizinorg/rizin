@@ -25,18 +25,21 @@ ut64 get_reg_val2(RzReg *areg, const char *name) {
 	return value;
 }
 
-#define SET_CPUCON1(val) set_reg_val2(areg, CPUCON1_NAME, val)
-#define SET_SP(val)      set_reg_val2(areg, "SP", val)
-#define SET_CSP(val)     set_reg_val2(areg, "CSP", val)
-#define SET_SGTDIS(val)  set_reg_val2(areg, CPUCON1_NAME, (CPUCON1_RESET_VALUE | (val << 3)))
+#define SET_CPUCON1(analysis, val) set_reg_val2(rz_analysis_get_reg(analysis), CPUCON1_NAME, val)
+#define SET_SP(analysis, val)      set_reg_val2(rz_analysis_get_reg(analysis), "SP", val)
+#define SET_CSP(analysis, val)     set_reg_val2(rz_analysis_get_reg(analysis), "CSP", val)
+#define SET_SGTDIS(analysis, val)  set_reg_val2(rz_analysis_get_reg(analysis), CPUCON1_NAME, (CPUCON1_RESET_VALUE | (val << 3)))
 
-#define GET_SGTDIS  get_flg_val(areg, "SGTDIS")
-#define GET_CPUCON1 get_reg_val2(areg, "CPUCON1")
-#define GET_SP      get_reg_val2(areg, "SP")
+#define GET_SGTDIS(analysis)  get_flg_val(rz_analysis_get_reg(analysis), "SGTDIS")
+#define GET_CPUCON1(analysis) get_reg_val2(rz_analysis_get_reg(analysis), "CPUCON1")
+#define GET_SP(analysis)      get_reg_val2(rz_analysis_get_reg(analysis), "SP")
 
 static OMF_components *get_component_by_ti(const rz_bin_omf166_obj *omf_obj, ut16 ti) {
 	bool found = false;
 	OMF_type *type = ht_up_find(omf_obj->ht_types, ti, &found);
+	if (!found) {
+		return NULL;
+	}
 	if (type->descr_type == COMPONENT_LIST_DESCRIPTOR) {
 		return (OMF_components *)&type->descriptor.components;
 	}
@@ -89,8 +92,9 @@ static inline RzType *TYPE_TI(rz_bin_omf166_obj *omf_obj, ut16 ti) {
 	}
 
 	RzType *ret = rz_type_identifier_of_base_type_str(typedb, type->label);
-	if (!ret)
+	if (!ret) {
 		return rz_type_identifier_of_base_type_str(typedb, "unknown_t");
+	}
 	return ret;
 }
 
@@ -211,8 +215,8 @@ RZ_API bool rz_core_bin_apply_omf_debug(const RzCore *core, const RzBinFile *bin
 		return false;
 	}
 
-	RzReg *areg = rz_analysis_get_reg(core->analysis);
-	SET_SP(SP_RESET_VALUE);
+	SET_SP(core->analysis, SP_RESET_VALUE);
+
 	rz_bin_omf166_obj *omf_obj = (rz_bin_omf166_obj *)binfile->o->bin_obj;
 
 #ifdef RZ_BUILD_DEBUG
@@ -228,7 +232,7 @@ RZ_API bool rz_core_bin_apply_omf_debug(const RzCore *core, const RzBinFile *bin
 		return false;
 	}
 
-	SET_SGTDIS(!(omf_obj->modinfo & 0x01));
+	SET_SGTDIS(core->analysis, !(omf_obj->modinfo & 0x01));
 
 	if (!binfile->o->lines) {
 		RzPVector *ls = omf_obj->linnums_vec;

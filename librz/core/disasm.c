@@ -1010,17 +1010,6 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 		}
 	}
 
-	if (ds->analysis_op.mmio_address != UT64_MAX) {
-		char number[32];
-		rz_strf(number, "0x%" PFMT64x, ds->analysis_op.mmio_address);
-
-		RzPlatformTarget *arch_target = rz_analysis_get_arch_target(core->analysis);
-		const char *resolved = rz_platform_profile_resolve_mmio(arch_target->profile, ds->analysis_op.mmio_address);
-		if (resolved) {
-			ds->opstr = rz_str_replace(ds->opstr, number, resolved, 0);
-		}
-	}
-
 	if (ds->analysis_op.ptr != UT64_MAX) {
 		char number[32];
 		rz_strf(number, "0x%" PFMT64x, ds->analysis_op.ptr);
@@ -1126,6 +1115,18 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 		ds_opstr_resolve_aav_symbols(ds);
 	} else {
 		ds_opstr_try_colorize(ds, print_color);
+	}
+	for (int i = 0; i < 4; i++) {
+		if (ds->analysis_op.mmios[i] != UT64_MAX) {
+			char number[32];
+			rz_strf(number, "0x%" PFMT64x, ds->analysis_op.mmios[i]);
+
+			RzPlatformTarget *arch_target = rz_analysis_get_arch_target(core->analysis);
+			const char *resolved = rz_platform_profile_resolve_mmio(arch_target->profile, ds->analysis_op.mmios[i]);
+			if (resolved) {
+				ds->opstr = rz_str_replace(ds->opstr, number, resolved, 0);
+			}
+		}
 	}
 	rz_str_trim_char(ds->opstr, '\n');
 	// updates ds->opstr

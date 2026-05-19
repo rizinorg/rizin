@@ -223,7 +223,7 @@ ut32 c166_get_perms_from_class(const ut8 class_id) {
 	case C166_CLASS_ICODE:
 	case C166_CLASS_FCODE:
 	case C166_CLASS_NCODE:
-		return RZ_PERM_RW;
+		return RZ_PERM_RX;
 	case C166_CLASS_FCONST:
 	case C166_CLASS_HCONST:
 	case C166_CLASS_XCONST:
