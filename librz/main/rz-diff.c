@@ -1408,7 +1408,7 @@ static bool rz_diff_unified_files(DiffContext *ctx) {
 
 	switch (ctx->type) {
 	case DIFF_TYPE_BYTES:
-		diff = rz_diff_bytes_new(a_buffer, a_size, b_buffer, b_size, NULL);
+		diff = rz_diff_bytes_new(a_buffer, a_size, b_buffer, b_size);
 		break;
 	case DIFF_TYPE_CLASSES:
 		diff = rz_diff_classes_new(&dfile_a, &dfile_b, ctx->compare_addresses);

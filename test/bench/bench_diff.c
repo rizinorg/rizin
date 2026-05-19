@@ -32,9 +32,9 @@
  * the hit-map / longest-match search.
  */
 
-#define BUF_SMALL   256
-#define BUF_MEDIUM  4096
-#define BUF_LARGE   32768
+#define BUF_SMALL  256
+#define BUF_MEDIUM 4096
+#define BUF_LARGE  32768
 
 #define ITER_HEAVY  64
 #define ITER_MEDIUM 1024
@@ -147,7 +147,7 @@ static void bench_bytes_new_similar_medium(RzTable *t_out) {
 	make_pair_similar(a, b, BUF_MEDIUM, 5);
 
 	RZ_BENCH_RUN("[RzDiff] rz_diff_bytes_new (similar, 4KB)", t_out, ITER_MEDIUM, {
-		RzDiff *d = rz_diff_bytes_new(a, BUF_MEDIUM, b, BUF_MEDIUM, NULL);
+		RzDiff *d = rz_diff_bytes_new(a, BUF_MEDIUM, b, BUF_MEDIUM);
 		rz_diff_free(d);
 	});
 
@@ -161,7 +161,7 @@ static void bench_bytes_new_divergent_medium(RzTable *t_out) {
 	make_pair_divergent(a, b, BUF_MEDIUM);
 
 	RZ_BENCH_RUN("[RzDiff] rz_diff_bytes_new (divergent, 4KB)", t_out, ITER_MEDIUM, {
-		RzDiff *d = rz_diff_bytes_new(a, BUF_MEDIUM, b, BUF_MEDIUM, NULL);
+		RzDiff *d = rz_diff_bytes_new(a, BUF_MEDIUM, b, BUF_MEDIUM);
 		rz_diff_free(d);
 	});
 
@@ -175,7 +175,7 @@ static void bench_bytes_matches_similar_small(RzTable *t_out) {
 	make_pair_similar(a, b, BUF_SMALL, 5);
 
 	RZ_BENCH_RUN("[RzDiff] rz_diff_matches_new (similar, 256B)", t_out, ITER_LIGHT, {
-		RzDiff *d = rz_diff_bytes_new(a, BUF_SMALL, b, BUF_SMALL, NULL);
+		RzDiff *d = rz_diff_bytes_new(a, BUF_SMALL, b, BUF_SMALL);
 		RzList *m = rz_diff_matches_new(d);
 		rz_list_free(m);
 		rz_diff_free(d);
@@ -191,7 +191,7 @@ static void bench_bytes_matches_similar_medium(RzTable *t_out) {
 	make_pair_similar(a, b, BUF_MEDIUM, 5);
 
 	RZ_BENCH_RUN("[RzDiff] rz_diff_matches_new (similar, 4KB)", t_out, ITER_HEAVY, {
-		RzDiff *d = rz_diff_bytes_new(a, BUF_MEDIUM, b, BUF_MEDIUM, NULL);
+		RzDiff *d = rz_diff_bytes_new(a, BUF_MEDIUM, b, BUF_MEDIUM);
 		RzList *m = rz_diff_matches_new(d);
 		rz_list_free(m);
 		rz_diff_free(d);
@@ -209,7 +209,7 @@ static void bench_bytes_matches_divergent_medium(RzTable *t_out) {
 	/* Divergent case is the pathological one for the inner loop; keep iter
 	 * count modest. */
 	RZ_BENCH_RUN("[RzDiff] rz_diff_matches_new (divergent, 4KB)", t_out, ITER_HEAVY, {
-		RzDiff *d = rz_diff_bytes_new(a, BUF_MEDIUM, b, BUF_MEDIUM, NULL);
+		RzDiff *d = rz_diff_bytes_new(a, BUF_MEDIUM, b, BUF_MEDIUM);
 		RzList *m = rz_diff_matches_new(d);
 		rz_list_free(m);
 		rz_diff_free(d);
@@ -225,7 +225,7 @@ static void bench_bytes_opcodes_similar_medium(RzTable *t_out) {
 	make_pair_similar(a, b, BUF_MEDIUM, 5);
 
 	RZ_BENCH_RUN("[RzDiff] rz_diff_opcodes_new (similar, 4KB)", t_out, ITER_HEAVY, {
-		RzDiff *d = rz_diff_bytes_new(a, BUF_MEDIUM, b, BUF_MEDIUM, NULL);
+		RzDiff *d = rz_diff_bytes_new(a, BUF_MEDIUM, b, BUF_MEDIUM);
 		RzList *ops = rz_diff_opcodes_new(d);
 		rz_list_free(ops);
 		rz_diff_free(d);
@@ -241,7 +241,7 @@ static void bench_bytes_opcodes_grouped_similar_medium(RzTable *t_out) {
 	make_pair_similar(a, b, BUF_MEDIUM, 5);
 
 	RZ_BENCH_RUN("[RzDiff] rz_diff_opcodes_grouped_new (similar, 4KB)", t_out, ITER_HEAVY, {
-		RzDiff *d = rz_diff_bytes_new(a, BUF_MEDIUM, b, BUF_MEDIUM, NULL);
+		RzDiff *d = rz_diff_bytes_new(a, BUF_MEDIUM, b, BUF_MEDIUM);
 		RzList *g = rz_diff_opcodes_grouped_new(d, RZ_DIFF_DEFAULT_N_GROUPS);
 		rz_list_free(g);
 		rz_diff_free(d);
@@ -257,7 +257,7 @@ static void bench_bytes_ratio_similar_medium(RzTable *t_out) {
 	make_pair_similar(a, b, BUF_MEDIUM, 5);
 
 	RZ_BENCH_RUN("[RzDiff] rz_diff_ratio (similar, 4KB)", t_out, ITER_HEAVY, {
-		RzDiff *d = rz_diff_bytes_new(a, BUF_MEDIUM, b, BUF_MEDIUM, NULL);
+		RzDiff *d = rz_diff_bytes_new(a, BUF_MEDIUM, b, BUF_MEDIUM);
 		double r = 0.0;
 		rz_diff_ratio(d, &r);
 		rz_diff_free(d);
@@ -273,7 +273,7 @@ static void bench_bytes_unified_similar_medium(RzTable *t_out) {
 	make_pair_similar(a, b, BUF_MEDIUM, 5);
 
 	RZ_BENCH_RUN("[RzDiff] rz_diff_unified_text bytes (similar, 4KB)", t_out, ITER_HEAVY, {
-		RzDiff *d = rz_diff_bytes_new(a, BUF_MEDIUM, b, BUF_MEDIUM, NULL);
+		RzDiff *d = rz_diff_bytes_new(a, BUF_MEDIUM, b, BUF_MEDIUM);
 		char *s = rz_diff_unified_text(d, NULL, NULL, false, false);
 		free(s);
 		rz_diff_free(d);
@@ -421,7 +421,7 @@ static void bench_bytes_unified_large_similar(RzTable *t_out) {
 	 * is kept low so the whole bench suite still fits comfortably inside the
 	 * `benchmark()` timeout configured in test/bench/meson.build. */
 	RZ_BENCH_RUN("[RzDiff] rz_diff_unified_text bytes (similar, 32KB)", t_out, 8, {
-		RzDiff *d = rz_diff_bytes_new(a, BUF_LARGE, b, BUF_LARGE, NULL);
+		RzDiff *d = rz_diff_bytes_new(a, BUF_LARGE, b, BUF_LARGE);
 		char *s = rz_diff_unified_text(d, NULL, NULL, false, false);
 		free(s);
 		rz_diff_free(d);
@@ -690,12 +690,12 @@ static void make_block_shift_pair(ut8 *a, ut8 *b, ut32 size) {
  * meson `benchmark()` timeout (120 s). Once PR #6385's chunked
  * comparison lands, these can be cranked back up.
  */
-#define TORTURE_FW_SIZE      (8 * 1024)   /* synthesized firmware              */
-#define TORTURE_EXEC_SIZE    (8 * 1024)   /* synthesized executable             */
-#define TORTURE_MEMDUMP_SIZE (8 * 1024)   /* synthesized memdump-shape blob     */
-#define TORTURE_BLOCKSHIFT   (16 * 1024)  /* block-shift -- few matches, fast   */
-#define TORTURE_ADVERSARY    (2 * 1024)   /* pathological hash distributions    */
-#define ITER_TORTURE         3            /* must be >= 3 for useful stddev     */
+#define TORTURE_FW_SIZE      (8 * 1024) /* synthesized firmware              */
+#define TORTURE_EXEC_SIZE    (8 * 1024) /* synthesized executable             */
+#define TORTURE_MEMDUMP_SIZE (8 * 1024) /* synthesized memdump-shape blob     */
+#define TORTURE_BLOCKSHIFT   (16 * 1024) /* block-shift -- few matches, fast   */
+#define TORTURE_ADVERSARY    (2 * 1024) /* pathological hash distributions    */
+#define ITER_TORTURE         3 /* must be >= 3 for useful stddev     */
 #define ITER_TORTURE_LIGHT   8
 
 static void bench_torture_firmware_pair(RzTable *t_out) {
@@ -704,7 +704,7 @@ static void bench_torture_firmware_pair(RzTable *t_out) {
 	make_firmware_pair(v1, v2, TORTURE_FW_SIZE, 0xa11dau);
 
 	RZ_BENCH_RUN("[RzDiff] torture: firmware v1 vs v2 (8KB, mostly identical)", t_out, ITER_TORTURE, {
-		RzDiff *d = rz_diff_bytes_new(v1, TORTURE_FW_SIZE, v2, TORTURE_FW_SIZE, NULL);
+		RzDiff *d = rz_diff_bytes_new(v1, TORTURE_FW_SIZE, v2, TORTURE_FW_SIZE);
 		char *s = rz_diff_unified_text(d, NULL, NULL, false, false);
 		free(s);
 		rz_diff_free(d);
@@ -713,7 +713,7 @@ static void bench_torture_firmware_pair(RzTable *t_out) {
 	/* Also measure the matches phase in isolation -- the place chunked /
 	 * hashed byte comparison primarily speeds up. */
 	RZ_BENCH_RUN("[RzDiff] torture: firmware v1 vs v2 (8KB, matches only)", t_out, ITER_TORTURE, {
-		RzDiff *d = rz_diff_bytes_new(v1, TORTURE_FW_SIZE, v2, TORTURE_FW_SIZE, NULL);
+		RzDiff *d = rz_diff_bytes_new(v1, TORTURE_FW_SIZE, v2, TORTURE_FW_SIZE);
 		RzList *m = rz_diff_matches_new(d);
 		rz_list_free(m);
 		rz_diff_free(d);
@@ -732,7 +732,7 @@ static void bench_torture_big_exec(RzTable *t_out) {
 	 * rizinorg/rizin#6390 and #6403, we need at least 3 iterations for
 	 * those statistics to be meaningful. */
 	RZ_BENCH_RUN("[RzDiff] torture: big exec (8KB, .text churn)", t_out, ITER_TORTURE, {
-		RzDiff *d = rz_diff_bytes_new(a, TORTURE_EXEC_SIZE, b, TORTURE_EXEC_SIZE, NULL);
+		RzDiff *d = rz_diff_bytes_new(a, TORTURE_EXEC_SIZE, b, TORTURE_EXEC_SIZE);
 		RzList *ops = rz_diff_opcodes_new(d);
 		rz_list_free(ops);
 		rz_diff_free(d);
@@ -741,7 +741,7 @@ static void bench_torture_big_exec(RzTable *t_out) {
 	/* Ratio-only is significantly cheaper than full unified, and is what
 	 * binary-similarity tooling typically wants. */
 	RZ_BENCH_RUN("[RzDiff] torture: big exec ratio (8KB)", t_out, ITER_TORTURE, {
-		RzDiff *d = rz_diff_bytes_new(a, TORTURE_EXEC_SIZE, b, TORTURE_EXEC_SIZE, NULL);
+		RzDiff *d = rz_diff_bytes_new(a, TORTURE_EXEC_SIZE, b, TORTURE_EXEC_SIZE);
 		double r = 0.0;
 		rz_diff_ratio(d, &r);
 		rz_diff_free(d);
@@ -760,7 +760,7 @@ static void bench_torture_memdump(RzTable *t_out) {
 	 * giant hit list in b_hits and stress the longest-match search far more
 	 * than a uniformly-random buffer of the same size. */
 	RZ_BENCH_RUN("[RzDiff] torture: memdump (8KB, sparse, few pages changed)", t_out, ITER_TORTURE, {
-		RzDiff *d = rz_diff_bytes_new(a, TORTURE_MEMDUMP_SIZE, b, TORTURE_MEMDUMP_SIZE, NULL);
+		RzDiff *d = rz_diff_bytes_new(a, TORTURE_MEMDUMP_SIZE, b, TORTURE_MEMDUMP_SIZE);
 		RzList *ops = rz_diff_opcodes_new(d);
 		rz_list_free(ops);
 		rz_diff_free(d);
@@ -779,7 +779,7 @@ static void bench_torture_all_zeros(RzTable *t_out) {
 	make_all_zeros_pair(a, b, TORTURE_ADVERSARY);
 
 	RZ_BENCH_RUN("[RzDiff] torture: all-zeros adversary (2KB)", t_out, ITER_TORTURE, {
-		RzDiff *d = rz_diff_bytes_new(a, TORTURE_ADVERSARY, b, TORTURE_ADVERSARY, NULL);
+		RzDiff *d = rz_diff_bytes_new(a, TORTURE_ADVERSARY, b, TORTURE_ADVERSARY);
 		RzList *m = rz_diff_matches_new(d);
 		rz_list_free(m);
 		rz_diff_free(d);
@@ -796,7 +796,7 @@ static void bench_torture_repeating_pattern(RzTable *t_out) {
 	make_repeating_pattern_pair(a, b, TORTURE_ADVERSARY);
 
 	RZ_BENCH_RUN("[RzDiff] torture: short repeating pattern (2KB)", t_out, ITER_TORTURE_LIGHT, {
-		RzDiff *d = rz_diff_bytes_new(a, TORTURE_ADVERSARY, b, TORTURE_ADVERSARY, NULL);
+		RzDiff *d = rz_diff_bytes_new(a, TORTURE_ADVERSARY, b, TORTURE_ADVERSARY);
 		RzList *m = rz_diff_matches_new(d);
 		rz_list_free(m);
 		rz_diff_free(d);
@@ -816,7 +816,7 @@ static void bench_torture_block_shift(RzTable *t_out) {
 	make_block_shift_pair(a, b, TORTURE_BLOCKSHIFT);
 
 	RZ_BENCH_RUN("[RzDiff] torture: block shift (16KB, 1KB moved)", t_out, ITER_TORTURE, {
-		RzDiff *d = rz_diff_bytes_new(a, TORTURE_BLOCKSHIFT, b, TORTURE_BLOCKSHIFT, NULL);
+		RzDiff *d = rz_diff_bytes_new(a, TORTURE_BLOCKSHIFT, b, TORTURE_BLOCKSHIFT);
 		RzList *ops = rz_diff_opcodes_new(d);
 		rz_list_free(ops);
 		rz_diff_free(d);
