@@ -22,8 +22,6 @@
 static bool check_unused_opcode(const ut8 opcode) {
 	switch (opcode) {
 	case 0x3b:
-	case 0x44:
-	case 0x45:
 	case 0x8B:
 	case 0x95:
 	case 0xC1:
@@ -311,6 +309,8 @@ static _RzAnalysisOpType c166_analysis_op_type_by_opcode(const ut8 opcode) {
 	case C166_SCXT_reg_mem:
 	case C166_EXTP_or_EXTS_pag10_or_seg8_irang2:
 	case C166_EXTP_or_EXTS_Rwm_irang2:
+	case C166_STALLAM_44:
+	case C166_STALLEW_45:
 		return RZ_ANALYSIS_OP_TYPE_UNK;
 	default:
 		printf("0x%02x\n", opcode);
@@ -357,16 +357,18 @@ static st32 disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, st32 len) {
 		return op->size;
 	}
 	op->size = c166_decode_command(state, &inst, buf, len);
+	c166_maybe_deactivate_ext(state, inst.addr);
 
 	if (op->size == 4 && len == 3) {
 		rz_asm_op_setf_asm(op, FMT_2WORD, buf[0], buf[1], buf[2], 0x00);
 	} else if (op->size == 4 && len == 2) {
 		rz_asm_op_setf_asm(op, FMT_2WORD, buf[0], buf[1], 0x00, 0x00);
 	} else if (RZ_STR_EQ(inst.instr, "invalid")) {
-		if (op->size == 2)
+		if (op->size == 2) {
 			rz_asm_op_setf_asm(op, FMT_WORD, buf[0], buf[1]);
-		else
+		} else {
 			rz_asm_op_setf_asm(op, FMT_2WORD, buf[0], buf[1], buf[2], buf[3]);
+		}
 	} else {
 		if (RZ_STR_ISNOTEMPTY(inst.operands)) {
 			rz_asm_op_setf_asm(op, FMT7, inst.instr, inst.operands);
@@ -395,9 +397,18 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	if (!pvec) {
 		return NULL;
 	}
+	/**
+	 * These comments are technical,
+	 * to avoid losing working token versions
+	 * for functions that are not yet fully implemented.
+	 */
 	TOKEN(META, "^(.word.*)");
-	TOKEN(SEPARATOR, "([\\s.,:]+)");
-	TOKEN(REGISTER, "\\b0x([fF][eEfF][0-9a-fA-F]{2})\\b");
+	// TOKEN(NUMBER, "#(0x[0-9a-f]{1,8})");
+	TOKEN(REGISTER, "(0xf[0,a-f][0-9a-f]{2})"); ///< 0xfe00:0x0246
+	// Hexadecimal numbers
+	TOKEN(SEPARATOR, "([\\s.,:#]+)");
+	TOKEN(NUMBER, "(0x[f][0-9a-f]{1,3})");
+	TOKEN(NUMBER, "(0x[^f][0-9a-f]+)");
 	TOKEN(MNEMONIC, "^(jmpa[+-]?)"); ///< jmpa+ jmpa-  mnemonics
 	TOKEN(MNEMONIC, "^(calla[+-]?)"); ///< calla+ calla- mnemonics
 	TOKEN(META, "^([\\- USR]+[012]?)");
@@ -405,8 +416,6 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	TOKEN(META, "([\\[\\]\\-#])");
 	// TOKEN(META, "(cc_\\w+)");
 	TOKEN(META, "(cc_[\\w\\/]+)");
-	// Hexadecimal numbers
-	TOKEN(NUMBER, "(0x[0-9a-f]+)");
 	/**
 	 * Match normal registers which start with small r, optional h or l
 	 * and a number.
@@ -415,16 +424,10 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	 */
 	TOKEN(REGISTER, "\\b(r[hl]?[0-9]{1,2}|[A-Z]+[A-Z0-9]*)\\b");
 	TOKEN(MNEMONIC, "^([\\w]+[12]?)");
-	// TOKEN(SEPARATOR, "([\\s.,:+]+)");
 	TOKEN(SEPARATOR, "(\\+)");
 	// Decimal numbers
 	TOKEN(NUMBER, "(data[2,3,4,5,8])");
 	TOKEN(NUMBER, "(\\d+)");
-	/**
-	 * These comments are technical,
-	 * to avoid losing working token versions
-	 * for functions that are not yet fully implemented.
-	 */
 	return pvec;
 }
 
@@ -467,6 +470,7 @@ static char **c166_cpu_descriptions() {
 		"c166-generic", "Siemens/Infineon C166 family",
 		"c166v1", "Siemens/Infineon C16x v1 family",
 		"c166v2", "Siemens/Infineon C16x v2 family",
+		"st10", "STMicroelectronics ST10 family of 16-bit single-chip",
 		NULL
 	};
 	return cpu_desc;
@@ -482,10 +486,7 @@ RzAsmPlugin rz_asm_plugin_c166 = {
 	.disassemble = &disassemble,
 	.init = &c16x_init,
 	.fini = &c16x_fini,
-	.cpus =
-		"c166-generic,"
-		"c166v1,"
-		"c166v2",
+	.cpus = "c166-generic,c166v1,c166v2,st10",
 	.get_cpu_desc = c166_cpu_descriptions,
 };
 
