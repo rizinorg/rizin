@@ -499,6 +499,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	if (argc == 2 && !strcmp(argv[1], "-H")) {
 		main_print_var(r, NULL);
 		LISTS_FREE();
+		rz_core_free(r);
 		return 0;
 	}
 
@@ -565,6 +566,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 #else
 		case 'd':
 			RZ_LOG_ERROR("Sorry. No debugger backend available.\n");
+			rz_core_free(r);
 			return 1;
 #endif
 		case 'D': {
@@ -579,6 +581,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				rz_cmd_state_output_fini(&state);
 				rz_cons_flush();
 				LISTS_FREE();
+				rz_core_free(r);
 				return 0;
 			}
 			break;
@@ -630,6 +633,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		case 'H':
 			main_print_var(r, opt.arg);
 			LISTS_FREE();
+			rz_core_free(r);
 			return 0;
 		case 'i':
 			if (RZ_STR_ISEMPTY(opt.arg)) {
@@ -716,15 +720,19 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
 				free(customRarunProfile);
+				rz_core_free(r);
 				return 0;
 			} else {
 				rz_main_version_verify(0);
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
 				free(customRarunProfile);
-				return rz_main_version_print(r->sys_path, "rizin");
+				ret = rz_main_version_print(r->sys_path, "rizin");
+				rz_core_free(r);
+				return ret;
 			}
 		case 'V':
+			rz_core_free(r);
 			return rz_main_version_verify(1);
 		case 'w':
 			perms |= RZ_PERM_W;
@@ -741,6 +749,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		RZ_LOG_ERROR("stderr2stdout: Failed to dup2 stderr\n");
 		LISTS_FREE();
 		RZ_FREE(debugbackend);
+		rz_core_free(r);
 		return 1;
 	}
 	if (noStderr) {
@@ -748,6 +757,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			RZ_LOG_ERROR("Failed to close stderr\n");
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
+			rz_core_free(r);
 			return 1;
 		}
 		const char nul[] = RZ_SYS_DEVNULL;
@@ -756,6 +766,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			RZ_LOG_ERROR("Failed to open %s\n", nul);
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
+			rz_core_free(r);
 			return 1;
 		}
 		if (2 != new_stderr) {
@@ -763,12 +774,14 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				RZ_LOG_ERROR("Failed to dup2 stderr\n");
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
+				rz_core_free(r);
 				return 1;
 			}
 			if (-1 == close(new_stderr)) {
 				RZ_LOG_ERROR("Failed to close %s\n", nul);
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
+				rz_core_free(r);
 				return 1;
 			}
 		}
@@ -821,6 +834,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		LISTS_FREE();
 		free(pfile);
 		RZ_FREE(debugbackend);
+		rz_core_free(r);
 		return 0;
 	}
 
@@ -828,7 +842,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		LISTS_FREE();
 		free(pfile);
 		RZ_FREE(debugbackend);
-		return main_help(r, help > 1 ? 2 : 0);
+		ret = main_help(r, help > 1 ? 2 : 0);
+		rz_core_free(r);
+		return ret;
 	}
 	if (customRarunProfile) {
 		char *tfn = rz_file_temp(".rz-run");
@@ -845,6 +861,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			RZ_LOG_ERROR("Missing argument for -d\n");
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
+			rz_core_free(r);
 			return 1;
 		}
 		const char *src = haveRarunProfile ? pfile : argv[opt.ind];
@@ -892,6 +909,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			RZ_LOG_ERROR("Missing URI for -C\n");
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
+			rz_core_free(r);
 			return 1;
 		}
 		if (strstr(uri, "://")) {
@@ -928,6 +946,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			LISTS_FREE();
 			free(pfile);
 			RZ_FREE(debugbackend);
+			rz_core_free(r);
 			return 1;
 		}
 		if (rz_sys_chdir(argv[opt.ind])) {
@@ -935,6 +954,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			LISTS_FREE();
 			free(pfile);
 			RZ_FREE(debugbackend);
+			rz_core_free(r);
 			return 1;
 		}
 	} else if (argv[opt.ind] && !strcmp(argv[opt.ind], "-")) {
@@ -943,6 +963,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		int result = _setmode(_fileno(stdin), _O_BINARY);
 		if (result == -1) {
 			RZ_LOG_ERROR("Cannot set stdin to binary mode\n");
+			rz_core_free(r);
 			return 1;
 		}
 #endif
@@ -971,6 +992,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				RZ_LOG_ERROR("[=] Cannot open '%s'\n", path);
 				LISTS_FREE();
 				free(path);
+				rz_core_free(r);
 				return 1;
 			}
 			rz_io_map_new(r->io, fh->fd, 7, 0LL, mapaddr,
@@ -996,6 +1018,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			RZ_LOG_ERROR("Cannot slurp from stdin\n");
 			free(buf);
 			LISTS_FREE();
+			rz_core_free(r);
 			return 1;
 		}
 	} else if (has_file_arg(argc, argv, &opt)) {
@@ -1010,6 +1033,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				RZ_LOG_ERROR("No program given to -d\n");
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
+				rz_core_free(r);
 				return 1;
 			}
 			if (debug == 2) {
