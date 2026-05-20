@@ -15,6 +15,8 @@ typedef struct rz_bench_ctx_t {
 	ut64 iterations; ///< number of iterations
 	ut64 start_time; ///< start time of the benchmark in microseconds
 	ut64 total_time; ///< total elapsed time of the benchmark in microseconds
+	double mean_us; ///< The average time needed per iteration in microseconds.
+	double std_dev; ///< Standard deviation of benchmark samples in microseconds.
 } RzBenchCtx;
 
 RZ_API void rz_bench_init(RZ_NONNULL RzBenchCtx *ctx, RZ_NONNULL const char *name, ut64 iterations);
@@ -34,25 +36,35 @@ RZ_API void rz_bench_report(RZ_NONNULL RzBenchCtx *ctx, RZ_NONNULL RzTable *t);
  */
 #define RZ_BENCH_RUN(name, table, iterations, code) \
 	do { \
+		RzMathWelfordSums wf = { 0 }; \
 		RzBenchCtx ctx; \
 		rz_bench_init(&ctx, name, iterations); \
 		rz_bench_start(&ctx); \
 		for (ut64 i = 0; i < iterations; i++) { \
+			ut64 spl = rz_time_now_mono(); \
 			code; \
+			rz_math_welford_push(&wf, (double)(rz_time_now_mono() - spl)); \
 		} \
+		ctx.std_dev = rz_math_welford_std_deviation(&wf); \
+		ctx.mean_us = rz_math_welford_mean(&wf); \
 		rz_bench_end(&ctx); \
 		rz_bench_report(&ctx, table); \
 	} while (0)
 
 #define RZ_BENCH_RUN_I(name, i, table, iterations, code) \
 	do { \
+		RzMathWelfordSums wf = { 0 }; \
 		RzBenchCtx ctx; \
 		rz_bench_init(&ctx, name, iterations); \
 		rz_bench_start(&ctx); \
 		for (ut64(i) = 0; (i) < iterations; (i)++) { \
+			ut64 spl = rz_time_now_mono(); \
 			code; \
+			rz_math_welford_push(&wf, (double)(rz_time_now_mono() - spl)); \
 		} \
 		rz_bench_end(&ctx); \
+		ctx.std_dev = rz_math_welford_std_deviation(&wf); \
+		ctx.mean_us = rz_math_welford_mean(&wf); \
 		rz_bench_report(&ctx, table); \
 	} while (0)
 
@@ -61,7 +73,7 @@ RZ_API void rz_bench_report(RZ_NONNULL RzBenchCtx *ctx, RZ_NONNULL RzTable *t);
  * \param T table to initialize.
  */
 #define RZ_BENCH_TABLE_INIT(T) \
-	rz_table_set_columnsf(T, "snnnn", "Benchmark", "Iterations", "Total time [ms]", "Avg iter time [us/iteration]", "Throughput [iterations/sec]");
+	rz_table_set_columnsf(T, "sdnnnn", "Benchmark", "Iterations", "Total time [ms]", "Avg iter time [us/iteration]", "Throughput [iterations/sec]", "Std Deviation");
 
 /**
  * \brief Prints microbenchmark results and frees the RzTable \p T. Should be called at end of a benchmark suite.
