@@ -178,6 +178,9 @@ RzList /*<char *>*/ *PE_(section_flag_to_rzlist)(ut64 flag) {
 bool PE_(read_image_section_header)(RzBuffer *b, ut64 addr, PE_(image_section_header) * section_header) {
 	ut8 buf[sizeof(PE_(image_section_header))];
 	st64 bytes_read = rz_buf_read_at(b, addr, buf, sizeof(buf));
+	if (bytes_read == -1) {
+		return false;
+	}
 	if (bytes_read < sizeof(buf)) {
 		// For incomplete section header, fill the rest of the section header with 0
 		memset(buf + bytes_read, 0, sizeof(buf) - bytes_read);
