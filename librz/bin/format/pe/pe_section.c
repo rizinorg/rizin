@@ -177,9 +177,7 @@ RzList /*<char *>*/ *PE_(section_flag_to_rzlist)(ut64 flag) {
 
 bool PE_(read_image_section_header)(RzBuffer *b, ut64 addr, PE_(image_section_header) * section_header) {
 	ut8 buf[sizeof(PE_(image_section_header))];
-	b->Oxff_priv_override = true;
 	rz_buf_read_at(b, addr, buf, sizeof(buf));
-	b->Oxff_priv_override = false;
 	memcpy(section_header->Name, buf, PE_IMAGE_SIZEOF_SHORT_NAME);
 	PE_READ_STRUCT_FIELD(section_header, PE_(image_section_header), Misc.PhysicalAddress, 32);
 	PE_READ_STRUCT_FIELD(section_header, PE_(image_section_header), VirtualAddress, 32);
