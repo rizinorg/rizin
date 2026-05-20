@@ -182,7 +182,7 @@ bool PE_(read_image_section_header)(RzBuffer *b, ut64 addr, PE_(image_section_he
 		return false;
 	}
 	if (bytes_read < sizeof(buf)) {
-		// For incomplete section header, fill the rest of the section header with 0
+		// For incomplete section header, fill the rest of the header with 0 so that tests pass
 		memset(buf + bytes_read, 0, sizeof(buf) - bytes_read);
 	}
 	memcpy(section_header->Name, buf, PE_IMAGE_SIZEOF_SHORT_NAME);
