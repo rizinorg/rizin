@@ -16,6 +16,10 @@ aF
 e log.level=3
 pd 10
 afb
+echo -- 4.5 --
+e io.ff=false
+pd 4
+e io.ff=true
 echo -- 5 --
 af-
 e io.0xff=0
@@ -83,6 +87,14 @@ WARNING: Failed to read chunk of size 0x101 at 0x10020 from io.
             0x0001002f      ff             invalid
             0x00010030      ff             invalid
 0x00010020 0x0001002e 00:0000 14
+-- 4.5 --
+ERROR: Incomplete buffer read: expected 0x101 bytes, got 13 bytes.
+WARNING: Failed to read chunk of size 0x101 at 0x10020 from io.
+/ entry0();
+|           0x00010020      b32a           mov   bl, 0x2a              ; '*'
+|           0x00010022      31c0           xor   eax, eax
+|           0x00010024      40             inc   eax
+|           0x00010025      cd80           int   0x80
 -- 5 --
 WARNING: Failed to read chunk of size 0x101 at 0x10020 from io.
 / entry0();

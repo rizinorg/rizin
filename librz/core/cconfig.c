@@ -2032,6 +2032,7 @@ static bool cb_ioff(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	core->io->ff = node->i_value;
+	rz_buf_set_Oxff_global_enabled(core->io->ff);
 	return true;
 }
 
@@ -2039,6 +2040,7 @@ static bool cb_io_oxff(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	core->io->Oxff = node->i_value;
+	rz_buf_set_Oxff_global(core->io->Oxff);
 	return true;
 }
 
