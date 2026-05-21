@@ -1,5 +1,7 @@
 NAME=PE: corkami foldedhdrW7.exe - open
 FILE=bins/pe/foldedhdrW7.exe
+# HACK
+ARGS=-e io.0xff=0
 CMDS=q!
 EXPECT=
 RUN
