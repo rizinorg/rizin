@@ -4145,6 +4145,7 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 		}
 		ut64 upper = RZ_MIN(next_data, next_fcn);
 		ut64 size = (upper != UT64_MAX) ? upper - target : ptr_size;
+		// ut64 size = (upper != UT64_MAX) ? RZ_MIN(upper - target, ptr_size) : ptr_size;
 		rz_meta_set(core->analysis, RZ_META_TYPE_DATA, target, size, NULL);
 	}
 
