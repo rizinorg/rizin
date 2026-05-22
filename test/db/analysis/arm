@@ -2297,7 +2297,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ARM Thumb literal pool after function marked as data (pool entry points to ELF section)
+NAME=ARM Thumb literal pool after function marked as data
 FILE=bins/arm/elf/K64F-RIOT-SPI.elf
 CMDS=<<EOF
 aaa
