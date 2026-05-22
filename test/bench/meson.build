@@ -23,6 +23,7 @@ if get_option('enable_benchmarks')
     'il',
     'ht',
     'util',
+    'vector',
     'list'
   ]
 
