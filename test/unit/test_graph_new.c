@@ -15,6 +15,10 @@ static ut64 simple_hash_base(const void *data) {
 	return (ut64)(utptr)data + BASE;
 }
 
+static ut64 str_hash(RZ_NULLABLE const void *data) {
+	return rz_str_djb2_hash(data);
+}
+
 static void topo_sorting(RzGraphNode *n, RzGraphVisitor *vis) {
 	RzList *order = (RzList *)vis->visitor_data;
 	rz_list_prepend(order, rz_graph_node_get_data_mut(n));
@@ -90,27 +94,22 @@ static bool test_graph_edges(void) {
 	RzGraphNode *arr[16] = { 0 };
 
 	// Add edges
-	bool success = rz_graph_add_edge(g, n1, n2, NULL);
-	mu_assert_true(success, "add_edge.1->2");
+	mu_assert_eq(rz_graph_add_edge(g, n1, n2, NULL), RZ_GRAPH_STATUS_OK, "add_edge.1->2");
 	mu_assert_eq(rz_graph_count_edges(g), 1, "n_edges.1");
 
-	success = rz_graph_add_edge(g, n1, n3, NULL);
-	mu_assert_true(success, "add_edge.1->3");
+	mu_assert_eq(rz_graph_add_edge_by_id(g, 1, 9, NULL), RZ_GRAPH_STATUS_MISSING_NODE, "add_edge.1->2");
+	mu_assert_eq(rz_graph_count_edges(g), 1, "n_edges.1");
+
+	mu_assert_eq(rz_graph_add_edge_by_id(g, 1, 3, NULL), RZ_GRAPH_STATUS_OK, "add_edge.1->3");
 	mu_assert_eq(rz_graph_count_edges(g), 2, "n_edges.2");
 
-	success = rz_graph_add_edge(g, n2, n3, NULL);
-	mu_assert_true(success, "add_edge.2->3");
+	mu_assert_eq(rz_graph_add_edge(g, n2, n3, NULL), RZ_GRAPH_STATUS_OK, "add_edge.2->3");
 	mu_assert_eq(rz_graph_count_edges(g), 3, "n_edges.3");
 
 	// assert more edges
-	bool has_edge = rz_graph_has_edge(g, n1, n2);
-	mu_assert_true(has_edge, "has_edge.1->2");
-
-	has_edge = rz_graph_has_edge(g, n2, n1);
-	mu_assert_false(has_edge, "has_edge.2->1.false");
-
-	has_edge = rz_graph_has_edge(g, n1, n3);
-	mu_assert_true(has_edge, "has_edge.1->3");
+	mu_assert_eq(rz_graph_has_edge(g, n1, n2), RZ_GRAPH_STATUS_OK, "has_edge.1->2");
+	mu_assert_eq(rz_graph_has_edge(g, n2, n1), RZ_GRAPH_STATUS_MISSING_EDGE, "has_edge.2->1.false");
+	mu_assert_eq(rz_graph_has_edge(g, n1, n3), RZ_GRAPH_STATUS_OK, "has_edge.1->3");
 
 	// Add 16 more nodes (more than LIST_IMPL_DEFAULT_NODE_VEC_SIZE)
 	// then add an edge and check if it fails somehow.
@@ -119,26 +118,27 @@ static bool test_graph_edges(void) {
 		mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(i + 4), &arr[i]), RZ_GRAPH_STATUS_OK, "Failed to add");
 		mu_assert_notnull(arr[i], "Was NULL, should not.");
 	}
-	success = rz_graph_add_edge(g, arr[8], n3, NULL);
-	mu_assert_true(success, "add_edge.12->3");
+	mu_assert_eq(rz_graph_add_edge(g, arr[8], n3, NULL), RZ_GRAPH_STATUS_OK, "add_edge.12->3");
 	mu_assert_eq(rz_graph_count_edges(g), 4, "n_edges.4");
-	has_edge = rz_graph_has_edge_by_id(g, 8 + 4, 3);
-	mu_assert_true(has_edge, "has_edge.12->3");
+	mu_assert_eq(rz_graph_has_edge_by_id(g, 8 + 4, 3), RZ_GRAPH_STATUS_OK, "has_edge.12->3");
 
 	mu_assert_eq(rz_graph_del_node(g, arr[8]), RZ_GRAPH_STATUS_EXISTED, "Del failed");
 	// Node pointer is freed by del.
 	arr[8] = NULL;
-	has_edge = rz_graph_has_edge_by_id(g, 8 + 4, 3);
-	mu_assert_false(has_edge, "has_edge.12->3 fail");
+	mu_assert_eq(rz_graph_has_edge_by_id(g, 8 + 4, 3), RZ_GRAPH_STATUS_MISSING_EDGE, "has_edge.12->3 fail");
 
 	// Node should be placed at the edge list index of just deleted node 11.
 	RzGraphNode *nx = NULL;
 	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(0xffff), &nx), RZ_GRAPH_STATUS_OK, "Failed to add");
-	success = rz_graph_add_edge(g, nx, n3, NULL);
-	mu_assert_true(success, "add_edge.0xffff->3");
+	mu_assert_eq(rz_graph_add_edge(g, nx, n3, NULL), RZ_GRAPH_STATUS_OK, "add_edge.0xffff->3");
 	mu_assert_eq(rz_graph_count_edges(g), 4, "n_edges.4");
-	has_edge = rz_graph_has_edge(g, nx, n3);
-	mu_assert_true(has_edge, "has_edge.0xffff->3");
+	mu_assert_eq(rz_graph_has_edge(g, nx, n3), RZ_GRAPH_STATUS_OK, "has_edge.0xffff->3");
+
+	mu_assert_eq(rz_graph_del_edge_by_id(g, 2, 99), RZ_GRAPH_STATUS_OK, "del_edge not existing");
+	mu_assert_eq(rz_graph_count_edges(g), 4, "n_edges.4");
+
+	mu_assert_eq(rz_graph_del_edge_by_id(g, 2, 3), RZ_GRAPH_STATUS_EXISTED, "del_edge_id.2->3");
+	mu_assert_eq(rz_graph_count_edges(g), 3, "n_edges.3");
 
 	rz_graph_free(g);
 	mu_end;
@@ -159,15 +159,13 @@ static bool test_graph_edge_deletion(void) {
 	rz_graph_add_edge(g, n1, n3, NULL);
 	mu_assert_eq(rz_graph_count_edges(g), 3, "n_edges.initial");
 
-	bool success = rz_graph_del_edge(g, n1, n2);
-	mu_assert_true(success, "del_edge.1->2");
+	mu_assert_eq(rz_graph_del_edge(g, n1, n2), RZ_GRAPH_STATUS_EXISTED, "del_edge.1->2");
+	mu_assert_eq(rz_graph_del_edge(g, n1, n2), RZ_GRAPH_STATUS_OK, "del_edge non 1->2");
 	mu_assert_eq(rz_graph_count_edges(g), 2, "n_edges.after_del");
 
-	bool has_edge = rz_graph_has_edge(g, n1, n2);
-	mu_assert_false(has_edge, "has_edge.1->2.deleted");
+	mu_assert_eq(rz_graph_has_edge(g, n1, n2), RZ_GRAPH_STATUS_MISSING_EDGE, "has_edge.1->2.deleted");
 
-	has_edge = rz_graph_has_edge(g, n2, n3);
-	mu_assert_true(has_edge, "has_edge.2->3.exists");
+	mu_assert_eq(rz_graph_has_edge(g, n2, n3), RZ_GRAPH_STATUS_OK, "has_edge.2->3.exists");
 
 	rz_graph_free(g);
 	mu_end;
@@ -195,18 +193,16 @@ static bool test_graph_edge_deletion_multi(void) {
 	rz_graph_add_edge(g, n2, n3, NULL);
 	mu_assert_eq(rz_graph_count_edges(g), 4, "n_edges.initial");
 
-	bool success = rz_graph_del_edges(g, dst_is_n3, NULL);
-	mu_assert_true(success, "del_edge x->3");
+	mu_assert_eq(rz_graph_del_edges(g, dst_is_n3, NULL), RZ_GRAPH_STATUS_EXISTED, "del_edge x->3");
 	mu_assert_eq(rz_graph_count_edges(g), 2, "n_edges.after_del");
 
-	bool has_edge = rz_graph_has_edge(g, n1, n2);
-	mu_assert_true(has_edge, "has_edge.1->2.exists");
-	has_edge = rz_graph_has_edge(g, n1, n4);
-	mu_assert_true(has_edge, "has_edge.1->4.exists");
+	mu_assert_eq(rz_graph_has_edge(g, n1, n2), RZ_GRAPH_STATUS_OK, "has_edge.1->2.exists");
+	mu_assert_eq(rz_graph_has_edge(g, n1, n4), RZ_GRAPH_STATUS_OK, "has_edge.1->4.exists");
 
-	success = rz_graph_del_edges(g, NULL, NULL);
-	mu_assert_true(success, "del_edge all");
+	mu_assert_eq(rz_graph_del_edges(g, NULL, NULL), RZ_GRAPH_STATUS_EXISTED, "del_edge all");
 	mu_assert_eq(rz_graph_count_edges(g), 0, "n_edges.after_del");
+
+	mu_assert_eq(rz_graph_del_edges(g, NULL, NULL), RZ_GRAPH_STATUS_OK, "del_edge none");
 
 	rz_graph_free(g);
 	mu_end;
@@ -235,16 +231,22 @@ static bool test_graph_edges_data_update(void) {
 	rz_graph_add_edge(g, n2, n3, RZ_GRAPH_INT_AS_DATA(0x23));
 	mu_assert_eq(rz_graph_count_edges(g), 4, "n_edges.initial");
 
-	mu_assert_true(rz_graph_update_edge(g, n3, n3, RZ_GRAPH_INT_AS_DATA(0x33), NULL, NULL), "Did not add edge");
+	mu_assert_eq(rz_graph_update_edge_by_id(g, 3, 9, RZ_GRAPH_INT_AS_DATA(0x33), NULL, NULL),
+		RZ_GRAPH_STATUS_MISSING_NODE, "missing node expected");
+
+	mu_assert_eq(rz_graph_update_edge(g, n3, n3, RZ_GRAPH_INT_AS_DATA(0x33), NULL, NULL),
+		RZ_GRAPH_STATUS_OK, "add edge");
 	mu_assert_eq(rz_graph_count_edges(g), 5, "n_edges.added");
 
-	mu_assert_true(rz_graph_update_edge_by_id(g, 2, 3, RZ_GRAPH_INT_AS_DATA(0xff), is_from_one, NULL), "Should return true for not updated");
+	mu_assert_eq(rz_graph_update_edge_by_id(g, 2, 3, RZ_GRAPH_INT_AS_DATA(0xff), is_from_one, NULL),
+		RZ_GRAPH_STATUS_NOT_UPDATED, "updated");
 	RzGraphEdge *e = rz_graph_find_edge(g, n2, n3);
 	mu_assert_notnull(e, "Not NULL");
 	ut64 edge_data = (utptr)rz_graph_edge_get_data(e);
 	mu_assert_eq(edge_data, 0x23, "Edge data changed.");
 
-	mu_assert_true(rz_graph_update_edge_by_id(g, 1, 3, RZ_GRAPH_INT_AS_DATA(0xff), is_from_one, NULL), "Should return true for updated");
+	mu_assert_eq(rz_graph_update_edge_by_id(g, 1, 3, RZ_GRAPH_INT_AS_DATA(0xff), is_from_one, NULL),
+		RZ_GRAPH_STATUS_UPDATED, "updated");
 	e = rz_graph_find_edge(g, n1, n3);
 	mu_assert_notnull(e, "Not NULL");
 	edge_data = (utptr)rz_graph_edge_get_data(e);
@@ -382,8 +384,7 @@ static bool test_graph_node_deletion(void) {
 	mu_assert_null(found, "find_node.deleted");
 
 	// edge n1->n3 still found
-	bool has_edge = rz_graph_has_edge(g, n1, n3);
-	mu_assert_true(has_edge, "has_edge.1->3.exists");
+	mu_assert_eq(rz_graph_has_edge(g, n1, n3), RZ_GRAPH_STATUS_OK, "has_edge.1->3.exists");
 
 	mu_assert_eq(rz_graph_del_node_by_id(g, 0x40000003), RZ_GRAPH_STATUS_EXISTED, "del failed");
 
@@ -580,11 +581,57 @@ static bool test_graph_complex(void) {
 	mu_assert_eq(rz_graph_count_edges(g), 12, "n_edges.12");
 
 	// test various connections
-	mu_assert_true(rz_graph_has_edge(g, nodes[0], nodes[1]), "has_edge.0->1");
-	mu_assert_true(rz_graph_has_edge(g, nodes[1], nodes[4]), "has_edge.1->4");
-	mu_assert_false(rz_graph_has_edge(g, nodes[0], nodes[9]), "has_edge.0->9.false");
+	mu_assert_eq(rz_graph_has_edge(g, nodes[0], nodes[1]), RZ_GRAPH_STATUS_OK, "has_edge.0->1");
+	mu_assert_eq(rz_graph_has_edge(g, nodes[1], nodes[4]), RZ_GRAPH_STATUS_OK, "has_edge.1->4");
+	mu_assert_eq(rz_graph_has_edge(g, nodes[0], nodes[9]), RZ_GRAPH_STATUS_MISSING_EDGE, "has_edge.0->9.false");
 
 	rz_graph_free(g);
+	mu_end;
+}
+
+static bool test_graph_node_edge_data(void) {
+	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, str_hash, free, free);
+
+	char nname[2] = { 0 };
+	// 10 nodes
+	RzGraphNode *nodes[10];
+	for (int i = 0; i < 10; i++) {
+		nodes[i] = NULL;
+		rz_strf(nname, "%d", i);
+		mu_assert_eq(rz_graph_add_node(g, rz_str_dup(nname), &nodes[i]), RZ_GRAPH_STATUS_OK, "Failed to add");
+		mu_assert_notnull(nodes[i], "add_node");
+		mu_assert_eq(rz_graph_add_edge(g, nodes[i], nodes[i], malloc(16)), RZ_GRAPH_STATUS_OK, "Failed to add self-ref edge");
+	}
+	mu_assert_eq(rz_graph_count_edges(g), 10, "n_edges.10");
+
+	mu_assert_eq(rz_graph_add_edge_by_id(g, str_hash("0"), str_hash("0"), malloc(16)), RZ_GRAPH_STATUS_EXISTED, "add existing edge, data must be freed");
+	mu_assert_eq(rz_graph_count_edges(g), 10, "n_edges.10");
+
+	for (int i = 1; i < 10; i++) {
+		mu_assert_eq(rz_graph_add_edge(g, nodes[i - 1], nodes[i], malloc(16)), RZ_GRAPH_STATUS_OK, "Failed to add back edge");
+	}
+
+	for (int i = 0; i < 10; i++) {
+		rz_strf(nname, "%d", i);
+		RzGraphNode *n = rz_graph_find_node(g, str_hash(nname));
+		mu_assert_notnull(n, "find node");
+		mu_assert_streq(rz_graph_node_get_data(n), nname, "Name mismatch");
+	}
+
+	for (int i = 0; i < 10; i++) {
+		mu_assert_eq(rz_graph_has_edge(g, nodes[i], nodes[i]), RZ_GRAPH_STATUS_OK, "Failed to has self-ref edge");
+		if (i != 0) {
+			mu_assert_eq(rz_graph_has_edge(g, nodes[i - 1], nodes[i]), RZ_GRAPH_STATUS_OK, "Failed to has back edge");
+		}
+	}
+
+	mu_assert_eq(rz_graph_del_edge_by_id(g, str_hash("00"), str_hash("0")), RZ_GRAPH_STATUS_OK, "Not existing node.");
+	mu_assert_eq(rz_graph_count_edges(g), 19, "n_edges.10");
+	mu_assert_eq(rz_graph_del_edge_by_id(g, str_hash("0"), str_hash("0")), RZ_GRAPH_STATUS_EXISTED, "Del edge with data.");
+	mu_assert_eq(rz_graph_count_edges(g), 18, "n_edges.9");
+
+	rz_graph_free(g);
+
 	mu_end;
 }
 
@@ -634,27 +681,27 @@ static bool test_graph_edges_matrix(void) {
 	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 
 	// Add edges
-	bool success = rz_graph_add_edge(g, n1, n2, NULL);
-	mu_assert_true(success, "add_edge.1->2");
+	mu_assert_eq(rz_graph_add_edge(g, n1, n2, NULL), RZ_GRAPH_STATUS_OK, "add_edge.1->2");
 	mu_assert_eq(rz_graph_count_edges(g), 1, "n_edges.1");
 
-	success = rz_graph_add_edge(g, n1, n3, NULL);
-	mu_assert_true(success, "add_edge.1->3");
+	mu_assert_eq(rz_graph_add_edge(g, n1, n3, NULL), RZ_GRAPH_STATUS_OK, "add_edge.1->3");
 	mu_assert_eq(rz_graph_count_edges(g), 2, "n_edges.2");
 
-	success = rz_graph_add_edge(g, n2, n3, NULL);
-	mu_assert_true(success, "add_edge.2->3");
+	mu_assert_eq(rz_graph_add_edge(g, n2, n3, NULL), RZ_GRAPH_STATUS_OK, "add_edge.2->3");
 	mu_assert_eq(rz_graph_count_edges(g), 3, "n_edges.3");
 
 	// assert more edges
-	bool has_edge = rz_graph_has_edge(g, n1, n2);
-	mu_assert_true(has_edge, "has_edge.1->2");
+	mu_assert_eq(rz_graph_has_edge(g, n1, n2), RZ_GRAPH_STATUS_OK, "has_edge.1->2");
 
-	has_edge = rz_graph_has_edge(g, n2, n1);
-	mu_assert_false(has_edge, "has_edge.2->1.false");
+	mu_assert_eq(rz_graph_has_edge(g, n2, n1), RZ_GRAPH_STATUS_MISSING_EDGE, "has_edge.2->1.false");
 
-	has_edge = rz_graph_has_edge(g, n1, n3);
-	mu_assert_true(has_edge, "has_edge.1->3");
+	mu_assert_eq(rz_graph_has_edge(g, n1, n3), RZ_GRAPH_STATUS_OK, "has_edge.1->3");
+
+	mu_assert_eq(rz_graph_del_edge_by_id(g, 2, 8), RZ_GRAPH_STATUS_OK, "del_edge not existing");
+	mu_assert_eq(rz_graph_count_edges(g), 3, "n_edges.3");
+
+	mu_assert_eq(rz_graph_del_edge_by_id(g, 2, 3), RZ_GRAPH_STATUS_EXISTED, "del_edge_id.2->3");
+	mu_assert_eq(rz_graph_count_edges(g), 2, "n_edges.2");
 
 	rz_graph_free(g);
 	mu_end;
@@ -675,15 +722,12 @@ static bool test_graph_edge_deletion_matrix(void) {
 	rz_graph_add_edge(g, n1, n3, NULL);
 	mu_assert_eq(rz_graph_count_edges(g), 3, "n_edges.initial");
 
-	bool success = rz_graph_del_edge(g, n1, n2);
-	mu_assert_true(success, "del_edge.1->2");
+	mu_assert_eq(rz_graph_del_edge(g, n1, n2), RZ_GRAPH_STATUS_EXISTED, "del_edge.1->2");
 	mu_assert_eq(rz_graph_count_edges(g), 2, "n_edges.after_del");
 
-	bool has_edge = rz_graph_has_edge(g, n1, n2);
-	mu_assert_false(has_edge, "has_edge.1->2.deleted");
+	mu_assert_eq(rz_graph_has_edge(g, n1, n2), RZ_GRAPH_STATUS_MISSING_EDGE, "has_edge.1->2.deleted");
 
-	has_edge = rz_graph_has_edge(g, n2, n3);
-	mu_assert_true(has_edge, "has_edge.2->3.exists");
+	mu_assert_eq(rz_graph_has_edge(g, n2, n3), RZ_GRAPH_STATUS_OK, "has_edge.2->3.exists");
 
 	rz_graph_free(g);
 	mu_end;
@@ -707,18 +751,16 @@ static bool test_graph_edge_deletion_multi_matrix(void) {
 	rz_graph_add_edge(g, n2, n3, NULL);
 	mu_assert_eq(rz_graph_count_edges(g), 4, "n_edges.initial");
 
-	bool success = rz_graph_del_edges(g, dst_is_n3, NULL);
-	mu_assert_true(success, "del_edge x->3");
+	mu_assert_eq(rz_graph_del_edges(g, dst_is_n3, NULL), RZ_GRAPH_STATUS_EXISTED, "del_edge x->3");
 	mu_assert_eq(rz_graph_count_edges(g), 2, "n_edges.after_del");
 
-	bool has_edge = rz_graph_has_edge(g, n1, n2);
-	mu_assert_true(has_edge, "has_edge.1->2.exists");
-	has_edge = rz_graph_has_edge(g, n1, n4);
-	mu_assert_true(has_edge, "has_edge.1->4.exists");
+	mu_assert_eq(rz_graph_has_edge(g, n1, n2), RZ_GRAPH_STATUS_OK, "has_edge.1->2.exists");
+	mu_assert_eq(rz_graph_has_edge(g, n1, n4), RZ_GRAPH_STATUS_OK, "has_edge.1->4.exists");
 
-	success = rz_graph_del_edges(g, NULL, NULL);
-	mu_assert_true(success, "del_edge all");
+	mu_assert_eq(rz_graph_del_edges(g, NULL, NULL), RZ_GRAPH_STATUS_EXISTED, "del_edge all");
 	mu_assert_eq(rz_graph_count_edges(g), 0, "n_edges.after_del");
+
+	mu_assert_eq(rz_graph_del_edges(g, NULL, NULL), RZ_GRAPH_STATUS_OK, "del_edge none");
 
 	rz_graph_free(g);
 	mu_end;
@@ -742,16 +784,22 @@ static bool test_graph_edges_data_update_matrix(void) {
 	rz_graph_add_edge(g, n2, n3, RZ_GRAPH_INT_AS_DATA(0x23));
 	mu_assert_eq(rz_graph_count_edges(g), 4, "n_edges.initial");
 
-	mu_assert_true(rz_graph_update_edge(g, n3, n3, RZ_GRAPH_INT_AS_DATA(0x33), NULL, NULL), "Did not add edge");
+	mu_assert_eq(rz_graph_update_edge_by_id(g, 3, 9, RZ_GRAPH_INT_AS_DATA(0x33), NULL, NULL),
+		RZ_GRAPH_STATUS_MISSING_NODE, "missing node expected");
+
+	mu_assert_eq(rz_graph_update_edge(g, n3, n3, RZ_GRAPH_INT_AS_DATA(0x33), NULL, NULL),
+		RZ_GRAPH_STATUS_OK, "add edge");
 	mu_assert_eq(rz_graph_count_edges(g), 5, "n_edges.added");
 
-	mu_assert_true(rz_graph_update_edge_by_id(g, 2, 3, RZ_GRAPH_INT_AS_DATA(0xff), is_from_one, NULL), "Should return true for not updated");
+	mu_assert_eq(rz_graph_update_edge_by_id(g, 2, 3, RZ_GRAPH_INT_AS_DATA(0xff), is_from_one, NULL),
+		RZ_GRAPH_STATUS_NOT_UPDATED, "not updated");
 	RzGraphEdge *e = rz_graph_find_edge(g, n2, n3);
 	mu_assert_notnull(e, "Not NULL");
 	ut64 edge_data = (utptr)rz_graph_edge_get_data(e);
 	mu_assert_eq(edge_data, 0x23, "Edge data changed.");
 
-	mu_assert_true(rz_graph_update_edge_by_id(g, 1, 3, RZ_GRAPH_INT_AS_DATA(0xff), is_from_one, NULL), "Should return true for updated");
+	mu_assert_eq(rz_graph_update_edge_by_id(g, 1, 3, RZ_GRAPH_INT_AS_DATA(0xff), is_from_one, NULL),
+		RZ_GRAPH_STATUS_UPDATED, "updated");
 	e = rz_graph_find_edge(g, n1, n3);
 	mu_assert_notnull(e, "Not NULL");
 	edge_data = (utptr)rz_graph_edge_get_data(e);
@@ -885,8 +933,7 @@ static bool test_graph_node_deletion_matrix(void) {
 	mu_assert_null(found, "find_node.deleted");
 
 	// edge n1->n3 still found
-	bool has_edge = rz_graph_has_edge(g, n1, n3);
-	mu_assert_true(has_edge, "has_edge.1->3.exists");
+	mu_assert_eq(rz_graph_has_edge(g, n1, n3), RZ_GRAPH_STATUS_OK, "has_edge.1->3.exists");
 
 	rz_graph_free(g);
 	mu_end;
@@ -1078,11 +1125,57 @@ static bool test_graph_complex_matrix(void) {
 	mu_assert_eq(rz_graph_count_edges(g), 12, "n_edges.12");
 
 	// test various connections
-	mu_assert_true(rz_graph_has_edge(g, nodes[0], nodes[1]), "has_edge.0->1");
-	mu_assert_true(rz_graph_has_edge(g, nodes[1], nodes[4]), "has_edge.1->4");
-	mu_assert_false(rz_graph_has_edge(g, nodes[0], nodes[9]), "has_edge.0->9.false");
+	mu_assert_eq(rz_graph_has_edge(g, nodes[0], nodes[1]), RZ_GRAPH_STATUS_OK, "has_edge.0->1");
+	mu_assert_eq(rz_graph_has_edge(g, nodes[1], nodes[4]), RZ_GRAPH_STATUS_OK, "has_edge.1->4");
+	mu_assert_eq(rz_graph_has_edge(g, nodes[0], nodes[9]), RZ_GRAPH_STATUS_MISSING_EDGE, "has_edge.0->9.false");
 
 	rz_graph_free(g);
+	mu_end;
+}
+
+static bool test_graph_node_edge_data_matrix(void) {
+	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, str_hash, free, free);
+
+	char nname[2] = { 0 };
+	// 10 nodes
+	RzGraphNode *nodes[10];
+	for (int i = 0; i < 10; i++) {
+		nodes[i] = NULL;
+		rz_strf(nname, "%d", i);
+		mu_assert_eq(rz_graph_add_node(g, rz_str_dup(nname), &nodes[i]), RZ_GRAPH_STATUS_OK, "Failed to add");
+		mu_assert_notnull(nodes[i], "add_node");
+		mu_assert_eq(rz_graph_add_edge(g, nodes[i], nodes[i], malloc(16)), RZ_GRAPH_STATUS_OK, "Failed to add self-ref edge");
+	}
+	mu_assert_eq(rz_graph_count_edges(g), 10, "n_edges.10");
+
+	mu_assert_eq(rz_graph_add_edge_by_id(g, str_hash("0"), str_hash("0"), malloc(16)), RZ_GRAPH_STATUS_EXISTED, "add existing edge, data must be freed");
+	mu_assert_eq(rz_graph_count_edges(g), 10, "n_edges.10");
+
+	for (int i = 1; i < 10; i++) {
+		mu_assert_eq(rz_graph_add_edge(g, nodes[i - 1], nodes[i], malloc(16)), RZ_GRAPH_STATUS_OK, "Failed to add back edge");
+	}
+
+	for (int i = 0; i < 10; i++) {
+		rz_strf(nname, "%d", i);
+		RzGraphNode *n = rz_graph_find_node(g, str_hash(nname));
+		mu_assert_notnull(n, "find node");
+		mu_assert_streq(rz_graph_node_get_data(n), nname, "Name mismatch");
+	}
+
+	for (int i = 0; i < 10; i++) {
+		mu_assert_eq(rz_graph_has_edge(g, nodes[i], nodes[i]), RZ_GRAPH_STATUS_OK, "Failed to has self-ref edge");
+		if (i != 0) {
+			mu_assert_eq(rz_graph_has_edge(g, nodes[i - 1], nodes[i]), RZ_GRAPH_STATUS_OK, "Failed to has back edge");
+		}
+	}
+
+	mu_assert_eq(rz_graph_del_edge_by_id(g, str_hash("00"), str_hash("0")), RZ_GRAPH_STATUS_OK, "Not existing node.");
+	mu_assert_eq(rz_graph_count_edges(g), 19, "n_edges.10");
+	mu_assert_eq(rz_graph_del_edge_by_id(g, str_hash("0"), str_hash("0")), RZ_GRAPH_STATUS_EXISTED, "Del edge with data.");
+	mu_assert_eq(rz_graph_count_edges(g), 18, "n_edges.9");
+
+	rz_graph_free(g);
+
 	mu_end;
 }
 
@@ -1217,6 +1310,7 @@ static int all_tests(void) {
 	mu_run_test(test_graph_get_nodes);
 	mu_run_test(test_graph_find_edge);
 	mu_run_test(test_graph_complex);
+	mu_run_test(test_graph_node_edge_data);
 
 	// matrix impl
 	mu_run_test(test_graph_nodes_matrix);
@@ -1233,6 +1327,7 @@ static int all_tests(void) {
 	mu_run_test(test_graph_get_nodes_matrix);
 	mu_run_test(test_graph_find_edge_matrix);
 	mu_run_test(test_graph_complex_matrix);
+	mu_run_test(test_graph_node_edge_data_matrix);
 
 	mu_run_test(test_graph_impl_equivalence);
 

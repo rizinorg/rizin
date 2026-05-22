@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_util/rz_graph.h"
 #include <rz_cmd.h>
 #include <rz_util/rz_log.h>
 #include <rz_util/rz_num.h>
@@ -93,7 +92,10 @@ static RzGraphNode *get_graphtrace_node(RzGraph /*<struct trace_node *, None *>*
 
 	snprintf(tn_key, TN_KEY_LEN, TN_KEY_FMT, tn->addr);
 	gn = (RzGraphNode *)(size_t)sdb_num_get(nodes, tn_key);
-	if (!gn && rz_graph_add_node(g, tn, &gn) != RZ_GRAPH_STATUS_ERR) {
+	if (gn) {
+		return gn;
+	}
+	if (rz_graph_add_node(g, tn, &gn) != RZ_GRAPH_STATUS_ERR) {
 		sdb_num_set(nodes, tn_key, (ut64)(size_t)gn);
 	}
 	return gn;
@@ -118,7 +120,7 @@ static void dot_trace_discover_child(RTreeNode *n, RTreeVisitor *vis) {
 		RzGraphNode *gn = get_graphtrace_node(g, gnodes, tn);
 		RzGraphNode *gn_parent = get_graphtrace_node(g, gnodes, tn_parent);
 
-		if (!rz_graph_has_edge(g, gn_parent, gn))
+		if (rz_graph_has_edge(g, gn_parent, gn) == RZ_GRAPH_STATUS_MISSING_EDGE)
 			rz_graph_add_edge(g, gn_parent, gn, NULL);
 	}
 }
