@@ -30,8 +30,6 @@ typedef struct rz_graph_matrix_edge_impl_t {
 	ut64 capacity;
 } RzGraphMatrixImpl;
 
-#define MATRIX_DEFAULT_CAPACITY 512
-
 /* Edge Extract and Builds */
 
 /**
@@ -597,25 +595,30 @@ static bool rz_graph_matrix_impl_require_capacity(RzGraphMatrixImpl *impl, ut64 
 	if (required <= impl->capacity) {
 		return true;
 	}
+	ut64 old_cap = impl->capacity;
 	ut64 new_cap = impl->capacity;
 	while (new_cap < required) {
 		new_cap += new_cap / 4;
 	}
 
-	RzGraphEdge **new_matrix = RZ_NEWS0(RzGraphEdge *, new_cap * new_cap);
+	RzGraphEdge **new_matrix = realloc(impl->matrix, sizeof(RzGraphEdge *) * new_cap * new_cap);
 	if (!new_matrix) {
 		RZ_LOG_WARN("Failed to adjust matrix capacity to %" PFMT64u "\n", new_cap);
 		return false;
 	}
+	RzGraphEdge **new_tail = new_matrix + new_cap * new_cap;
+	RzGraphEdge **old_tail = new_matrix + old_cap * old_cap;
+	size_t tail_size = new_tail - old_tail;
+	memset(old_tail, 0, tail_size * sizeof(RzGraphEdge *));
 
-	// move old to new matrix
-	for (ut32 r = 0; r < impl->capacity; ++r) {
-		for (ut32 c = 0; c < impl->capacity; ++c) {
-			new_matrix[r * new_cap + c] = impl->matrix[r * impl->capacity + c];
-		}
+	ut64 old_row_size = old_cap * sizeof(RzGraphEdge *);
+	for (st64 r = old_cap - 1; r >= 0; --r) {
+		RzGraphEdge **old_row = new_matrix + (old_cap * r);
+		RzGraphEdge **new_row = new_matrix + (new_cap * r);
+		memmove(new_row, old_row, old_row_size);
+		memset(old_row, 0, (new_row - old_row) * sizeof(RzGraphEdge *));
 	}
 
-	free(impl->matrix);
 	impl->matrix = new_matrix;
 	impl->capacity = new_cap;
 	return true;
@@ -944,7 +947,7 @@ static RzGraphMatrixImpl *rz_graph_matrix_impl_init(ut64 capacity) {
 	if (!impl) {
 		return NULL;
 	}
-	impl->capacity = capacity ? capacity : MATRIX_DEFAULT_CAPACITY;
+	impl->capacity = capacity ? capacity : RZ_GRAPH_MATRIX_DEFAULT_CAPACITY;
 	impl->matrix = RZ_NEWS0(RzGraphEdge *, impl->capacity * impl->capacity);
 	if (!impl->matrix) {
 		RZ_LOG_WARN("Failed to init graph matrix with capacity %" PFMT64u "\n", impl->capacity)
@@ -1142,7 +1145,7 @@ RZ_API RZ_OWN RzGraph /*<NodeType *, EdgeType *>*/ *rz_graph_new(
 		return g;
 	}
 	case RZ_GRAPH_IMPL_MATRIX: {
-		RzGraphMatrixImpl *impl = rz_graph_matrix_impl_init(MATRIX_DEFAULT_CAPACITY);
+		RzGraphMatrixImpl *impl = rz_graph_matrix_impl_init(RZ_GRAPH_MATRIX_DEFAULT_CAPACITY);
 		if (!impl) {
 			goto fail_clean;
 		}
@@ -1320,7 +1323,7 @@ RZ_API void rz_graph_reset(RzGraph /*<NodeType *, EdgeType *>*/ *g) {
 		}
 		break;
 	case RZ_GRAPH_IMPL_MATRIX:
-		g->impl = rz_graph_matrix_impl_init(MATRIX_DEFAULT_CAPACITY);
+		g->impl = rz_graph_matrix_impl_init(RZ_GRAPH_MATRIX_DEFAULT_CAPACITY);
 		if (!g->impl) {
 			RZ_LOG_WARN("Failed to reset, clear data only\n");
 			return;

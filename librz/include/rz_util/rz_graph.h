@@ -29,12 +29,26 @@ typedef bool (*RzGraphEdgeChooser)(const RzGraphEdge *data, void *cb_data);
  */
 #define RZ_GRAPH_INT_AS_DATA(n) ((void *)(utptr)(n))
 
+/**
+ * \brief The default capacity in number of nodes of the adjacency
+ * matrix implementation.
+ * NOTE: The current matrix implementation is really just an adjacency matrix
+ * and has an exponential memory footprint.
+ * This default capacity has already uses up to:
+ * 256 * 256 * sizeof(RzGraphEdge *) bytes = 500 KiB
+ */
+#define RZ_GRAPH_MATRIX_DEFAULT_CAPACITY 256
+
 typedef enum {
 	RZ_GRAPH_IMPL_LIST,
 	/**
 	 * \brief A n x n adjacency matrix.
 	 * Should only be used for known small graphs. Otherwise it can quickly
 	 * lead to OOM events because its size is `O(n x n x sizeof(void *))`
+	 *
+	 * ATTENTION: This implementation is not thread-safe!
+	 * If an element is added beyond its capacity, it will reallocate the matrix
+	 * array and possibly invalidate currently in use pointers into it.
 	 */
 	RZ_GRAPH_IMPL_MATRIX
 } RzGraphImplType;

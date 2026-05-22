@@ -1179,6 +1179,77 @@ static bool test_graph_node_edge_data_matrix(void) {
 	mu_end;
 }
 
+static bool test_graph_capacity_realloc_matrix(void) {
+	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, str_hash, free, free);
+
+	char name[32] = { 0 };
+	RzGraphNode *nodes[RZ_GRAPH_MATRIX_DEFAULT_CAPACITY + 1];
+	// Fill adjacency matrix
+	for (size_t i = 0; i < RZ_GRAPH_MATRIX_DEFAULT_CAPACITY; ++i) {
+		nodes[i] = NULL;
+		rz_strf(name, "%" PFMTSZu, i);
+		mu_assert_eq(rz_graph_add_node(g, rz_str_dup(name), &nodes[i]), RZ_GRAPH_STATUS_OK, "Failed to add");
+		mu_assert_notnull(nodes[i], "add_node");
+	}
+
+	RzGraphNode *ni;
+	RzGraphNode *nj;
+	// Fill every single edge cell
+	for (size_t i = 0; i < RZ_GRAPH_MATRIX_DEFAULT_CAPACITY; ++i) {
+		for (size_t j = 0; j < RZ_GRAPH_MATRIX_DEFAULT_CAPACITY; ++j) {
+			ni = nodes[i];
+			nj = nodes[j];
+			rz_strf(name, "%" PFMTSZu "->%" PFMTSZu, i, j);
+			mu_assert_eq(rz_graph_add_edge(g, ni, nj, rz_str_dup(name)), RZ_GRAPH_STATUS_OK, "Failed to add i->j");
+		}
+	}
+
+	// Should reallocate the matrix memory.
+	size_t i = RZ_GRAPH_MATRIX_DEFAULT_CAPACITY;
+	nodes[i] = NULL;
+	rz_strf(name, "%" PFMTSZu, i);
+	mu_assert_eq(rz_graph_add_node(g, rz_str_dup(name), &nodes[i]), RZ_GRAPH_STATUS_OK, "Failed to add overflow node");
+	// Add edges to the node including a self-ref
+	for (size_t j = 0; j <= RZ_GRAPH_MATRIX_DEFAULT_CAPACITY; ++j) {
+		ni = nodes[i];
+		nj = nodes[j];
+		rz_strf(name, "%" PFMTSZu "->%" PFMTSZu, i, j);
+		mu_assert_eq(rz_graph_add_edge(g, ni, nj, rz_str_dup(name)), RZ_GRAPH_STATUS_OK, "Failed to add i->j");
+		if (i != j) {
+			rz_strf(name, "%" PFMTSZu "->%" PFMTSZu, j, i);
+			mu_assert_eq(rz_graph_add_edge(g, nj, ni, rz_str_dup(name)), RZ_GRAPH_STATUS_OK, "Failed to add j->i");
+		}
+	}
+
+	for (size_t i = 0; i <= RZ_GRAPH_MATRIX_DEFAULT_CAPACITY; ++i) {
+		rz_strf(name, "%" PFMTSZu, i);
+		RzGraphNode *n = rz_graph_find_node(g, str_hash(name));
+		mu_assert_notnull(n, "Did not find node");
+		const char *nname = rz_graph_node_get_data(n);
+		mu_assert_streq(name, nname, "Node name mismatch");
+
+		for (size_t j = 0; j <= RZ_GRAPH_MATRIX_DEFAULT_CAPACITY; ++j) {
+			ni = nodes[i];
+			nj = nodes[j];
+			rz_strf(name, "%" PFMTSZu "->%" PFMTSZu, i, j);
+			RzGraphEdge *e = rz_graph_find_edge(g, ni, nj);
+			mu_assert_notnull(e, "Failed to find i->j");
+			const char *ename = rz_graph_edge_get_data(e);
+			mu_assert_streq(name, ename, "Edge name mismatch");
+
+			rz_strf(name, "%" PFMTSZu "->%" PFMTSZu, j, i);
+			e = rz_graph_find_edge(g, nj, ni);
+			mu_assert_notnull(e, "Failed to find j->i");
+			ename = rz_graph_edge_get_data(e);
+			mu_assert_streq(name, ename, "Edge name mismatch");
+		}
+	}
+
+	rz_graph_free(g);
+
+	mu_end;
+}
+
 static bool test_graph_impl_equivalence(void) {
 	// Create both graphs
 	RzGraph *g_list = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash_base, NULL, NULL);
@@ -1328,6 +1399,8 @@ static int all_tests(void) {
 	mu_run_test(test_graph_find_edge_matrix);
 	mu_run_test(test_graph_complex_matrix);
 	mu_run_test(test_graph_node_edge_data_matrix);
+
+	mu_run_test(test_graph_capacity_realloc_matrix);
 
 	mu_run_test(test_graph_impl_equivalence);
 
