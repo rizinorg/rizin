@@ -569,6 +569,11 @@ static RzGraphListImpl *rz_graph_list_impl_init(void) {
  * -------------------------
  */
 
+static inline ut64 rz_graph_matrix_impl_mem_usage(const RzGraph *g) {
+	RzGraphMatrixImpl *impl = g->impl;
+	return impl->capacity * impl->capacity * sizeof(RzGraphEdge *);
+}
+
 /**
  * \brief Get a pointer to the matrix cell for edge (from -> to).
  *
@@ -981,6 +986,7 @@ static const RzGraphImplOps matrix_impl_ops = {
 	.get_in_edges = rz_graph_matrix_impl_get_in_edges,
 	.add_node = rz_graph_matrix_impl_add_node,
 	.del_node = rz_graph_matrix_impl_del_node,
+	.mem_usage = rz_graph_matrix_impl_mem_usage,
 	.fini = rz_matrix_fini
 };
 
@@ -1629,6 +1635,23 @@ RZ_API RZ_OWN RzIterator *rz_graph_get_nodes(const RzGraph /*<NodeType *, EdgeTy
 	rz_return_val_if_fail(g, NULL);
 	RzIterator *iter = pvector_as_iter(g->node_vec);
 	return iter;
+}
+
+/**
+ * \brief Returns the number of bytes the graph covers in memory.
+ * NOTE: The real memory usage will always be a little bit larger.
+ *
+ * \param g The graph to get the memory usage for.
+ *
+ * \return The estimated size in bytes the graph covers in memory.
+ *         Or 0 in case of failure, if the graph implementation doesn't tracking it.
+ */
+RZ_API ut64 rz_graph_mem_usage(const RzGraph *g) {
+	rz_return_val_if_fail(g, 0);
+	if (g->impl_ops->mem_usage) {
+		return g->impl_ops->mem_usage(g);
+	}
+	return 0;
 }
 
 /**

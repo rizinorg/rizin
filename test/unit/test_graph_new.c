@@ -1133,6 +1133,13 @@ static bool test_graph_complex_matrix(void) {
 	mu_end;
 }
 
+static bool test_graph_mem_usage_matrix(void) {
+	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, str_hash, free, free);
+	mu_assert_eq(rz_graph_mem_usage(g), RZ_GRAPH_MATRIX_DEFAULT_CAPACITY * RZ_GRAPH_MATRIX_DEFAULT_CAPACITY * sizeof(RzGraphEdge *), "Wrong memory usage");
+	rz_graph_free(g);
+	mu_end;
+}
+
 static bool test_graph_node_edge_data_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, str_hash, free, free);
 
@@ -1399,6 +1406,7 @@ static int all_tests(void) {
 	mu_run_test(test_graph_find_edge_matrix);
 	mu_run_test(test_graph_complex_matrix);
 	mu_run_test(test_graph_node_edge_data_matrix);
+	mu_run_test(test_graph_mem_usage_matrix);
 
 	mu_run_test(test_graph_capacity_realloc_matrix);
 

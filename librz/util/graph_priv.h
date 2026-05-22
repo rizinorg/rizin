@@ -43,6 +43,7 @@ struct rz_graph_impl_ops_t {
 
 	// Extract edge from graph
 	RZ_BORROW RzGraphEdge *(*find_edge)(RzGraph *g, RzGraphNode *from, RzGraphNode *to);
+	ut64 (*mem_usage)(const RzGraph *g);
 
 	// Return neighbors as iterator
 	RZ_OWN RzIterator *(*get_out_edges)(RzGraph *graph, RzGraphNode *node);

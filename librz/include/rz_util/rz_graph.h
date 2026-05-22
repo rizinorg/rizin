@@ -94,6 +94,7 @@ RZ_API RZ_OWN RzIterator *rz_graph_in_neighbors(RzGraph *g, RzGraphNode *n);
 RZ_API ut64 rz_graph_count_nodes(const RzGraph *g);
 RZ_API ut64 rz_graph_count_edges(const RzGraph *g);
 RZ_API RZ_OWN RzIterator *rz_graph_get_nodes(const RzGraph *g);
+RZ_API ut64 rz_graph_mem_usage(const RzGraph *g);
 
 /**
  * Get a label for a dot graph edge.
