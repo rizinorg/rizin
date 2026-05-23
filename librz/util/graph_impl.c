@@ -600,30 +600,25 @@ static bool rz_graph_matrix_impl_require_capacity(RzGraphMatrixImpl *impl, ut64 
 	if (required <= impl->capacity) {
 		return true;
 	}
-	ut64 old_cap = impl->capacity;
 	ut64 new_cap = impl->capacity;
 	while (new_cap < required) {
 		new_cap += new_cap / 4;
 	}
 
-	RzGraphEdge **new_matrix = realloc(impl->matrix, sizeof(RzGraphEdge *) * new_cap * new_cap);
+	RzGraphEdge **new_matrix = RZ_NEWS0(RzGraphEdge *, new_cap * new_cap);
 	if (!new_matrix) {
 		RZ_LOG_WARN("Failed to adjust matrix capacity to %" PFMT64u "\n", new_cap);
 		return false;
 	}
-	RzGraphEdge **new_tail = new_matrix + new_cap * new_cap;
-	RzGraphEdge **old_tail = new_matrix + old_cap * old_cap;
-	size_t tail_size = new_tail - old_tail;
-	memset(old_tail, 0, tail_size * sizeof(RzGraphEdge *));
 
-	ut64 old_row_size = old_cap * sizeof(RzGraphEdge *);
-	for (st64 r = old_cap - 1; r >= 0; --r) {
-		RzGraphEdge **old_row = new_matrix + (old_cap * r);
-		RzGraphEdge **new_row = new_matrix + (new_cap * r);
-		memmove(new_row, old_row, old_row_size);
-		memset(old_row, 0, (new_row - old_row) * sizeof(RzGraphEdge *));
+	// move old to new matrix
+	for (ut32 r = 0; r < impl->capacity; ++r) {
+		for (ut32 c = 0; c < impl->capacity; ++c) {
+			new_matrix[r * new_cap + c] = impl->matrix[r * impl->capacity + c];
+		}
 	}
 
+	free(impl->matrix);
 	impl->matrix = new_matrix;
 	impl->capacity = new_cap;
 	return true;
