@@ -25,22 +25,92 @@ NAME=PE: corkami virtsectblXP.exe - sections
 FILE=bins/pe/virtsectblXP.exe
 CMDS=iSt:vaddr/cols/vsize/name
 EXPECT=<<EOF
-     vaddr vsize name    
--------------------------
-0x00400000   0x0 sect_0
-0x00400000   0x0 sect_1
-0x00400000   0x0 sect_2
-0x00400000   0x0 sect_3
-0x00400000   0x0 sect_4
-0x00400000   0x0 sect_5
-0x00400000   0x0 sect_6
-0x00400000   0x0 sect_7
-0x00400000   0x0 sect_8
-0x00400000   0x0 sect_9
-0x00400000   0x0 sect_10
-0x00400000   0x0 sect_11
-0x00400000   0x0 sect_12
-0x00400000   0x0 sect_13
+     vaddr vsize name 
+----------------------
 0x00400138 0x110 blob
+EOF
+EXPECT_ERR=<<EOF
+WARNING: Failed to read section header at 0x2b0.
+WARNING: Failed to read section header at 0x2d8.
+WARNING: Failed to read section header at 0x300.
+WARNING: Failed to read section header at 0x328.
+WARNING: Failed to read section header at 0x350.
+WARNING: Failed to read section header at 0x378.
+WARNING: Failed to read section header at 0x3a0.
+WARNING: Failed to read section header at 0x3c8.
+WARNING: Failed to read section header at 0x3f0.
+WARNING: Failed to read section header at 0x418.
+WARNING: Failed to read section header at 0x440.
+WARNING: Failed to read section header at 0x468.
+WARNING: Failed to read section header at 0x490.
+WARNING: Failed to read section header at 0x4b8.
+WARNING: Failed to read section header at 0x4e0.
+WARNING: Failed to read section header at 0x508.
+WARNING: Failed to read section header at 0x530.
+WARNING: Failed to read section header at 0x558.
+WARNING: Failed to read section header at 0x580.
+WARNING: Failed to read section header at 0x5a8.
+WARNING: Failed to read section header at 0x5d0.
+WARNING: Failed to read section header at 0x5f8.
+WARNING: Failed to read section header at 0x620.
+WARNING: Failed to read section header at 0x648.
+WARNING: Failed to read section header at 0x670.
+WARNING: Failed to read section header at 0x698.
+WARNING: Failed to read section header at 0x6c0.
+WARNING: Failed to read section header at 0x6e8.
+WARNING: Failed to read section header at 0x710.
+WARNING: Failed to read section header at 0x738.
+WARNING: Failed to read section header at 0x760.
+WARNING: Failed to read section header at 0x788.
+WARNING: Failed to read section header at 0x7b0.
+WARNING: Failed to read section header at 0x7d8.
+WARNING: Failed to read section header at 0x800.
+WARNING: Failed to read section header at 0x828.
+WARNING: Failed to read section header at 0x850.
+WARNING: Failed to read section header at 0x878.
+WARNING: Failed to read section header at 0x8a0.
+WARNING: Failed to read section header at 0x8c8.
+WARNING: Failed to read section header at 0x8f0.
+WARNING: Failed to read section header at 0x918.
+WARNING: Failed to read section header at 0x940.
+WARNING: Failed to read section header at 0x968.
+WARNING: Failed to read section header at 0x990.
+WARNING: Failed to read section header at 0x9b8.
+WARNING: Failed to read section header at 0x9e0.
+WARNING: Failed to read section header at 0xa08.
+WARNING: Failed to read section header at 0xa30.
+WARNING: Failed to read section header at 0xa58.
+WARNING: Failed to read section header at 0xa80.
+WARNING: Failed to read section header at 0xaa8.
+WARNING: Failed to read section header at 0xad0.
+WARNING: Failed to read section header at 0xaf8.
+WARNING: Failed to read section header at 0xb20.
+WARNING: Failed to read section header at 0xb48.
+WARNING: Failed to read section header at 0xb70.
+WARNING: Failed to read section header at 0xb98.
+WARNING: Failed to read section header at 0xbc0.
+WARNING: Failed to read section header at 0xbe8.
+WARNING: Failed to read section header at 0xc10.
+WARNING: Failed to read section header at 0xc38.
+WARNING: Failed to read section header at 0xc60.
+WARNING: Failed to read section header at 0xc88.
+WARNING: Failed to read section header at 0xcb0.
+WARNING: Failed to read section header at 0xcd8.
+WARNING: Failed to read section header at 0xd00.
+WARNING: Failed to read section header at 0xd28.
+WARNING: Failed to read section header at 0xd50.
+WARNING: Failed to read section header at 0xd78.
+WARNING: Failed to read section header at 0xda0.
+WARNING: Failed to read section header at 0xdc8.
+WARNING: Failed to read section header at 0xdf0.
+WARNING: Failed to read section header at 0xe18.
+WARNING: Failed to read section header at 0xe40.
+WARNING: Failed to read section header at 0xe68.
+WARNING: Failed to read section header at 0xe90.
+WARNING: Failed to read section header at 0xeb8.
+WARNING: Failed to read section header at 0xee0.
+WARNING: Failed to read section header at 0xf08.
+WARNING: Failed to read section header at 0xf30.
+WARNING: Failed to read section header at 0xf58.
 EOF
 RUN

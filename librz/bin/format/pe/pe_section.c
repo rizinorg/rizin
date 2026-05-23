@@ -177,7 +177,9 @@ RzList /*<char *>*/ *PE_(section_flag_to_rzlist)(ut64 flag) {
 
 bool PE_(read_image_section_header)(RzBuffer *b, ut64 addr, PE_(image_section_header) * section_header) {
 	ut8 buf[sizeof(PE_(image_section_header))];
-	rz_buf_read_at(b, addr, buf, sizeof(buf));
+	if (rz_buf_read_at(b, addr, buf, sizeof(buf)) != sizeof(buf)) {
+		return false;
+	}
 	memcpy(section_header->Name, buf, PE_IMAGE_SIZEOF_SHORT_NAME);
 	PE_READ_STRUCT_FIELD(section_header, PE_(image_section_header), Misc.PhysicalAddress, 32);
 	PE_READ_STRUCT_FIELD(section_header, PE_(image_section_header), VirtualAddress, 32);
@@ -298,13 +300,6 @@ int PE_(bin_pe_init_sections)(RzBinPEObj *bin) {
 		return true;
 	}
 	ut64 sections_size = sizeof(PE_(image_section_header)) * bin->num_sections;
-	if (sections_size > bin->size) {
-		sections_size = bin->size;
-		bin->num_sections = bin->size / sizeof(PE_(image_section_header));
-		// massage this to make corkami happy
-		// RZ_LOG_INFO("Invalid NumberOfSections value\n");
-		// goto out_error;
-	}
 	if (!(bin->section_header = malloc(sections_size))) {
 		rz_sys_perror("malloc (section header)");
 		goto out_error;
@@ -312,14 +307,16 @@ int PE_(bin_pe_init_sections)(RzBinPEObj *bin) {
 	bin->section_header_offset = bin->dos_header->e_lfanew + 4 + sizeof(PE_(image_file_header)) +
 		bin->nt_headers->file_header.SizeOfOptionalHeader;
 	int i;
+	int valid_sections = 0;
 	for (i = 0; i < bin->num_sections; i++) {
-		if (!PE_(read_image_section_header)(bin->b, bin->section_header_offset + i * sizeof(PE_(image_section_header)),
-			    bin->section_header + i)) {
-			RZ_LOG_INFO("read (sections)\n");
-			RZ_FREE(bin->section_header);
-			goto out_error;
+		ut64 section_header_addr = bin->section_header_offset + i * sizeof(PE_(image_section_header));
+		if (!PE_(read_image_section_header)(bin->b, section_header_addr, bin->section_header + valid_sections)) {
+			RZ_LOG_WARN("Failed to read section header at 0x%" PFMT64x ".\n", section_header_addr);
+		} else {
+			valid_sections++;
 		}
 	}
+	bin->num_sections = valid_sections;
 	/*
 	 * Each symbol table entry includes a name, storage class, type, value and section number.Short names (8 characters or fewer) are stored directly in the symbol table;
 	 * longer names are stored as an paddr into the string table at the end of the COFF object.
