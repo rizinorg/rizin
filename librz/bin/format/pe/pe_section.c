@@ -310,10 +310,10 @@ int PE_(bin_pe_init_sections)(RzBinPEObj *bin) {
 	int valid_sections = 0;
 	for (i = 0; i < bin->num_sections; i++) {
 		ut64 section_header_addr = bin->section_header_offset + i * sizeof(PE_(image_section_header));
-		if (!PE_(read_image_section_header)(bin->b, section_header_addr, bin->section_header + valid_sections)) {
-			RZ_LOG_WARN("Failed to read section header at 0x%" PFMT64x ".\n", section_header_addr);
-		} else {
+		if (PE_(read_image_section_header)(bin->b, section_header_addr, bin->section_header + valid_sections)) {
 			valid_sections++;
+		} else {
+			RZ_LOG_WARN("Failed to read section header at 0x%" PFMT64x ".\n", section_header_addr);
 		}
 	}
 	bin->num_sections = valid_sections;
