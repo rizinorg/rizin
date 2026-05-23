@@ -569,6 +569,25 @@ foreach it : ccs
     add_project_arguments([sse2_compiler_flag], language: 'c', native: it_native)
   endif
 
+  # Try to compile a basic Neon code snippet to discover if Neon is supported for the target arch
+  neon_args = []
+  if it_cc.get_id() == 'msvc'
+    neon_args = ['/arch=Neon']
+  elif it_cc.has_argument('-mfpu=neon')
+    neon_args = ['-mfpu=neon']
+  endif
+  neon_code = '''#include <arm_neon.h>
+    int main (int argc, char *argv[]) { uint8x16_t v = vdupq_n_u8(0xff); return 0; }
+  '''
+  has_neon = it_cc.compiles(neon_code, args : neon_args, name: 'NEON code snippet')
+  it_userconf.set10('HAVE_NEON', has_neon)
+
+  # Enable NEON compiler support since it may not be enabled by default
+  if has_neon and neon_args != [] and it_machine.cpu_family() in ['arm', 'arm64', 'aarch32', 'aarch64']
+    add_project_arguments(neon_args, language: 'c', native: it_native)
+  endif
+
+
   foreach item : [
       ['linux/ashmem.h', '', []],
       ['sys/shm.h', '', []],

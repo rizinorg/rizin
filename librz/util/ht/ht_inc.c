@@ -44,6 +44,12 @@
 #define GROUP_WIDTH 16
 typedef ut16 group_mask_t;
 typedef __m128i group_t;
+#elif HAVE_NEON
+#include <arm_neon.h>
+#define LOOKUP_METHOD_NEON
+#define GROUP_WIDTH 8
+typedef uint64_t group_mask_t;
+typedef int8x8_t group_t;
 #elif RZ_SYS_BITS == RZ_SYS_BITS_64
 #define LOOKUP_METHOD_BITWISE_64
 typedef ut64 group_t;
@@ -122,6 +128,46 @@ static inline ut8 group_lowest_bit(group_mask_t mask) {
 		HT_FOREACH_UNROLL(ht, kv, i + 13, body); \
 		HT_FOREACH_UNROLL(ht, kv, i + 14, body); \
 		HT_FOREACH_UNROLL(ht, kv, i + 15, body); \
+	}
+#elif defined(LOOKUP_METHOD_NEON)
+static inline group_t group_load(const void *addr) {
+	return vld1_s8((const st8 *)addr);
+}
+
+static inline group_mask_t group_match_hash_fragment(group_t group, ut8 ctrl) {
+	int8x8_t dup = vdup_n_s8(ctrl);
+	uint8x8_t mask = vceq_s8(group, dup);
+	return vget_lane_u64(vreinterpret_u64_u8(mask), 0) & 0x8080808080808080ull;
+}
+
+static inline group_mask_t group_match_empty(group_t group) {
+	int8x8_t dup = vdup_n_s8(H2_STATUS_EMPTY);
+	uint8x8_t mask = vceq_s8(group, dup);
+	return vget_lane_u64(vreinterpret_u64_u8(mask), 0) & 0x8080808080808080ull;
+}
+
+static inline group_mask_t group_match_deleted(group_t group) {
+	int8x8_t dup = vdup_n_s8(H2_STATUS_DELETED);
+	uint8x8_t mask = vceq_s8(group, dup);
+	return vget_lane_u64(vreinterpret_u64_u8(mask), 0) & 0x8080808080808080ull;
+}
+
+static inline ut8 group_lowest_bit(group_mask_t mask) {
+	return mask ? rz_bits_trailing_zeros(mask) / 8 : UT8_MAX;
+}
+
+#define HT_FOREACH(ht, kv, body) \
+	for (INDEX_TYPE i = 0; i < (ht)->capacity; i += GROUP_WIDTH) { \
+		RZ_PREFETCH(&(ht)->ctrl[i + GROUP_WIDTH]); \
+		RZ_PREFETCH(HT_SLOT_AT((ht), i + GROUP_WIDTH)); \
+		HT_FOREACH_UNROLL(ht, kv, i + 0, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 1, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 2, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 3, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 4, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 5, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 6, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 7, body); \
 	}
 #elif defined(LOOKUP_METHOD_BITWISE_64)
 static inline group_t group_load(const void *addr) {
@@ -442,7 +488,7 @@ static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE k
 
 	while (true) {
 		// Probe one group at a time
-#if defined(LOOKUP_METHOD_SSE2) || defined(LOOKUP_METHOD_BITWISE_64)
+#if defined(LOOKUP_METHOD_SSE2) || defined(LOOKUP_METHOD_NEON) || defined(LOOKUP_METHOD_BITWISE_64)
 		group_mask_t deleted_match;
 		group_mask_t empty_match;
 		group_t group = group_load(&ht->ctrl[index]);
@@ -530,7 +576,7 @@ static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const u
 
 	while (true) {
 		// Probe one group at a time
-#if defined(LOOKUP_METHOD_SSE2) || defined(LOOKUP_METHOD_BITWISE_64)
+#if defined(LOOKUP_METHOD_SSE2) || defined(LOOKUP_METHOD_NEON) || defined(LOOKUP_METHOD_BITWISE_64)
 		group_t group = group_load(&ht->ctrl[index]);
 
 		// Match all group control bytes with the H2 (hash fragment) of `key`
