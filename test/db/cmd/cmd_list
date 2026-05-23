@@ -641,7 +641,6 @@ fletcher16
 fletcher32
 fletcher64
 fletcher8
-fnv1a
 jenkins
 keccak-256
 keccak-384
@@ -670,7 +669,6 @@ xor16
 xor8
 xxhash32
 xxhash64
-EOF
 RUN
 
 NAME=Set the debug backend
