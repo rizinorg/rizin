@@ -165,6 +165,13 @@ HCS12X          Freescale HCS12X: 16-bit microcontroller (upwards compatible wit
 68040           Motorola 68040: High-performance 32-bit microprocessor with integrated FPU
 68060           Motorola 68060: 32-bit microprocessor, highest performer in m68k series
 cpu32           Motorola CPU32: 32-bit embedded-controller CPU core based on the 68020
+coldfire        Motorola ColdFire: 32-bit embedded-controller family based on the 68000 ISA
+cfv1            Motorola ColdFire V1 core
+cfv2            Motorola ColdFire V2 core
+cfv3            Motorola ColdFire V3 core
+cfv4            Motorola ColdFire V4 core
+cfv4e           Motorola ColdFire V4e core with enhanced MAC and FPU features
+cfv5            Motorola ColdFire V5 core
 baseline        Baseline 12-bit instruction set microcontrollers: PIC10Fxxx, PIC12Fxxx, and PIC16Fxxx
 midrange        Mid-Range 14-bit instruction set microcontrollers: PIC10Fxxx, PIC12Fxxx, and PIC16Fxxx
 highend         High-End 16-bit instruction set microcontrollers: PIC18Fxxxx, PIC18FxxJxx, and PIC18FxxKxx
@@ -181,4 +188,3 @@ c64x            Texas Instruments TMS320C64x DSP family
 tricore         Generic TriCore CPU family by Infineon
 EOF
 RUN
-
