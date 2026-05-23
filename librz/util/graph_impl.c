@@ -569,7 +569,7 @@ static RzGraphListImpl *rz_graph_list_impl_init(void) {
  * -------------------------
  */
 
-static inline ut64 rz_graph_matrix_impl_mem_usage(const RzGraph *g) {
+static inline ut64 rz_graph_matrix_impl_mem_usage(const RzGraph /*<NodeType *, EdgeType *>*/ *g) {
 	RzGraphMatrixImpl *impl = g->impl;
 	return impl->capacity * impl->capacity * sizeof(RzGraphEdge *);
 }
@@ -1641,7 +1641,7 @@ RZ_API RZ_OWN RzIterator *rz_graph_get_nodes(const RzGraph /*<NodeType *, EdgeTy
  * \return The estimated size in bytes the graph covers in memory.
  *         Or 0 in case of failure, if the graph implementation doesn't tracking it.
  */
-RZ_API ut64 rz_graph_mem_usage(const RzGraph *g) {
+RZ_API ut64 rz_graph_mem_usage(const RzGraph /*<NodeType *, EdgeType *>*/ *g) {
 	rz_return_val_if_fail(g, 0);
 	if (g->impl_ops->mem_usage) {
 		return g->impl_ops->mem_usage(g);
