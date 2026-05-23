@@ -32,6 +32,7 @@ struct rz_bin_coff_obj {
 	ut64 *scn_va;
 	ut64 reloc_targets_map_base;
 	bool reloc_targets_map_base_calculated;
+	size_t reloc_size; /* TI COFF specific */
 	RzBuffer *buf_patched; ///< overlay over the original file with relocs patched
 	bool relocs_patched;
 };

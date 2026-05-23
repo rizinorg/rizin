@@ -1,0 +1,19 @@
+NAME=ti1 coff section
+FILE=bins/ti_coff/ti1.obj
+CMDS=iS
+EXPECT=<<EOF
+     paddr size      vaddr vsize align perm name  type flags       
+-------------------------------------------------------------------
+0x00000036 0x10 0x00000000  0x10   0x0 -r-x .text      MEM_NO_READ
+EOF
+RUN
+
+NAME=ti2 coff section
+FILE=bins/ti_coff/ti2.obj
+CMDS=iS
+EXPECT=<<EOF
+     paddr size      vaddr vsize align perm name  type flags       
+-------------------------------------------------------------------
+0x00000046 0x10 0x00000000  0x10   0x0 -r-x .text      MEM_NO_READ
+EOF
+RUN

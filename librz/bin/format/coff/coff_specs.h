@@ -192,6 +192,11 @@ typedef struct coff_hdr {
 	ut16 f_flags; /* Flags */
 } CoffHdr;
 
+typedef struct ti_coff_hdr {
+	CoffHdr file_hdr;
+	ut16 target_id;
+} TiCoffHdr;
+
 typedef struct coff_opt_hdr {
 	ut16 magic; /* Magic Number */
 	ut16 vstamp; /* Version stamp  */
@@ -211,10 +216,40 @@ typedef struct coff_scn_hdr {
 	ut32 s_scnptr; /* File offset to the Section data */
 	ut32 s_relptr; /* File offset to the Relocation table for this Section */
 	ut32 s_lnnoptr; /* File offset to the Line Number table for this Section */
-	ut16 s_nreloc; /* Number of Relocation table entries */
-	ut16 s_nlnno; /* Number of Line Number table entries */
+	ut32 s_nreloc; /* Number of Relocation table entries */
+	ut32 s_nlnno; /* Number of Line Number table entries */
 	ut32 s_flags; /* Flags for this section */
+	ut16 s_reserved; /* TI-specific reserved field */
+	ut16 s_page; /* TI-specific memory page */
 } CoffScnHdr;
+
+typedef struct coff1_ti_scn_hdr {
+	char s_name[8];
+	ut32 s_paddr;
+	ut32 s_vaddr;
+	ut32 s_size;
+	ut32 s_scnptr;
+	ut32 s_relptr;
+	ut32 s_lnnoptr;
+} Coff1TiScnHdr;
+
+typedef struct coff2_ti_scn_hdr {
+	char s_name[8];
+	ut32 s_paddr;
+	ut32 s_vaddr;
+	ut32 s_size;
+	ut32 s_scnptr;
+	ut32 s_relptr;
+	ut32 s_lnnoptr;
+	ut32 s_nreloc;
+	ut32 s_nlnno;
+	ut32 s_flags;
+	ut16 s_reserved;
+	ut16 s_page;
+} Coff2TiScnHdr;
+
+#define TI_COFF1_SCN_HDR_SIZE 32
+#define TI_COFF2_SCN_HDR_SIZE 48
 
 typedef struct coff_symbol {
 	char n_name[8]; /* Symbol Name */
@@ -232,6 +267,16 @@ struct coff_reloc {
 	ut32 rz_symndx; /* Symbol index */
 	ut16 rz_type; /* Type of relocation */
 };
+
+struct coff_ti_reloc {
+	ut32 rz_vaddr; ///< Reference Address
+	ut32 rz_symndx; ///< Symbol index
+	ut16 rz_reserved; ///< Reserved
+	ut16 rz_type; ///< Type of relocation
+};
+
+#define COFF_RELOC_SIZE    10
+#define COFF_TI_RELOC_SIZE 12
 
 #define COFF_SYM_GET_DTYPE(type) (((type) >> 4) & 3)
 #endif /* COFF_SPECS_H */

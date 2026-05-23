@@ -155,16 +155,16 @@ static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void
 		if (!scn_hdr->s_nreloc) {
 			continue;
 		}
-		int size = scn_hdr->s_nreloc * sizeof(struct coff_reloc);
-		if (size < 0) {
-			break;
+		size_t on_disk_relocs_size = scn_hdr->s_nreloc * bin->reloc_size;
+		if (on_disk_relocs_size == 0) {
+			continue;
 		}
-		struct coff_reloc *rel = calloc(1, size + sizeof(struct coff_reloc));
+		struct coff_reloc *rel = calloc(scn_hdr->s_nreloc + 1, sizeof(struct coff_reloc));
 		if (!rel) {
 			break;
 		}
 		if (scn_hdr->s_relptr > bin->size ||
-			scn_hdr->s_relptr + size > bin->size) {
+			scn_hdr->s_relptr + on_disk_relocs_size > bin->size) {
 			free(rel);
 			break;
 		}
@@ -172,9 +172,17 @@ static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void
 		bool read_success = false;
 		for (size_t j = 0; j < scn_hdr->s_nreloc; j++) {
 			struct coff_reloc *coff_rel = rel + j;
-			read_success = rz_buf_read_le32_offset(bin->b, &offset, &coff_rel->rz_vaddr) &&
-				rz_buf_read_le32_offset(bin->b, &offset, &coff_rel->rz_symndx) &&
-				rz_buf_read_le16_offset(bin->b, &offset, &coff_rel->rz_type);
+			if (bin->reloc_size == COFF_TI_RELOC_SIZE) {
+				ut16 reserved;
+				read_success = rz_buf_read_ble32_offset(bin->b, &offset, &coff_rel->rz_vaddr, bin->big_endian) &&
+					rz_buf_read_ble32_offset(bin->b, &offset, &coff_rel->rz_symndx, bin->big_endian) &&
+					rz_buf_read_ble16_offset(bin->b, &offset, &reserved, bin->big_endian) &&
+					rz_buf_read_ble16_offset(bin->b, &offset, &coff_rel->rz_type, bin->big_endian);
+			} else {
+				read_success = rz_buf_read_ble32_offset(bin->b, &offset, &coff_rel->rz_vaddr, bin->big_endian) &&
+					rz_buf_read_ble32_offset(bin->b, &offset, &coff_rel->rz_symndx, bin->big_endian) &&
+					rz_buf_read_ble16_offset(bin->b, &offset, &coff_rel->rz_type, bin->big_endian);
+			}
 			if (!read_success) {
 				break;
 			}
