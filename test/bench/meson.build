@@ -20,6 +20,7 @@ if get_option('enable_benchmarks')
   # List of benchmarks to build
   benchmarks = [
     'bitvector',
+    'diff',
     'il',
     'ht',
     'util',
@@ -35,6 +36,7 @@ if get_option('enable_benchmarks')
       dependencies: [
         bench_utils_dep,
         rz_util_dep,
+        rz_diff_dep,
         rz_core_dep,
       ],
       install: false,
@@ -42,7 +44,7 @@ if get_option('enable_benchmarks')
     )
     
     # Register with meson test system (run with: meson test --benchmark)
-    benchmark(bench, exe, suite: 'bench', timeout: 120)
+    benchmark(bench, exe, suite: 'bench', timeout: 1024)
   endforeach
 
   message('Benchmarks enabled - build with "meson compile" and run with "meson test --benchmark"')
