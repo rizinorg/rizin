@@ -1427,7 +1427,7 @@ static bool filter_gadget(RzCore *core, const ut8 *buf, RzGadgetSearchContext *c
 		ut8 local_buf[32];
 
 		if (buf) {
-			int buf_offset = (int)(hit->addr - context->from);
+			st64 buf_offset = (st64)(hit->addr - context->from);
 			if (buf_offset < 0 || (ut64)buf_offset >= delta) {
 				continue;
 			}
