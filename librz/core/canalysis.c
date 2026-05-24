@@ -4005,6 +4005,11 @@ static bool collect_ht_keys_cb(void *user, const ut64 k, const void *v) {
 	return true;
 }
 
+static bool addr_in_exec_section(RzBinObject *bo, ut64 addr) {
+	RzBinSection *sec = rz_bin_get_section_at(bo, addr, true);
+	return sec && (sec->perm & RZ_PERM_X);
+}
+
 static void analysis_mark_xrefs_as_data(RzCore *core) {
 	int bits = rz_asm_get_bits(core->rasm);
 	ut64 ptr_size = bits == 64 ? 8 : 4;
@@ -4036,6 +4041,14 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 		rz_list_free(all_xrefs);
 		return;
 	}
+	// subset of data_targets that are in exec sections (pool entries): size capped at ptr_size
+	RzSetU *exec_targets = rz_set_u_new();
+	if (!exec_targets) {
+		rz_set_u_free(data_targets);
+		rz_set_u_free(code_call_targets);
+		rz_list_free(all_xrefs);
+		return;
+	}
 	rz_list_foreach (all_xrefs, iter, xref) {
 		if (xref->type != RZ_ANALYSIS_XREF_TYPE_DATA &&
 			xref->type != RZ_ANALYSIS_XREF_TYPE_STRING) {
@@ -4062,8 +4075,8 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 		if (!bo) {
 			continue;
 		}
-		RzBinSection *sec = rz_bin_get_section_at(bo, target, true);
-		if (sec && (sec->perm & RZ_PERM_X)) {
+		bool target_in_exec = addr_in_exec_section(bo, target);
+		if (target_in_exec) {
 			ut8 buf[8] = { 0 };
 			if (!rz_io_read_at_mapped(core->io, target, buf, ptr_size)) {
 				continue;
@@ -4076,8 +4089,20 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 				stored_val = big_endian ? rz_read_be32(buf) : rz_read_le32(buf);
 			}
 			RzBinSection *val_sec = rz_bin_get_section_at(bo, stored_val, true);
-			if (!val_sec || (val_sec->perm & RZ_PERM_X)) {
+			if (val_sec && (val_sec->perm & RZ_PERM_X)) {
+				// stored value is a code pointer — skip
 				continue;
+			}
+			if (!val_sec) {
+				// address do not refer to a section in ELF
+				ut64 fcn_end = fcn_from->addr + rz_analysis_function_linear_size(fcn_from);
+				if (target < fcn_end) {
+					continue;
+				}
+				// not padding
+				if (target - fcn_end >= ptr_size) {
+					continue;
+				}
 			}
 		}
 		// skip if already annotated by any other analysis
@@ -4088,11 +4113,15 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 			continue;
 		}
 		rz_set_u_add(data_targets, target);
+		if (target_in_exec) {
+			rz_set_u_add(exec_targets, target);
+		}
 	}
 	rz_list_free(all_xrefs);
 	rz_set_u_free(code_call_targets);
 
 	if (!rz_set_u_size(data_targets)) {
+		rz_set_u_free(exec_targets);
 		rz_set_u_free(data_targets);
 		return;
 	}
@@ -4100,6 +4129,7 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 	// convert set to sorted vector
 	RzVector *data_addrs = rz_vector_new(sizeof(ut64), NULL, NULL);
 	if (!data_addrs) {
+		rz_set_u_free(exec_targets);
 		rz_set_u_free(data_targets);
 		return;
 	}
@@ -4119,6 +4149,8 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 	}
 
 	// mark each target up to the nearest of: next data target, next function, or ptr_size
+	// for exec-section pool entries the size is capped at ptr_size to avoid consuming code;
+	// for data-section targets the natural boundary size is used.
 	size_t n = rz_vector_len(data_addrs);
 	for (size_t i = 0; i < n; i++) {
 		ut64 target = *(ut64 *)rz_vector_index_ptr(data_addrs, i);
@@ -4132,10 +4164,18 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 			}
 		}
 		ut64 upper = RZ_MIN(next_data, next_fcn);
-		ut64 size = (upper != UT64_MAX) ? upper - target : ptr_size;
+		ut64 size;
+		if (upper != UT64_MAX) {
+			size = rz_set_u_contains(exec_targets, target)
+				? RZ_MIN(upper - target, ptr_size)
+				: upper - target;
+		} else {
+			size = ptr_size;
+		}
 		rz_meta_set(core->analysis, RZ_META_TYPE_DATA, target, size, NULL);
 	}
 
+	rz_set_u_free(exec_targets);
 	rz_vector_free(data_addrs);
 	rz_vector_free(fcn_starts);
 }
