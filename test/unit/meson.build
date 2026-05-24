@@ -116,6 +116,7 @@ if get_option('enable_tests')
     'serialize_seek',
     'serialize_spaces',
     'serialize_types',
+    'shm',
     'skiplist',
     'skyline',
     'socket',
