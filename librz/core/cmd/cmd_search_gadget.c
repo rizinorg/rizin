@@ -206,10 +206,10 @@ static bool gadget_constraint_set_regs(RzGadgetConstraint *rc,
 	}
 
 	rc->type = il_type;
-	rc->args[DST_REG] = rz_str_dup(dst->name);
-	rc->args[SRC_REG] = rz_str_dup(src0->name);
+	rc->args[RZ_GADGET_ARG_DST_REG] = rz_str_dup(dst->name);
+	rc->args[RZ_GADGET_ARG_SRC_REG] = rz_str_dup(src0->name);
 	if (src1) {
-		rc->args[SRC_REG_SECOND] = rz_str_dup(src1->name);
+		rc->args[RZ_GADGET_ARG_SRC_REG_SECOND] = rz_str_dup(src1->name);
 	}
 	return true;
 }
@@ -223,7 +223,7 @@ static bool gadget_constraint_set_op(RzGadgetConstraint *rc, RzILOpPureCode op) 
 	if (!op_str) {
 		return false;
 	}
-	rc->args[OP] = rz_str_dup(op_str);
+	rc->args[RZ_GADGET_ARG_OP] = rz_str_dup(op_str);
 	return true;
 }
 
@@ -238,11 +238,11 @@ static bool gadget_constraint_set_const(RzGadgetConstraint *rc,
 	}
 
 	rc->type = il_type;
-	rc->args[DST_REG] = rz_str_dup(dst->name);
+	rc->args[RZ_GADGET_ARG_DST_REG] = rz_str_dup(dst->name);
 	if (src0) {
-		rc->args[SRC_REG] = rz_str_dup(src0->name);
+		rc->args[RZ_GADGET_ARG_SRC_REG] = rz_str_dup(src0->name);
 	}
-	rc->args[SRC_CONST] = rz_str_newf("%" PFMT64u, const_value);
+	rc->args[RZ_GADGET_ARG_SRC_CONST] = rz_str_newf("%" PFMT64u, const_value);
 	return true;
 }
 
@@ -285,13 +285,13 @@ static bool parse_compound_op(const RzCore *core, const char *str, RzGadgetConst
 
 	if (constant_status && is_compound_op) {
 		// dst = dst (math op) num
-		return gadget_constraint_set_const(gadget_constraint, MOV_OP_CONST, dst_reg, dst_reg, const_value) &&
+		return gadget_constraint_set_const(gadget_constraint, RZ_GADGET_IL_INSTR_MOV_OP_CONST, dst_reg, dst_reg, const_value) &&
 			gadget_constraint_set_op(gadget_constraint, op);
 	}
 
 	if (src_reg && is_compound_op) {
 		// dst = dst (math op) src
-		return gadget_constraint_set_regs(gadget_constraint, MOV_OP_REG, dst_reg, dst_reg, src_reg) &&
+		return gadget_constraint_set_regs(gadget_constraint, RZ_GADGET_IL_INSTR_MOV_OP_REG, dst_reg, dst_reg, src_reg) &&
 			gadget_constraint_set_op(gadget_constraint, op);
 	}
 
@@ -302,7 +302,7 @@ static bool parse_compound_op(const RzCore *core, const char *str, RzGadgetConst
 	const_value = 1;
 	// dst (math op)= 1
 
-	return gadget_constraint_set_const(gadget_constraint, MOV_OP_CONST, dst_reg, dst_reg, const_value) &&
+	return gadget_constraint_set_const(gadget_constraint, RZ_GADGET_IL_INSTR_MOV_OP_CONST, dst_reg, dst_reg, const_value) &&
 		gadget_constraint_set_op(gadget_constraint, op);
 }
 
@@ -318,7 +318,7 @@ static bool parse_reg_to_const(const RzCore *core, const char *str, RzGadgetCons
 		return false;
 	}
 
-	return gadget_constraint_set_const(gadget_constraint, MOV_CONST, dst_reg, NULL, const_value);
+	return gadget_constraint_set_const(gadget_constraint, RZ_GADGET_IL_INSTR_MOV_CONST, dst_reg, NULL, const_value);
 }
 
 static bool parse_reg_to_reg(const RzCore *core, const char *str, RzGadgetConstraint *gadget_constraint) {
@@ -342,7 +342,7 @@ static bool parse_reg_to_reg(const RzCore *core, const char *str, RzGadgetConstr
 		return false;
 	}
 
-	return gadget_constraint_set_regs(gadget_constraint, MOV_REG, dst_reg, src_reg, NULL);
+	return gadget_constraint_set_regs(gadget_constraint, RZ_GADGET_IL_INSTR_MOV_REG, dst_reg, src_reg, NULL);
 }
 
 static bool parse_reg_op_const(const RzCore *core, const char *str, RzGadgetConstraint *gadget_constraint) {
@@ -361,7 +361,7 @@ static bool parse_reg_op_const(const RzCore *core, const char *str, RzGadgetCons
 		goto compound;
 	}
 
-	return gadget_constraint_set_const(gadget_constraint, MOV_OP_CONST, dst_reg, src_reg, const_value) &&
+	return gadget_constraint_set_const(gadget_constraint, RZ_GADGET_IL_INSTR_MOV_OP_CONST, dst_reg, src_reg, const_value) &&
 		gadget_constraint_set_op(gadget_constraint, op);
 
 compound:
@@ -392,7 +392,7 @@ static bool parse_reg_op_reg(const RzCore *core, const char *str, RzGadgetConstr
 		goto compound;
 	}
 
-	return gadget_constraint_set_regs(gadget_constraint, MOV_OP_REG, dst_reg, src_reg0, src_reg1) &&
+	return gadget_constraint_set_regs(gadget_constraint, RZ_GADGET_IL_INSTR_MOV_OP_REG, dst_reg, src_reg0, src_reg1) &&
 		gadget_constraint_set_op(gadget_constraint, op);
 
 compound:

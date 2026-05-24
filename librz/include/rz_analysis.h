@@ -25,6 +25,7 @@
 #include <rz_platform.h>
 #include <rz_cmd.h>
 #include <rz_esil/rz_esil.h>
+#include <rz_gadget.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,6 +43,25 @@ typedef struct {
 	struct rz_analysis_function_t *fcn;
 	PJ *pj;
 } RzAnalysisMetaUserItem;
+
+/**
+ * \brief Gadget cache
+ *
+ * Stores a cache of discovered gadgets for a contiguous address range.
+ * The cache holds `RzGadgetCacheNode` nodes in an RB tree keyed by gadget start address.
+ * The cache is built for the given parameters (`from`, `to`, `max_instr`, `allow_conditional`)
+ * and is only valid for those parameters.
+ * When these parameters change, the cache must be rebuilt.
+ * The `free` callback is used to release per-node resources when the cache is cleared.
+ */
+typedef struct rz_gadget_cache_t {
+	RBTree tree; ///< root node
+	ut64 from; ///< cached address range start
+	ut64 to; ///< cached address range end
+	size_t max_instr; ///< gadget.len used during cache build
+	bool allow_conditional; ///< gadget.conditional used during cache build
+	RBNodeFree free; ///< the custom free function that frees a RzGadgetCacheNode of the tree
+} RzGadgetCache;
 
 typedef enum {
 	RZ_ANALYSIS_DATA_INFO_TYPE_NULL = 0,
@@ -1370,6 +1390,8 @@ RZ_API RZ_BORROW HtUP *rz_analysis_get_xrefs_from(RZ_NONNULL RzAnalysis *analysi
 RZ_API void rz_analysis_set_xrefs_from(RZ_NONNULL RzAnalysis *analysis, HtUP *xrefs_from);
 RZ_API RZ_BORROW HtUP *rz_analysis_get_xrefs_to(RZ_NONNULL RzAnalysis *analysis);
 RZ_API void rz_analysis_set_xrefs_to(RZ_NONNULL RzAnalysis *analysis, HtUP *xrefs_to);
+RZ_API RZ_BORROW RzGadgetCache *rz_analysis_get_gadget_cache(RZ_NONNULL RzAnalysis *analysis, RzGadgetType type);
+RZ_API void rz_analysis_set_gadget_cache(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzGadgetCache *gadget_cache, RzGadgetType type);
 RZ_API RZ_BORROW HtUP *rz_analysis_get_gadget_semantics(RZ_NONNULL RzAnalysis *analysis);
 RZ_API void rz_analysis_set_gadget_semantics(RZ_NONNULL RzAnalysis *analysis, HtUP *rop_semantics);
 RZ_API RZ_BORROW RzAnalysisCallbacks *rz_analysis_get_callbacks(RZ_NONNULL RzAnalysis *analysis);

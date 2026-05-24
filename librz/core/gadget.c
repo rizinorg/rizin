@@ -1404,24 +1404,87 @@ static void update_search_context(const RzGadgetSearchContext *context, const ch
 	}
 }
 
-static RzPVector /*<RzCoreAsmHit *>*/ *construct_gadget(RzCore *core, ut8 *buf, int idx, RzGadgetSearchContext *context,
-	RzList /*<char *>*/ *rx_list, RzGadgetEndListPair *end_gadget) {
+static bool filter_gadget(RzCore *core, const ut8 *buf, RzGadgetSearchContext *context,
+	RzList /*<char *>*/ *rx_list, RzPVector /*<RzCoreAsmHit *>*/ *hitlist) {
+
+	bool is_greparg = !(context->mask & (RZ_GADGET_PRINT_DETAIL | RZ_GADGET_ANALYZE)) && !(context->detail_mask | RZ_GADGET_DETAIL_SEARCH_NON) && context->greparg;
+	if (!is_greparg) {
+		return true;
+	}
+
 	const char *start = NULL, *end = NULL;
 	int count = 0;
 	char *rx = NULL;
 	char *grep_str = NULL;
-	bool is_greparg = !(context->mask & (RZ_GADGET_PRINT_DETAIL | RZ_GADGET_ANALYZE)) && !(context->detail_mask | RZ_GADGET_DETAIL_SEARCH_NON) && context->greparg;
-	if (is_greparg) {
-		init_grep_context(context, &grep_str, &start, &end, rx_list, &rx, &count);
+	init_grep_context(context, &grep_str, &start, &end, rx_list, &rx, &count);
+
+	ut64 delta = context->to - context->from;
+	void **it;
+	rz_pvector_foreach (hitlist, it) {
+		RzCoreAsmHit *hit = *it;
+		const ut8 *op_buf;
+		ut64 op_size;
+		ut8 local_buf[32];
+
+		if (buf) {
+			st64 buf_offset = (st64)(hit->addr - context->from);
+			if (buf_offset < 0 || (ut64)buf_offset >= delta) {
+				continue;
+			}
+			op_buf = buf + buf_offset;
+			op_size = delta - buf_offset;
+		} else {
+			// if buf is not provided, read 32bytes (sufficient for single instruction) from hit->addr
+			if (rz_io_nread_at(core->io, hit->addr, local_buf, sizeof(local_buf)) < 0) {
+				continue;
+			}
+			op_buf = local_buf;
+			op_size = sizeof(local_buf);
+		}
+
+		RzAnalysisOp aop = { 0 };
+		rz_analysis_op_init(&aop);
+		if (rz_analysis_op(core->analysis, &aop, hit->addr, op_buf,
+			    op_size, RZ_ANALYSIS_OP_MASK_DISASM) < 0) {
+			rz_analysis_op_fini(&aop);
+			continue;
+		}
+		const char *opst = aop.mnemonic;
+		if (opst) {
+			bool search_hit = false;
+			if (rx) {
+				int grep_find = rz_regex_contains(rx, opst, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT);
+				search_hit = end && context->greparg && grep_find;
+			} else {
+				search_hit = end && context->greparg && strstr(opst, grep_str);
+			}
+			if (search_hit) {
+				update_search_context(context, &start, &end, &grep_str, rx_list, &rx, &count);
+			}
+		}
+		rz_analysis_op_fini(&aop);
 	}
+
+	bool pass = true;
+	if (context->regexp && rx) {
+		pass = false;
+	} else if (is_greparg && end) {
+		pass = false;
+	}
+
+	free(grep_str);
+	return pass;
+}
+
+static RzPVector /*<RzCoreAsmHit *>*/ *build_gadget_hitlist_raw(RzCore *core, ut8 *buf, ssize_t idx,
+	RzGadgetSearchContext *context, RzGadgetEndListPair *end_gadget, RZ_OUT RzStrBuf **sb_out) {
 
 	RzPVector *hitlist = rz_pvector_new((RzPVectorFree)rz_core_asm_hit_free);
 	if (!hitlist) {
-		free(grep_str);
 		return NULL;
 	}
 
-	ut8 nb_instr = 0;
+	size_t nb_instr = 0;
 	ut64 addr = context->from + idx;
 	ut64 delta = context->to - context->from;
 	ut32 end_gadget_cnt = 0;
@@ -1467,17 +1530,6 @@ static RzPVector /*<RzCoreAsmHit *>*/ *construct_gadget(RzCore *core, ut8 *buf, 
 		idx += aop.size;
 		addr += aop.size;
 
-		bool search_hit = false;
-		if (rx) {
-			int grep_find = rz_regex_contains(rx, opst, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT);
-			search_hit = end && context->greparg && grep_find;
-		} else if (is_greparg) {
-			search_hit = end && context->greparg && strstr(opst, grep_str);
-		}
-
-		if (search_hit) {
-			update_search_context(context, &start, &end, &grep_str, rx_list, &rx, &count);
-		}
 		if (end_gadget->instr_offset <= idx - aop.size) {
 			valid = end_gadget->instr_offset == idx - aop.size;
 			goto cleanup;
@@ -1485,21 +1537,125 @@ static RzPVector /*<RzCoreAsmHit *>*/ *construct_gadget(RzCore *core, ut8 *buf, 
 		rz_analysis_op_fini(&aop);
 		nb_instr++;
 	}
-
 cleanup:
 	rz_analysis_op_fini(&aop);
-	free(grep_str);
-	if ((context->regexp && rx) || (!valid || (is_greparg && end))) {
+
+	if (!valid) {
 		rz_pvector_free(hitlist);
 		rz_strbuf_free(sb);
+		if (sb_out) {
+			*sb_out = NULL;
+		}
 		return NULL;
 	}
+	if (sb_out) {
+		*sb_out = sb;
+	} else {
+		rz_strbuf_free(sb);
+	}
+	return hitlist;
+}
+
+static void free_gadget_cache_node(RBNode *node, void *user) {
+	if (!node) {
+		return;
+	}
+	RzGadgetCacheNode *n = container_of(node, RzGadgetCacheNode, rb);
+	rz_pvector_free(n->hitlist);
+	free(n);
+}
+
+static int gadget_cache_node_cmp(const void *data, const RBNode *x, void *user) {
+	const ut64 addr = *(const ut64 *)data;
+	const RzGadgetCacheNode *node = container_of(x, const RzGadgetCacheNode, rb);
+	return addr - node->addr;
+}
+
+static RzPVector /*<RzCoreAsmHit *>*/ *deep_copy_hitlist(const RzPVector /*<RzCoreAsmHit *>*/ *hitlist) {
+	if (!hitlist) {
+		return NULL;
+	}
+	RzPVector *new_hitlist = rz_pvector_new((RzPVectorFree)rz_core_asm_hit_free);
+	if (!new_hitlist) {
+		return NULL;
+	}
+	void **it;
+	rz_pvector_foreach (hitlist, it) {
+		const RzCoreAsmHit *hit = *it;
+		RzCoreAsmHit *new_hit = rz_core_asm_hit_new();
+		if (!new_hit) {
+			rz_pvector_free(new_hitlist);
+			return NULL;
+		}
+		new_hit->addr = hit->addr;
+		new_hit->len = hit->len;
+		new_hit->valid = hit->valid;
+		if (hit->code) {
+			new_hit->code = strdup(hit->code);
+		}
+		rz_pvector_push(new_hitlist, new_hit);
+	}
+	return new_hitlist;
+}
+
+static bool insert_gadget_in_cache(RzCore *core, RzGadgetSearchContext *context, ssize_t idx,
+	RzGadgetEndListPair *end_gadget, RzPVector /*<RzCoreAsmHit *>*/ *hitlist) {
+
+	ut64 gadget_addr = context->from + idx;
+	RzGadgetCache *gadget_cache = rz_analysis_get_gadget_cache(core->analysis, context->type);
+	if (!gadget_cache) {
+		return false;
+	}
+	RzPVector *hitlist_copy = deep_copy_hitlist(hitlist);
+	if (!hitlist_copy) {
+		return false;
+	}
+
+	RzGadgetCacheNode *node = RZ_NEW0(RzGadgetCacheNode);
+	if (!node) {
+		rz_pvector_free(hitlist_copy);
+		return false;
+	}
+	node->addr = gadget_addr;
+	node->hitlist = hitlist_copy;
+	node->delay_size = end_gadget->delay_size;
+	void *data = &node->addr;
+	if (!rz_rbtree_insert(&gadget_cache->tree, data, &node->rb, gadget_cache_node_cmp, NULL)) {
+		RZ_LOG_ERROR("Failed to cache gadget for address 0x%" PFMT64x "\n", gadget_addr);
+		free_gadget_cache_node(&node->rb, NULL);
+		return false;
+	}
+	return true;
+}
+
+static RzPVector /*<RzCoreAsmHit *>*/ *construct_gadget(RzCore *core, ut8 *buf, ssize_t idx, RzGadgetSearchContext *context,
+	RzList /*<char *>*/ *rx_list, RzGadgetEndListPair *end_gadget) {
+
+	RzStrBuf *sb = NULL;
+	RzPVector *hitlist = build_gadget_hitlist_raw(core, buf, idx, context, end_gadget, &sb);
+	if (!hitlist) {
+		return NULL;
+	}
+
 	if (!handle_gadget_list(sb, context, end_gadget, hitlist)) {
 		rz_pvector_free(hitlist);
 		rz_strbuf_free(sb);
 		return NULL;
 	}
 	rz_strbuf_free(sb);
+
+	if (context->cache) {
+		if (!insert_gadget_in_cache(core, context, idx, end_gadget, hitlist)) {
+			rz_pvector_free(hitlist);
+			return NULL;
+		}
+	}
+
+	if (!filter_gadget(core, buf, context, rx_list, hitlist)) {
+		rz_pvector_free(hitlist);
+		return NULL;
+	}
+
 	return hitlist;
 }
 
@@ -1780,7 +1936,7 @@ static bool match_gadget_constraint(const RzGadgetInfo *gadget_info, const RzGad
 		return false;
 	}
 
-	const char *dst_reg = constraint->args[DST_REG];
+	const char *dst_reg = constraint->args[RZ_GADGET_ARG_DST_REG];
 	if (!dst_reg) {
 		return false;
 	}
@@ -1791,32 +1947,32 @@ static bool match_gadget_constraint(const RzGadgetInfo *gadget_info, const RzGad
 	}
 
 	switch (constraint->type) {
-	case MOV_CONST: {
-		const char *const_str = constraint->args[SRC_CONST];
+	case RZ_GADGET_IL_INSTR_MOV_CONST: {
+		const char *const_str = constraint->args[RZ_GADGET_ARG_SRC_CONST];
 		if (!const_str) {
 			return false;
 		}
 		ut64 expected_val = strtoull(const_str, NULL, 0);
 		return reg_info->new_val == expected_val;
 	}
-	case MOV_REG: {
-		const char *src_reg = constraint->args[SRC_REG];
+	case RZ_GADGET_IL_INSTR_MOV_REG: {
+		const char *src_reg = constraint->args[RZ_GADGET_ARG_SRC_REG];
 		if (!src_reg) {
 			return false;
 		}
 		return rz_core_gadget_reg_info_has_event(gadget_info, RZ_GADGET_EVENT_VAR_READ, src_reg);
 	}
-	case MOV_OP_CONST: {
-		const char *src_reg = constraint->args[SRC_REG];
-		const char *src_const = constraint->args[SRC_CONST];
+	case RZ_GADGET_IL_INSTR_MOV_OP_CONST: {
+		const char *src_reg = constraint->args[RZ_GADGET_ARG_SRC_REG];
+		const char *src_const = constraint->args[RZ_GADGET_ARG_SRC_CONST];
 		if (!src_reg || !src_const) {
 			return false;
 		}
 		return rz_core_gadget_reg_info_has_event(gadget_info, RZ_GADGET_EVENT_VAR_READ, src_reg);
 	}
-	case MOV_OP_REG: {
-		const char *src_reg = constraint->args[SRC_REG];
-		const char *src_reg_second = constraint->args[SRC_REG_SECOND];
+	case RZ_GADGET_IL_INSTR_MOV_OP_REG: {
+		const char *src_reg = constraint->args[RZ_GADGET_ARG_SRC_REG];
+		const char *src_reg_second = constraint->args[RZ_GADGET_ARG_SRC_REG_SECOND];
 		if (!src_reg || !src_reg_second) {
 			return false;
 		}
@@ -1843,10 +1999,51 @@ static bool match_constraints(const RzGadgetInfo *gadget_info, const RzPVector /
 	return true;
 }
 
-static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzGadgetSearchContext *context,
+static bool apply_post_build_filters(RzCore *core, RzGadgetSearchContext *context,
+	RzPVector /*<RzCoreAsmHit *>*/ *hitlist, int delay_size, ut64 gadget_addr) {
+
+	// constraint filtering
+	if (context->constraints && !rz_pvector_empty(context->constraints)) {
+		RzGadgetInfo *gadget_info = perform_gadget_analysis(context->type, core, context->allow_conditional, hitlist, delay_size);
+		if (!gadget_info || !match_constraints(gadget_info, context->constraints)) {
+			return false;
+		}
+	}
+
+	// detail mask filtering
+	if (context->detail_mask) {
+		RzGadgetInfo *gadget_info = perform_gadget_analysis(context->type, core, context->allow_conditional, hitlist, delay_size);
+		if (!gadget_info) {
+			return false;
+		}
+		if (context->detail_mask & (RZ_GADGET_DETAIL_SEARCH_STACK | RZ_GADGET_DETAIL_SEARCH_SIZE)) {
+			RzGadgetDetailSearchCmpOp cmp_op;
+			st64 target;
+			// RZ_GADGET_DETAIL_SEARCH_STACK -> stack_change, RZ_GADGET_DETAIL_SEARCH_SIZE -> size
+			ut64 search_val = context->detail_mask & RZ_GADGET_DETAIL_SEARCH_STACK ? gadget_info->stack_change : gadget_info->size;
+			if (!parse_detail_search_arg(core, context->greparg, &cmp_op, &target)) {
+				return false;
+			}
+			if (!match_detail_search(search_val, cmp_op, target)) {
+				return false;
+			}
+		}
+	}
+
+	// alignment check
+	if (core->search->align && gadget_addr % core->search->align != 0) {
+		return false;
+	}
+
+	return true;
+}
+
+static bool process_disassembly(RzCore *core, ut8 *buf, const ssize_t idx, RzGadgetSearchContext *context,
 	RzList /*<char *>*/ *rx_list, RzGadgetEndListPair *end_gadget) {
 	RzAsmOp *asmop = rz_asm_op_new();
 	bool status = false;
+	ut64 orig_pc = rz_asm_get_pc(core->rasm);
+
 	const int ret = rz_asm_disassemble(core->rasm, asmop, buf + idx, context->to - context->from - idx);
 	if (!ret) {
 		goto fini;
@@ -1858,37 +2055,13 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzGadgetS
 		goto fini;
 	}
 
-	if (context->constraints && !rz_pvector_empty(context->constraints)) {
-		RzGadgetInfo *gadget_info = perform_gadget_analysis(context->type, core, context->allow_conditional, hitlist, end_gadget->delay_size);
-		if (!gadget_info || !match_constraints(gadget_info, context->constraints)) {
-			rz_pvector_free(hitlist);
-			goto fini;
-		}
+	// when caching and max_count exhausts, skip output BUT continue building cache
+	if (context->cache && context->max_count == 0) {
+		rz_pvector_free(hitlist);
+		goto fini;
 	}
 
-	if (context->detail_mask) {
-		RzGadgetInfo *gadget_info = perform_gadget_analysis(context->type, core, context->allow_conditional, hitlist, end_gadget->delay_size);
-		if (!gadget_info) {
-			rz_pvector_free(hitlist);
-			goto fini;
-		}
-		if (context->detail_mask & (RZ_GADGET_DETAIL_SEARCH_STACK | RZ_GADGET_DETAIL_SEARCH_SIZE)) {
-			RzGadgetDetailSearchCmpOp cmp_op;
-			st64 target;
-			// RZ_GADGET_DETAIL_SEARCH_STACK -> stack_change, RZ_GADGET_DETAIL_SEARCH_SIZE -> size
-			ut64 search_val = context->detail_mask & RZ_GADGET_DETAIL_SEARCH_STACK ? gadget_info->stack_change : gadget_info->size;
-			if (!parse_detail_search_arg(core, context->greparg, &cmp_op, &target)) {
-				rz_pvector_free(hitlist);
-				goto fini;
-			}
-			if (!match_detail_search(search_val, cmp_op, target)) {
-				rz_pvector_free(hitlist);
-				goto fini;
-			}
-		}
-	}
-
-	if (core->search->align && (context->from + idx) % core->search->align != 0) {
+	if (!apply_post_build_filters(core, context, hitlist, end_gadget->delay_size, context->from + idx)) {
 		rz_pvector_free(hitlist);
 		goto fini;
 	}
@@ -1902,16 +2075,17 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzGadgetS
 	if (context->max_count > 0) {
 		context->max_count--;
 		if (context->max_count < 1) {
-			status = true;
+			status = !context->cache;
 		}
 	}
 
 fini:
+	rz_asm_set_pc(core->rasm, orig_pc);
 	rz_asm_op_free(asmop);
 	return status;
 }
 
-static bool update_end_gadget(int *i, const int gadget_depth, RzGadgetEndListPair **end_gadget, const RzGadgetSearchContext *context) {
+static bool update_end_gadget(ssize_t *i, const int gadget_depth, RzGadgetEndListPair **end_gadget, const RzGadgetSearchContext *context) {
 	rz_return_val_if_fail(end_gadget && context, false);
 	if (*i > (*end_gadget)->instr_offset) {
 		// We've exhausted the first end-gadget section,
@@ -1928,6 +2102,61 @@ static bool update_end_gadget(int *i, const int gadget_depth, RzGadgetEndListPai
 			*end_gadget = NULL;
 			return false;
 		}
+	}
+	return true;
+}
+
+static bool print_gadgets_from_cache(RzCore *core, RzGadgetCache *gadget_cache, RzGadgetSearchContext *context, RzList /*<char *>*/ *rx_list) {
+	void *addr = &context->from;
+	RBIter iter = rz_rbtree_lower_bound_forward(gadget_cache->tree, addr, gadget_cache_node_cmp, NULL);
+	while (rz_rbtree_iter_has(&iter)) {
+		RzGadgetCacheNode *node = rz_rbtree_iter_get(&iter, RzGadgetCacheNode, rb);
+		if (!node) {
+			rz_rbtree_iter_next(&iter);
+			continue;
+		}
+		if (node->addr > context->to) {
+			break;
+		}
+		if (node->addr < context->from || node->addr >= context->to) {
+			rz_rbtree_iter_next(&iter);
+			continue;
+		}
+
+		if (!filter_gadget(core, NULL, context, rx_list, node->hitlist)) {
+			rz_rbtree_iter_next(&iter);
+			continue;
+		}
+
+		if (!apply_post_build_filters(core, context, node->hitlist, node->delay_size, node->addr)) {
+			rz_rbtree_iter_next(&iter);
+			continue;
+		}
+
+		if (!rz_core_handle_gadget_request_type(core, context, node->hitlist, node->delay_size)) {
+			return false;
+		}
+
+		if (context->max_count > 0) {
+			context->max_count--;
+			if (context->max_count < 1) {
+				break;
+			}
+		}
+		rz_rbtree_iter_next(&iter);
+	}
+	return true;
+}
+
+static bool is_gadget_cache_valid(RzCore *core, RzGadgetCache *gadget_cache, RzGadgetSearchContext *context) {
+	if (context->from < gadget_cache->from || context->to > gadget_cache->to) {
+		return false;
+	}
+	if (context->max_instr != gadget_cache->max_instr) {
+		return false;
+	}
+	if (context->allow_conditional != gadget_cache->allow_conditional) {
+		return false;
 	}
 	return true;
 }
@@ -1962,7 +2191,7 @@ static int handle_gadget_search_address(RzCore *core, RzGadgetSearchContext *con
 	RzGadgetEndListPair *end_gadget = rz_list_pop(context->end_list);
 	// Start at just before the first end gadget.
 	const int next = end_gadget->instr_offset;
-	for (int i = 0; i < delta && context->max_count; i += context->increment) {
+	for (ssize_t i = 0; i < delta && (context->cache || context->max_count); i += context->increment) {
 		// TODO: Test this and check if this line is needed in x86
 		const int prev = 0;
 		if (context->increment == 1 && i < prev - max_inst_size_x86) {
@@ -1984,6 +2213,44 @@ static int handle_gadget_search_address(RzCore *core, RzGadgetSearchContext *con
 	free(buf);
 	rz_list_free(context->end_list);
 	return 0;
+}
+
+static int handle_gadget_cache(RzCore *core, RzGadgetSearchContext *context, RzList /*<char *>*/ *rx_list) {
+
+	RzGadgetCache *gadget_cache = rz_analysis_get_gadget_cache(core->analysis, context->type);
+
+	// cache hit
+	if (gadget_cache) {
+		if (is_gadget_cache_valid(core, gadget_cache, context)) {
+			RZ_LOG_INFO("core: Using gadget cache\n");
+			if (print_gadgets_from_cache(core, gadget_cache, context, rx_list)) {
+				return 0;
+			} else {
+				RZ_LOG_ERROR("core: Failed to print gadgets from cache\n");
+				return -1;
+			}
+		} else {
+			RZ_LOG_INFO("core: Parameters change detected, Rebuilding cache\n");
+		}
+	}
+
+	// cache miss
+	RzGadgetCache *gadget_cache_new = RZ_NEW0(RzGadgetCache);
+	if (!gadget_cache_new) {
+		RZ_LOG_ERROR("core: Failed to allocate gadget cache\n");
+		return -1;
+	}
+	RZ_LOG_DEBUG("core: Building gadget cache for address range 0x%" PFMT64x " - 0x%" PFMT64x "\n", context->from, context->to);
+	gadget_cache_new->tree = NULL;
+	gadget_cache_new->free = free_gadget_cache_node;
+	gadget_cache_new->from = context->from;
+	gadget_cache_new->to = context->to;
+	gadget_cache_new->max_instr = context->max_instr;
+	gadget_cache_new->allow_conditional = context->allow_conditional;
+
+	rz_analysis_set_gadget_cache(core->analysis, gadget_cache_new, context->type);
+
+	return 1; // set gadget cache and continue normal flow to build cache and print gadgets
 }
 
 /**
@@ -2027,10 +2294,27 @@ RZ_API RzCmdStatus rz_core_gadget_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzG
 	}
 	RzList /*<char *>*/ *rx_list = rz_core_gadget_handle_grep_args(context->greparg, context->regexp);
 	int status = 0;
-	// If specific address range is provided, scan that range for gadgets.
+
+	// If specific address range is provided, constrain the search interval.
+	// This path hits only when context->from/to is set using RZ_API
+	// in normal flow of /[RJC] commands this will never be hit
 	if (context->to || context->from) {
-		status = handle_gadget_search_address(core, context, rx_list);
-		goto cleanup;
+		RzInterval custom_itv = { context->from, context->to - context->from };
+		search_itv = rz_itv_intersect(search_itv, custom_itv);
+	}
+
+	// if cache is enabled, try to print gadgets from cache first, if cache is valid, else rebuild cache
+	if (context->cache) {
+		context->from = search_itv.addr;
+		context->to = search_itv.addr + search_itv.size;
+		int result = handle_gadget_cache(core, context, rx_list);
+		if (result == 0) {
+			status = 0;
+			goto cleanup;
+		} else if (result == -1) {
+			status = -1;
+			goto cleanup;
+		}
 	}
 
 	RzList *boundaries = rz_core_get_boundaries_select(core, "search.from", "search.to", "search.in");
@@ -2102,7 +2386,7 @@ RZ_API void rz_core_gadget_constraint_free(RZ_NULLABLE void *data) {
 	if (!constraint) {
 		return;
 	}
-	for (size_t i = 0; i < NUM_ARGS; i++) {
+	for (size_t i = 0; i < RZ_GADGET_ARG_NUM_ARGS; i++) {
 		free(constraint->args[i]);
 	}
 	free(constraint);

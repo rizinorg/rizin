@@ -111,6 +111,8 @@ RZ_IPI RzCmdStatus rz_cmd_search_hash_entropy_fractional_handler(RzCore *core, i
 RZ_IPI RzCmdStatus rz_cmd_search_cryptographic_material_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/C"
 RZ_IPI RzCmdStatus rz_cmd_info_cop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/C-"
+RZ_IPI RzCmdStatus rz_cmd_clear_cop_gadget_cache_handler(RzCore *core, int argc, const char **argv);
 // "/C/"
 RZ_IPI RzCmdStatus rz_cmd_search_cop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/Ck"
@@ -127,6 +129,8 @@ RZ_IPI RzCmdStatus rz_cmd_search_deltified_handler(RzCore *core, int argc, const
 RZ_IPI RzCmdStatus rz_cmd_search_file_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/J"
 RZ_IPI RzCmdStatus rz_cmd_info_jop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/J-"
+RZ_IPI RzCmdStatus rz_cmd_clear_jop_gadget_cache_handler(RzCore *core, int argc, const char **argv);
 // "/J/"
 RZ_IPI RzCmdStatus rz_cmd_search_jop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/Jk"
@@ -167,6 +171,8 @@ RZ_IPI RzCmdStatus rz_cmd_search_reference_write_handler(RzCore *core, int argc,
 RZ_IPI RzCmdStatus rz_cmd_search_reference_execute_handler(RzCore *core, int argc, const char **argv);
 // "/R"
 RZ_IPI RzCmdStatus rz_cmd_info_rop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/R-"
+RZ_IPI RzCmdStatus rz_cmd_clear_rop_gadget_cache_handler(RzCore *core, int argc, const char **argv);
 // "/R/"
 RZ_IPI RzCmdStatus rz_cmd_search_rop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/Rk"
