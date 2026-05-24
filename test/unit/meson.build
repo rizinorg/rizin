@@ -94,6 +94,7 @@ if get_option('enable_tests')
     'list',
     'log',
     'lzma',
+    'math',
     'mem',
     'ovf',
     'pj',
