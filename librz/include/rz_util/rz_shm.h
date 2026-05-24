@@ -2,10 +2,6 @@
 #define RZ_SHM_H
 #include <rz_types.h>
 
-#if __WINDOWS__
-#include <rz_windows.h>
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
