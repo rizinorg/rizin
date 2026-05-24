@@ -4005,6 +4005,11 @@ static bool collect_ht_keys_cb(void *user, const ut64 k, const void *v) {
 	return true;
 }
 
+static bool addr_in_exec_section(RzBinObject *bo, ut64 addr) {
+	RzBinSection *sec = rz_bin_get_section_at(bo, addr, true);
+	return sec && (sec->perm & RZ_PERM_X);
+}
+
 static void analysis_mark_xrefs_as_data(RzCore *core) {
 	int bits = rz_asm_get_bits(core->rasm);
 	ut64 ptr_size = bits == 64 ? 8 : 4;
@@ -4070,8 +4075,7 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 		if (!bo) {
 			continue;
 		}
-		RzBinSection *sec = rz_bin_get_section_at(bo, target, true);
-		bool target_in_exec = sec && (sec->perm & RZ_PERM_X);
+		bool target_in_exec = addr_in_exec_section(bo, target);
 		if (target_in_exec) {
 			ut8 buf[8] = { 0 };
 			if (!rz_io_read_at_mapped(core->io, target, buf, ptr_size)) {
