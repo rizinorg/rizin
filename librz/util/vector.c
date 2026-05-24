@@ -34,6 +34,8 @@
 #define RESIZE_OR_RETURN_NULL(next_capacity)  RESIZE_OR_RETURN_VAL(next_capacity, NULL)
 #define RESIZE_OR_RETURN_FALSE(next_capacity) RESIZE_OR_RETURN_VAL(next_capacity, false)
 
+#define RZ_VECTOR_SWAP_TMP_SIZE 256
+
 RZ_API void rz_vector_init(RzVector *vec, size_t elem_size, RzVectorFree free, void *free_user) {
 	rz_return_if_fail(vec);
 	vec->a = NULL;
@@ -244,6 +246,28 @@ RZ_API void *rz_vector_assign_at(RZ_BORROW RzVector *vec, size_t index, RZ_NULLA
 		vec->len = index + 1;
 	}
 	return p;
+}
+
+/**
+ * \brief Removes the element at the given index.
+ * This function will not keep the order of the elements.
+ * Due to this, it won't use memmove and has much better
+ * performance than rz_vector_remove_at().
+ *
+ * \param vec The vector to remove the element from.
+ * \param index The index of the element to remove.
+ * \param into Optional pointer to copy the removed element into.
+ */
+RZ_API void rz_vector_remove_at_unsorted(RZ_BORROW RzVector *vec, size_t index, RZ_OUT RZ_NULLABLE void *into) {
+	rz_return_if_fail(vec);
+	if (rz_vector_empty(vec)) {
+		return;
+	}
+	size_t l = rz_vector_len(vec) - 1;
+	if (index < l) {
+		rz_vector_swap(vec, index, l);
+	}
+	rz_vector_pop(vec, into);
 }
 
 RZ_API void rz_vector_remove_at(RzVector *vec, size_t index, void *into) {
@@ -470,18 +494,37 @@ RZ_API bool rz_vector_contains(const RZ_NONNULL RzVector *vec, const RZ_NONNULL 
 	return false;
 }
 
+/**
+ * \brief Swaps two elements in the vector.
+ *
+ * \param vec The vector to swap elements in.
+ * \param index_a The index of an element.
+ * \param index_b The index of another element.
+ *
+ * \return True if elements were swapped. False in case of error.
+ */
 RZ_API bool rz_vector_swap(RzVector *vec, size_t index_a, size_t index_b) {
 	rz_return_val_if_fail(vec && index_a < vec->len && index_b < vec->len, false);
-	ut8 *tmp = malloc(vec->elem_size);
-	if (!tmp) {
-		return false;
+	if (index_a == index_b) {
+		return true;
 	}
 	void *elem_a = rz_vector_index_ptr(vec, index_a);
 	void *elem_b = rz_vector_index_ptr(vec, index_b);
+
+	ut8 stack_tmp[RZ_VECTOR_SWAP_TMP_SIZE];
+	void *tmp = vec->elem_size <= sizeof(stack_tmp) ? stack_tmp : malloc(vec->elem_size);
+	if (RZ_UNLIKELY(!tmp)) {
+		rz_warn_if_reached();
+		return false;
+	}
+
 	memcpy(tmp, elem_a, vec->elem_size);
 	memcpy(elem_a, elem_b, vec->elem_size);
 	memcpy(elem_b, tmp, vec->elem_size);
-	free(tmp);
+
+	if (tmp != stack_tmp) {
+		free(tmp);
+	}
 	return true;
 }
 
@@ -740,6 +783,24 @@ RZ_API void *rz_pvector_assign_at(RZ_BORROW RZ_NONNULL RzPVector *vec, size_t in
 	void *prev = !p || increased_len ? NULL : *p;
 	rz_vector_assign_at(&vec->v, index, &ptr);
 	return prev;
+}
+
+/**
+ * \brief Removes the element at the given index.
+ * This function will not keep the order of the elements.
+ * Due to this, it won't use memmove and has much better
+ * performance than rz_pvector_remove_at().
+ *
+ * \param vec The vector to remove the element from.
+ * \param index The index of the element to remove.
+ *
+ * \return The removed pointer. Or NULL in case of failure.
+ */
+RZ_API void *rz_pvector_remove_at_unsorted(RZ_BORROW RzPVector *vec, size_t index) {
+	rz_return_val_if_fail(vec, NULL);
+	void *r = rz_pvector_at(vec, index);
+	rz_vector_remove_at_unsorted(&vec->v, index, NULL);
+	return r;
 }
 
 RZ_API void *rz_pvector_remove_at(RzPVector *vec, size_t index) {

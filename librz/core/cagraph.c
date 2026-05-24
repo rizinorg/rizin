@@ -13,17 +13,16 @@ RZ_IPI void rz_core_agraph_add_node(RzCore *core, const char *title, const char 
 	char *b = rz_str_dup(body);
 	if (rz_str_startswith(b, "base64:")) {
 		char *newbody = rz_str_dup(b);
-		if (!newbody) {
-			free(b);
-			return;
-		}
-		b = rz_str_replace(newbody, "\\n", "", true);
-		newbody = (char *)rz_base64_decode_dyn(b + strlen("base64:"), -1);
 		free(b);
 		if (!newbody) {
 			return;
 		}
-		b = newbody;
+		char *newbody_no_nl = rz_str_replace(newbody, "\\n", "", true);
+		b = (char *)rz_base64_decode_dyn(newbody_no_nl + strlen("base64:"), -1);
+		free(newbody_no_nl);
+		if (!b) {
+			return;
+		}
 	}
 	if (!RZ_STR_ISEMPTY(b)) {
 		b = rz_str_append(b, "\n");

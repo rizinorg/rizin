@@ -425,6 +425,36 @@ static bool test_vector_remove_at(void) {
 	mu_end;
 }
 
+static bool test_vector_remove_at_unsorted(void) {
+	RzVector v = { 0 };
+	// Check it doesn't read/writes OOB.
+	rz_vector_remove_at_unsorted(&v, 0, NULL);
+
+	init_test_vector(&v, 5, 0, NULL, NULL);
+
+	ut32 e;
+	rz_vector_remove_at_unsorted(&v, 2, &e);
+	mu_assert_eq(e, 2, "rz_vector_remove_at_unsorted => into");
+	mu_assert_eq(v.len, 4UL, "rz_vector_remove_at_unsorted => len");
+
+	mu_assert_eq(((ut32 *)v.a)[0], 0, "rz_vector_remove_at_unsorted => remaining elements");
+	mu_assert_eq(((ut32 *)v.a)[1], 1, "rz_vector_remove_at_unsorted => remaining elements");
+	mu_assert_eq(((ut32 *)v.a)[2], 4, "rz_vector_remove_at_unsorted => remaining elements");
+	mu_assert_eq(((ut32 *)v.a)[3], 3, "rz_vector_remove_at_unsorted => remaining elements");
+
+	rz_vector_remove_at_unsorted(&v, 3, &e);
+	mu_assert_eq(e, 3, "rz_vector_remove_at_unsorted (end) => into");
+	mu_assert_eq(v.len, 3UL, "rz_vector_remove_at_unsorted (end) => len");
+
+	mu_assert_eq(((ut32 *)v.a)[0], 0, "rz_vector_remove_at_unsorted (end) => remaining elements");
+	mu_assert_eq(((ut32 *)v.a)[1], 1, "rz_vector_remove_at_unsorted (end) => remaining elements");
+	mu_assert_eq(((ut32 *)v.a)[2], 4, "rz_vector_remove_at_unsorted (end) => remaining elements");
+
+	rz_vector_clear(&v);
+
+	mu_end;
+}
+
 static bool test_vector_remove_range(void) {
 	RzVector v;
 	init_test_vector(&v, 5, 0, NULL, NULL);
@@ -1177,6 +1207,31 @@ static bool test_pvector_remove_at(void) {
 	mu_end;
 }
 
+static bool test_pvector_remove_at_unsorted(void) {
+	RzPVector v;
+	init_test_pvector(&v, 5, 0);
+
+	ut32 *e = rz_pvector_remove_at_unsorted(&v, 0);
+	mu_assert_eq(*e, 0, "remove_at_unsorted ret");
+	free(e);
+	mu_assert_eq(v.v.len, 4UL, "remove_at_unsorted => len");
+	mu_assert_eq(*((ut32 **)v.v.a)[0], 4, "remove_at_unsorted => remaining content");
+	mu_assert_eq(*((ut32 **)v.v.a)[1], 1, "remove_at_unsorted => remaining content");
+	mu_assert_eq(*((ut32 **)v.v.a)[2], 2, "remove_at_unsorted => remaining content");
+	mu_assert_eq(*((ut32 **)v.v.a)[3], 3, "remove_at_unsorted => remaining content");
+
+	e = rz_pvector_remove_at_unsorted(&v, 3);
+	mu_assert_eq(*e, 3, "remove_at_unsorted ret");
+	free(e);
+	mu_assert_eq(v.v.len, 3UL, "remove_at_unsorted => len");
+	mu_assert_eq(*((ut32 **)v.v.a)[0], 4, "remove_at_unsorted => remaining content");
+	mu_assert_eq(*((ut32 **)v.v.a)[1], 1, "remove_at_unsorted => remaining content");
+	mu_assert_eq(*((ut32 **)v.v.a)[2], 2, "remove_at_unsorted => remaining content");
+
+	rz_pvector_clear(&v);
+	mu_end;
+}
+
 // clang-format off
 static bool test_pvector_insert(void) {
 	RzPVector v;
@@ -1653,6 +1708,7 @@ static int all_tests(void) {
 	mu_run_test(test_vector_clone);
 	mu_run_test(test_vector_empty);
 	mu_run_test(test_vector_remove_at);
+	mu_run_test(test_vector_remove_at_unsorted);
 	mu_run_test(test_vector_sort);
 	mu_run_test(test_vector_remove_range);
 	mu_run_test(test_vector_insert);
@@ -1683,6 +1739,7 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_join);
 	mu_run_test(test_pvector_contains);
 	mu_run_test(test_pvector_remove_at);
+	mu_run_test(test_pvector_remove_at_unsorted);
 	mu_run_test(test_pvector_assign_at);
 	mu_run_test(test_pvector_insert);
 	mu_run_test(test_pvector_insert_range);

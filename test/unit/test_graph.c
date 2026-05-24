@@ -3,6 +3,7 @@
 
 #include <rz_util.h>
 #include "minunit.h"
+#include "rz_util/rz_graph.h"
 
 static ut64 ptr_hash(const void *data) {
 	return (ut64)(uintptr_t)data;
@@ -29,7 +30,7 @@ static bool test_legacy_graph(void) {
 	mu_assert_eq(rz_graph_add_node(g, (void *)2, &gn2), RZ_GRAPH_STATUS_OK, "Failed add");
 	mu_assert_ptreq(rz_graph_find_node(g, rz_graph_node_get_id(gn2)), gn2, "get_node.2");
 	rz_graph_add_edge(g, gn, gn2, NULL);
-	mu_assert_true(rz_graph_has_edge(g, gn, gn2), "is_adjacent.1");
+	mu_assert_eq(rz_graph_has_edge(g, gn, gn2), RZ_GRAPH_STATUS_OK, "is_adjacent.1");
 
 	// Check out-neighbors of gn: should contain gn2
 	{
@@ -109,16 +110,16 @@ static bool test_legacy_graph(void) {
 	rz_graph_add_edge(g, gn7, gn8, NULL);
 	rz_graph_add_edge(g, gn8, gn9, NULL);
 	mu_assert_eq(rz_graph_count_edges(g), 17, "n_edges");
-	rz_graph_del_edge(g, gn8, gn9);
-	mu_assert_eq(rz_graph_has_edge(g, gn8, gn9), false, "is_adjacent.0");
+	mu_assert_eq(rz_graph_del_edge(g, gn8, gn9), RZ_GRAPH_STATUS_EXISTED, "del edge failed");
+	mu_assert_eq(rz_graph_has_edge(g, gn8, gn9), RZ_GRAPH_STATUS_MISSING_EDGE, "is_adjacent.0");
 	mu_assert_eq(rz_graph_count_edges(g), 16, "n_edges.1");
 	rz_graph_add_edge(g, gn9, gn8, NULL);
 	mu_assert_eq(rz_graph_count_edges(g), 17, "n_edges.2");
-	mu_assert_eq(rz_graph_has_edge(g, gn9, gn8), true, "is_adjacent");
-	rz_graph_del_edge(g, gn9, gn8);
+	mu_assert_eq(rz_graph_has_edge(g, gn9, gn8), RZ_GRAPH_STATUS_OK, "is_adjacent");
+	mu_assert_eq(rz_graph_del_edge(g, gn9, gn8), RZ_GRAPH_STATUS_EXISTED, "del edge failed");
 	rz_graph_add_edge(g, gn8, gn9, NULL);
-	mu_assert_eq(rz_graph_has_edge(g, gn9, gn8), false, "is_adjacent.1");
-	mu_assert_eq(rz_graph_has_edge(g, gn8, gn9), true, "is_adjacent.2");
+	mu_assert_eq(rz_graph_has_edge(g, gn9, gn8), RZ_GRAPH_STATUS_MISSING_EDGE, "is_adjacent.1");
+	mu_assert_eq(rz_graph_has_edge(g, gn8, gn9), RZ_GRAPH_STATUS_OK, "is_adjacent.2");
 
 	RzGraphVisitor vis = { 0 };
 	vis.visitor_data = rz_list_new();

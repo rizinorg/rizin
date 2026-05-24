@@ -854,7 +854,8 @@ static void extend_icfg(const RzAnalysis *analysis, RZ_BORROW RzGraph /*<RzGraph
 	RzGraphNode *from_node = get_graph_node_of_fcn(icfg, graph_idx, fcn);
 	RzListIter *it;
 	const RzAnalysisXRef *xref;
-	rz_list_foreach (rz_analysis_function_get_xrefs_from(fcn), it, xref) {
+	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
+	rz_list_foreach (xrefs, it, xref) {
 		if (xref->type != RZ_ANALYSIS_XREF_TYPE_CALL) {
 			continue;
 		}
@@ -864,7 +865,7 @@ static void extend_icfg(const RzAnalysis *analysis, RZ_BORROW RzGraph /*<RzGraph
 			continue;
 		}
 		RzGraphNode *to_node = get_graph_node_of_fcn(icfg, graph_idx, called_fcn);
-		if (rz_graph_has_edge(icfg, from_node, to_node)) {
+		if (rz_graph_has_edge(icfg, from_node, to_node) == RZ_GRAPH_STATUS_OK) {
 			// Edge already added and walked. Don't recurse.
 			continue;
 		}
@@ -872,6 +873,7 @@ static void extend_icfg(const RzAnalysis *analysis, RZ_BORROW RzGraph /*<RzGraph
 		// Recurse into called function.
 		extend_icfg(analysis, icfg, graph_idx, called_fcn);
 	}
+	rz_list_free(xrefs);
 }
 
 /**
@@ -1056,6 +1058,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, None *>*/ *rz_core_graph_cfg(RZ_NONN
 	RzAnalysisOp target_op = { 0 };
 	int disas_bytes = rz_analysis_op(core->analysis, &curr_op, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM);
 	RzGraphNode *entry = add_node_info_cfg(graph, &curr_op, true);
+	rz_analysis_op_fini(&curr_op);
 	ht_uu_insert(nodes_visited, addr, rz_graph_node_get_id(entry));
 	rz_vector_push(to_visit, &addr);
 
@@ -1085,6 +1088,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, None *>*/ *rz_core_graph_cfg(RZ_NONN
 				goto error;
 			}
 			if (!add_edge_to_cfg(graph, to_visit, nodes_visited, &curr_op, &target_op)) {
+				rz_analysis_op_fini(&target_op);
 				goto error;
 			}
 			rz_analysis_op_fini(&target_op);
@@ -1099,6 +1103,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, None *>*/ *rz_core_graph_cfg(RZ_NONN
 				goto error;
 			}
 			if (!add_edge_to_cfg(graph, to_visit, nodes_visited, &curr_op, &target_op)) {
+				rz_analysis_op_fini(&target_op);
 				goto error;
 			}
 			rz_analysis_op_fini(&target_op);
@@ -1120,6 +1125,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, None *>*/ *rz_core_graph_cfg(RZ_NONN
 			goto error;
 		}
 		if (!add_edge_to_cfg(graph, to_visit, nodes_visited, &curr_op, &target_op)) {
+			rz_analysis_op_fini(&target_op);
 			goto error;
 		}
 		rz_analysis_op_fini(&target_op);
@@ -1133,6 +1139,7 @@ fini:
 
 error:
 	rz_warn_if_reached();
+	rz_analysis_op_fini(&curr_op);
 	rz_graph_free(graph);
 	graph = NULL;
 	goto fini;
