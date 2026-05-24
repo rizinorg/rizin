@@ -202,6 +202,7 @@ bool test_rz_buf_io_fd(void) {
 	const int length = 23;
 
 	RzIO *io = rz_io_new();
+	io->ff = true;
 	char *tmpfile = rz_file_temp(NULL);
 	char *filename = rz_str_newf("file://%s", tmpfile);
 	free(tmpfile);
