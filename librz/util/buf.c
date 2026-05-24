@@ -16,27 +16,6 @@
 
 #define GET_STRING_BUFFER_SIZE 32
 
-static ut8 Oxff_global = 0xff;
-static bool Oxff_global_enabled = true;
-
-/**
- * \brief The byte to fill buffer read shortfalls. Buffers can override.
- * Filling can be disabled via `Oxff_global_enabled`.
- *
- * \param new_byte The new fill byte.
- */
-RZ_API void rz_buf_set_Oxff_global(ut8 new_byte) {
-	Oxff_global = new_byte;
-}
-
-/**
- * \brief Determine whether `Oxff_global` can fill buffer read shortfalls.
- * \param new_val The new setting.
- */
-RZ_API void rz_buf_set_Oxff_global_enabled(bool new_val) {
-	Oxff_global_enabled = new_val;
-}
-
 static void buf_whole_buf_free(RzBuffer *b) {
 	// free the whole_buf only if it was initially allocated by the buf types
 	if (b->methods->get_whole_buf) {
@@ -503,7 +482,7 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_slurp(const char *file) {
 RZ_API RZ_OWN RzBuffer *rz_buf_new_sparse(ut8 Oxff) {
 	RzBuffer *b = new_buffer(RZ_BUFFER_SPARSE, NULL);
 	if (b) {
-		rz_buf_set_overflow_byte(b, Oxff);
+		b->Oxff_priv = Oxff;
 	}
 
 	return b;
@@ -1267,12 +1246,7 @@ RZ_API st64 rz_buf_read(RZ_NONNULL RzBuffer *b, RZ_NONNULL ut8 RZ_OUT *buf, ut64
 	}
 
 	if (len > result) {
-		if (b->Oxff_priv_override || Oxff_global_enabled) {
-			memset(buf + result, b->Oxff_priv_override ? b->Oxff_priv : Oxff_global, len - result);
-		} else {
-			RZ_LOG_ERROR("Incomplete buffer read: expected 0x%" PFMT64x " bytes, got %" PFMT64d " bytes.\n", len, result);
-			return -1;
-		}
+		memset(buf + result, b->Oxff_priv, len - result);
 	}
 
 	return result;
@@ -1427,7 +1401,6 @@ RZ_API void rz_buf_set_overflow_byte(RZ_NONNULL RzBuffer *b, ut8 Oxff) {
 	rz_return_if_fail(b);
 
 	b->Oxff_priv = Oxff;
-	b->Oxff_priv_override = true;
 }
 
 /**
