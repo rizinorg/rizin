@@ -1246,7 +1246,17 @@ RZ_API st64 rz_buf_read(RZ_NONNULL RzBuffer *b, RZ_NONNULL ut8 RZ_OUT *buf, ut64
 	}
 
 	if (len > result) {
-		memset(buf + result, b->Oxff_priv, len - result);
+		ut8 Oxff = b->Oxff_priv;
+		if (b->type == RZ_BUFFER_IO || b->type == RZ_BUFFER_IO_FD) {
+			RzIOBind *iob = b->type == RZ_BUFFER_IO ? ((BufIOPriv *)b->priv)->iob : ((struct buf_io_fd_priv *)b->priv)->iob;
+			rz_return_val_if_fail(iob, -1);
+			if (!iob->io->ff) {
+				RZ_LOG_ERROR("Incomplete buffer read: expected 0x%" PFMT64x " bytes, got %" PFMT64d " bytes.\n", len, result);
+				return -1;
+			}
+			Oxff = iob->io->Oxff;
+		}
+		memset(buf + result, Oxff, len - result);
 	}
 
 	return result;
