@@ -1557,6 +1557,9 @@ cleanup:
 }
 
 static void free_gadget_cache_node(RBNode *node, void *user) {
+	if (!node) {
+		return;
+	}
 	RzGadgetCacheNode *n = container_of(node, RzGadgetCacheNode, rb);
 	rz_pvector_free(n->hitlist);
 	free(n);
@@ -2039,6 +2042,8 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const ssize_t idx, RzGad
 	RzList /*<char *>*/ *rx_list, RzGadgetEndListPair *end_gadget) {
 	RzAsmOp *asmop = rz_asm_op_new();
 	bool status = false;
+	ut64 orig_pc = rz_asm_get_pc(core->rasm);
+
 	const int ret = rz_asm_disassemble(core->rasm, asmop, buf + idx, context->to - context->from - idx);
 	if (!ret) {
 		goto fini;
@@ -2075,6 +2080,7 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const ssize_t idx, RzGad
 	}
 
 fini:
+	rz_asm_set_pc(core->rasm, orig_pc);
 	rz_asm_op_free(asmop);
 	return status;
 }
