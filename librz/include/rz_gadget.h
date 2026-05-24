@@ -145,7 +145,7 @@ typedef struct rz_gadget_constraint_t {
  */
 typedef struct rz_gadget_search_context_t {
 	RzGadgetType type; ///< Type of gadget to search for.
-	ut8 max_instr; ///< Gadget search max length.
+	size_t max_instr; ///< Gadget search max length.
 	bool subchains; ///< Display every length gadget from gadget.len=X to 2.
 	bool allow_conditional; ///< Include conditional jump, calls and returns in gadget search.
 	bool comments; ///< Display comments in gadget search output.

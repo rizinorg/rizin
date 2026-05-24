@@ -1484,7 +1484,7 @@ static RzPVector /*<RzCoreAsmHit *>*/ *build_gadget_hitlist_raw(RzCore *core, ut
 		return NULL;
 	}
 
-	ut8 nb_instr = 0;
+	size_t nb_instr = 0;
 	ut64 addr = context->from + idx;
 	ut64 delta = context->to - context->from;
 	ut32 end_gadget_cnt = 0;

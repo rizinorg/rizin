@@ -57,7 +57,7 @@ typedef struct rz_gadget_cache_t {
 	RBTree tree; ///< root node
 	ut64 from; ///< cached address range start
 	ut64 to; ///< cached address range end
-	ut8 max_instr; ///< gadget.len used during cache build
+	size_t max_instr; ///< gadget.len used during cache build
 	bool allow_conditional; ///< gadget.conditional used during cache build
 	RBNodeFree free; ///< the custom free function that frees a RzGadgetCacheNode of the tree
 } RzGadgetCache;
