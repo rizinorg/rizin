@@ -28,6 +28,7 @@ RZ_API bool rz_shm_open(RzShm *shm, const char *name, bool rw, size_t size);
 RZ_API int rz_shm_close(RzShm *shm);
 RZ_API int rz_shm_read(RzShm *shm, ut64 offset, ut8 *buf, size_t count);
 RZ_API int rz_shm_write(RzShm *shm, ut64 offset, const ut8 *buf, size_t count);
+RZ_API int rz_shm_unlink(const char *name);
 
 #ifdef __cplusplus
 }

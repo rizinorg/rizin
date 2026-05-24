@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #if HAVE_HEADER_LINUX_ASHMEM_H || HAVE_HEADER_SYS_SHM_H || __WINDOWS__
 #if HAVE_HEADER_LINUX_ASHMEM_H
@@ -46,7 +47,7 @@ RZ_API void rz_shm_free(RzShm *shm) {
 	if (!shm) {
 		return;
 	}
-	free(shm->name);
+	RZ_FREE(shm->name);
 	free(shm);
 }
 
@@ -63,7 +64,7 @@ RZ_API bool rz_shm_open(RzShm *shm, const char *name, bool rw, size_t size) {
 	free(wname);
 	if (!shm->h) {
 		RZ_LOG_ERROR("Cannot open shared memory \"%s\"\n", shm->name);
-		free(shm->name);
+		RZ_FREE(shm->name);
 		return false;
 	}
 	if (size > 0) {
@@ -74,7 +75,7 @@ RZ_API bool rz_shm_open(RzShm *shm, const char *name, bool rw, size_t size) {
 		RZ_LOG_ERROR("Cannot map shared memory \"%s\"\n", shm->name);
 		CloseHandle(shm->h);
 		shm->h = NULL;
-		free(shm->name);
+		RZ_FREE(shm->name);
 		return false;
 	}
 	if (size == 0) {
@@ -96,7 +97,7 @@ RZ_API bool rz_shm_open(RzShm *shm, const char *name, bool rw, size_t size) {
 #endif
 	if (shm->fd == -1) {
 		RZ_LOG_ERROR("Cannot connect to shared memory \"%s\" (0x%08x)\n", shm->name, shm->id);
-		free(shm->name);
+		RZ_FREE(shm->name);
 		return false;
 	}
 	if (size > 0) {
@@ -112,7 +113,7 @@ RZ_API bool rz_shm_open(RzShm *shm, const char *name, bool rw, size_t size) {
 			RZ_LOG_ERROR("Cannot determine the size of shared memory \"%s\" (0x%08x)\n", shm->name, shm->id);
 			close(shm->fd);
 			shm->fd = -1;
-			free(shm->name);
+			RZ_FREE(shm->name);
 			return false;
 		}
 		shm->size = st.st_size;
@@ -124,7 +125,7 @@ RZ_API bool rz_shm_open(RzShm *shm, const char *name, bool rw, size_t size) {
 		RZ_LOG_ERROR("Cannot set shared memory \"%s\"/%lu (0x%08x)\n", shm->name, (unsigned long)shm->size, shm->id);
 		close(shm->fd);
 		shm->fd = -1;
-		free(shm->name);
+		RZ_FREE(shm->name);
 		return false;
 	}
 #endif
@@ -134,7 +135,7 @@ RZ_API bool rz_shm_open(RzShm *shm, const char *name, bool rw, size_t size) {
 		close(shm->fd);
 		shm->fd = -1;
 		shm->buf = NULL;
-		free(shm->name);
+		RZ_FREE(shm->name);
 		return false;
 	}
 #else
@@ -153,7 +154,7 @@ RZ_API bool rz_shm_open(RzShm *shm, const char *name, bool rw, size_t size) {
 	shm->size = SHMATSZ;
 	if (shm->fd == -1) {
 		RZ_LOG_ERROR("Cannot connect to shared memory (%d)\n", shm->id);
-		free(shm->name);
+		RZ_FREE(shm->name);
 		return false;
 	}
 #endif
@@ -173,6 +174,9 @@ RZ_API int rz_shm_close(RzShm *shm) {
 	shm->h = NULL;
 #else
 #if HAVE_SHM_OPEN || HAVE_HEADER_LINUX_ASHMEM_H
+	if (shm->buf && shm->buf != MAP_FAILED) {
+		munmap(shm->buf, shm->size);
+	}
 	ret = close(shm->fd);
 	shm->fd = -1;
 	shm->buf = NULL;
@@ -202,7 +206,7 @@ RZ_API int rz_shm_read(RzShm *shm, ut64 offset, ut8 *buf, size_t count) {
 		return count;
 	}
 #if !defined(__WINDOWS__)
-	return read(shm->fd, buf, count);
+	return pread(shm->fd, buf, count, offset);
 #else
 	return 0;
 #endif
@@ -210,12 +214,33 @@ RZ_API int rz_shm_read(RzShm *shm, ut64 offset, ut8 *buf, size_t count) {
 
 RZ_API int rz_shm_write(RzShm *shm, ut64 offset, const ut8 *buf, size_t count) {
 	rz_return_val_if_fail(shm, -1);
+	if (offset + count >= shm->size) {
+		if (offset > shm->size) {
+			return -1;
+		}
+		count = shm->size - offset;
+	}
 	if (shm->buf) {
 		(void)memcpy(shm->buf + offset, buf, count);
 		return count;
 	}
 #if !defined(__WINDOWS__)
-	return write(shm->fd, buf, count);
+	return pwrite(shm->fd, buf, count, offset);
+#else
+	return 0;
+#endif
+}
+
+RZ_API int rz_shm_unlink(const char *name) {
+	rz_return_val_if_fail(name, -1);
+#if HAVE_SHM_OPEN
+	char *shm_name = rz_str_newf("/%s", name);
+	if (!shm_name) {
+		return -1;
+	}
+	int ret = shm_unlink(shm_name);
+	free(shm_name);
+	return ret;
 #else
 	return 0;
 #endif
@@ -247,6 +272,10 @@ RZ_API int rz_shm_read(RzShm *shm, ut64 offset, ut8 *buf, size_t count) {
 
 RZ_API int rz_shm_write(RzShm *shm, ut64 offset, const ut8 *buf, size_t count) {
 	return -1;
+}
+
+RZ_API int rz_shm_unlink(const char *name) {
+	return 0;
 }
 
 #endif
