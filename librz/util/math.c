@@ -18,16 +18,16 @@ RZ_API void rz_math_welford_push(RZ_BORROW RzMathWelfordSums *wf, double var) {
 	wf->n++;
 
 	// See Knuth TAOCP vol 2, 3rd edition, page 232
+	double old_mean;
+	double oldS;
 	if (wf->n == 1) {
-		wf->old_mean = wf->new_mean = var;
-		wf->oldS = 0.0;
+		old_mean = wf->amean = var;
+		wf->sums = 0.0;
 	} else {
-		wf->new_mean = wf->old_mean + (var - wf->old_mean) / wf->n;
-		wf->newS = wf->oldS + (var - wf->old_mean) * (var - wf->new_mean);
-
-		// set up for next iteration
-		wf->old_mean = wf->new_mean;
-		wf->oldS = wf->newS;
+		old_mean = wf->amean;
+		oldS = wf->sums;
+		wf->amean = old_mean + (var - old_mean) / wf->n;
+		wf->sums = oldS + (var - old_mean) * (var - wf->amean);
 	}
 }
 
@@ -38,12 +38,12 @@ RZ_API ut64 rz_math_welford_n(const RzMathWelfordSums *wf) {
 
 RZ_API double rz_math_welford_mean(const RzMathWelfordSums *wf) {
 	rz_return_val_if_fail(wf, 0.0);
-	return (wf->n > 0) ? wf->new_mean : 0.0;
+	return (wf->n > 0) ? wf->amean : 0.0;
 }
 
 RZ_API double rz_math_welford_variance(const RzMathWelfordSums *wf) {
 	rz_return_val_if_fail(wf, 0.0);
-	return ((wf->n > 1) ? wf->newS / (wf->n - 1) : 0.0);
+	return ((wf->n > 1) ? wf->sums / (wf->n - 1) : 0.0);
 }
 
 RZ_API double rz_math_welford_std_deviation(const RzMathWelfordSums *wf) {
@@ -53,5 +53,5 @@ RZ_API double rz_math_welford_std_deviation(const RzMathWelfordSums *wf) {
 
 RZ_API double rz_math_welford_sum_of_squares(const RzMathWelfordSums *wf) {
 	rz_return_val_if_fail(wf, 0.0);
-	return wf->newS;
+	return wf->sums;
 }

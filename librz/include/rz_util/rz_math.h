@@ -16,10 +16,8 @@ extern "C" {
  */
 typedef struct {
 	ut64 n; ///< Number of variables
-	double old_mean; ///< The mean before a variable is added.
-	double new_mean; ///< The mean after a variable was added.
-	double oldS; ///< Sum of squares before a variable is added.
-	double newS; ///< Sum of squares after a variable was added.
+	double amean; ///< The arithmetic mean of the variables.
+	double sums; ///< Sum of squares.
 } RzMathWelfordSums;
 
 RZ_API void rz_math_welford_init(RZ_BORROW RzMathWelfordSums *wf);
