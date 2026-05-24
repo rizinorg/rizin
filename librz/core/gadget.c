@@ -1936,7 +1936,7 @@ static bool match_gadget_constraint(const RzGadgetInfo *gadget_info, const RzGad
 		return false;
 	}
 
-	const char *dst_reg = constraint->args[DST_REG];
+	const char *dst_reg = constraint->args[RZ_GADGET_ARG_DST_REG];
 	if (!dst_reg) {
 		return false;
 	}
@@ -1947,32 +1947,32 @@ static bool match_gadget_constraint(const RzGadgetInfo *gadget_info, const RzGad
 	}
 
 	switch (constraint->type) {
-	case MOV_CONST: {
-		const char *const_str = constraint->args[SRC_CONST];
+	case RZ_GADGET_IL_INSTR_MOV_CONST: {
+		const char *const_str = constraint->args[RZ_GADGET_ARG_SRC_CONST];
 		if (!const_str) {
 			return false;
 		}
 		ut64 expected_val = strtoull(const_str, NULL, 0);
 		return reg_info->new_val == expected_val;
 	}
-	case MOV_REG: {
-		const char *src_reg = constraint->args[SRC_REG];
+	case RZ_GADGET_IL_INSTR_MOV_REG: {
+		const char *src_reg = constraint->args[RZ_GADGET_ARG_SRC_REG];
 		if (!src_reg) {
 			return false;
 		}
 		return rz_core_gadget_reg_info_has_event(gadget_info, RZ_GADGET_EVENT_VAR_READ, src_reg);
 	}
-	case MOV_OP_CONST: {
-		const char *src_reg = constraint->args[SRC_REG];
-		const char *src_const = constraint->args[SRC_CONST];
+	case RZ_GADGET_IL_INSTR_MOV_OP_CONST: {
+		const char *src_reg = constraint->args[RZ_GADGET_ARG_SRC_REG];
+		const char *src_const = constraint->args[RZ_GADGET_ARG_SRC_CONST];
 		if (!src_reg || !src_const) {
 			return false;
 		}
 		return rz_core_gadget_reg_info_has_event(gadget_info, RZ_GADGET_EVENT_VAR_READ, src_reg);
 	}
-	case MOV_OP_REG: {
-		const char *src_reg = constraint->args[SRC_REG];
-		const char *src_reg_second = constraint->args[SRC_REG_SECOND];
+	case RZ_GADGET_IL_INSTR_MOV_OP_REG: {
+		const char *src_reg = constraint->args[RZ_GADGET_ARG_SRC_REG];
+		const char *src_reg_second = constraint->args[RZ_GADGET_ARG_SRC_REG_SECOND];
 		if (!src_reg || !src_reg_second) {
 			return false;
 		}
@@ -2386,7 +2386,7 @@ RZ_API void rz_core_gadget_constraint_free(RZ_NULLABLE void *data) {
 	if (!constraint) {
 		return;
 	}
-	for (size_t i = 0; i < NUM_ARGS; i++) {
+	for (size_t i = 0; i < RZ_GADGET_ARG_NUM_ARGS; i++) {
 		free(constraint->args[i]);
 	}
 	free(constraint);

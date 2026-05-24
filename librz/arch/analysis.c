@@ -532,7 +532,7 @@ RZ_API void rz_analysis_set_xrefs_to(RZ_NONNULL RzAnalysis *analysis, HtUP *xref
  * \param type The RzGadgetType of gadget cache to retrieve.
  * \return A pointer to the requested RzGadgetCache, or NULL if the type is invalid.
  */
-RZ_API RZ_BORROW RzGadgetCache *rz_analysis_get_gadget_cache(RZ_NONNULL RzAnalysis *analysis, ut8 type) {
+RZ_API RZ_BORROW RzGadgetCache *rz_analysis_get_gadget_cache(RZ_NONNULL RzAnalysis *analysis, RzGadgetType type) {
 	rz_return_val_if_fail(analysis, NULL);
 	if (type >= 3) {
 		return NULL;
@@ -551,7 +551,7 @@ RZ_API RZ_BORROW RzGadgetCache *rz_analysis_get_gadget_cache(RZ_NONNULL RzAnalys
  * \param gadget_cache Pointer to the RzGadgetCache object to set.
  * \param type The RzGadgetType of gadget cache to set.
  */
-RZ_API void rz_analysis_set_gadget_cache(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzGadgetCache *gadget_cache, ut8 type) {
+RZ_API void rz_analysis_set_gadget_cache(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzGadgetCache *gadget_cache, RzGadgetType type) {
 	rz_return_if_fail(analysis);
 	if (type < 3) {
 		if (analysis->gadget_cache[type] == gadget_cache) {
