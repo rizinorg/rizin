@@ -3,9 +3,10 @@
 
 #include <rz_util.h>
 
-RZ_API void rz_math_welford_init(RZ_BORROW RzMathWelfordSums *wf) {
+RZ_API void rz_math_welford_init(RZ_BORROW RzMathWelfordSums *wf, double geo_repl) {
 	rz_return_if_fail(wf);
 	memset(wf, 0, sizeof(RzMathWelfordSums));
+	wf->geo_repl = geo_repl;
 }
 
 RZ_API void rz_math_welford_clear(RZ_BORROW RzMathWelfordSums *wf) {
@@ -15,6 +16,9 @@ RZ_API void rz_math_welford_clear(RZ_BORROW RzMathWelfordSums *wf) {
 
 RZ_API void rz_math_welford_push(RZ_BORROW RzMathWelfordSums *wf, double var) {
 	rz_return_if_fail(wf);
+	if (var <= (double)0.0 && wf->geo_repl) {
+		var = wf->geo_repl;
+	}
 	wf->n++;
 
 	// See Knuth TAOCP vol 2, 3rd edition, page 232
@@ -34,7 +38,6 @@ RZ_API void rz_math_welford_push(RZ_BORROW RzMathWelfordSums *wf, double var) {
 		double old_gmean = wf->gmean;
 		wf->ln_v_sums += log(var);
 		wf->gmean = exp(wf->ln_v_sums / wf->n);
-
 		wf->gsums += log(var / old_gmean) * log(var / wf->gmean);
 	}
 }

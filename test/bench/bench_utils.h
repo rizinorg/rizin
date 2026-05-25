@@ -27,6 +27,14 @@ RZ_API void rz_bench_end(RZ_NONNULL RzBenchCtx *ctx);
 RZ_API void rz_bench_report(RZ_NONNULL RzBenchCtx *ctx, RZ_NONNULL RzTable *t);
 
 /**
+ * \brief The variable to replace data points == 0.0 with.
+ * The benchmark has microseconds as data points.
+ * So 0.1 microsecond as replacement for a non-measurable
+ * difference in runtime seems fine.
+ */
+#define RZ_BENCH_INVALID_GEO_VAR_REPLACEMENT 0.1
+
+/**
  * \brief Run a benchmark with the given code block
  *
  * Example usage:
@@ -38,7 +46,8 @@ RZ_API void rz_bench_report(RZ_NONNULL RzBenchCtx *ctx, RZ_NONNULL RzTable *t);
  */
 #define RZ_BENCH_RUN(name, table, iterations, code) \
 	do { \
-		RzMathWelfordSums wf = { 0 }; \
+		RzMathWelfordSums wf; \
+		rz_math_welford_init(&wf, RZ_BENCH_INVALID_GEO_VAR_REPLACEMENT); \
 		RzBenchCtx ctx; \
 		rz_bench_init(&ctx, name, iterations); \
 		rz_bench_start(&ctx); \
@@ -57,7 +66,8 @@ RZ_API void rz_bench_report(RZ_NONNULL RzBenchCtx *ctx, RZ_NONNULL RzTable *t);
 
 #define RZ_BENCH_RUN_I(name, i, table, iterations, code) \
 	do { \
-		RzMathWelfordSums wf = { 0 }; \
+		RzMathWelfordSums wf; \
+		rz_math_welford_init(&wf, RZ_BENCH_INVALID_GEO_VAR_REPLACEMENT); \
 		RzBenchCtx ctx; \
 		rz_bench_init(&ctx, name, iterations); \
 		rz_bench_start(&ctx); \

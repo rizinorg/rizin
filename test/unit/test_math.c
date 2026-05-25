@@ -7,7 +7,7 @@
 
 static bool test_welford_arithmetic(void) {
 	RzMathWelfordSums wf = { 0 };
-	rz_math_welford_init(&wf);
+	rz_math_welford_init(&wf, 0.0);
 	rz_math_welford_push(&wf, 0.49671415);
 	rz_math_welford_push(&wf, -0.1382643);
 	rz_math_welford_push(&wf, 0.64768854);
@@ -48,7 +48,7 @@ static bool test_welford_arithmetic(void) {
 
 static bool test_welford_geometric(void) {
 	RzMathWelfordSums wf = { 0 };
-	rz_math_welford_init(&wf);
+	rz_math_welford_init(&wf, 0.0);
 
 	rz_math_welford_push(&wf, 131.5502965);
 	rz_math_welford_push(&wf, 47.68105836);
