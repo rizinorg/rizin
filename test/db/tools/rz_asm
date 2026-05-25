@@ -8,6 +8,15 @@ _dA__ 4          i4004       LGPL3   Intel 4004 disassembler
 EOF
 RUN
 
+NAME=rz-asm -m unknown plugin prints error (gh-6367)
+TOOL=rz-asm
+ARGS=-m bogusplugin
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Unknown assembly plugin: bogusplugin
+EOF
+RUN
+
 NAME=rz-asm arm32le assemble
 TOOL=rz-asm
 FILE=mov r0, 3
