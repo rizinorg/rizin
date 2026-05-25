@@ -298,13 +298,7 @@ static bool rz_cmd_java_init_handler(RzCore *core, void **user) {
 	}
 
 	RzCmd *rcmd = core->rcmd;
-	RzCmdDesc *root_cd = rz_cmd_get_root(rcmd);
-	if (!root_cd) {
-		free(ctx);
-		return false;
-	}
-
-	RzCmdDesc *java = rz_cmd_desc_group_new(rcmd, root_cd, "java", NULL, NULL, &java_usage);
+	RzCmdDesc *java = rz_core_plugin_cmd_desc_group_new(core, "java", NULL, NULL, &java_usage);
 	if (!java) {
 		rz_warn_if_reached();
 		free(ctx);
@@ -327,7 +321,7 @@ static bool rz_cmd_java_init_handler(RzCore *core, void **user) {
 static bool rz_cmd_java_fini_handler(RzCore *core, void *user) {
 	CoreJavaContext *ctx = user;
 	rz_return_val_if_fail(ctx && ctx->cmd_desc, false);
-	bool res = rz_cmd_desc_remove(core->rcmd, ctx->cmd_desc);
+	bool res = rz_core_plugin_cmd_desc_remove(core, ctx->cmd_desc);
 	free(ctx);
 	return res;
 }
@@ -338,8 +332,8 @@ RzCorePlugin rz_core_plugin_java = {
 	.license = "LGPL-3.0-only",
 	.author = "deroad",
 	.version = "1.0",
-	.init_context = rz_cmd_java_init_handler,
-	.fini_context = rz_cmd_java_fini_handler,
+	.init = rz_cmd_java_init_handler,
+	.fini = rz_cmd_java_fini_handler,
 };
 
 #ifndef RZ_PLUGIN_INCORE

@@ -66,19 +66,15 @@ RZ_IPI RzCmdStatus rz_cmd_example_handler(RzCore *core, int argc, const char **a
 	return RZ_CMD_STATUS_OK;
 }
 
-static bool rz_cmd_example_init(RzCore *core) {
+static bool rz_cmd_example_init(RzCore *core, void **user) {
+	(void)user;
 	/* Here you can initialize any aspect of the
 	 * core plugin (like allocate memory or register
 	 * the core plugin on the shell or create a socket) */
 	eprintf("This init was called!\n");
-	RzCmd *rcmd = core->rcmd;
-	RzCmdDesc *root_cd = rz_cmd_get_root(rcmd);
-	if (!root_cd) {
-		return false;
-	}
 
 	/* Here you will add your custom command and add it into the root tree. */
-	RzCmdDesc *cd = rz_cmd_desc_argv_new(rcmd, root_cd, "example", rz_cmd_example_handler, &cmd_example_help);
+	RzCmdDesc *cd = rz_core_plugin_cmd_desc_argv_new(core, "example", rz_cmd_example_handler, &cmd_example_help);
 	if (!cd) {
 		rz_warn_if_reached();
 		return false;
@@ -87,7 +83,8 @@ static bool rz_cmd_example_init(RzCore *core) {
 	return true;
 }
 
-static bool rz_cmd_example_fini(RzCore *core) {
+static bool rz_cmd_example_fini(RzCore *core, void *user) {
+	(void)user;
 	/* Here you can end any aspect of the core
 	 * plugin (like free allocated memory, or
 	 * end sockets, etc..) */
