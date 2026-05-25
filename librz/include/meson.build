@@ -91,6 +91,7 @@ rz_util_files = [
   'rz_util/rz_lang_byte_array.h',
   'rz_util/rz_log.h',
   'rz_util/rz_luhn.h',
+  'rz_util/rz_math.h',
   'rz_util/rz_mem.h',
   'rz_util/rz_name.h',
   'rz_util/rz_num.h',
