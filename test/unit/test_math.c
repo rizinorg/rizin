@@ -96,12 +96,19 @@ static bool test_welford_geometric_overflows(void) {
 		double v = rz_time_now_mono() + rz_num_rand64(0x20000);
 		rz_math_welford_push(&wf, v);
 	}
-	mu_assert_neq(rz_math_welford_gmean(&wf), 0.0, "Should not be 0.0");
-	mu_assert_neq(rz_math_welford_gmean(&wf), -F64_NAN, "Should not be -nan");
-	mu_assert_neq(rz_math_welford_gmean(&wf), F64_NAN, "Should not be nan");
-	mu_assert_neq(rz_math_welford_gstddev(&wf), 0.0, "Should not be 0.0");
-	mu_assert_neq(rz_math_welford_gstddev(&wf), -F64_NAN, "Should not be -nan");
-	mu_assert_neq(rz_math_welford_gstddev(&wf), F64_NAN, "Should not be nan");
+	char val[16] = { 0 };
+	rz_strf(val, "%.f", rz_math_welford_gmean(&wf));
+	mu_assert_false(RZ_STR_EQ(val, "0.0"), "Should not be 0.0");
+	rz_strf(val, "%.f", rz_math_welford_gmean(&wf));
+	mu_assert_false(RZ_STR_EQ(val, "-nan"), "Should not be -nan");
+	rz_strf(val, "%.f", rz_math_welford_gmean(&wf));
+	mu_assert_false(RZ_STR_EQ(val, "nan"), "Should not be nan");
+	rz_strf(val, "%.f", rz_math_welford_gstddev(&wf));
+	mu_assert_false(RZ_STR_EQ(val, "0.0"), "Should not be 0.0");
+	rz_strf(val, "%.f", rz_math_welford_gstddev(&wf));
+	mu_assert_false(RZ_STR_EQ(val, "-nan"), "Should not be -nan");
+	rz_strf(val, "%.f", rz_math_welford_gstddev(&wf));
+	mu_assert_false(RZ_STR_EQ(val, "nan"), "Should not be nan");
 	rz_math_welford_clear(&wf);
 
 	mu_end;
