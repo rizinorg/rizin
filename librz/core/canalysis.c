@@ -3916,7 +3916,9 @@ static void core_analysis_using_plugins(RzCore *core) {
 	RzCorePlugin **val;
 	rz_iterator_foreach(it, val) {
 		RzCorePlugin *plugin = *val;
-		if (plugin->analysis) {
+		if (plugin->analysis_context) {
+			plugin->analysis_context(core, rz_core_plugin_context_get(core, plugin->name));
+		} else if (plugin->analysis) {
 			plugin->analysis(core);
 		}
 	}

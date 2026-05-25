@@ -26,6 +26,10 @@
 #define rz_cmd_desc_argv_modes_new_warn(rcmd, root, cmd, flags) \
 	rz_warn_if_fail(rz_cmd_desc_argv_state_new(rcmd, root, #cmd, flags, name_handler(cmd), &name_help(cmd)))
 
+typedef struct core_dex_context_t {
+	RzCmdDesc *cmd_desc;
+} CoreDexContext;
+
 static RzBinDex *core_dex_get_class(RzCore *core) {
 	if (!core) {
 		return NULL;
@@ -286,30 +290,40 @@ static const RzCmdDescHelp dex_usage = {
 static_description_without_args(dexs, "prints the dex structure");
 static_description_without_args(dexe, "prints the dex exported methods");
 
-static bool rz_cmd_dex_init_handler(RzCore *core) {
+static bool rz_cmd_dex_init_handler(RzCore *core, void **user) {
+	CoreDexContext *ctx = RZ_NEW0(CoreDexContext);
+	if (!ctx) {
+		return false;
+	}
+
 	RzCmd *rcmd = core->rcmd;
 	RzCmdDesc *root_cd = rz_cmd_get_root(rcmd);
 	if (!root_cd) {
+		free(ctx);
 		return false;
 	}
 
 	RzCmdDesc *dex = rz_cmd_desc_group_new(rcmd, root_cd, "dex", NULL, NULL, &dex_usage);
 	if (!dex) {
 		rz_warn_if_reached();
+		free(ctx);
 		return false;
 	}
+	ctx->cmd_desc = dex;
 
 	rz_cmd_desc_argv_modes_new_warn(rcmd, dex, dexs, RZ_OUTPUT_MODE_STANDARD);
 	rz_cmd_desc_argv_modes_new_warn(rcmd, dex, dexe, RZ_OUTPUT_MODE_STANDARD);
 
+	*user = ctx;
 	return true;
 }
 
-static bool rz_cmd_dex_fini_handler(RzCore *core) {
-	RzCmd *rcmd = core->rcmd;
-	RzCmdDesc *cd = rz_cmd_get_desc(rcmd, "dex");
-	rz_return_val_if_fail(cd, false);
-	return rz_cmd_desc_remove(rcmd, cd);
+static bool rz_cmd_dex_fini_handler(RzCore *core, void *user) {
+	CoreDexContext *ctx = user;
+	rz_return_val_if_fail(ctx && ctx->cmd_desc, false);
+	bool res = rz_cmd_desc_remove(core->rcmd, ctx->cmd_desc);
+	free(ctx);
+	return res;
 }
 
 RzCorePlugin rz_core_plugin_dex = {
@@ -318,8 +332,8 @@ RzCorePlugin rz_core_plugin_dex = {
 	.license = "LGPL-3.0-only",
 	.author = "deroad",
 	.version = "1.0",
-	.init = rz_cmd_dex_init_handler,
-	.fini = rz_cmd_dex_fini_handler,
+	.init_context = rz_cmd_dex_init_handler,
+	.fini_context = rz_cmd_dex_fini_handler,
 };
 
 #ifndef RZ_PLUGIN_INCORE
