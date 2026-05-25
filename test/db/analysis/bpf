@@ -160,9 +160,8 @@ EXPECT=<<EOF
 | |||||||   0x08000490      mov64 r2, r10
 | |||||||   0x08000498      add64 r2, 0xffffffb4
 | |||||||   0x080004a0      lddw  r1, 0x0
-| |||||||   0x080004b0      call  0x1                                  ; int xdp_flowtable_do_lookup(struct xdp_md *ctx)
+| |||||||   0x080004b0      call  0x1
 | |||||||   0x080004b8      mov64 r1, r0
-| |||||||   ; CALL XREF from sym.xdp_flowtable_do_lookup @ 0x80004b0
 | |||||||   0x080004c0      mov   r0, 0x2
 | ========< 0x080004c8      jeq   r1, 0x0, +0x2
 | |||||||   0x080004d0      mov   r2, 0x1
