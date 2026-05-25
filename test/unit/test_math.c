@@ -85,10 +85,33 @@ static bool test_welford_geometric(void) {
 	mu_end;
 }
 
+#define ITER 20000000
+
+static bool test_welford_geometric_overflows(void) {
+	RzMathWelfordSums wf = { 0 };
+	rz_math_welford_init(&wf, 0.0);
+	// Values don't matter. All we want is to ensure it doesn't overflow.
+	for (size_t i = 0; i < ITER; i++) {
+		// Sample random not negative double
+		double v = rz_time_now_mono() + rz_num_rand64(0x20000);
+		rz_math_welford_push(&wf, v);
+	}
+	mu_assert_neq(rz_math_welford_gmean(&wf), 0.0, "Should not be 0.0");
+	mu_assert_neq(rz_math_welford_gmean(&wf), -F64_NAN, "Should not be -nan");
+	mu_assert_neq(rz_math_welford_gmean(&wf), F64_NAN, "Should not be nan");
+	mu_assert_neq(rz_math_welford_gstddev(&wf), 0.0, "Should not be 0.0");
+	mu_assert_neq(rz_math_welford_gstddev(&wf), -F64_NAN, "Should not be -nan");
+	mu_assert_neq(rz_math_welford_gstddev(&wf), F64_NAN, "Should not be nan");
+	rz_math_welford_clear(&wf);
+
+	mu_end;
+}
+
 static int all_tests(void) {
 
 	mu_run_test(test_welford_arithmetic);
 	mu_run_test(test_welford_geometric);
+	mu_run_test(test_welford_geometric_overflows);
 
 	return tests_passed != tests_run;
 }

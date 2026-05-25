@@ -89,7 +89,15 @@ RZ_API void rz_bench_report(RZ_NONNULL RzBenchCtx *ctx, RZ_NONNULL RzTable *t);
  * \param T table to initialize.
  */
 #define RZ_BENCH_TABLE_INIT(T) \
-	rz_table_set_columnsf(T, "sdnnnn", "Benchmark", "Iterations", "Total time [ms]", "Avg iter time [us/iteration]", "Throughput [iterations/sec]", "Std Deviation");
+	rz_table_set_columnsf(T, "sdnnnnnn", \
+		"Benchmark", \
+		"| Iterations", \
+		"| Total time [ms]", \
+		"| Throughput [iterations/sec]", \
+		"| Mean [us/iteration]", \
+		"| Standard Deviation", \
+		"| Mean (geometric)", \
+		"| Std. Dev (geometric)");
 
 /**
  * \brief Prints microbenchmark results and frees the RzTable \p T. Should be called at end of a benchmark suite.
