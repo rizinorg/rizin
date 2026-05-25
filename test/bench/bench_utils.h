@@ -34,36 +34,17 @@ RZ_API void rz_bench_report(RZ_NONNULL RzBenchCtx *ctx, RZ_NONNULL RzTable *t);
  */
 #define RZ_BENCH_INVALID_GEO_VAR_REPLACEMENT 0.1
 
+
 /**
  * \brief Run a benchmark with the given code block
  *
  * Example usage:
  * \code
- * RZ_BENCH_RUN("my_function", table, 1000000, {
+ * RZ_BENCH_RUN_I("my_function", cnt, table, 1000000, {
  *     my_function(data);
  * });
  * \endcode
  */
-#define RZ_BENCH_RUN(name, table, iterations, code) \
-	do { \
-		RzMathWelfordSums wf; \
-		rz_math_welford_init(&wf, RZ_BENCH_INVALID_GEO_VAR_REPLACEMENT); \
-		RzBenchCtx ctx; \
-		rz_bench_init(&ctx, name, iterations); \
-		rz_bench_start(&ctx); \
-		for (ut64 i = 0; i < iterations; i++) { \
-			ut64 spl = rz_time_now_mono(); \
-			code; \
-			rz_math_welford_push(&wf, (double)(rz_time_now_mono() - spl)); \
-		} \
-		ctx.arith_std_dev = rz_math_welford_astddev(&wf); \
-		ctx.arith_mean_us = rz_math_welford_amean(&wf); \
-		ctx.geo_std_dev = rz_math_welford_gstddev(&wf); \
-		ctx.geo_mean_us = rz_math_welford_gmean(&wf); \
-		rz_bench_end(&ctx); \
-		rz_bench_report(&ctx, table); \
-	} while (0)
-
 #define RZ_BENCH_RUN_I(name, i, table, iterations, code) \
 	do { \
 		RzMathWelfordSums wf; \
@@ -83,6 +64,19 @@ RZ_API void rz_bench_report(RZ_NONNULL RzBenchCtx *ctx, RZ_NONNULL RzTable *t);
 		ctx.geo_mean_us = rz_math_welford_gmean(&wf); \
 		rz_bench_report(&ctx, table); \
 	} while (0)
+
+/**
+ * \brief Run a benchmark with the given code block
+ *
+ * Example usage:
+ * \code
+ * RZ_BENCH_RUN("my_function", table, 1000000, {
+ *     my_function(data);
+ * });
+ * \endcode
+ */
+#define RZ_BENCH_RUN(name, table, iterations, code) \
+	RZ_BENCH_RUN_I(name, i, table, iterations, code)
 
 /**
  * \brief Initializes the RzTable \p T used for storing results of microbenchmarks.
