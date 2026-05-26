@@ -2,8 +2,6 @@
 // SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_util/rz_log.h"
-#include "rz_util/rz_str.h"
 #include <rz_util/rz_regex.h>
 #include <rz_vector.h>
 #include <rz_types.h>
@@ -286,8 +284,10 @@ RZ_API RzCmdStatus rz_core_cpu_descs_print(RZ_NONNULL RzCore *core, RZ_NONNULL c
 	rz_list_sort(plugin_list, (RzListComparator)rz_asm_plugin_cmp, NULL);
 	RzListIter *it;
 	RzAsmPlugin *ap;
+
 	bool plugin_exist = false;
 	bool cpu_desc_exist = false;
+
 	rz_list_foreach (plugin_list, it, ap) {
 		if (RZ_STR_EQ(plugin, ap->name)) {
 			plugin_exist = true;
@@ -307,13 +307,17 @@ RZ_API RzCmdStatus rz_core_cpu_descs_print(RZ_NONNULL RzCore *core, RZ_NONNULL c
 			break;
 		}
 	}
-	if (!plugin_exist) {
-		RZ_LOG_ERROR("Unknown architecture: '%s'\nUse 'rz-asm -L' to list all available architectures", plugin);
-	} else if (!cpu_desc_exist) {
-		RZ_LOG_ERROR("No CPU descriptions exist for this architecture");
-	}
+
 	rz_iterator_free(iter);
 	rz_list_free(plugin_list);
+
+	if (!plugin_exist) {
+		RZ_LOG_ERROR("Unknown architecture: '%s'\nUse 'rz-asm -L' to list all available architectures", plugin);
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	} else if (!cpu_desc_exist) {
+		RZ_LOG_ERROR("No CPU descriptions exist for this architecture");
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
