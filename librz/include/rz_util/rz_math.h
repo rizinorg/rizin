@@ -22,9 +22,10 @@ typedef struct {
 	double gmean; ///< Geometric mean
 	double ln_v_sums; ///< Geometric sum of ln(x_i)
 	double gsums; ///< Geometric sums of squares
+	double geo_repl; ///< The replacement value for geometric calculations if the given var <= 0.0.
 } RzMathWelfordSums;
 
-RZ_API void rz_math_welford_init(RZ_BORROW RzMathWelfordSums *wf);
+RZ_API void rz_math_welford_init(RZ_BORROW RzMathWelfordSums *wf, double geo_repl);
 RZ_API void rz_math_welford_clear(RZ_BORROW RzMathWelfordSums *wf);
 RZ_API void rz_math_welford_push(RZ_BORROW RzMathWelfordSums *wf, double var);
 RZ_API ut64 rz_math_welford_n(const RzMathWelfordSums *wf);

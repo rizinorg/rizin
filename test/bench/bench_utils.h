@@ -27,37 +27,28 @@ RZ_API void rz_bench_end(RZ_NONNULL RzBenchCtx *ctx);
 RZ_API void rz_bench_report(RZ_NONNULL RzBenchCtx *ctx, RZ_NONNULL RzTable *t);
 
 /**
+ * \brief The variable to replace data points == 0.0 with.
+ * The benchmark has microseconds as data points.
+ * So 0.1 microsecond as replacement for a non-measurable
+ * difference in runtime seems fine.
+ */
+#define RZ_BENCH_INVALID_GEO_VAR_REPLACEMENT 0.1
+
+
+/**
  * \brief Run a benchmark with the given code block
  *
  * Example usage:
  * \code
- * RZ_BENCH_RUN("my_function", table, 1000000, {
+ * RZ_BENCH_RUN_I("my_function", cnt, table, 1000000, {
  *     my_function(data);
  * });
  * \endcode
  */
-#define RZ_BENCH_RUN(name, table, iterations, code) \
-	do { \
-		RzMathWelfordSums wf = { 0 }; \
-		RzBenchCtx ctx; \
-		rz_bench_init(&ctx, name, iterations); \
-		rz_bench_start(&ctx); \
-		for (ut64 i = 0; i < iterations; i++) { \
-			ut64 spl = rz_time_now_mono(); \
-			code; \
-			rz_math_welford_push(&wf, (double)(rz_time_now_mono() - spl)); \
-		} \
-		ctx.arith_std_dev = rz_math_welford_astddev(&wf); \
-		ctx.arith_mean_us = rz_math_welford_amean(&wf); \
-		ctx.geo_std_dev = rz_math_welford_gstddev(&wf); \
-		ctx.geo_mean_us = rz_math_welford_gmean(&wf); \
-		rz_bench_end(&ctx); \
-		rz_bench_report(&ctx, table); \
-	} while (0)
-
 #define RZ_BENCH_RUN_I(name, i, table, iterations, code) \
 	do { \
-		RzMathWelfordSums wf = { 0 }; \
+		RzMathWelfordSums wf; \
+		rz_math_welford_init(&wf, RZ_BENCH_INVALID_GEO_VAR_REPLACEMENT); \
 		RzBenchCtx ctx; \
 		rz_bench_init(&ctx, name, iterations); \
 		rz_bench_start(&ctx); \
@@ -75,11 +66,32 @@ RZ_API void rz_bench_report(RZ_NONNULL RzBenchCtx *ctx, RZ_NONNULL RzTable *t);
 	} while (0)
 
 /**
+ * \brief Run a benchmark with the given code block
+ *
+ * Example usage:
+ * \code
+ * RZ_BENCH_RUN("my_function", table, 1000000, {
+ *     my_function(data);
+ * });
+ * \endcode
+ */
+#define RZ_BENCH_RUN(name, table, iterations, code) \
+	RZ_BENCH_RUN_I(name, i, table, iterations, code)
+
+/**
  * \brief Initializes the RzTable \p T used for storing results of microbenchmarks.
  * \param T table to initialize.
  */
 #define RZ_BENCH_TABLE_INIT(T) \
-	rz_table_set_columnsf(T, "sdnnnn", "Benchmark", "Iterations", "Total time [ms]", "Avg iter time [us/iteration]", "Throughput [iterations/sec]", "Std Deviation");
+	rz_table_set_columnsf(T, "sdnnnnnn", \
+		"Benchmark", \
+		"| Iterations", \
+		"| Total time [ms]", \
+		"| Throughput [iterations/sec]", \
+		"| Mean [us/iteration]", \
+		"| Standard Deviation", \
+		"| Mean (geometric)", \
+		"| Std. Dev (geometric)");
 
 /**
  * \brief Prints microbenchmark results and frees the RzTable \p T. Should be called at end of a benchmark suite.

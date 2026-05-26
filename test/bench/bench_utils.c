@@ -39,5 +39,12 @@ RZ_API void rz_bench_report(RZ_NONNULL RzBenchCtx *ctx, RZ_NONNULL RzTable *t) {
 	double total_ms = ctx->total_time / 1000.0;
 	double ops_per_sec = ctx->total_time != 0 ? (ctx->iterations * 1000000.0) / ctx->total_time : 0;
 
-	rz_table_add_rowf(t, "sdffff", ctx->name, (int)ctx->iterations, total_ms, ctx->arith_mean_us, ops_per_sec, ctx->arith_std_dev);
+	rz_table_add_rowf(t, "sdffffff", ctx->name,
+		(int)ctx->iterations,
+		total_ms,
+		ops_per_sec,
+		ctx->arith_mean_us,
+		ctx->arith_std_dev,
+		ctx->geo_mean_us,
+		ctx->geo_std_dev);
 }
