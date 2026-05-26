@@ -19,9 +19,7 @@
  * earlier stages, and there is also a single-shot rz_pf_format()
  * convenience that runs the whole pipeline.
  *
- * Timestamp formats are owned by pf_parser_time.c. The legacy bridge
- * rz_type_format_data() lives at the bottom of this file so that older
- * call sites keep working until they are migrated to the new API.
+ * Timestamp formats are owned by pf_parser_time.c.
  */
 
 #include <rz_endian.h>
@@ -4611,28 +4609,4 @@ RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb,
 	(void)mode;
 	(void)n;
 	return pf_struct_size_impl(typedb, f, 0);
-}
-
-/* Transitional shim for the legacy rz_type_format_data() entry point.
- * Callers in librz/core/cprint.c and librz/core/disasm.c are migrated
- * to the new <rz_pf.h> API in the librz/core integration commit;
- * this shim keeps the build link-clean during the interim. */
-RZ_API RZ_OWN char *rz_type_format_data(RZ_BORROW RzTypeDB *t, RzPrint *p,
-		ut64 seek, const ut8 *b, const int len,
-		const char *formatname, int mode,
-		const char *setval, char *ofield) {
-	(void)p; (void)setval; (void)ofield;
-	const char *resolved = rz_pf_resolve_name(t, formatname);
-	const char *raw = resolved ? resolved : formatname;
-	RzPfCtx ctx;
-	memset(&ctx, 0, sizeof(ctx));
-	ctx.typedb = t;
-	ctx.max_depth = 32;
-	RzPfMode pfmode;
-	if (mode & RZ_PRINT_JSON)        { pfmode = RZ_PF_MODE_JSON; }
-	else if (mode & RZ_PRINT_STRUCT) { pfmode = RZ_PF_MODE_CSTRUCT; }
-	else if (mode & RZ_PRINT_DOT)    { pfmode = RZ_PF_MODE_DOT; }
-	else if (mode & RZ_PRINT_QUIET)  { pfmode = RZ_PF_MODE_QUIET; }
-	else                              { pfmode = RZ_PF_MODE_TEXT; }
-	return rz_pf_format(raw, b, len, seek, &ctx, pfmode, NULL);
 }

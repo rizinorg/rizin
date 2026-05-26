@@ -411,8 +411,6 @@ RZ_API void rz_type_db_format_purge(RzTypeDB *typedb);
 RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *type);
 RZ_API RZ_OWN char *rz_type_format(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *type);
 RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int mode, int n);
-RZ_API RZ_OWN char *rz_type_format_data(RZ_BORROW RzTypeDB *t, RzPrint *p, ut64 seek, const ut8 *b, const int len,
-	const char *formatname, int mode, const char *setval, char *ofield);
 RZ_API RZ_OWN char *rz_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzType *type);
 RZ_API RZ_OWN char *rz_type_as_format_pair(const RzTypeDB *typedb, RZ_NONNULL RzType *type);
 

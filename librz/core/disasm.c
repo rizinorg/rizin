@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
+#include <rz_pf.h>
 #include <rz_socket.h>
 #include <rz_util/rz_assert.h>
 #include <rz_util/rz_print.h>
@@ -3221,8 +3222,58 @@ static bool ds_print_meta_infos(RzDisasmState *ds, ut8 *buf, int len, int idx, i
 			rz_cons_printf("pf %s # size=%" PFMT64d "\n", mi->str, mi_size);
 			int len_before = rz_cons_get_buffer_len();
 			RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
-			char *format = rz_type_format_data(typedb, core->print, ds->at, buf + idx,
-				len - idx, mi->str, RZ_PRINT_MUSTSEE, NULL, NULL);
+			const char *raw = rz_pf_resolve_name(typedb, mi->str);
+			if (!raw) {
+				raw = mi->str;
+			}
+			RzPfCtx ctx;
+			memset(&ctx, 0, sizeof(ctx));
+			ctx.typedb = typedb;
+			ctx.big_endian = typedb && typedb->target
+				? typedb->target->big_endian
+				: false;
+			ctx.bits = typedb && typedb->target
+				? typedb->target->bits
+				: 64;
+			ctx.max_depth = 32;
+			/* Match the surrounding disassembly's color setting so
+			 * that struct-format output (`pd @ <struct>`) blends
+			 * with the rest of the listing. The palette is wired
+			 * to the active color theme via RzConsPrintablePalette
+			 * so `pf` output respects user theme choices.
+			 * Issue #782. */
+			RzPfPalette palette;
+			const RzPfPalette *palette_ptr = NULL;
+			if (ds->show_color) {
+				RzConsPrintablePalette *pal =
+					&ds->core->cons->context->pal;
+				palette.offset = pal->offset
+					? pal->offset
+					: Color_GREEN;
+				palette.name = pal->fname
+					? pal->fname
+					: Color_YELLOW;
+				palette.endian = pal->meta
+					? pal->meta
+					: Color_BLUE;
+				palette.hex_literal = pal->num
+					? pal->num
+					: Color_CYAN;
+				palette.label = pal->flag
+					? pal->flag
+					: Color_MAGENTA;
+				palette.reset = pal->reset
+					? pal->reset
+					: Color_RESET;
+				palette_ptr = &palette;
+			}
+			RzPfRenderOpts opts = {
+				.palette = palette_ptr,
+				.typedb = typedb,
+			};
+			char *format = rz_pf_format(raw, buf + idx,
+				len - idx, ds->at, &ctx,
+				RZ_PF_MODE_TEXT, &opts);
 			if (format) {
 				rz_cons_print(format);
 				free(format);
