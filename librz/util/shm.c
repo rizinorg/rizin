@@ -91,9 +91,9 @@ RZ_API bool rz_shm_open(RzShm *shm, const char *name, bool rw, size_t size) {
 	shm->id = rz_str_djb2_hash(name);
 
 #if HAVE_SHM_OPEN
-	shm->fd = shm_open(shm->name, O_CREAT | (rw ? O_RDWR : O_RDONLY), 0644);
+	shm->fd = shm_open(shm->name, rw ? (O_CREAT | O_RDWR) : O_RDONLY, 0644);
 #else // HAVE_HEADER_LINUX_ASHMEM_H
-	shm->fd = open("/dev/ashmem", O_CREAT | (rw ? O_RDWR : O_RDONLY), 0644);
+	shm->fd = open("/dev/ashmem", rw ? (O_CREAT | O_RDWR) : O_RDONLY, 0644);
 #endif
 	if (shm->fd == -1) {
 		RZ_LOG_ERROR("Cannot connect to shared memory \"%s\" (0x%08x)\n", shm->name, shm->id);
@@ -104,7 +104,13 @@ RZ_API bool rz_shm_open(RzShm *shm, const char *name, bool rw, size_t size) {
 		shm->size = size;
 #if HAVE_SHM_OPEN
 		if (rw) {
-			(void)ftruncate(shm->fd, shm->size);
+			if (ftruncate(shm->fd, shm->size) == -1) {
+				RZ_LOG_ERROR("Cannot truncate shared memory \"%s\" (0x%08x)\n", shm->name, shm->id);
+				close(shm->fd);
+				shm->fd = -1;
+				RZ_FREE(shm->name);
+				return false;
+			}
 		}
 #endif
 	} else {
