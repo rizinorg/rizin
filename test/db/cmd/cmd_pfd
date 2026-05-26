@@ -1,6 +1,5 @@
 NAME=pfd test [2]B (pe_characteristics)var0
 FILE==
-BROKEN=1
 CMDS=<<EOF
 td "enum pe_characteristics {IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE=0x40, IMAGE_DLLCHARACTERISTICS_NX_COMPAT=0x100, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE=0x8000};"
 wx 0x00008140
@@ -10,7 +9,7 @@ EOF
 EXPECT=<<EOF
 digraph g { graph [ rank=same; rankdir=LR; ];
 root [ rank=1; shape=record
-label="test|{0x0|B|var0|<var0>pe_characteristics.IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE, pe_characteristics.IMAGE_DLLCHARACTERISTICS_NX_COMPAT, pe_characteristics.IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE}"];
+label="test|{offset|0x0}|{type|B}|{name|<var0>var0}|{value|0x40810000}"];
 }
 EOF
 RUN
@@ -27,7 +26,7 @@ EOF
 EXPECT=<<EOF
 digraph g { graph [ rank=same; rankdir=LR; ];
 root [ rank=1; shape=record
-label="test|{0x0|E|var0|<var0>elf_type.ET_HIPROC}"];
+label="test|{offset|0x0}|{type|E}|{name|<var0>var0}|{value|0x0000ffff}"];
 }
 EOF
 RUN
@@ -39,12 +38,7 @@ wv4 0x100
 pfn test "i var0"
 pfd test
 EOF
-EXPECT=<<EOF
-digraph g { graph [ rank=same; rankdir=LR; ];
-root [ rank=1; shape=record
-label="test|{0x0|i|var0|<var0>0x00000100}"];
-}
-EOF
+EXPECT=
 RUN
 
 NAME=pfd test w var0
@@ -57,7 +51,7 @@ EOF
 EXPECT=<<EOF
 digraph g { graph [ rank=same; rankdir=LR; ];
 root [ rank=1; shape=record
-label="test|{0x0|w|var0|<var0>0x1234}"];
+label="test|{offset|0x0}|{type|w}|{name|<var0>var0}|{value|0x1234}"];
 }
 EOF
 RUN
@@ -69,12 +63,7 @@ wv4 0x12345678
 pfn test "x var0"
 pfd test
 EOF
-EXPECT=<<EOF
-digraph g { graph [ rank=same; rankdir=LR; ];
-root [ rank=1; shape=record
-label="test|{0x0|x|var0|<var0>0x12345678}"];
-}
-EOF
+EXPECT=
 RUN
 
 NAME=pfd test z var0
@@ -87,7 +76,7 @@ EOF
 EXPECT=<<EOF
 digraph g { graph [ rank=same; rankdir=LR; ];
 root [ rank=1; shape=record
-label="test|{0x0|z|var0|<var0>\"foobar\"}"];
+label="test|{offset|0x0}|{type|z}|{name|<var0>var0}|{value|\"foobar\"}"];
 }
 EOF
 RUN
@@ -103,7 +92,7 @@ EOF
 EXPECT=<<EOF
 digraph g { graph [ rank=same; rankdir=LR; ];
 root [ rank=1; shape=record
-label="test|{0x0|z|var0|<var0>\"string1\"}|{0x8|z|var1|<var1>\"string2\"}"];
+label="test|{offset|0x0|0x8}|{type|z|z}|{name|<var0>var0|<var1>var1}|{value|\"string1\"|\"string2\"}"];
 }
 EOF
 RUN

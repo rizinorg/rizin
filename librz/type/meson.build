@@ -11,6 +11,9 @@ rz_type_sources = [
   'parser/c_cpp_parser.c',
   'parser/types_parser.c',
   'parser/types_storage.c',
+  'pf_parser.c',
+  'pf_parser_time.c',
+  'pf_parser_tlv.c'
 ]
 
 r = run_command(py3_exe, check_meson_subproject_py, 'rizin-grammar-c', check: false)
