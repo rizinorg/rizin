@@ -468,6 +468,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 	}
 
 	RzIO *io = rz_io_new();
+	io->ff = true;
 	if (!io) {
 		free(efile);
 		return 1;

@@ -15,15 +15,34 @@ e analysis.in=io.maps
 aF
 e log.level=3
 pd 10
+afb
+echo -- 4.5 --
+e io.ff=false
+pd 4
+e io.ff=true
 echo -- 5 --
+af-
+e io.0xff=0
+e analysis.nonull=16
+aF
+pd 10
 afb
 echo -- 6 --
-afb-*
+af-
+e analysis.nonull=0
+e analysis.from=0
+e analysis.to=0x30000
+e analysis.limits=true
+aF
+pd 10
 afb
 echo -- 7 --
-afb+ entry0 entry0 `aos 4`
+afb-*
 afb
 echo -- 8 --
+afb+ entry0 entry0 `aos 4`
+afb
+echo -- 9 --
 pdf
 EOF
 EXPECT=<<EOF
@@ -63,19 +82,55 @@ WARNING: Failed to read chunk of size 0x101 at 0x10020 from io.
 |           0x00010025      cd80           int   0x80
 |           0x00010027      003400         add   byte [eax+eax*1], dh
 |           0x0001002a      2000           and   byte [eax], al
+\           0x0001002c      01ff           add   edi, edi
+            0x0001002e      ff             invalid
+            0x0001002f      ff             invalid
+            0x00010030      ff             invalid
+0x00010020 0x0001002e 00:0000 14
+-- 4.5 --
+ERROR: Incomplete buffer read: expected 0x101 bytes, got 13 bytes.
+WARNING: Failed to read chunk of size 0x101 at 0x10020 from io.
+/ entry0();
+|           0x00010020      b32a           mov   bl, 0x2a              ; '*'
+|           0x00010022      31c0           xor   eax, eax
+|           0x00010024      40             inc   eax
+|           0x00010025      cd80           int   0x80
+-- 5 --
+WARNING: Failed to read chunk of size 0x101 at 0x10020 from io.
+/ entry0();
+|           0x00010020      b32a           mov   bl, 0x2a              ; '*'
+|           0x00010022      31c0           xor   eax, eax
+|           0x00010024      40             inc   eax
+|           0x00010025      cd80           int   0x80
+|           0x00010027      003400         add   byte [eax+eax*1], dh
+|           0x0001002a      2000           and   byte [eax], al
+\           0x0001002c      0100           add   dword [eax], eax
+            0x0001002e      0000           add   byte [eax], al
+            0x00010030      0000           add   byte [eax], al
+            0x00010032      0000           add   byte [eax], al
+0x00010020 0x0001002e 00:0000 14
+-- 6 --
+WARNING: Failed to read chunk of size 0x101 at 0x10020 from io.
+/ entry0();
+|           0x00010020      b32a           mov   bl, 0x2a              ; '*'
+|           0x00010022      31c0           xor   eax, eax
+|           0x00010024      40             inc   eax
+|           0x00010025      cd80           int   0x80
+|           0x00010027      003400         add   byte [eax+eax*1], dh
+|           0x0001002a      2000           and   byte [eax], al
 |           0x0001002c      0100           add   dword [eax], eax
 |           0x0001002e      0000           add   byte [eax], al
 |           0x00010030      0000           add   byte [eax], al
 |           0x00010032      0000           add   byte [eax], al
--- 5 --
 0x00010020 0x0001fc1e 00:0000 64510 j 0x0001fc1e
-0x0001fc1e 0x00020020 00:0000 1026
--- 6 --
+0x0001fc1e 0x0002f81c 00:0000 64510 j 0x0002f81c
+0x0002f81c 0x00030000 00:0000 2020
 -- 7 --
-0x00010020 0x00010027 00:0000 7
 -- 8 --
+0x00010020 0x00010027 00:0000 7
+-- 9 --
 / entry0();
-|           0x00010020      b32a           mov   bl, 0x2a              ; '*' ; 42
+|           0x00010020      b32a           mov   bl, 0x2a              ; '*'
 |           0x00010022      31c0           xor   eax, eax
 |           0x00010024      40             inc   eax
 \           0x00010025      cd80           int   0x80
