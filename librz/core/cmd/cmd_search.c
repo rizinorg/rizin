@@ -204,6 +204,21 @@ RZ_IPI RzCmdStatus rz_cmd_jop_gadget_search_size_handler(RzCore *core, int argc,
 	return gadget_search_size(core, argc, argv, state, gadget_type);
 }
 
+RZ_IPI RzCmdStatus rz_cmd_clear_rop_gadget_cache_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_set_gadget_cache(core->analysis, NULL, RZ_GADGET_TYPE_ROP);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_clear_cop_gadget_cache_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_set_gadget_cache(core->analysis, NULL, RZ_GADGET_TYPE_COP);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_clear_jop_gadget_cache_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_set_gadget_cache(core->analysis, NULL, RZ_GADGET_TYPE_JOP);
+	return RZ_CMD_STATUS_OK;
+}
+
 static void cmd_search_bin(RzCore *core, RzInterval itv) {
 	ut64 from = itv.addr, to = rz_itv_end(itv);
 	int size; // , sz = sizeof (buf);

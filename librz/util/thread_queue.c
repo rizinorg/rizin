@@ -19,7 +19,7 @@ struct rz_th_queue_t {
 	RzThreadCond *reader_cond; ///< Cond for readers
 	size_t reader_awaiting; ///< Number of readers awaiting to read
 
-	RzThreadCond *empty_cond; ///< Cond any thread waiting for an empty queue
+	RzThreadCond *empty_cond; ///< Cond for predicate `closed || rz_list_empty(list)`
 
 	RzThreadLock *data_lock; ///< Lock used to modify the RzThreadQueue data
 	RzThreadQueueSize max_size; ///< Max queue size or unlimited
@@ -123,27 +123,23 @@ RZ_API RZ_OWN RzThreadQueue *rz_th_queue_from_pvector(RZ_NONNULL RZ_BORROW RzPVe
 /**
  * \brief  Closes a RzThreadQueue but only when empty (once closed you cannot read/write data).
  *
+ * This function will block until the queue is empty and then close it.
+ * If the queue is closed from somewhere else, it returns early, even if the queue is not empty.
+ *
  * \param  queue The RzThreadQueue to close
  */
 RZ_API void rz_th_queue_close_when_empty(RZ_NONNULL RzThreadQueue *queue) {
 	rz_return_if_fail(queue);
-
 	rz_th_lock_enter(queue->data_lock);
-	if (queue->closed) {
-		// already closed.
-		rz_th_lock_leave(queue->data_lock);
-		return;
-	}
-
-	while (!rz_list_empty(queue->list)) {
+	while (!queue->closed && !rz_list_empty(queue->list)) {
 		// the list is not empty, so we wait for it to be empty.
-		rz_th_cond_timed_wait(queue->empty_cond, queue->data_lock, 100);
+		rz_th_cond_wait(queue->empty_cond, queue->data_lock);
 	}
-
-	// we finally close the queue & notify all awating readers
-	queue->closed = true;
-	rz_th_cond_signal_all(queue->reader_cond);
-
+	if (!queue->closed) {
+		// we finally close the queue & notify all awating readers
+		queue->closed = true;
+		rz_th_cond_signal_all(queue->reader_cond);
+	}
 	rz_th_lock_leave(queue->data_lock);
 }
 
@@ -159,6 +155,7 @@ RZ_API void rz_th_queue_close(RZ_NONNULL RzThreadQueue *queue) {
 	if (!queue->closed) {
 		queue->closed = true;
 		rz_th_cond_signal_all(queue->reader_cond);
+		rz_th_cond_signal_all(queue->empty_cond);
 	}
 	rz_th_lock_leave(queue->data_lock);
 }
@@ -248,10 +245,10 @@ end:
  * \param  tail  When true, pops the element from the tail, otherwise from the head
  * \param  data  The data removed from the queue
  *
- * \return On success returns a valid pointer, otherwise NULL
+ * \return True if an element was popped from the queue, false if the queue was closed
  */
 RZ_API bool rz_th_queue_pop(RZ_NONNULL RzThreadQueue *queue, bool tail, RZ_NONNULL RZ_OUT void **data) {
-	rz_return_val_if_fail(queue && data, NULL);
+	rz_return_val_if_fail(queue && data, false);
 
 	bool ret = false;
 	rz_th_lock_enter(queue->reader_lock);
@@ -273,6 +270,9 @@ RZ_API bool rz_th_queue_pop(RZ_NONNULL RzThreadQueue *queue, bool tail, RZ_NONNU
 		*data = rz_list_pop(queue->list);
 	} else {
 		*data = rz_list_pop_head(queue->list);
+	}
+	if (rz_list_empty(queue->list)) {
+		rz_th_cond_signal_all(queue->empty_cond);
 	}
 	ret = true;
 
