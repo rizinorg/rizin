@@ -3778,6 +3778,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("gadget.subchains", "false", "Display every length gadget from gadget.len=X to 2");
 	SETBPREF("gadget.conditional", "false", "Include conditional jump, calls and returns in gadget search");
 	SETBPREF("gadget.comments", "false", "Display comments in gadget search output");
+	SETI("gadget.bytes_maxlen", 0, "Truncate the bytes column in /Rt table output to N bytes (0 = no truncation, append ... when truncated)");
 
 	/* io */
 	SETCB("io.cache", "false", &cb_io_cache, "Change both of io.cache.{read,write}");
