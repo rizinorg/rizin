@@ -8,7 +8,7 @@ extern "C" {
 
 typedef struct {
 #if __WINDOWS__
-	HANDLE h;
+	void *h;
 #else
 	int fd;
 	int id;
