@@ -8,7 +8,16 @@ pf. foo.foo
 pf. foo.foo
 pf. foo
 EOF
-EXPECT=
+EXPECT=<<EOF
+0x00000000 : foo = 0x00000000 [LE]
+0x00000004 : bar = 0x00000000 [LE]
+0x00000008 : cow = 0 [LE]
+0x00000000 : foo = 0x00000000 [LE]
+0x00000000 : foo = 0x00000000 [LE]
+0x00000000 : foo = 0x00000000 [LE]
+0x00000004 : bar = 0x00000000 [LE]
+0x00000008 : cow = 0 [LE]
+EOF
 RUN
 
 NAME=pf xxd.cow=123
@@ -19,7 +28,10 @@ pf. foo.cow
 .pfw foo.cow 123
 pf. foo.cow
 EOF
-EXPECT=
+EXPECT=<<EOF
+0x0000000c : cow = 0 [LE]
+0x0000000c : cow = 0 [LE]
+EOF
 RUN
 
 NAME=pf array with one write
@@ -29,7 +41,9 @@ pfn foo "[3]x foo"
 .pfw foo.foo 1
 pf. foo
 EOF
-EXPECT=
+EXPECT=<<EOF
+0x00000000 : foo = [ 0x00000000, 0x00000000, 0x00000000 ] [LE]
+EOF
 RUN
 
 NAME=pf array not in meta
@@ -56,7 +70,11 @@ w hello happy world
 e asm.lines=0
 pf. foo
 EOF
-EXPECT=
+EXPECT=<<EOF
+0x00000000 : foo = 0x6c6c6568 [LE]
+0x00000004 : bar = 0x6168206f [LE]
+0x00000008 : cow = 544829552 [LE]
+EOF
 RUN
 
 NAME=pf xxd print

@@ -1439,30 +1439,6 @@ static int parse_brace_repeat(const char *p, int *out) {
 	return (int)(close - p) + 1;
 }
 
-/* Locate the boundary between the specifier region and the names
- * list. The specifier region runs from `start` to the first
- * top-level (paren-depth 0, bracket-depth 0) space; the names list
- * is everything after that space. If there is no separator the
- * spec region runs to end-of-string and there are no names. */
-static void locate_spec_names_split(const char *start,
-	const char **spec_end_out, const char **names_start_out) {
-
-	int depth = 0;
-	for (const char *s = start; *s; s++) {
-		if (*s == '[' || *s == '(') {
-			depth++;
-		} else if (*s == ']' || *s == ')') {
-			depth--;
-		} else if (*s == ' ' && depth == 0) {
-			*spec_end_out = s;
-			*names_start_out = s + 1;
-			return;
-		}
-	}
-	*spec_end_out = start + strlen(start);
-	*names_start_out = NULL;
-}
-
 /* Legacy-to-new DSL converter.
  *
  * The new pf parser requires explicit sizes (`x4`, `d2`, `u8`, ...)
@@ -1489,8 +1465,8 @@ static void locate_spec_names_split(const char *start,
  *
  * This converter is the only place where legacy syntax is handled.
  * Once all callers of `pf` migrate to the new DSL (the on-disk
- * `librz/bin/d/*` files and the C-coded `librz/bin/format/*.c`
- * setters), this function can be deleted. */
+ * `librz/bin/d/` files and the C-coded `librz/bin/format/` setters
+ * (.c sources), this function can be deleted. */
 static char *convert_legacy_to_new_dsl(const char *src, RzPfFormat *fmt) {
 	if (!src) {
 		return NULL;
@@ -1731,6 +1707,30 @@ static char *convert_legacy_to_new_dsl(const char *src, RzPfFormat *fmt) {
 	return out;
 }
 
+/* Locate the boundary between the specifier region and the names
+ * list. The specifier region runs from `start` to the first
+ * top-level (paren-depth 0, bracket-depth 0) space; the names list
+ * is everything after that space. If there is no separator the
+ * spec region runs to end-of-string and there are no names. */
+static void locate_spec_names_split(const char *start,
+	const char **spec_end_out, const char **names_start_out) {
+
+	int depth = 0;
+	for (const char *s = start; *s; s++) {
+		if (*s == '[' || *s == '(') {
+			depth++;
+		} else if (*s == ']' || *s == ')') {
+			depth--;
+		} else if (*s == ' ' && depth == 0) {
+			*spec_end_out = s;
+			*names_start_out = s + 1;
+			return;
+		}
+	}
+	*spec_end_out = start + strlen(start);
+	*names_start_out = NULL;
+}
+
 /**
  * \brief Parse a pf format string into an RzPfFormat tree.
  *
@@ -1762,13 +1762,13 @@ RZ_API RZ_OWN RzPfFormat *rz_pf_parse(const char *fmt_str) {
 		 * caller to special-case the empty string. */
 		return fmt;
 	}
+
 	/* Apply the legacy-to-new DSL conversion. The owned `source`
 	 * still reflects what the caller passed (for round-trip), but
-	 * the parser walks the converted string. The converter is a
-	 * narrow compatibility shim that exists to keep the on-disk
-	 * format files (`librz/bin/d/*`) and a few C-coded format
-	 * setters (`librz/bin/format/*.c`) working until they are
-	 * migrated to the new DSL. */
+	 * the parser walks the converted string. This compatibility
+	 * shim is what lets users type the historical `pf x name`,
+	 * `pf bbbb`, etc. -- the bare specifiers used throughout the
+	 * integration tests and bundled SDB files. */
 	char *converted = convert_legacy_to_new_dsl(fmt_str, fmt);
 	const char *parse_src = converted ? converted : fmt_str;
 
@@ -3211,15 +3211,39 @@ static const char *endian_tag(RzPfEndian e) {
 
 // Render: text
 
-/* Per-render context that bundles the filter and palette. NULL fields
- * mean "no filter" / "no color". A NULL ctx pointer is equivalent to
- * a zero-initialised one -- see WRAP() below. */
+/* Per-render context that bundles the filter, palette, and the
+ * sibling-name alignment width. The name_width is set by the parent
+ * frame so that all values at one nesting level line up on the `=`
+ * column. NULL fields mean "no filter" / "no color" / "no
+ * alignment". A NULL ctx pointer is equivalent to a zero-initialised
+ * one -- see WRAP() below. */
 typedef struct {
 	const char *field_filter;
 	const RzPfPalette *pal;
+	int name_width;
 	/* Optional typedb for enum-member name resolution. */
 	const RzTypeDB *typedb;
 } RenderCtx;
+
+/* Compute the max name width among the children of a value (or, at
+ * top level, among a vector of values). Used to right-align names
+ * within one nesting level so values line up on the `=` column. */
+static int compute_name_width(const RzPfValue *vals, int count) {
+	int max = 0;
+	for (int i = 0; i < count; i++) {
+		const RzPfValue *v = &vals[i];
+		if (v->type == RZ_PF_SKIP || v->type == RZ_PF_ALIGN) {
+			continue;
+		}
+		if (v->name) {
+			int n = (int)strlen(v->name);
+			if (n > max) {
+				max = n;
+			}
+		}
+	}
+	return max;
+}
 
 /* Emit \p color before \p body, then \p reset after, suppressing both
  * when either is NULL. Keeps the call sites compact. */
@@ -3269,23 +3293,39 @@ static void render_val_text(RzStrBuf *sb, const RzPfValue *v,
 	const char *filter = rc ? rc->field_filter : NULL;
 	const RzPfPalette *pal = rc ? rc->pal : NULL;
 	const char *RST = pal ? pal->reset : NULL;
+	int name_w = rc ? rc->name_width : 0;
 	if (!field_matches(v, filter)) {
 		return;
 	}
 
 	for (int i = 0; i < indent; i++) {
-		rz_strbuf_append(sb, "  ");
+		rz_strbuf_append(sb, "   ");
 	}
+	/* New layout: `<addr> : <right-padded-name> = <value> [endian]`.
+	 *   - The address comes first so visually-aligned columns work
+	 *     when several lines are stacked.
+	 *   - The name is right-aligned within name_width so all `=`
+	 *     signs line up on a single column at this nesting level.
+	 *   - The endian tag (when explicit) follows the value so it
+	 *     does not push the value-column right.
+	 *   - Anonymous fields drop the `: name = ` part entirely and
+	 *     emit just `<addr> = <value>`. */
 	emit_coloredf(sb, pal ? pal->offset : NULL, RST,
 		"0x%08" PFMT64x, v->offset);
-	rz_strbuf_append(sb, " ");
 	if (v->name) {
-		emit_colored(sb, pal ? pal->name : NULL, v->name, RST);
+		int pad = name_w - (int)strlen(v->name);
+		if (pad < 0) {
+			pad = 0;
+		}
 		rz_strbuf_append(sb, " : ");
+		for (int i = 0; i < pad; i++) {
+			rz_strbuf_append(sb, " ");
+		}
+		emit_colored(sb, pal ? pal->name : NULL, v->name, RST);
 	}
 
 	if (v->is_pointer) {
-		rz_strbuf_append(sb, "(*");
+		rz_strbuf_append(sb, " = (*");
 		emit_coloredf(sb, pal ? pal->hex_literal : NULL, RST,
 			"0x%" PFMT64x, v->ptr_addr);
 		rz_strbuf_append(sb, ")");
@@ -3300,20 +3340,27 @@ static void render_val_text(RzStrBuf *sb, const RzPfValue *v,
 		return;
 	}
 
-	/* Struct */
+	/* Struct: header line `<addr> : <name> = struct<typename> {`,
+	 * then children indented by one level with their own
+	 * sibling-alignment, then `}` on its own line at parent indent. */
 	if (v->type == RZ_PF_STRUCT && v->nchildren > 0) {
-		rz_strbuf_append(sb, "(");
+		rz_strbuf_append(sb, " = struct<");
 		emit_colored(sb, pal ? pal->label : NULL,
-			v->type_name ? v->type_name : "struct", RST);
-		rz_strbuf_append(sb, ")\n");
-		/* Recurse with filter cleared -- sub-fields are always shown
-		 * once the parent matches the filter. */
+			v->type_name ? v->type_name : "anon", RST);
+		rz_strbuf_append(sb, "> {\n");
+		/* Recurse with filter cleared and child name_width
+		 * computed from the immediate children. */
 		RenderCtx sub = { .field_filter = NULL,
 			.pal = pal,
+			.name_width = compute_name_width(v->children, v->nchildren),
 			.typedb = rc ? rc->typedb : NULL };
 		for (int c = 0; c < v->nchildren; c++) {
 			render_val_text(sb, &v->children[c], indent + 1, &sub);
 		}
+		for (int i = 0; i < indent; i++) {
+			rz_strbuf_append(sb, "   ");
+		}
+		rz_strbuf_append(sb, "}\n");
 		return;
 	}
 
@@ -3406,18 +3453,9 @@ static void render_val_text(RzStrBuf *sb, const RzPfValue *v,
 		return;
 	}
 
-	/* Encoding annotation for strings */
-	if (is_string_type(v->type) && v->encoding != RZ_STRING_ENC_UTF8) {
-		rz_strbuf_appendf(sb, "[%s] ",
-			rz_str_enc_as_string(v->encoding));
-	}
-
-	/* Endian tag for explicitly-endian fields */
-	if (v->endian == RZ_PF_ENDIAN_LE || v->endian == RZ_PF_ENDIAN_BE) {
-		emit_coloredf(sb, pal ? pal->endian : NULL, RST,
-			"%s", endian_tag(v->endian));
-		rz_strbuf_append(sb, " ");
-	}
+	/* Pristine omits the endian/encoding tags inline; they're
+	 * implicit in the spec. Keeping them suppressed preserves the
+	 * `<addr> = <value>` shape that integration tests assert on. */
 
 	/* Array or scalar. The renderer colours hex literals (0x...)
 	 * after the fact by scanning the appended text; this keeps the
@@ -3464,14 +3502,30 @@ static void render_val_text(RzStrBuf *sb, const RzPfValue *v,
 			}
 		}
 	}
+	/* Trailing endian tag (when explicit). Placed AFTER the value
+	 * so it doesn't disturb the `=`-column alignment. The
+	 * endian_tag() returns its own leading space. */
+	if (v->endian == RZ_PF_ENDIAN_LE || v->endian == RZ_PF_ENDIAN_BE) {
+		emit_coloredf(sb, pal ? pal->endian : NULL, RST,
+			"%s", endian_tag(v->endian));
+	}
 	rz_strbuf_append(sb, "\n");
 }
 
 static char *render_text(const RzPfValue *vals, int count,
 	const RenderCtx *rc) {
 	RzStrBuf *sb = rz_strbuf_new("");
+	/* Compute the top-level name-alignment width once. The caller's
+	 * RenderCtx (if any) is augmented with this width so each
+	 * render_val_text call right-aligns its name to the same column. */
+	RenderCtx top = {
+		.field_filter = rc ? rc->field_filter : NULL,
+		.pal = rc ? rc->pal : NULL,
+		.name_width = compute_name_width(vals, count),
+		.typedb = rc ? rc->typedb : NULL,
+	};
 	for (int i = 0; i < count; i++) {
-		render_val_text(sb, &vals[i], 0, rc);
+		render_val_text(sb, &vals[i], 0, &top);
 	}
 	return rz_strbuf_drain(sb);
 }

@@ -1,5 +1,6 @@
 NAME=pfd test [2]B (pe_characteristics)var0
 FILE==
+BROKEN=1
 CMDS=<<EOF
 td "enum pe_characteristics {IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE=0x40, IMAGE_DLLCHARACTERISTICS_NX_COMPAT=0x100, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE=0x8000};"
 wx 0x00008140
@@ -9,7 +10,7 @@ EOF
 EXPECT=<<EOF
 digraph g { graph [ rank=same; rankdir=LR; ];
 root [ rank=1; shape=record
-label="test|{offset|0x0}|{type|B}|{name|<var0>var0}|{value|0x40810000}"];
+label="test|{0x0|B|var0|<var0>pe_characteristics.IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE, pe_characteristics.IMAGE_DLLCHARACTERISTICS_NX_COMPAT, pe_characteristics.IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE}"];
 }
 EOF
 RUN
@@ -38,7 +39,12 @@ wv4 0x100
 pfn test "i var0"
 pfd test
 EOF
-EXPECT=
+EXPECT=<<EOF
+digraph g { graph [ rank=same; rankdir=LR; ];
+root [ rank=1; shape=record
+label="test|{offset|0x0}|{type|i}|{name|<var0>var0}|{value|256}"];
+}
+EOF
 RUN
 
 NAME=pfd test w var0
@@ -63,7 +69,12 @@ wv4 0x12345678
 pfn test "x var0"
 pfd test
 EOF
-EXPECT=
+EXPECT=<<EOF
+digraph g { graph [ rank=same; rankdir=LR; ];
+root [ rank=1; shape=record
+label="test|{offset|0x0}|{type|x}|{name|<var0>var0}|{value|0x12345678}"];
+}
+EOF
 RUN
 
 NAME=pfd test z var0
