@@ -87,6 +87,8 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	char _str[128];
 	char *str = _str;
 	*_str = 0;
+	RzStrBuf full_str;
+	rz_strbuf_init(&full_str);
 	if (ro->showstr) {
 		if (ro->widestr) {
 			str = _str;
@@ -112,18 +114,32 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			}
 			str[j] = 0;
 		} else {
-			size_t i;
-			for (i = 0; i < sizeof(_str) - 1; i++) {
-				char ch = ro->buf[delta + i];
+			// Walk back to the start of the printable run so we surface the
+			// whole string the hit lives inside, not just the suffix from
+			// the match position. Matches how `izz` reports strings.
+			size_t start = delta;
+			while (start > 0) {
+				char ch = ro->buf[start - 1];
+				if (!ch || !IS_PRINTABLE(ch)) {
+					break;
+				}
+				start--;
+			}
+			for (size_t i = start; i < ro->bsize; i++) {
+				char ch = ro->buf[i];
 				if (ch == '"' || ch == '\\') {
 					ch = '\'';
 				}
 				if (!ch || !IS_PRINTABLE(ch)) {
 					break;
 				}
-				str[i] = ch;
+				rz_strbuf_append_n(&full_str, &ch, 1);
 			}
-			str[i] = 0;
+			str = (char *)rz_strbuf_get(&full_str);
+			if (!str) {
+				str = _str;
+				*_str = 0;
+			}
 		}
 	} else {
 		size_t i;
@@ -165,6 +181,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			RZ_LOG_ERROR("Failed to execute command: %s\n", command);
 		}
 		free(command);
+		rz_strbuf_fini(&full_str);
 		return 1;
 	}
 	if (ro->rizin_command && ctx->core) {
@@ -174,8 +191,10 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			printf("%s", output);
 			free(output);
 		}
+		rz_strbuf_fini(&full_str);
 		return 1;
 	}
+	rz_strbuf_fini(&full_str);
 	return 1;
 }
 
