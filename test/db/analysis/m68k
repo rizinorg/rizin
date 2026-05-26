@@ -181,3 +181,2496 @@ macsr = 0x00000000
 mask = 0x00000000
 EOF
 RUN
+
+NAME=M68k ColdFire integer analysis
+FILE==
+CMDS=<<EOF
+e asm.arch=m68k
+e asm.bits=32
+e asm.cpu=cfv4e
+e asm.lines=false
+wx d080d1c00680000000015280d180c080028000000001e180e080660260fe61ff000000104ac0b080b1c00c80000000014c4028024c402401b1800a800000000148c049c04ed04e904ebafffc4eb9000000104ef9000000104e500004e188e08841d048502000204048d000037001c1c0c0c0448040804e71468080800080000000014e754e7350c0908091c00480000000015380918048404e404a804e58731071c04c80a293a2a900c002c104c2f42840e746fc04d2fb10fbd0000351fcfcc00050fc802123fd802123fc000e00e358e258
+pdj 74~{}
+EOF
+EXPECT=<<EOF
+[
+  {
+    "offset": 0,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "add.l d0, d0",
+    "disasm": "add.l d0, d0",
+    "bytes": "d080",
+    "family": "cpu",
+    "type": "add",
+    "reloc": false,
+    "type_num": 17,
+    "type2_num": 0
+  },
+  {
+    "offset": 2,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "adda.l d0, a0",
+    "disasm": "adda.l d0, a0",
+    "bytes": "d1c0",
+    "family": "cpu",
+    "type": "add",
+    "reloc": false,
+    "type_num": 17,
+    "type2_num": 0
+  },
+  {
+    "offset": 4,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 6,
+    "opcode": "addi.l 0x1, d0",
+    "disasm": "addi.l 0x1, d0",
+    "bytes": "068000000001",
+    "family": "cpu",
+    "type": "add",
+    "reloc": false,
+    "type_num": 17,
+    "type2_num": 0
+  },
+  {
+    "offset": 10,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "addq.l 0x1, d0",
+    "disasm": "addq.l 0x1, d0",
+    "bytes": "5280",
+    "family": "cpu",
+    "type": "add",
+    "reloc": false,
+    "type_num": 17,
+    "type2_num": 0
+  },
+  {
+    "offset": 12,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "addx.l d0, d0",
+    "disasm": "addx.l d0, d0",
+    "bytes": "d180",
+    "family": "cpu",
+    "type": "add",
+    "reloc": false,
+    "type_num": 17,
+    "type2_num": 0
+  },
+  {
+    "offset": 14,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "and.l d0, d0",
+    "disasm": "and.l d0, d0",
+    "bytes": "c080",
+    "family": "cpu",
+    "type": "and",
+    "reloc": false,
+    "type_num": 27,
+    "type2_num": 0
+  },
+  {
+    "offset": 16,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 6,
+    "opcode": "andi.l 0x1, d0",
+    "disasm": "andi.l 0x1, d0",
+    "bytes": "028000000001",
+    "family": "cpu",
+    "type": "and",
+    "reloc": false,
+    "type_num": 27,
+    "type2_num": 0
+  },
+  {
+    "offset": 22,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "asl.l 0x8, d0",
+    "disasm": "asl.l 0x8, d0",
+    "bytes": "e180",
+    "family": "cpu",
+    "type": "shl",
+    "reloc": false,
+    "type_num": 23,
+    "type2_num": 0
+  },
+  {
+    "offset": 24,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "asr.l 0x8, d0",
+    "disasm": "asr.l 0x8, d0",
+    "bytes": "e080",
+    "family": "cpu",
+    "type": "shr",
+    "reloc": false,
+    "type_num": 22,
+    "type2_num": 0
+  },
+  {
+    "offset": 26,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "bne.b 0x1e",
+    "disasm": "bne.b 0x1e",
+    "bytes": "6602",
+    "family": "cpu",
+    "type": "cjmp",
+    "reloc": false,
+    "type_num": 2147483649,
+    "type2_num": 0,
+    "jump": 30,
+    "fail": 28
+  },
+  {
+    "offset": 28,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "bra.b 0x1c",
+    "disasm": "bra.b 0x1c",
+    "bytes": "60fe",
+    "family": "cpu",
+    "type": "jmp",
+    "reloc": false,
+    "type_num": 1,
+    "type2_num": 0,
+    "jump": 28,
+    "fail": 30
+  },
+  {
+    "offset": 30,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 6,
+    "opcode": "bsr.l 0x30",
+    "disasm": "bsr.l 0x30",
+    "bytes": "61ff00000010",
+    "family": "cpu",
+    "type": "call",
+    "reloc": false,
+    "type_num": 3,
+    "type2_num": 0,
+    "jump": 48,
+    "fail": 36
+  },
+  {
+    "offset": 36,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "tas.b d0",
+    "disasm": "tas.b d0",
+    "bytes": "4ac0",
+    "family": "cpu",
+    "type": "null",
+    "reloc": false,
+    "type_num": 0,
+    "type2_num": 0
+  },
+  {
+    "offset": 38,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "cmp.l d0, d0",
+    "disasm": "cmp.l d0, d0",
+    "bytes": "b080",
+    "family": "cpu",
+    "type": "cmp",
+    "reloc": false,
+    "type_num": 15,
+    "type2_num": 0
+  },
+  {
+    "offset": 40,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "cmpa.l d0, a0",
+    "disasm": "cmpa.l d0, a0",
+    "bytes": "b1c0",
+    "family": "cpu",
+    "type": "cmp",
+    "reloc": false,
+    "type_num": 15,
+    "type2_num": 0
+  },
+  {
+    "offset": 42,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 6,
+    "opcode": "cmpi.l 0x1, d0",
+    "disasm": "cmpi.l 0x1, d0",
+    "bytes": "0c8000000001",
+    "family": "cpu",
+    "type": "cmp",
+    "reloc": false,
+    "type_num": 15,
+    "type2_num": 0
+  },
+  {
+    "offset": 48,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "divs.l d0, d2",
+    "disasm": "divs.l d0, d2",
+    "bytes": "4c402802",
+    "family": "cpu",
+    "type": "div",
+    "reloc": false,
+    "type_num": 21,
+    "type2_num": 0
+  },
+  {
+    "offset": 52,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "divu.l d0, d1:d2",
+    "disasm": "divu.l d0, d1:d2",
+    "bytes": "4c402401",
+    "family": "cpu",
+    "type": "div",
+    "reloc": false,
+    "type_num": 21,
+    "type2_num": 0
+  },
+  {
+    "offset": 56,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "eor.l d0, d0",
+    "disasm": "eor.l d0, d0",
+    "bytes": "b180",
+    "family": "cpu",
+    "type": "xor",
+    "reloc": false,
+    "type_num": 28,
+    "type2_num": 0
+  },
+  {
+    "offset": 58,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 6,
+    "opcode": "eori.l 0x1, d0",
+    "disasm": "eori.l 0x1, d0",
+    "bytes": "0a8000000001",
+    "family": "cpu",
+    "type": "xor",
+    "reloc": false,
+    "type_num": 28,
+    "type2_num": 0
+  },
+  {
+    "offset": 64,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "ext.l d0",
+    "disasm": "ext.l d0",
+    "bytes": "48c0",
+    "family": "cpu",
+    "type": "cast",
+    "reloc": false,
+    "type_num": 42,
+    "type2_num": 0
+  },
+  {
+    "offset": 66,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "extb.l d0",
+    "disasm": "extb.l d0",
+    "bytes": "49c0",
+    "family": "cpu",
+    "type": "cast",
+    "reloc": false,
+    "type_num": 42,
+    "type2_num": 0
+  },
+  {
+    "offset": 68,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "jmp (a0)",
+    "disasm": "jmp (a0)",
+    "bytes": "4ed0",
+    "family": "cpu",
+    "type": "ijmp",
+    "reloc": false,
+    "type_num": 134217730,
+    "type2_num": 0
+  },
+  {
+    "offset": 70,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "jsr (a0)",
+    "disasm": "jsr (a0)",
+    "bytes": "4e90",
+    "family": "cpu",
+    "type": "icall",
+    "reloc": false,
+    "type_num": 134217732,
+    "type2_num": 0
+  },
+  {
+    "offset": 72,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "jsr 0x46(pc)",
+    "disasm": "jsr 0x46(pc)",
+    "bytes": "4ebafffc",
+    "family": "cpu",
+    "type": "call",
+    "reloc": false,
+    "type_num": 3,
+    "type2_num": 0,
+    "jump": 70,
+    "fail": 76
+  },
+  {
+    "offset": 76,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 6,
+    "opcode": "jsr 0x10.l",
+    "disasm": "jsr 0x10.l",
+    "bytes": "4eb900000010",
+    "family": "cpu",
+    "type": "call",
+    "reloc": false,
+    "type_num": 3,
+    "type2_num": 0,
+    "jump": 16,
+    "fail": 82
+  },
+  {
+    "offset": 82,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 6,
+    "opcode": "jmp 0x10.l",
+    "disasm": "jmp 0x10.l",
+    "bytes": "4ef900000010",
+    "family": "cpu",
+    "type": "jmp",
+    "reloc": false,
+    "type_num": 1,
+    "type2_num": 0,
+    "jump": 16,
+    "fail": 88
+  },
+  {
+    "offset": 88,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "link.w a0, 0x4",
+    "disasm": "link.w a0, 0x4",
+    "bytes": "4e500004",
+    "family": "cpu",
+    "type": "push",
+    "reloc": false,
+    "type_num": 13,
+    "type2_num": 0
+  },
+  {
+    "offset": 92,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "lsl.l 0x8, d0",
+    "disasm": "lsl.l 0x8, d0",
+    "bytes": "e188",
+    "family": "cpu",
+    "type": "shl",
+    "reloc": false,
+    "type_num": 23,
+    "type2_num": 0
+  },
+  {
+    "offset": 94,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "lsr.l 0x8, d0",
+    "disasm": "lsr.l 0x8, d0",
+    "bytes": "e088",
+    "family": "cpu",
+    "type": "shr",
+    "reloc": false,
+    "type_num": 22,
+    "type2_num": 0
+  },
+  {
+    "offset": 96,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "lea.l (a0), a0",
+    "disasm": "lea.l (a0), a0",
+    "bytes": "41d0",
+    "family": "cpu",
+    "type": "lea",
+    "reloc": false,
+    "type_num": 33,
+    "type2_num": 0
+  },
+  {
+    "offset": 98,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "pea.l (a0)",
+    "disasm": "pea.l (a0)",
+    "bytes": "4850",
+    "family": "cpu",
+    "type": "lea",
+    "reloc": false,
+    "type_num": 33,
+    "type2_num": 0
+  },
+  {
+    "offset": 100,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "move.l d0, d0",
+    "disasm": "move.l d0, d0",
+    "bytes": "2000",
+    "family": "cpu",
+    "type": "mov",
+    "reloc": false,
+    "type_num": 9,
+    "type2_num": 0
+  },
+  {
+    "offset": 102,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "movea.l d0, a0",
+    "disasm": "movea.l d0, a0",
+    "bytes": "2040",
+    "family": "cpu",
+    "type": "mov",
+    "reloc": false,
+    "type_num": 9,
+    "type2_num": 0
+  },
+  {
+    "offset": 104,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "movem.l d0-d1, (a0)",
+    "disasm": "movem.l d0-d1, (a0)",
+    "bytes": "48d00003",
+    "family": "cpu",
+    "type": "store",
+    "reloc": false,
+    "type_num": 31,
+    "type2_num": 0
+  },
+  {
+    "offset": 108,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "moveq 0x1, d0",
+    "disasm": "moveq 0x1, d0",
+    "bytes": "7001",
+    "family": "cpu",
+    "type": "mov",
+    "reloc": false,
+    "type_num": 9,
+    "type2_num": 0
+  },
+  {
+    "offset": 110,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "muls.w d0, d0",
+    "disasm": "muls.w d0, d0",
+    "bytes": "c1c0",
+    "family": "cpu",
+    "type": "mul",
+    "reloc": false,
+    "type_num": 20,
+    "type2_num": 0
+  },
+  {
+    "offset": 112,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "mulu.w d0, d0",
+    "disasm": "mulu.w d0, d0",
+    "bytes": "c0c0",
+    "family": "cpu",
+    "type": "mul",
+    "reloc": false,
+    "type_num": 20,
+    "type2_num": 0
+  },
+  {
+    "offset": 114,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "neg.l d0",
+    "disasm": "neg.l d0",
+    "bytes": "4480",
+    "family": "cpu",
+    "type": "sub",
+    "reloc": false,
+    "type_num": 18,
+    "type2_num": 0
+  },
+  {
+    "offset": 116,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "negx.l d0",
+    "disasm": "negx.l d0",
+    "bytes": "4080",
+    "family": "cpu",
+    "type": "sub",
+    "reloc": false,
+    "type_num": 18,
+    "type2_num": 0
+  },
+  {
+    "offset": 118,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "nop",
+    "disasm": "nop",
+    "bytes": "4e71",
+    "family": "cpu",
+    "type": "nop",
+    "reloc": false,
+    "type_num": 8,
+    "type2_num": 0
+  },
+  {
+    "offset": 120,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "not.l d0",
+    "disasm": "not.l d0",
+    "bytes": "4680",
+    "family": "cpu",
+    "type": "not",
+    "reloc": false,
+    "type_num": 30,
+    "type2_num": 0
+  },
+  {
+    "offset": 122,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "or.l d0, d0",
+    "disasm": "or.l d0, d0",
+    "bytes": "8080",
+    "family": "cpu",
+    "type": "or",
+    "reloc": false,
+    "type_num": 26,
+    "type2_num": 0
+  },
+  {
+    "offset": 124,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 6,
+    "opcode": "ori.l 0x1, d0",
+    "disasm": "ori.l 0x1, d0",
+    "bytes": "008000000001",
+    "family": "cpu",
+    "type": "or",
+    "reloc": false,
+    "type_num": 26,
+    "type2_num": 0
+  },
+  {
+    "offset": 130,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "rts",
+    "disasm": "rts",
+    "bytes": "4e75",
+    "family": "cpu",
+    "type": "ret",
+    "reloc": false,
+    "type_num": 5,
+    "type2_num": 0
+  },
+  {
+    "offset": 132,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "rte",
+    "disasm": "rte",
+    "bytes": "4e73",
+    "family": "cpu",
+    "type": "ret",
+    "reloc": false,
+    "type_num": 5,
+    "type2_num": 0
+  },
+  {
+    "offset": 134,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "st.b d0",
+    "disasm": "st.b d0",
+    "bytes": "50c0",
+    "family": "cpu",
+    "type": "null",
+    "reloc": false,
+    "type_num": 0,
+    "type2_num": 0
+  },
+  {
+    "offset": 136,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "sub.l d0, d0",
+    "disasm": "sub.l d0, d0",
+    "bytes": "9080",
+    "family": "cpu",
+    "type": "sub",
+    "reloc": false,
+    "type_num": 18,
+    "type2_num": 0
+  },
+  {
+    "offset": 138,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "suba.l d0, a0",
+    "disasm": "suba.l d0, a0",
+    "bytes": "91c0",
+    "family": "cpu",
+    "type": "sub",
+    "reloc": false,
+    "type_num": 18,
+    "type2_num": 0
+  },
+  {
+    "offset": 140,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 6,
+    "opcode": "subi.l 0x1, d0",
+    "disasm": "subi.l 0x1, d0",
+    "bytes": "048000000001",
+    "family": "cpu",
+    "type": "sub",
+    "reloc": false,
+    "type_num": 18,
+    "type2_num": 0
+  },
+  {
+    "offset": 146,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "subq.l 0x1, d0",
+    "disasm": "subq.l 0x1, d0",
+    "bytes": "5380",
+    "family": "cpu",
+    "type": "sub",
+    "reloc": false,
+    "type_num": 18,
+    "type2_num": 0
+  },
+  {
+    "offset": 148,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "subx.l d0, d0",
+    "disasm": "subx.l d0, d0",
+    "bytes": "9180",
+    "family": "cpu",
+    "type": "sub",
+    "reloc": false,
+    "type_num": 18,
+    "type2_num": 0
+  },
+  {
+    "offset": 150,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "swap d0",
+    "disasm": "swap d0",
+    "bytes": "4840",
+    "family": "cpu",
+    "type": "mov",
+    "reloc": false,
+    "type_num": 9,
+    "type2_num": 0
+  },
+  {
+    "offset": 152,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "trap 0x0",
+    "disasm": "trap 0x0",
+    "bytes": "4e40",
+    "family": "cpu",
+    "type": "trap",
+    "reloc": false,
+    "type_num": 10,
+    "type2_num": 0
+  },
+  {
+    "offset": 154,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "tst.l d0",
+    "disasm": "tst.l d0",
+    "bytes": "4a80",
+    "family": "cpu",
+    "type": "cmp",
+    "reloc": false,
+    "type_num": 15,
+    "type2_num": 0
+  },
+  {
+    "offset": 156,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "unlk a0",
+    "disasm": "unlk a0",
+    "bytes": "4e58",
+    "family": "cpu",
+    "type": "pop",
+    "reloc": false,
+    "type_num": 14,
+    "type2_num": 0
+  },
+  {
+    "offset": 158,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "mvs.b (a0), d1",
+    "disasm": "mvs.b (a0), d1",
+    "bytes": "7310",
+    "family": "cpu",
+    "type": "load",
+    "reloc": false,
+    "type_num": 32,
+    "type2_num": 0
+  },
+  {
+    "offset": 160,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "mvz.w d0, d0",
+    "disasm": "mvz.w d0, d0",
+    "bytes": "71c0",
+    "family": "cpu",
+    "type": "cast",
+    "reloc": false,
+    "type_num": 42,
+    "type2_num": 0
+  },
+  {
+    "offset": 162,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "sats.l d0",
+    "disasm": "sats.l d0",
+    "bytes": "4c80",
+    "family": "cpu",
+    "type": "cast",
+    "reloc": false,
+    "type_num": 42,
+    "type2_num": 0
+  },
+  {
+    "offset": 164,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "mac.w a1l, a2u, <<, (a3)&, d1, acc0",
+    "disasm": "mac.w a1l, a2u, <<, (a3)&, d1, acc0",
+    "bytes": "a293a2a9",
+    "family": "cpu",
+    "type": "mul",
+    "reloc": false,
+    "type_num": 20,
+    "type2_num": 0
+  },
+  {
+    "offset": 168,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "bitrev d0",
+    "disasm": "bitrev d0",
+    "bytes": "00c0",
+    "family": "cpu",
+    "type": "undefined",
+    "reloc": false,
+    "type_num": 49,
+    "type2_num": 0
+  },
+  {
+    "offset": 170,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "byterev d1",
+    "disasm": "byterev d1",
+    "bytes": "02c1",
+    "family": "cpu",
+    "type": "undefined",
+    "reloc": false,
+    "type_num": 49,
+    "type2_num": 0
+  },
+  {
+    "offset": 172,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "ff1 d2",
+    "disasm": "ff1 d2",
+    "bytes": "04c2",
+    "family": "cpu",
+    "type": "undefined",
+    "reloc": false,
+    "type_num": 48,
+    "type2_num": 0
+  },
+  {
+    "offset": 174,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "intouch (a0)",
+    "disasm": "intouch (a0)",
+    "bytes": "f428",
+    "family": "cpu",
+    "type": "sync",
+    "reloc": false,
+    "type_num": 47,
+    "type2_num": 0
+  },
+  {
+    "offset": 176,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 6,
+    "opcode": "strldsr.w 0x4d2",
+    "disasm": "strldsr.w 0x4d2",
+    "bytes": "40e746fc04d2",
+    "family": "cpu",
+    "type": "mov",
+    "reloc": false,
+    "type_num": 9,
+    "type2_num": 0
+  },
+  {
+    "offset": 182,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "wddata.b (a0)",
+    "disasm": "wddata.b (a0)",
+    "bytes": "fb10",
+    "family": "cpu",
+    "type": "mov",
+    "reloc": false,
+    "type_num": 9,
+    "type2_num": 0
+  },
+  {
+    "offset": 184,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "wdebug.l (a0)",
+    "disasm": "wdebug.l (a0)",
+    "bytes": "fbd00003",
+    "family": "cpu",
+    "type": "mov",
+    "reloc": false,
+    "type_num": 9,
+    "type2_num": 0
+  },
+  {
+    "offset": 188,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "tpf",
+    "disasm": "tpf",
+    "bytes": "51fc",
+    "family": "cpu",
+    "type": "trap",
+    "reloc": false,
+    "type_num": 10,
+    "type2_num": 0
+  },
+  {
+    "offset": 190,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "cp0bcbusy 0x110",
+    "disasm": "cp0bcbusy 0x110",
+    "bytes": "fcc00050",
+    "family": "cpu",
+    "type": "cjmp",
+    "reloc": false,
+    "type_num": 2147483649,
+    "type2_num": 0,
+    "jump": 272,
+    "fail": 194
+  },
+  {
+    "offset": 194,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "cp0ld.l d0, d2, 0x1, 0x123",
+    "disasm": "cp0ld.l d0, d2, 0x1, 0x123",
+    "bytes": "fc802123",
+    "family": "cpu",
+    "type": "load",
+    "reloc": false,
+    "type_num": 32,
+    "type2_num": 0
+  },
+  {
+    "offset": 198,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "cp0st.l d2, d0, 0x1, 0x123",
+    "disasm": "cp0st.l d2, d0, 0x1, 0x123",
+    "bytes": "fd802123",
+    "family": "cpu",
+    "type": "store",
+    "reloc": false,
+    "type_num": 31,
+    "type2_num": 0
+  },
+  {
+    "offset": 202,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "cp0nop 0x8",
+    "disasm": "cp0nop 0x8",
+    "bytes": "fc000e00",
+    "family": "cpu",
+    "type": "nop",
+    "reloc": false,
+    "type_num": 8,
+    "type2_num": 0
+  },
+  {
+    "offset": 206,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "rol.w 0x1, d0",
+    "disasm": "rol.w 0x1, d0",
+    "bytes": "e358",
+    "family": "cpu",
+    "type": "rol",
+    "reloc": false,
+    "type_num": 36,
+    "type2_num": 0
+  },
+  {
+    "offset": 208,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "ror.w 0x1, d0",
+    "disasm": "ror.w 0x1, d0",
+    "bytes": "e258",
+    "family": "cpu",
+    "type": "ror",
+    "reloc": false,
+    "type_num": 35,
+    "type2_num": 0
+  }
+]
+EOF
+RUN
+
+NAME=M68k ColdFire FPU analysis
+FILE==
+CMDS=<<EOF
+e asm.arch=m68k
+e asm.bits=32
+e asm.cpu=cfv4e
+e asm.lines=false
+wx f2004000f2006000f23c44803f800000f23c5480400921fb54442d18f2105000f2106400f210c003f210e003f2800000f2800010f2c000000010f24800000010f2500000f27c0000f27a00001234f27b000012345678f200053af2000522f2000a28f2000523f2000520f2000521f2000525f2000538f2000518f200051af2000501f2000503f310f350f200051d
+pdj 31~{}
+EOF
+EXPECT=<<EOF
+[
+  {
+    "offset": 0,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "fmove.l d0, fp0",
+    "disasm": "fmove.l d0, fp0",
+    "bytes": "f2004000",
+    "family": "fpu",
+    "type": "mov",
+    "reloc": false,
+    "type_num": 9,
+    "type2_num": 0
+  },
+  {
+    "offset": 4,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "fmove.l fp0, d0",
+    "disasm": "fmove.l fp0, d0",
+    "bytes": "f2006000",
+    "family": "fpu",
+    "type": "mov",
+    "reloc": false,
+    "type_num": 9,
+    "type2_num": 0
+  },
+  {
+    "offset": 8,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 8,
+    "opcode": "fmove.s 1.000000, fp1",
+    "disasm": "fmove.s 1.000000, fp1",
+    "bytes": "f23c44803f800000",
+    "family": "fpu",
+    "type": "mov",
+    "reloc": false,
+    "type_num": 9,
+    "type2_num": 0
+  },
+  {
+    "offset": 16,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 12,
+    "opcode": "fmove.d 3.141593, fp1",
+    "disasm": "fmove.d 3.141593, fp1",
+    "bytes": "f23c5480400921fb54442d18",
+    "family": "fpu",
+    "type": "mov",
+    "reloc": false,
+    "type_num": 9,
+    "type2_num": 0
+  },
+  {
+    "offset": 28,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "fmove.w (a0), fp0",
+    "disasm": "fmove.w (a0), fp0",
+    "bytes": "f2105000",
+    "family": "fpu",
+    "type": "load",
+    "reloc": false,
+    "type_num": 32,
+    "type2_num": 0
+  },
+  {
+    "offset": 32,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "fmove.s fp0, (a0)",
+    "disasm": "fmove.s fp0, (a0)",
+    "bytes": "f2106400",
+    "family": "fpu",
+    "type": "store",
+    "reloc": false,
+    "type_num": 31,
+    "type2_num": 0
+  },
+  {
+    "offset": 36,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "fmovem (a0), fp0-fp1",
+    "disasm": "fmovem (a0), fp0-fp1",
+    "bytes": "f210c003",
+    "family": "fpu",
+    "type": "load",
+    "reloc": false,
+    "type_num": 32,
+    "type2_num": 0
+  },
+  {
+    "offset": 40,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "fmovem fp0-fp1, (a0)",
+    "disasm": "fmovem fp0-fp1, (a0)",
+    "bytes": "f210e003",
+    "family": "fpu",
+    "type": "store",
+    "reloc": false,
+    "type_num": 31,
+    "type2_num": 0
+  },
+  {
+    "offset": 44,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "fnop",
+    "disasm": "fnop",
+    "bytes": "f2800000",
+    "family": "fpu",
+    "type": "nop",
+    "reloc": false,
+    "type_num": 8,
+    "type2_num": 0
+  },
+  {
+    "offset": 48,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "fbf.w 0x42",
+    "disasm": "fbf.w 0x42",
+    "bytes": "f2800010",
+    "family": "fpu",
+    "type": "cjmp",
+    "reloc": false,
+    "type_num": 2147483649,
+    "type2_num": 0,
+    "jump": 66,
+    "fail": 52
+  },
+  {
+    "offset": 52,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 6,
+    "opcode": "fbf.l 0x46",
+    "disasm": "fbf.l 0x46",
+    "bytes": "f2c000000010",
+    "family": "fpu",
+    "type": "cjmp",
+    "reloc": false,
+    "type_num": 2147483649,
+    "type2_num": 0,
+    "jump": 70,
+    "fail": 58
+  },
+  {
+    "offset": 58,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 6,
+    "opcode": "fdbf d0, 0x4e",
+    "disasm": "fdbf d0, 0x4e",
+    "bytes": "f24800000010",
+    "family": "fpu",
+    "type": "cjmp",
+    "reloc": false,
+    "type_num": 2147483649,
+    "type2_num": 0,
+    "jump": 78,
+    "fail": 64
+  },
+  {
+    "offset": 64,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "fsf.b (a0)",
+    "disasm": "fsf.b (a0)",
+    "bytes": "f2500000",
+    "family": "fpu",
+    "type": "mov",
+    "reloc": false,
+    "type_num": 9,
+    "type2_num": 0
+  },
+  {
+    "offset": 68,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "ftrapf",
+    "disasm": "ftrapf",
+    "bytes": "f27c0000",
+    "family": "fpu",
+    "type": "trap",
+    "reloc": false,
+    "type_num": 10,
+    "type2_num": 0
+  },
+  {
+    "offset": 72,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 6,
+    "opcode": "ftrapf.w 0x1234",
+    "disasm": "ftrapf.w 0x1234",
+    "bytes": "f27a00001234",
+    "family": "fpu",
+    "type": "trap",
+    "reloc": false,
+    "type_num": 10,
+    "type2_num": 0
+  },
+  {
+    "offset": 78,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 8,
+    "opcode": "ftrapf.w 0x12345678",
+    "disasm": "ftrapf.w 0x12345678",
+    "bytes": "f27b000012345678",
+    "family": "fpu",
+    "type": "trap",
+    "reloc": false,
+    "type_num": 10,
+    "type2_num": 0
+  },
+  {
+    "offset": 86,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "ftst fp1, fp2",
+    "disasm": "ftst fp1, fp2",
+    "bytes": "f200053a",
+    "family": "fpu",
+    "type": "cmp",
+    "reloc": false,
+    "type_num": 15,
+    "type2_num": 0
+  },
+  {
+    "offset": 90,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "fadd fp1, fp2",
+    "disasm": "fadd fp1, fp2",
+    "bytes": "f2000522",
+    "family": "fpu",
+    "type": "add",
+    "reloc": false,
+    "type_num": 17,
+    "type2_num": 0
+  },
+  {
+    "offset": 94,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "fsub fp2, fp4",
+    "disasm": "fsub fp2, fp4",
+    "bytes": "f2000a28",
+    "family": "fpu",
+    "type": "sub",
+    "reloc": false,
+    "type_num": 18,
+    "type2_num": 0
+  },
+  {
+    "offset": 98,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "fmul fp1, fp2",
+    "disasm": "fmul fp1, fp2",
+    "bytes": "f2000523",
+    "family": "fpu",
+    "type": "mul",
+    "reloc": false,
+    "type_num": 20,
+    "type2_num": 0
+  },
+  {
+    "offset": 102,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "fdiv fp1, fp2",
+    "disasm": "fdiv fp1, fp2",
+    "bytes": "f2000520",
+    "family": "fpu",
+    "type": "div",
+    "reloc": false,
+    "type_num": 21,
+    "type2_num": 0
+  },
+  {
+    "offset": 106,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "fmod fp1, fp2",
+    "disasm": "fmod fp1, fp2",
+    "bytes": "f2000521",
+    "family": "fpu",
+    "type": "mod",
+    "reloc": false,
+    "type_num": 38,
+    "type2_num": 0
+  },
+  {
+    "offset": 110,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "frem fp1, fp2",
+    "disasm": "frem fp1, fp2",
+    "bytes": "f2000525",
+    "family": "fpu",
+    "type": "mod",
+    "reloc": false,
+    "type_num": 38,
+    "type2_num": 0
+  },
+  {
+    "offset": 114,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "fcmp fp1, fp2",
+    "disasm": "fcmp fp1, fp2",
+    "bytes": "f2000538",
+    "family": "fpu",
+    "type": "cmp",
+    "reloc": false,
+    "type_num": 15,
+    "type2_num": 0
+  },
+  {
+    "offset": 118,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "fabs fp1, fp2",
+    "disasm": "fabs fp1, fp2",
+    "bytes": "f2000518",
+    "family": "fpu",
+    "type": "undefined",
+    "reloc": false,
+    "type_num": 44,
+    "type2_num": 0
+  },
+  {
+    "offset": 122,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "fneg fp1, fp2",
+    "disasm": "fneg fp1, fp2",
+    "bytes": "f200051a",
+    "family": "fpu",
+    "type": "sub",
+    "reloc": false,
+    "type_num": 18,
+    "type2_num": 0
+  },
+  {
+    "offset": 126,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "fint fp1, fp2",
+    "disasm": "fint fp1, fp2",
+    "bytes": "f2000501",
+    "family": "fpu",
+    "type": "cast",
+    "reloc": false,
+    "type_num": 42,
+    "type2_num": 0
+  },
+  {
+    "offset": 130,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "fintrz fp1, fp2",
+    "disasm": "fintrz fp1, fp2",
+    "bytes": "f2000503",
+    "family": "fpu",
+    "type": "cast",
+    "reloc": false,
+    "type_num": 42,
+    "type2_num": 0
+  },
+  {
+    "offset": 134,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "fsave (a0)",
+    "disasm": "fsave (a0)",
+    "bytes": "f310",
+    "family": "fpu",
+    "type": "store",
+    "reloc": false,
+    "type_num": 31,
+    "type2_num": 0
+  },
+  {
+    "offset": 136,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "frestore (a0)",
+    "disasm": "frestore (a0)",
+    "bytes": "f350",
+    "family": "fpu",
+    "type": "load",
+    "reloc": false,
+    "type_num": 32,
+    "type2_num": 0
+  },
+  {
+    "offset": 138,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "fcos fp1, fp2",
+    "disasm": "fcos fp1, fp2",
+    "bytes": "f200051d",
+    "family": "fpu",
+    "type": "unk",
+    "reloc": false,
+    "type_num": 7,
+    "type2_num": 0
+  }
+]
+EOF
+RUN
+
+NAME=M68k CPU32 table analysis
+FILE==
+CMDS=<<EOF
+e asm.arch=m68k
+e asm.bits=32
+e asm.cpu=cpu32
+e asm.lines=false
+wx 4afaf8100140f8123980f8112500f8145d40
+pdj 5~{}
+EOF
+EXPECT=<<EOF
+[
+  {
+    "offset": 0,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "bgnd",
+    "disasm": "bgnd",
+    "bytes": "4afa",
+    "family": "cpu",
+    "type": "trap",
+    "reloc": false,
+    "type_num": 10,
+    "type2_num": 0
+  },
+  {
+    "offset": 2,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "tblu.w (a0), d0",
+    "disasm": "tblu.w (a0), d0",
+    "bytes": "f8100140",
+    "family": "cpu",
+    "type": "load",
+    "reloc": false,
+    "type_num": 32,
+    "type2_num": 0
+  },
+  {
+    "offset": 6,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "tbls.l (a2), d3",
+    "disasm": "tbls.l (a2), d3",
+    "bytes": "f8123980",
+    "family": "cpu",
+    "type": "load",
+    "reloc": false,
+    "type_num": 32,
+    "type2_num": 0
+  },
+  {
+    "offset": 10,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "tblun.b (a1), d2",
+    "disasm": "tblun.b (a1), d2",
+    "bytes": "f8112500",
+    "family": "cpu",
+    "type": "load",
+    "reloc": false,
+    "type_num": 32,
+    "type2_num": 0
+  },
+  {
+    "offset": 14,
+    "esil": "",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "tblsn.w (a4), d5",
+    "disasm": "tblsn.w (a4), d5",
+    "bytes": "f8145d40",
+    "family": "cpu",
+    "type": "load",
+    "reloc": false,
+    "type_num": 32,
+    "type2_num": 0
+  }
+]
+EOF
+RUN
+
+NAME=M68k CPU variant analysis
+FILE==
+CMDS=<<EOF
+e asm.arch=m68k
+e asm.bits=32
+e asm.lines=false
+e asm.cpu=coldfire
+wx 7310
+echo -- coldfire --
+aoj~{}
+e asm.cpu=cfv1
+wx a554
+echo -- cfv1 --
+aoj~{}
+e asm.cpu=cfv2
+wx 4c402802
+echo -- cfv2 --
+aoj~{}
+e asm.cpu=cfv3
+wx f4e8
+echo -- cfv3 --
+aoj~{}
+e asm.cpu=cfv4
+wx 60ff00000010
+echo -- cfv4 --
+aoj~{}
+e asm.cpu=cfv4e
+wx a900
+echo -- cfv4e --
+aoj~{}
+wx 71c0
+echo -- cfv4e mvz --
+aoj~{}
+wx 4c80
+echo -- cfv4e sats --
+aoj~{}
+wx a293a2a9
+echo -- cfv4e mac-shift --
+aoj~{}
+wx 4ebafffc
+echo -- cfv4e pc-relative --
+aoj~{}
+wx 4ed0
+echo -- cfv4e indirect --
+aoj~{}
+wx f23c44803f800000
+echo -- cfv4e fpu-single --
+aoj~{}
+e asm.cpu=cfv5
+wx a0010000
+echo -- cfv5 --
+aoj~{}
+e asm.cpu=68040
+wx 4eb912345678
+echo -- 68040 absolute --
+aoj~{}
+EOF
+EXPECT=<<EOF
+-- coldfire --
+[
+  {
+    "opcode": "mvs.b (a0), d1",
+    "disasm": "mvs.b (a0), d1",
+    "pseudo": "asm(\"mvs (a0), d1\")",
+    "mnemonic": "mvs.b",
+    "mask": "ffff",
+    "sign": true,
+    "prefix": 0,
+    "id": 299,
+    "opex": {
+      "operands": [
+        {
+          "type": "mem",
+          "address_mode": 3,
+          "base_reg": "a0",
+          "in_disp": 0,
+          "out_disp": 0,
+          "disp": 0,
+          "scale": 0,
+          "bitfield": 0,
+          "width": 0,
+          "offset": 0,
+          "index_size": 0,
+          "in_disp_size": 0,
+          "out_disp_size": 0,
+          "disp_size": 0
+        },
+        {
+          "type": "reg",
+          "value": "d1"
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "7310",
+    "size": 2,
+    "type": "load",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "family": "cpu"
+  }
+]
+-- cfv1 --
+[
+  {
+    "opcode": "mov3q.l 0x2, (a4)",
+    "disasm": "mov3q.l 0x2, (a4)",
+    "pseudo": "asm(\"mov3q 0x2, (a4)\")",
+    "mnemonic": "mov3q.l",
+    "mask": "ffff",
+    "sign": false,
+    "prefix": 0,
+    "id": 294,
+    "opex": {
+      "operands": [
+        {
+          "type": "imm",
+          "value": 2
+        },
+        {
+          "type": "mem",
+          "address_mode": 3,
+          "base_reg": "a4",
+          "in_disp": 0,
+          "out_disp": 0,
+          "disp": 0,
+          "scale": 0,
+          "bitfield": 0,
+          "width": 0,
+          "offset": 0,
+          "index_size": 0,
+          "in_disp_size": 0,
+          "out_disp_size": 0,
+          "disp_size": 0
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "a554",
+    "size": 2,
+    "type": "store",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "family": "cpu"
+  }
+]
+-- cfv2 --
+[
+  {
+    "opcode": "divs.l d0, d2",
+    "disasm": "divs.l d0, d2",
+    "pseudo": "asm(\"divs d0, d2\")",
+    "mnemonic": "divs.l",
+    "mask": "ffffffff",
+    "sign": false,
+    "prefix": 0,
+    "id": 78,
+    "opex": {
+      "operands": [
+        {
+          "type": "reg",
+          "value": "d0"
+        },
+        {
+          "type": "reg",
+          "value": "d2"
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "4c402802",
+    "size": 4,
+    "type": "div",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "family": "cpu"
+  }
+]
+-- cfv3 --
+[
+  {
+    "opcode": "cpushl bc, (a0)",
+    "disasm": "cpushl bc, (a0)",
+    "pseudo": "asm(\"cpushl bc, (a0)\")",
+    "mnemonic": "cpushl",
+    "mask": "ffff",
+    "sign": false,
+    "prefix": 0,
+    "id": 58,
+    "opex": {
+      "operands": [
+        {
+          "type": "imm",
+          "value": 3
+        },
+        {
+          "type": "mem",
+          "address_mode": 3,
+          "base_reg": "a0",
+          "in_disp": 0,
+          "out_disp": 0,
+          "disp": 0,
+          "scale": 0,
+          "bitfield": 0,
+          "width": 0,
+          "offset": 0,
+          "index_size": 0,
+          "in_disp_size": 0,
+          "out_disp_size": 0,
+          "disp_size": 0
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "f4e8",
+    "size": 2,
+    "type": "sync",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "family": "cpu"
+  }
+]
+-- cfv4 --
+[
+  {
+    "opcode": "bra.l 0x12",
+    "disasm": "bra.l 0x12",
+    "pseudo": "goto 0x12",
+    "mnemonic": "bra.l",
+    "mask": "ff0000000000",
+    "jump": 18,
+    "fail": 6,
+    "sign": false,
+    "prefix": 0,
+    "id": 27,
+    "opex": {
+      "operands": [
+        {
+          "type": "br_disp",
+          "disp": 16,
+          "disp_size": 4
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "60ff00000010",
+    "size": 6,
+    "type": "jmp",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "family": "cpu"
+  }
+]
+-- cfv4e --
+[
+  {
+    "opcode": "move.l d0, macsr",
+    "disasm": "move.l d0, macsr",
+    "pseudo": "macsr = d0",
+    "mnemonic": "move.l",
+    "mask": "ffff",
+    "sign": false,
+    "prefix": 0,
+    "id": 286,
+    "opex": {
+      "operands": [
+        {
+          "type": "reg",
+          "value": "d0"
+        },
+        {
+          "type": "reg",
+          "value": "macsr"
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "a900",
+    "size": 2,
+    "type": "mov",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "family": "cpu"
+  }
+]
+-- cfv4e mvz --
+[
+  {
+    "opcode": "mvz.w d0, d0",
+    "disasm": "mvz.w d0, d0",
+    "pseudo": "asm(\"mvz d0, d0\")",
+    "mnemonic": "mvz.w",
+    "mask": "ffff",
+    "sign": false,
+    "prefix": 0,
+    "id": 300,
+    "opex": {
+      "operands": [
+        {
+          "type": "reg",
+          "value": "d0"
+        },
+        {
+          "type": "reg",
+          "value": "d0"
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "71c0",
+    "size": 2,
+    "type": "cast",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "family": "cpu"
+  }
+]
+-- cfv4e sats --
+[
+  {
+    "opcode": "sats.l d0",
+    "disasm": "sats.l d0",
+    "pseudo": "asm(\"sats d0\")",
+    "mnemonic": "sats.l",
+    "mask": "ffff",
+    "sign": false,
+    "prefix": 0,
+    "id": 335,
+    "opex": {
+      "operands": [
+        {
+          "type": "reg",
+          "value": "d0"
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "4c80",
+    "size": 2,
+    "type": "cast",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "family": "cpu"
+  }
+]
+-- cfv4e mac-shift --
+[
+  {
+    "opcode": "mac.w a1l, a2u, <<, (a3)&, d1, acc0",
+    "disasm": "mac.w a1l, a2u, <<, (a3)&, d1, acc0",
+    "pseudo": "asm(\"mac a1l, a2u, <<, (a3)&, d1, acc0\")",
+    "mnemonic": "mac.w",
+    "mask": "ffffffff",
+    "sign": false,
+    "prefix": 0,
+    "id": 285,
+    "opex": {
+      "operands": [
+        {
+          "flags": 1,
+          "type": "reg",
+          "value": "a1"
+        },
+        {
+          "flags": 2,
+          "type": "reg",
+          "value": "a2"
+        },
+        {
+          "flags": 4,
+          "type": "shift"
+        },
+        {
+          "flags": 16,
+          "type": "mem",
+          "address_mode": 3,
+          "base_reg": "a3",
+          "in_disp": 0,
+          "out_disp": 0,
+          "disp": 0,
+          "scale": 0,
+          "bitfield": 0,
+          "width": 0,
+          "offset": 0,
+          "index_size": 0,
+          "in_disp_size": 0,
+          "out_disp_size": 0,
+          "disp_size": 0
+        },
+        {
+          "type": "reg",
+          "value": "d1"
+        },
+        {
+          "type": "reg",
+          "value": "acc0"
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "a293a2a9",
+    "size": 4,
+    "type": "mul",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "family": "cpu"
+  }
+]
+-- cfv4e pc-relative --
+[
+  {
+    "opcode": "jsr 0xfffffffe(pc)",
+    "disasm": "jsr 0xfffffffe(pc)",
+    "pseudo": "call 0xfffffffe(pc)",
+    "description": "jump to subroutine",
+    "mnemonic": "jsr",
+    "mask": "ff000000",
+    "jump": 4294967294,
+    "fail": 4,
+    "sign": false,
+    "prefix": 0,
+    "id": 279,
+    "opex": {
+      "operands": [
+        {
+          "type": "mem",
+          "address_mode": 11,
+          "address": 0,
+          "in_disp": 0,
+          "out_disp": 0,
+          "disp": -4,
+          "scale": 0,
+          "bitfield": 0,
+          "width": 0,
+          "offset": 0,
+          "index_size": 0,
+          "in_disp_size": 0,
+          "out_disp_size": 0,
+          "disp_size": 1
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "4ebafffc",
+    "size": 4,
+    "type": "call",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "family": "cpu"
+  }
+]
+-- cfv4e indirect --
+[
+  {
+    "opcode": "jmp (a0)",
+    "disasm": "jmp (a0)",
+    "pseudo": "goto (a0)",
+    "description": "jump",
+    "mnemonic": "jmp",
+    "mask": "ffff",
+    "fail": 2,
+    "sign": false,
+    "prefix": 0,
+    "id": 278,
+    "opex": {
+      "operands": [
+        {
+          "type": "mem",
+          "address_mode": 3,
+          "base_reg": "a0",
+          "in_disp": 0,
+          "out_disp": 0,
+          "disp": 0,
+          "scale": 0,
+          "bitfield": 0,
+          "width": 0,
+          "offset": 0,
+          "index_size": 0,
+          "in_disp_size": 0,
+          "out_disp_size": 0,
+          "disp_size": 0
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "4ed0",
+    "size": 2,
+    "type": "ijmp",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "family": "cpu"
+  }
+]
+-- cfv4e fpu-single --
+[
+  {
+    "opcode": "fmove.s 1.000000, fp1",
+    "disasm": "fmove.s 1.000000, fp1",
+    "pseudo": "asm(\"fmove.s 1.000000, fp1\")",
+    "mnemonic": "fmove.s",
+    "mask": "ffffffffffffffff",
+    "sign": false,
+    "prefix": 0,
+    "id": 179,
+    "opex": {
+      "operands": [
+        {
+          "type": "fp_single",
+          "value": 1.000000
+        },
+        {
+          "type": "reg",
+          "value": "fp1"
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "f23c44803f800000",
+    "size": 8,
+    "type": "mov",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "family": "fpu"
+  }
+]
+-- cfv5 --
+[
+  {
+    "opcode": "mac.w d1l, d0l, acc0",
+    "disasm": "mac.w d1l, d0l, acc0",
+    "pseudo": "asm(\"mac d1l, d0l, acc0\")",
+    "mnemonic": "mac.w",
+    "mask": "ffffffff",
+    "sign": false,
+    "prefix": 0,
+    "id": 285,
+    "opex": {
+      "operands": [
+        {
+          "flags": 1,
+          "type": "reg",
+          "value": "d1"
+        },
+        {
+          "flags": 1,
+          "type": "reg",
+          "value": "d0"
+        },
+        {
+          "type": "reg",
+          "value": "acc0"
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "a0010000",
+    "size": 4,
+    "type": "mul",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "family": "cpu"
+  }
+]
+-- 68040 absolute --
+[
+  {
+    "opcode": "jsr 0x12345678.l",
+    "disasm": "jsr 0x12345678.l",
+    "pseudo": "call 0x12345678",
+    "description": "jump to subroutine",
+    "mnemonic": "jsr",
+    "mask": "ff0000000000",
+    "jump": 305419896,
+    "fail": 6,
+    "sign": false,
+    "prefix": 0,
+    "id": 279,
+    "opex": {
+      "operands": [
+        {
+          "type": "mem",
+          "address_mode": 17,
+          "address": 305419896,
+          "in_disp": 0,
+          "out_disp": 0,
+          "disp": 0,
+          "scale": 0,
+          "bitfield": 0,
+          "width": 0,
+          "offset": 0,
+          "index_size": 0,
+          "in_disp_size": 0,
+          "out_disp_size": 0,
+          "disp_size": 0
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "4eb912345678",
+    "size": 6,
+    "type": "call",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "family": "cpu"
+  }
+]
+EOF
+RUN
