@@ -217,7 +217,7 @@ e asm.cpu=c64x
 arp
 EOF
 EXPECT=<<EOF
-=PC	pc
+=PC	pce1
 =A0	a4
 =A1	b4
 =A2	a6
