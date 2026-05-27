@@ -600,14 +600,18 @@ static RzBinInfo *coff_info(RzBinFile *bf) {
 		switch (obj->target_id) {
 		case COFF_FILE_TARGET_TI_TMS320C3x4x:
 			ret->machine = rz_str_dup("TMS320C3x/4x");
-			ret->cpu = rz_str_dup("c54x");
+			/* TMS320C3x/C4x is a floating-point DSP family that
+			 * rizin does not currently disassemble; pick the
+			 * closest-in-spirit 32-bit TI VLIW family. */
+			ret->cpu = rz_str_dup("c64x");
 			ret->arch = rz_str_dup("tms320");
 			ret->bits = 32;
 			break;
 		case COFF_FILE_TARGET_TI_TMS470:
+			/* TMS470 is an ARM7TDMI core, not a TMS320 DSP. */
 			ret->machine = rz_str_dup("TMS470");
-			ret->cpu = rz_str_dup("c54x");
-			ret->arch = rz_str_dup("tms320");
+			ret->cpu = rz_str_dup("arm");
+			ret->arch = rz_str_dup("arm");
 			ret->bits = 32;
 			break;
 		case COFF_FILE_TARGET_TI_TMS320C5400:
@@ -618,7 +622,7 @@ static RzBinInfo *coff_info(RzBinFile *bf) {
 			break;
 		case COFF_FILE_TARGET_TI_TMS320C6000:
 			ret->machine = rz_str_dup("TMS320C6000");
-			ret->cpu = rz_str_dup("c55x");
+			ret->cpu = rz_str_dup("c64x");
 			ret->arch = rz_str_dup("tms320");
 			ret->bits = 32;
 			break;
@@ -630,15 +634,15 @@ static RzBinInfo *coff_info(RzBinFile *bf) {
 			break;
 		case COFF_FILE_TARGET_TI_TMS320C2800:
 			ret->machine = rz_str_dup("TMS320C2800");
-			ret->cpu = rz_str_dup("c54x");
+			ret->cpu = rz_str_dup("c28x");
 			ret->arch = rz_str_dup("tms320");
 			ret->bits = 32;
 			break;
 		case COFF_FILE_TARGET_TI_MSP430:
-			ret->machine = rz_str_dup("TMS320C2800");
-			ret->cpu = rz_str_dup("c54x");
-			ret->arch = rz_str_dup("tms320");
-			ret->bits = 32;
+			ret->machine = rz_str_dup("MSP430");
+			ret->cpu = rz_str_dup("msp430");
+			ret->arch = rz_str_dup("msp430");
+			ret->bits = 16;
 			break;
 		case COFF_FILE_TARGET_TI_TMS320C5500_PLUS:
 			ret->machine = rz_str_dup("TMS320C5500+");

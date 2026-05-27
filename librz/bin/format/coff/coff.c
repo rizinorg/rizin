@@ -265,15 +265,57 @@ static bool coff_init_scn_hdr(RzBuffer *b, ut64 *offset, struct coff_scn_hdr *sc
 		rz_buf_read_ble32_offset(b, offset, &scn->s_flags, big_endian);
 }
 
+/* TI COFF v2 section header is 48 bytes (vs 40 for the standard
+ * COFF1 form). The relocation and line-number counts are widened
+ * from 16 to 32 bits, and a 2-byte reserved field plus a 2-byte
+ * memory-page-number field are appended. The TI 'Common Object File
+ * Format Specification' (SPRAAO8) documents this; the asm55p /
+ * cl55 toolchain in the TI C55x+ SDK produces this layout. Mis-
+ * parsing as the 40-byte form leaves the section table walking
+ * off-by-8 per section, which in practice produces vaddr and size
+ * fields full of garbage (e.g. 0x7461642e, ASCII '.dat' from the
+ * adjacent section name). */
+static bool coff_init_scn_hdr_ti(RzBuffer *b, ut64 *offset, struct coff_scn_hdr *scn, bool big_endian) {
+	ut32 nreloc32 = 0;
+	ut32 nlnno32 = 0;
+	ut16 reserved = 0;
+	ut16 mempage = 0;
+	bool ok = rz_buf_read_offset(b, offset, (ut8 *)scn->s_name, sizeof(scn->s_name)) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_paddr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_vaddr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_size, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_scnptr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_relptr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_lnnoptr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &nreloc32, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &nlnno32, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_flags, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &reserved, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &mempage, big_endian);
+	if (ok) {
+		/* Clamp the wider TI counts to the 16-bit fields that the
+		 * rest of the COFF code uses; the section table is the only
+		 * place where TI widens these. Real-world section relocation
+		 * counts well above 64K are unheard of. */
+		scn->s_nreloc = (ut16)(nreloc32 > UT16_MAX ? UT16_MAX : nreloc32);
+		scn->s_nlnno = (ut16)(nlnno32 > UT16_MAX ? UT16_MAX : nlnno32);
+	}
+	return ok;
+}
+
 static bool bin_coff_init_scn_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj, ut64 *offset) {
 	obj->scn_hdrs = rz_vector_new(sizeof(struct coff_scn_hdr), NULL, NULL);
 	if (!obj->scn_hdrs) {
 		return false;
 	}
 
+	const bool ti_v2 = coff_is_ti_machine(obj);
 	for (size_t i = 0; i < obj->hdr.f_nscns; ++i) {
 		struct coff_scn_hdr scn = { 0 };
-		if (!coff_init_scn_hdr(b, offset, &scn, obj->big_endian)) {
+		const bool ok = ti_v2
+			? coff_init_scn_hdr_ti(b, offset, &scn, obj->big_endian)
+			: coff_init_scn_hdr(b, offset, &scn, obj->big_endian);
+		if (!ok) {
 			return false;
 		}
 		rz_vector_push(obj->scn_hdrs, &scn);
