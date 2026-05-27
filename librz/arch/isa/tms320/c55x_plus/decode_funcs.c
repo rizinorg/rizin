@@ -4,9 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include "ins.h"
-#include "utils.h"
 
 char *get_tc2_tc1(ut32 ins_bits) {
 	char *res = "tc1";
@@ -56,183 +54,95 @@ char *get_trans_reg(ut32 ins_bits) {
 }
 
 char *get_AR_regs_class1(ut32 ins_bits) {
-	ut32 op = (ins_bits >> 4) & 7;
-	char *res = (char *)calloc(1, 50);
-	if (!res) {
-		return NULL;
-	}
+	const ut32 op = (ins_bits >> 4) & 7;
+	const long n = (long int)ins_bits & 0xF;
 	switch (op) {
-	case 0:
-		sprintf(res, "*ar-%ld", (long int)ins_bits & 0xF);
-		break;
-	case 1:
-		sprintf(res, "*ar+%ld", (long int)ins_bits & 0xF);
-		break;
-	case 2:
-		sprintf(res, "*ar%ld(t0)", (long int)ins_bits & 0xF);
-		break;
-	case 3:
-		sprintf(res, "*ar%ld", (long int)ins_bits & 0xF);
-		break;
-	case 4:
-		sprintf(res, "*(ar%ld-t0)", (long int)ins_bits & 0xF);
-		break;
-	case 5:
-		sprintf(res, "*(ar%ld-t1)", (long int)ins_bits & 0xF);
-		break;
-	case 6:
-		sprintf(res, "*(ar%ld+t0)", (long int)ins_bits & 0xF);
-		break;
-	case 7:
-		sprintf(res, "*(ar%ld+t1)", (long int)ins_bits & 0xF);
-		break;
+	case 0: return rz_str_newf("*ar-%ld", n);
+	case 1: return rz_str_newf("*ar+%ld", n);
+	case 2: return rz_str_newf("*ar%ld(t0)", n);
+	case 3: return rz_str_newf("*ar%ld", n);
+	case 4: return rz_str_newf("*(ar%ld-t0)", n);
+	case 5: return rz_str_newf("*(ar%ld-t1)", n);
+	case 6: return rz_str_newf("*(ar%ld+t0)", n);
+	case 7: return rz_str_newf("*(ar%ld+t1)", n);
 	}
-	return res;
+	return NULL;
 }
 
 char *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx) {
-	ut8 op, op2, reg_num, type;
-	char *res = NULL;
+	const ut8 op = ins_bits >> 6;
+	const ut8 op2 = ins_bits & 3;
+	const long reg_num = (ins_bits >> 2) & 0xF;
 
-	op = ins_bits >> 6;
-	op2 = ins_bits & 3;
-	reg_num = (ins_bits >> 2) & 0xF;
 	if (ret_len) {
 		*ret_len = 0;
 	}
-	// printf("OP1 %x OP2 0x%x %x\n", op, op2, reg_num);
-	res = malloc(50);
-	if (!res) {
-		return NULL;
-	}
 	if (op2 == 2) {
 		if (op) {
-			sprintf(res, "*ar%ld(short(#0x%lx))",
-				(long int)reg_num, (long int)idx * op);
-		} else {
-			sprintf(res, "*ar%ld", (long int)reg_num);
+			return rz_str_newf("*ar%ld(short(#0x%lx))", reg_num, (long int)idx * op);
 		}
-	} else {
-		type = (op >> 3 | 2 * op2);
-		if (type == 6) {
-			sprintf(res, "@#0x%lx", (long int)idx * (reg_num | 16 * (op & 7)));
-		} else if (type == 7) {
-			sprintf(res, "*sp(#0x%lx)", (long int)idx * (reg_num | 16 * (op & 7)));
-		} else {
-			type = idx | 16 * op;
-			switch (type) {
-			case 0:
-				sprintf(res, "*ar%ld-", (long int)reg_num);
-				break;
-			case 1:
-				sprintf(res, "*ar%ld+", (long int)reg_num);
-				break;
-			case 2:
-				sprintf(res, "*ar%ld(t0)", (long int)reg_num);
-				break;
-			case 3:
-				sprintf(res, "*ar%ld(t1)", (long int)reg_num);
-				break;
-			case 4:
-				sprintf(res, "*(ar%ld-t0)", (long int)reg_num);
-				break;
-			case 5:
-				sprintf(res, "*(ar%ld-t1)", (long int)reg_num);
-				break;
-			case 6:
-				sprintf(res, "*(ar%ld+t0)", (long int)reg_num);
-				break;
-			case 7:
-				sprintf(res, "*(ar%ld+t1)", (long int)reg_num);
-				break;
-			case 8:
-				sprintf(res, "*-ar%ld", (long int)reg_num);
-				break;
-			case 9:
-				sprintf(res, "*+ar%ld", (long int)reg_num);
-				break;
-			case 10:
-				sprintf(res, "*ar%ld(t2)", (long int)reg_num);
-				break;
-			case 11:
-				sprintf(res, "*ar%ld(t3)", (long int)reg_num);
-				break;
-			case 12:
-				sprintf(res, "*(ar%ld-t2)", (long int)reg_num);
-				break;
-			case 13:
-				sprintf(res, "*(ar%ld-t3)", (long int)reg_num);
-				break;
-			case 14:
-				sprintf(res, "*(ar%ld+t2)", (long int)reg_num);
-				break;
-			case 15:
-				sprintf(res, "*(ar%ld+t3)", (long int)reg_num);
-				break;
-			case 16:
-				sprintf(res, "*(ar%ld-t0b)", (long int)reg_num);
-				break;
-			case 17:
-				sprintf(res, "*(ar%ld+t0b)", (long int)reg_num);
-				break;
-			case 18:
-				sprintf(res, "*ar%ld(t0<<#1)", (long int)reg_num);
-				break;
-			case 19:
-				sprintf(res, "*ar%ld(t1<<#1)", (long int)reg_num);
-				break;
-			case 23:
-				sprintf(res, "*ar%ld(xar15)", (long int)reg_num);
-				break;
+		return rz_str_newf("*ar%ld", reg_num);
+	}
 
-			case 24:
-			case 25:
-			case 26:
-			case 27:
-				idx = get_ins_part(ins_pos, 2);
-				if (ret_len) {
-					*ret_len = 2;
-				}
-				switch (type) {
-				case 24:
-					sprintf(res, "*ar%ld(#%ld)", (long int)reg_num, (long int)op * idx);
-					break;
-				case 25:
-					sprintf(res, "*+ar%ld(#%ld)", (long int)reg_num, (long int)op * idx);
-					break;
-				case 26:
-					sprintf(res, "*abs16(#0x%lx)", (long int)idx);
-					break;
-				default:
-					sprintf(res, "*port(#0x%lx)", (long int)idx);
-					break;
-				}
-				break;
-			case 28:
-			case 29:
-			case 30:
-				idx = get_ins_part(ins_pos, 3);
-				if (ret_len) {
-					*ret_len = 3;
-				}
-				switch (type) {
-				case 28:
-					sprintf(res, "*ar%ld(#0x%lx)", (long int)reg_num, (long int)idx * op);
-					break;
-				case 29:
-					sprintf(res, "*+ar%ld(#0x%lx)", (long int)reg_num, (long int)idx * op);
-					break;
-				default:
-					sprintf(res, "*(#0x%lx)", (long int)idx);
-					break;
-				}
+	ut8 type = (op >> 3 | 2 * op2);
+	if (type == 6) {
+		return rz_str_newf("@#0x%lx", (long int)idx * (reg_num | 16 * (op & 7)));
+	} else if (type == 7) {
+		return rz_str_newf("*sp(#0x%lx)", (long int)idx * (reg_num | 16 * (op & 7)));
+	}
 
-				break;
-			}
+	type = idx | 16 * op;
+	switch (type) {
+	case 0: return rz_str_newf("*ar%ld-", reg_num);
+	case 1: return rz_str_newf("*ar%ld+", reg_num);
+	case 2: return rz_str_newf("*ar%ld(t0)", reg_num);
+	case 3: return rz_str_newf("*ar%ld(t1)", reg_num);
+	case 4: return rz_str_newf("*(ar%ld-t0)", reg_num);
+	case 5: return rz_str_newf("*(ar%ld-t1)", reg_num);
+	case 6: return rz_str_newf("*(ar%ld+t0)", reg_num);
+	case 7: return rz_str_newf("*(ar%ld+t1)", reg_num);
+	case 8: return rz_str_newf("*-ar%ld", reg_num);
+	case 9: return rz_str_newf("*+ar%ld", reg_num);
+	case 10: return rz_str_newf("*ar%ld(t2)", reg_num);
+	case 11: return rz_str_newf("*ar%ld(t3)", reg_num);
+	case 12: return rz_str_newf("*(ar%ld-t2)", reg_num);
+	case 13: return rz_str_newf("*(ar%ld-t3)", reg_num);
+	case 14: return rz_str_newf("*(ar%ld+t2)", reg_num);
+	case 15: return rz_str_newf("*(ar%ld+t3)", reg_num);
+	case 16: return rz_str_newf("*(ar%ld-t0b)", reg_num);
+	case 17: return rz_str_newf("*(ar%ld+t0b)", reg_num);
+	case 18: return rz_str_newf("*ar%ld(t0<<#1)", reg_num);
+	case 19: return rz_str_newf("*ar%ld(t1<<#1)", reg_num);
+	case 23: return rz_str_newf("*ar%ld(xar15)", reg_num);
+	case 24:
+	case 25:
+	case 26:
+	case 27:
+		idx = get_ins_part(ins_pos, 2);
+		if (ret_len) {
+			*ret_len = 2;
+		}
+		switch (type) {
+		case 24: return rz_str_newf("*ar%ld(#%ld)", reg_num, (long int)op * idx);
+		case 25: return rz_str_newf("*+ar%ld(#%ld)", reg_num, (long int)op * idx);
+		case 26: return rz_str_newf("*abs16(#0x%lx)", (long int)idx);
+		default: return rz_str_newf("*port(#0x%lx)", (long int)idx);
+		}
+	case 28:
+	case 29:
+	case 30:
+		idx = get_ins_part(ins_pos, 3);
+		if (ret_len) {
+			*ret_len = 3;
+		}
+		switch (type) {
+		case 28: return rz_str_newf("*ar%ld(#0x%lx)", reg_num, (long int)idx * op);
+		case 29: return rz_str_newf("*+ar%ld(#0x%lx)", reg_num, (long int)idx * op);
+		default: return rz_str_newf("*(#0x%lx)", (long int)idx);
 		}
 	}
 
-	return res;
+	return NULL;
 }
 
 char *get_reg_pair(ut32 idx) {
@@ -1016,17 +926,17 @@ char *get_opers(ut8 oper_byte) {
 			char *reg_name = get_reg_name_4(oper_byte & 0x1F);
 			switch (oper_type) {
 			case 1u:
-				return strcat_dup(reg_name, " != #0", 1);
+				return rz_str_append(reg_name, " != #0");
 			case 0u:
-				return strcat_dup(reg_name, " == #0", 1);
+				return rz_str_append(reg_name, " == #0");
 			case 2u:
-				return strcat_dup(reg_name, " < #0", 1);
+				return rz_str_append(reg_name, " < #0");
 			case 3u:
-				return strcat_dup(reg_name, " >= #0", 1);
+				return rz_str_append(reg_name, " >= #0");
 			case 4u:
-				return strcat_dup(reg_name, " > #0", 1);
+				return rz_str_append(reg_name, " > #0");
 			case 5u:
-				return strcat_dup(reg_name, " <= #0", 1);
+				return rz_str_append(reg_name, " <= #0");
 			default:
 				free(reg_name);
 				return NULL;
@@ -1039,11 +949,9 @@ char *get_opers(ut8 oper_byte) {
 				free(reg_name);
 				return NULL;
 			}
-			return strcat_dup(reg_name, " != #0", 1);
+			return rz_str_append(reg_name, " != #0");
 		} else {
-			// coverity may complain but strcat_dup set to null
-			// reg_name when free
-			return strcat_dup(reg_name, " == #0", 1);
+			return rz_str_append(reg_name, " == #0");
 		}
 	}
 	}
@@ -1076,15 +984,10 @@ char *get_sim_reg(char *reg_arg, ut32 ins_bits) {
 			}
 		}
 		aux = get_reg_name_1(ins_bits >> 2);
-		res = strcat_dup("@", aux, 2);
+		res = rz_str_prepend(aux, "@");
 		break;
 	case 2:
-		aux = (char *)calloc(1, 50);
-		if (!aux) {
-			return NULL;
-		}
-		sprintf(aux, "@#0x%x", code);
-		res = aux;
+		res = rz_str_newf("@#0x%x", code);
 		break;
 	case 1:
 	case 3:

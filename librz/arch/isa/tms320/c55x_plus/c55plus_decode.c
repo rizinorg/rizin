@@ -4,13 +4,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <string.h>
 #include <rz_types.h>
 #include <rz_util.h>
 
 #include "ins.h"
 #include "decode.h"
-#include "utils.h"
 #include "hashtable.h"
 #include "decode_funcs.h"
 
@@ -90,11 +88,6 @@ static ut32 get_ins_bits(ut32 hash_code, ut32 ins_pos, char *ins,
 		if (!op_str[x]) {
 			x = 0;
 		}
-	}
-
-	if (C55PLUS_DEBUG) {
-		printf("INS_BITS => 0x%x\n", res);
-		getchar();
 	}
 
 	return res;
@@ -247,10 +240,6 @@ static char *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_le
 		}
 	}
 
-	if (C55PLUS_DEBUG) {
-		printf("PSEUDO INS %s\n", ins);
-	}
-
 	pos = ins;
 	// instruction length
 	*ins_len_dec = ins_len;
@@ -277,19 +266,12 @@ static char *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_le
 			token_aux[len] = '\0';
 			pos = aux;
 
-			if (C55PLUS_DEBUG) {
-				printf("TOKEN AUX: %s\n", token_aux);
-			}
-
 			reg = NULL;
 			for (i = 0; i < len; i++) {
 				if (token_aux[i] == ',') {
 					len = (unsigned int)(size_t)(&token_aux[i] - token_aux);
 					reg = &token_aux[i + 1];
 
-					if (C55PLUS_DEBUG) {
-						printf("REG : %s\n", reg);
-					}
 					break;
 				}
 			}
@@ -299,20 +281,13 @@ static char *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_le
 			if (*err_code < 0) {
 				return NULL;
 			}
-			res_decode = strcat_dup(res_decode, aux, 3);
-			if (C55PLUS_DEBUG) {
-				printf("RET TOKEN %s\n", res_decode);
-			}
+			res_decode = rz_str_append_owned(res_decode, aux);
 		} else {
 			token_aux[0] = *pos;
 			token_aux[1] = '\0';
-			res_decode = strcat_dup(res_decode, token_aux, 1);
+			res_decode = rz_str_append(res_decode, token_aux);
 		}
 		pos++;
-	}
-
-	if (C55PLUS_DEBUG) {
-		printf("RESULT DECODE: %s\n", res_decode);
 	}
 
 	return res_decode;
@@ -410,23 +385,19 @@ static char *do_decode(ut32 ins_off, ut32 ins_pos, ut32 two_ins, ut32 *next_ins_
 		*ins_hash_code = hash_code;
 	}
 
-	if (C55PLUS_DEBUG) {
-		printf("MAGIC VALUE 0x%x\n", 0x800);
-	}
-
 	if (hash_aux == 0x1E1 || hash_aux == 0x1E2) {
 		ins_aux = decode_ins(hash_aux, ins_pos, ins_off, &ins_len_dec, &reg_len_dec,
 			&ret_ins_bits, magic_value, two_ins, err_code);
 		if (*err_code < 0) {
 			return NULL;
 		}
-		ins_aux = strcat_dup(ins_aux, " ", 1);
+		ins_aux = rz_str_append(ins_aux, " ");
 	}
 
 	if (hash_code == 0x223) {
-		ins_res = strcat_dup(ins_aux, ".byte 0x", 1);
-		ins_aux = get_hex_str(get_ins_part(ins_pos, 1));
-		ins_res = strcat_dup(ins_res, ins_aux, 2);
+		char hex_buf[8];
+		ins_res = rz_str_append(ins_aux, ".byte 0x");
+		ins_res = rz_str_append(ins_res, rz_strf(hex_buf, "%02x", get_ins_part(ins_pos, 1) & 0xff));
 		*next_ins_pos = *next_ins_pos + 1;
 	} else {
 		free(ins_aux);
@@ -436,9 +407,8 @@ static char *do_decode(ut32 ins_off, ut32 ins_pos, ut32 two_ins, ut32 *next_ins_
 			free(ins_aux);
 			return NULL;
 		}
-		ins_res = strcat_dup(ins_aux, ins_res, 1);
+		ins_res = rz_str_append_owned(ins_aux, ins_res);
 		// printf("NEXT POS %d %d\n", ins_len_dec, reg_len_dec);
-		// getchar();
 		*next_ins_pos += ins_len_dec; // reg_len_dec;
 	}
 
@@ -484,13 +454,11 @@ char *c55plus_decode(ut32 ins_pos, ut32 *next_ins_pos) {
 		*next_ins_pos = next_ins2_pos;
 
 		if (hash_code == 0xF0 || hash_code == 0xF1) {
-			aux = strcat_dup(ins2, " || ", 1);
-			ins_res = strcat_dup(aux, ins1, 1);
-			free(ins1);
+			aux = rz_str_append(ins2, " || ");
+			ins_res = rz_str_append_owned(aux, ins1);
 		} else {
-			aux = strcat_dup(ins1, " || ", 1);
-			ins_res = strcat_dup(aux, ins2, 1);
-			free(ins2);
+			aux = rz_str_append(ins1, " || ");
+			ins_res = rz_str_append_owned(aux, ins2);
 		}
 		*next_ins_pos = next_ins1_pos + next_ins2_pos + 1;
 		if (*next_ins_pos != two_ins) {
@@ -524,7 +492,6 @@ static char *get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 	ut32 ins_pos, ut32 ins_len, ut8 two_ins, int *err_code) {
 	ut32 tok_op, ins_bits;
 	char *res = NULL;
-	char buff_aux[512];
 	char *aux = NULL;
 	ut32 ret_len = 0, flag;
 
@@ -536,11 +503,6 @@ static char *get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 		return NULL;
 	}
 	tok_op = *ins_token - 0x23;
-
-	if (C55PLUS_DEBUG) {
-		printf("WAY ins_bits: OP = %d 0x%x %s %d %d\n", tok_op, ins_bits, ins_token, ins_token_len, ins_pos);
-		getchar();
-	}
 
 	switch (tok_op) {
 	case 30:
@@ -571,8 +533,7 @@ static char *get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 	case 39: res = get_cmp_op(ins_bits); break;
 	case 40:
 	case 48:
-		sprintf(buff_aux, "#0x%x", (ins_bits << (32 - ins_token_len) >> (32 - ins_token_len)));
-		res = rz_str_dup(buff_aux);
+		res = rz_str_newf("#0x%x", (ins_bits << (32 - ins_token_len) >> (32 - ins_token_len)));
 		break;
 	case 70:
 	case 72:
@@ -590,41 +551,34 @@ static char *get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 			*ret_ins_bits = ins_bits;
 		}
 		if (!reg_arg || *reg_arg != '-') {
-			sprintf(buff_aux, "#0x%lx", (long unsigned int)ins_bits);
+			res = rz_str_newf("#0x%lx", (long unsigned int)ins_bits);
 		} else {
-			sprintf(buff_aux, "-#0x%lx", (long unsigned int)ins_bits);
+			res = rz_str_newf("-#0x%lx", (long unsigned int)ins_bits);
 		}
-		res = rz_str_dup(buff_aux);
 		if (!reg_arg || *reg_arg != 'm') {
 			break;
 		}
 
-		res = strcat_dup(res, ")", 1);
-		res = strcat_dup("*(", res, 2);
+		res = rz_str_append(res, ")");
+		res = rz_str_prepend(res, "*(");
 
 		if (magic_value & 0xC0) {
-			res = strcat_dup(res, ")", 1);
-			res = strcat_dup("volatile(", res, 2);
+			res = rz_str_append(res, ")");
+			res = rz_str_prepend(res, "volatile(");
 		} else if (magic_value & 0x30) {
-			res = strcat_dup(res, ")", 1);
-			res = strcat_dup("port(", res, 2);
+			res = rz_str_append(res, ")");
+			res = rz_str_prepend(res, "port(");
 		}
 		break;
 	case 41:
 	case 73:
-		if ((reg_arg && *reg_arg == 'L') || hash_code == 105 || hash_code == 7) {
-			if (C55PLUS_DEBUG) {
-				fprintf(stderr, "Ooops!!! look up address in sections!! %d", hash_code);
-			}
-		}
 		if (reg_arg && *reg_arg == 'L') {
 			ins_bits = ins_bits << (32 - ins_token_len) >> (32 - ins_token_len);
 		}
 		if (reg_arg && *reg_arg == 'i') {
 			res = rz_str_dup("");
 		} else {
-			sprintf(buff_aux, "#0x%06lx", (long unsigned int)ins_bits);
-			res = rz_str_dup(buff_aux);
+			res = rz_str_newf("#0x%06lx", (long unsigned int)ins_bits);
 		}
 		break;
 	case 42:
@@ -651,34 +605,34 @@ static char *get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 			aux = get_AR_regs_class2(ins_bits, &ret_len, ins_len + ins_pos, 1);
 		}
 		if (magic_value & 1) {
-			aux = strcat_dup(aux, ")", 1);
-			aux = strcat_dup("mmap(", aux, 2);
+			aux = rz_str_append(aux, ")");
+			aux = rz_str_prepend(aux, "mmap(");
 		} else if ((magic_value & 4) && is_linear_circular(ins_bits)) {
-			aux = strcat_dup(aux, ")", 1);
-			aux = strcat_dup("linear(", aux, 2);
+			aux = rz_str_append(aux, ")");
+			aux = rz_str_prepend(aux, "linear(");
 		} else if ((magic_value & 8) && is_linear_circular(ins_bits)) {
-			aux = strcat_dup(aux, ")", 1);
-			aux = strcat_dup("circular(", aux, 2);
+			aux = rz_str_append(aux, ")");
+			aux = rz_str_prepend(aux, "circular(");
 		} else if (magic_value & 2) {
-			aux = strcat_dup(aux, ")", 1);
-			aux = strcat_dup("lock(", aux, 2);
+			aux = rz_str_append(aux, ")");
+			aux = rz_str_prepend(aux, "lock(");
 		} else if (reg_arg) {
 			if (((magic_value & 0x10) && strchr(reg_arg, 'r')) ||
 				((magic_value & 0x20) && strchr(reg_arg, 'w'))) {
 
-				aux = strcat_dup(aux, ")", 1);
-				aux = strcat_dup("port(", aux, 2);
+				aux = rz_str_append(aux, ")");
+				aux = rz_str_prepend(aux, "port(");
 			} else if (
 				((magic_value & 0x40) && strchr(reg_arg, 'r')) ||
 				((magic_value & 0x80000000) && strchr(reg_arg, 'w'))) {
 
-				aux = strcat_dup(aux, ")", 1);
-				aux = strcat_dup("volatile(", aux, 2);
+				aux = rz_str_append(aux, ")");
+				aux = rz_str_prepend(aux, "volatile(");
 			}
 		}
 
 		if (flag) {
-			res = strcat_dup("t3 = ", aux, 2);
+			res = rz_str_prepend(aux, "t3 = ");
 		} else {
 			res = aux;
 			*ret_reg_len = ret_len;
@@ -739,34 +693,34 @@ static char *get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 		tok_op = ins_bits & 0xF;
 		if (magic_value & 4) {
 			if (tok_op <= 7 || tok_op == 0xF) {
-				aux = strcat_dup(aux, ")", 1);
-				aux = strcat_dup("linear(", aux, 2);
+				aux = rz_str_append(aux, ")");
+				aux = rz_str_prepend(aux, "linear(");
 			}
 		} else if (magic_value & 8) {
 			if (tok_op <= 7 || tok_op == 0xF) {
-				aux = strcat_dup(aux, ")", 1);
-				aux = strcat_dup("circular(", aux, 2);
+				aux = rz_str_append(aux, ")");
+				aux = rz_str_prepend(aux, "circular(");
 			}
 		} else if (magic_value & 2) {
-			aux = strcat_dup(aux, ")", 1);
-			aux = strcat_dup("lock(", aux, 2);
+			aux = rz_str_append(aux, ")");
+			aux = rz_str_prepend(aux, "lock(");
 		} else if (reg_arg) {
 			if (
 				((magic_value & 0x10) && *ins_token == 'X' && strchr(reg_arg, 'r')) ||
 				((magic_value & 0x20) && *ins_token == 'Y' && strchr(reg_arg, 'w'))) {
 
-				aux = strcat_dup(aux, ")", 1);
-				aux = strcat_dup("port(", aux, 2);
+				aux = rz_str_append(aux, ")");
+				aux = rz_str_prepend(aux, "port(");
 			} else if (
 				((magic_value & 0x40) && *ins_token == 'X' && strchr(reg_arg, 'r')) ||
 				((magic_value & 0x80000000) && *ins_token == 'Y' && strchr(reg_arg, 'w'))
 
 			) {
-				aux = strcat_dup(aux, ")", 1);
-				aux = strcat_dup("volatile(", aux, 2);
+				aux = rz_str_append(aux, ")");
+				aux = rz_str_prepend(aux, "volatile(");
 			}
 		}
-		res = flag ? strcat_dup("t3 = ", aux, 2) : aux;
+		res = flag ? rz_str_prepend(aux, "t3 = ") : aux;
 		break;
 	case 0:
 	case 1:
@@ -872,17 +826,11 @@ static char *get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 			return NULL;
 		}
 		if (res != NULL) {
-			if (C55PLUS_DEBUG) {
-				printf("OP(78): TOKEN=%s\n", res);
-			}
 			res = rz_str_dup(res);
 		}
 		break;
 	}
 
 ret_decode:
-	if (C55PLUS_DEBUG) {
-		printf("RES = %s\n", (res) ? res : "NULL");
-	}
 	return res;
 }

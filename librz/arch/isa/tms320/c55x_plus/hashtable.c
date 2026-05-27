@@ -2809,11 +2809,6 @@ st32 get_hash_code(ut32 ins_pos) {
 	opcode = get_ins_part(ins_pos, 1);
 	ins_len = get_ins_len(opcode);
 
-	if (C55PLUS_DEBUG) {
-		printf("opcode: 0x%x part: %d\n", opcode, ins_pos);
-		printf("ins_len: 0x%x\n", ins_len);
-	}
-
 	if (ins_len > 1) {
 		len = ins_len - 1;
 		if (len >= 4) {
@@ -2837,15 +2832,7 @@ st32 get_hash_code(ut32 ins_pos) {
 	// get_hashcode_func = *(ut32 *)(((ut8 *)ins_hash + sizeof(ut32)) + pos * 8);
 	get_hashcode_func = ins_hash[pos].hash_func;
 
-	if (C55PLUS_DEBUG) {
-		printf("hashfunc => %p 0x%x\n", get_hashcode_func, pos);
-		printf("hashargs => 0x%x 0x%x 0x%x\n", (ut32)arg, ins_part1, ins_part2);
-	}
-
 	hash_code = get_hashcode_func(arg, ins_part2);
-	if (C55PLUS_DEBUG) {
-		printf("ret hashcode: 0x%x\n", hash_code);
-	}
 
 	return hash_code;
 }
