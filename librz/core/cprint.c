@@ -1424,6 +1424,7 @@ static RZ_OWN char *core_print_format(RzCore *core, const char *fmt, const char 
 		.graph_label = graph_label,
 		.palette = palette_ptr,
 		.typedb = typedb,
+		.short_offsets = rz_config_get_b(core->config, "scr.pf.short"),
 	};
 	result = rz_pf_format(raw_fmt, buf, size, core->offset,
 		&ctx, pf_mode, &opts);

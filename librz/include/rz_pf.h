@@ -99,6 +99,14 @@ typedef struct {
 	 * `; ET_DYN` after the numeric value). When NULL the renderer
 	 * still emits the numeric value but no symbolic suffix. */
 	const RzTypeDB *typedb;
+
+	/* When true, MODE_TEXT renders offsets as deltas from the format's
+	 * base address (`+<n>` with width-2 zero-padded hex) instead of
+	 * the absolute address. The first field at offset 0 is shown as
+	 * `   0` for alignment. Useful for self-contained struct dumps
+	 * where the absolute load address is noise. Controlled via the
+	 * `scr.pf.short` core config option. */
+	bool short_offsets;
 } RzPfRenderOpts;
 
 // Per-field endianess

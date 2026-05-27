@@ -2941,6 +2941,11 @@ typedef struct {
 	const char *field_filter;
 	const RzPfPalette *pal;
 	int name_width;
+	/* When true, format offsets as `+<delta>` from base_offset. */
+	bool short_offsets;
+	/* The format's base address. Used to compute deltas in short
+	 * mode; ignored otherwise. */
+	ut64 base_offset;
 	/* Optional typedb for enum-member name resolution. */
 	const RzTypeDB *typedb;
 } RenderCtx;
@@ -3029,9 +3034,27 @@ static void render_val_text(RzStrBuf *sb, const RzPfValue *v,
 	 *   - The endian tag (when explicit) follows the value so it
 	 *     does not push the value-column right.
 	 *   - Anonymous fields drop the `: name = ` part entirely and
-	 *     emit just `<addr> = <value>`. */
-	emit_coloredf(sb, pal ? pal->offset : NULL, RST,
-		"0x%08" PFMT64x, v->offset);
+	 *     emit just `<addr> = <value>`.
+	 *   - When rc->short_offsets is set, the offset column shows
+	 *     `+<n>` (delta from rc->base_offset) or `   0` for the
+	 *     base. */
+	if (rc && rc->short_offsets) {
+		ut64 delta = v->offset >= rc->base_offset
+			? (v->offset - rc->base_offset)
+			: 0;
+		if (delta == 0) {
+			emit_coloredf(sb, pal ? pal->offset : NULL, RST,
+				"%4s", "0");
+		} else {
+			char buf[16];
+			snprintf(buf, sizeof(buf), "+%" PFMT64u, delta);
+			emit_coloredf(sb, pal ? pal->offset : NULL, RST,
+				"%4s", buf);
+		}
+	} else {
+		emit_coloredf(sb, pal ? pal->offset : NULL, RST,
+			"0x%08" PFMT64x, v->offset);
+	}
 	if (v->name) {
 		int pad = name_w - (int)strlen(v->name);
 		if (pad < 0) {
@@ -3073,6 +3096,8 @@ static void render_val_text(RzStrBuf *sb, const RzPfValue *v,
 		RenderCtx sub = { .field_filter = NULL,
 			.pal = pal,
 			.name_width = compute_name_width(v->children, v->nchildren),
+			.short_offsets = rc ? rc->short_offsets : false,
+			.base_offset = rc ? rc->base_offset : 0,
 			.typedb = rc ? rc->typedb : NULL };
 		for (int c = 0; c < v->nchildren; c++) {
 			render_val_text(sb, &v->children[c], indent + 1, &sub);
@@ -3260,6 +3285,9 @@ static char *render_text(const RzPfValue *vals, int count,
 		.field_filter = rc ? rc->field_filter : NULL,
 		.pal = rc ? rc->pal : NULL,
 		.name_width = compute_name_width(vals, count),
+		.short_offsets = rc ? rc->short_offsets : false,
+		.base_offset = rc ? rc->base_offset
+			: (count > 0 ? vals[0].offset : 0),
 		.typedb = rc ? rc->typedb : NULL,
 	};
 	for (int i = 0; i < count; i++) {
@@ -3934,7 +3962,10 @@ RZ_API RZ_OWN char *rz_pf_render(
 	const char *label = opts ? opts->graph_label : NULL;
 	const RzPfPalette *pal = opts ? opts->palette : NULL;
 	const RzTypeDB *typedb = opts ? opts->typedb : NULL;
+	bool short_off = opts ? opts->short_offsets : false;
 	RenderCtx rc = { .field_filter = filter, .pal = pal,
+		.short_offsets = short_off,
+		.base_offset = count > 0 ? vals[0].offset : 0,
 		.typedb = typedb };
 	switch (mode) {
 	case RZ_PF_MODE_JSON: {
