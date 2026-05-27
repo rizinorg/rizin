@@ -162,3 +162,103 @@ EXPECT=<<EOF
             0x0000000d      488d152b0000.  lea   rdx, qword [0x0000003f] ; str.Coffee_time ; "Coffee time!"; RELOC 32 .data @ 0x00000030 + 0xf
 EOF
 RUN
+
+NAME=TI COFF v2: c28x target_id 0x009d -> cpu c28x
+FILE=bins/tms320/emulateme_nostd.ccsv5.c28x.ticoff2.dbg.coff
+CMDS=<<EOF
+iI~^arch
+iI~^cpu
+iI~^bintype
+EOF
+EXPECT=<<EOF
+arch     tms320
+cpu      c28x
+bintype  coff
+EOF
+RUN
+
+NAME=TI COFF v2: c54x target_id 0x0098 -> cpu c54x
+FILE=bins/tms320/emulateme_nostd.ccsv5.c54x.ticoff2.dbg.coff
+CMDS=<<EOF
+iI~^cpu
+EOF
+EXPECT=<<EOF
+cpu      c54x
+EOF
+RUN
+
+NAME=TI COFF v2: c55x target_id 0x009c -> cpu c55x
+FILE=bins/tms320/emulateme_nostd.ccsv5.c55x.ticoff2.dbg.coff
+CMDS=<<EOF
+iI~^cpu
+EOF
+EXPECT=<<EOF
+cpu      c55x
+EOF
+RUN
+
+NAME=TI COFF v2: c62x target_id 0x0099 -> cpu c64x
+FILE=bins/tms320/emulateme_nostd.ccsv5.c62x.ticoff2.dbg.coff
+CMDS=<<EOF
+iI~^cpu
+EOF
+EXPECT=<<EOF
+cpu      c64x
+EOF
+RUN
+
+NAME=TI COFF v2: c64x target_id 0x0099 -> cpu c64x
+FILE=bins/tms320/emulateme_nostd.ccsv5.c64x.ticoff2.dbg.coff
+CMDS=<<EOF
+iI~^cpu
+EOF
+EXPECT=<<EOF
+cpu      c64x
+EOF
+RUN
+
+NAME=TI COFF v2: c64xp target_id 0x0099 -> cpu c64x
+FILE=bins/tms320/emulateme_nostd.ccsv5.c64xp.ticoff2.dbg.coff
+CMDS=<<EOF
+iI~^cpu
+EOF
+EXPECT=<<EOF
+cpu      c64x
+EOF
+RUN
+
+NAME=TI COFF v2: c55xp file (target_id 0x009c) parses cleanly
+FILE=bins/tms320/emulateme_nostd.ccsv5.c55xp.ticoff2.dbg.coff
+CMDS=<<EOF
+iI~^arch
+iI~^bits
+EOF
+EXPECT=<<EOF
+arch     tms320
+bits     32
+EOF
+RUN
+
+NAME=TI COFF v2: stripped variant parses
+FILE=bins/tms320/emulateme_nostd.ccsv5.c55x.ticoff2.dbg.stripped.coff
+CMDS=<<EOF
+iI~^arch
+iS~.text
+EOF
+EXPECT=<<EOF
+arch     tms320
+0x00000236 0x2da 0x00000030 0x2da   0x0 -r-x .text                 CNT_CODE,MEM_PURGEABLE,MEM_NO_READ
+EOF
+RUN
+
+NAME=TI COFF v2: relocatable variant parses sections
+FILE=bins/tms320/emulateme_nostd.ccsv5.c55x.ticoff2.rel.coff
+CMDS=<<EOF
+iI~^arch
+iI~^cpu
+EOF
+EXPECT=<<EOF
+arch     tms320
+cpu      c55x
+EOF
+RUN
