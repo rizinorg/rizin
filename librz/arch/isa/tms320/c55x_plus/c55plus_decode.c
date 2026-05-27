@@ -659,6 +659,26 @@ static char *get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 			return NULL;
 		}
 		break;
+	case 51:
+		/* V / VV template field -- Carry or TC2 (see decode_funcs.c
+		 * get_tc2_or_carry comment). With a 'VV,1' suffix the high
+		 * bit of the 2-bit field is consumed; with 'VV,2' the low bit.
+		 * With no suffix the whole field is consumed. ROL/ROR use the
+		 * paired (VV,1 ; VV,2) form. */
+		if (reg_arg) {
+			if (*reg_arg == '1') {
+				res = get_tc2_or_carry(ins_bits >> 1);
+			} else if (*reg_arg == '2') {
+				res = get_tc2_or_carry(ins_bits & 1);
+			}
+		} else {
+			res = get_tc2_or_carry(ins_bits);
+		}
+		if (!res) {
+			*err_code = -1;
+			return NULL;
+		}
+		break;
 	case 52:
 		if (ins_bits == 0) {
 			break;
