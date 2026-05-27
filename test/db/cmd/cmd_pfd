@@ -10,7 +10,7 @@ EOF
 EXPECT=<<EOF
 digraph g { graph [ rank=same; rankdir=LR; ];
 root [ rank=1; shape=record
-label="test|{0x0|B|var0|<var0>pe_characteristics.IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE, pe_characteristics.IMAGE_DLLCHARACTERISTICS_NX_COMPAT, pe_characteristics.IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE}"];
+label="test|{offset|0x0}|{type|B}|{name|<var0>var0}|{value|0x40810000}"];
 }
 EOF
 RUN
@@ -36,7 +36,7 @@ NAME=pfd test i var0
 FILE==
 CMDS=<<EOF
 wv4 0x100
-pfn test "i var0"
+pfn test "d4 var0"
 pfd test
 EOF
 EXPECT=<<EOF
@@ -51,7 +51,7 @@ NAME=pfd test w var0
 FILE==
 CMDS=<<EOF
 wv2 0x1234
-pfn test "w var0"
+pfn test "x2 var0"
 pfd test
 EOF
 EXPECT=<<EOF
@@ -66,7 +66,7 @@ NAME=pfd test x var0
 FILE==
 CMDS=<<EOF
 wv4 0x12345678
-pfn test "x var0"
+pfn test "x4 var0"
 pfd test
 EOF
 EXPECT=<<EOF

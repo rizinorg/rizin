@@ -1266,24 +1266,49 @@ static RZ_OWN char *core_print_format(RzCore *core, const char *fmt, const char 
 						(const ut8 *)s, slen);
 				}
 			}
-			/* Re-read the full slot to show the result. For wide
-			 * encodings, decoding the slot in confirmation output
-			 * is overkill; echo the input value instead -- the
-			 * subsequent `pf.` will show the proper decoded
-			 * result anyway. For UTF-8 the readback is the real
-			 * resulting byte sequence, which gives a useful
-			 * preview of the residual-tail behaviour. */
+			/* Re-read the full slot to show the result of the
+			 * write. For wide encodings, decode the byte slot
+			 * back to a printable form so the confirmation
+			 * reflects what is actually in memory, not what was
+			 * passed in. If the encode/decode round-trip ever
+			 * regresses, this output will catch it instead of
+			 * silently echoing the input. For UTF-8 / ASCII the
+			 * raw bytes ARE the printable form, so the readback
+			 * is used directly. */
+			ut8 readback[256] = { 0 };
+			rz_io_read_at_mapped(core->io, target_off,
+				readback, sizeof(readback) - 1);
 			if (enc == RZ_STRING_ENC_UTF16LE
 				|| enc == RZ_STRING_ENC_UTF16BE) {
-				rz_strbuf_appendf(out,
-					"%*s : 0x%08" PFMT64x " = \"%.*s\"\n",
-					label_w, field_filter,
-					target_off - address, (int)slen, s);
-			} else {
-				ut8 readback[256] = { 0 };
+				/* Find the wide-string length in bytes:
+				 * scan for the first 16-bit zero. The slot is
+				 * not extended on partial overwrite, so the
+				 * tail of the original wide content remains. */
 				int rlen = 0;
-				rz_io_read_at_mapped(core->io, target_off,
-					readback, sizeof(readback) - 1);
+				while (rlen + 1 < (int)sizeof(readback) - 1
+					&& (readback[rlen] || readback[rlen + 1])) {
+					rlen += 2;
+				}
+				ut8 swap[256];
+				const ut8 *src = readback;
+				if (enc == RZ_STRING_ENC_UTF16BE) {
+					/* rz_str_utf16_decode expects LE byte
+					 * pairs; swap each pair for BE input. */
+					for (int i = 0; i + 1 < rlen; i += 2) {
+						swap[i] = readback[i + 1];
+						swap[i + 1] = readback[i];
+					}
+					src = swap;
+				}
+				char *decoded = rz_str_utf16_decode(src, rlen);
+				rz_strbuf_appendf(out,
+					"%*s : 0x%08" PFMT64x " = \"%s\"\n",
+					label_w, field_filter,
+					target_off - address,
+					decoded ? decoded : "");
+				free(decoded);
+			} else {
+				int rlen = 0;
 				while (rlen < (int)sizeof(readback) - 1
 					&& readback[rlen]) {
 					rlen++;

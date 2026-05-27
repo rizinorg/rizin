@@ -1438,275 +1438,6 @@ static int parse_brace_repeat(const char *p, int *out) {
 	*out = n;
 	return (int)(close - p) + 1;
 }
-
-/* Legacy-to-new DSL converter.
- *
- * The new pf parser requires explicit sizes (`x4`, `d2`, `u8`, ...)
- * and uses `u`/`U` for explicit-endian unsigned, `t(kind)` for time,
- * `z(enc)` for encoded strings, `@N` for alignment, `:N<` / `:N>` for
- * bit fields. The legacy DSL allowed bare-letter specifiers with
- * implicit sizes:
- *
- *   x  -> x4 LE      X  -> X4 BE (uppercase = BE)
- *   d  -> d4 LE      D  -> d4 LE (legacy "explicit" decimal)
- *   o  -> o4 LE      O  -> o4 LE
- *   u  -> u4 LE
- *   b  -> b1 LE      (single-byte binary)
- *   w  -> x2 LE      (16-bit word)
- *   q  -> x8 LE      (64-bit quad)
- *   i  -> d4 LE      (legacy "integer")
- *   nN -> uN LE      (N=1,2,4,8: little-endian explicit-width)
- *   NN -> UN BE      (N=1,2,4,8: big-endian explicit-width)
- *
- * Strings inside parenthesised annotations like `(name)`, `t(kind)`,
- * `z(enc)`, `B4(flag=val,...)`, and `V(t=...,l=...)` are passed
- * through untouched. The specifier block ends at the first unescaped
- * space (which separates spec from names).
- *
- * This converter is the only place where legacy syntax is handled.
- * Once all callers of `pf` migrate to the new DSL (the on-disk
- * `librz/bin/d/` files and the C-coded `librz/bin/format/` setters
- * (.c sources), this function can be deleted. */
-static char *convert_legacy_to_new_dsl(const char *src, RzPfFormat *fmt) {
-	if (!src) {
-		return NULL;
-	}
-	size_t in_len = strlen(src);
-	/* Generous upper bound: each input byte may turn into 2 output
-	 * bytes (bare `x` -> `x4`). Plus a few bytes of slack. */
-	char *out = malloc(in_len * 2 + 16);
-	if (!out) {
-		return NULL;
-	}
-	size_t oi = 0;
-	const char *p = src;
-	int paren_depth = 0;
-	int bracket_depth = 0;
-	int in_specs = 1;
-	/* Emit one deprecation warning per converted spec character.
-	 * Position is the offset into the original source. */
-#define WARN_LEGACY(letter, repl) \
-	do { \
-		if (fmt) { \
-			pf_emit_error(fmt, RZ_PF_ERR_WARN, \
-				RZ_PF_ERRC_DEPRECATED, \
-				(int)(p - src), \
-				"pf: legacy '%c' deprecated, use '%s'", \
-				(letter), (repl)); \
-		} \
-	} while (0)
-	while (*p) {
-		char c = *p;
-		if (in_specs && paren_depth == 0 && (c == ' ' || c == '\t')) {
-			in_specs = 0;
-		}
-		if (!in_specs) {
-			out[oi++] = c;
-			p++;
-			continue;
-		}
-		if (c == '(') {
-			paren_depth++;
-			out[oi++] = c;
-			p++;
-			continue;
-		}
-		if (c == ')') {
-			if (paren_depth > 0) {
-				paren_depth--;
-			}
-			out[oi++] = c;
-			p++;
-			continue;
-		}
-		if (c == '[') {
-			bracket_depth++;
-			out[oi++] = c;
-			p++;
-			continue;
-		}
-		if (c == ']') {
-			if (bracket_depth > 0) {
-				bracket_depth--;
-			}
-			out[oi++] = c;
-			p++;
-			continue;
-		}
-		if (paren_depth > 0 || bracket_depth > 0) {
-			out[oi++] = c;
-			p++;
-			continue;
-		}
-		/* In specifier territory at top level. Look at the next
-		 * char to decide whether this is a sized form (already
-		 * new DSL: `x4`, `d2`, ...) or a bare legacy form. */
-		char nx = p[1];
-		int already_sized = (nx == '1' || nx == '2' || nx == '4' || nx == '8');
-		/* Avoid converting tokens that look like bare specifiers
-		 * but are actually new-DSL prefixes: `t(`, `z(`, `s(`,
-		 * `T(`, `Z(`, `S(`, `G(`, `V(`, `B(`. */
-		int has_paren_arg = (nx == '(');
-		switch (c) {
-		case 't':
-		case 'T':
-		case 'z':
-		case 'Z':
-		case 's':
-		case 'S':
-		case 'G':
-		case 'V':
-			if (has_paren_arg || already_sized) {
-				out[oi++] = c;
-				p++;
-				continue;
-			}
-			/* Bare 't' / 'T' / 'z' / 's' are themselves
-			 * legacy forms; the new parser handles them with
-			 * a deprecation warning. Pass through. */
-			out[oi++] = c;
-			p++;
-			continue;
-		case 'B':
-			if (has_paren_arg || already_sized) {
-				out[oi++] = c;
-				p++;
-				continue;
-			}
-			out[oi++] = c;
-			p++;
-			continue;
-		case 'f':
-		case 'F':
-			out[oi++] = c;
-			p++;
-			continue;
-		case 'x':
-			if (already_sized) {
-				out[oi++] = c;
-				p++;
-				continue;
-			}
-			WARN_LEGACY('x', "x4");
-			out[oi++] = 'x';
-			out[oi++] = '4';
-			p++;
-			continue;
-		case 'X':
-			/* Bare X means legacy hex dump (RZ_PF_HEXDUMP) and
-			 * goes to the in-parser case. Only sized X{1,2,4,8}
-			 * is a big-endian hex int. Don't touch either. */
-			out[oi++] = c;
-			p++;
-			continue;
-		case 'd':
-			if (already_sized) {
-				out[oi++] = c;
-				p++;
-				continue;
-			}
-			WARN_LEGACY('d', "d4");
-			out[oi++] = 'd';
-			out[oi++] = '4';
-			p++;
-			continue;
-		case 'D':
-			if (already_sized) {
-				out[oi++] = c;
-				p++;
-				continue;
-			}
-			WARN_LEGACY('D', "d4");
-			out[oi++] = 'd';
-			out[oi++] = '4';
-			p++;
-			continue;
-		case 'o':
-			if (already_sized) {
-				out[oi++] = c;
-				p++;
-				continue;
-			}
-			WARN_LEGACY('o', "o4");
-			out[oi++] = 'o';
-			out[oi++] = '4';
-			p++;
-			continue;
-		case 'O':
-			if (already_sized) {
-				out[oi++] = c;
-				p++;
-				continue;
-			}
-			WARN_LEGACY('O', "o4");
-			out[oi++] = 'o';
-			out[oi++] = '4';
-			p++;
-			continue;
-		case 'u':
-			if (already_sized) {
-				out[oi++] = c;
-				p++;
-				continue;
-			}
-			WARN_LEGACY('u', "u4");
-			out[oi++] = 'u';
-			out[oi++] = '4';
-			p++;
-			continue;
-		case 'b':
-			if (already_sized) {
-				out[oi++] = c;
-				p++;
-				continue;
-			}
-			WARN_LEGACY('b', "b1");
-			out[oi++] = 'b';
-			out[oi++] = '1';
-			p++;
-			continue;
-		case 'w':
-			WARN_LEGACY('w', "x2");
-			out[oi++] = 'x';
-			out[oi++] = '2';
-			p++;
-			continue;
-		case 'q':
-			WARN_LEGACY('q', "x8");
-			out[oi++] = 'x';
-			out[oi++] = '8';
-			p++;
-			continue;
-		case 'i':
-			WARN_LEGACY('i', "d4");
-			out[oi++] = 'd';
-			out[oi++] = '4';
-			p++;
-			continue;
-		case 'n':
-		case 'N':
-			if (nx == '1' || nx == '2' || nx == '4' || nx == '8') {
-				char tmp[4] = { (c == 'n') ? 'u' : 'U',
-					nx, 0, 0 };
-				WARN_LEGACY(c, tmp);
-				out[oi++] = tmp[0];
-				out[oi++] = nx;
-				p += 2;
-				continue;
-			}
-			out[oi++] = c;
-			p++;
-			continue;
-		default:
-			out[oi++] = c;
-			p++;
-			continue;
-		}
-	}
-	out[oi] = '\0';
-	return out;
-}
-
 /* Locate the boundary between the specifier region and the names
  * list. The specifier region runs from `start` to the first
  * top-level (paren-depth 0, bracket-depth 0) space; the names list
@@ -1763,15 +1494,6 @@ RZ_API RZ_OWN RzPfFormat *rz_pf_parse(const char *fmt_str) {
 		return fmt;
 	}
 
-	/* Apply the legacy-to-new DSL conversion. The owned `source`
-	 * still reflects what the caller passed (for round-trip), but
-	 * the parser walks the converted string. This compatibility
-	 * shim is what lets users type the historical `pf x name`,
-	 * `pf bbbb`, etc. -- the bare specifiers used throughout the
-	 * integration tests and bundled SDB files. */
-	char *converted = convert_legacy_to_new_dsl(fmt_str, fmt);
-	const char *parse_src = converted ? converted : fmt_str;
-
 	/* Establish the per-parse diagnostic context. Saved across the
 	 * call so that rz_pf_parse() remains safe to invoke recursively
 	 * from helpers (e.g. read_nested_struct() reparses a child
@@ -1779,9 +1501,9 @@ RZ_API RZ_OWN RzPfFormat *rz_pf_parse(const char *fmt_str) {
 	RzPfFormat *saved_fmt = g_current_fmt;
 	const char *saved_src = g_current_src;
 	g_current_fmt = fmt;
-	g_current_src = parse_src;
+	g_current_src = fmt_str;
 
-	const char *p = parse_src;
+	const char *p = fmt_str;
 	while (*p && isspace((ut8)*p)) {
 		p++;
 	}
@@ -1844,7 +1566,6 @@ RZ_API RZ_OWN RzPfFormat *rz_pf_parse(const char *fmt_str) {
 		g_current_src = saved_src;
 		free(fmt->source);
 		free(fmt);
-		free(converted);
 		return NULL;
 	}
 
@@ -2011,7 +1732,6 @@ RZ_API RZ_OWN RzPfFormat *rz_pf_parse(const char *fmt_str) {
 
 	g_current_fmt = saved_fmt;
 	g_current_src = saved_src;
-	free(converted);
 	return fmt;
 }
 
@@ -3410,7 +3130,10 @@ static void render_val_text(RzStrBuf *sb, const RzPfValue *v,
 				rz_strbuf_append(sb, "  ");
 			}
 			for (int k = 0; k < v->raw_len; k++) {
-				rz_strbuf_appendf(sb, "%02x ",
+				if (k) {
+					rz_strbuf_append(sb, " ");
+				}
+				rz_strbuf_appendf(sb, "%02x",
 					v->scalars[0].v_raw[k]);
 			}
 			rz_strbuf_append(sb, "\n");
@@ -3421,7 +3144,10 @@ static void render_val_text(RzStrBuf *sb, const RzPfValue *v,
 	/* Raw / uint128 */
 	if (is_raw_type(v->type) && v->scalars && v->scalars[0].v_raw) {
 		for (int k = 0; k < v->raw_len; k++) {
-			rz_strbuf_appendf(sb, "%02x ",
+			if (k) {
+				rz_strbuf_append(sb, " ");
+			}
+			rz_strbuf_appendf(sb, "%02x",
 				v->scalars[0].v_raw[k]);
 		}
 		rz_strbuf_append(sb, "\n");
@@ -3434,20 +3160,22 @@ static void render_val_text(RzStrBuf *sb, const RzPfValue *v,
 			rz_pf_timefmt_as_string(v->timefmt));
 		emit_coloredf(sb, pal ? pal->endian : NULL, RST,
 			"%s", endian_tag(v->endian));
-		rz_strbuf_append(sb, " ");
-		if (v->count > 1 && v->scalars) {
-			rz_strbuf_append(sb, "[ ");
-			for (int k = 0; k < v->count; k++) {
-				if (k) {
-					rz_strbuf_append(sb, ", ");
+		if (v->count >= 1 && v->scalars) {
+			rz_strbuf_append(sb, " ");
+			if (v->count > 1) {
+				rz_strbuf_append(sb, "[ ");
+				for (int k = 0; k < v->count; k++) {
+					if (k) {
+						rz_strbuf_append(sb, ", ");
+					}
+					rz_pf_timestamp_format_str(sb, v->timefmt,
+						&v->scalars[k]);
 				}
+				rz_strbuf_append(sb, " ]");
+			} else {
 				rz_pf_timestamp_format_str(sb, v->timefmt,
-					&v->scalars[k]);
+					&v->scalars[0]);
 			}
-			rz_strbuf_append(sb, " ]");
-		} else if (v->count == 1 && v->scalars) {
-			rz_pf_timestamp_format_str(sb, v->timefmt,
-				&v->scalars[0]);
 		}
 		rz_strbuf_append(sb, "\n");
 		return;
@@ -3508,6 +3236,16 @@ static void render_val_text(RzStrBuf *sb, const RzPfValue *v,
 	if (v->endian == RZ_PF_ENDIAN_LE || v->endian == RZ_PF_ENDIAN_BE) {
 		emit_coloredf(sb, pal ? pal->endian : NULL, RST,
 			"%s", endian_tag(v->endian));
+	}
+	/* When the field type didn't produce a value (e.g. an unknown
+	 * inline type like "pf"), strip the dangling trailing space
+	 * before the newline so the EXPECT output is clean. */
+	{
+		const char *buf = rz_strbuf_get(sb);
+		int len = (int)rz_strbuf_length(sb);
+		if (buf && len > 0 && buf[len - 1] == ' ') {
+			rz_strbuf_slice(sb, 0, len - 1);
+		}
 	}
 	rz_strbuf_append(sb, "\n");
 }

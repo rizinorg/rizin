@@ -50,13 +50,18 @@ NAME=pf i foo @x:0x01
 FILE==
 ARGS=-a x86 -b 32
 CMDS=pf i foo @x:0x01
-EXPECT=
+EXPECT=<<EOF
+0x00000000 : foo = 1 [LE]
+EOF
 RUN
 
 NAME=pf [3]ub
 FILE==
 CMDS=pf [3]ub
-EXPECT=
+EXPECT=<<EOF
+0x00000000 = [ 0, 0, 0 ] [LE]
+0x0000000c = 0b0000_0000 [LE]
+EOF
 RUN
 
 NAME=Cf main
@@ -404,7 +409,8 @@ wv 0x2a
 pf 0iw integer word
 EOF
 EXPECT=<<EOF
-0x00000000 : integer = 0x002a [LE]
+0x00000000 : integer = 42 [LE]
+0x00000000 :    word = 0x002a [LE]
 EOF
 RUN
 
@@ -564,7 +570,9 @@ e asm.bits=32
 s 0x80
 pfv .pe_nt_image_headers32.optionalHeader.dataDirectory[5].virtualAddress
 EOF
-EXPECT=
+EXPECT=<<EOF
+0x00000120 : virtualAddress = 0x0000c000 [LE]
+EOF
 RUN
 
 NAME=print signed and unsigned values
