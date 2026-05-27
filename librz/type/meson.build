@@ -11,9 +11,20 @@ rz_type_sources = [
   'parser/c_cpp_parser.c',
   'parser/types_parser.c',
   'parser/types_storage.c',
-  'pf_parser.c',
-  'pf_parser_time.c',
-  'pf_parser_tlv.c'
+  'pf/pf_parser.c',
+  'pf/pf_parser_array.c',
+  'pf/pf_parser_bitfield.c',
+  'pf/pf_parser_bitvec.c',
+  'pf/pf_parser_string.c',
+  'pf/pf_parser_struct.c',
+  'pf/pf_parser_time.c',
+  'pf/pf_parser_tlv.c',
+  'pf/pf_render.c',
+  'pf/pf_render_text.c',
+  'pf/pf_render_json.c',
+  'pf/pf_render_cstruct.c',
+  'pf/pf_render_dot.c',
+  'pf/pf_render_sd.c'
 ]
 
 r = run_command(py3_exe, check_meson_subproject_py, 'rizin-grammar-c', check: false)
@@ -28,6 +39,7 @@ endif
 rz_type_inc = [
   platform_inc,
   'parser',
+  'pf',
 ]
 
 rz_type = library('rz_type', rz_type_sources,

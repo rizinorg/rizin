@@ -16,8 +16,8 @@
  */
 
 #include <rz_util.h>
-#include "../../librz/type/pf_parser.h"
-#include "../../librz/type/pf_parser_time.h"
+#include "../../librz/type/pf/pf_parser.h"
+#include "../../librz/type/pf/pf_parser_time.h"
 #include "minunit.h"
 
 /* --------------------------------------------------------------------
@@ -1669,7 +1669,7 @@ static bool test_pf_parse_bitvec_missing_paren(void) {
 	/* `v` without `(` is a syntax error; parser logs and skips. */
 	RzPfFormat *fmt = rz_pf_parse("v bits");
 	mu_assert_notnull(fmt, "parse v (degraded)");
-	mu_assert(fmt->nerrors > 0, "diagnostic recorded");
+	mu_assert("diagnostic recorded", fmt->nerrors > 0);
 	rz_pf_format_free(fmt);
 	mu_end;
 }
@@ -1746,9 +1746,9 @@ static bool test_pf_render_bitvec_text(void) {
 	char *out = rz_pf_render(vals, count, RZ_PF_MODE_TEXT, NULL);
 	mu_assert_notnull(out, "render text");
 	/* Format: `[ 1 0 1 0 1 0 1 1 | 1 1 0 0 ] (12-bit)` */
-	mu_assert(strstr(out, "[ 1 0 1 0 1 0 1 1 | 1 1 0 0 ]"),
-		"grouped-by-8 rendering present");
-	mu_assert(strstr(out, "(12-bit)"), "width suffix present");
+	mu_assert("grouped-by-8 rendering present",
+		strstr(out, "[ 1 0 1 0 1 0 1 1 | 1 1 0 0 ]"));
+	mu_assert("width suffix present", strstr(out, "(12-bit)"));
 	free(out);
 	rz_pf_values_free(vals, count);
 	rz_pf_format_free(fmt);
@@ -2737,7 +2737,216 @@ static bool test_pf_render_bitfield_inline_idempotent(void) {
 	mu_end;
 }
 
-static int all_tests(void) {
+/* --------------------------------------------------------------------
+ *  RzStructuredData renderer (rz_pf_render_sd)
+ * -------------------------------------------------------------------- */
+
+/* Helper: parse + read + render to SDB, then serialise to JSON for easy
+ * assertions. Returns an owned JSON string (caller frees) or NULL. */
+static char *sd_json_of(const char *fmt, const ut8 *buf, int len) {
+	RzPfFormat *f = rz_pf_parse(fmt);
+	if (!f) {
+		return NULL;
+	}
+	int n = 0;
+	RzPfValue *vals = rz_pf_read(f, buf, len, 0, NULL, &n);
+	char *json = NULL;
+	if (vals && n > 0) {
+		RzStructuredData *sd = rz_pf_render_sd(vals, n, NULL);
+		if (sd) {
+			json = rz_structured_data_to_json(sd);
+			rz_structured_data_free(sd);
+		}
+	}
+	rz_pf_values_free(vals, n);
+	rz_pf_format_free(f);
+	return json;
+}
+
+/* Scalars map to typed values keyed by field name. */
+static bool test_pf_render_sd_scalars(void) {
+	const ut8 buf[] = { 0x7f, 0x45, 0x4c, 0x46, 0x2a, 0, 0, 0, 'h', 'i', 0 };
+	char *json = sd_json_of("x4d4z magic count name", buf, sizeof(buf));
+	mu_assert_notnull(json, "sd json");
+	mu_assert_true(strstr(json, "\"magic\":1179403647") != NULL,
+		"x4 magic as unsigned");
+	mu_assert_true(strstr(json, "\"count\":42") != NULL,
+		"d4 count as signed");
+	mu_assert_true(strstr(json, "\"name\":\"hi\"") != NULL,
+		"z name as string");
+	free(json);
+	mu_end;
+}
+
+/* A bitvector becomes an array of 0/1 entries. */
+static bool test_pf_render_sd_bitvec(void) {
+	const ut8 buf[] = { 0xAB };
+	char *json = sd_json_of("v(8) flags", buf, sizeof(buf));
+	mu_assert_notnull(json, "sd json");
+	mu_assert_true(strstr(json, "\"flags\":[1,0,1,0,1,0,1,1]") != NULL,
+		"bitvector as 0/1 array");
+	free(json);
+	mu_end;
+}
+
+/* A GUID renders as a colon-separated byte block. */
+static bool test_pf_render_sd_guid(void) {
+	const ut8 buf[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+		0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10 };
+	char *json = sd_json_of("G uuid", buf, sizeof(buf));
+	mu_assert_notnull(json, "sd json");
+	mu_assert_true(strstr(json, "01:02:03:04") != NULL,
+		"GUID as colon-separated bytes");
+	free(json);
+	mu_end;
+}
+
+/* A nested struct becomes a sub-map carrying a "_type" tag. */
+static bool test_pf_render_sd_nested_struct(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "typedb");
+	rz_type_db_format_set(typedb, "point", "d4d4 x y");
+
+	const ut8 buf[] = { 0x01, 0, 0, 0, 0x02, 0, 0, 0 };
+	RzPfCtx *ctx = rz_pf_ctx_new();
+	rz_pf_ctx_setup(ctx, typedb, false, 32, NULL, NULL);
+	RzPfFormat *f = rz_pf_parse("? (point)origin");
+	int n = 0;
+	RzPfValue *vals = rz_pf_read(f, buf, sizeof(buf), 0, ctx, &n);
+	RzStructuredData *sd = rz_pf_render_sd(vals, n, NULL);
+	char *json = sd ? rz_structured_data_to_json(sd) : NULL;
+	mu_assert_notnull(json, "sd json");
+	mu_assert_true(strstr(json, "\"origin\":{") != NULL,
+		"nested struct as sub-map");
+	mu_assert_true(strstr(json, "\"_type\":\"point\"") != NULL,
+		"struct type recorded");
+	mu_assert_true(strstr(json, "\"x\":1") != NULL, "child x");
+	mu_assert_true(strstr(json, "\"y\":2") != NULL, "child y");
+	free(json);
+	rz_structured_data_free(sd);
+	rz_pf_values_free(vals, n);
+	rz_pf_format_free(f);
+	rz_pf_ctx_free(ctx);
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
+/* Unnamed fields get stable field_<index> keys. */
+static bool test_pf_render_sd_autoname(void) {
+	const ut8 buf[] = { 0x11, 0x22 };
+	char *json = sd_json_of("x1x1", buf, sizeof(buf));
+	mu_assert_notnull(json, "sd json");
+	mu_assert_true(strstr(json, "\"field_0\":") != NULL,
+		"first unnamed field auto-keyed");
+	mu_assert_true(strstr(json, "\"field_1\":") != NULL,
+		"second unnamed field auto-keyed");
+	free(json);
+	mu_end;
+}
+
+/* Signed, unsigned-decimal, and float scalars keep their kind. */
+static bool test_pf_render_sd_signed_and_float(void) {
+	/* d4 = -1 (0xffffffff LE), u4 = 5, f4 = 1.5 */
+	const ut8 buf[] = { 0xff, 0xff, 0xff, 0xff,
+		0x05, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0xc0, 0x3f };
+	char *json = sd_json_of("d4u4f4 neg pos frac", buf, sizeof(buf));
+	mu_assert_notnull(json, "sd json");
+	mu_assert_true(strstr(json, "\"neg\":-1") != NULL,
+		"signed decimal stays signed");
+	mu_assert_true(strstr(json, "\"pos\":5") != NULL,
+		"unsigned decimal");
+	mu_assert_true(strstr(json, "\"frac\":1.5") != NULL,
+		"float renders as double");
+	free(json);
+	mu_end;
+}
+
+/* A fixed-count array of scalars renders as a JSON array. */
+static bool test_pf_render_sd_scalar_array(void) {
+	const ut8 buf[] = { 0x0a, 0x14, 0x1e };
+	char *json = sd_json_of("[3]x1 items", buf, sizeof(buf));
+	mu_assert_notnull(json, "sd json");
+	mu_assert_true(strstr(json, "\"items\":[10,20,30]") != NULL,
+		"array of scalars as JSON array");
+	free(json);
+	mu_end;
+}
+
+/* The field filter restricts output to the named field. */
+static bool test_pf_render_sd_filter(void) {
+	const ut8 buf[] = { 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00 };
+	RzPfFormat *f = rz_pf_parse("x4x4 alpha beta");
+	int n = 0;
+	RzPfValue *vals = rz_pf_read(f, buf, sizeof(buf), 0, NULL, &n);
+	RzPfRenderOpts opts = { 0 };
+	opts.field_filter = "beta";
+	RzStructuredData *sd = rz_pf_render_sd(vals, n, &opts);
+	char *json = sd ? rz_structured_data_to_json(sd) : NULL;
+	mu_assert_notnull(json, "sd json");
+	mu_assert_true(strstr(json, "\"beta\":") != NULL,
+		"filtered field present");
+	mu_assert_true(strstr(json, "\"alpha\":") == NULL,
+		"non-matching field absent");
+	free(json);
+	rz_structured_data_free(sd);
+	rz_pf_values_free(vals, n);
+	rz_pf_format_free(f);
+	mu_end;
+}
+
+/* A timestamp emits both a formatted string and a "<name>_raw" sibling. */
+static bool test_pf_render_sd_timestamp(void) {
+	/* unix32 = 0 -> 1970-01-01T00:00:00Z */
+	const ut8 buf[] = { 0x00, 0x00, 0x00, 0x00 };
+	char *json = sd_json_of("t(unix32) when", buf, sizeof(buf));
+	mu_assert_notnull(json, "sd json");
+	mu_assert_true(strstr(json, "\"when\":") != NULL,
+		"timestamp formatted string present");
+	mu_assert_true(strstr(json, "\"when_raw\":0") != NULL,
+		"raw timestamp sibling present");
+	free(json);
+	mu_end;
+}
+
+/* The tree round-trips to YAML as well as JSON. */
+static bool test_pf_render_sd_yaml(void) {
+	const ut8 buf[] = { 0x2a, 0x00, 0x00, 0x00 };
+	RzPfFormat *f = rz_pf_parse("d4 answer");
+	int n = 0;
+	RzPfValue *vals = rz_pf_read(f, buf, sizeof(buf), 0, NULL, &n);
+	RzStructuredData *sd = rz_pf_render_sd(vals, n, NULL);
+	char *yaml = sd ? rz_structured_data_to_yaml(sd) : NULL;
+	mu_assert_notnull(yaml, "sd yaml");
+	mu_assert_true(strstr(yaml, "answer: 42") != NULL,
+		"YAML serialisation of the SD tree");
+	free(yaml);
+	rz_structured_data_free(sd);
+	rz_pf_values_free(vals, n);
+	rz_pf_format_free(f);
+	mu_end;
+}
+
+/* A format whose only fields are skip/align produces a valid but empty
+ * top-level map (an object with no members), not NULL and not a crash. */
+static bool test_pf_render_sd_only_skips(void) {
+	const ut8 buf[] = { 0x11, 0x22, 0x33, 0x44 };
+	RzPfFormat *f = rz_pf_parse("....");
+	mu_assert_notnull(f, "parse skip-only format");
+	int n = 0;
+	RzPfValue *vals = rz_pf_read(f, buf, sizeof(buf), 0, NULL, &n);
+	RzStructuredData *sd = rz_pf_render_sd(vals, n, NULL);
+	char *json = sd ? rz_structured_data_to_json(sd) : NULL;
+	mu_assert_notnull(json, "sd json");
+	mu_assert_streq(json, "{}", "skip-only format renders empty object");
+	free(json);
+	rz_structured_data_free(sd);
+	rz_pf_values_free(vals, n);
+	rz_pf_format_free(f);
+	mu_end;
+}
+
+int all_tests(void) {
 	/* Field size */
 	mu_run_test(test_pf_field_size_1byte);
 	mu_run_test(test_pf_field_size_2byte);
@@ -2947,6 +3156,19 @@ static int all_tests(void) {
 	mu_run_test(test_pf_parse_bitfield_missing_eq_diagnostic);
 	mu_run_test(test_pf_parse_bitfield_empty_field_diagnostic);
 	mu_run_test(test_pf_render_bitfield_inline_idempotent);
+
+	/* RzStructuredData renderer */
+	mu_run_test(test_pf_render_sd_scalars);
+	mu_run_test(test_pf_render_sd_bitvec);
+	mu_run_test(test_pf_render_sd_guid);
+	mu_run_test(test_pf_render_sd_nested_struct);
+	mu_run_test(test_pf_render_sd_autoname);
+	mu_run_test(test_pf_render_sd_signed_and_float);
+	mu_run_test(test_pf_render_sd_scalar_array);
+	mu_run_test(test_pf_render_sd_filter);
+	mu_run_test(test_pf_render_sd_timestamp);
+	mu_run_test(test_pf_render_sd_yaml);
+	mu_run_test(test_pf_render_sd_only_skips);
 
 	return tests_passed != tests_run;
 }

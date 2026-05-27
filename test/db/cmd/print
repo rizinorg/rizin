@@ -231,13 +231,13 @@ EXPECT=<<EOF
 struct elf_header {
     struct elf_ident {
         char* magic; /* "\x7fELF" */
-        enum class; /* 0x00000002 */
-        enum data; /* 0x00000001 */
-        enum version; /* 0x00000001 */
+        enum class; /* 0x00000002 ; ELFCLASS64 */
+        enum data; /* 0x00000001 ; ELFDATA2LSB */
+        enum version; /* 0x00000001 ; EV_CURRENT */
     } ident;
-    enum type; /* 0x00000003 */
-    enum machine; /* 0x0000003e */
-    enum version; /* 0x00000001 */
+    enum type; /* 0x00000003 ; ET_DYN */
+    enum machine; /* 0x0000003e ; EM_X86_64 */
+    enum version; /* 0x00000001 ; EV_CURRENT */
     uint64_t entry; /* 0x0000000000005ae0 */
     uint64_t phoff; /* 0x0000000000000040 */
     uint64_t shoff; /* 0x0000000000021368 */

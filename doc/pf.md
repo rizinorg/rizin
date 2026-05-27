@@ -2,7 +2,7 @@
 
 The `pf` command in Rizin formats raw bytes through a small domain-specific
 language. This document is the reference for the language; the implementation
-lives in `librz/type/pf_parser.c` and the public API is `<rz_pf.h>`.
+lives under `librz/type/pf/` and the public API is `<rz_pf.h>`.
 
 ## Quick examples
 
@@ -110,7 +110,9 @@ canonical form is `t(format)`.
   `(enumname)fieldname` in the names list. `E1` / `E2` / `E4` / `E8` to use a
   different scalar width.
 - `B` -- bitfield. Two flavours:
-  - Typed: `B4 (perm) flags` -- `perm` resolved via the typedb.
+  - Typed: `B4 (perm) flags` -- `perm` resolved via the typedb. Bare `B`
+    without a width uses 4 bytes by default; `B1`/`B2`/`B4`/`B8` to select
+    the underlying scalar width.
   - Inline: `B4(R=1,W=2,X=4)` -- flags declared inline in parens. The presence
     of `=` inside the parens is the discriminator.
 - `G[(layout)]` -- 16-byte GUID. Layouts:
@@ -126,7 +128,63 @@ canonical form is `t(format)`.
   - `d=<table>` -- dispatch table name. After reading the tag, look up
     `tlv.<table>.<hex-tag>` in the typedb; that entry is itself a `pf` format
     string that is applied to the value bytes.
-- `r` -- raw hexdump. Length comes from the `[N]` repeat prefix.
+- `Q` -- 128-bit unsigned integer (16 bytes, byte-sequential). Endianness
+  matters only for display; the bytes are emitted in buffer order.
+- `r` -- raw hexdump. Length comes from the `[N]` repeat prefix; without a
+  prefix it consumes one byte.
+- `U` / `L` -- ULEB128 / SLEB128 (variable-length unsigned / signed). Decoded
+  greedily up to 10 bytes (enough for a full 64-bit value).
+- `n` / `N` -- context-sized integer:
+  - `n1`/`n2`/`n4`/`n8` -- forced byte width (1/2/4/8) in LE.
+  - `N1`/`N2`/`N4`/`N8` -- same, BE.
+  - Bare `n`/`N` defaults to `ctx.bits/8` bytes.
+
+### Pointers
+
+`p` reads a pointer-sized scalar and prints its value. The width follows
+the context bits unless an explicit suffix is given:
+
+- `p` -- pointer in `ctx.bits/8` bytes (default 8 on 64-bit, 4 on 32-bit).
+- `p2` -- 16-bit pointer (2 bytes).
+- `p4` -- 32-bit pointer (4 bytes).
+- `p8` -- 64-bit pointer (8 bytes).
+
+The displayed value is rendered in the current context endianness.
+
+### Pointer dereference
+
+`*<type>` -- read the field's bytes as a pointer, then follow the pointer
+through the I/O callback and decode `<type>` at the dereferenced address.
+The displayed line shows both the pointer (`(*0x...)`) and the dereferenced
+payload:
+
+- `*z` -- pointer to NUL-terminated string. Emits `(*0xNN) "string"`.
+- `*d4` / `*x2` / `*u8` -- pointer to a fixed-width scalar. Emits
+  `(*0xNN) <value>` with the dereferenced value formatted per the inner
+  spec.
+- `*?` -- pointer to a typedb-registered struct. Emits the `(*0xNN)`
+  literal followed by the full struct body, recursively. Recursion is
+  bounded by `RzPfCtx::max_depth` so cyclic pointer chains terminate
+  cleanly.
+
+The pointer itself is read in the field's effective width (see Pointers
+above) and endianness. The `s` specifier is the simpler `string-by-pointer`
+form: it behaves like `*z` and renders the same `(*0xNN) "string"` shape
+when the deref produced a body, falling back to a bare `""` when the
+target is unmapped.
+
+### Endianness
+
+Endianness is encoded by the case of the spec letter rather than a
+standalone directive:
+
+- Lowercase (`x`, `d`, `u`, `o`, `b`, `f`, `t`, ...) -- little-endian.
+- Uppercase (`X`, `D`, `U`, `O`, `B`, `F`, `T`, ...) -- big-endian.
+
+There is no standalone endian-switch directive in the spec language; each
+specifier carries its own endianness. Context-endian forms (`n`, `N`, and
+the inner reads for pointer dereference) consult `RzPfCtx::big_endian`
+when no explicit case is given.
 
 ### Repetition and arrays
 
@@ -176,13 +234,6 @@ canonical form is `t(format)`.
   alongside a `bit_width` sibling. Quiet mode (`pfq`) emits the bits
   space-separated with no decoration.
 
-### Pointer dereference
-
-- `*<type>` -- read the field's bytes as a pointer (8 or 4 bytes depending on
-  context bits), then follow the pointer through the I/O callback and decode
-  `<type>` at the dereferenced address. The displayed value shows both the
-  pointer value (`*0x...`) and the dereferenced payload.
-
 ## Names grammar
 
 A name token can be:
@@ -212,9 +263,71 @@ caller, not by the format string):
   their decoded values in comments. When invoked as `pfc <name>` against a
   typedb-registered format, the format name is included after the `struct`
   keyword (e.g. `struct elf_header { ... }`).
-- **quiet** -- value-only, one per line, no names or offsets.
+- **quiet** -- value-only, one per line, no names or offsets. Used by
+  `pfq` and `pfv`. Raw byte-sequential types (`Q`, `r`) emit their bytes
+  as a space-separated hex stream.
 - **dot** -- Graphviz `digraph` with each top-level field as a record cell
   inside a single `shape=record` node. Used by `pfd`.
+- **structured data** -- a value-centric `RzStructuredData` tree (the
+  generic key/value document model shared with `rz_bin`, ASN.1, and
+  PKCS#7). Exposed through `rz_pf_render_sd()` rather than a string
+  mode, since the result is a tree the caller can serialise to JSON or
+  YAML (`rz_structured_data_to_json` / `_to_yaml`) or walk with the
+  generic iterator. The top level is a map keyed by field name (unnamed
+  fields become `field_<n>`); scalars map to typed unsigned/signed/
+  double/string entries, arrays and bitvectors to arrays, nested structs
+  to sub-maps with a `_type` key, and raw/GUID payloads to byte blocks.
+  Timestamps emit a formatted string plus a `<name>_raw` sibling.
+
+## Write mode (`pfw`)
+
+`pfw <name>.<field> <value>` writes a new value into the field. The field
+path can be a dotted navigation into nested structs, e.g.:
+
+```text
+pfw gobelin.Buh.first 42
+pfw gobelin.Buh.Boh.Bah.Bah.word 0xadde
+```
+
+The walker descends through children at each `.`; pointer-deref fields
+are followed transparently when the target is mapped. Writes go through
+the I/O layer (`rz_io_write_at`) and emit a confirmation line of the
+form `<field> : <offset> = <value>`.
+
+The legacy convention of prefixing `pfw` with `.` (to execute the output
+as rizin commands) is no longer needed and is not supported -- the new
+`pfw` writes directly. Likewise, the legacy `.pf*` "execute the rendered
+output as commands" form is gone.
+
+## Deprecated single-letter aliases
+
+For backward compatibility, the parser still accepts a handful of bare
+specifiers that map to the new canonical forms, emitting a one-time
+deprecation diagnostic:
+
+| Legacy | Canonical    | Meaning                              |
+|--------|--------------|--------------------------------------|
+| `b`    | `b1`         | 1-byte binary                        |
+| `c`    | `c`          | 1-byte signed char (unchanged)       |
+| `d`    | `d4`         | 4-byte signed decimal LE             |
+| `o`    | `o4`         | 4-byte octal LE                      |
+| `q`    | `x8`         | 8-byte hex LE                        |
+| `u`    | `u4`         | 4-byte unsigned decimal LE           |
+| `i`    | `d4`         | 4-byte signed decimal LE             |
+| `f`    | `f4`         | IEEE-754 single LE                   |
+| `F`    | `F8`         | IEEE-754 double BE                   |
+| `w`    | `x2`         | 2-byte hex LE                        |
+| `Z`    | `z(utf16le)` | UTF-16 LE zstring                    |
+| `t`    | `t(unix32)`  | Unix-32 timestamp                    |
+| `T`    | `T(unix32)`  | Unix-32 timestamp BE                 |
+| `X`    | `r`          | raw hex byte dump                    |
+| `C`    | `u1`         | 1-byte unsigned decimal              |
+
+The single-byte `r` (raw hexdump) reads one byte; combine it with a
+repeat prefix (`[16]r`) for longer dumps. Note that the legacy
+`r (regname)` register-fetch form is **not** implemented in the new
+parser; restoring it would require a register-lookup hook in the parser
+context.
 
 ## Diagnostics
 

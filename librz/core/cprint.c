@@ -1083,6 +1083,12 @@ static RzPfMode cprint_pf_mode(int mode) {
 	if (mode & RZ_PRINT_QUIET) {
 		return RZ_PF_MODE_QUIET;
 	}
+	if (mode & RZ_PRINT_VALUE) {
+		/* `pfv` -- prints just the field value(s) with no offset
+		 * /name/endian decoration. Reuses the QUIET renderer, which
+		 * already emits one bare scalar per field with no prefix. */
+		return RZ_PF_MODE_QUIET;
+	}
 	if (mode & RZ_PRINT_MUSTSET) {
 		return RZ_PF_MODE_WRITE;
 	}
@@ -1175,7 +1181,7 @@ static RZ_OWN char *core_print_format(RzCore *core, const char *fmt, const char 
 		const char *write_val = comp ? comp->value : value;
 		if (RZ_STR_ISEMPTY(field_filter) || RZ_STR_ISEMPTY(write_val)) {
 			RZ_LOG_ERROR("pf: write mode requires "
-				"<format>.<field> <value>\n");
+				     "<format>.<field> <value>\n");
 			free(buf);
 			goto stage_left;
 		}
@@ -1189,12 +1195,42 @@ static RZ_OWN char *core_print_format(RzCore *core, const char *fmt, const char 
 		RzPfValue *vals = rz_pf_read(parsed, buf, size, address,
 			&ctx, &nvals);
 
-		/* Locate the target field by name. */
+		/* Locate the target field by name. The `field_filter` may
+		 * be a dotted path into nested structs (e.g. `Buh.first` or
+		 * `Buh.Boh.Bah.Bah.word`); walk through children at each
+		 * dot. */
 		const RzPfValue *target = NULL;
-		for (int i = 0; vals && i < nvals; i++) {
-			if (vals[i].name && !strcmp(vals[i].name, field_filter)) {
-				target = &vals[i];
-				break;
+		{
+			const RzPfValue *cur_vals = vals;
+			int cur_n = nvals;
+			const char *seg_start = field_filter;
+			while (seg_start && *seg_start) {
+				const char *seg_end = strchr(seg_start, '.');
+				size_t seg_len = seg_end
+					? (size_t)(seg_end - seg_start)
+					: strlen(seg_start);
+				const RzPfValue *found = NULL;
+				for (int i = 0; cur_vals && i < cur_n; i++) {
+					if (cur_vals[i].name &&
+						strlen(cur_vals[i].name) == seg_len &&
+						!strncmp(cur_vals[i].name,
+							seg_start, seg_len)) {
+						found = &cur_vals[i];
+						break;
+					}
+				}
+				if (!found) {
+					target = NULL;
+					break;
+				}
+				if (!seg_end) {
+					target = found;
+					break;
+				}
+				/* Descend into children for the next segment. */
+				cur_vals = found->children;
+				cur_n = found->nchildren;
+				seg_start = seg_end + 1;
 			}
 		}
 		if (!target) {
@@ -1207,9 +1243,7 @@ static RZ_OWN char *core_print_format(RzCore *core, const char *fmt, const char 
 		}
 
 		ut64 target_off = target->offset;
-		bool target_be = target->endian == RZ_PF_ENDIAN_BE
-			|| (target->endian == RZ_PF_ENDIAN_CTX
-				&& ctx.big_endian);
+		bool target_be = target->endian == RZ_PF_ENDIAN_BE || (target->endian == RZ_PF_ENDIAN_CTX && ctx.big_endian);
 
 		/* Right-align the field label to the widest name in the
 		 * format, so successive `pfw fmt.a` / `pfw fmt.b` lines
@@ -1238,8 +1272,7 @@ static RZ_OWN char *core_print_format(RzCore *core, const char *fmt, const char 
 				slen -= 2;
 			}
 			RzStrEnc enc = target->encoding;
-			if (enc == RZ_STRING_ENC_UTF16LE
-				|| enc == RZ_STRING_ENC_UTF16BE) {
+			if (enc == RZ_STRING_ENC_UTF16LE || enc == RZ_STRING_ENC_UTF16BE) {
 				bool be = (enc == RZ_STRING_ENC_UTF16BE);
 				char *utf8 = rz_str_ndup(s, slen);
 				if (utf8) {
@@ -1278,15 +1311,13 @@ static RZ_OWN char *core_print_format(RzCore *core, const char *fmt, const char 
 			ut8 readback[256] = { 0 };
 			rz_io_read_at_mapped(core->io, target_off,
 				readback, sizeof(readback) - 1);
-			if (enc == RZ_STRING_ENC_UTF16LE
-				|| enc == RZ_STRING_ENC_UTF16BE) {
+			if (enc == RZ_STRING_ENC_UTF16LE || enc == RZ_STRING_ENC_UTF16BE) {
 				/* Find the wide-string length in bytes:
 				 * scan for the first 16-bit zero. The slot is
 				 * not extended on partial overwrite, so the
 				 * tail of the original wide content remains. */
 				int rlen = 0;
-				while (rlen + 1 < (int)sizeof(readback) - 1
-					&& (readback[rlen] || readback[rlen + 1])) {
+				while (rlen + 1 < (int)sizeof(readback) - 1 && (readback[rlen] || readback[rlen + 1])) {
 					rlen += 2;
 				}
 				ut8 swap[256];
@@ -1309,8 +1340,7 @@ static RZ_OWN char *core_print_format(RzCore *core, const char *fmt, const char 
 				free(decoded);
 			} else {
 				int rlen = 0;
-				while (rlen < (int)sizeof(readback) - 1
-					&& readback[rlen]) {
+				while (rlen < (int)sizeof(readback) - 1 && readback[rlen]) {
 					rlen++;
 				}
 				rz_strbuf_appendf(out,
@@ -1330,7 +1360,7 @@ static RZ_OWN char *core_print_format(RzCore *core, const char *fmt, const char 
 			}
 			if (width < 1 || width > 8) {
 				RZ_LOG_ERROR("pf: write mode: cannot determine "
-					"size for field '%s' (type=%d)\n",
+					     "size for field '%s' (type=%d)\n",
 					field_filter, (int)target->type);
 				rz_strbuf_free(out);
 				rz_pf_format_free(parsed);

@@ -3,23 +3,42 @@
 
 /**
  * \file pf_parser.c
- * \brief Implementation of the pf format parser, reader, and renderers.
+ * \brief Core of the pf format parser and reader.
  *
- * The pipeline is split into three stages:
+ * The pf engine is a three-stage pipeline:
  *   1. parse  -- turn a pf format string into an RzPfFormat
  *      (field descriptors plus repeat/union metadata).
  *   2. read   -- walk the parsed format over a byte buffer and produce
  *      an array of RzPfValue, one per top-level field, with nested
  *      children for struct fields.
  *   3. render -- emit the parsed values in one of the modes (text,
- *      JSON, C struct, quiet).
+ *      JSON, C struct, quiet, DOT, or RzStructuredData).
  *
  * All three stages are exposed as public RZ_API entry points so that
  * callers that already have a parsed format or values can skip the
  * earlier stages, and there is also a single-shot rz_pf_format()
  * convenience that runs the whole pipeline.
  *
- * Timestamp formats are owned by pf_parser_time.c.
+ * This file holds the parse driver (rz_pf_parse), the top-level
+ * type-spec dispatcher (parse_type_spec), the reader core
+ * (pf_read_field / rz_pf_read), the parsing context, and the public
+ * utility surface. The more involved sub-grammars are split into
+ * sibling translation units under librz/type/pf/, wired together by
+ * pf_internal.h:
+ *
+ *   pf_parser_string.c    string/encoding specs (z / s / Z)
+ *   pf_parser_bitfield.c  inline + typed bitfields (B...)
+ *   pf_parser_bitvec.c    bitvectors (v(N))
+ *   pf_parser_array.c     array-count resolution ([N] / [@name])
+ *   pf_parser_struct.c    nested struct / union reading (?)
+ *   pf_parser_time.c      timestamp wire-formats (t / T)
+ *   pf_parser_tlv.c       TLV records (V)
+ *   pf_render.c           shared render helpers + rz_pf_render dispatch
+ *   pf_render_text.c      text + quiet renderers
+ *   pf_render_json.c      JSON renderer
+ *   pf_render_cstruct.c   C-struct renderer
+ *   pf_render_dot.c       Graphviz DOT renderer
+ *   pf_render_sd.c        RzStructuredData renderer
  */
 
 #include <rz_endian.h>
@@ -33,34 +52,7 @@
 
 #include "pf_parser.h"
 #include "pf_parser_time.h"
-
-/* Portable replacement for vasprintf() -- which is a glibc extension
- * not provided by MSVC. The contract matches vasprintf(3) on success:
- * the caller owns *out and must free() it. On failure *out is set to
- * NULL and -1 is returned. ap is consumed in either case. */
-static int pf_vasprintf(char **out, const char *fmt, va_list ap) {
-	va_list ap2;
-	va_copy(ap2, ap);
-	int n = vsnprintf(NULL, 0, fmt, ap2);
-	va_end(ap2);
-	if (n < 0) {
-		*out = NULL;
-		return -1;
-	}
-	char *buf = malloc((size_t)n + 1);
-	if (!buf) {
-		*out = NULL;
-		return -1;
-	}
-	int n2 = vsnprintf(buf, (size_t)n + 1, fmt, ap);
-	if (n2 < 0) {
-		free(buf);
-		*out = NULL;
-		return -1;
-	}
-	*out = buf;
-	return n2;
-}
+#include "pf_internal.h"
 
 /**
  * Resolve per-field endianness to a concrete bool (true = big).
@@ -73,14 +65,6 @@ static inline bool resolve_endian(RzPfEndian field_endian,
 	case RZ_PF_ENDIAN_BE: return true;
 	default:
 		return ctx ? ctx->big_endian : false;
-	}
-}
-
-static const char *endian_str(RzPfEndian e) {
-	switch (e) {
-	case RZ_PF_ENDIAN_LE: return "little";
-	case RZ_PF_ENDIAN_BE: return "big";
-	default: return "context";
 	}
 }
 
@@ -183,10 +167,20 @@ static int ctx_ptr_size(const RzPfCtx *ctx) {
 	}
 }
 
+/* Effective pointer width: per-field override (set by `p{2,4,8}` in
+ * the DSL via fld->bit_width) wins over ctx.bits. Returns 2/4/8. */
+static int fld_ptr_size(const RzPfField *fld, const RzPfCtx *ctx) {
+	if (fld && fld->bit_width >= 2 && fld->bit_width <= 8 &&
+		(fld->bit_width == 2 || fld->bit_width == 4 || fld->bit_width == 8)) {
+		return fld->bit_width;
+	}
+	return ctx_ptr_size(ctx);
+}
+
 static ut64 read_ptr(const ut8 *buf, int off, int avail,
-	const RzPfCtx *ctx) {
+	const RzPfField *fld, const RzPfCtx *ctx) {
 	bool be = ctx ? ctx->big_endian : false;
-	int psz = ctx_ptr_size(ctx);
+	int psz = fld_ptr_size(fld, ctx);
 	if (avail < psz) {
 		return 0;
 	}
@@ -217,195 +211,6 @@ RZ_API int rz_pf_enc_null_unit_size(RzStrEnc enc) {
 	default:
 		return 1;
 	}
-}
-
-static int scan_null_term(const ut8 *buf, int max, int unit) {
-	for (int i = 0; i + unit <= max; i += unit) {
-		bool nul = true;
-		for (int j = 0; j < unit; j++) {
-			if (buf[i + j]) {
-				nul = false;
-				break;
-			}
-		}
-		if (nul) {
-			return i;
-		}
-	}
-	return max;
-}
-
-static RzCodePoint ebcdic_byte_to_codepoint(ut8 byte, RzStrEnc enc) {
-	RzCodePoint ch = 0;
-	switch (enc) {
-	case RZ_STRING_ENC_IBM037:
-		(void)rz_str_ibm037_to_unicode(byte, &ch);
-		break;
-	case RZ_STRING_ENC_IBM290:
-		(void)rz_str_ibm290_to_unicode(byte, &ch);
-		break;
-	case RZ_STRING_ENC_EBCDIC_ES:
-		(void)rz_str_ebcdic_es_to_unicode(byte, &ch);
-		break;
-	case RZ_STRING_ENC_EBCDIC_UK:
-		(void)rz_str_ebcdic_uk_to_unicode(byte, &ch);
-		break;
-	case RZ_STRING_ENC_EBCDIC_US:
-		(void)rz_str_ebcdic_us_to_unicode(byte, &ch);
-		break;
-	default:
-		break;
-	}
-	return ch;
-}
-
-static char *pf_decode_string(const ut8 *raw, int raw_len,
-	RzStrEnc enc) {
-	if (!raw || raw_len <= 0) {
-		return strdup("");
-	}
-	switch (enc) {
-	case RZ_STRING_ENC_8BIT:
-	case RZ_STRING_ENC_UTF8:
-	case RZ_STRING_ENC_MUTF8:
-		return rz_str_ndup((const char *)raw, raw_len);
-
-	case RZ_STRING_ENC_UTF16LE:
-	case RZ_STRING_ENC_UTF16BE:
-	case RZ_STRING_ENC_UTF32LE:
-	case RZ_STRING_ENC_UTF32BE: {
-		RzStrBuf *sb = rz_strbuf_new("");
-		if (!sb) {
-			return strdup("");
-		}
-		int pos = 0;
-		// Note, we force checking string encoding validity
-		while (pos < raw_len) {
-			RzCodePoint ch = 0;
-			int c = 0;
-			switch (enc) {
-			case RZ_STRING_ENC_UTF16LE:
-				c = rz_utf16le_decode(raw + pos,
-					raw_len - pos, &ch, true);
-				break;
-			case RZ_STRING_ENC_UTF16BE:
-				c = rz_utf16be_decode(raw + pos,
-					raw_len - pos, &ch, true);
-				break;
-			case RZ_STRING_ENC_UTF32LE:
-				c = rz_utf32le_decode(raw + pos,
-					raw_len - pos, &ch, true);
-				break;
-			case RZ_STRING_ENC_UTF32BE:
-				c = rz_utf32be_decode(raw + pos,
-					raw_len - pos, &ch, true);
-				break;
-			default: break;
-			}
-			if (c <= 0) {
-				break;
-			}
-			ut8 u8[8];
-			int u8l = rz_utf8_encode(u8, ch);
-			if (u8l > 0) {
-				rz_strbuf_append_n(sb,
-					(const char *)u8, u8l);
-			}
-			pos += c;
-		}
-		return rz_strbuf_drain(sb);
-	}
-
-	case RZ_STRING_ENC_IBM037:
-	case RZ_STRING_ENC_IBM290:
-	case RZ_STRING_ENC_EBCDIC_ES:
-	case RZ_STRING_ENC_EBCDIC_UK:
-	case RZ_STRING_ENC_EBCDIC_US: {
-		RzStrBuf *sb = rz_strbuf_new("");
-		if (!sb) {
-			return strdup("");
-		}
-		for (int i = 0; i < raw_len; i++) {
-			RzCodePoint ch = ebcdic_byte_to_codepoint(raw[i], enc);
-			ut8 u8[8];
-			int u8l = rz_utf8_encode(u8, ch);
-			if (u8l > 0) {
-				rz_strbuf_append_n(sb,
-					(const char *)u8, u8l);
-			}
-		}
-		return rz_strbuf_drain(sb);
-	}
-
-	case RZ_STRING_ENC_GUESS: {
-		RzStrEnc det = rz_str_guess_encoding_from_buffer(
-			raw, raw_len);
-		if (det == RZ_STRING_ENC_GUESS) {
-			det = RZ_STRING_ENC_UTF8;
-		}
-		return pf_decode_string(raw, raw_len, det);
-	}
-
-	default:
-		return rz_str_ndup((const char *)raw, raw_len);
-	}
-}
-
-/* Read an inline NUL-terminated string out of `buf[off..buf_len]`.
- * If a NUL is not found before the buffer end, `*out_overflow` is set
- * to true and the caller may emit an `ovf "..."` indicator. The
- * returned string is the printable prefix found before either the
- * NUL or the first non-printable byte (so noisy `\xff` tails from
- * `io.unalloc=true` reads do not leak into the rendered output).
- */
-static int read_inline_string(const ut8 *buf, int off, int buf_len,
-	RzStrEnc enc, char **out_str, bool *out_overflow) {
-	int avail = buf_len - off;
-	if (avail <= 0) {
-		*out_str = strdup("");
-		if (out_overflow) {
-			*out_overflow = true;
-		}
-		return 0;
-	}
-	int unit = rz_pf_enc_null_unit_size(enc);
-	int raw_len = scan_null_term(buf + off, avail, unit);
-	bool overflow = (raw_len >= avail);
-	if (overflow) {
-		/* No terminator inside the buffer. Truncate the printable
-		 * prefix at the first non-printable byte to avoid spilling
-		 * the (often `\xff`) tail of unmapped memory into output. */
-		int printable = 0;
-		while (printable < raw_len) {
-			ut8 b = buf[off + printable];
-			if (b < 0x20 || b > 0x7e) {
-				break;
-			}
-			printable++;
-		}
-		raw_len = printable;
-	}
-	*out_str = pf_decode_string(buf + off, raw_len, enc);
-	if (out_overflow) {
-		*out_overflow = overflow;
-	}
-	return RZ_MIN(raw_len + unit, avail);
-}
-
-static char *deref_string(const RzPfCtx *ctx, ut64 addr,
-	RzStrEnc enc) {
-	if (!ctx || !ctx->read_at || addr == 0 || addr == UT64_MAX) {
-		return strdup("");
-	}
-	ut8 tmp[1024];
-	memset(tmp, 0, sizeof(tmp));
-	int n = ctx->read_at(ctx->read_at_user, addr, tmp, sizeof(tmp));
-	if (n <= 0) {
-		return strdup("");
-	}
-	int unit = rz_pf_enc_null_unit_size(enc);
-	int raw_len = scan_null_term(tmp, n, unit);
-	return pf_decode_string(tmp, raw_len, enc);
 }
 
 // Timestamp support is implemented in pf_parser_time.c.
@@ -513,6 +318,20 @@ RZ_API int rz_pf_field_size(RzPfFieldType type) {
 	}
 }
 
+/* The `E`/`B` (enum/bitfield) forms accept an optional 1..8 byte-width
+ * prefix (e.g. `E1`, `B2`) stored in bit_width. When present it
+ * overrides the default 4-byte size. Returns the effective element
+ * size for \p fld, or the supplied \p fallback when no override
+ * applies. Centralises a rule that the reader and both struct-size
+ * passes would otherwise each spell out. */
+static int pf_enum_bitfield_width(const RzPfField *fld, int fallback) {
+	if ((fld->type == RZ_PF_ENUM || fld->type == RZ_PF_BITFIELD) &&
+		fld->bit_width >= 1 && fld->bit_width <= 8) {
+		return fld->bit_width;
+	}
+	return fallback;
+}
+
 /**
  * \brief C-language type spelling for a field type.
  *
@@ -588,48 +407,6 @@ RZ_API const char *rz_pf_field_ctype(RzPfFieldType type) {
 	}
 }
 
-static const char *type_repr_name(RzPfFieldType type) {
-	switch (type) {
-	case RZ_PF_HEX8:
-	case RZ_PF_HEX16:
-	case RZ_PF_HEX32:
-	case RZ_PF_HEX64:
-		return "hex";
-	case RZ_PF_DEC_S8:
-	case RZ_PF_DEC_S16:
-	case RZ_PF_DEC_S32:
-	case RZ_PF_DEC_S64:
-		return "signed";
-	case RZ_PF_DEC_U8:
-	case RZ_PF_DEC_U16:
-	case RZ_PF_DEC_U32:
-	case RZ_PF_DEC_U64:
-		return "unsigned";
-	case RZ_PF_OCT8:
-	case RZ_PF_OCT16:
-	case RZ_PF_OCT32:
-	case RZ_PF_OCT64:
-		return "octal";
-	case RZ_PF_BIN8:
-	case RZ_PF_BIN16:
-	case RZ_PF_BIN32:
-	case RZ_PF_BIN64:
-		return "binary";
-	case RZ_PF_FLOAT16: return "float16";
-	case RZ_PF_FLOAT32: return "float32";
-	case RZ_PF_FLOAT64: return "float64";
-	case RZ_PF_TIMESTAMP: return "timestamp";
-	case RZ_PF_HEXDUMP: return "raw";
-	case RZ_PF_GUID: return "guid";
-	case RZ_PF_BITS: return "bits";
-	case RZ_PF_BITVEC: return "bitvec";
-	case RZ_PF_TLV: return "tlv";
-	case RZ_PF_ALIGN: return "align";
-	default:
-		return rz_pf_field_ctype(type);
-	}
-}
-
 // PF Parser implementation
 
 /* Per-parse current format pointer. Set on entry to rz_pf_parse(),
@@ -645,8 +422,9 @@ static RzPfFormat *g_current_fmt = NULL;
 static const char *g_current_src = NULL;
 
 /* Compute the 0-based position into the source string from a char
- * pointer that must lie within the source. Returns -1 if outside. */
-static int pf_pos_of(const char *p) {
+ * pointer that must lie within the source. Returns -1 if outside.
+ * Non-static: shared across pf TUs via pf_internal.h (used by PF_DIAG). */
+int pf_pos_of(const char *p) {
 	if (!g_current_src || !p) {
 		return -1;
 	}
@@ -659,9 +437,10 @@ static int pf_pos_of(const char *p) {
 /* Append a diagnostic to a format. The format takes ownership of the
  * formatted message.
  *
- * Visibility: extern (not RZ_API) so the TLV parser in pf_parser_tlv.c
- * can emit diagnostics into the same format object without needing to
- * pass the pointer through every call. */
+ * Visibility: extern (not RZ_API) so the sub-parsers (TLV, string,
+ * bitfield, bitvec, struct, array) can emit diagnostics into the same
+ * format object without needing to pass the pointer through every
+ * call. */
 void pf_emit_error(RzPfFormat *fmt, RzPfErrSeverity sev,
 	RzPfErrCategory cat, int pos, const char *fmt_str, ...) {
 	if (!fmt) {
@@ -688,7 +467,7 @@ void pf_emit_error(RzPfFormat *fmt, RzPfErrSeverity sev,
 	fmt->nerrors++;
 }
 
-/* Accessor for cross-file emitters (TLV). */
+/* Accessors for cross-file emitters (sub-parsers). */
 RzPfFormat *pf_current_fmt(void) {
 	return g_current_fmt;
 }
@@ -701,18 +480,7 @@ static void pf_error_fini(RzPfError *e) {
 	free(e->message);
 }
 
-/* Position-aware diagnostic from any parse helper. The position is
- * resolved from the source pointer (set by rz_pf_parse), the message
- * is also forwarded to RZ_LOG_WARN so existing log scrapes keep
- * working unchanged. */
-#define PF_DIAG(sev, cat, src_ptr, ...) \
-	do { \
-		int _pos = pf_pos_of(src_ptr); \
-		if (g_current_fmt) { \
-			pf_emit_error(g_current_fmt, (sev), (cat), _pos, __VA_ARGS__); \
-		} \
-		RZ_LOG_WARN(__VA_ARGS__); \
-	} while (0)
+/* PF_DIAG is defined in pf_internal.h and shared by every pf TU. */
 
 static char **split_names(const char *s, int *out_n) {
 	*out_n = 0;
@@ -768,7 +536,7 @@ static void parse_annotated_name(const char *raw,
 	*out_name = strdup(raw);
 }
 
-static int parse_paren_annotation(const char *p, const char *end,
+int pf_parse_paren_annotation(const char *p, const char *end,
 	char **out_str) {
 	*out_str = NULL;
 	if (p[0] != '(') {
@@ -843,7 +611,7 @@ static int parse_timestamp_spec(const char *p, const char *end,
 
 	if (p[1] == '(') {
 		char *name = NULL;
-		int c = 1 + parse_paren_annotation(p + 1, end, &name);
+		int c = 1 + pf_parse_paren_annotation(p + 1, end, &name);
 		if (name) {
 			fld->timefmt = rz_pf_timefmt_from_string(name);
 			/* If the lookup fell back to UNIX32 and the spelled
@@ -878,182 +646,6 @@ static int parse_timestamp_spec(const char *p, const char *end,
 	return 1;
 }
 
-// String:  z / s  with optional (encoding) and optional trailing
-// length prefix [N] or [Nb] (bytes-unit suffix). The trailing form
-// can only appear immediately after the spec (and optional
-// (encoding)); a separate leading [N] before z/s still means
-// "array of strings", which is parsed at field level.
-static int parse_string_spec(const char *p, const char *end,
-	RzPfField *fld) {
-	fld->type = (p[0] == 'z') ? RZ_PF_ZSTRING : RZ_PF_STRPTR;
-	fld->encoding = RZ_STRING_ENC_UTF8;
-	fld->endian = RZ_PF_ENDIAN_CTX;
-	fld->str_len_prefix = 0;
-	fld->str_len_in_bytes = false;
-	int consumed = 1;
-	if (p[consumed] == '(') {
-		char *enc_name = NULL;
-		int pl = parse_paren_annotation(p + consumed, end, &enc_name);
-		if (enc_name) {
-			RzStrEnc enc = rz_str_enc_string_as_type(enc_name);
-			/* rz_str_enc_string_as_type falls back to GUESS on
-			 * unknown names. If the user spelled something
-			 * other than "guess" and we got GUESS back, that's
-			 * a typo -- emit a parse-time diagnostic. */
-			if (enc == RZ_STRING_ENC_GUESS && strncmp(enc_name, "guess", 5) != 0) {
-				PF_DIAG(RZ_PF_ERR_WARN,
-					RZ_PF_ERRC_SEMANTIC, p,
-					"pf: unknown string encoding '%s', defaulting to guess\n",
-					enc_name);
-			}
-			fld->encoding = enc;
-			free(enc_name);
-			consumed += pl;
-		}
-	}
-	/* Optional trailing length prefix [N] / [Nb]. We only treat the
-	 * brackets as a prefix marker if N is one of {1,2,4,8}; anything
-	 * else is left for the outer field-array parser. Skip entirely
-	 * when the field already has a fixed-length `[N]z` prefix --
-	 * the next bracket belongs to the next field's array prefix. */
-	if (p[consumed] == '[' && fld->str_fixed_len == 0) {
-		const char *cl = strchr(p + consumed, ']');
-		if (cl && (!end || cl < end)) {
-			int inner = cl - (p + consumed + 1);
-			if (inner >= 1 && inner <= 3) {
-				char buf[4] = { 0 };
-				memcpy(buf, p + consumed + 1, inner);
-				bool in_bytes = false;
-				if (buf[inner - 1] == 'b') {
-					in_bytes = true;
-					buf[inner - 1] = 0;
-				}
-				int n = atoi(buf);
-				if (n == 1 || n == 2 || n == 4 || n == 8) {
-					fld->str_len_prefix = n;
-					fld->str_len_in_bytes = in_bytes;
-					consumed += (cl - (p + consumed)) + 1;
-				}
-			}
-		}
-	}
-	return consumed;
-}
-
-// Parse a comma-separated list of NAME=VALUE entries inside parens.
-// VALUE accepts decimal, 0x... hex, or 0b... binary. Returns the
-// number of entries appended; caller passes a growable array.
-static int parse_bitflag_list(const char *body,
-	RzPfBitflag **out_arr, int *out_count) {
-	int cap = 8, n = 0;
-	RzPfBitflag *arr = RZ_NEWS0(RzPfBitflag, cap);
-	if (!arr) {
-		return 0;
-	}
-	const char *p = body;
-	while (*p) {
-		while (*p == ',' || isspace((ut8)*p)) {
-			p++;
-		}
-		if (!*p) {
-			break;
-		}
-		const char *nm = p;
-		while (*p && *p != '=' && *p != ',') {
-			p++;
-		}
-		if (*p != '=') {
-			/* Bad entry -- skip to next comma. */
-			PF_DIAG(RZ_PF_ERR_ERROR, RZ_PF_ERRC_SYNTAX, nm,
-				"pf: bitfield entry without '=' (expected NAME=VALUE), skipping\n");
-			while (*p && *p != ',') {
-				p++;
-			}
-			continue;
-		}
-		int nm_len = p - nm;
-		while (nm_len > 0 && isspace((ut8)nm[nm_len - 1])) {
-			nm_len--;
-		}
-		p++; /* eat '=' */
-		while (isspace((ut8)*p)) {
-			p++;
-		}
-		const char *vs = p;
-		while (*p && *p != ',') {
-			p++;
-		}
-		int vlen = p - vs;
-		while (vlen > 0 && isspace((ut8)vs[vlen - 1])) {
-			vlen--;
-		}
-		if (nm_len <= 0 || vlen <= 0) {
-			PF_DIAG(RZ_PF_ERR_ERROR, RZ_PF_ERRC_SYNTAX, nm,
-				"pf: bitfield entry has empty name or value, skipping\n");
-			continue;
-		}
-
-		char *vstr = rz_str_ndup(vs, vlen);
-		if (!vstr) {
-			continue;
-		}
-		ut64 val = 0;
-		if (vstr[0] == '0' && (vstr[1] == 'x' || vstr[1] == 'X')) {
-			val = strtoull(vstr + 2, NULL, 16);
-		} else if (vstr[0] == '0' && (vstr[1] == 'b' || vstr[1] == 'B')) {
-			val = strtoull(vstr + 2, NULL, 2);
-		} else {
-			val = strtoull(vstr, NULL, 10);
-		}
-		free(vstr);
-
-		if (n >= cap) {
-			cap *= 2;
-			RzPfBitflag *tmp = realloc(arr, cap * sizeof(RzPfBitflag));
-			if (!tmp) {
-				break;
-			}
-			arr = tmp;
-		}
-		arr[n].name = rz_str_ndup(nm, nm_len);
-		arr[n].value = val;
-		n++;
-	}
-	*out_arr = arr;
-	*out_count = n;
-	return n;
-}
-
-// Inline-bitfield re-interpretation: convert a parsed BIN field to
-// BITFIELD when the immediately following parens contains '='.
-// Returns extra bytes consumed (length of "(...)") or 0 if no.
-static int maybe_inline_bitfield(const char *p_after_spec,
-	const char *spec_end, RzPfField *fld, int size_bytes) {
-	if (p_after_spec[0] != '(') {
-		return 0;
-	}
-	const char *cl = strchr(p_after_spec + 1, ')');
-	if (!cl || (spec_end && cl >= spec_end)) {
-		return 0;
-	}
-	/* Discriminate: presence of '=' inside parens marks an inline
-	 * bitflag map; otherwise leave the parens alone (it's a typedb
-	 * name annotation, handled at field-name level). */
-	const char *eq = memchr(p_after_spec + 1, '=', cl - (p_after_spec + 1));
-	if (!eq) {
-		return 0;
-	}
-	char *body = rz_str_ndup(p_after_spec + 1, cl - (p_after_spec + 1));
-	if (!body) {
-		return 0;
-	}
-	fld->type = RZ_PF_BITFIELD;
-	fld->bitfield_size = size_bytes;
-	parse_bitflag_list(body, &fld->bitflags, &fld->bitflag_count);
-	free(body);
-	return (cl - p_after_spec) + 1;
-}
-
 // GUID:  G  with optional (le|be|ms). Default is MS layout.
 static int parse_guid_spec(const char *p, const char *end, RzPfField *fld) {
 	fld->type = RZ_PF_GUID;
@@ -1062,7 +654,7 @@ static int parse_guid_spec(const char *p, const char *end, RzPfField *fld) {
 	int consumed = 1;
 	if (p[1] == '(') {
 		char *name = NULL;
-		int pl = parse_paren_annotation(p + 1, end, &name);
+		int pl = pf_parse_paren_annotation(p + 1, end, &name);
 		if (name) {
 			if (!rz_str_casecmp(name, "le")) {
 				fld->guid_layout = RZ_PF_GUID_LE;
@@ -1119,85 +711,6 @@ static int parse_bits_spec(const char *p, RzPfField *fld) {
 	return consumed;
 }
 
-/* Bitvector:  v(N)  or  v(N,lsb)  or  v(N,msb)
- *
- * Reads N individual bits from ceil(N/8) bytes of input and exposes
- * them as an array of N 0/1 values. Renders as space-separated bits
- * grouped by 8 (`1 0 1 0 1 1 0 0 | 0 1 1 ...`). JSON renders as a
- * string of '0'/'1' characters for compactness.
- *
- * Forensics use: page-frame allocation maps, NTFS $Bitmap clusters,
- * ext4 block/inode bitmaps, ELF DT_FLAGS_1, PE characteristics bits
- * that you want to *see* rather than collapse into a hex number.
- *
- * Bit order within each byte defaults to MSB-first (bit 7 of byte 0
- * is bit 0 of the vector); pass `lsb` for the Intel-ish order. */
-static int parse_bitvec_spec(const char *p, const char *spec_end,
-	RzPfField *fld) {
-	int consumed = 1; /* the 'v' */
-	if (p[consumed] != '(') {
-		PF_DIAG(RZ_PF_ERR_ERROR, RZ_PF_ERRC_SYNTAX, p,
-			"pf: 'v' bitvector spec missing '(N)' "
-			"(use 'v(N)' or 'v(N,lsb)'), skipping\n");
-		return 1;
-	}
-	consumed++; /* '(' */
-	if (!isdigit((ut8)p[consumed])) {
-		PF_DIAG(RZ_PF_ERR_ERROR, RZ_PF_ERRC_SYNTAX, p,
-			"pf: 'v(N)' missing N (use 'v(N)' with N>=1), "
-			"skipping\n");
-		return consumed;
-	}
-	int n = 0;
-	while (isdigit((ut8)p[consumed]) && n < 100000) {
-		n = n * 10 + (p[consumed] - '0');
-		consumed++;
-	}
-	if (n < 1) {
-		PF_DIAG(RZ_PF_ERR_WARN, RZ_PF_ERRC_RANGE, p,
-			"pf: bitvector width %d must be >= 1, clamping\n", n);
-		n = 1;
-	} else if (n > 4096) {
-		PF_DIAG(RZ_PF_ERR_WARN, RZ_PF_ERRC_RANGE, p,
-			"pf: bitvector width %d exceeds maximum 4096, "
-			"clamping\n", n);
-		n = 4096;
-	}
-	fld->type = RZ_PF_BITVEC;
-	fld->bit_width = n;
-	fld->bit_order = RZ_PF_BITORDER_MSB;
-	/* Optional ,lsb / ,msb */
-	if (p[consumed] == ',') {
-		consumed++;
-		while (p[consumed] == ' ') {
-			consumed++;
-		}
-		if (p[consumed] == 'l' && p[consumed + 1] == 's' &&
-			p[consumed + 2] == 'b') {
-			fld->bit_order = RZ_PF_BITORDER_LSB;
-			consumed += 3;
-		} else if (p[consumed] == 'm' && p[consumed + 1] == 's' &&
-			p[consumed + 2] == 'b') {
-			fld->bit_order = RZ_PF_BITORDER_MSB;
-			consumed += 3;
-		} else {
-			PF_DIAG(RZ_PF_ERR_WARN, RZ_PF_ERRC_SYNTAX, p,
-				"pf: 'v(N,?)' unknown bit-order keyword "
-				"(use 'lsb' or 'msb'); defaulting to msb\n");
-			while (p + consumed < spec_end && p[consumed] != ')') {
-				consumed++;
-			}
-		}
-	}
-	if (p[consumed] == ')') {
-		consumed++;
-	} else {
-		PF_DIAG(RZ_PF_ERR_WARN, RZ_PF_ERRC_SYNTAX, p,
-			"pf: 'v(N)' missing closing ')'\n");
-	}
-	return consumed;
-}
-
 // Alignment:  @N where N >= 1.
 static int parse_align_spec(const char *p, RzPfField *fld) {
 	int consumed = 1; /* the '@' */
@@ -1221,12 +734,6 @@ static int parse_align_spec(const char *p, RzPfField *fld) {
 	fld->align_to = n;
 	return consumed;
 }
-
-/* Forward decl: parse a TLV V(t=...,l=...,d=...,h=...,e=...) spec.
- * The implementation lives in pf_parser_tlv.c so the TLV semantics
- * are isolated from the core parser. */
-extern int pf_parse_tlv_spec(const char *p, const char *end,
-	RzPfField *fld);
 
 // Main type-specifier dispatcher.
 /* The four BIN sizes paired with their wire width. Used to recover
@@ -1266,7 +773,7 @@ static int parse_type_spec(const char *p, const char *spec_end,
 
 	/* -- String: z / s -- */
 	if (p[0] == 'z' || p[0] == 's') {
-		return parse_string_spec(p, spec_end, fld);
+		return pf_parse_string_spec(p, spec_end, fld);
 	}
 
 	/* -- Float: f/F  (try sized first, then bare) -- */
@@ -1296,6 +803,15 @@ static int parse_type_spec(const char *p, const char *spec_end,
 		return 1;
 	}
 
+	/* -- Sized pointer: p{2,4,8} -- explicit byte width overrides
+	 * ctx.bits. Bare 'p' (handled below) follows ctx.bits. */
+	if (p[0] == 'p' && (p[1] == '2' || p[1] == '4' || p[1] == '8')) {
+		fld->type = RZ_PF_POINTER;
+		fld->endian = RZ_PF_ENDIAN_CTX;
+		fld->bit_width = p[1] - '0'; /* 2/4/8 bytes */
+		return 2;
+	}
+
 	/* -- Sized integers: {x,d,u,o,b,X,D,U,O,B}{1,2,4,8} -- */
 	if (p[0] && p[1]) {
 		RzPfFieldType it;
@@ -1311,7 +827,7 @@ static int parse_type_spec(const char *p, const char *spec_end,
 			if (p[0] == 'B' && p[r] == '(') {
 				int sz = bin_type_width(it);
 				if (sz) {
-					int extra = maybe_inline_bitfield(p + r,
+					int extra = pf_maybe_inline_bitfield(p + r,
 						spec_end, fld, sz);
 					if (extra) {
 						return r + extra;
@@ -1352,7 +868,7 @@ static int parse_type_spec(const char *p, const char *spec_end,
 		return parse_bits_spec(p, fld);
 	}
 	if (p[0] == 'v') {
-		return parse_bitvec_spec(p, spec_end, fld);
+		return pf_parse_bitvec_spec(p, spec_end, fld);
 	}
 	if (p[0] == 'G') {
 		return parse_guid_spec(p, spec_end, fld);
@@ -1408,7 +924,7 @@ static int parse_type_spec(const char *p, const char *spec_end,
 		 * annotation in the names list. */
 		if (p[1] == '(') {
 			char *tn = NULL;
-			int annot = parse_paren_annotation(p + 1, spec_end, &tn);
+			int annot = pf_parse_paren_annotation(p + 1, spec_end, &tn);
 			if (annot > 0 && tn) {
 				free(fld->type_name);
 				fld->type_name = tn;
@@ -1427,6 +943,15 @@ static int parse_type_spec(const char *p, const char *spec_end,
 		PF_DIAG(RZ_PF_ERR_WARN, RZ_PF_ERRC_DEPRECATED, p,
 			"pf: bare 'b' deprecated, use 'b1'\n");
 		fld->type = RZ_PF_BIN8;
+		fld->endian = RZ_PF_ENDIAN_LE;
+		return 1;
+	case 'C':
+		/* Legacy 1-byte unsigned decimal ("decimal char"); the new
+		 * canonical form is 'u1'. Emit a deprecation note so users
+		 * can migrate without losing the test-coverage path. */
+		PF_DIAG(RZ_PF_ERR_WARN, RZ_PF_ERRC_DEPRECATED, p,
+			"pf: bare 'C' deprecated, use 'u1'\n");
+		fld->type = RZ_PF_DEC_U8;
 		fld->endian = RZ_PF_ENDIAN_LE;
 		return 1;
 	case 'd':
@@ -1561,7 +1086,6 @@ static void locate_spec_names_split(const char *start,
  * RzPfCtx populated with a typedb if your format references named
  * structs, enums, or bitfields.
  */
-
 RZ_API RZ_OWN RzPfFormat *rz_pf_parse(const char *fmt_str) {
 	if (!fmt_str) {
 		return NULL;
@@ -1581,7 +1105,7 @@ RZ_API RZ_OWN RzPfFormat *rz_pf_parse(const char *fmt_str) {
 
 	/* Establish the per-parse diagnostic context. Saved across the
 	 * call so that rz_pf_parse() remains safe to invoke recursively
-	 * from helpers (e.g. read_nested_struct() reparses a child
+	 * from helpers (e.g. pf_read_nested_struct() reparses a child
 	 * format string by name). */
 	RzPfFormat *saved_fmt = g_current_fmt;
 	const char *saved_src = g_current_src;
@@ -2055,118 +1579,8 @@ static void read_scalar(const ut8 *buf, int off, int avail,
 	}
 }
 
-/* Per-format reading state. Used to thread the bit cursor through
- * consecutive :N fields and to let [@name] fields look back at
- * previously-parsed siblings in the same format scope. */
-typedef struct {
-	int bit_cursor; //<< 0..7, bit position within the
-			//   current byte for :N fields.
-	const RzPfValue *siblings; //<< borrowed array of values already
-				   //   parsed in this scope (for [@name]).
-	int n_siblings;
-} ReadState;
-
-/* Look up the most-recent same-name scalar in the sibling array. */
-static ut64 lookup_sibling_value(const ReadState *st, const char *name) {
-	if (!st || !name) {
-		return 0;
-	}
-	for (int i = st->n_siblings - 1; i >= 0; i--) {
-		const RzPfValue *v = &st->siblings[i];
-		if (!v->name || strcmp(v->name, name)) {
-			continue;
-		}
-		if (v->count < 1 || !v->scalars) {
-			continue;
-		}
-		const RzPfScalar *s = &v->scalars[0];
-		/* Match by field type -> pick the right slot. */
-		switch (v->type) {
-		case RZ_PF_HEX8:
-		case RZ_PF_DEC_U8:
-		case RZ_PF_OCT8:
-		case RZ_PF_BIN8:
-		case RZ_PF_CHAR:
-			return s->v_u8;
-		case RZ_PF_DEC_S8: return (ut64)(st64)s->v_s8;
-		case RZ_PF_HEX16:
-		case RZ_PF_DEC_U16:
-		case RZ_PF_OCT16:
-		case RZ_PF_BIN16:
-			return s->v_u16;
-		case RZ_PF_DEC_S16: return (ut64)(st64)s->v_s16;
-		case RZ_PF_HEX32:
-		case RZ_PF_DEC_U32:
-		case RZ_PF_OCT32:
-		case RZ_PF_BIN32:
-		case RZ_PF_ENUM:
-		case RZ_PF_BITFIELD:
-			return s->v_u32;
-		case RZ_PF_DEC_S32: return (ut64)(st64)s->v_s32;
-		case RZ_PF_HEX64:
-		case RZ_PF_DEC_U64:
-		case RZ_PF_OCT64:
-		case RZ_PF_BIN64:
-		case RZ_PF_POINTER:
-		case RZ_PF_ULEB128:
-		case RZ_PF_BITS:
-			return s->v_u64;
-		case RZ_PF_DEC_S64:
-		case RZ_PF_SLEB128:
-			return (ut64)s->v_s64;
-		default:
-			return 0;
-		}
-	}
-	RZ_LOG_WARN("pf: [@%s] no earlier field with that name\n", name);
-	return 0;
-}
-
-/* Resolve the effective array count for a field, honoring [@name]. */
-static int resolve_array_count(const RzPfField *fld, const ReadState *st) {
-	if (fld->length_ref) {
-		ut64 v = lookup_sibling_value(st, fld->length_ref);
-		if (v > INT32_MAX) {
-			RZ_LOG_WARN("pf: [@%s] count %" PFMT64u
-				    " too large, clamping\n",
-				fld->length_ref, v);
-			v = INT32_MAX;
-		}
-		return (int)v;
-	}
-	return (fld->array_count > 0) ? fld->array_count : 1;
-}
-
-/* Read a string with a length prefix. Returns the total bytes
- * consumed (prefix + payload). Output is decoded into UTF-8. */
-static int read_lenprefix_string(const ut8 *buf, int off, int avail,
-	RzStrEnc enc, int prefix_size, bool len_in_bytes,
-	bool be, char **out_str) {
-	if (avail < prefix_size) {
-		*out_str = strdup("");
-		return 0;
-	}
-	ut64 raw_len = 0;
-	switch (prefix_size) {
-	case 1: raw_len = buf[off]; break;
-	case 2: raw_len = rz_read_ble16(buf + off, be); break;
-	case 4: raw_len = rz_read_ble32(buf + off, be); break;
-	case 8: raw_len = rz_read_ble64(buf + off, be); break;
-	default:
-		*out_str = strdup("");
-		return 0;
-	}
-	int unit = rz_pf_enc_null_unit_size(enc);
-	int byte_count = len_in_bytes ? (int)raw_len : (int)(raw_len * unit);
-	if (byte_count < 0)
-		byte_count = 0;
-	int max_avail = avail - prefix_size;
-	if (byte_count > max_avail) {
-		byte_count = max_avail;
-	}
-	*out_str = pf_decode_string(buf + off + prefix_size, byte_count, enc);
-	return prefix_size + byte_count;
-}
+/* ReadState (per-format reading state) is defined in pf_internal.h so
+ * the struct/array/bitvec sub-readers can share it. */
 
 /* GUID layout decoders. The buffer is always 16 bytes long. The MS
  * layout (default) follows the Microsoft "GUID" struct: D1=u32 LE,
@@ -2253,86 +1667,7 @@ static int read_bits_field(const RzPfField *fld, const ut8 *buf,
 	return bytes_consumed;
 }
 
-static int read_field(const RzPfField *fld, const ut8 *buf, int off,
-	int buf_len, ut64 base_addr, const RzPfCtx *ctx, int depth,
-	ReadState *st, RzPfValue *val);
-
-static int read_nested_struct(const RzPfField *fld, const ut8 *buf,
-	int off, int buf_len, ut64 base_addr,
-	const RzPfCtx *ctx, int depth, RzPfValue *val) {
-	if (!ctx || !ctx->typedb || !fld->type_name) {
-		return 0;
-	}
-	if (depth >= ctx->max_depth) {
-		RZ_LOG_WARN("pf: max depth for '%s'\n", fld->type_name);
-		return 0;
-	}
-	const char *sub_str = rz_pf_resolve_name(
-		ctx->typedb, fld->type_name);
-	if (RZ_STR_ISEMPTY(sub_str)) {
-		RZ_LOG_WARN("pf: unknown format '%s'\n", fld->type_name);
-		return 0;
-	}
-	RzPfFormat *sub = rz_pf_parse(sub_str);
-	if (!sub) {
-		return 0;
-	}
-
-	int repeat = (fld->array_count > 0)
-		? fld->array_count
-		: sub->repeat;
-	int child_cap = sub->nfields * repeat;
-	val->children = RZ_NEWS0(RzPfValue, child_cap);
-	val->nchildren = 0;
-	/* Record the array length so filter-path navigators (e.g.
-	 * `name.field[N]`) can slice the flat children list into a
-	 * per-iteration window of `nchildren / count` entries. For a
-	 * scalar struct field (no array prefix) `repeat` is 1, which
-	 * matches the default. */
-	val->count = repeat;
-
-	int total = 0;
-	for (int r = 0; r < repeat && off + total < buf_len; r++) {
-		int soff = 0, max_soff = 0;
-		/* Fresh per-iteration read state: bit cursor and sibling
-		 * lookup are scoped to this struct instance. */
-		ReadState sub_st = { 0 };
-		sub_st.siblings = val->children;
-		for (int fi = 0; fi < sub->nfields; fi++) {
-			if (sub->is_union) {
-				soff = 0;
-			}
-			if (val->nchildren >= child_cap) {
-				child_cap *= 2;
-				val->children = realloc(val->children,
-					child_cap * sizeof(RzPfValue));
-				sub_st.siblings = val->children;
-			}
-			sub_st.n_siblings = val->nchildren;
-			int c = read_field(&sub->fields[fi], buf,
-				off + total + soff, buf_len,
-				base_addr, ctx, depth + 1,
-				&sub_st,
-				&val->children[val->nchildren]);
-			val->nchildren++;
-			if (sub->is_union) {
-				max_soff = RZ_MAX(max_soff, c);
-			} else {
-				soff += c;
-			}
-		}
-		total += sub->is_union ? max_soff : soff;
-	}
-	rz_pf_format_free(sub);
-	return total;
-}
-
-/* Forward decl for the TLV reader, defined in pf_parser_tlv.c. */
-extern int pf_tlv_read(const RzPfField *fld, const ut8 *buf,
-	int off, int buf_len, ut64 base_addr, const RzPfCtx *ctx,
-	int depth, RzPfValue *val);
-
-static int read_field(const RzPfField *fld, const ut8 *buf, int off,
+int pf_read_field(const RzPfField *fld, const ut8 *buf, int off,
 	int buf_len, ut64 base_addr, const RzPfCtx *ctx,
 	int depth, ReadState *st, RzPfValue *val) {
 	memset(val, 0, sizeof(*val));
@@ -2386,17 +1721,82 @@ static int read_field(const RzPfField *fld, const ut8 *buf, int off,
 	 * string in the field's encoding. The body text is then shown
 	 * after the (*0x...) pointer literal in the rendered output. */
 	if (fld->is_pointer) {
-		int psz = ctx_ptr_size(ctx);
+		int psz = fld_ptr_size(fld, ctx);
 		if (avail < psz) {
 			return snap_advance;
 		}
-		val->ptr_addr = read_ptr(buf, off, avail, ctx);
+		val->ptr_addr = read_ptr(buf, off, avail, fld, ctx);
 		if (fld->type == RZ_PF_ZSTRING && ctx && ctx->read_at) {
 			val->count = 1;
 			val->scalars = RZ_NEWS0(RzPfScalar, 1);
 			if (val->scalars) {
-				val->scalars[0].v_str = deref_string(
+				val->scalars[0].v_str = pf_deref_string(
 					ctx, val->ptr_addr, fld->encoding);
+			}
+		} else if (fld->type == RZ_PF_STRUCT &&
+			ctx && ctx->read_at && fld->type_name &&
+			val->ptr_addr != 0) {
+			/* Pointer-to-struct (`*?`): fetch a worst-case buffer
+			 * from ctx->read_at at the pointer target and feed it
+			 * through read_nested_struct, exactly as if the struct
+			 * were inlined at the target. Depth is bumped to
+			 * prevent unbounded recursion on cyclic pointers
+			 * (e.g. `troll{ Bah: *troll }` where each Bah points
+			 * back into the same region). */
+			if (depth < (ctx->max_depth - 1)) {
+				/* 4 KiB is plenty for typical pf structs and
+				 * keeps the recursion bounded even when the
+				 * struct nominal size is unknown. */
+				enum { DEREF_BUF = 4096 };
+				ut8 *tbuf = RZ_NEWS0(ut8, DEREF_BUF);
+				if (tbuf) {
+					int got = ctx->read_at(ctx->read_at_user,
+						val->ptr_addr, tbuf, DEREF_BUF);
+					if (got > 0) {
+						pf_read_nested_struct(fld, tbuf,
+							0, got,
+							val->ptr_addr,
+							ctx, depth + 1, val);
+					}
+					free(tbuf);
+				}
+			}
+		} else if (ctx && ctx->read_at &&
+			rz_pf_field_size(fld->type) > 0 &&
+			rz_pf_field_size(fld->type) <= 8) {
+			/* Numeric pointer (`*d4`, `*x2`, `*u8`, ...): read the
+			 * target word through the I/O callback and present it
+			 * via scalars[0]. The renderer shows both the pointer
+			 * itself (`(*0x...)`) and the dereferenced value. */
+			int tsz = rz_pf_field_size(fld->type);
+			ut8 tbuf[8] = { 0 };
+			if (ctx->read_at(ctx->read_at_user, val->ptr_addr,
+				    tbuf, tsz) == tsz) {
+				val->count = 1;
+				val->scalars = RZ_NEWS0(RzPfScalar, 1);
+				if (val->scalars) {
+					bool be = (fld->endian == RZ_PF_ENDIAN_BE) ||
+						(fld->endian == RZ_PF_ENDIAN_CTX &&
+							ctx && ctx->big_endian);
+					switch (tsz) {
+					case 1:
+						val->scalars[0].v_u8 = tbuf[0];
+						val->scalars[0].v_s8 = (st8)tbuf[0];
+						break;
+					case 2:
+						val->scalars[0].v_u16 = rz_read_ble16(tbuf, be);
+						val->scalars[0].v_s16 = (st16)val->scalars[0].v_u16;
+						break;
+					case 4:
+						val->scalars[0].v_u32 = rz_read_ble32(tbuf, be);
+						val->scalars[0].v_s32 = (st32)val->scalars[0].v_u32;
+						break;
+					case 8:
+						val->scalars[0].v_u64 = rz_read_ble64(tbuf, be);
+						val->scalars[0].v_s64 = (st64)val->scalars[0].v_u64;
+						break;
+					}
+				}
 			}
 		}
 		return snap_advance + psz;
@@ -2405,7 +1805,7 @@ static int read_field(const RzPfField *fld, const ut8 *buf, int off,
 	/* Struct */
 	if (fld->type == RZ_PF_STRUCT) {
 		return snap_advance +
-			read_nested_struct(fld, buf, off, buf_len,
+			pf_read_nested_struct(fld, buf, off, buf_len,
 				base_addr, ctx, depth, val);
 	}
 
@@ -2422,43 +1822,11 @@ static int read_field(const RzPfField *fld, const ut8 *buf, int off,
 	}
 
 	/* Bitvector -- N individual bits unpacked as N 0/1 scalars.
-	 * Consumes ceil(N/8) bytes from the buffer; bit order within
-	 * each byte is controlled by fld->bit_order. The vector is
-	 * read whole (not bit-packed across multiple v() fields like
-	 * RZ_PF_BITS would be) and does not advance the bit cursor.
-	 *
-	 * Worked example for `v(12)` over bytes `0xAB 0xCD` MSB-first:
-	 *   bit 0 = (0xAB >> 7) & 1 = 1
-	 *   bit 1 = (0xAB >> 6) & 1 = 0
-	 *   ...
-	 *   bit 8 = (0xCD >> 7) & 1 = 1
-	 *   bit 9 = (0xCD >> 6) & 1 = 1
-	 *   bit 10 = (0xCD >> 5) & 1 = 0
-	 *   bit 11 = (0xCD >> 4) & 1 = 0
-	 *   -> [ 1 0 1 0 1 0 1 1 | 1 1 0 0 ] */
+	 * Consumes ceil(N/8) bytes from the buffer; the read logic lives
+	 * in pf_parser_bitvec.c. Does not advance the bit cursor. */
 	if (fld->type == RZ_PF_BITVEC) {
-		int nbits = fld->bit_width;
-		int nbytes = (nbits + 7) / 8;
-		if (nbytes > avail) {
-			nbytes = avail;
-			nbits = nbytes * 8;
-		}
-		val->count = nbits;
-		val->bit_width = nbits;
-		val->scalars = RZ_NEWS0(RzPfScalar, nbits > 0 ? nbits : 1);
-		for (int i = 0; i < nbits; i++) {
-			int byte_idx = i / 8;
-			int bit_idx = i % 8;
-			ut8 b = buf[off + byte_idx];
-			ut8 bit;
-			if (fld->bit_order == RZ_PF_BITORDER_LSB) {
-				bit = (b >> bit_idx) & 1;
-			} else {
-				bit = (b >> (7 - bit_idx)) & 1;
-			}
-			val->scalars[i].v_u8 = bit;
-		}
-		return snap_advance + nbytes;
+		return snap_advance +
+			pf_read_bitvec_field(fld, buf, off, avail, val);
 	}
 
 	/* GUID */
@@ -2477,7 +1845,7 @@ static int read_field(const RzPfField *fld, const ut8 *buf, int off,
 	/* Timestamp (uses per-field be) */
 	if (fld->type == RZ_PF_TIMESTAMP) {
 		int sz = rz_pf_timefmt_size(fld->timefmt);
-		int cnt = resolve_array_count(fld, st);
+		int cnt = pf_resolve_array_count(fld, st);
 		if (cnt < 1)
 			cnt = 1;
 		val->count = cnt;
@@ -2532,13 +1900,13 @@ static int read_field(const RzPfField *fld, const ut8 *buf, int off,
 				(const char *)buf + off, slen);
 			consumed = n;
 		} else if (fld->str_len_prefix > 0) {
-			consumed = read_lenprefix_string(buf, off, avail,
+			consumed = pf_read_lenprefix_string(buf, off, avail,
 				fld->encoding, fld->str_len_prefix,
 				fld->str_len_in_bytes, be,
 				&val->scalars[0].v_str);
 		} else {
 			bool overflow = false;
-			consumed = read_inline_string(buf, off, buf_len,
+			consumed = pf_read_inline_string(buf, off, buf_len,
 				fld->encoding, &val->scalars[0].v_str,
 				&overflow);
 			val->overflow = overflow;
@@ -2548,12 +1916,12 @@ static int read_field(const RzPfField *fld, const ut8 *buf, int off,
 
 	/* String pointer (pointer read uses ctx endian) */
 	if (fld->type == RZ_PF_STRPTR) {
-		int psz = ctx_ptr_size(ctx);
+		int psz = fld_ptr_size(fld, ctx);
 		val->count = 1;
 		val->scalars = RZ_NEWS0(RzPfScalar, 1);
 		if (avail >= psz) {
-			val->ptr_addr = read_ptr(buf, off, avail, ctx);
-			val->scalars[0].v_str = deref_string(
+			val->ptr_addr = read_ptr(buf, off, avail, fld, ctx);
+			val->scalars[0].v_str = pf_deref_string(
 				ctx, val->ptr_addr, fld->encoding);
 		} else {
 			val->scalars[0].v_str = strdup("");
@@ -2563,19 +1931,19 @@ static int read_field(const RzPfField *fld, const ut8 *buf, int off,
 
 	/* Generic pointer (ctx endian) */
 	if (fld->type == RZ_PF_POINTER) {
-		int psz = ctx_ptr_size(ctx);
+		int psz = fld_ptr_size(fld, ctx);
 		val->count = 1;
 		val->scalars = RZ_NEWS0(RzPfScalar, 1);
 		if (avail >= psz) {
 			val->scalars[0].v_u64 = read_ptr(
-				buf, off, avail, ctx);
+				buf, off, avail, fld, ctx);
 		}
 		return snap_advance + psz;
 	}
 
 	/* ULEB128 */
 	if (fld->type == RZ_PF_ULEB128) {
-		int cnt = resolve_array_count(fld, st);
+		int cnt = pf_resolve_array_count(fld, st);
 		if (cnt < 1)
 			cnt = 1;
 		val->count = cnt;
@@ -2593,7 +1961,7 @@ static int read_field(const RzPfField *fld, const ut8 *buf, int off,
 
 	/* SLEB128 */
 	if (fld->type == RZ_PF_SLEB128) {
-		int cnt = resolve_array_count(fld, st);
+		int cnt = pf_resolve_array_count(fld, st);
 		if (cnt < 1)
 			cnt = 1;
 		val->count = cnt;
@@ -2611,7 +1979,7 @@ static int read_field(const RzPfField *fld, const ut8 *buf, int off,
 
 	/* Raw hex dump */
 	if (fld->type == RZ_PF_HEXDUMP) {
-		int n = resolve_array_count(fld, st);
+		int n = pf_resolve_array_count(fld, st);
 		if (n < 1)
 			n = 1;
 		int actual = RZ_MIN(n, avail);
@@ -2651,10 +2019,8 @@ static int read_field(const RzPfField *fld, const ut8 *buf, int off,
 	if (elem_sz <= 0) {
 		return snap_advance;
 	}
-	if ((fld->type == RZ_PF_ENUM || fld->type == RZ_PF_BITFIELD) && fld->bit_width >= 1 && fld->bit_width <= 8) {
-		elem_sz = fld->bit_width;
-	}
-	int cnt = resolve_array_count(fld, st);
+	elem_sz = pf_enum_bitfield_width(fld, elem_sz);
+	int cnt = pf_resolve_array_count(fld, st);
 	if (cnt < 1)
 		cnt = 1;
 	val->count = cnt;
@@ -2737,9 +2103,17 @@ RZ_API RZ_OWN RzPfValue *rz_pf_read(
 				off = 0;
 			}
 			st.n_siblings = idx - (int)(st.siblings - vals);
-			int c = read_field(&fmt->fields[fi], buf,
+			/* read_field computes val->offset = base_addr + off,
+			 * so we pass the full absolute byte offset (cur_off +
+			 * intra-iter off) as off, and the original base_addr
+			 * unchanged. Earlier this also added cur_off into the
+			 * base_addr, which double-counted the iteration offset
+			 * and broke the displayed addresses on rep>0 (the data
+			 * read was still correct because read_field uses the
+			 * off arg as its buf index). */
+			int c = pf_read_field(&fmt->fields[fi], buf,
 				cur_off + off, buf_len,
-				base_addr + cur_off, ctx, 0, &st, &vals[idx]);
+				base_addr, ctx, 0, &st, &vals[idx]);
 			idx++;
 			if (fmt->is_union) {
 				max_off = RZ_MAX(max_off, c);
@@ -2754,14 +2128,6 @@ RZ_API RZ_OWN RzPfValue *rz_pf_read(
 		*out_count = idx;
 	}
 	return vals;
-}
-
-static bool is_string_type(RzPfFieldType t) {
-	return t == RZ_PF_ZSTRING || t == RZ_PF_STRPTR;
-}
-
-static bool is_raw_type(RzPfFieldType t) {
-	return t == RZ_PF_HEXDUMP || t == RZ_PF_UINT128 || t == RZ_PF_GUID || t == RZ_PF_TLV;
 }
 
 /**
@@ -2797,1361 +2163,6 @@ RZ_API void rz_pf_values_free(RZ_NULLABLE RzPfValue *vals, int count) {
 		rz_pf_values_free(v->children, v->nchildren);
 	}
 	free(vals);
-}
-
-// Render helpers
-
-static bool field_matches(const RzPfValue *v, const char *field_filter) {
-	if (RZ_STR_ISEMPTY(field_filter)) {
-		return true;
-	}
-	return v->name && !strcmp(v->name, field_filter);
-}
-
-static void render_binary(RzStrBuf *sb, ut64 v, int bits) {
-	rz_strbuf_append(sb, "0b");
-	bool started = false;
-	for (int i = bits - 1; i >= 0; i--) {
-		int bit = (v >> i) & 1;
-		if (bit) {
-			started = true;
-		}
-		if (started || i < 8) {
-			rz_strbuf_appendf(sb, "%d", bit);
-			if (i > 0 && i % 4 == 0) {
-				rz_strbuf_append(sb, "_");
-			}
-		}
-	}
-}
-
-static void scalar_text(RzStrBuf *sb, const RzPfValue *val, int k,
-	const RzTypeDB *typedb) {
-	const RzPfScalar *s = &val->scalars[k];
-	switch (val->type) {
-	case RZ_PF_HEX8:
-		rz_strbuf_appendf(sb, "0x%02x", s->v_u8);
-		break;
-	case RZ_PF_HEX16:
-		rz_strbuf_appendf(sb, "0x%04x",
-			(unsigned)s->v_u16);
-		break;
-	case RZ_PF_HEX32:
-		rz_strbuf_appendf(sb, "0x%08x",
-			(unsigned)s->v_u32);
-		break;
-	case RZ_PF_HEX64:
-		rz_strbuf_appendf(sb, "0x%016" PFMT64x,
-			s->v_u64);
-		break;
-	case RZ_PF_DEC_S8:
-		rz_strbuf_appendf(sb, "%d", (int)s->v_s8);
-		break;
-	case RZ_PF_DEC_S16:
-		rz_strbuf_appendf(sb, "%d", (int)s->v_s16);
-		break;
-	case RZ_PF_DEC_S32:
-		rz_strbuf_appendf(sb, "%d", s->v_s32);
-		break;
-	case RZ_PF_DEC_S64:
-		rz_strbuf_appendf(sb, "%" PFMT64d, s->v_s64);
-		break;
-	case RZ_PF_DEC_U8:
-		rz_strbuf_appendf(sb, "%u",
-			(unsigned)s->v_u8);
-		break;
-	case RZ_PF_DEC_U16:
-		rz_strbuf_appendf(sb, "%u",
-			(unsigned)s->v_u16);
-		break;
-	case RZ_PF_DEC_U32:
-		rz_strbuf_appendf(sb, "%u",
-			(unsigned)s->v_u32);
-		break;
-	case RZ_PF_DEC_U64:
-		rz_strbuf_appendf(sb, "%" PFMT64u, s->v_u64);
-		break;
-	case RZ_PF_OCT8:
-		rz_strbuf_appendf(sb, "0o%03o",
-			(unsigned)s->v_u8);
-		break;
-	case RZ_PF_OCT16:
-		rz_strbuf_appendf(sb, "0o%06o",
-			(unsigned)s->v_u16);
-		break;
-	case RZ_PF_OCT32:
-		rz_strbuf_appendf(sb, "0o%011o",
-			(unsigned)s->v_u32);
-		break;
-	case RZ_PF_OCT64:
-		rz_strbuf_appendf(sb, "0o%022" PFMT64o,
-			s->v_u64);
-		break;
-	case RZ_PF_BIN8:
-		render_binary(sb, s->v_u8, 8);
-		break;
-	case RZ_PF_BIN16:
-		render_binary(sb, s->v_u16, 16);
-		break;
-	case RZ_PF_BIN32:
-		render_binary(sb, s->v_u32, 32);
-		break;
-	case RZ_PF_BIN64:
-		render_binary(sb, s->v_u64, 64);
-		break;
-	case RZ_PF_FLOAT16:
-		rz_strbuf_appendf(sb, "%.4g",
-			(double)s->v_f32);
-		break;
-	case RZ_PF_FLOAT32:
-		rz_strbuf_appendf(sb, "%.9g",
-			(double)s->v_f32);
-		break;
-	case RZ_PF_FLOAT64:
-		rz_strbuf_appendf(sb, "%.17g", s->v_f64);
-		break;
-	case RZ_PF_CHAR: {
-		ut8 c = s->v_u8;
-		rz_strbuf_appendf(sb, "'%c'",
-			(c >= 0x20 && c < 0x7f) ? c : '.');
-		break;
-	}
-	case RZ_PF_ZSTRING:
-	case RZ_PF_STRPTR: {
-		rz_strbuf_append(sb, "\"");
-		const char *str = s->v_str ? s->v_str : "";
-		for (const unsigned char *q = (const unsigned char *)str; *q; q++) {
-			if (*q >= 0x20 && *q < 0x7f && *q != '"' && *q != '\\') {
-				rz_strbuf_appendf(sb, "%c", *q);
-			} else if (*q == '"') {
-				rz_strbuf_append(sb, "\\\"");
-			} else if (*q == '\\') {
-				rz_strbuf_append(sb, "\\\\");
-			} else if (*q == '\n') {
-				rz_strbuf_append(sb, "\\n");
-			} else if (*q == '\r') {
-				rz_strbuf_append(sb, "\\r");
-			} else if (*q == '\t') {
-				rz_strbuf_append(sb, "\\t");
-			} else {
-				rz_strbuf_appendf(sb, "\\x%02x", *q);
-			}
-		}
-		rz_strbuf_append(sb, "\"");
-		break;
-	}
-	case RZ_PF_POINTER:
-		rz_strbuf_appendf(sb, "0x%" PFMT64x,
-			s->v_u64);
-		break;
-	case RZ_PF_ULEB128:
-		rz_strbuf_appendf(sb, "%" PFMT64u, s->v_u64);
-		break;
-	case RZ_PF_SLEB128:
-		rz_strbuf_appendf(sb, "%" PFMT64d, s->v_s64);
-		break;
-	case RZ_PF_ENUM: {
-		ut32 v = s->v_u32;
-		rz_strbuf_appendf(sb, "0x%08x", (unsigned)v);
-		/* Resolve the enum-member name via the typedb when the
-		 * field carries the enum type name and the renderer was
-		 * given a typedb. Output mirrors legacy `pf` so existing
-		 * users see the same `; SYMBOL` suffix:
-		 *
-		 *   class = 0x00000002 ; ELFCLASS64
-		 *
-		 * When the typedb has no member at the read value, no
-		 * suffix is appended -- the numeric output stands alone. */
-		if (typedb && val->type_name) {
-			const char *sym = rz_type_db_enum_member_by_val(
-				(RzTypeDB *)typedb, val->type_name, v);
-			if (sym && *sym) {
-				rz_strbuf_append(sb, " ; ");
-				rz_strbuf_append(sb, sym);
-			}
-		}
-		break;
-	}
-	case RZ_PF_BITFIELD: {
-		ut32 v = s->v_u32;
-		rz_strbuf_appendf(sb, "0x%08x", (unsigned)v);
-		if (val->bitflags && val->bitflag_count > 0) {
-			ut32 residual = v;
-			bool first = true;
-			rz_strbuf_append(sb, " : ");
-			for (int i = 0; i < val->bitflag_count; i++) {
-				ut32 fv = (ut32)val->bitflags[i].value;
-				if (fv && (v & fv) == fv) {
-					if (!first) {
-						rz_strbuf_append(sb, " | ");
-					}
-					rz_strbuf_append(sb,
-						val->bitflags[i].name);
-					residual &= ~fv;
-					first = false;
-				}
-			}
-			if (residual) {
-				if (!first) {
-					rz_strbuf_append(sb, " | ");
-				}
-				rz_strbuf_appendf(sb, "0x%x", residual);
-			} else if (first) {
-				rz_strbuf_append(sb, "0");
-			}
-		}
-		break;
-	}
-	case RZ_PF_BITS:
-		rz_strbuf_appendf(sb, "%" PFMT64u " (%d-bit)",
-			s->v_u64, val->bit_width);
-		break;
-	case RZ_PF_BITVEC:
-		/* Quiet rendering uses the same per-element loop as numeric
-		 * arrays, so each scalar is just the 0/1 bit. */
-		rz_strbuf_appendf(sb, "%d", (int)(s->v_u8 & 1));
-		break;
-	default:
-		rz_strbuf_append(sb, "?");
-		break;
-	}
-}
-
-/* Render a 16-byte GUID buffer with the canonical
- * xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx form, honoring the layout
- * variant stored on the value. */
-static void render_guid(RzStrBuf *sb, const ut8 *b, RzPfGuidLayout lay) {
-	if (!b) {
-		rz_strbuf_append(sb, "00000000-0000-0000-0000-000000000000");
-		return;
-	}
-	ut32 d1;
-	ut16 d2, d3;
-	switch (lay) {
-	case RZ_PF_GUID_BE:
-		d1 = rz_read_be32(b);
-		d2 = rz_read_be16(b + 4);
-		d3 = rz_read_be16(b + 6);
-		break;
-	case RZ_PF_GUID_LE:
-		d1 = rz_read_le32(b);
-		d2 = rz_read_le16(b + 4);
-		d3 = rz_read_le16(b + 6);
-		break;
-	case RZ_PF_GUID_MS:
-	default:
-		d1 = rz_read_le32(b);
-		d2 = rz_read_le16(b + 4);
-		d3 = rz_read_le16(b + 6);
-		break;
-	}
-	rz_strbuf_appendf(sb,
-		"%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-		(unsigned)d1, (unsigned)d2, (unsigned)d3,
-		b[8], b[9], b[10], b[11], b[12], b[13], b[14], b[15]);
-}
-
-static const char *endian_tag(RzPfEndian e) {
-	switch (e) {
-	case RZ_PF_ENDIAN_LE: return " [LE]";
-	case RZ_PF_ENDIAN_BE: return " [BE]";
-	default: return "";
-	}
-}
-
-// Render: text
-
-/* Per-render context that bundles the filter, palette, and the
- * sibling-name alignment width. The name_width is set by the parent
- * frame so that all values at one nesting level line up on the `=`
- * column. NULL fields mean "no filter" / "no color" / "no
- * alignment". A NULL ctx pointer is equivalent to a zero-initialised
- * one -- see WRAP() below. */
-typedef struct {
-	const char *field_filter;
-	const RzPfPalette *pal;
-	int name_width;
-	/* When true, format offsets as `+<delta>` from base_offset. */
-	bool short_offsets;
-	/* The format's base address. Used to compute deltas in short
-	 * mode; ignored otherwise. */
-	ut64 base_offset;
-	/* Optional typedb for enum-member name resolution. */
-	const RzTypeDB *typedb;
-} RenderCtx;
-
-/* Compute the max name width among the children of a value (or, at
- * top level, among a vector of values). Used to right-align names
- * within one nesting level so values line up on the `=` column. */
-static int compute_name_width(const RzPfValue *vals, int count) {
-	int max = 0;
-	for (int i = 0; i < count; i++) {
-		const RzPfValue *v = &vals[i];
-		if (v->type == RZ_PF_SKIP || v->type == RZ_PF_ALIGN) {
-			continue;
-		}
-		if (v->name) {
-			int n = (int)strlen(v->name);
-			if (n > max) {
-				max = n;
-			}
-		}
-	}
-	return max;
-}
-
-/* Emit \p color before \p body, then \p reset after, suppressing both
- * when either is NULL. Keeps the call sites compact. */
-static void emit_colored(RzStrBuf *sb, const char *color,
-	const char *body, const char *reset) {
-	if (color) {
-		rz_strbuf_append(sb, color);
-	}
-	rz_strbuf_append(sb, body);
-	if (color && reset) {
-		rz_strbuf_append(sb, reset);
-	}
-}
-
-/* Like emit_colored() but accepts a printf-formatted body. */
-RZ_PRINTF_CHECK(4, 5)
-static void emit_coloredf(RzStrBuf *sb, const char *color,
-	const char *reset, const char *fmt, ...) {
-	va_list ap;
-	char *body = NULL;
-	va_start(ap, fmt);
-	if (pf_vasprintf(&body, fmt, ap) < 0) {
-		body = NULL;
-	}
-	va_end(ap);
-	if (!body) {
-		return;
-	}
-	if (color) {
-		rz_strbuf_append(sb, color);
-	}
-	rz_strbuf_append(sb, body);
-	if (color && reset) {
-		rz_strbuf_append(sb, reset);
-	}
-	free(body);
-}
-
-static void render_val_text(RzStrBuf *sb, const RzPfValue *v,
-	int indent, const RenderCtx *rc) {
-	if (v->type == RZ_PF_SKIP) {
-		return;
-	}
-	if (v->type == RZ_PF_ALIGN) {
-		return;
-	}
-	const char *filter = rc ? rc->field_filter : NULL;
-	const RzPfPalette *pal = rc ? rc->pal : NULL;
-	const char *RST = pal ? pal->reset : NULL;
-	int name_w = rc ? rc->name_width : 0;
-	if (!field_matches(v, filter)) {
-		return;
-	}
-
-	for (int i = 0; i < indent; i++) {
-		rz_strbuf_append(sb, "   ");
-	}
-	/* New layout: `<addr> : <right-padded-name> = <value> [endian]`.
-	 *   - The address comes first so visually-aligned columns work
-	 *     when several lines are stacked.
-	 *   - The name is right-aligned within name_width so all `=`
-	 *     signs line up on a single column at this nesting level.
-	 *   - The endian tag (when explicit) follows the value so it
-	 *     does not push the value-column right.
-	 *   - Anonymous fields drop the `: name = ` part entirely and
-	 *     emit just `<addr> = <value>`.
-	 *   - When rc->short_offsets is set, the offset column shows
-	 *     `+<n>` (delta from rc->base_offset) or `   0` for the
-	 *     base. */
-	if (rc && rc->short_offsets) {
-		ut64 delta = v->offset >= rc->base_offset
-			? (v->offset - rc->base_offset)
-			: 0;
-		if (delta == 0) {
-			emit_coloredf(sb, pal ? pal->offset : NULL, RST,
-				"%4s", "0");
-		} else {
-			char buf[16];
-			snprintf(buf, sizeof(buf), "+%" PFMT64u, delta);
-			emit_coloredf(sb, pal ? pal->offset : NULL, RST,
-				"%4s", buf);
-		}
-	} else {
-		emit_coloredf(sb, pal ? pal->offset : NULL, RST,
-			"0x%08" PFMT64x, v->offset);
-	}
-	if (v->name) {
-		int pad = name_w - (int)strlen(v->name);
-		if (pad < 0) {
-			pad = 0;
-		}
-		rz_strbuf_append(sb, " : ");
-		for (int i = 0; i < pad; i++) {
-			rz_strbuf_append(sb, " ");
-		}
-		emit_colored(sb, pal ? pal->name : NULL, v->name, RST);
-	}
-
-	if (v->is_pointer) {
-		rz_strbuf_append(sb, " = (*");
-		emit_coloredf(sb, pal ? pal->hex_literal : NULL, RST,
-			"0x%" PFMT64x, v->ptr_addr);
-		rz_strbuf_append(sb, ")");
-		/* For pointer-to-string (`*z`), append the decoded body. */
-		if (v->type == RZ_PF_ZSTRING && v->scalars
-			&& v->scalars[0].v_str) {
-			rz_strbuf_append(sb, " \"");
-			rz_strbuf_append(sb, v->scalars[0].v_str);
-			rz_strbuf_append(sb, "\"");
-		}
-		rz_strbuf_append(sb, "\n");
-		return;
-	}
-
-	/* Struct: header line `<addr> : <name> = struct<typename> {`,
-	 * then children indented by one level with their own
-	 * sibling-alignment, then `}` on its own line at parent indent. */
-	if (v->type == RZ_PF_STRUCT && v->nchildren > 0) {
-		rz_strbuf_append(sb, " = struct<");
-		emit_colored(sb, pal ? pal->label : NULL,
-			v->type_name ? v->type_name : "anon", RST);
-		rz_strbuf_append(sb, "> {\n");
-		/* Recurse with filter cleared and child name_width
-		 * computed from the immediate children. */
-		RenderCtx sub = { .field_filter = NULL,
-			.pal = pal,
-			.name_width = compute_name_width(v->children, v->nchildren),
-			.short_offsets = rc ? rc->short_offsets : false,
-			.base_offset = rc ? rc->base_offset : 0,
-			.typedb = rc ? rc->typedb : NULL };
-		for (int c = 0; c < v->nchildren; c++) {
-			render_val_text(sb, &v->children[c], indent + 1, &sub);
-		}
-		for (int i = 0; i < indent; i++) {
-			rz_strbuf_append(sb, "   ");
-		}
-		rz_strbuf_append(sb, "}\n");
-		return;
-	}
-
-	rz_strbuf_append(sb, " = ");
-
-	/* Overflow indicator: when the read of an inline string ran off
-	 * the end of the buffer without finding NUL (e.g. unmapped memory
-	 * with io.unalloc=true filling the tail with 0xff), prefix the
-	 * value with `ovf ` so the caller knows the displayed body was
-	 * truncated. Matches the legacy parser's behaviour. */
-	if (v->overflow && (v->type == RZ_PF_ZSTRING || v->type == RZ_PF_STRPTR)) {
-		rz_strbuf_append(sb, "ovf ");
-	}
-
-	/* GUID */
-	if (v->type == RZ_PF_GUID && v->scalars && v->scalars[0].v_raw) {
-		/* GUID rendering goes through render_guid which uses raw
-		 * sprintf into the strbuf. Wrap the whole thing in color. */
-		if (pal && pal->hex_literal) {
-			rz_strbuf_append(sb, pal->hex_literal);
-		}
-		render_guid(sb, v->scalars[0].v_raw, v->guid_layout);
-		if (pal && pal->hex_literal && RST) {
-			rz_strbuf_append(sb, RST);
-		}
-		rz_strbuf_append(sb, "\n");
-		return;
-	}
-
-	/* TLV: emit header line, then recurse into children if any,
-	 * otherwise dump raw bytes. */
-	if (v->type == RZ_PF_TLV) {
-		rz_strbuf_append(sb, "tag=");
-		emit_coloredf(sb, pal ? pal->hex_literal : NULL, RST,
-			"0x%" PFMT64x, v->tlv_tag);
-		rz_strbuf_appendf(sb, " len=%" PFMT64u "\n", v->tlv_length);
-		RenderCtx sub = { .field_filter = NULL,
-			.pal = pal,
-			.typedb = rc ? rc->typedb : NULL };
-		if (v->nchildren > 0) {
-			for (int c = 0; c < v->nchildren; c++) {
-				render_val_text(sb, &v->children[c],
-					indent + 1, &sub);
-			}
-		} else if (v->scalars && v->scalars[0].v_raw && v->raw_len > 0) {
-			for (int i = 0; i < indent + 1; i++) {
-				rz_strbuf_append(sb, "  ");
-			}
-			for (int k = 0; k < v->raw_len; k++) {
-				if (k) {
-					rz_strbuf_append(sb, " ");
-				}
-				rz_strbuf_appendf(sb, "%02x",
-					v->scalars[0].v_raw[k]);
-			}
-			rz_strbuf_append(sb, "\n");
-		}
-		return;
-	}
-
-	/* Raw / uint128 */
-	if (is_raw_type(v->type) && v->scalars && v->scalars[0].v_raw) {
-		for (int k = 0; k < v->raw_len; k++) {
-			if (k) {
-				rz_strbuf_append(sb, " ");
-			}
-			rz_strbuf_appendf(sb, "%02x",
-				v->scalars[0].v_raw[k]);
-		}
-		rz_strbuf_append(sb, "\n");
-		return;
-	}
-
-	/* Bitvector -- render N bits as `[ 1 0 1 1 0 0 1 0 | 1 1 0 0 ]`
-	 * with a `|` separator every 8 bits for readability, and an
-	 * `(N-bit)` suffix for orientation. */
-	if (v->type == RZ_PF_BITVEC) {
-		rz_strbuf_append(sb, "[ ");
-		for (int k = 0; k < v->count; k++) {
-			if (k && (k % 8) == 0) {
-				rz_strbuf_append(sb, "| ");
-			}
-			rz_strbuf_appendf(sb, "%d ",
-				(int)v->scalars[k].v_u8);
-		}
-		rz_strbuf_appendf(sb, "] (%d-bit)\n", v->bit_width);
-		return;
-	}
-
-	/* Timestamp */
-	if (v->type == RZ_PF_TIMESTAMP) {
-		rz_strbuf_appendf(sb, "[%s]",
-			rz_pf_timefmt_as_string(v->timefmt));
-		emit_coloredf(sb, pal ? pal->endian : NULL, RST,
-			"%s", endian_tag(v->endian));
-		if (v->count >= 1 && v->scalars) {
-			rz_strbuf_append(sb, " ");
-			if (v->count > 1) {
-				rz_strbuf_append(sb, "[ ");
-				for (int k = 0; k < v->count; k++) {
-					if (k) {
-						rz_strbuf_append(sb, ", ");
-					}
-					rz_pf_timestamp_format_str(sb, v->timefmt,
-						&v->scalars[k]);
-				}
-				rz_strbuf_append(sb, " ]");
-			} else {
-				rz_pf_timestamp_format_str(sb, v->timefmt,
-					&v->scalars[0]);
-			}
-		}
-		rz_strbuf_append(sb, "\n");
-		return;
-	}
-
-	/* Pristine omits the endian/encoding tags inline; they're
-	 * implicit in the spec. Keeping them suppressed preserves the
-	 * `<addr> = <value>` shape that integration tests assert on. */
-
-	/* Array or scalar. The renderer colours hex literals (0x...)
-	 * after the fact by scanning the appended text; this keeps the
-	 * scalar_text() helper free of palette plumbing. */
-	int mark = (int)rz_strbuf_length(sb);
-	if (v->count > 1 && v->scalars) {
-		rz_strbuf_append(sb, "[ ");
-		for (int k = 0; k < v->count; k++) {
-			if (k) {
-				rz_strbuf_append(sb, ", ");
-			}
-			scalar_text(sb, v, k, rc ? rc->typedb : NULL);
-		}
-		rz_strbuf_append(sb, " ]");
-	} else if (v->count == 1 && v->scalars) {
-		scalar_text(sb, v, 0, rc ? rc->typedb : NULL);
-	}
-
-	/* Colorize 0x... literals in the scalar output. */
-	if (pal && pal->hex_literal) {
-		char *cur = (char *)rz_strbuf_get(sb);
-		int len = (int)rz_strbuf_length(sb);
-		if (cur && len > mark) {
-			char *tail = strdup(cur + mark);
-			if (tail) {
-				rz_strbuf_slice(sb, 0, mark);
-				const char *p = tail;
-				while (*p) {
-					if (p[0] == '0' && p[1] == 'x' && isxdigit((ut8)p[2])) {
-						const char *end = p + 2;
-						while (isxdigit((ut8)*end)) {
-							end++;
-						}
-						char *hx = rz_str_ndup(p, end - p);
-						emit_colored(sb, pal->hex_literal, hx, RST);
-						free(hx);
-						p = end;
-					} else {
-						rz_strbuf_appendf(sb, "%c", *p);
-						p++;
-					}
-				}
-				free(tail);
-			}
-		}
-	}
-	/* Trailing endian tag (when explicit). Placed AFTER the value
-	 * so it doesn't disturb the `=`-column alignment. The
-	 * endian_tag() returns its own leading space. */
-	if (v->endian == RZ_PF_ENDIAN_LE || v->endian == RZ_PF_ENDIAN_BE) {
-		emit_coloredf(sb, pal ? pal->endian : NULL, RST,
-			"%s", endian_tag(v->endian));
-	}
-	/* When the field type didn't produce a value (e.g. an unknown
-	 * inline type like "pf"), strip the dangling trailing space
-	 * before the newline so the EXPECT output is clean. */
-	{
-		const char *buf = rz_strbuf_get(sb);
-		int len = (int)rz_strbuf_length(sb);
-		if (buf && len > 0 && buf[len - 1] == ' ') {
-			rz_strbuf_slice(sb, 0, len - 1);
-		}
-	}
-	rz_strbuf_append(sb, "\n");
-}
-
-static char *render_text(const RzPfValue *vals, int count,
-	const RenderCtx *rc) {
-	RzStrBuf *sb = rz_strbuf_new("");
-	/* Compute the top-level name-alignment width once. The caller's
-	 * RenderCtx (if any) is augmented with this width so each
-	 * render_val_text call right-aligns its name to the same column. */
-	RenderCtx top = {
-		.field_filter = rc ? rc->field_filter : NULL,
-		.pal = rc ? rc->pal : NULL,
-		.name_width = compute_name_width(vals, count),
-		.short_offsets = rc ? rc->short_offsets : false,
-		.base_offset = rc ? rc->base_offset
-			: (count > 0 ? vals[0].offset : 0),
-		.typedb = rc ? rc->typedb : NULL,
-	};
-	for (int i = 0; i < count; i++) {
-		render_val_text(sb, &vals[i], 0, &top);
-	}
-	return rz_strbuf_drain(sb);
-}
-
-// Render: quiet (compact) mode
-static char *render_quiet(const RzPfValue *vals, int count,
-	const RenderCtx *rc) {
-	const char *filter = rc ? rc->field_filter : NULL;
-	RzStrBuf *sb = rz_strbuf_new("");
-	for (int i = 0; i < count; i++) {
-		const RzPfValue *v = &vals[i];
-		if (v->type == RZ_PF_SKIP) {
-			continue;
-		}
-		if (v->type == RZ_PF_ALIGN) {
-			continue;
-		}
-		if (!field_matches(v, filter)) {
-			continue;
-		}
-		if (v->type == RZ_PF_TIMESTAMP && v->count >= 1 && v->scalars) {
-			rz_pf_timestamp_format_str(sb, v->timefmt,
-				&v->scalars[0]);
-		} else if (v->type == RZ_PF_GUID && v->scalars && v->scalars[0].v_raw) {
-			render_guid(sb, v->scalars[0].v_raw, v->guid_layout);
-		} else if (v->type == RZ_PF_TLV) {
-			rz_strbuf_appendf(sb,
-				"0x%" PFMT64x ":%" PFMT64u,
-				v->tlv_tag, v->tlv_length);
-		} else if (v->count >= 1 && v->scalars) {
-			for (int k = 0; k < v->count; k++) {
-				if (k) {
-					rz_strbuf_append(sb, " ");
-				}
-				scalar_text(sb, v, k, rc ? rc->typedb : NULL);
-			}
-		}
-		rz_strbuf_append(sb, "\n");
-	}
-	return rz_strbuf_drain(sb);
-}
-
-// Render: JSON mode
-static void scalar_json(PJ *j, const RzPfValue *val, int k) {
-	const RzPfScalar *s = &val->scalars[k];
-	switch (val->type) {
-	case RZ_PF_HEX8:
-	case RZ_PF_DEC_U8:
-	case RZ_PF_OCT8:
-	case RZ_PF_BIN8:
-		pj_n(j, s->v_u8);
-		break;
-	case RZ_PF_HEX16:
-	case RZ_PF_DEC_U16:
-	case RZ_PF_OCT16:
-	case RZ_PF_BIN16:
-		pj_n(j, s->v_u16);
-		break;
-	case RZ_PF_HEX32:
-	case RZ_PF_DEC_U32:
-	case RZ_PF_OCT32:
-	case RZ_PF_BIN32:
-	case RZ_PF_ENUM:
-	case RZ_PF_BITFIELD:
-		pj_n(j, s->v_u32);
-		break;
-	case RZ_PF_HEX64:
-	case RZ_PF_DEC_U64:
-	case RZ_PF_OCT64:
-	case RZ_PF_BIN64:
-	case RZ_PF_POINTER:
-	case RZ_PF_ULEB128:
-		pj_n(j, s->v_u64);
-		break;
-	case RZ_PF_DEC_S8: pj_N(j, s->v_s8); break;
-	case RZ_PF_DEC_S16: pj_N(j, s->v_s16); break;
-	case RZ_PF_DEC_S32: pj_N(j, s->v_s32); break;
-	case RZ_PF_DEC_S64:
-	case RZ_PF_SLEB128:
-		pj_N(j, s->v_s64);
-		break;
-	case RZ_PF_FLOAT16:
-	case RZ_PF_FLOAT32:
-		pj_d(j, (double)s->v_f32);
-		break;
-	case RZ_PF_FLOAT64:
-		pj_d(j, s->v_f64);
-		break;
-	case RZ_PF_CHAR: {
-		char cs[2] = { (s->v_u8 >= 0x20 && s->v_u8 < 0x7f)
-				? (char)s->v_u8
-				: '.',
-			'\0' };
-		pj_s(j, cs);
-		break;
-	}
-	case RZ_PF_ZSTRING:
-	case RZ_PF_STRPTR:
-		pj_s(j, s->v_str ? s->v_str : "");
-		break;
-	case RZ_PF_BITS:
-		pj_n(j, s->v_u64);
-		break;
-	default:
-		pj_null(j);
-		break;
-	}
-}
-
-static void render_val_json(PJ *j, const RzPfValue *v,
-	const char *field_filter) {
-	if (v->type == RZ_PF_SKIP) {
-		return;
-	}
-	if (v->type == RZ_PF_ALIGN) {
-		return;
-	}
-	if (!field_matches(v, field_filter)) {
-		return;
-	}
-
-	pj_o(j);
-	if (v->name) {
-		pj_ks(j, "name", v->name);
-	}
-	pj_ks(j, "type", type_repr_name(v->type));
-
-	/* Size */
-	if (v->type == RZ_PF_TIMESTAMP) {
-		pj_ki(j, "size", rz_pf_timefmt_size(v->timefmt));
-	} else {
-		int sz = rz_pf_field_size(v->type);
-		if (sz > 0) {
-			pj_ki(j, "size", sz);
-		}
-	}
-
-	pj_kn(j, "offset", v->offset);
-
-	/* Endianness metadata (only for explicit LE/BE) */
-	if (v->endian == RZ_PF_ENDIAN_LE || v->endian == RZ_PF_ENDIAN_BE) {
-		pj_ks(j, "endian", endian_str(v->endian));
-	}
-
-	/* String encoding */
-	if (is_string_type(v->type)) {
-		pj_ks(j, "encoding",
-			rz_str_enc_as_string(v->encoding));
-	}
-
-	/* Timestamp: dual raw + formatted */
-	if (v->type == RZ_PF_TIMESTAMP) {
-		pj_ks(j, "timefmt",
-			rz_pf_timefmt_as_string(v->timefmt));
-
-		/* Raw */
-		pj_k(j, "raw");
-		if (v->count > 1) {
-			pj_a(j);
-			for (int k = 0; k < v->count; k++) {
-				const RzPfScalar *s = &v->scalars[k];
-				if (rz_pf_timefmt_is_float(v->timefmt)) {
-					pj_d(j, s->v_f64);
-				} else if (rz_pf_timefmt_size(v->timefmt) == 4) {
-					pj_n(j, s->v_u32);
-				} else {
-					pj_n(j, s->v_u64);
-				}
-			}
-			pj_end(j);
-		} else if (v->count == 1) {
-			const RzPfScalar *s = &v->scalars[0];
-			if (rz_pf_timefmt_is_float(v->timefmt)) {
-				pj_d(j, s->v_f64);
-			} else if (rz_pf_timefmt_size(v->timefmt) == 4) {
-				pj_n(j, s->v_u32);
-			} else {
-				pj_n(j, s->v_u64);
-			}
-		}
-
-		/* Formatted */
-		pj_k(j, "value");
-		if (v->count > 1) {
-			pj_a(j);
-			for (int k = 0; k < v->count; k++) {
-				RzStrBuf *tmp = rz_strbuf_new("");
-				rz_pf_timestamp_format_str(tmp, v->timefmt,
-					&v->scalars[k]);
-				pj_s(j, rz_strbuf_get(tmp));
-				rz_strbuf_free(tmp);
-			}
-			pj_end(j);
-		} else if (v->count == 1) {
-			RzStrBuf *tmp = rz_strbuf_new("");
-			rz_pf_timestamp_format_str(tmp, v->timefmt,
-				&v->scalars[0]);
-			pj_s(j, rz_strbuf_get(tmp));
-			rz_strbuf_free(tmp);
-		}
-		pj_end(j);
-		return;
-	}
-
-	if (v->is_pointer) {
-		pj_kn(j, "pointer", v->ptr_addr);
-		pj_end(j);
-		return;
-	}
-
-	/* Struct */
-	if (v->type == RZ_PF_STRUCT && v->nchildren > 0) {
-		if (v->type_name) {
-			pj_ks(j, "struct_type", v->type_name);
-		}
-		pj_k(j, "fields");
-		pj_a(j);
-		for (int c = 0; c < v->nchildren; c++) {
-			render_val_json(j, &v->children[c], NULL);
-		}
-		pj_end(j);
-		pj_end(j);
-		return;
-	}
-
-	/* GUID */
-	if (v->type == RZ_PF_GUID && v->scalars && v->scalars[0].v_raw) {
-		RzStrBuf *tmp = rz_strbuf_new("");
-		render_guid(tmp, v->scalars[0].v_raw, v->guid_layout);
-		pj_ks(j, "value", rz_strbuf_get(tmp));
-		rz_strbuf_free(tmp);
-		pj_end(j);
-		return;
-	}
-
-	/* Bitvector -- compact as a string of '0'/'1' so consumers can
-	 * regex-match runs without iterating an array. Also include the
-	 * bit width as a sibling field so size info isn't lost. */
-	if (v->type == RZ_PF_BITVEC) {
-		pj_kn(j, "bit_width", v->bit_width);
-		char *bits = malloc(v->count + 1);
-		if (bits) {
-			for (int k = 0; k < v->count; k++) {
-				bits[k] = '0' + (v->scalars[k].v_u8 & 1);
-			}
-			bits[v->count] = '\0';
-			pj_ks(j, "value", bits);
-			free(bits);
-		}
-		pj_end(j);
-		return;
-	}
-
-	/* TLV */
-	if (v->type == RZ_PF_TLV) {
-		pj_kn(j, "tag", v->tlv_tag);
-		pj_kn(j, "length", v->tlv_length);
-		if (v->nchildren > 0) {
-			pj_k(j, "fields");
-			pj_a(j);
-			for (int c = 0; c < v->nchildren; c++) {
-				render_val_json(j, &v->children[c], NULL);
-			}
-			pj_end(j);
-		} else if (v->scalars && v->scalars[0].v_raw) {
-			pj_k(j, "value");
-			pj_a(j);
-			for (int k = 0; k < v->raw_len; k++) {
-				pj_n(j, v->scalars[0].v_raw[k]);
-			}
-			pj_end(j);
-		}
-		pj_end(j);
-		return;
-	}
-
-	/* Bitfield with inline named flags */
-	if (v->type == RZ_PF_BITFIELD && v->bitflags && v->bitflag_count > 0 && v->count == 1 && v->scalars) {
-		ut32 bv = v->scalars[0].v_u32;
-		pj_kn(j, "value", bv);
-		pj_k(j, "flags");
-		pj_a(j);
-		for (int i = 0; i < v->bitflag_count; i++) {
-			ut32 fv = (ut32)v->bitflags[i].value;
-			if (fv && (bv & fv) == fv) {
-				pj_s(j, v->bitflags[i].name);
-			}
-		}
-		pj_end(j);
-		pj_end(j);
-		return;
-	}
-
-	/* Raw */
-	if (is_raw_type(v->type) && v->scalars && v->scalars[0].v_raw) {
-		pj_k(j, "value");
-		pj_a(j);
-		for (int k = 0; k < v->raw_len; k++) {
-			pj_n(j, v->scalars[0].v_raw[k]);
-		}
-		pj_end(j);
-		pj_end(j);
-		return;
-	}
-
-	/* Scalar / array */
-	pj_k(j, "value");
-	if (v->count > 1 && v->scalars) {
-		pj_a(j);
-		for (int k = 0; k < v->count; k++) {
-			scalar_json(j, v, k);
-		}
-		pj_end(j);
-	} else if (v->count == 1 && v->scalars) {
-		scalar_json(j, v, 0);
-	} else {
-		pj_null(j);
-	}
-	pj_end(j);
-}
-
-/**
- * \brief Build a JSON document from an array of values.
- *
- * \param vals Array from rz_pf_read(); must not be NULL.
- * \param count Number of entries in \p vals.
- * \param opts Optional render-time parameters; only field_filter is
- *             consulted (palette has no effect on JSON).
- * \return Newly-allocated PJ. Caller frees with pj_free(). Returns
- *         NULL on allocation failure.
- */
-RZ_API RZ_OWN PJ *rz_pf_render_json(
-	RZ_BORROW const RzPfValue *vals, int count,
-	RZ_NULLABLE const RzPfRenderOpts *opts) {
-	rz_return_val_if_fail(vals, NULL);
-	const char *filter = opts ? opts->field_filter : NULL;
-	PJ *j = pj_new();
-	if (!j) {
-		return NULL;
-	}
-	pj_a(j);
-	for (int i = 0; i < count; i++) {
-		render_val_json(j, &vals[i], filter);
-	}
-	pj_end(j);
-	return j;
-}
-
-// Render: C struct
-
-static void render_val_cstruct(RzStrBuf *sb, const RzPfValue *v,
-	int indent, const char *field_filter) {
-	if (v->type == RZ_PF_SKIP) {
-		return;
-	}
-	if (v->type == RZ_PF_ALIGN) {
-		return;
-	}
-	if (!field_matches(v, field_filter)) {
-		return;
-	}
-	const char *pad = "    ";
-	for (int i = 0; i < indent; i++) {
-		rz_strbuf_append(sb, pad);
-	}
-	const char *name = v->name ? v->name : "field";
-
-	if (v->type == RZ_PF_STRUCT && v->nchildren > 0) {
-		rz_strbuf_appendf(sb, "struct %s {\n",
-			v->type_name ? v->type_name : "");
-		for (int c = 0; c < v->nchildren; c++) {
-			render_val_cstruct(sb, &v->children[c],
-				indent + 1, NULL);
-		}
-		for (int i = 0; i < indent; i++) {
-			rz_strbuf_append(sb, pad);
-		}
-		rz_strbuf_appendf(sb, "} %s;\n", name);
-		return;
-	}
-
-	const char *ct = (v->type == RZ_PF_TIMESTAMP)
-		? rz_pf_timefmt_ctype(v->timefmt)
-		: rz_pf_field_ctype(v->type);
-
-	if (v->count > 1) {
-		rz_strbuf_appendf(sb, "%s %s[%d];", ct, name, v->count);
-	} else {
-		rz_strbuf_appendf(sb, "%s %s;", ct, name);
-	}
-
-	rz_strbuf_append(sb, " /* ");
-	if (v->endian == RZ_PF_ENDIAN_LE || v->endian == RZ_PF_ENDIAN_BE) {
-		rz_strbuf_appendf(sb, "%s, ",
-			endian_str(v->endian));
-	}
-	if (v->is_pointer) {
-		rz_strbuf_appendf(sb, "*0x%" PFMT64x, v->ptr_addr);
-	} else if (v->type == RZ_PF_TIMESTAMP && v->count >= 1 && v->scalars) {
-		rz_pf_timestamp_format_str(sb, v->timefmt, &v->scalars[0]);
-	} else if (v->count >= 1 && v->scalars && !is_raw_type(v->type)) {
-		int lim = RZ_MIN(v->count, 6);
-		for (int k = 0; k < lim; k++) {
-			if (k) {
-				rz_strbuf_append(sb, ", ");
-			}
-			scalar_text(sb, v, k, NULL);
-		}
-		if (v->count > 6) {
-			rz_strbuf_append(sb, ", ...");
-		}
-	}
-	rz_strbuf_append(sb, " */\n");
-}
-
-static char *render_cstruct(const RzPfValue *vals, int count,
-	const char *field_filter, const char *label) {
-	RzStrBuf *sb = rz_strbuf_new(NULL);
-	if (label && *label) {
-		/* The legacy renderer emitted `struct <name> {` when the
-		 * caller invoked `pfc <name>` on a typedb-registered format.
-		 * Reproduce that form so consumers that parse `pfc` output
-		 * (or just eyeball it) still see the format name. */
-		rz_strbuf_appendf(sb, "struct %s {\n", label);
-	} else {
-		rz_strbuf_append(sb, "struct {\n");
-	}
-	for (int i = 0; i < count; i++) {
-		render_val_cstruct(sb, &vals[i], 1, field_filter);
-	}
-	rz_strbuf_append(sb, "};\n");
-	return rz_strbuf_drain(sb);
-}
-
-// Render: dot graph (Graphviz `digraph` record nodes)
-
-/* Map a field type to the single-character glyph the legacy dot
- * renderer emits in the "type" column of each record cell. The
- * glyph is purely cosmetic -- anyone consuming the dot output for
- * layout cares about the structure, not the letter. */
-static char dot_type_glyph(RzPfFieldType t) {
-	switch (t) {
-	case RZ_PF_HEX8: return 'x';
-	case RZ_PF_HEX16: return 'w';
-	case RZ_PF_HEX32: return 'x';
-	case RZ_PF_HEX64: return 'q';
-	case RZ_PF_DEC_S8:
-	case RZ_PF_DEC_S16:
-	case RZ_PF_DEC_S32:
-	case RZ_PF_DEC_S64: return 'i';
-	case RZ_PF_DEC_U8:
-	case RZ_PF_DEC_U16:
-	case RZ_PF_DEC_U32:
-	case RZ_PF_DEC_U64: return 'd';
-	case RZ_PF_OCT8:
-	case RZ_PF_OCT16:
-	case RZ_PF_OCT32:
-	case RZ_PF_OCT64: return 'o';
-	case RZ_PF_BIN8:
-	case RZ_PF_BIN16:
-	case RZ_PF_BIN32:
-	case RZ_PF_BIN64: return 'b';
-	case RZ_PF_FLOAT16:
-	case RZ_PF_FLOAT32: return 'f';
-	case RZ_PF_FLOAT64: return 'F';
-	case RZ_PF_CHAR: return 'c';
-	case RZ_PF_POINTER: return 'p';
-	case RZ_PF_UINT128: return 'Q';
-	case RZ_PF_HEXDUMP: return 'r';
-	case RZ_PF_ULEB128: return 'U';
-	case RZ_PF_SLEB128: return 'L';
-	case RZ_PF_ZSTRING: return 'z';
-	case RZ_PF_STRPTR: return 's';
-	case RZ_PF_TIMESTAMP: return 't';
-	case RZ_PF_ENUM: return 'E';
-	case RZ_PF_BITFIELD: return 'B';
-	case RZ_PF_STRUCT: return '?';
-	case RZ_PF_GUID: return 'G';
-	case RZ_PF_BITS: return ':';
-	case RZ_PF_BITVEC: return 'v';
-	case RZ_PF_TLV: return 'V';
-	case RZ_PF_ALIGN: return '@';
-	case RZ_PF_SKIP: return '.';
-	}
-	return '?';
-}
-
-/* Escape a character for dot-record `label="..."` syntax. Characters
- * that need escaping in record fields: " \ | { } < > ; backslash. */
-static void dot_emit_escaped(RzStrBuf *sb, const char *s) {
-	if (!s) {
-		return;
-	}
-	for (const char *p = s; *p; p++) {
-		switch (*p) {
-		case '"':
-		case '\\':
-		case '|':
-		case '{':
-		case '}':
-		case '<':
-		case '>':
-			rz_strbuf_append(sb, "\\");
-			/* fallthrough */
-		default:
-			rz_strbuf_appendf(sb, "%c", *p);
-		}
-	}
-}
-
-/* Render one cell value (the "value" column) for a field. Used by
- * the column-aligned DOT renderer. */
-static void render_dot_value_cell(RzStrBuf *sb, const RzPfValue *v) {
-	if (v->is_pointer) {
-		rz_strbuf_appendf(sb, "*0x%" PFMT64x, v->ptr_addr);
-		return;
-	}
-	if (v->type == RZ_PF_STRUCT && v->nchildren > 0) {
-		rz_strbuf_appendf(sb, "%s",
-			v->type_name ? v->type_name : "struct");
-		return;
-	}
-	if (v->type == RZ_PF_BITFIELD && v->bitflags && v->bitflag_count > 0 && v->count == 1 && v->scalars) {
-		const char *tn = v->type_name ? v->type_name : "";
-		ut32 bv = v->scalars[0].v_u32;
-		bool first = true;
-		for (int i = 0; i < v->bitflag_count; i++) {
-			ut32 fv = (ut32)v->bitflags[i].value;
-			if (fv && (bv & fv) == fv) {
-				if (!first) {
-					rz_strbuf_append(sb, ", ");
-				}
-				if (*tn) {
-					rz_strbuf_appendf(sb, "%s.", tn);
-				}
-				dot_emit_escaped(sb, v->bitflags[i].name);
-				first = false;
-			}
-		}
-		if (first) {
-			rz_strbuf_appendf(sb, "0x%x", (unsigned)bv);
-		}
-		return;
-	}
-	if (v->type == RZ_PF_ZSTRING && v->scalars && v->scalars[0].v_str) {
-		rz_strbuf_append(sb, "\\\"");
-		dot_emit_escaped(sb, v->scalars[0].v_str);
-		rz_strbuf_append(sb, "\\\"");
-		return;
-	}
-	if (v->type == RZ_PF_GUID && v->scalars && v->scalars[0].v_raw) {
-		render_guid(sb, v->scalars[0].v_raw, v->guid_layout);
-		return;
-	}
-	if (v->type == RZ_PF_TIMESTAMP && v->count >= 1 && v->scalars) {
-		RzStrBuf *tmp = rz_strbuf_new("");
-		rz_pf_timestamp_format_str(tmp, v->timefmt,
-			&v->scalars[0]);
-		char *s = rz_strbuf_drain(tmp);
-		dot_emit_escaped(sb, s);
-		free(s);
-		return;
-	}
-	if (v->type == RZ_PF_TLV) {
-		rz_strbuf_appendf(sb, "tag=0x%" PFMT64x " len=%" PFMT64u,
-			v->tlv_tag, v->tlv_length);
-		return;
-	}
-	if (v->scalars && v->count >= 1) {
-		RzStrBuf *tmp = rz_strbuf_new("");
-		scalar_text(tmp, v, 0, NULL);
-		char *s = rz_strbuf_drain(tmp);
-		dot_emit_escaped(sb, s);
-		free(s);
-	}
-}
-
-/* Predicate: a field is rendered in DOT if it's not a skip/align and
- * passes the optional name filter. */
-static bool dot_field_visible(const RzPfValue *v, const char *field_filter) {
-	if (v->type == RZ_PF_SKIP) {
-		return false;
-	}
-	if (v->type == RZ_PF_ALIGN) {
-		return false;
-	}
-	return field_matches(v, field_filter);
-}
-
-static char *render_dot(const RzPfValue *vals, int count,
-	const char *graph_label, const char *field_filter) {
-	RzStrBuf *sb = rz_strbuf_new(
-		"digraph g { graph [ rank=same; rankdir=LR; ];\n"
-		"root [ rank=1; shape=record\n"
-		"label=\"");
-	const char *label = (graph_label && *graph_label)
-		? graph_label
-		: "root";
-	dot_emit_escaped(sb, label);
-
-	/* Count visible top-level fields so we can produce aligned
-	 * columns. The DOT record format `{a|b|c}|{d|e|f}` is laid
-	 * out by Graphviz as two rows whose cells line up when each
-	 * group has the same number of entries. We exploit that to
-	 * make a per-column table (offset / type / name / value). */
-	int visible = 0;
-	for (int i = 0; i < count; i++) {
-		if (dot_field_visible(&vals[i], field_filter)) {
-			visible++;
-		}
-	}
-	if (visible == 0) {
-		rz_strbuf_append(sb, "\"];\n}\n");
-		return rz_strbuf_drain(sb);
-	}
-
-	/* Row 1: offsets */
-	rz_strbuf_append(sb, "|{offset");
-	for (int i = 0; i < count; i++) {
-		const RzPfValue *v = &vals[i];
-		if (!dot_field_visible(v, field_filter)) {
-			continue;
-		}
-		rz_strbuf_appendf(sb, "|0x%" PFMT64x, v->offset);
-	}
-	rz_strbuf_append(sb, "}");
-
-	/* Row 2: type glyphs */
-	rz_strbuf_append(sb, "|{type");
-	for (int i = 0; i < count; i++) {
-		const RzPfValue *v = &vals[i];
-		if (!dot_field_visible(v, field_filter)) {
-			continue;
-		}
-		rz_strbuf_appendf(sb, "|%c", dot_type_glyph(v->type));
-	}
-	rz_strbuf_append(sb, "}");
-
-	/* Row 3: field names (with port anchors for external edges) */
-	rz_strbuf_append(sb, "|{name");
-	for (int i = 0; i < count; i++) {
-		const RzPfValue *v = &vals[i];
-		if (!dot_field_visible(v, field_filter)) {
-			continue;
-		}
-		rz_strbuf_append(sb, "|");
-		if (v->name) {
-			rz_strbuf_appendf(sb, "<%s>%s", v->name, v->name);
-		}
-	}
-	rz_strbuf_append(sb, "}");
-
-	/* Row 4: decoded values */
-	rz_strbuf_append(sb, "|{value");
-	for (int i = 0; i < count; i++) {
-		const RzPfValue *v = &vals[i];
-		if (!dot_field_visible(v, field_filter)) {
-			continue;
-		}
-		rz_strbuf_append(sb, "|");
-		render_dot_value_cell(sb, v);
-	}
-	rz_strbuf_append(sb, "}");
-
-	rz_strbuf_append(sb, "\"];\n}\n");
-	return rz_strbuf_drain(sb);
-}
-
-// Unified render dispatcher
-/**
- * \brief Render an array of values to a string in the given mode.
- *
- * \param vals Array from rz_pf_read(); must not be NULL.
- * \param count Number of entries.
- * \param mode Output mode: TEXT (default), JSON, CSTRUCT, QUIET, DOT.
- *             WRITE mode is handled separately by the bridge.
- * \param opts Optional render-time parameters (field filter, graph
- *             label, palette). NULL = defaults.
- * \return Newly-allocated string. Caller frees. Returns NULL if
- *         allocation fails or \p count is non-positive.
- */
-RZ_API RZ_OWN char *rz_pf_render(
-	RZ_BORROW const RzPfValue *vals, int count,
-	RzPfMode mode, RZ_NULLABLE const RzPfRenderOpts *opts) {
-	rz_return_val_if_fail(vals && count > 0, NULL);
-	const char *filter = opts ? opts->field_filter : NULL;
-	const char *label = opts ? opts->graph_label : NULL;
-	const RzPfPalette *pal = opts ? opts->palette : NULL;
-	const RzTypeDB *typedb = opts ? opts->typedb : NULL;
-	bool short_off = opts ? opts->short_offsets : false;
-	RenderCtx rc = { .field_filter = filter, .pal = pal,
-		.short_offsets = short_off,
-		.base_offset = count > 0 ? vals[0].offset : 0,
-		.typedb = typedb };
-	switch (mode) {
-	case RZ_PF_MODE_JSON: {
-		PJ *j = rz_pf_render_json(vals, count, opts);
-		if (!j) {
-			return NULL;
-		}
-		char *s = strdup(pj_string(j));
-		pj_free(j);
-		return s;
-	}
-	case RZ_PF_MODE_CSTRUCT:
-		return render_cstruct(vals, count, filter, label);
-	case RZ_PF_MODE_QUIET:
-		return render_quiet(vals, count, &rc);
-	case RZ_PF_MODE_DOT:
-		return render_dot(vals, count, label, filter);
-	case RZ_PF_MODE_TEXT:
-	default:
-		return render_text(vals, count, &rc);
-	}
 }
 
 /* Parse a single path component from `cursor` into (name, has_index, index).
@@ -4389,15 +2400,16 @@ RZ_API RZ_OWN char *rz_pf_format(
 	}
 	/* If the caller passed a filter path like "name[3].sub", resolve it
 	 * by walking the value tree and rendering only the matched subtree.
-	 * Plain `name` paths are left to the existing field_matches() check
-	 * in the renderer so its alignment / formatting code stays simple. */
+	 * Plain `name` paths are left to the existing pf_field_matches()
+	 * check in the renderer so its alignment / formatting code stays
+	 * simple. */
 	char *result = NULL;
 	const RzPfValue *render_vals = vals;
 	int render_count = count;
 	bool used_path = false;
 	RzPfValue scalar_slice; /* keeps a local copy of a scalar-array
-	                         * element so the renderer prints just one
-	                         * value without touching the original tree. */
+				 * element so the renderer prints just one
+				 * value without touching the original tree. */
 	bool scalar_slice_active = false;
 	const char *filter = opts ? opts->field_filter : NULL;
 	if (!RZ_STR_ISEMPTY(filter) &&
@@ -4406,7 +2418,7 @@ RZ_API RZ_OWN char *rz_pf_format(
 		int sub_count = 0;
 		int sub_stride = 0;
 		if (pf_path_navigate(vals, count, filter,
-			&sub, &sub_count, &sub_stride)) {
+			    &sub, &sub_count, &sub_stride)) {
 			if (sub_stride > 0 && sub && sub->scalars) {
 				/* Scalar array element selection. Build a
 				 * temporary RzPfValue that views just the
@@ -4427,7 +2439,10 @@ RZ_API RZ_OWN char *rz_pf_format(
 				scalar_slice.type_name = sub->type_name;
 				scalar_slice.encoding = sub->encoding;
 				scalar_slice.timefmt = sub->timefmt;
-				scalar_slice.offset = sub->offset + idx * width;
+				/* Widen before multiplying: idx and width are int, but
+				 * offset is ut64, so compute the byte delta in 64-bit
+				 * to avoid a 32-bit overflow for large array indices. */
+				scalar_slice.offset = sub->offset + (ut64)idx * width;
 				scalar_slice.is_pointer = sub->is_pointer;
 				scalar_slice.ptr_addr = sub->ptr_addr;
 				scalar_slice.count = 1;
@@ -4475,29 +2490,55 @@ RZ_API RZ_OWN char *rz_pf_format(
 
 // Legacy bridge
 
-/**
- * \brief Compute the byte size of a parsed pf format.
- *
- * Walks the format once, summing the byte width of every field. Nested
- * struct fields recurse through the typedb. Used by the legacy callers
- * in cmd_print.c / cprint.c to pre-size their read buffer before
- * invoking the formatter; new code can call this directly when it just
- * needs the size without actually reading.
- *
- * Returns 0 if the format is unknown or empty. Variable-length fields
- * (zstrings, hex dumps, LEB128, timestamps with no fixed size) report
- * their *minimum* width, since their actual size depends on input data.
- *
- * \param typedb Type database used to resolve named-format references.
- * \param f Either a named format (resolved via typedb) or a raw pf string.
- * \param mode Unused, kept for ABI compatibility.
- * \param n Unused, kept for ABI compatibility.
- */
-/* Recursion-bound for the struct-size computation. Must match the
- * read-path bound (RzPfCtx::max_depth default of 32) since the size
- * walk and the read walk traverse the same typedb graph and should
- * agree on what is considered "too deep". */
+/* Recursion bound for the struct-size walk. Matches the read-path bound
+ * (RzPfCtx::max_depth default of 32) since the size walk and the read
+ * walk traverse the same typedb graph and should agree on "too deep". */
 #define PF_STRUCT_SIZE_MAX_DEPTH 32
+
+/* Internal recursive worker behind rz_type_format_struct_size().
+ *
+ * Walks the format once, summing the byte width of every field; nested
+ * struct fields recurse through the typedb (bounded by \p depth against
+ * PF_STRUCT_SIZE_MAX_DEPTH). Variable-length fields (zstrings, hex
+ * dumps, LEB128, variable timestamps) contribute their *minimum* width,
+ * since their real size depends on the input bytes. Returns 0 for an
+ * unknown or empty format. \p f is either a named format (resolved via
+ * \p typedb) or a raw pf string.
+ *
+ * Forward-declared here because pf_field_static_size() (below) recurses
+ * back into it for nested-struct fields. */
+static int pf_struct_size_impl(const RzTypeDB *typedb, const char *f,
+	int depth);
+
+/* Static (context-free) byte size of a single field, used by both the
+ * sum and union passes of pf_struct_size_impl. Pointers fall back to an
+ * 8-byte upper bound when no `p{2,4,8}` override is present (the size
+ * walk has no RzPfCtx); variable-length fields report 0. \p typedb and
+ * \p depth feed nested-struct recursion. */
+static int pf_field_static_size(const RzPfField *fld,
+	const RzTypeDB *typedb, int depth) {
+	if (fld->is_pointer || fld->type == RZ_PF_POINTER) {
+		return fld_ptr_size(fld, NULL);
+	}
+	if (fld->type == RZ_PF_TIMESTAMP) {
+		return rz_pf_timefmt_size(fld->timefmt);
+	}
+	if (fld->type == RZ_PF_STRUCT && typedb && fld->type_name) {
+		return pf_struct_size_impl(typedb, fld->type_name, depth + 1);
+	}
+	if (fld->type == RZ_PF_UINT128) {
+		return 16;
+	}
+	int sz = RZ_MAX(0, rz_pf_field_size(fld->type));
+	/* Honour the `[N]E`/`[N]B` byte-width override. */
+	sz = pf_enum_bitfield_width(fld, sz);
+	/* Honour the `[N]z`/`[N]s` fixed-string-length form. */
+	if ((fld->type == RZ_PF_ZSTRING || fld->type == RZ_PF_STRPTR) &&
+		fld->str_fixed_len > 0) {
+		sz = fld->str_fixed_len;
+	}
+	return sz;
+}
 
 static int pf_struct_size_impl(const RzTypeDB *typedb, const char *f,
 	int depth) {
@@ -4524,38 +2565,7 @@ static int pf_struct_size_impl(const RzTypeDB *typedb, const char *f,
 	for (int i = 0; i < fmt->nfields; i++) {
 		const RzPfField *fld = &fmt->fields[i];
 		int cnt = (fld->array_count > 0) ? fld->array_count : 1;
-		int sz = 0;
-
-		if (fld->is_pointer) {
-			/* Pointer width is target-dependent; assume 8 as a
-			 * safe upper bound for sizing. The exact value would
-			 * need an RzPfCtx, which struct_size doesn't take. */
-			sz = 8;
-		} else if (fld->type == RZ_PF_TIMESTAMP) {
-			sz = rz_pf_timefmt_size(fld->timefmt);
-		} else if (fld->type == RZ_PF_STRUCT && typedb && fld->type_name) {
-			sz = pf_struct_size_impl(typedb,
-				fld->type_name, depth + 1);
-		} else if (fld->type == RZ_PF_UINT128) {
-			sz = 16;
-		} else {
-			sz = rz_pf_field_size(fld->type);
-			if (sz < 0) {
-				/* Variable-length: count as 0 for the
-				 * lower-bound estimate. */
-				sz = 0;
-			}
-			/* Honour the `[N]E`/`[N]B` byte-width override. */
-			if ((fld->type == RZ_PF_ENUM || fld->type == RZ_PF_BITFIELD) && fld->bit_width >= 1 && fld->bit_width <= 8) {
-				sz = fld->bit_width;
-			}
-			/* Honour the `[N]z`/`[N]s` fixed-string-length form. */
-			if ((fld->type == RZ_PF_ZSTRING || fld->type == RZ_PF_STRPTR) && fld->str_fixed_len > 0) {
-				sz = fld->str_fixed_len;
-			}
-		}
-
-		total += sz * cnt;
+		total += pf_field_static_size(fld, typedb, depth) * cnt;
 	}
 
 	int repeat = fmt->is_union ? 1 : fmt->repeat;
@@ -4565,25 +2575,7 @@ static int pf_struct_size_impl(const RzTypeDB *typedb, const char *f,
 		for (int i = 0; i < fmt->nfields; i++) {
 			const RzPfField *fld = &fmt->fields[i];
 			int cnt = (fld->array_count > 0) ? fld->array_count : 1;
-			int sz;
-			if (fld->is_pointer) {
-				sz = 8;
-			} else if (fld->type == RZ_PF_TIMESTAMP) {
-				sz = rz_pf_timefmt_size(fld->timefmt);
-			} else if (fld->type == RZ_PF_STRUCT && typedb && fld->type_name) {
-				sz = pf_struct_size_impl(typedb,
-					fld->type_name, depth + 1);
-			} else if (fld->type == RZ_PF_UINT128) {
-				sz = 16;
-			} else {
-				sz = RZ_MAX(0, rz_pf_field_size(fld->type));
-				if ((fld->type == RZ_PF_ENUM || fld->type == RZ_PF_BITFIELD) && fld->bit_width >= 1 && fld->bit_width <= 8) {
-					sz = fld->bit_width;
-				}
-				if ((fld->type == RZ_PF_ZSTRING || fld->type == RZ_PF_STRPTR) && fld->str_fixed_len > 0) {
-					sz = fld->str_fixed_len;
-				}
-			}
+			int sz = pf_field_static_size(fld, typedb, depth);
 			total = RZ_MAX(total, sz * cnt);
 		}
 	}
@@ -4592,6 +2584,21 @@ static int pf_struct_size_impl(const RzTypeDB *typedb, const char *f,
 	return total * repeat;
 }
 
+/**
+ * \brief Compute the byte size of a pf format string.
+ *
+ * Legacy compatibility entry point: parses \p f, sums the size of each
+ * field (honouring repeats, arrays, sized strings and typedb-named
+ * sub-structs), and returns the total. Named formats are resolved
+ * through \p typedb when provided.
+ *
+ * \param typedb Type database for resolving named formats; may be NULL.
+ * \param f      The pf format string to measure.
+ * \param mode   Unused; accepted for source compatibility with the
+ *               historical signature.
+ * \param n      Unused; accepted for source compatibility.
+ * \return Total size in bytes, or 0 on empty input or parse failure.
+ */
 RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb,
 	const char *f, int mode, int n) {
 	(void)mode;

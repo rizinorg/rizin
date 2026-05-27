@@ -15981,7 +15981,7 @@ static const RzCmdDescDetailEntry pf_Sized_space_integers_space__oparen_lowercas
 	{ .text = "u1 / u2 / u4 / u8", .arg_str = NULL, .comment = "decimal unsigned, N bytes" },
 	{ .text = "o1 / o2 / o4 / o8", .arg_str = NULL, .comment = "octal, N bytes" },
 	{ .text = "b1 / b2 / b4 / b8", .arg_str = NULL, .comment = "binary, N bytes" },
-	{ .text = "n1 / n2 / n4 / n8", .arg_str = NULL, .comment = "hex unsigned, N bytes, context-endian (follows ctx.big_endian; use for file headers whose endianness depends on the file's data byte, e.g. ELF)" },
+	{ .text = "n1 / n2 / n4 / n8", .arg_str = NULL, .comment = "hex unsigned, N bytes, context-endian (follows ctx.big_endian; for headers like ELF that pick endian via a data byte)" },
 	{ .text = "f2 / f4 / f8", .arg_str = NULL, .comment = "IEEE 754 float, 2/4/8 bytes (half/single/double)" },
 	{ 0 },
 };
@@ -16058,7 +16058,7 @@ static const RzCmdDescDetailEntry pf_Notes_detail_entries[] = {
 	{ .text = "endian via case", .arg_str = NULL, .comment = "lowercase specifier = little-endian, UPPERCASE = big-endian" },
 	{ .text = "context endian", .arg_str = NULL, .comment = "n1/n2/n4/n8 follow the surrounding RzPfCtx.big_endian flag instead of being pinned by case" },
 	{ .text = "skip vs alignment", .arg_str = NULL, .comment = "'.' / '[N].' skip an exact number of bytes; '@N' pads to the next N-byte boundary" },
-	{ .text = "deprecation", .arg_str = NULL, .comment = "bare-letter codes from the legacy parser (b, c, d, f, o, q, s, t, u, w, x, z) still parse with a deprecation warning; new code should use the sized forms" },
+	{ .text = "deprecation", .arg_str = NULL, .comment = "bare-letter codes (b, c, d, f, o, q, s, t, u, w, x, z) still parse with a warning; use sized forms in new code" },
 	{ .text = "pf 'X2D4u8 bigWord beef qword'", .arg_str = NULL, .comment = "BE u16, BE s32, LE u64 -- one of every endianness/sign combination" },
 	{ .text = "pfn foo 'rr (eax)reg1 (eip)reg2'", .arg_str = NULL, .comment = "Create object foo referencing two registers" },
 	{ .text = "pf 't(unix32)t(unix32) troll plop'", .arg_str = NULL, .comment = "Print two unix-epoch (32-bit) timestamps with labels 'troll' and 'plop'" },

@@ -6279,9 +6279,10 @@ RZ_IPI RzCmdStatus rz_cmd_print_format_named_dot_handler(RzCore *core, int argc,
 	const char *fmt = rz_type_db_format_get(typedb, name);
 	if (RZ_STR_ISEMPTY(fmt)) {
 		RZ_LOG_ERROR("pf.: no registered format named '%s'. "
-			"Run `pfn` to list known formats, or `pfo` to load a "
-			"format definition file (e.g. `pfo elf64` then "
-			"`pf. elf_header`).\n", name);
+			     "Run `pfn` to list known formats, or `pfo` to load a "
+			     "format definition file (e.g. `pfo elf64` then "
+			     "`pf. elf_header`).\n",
+			name);
 		free(name);
 		return RZ_CMD_STATUS_ERROR;
 	}

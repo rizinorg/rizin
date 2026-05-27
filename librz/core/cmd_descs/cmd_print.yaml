@@ -566,7 +566,10 @@ commands:
           - text: "b1 / b2 / b4 / b8"
             comment: "binary, N bytes"
           - text: "n1 / n2 / n4 / n8"
-            comment: "hex unsigned, N bytes, context-endian (follows ctx.big_endian; use for file headers whose endianness depends on the file's data byte, e.g. ELF)"
+            comment: >
+              hex unsigned, N bytes, context-endian (follows
+              ctx.big_endian; for headers like ELF that pick endian
+              via a data byte)
           - text: "f2 / f4 / f8"
             comment: "IEEE 754 float, 2/4/8 bytes (half/single/double)"
       - name: Special scalars
@@ -672,7 +675,9 @@ commands:
           - text: "skip vs alignment"
             comment: "'.' / '[N].' skip an exact number of bytes; '@N' pads to the next N-byte boundary"
           - text: "deprecation"
-            comment: "bare-letter codes from the legacy parser (b, c, d, f, o, q, s, t, u, w, x, z) still parse with a deprecation warning; new code should use the sized forms"
+            comment: >
+              bare-letter codes (b, c, d, f, o, q, s, t, u, w, x, z)
+              still parse with a warning; use sized forms in new code
           - text: "pf 'X2D4u8 bigWord beef qword'"
             comment: "BE u16, BE s32, LE u64 -- one of every endianness/sign combination"
           - text: "pfn foo 'rr (eax)reg1 (eip)reg2'"

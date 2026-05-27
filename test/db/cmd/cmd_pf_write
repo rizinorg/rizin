@@ -4,7 +4,7 @@ CMDS=<<EOF
 pfn foo "x4x4d4 foo bar cow"
 pf. foo
 pf. foo.foo
-.pfw foo.foo 123
+pfw foo.foo 123
 pf. foo.foo
 pf. foo
 EOF
@@ -13,6 +13,7 @@ EXPECT=<<EOF
 0x00000004 : bar = 0x00000000 [LE]
 0x00000008 : cow = 0 [LE]
 0x00000000 : foo = 0x00000000 [LE]
+foo : 0x00000000 = 123
 0x00000000 : foo = 0x0000007b [LE]
 0x00000000 : foo = 0x0000007b [LE]
 0x00000004 : bar = 0x00000000 [LE]
@@ -25,11 +26,12 @@ FILE==
 CMDS=<<EOF
 pfn foo "[2]x4x4d4 foo bar cow"
 pf. foo.cow
-.pfw foo.cow 123
+pfw foo.cow 123
 pf. foo.cow
 EOF
 EXPECT=<<EOF
 0x0000000c : cow = 0 [LE]
+cow : 0x0000000c = 123
 0x0000000c : cow = 123 [LE]
 EOF
 RUN
@@ -38,10 +40,11 @@ NAME=pf array with one write
 FILE==
 CMDS=<<EOF
 pfn foo "[3]x4 foo"
-.pfw foo.foo 1
+pfw foo.foo 1
 pf. foo
 EOF
 EXPECT=<<EOF
+foo : 0x00000000 = 1
 0x00000000 : foo = [ 0x00000001, 0x00000000, 0x00000000 ] [LE]
 EOF
 RUN
@@ -74,24 +77,6 @@ EXPECT=<<EOF
 0x00000000 : foo = 0x6c6c6568 [LE]
 0x00000004 : bar = 0x6168206f [LE]
 0x00000008 : cow = 544829552 [LE]
-EOF
-RUN
-
-NAME=pf xxd print
-BROKEN=1
-FILE==
-CMDS=<<EOF
-pfn foo "[2]x4x4d4 foo bar cow"
-w hello happy world
-e asm.lines=0
-e asm.flags.inbytes=1
-.pf* .foo
-pd 3
-EOF
-EXPECT=<<EOF
-0x00000000      push  0x6f6c6c65                                       ; 'ello'
-0x00000005      and   byte [rax+0x61], ch
-0x00000008      jo    0x7a
 EOF
 RUN
 

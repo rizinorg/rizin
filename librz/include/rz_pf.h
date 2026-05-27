@@ -260,6 +260,9 @@ typedef struct {
 		       //   `[N]E`/`[N]B` form, N (1..8) is the byte
 		       //   width of the underlying scalar; otherwise
 		       //   the default of 4 bytes applies.
+		       //   For RZ_PF_POINTER introduced via `p{2,4,8}`,
+		       //   the explicit byte width overrides ctx.bits.
+		       //   0 means: use ctx.bits.
 	RzPfBitOrder bit_order;
 	RzPfGuidLayout guid_layout;
 
@@ -318,10 +321,10 @@ typedef struct rz_pf_value_t {
 	ut64 offset; //<< virtual address of this field
 	bool is_pointer;
 	bool overflow; //<< set when an inline string read reached the
-	               //   end of the buffer without finding NUL; the
-	               //   renderer emits `ovf "..."` to signal the
-	               //   truncated display (matches legacy semantics
-	               //   for unmapped / unterminated memory).
+		       //   end of the buffer without finding NUL; the
+		       //   renderer emits `ovf "..."` to signal the
+		       //   truncated display (matches legacy semantics
+		       //   for unmapped / unterminated memory).
 	ut64 ptr_addr; //<< if is_pointer, the dereferenced address
 
 	int count; //<< 1 for scalar, >1 for array
@@ -391,6 +394,18 @@ RZ_API RZ_OWN char *rz_pf_render(
 	RZ_BORROW const RzPfValue *vals, int count,
 	RzPfMode mode, RZ_NULLABLE const RzPfRenderOpts *opts);
 RZ_API RZ_OWN PJ *rz_pf_render_json(
+	RZ_BORROW const RzPfValue *vals, int count,
+	RZ_NULLABLE const RzPfRenderOpts *opts);
+
+/* Render the parsed values into an RzStructuredData tree -- the generic
+ * key/value document model shared with rz_bin, ASN.1, PKCS#7, etc. The
+ * top level is a map keyed by field name (auto-named field_<n> when the
+ * format omitted a name); nested structs become sub-maps, arrays and
+ * bitvectors become arrays, and raw/GUID byte payloads are emitted via
+ * the byte-block helpers. Caller owns the result and frees it with
+ * rz_structured_data_free(). \p opts has the same semantics as in
+ * rz_pf_render() (only the field filter is consulted). */
+RZ_API RZ_OWN RzStructuredData *rz_pf_render_sd(
 	RZ_BORROW const RzPfValue *vals, int count,
 	RZ_NULLABLE const RzPfRenderOpts *opts);
 

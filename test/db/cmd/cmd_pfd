@@ -1,16 +1,16 @@
 NAME=pfd test [2]B (pe_characteristics)var0
 FILE==
-BROKEN=1
 CMDS=<<EOF
+e asm.arch=x86
 td "enum pe_characteristics {IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE=0x40, IMAGE_DLLCHARACTERISTICS_NX_COMPAT=0x100, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE=0x8000};"
-wx 0x00008140
+wx 40810000
 pfn test "B (pe_characteristics)var0"
 pfd test
 EOF
 EXPECT=<<EOF
 digraph g { graph [ rank=same; rankdir=LR; ];
 root [ rank=1; shape=record
-label="test|{offset|0x0}|{type|B}|{name|<var0>var0}|{value|0x40810000}"];
+label="test|{offset|0x0}|{type|B}|{name|<var0>var0}|{value|0x00008140 : IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE \| IMAGE_DLLCHARACTERISTICS_NX_COMPAT \| IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE}"];
 }
 EOF
 RUN
@@ -27,7 +27,7 @@ EOF
 EXPECT=<<EOF
 digraph g { graph [ rank=same; rankdir=LR; ];
 root [ rank=1; shape=record
-label="test|{offset|0x0}|{type|E}|{name|<var0>var0}|{value|0x0000ffff}"];
+label="test|{offset|0x0}|{type|E}|{name|<var0>var0}|{value|0x0000ffff ; ET_HIPROC}"];
 }
 EOF
 RUN
@@ -35,6 +35,7 @@ RUN
 NAME=pfd test i var0
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 wv4 0x100
 pfn test "d4 var0"
 pfd test
@@ -50,6 +51,7 @@ RUN
 NAME=pfd test w var0
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 wv2 0x1234
 pfn test "x2 var0"
 pfd test
@@ -65,6 +67,7 @@ RUN
 NAME=pfd test x var0
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 wv4 0x12345678
 pfn test "x4 var0"
 pfd test

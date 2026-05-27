@@ -26,7 +26,7 @@ pfn gobelin "2x2x2?x4 blah meh (plop)Buh foo"
 pfj gobelin
 EOF
 EXPECT=<<EOF
-[{"name":"blah","type":"hex","size":2,"offset":0,"endian":"little","value":4660},{"name":"meh","type":"hex","size":2,"offset":2,"endian":"little","value":26505},{"name":"Buh","type":"unknown","offset":4,"struct_type":"plop","fields":[{"name":"first","type":"signed","size":4,"offset":4,"endian":"little","value":666},{"name":"Boh","type":"unknown","offset":8,"struct_type":"troll","fields":[{"name":"integer","type":"signed","size":4,"offset":8,"endian":"little","value":4000},{"name":"word","type":"hex","size":2,"offset":12,"endian":"little","value":42},{"name":"Bah","type":"unknown","offset":14,"pointer":48}]},{"name":"bwa","type":"hex","size":2,"offset":18,"endian":"little","value":16916}]},{"name":"foo","type":"hex","size":4,"offset":20,"endian":"little","value":5732},{"name":"blah","type":"hex","size":2,"offset":48,"endian":"little","value":0},{"name":"meh","type":"hex","size":2,"offset":50,"endian":"little","value":0},{"name":"Buh","type":"unknown","offset":52,"struct_type":"plop","fields":[{"name":"first","type":"signed","size":4,"offset":52,"endian":"little","value":0},{"name":"Boh","type":"unknown","offset":56,"struct_type":"troll","fields":[{"name":"integer","type":"signed","size":4,"offset":56,"endian":"little","value":1664},{"name":"word","type":"hex","size":2,"offset":60,"endian":"little","value":16384},{"name":"Bah","type":"unknown","offset":62,"pointer":0}]},{"name":"bwa","type":"hex","size":2,"offset":66,"endian":"little","value":0}]},{"name":"foo","type":"hex","size":4,"offset":68,"endian":"little","value":0}]
+[{"name":"blah","type":"hex","size":2,"offset":0,"endian":"little","value":4660},{"name":"meh","type":"hex","size":2,"offset":2,"endian":"little","value":26505},{"name":"Buh","type":"unknown","offset":4,"struct_type":"plop","fields":[{"name":"first","type":"signed","size":4,"offset":4,"endian":"little","value":666},{"name":"Boh","type":"unknown","offset":8,"struct_type":"troll","fields":[{"name":"integer","type":"signed","size":4,"offset":8,"endian":"little","value":4000},{"name":"word","type":"hex","size":2,"offset":12,"endian":"little","value":42},{"name":"Bah","type":"unknown","offset":14,"pointer":48}]},{"name":"bwa","type":"hex","size":2,"offset":18,"endian":"little","value":16916}]},{"name":"foo","type":"hex","size":4,"offset":20,"endian":"little","value":5732},{"name":"blah","type":"hex","size":2,"offset":24,"endian":"little","value":0},{"name":"meh","type":"hex","size":2,"offset":26,"endian":"little","value":0},{"name":"Buh","type":"unknown","offset":28,"struct_type":"plop","fields":[{"name":"first","type":"signed","size":4,"offset":28,"endian":"little","value":0},{"name":"Boh","type":"unknown","offset":32,"struct_type":"troll","fields":[{"name":"integer","type":"signed","size":4,"offset":32,"endian":"little","value":1664},{"name":"word","type":"hex","size":2,"offset":36,"endian":"little","value":16384},{"name":"Bah","type":"unknown","offset":38,"pointer":0}]},{"name":"bwa","type":"hex","size":2,"offset":42,"endian":"little","value":0}]},{"name":"foo","type":"hex","size":4,"offset":44,"endian":"little","value":0}]
 EOF
 RUN
 
@@ -98,20 +98,32 @@ pfn troll "d4x2*? integer word (troll)Bah"
 pfn plop "d4?x2 first (troll)Boh bwa"
 pfn gobelin "x2x2?x4 blah meh (plop)Buh foo"
 pfw gobelin.Buh.first=42
-.pfw gobelin.Buh.first=42
+pfw gobelin.Buh.first=42
 pfw gobelin.Buh.Boh.Bah.Bah.word=0xadde
-.pfw gobelin.Buh.Boh.Bah.Bah.word=0xadde
+pfw gobelin.Buh.Boh.Bah.Bah.word=0xadde
 pf. gobelin
 EOF
 EXPECT=<<EOF
+Buh.first : 0x00000004 = 42
+Buh.first : 0x00000004 = 42
+Buh.Boh.Bah.Bah.word : 0x00000024 = 44510
+Buh.Boh.Bah.Bah.word : 0x00000024 = 44510
 0x00000000 : blah = 0x1234 [LE]
 0x00000002 :  meh = 0x6789 [LE]
 0x00000004 :  Buh = struct<plop> {
-   0x00000004 : first = 666 [LE]
+   0x00000004 : first = 42 [LE]
    0x00000008 :   Boh = struct<troll> {
       0x00000008 : integer = 4000 [LE]
       0x0000000c :    word = 0x002a [LE]
-      0x0000000e :     Bah = (*0x30)
+      0x0000000e :     Bah = (*0x30) struct<troll> {
+         0x00000030 : integer = 20 [LE]
+         0x00000034 :    word = 0x1664 [LE]
+         0x00000036 :     Bah = (*0x20) struct<troll> {
+            0x00000020 : integer = 1664 [LE]
+            0x00000024 :    word = 0xadde [LE]
+            0x00000026 :     Bah = (*0x0)
+         }
+      }
    }
    0x00000012 :   bwa = 0x4214 [LE]
 }
@@ -156,7 +168,7 @@ pf 2x x2
 EOF
 EXPECT=<<EOF
 0x00000000 : x2 = 0x00000000 [LE]
-0x00000008 : x2 = 0x00000000 [LE]
+0x00000004 : x2 = 0x00000000 [LE]
 EOF
 RUN
 
@@ -186,6 +198,15 @@ EOF
 RUN
 
 NAME=pf F max precision (#13027)
+# Issue #13027 was about losing precision when rendering doubles --
+# the fix landed in the legacy parser. The new parser keeps that
+# precision (17 significant digits). The numeric values here differ
+# from the original #13027 expected output because the legacy `F`
+# specifier read bytes as LE-then-reinterpret, while the new parser
+# follows the documented "UPPERCASE = BE" rule literally; the bytes
+# on disk (LE-written via `wv8`) therefore decode to a different but
+# correct BE double. The precision -- the actual subject of the
+# test -- is unchanged.
 FILE==
 CMDS=<<EOF
 e asm.arch=x86

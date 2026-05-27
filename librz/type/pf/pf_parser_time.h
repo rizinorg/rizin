@@ -1,6 +1,16 @@
 // SPDX-FileCopyrightText: 2026 Anton Kochkov <anton.kochkov@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+/**
+ * \file pf_parser_time.h
+ * \brief Timestamp wire-format API for the pf engine.
+ *
+ * Declares the timestamp helpers implemented in pf_parser_time.c:
+ * format-name lookups, per-format size/type queries, and the
+ * read/convert/render entry points used by the parser and renderers.
+ * Private to librz/type/pf/; not installed.
+ */
+
 #ifndef PF_PARSER_TIME_H
 #define PF_PARSER_TIME_H
 

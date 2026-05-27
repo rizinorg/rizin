@@ -25,13 +25,36 @@ path.c                  Path-style access into nested types
 serialize_*.c           Project (de)serialization of types and functions
 parser/                 Tree-sitter based C type parser
 
-pf_parser.c             Main pf parser, reader, and renderers
-                        (text / json / cstruct / quiet / dot / write)
-pf_parser.h             Internal alias header -- includes <rz_pf.h>
-pf_parser_time.c        Timestamp wire-format decoders
+pf/                     The pf (print-format) engine. All sources live
+                        under this directory; only format.c stays at the
+                        librz/type/ top level.
+pf/pf_parser.c          Parse driver, type-spec dispatcher, reader core,
+                        parsing context, public utility surface
+pf/pf_parser.h          Internal alias header -- includes <rz_pf.h>, plus
+                        helpers shared with pf_render.c (is_string_type,
+                        is_raw_type, endian_str, pf_vasprintf) as inlines
+pf/pf_internal.h        Cross-TU glue: PF_DIAG diagnostic macro, the
+                        shared ReadState, and declarations of every
+                        function that crosses a pf file boundary
+pf/pf_parser_string.c   String/encoding spec parsing + reading (z / s / Z)
+pf/pf_parser_bitfield.c Inline + typed bitfield parsing (B...)
+pf/pf_parser_bitvec.c   Bitvector parsing + reading (v(N))
+pf/pf_parser_array.c    Array-count resolution ([N] / [@name])
+pf/pf_parser_struct.c   Nested struct / union reading (?)
+pf/pf_parser_time.c     Timestamp wire-format decoders
                         (filetime, dos, hfs, oletime, webkit, cocoa, ...)
-pf_parser_time.h        Private API between pf_parser.c and pf_parser_time.c
-pf_parser_tlv.c         TLV (Tag-Length-Value) record parsing and dispatch
+pf/pf_parser_time.h     Private API between pf_parser.c and pf_parser_time.c
+pf/pf_parser_tlv.c      TLV (Tag-Length-Value) record parsing and dispatch
+pf/pf_render.c          Shared render helpers (pf_field_matches,
+                        pf_scalar_text, pf_render_guid) and the
+                        rz_pf_render() mode dispatcher
+pf/pf_render.h          Cross-TU glue for the renderers: the RenderCtx
+                        record and shared-helper / per-mode declarations
+pf/pf_render_text.c     Text + quiet renderers
+pf/pf_render_json.c     JSON renderer (+ rz_pf_render_json entry point)
+pf/pf_render_cstruct.c  C-struct renderer
+pf/pf_render_dot.c      Graphviz DOT renderer
+pf/pf_render_sd.c       RzStructuredData renderer (rz_pf_render_sd)
 ```
 
 ## `pf` architecture
@@ -113,9 +136,10 @@ forward to `rz_io_nread_at`.
 
 ### render
 
-Rendering is a separate pass over the `RzPfValue[]`. There are six modes;
-five produce text output, one (`WRITE`) is handled by the bridge in
-`librz/core` rather than `rz_pf_render`:
+Rendering is a separate pass over the `RzPfValue[]`. Most modes produce a
+string; `WRITE` is handled by the bridge in `librz/core` rather than
+`rz_pf_render`, and the structured-data renderer returns a tree rather
+than text (see below):
 
 - **text** -- `<offset> <name> : [endian] <value>` one line per field.
   Optionally colorised via `RzPfRenderOpts::palette`; the palette holds
@@ -130,12 +154,21 @@ five produce text output, one (`WRITE`) is handled by the bridge in
 - **dot** -- Graphviz `digraph` record node with four column-aligned rows
   (offset / type-glyph / name / value), one column per visible field. The
   graph label is taken from `RzPfRenderOpts::graph_label`.
+- **structured data** -- not a string mode: `rz_pf_render_sd()` returns an
+  `RzStructuredData` tree (the generic key/value document model shared with
+  `rz_bin`, ASN.1 and PKCS#7), which the caller can serialise to JSON or
+  YAML or walk with the generic iterator.
 
 `RzPfRenderOpts` additionally holds an optional `field_filter` (skip
 fields whose name does not match) used by `pf.<name>.<field>` selectors.
 
-The renderer dispatcher is `rz_pf_render()`; each mode has its own
-`render_<mode>()` function inside `pf_parser.c`.
+The renderer dispatcher is `rz_pf_render()` in `pf_render.c`, which fans
+out to one translation unit per mode (`pf_render_text.c`,
+`pf_render_json.c`, `pf_render_cstruct.c`, `pf_render_dot.c`,
+`pf_render_sd.c`). `pf_render.c` keeps only the dispatcher and the helpers
+shared across modes (`pf_field_matches`, `pf_scalar_text`,
+`pf_render_guid`); `pf_render.h` declares those plus the shared
+`RenderCtx` record and the per-mode entry points.
 
 ## Typedb integration
 

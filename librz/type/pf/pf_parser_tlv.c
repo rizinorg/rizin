@@ -40,29 +40,12 @@
 #include <stdlib.h>
 
 #include "pf_parser.h"
-#include "pf_parser_time.h"
+#include "pf_internal.h"
 
-/* Cross-file diagnostic emitter; defined in pf_parser.c. The TLV
- * parser uses these to participate in the same positioned-error
- * machinery as the main parser. */
-extern void pf_emit_error(RzPfFormat *fmt, RzPfErrSeverity sev,
-	RzPfErrCategory cat, int pos, const char *fmt_str, ...);
-extern RzPfFormat *pf_current_fmt(void);
-extern const char *pf_current_src(void);
-
+/* TLV diagnostics share the main parser's positioned-error machinery
+ * via the common PF_DIAG macro (declared in pf_internal.h). */
 #define TLV_DIAG(sev, cat, src_ptr, ...) \
-	do { \
-		const char *_src = pf_current_src(); \
-		int _pos = (src_ptr && _src && src_ptr >= _src) \
-			? (int)(src_ptr - _src) \
-			: -1; \
-		RzPfFormat *_cur = pf_current_fmt(); \
-		if (_cur) { \
-			pf_emit_error(_cur, (sev), (cat), \
-				_pos, __VA_ARGS__); \
-		} \
-		RZ_LOG_WARN(__VA_ARGS__); \
-	} while (0)
+	PF_DIAG(sev, cat, src_ptr, __VA_ARGS__)
 
 /* Compose the dispatch key from table name and tag. The caller frees. */
 static char *tlv_key(const char *table, ut64 tag) {
