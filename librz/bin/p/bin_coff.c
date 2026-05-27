@@ -107,7 +107,19 @@ static bool coff_fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, size_
 		} else {
 			ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
 		}
-		ptr->type = (DTYPE_IS_FUNCTION(s->n_type) || !strcmp(coffname, "main"))
+		/* DTYPE_IS_FUNCTION checks the n_type ISFCN bit, which C and
+		 * C++ compilers set on function symbols. Assembler-emitted
+		 * globals (TI asm55/cl55, GAS COFF output) don't always set
+		 * that bit, but they're nonetheless functions when their
+		 * containing section has CNT_CODE. Promote them so analysis
+		 * (aa) sees real functions instead of unknown globals.
+		 *
+		 * The 'main' name override predates this and stays as the
+		 * last-resort fallback for files where neither the type bit
+		 * nor section flags are reliable. */
+		ptr->type = (DTYPE_IS_FUNCTION(s->n_type) ||
+				    (sc_hdr && (sc_hdr->s_flags & COFF_SCN_CNT_CODE)) ||
+				    !strcmp(coffname, "main"))
 			? RZ_BIN_TYPE_FUNC_STR
 			: RZ_BIN_TYPE_UNKNOWN_STR;
 		break;
