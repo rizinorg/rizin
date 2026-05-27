@@ -18,6 +18,31 @@ char *get_tc2_tc1(ut32 ins_bits) {
 	return rz_str_dup(res);
 }
 
+/* Decode the 'V'/'VV' template field used by ROL/ROR/and a handful of
+ * other algebraic forms in SWPU104. The same 1-bit slot encodes either
+ * the carry-flag or the TC2 condition register, depending on the
+ * surrounding instruction. dis55.exe v4.3.6 calls this function
+ * 'TC2_or_Carry' internally; matching that name keeps the cross-
+ * reference obvious for anyone tracing a divergence.
+ *
+ *   bit = 0  ->  "Carry"   (the C bit of ST0_55)
+ *   bit = 1  ->  "TC2"     (the TC2 bit of ST0_55)
+ *
+ * For ROL/ROR specifically the field is always 0 in the assembler
+ * output (no syntax exists for the TC2 alternative) so the operand
+ * comes out as 'Carry' in the disassembled form. */
+char *get_tc2_or_carry(ut32 ins_bits) {
+	char *res = "Carry";
+	if (ins_bits) {
+		if (ins_bits != 1) {
+			fprintf(stderr, "Invalid instruction TC2 or Carry (%d)\n", ins_bits);
+			return NULL;
+		}
+		res = "TC2";
+	}
+	return rz_str_dup(res);
+}
+
 char *get_trans_reg(ut32 ins_bits) {
 	char *res = NULL;
 

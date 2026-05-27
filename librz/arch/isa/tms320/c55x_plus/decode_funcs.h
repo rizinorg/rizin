@@ -7,6 +7,7 @@
 #include <rz_types.h>
 
 char *get_tc2_tc1(ut32 ins_bits);
+char *get_tc2_or_carry(ut32 ins_bits);
 char *get_trans_reg(ut32 ins_bits);
 char *get_AR_regs_class1(ut32 ins_bits);
 char *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx);

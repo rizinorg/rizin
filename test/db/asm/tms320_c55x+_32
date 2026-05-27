@@ -23,3 +23,95 @@ d "xccpart tc1" 07e4
 d "xccpart ac0 <= #0 || mov #0x0, t0" 3605a07bb000
 d "xor #0x1, ar3, ar3" c5a3230001
 d "xccpart xar12 == #0" 07cc
+
+d "add ar0, ac0" 740020
+d "ret" 21
+d "add #0x1, ac0" 7b0001
+d "add #0x32, ac1, ac1" c401010032
+d "add t0, ac0" 740030
+d "add t1, ac1" 740131
+d "add #0x64, ac0, ac1" c401000064
+d "sub #0x1, ac0" 7b0081
+d "sub ar0, ac0" 7400a0
+d "sub ac1, ac0" 740081
+d "mov #0x42, ac0" ac000042
+d "mov ar0, ar1" 772120
+d "mov ar2, ar3" 772322
+d "nop" 20
+
+d "and #0xff, ac0, ac0" c5000000ff
+d "or #0xf, ac1, ac1" c50181000f
+d "xor #0xaa, ac2, ac2" c5820200aa
+d "and ac0, ac1" 750100
+d "or ac0, ac2" 750280
+d "xor ac0, ac3" 758300
+d "sfts ac1, t3, ac1" a6818133
+d "sftl ac1, #0xf, ac1" a781010f
+d "bclr st0_acov0, st0_55" 0a0a
+d "xor #0x1, ar3, ar3" c5a3230001
+d "and ac1, ac0" 750001
+d "or ac2, ac0" 750082
+d "xor ac3, ac0" 758003
+d "sfts ac0, t0, ac0" a6808030
+d "sftl ac0, #0x4, ac0" a7800004
+
+d "b #0x00002d" 68002d
+d "call #0x000028" 690028
+d "bcc #0x000023, ac0 != #0" 6a2320
+d "bcc #0x00001f, ac0 == #0" 6a1f00
+d "bcc #0x00001c, ac1 != #0" 6a1c21
+d "bcc #0x000019, t0 < #0" 6a1948
+d "bcc #0x000016, ar0 > #0" 6a1690
+d "bccu #0x000010, ar0 < ar1" dba0210010
+d "bccu #0x00000b, ar2 < ar3" dba223000b
+d "bcc #0x000005, ac0 == #0" 6a0500
+d "call #0x00ffd0" 69ffd0
+
+d "macm *ar2, *ar4, ac0, ac0" c832803400
+d "mpym *ar2, *ar4, ac0" c832003400
+
+d "pop t2, t3" 713233
+d "pshboth xar5" 0d25
+d "psh mmap(@st0_55)" 2461e400
+d "pop mmap(@st1_55)" 2461e508
+
+d "cmp t2 == t3, tc1" a4323300
+d "cmp t0 == t1, tc2" a4303101
+d "cmp ar0 < ar1, tc1" a4202108
+d "cmp ar2 >= ar3, tc2" a422230d
+d "cmp ac0 != ac1, tc1" a4000104
+
+d "amar *(ar2+t0b)" 621240
+d "asub #0xb, xar1" ae21000b
+d "amov #0x12, xar0" d280000012
+d "amov #0x34, xar1" d281000034
+
+d "abs ac0, ac0" 760000
+d "abs ac1, ac2" 760201
+d "neg ac0, ac0" 760080
+d "neg ac1, ac2" 760281
+d "neg t0, t1" 7631b0
+d "neg ar0, ar1" 7621a0
+
+d "max ac0, ac1" 768100
+d "max ac2, ac3" 768302
+d "min ac0, ac1" 768180
+d "min ac2, ac3" 768382
+
+d "idle" 0020
+d "reti" 00c0
+d "intr #0x5" 0305
+d "trap #0x4" 0344
+
+d "bset st0_acov0, st0_55" 0a2a
+d "bset st0_acov1, st0_55" 0a29
+d "bclr st0_acov2, st0_55" 0a0f
+d "bset st0_acov3, st0_55" 0a2e
+
+d "rol carry, ac0, carry, ac1" a8010000
+d "ror carry, ac0, carry, ac1" a8018000
+
+d "xcc tc1" 06e4
+d "mov #0x0, t0" 7bb000
+d "xcc ac0 == #0" 0600
+d "mov #0x1, t1" 7bb101
