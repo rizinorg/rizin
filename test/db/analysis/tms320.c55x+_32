@@ -1,0 +1,513 @@
+NAME=c55x+ analysis: register profile (PC alias resolves)
+FILE==
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c55x+
+arp~^=PC
+EOF
+EXPECT=<<EOF
+=PC	pc
+EOF
+RUN
+
+NAME=c55x+ analysis: opcode classification (batched)
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c55x+
+wx 20 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^size
+wx 21 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^size
+wx 2021 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^size
+ao 1 @ 1~^type
+ao 1 @ 0~^size
+wx 68002d @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+wx 690028 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+ao 1 @ 0~^fail
+wx 6a2320 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+ao 1 @ 0~^fail
+wx 9a000020 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+ao 1 @ 0~^fail
+wx 9b000020 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+wx 9c000020 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+wx 9d000020 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+wx d800000020 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+ao 1 @ 0~^fail
+wx d900000020 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+wx dba0210010 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^fail
+wx 0240 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^fail
+wx 0280 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^fail
+wx 740020 @ 0
+ao 1 @ 0~^type
+wx 7b0001 @ 0
+ao 1 @ 0~^type
+wx 740081 @ 0
+ao 1 @ 0~^type
+wx 770030 @ 0
+ao 1 @ 0~^type
+wx c5000000ff @ 0
+ao 1 @ 0~^type
+wx c50181000f @ 0
+ao 1 @ 0~^type
+wx c5a3230001 @ 0
+ao 1 @ 0~^type
+wx a4323300 @ 0
+ao 1 @ 0~^type
+wx a6818133 @ 0
+ao 1 @ 0~^type
+wx a7810131 @ 0
+ao 1 @ 0~^type
+wx c832803400 @ 0
+ao 1 @ 0~^type
+wx c832003400 @ 0
+ao 1 @ 0~^type
+wx 2461e400 @ 0
+ao 1 @ 0~^type
+wx 713233 @ 0
+ao 1 @ 0~^type
+wx 0d25 @ 0
+ao 1 @ 0~^type
+wx 621240 @ 0
+ao 1 @ 0~^type
+wx ae21000b @ 0
+ao 1 @ 0~^type
+wx 760000 @ 0
+ao 1 @ 0~^type
+wx 760080 @ 0
+ao 1 @ 0~^type
+wx 768100 @ 0
+ao 1 @ 0~^type
+wx 768180 @ 0
+ao 1 @ 0~^type
+wx 0020 @ 0
+ao 1 @ 0~^type
+wx 00c0 @ 0
+ao 1 @ 0~^type
+wx 0305 @ 0
+ao 1 @ 0~^type
+wx 0344 @ 0
+ao 1 @ 0~^type
+wx 0a2a @ 0
+ao 1 @ 0~^type
+wx 0a0a @ 0
+ao 1 @ 0~^type
+wx ff @ 0
+ao 1 @ 0~^type
+wx 6a0500200000000000 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+ao 1 @ 0~^fail
+wx 0380 @ 0
+ao 1 @ 0~^type
+wx 03c0 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^family
+wx 035f @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^val
+wx 5811223344 @ 0
+ao 1 @ 0~^type
+wx ac010005 @ 0
+ao 1 @ 0~^type
+wx b401020304 @ 0
+ao 1 @ 0~^type
+wx b600112233 @ 0
+ao 1 @ 0~^type
+wx 8c80112233 @ 0
+ao 1 @ 0~^type
+wx c000010002 @ 0
+ao 1 @ 0~^type
+wx d000abcd12 @ 0
+ao 1 @ 0~^type
+wx 2e10 @ 0
+ao 1 @ 0~^type
+wx 0b11 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^family
+wx 2300 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^family
+wx c6112233 @ 0
+ao 1 @ 0~^type
+wx 0380 @ 0
+ao 1 @ 0~^type
+wx 03c0 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^family
+wx 035f @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^val
+wx 5811223344 @ 0
+ao 1 @ 0~^type
+wx ac010005 @ 0
+ao 1 @ 0~^type
+wx b401020304 @ 0
+ao 1 @ 0~^type
+wx b600112233 @ 0
+ao 1 @ 0~^type
+wx 8c80112233 @ 0
+ao 1 @ 0~^type
+wx c000010002 @ 0
+ao 1 @ 0~^type
+wx d000abcd12 @ 0
+ao 1 @ 0~^type
+wx 2e10 @ 0
+ao 1 @ 0~^type
+wx 0b11 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^family
+wx 2300 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^family
+wx c6112233 @ 0
+ao 1 @ 0~^type
+EOF
+EXPECT=<<EOF
+type: nop
+size: 1
+type: ret
+size: 1
+type: nop
+size: 1
+type: ret
+size: 1
+type: jmp
+jump: 0x00000030
+type: call
+jump: 0x0000002b
+fail: 0x00000003
+type: cjmp
+jump: 0x00000026
+fail: 0x00000003
+type: cjmp
+jump: 0x00000004
+fail: 0x00000004
+type: ccall
+jump: 0x00000004
+type: jmp
+jump: 0x00000020
+type: call
+jump: 0x00000020
+type: cjmp
+jump: 0x00000000
+fail: 0x00000005
+type: ccall
+jump: 0x00000000
+type: cjmp
+fail: 0x00000005
+type: ujmp
+fail: 0x00000002
+type: ucall
+fail: 0x00000002
+type: add
+type: add
+type: sub
+type: mov
+type: and
+type: or
+type: xor
+type: cmp
+type: shl
+type: shl
+type: mul
+type: mul
+type: push
+type: pop
+type: upush
+type: lea
+type: sub
+type: null
+type: sub
+type: cmp
+type: cmp
+type: nop
+type: ret
+type: swi
+type: trap
+type: mov
+type: mov
+type: null
+type: cjmp
+jump: 0x00000008
+fail: 0x00000003
+type: xchg
+type: trap
+family: cpu
+type: trap
+val: 0x0000001f
+type: mov
+type: mov
+type: mov
+type: add
+type: add
+type: add
+type: mov
+type: cmp
+type: trap
+family: cpu
+type: trap
+family: cpu
+type: mov
+type: xchg
+type: trap
+family: cpu
+type: trap
+val: 0x0000001f
+type: mov
+type: mov
+type: mov
+type: add
+type: add
+type: add
+type: mov
+type: cmp
+type: trap
+family: cpu
+type: trap
+family: cpu
+type: mov
+EOF
+RUN
+
+NAME=c55x+ analysis (no debug): 18_full_program.obj -- 6-function callgraph, stack tracking
+FILE=bins/tms320/coff2/18_full_program.obj
+ARGS=-A
+CMDS=<<EOF
+iI~^arch
+iI~^cpu
+afl~?
+afs @ sym._main
+avgl~?
+afb @ sym._main~?
+afi @ sym._main~^num-bbs
+afi @ sym._main~^stackframe
+afi @ sym._main~^call-refs
+EOF
+EXPECT=<<EOF
+arch     tms320
+cpu      c55x+
+6
+int main(int argc, char **argv, char **envp);
+0
+1
+num-bbs: 1
+stackframe: 6
+call-refs: 0x00000034 C 0x00000042 C 0x0000004c C
+EOF
+RUN
+
+NAME=c55x+ analysis (no debug): 19_emulateme_nostd.obj -- multi-BB cyclomatic > 1
+FILE=bins/tms320/coff2/19_emulateme_nostd.obj
+ARGS=-A
+CMDS=<<EOF
+iI~^cpu
+afl~?
+afs @ sym._main
+avgl~?
+afb @ sym._main~?
+afi @ sym._main~^num-bbs
+afi @ sym._main~^stackframe
+afi @ sym._main~^cyclomatic-complexity
+EOF
+EXPECT=<<EOF
+cpu      c55x+
+5
+int main(int argc, char **argv, char **envp);
+0
+5
+num-bbs: 5
+stackframe: 6
+cyclomatic-complexity: 5
+EOF
+RUN
+
+NAME=c55x+ analysis (no debug): 17_data_layout.obj -- section table + functions
+FILE=bins/tms320/coff2/17_data_layout.obj
+ARGS=-A
+CMDS=<<EOF
+iI~^cpu
+afl~?
+iSq~^0x~?
+iSq~^0x~text~?
+iSq~^0x~bss~?
+iSq~^0x~const~?
+avgl~?
+EOF
+EXPECT=<<EOF
+cpu      c55x+
+4
+5
+1
+1
+1
+0
+EOF
+RUN
+
+NAME=c55x+ analysis (no debug): 15_fir_filter.obj -- pdf reflines and MAC classification
+FILE=bins/tms320/coff2/15_fir_filter.obj
+ARGS=-A
+CMDS=<<EOF
+iI~^cpu
+afl~?
+afs @ sym._fir_step
+afb @ sym._fir_step~?
+afi @ sym._fir_step~^cyclomatic-cost
+afi @ sym._fir_step~^cyclomatic-complexity
+EOF
+EXPECT=<<EOF
+cpu      c55x+
+4
+void sym._fir_step();
+1
+cyclomatic-cost: 0
+cyclomatic-complexity: 1
+EOF
+RUN
+
+NAME=c55x+ analysis: RzAnalysisOp operand fields (reg / ireg / disp / direction)
+FILE==
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c55x+
+# B AC0 -- 0x02 with bit 7 clear, low 2 bits select AC; reg=none, ireg=ac0
+wx 0200 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^ireg
+ao 1 @ 0~^direction
+# CALL AC2 -- 0x02 with bit 7 set; ireg=ac2, stackptr=2
+wx 0282 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^ireg
+ao 1 @ 0~^stackptr
+ao 1 @ 0~^direction
+# INTR 5 -- 0x03 with high 2 bits=00; val=5, family=cpu
+wx 0305 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^val
+ao 1 @ 0~^family
+# TRAP 7 -- 0x03 with high 2 bits=01; val=7, family=cpu
+wx 0347 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^val
+ao 1 @ 0~^family
+# RETCC -- 0x08; stackptr=-2, reg=sp
+wx 0840 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^reg
+ao 1 @ 0~^stackptr
+# PSHBOTH -- 0x0d; reg=sp, direction=write, stackptr=2
+wx 0d25 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^reg
+ao 1 @ 0~^direction
+ao 1 @ 0~^stackptr
+# PSH dbl -- 0x0e; stackptr=2
+wx 0e25 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^reg
+ao 1 @ 0~^direction
+ao 1 @ 0~^stackptr
+# POP dbl -- 0x0f; stackptr=-2
+wx 0f25 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^reg
+ao 1 @ 0~^direction
+ao 1 @ 0~^stackptr
+# RET -- 0x21; reg=sp, stackptr=-2
+wx 21 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^reg
+ao 1 @ 0~^stackptr
+# RETI -- 0x00 0xc0; reg=sp, stackptr=-2
+wx 00c0 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^reg
+ao 1 @ 0~^stackptr
+EOF
+EXPECT=<<EOF
+type: ujmp
+ireg: ac0
+direction: exec
+type: ucall
+ireg: ac2
+stackptr: 2
+direction: exec
+type: swi
+val: 0x00000005
+family: cpu
+type: trap
+val: 0x00000007
+family: cpu
+type: cret
+reg: sp
+stackptr: -2
+type: upush
+reg: sp
+direction: write
+stackptr: 2
+type: push
+reg: sp
+direction: write
+stackptr: 2
+type: pop
+reg: sp
+direction: read
+stackptr: -2
+type: ret
+reg: sp
+stackptr: -2
+type: ret
+reg: sp
+stackptr: -2
+EOF
+RUN
+
+NAME=c55x+ analysis: stackframe tracking propagates to afi (high-level summariser picks up stackptr)
+FILE=bins/tms320/coff2/16_compiler_style.obj
+ARGS=-A
+CMDS=<<EOF
+# Each function's prologue/epilogue should produce the right stackframe.
+# This verifies the analyzer's stackop/stackptr fields on AADD K8,SP
+# (case 0x0c) and PSH/POP families reach the function summariser.
+afi @ sym._w~^stackframe:0
+afi @ sym._setup_locals~^stackframe:0
+afi @ sym._three_arg_caller~^stackframe:0
+afi @ sym._no_locals~^stackframe:0
+EOF
+EXPECT=<<EOF
+stackframe: 0
+stackframe: 2
+stackframe: 6
+stackframe: 0
+EOF
+RUN

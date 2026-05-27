@@ -1,0 +1,698 @@
+NAME=c55x analysis: register profile (PC alias resolves)
+FILE==
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c55x
+arp~^=PC
+EOF
+EXPECT=<<EOF
+=PC	pc
+EOF
+RUN
+
+NAME=c55x analysis: opcode classification (batched)
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c55x
+wx 20 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^size
+wx 21 @ 0
+ao 1 @ 0~^type
+wx 040500 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+ao 1 @ 0~^fail
+wx 060020 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+wx 080020 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+ao 1 @ 0~^stackptr
+wx 0c1020 @ 0
+ao 1 @ 0~^type
+wx 0e0020 @ 0
+ao 1 @ 0~^type
+wx 4804 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^stackptr
+wx 4805 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^stackptr
+wx 4800 @ 0
+ao 1 @ 0~^type
+wx 020405 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^stackptr
+ao 1 @ 0~^fail
+wx 4a10 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+wx 6005 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+ao 1 @ 0~^fail
+wx 6a102030 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+wx 6b102030 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+wx 6c102030 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+ao 1 @ 0~^stackptr
+wx 6e002000 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^stackptr
+ao 1 @ 0~^fail
+wx 6f002000 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^fail
+wx 9120 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^fail
+wx 9220 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^stackptr
+ao 1 @ 0~^fail
+wx 9400 @ 0
+ao 1 @ 0~^type
+wx 950f @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^val
+wx 958f @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^val
+wx 9601 @ 0
+ao 1 @ 0~^type
+wx 3800 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^stackptr
+wx 3a00 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^stackptr
+wx 030405 @ 0
+ao 1 @ 0~^type
+wx 050500 @ 0
+ao 1 @ 0~^type
+wx 070020 @ 0
+ao 1 @ 0~^type
+wx 090020 @ 0
+ao 1 @ 0~^type
+wx 69102030 @ 0
+ao 1 @ 0~^type
+wx 2410 @ 0
+ao 1 @ 0~^type
+wx 2610 @ 0
+ao 1 @ 0~^type
+wx 2210 @ 0
+ao 1 @ 0~^type
+wx 2810 @ 0
+ao 1 @ 0~^type
+wx 2a10 @ 0
+ao 1 @ 0~^type
+wx 2c10 @ 0
+ao 1 @ 0~^type
+wx 2e10 @ 0
+ao 1 @ 0~^type
+wx 3010 @ 0
+ao 1 @ 0~^type
+wx 3410 @ 0
+ao 1 @ 0~^type
+wx 3610 @ 0
+ao 1 @ 0~^type
+wx 122030 @ 0
+ao 1 @ 0~^type
+wx 5010 @ 0
+ao 1 @ 0~^type
+wx 5610 @ 0
+ao 1 @ 0~^type
+wx 5810 @ 0
+ao 1 @ 0~^type
+wx 5e10 @ 0
+ao 1 @ 0~^type
+wx 85101020 @ 0
+ao 1 @ 0~^type
+wx a01122 @ 0
+ao 1 @ 0~^type
+wx ac1122 @ 0
+ao 1 @ 0~^type
+wx c01122 @ 0
+ao 1 @ 0~^type
+wx cc1122 @ 0
+ao 1 @ 0~^type
+wx 20 @ 0
+ao 1 @ 0~^type
+wx 21 @ 0
+ao 1 @ 0~^type
+wx 040500 @ 0
+ao 1 @ 0~^type
+wx 060020 @ 0
+ao 1 @ 0~^type
+wx 080020 @ 0
+ao 1 @ 0~^type
+wx 0c1020 @ 0
+ao 1 @ 0~^type
+wx 0e0020 @ 0
+ao 1 @ 0~^type
+wx 4cff @ 0
+ao 1 @ 0~^type
+wx 4804 @ 0
+ao 1 @ 0~^type
+wx 38 @ 0
+ao 1 @ 0~^type
+wx 3a @ 0
+ao 1 @ 0~^type
+wx 6010 @ 0
+ao 1 @ 0~^type
+wx 6a010203 @ 0
+ao 1 @ 0~^type
+wx 6b010203 @ 0
+ao 1 @ 0~^type
+wx 6c010203 @ 0
+ao 1 @ 0~^type
+wx 91 @ 0
+ao 1 @ 0~^type
+wx 92 @ 0
+ao 1 @ 0~^type
+wx 93 @ 0
+ao 1 @ 0~^type
+wx a000 @ 0
+ao 1 @ 0~^type
+wx a500 @ 0
+ao 1 @ 0~^type
+wx c000 @ 0
+ao 1 @ 0~^type
+wx c500 @ 0
+ao 1 @ 0~^type
+wx 7a01 @ 0
+ao 1 @ 0~^type
+wx 7b00 @ 0
+ao 1 @ 0~^type
+wx 7c01 @ 0
+ao 1 @ 0~^type
+wx 8100 @ 0
+ao 1 @ 0~^type
+wx 581234 @ 0
+ao 1 @ 0~^type
+wx 821234 @ 0
+ao 1 @ 0~^type
+wx d01234 @ 0
+ao 1 @ 0~^type
+wx 5000 @ 0
+ao 1 @ 0~^type
+wx 3600 @ 0
+ao 1 @ 0~^type
+wx 3400 @ 0
+ao 1 @ 0~^type
+wx 2e00 @ 0
+ao 1 @ 0~^type
+wx 3000 @ 0
+ao 1 @ 0~^type
+wx 5e00 @ 0
+ao 1 @ 0~^type
+wx 76020304 @ 0
+ao 1 @ 0~^type
+wx 77020304 @ 0
+ao 1 @ 0~^type
+wx 85020304 @ 0
+ao 1 @ 0~^type
+wx 6c00ff00 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+ao 1 @ 0~^stackptr
+wx 6a012345 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+wx 4804 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^stackptr
+wx 38 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^stackptr
+wx 3a @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^stackptr
+EOF
+EXPECT=<<EOF
+type: nop
+size: 1
+type: nop
+type: cjmp
+jump: 0x00000008
+fail: 0x00000003
+type: jmp
+jump: 0x00000023
+type: call
+jump: 0x00000023
+stackptr: 2
+type: rep
+type: rep
+type: ret
+stackptr: -2
+type: ret
+stackptr: -2
+type: rep
+type: cret
+stackptr: -2
+fail: 0x00000003
+type: jmp
+jump: 0x00000012
+type: cjmp
+jump: 0x00000007
+fail: 0x00000002
+type: jmp
+jump: 0x00102030
+type: jmp
+jump: 0x00102030
+type: call
+jump: 0x00102030
+stackptr: 2
+type: ccall
+stackptr: 2
+fail: 0x00000004
+type: cjmp
+fail: 0x00000004
+type: ujmp
+fail: 0x00000002
+type: ucall
+stackptr: 2
+fail: 0x00000002
+type: trap
+type: swi
+val: 0x0000000f
+type: trap
+val: 0x0000000f
+type: cmp
+type: push
+stackptr: 1
+type: pop
+stackptr: -1
+type: cret
+type: cjmp
+type: jmp
+type: call
+type: null
+type: add
+type: sub
+type: mov
+type: and
+type: or
+type: xor
+type: cmp
+type: cmp
+type: sub
+type: not
+type: cmp
+type: shl
+type: mul
+type: mul
+type: xchg
+type: lea
+type: mov
+type: mov
+type: mov
+type: mov
+type: nop
+type: nop
+type: cjmp
+type: jmp
+type: call
+type: rep
+type: rep
+type: rep
+type: ret
+type: push
+type: pop
+type: cjmp
+type: jmp
+type: jmp
+type: call
+type: ujmp
+type: ucall
+type: ucall
+type: mov
+type: mov
+type: mov
+type: mov
+type: add
+type: add
+type: sub
+type: add
+type: mul
+type: mul
+type: mul
+type: shl
+type: not
+type: sub
+type: cmp
+type: cmp
+type: xchg
+type: mov
+type: lea
+type: lea
+type: call
+jump: 0x0000ff00
+stackptr: 2
+type: jmp
+jump: 0x00012345
+type: ret
+stackptr: -2
+type: push
+stackptr: 1
+type: pop
+stackptr: -1
+EOF
+RUN
+
+NAME=c55x analysis: 10_full_program.o
+FILE=bins/tms320/coff1/10_full_program.o
+CMDS=<<EOF
+iI~^arch
+iI~^cpu
+iI~^bintype
+aaa
+afl~?
+afl~sym._main$~?
+afl~sym._iir_lowpass$~?
+afl~sym._fir_lowpass$~?
+afl~sym._compress$~?
+afl~sym._timer_isr$~?
+EOF
+EXPECT=<<EOF
+arch     tms320
+cpu      c54x
+bintype  coff
+10
+1
+1
+1
+1
+1
+EOF
+RUN
+
+NAME=c55x binary fixture: c54x 09_data_layout.o -- section table (.bss / .data discovered)
+FILE=bins/tms320/coff1/09_data_layout.o
+CMDS=<<EOF
+iI~^arch
+iI~^cpu
+iSq~^0x~?
+EOF
+EXPECT=<<EOF
+arch     tms320
+cpu      c54x
+7
+EOF
+RUN
+
+NAME=c55x binary fixture: c54x 04_fir_filter.o -- FIR functions discovered
+FILE=bins/tms320/coff1/04_fir_filter.o
+CMDS=<<EOF
+iI~^arch
+iI~^cpu
+aaa
+afl~?
+EOF
+EXPECT=<<EOF
+arch     tms320
+cpu      c54x
+6
+EOF
+RUN
+
+NAME=c55x analysis (with debug): emulateme c55x dbg.coff -- DWARF args/globals/sigs/bbs/pdf
+FILE=bins/tms320/emulateme_nostd.ccsv5.c55x.ticoff2.dbg.coff
+ARGS=-A
+CMDS=<<EOF
+iI~^arch
+iI~^cpu
+afl~?
+afs @ dbg.main
+afvl @ dbg.main
+avgl~?
+avgl~uart_address
+avgl~seckrit
+afb @ dbg.main~?
+afi @ dbg.main~^num-bbs
+afi @ dbg.main~^stackframe
+afi @ dbg.main~^args
+pdf @ sym._decrypt~int sym
+pdf @ sym._decrypt~call
+EOF
+EXPECT=<<EOF
+arch     tms320
+cpu      c55x
+14
+int main(int argc);
+arg int argc @ ar4
+7
+global nstd_uint8_t * uart_address @ 0x800000
+global nstd_uint8_t [17] seckrit @ 0x4800000
+3
+num-bbs: 3
+stackframe: 7
+args: 1
+/ int sym._decrypt();
+| 0x000001db      call  0xFE52                                         ; fcn.00000030
+EOF
+RUN
+
+NAME=c55x analysis (with debug): emulateme c55x rel.coff -- DWARF still works on relocatable
+FILE=bins/tms320/emulateme_nostd.ccsv5.c55x.ticoff2.rel.coff
+ARGS=-A
+CMDS=<<EOF
+iI~^cpu
+afl~?
+afs @ dbg.main
+afvl @ dbg.main
+avgl~?
+afi @ dbg.main~^stackframe
+afi @ dbg.main~^args
+EOF
+EXPECT=<<EOF
+cpu      c55x
+13
+int main(int argc);
+arg int argc @ ar4
+7
+stackframe: 6
+args: 1
+EOF
+RUN
+
+NAME=c55x analysis (with debug): c55xp dbg.coff loaded as c55x -- DWARF still works
+FILE=bins/tms320/emulateme_nostd.ccsv5.c55xp.ticoff2.dbg.coff
+ARGS=-A
+CMDS=<<EOF
+iI~^cpu
+afl~?
+afs @ dbg.main
+afvl @ dbg.main
+avgl~?
+afi @ dbg.main~^args
+EOF
+EXPECT=<<EOF
+cpu      c55x
+13
+int main(int argc);
+arg int argc @ ar4
+7
+args: 1
+EOF
+RUN
+
+NAME=c55x analysis (no debug): emulateme c55x dbg.stripped.coff -- no DWARF args/globals
+FILE=bins/tms320/emulateme_nostd.ccsv5.c55x.ticoff2.dbg.stripped.coff
+ARGS=-A
+CMDS=<<EOF
+iI~^cpu
+afl~?
+afs @ sym._main
+afvl @ sym._main
+avgl~?
+afb @ sym._main~?
+afi @ sym._main~^num-bbs
+afi @ sym._main~^stackframe
+afi @ sym._main~^call-refs
+EOF
+EXPECT=<<EOF
+cpu      c55x
+14
+int main(int argc, char **argv, char **envp);
+0
+1
+num-bbs: 1
+stackframe: 2
+call-refs: 0x00000235 C
+EOF
+RUN
+
+NAME=c55x analysis (no debug): emulateme c55x rel.stripped.coff -- no DWARF args/globals
+FILE=bins/tms320/emulateme_nostd.ccsv5.c55x.ticoff2.rel.stripped.coff
+ARGS=-A
+CMDS=<<EOF
+iI~^cpu
+afs @ sym._main
+afvl @ sym._main
+avgl~?
+afb @ sym._main~?
+afi @ sym._main~^stackframe
+afi @ sym._main~^call-refs
+EOF
+EXPECT=<<EOF
+cpu      c55x
+int main(int argc, char **argv, char **envp);
+0
+3
+stackframe: 14
+call-refs: 0x000002bb C 0x00000364 C
+EOF
+RUN
+
+NAME=c55x analysis (no debug): c55xp dbg.stripped.coff -- no DWARF, byte-driven still works
+FILE=bins/tms320/emulateme_nostd.ccsv5.c55xp.ticoff2.dbg.stripped.coff
+ARGS=-A
+CMDS=<<EOF
+iI~^cpu
+afl~?
+afs @ sym._main
+avgl~?
+afi @ sym._main~^stackframe:0
+EOF
+EXPECT=<<EOF
+cpu      c55x
+13
+int main(int argc, char **argv, char **envp);
+0
+stackframe: 2
+EOF
+RUN
+
+NAME=c55x analysis: RzAnalysisOp operand fields (reg / ireg / disp / direction)
+FILE==
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c55x
+# AADD K8, SP -- frame adjustment; reg=sp, disp=K8, stackop=inc, stackptr=K8
+wx 4e08 @ 0
+ao 1 @ 0~^val
+ao 1 @ 0~^disp
+ao 1 @ 0~^reg
+ao 1 @ 0~^stackop
+ao 1 @ 0~^stackptr
+# B AC1 -- indirect branch; ireg=ac1, direction=exec
+wx 9101 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^ireg
+# CALL AC2 -- indirect call; ireg=ac2, direction=exec, stackptr=2
+wx 9202 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^ireg
+ao 1 @ 0~^stackptr
+# AADD ac0, ar3 -- register-to-register; reg=ar3 (dst), ireg=ac0 (src)
+wx 1400b0 @ 0
+ao 1 @ 0~^reg
+ao 1 @ 0~^ireg
+# MOV *sp(#0x10), ac1 -- LOAD; reg=ac1, ireg=sp, disp=0x10, direction=read, refptr=2
+wx a120 @ 0
+ao 1 @ 0~^reg
+ao 1 @ 0~^ireg
+ao 1 @ 0~^disp
+ao 1 @ 0~^direction
+ao 1 @ 0~^refptr
+# MOV ar3, *sp(#0x10) -- STORE; reg=ar3, ireg=sp, disp=0x10, direction=write
+wx cb20 @ 0
+ao 1 @ 0~^reg
+ao 1 @ 0~^ireg
+ao 1 @ 0~^disp
+ao 1 @ 0~^direction
+# PSH dbl -- 0xb7; stackptr=2 (dbl word push)
+wx b700 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^reg
+ao 1 @ 0~^direction
+ao 1 @ 0~^stackptr
+# POP single -- 0xbb; stackptr=-1
+wx bb00 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^reg
+ao 1 @ 0~^direction
+ao 1 @ 0~^stackptr
+# B 0x100 -- 24-bit absolute branch; direction=exec
+wx 6a000100 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+ao 1 @ 0~^direction
+# INTR 0xA -- SWI; val=0xA, family=cpu
+wx 950a @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^val
+ao 1 @ 0~^family
+EOF
+EXPECT=<<EOF
+val: 0x00000008
+disp: 0x00000008
+reg: sp
+stackop: inc
+stackptr: -8
+type: ujmp
+ireg: ac1
+type: ucall
+ireg: ac2
+stackptr: 2
+reg: ar3
+ireg: ac0
+reg: ac1
+ireg: sp
+disp: 0x00000010
+direction: read
+refptr: 2
+reg: ar3
+ireg: sp
+disp: 0x00000010
+direction: write
+type: push
+reg: sp
+direction: write
+stackptr: 2
+type: pop
+reg: sp
+direction: read
+stackptr: -1
+type: jmp
+jump: 0x00000100
+direction: exec
+type: swi
+val: 0x0000000a
+family: cpu
+EOF
+RUN
+
+NAME=c55x analysis: stackframe tracking propagates to afi (high-level summariser picks up stackptr)
+FILE=bins/tms320/emulateme_nostd.ccsv5.c55x.ticoff2.dbg.coff
+ARGS=-A
+CMDS=<<EOF
+# Each function with a prologue should have a non-zero stackframe.
+# This verifies the analyzer's stackop/stackptr fields are reaching afi.
+afi @ dbg.main~^stackframe:0
+afi @ sym._decrypt~^stackframe:0
+afi @ sym._c_strlen~^stackframe:0
+afi @ sym._uart_write_hex~^stackframe:0
+# afi shows the dbg.main args via afvl integration (which reads op->reg
+# of the AADD K8, SP instruction to identify the prologue frame size)
+afi @ dbg.main~^args
+afi @ dbg.main~^locals
+EOF
+EXPECT=<<EOF
+stackframe: 7
+stackframe: 0
+stackframe: 4
+stackframe: 2
+args: 1
+locals: 0
+EOF
+RUN

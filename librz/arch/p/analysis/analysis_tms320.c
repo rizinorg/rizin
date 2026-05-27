@@ -1,74 +1,18 @@
 // SPDX-FileCopyrightText: 2024 deroad <wargio@libero.it>
 // SPDX-FileCopyrightText: 2014 Ilya V. Matveychikov <i.matveychikov@milabs.ru>
+// SPDX-FileCopyrightText: 2026 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
 #include <tms320/tms320_dasm.h>
 
+#include <tms320/c55x/c55x_analysis.h>
 #include <tms320/c55x_plus/c55plus_analysis.h>
 #include <tms320/c64x/c64x.h>
 
 typedef struct tms320_ctx_t {
 	void *c64x;
-	tms320_dasm_t engine;
 } Tms320Context;
-
-static bool match(const char *str, const char *token) {
-	return !strncasecmp(str, token, strlen(token));
-}
-
-static int tms320_c55x_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, tms320_dasm_t *engine) {
-	const char *str = engine->syntax;
-
-	op->delay = 0;
-	op->size = tms320_dasm(engine, buf, len);
-	op->type = RZ_ANALYSIS_OP_TYPE_NULL;
-
-	str = strstr(str, "||") ? str + 3 : str;
-
-	if (match(str, "B ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		if (match(str, "B AC")) {
-			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
-		}
-	} else if (match(str, "BCC ") || match(str, "BCCU ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-	} else if (match(str, "CALL ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-		if (match(str, "CALL AC")) {
-			op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
-		}
-	} else if (match(str, "CALLCC ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_CCALL;
-	} else if (match(str, "RET")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_RET;
-		if (match(str, "RETCC")) {
-			op->type = RZ_ANALYSIS_OP_TYPE_CRET;
-		}
-	} else if (match(str, "MOV ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
-	} else if (match(str, "PSHBOTH ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_UPUSH;
-	} else if (match(str, "PSH ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
-	} else if (match(str, "POPBOTH ") || match(str, "POP ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_POP;
-	} else if (match(str, "CMP ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
-	} else if (match(str, "CMPAND ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_ACMP;
-	} else if (match(str, "NOP")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
-	} else if (match(str, "INTR ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
-	} else if (match(str, "TRAP ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
-	} else if (match(str, "INVALID")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
-	}
-
-	return op->size;
-}
 
 int tms320_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	Tms320Context *context = (Tms320Context *)analysis->plugin_data;
@@ -79,7 +23,7 @@ int tms320_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 	} else if (cpu && rz_str_casecmp(cpu, "c64x") == 0) {
 		return tms320_c64x_op(analysis, op, addr, buf, len, mask, context->c64x);
 	}
-	return tms320_c55x_op(analysis, op, addr, buf, len, &context->engine);
+	return tms320_c55x_op_byte(analysis, op, addr, buf, len);
 }
 
 static bool tms320_analysis_init(void **user) {
@@ -89,7 +33,6 @@ static bool tms320_analysis_init(void **user) {
 	}
 
 	context->c64x = tms320_c64x_new();
-	tms320_dasm_init(&context->engine);
 	*user = context;
 	return true;
 }
@@ -99,7 +42,6 @@ static bool tms320_analysis_fini(void *user) {
 	Tms320Context *context = (Tms320Context *)user;
 
 	tms320_c64x_free(context->c64x);
-	tms320_dasm_fini(&context->engine);
 	free(context);
 	return true;
 }
@@ -194,7 +136,7 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			"ctr xssp   .23 569 0 # Extended system stack pointer\n";
 	} else {
 		p =
-			"=PC	pc\n"
+			"=PC	pce1\n"
 			"=A0	a4\n"
 			"=A1	b4\n"
 			"=A2	a6\n"
