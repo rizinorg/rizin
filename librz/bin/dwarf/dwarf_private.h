@@ -31,6 +31,17 @@ RZ_IPI RzBinEndianReader *RzBinEndianReader_from_file(
 	RzBinFile *binfile, const char *sect_name);
 
 static inline bool bf_bigendian(RzBinFile *bf) {
+	if (bf && bf->o && bf->o->info && bf->o->info->arch &&
+		!strcmp(bf->o->info->arch, "tms320")) {
+		/* TI COFF for TMS320C55x stores DWARF section data as
+		 * 16-bit big-endian words even when the COFF file
+		 * headers are little-endian. Without this override the
+		 * DWARF parser reads the unit length as garbage and
+		 * bails out with zero compilation units, so afvl /
+		 * avgl / afs / pdf return nothing on cl55-built
+		 * binaries. */
+		return true;
+	}
 	return bf->o && bf->o->info && bf->o->info->big_endian;
 }
 
