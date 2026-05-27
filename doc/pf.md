@@ -150,6 +150,32 @@ canonical form is `t(format)`.
   Consecutive `:N` fields share a bit-level cursor within the current byte;
   when a non-bit field follows, the cursor snaps to the next byte boundary.
 
+- `v(N)` / `v(N,lsb)` / `v(N,msb)` -- **bitvector**: read N individual
+  bits (1..4096) and expose them as N separate 0/1 scalars. Consumes
+  exactly `ceil(N/8)` bytes from the buffer. Unlike `:N`, a bitvector
+  does not interact with the packed-bit cursor -- each `v(N)` field
+  reads whole bytes and stands alone.
+
+  Bit order within each byte defaults to MSB-first (bit 7 of byte 0 is
+  bit 0 of the vector). Pass `,lsb` for the Intel-style order.
+
+  Forensics / RE use cases: page-frame allocation maps, NTFS `$Bitmap`
+  clusters, ext4 block/inode bitmaps, ELF `DT_FLAGS_1`, PE
+  characteristics, ACL bitmasks -- anywhere you want to *see* a
+  bitmap rather than collapse it to a hex number.
+
+  ```
+  > wx abcd
+  > pf v(12) bits
+  0x00000000 : bits = [ 1 0 1 0 1 0 1 1 | 1 1 0 0 ] (12-bit)
+  > pfj "v(16) bits"
+  [{"name":"bits","type":"bitvec","offset":0,"bit_width":16,"value":"1010101111001101"}]
+  ```
+
+  JSON renders the vector as a compact string of `'0'`/`'1'` characters
+  alongside a `bit_width` sibling. Quiet mode (`pfq`) emits the bits
+  space-separated with no decoration.
+
 ### Pointer dereference
 
 - `*<type>` -- read the field's bytes as a pointer (8 or 4 bytes depending on

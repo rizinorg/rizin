@@ -196,6 +196,10 @@ typedef enum {
 	// DSL extensions
 	RZ_PF_ALIGN, //<< @N -- align read cursor to N-byte boundary
 	RZ_PF_BITS, //<< :N -- read N bits (1..64) from a packed bitstream
+	RZ_PF_BITVEC, //<< v(N) -- bitvector: N individual bits unpacked as
+		      //   0/1 array. N bits are read from ceil(N/8) bytes,
+		      //   MSB-first by default. Forensics-friendly for page
+		      //   maps, allocation bitmaps, ELF DT_FLAGS, etc.
 	RZ_PF_GUID, //<< G  -- 16-byte GUID/UUID, layout-aware
 	RZ_PF_TLV, //<< V(t=..,l=..,...)  -- single TLV record
 } RzPfFieldType;

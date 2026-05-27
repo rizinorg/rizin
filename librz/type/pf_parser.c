@@ -577,6 +577,8 @@ RZ_API const char *rz_pf_field_ctype(RzPfFieldType type) {
 		return "uuid_t";
 	case RZ_PF_BITS:
 		return "uint64_t /* bits */";
+	case RZ_PF_BITVEC:
+		return "uint8_t[] /* bitvector */";
 	case RZ_PF_TLV:
 		return "tlv_t";
 	case RZ_PF_ALIGN:
@@ -620,6 +622,7 @@ static const char *type_repr_name(RzPfFieldType type) {
 	case RZ_PF_HEXDUMP: return "raw";
 	case RZ_PF_GUID: return "guid";
 	case RZ_PF_BITS: return "bits";
+	case RZ_PF_BITVEC: return "bitvec";
 	case RZ_PF_TLV: return "tlv";
 	case RZ_PF_ALIGN: return "align";
 	default:
@@ -1116,6 +1119,85 @@ static int parse_bits_spec(const char *p, RzPfField *fld) {
 	return consumed;
 }
 
+/* Bitvector:  v(N)  or  v(N,lsb)  or  v(N,msb)
+ *
+ * Reads N individual bits from ceil(N/8) bytes of input and exposes
+ * them as an array of N 0/1 values. Renders as space-separated bits
+ * grouped by 8 (`1 0 1 0 1 1 0 0 | 0 1 1 ...`). JSON renders as a
+ * string of '0'/'1' characters for compactness.
+ *
+ * Forensics use: page-frame allocation maps, NTFS $Bitmap clusters,
+ * ext4 block/inode bitmaps, ELF DT_FLAGS_1, PE characteristics bits
+ * that you want to *see* rather than collapse into a hex number.
+ *
+ * Bit order within each byte defaults to MSB-first (bit 7 of byte 0
+ * is bit 0 of the vector); pass `lsb` for the Intel-ish order. */
+static int parse_bitvec_spec(const char *p, const char *spec_end,
+	RzPfField *fld) {
+	int consumed = 1; /* the 'v' */
+	if (p[consumed] != '(') {
+		PF_DIAG(RZ_PF_ERR_ERROR, RZ_PF_ERRC_SYNTAX, p,
+			"pf: 'v' bitvector spec missing '(N)' "
+			"(use 'v(N)' or 'v(N,lsb)'), skipping\n");
+		return 1;
+	}
+	consumed++; /* '(' */
+	if (!isdigit((ut8)p[consumed])) {
+		PF_DIAG(RZ_PF_ERR_ERROR, RZ_PF_ERRC_SYNTAX, p,
+			"pf: 'v(N)' missing N (use 'v(N)' with N>=1), "
+			"skipping\n");
+		return consumed;
+	}
+	int n = 0;
+	while (isdigit((ut8)p[consumed]) && n < 100000) {
+		n = n * 10 + (p[consumed] - '0');
+		consumed++;
+	}
+	if (n < 1) {
+		PF_DIAG(RZ_PF_ERR_WARN, RZ_PF_ERRC_RANGE, p,
+			"pf: bitvector width %d must be >= 1, clamping\n", n);
+		n = 1;
+	} else if (n > 4096) {
+		PF_DIAG(RZ_PF_ERR_WARN, RZ_PF_ERRC_RANGE, p,
+			"pf: bitvector width %d exceeds maximum 4096, "
+			"clamping\n", n);
+		n = 4096;
+	}
+	fld->type = RZ_PF_BITVEC;
+	fld->bit_width = n;
+	fld->bit_order = RZ_PF_BITORDER_MSB;
+	/* Optional ,lsb / ,msb */
+	if (p[consumed] == ',') {
+		consumed++;
+		while (p[consumed] == ' ') {
+			consumed++;
+		}
+		if (p[consumed] == 'l' && p[consumed + 1] == 's' &&
+			p[consumed + 2] == 'b') {
+			fld->bit_order = RZ_PF_BITORDER_LSB;
+			consumed += 3;
+		} else if (p[consumed] == 'm' && p[consumed + 1] == 's' &&
+			p[consumed + 2] == 'b') {
+			fld->bit_order = RZ_PF_BITORDER_MSB;
+			consumed += 3;
+		} else {
+			PF_DIAG(RZ_PF_ERR_WARN, RZ_PF_ERRC_SYNTAX, p,
+				"pf: 'v(N,?)' unknown bit-order keyword "
+				"(use 'lsb' or 'msb'); defaulting to msb\n");
+			while (p + consumed < spec_end && p[consumed] != ')') {
+				consumed++;
+			}
+		}
+	}
+	if (p[consumed] == ')') {
+		consumed++;
+	} else {
+		PF_DIAG(RZ_PF_ERR_WARN, RZ_PF_ERRC_SYNTAX, p,
+			"pf: 'v(N)' missing closing ')'\n");
+	}
+	return consumed;
+}
+
 // Alignment:  @N where N >= 1.
 static int parse_align_spec(const char *p, RzPfField *fld) {
 	int consumed = 1; /* the '@' */
@@ -1262,12 +1344,15 @@ static int parse_type_spec(const char *p, const char *spec_end,
 		}
 	}
 
-	/* -- DSL extensions: @N, :N, G, V(...) -- */
+	/* -- DSL extensions: @N, :N, v(N), G, V(...) -- */
 	if (p[0] == '@') {
 		return parse_align_spec(p, fld);
 	}
 	if (p[0] == ':') {
 		return parse_bits_spec(p, fld);
+	}
+	if (p[0] == 'v') {
+		return parse_bitvec_spec(p, spec_end, fld);
 	}
 	if (p[0] == 'G') {
 		return parse_guid_spec(p, spec_end, fld);
@@ -2336,6 +2421,46 @@ static int read_field(const RzPfField *fld, const ut8 *buf, int off,
 			read_bits_field(fld, buf, off, avail, st, val);
 	}
 
+	/* Bitvector -- N individual bits unpacked as N 0/1 scalars.
+	 * Consumes ceil(N/8) bytes from the buffer; bit order within
+	 * each byte is controlled by fld->bit_order. The vector is
+	 * read whole (not bit-packed across multiple v() fields like
+	 * RZ_PF_BITS would be) and does not advance the bit cursor.
+	 *
+	 * Worked example for `v(12)` over bytes `0xAB 0xCD` MSB-first:
+	 *   bit 0 = (0xAB >> 7) & 1 = 1
+	 *   bit 1 = (0xAB >> 6) & 1 = 0
+	 *   ...
+	 *   bit 8 = (0xCD >> 7) & 1 = 1
+	 *   bit 9 = (0xCD >> 6) & 1 = 1
+	 *   bit 10 = (0xCD >> 5) & 1 = 0
+	 *   bit 11 = (0xCD >> 4) & 1 = 0
+	 *   -> [ 1 0 1 0 1 0 1 1 | 1 1 0 0 ] */
+	if (fld->type == RZ_PF_BITVEC) {
+		int nbits = fld->bit_width;
+		int nbytes = (nbits + 7) / 8;
+		if (nbytes > avail) {
+			nbytes = avail;
+			nbits = nbytes * 8;
+		}
+		val->count = nbits;
+		val->bit_width = nbits;
+		val->scalars = RZ_NEWS0(RzPfScalar, nbits > 0 ? nbits : 1);
+		for (int i = 0; i < nbits; i++) {
+			int byte_idx = i / 8;
+			int bit_idx = i % 8;
+			ut8 b = buf[off + byte_idx];
+			ut8 bit;
+			if (fld->bit_order == RZ_PF_BITORDER_LSB) {
+				bit = (b >> bit_idx) & 1;
+			} else {
+				bit = (b >> (7 - bit_idx)) & 1;
+			}
+			val->scalars[i].v_u8 = bit;
+		}
+		return snap_advance + nbytes;
+	}
+
 	/* GUID */
 	if (fld->type == RZ_PF_GUID) {
 		return snap_advance +
@@ -2881,6 +3006,11 @@ static void scalar_text(RzStrBuf *sb, const RzPfValue *val, int k,
 		rz_strbuf_appendf(sb, "%" PFMT64u " (%d-bit)",
 			s->v_u64, val->bit_width);
 		break;
+	case RZ_PF_BITVEC:
+		/* Quiet rendering uses the same per-element loop as numeric
+		 * arrays, so each scalar is just the 0/1 bit. */
+		rz_strbuf_appendf(sb, "%d", (int)(s->v_u8 & 1));
+		break;
 	default:
 		rz_strbuf_append(sb, "?");
 		break;
@@ -3176,6 +3306,22 @@ static void render_val_text(RzStrBuf *sb, const RzPfValue *v,
 				v->scalars[0].v_raw[k]);
 		}
 		rz_strbuf_append(sb, "\n");
+		return;
+	}
+
+	/* Bitvector -- render N bits as `[ 1 0 1 1 0 0 1 0 | 1 1 0 0 ]`
+	 * with a `|` separator every 8 bits for readability, and an
+	 * `(N-bit)` suffix for orientation. */
+	if (v->type == RZ_PF_BITVEC) {
+		rz_strbuf_append(sb, "[ ");
+		for (int k = 0; k < v->count; k++) {
+			if (k && (k % 8) == 0) {
+				rz_strbuf_append(sb, "| ");
+			}
+			rz_strbuf_appendf(sb, "%d ",
+				(int)v->scalars[k].v_u8);
+		}
+		rz_strbuf_appendf(sb, "] (%d-bit)\n", v->bit_width);
 		return;
 	}
 
@@ -3527,6 +3673,24 @@ static void render_val_json(PJ *j, const RzPfValue *v,
 		return;
 	}
 
+	/* Bitvector -- compact as a string of '0'/'1' so consumers can
+	 * regex-match runs without iterating an array. Also include the
+	 * bit width as a sibling field so size info isn't lost. */
+	if (v->type == RZ_PF_BITVEC) {
+		pj_kn(j, "bit_width", v->bit_width);
+		char *bits = malloc(v->count + 1);
+		if (bits) {
+			for (int k = 0; k < v->count; k++) {
+				bits[k] = '0' + (v->scalars[k].v_u8 & 1);
+			}
+			bits[v->count] = '\0';
+			pj_ks(j, "value", bits);
+			free(bits);
+		}
+		pj_end(j);
+		return;
+	}
+
 	/* TLV */
 	if (v->type == RZ_PF_TLV) {
 		pj_kn(j, "tag", v->tlv_tag);
@@ -3753,6 +3917,7 @@ static char dot_type_glyph(RzPfFieldType t) {
 	case RZ_PF_STRUCT: return '?';
 	case RZ_PF_GUID: return 'G';
 	case RZ_PF_BITS: return ':';
+	case RZ_PF_BITVEC: return 'v';
 	case RZ_PF_TLV: return 'V';
 	case RZ_PF_ALIGN: return '@';
 	case RZ_PF_SKIP: return '.';

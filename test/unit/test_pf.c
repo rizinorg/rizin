@@ -1609,6 +1609,152 @@ static bool test_pf_read_bits_lsb(void) {
 	mu_end;
 }
 
+/* --------- bitvector (v(N)) tests ----------------------------------- */
+
+static bool test_pf_parse_bitvec_basic(void) {
+	RzPfFormat *fmt = rz_pf_parse("v(8) bits");
+	mu_assert_notnull(fmt, "parse v(8)");
+	mu_assert_eq(fmt->nfields, 1, "1 field");
+	mu_assert_eq(fmt->fields[0].type, RZ_PF_BITVEC, "BITVEC");
+	mu_assert_eq(fmt->fields[0].bit_width, 8, "8-bit");
+	mu_assert_eq(fmt->fields[0].bit_order, RZ_PF_BITORDER_MSB,
+		"default MSB");
+	rz_pf_format_free(fmt);
+	mu_end;
+}
+
+static bool test_pf_parse_bitvec_partial_byte(void) {
+	/* v(12) reads 2 bytes but only 12 bits are exposed. */
+	RzPfFormat *fmt = rz_pf_parse("v(12) bits");
+	mu_assert_notnull(fmt, "parse v(12)");
+	mu_assert_eq(fmt->fields[0].bit_width, 12, "12-bit width");
+	rz_pf_format_free(fmt);
+	mu_end;
+}
+
+static bool test_pf_parse_bitvec_lsb_msb_kw(void) {
+	RzPfFormat *fmt = rz_pf_parse("v(16,lsb) bits");
+	mu_assert_notnull(fmt, "parse v(16,lsb)");
+	mu_assert_eq(fmt->fields[0].bit_order, RZ_PF_BITORDER_LSB,
+		"LSB order");
+	rz_pf_format_free(fmt);
+
+	fmt = rz_pf_parse("v(16,msb) bits");
+	mu_assert_notnull(fmt, "parse v(16,msb)");
+	mu_assert_eq(fmt->fields[0].bit_order, RZ_PF_BITORDER_MSB,
+		"MSB order");
+	rz_pf_format_free(fmt);
+	mu_end;
+}
+
+static bool test_pf_parse_bitvec_clamp_low(void) {
+	/* v(0) -> clamped to 1 with a warning. */
+	RzPfFormat *fmt = rz_pf_parse("v(0) bits");
+	mu_assert_notnull(fmt, "parse v(0)");
+	mu_assert_eq(fmt->fields[0].bit_width, 1, "clamped low to 1");
+	rz_pf_format_free(fmt);
+	mu_end;
+}
+
+static bool test_pf_parse_bitvec_clamp_high(void) {
+	/* v(99999) -> clamped to 4096 with a warning. */
+	RzPfFormat *fmt = rz_pf_parse("v(99999) bits");
+	mu_assert_notnull(fmt, "parse v(99999)");
+	mu_assert_eq(fmt->fields[0].bit_width, 4096, "clamped high to 4096");
+	rz_pf_format_free(fmt);
+	mu_end;
+}
+
+static bool test_pf_parse_bitvec_missing_paren(void) {
+	/* `v` without `(` is a syntax error; parser logs and skips. */
+	RzPfFormat *fmt = rz_pf_parse("v bits");
+	mu_assert_notnull(fmt, "parse v (degraded)");
+	mu_assert(fmt->nerrors > 0, "diagnostic recorded");
+	rz_pf_format_free(fmt);
+	mu_end;
+}
+
+static bool test_pf_read_bitvec_msb(void) {
+	/* Byte 0xAB = 0b10101011, MSB-first => bits 1,0,1,0,1,0,1,1 */
+	RzPfFormat *fmt = rz_pf_parse("v(8) bits");
+	const ut8 buf[] = { 0xAB, 0x00 };
+	int count = 0;
+	RzPfValue *vals = rz_pf_read(fmt, buf, sizeof(buf), 0, NULL, &count);
+	mu_assert_notnull(vals, "read v(8) MSB");
+	mu_assert_eq(count, 1, "1 value");
+	mu_assert_eq(vals[0].type, RZ_PF_BITVEC, "BITVEC type");
+	mu_assert_eq(vals[0].count, 8, "8 bit-scalars");
+	mu_assert_eq(vals[0].bit_width, 8, "bit_width=8");
+	const ut8 expected[] = { 1, 0, 1, 0, 1, 0, 1, 1 };
+	for (int i = 0; i < 8; i++) {
+		mu_assert_eq(vals[0].scalars[i].v_u8, expected[i],
+			"MSB bit i");
+	}
+	rz_pf_values_free(vals, count);
+	rz_pf_format_free(fmt);
+	mu_end;
+}
+
+static bool test_pf_read_bitvec_lsb(void) {
+	/* Byte 0xAB, LSB-first => bits 1,1,0,1,0,1,0,1 */
+	RzPfFormat *fmt = rz_pf_parse("v(8,lsb) bits");
+	const ut8 buf[] = { 0xAB, 0x00 };
+	int count = 0;
+	RzPfValue *vals = rz_pf_read(fmt, buf, sizeof(buf), 0, NULL, &count);
+	mu_assert_notnull(vals, "read v(8) LSB");
+	const ut8 expected[] = { 1, 1, 0, 1, 0, 1, 0, 1 };
+	for (int i = 0; i < 8; i++) {
+		mu_assert_eq(vals[0].scalars[i].v_u8, expected[i],
+			"LSB bit i");
+	}
+	rz_pf_values_free(vals, count);
+	rz_pf_format_free(fmt);
+	mu_end;
+}
+
+static bool test_pf_read_bitvec_partial(void) {
+	/* v(12) over 0xAB 0xCD MSB-first:
+	 *   0xAB = 10101011, 0xCD = 11001101  -> first 12 bits =
+	 *   1 0 1 0 1 0 1 1 | 1 1 0 0
+	 * Consumes 2 bytes from buf. */
+	RzPfFormat *fmt = rz_pf_parse("v(12)x1 bits tail");
+	const ut8 buf[] = { 0xAB, 0xCD, 0xEF };
+	int count = 0;
+	RzPfValue *vals = rz_pf_read(fmt, buf, sizeof(buf), 0, NULL, &count);
+	mu_assert_notnull(vals, "read v(12)");
+	mu_assert_eq(count, 2, "2 values (bits + tail)");
+	mu_assert_eq(vals[0].count, 12, "12 bits");
+	const ut8 expected[] = { 1, 0, 1, 0, 1, 0, 1, 1,
+		1, 1, 0, 0 };
+	for (int i = 0; i < 12; i++) {
+		mu_assert_eq(vals[0].scalars[i].v_u8, expected[i],
+			"bit i");
+	}
+	/* tail should be the third byte 0xEF, proving v(12) consumed
+	 * exactly ceil(12/8) = 2 bytes. */
+	mu_assert_eq(vals[1].scalars[0].v_u8, 0xEF, "tail after bitvec");
+	rz_pf_values_free(vals, count);
+	rz_pf_format_free(fmt);
+	mu_end;
+}
+
+static bool test_pf_render_bitvec_text(void) {
+	RzPfFormat *fmt = rz_pf_parse("v(12) bits");
+	const ut8 buf[] = { 0xAB, 0xCD };
+	int count = 0;
+	RzPfValue *vals = rz_pf_read(fmt, buf, sizeof(buf), 0, NULL, &count);
+	char *out = rz_pf_render(vals, count, RZ_PF_MODE_TEXT, NULL);
+	mu_assert_notnull(out, "render text");
+	/* Format: `[ 1 0 1 0 1 0 1 1 | 1 1 0 0 ] (12-bit)` */
+	mu_assert(strstr(out, "[ 1 0 1 0 1 0 1 1 | 1 1 0 0 ]"),
+		"grouped-by-8 rendering present");
+	mu_assert(strstr(out, "(12-bit)"), "width suffix present");
+	free(out);
+	rz_pf_values_free(vals, count);
+	rz_pf_format_free(fmt);
+	mu_end;
+}
+
 static bool test_pf_parse_guid(void) {
 	RzPfFormat *fmt = rz_pf_parse("G uuid");
 	mu_assert_notnull(fmt, "parse G");
@@ -2727,6 +2873,16 @@ static int all_tests(void) {
 	mu_run_test(test_pf_parse_bits);
 	mu_run_test(test_pf_read_bits_msb);
 	mu_run_test(test_pf_read_bits_lsb);
+	mu_run_test(test_pf_parse_bitvec_basic);
+	mu_run_test(test_pf_parse_bitvec_partial_byte);
+	mu_run_test(test_pf_parse_bitvec_lsb_msb_kw);
+	mu_run_test(test_pf_parse_bitvec_clamp_low);
+	mu_run_test(test_pf_parse_bitvec_clamp_high);
+	mu_run_test(test_pf_parse_bitvec_missing_paren);
+	mu_run_test(test_pf_read_bitvec_msb);
+	mu_run_test(test_pf_read_bitvec_lsb);
+	mu_run_test(test_pf_read_bitvec_partial);
+	mu_run_test(test_pf_render_bitvec_text);
 	mu_run_test(test_pf_parse_guid);
 	mu_run_test(test_pf_read_guid);
 	mu_run_test(test_pf_parse_lenref_array);

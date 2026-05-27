@@ -96,6 +96,13 @@ nested-struct instance. When a non-bit field is read while
 `bit_cursor != 0`, the cursor snaps to the next byte boundary; this is the
 "snap-flush" rule.
 
+Bitvector fields (`v(N)`) intentionally bypass the bit cursor: each
+`v(N)` reads exactly `ceil(N/8)` *whole bytes* and unpacks them into
+N individual 0/1 scalars. They do not pack with neighbouring `:N`
+fields, and reading a `v(N)` field next to a `:N` field will flush
+any partially-consumed bit cursor first. The bit-order knob (`lsb`
+vs `msb`) governs the per-byte unpacking, not the byte order itself.
+
 `[@name]` length-by-reference works by scanning `siblings[0..n_siblings)`
 for an earlier field with the matching name. Lookups never cross struct
 boundaries.
