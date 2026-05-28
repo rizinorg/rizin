@@ -16101,7 +16101,7 @@ static const RzCmdDescHelp cmd_print_format_help = {
 static const RzCmdDescArg cmd_print_format_delete_args[] = {
 	{
 		.name = "formatname",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_PF_FORMAT_NAME,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
@@ -16123,7 +16123,7 @@ static const RzCmdDescHelp cmd_print_format_delete_all_help = {
 static const RzCmdDescArg cmd_print_format_apply_args[] = {
 	{
 		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_PF_FORMAT_NAME,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
@@ -16137,7 +16137,7 @@ static const RzCmdDescHelp cmd_print_format_apply_help = {
 static const RzCmdDescArg cmd_print_format_c_args[] = {
 	{
 		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_PF_FORMAT_NAME,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
@@ -16151,7 +16151,7 @@ static const RzCmdDescHelp cmd_print_format_c_help = {
 static const RzCmdDescArg cmd_print_format_dot_args[] = {
 	{
 		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_PF_FORMAT_NAME,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
@@ -16165,7 +16165,7 @@ static const RzCmdDescHelp cmd_print_format_dot_help = {
 static const RzCmdDescArg cmd_print_format_named_dot_args[] = {
 	{
 		.name = "formatname",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_PF_FORMAT_PATH,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
@@ -16180,7 +16180,7 @@ static const RzCmdDescHelp cmd_print_format_named_dot_help = {
 static const RzCmdDescArg cmd_print_format_named_args[] = {
 	{
 		.name = "formatname",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_PF_FORMAT_NAME,
 		.optional = true,
 
 	},
@@ -16201,7 +16201,7 @@ static const RzCmdDescHelp cmd_print_format_named_help = {
 static const RzCmdDescArg cmd_print_format_file_args[] = {
 	{
 		.name = "file",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_PF_FDF_FILE,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
@@ -16216,7 +16216,7 @@ static const RzCmdDescHelp cmd_print_format_file_help = {
 static const RzCmdDescArg cmd_print_format_size_args[] = {
 	{
 		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_PF_FORMAT_NAME,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
@@ -16230,7 +16230,7 @@ static const RzCmdDescHelp cmd_print_format_size_help = {
 static const RzCmdDescArg cmd_print_format_value_args[] = {
 	{
 		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_PF_FORMAT_NAME,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
@@ -16244,7 +16244,7 @@ static const RzCmdDescHelp cmd_print_format_value_help = {
 static const RzCmdDescArg cmd_print_format_write_args[] = {
 	{
 		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_PF_FORMAT_PATH,
 
 	},
 	{

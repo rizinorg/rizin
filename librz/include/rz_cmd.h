@@ -54,6 +54,9 @@ typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_REG_FILTER, ///< Argument is a register name, size, type or "all"
 	RZ_CMD_ARG_TYPE_REG_TYPE, ///< Argument is a register type/arena like "gpr"
 	RZ_CMD_ARG_TYPE_FOLDER, ///< Argument is a directory or path
+	RZ_CMD_ARG_TYPE_PF_FORMAT_NAME, ///< Argument is the name of a `pf` named format (registered via `pfn`)
+	RZ_CMD_ARG_TYPE_PF_FORMAT_PATH, ///< Argument is a `pf` named format name optionally followed by `.<field>` (for `pf.` and `pfw`)
+	RZ_CMD_ARG_TYPE_PF_FDF_FILE, ///< Argument is the name of a Format Definition File (.fdf), looked up in the FDF search dirs
 } RzCmdArgType;
 
 /**

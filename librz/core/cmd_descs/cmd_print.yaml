@@ -479,7 +479,7 @@ commands:
         cname: cmd_print_format_delete
         args:
           - name: formatname
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_PF_FORMAT_NAME
       - name: pf-*
         summary: Remove all named formats
         cname: cmd_print_format_delete_all
@@ -489,19 +489,19 @@ commands:
         cname: cmd_print_format_apply
         args:
           - name: format
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_PF_FORMAT_NAME
       - name: pfc
         summary: Show data using given format string with C syntax
         cname: cmd_print_format_c
         args:
           - name: format
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_PF_FORMAT_NAME
       - name: pfd
         summary: Show data using given format string as DOT
         cname: cmd_print_format_dot
         args:
           - name: format
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_PF_FORMAT_NAME
       - name: pf.
         summary: Show data using given named format
         cname: cmd_print_format_named_dot
@@ -512,14 +512,14 @@ commands:
           - RZ_OUTPUT_MODE_QUIET
         args:
           - name: formatname
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_PF_FORMAT_PATH
             optional: true
       - name: pfn
         summary: List named formats/Print named format string/Define a new named format
         cname: cmd_print_format_named
         args:
           - name: formatname
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_PF_FORMAT_NAME
             optional: true
           - name: formatstring
             type: RZ_CMD_ARG_TYPE_STRING
@@ -529,26 +529,26 @@ commands:
         cname: cmd_print_format_file
         args:
           - name: file
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_PF_FDF_FILE
             optional: true
       - name: pfs
         summary: Print the size of format in bytes
         cname: cmd_print_format_size
         args:
           - name: format
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_PF_FORMAT_NAME
       - name: pfv
         summary: Print the value for named format
         cname: cmd_print_format_value
         args:
           - name: format
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_PF_FORMAT_NAME
       - name: pfw
         summary: Write data using given format string
         cname: cmd_print_format_write
         args:
           - name: format
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_PF_FORMAT_PATH
           - name: value
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true

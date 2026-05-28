@@ -5,6 +5,10 @@
 #include <rz_core.h>
 #include <rz_cons.h>
 #include <rz_cmd.h>
+#include <rz_pf.h>
+#include <rz_util/rz_path.h>
+#include <rz_util/rz_sys.h>
+#include <rz_userconf.h>
 
 /**
  * Describe what needs to be autocompleted.
@@ -435,6 +439,289 @@ static void autocmplt_cmd_arg_any_type(RzCore *core, RzLineNSCompletionResult *r
 	rz_list_free(list);
 }
 
+/* Offer the names of all `pf` named formats (those registered via `pfn`
+ * or seeded by `pfo`). Used by sub-commands that take a format-name
+ * argument: `pf-`, `pfn`, `pfs`, `pfv`. */
+static void autocmplt_cmd_arg_pf_format_name(RzCore *core,
+	RzLineNSCompletionResult *res, const char *s, size_t len) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzList *list = rz_type_db_format_all(typedb);
+	if (!list) {
+		return;
+	}
+	RzListIter *iter;
+	RzTypeFormat *fmt;
+	rz_list_foreach (list, iter, fmt) {
+		if (fmt->name && !strncmp(fmt->name, s, len)) {
+			rz_line_ns_completion_result_add(res, fmt->name);
+		}
+	}
+	rz_list_free(list);
+}
+
+/* Helper: consume one path segment of the form `name`, optionally
+ * followed by `[N]` and optionally followed by `.`. \p in points at
+ * the first character of the segment, \p end is the hard read limit.
+ *
+ * Concretely, for the four shapes the function accepts:
+ *
+ *      "field"       -> consumed = 5,  *out_name_len = 5, *out_has_idx = false
+ *      "field."      -> consumed = 6,  *out_name_len = 5, *out_has_idx = false
+ *      "field[3]"    -> consumed = 8,  *out_name_len = 5, *out_has_idx = true
+ *      "field[3]."   -> consumed = 9,  *out_name_len = 5, *out_has_idx = true
+ *
+ * Returns the byte count consumed (including the optional `[N]` and
+ * the trailing `.` if present). Returns 0 when the segment is
+ * malformed in a way that should stop the walk (empty name, an
+ * unterminated `[`, an empty `[]`, or a non-numeric index). \p end
+ * is a hard stop: parsing never reads past it.
+ *
+ * Hand-rolled rather than regex: the segment grammar is small
+ * enough that a single forward pass without backtracking is shorter
+ * than calling into RzRegex + submatch extraction, and it stays
+ * zero-allocation in the completion hot path. */
+static size_t pf_path_seg_consume(const char *in, const char *end,
+	size_t *out_name_len, bool *out_has_idx) {
+	const char *name_end = in;
+	while (name_end < end && *name_end != '.' && *name_end != '[') {
+		name_end++;
+	}
+	if (name_end == in) {
+		return 0; /* empty name */
+	}
+	*out_name_len = name_end - in;
+	*out_has_idx = false;
+	const char *cursor = name_end;
+	if (cursor < end && *cursor == '[') {
+		const char *digits = cursor + 1;
+		const char *rb = digits;
+		while (rb < end && *rb != ']') {
+			if (*rb < '0' || *rb > '9') {
+				return 0;
+			}
+			rb++;
+		}
+		if (rb >= end || *rb != ']') {
+			return 0; /* unterminated [ */
+		}
+		if (rb == digits) {
+			return 0; /* empty [] */
+		}
+		*out_has_idx = true;
+		cursor = rb + 1;
+	}
+	if (cursor < end && *cursor == '.') {
+		cursor++;
+	}
+	return cursor - in;
+}
+
+/* Helper: walk \p committed and return the RzPfFormat whose fields
+ * the caller should complete against, or NULL if descent isn't
+ * possible (unknown name, non-struct field, malformed segment).
+ *
+ * \p committed is the prefix of the user's input up to and including
+ * the last `.` -- i.e. every fully-typed segment. The walk consumes
+ * one segment per loop iteration (via \ref pf_path_seg_consume), looks
+ * the segment's name up in the current format, and re-parses the
+ * named struct's body when a `type_name` is present.
+ *
+ * Same rationale as \ref pf_path_seg_consume for not using regex: the
+ * loop is a thin glue layer over pf_path_seg_consume + a typedb
+ * lookup, with no extraction step that a regex would simplify. */
+static RZ_OWN RzPfFormat *pf_resolve_path_format(RzTypeDB *typedb,
+	const char *committed, size_t committed_len) {
+	const char *end = committed + committed_len;
+	const char *p = committed;
+	RzPfFormat *cur = NULL;
+
+	/* First segment: must resolve through the typedb (top-level
+	 * format name). */
+	size_t name_len = 0;
+	bool has_idx = false;
+	size_t consumed = pf_path_seg_consume(p, end, &name_len, &has_idx);
+	if (!consumed) {
+		return NULL;
+	}
+	char *name = rz_str_ndup(p, name_len);
+	if (!name) {
+		return NULL;
+	}
+	const char *body = rz_type_db_format_get(typedb, name);
+	free(name);
+	if (RZ_STR_ISEMPTY(body)) {
+		return NULL;
+	}
+	cur = rz_pf_parse(body);
+	if (!cur) {
+		return NULL;
+	}
+	p += consumed;
+
+	/* Subsequent segments: each must name a STRUCT field within the
+	 * current format whose `type_name` resolves to another named
+	 * format. Scalars and inline structs (no type_name) cannot be
+	 * descended into. */
+	while (p < end) {
+		consumed = pf_path_seg_consume(p, end, &name_len, &has_idx);
+		if (!consumed) {
+			goto err;
+		}
+		const RzPfField *match = NULL;
+		for (int i = 0; i < cur->nfields; i++) {
+			const char *fname = cur->fields[i].name;
+			if (fname && strlen(fname) == name_len &&
+				!strncmp(fname, p, name_len)) {
+				match = &cur->fields[i];
+				break;
+			}
+		}
+		if (!match || match->type != RZ_PF_STRUCT ||
+			RZ_STR_ISEMPTY(match->type_name)) {
+			goto err;
+		}
+		const char *child_body = rz_type_db_format_get(typedb,
+			match->type_name);
+		if (RZ_STR_ISEMPTY(child_body)) {
+			goto err;
+		}
+		RzPfFormat *child = rz_pf_parse(child_body);
+		if (!child) {
+			goto err;
+		}
+		rz_pf_format_free(cur);
+		cur = child;
+		p += consumed;
+	}
+	return cur;
+err:
+	rz_pf_format_free(cur);
+	return NULL;
+}
+
+/* Offer a format name optionally followed by a dotted path of fields,
+ * with optional `[N]` array indices on any segment. Used by `pf.` and
+ * `pfw`, both of which accept `name[.field[N]?]*`.
+ *
+ * The path scan -- both the last-dot search done here and the segment
+ * walk delegated to \ref pf_path_seg_consume / \ref
+ * pf_resolve_path_format -- is hand-rolled rather than regex-driven:
+ * single forward / backward passes over a short buffer with no
+ * capture-group extraction, called on every TAB. See
+ * \ref pf_path_seg_consume for the shape of one segment.
+ *
+ * UX rules:
+ *   - No `.` in the partial -> complete the top-level format name and
+ *     suppress the trailing space so `.` can be typed next without
+ *     space insertion.
+ *   - `.` is the segment separator. The cursor sits in the final
+ *     segment; everything before the last `.` is the committed path.
+ *   - Inside `[...]` or immediately after `]` (no trailing `.`), the
+ *     user is mid-index, not mid-identifier: nothing useful to offer.
+ *   - The committed path is walked through STRUCT-typed children
+ *     (whose `type_name` resolves to another registered format).
+ *     Walking past a scalar or an inline struct returns nothing. */
+static void autocmplt_cmd_arg_pf_format_path(RzCore *core,
+	RzLineNSCompletionResult *res, const char *s, size_t len) {
+	/* Find the LAST dot in the partial input. Everything before it
+	 * (inclusive) is the committed path; what follows is the segment
+	 * we're completing. NOTE: rz_sub_str_rchr returns the FIRST
+	 * match within its range (the `r` is for "range", not "right"),
+	 * so we have to walk manually. */
+	const char *last_dot = NULL;
+	for (size_t i = len; i > 0; i--) {
+		if (s[i - 1] == '.') {
+			last_dot = s + (i - 1);
+			break;
+		}
+	}
+	if (!last_dot) {
+		/* No dot yet: complete the format name. Leave `end_string`
+		 * empty so the cursor stays right after the name and the
+		 * user can type `.` to descend into fields without an
+		 * intervening space being inserted. */
+		res->end_string = "";
+		autocmplt_cmd_arg_pf_format_name(core, res, s, len);
+		return;
+	}
+
+	/* The tail (post-last-dot) is what we complete. If the tail
+	 * contains `[`, the cursor is mid-index; we offer nothing. A
+	 * trailing `]` with no following `.` is also mid-descent: the
+	 * user still needs to type the dot before fields are
+	 * meaningful. */
+	const char *tail = last_dot + 1;
+	size_t tail_len = len - (tail - s);
+	if (memchr(tail, '[', tail_len) || memchr(tail, ']', tail_len)) {
+		return;
+	}
+
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	/* Walk every segment up to and including the last `.`. */
+	size_t committed_len = (last_dot - s) + 1;
+	RzPfFormat *parsed = pf_resolve_path_format(typedb, s, committed_len);
+	if (!parsed) {
+		return;
+	}
+
+	/* Rewrite `start` so the completion only replaces the tail; the
+	 * committed path stays put. End-string stays empty so further
+	 * descent (typing the next `.`) doesn't get a space jammed in. */
+	res->start += (tail - s);
+	res->end_string = "";
+
+	for (int i = 0; i < parsed->nfields; i++) {
+		const char *fname = parsed->fields[i].name;
+		if (fname && !strncmp(fname, tail, tail_len)) {
+			rz_line_ns_completion_result_add(res, fname);
+		}
+	}
+	rz_pf_format_free(parsed);
+}
+
+/* List the basenames of Format Definition Files (.fdf and other format
+ * scripts) found in the user's home FDF directory and the system FDF
+ * directory. Mirrors the search order used by `pfo`, including the
+ * HtSU-based dedup for files installed in both locations. */
+static void autocmplt_cmd_arg_pf_fdf_file(RzCore *core,
+	RzLineNSCompletionResult *res, const char *s, size_t len) {
+	HtSU *seen = ht_su_new(HT_STR_DUP);
+	char *home = rz_path_home_prefix(RZ_SDB_FORMAT);
+	char *sysdir = rz_path_system(core->sys_path, RZ_SDB_FORMAT);
+	const char *dirs[2] = { home, sysdir };
+	for (int i = 0; i < 2; i++) {
+		if (!dirs[i]) {
+			continue;
+		}
+		RzList *files = rz_sys_dir(dirs[i]);
+		if (!files) {
+			continue;
+		}
+		RzListIter *iter;
+		const char *fn;
+		rz_list_foreach (files, iter, fn) {
+			/* Skip dotfiles (`.`, `..`, and hidden files: FDF
+			 * conventions don't use leading dots). */
+			if (!*fn || *fn == '.') {
+				continue;
+			}
+			if (seen && ht_su_find(seen, fn, NULL)) {
+				continue;
+			}
+			if (!strncmp(fn, s, len)) {
+				rz_line_ns_completion_result_add(res, fn);
+			}
+			if (seen) {
+				ht_su_insert(seen, fn, 1);
+			}
+		}
+		rz_list_free(files);
+	}
+	free(home);
+	free(sysdir);
+	ht_su_free(seen);
+}
+
 static void autocmplt_cmd_arg_global_var(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	RzAnalysisVarGlobal *glob;
 	RzListIter *iter;
@@ -764,6 +1051,16 @@ static void autocmplt_cmd_arg(RzCore *core, RzLineNSCompletionResult *res, const
 		break;
 	case RZ_CMD_ARG_TYPE_FOLDER:
 		autocmplt_cmd_arg_folder(res, s, len);
+		break;
+	case RZ_CMD_ARG_TYPE_PF_FORMAT_NAME:
+		autocmplt_cmd_arg_pf_format_name(core, res, s, len);
+		break;
+	case RZ_CMD_ARG_TYPE_PF_FORMAT_PATH:
+		autocmplt_cmd_arg_pf_format_path(core, res, s, len);
+		break;
+	case RZ_CMD_ARG_TYPE_PF_FDF_FILE:
+		autocmplt_cmd_arg_pf_fdf_file(core, res, s, len);
+		break;
 	default:
 		break;
 	}
