@@ -104,6 +104,7 @@ struct tms320_instruction_flag {
 struct tms320_instruction_head {
 	ut8 byte;
 	ut8 size;
+	ut16 id; ///< TMS320C55InsID for this leading-byte entry (0 = unset/invalid)
 	insn_item_t insn;
 };
 
@@ -124,6 +125,7 @@ typedef struct {
 #define TMS320_S_INVAL 0x01
 	ut8 status;
 	ut8 length;
+	ut16 insn_id; ///< TMS320C55InsID of the decoded instruction (0 if unknown)
 	char syntax[1024];
 
 #define def_field(name, size) \
@@ -244,6 +246,17 @@ typedef struct {
 #define INSN_SYNTAX(...) (char *)#__VA_ARGS__
 
 extern int tms320_dasm(tms320_dasm_t *, const ut8 *, int);
+
+/** Resolve the C55x instruction ID for a byte sequence by disassembling
+ * it and mapping the decoded mnemonic to a TMS320C55InsID. Honours the
+ * per-instruction operand masks (so multi-form leading bytes resolve to
+ * the mnemonic actually decoded). Returns 0 when the bytes don't decode
+ * to a known instruction. */
+extern ut16 tms320c55x_insn_id_decode(const ut8 *buf, int len);
+
+/** C55x+ counterpart of tms320c55x_insn_id_decode(). Resolves the
+ * TMS320C55InsID by running the C55x+ token decoder over the bytes. */
+extern ut16 tms320c55x_plus_insn_id_decode(const ut8 *buf, int len);
 
 extern int tms320_dasm_init(tms320_dasm_t *);
 extern int tms320_dasm_fini(tms320_dasm_t *);

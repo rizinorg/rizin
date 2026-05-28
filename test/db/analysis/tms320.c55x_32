@@ -188,7 +188,7 @@ wx c000 @ 0
 ao 1 @ 0~^type
 wx c500 @ 0
 ao 1 @ 0~^type
-wx 7a01 @ 0
+wx 7a010000 @ 0
 ao 1 @ 0~^type
 wx 7b00 @ 0
 ao 1 @ 0~^type
@@ -295,7 +295,7 @@ type: cret
 type: cjmp
 type: jmp
 type: call
-type: null
+type: ccall
 type: add
 type: sub
 type: mov
@@ -351,7 +351,7 @@ type: sub
 type: cmp
 type: cmp
 type: xchg
-type: mov
+type: null
 type: lea
 type: lea
 type: call
@@ -548,7 +548,7 @@ cpu      c55x
 int main(int argc, char **argv, char **envp);
 0
 3
-stackframe: 14
+stackframe: 15
 call-refs: 0x000002bb C 0x00000364 C
 EOF
 RUN
@@ -694,5 +694,92 @@ stackframe: 4
 stackframe: 2
 args: 1
 locals: 0
+EOF
+RUN
+
+NAME=c55x analysis: named instruction id (op->id = TMS320C55_INS_*)
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c55x
+# The disassembler tags each instruction with a named TMS320C55InsID, which
+# the analyzer surfaces on op->id (Capstone-style). These values are the
+# positions in the TMS320C55_INS_* enum (see tms320_insn.h): B=12, CALL=26,
+# RET=67, NOP=59, PSH=64, POP=62, AND=10, MOV=53, INTR=39, TRAP=96.
+wx 060020 @ 0
+ao 1 @ 0~id
+wx 080020 @ 0
+ao 1 @ 0~id
+wx 4884 @ 0
+ao 1 @ 0~id
+wx 20 @ 0
+ao 1 @ 0~id
+wx 3800 @ 0
+ao 1 @ 0~id
+wx 3a00 @ 0
+ao 1 @ 0~id
+wx 1010 @ 0
+ao 1 @ 0~id
+wx a000 @ 0
+ao 1 @ 0~id
+wx 950f @ 0
+ao 1 @ 0~id
+wx 958f @ 0
+ao 1 @ 0~id
+EOF
+EXPECT=<<EOF
+id: 12
+id: 26
+id: 67
+id: 59
+id: 64
+id: 62
+id: 10
+id: 53
+id: 39
+id: 96
+EOF
+RUN
+
+NAME=c55x analysis: regression - byte-vs-decoded id classification
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c55x
+# These cases were mis-classified by the earlier raw-opcode-byte switch
+# and are fixed by dispatching on the decoded TMS320C55_INS_* id.
+#
+# 0x50 is a multi-form leading byte: with operand 0x66 it is `psh t2`
+# (a stack push), not the `sftl` form the bare byte 0x50 maps to. The
+# old byte switch typed it SHL; it must be a stack push (stackptr=1).
+wx 5066 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^stackptr
+# 0x48 0x05 decodes to `reti`, a return. The old switch typed the whole
+# 0x48 family REP; reti must be RET.
+wx 4805 @ 0
+ao 1 @ 0~^type
+# 0x95 with bit7 of byte1 clear is INTR (swi); set is TRAP. The decoder
+# distinguishes them; both carry the 5-bit immediate in val.
+wx 950f @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^val
+wx 958f @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^val
+# DELAY (0xb6) is a memory-delay MOVE per TI SWPU104 6.7.1: it accesses
+# memory (refptr=2), it is not a CPU-control op.
+wx b600 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^refptr
+EOF
+EXPECT=<<EOF
+type: push
+stackptr: 1
+type: ret
+type: swi
+val: 0x0000000f
+type: trap
+val: 0x0000000f
+type: mov
+refptr: 2
 EOF
 RUN

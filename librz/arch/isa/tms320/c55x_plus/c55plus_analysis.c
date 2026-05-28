@@ -10,6 +10,8 @@
 
 #include "c55plus_analysis.h"
 #include "ins.h"
+#include "../tms320c55x_insn.h"
+#include "../tms320_dasm.h"
 
 /**
  * \file c55plus_analysis.c
@@ -205,6 +207,14 @@ int tms320_c55x_plus_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	op->size = ins_len;
 	op->type = RZ_ANALYSIS_OP_TYPE_NULL;
 
+	/* Surface the named instruction ID (Capstone-style op->id), resolved
+	 * from the C55x+ token decoder's decoded mnemonic. The type-level
+	 * dispatch below stays byte-driven because C55x+ packs many distinct
+	 * instructions behind each leading byte (disambiguated by operand
+	 * bits the analyzer already inspects); the ID gives consumers the
+	 * exact mnemonic without re-deriving it. */
+	op->id = tms320c55x_plus_insn_id_decode(buf, len);
+
 	switch (buf[0]) {
 	/* ---- 0x00 family: NOP_16 / IDLE / RETI / to_word --------------- */
 	case 0x00:
@@ -380,10 +390,16 @@ int tms320_c55x_plus_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 
-	/* ---- 0x60: DELAY --------------------------------------------- */
+	/* ---- 0x60: DELAY -- memory-delay move (TI SWPU104 sec.6.7.1,
+	 *     "Memory Delay", grouped under Move Operations). delay(Smem)
+	 *     copies the word at Smem to the next-higher address Smem+1 (a
+	 *     one-word memory-to-memory data shift used to build delay lines
+	 *     in filters): one data read, one data write. It is a data MOV,
+	 *     not a CPU/system-control op, so no FAMILY_CPU. -------------- */
 	case 0x60:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
-		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
+		set_mem_width(op, 2);
+		set_dir(op, RZ_ANALYSIS_OP_DIR_WRITE);
 		break;
 
 	/* ---- 0x61: PSH dbl(mem) -------------------------------------- */
@@ -497,14 +513,31 @@ int tms320_c55x_plus_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 
-	/* ---- 0x7B: ADD #k7, ACx (b1 0x00-0x0F) or MOV #k8, Tx (0xB0-0xBF) */
+	/* ---- 0x7B: Ra = Ra +/- k4 | Ra <</>> #1 | Ra = k4 -------------
+	 * Per TI SWPU104 Table 7-2 (opcode 01111011):
+	 *   byte1 bit7 (0x80) set   -> LD   (Ra = k4)            -> MOV
+	 *   byte1 bit7 (0x80) clear -> arithmetic/shift on Ra, where
+	 *       byte2 bit4 (0x10) set -> shift by 1 (SFTA)       -> SHL
+	 *       byte2 bit4 (0x10) clr -> add/sub k4, with
+	 *           byte2 bit7 (0x80) set -> SUB else ADD
+	 * The k4 immediate is the low nibble of byte2. */
 	case 0x7b:
 		if (ins_len >= 3) {
-			set_imm(op, buf[2]);
-			if ((buf[1] & 0xf0) == 0xb0) {
+			if (buf[1] & 0x80) {
+				/* LD Ra, #k4 -- load immediate */
 				op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+				set_imm(op, buf[2] & 0x0f);
+			} else if (buf[2] & 0x10) {
+				/* SFTA Ra, #1 -- arithmetic shift by one */
+				op->type = (buf[2] & 0x80) ? RZ_ANALYSIS_OP_TYPE_SHR : RZ_ANALYSIS_OP_TYPE_SHL;
+			} else if (buf[2] & 0x80) {
+				/* SUB Ra, #k4 */
+				op->type = RZ_ANALYSIS_OP_TYPE_SUB;
+				set_imm(op, buf[2] & 0x0f);
 			} else {
+				/* ADD Ra, #k4 */
 				op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+				set_imm(op, buf[2] & 0x0f);
 			}
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
@@ -652,8 +685,18 @@ int tms320_c55x_plus_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case 0xcb: op->type = RZ_ANALYSIS_OP_TYPE_MUL; break;
 	case 0xce: op->type = RZ_ANALYSIS_OP_TYPE_MUL; break; /* SQDST */
 
-	case 0xd1: op->type = RZ_ANALYSIS_OP_TYPE_MOV; break; /* COPY */
-	case 0xd2: op->type = RZ_ANALYSIS_OP_TYPE_SUB; break;
+	case 0xd1:
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		break; /* COPY */
+	/* ---- 0xD2: mar(XDAa op k24) -- modify extended address register.
+	 * Per TI SWPU104 Table 7-2 (opcode 11010010), byte1 bits 6-5 select
+	 *   00 -> mar(XDAa - k24)   (ASUB)
+	 *   01 -> mar(XDAa + k24)   (AMOV/AADD with +)
+	 *   10 -> mar(XDAa = k24)   (AMOV load)
+	 * All are address-register arithmetic/loads, classified LEA (the
+	 * same family as 0x14 AADD and 0x77 AMOV). The earlier code typed
+	 * this SUB, which mis-classified the load and add forms. */
+	case 0xd2: op->type = RZ_ANALYSIS_OP_TYPE_LEA; break;
 	case 0xd4:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break; /* MAXDIFF */
@@ -800,6 +843,21 @@ int tms320_c55x_plus_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		 * red. Leaving as NULL lets the disassembler's own
 		 * "invalid" rendering speak for itself per-instruction. */
 		break;
+	}
+
+	/* The byte-level switch above handles control flow (targets, fail
+	 * paths), stack deltas and operand fields, but it cannot always tell
+	 * apart instructions that share a leading byte but differ by operand
+	 * bits (e.g. ADD vs SUB, AND vs OR vs XOR, AMOV vs ASUB, PSH vs POP).
+	 * The decoder already resolved the exact mnemonic, so for the
+	 * arithmetic / logical / move / multiply / stack families take the
+	 * authoritative type from the instruction id. Control flow, repeats,
+	 * XCC and the like map to NULL here and keep the type the byte switch
+	 * assigned. Stack-effect bookkeeping (stackop/stackptr) set above is
+	 * preserved. */
+	const int id_type = tms320c55x_insn_optype((TMS320C55InsID)op->id);
+	if (id_type != RZ_ANALYSIS_OP_TYPE_NULL) {
+		op->type = id_type;
 	}
 
 	return op->size;

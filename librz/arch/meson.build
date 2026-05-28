@@ -323,6 +323,7 @@ arch_isa_sources = [
   'isa/tms320/c55x_plus/ins.c',
   'isa/tms320/c64x/c64x.c',
   'isa/tms320/tms320_dasm.c',
+  'isa/tms320/tms320c55x_insn.c',
   'isa/v810/v810_disas.c',
   'isa/v810/v810_il.c',
   'isa/v850/v850_disas.c',
