@@ -24,7 +24,7 @@ RUN
 
 NAME=milstd1750: GCC-compiled C binary (Dhrystone) - aaa discovers 14 functions, first carved as 4-insn block at 0x200
 FILE=bins/millstd1750/test_full2.bin
-ARGS=-a milstd1750 -b 8 -m 0x200
+ARGS=-a milstd1750 -b 8 -m 0x200 -n
 CMDS=<<EOF
 e scr.color=false
 e analysis.calls=true
