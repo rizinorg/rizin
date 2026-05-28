@@ -578,3 +578,49 @@ type: lea
 type: lea
 EOF
 RUN
+
+NAME=c55x+ analysis: pdf render - _c_strlen (loop, fwd+back bcc reflines)
+FILE=bins/tms320/coff2/19_emulateme_nostd.obj
+ARGS=-A
+CMDS=<<EOF
+e analysis.cpu=c55x+
+pdf @ sym._c_strlen
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from sym._main @ 0xc9
+/ sym._c_strlen();
+|           0x00000056      mov   #0x0, t0
+|       .-> 0x00000059      copy  *(ar0+t0b), t1
+|      ,==< 0x0000005c      bcc   #0x000008, t1 == #0
+|      |:   0x0000005f      add   #0x1, t0
+|      |`=< 0x00000062      bcc   #0x00fff2, t0 < #0x7f
+\      `--> 0x00000067      ret
+EOF
+RUN
+
+NAME=c55x+ analysis: pdf render - _main (nested branches, two call refs)
+FILE=bins/tms320/coff2/19_emulateme_nostd.obj
+ARGS=-A
+CMDS=<<EOF
+e analysis.cpu=c55x+
+pdf @ sym._main
+EOF
+EXPECT=<<EOF
+/ int sym._main(int argc, char **argv, char **envp);
+|           0x000000ba      psh   t1
+|       ,=< 0x000000bc      bcc   #0x00001c, t0 != #0x2
+|       |   0x000000c1      mov   , ac0
+|       |   0x000000c4      nop_16
+|       |   0x000000c6      mov   ac0, xar0
+|       |   0x000000c9      call  #0x00ff8a                            ; sym._c_strlen
+|      ,==< 0x000000cc      bcc   #0x00000c, t0 != #0x10
+|      ||   0x000000d1      call  #0x00ff94                            ; sym._decrypt
+|     ,===< 0x000000d4      bcc   #0x000006, t0 == #0
+|     |||   0x000000d7      mov   #0x0, t0
+|     |||   0x000000da      pop   t1
+|     |||   0x000000dc      ret
+|     ```-> 0x000000dd      mov   #0x1, t0
+|           0x000000e0      pop   t1
+\           0x000000e2      ret
+EOF
+RUN

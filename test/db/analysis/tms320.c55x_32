@@ -783,3 +783,71 @@ type: mov
 refptr: 2
 EOF
 RUN
+
+NAME=c55x analysis: pdf render - _uart_write_hex (branch + call reflines)
+FILE=bins/tms320/emulateme_nostd.ccsv5.c55x.ticoff2.dbg.coff
+ARGS=-A
+CMDS=<<EOF
+e analysis.cpu=c55x
+pdf @ sym._uart_write_hex
+EOF
+EXPECT=<<EOF
+/ sym._uart_write_hex(nstd_uint8_t value);
+|           0x00000169      cmp   t0 == ar1, tc1
+|           0x0000016c      ||    nop
+|       ,=< 0x0000016d      bcc   0x12, tc1                            ; sym._decrypt
+|       |   0x00000170      amar  *(0x20536D), xar0
+|       |   0x00000176      mov   0x0017, ac0
+|       |   0x0000017a      call  0xFEB3                               ; fcn.00000030
+|       |   0x0000017d      mov   0x1, t0
+\      ,==< 0x0000017f      b     0x005E                               ; fcn.000000d4+0x10c
+EOF
+RUN
+
+NAME=c55x analysis: pdf render - ___text (multi-BB, reflines both ways, data/call refs)
+FILE=bins/tms320/emulateme_nostd.ccsv5.c55x.ticoff2.dbg.coff
+ARGS=-A
+CMDS=<<EOF
+e analysis.cpu=c55x
+pdf @ sym.___text
+EOF
+EXPECT=<<EOF
+            ;-- .text:
+            ;-- _uart_write_text:
+/ sym.___text();
+|           0x00000130      mov   0x0, ac0
+|           0x00000132      cmpu  ac0 >= ac1, tc1
+|       ,=< 0x00000135      bcc   0x29, tc1                            ; fcn.000000d4+0xc8
+|       |   ;-- $C$DW$L$_uart_write_text$2$B:
+|       |   ;-- $C$L1:
+|       |   0x00000138      mov   0x0000 << #16, ac1
+|       |   0x0000013c      or    0x8004, ac1, ac1
+|       |   0x00000140      add   ac0, ac1
+|       |   0x00000142      mov   ac1, xar3
+|       |   0x00000144      mov   0x0000 << #16, ac1
+|       |   0x00000148      or    0x8004, ac1, ac1
+|       |   0x0000014c      xor   *ar3, ar1, ar2
+|       |   0x0000014f      ||    add ac0, ac1
+|       |   0x00000151      mov   ac1, xar3
+|       |   0x00000153      mov   ar2, *ar3
+|       |   0x00000155      mov   0x0010, ac1
+|       |   0x00000159      add   0x1, ac0
+|       |   0x0000015b      cmpu  ac0 < ac1, tc1
+|      ,==< 0x0000015e      bcc   0xD7, tc1
+|      ||   0x00000161      mov   0x1, t0
+       ||   ; CODE XREF from fcn.000000d4 @ 0x12e
+..
+       ||   ;-- $C$L2:
+       ||   ;-- $C$DW$L$_uart_write_text$2$E:
+\    ||`--> 0x000001c5      ||    min ar0, ar6
+|    || |   ;-- (0x000001c9) $C$DW$L$_c_strlen$2$B:
+|    || |   ;-- (0x000001c9) $C$L3:
+|    || |   0x000001c7  ~   rptcc 0x4E, t2 == 0
+|    || |   0x000001ca      mov   0x1, ac0
+|    || |   0x000001cc      call  0xFE61                               ; fcn.00000030
+|    || |   0x000001cf      mov   0x0, t0
+|    || |   ;-- (0x000001d2) $C$L4:
+|    || |   ;-- (0x000001d2) $C$DW$L$_c_strlen$2$E:
+\    ||,==< 0x000001d1  ~   b     0x0D                                 ; fcn.000000d4+0x10c
+EOF
+RUN
