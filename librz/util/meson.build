@@ -114,6 +114,7 @@ rz_util_evaluator_sources = [
   'num/parser.c',
   'num/evaluator.c',
   'num/value_print.c',
+  'num/expr.c',
 ]
 rz_util_sources += rz_util_evaluator_sources
 

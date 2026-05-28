@@ -114,7 +114,7 @@ static void bytes_to_result(const ut8 *digest, ut32 n, RzNumCallbackResult *out)
 // Generic "hash bytes with the named algorithm" worker shared by all
 // the digest-family functions. argc must be 2 (addr, len).
 static void core_hash_named(RzCore *core, const char *algo,
-		const RzNumValue *args, int argc, RzNumCallbackResult *out) {
+	const RzNumValue *args, int argc, RzNumCallbackResult *out) {
 	out->ok = false;
 	if (!core || !core->hash || argc != 2) {
 		return;
@@ -161,7 +161,7 @@ DIGEST_FN(core_fn_xxhash, "xxhash32")
 // requested CRC width in bits; this is the "optional parameter for
 // the exact algorithm" rather than separate crc8/crc16/... names.
 static void core_fn_crc(void *user, const RzNumValue *args, int argc,
-		RzNumCallbackResult *out) {
+	RzNumCallbackResult *out) {
 	out->ok = false;
 	if (argc != 2 && argc != 3) {
 		return;
@@ -181,13 +181,13 @@ static void core_fn_crc(void *user, const RzNumValue *args, int argc,
 
 // hash(addr, len) is an alias for sha256 - a sensible default digest.
 static void core_fn_hash(void *user, const RzNumValue *args, int argc,
-		RzNumCallbackResult *out) {
+	RzNumCallbackResult *out) {
 	core_hash_named((RzCore *)user, "sha256", args, argc, out);
 }
 
 // entropy(addr, len) and temperature(addr, len) return doubles.
 static void core_fn_entropy(void *user, const RzNumValue *args, int argc,
-		RzNumCallbackResult *out) {
+	RzNumCallbackResult *out) {
 	RzCore *core = (RzCore *)user;
 	out->ok = false;
 	if (argc != 2) {
@@ -205,7 +205,7 @@ static void core_fn_entropy(void *user, const RzNumValue *args, int argc,
 }
 
 static void core_fn_temperature(void *user, const RzNumValue *args, int argc,
-		RzNumCallbackResult *out) {
+	RzNumCallbackResult *out) {
 	RzCore *core = (RzCore *)user;
 	out->ok = false;
 	if (argc != 2) {
@@ -252,16 +252,32 @@ static RzNumFuncRegistry *core_build_registry(RzCore *core) {
 	return reg;
 }
 
-RZ_API bool rz_core_math(RzCore *core, const char *expr,
-		const RzCoreMathOptions *options,
-		RZ_OUT RzNumValue *out_value,
-		RZ_OUT RZ_NULLABLE char **error_msg) {
+/**
+ * \brief Context-aware expression evaluator built on rz_num_math_value_ex().
+ *
+ * Resolves identifiers against the current core (flags, the special
+ * variables $$, $$$, $b, $B, $F, ..., built-in and unicode-aliased
+ * math functions) and evaluates bignum / float / bit-vector arithmetic.
+ * The address-typed suffix (`0x1000:le32`) is read through core->io.
+ *
+ * \param core      Core whose context (flags, offset, block size,
+ *                  core->num callback) backs the evaluation. Must be non-NULL.
+ * \param expr      Expression to evaluate. Must be non-NULL.
+ * \param options   Optional options (timeout). NULL selects defaults.
+ * \param out_value Out-parameter receiving the value; finalise it with
+ *                  rz_num_value_fini() when done. Must be non-NULL.
+ * \param error_msg Optional out-pointer for a caller-owned diagnostic.
+ * \return true on success, false on parse or evaluation error.
+ */
+RZ_API bool rz_core_math(RZ_NONNULL RzCore *core, RZ_NONNULL const char *expr,
+	RZ_NULLABLE const RzCoreMathOptions *options,
+	RZ_OUT RZ_NONNULL RzNumValue *out_value,
+	RZ_OUT RZ_NULLABLE char **error_msg) {
 	rz_return_val_if_fail(core && expr && out_value, false);
 
 	RzNumFuncRegistry *reg = core_build_registry(core);
-	// Variables bound with `x = expr` persist across % invocations for
-	// the life of the core, backed by a store hung off core->num. It
-	// is created on first use and freed in rz_num_free().
+	// `x = expr` bindings persist for the life of the core via a store
+	// hung off core->num, created on first use, freed in rz_num_free().
 	if (core->num && !core->num->expr_vars) {
 		core->num->expr_vars = rz_num_value_store_new();
 	}
@@ -273,16 +289,11 @@ RZ_API bool rz_core_math(RzCore *core, const char *expr,
 		.vars = core->num ? core->num->expr_vars : NULL,
 	};
 
-	// core->num carries the per-core callback that resolves flags,
-	// special variables, and the legacy-syntax escape hatches.
 	bool ok = rz_num_math_value_ex(core->num, expr, &opt, out_value, error_msg);
-
 	rz_num_func_registry_free(reg);
 
-	// Sync the legacy num->value / num->fvalue fields so consumers
-	// that inspect them see the same state as if rz_num_math() had
-	// been called. dbz is set by the evaluator itself on a trapped
-	// divide-by-zero.
+	// Mirror the legacy num->value / num->fvalue so consumers reading
+	// them observe the same state rz_num_math() would have left.
 	if (ok && core->num) {
 		core->num->value = rz_num_value_to_ut64(out_value);
 		core->num->fvalue = rz_num_value_to_double(out_value);
@@ -290,16 +301,23 @@ RZ_API bool rz_core_math(RzCore *core, const char *expr,
 	return ok;
 }
 
-RZ_API ut64 rz_core_math_ut64(RzCore *core, const char *expr) {
+/**
+ * \brief Convenience wrapper around rz_core_math() returning a ut64.
+ *
+ * Mirrors rz_num_math_ut64(): FLOAT truncates, BIG narrows to the low
+ * 64 bits. Errors return 0 (core->num->dbz is still set on a trapped
+ * divide-by-zero); the diagnostic is left for the caller to surface.
+ *
+ * \param core Core backing the evaluation. Must be non-NULL.
+ * \param expr Expression to evaluate. Must be non-NULL.
+ * \return The ut64 projection of the result, or 0 on error.
+ */
+RZ_API ut64 rz_core_math_ut64(RZ_NONNULL RzCore *core, RZ_NONNULL const char *expr) {
 	rz_return_val_if_fail(core && expr, 0);
 	RzNumValue v;
 	rz_num_value_init(&v);
 	char *err = NULL;
 	if (!rz_core_math(core, expr, NULL, &v, &err)) {
-		// The diagnostic is the caller's to surface; rz_core_math_ut64
-		// is silent on errors so handlers can decide how to respond.
-		// dbz on the underlying num is still set, the canonical
-		// "this evaluation tried to divide by zero" signal.
 		free(err);
 		rz_num_value_fini(&v);
 		return 0;
@@ -308,4 +326,33 @@ RZ_API ut64 rz_core_math_ut64(RzCore *core, const char *expr) {
 	ut64 ret = rz_num_value_to_ut64(&v);
 	rz_num_value_fini(&v);
 	return ret;
+}
+
+/**
+ * \brief Lift an expression to its RzIL pure-expression form in core context.
+ *
+ * Thin wrapper over rz_il_lift_num() supplying the core's function
+ * registry and IO-read callback, so any function call, typed-address
+ * dereference, or host variable is grounded to the same concrete value
+ * the % command would compute. The result is a typed RzILOpPure tree; a
+ * caller wanting the pLf text form passes it to
+ * rz_il_op_pure_stringify_unicode().
+ *
+ * \param core      Core context. Must be non-NULL.
+ * \param expr      Expression to lift. Must be non-NULL.
+ * \param error_msg Optional out-pointer for a caller-owned diagnostic.
+ * \return The lifted RzILOpPure (caller-owned), or NULL on error.
+ */
+RZ_API RZ_OWN RzILOpPure *rz_core_il_lift(RZ_NONNULL RzCore *core, RZ_NONNULL const char *expr,
+	RZ_OUT RZ_NULLABLE char **error_msg) {
+	rz_return_val_if_fail(core && expr, NULL);
+	RzNumFuncRegistry *reg = core_build_registry(core);
+	RzNumMathOptions opt = {
+		.funcs = reg,
+		.io_read = core_io_read,
+		.io_read_user = core,
+	};
+	RzILOpPure *out = rz_il_lift_num(core->num, expr, &opt, error_msg);
+	rz_num_func_registry_free(reg);
+	return out;
 }

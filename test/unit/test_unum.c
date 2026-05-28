@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
+#include <rz_il/rz_il_opcodes.h>
 #include <math.h>
 #include "minunit.h"
 
@@ -183,48 +184,87 @@ bool test_rz_num_abs() {
 
 static ut64 test_var_cb(RzNum *self, const char *name, int *ok) {
 	(void)self;
-	if (!strcmp(name, "x")) { *ok = 1; return 10; }
-	if (!strcmp(name, "y")) { *ok = 1; return 20; }
-	if (!strcmp(name, "$$")) { *ok = 1; return 0x1000; }
-	if (!strcmp(name, "$F")) { *ok = 1; return 0x2000; }
-	if (!strcmp(name, "$S")) { *ok = 1; return 0x40000; }
+	if (!strcmp(name, "x")) {
+		*ok = 1;
+		return 10;
+	}
+	if (!strcmp(name, "y")) {
+		*ok = 1;
+		return 20;
+	}
+	if (!strcmp(name, "$$")) {
+		*ok = 1;
+		return 0x1000;
+	}
+	if (!strcmp(name, "$F")) {
+		*ok = 1;
+		return 0x2000;
+	}
+	if (!strcmp(name, "$S")) {
+		*ok = 1;
+		return 0x40000;
+	}
 	*ok = 0;
 	return 0;
 }
 
-#define ASSERT_U64(expr, want) do { \
-	RzNumValue _v; \
-	rz_num_value_init(&_v); \
-	char *_err = NULL; \
-	bool _ok = rz_num_math_value(num_with_cb, (expr), &_v, &_err); \
-	mu_assert_true(_ok, "evaluation failed: " expr); \
-	mu_assert_eq(_v.kind, RZ_NUM_KIND_UT64, "wrong kind for: " expr); \
-	mu_assert_eq(_v.val.n, (ut64)(want), "wrong ut64 result for: " expr); \
-	rz_num_value_fini(&_v); \
-	free(_err); \
-} while (0)
+// Callback for the local-label test. It resolves a function-local
+// ".label" relative to the value that precedes the '+', which the
+// evaluator must place in nc.number_value.n (mirroring how the rizin
+// core callback resolves `.foo` against the function at that address).
+// It reads nc through `self`, so the test wires the RzNum's userptr to
+// the RzNum itself, exactly as a host that needs nc would.
+static ut64 label_cb(RzNum *self, const char *name, int *ok) {
+	*ok = 0;
+	if (!strcmp(name, "base")) {
+		*ok = 1;
+		return 0x1000;
+	}
+	// foo's absolute address is 0x1004; return it as a delta from the
+	// base the evaluator handed us through nc.
+	if (!strcmp(name, ".foo") && self && self->nc.curr_tok == '+') {
+		*ok = 1;
+		return 0x1004 - self->nc.number_value.n;
+	}
+	return 0;
+}
 
-#define ASSERT_F64(expr, want) do { \
-	RzNumValue _v; \
-	rz_num_value_init(&_v); \
-	char *_err = NULL; \
-	bool _ok = rz_num_math_value(num_with_cb, (expr), &_v, &_err); \
-	mu_assert_true(_ok, "evaluation failed: " expr); \
-	mu_assert_eq(_v.kind, RZ_NUM_KIND_FLOAT, "wrong kind for: " expr); \
-	mu_assert_true(_v.val.d == (double)(want), "wrong float result for: " expr); \
-	rz_num_value_fini(&_v); \
-	free(_err); \
-} while (0)
+#define ASSERT_U64(expr, want) \
+	do { \
+		RzNumValue _v; \
+		rz_num_value_init(&_v); \
+		char *_err = NULL; \
+		bool _ok = rz_num_math_value(num_with_cb, (expr), &_v, &_err); \
+		mu_assert_true(_ok, "evaluation failed: " expr); \
+		mu_assert_eq(_v.kind, RZ_NUM_KIND_UT64, "wrong kind for: " expr); \
+		mu_assert_eq(_v.val.n, (ut64)(want), "wrong ut64 result for: " expr); \
+		rz_num_value_fini(&_v); \
+		free(_err); \
+	} while (0)
 
-#define ASSERT_FAIL(expr) do { \
-	RzNumValue _v; \
-	rz_num_value_init(&_v); \
-	char *_err = NULL; \
-	bool _ok = rz_num_math_value(num_with_cb, (expr), &_v, &_err); \
-	mu_assert_false(_ok, "should have failed: " expr); \
-	rz_num_value_fini(&_v); \
-	free(_err); \
-} while (0)
+#define ASSERT_F64(expr, want) \
+	do { \
+		RzNumValue _v; \
+		rz_num_value_init(&_v); \
+		char *_err = NULL; \
+		bool _ok = rz_num_math_value(num_with_cb, (expr), &_v, &_err); \
+		mu_assert_true(_ok, "evaluation failed: " expr); \
+		mu_assert_eq(_v.kind, RZ_NUM_KIND_FLOAT, "wrong kind for: " expr); \
+		mu_assert_true(_v.val.d == (double)(want), "wrong float result for: " expr); \
+		rz_num_value_fini(&_v); \
+		free(_err); \
+	} while (0)
+
+#define ASSERT_FAIL(expr) \
+	do { \
+		RzNumValue _v; \
+		rz_num_value_init(&_v); \
+		char *_err = NULL; \
+		bool _ok = rz_num_math_value(num_with_cb, (expr), &_v, &_err); \
+		mu_assert_false(_ok, "should have failed: " expr); \
+		rz_num_value_fini(&_v); \
+		free(_err); \
+	} while (0)
 
 static RzNum *num_with_cb = NULL;
 
@@ -239,6 +279,14 @@ bool test_rz_num_math_value_integer_arith() {
 	ASSERT_U64("0x10 + 0b1010", 0x1a);
 	ASSERT_U64("0x10 + 0o10", 0x18);
 	ASSERT_U64("0x10 + 0t10", 0x13);
+	// C-style octal: a leading 0 followed by more digits is octal,
+	// matching the legacy parser (used by e.g. `s 034`).
+	ASSERT_U64("034", 28);
+	ASSERT_U64("010", 8);
+	ASSERT_U64("00120000", 0xa000); // 0o120000 == 40960
+	ASSERT_U64("0", 0);
+	ASSERT_U64("00", 0);
+	ASSERT_U64("07 + 1", 8); // 0o7 + 1
 	mu_end;
 }
 
@@ -342,6 +390,33 @@ bool test_rz_num_math_value_special_variables() {
 	mu_end;
 }
 
+// Function-local flags: `base + .foo` resolves .foo relative to the
+// value before the '+'. The evaluator must publish that value through
+// nc.number_value.n / nc.curr_tok so the host callback (here label_cb)
+// can turn the absolute label address into a delta. (Regression: the
+// new parser left nc untouched, so `s main+.foo` came out as `main`.)
+bool test_rz_num_math_value_local_label() {
+	RzNum *ln = rz_num_new(label_cb, NULL, NULL);
+	mu_assert_notnull(ln, "rz_num_new");
+	ln->userptr = ln; // a host that needs nc passes a ptr it can reach nc through
+
+	RzNumValue v;
+	char *err = NULL;
+	rz_num_value_init(&v);
+	bool ok = rz_num_math_value(ln, "base + .foo", &v, &err);
+	mu_assert_true(ok, "base + .foo evaluates");
+	mu_assert_eq(v.kind, RZ_NUM_KIND_UT64, "ut64 result");
+	mu_assert_eq(v.val.n, 0x1004, "base + .foo == foo's absolute address");
+	rz_num_value_fini(&v);
+	free(err);
+
+	// And through the legacy entry point, since that is what `s` uses.
+	mu_assert_eq(rz_num_math(ln, "base + .foo"), 0x1004, "rz_num_math base + .foo");
+
+	rz_num_free(ln);
+	mu_end;
+}
+
 // Regression: the host callback must receive the opaque userptr that
 // was passed to rz_num_new() as its first argument - NOT the RzNum
 // itself. RzCore's num_callback casts that first argument straight to
@@ -362,8 +437,14 @@ static ut64 userptr_var_cb(RzNum *self, const char *name, int *ok) {
 		*ok = 0;
 		return 0;
 	}
-	if (!strcmp(name, "base")) { *ok = 1; return ctx->base; }
-	if (!strcmp(name, "$$")) { *ok = 1; return ctx->base + 0x10; }
+	if (!strcmp(name, "base")) {
+		*ok = 1;
+		return ctx->base;
+	}
+	if (!strcmp(name, "$$")) {
+		*ok = 1;
+		return ctx->base + 0x10;
+	}
 	*ok = 0;
 	return 0;
 }
@@ -381,14 +462,18 @@ bool test_rz_num_math_value_callback_userptr() {
 	mu_assert_true(rz_num_math_value(n, "base + 1", &v, &err),
 		"base + 1 resolves via userptr");
 	mu_assert_eq(rz_num_value_to_ut64(&v), 0x4001, "base + 1 == 0x4001");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Special variable: same userptr path.
 	rz_num_value_init(&v);
 	mu_assert_true(rz_num_math_value(n, "$$ + 4", &v, &err),
 		"$$ + 4 resolves via userptr");
 	mu_assert_eq(rz_num_value_to_ut64(&v), 0x4014, "$$ + 4 == 0x4014");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// An unknown name still resolves to 0 without touching anything
 	// unsafe (the callback sets ok=0).
@@ -396,7 +481,9 @@ bool test_rz_num_math_value_callback_userptr() {
 	mu_assert_true(rz_num_math_value(n, "unknown_name + 7", &v, &err),
 		"unknown var resolves to 0");
 	mu_assert_eq(rz_num_value_to_ut64(&v), 7, "unknown + 7 == 7");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	rz_num_free(n);
 	mu_end;
@@ -415,18 +502,24 @@ bool test_rz_num_math_value_string_bytes() {
 	mu_assert_eq(v.kind, RZ_NUM_KIND_BITVECTOR, "\"AB\" is bitvector");
 	mu_assert_eq(rz_bv_len(v.val.bv), 16, "\"AB\" width 16");
 	mu_assert_eq(rz_bv_to_ut64(v.val.bv), 0x4241, "\"AB\" value");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	rz_num_value_init(&v);
 	mu_assert_true(rz_num_math_value(num, "\"A\"", &v, &err), "\"A\"");
 	mu_assert_eq(rz_bv_len(v.val.bv), 8, "\"A\" width 8");
 	mu_assert_eq(rz_bv_to_ut64(v.val.bv), 0x41, "\"A\" value");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	rz_num_value_init(&v);
 	mu_assert_true(rz_num_math_value(num, "\"\\x41\\x42\"", &v, &err), "hex escapes");
 	mu_assert_eq(rz_bv_to_ut64(v.val.bv), 0x4241, "hex-escape value");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Arithmetic keeps the bit-vector width: "AB" is 16-bit, so + 1
 	// wraps within 16 bits.
@@ -434,13 +527,17 @@ bool test_rz_num_math_value_string_bytes() {
 	mu_assert_true(rz_num_math_value(num, "\"AB\" + 1", &v, &err), "\"AB\" + 1");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_BITVECTOR, "\"AB\" + 1 is bitvector");
 	mu_assert_eq(rz_bv_to_ut64(v.val.bv), 0x4242, "\"AB\" + 1 value");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// A longer string than would fit a ut64 is now representable.
 	rz_num_value_init(&v);
 	mu_assert_true(rz_num_math_value(num, "\"ABCDEFGHIJ\"", &v, &err), "10-byte string");
 	mu_assert_eq(rz_bv_len(v.val.bv), 80, "10-byte string width 80");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	mu_end;
 }
@@ -491,13 +588,17 @@ bool test_rz_num_math_value_assignment() {
 		"(big = 0x10000000000000000) + (big - big)", &v, &err);
 	mu_assert_true(ok, "bignum binding");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_BIG, "bound bignum stays BIG");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// A reserved word cannot be assigned.
 	mu_assert_false(rz_num_math_value(NULL, "mod = 5", &v, &err),
 		"reserved word assignment");
 	mu_assert_eq(v.err, RZ_NUM_ERR_RESERVED_WORD, "mod= -> RESERVED_WORD");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	mu_end;
 }
@@ -557,14 +658,18 @@ bool test_rz_num_math_value_conditional() {
 		"bitvector branch");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_BITVECTOR, "ternary yields bitvector");
 	mu_assert_eq(rz_bv_to_ut64(v.val.bv), 5, "1 ? 5u8 : 9u8 == 5u8");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// A big-number branch is returned exact.
 	rz_num_value_init(&v);
 	mu_assert_true(rz_num_math_value(NULL, "0 ? 1 : 2 ** 100", &v, &err),
 		"bignum branch");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_BIG, "ternary yields big");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	mu_end;
 }
@@ -593,15 +698,21 @@ bool test_rz_num_math_value_signed_arith() {
 	rz_num_value_init(&v);
 	mu_assert_false(rz_num_math_value(NULL, "5 sdiv 0", &v, &err), "sdiv by zero");
 	mu_assert_eq(v.err, RZ_NUM_ERR_DIV_ZERO, "sdiv 0 -> DIV_ZERO");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 	mu_assert_false(rz_num_math_value(NULL, "5 smod 0", &v, &err), "smod by zero");
 	mu_assert_eq(v.err, RZ_NUM_ERR_DIV_ZERO, "smod 0 -> DIV_ZERO");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// sdiv / smod / sar are reserved and cannot be variable names.
 	mu_assert_false(rz_num_math_value(NULL, "sdiv = 1", &v, &err), "sdiv reserved");
 	mu_assert_eq(v.err, RZ_NUM_ERR_RESERVED_WORD, "sdiv -> RESERVED_WORD");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	mu_end;
 }
@@ -628,7 +739,9 @@ bool test_rz_num_math_value_len() {
 	rz_num_value_init(&v);
 	mu_assert_false(rz_num_math_value(NULL, "len(1.5)", &v, &err), "len on float");
 	mu_assert_eq(v.err, RZ_NUM_ERR_TYPE_MISMATCH, "len(float) -> TYPE_MISMATCH");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	mu_end;
 }
@@ -648,33 +761,45 @@ bool test_rz_num_math_value_persistent_vars() {
 	rz_num_value_init(&v);
 	mu_assert_true(rz_num_math_value_ex(NULL, "base = 0x1000", &opt, &v, &err), "bind base");
 	mu_assert_eq(rz_num_value_to_ut64(&v), 0x1000, "base value");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Call 2: read the persisted binding.
 	rz_num_value_init(&v);
 	mu_assert_true(rz_num_math_value_ex(NULL, "base + 0x20", &opt, &v, &err), "read base");
 	mu_assert_eq(rz_num_value_to_ut64(&v), 0x1020, "persisted base + 0x20");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Call 3: bind another using the persisted one, then read it.
 	rz_num_value_init(&v);
 	mu_assert_true(rz_num_math_value_ex(NULL, "top = base + 0x100", &opt, &v, &err), "bind top");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 	rz_num_value_init(&v);
 	mu_assert_true(rz_num_math_value_ex(NULL, "top - base", &opt, &v, &err), "read top");
 	mu_assert_eq(rz_num_value_to_ut64(&v), 0x100, "top - base");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	rz_num_value_store_free(store);
 
 	// Without a store, a binding does NOT persist to the next call.
 	rz_num_value_init(&v);
 	mu_assert_true(rz_num_math_value(NULL, "ephem = 42", &v, &err), "ephemeral bind");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 	rz_num_value_init(&v);
 	mu_assert_true(rz_num_math_value(NULL, "ephem + 1", &v, &err), "ephem unknown");
 	mu_assert_eq(rz_num_value_to_ut64(&v), 1, "ephem resolves to 0 -> 1"); // unknown var -> 0
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	mu_end;
 }
@@ -701,14 +826,18 @@ bool test_rz_num_math_value_bignum_arith() {
 	// (2^64)^2 == 2^128
 	mu_assert_streq_free(dec,
 		"340282366920938463463374607431768211456", "2^128 exact");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Bignum + ut64 stays exact.
 	ok = rz_num_math_value(NULL, "0x10000000000000000 + 5", &v, &err);
 	mu_assert_true(ok, "big + ut64");
 	dec = rz_big_to_decstr(v.val.big);
 	mu_assert_streq_free(dec, "18446744073709551621", "2^64 + 5");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Bignum subtraction that demotes back to ut64 when it fits.
 	ok = rz_num_math_value(NULL,
@@ -716,7 +845,9 @@ bool test_rz_num_math_value_bignum_arith() {
 	mu_assert_true(ok, "big - big");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_UT64, "demotes to ut64");
 	mu_assert_eq(v.val.n, 0, "2^64 - 2^64 == 0");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Decimal bignum literal round-trips through the decstr.
 	ok = rz_num_math_value(NULL,
@@ -726,7 +857,9 @@ bool test_rz_num_math_value_bignum_arith() {
 	dec = rz_big_to_decstr(v.val.big);
 	mu_assert_streq_free(dec, "123456789012345678901234567890",
 		"decimal literal round-trip");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	mu_end;
 }
@@ -754,21 +887,26 @@ bool test_rz_num_math_value_bitvector() {
 	mu_assert_eq(v.kind, RZ_NUM_KIND_BITVECTOR, "5u8 is bitvector");
 	mu_assert_eq(rz_bv_len(v.val.bv), 8, "width 8");
 	mu_assert_eq(rz_bv_to_ut64(v.val.bv), 5, "value 5");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
-#define ASSERT_BV(expr, want_width, want_val) do { \
-	RzNumValue _v; char *_e = NULL; \
-	bool _ok = rz_num_math_value(NULL, (expr), &_v, &_e); \
-	mu_assert_true(_ok, expr); \
-	mu_assert_eq(_v.kind, RZ_NUM_KIND_BITVECTOR, expr " kind"); \
-	mu_assert_eq(rz_bv_len(_v.val.bv), (want_width), expr " width"); \
-	mu_assert_eq(rz_bv_to_ut64(_v.val.bv), (want_val), expr " value"); \
-	rz_num_value_fini(&_v); free(_e); \
-} while (0)
+#define ASSERT_BV(expr, want_width, want_val) \
+	do { \
+		RzNumValue _v; \
+		char *_e = NULL; \
+		bool _ok = rz_num_math_value(NULL, (expr), &_v, &_e); \
+		mu_assert_true(_ok, expr); \
+		mu_assert_eq(_v.kind, RZ_NUM_KIND_BITVECTOR, expr " kind"); \
+		mu_assert_eq(rz_bv_len(_v.val.bv), (want_width), expr " width"); \
+		mu_assert_eq(rz_bv_to_ut64(_v.val.bv), (want_val), expr " value"); \
+		rz_num_value_fini(&_v); \
+		free(_e); \
+	} while (0)
 
 	// Arithmetic wraps modulo the operand width.
-	ASSERT_BV("200u8 + 100u8", 8, 44);   // 300 mod 256
-	ASSERT_BV("0xffu8 + 1u8", 8, 0);     // overflow wraps to 0
+	ASSERT_BV("200u8 + 100u8", 8, 44); // 300 mod 256
+	ASSERT_BV("0xffu8 + 1u8", 8, 0); // overflow wraps to 0
 	ASSERT_BV("0xffffu16 + 1u16", 16, 0);
 	ASSERT_BV("100u8 - 50u8", 8, 50);
 	ASSERT_BV("10u16 * 10u16", 16, 100);
@@ -804,7 +942,9 @@ bool test_rz_num_math_value_bitvector() {
 	ok = rz_num_math_value(NULL, "1u8 / 0u8", &v, &err);
 	mu_assert_false(ok, "bv div by zero fails");
 	mu_assert_eq(v.err, RZ_NUM_ERR_DIV_ZERO, "bv div zero -> DIV_ZERO");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// ** on a bit-vector is modular at the operand width: it is
 	// computed by iterative squaring entirely within W bits, so a
@@ -813,12 +953,16 @@ bool test_rz_num_math_value_bitvector() {
 	mu_assert_true(ok, "bv ** succeeds");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_BITVECTOR, "bv ** -> bitvector");
 	mu_assert_eq(rz_bv_to_ut64(v.val.bv), 8, "2u8 ** 3u8 == 8u8");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 	// Overflow wraps modulo 2^W.
 	ok = rz_num_math_value(NULL, "2u8 ** 8u8", &v, &err);
 	mu_assert_true(ok, "bv ** overflow ok");
 	mu_assert_eq(rz_bv_to_ut64(v.val.bv), 0, "2u8 ** 8u8 wraps to 0");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	mu_end;
 }
@@ -833,7 +977,8 @@ bool test_rz_num_math_value_bignum() {
 	mu_assert_true(ok, "parse 65-bit hex");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_BIG, "65-bit hex is BIG kind");
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	// Arithmetic on a BIG operand stays in BIG when the result
 	// also exceeds ut64.
@@ -841,7 +986,8 @@ bool test_rz_num_math_value_bignum() {
 	mu_assert_true(ok, "BIG * 2");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_BIG, "BIG * 2 stays BIG");
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	// Arithmetic that brings a BIG operand back inside ut64 must
 	// demote to UT64. 0x10000000000000001 - 2 == 0xffffffffffffffff.
@@ -850,7 +996,8 @@ bool test_rz_num_math_value_bignum() {
 	mu_assert_eq(v.kind, RZ_NUM_KIND_UT64, "result fits in ut64");
 	mu_assert_eq(v.val.n, 0xffffffffffffffffULL, "result value");
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	// Comparisons between BIG and UT64 work without losing precision.
 	ok = rz_num_math_value(NULL,
@@ -859,7 +1006,8 @@ bool test_rz_num_math_value_bignum() {
 	mu_assert_eq(v.kind, RZ_NUM_KIND_UT64, "compare result is ut64");
 	mu_assert_eq(v.val.n, 1, "2^64 > 2^64-1");
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	// Large decimal literal that overflows ut64 is also promoted to
 	// BIG (was an error in earlier versions; the evaluator now
@@ -869,7 +1017,8 @@ bool test_rz_num_math_value_bignum() {
 	mu_assert_true(ok, "large decimal parses");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_BIG, "decimal overflow -> BIG");
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	// Round-trip: a decimal bignum can be used in arithmetic. 10^40
 	// divided by 10 is still 10^39, which exceeds ut64 and stays
@@ -879,7 +1028,8 @@ bool test_rz_num_math_value_bignum() {
 	mu_assert_true(ok, "decimal bignum / 10");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_BIG, "still BIG after /10");
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	// Binary literal that overflows ut64 also promotes:
 	// 2^65 in binary = '1' followed by 65 zeros.
@@ -889,7 +1039,8 @@ bool test_rz_num_math_value_bignum() {
 	mu_assert_true(ok, "binary overflow promotes");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_BIG, "binary overflow -> BIG");
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	// Float-with-big still demotes to float (float kind is the
 	// highest-precision-loss kind so it wins).
@@ -897,7 +1048,8 @@ bool test_rz_num_math_value_bignum() {
 	mu_assert_true(ok, "BIG + float");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_FLOAT, "float wins over big");
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	// rz_num_math_ut64 projects BIG back to ut64 by truncation.
 	ut64 truncated = rz_num_math(num, "0x10000000000000001");
@@ -912,7 +1064,8 @@ bool test_rz_num_math_value_bignum() {
 	char *dec = rz_big_to_decstr(v.val.big);
 	mu_assert_streq_free(dec, "18446744073709551616", "exact 2^64");
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	// 10 ** 40 is exact.
 	ok = rz_num_math_value(NULL, "10 ** 40", &v, &err);
@@ -922,7 +1075,8 @@ bool test_rz_num_math_value_bignum() {
 	mu_assert_streq_free(dec,
 		"10000000000000000000000000000000000000000", "exact 10^40");
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	// Small integer powers stay ut64.
 	ASSERT_U64("2 ** 10", 1024);
@@ -942,7 +1096,8 @@ bool test_rz_num_math_value_bignum() {
 	mu_assert_eq((ut64)strlen(dec), (ut64)1233, "2^4095 digit count");
 	free(dec);
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	// One bit past the ceiling: 2 ** 4096 is 4097 bits and cannot be
 	// represented exactly, so the evaluator deliberately falls back
@@ -953,14 +1108,16 @@ bool test_rz_num_math_value_bignum() {
 	mu_assert_eq(v.kind, RZ_NUM_KIND_FLOAT, "2^4096 overflows to float");
 	mu_assert_true(isinf(v.val.d), "2^4096 is +inf");
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	// A float operand forces the double path; the result is float.
 	ok = rz_num_math_value(NULL, "2 ** 0.5", &v, &err);
 	mu_assert_true(ok, "2 ** 0.5");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_FLOAT, "fractional exponent -> float");
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	mu_end;
 }
@@ -982,7 +1139,8 @@ bool test_rz_num_math_value_timeout() {
 	int p = 0;
 	buf[p++] = '0';
 	for (int i = 0; i < N; i++) {
-		buf[p++] = '+'; buf[p++] = '1';
+		buf[p++] = '+';
+		buf[p++] = '1';
 	}
 	buf[p] = 0;
 
@@ -999,7 +1157,9 @@ bool test_rz_num_math_value_timeout() {
 	mu_assert_true(ok, "no timeout completes");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_UT64, "result is ut64");
 	mu_assert_eq(v.val.n, (ut64)N, "result value");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	if (elapsed_us > 5000) {
 		// The host is slow enough that a 1 ms budget will reliably
@@ -1009,7 +1169,8 @@ bool test_rz_num_math_value_timeout() {
 		ok = rz_num_math_value_ex(NULL, buf, &opt, &v, &err);
 		mu_assert_false(ok, "1ms timeout aborts");
 		mu_assert_eq(v.err, RZ_NUM_ERR_TIMEOUT, "1ms -> TIMEOUT");
-		rz_num_value_fini(&v); free(err);
+		rz_num_value_fini(&v);
+		free(err);
 	}
 	free(buf);
 	mu_end;
@@ -1026,27 +1187,32 @@ bool test_rz_num_math_value_error_codes() {
 	mu_assert_false(rz_num_math_value(NULL, "", &v, &err), "empty");
 	mu_assert_eq(v.err, RZ_NUM_ERR_EMPTY, "empty -> RZ_NUM_ERR_EMPTY");
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	mu_assert_false(rz_num_math_value(NULL, "1 +", &v, &err), "truncated");
 	mu_assert_eq(v.err, RZ_NUM_ERR_PARSE, "truncated -> RZ_NUM_ERR_PARSE");
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	mu_assert_false(rz_num_math_value(NULL, "1 / 0", &v, &err), "div by zero");
 	mu_assert_eq(v.err, RZ_NUM_ERR_DIV_ZERO, "div0 -> RZ_NUM_ERR_DIV_ZERO");
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	mu_assert_false(rz_num_math_value(NULL, "5 % 0", &v, &err), "mod by zero");
 	mu_assert_eq(v.err, RZ_NUM_ERR_DIV_ZERO, "mod0 -> RZ_NUM_ERR_DIV_ZERO");
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	mu_assert_false(rz_num_math_value(NULL, "mod", &v, &err), "reserved word");
 	mu_assert_eq(v.err, RZ_NUM_ERR_RESERVED_WORD, "mod -> RZ_NUM_ERR_RESERVED_WORD");
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	mu_assert_false(rz_num_math_value(NULL, "$nonexistent_var", &v, &err),
 		"unknown special variable");
@@ -1060,14 +1226,16 @@ bool test_rz_num_math_value_error_codes() {
 	mu_assert_eq(v.err, RZ_NUM_ERR_PARSE,
 		"$nonexistent_var -> RZ_NUM_ERR_PARSE (closed-list grammar)");
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	mu_assert_false(rz_num_math_value(NULL, "foo(1, 2)", &v, &err),
 		"unknown function");
 	mu_assert_eq(v.err, RZ_NUM_ERR_NOT_IMPLEMENTED,
 		"foo() -> RZ_NUM_ERR_NOT_IMPLEMENTED");
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	// Decimal literal overflow is now supported via shift-and-add
 	// bignum promotion. RZ_NUM_ERR_OVERFLOW is reserved for cases
@@ -1076,25 +1244,28 @@ bool test_rz_num_math_value_error_codes() {
 	// category remains for future fixed-precision literal kinds
 	// (e.g. user-specified bit-vector widths).
 	mu_assert_true(rz_num_math_value(NULL,
-		"99999999999999999999999999999999", &v, &err),
+			       "99999999999999999999999999999999", &v, &err),
 		"decimal overflow no longer errors");
 	mu_assert_eq(v.err, RZ_NUM_ERR_OK,
 		"decimal overflow -> OK (promoted to BIG)");
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	mu_assert_false(rz_num_math_value(NULL, "0 log 5", &v, &err),
 		"log with bad base");
 	mu_assert_eq(v.err, RZ_NUM_ERR_UNCOMPUTABLE,
 		"log(0) -> RZ_NUM_ERR_UNCOMPUTABLE");
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	// On success, err must be RZ_NUM_ERR_OK.
 	mu_assert_true(rz_num_math_value(NULL, "1 + 2", &v, &err), "valid");
 	mu_assert_eq(v.err, RZ_NUM_ERR_OK, "valid -> RZ_NUM_ERR_OK");
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	mu_end;
 }
@@ -1102,7 +1273,7 @@ bool test_rz_num_math_value_error_codes() {
 // --- helpers for the custom-function / IO-callback tests ---
 
 static void tfn_triple(void *user, const RzNumValue *args, int argc,
-		RzNumCallbackResult *out) {
+	RzNumCallbackResult *out) {
 	(void)user;
 	if (argc != 1) {
 		out->ok = false;
@@ -1114,7 +1285,7 @@ static void tfn_triple(void *user, const RzNumValue *args, int argc,
 }
 
 static void tfn_pow2(void *user, const RzNumValue *args, int argc,
-		RzNumCallbackResult *out) {
+	RzNumCallbackResult *out) {
 	(void)user;
 	if (argc != 1) {
 		out->ok = false;
@@ -1134,7 +1305,7 @@ static void tfn_pow2(void *user, const RzNumValue *args, int argc,
 }
 
 static void tfn_fail(void *user, const RzNumValue *args, int argc,
-		RzNumCallbackResult *out) {
+	RzNumCallbackResult *out) {
 	(void)user;
 	(void)args;
 	(void)argc;
@@ -1145,7 +1316,7 @@ static void tfn_fail(void *user, const RzNumValue *args, int argc,
 // accepts arity -1 and that a call may pass an arbitrary number of
 // arguments (beyond the small inline buffer the evaluator uses).
 static void tfn_sum(void *user, const RzNumValue *args, int argc,
-		RzNumCallbackResult *out) {
+	RzNumCallbackResult *out) {
 	(void)user;
 	ut64 s = 0;
 	for (int i = 0; i < argc; i++) {
@@ -1190,13 +1361,17 @@ bool test_rz_num_math_value_custom_funcs() {
 		"triple(7)");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_UT64, "triple kind");
 	mu_assert_eq(v.val.n, 21, "triple(7) == 21");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Custom function used as a sub-expression.
 	mu_assert_true(rz_num_math_value_ex(NULL, "triple(7) + 1", &opt, &v, &err),
 		"triple in expr");
 	mu_assert_eq(v.val.n, 22, "triple(7)+1 == 22");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Custom function returning a bignum.
 	mu_assert_true(rz_num_math_value_ex(NULL, "pow2(100)", &opt, &v, &err),
@@ -1205,31 +1380,41 @@ bool test_rz_num_math_value_custom_funcs() {
 	char *dec = rz_big_to_decstr(v.val.big);
 	mu_assert_streq_free(dec,
 		"1267650600228229401496703205376", "pow2(100) exact");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Built-ins still resolve alongside the registry.
 	mu_assert_true(rz_num_math_value_ex(NULL, "min(3, 7)", &opt, &v, &err),
 		"built-in min still works");
 	mu_assert_eq(v.val.n, 3, "min(3,7) == 3");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Nesting a built-in inside a custom function.
 	mu_assert_true(rz_num_math_value_ex(NULL, "triple(min(2, 5))", &opt, &v, &err),
 		"nest builtin in custom");
 	mu_assert_eq(v.val.n, 6, "triple(min(2,5)) == 6");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// A callback that signals failure surfaces RZ_NUM_ERR_UNCOMPUTABLE.
 	mu_assert_false(rz_num_math_value_ex(NULL, "boom()", &opt, &v, &err),
 		"failing callback");
 	mu_assert_eq(v.err, RZ_NUM_ERR_UNCOMPUTABLE, "boom -> UNCOMPUTABLE");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Arity mismatch on a custom function.
 	mu_assert_false(rz_num_math_value_ex(NULL, "triple(1, 2)", &opt, &v, &err),
 		"wrong arity");
 	mu_assert_eq(v.err, RZ_NUM_ERR_NOT_IMPLEMENTED, "arity -> NOT_IMPLEMENTED");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// A function may be registered under a non-ASCII (Unicode) name
 	// and is then callable by that name. The name is copied as UTF-8,
@@ -1237,40 +1422,50 @@ bool test_rz_num_math_value_custom_funcs() {
 	//   \u0441\u0443\u043c\u043c\u0430 = Cyrillic "summa" (sum)
 	//   \u5408\u8ba1               = CJK "total"
 	mu_assert_true(rz_num_func_registry_add(reg,
-		"\u0441\u0443\u043c\u043c\u0430", -1, tfn_sum, NULL),
+			       "\u0441\u0443\u043c\u043c\u0430", -1, tfn_sum, NULL),
 		"register Cyrillic-named function");
 	mu_assert_true(rz_num_func_registry_add(reg,
-		"\u5408\u8ba1", -1, tfn_sum, NULL),
+			       "\u5408\u8ba1", -1, tfn_sum, NULL),
 		"register CJK-named function");
 
 	mu_assert_true(rz_num_math_value_ex(NULL,
-		"\u0441\u0443\u043c\u043c\u0430(1, 2, 3)", &opt, &v, &err),
+			       "\u0441\u0443\u043c\u043c\u0430(1, 2, 3)", &opt, &v, &err),
 		"call Cyrillic-named function");
 	mu_assert_eq(v.val.n, 6, "summa(1,2,3) == 6");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// A Unicode-named function nests with the rest of the language.
 	mu_assert_true(rz_num_math_value_ex(NULL,
-		"\u5408\u8ba1(10, 20) * 2", &opt, &v, &err),
+			       "\u5408\u8ba1(10, 20) * 2", &opt, &v, &err),
 		"CJK-named function in expr");
 	mu_assert_eq(v.val.n, 60, "total(10,20)*2 == 60");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// A variadic function may take many arguments - well beyond the
 	// small inline buffer the evaluator keeps for the common case -
 	// so registration is not limited to a fixed maximum arity.
 	mu_assert_true(rz_num_math_value_ex(NULL,
-		"\u0441\u0443\u043c\u043c\u0430(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)",
-		&opt, &v, &err), "10-argument call");
+			       "\u0441\u0443\u043c\u043c\u0430(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)",
+			       &opt, &v, &err),
+		"10-argument call");
 	mu_assert_eq(v.val.n, 55, "sum of 1..10 == 55");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	mu_assert_true(rz_num_math_value_ex(NULL,
-		"\u5408\u8ba1(100, 200, 300, 400, 500, 600, 700, 800, "
-		"900, 1000, 1100, 1200)",
-		&opt, &v, &err), "12-argument call");
+			       "\u5408\u8ba1(100, 200, 300, 400, 500, 600, 700, 800, "
+			       "900, 1000, 1100, 1200)",
+			       &opt, &v, &err),
+		"12-argument call");
 	mu_assert_eq(v.val.n, 7800, "sum of the 12 args == 7800");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// A registered function may also shadow a built-in by name; here
 	// a variadic "min" replaces the 2-arg built-in and now accepts
@@ -1280,7 +1475,9 @@ bool test_rz_num_math_value_custom_funcs() {
 	mu_assert_true(rz_num_math_value_ex(NULL, "min(1, 2, 3, 4)", &opt, &v, &err),
 		"shadowed min with 4 args");
 	mu_assert_eq(v.val.n, 10, "shadow min(1,2,3,4) sums to 10");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	rz_num_func_registry_free(reg);
 	mu_end;
@@ -1296,7 +1493,9 @@ bool test_rz_num_math_value_io_read() {
 		"typed read le32");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_UT64, "read kind");
 	mu_assert_eq(v.val.n, 0xdafe, "0x1000:le32 dereferenced");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Width-2 read with the OPPOSITE endianness of how the mock
 	// wrote the bytes: the conceptual value 0xdafe was written
@@ -1308,19 +1507,25 @@ bool test_rz_num_math_value_io_read() {
 	mu_assert_true(rz_num_math_value_ex(NULL, "0x1000:be16", &opt, &v, &err),
 		"typed read be16");
 	mu_assert_eq(v.val.n, 0xfeda, "0x1000:be16 byte-swaps the LE bytes");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// The dereferenced value is usable in further arithmetic.
 	mu_assert_true(rz_num_math_value_ex(NULL, "0x1000:le32 + 1", &opt, &v, &err),
 		"typed read in expr");
 	mu_assert_eq(v.val.n, 0xdaff, "0x1000:le32 + 1");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Without a callback, the literal address is returned.
 	mu_assert_true(rz_num_math_value(NULL, "0x1000:le32", &v, &err),
 		"no callback -> literal");
 	mu_assert_eq(v.val.n, 0x1000, "literal address when no io_read");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	mu_end;
 }
@@ -1351,25 +1556,33 @@ bool test_rz_num_math_value_typed_reads() {
 		"signed s32 read");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_UT64, "s32 kind");
 	mu_assert_eq(v.val.n, (ut64)(-1), "0xffffffff:s32 == -1");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// The same bytes read unsigned are 0xffffffff.
 	mu_assert_true(rz_num_math_value_ex(NULL, "0xffffffff:le32", &opt, &v, &err),
 		"unsigned le32 read");
 	mu_assert_eq(v.val.n, 0xffffffff, "0xffffffff:le32 == 0xffffffff");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Signed 16-bit: 0xfffe is -2.
 	mu_assert_true(rz_num_math_value_ex(NULL, "0xfffe:s16", &opt, &v, &err),
 		"signed s16 read");
 	mu_assert_eq(v.val.n, (ut64)(-2), "0xfffe:s16 == -2");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// A positive signed value is unchanged.
 	mu_assert_true(rz_num_math_value_ex(NULL, "0x7f:s8", &opt, &v, &err),
 		"signed s8 positive");
 	mu_assert_eq(v.val.n, 0x7f, "0x7f:s8 == 127");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Float read (single precision): the raw bits of 1.5f are
 	// 0x3fc00000.
@@ -1377,27 +1590,58 @@ bool test_rz_num_math_value_typed_reads() {
 		"float f32 read");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_FLOAT, "f32 kind is float");
 	mu_assert_true(v.val.d == 1.5, "0x3fc00000:f32 == 1.5");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Float read (double precision): the raw bits of 2.0 are
 	// 0x4000000000000000.
 	mu_assert_true(rz_num_math_value_ex(NULL, "0x4000000000000000:f64", &opt, &v, &err),
 		"float f64 read");
 	mu_assert_true(v.val.d == 2.0, "...:f64 == 2.0");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Half precision (f16): the raw bits of 1.5 are 0x3e00.
 	mu_assert_true(rz_num_math_value_ex(NULL, "0x3e00:f16", &opt, &v, &err),
 		"float f16 read");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_FLOAT, "f16 kind is float");
 	mu_assert_true(v.val.d == 1.5, "0x3e00:f16 == 1.5");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// f16 of 0xc000 is -2.0.
 	mu_assert_true(rz_num_math_value_ex(NULL, "0xc000:f16", &opt, &v, &err),
 		"float f16 negative");
 	mu_assert_true(v.val.d == -2.0, "0xc000:f16 == -2.0");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
+
+	// f16 Inf/NaN (exp all ones). These decode through a bit-pattern
+	// path (no 0.0/0.0), so check the special values come out right.
+	mu_assert_true(rz_num_math_value_ex(NULL, "0x7c00:f16", &opt, &v, &err),
+		"float f16 +inf read");
+	mu_assert_true(isinf(v.val.d) && v.val.d > 0, "0x7c00:f16 == +inf");
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
+
+	mu_assert_true(rz_num_math_value_ex(NULL, "0xfc00:f16", &opt, &v, &err),
+		"float f16 -inf read");
+	mu_assert_true(isinf(v.val.d) && v.val.d < 0, "0xfc00:f16 == -inf");
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
+
+	mu_assert_true(rz_num_math_value_ex(NULL, "0x7e00:f16", &opt, &v, &err),
+		"float f16 nan read");
+	mu_assert_true(isnan(v.val.d), "0x7e00:f16 == nan");
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// 128-bit reads need two underlying IO reads (the callback
 	// returns ut64); the result is a width-128 bit-vector. The mock
@@ -1408,7 +1652,9 @@ bool test_rz_num_math_value_typed_reads() {
 	mu_assert_eq(v.kind, RZ_NUM_KIND_BITVECTOR, ":128 yields bitvector");
 	mu_assert_eq(rz_bv_len(v.val.bv), 128, ":128 is width 128");
 	mu_assert_eq(rz_bv_to_ut64(v.val.bv), 0x100, ":128 low qword");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// :f128 likewise yields a width-128 bit-vector carrying the raw
 	// IEEE-754 quad-precision bit pattern. RzNum's float kind is
@@ -1419,24 +1665,33 @@ bool test_rz_num_math_value_typed_reads() {
 		":f128 quad-precision read");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_BITVECTOR, ":f128 yields bitvector");
 	mu_assert_eq(rz_bv_len(v.val.bv), 128, ":f128 is width 128");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Two reads of the same 128-bit value are equal.
 	mu_assert_true(rz_num_math_value_ex(NULL, "0x200:128 == 0x200:128",
-		&opt, &v, &err), ":128 equality");
+			       &opt, &v, &err),
+		":128 equality");
 	mu_assert_eq(v.val.n, 1, ":128 equals itself");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Without an IO callback the literal address comes back (parity
 	// with the other typed-read widths).
 	mu_assert_true(rz_num_math_value(NULL, "0x1234:128", &v, &err),
 		":128 literal fallback");
 	mu_assert_eq(v.val.n, 0x1234, ":128 == address with no io_read");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 	mu_assert_true(rz_num_math_value(NULL, "0x1234:f128", &v, &err),
 		":f128 literal fallback");
 	mu_assert_eq(v.val.n, 0x1234, ":f128 == address with no io_read");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	mu_end;
 }
@@ -1454,58 +1709,76 @@ bool test_rz_num_math_value_bitvector_extended_ops() {
 		"u8 rol 4");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_BITVECTOR, "rol yields bv");
 	mu_assert_eq(rz_bv_to_ut64(v.val.bv), 0x21, "0x12u8 rol 4 == 0x21");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	rz_num_value_init(&v);
 	mu_assert_true(rz_num_math_value(NULL, "0x12u8 >>> 4", &v, &err),
 		"u8 ror 4");
 	mu_assert_eq(rz_bv_to_ut64(v.val.bv), 0x21, "0x12u8 ror 4 == 0x21");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	rz_num_value_init(&v);
 	mu_assert_true(rz_num_math_value(NULL, "0x12345678u32 <<< 8", &v, &err),
 		"u32 rol 8");
 	mu_assert_eq(rz_bv_to_ut64(v.val.bv), 0x34567812, "u32 rol 8 wraps top byte");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Rotation by a full width is the identity.
 	rz_num_value_init(&v);
 	mu_assert_true(rz_num_math_value(NULL, "0xabu8 <<< 8", &v, &err),
 		"u8 rol 8 == identity");
 	mu_assert_eq(rz_bv_to_ut64(v.val.bv), 0xab, "rol full-width is identity");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Power: modular at W bits, exponentiation by squaring.
 	rz_num_value_init(&v);
 	mu_assert_true(rz_num_math_value(NULL, "3u32 ** 10u32", &v, &err),
 		"u32 power");
 	mu_assert_eq(rz_bv_to_ut64(v.val.bv), 59049, "3^10 == 59049");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	rz_num_value_init(&v);
 	mu_assert_true(rz_num_math_value(NULL, "2u8 ** 8u8", &v, &err),
 		"u8 power overflow wraps");
 	mu_assert_eq(rz_bv_to_ut64(v.val.bv), 0, "2u8 ** 8 wraps to 0");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	rz_num_value_init(&v);
 	mu_assert_true(rz_num_math_value(NULL, "2u32 ** 32u32", &v, &err),
 		"u32 power overflow wraps");
 	mu_assert_eq(rz_bv_to_ut64(v.val.bv), 0, "2u32 ** 32 wraps to 0");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Logarithm: floor(log_base(value)) at the combined width.
 	rz_num_value_init(&v);
 	mu_assert_true(rz_num_math_value(NULL, "2u32 log 16u32", &v, &err),
 		"u32 log");
 	mu_assert_eq(rz_bv_to_ut64(v.val.bv), 4, "log2(16) == 4");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	rz_num_value_init(&v);
 	mu_assert_true(rz_num_math_value(NULL, "2u8 log 4u8", &v, &err),
 		"u8 log");
 	mu_assert_eq(rz_bv_to_ut64(v.val.bv), 2, "log2(4) == 2");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Signed family on bit-vectors. 0xff as u8-signed is -1, 0xfe is
 	// -2; sdiv truncates toward zero, sar sign-extends.
@@ -1513,25 +1786,33 @@ bool test_rz_num_math_value_bitvector_extended_ops() {
 	mu_assert_true(rz_num_math_value(NULL, "0xffu8 sdiv 2u8", &v, &err),
 		"u8 sdiv");
 	mu_assert_eq(rz_bv_to_ut64(v.val.bv), 0, "-1 sdiv 2 == 0 (trunc)");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	rz_num_value_init(&v);
 	mu_assert_true(rz_num_math_value(NULL, "0xffu8 smod 3u8", &v, &err),
 		"u8 smod");
 	mu_assert_eq(rz_bv_to_ut64(v.val.bv), 0xff, "-1 smod 3 == -1");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	rz_num_value_init(&v);
 	mu_assert_true(rz_num_math_value(NULL, "0xfeu8 sar 1u8", &v, &err),
 		"u8 sar");
 	mu_assert_eq(rz_bv_to_ut64(v.val.bv), 0xff, "-2 sar 1 == -1 (sign-fill)");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	// Division by zero on the signed bit-vector ops is reported.
 	mu_assert_false(rz_num_math_value(NULL, "5u8 sdiv 0u8", &v, &err),
 		"bv sdiv by zero fails");
 	mu_assert_eq(v.err, RZ_NUM_ERR_DIV_ZERO, "bv sdiv 0 -> DIV_ZERO");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	mu_end;
 }
@@ -1568,16 +1849,170 @@ bool test_rz_num_math_value_builtins() {
 	rz_num_value_init(&v);
 	mu_assert_false(rz_num_math_value(num, "min(1)", &v, &err), "wrong arity");
 	mu_assert_eq(v.err, RZ_NUM_ERR_NOT_IMPLEMENTED, "arity -> NOT_IMPLEMENTED");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	mu_assert_false(rz_num_math_value(num, "foo(1, 2)", &v, &err), "unknown");
 	mu_assert_eq(v.err, RZ_NUM_ERR_NOT_IMPLEMENTED, "unknown -> NOT_IMPLEMENTED");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	mu_end;
 }
 
-// Exercise non-ASCII identifiers across several writing systems, for
+// Math and bit functions: log/ln/log2/log10/sqrt (float results),
+// floor/ceil/round (float -> ut64 bridge), gcd, clz, ctz. These are
+// the domain-relevant additions on top of min/max/abs/popcount/len.
+bool test_rz_num_math_value_math_functions() {
+	num = NULL;
+
+	// Exact-valued transcendentals come back as exact floats.
+	ASSERT_F64("log(1)", 0.0);
+	ASSERT_F64("ln(1)", 0.0);
+	ASSERT_F64("log2(256)", 8.0);
+	ASSERT_F64("log2(1024)", 10.0);
+	ASSERT_F64("log10(1000)", 3.0);
+	ASSERT_F64("log10(1)", 0.0);
+	ASSERT_F64("sqrt(16)", 4.0);
+	ASSERT_F64("sqrt(0)", 0.0);
+	ASSERT_F64("sqrt(2)", sqrt(2.0)); // irrational: compare to libm
+	ASSERT_F64("log(2.718281828459045)", log(2.718281828459045));
+	// log() is natural; the base-b logarithm is the `b log x` operator.
+	ASSERT_F64("ln(100)", log(100.0));
+	// Integers are unsigned here, so sqrt(-1) is sqrt(2^64-1), not a
+	// domain error (same model that makes 0 - 1 == 2^64-1). Genuine
+	// domain errors come from negative floats; see below.
+	ASSERT_F64("sqrt(-1)", sqrt((double)UT64_MAX));
+
+	// floor/ceil/round bridge float to ut64 (two's complement for
+	// negatives). C round() rounds halves away from zero.
+	ASSERT_U64("floor(3.7)", 3);
+	ASSERT_U64("ceil(3.2)", 4);
+	ASSERT_U64("floor(3.0)", 3);
+	ASSERT_U64("ceil(3.0)", 3);
+	ASSERT_U64("round(2.5)", 3);
+	ASSERT_U64("round(2.4)", 2);
+	ASSERT_U64("round(-2.5)", (ut64)(-3LL));
+	ASSERT_U64("floor(-1.5)", (ut64)(-2LL));
+	ASSERT_U64("ceil(-1.5)", (ut64)(-1LL));
+	// Integer arguments pass straight through, keeping full precision.
+	ASSERT_U64("floor(42)", 42);
+	ASSERT_U64("ceil(42)", 42);
+	ASSERT_U64("round(42)", 42);
+
+	// gcd over ut64.
+	ASSERT_U64("gcd(48, 36)", 12);
+	ASSERT_U64("gcd(1071, 462)", 21);
+	ASSERT_U64("gcd(17, 5)", 1);
+	ASSERT_U64("gcd(100, 0)", 100);
+	ASSERT_U64("gcd(0, 0)", 0);
+
+	// clz / ctz over the 64-bit projection.
+	ASSERT_U64("clz(1)", 63);
+	ASSERT_U64("clz(0)", 64);
+	ASSERT_U64("clz(0x8000000000000000)", 0);
+	ASSERT_U64("clz(0xff)", 56);
+	ASSERT_U64("ctz(8)", 3);
+	ASSERT_U64("ctz(0)", 64);
+	ASSERT_U64("ctz(1)", 0);
+	ASSERT_U64("ctz(0x8000000000000000)", 63);
+
+	// Compositions: number of bits needed to represent N is
+	// floor(log2(N)) + 1, a staple of the analysis domain.
+	ASSERT_U64("floor(log2(1000)) + 1", 10);
+	ASSERT_U64("floor(log2(255)) + 1", 8);
+	ASSERT_U64("ceil(log2(1000))", 10);
+	ASSERT_U64("clz(0xff) + ctz(0x100)", 64); // 56 + 8
+
+	// Domain violations are reported, not guessed.
+	RzNumValue v;
+	char *err = NULL;
+	rz_num_value_init(&v);
+	mu_assert_false(rz_num_math_value(num, "log(0)", &v, &err), "log(0)");
+	mu_assert_eq(v.err, RZ_NUM_ERR_UNCOMPUTABLE, "log(0) -> UNCOMPUTABLE");
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
+
+	rz_num_value_init(&v);
+	mu_assert_false(rz_num_math_value(num, "log2(0)", &v, &err), "log2(0)");
+	mu_assert_eq(v.err, RZ_NUM_ERR_UNCOMPUTABLE, "log2(0) -> UNCOMPUTABLE");
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
+
+	rz_num_value_init(&v);
+	mu_assert_false(rz_num_math_value(num, "sqrt(-1.5)", &v, &err), "sqrt(-1.5)");
+	mu_assert_eq(v.err, RZ_NUM_ERR_UNCOMPUTABLE, "sqrt(-1.5) -> UNCOMPUTABLE");
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
+
+	rz_num_value_init(&v);
+	mu_assert_false(rz_num_math_value(num, "log(-2.5)", &v, &err), "log(-2.5)");
+	mu_assert_eq(v.err, RZ_NUM_ERR_UNCOMPUTABLE, "log(-2.5) -> UNCOMPUTABLE");
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
+
+	// Wrong arity still reports NOT_IMPLEMENTED.
+	rz_num_value_init(&v);
+	mu_assert_false(rz_num_math_value(num, "gcd(1)", &v, &err), "gcd arity");
+	mu_assert_eq(v.err, RZ_NUM_ERR_NOT_IMPLEMENTED, "gcd(1) -> NOT_IMPLEMENTED");
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
+
+	mu_end;
+}
+
+// "Torture" cases: each expression deliberately piles many grammar
+// features into a single computation - multiple numeric bases (hex,
+// binary, octal, C-style octal, ternary), arithmetic, signed
+// operators (sdiv/smod/sar), shifts and rotates, the full bitwise
+// precedence ladder (& > ^ > |, all looser than the shifts), unary
+// operators, comparisons and equality, nested conditionals,
+// assignment/sequencing, fixed-width bit-vectors, and nested function
+// calls. Every expected value was cross-checked against an independent
+// Python oracle and the sympy-based verifier. Grouping notes are given
+// where the precedence is non-obvious (the shift operators - including
+// sar - bind looser than + and -, so e.g. `(-100) sar 3 + ...` parses
+// as `(-100) sar (3 + ...)`).
+bool test_rz_num_math_value_torture() {
+	// bases + arithmetic + function + shift + full bitwise ladder
+	ASSERT_U64("(0x10 + 0b110) * 0o3 - gcd(36, 24) << 2 & 0xff | 0t21", 0xdf);
+	// signed sdiv/smod, comparison, conditional, abs/popcount, unary -
+	ASSERT_U64("(100 sdiv 7 > 10 ? abs(0 - 50) : popcount(0xff)) + (-20 smod 6)", 0x30);
+	// rotate, exponent, bitwise xor/and with shift-tighter-than-&
+	ASSERT_U64("(1 <<< 8 | 0xff) ^ (2 ** 4 - 1) & 0xf0 >>> 4", 0x1f0);
+	// unary ~, logical/arith shifts, & ^ | ladder, popcount
+	ASSERT_U64("~0 >> 56 & 0xff ^ 0b1100 | popcount(0xffff) << 2", 0xf3);
+	// nested gcd/min/max/clz, float-bridging floor(sqrt(...)), octal
+	ASSERT_U64("max(gcd(48,36), min(20, clz(0x100))) * 2 + floor(sqrt(0x100)) - 0o17", 0x29);
+	// C-style octal (034, 010), equality-in-conditional, ternary base
+	ASSERT_U64("(034 + 010) * 2 - 0x10 + (5 > 3 == 1 ? 0b111 : 0t22)", 0x3f);
+	// large hex, masking, shift, xor with a rotate of the high word
+	ASSERT_U64("((0xdeadbeef & 0xffff) | (0xcafe << 4)) ^ 0xf0f0 >>> 8", 0xf0000000000cbf1f);
+	// sar binds looser than +/- : == `(-100) sar (3 + 28 - 2)` == -1
+	ASSERT_U64("(-100) sar 3 + 100 sdiv 7 * 2 - 5 smod 3", 0xffffffffffffffff);
+	// right-assoc **, comparison/equality conditionals, clz, len(int)
+	ASSERT_U64("(2 ** 3 ** 2 > 500 ? 1 : 0) + (popcount(0xff) == 8 ? clz(1) : 0) + len(0x1234)", 0x4d);
+	// assignment + sequencing, reuse of a bound variable, bitwise
+	ASSERT_U64("a = 0xff; b = a << 4 | a; b & 0xf0f ^ 0x101", 0xe0e);
+	// gcd of an exponent and an octal, conditional, abs, rotate
+	ASSERT_U64("gcd(2 ** 8, 0o1000) + (3 < 2 ? 999 : abs(10 - 0x20)) * (1 <<< 2)", 0x158);
+	// u8 wraparound inside an equality test, clz/ctz, shift, xor, or
+	ASSERT_U64("(0xffu8 + 1u8 == 0 ? 0xaa : 0xbb) | (clz(0x8000) << 1) ^ ctz(0x400)", 0xea);
+	// string-byte len, bit-vector len, popcount, arithmetic + or
+	ASSERT_U64("(len(\"ABCD\") + len(\"XY\")) * 2 - len(0xffffu16) | popcount(0xf0f0)", 0x58);
+	// deeply nested conditionals on both sides, right-assoc chaining
+	ASSERT_U64("(10 > 5 ? (20 < 15 ? 1 : (3 == 3 ? 0xff : 0)) : 0xaa) + (0 ? 1 : 2 ? 3 : 4)", 0x102);
+	// one long precedence chain: mult>add>shift>&>^>|
+	ASSERT_U64("1 + 2 * 3 - 4 << 1 | 5 & 6 ^ 7 + 8 >> 2", 0x7);
+	mu_end;
+}
 // both variable names and function names. The grammar's identifier
 // rule admits any run of non-operator, non-control UTF-8, so these
 // work without special-casing; this test pins that behaviour down.
@@ -1608,7 +2043,8 @@ bool test_rz_num_math_value_unicode_names() {
 
 	// Arabic (right-to-left script; stored and compared as bytes).
 	ASSERT_U64("(\xd9\x85\xd8\xaa\xd8\xba\xd9\x8a\xd8\xb1 = 4) + "
-		"\xd9\x85\xd8\xaa\xd8\xba\xd9\x8a\xd8\xb1", 8); // "متغير" (variable)
+		   "\xd9\x85\xd8\xaa\xd8\xba\xd9\x8a\xd8\xb1",
+		8); // "متغير" (variable)
 
 	// Cyrillic.
 	ASSERT_U64("(\xd0\xbd\xd0\xb0\xd1\x87 = 10) + \xd0\xbd\xd0\xb0\xd1\x87", 20); // "нач"
@@ -1641,7 +2077,9 @@ bool test_rz_num_math_value_unicode_names() {
 		"unknown unicode function"); // "関数" (Japanese: function), unregistered
 	mu_assert_eq(v.err, RZ_NUM_ERR_NOT_IMPLEMENTED,
 		"unknown unicode fn -> NOT_IMPLEMENTED");
-	rz_num_value_fini(&v); free(err); err = NULL;
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
 
 	mu_end;
 }
@@ -1670,7 +2108,8 @@ bool test_rz_num_math_value_pretty_print() {
 	mu_assert_streq(one, "0x100000", "compact form");
 	free(one);
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	// FLOAT case
 	rz_num_math_value(NULL, "3.14159", &v, &err);
@@ -1681,7 +2120,8 @@ bool test_rz_num_math_value_pretty_print() {
 	mu_assert_notnull(strstr(out, "hex"), "bit pattern");
 	free(out);
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	// BIG case: decimal + hex + width.
 	rz_num_math_value(NULL, "0x10000000000000000", &v, &err);
@@ -1695,7 +2135,8 @@ bool test_rz_num_math_value_pretty_print() {
 	mu_assert_notnull(strstr(out, "width"), "width hint");
 	free(out);
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	// Error case must surface the category name.
 	rz_num_math_value(NULL, "1 / 0", &v, &err);
@@ -1709,7 +2150,8 @@ bool test_rz_num_math_value_pretty_print() {
 	mu_assert_notnull(strstr(one, "error"), "compact carries error too");
 	free(one);
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	// rz_num_error_name is stable and covers every category.
 	mu_assert_streq(rz_num_error_name(RZ_NUM_ERR_OK), "ok", "ok");
@@ -1760,7 +2202,8 @@ bool test_rz_num_math_value_bitvector_unicode() {
 		"utf8 width is below the values");
 	free(uni);
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	// A 16-bit value renders a two-digit subscript: U+2081 U+2086.
 	ok = rz_num_math_value(NULL, "10u16 * 10u16", &v, &err);
@@ -1772,7 +2215,8 @@ bool test_rz_num_math_value_bitvector_unicode() {
 	mu_assert_notnull(strstr(uni, "binary  0000000001100100\u2081\u2086\n"), "16-bit binary subscript");
 	free(uni);
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
 
 	// NULL opts behaves exactly like the ASCII default.
 	ok = rz_num_math_value(NULL, "5u8", &v, &err);
@@ -1784,7 +2228,115 @@ bool test_rz_num_math_value_bitvector_unicode() {
 	mu_assert_null(strstr(uni, "\u2085"), "NULL opts -> no subscript");
 	free(uni);
 	rz_num_value_fini(&v);
-	free(err); err = NULL;
+	free(err);
+	err = NULL;
+
+	mu_end;
+}
+
+bool test_rz_num_il_lift() {
+	char *err = NULL;
+
+#define ASSERT_LIFT(expr, want) \
+	do { \
+		char *_e = NULL; \
+		RzILOpPure *_op = rz_il_lift_num(NULL, (expr), NULL, &_e); \
+		mu_assert_notnull(_op, expr " lifts"); \
+		RzStrBuf _sb; \
+		rz_strbuf_init(&_sb); \
+		RzILStringifyCtx _ctx = { 0 }; \
+		rz_il_op_pure_stringify_unicode(&_ctx, _op, &_sb); \
+		rz_il_op_pure_free(_op); \
+		free(_e); \
+		char *_s = rz_strbuf_drain_nofree(&_sb); \
+		mu_assert_streq_free(_s, (want), expr); \
+	} while (0)
+
+	// Arithmetic keeps precedence and uses RzIL glyphs; ut64 literals
+	// become 64-bit bit-vector constants with a subscript width.
+	ASSERT_LIFT("1 + 2 * 3", "(0x1\u2086\u2084 + (0x2\u2086\u2084 * 0x3\u2086\u2084))");
+	ASSERT_LIFT("(1 + 2) * 3", "((0x1\u2086\u2084 + 0x2\u2086\u2084) * 0x3\u2086\u2084)");
+	ASSERT_LIFT("0x10 & 0xff", "(0x10\u2086\u2084 & 0xff\u2086\u2084)");
+	// Shifts carry an explicit fill bit as a third operand in RzIL's
+	// serialization; a logical shift fills with false (\u22a5).
+	ASSERT_LIFT("1 << 4", "(0x1\u2086\u2084 \u226a 0x4\u2086\u2084 \u22a5)");
+	ASSERT_LIFT("10 == 10", "(0xa\u2086\u2084 \u2261 0xa\u2086\u2084)");
+
+	// Width-suffixed literals keep their bit-vector width.
+	ASSERT_LIFT("5u8 + 3u8", "(0x5\u2088 + 0x3\u2088)");
+
+	// Unary minus / bitwise not render as a prefix glyph directly on the
+	// operand (no wrapping parentheses), matching RzIL's exporter.
+	ASSERT_LIFT("-5", "\u22120x5\u2086\u2084");
+	ASSERT_LIFT("~0xff", "~0xff\u2086\u2084");
+
+	// Functions have no structural RzIL form, so they are grounded to
+	// a concrete bit-vector constant first: min(5,3) == 3.
+	ASSERT_LIFT("min(5, 3) + 1", "(0x3\u2086\u2084 + 0x1\u2086\u2084)");
+
+	// ** is likewise grounded: 2 ** 8 == 256.
+	ASSERT_LIFT("2 ** 8", "0x100\u2086\u2084");
+
+	// Signed division / remainder lift to their RzIL glyphs (the
+	// superscript plus marks signedness): sdiv -> /+, smod -> %+.
+	ASSERT_LIFT("10 sdiv 3", "(0xa\u2086\u2084 /\u207a 0x3\u2086\u2084)");
+	ASSERT_LIFT("10 smod 3", "(0xa\u2086\u2084 %\u207a 0x3\u2086\u2084)");
+	// Arithmetic shift right is a plain RzIL shiftr whose fill bit is the
+	// sign bit (msb, the \u2191 glyph) of the shifted value.
+	ASSERT_LIFT("256 sar 2",
+		"(0x100\u2086\u2084 \u226b 0x2\u2086\u2084 \u21910x100\u2086\u2084)");
+
+	// A ';'-separated sequence is grounded to its final value: the
+	// last statement wins and earlier bindings are honoured.
+	ASSERT_LIFT("1 + 2; 3 + 4", "0x7\u2086\u2084");
+	ASSERT_LIFT("x = 5; x + 1", "0x6\u2086\u2084");
+
+	// The ternary lifts structurally to RzIL's ite, rendered exactly
+	// as the RzIL Unicode exporter prints it: "(cond <ITE> then else)"
+	// with the two-headed-arrow glyph. This is the one control-flow
+	// form with a direct RzIL pure-op, so it is not grounded.
+	ASSERT_LIFT("1 ? 10 : 20",
+		"(0x1\u2086\u2084 \u21a0 0xa\u2086\u2084 0x14\u2086\u2084)");
+	ASSERT_LIFT("1 ? 2 + 3 : 4 * 5",
+		"(0x1\u2086\u2084 \u21a0 (0x2\u2086\u2084 + 0x3\u2086\u2084) (0x4\u2086\u2084 * 0x5\u2086\u2084))");
+
+	// Float-pure arithmetic lifts to the RzIL float-binop form with
+	// the round-nearest-even prefix - "(rne x + y)" - and the operands
+	// render as the bit-vector representation of the double with the
+	// ".f64" subscript, matching how RzIL prints a `float
+	// RZ_FLOAT_IEEE754_BIN_64 <bitv>` op.
+	ASSERT_LIFT("1.5 + 2.5",
+		"(rne 0x3ff8000000000000.f\u2086\u2084 + 0x4004000000000000.f\u2086\u2084)");
+	ASSERT_LIFT("1.0 / 2.0",
+		"(rne 0x3ff0000000000000.f\u2086\u2084 / 0x4000000000000000.f\u2086\u2084)");
+
+	// Mixed integer / float is grounded rather than fabricating an
+	// implicit cast the user did not write.
+	ASSERT_LIFT("1 + 2.5", "0x3\u2086\u2084");
+
+	// Float-conditioned ternary: the evaluator's "non-zero float is
+	// true" semantic does not match RzIL's ite (which expects a Bool),
+	// so the lift wraps the condition in is_fzero and SWAPS the branches
+	// - "(f \u2261 0 \u21a0 else then)". This makes the lifted form pick the
+	// same branch as the evaluator: 0.5 -> "then", 0.0 -> "else".
+	ASSERT_LIFT("0.5 ? 7 : 8",
+		"(0x3fe0000000000000.f\u2086\u2084 \u2261 0 \u21a0 0x8\u2086\u2084 0x7\u2086\u2084)");
+	ASSERT_LIFT("0.0 ? 7 : 8",
+		"(0x0.f\u2086\u2084 \u2261 0 \u21a0 0x8\u2086\u2084 0x7\u2086\u2084)");
+
+	// Float-conditioned ternary with float branches: both the
+	// condition and the branches lift in their float form.
+	ASSERT_LIFT("0.5 ? 1.5 : 2.5",
+		"(0x3fe0000000000000.f\u2086\u2084 \u2261 0 \u21a0 "
+		"0x4004000000000000.f\u2086\u2084 0x3ff8000000000000.f\u2086\u2084)");
+
+#undef ASSERT_LIFT
+
+	// A parse error is reported, not lifted.
+	RzILOpPure *bad = rz_il_lift_num(NULL, "1 +", NULL, &err);
+	mu_assert_null(bad, "incomplete expression does not lift");
+	free(err);
+	err = NULL;
 
 	mu_end;
 }
@@ -1809,6 +2361,24 @@ bool test_rz_num_math_ut64_legacy_compat() {
 	mu_assert_eq(rz_num_math(num, "log"), 0, "bare 'log' is silent 0");
 	mu_assert_eq(rz_num_math(num, "le"), 0, "bare 'le' is silent 0");
 	mu_assert_eq(rz_num_math(num, "be"), 0, "bare 'be' is silent 0");
+
+	// num->nc.errors contract: callers such as the seek and write
+	// commands gate on it, so a successful evaluation must leave it
+	// clear even if a previous one set it, and a genuine error must
+	// set it. (Regression: the new-parser path used to leave a stale
+	// count in place, which made `s main` and friends silently abort.)
+	RzNum *ncnum = rz_num_new(NULL, NULL, NULL);
+	ncnum->nc.errors = 7;
+	mu_assert_eq(rz_num_math(ncnum, "1 + 2"), 3, "value still correct");
+	mu_assert_eq(ncnum->nc.errors, 0, "success clears stale nc.errors");
+	ncnum->nc.errors = 7;
+	mu_assert_eq(rz_num_math(ncnum, "0x1000"), 0x1000, "flagless literal");
+	mu_assert_eq(ncnum->nc.errors, 0, "success clears nc.errors (literal)");
+	rz_num_math(ncnum, "1 / 0");
+	mu_assert_true(ncnum->nc.errors != 0, "division by zero sets nc.errors");
+	mu_assert_eq(rz_num_math(ncnum, "42"), 42, "recover after error");
+	mu_assert_eq(ncnum->nc.errors, 0, "next success re-clears nc.errors");
+	rz_num_free(ncnum);
 	mu_end;
 }
 
@@ -1837,6 +2407,7 @@ bool all_tests() {
 	mu_run_test(test_rz_num_math_value_units);
 	mu_run_test(test_rz_num_math_value_comparisons);
 	mu_run_test(test_rz_num_math_value_special_variables);
+	mu_run_test(test_rz_num_math_value_local_label);
 	mu_run_test(test_rz_num_math_value_callback_userptr);
 	mu_run_test(test_rz_num_math_value_string_bytes);
 	mu_run_test(test_rz_num_math_value_reserved_words);
@@ -1855,6 +2426,8 @@ bool all_tests() {
 	mu_run_test(test_rz_num_math_value_timeout);
 	mu_run_test(test_rz_num_math_value_error_codes);
 	mu_run_test(test_rz_num_math_value_builtins);
+	mu_run_test(test_rz_num_math_value_math_functions);
+	mu_run_test(test_rz_num_math_value_torture);
 	mu_run_test(test_rz_num_math_value_unicode_names);
 	mu_run_test(test_rz_num_math_value_custom_funcs);
 	mu_run_test(test_rz_num_math_value_io_read);
@@ -1863,6 +2436,7 @@ bool all_tests() {
 	mu_run_test(test_rz_num_math_value_pretty_print);
 	mu_run_test(test_rz_num_math_value_bitvector_unicode);
 	mu_run_test(test_rz_num_math_ut64_legacy_compat);
+	mu_run_test(test_rz_num_il_lift);
 	return tests_passed != tests_run;
 }
 

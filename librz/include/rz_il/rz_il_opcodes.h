@@ -904,6 +904,12 @@ RZ_API void rz_il_op_effect_json(RZ_NONNULL RzILOpEffect *op, RZ_NONNULL PJ *pj)
 RZ_API bool rz_il_op_pure_stringify_unicode(RZ_NONNULL RZ_BORROW RzILStringifyCtx *ctx, RZ_NONNULL RZ_BORROW RzILOpPure *op, RZ_NONNULL RZ_BORROW RzStrBuf *sb);
 RZ_API bool rz_il_op_effect_stringify_unicode(RZ_NONNULL RZ_BORROW RzILStringifyCtx *ctx, RZ_NONNULL RZ_BORROW RzILOpEffect *op, RZ_NONNULL RZ_BORROW RzStrBuf *sb);
 
+// Lift an RzNum expression (via the tree-sitter-free RzNumExpression that
+// librz_util produces) into a typed RzILOpPure. Defined in il_num.c.
+RZ_API RZ_OWN RzILOpPure *rz_il_op_pure_from_num_expression(RZ_NONNULL const RzNumExpression *expr);
+RZ_API RZ_OWN RzILOpPure *rz_il_lift_num(RZ_NULLABLE RzNum *num, RZ_NONNULL const char *expr,
+	RZ_NULLABLE const RzNumMathOptions *opts, RZ_NULLABLE char **error_msg);
+
 #ifdef __cplusplus
 }
 #endif
