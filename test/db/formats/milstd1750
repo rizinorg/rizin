@@ -1,5 +1,5 @@
 NAME=milstd1750: hand-written test_full.bin - first instructions and branch targets resolved by analysis
-FILE=bins/millstd1750/test_full.bin
+FILE=bins/mil_std_1750/test_full.bin
 ARGS=-a milstd1750 -b 8 -m 0x200
 CMDS=<<EOF
 e scr.color=false
@@ -23,7 +23,7 @@ EOF
 RUN
 
 NAME=milstd1750: GCC-compiled C binary (Dhrystone) - aaa discovers 14 functions, first carved as 4-insn block at 0x200
-FILE=bins/millstd1750/test_full2.bin
+FILE=bins/mil_std_1750/test_full2.bin
 ARGS=-a milstd1750 -b 8 -m 0x200 -n
 CMDS=<<EOF
 e scr.color=false
@@ -73,7 +73,7 @@ EOF
 RUN
 
 NAME=milstd1750: COFF object is autodetected (format/arch/endian) and disassembled without -a flag
-FILE=bins/millstd1750/sample_coff.bin
+FILE=bins/mil_std_1750/sample_coff.bin
 CMDS=<<EOF
 e scr.color=false
 i~format,type,arch,endian,bintype
