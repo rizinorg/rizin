@@ -351,10 +351,15 @@ static inline void emit_span(const char *s, size_t n, const char *color) {
 	}
 }
 
-static void core_colorify_il_statement(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr) {
-	rz_cons_printf("%s0x%" PFMT64x Color_RESET "%c", ctx->pal.label, addr, delim);
+/**
+ * \brief Colorize a stringified RzIL effect body to the cons buffer.
+ *
+ * Emits only the body (no address prefix, no newline) with the same palette
+ * as \c plf. A NULL or empty \p il_stmt emits nothing.
+ */
+RZ_IPI void rz_core_il_colorize_body(RZ_NONNULL RzConsContext *ctx, RZ_NULLABLE const char *il_stmt) {
+	rz_return_if_fail(ctx);
 	if (RZ_STR_ISEMPTY(il_stmt)) {
-		rz_cons_newline();
 		return;
 	}
 
@@ -380,6 +385,11 @@ static void core_colorify_il_statement(RzConsContext *ctx, const char *il_stmt, 
 	}
 
 	emit_span(il_stmt + prev, len - prev, color);
+}
+
+static void core_colorify_il_statement(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr) {
+	rz_cons_printf("%s0x%" PFMT64x Color_RESET "%c", ctx->pal.label, addr, delim);
+	rz_core_il_colorize_body(ctx, il_stmt);
 	rz_cons_newline();
 }
 
