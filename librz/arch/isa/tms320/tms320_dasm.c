@@ -11,6 +11,7 @@
 
 /* private headers */
 #include "tms320_dasm.h"
+#include "tms320c55x_insn.h"
 
 #include "c55x_plus/c55plus.h"
 
@@ -1168,6 +1169,20 @@ int tms320_dasm(tms320_dasm_t *dasm, const ut8 *stream, int len) {
 
 	if (dasm->status & TMS320_S_INVAL) {
 		strcpy(dasm->syntax, "invalid"), dasm->length = 1;
+		dasm->insn_id = TMS320C55_INS_INVALID;
+	} else {
+		/* Resolve the instruction ID from the decoded mnemonic. The
+		 * syntax string is the disassembler's ground truth: it reflects
+		 * the exact sub-instruction selected by the operand mask lists,
+		 * which a static leading-byte->head mapping cannot capture (e.g.
+		 * 0x95 0x8F decodes to TRAP, not INTR; 0x48 0x05 to RETI, not
+		 * RPT). Falls back to the matched table head's id for C55x when
+		 * the mnemonic isn't in the table (should not normally happen). */
+		dasm->insn_id = tms320c55x_insn_id_from_syntax(dasm->syntax);
+		if (dasm->insn_id == TMS320C55_INS_INVALID &&
+			tms320_f_get_cpu(dasm) != TMS320_F_CPU_C55X_PLUS && dasm->head) {
+			dasm->insn_id = dasm->head->id;
+		}
 	}
 
 	return full_insn_size(dasm);
@@ -1175,6 +1190,51 @@ int tms320_dasm(tms320_dasm_t *dasm, const ut8 *stream, int len) {
 
 // insn_head_t c55x_list[]
 #include "c55x/table.h"
+
+/* Resolve the C55x instruction ID for a byte sequence by running the
+ * disassembler and mapping its decoded mnemonic to a TMS320C55InsID. This
+ * is the accurate path: unlike a static leading-byte table, it honours
+ * the per-instruction mask lists, so multi-form heads (e.g. 0x50, which
+ * decodes to either POPBOTH or SFTL depending on operand bits) resolve
+ * to the mnemonic actually decoded.
+ *
+ * A single cached dasm instance is used to avoid per-call init/fini. The
+ * cache is process-wide and the disassembler is stateless across calls
+ * (init_dasm() resets it each time), so this is safe for the analyzer's
+ * single-threaded use. */
+ut16 tms320c55x_insn_id_decode(const ut8 *buf, int len) {
+	static tms320_dasm_t dasm;
+	static int initialized = 0;
+	if (!initialized) {
+		tms320_dasm_init(&dasm);
+		tms320_f_set_cpu(&dasm, TMS320_F_CPU_C55X);
+		initialized = 1;
+	}
+	if (!buf || len < 1) {
+		return TMS320C55_INS_INVALID;
+	}
+	tms320_dasm(&dasm, buf, len);
+	return dasm.insn_id;
+}
+
+/* C55x+ counterpart of tms320c55x_insn_id_decode(): run the C55x+
+ * token decoder over the byte sequence and return the TMS320C55InsID of the
+ * decoded mnemonic. Uses a separate cached dasm instance pinned to the
+ * C55x+ feature set. */
+ut16 tms320c55x_plus_insn_id_decode(const ut8 *buf, int len) {
+	static tms320_dasm_t dasm;
+	static int initialized = 0;
+	if (!initialized) {
+		tms320_dasm_init(&dasm);
+		tms320_f_set_cpu(&dasm, TMS320_F_CPU_C55X_PLUS);
+		initialized = 1;
+	}
+	if (!buf || len < 1) {
+		return TMS320C55_INS_INVALID;
+	}
+	tms320_dasm(&dasm, buf, len);
+	return dasm.insn_id;
+}
 
 int tms320_dasm_init(tms320_dasm_t *dasm) {
 	int i = 0;

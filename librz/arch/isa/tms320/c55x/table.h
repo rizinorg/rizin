@@ -5,6 +5,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x00,
 	.size = 0x03,
+	.id = TMS320C55_INS_RPTCC,
 	.insn = {
 		// kkkkkkkkxCCCCCCC0000000E
 		.i_list = NULL,
@@ -16,6 +17,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x02,
 	.size = 0x03,
+	.id = TMS320C55_INS_RETCC,
 	.insn = {
 		// xxxxxxxxxCCCCCCC0000001E
 		.i_list = NULL,
@@ -27,6 +29,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x04,
 	.size = 0x03,
+	.id = TMS320C55_INS_BCC,
 	.insn = {
 		// LLLLLLLLxCCCCCCC0000010E
 		.i_list = NULL,
@@ -38,6 +41,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x06,
 	.size = 0x03,
+	.id = TMS320C55_INS_B,
 	.insn = {
 		// LLLLLLLLLLLLLLLL0000011E
 		.i_list = NULL,
@@ -49,6 +53,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x08,
 	.size = 0x03,
+	.id = TMS320C55_INS_CALL,
 	.insn = {
 		// LLLLLLLLLLLLLLLL0000100E
 		.i_list = NULL,
@@ -60,6 +65,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x0c,
 	.size = 0x03,
+	.id = TMS320C55_INS_RPT,
 	.insn = {
 		// kkkkkkkkkkkkkkkk0000110E
 		.i_list = NULL,
@@ -71,6 +77,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x0e,
 	.size = 0x03,
+	.id = TMS320C55_INS_RPTB,
 	.insn = {
 		// llllllllllllllll0000111E
 		.i_list = NULL,
@@ -82,6 +89,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x10,
 	.size = 0x03,
+	.id = TMS320C55_INS_AND,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -199,6 +207,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x12,
 	.size = 0x03,
+	.id = TMS320C55_INS_CMPAND,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -260,6 +269,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x14,
 	.size = 0x03,
+	.id = TMS320C55_INS_AADD,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -398,6 +408,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x16,
 	.size = 0x03,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -466,6 +477,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x18,
 	.size = 0x03,
+	.id = TMS320C55_INS_AND,
 	.insn = {
 		// FDDDFSSSkkkkkkkk0001100E
 		.i_list = NULL,
@@ -477,6 +489,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x1a,
 	.size = 0x03,
+	.id = TMS320C55_INS_OR,
 	.insn = {
 		// FDDDFSSSkkkkkkkk0001101E
 		.i_list = NULL,
@@ -488,6 +501,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x1c,
 	.size = 0x03,
+	.id = TMS320C55_INS_XOR,
 	.insn = {
 		// FDDDFSSSkkkkkkkk0001110E
 		.i_list = NULL,
@@ -499,6 +513,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x1e,
 	.size = 0x03,
+	.id = TMS320C55_INS_MPYK,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -525,6 +540,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x20,
 	.size = 0x01,
+	.id = TMS320C55_INS_NOP,
 	.insn = {
 		// 0010000E
 		.i_list = NULL,
@@ -536,6 +552,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x22,
 	.size = 0x02,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		// FSSSFDDD0010001E
 		.i_list = NULL,
@@ -547,6 +564,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x24,
 	.size = 0x02,
+	.id = TMS320C55_INS_ADD,
 	.insn = {
 		// FSSSFDDD0010010E
 		.i_list = NULL,
@@ -558,6 +576,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x26,
 	.size = 0x02,
+	.id = TMS320C55_INS_SUB,
 	.insn = {
 		// FSSSFDDD0010011E
 		.i_list = NULL,
@@ -569,6 +588,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x28,
 	.size = 0x02,
+	.id = TMS320C55_INS_AND,
 	.insn = {
 		// FSSSFDDD0010100E
 		.i_list = NULL,
@@ -580,6 +600,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x2a,
 	.size = 0x02,
+	.id = TMS320C55_INS_OR,
 	.insn = {
 		// FSSSFDDD0010101E
 		.i_list = NULL,
@@ -591,6 +612,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x2c,
 	.size = 0x02,
+	.id = TMS320C55_INS_XOR,
 	.insn = {
 		// FSSSFDDD0010110E
 		.i_list = NULL,
@@ -602,6 +624,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x2e,
 	.size = 0x02,
+	.id = TMS320C55_INS_MAX,
 	.insn = {
 		// FSSSFDDD0010111E
 		.i_list = NULL,
@@ -613,6 +636,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x30,
 	.size = 0x02,
+	.id = TMS320C55_INS_MIN,
 	.insn = {
 		// FSSSFDDD0011000E
 		.i_list = NULL,
@@ -624,6 +648,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x32,
 	.size = 0x02,
+	.id = TMS320C55_INS_ABS,
 	.insn = {
 		// FSSSFDDD0011001E
 		.i_list = NULL,
@@ -635,6 +660,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x34,
 	.size = 0x02,
+	.id = TMS320C55_INS_NEG,
 	.insn = {
 		// FSSSFDDD0011010E
 		.i_list = NULL,
@@ -646,6 +672,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x36,
 	.size = 0x02,
+	.id = TMS320C55_INS_NOT,
 	.insn = {
 		// FSSSFDDD0011011E
 		.i_list = NULL,
@@ -657,6 +684,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x38,
 	.size = 0x02,
+	.id = TMS320C55_INS_PSH,
 	.insn = {
 		// FSSSFDDD0011100E
 		.i_list = NULL,
@@ -668,6 +696,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x3a,
 	.size = 0x02,
+	.id = TMS320C55_INS_POP,
 	.insn = {
 		// FSSSFDDD0011101E
 		.i_list = NULL,
@@ -679,6 +708,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x3c,
 	.size = 0x02,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		// kkkkFDDD0011110E
 		.i_list = NULL,
@@ -690,6 +720,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x3e,
 	.size = 0x02,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		// kkkkFDDD0011111E
 		.i_list = NULL,
@@ -701,6 +732,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x40,
 	.size = 0x02,
+	.id = TMS320C55_INS_ADD,
 	.insn = {
 		// kkkkFDDD0100000E
 		.i_list = NULL,
@@ -712,6 +744,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x42,
 	.size = 0x02,
+	.id = TMS320C55_INS_SUB,
 	.insn = {
 		// kkkkFDDD0100001E
 		.i_list = NULL,
@@ -723,6 +756,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x44,
 	.size = 0x02,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -798,6 +832,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x46,
 	.size = 0x02,
+	.id = TMS320C55_INS_BCLR,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -866,6 +901,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x48,
 	.size = 0x02,
+	.id = TMS320C55_INS_RETI,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -920,6 +956,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x4a,
 	.size = 0x02,
+	.id = TMS320C55_INS_B,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -946,6 +983,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x4c,
 	.size = 0x02,
+	.id = TMS320C55_INS_RPT,
 	.insn = {
 		// kkkkkkkk0100110E
 		.i_list = NULL,
@@ -957,6 +995,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x4e,
 	.size = 0x02,
+	.id = TMS320C55_INS_AADD,
 	.insn = {
 		// KKKKKKKK0100111E
 		.i_list = NULL,
@@ -968,6 +1007,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x50,
 	.size = 0x02,
+	.id = TMS320C55_INS_POPBOTH,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -1036,6 +1076,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x52,
 	.size = 0x02,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -1097,6 +1138,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x54,
 	.size = 0x02,
+	.id = TMS320C55_INS_ADD,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -1158,6 +1200,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x56,
 	.size = 0x02,
+	.id = TMS320C55_INS_MAC,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -1184,6 +1227,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x58,
 	.size = 0x02,
+	.id = TMS320C55_INS_MPY,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -1210,6 +1254,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x5a,
 	.size = 0x02,
+	.id = TMS320C55_INS_ADD,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -1243,6 +1288,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x5c,
 	.size = 0x02,
+	.id = TMS320C55_INS_SFTL,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -1276,6 +1322,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x5e,
 	.size = 0x02,
+	.id = TMS320C55_INS_SWAP,
 	.insn = {
 		// 00kkkkkk0101111E
 		.i_list = NULL,
@@ -1287,6 +1334,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x60,
 	.size = 0x02,
+	.id = TMS320C55_INS_BCC,
 	.insn = {
 		// lCCCCCCC01100lll
 		.i_list = NULL,
@@ -1298,6 +1346,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x68,
 	.size = 0x05,
+	.id = TMS320C55_INS_BCC,
 	.insn = {
 		// PPPPPPPPPPPPPPPPPPPPPPPPxCCCCCCC01101000
 		.i_list = NULL,
@@ -1309,6 +1358,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x69,
 	.size = 0x05,
+	.id = TMS320C55_INS_CALLCC,
 	.insn = {
 		// PPPPPPPPPPPPPPPPPPPPPPPPxCCCCCCC01101001
 		.i_list = NULL,
@@ -1320,6 +1370,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x6a,
 	.size = 0x04,
+	.id = TMS320C55_INS_B,
 	.insn = {
 		// PPPPPPPPPPPPPPPPPPPPPPPP01101010
 		.i_list = NULL,
@@ -1331,6 +1382,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x6c,
 	.size = 0x04,
+	.id = TMS320C55_INS_CALL,
 	.insn = {
 		// PPPPPPPPPPPPPPPPPPPPPPPP01101100
 		.i_list = NULL,
@@ -1342,6 +1394,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x6d,
 	.size = 0x04,
+	.id = TMS320C55_INS_BCC,
 	.insn = {
 		// LLLLLLLLLLLLLLLLxCCCCCCC01101101
 		.i_list = NULL,
@@ -1353,6 +1406,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x6e,
 	.size = 0x04,
+	.id = TMS320C55_INS_CALLCC,
 	.insn = {
 		// LLLLLLLLLLLLLLLLxCCCCCCC01101110
 		.i_list = NULL,
@@ -1364,6 +1418,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x6f,
 	.size = 0x04,
+	.id = TMS320C55_INS_BCC,
 	.insn = {
 		// LLLLLLLLKKKKKKKKFSSSccxu01101111
 		.i_list = NULL,
@@ -1375,6 +1430,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x70,
 	.size = 0x04,
+	.id = TMS320C55_INS_ADD,
 	.insn = {
 		// SSDDSHFTKKKKKKKKKKKKKKKK01110000
 		.i_list = NULL,
@@ -1386,6 +1442,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x71,
 	.size = 0x04,
+	.id = TMS320C55_INS_SUB,
 	.insn = {
 		// SSDDSHFTKKKKKKKKKKKKKKKK01110001
 		.i_list = NULL,
@@ -1397,6 +1454,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x72,
 	.size = 0x04,
+	.id = TMS320C55_INS_AND,
 	.insn = {
 		// SSDDSHFTkkkkkkkkkkkkkkkk01110010
 		.i_list = NULL,
@@ -1408,6 +1466,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x73,
 	.size = 0x04,
+	.id = TMS320C55_INS_OR,
 	.insn = {
 		// SSDDSHFTkkkkkkkkkkkkkkkk01110011
 		.i_list = NULL,
@@ -1419,6 +1478,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x74,
 	.size = 0x04,
+	.id = TMS320C55_INS_XOR,
 	.insn = {
 		// SSDDSHFTkkkkkkkkkkkkkkkk01110100
 		.i_list = NULL,
@@ -1430,6 +1490,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x75,
 	.size = 0x04,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		// xxDDSHFTKKKKKKKKKKKKKKKK01110101
 		.i_list = NULL,
@@ -1441,6 +1502,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x76,
 	.size = 0x04,
+	.id = TMS320C55_INS_BFXTR,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -1474,6 +1536,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x77,
 	.size = 0x04,
+	.id = TMS320C55_INS_AMOV,
 	.insn = {
 		// FDDDxxxxDDDDDDDDDDDDDDDD01110111
 		.i_list = NULL,
@@ -1485,6 +1548,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x78,
 	.size = 0x04,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -1560,6 +1624,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x79,
 	.size = 0x04,
+	.id = TMS320C55_INS_MPYK,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -1586,6 +1651,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x7a,
 	.size = 0x04,
+	.id = TMS320C55_INS_ADD,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -1647,6 +1713,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x7b,
 	.size = 0x04,
+	.id = TMS320C55_INS_ADD,
 	.insn = {
 		// FDDDFSSSKKKKKKKKKKKKKKKK01111011
 		.i_list = NULL,
@@ -1658,6 +1725,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x7c,
 	.size = 0x04,
+	.id = TMS320C55_INS_SUB,
 	.insn = {
 		// FDDDFSSSKKKKKKKKKKKKKKKK01111100
 		.i_list = NULL,
@@ -1669,6 +1737,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x7d,
 	.size = 0x04,
+	.id = TMS320C55_INS_AND,
 	.insn = {
 		// FDDDFSSSkkkkkkkkkkkkkkkk01111101
 		.i_list = NULL,
@@ -1680,6 +1749,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x7e,
 	.size = 0x04,
+	.id = TMS320C55_INS_OR,
 	.insn = {
 		// FDDDFSSSkkkkkkkkkkkkkkkk01111110
 		.i_list = NULL,
@@ -1691,6 +1761,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x7f,
 	.size = 0x04,
+	.id = TMS320C55_INS_XOR,
 	.insn = {
 		// FDDDFSSSkkkkkkkkkkkkkkkk01111111
 		.i_list = NULL,
@@ -1702,6 +1773,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x80,
 	.size = 0x03,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -1735,6 +1807,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x81,
 	.size = 0x03,
+	.id = TMS320C55_INS_ADD,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -1768,6 +1841,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x82,
 	.size = 0x04,
+	.id = TMS320C55_INS_MPY,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -1808,6 +1882,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x83,
 	.size = 0x04,
+	.id = TMS320C55_INS_MAC,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -1848,6 +1923,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x84,
 	.size = 0x04,
+	.id = TMS320C55_INS_MAS,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -1888,6 +1964,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x85,
 	.size = 0x04,
+	.id = TMS320C55_INS_FIRSADD,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -1935,6 +2012,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x86,
 	.size = 0x04,
+	.id = TMS320C55_INS_SQDST,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -2010,6 +2088,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x87,
 	.size = 0x04,
+	.id = TMS320C55_INS_LMSF,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -2071,6 +2150,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x90,
 	.size = 0x02,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		// XSSSXDDD10010000
 		.i_list = NULL,
@@ -2082,6 +2162,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x91,
 	.size = 0x02,
+	.id = TMS320C55_INS_B,
 	.insn = {
 		// xxxxxxSS10010001
 		.i_list = NULL,
@@ -2093,6 +2174,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x92,
 	.size = 0x02,
+	.id = TMS320C55_INS_CALL,
 	.insn = {
 		// xxxxxxSS10010010
 		.i_list = NULL,
@@ -2104,6 +2186,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x94,
 	.size = 0x02,
+	.id = TMS320C55_INS_RESET,
 	.insn = {
 		// xxxxxxxx10010100
 		.i_list = NULL,
@@ -2115,6 +2198,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x95,
 	.size = 0x02,
+	.id = TMS320C55_INS_INTR,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -2141,6 +2225,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x96,
 	.size = 0x02,
+	.id = TMS320C55_INS_XCC,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -2167,6 +2252,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x9e,
 	.size = 0x02,
+	.id = TMS320C55_INS_XCC,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -2193,6 +2279,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0x9f,
 	.size = 0x02,
+	.id = TMS320C55_INS_XCC,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -2219,6 +2306,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xa0,
 	.size = 0x02,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		// AAAAAAAI1010FDDD
 		.i_list = NULL,
@@ -2230,6 +2318,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xb0,
 	.size = 0x02,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		// AAAAAAAI101100DD
 		.i_list = NULL,
@@ -2241,6 +2330,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xb4,
 	.size = 0x02,
+	.id = TMS320C55_INS_AMAR,
 	.insn = {
 		// AAAAAAAI10110100
 		.i_list = NULL,
@@ -2252,6 +2342,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xb5,
 	.size = 0x02,
+	.id = TMS320C55_INS_PSH,
 	.insn = {
 		// AAAAAAAI10110101
 		.i_list = NULL,
@@ -2263,6 +2354,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xb6,
 	.size = 0x02,
+	.id = TMS320C55_INS_DELAY,
 	.insn = {
 		// AAAAAAAI10110110
 		.i_list = NULL,
@@ -2274,6 +2366,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xb7,
 	.size = 0x02,
+	.id = TMS320C55_INS_PSH,
 	.insn = {
 		// AAAAAAAI10110111
 		.i_list = NULL,
@@ -2285,6 +2378,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xb8,
 	.size = 0x02,
+	.id = TMS320C55_INS_POP,
 	.insn = {
 		// AAAAAAAI10111000
 		.i_list = NULL,
@@ -2296,6 +2390,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xbb,
 	.size = 0x02,
+	.id = TMS320C55_INS_POP,
 	.insn = {
 		// AAAAAAAI10111011
 		.i_list = NULL,
@@ -2307,6 +2402,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xbc,
 	.size = 0x02,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		// AAAAAAAI101111SS
 		.i_list = NULL,
@@ -2318,6 +2414,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xc0,
 	.size = 0x02,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		// AAAAAAAI1100FSSS
 		.i_list = NULL,
@@ -2329,6 +2426,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xd0,
 	.size = 0x03,
+	.id = TMS320C55_INS_MPY,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -2369,6 +2467,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xd1,
 	.size = 0x03,
+	.id = TMS320C55_INS_MPYM,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -2402,6 +2501,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xd2,
 	.size = 0x03,
+	.id = TMS320C55_INS_MACM,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -2442,6 +2542,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xd3,
 	.size = 0x03,
+	.id = TMS320C55_INS_MPYM,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -2475,6 +2576,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xd4,
 	.size = 0x03,
+	.id = TMS320C55_INS_MACM,
 	.insn = {
 		// U%DDssSSAAAAAAAI11010100
 		.i_list = NULL,
@@ -2486,6 +2588,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xd5,
 	.size = 0x03,
+	.id = TMS320C55_INS_MASM,
 	.insn = {
 		// U%DDssSSAAAAAAAI11010101
 		.i_list = NULL,
@@ -2497,6 +2600,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xd6,
 	.size = 0x03,
+	.id = TMS320C55_INS_ADD,
 	.insn = {
 		// FDDDFSSSAAAAAAAI11010110
 		.i_list = NULL,
@@ -2508,6 +2612,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xd7,
 	.size = 0x03,
+	.id = TMS320C55_INS_SUB,
 	.insn = {
 		// FDDDFSSSAAAAAAAI11010111
 		.i_list = NULL,
@@ -2519,6 +2624,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xd8,
 	.size = 0x03,
+	.id = TMS320C55_INS_SUB,
 	.insn = {
 		// FDDDFSSSAAAAAAAI11011000
 		.i_list = NULL,
@@ -2530,6 +2636,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xd9,
 	.size = 0x03,
+	.id = TMS320C55_INS_AND,
 	.insn = {
 		// FDDDFSSSAAAAAAAI11011001
 		.i_list = NULL,
@@ -2541,6 +2648,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xda,
 	.size = 0x03,
+	.id = TMS320C55_INS_OR,
 	.insn = {
 		// FDDDFSSSAAAAAAAI11011010
 		.i_list = NULL,
@@ -2552,6 +2660,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xdb,
 	.size = 0x03,
+	.id = TMS320C55_INS_XOR,
 	.insn = {
 		// FDDDFSSSAAAAAAAI11011011
 		.i_list = NULL,
@@ -2563,6 +2672,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xdc,
 	.size = 0x03,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -2722,6 +2832,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xdd,
 	.size = 0x03,
+	.id = TMS320C55_INS_ADD,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -2762,6 +2873,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xde,
 	.size = 0x03,
+	.id = TMS320C55_INS_ADDSUBCC,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -2837,6 +2949,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xdf,
 	.size = 0x03,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -2898,6 +3011,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xe0,
 	.size = 0x03,
+	.id = TMS320C55_INS_BTST,
 	.insn = {
 		// FSSSxxxtAAAAAAAI11100000
 		.i_list = NULL,
@@ -2909,6 +3023,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xe1,
 	.size = 0x03,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		// DDSHIFTWAAAAAAAI11100001
 		.i_list = NULL,
@@ -2920,6 +3035,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xe2,
 	.size = 0x03,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		// DDSHIFTWAAAAAAAI11100010
 		.i_list = NULL,
@@ -2931,6 +3047,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xe3,
 	.size = 0x03,
+	.id = TMS320C55_INS_BSET,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -3006,6 +3123,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xe4,
 	.size = 0x03,
+	.id = TMS320C55_INS_PSH,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -3032,6 +3150,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xe5,
 	.size = 0x03,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -3191,6 +3310,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xe6,
 	.size = 0x03,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		// KKKKKKKKAAAAAAAI11100110
 		.i_list = NULL,
@@ -3202,6 +3322,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xe7,
 	.size = 0x03,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -3235,6 +3356,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xe8,
 	.size = 0x03,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -3261,6 +3383,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xe9,
 	.size = 0x03,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		// SSSHIFTWAAAAAAAI11101001
 		.i_list = NULL,
@@ -3272,6 +3395,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xea,
 	.size = 0x03,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		// SSSHIFTWAAAAAAAI11101010
 		.i_list = NULL,
@@ -3283,6 +3407,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xeb,
 	.size = 0x03,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -3330,6 +3455,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xec,
 	.size = 0x03,
+	.id = TMS320C55_INS_AMAR,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -3384,6 +3510,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xed,
 	.size = 0x03,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -3480,6 +3607,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xee,
 	.size = 0x03,
+	.id = TMS320C55_INS_ADD,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -3548,6 +3676,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xef,
 	.size = 0x03,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -3588,6 +3717,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xf0,
 	.size = 0x04,
+	.id = TMS320C55_INS_CMP,
 	.insn = {
 		// KKKKKKKKKKKKKKKKAAAAAAAI11110000
 		.i_list = NULL,
@@ -3599,6 +3729,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xf1,
 	.size = 0x04,
+	.id = TMS320C55_INS_CMP,
 	.insn = {
 		// KKKKKKKKKKKKKKKKAAAAAAAI11110001
 		.i_list = NULL,
@@ -3610,6 +3741,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xf2,
 	.size = 0x04,
+	.id = TMS320C55_INS_BAND,
 	.insn = {
 		// kkkkkkkkkkkkkkkkAAAAAAAI11110010
 		.i_list = NULL,
@@ -3621,6 +3753,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xf3,
 	.size = 0x04,
+	.id = TMS320C55_INS_BAND,
 	.insn = {
 		// kkkkkkkkkkkkkkkkAAAAAAAI11110011
 		.i_list = NULL,
@@ -3632,6 +3765,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xf4,
 	.size = 0x04,
+	.id = TMS320C55_INS_AND,
 	.insn = {
 		// kkkkkkkkkkkkkkkkAAAAAAAI11110100
 		.i_list = NULL,
@@ -3643,6 +3777,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xf5,
 	.size = 0x04,
+	.id = TMS320C55_INS_OR,
 	.insn = {
 		// kkkkkkkkkkkkkkkkAAAAAAAI11110101
 		.i_list = NULL,
@@ -3654,6 +3789,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xf6,
 	.size = 0x04,
+	.id = TMS320C55_INS_XOR,
 	.insn = {
 		// kkkkkkkkkkkkkkkkAAAAAAAI11110110
 		.i_list = NULL,
@@ -3665,6 +3801,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xf7,
 	.size = 0x04,
+	.id = TMS320C55_INS_ADD,
 	.insn = {
 		// KKKKKKKKKKKKKKKKAAAAAAAI11110111
 		.i_list = NULL,
@@ -3676,6 +3813,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xf8,
 	.size = 0x04,
+	.id = TMS320C55_INS_MPYMK,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -3702,6 +3840,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xf9,
 	.size = 0x04,
+	.id = TMS320C55_INS_ADD,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -3735,6 +3874,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xfa,
 	.size = 0x04,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
@@ -3761,6 +3901,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xfb,
 	.size = 0x04,
+	.id = TMS320C55_INS_MOV,
 	.insn = {
 		// KKKKKKKKKKKKKKKKAAAAAAAI11111011
 		.i_list = NULL,
@@ -3772,6 +3913,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xfc,
 	.size = 0x04,
+	.id = TMS320C55_INS_BCC,
 	.insn = {
 		// LLLLLLLLLLLLLLLLAAAAAAAI11111100
 		.i_list = NULL,
@@ -3783,6 +3925,7 @@ static insn_head_t c55x_list[] = {
 {
 	.byte = 0xfd,
 	.size = 0x04,
+	.id = TMS320C55_INS_MPY,
 	.insn = {
 		.i_list = (insn_item_t []) {
 			{
