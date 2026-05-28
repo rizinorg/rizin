@@ -94,7 +94,8 @@ typedef enum {
 	RZ_CORE_WRITE_OP_SHIFT_RIGHT, ///< Write the shift right of existing byte and argument value
 } RzCoreWriteOp;
 
-typedef bool (*RzCorePluginCallback)(RzCore *core);
+typedef bool (*RzCorePluginInitCallback)(RzCore *core, RZ_OUT void **user);
+typedef bool (*RzCorePluginCallback)(RzCore *core, RZ_NULLABLE void *user);
 
 typedef struct rz_core_plugin_t {
 	const char *name;
@@ -102,9 +103,9 @@ typedef struct rz_core_plugin_t {
 	const char *license;
 	const char *author;
 	const char *version;
-	RzCorePluginCallback init; ///< Is called when the plugin is loaded by rizin
-	RzCorePluginCallback fini; ///< Is called when the plugin is unloaded by rizin
-	RzCorePluginCallback analysis; ///< Is called when automatic analysis is performed.
+	RzCorePluginInitCallback init; ///< Is called when the plugin is loaded by rizin. Stores per-core plugin state in user.
+	RzCorePluginCallback fini; ///< Is called when the plugin is unloaded by rizin with the per-core plugin state.
+	RzCorePluginCallback analysis; ///< Is called when automatic analysis is performed with the per-core plugin state.
 } RzCorePlugin;
 
 typedef struct rz_core_rtr_host_t RzCoreRtrHost;
@@ -295,6 +296,7 @@ struct rz_core_t {
 	// They are used in pointer passing hacks in rz_types.h.
 	RzIO *io;
 	HtSP /*<RzCorePlugin *>*/ *plugins; ///< List of registered core plugins
+	HtSP /*<void *>*/ *plugin_contexts; ///< Per-core plugin state
 	RzConfig *config;
 	HtSP /*<plugin_name: RzConfig>*/ *plugin_configs; ///< Pointers to plugin configurations. Indexed by plugin name
 	ut64 offset; // current seek
@@ -463,6 +465,15 @@ RZ_API bool rz_core_plugin_init(RzCore *core);
 RZ_API bool rz_core_plugin_add(RzCore *core, RZ_NONNULL RzCorePlugin *plugin);
 RZ_API bool rz_core_plugin_del(RzCore *core, RZ_NONNULL RzCorePlugin *plugin);
 RZ_API bool rz_core_plugin_fini(RzCore *core);
+RZ_API void *rz_core_plugin_context_get(RZ_NONNULL RzCore *core, RZ_NONNULL RzCorePlugin *plugin);
+RZ_API RzCmdDesc *rz_core_plugin_cmd_desc_argv_new(RZ_NONNULL RzCore *core,
+	RZ_NONNULL const char *name, RZ_NONNULL RzCmdArgvCb cb,
+	RZ_NONNULL const RzCmdDescHelp *help);
+RZ_API RzCmdDesc *rz_core_plugin_cmd_desc_group_new(RZ_NONNULL RzCore *core,
+	RZ_NONNULL const char *name, RZ_NULLABLE RzCmdArgvCb cb,
+	RZ_NULLABLE const RzCmdDescHelp *help,
+	RZ_NONNULL const RzCmdDescHelp *group_help);
+RZ_API bool rz_core_plugin_cmd_desc_remove(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdDesc *desc);
 
 // #define rz_core_ncast(x) (RzCore*)(size_t)(x)
 RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_core_get_themes(RZ_NONNULL RzCore *core);
