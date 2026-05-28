@@ -40,6 +40,7 @@
 #include <rz_util/rz_file.h>
 #include <rz_util/rz_float.h>
 #include <rz_util/rz_graph.h>
+#include <rz_util/rz_graph_layout.h>
 #include <rz_util/rz_hex.h>
 #include <rz_util/rz_idpool.h>
 #include <rz_util/rz_intervaltree.h>
