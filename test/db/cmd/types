@@ -12,8 +12,8 @@ EOF
 EXPECT=<<EOF
 Foo = struct anonymous struct 0
 Bar = struct anonymous struct 1
-pf "d a"
-pf "z[0]d hello world"
+pf "d4 a"
+pf "z[0]d4 hello world"
 EOF
 RUN
 
@@ -35,11 +35,11 @@ EOF
 EXPECT=<<EOF
             0x00000000      4157           push  r15
 (short bla)
- short : 0x00000002 = 0x5641
+0x00000002 : short = 0x5641 [LE]
             0x00000004      4155           push  r13
             0x00000006      4154           push  r12
 (int foo)
- int : 0x00000008 = 1442089289
+0x00000008 : int = 1442089289 [LE]
             0x0000000c      53             push  rbx
             0x0000000d      89fd           mov   ebp, edi
             0x0000000f      4881eca80300.  sub   rsp, 0x3a8
@@ -60,10 +60,10 @@ pd 3
 EOF
 EXPECT=<<EOF
 (VbHeader vbb)
-     szVbMagic : 0x00000000 = [ 'H', 'e', 'l', 'l' ]
- wRuntimeBuild : 0x00000004 = 0x1234
-     szLangDll : 0x00000006 = [ 'H', 'e', 'l', 'l', 'o', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
-  szSecLangDll : 0x00000014 = [ 'H', 'e', 'l', 'l', 'o', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
+0x00000000 :     szVbMagic = [ 'H', 'e', 'l', 'l' ]
+0x00000004 : wRuntimeBuild = 0x1234 [LE]
+0x00000006 :     szLangDll = [ 'H', 'e', 'l', 'l', 'o', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
+0x00000014 :  szSecLangDll = [ 'H', 'e', 'l', 'l', 'o', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
             0x00000022      90             nop
             0x00000023      90             nop
 EOF
@@ -211,23 +211,23 @@ t void
 EOF
 EXPECT=<<EOF
 pf "c char"
-pf "F double"
-pf "F long double"
-pf "f float"
-pf "d int"
-pf "w short"
-pf "q long"
-pf "q long long"
-pf "q size_t"
-pf "q uid_t"
-pf "b int8_t"
-pf "b uint8_t"
-pf "w int16_t"
-pf "w uint16_t"
-pf "d int32_t"
-pf "d uint32_t"
-pf "q int64_t"
-pf "q uint64_t"
+pf "F8 double"
+pf "F8 long double"
+pf "f4 float"
+pf "d4 int"
+pf "x2 short"
+pf "x8 long"
+pf "x8 long long"
+pf "x8 size_t"
+pf "x8 uid_t"
+pf "x1 int8_t"
+pf "x1 uint8_t"
+pf "x2 int16_t"
+pf "x2 uint16_t"
+pf "d4 int32_t"
+pf "d4 uint32_t"
+pf "x8 int64_t"
+pf "x8 uint64_t"
 pf "c char16_t"
 EOF
 RUN
@@ -240,7 +240,7 @@ t-*
 t int
 EOF
 EXPECT=<<EOF
-pf "d int"
+pf "d4 int"
 EOF
 EXPECT_ERR=<<EOF
 ERROR: core: cannot find 'int' type's format
@@ -285,7 +285,7 @@ tu xoo
 tuc xoo
 EOF
 EXPECT=<<EOF
-pf "0ddd x y z"
+pf "0d4d4d4 x y z"
 union xoo {
 	int x;
 	int y;
@@ -313,11 +313,11 @@ te bar
 tec bar
 EOF
 EXPECT=<<EOF
-pf "0i b"
+pf "0d4 b"
 union bla {
 	uint b;
 };
-pf "i[5]*c b foo"
+pf "d4[5]*c b foo"
 struct foo {
 	uint b;
 	char *foo[5];
@@ -386,7 +386,7 @@ EOF
 EXPECT=<<EOF
 const_reference = struct const_reference_0
 typedef struct const_reference_0 const_reference;
-pf "d a"
+pf "d4 a"
 const_reference;
 struct const_reference_0 {
 	int a;
@@ -500,9 +500,9 @@ ts test_struct2
 tsd test_struct2
 EOF
 EXPECT=<<EOF
-pf "dd x y"
+pf "d4d4 x y"
 struct test_struct { int x; int y; };
-pf "w[5]ww[10]wd a (word)b c (word)d e"
+pf "x2[5]x2x2[10]x2d4 a (word)b c (word)d e"
 struct test_struct2 { word a; word b[5]; word c; word d[10]; dword e; };
 EOF
 RUN
@@ -515,7 +515,7 @@ ts test_struct
 tsd test_struct
 EOF
 EXPECT=<<EOF
-pf "dd x y"
+pf "d4d4 x y"
 struct test_struct { int x; int y; };
 EOF
 RUN
@@ -704,14 +704,14 @@ struct name {
 	char middle[40];
 	char last[40];
 };
-pf "bbw day month year"
+pf "x1x1x2 day month year"
 struct date { uint8_t day; uint8_t month; uint16_t year; };
 struct date {
 	uint8_t day;
 	uint8_t month;
 	uint16_t year;
 };
-pf "[127]c[40]cd street city zip"
+pf "[127]c[40]cd4 street city zip"
 struct addr { char street[127]; char city[40]; uint32_t zip; };
 struct addr {
 	char street[127];
@@ -743,7 +743,7 @@ tu x
 tuc x
 EOF
 EXPECT=<<EOF
-pf "0fd a b"
+pf "0f4d4 a b"
 union x {
 	float a;
 	int b;
@@ -772,12 +772,12 @@ ts foo
 .ts foo
 EOF
 EXPECT=<<EOF
-pf "d? x (bar)moo"
-   x : 0x00000000 = 0
- moo : 
-                struct<bar>
-   a : 0x00000004 = 0
-   b : 0x00000008 = 0
+pf "d4? x (bar)moo"
+0x00000000 :   x = 0 [LE]
+0x00000004 : moo = struct<bar> {
+   0x00000004 : a = 0 [LE]
+   0x00000008 : b = 0 [LE]
+}
 EOF
 RUN
 
@@ -790,18 +790,14 @@ ts foo
 .ts foo
 EOF
 EXPECT=<<EOF
-pf "d[2]? x (bar)moo"
-   x : 0x00000000 = 0
- moo : 
-[
-                struct<bar>
-   a : 0x00000004 = 0
-   b : 0x00000008 = 0
-
-                struct<bar>
-   a : 0x0000000c = 0
-   b : 0x00000010 = 0
-]
+pf "d4[2]? x (bar)moo"
+0x00000000 :   x = 0 [LE]
+0x00000004 : moo = struct<bar> {
+   0x00000004 : a = 0 [LE]
+   0x00000008 : b = 0 [LE]
+   0x0000000c : a = 0 [LE]
+   0x00000010 : b = 0 [LE]
+}
 EOF
 RUN
 
@@ -854,10 +850,10 @@ tp person @ 10
 tp person 10
 EOF
 EXPECT=<<EOF
-  age : 0x0000000a = 19
- name : 0x0000000e = [ 'C', 'a', 'r', 'l', 'o', 's', '.', '.', '.', '.' ]
-  age : 0x0000000a = 19
- name : 0x0000000e = [ 'C', 'a', 'r', 'l', 'o', 's', '.', '.', '.', '.' ]
+0x0000000a :  age = 19 [LE]
+0x0000000e : name = [ 'C', 'a', 'r', 'l', 'o', 's', '.', '.', '.', '.' ]
+0x0000000a :  age = 19 [LE]
+0x0000000e : name = [ 'C', 'a', 'r', 'l', 'o', 's', '.', '.', '.', '.' ]
 EOF
 RUN
 
@@ -885,33 +881,33 @@ t simple
 tp simple @ 0
 EOF
 EXPECT=<<EOF
-pf "0ddf a b c"
- a : 0x00000000 = 11206419
- b : 0x00000000 = 11206419
- c : 0x00000000 = 1.57035377e-38
+pf "0d4d4f4 a b c"
+0x00000000 : a = 11206419 [LE]
+0x00000000 : b = 11206419 [LE]
+0x00000000 : c = 1.57035377e-38 [LE]
 pf "?z (poo)q p"
- q : 
-                 union<poo>
-   a : 0x00000000 = 11206419
-   b : 0x00000000 = 11206419
-   c : 0x00000000 = (qword)0x0000000000aaff13
- p : 0x00000008 = "Carlossssssssssssssssssssssssssssss"
-pf "d?p a (moo)f goo"
-   a : 0x00000000 = 11206419
-   f : 
-                 union<moo>
-   t : 0x00000004 = 0
-   b : 0x00000004 = '.'
-   c : 0x00000004 = (qword)0x6c72614300000000
- goo : 0x0000000c = (qword)0x737373737373736f
+0x00000000 : q = struct<poo> {
+   0x00000000 : a = 11206419 [LE]
+   0x00000000 : b = 11206419 [LE]
+   0x00000000 : c = 0x0000000000aaff13 [LE]
+}
+0x00000008 : p = "Carlossssssssssssssssssssssssssssss"
+pf "d4?p a (moo)f goo"
+0x00000000 :   a = 11206419 [LE]
+0x00000004 :   f = struct<moo> {
+   0x00000004 : t = 0 [LE]
+   0x00000004 : b = '.'
+   0x00000004 : c = 0x6c72614300000000 [LE]
+}
+0x0000000c : goo = 0x737373737373736f
 pf "?ppp (y)g val_4 val_5 val_6"
-     g : 
-                 union<y>
-   a : 0x00000000 = 11206419
-   b : 0x00000000 = 11206419
- val_4 : 0x00000004 = (qword)0x6c72614300000000
- val_5 : 0x0000000c = (qword)0x737373737373736f
- val_6 : 0x00000014 = (qword)0x7373737373737373
+0x00000000 :     g = struct<y> {
+   0x00000000 : a = 11206419 [LE]
+   0x00000000 : b = 11206419 [LE]
+}
+0x00000004 : val_4 = 0x6c72614300000000
+0x0000000c : val_5 = 0x737373737373736f
+0x00000014 : val_6 = 0x7373737373737373
 EOF
 RUN
 
@@ -927,14 +923,14 @@ b 16
 tp foobar
 EOF
 EXPECT=<<EOF
- a : 0x00000000 = 175704697
- b : 0x00000004 = 175704697
- c : 0x00000008 = 175704697
- d : 0x0000000c = 175704697
- a : 0x00000000 = 175704697
- b : 0x00000004 = 175704697
- c : 0x00000008 = 175704697
- d : 0x0000000c = 175704697
+0x00000000 : a = 175704697 [LE]
+0x00000004 : b = 175704697 [LE]
+0x00000008 : c = 175704697 [LE]
+0x0000000c : d = 175704697 [LE]
+0x00000000 : a = 175704697 [LE]
+0x00000004 : b = 175704697 [LE]
+0x00000008 : c = 175704697 [LE]
+0x0000000c : d = 175704697 [LE]
 EOF
 RUN
 
@@ -992,78 +988,78 @@ tpv s32ui 0xcafebabecafebabe
 tpv s32iu 0xcafebabecafebabe
 EOF
 EXPECT=<<EOF
- a_u : 0x00000000 = 0xbabe
- b_i : 0x00000002 = 0x0000
- c_u : 0x00000004 = 0x0000
- d_i : 0x00000006 = 0x0000
- a_i : 0x00000000 = 0xbabe
- b_u : 0x00000002 = 0x0000
- c_i : 0x00000004 = 0x0000
- d_u : 0x00000006 = 0x0000
- e_u : 0x00000000 = 3133014016
- f_i : 0x00000004 = 0x0000
- e_i : 0x00000000 = 3133014016
- f_u : 0x00000004 = 0x0000
- a_u : 0x00000000 = 0xbabe
- b_i : 0x00000002 = 0x0000
- c_u : 0x00000004 = 0x0000
- d_i : 0x00000006 = 0x0000
- a_i : 0x00000000 = 0xbabe
- b_u : 0x00000002 = 0x0000
- c_i : 0x00000004 = 0x0000
- d_u : 0x00000006 = 0x0000
- e_u : 0x00000000 = 47806
- f_i : 0x00000004 = 0x0000
- e_i : 0x00000000 = 47806
- f_u : 0x00000004 = 0x0000
- a_u : 0x00000000 = 0xcafe
- b_i : 0x00000002 = 0xbabe
- c_u : 0x00000004 = 0x0000
- d_i : 0x00000006 = 0x0000
- a_i : 0x00000000 = 0xcafe
- b_u : 0x00000002 = 0xbabe
- c_i : 0x00000004 = 0x0000
- d_u : 0x00000006 = 0x0000
- e_u : 0x00000000 = 3405691582
- f_i : 0x00000004 = 0x0000
- e_i : 0x00000000 = 3405691582
- f_u : 0x00000004 = 0x0000
- a_u : 0x00000000 = 0xbabe
- b_i : 0x00000002 = 0xcafe
- c_u : 0x00000004 = 0x0000
- d_i : 0x00000006 = 0x0000
- a_i : 0x00000000 = 0xbabe
- b_u : 0x00000002 = 0xcafe
- c_i : 0x00000004 = 0x0000
- d_u : 0x00000006 = 0x0000
- e_u : 0x00000000 = 3405691582
- f_i : 0x00000004 = 0x0000
- e_i : 0x00000000 = 3405691582
- f_u : 0x00000004 = 0x0000
- a_u : 0x00000000 = 0xcafe
- b_i : 0x00000002 = 0xbabe
- c_u : 0x00000004 = 0xcafe
- d_i : 0x00000006 = 0xbabe
- a_i : 0x00000000 = 0xcafe
- b_u : 0x00000002 = 0xbabe
- c_i : 0x00000004 = 0xcafe
- d_u : 0x00000006 = 0xbabe
- e_u : 0x00000000 = 3405691582
- f_i : 0x00000004 = 0xcafe
- e_i : 0x00000000 = 3405691582
- f_u : 0x00000004 = 0xcafe
- a_u : 0x00000000 = 0xbabe
- b_i : 0x00000002 = 0xcafe
- c_u : 0x00000004 = 0xbabe
- d_i : 0x00000006 = 0xcafe
- a_i : 0x00000000 = 0xbabe
- b_u : 0x00000002 = 0xcafe
- c_i : 0x00000004 = 0xbabe
- d_u : 0x00000006 = 0xcafe
- e_u : 0x00000000 = 3405691582
- f_i : 0x00000004 = 0xbabe
- e_i : 0x00000000 = 3405691582
- f_u : 0x00000004 = 0xbabe
+0x00000000 : a_u = 0xbeba [LE]
+0x00000002 : b_i = 0x0000 [LE]
+0x00000004 : c_u = 0x0000 [LE]
+0x00000006 : d_i = 0x0000 [LE]
+0x00000000 : a_i = 0xbeba [LE]
+0x00000002 : b_u = 0x0000 [LE]
+0x00000004 : c_i = 0x0000 [LE]
+0x00000006 : d_u = 0x0000 [LE]
+0x00000000 : e_u = 48826 [LE]
+0x00000004 : f_i = 0x0000 [LE]
+0x00000000 : e_i = 48826 [LE]
+0x00000004 : f_u = 0x0000 [LE]
+0x00000000 : a_u = 0xbabe [LE]
+0x00000002 : b_i = 0x0000 [LE]
+0x00000004 : c_u = 0x0000 [LE]
+0x00000006 : d_i = 0x0000 [LE]
+0x00000000 : a_i = 0xbabe [LE]
+0x00000002 : b_u = 0x0000 [LE]
+0x00000004 : c_i = 0x0000 [LE]
+0x00000006 : d_u = 0x0000 [LE]
+0x00000000 : e_u = 47806 [LE]
+0x00000004 : f_i = 0x0000 [LE]
+0x00000000 : e_i = 47806 [LE]
+0x00000004 : f_u = 0x0000 [LE]
+0x00000000 : a_u = 0xfeca [LE]
+0x00000002 : b_i = 0xbeba [LE]
+0x00000004 : c_u = 0x0000 [LE]
+0x00000006 : d_i = 0x0000 [LE]
+0x00000000 : a_i = 0xfeca [LE]
+0x00000002 : b_u = 0xbeba [LE]
+0x00000004 : c_i = 0x0000 [LE]
+0x00000006 : d_u = 0x0000 [LE]
+0x00000000 : e_u = -1095041334 [LE]
+0x00000004 : f_i = 0x0000 [LE]
+0x00000000 : e_i = -1095041334 [LE]
+0x00000004 : f_u = 0x0000 [LE]
+0x00000000 : a_u = 0xbabe [LE]
+0x00000002 : b_i = 0xcafe [LE]
+0x00000004 : c_u = 0x0000 [LE]
+0x00000006 : d_i = 0x0000 [LE]
+0x00000000 : a_i = 0xbabe [LE]
+0x00000002 : b_u = 0xcafe [LE]
+0x00000004 : c_i = 0x0000 [LE]
+0x00000006 : d_u = 0x0000 [LE]
+0x00000000 : e_u = -889275714 [LE]
+0x00000004 : f_i = 0x0000 [LE]
+0x00000000 : e_i = -889275714 [LE]
+0x00000004 : f_u = 0x0000 [LE]
+0x00000000 : a_u = 0xfeca [LE]
+0x00000002 : b_i = 0xbeba [LE]
+0x00000004 : c_u = 0xfeca [LE]
+0x00000006 : d_i = 0xbeba [LE]
+0x00000000 : a_i = 0xfeca [LE]
+0x00000002 : b_u = 0xbeba [LE]
+0x00000004 : c_i = 0xfeca [LE]
+0x00000006 : d_u = 0xbeba [LE]
+0x00000000 : e_u = -1095041334 [LE]
+0x00000004 : f_i = 0xfeca [LE]
+0x00000000 : e_i = -1095041334 [LE]
+0x00000004 : f_u = 0xfeca [LE]
+0x00000000 : a_u = 0xbabe [LE]
+0x00000002 : b_i = 0xcafe [LE]
+0x00000004 : c_u = 0xbabe [LE]
+0x00000006 : d_i = 0xcafe [LE]
+0x00000000 : a_i = 0xbabe [LE]
+0x00000002 : b_u = 0xcafe [LE]
+0x00000004 : c_i = 0xbabe [LE]
+0x00000006 : d_u = 0xcafe [LE]
+0x00000000 : e_u = -889275714 [LE]
+0x00000004 : f_i = 0xbabe [LE]
+0x00000000 : e_i = -889275714 [LE]
+0x00000004 : f_u = 0xbabe [LE]
 EOF
 RUN
 
@@ -1079,9 +1075,9 @@ aecu 0x000006d5
 tp Books var_e8h
 EOF
 EXPECT=<<EOF
-   title : 0x00177f18 = [ 'R', 'a', 'd', 'a', 'r', 'e', '2', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
-  author : 0x00177f4a = [ 'p', 'a', 'n', 'c', 'a', 'k', 'e', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
- subject : 0x00177f7c = [ 'R', 'e', 'v', 'e', 'r', 's', 'i', 'n', 'g', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
+0x00177f18 :   title = [ 'R', 'a', 'd', 'a', 'r', 'e', '2', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
+0x00177f4a :  author = [ 'p', 'a', 'n', 'c', 'a', 'k', 'e', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
+0x00177f7c : subject = [ 'R', 'e', 'v', 'e', 'r', 's', 'i', 'n', 'g', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
 EOF
 RUN
 
@@ -1093,8 +1089,8 @@ td "struct foo {char* a; int b;}"
 tpx foo 41414141441414141414420010000000
 EOF
 EXPECT=<<EOF
- a : 0x00000000 = "AAAAD\x14\x14\x14\x14\x14B"
- b : 0x0000000c = 16
+0x00000000 : a = "AAAAD\x14\x14\x14\x14\x14B"
+0x0000000c : b = 16 [LE]
 EOF
 RUN
 
@@ -1374,26 +1370,26 @@ tsc boo
 #tsc moo
 EOF
 EXPECT=<<EOF
-pf "dpz x (fp)fp b"
+pf "d4pz x (fp)fp b"
 struct foo { int x; int (*fp)(int a, int b); char *b; };
 struct foo {
 	int x;
 	int (*fp)(int a, int b);
 	char *b;
 };
-  x : 0x00000000 = 0
-(fp)fp : 0x00000004 = (qword)0x0000000000000000
-  b : 0x0000000c = "\x05hello"
-pf "dpz x (ffp)ffp b"
+0x00000000 :  x = 0 [LE]
+0x00000004 : fp = 0x0
+0x0000000c :  b = "\x05hello"
+pf "d4pz x (ffp)ffp b"
 struct boo { int x; int (***ffp)(int a, int b); char *b; };
 struct boo {
 	int x;
 	int (***ffp)(int a, int b);
 	char *b;
 };
-   x : 0x00000000 = 0
-(ffp)ffp : 0x00000004 = (qword)0x0000000000000000
-   b : 0x0000000c = "\x05hello"
+0x00000000 :   x = 0 [LE]
+0x00000004 : ffp = 0x0
+0x0000000c :   b = "\x05hello"
 EOF
 RUN
 
@@ -1406,7 +1402,7 @@ ts normal
 ts pointer
 EOF
 EXPECT=<<EOF
-pf "dc a b"
+pf "d4c a b"
 pf "z*? y (normal)obj"
 EOF
 RUN
@@ -1557,8 +1553,8 @@ tt B
 tt O
 EOF
 EXPECT=<<EOF
-pf "f num"
-pf "dF num num2"
+pf "f4 num"
+pf "d4F8 num num2"
 pf "c ch"
 ----
 struct A {
@@ -1594,9 +1590,9 @@ tsc "anonymous struct 0"
 tsc "anonymous struct 1"
 EOF
 EXPECT=<<EOF
-pf "f num"
+pf "f4 num"
 pf "c ch"
-pf "f num"
+pf "f4 num"
 pf "c ch"
 typedef struct anonymous struct 0 A;
 typedef struct anonymous struct 1 B;
@@ -2117,7 +2113,7 @@ td "struct s1 { int a; int size; int b; };"
 ts s1
 EOF
 EXPECT=<<EOF
-pf "ddd a size b"
+pf "d4d4d4 a size b"
 EOF
 RUN
 
@@ -2269,8 +2265,8 @@ tu foo
 t foo
 EOF
 EXPECT=<<EOF
-pf "0dc a b"
-pf "0dc a b"
+pf "0d4c a b"
+pf "0d4c a b"
 EOF
 RUN
 
@@ -2287,9 +2283,9 @@ pd 1
 EOF
 EXPECT=<<EOF
 (foo goo)
- a : 0x00000000 = 4000
- b : 0x00000004 = 8000
- c : 0x00000008 = (qword)0x8000000000000008
+0x00000000 : a = 4000 [LE]
+0x00000004 : b = 8000 [LE]
+0x00000008 : c = 0x8000000000000008 [LE]
 EOF
 RUN
 
@@ -8326,8 +8322,8 @@ tl goo_t;
 EOF
 EXPECT=<<EOF
 typedef bmg (0x2a0) "[2]??? (bla_t)bla (moo_t)moot (goo_t)goot"
-typedef bla_t (0xb0) "dc?*q a b (anonymous struct 1)q z"
-typedef moo_t (0x48) "c*q a z"
+typedef bla_t (0xb0) "d4c?*x8 a b (anonymous struct 1)q z"
+typedef moo_t (0x48) "c*x8 a z"
 typedef goo_t (0xf8) "p[10]c? a b (anonymous struct 4)q"
 EOF
 RUN

@@ -1,0 +1,86 @@
+NAME=scr.pf.short basic struct
+FILE=malloc://1024
+ARGS=-a x86
+CMDS=<<EOF
+wx 00007a452a4b9a02
+e scr.pf.short=true
+pf fcb1d4 foo bar fool beer
+EOF
+EXPECT=<<EOF
+   0 :  foo = 4000 [LE]
+  +4 :  bar = '*'
+  +5 : fool = 0b0100_1011 [LE]
+  +6 : beer = 666 [LE]
+EOF
+RUN
+
+NAME=scr.pf.short off matches absolute offsets
+FILE=malloc://1024
+ARGS=-a x86
+CMDS=<<EOF
+wx 00007a452a4b9a02
+e scr.pf.short=false
+pf fcb1d4 foo bar fool beer
+EOF
+EXPECT=<<EOF
+0x00000000 :  foo = 4000 [LE]
+0x00000004 :  bar = '*'
+0x00000005 : fool = 0b0100_1011 [LE]
+0x00000006 : beer = 666 [LE]
+EOF
+RUN
+
+NAME=scr.pf.short with nested struct
+FILE=malloc://1024
+ARGS=-a x86
+CMDS=<<EOF
+wx deadbeef0100020003000000aabb
+e scr.pf.short=true
+pfn inner "x4u2u2 magic ver flags"
+pfn outer "?(inner)x4x2 head id tail"
+pf outer
+EOF
+EXPECT=<<EOF
+   0 : head = struct<inner> {
+      0 : magic = 0xefbeadde [LE]
+     +4 :   ver = 1 [LE]
+     +6 : flags = 2 [LE]
+}
+  +8 :   id = 0x00000003 [LE]
+ +12 : tail = 0xbbaa [LE]
+EOF
+RUN
+
+NAME=scr.pf.short with concatenated TLVs
+FILE=malloc://1024
+ARGS=-a x86
+CMDS=<<EOF
+wx 01000652697a696e210200040102030405000852697a696e2102030405
+e scr.pf.short=true
+pfn tlvs "V(t=u1,l=u2,e=be)V(t=u1,l=u2,e=be) hello version"
+pf tlvs
+EOF
+EXPECT=<<EOF
+   0 :   hello = tag=0x1 len=6
+  52 69 7a 69 6e 21
+  +9 : version = tag=0x2 len=4
+  01 02 03 04
+EOF
+RUN
+
+NAME=scr.pf.short with @-offset uses local base
+FILE=malloc://1024
+ARGS=-a x86
+CMDS=<<EOF
+wx 00000000000000000000000000000000deadbeef0100020003000000
+e scr.pf.short=true
+pfn hdr "x4u2u2x4 magic ver flags id"
+pf hdr @ 0x10
+EOF
+EXPECT=<<EOF
+   0 : magic = 0xefbeadde [LE]
+  +4 :   ver = 1 [LE]
+  +6 : flags = 2 [LE]
+  +8 :    id = 0x00000003 [LE]
+EOF
+RUN

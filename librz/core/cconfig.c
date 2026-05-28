@@ -3661,6 +3661,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("scr.wheel.speed", 4, "Mouse wheel speed");
 #endif
 	SETBPREF("scr.wheel.nkey", "false", "Use sn/sp and scr.nkey on wheel instead of scroll");
+	SETBPREF("scr.pf.short", "false", "Render pf offsets as +<delta> from the format base instead of absolute addresses");
 	// RENAME TO scr.mouse
 	SETBPREF("scr.wheel", "true", "Mouse wheel in Visual; temporaryly disable/reenable by right click/Enter)");
 	SETPREF("scr.layout", "", "Name of the selected layout");

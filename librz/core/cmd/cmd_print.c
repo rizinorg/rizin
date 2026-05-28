@@ -6259,7 +6259,35 @@ RZ_IPI RzCmdStatus rz_cmd_print_format_apply_handler(RzCore *core, int argc, con
 
 RZ_IPI RzCmdStatus rz_cmd_print_format_named_dot_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	int mode = RZ_PRINT_MUSTSEE;
-	return print_format(core, argv[1], mode, state);
+	/* pf. is the "show data using a NAMED format" command. The leading
+	 * dot is the marker. If the argument doesn't resolve to a registered
+	 * format (and isn't a sub-field reference like `name.field`), bail
+	 * out with a clear error instead of falling through to raw-format
+	 * parsing, which would emit a string of "unknown specifier" warnings
+	 * that obscure the real problem. */
+	if (argc < 2) {
+		return print_format(core, "", mode, state);
+	}
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	const char *arg = argv[1];
+	const char *dot = strchr(arg, '.');
+	size_t name_len = dot ? (size_t)(dot - arg) : strlen(arg);
+	char *name = rz_str_ndup(arg, name_len);
+	if (!name) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	const char *fmt = rz_type_db_format_get(typedb, name);
+	if (RZ_STR_ISEMPTY(fmt)) {
+		RZ_LOG_ERROR("pf.: no registered format named '%s'. "
+			     "Run `pfn` to list known formats, or `pfo` to load a "
+			     "format definition file (e.g. `pfo elf64` then "
+			     "`pf. elf_header`).\n",
+			name);
+		free(name);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	free(name);
+	return print_format(core, arg, mode, state);
 }
 
 static int compare_type_formats(const RzTypeFormat *a, const RzTypeFormat *b, RZ_UNUSED void *user) {
@@ -6308,12 +6336,19 @@ RZ_IPI RzCmdStatus rz_cmd_print_format_file_handler(RzCore *core, int argc, cons
 		RzList *files;
 		RzListIter *iter;
 		const char *fn;
+		/* De-duplicate file names that appear in both the home FDF dir
+		 * and the system FDF dir (common when the same file is
+		 * installed in both locations). */
+		HtSU *seen = ht_su_new(HT_STR_DUP);
 		char *home = rz_path_home_prefix(RZ_SDB_FORMAT);
 		if (home) {
 			files = rz_sys_dir(home);
 			rz_list_foreach (files, iter, fn) {
-				if (*fn && *fn != '.') {
+				if (*fn && *fn != '.' && (!seen || !ht_su_find(seen, fn, NULL))) {
 					rz_cons_println(fn);
+					if (seen) {
+						ht_su_insert(seen, fn, 1);
+					}
 				}
 			}
 			rz_list_free(files);
@@ -6323,13 +6358,17 @@ RZ_IPI RzCmdStatus rz_cmd_print_format_file_handler(RzCore *core, int argc, cons
 		if (path) {
 			files = rz_sys_dir(path);
 			rz_list_foreach (files, iter, fn) {
-				if (*fn && *fn != '.') {
+				if (*fn && *fn != '.' && (!seen || !ht_su_find(seen, fn, NULL))) {
 					rz_cons_println(fn);
+					if (seen) {
+						ht_su_insert(seen, fn, 1);
+					}
 				}
 			}
 			rz_list_free(files);
 			free(path);
 		}
+		ht_su_free(seen);
 		return RZ_CMD_STATUS_OK;
 	}
 	char *home_formats = rz_path_home_prefix(RZ_SDB_FORMAT);

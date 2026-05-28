@@ -4641,9 +4641,23 @@ RZ_API RZ_OWN char *rz_core_analysis_var_display(RZ_NONNULL RzCore *core, RZ_NON
 			ut64 regval = rz_debug_reg_get(core->dbg, var->storage.reg);
 			r = rz_core_print_hexdump_refs(core, wordsize, wordsize, regval);
 		} else {
-			char *regfmt = rz_str_newf("r (%s)", var->storage.reg);
-			r = rz_core_print_format(core, regfmt, RZ_PRINT_MUSTSEE, core->offset);
-			free(regfmt);
+			/* The legacy `r (regname)` pf specifier was retired by the
+			 * pf-parser rewrite. The new DSL is purely byte-buffer-
+			 * driven and has no notion of a "read this register" op,
+			 * so we reproduce the legacy MUSTSEE output ourselves:
+			 * leading column padding (matches the namefmt the legacy
+			 * formatter emitted for an empty field name), the register
+			 * name, and its 64-bit value as a hex literal.
+			 *
+			 * Use rz_reg_get_value() against the core's default RzReg
+			 * (the same data source the legacy `r (...)` path went
+			 * through) instead of rz_debug_reg_get(), so the value is
+			 * read correctly in non-debug sessions (e.g. ESIL-only). */
+			RzReg *reg = rz_core_reg_default(core);
+			RzRegItem *ri = reg ? rz_reg_get(reg, var->storage.reg, RZ_REG_TYPE_ANY) : NULL;
+			ut64 regval = ri ? rz_reg_get_value(reg, ri) : 0;
+			r = rz_str_newf("  : %s : 0x%08" PFMT64x "\n",
+				var->storage.reg, regval);
 		}
 		rz_strbuf_append(sb, r);
 		free(r);

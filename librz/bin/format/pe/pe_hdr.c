@@ -132,7 +132,7 @@ int PE_(bin_pe_init_hdr)(RzBinPEObj *bin) {
 		return false;
 	}
 	sdb_num_set(bin->kv, "pe_dos_header.offset", 0);
-	sdb_set(bin->kv, "pe_dos_header.format", "[2]zwwwwwwwwwwwww[4]www[10]wx"
+	sdb_set(bin->kv, "pe_dos_header.format", "[2]zx2x2x2x2x2x2x2x2x2x2x2x2x2[4]x2x2x2[10]x2x"
 						 " e_magic e_cblp e_cp e_crlc e_cparhdr e_minalloc e_maxalloc"
 						 " e_ss e_sp e_csum e_ip e_cs e_lfarlc e_ovno e_res e_oemid"
 						 " e_oeminfo e_res2 e_lfanew");
@@ -163,7 +163,7 @@ int PE_(bin_pe_init_hdr)(RzBinPEObj *bin) {
 #if RZ_BIN_PE64
 	sdb_num_set(bin->kv, "pe_nt_image_headers64.offset", bin->dos_header->e_lfanew);
 	sdb_set(bin->kv, "pe_nt_image_headers64.format", "[4]z?? signature (pe_image_file_header)fileHeader (pe_image_optional_header64)optionalHeader");
-	sdb_set(bin->kv, "pe_image_optional_header64.format", "[2]Ebbxxxxxqxxwwwwwwxxxx[2]E[2]Bqqqqxx[16]?"
+	sdb_set(bin->kv, "pe_image_optional_header64.format", "[2]Ex1x1x4x4x4x4x4x8x4x4x2x2x2x2x2x2x4x4x4x4[2]E[2]Bx8x8x8x8x4x4[16]?"
 							      " (pe_magic)magic majorLinkerVersion minorLinkerVersion sizeOfCode sizeOfInitializedData"
 							      " sizeOfUninitializedData addressOfEntryPoint baseOfCode imageBase"
 							      " sectionAlignment fileAlignment majorOperatingSystemVersion minorOperatingSystemVersion"
@@ -174,7 +174,7 @@ int PE_(bin_pe_init_hdr)(RzBinPEObj *bin) {
 #else
 	sdb_num_set(bin->kv, "pe_nt_image_headers32.offset", bin->dos_header->e_lfanew);
 	sdb_set(bin->kv, "pe_nt_image_headers32.format", "[4]z?? signature (pe_image_file_header)fileHeader (pe_image_optional_header32)optionalHeader");
-	sdb_set(bin->kv, "pe_image_optional_header32.format", "[2]Ebbxxxxxxxxxwwwwwwxxxx[2]E[2]Bxxxxxx[16]?"
+	sdb_set(bin->kv, "pe_image_optional_header32.format", "[2]Ex1x1x4x4x4x4x4x4x4x4x4x2x2x2x2x2x2x4x4x4x4[2]E[2]Bx4x4x4x4x4x4[16]?"
 							      " (pe_magic)magic majorLinkerVersion minorLinkerVersion sizeOfCode sizeOfInitializedData"
 							      " sizeOfUninitializedData addressOfEntryPoint baseOfCode baseOfData imageBase"
 							      " sectionAlignment fileAlignment majorOperatingSystemVersion minorOperatingSystemVersion"
@@ -190,10 +190,10 @@ int PE_(bin_pe_init_hdr)(RzBinPEObj *bin) {
 						      " IMAGE_FILE_BYTES_REVERSED_LO=0x0080, IMAGE_FILE_32BIT_MACHINE=0x0100, IMAGE_FILE_DEBUG_STRIPPED=0x0200, "
 						      " IMAGE_FILE_REMOVABLE_RUN_FROM_SWAP=0x0400, IMAGE_FILE_NET_RUN_FROM_SWAP=0x0800, IMAGE_FILE_SYSTEM=0x1000, "
 						      " IMAGE_FILE_DLL=0x2000, IMAGE_FILE_UP_SYSTEM_ONLY=0x4000, IMAGE_FILE_BYTES_REVERSED_HI=0x8000 };");
-	sdb_set(bin->kv, "pe_image_file_header.format", "[2]Ewtxxw[2]B"
+	sdb_set(bin->kv, "pe_image_file_header.format", "[2]Ex2tx4x4x2[2]B"
 							" (pe_machine)machine numberOfSections timeDateStamp pointerToSymbolTable"
 							" numberOfSymbols sizeOfOptionalHeader (pe_characteristics)characteristics");
-	sdb_set(bin->kv, "pe_image_data_directory.format", "xx virtualAddress size");
+	sdb_set(bin->kv, "pe_image_data_directory.format", "x4x4 virtualAddress size");
 
 	// adding compile time to the SDB
 	{

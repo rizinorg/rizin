@@ -89,7 +89,7 @@ static const RzCmdDescDetail query_sdb_get_set_details[2];
 static const RzCmdDescDetail plugins_asm_print_details[2];
 static const RzCmdDescDetail open_binary_select_details[2];
 static const RzCmdDescDetail cmd_print_byte_array_details[3];
-static const RzCmdDescDetail pf_details[3];
+static const RzCmdDescDetail pf_details[10];
 static const RzCmdDescDetail print_function_rzil_enriched_details[6];
 static const RzCmdDescDetail print_string_details[2];
 static const RzCmdDescDetail print_hexdump_format_details[4];
@@ -15975,71 +15975,105 @@ static const RzCmdDescHelp cmd_disassemble_summarize_block_help = {
 	.args = cmd_disassemble_summarize_block_args,
 };
 
-static const RzCmdDescDetailEntry pf_Formats_detail_entries[] = {
-	{ .text = "b", .arg_str = NULL, .comment = "byte (unsigned)" },
-	{ .text = "B", .arg_str = NULL, .comment = "resolve enum bitfield (see t?)" },
-	{ .text = "c", .arg_str = NULL, .comment = "char (signed byte)" },
-	{ .text = "C", .arg_str = NULL, .comment = "byte in decimal" },
-	{ .text = "d", .arg_str = NULL, .comment = "0xHEX value (4 bytes) (see 'i' and 'x' formats)" },
-	{ .text = "D", .arg_str = NULL, .comment = "disassemble one opcode" },
-	{ .text = "e", .arg_str = NULL, .comment = "temporarily swap endian" },
-	{ .text = "E", .arg_str = NULL, .comment = "resolve enum name (see t?)" },
-	{ .text = "f", .arg_str = NULL, .comment = "float value (4 bytes)" },
-	{ .text = "F", .arg_str = NULL, .comment = "double float value (8 bytes)" },
-	{ .text = "i", .arg_str = NULL, .comment = "signed integer value (4 bytes) (see 'd' and 'x' formats)" },
-	{ .text = "n", .arg_str = NULL, .comment = "next char specifies size of signed value (1, 2, 4, or 8 byte(s))" },
-	{ .text = "N", .arg_str = NULL, .comment = "next char specifies size of unsigned value (1, 2, 4, or 8 byte(s))" },
-	{ .text = "o", .arg_str = NULL, .comment = "octal value (4 bytes)" },
-	{ .text = "p", .arg_str = NULL, .comment = "pointer reference (2, 4, or 8 bytes)" },
-	{ .text = "q", .arg_str = NULL, .comment = "quadword (8 bytes)" },
-	{ .text = "Q", .arg_str = NULL, .comment = "octoword (uint128_t) (16 bytes)" },
-	{ .text = "r", .arg_str = NULL, .comment = "CPU register (`pf r (eax)plop`)" },
-	{ .text = "s", .arg_str = NULL, .comment = "32 bit pointer to string (4 bytes)" },
-	{ .text = "s", .arg_str = NULL, .comment = "32 bit pointer to string (4 bytes)" },
-	{ .text = "t", .arg_str = NULL, .comment = "32 bit UNIX timestamp (4 bytes)" },
-	{ .text = "T", .arg_str = NULL, .comment = "show ten first bytes of buffer" },
-	{ .text = "u", .arg_str = NULL, .comment = "uleb128 (variable length)" },
-	{ .text = "w", .arg_str = NULL, .comment = "word (2 bytes unsigned short in hex)" },
-	{ .text = "x", .arg_str = NULL, .comment = "0xHEX value and flag (fd @ addr) (see 'd' and 'i' formats)" },
-	{ .text = "X", .arg_str = NULL, .comment = "show formatted hexpairs" },
-	{ .text = "z", .arg_str = NULL, .comment = "null terminated string" },
-	{ .text = "Z", .arg_str = NULL, .comment = "null terminated wide string" },
-	{ .text = "?", .arg_str = NULL, .comment = "data structure `pf ? (struct_name)example_name`" },
-	{ .text = "*", .arg_str = NULL, .comment = "next char is pointer (honors 'asm.bits')" },
-	{ .text = "+", .arg_str = NULL, .comment = "toggle show flags for each offset" },
-	{ .text = ":", .arg_str = NULL, .comment = "skip 4 bytes" },
-	{ .text = ".", .arg_str = NULL, .comment = "skip 1 byte" },
-	{ .text = ";", .arg_str = NULL, .comment = "rewind 4 bytes" },
-	{ .text = ",", .arg_str = NULL, .comment = "rewind 1 byte" },
+static const RzCmdDescDetailEntry pf_Sized_space_integers_space__oparen_lowercase_equal_LE_space_UPPER_equal_BE_cparen__detail_entries[] = {
+	{ .text = "x1 / x2 / x4 / x8", .arg_str = NULL, .comment = "hex unsigned, N bytes" },
+	{ .text = "d1 / d2 / d4 / d8", .arg_str = NULL, .comment = "decimal signed, N bytes" },
+	{ .text = "u1 / u2 / u4 / u8", .arg_str = NULL, .comment = "decimal unsigned, N bytes" },
+	{ .text = "o1 / o2 / o4 / o8", .arg_str = NULL, .comment = "octal, N bytes" },
+	{ .text = "b1 / b2 / b4 / b8", .arg_str = NULL, .comment = "binary, N bytes" },
+	{ .text = "n1 / n2 / n4 / n8", .arg_str = NULL, .comment = "hex unsigned, N bytes, context-endian (follows ctx.big_endian; for headers like ELF that pick endian via a data byte)" },
+	{ .text = "f2 / f4 / f8", .arg_str = NULL, .comment = "IEEE 754 float, 2/4/8 bytes (half/single/double)" },
 	{ 0 },
 };
 
-static const RzCmdDescDetailEntry pf_Example_space_of_space_usages_detail_entries[] = {
-	{ .text = "pf '3xi foo bar'", .arg_str = NULL, .comment = "3-array of structures, each with named fields: 'foo' as hex, 'bar' as int" },
-	{ .text = "pf 'B (BitFldType)arg_name'", .arg_str = NULL, .comment = "Resolve bitfield enum type for the arg_name" },
-	{ .text = "pf 'E (EnumType)arg_name'", .arg_str = NULL, .comment = "Resolve enum type for the arg_name" },
-	{ .text = "pf '*z*i*w nb name blob'", .arg_str = NULL, .comment = "Print pointers with the given labels" },
-	{ .text = "pf 'iwq foo bar troll'", .arg_str = NULL, .comment = "Print the iwq format with foo, bar, troll as respective fields" },
-	{ .text = "pf '0iwq foo bar troll'", .arg_str = NULL, .comment = "Same as above but considered as a union (all fields at offset 0)" },
-	{ .text = "pfn obj 'xxdz prev next size name'", .arg_str = NULL, .comment = "Define the obj format as xxdz" },
-	{ .text = "pf. 'plop ? (troll)mystruct'", .arg_str = NULL, .comment = "Use previously defined structure 'troll'" },
-	{ .text = "pf.j plop @ 0x14", .arg_str = NULL, .comment = "Apply format object at the given offset" },
-	{ .text = "pf '{N} (bifc)'", .arg_str = NULL, .comment = "Print N times the following format (bifc)" },
-	{ .text = "pf [4]w[7]i", .arg_str = NULL, .comment = "Print an array of 4 words and then an array of 7 integers" },
-	{ .text = "pf 'ic...?i foo bar \"(pf xw yo foo)troll\" yo'", .arg_str = NULL, .comment = "Print nested anonymous structures" },
-	{ .text = "pf ';..x'", .arg_str = NULL, .comment = "Print value located 6 bytes from the current offset" },
-	{ .text = "pf '[10]z[3]i[10]Zb'", .arg_str = NULL, .comment = "Print a fixed size string, widechar, and var" },
-	{ .text = "pfj +F @ 0x14", .arg_str = NULL, .comment = "Print the content at given offset with a flag" },
-	{ .text = "pf n2", .arg_str = NULL, .comment = "Print signed short (2 bytes) value. Use N instead of n for printing unsigned values" },
-	{ .text = "pf '[2]? (plop)structname @ 0x10'", .arg_str = NULL, .comment = "Print an array of structures at the given offset" },
-	{ .text = "pf 'eqew bigWord beef'", .arg_str = NULL, .comment = "Swap endianness and print with given labels" },
-	{ .text = "pfn foo 'rr (eax)reg1 (eip)reg2'", .arg_str = NULL, .comment = "Create obect foo referencing to register values" },
-	{ .text = "pf 'tt troll plop'", .arg_str = NULL, .comment = "Print time stamps with labels 'troll' and 'plop'" },
+static const RzCmdDescDetailEntry pf_Special_space_scalars_detail_entries[] = {
+	{ .text = "c", .arg_str = NULL, .comment = "single byte rendered as character" },
+	{ .text = "p", .arg_str = NULL, .comment = "pointer (size from ctx.bits: 2 / 4 / 8 bytes)" },
+	{ .text = "Q", .arg_str = NULL, .comment = "uint128_t (16 bytes, byte-sequential)" },
+	{ .text = "r", .arg_str = NULL, .comment = "raw hex byte dump (count via [N])" },
+	{ .text = "U / L", .arg_str = NULL, .comment = "ULEB128 / SLEB128 (variable length)" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry pf_Strings_space__oparen_encoding_minus_aware_cparen__detail_entries[] = {
+	{ .text = "z", .arg_str = NULL, .comment = "inline NUL-terminated string" },
+	{ .text = "z(utf16le)", .arg_str = NULL, .comment = "encoding override (utf8, utf16le, utf16be, utf32le, utf32be, ibm037, ebcdic_us, ...)" },
+	{ .text = "z[N]", .arg_str = NULL, .comment = "length-prefixed string, N-byte prefix (1/2/4/8), length is in characters" },
+	{ .text = "z(utf16le)[2b]", .arg_str = NULL, .comment = "length prefix in BYTES (MS BSTR style); suffix 'b' switches the unit" },
+	{ .text = "s", .arg_str = NULL, .comment = "pointer to NUL-terminated string (dereferences via read_at)" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry pf_Timestamps_space__oparen_parameterised_cparen__detail_entries[] = {
+	{ .text = "t(unix32) / T(unix32)", .arg_str = NULL, .comment = "wire format inside the parens; case selects LE/BE" },
+	{ .text = "supported formats", .arg_str = NULL, .comment = "unix32, unix64, unixms, unixus, unixns, filetime (alias ntfs), dos, hfs, oletime, webkit, cocoa" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry pf_Typed_space_composites_detail_entries[] = {
+	{ .text = "E (enum_type)", .arg_str = NULL, .comment = "4-byte enum, name resolved via typedb" },
+	{ .text = "B (bitfield_type)", .arg_str = NULL, .comment = "4-byte bitfield, name resolved via typedb" },
+	{ .text = "B4(R=1,W=2,X=4)", .arg_str = NULL, .comment = "inline bitfield with named flags (size = 1/2/4/8 byte BN)" },
+	{ .text = "? (struct_type)", .arg_str = NULL, .comment = "nested struct, name resolved via typedb" },
+	{ .text = "0...", .arg_str = NULL, .comment = "leading '0' marks the format as a union (all fields share offset 0)" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry pf_DSL_space_extensions_detail_entries[] = {
+	{ .text = "@N", .arg_str = NULL, .comment = "align cursor up to next N-byte boundary (no value, no name)" },
+	{ .text = ":N", .arg_str = NULL, .comment = "read N bits (1..64) from packed bitstream; MSB-first by default" },
+	{ .text = ":N< / :N>", .arg_str = NULL, .comment = "explicit bit order: < = LSB-first, > = MSB-first" },
+	{ .text = "G", .arg_str = NULL, .comment = "16-byte GUID/UUID, mixed-endian (MS) layout by default" },
+	{ .text = "G(le) / G(be)", .arg_str = NULL, .comment = "GUID layout: all-LE or RFC 4122 BE" },
+	{ .text = "V(t=u1,l=u2,d=table)", .arg_str = NULL, .comment = "TLV record; t=tag, l=length, e=le/be, h=v/a (header inclusion), d=dispatch table" },
+	{ .text = "[@field_name]T", .arg_str = NULL, .comment = "array whose length comes from an earlier scalar field" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry pf_Skip_space__slash__space_repeat_space__slash__space_pointers_detail_entries[] = {
+	{ .text = ".", .arg_str = NULL, .comment = "skip 1 byte; [N]. skips N bytes" },
+	{ .text = "3...", .arg_str = NULL, .comment = "leading integer repeats the whole format N times" },
+	{ .text = "{N}...", .arg_str = NULL, .comment = "alternate repeat syntax" },
+	{ .text = "*T", .arg_str = NULL, .comment = "field is a pointer to T (dereferenced via read_at)" },
+	{ .text = "[N]T", .arg_str = NULL, .comment = "fixed-size array of N elements of T" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry pf_Examples_detail_entries[] = {
+	{ .text = "pf 'x4 d2 u8 z magic ver size name'", .arg_str = NULL, .comment = "header with hex u32, signed s16, unsigned u64, NUL-terminated string" },
+	{ .text = "pf 'B4(R=1,W=2,X=4,KERN=0x100) perms'", .arg_str = NULL, .comment = "inline bitfield with named flags" },
+	{ .text = "pf 'u1 [@count] x4 count items'", .arg_str = NULL, .comment = "u8 count, then that many u32 hex values" },
+	{ .text = "pf 'z(utf16le)[2b] bstr'", .arg_str = NULL, .comment = "BSTR-style: 2-byte length prefix counting bytes, UTF-16 LE body" },
+	{ .text = "pf ':1 :7 x4 flag rest tail'", .arg_str = NULL, .comment = "bit-level: 1 bit then 7 bits, then 4 bytes" },
+	{ .text = "pf 'G(be) uuid'", .arg_str = NULL, .comment = "RFC 4122 big-endian UUID" },
+	{ .text = "pf 'V(t=u1,l=u2,d=usb_desc) record'", .arg_str = NULL, .comment = "TLV dispatched via the 'usb_desc' tag-to-format table" },
+	{ .text = "pf 't(filetime) created'", .arg_str = NULL, .comment = "8-byte Windows FILETIME timestamp" },
+	{ .text = "pf '3 0x4d4 a b'", .arg_str = NULL, .comment = "repeat 3 times, union with fields x4 and d4" },
+	{ .text = "pf '? (mytype) field'", .arg_str = NULL, .comment = "nested struct of typedb format 'mytype'" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry pf_Notes_detail_entries[] = {
+	{ .text = "bit order", .arg_str = NULL, .comment = ":N defaults to MSB-first (matches DWARF and most network protocols); use <N for LSB-first" },
+	{ .text = "endian via case", .arg_str = NULL, .comment = "lowercase specifier = little-endian, UPPERCASE = big-endian" },
+	{ .text = "context endian", .arg_str = NULL, .comment = "n1/n2/n4/n8 follow the surrounding RzPfCtx.big_endian flag instead of being pinned by case" },
+	{ .text = "skip vs alignment", .arg_str = NULL, .comment = "'.' / '[N].' skip an exact number of bytes; '@N' pads to the next N-byte boundary" },
+	{ .text = "deprecation", .arg_str = NULL, .comment = "bare-letter codes (b, c, d, f, o, q, s, t, u, w, x, z) still parse with a warning; use sized forms in new code" },
+	{ .text = "pf 'X2D4u8 bigWord beef qword'", .arg_str = NULL, .comment = "BE u16, BE s32, LE u64 -- one of every endianness/sign combination" },
+	{ .text = "pfn foo 'rr (eax)reg1 (eip)reg2'", .arg_str = NULL, .comment = "Create object foo referencing two registers" },
+	{ .text = "pf 't(unix32)t(unix32) troll plop'", .arg_str = NULL, .comment = "Print two unix-epoch (32-bit) timestamps with labels 'troll' and 'plop'" },
 	{ 0 },
 };
 static const RzCmdDescDetail pf_details[] = {
-	{ .name = "Formats", .entries = pf_Formats_detail_entries },
-	{ .name = "Example of usages", .entries = pf_Example_space_of_space_usages_detail_entries },
+	{ .name = "Sized integers (lowercase=LE UPPER=BE)", .entries = pf_Sized_space_integers_space__oparen_lowercase_equal_LE_space_UPPER_equal_BE_cparen__detail_entries },
+	{ .name = "Special scalars", .entries = pf_Special_space_scalars_detail_entries },
+	{ .name = "Strings (encoding-aware)", .entries = pf_Strings_space__oparen_encoding_minus_aware_cparen__detail_entries },
+	{ .name = "Timestamps (parameterised)", .entries = pf_Timestamps_space__oparen_parameterised_cparen__detail_entries },
+	{ .name = "Typed composites", .entries = pf_Typed_space_composites_detail_entries },
+	{ .name = "DSL extensions", .entries = pf_DSL_space_extensions_detail_entries },
+	{ .name = "Skip / repeat / pointers", .entries = pf_Skip_space__slash__space_repeat_space__slash__space_pointers_detail_entries },
+	{ .name = "Examples", .entries = pf_Examples_detail_entries },
+	{ .name = "Notes", .entries = pf_Notes_detail_entries },
 	{ 0 },
 };
 static const RzCmdDescHelp pf_help = {

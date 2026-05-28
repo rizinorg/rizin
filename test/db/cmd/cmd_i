@@ -3591,7 +3591,7 @@ EOF
 EXPECT=<<EOF
 no
 ---
-elf_header.format=?[2]E[2]E[4]ExxxxN2N2N2N2N2N2 (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
+elf_header.format=?[2]E[2]E[4]En4n4n4n4n2n2n2n2n2n2 (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
 elf_header.intrp=/lib/ld-linux.so.2
 elf_header.intrp_addr=0x134
 elf_header.intrp_size=0x13

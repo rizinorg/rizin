@@ -64,7 +64,7 @@ static const char *sdb_elf_hdr_version_cparse = "enum elf_hdr_version {EV_NONE=0
 
 static const char *sdb_elf_obj_version_cparse = "enum elf_obj_version {EV_NONE=0, EV_CURRENT=1};";
 
-static const char *sdb_elf_ident_format = "[4]z[1]E[1]E[1]E.::"
+static const char *sdb_elf_ident_format = "[4]z[1]E[1]E[1]E.[4].[4]."
 					  " magic (elf_class)class (elf_data)data (elf_hdr_version)version";
 
 static const char *sdb_elf_s_type_cparse = "enum elf_s_type {SHT_NULL=0,SHT_PROGBITS=1,"
@@ -73,31 +73,31 @@ static const char *sdb_elf_s_type_cparse = "enum elf_s_type {SHT_NULL=0,SHT_PROG
 					   "SHT_HIOS=0x6fffffff,SHT_LOPROC=0x70000000,SHT_HIPROC=0x7fffffff};";
 
 #if RZ_BIN_ELF64
-static const char *sdb_elf_phdr_format = "[4]E[4]Eqqqqqq (elf_p_type)type (elf_p_flags)flags"
+static const char *sdb_elf_phdr_format = "[4]E[4]En8n8n8n8n8n8 (elf_p_type)type (elf_p_flags)flags"
 					 " offset vaddr paddr filesz memsz align";
 
 static const char *sdb_elf_s_flags_64_cparse = "enum elf_s_flags_64 {SF64_None=0,SF64_Exec=1,"
 					       "SF64_Alloc=2,SF64_Alloc_Exec=3,SF64_Write=4,SF64_Write_Exec=5,"
 					       "SF64_Write_Alloc=6,SF64_Write_Alloc_Exec=7};";
 
-static const char *sdb_elf_shdr_format = "x[4]E[8]Eqqqxxqq name (elf_s_type)type"
+static const char *sdb_elf_shdr_format = "n4[4]E[8]En8n8n8n4n4n8n8 name (elf_s_type)type"
 					 " (elf_s_flags_64)flags addr offset size link info addralign entsize";
 
-static const char *sdb_elf_header_format = "?[2]E[2]E[4]EqqqxN2N2N2N2N2N2"
+static const char *sdb_elf_header_format = "?[2]E[2]E[4]En8n8n8n4n2n2n2n2n2n2"
 					   " (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version"
 					   " entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx";
 #else
-static const char *sdb_elf_phdr_format = "[4]Exxxxx[4]Ex (elf_p_type)type offset vaddr paddr"
+static const char *sdb_elf_phdr_format = "[4]En4n4n4n4n4[4]En4 (elf_p_type)type offset vaddr paddr"
 					 " filesz memsz (elf_p_flags)flags align";
 
 static const char *sdb_elf_s_flags_32_cparse = "enum elf_s_flags_32 {SF32_None=0,SF32_Exec=1,"
 					       "SF32_Alloc=2,SF32_Alloc_Exec=3,SF32_Write=4,SF32_Write_Exec=5,"
 					       "SF32_Write_Alloc=6,SF32_Write_Alloc_Exec=7};";
 
-static const char *sdb_elf_shdr_format = "x[4]E[4]Exxxxxxx name (elf_s_type)type"
+static const char *sdb_elf_shdr_format = "n4[4]E[4]En4n4n4n4n4n4n4 name (elf_s_type)type"
 					 " (elf_s_flags_32)flags addr offset size link info addralign entsize";
 
-static const char *sdb_elf_header_format = "?[2]E[2]E[4]ExxxxN2N2N2N2N2N2"
+static const char *sdb_elf_header_format = "?[2]E[2]E[4]En4n4n4n4n2n2n2n2n2n2"
 					   " (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version"
 					   " entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx";
 #endif
