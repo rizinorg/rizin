@@ -580,17 +580,23 @@ static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzVectorCom
 	}
 
 	memcpy(pivot, VEC_INDEX(a, i), elem_size);
-	memcpy(VEC_INDEX(a, i), VEC_INDEX(a, len - 1), elem_size);
+	if (i != len - 1) {
+		memcpy(VEC_INDEX(a, i), VEC_INDEX(a, len - 1), elem_size);
+	}
 	for (i = 0; i < len - 1; i++) {
 		if ((cmp(VEC_INDEX(a, i), pivot, user) < 0 && !reverse) ||
 			(cmp(VEC_INDEX(a, i), pivot, user) > 0 && reverse)) {
-			memcpy(t, VEC_INDEX(a, i), elem_size);
-			memcpy(VEC_INDEX(a, i), VEC_INDEX(a, j), elem_size);
-			memcpy(VEC_INDEX(a, j), t, elem_size);
+			if (j != i) {
+				memcpy(t, VEC_INDEX(a, i), elem_size);
+				memcpy(VEC_INDEX(a, i), VEC_INDEX(a, j), elem_size);
+				memcpy(VEC_INDEX(a, j), t, elem_size);
+			}
 			j++;
 		}
 	}
-	memcpy(VEC_INDEX(a, len - 1), VEC_INDEX(a, j), elem_size);
+	if (j != len - 1) {
+		memcpy(VEC_INDEX(a, len - 1), VEC_INDEX(a, j), elem_size);
+	}
 	memcpy(VEC_INDEX(a, j), pivot, elem_size);
 	RZ_FREE(t);
 	RZ_FREE(pivot);
