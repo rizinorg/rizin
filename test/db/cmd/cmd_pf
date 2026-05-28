@@ -254,6 +254,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pf format from typedef'd void* / char* (orphan-* regression)
+FILE==
+ARGS=-a x86 -b 64 -k windows
+CMDS=<<EOF
+ts _SECURITY_ATTRIBUTES
+ts _STARTUPINFOA
+EOF
+EXPECT=<<EOF
+pf "d4pd4 nLength (LPVOID)lpSecurityDescriptor bInheritHandle"
+pf "d4*c*c*cd4d4d4d4d4d4d4d4x2x2*x1ppp cb (LPSTR)lpReserved (LPSTR)lpDesktop (LPSTR)lpTitle dwX dwY dwXSize dwYSize dwXCountChars dwYCountChars dwFillAttribute dwFlags wShowWindow cbReserved2 (LPBYTE)lpReserved2 hStdInput hStdOutput hStdError"
+EOF
+RUN
+
 NAME=timestamp
 FILE=malloc://1024
 CMDS=<<EOF

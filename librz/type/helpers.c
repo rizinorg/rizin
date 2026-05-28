@@ -315,7 +315,7 @@ RZ_API bool rz_type_is_void_ptr(RZ_NONNULL const RzType *type) {
 }
 
 /**
- * \brief Checks if the pointer RzType is a nested abstract pointer ("void **", "vpod ***", etc)
+ * \brief Checks if the pointer RzType is a nested abstract pointer ("void **", "void ***", etc)
  *
  * \param type RzType type pointer
  */
