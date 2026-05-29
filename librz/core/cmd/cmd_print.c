@@ -5113,6 +5113,42 @@ static bool print_histogram(RzCore *core, RZ_NULLABLE RzHistogramOptions *opts, 
 	return true;
 }
 
+static bool print_histogram_horizontal_f64(RzCore *core, RZ_NULLABLE RzHistogramOptions *opts, const double *data, ut64 offset, int width, int height) {
+	RzStrBuf *strbuf = NULL;
+	bool hex_offset = rz_config_get_i(core->config, "hex.offset");
+	core->print->num = core->num;
+	if (hex_offset) {
+		// TODO: Currently this option doesn't affect horizontal histograms
+		core->print->flags |= RZ_PRINT_FLAGS_OFFSET;
+	} else {
+		core->print->flags &= ~RZ_PRINT_FLAGS_OFFSET;
+	}
+	if (opts) {
+		strbuf = rz_histogram_horizontal_f64(opts, data, width, height);
+	} else {
+		RzHistogramOptions default_opts = {
+			.unicode = rz_config_get_b(core->config, "scr.utf8"),
+			.thinline = !rz_config_get_b(core->config, "scr.hist.block"),
+			.ruler = rz_config_get_b(core->config, "scr.hist.ruler"),
+			.legend = false,
+			.offset = rz_config_get_b(core->config, "hex.offset"),
+			.offpos = offset,
+			.cursor = false,
+			.curpos = 0,
+			.color = rz_config_get_i(core->config, "scr.color"),
+			.pal = &core->cons->context->pal
+		};
+		strbuf = rz_histogram_horizontal_f64(&default_opts, data, width, height);
+	}
+	if (!strbuf) {
+		return false;
+	}
+	char *histogram = rz_strbuf_drain(strbuf);
+	rz_cons_print(histogram);
+	free(histogram);
+	return true;
+}
+
 static void showcursor(RzCore *core, int x) {
 	if (!x) {
 		int wheel = rz_config_get_i(core->config, "scr.wheel");
@@ -5302,6 +5338,7 @@ static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **
 		return RZ_CMD_STATUS_ERROR;
 	}
 	ut8 *data = calloc(1, brange->nblocks);
+	double *fdata = NULL;
 	ut8 *tmp = malloc(brange->blocksize);
 	if (!tmp) {
 		RZ_LOG_ERROR("core: failed to malloc memory\n");
@@ -5309,10 +5346,24 @@ static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **
 		free(brange);
 		return RZ_CMD_STATUS_ERROR;
 	}
+	if (!isinteractive) {
+		fdata = calloc(brange->nblocks, sizeof(double));
+		if (!fdata) {
+			RZ_LOG_ERROR("core: failed to malloc memory\n");
+			free(tmp);
+			free(data);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	}
 	for (size_t i = 0; i < brange->nblocks; i++) {
 		ut64 off = brange->from + (brange->blocksize * (i + brange->skipblocks));
 		rz_io_read_at_mapped(core->io, off, tmp, brange->blocksize);
-		data[i] = (ut8)(255 * rz_hash_entropy_fraction(tmp, brange->blocksize));
+		double entropy = rz_hash_entropy_fraction(tmp, brange->blocksize);
+		data[i] = (ut8)(255.0 * entropy);
+		if (fdata) {
+			fdata[i] = entropy;
+		}
 	}
 	free(tmp);
 	if (isinteractive) {
@@ -5322,14 +5373,24 @@ static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **
 			free(data);
 			return RZ_CMD_STATUS_ERROR;
 		}
+	} else if (vertical) {
+		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, true)) {
+			RZ_LOG_ERROR("Cannot generate vertical histogram\n");
+			free(fdata);
+			free(data);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
 	} else {
-		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
-			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+		if (!print_histogram_horizontal_f64(core, NULL, fdata, brange->from, brange->nblocks, 14)) {
+			RZ_LOG_ERROR("Cannot generate horizontal histogram\n");
+			free(fdata);
 			free(data);
 			free(brange);
 			return RZ_CMD_STATUS_ERROR;
 		}
 	}
+	free(fdata);
 	free(data);
 	free(brange);
 	return RZ_CMD_STATUS_OK;

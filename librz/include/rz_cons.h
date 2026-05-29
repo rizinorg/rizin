@@ -1063,6 +1063,7 @@ RZ_API const char *rz_cons_get_rune(const ut8 ch);
 
 /* Histograms */
 RZ_API RZ_OWN RzStrBuf *rz_histogram_horizontal(RZ_NONNULL RzHistogramOptions *opts, RZ_NONNULL const ut8 *data, ut32 width, ut32 height);
+RZ_API RZ_OWN RzStrBuf *rz_histogram_horizontal_f64(RZ_NONNULL RzHistogramOptions *opts, RZ_NONNULL const double *data, ut32 width, ut32 height);
 RZ_API RZ_OWN RzStrBuf *rz_histogram_vertical(RZ_NONNULL RzHistogramOptions *opts, RZ_NONNULL const ut8 *data, int width, int step);
 RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzHistogramInteractive *hist, const unsigned char *data);
 RZ_API RzHistogramOptions *rz_histogram_options_new();

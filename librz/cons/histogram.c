@@ -48,42 +48,113 @@ RZ_API RZ_OWN RzStrBuf *rz_histogram_horizontal(RZ_NONNULL RzHistogramOptions *o
 		kol[2] = opts->pal->cjmp;
 		kol[3] = opts->pal->mov;
 		kol[4] = opts->pal->nop;
-		for (i = 0; i < rows; i++) {
-			size_t threshold = i * (0xff / rows);
-			size_t koli = i * 5 / rows;
-			if (opts->ruler) {
-				rz_strbuf_appendf(buf, " %3zu%s", (255 - threshold), vline);
-			}
-			for (j = 0; j < cols; j++) {
-				int realJ = j * width / cols;
-				if (255 - data[realJ] < threshold || (i + 1 == rows)) {
+	}
+	ut64 max_val = 0;
+	for (size_t k = 0; k < width; k++) {
+		if (data[k] > max_val) {
+			max_val = data[k];
+		}
+	}
+
+	ut64 min_val = 0;
+	for (i = 0; i < rows; i++) {
+		ut64 range = max_val - min_val;
+		ut64 val = (rows > 1) ? (max_val - (i * range) / (rows - 1)) : max_val;
+		size_t koli = i * 5 / rows;
+
+		if (opts->ruler) {
+			rz_strbuf_appendf(buf, "%6" PFMT64u " %s ", val, vline);
+		}
+
+		for (j = 0; j < cols; j++) {
+			size_t realJ = width > 0 ? (j * width / cols) : 0;
+			ut64 d = width > 0 ? data[realJ] : 0;
+
+			if (d >= val && d > 0) {
+				if (opts->color) {
 					if (opts->thinline) {
 						rz_strbuf_appendf(buf, "%s%s%s", kol[koli], vline, Color_RESET);
 					} else {
 						rz_strbuf_appendf(buf, "%s%s%s", kol[koli], block, Color_RESET);
 					}
 				} else {
-					rz_strbuf_append(buf, " ");
+					if (opts->thinline) {
+						rz_strbuf_append(buf, vline);
+					} else {
+						rz_strbuf_append(buf, block);
+					}
 				}
+			} else if (i + 1 == rows) {
+				rz_strbuf_append(buf, "_"); // Base line for empty space at the bottom
+			} else {
+				rz_strbuf_append(buf, " "); // Empty space
 			}
-			rz_strbuf_append(buf, "\n");
 		}
-		return buf;
+		rz_strbuf_append(buf, "\n");
+	}
+	return buf;
+}
+
+/**
+ * \brief Create the string buffer with the horizontal histogram for floating point values
+ *
+ * \param opts Histogram options: color, style, legend and cursor position
+ * \param data A buffer with the numerical data in the format of double values
+ * \param width Width of the histogram
+ * \param height Height of the histogram
+ */
+RZ_API RZ_OWN RzStrBuf *rz_histogram_horizontal_f64(RZ_NONNULL RzHistogramOptions *opts, RZ_NONNULL const double *data, ut32 width, ut32 height) {
+	rz_return_val_if_fail(opts && data, NULL);
+	RzStrBuf *buf = rz_strbuf_new("");
+	if (!buf) {
+		return NULL;
+	}
+
+	size_t i, j;
+	ut32 cols = 78;
+	ut32 rows = height > 0 ? height : 10;
+	const char *vline = opts->unicode ? RUNE_LINE_VERT : "|";
+	const char *block = opts->unicode ? UTF_BLOCK : "#";
+	const char *kol[5];
+	if (opts->color) {
+		kol[0] = opts->pal->call;
+		kol[1] = opts->pal->jmp;
+		kol[2] = opts->pal->cjmp;
+		kol[3] = opts->pal->mov;
+		kol[4] = opts->pal->nop;
+	}
+	double max_val = 0.0;
+	for (size_t k = 0; k < width; k++) {
+		if (data[k] > max_val) {
+			max_val = data[k];
+		}
+	}
+	if (max_val <= 0.0) {
+		max_val = 1.0;
 	}
 
 	for (i = 0; i < rows; i++) {
-		size_t threshold = i * (0xff / rows);
+		double val = (rows > 1) ? (max_val - ((double)i * max_val) / (double)(rows - 1)) : max_val;
+		size_t koli = i * 5 / rows;
+
 		if (opts->ruler) {
-			rz_strbuf_appendf(buf, " %3zu%s", (255 - threshold), vline);
+			rz_strbuf_appendf(buf, "%5.2f %s ", val, vline);
 		}
+
 		for (j = 0; j < cols; j++) {
-			size_t realJ = j * width / cols;
-			if (255 - data[realJ] < threshold) {
-				if (opts->thinline) {
-					rz_strbuf_append(buf, vline);
+			size_t realJ = width > 0 ? (j * width / cols) : 0;
+			double d = width > 0 ? data[realJ] : 0.0;
+
+			if (d >= val && d > 0.0) {
+				if (opts->color) {
+					if (opts->thinline) {
+						rz_strbuf_appendf(buf, "%s%s%s", kol[koli], vline, Color_RESET);
+					} else {
+						rz_strbuf_appendf(buf, "%s%s%s", kol[koli], block, Color_RESET);
+					}
 				} else {
-					if (opts->color) {
-						rz_strbuf_appendf(buf, "%s%s%s", Color_BGGRAY, block, Color_RESET);
+					if (opts->thinline) {
+						rz_strbuf_append(buf, vline);
 					} else {
 						rz_strbuf_append(buf, block);
 					}

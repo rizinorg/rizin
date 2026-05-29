@@ -16,10 +16,43 @@ bool test_histogram_horizontal(void) {
 
 	char *res = rz_strbuf_drain(buf);
 	mu_assert_notnull(res, "Histogram buffer should not be null");
-	mu_assert_true(strstr(res, "255|") != NULL, "Ruler 255 present");
-	mu_assert_true(strstr(res, "128|") != NULL, "Ruler 128 present");
-	mu_assert_true(strstr(res, "_") != NULL, "Base line present");
+	mu_assert_true(strstr(res, "200 |") != NULL, "Ruler 200 present");
 	free(res);
+	rz_cons_free();
+	mu_end;
+}
+
+bool test_histogram_entropy(void) {
+	rz_cons_new();
+	RzHistogramOptions opts = { 0 };
+	opts.color = false;
+	opts.unicode = false;
+	opts.ruler = true;
+
+	double entropy_data[] = { 3.14 };
+	RzStrBuf *buf = rz_histogram_horizontal_f64(&opts, entropy_data, 1, 2);
+	char *res = rz_strbuf_drain(buf);
+	mu_assert_notnull(res, "Histogram buffer should not be null");
+	mu_assert_true(strstr(res, "3.14 |") != NULL, "Ruler entropy present");
+	mu_assert_true(strstr(res, "0.00 |") != NULL, "Baseline present");
+	free(res);
+
+	double entropy_fract_data[] = { 0.39 };
+	buf = rz_histogram_horizontal_f64(&opts, entropy_fract_data, 1, 2);
+	res = rz_strbuf_drain(buf);
+	mu_assert_notnull(res, "Histogram buffer should not be null");
+	mu_assert_true(strstr(res, "0.39 |") != NULL, "Ruler entropy_fract present");
+	mu_assert_true(strstr(res, "0.00 |") != NULL, "Baseline present");
+	free(res);
+
+	double temperature_data[] = { 0.18 };
+	buf = rz_histogram_horizontal_f64(&opts, temperature_data, 1, 2);
+	res = rz_strbuf_drain(buf);
+	mu_assert_notnull(res, "Histogram buffer should not be null");
+	mu_assert_true(strstr(res, "0.18 |") != NULL, "Ruler temperature present");
+	mu_assert_true(strstr(res, "0.00 |") != NULL, "Baseline present");
+	free(res);
+
 	rz_cons_free();
 	mu_end;
 }
@@ -44,6 +77,7 @@ bool test_histogram_vertical(void) {
 
 bool all_tests() {
 	mu_run_test(test_histogram_horizontal);
+	mu_run_test(test_histogram_entropy);
 	mu_run_test(test_histogram_vertical);
 	return tests_passed != tests_run;
 }
