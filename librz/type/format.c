@@ -256,6 +256,49 @@ RZ_API RZ_OWN char *rz_type_format(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL
 	return rz_base_type_as_format(typedb, btype);
 }
 
+/* True iff `type` is a POINTER whose pointee resolves -- by walking
+ * through typedef chains in the typedb -- to an atomic base type named
+ * exactly `atomic_name`.  This is the typedb-aware counterpart of the
+ * rz_type_is_*_ptr helpers in librz/type/helpers.c, which compare the
+ * raw identifier name and so do not see through typedef chains like
+ * PVOID -> VOID -> void or LPSTR -> CHAR -> char.  Walks at most
+ * RZ_TYPE_FORMAT_PTR_RESOLVE_MAX_DEPTH typedef hops so a circular
+ * typedef cannot send the resolver into an infinite loop.
+ */
+#define RZ_TYPE_FORMAT_PTR_RESOLVE_MAX_DEPTH 16
+
+static bool ptr_pointee_resolves_to(const RzTypeDB *typedb, const RzType *type, const char *atomic_name) {
+	if (!type || type->kind != RZ_TYPE_KIND_POINTER || !atomic_name) {
+		return false;
+	}
+	const RzType *ptr = type->pointer.type;
+	if (!ptr || ptr->kind != RZ_TYPE_KIND_IDENTIFIER ||
+		ptr->identifier.kind != RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED ||
+		!ptr->identifier.name) {
+		return false;
+	}
+	const char *cur_name = ptr->identifier.name;
+	for (int i = 0; i < RZ_TYPE_FORMAT_PTR_RESOLVE_MAX_DEPTH && cur_name; i++) {
+		if (!strcmp(cur_name, atomic_name)) {
+			return true;
+		}
+		RzBaseType *btyp = rz_type_db_get_base_type(typedb, cur_name);
+		if (!btyp) {
+			return false;
+		}
+		if (btyp->kind == RZ_BASE_TYPE_KIND_ATOMIC) {
+			return btyp->name && !strcmp(btyp->name, atomic_name);
+		}
+		if (btyp->kind != RZ_BASE_TYPE_KIND_TYPEDEF || !btyp->type ||
+			btyp->type->kind != RZ_TYPE_KIND_IDENTIFIER ||
+			!btyp->type->identifier.name) {
+			return false;
+		}
+		cur_name = btyp->type->identifier.name;
+	}
+	return false;
+}
+
 static void type_to_format(const RzTypeDB *typedb, RzStrBuf *buf, RzType *type) {
 	if (type->kind == RZ_TYPE_KIND_IDENTIFIER) {
 		const char *format = rz_type_db_format_get(typedb, type->identifier.name);
@@ -280,6 +323,26 @@ static void type_to_format(const RzTypeDB *typedb, RzStrBuf *buf, RzType *type) 
 		rz_strbuf_appendf(buf, "[%" PFMT64d "]", type->array.count);
 		type_to_format(typedb, buf, type->array.type);
 	} else if (type->kind == RZ_TYPE_KIND_POINTER) {
+		// Pointer-to-void via a typedef chain (PVOID -> VOID -> void,
+		// LPVOID -> PVOID -> VOID -> void, HANDLE -> ... -> void) must
+		// emit a self-contained `p` token rather than the recursive
+		// `*<inner>` fallback, which would leave an orphan `*` because
+		// `void` has no pf format of its own.  The rz_type_is_void_ptr
+		// helper only matches the raw identifier name "void", so it
+		// does not see through these typedef chains;
+		// ptr_pointee_resolves_to does.
+		//
+		// Pointer-to-char is intentionally NOT folded here: the
+		// recursive walker already produces `*c` (pointer-deref to a
+		// 1-byte signed char), which is a valid pf spec under the new
+		// parser and is what callers such as `avgp` for a `char *`
+		// global variable already expect (showing the pointer literal
+		// rather than reinterpreting the pointer bytes as an inline
+		// string).
+		if (ptr_pointee_resolves_to(typedb, type, "void")) {
+			rz_strbuf_append(buf, "p");
+			return;
+		}
 		rz_strbuf_append(buf, "*");
 		type_to_format(typedb, buf, type->pointer.type);
 	}
@@ -338,6 +401,17 @@ static bool type_to_format_pair(const RzTypeDB *typedb, RzStrBuf *format, RzStrB
 			// Callables are allowed to have empty names
 			if (name) {
 				rz_strbuf_appendf(fields, "%s ", name);
+			}
+		} else if (ptr_pointee_resolves_to(typedb, type, "void")) {
+			// Same orphan-`*` issue as in type_to_format: emit a
+			// self-contained `p` and the field name so the resulting
+			// pair (e.g. "p" + "(PVOID)lpSecurityDescriptor")
+			// parses cleanly under the new pf DSL.  Pointer-to-char
+			// is intentionally NOT folded -- see the matching comment
+			// in type_to_format.
+			rz_strbuf_append(format, "p");
+			if (identifier) {
+				rz_strbuf_appendf(fields, "%s ", identifier);
 			}
 		} else {
 			rz_strbuf_append(format, "*");

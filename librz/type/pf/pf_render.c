@@ -316,12 +316,6 @@ void pf_render_guid(RzStrBuf *sb, const ut8 *b, RzPfGuidLayout lay) {
 		b[8], b[9], b[10], b[11], b[12], b[13], b[14], b[15]);
 }
 
-// Render: text
-
-// Render: C struct
-
-// Render: dot graph (Graphviz `digraph` record nodes)
-
 // Unified render dispatcher
 /**
  * \brief Render an array of values to a string in the given mode.
