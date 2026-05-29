@@ -1506,7 +1506,7 @@ RZ_API RzGraphStatus rz_graph_update_edge(
 	void *cb_data) {
 	rz_return_val_if_fail(g && from && to, RZ_GRAPH_STATUS_ERR);
 	RzGraphEdge *e = rz_graph_find_edge(g, from, to);
-	bool update = (!cb || cb(e, cb_data));
+	bool update = (!cb || (e && cb(e, cb_data)));
 	if (e && update) {
 		if (g->edge_data_free) {
 			g->edge_data_free(e->data);

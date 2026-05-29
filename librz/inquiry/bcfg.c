@@ -71,8 +71,8 @@ static bool edge_from(const RzGraphEdge *e, void *addr) {
 }
 
 RZ_IPI bool rz_inquiry_bcfg_del_out_edges(RzInquiryBCFG *cfg, ut64 bb_addr) {
-
-	return rz_graph_del_edges(cfg->graph, edge_from, RZ_GRAPH_INT_AS_DATA(bb_addr));
+	rz_return_val_if_fail(cfg, false);
+	return rz_graph_del_edges(cfg->graph, edge_from, RZ_GRAPH_INT_AS_DATA(bb_addr)) != RZ_GRAPH_STATUS_ERR;
 }
 
 /**
@@ -87,11 +87,15 @@ RZ_IPI bool rz_inquiry_bcfg_del_out_edges(RzInquiryBCFG *cfg, ut64 bb_addr) {
  * \return True if edge was added. False for error or if a node doesn't exist.
  */
 RZ_IPI bool rz_inquiry_bcfg_add_edge(RzInquiryBCFG *cfg, ut64 from_bb, ut64 to_bb, RzInquiryBCFGEdgeType type) {
-	return rz_graph_add_edge_by_id(cfg->graph, from_bb, to_bb, RZ_GRAPH_INT_AS_DATA(type));
+	RzGraphStatus s = rz_graph_add_edge_by_id(cfg->graph, from_bb, to_bb, RZ_GRAPH_INT_AS_DATA(type));
+	if (s == RZ_GRAPH_STATUS_OK || s == RZ_GRAPH_STATUS_EXISTED) {
+		return true;
+	}
+	return false;
 }
 
 RZ_IPI bool rz_inquiry_bcfg_del_edge(RzInquiryBCFG *cfg, ut64 from_bb, ut64 to_bb) {
-	return rz_graph_del_edge_by_id(cfg->graph, from_bb, to_bb);
+	return rz_graph_del_edge_by_id(cfg->graph, from_bb, to_bb) != RZ_GRAPH_STATUS_ERR;
 }
 
 static bool is_cf_edge(const RzGraphEdge *e, void *unused) {
@@ -113,7 +117,7 @@ static bool is_cf_edge(const RzGraphEdge *e, void *unused) {
  * \return True if edge was added. False in case of error.
  */
 RZ_IPI bool rz_inquiry_bcfg_update_edge(RzInquiryBCFG *cfg, ut64 from_bb, ut64 to_bb, RzInquiryBCFGEdgeType type) {
-	return rz_graph_update_edge_by_id(cfg->graph, from_bb, to_bb, RZ_GRAPH_INT_AS_DATA(type), is_cf_edge, NULL);
+	return rz_graph_update_edge_by_id(cfg->graph, from_bb, to_bb, RZ_GRAPH_INT_AS_DATA(type), is_cf_edge, NULL) != RZ_GRAPH_STATUS_ERR;
 }
 
 RZ_IPI bool rz_inquiry_bcfg_get_block(const RzInquiryBCFG *cfg, ut64 bb_addr, RZ_OUT RZ_NULLABLE RzInquiryBlock *bb) {
@@ -158,18 +162,11 @@ RZ_IPI bool rz_inquiry_bcfg_add_block(RzInquiryBCFG *cfg, ut64 addr, ut64 size) 
 	}
 	bb->addr = addr;
 	bb->size = size;
-	bool existed;
-	RzGraphNode *n = rz_graph_add_get_node(cfg->graph, bb, &existed);
-	if (!n) {
-		return false;
-	}
+	rz_graph_add_node(cfg->graph, bb, NULL);
 	// const RzInquiryBB *nbb = rz_graph_node_get_data(n);
 	// if (nbb->size != size) {
 	// 	rz_warn_if_reached();
 	// }
-	if (existed) {
-		free(bb);
-	}
 	return true;
 }
 
