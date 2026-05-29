@@ -1900,8 +1900,13 @@ RZ_API int rz_analysis_function_get_arg_count(RzAnalysis *analysis, RzAnalysisFu
 	if (!callable) {
 		return -1;
 	}
-	rz_type_func_save(analysis->typedb, callable);
-	return rz_pvector_len(callable->args);
+	int argc = rz_pvector_len(callable->args);
+	// rz_type_func_save() does not take ownership when a callable with the
+	// same name is already registered, so free the derived one in that case.
+	if (!rz_type_func_save(analysis->typedb, callable)) {
+		rz_type_callable_free(callable);
+	}
+	return argc;
 }
 
 // tfj and afsj call this function
