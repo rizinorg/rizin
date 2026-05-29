@@ -147,8 +147,7 @@ RZ_API RZ_OWN RzAnalysisILVM *rz_analysis_il_vm_new(RzAnalysis *a, RZ_NULLABLE R
 	if (!r) {
 		goto ruby_pool;
 	}
-	r->_priv_io_buf = rz_buf_new_with_io(&a->iob);
-	r->io_buf = rz_buf_new_sparse_overlay(r->_priv_io_buf, RZ_BUF_SPARSE_WRITE_MODE_SPARSE);
+	r->io_buf = rz_buf_new_with_io(&a->iob);
 	setup_vm_from_config(a, r, config);
 	if (!r->vm) {
 		rz_buf_free(r->io_buf);
@@ -171,7 +170,6 @@ RZ_API void rz_analysis_il_vm_free(RZ_NULLABLE RzAnalysisILVM *vm) {
 	}
 	rz_il_vm_free(vm->vm);
 	rz_il_reg_binding_free(vm->reg_binding);
-	rz_buf_free(vm->_priv_io_buf);
 	rz_buf_free(vm->io_buf);
 	free(vm);
 }
