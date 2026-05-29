@@ -391,7 +391,7 @@ echo ---
 echo ---
 !rz-bin -P ${RZ_FILE} | grep all_control_bits | grep -ao 0x3c09f00
 echo ---
-!rz-bin -P ${RZ_FILE} | grep "__acrt_fenv_abstract_status {"
+!rz-bin -P ${RZ_FILE} | grep "enum __acrt_fenv_abstract_status : uint32_t {"
 echo ---
 !rz-bin -P ${RZ_FILE} | grep "_towlower_internal"
 echo ---
@@ -404,7 +404,7 @@ nLength
 ---
 0x3c09f00
 ---
-enum __acrt_fenv_abstract_status {
+enum __acrt_fenv_abstract_status : uint32_t {
 ---
 0x00066da4  4366  .text  _towlower_internal
 ---

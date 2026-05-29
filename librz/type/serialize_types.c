@@ -33,8 +33,8 @@ static char *get_type_data(Sdb *sdb, const char *type, const char *sname) {
 	return members;
 }
 
-static TypeFormatPair *get_enum_type(Sdb *sdb, const char *sname) {
-	rz_return_val_if_fail(sdb && RZ_STR_ISNOTEMPTY(sname), NULL);
+static TypeFormatPair *get_enum_type(RzTypeDB *typedb, Sdb *sdb, const char *sname) {
+	rz_return_val_if_fail(typedb && sdb && RZ_STR_ISNOTEMPTY(sname), NULL);
 
 	RzBaseType *base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
@@ -75,6 +75,25 @@ static TypeFormatPair *get_enum_type(Sdb *sdb, const char *sname) {
 		sdb_aforeach_next(cur);
 	}
 	free(members);
+
+	// C23 fixed underlying type, stored by save_enum() under "enum.<name>.@type".
+	// The referenced type may not have been deserialized yet -- base types are read
+	// from the sdb in an unspecified (hash) order -- but rz_type_parse_string_single()
+	// turns an unknown name into a forward-looking identifier instead of failing, and
+	// identifiers are resolved lazily by name when used (e.g. for the enum width), so
+	// the load order of the underlying type relative to this enum does not matter.
+	RzStrBuf utkey;
+	char *underlying = sdb_get(sdb, rz_strbuf_initf(&utkey, "enum.%s.@type", sname));
+	rz_strbuf_fini(&utkey);
+	if (underlying) {
+		char *error_msg = NULL;
+		RzType *ut = rz_type_parse_string_single(typedb->parser, underlying, &error_msg);
+		free(underlying);
+		free(error_msg);
+		if (ut) {
+			base_type->type = ut;
+		}
+	}
 
 	RzStrBuf key;
 	char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname));
@@ -327,7 +346,7 @@ bool sdb_load_base_types(RzTypeDB *typedb, Sdb *sdb) {
 		if (!strcmp(sdbkv_value(kv), "struct")) {
 			tpair = get_struct_type(typedb, sdb, sdbkv_key(kv));
 		} else if (!strcmp(sdbkv_value(kv), "enum")) {
-			tpair = get_enum_type(sdb, sdbkv_key(kv));
+			tpair = get_enum_type(typedb, sdb, sdbkv_key(kv));
 		} else if (!strcmp(sdbkv_value(kv), "union")) {
 			tpair = get_union_type(typedb, sdb, sdbkv_key(kv));
 		} else if (!strcmp(sdbkv_value(kv), "typedef")) {
@@ -496,6 +515,16 @@ static void save_enum(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type) 
 	char *key = rz_str_newf("enum.%s", sname);
 	sdb_set(sdb, key, rz_strbuf_get(&arglist));
 	free(key);
+
+	// C23 fixed underlying type, e.g. "enum E : long long { ... }".
+	// Stored under a key that cannot clash with a case name.
+	if (type->type) {
+		char *underlying = rz_type_as_string(typedb, type->type);
+		if (underlying) {
+			sdb_set(sdb, rz_strbuf_setf(&param_key, "enum.%s.@type", sname), underlying);
+			free(underlying);
+		}
+	}
 
 	rz_strbuf_fini(&arglist);
 	rz_strbuf_fini(&param_key);

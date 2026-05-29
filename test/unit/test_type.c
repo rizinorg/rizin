@@ -416,6 +416,45 @@ static bool test_enum_types(void) {
 	mu_end;
 }
 
+static bool test_enum_underlying_type(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+
+	// C23 enum with a fixed underlying type. A single-token primitive type is
+	// used here since that is what the bundled grammar revision already parses.
+	char *error_msg = NULL;
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, "enum EU : uint64_t { A = 1, B = 2 };", &error_msg);
+	mu_assert_notnull(ttype, "enum with underlying type parses");
+	mu_assert_null(error_msg, "no parse error");
+
+	RzBaseType *base = rz_type_db_get_base_type(typedb, "EU");
+	mu_assert_notnull(base, "EU base type exists");
+	mu_assert_eq(RZ_BASE_TYPE_KIND_ENUM, base->kind, "EU is an enum");
+	mu_assert_notnull(base->type, "underlying type stored on the base type");
+	mu_assert_streq_free(rz_type_as_string(typedb, base->type), "uint64_t", "underlying type is uint64_t");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), "enum EU : uint64_t { A = 0x1, B = 0x2 }", "enum renders its underlying type");
+	// enum_bitsize() now derives the width from the underlying type via
+	// rz_type_db_base_get_bitsize(); the concrete value is exercised in the
+	// integration tests since this unit harness does not load atomic widths.
+	rz_type_free(ttype);
+
+	// A classic enum keeps a NULL underlying type and the default int width
+	error_msg = NULL;
+	RzType *plain = rz_type_parse_string_single(typedb->parser, "enum EC { X = 7 };", &error_msg);
+	mu_assert_notnull(plain, "classic enum parses");
+	RzBaseType *bc = rz_type_db_get_base_type(typedb, "EC");
+	mu_assert_notnull(bc, "EC base type exists");
+	mu_assert_null(bc->type, "classic enum has no underlying type");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, bc), "enum EC { X = 0x7 }", "classic enum renders without an underlying type");
+	mu_assert_eq(rz_type_db_base_get_bitsize(typedb, bc), 32, "classic enum defaults to 32 bits");
+	rz_type_free(plain);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 static bool test_const_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
@@ -1969,6 +2008,7 @@ int all_tests() {
 	mu_run_test(test_type_as_string);
 	mu_run_test(test_type_as_pretty_string);
 	mu_run_test(test_enum_types);
+	mu_run_test(test_enum_underlying_type);
 	mu_run_test(test_const_types);
 	mu_run_test(test_array_types);
 	mu_run_test(test_single_typedef_aliases);

@@ -380,6 +380,7 @@ Detailed project load info:
   project migrated from version 19 to 20.
   project migrated from version 20 to 21.
   project migrated from version 21 to 22.
+  project migrated from version 22 to 23.
 EOF
 RUN
 

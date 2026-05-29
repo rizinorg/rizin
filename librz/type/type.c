@@ -675,7 +675,11 @@ static ut64 atomic_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype)
 
 static ut64 enum_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
 	rz_return_val_if_fail(typedb && btype && btype->kind == RZ_BASE_TYPE_KIND_ENUM, 0);
-	// FIXME: Need a proper way to determine size of enum
+	// A C23 enum can fix its underlying type ("enum E : long long { ... }");
+	// otherwise it defaults to the implementation's int width.
+	if (btype->type) {
+		return rz_type_db_get_bitsize(typedb, btype->type);
+	}
 	return 32;
 }
 
@@ -1043,6 +1047,13 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 		case RZ_BASE_TYPE_KIND_ENUM:
 			if (unfold_all || (is_anon && unfold_anon)) {
 				RzTypeEnumCase *cas;
+				if (btype->type) { // C23 fixed underlying type
+					char *underlying = rz_type_as_string(typedb, btype->type);
+					if (underlying) {
+						rz_strbuf_appendf(buf, " : %s", underlying);
+						free(underlying);
+					}
+				}
 				rz_strbuf_append(buf, " {");
 				if (multiline) {
 					indent++; // no recursive call, so manually need to update indent

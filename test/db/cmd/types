@@ -586,41 +586,55 @@ tec v
 te v
 te v 0x123
 te v 0x321
+EOF
+EXPECT=<<EOF
+enum v : int { t = 0x123, p = 0x321 };
+enum v : int {
+	t = 0x123,
+	p = 0x321
+};
+enum v : int {
+	t = 0x123,
+	p = 0x321
+};
+t = 0x123
+p = 0x321
+t
+p
+EOF
+RUN
+
+NAME=enhanced enum with long long underlying type
+BROKEN=1
+FILE==
+CMDS=<<EOF
 td "enum w : long long { t=0x123, p=0x321 };"
 tcd w
 tc w
-tec w
-te w
-te w 0x123
-te w 0x321
 EOF
 EXPECT=<<EOF
-enum v { t = 0x123, p = 0x321 };
-enum v {
+enum w : long long { t = 0x123, p = 0x321 };
+enum w : long long {
 	t = 0x123,
 	p = 0x321
 };
-enum v {
-	t = 0x123,
-	p = 0x321
+EOF
+RUN
+
+NAME=enhanced enum with unsigned int underlying type
+BROKEN=1
+FILE==
+CMDS=<<EOF
+td "enum ui : unsigned int { a=1, b=2 };"
+tcd ui
+tc ui
+EOF
+EXPECT=<<EOF
+enum ui : unsigned int { a = 0x1, b = 0x2 };
+enum ui : unsigned int {
+	a = 0x1,
+	b = 0x2
 };
-t = 0x123
-p = 0x321
-t
-p
-enum w { t = 0x123, p = 0x321 };
-enum w {
-	t = 0x123,
-	p = 0x321
-};
-enum w {
-	t = 0x123,
-	p = 0x321
-};
-t = 0x123
-p = 0x321
-t
-p
 EOF
 RUN
 

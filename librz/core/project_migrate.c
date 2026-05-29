@@ -754,6 +754,21 @@ RZ_API bool rz_project_migrate_v21_v22(RzProject *prj, RzSerializeResultInfo *re
 	return true;
 }
 
+// --
+// Migration 22 -> 23
+//
+// Changes:
+// Enums can now declare a fixed underlying type ("enum E : long long { ... }"),
+// serialized under "enum.<name>.@type" in "/core/analysis/types". Older
+// projects simply lack that key and the deserializer treats its absence as a
+// classic (int-backed) enum, so there is nothing to migrate.
+
+RZ_API bool rz_project_migrate_v22_v23(RzProject *prj, RzSerializeResultInfo *res) {
+	// there is nothing to be done since the deserializer treats a missing
+	// "enum.<name>.@type" as a classic enum without a fixed underlying type
+	return true;
+}
+
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
 	rz_project_migrate_v2_v3,
@@ -776,6 +791,7 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v19_v20,
 	rz_project_migrate_v20_v21,
 	rz_project_migrate_v21_v22,
+	rz_project_migrate_v22_v23,
 };
 
 /// Migrate the given project to the current version in-place
