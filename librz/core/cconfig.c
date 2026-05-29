@@ -3693,6 +3693,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("scr.prompt.sect", "false", "Show section name in the prompt");
 	SETCB("scr.hist.block", "true", &cb_scr_histblock, "Use blocks for histogram");
 	SETBPREF("scr.hist.ruler", "true", "Show histogram ruler");
+	SETI("scr.hist.width", 0, "Default width (in screen columns) of the horizontal histogram. 0 = auto-clamp to terminal width");
+	SETI("scr.hist.height", 0, "Default height (in screen rows) of the horizontal histogram. 0 = auto-clamp to terminal height");
 	SETCB("scr.prompt", "true", &cb_scrprompt, "Show user prompt (used by rizin -q)");
 	SETCB("scr.tee", "", &cb_teefile, "Pipe output to file of this name");
 	SETPREF("scr.seek", "", "Seek to the specified address on startup");
