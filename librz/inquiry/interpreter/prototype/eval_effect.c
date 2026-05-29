@@ -7,7 +7,7 @@
 #include "rz_util/rz_bitvector.h"
 #include "rz_util/rz_str.h"
 
-static bool value_indicates_ret_addr_write(RzInterpreterSet *iset, ProtoIntrprAbstrData *val) {
+static bool value_indicates_ret_addr_write(RzInterpSet *iset, ProtoIntrprAbstrData *val) {
 	return val->is_concrete &&
 		(rz_bv_to_ut64(val->bv) == iset->astate->bb_addr + iset->astate->bb_size ||
 			// Sparc stores the call instruction PC into o8.
@@ -15,7 +15,7 @@ static bool value_indicates_ret_addr_write(RzInterpreterSet *iset, ProtoIntrprAb
 			(rz_str_startswith(iset->astate->arch_name, "sparc") && rz_bv_to_ut64(val->bv) == rz_bv_to_ut64(AD(iset->astate->pc->abstr_data)->bv)));
 }
 
-RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterSet *iset,
+RZ_IPI bool interpreter_prototype_eval_effect(RzInterpSet *iset,
 	const RzILOpEffect *effect,
 	size_t insn_pkt_size,
 	ProtoIntrprPluginData *plugin_data) {

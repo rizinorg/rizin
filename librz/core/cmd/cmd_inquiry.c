@@ -50,15 +50,16 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 	if (!entry_points) {
 		return RZ_CMD_STATUS_ERROR;
 	}
+	bool run_fcn_detection = RZ_STR_EQ(argv[1], "-f");
 
 	ut64 entry_point;
-	if (argc == 1) {
+	if (argc == (run_fcn_detection ? 2 : 1)) {
 		// No specific entry point given. Pick the one provided by the bin plugin.
 		entry_point = rz_bin_get_first_entrypoint(core->bin->cur->o);
 		rz_set_u_add(entry_points, entry_point);
 	} else {
 		// Add all entry points given as arguments.
-		for (size_t i = 1; i < argc; i++) {
+		for (size_t i = (run_fcn_detection ? 2 : 1); i < argc; i++) {
 			ut64 entry_point = rz_num_get(core->num, argv[i]);
 			rz_set_u_add(entry_points, entry_point);
 		}
@@ -73,19 +74,29 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 		rz_vector_free(ignored_code_regions);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	eprintf("Perform function deduction: ");
 
 	RzSetU *symbol_addresses = rz_set_u_new();
-	if (!rz_inquiry_get_fcn_symbol_addr(core, symbol_addresses)) {
+	if (!symbol_addresses || !rz_inquiry_get_fcn_symbol_addr(core, symbol_addresses)) {
 		rz_vector_free(ignored_code_regions);
 		rz_warn_if_reached();
 		return RZ_CMD_STATUS_ERROR;
 	}
 	const RzPVector *symbols = rz_bin_object_get_symbols(core->bin->cur->o);
-	success = rz_inquiry_function_deduction(core->analysis, core->inquiry, symbol_addresses, symbols, ignored_code_regions);
-	eprintf("%s\n", success ? "OK" : "FAIL");
+	RzPVector *fcns = rz_pvector_new((RzPVectorFree)rz_inquiry_function_free);
+
+	if (!fcns || !symbols) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (run_fcn_detection) {
+		eprintf("Perform function deduction: ");
+		success &= rz_inquiry_function_deduction(core->analysis, core->inquiry, symbol_addresses, symbols, ignored_code_regions, fcns);
+		eprintf("%s\n", success ? "OK" : "FAIL");
+	}
 	rz_set_u_free(symbol_addresses);
 	rz_vector_free(ignored_code_regions);
+
+	success &= rz_inquiry_convert_and_add_to_analysis(core->analysis, core->inquiry, fcns, symbols);
+	rz_pvector_free(fcns);
 
 	return success ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }

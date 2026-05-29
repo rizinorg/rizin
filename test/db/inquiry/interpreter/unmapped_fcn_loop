@@ -1,7 +1,7 @@
 NAME=Indirect call x86
 FILE=bins/inquiry/interpreter/prototype/x86_unmapped_fcn_in_loop
 CMDS=<<EOF
-aaaaIp sym.run
+aaaaIp -f sym.run
 agf @ sym.run
 agf @ sym.recurse
 agf @ sym.function_0

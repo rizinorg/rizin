@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
- * \file The header file for the RzInterpreter contains declarations for
+ * \file The header file for the RzInterp contains declarations for
  * all RzIL based interpreters.
  */
 
 #ifndef RZ_INTERPRETER
 #define RZ_INTERPRETER
 
-#include "rz_inquiry/rz_bb_graph.h"
+#include <rz_inquiry/rz_bcfg.h>
 #include <rz_inquiry/rz_il_cache.h>
 #include <rz_arch.h>
 #include <rz_io.h>
@@ -20,9 +20,9 @@
 /**
  * \brief Only one IO request at a time is possible (currently).
  */
-#define RZ_INTERPRETER_IO_RBUF_SIZE           128
-#define RZ_INTERPRETER_YIELD_RBUF_SIZE        128
-#define RZ_INTERPRETER_ENTRY_POINTS_RBUF_SIZE 4
+#define RZ_INTERP_IO_RBUF_SIZE           128
+#define RZ_INTERP_YIELD_RBUF_SIZE        128
+#define RZ_INTERP_ENTRY_POINTS_RBUF_SIZE 4
 
 typedef struct rz_intp_run_state RzIntpRunState;
 
@@ -45,31 +45,31 @@ typedef enum {
 	/**
 	 * \brief An undefined abstracted value.
 	 */
-	RZ_INTERPRETER_ABSTRACTION_UNDEF = 0,
+	RZ_INTERP_ABSTRACTION_UNDEF = 0,
 	/**
 	 * \brief Value abstraction into constant and bottom values.
 	 */
-	RZ_INTERPRETER_ABSTRACTION_CONST = 1 << 0,
+	RZ_INTERP_ABSTRACTION_CONST = 1 << 0,
 	/**
 	 * \brief Value abstraction into Heap[base, offset] and bottom values.
 	 */
-	RZ_INTERPRETER_ABSTRACTION_HEAP = 1 << 1,
+	RZ_INTERP_ABSTRACTION_HEAP = 1 << 1,
 	/**
 	 * \brief Value abstraction into Stack[base, offset] and bottom values.
 	 */
-	RZ_INTERPRETER_ABSTRACTION_STACK = 1 << 2,
-} RzInterpreterAbstraction;
+	RZ_INTERP_ABSTRACTION_STACK = 1 << 2,
+} RzInterpAbstraction;
 
 /**
  * \brief An arbitrary abstract value.
  */
 typedef struct {
-	RzInterpreterAbstraction kind; ///< The abstraction of the value.
+	RzInterpAbstraction kind; ///< The abstraction of the value.
 	void *abstr_data; ///< The abstract data. It is managed by individual interpreter.
-} RzInterpreterAbstrVal;
+} RzInterpAbstrVal;
 
 typedef struct {
-	RzInquiryBBCFGEdgeType cf_type; ///< Control flow type.
+	RzInquiryBCFGEdgeType cf_type; ///< Control flow type.
 	/**
 	 * \brief The address of the block which changes the control flow.
 	 * This might be UT64_MAX, if there was no jump that flow originated from.
@@ -99,27 +99,27 @@ typedef struct {
 	/**
 	 * \brief Control flow type.
 	 */
-	RzInquiryBBCFGEdgeType type;
-} RzInterpreterCtrlFlow;
+	RzInquiryBCFGEdgeType type;
+} RzInterpCtrlFlow;
 
 typedef struct {
-	RzInterpreterAbstraction kinds; ///< The abstractions of the state.
+	RzInterpAbstraction kinds; ///< The abstractions of the state.
 	HtUP *var_name_hashes; ///< Map of DJB2 hashes to variable names.
-	HtUP /*<RzInterpreterAbstrVal *>*/ *globals; ///< Global variables (mostly registers). Indexed by DJB2 hash of global name.
-	HtUP /*<RzInterpreterAbstrVal *>*/ *locals; ///< Local variables. Indexed by DJB2 hash of the local name.
-	HtUP /*<RzInterpreterAbstrVal *>*/ *lets; ///< Let variables. Indexed by DJB2 hash of the let name.
-	RzInterpreterAbstrVal *pc; ///< In our RzIL implementation the PC is not part of the register file.
+	HtUP /*<RzInterpAbstrVal *>*/ *globals; ///< Global variables (mostly registers). Indexed by DJB2 hash of global name.
+	HtUP /*<RzInterpAbstrVal *>*/ *locals; ///< Local variables. Indexed by DJB2 hash of the local name.
+	HtUP /*<RzInterpAbstrVal *>*/ *lets; ///< Let variables. Indexed by DJB2 hash of the let name.
+	RzInterpAbstrVal *pc; ///< In our RzIL implementation the PC is not part of the register file.
 	RzAnalysisILConfig *il_config; ///< The IL configuration of the RzArch plugin.
 	const char *arch_name; ///< Name of architecture. Used by work-arounds until we have RzArch.
 	ut64 bb_addr;
 	ut64 bb_size;
-} RzInterpreterAbstrState;
+} RzInterpAbstrState;
 
 typedef enum {
 	/**
 	 * \brief The yield is an cross reference.
 	 */
-	RZ_INTERPRETER_YIELD_KIND_XREF = 0,
+	RZ_INTERP_YIELD_KIND_XREF = 0,
 
 	/**
 	 * \brief This yield is a simple flag, signaling if the current basic block
@@ -128,37 +128,37 @@ typedef enum {
 	 * If the last branch instruction does not jump to the neighboring basic block
 	 * it is a strong indicator that the jump is a call and the next address a return point.
 	 */
-	RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE,
+	RZ_INTERP_YIELD_KIND_CALL_CANDIDATE,
 
 	/**
-	 * \brief Yield is a RzInterpreterCtrlFlow.
+	 * \brief Yield is a RzInterpCtrlFlow.
 	 * Reported by every interpreter.
 	 */
-	RZ_INTERPRETER_YIELD_KIND_CONTROL_FLOW,
-	RZ_INTERPRETER_YIELD_KIND_NUM,
-} RzInterpreterYieldKind;
+	RZ_INTERP_YIELD_KIND_CONTROL_FLOW,
+	RZ_INTERP_YIELD_KIND_NUM,
+} RzInterpYieldKind;
 
 /**
  * \brief A filter for abstract values to decide if they should be pushed into
  * the yield ring buffer or not.
  */
-typedef bool (*RzInterpreterYieldFilter)(const void *element, const void *filter_data);
+typedef bool (*RzInterpYieldFilter)(const void *element, const void *filter_data);
 
 typedef struct {
 	RzPVector /*<RzBinSection *>*/ *io_boundaries;
-} RzInterpreterYieldFilterData;
+} RzInterpYieldFilterData;
 
 /**
  * \brief A ring buffer to push interpretation yields into.
  */
 typedef struct {
-	RzInterpreterYieldKind kind;
-	RzInterpreterYieldFilter filter;
-	RzInterpreterYieldFilterData *filter_data;
+	RzInterpYieldKind kind;
+	RzInterpYieldFilter filter;
+	RzInterpYieldFilterData *filter_data;
 	RzThreadRingBuf *rbuf;
-} RzInterpreterYieldRBuf;
+} RzInterpYieldRBuf;
 
-typedef struct rz_interpreter_set RzInterpreterSet;
+typedef struct rz_interpreter_set RzInterpSet;
 
 typedef struct {
 	const char *name;
@@ -169,39 +169,39 @@ typedef struct {
 	/**
 	 * \brief Supported abstractions. Multiple flags can be set.
 	 */
-	RzInterpreterAbstraction supported_abstractions;
+	RzInterpAbstraction supported_abstractions;
 	/**
 	 * \brief The yield type this interpreter generates.
 	 */
-	RzInterpreterYieldKind supported_yields[RZ_INTERPRETER_YIELD_KIND_NUM];
+	RzInterpYieldKind supported_yields[RZ_INTERP_YIELD_KIND_NUM];
 	bool (*init)(void **plugin_data);
 	bool (*reset)(void *plugin_data);
 	bool (*fini)(void *plugin_data);
 	/**
 	 * \brief Initializes the abstract state.
 	 */
-	bool (*init_state)(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_data);
+	bool (*init_state)(RZ_BORROW RzInterpAbstrState *state, void *plugin_data);
 	/**
 	 * \brief Reset the abstract state.
 	 */
-	bool (*reset_state)(RZ_BORROW RzInterpreterAbstrState *state, ut64 entry_point, void *plugin_data);
+	bool (*reset_state)(RZ_BORROW RzInterpAbstrState *state, ut64 entry_point, void *plugin_data);
 	/**
 	 * \brief Closes the abstract state and frees all its abstract data and sets the pointers to NULL.
 	 */
-	bool (*fini_state)(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_data);
+	bool (*fini_state)(RZ_BORROW RzInterpAbstrState *state, void *plugin_data);
 	/**
 	 * \brief Clones the abstract state.
 	 */
-	RZ_OWN RzInterpreterAbstrState *(*clone_state)(const RzInterpreterAbstrState *state, void *plugin_data);
+	RZ_OWN RzInterpAbstrState *(*clone_state)(const RzInterpAbstrState *state, void *plugin_data);
 	/**
 	 * \brief Hashes the state.
 	 */
-	ut64 (*hash_state)(RZ_NONNULL const RzInterpreterAbstrState *state,
+	ut64 (*hash_state)(RZ_NONNULL const RzInterpAbstrState *state,
 		void *plugin_data);
 	/**
 	 * \brief Evaluates an effect with the mutable state.
 	 */
-	bool (*eval)(RZ_NONNULL RzInterpreterSet *iset,
+	bool (*eval)(RZ_NONNULL RzInterpSet *iset,
 		RZ_NONNULL const RzILCacheBlock *il_bb,
 		void *plugin_data);
 	/**
@@ -210,8 +210,8 @@ typedef struct {
 	 * \return Returns false in case of error. The interpretation must abort.
 	 * True otherwise.
 	 */
-	bool (*successors)(RZ_NONNULL const RzInterpreterAbstrState *state,
-		RZ_NONNULL RZ_OUT RzVector /*<RzInterpreterBranch>*/ *successors,
+	bool (*successors)(RZ_NONNULL const RzInterpAbstrState *state,
+		RZ_NONNULL RZ_OUT RzVector /*<RzInterpBranch>*/ *successors,
 		void *plugin_data);
 
 	/**
@@ -220,35 +220,35 @@ typedef struct {
 	 * \return Returns false in case of error. The interpretation must abort.
 	 * True otherwise.
 	 */
-	bool (*state_as_str)(RZ_NONNULL const RzInterpreterAbstrState *state,
+	bool (*state_as_str)(RZ_NONNULL const RzInterpAbstrState *state,
 		RZ_NONNULL RZ_OUT RzStrBuf *str_buf,
 		void *plugin_data);
 	/**
 	 * \brief Set the abstract PC to the given address.
 	 */
-	bool (*set_pc)(RZ_NONNULL RzInterpreterAbstrState *state,
+	bool (*set_pc)(RZ_NONNULL RzInterpAbstrState *state,
 		ut64 pc,
 		void *plugin_data);
-} RzInterpreterPlugin;
+} RzInterpPlugin;
 
 typedef enum {
-	RZ_INTERPRETER_IO_READ,
-	RZ_INTERPRETER_IO_WRITE,
-} RzInterpreterIOReqType;
+	RZ_INTERP_IO_READ,
+	RZ_INTERP_IO_WRITE,
+} RzInterpIOReqType;
 
 typedef struct {
-	RzInterpreterIOReqType type;
+	RzInterpIOReqType type;
 	size_t mem_idx; ///< The memory space to read/write.
 	bool big_endian; ///< Set if the data is big endian ordered.
 	const RzBitVector *addr; ///< The address to read/write.
 	const RzBitVector *st_data; ///< The data to store.
 	RzBitVector *ld_data; ///< The bit vector to load into. It is BORROWED.
 	size_t n_bits; ///< The number of bits to read/write.
-} RzInterpreterIORequest;
+} RzInterpIORequest;
 
 typedef struct {
 	bool req_ok; ///< Set to true if IO request succeeded.
-} RzInterpreterIOResult;
+} RzInterpIOResult;
 
 /**
  * \brief The set of required objects for an interpreter to run.
@@ -256,7 +256,7 @@ typedef struct {
 RZ_LIFETIME(RzInquiry)
 struct rz_interpreter_set {
 	// TODO: Move this one into each plugin?
-	RzInterpreterAbstrState *astate; ///< The abstract state of the interpreter.
+	RzInterpAbstrState *astate; ///< The abstract state of the interpreter.
 
 	RzIntpRunState *run_state; ///< The state the interpreter is currently in.
 	/**
@@ -272,18 +272,18 @@ struct rz_interpreter_set {
 	RzAnalysisILVM *il_vm; ///< The RzAnalysisILVM for memory IO.
 
 	RZ_LIFETIME(RzILCache)
-	RZ_BORROW RzThreadQueue /*<const RzInterpreterILOp *>*/ *il_queue; ///< The queue to receive the IL effects.
+	RZ_BORROW RzThreadQueue /*<const RzInterpILOp *>*/ *il_queue; ///< The queue to receive the IL effects.
 	RZ_LIFETIME(RzILCache)
-	RZ_BORROW RzThreadRingBuf /*<RzInterpreterBranch>*/ *il_request_rbuf; ///< The ring buffer to send requests to the cache what address to get the next IL op from.
+	RZ_BORROW RzThreadRingBuf /*<RzInterpBranch>*/ *il_request_rbuf; ///< The ring buffer to send requests to the cache what address to get the next IL op from.
 
-	RzThreadRingBuf /*<RzInterpreterIORequest>*/ *io_request_rbuf; ///< The ring buffer for read/write requests to the IO layer.
-	RzThreadRingBuf /*<const RzInterpreterIOResult *>*/ *io_result_rbuf; ///< The ring buffer for the read/write requests' answers.
+	RzThreadRingBuf /*<RzInterpIORequest>*/ *io_request_rbuf; ///< The ring buffer for read/write requests to the IO layer.
+	RzThreadRingBuf /*<const RzInterpIOResult *>*/ *io_result_rbuf; ///< The ring buffer for the read/write requests' answers.
 
 	/**
 	 * \brief The ring buffers to push the yield of interpretation into.
 	 * These ring buffers are shared with other interpreter sets.
 	 */
-	RZ_BORROW RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM];
+	RZ_BORROW RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM];
 	/**
 	 * \brief Ignored address ranges.
 	 */
@@ -291,7 +291,7 @@ struct rz_interpreter_set {
 	/**
 	 * \brief The interpreter plugin.
 	 */
-	RzInterpreterPlugin *plugin;
+	RzInterpPlugin *plugin;
 	/**
 	 * \brief The private data of a single interpreter thread.
 	 */
@@ -306,29 +306,29 @@ RZ_API const char *rz_intp_run_state_flag_str(RzIntpRunStateFlag flag);
 
 RZ_IPI void rz_intp_run_state_set(RZ_BORROW RZ_NONNULL RzIntpRunState *state, RzIntpRunStateFlag flag);
 
-RZ_API void rz_interpreter_yield_rbuf_free(RZ_OWN RZ_NULLABLE RzInterpreterYieldRBuf *yield_rbuf);
+RZ_API void rz_interpreter_yield_rbuf_free(RZ_OWN RZ_NULLABLE RzInterpYieldRBuf *yield_rbuf);
 
-RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
+RZ_API RZ_OWN RzInterpAbstrState *rz_interpreter_abstr_state_new(
 	const char *arch_name,
-	RzInterpreterAbstraction kinds,
+	RzInterpAbstraction kinds,
 	RZ_OWN RZ_NONNULL RzAnalysisILConfig *il_config,
 	RZ_NULLABLE const RzILRegBinding *reg_bindings);
-RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpreterAbstrState *state);
+RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpAbstrState *state);
 
-RZ_API RZ_OWN RzInterpreterYieldRBuf *rz_interpreter_yield_rbuf_new(RzInterpreterYieldKind kind,
-	RzInterpreterYieldFilter filter,
+RZ_API RZ_OWN RzInterpYieldRBuf *rz_interpreter_yield_rbuf_new(RzInterpYieldKind kind,
+	RzInterpYieldFilter filter,
 	RZ_OWN RZ_NULLABLE void *filter_data);
 
-RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
+RZ_API RZ_OWN RzInterpSet *rz_interpreter_set_new(
 	RzAnalysis *analysis,
-	RZ_NONNULL RZ_OWN RzInterpreterPlugin *plugin,
-	RzInterpreterAbstraction abstraction,
+	RZ_NONNULL RZ_OWN RzInterpPlugin *plugin,
+	RzInterpAbstraction abstraction,
 	RZ_NONNULL RZ_BORROW RzThreadRingBuf *il_request_rbuf,
 	RZ_NONNULL RZ_BORROW RzThreadQueue *il_queue,
-	RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM],
+	RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM],
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code);
-RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset);
+RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpSet *iset);
 
-RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset);
+RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpSet *iset);
 
 #endif // RZ_INTERPRETER

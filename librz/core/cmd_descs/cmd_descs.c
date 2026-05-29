@@ -43,6 +43,7 @@ static const RzCmdDescDetail compare_and_set_core_num_value_details[2];
 static const RzCmdDescDetail exec_cmd_if_core_num_value_positive_details[2];
 static const RzCmdDescDetail exec_cmd_if_core_num_value_negative_details[2];
 static const RzCmdDescDetail push_escaped_details[3];
+static const RzCmdDescDetail inquiry_interpreter_prototype_details[2];
 static const RzCmdDescDetail analysis_all_esil_details[2];
 static const RzCmdDescDetail analyze_all_preludes_details[2];
 static const RzCmdDescDetail analysis_functions_merge_details[2];
@@ -251,7 +252,7 @@ static const RzCmdDescArg input_msg_args[2];
 static const RzCmdDescArg input_conditional_args[2];
 static const RzCmdDescArg get_addr_references_args[2];
 static const RzCmdDescArg push_escaped_args[2];
-static const RzCmdDescArg inquiry_interpreter_prototype_args[2];
+static const RzCmdDescArg inquiry_interpreter_prototype_args[3];
 static const RzCmdDescArg analysis_all_esil_args[2];
 static const RzCmdDescArg analyze_all_consecutive_functions_in_section_args[2];
 static const RzCmdDescArg analyze_xrefs_section_bytes_args[2];
@@ -4053,7 +4054,24 @@ static const RzCmdDescHelp analyze_everything_experimental_help = {
 static const RzCmdDescHelp aaaaI_help = {
 	.summary = "New RzInquiry analysis.",
 };
+static const RzCmdDescDetailEntry inquiry_interpreter_prototype_Examples_detail_entries[] = {
+	{ .text = "aaaaIp", .arg_str = "", .comment = "Run prototype RzIL analysis detecting cross references." },
+	{ .text = "aaaaIp", .arg_str = " 0x1000", .comment = "Run prototype RzIL analysis starting at address 0x1000." },
+	{ .text = "aaaaIp", .arg_str = " -f", .comment = "Run prototype RzIL analysis with function detection." },
+	{ 0 },
+};
+static const RzCmdDescDetail inquiry_interpreter_prototype_details[] = {
+	{ .name = "Examples", .entries = inquiry_interpreter_prototype_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg inquiry_interpreter_prototype_args[] = {
+	{
+		.name = "f",
+		.type = RZ_CMD_ARG_TYPE_OPTION,
+		.flags = RZ_CMD_ARG_FLAG_OPTION,
+		.default_value = "0",
+
+	},
 	{
 		.name = "entry_points",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
@@ -4065,6 +4083,7 @@ static const RzCmdDescArg inquiry_interpreter_prototype_args[] = {
 };
 static const RzCmdDescHelp inquiry_interpreter_prototype_help = {
 	.summary = "Abstract Interpreter Prototype",
+	.details = inquiry_interpreter_prototype_details,
 	.args = inquiry_interpreter_prototype_args,
 };
 

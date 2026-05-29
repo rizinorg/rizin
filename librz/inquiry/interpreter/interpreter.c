@@ -16,7 +16,7 @@
 #include <rz_vector.h>
 #include <rz_util.h>
 
-RZ_API void rz_interpreter_yield_rbuf_free(RZ_OWN RZ_NULLABLE RzInterpreterYieldRBuf *yield_rbufs) {
+RZ_API void rz_interpreter_yield_rbuf_free(RZ_OWN RZ_NULLABLE RzInterpYieldRBuf *yield_rbufs) {
 	if (!yield_rbufs) {
 		return;
 	}
@@ -30,10 +30,10 @@ RZ_API void rz_interpreter_yield_rbuf_free(RZ_OWN RZ_NULLABLE RzInterpreterYield
 	free(yield_rbufs);
 }
 
-RZ_API RZ_OWN RzInterpreterYieldRBuf *rz_interpreter_yield_rbuf_new(RzInterpreterYieldKind kind,
-	RzInterpreterYieldFilter filter,
+RZ_API RZ_OWN RzInterpYieldRBuf *rz_interpreter_yield_rbuf_new(RzInterpYieldKind kind,
+	RzInterpYieldFilter filter,
 	RZ_OWN RZ_NULLABLE void *filter_data) {
-	RzInterpreterYieldRBuf *yield_rbufs = RZ_NEW0(RzInterpreterYieldRBuf);
+	RzInterpYieldRBuf *yield_rbufs = RZ_NEW0(RzInterpYieldRBuf);
 	if (!yield_rbufs) {
 		return NULL;
 	}
@@ -42,18 +42,18 @@ RZ_API RZ_OWN RzInterpreterYieldRBuf *rz_interpreter_yield_rbuf_new(RzInterprete
 	default:
 		rz_warn_if_reached();
 		return NULL;
-	case RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE:
-		rbuf = rz_th_ring_buf_new(RZ_INTERPRETER_YIELD_RBUF_SIZE, sizeof(RzAnalysisCallCandidate));
+	case RZ_INTERP_YIELD_KIND_CALL_CANDIDATE:
+		rbuf = rz_th_ring_buf_new(RZ_INTERP_YIELD_RBUF_SIZE, sizeof(RzAnalysisCallCandidate));
 		break;
-	case RZ_INTERPRETER_YIELD_KIND_CONTROL_FLOW:
-		rbuf = rz_th_ring_buf_new(RZ_INTERPRETER_YIELD_RBUF_SIZE, sizeof(RzInterpreterCtrlFlow));
+	case RZ_INTERP_YIELD_KIND_CONTROL_FLOW:
+		rbuf = rz_th_ring_buf_new(RZ_INTERP_YIELD_RBUF_SIZE, sizeof(RzInterpCtrlFlow));
 		break;
-	case RZ_INTERPRETER_YIELD_KIND_XREF:
+	case RZ_INTERP_YIELD_KIND_XREF:
 		if (filter_data) {
-			yield_rbufs->filter_data = RZ_NEW0(RzInterpreterYieldFilterData);
+			yield_rbufs->filter_data = RZ_NEW0(RzInterpYieldFilterData);
 			yield_rbufs->filter_data->io_boundaries = filter_data;
 		}
-		rbuf = rz_th_ring_buf_new(RZ_INTERPRETER_YIELD_RBUF_SIZE, sizeof(RzAnalysisXRef));
+		rbuf = rz_th_ring_buf_new(RZ_INTERP_YIELD_RBUF_SIZE, sizeof(RzAnalysisXRef));
 		if (!rbuf) {
 			rz_pvector_free(filter_data);
 			return NULL;
@@ -74,19 +74,19 @@ RZ_API RZ_OWN RzInterpreterYieldRBuf *rz_interpreter_yield_rbuf_new(RzInterprete
  * \brief Initializes an abstract state for specified abstract kinds. Optionally with a list of registers.
  * The register name list should always be given if the architecture has some.
  */
-RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
+RZ_API RZ_OWN RzInterpAbstrState *rz_interpreter_abstr_state_new(
 	const char *arch_name,
-	RzInterpreterAbstraction kinds,
+	RzInterpAbstraction kinds,
 	RZ_OWN RZ_NONNULL RzAnalysisILConfig *il_config,
 	RZ_NULLABLE const RzILRegBinding *reg_bindings) {
 	rz_return_val_if_fail(il_config && reg_bindings, NULL);
-	RzInterpreterAbstrState *state = RZ_NEW0(RzInterpreterAbstrState);
+	RzInterpAbstrState *state = RZ_NEW0(RzInterpAbstrState);
 	if (!state) {
 		return NULL;
 	}
 	state->arch_name = arch_name;
 	state->kinds = kinds;
-	state->pc = RZ_NEW0(RzInterpreterAbstrVal);
+	state->pc = RZ_NEW0(RzInterpAbstrVal);
 	if (!state->pc) {
 		return NULL;
 	}
@@ -95,7 +95,7 @@ RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
 	state->globals = ht_up_new(NULL, free);
 	for (size_t i = 0; i < reg_bindings->regs_count; i++) {
 		const char *rname = reg_bindings->regs[i].name;
-		RzInterpreterAbstrVal *aval = RZ_NEW0(RzInterpreterAbstrVal);
+		RzInterpAbstrVal *aval = RZ_NEW0(RzInterpAbstrVal);
 		if (!aval) {
 			ht_up_free(state->globals);
 			ht_up_free(state->var_name_hashes);
@@ -103,7 +103,7 @@ RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
 			return NULL;
 		}
 
-		aval->kind = RZ_INTERPRETER_ABSTRACTION_UNDEF;
+		aval->kind = RZ_INTERP_ABSTRACTION_UNDEF;
 		ut64 djb2_reg_hash = rz_str_djb2_hash(rname);
 		if (!ht_up_insert(state->globals, djb2_reg_hash, aval) ||
 			!ht_up_insert(state->var_name_hashes, djb2_reg_hash, rz_str_dup(rname))) {
@@ -119,7 +119,7 @@ RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
 	return state;
 }
 
-RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpreterAbstrState *state) {
+RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpAbstrState *state) {
 	if (!state) {
 		return;
 	}
@@ -144,7 +144,7 @@ RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpreterAbst
 	free(state);
 }
 
-RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset) {
+RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpSet *iset) {
 	if (!iset) {
 		return;
 	}
@@ -183,9 +183,9 @@ static bool setup_ipc_objects(
 	// Setup the IO queues. Each interpreter instance needs it's own queue at
 	// for writing IO. Because the writing is done on the IO cache, and each
 	// instance needs its own cache.
-	*io_request_rbuf = rz_th_ring_buf_new(RZ_INTERPRETER_IO_RBUF_SIZE, sizeof(RzInterpreterIORequest));
-	*io_result_rbuf = rz_th_ring_buf_new(RZ_INTERPRETER_IO_RBUF_SIZE, sizeof(RzInterpreterIOResult));
-	*entry_points = rz_th_ring_buf_new(RZ_INTERPRETER_ENTRY_POINTS_RBUF_SIZE, sizeof(ut64));
+	*io_request_rbuf = rz_th_ring_buf_new(RZ_INTERP_IO_RBUF_SIZE, sizeof(RzInterpIORequest));
+	*io_result_rbuf = rz_th_ring_buf_new(RZ_INTERP_IO_RBUF_SIZE, sizeof(RzInterpIOResult));
+	*entry_points = rz_th_ring_buf_new(RZ_INTERP_ENTRY_POINTS_RBUF_SIZE, sizeof(ut64));
 	if (!*io_request_rbuf || !*io_result_rbuf || !*entry_points) {
 		rz_warn_if_reached();
 		goto error_free;
@@ -201,16 +201,16 @@ error_free:
 }
 
 /**
- * \brief Initializes a new RzInterpreterSet and returns it.
+ * \brief Initializes a new RzInterpSet and returns it.
  * If it fails, all arguments are freed.
  */
-RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
+RZ_API RZ_OWN RzInterpSet *rz_interpreter_set_new(
 	RzAnalysis *analysis,
-	RZ_NONNULL RZ_OWN RzInterpreterPlugin *plugin,
-	RzInterpreterAbstraction abstraction,
+	RZ_NONNULL RZ_OWN RzInterpPlugin *plugin,
+	RzInterpAbstraction abstraction,
 	RZ_NONNULL RZ_BORROW RzThreadRingBuf *il_request_rbuf,
 	RZ_NONNULL RZ_BORROW RzThreadQueue *il_queue,
-	RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM],
+	RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM],
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
 	rz_return_val_if_fail(plugin && ignored_code && analysis && il_request_rbuf && il_queue, NULL);
 
@@ -219,7 +219,7 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 		return NULL;
 	}
 
-	RzInterpreterSet *iset = RZ_NEW0(RzInterpreterSet);
+	RzInterpSet *iset = RZ_NEW0(RzInterpSet);
 	if (!iset) {
 		return NULL;
 	}
@@ -244,7 +244,7 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 
 	const RzAnalysisPlugin *cur = rz_analysis_plugin_current(analysis);
 	RzAnalysisILConfig *config = cur->il_config(analysis);
-	RzInterpreterAbstrState *state = rz_interpreter_abstr_state_new(
+	RzInterpAbstrState *state = rz_interpreter_abstr_state_new(
 		cur->arch,
 		abstraction,
 		config,
@@ -273,9 +273,9 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	iset->il_queue = il_queue;
 	iset->il_request_rbuf = il_request_rbuf;
 	iset->entry_points = entry_points;
-	iset->yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF] = yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF];
-	iset->yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE] = yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE];
-	iset->yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CONTROL_FLOW] = yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CONTROL_FLOW];
+	iset->yield_rbufs[RZ_INTERP_YIELD_KIND_XREF] = yield_rbufs[RZ_INTERP_YIELD_KIND_XREF];
+	iset->yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE] = yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE];
+	iset->yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW] = yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW];
 	iset->io_request_rbuf = io_request_rbuf;
 	iset->io_result_rbuf = io_result_rbuf;
 	iset->run_state_sync = rz_th_sem_new(0);
@@ -295,11 +295,11 @@ static bool jumps_to_ignored_code(const RzVector *v, ut64 jump_target) {
 }
 
 typedef struct {
-	RzInterpreterCtrlFlow ctrl_flow;
+	RzInterpCtrlFlow ctrl_flow;
 	ut64 in_state_hash;
 } SuccessorState;
 
-static bool choose_next_pc(RzInterpreterSet *iset,
+static bool choose_next_pc(RzInterpSet *iset,
 	ut64 out_hash,
 	RzVector *tmp_succ_addr,
 	RzVector *succ_states,
@@ -324,7 +324,7 @@ static bool choose_next_pc(RzInterpreterSet *iset,
 	has_succsessor = !rz_vector_empty(tmp_succ_addr);
 	// Request the successor effects over the queue.
 	while (!rz_vector_empty(tmp_succ_addr)) {
-		RzInterpreterCtrlFlow cf = { 0 };
+		RzInterpCtrlFlow cf = { 0 };
 		rz_vector_pop_front(tmp_succ_addr, &cf);
 		if (cf.target_addr == UT64_MAX || cf.target_addr == 0) {
 			RZ_LOG_DEBUG("interpreter: Quit due to invalid PC.\n");
@@ -358,7 +358,7 @@ static bool choose_next_pc(RzInterpreterSet *iset,
  * \brief Set entry point and reset (clean) the vectors and sets.
  */
 static bool reset_intrpr_state(
-	RzInterpreterSet *iset,
+	RzInterpSet *iset,
 	ut64 entry_point,
 	RzVector **tmp_succ_addr,
 	RzSetU **reachable_states,
@@ -373,7 +373,7 @@ static bool reset_intrpr_state(
 		return false;
 	}
 
-	*tmp_succ_addr = rz_vector_new(sizeof(RzInterpreterCtrlFlow), NULL, NULL);
+	*tmp_succ_addr = rz_vector_new(sizeof(RzInterpCtrlFlow), NULL, NULL);
 	*succ_states = rz_vector_new(sizeof(SuccessorState), NULL, NULL);
 	*reachable_states = rz_set_u_new();
 	if (!tmp_succ_addr || !succ_states || !reachable_states) {
@@ -386,14 +386,14 @@ static bool reset_intrpr_state(
 /**
  * Main interpretation.
  */
-RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
+RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpSet *iset) {
 	rz_return_val_if_fail(iset &&
 			iset->astate &&
 			iset->il_request_rbuf &&
 			iset->il_queue &&
-			iset->yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF] &&
-			iset->yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE] &&
-			iset->yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CONTROL_FLOW] &&
+			iset->yield_rbufs[RZ_INTERP_YIELD_KIND_XREF] &&
+			iset->yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE] &&
+			iset->yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW] &&
 			iset->run_state_sync &&
 			iset->plugin &&
 			iset->plugin->eval &&
@@ -406,7 +406,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	bool success = true;
 
 	RZ_LOG_DEBUG("interpreter: Main: Hello.\n");
-	RzInterpreterPlugin *plugin = iset->plugin;
+	RzInterpPlugin *plugin = iset->plugin;
 
 	//
 	// Start interpretation
@@ -508,7 +508,7 @@ EMU: {
 	// Now we know the size of the destination block.
 	// Set it and report the control flow change.
 	next.ctrl_flow.target_block_size = il_bb->size;
-	RzThreadRingBuf *cf_rbuf = iset->yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CONTROL_FLOW]->rbuf;
+	RzThreadRingBuf *cf_rbuf = iset->yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW]->rbuf;
 	if (rz_th_ring_buf_put(cf_rbuf, &next.ctrl_flow) != RZ_THREAD_RING_BUF_OK) {
 		return false;
 	}
@@ -519,7 +519,7 @@ EMU: {
 		goto CLEAN;
 	}
 
-	// Loop back. Interpret next basic block.
+	// Loop back. Interpret next block.
 	goto EMU;
 }
 

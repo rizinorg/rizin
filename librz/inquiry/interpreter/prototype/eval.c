@@ -11,7 +11,7 @@
 #include <rz_util/rz_bitvector.h>
 
 bool report_yield_xref(
-	RzInterpreterSet *iset,
+	RzInterpSet *iset,
 	size_t insn_pkt_size,
 	ut64 from,
 	const ProtoIntrprAbstrData *to,
@@ -33,7 +33,7 @@ bool report_yield_xref(
 		return true;
 	}
 
-	RzInterpreterYieldRBuf *yrbuf = iset->yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF];
+	RzInterpYieldRBuf *yrbuf = iset->yield_rbufs[RZ_INTERP_YIELD_KIND_XREF];
 	rz_return_val_if_fail(yrbuf, false);
 
 	ut64 to_addr = rz_bv_to_ut64(to->bv);
@@ -55,9 +55,9 @@ bool report_yield_xref(
  * \brief Report the store of the next PC and report it as possible return point.
  */
 bool report_yield_call_candiate(
-	RzInterpreterSet *iset,
+	RzInterpSet *iset,
 	ProtoIntrprPluginData *plugin_data) {
-	RzInterpreterYieldRBuf *cc_rbuf = iset->yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE];
+	RzInterpYieldRBuf *cc_rbuf = iset->yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE];
 	rz_return_val_if_fail(cc_rbuf, false);
 
 	RzAnalysisCallCandidate cc = { 0 };
@@ -75,7 +75,7 @@ void copy_abstr_data(ProtoIntrprAbstrData *dst, const ProtoIntrprAbstrData *src)
 	dst->is_concrete = src->is_concrete;
 }
 
-void write_var_to_state(RzInterpreterSet *iset,
+void write_var_to_state(RzInterpSet *iset,
 	RzILVarKind kind,
 	ut64 var_id,
 	const ProtoIntrprAbstrData *data) {
@@ -94,22 +94,22 @@ void write_var_to_state(RzInterpreterSet *iset,
 		ht_vals = iset->astate->lets;
 		break;
 	}
-	RzInterpreterAbstrVal *av = ht_up_find(ht_vals, var_id, NULL);
+	RzInterpAbstrVal *av = ht_up_find(ht_vals, var_id, NULL);
 	if (!av) {
 		if (kind == RZ_IL_VAR_KIND_GLOBAL) {
 			RZ_LOG_WARN("New global variable created: 0x%" PFMT64x "\n", var_id)
 		}
-		av = RZ_NEW0(RzInterpreterAbstrVal);
+		av = RZ_NEW0(RzInterpAbstrVal);
 		ht_up_insert(ht_vals, var_id, av);
 	}
 	if (!av->abstr_data) {
-		av->kind = RZ_INTERPRETER_ABSTRACTION_CONST;
+		av->kind = RZ_INTERP_ABSTRACTION_CONST;
 		av->abstr_data = adata_new();
 	}
 	copy_abstr_data(av->abstr_data, data);
 }
 
-bool read_var_from_state(RzInterpreterSet *iset,
+bool read_var_from_state(RzInterpSet *iset,
 	RzILVarKind kind,
 	ut64 var_id,
 	RZ_OUT ProtoIntrprAbstrData *data) {
@@ -128,7 +128,7 @@ bool read_var_from_state(RzInterpreterSet *iset,
 		ht_vals = iset->astate->lets;
 		break;
 	}
-	RzInterpreterAbstrVal *av = ht_up_find(ht_vals, var_id, NULL);
+	RzInterpAbstrVal *av = ht_up_find(ht_vals, var_id, NULL);
 	if (!av || !av->abstr_data) {
 		// Variable doesn't exist.
 		// This should never happen and is a bug.
@@ -145,7 +145,7 @@ bool read_var_from_state(RzInterpreterSet *iset,
 // TODO: The assumption that true != 0 is invalid.
 // It depends on the architecture and must be decided by the RzArch plugin.
 // State is passed due to this here as well. To make later refactoring easier.
-bool abstr_is_true(const RzInterpreterSet *iset, const ProtoIntrprAbstrData *data) {
+bool abstr_is_true(const RzInterpSet *iset, const ProtoIntrprAbstrData *data) {
 	if (!data->is_concrete) {
 		return false;
 	}
@@ -153,7 +153,7 @@ bool abstr_is_true(const RzInterpreterSet *iset, const ProtoIntrprAbstrData *dat
 }
 
 bool store_abstr_data(
-	RzInterpreterSet *iset,
+	RzInterpSet *iset,
 	RzILMemIndex mem_idx,
 	const ProtoIntrprAbstrData *addr,
 	const ProtoIntrprAbstrData *src) {
@@ -161,12 +161,12 @@ bool store_abstr_data(
 		// Really don't write?
 		return true;
 	}
-	RzInterpreterIORequest io_req = { 0 };
+	RzInterpIORequest io_req = { 0 };
 	io_req.n_bits = rz_bv_len(src->bv);
 	io_req.mem_idx = mem_idx;
 	io_req.big_endian = iset->astate->il_config->big_endian;
 
-	io_req.type = RZ_INTERPRETER_IO_WRITE;
+	io_req.type = RZ_INTERP_IO_WRITE;
 	io_req.addr = addr->bv;
 	io_req.st_data = src->bv;
 
@@ -178,7 +178,7 @@ bool store_abstr_data(
 		return false;
 	}
 
-	RzInterpreterIOResult io_res = { 0 };
+	RzInterpIOResult io_res = { 0 };
 	if (rz_th_ring_buf_take_blocking(iset->io_result_rbuf, &io_res) != RZ_THREAD_RING_BUF_OK) {
 		return false;
 	}
@@ -186,14 +186,14 @@ bool store_abstr_data(
 }
 
 bool load_abstr_data(
-	RzInterpreterSet *iset,
+	RzInterpSet *iset,
 	RzILMemIndex mem_idx,
 	const ProtoIntrprAbstrData *addr,
 	size_t n_bits,
 	RZ_OUT ProtoIntrprAbstrData *out) {
-	RzInterpreterIORequest io_req = { 0 };
+	RzInterpIORequest io_req = { 0 };
 	rz_bv_cast_inplace(out->bv, n_bits, 0);
-	io_req.type = RZ_INTERPRETER_IO_READ;
+	io_req.type = RZ_INTERP_IO_READ;
 	io_req.addr = addr->bv;
 	io_req.ld_data = out->bv;
 	io_req.mem_idx = mem_idx;
@@ -202,7 +202,7 @@ bool load_abstr_data(
 	if (rz_th_ring_buf_put(iset->io_request_rbuf, &io_req) != RZ_THREAD_RING_BUF_OK) {
 		return false;
 	}
-	RzInterpreterIOResult io_res = { 0 };
+	RzInterpIOResult io_res = { 0 };
 	if (rz_th_ring_buf_take_blocking(iset->io_result_rbuf, &io_res) != RZ_THREAD_RING_BUF_OK) {
 		return false;
 	}
@@ -220,7 +220,7 @@ bool load_abstr_data(
 	return true;
 }
 
-bool set_abstr_pc(RzInterpreterAbstrState *state, ProtoIntrprAbstrData *pc,
+bool set_abstr_pc(RzInterpAbstrState *state, ProtoIntrprAbstrData *pc,
 	void *plugin_data) {
 	rz_return_val_if_fail(state && pc, false);
 	ProtoIntrprPluginData *pdata = plugin_data;
@@ -236,7 +236,7 @@ bool set_abstr_pc(RzInterpreterAbstrState *state, ProtoIntrprAbstrData *pc,
 	return true;
 }
 
-bool set_pc(RzInterpreterAbstrState *state, ut64 pc,
+bool set_pc(RzInterpAbstrState *state, ut64 pc,
 	void *plugin_data) {
 	rz_return_val_if_fail(state, false);
 	ProtoIntrprPluginData *pdata = plugin_data;
