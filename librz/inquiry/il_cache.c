@@ -154,7 +154,7 @@ RZ_API RZ_OWN RzILCacheBlock *rz_il_cache_lift_il_block(const RzILCache *cache, 
 		}
 		if (rz_analysis_op(cache->analysis, &op, addr, buf, max_read_size,
 			    RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_INSN_PKT) <= 0) {
-			RZ_LOG_ERROR("Failed to decode IL op\n");
+			RZ_LOG_DEBUG("Failed to decode IL op\n");
 			goto fail;
 		}
 		bool lifted = true;
@@ -251,7 +251,7 @@ static bool lift_executable_maps(RzILCache *cache) {
 		while (addr < sec->vaddr + sec->vsize) {
 			const RzILCacheBlock *block = lift_il_block(cache, addr);
 			if (!block) {
-				RZ_LOG_WARN("Failed to lift IL block at 0x%" PFMT64x
+				RZ_LOG_INFO("Failed to lift IL block at 0x%" PFMT64x
 					    " - Stop lifting section '%s'\n",
 					addr, sec->name);
 				break;
@@ -294,7 +294,7 @@ RZ_API bool rz_il_cache_serve(RZ_NONNULL RzILCache *cache) {
 					rz_th_queue_push(serve_queue, (void *)block, true);
 				} else {
 					rz_th_queue_push(serve_queue, RZ_IL_CACHE_FAILED_LIFTING_PTR, true);
-					RZ_LOG_WARN("Failed to lift IL block at 0x%" PFMT64x "\n", req_addr);
+					RZ_LOG_DEBUG("Failed to lift IL block at 0x%" PFMT64x "\n", req_addr);
 				}
 			}
 		}
