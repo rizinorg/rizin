@@ -7,7 +7,7 @@
 #include "rz_util/rz_graph.h"
 #include "rz_util/rz_iterator.h"
 #include "rz_vector.h"
-#include <rz_inquiry/rz_bb_graph.h>
+#include <rz_inquiry/rz_bcfg.h>
 
 static ut64 hash_node(const void *data) {
 	const RzInquiryBlock *bb = data;
@@ -21,48 +21,48 @@ static RZ_OWN char *node_formatter(const RzGraphNode *n) {
 }
 
 static RZ_OWN char *edge_formatter(const RzGraphEdge *e) {
-	RzInquiryBBCFGEdgeType type = (utptr)rz_graph_edge_get_data(e);
+	RzInquiryBCFGEdgeType type = (utptr)rz_graph_edge_get_data(e);
 	switch (type) {
-	case RZ_INQUIRY_BB_CFG_EDGE_TYPE_NONE:
+	case RZ_INQUIRY_BCFG_EDGE_TYPE_NONE:
 		return rz_str_dup("[label=Unknown]");
-	case RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP:
-	case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF:
+	case RZ_INQUIRY_BCFG_EDGE_TYPE_JMP:
+	case RZ_INQUIRY_BCFG_EDGE_TYPE_CF:
 		return NULL;
-	case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL_RET:
+	case RZ_INQUIRY_BCFG_EDGE_TYPE_CALL_RET:
 		return rz_str_dup("[style=dotted label=npc]");
-	case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL:
+	case RZ_INQUIRY_BCFG_EDGE_TYPE_CALL:
 		return rz_str_dup("[style=dotted label=call]");
-	case RZ_INQUIRY_BB_CFG_EDGE_TYPE_RETURN:
+	case RZ_INQUIRY_BCFG_EDGE_TYPE_RETURN:
 		return rz_str_dup("[style=dotted label=ret]");
 	}
 	rz_warn_if_reached();
 	return NULL;
 }
 
-RZ_IPI RZ_OWN char *rz_inquiry_bb_cfg_as_dot(const RzInquiryBBCFG *bb_cfg, RZ_NULLABLE const char *name) {
-	rz_return_val_if_fail(bb_cfg, NULL);
-	return rz_graph_as_dot_str(bb_cfg->graph, name, node_formatter, edge_formatter);
+RZ_IPI RZ_OWN char *rz_inquiry_bcfg_as_dot(const RzInquiryBCFG *bcfg, RZ_NULLABLE const char *name) {
+	rz_return_val_if_fail(bcfg, NULL);
+	return rz_graph_as_dot_str(bcfg->graph, name, node_formatter, edge_formatter);
 }
 
-RZ_IPI RZ_OWN RzInquiryBBCFG *rz_inquiry_bb_cfg_new(RzGraphImplType impl_type) {
-	RzInquiryBBCFG *bb_cfg = RZ_NEW0(RzInquiryBBCFG);
-	if (!bb_cfg) {
+RZ_IPI RZ_OWN RzInquiryBCFG *rz_inquiry_bcfg_new(RzGraphImplType impl_type) {
+	RzInquiryBCFG *bcfg = RZ_NEW0(RzInquiryBCFG);
+	if (!bcfg) {
 		return NULL;
 	}
-	bb_cfg->graph = rz_graph_new(impl_type, hash_node, free, NULL);
-	if (!bb_cfg->graph) {
-		rz_inquiry_bb_cfg_free(bb_cfg);
+	bcfg->graph = rz_graph_new(impl_type, hash_node, free, NULL);
+	if (!bcfg->graph) {
+		rz_inquiry_bcfg_free(bcfg);
 		return NULL;
 	}
-	return bb_cfg;
+	return bcfg;
 }
 
-RZ_IPI void rz_inquiry_bb_cfg_free(RZ_NULLABLE RZ_OWN RzInquiryBBCFG *bb_cfg) {
-	if (!bb_cfg) {
+RZ_IPI void rz_inquiry_bcfg_free(RZ_NULLABLE RZ_OWN RzInquiryBCFG *bcfg) {
+	if (!bcfg) {
 		return;
 	}
-	rz_graph_free(bb_cfg->graph);
-	free(bb_cfg);
+	rz_graph_free(bcfg->graph);
+	free(bcfg);
 }
 
 static bool edge_from(const RzGraphEdge *e, void *addr) {
@@ -70,53 +70,53 @@ static bool edge_from(const RzGraphEdge *e, void *addr) {
 	return rz_graph_node_get_id(rz_graph_edge_get_from(e)) == from_addr;
 }
 
-RZ_IPI bool rz_inquiry_bb_cfg_del_out_edges(RzInquiryBBCFG *cfg, ut64 bb_addr) {
+RZ_IPI bool rz_inquiry_bcfg_del_out_edges(RzInquiryBCFG *cfg, ut64 bb_addr) {
 
 	return rz_graph_del_edges(cfg->graph, edge_from, RZ_GRAPH_INT_AS_DATA(bb_addr));
 }
 
 /**
- * \brief Adds an edge to the basic block CFG.
+ * \brief Adds an edge to the block CFG.
  *
- * \param cfg The basic block CFG to edit.
- * \param from_bb The address of the basic block with the branch.
+ * \param cfg The block CFG to edit.
+ * \param from_bb The address of the block with the branch.
  *                Not the address of the branch instruction!
- * \param to_bb The address of the basic block the branch leads to.
+ * \param to_bb The address of the block the branch leads to.
  * \param type The type of the edge.
  *
  * \return True if edge was added. False for error or if a node doesn't exist.
  */
-RZ_IPI bool rz_inquiry_bb_cfg_add_edge(RzInquiryBBCFG *cfg, ut64 from_bb, ut64 to_bb, RzInquiryBBCFGEdgeType type) {
+RZ_IPI bool rz_inquiry_bcfg_add_edge(RzInquiryBCFG *cfg, ut64 from_bb, ut64 to_bb, RzInquiryBCFGEdgeType type) {
 	return rz_graph_add_edge_by_id(cfg->graph, from_bb, to_bb, RZ_GRAPH_INT_AS_DATA(type));
 }
 
-RZ_IPI bool rz_inquiry_bb_cfg_del_edge(RzInquiryBBCFG *cfg, ut64 from_bb, ut64 to_bb) {
+RZ_IPI bool rz_inquiry_bcfg_del_edge(RzInquiryBCFG *cfg, ut64 from_bb, ut64 to_bb) {
 	return rz_graph_del_edge_by_id(cfg->graph, from_bb, to_bb);
 }
 
 static bool is_cf_edge(const RzGraphEdge *e, void *unused) {
-	RzInquiryBBCFGEdgeType type = (utptr)rz_graph_edge_get_data(e);
-	return type == RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF || type == RZ_INQUIRY_BB_CFG_EDGE_TYPE_NONE;
+	RzInquiryBCFGEdgeType type = (utptr)rz_graph_edge_get_data(e);
+	return type == RZ_INQUIRY_BCFG_EDGE_TYPE_CF || type == RZ_INQUIRY_BCFG_EDGE_TYPE_NONE;
 }
 
 /**
- * \brief Updates or adds an edge to the basic block CFG.
- * Only edges of type RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF are updated to \p type.
+ * \brief Updates or adds an edge to the block CFG.
+ * Only edges of type RZ_INQUIRY_BCFG_EDGE_TYPE_CF are updated to \p type.
  * Otherwise the edge is not updated.
  *
- * \param cfg The basic block CFG to edit.
- * \param from_bb The address of the basic block with the branch.
+ * \param cfg The block CFG to edit.
+ * \param from_bb The address of the block with the branch.
  *                Not the address of the branch instruction!
- * \param to_bb The address of the basic block the branch leads to.
+ * \param to_bb The address of the block the branch leads to.
  * \param type The type of the edge.
  *
  * \return True if edge was added. False in case of error.
  */
-RZ_IPI bool rz_inquiry_bb_cfg_update_edge(RzInquiryBBCFG *cfg, ut64 from_bb, ut64 to_bb, RzInquiryBBCFGEdgeType type) {
+RZ_IPI bool rz_inquiry_bcfg_update_edge(RzInquiryBCFG *cfg, ut64 from_bb, ut64 to_bb, RzInquiryBCFGEdgeType type) {
 	return rz_graph_update_edge_by_id(cfg->graph, from_bb, to_bb, RZ_GRAPH_INT_AS_DATA(type), is_cf_edge, NULL);
 }
 
-RZ_IPI bool rz_inquiry_bb_cfg_get_basic_block(const RzInquiryBBCFG *cfg, ut64 bb_addr, RZ_OUT RZ_NULLABLE RzInquiryBlock *bb) {
+RZ_IPI bool rz_inquiry_bcfg_get_block(const RzInquiryBCFG *cfg, ut64 bb_addr, RZ_OUT RZ_NULLABLE RzInquiryBlock *bb) {
 	rz_return_val_if_fail(cfg, false);
 	const RzGraphNode *n = rz_graph_find_node(cfg->graph, bb_addr);
 	if (!n) {
@@ -134,7 +134,7 @@ RZ_IPI bool rz_inquiry_bb_cfg_get_basic_block(const RzInquiryBBCFG *cfg, ut64 bb
 /**
  * \brief Neighbors of outgoing edges.
  */
-RZ_API RZ_OWN RzIterator /*<RzGraphEdge *>*/ *rz_inquiry_bb_cfg_get_outgoing_edges(const RzInquiryBBCFG *cfg, ut64 bb_addr) {
+RZ_API RZ_OWN RzIterator /*<RzGraphEdge *>*/ *rz_inquiry_bcfg_get_outgoing_edges(const RzInquiryBCFG *cfg, ut64 bb_addr) {
 	rz_return_val_if_fail(cfg, NULL);
 	return rz_graph_out_edges_by_id(cfg->graph, bb_addr);
 }
@@ -142,7 +142,7 @@ RZ_API RZ_OWN RzIterator /*<RzGraphEdge *>*/ *rz_inquiry_bb_cfg_get_outgoing_edg
 /**
  * \brief Neighbors of incoming edges.
  */
-RZ_API RZ_OWN RzIterator /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_incoming_edges(const RzInquiryBBCFG *cfg, ut64 bb_addr) {
+RZ_API RZ_OWN RzIterator /*<RzGraphNode *>*/ *rz_inquiry_bcfg_get_incoming_edges(const RzInquiryBCFG *cfg, ut64 bb_addr) {
 	rz_return_val_if_fail(cfg, NULL);
 	return rz_graph_in_edges_by_id(cfg->graph, bb_addr);
 }
@@ -151,7 +151,7 @@ RZ_API RZ_OWN RzIterator /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_incoming_edg
  * \brief Does not update the BB if it is already present.
  * Returns false if it already exists.
  */
-RZ_IPI bool rz_inquiry_bb_cfg_add_block(RzInquiryBBCFG *cfg, ut64 addr, ut64 size) {
+RZ_IPI bool rz_inquiry_bcfg_add_block(RzInquiryBCFG *cfg, ut64 addr, ut64 size) {
 	RzInquiryBlock *bb = RZ_NEW(RzInquiryBlock);
 	if (!bb) {
 		return false;
@@ -173,31 +173,31 @@ RZ_IPI bool rz_inquiry_bb_cfg_add_block(RzInquiryBBCFG *cfg, ut64 addr, ut64 siz
 	return true;
 }
 
-RZ_IPI bool rz_inquiry_bb_cfg_add_xrefs(RzInquiryBBCFG *cfg, const RzVector /*<RzAnalysisXRef>*/ *xrefs) {
+RZ_IPI bool rz_inquiry_bcfg_add_edge_xref(RzInquiryBCFG *cfg, const RzVector /*<RzAnalysisXRef>*/ *xrefs) {
 	RzAnalysisXRef *xref;
 	rz_vector_foreach (xrefs, xref) {
 		switch (xref->type) {
 		case RZ_ANALYSIS_XREF_TYPE_CODE:
-			if (!rz_inquiry_bb_cfg_update_edge(cfg, xref->bb_addr, xref->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP)) {
+			if (!rz_inquiry_bcfg_update_edge(cfg, xref->bb_addr, xref->to, RZ_INQUIRY_BCFG_EDGE_TYPE_JMP)) {
 				RZ_LOG_DEBUG("Did not add JMP edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", xref->bb_addr, xref->to);
 			}
 			break;
 		case RZ_ANALYSIS_XREF_TYPE_CALL:
-			if (!rz_inquiry_bb_cfg_update_edge(cfg, xref->bb_addr, xref->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL)) {
+			if (!rz_inquiry_bcfg_update_edge(cfg, xref->bb_addr, xref->to, RZ_INQUIRY_BCFG_EDGE_TYPE_CALL)) {
 				RZ_LOG_DEBUG("Did not add CALL edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", xref->bb_addr, xref->to);
 			}
 			RzInquiryBlock bb = { 0 };
-			if (!rz_inquiry_bb_cfg_get_basic_block(cfg, xref->bb_addr, &bb)) {
+			if (!rz_inquiry_bcfg_get_block(cfg, xref->bb_addr, &bb)) {
 				rz_warn_if_reached();
 				break;
 			}
 			ut64 ret_addr = bb.addr + bb.size;
-			if (!rz_inquiry_bb_cfg_update_edge(cfg, xref->bb_addr, ret_addr, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL_RET)) {
+			if (!rz_inquiry_bcfg_update_edge(cfg, xref->bb_addr, ret_addr, RZ_INQUIRY_BCFG_EDGE_TYPE_CALL_RET)) {
 				RZ_LOG_DEBUG("Did not add CALL_RET edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", xref->bb_addr, ret_addr);
 			}
 			break;
 		case RZ_ANALYSIS_XREF_TYPE_RETURN:
-			if (!rz_inquiry_bb_cfg_update_edge(cfg, xref->bb_addr, xref->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_RETURN)) {
+			if (!rz_inquiry_bcfg_update_edge(cfg, xref->bb_addr, xref->to, RZ_INQUIRY_BCFG_EDGE_TYPE_RETURN)) {
 				RZ_LOG_DEBUG("Did not add RETURN edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", xref->bb_addr, xref->to);
 			}
 			break;
@@ -281,7 +281,7 @@ static int cmp(const RzInquiryBlock *a, const RzInquiryBlock *b, void *user) {
  * |
  * +--   0x10a0
  */
-RZ_IPI bool rz_inquiry_bb_cfg_reduce(RzInquiryBBCFG *cfg) {
+RZ_IPI bool rz_inquiry_bcfg_reduce(RzInquiryBCFG *cfg) {
 	RzPVector blocks = { 0 };
 	rz_pvector_init(&blocks, NULL);
 	rz_pvector_reserve(&blocks, rz_graph_get_n_nodes(cfg->graph));
@@ -340,7 +340,7 @@ RZ_IPI bool rz_inquiry_bb_cfg_reduce(RzInquiryBBCFG *cfg) {
 				rz_graph_del_edge_by_id(cfg->graph, a->addr, *to);
 			}
 			rz_vector_purge(&outedges);
-			rz_graph_add_edge_by_id(cfg->graph, a->addr, b->addr, RZ_GRAPH_INT_AS_DATA(RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF));
+			rz_graph_add_edge_by_id(cfg->graph, a->addr, b->addr, RZ_GRAPH_INT_AS_DATA(RZ_INQUIRY_BCFG_EDGE_TYPE_CF));
 			// Check for blocks b overlaps with.
 			a = b;
 		}

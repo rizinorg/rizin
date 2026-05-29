@@ -9,7 +9,7 @@
  * \brief Evaluate a pure.
  */
 RZ_IPI bool interpreter_prototype_eval_pure(
-	RzInterpreterSet *iset,
+	RzInterpSet *iset,
 	const RzILOpPure *pure,
 	RZ_OUT ProtoIntrprAbstrData *out,
 	ProtoIntrprPluginData *plugin_data) {

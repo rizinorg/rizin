@@ -14,7 +14,7 @@
 
 #define MAX_INVOCATIONS_PER_BLOCK 3
 
-static bool eval(RZ_NONNULL RzInterpreterSet *iset,
+static bool eval(RZ_NONNULL RzInterpSet *iset,
 	RZ_NONNULL const RzILCacheBlock *il_bb,
 	void *plugin_data) {
 	ProtoIntrprPluginData *pdata = plugin_data;
@@ -57,8 +57,8 @@ static bool eval(RZ_NONNULL RzInterpreterSet *iset,
 	return true;
 }
 
-bool successors(RZ_NONNULL const RzInterpreterAbstrState *state,
-	RZ_NONNULL RZ_OUT RzVector /*<RzInterpreterBranch>*/ *successors,
+bool successors(RZ_NONNULL const RzInterpAbstrState *state,
+	RZ_NONNULL RZ_OUT RzVector /*<RzInterpBranch>*/ *successors,
 	void *plugin_data) {
 	rz_return_val_if_fail(state && successors, false);
 	ProtoIntrprPluginData *pdata = plugin_data;
@@ -74,14 +74,14 @@ bool successors(RZ_NONNULL const RzInterpreterAbstrState *state,
 	}
 
 	ut64 next_pc = rz_bv_to_ut64(apc->bv);
-	RzInterpreterCtrlFlow branch = { 0 };
+	RzInterpCtrlFlow branch = { 0 };
 	branch.target_addr = branch.actual_target = next_pc;
 	branch.src_block_addr = pdata->prev_pc;
 	rz_vector_push(successors, &branch);
 	return true;
 }
 
-static bool init_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_data) {
+static bool init_state(RZ_BORROW RzInterpAbstrState *state, void *plugin_data) {
 	state->pc->abstr_data = RZ_NEW0(ProtoIntrprAbstrData);
 	ProtoIntrprAbstrData *apc = AD(state->pc->abstr_data);
 	apc->bv = rz_bv_new_from_ut64(state->il_config->mem_key_size, 0);
@@ -91,7 +91,7 @@ static bool init_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_da
 	ut64 *k;
 	rz_iterator_foreach(it, k) {
 		ut64 djb2_reg_name = *k;
-		RzInterpreterAbstrVal *av = ht_up_find(state->globals, djb2_reg_name, NULL);
+		RzInterpAbstrVal *av = ht_up_find(state->globals, djb2_reg_name, NULL);
 		rz_return_val_if_fail(av, false);
 		av->abstr_data = RZ_NEW0(ProtoIntrprAbstrData);
 		// Length doesn't matter here. Because the destination is always
@@ -120,7 +120,7 @@ static bool init_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_da
 	return true;
 }
 
-static bool reset_state(RZ_BORROW RzInterpreterAbstrState *state, ut64 entry_point, void *plugin_data) {
+static bool reset_state(RZ_BORROW RzInterpAbstrState *state, ut64 entry_point, void *plugin_data) {
 	ProtoIntrprAbstrData *apc = AD(state->pc->abstr_data);
 	rz_bv_set_from_ut64(apc->bv, entry_point);
 	apc->is_concrete = true;
@@ -129,7 +129,7 @@ static bool reset_state(RZ_BORROW RzInterpreterAbstrState *state, ut64 entry_poi
 	ut64 *k;
 	rz_iterator_foreach(it, k) {
 		ut64 djb2_reg_name = *k;
-		RzInterpreterAbstrVal *av = ht_up_find(state->globals, djb2_reg_name, NULL);
+		RzInterpAbstrVal *av = ht_up_find(state->globals, djb2_reg_name, NULL);
 		rz_bv_set_from_ut64(AD(av->abstr_data)->bv, 0);
 		AD(av->abstr_data)->is_concrete = true;
 		if (state->il_config->init_state) {
@@ -151,7 +151,7 @@ static bool reset_state(RZ_BORROW RzInterpreterAbstrState *state, ut64 entry_poi
 	return true;
 }
 
-static bool fini_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_data) {
+static bool fini_state(RZ_BORROW RzInterpAbstrState *state, void *plugin_data) {
 	ProtoIntrprAbstrData *ad = state->pc->abstr_data;
 	if (ad && ad->bv) {
 		rz_bv_free(ad->bv);
@@ -160,9 +160,9 @@ static bool fini_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_da
 	state->pc->abstr_data = NULL;
 
 	RzIterator *it = ht_up_as_iter(state->globals);
-	RzInterpreterAbstrVal **v;
+	RzInterpAbstrVal **v;
 	rz_iterator_foreach(it, v) {
-		RzInterpreterAbstrVal *av = *v;
+		RzInterpAbstrVal *av = *v;
 		ProtoIntrprAbstrData *ad = av->abstr_data;
 		if (ad && ad->bv) {
 			rz_bv_free(ad->bv);
@@ -174,7 +174,7 @@ static bool fini_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_da
 
 	it = ht_up_as_iter(state->locals);
 	rz_iterator_foreach(it, v) {
-		RzInterpreterAbstrVal *av = *v;
+		RzInterpAbstrVal *av = *v;
 		ProtoIntrprAbstrData *ad = av->abstr_data;
 		if (ad && ad->bv) {
 			rz_bv_free(ad->bv);
@@ -186,7 +186,7 @@ static bool fini_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_da
 
 	it = ht_up_as_iter(state->lets);
 	rz_iterator_foreach(it, v) {
-		RzInterpreterAbstrVal *av = *v;
+		RzInterpAbstrVal *av = *v;
 		ProtoIntrprAbstrData *ad = av->abstr_data;
 		if (ad && ad->bv) {
 			rz_bv_free(ad->bv);
@@ -203,16 +203,16 @@ static bool fini_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_da
  * It is likely not sufficient to prevent collisions.
  * It is also slow.
  */
-static ut64 hash_state(RZ_NONNULL const RzInterpreterAbstrState *state, void *plugin_data) {
+static ut64 hash_state(RZ_NONNULL const RzInterpAbstrState *state, void *plugin_data) {
 	ut64 h = 5381;
 	ProtoIntrprAbstrData *ad = state->pc->abstr_data;
 	if (ad->bv) {
 		h = (h ^ (h << 5)) ^ rz_bv_to_ut64(ad->bv);
 	}
 	RzIterator *it = ht_up_as_iter(state->globals);
-	RzInterpreterAbstrVal **v;
+	RzInterpAbstrVal **v;
 	rz_iterator_foreach(it, v) {
-		RzInterpreterAbstrVal *av = *v;
+		RzInterpAbstrVal *av = *v;
 		ProtoIntrprAbstrData *ad = av->abstr_data;
 		if (ad->bv) {
 			h = (h ^ (h << 5)) ^ rz_bv_to_ut64(ad->bv);
@@ -222,7 +222,7 @@ static ut64 hash_state(RZ_NONNULL const RzInterpreterAbstrState *state, void *pl
 	return h;
 }
 
-bool state_as_str(RZ_NONNULL const RzInterpreterAbstrState *state,
+bool state_as_str(RZ_NONNULL const RzInterpAbstrState *state,
 	RZ_NONNULL RZ_OUT RzStrBuf *sb,
 	void *plugin_data) {
 	rz_return_val_if_fail(state && sb, false);
@@ -238,7 +238,7 @@ bool state_as_str(RZ_NONNULL const RzInterpreterAbstrState *state,
 	ut64 *k;
 	rz_iterator_foreach(it, k) {
 		const char *gname = ht_up_find(state->var_name_hashes, *k, NULL);
-		RzInterpreterAbstrVal *av = ht_up_find(state->globals, *k, NULL);
+		RzInterpAbstrVal *av = ht_up_find(state->globals, *k, NULL);
 		ProtoIntrprAbstrData *ad = av->abstr_data;
 		value = ad->is_concrete ? rz_bv_as_hex_string(ad->bv, true) : rz_str_dup("⊥");
 		rz_strbuf_appendf(sb, "\t%s = %s\n", gname, value);
@@ -292,14 +292,14 @@ bool reset(void *plugin_data) {
 	return true;
 }
 
-static RzInterpreterPlugin rz_interpreter_plugin_prototype = {
+static RzInterpPlugin rz_interpreter_plugin_prototype = {
 	.name = "abstr_int_prototype",
 	.author = "Rot127",
 	.version = "0.1p",
 	.desc = "A prototype interpreter for constant/bottom abstractions.",
 	.license = "LGPL-3.0-only",
-	.supported_abstractions = RZ_INTERPRETER_ABSTRACTION_CONST,
-	.supported_yields = { RZ_INTERPRETER_YIELD_KIND_XREF, RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE },
+	.supported_abstractions = RZ_INTERP_ABSTRACTION_CONST,
+	.supported_yields = { RZ_INTERP_YIELD_KIND_XREF, RZ_INTERP_YIELD_KIND_CALL_CANDIDATE },
 	.init = init,
 	.reset = reset,
 	.fini = fini,

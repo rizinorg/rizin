@@ -10,7 +10,7 @@
 #include "rz_cons.h"
 #include "rz_il/definitions/mem.h"
 #include "rz_il/rz_il_vm.h"
-#include "rz_inquiry/rz_bb_graph.h"
+#include "rz_inquiry/rz_bcfg.h"
 #include "rz_inquiry/rz_il_cache.h"
 #include "rz_inquiry/rz_interpreter.h"
 #include "rz_inquiry_plugins.h"
@@ -86,7 +86,7 @@ RZ_API void rz_inquiry_function_free(RZ_NULLABLE RZ_OWN RzInquiryFunction *fcn) 
 	if (!fcn) {
 		return;
 	}
-	rz_inquiry_bb_cfg_free(fcn->bb_cfg);
+	rz_inquiry_bcfg_free(fcn->bcfg);
 	rz_vector_free(fcn->entry_points);
 	free(fcn);
 }
@@ -96,9 +96,9 @@ RZ_IPI RZ_OWN RzInquiryFunction *rz_inquiry_function_new() {
 	if (!fcn) {
 		return NULL;
 	}
-	fcn->bb_cfg = rz_inquiry_bb_cfg_new(RZ_GRAPH_IMPL_LIST);
+	fcn->bcfg = rz_inquiry_bcfg_new(RZ_GRAPH_IMPL_LIST);
 	fcn->entry_points = rz_vector_new(sizeof(ut64), NULL, NULL);
-	if (!fcn->bb_cfg || !fcn->entry_points) {
+	if (!fcn->bcfg || !fcn->entry_points) {
 		rz_inquiry_function_free(fcn);
 		return NULL;
 	}
@@ -114,7 +114,7 @@ RZ_API RZ_OWN char *rz_inquiry_function_str(const RzInquiryFunction *fcn) {
 		rz_strbuf_appendf(buf, "%s0x%" PFMT64x, (i++ > 0 ? ", " : " "), *it);
 	}
 	rz_strbuf_append(buf, " ]\n");
-	RzIterator *iter = rz_graph_get_nodes(fcn->bb_cfg->graph);
+	RzIterator *iter = rz_graph_get_nodes(fcn->bcfg->graph);
 	RzGraphNode *n;
 	rz_iterator_foreach(iter, n) {
 		const RzInquiryBlock *bb = rz_graph_node_get_data(n);
@@ -133,11 +133,11 @@ RZ_API RZ_OWN RzInquiry *rz_inquiry_new(void) {
 	iq->plugins_data = ht_sp_new(HT_STR_CONST, NULL, NULL);
 	iq->call_candidates = ht_up_new(NULL, free);
 	iq->dynamic_xrefs = rz_vector_new(sizeof(RzAnalysisXRef), NULL, NULL);
-	iq->bb_cfg = rz_inquiry_bb_cfg_new(RZ_GRAPH_IMPL_LIST);
-	if (!iq->plugins || !iq->plugins_data || !iq->bb_cfg) {
+	iq->bcfg = rz_inquiry_bcfg_new(RZ_GRAPH_IMPL_LIST);
+	if (!iq->plugins || !iq->plugins_data || !iq->bcfg) {
 		ht_sp_free(iq->plugins);
 		ht_sp_free(iq->plugins_data);
-		rz_inquiry_bb_cfg_free(iq->bb_cfg);
+		rz_inquiry_bcfg_free(iq->bcfg);
 		free(iq);
 		return NULL;
 	}
@@ -158,7 +158,7 @@ RZ_API void rz_inquiry_free(RZ_OWN RZ_NULLABLE RzInquiry *iq) {
 	ht_sp_free(iq->plugins);
 	ht_sp_free(iq->plugins_data);
 	ht_up_free(iq->call_candidates);
-	rz_inquiry_bb_cfg_free(iq->bb_cfg);
+	rz_inquiry_bcfg_free(iq->bcfg);
 	rz_vector_free(iq->dynamic_xrefs);
 	free(iq);
 }
@@ -196,9 +196,9 @@ RZ_API bool rz_inquiry_xref_interpreter_filter(RZ_NONNULL const RzAnalysisXRef *
 	return false;
 }
 
-static void handle_io_request(RzPVector /*<RzILMem *>*/ *il_mems, RzInterpreterIORequest *io_req, RZ_OUT RzInterpreterIOResult *io_res) {
+static void handle_io_request(RzPVector /*<RzILMem *>*/ *il_mems, RzInterpIORequest *io_req, RZ_OUT RzInterpIOResult *io_res) {
 	RZ_LOG_DEBUG("inquiry: Received IO %s request: mem:%" PFMTSZd " 0x%" PFMT64x "\n",
-		io_req->type == RZ_INTERPRETER_IO_WRITE ? "write" : "read",
+		io_req->type == RZ_INTERP_IO_WRITE ? "write" : "read",
 		io_req->mem_idx,
 		rz_bv_to_ut64(io_req->addr));
 	io_res->req_ok = false;
@@ -213,13 +213,13 @@ static void handle_io_request(RzPVector /*<RzILMem *>*/ *il_mems, RzInterpreterI
 		return;
 	}
 	RzILMem *mem = rz_pvector_at(il_mems, mem_idx);
-	if (io_req->type == RZ_INTERPRETER_IO_READ) {
+	if (io_req->type == RZ_INTERP_IO_READ) {
 		io_res->req_ok = rz_il_mem_loadw_into(mem, io_req->ld_data, io_req->addr, io_req->n_bits, io_req->big_endian);
 	} else {
 		io_res->req_ok = rz_il_mem_storew(mem, io_req->addr, io_req->st_data, io_req->big_endian);
 	}
 	RZ_LOG_DEBUG("inquiry: Sent IO %s result. Success = %s.\n",
-		io_req->type == RZ_INTERPRETER_IO_WRITE ? "write" : "read",
+		io_req->type == RZ_INTERP_IO_WRITE ? "write" : "read",
 		rz_str_bool(io_res->req_ok));
 }
 
@@ -285,23 +285,23 @@ static bool get_branch_targets(RzCore *core, RzSetU *branch_targets) {
 	return true;
 }
 
-static bool log_control_flow(RzInquiry *inquiry, RzInterpreterCtrlFlow *cf) {
+static bool log_control_flow(RzInquiry *inquiry, RzInterpCtrlFlow *cf) {
 	RZ_LOG_DEBUG("inquiry: Received control flow: 0x%" PFMT64x " size: %" PFMTSZu " (alt: 0x%" PFMT64x ")\n",
 		cf->target_addr, cf->target_block_size, cf->alt_target);
-	rz_inquiry_bb_cfg_add_block(inquiry->bb_cfg, cf->actual_target, cf->target_block_size);
+	rz_inquiry_bcfg_add_block(inquiry->bcfg, cf->actual_target, cf->target_block_size);
 	if (cf->alt_target) {
 		// Add a dummy basic block at the address the call originally jumped to.
 		// This is the basic block for the imported function.
-		rz_inquiry_bb_cfg_add_block(inquiry->bb_cfg, cf->target_addr, 1);
+		rz_inquiry_bcfg_add_block(inquiry->bcfg, cf->target_addr, 1);
 	}
 	// Add a simple control flow edge here.
 	// It gets later updated to another type if a reported xref has it.
-	rz_inquiry_bb_cfg_add_edge(inquiry->bb_cfg, cf->src_block_addr, cf->actual_target, cf->type);
+	rz_inquiry_bcfg_add_edge(inquiry->bcfg, cf->src_block_addr, cf->actual_target, cf->type);
 	return true;
 }
 
-static bool handle_yields(RzInquiry *inquiry, RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM]) {
-	RzInterpreterYieldRBuf *rbuf_xrefs = yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF];
+static bool handle_yields(RzInquiry *inquiry, RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM]) {
+	RzInterpYieldRBuf *rbuf_xrefs = yield_rbufs[RZ_INTERP_YIELD_KIND_XREF];
 	rz_return_val_if_fail(rbuf_xrefs, false);
 
 	RzAnalysisXRef xref = { 0 };
@@ -316,9 +316,9 @@ static bool handle_yields(RzInquiry *inquiry, RzInterpreterYieldRBuf *yield_rbuf
 		}
 	}
 
-	RzInterpreterYieldRBuf *rbuf_cf = yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CONTROL_FLOW];
+	RzInterpYieldRBuf *rbuf_cf = yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW];
 	if (!rz_th_ring_buf_is_empty_unsafe(rbuf_cf->rbuf)) {
-		RzInterpreterCtrlFlow cf = { 0 };
+		RzInterpCtrlFlow cf = { 0 };
 		RzThreadRingBufResult r = rz_th_ring_buf_take(rbuf_cf->rbuf, &cf);
 		if (r == RZ_THREAD_RING_BUF_CLOSED) {
 			rz_warn_if_reached();
@@ -328,7 +328,7 @@ static bool handle_yields(RzInquiry *inquiry, RzInterpreterYieldRBuf *yield_rbuf
 		}
 	}
 
-	RzInterpreterYieldRBuf *rbuf_calls = yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE];
+	RzInterpYieldRBuf *rbuf_calls = yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE];
 	rz_return_val_if_fail(rbuf_calls, false);
 
 	RzAnalysisCallCandidate cc = { 0 };
@@ -358,7 +358,7 @@ static bool handle_yields(RzInquiry *inquiry, RzInterpreterYieldRBuf *yield_rbuf
  */
 // TODO: Optimize
 static bool reduce_get_entry_points(
-	RzInterpreterSet *iset,
+	RzInterpSet *iset,
 	RzILCache *il_cache,
 	RZ_BORROW RzSetU /*<ut64>*/ *entry_points) {
 	// Add the next entry point we need to check for executable regions the interpreters did not cover.
@@ -391,7 +391,7 @@ static bool reduce_get_entry_points(
 	return true;
 }
 
-static void close_reset_ipc_obj(RzInterpreterSet *iset) {
+static void close_reset_ipc_obj(RzInterpSet *iset) {
 	// Close and clear all the IPC objects of this interpreter.
 	// This also clears the buffer and queues
 	rz_th_ring_buf_close(iset->io_request_rbuf);
@@ -402,7 +402,7 @@ static void close_reset_ipc_obj(RzInterpreterSet *iset) {
 	rz_list_free(rz_th_queue_pop_all(iset->il_queue));
 }
 
-static void open_ipc_obj(RzInterpreterSet *iset) {
+static void open_ipc_obj(RzInterpSet *iset) {
 	// Open queue again, so the interpretation can start at another
 	// jump target again.
 	rz_th_ring_buf_open(iset->io_request_rbuf);
@@ -432,9 +432,9 @@ static bool collect_entry_points(RzCore *core,
 }
 
 static bool setup_yield_rbufs(
-	RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM],
+	RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM],
 	RZ_OWN RzPVector /*<RzBinSection *>*/ *sections,
-	RzInterpreterYieldFilter yield_filter) {
+	RzInterpYieldFilter yield_filter) {
 	// A single interpreter can produce different yields.
 	// E.g. if the interpreter has a complex abstract memory model
 	// for stack, heap and constant values.
@@ -442,25 +442,25 @@ static bool setup_yield_rbufs(
 	// These yield queues can be shared between different interpreters.
 	// So we have one yield queue for each yield type.
 
-	RzInterpreterYieldKind yield_kind = RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE;
-	RzInterpreterYieldRBuf *rbuf = NULL;
+	RzInterpYieldKind yield_kind = RZ_INTERP_YIELD_KIND_CALL_CANDIDATE;
+	RzInterpYieldRBuf *rbuf = NULL;
 	rbuf = rz_interpreter_yield_rbuf_new(yield_kind, NULL, NULL);
 	if (!rbuf) {
 		rz_warn_if_reached();
 		return false;
 	}
-	yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE] = rbuf;
+	yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE] = rbuf;
 
-	yield_kind = RZ_INTERPRETER_YIELD_KIND_CONTROL_FLOW;
+	yield_kind = RZ_INTERP_YIELD_KIND_CONTROL_FLOW;
 	rbuf = NULL;
 	rbuf = rz_interpreter_yield_rbuf_new(yield_kind, NULL, NULL);
 	if (!rbuf) {
 		rz_warn_if_reached();
 		return false;
 	}
-	yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CONTROL_FLOW] = rbuf;
+	yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW] = rbuf;
 
-	yield_kind = RZ_INTERPRETER_YIELD_KIND_XREF;
+	yield_kind = RZ_INTERP_YIELD_KIND_XREF;
 	rbuf = rz_interpreter_yield_rbuf_new(
 		yield_kind,
 		yield_filter,
@@ -469,13 +469,13 @@ static bool setup_yield_rbufs(
 		rz_warn_if_reached();
 		return false;
 	}
-	yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF] = rbuf;
+	yield_rbufs[RZ_INTERP_YIELD_KIND_XREF] = rbuf;
 	return true;
 }
 
 struct ituple {
 	RzThread *ithread;
-	RzInterpreterSet *iset;
+	RzInterpSet *iset;
 	RzIntpRunStateFlag next_run_state;
 };
 
@@ -488,7 +488,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
 	// All the things we need
 	bool return_code = true;
-	RzInterpreterSet *intp_iset = NULL;
+	RzInterpSet *intp_iset = NULL;
 
 	RzBuffer *io_buf = rz_buf_new_with_io(rz_analysis_get_io_bind(core->analysis));
 	RzSetU *symbol_targets = rz_set_u_new();
@@ -537,9 +537,9 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 	size_t n_threads = 1;
 	iset_map = RZ_NEWS0(struct ituple, n_threads);
 
-	RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM] = { 0 };
+	RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM] = { 0 };
 	if (!setup_yield_rbufs(yield_rbufs, rz_bin_object_get_sections(core->bin->cur->o),
-		    (RzInterpreterYieldFilter)rz_inquiry_xref_interpreter_filter)) {
+		    (RzInterpYieldFilter)rz_inquiry_xref_interpreter_filter)) {
 		return_code = false;
 		rz_warn_if_reached();
 		goto error_free;
@@ -559,7 +559,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		intp_iset = rz_interpreter_set_new(
 			core->analysis,
 			prototype->p_interpreter,
-			RZ_INTERPRETER_ABSTRACTION_CONST,
+			RZ_INTERP_ABSTRACTION_CONST,
 			il_req, il_queue,
 			yield_rbufs,
 			ignored_code);
@@ -594,7 +594,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			user_sent_signal = true;
 			break;
 		}
-		RzInterpreterSet *iset = iset_map[i].iset;
+		RzInterpSet *iset = iset_map[i].iset;
 		RzIntpRunStateFlag expected_rs = iset_map[i].next_run_state;
 
 		switch (rz_intp_run_state_get_unsafe(iset->run_state)) {
@@ -660,14 +660,14 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			// But this requires multiple IO write caches
 			// (one for each interpreter instance).
 			// Because this is not yet implemented, there is only one interpreter thread for now.
-			RzInterpreterIORequest io_req = { 0 };
+			RzInterpIORequest io_req = { 0 };
 			if (!rz_th_ring_buf_is_empty_unsafe(iset->io_request_rbuf)) {
 				RzThreadRingBufResult r = rz_th_ring_buf_take(iset->io_request_rbuf, &io_req);
 				if (r == RZ_THREAD_RING_BUF_CLOSED) {
 					rz_warn_if_reached();
 					goto fatal_error;
 				} else if (r == RZ_THREAD_RING_BUF_OK) {
-					RzInterpreterIOResult io_res = { 0 };
+					RzInterpIOResult io_res = { 0 };
 					handle_io_request(&iset->il_vm->vm->vm_memory, &io_req, &io_res);
 					if (rz_th_ring_buf_put(iset->io_result_rbuf, &io_res) != RZ_THREAD_RING_BUF_OK) {
 						rz_warn_if_reached();
@@ -757,33 +757,33 @@ fatal_error:
 		char *bstr = rz_il_cache_block_str(block);
 		RZ_LOG_DEBUG("inquiry: Add ILCache block: %s\n", bstr);
 		free(bstr);
-		rz_inquiry_bb_cfg_add_block(core->inquiry->bb_cfg, block->addr, block->size);
+		rz_inquiry_bcfg_add_block(core->inquiry->bcfg, block->addr, block->size);
 	}
 	rz_iterator_free(iter);
-	if (!rz_inquiry_bb_cfg_add_xrefs(core->inquiry->bb_cfg, rz_il_cache_get_static_xrefs(il_cache))) {
+	if (!rz_inquiry_bcfg_add_edge_xref(core->inquiry->bcfg, rz_il_cache_get_static_xrefs(il_cache))) {
 		rz_warn_if_reached();
 	}
-	if (!rz_inquiry_bb_cfg_add_xrefs(core->inquiry->bb_cfg, core->inquiry->dynamic_xrefs)) {
+	if (!rz_inquiry_bcfg_add_edge_xref(core->inquiry->bcfg, core->inquiry->dynamic_xrefs)) {
 		rz_warn_if_reached();
 	}
-	char *g = rz_inquiry_bb_cfg_as_dot(core->inquiry->bb_cfg, "not_reduced");
-	printf("%s\n", g);
-	free(g);
-	if (!rz_inquiry_bb_cfg_reduce(core->inquiry->bb_cfg)) {
+	// char *g = rz_inquiry_bcfg_as_dot(core->inquiry->bcfg, "not_reduced");
+	// printf("%s\n", g);
+	// free(g);
+	if (!rz_inquiry_bcfg_reduce(core->inquiry->bcfg)) {
 		rz_warn_if_reached();
 	}
-	g = rz_inquiry_bb_cfg_as_dot(core->inquiry->bb_cfg, "reduced");
-	printf("%s\n", g);
-	free(g);
+	// g = rz_inquiry_bcfg_as_dot(core->inquiry->bcfg, "reduced");
+	// printf("%s\n", g);
+	// free(g);
 
 	RZ_LOG_DEBUG("inquiry: inquiry: inquiry: Done\n");
 
 	rz_config_set(core->config, "io.cache", io_cache_opt);
 
 error_free:
-	rz_interpreter_yield_rbuf_free(yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF]);
-	rz_interpreter_yield_rbuf_free(yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE]);
-	rz_interpreter_yield_rbuf_free(yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CONTROL_FLOW]);
+	rz_interpreter_yield_rbuf_free(yield_rbufs[RZ_INTERP_YIELD_KIND_XREF]);
+	rz_interpreter_yield_rbuf_free(yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE]);
+	rz_interpreter_yield_rbuf_free(yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW]);
 	free(iset_map);
 	rz_set_u_free(entry_points);
 	rz_buf_free(io_buf);
@@ -797,30 +797,34 @@ error_free:
 	return return_code && !user_sent_signal;
 }
 
-static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry, RzPVector *fcns,
+RZ_API bool rz_inquiry_convert_and_add_to_analysis(
+	RzAnalysis *analysis,
+	RzInquiry *inquiry,
+	const RzPVector /*<RzInquiryFunction *>*/ *fcns,
 	const RzPVector /*<RzBinSymbol *>*/ *symbols) {
+	rz_return_val_if_fail(analysis && inquiry && fcns && symbols, false);
 	// Add all discovered binary blocks to analysis
 
-	RzIterator *iter = rz_graph_get_nodes(inquiry->bb_cfg->graph);
+	RzIterator *iter = rz_graph_get_nodes(inquiry->bcfg->graph);
 	RzGraphNode *n;
 	rz_iterator_foreach(iter, n) {
 		const RzInquiryBlock *bb = rz_graph_node_get_data(n);
 		rz_analysis_add_bb(analysis, bb->addr, bb->size);
 		RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, bb->addr);
-		RzIterator *out_edges = rz_inquiry_bb_cfg_get_outgoing_edges(inquiry->bb_cfg, bb->addr);
+		RzIterator *out_edges = rz_inquiry_bcfg_get_outgoing_edges(inquiry->bcfg, bb->addr);
 		if (!out_edges) {
 			continue;
 		}
 		RzGraphEdge *e;
 		rz_iterator_foreach(out_edges, e) {
 			ut64 target = rz_graph_node_get_id(rz_graph_edge_get_to(e));
-			RzInquiryBBCFGEdgeType type = (RzInquiryBBCFGEdgeType)(utptr)rz_graph_edge_get_data(e);
+			RzInquiryBCFGEdgeType type = (RzInquiryBCFGEdgeType)(utptr)rz_graph_edge_get_data(e);
 			switch (type) {
 			default:
 				continue;
-			case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL_RET:
-			case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF:
-			case RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP: {
+			case RZ_INQUIRY_BCFG_EDGE_TYPE_CALL_RET:
+			case RZ_INQUIRY_BCFG_EDGE_TYPE_CF:
+			case RZ_INQUIRY_BCFG_EDGE_TYPE_JMP: {
 				if (abb->jump == UT64_MAX && abb->fail != target) {
 					abb->jump = target;
 				} else if (abb->fail == UT64_MAX && abb->jump != target) {
@@ -868,7 +872,7 @@ static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry
 			continue;
 		}
 
-		RzIterator *iter = rz_graph_get_nodes(fcn->bb_cfg->graph);
+		RzIterator *iter = rz_graph_get_nodes(fcn->bcfg->graph);
 		RzGraphNode *n;
 		rz_iterator_foreach(iter, n) {
 			const RzInquiryBlock *bb = rz_graph_node_get_data(n);
@@ -881,23 +885,25 @@ static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry
 		}
 		rz_iterator_free(iter);
 	}
-	rz_pvector_free(fcns);
 	return true;
 }
 
-RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inquiry, RzSetU *symbol_addresses,
-	const RzPVector /*<RzBinSymbol *>*/ *symbols,
-	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
-	RzPVector *fcns = rz_pvector_new((RzPVectorFree)rz_inquiry_function_free);
+RZ_API bool rz_inquiry_function_deduction(
+	RZ_NONNULL RZ_BORROW RzAnalysis *analysis,
+	RZ_NONNULL RZ_BORROW RzInquiry *inquiry,
+	RZ_NONNULL RZ_BORROW RzSetU *symbol_addresses,
+	RZ_NONNULL const RzPVector /*<RzBinSymbol *>*/ *symbols,
+	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code,
+	RZ_NONNULL RZ_OUT RzPVector /*<RzInquiryFunction *>*/ *inquiry_fcns) {
+	rz_return_val_if_fail(analysis && inquiry && symbol_addresses && symbols && ignored_code && inquiry_fcns, false);
 	if (!rz_inquiry_algo_revng_fcn_detection(
 		    symbol_addresses,
 		    inquiry->call_candidates,
-		    inquiry->bb_cfg,
-		    fcns,
+		    inquiry->bcfg,
+		    inquiry_fcns,
 		    ignored_code)) {
 		rz_warn_if_reached();
 		return false;
 	}
-
-	return convert_and_add_to_analysis(analysis, inquiry, fcns, symbols);
+	return true;
 }

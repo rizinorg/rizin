@@ -22,12 +22,12 @@
  *   - Call candidates.
  *   - CFEPs
  *   - Return Addresses
- *   - Basic Block CFG (bb_cfg)
+ *   - Basic Block CFG (bcfg)
  *
  * ALGO:
  *
  * It simply iterates over all CFEPs.
- * For each one it follows its edges in the bb_cfg.
+ * For each one it follows its edges in the bcfg.
  * If an edge belongs to a call, it is NOT taken.
  *
  * Every walked edge and the basic blocks are added to the function.
@@ -36,11 +36,11 @@
  *
  * OUT:
  *  - List of functions
- *  - Each functions starts with one CFEP and is a sub-graph in the bb_cfg.
+ *  - Each functions starts with one CFEP and is a sub-graph in the bcfg.
  */
 
 #include "rz_analysis.h"
-#include "rz_inquiry/rz_bb_graph.h"
+#include "rz_inquiry/rz_bcfg.h"
 #include "rz_types_base.h"
 #include "rz_util/ht_up.h"
 #include "rz_util/rz_assert.h"
@@ -77,11 +77,11 @@ static void recurse_into_fcn_bbs(
 	RzInquiryFunction *fcn,
 	ut64 predecessor_bb_addr,
 	ut64 this_bb_addr,
-	RzInquiryBBCFGEdgeType edge_type,
+	RzInquiryBCFGEdgeType edge_type,
 	RzSetU *visited_fcn_bbs,
 	const RzVector /*<ut64>*/ *cfep_addresses,
 	const HtUP /*<RzAnalysisCallCandidate *>*/ *call_candidates,
-	const RzInquiryBBCFG *binary_bb_cfg,
+	const RzInquiryBCFG *binary_bcfg,
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
 	if (rz_set_u_contains(visited_fcn_bbs, this_bb_addr)) {
 		return;
@@ -92,26 +92,26 @@ static void recurse_into_fcn_bbs(
 	// Add edge
 	//
 	RzInquiryBlock this_bb = { 0 };
-	if (!rz_inquiry_bb_cfg_get_basic_block(binary_bb_cfg, this_bb_addr, &this_bb)) {
+	if (!rz_inquiry_bcfg_get_block(binary_bcfg, this_bb_addr, &this_bb)) {
 		rz_warn_if_reached();
 		goto err_return;
 	}
-	if (!rz_inquiry_bb_cfg_add_block(fcn->bb_cfg, this_bb.addr, this_bb.size)) {
+	if (!rz_inquiry_bcfg_add_block(fcn->bcfg, this_bb.addr, this_bb.size)) {
 		rz_warn_if_reached();
 		goto err_return;
 	}
 
-	if (edge_type != RZ_INQUIRY_BB_CFG_EDGE_TYPE_NONE) {
+	if (edge_type != RZ_INQUIRY_BCFG_EDGE_TYPE_NONE) {
 		RzInquiryBlock from_bb = { 0 };
-		if (!rz_inquiry_bb_cfg_get_basic_block(binary_bb_cfg, predecessor_bb_addr, &from_bb)) {
+		if (!rz_inquiry_bcfg_get_block(binary_bcfg, predecessor_bb_addr, &from_bb)) {
 			rz_warn_if_reached();
 			goto err_return;
 		}
-		if (!rz_inquiry_bb_cfg_add_block(fcn->bb_cfg, from_bb.addr, from_bb.size)) {
+		if (!rz_inquiry_bcfg_add_block(fcn->bcfg, from_bb.addr, from_bb.size)) {
 			rz_warn_if_reached();
 			goto err_return;
 		}
-		if (!rz_inquiry_bb_cfg_add_edge(fcn->bb_cfg, predecessor_bb_addr, this_bb_addr, edge_type)) {
+		if (!rz_inquiry_bcfg_add_edge(fcn->bcfg, predecessor_bb_addr, this_bb_addr, edge_type)) {
 			rz_warn_if_reached();
 			goto err_return;
 		}
@@ -120,7 +120,7 @@ static void recurse_into_fcn_bbs(
 	//
 	// Visit neighbors
 	//
-	RzIterator *successors = rz_inquiry_bb_cfg_get_outgoing_edges(binary_bb_cfg, this_bb_addr);
+	RzIterator *successors = rz_inquiry_bcfg_get_outgoing_edges(binary_bcfg, this_bb_addr);
 	if (!successors) {
 		// Node has no successors.
 		goto err_return;
@@ -128,15 +128,15 @@ static void recurse_into_fcn_bbs(
 
 	const RzGraphEdge *e;
 	rz_iterator_foreach(successors, e) {
-		RzInquiryBBCFGEdgeType etype = (RzInquiryBBCFGEdgeType)(utptr)rz_graph_edge_get_data(e);
+		RzInquiryBCFGEdgeType etype = (RzInquiryBCFGEdgeType)(utptr)rz_graph_edge_get_data(e);
 		ut64 succ_addr = rz_graph_node_get_id(rz_graph_edge_get_to(e));
 		switch (etype) {
-		case RZ_INQUIRY_BB_CFG_EDGE_TYPE_NONE:
-		case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF:
-		case RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP:
+		case RZ_INQUIRY_BCFG_EDGE_TYPE_NONE:
+		case RZ_INQUIRY_BCFG_EDGE_TYPE_CF:
+		case RZ_INQUIRY_BCFG_EDGE_TYPE_JMP:
 			// Just an edge between two basic blocks.
 			break;
-		case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL_RET:
+		case RZ_INQUIRY_BCFG_EDGE_TYPE_CALL_RET:
 			// This is the next instruction packet after a call candidate.
 			// It might be an non-existing edge which was only added as a guess.
 			// In general all instructions after a call are added to the with
@@ -152,8 +152,8 @@ static void recurse_into_fcn_bbs(
 				continue;
 			}
 			break;
-		case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL:
-		case RZ_INQUIRY_BB_CFG_EDGE_TYPE_RETURN:
+		case RZ_INQUIRY_BCFG_EDGE_TYPE_CALL:
+		case RZ_INQUIRY_BCFG_EDGE_TYPE_RETURN:
 			continue;
 		}
 		if (jumps_to_ignored_code(ignored_code, succ_addr)) {
@@ -168,7 +168,7 @@ static void recurse_into_fcn_bbs(
 			visited_fcn_bbs,
 			cfep_addresses,
 			call_candidates,
-			binary_bb_cfg,
+			binary_bcfg,
 			ignored_code);
 	}
 	rz_iterator_free(successors);
@@ -178,23 +178,23 @@ err_return:
 }
 
 static void fill_candidate_fcn_entry_points(
-	const RzInquiryBBCFG *binary_bb_cfg,
+	const RzInquiryBCFG *binary_bcfg,
 	const HtUP /*<RzAnalysisCallCandidate *>*/ *call_candidates,
 	RzVector *cfep_addresses) {
 	void **it;
 	RzIterator *iter = ht_up_as_iter(call_candidates);
 	rz_iterator_foreach(iter, it) {
 		RzAnalysisCallCandidate *cc = *it;
-		RzIterator *predecessor = rz_inquiry_bb_cfg_get_outgoing_edges(binary_bb_cfg, cc->bb_addr);
+		RzIterator *predecessor = rz_inquiry_bcfg_get_outgoing_edges(binary_bcfg, cc->bb_addr);
 		const RzGraphEdge *e;
 		rz_iterator_foreach(predecessor, e) {
-			RzInquiryBBCFGEdgeType type = (RzInquiryBBCFGEdgeType)(utptr)rz_graph_edge_get_data(e);
-			if (type == RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL_RET) {
+			RzInquiryBCFGEdgeType type = (RzInquiryBCFGEdgeType)(utptr)rz_graph_edge_get_data(e);
+			if (type == RZ_INQUIRY_BCFG_EDGE_TYPE_CALL_RET) {
 				// TODO: Remove this check
 				const RzGraphNode *nr = rz_graph_edge_get_to(e);
 				ut64 target = rz_graph_node_get_id(nr);
 				rz_warn_if_fail(target == cc->npc);
-			} else if (type == RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL) {
+			} else if (type == RZ_INQUIRY_BCFG_EDGE_TYPE_CALL) {
 				const RzGraphNode *nc = rz_graph_edge_get_to(e);
 				ut64 target = rz_graph_node_get_id(nc);
 				rz_vector_push(cfep_addresses, &target);
@@ -212,10 +212,10 @@ static void fill_candidate_fcn_entry_points(
 RZ_API bool rz_inquiry_algo_revng_fcn_detection(
 	RzSetU *symbol_addresses,
 	RZ_NONNULL const HtUP /*<RzAnalysisCallCandidate *>*/ *call_candidates,
-	RZ_NONNULL const RzInquiryBBCFG *binary_bb_cfg,
+	RZ_NONNULL const RzInquiryBCFG *binary_bcfg,
 	RZ_NONNULL RZ_OUT RzPVector /*<RzInquiryFunction *>*/ *fcns,
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
-	rz_return_val_if_fail(call_candidates && binary_bb_cfg && fcns, false);
+	rz_return_val_if_fail(call_candidates && binary_bcfg && fcns, false);
 
 	// Candidate function entry points
 	RzVector *cfep_addresses = rz_vector_new(sizeof(ut64), NULL, NULL);
@@ -225,7 +225,7 @@ RZ_API bool rz_inquiry_algo_revng_fcn_detection(
 		rz_vector_push(cfep_addresses, addr);
 	}
 	rz_iterator_free(iter);
-	fill_candidate_fcn_entry_points(binary_bb_cfg, call_candidates, cfep_addresses);
+	fill_candidate_fcn_entry_points(binary_bcfg, call_candidates, cfep_addresses);
 
 	// Set of handled cfep
 	RzSetU *cfep_handled = rz_set_u_new();
@@ -243,11 +243,11 @@ RZ_API bool rz_inquiry_algo_revng_fcn_detection(
 		recurse_into_fcn_bbs(fcn,
 			UT64_MAX,
 			cfep_addr,
-			RZ_INQUIRY_BB_CFG_EDGE_TYPE_NONE,
+			RZ_INQUIRY_BCFG_EDGE_TYPE_NONE,
 			visited_bbs,
 			cfep_addresses,
 			call_candidates,
-			binary_bb_cfg,
+			binary_bcfg,
 			ignored_code);
 		rz_set_u_free(visited_bbs);
 		rz_set_u_add(cfep_handled, cfep_addr);

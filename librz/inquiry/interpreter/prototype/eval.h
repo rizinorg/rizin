@@ -11,7 +11,7 @@
 #include <rz_inquiry/rz_interpreter.h>
 
 /**
- * \brief Abstract data getter from the RzInterpreterAbstrVal
+ * \brief Abstract data getter from the RzInterpAbstrVal
  */
 #define AD(av) (((ProtoIntrprAbstrData *)av))
 
@@ -92,46 +92,46 @@ static inline RZ_OWN ProtoIntrprAbstrData *adata_new() {
 }
 
 void copy_abstr_data(ProtoIntrprAbstrData *dst, const ProtoIntrprAbstrData *src);
-void write_var_to_state(RzInterpreterSet *iset, RzILVarKind kind, ut64 var_id, const ProtoIntrprAbstrData *data);
-bool read_var_from_state(RzInterpreterSet *iset, RzILVarKind kind, ut64 var_id, RZ_OUT ProtoIntrprAbstrData *data);
-bool abstr_is_true(const RzInterpreterSet *iset, const ProtoIntrprAbstrData *data);
+void write_var_to_state(RzInterpSet *iset, RzILVarKind kind, ut64 var_id, const ProtoIntrprAbstrData *data);
+bool read_var_from_state(RzInterpSet *iset, RzILVarKind kind, ut64 var_id, RZ_OUT ProtoIntrprAbstrData *data);
+bool abstr_is_true(const RzInterpSet *iset, const ProtoIntrprAbstrData *data);
 bool store_abstr_data(
-	RzInterpreterSet *iset,
+	RzInterpSet *iset,
 	RzILMemIndex mem_idx,
 	const ProtoIntrprAbstrData *addr,
 	const ProtoIntrprAbstrData *src);
 bool load_abstr_data(
-	RzInterpreterSet *iset,
+	RzInterpSet *iset,
 	RzILMemIndex mem_idx,
 	const ProtoIntrprAbstrData *addr,
 	size_t n_bits,
 	RZ_OUT ProtoIntrprAbstrData *out);
 
-RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterSet *iset,
+RZ_IPI bool interpreter_prototype_eval_effect(RzInterpSet *iset,
 	const RzILOpEffect *effect,
 	size_t nop_pc_inc,
 	ProtoIntrprPluginData *plugin_data);
 RZ_IPI bool interpreter_prototype_eval_pure(
-	RzInterpreterSet *iset,
+	RzInterpSet *iset,
 	const RzILOpPure *pure,
 	RZ_OUT ProtoIntrprAbstrData *out,
 	ProtoIntrprPluginData *plugin_data);
 
 bool report_yield_xref(
-	RzInterpreterSet *iset,
+	RzInterpSet *iset,
 	size_t insn_pkt_size,
 	ut64 from,
 	const ProtoIntrprAbstrData *to,
 	RzAnalysisXRefType type);
 
 bool report_yield_call_candiate(
-	RzInterpreterSet *iset,
+	RzInterpSet *iset,
 	ProtoIntrprPluginData *plugin_data);
 
-bool set_pc(RzInterpreterAbstrState *state, ut64 pc,
+bool set_pc(RzInterpAbstrState *state, ut64 pc,
 	void *plugin_data);
 
-bool set_abstr_pc(RzInterpreterAbstrState *state, ProtoIntrprAbstrData *pc,
+bool set_abstr_pc(RzInterpAbstrState *state, ProtoIntrprAbstrData *pc,
 	void *plugin_data);
 
 void stack_frame_fini(ProtoInterprAbstrStackFrame *frame, void *unused);
