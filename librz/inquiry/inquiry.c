@@ -831,7 +831,7 @@ RZ_API bool rz_inquiry_convert_and_add_to_analysis(
 					abb->fail = target;
 				} else if (abb->fail != target && abb->jump != target) {
 					RZ_LOG_WARN("The basic block at 0x%" PFMT64x " has more than two outgoing edges.\n"
-						    "\t\tHas jump = 0x%llx fail = 0x%llx. Will miss = 0x%llx (%d)\n",
+						    "\t\tHas jump = 0x%" PFMT64x " fail = 0x%" PFMT64x ". Will miss = 0x%" PFMT64x " (%d)\n",
 						bb->addr, abb->jump, abb->fail,
 						target, type);
 				}
