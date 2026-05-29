@@ -2423,8 +2423,8 @@ void AVIFileExit();
 HRESULT AVIFileInfoA(unknown_t pfile, unknown_t pfi, LONG lSize);
 HRESULT AVIFileInfoW(unknown_t pfile, unknown_t pfi, LONG lSize);
 void AVIFileInit();
-HRESULT AVIFileOpenA(unknown_t *ppfile, LPCSTR szFile, UINT mode, unknown_t pclsidHandler);
-HRESULT AVIFileOpenW(unknown_t *ppfile, LPCWSTR szFile, UINT mode, unknown_t pclsidHandler);
+HRESULT AVIFileOpenA(unknown_t *ppfile, LPCSTR szFile, UINT mode, CLSID pclsidHandler);
+HRESULT AVIFileOpenW(unknown_t *ppfile, LPCWSTR szFile, UINT mode, CLSID pclsidHandler);
 ULONG AVIFileRelease();
 int AbortDoc();
 BOOL AbortPath();
@@ -2526,7 +2526,7 @@ BOOL AreDpiAwarenessContextsEqual(DPI_AWARENESS_CONTEXT dpiContextA, DPI_AWARENE
 BOOL AreFileApisANSI();
 UINT ArrangeIconicWindows(HWND hWnd);
 BOOL AssignProcessToJobObject(HANDLE hJob, HANDLE hProcess);
-HRESULT AssocCreate(unknown_t clsid, REFIID riid, void **ppv);
+HRESULT AssocCreate(CLSID clsid, REFIID riid, void **ppv);
 HRESULT AssocCreateForClasses(unknown_t *rgClasses, ULONG cClasses, REFIID riid, void **ppv);
 HRESULT AssocGetPerceivedType(PCWSTR pszExt, unknown_t *ptype, unknown_t *pflag, PWSTR *ppszType);
 BOOL AssocIsDangerous(PCWSTR pszAssoc);
@@ -2612,7 +2612,7 @@ long BroadcastSystemMessageA(DWORD flags, LPDWORD lpInfo, UINT Msg, WPARAM wPara
 long BroadcastSystemMessageExA(DWORD flags, LPDWORD lpInfo, UINT Msg, WPARAM wParam, LPARAM lParam, PBSMINFO pbsmInfo);
 long BroadcastSystemMessageExW(DWORD flags, LPDWORD lpInfo, UINT Msg, WPARAM wParam, LPARAM lParam, PBSMINFO pbsmInfo);
 long BroadcastSystemMessageW(DWORD flags, LPDWORD lpInfo, UINT Msg, WPARAM wParam, LPARAM lParam);
-HRESULT BstrFromVector(unknown_t *psa, BSTR *pbstr);
+HRESULT BstrFromVector(SAFEARRAY *psa, BSTR *pbstr);
 BOOL BuildCommDCBA(LPCSTR lpDef, LPDCB lpDCB);
 BOOL BuildCommDCBAndTimeoutsA(LPCSTR lpDef, LPDCB lpDCB, LPCOMMTIMEOUTS lpCommTimeouts);
 BOOL BuildCommDCBAndTimeoutsW(LPCWSTR lpDef, LPDCB lpDCB, LPCOMMTIMEOUTS lpCommTimeouts);
@@ -3076,15 +3076,15 @@ BOOL CloseWindow(HWND hWnd);
 BOOL CloseWindowStation(HWINSTA hWinSta);
 ULONG CoAddRefServerProcess();
 HRESULT CoAllowSetForegroundWindow(IUnknown *pUnk, LPVOID lpvReserved);
-HRESULT CoAllowUnmarshalerCLSID(unknown_t clsid);
+HRESULT CoAllowUnmarshalerCLSID(REFCLSID clsid);
 DWORD CoBuildVersion();
 HRESULT CoCancelCall(DWORD dwThreadId, ULONG ulTimeout);
 HRESULT CoCopyProxy(IUnknown *pProxy, IUnknown **ppCopy);
 HRESULT CoCreateFreeThreadedMarshaler(LPUNKNOWN punkOuter, LPUNKNOWN *ppunkMarshal);
 HRESULT CoCreateGuid(GUID *pguid);
-HRESULT CoCreateInstance(unknown_t rclsid, LPUNKNOWN pUnkOuter, DWORD dwClsContext, REFIID riid, LPVOID *ppv);
-HRESULT CoCreateInstanceEx(unknown_t Clsid, IUnknown *punkOuter, DWORD dwClsCtx, unknown_t *pServerInfo, DWORD dwCount, unknown_t *pResults);
-HRESULT CoCreateInstanceFromApp(unknown_t Clsid, IUnknown *punkOuter, DWORD dwClsCtx, PVOID reserved, DWORD dwCount, unknown_t *pResults);
+HRESULT CoCreateInstance(REFCLSID rclsid, LPUNKNOWN pUnkOuter, DWORD dwClsContext, REFIID riid, LPVOID *ppv);
+HRESULT CoCreateInstanceEx(REFCLSID Clsid, IUnknown *punkOuter, DWORD dwClsCtx, unknown_t *pServerInfo, DWORD dwCount, unknown_t *pResults);
+HRESULT CoCreateInstanceFromApp(REFCLSID Clsid, IUnknown *punkOuter, DWORD dwClsCtx, PVOID reserved, DWORD dwCount, unknown_t *pResults);
 HRESULT CoCreateStandardMalloc(DWORD memctx, unknown_t **ppMalloc);
 HRESULT CoDecodeProxy(DWORD dwClientPid, UINT64 ui64ProxyAddress, PServerInformation pServerInformation);
 HRESULT CoDecrementMTAUsage(unknown_t Cookie);
@@ -3103,23 +3103,23 @@ HRESULT CoGetApartmentType(APTTYPE *pAptType, APTTYPEQUALIFIER *pAptQualifier);
 HRESULT CoGetCallContext(REFIID riid, void **ppInterface);
 HRESULT CoGetCallerTID(LPDWORD lpdwTID);
 HRESULT CoGetCancelObject(DWORD dwThreadId, REFIID iid, void **ppUnk);
-HRESULT CoGetClassObject(unknown_t rclsid, DWORD dwClsContext, LPVOID pvReserved, REFIID riid, LPVOID *ppv);
+HRESULT CoGetClassObject(REFCLSID rclsid, DWORD dwClsContext, LPVOID pvReserved, REFIID riid, LPVOID *ppv);
 HRESULT CoGetContextToken(ULONG_PTR *pToken);
 HRESULT CoGetCurrentLogicalThreadId(GUID *pguid);
 DWORD CoGetCurrentProcess();
 HRESULT CoGetDefaultContext(APTTYPE aptType, REFIID riid, void **ppv);
-HRESULT CoGetInstanceFromFile(unknown_t *pServerInfo, unknown_t *pClsid, IUnknown *punkOuter, DWORD dwClsCtx, DWORD grfMode, unknown_t *pwszName, DWORD dwCount, unknown_t *pResults);
-HRESULT CoGetInstanceFromIStorage(unknown_t *pServerInfo, unknown_t *pClsid, IUnknown *punkOuter, DWORD dwClsCtx, struct IStorage *pstg, DWORD dwCount, unknown_t *pResults);
+HRESULT CoGetInstanceFromFile(unknown_t *pServerInfo, CLSID *pClsid, IUnknown *punkOuter, DWORD dwClsCtx, DWORD grfMode, OLECHAR *pwszName, DWORD dwCount, unknown_t *pResults);
+HRESULT CoGetInstanceFromIStorage(unknown_t *pServerInfo, CLSID *pClsid, IUnknown *punkOuter, DWORD dwClsCtx, struct IStorage *pstg, DWORD dwCount, unknown_t *pResults);
 HRESULT CoGetInterfaceAndReleaseStream(LPSTREAM pStm, REFIID iid, LPVOID *ppv);
 HRESULT CoGetMalloc(DWORD dwMemContext, LPMALLOC *ppMalloc);
 HRESULT CoGetMarshalSizeMax(ULONG *pulSize, REFIID riid, LPUNKNOWN pUnk, DWORD dwDestContext, LPVOID pvDestContext, DWORD mshlflags);
 HRESULT CoGetObject(LPCWSTR pszName, unknown_t *pBindOptions, REFIID riid, void **ppv);
 HRESULT CoGetObjectContext(REFIID riid, LPVOID *ppv);
-HRESULT CoGetPSClsid(REFIID riid, unknown_t *pClsid);
+HRESULT CoGetPSClsid(REFIID riid, CLSID *pClsid);
 HRESULT CoGetStandardMarshal(REFIID riid, LPUNKNOWN pUnk, DWORD dwDestContext, LPVOID pvDestContext, DWORD mshlflags, LPMARSHAL *ppMarshal);
 HRESULT CoGetStdMarshalEx(LPUNKNOWN pUnkOuter, DWORD smexflags, LPUNKNOWN *ppUnkInner);
 HRESULT CoGetSystemSecurityPermissions(unknown_t comSDType, PSECURITY_DESCRIPTOR *ppSD);
-HRESULT CoGetTreatAsClass(unknown_t clsidOld, LPCLSID pClsidNew);
+HRESULT CoGetTreatAsClass(REFCLSID clsidOld, LPCLSID pClsidNew);
 HRESULT CoImpersonateClient();
 HRESULT CoIncrementMTAUsage(unknown_t *pCookie);
 HRESULT CoInitialize(LPVOID pvReserved);
@@ -3128,7 +3128,7 @@ HRESULT CoInitializeSecurity(PSECURITY_DESCRIPTOR pSecDesc, LONG cAuthSvc, unkno
 HRESULT CoInstall(unknown_t *pbc, DWORD dwFlags, unknown_t *pClassSpec, unknown_t *pQuery, LPWSTR pszCodeBase);
 HRESULT CoInvalidateRemoteMachineBindings(LPOLESTR pszMachineName);
 BOOL CoIsHandlerConnected(LPUNKNOWN pUnk);
-BOOL CoIsOle1Class(unknown_t rclsid);
+BOOL CoIsOle1Class(REFCLSID rclsid);
 HINSTANCE CoLoadLibrary(LPOLESTR lpszLibName, BOOL bAutoFree);
 HRESULT CoLockObjectExternal(LPUNKNOWN pUnk, BOOL fLock, BOOL fLastUnlockReleases);
 HRESULT CoMarshalHresult(LPSTREAM pstm, HRESULT hresult);
@@ -3139,11 +3139,11 @@ HRESULT CoQueryClientBlanket(DWORD *pAuthnSvc, DWORD *pAuthzSvc, LPOLESTR *pServ
 HRESULT CoQueryProxyBlanket(IUnknown *pProxy, DWORD *pwAuthnSvc, DWORD *pAuthzSvc, LPOLESTR *pServerPrincName, DWORD *pAuthnLevel, DWORD *pImpLevel, RPC_AUTH_IDENTITY_HANDLE *pAuthInfo, DWORD *pCapabilites);
 HRESULT CoRegisterActivationFilter(unknown_t *pActivationFilter);
 HRESULT CoRegisterChannelHook(REFGUID ExtensionUuid, unknown_t *pChannelHook);
-HRESULT CoRegisterClassObject(unknown_t rclsid, LPUNKNOWN pUnk, DWORD dwClsContext, DWORD flags, LPDWORD lpdwRegister);
+HRESULT CoRegisterClassObject(REFCLSID rclsid, LPUNKNOWN pUnk, DWORD dwClsContext, DWORD flags, LPDWORD lpdwRegister);
 HRESULT CoRegisterInitializeSpy(unknown_t *pSpy, ULARGE_INTEGER *puliCookie);
 HRESULT CoRegisterMallocSpy(unknown_t pMallocSpy);
 HRESULT CoRegisterMessageFilter(unknown_t lpMessageFilter, unknown_t *lplpMessageFilter);
-HRESULT CoRegisterPSClsid(REFIID riid, unknown_t rclsid);
+HRESULT CoRegisterPSClsid(REFIID riid, REFCLSID rclsid);
 HRESULT CoRegisterSurrogate(LPSURROGATE pSurrogate);
 HRESULT CoReleaseMarshalData(LPSTREAM pStm);
 ULONG CoReleaseServerProcess();
@@ -3153,14 +3153,14 @@ HRESULT CoRevokeClassObject(DWORD dwRegister);
 HRESULT CoRevokeInitializeSpy(ULARGE_INTEGER uliCookie);
 HRESULT CoRevokeMallocSpy();
 HRESULT CoSetCancelObject(IUnknown *pUnk);
-HRESULT CoSetProxyBlanket(IUnknown *pProxy, DWORD dwAuthnSvc, DWORD dwAuthzSvc, unknown_t *pServerPrincName, DWORD dwAuthnLevel, DWORD dwImpLevel, RPC_AUTH_IDENTITY_HANDLE pAuthInfo, DWORD dwCapabilities);
+HRESULT CoSetProxyBlanket(IUnknown *pProxy, DWORD dwAuthnSvc, DWORD dwAuthzSvc, OLECHAR *pServerPrincName, DWORD dwAuthnLevel, DWORD dwImpLevel, RPC_AUTH_IDENTITY_HANDLE pAuthInfo, DWORD dwCapabilities);
 HRESULT CoSuspendClassObjects();
 HRESULT CoSwitchCallContext(IUnknown *pNewObject, IUnknown **ppOldObject);
 LPVOID CoTaskMemAlloc(SIZE_T cb);
 void CoTaskMemFree(LPVOID pv);
 LPVOID CoTaskMemRealloc(LPVOID pv, SIZE_T cb);
 HRESULT CoTestCancel();
-HRESULT CoTreatAsClass(unknown_t clsidOld, unknown_t clsidNew);
+HRESULT CoTreatAsClass(REFCLSID clsidOld, REFCLSID clsidNew);
 void CoUninitialize();
 HRESULT CoUnmarshalHresult(LPSTREAM pstm, HRESULT *phresult);
 HRESULT CoUnmarshalInterface(LPSTREAM pStm, REFIID riid, LPVOID *ppv);
@@ -3235,14 +3235,14 @@ HANDLE CreateActCtxA(PCACTCTXA pActCtx);
 HANDLE CreateActCtxW(PCACTCTXW pActCtx);
 HRESULT CreateAntiMoniker(unknown_t *ppmk);
 HRESULT CreateAppContainerProfile(PCWSTR pszAppContainerName, PCWSTR pszDisplayName, PCWSTR pszDescription, PSID_AND_ATTRIBUTES pCapabilities, DWORD dwCapabilityCount, PSID *ppSidAppContainerSid);
-HRESULT CreateBindCtx(DWORD reserved, unknown_t *ppbc);
+HRESULT CreateBindCtx(DWORD reserved, LPBC *ppbc);
 HBITMAP CreateBitmap(int nWidth, int nHeight, UINT cPlanes, UINT cBitsPerPel, VOID *lpvBits);
 HBITMAP CreateBitmapIndirect();
 HANDLE CreateBoundaryDescriptorA(LPCSTR Name, ULONG Flags);
 HANDLE CreateBoundaryDescriptorW(LPCWSTR Name, ULONG Flags);
 HBRUSH CreateBrushIndirect();
 BOOL CreateCaret(HWND hWnd, HBITMAP hBitmap, int nWidth, int nHeight);
-HRESULT CreateClassMoniker(unknown_t rclsid, unknown_t *ppmk);
+HRESULT CreateClassMoniker(REFCLSID rclsid, unknown_t *ppmk);
 HCOLORSPACE CreateColorSpaceA();
 HCOLORSPACE CreateColorSpaceW();
 HBITMAP CreateCompatibleBitmap(HDC hdc, int nWidth, int nHeight);
@@ -3257,7 +3257,7 @@ HBRUSH CreateDIBPatternBrushPt(VOID *lpPackedDIB, unknown_t iUsage);
 HBITMAP CreateDIBSection(HDC hdc, BITMAPINFO *pbmi, UINT iUsage, VOID **ppvBits, HANDLE hSection, DWORD dwOffset);
 HBITMAP CreateDIBitmap(HDC hdc, unknown_t *lpbmih, unknown_t fdwInit, VOID *lpbInit, BITMAPINFO *lpbmi, unknown_t fuUsage);
 HRESULT CreateDataAdviseHolder(unknown_t *ppDAHolder);
-HRESULT CreateDataCache(LPUNKNOWN pUnkOuter, unknown_t rclsid, REFIID iid, LPVOID *ppv);
+HRESULT CreateDataCache(LPUNKNOWN pUnkOuter, REFCLSID rclsid, REFIID iid, LPVOID *ppv);
 BOOL CreateDecompressor(DWORD Algorithm, PCOMPRESS_ALLOCATION_ROUTINES AllocationRoutines, PDECOMPRESSOR_HANDLE DecompressorHandle);
 HDESK CreateDesktopA(LPCSTR lpszDesktop, LPCSTR lpszDevice, unknown_t *pDevmode, DWORD dwFlags, ACCESS_MASK dwDesiredAccess, LPSECURITY_ATTRIBUTES lpsa);
 HDESK CreateDesktopExA(LPCSTR lpszDesktop, LPCSTR lpszDevice, unknown_t *pDevmode, DWORD dwFlags, ACCESS_MASK dwDesiredAccess, LPSECURITY_ATTRIBUTES lpsa, ULONG ulHeapSize, PVOID pvoid);
@@ -3715,8 +3715,8 @@ HRESULT DispCallFunc(void *pvInstance, ULONG_PTR oVft, unknown_t cc, VARTYPE vtR
 HRESULT DispGetIDsOfNames(unknown_t *ptinfo, LPOLESTR *rgszNames, UINT cNames, unknown_t *rgdispid);
 HRESULT DispGetParam(unknown_t *pdispparams, UINT position, VARTYPE vtTarg, VARIANT *pvarResult, UINT *puArgErr);
 HRESULT DispInvoke(void *_this, unknown_t *ptinfo, unknown_t dispidMember, WORD wFlags, unknown_t *pparams, VARIANT *pvarResult, unknown_t *pexcepinfo, UINT *puArgErr);
-LRESULT DispatchMessageA(unknown_t *lpMsg);
-LRESULT DispatchMessageW(unknown_t *lpMsg);
+LRESULT DispatchMessageA(MSG *lpMsg);
+LRESULT DispatchMessageW(MSG *lpMsg);
 LONG DisplayConfigGetDeviceInfo(unknown_t *requestPacket);
 LONG DisplayConfigSetDeviceInfo(unknown_t *setPacket);
 int DlgDirListA(HWND hDlg, LPSTR lpPathSpec, int nIDListBox, int nIDStaticPath, UINT uFileType);
@@ -3728,7 +3728,7 @@ BOOL DlgDirSelectComboBoxExW(HWND hwndDlg, LPWSTR lpString, int cchOut, int idCo
 BOOL DlgDirSelectExA(HWND hwndDlg, LPSTR lpString, int chCount, int idListBox);
 BOOL DlgDirSelectExW(HWND hwndDlg, LPWSTR lpString, int chCount, int idListBox);
 HRESULT DllCanUnloadNow();
-HRESULT DllGetClassObject(unknown_t rclsid, REFIID riid, LPVOID *ppv);
+HRESULT DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv);
 HRESULT DllInstall(BOOL bInstall, PCWSTR pszCmdLine);
 HRESULT DllRegisterServer();
 HRESULT DllUnregisterServer();
@@ -4102,7 +4102,7 @@ HRESULT GetAcceptLanguagesA(LPSTR pszLanguages, DWORD *pcchLanguages);
 HRESULT GetAcceptLanguagesW(LPWSTR pszLanguages, DWORD *pcchLanguages);
 BOOL GetAce(PACL pAcl, DWORD dwAceIndex, LPVOID *pAce);
 BOOL GetAclInformation(PACL pAcl, LPVOID pAclInformation, DWORD nAclInformationLength, ACL_INFORMATION_CLASS dwAclInformationClass);
-HRESULT GetActiveObject(unknown_t rclsid, void *pvReserved, IUnknown **ppunk);
+HRESULT GetActiveObject(REFCLSID rclsid, void *pvReserved, IUnknown **ppunk);
 DWORD GetActiveProcessorCount(WORD GroupNumber);
 WORD GetActiveProcessorGroupCount();
 HWND GetActiveWindow();
@@ -4167,7 +4167,7 @@ BOOL GetCharWidthI(HDC hdc, UINT giFirst, UINT cgi, LPWORD pgi, LPINT lpBuffer);
 BOOL GetCharWidthW(HDC hdc, UINT iFirstChar, UINT iLastChar, LPINT lpBuffer);
 long GetCharacterPlacementA(HDC hdc, LPCSTR lpString, int nCount, int nMaxExtent, unknown_t lpResults, unknown_t dwFlags);
 long GetCharacterPlacementW(HDC hdc, LPCWSTR lpString, int nCount, int nMaxExtent, unknown_t lpResults, unknown_t dwFlags);
-HRESULT GetClassFile(LPCOLESTR szFilename, unknown_t *pclsid);
+HRESULT GetClassFile(LPCOLESTR szFilename, CLSID *pclsid);
 HRESULT GetClassID();
 BOOL GetClassInfoA(HINSTANCE hInstance, LPCSTR lpClassName, LPWNDCLASSA lpWndClass);
 BOOL GetClassInfoExA(HINSTANCE hInstance, LPCSTR lpszClass, LPWNDCLASSEXA lpwcx);
@@ -4790,7 +4790,7 @@ BOOL GetUserProfileDirectoryA(HANDLE hToken, LPSTR lpProfileDir, LPDWORD lpcchSi
 BOOL GetUserProfileDirectoryW(HANDLE hToken, LPWSTR lpProfileDir, LPDWORD lpcchSize);
 DWORD GetVersion();
 BOOL GetVersionExA(LPOSVERSIONINFOA lpVersionInformation);
-BOOL GetVersionExW(unknown_t lpVersionInformation);
+BOOL GetVersionExW(LPOSVERSIONINFOW lpVersionInformation);
 HRESULT GetViewStatus();
 BOOL GetViewportExtEx(HDC hdc, LPSIZE lpSize);
 BOOL GetViewportOrgEx(HDC hdc, LPPOINT lpPoint);
@@ -5103,7 +5103,7 @@ int LCIDToLocaleName(LCID Locale, LPWSTR lpName, int cchName, DWORD dwFlags);
 int LCMapStringA(LCID Locale, DWORD dwMapFlags, LPCSTR lpSrcStr, int cchSrc, LPSTR lpDestStr, int cchDest);
 int LCMapStringEx(LPCWSTR lpLocaleName, DWORD dwMapFlags, LPCWSTR lpSrcStr, int cchSrc, LPWSTR lpDestStr, int cchDest, LPNLSVERSIONINFO lpVersionInformation, LPVOID lpReserved, LPARAM sortHandle);
 int LCMapStringW(LCID Locale, DWORD dwMapFlags, LPCWSTR lpSrcStr, int cchSrc, LPWSTR lpDestStr, int cchDest);
-ULONG LHashValOfNameSys(unknown_t syskind, LCID lcid, unknown_t *szName);
+ULONG LHashValOfNameSys(unknown_t syskind, LCID lcid, OLECHAR *szName);
 ULONG LHashValOfNameSysA(unknown_t syskind, LCID lcid, LPCSTR szName);
 BOOL LPtoDP(HDC hdc, LPPOINT lpPoints, int nCount);
 ULONG LdapGetLastError();
@@ -5232,7 +5232,7 @@ int MessageBoxIndirectW(unknown_t *lpmbp);
 int MessageBoxW(HWND hWnd, LPCWSTR lpText, LPCWSTR lpCaption, UINT uType);
 BOOL MiniDumpReadDumpStream(PVOID BaseOfDump, ULONG StreamNumber, PMINIDUMP_DIRECTORY *Dir, PVOID *StreamPointer, ULONG *StreamSize);
 BOOL MiniDumpWriteDump(HANDLE hProcess, DWORD ProcessId, HANDLE hFile, MINIDUMP_TYPE DumpType, unknown_t ExceptionParam, PMINIDUMP_USER_STREAM_INFORMATION UserStreamParam, PMINIDUMP_CALLBACK_INFORMATION CallbackParam);
-HRESULT MkParseDisplayName(unknown_t pbc, LPCOLESTR szUserName, ULONG *pchEaten, unknown_t *ppmk);
+HRESULT MkParseDisplayName(LPBC pbc, LPCOLESTR szUserName, ULONG *pchEaten, unknown_t *ppmk);
 BOOL ModifyMenuA(HMENU hMnu, UINT uPosition, UINT uFlags, UINT_PTR uIDNewItem, LPCSTR lpNewItem);
 BOOL ModifyMenuW(HMENU hMnu, UINT uPosition, UINT uFlags, UINT_PTR uIDNewItem, LPCWSTR lpNewItem);
 BOOL ModifyWorldTransform(HDC hdc, unknown_t *lpXform, DWORD iMode);
@@ -5602,7 +5602,7 @@ DWORD ProcessGroupPolicyCompleted(unknown_t extensionId, unknown_t pAsyncHandle,
 DWORD ProcessGroupPolicyCompletedEx(unknown_t extensionId, unknown_t pAsyncHandle, DWORD dwStatus, HRESULT RsopStatus);
 BOOL ProcessIdToSessionId(DWORD dwProcessId, DWORD *pSessionId);
 ULONG ProcessTrace(PTRACEHANDLE HandleArray, ULONG HandleCount, LPFILETIME StartTime, LPFILETIME EndTime);
-HRESULT ProgIDFromCLSID(unknown_t clsid, LPOLESTR *lplpszProgID);
+HRESULT ProgIDFromCLSID(REFCLSID clsid, LPOLESTR *lplpszProgID);
 HRESULT PropVariantClear(unknown_t *pvar);
 HRESULT PropVariantCopy(unknown_t *pvarDest, unknown_t *pvarSrc);
 BOOL PtInRect(RECT *lprc, POINT pt);
@@ -5782,7 +5782,7 @@ LSTATUS RegSetValueExW(HKEY hKey, LPCWSTR lpValueName, DWORD Reserved, DWORD dwT
 LSTATUS RegSetValueW(HKEY hKey, LPCWSTR lpSubKey, DWORD dwType, LPCWSTR lpData, DWORD cbData);
 LSTATUS RegUnLoadKeyA(HKEY hKey, LPCSTR lpSubKey);
 LSTATUS RegUnLoadKeyW(HKEY hKey, LPCWSTR lpSubKey);
-HRESULT RegisterActiveObject(IUnknown *punk, unknown_t rclsid, DWORD dwFlags, DWORD *pdwRegister);
+HRESULT RegisterActiveObject(IUnknown *punk, REFCLSID rclsid, DWORD dwFlags, DWORD *pdwRegister);
 HRESULT RegisterApplicationRecoveryCallback(APPLICATION_RECOVERY_CALLBACK pRecoveyCallback, PVOID pvParameter, DWORD dwPingInterval, DWORD dwFlags);
 HRESULT RegisterApplicationRestart(PCWSTR pwzCommandline, DWORD dwFlags);
 PVOID RegisterBadMemoryNotification(PBAD_MEMORY_CALLBACK_ROUTINE Callback);
@@ -5816,7 +5816,7 @@ BOOL RegisterTouchWindow(HWND hwnd, ULONG ulFlags);
 ULONG RegisterTraceGuidsA(WMIDPREQUEST RequestAddress, PVOID RequestContext, LPCGUID ControlGuid, ULONG GuidCount, PTRACE_GUID_REGISTRATION TraceGuidReg, LPCSTR MofImagePath, LPCSTR MofResourceName, PTRACEHANDLE RegistrationHandle);
 ULONG RegisterTraceGuidsW(WMIDPREQUEST RequestAddress, PVOID RequestContext, LPCGUID ControlGuid, ULONG GuidCount, PTRACE_GUID_REGISTRATION TraceGuidReg, LPCWSTR MofImagePath, LPCWSTR MofResourceName, PTRACEHANDLE RegistrationHandle);
 HRESULT RegisterTypeLib(unknown_t *ptlib, LPCOLESTR szFullPath, LPCOLESTR szHelpDir);
-HRESULT RegisterTypeLibForUser(unknown_t *ptlib, unknown_t *szFullPath, unknown_t *szHelpDir);
+HRESULT RegisterTypeLibForUser(unknown_t *ptlib, OLECHAR *szFullPath, OLECHAR *szHelpDir);
 BOOL RegisterWaitForSingleObject(PHANDLE phNewWaitObject, HANDLE hObject, WAITORTIMERCALLBACK Callback, PVOID Context, ULONG dwMilliseconds, ULONG dwFlags);
 UINT RegisterWindowMessageA(LPCSTR lpString);
 UINT RegisterWindowMessageW(LPCWSTR lpString);
@@ -6074,7 +6074,7 @@ HRESULT SHSetThreadRef(IUnknown *punk);
 LSTATUS SHSetValueA(HKEY hkey, LPCSTR pszSubKey, LPCSTR pszValue, DWORD dwType, LPCVOID pvData, DWORD cbData);
 LSTATUS SHSetValueW(HKEY hkey, LPCWSTR pszSubKey, LPCWSTR pszValue, DWORD dwType, LPCVOID pvData, DWORD cbData);
 PIDLIST_ABSOLUTE SHSimpleIDListFromPath(PCWSTR pszPath);
-BOOL SHSkipJunction(unknown_t *pbc, unknown_t *pclsid);
+BOOL SHSkipJunction(unknown_t *pbc, CLSID *pclsid);
 HRESULT SHStrDupA(LPCSTR psz, LPWSTR *ppwsz);
 HRESULT SHStrDupW(LPCWSTR psz, LPWSTR *ppwsz);
 CHAR SHStripMneumonicA(LPSTR pszMenu);
@@ -6082,38 +6082,38 @@ WCHAR SHStripMneumonicW(LPWSTR pszMenu);
 int SHUnicodeToAnsi(PCWSTR pwszSrc, PSTR pszDst, int cchBuf);
 int SHUnicodeToUnicode(PCWSTR pwzSrc, PWSTR pwzDst, int cwchBuf);
 BOOL SHUnlockShared(void *pvData);
-HRESULT SafeArrayAccessData(unknown_t *psa, void **ppvData);
-HRESULT SafeArrayAddRef(unknown_t *psa, PVOID *ppDataToRelease);
-HRESULT SafeArrayAllocData(unknown_t *psa);
-HRESULT SafeArrayAllocDescriptor(UINT cDims, unknown_t **ppsaOut);
-HRESULT SafeArrayAllocDescriptorEx(VARTYPE vt, UINT cDims, unknown_t **ppsaOut);
-HRESULT SafeArrayCopy(unknown_t *psa, unknown_t **ppsaOut);
-HRESULT SafeArrayCopyData(unknown_t *psaSource, unknown_t *psaTarget);
-unknown_t * SafeArrayCreate(VARTYPE vt, UINT cDims, unknown_t *rgsabound);
-unknown_t * SafeArrayCreateEx(VARTYPE vt, UINT cDims, unknown_t *rgsabound, PVOID pvExtra);
-unknown_t * SafeArrayCreateVector(VARTYPE vt, LONG lLbound, ULONG cElements);
-unknown_t * SafeArrayCreateVectorEx(VARTYPE vt, LONG lLbound, ULONG cElements, PVOID pvExtra);
-HRESULT SafeArrayDestroy(unknown_t *psa);
-HRESULT SafeArrayDestroyData(unknown_t *psa);
-HRESULT SafeArrayDestroyDescriptor(unknown_t *psa);
-UINT SafeArrayGetDim(unknown_t *psa);
-HRESULT SafeArrayGetElement(unknown_t *psa, LONG *rgIndices, void *pv);
-UINT SafeArrayGetElemsize(unknown_t *psa);
-HRESULT SafeArrayGetIID(unknown_t *psa, GUID *pguid);
-HRESULT SafeArrayGetLBound(unknown_t *psa, UINT nDim, LONG *plLbound);
-HRESULT SafeArrayGetRecordInfo(unknown_t *psa, unknown_t **prinfo);
-HRESULT SafeArrayGetUBound(unknown_t *psa, UINT nDim, LONG *plUbound);
-HRESULT SafeArrayGetVartype(unknown_t *psa, VARTYPE *pvt);
-HRESULT SafeArrayLock(unknown_t *psa);
-HRESULT SafeArrayPtrOfIndex(unknown_t *psa, LONG *rgIndices, void **ppvData);
-HRESULT SafeArrayPutElement(unknown_t *psa, LONG *rgIndices, void *pv);
-HRESULT SafeArrayRedim(unknown_t *psa, unknown_t *psaboundNew);
+HRESULT SafeArrayAccessData(SAFEARRAY *psa, void **ppvData);
+HRESULT SafeArrayAddRef(SAFEARRAY *psa, PVOID *ppDataToRelease);
+HRESULT SafeArrayAllocData(SAFEARRAY *psa);
+HRESULT SafeArrayAllocDescriptor(UINT cDims, SAFEARRAY **ppsaOut);
+HRESULT SafeArrayAllocDescriptorEx(VARTYPE vt, UINT cDims, SAFEARRAY **ppsaOut);
+HRESULT SafeArrayCopy(SAFEARRAY *psa, SAFEARRAY **ppsaOut);
+HRESULT SafeArrayCopyData(SAFEARRAY *psaSource, SAFEARRAY *psaTarget);
+SAFEARRAY * SafeArrayCreate(VARTYPE vt, UINT cDims, SAFEARRAYBOUND *rgsabound);
+SAFEARRAY * SafeArrayCreateEx(VARTYPE vt, UINT cDims, SAFEARRAYBOUND *rgsabound, PVOID pvExtra);
+SAFEARRAY * SafeArrayCreateVector(VARTYPE vt, LONG lLbound, ULONG cElements);
+SAFEARRAY * SafeArrayCreateVectorEx(VARTYPE vt, LONG lLbound, ULONG cElements, PVOID pvExtra);
+HRESULT SafeArrayDestroy(SAFEARRAY *psa);
+HRESULT SafeArrayDestroyData(SAFEARRAY *psa);
+HRESULT SafeArrayDestroyDescriptor(SAFEARRAY *psa);
+UINT SafeArrayGetDim(SAFEARRAY *psa);
+HRESULT SafeArrayGetElement(SAFEARRAY *psa, LONG *rgIndices, void *pv);
+UINT SafeArrayGetElemsize(SAFEARRAY *psa);
+HRESULT SafeArrayGetIID(SAFEARRAY *psa, GUID *pguid);
+HRESULT SafeArrayGetLBound(SAFEARRAY *psa, UINT nDim, LONG *plLbound);
+HRESULT SafeArrayGetRecordInfo(SAFEARRAY *psa, unknown_t **prinfo);
+HRESULT SafeArrayGetUBound(SAFEARRAY *psa, UINT nDim, LONG *plUbound);
+HRESULT SafeArrayGetVartype(SAFEARRAY *psa, VARTYPE *pvt);
+HRESULT SafeArrayLock(SAFEARRAY *psa);
+HRESULT SafeArrayPtrOfIndex(SAFEARRAY *psa, LONG *rgIndices, void **ppvData);
+HRESULT SafeArrayPutElement(SAFEARRAY *psa, LONG *rgIndices, void *pv);
+HRESULT SafeArrayRedim(SAFEARRAY *psa, SAFEARRAYBOUND *psaboundNew);
 void SafeArrayReleaseData(PVOID pData);
-void SafeArrayReleaseDescriptor(unknown_t *psa);
-HRESULT SafeArraySetIID(unknown_t *psa, REFGUID guid);
-HRESULT SafeArraySetRecordInfo(unknown_t *psa, unknown_t *prinfo);
-HRESULT SafeArrayUnaccessData(unknown_t *psa);
-HRESULT SafeArrayUnlock(unknown_t *psa);
+void SafeArrayReleaseDescriptor(SAFEARRAY *psa);
+HRESULT SafeArraySetIID(SAFEARRAY *psa, REFGUID guid);
+HRESULT SafeArraySetRecordInfo(SAFEARRAY *psa, unknown_t *prinfo);
+HRESULT SafeArrayUnaccessData(SAFEARRAY *psa);
+HRESULT SafeArrayUnlock(SAFEARRAY *psa);
 HRESULT Save(LPCOLESTR pszFileName, BOOL fRemember);
 HRESULT SaveCompleted();
 long SaveDC();
@@ -6376,7 +6376,7 @@ int SetTextCharacterExtra(HDC hdc, int nCharExtra);
 COLORREF SetTextColor(HDC hdc, COLORREF crColor);
 BOOL SetTextJustification(HDC hdc, int nBreakExtra, int nBreakCount);
 DWORD_PTR SetThreadAffinityMask(HANDLE hThread, DWORD_PTR dwThreadAffinityMask);
-BOOL SetThreadContext(HANDLE hThread, unknown_t *lpContext);
+BOOL SetThreadContext(HANDLE hThread, CONTEXT *lpContext);
 HRESULT SetThreadDescription(HANDLE hThread, PCWSTR lpThreadDescription);
 BOOL SetThreadDesktop(HDESK hDesktop);
 DPI_AWARENESS_CONTEXT SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT dpiContext);
@@ -6490,10 +6490,10 @@ BOOL StartServiceW(SC_HANDLE hService, DWORD dwNumServiceArgs, LPCWSTR *lpServic
 VOID StartThreadpoolIo(PTP_IO pio);
 ULONG StartTraceA(PTRACEHANDLE TraceHandle, LPCSTR InstanceName, PEVENT_TRACE_PROPERTIES Properties);
 ULONG StartTraceW(PTRACEHANDLE TraceHandle, LPCWSTR InstanceName, PEVENT_TRACE_PROPERTIES Properties);
-HRESULT StgGetIFillLockBytesOnFile(unknown_t *pwcsName, unknown_t **ppflb);
+HRESULT StgGetIFillLockBytesOnFile(OLECHAR *pwcsName, unknown_t **ppflb);
 HRESULT StgGetIFillLockBytesOnILockBytes(unknown_t *pilb, unknown_t **ppflb);
 HRESULT StgOpenAsyncDocfileOnIFillLockBytes(unknown_t *pflb, DWORD grfMode, DWORD asyncFlags, struct IStorage **ppstgOpen);
-HRESULT StgOpenLayoutDocfile(unknown_t *pwcsDfName, DWORD grfMode, DWORD reserved, struct IStorage **ppstgOpen);
+HRESULT StgOpenLayoutDocfile(OLECHAR *pwcsDfName, DWORD grfMode, DWORD reserved, struct IStorage **ppstgOpen);
 ULONG StopTraceA(TRACEHANDLE TraceHandle, LPCSTR InstanceName, PEVENT_TRACE_PROPERTIES Properties);
 ULONG StopTraceW(TRACEHANDLE TraceHandle, LPCWSTR InstanceName, PEVENT_TRACE_PROPERTIES Properties);
 int StrCSpnA(PCSTR pszStr, PCSTR pszSet);
@@ -6572,7 +6572,7 @@ BOOL StrTrimA(PSTR psz, PCSTR pszTrimChars);
 BOOL StrTrimW(PWSTR psz, PCWSTR pszTrimChars);
 BOOL StretchBlt(HDC hdcDest, int nXOriginDest, int nYOriginDest, int nWidthDest, int nHeightDest, HDC hdcSrc, int nXOriginSrc, int nYOriginSrc, int nWidthSrc, int nHeightSrc, unknown_t dwRop);
 int StretchDIBits(HDC hdc, int XDest, int YDest, int nDestWidth, int nDestHeight, int XSrc, int YSrc, int nSrcWidth, int nSrcHeight, VOID *lpBits, BITMAPINFO *lpBitsInfo, unknown_t iUsage, unknown_t dwRop);
-HRESULT StringFromCLSID(unknown_t rclsid, LPOLESTR *lplpsz);
+HRESULT StringFromCLSID(REFCLSID rclsid, LPOLESTR *lplpsz);
 int StringFromGUID2(REFGUID rguid, LPOLESTR lpsz, int cchMax);
 HRESULT StringFromIID(REFIID rclsid, LPOLESTR *lplpsz);
 BOOL StrokeAndFillPath();
@@ -6748,12 +6748,12 @@ BOOL SymUnDName64(PIMAGEHLP_SYMBOL64 sym, PSTR UnDecName, DWORD UnDecNameLength)
 BOOL SymUnloadModule(HANDLE hProcess, DWORD BaseOfDll);
 BOOL SymUnloadModule64(HANDLE hProcess, DWORD64 BaseOfDll);
 HRESULT SysAddRefString(BSTR bstrString);
-BSTR SysAllocString(unknown_t *psz);
+BSTR SysAllocString(OLECHAR *psz);
 BSTR SysAllocStringByteLen(LPCSTR psz, UINT len);
-BSTR SysAllocStringLen(unknown_t *strIn, UINT ui);
+BSTR SysAllocStringLen(OLECHAR *strIn, UINT ui);
 void SysFreeString(BSTR bstrString);
-INT SysReAllocString(BSTR *pbstr, unknown_t *psz);
-INT SysReAllocStringLen(BSTR *pbstr, unknown_t *psz, unsigned int len);
+INT SysReAllocString(BSTR *pbstr, OLECHAR *psz);
+INT SysReAllocStringLen(BSTR *pbstr, OLECHAR *psz, unsigned int len);
 void SysReleaseString(BSTR bstrString);
 UINT SysStringByteLen(BSTR bstr);
 UINT SysStringLen(BSTR pbstr);
@@ -6798,7 +6798,7 @@ int TranslateAcceleratorA(HWND hWnd, HACCEL hAccTable, LPMSG lpMsg);
 int TranslateAcceleratorW(HWND hWnd, HACCEL hAccTable, LPMSG lpMsg);
 BOOL TranslateCharsetInfo(DWORD *lpSrc, unknown_t lpCs, unknown_t dwFlags);
 BOOL TranslateMDISysAccel(HWND hWndClient, LPMSG lpMsg);
-BOOL TranslateMessage(unknown_t *lpMsg);
+BOOL TranslateMessage(MSG *lpMsg);
 BOOLEAN TranslateNameA(LPCSTR lpAccountName, EXTENDED_NAME_FORMAT AccountNameFormat, EXTENDED_NAME_FORMAT DesiredNameFormat, LPSTR lpTranslatedName, PULONG nSize);
 BOOLEAN TranslateNameW(LPCWSTR lpAccountName, EXTENDED_NAME_FORMAT AccountNameFormat, EXTENDED_NAME_FORMAT DesiredNameFormat, LPWSTR lpTranslatedName, PULONG nSize);
 HRESULT TranslateURL(LPCSTR pcszURL, unknown_t dwInFlags, LPSTR *ppszTranslatedURL);
@@ -7186,7 +7186,7 @@ HRESULT VariantCopyInd(VARIANT *pvarDest, unknown_t *pvargSrc);
 void VariantInit(unknown_t *pvarg);
 INT VariantTimeToDosDateTime(DOUBLE vtime, USHORT *pwDosDate, USHORT *pwDosTime);
 INT VariantTimeToSystemTime(DOUBLE vtime, LPSYSTEMTIME lpSystemTime);
-HRESULT VectorFromBstr(BSTR bstr, unknown_t **ppsa);
+HRESULT VectorFromBstr(BSTR bstr, SAFEARRAY **ppsa);
 DWORD VerFindFileA(DWORD uFlags, LPCSTR szFileName, LPCSTR szWinDir, LPCSTR szAppDir, LPSTR szCurDir, PUINT puCurDirLen, LPSTR szDestDir, PUINT puDestDirLen);
 DWORD VerFindFileW(DWORD uFlags, LPCWSTR szFileName, LPCWSTR szWinDir, LPCWSTR szAppDir, LPWSTR szCurDir, PUINT puCurDirLen, LPWSTR szDestDir, PUINT puDestDirLen);
 DWORD VerInstallFileA(DWORD uFlags, LPCSTR szSrcFileName, LPCSTR szDestFileName, LPCSTR szSrcDir, LPCSTR szDestDir, LPCSTR szCurDir, LPSTR szTmpFile, PUINT puTmpFileLen);
@@ -7647,19 +7647,19 @@ int getc(FILE *stream);
 int getchar();
 char * getenv(const char *name);
 uid_t geteuid();
-unknown_t * gethostbyaddr(const char *addr, int len, int type);
-unknown_t * gethostbyname(const char *name);
+struct hostent * gethostbyaddr(const char *addr, int len, int type);
+struct hostent * gethostbyname(const char *name);
 int gethostname(char *name, int namelen);
 INT getnameinfo(SOCKADDR *pSockaddr, socklen_t SockaddrLength, PCHAR pNodeBuffer, DWORD NodeBufferSize, PCHAR pServiceBuffer, DWORD ServiceBufferSize, INT Flags);
 int getopt(int argc, const char **argv, const char *optstring);
 int getpeername(SOCKET s, struct sockaddr *name, int *namelen);
 int getpid();
 const char * getprogname();
-unknown_t * getprotobyname(const char *name);
-unknown_t * getprotobynumber(int number);
+struct protoent * getprotobyname(const char *name);
+struct protoent * getprotobynumber(int number);
 char * gets(char *s);
-unknown_t * getservbyname(const char *name, const char *proto);
-unknown_t * getservbyport(int port, const char *proto);
+struct servent * getservbyname(const char *name, const char *proto);
+struct servent * getservbyport(int port, const char *proto);
 int getsockname(SOCKET s, struct sockaddr *name, int *namelen);
 int getsockopt(SOCKET s, int level, int optname, char *optval, int *optlen);
 uid_t getuid();
@@ -8267,6 +8267,138 @@ int wvnsprintfW(PWSTR pszDest, int cchDest, PCWSTR pszFmt, va_list arglist);
 int wvsprintfA(LPSTR ARG_0, LPCSTR ARG_1, va_list arglist);
 int wvsprintfW(LPWSTR ARG_0, LPCWSTR ARG_1, va_list arglist);
 void * xmalloc(size_t size);
+EOF
+RUN
+
+NAME=windows types from issue 3728
+FILE==
+ARGS=-a x86 -b 64 -k windows
+CMDS=<<EOF
+tt MSG
+tt PMSG
+tt NPMSG
+tt LPMSG
+tt WIN32_FIND_DATAW
+tt PWIN32_FIND_DATAW
+tt LPWIN32_FIND_DATAW
+tt SYSTEM_INFO
+tt LPSYSTEM_INFO
+tt OSVERSIONINFOW
+tt POSVERSIONINFOW
+tt LPOSVERSIONINFOW
+tt RTL_OSVERSIONINFOW
+tt PRTL_OSVERSIONINFOW
+tt OSVERSIONINFOEXW
+tt POSVERSIONINFOEXW
+tt LPOSVERSIONINFOEXW
+tt ACTCTXW
+tt PACTCTXW
+tt PCACTCTXW
+tt SID_AND_ATTRIBUTES
+tt PSID_AND_ATTRIBUTES
+tt LUID
+tt PLUID
+tt LUID_AND_ATTRIBUTES
+tt PLUID_AND_ATTRIBUTES
+tt CONTEXT
+tt PCONTEXT
+tt KNONVOLATILE_CONTEXT_POINTERS
+tt PKNONVOLATILE_CONTEXT_POINTERS
+tt CLSID
+tt REFCLSID
+tt LPCLSID
+tt LPBC
+tt PSID
+tt LPOLESTR
+tt LPCOLESTR
+tt OLECHAR
+tt EVENT_TRACE_HEADER
+tt PEVENT_TRACE_HEADER
+tt TRACE_GUID_REGISTRATION
+tt PTRACE_GUID_REGISTRATION
+tt TRACEHANDLE
+tt PTRACEHANDLE
+EOF
+EXPECT=<<EOF
+MSG = struct tagMSG
+PMSG = struct tagMSG *
+NPMSG = struct tagMSG *
+LPMSG = struct tagMSG *
+WIN32_FIND_DATAW = struct _WIN32_FIND_DATAW
+PWIN32_FIND_DATAW = struct _WIN32_FIND_DATAW *
+LPWIN32_FIND_DATAW = struct _WIN32_FIND_DATAW *
+SYSTEM_INFO = struct _SYSTEM_INFO
+LPSYSTEM_INFO = struct _SYSTEM_INFO *
+OSVERSIONINFOW = struct _OSVERSIONINFOW
+POSVERSIONINFOW = struct _OSVERSIONINFOW *
+LPOSVERSIONINFOW = struct _OSVERSIONINFOW *
+RTL_OSVERSIONINFOW = struct _OSVERSIONINFOW
+PRTL_OSVERSIONINFOW = struct _OSVERSIONINFOW *
+OSVERSIONINFOEXW = struct _OSVERSIONINFOEXW
+POSVERSIONINFOEXW = struct _OSVERSIONINFOEXW *
+LPOSVERSIONINFOEXW = struct _OSVERSIONINFOEXW *
+ACTCTXW = struct tagACTCTXW
+PACTCTXW = struct tagACTCTXW *
+PCACTCTXW = struct tagACTCTXW *
+SID_AND_ATTRIBUTES = struct _SID_AND_ATTRIBUTES
+PSID_AND_ATTRIBUTES = struct _SID_AND_ATTRIBUTES *
+LUID = struct _LUID
+PLUID = struct _LUID *
+LUID_AND_ATTRIBUTES = struct _LUID_AND_ATTRIBUTES
+PLUID_AND_ATTRIBUTES = struct _LUID_AND_ATTRIBUTES *
+CONTEXT = struct _CONTEXT
+PCONTEXT = struct _CONTEXT *
+KNONVOLATILE_CONTEXT_POINTERS = struct _KNONVOLATILE_CONTEXT_POINTERS
+PKNONVOLATILE_CONTEXT_POINTERS = struct _KNONVOLATILE_CONTEXT_POINTERS *
+CLSID = GUID
+REFCLSID = CLSID *
+LPCLSID = CLSID *
+LPBC = struct _IBindCtx *
+PSID = PVOID
+LPOLESTR = OLECHAR *
+LPCOLESTR = OLECHAR *
+OLECHAR = WCHAR
+EVENT_TRACE_HEADER = struct _EVENT_TRACE_HEADER
+PEVENT_TRACE_HEADER = struct _EVENT_TRACE_HEADER *
+TRACE_GUID_REGISTRATION = struct _TRACE_GUID_REGISTRATION
+PTRACE_GUID_REGISTRATION = struct _TRACE_GUID_REGISTRATION *
+TRACEHANDLE = ULONG64
+PTRACEHANDLE = TRACEHANDLE *
+EOF
+RUN
+
+NAME=missing windows struct types referenced from function signatures
+FILE==
+ARGS=-a x86 -b 64 -k windows
+CMDS=<<EOF
+tt SAFEARRAY
+tt LPSAFEARRAY
+tt SAFEARRAYBOUND
+tt LPSAFEARRAYBOUND
+tt HOSTENT
+tt PHOSTENT
+tt LPHOSTENT
+tt PROTOENT
+tt PPROTOENT
+tt LPPROTOENT
+tt SERVENT
+tt PSERVENT
+tt LPSERVENT
+EOF
+EXPECT=<<EOF
+SAFEARRAY = struct tagSAFEARRAY
+LPSAFEARRAY = struct tagSAFEARRAY *
+SAFEARRAYBOUND = struct tagSAFEARRAYBOUND
+LPSAFEARRAYBOUND = struct tagSAFEARRAYBOUND *
+HOSTENT = struct hostent
+PHOSTENT = struct hostent *
+LPHOSTENT = struct hostent *
+PROTOENT = struct protoent
+PPROTOENT = struct protoent *
+LPPROTOENT = struct protoent *
+SERVENT = struct servent
+PSERVENT = struct servent *
+LPSERVENT = struct servent *
 EOF
 RUN
 
