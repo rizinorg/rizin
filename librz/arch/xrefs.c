@@ -334,22 +334,22 @@ static bool read_up_to(RzAnalysis *analysis, ut64 addr, ut8 *buf, size_t buf_siz
 }
 
 /**
- * \brief Returns all targets of call/jmp instructions within the \p sections.
+ * \brief Returns all control flow targets of call/jmp instructions within the \p sections.
  * NOTE: This function disassembles all instructions within the boundaries and checks for calls/jmps.
  * It DOES NOT use the existing xrefs.
  *
  * \param analysis The analysis plugin.
  * \param sections The RzBinSections to disassemble to find call/jmp instructions.
- * \param branch_targets The found call targets of all disassemble calls.
  * \param include_call_return_pts If true, it will add addresses after a call instruction as well.
+ * \param cf_targets The found call targets of all disassemble calls.
  *
  * \return True in case of success, false otherwise.
  */
-RZ_API bool rz_analysis_get_all_branch_targets(RzAnalysis *analysis,
+RZ_API bool rz_analysis_get_all_cf_targets(RzAnalysis *analysis,
 	const RzPVector /*<RzBinSection *>*/ *sections,
 	bool include_call_return_pts,
-	RZ_NONNULL RZ_OUT RzSetU *branch_targets) {
-	rz_return_val_if_fail(analysis && analysis->cur && sections && branch_targets, false);
+	RZ_NONNULL RZ_OUT RzSetU *cf_targets) {
+	rz_return_val_if_fail(analysis && analysis->cur && sections && cf_targets, false);
 	size_t buf_size = (analysis->cur->bits / 8) * 16;
 	ut8 *buf = RZ_NEWS0(ut8, buf_size);
 	if (!buf_size || !buf) {
@@ -379,17 +379,17 @@ RZ_API bool rz_analysis_get_all_branch_targets(RzAnalysis *analysis,
 			bool op_is_call = rz_analysis_op_is_direct_call(&op);
 			bool op_is_jump = rz_analysis_op_is_direct_jump(&op);
 			if ((op_is_call || op_is_jump) && op.jump != UT64_MAX) {
-				rz_set_u_add(branch_targets, op.jump);
+				rz_set_u_add(cf_targets, op.jump);
 				if (op.fail != UT64_MAX) {
 					if (op_is_jump) {
-						rz_set_u_add(branch_targets, op.fail);
+						rz_set_u_add(cf_targets, op.fail);
 					}
 				}
 			}
 			if (include_call_return_pts && op_is_call) {
 				// If it is a call, also add the following instruction as reference.
 				// Because it is likely a return point.
-				rz_set_u_add(branch_targets, op.addr + op.size);
+				rz_set_u_add(cf_targets, op.addr + op.size);
 			}
 			addr += op.size;
 			rz_analysis_op_fini(&op);
