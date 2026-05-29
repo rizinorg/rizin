@@ -1641,7 +1641,7 @@ RZ_API bool rz_analysis_xrefs_set(RzAnalysis *analysis, ut64 from, ut64 to, RzAn
 RZ_API bool rz_analysis_xrefs_deln(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
 RZ_API bool rz_analysis_xref_del(RzAnalysis *analysis, ut64 from, ut64 to);
 
-RZ_API bool rz_analysis_get_all_branch_targets(RzAnalysis *analysis,
+RZ_API bool rz_analysis_get_all_cf_targets(RzAnalysis *analysis,
 	const RzPVector /*<RzBinSection *>*/ *sections,
 	bool include_call_return_pts,
 	RZ_NONNULL RZ_OUT RzSetU *branch_targets);
