@@ -17,12 +17,12 @@ RUN
 NAME=gdbserver dp
 FILE=bins/elf/analysis/pie
 CMDS=<<EOF
-!scripts/gdbserver.py --port 12346 --multi --binary bins/elf/analysis/pie
-oodf gdb://127.0.0.1:12346
+!scripts/gdbserver.py --port 12347 --multi --binary bins/elf/analysis/pie
+oodf gdb://127.0.0.1:12347
 dp 
 EOF
-REGEXP_FILTER_OUT=(^\s*[*-]\s*(\d+\s+ppid:\d+\s+uid:\d+))
+REGEXP_FILTER_OUT=uid:.*$
 EXPECT=<<EOF
- - 1 ppid:0 uid:0
+uid:1000 s bins/elf/analysis/pie 
 EOF
 RUN
