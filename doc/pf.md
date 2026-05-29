@@ -299,6 +299,49 @@ as rizin commands) is no longer needed and is not supported -- the new
 `pfw` writes directly. Likewise, the legacy `.pf*` "execute the rendered
 output as commands" form is gone.
 
+## Defining types from formats (`tdf`)
+
+The **cstruct** output mode above only *prints* a C `struct`; the type is
+not added to the type database, so it does not drive type analysis. To turn
+a `pf` format into a real, analysis-backed type, use the `tdf` command
+("type define from format"):
+
+```text
+tdf <name> <format>
+```
+
+`<format>` is either a literal `pf` format string or the name of a format
+already saved with `pfn` / `pf.<name>`. The format name is resolved first
+(exactly like `pf <name>`), then falls back to being parsed as a literal
+format. The new type is registered through the same C-type parser as `td`,
+so afterwards it behaves like any other `t` type -- it shows up in `ts` /
+`tsc`, can be cast with `tp`, linked to addresses, and used as a member of
+further `td` / `tdf` definitions.
+
+```text
+[0x00000000]> tdf rgba "x1x1x1x1 r g b a"
+[0x00000000]> tsc rgba
+struct rgba {
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+	uint8_t a;
+};
+[0x00000000]> pfn pixel x1x1x1x1 r g b a   # save a named format ...
+[0x00000000]> tdf pixel_t pixel            # ... then promote it to a type
+```
+
+A leading `0` in the format makes the result a `union` instead of a
+`struct`. Specifiers are mapped to the standard fixed-width types
+(`x4`/`u4` → `uint32_t`, `d2` → `int16_t`, `c` → `char`, `f4` → `float`,
+`p` → `void *`, `s` → `char *`, `G` → `uint8_t[16]`, and so on). A few
+`pf` specifiers have no exact static C form and are converted best-effort:
+`@N` alignment is dropped (use `.` / `[N].` to materialise padding bytes),
+an unknown-length inline `z` string becomes `char *` (a fixed `[N]z`
+becomes `char[N]`), LEB128 widens to its largest decoded integer, and
+`?(Name)` / `E(Name)` references emit `struct Name` / `enum Name` -- which
+must themselves already be defined for the new type to register.
+
 ## Deprecated single-letter aliases
 
 For backward compatibility, the parser still accepts a handful of bare

@@ -18,7 +18,8 @@ already include the latter need not include the former explicitly.
 
 ```
 base.c                  RzBaseType (struct/union/enum/typedef) lifecycle
-format.c                Format-string codegen from RzType; named-format storage
+format.c                pf format-string codegen from RzType, the inverse
+                        pf -> C-declaration converter, named-format storage
 function.c              RzCallable definitions (function prototypes)
 helpers.c               Type comparison, size, attribute helpers
 path.c                  Path-style access into nested types
@@ -182,6 +183,25 @@ When a format references a typename via `?(Name)` / `E (Name) f` /
 or recursively `rz_pf_resolve_name + rz_pf_parse` (for nested struct
 formats). Recursion is bounded by `RzPfCtx::max_depth` (default 32) to
 catch self-referential structs cleanly.
+
+## Defining types from `pf` formats (`pf` → C)
+
+`format.c` also hosts the reverse helper
+`rz_type_format_to_c_declaration(name, fmt_str, &error)`: it parses a
+`pf` format with `rz_pf_parse()` and emits an equivalent C `struct`/`union`
+declaration built from the standard fixed-width types (`uint8_t`, `int32_t`,
+`float`, ...). Feeding that declaration to the C type parser (as the `tdf`
+command does) registers the format as a first-class `RzBaseType`, so it then
+participates in type analysis -- which a bare `pf` format never does.
+
+The conversion is purely *structural*: it consumes only the parsed
+`RzPfFormat` (field kinds, widths, array counts, pointer flags) and never a
+byte buffer, so it can run without any target data. A few specifiers have no
+exact static C form and are mapped best-effort: `@N` alignment carries no
+storage and is dropped; an unknown-length inline string `z` becomes
+`char *` (a fixed `[N]z` becomes `char[N]`); LEB128 widens to its largest
+decoded integer; and `?(Name)` / `E(Name)` emit `struct Name` / `enum Name`,
+which must themselves be defined types for the declaration to parse.
 
 ## Error reporting
 

@@ -94,6 +94,7 @@ static const RzCmdDescDetail print_function_rzil_enriched_details[6];
 static const RzCmdDescDetail print_string_details[2];
 static const RzCmdDescDetail print_hexdump_format_details[4];
 static const RzCmdDescDetail print_rising_and_falling_entropy_details[2];
+static const RzCmdDescDetail type_define_from_format_details[2];
 static const RzCmdDescDetail interactive_visual_details[2];
 static const RzCmdDescDetail write_details[3];
 static const RzCmdDescDetail write_bits_details[2];
@@ -876,6 +877,7 @@ static const RzCmdDescArg type_list_c_nl_args[2];
 static const RzCmdDescArg type_cc_list_args[2];
 static const RzCmdDescArg type_cc_del_args[2];
 static const RzCmdDescArg type_define_args[2];
+static const RzCmdDescArg type_define_from_format_args[3];
 static const RzCmdDescArg type_list_enum_args[3];
 static const RzCmdDescArg type_enum_bitfield_args[3];
 static const RzCmdDescArg type_enum_c_args[2];
@@ -19367,6 +19369,9 @@ static const RzCmdDescHelp type_cc_del_all_help = {
 	.args = type_cc_del_all_args,
 };
 
+static const RzCmdDescHelp td_help = {
+	.summary = "Define types from a C definition or a pf format string",
+};
 static const RzCmdDescArg type_define_args[] = {
 	{
 		.name = "type",
@@ -19379,6 +19384,35 @@ static const RzCmdDescArg type_define_args[] = {
 static const RzCmdDescHelp type_define_help = {
 	.summary = "Define type from C definition",
 	.args = type_define_args,
+};
+
+static const RzCmdDescDetailEntry type_define_from_format_Examples_detail_entries[] = {
+	{ .text = "tdf", .arg_str = " rgba \"x1x1x1x1 r g b a\"", .comment = "define struct rgba from an inline pf format" },
+	{ .text = "tdf", .arg_str = " elf_header elf_header", .comment = "define a type from the saved pf.elf_header format" },
+	{ 0 },
+};
+static const RzCmdDescDetail type_define_from_format_details[] = {
+	{ .name = "Examples", .entries = type_define_from_format_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg type_define_from_format_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "format",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_define_from_format_help = {
+	.summary = "Define a type from a pf format string or a saved pf.<name>",
+	.details = type_define_from_format_details,
+	.args = type_define_from_format_args,
 };
 
 static const RzCmdDescHelp te_help = {
@@ -25682,8 +25716,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *type_cc_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, tcc_cd, "tcc-*", rz_type_cc_del_all_handler, &type_cc_del_all_help);
 	rz_warn_if_fail(type_cc_del_all_cd);
 
-	RzCmdDesc *type_define_cd = rz_cmd_desc_argv_new(core->rcmd, t_cd, "td", rz_type_define_handler, &type_define_help);
-	rz_warn_if_fail(type_define_cd);
+	RzCmdDesc *td_cd = rz_cmd_desc_group_new(core->rcmd, t_cd, "td", rz_type_define_handler, &type_define_help, &td_help);
+	rz_warn_if_fail(td_cd);
+	RzCmdDesc *type_define_from_format_cd = rz_cmd_desc_argv_new(core->rcmd, td_cd, "tdf", rz_type_define_from_format_handler, &type_define_from_format_help);
+	rz_warn_if_fail(type_define_from_format_cd);
 
 	RzCmdDesc *te_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "te", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_list_enum_handler, &type_list_enum_help, &te_help);
 	rz_warn_if_fail(te_cd);

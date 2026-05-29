@@ -357,6 +357,57 @@ RZ_IPI RzCmdStatus rz_type_define_handler(RzCore *core, int argc, const char **a
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_type_define_from_format_handler(RzCore *core, int argc, const char **argv) {
+	const char *name = argv[1];
+	const char *format_arg = argv[2];
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+
+	/* Resolve the second argument. It may be either the name of a
+	 * format saved with pfn / pf.<name> or a literal `pf` format string.
+	 * A saved name is looked up first (a pure read of the formats hash);
+	 * otherwise the argument is parsed as a literal format. This is the
+	 * "including from existing saved ones" half of the feature, and it
+	 * deliberately uses rz_type_db_format_get rather than
+	 * rz_pf_resolve_name so that nothing but `tdf` ever writes into the
+	 * type database -- and only with the final registered type. */
+	const char *fmt_str = rz_type_db_format_get(typedb, format_arg);
+	if (!fmt_str) {
+		fmt_str = format_arg;
+	}
+
+	char *error = NULL;
+	char *c_decl = rz_type_format_to_c_declaration(name, fmt_str, &error);
+	if (!c_decl) {
+		RZ_LOG_ERROR("Cannot build a type from format \"%s\": %s\n",
+			format_arg, error ? error : "unknown error");
+		free(error);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	/* Register the synthesised declaration through the regular C type
+	 * parser, exactly as `td` does, so the new type becomes a first-class
+	 * RzBaseType that participates in type analysis. */
+	char *parse_error = NULL;
+	int rc = rz_type_parse_string_stateless(typedb->parser, c_decl, &parse_error);
+	if (rc && parse_error) {
+		rz_str_trim_tail(parse_error);
+		RZ_LOG_ERROR("Failed to define type \"%s\": %s\n", name, parse_error);
+		free(parse_error);
+		free(c_decl);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	free(parse_error);
+
+	/* Confirm the type actually landed in the database. */
+	if (!rz_type_db_get_base_type(typedb, name)) {
+		RZ_LOG_ERROR("Type \"%s\" was not registered (check the format)\n", name);
+		free(c_decl);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	free(c_decl);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_type_list_enum_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (argc > 1) {
 		if (argc > 2) {

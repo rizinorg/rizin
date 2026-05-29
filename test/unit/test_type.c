@@ -1878,7 +1878,86 @@ bool test_callable_unspecified_parameters(void) {
 	mu_end;
 }
 
+static bool test_type_format_to_c_declaration_struct(void) {
+	char *s = rz_type_format_to_c_declaration("rgba", "x1x1x1x1 r g b a", NULL);
+	mu_assert_streq_free(s,
+		"struct rgba {\n\tuint8_t r;\n\tuint8_t g;\n\tuint8_t b;\n\tuint8_t a;\n};",
+		"struct from inline pf format");
+	mu_end;
+}
+
+static bool test_type_format_to_c_declaration_union(void) {
+	char *s = rz_type_format_to_c_declaration("onion", "0d4d4d4 a b c", NULL);
+	mu_assert_streq_free(s,
+		"union onion {\n\tint32_t a;\n\tint32_t b;\n\tint32_t c;\n};",
+		"union from leading-0 pf format");
+	mu_end;
+}
+
+static bool test_type_format_to_c_declaration_pointers_and_strings(void) {
+	char *s = rz_type_format_to_c_declaration("ps", "ps ptr str", NULL);
+	mu_assert_streq_free(s,
+		"struct ps {\n\tvoid *ptr;\n\tchar *str;\n};",
+		"pointer and string fields");
+	mu_end;
+}
+
+static bool test_type_format_to_c_declaration_array(void) {
+	char *s = rz_type_format_to_c_declaration("arr", "[4]d4 vals", NULL);
+	mu_assert_streq_free(s,
+		"struct arr {\n\tint32_t vals[4];\n};",
+		"fixed-size array field");
+	mu_end;
+}
+
+static bool test_type_format_to_c_declaration_invalid(void) {
+	char *err = NULL;
+	char *s = rz_type_format_to_c_declaration("", "x4 a", &err);
+	mu_assert_null(s, "empty name rejected");
+	free(err);
+	err = NULL;
+	s = rz_type_format_to_c_declaration("foo", "", &err);
+	mu_assert_null(s, "empty format rejected");
+	free(err);
+	mu_end;
+}
+
+static bool test_type_format_to_c_declaration_registers_base_type(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+
+	char *decl = rz_type_format_to_c_declaration("point", "d4d4 x y", NULL);
+	mu_assert_notnull(decl, "converted format to declaration");
+
+	char *error_msg = NULL;
+	rz_type_parse_string_stateless(typedb->parser, decl, &error_msg);
+	free(decl);
+
+	RzBaseType *base = rz_type_db_get_base_type(typedb, "point");
+	mu_assert_notnull(base, "type registered in the database");
+	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "registered as struct");
+	mu_assert_eq(rz_vector_len(&base->struct_data.members), 2, "two members");
+
+	RzTypeStructMember *m = rz_vector_index_ptr(&base->struct_data.members, 0);
+	mu_assert_true(rz_type_atomic_str_eq(typedb, m->type, "int32_t"), "first member type");
+	mu_assert_streq(m->name, "x", "first member name");
+	m = rz_vector_index_ptr(&base->struct_data.members, 1);
+	mu_assert_true(rz_type_atomic_str_eq(typedb, m->type, "int32_t"), "second member type");
+	mu_assert_streq(m->name, "y", "second member name");
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 int all_tests() {
+	mu_run_test(test_type_format_to_c_declaration_struct);
+	mu_run_test(test_type_format_to_c_declaration_union);
+	mu_run_test(test_type_format_to_c_declaration_pointers_and_strings);
+	mu_run_test(test_type_format_to_c_declaration_array);
+	mu_run_test(test_type_format_to_c_declaration_invalid);
+	mu_run_test(test_type_format_to_c_declaration_registers_base_type);
 	mu_run_test(test_types_get_base_type_struct);
 	mu_run_test(test_types_get_base_type_union);
 	mu_run_test(test_types_get_base_type_enum);

@@ -4,19 +4,18 @@
 
 /**
  * \file format.c
- * \brief Convert RzType / RzBaseType values into pf format strings.
+ * \brief Convert between RzType / RzBaseType values and `pf` format strings.
  *
- * This file is the *producer* side: it walks an in-memory RzType tree
- * (the AST built from C declarations parsed by tree-sitter) and emits
- * the corresponding pf format string plus the matching " name1 name2..."
- * tail.
+ * The main direction is the *producer* side: walk an in-memory RzType
+ * tree and emit the corresponding pf format string plus the matching
+ * " name1 name2..." tail.
  *
- * The *consumer* side -- parsing a pf string and using it to interpret
- * bytes -- lives in pf_parser.c.
+ * The reverse helper rz_type_format_to_c_declaration() takes a pf format
+ * string and emits an equivalent C struct/union declaration, so a format
+ * can be promoted to a registered RzBaseType (used by the `tdf` command).
  *
- * The two sides share a single textual format, which is the DSL
- * documented in pf_parser.h, so any new specifier added to the parser
- * must also be wired in here when it has a meaningful RzType mapping.
+ * The byte-level consumer -- parsing a pf string and interpreting bytes
+ * through it -- lives in the pf engine under librz/type/pf/.
  */
 
 #include "rz_util/rz_str_util.h"
@@ -24,6 +23,7 @@
 #include <rz_util/rz_print.h>
 #include <rz_reg.h>
 #include <rz_type.h>
+#include <rz_pf.h>
 
 /* Every format string essentially contains two parts:
  * 1. The format (`pf` string) itself
@@ -254,6 +254,190 @@ RZ_API RZ_OWN char *rz_type_format(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL
 		return NULL;
 	}
 	return rz_base_type_as_format(typedb, btype);
+}
+
+static const char *uint_ctype_for_bytes(int nbytes) {
+	if (nbytes <= 1) {
+		return "uint8_t";
+	}
+	if (nbytes <= 2) {
+		return "uint16_t";
+	}
+	if (nbytes <= 4) {
+		return "uint32_t";
+	}
+	return "uint64_t";
+}
+
+static const char *uint_ctype_for_bits(int nbits) {
+	if (nbits <= 8) {
+		return "uint8_t";
+	}
+	if (nbits <= 16) {
+		return "uint16_t";
+	}
+	if (nbits <= 32) {
+		return "uint32_t";
+	}
+	return "uint64_t";
+}
+
+// Fixed-width integer the timestamp wire-format is decoded from.
+static const char *pf_timefmt_ctype(RzPfTimeFmt tf) {
+	switch (tf) {
+	case RZ_PF_TIMEFMT_UNIX32:
+	case RZ_PF_TIMEFMT_DOS:
+	case RZ_PF_TIMEFMT_HFS:
+		return "uint32_t";
+	case RZ_PF_TIMEFMT_OLETIME:
+	case RZ_PF_TIMEFMT_COCOA:
+		return "double";
+	default:
+		return "uint64_t";
+	}
+}
+
+// Append a `<ctype> <name>;` member, or `<ctype> <name>[count];` when count > 1.
+static void pf_emit_member(RzStrBuf *sb, const char *ctype, const char *name, int count) {
+	if (count > 1) {
+		rz_strbuf_appendf(sb, "\t%s %s[%d];\n", ctype, name, count);
+	} else {
+		rz_strbuf_appendf(sb, "\t%s %s;\n", ctype, name);
+	}
+}
+
+static void pf_field_to_member(RzStrBuf *sb, const RzPfField *fld, int idx) {
+	char namebuf[32];
+	const char *name = fld->name;
+	if (RZ_STR_ISEMPTY(name)) {
+		snprintf(namebuf, sizeof(namebuf), "field_%d", idx);
+		name = namebuf;
+	}
+	int count = fld->array_count;
+
+	switch (fld->type) {
+	case RZ_PF_ALIGN: // cursor alignment: no storage
+	case RZ_PF_TLV: // variable, self-describing: not expressible statically
+		return;
+	case RZ_PF_BITS: {
+		int w = fld->bit_width > 0 ? fld->bit_width : 1;
+		rz_strbuf_appendf(sb, "\t%s %s : %d;\n", uint_ctype_for_bits(w), name, w);
+		return;
+	}
+	case RZ_PF_SKIP:
+	case RZ_PF_HEXDUMP:
+		pf_emit_member(sb, "uint8_t", name, count > 0 ? count : 1);
+		return;
+	case RZ_PF_GUID:
+	case RZ_PF_UINT128:
+		pf_emit_member(sb, "uint8_t", name, 16);
+		return;
+	case RZ_PF_BITVEC:
+		pf_emit_member(sb, "uint8_t", name, fld->bit_width > 0 ? (fld->bit_width + 7) / 8 : 1);
+		return;
+	case RZ_PF_ZSTRING:
+		// only a fixed-length [N]z can be sized; bare z is best-effort char *
+		if (fld->str_fixed_len > 0) {
+			rz_strbuf_appendf(sb, "\tchar %s[%d];\n", name, fld->str_fixed_len);
+		} else {
+			rz_strbuf_appendf(sb, "\tchar *%s;\n", name);
+		}
+		return;
+	case RZ_PF_STRPTR:
+		rz_strbuf_appendf(sb, "\tchar *%s;\n", name);
+		return;
+	case RZ_PF_POINTER:
+		if (count > 1) {
+			rz_strbuf_appendf(sb, "\tvoid *%s[%d];\n", name, count);
+		} else {
+			rz_strbuf_appendf(sb, "\tvoid *%s;\n", name);
+		}
+		return;
+	case RZ_PF_STRUCT:
+		if (RZ_STR_ISEMPTY(fld->type_name)) {
+			pf_emit_member(sb, "uint8_t", name, count); // anonymous: placeholder byte
+		} else if (count > 1) {
+			rz_strbuf_appendf(sb, "\tstruct %s %s[%d];\n", fld->type_name, name, count);
+		} else {
+			rz_strbuf_appendf(sb, "\tstruct %s %s;\n", fld->type_name, name);
+		}
+		return;
+	case RZ_PF_ENUM:
+		if (RZ_STR_ISEMPTY(fld->type_name)) {
+			pf_emit_member(sb, uint_ctype_for_bytes(fld->bit_width > 0 ? fld->bit_width : 4), name, count);
+		} else if (count > 1) {
+			rz_strbuf_appendf(sb, "\tenum %s %s[%d];\n", fld->type_name, name, count);
+		} else {
+			rz_strbuf_appendf(sb, "\tenum %s %s;\n", fld->type_name, name);
+		}
+		return;
+	case RZ_PF_BITFIELD:
+		pf_emit_member(sb, uint_ctype_for_bytes(fld->bitfield_size > 0 ? fld->bitfield_size : 4), name, count);
+		return;
+	case RZ_PF_TIMESTAMP:
+		pf_emit_member(sb, pf_timefmt_ctype(fld->timefmt), name, count);
+		return;
+	case RZ_PF_CHAR:
+		pf_emit_member(sb, "char", name, count);
+		return;
+	case RZ_PF_ULEB128: // variable length on the wire; modelled by widest value
+		pf_emit_member(sb, "uint64_t", name, count);
+		return;
+	case RZ_PF_SLEB128:
+		pf_emit_member(sb, "int64_t", name, count);
+		return;
+	case RZ_PF_FLOAT16: // no standard 2-byte float type; model storage width
+		pf_emit_member(sb, "uint16_t", name, count);
+		return;
+	default: // hex / signed / unsigned / octal / binary scalars
+		pf_emit_member(sb, rz_pf_field_ctype(fld->type), name, count);
+		return;
+	}
+}
+
+/**
+ * \brief Convert a `pf` format string into an equivalent C declaration
+ *
+ * Parses \p fmt_str and renders a C `struct` (or `union`, when the format
+ * begins with the `0` union marker) named \p name, using standard
+ * fixed-width types. The result is a complete declaration ending in `;`,
+ * ready to pass to rz_type_parse_string_stateless() so the format becomes
+ * a registered RzBaseType. The conversion is structural: it consumes only
+ * the parsed format, never a byte buffer. Specifiers with no exact static
+ * C form are mapped best-effort (`@N` dropped, unsized `z` -> char *,
+ * LEB128 widened, `?(Name)`/`E(Name)` -> struct/enum references).
+ *
+ * \param name Identifier for the generated struct/union
+ * \param fmt_str A `pf` format string (the `fmt fieldnames` form)
+ * \param error Optional; set to an owned error message on failure
+ * \return Owned C declaration string, or NULL on failure
+ */
+RZ_API RZ_OWN char *rz_type_format_to_c_declaration(RZ_NONNULL const char *name,
+	RZ_NONNULL const char *fmt_str, RZ_NULLABLE char **error) {
+	rz_return_val_if_fail(name && fmt_str, NULL);
+	if (RZ_STR_ISEMPTY(name) || RZ_STR_ISEMPTY(fmt_str)) {
+		if (error) {
+			*error = rz_str_dup("empty type name or format string");
+		}
+		return NULL;
+	}
+	RzPfFormat *fmt = rz_pf_parse(fmt_str);
+	if (!fmt || fmt->nfields <= 0) {
+		if (error) {
+			char *diag = fmt ? rz_pf_format_errors_to_string(fmt) : NULL;
+			*error = diag ? diag : rz_str_dup("pf format defined no fields");
+		}
+		rz_pf_format_free(fmt);
+		return NULL;
+	}
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	rz_strbuf_appendf(sb, "%s %s {\n", fmt->is_union ? "union" : "struct", name);
+	for (int i = 0; i < fmt->nfields; i++) {
+		pf_field_to_member(sb, &fmt->fields[i], i);
+	}
+	rz_strbuf_append(sb, "};");
+	rz_pf_format_free(fmt);
+	return rz_strbuf_drain(sb);
 }
 
 /* True iff `type` is a POINTER whose pointee resolves -- by walking
