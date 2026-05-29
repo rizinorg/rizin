@@ -586,7 +586,17 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 		ptr = ptr2;
 	}
 	if (data != str) {
-		strncpy(str, data, len);
+		// `data` is a colorized operand that may be longer than the
+		// destination buffer. rz_str_ncpy() truncates and always
+		// NUL-terminates (plain strncpy did neither, letting the operand run
+		// into the adjacent strsub[] buffer). A byte-bounded cut can still
+		// split a trailing ANSI escape, so when truncation happens re-trim to
+		// the visible length: rz_str_ansi_trim() consumes escapes atomically
+		// and stops at the last visible glyph, dropping the partial escape so
+		// we never emit a garbled "\x1b[..." sequence. See issue #3831.
+		if (rz_str_ncpy(str, data, len) >= (size_t)len) {
+			rz_str_ansi_trim(str, -1, rz_str_ansi_len(str));
+		}
 	} else {
 		eprintf("Invalid str/data inputs\n");
 	}

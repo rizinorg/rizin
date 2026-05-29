@@ -98,6 +98,7 @@ if get_option('enable_tests')
     'math',
     'mem',
     'ovf',
+    'parse',
     'pf',
     'pj',
     'rbtree',
