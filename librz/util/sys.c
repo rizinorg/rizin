@@ -411,6 +411,9 @@ RZ_API void rz_sys_backtrace(void) {
  * \brief Sleep for \p secs seconds
  */
 RZ_API int rz_sys_sleep(int secs) {
+	if (secs == 0) {
+		return 0;
+	}
 #if HAVE_CLOCK_NANOSLEEP && defined(CLOCK_MONOTONIC)
 	struct timespec rqtp;
 	rqtp.tv_sec = secs;
@@ -428,6 +431,9 @@ RZ_API int rz_sys_sleep(int secs) {
  * \brief Sleep for \p usecs microseconds
  */
 RZ_API int rz_sys_usleep(int usecs) {
+	if (usecs == 0) {
+		return 0;
+	}
 #if HAVE_CLOCK_NANOSLEEP && defined(CLOCK_MONOTONIC)
 	struct timespec rqtp;
 	rqtp.tv_sec = usecs / 1000000;
