@@ -2511,6 +2511,8 @@ RZ_IPI RzCmdStatus rz_type_cc_del_handler(RzCore *core, int argc, const char **a
 RZ_IPI RzCmdStatus rz_type_cc_del_all_handler(RzCore *core, int argc, const char **argv);
 // "td"
 RZ_IPI RzCmdStatus rz_type_define_handler(RzCore *core, int argc, const char **argv);
+// "tdf"
+RZ_IPI RzCmdStatus rz_type_define_from_format_handler(RzCore *core, int argc, const char **argv);
 // "te"
 RZ_IPI RzCmdStatus rz_type_list_enum_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "teb"

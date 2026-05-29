@@ -70,11 +70,31 @@ commands:
             summary: Remove all calling conventions
             args: []
   - name: td
-    cname: type_define
-    summary: Define type from C definition
-    args:
-      - name: type
-        type: RZ_CMD_ARG_TYPE_STRING
+    summary: Define types from a C definition or a pf format string
+    subcommands:
+      - name: td
+        cname: type_define
+        summary: Define type from C definition
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: tdf
+        cname: type_define_from_format
+        summary: Define a type from a pf format string or a saved pf.<name>
+        details:
+          - name: "Examples"
+            entries:
+              - text: "tdf"
+                arg_str: ' rgba "x1x1x1x1 r g b a"'
+                comment: "define struct rgba from an inline pf format"
+              - text: "tdf"
+                arg_str: " elf_header elf_header"
+                comment: "define a type from the saved pf.elf_header format"
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: format
+            type: RZ_CMD_ARG_TYPE_STRING
   - name: te
     summary: List loaded enums
     subcommands:

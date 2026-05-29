@@ -8472,3 +8472,123 @@ struct foo {
 };
 EOF
 RUN
+
+NAME=tdf define struct from inline pf format
+FILE==
+CMDS=<<EOF
+tdf rgba "x1x1x1x1 r g b a"
+tsc rgba
+EOF
+EXPECT=<<EOF
+struct rgba {
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+	uint8_t a;
+};
+EOF
+RUN
+
+NAME=tdf maps pf specifiers to fixed-width C types
+FILE==
+CMDS=<<EOF
+tdf widths "x1d2u4x8 hx d16 u32 q64"
+tsc widths
+tdf scal "cf4psGx8 ch flt ptr str guid big"
+tsc scal
+EOF
+EXPECT=<<EOF
+struct widths {
+	uint8_t hx;
+	int16_t d16;
+	uint32_t u32;
+	uint64_t q64;
+};
+struct scal {
+	char ch;
+	float flt;
+	void *ptr;
+	char *str;
+	uint8_t guid[16];
+	uint64_t big;
+};
+EOF
+RUN
+
+NAME=tdf define fixed-size array field from pf format
+FILE==
+CMDS=<<EOF
+tdf arr3 "[4]d4 vals"
+tsc arr3
+EOF
+EXPECT=<<EOF
+struct arr3 {
+	int32_t vals[4];
+};
+EOF
+RUN
+
+NAME=tdf define union from pf union format
+FILE==
+CMDS=<<EOF
+tdf onion "0d4d4d4 a b c"
+tuc onion
+EOF
+EXPECT=<<EOF
+union onion {
+	int32_t a;
+	int32_t b;
+	int32_t c;
+};
+EOF
+RUN
+
+NAME=tdf define type from a saved pf format
+FILE==
+CMDS=<<EOF
+pfn rgbfmt x1x1x1x1 r g b a
+tdf rgbsaved rgbfmt
+tsc rgbsaved
+EOF
+EXPECT=<<EOF
+struct rgbsaved {
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+	uint8_t a;
+};
+EOF
+RUN
+
+NAME=tdf produces a first-class base type usable in further definitions
+FILE==
+CMDS=<<EOF
+tdf inner "d4d4 x y"
+td "struct outer { struct inner pt; int32_t flag; }"
+tsc outer
+EOF
+EXPECT=<<EOF
+struct outer {
+	struct inner pt;
+	int32_t flag;
+};
+EOF
+RUN
+
+NAME=pf and pfn do not register types, only tdf does
+FILE==
+CMDS=<<EOF
+pfn pixfmt x1x1x1x1 r g b a
+t~pixfmt
+tdf pixtype pixfmt
+tsc pixtype
+EOF
+EXPECT=<<EOF
+struct pixtype {
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+	uint8_t a;
+};
+EOF
+RUN
