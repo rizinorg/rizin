@@ -597,6 +597,10 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 			}
 			field_declarator = ts_node_next_named_sibling(field_declarator);
 		} while (!ts_node_is_null(field_declarator));
+		// The member type is cloned into each declarator above, so the
+		// type pair built for this field is no longer needed. Its btype
+		// is borrowed from the type database, only the type is owned.
+		rz_type_free(membtpair->type);
 		free(membtpair);
 	}
 	// If parsing successfull completed - we store the state
@@ -883,6 +887,10 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 			}
 			field_declarator = ts_node_next_named_sibling(field_declarator);
 		} while (!ts_node_is_null(field_declarator));
+		// The member type is cloned into each declarator above, so the
+		// type pair built for this field is no longer needed. Its btype
+		// is borrowed from the type database, only the type is owned.
+		rz_type_free(membtpair->type);
 		free(membtpair);
 	}
 	// If parsing successfull completed - we store the state
