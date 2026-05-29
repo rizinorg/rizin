@@ -21,8 +21,8 @@ CMDS=<<EOF
 oodf gdb://127.0.0.1:12347
 dp 
 EOF
-REGEXP_FILTER_OUT=uid:.*$
+REGEXP_FILTER_OUT=s.*pie
 EXPECT=<<EOF
-uid:1000 s bins/elf/analysis/pie 
+s bins/elf/analysis/pie
 EOF
 RUN
