@@ -60,11 +60,11 @@ def main():
                 print(output)
             # Exit once gdbserver is ready for connections
             if "Listening on port" in output:
-                os._exit(0)
+                os._exit(0)  # pylint: disable=protected-access
             # gdbserver might fail to start if the port is taken
             if "Can't bind address" in output:
                 print(output)
-                os._exit(1)
+                os._exit(1)  # pylint: disable=protected-access
 
 
 if __name__ == "__main__":
