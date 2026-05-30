@@ -85,24 +85,43 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterSet *iset,
 		if (!eval_out.is_concrete) {
 			RZ_LOG_DEBUG("PC is going to be set to an abstract value! Current PC = 0x%" PFMT64x "\n", rz_bv_to_ut64(pc->bv));
 		}
+		ut64 target = rz_bv_to_ut64(eval_out.bv);
 		RZ_LOG_DEBUG("Prototype: JMP - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
-			rz_bv_to_ut64(pc->bv),
-			rz_bv_to_ut64(eval_out.bv),
+			rz_bv_to_ut64(pc->bv), target,
 			eval_out.is_concrete ? "Concrete" : "Abstract");
-		bool reported_cc = false;
-		if (plugin_data->call_cand.store_addr && eval_out.is_concrete) {
-			// An instruction in this basic block stored the next PC.
-			// Report a call candidate.
-			plugin_data->call_cand.candidate_addr = rz_bv_to_ut64(pc->bv);
-			plugin_data->call_cand.target = rz_bv_to_ut64(eval_out.bv);
-			report_yield_call_candiate(iset, plugin_data);
-			reported_cc = true;
-		}
-		memset(&plugin_data->call_cand, 0, sizeof(plugin_data->call_cand));
 
 		if (eval_out.is_concrete) {
+			RzAnalysisXRefType xref_type = RZ_ANALYSIS_XREF_TYPE_CODE;
+
+			if (plugin_data->call_cand.store_addr) {
+				// An instruction in this basic block stored the next PC.
+				// Report a call candidate and assume this jump is a call.
+				plugin_data->call_cand.candidate_addr = rz_bv_to_ut64(pc->bv);
+				plugin_data->call_cand.target = target;
+				report_yield_call_candiate(iset, plugin_data);
+
+				// For a call, we need to push a new frame.
+				RzBitVector ret_addr = { 0 };
+				rz_bv_init(&ret_addr, rz_bv_len(eval_out.bv));
+				rz_bv_set_from_ut64(&ret_addr, plugin_data->call_cand.npc);
+
+				bool found = false;
+				ut64 ic = ht_uu_find(plugin_data->bb_invocation_count, plugin_data->call_cand.target, &found);
+				stack_frame_push(plugin_data, eval_out.bv, &ret_addr, !found ? 0 : ic);
+				rz_bv_fini(&ret_addr);
+
+				xref_type = RZ_ANALYSIS_XREF_TYPE_CALL;
+			}
+			if (xref_type == RZ_ANALYSIS_XREF_TYPE_CODE && stack_frame_top_ret_addr_cmp(plugin_data, eval_out.bv)) {
+				stack_frame_pop(plugin_data, NULL);
+				xref_type = RZ_ANALYSIS_XREF_TYPE_RETURN;
+			}
+
 			report_yield_xref(iset, insn_pkt_size, rz_bv_to_ut64(pc->bv), &eval_out,
-				reported_cc ? RZ_ANALYSIS_XREF_TYPE_CALL : RZ_ANALYSIS_XREF_TYPE_CODE);
+				xref_type);
+
+			// Clear the call candidate tracking variable.
+			memset(&plugin_data->call_cand, 0, sizeof(plugin_data->call_cand));
 		}
 
 		// Setting the PC to a bottom value is allowed here!

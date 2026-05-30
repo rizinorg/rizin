@@ -218,6 +218,8 @@ RZ_API const char *rz_analysis_xrefs_type_tostring(RzAnalysisXRefType type) {
 		return "STRING";
 	case RZ_ANALYSIS_XREF_TYPE_MEM_WRITE:
 		return "MEM_WRITE";
+	case RZ_ANALYSIS_XREF_TYPE_RETURN:
+		return "RETURN";
 	case RZ_ANALYSIS_XREF_TYPE_NULL:
 	default:
 		return "UNKNOWN";
@@ -381,15 +383,13 @@ RZ_API bool rz_analysis_get_all_branch_targets(RzAnalysis *analysis,
 				rz_set_u_add(branch_targets, op.jump);
 
 				RzAnalysisXRef edge = { .from = addr, .to = op.jump };
-				op.type = op_is_call ? RZ_ANALYSIS_XREF_TYPE_CALL : RZ_ANALYSIS_XREF_TYPE_CODE;
+				edge.type = op_is_call ? RZ_ANALYSIS_XREF_TYPE_CALL : RZ_ANALYSIS_XREF_TYPE_CODE;
 				rz_vector_push(insn_to_insn_edges, &edge);
 
 				if (op.fail != UT64_MAX) {
 					if (op_is_jump) {
-						op.type = RZ_ANALYSIS_XREF_TYPE_CODE;
+						RzAnalysisXRef edge = { .from = addr, .to = op.fail, .type = RZ_ANALYSIS_XREF_TYPE_CODE };
 						rz_set_u_add(branch_targets, op.fail);
-
-						RzAnalysisXRef edge = { .from = addr, .to = op.fail };
 						rz_vector_push(insn_to_insn_edges, &edge);
 					}
 				}
@@ -398,8 +398,7 @@ RZ_API bool rz_analysis_get_all_branch_targets(RzAnalysis *analysis,
 				// If it is a call, also add the following instruction as reference.
 				// Because it is likely a return point.
 				rz_set_u_add(branch_targets, op.addr + op.size);
-				op.type = RZ_ANALYSIS_XREF_TYPE_CALL_RET;
-				RzAnalysisXRef edge = { .from = addr, .to = op.fail };
+				RzAnalysisXRef edge = { .from = addr, .to = op.fail, .type = RZ_ANALYSIS_XREF_TYPE_CALL_RET };
 				rz_vector_push(insn_to_insn_edges, &edge);
 			}
 			addr += op.size;

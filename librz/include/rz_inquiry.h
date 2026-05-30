@@ -69,7 +69,6 @@ RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis,
  */
 typedef struct {
 	RzVector /*<ut64>*/ *entry_points;
-	RzVector /*<RzAnalysisCallCandidate>*/ *call_candidates;
 	RzInquiryBBCFG *bb_cfg;
 } RzInquiryFunction;
 

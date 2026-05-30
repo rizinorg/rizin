@@ -22,15 +22,15 @@ typedef enum {
 	 */
 	RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP,
 	/**
+	 * \brief A control flow edge between two blocks where the "from" block does not end with a JUMP.
+	 * It is between two blocks which were split from a single one.
+	 */
+	RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF,
+	/**
 	 * \brief An control flow change via a RzIL JMP but by a call candidate.
 	 * The "from" BB ends with a jump, very likely to a procedure.
 	 */
 	RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL,
-	/**
-	 * \brief A control flow edge between two blocks where the "from" block does not end with a JUMP.
-	 * It is between two blocks, if they were split from a single one.
-	 */
-	RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF,
 	/**
 	 * \brief This edge does not depict a control flow edge.
 	 * It is an opaque edge between a call instruction and the (possible) return point of the procedure called.
@@ -38,6 +38,10 @@ typedef enum {
 	 * There are multiple exceptions to it though, like tail calls, non-returning procedures, or delayed calls.
 	 */
 	RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL_RET,
+	/**
+	 * \brief An edge from a return instruction to its target.
+	 */
+	RZ_INQUIRY_BB_CFG_EDGE_TYPE_RETURN,
 } RzInquiryBBCFGEdgeType;
 
 /**

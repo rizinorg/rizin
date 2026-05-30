@@ -116,8 +116,6 @@ RZ_IPI bool rz_inquiry_bb_cfg_add_xrefs(RzInquiryBBCFG *cfg, RzVector /*<RzAnaly
 	RzAnalysisXRef *xref;
 	rz_vector_foreach (xrefs, xref) {
 		switch (xref->type) {
-		default:
-			continue;
 		case RZ_ANALYSIS_XREF_TYPE_CODE:
 			if (!rz_inquiry_bb_cfg_add_edge(cfg, xref->bb_addr, xref->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP)) {
 				RZ_LOG_DEBUG("Did not add JMP edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", xref->bb_addr, xref->to);
@@ -137,6 +135,17 @@ RZ_IPI bool rz_inquiry_bb_cfg_add_xrefs(RzInquiryBBCFG *cfg, RzVector /*<RzAnaly
 				RZ_LOG_DEBUG("Did not add CALL_RET edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", xref->bb_addr, ret_addr);
 			}
 			break;
+		case RZ_ANALYSIS_XREF_TYPE_RETURN:
+			if (!rz_inquiry_bb_cfg_add_edge(cfg, xref->bb_addr, xref->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_RETURN)) {
+				RZ_LOG_DEBUG("Did not add RETURN edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", xref->bb_addr, xref->to);
+			}
+			break;
+		case RZ_ANALYSIS_XREF_TYPE_NULL:
+		case RZ_ANALYSIS_XREF_TYPE_DATA:
+		case RZ_ANALYSIS_XREF_TYPE_STRING:
+		case RZ_ANALYSIS_XREF_TYPE_MEM_WRITE:
+		case RZ_ANALYSIS_XREF_TYPE_CALL_RET:
+			continue;
 		}
 	}
 	return true;
@@ -195,11 +204,23 @@ RZ_IPI bool rz_inquiry_bb_cfg_reduce(RzInquiryBBCFG *cfg) {
 			rz_goto_if_fail(big_bb, fail);
 			big_bb->size = small_bb_addr - big_bb_addr;
 
-			// add edge between big to small bb, remove old edges.
+			// add edge between big to small bb, move old edges to small_bb.
+			RzGraphEdge *e;
+			RzIterator *out_edges = rz_inquiry_bb_cfg_get_outgoing_edges(cfg, big_bb_addr);
+			rz_iterator_foreach(out_edges, e) {
+				ut64 to = rz_graph_node_get_id(rz_graph_edge_get_to(e));
+				RzInquiryBBCFGEdgeType type = (utptr)rz_graph_edge_get_data(e);
+				if (!rz_inquiry_bb_cfg_add_edge(cfg, small_bb_addr, to, type)) {
+					RZ_LOG_DEBUG("Did not add edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", big_bb_addr, small_bb_addr);
+					continue;
+				}
+			}
+			rz_iterator_free(out_edges);
+
 			rz_inquiry_bb_cfg_del_out_edges(cfg, big_bb_addr);
 			if (!rz_inquiry_bb_cfg_add_edge(cfg, big_bb_addr, small_bb_addr, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF)) {
 				RZ_LOG_DEBUG("Did not add edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", big_bb_addr, small_bb_addr);
-				goto fail;
+				continue;
 			}
 		}
 	}
@@ -208,6 +229,7 @@ RZ_IPI bool rz_inquiry_bb_cfg_reduce(RzInquiryBBCFG *cfg) {
 	return true;
 
 fail:
+	rz_iterator_free(iter);
 	ht_up_free(overlapping_bbs);
 	rz_warn_if_reached();
 	return false;

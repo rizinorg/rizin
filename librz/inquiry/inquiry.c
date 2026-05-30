@@ -87,7 +87,6 @@ RZ_API void rz_inquiry_function_free(RZ_NULLABLE RZ_OWN RzInquiryFunction *fcn) 
 	}
 	rz_inquiry_bb_cfg_free(fcn->bb_cfg);
 	rz_vector_free(fcn->entry_points);
-	rz_vector_free(fcn->call_candidates);
 	free(fcn);
 }
 
@@ -98,7 +97,6 @@ RZ_IPI RZ_OWN RzInquiryFunction *rz_inquiry_function_new() {
 	}
 	fcn->bb_cfg = rz_inquiry_bb_cfg_new(RZ_GRAPH_IMPL_LIST);
 	fcn->entry_points = rz_vector_new(sizeof(ut64), NULL, NULL);
-	fcn->call_candidates = rz_vector_new(sizeof(RzAnalysisCallCandidate), NULL, NULL);
 	if (!fcn->bb_cfg || !fcn->entry_points) {
 		rz_inquiry_function_free(fcn);
 		return NULL;
@@ -168,16 +166,12 @@ RZ_IPI bool rz_inquiry_bb_cfg_complement(RzInquiry *iq, RzVector /*<RzAnalysisXR
 				continue;
 			}
 			switch (i2i_edge->type) {
-			default:
-				rz_warn_if_reached();
-				break;
 			case RZ_ANALYSIS_XREF_TYPE_CALL:
 				if (!rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, i2i_edge->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL)) {
 					rz_warn_if_reached();
 				}
 				break;
 			case RZ_ANALYSIS_XREF_TYPE_CODE:
-				eprintf("Add i2i jump: 0x%llx -> 0x%llx\n", bb->addr, i2i_edge->to);
 				if (!rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, i2i_edge->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP)) {
 					rz_warn_if_reached();
 				}
@@ -186,6 +180,19 @@ RZ_IPI bool rz_inquiry_bb_cfg_complement(RzInquiry *iq, RzVector /*<RzAnalysisXR
 				if (!rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, i2i_edge->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL_RET)) {
 					rz_warn_if_reached();
 				}
+				break;
+			case RZ_ANALYSIS_XREF_TYPE_RETURN:
+				if (!rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, i2i_edge->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_RETURN)) {
+					rz_warn_if_reached();
+				}
+				break;
+			case RZ_ANALYSIS_XREF_TYPE_NULL:
+			case RZ_ANALYSIS_XREF_TYPE_DATA:
+			case RZ_ANALYSIS_XREF_TYPE_STRING:
+			case RZ_ANALYSIS_XREF_TYPE_MEM_WRITE:
+				RZ_LOG_WARN("Xref of type %s for code edge.\n",
+					rz_analysis_xrefs_type_tostring(i2i_edge->type));
+				rz_warn_if_reached();
 				break;
 			}
 		}
@@ -856,90 +863,87 @@ static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry
 	}
 	rz_iterator_free(iter);
 
-
-	iter = ht_up_as_iter(inquiry->call_candidates);
-	void **it;
-	rz_iterator_foreach (iter, it) {
-		RzAnalysisCallCandidate *cc = *it;
-		rz_analysis_xrefs_set(analysis, cc->candidate_addr, cc->target, RZ_ANALYSIS_XREF_TYPE_CALL);
-	}
-	rz_iterator_free(iter);
-
 	RzAnalysisXRef *xref;
-	rz_vector_foreach(inquiry->xrefs, xref) {
-		rz_analysis_xrefs_set(analysis, xref->from, xref->to, xref->type != RZ_ANALYSIS_XREF_TYPE_CALL_RET ? xref->type : RZ_ANALYSIS_XREF_TYPE_CODE);
+	rz_vector_foreach (inquiry->xrefs, xref) {
 		RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, xref->bb_addr);
-			RzIterator *out_edges = rz_inquiry_bb_cfg_get_outgoing_edges(inquiry->bb_cfg, xref->bb_addr);
-			if (!out_edges) {
-				continue;
-			}
-			RzGraphEdge *e;
-			rz_iterator_foreach(out_edges, e) {
-				RzInquiryBBCFGEdgeType type = (RzInquiryBBCFGEdgeType)(utptr)rz_graph_edge_get_data(e);
-				switch (type) {
-				case RZ_INQUIRY_BB_CFG_EDGE_TYPE_NONE:
-					rz_warn_if_reached();
-					// fall through
-				case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF:
-				case RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP: {
-					ut64 target = rz_graph_node_get_id(rz_graph_edge_get_to(e));
-					if (abb->jump == UT64_MAX || abb->jump == target) {
-						abb->jump = target;
-						eprintf("Add jump = 0x%llx -> 0x%llx (%d)\n", xref->bb_addr, target, type);
-					} else if (abb->fail == UT64_MAX || abb->fail == target) {
-						abb->fail = target;
-						eprintf("Add fail = 0x%llx -> 0x%llx (%d)\n", xref->bb_addr, target, type);
-					} else if (abb->fail != target && abb->jump != target) {
-						RZ_LOG_WARN("The basic block at 0x%" PFMT64x " has more than two outgoing edges.\n"
-							    "\t\tHas jump = 0x%llx fail = 0x%llx. Will miss = 0x%llx (%d)\n", xref->bb_addr, abb->jump, abb->fail,
-							target, type);
-					}
-					break;
+		RzIterator *out_edges = rz_inquiry_bb_cfg_get_outgoing_edges(inquiry->bb_cfg, xref->bb_addr);
+		if (!out_edges) {
+			continue;
+		}
+		RzGraphEdge *e;
+		rz_iterator_foreach(out_edges, e) {
+			RzInquiryBBCFGEdgeType type = (RzInquiryBBCFGEdgeType)(utptr)rz_graph_edge_get_data(e);
+			switch (type) {
+			case RZ_INQUIRY_BB_CFG_EDGE_TYPE_NONE:
+				rz_warn_if_reached();
+				break;
+			case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF:
+			case RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP: {
+				ut64 target = rz_graph_node_get_id(rz_graph_edge_get_to(e));
+				if (abb->jump == UT64_MAX && abb->fail != target) {
+					abb->jump = target;
+				} else if (abb->fail == UT64_MAX && abb->jump != target) {
+					abb->fail = target;
+				} else if (abb->fail != target && abb->jump != target) {
+					RZ_LOG_WARN("The basic block at 0x%" PFMT64x " has more than two outgoing edges.\n"
+						    "\t\tHas jump = 0x%llx fail = 0x%llx. Will miss = 0x%llx (%d)\n",
+						xref->bb_addr, abb->jump, abb->fail,
+						target, type);
 				}
-				case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL_RET:
-				case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL:
-					break;
-				}
+				rz_analysis_xrefs_set(analysis, xref->from, xref->to, RZ_ANALYSIS_XREF_TYPE_CODE);
+				break;
 			}
-			rz_iterator_free(out_edges);
+			case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL_RET:
+				rz_analysis_xrefs_set(analysis, xref->from, xref->to, RZ_ANALYSIS_XREF_TYPE_CODE);
+				break;
+			case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL:
+				rz_analysis_xrefs_set(analysis, xref->from, xref->to, RZ_ANALYSIS_XREF_TYPE_CALL);
+				break;
+			case RZ_INQUIRY_BB_CFG_EDGE_TYPE_RETURN:
+				rz_analysis_xrefs_set(analysis, xref->from, xref->to, RZ_ANALYSIS_XREF_TYPE_RETURN);
+				break;
+			}
+		}
+		rz_iterator_free(out_edges);
 	}
 
 	// // Convert the Inquiry functions to analysis function.
-	// rz_pvector_foreach (fcns, it) {
-	// 	RzInquiryFunction *fcn = *it;
+	void **it;
+	rz_pvector_foreach (fcns, it) {
+		RzInquiryFunction *fcn = *it;
 
-	// 	ut64 fcn_addr = *(ut64 *)rz_vector_head(fcn->entry_points);
-	// 	char new_fcn_name[64] = { 0 };
-	// 	void **it;
-	// 	rz_pvector_foreach (symbols, it) {
-	// 		RzBinSymbol *s = *it;
-	// 		if (s->vaddr == fcn_addr && RZ_STR_EQ(s->type, RZ_BIN_TYPE_FUNC_STR)) {
-	// 			rz_strf(new_fcn_name, "sym.%s", s->name);
-	// 			break;
-	// 		}
-	// 	}
-	// 	if (new_fcn_name[0] == '\0') {
-	// 		rz_strf(new_fcn_name, "fcn_0x%" PFMT64x, fcn_addr);
-	// 	}
-	// 	RzAnalysisFunction *afcn = rz_analysis_create_function(analysis, new_fcn_name, fcn_addr, RZ_ANALYSIS_FCN_TYPE_FCN);
-	// 	if (!afcn) {
-	// 		rz_warn_if_reached();
-	// 		continue;
-	// 	}
+		ut64 fcn_addr = *(ut64 *)rz_vector_head(fcn->entry_points);
+		char new_fcn_name[64] = { 0 };
+		void **it;
+		rz_pvector_foreach (symbols, it) {
+			RzBinSymbol *s = *it;
+			if (s->vaddr == fcn_addr && RZ_STR_EQ(s->type, RZ_BIN_TYPE_FUNC_STR)) {
+				rz_strf(new_fcn_name, "sym.%s", s->name);
+				break;
+			}
+		}
+		if (new_fcn_name[0] == '\0') {
+			rz_strf(new_fcn_name, "fcn_0x%" PFMT64x, fcn_addr);
+		}
+		RzAnalysisFunction *afcn = rz_analysis_create_function(analysis, new_fcn_name, fcn_addr, RZ_ANALYSIS_FCN_TYPE_FCN);
+		if (!afcn) {
+			rz_warn_if_reached();
+			continue;
+		}
 
-	// 	RzIterator *iter = rz_graph_get_nodes(fcn->bb_cfg->graph);
-	// 	RzGraphNode *n;
-	// 	rz_iterator_foreach(iter, n) {
-	// 		const RzInquiryBB *bb = rz_graph_node_get_data(n);
-	// 		RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, bb->addr);
-	// 		if (!abb && !(abb = rz_analysis_create_block(analysis, bb->addr, bb->size))) {
-	// 			rz_warn_if_reached();
-	// 			continue;
-	// 		}
-	// 		rz_analysis_function_add_block(afcn, abb);
-	// 	}
-	// 	rz_iterator_free(iter);
-	// }
+		RzIterator *iter = rz_graph_get_nodes(fcn->bb_cfg->graph);
+		RzGraphNode *n;
+		rz_iterator_foreach(iter, n) {
+			const RzInquiryBB *bb = rz_graph_node_get_data(n);
+			RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, bb->addr);
+			if (!abb && !(abb = rz_analysis_create_block(analysis, bb->addr, bb->size))) {
+				rz_warn_if_reached();
+				continue;
+			}
+			rz_analysis_function_add_block(afcn, abb);
+		}
+		rz_iterator_free(iter);
+	}
 	rz_pvector_free(fcns);
 	return true;
 }
