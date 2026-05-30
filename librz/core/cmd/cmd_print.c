@@ -5158,16 +5158,56 @@ static void showcursor(RzCore *core, int x) {
 	rz_cons_show_cursor(x);
 }
 
-static RzCmdStatus print_visual_bytes(RzCore *core, RZ_NONNULL const unsigned char *data, RZ_NONNULL CoreBlockRange *brange) {
+// Re-read the config-driven opts fields so `:` `e scr.hist.minimap=...` (and
+// scr.hist.block / scr.utf8 / hex.offset / scr.color) take effect on the next
+// redraw. Scenario-specific fields (value_max, data_f, ...) are preserved.
+static void refresh_visual_opts_from_config(RzCore *core, RzHistogramOptions *opts) {
+	if (!opts) {
+		return;
+	}
+	opts->unicode = rz_config_get_b(core->config, "scr.utf8");
+	opts->thinline = !rz_config_get_b(core->config, "scr.hist.block");
+	opts->minimap = rz_config_get_b(core->config, "scr.hist.minimap");
+	opts->offset = rz_config_get_b(core->config, "hex.offset");
+	opts->color = rz_config_get_i(core->config, "scr.color");
+}
+
+static RZ_OWN RzHistogramOptions *default_visual_opts(RzCore *core, ut64 offset) {
+	RzHistogramOptions *opts = rz_histogram_options_new();
+	if (!opts) {
+		return NULL;
+	}
+	opts->legend = false;
+	opts->ruler = true;
+	opts->offpos = offset;
+	opts->cursor = false;
+	opts->curpos = 0;
+	opts->pal = &core->cons->context->pal;
+	refresh_visual_opts_from_config(core, opts);
+	return opts;
+}
+
+static const char *help_msg_visual_hist[] = {
+	"?", "", "show this help",
+	"hl", "", "move cursor left / right one bar",
+	"+/-", "", "zoom in / out",
+	":cmd", "", "run a rizin command",
+	"q", "", "back to Visual mode (or Q / Space)",
+	NULL
+};
+
+static RzCmdStatus print_visual_bytes(RzCore *core, RZ_OWN RZ_NONNULL RzHistogramOptions *opts, RZ_NONNULL const ut8 *data, RZ_NONNULL CoreBlockRange *brange) {
 	if (!rz_cons_is_interactive()) {
 		RZ_LOG_ERROR("core: visual mode requires scr.interactive=true.\n");
+		rz_histogram_options_free(opts);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzConsCanvas *can;
 	bool exit_histogram = false, is_error = false;
 	RzConfigHold *hc = rz_config_hold_new(core->config);
 	if (!hc) {
-		return false;
+		rz_histogram_options_free(opts);
+		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_config_hold_var(hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
 
@@ -5182,39 +5222,30 @@ static RzCmdStatus print_visual_bytes(RzCore *core, RZ_NONNULL const unsigned ch
 				     "size? See scr.columns + scr.rows\n");
 			rz_config_hold_restore(hc);
 			rz_config_hold_free(hc);
-			return false;
+			rz_histogram_options_free(opts);
+			return RZ_CMD_STATUS_ERROR;
 		}
 	}
 	can->color = rz_config_get_i(core->config, "scr.color");
 
-	RzHistogramOptions *opts = rz_histogram_options_new();
-	if (!opts) {
-		rz_config_hold_restore(hc);
-		rz_config_hold_free(hc);
-		rz_cons_canvas_free(can);
-		return RZ_CMD_STATUS_ERROR;
-	}
-	opts->unicode = rz_config_get_b(core->config, "scr.utf8");
-	opts->thinline = !rz_config_get_b(core->config, "scr.hist.block");
-	opts->legend = false;
-	opts->offset = rz_config_get_b(core->config, "hex.offset");
-	opts->offpos = brange->from;
-	opts->cursor = false;
-	opts->curpos = 0;
-	opts->color = rz_config_get_i(core->config, "scr.color");
-	opts->pal = &core->cons->context->pal;
 	RzHistogramInteractive *hist = rz_histogram_interactive_new(can, opts);
-	hist->size = brange->nblocks;
 	if (!hist) {
-		rz_histogram_options_free(hist->opts);
 		rz_config_hold_restore(hc);
 		rz_config_hold_free(hc);
 		rz_cons_canvas_free(can);
+		rz_histogram_options_free(opts);
 		return RZ_CMD_STATUS_ERROR;
 	}
+	hist->size = brange->nblocks;
+	hist->blocksize = brange->blocksize;
 
 	int okey, key;
 	while (!exit_histogram && !is_error && !rz_cons_is_breaked()) {
+		// Re-read scr.hist.minimap / scr.hist.block / scr.utf8 / scr.color /
+		// hex.offset from config every iteration so that `:` + `e ...` <Enter>
+		// from inside the visual histogram takes effect on the next redraw.
+		refresh_visual_opts_from_config(core, hist->opts);
+		can->color = rz_config_get_i(core->config, "scr.color");
 		showcursor(core, false);
 		w = rz_cons_get_size(&h);
 		if (!rz_cons_canvas_resize(hist->can, w, h)) {
@@ -5226,7 +5257,16 @@ static RzCmdStatus print_visual_bytes(RzCore *core, RZ_NONNULL const unsigned ch
 		}
 		hist->w = w;
 		hist->h = h;
+		// Pre-fetch up to 32 bytes at the cursor for the hex preview panel;
+		// zero-initialised so a short or failed read simply shows zero bytes.
+		ut8 cursor_bytes_buf[32] = { 0 };
+		ut64 cursor_off = brange->from + (ut64)hist->barnumber * brange->blocksize;
+		rz_io_read_at_mapped(core->io, cursor_off, cursor_bytes_buf, sizeof(cursor_bytes_buf));
+		hist->cursor_bytes = cursor_bytes_buf;
+		hist->cursor_bytes_len = sizeof(cursor_bytes_buf);
 		RzStrBuf *str = rz_histogram_interactive_horizontal(hist, data);
+		hist->cursor_bytes = NULL;
+		hist->cursor_bytes_len = 0;
 		rz_cons_canvas_write(hist->can, str->ptr);
 		rz_strbuf_free(str);
 		rz_cons_canvas_print_region(hist->can);
@@ -5235,14 +5275,18 @@ static RzCmdStatus print_visual_bytes(RzCore *core, RZ_NONNULL const unsigned ch
 		okey = rz_cons_readchar();
 		key = rz_cons_arrow_to_hjkl(okey);
 		switch (key) {
-		case '?':
+		case '?': {
 			rz_cons_clear00();
-			rz_cons_printf("Visual ASCII Art graph keybindings:\n"
-				       " +/-    - zoom in/out\n"
-				       " hl    	- move left and right\n"
-				       " q      - back to Visual mode\n");
-			rz_cons_less();
-			rz_cons_any_key(NULL);
+			RzStrBuf *help = rz_strbuf_new(NULL);
+			if (help) {
+				rz_core_visual_append_help(help, "Visual histogram keybindings", help_msg_visual_hist);
+				rz_cons_less_str(rz_strbuf_get(help), "?");
+				rz_strbuf_free(help);
+			}
+			break;
+		}
+		case ':':
+			rz_core_visual_prompt_input(core);
 			break;
 		case 'h':
 			hist->barnumber = (hist->barnumber > 0) ? (hist->barnumber - 1) : (brange->nblocks - 1);
@@ -5296,9 +5340,25 @@ static RzCmdStatus print_histogram_bytes(RzCore *core, int argc, const char **ar
 		return RZ_CMD_STATUS_ERROR;
 	}
 	ut8 *data = calloc(1, brange->nblocks);
-	rz_io_read_at_mapped(core->io, core->offset, data, brange->nblocks);
+	// Sample one byte at the start of each block (not nblocks contiguous bytes
+	// from core->offset, which for blocksize > 1 rendered only the file's first
+	// bytes; #4431). Byte-by-byte keeps huge/sparse files cheap.
+	for (size_t i = 0; i < brange->nblocks; i++) {
+		ut64 off = brange->from + (ut64)i * brange->blocksize;
+		if (!rz_io_read_at_mapped(core->io, off, &data[i], 1)) {
+			// Render an unreadable block as a zero sample.
+			data[i] = 0;
+		}
+	}
 	if (isinteractive) {
-		if (!print_visual_bytes(core, data, brange)) {
+		RzHistogramOptions *opts = default_visual_opts(core, brange->from);
+		if (!opts) {
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		opts->value_max = 255;
+		if (print_visual_bytes(core, opts, data, brange) != RZ_CMD_STATUS_OK) {
 			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
 			free(brange);
 			free(data);
@@ -5367,7 +5427,17 @@ static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **
 	}
 	free(tmp);
 	if (isinteractive) {
-		if (!print_visual_bytes(core, data, brange)) {
+		RzHistogramOptions *opts = default_visual_opts(core, brange->from);
+		if (!opts) {
+			free(brange);
+			free(fdata);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		opts->value_max = 8;
+		opts->value_precision = 1;
+		opts->data_f = fdata; // visual fp path uses Shannon directly
+		if (print_visual_bytes(core, opts, data, brange) != RZ_CMD_STATUS_OK) {
 			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
 			free(brange);
 			free(fdata);
@@ -5731,7 +5801,13 @@ static RzCmdStatus print_histogram_marks(RzCore *core, int argc, const char **ar
 	}
 	free(tmp);
 	if (isinteractive) {
-		if (!print_visual_bytes(core, data, brange)) {
+		RzHistogramOptions *opts = default_visual_opts(core, brange->from);
+		if (!opts) {
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		if (print_visual_bytes(core, opts, data, brange) != RZ_CMD_STATUS_OK) {
 			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
 			free(brange);
 			free(data);
@@ -5790,7 +5866,13 @@ static RzCmdStatus print_histogram_0x00(RzCore *core, int argc, const char **arg
 	}
 	free(tmp);
 	if (isinteractive) {
-		if (!print_visual_bytes(core, data, brange)) {
+		RzHistogramOptions *opts = default_visual_opts(core, brange->from);
+		if (!opts) {
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		if (print_visual_bytes(core, opts, data, brange) != RZ_CMD_STATUS_OK) {
 			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
 			free(brange);
 			free(data);
@@ -5850,7 +5932,13 @@ static RzCmdStatus print_histogram_0xff(RzCore *core, int argc, const char **arg
 	}
 	free(tmp);
 	if (isinteractive) {
-		if (!print_visual_bytes(core, data, brange)) {
+		RzHistogramOptions *opts = default_visual_opts(core, brange->from);
+		if (!opts) {
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		if (print_visual_bytes(core, opts, data, brange) != RZ_CMD_STATUS_OK) {
 			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
 			free(brange);
 			free(data);
@@ -5910,7 +5998,13 @@ static RzCmdStatus print_histogram_printable(RzCore *core, int argc, const char 
 	}
 	free(tmp);
 	if (isinteractive) {
-		if (!print_visual_bytes(core, data, brange)) {
+		RzHistogramOptions *opts = default_visual_opts(core, brange->from);
+		if (!opts) {
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		if (print_visual_bytes(core, opts, data, brange) != RZ_CMD_STATUS_OK) {
 			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
 			free(brange);
 			free(data);
@@ -5979,7 +6073,13 @@ static RzCmdStatus print_histogram_z(RzCore *core, int argc, const char **argv, 
 	}
 	free(tmp);
 	if (isinteractive) {
-		if (!print_visual_bytes(core, data, brange)) {
+		RzHistogramOptions *opts = default_visual_opts(core, brange->from);
+		if (!opts) {
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		if (print_visual_bytes(core, opts, data, brange) != RZ_CMD_STATUS_OK) {
 			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
 			free(brange);
 			free(data);
@@ -6025,7 +6125,13 @@ static RzCmdStatus print_histogram_stats(RzCore *core, int argc, const char **ar
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (isinteractive) {
-		if (!print_visual_bytes(core, data, brange)) {
+		RzHistogramOptions *opts = default_visual_opts(core, brange->from);
+		if (!opts) {
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		if (print_visual_bytes(core, opts, data, brange) != RZ_CMD_STATUS_OK) {
 			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
 			free(brange);
 			free(data);
@@ -6070,7 +6176,13 @@ static RzCmdStatus analysis_hist_handler(RzCore *core, int argc, const char **ar
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (isinteractive) {
-		if (!print_visual_bytes(core, data, brange)) {
+		RzHistogramOptions *opts = default_visual_opts(core, brange->from);
+		if (!opts) {
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		if (print_visual_bytes(core, opts, data, brange) != RZ_CMD_STATUS_OK) {
 			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
 			free(brange);
 			free(data);
