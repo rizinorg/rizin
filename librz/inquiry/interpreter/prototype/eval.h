@@ -28,8 +28,33 @@ typedef struct {
 } ProtoIntrprAbstrData;
 
 typedef struct {
+	/**
+	 * \brief The procedure's entry point this frame was initialized at.
+	 */
+	RzBitVector entry_point;
+	/**
+	 * \brief The number of times that frame was initialized at the entry point.
+	 * This is equivalent to the number of times the function was called at this entry point.
+	 */
+	ut64 instance;
+	/**
+	 * \brief The return address of the procedure.
+	 * TODO: The return address might be wrong in case of tail calls.
+	 * The prototype doesn't really check what address was stored in the link register
+	 * or on the stack (due to missing abstraction of archs calling convention).
+	 * Instead, it simply stores the instruction address which comes after the call
+	 * in memory.
+	 */
+	RzBitVector return_addr;
+
+	// TODO: The abstract stack pointer at the point of procedure entry should be tracked here.
+	// But this needs to wait until we have a proper memory model implemented.
+} ProtoInterprAbstrStackFrame;
+
+typedef struct {
 	HtUU *bb_invocation_count;
 	RzAnalysisCallCandidate call_cand; ///< Data of a call candidate.
+	RzVector /*<ProtoInterprAbstrStackFrame>*/ stack; ///< The call frame stack.
 } ProtoIntrprPluginData;
 
 /**
@@ -104,5 +129,10 @@ bool report_yield_call_candiate(
 
 bool set_pc(RzInterpreterAbstrState *state, ut64 pc,
 	void *plugin_data);
+
+void stack_frame_fini(ProtoInterprAbstrStackFrame *frame, void *unused);
+void stack_frame_push(ProtoIntrprPluginData *pdata, RzBitVector *entry_point, RzBitVector *return_addr, ut64 instance);
+void stack_frame_pop(ProtoIntrprPluginData *pdata, RZ_NULLABLE ProtoInterprAbstrStackFrame *frame);
+bool stack_frame_top_ret_addr_cmp(ProtoIntrprPluginData *pdata, RzBitVector *addr);
 
 #endif // PROTOYPE_EVAL_H

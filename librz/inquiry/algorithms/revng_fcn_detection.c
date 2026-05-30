@@ -46,6 +46,7 @@
 #include "rz_util/rz_assert.h"
 #include "rz_util/rz_graph.h"
 #include "rz_util/rz_iterator.h"
+#include "rz_util/rz_log.h"
 #include "rz_util/rz_set.h"
 #include "rz_vector.h"
 #include <rz_inquiry.h>
@@ -121,7 +122,7 @@ static void recurse_into_fcn_bbs(
 	//
 	RzIterator *successors = rz_inquiry_bb_cfg_get_outgoing_edges(binary_bb_cfg, this_bb_addr);
 	if (!successors) {
-		rz_warn_if_reached();
+		// Node has no successors.
 		goto err_return;
 	}
 
@@ -153,15 +154,9 @@ static void recurse_into_fcn_bbs(
 				continue;
 			}
 			break;
-		case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL: {
-			RzAnalysisCallCandidate *cc = ht_up_find((HtUP *)call_candidates, this_bb_addr, NULL);
-			// Don't recurse edges to other procedures.
-			// Instead we add this address to the functions call targets.
-			if (cc) {
-				rz_vector_push(fcn->call_candidates, cc);
-			}
+		case RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL:
+		case RZ_INQUIRY_BB_CFG_EDGE_TYPE_RETURN:
 			continue;
-		}
 		}
 		if (jumps_to_ignored_code(ignored_code, succ_addr)) {
 			continue;
@@ -204,7 +199,6 @@ static void fill_candidate_fcn_entry_points(
 			} else if (type == RZ_INQUIRY_BB_CFG_EDGE_TYPE_CALL) {
 				const RzGraphNode *nc = rz_graph_edge_get_to(e);
 				ut64 target = rz_graph_node_get_id(nc);
-				rz_warn_if_fail(target == cc->target);
 				rz_vector_push(cfep_addresses, &target);
 				RZ_LOG_DEBUG("Add cfep at 0x%" PFMT64x " (call: 0x%" PFMT64x ") "
 					     "based on BB 0x%" PFMT64x "\n",

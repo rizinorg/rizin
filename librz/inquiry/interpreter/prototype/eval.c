@@ -228,3 +228,33 @@ bool set_pc(RzInterpreterAbstrState *state, ut64 pc,
 		pc);
 	return rz_bv_set_from_ut64(AD(state->pc->abstr_data)->bv, pc);
 }
+
+void stack_frame_fini(ProtoInterprAbstrStackFrame *frame, void *unused) {
+	if (!frame) {
+		return;
+	}
+	rz_bv_fini(&frame->return_addr);
+	rz_bv_fini(&frame->entry_point);
+}
+
+void stack_frame_push(ProtoIntrprPluginData *pdata, RzBitVector *entry_point, RzBitVector *return_addr, ut64 instance) {
+	ProtoInterprAbstrStackFrame frame = { 0 };
+	rz_bv_init(&frame.return_addr, rz_bv_len(return_addr));
+	rz_bv_copy(&frame.return_addr, return_addr);
+	rz_bv_init(&frame.entry_point, rz_bv_len(entry_point));
+	rz_bv_copy(&frame.entry_point, entry_point);
+	frame.instance = instance;
+	rz_vector_push(&pdata->stack, &frame);
+}
+
+void stack_frame_pop(ProtoIntrprPluginData *pdata, RZ_NULLABLE ProtoInterprAbstrStackFrame *frame) {
+	rz_vector_pop(&pdata->stack, frame);
+}
+
+bool stack_frame_top_ret_addr_cmp(ProtoIntrprPluginData *pdata, RzBitVector *addr) {
+	ProtoInterprAbstrStackFrame *frame = rz_vector_tail(&pdata->stack);
+	if (!frame) {
+		return false;
+	}
+	return rz_bv_eq(&frame->return_addr, addr);
+}

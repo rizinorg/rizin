@@ -10,6 +10,8 @@
 #include "rz_util/ht_uu.h"
 #include "rz_util/rz_bitvector.h"
 
+#define INITIAL_STACK_CAPACITY 8
+
 #define MAX_INVOCATIONS_PER_BB 3
 
 static bool eval(RZ_NONNULL RzInterpreterSet *iset,
@@ -105,7 +107,7 @@ static bool init_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_da
 		AD(av->abstr_data)->is_concrete = true;
 		if (state->il_config->init_state) {
 			RzAnalysisILInitStateVar *il_var;
-			rz_vector_foreach(&state->il_config->init_state->vars, il_var) {
+			rz_vector_foreach (&state->il_config->init_state->vars, il_var) {
 				if (rz_str_djb2_hash(il_var->name) != djb2_reg_name) {
 					continue;
 				}
@@ -258,6 +260,10 @@ bool init(void **plugin_data) {
 		free(pdata);
 		return false;
 	}
+	rz_vector_init(&pdata->stack,
+		sizeof(ProtoInterprAbstrStackFrame),
+		(RzVectorFree)stack_frame_fini, NULL);
+	rz_vector_reserve(&pdata->stack, INITIAL_STACK_CAPACITY);
 	*plugin_data = pdata;
 	return true;
 }
@@ -269,6 +275,7 @@ bool fini(void *plugin_data) {
 	RZ_LOG_DEBUG("prototype: fini()\n");
 	ProtoIntrprPluginData *pdata = plugin_data;
 	ht_uu_free(pdata->bb_invocation_count);
+	rz_vector_fini(&pdata->stack);
 	free(pdata);
 	return true;
 }
@@ -281,6 +288,7 @@ bool reset(void *plugin_data) {
 	ProtoIntrprPluginData *pdata = plugin_data;
 	ht_uu_clear(pdata->bb_invocation_count);
 	memset(&pdata->call_cand, 0, sizeof(RzAnalysisCallCandidate));
+	rz_vector_purge(&pdata->stack);
 	return true;
 }
 
