@@ -13,8 +13,6 @@
 
 #define MAX_SCAN_SIZE 0x7ffffff
 
-HEAPTYPE(ut64);
-
 static const char *help_detail_ae[] = {
 	"Examples:", "ESIL", " examples and documentation",
 	"=", "", "assign updating internal flags",
@@ -612,14 +610,15 @@ static char *fcnjoin(RzList /*<RzAnalysisFunction *>*/ *list) {
 	return s;
 }
 
-static char *ut64join(RzList /*<ut64 *>*/ *list) {
+static char *ut64join(RzSetU *calls) {
 	ut64 *n;
-	RzListIter *iter;
 	RzStrBuf buf;
 	rz_strbuf_init(&buf);
-	rz_list_foreach (list, iter, n) {
+	RzIterator *calls_iter = rz_set_u_as_iter(calls);
+	rz_iterator_foreach(calls_iter, n) {
 		rz_strbuf_appendf(&buf, " 0x%08" PFMT64x, *n);
 	}
+	rz_iterator_free(calls_iter);
 	char *s = rz_str_dup(rz_strbuf_get(&buf));
 	rz_strbuf_fini(&buf);
 	return s;
@@ -5681,12 +5680,12 @@ static RzList /*<ut64 *>*/ *get_xrefs(RzAnalysisBlock *block) {
 	return list;
 }
 
-static RzList /*<ut64 *>*/ *get_calls(RzCore *core, RzAnalysisBlock *block) {
+static RZ_OWN RzSetU *get_calls(RzCore *core, RzAnalysisBlock *block) {
 	ut8 *data = malloc(block->size);
 	if (!data) {
 		return NULL;
 	}
-	RzList *list = NULL;
+	RzSetU *calls = rz_set_u_new();
 	RzAnalysisOp op = { 0 };
 	rz_io_read_at_mapped(core->io, block->addr, data, block->size);
 	for (size_t i = 0; i < block->size; i++) {
@@ -5696,10 +5695,18 @@ static RzList /*<ut64 *>*/ *get_calls(RzCore *core, RzAnalysisBlock *block) {
 			continue;
 		}
 		if (op.type == RZ_ANALYSIS_OP_TYPE_CALL) {
-			if (!list) {
-				list = rz_list_newf(free);
+			rz_set_u_add(calls, op.jump);
+
+			RzList *xrefs = rz_analysis_xrefs_get_from(block->analysis, op.addr);
+			RzAnalysisXRef *xref;
+			RzListIter *iter;
+			rz_list_foreach (xrefs, iter, xref) {
+				if (xref->type != RZ_ANALYSIS_XREF_TYPE_CALL) {
+					continue;
+				}
+				rz_set_u_add(calls, xref->to);
 			}
-			rz_list_push(list, ut64_new(op.jump));
+			rz_list_free(xrefs);
 		}
 		rz_analysis_op_fini(&op);
 		if (op.size > 0) {
@@ -5707,7 +5714,7 @@ static RzList /*<ut64 *>*/ *get_calls(RzCore *core, RzAnalysisBlock *block) {
 		}
 	}
 	free(data);
-	return list;
+	return calls;
 }
 
 RZ_IPI RzCmdStatus rz_analysis_basic_block_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -5733,7 +5740,7 @@ RZ_IPI RzCmdStatus rz_analysis_basic_block_list_handler(RzCore *core, int argc, 
 	RBTree *bb_tree = rz_analysis_get_bb_tree(core->analysis);
 	rz_rbtree_foreach ((*bb_tree), iter, block, RzAnalysisBlock, _rb) {
 		RzList *xrefs = get_xrefs(block);
-		RzList *calls = get_calls(core, block);
+		RzSetU *calls = get_calls(core, block);
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(pj);
@@ -5758,11 +5765,12 @@ RZ_IPI RzCmdStatus rz_analysis_basic_block_list_handler(RzCore *core, int argc, 
 			}
 			if (calls) {
 				pj_ka(pj, "calls");
-				RzListIter *iter2;
 				ut64 *addr;
-				rz_list_foreach (calls, iter2, addr) {
+				RzIterator *call_iter = rz_set_u_as_iter(calls);
+				rz_iterator_foreach(call_iter, addr) {
 					pj_n(pj, *addr);
 				}
+				rz_iterator_free(call_iter);
 				pj_end(pj);
 			}
 			pj_ka(pj, "fcns");
@@ -5817,11 +5825,12 @@ RZ_IPI RzCmdStatus rz_analysis_basic_block_list_handler(RzCore *core, int argc, 
 			}
 			if (calls) {
 				rz_cons_printf(" .c");
-				RzListIter *iter2;
 				ut64 *addr;
-				rz_list_foreach (calls, iter2, addr) {
+				RzIterator *call_iter = rz_set_u_as_iter(calls);
+				rz_iterator_foreach(call_iter, addr) {
 					rz_cons_printf(" 0x%08" PFMT64x, *addr);
 				}
+				rz_iterator_free(call_iter);
 			}
 			if (block->fcns) {
 				RzListIter *iter2;
@@ -5838,7 +5847,7 @@ RZ_IPI RzCmdStatus rz_analysis_basic_block_list_handler(RzCore *core, int argc, 
 			iter.len = 0;
 		}
 		rz_list_free(xrefs);
-		rz_list_free(calls);
+		rz_set_u_free(calls);
 	}
 	rz_cmd_state_output_array_end(state);
 	return status;
