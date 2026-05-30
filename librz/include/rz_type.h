@@ -286,6 +286,8 @@ RZ_API RZ_BORROW RzBaseType *rz_type_db_get_compound_type(const RzTypeDB *typedb
 RZ_API bool rz_type_db_save_base_type(const RzTypeDB *typedb, RzBaseType *type);
 RZ_API bool rz_type_db_update_base_type(const RzTypeDB *typedb, RzBaseType *type);
 RZ_API bool rz_type_db_delete_base_type(RzTypeDB *typedb, RZ_NONNULL RzBaseType *type);
+RZ_API bool rz_type_db_rename_base_type(RzTypeDB *typedb, RZ_NONNULL const char *from, RZ_NONNULL const char *to);
+RZ_API void rz_type_rename_references(RZ_NULLABLE RzType *type, RZ_NONNULL const char *from, RZ_NONNULL const char *to);
 
 RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_db_get_base_types_of_kind(const RzTypeDB *typedb, RzBaseTypeKind kind);
 RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_db_get_base_types(const RzTypeDB *typedb);

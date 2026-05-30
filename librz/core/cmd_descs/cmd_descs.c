@@ -95,6 +95,7 @@ static const RzCmdDescDetail print_string_details[2];
 static const RzCmdDescDetail print_hexdump_format_details[4];
 static const RzCmdDescDetail print_rising_and_falling_entropy_details[2];
 static const RzCmdDescDetail type_define_from_format_details[2];
+static const RzCmdDescDetail type_rename_details[2];
 static const RzCmdDescDetail interactive_visual_details[2];
 static const RzCmdDescDetail write_details[3];
 static const RzCmdDescDetail write_bits_details[2];
@@ -894,6 +895,7 @@ static const RzCmdDescArg type_open_sdb_args[2];
 static const RzCmdDescArg type_print_args[3];
 static const RzCmdDescArg type_print_value_args[3];
 static const RzCmdDescArg type_print_hexstring_args[3];
+static const RzCmdDescArg type_rename_args[3];
 static const RzCmdDescArg type_list_structure_args[2];
 static const RzCmdDescArg type_structure_c_args[2];
 static const RzCmdDescArg type_structure_c_nl_args[2];
@@ -19704,6 +19706,34 @@ static const RzCmdDescHelp type_print_hexstring_help = {
 	.args = type_print_hexstring_args,
 };
 
+static const RzCmdDescDetailEntry type_rename_Examples_detail_entries[] = {
+	{ .text = "tr", .arg_str = " struct_a struct_b", .comment = "rename the type struct_a to struct_b, updating all its users" },
+	{ 0 },
+};
+static const RzCmdDescDetail type_rename_details[] = {
+	{ .name = "Examples", .entries = type_rename_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg type_rename_args[] = {
+	{
+		.name = "old",
+		.type = RZ_CMD_ARG_TYPE_ANY_TYPE,
+
+	},
+	{
+		.name = "new",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_rename_help = {
+	.summary = "Rename a type and update every type and function type that references it",
+	.details = type_rename_details,
+	.args = type_rename_args,
+};
+
 static const RzCmdDescHelp ts_help = {
 	.summary = "List loaded structures",
 };
@@ -25769,6 +25799,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *type_print_hexstring_cd = rz_cmd_desc_argv_new(core->rcmd, tp_cd, "tpx", rz_type_print_hexstring_handler, &type_print_hexstring_help);
 	rz_warn_if_fail(type_print_hexstring_cd);
+
+	RzCmdDesc *type_rename_cd = rz_cmd_desc_argv_new(core->rcmd, t_cd, "tr", rz_type_rename_handler, &type_rename_help);
+	rz_warn_if_fail(type_rename_cd);
 
 	RzCmdDesc *ts_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "ts", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_type_list_structure_handler, &type_list_structure_help, &ts_help);
 	rz_warn_if_fail(ts_cd);
