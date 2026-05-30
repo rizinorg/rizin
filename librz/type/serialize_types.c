@@ -154,10 +154,16 @@ static TypeFormatPair *get_struct_type(RzTypeDB *typedb, Sdb *sdb, const char *s
 				goto error;
 			}
 
+			// offset still points at the "offset,bitsize" tail; split it so the
+			// 3rd field is the bitfield width in bits (0, or absent in
+			// pre-bitfield projects, if the member is not a bitfield).
+			char *member_bitsize = NULL;
+			char *member_offset = sdb_anext(offset, &member_bitsize);
 			RzTypeStructMember memb = {
 				.name = rz_str_dup(cur),
 				.type = ttype,
-				.offset = strtol(offset, NULL, 10)
+				.offset = strtol(member_offset, NULL, 10),
+				.size = member_bitsize ? (size_t)strtoull(member_bitsize, NULL, 10) : 0,
 			};
 
 			free(values);
@@ -217,7 +223,8 @@ static TypeFormatPair *get_union_type(RzTypeDB *typedb, Sdb *sdb, const char *sn
 			if (!values) {
 				goto error;
 			}
-			char *value = sdb_anext(values, NULL);
+			char *member_rest = NULL; // "offset,bitsize" tail after the type
+			char *value = sdb_anext(values, &member_rest);
 			char *error_msg = NULL;
 			RzType *ttype = rz_type_parse_string_single(typedb->parser, value, &error_msg);
 			if (!ttype || error_msg) {
@@ -225,9 +232,17 @@ static TypeFormatPair *get_union_type(RzTypeDB *typedb, Sdb *sdb, const char *sn
 				goto error;
 			}
 
+			// split the "offset,bitsize" tail; the 3rd comma-field (after the
+			// unused union member offset) is the bitfield width in bits, 0 if
+			// the member is not a bitfield.
+			char *member_bitsize = NULL;
+			if (member_rest) {
+				sdb_anext(member_rest, &member_bitsize);
+			}
 			RzTypeUnionMember memb = {
 				.name = rz_str_dup(cur),
-				.type = ttype
+				.type = ttype,
+				.size = member_bitsize ? (size_t)strtoull(member_bitsize, NULL, 10) : 0,
 			};
 			free(values);
 
@@ -401,12 +416,12 @@ static void save_struct(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type
 	int i = 0;
 	RzTypeStructMember *member;
 	rz_vector_foreach (&type->struct_data.members, member) {
-		// struct.name.param=type,offset,argsize
+		// struct.name.param=type,offset,bitsize
 		char *member_sname = rz_str_sanitize_sdb_key(member->name);
 		char *member_type = rz_type_as_string(typedb, member->type);
 		sdb_set(sdb,
 			rz_strbuf_setf(&param_key, "%s.%s.%s", kind, sname, member_sname),
-			rz_strbuf_setf(&param_val, "%s,%zu,%u", member_type, member->offset, 0));
+			rz_strbuf_setf(&param_val, "%s,%zu,%u", member_type, member->offset, (unsigned)member->size));
 		free(member_type);
 		free(member_sname);
 
@@ -449,12 +464,12 @@ static void save_union(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type)
 	int i = 0;
 	RzTypeUnionMember *member;
 	rz_vector_foreach (&type->union_data.members, member) {
-		// union.name.arg1=type,offset,argsize
+		// union.name.arg1=type,offset,bitsize
 		char *member_sname = rz_str_sanitize_sdb_key(member->name);
 		char *member_type = rz_type_as_string(typedb, member->type);
 		sdb_set(sdb,
 			rz_strbuf_setf(&param_key, "%s.%s.%s", kind, sname, member_sname),
-			rz_strbuf_setf(&param_val, "%s,%zu,%u", member_type, member->offset, 0));
+			rz_strbuf_setf(&param_val, "%s,%zu,%u", member_type, member->offset, (unsigned)member->size));
 		free(member_type);
 		free(member_sname);
 

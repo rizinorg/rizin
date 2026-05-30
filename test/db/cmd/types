@@ -17,6 +17,29 @@ pf "z[0]d4 hello world"
 EOF
 RUN
 
+NAME=td struct and union bitfields
+FILE==
+CMDS=<<EOF
+td "struct qwe { int a:4; int b:16; int c:3; };"
+tcd qwe
+ts qwe
+td "union uu { int a:4; int b:16; };"
+tcd uu
+ts uu
+wx 45230100 @ 0
+tp qwe @ 0
+EOF
+EXPECT=<<EOF
+struct qwe { int a : 4; int b : 16; int c : 3; };
+pf ":4<:16<:3< a b c"
+union uu { int a : 4; int b : 16; };
+pf "0:4<:16< a b"
+0x00000000 : a = 5 (4-bit)
+0x00000000 : b = 4660 (16-bit)
+0x00000002 : c = 0 (3-bit)
+EOF
+RUN
+
 NAME=types - global var
 FILE==
 CMDS=<<EOF

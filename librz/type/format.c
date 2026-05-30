@@ -140,6 +140,15 @@ static void base_type_to_format_unfold(const RzTypeDB *typedb, RZ_NONNULL RzBase
 	case RZ_BASE_TYPE_KIND_STRUCT: {
 		RzTypeStructMember *memb;
 		rz_vector_foreach (&type->struct_data.members, memb) {
+			if (rz_type_struct_member_is_bitfield(memb)) {
+				rz_warn_if_fail(typedb->target);
+				// C bitfield member: emit the pf ":N" packed-bits spec with the
+				// bit order matching the target endianness ('<' little, '>' big).
+				rz_strbuf_appendf(format, ":%u%s", (unsigned)memb->size,
+					(typedb->target && typedb->target->big_endian) ? ">" : "<");
+				rz_strbuf_appendf(fields, "%s ", memb->name);
+				continue;
+			}
 			const char *membtype = type_to_identifier(typedb, memb->type);
 			// Avoid infinite recursion in case of self-referential structures
 			if (!membtype || !strcmp(membtype, type->name)) {
@@ -170,6 +179,15 @@ static void base_type_to_format_unfold(const RzTypeDB *typedb, RZ_NONNULL RzBase
 		rz_strbuf_append(format, "0");
 		RzTypeUnionMember *memb;
 		rz_vector_foreach (&type->union_data.members, memb) {
+			if (rz_type_union_member_is_bitfield(memb)) {
+				rz_warn_if_fail(typedb->target);
+				// C bitfield member: emit the pf ":N" packed-bits spec with the
+				// bit order matching the target endianness ('<' little, '>' big).
+				rz_strbuf_appendf(format, ":%u%s", (unsigned)memb->size,
+					(typedb->target && typedb->target->big_endian) ? ">" : "<");
+				rz_strbuf_appendf(fields, "%s ", memb->name);
+				continue;
+			}
 			const char *membtype = type_to_identifier(typedb, memb->type);
 			// Avoid infinite recursion in case of self-referential unions
 			if (!membtype || !strcmp(membtype, type->name)) {

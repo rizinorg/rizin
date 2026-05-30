@@ -93,14 +93,14 @@ typedef struct rz_type_struct_member_t {
 	char *name;
 	RzType *type;
 	size_t offset; // in bytes
-	size_t size; // in bits?
+	size_t size; ///< bitfield width in bits, or 0 if the member is not a bitfield
 } RzTypeStructMember;
 
 typedef struct rz_type_union_member_t {
 	char *name;
 	RzType *type;
 	size_t offset; // in bytes
-	size_t size; // in bits?
+	size_t size; ///< bitfield width in bits, or 0 if the member is not a bitfield
 } RzTypeUnionMember;
 
 typedef struct rz_base_type_struct_t {
@@ -292,6 +292,9 @@ RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_db_get_base_types(const RzTypeD
 
 RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype);
 RZ_API RZ_OWN char *rz_type_db_base_type_as_pretty_string(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype, unsigned int opts, int unfold_level);
+
+RZ_API bool rz_type_struct_member_is_bitfield(RZ_NONNULL const RzTypeStructMember *member);
+RZ_API bool rz_type_union_member_is_bitfield(RZ_NONNULL const RzTypeUnionMember *member);
 RZ_API bool rz_type_db_edit_base_type(RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *typestr);
 RZ_API RZ_BORROW RzType *rz_type_db_base_type_unwrap_typedef(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype);
 

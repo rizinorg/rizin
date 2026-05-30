@@ -769,6 +769,23 @@ RZ_API bool rz_project_migrate_v22_v23(RzProject *prj, RzSerializeResultInfo *re
 	return true;
 }
 
+// --
+// Migration 23 -> 24
+//
+// Changes:
+// Struct and union members now keep their C bitfield width ("int a : 4;"),
+// stored as the 3rd comma-field of "struct.<name>.<member>" /
+// "union.<name>.<member>" (type,offset,bitsize) in "/core/analysis/types".
+// That field already existed and was always written as 0, so older projects
+// carry a 0 (or no 3rd field at all) and the deserializer reads that as a
+// regular, non-bitfield member -- there is nothing to migrate.
+
+RZ_API bool rz_project_migrate_v23_v24(RzProject *prj, RzSerializeResultInfo *res) {
+	// there is nothing to be done since the deserializer reads a 0 (or absent)
+	// member bitsize as a regular, non-bitfield struct/union member
+	return true;
+}
+
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
 	rz_project_migrate_v2_v3,
@@ -792,6 +809,7 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v20_v21,
 	rz_project_migrate_v21_v22,
 	rz_project_migrate_v22_v23,
+	rz_project_migrate_v23_v24,
 };
 
 /// Migrate the given project to the current version in-place

@@ -1113,7 +1113,7 @@ static RzTypeStructMember *struct_member_parse(
 	char *name = NULL;
 	RzType *type = NULL;
 	ut64 offset = 0;
-	ut64 size = 0;
+	ut64 size = 0; // bitfield width in bits, 0 if the member is not a bitfield
 	RzBinDwarfAttr *attr = NULL;
 	rz_vector_foreach (&die->attrs, attr) {
 		switch (attr->at) {
@@ -1121,7 +1121,9 @@ static RzTypeStructMember *struct_member_parse(
 			name = at_string_escaped(attr, ctx);
 			break;
 		case DW_AT_type:
-			type = type_parse_from_offset(ctx, rz_bin_dwarf_attr_udata(attr), &size);
+			// The member type's own size is not the member size; the bitfield
+			// width, if any, is taken from DW_AT_bit_size below.
+			type = type_parse_from_offset(ctx, rz_bin_dwarf_attr_udata(attr), NULL);
 			break;
 		case DW_AT_data_member_location:
 			/*
@@ -1133,10 +1135,10 @@ static RzTypeStructMember *struct_member_parse(
 			*/
 			offset = rz_bin_dwarf_attr_udata(attr);
 			break;
-		// If the size of a data member is not the same as the
-		//  size of the type given for the data member
+		// A bitfield member carries DW_AT_bit_size, whose value is the width in
+		// bits and is recorded as the member size. DW_AT_byte_size is the storage
+		// size, not a bitfield marker, so it is ignored here.
 		case DW_AT_byte_size:
-			size = rz_bin_dwarf_attr_udata(attr) * CHAR_BIT;
 			break;
 		case DW_AT_bit_size:
 			size = rz_bin_dwarf_attr_udata(attr);

@@ -557,7 +557,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 					.name = membname,
 					.type = rz_type_clone(membtpair->type),
 					.offset = 0, // FIXME
-					.size = 0, // FIXME
+					.size = bits,
 				};
 				void *element = rz_vector_push(members, &memb); // returns null if no space available
 				if (!element) {
@@ -853,7 +853,7 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 					.name = membname,
 					.type = rz_type_clone(membtpair->type),
 					.offset = 0, // Always 0 for unions
-					.size = 0, // FIXME
+					.size = bits,
 				};
 				void *element = rz_vector_push(members, &memb); // returns null if no space available
 				if (!element) {

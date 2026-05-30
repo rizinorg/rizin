@@ -977,6 +977,90 @@ static bool test_struct_array_types(void) {
 	mu_end;
 }
 
+static bool test_struct_union_bitfield(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	rz_type_db_set_bits(typedb, 64);
+
+	char *error_msg = NULL;
+
+	// Struct with C bitfields: the widths must be kept on the members (#1240)
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, "struct qwe { int a : 4; int b : 16; int c : 3; };", &error_msg);
+	mu_assert_notnull(ttype, "bitfield struct parses");
+	mu_assert_null(error_msg, "no parse error");
+	mu_assert_streq(ttype->identifier.name, "qwe", "qwe struct");
+	rz_type_free(ttype);
+
+	RzBaseType *base = rz_type_db_get_base_type(typedb, "qwe");
+	mu_assert_notnull(base, "qwe base type");
+	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "not struct");
+	mu_assert_eq(3, rz_vector_len(&base->struct_data.members), "three members");
+	RzTypeStructMember *sm0 = rz_vector_index_ptr(&base->struct_data.members, 0);
+	RzTypeStructMember *sm1 = rz_vector_index_ptr(&base->struct_data.members, 1);
+	RzTypeStructMember *sm2 = rz_vector_index_ptr(&base->struct_data.members, 2);
+	mu_assert_streq(sm0->name, "a", "struct member 0 name");
+	mu_assert_eq(sm0->size, 4, "struct member a bitfield width");
+	mu_assert_streq(sm1->name, "b", "struct member 1 name");
+	mu_assert_eq(sm1->size, 16, "struct member b bitfield width");
+	mu_assert_streq(sm2->name, "c", "struct member 2 name");
+	mu_assert_eq(sm2->size, 3, "struct member c bitfield width");
+	// the renderer prints the widths back as " : N" (#1240)
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base),
+		"struct qwe { int a : 4; int b : 16; int c : 3; }", "struct bitfields rendered");
+	// the pf format uses the packed ":N" bits spec, little-endian order (#314)
+	mu_assert_streq_free(rz_base_type_as_format(typedb, base),
+		":4<:16<:3< a b c", "struct bitfield pf format (little-endian)");
+
+	// Union with C bitfields
+	ttype = rz_type_parse_string_single(typedb->parser, "union uu { int a : 4; int b : 16; };", &error_msg);
+	mu_assert_notnull(ttype, "bitfield union parses");
+	mu_assert_null(error_msg, "no parse error");
+	rz_type_free(ttype);
+
+	base = rz_type_db_get_base_type(typedb, "uu");
+	mu_assert_notnull(base, "uu base type");
+	mu_assert_eq(RZ_BASE_TYPE_KIND_UNION, base->kind, "not union");
+	mu_assert_eq(2, rz_vector_len(&base->union_data.members), "two members");
+	RzTypeUnionMember *um0 = rz_vector_index_ptr(&base->union_data.members, 0);
+	RzTypeUnionMember *um1 = rz_vector_index_ptr(&base->union_data.members, 1);
+	mu_assert_eq(um0->size, 4, "union member a bitfield width");
+	mu_assert_eq(um1->size, 16, "union member b bitfield width");
+	mu_assert_streq_free(rz_base_type_as_format(typedb, base),
+		"0:4<:16< a b", "union bitfield pf format (little-endian)");
+
+	// Regression (#1240): loaders record a member's bitfield width in `size` and
+	// leave it 0 for a plain member (e.g. the DWARF reader for "int a"). A size of
+	// 0 must render as a plain member, a non-zero size as a bitfield.
+	RzBaseType *sr = rz_type_base_type_new(RZ_BASE_TYPE_KIND_STRUCT);
+	mu_assert_notnull(sr, "new struct base type");
+	sr->name = strdup("selfref");
+	RzTypeStructMember sm;
+	sm.name = strdup("full");
+	sm.offset = 0;
+	sm.type = rz_type_parse_string_single(typedb->parser, "int", &error_msg);
+	mu_assert_notnull(sm.type, "int type parses");
+	sm.size = 0; // plain member, as a loader such as DWARF records it
+	mu_assert_false(rz_type_struct_member_is_bitfield(&sm), "size 0 is not a bitfield");
+	rz_vector_push(&sr->struct_data.members, &sm);
+	sm.name = strdup("bits");
+	sm.offset = 4;
+	sm.type = rz_type_parse_string_single(typedb->parser, "int", &error_msg);
+	mu_assert_notnull(sm.type, "int type parses");
+	sm.size = 4; // a real bitfield
+	mu_assert_true(rz_type_struct_member_is_bitfield(&sm), "non-zero size is a bitfield");
+	rz_vector_push(&sr->struct_data.members, &sm);
+	mu_assert_true(rz_type_db_save_base_type(typedb, sr), "register selfref");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, sr),
+		"struct selfref { int full; int bits : 4; }", "plain member is not a bitfield, narrow member is");
+	mu_assert_streq_free(rz_base_type_as_format(typedb, sr),
+		"d4:4< full bits", "plain member keeps its normal pf, bitfield uses :N");
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 static bool test_struct_identifier_without_specifier(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
@@ -2014,6 +2098,7 @@ int all_tests() {
 	mu_run_test(test_single_typedef_aliases);
 	mu_run_test(test_struct_func_types);
 	mu_run_test(test_struct_array_types);
+	mu_run_test(test_struct_union_bitfield);
 	mu_run_test(test_struct_identifier_without_specifier);
 	mu_run_test(test_union_identifier_without_specifier);
 	mu_run_test(test_edit_types);

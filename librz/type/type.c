@@ -1016,7 +1016,18 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 				}
 				rz_vector_foreach (&btype->struct_data.members, memb) {
 					char *unfold = type_as_pretty_string(typedb, memb->type, memb->name, used_types, opts, unfold_level - 1, indent_level + 1);
-					rz_strbuf_appendf(buf, "%s%s", unfold, separator);
+					if (rz_type_struct_member_is_bitfield(memb)) {
+						// bitfield member: render the width as " : N" before the trailing ';'
+						char *semicolon = strrchr(unfold, ';');
+						if (semicolon) {
+							*semicolon = '\0';
+							rz_strbuf_appendf(buf, "%s : %u;%s%s", unfold, (unsigned)memb->size, semicolon + 1, separator);
+						} else {
+							rz_strbuf_appendf(buf, "%s%s", unfold, separator);
+						}
+					} else {
+						rz_strbuf_appendf(buf, "%s%s", unfold, separator);
+					}
 					free(unfold);
 				}
 				for (int i = 0; i < indent; i++) {
@@ -1035,7 +1046,18 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 				}
 				rz_vector_foreach (&btype->union_data.members, memb) {
 					char *unfold = type_as_pretty_string(typedb, memb->type, memb->name, used_types, opts, unfold_level - 1, indent_level + 1);
-					rz_strbuf_appendf(buf, "%s%s", unfold, separator);
+					if (rz_type_union_member_is_bitfield(memb)) {
+						// bitfield member: render the width as " : N" before the trailing ';'
+						char *semicolon = strrchr(unfold, ';');
+						if (semicolon) {
+							*semicolon = '\0';
+							rz_strbuf_appendf(buf, "%s : %u;%s%s", unfold, (unsigned)memb->size, semicolon + 1, separator);
+						} else {
+							rz_strbuf_appendf(buf, "%s%s", unfold, separator);
+						}
+					} else {
+						rz_strbuf_appendf(buf, "%s%s", unfold, separator);
+					}
 					free(unfold);
 				}
 				for (int i = 0; i < indent; i++) {
