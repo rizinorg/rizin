@@ -103,9 +103,15 @@ ARGS=-t strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
 --- bins/elf/elf_one_symbol_shdr
 +++ bins/elf/elf_one_symbol_shdr1
-@@ -1,1 +1,1 @@
+@@ -1,7 +1,7 @@
+ __libc_start_main
+ _IO_stdin_used
+ __gmon_start__
 -Hello world!
 +AAAAo world!
+ GLIBC_2.0
+ libc.so.6
+ puts
 
 EOF
 RUN
@@ -114,7 +120,7 @@ NAME=rz-diff strings comparison JSON
 TOOL=rz-diff
 ARGS=-jt strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
-{"from":"bins/elf/elf_one_symbol_shdr","to":"bins/elf/elf_one_symbol_shdr1","diff":[{"from":[1,1],"to":[1,1],"ops":[{"op":"delete","value":"Hello world!\n"},{"op":"insert","value":"AAAAo world!\n"}]}]}
+{"from":"bins/elf/elf_one_symbol_shdr","to":"bins/elf/elf_one_symbol_shdr1","diff":[{"from":[1,7],"to":[1,7],"ops":[{"op":"equal","value":"__libc_start_main\n"},{"op":"equal","value":"_IO_stdin_used\n"},{"op":"equal","value":"__gmon_start__\n"},{"op":"delete","value":"Hello world!\n"},{"op":"insert","value":"AAAAo world!\n"},{"op":"equal","value":"GLIBC_2.0\n"},{"op":"equal","value":"libc.so.6\n"},{"op":"equal","value":"puts\n"}]}]}
 EOF
 RUN
 
@@ -124,9 +130,15 @@ ARGS=-At strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
 --- bins/elf/elf_one_symbol_shdr
 +++ bins/elf/elf_one_symbol_shdr1
-@@ -1,1 +1,1 @@
+@@ -1,7 +1,7 @@
+ virt: 0x000000000804821b phys: 0x000000000000021b __libc_start_main
+ virt: 0x0000000008048207 phys: 0x0000000000000207 _IO_stdin_used
+ virt: 0x000000000804822d phys: 0x000000000000022d __gmon_start__
 -virt: 0x00000000080484b0 phys: 0x00000000000004b0 Hello world!
 +virt: 0x00000000080484b0 phys: 0x00000000000004b0 AAAAo world!
+ virt: 0x000000000804823c phys: 0x000000000000023c GLIBC_2.0
+ virt: 0x00000000080481fd phys: 0x00000000000001fd libc.so.6
+ virt: 0x0000000008048216 phys: 0x0000000000000216 puts
 
 EOF
 RUN
@@ -135,7 +147,7 @@ NAME=rz-diff strings comparison with addresses JSON
 TOOL=rz-diff
 ARGS=-Ajt strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
-{"from":"bins/elf/elf_one_symbol_shdr","to":"bins/elf/elf_one_symbol_shdr1","diff":[{"from":[1,1],"to":[1,1],"ops":[{"op":"delete","value":"virt: 0x00000000080484b0 phys: 0x00000000000004b0 Hello world!\n"},{"op":"insert","value":"virt: 0x00000000080484b0 phys: 0x00000000000004b0 AAAAo world!\n"}]}]}
+{"from":"bins/elf/elf_one_symbol_shdr","to":"bins/elf/elf_one_symbol_shdr1","diff":[{"from":[1,7],"to":[1,7],"ops":[{"op":"equal","value":"virt: 0x000000000804821b phys: 0x000000000000021b __libc_start_main\n"},{"op":"equal","value":"virt: 0x0000000008048207 phys: 0x0000000000000207 _IO_stdin_used\n"},{"op":"equal","value":"virt: 0x000000000804822d phys: 0x000000000000022d __gmon_start__\n"},{"op":"delete","value":"virt: 0x00000000080484b0 phys: 0x00000000000004b0 Hello world!\n"},{"op":"insert","value":"virt: 0x00000000080484b0 phys: 0x00000000000004b0 AAAAo world!\n"},{"op":"equal","value":"virt: 0x000000000804823c phys: 0x000000000000023c GLIBC_2.0\n"},{"op":"equal","value":"virt: 0x00000000080481fd phys: 0x00000000000001fd libc.so.6\n"},{"op":"equal","value":"virt: 0x0000000008048216 phys: 0x0000000000000216 puts\n"}]}]}
 EOF
 RUN
 

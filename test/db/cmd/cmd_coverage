@@ -8,7 +8,7 @@ EXPECT=<<EOF
 functions:   76
 xrefs:       179
 calls:       130
-strings:     1
+strings:     26
 symbols:     102
 imports:     10
 signatures:  0

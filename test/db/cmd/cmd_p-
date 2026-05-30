@@ -25,8 +25,8 @@ e search.in=io.maps
 p-
 EOF
 EXPECT=<<EOF
-0x08048000 [^._______ssss_s__ssssii_ss_ss_ss__sz_s____s] 0x0804859c
-0x08048000 [^_sssisszss_____________________________s_s] 0x080496d0
+0x08048000 [^._______ssss_zzzssssii_ss_ss_ss__sz_s____s] 0x0804859c
+0x08048000 [^_szzisszss_____________________________s_s] 0x080496d0
 EOF
 RUN
 
