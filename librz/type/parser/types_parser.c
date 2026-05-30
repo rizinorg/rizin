@@ -1090,6 +1090,18 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 			}
 		}
 	}
+	// C23 fixed underlying type, e.g. "enum E : unsigned int { ... }". The
+	// grammar exposes it as the "underlying_type" field; store it on the
+	// base type (RzBaseType::type), leaving it NULL for a classic enum.
+	TSNode enum_underlying = ts_node_child_by_field_name(node, "underlying_type", 15);
+	if (!ts_node_is_null(enum_underlying)) {
+		ParserTypePair *underlying = NULL;
+		if (!parse_type_node_single(state, enum_underlying, text, &underlying, false) && underlying) {
+			rz_type_free(enum_pair->btype->type);
+			enum_pair->btype->type = underlying->type;
+			free(underlying);
+		}
+	}
 	// If parsing successfull completed - we store the state
 	if (enum_pair) {
 		c_parser_base_type_store(state, name, enum_pair);

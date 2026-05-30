@@ -5,6 +5,7 @@
 #include <rz_project.h>
 
 #include "../unit/minunit.h"
+#include "test_config.h"
 #include "rz_config.h"
 #include "sdb.h"
 
@@ -691,6 +692,42 @@ static bool test_migrate_v21_v22_gadget_config() {
 	mu_end;
 }
 
+static bool test_migrate_v22_v23_enum() {
+	RzProject *prj = rz_project_load_file_raw("prj/v22-enum.rzdb");
+	mu_assert_notnull(prj, "load raw project");
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	bool s = rz_project_migrate_v22_v23(prj, res);
+	mu_assert_true(s, "v22->v23 migrate success");
+
+	Sdb *core_db = sdb_ns(prj, "core", false);
+	mu_assert_notnull(core_db, "core ns");
+	Sdb *analysis_db = sdb_ns(core_db, "analysis", false);
+	mu_assert_notnull(analysis_db, "analysis ns");
+	Sdb *types_db = sdb_ns(analysis_db, "types", false);
+	mu_assert_notnull(types_db, "types ns");
+
+	// The migration is additive: a classic enum keeps its cases and gains no
+	// "enum.<name>.@type" key (that key is only written for a fixed underlying type).
+	mu_assert_streq_free(sdb_get(types_db, "Color"), "enum", "classic enum kind preserved");
+	mu_assert_null(sdb_get(types_db, "enum.Color.@type"), "classic enum has no underlying-type key");
+
+	// It must still deserialize into a classic enum (no underlying type).
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "type db new");
+	rz_type_db_init(typedb, TEST_BUILD_TYPES_DIR, "x86", 64, "linux");
+	mu_assert_true(rz_serialize_types_load(types_db, typedb, NULL), "types deserialize");
+	RzBaseType *color = rz_type_db_get_base_type(typedb, "Color");
+	mu_assert_notnull(color, "Color base type present");
+	mu_assert_eq(color->kind, RZ_BASE_TYPE_KIND_ENUM, "Color is an enum");
+	mu_assert_null(color->type, "classic enum has no underlying type");
+	mu_assert_eq(rz_vector_len(&color->enum_data.cases), 3, "three enum cases preserved");
+	rz_type_db_free(typedb);
+
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
+
 /// Load project of given version from file into core and check the log for migration success messages
 #define BEGIN_LOAD_TEST(core, version, file) \
 	do { \
@@ -1127,6 +1164,7 @@ int all_tests() {
 	mu_run_test(test_migrate_v18_v19_str_config);
 	mu_run_test(test_migrate_v20_v21_debase64);
 	mu_run_test(test_migrate_v21_v22_gadget_config);
+	mu_run_test(test_migrate_v22_v23_enum);
 	mu_run_test(test_load_v1_noreturn);
 	mu_run_test(test_load_v1_noreturn_empty);
 	mu_run_test(test_load_v1_unknown_type);
