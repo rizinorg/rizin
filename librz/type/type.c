@@ -566,47 +566,57 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_find_enums_by_val(const RzTypeDB *
 }
 
 /**
- * \brief Returns all matching bitfields as an OR mask given the resulting value
+ * \brief Renders a value as the OR of the flag-enum members that compose it
+ *
+ * Each set bit of \p val is looked up among the members of the bitfield (flag)
+ * enum \p name; the matching member names, each qualified with the enum name,
+ * are joined by " | " into a newly-allocated string, for example
+ * "access_def.W_OK | access_def.R_OK". \p val is decomposed bit by bit, so a
+ * member whose value is not a single bit is never matched against the whole
+ * value -- use rz_type_db_enum_member_by_val() for that exact-match case (the
+ * disassembly filter tries it first).
  *
  * \param typedb Types Database instance
- * \param name The name of the bitfield enum
- * \param val The value to search for
+ * \param name The name of the bitfield (flag) enum
+ * \param val The value to decompose
+ * \return The qualified OR mask, or NULL if \p name is not an enum, \p val is 0,
+ *         or any set bit of \p val has no matching member (so \p val is not
+ *         cleanly a combination of the enum's flag members).
  */
 RZ_API RZ_OWN char *rz_type_db_enum_get_bitfield(const RzTypeDB *typedb, RZ_NONNULL const char *name, ut64 val) {
 	rz_return_val_if_fail(typedb && name, NULL);
-	char *res = NULL;
-	int i;
-	bool isFirst = true;
 
 	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
-	if (!btype) {
+	if (!btype || btype->kind != RZ_BASE_TYPE_KIND_ENUM) {
 		return NULL;
 	}
-	if (btype->kind != RZ_BASE_TYPE_KIND_ENUM) {
+	if (!val) {
 		return NULL;
 	}
-	char *ret = rz_str_newf("0x%08" PFMT64x " : ", val);
-	for (i = 0; i < 32; i++) {
-		ut32 n = 1ULL << i;
+	char *ret = NULL;
+	for (int i = 0; i < 64; i++) {
+		ut64 n = 1ULL << i;
 		if (!(val & n)) {
 			continue;
 		}
+		const char *member = NULL;
 		RzTypeEnumCase *cas;
 		rz_vector_foreach (&btype->enum_data.cases, cas) {
 			if (cas->val == n) {
-				res = cas->name;
+				member = cas->name;
 				break;
 			}
 		}
-		if (isFirst) {
-			isFirst = false;
-		} else {
-			ret = rz_str_append(ret, " | ");
+		if (!member) {
+			// a set bit with no matching member: not a clean flag combination
+			RZ_LOG_ERROR("Can't find matching enum \"%s\" member for %d bit\n", name, i);
+			free(ret);
+			return NULL;
 		}
-		if (res) {
-			ret = rz_str_append(ret, res);
+		if (ret) {
+			ret = rz_str_appendf(ret, " | %s.%s", name, member);
 		} else {
-			ret = rz_str_appendf(ret, "0x%x", n);
+			ret = rz_str_newf("%s.%s", name, member);
 		}
 	}
 	return ret;
