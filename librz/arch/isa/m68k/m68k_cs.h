@@ -4,7 +4,7 @@
 #ifndef RZ_M68K_CS_H
 #define RZ_M68K_CS_H
 
-#include <string.h>
+#include <rz_util/rz_str.h>
 #include <capstone/capstone.h>
 
 #define M68K_LONGEST_INSTRUCTION 22
@@ -14,30 +14,30 @@ static inline cs_mode rz_m68k_cs_mode(const char *cpu) {
 		return CS_MODE_M68K_040;
 	}
 #ifdef RZ_CAPSTONE_HAS_M68K_CPU32
-	if (strstr(cpu, "cpu32") || strstr(cpu, "CPU32")) {
+	if (rz_str_casestr(cpu, "cpu32")) {
 		return CS_MODE_M68K_CPU32;
 	}
 #endif
 #ifdef RZ_CAPSTONE_HAS_M68K_COLDFIRE
-	if (strstr(cpu, "cfv1") || strstr(cpu, "CFV1")) {
+	if (rz_str_casestr(cpu, "cfv1")) {
 		return CS_MODE_M68K_CFV1;
 	}
-	if (strstr(cpu, "cfv2") || strstr(cpu, "CFV2")) {
+	if (rz_str_casestr(cpu, "cfv2")) {
 		return CS_MODE_M68K_CFV2;
 	}
-	if (strstr(cpu, "cfv3") || strstr(cpu, "CFV3")) {
+	if (rz_str_casestr(cpu, "cfv3")) {
 		return CS_MODE_M68K_CFV3;
 	}
-	if (strstr(cpu, "cfv4e") || strstr(cpu, "CFV4E")) {
+	if (rz_str_casestr(cpu, "cfv4e")) {
 		return CS_MODE_M68K_CFV4E;
 	}
-	if (strstr(cpu, "cfv4") || strstr(cpu, "CFV4")) {
+	if (rz_str_casestr(cpu, "cfv4")) {
 		return CS_MODE_M68K_CFV4;
 	}
-	if (strstr(cpu, "cfv5") || strstr(cpu, "CFV5")) {
+	if (rz_str_casestr(cpu, "cfv5")) {
 		return CS_MODE_M68K_CFV5;
 	}
-	if (strstr(cpu, "coldfire") || strstr(cpu, "ColdFire") || strstr(cpu, "COLDFIRE")) {
+	if (rz_str_casestr(cpu, "coldfire")) {
 		return CS_MODE_M68K_COLDFIRE;
 	}
 #endif
