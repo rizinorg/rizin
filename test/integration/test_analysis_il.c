@@ -149,6 +149,8 @@ static bool test_analysis_il() {
 	mu_assert_eq(count, 30, "il op count of function");
 	rz_iterator_free(iter);
 
+	rz_strbuf_fini(&sb);
+	rz_analysis_op_fini(&op);
 	rz_core_seek(core, 0x918, true);
 	rz_core_analysis_il_reinit(core);
 	mu_assert("eval rzil", rz_core_il_step(core, 3));
