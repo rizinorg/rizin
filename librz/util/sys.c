@@ -411,7 +411,7 @@ RZ_API void rz_sys_backtrace(void) {
  * \brief Sleep for \p secs seconds
  */
 RZ_API int rz_sys_sleep(int secs) {
-	if (secs == 0) {
+	if (secs < 1) {
 		return 0;
 	}
 #if HAVE_CLOCK_NANOSLEEP && defined(CLOCK_MONOTONIC)
