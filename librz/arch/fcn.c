@@ -1795,6 +1795,7 @@ RZ_API RzAnalysisFunction *rz_analysis_get_function_byname(RzAnalysis *a, const 
 
 /**
  * \brief Adds a basic block to the RzAnalysis.
+ * It disassembles it to determine the instructions and their offset.
  */
 RZ_API bool rz_analysis_add_bb(RzAnalysis *a, ut64 addr, ut64 size) {
 	rz_return_val_if_fail(a && size > 0, false);
@@ -1812,6 +1813,7 @@ RZ_API bool rz_analysis_add_bb(RzAnalysis *a, ut64 addr, ut64 size) {
 	if (!block) {
 		return false;
 	}
+	rz_analysis_block_analyze_ops(block);
 	return true;
 }
 
