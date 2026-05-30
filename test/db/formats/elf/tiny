@@ -25,6 +25,7 @@ af-
 e io.0xff=0
 e analysis.nonull=16
 aF
+ahi du @ 0x10020
 pd 10
 afb
 echo -- 6 --
@@ -98,7 +99,7 @@ WARNING: Failed to read chunk of size 0x101 at 0x10020 from io.
 -- 5 --
 WARNING: Failed to read chunk of size 0x101 at 0x10020 from io.
 / entry0();
-|           0x00010020      b32a           mov   bl, 0x2a              ; '*'
+|           0x00010020      b32a           mov   bl, 42                ; '*'
 |           0x00010022      31c0           xor   eax, eax
 |           0x00010024      40             inc   eax
 |           0x00010025      cd80           int   0x80
@@ -112,7 +113,7 @@ WARNING: Failed to read chunk of size 0x101 at 0x10020 from io.
 -- 6 --
 WARNING: Failed to read chunk of size 0x101 at 0x10020 from io.
 / entry0();
-|           0x00010020      b32a           mov   bl, 0x2a              ; '*'
+|           0x00010020      b32a           mov   bl, 42                ; '*'
 |           0x00010022      31c0           xor   eax, eax
 |           0x00010024      40             inc   eax
 |           0x00010025      cd80           int   0x80
@@ -130,7 +131,7 @@ WARNING: Failed to read chunk of size 0x101 at 0x10020 from io.
 0x00010020 0x00010027 00:0000 7
 -- 9 --
 / entry0();
-|           0x00010020      b32a           mov   bl, 0x2a              ; '*'
+|           0x00010020      b32a           mov   bl, 42                ; '*'
 |           0x00010022      31c0           xor   eax, eax
 |           0x00010024      40             inc   eax
 \           0x00010025      cd80           int   0x80
