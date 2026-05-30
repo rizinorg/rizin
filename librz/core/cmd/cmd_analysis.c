@@ -5533,17 +5533,6 @@ static RZ_OWN RzSetU *get_calls(RzCore *core, RzAnalysisBlock *block) {
 		}
 		if (op.type == RZ_ANALYSIS_OP_TYPE_CALL) {
 			rz_set_u_add(calls, op.jump);
-
-			RzList *xrefs = rz_analysis_xrefs_get_from(block->analysis, op.addr);
-			RzAnalysisXRef *xref;
-			RzListIter *iter;
-			rz_list_foreach (xrefs, iter, xref) {
-				if (xref->type != RZ_ANALYSIS_XREF_TYPE_CALL) {
-					continue;
-				}
-				rz_set_u_add(calls, xref->to);
-			}
-			rz_list_free(xrefs);
 		}
 		rz_analysis_op_fini(&op);
 		if (op.size > 0) {
