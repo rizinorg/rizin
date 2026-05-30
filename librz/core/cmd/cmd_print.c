@@ -5076,8 +5076,23 @@ static ut8 *analysis_histogram_data(RzCore *core, CoreBlockRange *brange, CoreAn
 	return data;
 }
 
-static bool print_histogram(RzCore *core, RZ_NULLABLE RzHistogramOptions *opts, const ut8 *data, ut64 offset, int width, int step, bool vertical) {
-	RzStrBuf *strbuf = NULL;
+// Build an RzHistogramOptions filled from config-driven defaults.
+static RzHistogramOptions default_histogram_opts(RzConfig *config, RzConsPrintablePalette *pal, ut64 offset) {
+	return (RzHistogramOptions){
+		.unicode = rz_config_get_b(config, "scr.utf8"),
+		.thinline = !rz_config_get_b(config, "scr.hist.block"),
+		.ruler = rz_config_get_b(config, "scr.hist.ruler"),
+		.legend = false,
+		.offset = rz_config_get_b(config, "hex.offset"),
+		.cursor = false,
+		.color = rz_config_get_i(config, "scr.color"),
+		.offpos = offset,
+		.curpos = 0,
+		.pal = pal,
+	};
+}
+
+static bool print_histogram(RzCore *core, RZ_NONNULL RzHistogramOptions *opts, const ut8 *data, int width, int step, bool vertical) {
 	bool hex_offset = rz_config_get_i(core->config, "hex.offset");
 	core->print->num = core->num;
 	if (hex_offset) {
@@ -5086,30 +5101,48 @@ static bool print_histogram(RzCore *core, RZ_NULLABLE RzHistogramOptions *opts, 
 	} else {
 		core->print->flags &= ~RZ_PRINT_FLAGS_OFFSET;
 	}
-	if (opts) {
-		strbuf = vertical ? rz_histogram_vertical(opts, data, width, step) : rz_histogram_horizontal(opts, data, width, 14);
-	} else {
-		RzHistogramOptions default_opts = {
-			.unicode = rz_config_get_b(core->config, "scr.utf8"),
-			.thinline = !rz_config_get_b(core->config, "scr.hist.block"),
-			.ruler = rz_config_get_b(core->config, "scr.hist.ruler"),
-			.legend = false,
-			.offset = rz_config_get_b(core->config, "hex.offset"),
-			.offpos = offset,
-			.cursor = false,
-			.curpos = 0,
-			.color = rz_config_get_i(core->config, "scr.color"),
-			.pal = &core->cons->context->pal
-		};
-		strbuf = vertical ? rz_histogram_vertical(&default_opts, data, width, step) : rz_histogram_horizontal(&default_opts, data, width, 14);
+	// Compute the histogram screen size from configuration, clamped to the
+	// current terminal dimensions so it never overflows the screen.
+	int term_rows = 0;
+	int term_cols = rz_cons_get_size(&term_rows);
+	if (term_cols <= 0) {
+		term_cols = 80;
 	}
+	if (term_rows <= 0) {
+		term_rows = 24;
+	}
+	ut64 cfg_w = rz_config_get_i(core->config, "scr.hist.width");
+	ut64 cfg_h = rz_config_get_i(core->config, "scr.hist.height");
+	// Reserve a few columns/rows so the chart doesn't touch the terminal
+	// edge: the Y-axis ruler gutter (up to ~6 cols for " 0.00|"), the
+	// right-aligned X-axis end label (which would otherwise wrap when it
+	// lands on the very last column), the 2 X-axis ruler lines and the
+	// prompt that comes back on the next line.
+	int avail_cols = term_cols > 10 ? term_cols - 8 : term_cols;
+	int avail_rows = term_rows > 6 ? term_rows - 4 : term_rows;
+	ut32 hist_cols = (cfg_w > 0) ? (ut32)RZ_MIN((int)cfg_w, avail_cols) : 78;
+	ut32 hist_rows = (cfg_h > 0) ? (ut32)RZ_MIN((int)cfg_h, avail_rows) : 14;
+	if (cfg_w > 0 && hist_cols < 4) {
+		hist_cols = 4;
+	}
+	if (cfg_h > 0 && hist_rows < 2) {
+		hist_rows = 2;
+	}
+	if (opts->cols == 0) {
+		opts->cols = hist_cols;
+	}
+	if (opts->blocksize == 0 && step > 0) {
+		opts->blocksize = (ut64)step;
+	}
+	RzStrBuf *strbuf = vertical
+		? rz_histogram_vertical(opts, data, width, step)
+		: rz_histogram_horizontal(opts, data, width, hist_rows);
 	if (!strbuf) {
 		return false;
-	} else {
-		char *histogram = rz_strbuf_drain(strbuf);
-		rz_cons_print(histogram);
-		free(histogram);
 	}
+	char *histogram = rz_strbuf_drain(strbuf);
+	rz_cons_print(histogram);
+	free(histogram);
 	return true;
 }
 
@@ -5272,7 +5305,9 @@ static RzCmdStatus print_histogram_bytes(RzCore *core, int argc, const char **ar
 			return RZ_CMD_STATUS_ERROR;
 		}
 	} else {
-		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+		RzHistogramOptions opts = default_histogram_opts(core->config, &core->cons->context->pal, brange->from);
+		opts.value_max = 255;
+		if (!print_histogram(core, &opts, data, brange->nblocks, brange->blocksize, vertical)) {
 			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
 			free(brange);
 			free(data);
@@ -5302,9 +5337,14 @@ static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **
 		return RZ_CMD_STATUS_ERROR;
 	}
 	ut8 *data = calloc(1, brange->nblocks);
+	// fp entropy for the static horizontal path (via opts->data_f); the ut8
+	// copy keeps the visual / vertical paths working.
+	double *fdata = RZ_NEWS0(double, brange->nblocks);
 	ut8 *tmp = malloc(brange->blocksize);
-	if (!tmp) {
+	if (!tmp || !fdata || !data) {
 		RZ_LOG_ERROR("core: failed to malloc memory\n");
+		free(tmp);
+		free(fdata);
 		free(data);
 		free(brange);
 		return RZ_CMD_STATUS_ERROR;
@@ -5312,25 +5352,56 @@ static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **
 	for (size_t i = 0; i < brange->nblocks; i++) {
 		ut64 off = brange->from + (brange->blocksize * (i + brange->skipblocks));
 		rz_io_read_at_mapped(core->io, off, tmp, brange->blocksize);
-		data[i] = (ut8)(255 * rz_hash_entropy_fraction(tmp, brange->blocksize));
+		// Shannon entropy in bits-per-byte (0..8 for ut8 data).
+		double e = rz_hash_entropy(tmp, brange->blocksize);
+		// Quantise into ut8 over the Shannon range (8 bits/byte max) so the
+		// visual / vertical paths' integer thresholds rescale correctly.
+		double q = e / 8.0;
+		if (q < 0.0) {
+			q = 0.0;
+		} else if (q > 1.0) {
+			q = 1.0;
+		}
+		data[i] = (ut8)(255 * q);
+		fdata[i] = e;
 	}
 	free(tmp);
 	if (isinteractive) {
 		if (!print_visual_bytes(core, data, brange)) {
 			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
 			free(brange);
+			free(fdata);
 			free(data);
 			return RZ_CMD_STATUS_ERROR;
 		}
-	} else {
-		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
-			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+	} else if (vertical) {
+		// Vertical path uses the ut8 buffer (no data_f support there yet).
+		RzHistogramOptions opts = default_histogram_opts(core->config, &core->cons->context->pal, brange->from);
+		opts.value_max = 8;
+		opts.value_precision = 1;
+		if (!print_histogram(core, &opts, data, brange->nblocks, brange->blocksize, true)) {
+			RZ_LOG_ERROR("Cannot generate vertical histogram\n");
 			free(data);
+			free(fdata);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		// Route fp Shannon values via opts->data_f for full precision.
+		RzHistogramOptions opts = default_histogram_opts(core->config, &core->cons->context->pal, brange->from);
+		opts.value_max = 8;
+		opts.value_precision = 1;
+		opts.data_f = fdata;
+		if (!print_histogram(core, &opts, data, brange->nblocks, brange->blocksize, false)) {
+			RZ_LOG_ERROR("Cannot generate horizontal histogram\n");
+			free(data);
+			free(fdata);
 			free(brange);
 			return RZ_CMD_STATUS_ERROR;
 		}
 	}
 	free(data);
+	free(fdata);
 	free(brange);
 	return RZ_CMD_STATUS_OK;
 }
@@ -5667,7 +5738,9 @@ static RzCmdStatus print_histogram_marks(RzCore *core, int argc, const char **ar
 			return RZ_CMD_STATUS_ERROR;
 		}
 	} else {
-		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+		RzHistogramOptions opts = default_histogram_opts(core->config, &core->cons->context->pal, brange->from);
+		opts.value_max = 255;
+		if (!print_histogram(core, &opts, data, brange->nblocks, brange->blocksize, vertical)) {
 			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
 			free(data);
 			free(brange);
@@ -5724,7 +5797,10 @@ static RzCmdStatus print_histogram_0x00(RzCore *core, int argc, const char **arg
 			return RZ_CMD_STATUS_ERROR;
 		}
 	} else {
-		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+		RzHistogramOptions opts = default_histogram_opts(core->config, &core->cons->context->pal, brange->from);
+		opts.value_max = 100;
+		opts.value_unit = "%";
+		if (!print_histogram(core, &opts, data, brange->nblocks, brange->blocksize, vertical)) {
 			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
 			free(data);
 			free(brange);
@@ -5781,7 +5857,10 @@ static RzCmdStatus print_histogram_0xff(RzCore *core, int argc, const char **arg
 			return RZ_CMD_STATUS_ERROR;
 		}
 	} else {
-		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+		RzHistogramOptions opts = default_histogram_opts(core->config, &core->cons->context->pal, brange->from);
+		opts.value_max = 100;
+		opts.value_unit = "%";
+		if (!print_histogram(core, &opts, data, brange->nblocks, brange->blocksize, vertical)) {
 			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
 			free(data);
 			free(brange);
@@ -5838,7 +5917,10 @@ static RzCmdStatus print_histogram_printable(RzCore *core, int argc, const char 
 			return RZ_CMD_STATUS_ERROR;
 		}
 	} else {
-		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+		RzHistogramOptions opts = default_histogram_opts(core->config, &core->cons->context->pal, brange->from);
+		opts.value_max = 100;
+		opts.value_unit = "%";
+		if (!print_histogram(core, &opts, data, brange->nblocks, brange->blocksize, vertical)) {
 			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
 			free(data);
 			free(brange);
@@ -5904,7 +5986,10 @@ static RzCmdStatus print_histogram_z(RzCore *core, int argc, const char **argv, 
 			return RZ_CMD_STATUS_ERROR;
 		}
 	} else {
-		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+		RzHistogramOptions opts = default_histogram_opts(core->config, &core->cons->context->pal, brange->from);
+		opts.value_max = 100;
+		opts.value_unit = "%";
+		if (!print_histogram(core, &opts, data, brange->nblocks, brange->blocksize, vertical)) {
 			free(data);
 			free(brange);
 			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
@@ -5947,7 +6032,9 @@ static RzCmdStatus print_histogram_stats(RzCore *core, int argc, const char **ar
 			return RZ_CMD_STATUS_ERROR;
 		}
 	} else {
-		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+		RzHistogramOptions opts = default_histogram_opts(core->config, &core->cons->context->pal, brange->from);
+		opts.value_max = 255;
+		if (!print_histogram(core, &opts, data, brange->nblocks, brange->blocksize, vertical)) {
 			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
 			free(data);
 			free(brange);
@@ -5990,7 +6077,9 @@ static RzCmdStatus analysis_hist_handler(RzCore *core, int argc, const char **ar
 			return RZ_CMD_STATUS_ERROR;
 		}
 	} else {
-		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+		RzHistogramOptions opts = default_histogram_opts(core->config, &core->cons->context->pal, brange->from);
+		opts.value_max = 255;
+		if (!print_histogram(core, &opts, data, brange->nblocks, brange->blocksize, vertical)) {
 			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
 			free(data);
 			free(brange);

@@ -838,16 +838,24 @@ typedef struct rz_cons_canvas_line_style_t {
 #define SELF_LOOP   10
 
 typedef struct rz_histogram_options_t {
-	bool unicode; //<< Use Unicode characters instead of ASCII
-	bool thinline; //<< Use thin lines instead of block lines
-	bool ruler; //<< Show ruler
-	bool legend; //<< Show axes and legend
-	bool offset; //<< Show offsets
-	ut64 offpos; //<< Starting offset value
-	bool cursor; //<< Show cursor position
-	ut64 curpos; //<< Cursor position
-	bool color; //<< Use colors
-	RzConsPrintablePalette *pal; //<< Colors palette if color is enabled
+	bool unicode; ///< Use Unicode characters instead of ASCII
+	bool thinline; ///< Use thin lines instead of block lines
+	bool ruler; ///< Show ruler
+	bool legend; ///< Show axes and legend
+	bool offset; ///< Show offsets
+	bool cursor; ///< Show cursor position
+	bool color; ///< Use colors
+	ut32 cols; ///< Screen-column width (0 = default 78)
+	ut64 offpos; ///< Starting offset value
+	ut64 curpos; ///< Cursor position
+	ut64 blocksize; ///< Bytes per data point (drives the X-axis offset ruler; 0 disables it)
+	int value_min; ///< Minimum value for ruler labels and threshold scale (0..255 default)
+	int value_max; ///< Maximum value for ruler labels and threshold scale (0 = 0..255 default)
+	int value_precision; ///< Decimal digits on ruler labels (0 = integer)
+	double value_scale; ///< Multiplier on integer row values for ruler labels (0 = 1.0)
+	const char *value_unit; ///< Optional unit suffix after ruler values (NULL = none)
+	RZ_NULLABLE const double *data_f; ///< Optional fp data buffer; overrides ut8 data when set
+	RzConsPrintablePalette *pal; ///< Colors palette if color is enabled
 } RzHistogramOptions;
 
 typedef struct rz_bar_options_t {
