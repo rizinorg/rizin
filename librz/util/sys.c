@@ -431,7 +431,7 @@ RZ_API int rz_sys_sleep(int secs) {
  * \brief Sleep for \p usecs microseconds
  */
 RZ_API int rz_sys_usleep(int usecs) {
-	if (usecs == 0) {
+	if (usecs < 1) {
 		return 0;
 	}
 #if HAVE_CLOCK_NANOSLEEP && defined(CLOCK_MONOTONIC)
