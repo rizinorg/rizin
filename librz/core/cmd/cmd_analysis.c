@@ -5661,23 +5661,20 @@ RZ_IPI RzCmdStatus rz_analysis_all_esil_functions_handler(RzCore *core, int argc
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzList /*<ut64 *>*/ *get_xrefs(RzAnalysisBlock *block) {
+static RzSetU *get_xrefs(RzAnalysisBlock *block) {
 	RzListIter *iter;
 	RzAnalysisXRef *xref;
-	RzList *list = NULL;
+	RzSetU *set = rz_set_u_new();
 	size_t i;
 	for (i = 0; i < block->ninstr; i++) {
 		ut64 ia = block->addr + block->op_pos[i];
 		RzList *xrefs = rz_analysis_xrefs_get_to(block->analysis, ia);
 		rz_list_foreach (xrefs, iter, xref) {
-			if (!list) {
-				list = rz_list_newf(free);
-			}
-			rz_list_push(list, ut64_new(xref->from));
+			rz_set_u_add(set, xref->from);
 		}
 		rz_list_free(xrefs);
 	}
-	return list;
+	return set;
 }
 
 static RZ_OWN RzSetU *get_calls(RzCore *core, RzAnalysisBlock *block) {
@@ -5694,19 +5691,23 @@ static RZ_OWN RzSetU *get_calls(RzCore *core, RzAnalysisBlock *block) {
 		if (ret < 1) {
 			continue;
 		}
-		if (op.type == RZ_ANALYSIS_OP_TYPE_CALL) {
-			rz_set_u_add(calls, op.jump);
-
-			RzList *xrefs = rz_analysis_xrefs_get_from(block->analysis, op.addr);
-			RzAnalysisXRef *xref;
-			RzListIter *iter;
-			rz_list_foreach (xrefs, iter, xref) {
-				if (xref->type != RZ_ANALYSIS_XREF_TYPE_CALL) {
-					continue;
+		if (rz_analysis_op_is_call(&op)) {
+			if (op.jump != UT64_MAX) {
+				rz_set_u_add(calls, op.jump);
+			} else {
+				// No statically know call target.
+				// Check if a previous analysis found any xrefs from it.
+				RzList *xrefs = rz_analysis_xrefs_get_from(block->analysis, op.addr);
+				RzAnalysisXRef *xref;
+				RzListIter *iter;
+				rz_list_foreach (xrefs, iter, xref) {
+					if (xref->type != RZ_ANALYSIS_XREF_TYPE_CALL) {
+						continue;
+					}
+					rz_set_u_add(calls, xref->to);
 				}
-				rz_set_u_add(calls, xref->to);
+				rz_list_free(xrefs);
 			}
-			rz_list_free(xrefs);
 		}
 		rz_analysis_op_fini(&op);
 		if (op.size > 0) {
@@ -5739,7 +5740,7 @@ RZ_IPI RzCmdStatus rz_analysis_basic_block_list_handler(RzCore *core, int argc, 
 	RzAnalysisBlock *block;
 	RBTree *bb_tree = rz_analysis_get_bb_tree(core->analysis);
 	rz_rbtree_foreach ((*bb_tree), iter, block, RzAnalysisBlock, _rb) {
-		RzList *xrefs = get_xrefs(block);
+		RzSetU *xrefs = get_xrefs(block);
 		RzSetU *calls = get_calls(core, block);
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
@@ -5756,11 +5757,12 @@ RZ_IPI RzCmdStatus rz_analysis_basic_block_list_handler(RzCore *core, int argc, 
 			}
 			if (xrefs) {
 				pj_ka(pj, "xrefs");
-				RzListIter *iter2;
 				ut64 *addr;
-				rz_list_foreach (xrefs, iter2, addr) {
+				RzIterator *xref_iter = rz_set_u_as_iter(xrefs);
+				rz_iterator_foreach(xref_iter, addr) {
 					pj_n(pj, *addr);
 				}
+				rz_iterator_free(xref_iter);
 				pj_end(pj);
 			}
 			if (calls) {
@@ -5786,7 +5788,7 @@ RZ_IPI RzCmdStatus rz_analysis_basic_block_list_handler(RzCore *core, int argc, 
 			char *jump = block->jump != UT64_MAX ? rz_str_newf("0x%08" PFMT64x, block->jump) : rz_str_dup("");
 			char *fail = block->fail != UT64_MAX ? rz_str_newf("0x%08" PFMT64x, block->fail) : rz_str_dup("");
 			char *call = ut64join(calls);
-			char *xref = ut64join(calls);
+			char *xref = ut64join(xrefs);
 			char *fcns = fcnjoin(block->fcns);
 			rz_table_add_rowf(table, "xnddsssss",
 				block->addr,
@@ -5816,12 +5818,12 @@ RZ_IPI RzCmdStatus rz_analysis_basic_block_list_handler(RzCore *core, int argc, 
 				rz_cons_printf(" .f 0x%08" PFMT64x, block->fail);
 			}
 			if (xrefs) {
-				RzListIter *iter2;
-				rz_cons_printf(" .x");
 				ut64 *addr;
-				rz_list_foreach (xrefs, iter2, addr) {
+				RzIterator *xref_iter = rz_set_u_as_iter(xrefs);
+				rz_iterator_foreach(xref_iter, addr) {
 					rz_cons_printf(" 0x%08" PFMT64x, *addr);
 				}
+				rz_iterator_free(xref_iter);
 			}
 			if (calls) {
 				rz_cons_printf(" .c");
@@ -5846,7 +5848,7 @@ RZ_IPI RzCmdStatus rz_analysis_basic_block_list_handler(RzCore *core, int argc, 
 			status = RZ_CMD_STATUS_WRONG_ARGS;
 			iter.len = 0;
 		}
-		rz_list_free(xrefs);
+		rz_set_u_free(xrefs);
 		rz_set_u_free(calls);
 	}
 	rz_cmd_state_output_array_end(state);
