@@ -4172,7 +4172,7 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 		if (!strcmp(ds->show_cmtoff, "true")) {
 			ds_begin_comment(ds);
 			ds_comment(ds, true, "; 0x%" PFMT64x, refaddr);
-		} else if (!refaddr_printed && strcmp(ds->show_cmtoff, "false")) {
+		} else if (!refaddr_printed && strcmp(ds->show_cmtoff, "false") && (!ds->hint || !ds->hint->immbase)) {
 			char addrstr[32] = { 0 };
 			snprintf(addrstr, sizeof(addrstr), "0x%" PFMT64x, refaddr);
 			if (!ds->opstr || !strstr(ds->opstr, addrstr)) {
