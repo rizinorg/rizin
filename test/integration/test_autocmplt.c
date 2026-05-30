@@ -432,7 +432,7 @@ static bool test_autocmplt_seek(void) {
 	mu_assert_notnull(r, "r should not be null");
 	mu_assert_eq(r->start, strlen("s "), "should autocomplete the last arg");
 	mu_assert_eq(r->end, buf->length, "should autocomplete ending at end of buffer");
-	mu_assert_eq(rz_pvector_len(&r->options), 164, "there are 164 rznum vars on loading");
+	mu_assert_eq(rz_pvector_len(&r->options), 177, "there are 177 rznum vars on loading");
 	rz_line_ns_completion_result_free(r);
 
 	rz_flag_set(core->flags, "flag1", 0x1000, 1);
@@ -684,9 +684,9 @@ static bool test_autocmplt_tmp_seek(void) {
 	mu_assert_notnull(r, "r should not be null");
 	mu_assert_eq(r->start, strlen("pd @ "), "should autocomplete the @ operator");
 	mu_assert_eq(r->end, buf->length, "should autocomplete ending at end of buffer");
-	mu_assert_eq(rz_pvector_len(&r->options), 2, "there are 2 possible values to seek to starting with st");
-	mu_assert_streq(rz_pvector_at(&r->options, 0), "str.Hello", "hello string is there");
-	mu_assert_streq(rz_pvector_at(&r->options, 1), "str.r2_folks", "r2_folks string is there");
+	mu_assert_eq(rz_pvector_len(&r->options), 15, "there are 15 possible values to seek to starting with st");
+	mu_assert_streq(rz_pvector_at(&r->options, 13), "str.Hello", "hello string is there");
+	mu_assert_streq(rz_pvector_at(&r->options, 14), "str.r2_folks", "r2_folks string is there");
 	rz_line_ns_completion_result_free(r);
 	fake_core_free(core);
 	mu_end;

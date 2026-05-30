@@ -373,8 +373,14 @@ TOOL=rz-bin
 ARGS=-z
 EXPECT=<<EOF
 [Strings]
-     paddr      vaddr len size section type  string       
-----------------------------------------------------------
+     paddr      vaddr len size section type  string            
+---------------------------------------------------------------
+0x000001fd 0x080481fd   9   10 .dynstr ascii libc.so.6
+0x00000207 0x08048207  14   15 .dynstr ascii _IO_stdin_used
+0x00000216 0x08048216   4    5 .dynstr ascii puts
+0x0000021b 0x0804821b  17   18 .dynstr ascii __libc_start_main
+0x0000022d 0x0804822d  14   15 .dynstr ascii __gmon_start__
+0x0000023c 0x0804823c   9   10 .dynstr ascii GLIBC_2.0
 0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
 
 EOF
@@ -491,6 +497,11 @@ FILE=bins/elf/analysis/hello-linux-x86_64
 TOOL=rz-bin
 ARGS=-qqz
 EXPECT=<<EOF
+__gmon_start__
+libc.so.6
+puts
+__libc_start_main
+GLIBC_2.2.5
 Hello World
 EOF
 RUN
@@ -793,8 +804,14 @@ nth      paddr      vaddr bind   type   size lib name
 0x00000000  0x34 0x08048000  0x34    0x0 -rw- ehdr
 
 [Strings]
-     paddr      vaddr len size section type  string       
-----------------------------------------------------------
+     paddr      vaddr len size section type  string            
+---------------------------------------------------------------
+0x000001fd 0x080481fd   9   10 .dynstr ascii libc.so.6
+0x00000207 0x08048207  14   15 .dynstr ascii _IO_stdin_used
+0x00000216 0x08048216   4    5 .dynstr ascii puts
+0x0000021b 0x0804821b  17   18 .dynstr ascii __libc_start_main
+0x0000022d 0x0804822d  14   15 .dynstr ascii __gmon_start__
+0x0000023c 0x0804823c   9   10 .dynstr ascii GLIBC_2.0
 0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
 
 [Main]
@@ -1299,8 +1316,16 @@ TOOL=rz-bin
 ARGS=-z -N2
 EXPECT=<<EOF
 [Strings]
-     paddr      vaddr len size section type  string 
-----------------------------------------------------
+     paddr      vaddr len size section type  string                      
+-------------------------------------------------------------------------
+0x00000471 0x00000471  17   18 .dynstr ascii __libc_start_main
+0x00000483 0x00000483  14   15 .dynstr ascii __cxa_finalize
+0x00000492 0x00000492   9   10 .dynstr ascii libc.so.6
+0x0000049c 0x0000049c  11   12 .dynstr ascii GLIBC_2.2.5
+0x000004a8 0x000004a8  10   11 .dynstr ascii GLIBC_2.34
+0x000004b3 0x000004b3  27   28 .dynstr ascii _ITM_deregisterTMCloneTable
+0x000004cf 0x000004cf  14   15 .dynstr ascii __gmon_start__
+0x000004de 0x000004de  25   26 .dynstr ascii _ITM_registerTMCloneTable
 0x00002006 0x00002006   2    3 .rodata ascii 22
 0x00002009 0x00002009   3    4 .rodata ascii 333
 0x0000200d 0x0000200d   4    5 .rodata ascii 4444

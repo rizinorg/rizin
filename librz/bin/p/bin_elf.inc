@@ -803,6 +803,15 @@ static RzPVector /*<RzBinSection *>*/ *sections_obj(ELFOBJ *obj, size_t psize) {
 		} else if (!strcmp(ptr->name, "C")) {
 			ptr->is_data = true;
 		}
+		// String tables (e.g. .dynstr) and sections explicitly flagged with
+		// SHF_STRINGS hold NUL-terminated strings, not code. When such a
+		// section is mapped into memory (SHF_ALLOC) mark it so the string
+		// search picks up its contents (iz) and the disassembler renders it
+		// as strings instead of trying to decode it as instructions.
+		if ((section->flags & SHF_ALLOC) &&
+			(section->type == SHT_STRTAB || (section->flags & SHF_STRINGS))) {
+			ptr->has_strings = true;
+		}
 		if (is_wordable_section(ptr->name)) {
 			ptr->layout.type = RZ_META_TYPE_DATA;
 			ptr->layout.element_size = sizeof(Elf_(Addr));

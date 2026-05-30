@@ -211,17 +211,19 @@ fl~?
 fl~main
 EOF
 EXPECT=<<EOF
-111
+120
+0x080482ac 18 str.libc_start_main
 0x08048364 16 sym.imp.__libc_start_main
 0x08048540 256 main
 0x08048540 92 sym.renamedmain
 0x0804a000 4 reloc.__libc_start_main
 --
 --
-111
+120
+0x080482ac 18 str.libc_start_main
 0x08048364 16 sym.imp.__libc_start_main
-0x08048540 92 sym.renamedmain
 0x08048540 256 main
+0x08048540 92 sym.renamedmain
 0x0804a000 4 reloc.__libc_start_main
 EOF
 RUN
