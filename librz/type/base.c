@@ -321,7 +321,9 @@ RZ_API RZ_OWN char *rz_type_db_base_type_as_pretty_string(RZ_NONNULL const RzTyp
 	rz_return_val_if_fail(typedb && btype, NULL);
 
 	RzType *type = rz_type_identifier_of_base_type(typedb, btype, false);
-	return rz_type_as_pretty_string(typedb, type, NULL, opts, unfold_level);
+	char *ret = rz_type_as_pretty_string(typedb, type, NULL, opts, unfold_level);
+	rz_type_free(type);
+	return ret;
 }
 
 /**

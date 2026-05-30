@@ -539,8 +539,9 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 					result = -1;
 					goto srnexit;
 				}
-				const char *bits_str = ts_node_sub_string(field_bits, text);
+				char *bits_str = ts_node_sub_string(field_bits, text);
 				int bits = rz_num_get(NULL, bits_str);
+				free(bits_str);
 				parser_debug(state, "field type: %s field_identifier: %s bits: %d\n", real_type, real_identifier, bits);
 				// Then we augment resulting type field with the data from parsed declarator
 				char *membname = NULL;
@@ -593,7 +594,9 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 				}
 				parser_debug(state, "Appended member \"%s\" into struct \"%s\"\n", membname, name);
 			} else {
-				parser_debug(state, "Struct field wrong: \"%s\"\n", ts_node_sub_string(field_declarator, text));
+				char *wrong = ts_node_sub_string(field_declarator, text);
+				parser_debug(state, "Struct field wrong: \"%s\"\n", wrong);
+				free(wrong);
 			}
 			field_declarator = ts_node_next_named_sibling(field_declarator);
 		} while (!ts_node_is_null(field_declarator));
@@ -832,8 +835,9 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 					result = -1;
 					goto urnexit;
 				}
-				const char *bits_str = ts_node_sub_string(field_bits, text);
+				char *bits_str = ts_node_sub_string(field_bits, text);
 				int bits = rz_num_get(NULL, bits_str);
+				free(bits_str);
 				parser_debug(state, "field type: %s field_identifier: %s bits: %d\n", real_type, real_identifier, bits);
 				// Then we augment resulting type field with the data from parsed declarator
 				char *membname = NULL;
