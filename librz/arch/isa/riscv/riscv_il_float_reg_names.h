@@ -49,7 +49,10 @@ static inline const char *riscv_freg_name(uint32_t reg) {
 	if (reg >= RISCV_REG_F0_D && reg <= RISCV_REG_F31_D) {
 		return riscv_freg_names[reg - RISCV_REG_F0_D];
 	}
-	return riscv_freg_names[reg - RISCV_REG_F0_F];
+	if (reg >= RISCV_REG_F0_F && reg <= RISCV_REG_F31_F) {
+		return riscv_freg_names[reg - RISCV_REG_F0_F];
+	}
+	return "<invalid_fp_reg>";
 }
 
 #endif // RISCV_IL_FLOAT_REG_NAMES_H
