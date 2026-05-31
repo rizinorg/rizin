@@ -5695,7 +5695,7 @@ static RZ_OWN RzSetU *get_calls(RzCore *core, RzAnalysisBlock *block) {
 			if (op.jump != UT64_MAX) {
 				rz_set_u_add(calls, op.jump);
 			} else {
-				// No statically know call target.
+				// No statically known call target.
 				// Check if a previous analysis found any xrefs from it.
 				RzList *xrefs = rz_analysis_xrefs_get_from(block->analysis, op.addr);
 				RzAnalysisXRef *xref;
