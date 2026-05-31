@@ -14,7 +14,9 @@ static void pdb_types_print_standard(const RzTypeDB *db, const RzPdb *pdb, const
 	RzBaseType *type;
 	RzStrBuf *buf = rz_strbuf_new(NULL);
 	rz_list_foreach (types, it, type) {
-		rz_strbuf_append(buf, rz_type_db_base_type_as_pretty_string(db, type, RZ_TYPE_PRINT_MULTILINE | RZ_TYPE_PRINT_END_NEWLINE, 1));
+		char *pretty = rz_type_db_base_type_as_pretty_string(db, type, RZ_TYPE_PRINT_MULTILINE | RZ_TYPE_PRINT_END_NEWLINE, 1);
+		rz_strbuf_append(buf, pretty);
+		free(pretty);
 	}
 	rz_cons_print(rz_strbuf_get(buf));
 	rz_strbuf_free(buf);
