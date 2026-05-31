@@ -2575,6 +2575,12 @@ RZ_IPI RzCmdStatus rz_type_xrefs_function_handler(RzCore *core, int argc, const 
 RZ_IPI RzCmdStatus rz_type_xrefs_graph_handler(RzCore *core, int argc, const char **argv);
 // "txl"
 RZ_IPI RzCmdStatus rz_type_xrefs_list_all_handler(RzCore *core, int argc, const char **argv);
+// "tk"
+RZ_IPI RzCmdStatus rz_type_typeclass_handler(RzCore *core, int argc, const char **argv);
+// "tkl"
+RZ_IPI RzCmdStatus rz_type_typeclass_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "tks"
+RZ_IPI RzCmdStatus rz_type_typeclass_set_handler(RzCore *core, int argc, const char **argv);
 // "V"
 RZ_IPI RzCmdStatus rz_interactive_visual_handler(RzCore *core, int argc, const char **argv);
 // "VH"

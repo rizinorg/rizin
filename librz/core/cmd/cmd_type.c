@@ -865,3 +865,41 @@ RZ_IPI RzCmdStatus rz_type_xrefs_list_all_handler(RzCore *core, int argc, const 
 	types_xrefs_all(core);
 	return RZ_CMD_STATUS_OK;
 }
+
+RZ_IPI RzCmdStatus rz_type_typeclass_handler(RzCore *core, int argc, const char **argv) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, argv[1]);
+	if (!btype) {
+		RZ_LOG_ERROR("Type \"%s\" does not exist\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzTypeTypeclass typeclass = rz_base_type_typeclass(typedb, btype);
+	rz_cons_println(rz_type_typeclass_as_string(typeclass));
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_typeclass_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	rz_core_types_typeclass_print_all(core, mode);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_typeclass_set_handler(RzCore *core, int argc, const char **argv) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, argv[1]);
+	if (!btype) {
+		RZ_LOG_ERROR("Type \"%s\" does not exist\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzTypeTypeclass typeclass = rz_type_typeclass_from_string(argv[2]);
+	// rz_type_typeclass_from_string returns RZ_TYPE_TYPECLASS_NONE both for the
+	// "None" typeclass and for an unknown string, so reject unknown ones here.
+	if (typeclass == RZ_TYPE_TYPECLASS_NONE && strcmp(argv[2], "None")) {
+		RZ_LOG_ERROR("Unknown typeclass \"%s\"\n", argv[2]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!rz_base_type_set_typeclass(btype, typeclass)) {
+		RZ_LOG_ERROR("Cannot set typeclass \"%s\" on type \"%s\"\n", argv[2], argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
