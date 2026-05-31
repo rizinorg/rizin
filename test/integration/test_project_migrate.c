@@ -728,6 +728,49 @@ static bool test_migrate_v22_v23_enum() {
 	mu_end;
 }
 
+static bool test_migrate_v23_v24_bitfield() {
+	RzProject *prj = rz_project_load_file_raw("prj/v23-bitfield.rzdb");
+	mu_assert_notnull(prj, "load raw project");
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	bool s = rz_project_migrate_v23_v24(prj, res);
+	mu_assert_true(s, "v23->v24 migrate success");
+
+	Sdb *core_db = sdb_ns(prj, "core", false);
+	mu_assert_notnull(core_db, "core ns");
+	Sdb *analysis_db = sdb_ns(core_db, "analysis", false);
+	mu_assert_notnull(analysis_db, "analysis ns");
+	Sdb *types_db = sdb_ns(analysis_db, "types", false);
+	mu_assert_notnull(types_db, "types ns");
+
+	// The migration is additive: the bitfield width already lives in the 3rd
+	// comma-field of each struct member ("type,offset,bitsize"), so nothing in
+	// the sdb changes.
+	mu_assert_streq_free(sdb_get(types_db, "struct.qwe.a"), "int,0,4", "member a keeps its bitfield width");
+	mu_assert_streq_free(sdb_get(types_db, "struct.qwe.b"), "int,0,16", "member b keeps its bitfield width");
+	mu_assert_streq_free(sdb_get(types_db, "struct.qwe.c"), "int,0,3", "member c keeps its bitfield width");
+
+	// It must deserialize into a struct whose members carry the bitfield widths.
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "type db new");
+	rz_type_db_init(typedb, TEST_BUILD_TYPES_DIR, "x86", 64, "linux");
+	mu_assert_true(rz_serialize_types_load(types_db, typedb, NULL), "types deserialize");
+	RzBaseType *qwe = rz_type_db_get_base_type(typedb, "qwe");
+	mu_assert_notnull(qwe, "qwe base type present");
+	mu_assert_eq(qwe->kind, RZ_BASE_TYPE_KIND_STRUCT, "qwe is a struct");
+	mu_assert_eq(rz_vector_len(&qwe->struct_data.members), 3, "three members preserved");
+	RzTypeStructMember *m0 = rz_vector_index_ptr(&qwe->struct_data.members, 0);
+	RzTypeStructMember *m1 = rz_vector_index_ptr(&qwe->struct_data.members, 1);
+	RzTypeStructMember *m2 = rz_vector_index_ptr(&qwe->struct_data.members, 2);
+	mu_assert_eq(m0->size, 4, "member a bitfield width deserialized");
+	mu_assert_eq(m1->size, 16, "member b bitfield width deserialized");
+	mu_assert_eq(m2->size, 3, "member c bitfield width deserialized");
+	rz_type_db_free(typedb);
+
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
+
 /// Load project of given version from file into core and check the log for migration success messages
 #define BEGIN_LOAD_TEST(core, version, file) \
 	do { \
@@ -1165,6 +1208,7 @@ int all_tests() {
 	mu_run_test(test_migrate_v20_v21_debase64);
 	mu_run_test(test_migrate_v21_v22_gadget_config);
 	mu_run_test(test_migrate_v22_v23_enum);
+	mu_run_test(test_migrate_v23_v24_bitfield);
 	mu_run_test(test_load_v1_noreturn);
 	mu_run_test(test_load_v1_noreturn_empty);
 	mu_run_test(test_load_v1_unknown_type);

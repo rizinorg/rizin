@@ -326,6 +326,16 @@ RZ_API RZ_OWN char *rz_type_db_base_type_as_pretty_string(RZ_NONNULL const RzTyp
 	return ret;
 }
 
+RZ_API bool rz_type_struct_member_is_bitfield(RZ_NONNULL const RzTypeStructMember *member) {
+	rz_return_val_if_fail(member, false);
+	return member->size > 0;
+}
+
+RZ_API bool rz_type_union_member_is_bitfield(RZ_NONNULL const RzTypeUnionMember *member) {
+	rz_return_val_if_fail(member, false);
+	return member->size > 0;
+}
+
 /**
  * \brief Searches for the compound RzBaseType in the types database given the name
  *

@@ -67,17 +67,19 @@ bool test_types_save() {
 	RzType *mtype = rz_type_parse_string_single(typedb->parser, "char *", &error_msg);
 	mu_assert_notnull(mtype, "member type parsing");
 	member.type = mtype;
-	member.size = rz_type_db_get_bitsize(typedb, mtype);
-	mu_assert_eq(member.size, 64, "member type size");
+	ut64 gillian_bitsize = rz_type_db_get_bitsize(typedb, mtype);
+	mu_assert_eq(gillian_bitsize, 64, "member type size");
+	member.size = 0;
 	rz_vector_push(&type->struct_data.members, &member);
 
 	// struct.junker.seed
 	member.name = strdup("seed");
-	member.offset = member.size / 8; // size of the previous member
+	member.offset = gillian_bitsize / 8;
 	mtype = rz_type_parse_string_single(typedb->parser, "uint64_t", &error_msg);
 	mu_assert_notnull(mtype, "member type parsing");
 	member.type = mtype;
-	mu_assert_eq(member.size, 64, "member type size");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, mtype), 64, "member type size");
+	member.size = 0;
 	rz_vector_push(&type->struct_data.members, &member);
 
 	rz_type_db_save_base_type(typedb, type);
@@ -93,7 +95,7 @@ bool test_types_save() {
 	mtype = rz_type_parse_string_single(typedb->parser, "int", &error_msg);
 	mu_assert_notnull(mtype, "\"random\" member type parsing");
 	mumber.type = mtype;
-	mumber.size = rz_type_db_get_bitsize(typedb, mtype);
+	mumber.size = 0;
 	rz_vector_push(&type->union_data.members, &mumber);
 
 	// union.snatcher.hajile
@@ -102,7 +104,7 @@ bool test_types_save() {
 	mtype = rz_type_parse_string_single(typedb->parser, "uint32_t", &error_msg);
 	mu_assert_notnull(mtype, "\"hajile\" member type parsing");
 	mumber.type = mtype;
-	mumber.size = rz_type_db_get_bitsize(typedb, mtype);
+	mumber.size = 0;
 	rz_vector_push(&type->union_data.members, &mumber);
 
 	rz_type_db_save_base_type(typedb, type);
