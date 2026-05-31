@@ -28,6 +28,8 @@ nth      vaddr bind   type   lib name
 0x0000083c sym.varfunc
 0x00000850 str.res:__d str.res:__d
 0x00000854 sym._MIPS_STUBS(gp)
+0x0000085c sym.imp.printf
+0x00000940 [14] -r-x section size 48 named .MIPS.stubs
 EOF
 RUN
 
@@ -61,6 +63,8 @@ nth      vaddr bind   type   lib name
 0x0000080c sym.varfunc
 0x00000820 str.res:__d str.res:__d
 0x00000824 sym._MIPS_STUBS(gp)
+0x0000082c sym.imp.printf
+0x00000900 [14] -r-x section size 48 named .MIPS.stubs
 EOF
 RUN
 
