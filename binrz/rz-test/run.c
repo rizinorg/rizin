@@ -5,6 +5,9 @@
 #include <rz_util/rz_str.h>
 #include <rz_util/rz_regex.h>
 #include <rz_cons.h>
+#include <rz_asm.h>
+#include <rz_analysis.h>
+#include <rz_il.h>
 
 #if __WINDOWS__
 static ut8 *crlf2lf(ut8 *str) {
@@ -458,139 +461,174 @@ RZ_API bool rz_test_check_json_test(RzSubprocessOutput *out, RzJsonTest *test) {
 	return ret;
 }
 
+/**
+ * \brief Lift, stringify and validate the IL of every instruction in \p test.
+ *
+ * This mirrors what `rz-asm -I` does (see print_and_check_il() and the
+ * DISASM_MODE_IL loop in librz/main/rz-asm.c), but runs in-process instead of
+ * spawning a separate rz-asm for each instruction. The produced strings are
+ * post-processed exactly like the previous subprocess-based runner did (trim,
+ * and replace '\n' with ';' for the IL itself) so the recorded EXPECT values
+ * keep matching.
+ */
+static void rz_test_run_asm_il(RzAnalysis *analysis, RzAsmTest *test, RzAsmTestOutput *out) {
+	RzStrBuf il_sb;
+	RzStrBuf err_sb;
+	rz_strbuf_init(&il_sb);
+	rz_strbuf_init(&err_sb);
+
+	bool failed = false;
+	ut64 addr = test->offset;
+	int len = (int)test->bytes_size;
+	int ret = 0;
+	while (ret < len) {
+		RzAnalysisOp aop = { 0 };
+		rz_analysis_op_init(&aop);
+		if (rz_analysis_op(analysis, &aop, addr, test->bytes + ret, len - ret, RZ_ANALYSIS_OP_MASK_IL) <= 0) {
+			rz_strbuf_append(&err_sb, "Invalid\n");
+			failed = true;
+			rz_analysis_op_fini(&aop);
+			break;
+		}
+
+		RzAnalysisILVM *vm = rz_analysis_il_vm_new(analysis, NULL);
+		if (!vm) {
+			rz_strbuf_append(&err_sb, "Failed to initialize IL VM for this architecture.\n");
+			failed = true;
+			rz_analysis_op_fini(&aop);
+			break;
+		}
+		RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_from_vm(vm->vm);
+		if (!ctx) {
+			rz_strbuf_append(&err_sb, "Failed to derive context from IL VM.\n");
+			failed = true;
+			rz_analysis_il_vm_free(vm);
+			rz_analysis_op_fini(&aop);
+			break;
+		}
+
+		RzILOpEffect *il_op = aop.il_op;
+		if (il_op) {
+			RzStrBuf sb;
+			rz_strbuf_init(&sb);
+			rz_il_op_effect_stringify(il_op, &sb, false);
+			rz_strbuf_appendf(&il_sb, "%s\n", rz_strbuf_get(&sb));
+			rz_strbuf_fini(&sb);
+		}
+
+		char *report = NULL;
+		if (!rz_il_validate_effect(il_op, ctx, NULL, NULL, &report)) {
+			failed = true;
+			rz_strbuf_appendf(&err_sb, "IL Validation failed%c\n", report ? ':' : '.');
+		}
+		if (report) {
+			rz_strbuf_appendf(&err_sb, "%s\n", report);
+			free(report);
+		}
+
+		rz_il_validate_global_context_free(ctx);
+		rz_analysis_il_vm_free(vm);
+
+		ret += aop.size;
+		addr += aop.size;
+		rz_analysis_op_fini(&aop);
+		if (failed) {
+			break;
+		}
+	}
+
+	char *il = rz_str_dup(rz_strbuf_get(&il_sb));
+	rz_strbuf_fini(&il_sb);
+	if (il) {
+		rz_str_trim(il);
+		rz_str_replace_char(il, '\n', ';');
+	}
+	out->il = il;
+
+	char *il_err = rz_str_dup(rz_strbuf_get(&err_sb));
+	rz_strbuf_fini(&err_sb);
+	if (il_err) {
+		rz_str_trim(il_err);
+	}
+	out->il_err = il_err;
+
+	out->il_ret = failed ? 1 : 0;
+	out->il_failed = failed;
+}
+
 RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest *test) {
 	RzAsmTestOutput *out = RZ_NEW0(RzAsmTestOutput);
 	if (!out) {
 		return NULL;
 	}
 	out->as_ret = out->disas_ret = out->il_ret = INT_MAX;
-	char *rz_asm_exe = rz_file_path("rz-asm");
 
-	RzPVector args;
-	rz_pvector_init(&args, NULL);
+	(void)config;
 
+	const bool big_endian = test->mode & RZ_ASM_TEST_MODE_BIG_ENDIAN;
+
+	RzAsm *a = rz_asm_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+	if (!a || !analysis) {
+		rz_asm_free(a);
+		rz_analysis_free(analysis);
+		return out;
+	}
+
+	// Mirror the way rz-asm sets up its RzAsm/RzAnalysis from the CLI flags
+	// (-a/-c/-b/-e), so the encodings, disassembly and IL match byte for byte.
 	if (test->arch) {
-		rz_pvector_push(&args, "-a");
-		rz_pvector_push(&args, (void *)test->arch);
+		rz_asm_use(a, test->arch);
+		rz_analysis_use(analysis, test->arch);
 	}
-
 	if (test->cpu) {
-		rz_pvector_push(&args, "-c");
-		rz_pvector_push(&args, (void *)test->cpu);
+		rz_asm_set_cpu(a, test->cpu);
+		rz_analysis_set_cpu(analysis, test->cpu);
 	}
-
-	char bits[0x20];
 	if (test->bits) {
-		snprintf(bits, sizeof(bits), "%d", test->bits);
-		rz_pvector_push(&args, "-b");
-		rz_pvector_push(&args, bits);
+		rz_asm_set_bits(a, test->bits);
+		rz_analysis_set_bits(analysis, test->bits);
 	}
-
-	if (test->mode & RZ_ASM_TEST_MODE_BIG_ENDIAN) {
-		rz_pvector_push(&args, "-e");
-	}
-
-	char offset[0x20];
-	if (test->offset) {
-		rz_snprintf(offset, sizeof(offset), "0x%" PFMT64x, test->offset);
-		rz_pvector_push(&args, "-o");
-		rz_pvector_push(&args, offset);
-	}
+	rz_asm_set_big_endian(a, big_endian);
+	rz_analysis_set_big_endian(analysis, big_endian);
 
 	if (test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) {
-		rz_pvector_push(&args, test->disasm);
-		RzSubprocess *proc = rz_subprocess_start(rz_asm_exe, args.v.a, rz_pvector_len(&args), NULL, NULL, 0);
-		if (rz_subprocess_wait(proc, config->timeout_ms) == RZ_SUBPROCESS_TIMEDOUT) {
-			rz_subprocess_kill(proc);
-			out->as_timeout = true;
-			goto rip;
-		}
-		char *as_err = (char *)crlf2lf(rz_subprocess_err(proc, NULL));
-		rz_str_trim(as_err);
-		out->as_err = as_err;
-		out->as_ret = rz_subprocess_ret(proc);
-		if (out->as_ret != 0) {
-			goto rip;
-		}
-		char *hex = (char *)crlf2lf(rz_subprocess_out(proc, NULL));
-		size_t hexlen = strlen(hex);
-		if (!hexlen) {
-			goto rip;
-		}
-		ut8 *bytes = malloc(hexlen);
-		int byteslen = rz_hex_str2bin(hex, bytes);
-		free(hex);
-		if (byteslen <= 0) {
-			free(bytes);
-			goto rip;
-		}
-		out->bytes = bytes;
-		out->bytes_size = (size_t)byteslen;
-	rip:
-		rz_pvector_pop(&args);
-		rz_subprocess_free(proc);
-	}
-	if (test->mode & RZ_ASM_TEST_MODE_DISASSEMBLE) {
-		char *hex = rz_hex_bin2strdup(test->bytes, test->bytes_size);
-		if (!hex) {
-			goto beach;
-		}
-		rz_pvector_push(&args, "-d");
-		rz_pvector_push(&args, hex);
-		RzSubprocess *proc = rz_subprocess_start(rz_asm_exe, args.v.a, rz_pvector_len(&args), NULL, NULL, 0);
-		if (rz_subprocess_wait(proc, config->timeout_ms) == RZ_SUBPROCESS_TIMEDOUT) {
-			rz_subprocess_kill(proc);
-			out->disas_timeout = true;
-			goto ship;
-		}
-		char *disas_err = (char *)crlf2lf(rz_subprocess_err(proc, NULL));
-		rz_str_trim(disas_err);
-		out->disas_err = disas_err;
-		out->disas_ret = rz_subprocess_ret(proc);
-		if (out->disas_ret != 0) {
-			goto ship;
-		}
-		char *disasm = (char *)crlf2lf(rz_subprocess_out(proc, NULL));
-		rz_str_trim(disasm);
-		rz_str_replace_char(disasm, '\n', ';');
-		out->disasm = disasm;
-	ship:
-		free(hex);
-		rz_pvector_pop(&args);
-		rz_pvector_pop(&args);
-		rz_subprocess_free(proc);
-	}
-	if (test->il) {
-		char *hex = rz_hex_bin2strdup(test->bytes, test->bytes_size);
-		if (!hex) {
-			goto beach;
-		}
-		rz_pvector_push(&args, "-I");
-		rz_pvector_push(&args, hex);
-		RzSubprocess *proc = rz_subprocess_start(rz_asm_exe, args.v.a, rz_pvector_len(&args), NULL, NULL, 0);
-		if (rz_subprocess_wait(proc, config->timeout_ms) == RZ_SUBPROCESS_TIMEDOUT) {
-			rz_subprocess_kill(proc);
-			out->il_timeout = true;
+		rz_asm_set_pc(a, test->offset);
+		RzAsmCode *acode = rz_asm_rasm_assemble(a, test->disasm, false);
+		if (acode && acode->len > 0) {
+			out->bytes = malloc(acode->len);
+			if (out->bytes) {
+				memcpy(out->bytes, acode->bytes, acode->len);
+				out->bytes_size = (size_t)acode->len;
+			}
+			out->as_ret = 0;
 		} else {
-			char *il = (char *)crlf2lf(rz_subprocess_out(proc, NULL));
-			rz_str_trim(il);
-			rz_str_replace_char(il, '\n', ';');
-			char *il_err = (char *)crlf2lf(rz_subprocess_err(proc, NULL));
-			rz_str_trim(il_err);
-			out->il = il;
-			out->il_err = il_err;
-			out->il_ret = rz_subprocess_ret(proc);
-			out->il_failed = out->il_ret != 0;
+			out->as_ret = 1;
 		}
-		free(hex);
-		rz_pvector_pop(&args);
-		rz_pvector_pop(&args);
-		rz_subprocess_free(proc);
+		rz_asm_code_free(acode);
 	}
 
-beach:
-	free(rz_asm_exe);
-	rz_pvector_clear(&args);
+	if (test->mode & RZ_ASM_TEST_MODE_DISASSEMBLE) {
+		rz_asm_set_pc(a, test->offset);
+		RzAsmCode *acode = rz_asm_mdisassemble(a, test->bytes, (int)test->bytes_size);
+		if (acode && acode->assembly) {
+			char *disasm = rz_str_dup(acode->assembly);
+			rz_str_trim(disasm);
+			rz_str_replace_char(disasm, '\n', ';');
+			out->disasm = disasm;
+			out->disas_ret = 0;
+		} else {
+			out->disas_ret = 1;
+		}
+		rz_asm_code_free(acode);
+	}
+
+	if (test->il) {
+		rz_test_run_asm_il(analysis, test, out);
+	}
+
+	rz_asm_free(a);
+	rz_analysis_free(analysis);
 	return out;
 }
 
