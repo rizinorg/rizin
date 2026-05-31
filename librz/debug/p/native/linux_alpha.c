@@ -159,10 +159,6 @@ static int rz_debug_native_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) 
 
 			regs[i] = (ut64)v;
 		}
-		if (ret != 0) {
-			rz_sys_perror("PTRACE_GETREGSET");
-			return false;
-		}
 		size = RZ_MIN(sizeof(regs), size);
 		memcpy(buf, &regs, size);
 		return size;
@@ -173,6 +169,25 @@ static int rz_debug_native_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) 
 
 static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 	int pid = dbg->pid;
+	switch (type) {
+	case RZ_REG_TYPE_DRX:
+		return false;
+	case RZ_REG_TYPE_GPR:
+		int ret;
+		for (int i = 0; i < 66; i++) {
+			ut64 value = rz_read_at_le64(buf, i * 8);
+			ret = rz_debug_ptrace(dbg, PTRACE_POKEUSER, pid, (void *)i, (void *)value);
+			if (ret == -1) {
+				RZ_LOG_ERROR("Writing to register for value : %llx", value);
+				return false;
+			}
+		}
+		break;
+	default:
+		RZ_LOG_DEBUG("TODO: reg_write_non-gpr (%d)\n", type);
+		return false;
+	}
+	return true;
 }
 
 static RzDebugMap *rz_debug_native_map_alloc(RzDebug *dbg, ut64 addr, int size, bool thp) {
