@@ -83,7 +83,7 @@ RUN pip3 install --root=/tmp/rizin-install ./rz-pipe/python
 WORKDIR /tmp
 RUN git clone --recurse-submodules -b "$RZ_GHIDRA_VERSION" https://github.com/rizinorg/rz-ghidra
 WORKDIR /tmp/rz-ghidra
-RUN cmake -DCMAKE_PREFIX_PATH=/tmp/rizin-install/usr -DCMAKE_INSTALL_PREFIX=/usr -B build && cmake --build build && DESTDIR=/tmp/rizin-install cmake --build build --target install
+RUN cmake -DCMAKE_PREFIX_PATH=/tmp/rizin-install/usr -DCMAKE_INSTALL_PREFIX=/usr -DUSE_SYSTEM_ZLIB=OFF -B build && cmake --build build && DESTDIR=/tmp/rizin-install cmake --build build --target install
 
 FROM debian:11
 ENV RZ_ARM64_AS=${with_arm64_as:+aarch64-linux-gnu-as}
