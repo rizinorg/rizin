@@ -1056,6 +1056,7 @@ RZ_API bool rz_analysis_block_set_op_offset(RzAnalysisBlock *block, size_t i, ut
 			if (!tmp_op_pos) {
 				return false;
 			}
+			memset(tmp_op_pos + block->op_pos_size, 0, (new_pos_size - block->op_pos_size) * sizeof(ut16));
 			block->op_pos_size = new_pos_size;
 			block->op_pos = tmp_op_pos;
 		}
