@@ -21,6 +21,7 @@ if get_option('enable_benchmarks')
   benchmarks = [
     'bitvector',
     'diff',
+    'graph',
     'il',
     'ht',
     'util',
