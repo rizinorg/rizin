@@ -15985,14 +15985,14 @@ static const RzCmdDescDetailEntry pf_Sized_space_integers_space__oparen_lowercas
 	{ .text = "u1 / u2 / u4 / u8", .arg_str = NULL, .comment = "decimal unsigned, N bytes" },
 	{ .text = "o1 / o2 / o4 / o8", .arg_str = NULL, .comment = "octal, N bytes" },
 	{ .text = "b1 / b2 / b4 / b8", .arg_str = NULL, .comment = "binary, N bytes" },
-	{ .text = "n1 / n2 / n4 / n8", .arg_str = NULL, .comment = "hex unsigned, N bytes, context-endian (follows ctx.big_endian; for headers like ELF that pick endian via a data byte)" },
+	{ .text = "n1 / n2 / n4 / n8", .arg_str = NULL, .comment = "hex unsigned, N bytes; endian comes from the active pf parsing context (set by pf -e, by a parent V/B's e=..., or by the embedding caller), not from the spec's case; useful when the byte order isn't fixed in the format itself (file headers with an endian marker, embedded protocols, serialised records)" },
 	{ .text = "f2 / f4 / f8", .arg_str = NULL, .comment = "IEEE 754 float, 2/4/8 bytes (half/single/double)" },
 	{ 0 },
 };
 
 static const RzCmdDescDetailEntry pf_Special_space_scalars_detail_entries[] = {
 	{ .text = "c", .arg_str = NULL, .comment = "single byte rendered as character" },
-	{ .text = "p", .arg_str = NULL, .comment = "pointer (size from ctx.bits: 2 / 4 / 8 bytes)" },
+	{ .text = "p / p2 / p4 / p8", .arg_str = NULL, .comment = "pointer: bare p uses ctx.bits (2/4/8 bytes); p2/p4/p8 force the width" },
 	{ .text = "Q", .arg_str = NULL, .comment = "uint128_t (16 bytes, byte-sequential)" },
 	{ .text = "r", .arg_str = NULL, .comment = "raw hex byte dump (count via [N])" },
 	{ .text = "U / L", .arg_str = NULL, .comment = "ULEB128 / SLEB128 (variable length)" },
@@ -16028,8 +16028,9 @@ static const RzCmdDescDetailEntry pf_DSL_space_extensions_detail_entries[] = {
 	{ .text = ":N", .arg_str = NULL, .comment = "read N bits (1..64) from packed bitstream; MSB-first by default" },
 	{ .text = ":N< / :N>", .arg_str = NULL, .comment = "explicit bit order: < = LSB-first, > = MSB-first" },
 	{ .text = "G", .arg_str = NULL, .comment = "16-byte GUID/UUID, mixed-endian (MS) layout by default" },
-	{ .text = "G(le) / G(be)", .arg_str = NULL, .comment = "GUID layout: all-LE or RFC 4122 BE" },
-	{ .text = "V(t=u1,l=u2,d=table)", .arg_str = NULL, .comment = "TLV record; t=tag, l=length, e=le/be, h=v/a (header inclusion), d=dispatch table" },
+	{ .text = "G(le) / G(be)", .arg_str = NULL, .comment = "GUID layout: G(le) is LE on D1/D2/D3 (D4 stays raw, effectively the MS layout); G(be) is RFC 4122 BE" },
+	{ .text = "V(t=u1,l=u2,d=table)", .arg_str = NULL, .comment = "TLV record; t=tag, l=length, e=le/be, h=v/l/a (len covers value / len+value / tag+len+value), d=dispatch table" },
+	{ .text = "v(N) / v(N,lsb) / v(N,msb)", .arg_str = NULL, .comment = "bitvector: N individual bits (1..4096) exposed as separate 0/1 scalars; consumes ceil(N/8) bytes; bytes are always shown low-address to high; within each byte the default (msb) prints bit 7 first through bit 0, while lsb flips that to bit 0 first through bit 7" },
 	{ .text = "[@field_name]T", .arg_str = NULL, .comment = "array whose length comes from an earlier scalar field" },
 	{ 0 },
 };
@@ -16060,9 +16061,9 @@ static const RzCmdDescDetailEntry pf_Examples_detail_entries[] = {
 static const RzCmdDescDetailEntry pf_Notes_detail_entries[] = {
 	{ .text = "bit order", .arg_str = NULL, .comment = ":N defaults to MSB-first (matches DWARF and most network protocols); use <N for LSB-first" },
 	{ .text = "endian via case", .arg_str = NULL, .comment = "lowercase specifier = little-endian, UPPERCASE = big-endian" },
-	{ .text = "context endian", .arg_str = NULL, .comment = "n1/n2/n4/n8 follow the surrounding RzPfCtx.big_endian flag instead of being pinned by case" },
+	{ .text = "context endian", .arg_str = NULL, .comment = "n1/n2/n4/n8 take the active pf parsing context's current endian setting, not the spec's case" },
 	{ .text = "skip vs alignment", .arg_str = NULL, .comment = "'.' / '[N].' skip an exact number of bytes; '@N' pads to the next N-byte boundary" },
-	{ .text = "deprecation", .arg_str = NULL, .comment = "bare-letter codes (b, c, d, f, o, q, s, t, u, w, x, z) still parse with a warning; use sized forms in new code" },
+	{ .text = "deprecation", .arg_str = NULL, .comment = "bare-letter codes (b, C, d, f, F, i, o, q, t, T, w, x, X, Z) still parse with a one-time warning; use the sized or parenthesised forms in new code" },
 	{ .text = "pf 'X2D4u8 bigWord beef qword'", .arg_str = NULL, .comment = "BE u16, BE s32, LE u64 -- one of every endianness/sign combination" },
 	{ .text = "pfn foo 'rr (eax)reg1 (eip)reg2'", .arg_str = NULL, .comment = "Create object foo referencing two registers" },
 	{ .text = "pf 't(unix32)t(unix32) troll plop'", .arg_str = NULL, .comment = "Print two unix-epoch (32-bit) timestamps with labels 'troll' and 'plop'" },
