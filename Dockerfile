@@ -73,7 +73,7 @@ RUN pip3 install meson tomli
 COPY . /tmp/rizin/
 
 WORKDIR /tmp/rizin
-RUN meson setup --prefix=/usr -Dinstall_sigdb=true /tmp/build && \
+RUN meson setup --prefix=/usr -Dinstall_sigdb=true -Duse_sys_zlib=true /tmp/build && \
 	meson compile -C /tmp/build && \
 	meson install --destdir /tmp/rizin-install -C /tmp/build
 
