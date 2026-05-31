@@ -1288,7 +1288,7 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 		!rz_io_is_valid_offset(core->io, offset, 0)) {
 		return;
 	}
-	for (size_t i = 0, n = 0; (i + sizeof(st32)) <= len; i += step, n++) {
+	for (size_t i = 0; (i + sizeof(st32)) <= len; i += step) {
 		st32 delta = rz_read_le32(buf + i);
 		ut64 addr = offset + delta;
 		if (!rz_io_is_valid_offset(core->io, addr, 0)) {
