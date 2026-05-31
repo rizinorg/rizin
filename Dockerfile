@@ -41,8 +41,8 @@ ARG with_arm32_as
 ARG with_arm64_as
 ARG with_ppc_as
 
-ENV RZ_PIPE_PY_VERSION ${RZ_PIPE_PY_VERSION}
-ENV RZ_GHIDRA_VERSION ${RZ_GHIDRA_VERSION}
+ENV RZ_PIPE_PY_VERSION=${RZ_PIPE_PY_VERSION}
+ENV RZ_GHIDRA_VERSION=${RZ_GHIDRA_VERSION}
 
 RUN echo -e "Building versions:\n\
 	RZ_PIPE_PY_VERSION=${RZ_PIPE_PY_VERSION}\
@@ -96,7 +96,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 
 USER rizin
 WORKDIR /home/rizin
-ENV HOME /home/rizin
+ENV HOME=/home/rizin
 
 COPY --from=0 /tmp/rizin-install/ /
 
