@@ -94,6 +94,15 @@ static char **m68k_cpu_descriptions() {
 #ifdef RZ_CAPSTONE_HAS_M68K_CPU32
 		"cpu32", "Motorola CPU32: 32-bit embedded-controller CPU core based on the 68020",
 #endif
+#ifdef RZ_CAPSTONE_HAS_M68K_COLDFIRE
+		"coldfire", "Motorola ColdFire: 32-bit embedded-controller family based on the 68000 ISA",
+		"cfv1", "Motorola ColdFire V1 core",
+		"cfv2", "Motorola ColdFire V2 core",
+		"cfv3", "Motorola ColdFire V3 core",
+		"cfv4", "Motorola ColdFire V4 core",
+		"cfv4e", "Motorola ColdFire V4e core with enhanced MAC and FPU features",
+		"cfv5", "Motorola ColdFire V5 core",
+#endif
 		NULL
 	};
 	return cpu_desc;
@@ -102,7 +111,14 @@ static char **m68k_cpu_descriptions() {
 RzAsmPlugin rz_asm_plugin_m68k_cs = {
 	.name = "m68k",
 	.desc = "Motorola 68K Capstone-based disassembler",
-	.cpus = M68K_CPUS,
+	.cpus = "68000,68010,68020,68030,68040,68060"
+#ifdef RZ_CAPSTONE_HAS_M68K_CPU32
+		",cpu32"
+#endif
+#ifdef RZ_CAPSTONE_HAS_M68K_COLDFIRE
+		",coldfire,cfv1,cfv2,cfv3,cfv4,cfv4e,cfv5"
+#endif
+	,
 	.license = "BSD",
 	.arch = "m68k",
 	.bits = 32,

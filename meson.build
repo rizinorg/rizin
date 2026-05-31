@@ -230,6 +230,21 @@ if has_capstone_m68k_cpu32
   add_project_arguments(['-DRZ_CAPSTONE_HAS_M68K_CPU32'], language: 'c')
 endif
 
+has_capstone_m68k_coldfire = cc.compiles('''
+#include <capstone/capstone.h>
+int main(void) {
+	cs_mode mode = CS_MODE_M68K_COLDFIRE | CS_MODE_M68K_CFV1 | CS_MODE_M68K_CFV2 | CS_MODE_M68K_CFV3 | CS_MODE_M68K_CFV4 | CS_MODE_M68K_CFV4E | CS_MODE_M68K_CFV5;
+	return mode == 0;
+}
+''',
+  dependencies: capstone_check_deps,
+  include_directories: capstone_check_includes,
+  name: 'Capstone has M68K ColdFire modes'
+)
+if has_capstone_m68k_coldfire
+  add_project_arguments(['-DRZ_CAPSTONE_HAS_M68K_COLDFIRE'], language: 'c')
+endif
+
 has_capstone_m680x_hcs12x = cc.compiles('''
 #include <capstone/capstone.h>
 int main(void) {
