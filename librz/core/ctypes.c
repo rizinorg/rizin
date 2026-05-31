@@ -1031,3 +1031,50 @@ RZ_IPI bool rz_types_open_editor(RzCore *core, RZ_NONNULL const char *name) {
 	free(str);
 	return result;
 }
+
+/**
+ * \brief Renames the base type \p from into \p to and updates every usage of it
+ *
+ * On top of renaming the base type in the Types DB (which also keeps other
+ * types, function types and `pf` formats consistent, see
+ * rz_type_db_rename_base_type), this updates the type usages that live in the
+ * analysis state: the types of global variables, the function signatures
+ * (return type and arguments) and the function local variables.
+ *
+ * \param analysis RzAnalysis instance
+ * \param from Current name of the base type to rename
+ * \param to New name for the base type
+ * \return true on success, false if \p from does not exist or \p to is already in use
+ */
+RZ_IPI bool rz_core_types_rename(RzAnalysis *analysis, RZ_NONNULL const char *from, RZ_NONNULL const char *to) {
+	rz_return_val_if_fail(analysis && from && to, false);
+	RzTypeDB *typedb = rz_analysis_get_type_db(analysis);
+	if (!rz_type_db_rename_base_type(typedb, from, to)) {
+		return false;
+	}
+	// Global variables (as reported by `avg`).
+	RzList *globals = rz_analysis_var_global_get_all(analysis);
+	if (globals) {
+		RzListIter *it;
+		RzAnalysisVarGlobal *glob;
+		rz_list_foreach (globals, it, glob) {
+			rz_type_rename_references(glob->type, from, to);
+		}
+		rz_list_free(globals);
+	}
+	// Function signatures (return type and arguments) and local variables.
+	RzListIter *fit;
+	RzAnalysisFunction *fcn;
+	RzList *fcns = rz_analysis_function_list(analysis);
+	rz_list_foreach (fcns, fit, fcn) {
+		rz_type_rename_references(fcn->ret_type, from, to);
+		void **vit;
+		rz_pvector_foreach (&fcn->vars, vit) {
+			RzAnalysisVar *var = *vit;
+			if (var) {
+				rz_type_rename_references(var->type, from, to);
+			}
+		}
+	}
+	return true;
+}

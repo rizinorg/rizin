@@ -245,6 +245,20 @@ commands:
             type: RZ_CMD_ARG_TYPE_ANY_TYPE
           - name: hexpairs
             type: RZ_CMD_ARG_TYPE_STRING
+  - name: tr
+    cname: type_rename
+    summary: Rename a type and update every type and function type that references it
+    details:
+      - name: "Examples"
+        entries:
+          - text: "tr"
+            arg_str: " struct_a struct_b"
+            comment: "rename the type struct_a to struct_b, updating all its users"
+    args:
+      - name: old
+        type: RZ_CMD_ARG_TYPE_ANY_TYPE
+      - name: new
+        type: RZ_CMD_ARG_TYPE_STRING
   - name: ts
     summary: List loaded structures
     subcommands:
