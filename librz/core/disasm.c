@@ -4224,7 +4224,7 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 				ds->printed_flag_addr = refaddr;
 			}
 		} else {
-			if (refaddr == UT64_MAX || refaddr == UT32_MAX) {
+			if ((refaddr == UT64_MAX || refaddr == UT32_MAX) && (!ds->hint || !ds->hint->immbase)) {
 				ds_begin_comment(ds);
 				ds_comment(ds, true, "; -1");
 			} else if (((char)refaddr > 0) && refaddr >= '!' && refaddr <= '~') {
