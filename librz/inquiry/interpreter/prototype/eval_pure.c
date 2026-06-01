@@ -45,9 +45,9 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			RZ_LOG_ERROR("prototype: ITE condition failed to evaluate.\n");
 			return false;
 		}
-		if (!out->is_concrete) {
+		if (!out->is_const) {
 			// Can't decide which pure to evaluate.
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 
 		if (abstr_is_true(iset, out)) {
@@ -68,31 +68,31 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			rz_bv_cast_inplace(out->bv, 1, false);
 		}
 		rz_bv_set(out->bv, 0, false);
-		out->is_concrete = true;
+		out->is_const = true;
 		break;
 	case RZ_IL_OP_B1:
 		if (rz_bv_len(out->bv) != 1) {
 			rz_bv_cast_inplace(out->bv, 1, false);
 		}
 		rz_bv_set(out->bv, 0, true);
-		out->is_concrete = true;
+		out->is_const = true;
 		break;
 	case RZ_IL_OP_CAST: {
 		if (!interpreter_prototype_eval_pure(iset, pure->op.cast.val, out, plugin_data)) {
 			RZ_LOG_ERROR("prototype: CAST val failed to evaluate.\n");
 			return false;
 		}
-		if (!out->is_concrete) {
-			goto map_to_bottom;
+		if (!out->is_const) {
+			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(fill_bit);
 		if (!interpreter_prototype_eval_pure(iset, pure->op.cast.fill, &fill_bit, plugin_data)) {
 			RZ_LOG_ERROR("prototype: CAST fill failed to evaluate.\n");
 			return false;
 		}
-		if (!fill_bit.is_concrete) {
+		if (!fill_bit.is_const) {
 			rz_bv_fini(fill_bit.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		rz_bv_cast_inplace(out->bv, pure->op.cast.length, abstr_is_true(iset, &fill_bit));
 		break;
@@ -100,7 +100,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	case RZ_IL_OP_BITV:
 		rz_bv_cast_inplace(out->bv, rz_bv_len(pure->op.bitv.value), false);
 		rz_bv_copy(out->bv, pure->op.bitv.value);
-		out->is_concrete = true;
+		out->is_const = true;
 		break;
 	case RZ_IL_OP_APPEND: {
 		STACK_ABSTR_DATA_OUT(high);
@@ -108,22 +108,22 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			RZ_LOG_ERROR("prototype: APPEND high failed to evaluate.\n");
 			return false;
 		}
-		if (!high.is_concrete) {
+		if (!high.is_const) {
 			rz_bv_fini(high.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		if (!interpreter_prototype_eval_pure(iset, pure->op.append.low, out, plugin_data)) {
 			RZ_LOG_ERROR("prototype: APPEND low failed to evaluate.\n");
 			rz_bv_fini(high.bv);
 			return false;
 		}
-		if (!out->is_concrete) {
+		if (!out->is_const) {
 			rz_bv_fini(high.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		rz_bv_cast_inplace(out->bv, rz_bv_len(out->bv) + rz_bv_len(high.bv), false);
 		rz_bv_copy_nbits(high.bv, 0, out->bv, rz_bv_len(out->bv), rz_bv_len(high.bv));
-		out->is_concrete = true;
+		out->is_const = true;
 		rz_bv_fini(high.bv);
 		break;
 	}
@@ -134,7 +134,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			RZ_LOG_ERROR("prototype: INV x failed to evaluate.\n");
 			return false;
 		}
-		if (out->is_concrete) {
+		if (out->is_const) {
 			rz_bv_not_inplace(out->bv);
 		}
 		break;
@@ -147,21 +147,21 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			RZ_LOG_ERROR("prototype: AND x failed to evaluate.\n");
 			return false;
 		}
-		if (!out->is_concrete) {
-			goto map_to_bottom;
+		if (!out->is_const) {
+			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(y);
 		if (!interpreter_prototype_eval_pure(iset, py, &y, plugin_data)) {
 			RZ_LOG_ERROR("prototype: AND y failed to evaluate.\n");
 			return false;
 		}
-		if (!y.is_concrete) {
+		if (!y.is_const) {
 			rz_bv_fini(y.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		if (!rz_bv_and_inplace(out->bv, y.bv)) {
 			rz_bv_fini(y.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		rz_bv_fini(y.bv);
 		break;
@@ -174,21 +174,21 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			RZ_LOG_ERROR("prototype: OR x failed to evaluate.\n");
 			return false;
 		}
-		if (!out->is_concrete) {
-			goto map_to_bottom;
+		if (!out->is_const) {
+			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(y);
 		if (!interpreter_prototype_eval_pure(iset, py, &y, plugin_data)) {
 			RZ_LOG_ERROR("prototype: OR y failed to evaluate.\n");
 			return false;
 		}
-		if (!y.is_concrete) {
+		if (!y.is_const) {
 			rz_bv_fini(y.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		if (!rz_bv_or_inplace(out->bv, y.bv)) {
 			rz_bv_fini(y.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		rz_bv_fini(y.bv);
 		break;
@@ -201,21 +201,21 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			RZ_LOG_ERROR("prototype: XOR x failed to evaluate.\n");
 			return false;
 		}
-		if (!out->is_concrete) {
-			goto map_to_bottom;
+		if (!out->is_const) {
+			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(y);
 		if (!interpreter_prototype_eval_pure(iset, py, &y, plugin_data)) {
 			RZ_LOG_ERROR("prototype: XOR y failed to evaluate.\n");
 			return false;
 		}
-		if (!y.is_concrete) {
+		if (!y.is_const) {
 			rz_bv_fini(y.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		if (!rz_bv_xor_inplace(out->bv, y.bv)) {
 			rz_bv_fini(y.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		rz_bv_fini(y.bv);
 		break;
@@ -228,7 +228,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		switch (pure->code) {
 		default:
 			rz_warn_if_reached();
-			goto map_to_bottom;
+			goto map_to_top;
 		case RZ_IL_OP_IS_ZERO:
 			bv = pure->op.is_zero.bv;
 			truth_test = rz_bv_is_zero_vector;
@@ -246,8 +246,8 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			RZ_LOG_ERROR("prototype: MSB/LSB/IS_ZERO bv failed to evaluate.\n");
 			return false;
 		}
-		if (!out->is_concrete) {
-			goto map_to_bottom;
+		if (!out->is_const) {
+			goto map_to_top;
 		}
 		bool truth = truth_test(out->bv);
 		rz_bv_cast_inplace(out->bv, 1, false);
@@ -260,7 +260,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			RZ_LOG_ERROR("prototype: NEG bv failed to evaluate.\n");
 			return false;
 		}
-		if (out->is_concrete) {
+		if (out->is_const) {
 			rz_bv_neg_inplace(out->bv);
 		}
 		break;
@@ -272,21 +272,21 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			RZ_LOG_ERROR("prototype: ADD x failed to evaluate.\n");
 			return false;
 		}
-		if (!out->is_concrete) {
-			goto map_to_bottom;
+		if (!out->is_const) {
+			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(y);
 		if (!interpreter_prototype_eval_pure(iset, py, &y, plugin_data)) {
 			RZ_LOG_ERROR("prototype: ADD y failed to evaluate.\n");
 			return false;
 		}
-		if (!y.is_concrete) {
+		if (!y.is_const) {
 			rz_bv_fini(y.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		if (!rz_bv_add_inplace(out->bv, y.bv, NULL)) {
 			rz_bv_fini(y.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		rz_bv_fini(y.bv);
 		break;
@@ -298,21 +298,21 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			RZ_LOG_ERROR("prototype: SUB x failed to evaluate.\n");
 			return false;
 		}
-		if (!out->is_concrete) {
-			goto map_to_bottom;
+		if (!out->is_const) {
+			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(y);
 		if (!interpreter_prototype_eval_pure(iset, py, &y, plugin_data)) {
 			RZ_LOG_ERROR("prototype: SUB y failed to evaluate.\n");
 			return false;
 		}
-		if (!y.is_concrete) {
+		if (!y.is_const) {
 			rz_bv_fini(y.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		if (!rz_bv_sub_inplace(out->bv, y.bv, NULL)) {
 			rz_bv_fini(y.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		rz_bv_fini(y.bv);
 		break;
@@ -326,34 +326,34 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			RZ_LOG_ERROR("prototype: SHIFT(L/R) x failed to evaluate.\n");
 			return false;
 		}
-		if (!out->is_concrete) {
-			goto map_to_bottom;
+		if (!out->is_const) {
+			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(y);
 		if (!interpreter_prototype_eval_pure(iset, py, &y, plugin_data)) {
 			RZ_LOG_ERROR("prototype: SHIFT(L/R) y failed to evaluate.\n");
 			return false;
 		}
-		if (!y.is_concrete) {
+		if (!y.is_const) {
 			rz_bv_fini(y.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(fill_bit);
 		if (!interpreter_prototype_eval_pure(iset, pfill_bit, &fill_bit, plugin_data)) {
 			RZ_LOG_ERROR("prototype: SHIFT(L/R) fill_bit failed to evaluate.\n");
 			return false;
 		}
-		if (!fill_bit.is_concrete) {
+		if (!fill_bit.is_const) {
 			rz_bv_fini(fill_bit.bv);
 			rz_bv_fini(y.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		bool (*shift)(RzBitVector *bv, ut32 size, bool fill_bit);
 		shift = pure->code == RZ_IL_OP_SHIFTR ? rz_bv_rshift_fill : rz_bv_lshift_fill;
 		if (!shift(out->bv, rz_bv_to_ut64(y.bv), abstr_is_true(iset, &fill_bit))) {
 			rz_bv_fini(fill_bit.bv);
 			rz_bv_fini(y.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		rz_bv_fini(fill_bit.bv);
 		rz_bv_fini(y.bv);
@@ -367,7 +367,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		RzILOpPure *py;
 		switch (pure->code) {
 		default:
-			goto map_to_bottom;
+			goto map_to_top;
 		case RZ_IL_OP_SLE:
 			px = pure->op.sle.x;
 			py = pure->op.sle.y;
@@ -389,17 +389,17 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			RZ_LOG_ERROR("prototype: CMP x failed to evaluate.\n");
 			return false;
 		}
-		if (!out->is_concrete) {
-			goto map_to_bottom;
+		if (!out->is_const) {
+			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(y);
 		if (!interpreter_prototype_eval_pure(iset, py, &y, plugin_data)) {
 			RZ_LOG_ERROR("prototype: CMP y failed to evaluate.\n");
 			return false;
 		}
-		if (!y.is_concrete) {
+		if (!y.is_const) {
 			rz_bv_fini(y.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		bool cmp_is_true = cmp(out->bv, y.bv);
 		rz_bv_cast_inplace(out->bv, 1, false);
@@ -417,9 +417,9 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			rz_bv_fini(ld_addr.bv);
 			return false;
 		}
-		if (!ld_addr.is_concrete) {
+		if (!ld_addr.is_const) {
 			rz_bv_fini(ld_addr.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		if (rz_bv_len(ld_addr.bv) == 64) {
 			// TODO: Remove normalization.
@@ -435,7 +435,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		size_t n_bits = pure->code == RZ_IL_OP_LOAD ? iset->astate->il_config->mem_key_size : pure->op.loadw.n_bits;
 		if (!load_abstr_data(iset, mem_idx, &ld_addr, n_bits, out)) {
 			rz_bv_fini(ld_addr.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		rz_bv_fini(ld_addr.bv);
 		break;
@@ -447,21 +447,21 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			RZ_LOG_ERROR("prototype: MUL x failed to evaluate.\n");
 			return false;
 		}
-		if (!out->is_concrete) {
-			goto map_to_bottom;
+		if (!out->is_const) {
+			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(y);
 		if (!interpreter_prototype_eval_pure(iset, py, &y, plugin_data)) {
 			RZ_LOG_ERROR("prototype: MUL y failed to evaluate.\n");
 			return false;
 		}
-		if (!y.is_concrete) {
+		if (!y.is_const) {
 			rz_bv_fini(y.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		if (!rz_bv_mul_inplace(out->bv, y.bv)) {
 			rz_bv_fini(y.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		rz_bv_fini(y.bv);
 		break;
@@ -473,21 +473,21 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			RZ_LOG_ERROR("prototype: MOD x failed to evaluate.\n");
 			return false;
 		}
-		if (!out->is_concrete) {
-			goto map_to_bottom;
+		if (!out->is_const) {
+			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(y);
 		if (!interpreter_prototype_eval_pure(iset, py, &y, plugin_data)) {
 			RZ_LOG_ERROR("prototype: MOD y failed to evaluate.\n");
 			return false;
 		}
-		if (!y.is_concrete) {
+		if (!y.is_const) {
 			rz_bv_fini(y.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		if (!rz_bv_mod_inplace(out->bv, y.bv)) {
 			rz_bv_fini(y.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		rz_bv_fini(y.bv);
 		break;
@@ -499,21 +499,21 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			RZ_LOG_ERROR("prototype: DIV x failed to evaluate.\n");
 			return false;
 		}
-		if (!out->is_concrete) {
-			goto map_to_bottom;
+		if (!out->is_const) {
+			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(y);
 		if (!interpreter_prototype_eval_pure(iset, py, &y, plugin_data)) {
 			RZ_LOG_ERROR("prototype: DIV y failed to evaluate.\n");
 			return false;
 		}
-		if (!y.is_concrete) {
+		if (!y.is_const) {
 			rz_bv_fini(y.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		if (!rz_bv_div_inplace(out->bv, y.bv)) {
 			rz_bv_fini(y.bv);
-			goto map_to_bottom;
+			goto map_to_top;
 		}
 		rz_bv_fini(y.bv);
 		break;
@@ -556,11 +556,11 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	case RZ_IL_OP_FEXCEPT:
 		RZ_LOG_ERROR("Unhandled pure %" PFMT32d "\n", pure->code);
 		// Not implemented.
-		goto map_to_bottom;
+		goto map_to_top;
 	}
 	return true;
 
-map_to_bottom:
-	out->is_concrete = false;
+map_to_top:
+	out->is_const = false;
 	return true;
 }

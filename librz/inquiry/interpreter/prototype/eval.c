@@ -16,7 +16,7 @@ bool report_yield_xref(
 	ut64 from,
 	const ProtoIntrprAbstrData *to,
 	RzAnalysisXRefType type) {
-	if (!to->is_concrete || rz_bv_len(to->bv) > 64) {
+	if (!to->is_const || rz_bv_len(to->bv) > 64) {
 		// Isn't reported
 		return true;
 	}
@@ -72,7 +72,7 @@ void copy_abstr_data(ProtoIntrprAbstrData *dst, const ProtoIntrprAbstrData *src)
 	rz_return_if_fail(dst && src && dst->bv && src->bv);
 	rz_bv_cast_inplace(dst->bv, rz_bv_len(src->bv), false);
 	rz_bv_copy(dst->bv, src->bv);
-	dst->is_concrete = src->is_concrete;
+	dst->is_const = src->is_const;
 }
 
 void write_var_to_state(RzInterpSet *iset,
@@ -146,7 +146,7 @@ bool read_var_from_state(RzInterpSet *iset,
 // It depends on the architecture and must be decided by the RzArch plugin.
 // State is passed due to this here as well. To make later refactoring easier.
 bool abstr_is_true(const RzInterpSet *iset, const ProtoIntrprAbstrData *data) {
-	if (!data->is_concrete) {
+	if (!data->is_const) {
 		return false;
 	}
 	return !rz_bv_is_zero_vector(data->bv);
@@ -157,7 +157,7 @@ bool store_abstr_data(
 	RzILMemIndex mem_idx,
 	const ProtoIntrprAbstrData *addr,
 	const ProtoIntrprAbstrData *src) {
-	if (!src->is_concrete) {
+	if (!src->is_const) {
 		// Really don't write?
 		return true;
 	}
@@ -212,7 +212,7 @@ bool load_abstr_data(
 			n_bits, rz_bv_len(out->bv));
 		return false;
 	}
-	out->is_concrete = true;
+	out->is_const = true;
 
 	char *bytes = rz_bv_as_hex_string(out->bv, true);
 	RZ_LOG_DEBUG("prototype: READ @ mem:%" PFMT32d " 0x%" PFMT64x " : %s\n", mem_idx, rz_bv_to_ut64(io_req.addr), bytes);
@@ -225,14 +225,14 @@ bool set_abstr_pc(RzInterpAbstrState *state, ProtoIntrprAbstrData *pc,
 	rz_return_val_if_fail(state && pc, false);
 	ProtoIntrprPluginData *pdata = plugin_data;
 	ProtoIntrprAbstrData *apc = AD(state->pc->abstr_data);
-	if (!apc->is_concrete || rz_bv_len(apc->bv) > 64) {
+	if (!apc->is_const || rz_bv_len(apc->bv) > 64) {
 		pdata->prev_pc = UT64_MAX;
 	} else {
 		pdata->prev_pc = rz_bv_to_ut64(apc->bv);
 	}
 	copy_abstr_data(state->pc->abstr_data, pc);
 	RZ_LOG_DEBUG("prototype: set_abstr_pc() - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
-		pdata->prev_pc, rz_bv_to_ut64(apc->bv), apc->is_concrete ? "Concrete" : "Abstract");
+		pdata->prev_pc, rz_bv_to_ut64(apc->bv), apc->is_const ? "Constant" : "Top");
 	return true;
 }
 
@@ -241,14 +241,14 @@ bool set_pc(RzInterpAbstrState *state, ut64 pc,
 	rz_return_val_if_fail(state, false);
 	ProtoIntrprPluginData *pdata = plugin_data;
 	ProtoIntrprAbstrData *apc = AD(state->pc->abstr_data);
-	if (!apc->is_concrete || rz_bv_len(apc->bv) > 64) {
+	if (!apc->is_const || rz_bv_len(apc->bv) > 64) {
 		pdata->prev_pc = UT64_MAX;
 	} else {
 		pdata->prev_pc = rz_bv_to_ut64(apc->bv);
 	}
 
-	apc->is_concrete = true;
-	RZ_LOG_DEBUG("prototype: set_pc() - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (Concrete)\n",
+	apc->is_const = true;
+	RZ_LOG_DEBUG("prototype: set_pc() - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (Constant)\n",
 		rz_bv_to_ut64(apc->bv), pc);
 	return rz_bv_set_from_ut64(apc->bv, pc);
 }

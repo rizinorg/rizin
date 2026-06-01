@@ -49,7 +49,7 @@ static bool eval(RZ_NONNULL RzInterpSet *iset,
 		if (!interpreter_prototype_eval_effect(iset, pkt->effect, pkt->insn_pkt_size, plugin_data)) {
 			return false;
 		}
-		if (pc == rz_bv_to_ut64(apc->bv) && apc->is_concrete) {
+		if (pc == rz_bv_to_ut64(apc->bv) && apc->is_const) {
 			// Instruction did not manipulate the PC. Set it to the next instruction (packet).
 			set_pc(iset->astate, pc + pkt->insn_pkt_size, plugin_data);
 		}
@@ -63,7 +63,7 @@ bool successors(RZ_NONNULL const RzInterpAbstrState *state,
 	rz_return_val_if_fail(state && successors, false);
 	ProtoIntrprPluginData *pdata = plugin_data;
 	ProtoIntrprAbstrData *apc = state->pc->abstr_data;
-	if (!apc->is_concrete) {
+	if (!apc->is_const) {
 		// The PC is not a concrete value.
 		// This prototype can't estimate a reasonable concretization for it.
 		return true;
@@ -85,7 +85,7 @@ static bool init_state(RZ_BORROW RzInterpAbstrState *state, void *plugin_data) {
 	state->pc->abstr_data = RZ_NEW0(ProtoIntrprAbstrData);
 	ProtoIntrprAbstrData *apc = AD(state->pc->abstr_data);
 	apc->bv = rz_bv_new_from_ut64(state->il_config->mem_key_size, 0);
-	apc->is_concrete = true;
+	apc->is_const = true;
 
 	RzIterator *it = ht_up_as_iter_keys(state->globals);
 	ut64 *k;
@@ -102,7 +102,7 @@ static bool init_state(RZ_BORROW RzInterpAbstrState *state, void *plugin_data) {
 		AD(av->abstr_data)->bv = rz_bv_new(state->il_config->mem_key_size);
 		// TODO: This is debatable. It depends on the ABI what the default values are.
 		// Some values must be concrete, otherwise the interpretation of the prototype end too early.
-		AD(av->abstr_data)->is_concrete = true;
+		AD(av->abstr_data)->is_const = true;
 		if (state->il_config->init_state) {
 			RzAnalysisILInitStateVar *il_var;
 			rz_vector_foreach (&state->il_config->init_state->vars, il_var) {
@@ -123,7 +123,7 @@ static bool init_state(RZ_BORROW RzInterpAbstrState *state, void *plugin_data) {
 static bool reset_state(RZ_BORROW RzInterpAbstrState *state, ut64 entry_point, void *plugin_data) {
 	ProtoIntrprAbstrData *apc = AD(state->pc->abstr_data);
 	rz_bv_set_from_ut64(apc->bv, entry_point);
-	apc->is_concrete = true;
+	apc->is_const = true;
 
 	RzIterator *it = ht_up_as_iter_keys(state->globals);
 	ut64 *k;
@@ -131,7 +131,7 @@ static bool reset_state(RZ_BORROW RzInterpAbstrState *state, ut64 entry_point, v
 		ut64 djb2_reg_name = *k;
 		RzInterpAbstrVal *av = ht_up_find(state->globals, djb2_reg_name, NULL);
 		rz_bv_set_from_ut64(AD(av->abstr_data)->bv, 0);
-		AD(av->abstr_data)->is_concrete = true;
+		AD(av->abstr_data)->is_const = true;
 		if (state->il_config->init_state) {
 			RzAnalysisILInitStateVar *il_var;
 			rz_vector_foreach (&state->il_config->init_state->vars, il_var) {
@@ -230,7 +230,7 @@ bool state_as_str(RZ_NONNULL const RzInterpAbstrState *state,
 	ut64 hash = hash_state(state, plugin_data);
 	rz_strbuf_appendf(sb, "hash = 0x%" PFMT64x "\n\n", hash);
 	rz_strbuf_append(sb, "Globals\n\n");
-	char *value = AD(state->pc->abstr_data)->is_concrete ? rz_bv_as_hex_string(AD(state->pc->abstr_data)->bv, true) : rz_str_dup("⊥");
+	char *value = AD(state->pc->abstr_data)->is_const ? rz_bv_as_hex_string(AD(state->pc->abstr_data)->bv, true) : rz_str_dup("⊥");
 	rz_strbuf_appendf(sb, "\tpc = %s\n\n", value);
 	free(value);
 
@@ -240,7 +240,7 @@ bool state_as_str(RZ_NONNULL const RzInterpAbstrState *state,
 		const char *gname = ht_up_find(state->var_name_hashes, *k, NULL);
 		RzInterpAbstrVal *av = ht_up_find(state->globals, *k, NULL);
 		ProtoIntrprAbstrData *ad = av->abstr_data;
-		value = ad->is_concrete ? rz_bv_as_hex_string(ad->bv, true) : rz_str_dup("⊥");
+		value = ad->is_const ? rz_bv_as_hex_string(ad->bv, true) : rz_str_dup("⊥");
 		rz_strbuf_appendf(sb, "\t%s = %s\n", gname, value);
 		free(value);
 	}
@@ -296,7 +296,7 @@ static RzInterpPlugin rz_interpreter_plugin_prototype = {
 	.name = "abstr_int_prototype",
 	.author = "Rot127",
 	.version = "0.1p",
-	.desc = "A prototype interpreter for constant/bottom abstractions.",
+	.desc = "A prototype interpreter for constant/top abstractions.",
 	.license = "LGPL-3.0-only",
 	.supported_abstractions = RZ_INTERP_ABSTRACTION_CONST,
 	.supported_yields = { RZ_INTERP_YIELD_KIND_XREF, RZ_INTERP_YIELD_KIND_CALL_CANDIDATE },

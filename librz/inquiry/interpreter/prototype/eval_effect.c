@@ -8,7 +8,7 @@
 #include "rz_util/rz_str.h"
 
 static bool value_indicates_ret_addr_write(RzInterpSet *iset, ProtoIntrprAbstrData *val) {
-	return val->is_concrete &&
+	return val->is_const &&
 		(rz_bv_to_ut64(val->bv) == iset->astate->bb_addr + iset->astate->bb_size ||
 			// Sparc stores the call instruction PC into o8.
 			// The return instruction jumps then to o7+8.
@@ -27,7 +27,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpSet *iset,
 	case RZ_IL_OP_EMPTY:
 		break;
 	case RZ_IL_OP_NOP: {
-		if (!pc->is_concrete) {
+		if (!pc->is_const) {
 			// The PC is no longer a concrete value.
 			// This plugin has no addition for it defined.
 			break;
@@ -74,15 +74,15 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpSet *iset,
 		if (!interpreter_prototype_eval_pure(iset, effect->op.jmp.dst, &eval_out, plugin_data)) {
 			goto error;
 		}
-		if (!eval_out.is_concrete) {
+		if (!eval_out.is_const) {
 			RZ_LOG_DEBUG("PC is going to be set to an abstract value! Current PC = 0x%" PFMT64x "\n", rz_bv_to_ut64(pc->bv));
 		}
 		ut64 target = rz_bv_to_ut64(eval_out.bv);
 		RZ_LOG_DEBUG("prototype: JMP - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
 			rz_bv_to_ut64(pc->bv), target,
-			eval_out.is_concrete ? "Concrete" : "Abstract");
+			eval_out.is_const ? "Concrete" : "Abstract");
 
-		if (eval_out.is_concrete) {
+		if (eval_out.is_const) {
 			RzAnalysisXRefType xref_type = RZ_ANALYSIS_XREF_TYPE_CODE;
 
 			if (plugin_data->call_cand.store_addr) {
@@ -116,7 +116,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpSet *iset,
 			memset(&plugin_data->call_cand, 0, sizeof(plugin_data->call_cand));
 		}
 
-		// Setting the PC to a bottom value is allowed here!
+		// Setting the PC to a top value is allowed here!
 		// The successor function will handle this case.
 		set_abstr_pc(iset->astate, &eval_out, plugin_data);
 		break;
@@ -125,7 +125,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpSet *iset,
 		if (!interpreter_prototype_eval_pure(iset, effect->op.branch.condition, &eval_out, plugin_data)) {
 			goto error;
 		}
-		if (!eval_out.is_concrete) {
+		if (!eval_out.is_const) {
 			// Bottom values means we can't make a
 			// decision (in this prototype implementation).
 			break;
@@ -152,7 +152,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpSet *iset,
 			rz_bv_fini(st_addr.bv);
 			goto error;
 		}
-		if (!st_addr.is_concrete) {
+		if (!st_addr.is_const) {
 			rz_bv_fini(st_addr.bv);
 			break;
 		}
@@ -172,7 +172,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpSet *iset,
 			rz_bv_fini(st_addr.bv);
 			goto error;
 		}
-		if (!eval_out.is_concrete) {
+		if (!eval_out.is_const) {
 			rz_bv_fini(st_addr.bv);
 			break;
 		}

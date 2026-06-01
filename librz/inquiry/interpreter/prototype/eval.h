@@ -17,12 +17,14 @@
 
 typedef struct {
 	/**
-	 * \brief Set if the bit vector below is a valid concrete value.
-	 * If unset it is a bottom value.
+	 * \brief Set if the abstract value represents a single constant bitvector.
+	 * If set, the bit vector below is a valid concrete value.
+	 * If unset it is a top value, i.e. represents the set of all bitvectors.
 	 */
-	bool is_concrete;
+	bool is_const;
 	/**
-	 * \brief The concrete value. If is_concrete is unset this might hold garbage.
+	 * \brief The single constant value.
+	 * If is_const is unset this might hold garbage.
 	 */
 	RzBitVector *bv;
 } ProtoIntrprAbstrData;
@@ -75,21 +77,21 @@ typedef struct {
 #define STACK_ABSTR_DATA_OUT(name) \
 	ut8 _##name##_bv_large_buf[BV_STACK_MAX_SIZE] = { 0 }; \
 	RzBitVector _##name##_bv_large = { .len = BV_STACK_MAX_SIZE, ._elem_len = BV_STACK_MAX_SIZE, .bits.large_a = _##name##_bv_large_buf, .stack_alloc = true }; \
-	ProtoIntrprAbstrData name = { .is_concrete = false, .bv = &_##name##_bv_large };
+	ProtoIntrprAbstrData name = { .is_const = false, .bv = &_##name##_bv_large };
 
 /**
  * \brief Creates abstract data on the heap with the given bit vector.
  */
 static inline RZ_OWN ProtoIntrprAbstrData *adata_from_bv(const RzBitVector *bv) {
 	ProtoIntrprAbstrData *ad = RZ_NEW0(ProtoIntrprAbstrData);
-	ad->is_concrete = true;
+	ad->is_const = true;
 	ad->bv = rz_bv_dup(bv);
 	return ad;
 }
 
 static inline RZ_OWN ProtoIntrprAbstrData *adata_new() {
 	ProtoIntrprAbstrData *ad = RZ_NEW0(ProtoIntrprAbstrData);
-	ad->is_concrete = false;
+	ad->is_const = false;
 	ad->bv = rz_bv_new(BV_STACK_MAX_SIZE);
 	return ad;
 }
