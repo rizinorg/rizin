@@ -416,6 +416,51 @@ static bool test_enum_types(void) {
 	mu_end;
 }
 
+static bool test_enum_get_bitfield(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+
+	// A flag enum modeled on access(2)'s mode argument, plus a member above bit
+	// 32 to exercise 64-bit handling.
+	RzBaseType *e = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ENUM);
+	mu_assert_notnull(e, "new enum base type");
+	e->name = strdup("access_def");
+	RzTypeEnumCase cases[] = {
+		{ .name = strdup("F_OK"), .val = 0x0 },
+		{ .name = strdup("X_OK"), .val = 0x1 },
+		{ .name = strdup("W_OK"), .val = 0x2 },
+		{ .name = strdup("R_OK"), .val = 0x4 },
+		{ .name = strdup("HIGH"), .val = 0x100000000LL },
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		rz_vector_push(&e->enum_data.cases, &cases[i]);
+	}
+	mu_assert_true(rz_type_db_save_base_type(typedb, e), "register enum");
+
+	// The issue #2344 case: access(2) mode 6 == R_OK | W_OK decomposes to the OR
+	// of its flag members (bits are visited low-to-high).
+	mu_assert_streq_free(rz_type_db_enum_get_bitfield(typedb, "access_def", 6),
+		"access_def.W_OK | access_def.R_OK", "OR of two flag members");
+	// A single set bit still resolves to that one (qualified) member.
+	mu_assert_streq_free(rz_type_db_enum_get_bitfield(typedb, "access_def", 4),
+		"access_def.R_OK", "single flag member");
+	// 64-bit: a member above bit 32 is matched (regression for the old 32-bit cap).
+	mu_assert_streq_free(rz_type_db_enum_get_bitfield(typedb, "access_def", 0x100000004LL),
+		"access_def.R_OK | access_def.HIGH", "64-bit flag member");
+	// A value with a set bit that has no matching member does not decompose.
+	mu_assert_null(rz_type_db_enum_get_bitfield(typedb, "access_def", 8), "no member for bit 3");
+	// Zero never decomposes (the exact F_OK=0 case belongs to enum_member_by_val).
+	mu_assert_null(rz_type_db_enum_get_bitfield(typedb, "access_def", 0), "zero value");
+	// A non-enum type, and an unknown type, both yield NULL.
+	mu_assert_null(rz_type_db_enum_get_bitfield(typedb, "int", 6), "non-enum type");
+	mu_assert_null(rz_type_db_enum_get_bitfield(typedb, "no_such_type", 6), "unknown type");
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 static bool test_enum_underlying_type(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
@@ -2092,6 +2137,7 @@ int all_tests() {
 	mu_run_test(test_type_as_string);
 	mu_run_test(test_type_as_pretty_string);
 	mu_run_test(test_enum_types);
+	mu_run_test(test_enum_get_bitfield);
 	mu_run_test(test_enum_underlying_type);
 	mu_run_test(test_const_types);
 	mu_run_test(test_array_types);
