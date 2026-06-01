@@ -1564,6 +1564,18 @@ RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_analysis_function_get_xrefs_to(c
 RZ_API bool rz_analysis_xrefs_set(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
 RZ_API bool rz_analysis_xrefs_deln(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
 RZ_API bool rz_analysis_xref_del(RzAnalysis *analysis, ut64 from, ut64 to);
+RZ_API RZ_OWN RzIterator *rz_analysis_xrefs_get_to_type(
+	RzAnalysis *analysis, ut64 addr, RzAnalysisXRefType type);
+RZ_API RZ_OWN RzIterator *rz_analysis_xrefs_get_from_type(
+	RzAnalysis *analysis, ut64 addr, RzAnalysisXRefType type);
+RZ_API RZ_OWN RzIterator *rz_analysis_xrefs_get_all_of_type(
+	RzAnalysis *analysis, RzAnalysisXRefType type);
+RZ_API ut64 rz_analysis_xrefs_count_type(
+	RzAnalysis *analysis, RzAnalysisXRefType type);
+RZ_API RZ_OWN RzIterator *rz_analysis_xrefs_get_to_range(
+	RzAnalysis *analysis, ut64 addr_from, ut64 addr_to);
+RZ_API RZ_OWN RzIterator *rz_analysis_xrefs_get_from_range(
+	RzAnalysis *analysis, ut64 addr_from, ut64 addr_to);
 
 /* var.c */
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(
