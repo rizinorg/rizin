@@ -112,9 +112,11 @@ jobs:
           name: lsan_logs
           path: lsan_reports.tgz
 
+      - name: Download git diff of PR
+        uses: actions/download-artifact@v5
+        with:
+          name: pr_changes
+
       - name: Check for new leaks
-        env:
-          CHANGES: ${{ needs.real_pr_shas.outputs.CHANGES }}
         run: |
-          echo "$CHANGES" > changes.diff
-          ./sys/lsan_check.py changes.diff $LSAN_LOGS_DIR/*
+          ./sys/lsan_check.py pr_changes.diff $LSAN_LOGS_DIR
