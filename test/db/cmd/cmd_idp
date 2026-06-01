@@ -110,7 +110,21 @@ EXPECT=<<EOF
         "name": "bitfield_typedef",
         "size": 1,
         "members": [
-          
+          {
+            "member_type": "unsigned char",
+            "member_name": "a",
+            "offset": 0
+          },
+          {
+            "member_type": "unsigned char",
+            "member_name": "b",
+            "offset": 0
+          },
+          {
+            "member_type": "unsigned char",
+            "member_name": "c",
+            "offset": 0
+          }
         ]
       },
       {
