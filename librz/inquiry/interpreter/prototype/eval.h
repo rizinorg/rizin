@@ -60,8 +60,11 @@ typedef struct {
 
 /**
  * \brief In bytes
+ *
+ * TODO: find a sweet spot here where this size is as small is possible,
+ * but in practice only very few heap allocations have to happen.
  */
-#define BV_STACK_MAX_SIZE 0x1000
+#define BV_STACK_MAX_SIZE 0x100
 
 /**
  * \brief Initializes an AbstractData object on the stack.
