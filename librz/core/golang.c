@@ -293,7 +293,8 @@ static ut32 core_recover_golang_functions_go_1_18_plus(RzCore *core, GoPcLnTab *
 	}
 
 	rz_flag_space_push(core->flags, RZ_FLAGS_FS_SYMBOLS);
-	for (ut32 i = 0, ptr = 0; i < pclntab->nfunctab; ++i, ptr += (pclntab->ptrsize * 2)) {
+
+	for (ut32 i = 0, ptr = 0, ptr_size = pclntab->ptrsize * 2; i < pclntab->nfunctab; ++i, ptr += ptr_size) {
 		ut64 offset = pclntab->functab + ptr;
 
 		// reads the value of the function pointer
@@ -756,8 +757,29 @@ static bool recover_string_at(GoStrRecover *ctx, ut64 str_addr, ut64 str_size) {
 	return true;
 }
 
+#define IS_PTR_ALIGNED(x, bits) ((((uintptr_t)(x)) & (sizeof(ut##bits) - 1)) == 0)
+
+static bool go_is_pattern(const ut8 *bytes, const ut8 *pattern, const ut8 *mask, const ut32 size, ut32 *inc) {
+#define FAST_MASK(bits) \
+	if (size > sizeof(ut##bits) && IS_PTR_ALIGNED(bytes, bits) && IS_PTR_ALIGNED(pattern, bits) && IS_PTR_ALIGNED(mask, bits)) { \
+		const ut##bits *b_##bits = (const ut##bits *)bytes; \
+		const ut##bits *p_##bits = (ut##bits *)pattern; \
+		const ut##bits *m_##bits = (const ut##bits *)mask; \
+		const ut##bits masked_op_##bits = *b_##bits & *m_##bits; \
+		*inc += sizeof(ut##bits); \
+		return masked_op_##bits == *p_##bits; \
+	}
+
+	FAST_MASK(32)
+	FAST_MASK(16)
+
+	*inc += 1;
+	ut8 masked_op = *bytes & *mask;
+	return masked_op == *pattern;
+#undef FAST_MASK
+}
+
 static bool go_is_sign_match(GoStrRecover *ctx, GoStrInfo *info, GoSignature *sigs, const size_t n_sigs) {
-	ut8 copy[32]; // big enough to handle any pattern.
 	ut32 nlen = 0;
 	memset(info, 0, sizeof(GoStrInfo));
 
@@ -766,24 +788,21 @@ static bool go_is_sign_match(GoStrRecover *ctx, GoStrInfo *info, GoSignature *si
 			return false;
 		}
 
-		GoSignature *sig = &sigs[i];
-		ut8 *bytes = ctx->bytes + nlen;
-		ut32 size = ctx->size - nlen;
-		if (sig->pasm->size > size) {
+		const GoSignature *sig = &sigs[i];
+		const ut8 *bytes = ctx->bytes + nlen;
+		const ut32 size = ctx->size - nlen;
+		const ut32 sig_size = sig->pasm->size;
+		if (sig_size > size) {
 			return false;
 		}
-
-		// copy opcodes
-		memcpy(copy, bytes, sig->pasm->size);
 
 		// apply mask
-		for (ut32 j = 0; j < sig->pasm->size; ++j) {
-			copy[j] = copy[j] & sig->pasm->mask[j];
-		}
-
-		// verify the masked input matches the pattern
-		if (memcmp(copy, sig->pasm->pattern, sig->pasm->size)) {
-			return false;
+		const ut8 *mask = sig->pasm->mask;
+		const ut8 *patt = sig->pasm->pattern;
+		for (ut32 j = 0; j < sig_size;) {
+			if (!go_is_pattern(&bytes[j], &patt[j], &mask[j], sig_size - j, &j)) {
+				return false;
+			}
 		}
 
 		// decode info
@@ -796,7 +815,7 @@ static bool go_is_sign_match(GoStrRecover *ctx, GoStrInfo *info, GoSignature *si
 			info->xref = ctx->pc + nlen;
 		}
 
-		nlen += sig->pasm->size;
+		nlen += sig_size;
 	}
 
 	return true;
@@ -891,6 +910,7 @@ static bool decode_disp_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const u
 	rz_analysis_op_fini(&aop);
 	return true;
 }
+
 // 0x004881da      48c7401003000000       mov   qword [rax + 0x10], 3
 // 0x004881e2      488d0d8d8c0100         lea   rcx, [0x004a0e76]
 go_asm_pattern_define(x86, 64, lea, "\x48\x00\x00\x00\x00\x00\x00", "\xff\x00\x00\x00\x00\x00\x00", true);
