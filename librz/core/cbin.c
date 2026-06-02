@@ -2728,16 +2728,16 @@ RZ_API bool rz_core_bin_sections_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBin
 
 err:
 	if (mode == RZ_OUTPUT_MODE_QUIET) {
-			RzTableView *view = rz_table_view_new(state->d.t);
-			if (view) {
-				rz_table_view_query(view, "vaddr/cols/vsize/perm/name");
-				char *s = rz_table_view_tostring(view);
-				if (s) {
-					rz_cons_printf("%s", s);
-					free(s);
-				}
-				rz_table_view_free(view);
+		RzTableView *view = rz_table_view_new(state->d.t);
+		if (view) {
+			rz_table_view_query(view, "vaddr/cols/vsize/perm/name");
+			char *s = rz_table_view_tostring(view);
+			if (s) {
+				rz_cons_printf("%s", s);
+				free(s);
 			}
+			rz_table_view_free(view);
+		}
 
 		state->mode = mode;
 		rz_table_free(state->d.t);

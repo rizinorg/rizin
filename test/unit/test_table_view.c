@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2026 Ashish Kumar <15678ashishk@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
@@ -19,11 +19,9 @@ bool test_rz_table_view_in_place(void) {
 	mu_assert_notnull(view, "RzTableView created successfully");
 	mu_assert_ptreq(view->table, t, "RzTableView points to the original table");
 
-	// Run a query via the view
 	bool qr = rz_table_view_query(view, "value/gt/15");
 	mu_assert_true(qr, "view query succeeded");
 
-	// Verify that original table got modified in-place
 	char *orig_str = rz_table_tostring(t);
 	mu_assert_streq(orig_str,
 		"name   value \n"
@@ -33,7 +31,6 @@ bool test_rz_table_view_in_place(void) {
 		"original table is modified in-place by view query");
 	free(orig_str);
 
-	// Verify the view outputs the queried data
 	char *view_str = rz_table_view_tostring(view);
 	mu_assert_streq(view_str,
 		"name   value \n"
@@ -43,10 +40,7 @@ bool test_rz_table_view_in_place(void) {
 		"view string is correct");
 	free(view_str);
 
-	// Freeing the view should not free the original table (no double-free)
 	rz_table_view_free(view);
-
-	// Original table is still valid and can be freed manually
 	rz_table_free(t);
 	mu_end;
 }
