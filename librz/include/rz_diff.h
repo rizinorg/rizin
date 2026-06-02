@@ -94,6 +94,13 @@ RZ_API RZ_OWN PJ *rz_diff_unified_json(RZ_NONNULL RzDiff *diff, RZ_NULLABLE cons
 RZ_API bool rz_diff_myers_distance(RZ_NONNULL const ut8 *a, ut32 size_a, RZ_NONNULL const ut8 *b, ut32 size_b, RZ_NULLABLE ut32 *distance, RZ_NULLABLE double *similarity);
 RZ_API bool rz_diff_levenshtein_distance(RZ_NONNULL const ut8 *a, ut32 size_a, RZ_NONNULL const ut8 *b, ut32 size_b, RZ_NULLABLE ut32 *distance, RZ_NULLABLE double *similarity);
 
+/* Content-Defined Chunking accelerated distance: for inputs larger than 1 MiB
+ * both buffers are split into content-defined chunks, identical chunks act as
+ * anchors, and the exact algorithm (Myers, or Levenshtein when substitution is
+ * true) runs only in the gaps between anchors. Below the threshold it forwards
+ * to the exact algorithm, so results match rz_diff_{myers,levenshtein}_distance. */
+RZ_API bool rz_diff_cdc_distance(RZ_NONNULL const ut8 *a, ut32 size_a, RZ_NONNULL const ut8 *b, ut32 size_b, bool substitution, RZ_NULLABLE ut32 *distance, RZ_NULLABLE double *similarity);
+
 #endif
 
 #ifdef __cplusplus

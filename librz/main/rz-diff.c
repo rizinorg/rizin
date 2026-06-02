@@ -30,6 +30,8 @@ typedef enum {
 	DIFF_DISTANCE_MYERS,
 	DIFF_DISTANCE_LEVENSHTEIN,
 	DIFF_DISTANCE_SSDEEP,
+	DIFF_DISTANCE_CDC_MYERS,
+	DIFF_DISTANCE_CDC_LEVENSHTEIN,
 } DiffDistance;
 
 typedef enum {
@@ -208,6 +210,8 @@ static void rz_diff_show_help(bool usage_only) {
 		"-d",       "myers",        "Compute edit distance using Eugene W. Myers' O(ND) algorithm (no substitution)",
 		"-d",       "leven",        "Compute edit distance using Levenshtein O(N^2) algorithm (with substitution)",
 		"-d",       "ssdeep",       "Compute edit distance using Context triggered piecewise hashing comparison",
+		"-d",       "cdc-myers",    "Like myers, but uses Content-Defined Chunking to accelerate large (>1MB) files",
+		"-d",       "cdc-leven",    "Like leven, but uses Content-Defined Chunking to accelerate large (>1MB) files",
 		"-i",       "",             "Use command line arguments instead of files (only for -d)",
 		"-H",       "",             "Hexadecimal visual mode",
 		"-h",       "",             "Show this help",
@@ -348,6 +352,10 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_LEVENSHTEIN);
 		} else if (!strcmp(algorithm, "ssdeep")) {
 			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_SSDEEP);
+		} else if (!strcmp(algorithm, "cdc-myers")) {
+			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_CDC_MYERS);
+		} else if (!strcmp(algorithm, "cdc-leven")) {
+			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_CDC_LEVENSHTEIN);
 		} else {
 			rz_diff_error_opt(ctx, DIFF_OPT_ERROR, "option -d argument '%s' is not a recognized algorithm.\n", algorithm);
 		}
@@ -549,6 +557,18 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 	case DIFF_DISTANCE_SSDEEP:
 		if ((similarity = rz_hash_ssdeep_compare((const char *)a_buffer, (const char *)b_buffer)) < 0) {
 			rz_diff_error("failed to calculate distance with ssdeep compare algorithm\n");
+			goto rz_diff_calculate_distance_bad;
+		}
+		break;
+	case DIFF_DISTANCE_CDC_MYERS:
+		if (!rz_diff_cdc_distance(a_buffer, a_size, b_buffer, b_size, false, &distance, &similarity)) {
+			rz_diff_error("failed to calculate distance with cdc-myers algorithm\n");
+			goto rz_diff_calculate_distance_bad;
+		}
+		break;
+	case DIFF_DISTANCE_CDC_LEVENSHTEIN:
+		if (!rz_diff_cdc_distance(a_buffer, a_size, b_buffer, b_size, true, &distance, &similarity)) {
+			rz_diff_error("failed to calculate distance with cdc-leven algorithm\n");
 			goto rz_diff_calculate_distance_bad;
 		}
 		break;
