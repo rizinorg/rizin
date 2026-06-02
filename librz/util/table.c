@@ -1763,3 +1763,31 @@ RZ_API RZ_OWN RzTable *rz_table_transpose(RZ_NONNULL RzTable *t) {
 	rz_list_free(row_name);
 	return transpose;
 }
+
+RZ_API RZ_OWN RzTableView *rz_table_view_new(RZ_NONNULL const RzTable *t) {
+	rz_return_val_if_fail(t, NULL);
+
+	RzTableView *view = RZ_NEW0(RzTableView);
+	if (!view) {
+		return NULL;
+	}
+	view->table = (RzTable *)t;
+	return view;
+}
+
+RZ_API void rz_table_view_free(RZ_NULLABLE RzTableView *view) {
+	if (!view) {
+		return;
+	}
+	free(view);
+}
+
+RZ_API bool rz_table_view_query(RZ_NONNULL RzTableView *view, RZ_NULLABLE const char *q) {
+	rz_return_val_if_fail(view && view->table, false);
+	return rz_table_query(view->table, q);
+}
+
+RZ_API RZ_OWN char *rz_table_view_tostring(RZ_NONNULL RzTableView *view) {
+	rz_return_val_if_fail(view && view->table, NULL);
+	return rz_table_tostring(view->table);
+}

@@ -482,6 +482,39 @@ bool test_rz_table_query_regressions(void) {
 	mu_end;
 }
 
+bool test_rz_table_view(void) {
+	RzTable *t = __table_test_data1();
+	RzTableView *view = rz_table_view_new(t);
+	mu_assert_notnull(view, "RzTableView created successfully");
+
+	bool qr = rz_table_view_query(view, "code/sort/rev");
+	mu_assert_true(qr, "view query succeeded");
+
+	char *orig_str = rz_table_tostring(t);
+	mu_assert_streq(orig_str,
+		"ascii code \n"
+		"-----------\n"
+		"c       99\n"
+		"b       98\n"
+		"a       97\n",
+		"original table is modified in-place since the view does not recreate it");
+	free(orig_str);
+
+	char *view_str = rz_table_view_tostring(view);
+	mu_assert_streq(view_str,
+		"ascii code \n"
+		"-----------\n"
+		"c       99\n"
+		"b       98\n"
+		"a       97\n",
+		"view is queried and sorted correctly");
+	free(view_str);
+
+	rz_table_view_free(view);
+	rz_table_free(t);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_table);
 	mu_run_test(test_rz_table_tostring);
@@ -493,6 +526,7 @@ bool all_tests() {
 	mu_run_test(test_rz_table_add_row_columnsf);
 	mu_run_test(test_rz_table_query);
 	mu_run_test(test_rz_table_query_regressions);
+	mu_run_test(test_rz_table_view);
 	return tests_passed != tests_run;
 }
 
