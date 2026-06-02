@@ -116,9 +116,17 @@ canonical form is `t(format)`.
   - Inline: `B4(R=1,W=2,X=4)` -- flags declared inline in parens. The presence
     of `=` inside the parens is the discriminator.
 - `G[(layout)]` -- 16-byte GUID. Layouts:
-  - `ms` (default) -- Microsoft mixed-endian (D1 LE u32, D2/D3 LE u16, D4 raw)
-  - `be` -- RFC 4122 big-endian network order
-  - `le` -- all little-endian
+  - `ms` (default) -- Microsoft mixed-endian, as used by the Windows
+    GUID/UUID convention in COM, the registry, and most Win32 binary
+    formats: D1 LE u32, D2/D3 LE u16, D4 raw.
+  - `be` -- big-endian network order: D1/D2/D3 BE, D4 raw. This is the
+    UUID transmission form specified by
+    [RFC 4122](https://www.rfc-editor.org/rfc/rfc4122).
+  - `le` -- D1/D2/D3 little-endian; D4 stays in buffer order, so the
+    rendered string is identical to the default MS layout. The keyword
+    is accepted for callers that want to be explicit about endianness;
+    it does not reverse the D4 byte run and does not correspond to any
+    published standard.
 - `V[(...)]` -- TLV record. Parameters in parens:
   - `t=<type>` -- tag scalar (default `u1`)
   - `l=<type>` -- length scalar (default `u2`)
@@ -134,10 +142,22 @@ canonical form is `t(format)`.
   prefix it consumes one byte.
 - `U` / `L` -- ULEB128 / SLEB128 (variable-length unsigned / signed). Decoded
   greedily up to 10 bytes (enough for a full 64-bit value).
-- `n` / `N` -- context-sized integer:
-  - `n1`/`n2`/`n4`/`n8` -- forced byte width (1/2/4/8) in LE.
-  - `N1`/`N2`/`N4`/`N8` -- same, BE.
-  - Bare `n`/`N` defaults to `ctx.bits/8` bytes.
+- `n` -- context-endian sized integer (unsigned hex):
+  - `n1`/`n2`/`n4`/`n8` -- 1/2/4/8 byte width. Endianness is taken
+    from the active pf parsing context (set by `pf -e le|be ...`, by
+    the format's own `e=...` directive on container specs like `V` or
+    `B`, or by the embedding API caller). Case of the spec letter is
+    *not* used to pin the endian, unlike `x{1,2,4,8}` (LE) and
+    `X{1,2,4,8}` (BE).
+  - The form is useful whenever the byte order isn't fixed by the
+    spec but determined at parse time -- common in file formats whose
+    headers carry an endian marker (ELF `EI_DATA`, MachO magic, the
+    GUID/UUID layout flag in some MS containers), but it also fits
+    serialized records, embedded protocols, and any structure where
+    the endianness lives outside the field itself.
+  - There is no uppercase `N` form and no bare `n` -- use a `1`/`2`/
+    `4`/`8` suffix or pick `x{1,2,4,8}` / `X{1,2,4,8}` when you do
+    want endian pinned by case.
 
 ### Pointers
 
@@ -351,8 +371,8 @@ deprecation diagnostic:
 | Legacy | Canonical    | Meaning                              |
 |--------|--------------|--------------------------------------|
 | `b`    | `b1`         | 1-byte binary                        |
-| `c`    | `c`          | 1-byte signed char (unchanged)       |
 | `d`    | `d4`         | 4-byte signed decimal LE             |
+| `x`    | `x4`         | 4-byte hex LE                        |
 | `o`    | `o4`         | 4-byte octal LE                      |
 | `q`    | `x8`         | 8-byte hex LE                        |
 | `u`    | `u4`         | 4-byte unsigned decimal LE           |
@@ -361,7 +381,7 @@ deprecation diagnostic:
 | `F`    | `F8`         | IEEE-754 double BE                   |
 | `w`    | `x2`         | 2-byte hex LE                        |
 | `Z`    | `z(utf16le)` | UTF-16 LE zstring                    |
-| `t`    | `t(unix32)`  | Unix-32 timestamp                    |
+| `t`    | `t(unix32)`  | Unix-32 timestamp LE                 |
 | `T`    | `T(unix32)`  | Unix-32 timestamp BE                 |
 | `X`    | `r`          | raw hex byte dump                    |
 | `C`    | `u1`         | 1-byte unsigned decimal              |
