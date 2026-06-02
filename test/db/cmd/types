@@ -20,6 +20,8 @@ RUN
 NAME=td struct and union bitfields
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
+e cfg.bigendian=false
 td "struct qwe { int a:4; int b:16; int c:3; };"
 tcd qwe
 ts qwe
