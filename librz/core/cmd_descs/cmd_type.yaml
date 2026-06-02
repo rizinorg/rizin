@@ -360,3 +360,47 @@ commands:
         cname: type_xrefs_list_all
         summary: List all types used by any function
         args: []
+  - name: tk
+    summary: Manage the typeclasses of types
+    description: >
+      Typeclasses classify atomic types by the general kind of value they hold,
+      independently of their concrete name or size, so the analysis can pick a
+      suitable type generically (for example any signed integer). The available
+      typeclasses are Num (any number), Integral (any integer), Floating (any
+      floating point number), Address (integer types used to work with
+      pointers), Signed Integral and Unsigned Integral (the signed and unsigned
+      subclasses of Integral) and None (the most generic one, used when no
+      specific typeclass applies).
+    subcommands:
+      - name: tk
+        cname: type_typeclass
+        summary: Show the typeclass of the given type
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_ANY_TYPE
+      - name: tkl
+        cname: type_typeclass_list
+        summary: List all typeclasses, or the types belonging to each of them
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_LONG
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: tks
+        cname: type_typeclass_set
+        summary: Set the typeclass of a type
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_ANY_TYPE
+          - name: typeclass
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: Examples
+            entries:
+              - text: "tks"
+                arg_str: " int Floating"
+                comment: "treat the int type as the Floating typeclass"
+              - text: "tks"
+                arg_str: ' int "Signed Integral"'
+                comment: "set a typeclass whose name contains a space (quote it)"

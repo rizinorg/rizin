@@ -96,6 +96,7 @@ static const RzCmdDescDetail print_hexdump_format_details[4];
 static const RzCmdDescDetail print_rising_and_falling_entropy_details[2];
 static const RzCmdDescDetail type_define_from_format_details[2];
 static const RzCmdDescDetail type_rename_details[2];
+static const RzCmdDescDetail type_typeclass_set_details[2];
 static const RzCmdDescDetail interactive_visual_details[2];
 static const RzCmdDescDetail write_details[3];
 static const RzCmdDescDetail write_bits_details[2];
@@ -906,6 +907,8 @@ static const RzCmdDescArg type_union_c_args[2];
 static const RzCmdDescArg type_union_c_nl_args[2];
 static const RzCmdDescArg type_xrefs_list_args[2];
 static const RzCmdDescArg type_xrefs_function_args[2];
+static const RzCmdDescArg type_typeclass_args[2];
+static const RzCmdDescArg type_typeclass_set_args[3];
 static const RzCmdDescArg interactive_visual_args[2];
 static const RzCmdDescArg interactive_panel_load_args[2];
 static const RzCmdDescArg interactive_panel_store_args[2];
@@ -19903,6 +19906,60 @@ static const RzCmdDescHelp type_xrefs_list_all_help = {
 	.args = type_xrefs_list_all_args,
 };
 
+static const RzCmdDescHelp tk_help = {
+	.summary = "Manage the typeclasses of types",
+	.description = "Typeclasses classify atomic types by the general kind of value they hold, independently of their concrete name or size, so the analysis can pick a suitable type generically (for example any signed integer). The available typeclasses are Num (any number), Integral (any integer), Floating (any floating point number), Address (integer types used to work with pointers), Signed Integral and Unsigned Integral (the signed and unsigned subclasses of Integral) and None (the most generic one, used when no specific typeclass applies).",
+};
+static const RzCmdDescArg type_typeclass_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_ANY_TYPE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_typeclass_help = {
+	.summary = "Show the typeclass of the given type",
+	.args = type_typeclass_args,
+};
+
+static const RzCmdDescArg type_typeclass_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp type_typeclass_list_help = {
+	.summary = "List all typeclasses, or the types belonging to each of them",
+	.args = type_typeclass_list_args,
+};
+
+static const RzCmdDescDetailEntry type_typeclass_set_Examples_detail_entries[] = {
+	{ .text = "tks", .arg_str = " int Floating", .comment = "treat the int type as the Floating typeclass" },
+	{ .text = "tks", .arg_str = " int \"Signed Integral\"", .comment = "set a typeclass whose name contains a space (quote it)" },
+	{ 0 },
+};
+static const RzCmdDescDetail type_typeclass_set_details[] = {
+	{ .name = "Examples", .entries = type_typeclass_set_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg type_typeclass_set_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_ANY_TYPE,
+
+	},
+	{
+		.name = "typeclass",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_typeclass_set_help = {
+	.summary = "Set the typeclass of a type",
+	.details = type_typeclass_set_details,
+	.args = type_typeclass_set_args,
+};
+
 static const RzCmdDescHelp V_help = {
 	.summary = "Interactive mode",
 };
@@ -25834,6 +25891,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *type_xrefs_list_all_cd = rz_cmd_desc_argv_new(core->rcmd, tx_cd, "txl", rz_type_xrefs_list_all_handler, &type_xrefs_list_all_help);
 	rz_warn_if_fail(type_xrefs_list_all_cd);
+
+	RzCmdDesc *tk_cd = rz_cmd_desc_group_new(core->rcmd, t_cd, "tk", rz_type_typeclass_handler, &type_typeclass_help, &tk_help);
+	rz_warn_if_fail(tk_cd);
+	RzCmdDesc *type_typeclass_list_cd = rz_cmd_desc_argv_modes_new(core->rcmd, tk_cd, "tkl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_type_typeclass_list_handler, &type_typeclass_list_help);
+	rz_warn_if_fail(type_typeclass_list_cd);
+
+	RzCmdDesc *type_typeclass_set_cd = rz_cmd_desc_argv_new(core->rcmd, tk_cd, "tks", rz_type_typeclass_set_handler, &type_typeclass_set_help);
+	rz_warn_if_fail(type_typeclass_set_cd);
 
 	RzCmdDesc *V_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "V", rz_interactive_visual_handler, &interactive_visual_help, &V_help);
 	rz_warn_if_fail(V_cd);

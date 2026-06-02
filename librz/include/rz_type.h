@@ -318,6 +318,7 @@ RZ_API int rz_type_kind(RzTypeDB *typedb, RZ_NONNULL const char *name);
 RZ_API RZ_BORROW const char *rz_type_typeclass_as_string(RzTypeTypeclass typeclass);
 RZ_API RzTypeTypeclass rz_type_typeclass_from_string(RZ_NONNULL const char *typeclass);
 RZ_API RzTypeTypeclass rz_base_type_typeclass(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *type);
+RZ_API bool rz_base_type_set_typeclass(RZ_NONNULL RzBaseType *type, RzTypeTypeclass typeclass);
 RZ_API RzTypeTypeclass rz_type_typeclass(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API bool rz_base_type_is_num(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *type);
 RZ_API bool rz_type_is_num(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);

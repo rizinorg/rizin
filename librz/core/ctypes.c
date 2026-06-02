@@ -1078,3 +1078,76 @@ RZ_IPI bool rz_core_types_rename(RzAnalysis *analysis, RZ_NONNULL const char *fr
 	}
 	return true;
 }
+
+/**
+ * \brief Prints all typeclasses, or the types belonging to each typeclass
+ *
+ * \param core RzCore instance
+ * \param mode Output mode: STANDARD lists the typeclass names, LONG/TABLE/JSON
+ *             additionally list the atomic types belonging to each typeclass
+ */
+RZ_IPI void rz_core_types_typeclass_print_all(RzCore *core, RzOutputMode mode) {
+	rz_return_if_fail(core && core->analysis);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzTypeTypeclass tc;
+	switch (mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		for (tc = RZ_TYPE_TYPECLASS_NUM; tc < RZ_TYPE_TYPECLASS_INVALID; tc++) {
+			rz_cons_println(rz_type_typeclass_as_string(tc));
+		}
+		break;
+	case RZ_OUTPUT_MODE_LONG:
+		for (tc = RZ_TYPE_TYPECLASS_NUM; tc < RZ_TYPE_TYPECLASS_INVALID; tc++) {
+			rz_cons_printf("%s:\n", rz_type_typeclass_as_string(tc));
+			RzList *types = rz_type_typeclass_get_all(typedb, tc);
+			RzListIter *it;
+			RzBaseType *btype;
+			rz_list_foreach (types, it, btype) {
+				rz_cons_printf("  %s\n", btype->name);
+			}
+			rz_list_free(types);
+		}
+		break;
+	case RZ_OUTPUT_MODE_TABLE: {
+		RzTable *table = rz_table_new();
+		rz_table_set_columnsf(table, "ss", "typeclass", "type");
+		for (tc = RZ_TYPE_TYPECLASS_NUM; tc < RZ_TYPE_TYPECLASS_INVALID; tc++) {
+			const char *tcname = rz_type_typeclass_as_string(tc);
+			RzList *types = rz_type_typeclass_get_all(typedb, tc);
+			RzListIter *it;
+			RzBaseType *btype;
+			rz_list_foreach (types, it, btype) {
+				rz_table_add_rowf(table, "ss", tcname, btype->name);
+			}
+			rz_list_free(types);
+		}
+		char *s = rz_table_tostring(table);
+		rz_cons_print(s);
+		free(s);
+		rz_table_free(table);
+		break;
+	}
+	case RZ_OUTPUT_MODE_JSON: {
+		PJ *pj = pj_new();
+		pj_o(pj);
+		for (tc = RZ_TYPE_TYPECLASS_NUM; tc < RZ_TYPE_TYPECLASS_INVALID; tc++) {
+			pj_ka(pj, rz_type_typeclass_as_string(tc));
+			RzList *types = rz_type_typeclass_get_all(typedb, tc);
+			RzListIter *it;
+			RzBaseType *btype;
+			rz_list_foreach (types, it, btype) {
+				pj_s(pj, btype->name);
+			}
+			rz_list_free(types);
+			pj_end(pj);
+		}
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+		break;
+	}
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+}
