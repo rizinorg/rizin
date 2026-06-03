@@ -544,7 +544,7 @@ RUN
 NAME=flag-func_sig order
 FILE=bins/elf/abcde-qt32
 CMDS=<<EOF
-e asm.demangle=true
+e asm.flags.real=true
 e asm.bytes=false
 e asm.sub.names=false
 e asm.sub.jmp=false
