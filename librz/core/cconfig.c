@@ -3286,7 +3286,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	update_asmbits_options(core, n);
 	SETBPREF("asm.functions", "true", "Show functions in disassembly");
 	SETBPREF("asm.xrefs", "true", "Show xrefs in disassembly");
-	SETBPREF("asm.demangle", "true", "Show demangled symbols in disasm");
 	SETBPREF("asm.describe", "false", "Show opcode description");
 	SETPREF("asm.highlight", "", "Highlight current line");
 	SETBPREF("asm.marks", "true", "Show marks before the disassembly");

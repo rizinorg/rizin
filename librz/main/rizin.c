@@ -670,7 +670,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			break;
 		case 'M':
 			rz_config_set(r->config, "bin.demangle", "false");
-			rz_config_set(r->config, "asm.demangle", "false");
 			break;
 		case 'n':
 			if (load_bin == LOAD_BIN_ALL) { // "-n"
