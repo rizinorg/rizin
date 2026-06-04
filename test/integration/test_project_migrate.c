@@ -771,6 +771,24 @@ static bool test_migrate_v23_v24_bitfield() {
 	mu_end;
 }
 
+static bool test_migrate_v24_v25_asm_demangle() {
+	RzProject *prj = rz_project_load_file_raw("prj/v24-asm-demangle.rzdb");
+	mu_assert_notnull(prj, "load raw project");
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	bool s = rz_project_migrate_v24_v25(prj, res);
+	mu_assert_true(s, "migrate success");
+
+	Sdb *core_db = sdb_ns(prj, "core", false);
+	mu_assert_notnull(core_db, "core ns");
+	Sdb *config_db = sdb_ns(core_db, "config", false);
+	mu_assert_notnull(config_db, "config ns");
+	mu_assert_null(sdb_get(config_db, "asm.demangle"), "asm.demangle doesn't exist");
+
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
+
 /// Load project of given version from file into core and check the log for migration success messages
 #define BEGIN_LOAD_TEST(core, version, file) \
 	do { \
@@ -1209,6 +1227,7 @@ int all_tests() {
 	mu_run_test(test_migrate_v21_v22_gadget_config);
 	mu_run_test(test_migrate_v22_v23_enum);
 	mu_run_test(test_migrate_v23_v24_bitfield);
+	mu_run_test(test_migrate_v24_v25_asm_demangle);
 	mu_run_test(test_load_v1_noreturn);
 	mu_run_test(test_load_v1_noreturn_empty);
 	mu_run_test(test_load_v1_unknown_type);

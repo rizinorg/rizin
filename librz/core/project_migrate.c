@@ -25,7 +25,7 @@
  *  * Implement a function like `bool rz_project_migrate_migrate_v1_v2(RzProject *prj, RzSerializeResultInfo *res)`
  *    which edits prj in-place and converts it from the previous to the current version.
  *  * Append this function to the `migrations` array below.
- *  * Implement tests in `test/unit/test_project_migrate.c` that cover all changes (see the documentation there).
+ *  * Implement tests in `test/integration/test_project_migrate.c` that cover all changes (see the documentation there).
  */
 
 // --
@@ -786,6 +786,21 @@ RZ_API bool rz_project_migrate_v23_v24(RzProject *prj, RzSerializeResultInfo *re
 	return true;
 }
 
+// --
+// Migration 24 -> 25
+//
+// Changes from 0374f28e0384fdc6e218511f3ba986312c6d98ab:
+//      Removed "asm.demangle" option.
+
+RZ_API bool rz_project_migrate_v24_v25(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *config_db;
+	RZ_SERIALIZE_SUB(core_db, config_db, res, "config", return false;);
+	sdb_remove(config_db, "asm.demangle");
+	return true;
+}
+
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
 	rz_project_migrate_v2_v3,
@@ -810,6 +825,7 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v21_v22,
 	rz_project_migrate_v22_v23,
 	rz_project_migrate_v23_v24,
+	rz_project_migrate_v24_v25,
 };
 
 /// Migrate the given project to the current version in-place
