@@ -89,7 +89,6 @@ static bool decode_tableswitch(JavaVM *jvm, Bytecode *bytecode) {
 	ut32 offset = jvm->current + align_upper(jvm) + 1;
 
 	if (((ssize_t)jvm->size - (ssize_t)offset) < 12) {
-		rz_warn_if_reached();
 		return false;
 	}
 
@@ -1224,7 +1223,6 @@ static bool decode_instruction(JavaVM *jvm, Bytecode *bytecode) {
 	case BYTECODE_AA_TABLESWITCH:
 		strcpy(bytecode->name, "tableswitch");
 		if (!decode_tableswitch(jvm, bytecode)) {
-			rz_warn_if_reached();
 			return false;
 		}
 		bytecode->atype = RZ_ANALYSIS_OP_TYPE_CJMP;
@@ -1233,7 +1231,6 @@ static bool decode_instruction(JavaVM *jvm, Bytecode *bytecode) {
 	case BYTECODE_AB_LOOKUPSWITCH:
 		strcpy(bytecode->name, "lookupswitch");
 		if (!decode_lookupswitch(jvm, bytecode)) {
-			rz_warn_if_reached();
 			return false;
 		}
 		bytecode->atype = RZ_ANALYSIS_OP_TYPE_CJMP;
