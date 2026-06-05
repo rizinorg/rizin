@@ -19,6 +19,8 @@
 #define WAITPID_FLAGS 0
 #endif
 
+#define ALPHA_PTRACE_REG_COUNT 66
+
 static char *rz_debug_native_reg_profile(RzDebug *dbg) {
 #include "reg/linux-alpha.h"
 }
@@ -80,7 +82,6 @@ static int rz_debug_native_continue(RzDebug *dbg, int pid, int tid, int sig) {
 			rz_sys_perror("PTRACE_CONT");
 		}
 	}
-	// return ret >= 0 ? tid : false;
 	return tid;
 }
 
@@ -90,7 +91,7 @@ static RzDebugInfo *rz_debug_native_info(RzDebug *dbg, const char *arg) {
 
 static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 	RzDebugReasonType reason = RZ_DEBUG_REASON_UNKNOWN;
-	if (pid == -1) {
+	if (pid < 0) {
 		RZ_LOG_ERROR("rz_debug_native_wait called with pid -1\n");
 		return RZ_DEBUG_REASON_ERROR;
 	}
@@ -130,7 +131,6 @@ static int rz_debug_native_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) 
 		return false;
 	}
 	int pid = dbg->tid;
-	int ret = 0;
 	switch (type) {
 	case RZ_REG_TYPE_DRX:
 	case RZ_REG_TYPE_MMX:
@@ -141,13 +141,11 @@ static int rz_debug_native_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) 
 	case RZ_REG_TYPE_FLG:
 	case RZ_REG_TYPE_FPU:
 	case RZ_REG_TYPE_GPR: {
-
-		int status = 0;
-		ut64 regs[66];
+		ut64 regs[ALPHA_PTRACE_REG_COUNT];
 		memset(&regs, 0, sizeof(regs));
 		memset(buf, 0, size);
 
-		for (int i = 0; i < 66; i++) {
+		for (int i = 0; i < ALPHA_PTRACE_REG_COUNT; i++) {
 			errno = 0;
 			long v = rz_debug_ptrace(dbg, PTRACE_PEEKUSER, pid, (void *)i, NULL);
 
@@ -174,11 +172,11 @@ static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int
 		return false;
 	case RZ_REG_TYPE_GPR:
 		int ret;
-		for (int i = 0; i < 66; i++) {
+		for (int i = 0; i < ALPHA_PTRACE_REG_COUNT; i++) {
 			ut64 value = rz_read_at_le64(buf, i * 8);
 			ret = rz_debug_ptrace(dbg, PTRACE_POKEUSER, pid, (void *)i, (void *)value);
-			if (ret == -1) {
-				RZ_LOG_ERROR("Writing to register for value : %llx", value);
+			if (ret < 0) {
+				RZ_LOG_ERROR("Writing to register for value : %lx", value);
 				return false;
 			}
 		}
@@ -312,6 +310,9 @@ void rz_debug_native_fini(RzDebug *dbg, void *user) {
 RzDebugPlugin rz_debug_plugin_native = {
 	.name = "native",
 	.license = "LGPL3",
+	.bits = RZ_SYS_BITS_64,
+	.arch = "alpha",
+	.canstep = 0,
 	.init = &rz_debug_native_init,
 	.fini = &rz_debug_native_fini,
 	.step = &rz_debug_native_step,
