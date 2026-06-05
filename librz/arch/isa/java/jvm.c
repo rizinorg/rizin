@@ -60,7 +60,7 @@ static inline ut32 align_upper(JavaVM *jvm) {
 static bool decode_lookupswitch(JavaVM *jvm, Bytecode *bytecode) {
 	ut32 offset = jvm->current + align_upper(jvm);
 
-	if ((jvm->size - offset) < 8) {
+	if (((ssize_t)jvm->size - (ssize_t)offset) < 8) {
 		return false;
 	}
 	ut32 pc_default = rz_read_at_be32(jvm->buffer, offset);
@@ -88,7 +88,7 @@ static bool decode_lookupswitch(JavaVM *jvm, Bytecode *bytecode) {
 static bool decode_tableswitch(JavaVM *jvm, Bytecode *bytecode) {
 	ut32 offset = jvm->current + align_upper(jvm) + 1;
 
-	if ((jvm->size - offset) < 12) {
+	if (((ssize_t)jvm->size - (ssize_t)offset) < 12) {
 		rz_warn_if_reached();
 		return false;
 	}
