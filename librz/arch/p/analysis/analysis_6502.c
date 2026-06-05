@@ -1881,7 +1881,7 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	return op->size;
 
 oob_read:
-	free(op->mnemonic);
+	RZ_FREE(op->mnemonic);
 	return -1;
 }
 
