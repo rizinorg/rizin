@@ -245,5 +245,5 @@ d "nop 0x42,x" 5442 0x0 nop
 d "nop 0x42,x" 7442 0x0 nop
 d "nop 0x42,x" d442 0x0 nop
 d "nop 0x42,x" f442 0x0 nop
-d "invalid" ff 0x0 (seq (set tmp (+ (load 0 (+ (bv 16 0x6f) (cast 16 false (var x)))) (bv 8 0x1))) (store 0 (+ (bv 16 0x6f) (cast 16 false (var x))) (var tmp)) (set Z (is_zero (var tmp))) (set N (msb (var tmp))) (set src (load 0 (+ (bv 16 0x6f) (cast 16 false (var x))))) (set res (- (- (cast 9 false (var a)) (cast 9 false (var src))) (ite (var C) (bv 9 0x0) (bv 9 0x1)))) (set C (! (msb (var res)))) (set res8 (cast 8 false (var res))) (set Z (is_zero (var res8))) (set N (msb (var res8))) (set V (&& (^^ (msb (var a)) (msb (var res8))) (^^ (msb (var a)) (msb (var src))))) (set a (var res8)))
-d "invalid" bb 0x0 (seq (set sp (& (var sp) (load 0 (+ (bv 16 0xaef5) (cast 16 false (var y)))))) (set Z (is_zero (var sp))) (set N (msb (var sp))) (set x (var sp)) (set a (var sp)))
+d "invalid" ff 0x0
+d "invalid" bb 0x0
