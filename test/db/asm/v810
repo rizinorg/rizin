@@ -55,3 +55,4 @@ d "cvt.sw r10, r11" 6af9000c 0x0 (seq (set r11 (fcast_sint 32 rne (float 0 (var 
 d "subf.s r15, r30" cffb0014 0x0 (seq (set result (-. rne (float 0 (var r30) ) (float 0 (var r15) ))) (set PSW (| (| (| (| (| (<< (ite (! (is_fpos (var result))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x3) false) (<< (ite false (bv 32 0x1) (bv 32 0x0)) (bv 32 0x2) false)) (<< (ite (&& (! (|| (is_nan (var result)) (is_nan (float 0 (bv 32 0x0) )))) (<. (var result) (float 0 (bv 32 0x0) ))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x1) false)) (<< (ite (is_fzero (var result)) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x0) false)) (<< (ite (|| (is_nan (var result)) (is_inf (var result))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x9) false)) (<< (ite (is_fzero (float 0 (var r15) )) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x7) false))) (set r30 (fbits (var result))))
 d "rev r15, r10" 4ff90028 0x0 nop
 d "xb r11" 60f90020 0x0 nop
+d "xb r11" 107c 0x0 nop

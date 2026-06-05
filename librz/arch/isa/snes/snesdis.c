@@ -20,6 +20,7 @@ int snesDisass(int M_flag, int X_flag, ut64 pc, RzAsmOp *op, const ut8 *buf, int
 		rz_asm_op_set_asm(op, s_op->name);
 		break;
 	case SNES_OP_16BIT:
+		rz_return_val_if_fail(len >= 2, 0);
 		if (*buf % 0x20 == 0x10 || *buf == 0x80) { // relative branch
 			rz_asm_op_setf_asm(op, s_op->name, (ut32)(pc + 2 + (st8)buf[1]));
 		} else {
@@ -27,6 +28,7 @@ int snesDisass(int M_flag, int X_flag, ut64 pc, RzAsmOp *op, const ut8 *buf, int
 		}
 		break;
 	case SNES_OP_24BIT:
+		rz_return_val_if_fail(len >= 3, 0);
 		if (*buf == 0x44 || *buf == 0x54) { // mvp and mvn
 			rz_asm_op_setf_asm(op, s_op->name, buf[1], buf[2]);
 		} else if (*buf == 0x82) { // brl
@@ -36,16 +38,20 @@ int snesDisass(int M_flag, int X_flag, ut64 pc, RzAsmOp *op, const ut8 *buf, int
 		}
 		break;
 	case SNES_OP_32BIT:
+		rz_return_val_if_fail(len >= 4, 0);
 		rz_asm_op_setf_asm(op, s_op->name, buf[1] | buf[2] << 8 | buf[3] << 16);
 		break;
 	case SNES_OP_IMM_M:
 		if (M_flag) {
+			rz_return_val_if_fail(len >= 2, 0);
 			rz_asm_op_setf_asm(op, "%s #0x%02x", s_op->name, buf[1]);
 		} else {
+			rz_return_val_if_fail(len >= 1, 0);
 			rz_asm_op_setf_asm(op, "%s #0x%04x", s_op->name, rz_read_le16(buf + 1));
 		}
 		break;
 	case SNES_OP_IMM_X:
+		rz_return_val_if_fail(len < 3, 0);
 		if (X_flag) {
 			rz_asm_op_setf_asm(op, "%s #0x%02x", s_op->name, buf[1]);
 		} else {
