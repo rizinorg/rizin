@@ -99,6 +99,7 @@ RZ_API double rz_hash_entropy_fraction(RZ_NONNULL const ut8 *data, ut64 len);
 RZ_API double rz_hash_chisquare(RZ_NONNULL const ut8 *data, ut64 len);
 RZ_API double rz_hash_ioc(RZ_NONNULL const ut8 *data, ut64 len);
 RZ_API double rz_hash_min_entropy(RZ_NONNULL const ut8 *data, ut64 len);
+RZ_API double rz_hash_serial_correlation(RZ_NONNULL const ut8 *data, ut64 len);
 
 #endif
 
@@ -192,6 +193,7 @@ extern RzHashPlugin rz_hash_plugin_temperature;
 extern RzHashPlugin rz_hash_plugin_chisquare;
 extern RzHashPlugin rz_hash_plugin_ioc;
 extern RzHashPlugin rz_hash_plugin_minentropy;
+extern RzHashPlugin rz_hash_plugin_serialcorr;
 
 #ifdef __cplusplus
 }

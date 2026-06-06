@@ -95,6 +95,7 @@ hash_plugins_list = [
   'chisquare',
   'ioc',
   'minentropy',
+  'serialcorr',
 ]
 
 hash_plugins = {
@@ -149,6 +150,7 @@ rz_hash_sources = [
   'p/algo_chisquare.c',
   'p/algo_ioc.c',
   'p/algo_minentropy.c',
+  'p/algo_serialcorr.c',
   'algorithms/mod255/mod255.c',
   'algorithms/parity/parity.c',
   'algorithms/entropy/entropy.c',
@@ -156,6 +158,7 @@ rz_hash_sources = [
   'algorithms/chisquare/chisquare.c',
   'algorithms/ioc/ioc.c',
   'algorithms/minentropy/minentropy.c',
+  'algorithms/serialcorr/serialcorr.c',
   'algorithms/adler32/adler32.c',
   'algorithms/crc/crca.c',
   'algorithms/xor/xor.c',

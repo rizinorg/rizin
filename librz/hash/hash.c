@@ -253,6 +253,27 @@ RZ_API double rz_hash_min_entropy(RZ_NONNULL const ut8 *data, ut64 len) {
 	return e;
 }
 
+/**
+ * \brief      Calculates the serial correlation coefficient of the given input
+ *
+ * \param[in]  data  The input buffer
+ * \param[in]  len   The size of the input
+ *
+ * \return     The resulting serial correlation coefficient of the input
+ */
+RZ_API double rz_hash_serial_correlation(RZ_NONNULL const ut8 *data, ut64 len) {
+	rz_return_val_if_fail(data, 0.0);
+	const RzHashPlugin *plugin = &rz_hash_plugin_serialcorr;
+	ut8 *digest = NULL;
+	if (!plugin->small_block(data, len, &digest, NULL)) {
+		RZ_LOG_ERROR("msg digest: cannot calculate serial correlation\n");
+		return 0.0;
+	}
+	double e = rz_read_be_double(digest);
+	free(digest);
+	return e;
+}
+
 static int hash_cfg_config_compare(const void *value, const void *data, void *user) {
 	const HashCfgConfig *mdc = (const HashCfgConfig *)data;
 	const char *name = (const char *)value;
@@ -680,6 +701,9 @@ RZ_API RZ_OWN char *rz_hash_cfg_get_result_string(RZ_NONNULL RzHashCfg *md, RZ_N
 	} else if (!strcmp(name, "minentropy")) {
 		double minentropy = rz_read_be_double(mdc->digest);
 		return rz_str_newf("%.8f", minentropy);
+	} else if (!strcmp(name, "serialcorr")) {
+		double serialcorr = rz_read_be_double(mdc->digest);
+		return rz_str_newf("%.8f", serialcorr);
 	}
 
 	char *string = malloc((mdc->digest_size * 2) + 1);
@@ -770,6 +794,10 @@ RZ_API RZ_OWN char *rz_hash_cfg_calculate_small_block_string(RZ_NONNULL RzHash *
 		double minentropy = rz_read_be_double(digest);
 		free(digest);
 		return rz_str_newf("%.8f", minentropy);
+	} else if (!strcmp(name, "serialcorr")) {
+		double serialcorr = rz_read_be_double(digest);
+		free(digest);
+		return rz_str_newf("%.8f", serialcorr);
 	} else if (!strcmp(name, "ssdeep")) {
 		return (char *)digest;
 	}
