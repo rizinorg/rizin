@@ -328,7 +328,7 @@ RZ_API RZ_BORROW RzListIter *rz_list_append(RZ_NONNULL RzList *list, RZ_NONNULL 
 RZ_API RZ_BORROW RzListIter *rz_list_prepend(RZ_NONNULL RzList *list, RZ_NONNULL void *data) {
 	rz_return_val_if_fail(list, NULL);
 
-	RzListIter *item = RZ_NEW0(RzListIter);
+	RzListIter *item = RZ_NEW(RzListIter);
 	if (!item) {
 		return NULL;
 	}
@@ -513,7 +513,7 @@ RZ_API RZ_BORROW RzListIter *rz_list_add_sorted(RZ_NONNULL RzList *list, RZ_NONN
 	for (it = list->head; it && it->val && cmp(data, it->val, user) > 0; it = it->next) {
 	}
 	if (it) {
-		item = RZ_NEW0(RzListIter);
+		item = RZ_NEW(RzListIter);
 		if (!item) {
 			return NULL;
 		}
