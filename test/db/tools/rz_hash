@@ -294,6 +294,7 @@ ____h_ murmur3-x64-128 MIT        Austin Appleby                 MurmurHash3 x64
 ____h_ murmur3-x86-128 MIT        Austin Appleby                 MurmurHash3 x86 128-bit non-cryptographic hash
 ____h_ murmur3-x86-32 MIT        Austin Appleby                 MurmurHash3 x86 32-bit non-cryptographic hash
 ____h_ parity         LGPL3      deroad                         Parity checksum
+____h_ ror13          LGPL3      shessaanand                    ROR13 API hashing
 ____hm sha1           LGPL3      deroad                         SHA-1 cryptographic hash
 ____hm sha256         BSD-3      Aaron D. Gifford               SHA-256 cryptographic hash
 ____hm sha3-224       BSD-3      Andrey Jivsov                  SHA3-224 cryptographic hash
@@ -773,6 +774,7 @@ string: 0x00000000-0x00000005 murmur3-x64-128: computed hash doesn't match the e
 string: 0x00000000-0x00000005 murmur3-x86-128: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 murmur3-x86-32: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 parity: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 ror13: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha1: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha256: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha3-224: computed hash doesn't match the expected one
@@ -1579,6 +1581,13 @@ string: 0x00000000-0x00000005 ssdeep: 3:oIKn:oIKn
 EOF
 RUN
 
+NAME=rz-hash -a ror13 -s test
+TOOL=rz-hash
+ARGS=-a ror13 -s test
+EXPECT=<<EOF
+string: 0x00000000-0x00000004 ror13: eb9819b4
+EOF
+RUN
 
 NAME=rz-hash -a ssdeep bins/elf/analysis/hello-arm32
 TOOL=rz-hash

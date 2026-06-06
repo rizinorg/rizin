@@ -72,6 +72,7 @@ static hash_data_t hashes_to_test[] = {
 	{ INDATA("password"), .algo = "fletcher64", .expected = "e7d0e5d75732594b" },
 	{ INDATA("password"), .algo = "fnv1a", .expected = "364b5f18" },
 	{ INDATA("password"), .algo = "jenkins", .expected = "08d63509" },
+	{ INDATA("password"), .algo = "ror13", .expected = "731b5a5e" },
 	{ INDATA("password"), .algo = "adler32", .expected = "7403910f" },
 	{ INDATA("password"), .algo = "crc8smbus", .expected = "4f" },
 	{ INDATA("password"), .algo = "crc8cdma2000", .expected = "d6" },
