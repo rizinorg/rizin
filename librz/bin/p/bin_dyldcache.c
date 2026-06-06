@@ -378,7 +378,7 @@ static RzPVector /*<RzBinClass *>*/ *dyldcache_classes(RzBinFile *bf) {
 		return NULL;
 	}
 
-	RzPVector *ret = rz_pvector_new(free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_class_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -451,8 +451,8 @@ static RzPVector /*<RzBinClass *>*/ *dyldcache_classes(RzBinFile *bf) {
 
 				RzBinClass *klass;
 				if (!(klass = RZ_NEW0(RzBinClass)) ||
-					!(klass->methods = rz_list_new()) ||
-					!(klass->fields = rz_list_new())) {
+					!(klass->methods = rz_list_newf((RzListFree)rz_bin_symbol_free)) ||
+					!(klass->fields = rz_list_newf((RzListFree)rz_bin_class_field_free))) {
 					RZ_FREE(klass);
 					RZ_FREE(pointers);
 					RZ_FREE(sections);
