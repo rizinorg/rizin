@@ -363,10 +363,21 @@ static bool bin_coff_init_scn_va(struct rz_bin_coff_obj *obj) {
 	if (!obj->scn_va) {
 		return false;
 	}
+	// A fully linked executable (F_EXEC) carries the real load addresses in
+	// each section's s_vaddr; honor them so section and symbol VAs match the
+	// binary (e.g. TI COFF executables place .text at 0x100, .bss high, and
+	// vectors at 0xffff00 -- not a packed sequential layout). For relocatable
+	// objects (s_vaddr typically all zero) keep the historical sequential,
+	// 16-aligned fallback so each section still gets a distinct base.
+	const bool is_exec = (obj->hdr.f_flags & COFF_FLAGS_TI_F_EXEC) != 0;
 	size_t i = 0;
 	ut64 va = 0;
 	CoffScnHdr *scn_hdr;
 	rz_vector_enumerate (obj->scn_hdrs, scn_hdr, i) {
+		if (is_exec) {
+			obj->scn_va[i] = scn_hdr->s_vaddr;
+			continue;
+		}
 		obj->scn_va[i] = va;
 		va += scn_hdr->s_size ? scn_hdr->s_size : 16;
 		va = RZ_ROUND(va, 16ULL);

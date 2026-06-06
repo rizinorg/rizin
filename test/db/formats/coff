@@ -247,7 +247,7 @@ iS~.text
 EOF
 EXPECT=<<EOF
 arch     tms320
-0x00000236 0x2da 0x00000030 0x2da   0x0 -r-x .text                 CNT_CODE,MEM_PURGEABLE,MEM_NO_READ
+0x00000236 0x2da 0x00000100 0x2da   0x0 -r-x .text                 CNT_CODE,MEM_PURGEABLE,MEM_NO_READ
 EOF
 RUN
 
@@ -260,5 +260,20 @@ EOF
 EXPECT=<<EOF
 arch     tms320
 cpu      c55x
+EOF
+RUN
+
+NAME=TI COFF v2: debug-line symbols do not desync C55x disassembly
+FILE=bins/tms320/emulateme_nostd.ccsv5.c55x.ticoff2.dbg.coff
+CMDS=<<EOF
+e analysis.cpu=c55x
+e asm.cpu=c55x
+pi 4 @ 0x100
+EOF
+EXPECT=<<EOF
+mov 0x0, ac1
+cmpu ac1 >= ac0, tc1
+bcc 0x2F, tc1
+mov xar0, ac3
 EOF
 RUN
