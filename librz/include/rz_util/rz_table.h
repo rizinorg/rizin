@@ -85,6 +85,7 @@ RZ_API void rz_table_group(RZ_NONNULL RzTable *t, size_t nth, RZ_NULLABLE RzTabl
 RZ_API bool rz_table_query(RZ_NONNULL RzTable *t, RZ_NULLABLE const char *q);
 RZ_API bool rz_table_align(RZ_NONNULL RzTable *t, size_t nth, RzTableAlign align);
 RZ_API RZ_OWN RzTable *rz_table_transpose(RZ_NONNULL RzTable *t);
+RZ_API RZ_OWN RzTable *rz_table_clone(RZ_NONNULL const RzTable *t);
 RZ_API void rz_table_columns_select(RZ_NONNULL RzTable *t, RZ_NONNULL RzList /*<char *>*/ *col_names);
 RZ_API void rz_table_show_header(RZ_NONNULL RzTable *t, bool show_header);
 RZ_API void rz_table_set_char_mode(RZ_NONNULL RzTable *t, RzTableCharMode mode);
@@ -95,6 +96,7 @@ typedef struct rz_table_view_t {
 } RzTableView;
 
 RZ_API RZ_OWN RzTableView *rz_table_view_new(RZ_NONNULL const RzTable *t);
+RZ_API RZ_OWN RzTableView *rz_table_view_new_from_view(RZ_NONNULL const RzTableView *view);
 RZ_API void rz_table_view_free(RZ_NULLABLE RzTableView *view);
 RZ_API bool rz_table_view_query(RZ_NONNULL RzTableView *view, RZ_NULLABLE const char *q);
 RZ_API RZ_OWN char *rz_table_view_tostring(RZ_NONNULL RzTableView *view);

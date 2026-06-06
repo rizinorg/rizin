@@ -494,10 +494,10 @@ bool test_rz_table_view(void) {
 	mu_assert_streq(orig_str,
 		"ascii code \n"
 		"-----------\n"
-		"c       99\n"
+		"a       97\n"
 		"b       98\n"
-		"a       97\n",
-		"original table is modified in-place since the view does not recreate it");
+		"c       99\n",
+		"original table is not modified in-place since the view recreates it");
 	free(orig_str);
 
 	char *view_str = rz_table_view_tostring(view);

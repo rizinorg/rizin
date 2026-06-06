@@ -1392,7 +1392,8 @@ RZ_API void rz_table_columns_select(RZ_NONNULL RzTable *t, RZ_NONNULL RzList /*<
 	RzTableRow *row;
 	rz_vector_foreach (t->rows, row) {
 		RzPVector *old_items = row->items;
-		RzPVector *new_items = rz_pvector_new(free);
+		RzPVectorFree free_func = old_items ? (RzPVectorFree)old_items->v.free_user : NULL;
+		RzPVector *new_items = rz_pvector_new(free_func);
 
 		for (size_t i = 0; i < new_count; i++) {
 			char *item = rz_pvector_at(old_items, col_sources[i].prev_index);
@@ -1410,8 +1411,8 @@ RZ_API void rz_table_columns_select(RZ_NONNULL RzTable *t, RZ_NONNULL RzList /*<
 		void **item;
 		size_t i = 0;
 		rz_pvector_enumerate (old_items, item, i) {
-			if (free_cols[i]) {
-				free(*item);
+			if (free_cols[i] && free_func) {
+				free_func(*item);
 			}
 		}
 		// Set old_items->free = NULL to avoid useful items are freed
@@ -1764,6 +1765,136 @@ RZ_API RZ_OWN RzTable *rz_table_transpose(RZ_NONNULL RzTable *t) {
 	return transpose;
 }
 
+RZ_API RZ_OWN RzTable *rz_table_clone(RZ_NONNULL const RzTable *t) {
+	rz_return_val_if_fail(t, NULL);
+	RzTable *clone = rz_table_new();
+	if (!clone) {
+		return NULL;
+	}
+	clone->totalCols = t->totalCols;
+	clone->showHeader = t->showHeader;
+	clone->showFancy = t->showFancy;
+	clone->showJSON = t->showJSON;
+	clone->showCSV = t->showCSV;
+	clone->showSum = t->showSum;
+	clone->char_mode = t->char_mode;
+	clone->color = t->color;
+	clone->color_user = t->color_user;
+
+	RzTableColumn *col;
+	rz_vector_foreach (t->cols, col) {
+		RzTableColumn new_col = *col;
+		new_col.name = col->name ? rz_str_dup(col->name) : NULL;
+		if (col->name && !new_col.name) {
+			rz_table_free(clone);
+			return NULL;
+		}
+		rz_vector_push(clone->cols, &new_col);
+	}
+
+	RzTableRow *row;
+	rz_vector_foreach (t->rows, row) {
+		RzTableRow new_row = { 0 };
+		bool deep_copy = row->items && row->items->v.free_user != NULL;
+		new_row.items = rz_pvector_new(deep_copy ? (RzPVectorFree)row->items->v.free_user : NULL);
+		if (!new_row.items) {
+			rz_table_free(clone);
+			return NULL;
+		}
+		void **pitem;
+		rz_pvector_foreach (row->items, pitem) {
+			char *item = *pitem;
+			char *new_item;
+			if (deep_copy) {
+				new_item = item ? rz_str_dup(item) : NULL;
+				if (item && !new_item) {
+					rz_pvector_free(new_row.items);
+					rz_table_free(clone);
+					return NULL;
+				}
+			} else {
+				new_item = item;
+			}
+			rz_pvector_push(new_row.items, new_item);
+		}
+		rz_vector_push(clone->rows, &new_row);
+	}
+
+	return clone;
+}
+
+static RzTable *rz_table_clone_shallow(const RzTable *t) {
+	rz_return_val_if_fail(t, NULL);
+	RzTable *clone = rz_table_new();
+	if (!clone) {
+		return NULL;
+	}
+	clone->totalCols = t->totalCols;
+	clone->showHeader = t->showHeader;
+	clone->showFancy = t->showFancy;
+	clone->showJSON = t->showJSON;
+	clone->showCSV = t->showCSV;
+	clone->showSum = t->showSum;
+	clone->char_mode = t->char_mode;
+	clone->color = t->color;
+	clone->color_user = t->color_user;
+
+	RzTableColumn *col;
+	rz_vector_foreach (t->cols, col) {
+		RzTableColumn new_col = *col;
+		new_col.name = col->name ? rz_str_dup(col->name) : NULL;
+		if (col->name && !new_col.name) {
+			rz_table_free(clone);
+			return NULL;
+		}
+		rz_vector_push(clone->cols, &new_col);
+	}
+
+	RzTableRow *row;
+	rz_vector_foreach (t->rows, row) {
+		RzTableRow new_row = { 0 };
+		new_row.items = rz_pvector_new(NULL);
+		if (!new_row.items) {
+			rz_table_free(clone);
+			return NULL;
+		}
+		void **pitem;
+		rz_pvector_foreach (row->items, pitem) {
+			char *item = *pitem;
+			rz_pvector_push(new_row.items, item);
+		}
+		rz_vector_push(clone->rows, &new_row);
+	}
+
+	return clone;
+}
+
+static bool rz_table_realize(RzTable *t) {
+	rz_return_val_if_fail(t, false);
+	RzTableRow *row;
+	rz_vector_foreach (t->rows, row) {
+		if (row->items && row->items->v.free == NULL) {
+			RzPVector *new_items = rz_pvector_new(free);
+			if (!new_items) {
+				return false;
+			}
+			void **pitem;
+			rz_pvector_foreach (row->items, pitem) {
+				char *item = *pitem;
+				char *new_item = item ? rz_str_dup(item) : NULL;
+				if (item && !new_item) {
+					rz_pvector_free(new_items);
+					return false;
+				}
+				rz_pvector_push(new_items, new_item);
+			}
+			rz_pvector_free(row->items);
+			row->items = new_items;
+		}
+	}
+	return true;
+}
+
 RZ_API RZ_OWN RzTableView *rz_table_view_new(RZ_NONNULL const RzTable *t) {
 	rz_return_val_if_fail(t, NULL);
 
@@ -1771,20 +1902,43 @@ RZ_API RZ_OWN RzTableView *rz_table_view_new(RZ_NONNULL const RzTable *t) {
 	if (!view) {
 		return NULL;
 	}
-	view->table = (RzTable *)t;
+	view->table = rz_table_clone_shallow(t);
+	if (!view->table) {
+		free(view);
+		return NULL;
+	}
 	return view;
+}
+
+RZ_API RZ_OWN RzTableView *rz_table_view_new_from_view(RZ_NONNULL const RzTableView *view) {
+	rz_return_val_if_fail(view && view->table, NULL);
+	RzTableView *new_view = RZ_NEW0(RzTableView);
+	if (!new_view) {
+		return NULL;
+	}
+	new_view->table = rz_table_clone(view->table);
+	if (!new_view->table) {
+		free(new_view);
+		return NULL;
+	}
+	return new_view;
 }
 
 RZ_API void rz_table_view_free(RZ_NULLABLE RzTableView *view) {
 	if (!view) {
 		return;
 	}
+	rz_table_free(view->table);
 	free(view);
 }
 
 RZ_API bool rz_table_view_query(RZ_NONNULL RzTableView *view, RZ_NULLABLE const char *q) {
 	rz_return_val_if_fail(view && view->table, false);
-	return rz_table_query(view->table, q);
+	bool res = rz_table_query(view->table, q);
+	if (res) {
+		rz_table_realize(view->table);
+	}
+	return res;
 }
 
 RZ_API RZ_OWN char *rz_table_view_tostring(RZ_NONNULL RzTableView *view) {
