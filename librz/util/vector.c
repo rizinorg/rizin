@@ -562,22 +562,15 @@ RZ_API RZ_OWN void *rz_vector_take_array(RZ_BORROW RzVector *vec) {
 
 // CLRS Quicksort. It is slow, but simple.
 #define VEC_INDEX(a, i) (char *)a + elem_size *(i)
-static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzVectorComparator cmp, bool reverse, void *user) {
-	rz_return_if_fail(a);
+
+// Recursive quicksort. \p t and \p pivot are caller-provided scratch buffers of
+// elem_size bytes each; they are reused across the whole recursion so the sort
+// performs no per-call allocation.
+static void vector_quick_sort_rec(void *a, size_t elem_size, size_t len, RzVectorComparator cmp, bool reverse, void *user, void *t, void *pivot) {
 	if (len <= 1) {
 		return;
 	}
 	size_t i = rand() % len, j = 0;
-	void *t, *pivot;
-
-	t = (void *)malloc(elem_size);
-	pivot = (void *)malloc(elem_size);
-	if (!t || !pivot) {
-		free(t);
-		free(pivot);
-		RZ_LOG_ERROR("Failed to allocate memory\n");
-		return;
-	}
 
 	memcpy(pivot, VEC_INDEX(a, i), elem_size);
 	if (i != len - 1) {
@@ -598,10 +591,42 @@ static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzVectorCom
 		memcpy(VEC_INDEX(a, len - 1), VEC_INDEX(a, j), elem_size);
 	}
 	memcpy(VEC_INDEX(a, j), pivot, elem_size);
-	RZ_FREE(t);
-	RZ_FREE(pivot);
-	vector_quick_sort(a, elem_size, j, cmp, reverse, user);
-	vector_quick_sort(VEC_INDEX(a, j + 1), elem_size, len - j - 1, cmp, reverse, user);
+	vector_quick_sort_rec(a, elem_size, j, cmp, reverse, user, t, pivot);
+	vector_quick_sort_rec(VEC_INDEX(a, j + 1), elem_size, len - j - 1, cmp, reverse, user, t, pivot);
+}
+
+#define RZ_VECTOR_SORT_TMP_SIZE 256
+
+static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzVectorComparator cmp, bool reverse, void *user) {
+	rz_return_if_fail(a);
+	if (len <= 1) {
+		return;
+	}
+	// Allocate the two scratch buffers once for the whole sort instead of on
+	// every recursive call. Small elements (the common case) use the stack.
+	ut8 t_buf[RZ_VECTOR_SORT_TMP_SIZE];
+	ut8 pivot_buf[RZ_VECTOR_SORT_TMP_SIZE];
+	void *t = elem_size <= RZ_VECTOR_SORT_TMP_SIZE ? (void *)t_buf : malloc(elem_size);
+	void *pivot = elem_size <= RZ_VECTOR_SORT_TMP_SIZE ? (void *)pivot_buf : malloc(elem_size);
+	if (!t || !pivot) {
+		if (t != (void *)t_buf) {
+			free(t);
+		}
+		if (pivot != (void *)pivot_buf) {
+			free(pivot);
+		}
+		RZ_LOG_ERROR("Failed to allocate memory\n");
+		return;
+	}
+
+	vector_quick_sort_rec(a, elem_size, len, cmp, reverse, user, t, pivot);
+
+	if (t != (void *)t_buf) {
+		free(t);
+	}
+	if (pivot != (void *)pivot_buf) {
+		free(pivot);
+	}
 }
 #undef VEC_INDEX
 
