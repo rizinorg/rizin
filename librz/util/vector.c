@@ -577,8 +577,8 @@ static void vector_quick_sort_rec(void *a, size_t elem_size, size_t len, RzVecto
 		memcpy(VEC_INDEX(a, i), VEC_INDEX(a, len - 1), elem_size);
 	}
 	for (i = 0; i < len - 1; i++) {
-		if ((cmp(VEC_INDEX(a, i), pivot, user) < 0 && !reverse) ||
-			(cmp(VEC_INDEX(a, i), pivot, user) > 0 && reverse)) {
+		int c = cmp(VEC_INDEX(a, i), pivot, user);
+		if ((c < 0 && !reverse) || (c > 0 && reverse)) {
 			if (j != i) {
 				memcpy(t, VEC_INDEX(a, i), elem_size);
 				memcpy(VEC_INDEX(a, i), VEC_INDEX(a, j), elem_size);
