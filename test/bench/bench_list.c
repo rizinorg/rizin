@@ -333,6 +333,67 @@ static void bench_purge_v4_empty(RzTable *t_out) {
 	rz_list_free(list);
 }
 
+#define IDX_N 50000
+
+// Build a list of n non-null elements once, for reuse across timed iterations.
+static RzList *make_index_list(ut32 n) {
+	RzList *list = rz_list_new();
+	populate_list(list, n);
+	return list;
+}
+
+// rz_list_prepend: per-element prepend throughput (allocation + linking).
+static void bench_prepend_50k(RzTable *t_out) {
+	RZ_BENCH_RUN("prepend_50k", t_out, 200, {
+		RzList *list = rz_list_new();
+		for (ut32 j = 0; j < IDX_N; j++) {
+			rz_list_prepend(list, (void *)(size_t)(j + 1));
+		}
+		rz_list_free(list);
+	});
+}
+
+// rz_list_get_n, tail-biased indices: new code walks backward from the tail.
+static void bench_get_n_tail_50k(RzTable *t_out) {
+	RzList *list = make_index_list(IDX_N);
+	RZ_BENCH_RUN_I("get_n_tail_50k", i, t_out, 200000, {
+		ut32 n = IDX_N - 1 - (ut32)(i & 7); // always within 8 of the tail
+		RZ_DONT_OPTIMIZE(void *, rz_list_get_n(list, n));
+	});
+	rz_list_free(list);
+}
+
+// rz_list_get_n, uniform-random indices: new code averages len/4 vs len/2 steps.
+static void bench_get_n_random_50k(RzTable *t_out) {
+	RzList *list = make_index_list(IDX_N);
+	RZ_BENCH_RUN_I("get_n_random_50k", i, t_out, 100000, {
+		ut32 n = (ut32)((i * 2654435761u) % IDX_N); // Knuth multiplicative hash
+		RZ_DONT_OPTIMIZE(void *, rz_list_get_n(list, n));
+	});
+	rz_list_free(list);
+}
+
+// rz_list_set_n, tail-biased indices.
+static void bench_set_n_tail_50k(RzTable *t_out) {
+	RzList *list = make_index_list(IDX_N);
+	RZ_BENCH_RUN_I("set_n_tail_50k", i, t_out, 200000, {
+		ut32 n = IDX_N - 1 - (ut32)(i & 7);
+		RZ_DONT_OPTIMIZE(bool, rz_list_set_n(list, n, (void *)(size_t)(n + 1)));
+	});
+	rz_list_free(list);
+}
+
+// rz_list_del_n at a fixed interior position. The list is large and shrinks by
+// only one element per iteration, so the walk length stays ~constant and the
+// timing isolates the walk + unlink rather than list rebuild/teardown.
+static void bench_del_n_interior(RzTable *t_out) {
+	RzList *list = make_index_list(100000);
+	RZ_BENCH_RUN("del_n_pos2000_of_100k", t_out, 2000, {
+		rz_list_del_n(list, 2000);
+	});
+	rz_list_free(list);
+}
+
 int main() {
 	RzTable *t = rz_table_new();
 	RZ_BENCH_TABLE_INIT(t);
@@ -369,6 +430,13 @@ int main() {
 	bench_purge_v2_large_with_free(t);
 	bench_purge_v3_large_with_free(t);
 	bench_purge_v4_large_with_free(t);
+
+	// Functions touched by the RzList traversal optimizations
+	bench_prepend_50k(t);
+	bench_get_n_tail_50k(t);
+	bench_get_n_random_50k(t);
+	bench_set_n_tail_50k(t);
+	bench_del_n_interior(t);
 
 	RZ_BENCH_TABLE_PRINT_AND_FREE(t);
 	return 0;
