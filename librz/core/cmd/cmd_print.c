@@ -5753,6 +5753,20 @@ RZ_IPI RzCmdStatus rz_print_equal_equal_chisquare_visual_handler(RzCore *core, i
 	return print_histogram_metric(core, argc, argv, false, true, &metric_chisquare);
 }
 
+static const RzBlockMetricSpec metric_ioc = { rz_hash_ioc, 0.0, 1.0, false, 4 };
+
+RZ_IPI RzCmdStatus rz_print_equal_ioc_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_metric(core, argc, argv, true, false, &metric_ioc);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_ioc_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_metric(core, argc, argv, false, false, &metric_ioc);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_ioc_visual_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_metric(core, argc, argv, false, true, &metric_ioc);
+}
+
 RZ_IPI RzCmdStatus rz_print_rising_and_falling_entropy_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	return print_rising_and_falling_entropy(core, argc, argv, state);
 }

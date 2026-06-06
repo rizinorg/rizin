@@ -93,6 +93,7 @@ hash_plugins_list = [
   'entropy_fract',
   'temperature',
   'chisquare',
+  'ioc',
 ]
 
 hash_plugins = {
@@ -145,11 +146,13 @@ rz_hash_sources = [
   'p/algo_entropy_fractional.c',
   'p/algo_temperature.c',
   'p/algo_chisquare.c',
+  'p/algo_ioc.c',
   'algorithms/mod255/mod255.c',
   'algorithms/parity/parity.c',
   'algorithms/entropy/entropy.c',
   'algorithms/temperature/temperature.c',
   'algorithms/chisquare/chisquare.c',
+  'algorithms/ioc/ioc.c',
   'algorithms/adler32/adler32.c',
   'algorithms/crc/crca.c',
   'algorithms/xor/xor.c',

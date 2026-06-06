@@ -2100,6 +2100,19 @@ commands:
           - name: skip
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
+      - name: p=I
+        summary: Show a vertical histogram of index of coincidence per each block
+        cname: print_equal_ioc
+        args:
+          - name: blocks
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: totalsize
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: skip
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
       - name: p=r
         summary: Print rising and falling entropy.
         cname: print_rising_and_falling_entropy
@@ -2353,6 +2366,26 @@ commands:
               - name: p==Cv
                 summary: Show a interactive horizontal histogram of chi-square (vs uniform) per each block
                 cname: print_equal_equal_chisquare_visual
+                args: []
+          - name: p==I
+            summary: Show a horizontal histogram of index of coincidence per each block
+            subcommands:
+              - name: p==I
+                summary: Show a horizontal histogram of index of coincidence per each block
+                cname: print_equal_equal_ioc
+                args:
+                  - name: blocks
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: totalsize
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: skip
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+              - name: p==Iv
+                summary: Show a interactive horizontal histogram of index of coincidence per each block
+                cname: print_equal_equal_ioc_visual
                 args: []
           - name: p==i
             summary: Show a horizontal histogram of invalid instructions per each block
