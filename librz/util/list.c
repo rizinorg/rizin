@@ -440,20 +440,8 @@ RZ_API ut32 rz_list_del_n(RZ_NONNULL RzList *list, ut32 n) {
 
 	rz_return_val_if_fail(list, false);
 
-	for (it = list->head, i = 0; it && it->val; it = it->next, i++) {
+	for (it = list->head, i = 0; it; it = it->next, i++) {
 		if (i == n) {
-			if (!it->prev && !it->next) {
-				list->head = list->tail = NULL;
-			} else if (!it->prev) {
-				it->next->prev = NULL;
-				list->head = it->next;
-			} else if (!it->next) {
-				it->prev->next = NULL;
-				list->tail = it->prev;
-			} else {
-				it->prev->next = it->next;
-				it->next->prev = it->prev;
-			}
 			rz_list_delete(list, it);
 			return true;
 		}
