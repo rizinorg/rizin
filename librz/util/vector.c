@@ -847,7 +847,7 @@ RZ_API void rz_pvector_remove_data(RzPVector *vec, void *x) {
 		return;
 	}
 
-	size_t index = (el - (void **)vec->v.a) * sizeof(void **) / vec->v.elem_size;
+	size_t index = el - (void **)vec->v.a;
 	rz_vector_remove_at(&vec->v, index, NULL);
 }
 
