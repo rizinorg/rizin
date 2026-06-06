@@ -1584,8 +1584,9 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 	RzBitVector *sig = rz_float_get_mantissa(f);
 	bool is_zero = rz_bv_is_zero_vector(sig) && exp == 0;
 
-	// sub normal one has no hidden bit, others should set to 1
-	if (!is_subnormal) {
+	// binary80 stores the integer bit explicitly in the mantissa; all other
+	// normal formats use a hidden bit that must be injected here
+	if (!is_subnormal && format != RZ_FLOAT_IEEE754_BIN_80) {
 		rz_bv_set(sig, man_len, true);
 	}
 
@@ -1639,9 +1640,7 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 		tmp = NULL;
 	}
 
-	// WARN: possible overflow if length < exp_no_bias
-	// WARN: higher bits may be cut off
-	rz_bv_copy_nbits(ret, 0, rounded, 0, rz_bv_len(rounded));
+	rz_bv_copy_nbits(ret, 0, rounded, 0, RZ_MIN(rz_bv_len(rounded), length));
 	rz_bv_free(rounded);
 	return ret;
 }
