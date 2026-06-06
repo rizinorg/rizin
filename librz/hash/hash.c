@@ -190,6 +190,27 @@ RZ_API double rz_hash_entropy_fraction(RZ_NONNULL const ut8 *data, ut64 len) {
 	return e;
 }
 
+/**
+ * \brief      Calculates the chi-square statistic (vs uniform) of the given input
+ *
+ * \param[in]  data  The input buffer
+ * \param[in]  len   The size of the input
+ *
+ * \return     The resulting chi-square statistic (vs uniform) of the input
+ */
+RZ_API double rz_hash_chisquare(RZ_NONNULL const ut8 *data, ut64 len) {
+	rz_return_val_if_fail(data, 0.0);
+	const RzHashPlugin *plugin = &rz_hash_plugin_chisquare;
+	ut8 *digest = NULL;
+	if (!plugin->small_block(data, len, &digest, NULL)) {
+		RZ_LOG_ERROR("msg digest: cannot calculate chisquare\n");
+		return 0.0;
+	}
+	double e = rz_read_be_double(digest);
+	free(digest);
+	return e;
+}
+
 static int hash_cfg_config_compare(const void *value, const void *data, void *user) {
 	const HashCfgConfig *mdc = (const HashCfgConfig *)data;
 	const char *name = (const char *)value;
@@ -608,6 +629,9 @@ RZ_API RZ_OWN char *rz_hash_cfg_get_result_string(RZ_NONNULL RzHashCfg *md, RZ_N
 	} else if (!strncmp(name, "temperature", strlen("temperature"))) {
 		double temperature = rz_read_be_double(mdc->digest);
 		return rz_str_newf("%.8f", temperature);
+	} else if (!strcmp(name, "chisquare")) {
+		double chisquare = rz_read_be_double(mdc->digest);
+		return rz_str_newf("%.8f", chisquare);
 	}
 
 	char *string = malloc((mdc->digest_size * 2) + 1);
@@ -686,6 +710,10 @@ RZ_API RZ_OWN char *rz_hash_cfg_calculate_small_block_string(RZ_NONNULL RzHash *
 		double temperature = rz_read_be_double(digest);
 		free(digest);
 		return rz_str_newf("%.8f", temperature);
+	} else if (!strcmp(name, "chisquare")) {
+		double chisquare = rz_read_be_double(digest);
+		free(digest);
+		return rz_str_newf("%.8f", chisquare);
 	} else if (!strcmp(name, "ssdeep")) {
 		return (char *)digest;
 	}

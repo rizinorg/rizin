@@ -6,6 +6,14 @@ bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a36 entropy: 3.27819072
 EOF
 RUN
 
+NAME=rz-hash -a chisquare
+TOOL=rz-hash
+ARGS=-a chisquare -s admin
+EXPECT=<<EOF
+string: 0x00000000-0x00000005 chisquare: 251.00000000
+EOF
+RUN
+
 NAME=rz-hash -a md2
 TOOL=rz-hash
 ARGS=-a md2 bins/elf/analysis/hello-linux-x86_64
@@ -224,6 +232,7 @@ ____h_ blake2sp       LGPL3      Farhan-25                      BLAKE2sp cryptog
 ____h_ blake2xb       LGPL3      Farhan-25                      BLAKE2xb cryptographic hash
 ____h_ blake2xs       LGPL3      Farhan-25                      BLAKE2xs cryptographic hash
 ____h_ blake3         CC0        Samuel Neves,Jack O'Connor     BLAKE3 cryptographic hash
+____h_ chisquare      LGPL3      xvilka                         Chi-square goodness-of-fit vs uniform
 ____h_ crc15can       LGPL3      deroad                         CRC-15 CAN checksum
 ____h_ crc16          LGPL3      deroad                         CRC-16 IBM/ARC checksum
 ____h_ crc16augccitt  LGPL3      deroad                         CRC-16 AUG-CCITT checksum
@@ -703,6 +712,7 @@ string: 0x00000000-0x00000005 blake2sp: computed hash doesn't match the expected
 string: 0x00000000-0x00000005 blake2xb: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 blake2xs: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 blake3: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 chisquare: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 crc15can: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 crc16: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 crc16augccitt: computed hash doesn't match the expected one

@@ -96,6 +96,7 @@ RZ_API RZ_OWN char *rz_hash_ssdeep(RZ_NONNULL const ut8 *input, size_t size);
 RZ_API ut32 rz_hash_xxhash(RZ_NONNULL const ut8 *input, size_t size);
 RZ_API double rz_hash_entropy(RZ_NONNULL const ut8 *data, ut64 len);
 RZ_API double rz_hash_entropy_fraction(RZ_NONNULL const ut8 *data, ut64 len);
+RZ_API double rz_hash_chisquare(RZ_NONNULL const ut8 *data, ut64 len);
 
 #endif
 
@@ -186,6 +187,7 @@ extern RzHashPlugin rz_hash_plugin_blake3;
 extern RzHashPlugin rz_hash_plugin_ssdeep;
 extern RzHashPlugin rz_hash_plugin_sm3;
 extern RzHashPlugin rz_hash_plugin_temperature;
+extern RzHashPlugin rz_hash_plugin_chisquare;
 
 #ifdef __cplusplus
 }
