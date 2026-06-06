@@ -835,6 +835,7 @@ static const RzCmdDescArg print_equal_call_args[4];
 static const RzCmdDescArg print_equal_entropy_args[4];
 static const RzCmdDescArg print_equal_chisquare_args[4];
 static const RzCmdDescArg print_equal_ioc_args[4];
+static const RzCmdDescArg print_equal_minentropy_args[4];
 static const RzCmdDescArg print_rising_and_falling_entropy_args[3];
 static const RzCmdDescArg print_equal_invalid_args[4];
 static const RzCmdDescArg print_equal_jump_args[4];
@@ -851,6 +852,7 @@ static const RzCmdDescArg print_equal_equal_call_args[4];
 static const RzCmdDescArg print_equal_equal_entropy_args[4];
 static const RzCmdDescArg print_equal_equal_chisquare_args[4];
 static const RzCmdDescArg print_equal_equal_ioc_args[4];
+static const RzCmdDescArg print_equal_equal_minentropy_args[4];
 static const RzCmdDescArg print_equal_equal_invalid_args[4];
 static const RzCmdDescArg print_equal_equal_jump_args[4];
 static const RzCmdDescArg print_equal_equal_m_args[4];
@@ -18220,6 +18222,33 @@ static const RzCmdDescHelp print_equal_ioc_help = {
 	.args = print_equal_ioc_args,
 };
 
+static const RzCmdDescArg print_equal_minentropy_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_minentropy_help = {
+	.summary = "Show a vertical histogram of min-entropy per each block",
+	.args = print_equal_minentropy_args,
+};
+
 static const RzCmdDescDetailEntry print_rising_and_falling_entropy_Default_space_values_detail_entries[] = {
 	{ .text = "", .arg_str = NULL, .comment = "Default rising threshold is 0.95 and falling threshold is 0.85" },
 	{ 0 },
@@ -18740,6 +18769,44 @@ static const RzCmdDescArg print_equal_equal_ioc_visual_args[] = {
 static const RzCmdDescHelp print_equal_equal_ioc_visual_help = {
 	.summary = "Show a interactive horizontal histogram of index of coincidence per each block",
 	.args = print_equal_equal_ioc_visual_args,
+};
+
+static const RzCmdDescHelp p_equal__equal_M_help = {
+	.summary = "Show a horizontal histogram of min-entropy per each block",
+};
+static const RzCmdDescArg print_equal_equal_minentropy_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_minentropy_help = {
+	.summary = "Show a horizontal histogram of min-entropy per each block",
+	.args = print_equal_equal_minentropy_args,
+};
+
+static const RzCmdDescArg print_equal_equal_minentropy_visual_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_minentropy_visual_help = {
+	.summary = "Show a interactive horizontal histogram of min-entropy per each block",
+	.args = print_equal_equal_minentropy_visual_args,
 };
 
 static const RzCmdDescHelp p_equal__equal_i_help = {
@@ -25728,6 +25795,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *print_equal_ioc_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=I", rz_print_equal_ioc_handler, &print_equal_ioc_help);
 	rz_warn_if_fail(print_equal_ioc_cd);
 
+	RzCmdDesc *print_equal_minentropy_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=M", rz_print_equal_minentropy_handler, &print_equal_minentropy_help);
+	rz_warn_if_fail(print_equal_minentropy_cd);
+
 	RzCmdDesc *print_rising_and_falling_entropy_cd = rz_cmd_desc_argv_state_new(core->rcmd, p_equal__cd, "p=r", RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_TABLE, rz_print_rising_and_falling_entropy_handler, &print_rising_and_falling_entropy_help);
 	rz_warn_if_fail(print_rising_and_falling_entropy_cd);
 
@@ -25793,6 +25863,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(p_equal__equal_I_cd);
 	RzCmdDesc *print_equal_equal_ioc_visual_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal_I_cd, "p==Iv", rz_print_equal_equal_ioc_visual_handler, &print_equal_equal_ioc_visual_help);
 	rz_warn_if_fail(print_equal_equal_ioc_visual_cd);
+
+	RzCmdDesc *p_equal__equal_M_cd = rz_cmd_desc_group_new(core->rcmd, p_equal__equal__cd, "p==M", rz_print_equal_equal_minentropy_handler, &print_equal_equal_minentropy_help, &p_equal__equal_M_help);
+	rz_warn_if_fail(p_equal__equal_M_cd);
+	RzCmdDesc *print_equal_equal_minentropy_visual_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal_M_cd, "p==Mv", rz_print_equal_equal_minentropy_visual_handler, &print_equal_equal_minentropy_visual_help);
+	rz_warn_if_fail(print_equal_equal_minentropy_visual_cd);
 
 	RzCmdDesc *p_equal__equal_i_cd = rz_cmd_desc_group_new(core->rcmd, p_equal__equal__cd, "p==i", rz_print_equal_equal_invalid_handler, &print_equal_equal_invalid_help, &p_equal__equal_i_help);
 	rz_warn_if_fail(p_equal__equal_i_cd);

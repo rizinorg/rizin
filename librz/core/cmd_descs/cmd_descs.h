@@ -2361,6 +2361,8 @@ RZ_IPI RzCmdStatus rz_print_equal_entropy_handler(RzCore *core, int argc, const 
 RZ_IPI RzCmdStatus rz_print_equal_chisquare_handler(RzCore *core, int argc, const char **argv);
 // "p=I"
 RZ_IPI RzCmdStatus rz_print_equal_ioc_handler(RzCore *core, int argc, const char **argv);
+// "p=M"
+RZ_IPI RzCmdStatus rz_print_equal_minentropy_handler(RzCore *core, int argc, const char **argv);
 // "p=r"
 RZ_IPI RzCmdStatus rz_print_rising_and_falling_entropy_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "p=i"
@@ -2411,6 +2413,10 @@ RZ_IPI RzCmdStatus rz_print_equal_equal_chisquare_visual_handler(RzCore *core, i
 RZ_IPI RzCmdStatus rz_print_equal_equal_ioc_handler(RzCore *core, int argc, const char **argv);
 // "p==Iv"
 RZ_IPI RzCmdStatus rz_print_equal_equal_ioc_visual_handler(RzCore *core, int argc, const char **argv);
+// "p==M"
+RZ_IPI RzCmdStatus rz_print_equal_equal_minentropy_handler(RzCore *core, int argc, const char **argv);
+// "p==Mv"
+RZ_IPI RzCmdStatus rz_print_equal_equal_minentropy_visual_handler(RzCore *core, int argc, const char **argv);
 // "p==i"
 RZ_IPI RzCmdStatus rz_print_equal_equal_invalid_handler(RzCore *core, int argc, const char **argv);
 // "p==iv"

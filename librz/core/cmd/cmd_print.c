@@ -5767,6 +5767,20 @@ RZ_IPI RzCmdStatus rz_print_equal_equal_ioc_visual_handler(RzCore *core, int arg
 	return print_histogram_metric(core, argc, argv, false, true, &metric_ioc);
 }
 
+static const RzBlockMetricSpec metric_minentropy = { rz_hash_min_entropy, 0.0, 8.0, false, 2 };
+
+RZ_IPI RzCmdStatus rz_print_equal_minentropy_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_metric(core, argc, argv, true, false, &metric_minentropy);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_minentropy_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_metric(core, argc, argv, false, false, &metric_minentropy);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_minentropy_visual_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_metric(core, argc, argv, false, true, &metric_minentropy);
+}
+
 RZ_IPI RzCmdStatus rz_print_rising_and_falling_entropy_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	return print_rising_and_falling_entropy(core, argc, argv, state);
 }

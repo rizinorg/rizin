@@ -94,6 +94,7 @@ hash_plugins_list = [
   'temperature',
   'chisquare',
   'ioc',
+  'minentropy',
 ]
 
 hash_plugins = {
@@ -147,12 +148,14 @@ rz_hash_sources = [
   'p/algo_temperature.c',
   'p/algo_chisquare.c',
   'p/algo_ioc.c',
+  'p/algo_minentropy.c',
   'algorithms/mod255/mod255.c',
   'algorithms/parity/parity.c',
   'algorithms/entropy/entropy.c',
   'algorithms/temperature/temperature.c',
   'algorithms/chisquare/chisquare.c',
   'algorithms/ioc/ioc.c',
+  'algorithms/minentropy/minentropy.c',
   'algorithms/adler32/adler32.c',
   'algorithms/crc/crca.c',
   'algorithms/xor/xor.c',

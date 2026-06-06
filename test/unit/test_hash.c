@@ -136,7 +136,9 @@ static hash_data_t hashes_to_test[] = {
 	{ INDATA("password"), .algo = "chisquare", .expected = "312.00000000" },
 	{ INDATA("admin"), .algo = "chisquare", .expected = "251.00000000" },
 	{ INDATA("password"), .algo = "ioc", .expected = "0.03571429" },
-	{ INDATA("admin"), .algo = "ioc", .expected = "0.00000000" }
+	{ INDATA("admin"), .algo = "ioc", .expected = "0.00000000" },
+	{ INDATA("password"), .algo = "minentropy", .expected = "2.00000000" },
+	{ INDATA("admin"), .algo = "minentropy", .expected = "2.32192809" }
 #undef INDATA
 };
 
