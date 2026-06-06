@@ -82,8 +82,8 @@ char *get_AR_regs_class1(ut32 ins_bits) {
 	const ut32 op = (ins_bits >> 4) & 7;
 	const long n = (long int)ins_bits & 0xF;
 	switch (op) {
-	case 0: return rz_str_newf("*ar-%ld", n);
-	case 1: return rz_str_newf("*ar+%ld", n);
+	case 0: return rz_str_newf("*ar%ld-", n);
+	case 1: return rz_str_newf("*ar%ld+", n);
 	case 2: return rz_str_newf("*ar%ld(t0)", n);
 	case 3: return rz_str_newf("*ar%ld", n);
 	case 4: return rz_str_newf("*(ar%ld-t0)", n);
@@ -98,6 +98,7 @@ char *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx) {
 	const ut8 op = ins_bits >> 6;
 	const ut8 op2 = ins_bits & 3;
 	const long reg_num = (ins_bits >> 2) & 0xF;
+	const ut32 scale = idx; /* data-size scale for offset operands (1=word) */
 
 	if (ret_len) {
 		*ret_len = 0;
@@ -116,7 +117,14 @@ char *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx) {
 		return rz_str_newf("*sp(#0x%lx)", (long int)idx * (reg_num | 16 * (op & 7)));
 	}
 
-	type = idx | 16 * op;
+	/* Reaching here, op2 (the 2-bit mm field) is 0 or 1: register-bit
+	 * indirect addressing. The mode index is the 4-bit MMMM field (op);
+	 * mm==1 selects the extended bank (t0b / t2 / t3 / xar15 / k16/k24
+	 * offsets), i.e. mode + 16. The earlier code multiplied the wrong
+	 * field (idx, an operand-scaling parameter) by 16, which mapped e.g.
+	 * "*arN+" (MMMM=1, mm=0) onto "*(arN+t0b)" (type 17) and emitted an
+	 * empty operand for the MMMM>=2 indexed modes. */
+	type = op | (op2 == 1 ? 16 : 0);
 	switch (type) {
 	case 0: return rz_str_newf("*ar%ld-", reg_num);
 	case 1: return rz_str_newf("*ar%ld+", reg_num);
@@ -148,8 +156,8 @@ char *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx) {
 			*ret_len = 2;
 		}
 		switch (type) {
-		case 24: return rz_str_newf("*ar%ld(#%ld)", reg_num, (long int)op * idx);
-		case 25: return rz_str_newf("*+ar%ld(#%ld)", reg_num, (long int)op * idx);
+		case 24: return rz_str_newf("*ar%ld(#%ld)", reg_num, (long int)scale * idx);
+		case 25: return rz_str_newf("*+ar%ld(#%ld)", reg_num, (long int)scale * idx);
 		case 26: return rz_str_newf("*abs16(#0x%lx)", (long int)idx);
 		default: return rz_str_newf("*port(#0x%lx)", (long int)idx);
 		}
@@ -161,8 +169,8 @@ char *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx) {
 			*ret_len = 3;
 		}
 		switch (type) {
-		case 28: return rz_str_newf("*ar%ld(#0x%lx)", reg_num, (long int)idx * op);
-		case 29: return rz_str_newf("*+ar%ld(#0x%lx)", reg_num, (long int)idx * op);
+		case 28: return rz_str_newf("*ar%ld(#0x%lx)", reg_num, (long int)idx * scale);
+		case 29: return rz_str_newf("*+ar%ld(#0x%lx)", reg_num, (long int)idx * scale);
 		default: return rz_str_newf("*(#0x%lx)", (long int)idx);
 		}
 	}
@@ -221,6 +229,11 @@ char *get_reg_name_3(ut32 idx) {
 	case 13: res = "ac13"; break;
 	case 14: res = "ac14"; break;
 	case 15: res = "ac15"; break;
+	/* Indices 16-31 ARE real accumulators on this C55x+ silicon variant:
+	 * TI's own asm55/dis55 round-trip them (e.g. `MOV #0, AC31.L` <-> 7bff00,
+	 * `MOV #0, AC16.L` <-> 7bf000). The generic SWPU086 C55x+ has only
+	 * AC0-AC15, but this variant extends the accumulator file to AC0-AC31;
+	 * omitting them produced disassembly with empty/dangling operands. */
 	case 16: res = "ac16"; break;
 	case 17: res = "ac17"; break;
 	case 18: res = "ac18"; break;
@@ -341,6 +354,9 @@ char *get_reg_name_1(ut32 idx) {
 	case 13: res = "ac13"; break;
 	case 14: res = "ac14"; break;
 	case 15: res = "ac15"; break;
+	/* Indices 16-31 ARE real accumulators on this C55x+ silicon variant
+	 * (TI asm55/dis55 round-trip AC16-AC31; e.g. 7bff00 = MOV #0, AC31.L).
+	 * Generic SWPU086 C55x+ has AC0-AC15; this variant extends to AC0-AC31. */
 	case 16: res = "ac16"; break;
 	case 17: res = "ac17"; break;
 	case 18: res = "ac18"; break;
@@ -402,6 +418,7 @@ char *get_reg_name_1(ut32 idx) {
 	case 77: res = "ac13.h"; break;
 	case 78: res = "ac14.h"; break;
 	case 79: res = "ac15.h"; break;
+	/* AC16-AC31 high halves (this variant's extended accumulators). */
 	case 80: res = "ac16.h"; break;
 	case 81: res = "ac17.h"; break;
 	case 82: res = "ac18.h"; break;
@@ -434,6 +451,7 @@ char *get_reg_name_1(ut32 idx) {
 	case 109: res = "ac13.l"; break;
 	case 110: res = "ac14.l"; break;
 	case 111: res = "ac15.l"; break;
+	/* AC16-AC31 low halves (this variant's extended accumulators). */
 	case 112: res = "ac16.l"; break;
 	case 113: res = "ac17.l"; break;
 	case 114: res = "ac18.l"; break;
@@ -522,22 +540,6 @@ char *get_reg_name_1(ut32 idx) {
 	case 205: res = "ac13.g"; break;
 	case 206: res = "ac14.g"; break;
 	case 207: res = "ac15.g"; break;
-	case 208: res = "ac16.g"; break;
-	case 209: res = "ac17.g"; break;
-	case 210: res = "ac18.g"; break;
-	case 211: res = "ac19.g"; break;
-	case 212: res = "ac20.g"; break;
-	case 213: res = "ac21.g"; break;
-	case 214: res = "ac22.g"; break;
-	case 215: res = "ac23.g"; break;
-	case 216: res = "ac24.g"; break;
-	case 217: res = "ac25.g"; break;
-	case 218: res = "ac26.g"; break;
-	case 219: res = "ac27.g"; break;
-	case 220: res = "ac28.g"; break;
-	case 221: res = "ac29.g"; break;
-	case 222: res = "ac30.g"; break;
-	case 223: res = "ac31.g"; break;
 	case 224: res = "st0"; break;
 	case 225: res = "st1"; break;
 	case 226: res = "st2"; break;

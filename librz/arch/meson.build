@@ -321,6 +321,7 @@ arch_isa_sources = [
   'isa/tms320/c55x/c55x_analysis.c',
   'isa/tms320/c55x_plus/c55plus.c',
   'isa/tms320/c55x_plus/c55plus_analysis.c',
+  'isa/tms320/c55x_plus/c55plus_il.c',
   'isa/tms320/c55x_plus/c55plus_decode.c',
   'isa/tms320/c55x_plus/decode_funcs.c',
   'isa/tms320/c55x_plus/hashtable.c',
