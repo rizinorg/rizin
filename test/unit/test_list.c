@@ -521,6 +521,229 @@ bool test_rz_list_sorted_uniq() {
 	mu_end;
 }
 
+/*
+ * Regression tests for NULL-value handling and bidirectional traversal.
+ *
+ * A list may legitimately store a NULL value (a (void *)0 element). Several
+ * traversal loops used to be bounded by `it && it->val`, which terminated the
+ * walk at such an element and produced wrong results or corrupted links. The
+ * tests below store a NULL value in the middle of a list and exercise get_n /
+ * set_n / del_n / insert / reverse / insertion-sort across it; each one fails
+ * against the pre-fix implementation. The comparator treats the pointer itself
+ * as the key (it never dereferences) so that a (void *)0 element is sortable.
+ */
+static int cmp_uintptr(const void *a, const void *b, void *user) {
+	(void)user;
+	uintptr_t x = (uintptr_t)a, y = (uintptr_t)b;
+	return (x > y) - (x < y);
+}
+
+bool test_rz_list_get_n_null_value(void) {
+	RzList *list = rz_list_new();
+	rz_list_append(list, (void *)0x10);
+	rz_list_append(list, (void *)0); // NULL value in the middle
+	rz_list_append(list, (void *)0x30);
+
+	mu_assert_ptreq(rz_list_get_n(list, 0), (void *)0x10, "get_n before NULL value");
+	mu_assert_ptreq(rz_list_get_n(list, 1), (void *)0, "get_n of NULL value");
+	// pre-fix: the `it && it->val` guard stopped here and returned NULL
+	mu_assert_ptreq(rz_list_get_n(list, 2), (void *)0x30, "get_n past NULL value");
+	mu_assert_null(rz_list_get_n(list, 3), "get_n out of bounds");
+
+	rz_list_free(list);
+	mu_end;
+}
+
+bool test_rz_list_set_n_null_value(void) {
+	RzList *list = rz_list_new();
+	rz_list_append(list, (void *)0x10);
+	rz_list_append(list, (void *)0); // NULL value in the middle
+	rz_list_append(list, (void *)0x30);
+
+	// set the element that sits after the NULL value
+	bool ok = rz_list_set_n(list, 2, (void *)0x33);
+	mu_assert_true(ok, "set_n past NULL value succeeds");
+	mu_assert_ptreq(rz_list_get_n(list, 2), (void *)0x33, "set_n past NULL value applied");
+	// out of range must still fail
+	mu_assert_false(rz_list_set_n(list, 3, (void *)0x99), "set_n out of bounds fails");
+
+	rz_list_free(list);
+	mu_end;
+}
+
+bool test_rz_list_get_set_n_bidirectional(void) {
+	// get_n / set_n now walk from whichever end is closer; verify every index,
+	// in particular the tail half reached via the prev links.
+	RzList *list = rz_list_new();
+	const intptr_t n = 50;
+	for (intptr_t i = 0; i < n; i++) {
+		rz_list_append(list, (void *)(i + 1)); // values 1..n, none NULL
+	}
+	for (intptr_t i = 0; i < n; i++) {
+		mu_assert_ptreq(rz_list_get_n(list, (ut32)i), (void *)(i + 1), "get_n any index");
+	}
+	// update a tail-half element (exercises the prev-walk branch)
+	mu_assert_true(rz_list_set_n(list, (ut32)(n - 3), (void *)0xabc), "set_n tail half");
+	mu_assert_ptreq(rz_list_get_n(list, (ut32)(n - 3)), (void *)0xabc, "set_n tail half applied");
+	mu_assert_ptreq(list->tail->val, (void *)n, "tail unchanged");
+	rz_list_free(list);
+	mu_end;
+}
+
+bool test_rz_list_del_n_null_value(void) {
+	RzList *list = rz_list_new();
+	rz_list_append(list, (void *)0x10);
+	rz_list_append(list, (void *)0); // NULL value
+	rz_list_append(list, (void *)0x30);
+	rz_list_append(list, (void *)0x40);
+
+	// delete the element past the NULL value: removes 0x30 -> {0x10, NULL, 0x40}
+	bool ok = rz_list_del_n(list, 2);
+	mu_assert_true(ok, "del_n past NULL value succeeds");
+	mu_assert_eq(rz_list_length(list), 3, "length after del_n past NULL");
+	mu_assert_ptreq(rz_list_get_n(list, 2), (void *)0x40, "element after deleted shifts down");
+
+	// forward and backward link integrity
+	int fwd = 0;
+	for (RzListIter *it = list->head; it; it = it->next) {
+		fwd++;
+	}
+	int bwd = 0;
+	for (RzListIter *it = list->tail; it; it = it->prev) {
+		bwd++;
+	}
+	mu_assert_eq(fwd, 3, "forward links intact after del_n");
+	mu_assert_eq(bwd, 3, "backward links intact after del_n");
+
+	rz_list_free(list);
+	mu_end;
+}
+
+bool test_rz_list_insert_null_value(void) {
+	RzList *list = rz_list_new();
+	rz_list_append(list, (void *)0x10);
+	rz_list_append(list, (void *)0); // NULL value
+	rz_list_append(list, (void *)0x30);
+
+	// insert at position 2 (after the NULL value): {0x10, NULL, 0x20, 0x30}
+	rz_list_insert(list, 2, (void *)0x20);
+	mu_assert_eq(rz_list_length(list), 4, "length after insert past NULL");
+	mu_assert_ptreq(rz_list_get_n(list, 0), (void *)0x10, "insert: head intact");
+	mu_assert_ptreq(rz_list_get_n(list, 1), (void *)0, "insert: NULL value intact");
+	mu_assert_ptreq(rz_list_get_n(list, 2), (void *)0x20, "insert: new element at n past NULL");
+	mu_assert_ptreq(rz_list_get_n(list, 3), (void *)0x30, "insert: tail shifted");
+	mu_assert_ptreq(list->tail->val, (void *)0x30, "insert: tail value");
+	mu_assert_null(list->tail->next, "insert: tail terminated");
+
+	rz_list_free(list);
+	mu_end;
+}
+
+bool test_rz_list_reverse_null_value(void) {
+	// reverse used to stop at the first NULL value, corrupting the links.
+	void *vals[] = { (void *)0x10, (void *)0, (void *)0x30 };
+	RzList *list = rz_list_new();
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(vals); i++) {
+		rz_list_append(list, vals[i]);
+	}
+	rz_list_reverse(list);
+
+	// expected order after reverse: 0x30, NULL, 0x10
+	void *exp[] = { (void *)0x30, (void *)0, (void *)0x10 };
+	int i = 0;
+	for (RzListIter *it = list->head; it; it = it->next, i++) {
+		if (i < (int)RZ_ARRAY_SIZE(exp)) {
+			mu_assert_ptreq(it->val, exp[i], "reverse value order with NULL");
+		}
+	}
+	mu_assert_eq(i, (int)RZ_ARRAY_SIZE(vals), "reverse forward reaches all nodes");
+
+	// backward traversal must reach every node too (link integrity)
+	int bwd = 0;
+	for (RzListIter *it = list->tail; it; it = it->prev) {
+		bwd++;
+	}
+	mu_assert_eq(bwd, (int)RZ_ARRAY_SIZE(vals), "reverse backward reaches all nodes");
+	mu_assert_ptreq(list->head->val, (void *)0x30, "reverse head");
+	mu_assert_ptreq(list->tail->val, (void *)0x10, "reverse tail");
+	mu_assert_null(list->head->prev, "reverse head prev is NULL");
+	mu_assert_null(list->tail->next, "reverse tail next is NULL");
+
+	rz_list_free(list);
+	mu_end;
+}
+
+bool test_rz_list_insertion_sort_null_value(void) {
+	// a short list (<= 43) takes the insertion-sort path; a NULL value used to
+	// halt the scan and leave the list unsorted.
+	RzList *list = rz_list_new();
+	rz_list_append(list, (void *)0x30);
+	rz_list_append(list, (void *)0); // NULL value
+	rz_list_append(list, (void *)0x10);
+	rz_list_append(list, (void *)0x20);
+	rz_list_sort(list, cmp_uintptr, NULL); // length 4 -> insertion sort
+
+	mu_assert_ptreq(rz_list_get_n(list, 0), (void *)0, "insertion sort: NULL value sorts first");
+	mu_assert_ptreq(rz_list_get_n(list, 1), (void *)0x10, "insertion sort: second");
+	mu_assert_ptreq(rz_list_get_n(list, 2), (void *)0x20, "insertion sort: third");
+	mu_assert_ptreq(rz_list_get_n(list, 3), (void *)0x30, "insertion sort: fourth");
+	mu_assert_ptreq(list->tail->val, (void *)0x30, "insertion sort: tail is max");
+	mu_assert_null(list->tail->next, "insertion sort: tail terminated");
+
+	rz_list_free(list);
+	mu_end;
+}
+
+// stable merge-sort property relied upon throughout: equal-key elements keep
+// their insertion order. Uses key/seq pairs and the >43 merge-sort path.
+typedef struct {
+	int key;
+	int seq;
+} StablePair;
+static int cmp_stable_pair(const void *a, const void *b, void *user) {
+	(void)user;
+	const StablePair *x = a, *y = b;
+	return (x->key > y->key) - (x->key < y->key);
+}
+bool test_rz_list_merge_sort_stable(void) {
+	const int n = 200; // > 43 -> merge sort path
+	StablePair *pairs = malloc(sizeof(StablePair) * n);
+	RzList *list = rz_list_new();
+	for (int i = 0; i < n; i++) {
+		pairs[i].key = (i * 7) % 10; // many duplicate keys
+		pairs[i].seq = i; // insertion order
+		rz_list_append(list, &pairs[i]);
+	}
+	rz_list_merge_sort(list, cmp_stable_pair, NULL);
+
+	int prev_key = -1, prev_seq = -1, count = 0;
+	RzListIter *it;
+	void *v;
+	rz_list_foreach (list, it, v) {
+		StablePair *p = v;
+		mu_assert_true(p->key >= prev_key, "merge sort: keys non-decreasing");
+		if (p->key == prev_key) {
+			mu_assert_true(p->seq > prev_seq, "merge sort: stable within equal keys");
+		}
+		prev_key = p->key;
+		prev_seq = p->seq;
+		count++;
+	}
+	mu_assert_eq(count, n, "merge sort: all elements present");
+	mu_assert_null(list->head->prev, "merge sort: head prev NULL");
+	mu_assert_null(list->tail->next, "merge sort: tail next NULL");
+	// tail reference must match the last node reached by traversal
+	RzListIter *t = list->head;
+	while (t->next) {
+		t = t->next;
+	}
+	mu_assert_ptreq(t, list->tail, "merge sort: tail reference correct");
+
+	rz_list_free(list);
+	free(pairs);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_list_size);
 	mu_run_test(test_rz_list_values);
@@ -541,6 +764,14 @@ int all_tests() {
 	mu_run_test(test_rz_list_find_val);
 	mu_run_test(test_rz_list_from_iter);
 	mu_run_test(test_rz_list_sorted_uniq);
+	mu_run_test(test_rz_list_get_n_null_value);
+	mu_run_test(test_rz_list_set_n_null_value);
+	mu_run_test(test_rz_list_get_set_n_bidirectional);
+	mu_run_test(test_rz_list_del_n_null_value);
+	mu_run_test(test_rz_list_insert_null_value);
+	mu_run_test(test_rz_list_reverse_null_value);
+	mu_run_test(test_rz_list_insertion_sort_null_value);
+	mu_run_test(test_rz_list_merge_sort_stable);
 	return tests_passed != tests_run;
 }
 
