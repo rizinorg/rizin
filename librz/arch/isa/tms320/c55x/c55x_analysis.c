@@ -11,6 +11,7 @@
 #include "c55x_analysis.h"
 #include "../tms320c55x_insn.h"
 #include "../tms320_dasm.h"
+#include "../c55x_plus/c55plus_analysis.h"
 
 /**
  * \file c55x_analysis.c
@@ -61,6 +62,27 @@ static inline st32 sign_extend(ut32 v, ut32 bits) {
 		return (st32)(v | ~mask);
 	}
 	return (st32)v;
+}
+
+/* Relative branch target from the decoder's displacement operand. The C55x
+ * disassembler renders the signed displacement correctly for every BCC/B form
+ * (the raw bytes place it differently per encoding, and the short 0x60-0x67
+ * forms fold it into the opcode), so parse the first hex operand and
+ * sign-extend it: 16-bit for the long 0x6f form, 8-bit otherwise. Returns
+ * false when there is no hex displacement (register / absolute branch), which
+ * the dedicated absolute paths handle instead. */
+static bool c55x_rel_target_from_syntax(const char *syntax, ut64 addr, int sz, ut8 op_byte, ut64 *out) {
+	if (!syntax) {
+		return false;
+	}
+	const char *h = strstr(syntax, "0x");
+	if (!h) {
+		return false;
+	}
+	ut64 v = strtoull(h, NULL, 16);
+	st32 d = sign_extend((ut32)v, (op_byte == 0x6f) ? 16 : 8);
+	*out = addr + (ut64)sz + (st64)d;
+	return true;
 }
 
 /* Set conditional-jump fields: type=cjmp, jump=target, fail=fallthrough. */
@@ -209,7 +231,7 @@ static const ut8 c55x_op_sizes[256] = {
 	2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, /* 0x30 */
 	2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, /* 0x40 */
 	2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, /* 0x50 */
-	2, 1, 1, 1, 1, 1, 1, 1, 5, 5, 4, 4, 4, 4, 4, 4, /* 0x60 */
+	2, 2, 2, 2, 2, 2, 2, 2, 5, 5, 4, 4, 4, 4, 4, 4, /* 0x60 */
 	4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, /* 0x70 */
 	3, 3, 4, 4, 4, 4, 4, 4, 1, 1, 1, 1, 1, 1, 1, 1, /* 0x80 */
 	2, 2, 2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, /* 0x90 */
@@ -230,7 +252,7 @@ static int c55x_op_size(const ut8 *buf, int len) {
 }
 
 int tms320_c55x_op_byte(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
-	const ut8 *buf, int len) {
+	const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	if (!op || !buf || len < 1) {
 		return 0;
 	}
@@ -277,6 +299,13 @@ int tms320_c55x_op_byte(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	const ut16 id = tms320c55x_insn_id_decode(buf, len);
 	op->id = id;
 
+	// Decode the mnemonic once. Branch-target resolution below reads the
+	// displacement the decoder rendered -- correct across every BCC/B form,
+	// whose raw displacement bytes differ by encoding (and the short 0x60-0x67
+	// branches carry the displacement in the opcode itself) -- and the IL lift
+	// at the end reuses the same string.
+	const char *syntax = tms320c55x_insn_syntax_decode(buf, len);
+
 	switch (id) {
 	/* ---- RPTCC k8, cond (3-byte conditional repeat) -------------- */
 	case TMS320C55_INS_RPTCC:
@@ -289,19 +318,16 @@ int tms320_c55x_op_byte(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		set_cret(op);
 		break;
 
-	/* ---- BCC: 8-bit or 16-bit signed relative conditional branch.
-	 *     0x04 / 0x60-0x66 carry an 8-bit displacement at byte 1;
-	 *     0x6F carries a 16-bit BE displacement. ------------------- */
-	case TMS320C55_INS_BCC:
-		if (op_byte == 0x6f) {
-			if (sz >= 4) {
-				const ut32 disp = rz_read_at_be16(buf, 1);
-				set_cjmp(op, addr + sz + sign_extend(disp, 16));
-			}
-		} else if (sz >= 2) {
-			set_cjmp(op, addr + sz + sign_extend(buf[1], 8));
+	/* ---- BCC: signed relative conditional branch. The decoder renders the
+	 *     displacement correctly for every form (0x04, 0x60-0x67 short, and
+	 *     the 16-bit 0x6f), so resolve the target from it. ------------- */
+	case TMS320C55_INS_BCC: {
+		ut64 tgt;
+		if (c55x_rel_target_from_syntax(syntax, addr, sz, op_byte, &tgt)) {
+			set_cjmp(op, tgt);
 		}
 		break;
+	}
 
 	/* ---- B: unconditional branch. Encodings:
 	 *     0x06 16-bit relative, 0x4A 8-bit relative,
@@ -608,6 +634,27 @@ int tms320_c55x_op_byte(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		 * whose leading 0x01/0x03/0x05/... bytes are the parallel
 		 * marker. */
 		break;
+	}
+
+	/* Short conditional branches 0x60-0x67 (and their parallel siblings) fold
+	 * the displacement into the opcode low bits and do not all resolve to the
+	 * BCC instruction id, so the switch above can leave them unclassified.
+	 * Classify any still-unclassified op the decoder calls a conditional
+	 * branch, taking the target from the rendered displacement. */
+	if (op->type == RZ_ANALYSIS_OP_TYPE_NULL && syntax &&
+		(!strncmp(syntax, "bcc ", 4) || !strncmp(syntax, "bccu ", 5) ||
+			!strncmp(syntax, "|| bcc ", 7) || !strncmp(syntax, "|| bccu ", 8))) {
+		ut64 tgt;
+		if (c55x_rel_target_from_syntax(syntax, addr, sz, op_byte, &tgt)) {
+			set_cjmp(op, tgt);
+		}
+	}
+
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		// Reuse the C55x+ semantic lifter via syntax normalization. The
+		// analysis-resolved op->type/jump/fail already drive the control-flow
+		// lifts; the disassembled syntax drives the data-path lifts.
+		op->il_op = tms320_c55x_il_lift(op, syntax);
 	}
 
 	return op->size;

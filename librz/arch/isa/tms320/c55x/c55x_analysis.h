@@ -9,6 +9,6 @@
 #include <rz_analysis.h>
 
 int tms320_c55x_op_byte(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
-	const ut8 *buf, int len);
+	const ut8 *buf, int len, RzAnalysisOpMask mask);
 
 #endif /* ANALYSIS_C55X_H */

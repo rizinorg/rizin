@@ -232,12 +232,15 @@ static char *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_le
 		*err_code = -1;
 		return NULL;
 	}
+	*reg_len_dec = 0;
 	if (hash_code == 0x19C) {
+		ut32 tok_reg_len = 0;
 		res_decode = get_token_decoded(hash_code, "MMMMxxxxmm", 10, NULL, ret_ins_bits,
-			reg_len_dec, magic_value, ins_pos + ins_off, ins_len, two_ins, err_code);
+			&tok_reg_len, magic_value, ins_pos + ins_off, ins_len, two_ins, err_code);
 		if (*err_code < 0) {
 			return NULL;
 		}
+		*reg_len_dec += tok_reg_len;
 	}
 
 	pos = ins;
@@ -276,11 +279,18 @@ static char *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_le
 				}
 			}
 
+			ut32 tok_reg_len = 0;
 			aux = get_token_decoded(hash_code, token_aux, len, reg, ret_ins_bits,
-				reg_len_dec, magic_value, ins_pos + ins_off, ins_len, two_ins, err_code);
+				&tok_reg_len, magic_value, ins_pos + ins_off, ins_len, two_ins, err_code);
 			if (*err_code < 0) {
 				return NULL;
 			}
+			/* get_token_decoded resets its ret_reg_len output to 0 on every
+			 * call, so a later token would otherwise clobber the extra-byte
+			 * count reported by an earlier offset operand (e.g. the
+			 * MMMMxxxxmm Smem token in COPY/MOV, which is followed by more
+			 * register tokens). Accumulate instead. */
+			*reg_len_dec += tok_reg_len;
 			res_decode = rz_str_append_owned(res_decode, aux);
 		} else {
 			token_aux[0] = *pos;
@@ -408,8 +418,12 @@ static char *do_decode(ut32 ins_off, ut32 ins_pos, ut32 two_ins, ut32 *next_ins_
 			return NULL;
 		}
 		ins_res = rz_str_append_owned(ins_aux, ins_res);
-		// printf("NEXT POS %d %d\n", ins_len_dec, reg_len_dec);
-		*next_ins_pos += ins_len_dec; // reg_len_dec;
+		/* ins_len_dec is the base encoding length; reg_len_dec carries the
+		 * extra bytes consumed by a k16/k24 offset operand (Smem modes
+		 * *arN(#K16) / *arN(#K24) / *abs16 / *(#K24)). These must be added
+		 * or the decoder under-reports the size and the following bytes are
+		 * re-decoded as a spurious extra instruction. */
+		*next_ins_pos += ins_len_dec + reg_len_dec;
 	}
 
 	return ins_res;

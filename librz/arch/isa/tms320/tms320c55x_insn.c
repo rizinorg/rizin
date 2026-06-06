@@ -239,6 +239,15 @@ RZ_API int tms320c55x_insn_optype(TMS320C55InsID id) {
 		return RZ_ANALYSIS_OP_TYPE_LEA;
 	case TMS320C55_INS_SWAP:
 		return RZ_ANALYSIS_OP_TYPE_XCHG;
+	/* ABS is intentionally NOT mapped: although RZ_ANALYSIS_OP_TYPE_ABS
+	 * exists as an enum value, rizin renders it as "undefined", which is
+	 * worse than leaving the op at NULL. Keep it NULL. */
+	case TMS320C55_INS_ABDST:
+		/* Absolute distance |a-b| (accumulate): difference-based. */
+		return RZ_ANALYSIS_OP_TYPE_SUB;
+	case TMS320C55_INS_SAT:
+		/* Saturate: clamp a value into range — a (conditional) move. */
+		return RZ_ANALYSIS_OP_TYPE_MOV;
 	case TMS320C55_INS_NOP:
 	case TMS320C55_INS_IDLE:
 		return RZ_ANALYSIS_OP_TYPE_NOP;
@@ -262,9 +271,9 @@ RZ_API int tms320c55x_insn_optype(TMS320C55InsID id) {
 		return RZ_ANALYSIS_OP_TYPE_TRAP;
 	default:
 		/* Control flow (B/BCC/CALL/CALLCC/...), repeats (RPT*), XCC,
-		 * SAT, ABS, SIM_TRIG and anything else: leave to the byte-level
-		 * classifier, which sets jump/call targets, stack deltas and
-		 * operand fields. */
+		 * ABS (renders as "undefined" — see above), SIM_TRIG and anything
+		 * else: leave to the byte-level classifier, which sets jump/call
+		 * targets, stack deltas and operand fields. */
 		return RZ_ANALYSIS_OP_TYPE_NULL;
 	}
 }

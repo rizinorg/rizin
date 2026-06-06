@@ -9,6 +9,7 @@
 #include <rz_analysis.h>
 
 #include "c55plus_analysis.h"
+#include "c55plus.h"
 #include "ins.h"
 #include "../tms320c55x_insn.h"
 #include "../tms320_dasm.h"
@@ -193,14 +194,26 @@ static inline void set_disp(RzAnalysisOp *op, st64 disp) {
 static const char *const c55xp_acc_names[4] = { "ac0", "ac1", "ac2", "ac3" };
 
 int tms320_c55x_plus_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
-	const ut8 *buf, int len) {
+	const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	if (!op || !buf || len < 1) {
 		return 0;
 	}
 
-	const ut32 ins_len = get_ins_len(buf[0]);
-	if (ins_len == 0 || (int)ins_len > len) {
+	const ut32 base_len = get_ins_len(buf[0]);
+	if (base_len == 0 || (int)base_len > len) {
 		return 0;
+	}
+
+	/* base_len is derived from the leading byte alone and so under-counts
+	 * the instructions that carry a variable k16/k24 offset operand in a
+	 * Smem field (e.g. "MOV *ARn(#K16), ACx"). Ask the disassembler for the
+	 * true length, which folds in those extra operand bytes; fall back to
+	 * the leading-byte length if the decode fails. */
+	ut32 ins_len = base_len;
+	tms320_dasm_t dasm = { 0 };
+	int dlen = c55x_plus_disassemble(&dasm, buf, len);
+	if (dlen > 0 && dlen <= len && (ut32)dlen >= base_len) {
+		ins_len = (ut32)dlen;
 	}
 
 	op->addr = addr;
@@ -271,7 +284,7 @@ int tms320_c55x_plus_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	 *   0x0?,0x1?,0x2?,0x3?  -> intr #k5     (SWPU104 6.5.13)
 	 *   0x4?,0x5?            -> trap #k5     (SWPU104 6.5.19)
 	 *   0x8?,0x9?,0xa?,0xb?  -> swap regs    (SWPU104 6.7.x)
-	 *   0xc?..0xf?           -> sim_trig     (Wrigley silicon)
+	 *   0xc?..0xf?           -> sim_trig     (C55x+ silicon variant)
 	 */
 	case 0x03:
 		if (ins_len < 2) {
@@ -291,7 +304,7 @@ int tms320_c55x_plus_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		case 0x80: /* swap */
 			op->type = RZ_ANALYSIS_OP_TYPE_XCHG;
 			break;
-		case 0xc0: /* sim_trig - Wrigley simulator trigger */
+		case 0xc0: /* sim_trig - simulator trigger (C55x+ variant) */
 			op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 			op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
 			break;
@@ -824,7 +837,7 @@ int tms320_c55x_plus_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 			break;
 		}
 		/* 0x0B (ecopr__), 0x23 (estop_byte): pseudo opcodes
-		 * specific to the Wrigley silicon. Used as emulation /
+		 * specific to this C55x+ silicon variant. Used as emulation /
 		 * coprocessor traps; classify as TRAP. */
 		if (buf[0] == 0x0b || buf[0] == 0x23) {
 			op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
@@ -858,6 +871,10 @@ int tms320_c55x_plus_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	const int id_type = tms320c55x_insn_optype((TMS320C55InsID)op->id);
 	if (id_type != RZ_ANALYSIS_OP_TYPE_NULL) {
 		op->type = id_type;
+	}
+
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		op->il_op = tms320_c55x_plus_il_lift(op, dasm.syntax);
 	}
 
 	return op->size;

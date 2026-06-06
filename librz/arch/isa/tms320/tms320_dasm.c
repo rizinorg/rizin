@@ -1217,6 +1217,21 @@ ut16 tms320c55x_insn_id_decode(const ut8 *buf, int len) {
 	return dasm.insn_id;
 }
 
+const char *tms320c55x_insn_syntax_decode(const ut8 *buf, int len) {
+	static tms320_dasm_t dasm;
+	static int initialized = 0;
+	if (!initialized) {
+		tms320_dasm_init(&dasm);
+		tms320_f_set_cpu(&dasm, TMS320_F_CPU_C55X);
+		initialized = 1;
+	}
+	if (!buf || len < 1) {
+		return NULL;
+	}
+	tms320_dasm(&dasm, buf, len);
+	return dasm.syntax;
+}
+
 /* C55x+ counterpart of tms320c55x_insn_id_decode(): run the C55x+
  * token decoder over the byte sequence and return the TMS320C55InsID of the
  * decoded mnemonic. Uses a separate cached dasm instance pinned to the

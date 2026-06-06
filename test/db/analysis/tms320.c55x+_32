@@ -590,7 +590,7 @@ EXPECT=<<EOF
             ; CALL XREF from sym._main @ 0xc9
 / sym._c_strlen();
 |           0x00000056      mov   #0x0, t0
-|       .-> 0x00000059      copy  *(ar0+t0b), t1
+|       .-> 0x00000059      copy  *ar0+, t1
 |      ,==< 0x0000005c      bcc   #0x000008, t1 == #0
 |      |:   0x0000005f      add   #0x1, t0
 |      |`=< 0x00000062      bcc   #0x00fff2, t0 < #0x7f
@@ -609,8 +609,7 @@ EXPECT=<<EOF
 / int sym._main(int argc, char **argv, char **envp);
 |           0x000000ba      psh   t1
 |       ,=< 0x000000bc      bcc   #0x00001c, t0 != #0x2
-|       |   0x000000c1      mov   , ac0
-|       |   0x000000c4      nop_16
+|       |   0x000000c1      mov   *ar0(#1), ac0
 |       |   0x000000c6      mov   ac0, xar0
 |       |   0x000000c9      call  #0x00ff8a                            ; sym._c_strlen
 |      ,==< 0x000000cc      bcc   #0x00000c, t0 != #0x10
@@ -622,5 +621,170 @@ EXPECT=<<EOF
 |     ```-> 0x000000dd      mov   #0x1, t0
 |           0x000000e0      pop   t1
 \           0x000000e2      ret
+EOF
+RUN
+
+NAME=c55x+ analysis: Smem k16/k24 offset operands extend op->size
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c55x+
+# MOV *ARn(#K16), ACx and COPY dbl(*ARn(#K16)), ACx carry a 16-bit
+# offset after the 3-byte base encoding -> op->size must be 5, not 3.
+# Regression guard for the reg_len_dec propagation fix; a short size
+# would leak the offset bytes back as a spurious following instruction.
+wx 5880400001 @ 0
+ao 1 @ 0~^size
+wx 5480711234 @ 0
+ao 1 @ 0~^size
+# A plain mm==0 Smem mode stays at the base length.
+wx 580000 @ 0
+ao 1 @ 0~^size
+EOF
+EXPECT=<<EOF
+size: 5
+size: 5
+size: 3
+EOF
+RUN
+
+NAME=c55x+ IL: nop and unconditional branch lift to RzIL
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c55x+
+wx 20 @ 0
+ao 1 @ 0~rzil
+wx 00 @ 0
+ao 1 @ 0~rzil
+wx 680400 @ 0
+ao 1 @ 0~rzil
+EOF
+EXPECT=<<EOF
+rzil: nop
+rzil: nop
+rzil: (jmp (bv 24 0x403))
+EOF
+RUN
+
+NAME=c55x+ IL: mov, bitwise, 16-bit arith, and xar-move lift to RzIL
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c55x+
+wx ac000042 @ 0
+ao 1 @ 0~rzil
+wx 772120 @ 0
+ao 1 @ 0~rzil
+wx 77a422 @ 0
+ao 1 @ 0~rzil
+wx 750100 @ 0
+ao 1 @ 0~rzil
+wx 758300 @ 0
+ao 1 @ 0~rzil
+wx 7b3009 @ 0
+ao 1 @ 0~rzil
+wx 743332 @ 0
+ao 1 @ 0~rzil
+wx 7b3381 @ 0
+ao 1 @ 0~rzil
+wx c5a3230001 @ 0
+ao 1 @ 0~rzil
+EOF
+EXPECT=<<EOF
+rzil: (set ac0 (bv 40 0x42))
+rzil: (set ar1 (var ar0))
+rzil: (set xar4 (var xar2))
+rzil: (set ac1 (& (var ac1) (var ac0)))
+rzil: (set ac3 (^ (var ac3) (var ac0)))
+rzil: (set t0 (+ (var t0) (bv 16 0x9)))
+rzil: (set t3 (+ (var t3) (var t2)))
+rzil: (set t3 (- (var t3) (bv 16 0x1)))
+rzil: (set ar3 (^ (var ar3) (bv 16 0x1)))
+EOF
+RUN
+
+NAME=c55x+ IL: memory load/store, post-modify, accumulator arith lift to RzIL
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c55x+
+wx 580280 @ 0
+ao 1 @ 0~rzil
+wx 581301 @ 0
+ao 1 @ 0~rzil
+wx 5105a0 @ 0
+ao 1 @ 0~rzil
+wx 501631 @ 0
+ao 1 @ 0~rzil
+wx 740001 @ 0
+ao 1 @ 0~rzil
+wx 740030 @ 0
+ao 1 @ 0~rzil
+wx 770030 @ 0
+ao 1 @ 0~rzil
+EOF
+EXPECT=<<EOF
+rzil: (set ac0 (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar2)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar2)) (bv 24 0x2)))))
+rzil: (seq (set ac1 (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar3)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar3)) (bv 24 0x2))))) (set xar3 (+ (var xar3) (bv 23 0x1))))
+rzil: (storew 0 (* (cast 24 false (var xar5)) (bv 24 0x2)) (cast 16 false (var ac0)))
+rzil: (seq (storew 0 (* (cast 24 false (var xar6)) (bv 24 0x2)) (var t1)) (set xar6 (+ (var xar6) (bv 23 0x1))))
+rzil: (set ac0 (+ (var ac0) (var ac1)))
+rzil: (set ac0 (+ (var ac0) (cast 40 (msb (var t0)) (var t0))))
+rzil: (set ac0 (cast 40 (msb (var t0)) (var t0)))
+EOF
+RUN
+
+NAME=c55x+ IL: amov/aadd/asub, amar, neg, mov half->reg, bitwise half forms lift to RzIL
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c55x+
+wx 72a427 @ 0
+ao 1 @ 0~rzil
+wx 7220a1 @ 0
+ao 1 @ 0~rzil
+wx 722023 @ 0
+ao 1 @ 0~rzil
+wx 760382 @ 0
+ao 1 @ 0~rzil
+wx 770162 @ 0
+ao 1 @ 0~rzil
+wx 6383c0 @ 0
+ao 1 @ 0~rzil
+wx c5626000ff @ 0
+ao 1 @ 0~rzil
+wx 75c060 @ 0
+ao 1 @ 0~rzil
+wx db604000fe @ 0
+ao 1 @ 0~rzil
+wx db60c0004d @ 0
+ao 1 @ 0~rzil
+EOF
+EXPECT=<<EOF
+rzil: (set xar4 (var xar7))
+rzil: (set xar0 (+ (var xar0) (var xar1)))
+rzil: (set xar0 (- (var xar0) (var xar3)))
+rzil: (set ac3 (- (bv 40 0x0) (var ac2)))
+rzil: (set ac1 (cast 40 (msb (cast 16 false (var ac2))) (cast 16 false (var ac2))))
+rzil: (set xar0 (cast 23 false (+ (cast 24 false (var sp)) (bv 24 0x3))))
+rzil: (set ac2 (| (& (var ac2) (bv 40 0xffffff0000)) (cast 40 false (& (cast 16 false (var ac0)) (bv 16 0xff)))))
+rzil: (set ac0 (| (& (var ac0) (bv 40 0xff0000ffff)) (<< (cast 40 false (^ (cast 16 false (>> (var ac0) (bv 8 0x10) false)) (cast 16 false (var ac0)))) (bv 6 0x10) false)))
+rzil: (branch (== (cast 16 false (var ac0)) (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (jmp (bv 24 0x103)) nop)
+rzil: (branch (! (== (cast 16 false (var ac0)) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))) (jmp (bv 24 0x52)) nop)
+EOF
+RUN
+
+NAME=c55x+ IL: deferred forms stay unlifted (correct-or-NULL contract)
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c55x+
+wx 21 @ 0
+ao 1 @ 0~rzil
+wx d280816dd8 @ 0
+ao 1 @ 0~rzil
+EOF
+EXPECT=<<EOF
 EOF
 RUN

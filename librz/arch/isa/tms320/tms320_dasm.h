@@ -247,6 +247,11 @@ typedef struct {
 
 extern int tms320_dasm(tms320_dasm_t *, const ut8 *, int);
 
+/** Disassemble a byte sequence as plain C55x and return the decoded syntax
+ * string (owned by a cached static dasm instance; valid until the next call).
+ * Used by the analysis layer to feed the (syntax-based) RzIL lifter. */
+extern const char *tms320c55x_insn_syntax_decode(const ut8 *, int);
+
 /** Resolve the C55x instruction ID for a byte sequence by disassembling
  * it and mapping the decoded mnemonic to a TMS320C55InsID. Honours the
  * per-instruction operand masks (so multi-form leading bytes resolve to
