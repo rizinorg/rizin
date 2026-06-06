@@ -360,7 +360,7 @@ RZ_API RZ_BORROW RzListIter *rz_list_insert(RZ_NONNULL RzList *list, ut32 n, RZ_
 	if (!list->head || !n) {
 		return rz_list_prepend(list, data);
 	}
-	for (it = list->head, i = 0; it && it->val; it = it->next, i++) {
+	for (it = list->head, i = 0; it; it = it->next, i++) {
 		if (i == n) {
 			item = RZ_NEW(RzListIter);
 			if (!item) {
@@ -470,7 +470,7 @@ RZ_API void rz_list_reverse(RZ_NONNULL RzList *list) {
 
 	rz_return_if_fail(list);
 
-	for (it = list->head; it && it->val; it = it->prev) {
+	for (it = list->head; it; it = it->prev) {
 		tmp = it->prev;
 		it->prev = it->next;
 		it->next = tmp;
@@ -714,8 +714,8 @@ RZ_API void rz_list_insertion_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListCom
 	}
 	RzListIter *it;
 	RzListIter *it2;
-	for (it = list->head; it && it->val; it = it->next) {
-		for (it2 = it->next; it2 && it2->val; it2 = it2->next) {
+	for (it = list->head; it; it = it->next) {
+		for (it2 = it->next; it2; it2 = it2->next) {
 			if (cmp(it->val, it2->val, user) > 0) {
 				void *t = it->val;
 				it->val = it2->val;
