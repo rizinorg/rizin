@@ -5125,7 +5125,8 @@ static bool set_jump_realname(RzDisasmState *ds, ut64 addr, const char **kw, con
 		// nothing to do, neither demangled nor regular realnames should be shown
 		return false;
 	}
-	RzFlagItem *flag_sym = rz_flag_get_by_spaces(f, addr, RZ_FLAGS_FS_FUNCTIONS, RZ_FLAGS_FS_SYMBOLS, NULL);
+	RzFlagItem *flag_sym = rz_flag_get_by_spaces(f, addr, RZ_FLAGS_FS_FUNCTIONS, RZ_FLAGS_FS_IMPORTS,
+		RZ_FLAGS_FS_SYMBOLS, NULL);
 	if (!flag_sym || !flag_sym->realname) {
 		// nothing to replace
 		return false;

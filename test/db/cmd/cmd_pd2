@@ -964,6 +964,6 @@ EXPECT=<<EOF
 |           0x00001034      push  rbp
 |           0x00001035      mov   rbp, rsp
 |           0x00001038      mov   edi, 0x91
-\           0x0000103d      call  section..plt.sec
+\           0x0000103d      call  _Exit
 EOF
 RUN
