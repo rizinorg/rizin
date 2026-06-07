@@ -31,7 +31,8 @@ features noreorder pic cpic o32 n32
 |           0x000804e8      addiu sp, sp, -0x20
 |           0x000804ec      sw    zero, (var_4h)
 |           0x000804f0      lw    t9, -sym.do_mips_start(gp)           ; [data.00091018:4]=0x8051c sym.do_mips_start
-|           0x000804f4      jalr  t9
+|           0x000804f4      jalr  t9                                   ; sym.do_mips_start
+|                                                                      ; 0x8051c
 |           0x000804f8      nop
 |       @-> 0x000804fc      b     0x804fc
 \           0x00080500      nop
@@ -50,10 +51,11 @@ features noreorder pic cpic o32 n32
 |           0x000805b8      move  fp, sp
 |           0x000805bc      sw    gp, (var_10h)
 |           0x000805c0      lw    v0, -segment.LOAD0(gp)               ; [data.0009103c:4]=0x80000 segment.ehdr
-|           0x000805c4      addiu a0, v0, 0x640                        ; 0x80640 ; "Hello World" ; str.Hello_World
+|           0x000805c4      addiu a0, v0, 0x640                        ; 0x80640 ; "Hello World" ; const char *s ; str.Hello_World
 |           0x000805c8      lw    v0, -sym._MIPS_STUBS(gp)             ; [data.00091048:4]=0x80600 sym.imp.puts
 |           0x000805cc      move  t9, v0
-|           0x000805d0      jalr  t9
+|           0x000805d0      jalr  t9                                   ; sym.imp.puts
+|                                                                      ; 0x80600 ; int puts(const char *s)
 |           0x000805d4      nop
 |           0x000805d8      lw    gp, (arg_10h)
 |           0x000805dc      move  sp, fp
@@ -98,7 +100,7 @@ features noreorder cpic o32 n32
 |           0x004000e2      sw    gp, (arg_10h)
 |           0x004000e6      sw    ra, (arg_24h)
 |           0x004000e8      addiur1sp a1, 0x18
-|           0x004000ea      jalr  t9
+|           0x004000ea      jalr  t9                                   ; 0x400221
 |           0x004000ec      addiu a0, zero, 5
 |           0x004000f0      lw    ra, (arg_24h)
 |           0x004000f2      jraddiusp 0x28
@@ -977,7 +979,8 @@ EXPECT=<<EOF
 |           0x00402598      addiu a1, zero, 0x2f
 |           0x0040259c      lw    s6, 0(s0)
 |           0x004025a0      move  s1, a0                               ; argc
-|           0x004025a4      jalr  t9
+|           0x004025a4      jalr  t9                                   ; sym.imp.strrchr
+|                                                                      ; 0x41e910 ; char *strrchr(const char *s, int c)
 |           0x004025a8      move  a0, s6
 |           0x004025ac      slti  v1, s1, 2
 |           0x004025b0      addiu a0, v0, 1
@@ -990,7 +993,8 @@ EXPECT=<<EOF
 |      :|   0x004025f8      addiu a1, s2, -0x10c0
 |      :|   0x004025fc      lw    t9, -sym.imp.strcmp(gp)              ; [0x435200:4]=0x41eb40 sym.imp.strcmp
 |      :|   0x00402600      move  a0, v1
-|      :|   0x00402604      jalr  t9
+|      :|   0x00402604      jalr  t9                                   ; sym.imp.strcmp
+|      :|                                                              ; 0x41eb40 ; int strcmp(const char *s1, const char *s2)
 |      :|   0x00402608      sw    v1, (var_2ch)
 |      :|   0x0040260c      lw    gp, (var_40h)
 |      :|   0x00402610      lw    v1, (var_2ch)
@@ -1048,13 +1052,15 @@ EXPECT=<<EOF
 | --------> 0x00402868      lw    t9, -sym.rtnl_open(gp)               ; [0x435300:4]=0x41a99c sym.rtnl_open
 | :||||:    0x0040286c      lui   s2, 0x43
 | :||||:    0x00402870      addiu a0, s2, 0x3c60
-| :||||:    0x00402874      jalr  t9
+| :||||:    0x00402874      jalr  t9                                   ; sym.rtnl_open
+| :||||:                                                               ; 0x41a99c ; "<\U0000001c"
 | :||||:    0x00402878      move  a1, zero
 | :||||:    0x0040287c      lw    gp, (var_40h)
 | :||||:,=< 0x00402880      bltz  v0, 0x402aa4
 | :||||:|   0x00402884      nop
 | :||||:|   0x00402888      lw    t9, -sym.imp.strlen(gp)              ; [0x435174:4]=0x41ec10 sym.imp.strlen
-| :||||:|   0x0040288c      jalr  t9
+| :||||:|   0x0040288c      jalr  t9                                   ; sym.imp.strlen
+| :||||:|                                                              ; 0x41ec10 ; size_t strlen(const char *s)
 | :||||:|   0x00402890      move  a0, s6
 | :||||:|   0x00402894      sltiu v0, v0, 3
 | :||||:|   0x00402898      lw    gp, (var_40h)
@@ -1101,7 +1107,8 @@ EXPECT=<<EOF
 |  |  :||   0x004029c4      nop
 ..
 | --------> 0x00402a20      lw    t9, -sym.rtnl_close(gp)              ; [0x4352c8:4]=0x41a9b8 sym.rtnl_close
-|  |   ||   0x00402a24      jalr  t9
+|  |   ||   0x00402a24      jalr  t9                                   ; sym.rtnl_close
+|  |   ||                                                              ; 0x41a9b8 ; "<\U0000001c"
 |  |   ||   0x00402a28      addiu a0, s2, 0x3c60
 | -`...---> 0x00402a2c      jal   fcn.004022e4
 |   :::||   0x00402a30      nop
@@ -1109,7 +1116,8 @@ EXPECT=<<EOF
 |   ::: |   0x00402a38      lui   a1, 0x42
 |   ::: |   0x00402a3c      move  a0, a2
 |   ::: |   0x00402a40      sw    a2, (var_2ch)
-|   ::: |   0x00402a44      jalr  t9
+|   ::: |   0x00402a44      jalr  t9                                   ; sym.matches
+|   ::: |                                                              ; 0x41b2b4 ; "<\U0000001c"
 |   ::: |   0x00402a48      addiu a1, a1, -0x1044
 |   ::: |   0x00402a4c      lw    gp, (var_40h)
 |   ::: |   0x00402a50      lw    a2, (var_2ch)
@@ -1123,7 +1131,8 @@ EXPECT=<<EOF
 |   ::: |   0x00402a70      lui   a1, 0x42
 |   ::: |   0x00402a74      move  a0, a2
 |   ::: |   0x00402a78      sw    a2, (var_2ch)
-|   ::: |   0x00402a7c      jalr  t9
+|   ::: |   0x00402a7c      jalr  t9                                   ; sym.matches
+|   ::: |                                                              ; 0x41b2b4 ; "<\U0000001c"
 |   ::: |   0x00402a80      addiu a1, a1, -0x1038
 |   ::: |   0x00402a84      lw    gp, (var_40h)
 |   ::: |   0x00402a88      lw    a2, (var_2ch)
@@ -1134,13 +1143,15 @@ EXPECT=<<EOF
 | ========< 0x00402a9c      b     0x4026f8
 |   :::||   0x00402aa0      sw    v1, 0x5470(v0)
 |   :::|`-> 0x00402aa4      lw    t9, -sym.imp.exit(gp)                ; [0x4351a4:4]=0x41ebb0 sym.imp.exit
-|   :::|    0x00402aa8      jalr  t9
-|   :::|    0x00402aac      addiu a0, zero, 1
+|   :::|    0x00402aa8      jalr  t9                                   ; sym.imp.exit
+|   :::|                                                               ; 0x41ebb0 ; void exit(int status)
+..
 |   :::`--> 0x00402ab0      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
 |   :::     0x00402ab4      lui   a1, 0x42
-|   :::     0x00402ab8      move  a0, a2                               ; envp
+|   :::     0x00402ab8      move  a0, a2
 |   :::     0x00402abc      sw    a2, (var_2ch)
-|   :::     0x00402ac0      jalr  t9
+|   :::     0x00402ac0      jalr  t9                                   ; sym.matches
+|   :::                                                                ; 0x41b2b4 ; "<\U0000001c"
 |   :::     0x00402ac4      addiu a1, a1, -0x102c
 |   :::     0x00402ac8      lw    gp, (var_40h)
 |   :::     0x00402acc      lw    a2, (var_2ch)
@@ -1152,9 +1163,10 @@ EXPECT=<<EOF
 |   ::: |   0x00402ae4      sw    v1, 0x5474(v0)
 |   ::: `-> 0x00402ae8      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
 |   :::     0x00402aec      lui   a1, 0x42
-|   :::     0x00402af0      move  a0, a2                               ; envp
+|   :::     0x00402af0      move  a0, a2
 |   :::     0x00402af4      sw    a2, (var_2ch)
-|   :::     0x00402af8      jalr  t9
+|   :::     0x00402af8      jalr  t9                                   ; sym.matches
+|   :::                                                                ; 0x41b2b4 ; "<\U0000001c"
 |   :::     0x00402afc      addiu a1, a1, -0x1020
 |   :::     0x00402b00      lw    gp, (var_40h)
 |   :::     0x00402b04      lw    a2, (var_2ch)
@@ -1162,9 +1174,10 @@ EXPECT=<<EOF
 |   ::: |   0x00402b0c      lui   a0, 0x42
 |   ::: |   0x00402b10      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
 |   ::: |   0x00402b14      lui   a1, 0x42
-|   ::: |   0x00402b18      move  a0, a2                               ; envp
+|   ::: |   0x00402b18      move  a0, a2
 |   ::: |   0x00402b1c      sw    a2, (var_2ch)
-|   ::: |   0x00402b20      jalr  t9
+|   ::: |   0x00402b20      jalr  t9                                   ; sym.matches
+|   ::: |                                                              ; 0x41b2b4 ; "<\U0000001c"
 |   ::: |   0x00402b24      addiu a1, a1, -0xff8
 |   ::: |   0x00402b28      lw    gp, (var_40h)
 |   ::: |   0x00402b2c      lw    a2, (var_2ch)
@@ -1177,17 +1190,20 @@ EXPECT=<<EOF
 |   :::|`-> 0x00402b48      lw    t9, -sym.imp.printf(gp)              ; [0x4353ec:4]=0x41e7b0 sym.imp.printf
 |   :::|    0x00402b4c      lui   a1, 0x42
 |   :::|    0x00402b50      addiu a0, a0, -0x1014
-|   :::|    0x00402b54      jalr  t9
+|   :::|    0x00402b54      jalr  t9                                   ; sym.imp.printf
+|   :::|                                                               ; 0x41e7b0 ; int printf(const char *format)
 |   :::|    0x00402b58      addiu a1, a1, -0xf20
 |   :::|    0x00402b5c      lw    gp, (var_40h)
 |   :::|    0x00402b60      lw    t9, -sym.imp.exit(gp)                ; [0x4351a4:4]=0x41ebb0 sym.imp.exit
-|   :::|    0x00402b64      jalr  t9
+|   :::|    0x00402b64      jalr  t9                                   ; sym.imp.exit
+|   :::|                                                               ; 0x41ebb0 ; void exit(int status)
 |   :::|    0x00402b68      move  a0, zero
 |   :::`--> 0x00402b6c      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
 |   :::     0x00402b70      lui   a1, 0x42
-|   :::     0x00402b74      move  a0, a2                               ; envp
+|   :::     0x00402b74      move  a0, a2
 |   :::     0x00402b78      sw    a2, (var_2ch)
-|   :::     0x00402b7c      jalr  t9
+|   :::     0x00402b7c      jalr  t9                                   ; sym.matches
+|   :::                                                                ; 0x41b2b4 ; "<\U0000001c"
 |   :::     0x00402b80      addiu a1, a1, -0xff0
 |   :::     0x00402b84      lw    gp, (var_40h)
 |   :::     0x00402b88      lw    a2, (var_2ch)
@@ -1202,9 +1218,10 @@ EXPECT=<<EOF
 ..
 |    :: `-> 0x00402bb0      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
 |    ::     0x00402bb4      lui   a1, 0x42
-|    ::     0x00402bb8      move  a0, a2                               ; envp
+|    ::     0x00402bb8      move  a0, a2
 |    ::     0x00402bbc      sw    a2, (var_2ch)
-|    ::     0x00402bc0      jalr  t9
+|    ::     0x00402bc0      jalr  t9                                   ; sym.matches
+|    ::                                                                ; 0x41b2b4 ; "<\U0000001c"
 |    ::     0x00402bc4      addiu a1, a1, -0xfe8
 |    ::     0x00402bc8      lw    gp, (var_40h)
 |    ::     0x00402bcc      lw    a2, (var_2ch)
@@ -1216,7 +1233,8 @@ EXPECT=<<EOF
 |     : |   0x00402be4      addiu a0, sp, 0x18
 |     : |   0x00402be8      lw    t9, -sym.get_unsigned(gp)            ; [0x435178:4]=0x41bec4 sym.get_unsigned
 |     : |   0x00402bec      lw    a1, 0(s0)
-|     : |   0x00402bf0      jalr  t9
+|     : |   0x00402bf0      jalr  t9                                   ; sym.get_unsigned
+|     : |                                                              ; 0x41bec4 ; "<\U0000001c"
 |     : |   0x00402bf4      move  a2, zero
 |     : |   0x00402bf8      lw    gp, (var_40h)
 |     :,==< 0x00402bfc      bnez  v0, 0x402c68
@@ -1227,9 +1245,10 @@ EXPECT=<<EOF
 |     :||   0x00402c10      sw    v1, 0(v0)
 |     :|`-> 0x00402c14      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
 |     :|    0x00402c18      lui   a1, 0x42
-|     :|    0x00402c1c      move  a0, a2                               ; envp
+|     :|    0x00402c1c      move  a0, a2
 |     :|    0x00402c20      sw    a2, (var_2ch)
-|     :|    0x00402c24      jalr  t9
+|     :|    0x00402c24      jalr  t9                                   ; sym.matches
+|     :|                                                               ; 0x41b2b4 ; "<\U0000001c"
 |     :|    0x00402c28      addiu a1, a1, -0xfc4
 |     :|    0x00402c2c      lw    gp, (var_40h)
 |     :|    0x00402c30      lw    a2, (var_2ch)
@@ -1241,11 +1260,13 @@ EXPECT=<<EOF
 |      |    0x00402c48      addiu a1, a1, -0xfbc
 |      |    0x00402c4c      lw    a0, 0(v0)
 |      |    ; CODE XREF from main @ 0x402c7c
-|      |.-> 0x00402c50      jalr  t9
+|      |.-> 0x00402c50      jalr  t9                                   ; sym.imp.fprintf
+|      |:                                                              ; 0x41e940 ; int fprintf(FILE *stream, const char *format, void *va_args)
 |      |:   0x00402c54      nop
 |      |:   0x00402c58      lw    gp, (var_40h)
 |      |:   0x00402c5c      lw    t9, -sym.imp.exit(gp)                ; [0x4351a4:4]=0x41ebb0 sym.imp.exit
-|      |:   0x00402c60      jalr  t9
+|      |:   0x00402c60      jalr  t9                                   ; sym.imp.exit
+|      |:                                                              ; 0x41ebb0 ; void exit(int status)
 |      |:   0x00402c64      addiu a0, zero, -1
 |      `--> 0x00402c68      lw    v0, -0x7efc(gp)                      ; [0x4351e4:4]=0
 |       :   0x00402c6c      lui   a1, 0x42

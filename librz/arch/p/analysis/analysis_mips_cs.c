@@ -143,15 +143,45 @@ static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num
 
 typedef struct {
 	RzRegItem reg;
-	ut64 t9_pre;
+	ut64 t9_pre; ///< address of the GOT slot $t9 points through (UT64_MAX if unknown)
+	int gp_load_reg; ///< register last loaded from a gp-relative address (MIPS_REG_INVALID if none)
+	ut64 gp_load_ptr; ///< the gp-relative slot address loaded into gp_load_reg
 } MIPSContext;
 
 static bool mips_init(void **user) {
 	MIPSContext *ctx = RZ_NEW0(MIPSContext);
 	rz_return_val_if_fail(ctx, false);
 	ctx->t9_pre = UT64_MAX;
+	ctx->gp_load_reg = MIPS_REG_INVALID;
 	*user = ctx;
 	return true;
+}
+
+/**
+ * \brief Resolve the target of a PIC call/tail-call made through $t9.
+ *
+ * In MIPS PIC code the callee address is loaded from the GOT into $t9 (either
+ * directly via `lw t9, %call16(sym)(gp)` or via `lw vX, ...(gp)` followed by
+ * `move t9, vX`) and then reached with `jalr t9` / `jr t9`. \p got_slot is the
+ * address of that GOT slot (tracked in MIPSContext); dereferencing it yields
+ * the actual function address (the imported symbol / lazy-binding stub).
+ *
+ * \return the resolved target address, or UT64_MAX when it cannot be
+ * determined, in which case the caller leaves the op unresolved as before.
+ */
+static ut64 mips_pic_call_target(RzAnalysis *analysis, ut64 got_slot) {
+	if (got_slot == 0 || got_slot == UT64_MAX || !analysis->iob.read_at) {
+		return UT64_MAX;
+	}
+	ut8 buf[8] = { 0 };
+	int wordsize = analysis->bits == 64 ? 8 : 4;
+	if (!analysis->iob.read_at(analysis->iob.io, got_slot, buf, wordsize)) {
+		return UT64_MAX;
+	}
+	ut64 target = wordsize == 8
+		? rz_read_ble64(buf, analysis->big_endian)
+		: (ut64)rz_read_ble32(buf, analysis->big_endian);
+	return target ? target : UT64_MAX;
 }
 
 static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh *handle, cs_insn *insn) {
@@ -347,11 +377,21 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		case MIPS_OP_MEM:
 			if (IS_REG_GP(OPERAND(1).mem.base)) {
 				op->ptr = analysis->gp + OPERAND(1).mem.disp;
+				// Remember this gp-relative load so a following `move t9, <reg>`
+				// (the standard PIC call setup) can recover the GOT slot.
+				ctx->gp_load_reg = REGID(0);
+				ctx->gp_load_ptr = op->ptr;
 				if (IS_REG_T9(REGID(0))) {
 					ctx->t9_pre = op->ptr;
 				}
-			} else if (IS_REG_T9(REGID(0))) {
-				ctx->t9_pre = UT64_MAX;
+			} else {
+				if (IS_REG_T9(REGID(0))) {
+					ctx->t9_pre = UT64_MAX;
+				}
+				// A non-gp load into the tracked register invalidates it.
+				if (REGID(0) == ctx->gp_load_reg) {
+					ctx->gp_load_reg = MIPS_REG_INVALID;
+				}
 			}
 			break;
 		case MIPS_OP_IMM:
@@ -395,9 +435,18 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		op->delay = 1;
 		op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
 		if (IS_REG_T9(REGID(0))) {
-			op->jump = ctx->t9_pre;
-			ctx->t9_pre = UT64_MAX;
 			op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
+			// Resolve the PIC callee: $t9 holds (a copy of) the GOT slot
+			// address; dereference it so the call points at the imported
+			// function. For (R|U)CALL ops the core builds the CALL xref from
+			// op->ptr, so set that (and op->jump) to the resolved target.
+			ut64 target = mips_pic_call_target(analysis, ctx->t9_pre);
+			if (target != UT64_MAX) {
+				op->ptr = target;
+				op->jump = target;
+			}
+			ctx->t9_pre = UT64_MAX;
+			ctx->gp_load_reg = MIPS_REG_INVALID;
 		}
 		break;
 #if CS_NEXT_VERSION >= 6
@@ -459,6 +508,16 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		break;
 	case MIPS_INS_MOVE:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		if (IS_REG_T9(REGID(0))) {
+			// `move t9, vX` right after `lw vX, %call16(sym)(gp)` is the
+			// canonical PIC call sequence; carry the GOT slot over to $t9 so
+			// the upcoming jalr can be resolved to the imported function.
+			if (ctx->gp_load_reg != MIPS_REG_INVALID && REGID(1) == ctx->gp_load_reg) {
+				ctx->t9_pre = ctx->gp_load_ptr;
+			} else {
+				ctx->t9_pre = UT64_MAX;
+			}
+		}
 		break;
 	case MIPS_INS_ADD:
 	case MIPS_INS_ADDI:
@@ -471,7 +530,14 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		op->sign = (insn->id == MIPS_INS_ADDI || insn->id == MIPS_INS_ADD || insn->id == MIPS_INS_DADD);
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		if (IS_REG_T9(REGID(0))) {
-			ctx->t9_pre += IMM(2);
+			if (insn->id == MIPS_INS_ADDU && OPCOUNT() == 2 &&
+				ctx->gp_load_reg != MIPS_REG_INVALID && REGID(1) == ctx->gp_load_reg) {
+				// `move t9, vX` may be emitted as the 2-operand `addu t9, vX`
+				// alias; carry the GOT slot over like MIPS_INS_MOVE does.
+				ctx->t9_pre = ctx->gp_load_ptr;
+			} else {
+				ctx->t9_pre += IMM(2);
+			}
 		}
 		if (IS_REG_SP(REGID(0))) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
@@ -559,6 +625,18 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 	case MIPS_INS_ORI:
 		SET_VAL(op, 2);
 		op->type = RZ_ANALYSIS_OP_TYPE_OR;
+		if (IS_REG_T9(REGID(0))) {
+			if (insn->id == MIPS_INS_OR && OPCOUNT() == 2 &&
+				ctx->gp_load_reg != MIPS_REG_INVALID && REGID(1) == ctx->gp_load_reg) {
+				// capstone emits `move t9, vX` as the 2-operand `or t9, vX`
+				// alias (`or t9, vX, $zero`); carry the GOT slot over so the
+				// following jalr/jr resolves to the imported function.
+				ctx->t9_pre = ctx->gp_load_ptr;
+			} else {
+				// any other write to $t9 invalidates the tracked slot
+				ctx->t9_pre = UT64_MAX;
+			}
+		}
 		break;
 	case MIPS_INS_DIV:
 	case MIPS_INS_DIVU:
@@ -816,8 +894,15 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 			ctx->t9_pre = UT64_MAX;
 		}
 		if (IS_REG_T9(REGID(0))) {
-			op->jump = ctx->t9_pre;
+			// PIC tail-call through $t9: resolve it like the jalr case above.
+			// For RJMP the core builds the xref from op->ptr.
+			ut64 target = mips_pic_call_target(analysis, ctx->t9_pre);
+			if (target != UT64_MAX) {
+				op->ptr = target;
+				op->jump = target;
+			}
 			ctx->t9_pre = UT64_MAX;
+			ctx->gp_load_reg = MIPS_REG_INVALID;
 		}
 
 		break;
