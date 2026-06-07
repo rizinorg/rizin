@@ -59,6 +59,7 @@
 
 #include <rz_diff.h>
 #include <rz_util.h>
+#include "cdc.h"
 /**/
 #include <rz_util/ht_pp.h>
 #include <rz_util/ht_uu.h>
@@ -96,6 +97,7 @@ struct rz_diff_t {
 	size_t b_size;
 	size_t block_size;
 	MethodsInternal methods;
+	bool use_cdc; ///< accelerate byte matching with FastCDC anchoring (large inputs)
 };
 
 static RzDiffMatch *generic_find_longest_match(RzDiff *diff, Block *block);
@@ -223,6 +225,22 @@ RZ_API RZ_OWN RzDiff *rz_diff_bytes_new(RZ_BORROW const ut8 *a, ut32 a_size, RZ_
 	diff->a_size = a_size;
 	diff->b_size = b_size;
 
+	return diff;
+}
+
+/**
+ * \brief Like rz_diff_bytes_new(), but FastCDC-accelerated for large inputs
+ *
+ * Produces the same byte diff as rz_diff_bytes_new(), but for inputs above the
+ * internal size threshold the matches are computed by running the exact matcher
+ * only inside the gaps between byte-identical content-defined chunks. Below the
+ * threshold the result is identical to rz_diff_bytes_new().
+ * */
+RZ_API RZ_OWN RzDiff *rz_diff_bytes_cdc_new(RZ_BORROW const ut8 *a, ut32 a_size, RZ_BORROW const ut8 *b, ut32 b_size) {
+	RzDiff *diff = rz_diff_bytes_new(a, a_size, b, b_size);
+	if (diff) {
+		diff->use_cdc = true;
+	}
 	return diff;
 }
 
@@ -502,6 +520,13 @@ static int cmp_matches(RzDiffMatch *m0, RzDiffMatch *m1, void *user) {
  * */
 RZ_API RZ_OWN RzList /*<RzDiffMatch *>*/ *rz_diff_matches_new(RZ_NONNULL RzDiff *diff) {
 	rz_return_val_if_fail(diff, NULL);
+	if (diff->use_cdc) {
+		RzList *cdc = rz_diff_bytes_cdc_matches((const ut8 *)diff->a, (ut32)diff->a_size, (const ut8 *)diff->b, (ut32)diff->b_size);
+		if (cdc) {
+			return cdc;
+		}
+		// below the CDC threshold: fall through to the exact matcher
+	}
 	RzList *stack = NULL;
 	RzList *matches = NULL;
 	RzList *non_adjacent = NULL;

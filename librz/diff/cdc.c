@@ -29,6 +29,7 @@
 
 #include <rz_diff.h>
 #include <rz_util.h>
+#include "cdc.h"
 
 #define RZ_DIFF_CDC_THRESHOLD (1u << 20) ///< below this, run exact Myers directly
 #define RZ_DIFF_CDC_TARGET    2048u ///< target average chunk size, in bytes
@@ -281,6 +282,139 @@ static bool cdc_gap(const ut8 *a, ut64 la, const ut8 *b, ut64 lb, ut64 *total) {
 	return true;
 }
 
+typedef struct cdc_anchor_t {
+	ut64 a_off; ///< chunk start in buffer A
+	ut64 b_off; ///< matching chunk start in buffer B
+	ut64 length; ///< shared length in bytes
+} CdcAnchor;
+
+/**
+ * \brief Find in-order, byte-identical chunk anchors shared by both buffers.
+ *
+ * Both buffers are FastCDC-chunked; B's chunks are indexed by (hash, index) and
+ * each A chunk is greedily matched to the earliest still-unused B chunk that is
+ * byte-identical (hash hit reconfirmed with memcmp). The anchors partition the
+ * inputs into zero-cost equal spans separated by gaps.
+ *
+ * \return malloc'd array of \p *count anchors (caller frees), or NULL on failure.
+ */
+/** \brief Length of the common prefix of \p a and \p b, up to \p n bytes. */
+static ut32 cdc_common_prefix(const ut8 *a, const ut8 *b, ut32 n) {
+	ut32 i = 0;
+	for (; i + 8 <= n; i += 8) {
+		ut64 x, y;
+		memcpy(&x, a + i, 8);
+		memcpy(&y, b + i, 8);
+		if (x != y) {
+			break;
+		}
+	}
+	for (; i < n && a[i] == b[i]; i++) {
+	}
+	return i;
+}
+
+/** \brief Length of the common suffix of \p a and \p b, up to \p limit bytes. */
+static ut32 cdc_common_suffix(const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 limit) {
+	ut32 i = 0;
+	for (; i + 8 <= limit; i += 8) {
+		ut64 x, y;
+		memcpy(&x, a + la - i - 8, 8);
+		memcpy(&y, b + lb - i - 8, 8);
+		if (x != y) {
+			break;
+		}
+	}
+	for (; i < limit && a[la - 1 - i] == b[lb - 1 - i]; i++) {
+	}
+	return i;
+}
+
+/**
+ * \brief Find in-order, byte-identical chunk anchors shared by both buffers.
+ *
+ * The common prefix and suffix are equal spans, so they are recorded as anchors
+ * directly and FastCDC only runs over the differing middle (this keeps the
+ * common "a change in otherwise similar inputs" case from paying to chunk the
+ * whole buffer). In the middle, B's chunks are indexed by (hash, index) and
+ * each A chunk is greedily matched to the earliest still-unused B chunk that is
+ * byte-identical (hash hit reconfirmed with memcmp). The anchors partition the
+ * inputs into zero-cost equal spans separated by gaps.
+ *
+ * \return malloc'd array of \p *count anchors (caller frees), or NULL on failure.
+ */
+static CdcAnchor *cdc_anchors_new(const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut64 *count) {
+	ut32 limit = RZ_MIN(la, lb);
+	ut32 pre = cdc_common_prefix(a, b, limit);
+	ut32 suf = cdc_common_suffix(a, la, b, lb, limit - pre);
+	const ut8 *ma = a + pre; // differing middle of A
+	const ut8 *mb = b + pre; // differing middle of B
+	ut32 mla = la - pre - suf;
+	ut32 mlb = lb - pre - suf;
+
+	CdcConfig cfg;
+	cdc_config_init(&cfg, RZ_DIFF_CDC_TARGET);
+
+	ut64 na = 0, nb = 0;
+	CdcChunk *ca = cdc_chunk_all(ma, mla, &cfg, &na);
+	CdcChunk *cb = cdc_chunk_all(mb, mlb, &cfg, &nb);
+	CdcRef *refs = nb ? RZ_NEWS0(CdcRef, nb) : NULL;
+	CdcAnchor *anchors = RZ_NEWS0(CdcAnchor, na + 2); // middle anchors + prefix + suffix
+	if (!ca || !cb || (nb && !refs) || !anchors) {
+		free(ca);
+		free(cb);
+		free(refs);
+		free(anchors);
+		return NULL;
+	}
+	for (ut64 j = 0; j < nb; j++) {
+		refs[j].hash = cb[j].hash;
+		refs[j].index = (ut32)j;
+	}
+	qsort(refs, nb, sizeof(CdcRef), cdc_ref_cmp);
+
+	ut64 used = 0;
+	if (pre) {
+		anchors[used].a_off = 0;
+		anchors[used].b_off = 0;
+		anchors[used].length = pre;
+		used++;
+	}
+	ut32 bj_min = 0;
+	for (ut64 ai = 0; ai < na; ai++) {
+		// earliest still-available B chunk that is byte-identical to ca[ai]
+		st64 hit = -1;
+		for (st64 k = cdc_ref_lower_bound(refs, nb, ca[ai].hash, bj_min);
+			k < (st64)nb && refs[k].hash == ca[ai].hash; k++) {
+			ut32 j = refs[k].index;
+			if (ca[ai].length == cb[j].length &&
+				!memcmp(ma + ca[ai].offset, mb + cb[j].offset, ca[ai].length)) {
+				hit = j;
+				break;
+			}
+		}
+		if (hit < 0) {
+			continue;
+		}
+		anchors[used].a_off = (ut64)pre + ca[ai].offset;
+		anchors[used].b_off = (ut64)pre + cb[hit].offset;
+		anchors[used].length = ca[ai].length;
+		used++;
+		bj_min = (ut32)hit + 1;
+	}
+	if (suf) {
+		anchors[used].a_off = la - suf;
+		anchors[used].b_off = lb - suf;
+		anchors[used].length = suf;
+		used++;
+	}
+	free(ca);
+	free(cb);
+	free(refs);
+	*count = used;
+	return anchors;
+}
+
 /**
  * \brief Edit distance between two buffers, FastCDC-accelerated for large inputs.
  *
@@ -306,54 +440,28 @@ RZ_API bool rz_diff_cdc_distance(RZ_NONNULL const ut8 *a, ut32 size_a, RZ_NONNUL
 		return rz_diff_myers_distance(a, size_a, b, size_b, distance, similarity);
 	}
 
-	CdcConfig cfg;
-	cdc_config_init(&cfg, RZ_DIFF_CDC_TARGET);
-
-	ut64 na = 0, nb = 0;
-	CdcChunk *ca = cdc_chunk_all(a, size_a, &cfg, &na);
-	CdcChunk *cb = cdc_chunk_all(b, size_b, &cfg, &nb);
-	CdcRef *refs = nb ? RZ_NEWS0(CdcRef, nb) : NULL;
-	if (!ca || !cb || (nb && !refs)) {
-		goto err;
+	ut64 n_anchors = 0;
+	CdcAnchor *anchors = cdc_anchors_new(a, size_a, b, size_b, &n_anchors);
+	if (!anchors) {
+		return false;
 	}
-	for (ut64 j = 0; j < nb; j++) {
-		refs[j].hash = cb[j].hash;
-		refs[j].index = (ut32)j;
-	}
-	qsort(refs, nb, sizeof(CdcRef), cdc_ref_cmp);
 
+	bool ok = true;
 	ut64 prev_a = 0, prev_b = 0, total = 0;
-	ut32 bj_min = 0;
-	for (ut64 ai = 0; ai < na; ai++) {
-		// earliest still-available B chunk that is byte-identical to ca[ai]
-		st64 hit = -1;
-		for (st64 k = cdc_ref_lower_bound(refs, nb, ca[ai].hash, bj_min);
-			k < (st64)nb && refs[k].hash == ca[ai].hash; k++) {
-			ut32 j = refs[k].index;
-			if (ca[ai].length == cb[j].length &&
-				!memcmp(a + ca[ai].offset, b + cb[j].offset, ca[ai].length)) {
-				hit = j;
-				break;
-			}
-		}
-		if (hit < 0) {
-			continue;
-		}
-		if (!cdc_gap(a + prev_a, ca[ai].offset - prev_a, b + prev_b, cb[hit].offset - prev_b, &total)) {
-			goto err;
-		}
-		prev_a = ca[ai].offset + ca[ai].length;
-		prev_b = cb[hit].offset + cb[hit].length;
-		bj_min = (ut32)hit + 1;
+	for (ut64 i = 0; i < n_anchors && ok; i++) {
+		ok = cdc_gap(a + prev_a, anchors[i].a_off - prev_a, b + prev_b, anchors[i].b_off - prev_b, &total);
+		prev_a = anchors[i].a_off + anchors[i].length;
+		prev_b = anchors[i].b_off + anchors[i].length;
 	}
-	// tail gap after the last anchor
-	if (!cdc_gap(a + prev_a, size_a - prev_a, b + prev_b, size_b - prev_b, &total)) {
-		goto err;
+	if (ok) {
+		// tail gap after the last anchor
+		ok = cdc_gap(a + prev_a, size_a - prev_a, b + prev_b, size_b - prev_b, &total);
+	}
+	free(anchors);
+	if (!ok) {
+		return false;
 	}
 
-	free(ca);
-	free(cb);
-	free(refs);
 	if (distance) {
 		*distance = total > UT32_MAX ? UT32_MAX : (ut32)total;
 	}
@@ -362,10 +470,112 @@ RZ_API bool rz_diff_cdc_distance(RZ_NONNULL const ut8 *a, ut32 size_a, RZ_NONNUL
 		*similarity = denom > 0 ? 1.0 - (double)total / denom : 1.0;
 	}
 	return true;
+}
 
-err:
-	free(ca);
-	free(cb);
-	free(refs);
-	return false;
+/**
+ * \brief Append the matches of one gap (shifted to absolute offsets) to \p out.
+ *
+ * When both sides of the gap are larger than \ref RZ_DIFF_CDC_THRESHOLD the gap
+ * is left untouched (no matches appended), so the opcode builder renders it as a
+ * single replace. The exact matcher costs roughly O(la * lb) and degenerates on
+ * a large-by-large block; reaching such a gap also means content-defined
+ * anchoring found no chunk-aligned identical content to break the region up, so
+ * sub-diffing it would do more work than diffing the whole input while adding
+ * little (a one-sided large gap, by contrast, stays cheap and is still diffed).
+ */
+static bool cdc_append_gap_matches(RzList /*<RzDiffMatch *>*/ *out, const ut8 *a, ut64 a_off, ut64 la, const ut8 *b, ut64 b_off, ut64 lb) {
+	if (!la && !lb) {
+		return true;
+	}
+	if (RZ_MIN(la, lb) > RZ_DIFF_CDC_THRESHOLD) {
+		return true; // left as a single replace by the opcode builder
+	}
+	RzDiff *diff = rz_diff_bytes_new(a + a_off, (ut32)la, b + b_off, (ut32)lb);
+	if (!diff) {
+		return false;
+	}
+	RzList *matches = rz_diff_matches_new(diff);
+	bool ok = matches != NULL;
+	RzListIter *it;
+	RzDiffMatch *m;
+	rz_list_foreach (matches, it, m) {
+		if (!m->size) {
+			continue; // skip the trailing sentinel / empty matches
+		}
+		RzDiffMatch *nm = RZ_NEW0(RzDiffMatch);
+		if (!nm) {
+			ok = false;
+			break;
+		}
+		nm->a = (ut32)a_off + m->a;
+		nm->b = (ut32)b_off + m->b;
+		nm->size = m->size;
+		if (!rz_list_append(out, nm)) {
+			free(nm);
+			ok = false;
+			break;
+		}
+	}
+	rz_list_free(matches);
+	rz_diff_free(diff);
+	return ok;
+}
+
+/** \brief Append a single equal span to \p out. */
+static bool cdc_append_match(RzList /*<RzDiffMatch *>*/ *out, ut32 a, ut32 b, ut32 size) {
+	RzDiffMatch *m = RZ_NEW0(RzDiffMatch);
+	if (!m) {
+		return false;
+	}
+	m->a = a;
+	m->b = b;
+	m->size = size;
+	if (!rz_list_append(out, m)) {
+		free(m);
+		return false;
+	}
+	return true;
+}
+
+RZ_IPI RZ_OWN RzList /*<RzDiffMatch *>*/ *rz_diff_bytes_cdc_matches(RZ_NONNULL const ut8 *a, ut32 size_a, RZ_NONNULL const ut8 *b, ut32 size_b) {
+	rz_return_val_if_fail(a && b, NULL);
+	if (RZ_MAX(size_a, size_b) <= RZ_DIFF_CDC_THRESHOLD) {
+		return NULL; // caller uses the exact global matcher
+	}
+
+	ut64 n_anchors = 0;
+	CdcAnchor *anchors = cdc_anchors_new(a, size_a, b, size_b, &n_anchors);
+	if (!anchors) {
+		return NULL;
+	}
+	RzList *matches = rz_list_newf((RzListFree)free);
+	if (!matches) {
+		free(anchors);
+		return NULL;
+	}
+
+	bool ok = true;
+	ut64 prev_a = 0, prev_b = 0;
+	for (ut64 i = 0; i < n_anchors && ok; i++) {
+		// fine-grained matches inside the gap before this anchor, then the
+		// anchor itself as one (large) equal span
+		ok = cdc_append_gap_matches(matches, a, prev_a, anchors[i].a_off - prev_a, b, prev_b, anchors[i].b_off - prev_b) &&
+			cdc_append_match(matches, (ut32)anchors[i].a_off, (ut32)anchors[i].b_off, (ut32)anchors[i].length);
+		prev_a = anchors[i].a_off + anchors[i].length;
+		prev_b = anchors[i].b_off + anchors[i].length;
+	}
+	if (ok) {
+		// fine-grained matches inside the tail gap after the last anchor
+		ok = cdc_append_gap_matches(matches, a, prev_a, size_a - prev_a, b, prev_b, size_b - prev_b);
+	}
+	// terminating sentinel, exactly as rz_diff_matches_new() emits
+	if (ok) {
+		ok = cdc_append_match(matches, size_a, size_b, 0);
+	}
+	free(anchors);
+	if (!ok) {
+		rz_list_free(matches);
+		return NULL;
+	}
+	return matches;
 }

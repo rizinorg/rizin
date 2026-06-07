@@ -122,6 +122,27 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rz-diff cdc-bytes comparison
+TOOL=rz-diff
+ARGS=-t cdc-bytes bins/other/rz-diff/rz-diff_c_1 bins/other/rz-diff/rz-diff_c_2
+EXPECT=<<EOF
+--- bins/other/rz-diff/rz-diff_c_1
++++ bins/other/rz-diff/rz-diff_c_2
+@@ -1,1 +1,1 @@
+-91
++90
+
+EOF
+RUN
+
+NAME=rz-diff cdc-bytes comparison JSON
+TOOL=rz-diff
+ARGS=-jt cdc-bytes bins/other/rz-diff/rz-diff_c_1 bins/other/rz-diff/rz-diff_c_2
+EXPECT=<<EOF
+{"from":"bins/other/rz-diff/rz-diff_c_1","to":"bins/other/rz-diff/rz-diff_c_2","diff":[{"from":[1,1],"to":[1,1],"ops":[{"op":"delete","value":"91"},{"op":"insert","value":"90"}]}]}
+EOF
+RUN
+
 
 NAME=rz-diff strings comparison
 TOOL=rz-diff

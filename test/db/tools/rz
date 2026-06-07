@@ -482,6 +482,7 @@ EXPECT=<<EOF
  [32m[0m             [0mThe same value will be set for file1, if -1 is not set.
  [32m-1[0m[33m cmd [0m      [0mInput for file1 when option -t 'commands' is given.
  [32m-t[0m[33m bytes [0m    [0mCompare raw bytes in the files (only for small files)
+ [32m-t[0m[33m cdc-bytes [0m[0mLike 'bytes' but FastCDC content-defined chunking accelerates large (>1MiB) inputs
  [32m-t[0m[33m lines [0m    [0mCompare text files
  [32m-t[0m[33m functions [0m[0mCompare functions found in the files
  [32m[0m             [0moptional -0 <fcn name|offset> to compare only one function

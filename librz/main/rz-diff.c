@@ -36,6 +36,7 @@ typedef enum {
 typedef enum {
 	DIFF_TYPE_UNKNOWN = 0,
 	DIFF_TYPE_BYTES,
+	DIFF_TYPE_CDC_BYTES,
 	DIFF_TYPE_CLASSES,
 	DIFF_TYPE_COMMAND,
 	DIFF_TYPE_ENTRIES,
@@ -228,6 +229,7 @@ static void rz_diff_show_help(bool usage_only) {
 		"",         "",             "The same value will be set for file1, if -1 is not set.",
 		"-1",       "cmd",          "Input for file1 when option -t 'commands' is given.",
 		"-t",       "bytes",        "Compare raw bytes in the files (only for small files)",
+		"-t",       "cdc-bytes",    "Like 'bytes' but FastCDC content-defined chunking accelerates large (>1MiB) inputs",
 		"-t",       "lines",        "Compare text files",
 		"-t",       "functions",    "Compare functions found in the files",
 		"",         "",             "optional -0 <fcn name|offset> to compare only one function",
@@ -364,6 +366,8 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 
 		if (!strcmp(type, "bytes")) {
 			rz_diff_ctx_set_type(ctx, DIFF_TYPE_BYTES);
+		} else if (!strcmp(type, "cdc-bytes")) {
+			rz_diff_ctx_set_type(ctx, DIFF_TYPE_CDC_BYTES);
 		} else if (!strcmp(type, "lines")) {
 			rz_diff_ctx_set_type(ctx, DIFF_TYPE_LINES);
 		} else if (!strcmp(type, "functions")) {
@@ -1399,6 +1403,7 @@ static bool rz_diff_unified_files(DiffContext *ctx) {
 	bool result = false;
 
 	if (ctx->type == DIFF_TYPE_BYTES ||
+		ctx->type == DIFF_TYPE_CDC_BYTES ||
 		ctx->type == DIFF_TYPE_LINES) {
 		if (!(a_buffer = rz_diff_slurp_file(ctx->file_a, &a_size))) {
 			goto rz_diff_unified_files_bad;
@@ -1419,6 +1424,9 @@ static bool rz_diff_unified_files(DiffContext *ctx) {
 	switch (ctx->type) {
 	case DIFF_TYPE_BYTES:
 		diff = rz_diff_bytes_new(a_buffer, a_size, b_buffer, b_size);
+		break;
+	case DIFF_TYPE_CDC_BYTES:
+		diff = rz_diff_bytes_cdc_new(a_buffer, a_size, b_buffer, b_size);
 		break;
 	case DIFF_TYPE_CLASSES:
 		diff = rz_diff_classes_new(&dfile_a, &dfile_b, ctx->compare_addresses);

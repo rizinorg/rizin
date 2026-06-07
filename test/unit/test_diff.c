@@ -113,6 +113,178 @@ bool test_rz_diff_cdc_large_matches_myers(void) {
 	mu_end;
 }
 
+// Replay opcodes to rebuild B from A: EQUAL spans are copied from A (so the
+// final compare also proves those spans are genuinely equal to B), changed
+// spans are copied from B, deletions contribute nothing. A correct edit script
+// must rebuild B exactly. Also verifies the opcodes tile [0,a_size) x [0,b_size)
+// contiguously, with no gaps or overlaps. Returns true iff everything checks.
+static bool diff_opcodes_rebuild_b(RzDiff *diff, const ut8 *a, ut32 a_size, const ut8 *b, ut32 b_size) {
+	RzList *ops = rz_diff_opcodes_new(diff);
+	if (!ops) {
+		return false;
+	}
+	ut8 *out = malloc(b_size ? b_size : 1);
+	bool ok = out != NULL;
+	ut32 outn = 0, ea = 0, eb = 0;
+	RzListIter *it;
+	RzDiffOp *op;
+	rz_list_foreach (ops, it, op) {
+		if (!ok) {
+			break;
+		}
+		ut32 la = (ut32)(op->a_end - op->a_beg);
+		ut32 lb = (ut32)(op->b_end - op->b_beg);
+		if ((ut32)op->a_beg != ea || (ut32)op->b_beg != eb) {
+			ok = false; // non-contiguous opcodes
+			break;
+		}
+		switch (op->type) {
+		case RZ_DIFF_OP_EQUAL:
+			if (la != lb || outn + la > b_size) {
+				ok = false;
+				break;
+			}
+			memcpy(out + outn, a + op->a_beg, la);
+			outn += la;
+			break;
+		case RZ_DIFF_OP_INSERT:
+		case RZ_DIFF_OP_REPLACE:
+			if (outn + lb > b_size) {
+				ok = false;
+				break;
+			}
+			memcpy(out + outn, b + op->b_beg, lb);
+			outn += lb;
+			break;
+		case RZ_DIFF_OP_DELETE:
+			break;
+		default:
+			ok = false;
+			break;
+		}
+		ea = op->a_end;
+		eb = op->b_end;
+	}
+	if (ok) {
+		ok = ea == a_size && eb == b_size && outn == b_size && (!b_size || !memcmp(out, b, b_size));
+	}
+	free(out);
+	rz_list_free(ops);
+	return ok;
+}
+
+bool test_rz_diff_cdc_bytes_below_threshold(void) {
+	// below RZ_DIFF_CDC_THRESHOLD the CDC byte path forwards to the exact
+	// matcher, so its unified diff must be identical to rz_diff_bytes_new; the
+	// reconstruction check also exercises both paths on small inputs.
+	const char *pairs[][2] = {
+		{ "", "abc" },
+		{ "abc", "" },
+		{ "same", "same" },
+		{ "hello world", "hello brave world" },
+		{ "the quick brown fox", "the slow brown cat" },
+		{ "aaaaaaaaaa", "aaabaaaaaa" },
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(pairs); i++) {
+		const ut8 *a = (const ut8 *)pairs[i][0];
+		const ut8 *b = (const ut8 *)pairs[i][1];
+		ut32 la = (ut32)strlen(pairs[i][0]);
+		ut32 lb = (ut32)strlen(pairs[i][1]);
+		RzDiff *d1 = rz_diff_bytes_new(a, la, b, lb);
+		RzDiff *d2 = rz_diff_bytes_cdc_new(a, la, b, lb);
+		mu_assert_notnull(d1, "bytes_new");
+		mu_assert_notnull(d2, "bytes_cdc_new");
+		char *u1 = rz_diff_unified_text(d1, "a", "b", false, false);
+		char *u2 = rz_diff_unified_text(d2, "a", "b", false, false);
+		mu_assert_notnull(u1, "unified bytes");
+		mu_assert_notnull(u2, "unified cdc-bytes");
+		mu_assert_streq(u2, u1, "cdc-bytes unified text equals bytes below threshold");
+		mu_assert_true(diff_opcodes_rebuild_b(d2, a, la, b, lb), "cdc-bytes opcodes rebuild B");
+		mu_assert_true(diff_opcodes_rebuild_b(d1, a, la, b, lb), "bytes opcodes rebuild B");
+		free(u1);
+		free(u2);
+		rz_diff_free(d1);
+		rz_diff_free(d2);
+	}
+	mu_end;
+}
+
+bool test_rz_diff_cdc_bytes_large_identical(void) {
+	const ut32 size = (1u << 20) + 0x40000; // 1.25 MiB, above the CDC threshold
+	ut8 *a = cdc_make_buffer(size, 0xbeef);
+	mu_assert_notnull(a, "alloc large buffer");
+	RzDiff *diff = rz_diff_bytes_cdc_new(a, size, a, size);
+	mu_assert_notnull(diff, "bytes_cdc_new identical");
+	RzList *ops = rz_diff_opcodes_new(diff);
+	mu_assert_notnull(ops, "opcodes identical");
+	// identical inputs collapse to a single EQUAL op spanning the whole buffer
+	mu_assert_eq(rz_list_length(ops), 1, "identical large buffers => single opcode");
+	RzDiffOp *op = (RzDiffOp *)rz_list_first_val(ops);
+	mu_assert_eq(op->type, RZ_DIFF_OP_EQUAL, "identical => EQUAL");
+	mu_assert_eq((ut32)op->a_beg, 0, "equal a_beg");
+	mu_assert_eq((ut32)op->a_end, size, "equal a_end");
+	mu_assert_eq((ut32)op->b_end, size, "equal b_end");
+	rz_list_free(ops);
+	rz_diff_free(diff);
+	free(a);
+	mu_end;
+}
+
+bool test_rz_diff_cdc_bytes_large_reconstruct(void) {
+	// Large input with edits that also shift the tail (a deletion and an
+	// insertion). Content-defined anchors re-sync across the shift; the
+	// resulting opcodes must still rebuild B exactly.
+	const ut32 size = (1u << 20) + 0x40000; // 1.25 MiB, above the CDC threshold
+	ut8 *a = cdc_make_buffer(size, 0x5eed);
+	ut8 *b = malloc(size);
+	mu_assert_notnull(a, "alloc a");
+	mu_assert_notnull(b, "alloc b");
+	ut32 sub_at = size / 4;
+	ut32 del_at = size / 2;
+	ut32 ins_at = (size / 4) * 3;
+	ut32 p = 0;
+	memcpy(b + p, a, del_at); // A[0:del_at], includes the substitution region
+	p += del_at;
+	for (ut32 i = 0; i < 16; i++) {
+		b[sub_at + i] ^= 0xff; // 16-byte substitution at 25%
+	}
+	memcpy(b + p, a + del_at + 8, ins_at - (del_at + 8)); // skip 8 bytes (deletion at 50%)
+	p += ins_at - (del_at + 8);
+	for (ut32 i = 0; i < 8; i++) {
+		b[p++] = (ut8)(0xa0 + i); // 8-byte insertion at 75%
+	}
+	memcpy(b + p, a + ins_at, size - ins_at); // tail
+	p += size - ins_at;
+	mu_assert_eq(p, size, "B built to expected size"); // deletion and insertion cancel
+
+	RzDiff *diff = rz_diff_bytes_cdc_new(a, size, b, size);
+	mu_assert_notnull(diff, "bytes_cdc_new");
+	mu_assert_true(diff_opcodes_rebuild_b(diff, a, size, b, size), "cdc-bytes opcodes rebuild shifted B");
+	rz_diff_free(diff);
+	free(a);
+	free(b);
+	mu_end;
+}
+
+bool test_rz_diff_cdc_bytes_large_replace(void) {
+	// Two unrelated large buffers share no chunk-aligned content, so the whole
+	// input is a single large-by-large gap. That gap exceeds the per-gap cap and
+	// is emitted as one replace instead of being sub-diffed; the opcodes must
+	// still rebuild B exactly.
+	const ut32 size = (1u << 20) + 0x40000; // 1.25 MiB, above the CDC threshold
+	ut8 *a = cdc_make_buffer(size, 0xaaaa);
+	ut8 *b = cdc_make_buffer(size, 0x5555);
+	mu_assert_notnull(a, "alloc a");
+	mu_assert_notnull(b, "alloc b");
+	RzDiff *diff = rz_diff_bytes_cdc_new(a, size, b, size);
+	mu_assert_notnull(diff, "bytes_cdc_new");
+	mu_assert_true(diff_opcodes_rebuild_b(diff, a, size, b, size), "cdc-bytes opcodes rebuild unrelated B");
+	rz_diff_free(diff);
+	free(a);
+	free(b);
+	mu_end;
+}
+
 bool test_rz_diff_unified_lines(void) {
 	RzDiff *diff = NULL;
 	char *result = NULL;
@@ -1235,6 +1407,10 @@ int all_tests() {
 	mu_run_test(test_rz_diff_cdc_below_threshold);
 	mu_run_test(test_rz_diff_cdc_large_identical);
 	mu_run_test(test_rz_diff_cdc_large_matches_myers);
+	mu_run_test(test_rz_diff_cdc_bytes_below_threshold);
+	mu_run_test(test_rz_diff_cdc_bytes_large_identical);
+	mu_run_test(test_rz_diff_cdc_bytes_large_reconstruct);
+	mu_run_test(test_rz_diff_cdc_bytes_large_replace);
 	mu_run_test(test_rz_diff_unified_lines);
 	mu_run_test(test_rz_diff_unified_bytes);
 	mu_run_test(test_rz_diff_hash_data);
