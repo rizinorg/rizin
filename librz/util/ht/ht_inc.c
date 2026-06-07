@@ -1029,6 +1029,29 @@ RZ_API const KEY_TYPE *Ht_(iter_next_key)(RzIterator *it) {
 	return NULL;
 }
 
+/**
+ * \brief Advances the iterator \p it and yields the next immutable key-value pair.
+ *
+ * \param it The iterator instance.
+ */
+RZ_API const HT_(Kv) *Ht_(iter_next_kv)(RzIterator *it) {
+	rz_return_val_if_fail(it, NULL);
+	HT_(IterState) *state = it->u;
+
+	// Iterate over tables until a table with an element is found.
+	for (; state->ti < state->ht->capacity; state->ti++) {
+		if (H2_IS_EMPTY_OR_DELETED(state->ht->ctrl[state->ti])) {
+			continue;
+		}
+		state->kv = HT_SLOT_AT(state->ht, state->ti);
+		state->ti++;
+		return state->kv;
+	}
+
+	// Iteration is done. No elements left to select.
+	return NULL;
+}
+
 RZ_API RZ_OWN HT_(IterMutState) *Ht_(new_iter_mut_state)(RZ_NONNULL HtName_(Ht) *ht) {
 	rz_return_val_if_fail(ht, NULL);
 	HT_(IterMutState) *state = RZ_NEW0(HT_(IterMutState));
@@ -1107,6 +1130,25 @@ RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ *Ht_(as_iter_keys)(const RZ_NONNULL
 	rz_return_val_if_fail(state, NULL);
 
 	RzIterator *iter = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_key), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state);
+	if (!iter) {
+		Ht_(free_iter_state)(state);
+	}
+	return iter;
+}
+
+/**
+ * \brief Returns an iterator over the hash table \p ht. The iterator yields immutable key-value pairs.
+ *
+ * \param ht The hash table to create the iterator for.
+ *
+ * \return The iterator over the hash table key-value pairs or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ *Ht_(as_iter_kv)(const RZ_NONNULL HtName_(Ht) *ht) {
+	rz_return_val_if_fail(ht, NULL);
+	HT_(IterState) *state = Ht_(new_iter_state)(ht);
+	rz_return_val_if_fail(state, NULL);
+
+	RzIterator *iter = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_kv), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state);
 	if (!iter) {
 		Ht_(free_iter_state)(state);
 	}
