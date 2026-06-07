@@ -245,7 +245,7 @@ static RzPVector /*<RzBinSection *>*/ *smd_sections(RzBinFile *bf) {
 	const smd_t *hdr = bf->o->bin_obj;
 	RzPVector *ret = NULL;
 
-	if (!(ret = rz_pvector_new(NULL))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 	RzBinSection *ptr;
@@ -300,7 +300,7 @@ static RzPVector /*<RzBinAddr *>*/ *smd_entries(RzBinFile *bf) {
 
 	RzPVector *ret;
 	RzBinAddr *ptr = NULL;
-	if (!(ret = rz_pvector_new(NULL))) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
 	if (!(ptr = RZ_NEW0(RzBinAddr))) {
