@@ -948,3 +948,22 @@ EXPECT=<<EOF
 \           0x00000025      end
 EOF
 RUN
+
+NAME=asm.flags.real -- section flag at imported func
+FILE=bins/elf/_Exit_0x91
+CMDS=<<EOF
+aF
+e asm.flags.real=true
+pdf
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- _start:
+/ entry0();
+|           0x00001030      endbr64                                    ; [11] -r-x section size 18 named .text
+|           0x00001034      push  rbp
+|           0x00001035      mov   rbp, rsp
+|           0x00001038      mov   edi, 0x91
+\           0x0000103d      call  section..plt.sec
+EOF
+RUN
