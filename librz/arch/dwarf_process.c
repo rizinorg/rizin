@@ -1958,7 +1958,7 @@ static RzBinDwarfLocation *location_by_biggest_range(const RzBinDwarfLocList *lo
 	void **it;
 	rz_pvector_foreach (&loclist->entries, it) {
 		RzBinDwarfLocListEntry *entry = *it;
-		ut64 range = entry->range.begin - entry->range.end;
+		ut64 range = entry->range.end - entry->range.begin;
 		if (range > biggest_range && entry->location &&
 			(entry->location->kind == RzBinDwarfLocationKind_REGISTER_OFFSET ||
 				entry->location->kind == RzBinDwarfLocationKind_REGISTER ||

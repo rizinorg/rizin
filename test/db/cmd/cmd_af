@@ -400,10 +400,10 @@ data-xrefs:
 locals: 6
 args: 2
 var void (*anonymous_fcn_0x4d93)() fn @ r12
+arg void *d @ r23
+arg int code @ r24
+var struct _atexit *p @ r27
 var int n @ r28
-arg int code @ r6
-arg void *d @ r7
-var struct _atexit *p @ LOCLIST
 var struct _atexit **lastp @ ...
 var struct _on_exit_args *args @ LOCLIST
 var int i @ LOCLIST
