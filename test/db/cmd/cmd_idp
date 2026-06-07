@@ -7,8 +7,20 @@ fi 1 @ 0x00401010
 EOF
 EXPECT=<<EOF
 0x00401000 4096 section..text
-0x00401000 0 pdb.SimplePDB.void___cdecl_SomeCoolFunction_void
-0x00401010 0 pdb.SimplePDB._main
+0x00401000 13 pdb.SimplePDB.void___cdecl_SomeCoolFunction_void
+0x00401010 8 pdb.SimplePDB._main
+EOF
+RUN
+
+NAME=idp creates functions for public function symbols
+FILE=bins/pdb/vs2019_cpp_override.exe
+CMDS=<<EOF
+idp bins/pdb/vs2019_cpp_override.pdb
+aflq~Foo,Bar
+EOF
+EXPECT=<<EOF
+0x00401000 pdb.vs2019_cpp_override.public_virtual:_int___thiscall_CTest1::Foo_void_const
+0x00401040 pdb.vs2019_cpp_override.public_virtual:_int___thiscall_CTest2::Bar_void_const
 EOF
 RUN
 
