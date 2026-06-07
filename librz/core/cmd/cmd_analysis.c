@@ -552,7 +552,16 @@ static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, 
 		if (op->il_op) {
 			RzStrBuf *sbil = rz_strbuf_new("");
 			rz_il_op_effect_stringify(op->il_op, sbil, false);
-			PRINTF_LN_STR("rzil", rz_strbuf_get(sbil));
+			const char *ilstr = rz_strbuf_get(sbil);
+			if (RZ_STR_ISNOTEMPTY(ilstr)) {
+				if (use_color) {
+					rz_cons_printf("%srzil: " Color_RESET, color);
+					rz_core_il_colorize_body(core->cons->context, ilstr);
+					rz_cons_newline();
+				} else {
+					rz_cons_printf("rzil: %s\n", ilstr);
+				}
+			}
 			rz_strbuf_free(sbil);
 		}
 		if (op->opex) {
