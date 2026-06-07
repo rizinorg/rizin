@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2025 tushar3q34 <tushar3q34@gmail.com>
+// SPDX-FileCopyrightText: 2026 historicattle <sirigere.naren@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
@@ -53,6 +54,10 @@ static void track_init(RzCore *core) {
 
 static ut64 get_reg_value(RzAnalysis *analysis, const char *reg_name) {
 	RzAnalysisILVM *vm = rz_analysis_get_il_vm(analysis);
+	if (!vm || !vm->vm) {
+		return UT64_MAX;
+	}
+
 	RzILVal *il_c_reg = rz_il_vm_get_var_value(vm->vm, RZ_IL_VAR_KIND_GLOBAL, reg_name);
 	if (!il_c_reg) {
 		return UT64_MAX;
@@ -63,6 +68,28 @@ static ut64 get_reg_value(RzAnalysis *analysis, const char *reg_name) {
 	}
 	ut64 val = rz_bv_to_ut64(bv);
 	rz_bv_free(bv);
+	return val;
+}
+
+static ut64 get_mem_value(RzAnalysis *analysis, ut64 addr, ut8 bytes) {
+	RzAnalysisILVM *vm = rz_analysis_get_il_vm(analysis);
+	if (!vm || !vm->vm) {
+		return UT64_MAX;
+	}
+
+	RzBitVector *addr_bv = rz_bv_new_from_ut64(rz_analysis_get_bits(analysis), addr);
+	if (!addr_bv) {
+		return UT64_MAX;
+	}
+
+	RzBitVector *val_bv = rz_il_vm_mem_loadw(vm->vm, 0, addr_bv, bytes * 8);
+	rz_bv_free(addr_bv);
+	if (!val_bv) {
+		return UT64_MAX;
+	}
+
+	ut64 val = rz_bv_to_ut64(val_bv);
+	rz_bv_free(val_bv);
 	return val;
 }
 
@@ -139,6 +166,7 @@ static RzSetU *allocator_xrefs(RzAnalysis *analysis) {
 			rz_list_foreach (xref_list, itt, xref) {
 				rz_set_u_add(xref_addrs, xref->from);
 			}
+			rz_list_free(xref_list);
 		}
 	}
 	return xref_addrs;
@@ -231,6 +259,84 @@ static void devirtualize_msg_dispatch(RzCore *core, RzSetU *msg_dispatch_addr) {
 	free(bytes);
 }
 
+static void devirtualize_msg_super_dispatch(RzCore *core, RzSetU *msg_super_dispatch_addr) {
+	RzAnalysisFunction *function = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_ROOT);
+	if (!function) {
+		function = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
+	}
+	if (!function) {
+		RZ_LOG_ERROR("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
+		return;
+	}
+
+	const char *cl_reg = rz_analysis_cc_arg(core->analysis, function->cc, 0);
+	const char *m_reg = rz_analysis_cc_arg(core->analysis, function->cc, 1);
+	const char *ret_reg = rz_analysis_cc_ret(core->analysis, function->cc);
+	RzSetU *xref_addrs = allocator_xrefs(core->analysis);
+	ut8 ptr_size = rz_analysis_get_bits(core->analysis) / 8;
+
+	ut64 start = function->addr;
+	ut64 end = rz_analysis_function_max_addr(function);
+	RzAnalysisOp *op = rz_analysis_op_new();
+	track_init(core);
+	ut8 *bytes = malloc(end - start);
+	if (!rz_io_read_at_mapped(core->io, start, bytes, end - start)) {
+		RZ_LOG_ERROR("Cannot read at offset 0x%08" PFMT64x "\n", start);
+	}
+
+	ut64 offset = 0;
+	bool refresh_vm = false;
+	while (start < end) {
+		if (rz_analysis_op(core->analysis, op, start, bytes + offset, end - start, RZ_ANALYSIS_OP_MASK_ALL) < 1) {
+			break;
+		}
+		if (refresh_vm) {
+			rz_core_analysis_il_reinit(core);
+			refresh_vm = false;
+		}
+
+		refresh_vm = is_branch_type_to_method(op);
+		rz_core_il_step(core, 1);
+		if (rz_set_u_contains(xref_addrs, start)) {
+			ut64 val = get_reg_value(core->analysis, cl_reg);
+			rz_analysis_il_vm_set_unsigned(core->analysis, ret_reg, val);
+		}
+
+		if (rz_set_u_contains(msg_super_dispatch_addr, op->addr)) {
+			ut64 vf_addr = get_reg_value(core->analysis, m_reg);
+			ut64 super_struct_addr = get_reg_value(core->analysis, cl_reg);
+			ut64 superclass_addr = UT64_MAX;
+			if (super_struct_addr != UT64_MAX) {
+				ut64 current_class_addr = get_mem_value(core->analysis, super_struct_addr + ptr_size, ptr_size);
+				if (current_class_addr != UT64_MAX) {
+					superclass_addr = get_mem_value(core->analysis, current_class_addr + ptr_size, ptr_size);
+				}
+			}
+
+			if (superclass_addr != UT64_MAX) {
+				char *vmethod_name = get_message_dispatch_method(core, superclass_addr, vf_addr);
+				if (vmethod_name) {
+					RzStrBuf *comment = rz_strbuf_new(NULL);
+					rz_strbuf_setf(comment, "Super message dispatch to %s", vmethod_name);
+					const char *str_comment = rz_strbuf_drain(comment);
+					rz_core_meta_comment_add(core, str_comment, start);
+					add_virtual_xrefs(core->analysis, vmethod_name, op->addr);
+					RZ_FREE(str_comment);
+					RZ_FREE(vmethod_name);
+				}
+			}
+		}
+		start += op->size;
+		offset += op->size;
+		core->offset = start;
+		rz_analysis_op_fini(op);
+	}
+
+	rz_set_u_free(xref_addrs);
+	rz_analysis_op_free(op);
+	RZ_FREE(bytes);
+}
+
 static char *construct_reloc_name(RZ_NONNULL RzBinReloc *reloc, RZ_NULLABLE const char *name, bool demangle) {
 	RzStrBuf *buf = rz_strbuf_new("");
 	if (!buf) {
@@ -265,6 +371,22 @@ static char *construct_reloc_name(RZ_NONNULL RzBinReloc *reloc, RZ_NULLABLE cons
 	return rz_strbuf_drain(buf);
 }
 
+static RzSetU *get_xrefs(RzAnalysis *analysis, RzVector /*<ut64>*/ *addrs) {
+	RzSetU *xrefs = rz_set_u_new();
+	ut64 *itt;
+	rz_vector_foreach (addrs, itt) {
+		ut64 addr = *itt;
+		RzList *xref_list = rz_analysis_xrefs_get_to(analysis, addr);
+		RzListIter *it;
+		RzAnalysisXRef *xref;
+		rz_list_foreach (xref_list, it, xref) {
+			rz_set_u_add(xrefs, xref->from);
+		}
+		rz_list_free(xref_list);
+	}
+	return xrefs;
+}
+
 /**
  * \brief devirtualize Objective-C message dispatch methods
  *
@@ -281,52 +403,66 @@ RZ_IPI void rz_core_analysis_devirtualize_objc_methods(RZ_NULLABLE RzCore *core)
 		return;
 	}
 
+	ut64 original_offset = core->offset;
+
 	// Check if the binary file has message dispatch methods
 	// First find in symbols, then in relocs
 	bool msg_dispatch = false;
+	bool msg_super_dispatch = false;
+
 	RzVector *msg_dispatch_addrs = rz_vector_new(sizeof(ut64), NULL, NULL);
+	RzVector *msg_super_dispatch_addrs = rz_vector_new(sizeof(ut64), NULL, NULL);
+	if (!msg_dispatch_addrs || !msg_super_dispatch_addrs) {
+		rz_vector_free(msg_dispatch_addrs);
+		rz_vector_free(msg_super_dispatch_addrs);
+		return;
+	}
 
 	const RzPVector *symbols = rz_bin_object_get_symbols(bf->o);
 	void **iter;
 	rz_pvector_foreach (symbols, iter) {
 		RzBinSymbol *symbol = *iter;
-		if (!rz_str_cmp(symbol->name, "objc_msgSend", -1)) {
+		if (RZ_STR_EQ(symbol->name, "objc_msgSend")) {
 			msg_dispatch = true;
 			rz_vector_push(msg_dispatch_addrs, &(symbol->vaddr));
-			break;
+		} else if (RZ_STR_EQ(symbol->name, "objc_msgSendSuper2")) {
+			msg_super_dispatch = true;
+			rz_vector_push(msg_super_dispatch_addrs, &(symbol->vaddr));
 		}
 	}
 
 	RzBinRelocStorage *relocs = rz_bin_object_patch_relocs(bf, obj);
-	for (size_t i = 0; i < relocs->relocs_count; i++) {
+	for (ut64 i = 0; relocs && i < relocs->relocs_count; i++) {
 		RzBinReloc *reloc = relocs->relocs[i];
 		bool demangle = rz_config_get_b(core->config, "bin.demangle");
 		char *name = construct_reloc_name(reloc, NULL, demangle);
-		if (!rz_str_cmp(name, "objc_msgSend", -1)) {
+		if (RZ_STR_EQ(name, "objc_msgSend")) {
 			msg_dispatch = true;
 			rz_vector_push(msg_dispatch_addrs, &(reloc->vaddr));
+		} else if (RZ_STR_EQ(name, "objc_msgSendSuper2")) {
+			msg_super_dispatch = true;
+			rz_vector_push(msg_super_dispatch_addrs, &(reloc->vaddr));
 		}
 		free(name);
 	}
 
-	RzSetU *msg_dispatch_xref_addr = rz_set_u_new();
-
 	// Note all xrefs to message dispatch
-	ut64 *itt;
-	rz_vector_foreach (msg_dispatch_addrs, itt) {
-		ut64 addr = *itt;
-		RzList *xref_list = rz_analysis_xrefs_get_to(core->analysis, addr);
-		RzListIter *it;
-		RzAnalysisXRef *xref;
-		rz_list_foreach (xref_list, it, xref) {
-			rz_set_u_add(msg_dispatch_xref_addr, xref->from);
-		}
-		rz_list_free(xref_list);
-	}
-	rz_vector_free(msg_dispatch_addrs);
+	RzSetU *msg_dispatch_xref_addr = get_xrefs(core->analysis, msg_dispatch_addrs);
 
+	rz_vector_free(msg_dispatch_addrs);
 	if (msg_dispatch) {
 		devirtualize_msg_dispatch(core, msg_dispatch_xref_addr);
 	}
+
 	rz_set_u_free(msg_dispatch_xref_addr);
+	core->offset = original_offset;
+	RzSetU *msg_super_dispatch_xref_addr = get_xrefs(core->analysis, msg_super_dispatch_addrs);
+
+	rz_vector_free(msg_super_dispatch_addrs);
+	if (msg_super_dispatch) {
+		devirtualize_msg_super_dispatch(core, msg_super_dispatch_xref_addr);
+	}
+
+	rz_set_u_free(msg_super_dispatch_xref_addr);
+	core->offset = original_offset;
 }
