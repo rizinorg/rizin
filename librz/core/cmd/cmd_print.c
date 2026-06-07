@@ -5391,14 +5391,32 @@ RZ_IPI RzCmdStatus rz_print_equal_equal_visual_handler(RzCore *core, int argc, c
 	return print_histogram_bytes(core, argc, argv, false, true);
 }
 
-static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **argv, bool vertical, bool isinteractive) {
+typedef double (*RzBlockMetricFn)(const ut8 *data, ut64 len);
+
+/**
+ * \brief Configuration for the generic per-block scalar histogram (p= / p==).
+ */
+typedef struct {
+	RzBlockMetricFn fn; ///< Per-block metric (e.g. rz_hash_entropy, rz_hash_chisquare).
+	double range_min; ///< Lower bound of the display range (ignored when autoscale is set).
+	double range_max; ///< Upper bound of the display range (ignored when autoscale is set).
+	bool autoscale; ///< Derive the upper bound from the largest value currently in view.
+	int precision; ///< Number of decimals shown on the ruler labels.
+} RzBlockMetricSpec;
+
+// Generic per-block histogram for a scalar byte statistic (entropy, chi-square, index
+// of coincidence, min-entropy, serial correlation, ...). The per-block value and its
+// display range come from spec: bounded metrics use the fixed [range_min, range_max];
+// unbounded ones (autoscale) rescale to the largest value currently in view so the
+// bars stay meaningful regardless of block size.
+static RzCmdStatus print_histogram_metric(RzCore *core, int argc, const char **argv, bool vertical, bool isinteractive, const RzBlockMetricSpec *spec) {
 	CoreBlockRange *brange = parse_args_calculate_range(core, argc, argv);
 	if (!brange) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	ut8 *data = calloc(1, brange->nblocks);
-	// fp entropy for the static horizontal path (via opts->data_f); the ut8
-	// copy keeps the visual / vertical paths working.
+	// fp metric values feed the static horizontal ruler via opts->data_f; the
+	// ut8 copy keeps the visual / vertical paths working.
 	double *fdata = RZ_NEWS0(double, brange->nblocks);
 	ut8 *tmp = malloc(brange->blocksize);
 	if (!tmp || !fdata || !data) {
@@ -5412,20 +5430,46 @@ static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **
 	for (size_t i = 0; i < brange->nblocks; i++) {
 		ut64 off = brange->from + (brange->blocksize * (i + brange->skipblocks));
 		rz_io_read_at_mapped(core->io, off, tmp, brange->blocksize);
-		// Shannon entropy in bits-per-byte (0..8 for ut8 data).
-		double e = rz_hash_entropy(tmp, brange->blocksize);
-		// Quantise into ut8 over the Shannon range (8 bits/byte max) so the
-		// visual / vertical paths' integer thresholds rescale correctly.
-		double q = e / 8.0;
+		fdata[i] = spec->fn(tmp, brange->blocksize);
+	}
+	free(tmp);
+	double vmin = spec->range_min;
+	double vmax = spec->range_max;
+	if (spec->autoscale) {
+		vmin = 0.0;
+		vmax = 0.0;
+		for (size_t i = 0; i < brange->nblocks; i++) {
+			if (fdata[i] > vmax) {
+				vmax = fdata[i];
+			}
+		}
+		if (vmax <= 0.0) {
+			vmax = 1.0;
+		}
+	}
+	double span = vmax - vmin;
+	if (span <= 0.0) {
+		span = 1.0;
+	}
+	for (size_t i = 0; i < brange->nblocks; i++) {
+		double q = (fdata[i] - vmin) / span;
 		if (q < 0.0) {
 			q = 0.0;
 		} else if (q > 1.0) {
 			q = 1.0;
 		}
 		data[i] = (ut8)(255 * q);
-		fdata[i] = e;
 	}
-	free(tmp);
+	// Integer ruler bounds, computed without libm: floor(vmin) and ceil(vmax).
+	int imin = (int)vmin;
+	if ((double)imin > vmin) {
+		imin--;
+	}
+	int imax = (int)vmax;
+	if ((double)imax < vmax) {
+		imax++;
+	}
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	if (isinteractive) {
 		RzHistogramOptions *opts = default_visual_opts(core, brange->from);
 		if (!opts) {
@@ -5439,41 +5483,32 @@ static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **
 		opts->data_f = fdata; // visual fp path uses Shannon directly
 		if (print_visual_bytes(core, opts, data, brange) != RZ_CMD_STATUS_OK) {
 			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
-			free(brange);
-			free(fdata);
-			free(data);
-			return RZ_CMD_STATUS_ERROR;
-		}
-	} else if (vertical) {
-		// Vertical path uses the ut8 buffer (no data_f support there yet).
-		RzHistogramOptions opts = default_histogram_opts(core->config, &core->cons->context->pal, brange->from);
-		opts.value_max = 8;
-		opts.value_precision = 1;
-		if (!print_histogram(core, &opts, data, brange->nblocks, brange->blocksize, true)) {
-			RZ_LOG_ERROR("Cannot generate vertical histogram\n");
-			free(data);
-			free(fdata);
-			free(brange);
-			return RZ_CMD_STATUS_ERROR;
+			res = RZ_CMD_STATUS_ERROR;
 		}
 	} else {
-		// Route fp Shannon values via opts->data_f for full precision.
 		RzHistogramOptions opts = default_histogram_opts(core->config, &core->cons->context->pal, brange->from);
-		opts.value_max = 8;
-		opts.value_precision = 1;
-		opts.data_f = fdata;
-		if (!print_histogram(core, &opts, data, brange->nblocks, brange->blocksize, false)) {
-			RZ_LOG_ERROR("Cannot generate horizontal histogram\n");
-			free(data);
-			free(fdata);
-			free(brange);
-			return RZ_CMD_STATUS_ERROR;
+		opts.value_min = imin;
+		opts.value_max = imax;
+		opts.value_precision = spec->precision;
+		// The static horizontal path can show full-precision fp values.
+		if (!vertical) {
+			opts.data_f = fdata;
+		}
+		if (!print_histogram(core, &opts, data, brange->nblocks, brange->blocksize, vertical)) {
+			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+			res = RZ_CMD_STATUS_ERROR;
 		}
 	}
 	free(data);
 	free(fdata);
 	free(brange);
-	return RZ_CMD_STATUS_OK;
+	return res;
+}
+
+static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **argv, bool vertical, bool isinteractive) {
+	// Shannon entropy in bits-per-byte (0..8 for ut8 data).
+	static const RzBlockMetricSpec spec = { rz_hash_entropy, 0.0, 8.0, false, 1 };
+	return print_histogram_metric(core, argc, argv, vertical, isinteractive, &spec);
 }
 
 static bool print_rising_and_falling_entropy_table(RzCore *core, RzCmdStateOutput *state, CoreBlockRange *brange, ut8 *tmp, double fallingthreshold, double risingthreshold) {
@@ -5772,6 +5807,62 @@ RZ_IPI RzCmdStatus rz_print_equal_equal_entropy_handler(RzCore *core, int argc, 
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_entropy_visual_handler(RzCore *core, int argc, const char **argv) {
 	return print_histogram_entropy(core, argc, argv, false, true);
+}
+
+static const RzBlockMetricSpec metric_chisquare = { rz_hash_chisquare, 0.0, 0.0, true, 1 };
+
+RZ_IPI RzCmdStatus rz_print_equal_chisquare_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_metric(core, argc, argv, true, false, &metric_chisquare);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_chisquare_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_metric(core, argc, argv, false, false, &metric_chisquare);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_chisquare_visual_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_metric(core, argc, argv, false, true, &metric_chisquare);
+}
+
+static const RzBlockMetricSpec metric_ioc = { rz_hash_ioc, 0.0, 1.0, false, 4 };
+
+RZ_IPI RzCmdStatus rz_print_equal_ioc_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_metric(core, argc, argv, true, false, &metric_ioc);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_ioc_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_metric(core, argc, argv, false, false, &metric_ioc);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_ioc_visual_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_metric(core, argc, argv, false, true, &metric_ioc);
+}
+
+static const RzBlockMetricSpec metric_minentropy = { rz_hash_min_entropy, 0.0, 8.0, false, 2 };
+
+RZ_IPI RzCmdStatus rz_print_equal_minentropy_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_metric(core, argc, argv, true, false, &metric_minentropy);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_minentropy_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_metric(core, argc, argv, false, false, &metric_minentropy);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_minentropy_visual_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_metric(core, argc, argv, false, true, &metric_minentropy);
+}
+
+static const RzBlockMetricSpec metric_serialcorr = { rz_hash_serial_correlation, -1.0, 1.0, false, 2 };
+
+RZ_IPI RzCmdStatus rz_print_equal_serialcorr_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_metric(core, argc, argv, true, false, &metric_serialcorr);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_serialcorr_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_metric(core, argc, argv, false, false, &metric_serialcorr);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_serialcorr_visual_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_metric(core, argc, argv, false, true, &metric_serialcorr);
 }
 
 RZ_IPI RzCmdStatus rz_print_rising_and_falling_entropy_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
