@@ -30,7 +30,7 @@ typedef struct {
  */
 static void _6502_il_accumulator(_6502ILAddr *out) {
 	out->kind = _6502_ADDR_KIND_ACCUMULATOR;
-	out->addr = VARG("a");
+	out->addr = NULL;
 }
 
 /**
@@ -564,7 +564,7 @@ static RzILOpEffect *_6502_il_op_transfer(const char *dst, const char *src, bool
  * SLO (ASL,ORA)
  */
 static RzILOpEffect *_6502_il_op_slo(_6502ILAddr *addr) {
-	RzILOpEffect *asl = _6502_il_op_asl(dup_addr(addr));
+	RzILOpEffect *asl = _6502_il_op_asl(addr);
 	RzILOpEffect *ora = _6502_il_op_ora(dup_addr(addr));
 	return SEQ2(asl, ora);
 }
@@ -573,7 +573,7 @@ static RzILOpEffect *_6502_il_op_slo(_6502ILAddr *addr) {
  * RLA (ROL,AND)
  */
 static RzILOpEffect *_6502_il_op_rla(_6502ILAddr *addr) {
-	RzILOpEffect *rol = _6502_il_op_rol(dup_addr(addr));
+	RzILOpEffect *rol = _6502_il_op_rol(addr);
 	RzILOpEffect *and_ = _6502_il_op_and(dup_addr(addr));
 	return SEQ2(rol, and_);
 }
@@ -582,7 +582,7 @@ static RzILOpEffect *_6502_il_op_rla(_6502ILAddr *addr) {
  * SRE (LSR,EOR)
  */
 static RzILOpEffect *_6502_il_op_sre(_6502ILAddr *addr) {
-	RzILOpEffect *lsr = _6502_il_op_lsr(dup_addr(addr));
+	RzILOpEffect *lsr = _6502_il_op_lsr(addr);
 	RzILOpEffect *eor = _6502_il_op_eor(dup_addr(addr));
 	return SEQ2(lsr, eor);
 }
@@ -591,7 +591,7 @@ static RzILOpEffect *_6502_il_op_sre(_6502ILAddr *addr) {
  * RRA (ROR,ADC)
  */
 static RzILOpEffect *_6502_il_op_rra(_6502ILAddr *addr) {
-	RzILOpEffect *ror = _6502_il_op_ror(dup_addr(addr));
+	RzILOpEffect *ror = _6502_il_op_ror(addr);
 	RzILOpEffect *adc = _6502_il_op_adc(dup_addr(addr));
 	return SEQ2(ror, adc);
 }
@@ -607,7 +607,7 @@ static RzILOpEffect *_6502_il_op_sax(_6502ILAddr *addr) {
  * LAX (LDA,LDX)
  */
 static RzILOpEffect *_6502_il_op_lax(_6502ILAddr *addr) {
-	RzILOpEffect *lda = _6502_il_op_ld("a", dup_addr(addr));
+	RzILOpEffect *lda = _6502_il_op_ld("a", addr);
 	RzILOpEffect *ldx = _6502_il_op_ld("x", dup_addr(addr));
 	return SEQ2(lda, ldx);
 }
@@ -631,7 +631,7 @@ static RzILOpEffect *_6502_il_op_laximm(_6502ILAddr *addr, ut8 magic) {
  * DCP (DEC,CMP)
  */
 static RzILOpEffect *_6502_il_op_dcp(_6502ILAddr *addr) {
-	RzILOpEffect *dec = _6502_il_op_inc(dup_addr(addr), false);
+	RzILOpEffect *dec = _6502_il_op_inc(addr, false);
 	RzILOpEffect *cmp = _6502_il_op_cmp("a", dup_addr(addr));
 	return SEQ2(dec, cmp);
 }
@@ -640,7 +640,7 @@ static RzILOpEffect *_6502_il_op_dcp(_6502ILAddr *addr) {
  * ISC (INC,SBC)
  */
 static RzILOpEffect *_6502_il_op_isc(_6502ILAddr *addr) {
-	RzILOpEffect *inc = _6502_il_op_inc(dup_addr(addr), true);
+	RzILOpEffect *inc = _6502_il_op_inc(addr, true);
 	RzILOpEffect *sbc = _6502_il_op_sbc(dup_addr(addr));
 	return SEQ2(inc, sbc);
 }
@@ -660,7 +660,8 @@ static RzILOpEffect *_6502_il_op_anc(_6502ILAddr *addr) {
  */
 static RzILOpEffect *_6502_il_op_alr(_6502ILAddr *addr) {
 	RzILOpEffect *and_ = _6502_il_op_and(addr);
-	_6502ILAddr acc = { .kind = _6502_ADDR_KIND_ACCUMULATOR, .addr = VARG("a") };
+	_6502ILAddr acc;
+	_6502_il_accumulator(&acc);
 	RzILOpEffect *lsr = _6502_il_op_lsr(&acc);
 	return SEQ2(and_, lsr);
 }
@@ -669,8 +670,9 @@ static RzILOpEffect *_6502_il_op_alr(_6502ILAddr *addr) {
  * ARR (AND,ROR)
  */
 static RzILOpEffect *_6502_il_op_arr(_6502ILAddr *addr) {
-	RzILOpEffect *and_ = _6502_il_op_and(dup_addr(addr));
-	_6502ILAddr acc = { .kind = _6502_ADDR_KIND_ACCUMULATOR, .addr = VARG("a") };
+	RzILOpEffect *and_ = _6502_il_op_and(addr);
+	_6502ILAddr acc;
+	_6502_il_accumulator(&acc);
 	RzILOpEffect *ror = _6502_il_op_ror(&acc);
 	return SEQ2(and_, ror);
 }
