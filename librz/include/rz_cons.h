@@ -426,6 +426,23 @@ typedef struct rz_cons_canvas_t {
 #define UTF_CIRCLE           "\u25EF"
 #define UTF_BLOCK            "\u2588"
 
+// Lower partial block elements (ascending height) for the minimap density ramp.
+#define UTF_BLOCK_LOWER_EIGHTH         "\u2581" // ▁
+#define UTF_BLOCK_LOWER_QUARTER        "\u2582" // ▂
+#define UTF_BLOCK_LOWER_THREE_EIGHTHS  "\u2583" // ▃
+#define UTF_BLOCK_LOWER_HALF           "\u2584" // ▄
+#define UTF_BLOCK_LOWER_FIVE_EIGHTHS   "\u2585" // ▅
+#define UTF_BLOCK_LOWER_THREE_QUARTERS "\u2586" // ▆
+#define UTF_BLOCK_LOWER_SEVEN_EIGHTHS  "\u2587" // ▇
+
+// Heavy box-drawing pieces for the minimap window indicator.
+#define RUNE_LINE_HORIZ_HEAVY "\u2501" // ━
+#define RUNE_CORNER_TL_HEAVY  "\u250F" // ┏
+#define RUNE_CORNER_TR_HEAVY  "\u2513" // ┓
+
+#define UTF_TRIANGLE_DOWN "\u25BC" // ▼
+#define UTF_TRIANGLE_UP   "\u25B2" // ▲
+
 // Emoji
 #define UTF8_POLICE_CARS_REVOLVING_LIGHT    "🚨"
 #define UTF8_WHITE_HEAVY_CHECK_MARK         "✅"
@@ -845,6 +862,7 @@ typedef struct rz_histogram_options_t {
 	bool offset; ///< Show offsets
 	bool cursor; ///< Show cursor position
 	bool color; ///< Use colors
+	bool minimap; ///< Show top minimap on visual histogram (visual mode only; auto-hides when data fits)
 	ut32 cols; ///< Screen-column width (0 = default 78)
 	ut64 offpos; ///< Starting offset value
 	ut64 curpos; ///< Cursor position
@@ -874,11 +892,15 @@ typedef struct rz_histogram_interactive_t {
 
 	int barnumber;
 	int size;
+	ut64 blocksize; ///< Bytes per data point (drives the X-axis offset ruler in interactive horizontal mode).
 	int zoom;
 	int movspeed;
 
 	int x, y;
 	int w, h;
+
+	const ut8 *cursor_bytes; ///< Up to 32 raw bytes read at the cursor's file offset; shown on the right of the minimap when `hist->w > 200`. NULL = no hex preview this redraw.
+	ut32 cursor_bytes_len; ///< Length of cursor_bytes (typically 32, can be less near EOF). Ignored when cursor_bytes is NULL.
 
 	RzHistogramOptions *opts;
 } RzHistogramInteractive;
@@ -1072,7 +1094,7 @@ RZ_API const char *rz_cons_get_rune(const ut8 ch);
 /* Histograms */
 RZ_API RZ_OWN RzStrBuf *rz_histogram_horizontal(RZ_NONNULL RzHistogramOptions *opts, RZ_NONNULL const ut8 *data, ut32 width, ut32 height);
 RZ_API RZ_OWN RzStrBuf *rz_histogram_vertical(RZ_NONNULL RzHistogramOptions *opts, RZ_NONNULL const ut8 *data, int width, int step);
-RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzHistogramInteractive *hist, const unsigned char *data);
+RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzHistogramInteractive *hist, RZ_NONNULL const ut8 *data);
 RZ_API RzHistogramOptions *rz_histogram_options_new();
 RZ_API void rz_histogram_options_free(RzHistogramOptions *histops);
 RZ_API RzHistogramInteractive *rz_histogram_interactive_new(RzConsCanvas *can, RzHistogramOptions *opts);
