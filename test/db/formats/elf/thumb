@@ -103,3 +103,19 @@ ldr r1, [0x000010e4]
 add r0, pc
 EOF
 RUN
+
+NAME=ELF: arm-thumb-dwarf - Thumb main tagged with $t mapping symbol
+FILE=bins/elf/dwarf/arm-thumb-dwarf.elf
+CMDS=<<EOF
+s main
+pi 6
+EOF
+EXPECT=<<EOF
+push {r7, lr}
+sub sp, 8
+add r7, sp, 0
+str r0, [r7, 4]
+str r1, [r7]
+ldr r3, [r7, 4]
+EOF
+RUN
