@@ -46,6 +46,73 @@ bool test_rz_diff_distances(void) {
 	mu_end;
 }
 
+// Deterministic pseudo-random buffer, so the CDC chunking (and thus the test
+// expectations) are reproducible across platforms.
+static ut8 *cdc_make_buffer(ut32 size, ut32 seed) {
+	ut8 *buf = malloc(size);
+	if (!buf) {
+		return NULL;
+	}
+	ut32 x = seed;
+	for (ut32 i = 0; i < size; i++) {
+		x = 1103515245u * x + 12345u;
+		buf[i] = (x >> 16) & 0xff;
+	}
+	return buf;
+}
+
+bool test_rz_diff_cdc_below_threshold(void) {
+	// below RZ_DIFF_CDC_THRESHOLD the CDC path forwards to exact Myers, so the
+	// results must match rz_diff_myers_distance byte-for-byte.
+	for (ut32 i = 0; tests[i].a; i++) {
+		size_t la = strlen((const char *)tests[i].a);
+		size_t lb = strlen((const char *)tests[i].b);
+		ut32 cdc = 0, myers = 0;
+		mu_assert_true(rz_diff_cdc_distance(tests[i].a, la, tests[i].b, lb, &cdc, NULL), "rz_diff_cdc_distance");
+		mu_assert_true(rz_diff_myers_distance(tests[i].a, la, tests[i].b, lb, &myers, NULL), "rz_diff_myers_distance");
+		mu_assert_eq(cdc, myers, "cdc-myers equals exact myers below threshold");
+		mu_assert_eq(cdc, tests[i].myers, "cdc-myers matches expected myers distance");
+	}
+	mu_end;
+}
+
+bool test_rz_diff_cdc_large_identical(void) {
+	const ut32 size = (1u << 20) + 0x40000; // 1.25 MiB, above the CDC threshold
+	ut8 *a = cdc_make_buffer(size, 0xc0ffee);
+	mu_assert_notnull(a, "alloc large buffer");
+	ut32 distance = UT32_MAX;
+	double similarity = -1.0;
+	mu_assert_true(rz_diff_cdc_distance(a, size, a, size, &distance, &similarity), "cdc on identical large buffers");
+	mu_assert_eq(distance, 0, "identical large buffers have zero distance");
+	mu_assert_true(fabs(similarity - 1.0) < 1e-9, "identical large buffers have similarity 1.0");
+	free(a);
+	mu_end;
+}
+
+bool test_rz_diff_cdc_large_matches_myers(void) {
+	const ut32 size = (1u << 20) + 0x40000; // 1.25 MiB, above the CDC threshold
+	ut8 *a = cdc_make_buffer(size, 0x1234);
+	ut8 *b = cdc_make_buffer(size, 0x1234);
+	mu_assert_notnull(a, "alloc buffer a");
+	mu_assert_notnull(b, "alloc buffer b");
+	// sparse single-byte substitutions: each edit lands in its own chunk, the
+	// neighbours stay anchored, so the summed per-gap distance equals the exact
+	// Myers distance (which is cheap to compute here because the edit distance
+	// stays small).
+	const ut32 offsets[] = { 1000, 200000, 500000, 800000, 1100000 };
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(offsets); i++) {
+		b[offsets[i]] ^= 0xff;
+	}
+	ut32 cdc = 0, myers = 0;
+	mu_assert_true(rz_diff_cdc_distance(a, size, b, size, &cdc, NULL), "cdc on edited large buffers");
+	mu_assert_true(rz_diff_myers_distance(a, size, b, size, &myers, NULL), "exact myers on edited large buffers");
+	mu_assert_true(myers > 0, "edited buffers differ");
+	mu_assert_eq(cdc, myers, "cdc-myers equals exact myers for localized edits");
+	free(a);
+	free(b);
+	mu_end;
+}
+
 bool test_rz_diff_unified_lines(void) {
 	RzDiff *diff = NULL;
 	char *result = NULL;
@@ -1165,6 +1232,9 @@ bool test_rz_diff_long_common_prefix(void) {
 
 int all_tests() {
 	mu_run_test(test_rz_diff_distances);
+	mu_run_test(test_rz_diff_cdc_below_threshold);
+	mu_run_test(test_rz_diff_cdc_large_identical);
+	mu_run_test(test_rz_diff_cdc_large_matches_myers);
 	mu_run_test(test_rz_diff_unified_lines);
 	mu_run_test(test_rz_diff_unified_bytes);
 	mu_run_test(test_rz_diff_hash_data);

@@ -51,6 +51,32 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rz-diff distance comparison (cdc-myers)
+TOOL=rz-diff
+ARGS=-d cdc-myers bins/java/Main.java.1.7.class bins/java/Main.java.15.class
+EXPECT=<<EOF
+similarity: 0.769
+distance: 602
+EOF
+RUN
+
+NAME=rz-diff distance comparison (cdc-myers) JSON
+TOOL=rz-diff
+ARGS=-jd cdc-myers bins/java/Main.java.1.7.class bins/java/Main.java.15.class
+EXPECT=<<EOF
+{"similarity":0.768995,"distance":602}
+EOF
+RUN
+
+NAME=rz-diff distance comparison (cdc-myers) QUIET
+TOOL=rz-diff
+ARGS=-qd cdc-myers bins/java/Main.java.1.7.class bins/java/Main.java.15.class
+EXPECT=<<EOF
+0.769
+602
+EOF
+RUN
+
 NAME=rz-diff similarity comparison (ssdeep)
 TOOL=rz-diff
 ARGS=-i -d ssdeep 384:2rOP+jOA3orMecdFpCAFRa5FZiqboYOCE:CwqVCA/IFZiqboYOC 384:lrOPfSTZjOA3orMecdFpu1FFl5bZiqboVOCX:zTZwqVu1fXbZiqboVOC

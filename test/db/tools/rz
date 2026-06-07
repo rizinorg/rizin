@@ -462,6 +462,7 @@ EXPECT=<<EOF
  [32m-b[0m[33m bits [0m     [0mSpecify register size for arch (16 (thumb), 32, 64, ..)
  [32m-d[0m[33m myers [0m    [0mCompute edit distance using Eugene W. Myers' O(ND) algorithm (no substitution)
  [32m-d[0m[33m leven [0m    [0mCompute edit distance using Levenshtein O(N^2) algorithm (with substitution)
+ [32m-d[0m[33m cdc-myers [0m[0mLike 'myers' but FastCDC content-defined chunking accelerates large (>1MiB) inputs
  [32m-d[0m[33m ssdeep [0m   [0mCompute edit distance using Context triggered piecewise hashing comparison
  [32m-i[0m           [0mUse command line arguments instead of files (only for -d)
  [32m-H[0m           [0mHexadecimal visual mode

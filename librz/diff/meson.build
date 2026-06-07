@@ -1,5 +1,6 @@
 rz_diff_sources = [
   'diff.c',
+  'cdc.c',
   'distance.c'
 ]
 

@@ -29,6 +29,7 @@ typedef enum {
 	DIFF_DISTANCE_UNKNOWN = 0,
 	DIFF_DISTANCE_MYERS,
 	DIFF_DISTANCE_LEVENSHTEIN,
+	DIFF_DISTANCE_CDC_MYERS,
 	DIFF_DISTANCE_SSDEEP,
 } DiffDistance;
 
@@ -207,6 +208,7 @@ static void rz_diff_show_help(bool usage_only) {
 		"-b",       "bits",         "Specify register size for arch (16 (thumb), 32, 64, ..)",
 		"-d",       "myers",        "Compute edit distance using Eugene W. Myers' O(ND) algorithm (no substitution)",
 		"-d",       "leven",        "Compute edit distance using Levenshtein O(N^2) algorithm (with substitution)",
+		"-d",       "cdc-myers",    "Like 'myers' but FastCDC content-defined chunking accelerates large (>1MiB) inputs",
 		"-d",       "ssdeep",       "Compute edit distance using Context triggered piecewise hashing comparison",
 		"-i",       "",             "Use command line arguments instead of files (only for -d)",
 		"-H",       "",             "Hexadecimal visual mode",
@@ -346,6 +348,8 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_MYERS);
 		} else if (!strcmp(algorithm, "leven")) {
 			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_LEVENSHTEIN);
+		} else if (!strcmp(algorithm, "cdc-myers")) {
+			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_CDC_MYERS);
 		} else if (!strcmp(algorithm, "ssdeep")) {
 			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_SSDEEP);
 		} else {
@@ -543,6 +547,12 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 	case DIFF_DISTANCE_LEVENSHTEIN:
 		if (!rz_diff_levenshtein_distance(a_buffer, a_size, b_buffer, b_size, &distance, &similarity)) {
 			rz_diff_error("failed to calculate distance with levenshtein algorithm\n");
+			goto rz_diff_calculate_distance_bad;
+		}
+		break;
+	case DIFF_DISTANCE_CDC_MYERS:
+		if (!rz_diff_cdc_distance(a_buffer, a_size, b_buffer, b_size, &distance, &similarity)) {
+			rz_diff_error("failed to calculate distance with cdc-myers algorithm\n");
 			goto rz_diff_calculate_distance_bad;
 		}
 		break;
