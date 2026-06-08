@@ -363,6 +363,42 @@ static inline void emit_span_to_strbuf(const char *s, size_t n, const char *colo
 	}
 }
 
+/**
+ * \brief Colorize a stringified RzIL effect body to the cons buffer.
+ *
+ * Emits only the body (no address prefix, no newline) with the same palette
+ * as \c plf. A NULL or empty \p il_stmt emits nothing.
+ */
+RZ_IPI void rz_core_il_colorize_body(RZ_NONNULL RzConsContext *ctx, RZ_NULLABLE const char *il_stmt) {
+	rz_return_if_fail(ctx);
+	if (RZ_STR_ISEMPTY(il_stmt)) {
+		return;
+	}
+
+	const char *color = NULL;
+	size_t prev = 0, len = strlen(il_stmt);
+
+	for (size_t i = 0; i < len; ++i) {
+		const char ch = il_stmt[i];
+
+		if (ch == '(' || ch == ')') {
+			emit_span(il_stmt + prev, i - prev, color);
+			rz_cons_printf("%s%c" Color_RESET, ctx->pal.meta, ch);
+			prev = i + 1;
+			color = (ch == '(') ? ctx->pal.flow : NULL;
+		} else if (ch == ' ') {
+			emit_span(il_stmt + prev, i - prev, color);
+			rz_cons_printf(" ");
+			prev = i + 1;
+			color = NULL;
+		} else if (i == prev && prev > 0 && il_stmt[prev - 1] == ' ') {
+			color = IS_DIGIT(ch) ? ctx->pal.num : ctx->pal.comment;
+		}
+	}
+
+	emit_span(il_stmt + prev, len - prev, color);
+}
+
 static void core_colorify_il_statement(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr) {
 	rz_cons_printf("%s0x%" PFMT64x Color_RESET "%c", ctx->pal.label, addr, delim);
 	rz_core_il_colorize_body(ctx, il_stmt);
@@ -535,7 +571,7 @@ static void core_colorify_il_statement_unicode_to_strbuf(RzConsContext *ctx, con
 		prev_i = i;
 		i += utf_size > 0 ? utf_size : 1;
 	}
-	if (prev_i >= len){
+	if (prev_i >= len) {
 		rz_strbuf_appendf(sb, "\n");
 		return;
 	}
@@ -562,16 +598,16 @@ static ut64 core_il_get_refline_at(ut64 vat, RZ_NONNULL RzPVector /*<RzAnalysisR
 
 static void init_asmqjmps(RZ_NONNULL RzCore *core) {
 	rz_return_if_fail(core);
-    if (core->keep_asmqjmps) {
-        return;
-    }
-    core->asmqjmps_count = 0;
-    ut64 *p = realloc(core->asmqjmps, RZ_CORE_ASMQJMPS_NUM * sizeof(ut64));
-    if (p) {
-        core->asmqjmps_size = RZ_CORE_ASMQJMPS_NUM;
-        core->asmqjmps = p;
-        memset(core->asmqjmps, 0xff, RZ_CORE_ASMQJMPS_NUM * sizeof(ut64));
-    }
+	if (core->keep_asmqjmps) {
+		return;
+	}
+	core->asmqjmps_count = 0;
+	ut64 *p = realloc(core->asmqjmps, RZ_CORE_ASMQJMPS_NUM * sizeof(ut64));
+	if (p) {
+		core->asmqjmps_size = RZ_CORE_ASMQJMPS_NUM;
+		core->asmqjmps = p;
+		memset(core->asmqjmps, 0xff, RZ_CORE_ASMQJMPS_NUM * sizeof(ut64));
+	}
 }
 
 typedef struct il_state_t {
@@ -584,12 +620,12 @@ typedef struct il_state_t {
 
 	ut8 *buf;
 	ut8 *addbuf;
-	int len;
+	size_t len;
 
-	int idx;
-	int inc;
-	int ops_count;
-	int n_lines;
+	size_t idx;
+	size_t inc;
+	size_t ops_count;
+	size_t n_lines;
 	ut8 min_op_size;
 
 	RzStrBuf *sb;
@@ -598,7 +634,7 @@ typedef struct il_state_t {
 	RzPVector /*<RzAnalysisRefline *>*/ *reflines;
 } RzILState;
 
-static RzILState *il_state_init(RZ_NONNULL RzCore *core){
+static RzILState *il_state_init(RZ_NONNULL RzCore *core) {
 	RzILState *ils = RZ_NEW0(RzILState);
 	ils->core = core;
 	ils->sb = RZ_NEW0(RzStrBuf);
@@ -606,7 +642,7 @@ static RzILState *il_state_init(RZ_NONNULL RzCore *core){
 	return ils;
 }
 
-static void il_state_init_reflines(RzILState *ils){
+static void il_state_reflines_init(RzILState *ils) {
 	rz_return_if_fail(ils && ils->core && ils->buf && (ils->len || ils->n_lines));
 	ils->reflines = rz_analysis_reflines_get(ils->core->analysis,
 		ils->addr, ils->buf, ils->len, ils->n_lines,
@@ -615,7 +651,7 @@ static void il_state_init_reflines(RzILState *ils){
 	rz_analysis_set_reflines(ils->core->analysis, ils->reflines);
 }
 
-static void core_il_stringify_single_il(RzILState *ils){
+static void core_il_stringify_single_il(RzILState *ils) {
 	const char *il_stmt = NULL;
 	const char delim = ils->options->pretty ? '\n' : ' ';
 	RzAnalysisOp op;
@@ -678,25 +714,26 @@ finalize:
 finish_str:
 	ils->dst->offset = ils->vat;
 	ils->dst->text = rz_strbuf_drain_nofree(ils->sb);
-	if(!ils->inc) ils->inc = RZ_MAX(1, ils->min_op_size);
+	if (!ils->inc)
+		ils->inc = RZ_MAX(1, ils->min_op_size);
 }
 
-static void il_state_fini_reflines(RzILState *ils){
-	if(ils){
+static void il_state_reflines_fini(RzILState *ils) {
+	if (ils) {
 		rz_analysis_set_reflines(ils->core->analysis, NULL);
 		rz_pvector_free(ils->reflines);
 		ils->reflines = NULL;
 	}
 }
 
-static void il_state_free(RzILState *ils){
+static void il_state_free(RzILState *ils) {
 	rz_strbuf_free(ils->sb);
-	il_state_fini_reflines(ils);
+	il_state_reflines_fini(ils);
 	RZ_FREE(ils->addbuf);
 	free(ils);
 }
 
-static bool il_state_complete(RzILState *ils){
+static bool il_state_complete(RzILState *ils) {
 	if (!ils->options->cbytes && ils->ops_count < ils->n_lines) {
 		ils->addr = ils->current + ils->inc;
 		if (ils->len < 16) {
@@ -712,27 +749,24 @@ static bool il_state_complete(RzILState *ils){
 	return true;
 }
 
-/* \brief Generate formatted RzIL output and append it to a vector of disassembly text entries.
+/* \brief Format instructions and add generated RzIL code to an analysis text vector.
  *
- * Decodes instructions starting at the given address, converts their
- * corresponding RzIL representations into printable text, optionally
- * applying pretty-printing, Unicode formatting, and syntax coloring.
- * The resulting strings are stored as RzAnalysisDisasmText entries in
- * the supplied vector.
+ * Decode instructions starting at the specified address, format their
+ * RzIL equivalents into printable strings, using optional pretty printing,
+ * unicode conversion and syntax highlighting, then store the strings as
+ * RzAnalysisDisasmText entries in the vector provided.
  *
- * \param core      RzCore instance.
- * \param addr      Starting address of the instruction stream.
- * \param buf       Buffer containing instruction bytes.
- * \param len       Size of \p buf in bytes.
- * \param n_lines   Maximum number of instructions to process. If zero,
- *                  core->blocksize is used.
- * \param options   Output formatting options and destination vector.
+ * \param core      Pointer to the current RzCore instance.
+ * \param addr      Starting address for instruction decoding.
+ * \param buf       Pointer to memory buffer that contains instructions.
+ * \param len       Length of \p buf in bytes.
+ * \param n_lines   Maximum number of instructions to decode. Uses
+ *                  core->blocksize if value is 0.
+ * \param options   Formatting parameters and vector for storing results.
  *
- * \return Number of instructions successfully processed.
+ * \return Number of instructions decoded successfully.
  */
-RZ_API int rz_core_il_print_rzil(RZ_NONNULL RzCore *core, ut64 addr,
-	RZ_NONNULL ut8 *buf, int len, int n_lines,
-	RZ_NULLABLE RzCoreILPrintOptions *options) {
+RZ_API int rz_core_il_print_rzil(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL ut8 *buf, size_t len, size_t n_lines, RZ_NULLABLE RzCoreILPrintOptions *options) {
 	rz_return_val_if_fail(core && buf && (n_lines || len), 0);
 
 	if (!options->vec) {
@@ -748,16 +782,13 @@ RZ_API int rz_core_il_print_rzil(RZ_NONNULL RzCore *core, ut64 addr,
 	ils->len = len;
 	ils->n_lines = n_lines;
 	ils->options = options;
-	ils->min_op_size = rz_analysis_archinfo(core->analysis,
-		RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
+	ils->min_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 
 	do {
-		il_state_init_reflines(ils);
+		il_state_reflines_init(ils);
 		init_asmqjmps(core);
 
-		for (ils->idx = 0;
-			ils->ops_count < ils->n_lines && ils->idx < ils->len;
-			ils->ops_count++, ils->idx += ils->inc) {
+		for (ils->idx = 0; ils->ops_count < ils->n_lines && ils->idx < ils->len; ils->ops_count++, ils->idx += ils->inc) {
 
 			core_il_stringify_single_il(ils);
 
@@ -767,8 +798,7 @@ RZ_API int rz_core_il_print_rzil(RZ_NONNULL RzCore *core, ut64 addr,
 				ils->dst = NULL;
 			}
 		}
-
-		il_state_fini_reflines(ils);
+		il_state_reflines_fini(ils);
 	} while (!il_state_complete(ils));
 
 	const int ops_count = ils->ops_count;
