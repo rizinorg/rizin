@@ -19,7 +19,7 @@ static void byte_stringify(const ut8 *bytes, RzStrBuf *sb) {
 
 static bool byte_small_block_compare(const ut8 *a, ut32 a_left, const ut8 *b, ut32 b_left, ut32 *inc) {
 #define SMALL_CMP(bits) \
-	if (a_left > sizeof(ut##bits) && IS_PTR_ALIGNED(a, ut##bits) && IS_PTR_ALIGNED(b, ut##bits)) { \
+	if (a_left > sizeof(ut##bits) && b_left > sizeof(ut##bits) && IS_PTR_ALIGNED(a, ut##bits) && IS_PTR_ALIGNED(b, ut##bits)) { \
 		ut##bits *a_##bits = (ut##bits *)a; \
 		ut##bits *b_##bits = (ut##bits *)b; \
 		*inc = sizeof(ut##bits); \
