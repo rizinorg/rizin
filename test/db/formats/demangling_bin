@@ -314,8 +314,8 @@ EOF
 EXPECT=<<EOF
             ; CALL XREF from main @ +0x222
             ; CALL XREF from fcn.00001717 @ +0xbb
-            ; CALL XREF from sym.std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char__::basic_string_char___void__char___char___std::allocator_char__const @ +0x66
-            ; CALL XREF from sym.void_std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char__::_M_construct_char___char___char___std::forward_iterator_tag @ +0x116
+            ; CALL XREF from std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>::basic_string<char*, void>(char*, char*, std::allocator<char> const&) @ +0x66
+            ; CALL XREF from void std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>::_M_construct<char*>(char*, char*, std::forward_iterator_tag) @ +0x116
 / _Unwind_Resume();
 \           0x00000f10      jmp   dword [ebx+0x70]
 
