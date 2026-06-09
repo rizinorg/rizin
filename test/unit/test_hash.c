@@ -58,6 +58,8 @@ static hash_data_t hashes_to_test[] = {
 	{ INDATA("password"), .algo = "keccak-256", .expected = "b68fe43f0d1a0d7aef123722670be50268e15365401c442f8806ef83b612976b" },
 	{ INDATA("password"), .algo = "keccak-384", .expected = "e0779e9bb200a589bc70e499a9f7db1006e181519394990ef41800bebe452c23b4a8372fd89df8d5e0d951af240be7bc" },
 	{ INDATA("password"), .algo = "keccak-512", .expected = "a6818b8188b36c44d17784c5551f63accc5deaf8786f9d0ad1ae3cd8d887cbab4f777286dbb315fb14854c8774dc0d10b5567e4a705536cc2a1d61ec0a16a7a6" },
+	{ INDATA("password"), .algo = "shake-128", .expected = "0ac28ef634f3a8415ae5ef6e614bf11f1a18df4d1fa05a4dd1e6a0acd93bfc57" },
+	{ INDATA("password"), .algo = "shake-256", .expected = "a5ee08f8e3abe7d592f6de77f1d3298a1149eba68b97f091c90b7736a1be63ab2d425f94c5346cac64807f20f654c5ad9063a4d12902c5e45533491215754883" },
 	{ INDATA("password"), .algo = "sm3", .expected = "08594e140bcc046e345325435218f67a85c38c63de6443b197b544d70ee62f26" },
 	{ INDATA("password"), .algo = "blake3", .expected = "7f2611ba158b6dcea4a69c229c303358c5e04493abeadee106a4bfa464d55787" },
 	{ INDATA("password"), .algo = "blake2b", .expected = "7c863950ac93c93692995e4732ce1e1466ad74a775352ffbaaf2a4a4ce9b549d0b414a1f3150452be6c7c72c694a7cb46f76452917298d33e67611f0a42addb8" },
