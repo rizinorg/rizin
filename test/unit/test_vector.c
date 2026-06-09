@@ -373,6 +373,120 @@ static bool test_vector_find_sorted(void) {
 	mu_end;
 }
 
+static int cmp_u32(const void *a, const void *b, void *user) {
+	(void)user;
+	ut32 x = *(const ut32 *)a, y = *(const ut32 *)b;
+	return (x > y) - (x < y);
+}
+static int qsort_u32_asc(const void *a, const void *b) {
+	ut32 x = *(const ut32 *)a, y = *(const ut32 *)b;
+	return (x > y) - (x < y);
+}
+static int qsort_u32_desc(const void *a, const void *b) {
+	ut32 x = *(const ut32 *)a, y = *(const ut32 *)b;
+	return (y > x) - (y < x);
+}
+
+// Sort a large vector with many duplicates, ascending and descending, and check
+// the result is fully ordered and a permutation of the input (verified against
+// a reference qsort). Exercises the recursion deeply and the shared scratch
+// buffers, which the small existing sort tests do not.
+static bool test_vector_sort_large(void) {
+	const size_t n = 2000;
+	ut32 *ref = malloc(sizeof(ut32) * n);
+	mu_assert_notnull(ref, "ref alloc");
+	RzVector v;
+	rz_vector_init(&v, sizeof(ut32), NULL, NULL);
+	srand(0xC0FFEE);
+	for (size_t i = 0; i < n; i++) {
+		ut32 x = (ut32)(rand() % 100); // heavy duplication
+		ref[i] = x;
+		rz_vector_push(&v, &x);
+	}
+
+	rz_vector_sort(&v, cmp_u32, false, NULL);
+	mu_assert_eq(v.len, n, "len after sort");
+	bool ok = true;
+	for (size_t i = 1; i < v.len; i++) {
+		if (*(ut32 *)rz_vector_index_ptr(&v, i - 1) > *(ut32 *)rz_vector_index_ptr(&v, i)) {
+			ok = false;
+		}
+	}
+	mu_assert_true(ok, "ascending order");
+	qsort(ref, n, sizeof(ut32), qsort_u32_asc);
+	bool perm = true;
+	for (size_t i = 0; i < n; i++) {
+		if (*(ut32 *)rz_vector_index_ptr(&v, i) != ref[i]) {
+			perm = false;
+		}
+	}
+	mu_assert_true(perm, "ascending is a permutation of the input");
+
+	rz_vector_sort(&v, cmp_u32, true, NULL);
+	ok = true;
+	for (size_t i = 1; i < v.len; i++) {
+		if (*(ut32 *)rz_vector_index_ptr(&v, i - 1) < *(ut32 *)rz_vector_index_ptr(&v, i)) {
+			ok = false;
+		}
+	}
+	mu_assert_true(ok, "descending order");
+	qsort(ref, n, sizeof(ut32), qsort_u32_desc);
+	perm = true;
+	for (size_t i = 0; i < n; i++) {
+		if (*(ut32 *)rz_vector_index_ptr(&v, i) != ref[i]) {
+			perm = false;
+		}
+	}
+	mu_assert_true(perm, "descending is a permutation of the input");
+
+	rz_vector_fini(&v);
+	free(ref);
+	mu_end;
+}
+
+typedef struct {
+	ut32 key;
+	ut8 pad[300];
+} SortBlob304; // > 256 bytes: exercises the heap-fallback scratch path in the sort
+
+static int cmp_blob304(const void *a, const void *b, void *user) {
+	(void)user;
+	ut32 x = ((const SortBlob304 *)a)->key, y = ((const SortBlob304 *)b)->key;
+	return (x > y) - (x < y);
+}
+
+// Sort elements larger than the on-stack scratch threshold, so the sort takes
+// the heap-allocated scratch fallback. Also checks the whole element (not just
+// the key) is moved consistently.
+static bool test_vector_sort_large_elem(void) {
+	const size_t n = 400;
+	RzVector v;
+	rz_vector_init(&v, sizeof(SortBlob304), NULL, NULL);
+	srand(0xBEEF);
+	for (size_t i = 0; i < n; i++) {
+		SortBlob304 b;
+		b.key = (ut32)(rand() % 1000);
+		memset(b.pad, (int)(b.key & 0xff), sizeof(b.pad)); // pad tied to key
+		rz_vector_push(&v, &b);
+	}
+	rz_vector_sort(&v, cmp_blob304, false, NULL);
+	mu_assert_eq(v.len, n, "len after large-elem sort");
+	bool ok = true;
+	for (size_t i = 0; i < v.len; i++) {
+		SortBlob304 *b = rz_vector_index_ptr(&v, i);
+		if (i > 0 && ((SortBlob304 *)rz_vector_index_ptr(&v, i - 1))->key > b->key) {
+			ok = false;
+		}
+		// the payload must still match its key after all the memcpy shuffling
+		if (b->pad[0] != (ut8)(b->key & 0xff) || b->pad[299] != (ut8)(b->key & 0xff)) {
+			ok = false;
+		}
+	}
+	mu_assert_true(ok, "large-element sort ordered with intact payloads");
+	rz_vector_fini(&v);
+	mu_end;
+}
+
 static bool test_vector_empty(void) {
 	RzVector v;
 	rz_vector_init(&v, 1, NULL, NULL);
@@ -1519,6 +1633,40 @@ static bool test_pvector_sort(void) {
 	mu_end;
 }
 
+// rz_pvector_remove_data finds the slot whose stored pointer equals x and
+// removes it while preserving order. Covers the simplified index computation.
+static bool test_pvector_remove_data(void) {
+	RzPVector v;
+	rz_pvector_init(&v, NULL);
+	for (size_t i = 1; i <= 6; i++) {
+		rz_pvector_push(&v, (void *)i);
+	}
+	rz_pvector_remove_data(&v, (void *)4); // expect 1,2,3,5,6
+	mu_assert_eq(rz_pvector_len(&v), 5UL, "len after remove_data");
+	void *exp[] = { (void *)1, (void *)2, (void *)3, (void *)5, (void *)6 };
+	bool ok = true;
+	for (size_t i = 0; i < 5; i++) {
+		if (rz_pvector_at(&v, i) != exp[i]) {
+			ok = false;
+		}
+	}
+	mu_assert_true(ok, "remove_data removes the right element and keeps order");
+
+	// removing the first and last elements
+	rz_pvector_remove_data(&v, (void *)1); // 2,3,5,6
+	rz_pvector_remove_data(&v, (void *)6); // 2,3,5
+	mu_assert_eq(rz_pvector_len(&v), 3UL, "len after removing ends");
+	mu_assert_ptreq(rz_pvector_at(&v, 0), (void *)2, "head after removing ends");
+	mu_assert_ptreq(rz_pvector_at(&v, 2), (void *)5, "tail after removing ends");
+
+	// removing an absent pointer is a no-op
+	rz_pvector_remove_data(&v, (void *)999);
+	mu_assert_eq(rz_pvector_len(&v), 3UL, "remove_data of absent value is a no-op");
+
+	rz_pvector_clear(&v);
+	mu_end;
+}
+
 static bool test_pvector_foreach(void) {
 	RzPVector v;
 	init_test_pvector2(&v, 5, 5);
@@ -1710,6 +1858,8 @@ static int all_tests(void) {
 	mu_run_test(test_vector_remove_at);
 	mu_run_test(test_vector_remove_at_unsorted);
 	mu_run_test(test_vector_sort);
+	mu_run_test(test_vector_sort_large);
+	mu_run_test(test_vector_sort_large_elem);
 	mu_run_test(test_vector_remove_range);
 	mu_run_test(test_vector_insert);
 	mu_run_test(test_vector_insert_range);
@@ -1752,6 +1902,7 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_bounds);
 	mu_run_test(test_pvector_tips);
 	mu_run_test(test_pvector_uniq);
+	mu_run_test(test_pvector_remove_data);
 
 	mu_run_test(test_array_bounds_fuzz);
 
