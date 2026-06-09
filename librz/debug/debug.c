@@ -1150,6 +1150,27 @@ RZ_API int rz_debug_step_cnum(RzDebug *dbg, int steps) {
 	return steps;
 }
 
+static bool skip_current_instruction(RzDebug *dbg) {
+	ut8 buf[64];
+	RzAnalysisOp op = { 0 };
+	ut64 pc = rz_debug_reg_get(dbg, "PC");
+
+	dbg->iob.read_at(dbg->iob.io, pc, buf, sizeof(buf));
+
+	rz_analysis_op_init(&op);
+	rz_analysis_op(dbg->analysis, &op, pc, buf, sizeof(buf),
+		RZ_ANALYSIS_OP_MASK_BASIC);
+
+	if (op.size <= 0) {
+		rz_analysis_op_fini(&op);
+		return false;
+	}
+
+	rz_debug_reg_set(dbg, "PC", pc + op.size);
+	rz_analysis_op_fini(&op);
+	return true;
+}
+
 RZ_API int rz_debug_continue_kill(RzDebug *dbg, int sig) {
 	RzDebugReasonType reason = RZ_DEBUG_REASON_NONE;
 	int ret = 0;
@@ -1298,34 +1319,30 @@ repeat:
 	}
 	sig = 0; // clear continuation after signal if needed
 
-	/* handle general signals here based on the return from the wait
-	 * function */
+	/* Skip the instruction which causes the kernel to send the signal, to skip the signal handler
+		Do not skip the instruction if the signal was send using kill etc types of system call*/
 	if (dbg->reason.signum != -1) {
 		int what = rz_debug_signal_what(dbg, dbg->reason.signum);
+
 		if (what & RZ_DBG_SIGNAL_CONT) {
 			sig = dbg->reason.signum;
 			eprintf("Continue into the signal %d handler\n", sig);
 			goto repeat;
 		} else if (what & RZ_DBG_SIGNAL_SKIP) {
-			// skip signal. requires skipping one instruction
-			ut8 buf[64];
-			RzAnalysisOp op = { 0 };
-			ut64 pc = rz_debug_reg_get(dbg, "PC");
-			dbg->iob.read_at(dbg->iob.io, pc, buf, sizeof(buf));
-			rz_analysis_op_init(&op);
-			rz_analysis_op(dbg->analysis, &op, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
-			if (op.size > 0) {
-				const char *signame = rz_signal_to_string(dbg->reason.signum);
-				rz_debug_reg_set(dbg, "PC", pc + op.size);
-				eprintf("Skip signal %d handler %s\n",
-					dbg->reason.signum, signame);
-				rz_analysis_op_fini(&op);
+			const char *signame = rz_signal_to_string(dbg->reason.signum);
+
+			if (dbg->reason.sig_source == RZ_DEBUG_SIGNAL_SOURCE_EXTERNAL) {
+				eprintf("Skipped signal handler for %d (%s)\n", dbg->reason.signum, signame);
 				goto repeat;
-			} else {
-				ut64 pc = rz_debug_reg_get(dbg, "PC");
-				eprintf("Stalled with an exception at 0x%08" PFMT64x "\n", pc);
 			}
-			rz_analysis_op_fini(&op);
+
+			if (skip_current_instruction(dbg)) {
+				eprintf("Skipped signal handler for %d (%s)\n", dbg->reason.signum, signame);
+				goto repeat;
+			}
+
+			ut64 pc = rz_debug_reg_get(dbg, "PC");
+			eprintf("Stalled with an exception at 0x%08" PFMT64x "\n", pc);
 		}
 	}
 #if __WINDOWS__
