@@ -116,6 +116,7 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 	// Find ntoskrnl.exe module
 	RzListIter *it;
 	WindModule mod = { 0 };
+	RzList *modules = NULL;
 	if (ctx->type == DMP_DUMPTYPE_TRIAGE) {
 		struct rz_bin_dmp64_obj_t *obj = core->bin->cur->o->bin_obj;
 		dmp_driver_desc *driver;
@@ -131,7 +132,7 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 	} else {
 		WindProc kernel = { .dir_base_table = ctx->kernelDirectoryTable, .uniqueid = 4 };
 		ctx->windctx.target = kernel;
-		RzList *modules = winkd_list_modules(&ctx->windctx);
+		modules = winkd_list_modules(&ctx->windctx);
 		WindModule *m;
 		rz_list_foreach (modules, it, m) {
 			if (rz_str_endswith(m->name, "\\ntoskrnl.exe")) {
@@ -164,6 +165,7 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 			RZ_LOG_WARN("Failed to download ntoskrnl.pdb, many things won't work.\n");
 		}
 	}
+	rz_list_free(modules);
 
 	if (!ctx->windctx.profile) {
 		RZ_LOG_ERROR("Could not find a profile for this Windows: %s %" PFMT32d "-bit %" PFMT32u " SP %" PFMT32u "\n",
