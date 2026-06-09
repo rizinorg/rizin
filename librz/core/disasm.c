@@ -1441,7 +1441,7 @@ RZ_API RZ_OWN char *rz_core_get_xref_comment(RZ_NONNULL RzCore *core, ut64 addr)
 							continue;
 						}
 					}
-					name = rz_str_dup(f->name);
+					name = rz_str_dup(core->flags->realnames && f->realname ? f->realname : f->name);
 					rz_list_append(addrs, rz_num_dup(xrefi->from - f->offset));
 				} else {
 					name = rz_str_dup("unk");
