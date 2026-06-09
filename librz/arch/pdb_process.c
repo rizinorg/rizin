@@ -185,7 +185,21 @@ static RzType *procedure_parse(
 	if (arglist) {
 		arglist_parse(typedb, stream, arglist, typ->callable->args);
 	}
-	rz_type_func_save((RzTypeDB *)typedb, callable);
+	if (!rz_type_func_save((RzTypeDB *)typedb, callable)) {
+		// A callable with this name is already registered. PDB type graphs
+		// frequently reference the same procedure type more than once, and
+		// unnamed procedures get a deterministic name derived from their TPI
+		// offset, so duplicates are expected. rz_type_func_save() does not take
+		// ownership on failure, so reuse the already-stored callable and free
+		// this one; otherwise it (and its whole subtree) would be leaked.
+		RzCallable *existing = rz_type_func_get((RzTypeDB *)typedb, callable->name);
+		rz_type_callable_free(callable);
+		typ->callable = existing;
+		if (!existing) {
+			rz_type_free(typ);
+			return NULL;
+		}
+	}
 	return typ;
 }
 
@@ -221,7 +235,18 @@ static RzType *mfunction_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, R
 	if (arglist) {
 		arglist_parse(typedb, stream, arglist, type->callable->args);
 	}
-	rz_type_func_save((RzTypeDB *)typedb, callable);
+	if (!rz_type_func_save((RzTypeDB *)typedb, callable)) {
+		// See procedure_parse(): rz_type_func_save() does not take ownership when
+		// a callable of the same name already exists, so free this duplicate and
+		// reuse the stored one to avoid leaking it together with its subtree.
+		RzCallable *existing = rz_type_func_get((RzTypeDB *)typedb, callable->name);
+		rz_type_callable_free(callable);
+		type->callable = existing;
+		if (!existing) {
+			rz_type_free(type);
+			return NULL;
+		}
+	}
 	return type;
 }
 
