@@ -102,6 +102,11 @@ static bool fini(void *u) {
 	return true;
 }
 
+static bool alpha_sw_breakpoint(const RzAsm *a, ut64 addr, const RzAsmOp *original, RzAsmOp *breakpoint) {
+	rz_asm_op_set_buf(breakpoint, (const ut8 *)"\x80\x00\x00\x00", 4);
+	return true;
+}
+
 RzAsmPlugin rz_asm_plugin_alpha_cs = {
 	.name = "alpha",
 	.desc = "DEC Alpha Capstone-based disassembler",
@@ -112,6 +117,7 @@ RzAsmPlugin rz_asm_plugin_alpha_cs = {
 	.disassemble = &disassemble,
 	.init = &init,
 	.fini = &fini,
+	.sw_breakpoint = &alpha_sw_breakpoint,
 };
 
 #ifndef RZ_PLUGIN_INCORE
