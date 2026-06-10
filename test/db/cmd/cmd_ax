@@ -50,6 +50,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=axl xref type counts after aa
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+aa
+axl~?
+axl~CALL~?
+axl~DATA~?
+axl~CODE~?
+EOF
+EXPECT=<<EOF
+26
+8
+16
+2
+EOF
+RUN
+
 NAME=axtl
 FILE=bins/elf/vim
 CMDS=<<EOF

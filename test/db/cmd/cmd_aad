@@ -1,0 +1,20 @@
+NAME=aad creates functions from data refs to code
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+af @ entry0
+aad
+aflq
+axl~DATA
+EOF
+EXPECT=<<EOF
+0x080482f0 sym.imp.__libc_start_main
+0x08048300 entry0
+0x0804830b fcn.0804830b
+0x08048310 fcn.08048310
+0x08048317 fcn.08048317
+               sym.imp.__libc_start_main 0x80482f0 ->      DATA -> 0x80496a8 reloc.__libc_start_main
+                            fcn.0804830b 0x804830b ->      DATA -> 0x8048490 sym.__libc_csu_fini
+                            fcn.08048310 0x8048310 ->      DATA -> 0x8048420 sym.__libc_csu_init
+                            fcn.08048317 0x8048317 ->      DATA -> 0x8048400 main
+EOF
+RUN
