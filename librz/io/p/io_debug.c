@@ -190,6 +190,8 @@ static RzRunProfile *_get_run_profile(RzIO *io, int bits, char **argv) {
 		return NULL;
 	}
 	for (i = 0; argv[i]; i++) {
+		// exec needs literal path
+		rz_str_arg_unescape(argv[i]);
 		rp->_args[i] = argv[i];
 	}
 	rp->_args[i] = NULL;

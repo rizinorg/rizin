@@ -1682,8 +1682,8 @@ RZ_API void rz_core_io_file_open(RZ_NONNULL RzCore *core, int fd) {
 		return;
 	}
 
-	// Escape spaces so that o's argv parse will detect the path properly
-	char *file = rz_str_path_escape(bf->file);
+	// keep path literal, dup as bf is freed
+	char *file = rz_str_dup(bf->file);
 	// Backup the baddr and sections that were already rebased to
 	// revert the rebase after the debug session is closed
 	ut64 orig_baddr = core->bin->cur->o->baddr_shift;
