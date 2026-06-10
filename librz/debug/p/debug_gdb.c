@@ -176,7 +176,7 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_gdb_map_get(RzDebug *dbg) { // TODO
 		gdbr_close_file(ctx->desc);
 		return NULL;
 	}
-	if ((ret = gdbr_read_file(ctx->desc, buf, buflen - 1)) <= 0) {
+	if ((ret = gdbr_read_file(ctx->desc, buf, buflen - 1, 0)) <= 0) {
 		gdbr_close_file(ctx->desc);
 		free(buf);
 		return NULL;

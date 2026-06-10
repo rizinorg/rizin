@@ -228,7 +228,8 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 			" R!pktsz           - get max packet size used\n"
 			" R!pktsz bytes     - set max. packet size as 'bytes' bytes\n"
 			" R!exec_file [pid] - get file which was executed for"
-			" current/specified pid\n");
+			" current/specified pid\n"
+			" R!download <remote path> <local path> - download file\n");
 		return NULL;
 	}
 	libgdbr_t *desc = fd->data;
@@ -378,6 +379,61 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		}
 		io->cb_printf("%s\n", file);
 		return file;
+	}
+	if (rz_str_startswith(cmd, "download")) {
+		RzList *args = rz_str_split_duplist(cmd, " ", true);
+		if (!args || rz_list_length(args) != 3) {
+			eprintf("R!download <remote path> <local path>\n");
+			rz_list_free(args);
+			return NULL;
+		}
+
+		char *remote_path = (char *)rz_list_get_n(args, 1);
+		char *local_path = (char *)rz_list_get_n(args, 2);
+
+		if (gdbr_open_file(desc, remote_path, 0, 0) < 0) {
+			eprintf("Failed to open remote file: %s\n", remote_path);
+			rz_list_free(args);
+			return NULL;
+		}
+
+		const ut64 chunk_sz = 1024 * 1024;
+		ut8 *buf = RZ_NEWS(ut8, chunk_sz);
+		if (!buf) {
+			eprintf("Failed to allocate memory for download\n");
+			gdbr_close_file(desc);
+			rz_list_free(args);
+			return NULL;
+		}
+
+		io->cb_printf("downloaing %s to %s\n", remote_path, local_path);
+
+		ut64 offset = 0;
+		bool write_error = false;
+		while (true) {
+			int nbytes = gdbr_read_file(desc, buf, chunk_sz, offset);
+			if (nbytes < 0) {
+				eprintf("Error reading remote file at offset %" PFMT64d ".\n", offset);
+				break;
+			} else if (nbytes == 0) { // EOF
+				break;
+			}
+			if (!rz_file_dump(local_path, buf, nbytes, offset != 0)) {
+				eprintf("Failed to write to local file: %s\n", local_path);
+				write_error = true;
+				break;
+			}
+			offset += nbytes;
+		}
+
+		if (!write_error) {
+			io->cb_printf("downloaded %" PFMT64d " bytes.\n", offset);
+		}
+
+		RZ_FREE(buf);
+		gdbr_close_file(desc);
+		rz_list_free(args);
+		return NULL;
 	}
 	// These are internal, not available to user directly
 	if (rz_str_startswith(cmd, "retries")) {

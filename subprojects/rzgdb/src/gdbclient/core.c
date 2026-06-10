@@ -1484,7 +1484,7 @@ end:
 	return ret;
 }
 
-int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
+int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len, ut64 offset) {
 	int ret, ret1;
 	char command[64];
 	ut64 data_sz;
@@ -1511,7 +1511,7 @@ int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
 		if (snprintf(command, sizeof(command) - 1,
 			    "vFile:pread:%x,%" PFMT64x ",%" PFMT64x,
 			    (int)g->remote_file_fd, (ut64)RZ_MIN(data_sz, max_len - ret),
-			    (ut64)ret) < 0) {
+			    (ut64)(offset + ret)) < 0) {
 			ret = -1;
 			goto end;
 		}
