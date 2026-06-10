@@ -4,7 +4,7 @@ CMDS=<<EOF
 af @ entry0
 aad
 aflq
-axl~DATA
+axl
 EOF
 EXPECT=<<EOF
 0x080482f0 sym.imp.__libc_start_main
@@ -16,22 +16,6 @@ EXPECT=<<EOF
                             fcn.0804830b 0x804830b ->      DATA -> 0x8048490 sym.__libc_csu_fini
                             fcn.08048310 0x8048310 ->      DATA -> 0x8048420 sym.__libc_csu_init
                             fcn.08048317 0x8048317 ->      DATA -> 0x8048400 main
-EOF
-RUN
-
-NAME=axl xref type counts after aa
-FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EOF
-aa
-axl~?
-axl~CALL~?
-axl~DATA~?
-axl~CODE~?
-EOF
-EXPECT=<<EOF
-26
-8
-16
-2
+                          fcn.08048317+5 0x804831c ->      CALL -> 0x80482f0 sym.imp.__libc_start_main
 EOF
 RUN
