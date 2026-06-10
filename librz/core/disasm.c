@@ -1351,6 +1351,37 @@ static void ds_show_xrefs(RzDisasmState *ds) {
 	free(all_xrefs);
 }
 
+static bool set_jump_realname(RzFlag *f, ut64 addr, const char **kw, const char **name) {
+	if (!f) {
+		return false;
+	}
+	if (!f->realnames) {
+		// nothing to do, neither demangled nor regular realnames should be shown
+		return false;
+	}
+	RzFlagItem *flag_sym = rz_flag_get_by_spaces(f, addr, RZ_FLAGS_FS_FUNCTIONS, RZ_FLAGS_FS_IMPORTS,
+		RZ_FLAGS_FS_SYMBOLS, NULL);
+	if (!flag_sym || !flag_sym->realname) {
+		// nothing to replace
+		return false;
+	}
+	if (!flag_sym->demangled && !f->realnames) {
+		// realname is not demangled and we don't want to show non-demangled realnames
+		return false;
+	}
+	*name = flag_sym->realname;
+	RzFlagItem *flag_mthd = rz_flag_get_by_spaces(f, addr, RZ_FLAGS_FS_CLASSES, NULL);
+	if (!f->realnames) {
+		// for asm.flags.real, we don't want these prefixes
+		if (flag_mthd && flag_mthd->name && rz_str_startswith(flag_mthd->name, "method.")) {
+			*kw = "method ";
+		} else {
+			*kw = "sym ";
+		}
+	}
+	return true;
+}
+
 /**
  * \brief Returns the auto-generated XREF comment(s) for a given address
  *
@@ -1417,7 +1448,7 @@ RZ_API RZ_OWN char *rz_core_get_xref_comment(RZ_NONNULL RzCore *core, ut64 addr)
 			continue;
 		}
 		if (xrefi->to == addr) {
-			char *name = NULL;
+			const char *name = NULL;
 			fun = rz_analysis_get_fcn_in(core->analysis, xrefi->from, -1);
 			if (fun) {
 				if (iter != rz_list_tail(xrefs)) {
@@ -1428,7 +1459,12 @@ RZ_API RZ_OWN char *rz_core_get_xref_comment(RZ_NONNULL RzCore *core, ut64 addr)
 						continue;
 					}
 				}
-				name = rz_str_dup(fun->name);
+				const char *kw = "";
+				if (set_jump_realname(core->flags, fun->addr, &kw, &name)) {
+					name = rz_str_newf("%s%s", kw, name);
+				} else {
+					name = rz_str_dup(fun->name);
+				}
 				rz_list_append(addrs, rz_num_dup(xrefi->from));
 			} else {
 				f = rz_flag_get_at(core->flags, xrefi->from, true);
@@ -5116,38 +5152,6 @@ static char *_find_next_number(char *op) {
 	return NULL;
 }
 
-static bool set_jump_realname(RzDisasmState *ds, ut64 addr, const char **kw, const char **name) {
-	RzFlag *f = ds->core->flags;
-	if (!f) {
-		return false;
-	}
-	if (!f->realnames) {
-		// nothing to do, neither demangled nor regular realnames should be shown
-		return false;
-	}
-	RzFlagItem *flag_sym = rz_flag_get_by_spaces(f, addr, RZ_FLAGS_FS_FUNCTIONS, RZ_FLAGS_FS_IMPORTS,
-		RZ_FLAGS_FS_SYMBOLS, NULL);
-	if (!flag_sym || !flag_sym->realname) {
-		// nothing to replace
-		return false;
-	}
-	if (!flag_sym->demangled && !f->realnames) {
-		// realname is not demangled and we don't want to show non-demangled realnames
-		return false;
-	}
-	*name = flag_sym->realname;
-	RzFlagItem *flag_mthd = rz_flag_get_by_spaces(f, addr, RZ_FLAGS_FS_CLASSES, NULL);
-	if (!f->realnames) {
-		// for asm.flags.real, we don't want these prefixes
-		if (flag_mthd && flag_mthd->name && rz_str_startswith(flag_mthd->name, "method.")) {
-			*kw = "method ";
-		} else {
-			*kw = "sym ";
-		}
-	}
-	return true;
-}
-
 /**
  * \brief Remove '#' from the asm string
  * \param op RzAsmOp instance
@@ -5199,10 +5203,10 @@ static void ds_opstr_sub_jumps(RzDisasmState *ds) {
 	ut64 addr = ds->analysis_op.jump;
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(analysis, addr);
 	if (fcn) {
-		if (!set_jump_realname(ds, addr, &kw, &name)) {
+		if (!set_jump_realname(f, addr, &kw, &name)) {
 			name = fcn->name;
 		}
-	} else if (f && !set_jump_realname(ds, addr, &kw, &name)) {
+	} else if (f && !set_jump_realname(f, addr, &kw, &name)) {
 		RzFlagItem *flag = rz_core_flag_get_by_spaces(f, addr);
 		if (flag) {
 			if (strchr(flag->name, '.')) {

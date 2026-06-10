@@ -267,11 +267,11 @@ EXPECT=<<EOF
 |           0x08049249      call  method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
 |           0x08049278      call  method.QLabel.QLabel_QString_const___QWidget___QFlags_Qt::WindowType
 ---
-            ; CALL XREF from sym._init @ 0x8049008
-            ; CALL XREF from method.QtPrivate::RefCount.deref @ 0x8049349
-            ; CALL XREF from method.QString.QString_char_const @ 0x804939d
-            ; CALL XREF from method.QString._QString @ 0x80493e5
-            ; CALL XREF from sym._fini @ 0x80495d4
+            ; CALL XREF from _init @ 0x8049008
+            ; CALL XREF from QtPrivate::RefCount::deref() @ 0x8049349
+            ; CALL XREF from QString::QString(char const*) @ 0x804939d
+            ; CALL XREF from QString::~QString() @ 0x80493e5
+            ; CALL XREF from _fini @ 0x80495d4
 / __x86.get_pc_thunk.bx();
 |           0x08049140      mov   ebx, dword [esp]
 
@@ -291,7 +291,7 @@ EXPECT=<<EOF
 / sym.__x86.get_pc_thunk.bx();
 |           0x08049140      mov   ebx, dword [esp]
 
-|           ; CODE XREFS from method.QtPrivate::RefCount.deref @ 0x8049371, 0x804937e
+|           ; CODE XREFS from QtPrivate::RefCount::deref() @ 0x8049371, 0x804937e
 |           0x08049390      mov   ebx, dword [var_8h]
 
 |           ; CODE XREFS from method.QtPrivate::RefCount.deref @ 0x8049371, 0x804937e
