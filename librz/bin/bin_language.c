@@ -11,7 +11,7 @@
 
 static inline bool check_rust(RzBinSymbol *sym) {
 	return strstr(sym->name, "_$LT$") ||
-		strstr(sym->name, "_rust_oom");
+		strstr(sym->name, "rust_oom");
 }
 
 static inline bool check_objc(RzBinSymbol *sym) {
