@@ -231,6 +231,14 @@ RZ_API bool rz_analysis_xrefs_deln(RzAnalysis *analysis, ut64 from, ut64 to, RzA
 	}
 	HtUP *ht1 = ht_up_find(analysis->ht_xrefs_from, from, NULL);
 	if (ht1) {
+		// The primary tables drop the (from, to) xref no matter which <type> was
+		// passed. Resolve the stored xref's actual type before it is freed below,
+		// so the type index entries are removed for the right type even when
+		// <type> doesn't match (otherwise they would keep a dangling pointer).
+		RzAnalysisXRef *xref = ht_up_find(ht1, to, NULL);
+		if (xref) {
+			type = xref->type;
+		}
 		ht_up_delete(ht1, to);
 	}
 	HtUP *ht2 = ht_up_find(analysis->ht_xrefs_to, to, NULL);

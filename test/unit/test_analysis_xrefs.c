@@ -298,6 +298,34 @@ static bool test_rz_analysis_xrefs_deln_nonexistent() {
 	mu_end;
 }
 
+static bool test_rz_analysis_xrefs_deln_wrong_type() {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+
+	rz_analysis_xrefs_set(analysis, 0x100, 0x200, RZ_ANALYSIS_XREF_TYPE_CALL);
+	mu_assert_eq(rz_analysis_xrefs_count_type(
+			     analysis, RZ_ANALYSIS_XREF_TYPE_CALL),
+		1, "call count before del");
+
+	// deln ignores <type> for the primary tables, so the xref is removed
+	// and the CALL type index must be cleaned up despite the DATA argument.
+	rz_analysis_xrefs_deln(analysis, 0x100, 0x200, RZ_ANALYSIS_XREF_TYPE_DATA);
+	mu_assert_eq(rz_analysis_xrefs_count(analysis), 0, "count after del");
+	mu_assert_eq(rz_analysis_xrefs_count_type(
+			     analysis, RZ_ANALYSIS_XREF_TYPE_CALL),
+		0, "call count after del");
+
+	// The CALL bucket may still exist but must not yield stale entries.
+	RzIterator *calls = rz_analysis_xrefs_get_all_of_type(
+		analysis, RZ_ANALYSIS_XREF_TYPE_CALL);
+	if (calls) {
+		mu_assert_eq(count_iter(calls), 0, "no stale call xrefs in type index");
+		rz_iterator_free(calls);
+	}
+
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
 static bool test_rz_analysis_xref_del_mixed_types() {
 	RzAnalysis *analysis = rz_analysis_new(NULL);
 
@@ -396,6 +424,7 @@ int all_tests() {
 	mu_run_test(test_rz_analysis_xrefs_set_no_self_ref);
 	mu_run_test(test_rz_analysis_xrefs_set_update);
 	mu_run_test(test_rz_analysis_xrefs_deln_nonexistent);
+	mu_run_test(test_rz_analysis_xrefs_deln_wrong_type);
 	mu_run_test(test_rz_analysis_xref_del_mixed_types);
 	mu_run_test(test_rz_analysis_xrefs_get_to_range);
 	mu_run_test(test_rz_analysis_xrefs_get_from_range);
