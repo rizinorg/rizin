@@ -750,7 +750,6 @@ RZ_API RzCmdStatus rz_core_lang_plugins_print(RzLang *lang, RzCmdStateOutput *st
 /* ccore.c */
 RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *state);
 
-/* cil.c */
 RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABLE RzAnalysisFunction *fcn);
 RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut64 a2);
 RZ_API int rz_core_esil_step(RzCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver);
@@ -926,6 +925,18 @@ RZ_API RZ_OWN char *rz_core_graph_to_sdb_str(RZ_NONNULL RzCore *core, RZ_NONNULL
 /*tp.c*/
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUU *addr_loop_table);
 
+/* cil.c */
+/**
+ * \brief Options for printing RzIL instructions.
+ */
+typedef struct rz_core_il_print_options {
+	bool cbytes; ///< If false, ignore the \p len byte limit and print exactly \p n_lines instructions in rz_core_print_disasm().
+	bool pretty; ///< If true, use delimiter(\n).
+	bool colorize; ///< If false, disable colorized output.
+	bool unicode; ///< If true, print RzIL using unicode formatting.
+	RzPVector /*<RzAnalysisDisasmText *>*/ *vec; ///< Output vector;
+} RzCoreILPrintOptions;
+
 /* asm.c */
 #define RZ_MIDFLAGS_HIDE     0
 #define RZ_MIDFLAGS_SHOW     1
@@ -965,6 +976,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_bwdisassemble(RzCore *core, ut64
 RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble_instr(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble_byte(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 RZ_API ut32 rz_core_asm_bwdis_len(RzCore *core, int *len, ut64 *start_addr, ut32 l);
+RZ_API int rz_core_il_print_rzil(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL ut8 *buf, size_t len, size_t n_lines, RZ_NULLABLE RzCoreILPrintOptions *options);
 RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL ut8 *buf, int len, int nlines, RZ_NULLABLE RzCmdStateOutput *state, RZ_NULLABLE RzCoreDisasmOptions *options);
 RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int len, int lines, PJ *pj);
 RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address, ut8 *buf, int nb_bytes, int nb_opcodes);
