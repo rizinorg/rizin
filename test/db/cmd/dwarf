@@ -8829,14 +8829,14 @@ var int32_t var_2ch @ stack - 0x2c
 var int32_t var_1ch @ stack - 0x1c
 var some_t *s @ stack - 0x1a
 arg int argc @ r0
+var struct Some *gg @ r0
 arg char **argv @ r1
-var struct Some *gg @ r2
 var float a @ ...
 var float b @ ...
 var double c @ ...
             ; CALL XREFS from dbg.main @ 0x817c, 0x8184
 / some_t * new_some()
-|           ; var struct Some *n @ r4
+|           ; var struct Some *n @ r0
 |           0x0000813c      push  {r4, lr}                             ; test.c:27
 |           0x0000813e      movs  r0, 0x14                             ; test.c:28 ; size_t size
 |           0x00008140      bl    malloc                               ; sym.malloc ; void *malloc(size_t size)
@@ -8878,14 +8878,14 @@ var int32_t var_2ch @ stack - 0x2c
 var int32_t var_1ch @ stack - 0x1c
 var some_t *s @ stack - 0x1a
 arg int argc @ r0
+var struct Some *gg @ r0
 arg char **argv @ r1
-var struct Some *gg @ r2
 var float a @ ...
 var float b @ ...
 var double c @ ...
             ; CALL XREFS from dbg.main @ 0x817c, 0x8184
 / some_t * new_some()
-|           ; var struct Some *n @ r4
+|           ; var struct Some *n @ r0
 |           0x0000813c      push  {r4, lr}                             ; test.c:27
 |           0x0000813e      movs  r0, 0x14                             ; test.c:28 ; size_t size
 |           0x00008140      bl    sym.malloc                           ; void *malloc(size_t size)
@@ -9692,5 +9692,21 @@ EXPECT=<<EOF
 	DW_AT_name [DW_FORM_strx]	: (index 0x7): global_data
 	DW_AT_name [DW_FORM_strx]	: (index 0x8): main
 	DW_AT_name [DW_FORM_strx]	: (index 0x9): int
+EOF
+RUN
+
+NAME="Register arguments from DWARF location lists with CFA frame base (arm)"
+FILE=bins/elf/dwarf/test3562_arm_small
+CMDS=<<EOF
+aaa
+afvl @ dbg.do_something
+EOF
+EXPECT=<<EOF
+var const unsigned char *p @ r4
+var const unsigned char *end @ r5
+var int acc @ r6
+arg struct cSTRUCT *item @ r7
+arg parse_buffer *input_buffer @ r8
+var size_t off @ r9
 EOF
 RUN
