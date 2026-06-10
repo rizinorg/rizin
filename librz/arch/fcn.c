@@ -563,6 +563,12 @@ static inline bool jumps_to_prelude(RzAnalysis *analysis, ut64 jmp_addr) {
 static inline bool jump_leaves_mapped_mem(RzAnalysis *analysis, ut64 insn_addr, ut64 jump_target) {
 	rz_return_val_if_fail(analysis, false);
 	RzIOMap *map = analysis->iob.map_get(analysis->iob.io, insn_addr);
+	if (!map) {
+		// The instruction itself is not part of any mapped region (e.g. analysis
+		// walked into a hole of a sparse address space such as a crash dump).
+		// Treat the jump as leaving mapped memory so we stop following it.
+		return true;
+	}
 	return (jump_target < map->itv.addr || jump_target >= map->itv.addr + map->itv.size);
 }
 
