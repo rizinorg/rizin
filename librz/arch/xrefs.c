@@ -17,8 +17,6 @@ xrefs 20->[10 C] 10 -> [16 J, 20 C]
 
 10 : call 20 16 : jmp 10 20 : call 10
 */
-// TODO: is it possible to have multiple type for the same (from, to) pair?
-//       if it is, things need to be adjusted
 
 static RzAnalysisXRef *rz_analysis_xref_new(ut64 from, ut64 to, ut64 type) {
 	RzAnalysisXRef *xref = RZ_NEW(RzAnalysisXRef);
@@ -177,36 +175,50 @@ RZ_API bool rz_analysis_xrefs_set(RzAnalysis *analysis, ut64 from, ut64 to, RzAn
 	if (!xref) {
 		return false;
 	}
-	// Clean up old type index entries if a different-typed xref existed before.
-	if (analysis->ht_xrefs_to_by_type) {
-		HtUP *ht = ht_up_find(analysis->ht_xrefs_to, to, NULL);
-		if (ht) {
-			RzAnalysisXRef *old = ht_up_find(ht, from, NULL);
-			if (old && old->type != type) {
-				del_xref_by_type(analysis->ht_xrefs_from_by_type, from, to, old->type, true);
-				del_xref_by_type(analysis->ht_xrefs_to_by_type, from, to, old->type, false);
-			}
+	// Remember whether a xref for the same (from, to) pair exists with a different
+	// type. Its type index entries are removed only after the new xref was inserted
+	// into the primary tables, so the old xref stays fully indexed if any insertion
+	// below fails.
+	bool drop_old_type = false;
+	RzAnalysisXRefType old_type = RZ_ANALYSIS_XREF_TYPE_NULL;
+	HtUP *ht = ht_up_find(analysis->ht_xrefs_to, to, NULL);
+	if (ht) {
+		RzAnalysisXRef *old = ht_up_find(ht, from, NULL);
+		if (old && old->type != type) {
+			drop_old_type = true;
+			old_type = old->type;
 		}
 	}
 	if (!set_xref(analysis->ht_xrefs_from, xref, true)) {
+		// Pointer isn't added to <ht_xrefs_from> so we have to release it
 		rz_analysis_xref_free(xref);
 		return false;
 	}
 	if (!set_xref(analysis->ht_xrefs_to, xref, false)) {
+		// Delete the entry in <ht_xrefs_from>. This also destroys a pre-existing
+		// xref for this (from, to) pair, so its type index entries are dropped too.
 		rz_analysis_xrefs_deln(analysis, from, to, type);
+		if (drop_old_type) {
+			del_xref_by_type(analysis->ht_xrefs_from_by_type, from, to, old_type, true);
+			del_xref_by_type(analysis->ht_xrefs_to_by_type, from, to, old_type, false);
+		}
+		// Pointer isn't added to <ht_xrefs_to> so we have to release it
 		rz_analysis_xref_free(xref);
 		return false;
 	}
-	if (analysis->ht_xrefs_from_by_type &&
-		!set_xref_by_type(analysis->ht_xrefs_from_by_type, xref, true)) {
+	// The old xref was replaced (and freed) by the updates above, so its type
+	// index entries have to be removed now.
+	if (drop_old_type) {
+		del_xref_by_type(analysis->ht_xrefs_from_by_type, from, to, old_type, true);
+		del_xref_by_type(analysis->ht_xrefs_to_by_type, from, to, old_type, false);
+	}
+	// rz_analysis_xrefs_deln() removes the primary entries (freeing the xref) and
+	// the type index entries of <type>, keeping all tables consistent on failure.
+	if (!set_xref_by_type(analysis->ht_xrefs_from_by_type, xref, true)) {
 		rz_analysis_xrefs_deln(analysis, from, to, type);
 		return false;
 	}
-	if (analysis->ht_xrefs_to_by_type &&
-		!set_xref_by_type(analysis->ht_xrefs_to_by_type, xref, false)) {
-		if (analysis->ht_xrefs_from_by_type) {
-			del_xref_by_type(analysis->ht_xrefs_from_by_type, from, to, type, true);
-		}
+	if (!set_xref_by_type(analysis->ht_xrefs_to_by_type, xref, false)) {
 		rz_analysis_xrefs_deln(analysis, from, to, type);
 		return false;
 	}

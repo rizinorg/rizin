@@ -5730,16 +5730,40 @@ RZ_IPI RzCmdStatus rz_analyze_all_function_calls_to_imports_handler(RzCore *core
 	return RZ_CMD_STATUS_OK;
 }
 
+static int xref_addr_cmp(const void *a, const void *b, void *user) {
+	const RzAnalysisXRef *xref_a = a;
+	const RzAnalysisXRef *xref_b = b;
+	if (xref_a->from != xref_b->from) {
+		return xref_a->from < xref_b->from ? -1 : 1;
+	}
+	if (xref_a->to != xref_b->to) {
+		return xref_a->to < xref_b->to ? -1 : 1;
+	}
+	return 0;
+}
+
 RZ_IPI RzCmdStatus rz_analyze_all_data_references_to_code_handler(RzCore *core, int argc, const char **argv) {
-	RzListIter *iter;
+	// Snapshot the DATA xrefs first, because rz_core_analysis_fcn() below adds
+	// new xrefs and the xref storage must not change while iterating over it.
+	RzVector xrefs;
+	rz_vector_init(&xrefs, sizeof(RzAnalysisXRef), NULL, NULL);
+	RzIterator *it = rz_analysis_xrefs_get_all_of_type(core->analysis, RZ_ANALYSIS_XREF_TYPE_DATA);
+	if (it) {
+		RzAnalysisXRef **pxref;
+		rz_iterator_foreach(it, pxref) {
+			rz_vector_push(&xrefs, *pxref);
+		}
+		rz_iterator_free(it);
+	}
+	// Keep the deterministic processing order rz_analysis_xrefs_get_from() provided.
+	rz_vector_sort(&xrefs, xref_addr_cmp, false, NULL);
 	RzAnalysisXRef *xref;
-	RzList *list = rz_analysis_xrefs_get_from(core->analysis, UT64_MAX);
-	rz_list_foreach (list, iter, xref) {
-		if (xref->type == RZ_ANALYSIS_XREF_TYPE_DATA && rz_io_is_valid_offset(core->io, xref->to, false)) {
+	rz_vector_foreach (&xrefs, xref) {
+		if (rz_io_is_valid_offset(core->io, xref->to, false)) {
 			rz_core_analysis_fcn(core, xref->from, xref->to, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
 		}
 	}
-	rz_list_free(list);
+	rz_vector_fini(&xrefs);
 	return RZ_CMD_STATUS_OK;
 }
 
