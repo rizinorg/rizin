@@ -133,11 +133,11 @@ RUN
 
 NAME=print anonymous nested struct
 FILE=malloc://1024
-BROKEN=1
 # Inline anonymous struct definitions like `?(format inner_names)field` are a
 # legacy quirk: the `?` typename is itself a parenthesised format+names string.
-# The rewritten parser only accepts typedb-registered struct names there.
-# Restoring this would require a recursive parser hook in the typename slot.
+# The new parser does not recurse into them (it only expands
+# typedb-registered struct names), so the nested `(pf ...)` is rendered as a
+# plain field instead of being expanded. This test locks in that behavior.
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32

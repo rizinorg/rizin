@@ -51,8 +51,9 @@ RUN
 
 NAME=pf array not in meta
 FILE==
-BROKEN=1
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 pfn foo "[3]x4 foo"
 .pf foo.foo 1
 .pf .foo
