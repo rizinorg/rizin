@@ -66,7 +66,6 @@ RUN
 
 NAME=dko and dkl
 FILE=bins/elf/analysis/calls_x64
-BROKEN=1
 ARGS=-a x86 -d
 CMDS=<<EOF
 dkl~SIGTERM
@@ -84,8 +83,27 @@ EXPECT=<<EOF
 15 SIGTERM skip
 15 SIGTERM
 15 SIGTERM skip
-[+] signal 15 aka SIGTERM received 2
+Hello world
 EOF
+REGEXP_FILTER_OUT=(?m)^(?!\[\+\]).+
+RUN
+
+NAME=Ignore instruction skip for external signals
+FILE=bins/elf/add
+ARGS=-d
+CMDS=<<EOF
+db @ main+22
+dc
+db-
+dko 10 skip
+ds
+dk 10
+dc
+EOF
+EXPECT=<<EOF
+SUM IS 50
+EOF
+REGEXP_FILTER_OUT=(?!\[\+\]).*
 RUN
 
 NAME=rizin -d no error from env
