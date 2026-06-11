@@ -1390,22 +1390,41 @@ RZ_API void rz_core_sym_name_fini(RZ_NULLABLE RzBinSymNames *names) {
 	RZ_FREE(names->methflag);
 }
 
+// ARM/AArch64 ELF mapping symbols mark the instruction set of a region of
+// bytes within a section. They are named "$<kind>" optionally followed by
+// ".<anything>" (e.g. "$t", "$t.0", "$d.realdata"), have type STT_NOTYPE and
+// binding STB_LOCAL. See the ARM ELF ABI (aaelf32/aaelf64, "Mapping symbols"):
+// $a = Arm code, $t = Thumb code, $x = AArch64 code, $d = data. Returns the
+// kind character ('a', 't', 'x', 'd', ...) or 0 if name is not a mapping symbol.
+static char arm_mapping_symbol_kind(const char *name) {
+	if (name && name[0] == '$' && name[1] && (name[2] == '\0' || name[2] == '.')) {
+		return name[1];
+	}
+	return 0;
+}
+
 static void handle_arm_special_symbol(RzCore *core, RzBinObject *o, RzBinSymbol *symbol, int va) {
 	ut64 addr = rva(o, symbol->paddr, symbol->vaddr, va);
-	if (!strcmp(symbol->name, "$a")) {
+	switch (arm_mapping_symbol_kind(symbol->name)) {
+	case 'a': // start of a region of ARM code
 		rz_analysis_hint_set_bits(core->analysis, addr, 32);
-	} else if (!strcmp(symbol->name, "$x")) {
+		break;
+	case 'x': // start of a region of AArch64 code
 		rz_analysis_hint_set_bits(core->analysis, addr, 64);
-	} else if (!strcmp(symbol->name, "$t")) {
+		break;
+	case 't': // start of a region of Thumb code
 		rz_analysis_hint_set_bits(core->analysis, addr, 16);
-	} else if (!strcmp(symbol->name, "$d")) {
+		break;
+	case 'd': // start of a region of data
 		// TODO: we could add data meta type at addr, but sometimes $d
 		// is in the middle of the code and it would make the code less
 		// readable.
-	} else {
+		break;
+	default:
 		if (core->bin->verbose) {
 			RZ_LOG_WARN("Special symbol %s not handled\n", symbol->name);
 		}
+		break;
 	}
 }
 
@@ -1487,9 +1506,10 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 			 * Skip also file symbols because not useful for now.
 			 */
 		} else if (is_special_symbol(symbol)) {
-			if (is_arm) {
-				handle_arm_special_symbol(core, o, symbol, va);
-			}
+			// ARM/AArch64 mapping symbols ($a/$t/$d/$x) are applied in a
+			// dedicated pass after regular symbols (see below) so they take
+			// precedence over the address-based ARM/Thumb heuristic that is
+			// applied to FUNC symbols by handle_arm_symbol().
 		} else {
 			// TODO: provide separate API in RzBinPlugin to let plugins handle analysis hints/metadata
 			if (is_arm) {
@@ -1563,6 +1583,26 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 		rz_pvector_foreach (o->entries, iter) {
 			entry = *iter;
 			handle_arm_entry(core, o, entry, va);
+		}
+	}
+
+	// Apply ARM/AArch64 mapping symbols ($a/$t/$d/$x) last. Per the ARM ELF
+	// ABI they are the authoritative markers of the instruction set for a
+	// region of bytes, so they must override the even/odd-address heuristic
+	// used above for FUNC symbols and entry points (e.g. a Thumb `main` at the
+	// even address tagged with `$t`, see issue #4665).
+	if (is_arm) {
+		rz_pvector_foreach (symbols, it) {
+			symbol = *it;
+			if (!symbol->name) {
+				continue;
+			}
+			if (is_invalid_address_va(va, symbol->vaddr, symbol->paddr)) {
+				continue;
+			}
+			if (is_special_symbol(symbol)) {
+				handle_arm_special_symbol(core, o, symbol, va);
+			}
 		}
 	}
 
