@@ -821,10 +821,10 @@ string: 0x00000000-0x00000005 sha3-224: computed hash doesn't match the expected
 string: 0x00000000-0x00000005 sha3-256: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha3-384: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha3-512: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 shake-128: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 shake-256: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha384: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha512: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 shake-128: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 shake-256: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sm3: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 ssdeep: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 temperature: computed hash doesn't match the expected one
