@@ -2581,6 +2581,169 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_type_handler(RzCore *core, int argc
 	return RZ_CMD_STATUS_OK;
 }
 
+static void var_constraints_print(RzCmdStateOutput *state, RZ_NONNULL const char *name,
+	RZ_NONNULL const RzVector /*<RzTypeConstraint>*/ *constraints, bool with_name) {
+	char *readable = rz_type_interval_constraints_as_string(constraints);
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON: {
+		PJ *pj = state->d.pj;
+		pj_o(pj);
+		pj_ks(pj, "name", name);
+		pj_ks(pj, "constraints", readable ? readable : "");
+		pj_ka(pj, "conditions");
+		void *it;
+		rz_vector_foreach (constraints, it) {
+			RzTypeConstraint *constr = (RzTypeConstraint *)it;
+			pj_o(pj);
+			pj_ks(pj, "cond", rz_type_cond_tostring(constr->cond));
+			pj_kn(pj, "value", constr->val);
+			pj_end(pj);
+		}
+		pj_end(pj);
+		pj_end(pj);
+		break;
+	}
+	default:
+		if (with_name) {
+			rz_cons_printf("%s: %s\n", name, readable ? readable : "");
+		} else if (readable) {
+			rz_cons_println(readable);
+		}
+		break;
+	}
+	free(readable);
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_vars_constraints_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
+	if (!fcn) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cmd_state_output_array_start(state);
+	if (argc > 1) {
+		RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, argv[1]);
+		if (!var) {
+			RZ_LOG_ERROR("core: Cannot find variable \"%s\" in the current function\n", argv[1]);
+			rz_cmd_state_output_array_end(state);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		var_constraints_print(state, var->name, &var->constraints, false);
+	} else {
+		void **it;
+		rz_pvector_foreach (&fcn->vars, it) {
+			RzAnalysisVar *var = *it;
+			char *readable = rz_type_interval_constraints_as_string(&var->constraints);
+			bool empty = RZ_STR_ISEMPTY(readable);
+			free(readable);
+			if (empty) {
+				continue;
+			}
+			var_constraints_print(state, var->name, &var->constraints, true);
+		}
+	}
+	rz_cmd_state_output_array_end(state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_vars_constraints_set_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
+	if (!fcn) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, argv[1]);
+	if (!var) {
+		RZ_LOG_ERROR("core: Cannot find variable \"%s\" in the current function\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzVector /*<RzTypeConstraint>*/ parsed;
+	rz_vector_init(&parsed, sizeof(RzTypeConstraint), NULL, NULL);
+	if (!rz_type_interval_constraints_from_string(argv[2], &parsed)) {
+		rz_vector_fini(&parsed);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_analysis_var_clear_constraints(var);
+	RzTypeConstraint *c;
+	rz_vector_foreach (&parsed, c) {
+		rz_analysis_var_add_constraint(var, c);
+	}
+	rz_vector_fini(&parsed);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_vars_constraints_del_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
+	if (!fcn) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, argv[1]);
+	if (!var) {
+		RZ_LOG_ERROR("core: Cannot find variable \"%s\" in the current function\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_analysis_var_clear_constraints(var);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_global_variable_constraints_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_cmd_state_output_array_start(state);
+	if (argc > 1) {
+		RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(core->analysis, argv[1]);
+		if (!glob) {
+			RZ_LOG_ERROR("Global variable '%s' does not exist!\n", argv[1]);
+			rz_cmd_state_output_array_end(state);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		var_constraints_print(state, glob->name, &glob->constraints, false);
+	} else {
+		RzList *globals = rz_analysis_var_global_get_all(core->analysis);
+		RzListIter *it;
+		RzAnalysisVarGlobal *glob;
+		rz_list_foreach (globals, it, glob) {
+			char *readable = rz_type_interval_constraints_as_string(&glob->constraints);
+			bool empty = RZ_STR_ISEMPTY(readable);
+			free(readable);
+			if (empty) {
+				continue;
+			}
+			var_constraints_print(state, glob->name, &glob->constraints, true);
+		}
+		rz_list_free(globals);
+	}
+	rz_cmd_state_output_array_end(state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_global_variable_constraints_set_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(core->analysis, argv[1]);
+	if (!glob) {
+		RZ_LOG_ERROR("Global variable '%s' does not exist!\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzVector /*<RzTypeConstraint>*/ parsed;
+	rz_vector_init(&parsed, sizeof(RzTypeConstraint), NULL, NULL);
+	if (!rz_type_interval_constraints_from_string(argv[2], &parsed)) {
+		rz_vector_fini(&parsed);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_analysis_var_global_clear_constraints(glob);
+	RzTypeConstraint *c;
+	rz_vector_foreach (&parsed, c) {
+		rz_analysis_var_global_add_constraint(glob, c);
+	}
+	rz_vector_fini(&parsed);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_global_variable_constraints_del_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(core->analysis, argv[1]);
+	if (!glob) {
+		RZ_LOG_ERROR("Global variable '%s' does not exist!\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_analysis_var_global_clear_constraints(glob);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_analysis_function_args_and_vars_xrefs_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode, bool use_args, bool use_vars) {
 	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {

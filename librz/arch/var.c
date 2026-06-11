@@ -1040,52 +1040,35 @@ RZ_API void rz_analysis_var_add_constraint(RzAnalysisVar *var, RZ_BORROW RzTypeC
 }
 
 /**
+ * \brief Removes all type constraints from a \p var variable
+ */
+RZ_API void rz_analysis_var_clear_constraints(RZ_NONNULL RzAnalysisVar *var) {
+	rz_return_if_fail(var);
+	rz_vector_clear(&var->constraints);
+}
+
+/**
  * \brief Get all type constraints of a \p var variable in the text form
  */
-RZ_API char *rz_analysis_var_get_constraints_readable(RzAnalysisVar *var) {
-	size_t n = var->constraints.len;
-	if (!n) {
-		return NULL;
-	}
-	bool low = false, high = false;
-	RzStrBuf sb;
-	rz_strbuf_init(&sb);
-	size_t i;
-	for (i = 0; i < n; i += 1) {
-		RzTypeConstraint *constr = rz_vector_index_ptr(&var->constraints, i);
-		switch (constr->cond) {
-		case RZ_TYPE_COND_LE:
-			if (high) {
-				rz_strbuf_append(&sb, " && ");
-			}
-			rz_strbuf_appendf(&sb, "<= 0x%" PFMT64x, constr->val);
-			low = true;
-			break;
-		case RZ_TYPE_COND_LT:
-			if (high) {
-				rz_strbuf_append(&sb, " && ");
-			}
-			rz_strbuf_appendf(&sb, "< 0x%" PFMT64x, constr->val);
-			low = true;
-			break;
-		case RZ_TYPE_COND_GE:
-			rz_strbuf_appendf(&sb, ">= 0x%" PFMT64x, constr->val);
-			high = true;
-			break;
-		case RZ_TYPE_COND_GT:
-			rz_strbuf_appendf(&sb, "> 0x%" PFMT64x, constr->val);
-			high = true;
-			break;
-		default:
-			break;
-		}
-		if (low && high && i != n - 1) {
-			rz_strbuf_append(&sb, " || ");
-			low = false;
-			high = false;
+RZ_API char *rz_analysis_var_get_constraints_readable(RZ_NONNULL RzAnalysisVar *var) {
+	rz_return_val_if_fail(var, NULL);
+	// The inline variable listing (afvl) only shows the interval/range hint.
+	// Equality and inequality constraints, such as the "== 0" produced by the
+	// ubiquitous null/zero checks, would clutter the listing; they are still
+	// recorded and can be inspected through the dedicated `afvc` command.
+	// Render only the interval bounds here.
+	RzVector /*<RzTypeConstraint>*/ intervals;
+	rz_vector_init(&intervals, sizeof(RzTypeConstraint), NULL, NULL);
+	RzTypeConstraint *c;
+	rz_vector_foreach (&var->constraints, c) {
+		if (c->cond == RZ_TYPE_COND_LE || c->cond == RZ_TYPE_COND_LT ||
+			c->cond == RZ_TYPE_COND_GE || c->cond == RZ_TYPE_COND_GT) {
+			rz_vector_push(&intervals, c);
 		}
 	}
-	return rz_strbuf_drain_nofree(&sb);
+	char *readable = rz_type_interval_constraints_as_string(&intervals);
+	rz_vector_fini(&intervals);
+	return readable;
 }
 
 static bool stack_offset_is_arg(RzAnalysisFunction *fcn, st64 stack_off) {

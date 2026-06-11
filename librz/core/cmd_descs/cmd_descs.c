@@ -278,6 +278,9 @@ static const RzCmdDescArg analysis_function_vars_rename_args[3];
 static const RzCmdDescArg analysis_function_vars_reads_args[2];
 static const RzCmdDescArg analysis_function_vars_writes_args[2];
 static const RzCmdDescArg analysis_function_vars_type_args[3];
+static const RzCmdDescArg analysis_function_vars_constraints_args[2];
+static const RzCmdDescArg analysis_function_vars_constraints_set_args[3];
+static const RzCmdDescArg analysis_function_vars_constraints_del_args[2];
 static const RzCmdDescArg analysis_function_vars_xrefs_args[2];
 static const RzCmdDescArg analysis_function_vars_xrefs_args_args[2];
 static const RzCmdDescArg analysis_function_vars_xrefs_vars_args[2];
@@ -354,6 +357,9 @@ static const RzCmdDescArg analysis_global_variable_rename_args[3];
 static const RzCmdDescArg analysis_global_variable_print_args[2];
 static const RzCmdDescArg analysis_global_variable_retype_args[3];
 static const RzCmdDescArg analysis_global_variable_xrefs_args[2];
+static const RzCmdDescArg analysis_global_variable_constraints_args[2];
+static const RzCmdDescArg analysis_global_variable_constraints_set_args[3];
+static const RzCmdDescArg analysis_global_variable_constraints_del_args[2];
 static const RzCmdDescArg analysis_rtti_demangle_class_name_args[2];
 static const RzCmdDescArg analysis_virtual_xrefs_args[2];
 static const RzCmdDescArg analysis_xrefs_set_0_args[2];
@@ -4867,6 +4873,55 @@ static const RzCmdDescHelp analysis_function_vars_type_help = {
 	.args = analysis_function_vars_type_args,
 };
 
+static const RzCmdDescHelp afvc_help = {
+	.summary = "Read/change value constraints of arguments/locals",
+};
+static const RzCmdDescArg analysis_function_vars_constraints_args[] = {
+	{
+		.name = "varname",
+		.type = RZ_CMD_ARG_TYPE_FCN_VAR,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_vars_constraints_help = {
+	.summary = "List value constraints of all variables / of the given one",
+	.args = analysis_function_vars_constraints_args,
+};
+
+static const RzCmdDescArg analysis_function_vars_constraints_set_args[] = {
+	{
+		.name = "varname",
+		.type = RZ_CMD_ARG_TYPE_FCN_VAR,
+
+	},
+	{
+		.name = "constraints",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_vars_constraints_set_help = {
+	.summary = "Set value constraints of a variable (e.g. afvcs var0 \">0,<=9\")",
+	.args = analysis_function_vars_constraints_set_args,
+};
+
+static const RzCmdDescArg analysis_function_vars_constraints_del_args[] = {
+	{
+		.name = "varname",
+		.type = RZ_CMD_ARG_TYPE_FCN_VAR,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_vars_constraints_del_help = {
+	.summary = "Remove all value constraints of a variable",
+	.args = analysis_function_vars_constraints_del_args,
+};
+
 static const RzCmdDescHelp afvx_help = {
 	.summary = "Show argument/variable xrefs in a function",
 };
@@ -6696,6 +6751,55 @@ static const RzCmdDescArg analysis_global_variable_xrefs_args[] = {
 static const RzCmdDescHelp analysis_global_variable_xrefs_help = {
 	.summary = "print all xrefs to the global variable",
 	.args = analysis_global_variable_xrefs_args,
+};
+
+static const RzCmdDescHelp avgc_help = {
+	.summary = "Read/change value constraints of global variables",
+};
+static const RzCmdDescArg analysis_global_variable_constraints_args[] = {
+	{
+		.name = "var_name",
+		.type = RZ_CMD_ARG_TYPE_GLOBAL_VAR,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_global_variable_constraints_help = {
+	.summary = "List value constraints of all globals / of the given one",
+	.args = analysis_global_variable_constraints_args,
+};
+
+static const RzCmdDescArg analysis_global_variable_constraints_set_args[] = {
+	{
+		.name = "var_name",
+		.type = RZ_CMD_ARG_TYPE_GLOBAL_VAR,
+
+	},
+	{
+		.name = "constraints",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_global_variable_constraints_set_help = {
+	.summary = "Set value constraints of a global variable (e.g. avgcs g \">0,<=9\")",
+	.args = analysis_global_variable_constraints_set_args,
+};
+
+static const RzCmdDescArg analysis_global_variable_constraints_del_args[] = {
+	{
+		.name = "var_name",
+		.type = RZ_CMD_ARG_TYPE_GLOBAL_VAR,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_global_variable_constraints_del_help = {
+	.summary = "Remove all value constraints of a global variable",
+	.args = analysis_global_variable_constraints_del_args,
 };
 
 static const RzCmdDescArg analysis_print_rtti_args[] = {
@@ -23092,6 +23196,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_vars_type_cd = rz_cmd_desc_argv_new(core->rcmd, afv_cd, "afvt", rz_analysis_function_vars_type_handler, &analysis_function_vars_type_help);
 	rz_warn_if_fail(analysis_function_vars_type_cd);
 
+	RzCmdDesc *afvc_cd = rz_cmd_desc_group_state_new(core->rcmd, afv_cd, "afvc", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_constraints_handler, &analysis_function_vars_constraints_help, &afvc_help);
+	rz_warn_if_fail(afvc_cd);
+	RzCmdDesc *analysis_function_vars_constraints_set_cd = rz_cmd_desc_argv_new(core->rcmd, afvc_cd, "afvcs", rz_analysis_function_vars_constraints_set_handler, &analysis_function_vars_constraints_set_help);
+	rz_warn_if_fail(analysis_function_vars_constraints_set_cd);
+
+	RzCmdDesc *analysis_function_vars_constraints_del_cd = rz_cmd_desc_argv_new(core->rcmd, afvc_cd, "afvc-", rz_analysis_function_vars_constraints_del_handler, &analysis_function_vars_constraints_del_help);
+	rz_warn_if_fail(analysis_function_vars_constraints_del_cd);
+
 	RzCmdDesc *afvx_cd = rz_cmd_desc_group_modes_new(core->rcmd, afv_cd, "afvx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_xrefs_handler, &analysis_function_vars_xrefs_help, &afvx_help);
 	rz_warn_if_fail(afvx_cd);
 	RzCmdDesc *analysis_function_vars_xrefs_args_cd = rz_cmd_desc_argv_modes_new(core->rcmd, afvx_cd, "afvxa", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_xrefs_args_handler, &analysis_function_vars_xrefs_args_help);
@@ -23459,6 +23571,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_global_variable_xrefs_cd = rz_cmd_desc_argv_state_new(core->rcmd, avg_cd, "avgx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_analysis_global_variable_xrefs_handler, &analysis_global_variable_xrefs_help);
 	rz_warn_if_fail(analysis_global_variable_xrefs_cd);
+
+	RzCmdDesc *avgc_cd = rz_cmd_desc_group_state_new(core->rcmd, avg_cd, "avgc", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_global_variable_constraints_handler, &analysis_global_variable_constraints_help, &avgc_help);
+	rz_warn_if_fail(avgc_cd);
+	RzCmdDesc *analysis_global_variable_constraints_set_cd = rz_cmd_desc_argv_new(core->rcmd, avgc_cd, "avgcs", rz_analysis_global_variable_constraints_set_handler, &analysis_global_variable_constraints_set_help);
+	rz_warn_if_fail(analysis_global_variable_constraints_set_cd);
+
+	RzCmdDesc *analysis_global_variable_constraints_del_cd = rz_cmd_desc_argv_new(core->rcmd, avgc_cd, "avgc-", rz_analysis_global_variable_constraints_del_handler, &analysis_global_variable_constraints_del_help);
+	rz_warn_if_fail(analysis_global_variable_constraints_del_cd);
 
 	RzCmdDesc *analysis_print_rtti_cd = rz_cmd_desc_argv_modes_new(core->rcmd, av_cd, "avr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_print_rtti_handler, &analysis_print_rtti_help);
 	rz_warn_if_fail(analysis_print_rtti_cd);

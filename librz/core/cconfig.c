@@ -3025,7 +3025,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("analysis.strings", "false", &cb_analysis_strings, "Identify and register strings during analysis (aar only)");
 	SETPREF("analysis.types.spec", "gcc", "Set profile for specifying format chars used in type analysis");
 	SETBPREF("analysis.types.verbose", "false", "Verbose output from type analysis");
-	SETBPREF("analysis.types.constraint", "false", "Enable constraint types analysis for variables");
+	SETBPREF("analysis.types.constraint", "true", "Enable constraint types analysis for variables");
 	SETCB("analysis.vars", "true", &cb_analysis_vars, "Analyze local variables and arguments");
 	SETBPREF("analysis.vinfun", "true", "Search values in functions (aav) (false by default to only find on non-code)");
 	SETBPREF("analysis.vinfunrange", "false", "Search values outside function ranges (requires analysis.vinfun=false)\n");
