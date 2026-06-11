@@ -51,7 +51,8 @@ features noreorder pic cpic o32 n32
 |           0x000805b8      move  fp, sp
 |           0x000805bc      sw    gp, (var_10h)
 |           0x000805c0      lw    v0, -segment.LOAD0(gp)               ; [data.0009103c:4]=0x80000 segment.ehdr
-|           0x000805c4      addiu a0, v0, 0x640                        ; 0x80640 ; "Hello World" ; const char *s ; str.Hello_World
+|           0x000805c4      addiu a0, v0, 0x640                        ; sym..rodata
+|                                                                      ; 0x80640 ; "Hello World" ; const char *s ; str.Hello_World
 |           0x000805c8      lw    v0, -sym._MIPS_STUBS(gp)             ; [data.00091048:4]=0x80600 sym.imp.puts
 |           0x000805cc      move  t9, v0
 |           0x000805d0      jalr  t9                                   ; sym.imp.puts
@@ -983,7 +984,7 @@ EXPECT=<<EOF
 |                                                                      ; 0x41e910 ; char *strrchr(const char *s, int c)
 |           0x004025a8      move  a0, s6
 |           0x004025ac      slti  v1, s1, 2
-|           0x004025b0      addiu a0, v0, 1
+|           0x004025b0      addiu a0, v0, 1                            ; sym._DYNAMIC_LINKING
 |           0x004025b4      lw    gp, (var_40h)
 |       ,=< 0x004025b8      bnez  v1, 0x402708
 ..
@@ -1860,7 +1861,7 @@ nth vaddr bind type lib name
 |      ||   0x000029b4      lw    a2, 0(v0)
 |      ||   0x000029b8      addiu a0, zero, 2
 |      ||   0x000029bc      bal   sym._dl_dprintf
-|      ||   0x000029c0      addiu a1, a1, 0x692c
+|      ||   0x000029c0      addiu a1, a1, 0x692c                       ; "%s: mmap of a spare page failed!\n"
 |      ||   0x000029c4      lw    gp, (arg_10h)
 |      ||   0x000029c8      addiu a0, zero, 0x14
 |      ||   0x000029cc      addiu v0, zero, 0xfa1
@@ -1883,5 +1884,27 @@ nth vaddr bind type lib name
 |           0x00002a10      lw    s0, (var_18h)
 |           0x00002a14      jr    ra
 \           0x00002a18      addiu sp, sp, 0x30
+EOF
+RUN
+
+NAME=mips PIC GOT page + offset string xref (#5203)
+FILE=bins/elf/analysis/mips-hello
+CMDS=<<EOF
+af @ main
+axt @ 0x80640
+EOF
+EXPECT=<<EOF
+main 0x805c4 [DATA] addiu a0, v0, str.Hello_World
+EOF
+RUN
+
+NAME=mips PIC GOT page + offset string xref BE (#5203)
+FILE=bins/elf/analysis/mipsbe-ip
+CMDS=<<EOF
+af @ sym.ll_init_map
+axt @ 0x41fc6c
+EOF
+EXPECT=<<EOF
+sym.ll_init_map 0x418954 [DATA] addiu a0, a0, -str.Cannot_send_dump_request
 EOF
 RUN
