@@ -1,0 +1,104 @@
+NAME=milstd1750: hand-written test_full.bin - first instructions and branch targets resolved by analysis
+FILE=bins/mil_std_1750/test_full.bin
+ARGS=-a milstd1750 -b 8 -m 0x200
+CMDS=<<EOF
+e scr.color=false
+s 0x200
+pi 4
+s 0x3a2
+ao 3~type,jump
+EOF
+EXPECT=<<EOF
+A(r1, 0x01e9)
+AR(r1, r2)
+AISP(r3, 5)
+AIM(r4, 0x0064)
+type: call
+jump: 0x000003ce
+type: call
+jump: 0x000003ce
+type: cjmp
+jump: 0x000003c8
+EOF
+RUN
+
+NAME=milstd1750: GCC-compiled C binary (Dhrystone) - aaa discovers 14 functions, first carved as 4-insn block at 0x200
+FILE=bins/mil_std_1750/test_full2.bin
+ARGS=-a milstd1750 -b 8 -m 0x200 -n
+CMDS=<<EOF
+e scr.color=false
+e analysis.calls=true
+aaa 2>/dev/null
+afl~?
+pdf @ 0x200
+EOF
+EXPECT=<<EOF
+14
+/ fcn.00000200();
+|           0x00000200      LIM(r0, 0x06cb)
+|           0x00000204      LIM(r1, 0x001e)
+|           0x00000208      LIM(r2, 0x02d2)
+\           0x0000020c      MOV(r0, r2)
+EOF
+RUN
+
+NAME=milstd1750: register profile (count, SW flag bits cf/pf/zf/nf, ic=PC, r15=SP per spec 4.4.1.c)
+FILE=malloc://32
+ARGS=-a milstd1750 -b 8
+CMDS=<<EOF
+e scr.color=false
+ar~?
+ar cf=1
+ar pf=1
+ar zf=1
+ar nf=1
+ar cf
+ar pf
+ar zf
+ar nf
+ar ic=0x1234
+ar ic
+ar r15=0xabcd
+ar r15
+EOF
+EXPECT=<<EOF
+21
+cf = 0x1
+pf = 0x1
+zf = 0x1
+nf = 0x1
+ic = 0x1234
+r15 = 0xabcd
+EOF
+RUN
+
+NAME=milstd1750: COFF object is autodetected (format/arch/endian) and disassembled without -a flag
+FILE=bins/mil_std_1750/sample_coff.bin
+CMDS=<<EOF
+e scr.color=false
+i~format,type,arch,endian,bintype
+pi 15 @ section..text
+EOF
+EXPECT=<<EOF
+format   coff
+type     COFF (Executable file)
+arch     milstd1750
+bintype  coff
+endian   BE
+LIM(r0, 0x06cb)
+LIM(r1, 0x001e)
+LIM(r2, 0x02d2)
+MOV(r0, r2)
+PSHM(r14, r14)
+LR(r14, r15)
+LR(r1, r0)
+AR(r1, r2)
+AISP(r3, 5)
+AIM(r4, 0x0064)
+JC(0x0, 0x0010, r0)
+LR(r15, r14)
+POPM(r14, r14)
+URS(r15)
+NOP()
+EOF
+RUN

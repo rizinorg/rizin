@@ -90,6 +90,8 @@ static bool coff_is_magic(ut16 arch) {
 	case COFF_FILE_MACHINE_TI_1:
 		/* fall-thru */
 	case COFF_FILE_MACHINE_TI_2:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_MIL1750:
 		return true;
 	default:
 		return false;
