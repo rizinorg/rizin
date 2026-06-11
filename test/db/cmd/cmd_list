@@ -576,6 +576,8 @@ sha3-384        BSD-3   Andrey Jivsov              SHA3-384 cryptographic hash
 sha3-512        BSD-3   Andrey Jivsov              SHA3-512 cryptographic hash
 sha384          BSD-3   Aaron D. Gifford           SHA-384 cryptographic hash
 sha512          BSD-3   Aaron D. Gifford           SHA-512 cryptographic hash
+shake-128       BSD-3   Andrey Jivsov              SHAKE-128 extendable-output function
+shake-256       BSD-3   Andrey Jivsov              SHAKE-256 extendable-output function
 sm3             LGPL2   FSF/deroad                 ShangMi 3 (SM3) cryptographic hash
 ssdeep          LGPL3   deroad                     SSDeep Context Triggered Piecewise Hash (CTPH, fuzzy hash)
 temperature     LGPL3   Seva                       Binary temperature [0.0-1.0] range
