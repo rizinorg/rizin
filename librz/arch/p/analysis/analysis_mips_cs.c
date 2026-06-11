@@ -144,17 +144,66 @@ static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num
 typedef struct {
 	RzRegItem reg;
 	ut64 t9_pre; ///< address of the GOT slot $t9 points through (UT64_MAX if unknown)
-	int gp_load_reg; ///< register last loaded from a gp-relative address (MIPS_REG_INVALID if none)
-	ut64 gp_load_ptr; ///< the gp-relative slot address loaded into gp_load_reg
+	/// For each register (indexed by capstone mips_reg id), the address of the
+	/// gp-relative GOT slot it was last loaded from, or UT64_MAX when it does
+	/// not currently hold such a value. This drives both PIC call resolution
+	/// (`lw vX, %call16(sym)(gp); move t9, vX; jalr t9`) and "GOT page + offset"
+	/// data addressing (`lw vX, %got(sym)(gp); addiu rD, vX, %lo(sym)`).
+	ut64 gp_load_slot[MIPS_REG_ENDING];
 } MIPSContext;
+
+/// Forget the GOT slot tracked for register \p reg (if any).
+static inline void mips_gp_slot_clear(MIPSContext *ctx, mips_reg reg) {
+	if (reg > MIPS_REG_INVALID && reg < MIPS_REG_ENDING) {
+		ctx->gp_load_slot[reg] = UT64_MAX;
+	}
+}
+
+/// Record that register \p reg now holds the value of gp-relative GOT slot \p slot.
+static inline void mips_gp_slot_set(MIPSContext *ctx, mips_reg reg, ut64 slot) {
+	if (reg > MIPS_REG_INVALID && reg < MIPS_REG_ENDING) {
+		ctx->gp_load_slot[reg] = slot;
+	}
+}
+
+/// \return the GOT slot tracked for register \p reg, or UT64_MAX if none.
+static inline ut64 mips_gp_slot_get(MIPSContext *ctx, mips_reg reg) {
+	return (reg > MIPS_REG_INVALID && reg < MIPS_REG_ENDING) ? ctx->gp_load_slot[reg] : UT64_MAX;
+}
+
+/// Drop all gp-load tracking (e.g. at init).
+static inline void mips_gp_slot_reset(MIPSContext *ctx) {
+	for (size_t i = 0; i < MIPS_REG_ENDING; i++) {
+		ctx->gp_load_slot[i] = UT64_MAX;
+	}
+}
 
 static bool mips_init(void **user) {
 	MIPSContext *ctx = RZ_NEW0(MIPSContext);
 	rz_return_val_if_fail(ctx, false);
 	ctx->t9_pre = UT64_MAX;
-	ctx->gp_load_reg = MIPS_REG_INVALID;
+	mips_gp_slot_reset(ctx);
 	*user = ctx;
 	return true;
+}
+
+/**
+ * \brief Read the pointer-sized value stored at \p addr (e.g. a MIPS GOT entry).
+ *
+ * \return the stored value, or UT64_MAX when it cannot be read.
+ */
+static ut64 mips_read_pointer(RzAnalysis *analysis, ut64 addr) {
+	if (addr == 0 || addr == UT64_MAX || !analysis->iob.read_at) {
+		return UT64_MAX;
+	}
+	ut8 buf[8] = { 0 };
+	int wordsize = analysis->bits == 64 ? 8 : 4;
+	if (!analysis->iob.read_at(analysis->iob.io, addr, buf, wordsize)) {
+		return UT64_MAX;
+	}
+	return wordsize == 8
+		? rz_read_ble64(buf, analysis->big_endian)
+		: (ut64)rz_read_ble32(buf, analysis->big_endian);
 }
 
 /**
@@ -170,17 +219,7 @@ static bool mips_init(void **user) {
  * determined, in which case the caller leaves the op unresolved as before.
  */
 static ut64 mips_pic_call_target(RzAnalysis *analysis, ut64 got_slot) {
-	if (got_slot == 0 || got_slot == UT64_MAX || !analysis->iob.read_at) {
-		return UT64_MAX;
-	}
-	ut8 buf[8] = { 0 };
-	int wordsize = analysis->bits == 64 ? 8 : 4;
-	if (!analysis->iob.read_at(analysis->iob.io, got_slot, buf, wordsize)) {
-		return UT64_MAX;
-	}
-	ut64 target = wordsize == 8
-		? rz_read_ble64(buf, analysis->big_endian)
-		: (ut64)rz_read_ble32(buf, analysis->big_endian);
+	ut64 target = mips_read_pointer(analysis, got_slot);
 	return target ? target : UT64_MAX;
 }
 
@@ -305,6 +344,9 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 	cs_insn *insn = NULL;
 	cs_mode mode = 0;
 	ut32 gpr_size = 0;
+	// Register whose gp-load tracking this instruction (re)establishes; used to
+	// avoid the post-switch write-invalidation clobbering it again.
+	int gp_tracked_reg = MIPS_REG_INVALID;
 	if (!cs_mode_from_cpu(rz_analysis_get_cpu(analysis), analysis->bits, analysis->big_endian, &mode, &gpr_size)) {
 		return -1;
 	}
@@ -377,10 +419,11 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		case MIPS_OP_MEM:
 			if (IS_REG_GP(OPERAND(1).mem.base)) {
 				op->ptr = analysis->gp + OPERAND(1).mem.disp;
-				// Remember this gp-relative load so a following `move t9, <reg>`
-				// (the standard PIC call setup) can recover the GOT slot.
-				ctx->gp_load_reg = REGID(0);
-				ctx->gp_load_ptr = op->ptr;
+				// Remember this gp-relative load: a following `move t9, <reg>`
+				// (PIC call setup) or `addiu rD, <reg>, ofst` (GOT page+offset
+				// data addressing) can then recover/resolve the real target.
+				mips_gp_slot_set(ctx, REGID(0), op->ptr);
+				gp_tracked_reg = REGID(0);
 				if (IS_REG_T9(REGID(0))) {
 					ctx->t9_pre = op->ptr;
 				}
@@ -388,10 +431,8 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 				if (IS_REG_T9(REGID(0))) {
 					ctx->t9_pre = UT64_MAX;
 				}
-				// A non-gp load into the tracked register invalidates it.
-				if (REGID(0) == ctx->gp_load_reg) {
-					ctx->gp_load_reg = MIPS_REG_INVALID;
-				}
+				// A non-gp load into the register invalidates its tracking; this
+				// is handled by the post-switch write-invalidation.
 			}
 			break;
 		case MIPS_OP_IMM:
@@ -446,7 +487,6 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 				op->jump = target;
 			}
 			ctx->t9_pre = UT64_MAX;
-			ctx->gp_load_reg = MIPS_REG_INVALID;
 		}
 		break;
 #if CS_NEXT_VERSION >= 6
@@ -512,11 +552,7 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 			// `move t9, vX` right after `lw vX, %call16(sym)(gp)` is the
 			// canonical PIC call sequence; carry the GOT slot over to $t9 so
 			// the upcoming jalr can be resolved to the imported function.
-			if (ctx->gp_load_reg != MIPS_REG_INVALID && REGID(1) == ctx->gp_load_reg) {
-				ctx->t9_pre = ctx->gp_load_ptr;
-			} else {
-				ctx->t9_pre = UT64_MAX;
-			}
+			ctx->t9_pre = mips_gp_slot_get(ctx, REGID(1));
 		}
 		break;
 	case MIPS_INS_ADD:
@@ -529,12 +565,30 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		SET_VAL(op, 2);
 		op->sign = (insn->id == MIPS_INS_ADDI || insn->id == MIPS_INS_ADD || insn->id == MIPS_INS_DADD);
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		// MIPS PIC "GOT page + offset" addressing of a local symbol:
+		//   lw    vX, %got(sym)(gp)   ; vX = GOT page base
+		//   addiu rD, vX, %lo(sym)    ; rD = &sym
+		// When vX still holds a gp-loaded GOT slot, dereference it and apply the
+		// immediate to recover &sym, so string/data xref detection (which reads
+		// op->ptr) can pick up the real target instead of the bare immediate.
+		// Never do this for $t9: an `addiu t9, t9, %lo(func)` computes a PIC
+		// tail-call *code* address, which the following jr/jalr resolves on its
+		// own and must not be turned into a data pointer. See issue #5203.
+		if (OPCOUNT() == 3 && OPERAND(2).type == MIPS_OP_IMM && !IS_REG_T9(REGID(0))) {
+			ut64 slot = mips_gp_slot_get(ctx, REGID(1));
+			if (slot != UT64_MAX) {
+				ut64 page = mips_read_pointer(analysis, slot);
+				if (page != UT64_MAX) {
+					op->ptr = page + IMM(2);
+				}
+			}
+		}
 		if (IS_REG_T9(REGID(0))) {
-			if (insn->id == MIPS_INS_ADDU && OPCOUNT() == 2 &&
-				ctx->gp_load_reg != MIPS_REG_INVALID && REGID(1) == ctx->gp_load_reg) {
+			ut64 slot = mips_gp_slot_get(ctx, REGID(1));
+			if (insn->id == MIPS_INS_ADDU && OPCOUNT() == 2 && slot != UT64_MAX) {
 				// `move t9, vX` may be emitted as the 2-operand `addu t9, vX`
 				// alias; carry the GOT slot over like MIPS_INS_MOVE does.
-				ctx->t9_pre = ctx->gp_load_ptr;
+				ctx->t9_pre = slot;
 			} else {
 				ctx->t9_pre += IMM(2);
 			}
@@ -626,12 +680,12 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		SET_VAL(op, 2);
 		op->type = RZ_ANALYSIS_OP_TYPE_OR;
 		if (IS_REG_T9(REGID(0))) {
-			if (insn->id == MIPS_INS_OR && OPCOUNT() == 2 &&
-				ctx->gp_load_reg != MIPS_REG_INVALID && REGID(1) == ctx->gp_load_reg) {
+			ut64 slot = mips_gp_slot_get(ctx, REGID(1));
+			if (insn->id == MIPS_INS_OR && OPCOUNT() == 2 && slot != UT64_MAX) {
 				// capstone emits `move t9, vX` as the 2-operand `or t9, vX`
 				// alias (`or t9, vX, $zero`); carry the GOT slot over so the
 				// following jalr/jr resolves to the imported function.
-				ctx->t9_pre = ctx->gp_load_ptr;
+				ctx->t9_pre = slot;
 			} else {
 				// any other write to $t9 invalidates the tracked slot
 				ctx->t9_pre = UT64_MAX;
@@ -902,7 +956,6 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 				op->jump = target;
 			}
 			ctx->t9_pre = UT64_MAX;
-			ctx->gp_load_reg = MIPS_REG_INVALID;
 		}
 
 		break;
@@ -978,6 +1031,33 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
 		SET_VAL(op, 2);
 		break;
+	}
+	// Any instruction that writes a register clobbers the GOT page base it may
+	// have held, so drop stale gp-load tracking for the written register
+	// (operand 0 for these ALU/load/move forms). The gp-relative load above
+	// re-establishes tracking for the value it just loaded, so the register it
+	// set (gp_tracked_reg) is skipped here. Keeping this tracking precise avoids
+	// a later `addiu rD, rX, ofst` resolving against a stale base.
+	if (insn && OPERAND(0).type == MIPS_OP_REG && REGID(0) != gp_tracked_reg) {
+		switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
+		case RZ_ANALYSIS_OP_TYPE_LOAD:
+		case RZ_ANALYSIS_OP_TYPE_MOV:
+		case RZ_ANALYSIS_OP_TYPE_ADD:
+		case RZ_ANALYSIS_OP_TYPE_SUB:
+		case RZ_ANALYSIS_OP_TYPE_AND:
+		case RZ_ANALYSIS_OP_TYPE_OR:
+		case RZ_ANALYSIS_OP_TYPE_XOR:
+		case RZ_ANALYSIS_OP_TYPE_NOT:
+		case RZ_ANALYSIS_OP_TYPE_SHL:
+		case RZ_ANALYSIS_OP_TYPE_SHR:
+		case RZ_ANALYSIS_OP_TYPE_SAR:
+		case RZ_ANALYSIS_OP_TYPE_ROL:
+		case RZ_ANALYSIS_OP_TYPE_ROR:
+			mips_gp_slot_clear(ctx, REGID(0));
+			break;
+		default:
+			break;
+		}
 	}
 beach:
 	set_opdir(op);
