@@ -22,6 +22,7 @@ RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const c
 	glob->coord.decl_file = NULL;
 	glob->coord.decl_line = UT32_MAX;
 	glob->coord.decl_col = UT32_MAX;
+	rz_vector_init(&glob->constraints, sizeof(RzTypeConstraint), NULL, NULL);
 
 	return glob;
 }
@@ -376,9 +377,19 @@ RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RZ_NONNUL
  * \param constraint RzTypeConstraint
  * \return void
  */
-RZ_API void rz_analysis_var_global_add_constraint(RzAnalysisVarGlobal *glob, RzTypeConstraint *constraint) {
+RZ_API void rz_analysis_var_global_add_constraint(RZ_NONNULL RzAnalysisVarGlobal *glob, RZ_NONNULL RzTypeConstraint *constraint) {
 	rz_return_if_fail(glob && constraint);
 	rz_vector_push(&glob->constraints, constraint);
+}
+
+/**
+ * \brief Removes all type constraints from a \p glob global variable
+ *
+ * \param glob Global variable instance
+ */
+RZ_API void rz_analysis_var_global_clear_constraints(RZ_NONNULL RzAnalysisVarGlobal *glob) {
+	rz_return_if_fail(glob);
+	rz_vector_clear(&glob->constraints);
 }
 
 /**
@@ -387,50 +398,9 @@ RZ_API void rz_analysis_var_global_add_constraint(RzAnalysisVarGlobal *glob, RzT
  * \param glob Global variable instance
  * \return char *
  */
-RZ_API RZ_OWN char *rz_analysis_var_global_get_constraints_readable(RzAnalysisVarGlobal *glob) {
-	size_t n = glob->constraints.len;
-	if (!n) {
-		return NULL;
-	}
-	bool low = false, high = false;
-	RzStrBuf sb;
-	rz_strbuf_init(&sb);
-	size_t i;
-	for (i = 0; i < n; i += 1) {
-		RzTypeConstraint *constr = rz_vector_index_ptr(&glob->constraints, i);
-		switch (constr->cond) {
-		case RZ_TYPE_COND_LE:
-			if (high) {
-				rz_strbuf_append(&sb, " && ");
-			}
-			rz_strbuf_appendf(&sb, "<= 0x%" PFMT64x, constr->val);
-			low = true;
-			break;
-		case RZ_TYPE_COND_LT:
-			if (high) {
-				rz_strbuf_append(&sb, " && ");
-			}
-			rz_strbuf_appendf(&sb, "< 0x%" PFMT64x, constr->val);
-			low = true;
-			break;
-		case RZ_TYPE_COND_GE:
-			rz_strbuf_appendf(&sb, ">= 0x%" PFMT64x, constr->val);
-			high = true;
-			break;
-		case RZ_TYPE_COND_GT:
-			rz_strbuf_appendf(&sb, "> 0x%" PFMT64x, constr->val);
-			high = true;
-			break;
-		default:
-			break;
-		}
-		if (low && high && i != n - 1) {
-			rz_strbuf_append(&sb, " || ");
-			low = false;
-			high = false;
-		}
-	}
-	return rz_strbuf_drain_nofree(&sb);
+RZ_API RZ_OWN char *rz_analysis_var_global_get_constraints_readable(RZ_NONNULL RzAnalysisVarGlobal *glob) {
+	rz_return_val_if_fail(glob, NULL);
+	return rz_type_interval_constraints_as_string(&glob->constraints);
 }
 
 /**

@@ -1607,7 +1607,8 @@ RZ_API void rz_analysis_var_set_access(RzAnalysisVar *var, const char *reg, ut64
 RZ_API void rz_analysis_var_remove_access_at(RzAnalysisVar *var, ut64 address);
 RZ_API void rz_analysis_var_clear_accesses(RzAnalysisVar *var);
 RZ_API void rz_analysis_var_add_constraint(RzAnalysisVar *var, RZ_BORROW RzTypeConstraint *constraint);
-RZ_API char *rz_analysis_var_get_constraints_readable(RzAnalysisVar *var);
+RZ_API void rz_analysis_var_clear_constraints(RZ_NONNULL RzAnalysisVar *var);
+RZ_API char *rz_analysis_var_get_constraints_readable(RZ_NONNULL RzAnalysisVar *var);
 
 RZ_API int rz_analysis_var_storage_cmp(
 	RZ_NONNULL const RzAnalysisVarStorage *a,
@@ -1692,8 +1693,9 @@ RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr_in(RzAna
 RZ_API RZ_OWN RzList /*<RzAnalysisVarGlobal *>*/ *rz_analysis_var_global_get_all(RzAnalysis *analysis);
 RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, RZ_NONNULL const char *old_name, RZ_NONNULL const char *newname);
 RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RZ_NONNULL RZ_BORROW RzType *type);
-RZ_API void rz_analysis_var_global_add_constraint(RzAnalysisVarGlobal *glob, RzTypeConstraint *constraint);
-RZ_API RZ_OWN char *rz_analysis_var_global_get_constraints_readable(RzAnalysisVarGlobal *glob);
+RZ_API void rz_analysis_var_global_add_constraint(RZ_NONNULL RzAnalysisVarGlobal *glob, RZ_NONNULL RzTypeConstraint *constraint);
+RZ_API void rz_analysis_var_global_clear_constraints(RZ_NONNULL RzAnalysisVarGlobal *glob);
+RZ_API RZ_OWN char *rz_analysis_var_global_get_constraints_readable(RZ_NONNULL RzAnalysisVarGlobal *glob);
 RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_analysis_var_global_xrefs(RzAnalysis *analysis, RZ_NONNULL const RzAnalysisVarGlobal *glob);
 RZ_API RZ_OWN RzList /*<RzTypePathTuple *>*/ *rz_analysis_type_paths_by_address(RzAnalysis *analysis, ut64 addr);
 

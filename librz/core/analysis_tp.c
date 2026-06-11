@@ -771,7 +771,32 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 					.cond = jmp ? rz_type_cond_invert(next_op->cond) : next_op->cond,
 					.val = aop->val
 				};
-				rz_analysis_var_add_constraint(var, &constr);
+				// Only keep constraints that carry useful information: a known
+				// immediate value (UT64_MAX means the compared value was not a
+				// resolvable immediate) and a condition that the rest of the
+				// type engine knows how to represent. Besides the interval
+				// bounds (<, <=, >, >=) this includes the equality and
+				// inequality conditions produced by je/jne-style branches.
+				// This avoids recording degenerate constraints such as
+				// "> 0xffffffffffffffff".
+				bool useful_cond = constr.cond == RZ_TYPE_COND_LE || constr.cond == RZ_TYPE_COND_LT ||
+					constr.cond == RZ_TYPE_COND_GE || constr.cond == RZ_TYPE_COND_GT ||
+					constr.cond == RZ_TYPE_COND_EQ || constr.cond == RZ_TYPE_COND_NE;
+				if (constr.val != UT64_MAX && useful_cond) {
+					// Avoid recording the same constraint more than once (the
+					// emulation may revisit the same comparison).
+					bool dup = false;
+					RzTypeConstraint *existing;
+					rz_vector_foreach (&var->constraints, existing) {
+						if (existing->cond == constr.cond && existing->val == constr.val) {
+							dup = true;
+							break;
+						}
+					}
+					if (!dup) {
+						rz_analysis_var_add_constraint(var, &constr);
+					}
+				}
 			}
 		}
 		vars_resolve_overlaps(used_vars);

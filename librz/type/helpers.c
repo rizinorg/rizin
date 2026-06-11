@@ -510,6 +510,247 @@ RZ_API RZ_BORROW const char *rz_type_cond_tostring(RzTypeCond cc) {
 }
 
 /**
+ * \brief Parse a type condition from its string form
+ *
+ * Accepts both the short mnemonic form returned by \ref rz_type_cond_tostring
+ * (e.g. "eq", "ne", "ge", "gt", "le", "lt") and the usual comparison symbols
+ * ("==", "!=", ">=", ">", "<=", "<").
+ *
+ * \param s the string to parse
+ * \return the parsed RzTypeCond, or RZ_TYPE_COND_AL when \p s is not recognized
+ */
+RZ_API RzTypeCond rz_type_cond_fromstring(RZ_NONNULL const char *s) {
+	rz_return_val_if_fail(s, RZ_TYPE_COND_AL);
+	if (RZ_STR_EQ(s, "eq") || RZ_STR_EQ(s, "==") || RZ_STR_EQ(s, "=")) {
+		return RZ_TYPE_COND_EQ;
+	} else if (RZ_STR_EQ(s, "ne") || RZ_STR_EQ(s, "!=")) {
+		return RZ_TYPE_COND_NE;
+	} else if (RZ_STR_EQ(s, "ge") || RZ_STR_EQ(s, ">=")) {
+		return RZ_TYPE_COND_GE;
+	} else if (RZ_STR_EQ(s, "gt") || RZ_STR_EQ(s, ">")) {
+		return RZ_TYPE_COND_GT;
+	} else if (RZ_STR_EQ(s, "le") || RZ_STR_EQ(s, "<=")) {
+		return RZ_TYPE_COND_LE;
+	} else if (RZ_STR_EQ(s, "lt") || RZ_STR_EQ(s, "<")) {
+		return RZ_TYPE_COND_LT;
+	}
+	return RZ_TYPE_COND_AL;
+}
+
+/**
+ * \brief A single bounded interval being assembled from a list of constraints
+ *
+ * Each side is optional: an interval may have only a lower bound (e.g. "> 0"),
+ * only an upper bound (e.g. "<= 9") or both. The \p incl flags record whether
+ * the respective bound is inclusive (>=, <=) or exclusive (>, <).
+ */
+typedef struct {
+	bool has_low; ///< a lower bound (>, >=) was seen
+	bool low_incl; ///< the lower bound is inclusive (>=)
+	ut64 low; ///< the lower bound value
+	bool has_high; ///< an upper bound (<, <=) was seen
+	bool high_incl; ///< the upper bound is inclusive (<=)
+	ut64 high; ///< the upper bound value
+} TypeInterval;
+
+/**
+ * \brief Append the textual form of a single interval to \p sb
+ *
+ * An empty interval is one that no value can satisfy (the lower bound is above
+ * the upper bound, or equal to it while at least one side is exclusive). The
+ * degenerate interval [x, x] (both bounds inclusive and equal) is rendered as
+ * the equality "== x", matching \ref RZ_TYPE_COND_EQ.
+ *
+ * \param sb the string buffer to append to
+ * \param iv the interval to render
+ * \param first set to false once the first term has been written; used to
+ *        insert the " || " separator between alternative intervals
+ * \return false if the interval is empty and thus cannot be represented
+ */
+static bool type_interval_append(RzStrBuf *sb, RZ_NONNULL const TypeInterval *iv, bool *first) {
+	if (!iv->has_low && !iv->has_high) {
+		return true; // nothing pending
+	}
+	if (iv->has_low && iv->has_high) {
+		if (iv->low > iv->high) {
+			return false; // empty interval
+		}
+		if (iv->low == iv->high && !(iv->low_incl && iv->high_incl)) {
+			return false; // empty interval, e.g. (x, x] or [x, x)
+		}
+	}
+	if (!*first) {
+		rz_strbuf_append(sb, " || ");
+	}
+	*first = false;
+	if (iv->has_low && iv->has_high && iv->low == iv->high) {
+		// a single allowed value, [x, x] is the same as == x
+		rz_strbuf_appendf(sb, "== 0x%" PFMT64x, iv->low);
+		return true;
+	}
+	if (iv->has_low) {
+		rz_strbuf_appendf(sb, "%s 0x%" PFMT64x, iv->low_incl ? ">=" : ">", iv->low);
+	}
+	if (iv->has_high) {
+		if (iv->has_low) {
+			rz_strbuf_append(sb, " && ");
+		}
+		rz_strbuf_appendf(sb, "%s 0x%" PFMT64x, iv->high_incl ? "<=" : "<", iv->high);
+	}
+	return true;
+}
+
+/**
+ * \brief Render a list of interval constraints into a human-readable string
+ *
+ * The constraints are interpreted as a disjunction (joined by "||") of bounded
+ * intervals, where each interval is a conjunction (joined by "&&") of a lower
+ * bound (>, >=) and/or an upper bound (<, <=). This matches the shape produced
+ * by the variable type inference for range checks such as "x > 0 && x <= 9" or
+ * several alternative ranges. An exact \ref RZ_TYPE_COND_EQ constraint, or an
+ * interval that collapses to a single value [x, x], is rendered as "== x".
+ *
+ * Constraints that do not form consistent intervals (for example a variable
+ * that is compared against many unrelated constants, as in a switch table, or
+ * an interval whose lower bound is not below its upper bound) cannot be
+ * represented as a meaningful range. In that case, and when there is no
+ * interval-style constraint at all, NULL is returned so that callers do not
+ * display misleading information.
+ *
+ * \param constraints vector of \ref RzTypeConstraint
+ * \return an owned string, or NULL when there is nothing meaningful to show
+ */
+RZ_API RZ_OWN char *rz_type_interval_constraints_as_string(RZ_NONNULL const RzVector /*<RzTypeConstraint>*/ *constraints) {
+	rz_return_val_if_fail(constraints, NULL);
+	RzStrBuf sb = { 0 };
+	bool first = true; // whether the first term still has to be written
+	TypeInterval cur = { 0 }; // the interval currently being assembled
+	RzTypeConstraint *c;
+	rz_vector_foreach (constraints, c) {
+		bool is_lower, incl;
+		switch (c->cond) {
+		case RZ_TYPE_COND_GE: is_lower = true, incl = true; break;
+		case RZ_TYPE_COND_GT: is_lower = true, incl = false; break;
+		case RZ_TYPE_COND_LE: is_lower = false, incl = true; break;
+		case RZ_TYPE_COND_LT: is_lower = false, incl = false; break;
+		case RZ_TYPE_COND_EQ:
+			// an exact value is its own complete term: flush the pending
+			// interval and emit the equality as a degenerate interval [x, x]
+			if (!type_interval_append(&sb, &cur, &first)) {
+				goto invalid;
+			}
+			cur = (TypeInterval){ .has_low = true, .low_incl = true, .low = c->val, .has_high = true, .high_incl = true, .high = c->val };
+			if (!type_interval_append(&sb, &cur, &first)) {
+				goto invalid;
+			}
+			cur = (TypeInterval){ 0 };
+			continue;
+		default: continue; // not an interval bound, ignore
+		}
+		// A second bound on the same side cannot extend the current interval.
+		// If the interval is already complete it opens a new alternative,
+		// otherwise the constraints are inconsistent.
+		bool *have_side = is_lower ? &cur.has_low : &cur.has_high;
+		if (*have_side) {
+			if (cur.has_low && cur.has_high) {
+				if (!type_interval_append(&sb, &cur, &first)) {
+					goto invalid;
+				}
+				cur = (TypeInterval){ 0 };
+			} else {
+				goto invalid;
+			}
+		}
+		if (is_lower) {
+			cur.has_low = true;
+			cur.low_incl = incl;
+			cur.low = c->val;
+		} else {
+			cur.has_high = true;
+			cur.high_incl = incl;
+			cur.high = c->val;
+		}
+	}
+	if (!type_interval_append(&sb, &cur, &first)) {
+		goto invalid;
+	}
+	if (first) {
+		// no interval-style constraint produced any output
+		rz_strbuf_fini(&sb);
+		return NULL;
+	}
+	return rz_strbuf_drain_nofree(&sb);
+invalid:
+	rz_strbuf_fini(&sb);
+	return NULL;
+}
+
+/**
+ * \brief Parse a textual list of interval constraints into \p constraints
+ *
+ * This is the inverse of \ref rz_type_interval_constraints_as_string. The input
+ * is a comma-separated list of comparisons, each one of the operators ==, !=,
+ * <, <=, >, >= (in symbol form like ">=10" or mnemonic form like "ge 10", as
+ * accepted by \ref rz_type_cond_fromstring) followed by a value. Values are
+ * evaluated with \ref rz_num_math without a number environment, so they must be
+ * literals or constant expressions. Any other operator makes the whole parse
+ * fail. Note that while "== x" round-trips through
+ * \ref rz_type_interval_constraints_as_string as the degenerate interval
+ * [x, x], the inequality "!= x" is stored but is not part of the interval
+ * rendering, as it does not describe a range.
+ *
+ * \param str the textual constraints, e.g. ">0,<=9", "gt 0, le 9" or "== 5"
+ * \param constraints an initialized vector of \ref RzTypeConstraint to fill
+ * \return true on success, false on a parse error (vector may be partially filled)
+ */
+RZ_API bool rz_type_interval_constraints_from_string(RZ_NONNULL const char *str, RZ_NONNULL RzVector /*<RzTypeConstraint>*/ *constraints) {
+	rz_return_val_if_fail(str && constraints, false);
+	// Group 1 is the operator (a run of <>!= symbols or a mnemonic such as
+	// "ge"), group 2 is the value. rz_type_cond_fromstring() then maps the
+	// operator and rejects anything that is not a comparison condition.
+	RzRegex *re = rz_regex_new("^\\s*([<>!=]+|[a-z]+)\\s*(.+?)\\s*$", RZ_REGEX_DEFAULT, RZ_REGEX_DEFAULT, NULL);
+	if (!re) {
+		return false;
+	}
+	bool ok = true;
+	RzList /*<char *>*/ *tokens = rz_str_split_duplist(str, ",", true);
+	RzListIter *it;
+	char *tok;
+	rz_list_foreach (tokens, it, tok) {
+		if (RZ_STR_ISEMPTY(tok)) {
+			continue;
+		}
+		RzPVector /*<RzRegexMatch *>*/ *matches = rz_regex_match_first(re, tok, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+		RzRegexMatch *op_match = rz_pvector_at(matches, 1);
+		RzRegexMatch *val_match = rz_pvector_at(matches, 2);
+		char *op = op_match ? rz_str_ndup(tok + op_match->start, op_match->len) : NULL;
+		char *valstr = val_match ? rz_str_ndup(tok + val_match->start, val_match->len) : NULL;
+		RzTypeCond cond = op ? rz_type_cond_fromstring(op) : RZ_TYPE_COND_AL;
+		// Accept the interval bounds (<, <=, >, >=) together with the equality
+		// and inequality conditions (==, !=). Anything else maps to
+		// RZ_TYPE_COND_AL via rz_type_cond_fromstring() and is rejected.
+		if (cond != RZ_TYPE_COND_LE && cond != RZ_TYPE_COND_LT &&
+			cond != RZ_TYPE_COND_GE && cond != RZ_TYPE_COND_GT &&
+			cond != RZ_TYPE_COND_EQ && cond != RZ_TYPE_COND_NE) {
+			RZ_LOG_ERROR("Invalid constraint \"%s\" (expected ==, !=, <, <=, >, >= followed by a value)\n", tok);
+			ok = false;
+		} else {
+			RzTypeConstraint c = { .cond = cond, .val = rz_num_math(NULL, valstr) };
+			rz_vector_push(constraints, &c);
+		}
+		free(op);
+		free(valstr);
+		rz_pvector_free(matches);
+		if (!ok) {
+			break;
+		}
+	}
+	rz_list_free(tokens);
+	rz_regex_free(re);
+	return ok;
+}
+
+/**
  * \brief return the inverted condition
  *
  * \param cond RzTypeCond

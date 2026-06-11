@@ -167,3 +167,26 @@ EXPECT=<<EOF
 0x00000030 : char = [ 'd', 'g', 'h', 'd', 'f' ]
 EOF
 RUN
+
+NAME=avgc set, read and clear global variable constraints (#315)
+FILE==
+CMDS=<<EOF
+avga foo int @ 0x100
+avga bar char @ 0x1000
+avgcs foo ">0,<=9"
+avgc foo
+avgcs bar "ge 5,lt 100"
+avgcj bar
+avgc
+avgc- foo
+avgc foo
+echo cleared
+EOF
+EXPECT=<<EOF
+> 0x0 && <= 0x9
+[{"name":"bar","constraints":">= 0x5 && < 0x64","conditions":[{"cond":"ge","value":5},{"cond":"lt","value":100}]}]
+foo: > 0x0 && <= 0x9
+bar: >= 0x5 && < 0x64
+cleared
+EOF
+RUN

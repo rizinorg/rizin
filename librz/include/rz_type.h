@@ -478,6 +478,9 @@ RZ_API bool rz_serialize_callables_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzTypeDB 
 
 // Constrained Type
 RZ_API RZ_BORROW const char *rz_type_cond_tostring(RzTypeCond cc);
+RZ_API RzTypeCond rz_type_cond_fromstring(RZ_NONNULL const char *s);
+RZ_API RZ_OWN char *rz_type_interval_constraints_as_string(RZ_NONNULL const RzVector /*<RzTypeConstraint>*/ *constraints);
+RZ_API bool rz_type_interval_constraints_from_string(RZ_NONNULL const char *str, RZ_NONNULL RzVector /*<RzTypeConstraint>*/ *constraints);
 RZ_API RzTypeCond rz_type_cond_invert(RzTypeCond cond);
 RZ_API bool rz_type_cond_eval(RzTypeCond cond, st64 arg0, st64 arg1);
 RZ_API bool rz_type_cond_eval_single(RzTypeCond cond, st64 arg0);

@@ -1921,7 +1921,7 @@ afvl~var_30h
 EOF
 EXPECT=<<EOF
 var int var_3ch @ stack - 0x3c
-var int64_t var_38h @ stack - 0x38
+var int64_t var_38h  { > 0x0} @ stack - 0x38
 var unsigned long var_30h @ stack - 0x30
 EOF
 RUN
@@ -1973,7 +1973,7 @@ var char **var_14e8h @ stack - 0x14e8
 var int var_14dch @ stack - 0x14dc
 var int *wstatus @ stack - 0x14d4
 var int64_t var_14cch @ stack - 0x14cc
-var int64_t var_14c8h @ stack - 0x14c8
+var int64_t var_14c8h  { <= 0x1} @ stack - 0x14c8
 var int64_t var_14c4h @ stack - 0x14c4
 var unsigned long pid @ stack - 0x14c0
 var unsigned long var_14bch @ stack - 0x14bc
@@ -1994,7 +1994,7 @@ arg int argc @ rdi
 arg char **argv @ rsi
 var char *str @ stack - 0xb8
 var int_fast64_t var_ach @ stack - 0xac
-var int64_t var_a8h @ stack - 0xa8
+var int64_t var_a8h  { <= 0x0} @ stack - 0xa8
 var unsigned long var_a4h @ stack - 0xa4
 var int var_a0h @ stack - 0xa0
 var int var_9ch @ stack - 0x9c
@@ -2070,7 +2070,7 @@ afvl
 EOF
 EXPECT=<<EOF
 var int64_t var_2dh @ stack - 0x2d
-var int64_t var_2ch @ stack - 0x2c
+var int64_t var_2ch  { > 0x9} @ stack - 0x2c
 var unsigned int var_28h @ stack - 0x28
 var int64_t var_24h @ stack - 0x24
 var const char *var_20h @ stack - 0x20

@@ -590,7 +590,7 @@ fn2
 arg void *q origin=DWARF @ rbp-8
 var float *arg1 @ rdi
 main
-var unsigned long long var_18h @ stack - 0x18
+var unsigned long long var_18h  { < 0x400} @ stack - 0x18
 var int64_t var_ch @ stack - 0xc
 EOF
 RUN

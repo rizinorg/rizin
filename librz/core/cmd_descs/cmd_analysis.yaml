@@ -481,6 +481,34 @@ commands:
                 type: RZ_CMD_ARG_TYPE_FCN_VAR
               - name: type
                 type: RZ_CMD_ARG_TYPE_STRING
+          - name: afvc
+            summary: Read/change value constraints of arguments/locals
+            subcommands:
+              - name: afvc
+                cname: analysis_function_vars_constraints
+                summary: List value constraints of all variables / of the given one
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
+                modes:
+                  - RZ_OUTPUT_MODE_STANDARD
+                  - RZ_OUTPUT_MODE_JSON
+                args:
+                  - name: varname
+                    type: RZ_CMD_ARG_TYPE_FCN_VAR
+                    optional: true
+              - name: afvcs
+                cname: analysis_function_vars_constraints_set
+                summary: 'Set value constraints of a variable (e.g. afvcs var0 ">0,<=9")'
+                args:
+                  - name: varname
+                    type: RZ_CMD_ARG_TYPE_FCN_VAR
+                  - name: constraints
+                    type: RZ_CMD_ARG_TYPE_STRING
+              - name: afvc-
+                cname: analysis_function_vars_constraints_del
+                summary: Remove all value constraints of a variable
+                args:
+                  - name: varname
+                    type: RZ_CMD_ARG_TYPE_FCN_VAR
           - name: afvx
             summary: Show argument/variable xrefs in a function
             subcommands:
@@ -1610,6 +1638,34 @@ commands:
             args:
               - name: name
                 type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
+          - name: avgc
+            summary: Read/change value constraints of global variables
+            subcommands:
+              - name: avgc
+                cname: analysis_global_variable_constraints
+                summary: List value constraints of all globals / of the given one
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
+                modes:
+                  - RZ_OUTPUT_MODE_STANDARD
+                  - RZ_OUTPUT_MODE_JSON
+                args:
+                  - name: var_name
+                    type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
+                    optional: true
+              - name: avgcs
+                cname: analysis_global_variable_constraints_set
+                summary: 'Set value constraints of a global variable (e.g. avgcs g ">0,<=9")'
+                args:
+                  - name: var_name
+                    type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
+                  - name: constraints
+                    type: RZ_CMD_ARG_TYPE_STRING
+              - name: avgc-
+                cname: analysis_global_variable_constraints_del
+                summary: Remove all value constraints of a global variable
+                args:
+                  - name: var_name
+                    type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
       - name: avr
         summary: try to parse RTTI at vtable addr (see analysis.cpp.abi)
         type: RZ_CMD_DESC_TYPE_ARGV_MODES

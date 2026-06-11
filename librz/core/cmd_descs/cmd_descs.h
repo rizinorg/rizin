@@ -472,6 +472,12 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_reads_handler(RzCore *core, int arg
 RZ_IPI RzCmdStatus rz_analysis_function_vars_writes_handler(RzCore *core, int argc, const char **argv);
 // "afvt"
 RZ_IPI RzCmdStatus rz_analysis_function_vars_type_handler(RzCore *core, int argc, const char **argv);
+// "afvc"
+RZ_IPI RzCmdStatus rz_analysis_function_vars_constraints_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "afvcs"
+RZ_IPI RzCmdStatus rz_analysis_function_vars_constraints_set_handler(RzCore *core, int argc, const char **argv);
+// "afvc-"
+RZ_IPI RzCmdStatus rz_analysis_function_vars_constraints_del_handler(RzCore *core, int argc, const char **argv);
 // "afvx"
 RZ_IPI RzCmdStatus rz_analysis_function_vars_xrefs_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "afvxa"
@@ -729,6 +735,12 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_print_handler(RzCore *core, int a
 RZ_IPI RzCmdStatus rz_analysis_global_variable_retype_handler(RzCore *core, int argc, const char **argv);
 // "avgx"
 RZ_IPI RzCmdStatus rz_analysis_global_variable_xrefs_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "avgc"
+RZ_IPI RzCmdStatus rz_analysis_global_variable_constraints_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "avgcs"
+RZ_IPI RzCmdStatus rz_analysis_global_variable_constraints_set_handler(RzCore *core, int argc, const char **argv);
+// "avgc-"
+RZ_IPI RzCmdStatus rz_analysis_global_variable_constraints_del_handler(RzCore *core, int argc, const char **argv);
 // "avr"
 RZ_IPI RzCmdStatus rz_analysis_print_rtti_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "avra"
