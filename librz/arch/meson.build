@@ -403,7 +403,6 @@ if get_option('use_gpl')
     'arc_gnu',
     'cris_gnu',
     'lanai_gnu',
-    'vax_gnu',
     'z80_gnu',
   ]
 
@@ -412,7 +411,6 @@ if get_option('use_gpl')
     'p_gnu/arch_arc.c',
     'p_gnu/arch_cris.c',
     'p_gnu/arch_lanai.c',
-    'p_gnu/arch_vax.c',
     'p_gnu/arch_z80.c',
   ]
 
@@ -426,7 +424,6 @@ if get_option('use_gpl')
     'isa_gnu/cris/cris-opc.c',
     'isa_gnu/lanai/lanai-dis.c',
     'isa_gnu/lanai/lanai-opc.c',
-    'isa_gnu/vax/vax-dis.c',
     # 'isa_gnu/z80/expressions.c',
     # 'isa_gnu/z80/z80.c',
     # 'isa_gnu/z80/z80asm.c',
