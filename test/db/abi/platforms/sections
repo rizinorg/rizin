@@ -5,7 +5,7 @@ iS~gold,plt
 EOF
 EXPECT=<<EOF
 0x00000378  0x48 0x00008378  0x48   0x0 -r-- .rel.plt               REL               alloc
-0x000003c0  0x80 0x000083c0  0x80   0x0 -r-x .plt                   PROGBITS          alloc,execute
+0x000003c0  0x80 0x000083c0  0x80   0x0 -r-x .plt                   PLT               alloc,execute
 0x00000bac  0x1c ----------  0x1c   0x0 ---- .note.gnu.gold-version NOTE              
 EOF
 RUN
@@ -17,7 +17,7 @@ iS~gold,plt
 EOF
 EXPECT=<<EOF
 0x00000350  0x50 0x00008350  0x50   0x0 -r-- .rel.plt           REL               alloc
-0x000003ac  0x8c 0x000083ac  0x8c   0x0 -r-x .plt               PROGBITS          alloc,execute
+0x000003ac  0x8c 0x000083ac  0x8c   0x0 -r-x .plt               PLT               alloc,execute
 EOF
 RUN
 
@@ -28,7 +28,7 @@ iS~MIPS
 EOF
 EXPECT=<<EOF
 0x000001c8  0x18 0x004001c8  0x18   0x0 -r-- .MIPS.abiflags     LOPROC+0x0000002a alloc
-0x00000df0  0x90 0x00400df0  0x90   0x0 -r-x .MIPS.stubs        PROGBITS          alloc,execute
+0x00000df0  0x90 0x00400df0  0x90   0x0 -r-x .MIPS.stubs        PLT               alloc,execute
 EOF
 RUN
 
@@ -40,7 +40,7 @@ EOF
 EXPECT=<<EOF
 0x00000270  0x18 0x120000270  0x18   0x0 -r-- .MIPS.abiflags     LOPROC+0x0000002a alloc
 0x00000288 0x168 0x120000288 0x168   0x0 -r-- .MIPS.options      LOPROC+0x0000000d alloc
-0x000012a0  0x90 0x1200012a0  0x90   0x0 -r-x .MIPS.stubs        PROGBITS          alloc,execute
+0x000012a0  0x90 0x1200012a0  0x90   0x0 -r-x .MIPS.stubs        PLT               alloc,execute
 EOF
 RUN
 
@@ -73,7 +73,7 @@ iS~gold,plt
 EOF
 EXPECT=<<EOF
 0x00000460  0xd8 0x00400460  0xd8   0x0 -r-- .rela.plt          RELA       alloc
-0x00000560  0xa0 0x00400560  0xa0   0x0 -r-x .plt               PROGBITS   alloc,execute
+0x00000560  0xa0 0x00400560  0xa0   0x0 -r-x .plt               PLT        alloc,execute
 0x00001000  0x60 0x00601000  0x60   0x0 -rw- .got.plt           PROGBITS   write,alloc
 EOF
 RUN
@@ -96,7 +96,7 @@ iS~gold,plt
 EOF
 EXPECT=<<EOF
 0x00000330  0x48 0x08048330  0x48   0x0 -r-- .rel.plt           REL        alloc
-0x000003a0  0xa0 0x080483a0  0xa0   0x0 -r-x .plt               PROGBITS   alloc,execute
+0x000003a0  0xa0 0x080483a0  0xa0   0x0 -r-x .plt               PLT        alloc,execute
 0x00001000  0x30 0x0804a000  0x30   0x0 -rw- .got.plt           PROGBITS   write,alloc
 EOF
 RUN
