@@ -549,7 +549,6 @@ TERM: {
 	RZ_FREE_CUSTOM(tmp_succ_addr, rz_vector_free);
 	RZ_FREE_CUSTOM(succ_states, rz_vector_free);
 	RZ_FREE_CUSTOM(reachable_states, rz_set_u_free);
-	iset->plugin->fini_state(iset->astate, iset->intrpr_priv);
 	if (iset->plugin->fini && iset->intrpr_priv) {
 		RZ_FREE_CUSTOM(iset->intrpr_priv, iset->plugin->fini);
 	}
