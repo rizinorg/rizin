@@ -24,6 +24,11 @@ syscall_preprocessing_py = files('sys/syscall_preprocessing.py')
 check_meson_subproject_py = files('sys/check_meson_subproject.py')
 git_exe_repo_py = files('sys/meson_git_wrapper.py')
 
+# Portable C equivalents of the per-build helper scripts, used as native
+# build-time tools when Python is not available (e.g. building with muon).
+create_tags_rz_c = files('sys/create_tags_rz.c')
+syscall_preprocessing_c = files('sys/syscall_preprocessing.c')
+
 is_static_build = get_option('static_runtime')
 is_static_libs_only = get_option('default_library') == 'static'
 if is_static_build and not is_static_libs_only
