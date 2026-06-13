@@ -53,10 +53,10 @@
 #include <rz_types.h>
 #include <rz_util.h>
 
-static int cmp(const void *a, const void *b, void *user) {
-	if ((ut64)a > (ut64)b) {
+static int cmp(const ut64 *a, const ut64 *b, void *user) {
+	if (*a > *b) {
 		return 1;
-	} else if ((ut64)a < (ut64)b) {
+	} else if (*a < *b) {
 		return -1;
 	}
 	return 0;
@@ -206,7 +206,7 @@ static void fill_candidate_fcn_entry_points(
 		rz_iterator_free(predecessor);
 	}
 	rz_iterator_free(iter);
-	rz_vector_sort(cfep_addresses, cmp, false, NULL);
+	rz_vector_sort(cfep_addresses, (RzVectorComparator)cmp, false, NULL);
 }
 
 RZ_API bool rz_inquiry_algo_revng_fcn_detection(
