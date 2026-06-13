@@ -376,7 +376,7 @@ static bool reset_intrpr_state(
 	*tmp_succ_addr = rz_vector_new(sizeof(RzInterpCtrlFlow), NULL, NULL);
 	*succ_states = rz_vector_new(sizeof(SuccessorState), NULL, NULL);
 	*reachable_states = rz_set_u_new();
-	if (!tmp_succ_addr || !succ_states || !reachable_states) {
+	if (!*tmp_succ_addr || !*succ_states || !*reachable_states) {
 		rz_warn_if_reached();
 		return false;
 	}
