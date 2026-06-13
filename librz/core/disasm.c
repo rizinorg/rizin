@@ -4041,8 +4041,10 @@ static inline bool is_filtered_flag(RzDisasmState *ds, const char *name) {
 		if (dupped) {
 			rz_name_filter(dupped, -1, true);
 			if (!strcmp(&name[4], dupped)) {
+				free(dupped);
 				return true;
 			}
+			free(dupped);
 		}
 	}
 	return false;
