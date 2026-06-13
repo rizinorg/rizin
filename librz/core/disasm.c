@@ -231,6 +231,7 @@ typedef struct {
 	char *refline, *refline2;
 	char *comment;
 	char *opstr;
+	char *opstr_nocolor;
 	char *osl, *sl;
 	int index;
 	ut64 at, vat, addr, dest;
@@ -857,6 +858,7 @@ static void ds_free(RzDisasmState *ds) {
 	free(ds->refline2);
 	free(ds->prev_line_col);
 	free(ds->opstr);
+	free(ds->opstr_nocolor);
 	free(ds->osl);
 	free(ds->sl);
 	free(ds->_tabsbuf);
@@ -965,7 +967,8 @@ static void ds_opstr_try_colorize(RzDisasmState *ds, bool print_color) {
 		return;
 	}
 	char *new_opstr = rz_strbuf_drain(colored_asm);
-	free(ds->opstr);
+	free(ds->opstr_nocolor);
+	ds->opstr_nocolor = ds->opstr;
 	ds->opstr = new_opstr;
 }
 
@@ -3621,7 +3624,7 @@ static void ds_print_fcn_name(RzDisasmState *ds) {
 		} else if (delta < 0) {
 			ds_begin_comment(ds);
 			ds_comment(ds, true, "; %s-0x%" PFMT64x, f->name, (ut64)(-delta));
-		} else if ((!ds->core->vmode || (!ds->subjmp && !ds->subnames)) && (!ds->opstr || !strstr(ds->opstr, f->name))) {
+		} else if ((!ds->core->vmode || (!ds->subjmp && !ds->subnames)) && (!ds->opstr || !strstr(ds->opstr_nocolor ? ds->opstr_nocolor : ds->opstr, f->name))) {
 			RzFlagItem *flag_sym;
 			if (ds->core->vmode && (flag_sym = rz_flag_get_by_spaces(ds->core->flags, ds->analysis_op.jump, RZ_FLAGS_FS_SYMBOLS, NULL)) && flag_sym->demangled) {
 				return;
