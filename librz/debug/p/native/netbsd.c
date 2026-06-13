@@ -34,6 +34,8 @@ static char *rz_debug_native_reg_profile(RzDebug *dbg) {
 #include "reg/netbsd-x86.h"
 #elif __x86_64__ /* x86_64 */
 #include "reg/netbsd-x64.h"
+#elif __vax__ /* vax */
+#include "reg/netbsd-vax.h"
 #endif /* end */
 }
 
@@ -571,6 +573,10 @@ RzDebugPlugin rz_debug_plugin_native = {
 	.bits = RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
 	.arch = "x86",
 	.canstep = 1, // XXX it's 1 on some platforms...
+#elif __vax__
+	.bits = RZ_SYS_BITS_32,
+	.arch = "vax",
+	.canstep = 1, // single-step via the PSL trace (T) bit
 #endif
 	.init = &rz_debug_native_init,
 	.fini = &rz_debug_native_fini,
