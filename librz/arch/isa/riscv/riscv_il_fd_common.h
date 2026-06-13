@@ -9,11 +9,15 @@
  * - RISCV_FD_REG_GETTER: get a floating-point register.
  * - RISCV_FD_REG_SETTER_BV: set a floating-point register to a raw bitvector.
  * - RISCV_FD_REG_GETTER_BV: get a floating-point register as a raw bitvector.
+
  * - RISCV_FD_GET_MANTISSA: get the mantissa of a floating-point number.
  * - RISCV_FD_GET_EXPONENT: get the exponent of a floating-point number.
  * - RISCV_FD_GET_SIGN: get the sign bit of a floating-point number.
+
  * - RISCV_FD_IS_NAN: check if a floating-point number is NaN.
  * - RISCV_FD_IS_S_NAN: check if a floating-point number is a signaling NaN.
+ * - RISCV_FD_CANONICAL_QNAN: get a canonical quiet NaN.
+ 
  * - RISCV_FD_IS_MAX_EXP: check if a floating-point number has the maximum exponent.
  * - RISCV_FD_IS_EXP_OVERFLOW_INT: check if a floating-point number has an exponent that would overflow an integer.
  * - RISCV_FD_IS_EXP_OVERFLOW_UINT: check if a floating-point number has an exponent that would overflow an unsigned integer.
@@ -64,7 +68,7 @@
 #error "RISCV_FD_GET_SIGN must be defined before including this file"
 #endif // RISCV_FD_GET_SIGN
 
-// -------------------------------------- NAN Query API --------------------------------------
+// -------------------------------------- NAN API --------------------------------------
 #ifndef RISCV_FD_IS_NAN
 #error "RISCV_FD_IS_NAN must be defined before including this file"
 #endif // RISCV_FD_IS_NAN
@@ -73,7 +77,11 @@
 #error "RISCV_FD_IS_S_NAN must be defined before including this file"
 #endif // RISCV_FD_IS_S_NAN
 
-// -------------------------------------- Exponent Query API --------------------------------------
+#ifndef RISCV_FD_CANONICAL_QNAN
+#error "RISCV_FD_CANONICAL_QNAN must be defined before including this file"
+#endif // RISCV_FD_CANONICAL_QNAN
+
+// -------------------------------------- Exponent API --------------------------------------
 #ifndef RISCV_FD_IS_MAX_EXP
 #error "RISCV_FD_IS_MAX_EXP must be defined before including this file"
 #endif // RISCV_FD_IS_MAX_EXP
@@ -133,7 +141,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 // When an instruction encodes rm=111 (DYN), the actual rounding mode is
 // read at runtime from fcsr.frm (bits [7:5]).  Because RzIL float ops
 // take a compile-time RzFloatRMode enum, we enumerate all five valid frm
-// values in an ITE tree so the right mode is chosen at emulation time.
+// values in an ITE decision tree so the right mode is chosen at emulation time.
 #define RISCV_FD_FRM_DISPATCH(fn, ...) \
 	ITE(EQ(VARL("_frm"), UN(64, 0)), fn(RZ_FLOAT_RMODE_RNE, __VA_ARGS__), \
 	ITE(EQ(VARL("_frm"), UN(64, 1)), fn(RZ_FLOAT_RMODE_RTZ, __VA_ARGS__), \
@@ -258,14 +266,14 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 	REQUIRE_OP(0, RISCV_OP_REG); \
 	REQUIRE_OP(1, RISCV_OP_MEM); \
 	uint32_t frd = insn->detail->riscv.operands[0].reg; \
-	RzILOpBitVector *rs = RISCV_GET_REG(insn->detail->riscv.operands[1].mem.base); \
+	RzILOpBitVector *rs = riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[1].mem.base); \
 	RzILOpBitVector *imm = SN(analysis->bits, insn->detail->riscv.operands[1].mem.disp);
 
 #define DECODE_FD_FS_MEM(analysis, insn) \
 	REQUIRE_OP(0, RISCV_OP_REG); \
 	REQUIRE_OP(1, RISCV_OP_MEM); \
 	RzILOpBitVector *bvrs1 = RISCV_FD_REG_GETTER_BV(insn->detail->riscv.operands[0].reg); \
-	RzILOpBitVector *rs = RISCV_GET_REG(insn->detail->riscv.operands[1].mem.base); \
+	RzILOpBitVector *rs = riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[1].mem.base); \
 	RzILOpBitVector *imm = SN(analysis->bits, insn->detail->riscv.operands[1].mem.disp);
 
 #define DECODE_FD_FD_FS_FS_FS(analysis, insn) \
@@ -371,20 +379,31 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 			/* ordinary float interpetation for IL float comparisons */ \
 			SETL("_b", FLOATV##sz(VARL("_bvb"))), \
 			/* true if operand 1 is any NaN (exponent==0xFF and mantissa!=0) */ \
-			SETL("_na", RISCV_FD_IS_NAN(VARL("_bva"))), \
+			SETL("_a_is_nan", RISCV_FD_IS_NAN(VARL("_bva"))), \
 			/* true if operand 2 is any NaN */ \
-			SETL("_nb", RISCV_FD_IS_NAN(VARL("_bvb"))), \
+			SETL("_b_is_nan", RISCV_FD_IS_NAN(VARL("_bvb"))), \
 			/* true if operand 1 is a signaling NaN (NaN with quiet bit[22]==0) */ \
-			SETL("_sa", RISCV_FD_IS_S_NAN(VARL("_bva"))), \
+			SETL("_a_is_snan", RISCV_FD_IS_S_NAN(VARL("_bva"))), \
 			/* true if operand 2 is a signaling NaN */ \
-			SETL("_sb", RISCV_FD_IS_S_NAN(VARL("_bvb"))), \
+			SETL("_b_is_snan", RISCV_FD_IS_S_NAN(VARL("_bvb"))), \
 			/* raise NV (invalid operation, bit 4) in fcsr when either operand is sNaN */ \
-			SETG("fcsr", LOGOR(VARG("fcsr"), ITE(OR(VARL("_sa"), VARL("_sb")), UN(64, 0x10), UN(64, 0)))), \
+			SETG("fcsr", LOGOR(VARG("fcsr"), ITE(OR(VARL("_a_is_snan"), VARL("_b_is_snan")), UN(64, 0x10), UN(64, 0)))), \
 			RISCV_FD_REG_SETTER(frd, \
-				ITE(OR(VARL("_sa"), VARL("_sb")), IL_FQNAN(RZ_FLOAT_IEEE754_BIN_##sz), \
-					ITE(VARL("_na"), VARL("_b"), \
-						ITE(VARL("_nb"), VARL("_a"), \
-							ITE(cond(VARL("_a"), VARL("_b")), VARL("_a"), VARL("_b"))))))); \
+				/* are both non-NAN and a op b? (op is >= or <=) */ \
+				ITE(cond(VARL("_a"), VARL("_b")), \
+					VARL("_a"), /* return a */ \
+					/* otherwise, check for NAN */ \
+					ITE(VARL("_a_is_nan"), \
+						ITE(VARL("_b_is_nan"), \
+							FLOATV##sz(RISCV_FD_CANONICAL_QNAN()), \
+							/* a is NaN, b is not */ \
+							VARL("_b")), \
+						/* a is not NaN, what about b ? */ \
+						ITE(VARL("_b_is_nan"), \
+							/* a is not NaN, b is NaN */ \
+							VARL("_a"), \
+							/* both non-NAN and b op a */ \
+							VARL("_b")))))); \
 	}
 
 #define DEF_FMIN(name, size) DEFINE_LIFTER_MINMAX(name, FLE, size)
@@ -413,7 +432,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 			SETL("_na", RISCV_FD_IS_NAN(VARL("_bva"))), \
 			SETL("_nb", RISCV_FD_IS_NAN(VARL("_bvb"))), \
 			SETG("fcsr", LOGOR(VARG("fcsr"), ITE(OR(VARL("_na"), VARL("_nb")), UN(64, 0x10), UN(64, 0)))), \
-			RISCV_SET_REG(rd, BOOL_TO_BV(cmp_fn(VARL("_a"), VARL("_b")), analysis->bits))); \
+			riscv_il_set_reg(rd, BOOL_TO_BV(cmp_fn(VARL("_a"), VARL("_b")), analysis->bits))); \
 	}
 
 #define DEF_FLT(name, size) DEFINE_FCMP_LIFTER(name, FLT, size)
@@ -437,7 +456,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 		SETL("_sa", RISCV_FD_IS_S_NAN(VARL("_bva"))), \
 		SETL("_sb", RISCV_FD_IS_S_NAN(VARL("_bvb"))), \
 		SETG("fcsr", LOGOR(VARG("fcsr"), ITE(OR(VARL("_sa"), VARL("_sb")), UN(64, 0x10), UN(64, 0)))), \
-		RISCV_SET_REG(rd, BOOL_TO_BV(FEQ(VARL("_a"), VARL("_b")), analysis->bits))); \
+		riscv_il_set_reg(rd, BOOL_TO_BV(FEQ(VARL("_a"), VARL("_b")), analysis->bits))); \
 }
 
 // -----------------------------------------------------------------------
@@ -476,7 +495,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 		SETL("_su", AND(VARL("_xz"), INV(VARL("_mz")))), \
 		SETL("_ze", AND(VARL("_xz"), VARL("_mz"))), \
 		SETL("_no", AND(INV(VARL("_xz")), INV(VARL("_xff")))), \
-		RISCV_SET_REG(rd, \
+		riscv_il_set_reg(rd, \
 			LOGOR(CLASSIFICATION_BIT(0, AND(VARL("_sg"), VARL("_in"))), \
 			LOGOR(CLASSIFICATION_BIT(1, AND(VARL("_sg"), VARL("_no"))), \
 			LOGOR(CLASSIFICATION_BIT(2, AND(VARL("_sg"), VARL("_su"))), \
@@ -514,7 +533,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 		SETL("_sg", NON_ZERO(RISCV_FD_GET_SIGN(VARL("_bv")))), \
 		SETL("_f", FLOATV##sz(VARL("_bv"))), \
 		SETL("_nv", RISCV_FD_IS_EXP_OVERFLOW_INT(VARL("_ex"))), \
-		RISCV_SET_REG(rd, SIGNED(analysis->bits, \
+		riscv_il_set_reg(rd, SIGNED(analysis->bits, \
 			ITE(VARL("_nv"), \
 				ITE(AND(VARL("_sg"), INV(AND(RISCV_FD_IS_MAX_EXP(VARL("_ex")), NON_ZERO(VARL("_mn"))))), \
 					UN(32, 0x80000000), \
@@ -523,7 +542,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 		SETG("fcsr", LOGOR(VARG("fcsr"), \
 			LOGOR( \
 				ITE(VARL("_nv"), UN(64, 0x10), UN(64, 0)), \
-				ITE(AND(INV(VARL("_nv")), FEXCEPT(RZ_FLOAT_E_INEXACT, FROUND(FD_ROUNDING_MODE, VARL("_f")))), \
+				ITE(AND(INV(VARL("_nv")), FEXCEPT(RZ_FLOAT_E_INEXACT, FROUND_EXC(FD_ROUNDING_MODE, VARL("_f")))), \
 					UN(64, 0x01), UN(64, 0)))))); \
 }
 
@@ -546,7 +565,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 		SETL("_nv", \
 			OR(RISCV_FD_IS_EXP_OVERFLOW_UINT(VARL("_ex")), \
 				AND(VARL("_sg"), OR(NON_ZERO(VARL("_ex")), NON_ZERO(VARL("_mn")))))), \
-		RISCV_SET_REG(rd, SIGNED(analysis->bits, \
+		riscv_il_set_reg(rd, SIGNED(analysis->bits, \
 			ITE(VARL("_nv"), \
 				ITE(OR(AND(RISCV_FD_IS_MAX_EXP(VARL("_ex")), NON_ZERO(VARL("_mn"))), INV(VARL("_sg"))), \
 					UN(32, 0xFFFFFFFF), \
@@ -555,7 +574,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 		SETG("fcsr", LOGOR(VARG("fcsr"), \
 			LOGOR( \
 				ITE(VARL("_nv"), UN(64, 0x10), UN(64, 0)), \
-				ITE(AND(INV(VARL("_nv")), FEXCEPT(RZ_FLOAT_E_INEXACT, FROUND(FD_ROUNDING_MODE, VARL("_f")))), \
+				ITE(AND(INV(VARL("_nv")), FEXCEPT(RZ_FLOAT_E_INEXACT, FROUND_EXC(FD_ROUNDING_MODE, VARL("_f")))), \
 					UN(64, 0x01), UN(64, 0)))))); \
 }
 
@@ -580,7 +599,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 		SETL("_sg", NON_ZERO(RISCV_FD_GET_SIGN(VARL("_bv")))), \
 		SETL("_f", FLOATV##sz(VARL("_bv"))), \
 		SETL("_nv", RISCV_FD_IS_EXP_OVERFLOW_LONG(VARL("_ex"))), \
-		RISCV_SET_REG(rd, \
+		riscv_il_set_reg(rd, \
 			ITE(VARL("_nv"), \
 				ITE(AND(VARL("_sg"), INV(AND(RISCV_FD_IS_MAX_EXP(VARL("_ex")), NON_ZERO(VARL("_mn"))))), \
 					UN(64, 0x8000000000000000ULL), \
@@ -589,7 +608,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 		SETG("fcsr", LOGOR(VARG("fcsr"), \
 			LOGOR( \
 				ITE(VARL("_nv"), UN(64, 0x10), UN(64, 0)), \
-				ITE(AND(INV(VARL("_nv")), FEXCEPT(RZ_FLOAT_E_INEXACT, FROUND(FD_ROUNDING_MODE, VARL("_f")))), \
+				ITE(AND(INV(VARL("_nv")), FEXCEPT(RZ_FLOAT_E_INEXACT, FROUND_EXC(FD_ROUNDING_MODE, VARL("_f")))), \
 					UN(64, 0x01), UN(64, 0)))))); \
 }
 
@@ -616,7 +635,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 		SETL("_nv", \
 			OR(RISCV_FD_IS_EXP_OVERFLOW_ULONG(VARL("_ex")), \
 				AND(VARL("_sg"), OR(NON_ZERO(VARL("_ex")), NON_ZERO(VARL("_mn")))))), \
-		RISCV_SET_REG(rd, \
+		riscv_il_set_reg(rd, \
 			ITE(VARL("_nv"), \
 				ITE(OR(AND(RISCV_FD_IS_MAX_EXP(VARL("_ex")), NON_ZERO(VARL("_mn"))), INV(VARL("_sg"))), \
 					UN(64, 0xFFFFFFFFFFFFFFFFULL), \
@@ -625,7 +644,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 		SETG("fcsr", LOGOR(VARG("fcsr"), \
 			LOGOR( \
 				ITE(VARL("_nv"), UN(64, 0x10), UN(64, 0)), \
-				ITE(AND(INV(VARL("_nv")), FEXCEPT(RZ_FLOAT_E_INEXACT, FROUND(FD_ROUNDING_MODE, VARL("_f")))), \
+				ITE(AND(INV(VARL("_nv")), FEXCEPT(RZ_FLOAT_E_INEXACT, FROUND_EXC(FD_ROUNDING_MODE, VARL("_f")))), \
 					UN(64, 0x01), UN(64, 0)))))); \
 }
 

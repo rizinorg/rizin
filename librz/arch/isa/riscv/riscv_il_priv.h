@@ -77,7 +77,7 @@ static RzILOpEffect *riscv_csr_write(uint16_t csr, RzILOpBitVector *val, int xle
 	REQUIRE_OP(2, RISCV_OP_REG); \
 	uint32_t rd = insn->detail->riscv.operands[0].reg; \
 	uint16_t csr = insn->detail->riscv.operands[1].csr; \
-	RzILOpBitVector *rs = RISCV_GET_REG(insn->detail->riscv.operands[2].reg);
+	RzILOpBitVector *rs = riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[2].reg);
 
 // rd=IntReg[0], csr=CSR[1], uimm=5-bit unsigned IMM[2]  (csrrwi, csrrsi, csrrci)
 #define DECODE_CSR_RD_CSR_IMM(analysis, insn) \
@@ -99,7 +99,7 @@ static RzILOpEffect *rz_riscv_lift_csrrw(RZ_BORROW RZ_NONNULL RzAnalysis *analys
 	return SEQ3(
 		SETL("_old", riscv_csr_read(csr, analysis->bits)),
 		riscv_csr_write(csr, rs, analysis->bits),
-		RISCV_SET_REG(rd, VARL("_old")));
+		riscv_il_set_reg(rd, VARL("_old")));
 }
 
 // -----------------------------------------------------------------------
@@ -113,7 +113,7 @@ static RzILOpEffect *rz_riscv_lift_csrrs(RZ_BORROW RZ_NONNULL RzAnalysis *analys
 	return SEQ3(
 		SETL("_old", riscv_csr_read(csr, analysis->bits)),
 		riscv_csr_write(csr, LOGOR(VARL("_old"), rs), analysis->bits),
-		RISCV_SET_REG(rd, VARL("_old")));
+		riscv_il_set_reg(rd, VARL("_old")));
 }
 
 // -----------------------------------------------------------------------
@@ -127,7 +127,7 @@ static RzILOpEffect *rz_riscv_lift_csrrc(RZ_BORROW RZ_NONNULL RzAnalysis *analys
 	return SEQ3(
 		SETL("_old", riscv_csr_read(csr, analysis->bits)),
 		riscv_csr_write(csr, LOGAND(VARL("_old"), LOGNOT(rs)), analysis->bits),
-		RISCV_SET_REG(rd, VARL("_old")));
+		riscv_il_set_reg(rd, VARL("_old")));
 }
 
 // -----------------------------------------------------------------------
@@ -141,7 +141,7 @@ static RzILOpEffect *rz_riscv_lift_csrrwi(RZ_BORROW RZ_NONNULL RzAnalysis *analy
 	return SEQ3(
 		SETL("_old", riscv_csr_read(csr, analysis->bits)),
 		riscv_csr_write(csr, uimm, analysis->bits),
-		RISCV_SET_REG(rd, VARL("_old")));
+		riscv_il_set_reg(rd, VARL("_old")));
 }
 
 // -----------------------------------------------------------------------
@@ -155,7 +155,7 @@ static RzILOpEffect *rz_riscv_lift_csrrsi(RZ_BORROW RZ_NONNULL RzAnalysis *analy
 	return SEQ3(
 		SETL("_old", riscv_csr_read(csr, analysis->bits)),
 		riscv_csr_write(csr, LOGOR(VARL("_old"), uimm), analysis->bits),
-		RISCV_SET_REG(rd, VARL("_old")));
+		riscv_il_set_reg(rd, VARL("_old")));
 }
 
 // -----------------------------------------------------------------------
@@ -169,7 +169,7 @@ static RzILOpEffect *rz_riscv_lift_csrrci(RZ_BORROW RZ_NONNULL RzAnalysis *analy
 	return SEQ3(
 		SETL("_old", riscv_csr_read(csr, analysis->bits)),
 		riscv_csr_write(csr, LOGAND(VARL("_old"), LOGNOT(uimm)), analysis->bits),
-		RISCV_SET_REG(rd, VARL("_old")));
+		riscv_il_set_reg(rd, VARL("_old")));
 }
 
 #undef DECODE_CSR_RD_CSR_RS

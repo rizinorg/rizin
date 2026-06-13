@@ -5,7 +5,6 @@
 #define RISCV_IL_D_H
 
 #include "riscv_il_base.h"
-#include "riscv_il_f.h"
 
 // -----------------------------------------------------------------------
 // D extension: register access (RISCV_REG_F0_D = 74, _D suffix)
@@ -38,6 +37,7 @@
 #define RISCV_FD_GET_SIGN(bv)              EXTRACT64(bv, UN(64, 63), UN(32, 1))
 #define RISCV_FD_IS_NAN(bv)                AND(EQ(RISCV_FD_GET_EXPONENT(bv), UN(64, 0x7FF)), NON_ZERO(RISCV_FD_GET_MANTISSA(bv)))
 #define RISCV_FD_IS_S_NAN(bv)              AND(RISCV_FD_IS_NAN(bv), EQ(EXTRACT64(bv, UN(64, 51), UN(32, 1)), UN(64, 0)))
+#define RISCV_FD_CANONICAL_QNAN() 		   UN(64, 0x7FF8000000000000)
 #define RISCV_FD_IS_MAX_EXP(bv)            EQ(bv, UN(64, 0x7FF))
 #define RISCV_FD_IS_EXP_OVERFLOW_INT(bv)   UGE(bv, UN(64, 1054))
 #define RISCV_FD_IS_EXP_OVERFLOW_UINT(bv)  UGE(bv, UN(64, 1055))
@@ -45,6 +45,7 @@
 #define RISCV_FD_IS_EXP_OVERFLOW_ULONG(bv) UGE(bv, UN(64, 1087))
 
 #include <rz_il/rz_il_opbuilder_begin.h>
+#include "riscv_il_fd_common.h"
 
 // -----------------------------------------------------------------------
 // Memory
@@ -126,7 +127,7 @@ DEF_FCVT_LU(fcvt_lu_d, 64)
 	REQUIRE_OP(0, RISCV_OP_REG); \
 	REQUIRE_OP(1, RISCV_OP_REG); \
 	uint32_t frd = insn->detail->riscv.operands[0].reg; \
-	RzILOpBitVector *rs1 = RISCV_GET_REG(insn->detail->riscv.operands[1].reg);
+	RzILOpBitVector *rs1 = riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[1].reg);
 
 // rd=IntReg[0], bvrs1=raw64(DReg[1])  (fmv.x.d)
 #define DECODE_D_RD_FS_BV(analysis, insn) \
@@ -216,7 +217,7 @@ static RzILOpEffect *rz_riscv_lift_fmv_x_d(RZ_BORROW RZ_NONNULL RzAnalysis *anal
 	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
 	REQUIRE_64_BIT(analysis);
 	DECODE_D_RD_FS_BV(analysis, insn);
-	return RISCV_SET_REG(rd, bvrs1);
+	return riscv_il_set_reg(rd, bvrs1);
 }
 
 // fmv.d.x fd, rs1  — copy integer register bits to float64 register (RV64D)
