@@ -26,6 +26,7 @@
 // NAN API
 #define RISCV_FD_IS_NAN(bv) AND(EQ(RISCV_FD_GET_EXPONENT(bv), UN(32, 0xFF)), NON_ZERO(RISCV_FD_GET_MANTISSA(bv)))
 #define RISCV_FD_IS_S_NAN(bv) AND(RISCV_FD_IS_NAN(bv), EQ(EXTRACT32(bv, UN(32, 22), UN(32, 1)), UN(32, 0)))
+#define RISCV_FD_CANONICAL_QNAN() UN(32, 0x7FC00000)
 // Exponent API
 #define RISCV_FD_IS_MAX_EXP(bv) EQ(bv, UN(32, 0xFF))
 #define RISCV_FD_IS_EXP_OVERFLOW_INT(bv) UGE(bv, UN(32, 158))
@@ -38,15 +39,12 @@
 // -----------------------------------------------------------------------
 #define F_RM riscv_rm_to_rz(insn->detail->riscv.rounding_mode)
 
-#define RISCV_SET_FREG_F(reg, fl)  RISCV_FD_REG_SETTER(reg, fl)
-#define RISCV_ACCUMULATE_FFLAGS()  RISCV_FD_UPDATE_FFLAGS()
-
 // frd=FReg[0], rs1=IntReg[1]  (fcvt.s.w, fcvt.s.wu, fcvt.s.l, fcvt.s.lu, fmv.w.x)
 #define DECODE_F_FD_RS(analysis, insn) \
 	REQUIRE_OP(0, RISCV_OP_REG); \
 	REQUIRE_OP(1, RISCV_OP_REG); \
 	uint32_t frd = insn->detail->riscv.operands[0].reg; \
-	RzILOpBitVector *rs1 = RISCV_GET_REG(insn->detail->riscv.operands[1].reg);
+	RzILOpBitVector *rs1 = riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[1].reg);
 
 // rd=IntReg[0], bvrs1=raw32(FReg[1])  (fmv.x.w)
 #define DECODE_F_RD_FS_BV(analysis, insn) DECODE_FD_RD_FS_BV(analysis, insn)
@@ -146,15 +144,15 @@ DEFINE_F_LIFTER(fcvt_s_wu, DECODE_F_FD_RS,
 
 // fcvt.s.l fd, rs1  — signed int64 to float32 (RV64F only)
 // NX is raised when the integer cannot be represented exactly in float32 (more than
-// 24 significant bits).  Saving to _r lets RISCV_ACCUMULATE_FFLAGS query the result.
+// 24 significant bits).  Saving to _r lets RISCV_FD_UPDATE_FFLAGS query the result.
 static RzILOpEffect *rz_riscv_lift_fcvt_s_l(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
 	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
 	REQUIRE_64_BIT(analysis);
 	DECODE_F_FD_RS(analysis, insn);
 	return SEQ3(
 		SETL("_r", SINT2F(RZ_FLOAT_IEEE754_BIN_32, F_RM, rs1)),
-		RISCV_SET_FREG_F(frd, VARL("_r")),
-		RISCV_ACCUMULATE_FFLAGS());
+		RISCV_FD_REG_SETTER(frd, VARL("_r")),
+		RISCV_FD_UPDATE_FFLAGS());
 }
 
 // fcvt.s.lu fd, rs1  — unsigned int64 to float32 (RV64F only)
@@ -164,8 +162,8 @@ static RzILOpEffect *rz_riscv_lift_fcvt_s_lu(RZ_BORROW RZ_NONNULL RzAnalysis *an
 	DECODE_F_FD_RS(analysis, insn);
 	return SEQ3(
 		SETL("_r", INT2F(RZ_FLOAT_IEEE754_BIN_32, F_RM, rs1)),
-		RISCV_SET_FREG_F(frd, VARL("_r")),
-		RISCV_ACCUMULATE_FFLAGS());
+		RISCV_FD_REG_SETTER(frd, VARL("_r")),
+		RISCV_FD_UPDATE_FFLAGS());
 }
 
 // -----------------------------------------------------------------------
@@ -191,14 +189,14 @@ DEFINE_F_LIFTER_BV_TO_FREG(fmv_w_x, DECODE_F_FD_RS,
 #undef RISCV_FD_GET_SIGN
 #undef RISCV_FD_IS_NAN
 #undef RISCV_FD_IS_S_NAN
+#undef RISCV_FD_CANONICAL_QNAN
 #undef RISCV_FD_IS_MAX_EXP
 #undef RISCV_FD_IS_EXP_OVERFLOW_INT
 #undef RISCV_FD_IS_EXP_OVERFLOW_UINT
 #undef RISCV_FD_IS_EXP_OVERFLOW_LONG
 #undef RISCV_FD_IS_EXP_OVERFLOW_ULONG
 #undef F_RM
-#undef RISCV_SET_FREG_F
-#undef RISCV_ACCUMULATE_FFLAGS
+#undef RISCV_FD_REG_SETTER
 #undef DECODE_F_FD_RS
 #undef DECODE_F_RD_FS_BV
 #undef DEFINE_F_LIFTER
