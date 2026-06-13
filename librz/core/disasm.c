@@ -900,13 +900,20 @@ static void __replaceImports(RzDisasmState *ds) {
 	}
 }
 
+static inline char *strstr_opstr(RzDisasmState *ds, const char *str) {
+	if (!ds->opstr) {
+		return NULL;
+	}
+	return strstr(ds->opstr_nocolor ? ds->opstr_nocolor : ds->opstr, str);
+}
+
 static void ds_opstr_resolve_aav_symbols(RzDisasmState *ds) {
 	if (!ds->opstr || !ds->core || !ds->core->flags || !ds->core->io || !ds->analysis_op.refptr) {
 		return;
 	}
 	RzCore *core = ds->core;
 	const char *pattern = "aav.aav.";
-	char *pos = strstr(ds->opstr, pattern);
+	char *pos = strstr_opstr(ds, pattern);
 	if (!pos) {
 		return;
 	}
@@ -1127,6 +1134,11 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 		free(ds->opstr);
 		ds->opstr = rz_str_dup(ds->str);
 		ds_opstr_resolve_aav_symbols(ds);
+		if (ds->opstr_nocolor) {
+			free(ds->opstr_nocolor);
+			ds->opstr_nocolor = rz_str_dup(ds->opstr);
+			rz_str_ansi_filter(ds->opstr_nocolor, NULL, NULL, -1);
+		}
 	} else {
 		ds_opstr_try_colorize(ds, print_color);
 	}
@@ -3593,7 +3605,7 @@ static void ds_print_fcn_name(RzDisasmState *ds) {
 		const char *arch;
 		RzFlagItem *flag = rz_flag_get_by_spaces(ds->core->flags, ds->analysis_op.jump,
 			RZ_FLAGS_FS_CLASSES, RZ_FLAGS_FS_SYMBOLS, NULL);
-		if (flag && flag->name && ds->opstr && !strstr(ds->opstr, flag->name) && (rz_str_startswith(flag->name, "sym.") || rz_str_startswith(flag->name, "method.")) && (arch = rz_config_get(ds->core->config, "asm.arch")) && strcmp(arch, "dalvik")) {
+		if (flag && flag->name && !strstr_opstr(ds, flag->name) && (rz_str_startswith(flag->name, "sym.") || rz_str_startswith(flag->name, "method.")) && (arch = rz_config_get(ds->core->config, "asm.arch")) && strcmp(arch, "dalvik")) {
 			RzFlagItem *flag_sym = flag;
 			if (ds->core->vmode && (rz_str_startswith(flag->name, "sym.") || (flag_sym = rz_flag_get_by_spaces(ds->core->flags, ds->analysis_op.jump, RZ_FLAGS_FS_SYMBOLS, NULL))) && flag_sym->demangled) {
 				return;
@@ -3624,7 +3636,7 @@ static void ds_print_fcn_name(RzDisasmState *ds) {
 		} else if (delta < 0) {
 			ds_begin_comment(ds);
 			ds_comment(ds, true, "; %s-0x%" PFMT64x, f->name, (ut64)(-delta));
-		} else if ((!ds->core->vmode || (!ds->subjmp && !ds->subnames)) && (!ds->opstr || !strstr(ds->opstr_nocolor ? ds->opstr_nocolor : ds->opstr, f->name))) {
+		} else if ((!ds->core->vmode || (!ds->subjmp && !ds->subnames)) && !strstr_opstr(ds, f->name)) {
 			RzFlagItem *flag_sym;
 			if (ds->core->vmode && (flag_sym = rz_flag_get_by_spaces(ds->core->flags, ds->analysis_op.jump, RZ_FLAGS_FS_SYMBOLS, NULL)) && flag_sym->demangled) {
 				return;
@@ -4029,8 +4041,10 @@ static inline bool is_filtered_flag(RzDisasmState *ds, const char *name) {
 		if (dupped) {
 			rz_name_filter(dupped, -1, true);
 			if (!strcmp(&name[4], dupped)) {
+				free(dupped);
 				return true;
 			}
+			free(dupped);
 		}
 	}
 	return false;
@@ -4123,12 +4137,12 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 				ut64 subrel_addr = core->parser->subrel_addr;
 				if (subrel_addr && subrel_addr != p) {
 					f2 = rz_core_flag_get_by_spaces(core->flags, subrel_addr);
-					f2_in_opstr = f2 && ds->opstr &&
-						((f2->name && strstr(ds->opstr, f2->name)) ||
-							(f2->realname && strstr(ds->opstr, f2->realname)));
+					f2_in_opstr = f2 &&
+						((f2->name && strstr_opstr(ds, f2->name)) ||
+							(f2->realname && strstr_opstr(ds, f2->realname)));
 				}
 				refaddr = p;
-				if (!flag_printed && !is_filtered_flag(ds, f->name) && (!ds->opstr || (!strstr(ds->opstr, f->name) && !strstr(ds->opstr, f->realname))) && !f2_in_opstr) {
+				if (!flag_printed && !is_filtered_flag(ds, f->name) && !strstr_opstr(ds, f->name) && !strstr_opstr(ds, f->realname) && !f2_in_opstr) {
 					ds_begin_comment(ds);
 					ds_comment(ds, true, "; %s", f->name);
 					ds->printed_flag_addr = p;
@@ -4214,13 +4228,13 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 		} else if (!refaddr_printed && strcmp(ds->show_cmtoff, "false") && (!ds->hint || !ds->hint->immbase)) {
 			char addrstr[32] = { 0 };
 			snprintf(addrstr, sizeof(addrstr), "0x%" PFMT64x, refaddr);
-			if (!ds->opstr || !strstr(ds->opstr, addrstr)) {
+			if (!strstr_opstr(ds, addrstr)) {
 				snprintf(addrstr, sizeof(addrstr), "0x%08" PFMT64x, refaddr);
-				if (!ds->opstr || !strstr(ds->opstr, addrstr)) {
+				if (!strstr_opstr(ds, addrstr)) {
 					bool print_refaddr = true;
 					if (refaddr < 10) {
 						snprintf(addrstr, sizeof(addrstr), "%" PFMT64u, refaddr);
-						if (ds->opstr && strstr(ds->opstr, addrstr)) {
+						if (strstr_opstr(ds, addrstr)) {
 							print_refaddr = false;
 						}
 					}
@@ -4257,7 +4271,7 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 				if (!string_printed) {
 					ds_print_str(ds, msg, len, refaddr);
 				}
-			} else if (!flag_printed && (!ds->opstr || (!strstr(ds->opstr, f->name) && !strstr(ds->opstr, f->realname)))) {
+			} else if (!flag_printed && !strstr_opstr(ds, f->name) && !strstr_opstr(ds, f->realname)) {
 				ds_begin_nl_comment(ds);
 				ds_comment(ds, true, "; %s", f->name);
 				ds->printed_flag_addr = refaddr;
@@ -4537,7 +4551,7 @@ static int myregwrite(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 		RZ_FREE(type);
 		if ((ds->printed_flag_addr == UT64_MAX || *val != ds->printed_flag_addr) && (ds->show_emu_strflag || !emu_str_printed)) {
 			RzFlagItem *fi = rz_flag_get_i(core->flags, *val);
-			if (fi && (!ds->opstr || !strstr(ds->opstr, fi->name))) {
+			if (fi && !strstr_opstr(ds, fi->name)) {
 				msg = rz_str_appendf(msg, "%s%s", msg && *msg ? " " : "", fi->name);
 			}
 		}
