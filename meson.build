@@ -9,7 +9,12 @@ project('rizin', 'c',
   ]
 )
 
-py3_exe = import('python').find_installation()
+py3_exe = import('python').find_installation(required: false)
+have_python = py3_exe.found()
+# The subproject staleness check is a developer convenience implemented in
+# Python (sys/check_meson_subproject.py). When Python is not available (e.g.
+# building with muon on a host without Python) the check is simply skipped.
+do_subprojects_check = have_python and get_option('subprojects_check')
 git_exe = find_program('git', required: false)
 pkgconfig_mod = import('pkgconfig')
 
@@ -18,7 +23,6 @@ create_tags_rz_py = files('sys/create_tags_rz.py')
 syscall_preprocessing_py = files('sys/syscall_preprocessing.py')
 check_meson_subproject_py = files('sys/check_meson_subproject.py')
 git_exe_repo_py = files('sys/meson_git_wrapper.py')
-cmake_package_prefix_dir_py = files('sys/meson_cmake_prefix_dir.py')
 
 is_static_build = get_option('static_runtime')
 is_static_libs_only = get_option('default_library') == 'static'
@@ -168,10 +172,14 @@ load_dirs = {
 }
 
 # Calcualte BINDIR's depth to be able to find the root directory during runtime
-# in portable builds
-py_cmd = 'import os; from pathlib import Path; print(len(Path(os.path.normpath(r"@0@")).parents) - len(Path(os.path.normpath(r"@1@")).parents))'.format(rizin_prefix / rizin_bindir, rizin_prefix)
-py_cmd = run_command(py3_exe, '-c', py_cmd, check: true)
-bindir_depth = py_cmd.stdout().strip()
+# in portable builds. bindir is relative to prefix, so its number of path
+# components is exactly the depth (the prefix components cancel out).
+bindir_depth = 0
+foreach _part : get_option('bindir').split('/')
+  if _part != '' and _part != '.'
+    bindir_depth += 1
+  endif
+endforeach
 
 foreach load_dir, default_subdir : load_dirs
   val = get_option(load_dir)
@@ -186,7 +194,22 @@ foreach load_dir, default_subdir : load_dirs
   endif
 endforeach
 
-cmake_package_relative_path = run_command(py3_exe, cmake_package_prefix_dir_py, rizin_prefix, rizin_cmakedir / 'xxx', check: true).stdout().strip()
+# Relative path from the installed CMake package directory back to the install
+# prefix. The generated config file is installed in <libdir>/cmake/<module>/,
+# so the number of '..' segments needed to reach the prefix is the component
+# count of libdir plus two (the 'cmake' directory and the per-module
+# directory). Computed in pure Meson (no Python) so the build also works with
+# muon; produces the same result as sys/meson_cmake_prefix_dir.py.
+cmake_ups = 2
+foreach _part : get_option('libdir').split('/')
+  if _part != '' and _part != '.'
+    cmake_ups += 1
+  endif
+endforeach
+cmake_package_relative_path = '..'
+foreach _i : range(cmake_ups - 1)
+  cmake_package_relative_path += '/..'
+endforeach
 
 subproject_clean_error_msg = 'Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.'
 
@@ -197,8 +220,7 @@ capstone_dep = dependency('capstone', version: '>=4.0.2', required: get_option('
 if not capstone_dep.found()
   capstone_version = get_option('use_capstone_version')
   if fs.is_file('subprojects/capstone-' + capstone_version + '.wrap')
-    r = run_command(py3_exe, check_meson_subproject_py, 'capstone-' + capstone_version, check: false)
-    if r.returncode() == 1 and get_option('subprojects_check')
+    if do_subprojects_check and run_command(py3_exe, check_meson_subproject_py, 'capstone-' + capstone_version, check: false).returncode() == 1
       error(subproject_clean_error_msg)
     endif
     capstone_proj = subproject('capstone-' + capstone_version, default_options: ['default_library=static'])
@@ -334,8 +356,7 @@ if (sys_libmspack_opt.auto() and not libmspack_dep.found()) or sys_libmspack_opt
 endif
 
 # handle xxhash library
-r = run_command(py3_exe, check_meson_subproject_py, 'xxhash', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
+if do_subprojects_check and run_command(py3_exe, check_meson_subproject_py, 'xxhash', check: false).returncode() == 1
   error(subproject_clean_error_msg)
 endif
 
@@ -352,8 +373,7 @@ if (sys_xxhash_opt.auto() and not xxhash_dep.found()) or sys_xxhash_opt.disabled
 endif
 
 # handle libdemangle
-r = run_command(py3_exe, check_meson_subproject_py, 'libdemangle', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
+if do_subprojects_check and run_command(py3_exe, check_meson_subproject_py, 'libdemangle', check: false).returncode() == 1
   error(subproject_clean_error_msg)
 endif
 
@@ -378,8 +398,7 @@ endif
 sys_openssl = dependency('openssl', required: get_option('use_sys_openssl'), static: is_static_build)
 
 # handle tree-sitter
-r = run_command(py3_exe, check_meson_subproject_py, 'tree-sitter', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
+if do_subprojects_check and run_command(py3_exe, check_meson_subproject_py, 'tree-sitter', check: false).returncode() == 1
   error(subproject_clean_error_msg)
 endif
 
@@ -391,8 +410,7 @@ if not tree_sitter_dep.found()
 endif
 
 # handle rizin-grammar-c
-r = run_command(py3_exe, check_meson_subproject_py, 'rizin-grammar-c', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
+if do_subprojects_check and run_command(py3_exe, check_meson_subproject_py, 'rizin-grammar-c', check: false).returncode() == 1
   error(subproject_clean_error_msg)
 endif
 
@@ -651,21 +669,34 @@ rz_version_h = configure_file(
 )
 
 if git_exe.found() and fs.exists('.git')
-  gittip_file = custom_target('gittip_file',
-    build_always_stale: true,
-    build_by_default: true,
-    output: 'gittip',
-    command: [py3_exe, git_exe_repo_py, git_exe, repo, '@OUTPUT@', 'rev-parse', 'HEAD'],
-    install: true,
-    install_dir: rizin_datdir_rz
-  )
+  if have_python
+    gittip_file = custom_target('gittip_file',
+      build_always_stale: true,
+      build_by_default: true,
+      output: 'gittip',
+      command: [py3_exe, git_exe_repo_py, git_exe, repo, '@OUTPUT@', 'rev-parse', 'HEAD'],
+      install: true,
+      install_dir: rizin_datdir_rz
+    )
+  else
+    # sys/meson_git_wrapper.py only exists to support ancient git without -C.
+    # Modern git supports -C, so call it directly and capture stdout.
+    gittip_file = custom_target('gittip_file',
+      build_always_stale: true,
+      build_by_default: true,
+      output: 'gittip',
+      command: [git_exe, '-C', repo, 'rev-parse', 'HEAD'],
+      capture: true,
+      install: true,
+      install_dir: rizin_datdir_rz
+    )
+  endif
 endif
 
 # handle zlib dependency
 zlib_dep = disabler()
 if get_option('use_zlib')
-  r = run_command(py3_exe, check_meson_subproject_py, 'zlib', check: false)
-  if r.returncode() == 1 and get_option('subprojects_check')
+  if do_subprojects_check and run_command(py3_exe, check_meson_subproject_py, 'zlib', check: false).returncode() == 1
     error(subproject_clean_error_msg)
   endif
 
@@ -678,8 +709,7 @@ if get_option('use_zlib')
 endif
 
 # handle lz4 dependency
-r = run_command(py3_exe, check_meson_subproject_py, 'lz4', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
+if do_subprojects_check and run_command(py3_exe, check_meson_subproject_py, 'lz4', check: false).returncode() == 1
   error(subproject_clean_error_msg)
 endif
 
@@ -692,8 +722,7 @@ endif
 # handle lzma dependency
 liblzma_dep = disabler()
 if get_option('use_lzma')
-  r = run_command(py3_exe, check_meson_subproject_py, 'lzma', check: false)
-  if r.returncode() == 1 and get_option('subprojects_check')
+  if do_subprojects_check and run_command(py3_exe, check_meson_subproject_py, 'lzma', check: false).returncode() == 1
     error(subproject_clean_error_msg)
   endif
 
@@ -706,8 +735,7 @@ if get_option('use_lzma')
 endif
 
 # handle softfloat dependency
-r = run_command(py3_exe, check_meson_subproject_py, 'softfloat', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
+if do_subprojects_check and run_command(py3_exe, check_meson_subproject_py, 'softfloat', check: false).returncode() == 1
   error(subproject_clean_error_msg)
 endif
 
@@ -723,8 +751,7 @@ if meson.is_cross_build()
 endif
 
 # handle zip dependency
-r = run_command(py3_exe, check_meson_subproject_py, 'libzip', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
+if do_subprojects_check and run_command(py3_exe, check_meson_subproject_py, 'libzip', check: false).returncode() == 1
   error(subproject_clean_error_msg)
 endif
 
@@ -747,8 +774,7 @@ if host_machine.system() == 'serenity' and libzip_dep.found()
 endif
 
 # handle zstd dependency
-r = run_command(py3_exe, check_meson_subproject_py, 'zstd', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
+if do_subprojects_check and run_command(py3_exe, check_meson_subproject_py, 'zstd', check: false).returncode() == 1
   error(subproject_clean_error_msg)
 endif
 
@@ -763,8 +789,7 @@ if not libzstd_dep.found()
 endif
 
 # handle yxml dependency
-r = run_command(py3_exe, check_meson_subproject_py, 'yxml', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
+if do_subprojects_check and run_command(py3_exe, check_meson_subproject_py, 'yxml', check: false).returncode() == 1
   error(subproject_clean_error_msg)
 endif
 
@@ -799,9 +824,10 @@ rpath_lib = ''
 rpath_summary = 'disabled'
 if use_rpath
   # Use bindir depth to create a path to the rootdir from bindir
-  py_cmd = 'import os; print("../" * @0@)'.format(bindir_depth.to_int())
-  py_cmd = run_command(py3_exe, '-c', py_cmd, check: true)
-  path_to_rootdir = py_cmd.stdout().strip()
+  path_to_rootdir = ''
+  foreach _i : range(bindir_depth)
+    path_to_rootdir += '../'
+  endforeach
 
   rpath_exe = '$ORIGIN/' + path_to_rootdir + get_option('libdir')
   rpath_lib = '$ORIGIN'
@@ -848,8 +874,7 @@ endif
 subdir('librz')
 
 if get_option('install_sigdb')
-  r = run_command(py3_exe, check_meson_subproject_py, 'sigdb', check: false)
-  if r.returncode() == 1 and get_option('subprojects_check')
+  if do_subprojects_check and run_command(py3_exe, check_meson_subproject_py, 'sigdb', check: false).returncode() == 1
     error(subproject_clean_error_msg)
   endif
   subproject('sigdb', default_options: ['sigdb_path=@0@'.format(get_option('prefix') / rizin_sigdb)])
