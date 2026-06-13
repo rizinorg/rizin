@@ -110,7 +110,9 @@ RZ_API RZ_OWN RzInterpAbstrState *rz_interpreter_abstr_state_new(
 			RZ_LOG_ERROR("Failed to add %s to the global variable map. "
 				     "DJB2 hash collision of the register name. DJB2 hash = 0x%" PFMT64x "\n",
 				rname, djb2_reg_hash);
-			return NULL;
+			ht_up_free(state->globals);
+			ht_up_free(state->var_name_hashes);
+			free(state);
 		}
 	}
 	state->locals = ht_up_new(NULL, free);
