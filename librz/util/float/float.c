@@ -1501,6 +1501,10 @@ RZ_API RZ_OWN RzFloat *rz_float_cast_float(RZ_NONNULL RzBitVector *bv, RzFloatFo
 	ut32 exp_max_no_bias = bias;
 
 	ut32 width = rz_bv_len(bv) - rz_bv_clz(bv);
+	// Zero has no highest set bit; handle it before width - 1 underflows.
+	if (width == 0) {
+		return rz_float_new_zero(format, false);
+	}
 	ut32 order = width - 1;
 	if (order > exp_max_no_bias) {
 		// error: not representable
