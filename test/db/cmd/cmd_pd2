@@ -966,7 +966,7 @@ EXPECT=<<EOF
 \           0x0000103d      call  sym.imp._Exit                        ; void _Exit(int status)
 \           0x0000103d      call  _Exit                                ; sym.imp._Exit ; void _Exit(int status)
 
-[36m\[0m           [32m0x0000103d[0m      [1;92mcall[0m[37m  [0m[37msym[0m[37m.[0m[37mimp[0m[37m.[0m[37m_[0m[37mExit[0m[0m[31m                        ; sym.imp._Exit[0m[31m ; void _Exit(int status)[0m
+[36m\[0m           [32m0x0000103d[0m      [1;92mcall[0m[37m  [0m[37msym[0m[37m.[0m[37mimp[0m[37m.[0m[37m_[0m[37mExit[0m[0m[0m[31m                        ; void _Exit(int status)[0m
 [36m\[0m           [32m0x0000103d[0m      [1;92mcall[0m[37m  [0m[37m_[0m[37mExit[0m[0m[31m                                ; sym.imp._Exit[0m[31m ; void _Exit(int status)[0m
 EOF
 RUN
