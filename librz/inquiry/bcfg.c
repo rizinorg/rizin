@@ -302,7 +302,7 @@ RZ_IPI bool rz_inquiry_bcfg_reduce(RzInquiryBCFG *cfg) {
 	rz_vector_reserve(&outedges, 8);
 
 	size_t n_blocks = rz_pvector_len(&blocks);
-	for (size_t i = 0; i < n_blocks - 1; ++i) {
+	for (size_t i = 0; n_blocks && i < n_blocks - 1; ++i) {
 		RzInquiryBlock *a = rz_pvector_at(&blocks, i);
 
 		// Split of all blocks a overlaps with.
