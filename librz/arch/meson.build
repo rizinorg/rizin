@@ -54,6 +54,7 @@ arch_plugins_list = [
   'tms320',
   'v810',
   'v850',
+  'vax',
   'wasm',
   'x86_as',
   'x86_nasm',
@@ -114,6 +115,7 @@ arch_plugin_sources = [
   'p/arch_tms320.c',
   'p/arch_v810.c',
   'p/arch_v850.c',
+  'p/arch_vax.c',
   'p/arch_wasm.c',
   'p/arch_x86_as.c',
   'p/arch_x86_nasm.c',
@@ -331,6 +333,7 @@ arch_isa_sources = [
   'isa/v810/v810_il.c',
   'isa/v850/v850_disas.c',
   'isa/v850/v850_il.c',
+  'isa/vax/vax_dis.c',
   'isa/wasm/wasm.c',
   'isa/x86/common.c',
   'isa/x86/x86_il.c',
@@ -403,7 +406,6 @@ if get_option('use_gpl')
     'arc_gnu',
     'cris_gnu',
     'lanai_gnu',
-    'vax_gnu',
     'z80_gnu',
   ]
 
@@ -412,7 +414,6 @@ if get_option('use_gpl')
     'p_gnu/arch_arc.c',
     'p_gnu/arch_cris.c',
     'p_gnu/arch_lanai.c',
-    'p_gnu/arch_vax.c',
     'p_gnu/arch_z80.c',
   ]
 
@@ -426,7 +427,6 @@ if get_option('use_gpl')
     'isa_gnu/cris/cris-opc.c',
     'isa_gnu/lanai/lanai-dis.c',
     'isa_gnu/lanai/lanai-opc.c',
-    'isa_gnu/vax/vax-dis.c',
     # 'isa_gnu/z80/expressions.c',
     # 'isa_gnu/z80/z80.c',
     # 'isa_gnu/z80/z80asm.c',

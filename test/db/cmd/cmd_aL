@@ -61,7 +61,7 @@ _dA__ 32         tms320      LGPL3   Texas Instruments TMS320 DSP family (c54x,c
 _dA_I 32         tricore     BSD     Siemens TriCore Capstone-based disassembler (by billow)
 _dAeI 32         v810        LGPL3   NEC V810 disassembler (by pancake)
 _dAeI 32         v850        LGPL3   NEC/Renesas V850 disassembler
-_dA__ 8 32       vax         GPL3    DEC VAX disassembler
+_dA__ 32         vax         LGPL3   DEC VAX-11 disassembler (by xvilka)
 adA__ 32         wasm        MIT     WebAssembly disassembler (by cgvwzq) v0.1.0
 _dAeI 16 32 64   x86         MIT     X86/X86_64 Zydis-based disassembler
 a____ 16 32 64   x86.as      LGPL3   Intel X86 GNU Assembler (Use RZ_X86_AS env)
