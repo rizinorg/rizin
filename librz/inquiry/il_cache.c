@@ -173,6 +173,8 @@ RZ_API RZ_OWN RzILCacheBlock *rz_il_cache_lift_il_block(const RzILCache *cache, 
 
 		if (lifted) {
 			changes_cf = rz_analysis_op_changes_control_flow(&op);
+		} else {
+			changes_cf = false;
 		}
 
 		if (changes_cf && op.jump != UT64_MAX && cache->static_xrefs) {
