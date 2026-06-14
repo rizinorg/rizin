@@ -66,20 +66,20 @@ static void linux_dbg_wait_break(RzDebug *dbg);
 static RzDebugReasonType linux_handle_new_task(RzDebug *dbg, int tid);
 
 /**
- * @brief Determine whether a signal was externally sent or internally generated.
+ * \brief Determine whether a signal was externally sent or internally generated.
  *
- * @param si_code Signal code from siginfo_t::si_code.
- * @return RZ_DEBUG_SIGNAL_SOURCE_EXTERNAL if the signal was sent via
+ * \param si_code Signal code from siginfo_t::si_code.
+ * \return RZ_DEBUG_SIGNAL_SOURCE_EXTERNAL if the signal was sent via
  *         kill(), sigqueue(), tkill()/tgkill(), otherwise
  *         RZ_DEBUG_SIGNAL_SOURCE_INTERNAL.
  */
-static RzDebugSignalSource find_signal_source(int si_code){
-	if(si_code == SI_USER ||
+static RzDebugSignalSource find_signal_source(int si_code) {
+	if (si_code == SI_USER ||
 		si_code == SI_QUEUE ||
-		si_code == SI_TKILL){
-			return RZ_DEBUG_SIGNAL_SOURCE_EXTERNAL;
-		}
-		return RZ_DEBUG_SIGNAL_SOURCE_INTERNAL;
+		si_code == SI_TKILL) {
+		return RZ_DEBUG_SIGNAL_SOURCE_EXTERNAL;
+	}
+	return RZ_DEBUG_SIGNAL_SOURCE_INTERNAL;
 }
 
 int linux_handle_signals(RzDebug *dbg, int tid) {
