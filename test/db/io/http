@@ -1,0 +1,16 @@
+NAME=read from http
+FILE=http://127.0.0.1:8000/simple.html
+CMDS=<<EOF
+r
+b 64
+ps
+EOF
+EXPECT=<<EOF
+342
+<!DOCTYPE html>
+<html>
+<head>
+<title>My Simple Web Page</title>
+
+EOF
+RUN
