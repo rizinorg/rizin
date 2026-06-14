@@ -98,22 +98,20 @@ static Elf_(Word) get_number_of_symbols_from_section(ELFOBJ *bin) {
 }
 
 static bool is_special_arm_symbol(ELFOBJ *bin, Elf_(Sym) * sym, const char *name) {
-	if (!name) {
+	// ARM/AArch64 mapping symbols are named "$<char>" optionally followed by
+	// ".<suffix>" (e.g. "$t", "$d.realdata"). The ABI specifies STT_NOTYPE, but
+	// some toolchains emit them as STT_FUNC/STT_OBJECT (e.g. Motorola P2K
+	// firmware), so only the name shape and local binding are checked, like
+	// binutils' bfd_is_arm_special_symbol_name() with BFD_ARM_SPECIAL_SYM_TYPE_ANY.
+	if (!name || name[0] != '$' || !name[1]) {
 		return false;
 	}
 
-	if (name[0] != '$') {
+	if (name[2] != '\0' && name[2] != '.') {
 		return false;
 	}
 
-	if (name[1] == 'a' || name[1] == 't' || name[1] == 'd' || name[1] == 'x') {
-		return (name[2] == '\0' || name[2] == '.') &&
-			ELF_ST_TYPE(sym->st_info) == STT_NOTYPE &&
-			ELF_ST_BIND(sym->st_info) == STB_LOCAL &&
-			ELF_ST_VISIBILITY(sym->st_info) == STV_DEFAULT;
-	}
-
-	return false;
+	return ELF_ST_BIND(sym->st_info) == STB_LOCAL;
 }
 
 static bool is_special_symbol(ELFOBJ *bin, Elf_(Sym) * sym, const char *name) {

@@ -1469,6 +1469,18 @@ static void select_flag_space(RzCore *core, RzBinSymbol *symbol) {
 	}
 }
 
+// True if the binary carries ARM/AArch64 mapping symbols ($a/$t/$d/$x).
+static bool has_arm_mapping_symbols(RzPVector /*<RzBinSymbol *>*/ *symbols) {
+	void **it;
+	rz_pvector_foreach (symbols, it) {
+		RzBinSymbol *symbol = *it;
+		if (symbol->name && is_special_symbol(symbol)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va) {
 	rz_return_val_if_fail(core && binfile, false);
 	RzBinObject *o = binfile->o;
@@ -1488,6 +1500,13 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 	void **iter;
 	void **it;
 	RzBinSymbol *symbol;
+
+	// Mapping symbols authoritatively describe the instruction set of each code
+	// region, so when present the address-parity heuristic in handle_arm_symbol()
+	// must be disabled: such binaries place Thumb functions at even addresses,
+	// where the heuristic would wrongly force ARM mode (see issue #4357).
+	bool arm_mapping_symbols = is_arm && has_arm_mapping_symbols(symbols);
+
 	rz_pvector_foreach (symbols, it) {
 		symbol = *it;
 		if (!symbol->name) {
@@ -1512,7 +1531,8 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 			// applied to FUNC symbols by handle_arm_symbol().
 		} else {
 			// TODO: provide separate API in RzBinPlugin to let plugins handle analysis hints/metadata
-			if (is_arm) {
+			// Address-parity heuristic only when no mapping symbols (see above).
+			if (is_arm && !arm_mapping_symbols) {
 				handle_arm_symbol(core, o, symbol, va);
 			}
 			select_flag_space(core, symbol);
