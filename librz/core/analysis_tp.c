@@ -9,6 +9,9 @@
 #include <rz_core.h>
 #define LOOP_MAX 10
 
+// from canalysis.c (core_private.h isn't included: it clashes with the local bb_cmpaddr)
+RZ_IPI void rz_core_add_string_ref(RzCore *core, ut64 xref_from, ut64 xref_to);
+
 static bool analysis_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt, RzAnalysisEsilTrace **et, RzAnalysisILTrace **rt) {
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
 	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
@@ -458,6 +461,16 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 					cmt_set = true;
 					if ((op->ptr && op->ptr != UT64_MAX) && !strcmp(name, "format")) {
 						RzFlagItem *f = rz_flag_get_by_spaces(core->flags, op->ptr, RZ_FLAGS_FS_STRINGS, NULL);
+						if (!f) {
+							// A format argument (e.g. scanf's "%s") is a string even when
+							// shorter than the detection threshold; create the reference so
+							// it is shown as a string and parsed for variadic typing below.
+							size_t saved_min = core->bin->str_search_cfg.min_length;
+							core->bin->str_search_cfg.min_length = 1;
+							rz_core_add_string_ref(core, op->addr, op->ptr);
+							core->bin->str_search_cfg.min_length = saved_min;
+							f = rz_flag_get_by_spaces(core->flags, op->ptr, RZ_FLAGS_FS_STRINGS, NULL);
+						}
 						if (f) {
 							char formatstr[0x200];
 							int read = rz_io_nread_at(core->io, f->offset, (ut8 *)formatstr, RZ_MIN(sizeof(formatstr) - 1, f->size));
