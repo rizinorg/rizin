@@ -7,6 +7,10 @@
 #define ANALYSIS_C55X_H
 
 #include <rz_analysis.h>
+#include <tms320/c55_ir.h>
+
+/// The TMS320C55x arch descriptor: drives the shared c55_ir engine/consumers.
+extern const C55ArchDesc c55x_arch_desc;
 
 int tms320_c55x_op_byte(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	const ut8 *buf, int len, RzAnalysisOpMask mask);

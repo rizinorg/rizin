@@ -5,7 +5,6 @@
 
 #include <rz_analysis.h>
 #include <rz_search.h>
-#include <tms320/tms320_dasm.h>
 
 #include <tms320/c55x/c55x_analysis.h>
 #include <tms320/c55x_plus/c55plus_analysis.h>
@@ -288,6 +287,56 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			"gpr	b30:b31	.64	488	0\n"
 #endif
 			;
+	}
+
+	// C55x+ (Ryujin) has 32 accumulators and 16 (extended) auxiliary registers,
+	// vs the 8/8 of the base C55x profile above. Append the extra ac8-31,
+	// ar8-15 and xar8-15 so the shared lifter's IL variables for them resolve
+	// (the byte offsets continue past ac7 at 684; C55x never references these).
+	const char *cpu = rz_analysis_get_cpu(a);
+	if (cpu && rz_str_casecmp(cpu, "c55x+") == 0) {
+		static const char *ext =
+			"ctr ac8    .40 684 0 # Accumulator 8\n"
+			"ctr ac9    .40 689 0 # Accumulator 9\n"
+			"ctr ac10   .40 694 0 # Accumulator 10\n"
+			"ctr ac11   .40 699 0 # Accumulator 11\n"
+			"ctr ac12   .40 704 0 # Accumulator 12\n"
+			"ctr ac13   .40 709 0 # Accumulator 13\n"
+			"ctr ac14   .40 714 0 # Accumulator 14\n"
+			"ctr ac15   .40 719 0 # Accumulator 15\n"
+			"ctr ac16   .40 724 0 # Accumulator 16\n"
+			"ctr ac17   .40 729 0 # Accumulator 17\n"
+			"ctr ac18   .40 734 0 # Accumulator 18\n"
+			"ctr ac19   .40 739 0 # Accumulator 19\n"
+			"ctr ac20   .40 744 0 # Accumulator 20\n"
+			"ctr ac21   .40 749 0 # Accumulator 21\n"
+			"ctr ac22   .40 754 0 # Accumulator 22\n"
+			"ctr ac23   .40 759 0 # Accumulator 23\n"
+			"ctr ac24   .40 764 0 # Accumulator 24\n"
+			"ctr ac25   .40 769 0 # Accumulator 25\n"
+			"ctr ac26   .40 774 0 # Accumulator 26\n"
+			"ctr ac27   .40 779 0 # Accumulator 27\n"
+			"ctr ac28   .40 784 0 # Accumulator 28\n"
+			"ctr ac29   .40 789 0 # Accumulator 29\n"
+			"ctr ac30   .40 794 0 # Accumulator 30\n"
+			"ctr ac31   .40 799 0 # Accumulator 31\n"
+			"gpr ar8    .16 804 0 # Auxiliary register 8\n"
+			"gpr ar9    .16 806 0 # Auxiliary register 9\n"
+			"gpr ar10   .16 808 0 # Auxiliary register 10\n"
+			"gpr ar11   .16 810 0 # Auxiliary register 11\n"
+			"gpr ar12   .16 812 0 # Auxiliary register 12\n"
+			"gpr ar13   .16 814 0 # Auxiliary register 13\n"
+			"gpr ar14   .16 816 0 # Auxiliary register 14\n"
+			"gpr ar15   .16 818 0 # Auxiliary register 15\n"
+			"gpr xar8   .23 820 0 # Extended auxiliary register 8\n"
+			"gpr xar9   .23 823 0 # Extended auxiliary register 9\n"
+			"gpr xar10  .23 826 0 # Extended auxiliary register 10\n"
+			"gpr xar11  .23 829 0 # Extended auxiliary register 11\n"
+			"gpr xar12  .23 832 0 # Extended auxiliary register 12\n"
+			"gpr xar13  .23 835 0 # Extended auxiliary register 13\n"
+			"gpr xar14  .23 838 0 # Extended auxiliary register 14\n"
+			"gpr xar15  .23 841 0 # Extended auxiliary register 15\n";
+		return rz_str_newf("%s%s", p, ext);
 	}
 
 	return rz_str_dup(p);

@@ -49,6 +49,7 @@ d "b 0x1230" 061230 0x0 (jmp (bv 24 0x1233))
 d "b 0x0123" 060123 0x0 (jmp (bv 24 0x126))
 d "call 0xDEAD" 08dead 0x0 (jmp (bv 24 0xffdeb0))
 d "rpt 0xDEAD" 0cdead 0x0 nop
+d "|| rpt 0x1234" 0d1234 0x0 nop
 d "rptb 0xDEAD" 0edead 0x0 nop
 d "and ac0 << 0x00" 100000
 d "or ac1 << 0x11, ac0" 101111 0x0 (set ac0 (| (var ac0) (<< (var ac1) (bv 8 0x11) false)))
@@ -85,6 +86,21 @@ d "dmaxdiff ac0, ac1, ac2, ac3, trn1" 108d71
 d "mindiff ac3, ac2, ac1, ac0" 107e80
 d "dmindiff ac3, ac2, ac1, ac0, trn0" 107f80
 d "dmindiff ac3, ac2, ac1, ac0, trn1" 107f81
+d "sftl ac0, 0x01" 100701 0x0 (set ac0 (<< (var ac0) (bv 6 0x1) false))
+d "sftl ac0, 0x37" 100737 0x0 (set ac0 (>> (var ac0) (bv 6 0x9) false))
+d "sfts ac0, 0x01" 100501 0x0 (set ac0 (<< (var ac0) (bv 6 0x1) false))
+d "sftl ac0, 0x01, ac1" 104701 0x0 (set ac1 (<< (var ac0) (bv 6 0x1) false))
+d "sftsc ac0, 0x01" 100601
+d "and ac0 << 0x01" 100001
+d "or ac0 << 0x01" 100101
+d "xor ac0 << 0x01" 100201
+d "and ac0 << 0x01, ac1" 104001 0x0 (set ac1 (& (var ac1) (<< (var ac0) (bv 8 0x1) false)))
+d "xor ac0 << 0x01, ac1" 104201 0x0 (set ac1 (^ (var ac1) (<< (var ac0) (bv 8 0x1) false)))
+d "add ac0 << 0x01, ac0" 100301 0x0 (set ac0 (+ (var ac0) (<< (var ac0) (bv 8 0x1) false)))
+d "sub ac0 << 0x01, ac0" 100401 0x0 (set ac0 (- (var ac0) (<< (var ac0) (bv 8 0x1) false)))
+d "add ac0 << 0x01, ac1" 104301 0x0 (set ac1 (+ (var ac1) (<< (var ac0) (bv 8 0x1) false)))
+d "add ac0 << 0x37, ac1" 104337 0x0 (set ac1 (+ (var ac1) (<< (var ac0) (bv 8 0x37) false)))
+d "add ac0 << 0x3F, ac1" 10433f 0x0 (set ac1 (+ (var ac1) (<< (var ac0) (bv 8 0x3f) false)))
 d "cmp ac0 == ar2, tc1" 1200a0 0x0 (set st0_55 (ite (== (var ac0) (cast 40 (msb (var ar2)) (var ar2))) (| (var st0_55) (bv 16 0x2000)) (& (var st0_55) (bv 16 0xdfff))))
 d "cmpand ac1 == ar3, tc1, tc2" 1211b1 0x0 (set st0_55 (ite (&& (== (var ac1) (cast 40 (msb (var ar3)) (var ar3))) (! (is_zero (& (var st0_55) (bv 16 0x2000))))) (| (var st0_55) (bv 16 0x1000)) (& (var st0_55) (bv 16 0xefff))))
 d "cmpand ac2 == ar4, !tc1, tc2" 1221c9 0x0 (set st0_55 (ite (&& (== (var ac2) (cast 40 (msb (var ar4)) (var ar4))) (! (! (is_zero (& (var st0_55) (bv 16 0x2000)))))) (| (var st0_55) (bv 16 0x1000)) (& (var st0_55) (bv 16 0xefff))))
@@ -95,10 +111,31 @@ d "cmpandu t2 == ac0, tc2, tc1" 126106 0x0 (set st0_55 (ite (&& (== (cast 40 fal
 d "cmpandu t3 == ac1, !tc2, tc1" 12711e 0x0 (set st0_55 (ite (&& (== (cast 40 false (var t3)) (var ac1)) (! (! (is_zero (& (var st0_55) (bv 16 0x1000)))))) (| (var st0_55) (bv 16 0x2000)) (& (var st0_55) (bv 16 0xdfff))))
 d "cmporu ar0 == ac2, tc1, tc2" 128225 0x0 (set st0_55 (ite (|| (== (cast 40 false (var ar0)) (var ac2)) (! (is_zero (& (var st0_55) (bv 16 0x2000))))) (| (var st0_55) (bv 16 0x1000)) (& (var st0_55) (bv 16 0xefff))))
 d "cmporu ar1 == ac3, !tc1, tc2" 12923d 0x0 (set st0_55 (ite (|| (== (cast 40 false (var ar1)) (var ac3)) (! (! (is_zero (& (var st0_55) (bv 16 0x2000)))))) (| (var st0_55) (bv 16 0x1000)) (& (var st0_55) (bv 16 0xefff))))
+d "cmp ac0 == ac0, tc1" 120000 0x0 (set st0_55 (ite (== (var ac0) (var ac0)) (| (var st0_55) (bv 16 0x2000)) (& (var st0_55) (bv 16 0xdfff))))
+d "cmp ac0 < ac1, tc1" 120410 0x0 (set st0_55 (ite (&& (sle (var ac0) (var ac1)) (! (== (var ac0) (var ac1)))) (| (var st0_55) (bv 16 0x2000)) (& (var st0_55) (bv 16 0xdfff))))
+d "cmp ac3 >= ac0, tc2" 123801 0x0 (set st0_55 (ite (! (&& (sle (var ac3) (var ac0)) (! (== (var ac3) (var ac0))))) (| (var st0_55) (bv 16 0x1000)) (& (var st0_55) (bv 16 0xefff))))
+d "cmp t0 != ac0, tc1" 124c00 0x0 (set st0_55 (ite (! (== (cast 40 (msb (var t0)) (var t0)) (var ac0))) (| (var st0_55) (bv 16 0x2000)) (& (var st0_55) (bv 16 0xdfff))))
+d "cmpand ac0 == ac1, tc1, tc1" 120110 0x0 (set st0_55 (ite (&& (== (var ac0) (var ac1)) (! (is_zero (& (var st0_55) (bv 16 0x2000))))) (| (var st0_55) (bv 16 0x2000)) (& (var st0_55) (bv 16 0xdfff))))
+d "cmpor ac0 == ac0, tc2, tc1" 120202 0x0 (set st0_55 (ite (|| (== (var ac0) (var ac0)) (! (is_zero (& (var st0_55) (bv 16 0x1000))))) (| (var st0_55) (bv 16 0x2000)) (& (var st0_55) (bv 16 0xdfff))))
 d "rol carry, ac0, carry, ac3" 120330 0x0 (seq (set ac3 (| (<< (var ac0) (bv 6 0x1) false) (cast 40 false (& (>> (var st0_55) (bv 8 0xb) false) (bv 16 0x1))))) (set st0_55 (ite (msb (var ac0)) (| (var st0_55) (bv 16 0x800)) (& (var st0_55) (bv 16 0xf7ff)))))
 d "rol tc2, ac1, carry, ac2" 121321 0x0 (seq (set ac2 (| (<< (var ac1) (bv 6 0x1) false) (cast 40 false (& (>> (var st0_55) (bv 8 0xc) false) (bv 16 0x1))))) (set st0_55 (ite (msb (var ac1)) (| (var st0_55) (bv 16 0x800)) (& (var st0_55) (bv 16 0xf7ff)))))
 d "ror tc2, ac2, carry, ac1" 12231a 0x0 (seq (set ac1 (| (>> (var ac2) (bv 6 0x1) false) (<< (cast 40 false (& (>> (var st0_55) (bv 8 0xc) false) (bv 16 0x1))) (bv 6 0x27) false))) (set st0_55 (ite (lsb (var ac2)) (| (var st0_55) (bv 16 0x800)) (& (var st0_55) (bv 16 0xf7ff)))))
 d "ror tc2, ac3, tc2, ac0" 12330b 0x0 (seq (set ac0 (| (>> (var ac3) (bv 6 0x1) false) (<< (cast 40 false (& (>> (var st0_55) (bv 8 0xc) false) (bv 16 0x1))) (bv 6 0x27) false))) (set st0_55 (ite (lsb (var ac3)) (| (var st0_55) (bv 16 0x1000)) (& (var st0_55) (bv 16 0xefff)))))
+d "rol carry, ac0, tc2, ac3" 120332 0x0 (seq (set ac3 (| (<< (var ac0) (bv 6 0x1) false) (cast 40 false (& (>> (var st0_55) (bv 8 0xb) false) (bv 16 0x1))))) (set st0_55 (ite (msb (var ac0)) (| (var st0_55) (bv 16 0x1000)) (& (var st0_55) (bv 16 0xefff)))))
+d "ror carry, ac1, tc2, ac1" 121319 0x0 (seq (set ac1 (| (>> (var ac1) (bv 6 0x1) false) (<< (cast 40 false (& (>> (var st0_55) (bv 8 0xb) false) (bv 16 0x1))) (bv 6 0x27) false))) (set st0_55 (ite (lsb (var ac1)) (| (var st0_55) (bv 16 0x1000)) (& (var st0_55) (bv 16 0xefff)))))
+d "rol carry, ac0, carry, ar2" 1203a0
+d "mpyk 0x1234, ac0" 79123400 0x0 (set ac0 (* (bv 40 0x1234) (cast 40 (msb (cast 16 false (var ac0))) (cast 16 false (var ac0)))))
+d "mpyk 0x12, ac0, ac3" 1e1234 0x0 (set ac3 (* (bv 40 0x12) (cast 40 (msb (cast 16 false (var ac0))) (cast 16 false (var ac0)))))
+d "mpykr 0x1234, ac0" 79123401 0x0 (set ac0 (& (+ (* (bv 40 0x1234) (cast 40 (msb (cast 16 false (var ac0))) (cast 16 false (var ac0)))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
+d "mpyk 0x80, ac0" 1e8000 0x0 (set ac0 (* (bv 40 0x80) (cast 40 (msb (cast 16 false (var ac0))) (cast 16 false (var ac0)))))
+d "mpykr 0x00, ac0" 1e0001 0x0 (set ac0 (& (+ (* (bv 40 0x0) (cast 40 (msb (cast 16 false (var ac0))) (cast 16 false (var ac0)))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
+d "mpyk 0x1234, ac0, ac1" 79123410 0x0 (set ac1 (* (bv 40 0x1234) (cast 40 (msb (cast 16 false (var ac0))) (cast 16 false (var ac0)))))
+d "mack t0, 0x1234, ac0" 79123402 0x0 (set ac0 (+ (var ac0) (* (cast 40 (msb (var t0)) (var t0)) (bv 40 0x1234))))
+d "mackr t0, 0x1234, ac0" 79123403 0x0 (set ac0 (& (+ (+ (var ac0) (* (cast 40 (msb (var t0)) (var t0)) (bv 40 0x1234))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
+d "mack t3, 0x80, ac0" 1e800e 0x0 (set ac0 (+ (var ac0) (* (cast 40 (msb (var t3)) (var t3)) (bv 40 0x80))))
+d "mack t2, 0x12, ac1, ac3" 1e127a 0x0 (set ac3 (+ (var ac1) (* (cast 40 (msb (var t2)) (var t2)) (bv 40 0x12))))
+d "|| mpyk 0x12, ac0, ac3" 1f1234 0x0 (set ac3 (* (bv 40 0x12) (cast 40 (msb (cast 16 false (var ac0))) (cast 16 false (var ac0)))))
+d "|| mack t2, 0x12, ac1, ac3" 1f127a 0x0 (set ac3 (+ (var ac1) (* (cast 40 (msb (var t2)) (var t2)) (bv 40 0x12))))
 d "aadd ac0, ac0" 140000 0x0 (set ac0 (+ (var ac0) (var ac0)))
 d "amov ac0, ac0" 140001 0x0 (set ac0 (var ac0))
 d "asub ac0, ac0" 140002 0x0 (set ac0 (- (var ac0) (var ac0)))
@@ -117,6 +154,37 @@ d "asub xar2, xar3" 14a1b2 0x0 (set xar3 (- (var xar3) (var xar2)))
 d "aadd xar3, xar2" 14b1a8 0x0 (set xar2 (+ (var xar2) (var xar3)))
 d "amov xar4, xar1" 14c199 0x0 (set xar1 (var xar4))
 d "asub xar5, xar0" 14d18a 0x0 (set xar0 (- (var xar0) (var xar5)))
+d "amov ac0, ac0" 140001 0x0 (set ac0 (var ac0))
+d "asub ac0, ac1" 140012 0x0 (set ac1 (- (var ac1) (var ac0)))
+d "asub ac0, t0" 140042 0x0 (set t0 (- (var t0) (cast 16 false (var ac0))))
+d "amov ac0, xar0" 140081 0x0 (set xar0 (cast 23 false (var ac0)))
+d "rptcc 0x00, ac0 == 0" 000000 0x0 nop
+d "rptcc 0xFF, ac0 == 0" 0000ff 0x0 nop
+d "rptcc 0x00, ac0 > 0" 004000 0x0 nop
+d "rptcc 0x00, !tc1 ^ !tc2" 00ff00 0x0 nop
+d "rptb 0x0000" 0e0000 0x0 nop
+d "rptb 0xFF00" 0eff00 0x0 nop
+d "rpt csr" 4800 0x0 nop
+d "rptadd csr, ac0" 4801 0x0 nop
+d "rptadd csr, ar7" 48f1 0x0 nop
+d "rptadd csr, 0xF" 48f2 0x0 nop
+d "rptsub csr, 0x0" 4803 0x0 nop
+d "rptsub csr, 0xF" 48f3 0x0 nop
+d "exp ac0, t0" 100800
+d "exp ac1, t0" 101800
+d "exp ac2, t1" 102810
+d "exp ac3, t3" 103830
+d "bcnt ac0, ac1, tc2, t0" 100a41
+d "maxdiff ac1, ac0, ac0, ac0" 101c00
+d "maxdiff ac0, ac3, ac0, ac3" 100cff
+d "mindiff ac0, ac0, ac0, ac0" 100e00
+d "dmaxdiff ac0, ac0, ac0, ac0, trn1" 100d01
+d "dmindiff ac0, ac0, ac0, ac1, trn0" 100f10
+d "mov *+ar0, ac0" a019
+d "mov *-ar0, ac0" a01b
+d "mov *+ar3, ac1" a179
+d "mov ac0, *+ar0" c019
+d "mov ac0, *-ar0" c01b
 d "mov 0x1A, dph" 1601a0 0x0 (set dph (bv 7 0x1a))
 d "mov 0x25, dph" 160250 0x0 (set dph (bv 7 0x25))
 d "mov 0x4A, dph" 1604a0 0x0 (set dph (bv 7 0x4a))
@@ -131,6 +199,8 @@ d "mov 0x5B1, brc1" 165b1a 0x0 (set brc1 (bv 16 0x5b1))
 d "and 0x11, ac0, ac1" 181110 0x0 (set ac1 (& (var ac0) (bv 40 0x11)))
 d "or 0x22, ac2, ac3" 1a2232 0x0 (set ac3 (| (var ac2) (bv 40 0x22)))
 d "xor 0x33, t0, t1" 1c3354 0x0 (set t1 (^ (var t0) (bv 16 0x33)))
+d "|| or 0x12, ac0, ac1" 1b1210 0x0 (set ac1 (| (var ac0) (bv 40 0x12)))
+d "and 0x12, ac0, t0" 181240 0x0 (set t0 (& (cast 16 false (var ac0)) (bv 16 0x12)))
 d "mpyk 0x11, ac0, ac1" 1e1110 0x0 (set ac1 (* (bv 40 0x11) (cast 40 (msb (cast 16 false (var ac0))) (cast 16 false (var ac0)))))
 d "mpykr 0x22, ac1, ac2" 1e2261 0x0 (set ac2 (& (+ (* (bv 40 0x22) (cast 40 (msb (cast 16 false (var ac1))) (cast 16 false (var ac1)))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
 d "mack t1, 0x33, ac0, ac1" 1e3316 0x0 (set ac1 (+ (var ac0) (* (cast 40 (msb (var t1)) (var t1)) (bv 40 0x33))))
@@ -155,13 +225,29 @@ d "neg t1, ar4" 345c 0x0 (set ar4 (- (bv 16 0x0) (var t1)))
 d "not t2, ar5" 366d 0x0 (set ar5 (~ (var t2)))
 d "psh ac1, ac2" 3812 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (* (cast 24 false (var sp)) (bv 24 0x2)) (cast 32 false (var ac1))) (set sp (- (var sp) (bv 16 0x2))) (storew 0 (* (cast 24 false (var sp)) (bv 24 0x2)) (cast 32 false (var ac2))))
 d "pop ac3, t0" 3a34 0x0 (seq (set ac3 (| (& (var ac3) (bv 40 0xff00000000)) (cast 40 false (loadw 0 32 (* (cast 24 false (var sp)) (bv 24 0x2)))))) (set sp (+ (var sp) (bv 16 0x2))) (set t0 (loadw 0 16 (* (cast 24 false (var sp)) (bv 24 0x2)))) (set sp (+ (var sp) (bv 16 0x1))))
+d "|| psh ac0, t0" 3904 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (* (cast 24 false (var sp)) (bv 24 0x2)) (cast 32 false (var ac0))) (set sp (- (var sp) (bv 16 0x1))) (storew 0 (* (cast 24 false (var sp)) (bv 24 0x2)) (var t0)))
+d "psh ar0, ar4" 388c 0x0 (seq (set sp (- (var sp) (bv 16 0x1))) (storew 0 (* (cast 24 false (var sp)) (bv 24 0x2)) (var ar0)) (set sp (- (var sp) (bv 16 0x1))) (storew 0 (* (cast 24 false (var sp)) (bv 24 0x2)) (var ar4)))
 d "mov 0xF, t0" 3cf4 0x0 (set t0 (bv 16 0xf))
 d "mov -0xF, t1" 3ef5
 d "add 0xF, t2" 40f6 0x0 (set t2 (+ (var t2) (bv 16 0xf)))
 d "sub 0xF, t3" 42f7 0x0 (set t3 (- (var t3) (bv 16 0xf)))
 d "mov hi(ac0), ar0" 4408 0x0 (set ar0 (cast 16 false (>> (var ac0) (bv 8 0x10) false)))
-d "sfts ac0, #-1" 4440
+d "mov hi(ac0), ac0" 4400 0x0 (set ac0 (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))))
+d "mov hi(ac1), ac0" 4410 0x0 (set ac0 (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false))))
+d "mov hi(ac0), ar7" 440f 0x0 (set ar7 (cast 16 false (>> (var ac0) (bv 8 0x10) false)))
+d "|| mov hi(ac0), ac0" 4500 0x0 (set ac0 (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))))
+d "sfts ac0, #-1" 4440 0x0 (set ac0 (>> (var ac0) (bv 6 0x1) (msb (var ac0))))
 d "sfts ac0, #1" 4450 0x0 (set ac0 (<< (var ac0) (bv 6 0x1) false))
+d "sfts t0, #1" 4454 0x0 (set t0 (<< (var t0) (bv 6 0x1) false))
+d "sfts ar0, #1" 4458 0x0 (set ar0 (<< (var ar0) (bv 6 0x1) false))
+d "|| sfts ac0, #1" 4550 0x0 (set ac0 (<< (var ac0) (bv 6 0x1) false))
+d "mov sp, ac0" 4480 0x0 (set ac0 (cast 40 (msb (var sp)) (var sp)))
+d "mov ssp, ac0" 4490 0x0 (set ac0 (cast 40 (msb (var ssp)) (var ssp)))
+d "mov cdp, ac0" 44a0 0x0 (set ac0 (cast 40 (msb (var cdp)) (var cdp)))
+d "mov brc0, ac0" 44c0 0x0 (set ac0 (cast 40 (msb (var brc0)) (var brc0)))
+d "mov rptc, ac0" 44e0 0x0 (set ac0 (cast 40 (msb (var rptc)) (var rptc)))
+d "mov sp, ar0" 4488 0x0 (set ar0 (var sp))
+d "|| mov sp, ac0" 4580 0x0 (set ac0 (cast 40 (msb (var sp)) (var sp)))
 d "mov sp, ar0" 4488 0x0 (set ar0 (var sp))
 d "mov ssp, ar1" 4499 0x0 (set ar1 (var ssp))
 d "mov cdp, ar2" 44aa 0x0 (set ar2 (var cdp))
@@ -187,15 +273,40 @@ d "b 0x7F" 4a7f 0x0 (jmp (bv 24 0x81))
 d "rptblocal 0x7F" 4aff 0x0 nop
 d "rpt 0xFF" 4cff 0x0 nop
 d "aadd 0xFF, sp" 4eff 0x0 (set sp (+ (var sp) (bv 16 0xff)))
+d "aadd 0x08, sp" 4e08 0x0 (set sp (+ (var sp) (bv 16 0x8)))
+d "|| aadd 0x01, sp" 4f01 0x0 (set sp (+ (var sp) (bv 16 0x1)))
 d "sftl ac0, #1" 5000 0x0 (set ac0 (<< (var ac0) (bv 6 0x1) false))
-d "sftl ac0, #-1" 5001
+d "sftl ac0, #-1" 5001 0x0 (set ac0 (>> (var ac0) (bv 6 0x1) false))
+d "sftl t0, #1" 5040 0x0 (set t0 (<< (var t0) (bv 6 0x1) false))
+d "sftl ar0, #1" 5080 0x0 (set ar0 (<< (var ar0) (bv 6 0x1) false))
 d "pop ac0" 5002 0x0 (seq (set ac0 (| (& (var ac0) (bv 40 0xff00000000)) (cast 40 false (loadw 0 32 (* (cast 24 false (var sp)) (bv 24 0x2)))))) (set sp (+ (var sp) (bv 16 0x2))))
 d "pop dbl(ac0)" 5003 0x0 (seq (set ac0 (| (& (var ac0) (bv 40 0xff00000000)) (cast 40 false (loadw 0 32 (* (cast 24 false (var sp)) (bv 24 0x2)))))) (set sp (+ (var sp) (bv 16 0x2))))
 d "psh ac0" 5006 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (* (cast 24 false (var sp)) (bv 24 0x2)) (cast 32 false (var ac0))))
 d "psh dbl(ac0)" 5007 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (* (cast 24 false (var sp)) (bv 24 0x2)) (cast 32 false (var ac0))))
 d "popboth ac0" 5004
 d "pshboth ac0" 5005
+d "popboth xsp" 5044
+d "popboth xcdp" 5074
+d "popboth xar0" 5084
+d "pshboth xar7" 50f5
+d "|| popboth ac0" 5104
+d "pop t0" 5042 0x0 (seq (set t0 (loadw 0 16 (* (cast 24 false (var sp)) (bv 24 0x2)))) (set sp (+ (var sp) (bv 16 0x1))))
+d "psh t0" 5046 0x0 (seq (set sp (- (var sp) (bv 16 0x1))) (storew 0 (* (cast 24 false (var sp)) (bv 24 0x2)) (var t0)))
+d "pop ar0" 5082 0x0 (seq (set ar0 (loadw 0 16 (* (cast 24 false (var sp)) (bv 24 0x2)))) (set sp (+ (var sp) (bv 16 0x1))))
+d "psh ar0" 5086 0x0 (seq (set sp (- (var sp) (bv 16 0x1))) (storew 0 (* (cast 24 false (var sp)) (bv 24 0x2)) (var ar0)))
+d "pop dbl(ac0)" 5083 0x0 (seq (set ac0 (| (& (var ac0) (bv 40 0xff00000000)) (cast 40 false (loadw 0 32 (* (cast 24 false (var sp)) (bv 24 0x2)))))) (set sp (+ (var sp) (bv 16 0x2))))
+d "psh dbl(ac2)" 5067 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (* (cast 24 false (var sp)) (bv 24 0x2)) (cast 32 false (var ac2))))
+d "|| pop ac0" 5102 0x0 (seq (set ac0 (| (& (var ac0) (bv 40 0xff00000000)) (cast 40 false (loadw 0 32 (* (cast 24 false (var sp)) (bv 24 0x2)))))) (set sp (+ (var sp) (bv 16 0x2))))
+d "|| psh ac0" 5106 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (* (cast 24 false (var sp)) (bv 24 0x2)) (cast 32 false (var ac0))))
 d "mov ac0, hi(ac0)" 5200 0x0 (set ac0 (| (& (var ac0) (bv 40 0xff0000ffff)) (<< (cast 40 false (cast 16 false (var ac0))) (bv 6 0x10) false)))
+d "mov ac0, hi(ac1)" 5201 0x0 (set ac1 (| (& (var ac1) (bv 40 0xff0000ffff)) (<< (cast 40 false (cast 16 false (var ac0))) (bv 6 0x10) false)))
+d "mov t0, hi(ac0)" 5240 0x0 (set ac0 (| (& (var ac0) (bv 40 0xff0000ffff)) (<< (cast 40 false (var t0)) (bv 6 0x10) false)))
+d "mov ar0, hi(ac0)" 5280 0x0 (set ac0 (| (& (var ac0) (bv 40 0xff0000ffff)) (<< (cast 40 false (var ar0)) (bv 6 0x10) false)))
+d "|| mov ac0, hi(ac0)" 5300 0x0 (set ac0 (| (& (var ac0) (bv 40 0xff0000ffff)) (<< (cast 40 false (cast 16 false (var ac0))) (bv 6 0x10) false)))
+d "mov ac0, sp" 5208 0x0 (set sp (cast 16 false (var ac0)))
+d "mov ac0, csr" 520c 0x0 (set csr (cast 16 false (var ac0)))
+d "mov ac0, brc0" 520e 0x0 (set brc0 (cast 16 false (var ac0)))
+d "mov t0, sp" 5248 0x0 (set sp (var t0))
 d "mov ac0, sp" 5208 0x0 (set sp (cast 16 false (var ac0)))
 d "mov ac0, ssp" 5209 0x0 (set ssp (cast 16 false (var ac0)))
 d "mov ac0, cdp" 520a 0x0 (set cdp (cast 16 false (var ac0)))
@@ -203,24 +314,86 @@ d "mov ac0, csr" 520c 0x0 (set csr (cast 16 false (var ac0)))
 d "mov ac0, brc1" 520d 0x0 (set brc1 (cast 16 false (var ac0)))
 d "mov ac0, brc0" 520e 0x0 (set brc0 (cast 16 false (var ac0)))
 d "addrv ac1, ac2" 5491
-d "sqar ac1, ac2" 5493 0x0 (set ac2 (* (cast 40 (msb (cast 16 false (var ac1))) (cast 16 false (var ac1))) (cast 40 (msb (cast 16 false (var ac1))) (cast 16 false (var ac1)))))
+d "addv ac0" 5400 0x0 (set ac0 (+ (var ac0) (ite (msb (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))) (- (bv 40 0x0) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))))))
+d "addrv ac0" 5401 0x0 (set ac0 (+ (var ac0) (ite (msb (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))) (- (bv 40 0x0) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))))))
+d "addv ac1, ac2" 5490 0x0 (set ac2 (+ (var ac2) (ite (msb (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false)))) (- (bv 40 0x0) (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false)))) (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false))))))
+d "addrv ac1, ac2" 5491 0x0 (set ac2 (+ (var ac2) (ite (msb (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false)))) (- (bv 40 0x0) (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false)))) (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false))))))
+d "addv ac1, ac0" 5410 0x0 (set ac0 (+ (var ac0) (ite (msb (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false)))) (- (bv 40 0x0) (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false)))) (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false))))))
+d "sqar ac1, ac2" 5493 0x0 (set ac2 (& (+ (+ (var ac2) (* (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false))))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
 d "sqsr ac1, ac2" 5495
-d "mpyr ac1, ac2" 5497 0x0 (set ac2 (& (+ (* (cast 40 (msb (cast 16 false (var ac1))) (cast 16 false (var ac1))) (cast 40 (msb (cast 16 false (var ac2))) (cast 16 false (var ac2)))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
-d "sqrr ac1, ac2" 5499 0x0 (set ac2 (& (+ (* (cast 40 (msb (cast 16 false (var ac1))) (cast 16 false (var ac1))) (cast 40 (msb (cast 16 false (var ac1))) (cast 16 false (var ac1)))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
+d "mpyr ac1, ac2" 5497 0x0 (set ac2 (& (+ (* (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 40 (msb (cast 16 false (>> (var ac2) (bv 8 0x10) false))) (cast 16 false (>> (var ac2) (bv 8 0x10) false)))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
+d "mpy ac1, ac2" 5496 0x0 (set ac2 (* (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 40 (msb (cast 16 false (>> (var ac2) (bv 8 0x10) false))) (cast 16 false (>> (var ac2) (bv 8 0x10) false)))))
+d "sqr ac1, ac2" 5498 0x0 (set ac2 (* (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false)))))
+d "sqa ac1, ac2" 5492 0x0 (set ac2 (+ (var ac2) (* (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false))))))
+d "sqs ac1, ac2" 5494 0x0 (set ac2 (- (var ac2) (* (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false))))))
+d "mpy ac0" 5406 0x0 (set ac0 (* (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))))
+d "sqr ac0" 5408 0x0 (set ac0 (* (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))))
+d "sqa ac0" 5402 0x0 (set ac0 (+ (var ac0) (* (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))))))
+d "sqr ac0, ac3" 54c8 0x0 (set ac3 (* (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))))
+d "sqrr ac1, ac2" 5499 0x0 (set ac2 (& (+ (* (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false)))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
 d "round ac1, ac2" 549b 0x0 (set ac2 (& (+ (var ac1) (bv 40 0x8000)) (bv 40 0xffffff0000)))
 d "satr ac1, ac2" 549d 0x0 (set ac2 (ite (! (sle (var ac1) (bv 40 0x7fffffff))) (bv 40 0x7fffffff) (ite (&& (sle (var ac1) (bv 40 0xff80000000)) (! (== (var ac1) (bv 40 0xff80000000)))) (bv 40 0xff80000000) (var ac1))))
-d "macr ac0, t0, ac0" 5601 0x0 (set ac0 (& (+ (+ (var ac0) (* (cast 40 (msb (cast 16 false (var ac0))) (cast 16 false (var ac0))) (cast 40 (msb (var t0)) (var t0)))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
-d "macr ac0, t0, ac1, ac1" 5641 0x0 (set ac1 (& (+ (+ (var ac1) (* (cast 40 (msb (cast 16 false (var ac0))) (cast 16 false (var ac0))) (cast 40 (msb (var t0)) (var t0)))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
-d "macr ac1, t0, ac0, ac1" 5843 0x0 (set ac1 (& (+ (+ (var ac0) (* (cast 40 (msb (cast 16 false (var ac1))) (cast 16 false (var ac1))) (cast 40 (msb (var t0)) (var t0)))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
-d "masr t0, ac0, ac1" 5643 0x0 (set ac1 (& (+ (- (var ac1) (* (cast 40 (msb (var t0)) (var t0)) (cast 40 (msb (cast 16 false (var ac0))) (cast 16 false (var ac0))))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
-d "mpyr t0, ac0, ac1" 5841 0x0 (set ac1 (& (+ (* (cast 40 (msb (var t0)) (var t0)) (cast 40 (msb (cast 16 false (var ac0))) (cast 16 false (var ac0)))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
+d "round ac0" 540a 0x0 (set ac0 (& (+ (var ac0) (bv 40 0x8000)) (bv 40 0xffffff0000)))
+d "round ac1, ac2" 549a 0x0 (set ac2 (& (+ (var ac1) (bv 40 0x8000)) (bv 40 0xffffff0000)))
+d "sat ac0" 540c 0x0 (set ac0 (ite (! (sle (var ac0) (bv 40 0x7fffffff))) (bv 40 0x7fffffff) (ite (&& (sle (var ac0) (bv 40 0xff80000000)) (! (== (var ac0) (bv 40 0xff80000000)))) (bv 40 0xff80000000) (var ac0))))
+d "sat ac1, ac2" 549c 0x0 (set ac2 (ite (! (sle (var ac1) (bv 40 0x7fffffff))) (bv 40 0x7fffffff) (ite (&& (sle (var ac1) (bv 40 0xff80000000)) (! (== (var ac1) (bv 40 0xff80000000)))) (bv 40 0xff80000000) (var ac1))))
+d "satr ac0" 540d 0x0 (set ac0 (ite (! (sle (var ac0) (bv 40 0x7fffffff))) (bv 40 0x7fffffff) (ite (&& (sle (var ac0) (bv 40 0xff80000000)) (! (== (var ac0) (bv 40 0xff80000000)))) (bv 40 0xff80000000) (var ac0))))
+d "macr ac0, t0, ac0" 5601 0x0 (set ac0 (& (+ (+ (var ac0) (* (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 40 (msb (var t0)) (var t0)))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
+d "macr ac0, t0, ac1, ac1" 5641 0x0 (set ac1 (& (+ (+ (var ac1) (* (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 40 (msb (var t0)) (var t0)))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
+d "macr ac1, t0, ac0, ac1" 5843 0x0 (set ac1 (& (+ (+ (var ac0) (* (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 40 (msb (var t0)) (var t0)))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
+d "masr t0, ac0, ac1" 5643 0x0 (set ac1 (& (+ (- (var ac1) (* (cast 40 (msb (var t0)) (var t0)) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
+d "mac ac0, t0, ac0" 5600 0x0 (set ac0 (+ (var ac0) (* (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 40 (msb (var t0)) (var t0)))))
+d "mac ac1, t0, ac0, ac0" 5610 0x0 (set ac0 (+ (var ac0) (* (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 40 (msb (var t0)) (var t0)))))
+d "mas t0, ac0" 5602 0x0 (set ac0 (- (var ac0) (* (cast 40 (msb (var t0)) (var t0)) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))))))
+d "mas t0, ac1, ac0" 5612 0x0 (set ac0 (- (var ac0) (* (cast 40 (msb (var t0)) (var t0)) (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false))))))
+d "mac ac0, t2, ac3, ac3" 56c8 0x0 (set ac3 (+ (var ac3) (* (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 40 (msb (var t2)) (var t2)))))
+d "mas t2, ac0, ac3" 56ca 0x0 (set ac3 (- (var ac3) (* (cast 40 (msb (var t2)) (var t2)) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))))))
+d "mpyr t0, ac0, ac1" 5841 0x0 (set ac1 (& (+ (* (cast 40 (msb (var t0)) (var t0)) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
+d "mpy t0, ac0" 5800 0x0 (set ac0 (* (cast 40 (msb (var t0)) (var t0)) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))))
+d "mpy t0, ac1, ac0" 5810 0x0 (set ac0 (* (cast 40 (msb (var t0)) (var t0)) (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false)))))
+d "mpyr t0, ac0" 5801 0x0 (set ac0 (& (+ (* (cast 40 (msb (var t0)) (var t0)) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
+d "mpy t2, ac0, ac3" 58c8 0x0 (set ac3 (* (cast 40 (msb (var t2)) (var t2)) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))))
+d "sftl ac0, t0" 5c00 0x0 (set ac0 (ite (&& (sle (var t0) (bv 16 0x0)) (! (== (var t0) (bv 16 0x0)))) (>> (var ac0) (- (bv 16 0x0) (var t0)) false) (<< (var ac0) (var t0) false)))
+d "sfts ac0, t0" 5c01 0x0 (set ac0 (ite (&& (sle (var t0) (bv 16 0x0)) (! (== (var t0) (bv 16 0x0)))) (>> (var ac0) (- (bv 16 0x0) (var t0)) (msb (var ac0))) (<< (var ac0) (var t0) false)))
+d "sftl ac1, t0, ac0" 5c10 0x0 (set ac0 (ite (&& (sle (var t0) (bv 16 0x0)) (! (== (var t0) (bv 16 0x0)))) (>> (var ac1) (- (bv 16 0x0) (var t0)) false) (<< (var ac1) (var t0) false)))
+d "sfts ac1, t0, ac0" 5c11 0x0 (set ac0 (ite (&& (sle (var t0) (bv 16 0x0)) (! (== (var t0) (bv 16 0x0)))) (>> (var ac1) (- (bv 16 0x0) (var t0)) (msb (var ac1))) (<< (var ac1) (var t0) false)))
+d "sftl ac0, t1, ac1" 5c44 0x0 (set ac1 (ite (&& (sle (var t1) (bv 16 0x0)) (! (== (var t1) (bv 16 0x0)))) (>> (var ac0) (- (bv 16 0x0) (var t1)) false) (<< (var ac0) (var t1) false)))
+d "sftl ac3, t2, ac2" 5cb8 0x0 (set ac2 (ite (&& (sle (var t2) (bv 16 0x0)) (! (== (var t2) (bv 16 0x0)))) (>> (var ac3) (- (bv 16 0x0) (var t2)) false) (<< (var ac3) (var t2) false)))
+d "mpym *sp(#0h), *cdp, ac0" d10000 0x0 (set ac0 (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2))))))
+d "mpym *sp(#0h), *cdp+, ac0" d10001 0x0 (seq (set ac0 (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))) (set xcdp (+ (var xcdp) (bv 23 0x1))))
+d "mpym *ar0, *cdp, ac0" d10100 0x0 (set ac0 (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2))))))
+d "mpymr *sp(#0h), *cdp, ac0" d10040 0x0 (set ac0 (& (+ (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2))))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
+d "macm *sp(#0h), *cdp, ac0" d10004 0x0 (set ac0 (+ (var ac0) (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))))
+d "masm *sp(#0h), *cdp, ac0" d10008 0x0 (set ac0 (- (var ac0) (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))))
+d "macmr *sp(#0h), *cdp, ac0" d10044 0x0 (set ac0 (& (+ (+ (var ac0) (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
+d "macm *sp(#0h), ac0, ac1" d20010 0x0 (set ac1 (+ (var ac1) (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))))))
+d "masm *sp(#0h), ac0, ac1" d20014 0x0 (set ac1 (- (var ac1) (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))))))
+d "macmr *sp(#0h), ac0, ac1" d20050 0x0 (set ac1 (& (+ (+ (var ac1) (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
+d "macm *sp(#0h), t0, ac0" d40000 0x0 (set ac0 (+ (var ac0) (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 (msb (var t0)) (var t0)))))
+d "macm *sp(#0h), t0, ac0, ac1" d40010 0x0 (set ac1 (+ (var ac0) (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 (msb (var t0)) (var t0)))))
+d "masm *sp(#0h), t0, ac0, ac1" d50010 0x0 (set ac1 (- (var ac0) (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 (msb (var t0)) (var t0)))))
+d "mpym *sp(#0h), ac0, ac1" d30010 0x0 (set ac1 (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))))
+d "mpym *sp(#0h), t0, ac0" d30004 0x0 (set ac0 (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 (msb (var t0)) (var t0))))
+d "mpymr *sp(#0h), ac0" d30040 0x0 (set ac0 (& (+ (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
+d "mpy *sp(#0h), uns(*cdp), ac0" d00004 0x0 (set ac0 (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 false (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2))))))
+d "mac *sp(#0h), uns(*cdp), ac0" d00008 0x0 (set ac0 (+ (var ac0) (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 false (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))))
+d "mas *sp(#0h), uns(*cdp), ac0" d0000c 0x0 (set ac0 (- (var ac0) (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 false (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))))
+d "mpym *sp(#0h), *(cdp+t0), ac0" d10003 0x0 (seq (set ac0 (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))) (set xcdp (+ (var xcdp) (cast 23 (msb (var t0)) (var t0)))))
+d "mpy *sp(#0h), uns(*(cdp+t0)), ac0" d00007 0x0 (seq (set ac0 (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 false (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))) (set xcdp (+ (var xcdp) (cast 23 (msb (var t0)) (var t0)))))
+d "mpym t3=*sp(#0h), *cdp, ac0" d10080 0x0 (seq (set t3 (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (set ac0 (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))))
+d "macm t3=*ar0, t0, ac0" d40180 0x0 (seq (set t3 (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (set ac0 (+ (var ac0) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (var t0)) (var t0))))))
 d "add ac0 << t0, ac0" 5a00 0x0 (set ac0 (+ (var ac0) (<< (var ac0) (var t0) false)))
 d "sub ac0 << t0, ac0" 5a01 0x0 (set ac0 (- (var ac0) (<< (var ac0) (var t0) false)))
 d "sftcc ac0, tc1" 5a02
 d "sftcc ac0, tc2" 5a03
+d "sftcc ac1, tc1" 5a42
+d "sftcc ac2, tc1" 5a82
+d "sftcc ac3, tc1" 5ac2
 d "sftl ac0, t0, ac1" 5c40 0x0 (set ac1 (ite (&& (sle (var t0) (bv 16 0x0)) (! (== (var t0) (bv 16 0x0)))) (>> (var ac0) (- (bv 16 0x0) (var t0)) false) (<< (var ac0) (var t0) false)))
 d "sfts ac0, t0, ac1" 5c41 0x0 (set ac1 (ite (&& (sle (var t0) (bv 16 0x0)) (! (== (var t0) (bv 16 0x0)))) (>> (var ac0) (- (bv 16 0x0) (var t0)) (msb (var ac0))) (<< (var ac0) (var t0) false)))
 d "sftsc ac0, t0, ac1" 5c42
+d "sftsc ac0, t0" 5c02
+d "sftsc ac1, t0, ac0" 5c12
 d "swap ac0, ac2" 5e00 0x0 (seq (set ac0 (^ (var ac0) (var ac2))) (set ac2 (^ (var ac2) (var ac0))) (set ac0 (^ (var ac0) (var ac2))))
 d "swap ac1, ac3" 5e01 0x0 (seq (set ac1 (^ (var ac1) (var ac3))) (set ac3 (^ (var ac3) (var ac1))) (set ac1 (^ (var ac1) (var ac3))))
 d "swap t0, t2" 5e04 0x0 (seq (set t0 (^ (var t0) (var t2))) (set t2 (^ (var t2) (var t0))) (set t0 (^ (var t0) (var t2))))
@@ -238,14 +411,37 @@ d "swapp ar4, t0" 5e1c 0x0 (seq (set ar4 (^ (var ar4) (var t0))) (set t0 (^ (var
 d "swapp ar6, t2" 5e1e 0x0 (seq (set ar6 (^ (var ar6) (var t2))) (set t2 (^ (var t2) (var ar6))) (set ar6 (^ (var ar6) (var t2))) (set ar7 (^ (var ar7) (var t3))) (set t3 (^ (var t3) (var ar7))) (set ar7 (^ (var ar7) (var t3))))
 d "swap4 ar4, t0" 5e2c 0x0 (seq (set ar4 (^ (var ar4) (var t0))) (set t0 (^ (var t0) (var ar4))) (set ar4 (^ (var ar4) (var t0))) (set ar5 (^ (var ar5) (var t1))) (set t1 (^ (var t1) (var ar5))) (set ar5 (^ (var ar5) (var t1))) (set ar6 (^ (var ar6) (var t2))) (set t2 (^ (var t2) (var ar6))) (set ar6 (^ (var ar6) (var t2))) (set ar7 (^ (var ar7) (var t3))) (set t3 (^ (var t3) (var ar7))) (set ar7 (^ (var ar7) (var t3))))
 d "swap ar0, ar1" 5e38 0x0 (seq (set ar0 (^ (var ar0) (var ar1))) (set ar1 (^ (var ar1) (var ar0))) (set ar0 (^ (var ar0) (var ar1))))
+d "add ac0 << t0, ac0" 5a00 0x0 (set ac0 (+ (var ac0) (<< (var ac0) (var t0) false)))
+d "sub ac0 << t0, ac0" 5a01 0x0 (set ac0 (- (var ac0) (<< (var ac0) (var t0) false)))
+d "add ac1 << t0, ac0" 5a10 0x0 (set ac0 (+ (var ac0) (<< (var ac1) (var t0) false)))
+d "add ac0 << t1, ac1" 5a44 0x0 (set ac1 (+ (var ac1) (<< (var ac0) (var t1) false)))
+d "add ac3 << t3, ac3" 5afc 0x0 (set ac3 (+ (var ac3) (<< (var ac3) (var t3) false)))
+d "sub ac3 << t3, ac3" 5afd 0x0 (set ac3 (- (var ac3) (<< (var ac3) (var t3) false)))
+d "bclr 0x0, st0_55" 4600 0x0 (set st0_55 (& (var st0_55) (bv 16 0xfffe)))
+d "bset 0x0, st0_55" 4601 0x0 (set st0_55 (| (var st0_55) (bv 16 0x1)))
+d "bclr 0x0, st1_55" 4602 0x0 (set st1_55 (& (var st1_55) (bv 16 0xfffe)))
+d "bclr 0x0, st3_55" 4606 0x0 (set st3_55 (& (var st3_55) (bv 16 0xfffe)))
+d "bclr 0xE, st0_55" 46e0 0x0 (set st0_55 (& (var st0_55) (bv 16 0xbfff)))
+d "bset 0xE, st0_55" 46e1 0x0 (set st0_55 (| (var st0_55) (bv 16 0x4000)))
+d "amov 0x0000, ac0" 77000000 0x0 (set ac0 (bv 40 0x0))
+d "amov 0xFF12, ac3" 77ff1230 0x0 (set ac3 (bv 40 0xff12))
+d "amov 0x0000, t0" 77000040 0x0 (set t0 (bv 16 0x0))
+d "amov 0x0000, ar4" 770000c0 0x0 (set ar4 (bv 16 0x0))
+d "amov 0x00FF, ac0" 7700ff00 0x0 (set ac0 (bv 40 0xff))
 d "b 0x123456" 6a123456 0x0 (jmp (bv 24 0x123456))
 d "call 0x123456" 6c123456 0x0 (jmp (bv 24 0x123456))
 d "bcc 0xF, ac0 == 0" 6780 0x0 (branch (== (var ac0) (bv 40 0x0)) (jmp (bv 24 0x11)) nop)
-d "bcc 0x1234, ac0 == 0" 6d001234 0x0 (branch (== (var ac0) (bv 40 0x0)) (jmp (bv 24 0x38)) nop)
-d "bcc 0x123456, ac0 == 0" 6800123456 0x0 (branch (== (var ac0) (bv 40 0x0)) (jmp (bv 24 0x5b)) nop)
+d "bcc 0x1234, ac0 == 0" 6d001234 0x0 (branch (== (var ac0) (bv 40 0x0)) (jmp (bv 24 0x1238)) nop)
+d "bcc 0x123456, ac0 == 0" 6800123456 0x0 (branch (== (var ac0) (bv 40 0x0)) (jmp (bv 24 0x123456)) nop)
 d "bcc 0x22, ac0 == 0x11" 6f001122 0x0 (branch (== (var ac0) (bv 40 0x11)) (jmp (bv 24 0x26)) nop)
 d "callcc 0x123456, ac0 == 0" 6900123456 0x0 (branch (== (var ac0) (bv 40 0x0)) (jmp (bv 24 0x123456)) nop)
-d "callcc 0x1234, ac0 == 0" 6e001234 0x0 (branch (== (var ac0) (bv 40 0x0)) (jmp (bv 24 0x1234)) nop)
+d "callcc 0x1234, ac0 == 0" 6e001234 0x0 (branch (== (var ac0) (bv 40 0x0)) (jmp (bv 24 0x1238)) nop)
+d "xcc tc1" 9664 0x0 nop
+d "bcc 0x1234, tc1" 6d641234 0x0 (branch (lsb (>> (var st0_55) (bv 4 0xd) false)) (jmp (bv 24 0x1238)) nop)
+d "bcc 0x1234, !carry" 6d761234 0x0 (branch (! (lsb (>> (var st0_55) (bv 4 0xb) false))) (jmp (bv 24 0x1238)) nop)
+d "bcc 0x123456, tc1" 6864123456 0x0 (branch (lsb (>> (var st0_55) (bv 4 0xd) false)) (jmp (bv 24 0x123456)) nop)
+d "callcc 0x1234, tc1" 6e641234 0x0 (branch (lsb (>> (var st0_55) (bv 4 0xd) false)) (jmp (bv 24 0x1238)) nop)
+d "retcc tc1" 026400
 d "add 0x1122 << 0x0, ac1, ac0" 70112240 0x0 (set ac0 (+ (var ac1) (<< (bv 40 0x1122) (bv 8 0x0) false)))
 d "sub 0x1122 << 0x1, ac1, ac0" 71112241 0x0 (set ac0 (- (var ac1) (<< (bv 40 0x1122) (bv 8 0x1) false)))
 d "and 0x1122 << 0x2, ac1, ac0" 72112242 0x0 (set ac0 (& (var ac1) (<< (bv 40 0x1122) (bv 8 0x2) false)))
@@ -253,7 +449,11 @@ d "or 0x1122 << 0x3, ac1, ac0" 73112243 0x0 (set ac0 (| (var ac1) (<< (bv 40 0x1
 d "xor 0x1122 << 0x4, ac1, ac0" 74112244 0x0 (set ac0 (^ (var ac1) (<< (bv 40 0x1122) (bv 8 0x4) false)))
 d "mov 0x1122 << 0x5, ac0" 75112245
 d "bfxtr 0x1122, ac0, ac0" 76112200
+d "bfxtr 0x0000, ac1, ac0" 76000001
+d "bfxtr 0x0000, ac0, ac1" 76000010
+d "bfxtr 0x0000, ac0, t0" 76000040
 d "bfxpa 0x1122, ac0, ac0" 76112204
+d "bfxpa 0x0000, ac1, ac0" 76000005
 d "mov 0x1122, ac0" 76112208 0x0 (set ac0 (bv 40 0x1122))
 d "amov 0x1122, ac0" 77112200 0x0 (set ac0 (bv 40 0x1122))
 d "mov 0x1122, dp" 78112200 0x0 (set dp (bv 16 0x1122))
@@ -278,6 +478,9 @@ d "sub 0x1122, ac0, t0" 7c112240 0x0 (set t0 (cast 16 false (- (var ac0) (bv 40 
 d "and 0x1122, ac0, t0" 7d112240 0x0 (set t0 (& (cast 16 false (var ac0)) (bv 16 0x1122)))
 d "or 0x1122, ac0, t0" 7e112240 0x0 (set t0 (| (cast 16 false (var ac0)) (bv 16 0x1122)))
 d "xor 0x1122, ac0, t0" 7f112240 0x0 (set t0 (^ (cast 16 false (var ac0)) (bv 16 0x1122)))
+d "add 0x8000, ac0" 7b800000 0x0 (set ac0 (+ (var ac0) (bv 40 0x8000)))
+d "sub 0x8000, ac0, ac1" 7c800010 0x0 (set ac1 (- (var ac0) (bv 40 0xffffff8000)))
+d "and 0x8000, ac0, ac0" 7d800000 0x0 (set ac0 (& (var ac0) (bv 40 0x8000)))
 d "idle" 7a00000c
 d "mov dbl(*ar0), dbl(*ar7(t0))" 8003f0 0x0 (storew 0 (* (+ (cast 24 false (var xar7)) (cast 24 (msb (var t0)) (var t0))) (bv 24 0x2)) (loadw 0 32 (* (cast 24 false (var xar0)) (bv 24 0x2))))
 d "mov dbl(*ar1+), dbl(*(ar6 - t1))" 802760 0x0 (seq (storew 0 (* (cast 24 false (var xar6)) (bv 24 0x2)) (loadw 0 32 (* (cast 24 false (var xar1)) (bv 24 0x2)))) (set xar1 (+ (var xar1) (bv 23 0x1))) (set xar6 (- (var xar6) (cast 23 (msb (var t1)) (var t1)))))
@@ -311,9 +514,51 @@ d "amar *ar0 :: mac *ar0, *cdp, ac0" 83000c00 0x0 (seq nop (set ac0 (+ (var ac0)
 d "amar *ar0 :: mac *ar0, *cdp, ac0 >> #16" 84000400 0x0 (seq nop (set ac0 (+ (>> (var ac0) (bv 6 0x10) (msb (var ac0))) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2))))))))
 d "amar *ar0 :: mas *ar0, *cdp, ac0" 85000000 0x0 (seq nop (set ac0 (- (var ac0) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2))))))))
 d "amar *ar0, *ar0, *cdp" 85000800 0x0 nop
-d "firsadd *ar0, *ar0, *cdp, ac0, ac0" 85000c00
-d "firssub *ar0, *ar0, *cdp, ac0, ac0" 85000c10
+d "firsadd *ar0, *ar0, *cdp, ac0, ac0" 85000c00 0x0 (seq (set ac0 (+ (var ac0) (* (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2))))))) (set ac0 (+ (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (bv 8 0x10) false) (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (bv 8 0x10) false))))
+d "firssub *ar0, *ar0, *cdp, ac0, ac0" 85000c10 0x0 (seq (set ac0 (+ (var ac0) (* (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2))))))) (set ac0 (- (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (bv 8 0x10) false) (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (bv 8 0x10) false))))
+d "firsadd *ar1+, *ar3-, *cdp, ac1, ac1" 8525ac44 0x0 (seq (set ac1 (+ (var ac1) (* (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2))))))) (set ac1 (+ (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar1)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar1)) (bv 24 0x2)))) (bv 8 0x10) false) (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar3)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar3)) (bv 24 0x2)))) (bv 8 0x10) false))) (set xar1 (+ (var xar1) (bv 23 0x1))) (set xar3 (- (var xar3) (bv 23 0x1))))
+d "firsadd *ar0, *ar0, *cdp+, ac0, ac0" 85000d00 0x0 (seq (set ac0 (+ (var ac0) (* (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2))))))) (set ac0 (+ (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (bv 8 0x10) false) (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (bv 8 0x10) false))) (set xcdp (+ (var xcdp) (bv 23 0x1))))
+d "firsadd *ar0+, *ar0, *cdp, ac1, ac2" 85040c84 0x0 (seq (set ac2 (+ (var ac2) (* (cast 40 (msb (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 16 false (>> (var ac1) (bv 8 0x10) false))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2))))))) (set ac1 (+ (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (bv 8 0x10) false) (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (bv 8 0x10) false))) (set xar0 (+ (var xar0) (bv 23 0x1))))
 d "mpym *ar0, *ar0, ac0" 86000000 0x0 (set ac0 (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2))))))
+d "mpym uns(*ar0), uns(*ar0), ac0" 8600000c 0x0 (set ac0 (* (cast 40 false (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 false (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2))))))
+d "mpym40 *ar0, *ar0, ac0" 86000010 0x0 (set ac0 (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2))))))
+d "mpym *ar1+, *ar2, ac0" 86250000 0x0 (seq (set ac0 (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar1)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar1)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar2)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar2)) (bv 24 0x2)))))) (set xar1 (+ (var xar1) (bv 23 0x1))))
+d "macm *ar0, *ar0, ac0" 86000020 0x0 (set ac0 (+ (var ac0) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))))))
+d "macm *ar0, *ar0, ac1, ac0" 86000420 0x0 (set ac0 (+ (var ac1) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))))))
+d "macm uns(*ar1+), *ar3-, ac3, ac0" 8625ac28 0x0 (seq (set ac0 (+ (var ac3) (* (cast 40 false (loadw 0 16 (* (cast 24 false (var xar1)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar3)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar3)) (bv 24 0x2))))))) (set xar1 (+ (var xar1) (bv 23 0x1))) (set xar3 (- (var xar3) (bv 23 0x1))))
+d "masm *ar0, *ar0, ac0" 86000060 0x0 (set ac0 (- (var ac0) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))))))
+d "masm *ar0, *ar0, ac1, ac0" 86000460 0x0 (set ac0 (- (var ac1) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))))))
+d "macm t3=*ar0, *ar0, ac0" 86000022 0x0 (seq (set t3 (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (set ac0 (+ (var ac0) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2))))))))
+d "macm *ar0, *ar0, ac0 >> #16" 86000040 0x0 (set ac0 (+ (>> (var ac0) (bv 6 0x10) (msb (var ac0))) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))))))
+d "macm *ar0, *ar0, ac1 >> #16, ac0" 86000440 0x0 (set ac0 (+ (>> (var ac1) (bv 6 0x10) (msb (var ac1))) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))))))
+d "macm *ar0, *ar0, ac0 >> #16, ac1" 86000140 0x0 (set ac1 (+ (>> (var ac0) (bv 6 0x10) (msb (var ac0))) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))))))
+d "macm *ar1+, *ar2, ac0 >> #16" 86250040 0x0 (seq (set ac0 (+ (>> (var ac0) (bv 6 0x10) (msb (var ac0))) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar1)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar1)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar2)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar2)) (bv 24 0x2))))))) (set xar1 (+ (var xar1) (bv 23 0x1))))
+d "macmr *ar0, *ar0, ac0 >> #16" 86000041 0x0 (set ac0 (& (+ (+ (>> (var ac0) (bv 6 0x10) (msb (var ac0))) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
+d "macm40 *ar0, *ar0, ac0 >> #16" 86000050 0x0 (set ac0 (+ (>> (var ac0) (bv 6 0x10) (msb (var ac0))) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))))))
+d "sqdst *ar0, *ar0, ac0, ac0" 860000e0 0x0 (seq (set ac0 (+ (var ac0) (* (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))))) (set ac0 (- (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (bv 8 0x10) false) (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (bv 8 0x10) false))))
+d "sqdst *ar1+, *ar2, ac0, ac3" 86250ce0 0x0 (seq (set ac3 (+ (var ac3) (* (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))))) (set ac0 (- (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar1)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar1)) (bv 24 0x2)))) (bv 8 0x10) false) (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar2)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar2)) (bv 24 0x2)))) (bv 8 0x10) false))) (set xar1 (+ (var xar1) (bv 23 0x1))))
+d "sqdst *ar0, *ar0, ac0, ac1" 860004e0 0x0 (seq (set ac1 (+ (var ac1) (* (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))))) (set ac0 (- (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (bv 8 0x10) false) (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (bv 8 0x10) false))))
+d "abdst *ar0, *ar0, ac0, ac0" 860000f0 0x0 (seq (set ac0 (+ (var ac0) (ite (sle (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (bv 40 0x0)) (- (bv 40 0x0) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))))) (set ac0 (- (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (bv 8 0x10) false) (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (bv 8 0x10) false))))
+d "abdst *ar1+, *ar2, ac0, ac3" 86250cf0 0x0 (seq (set ac3 (+ (var ac3) (ite (sle (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (bv 40 0x0)) (- (bv 40 0x0) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))))) (set ac0 (- (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar1)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar1)) (bv 24 0x2)))) (bv 8 0x10) false) (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar2)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar2)) (bv 24 0x2)))) (bv 8 0x10) false))) (set xar1 (+ (var xar1) (bv 23 0x1))))
+d "abdst *ar0, *ar0, ac0, ac1" 860004f0 0x0 (seq (set ac1 (+ (var ac1) (ite (sle (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (bv 40 0x0)) (- (bv 40 0x0) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))) (cast 40 (msb (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))))) (set ac0 (- (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (bv 8 0x10) false) (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (bv 8 0x10) false))))
+d "lms *ar1+, *ar2, ac0, ac3" 86250cc0 0x0 (seq (set lms_acx (var ac0)) (set ac3 (+ (var ac3) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar1)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar1)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar2)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar2)) (bv 24 0x2))))))) (set ac0 (& (+ (+ (var lms_acx) (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar1)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar1)) (bv 24 0x2)))) (bv 8 0x10) false)) (bv 40 0x8000)) (bv 40 0xffffff0000))) (set xar1 (+ (var xar1) (bv 23 0x1))))
+d "lms *ar0, *ar0, ac0, ac1" 860004c0 0x0 (seq (set lms_acx (var ac0)) (set ac1 (+ (var ac1) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2))))))) (set ac0 (& (+ (+ (var lms_acx) (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (bv 8 0x10) false)) (bv 40 0x8000)) (bv 40 0xffffff0000))))
+d "lms *ar0, *ar0, ac0, ac0" 860000c0 0x0 (seq (set lms_acx (var ac0)) (set ac0 (+ (var ac0) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2))))))) (set ac0 (& (+ (+ (var lms_acx) (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (bv 8 0x10) false)) (bv 40 0x8000)) (bv 40 0xffffff0000))))
+d "amar *ar0+, *ar0, *cdp+" 85040900 0x0 (seq (set xar0 (+ (var xar0) (bv 23 0x1))) (set xcdp (+ (var xcdp) (bv 23 0x1))))
+d "amar *(ar0 + t0), *ar0, *(cdp+t0)" 850c0b00 0x0 (seq (set xar0 (+ (var xar0) (cast 23 (msb (var t0)) (var t0)))) (set xcdp (+ (var xcdp) (cast 23 (msb (var t0)) (var t0)))))
+d "amar *ar0, *(ar0 + t0), *cdp" 85003800 0x0 (set xar0 (+ (var xar0) (cast 23 (msb (var t0)) (var t0))))
+d "amar *(ar0 + t1), *ar0, *cdp" 85100800 0x0 (set xar0 (+ (var xar0) (cast 23 (msb (var t1)) (var t1))))
+d "mpy *(ar0 + t1), *cdp, ac0 :: mpy *ar0, *cdp, ac0" 82100000 0x0 (seq (set ac0 (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))) (set xar0 (+ (var xar0) (cast 23 (msb (var t1)) (var t1)))) (set ac0 (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))))
+d "mpy *ar0(t0), *cdp, ac0 :: mpy *ar0, *cdp, ac0" 821c0000 0x0 (seq (set ac0 (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var xar0)) (cast 24 (msb (var t0)) (var t0))) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var xar0)) (cast 24 (msb (var t0)) (var t0))) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))) (set ac0 (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))))
+d "mpy *ar0, *cdp, ac0 :: mpy *(ar0 - t0), *cdp, ac0" 82005000 0x0 (seq (set ac0 (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))) (set ac0 (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))) (set xar0 (- (var xar0) (cast 23 (msb (var t0)) (var t0)))))
+d "mpy *ar0, *cdp, ac0 :: mpy *(ar0 - t1), *cdp, ac0" 82006000 0x0 (seq (set ac0 (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))) (set ac0 (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))) (set xar0 (- (var xar0) (cast 23 (msb (var t1)) (var t1)))))
+d "mpy *ar0, *cdp, ac0 :: mpy *ar0(t0), *cdp, ac0" 82007000 0x0 (seq (set ac0 (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))) (set ac0 (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var xar0)) (cast 24 (msb (var t0)) (var t0))) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var xar0)) (cast 24 (msb (var t0)) (var t0))) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))))
+d "amar *ar0 :: mpy uns(*ar0), uns(*cdp), ac1" 82000c84 0x0 (seq nop (set ac1 (* (cast 40 false (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 false (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))))
+d "amar *ar4 :: mac uns(*ar7-), uns(*cdp), ac1 >> #16" 8483a4c4 0x0 (seq nop (set ac1 (+ (>> (var ac1) (bv 6 0x10) (msb (var ac1))) (* (cast 40 false (loadw 0 16 (* (cast 24 false (var xar7)) (bv 24 0x2)))) (cast 40 false (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2))))))) (set xar7 (- (var xar7) (bv 23 0x1))))
+d "amar *ar0 :: mac uns(*(ar0 + t1)), uns(*cdp), ac1" 83004c84 0x0 (seq nop (set ac1 (+ (var ac1) (* (cast 40 false (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 false (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2))))))) (set xar0 (+ (var xar0) (cast 23 (msb (var t1)) (var t1)))))
+d "mas *ar1+, *cdp, ac1 :: mas uns(*ar3-), uns(*cdp), ac0" 8525a444 0x0 (seq (set ac1 (- (var ac1) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar1)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar1)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2))))))) (set xar1 (+ (var xar1) (bv 23 0x1))) (set ac0 (- (var ac0) (* (cast 40 false (loadw 0 16 (* (cast 24 false (var xar3)) (bv 24 0x2)))) (cast 40 false (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2))))))) (set xar3 (- (var xar3) (bv 23 0x1))))
+d "macr40 *ar0, *(cdp+t0), ac0 :: macr40 uns(*ar0), uns(*(cdp+t0)), ac0" 83000343 0x0 (seq (set ac0 (& (+ (+ (var ac0) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))) (bv 40 0x8000)) (bv 40 0xffffff0000))) (set xcdp (+ (var xcdp) (cast 23 (msb (var t0)) (var t0)))) (set ac0 (& (+ (+ (var ac0) (* (cast 40 false (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 false (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))) (bv 40 0x8000)) (bv 40 0xffffff0000))) (set xcdp (+ (var xcdp) (cast 23 (msb (var t0)) (var t0)))))
+d "mpy40 *ar7, *cdp+, ac0 :: mpy40 *ar2, *cdp+, ac0" 82e10102 0x0 (seq (set ac0 (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar7)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar7)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))) (set xcdp (+ (var xcdp) (bv 23 0x1))) (set ac0 (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar2)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar2)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))) (set xcdp (+ (var xcdp) (bv 23 0x1))))
 d "mpymr *ar0, *ar0, ac0" 86000001 0x0 (set ac0 (& (+ (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2))))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
 d "mpymr40 *ar0, *ar0, ac0" 86000011 0x0 (set ac0 (& (+ (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2))))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
 d "mpymr40 t3=*ar0, *ar0, ac0" 86000013 0x0 (seq (set t3 (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (set ac0 (& (+ (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2))))) (bv 40 0x8000)) (bv 40 0xffffff0000))))
@@ -325,19 +570,54 @@ d "macmr40 *ar0, *ar0, ac0, ac1" 86000131 0x0 (set ac1 (& (+ (+ (var ac0) (* (ca
 d "macmr40 *ar0, *ar0, ac0 >> #16" 86000051 0x0 (set ac0 (& (+ (+ (>> (var ac0) (bv 6 0x10) (msb (var ac0))) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
 d "macmr40 *ar0, *ar0, ac0 >> #16, ac1" 86000151 0x0 (set ac1 (& (+ (+ (>> (var ac0) (bv 6 0x10) (msb (var ac0))) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))))) (bv 40 0x8000)) (bv 40 0xffffff0000)))
 d "masmr40 t3=uns(*ar0), uns(*ar0), ac0, ac1" 8600017f 0x0 (seq (set t3 (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (set ac1 (& (+ (- (var ac0) (* (cast 40 false (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 false (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))))) (bv 40 0x8000)) (bv 40 0xffffff0000))))
-d "masm *ar0, t0, ac0 :: mov *ar0 << #16, ac0" 86000080
-d "macm *ar0, t0, ac0 :: mov *ar0 << #16, ac0" 860000a0
+d "masm *ar0, t0, ac0 :: mov *ar0 << #16, ac0" 86000080 0x0 (seq (set ac0 (- (var ac0) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (var t0)) (var t0))))) (set ac0 (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (bv 8 0x10) false)))
+d "macm *ar0, t0, ac0 :: mov *ar0 << #16, ac0" 860000a0 0x0 (seq (set ac0 (+ (var ac0) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (var t0)) (var t0))))) (set ac0 (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (bv 8 0x10) false)))
+d "masm t3=*ar1+, t2, ac0 :: mov *ar2 << #16, ac3" 86250c8a 0x0 (seq (set t3 (loadw 0 16 (* (cast 24 false (var xar1)) (bv 24 0x2)))) (set ac0 (- (var ac0) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar1)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar1)) (bv 24 0x2)))) (cast 40 (msb (var t2)) (var t2))))) (set xar1 (+ (var xar1) (bv 23 0x1))) (set ac3 (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar2)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar2)) (bv 24 0x2)))) (bv 8 0x10) false)))
+d "masm t3=*ar0, t0, ac1 :: mov *ar0 << #16, ac0" 86000182 0x0 (seq (set t3 (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (set ac1 (- (var ac1) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (var t0)) (var t0))))) (set ac0 (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (bv 8 0x10) false)))
+d "macm t3=*ar0, t0, ac1 :: mov *ar0 << #16, ac1" 860005a2 0x0 (seq (set t3 (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (set ac1 (+ (var ac1) (* (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (cast 40 (msb (var t0)) (var t0))))) (set ac1 (<< (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (bv 8 0x10) false)))
 d "mpym *ar0, t0, ac0 :: mov hi(ac0 << t2), *ar0" 87000000
 d "macm *ar0, t0, ac0 :: mov hi(ac0 << t2), *ar0" 87000020
 d "masm *ar0, t0, ac0 :: mov hi(ac0 << t2), *ar0" 87000040
-d "lms *ar0, *ar0, ac0, ac0" 860000c0
-d "sqdst *ar0, *ar0, ac0, ac0" 860000e0
-d "abdst *ar0, *ar0, ac0, ac0" 860000f0
 d "lmsf *ar0, *ar0, ac0, ac0" 87000061
 d "add *ar0 << #16, ac0, ac0 :: mov hi(ac0 << t2), *ar0" 87000080
 d "sub *ar0 << #16, ac0, ac0 :: mov hi(ac0 << t2), *ar0" 870000a0
 d "mov *ar0 << #16, ac0 :: mov hi(ac0 << t2), *ar0" 870000c0
 d "mov ac0, ac0" 9000 0x0 (set ac0 (var ac0))
+d "mov ac0, ac1" 9001 0x0 (set ac1 (var ac0))
+d "mov xar0, ac0" 9080 0x0 (set ac0 (cast 40 false (var xar0)))
+d "mov ac0, xar0" 9008 0x0 (set xar0 (cast 23 false (var ac0)))
+d "mov xar4, xar4" 90cc 0x0 (set xar4 (var xar4))
+d "not ac0" 3600 0x0 (set ac0 (~ (var ac0)))
+d "not ac0, ac1" 3601 0x0 (set ac1 (~ (var ac0)))
+d "not ac0, t0" 3604
+d "|| not ac3" 3733 0x0 (set ac3 (~ (var ac3)))
+d "neg ac0" 3400 0x0 (set ac0 (- (bv 40 0x0) (var ac0)))
+d "abs ac0" 3200 0x0 (set ac0 (ite (&& (sle (var ac0) (bv 40 0x0)) (! (== (var ac0) (bv 40 0x0)))) (- (bv 40 0x0) (var ac0)) (var ac0)))
+d "max ac0" 2e00 0x0 (set ac0 (ite (! (sle (var ac0) (var ac0))) (var ac0) (var ac0)))
+d "min ac0, ac1" 3001 0x0 (set ac1 (ite (&& (sle (var ac0) (var ac1)) (! (== (var ac0) (var ac1)))) (var ac0) (var ac1)))
+d "mov 0x44AA, dp" 7844aa00 0x0 (set dp (bv 16 0x44aa))
+d "mov 0x1234, bsac" 7812340e 0x0 (set bsac (bv 16 0x1234))
+d "mov 0x1234, sp" 78123410 0x0 (set sp (bv 16 0x1234))
+d "add 0x0044 << #16, ac0" 7a004400 0x0 (set ac0 (+ (var ac0) (<< (bv 40 0x44) (bv 8 0x10) false)))
+d "sub 0x8000 << #16, ac1, ac0" 7a800042 0x0 (set ac0 (- (var ac1) (<< (bv 40 0xffffff8000) (bv 8 0x10) false)))
+d "and 0x8000 << #16, ac0" 7a800004 0x0 (set ac0 (& (var ac0) (<< (bv 40 0x8000) (bv 8 0x10) false)))
+d "xor 0xFFFF << #16, ac0, ac1" 7affff18 0x0 (set ac1 (^ (var ac0) (<< (bv 40 0xffff) (bv 8 0x10) false)))
+d "mov 0x8000 << #16, ac2" 7a80002a 0x0 (set ac2 (bv 40 0xff80000000))
+d "add 0x1234 << 0x8, ac0" 70123408 0x0 (set ac0 (+ (var ac0) (<< (bv 40 0x1234) (bv 8 0x8) false)))
+d "sub 0x8000 << 0xF, ac1, ac0" 7180004f 0x0 (set ac0 (- (var ac1) (<< (bv 40 0xffffff8000) (bv 8 0xf) false)))
+d "and 0x8000 << 0x4, ac0" 72800004 0x0 (set ac0 (& (var ac0) (<< (bv 40 0x8000) (bv 8 0x4) false)))
+d "or 0x1234 << 0x4, ac0" 73123404 0x0 (set ac0 (| (var ac0) (<< (bv 40 0x1234) (bv 8 0x4) false)))
+d "mov 0x1234 << 0xA, ac2" 7512342a
+d "add ac0" 2400 0x0 (set ac0 (+ (var ac0) (var ac0)))
+d "sub ac3" 2633 0x0 (set ac3 (- (var ac3) (var ac3)))
+d "add t0" 2444 0x0 (set t0 (+ (var t0) (var t0)))
+d "mov -0x4, t0" 3e44
+d "mov -0xF, ar7" 3eff
+d "mov -0x0, ac0" 3e00
+d "mov 0x44A, brc1" 1644aa 0x0 (set brc1 (bv 16 0x44a))
+d "mov 0xFF0, bk03" 16ff04 0x0 (set bk03 (bv 16 0xff0))
+d "mov 0x000, csr" 160008 0x0 (set csr (bv 16 0x0))
+d "xor 0x1234 << 0x0, ac1, ac2" 74123460 0x0 (set ac2 (^ (var ac1) (<< (bv 40 0x1234) (bv 8 0x0) false)))
 d "b ac0" 9100 0x0 (jmp (cast 24 false (var ac0)))
 d "call ac0" 9200 0x0 (jmp (cast 24 false (var ac0)))
 d "reset" 9400
@@ -351,19 +631,169 @@ d "xcc ac0 == 0" 9f00 0x0 nop
 d "xccpart ac0 == 0" 9f80 0x0 nop# --- coverage expansion: additional instruction-class disassembly tests ---
 d "addsub t3, dual(*sp(#57h)), ac2" eeaeed
 d "addsub2cc *ar4+, ac3, t2, TC1, TC2, ac0" dd83ca
+d "addsub2cc *sp(#0h), ac3, t2, TC1, TC2, ac1" dd00da
+d "mov *sp(#0h) << t0, ac0" dd0003
+d "mov rnd(*sp(#0h) << t0), ac0" dd0043
+d "mov *sp(#9h) << t1, ac1" dd1217
 d "addsubcc *-ar7, ac0, TC2, ac3" defb31
+d "addsubcc *sp(#0h), ac1, TC1, ac0" de0040
+d "addsubcc *sp(#0h), ac3, TC1, ac0" de00c0
+d "addsubcc *sp(#0h), ac0, TC2, ac0" de0001
+d "addsubcc *sp(#0h), ac0, TC1, TC2, ac0" de0002
 d "band *cdp+, 0x1E70, TC1" f2911e70
 d "bnot ar3, *sp(#3Eh)" e37cbe
+d "bset ac0, *sp(#0h)" e3000c
+d "bclr t0, *sp(#0h)" e3004d
+d "bnot ar0, *sp(#0h)" e3008e
 d "btst 0x3, *ar0, TC2" dc013d
+d "btst 0x0, *sp(#0h), TC1" dc0000
+d "btst 0xF, *sp(#0h), TC1" dc00f0
+d "btst 0x0, *sp(#8h), TC1" dc1000
+d "btst 0x4, *sp(#0h), TC2" dc0041
+d "btst ac0, *ar0, tc1" e00100
+d "btst ac0, *ar0, tc2" e00101
+d "btst t0, *ar0, tc1" e00140
+d "btst ar7, *ar0, tc1" e001f0
+d "btst ac0, *ar0+, tc1" e00300
+d "band *ar0, 0x0000, TC1" f2010000
+d "band *ar0, 0x0000, TC2" f3010000
+d "band *ar0, 0xABCD, TC1" f201abcd
+d "band *ar2, 0x1234, TC1" f2411234
+d "mov *sp(#0h), dp" dc0002 0x0 (set dp (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2))))
+d "mov *sp(#0h), cdp" dc0012 0x0 (set cdp (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2))))
+d "mov *sp(#0h), dph" dc00c2 0x0 (set dph (cast 7 false (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))))
+d "mov *sp(#0h), pdp" dc00f2 0x0 (set pdp (cast 9 false (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))))
+d "mov *sp(#0h), csr" dc0003 0x0 (set csr (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2))))
+d "mov *sp(#0h), trn1" dc0043 0x0 (set trn1 (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2))))
 d "btstclr 0x8, *sp(#54h), TC1" e3a885
 d "btstnot 0xB, *ar2(t1), TC1" e357b8
 d "btstp Baddr, ac0" ece304
 d "btstset 0x5, *sp(#55h), TC1" e3aa51
+d "btstset 0x0, *sp(#0h), TC1" e30000
+d "btstset 0x0, *sp(#0h), TC2" e30002
+d "btstset 0xF, *sp(#0h), TC1" e300f0
+d "btstclr 0x0, *sp(#0h), TC2" e30006
+d "btstnot 0x0, *sp(#0h), TC2" e3000a
 d "delay *(ar0 - t1)" b615
+d "delay *ar0" b601
+d "delay *ar0+" b603
+d "delay *+ar0" b619
+d "mov *(ar0 + t0b), ac0" a01d
+d "mov *(ar0 - t0b), ac0" a01f
+d "mov *(ar4 + t0b), ac0" a09d
+d "mov ac0, *(ar0 + t0b)" c01d
+d "mov ac0, *(ar0 - t0b)" c01f
+d "delay *(ar0 + t0b)" b61d
+d "amar *(ar0 + t0b)" b41d
+d "amar *(ar0 - t0b)" b41f
 d "macmk *(ar2 + t0b), 0xB1, ac0, ac3" f85db134
 d "mpymk t3=*sp(#2h), 0x1C, ac2" f8041cea
 d "sqamr *-ar2, ac2" d25b6a
-d "sqrm *sp(#64h), ac2" d3c828
-d "sqsm *sp(#55h), ac3" d2aa3f
+d "sqrm *sp(#64h), ac2" d3c828 0x0 (set ac2 (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x64)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x64)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x64)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x64)) (bv 24 0x2))))))
+d "sqsm *sp(#55h), ac3" d2aa3f 0x0 (set ac3 (- (var ac3) (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x55)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x55)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x55)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x55)) (bv 24 0x2)))))))
 d "subadd t0, dual(*(ar5 - t0b)), ac2" eebf2f
 d "subc *ar4, ac3" de81f3
+d "subc *sp(#0h), ac1, ac0" de0043
+d "subc *sp(#0h), ac0, ac1" de0013
+d "subc *sp(#0h), ac1" de0053
+d "add *sp(#0h) << #16, ac0" de0004
+d "add *sp(#0h) << #16, ac1, ac0" de0044
+d "sub *sp(#0h) << #16, ac0" de0005
+d "sub ac0, *sp(#0h) << #16, ac0" de0006
+d "sub ac1, *sp(#0h) << #16, ac0" de0046
+d "addsub t0, *sp(#0h), ac0" de0008
+d "addsub t1, *sp(#0h), ac1" de0058
+d "subadd t0, *sp(#0h), ac0" de0009
+d "subadd t3, *sp(#0h), ac0" de00c9
+d "add *sp(#0h), ac0" df000c
+d "add uns(*sp(#0h)), ac0" df000d
+d "add *sp(#0h), ac1, ac0" df004c
+d "sub *sp(#0h), ac0" df000e
+d "sub uns(*sp(#0h)), ac3, ac0" df00cf
+d "mov *sp(#0h), ac0" df0004 0x0 (set ac0 (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))))
+d "mov uns(*sp(#0h)), ac0" df0005 0x0 (set ac0 (cast 40 false (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))))
+d "mov *sp(#0h), ac1" df0014 0x0 (set ac1 (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))))
+d "mov *ar0, ac0" df0104 0x0 (set ac0 (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))))
+d "mov high_byte(*sp(#0h)), ac0" df0000
+d "mov uns(high_byte(*sp(#0h))), ac0" df0001
+d "mov low_byte(*sp(#0h)), ac0" df0002
+d "mov low_byte(*sp(#0h)), ac3" df0032
+d "mov high_byte(*ar0), ac0" df0100
+d "add *sp(#0h), CARRY, ac0" df0008
+d "add uns(*sp(#0h)), CARRY, ac0" df0009
+d "add *sp(#0h), CARRY, ac1, ac0" df0048
+d "sub *sp(#0h), BORROW, ac0" df000a
+d "sub *sp(#0h), BORROW, ac1, ac0" df004a
+d "mov *ar0, ac0" a001 0x0 (set ac0 (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))))
+d "mov *ar0+, ac0" a003 0x0 (seq (set ac0 (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2))))) (set xar0 (+ (var xar0) (bv 23 0x1))))
+d "mov *(ar0 + t0), ac0" a007 0x0 (seq (set ac0 (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2))))) (set xar0 (+ (var xar0) (cast 23 (msb (var t0)) (var t0)))))
+d "mov *ar0(t1), ac0" a017 0x0 (set ac0 (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var xar0)) (cast 24 (msb (var t1)) (var t1))) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var xar0)) (cast 24 (msb (var t1)) (var t1))) (bv 24 0x2)))))
+d "mov *ar0, t0" a401 0x0 (set t0 (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2))))
+d "mov *ar0, ar0" a801 0x0 (set ar0 (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2))))
+d "mov *sp(#0h), ac0" a000 0x0 (set ac0 (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))))
+d "mov *sp(#10h), ac1" a120 0x0 (set ac1 (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x10)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x10)) (bv 24 0x2)))))
+d "mov ac0, *ar0" c001 0x0 (storew 0 (* (cast 24 false (var xar0)) (bv 24 0x2)) (cast 16 false (var ac0)))
+d "mov ac0, *sp(#0h)" c000 0x0 (storew 0 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)) (cast 16 false (var ac0)))
+d "mov t0, *ar0" c401 0x0 (storew 0 (* (cast 24 false (var xar0)) (bv 24 0x2)) (var t0))
+d "mov ar0, *ar0" c801 0x0 (storew 0 (* (cast 24 false (var xar0)) (bv 24 0x2)) (var ar0))
+d "mov hi(ac0), *ar0" bc01 0x0 (storew 0 (* (cast 24 false (var xar0)) (bv 24 0x2)) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))
+d "mov hi(ac0), *sp(#0h)" bc00 0x0 (storew 0 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)) (cast 16 false (>> (var ac0) (bv 8 0x10) false)))
+d "mov 0x12, *sp(#0h)" e60012 0x0 (storew 0 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)) (bv 16 0x12))
+d "mov 0xAB, *sp(#4h)" e608ab 0x0 (storew 0 (* (+ (cast 24 false (var sp)) (bv 24 0x4)) (bv 24 0x2)) (bv 16 0xab))
+d "mov 0x1234, *sp(#0h)" fb001234 0x0 (storew 0 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)) (bv 16 0x1234))
+d "mov *sp(#0h) << #16, ac0" b000
+d "mov *ar0 << #16, ac0" b001
+d "amar *sp(#0h)" b400 0x0 nop
+d "amar *ar0+" b403 0x0 (set xar0 (+ (var xar0) (bv 23 0x1)))
+d "psh *sp(#0h)" b500
+d "pop *ar0" bb01
+d "psh dbl(*sp(#0h))" b700
+d "pop dbl(*ar0)" b801
+
+d "mpymu *sp(#0h), t0, ac0" d3000c 0x0 (set ac0 (* (cast 40 false (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 false (var t0))))
+d "mpymu *ar1-, t0, ac0" d3250c 0x0 (seq (set ac0 (* (cast 40 false (loadw 0 16 (* (cast 24 false (var xar1)) (bv 24 0x2)))) (cast 40 false (var t0)))) (set xar1 (- (var xar1) (bv 23 0x1))))
+d "mpymu *sp(#0h), t0, ac1" d3001c 0x0 (set ac1 (* (cast 40 false (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (cast 40 false (var t0))))
+d "add *sp(#0h), ac0" d60000
+d "add *sp(#0h), ac0, ac1" d60010
+d "add *sp(#0h), ac0, t0" d60040
+d "add *ar0, ac1, ac0" d60101
+d "add *sp(#8h), ac0" d61000
+d "sub *sp(#0h), ac0" d70000
+d "sub *sp(#0h), ac0, ac1" d70010
+d "sub *sp(#0h), ac1, ac0" d70001
+d "and *sp(#0h), ac0, ac0" d90000 0x0 (set ac0 (& (var ac0) (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2))))))
+d "and *sp(#0h), ac1, ac0" d90001 0x0 (set ac0 (& (var ac1) (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2))))))
+d "and *sp(#0h), ac0, t0" d90040
+d "or *sp(#0h), ac0, ac0" da0000 0x0 (set ac0 (| (var ac0) (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2))))))
+d "or *sp(#0h), ac2, ac0" da0002 0x0 (set ac0 (| (var ac2) (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2))))))
+d "xor *sp(#0h), ac1, ac0" db0001 0x0 (set ac0 (^ (var ac1) (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x0)) (bv 24 0x2))))))
+d "and *sp(#0h), ar0, ac0" d90008
+d "xor *sp(#0h), ac0, t0" db0040
+d "sub ac0, *sp(#0h), ac0" d80000
+d "sub ac0, *sp(#0h), ac1" d80010
+d "sub ac1, *sp(#0h), ac0" d80001
+d "sub ac0, *sp(#0h), t0" d80040
+d "sub ac0, *ar0, ac0" d80100
+d "sub ar0, *sp(#0h), ac0" d80008
+d "add *sp(#0h) << t0, ac0" dd0000
+d "add *sp(#0h) << t0, ac0, ac1" dd0010
+d "sub *sp(#0h) << t0, ac0" dd0001
+d "add *sp(#0h) << t0, ac1, ac0" dd0040
+d "add *sp(#0h) << t2, ac0" dd0008
+d "add *ar0 << t0, ac0" dd0100
+d "add *ar0+ << t0, ac0" dd0300
+d "sub *sp(#0h) << t0, ac0, ac1" dd0011
+d "mpym *ar0(0x3412), *cdp, ac0" d10d003412 0x0 (set ac0 (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var xar0)) (bv 24 0x3412)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var xar0)) (bv 24 0x3412)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2))))))
+d "mpym *+ar0(0x3412), *cdp, ac0" d10f003412 0x0 (seq (set ac0 (* (cast 40 (msb (loadw 0 16 (* (+ (cast 24 false (var xar0)) (bv 24 0x3412)) (bv 24 0x2)))) (loadw 0 16 (* (+ (cast 24 false (var xar0)) (bv 24 0x3412)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))))) (set xar0 (+ (var xar0) (bv 23 0x3412))))
+d "mpym abs16(0x3412), *cdp, ac0" d111003412 0x0 (set ac0 (* (cast 40 (msb (loadw 0 16 (* (| (<< (cast 24 false (var dph)) (bv 8 0x10) false) (bv 24 0x3412)) (bv 24 0x2)))) (loadw 0 16 (* (| (<< (cast 24 false (var dph)) (bv 8 0x10) false) (bv 24 0x3412)) (bv 24 0x2)))) (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xcdp)) (bv 24 0x2))))))
+d "and 0xF91F, *sp(#3h)" f406f91f 0x0 (storew 0 (* (+ (cast 24 false (var sp)) (bv 24 0x3)) (bv 24 0x2)) (& (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x3)) (bv 24 0x2))) (bv 16 0xf91f)))
+d "and 0xFA00, *sp(#4Bh)" f496fa00 0x0 (storew 0 (* (+ (cast 24 false (var sp)) (bv 24 0x4b)) (bv 24 0x2)) (& (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x4b)) (bv 24 0x2))) (bv 16 0xfa00)))
+d "or 0x4100, *sp(#3h)" f5064100 0x0 (storew 0 (* (+ (cast 24 false (var sp)) (bv 24 0x3)) (bv 24 0x2)) (| (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x3)) (bv 24 0x2))) (bv 16 0x4100)))
+d "or 0x8000, *sp(#4Bh)" f5968000 0x0 (storew 0 (* (+ (cast 24 false (var sp)) (bv 24 0x4b)) (bv 24 0x2)) (| (loadw 0 16 (* (+ (cast 24 false (var sp)) (bv 24 0x4b)) (bv 24 0x2))) (bv 16 0x8000)))
+d "and 0x1234, *ar0" f4011234 0x0 (storew 0 (* (cast 24 false (var xar0)) (bv 24 0x2)) (& (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2))) (bv 16 0x1234)))
+d "or 0x2345, *ar0" f5012345 0x0 (storew 0 (* (cast 24 false (var xar0)) (bv 24 0x2)) (| (loadw 0 16 (* (cast 24 false (var xar0)) (bv 24 0x2))) (bv 16 0x2345)))
+d "amar *ar3, xar0" ec618e
+d "amar *ar6+, xar0" ecc38e
+d "amar *ar3, xar1" ec619e
+d "amar *ar3, t0" ec614e
+d "amar *sp(#20h), xar0" ec408e 0x0 (set xar0 (cast 23 false (+ (cast 24 false (var sp)) (bv 24 0x20))))
