@@ -869,14 +869,14 @@ EXPECT=<<EOF
 |      |:   0x100001a85      add   eax, 0x01
 |      |:   0x100001a88      mov   dword [var_34h], eax
 |      |`=< 0x100001a8b      jmp   0x100001a58
-|      `--> 0x100001a90      lea   rdi, qword data.100001e17           ; 0x100001e17 ; "\n" ; const char *format
+|      `--> 0x100001a90      lea   rdi, qword str.                     ; 0x100001e17 ; "\n" ; const char *format
 |           0x100001a97      mov   al, 0x00
 |           0x100001a99      call  sym.imp.printf                      ; int printf(const char *format)
 |           0x100001a9e      lea   rdi, qword reloc.__CFConstantStringClassReference.100002030 ; rsi
 |                                                                      ; 0x100002030
 |           0x100001aa5      mov   qword [var_40h], rdi
 |           0x100001aa9      mov   rsi, qword [var_40h]
-|           0x100001aad      lea   rdi, qword data.100001e28           ; 0x100001e28 ; "%p\n" ; const char *format
+|           0x100001aad      lea   rdi, qword str.p                    ; 0x100001e28 ; "%p\n" ; const char *format
 |           0x100001ab4      mov   dword [var_a8h], eax
 |           0x100001aba      mov   al, 0x00
 |           0x100001abc      call  sym.imp.printf                      ; int printf(const char *format)

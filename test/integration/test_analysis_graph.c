@@ -131,7 +131,7 @@ bool test_analysis_graph_more() {
 		"{\"id\":2,\"title\":\"str.RPISEC___CrackMe_v2.0\",\"offset\":134516134,\"out_nodes\":[]},"
 		"{\"id\":3,\"title\":\"str.\",\"offset\":134516164,\"out_nodes\":[]},"
 		"{\"id\":4,\"title\":\"str.Password:\",\"offset\":134516194,\"out_nodes\":[]},"
-		"{\"id\":5,\"title\":\"data.08048dee\",\"offset\":134516206,\"out_nodes\":[]}"
+		"{\"id\":5,\"title\":\"str.d\",\"offset\":134516206,\"out_nodes\":[]}"
 		"]}\n",
 		"graph json");
 	rz_graph_free(g);
