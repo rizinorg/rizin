@@ -152,6 +152,27 @@ end:
 	return ret;
 }
 
+/**
+ * \brief Query the remote stub for its name and version via qGDBServerVersion
+ *
+ * qGDBServerVersion is an LLDB protocol extension. The reply is a list of
+ * `key:value;` pairs, e.g. `name:debugserver;version:902.0.0;`. Stubs that do
+ * not implement it (such as gdbserver) reply with an empty packet, in which
+ * case this does nothing beyond emitting a debug log line.
+ */
+static void gdbr_query_gdb_server_version(libgdbr_t *g) {
+	if (send_msg(g, "qGDBServerVersion") < 0 || read_packet(g, false) < 0) {
+		return;
+	}
+	send_ack(g);
+	if (g->data_len == 0 || !*g->data) {
+		RZ_LOG_DEBUG("gdb: remote does not implement qGDBServerVersion\n");
+		return;
+	}
+	g->data[g->data_len] = '\0';
+	RZ_LOG_DEBUG("gdb: remote server version: %s\n", g->data);
+}
+
 int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	const char *message = "qSupported:multiprocess+;qRelocInsn+;xmlRegisters=i386";
 	int i;
@@ -234,6 +255,8 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 			g->no_ack = true;
 		}
 	}
+	// Query and log the remote server name/version (qGDBServerVersion)
+	gdbr_query_gdb_server_version(g);
 	if (g->remote_type == GDB_REMOTE_TYPE_LLDB) {
 		if ((ret = gdbr_connect_lldb(g)) < 0) {
 			goto end;
