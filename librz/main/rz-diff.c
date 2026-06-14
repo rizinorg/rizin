@@ -1,4 +1,5 @@
-// SPDX-FileCopyrightText: 2021 deroad <wargiof@libero.it>
+// SPDX-FileCopyrightText: 2021-2026 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021-2026 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
@@ -7,6 +8,8 @@
 #include <rz_diff.h>
 #include <rz_util.h>
 #include <rz_main.h>
+
+#define RZ_DIFF_DISTANCE_MAX_SIZE (1024 * 1024) // 1 miB
 
 #define SAFE_STR_DEF(x, y) (x ? x : y)
 #define SAFE_STR(x)        (x ? x : "")
@@ -29,6 +32,7 @@ typedef enum {
 	DIFF_DISTANCE_UNKNOWN = 0,
 	DIFF_DISTANCE_MYERS,
 	DIFF_DISTANCE_LEVENSHTEIN,
+	DIFF_DISTANCE_LCS_ROLLING,
 	DIFF_DISTANCE_SSDEEP,
 } DiffDistance;
 
@@ -207,6 +211,7 @@ static void rz_diff_show_help(bool usage_only) {
 		"-b",       "bits",         "Specify register size for arch (16 (thumb), 32, 64, ..)",
 		"-d",       "myers",        "Compute edit distance using Eugene W. Myers' O(ND) algorithm (no substitution)",
 		"-d",       "leven",        "Compute edit distance using Levenshtein O(N^2) algorithm (with substitution)",
+		"-d",       "lcs-roll",     "Compute edit distance using Myers+FastCDC with chunk size " RZ_STR_DEF(RZ_DIFF_LCS_ROLL_DEFAULT_BLOCK_SIZE) " (-0 to change chunk size)",
 		"-d",       "ssdeep",       "Compute edit distance using Context triggered piecewise hashing comparison",
 		"-i",       "",             "Use command line arguments instead of files (only for -d)",
 		"-H",       "",             "Hexadecimal visual mode",
@@ -346,6 +351,8 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_MYERS);
 		} else if (!strcmp(algorithm, "leven")) {
 			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_LEVENSHTEIN);
+		} else if (!strcmp(algorithm, "lcs-roll")) {
+			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_LCS_ROLLING);
 		} else if (!strcmp(algorithm, "ssdeep")) {
 			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_SSDEEP);
 		} else {
@@ -507,12 +514,23 @@ rz_diff_slurp_file_end:
 	return buffer;
 }
 
+static ut32 check_distance_max_size(ut32 size, const char *algo, const char *name) {
+	const ut32 max_size = RZ_DIFF_DISTANCE_MAX_SIZE;
+	if (size <= max_size) {
+		return size;
+	}
+
+	RZ_LOG_WARN("diff: length of buffer %s exceeds the limit size for %s distance (size: %u > max: %u); buffer length has been changed.\n", name, algo, size, max_size);
+	return max_size;
+}
+
 static bool rz_diff_calculate_distance(DiffContext *ctx) {
 	size_t a_size = 0;
 	size_t b_size = 0;
 	ut8 *a_buffer = NULL;
 	ut8 *b_buffer = NULL;
 	ut32 distance = 0;
+	st32 chunk_size = 0;
 	double similarity = 0.0;
 
 	if (ctx->command_line) {
@@ -535,14 +553,32 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 
 	switch (ctx->distance) {
 	case DIFF_DISTANCE_MYERS:
+		a_size = check_distance_max_size(a_size, "myers", "file0");
+		b_size = check_distance_max_size(b_size, "myers", "file1");
 		if (!rz_diff_myers_distance(a_buffer, a_size, b_buffer, b_size, &distance, &similarity)) {
 			rz_diff_error("failed to calculate distance with myers algorithm\n");
 			goto rz_diff_calculate_distance_bad;
 		}
 		break;
 	case DIFF_DISTANCE_LEVENSHTEIN:
+		a_size = check_distance_max_size(a_size, "levenshtein", "file0");
+		b_size = check_distance_max_size(b_size, "levenshtein", "file1");
 		if (!rz_diff_levenshtein_distance(a_buffer, a_size, b_buffer, b_size, &distance, &similarity)) {
 			rz_diff_error("failed to calculate distance with levenshtein algorithm\n");
+			goto rz_diff_calculate_distance_bad;
+		}
+		break;
+	case DIFF_DISTANCE_LCS_ROLLING:
+		chunk_size = RZ_DIFF_LCS_ROLL_DEFAULT_BLOCK_SIZE;
+		if (ctx->input_a) {
+			chunk_size = atoi(ctx->input_a);
+			if (chunk_size < 1) {
+				rz_diff_error("invalid to chunk size (%d)\n", chunk_size);
+				goto rz_diff_calculate_distance_bad;
+			}
+		}
+		if (!rz_diff_lcs_rolling_distance(a_buffer, a_size, b_buffer, b_size, chunk_size, &distance, &similarity)) {
+			rz_diff_error("failed to calculate distance with lcs rolling algorithm with chunk size %d\n", chunk_size);
 			goto rz_diff_calculate_distance_bad;
 		}
 		break;
@@ -568,6 +604,9 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 		if (ctx->distance != DIFF_DISTANCE_SSDEEP) {
 			pj_kn(pj, "distance", distance);
 		}
+		if (ctx->distance == DIFF_DISTANCE_LCS_ROLLING) {
+			pj_kn(pj, "chunk_size", chunk_size);
+		}
 		pj_end(pj);
 		printf("%s\n", pj_string(pj));
 		pj_free(pj);
@@ -580,7 +619,10 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 		// DIFF_MODE_STANDARD
 		printf("similarity: %.3f\n", similarity);
 		if (ctx->distance != DIFF_DISTANCE_SSDEEP) {
-			printf("distance: %d\n", distance);
+			printf("distance: %u\n", distance);
+		}
+		if (ctx->distance == DIFF_DISTANCE_LCS_ROLLING) {
+			printf("chunksize: %d\n", chunk_size);
 		}
 	}
 	free(a_buffer);

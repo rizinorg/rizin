@@ -19,7 +19,7 @@ static void byte_stringify(const ut8 *bytes, RzStrBuf *sb) {
 
 static bool byte_small_block_compare(const ut8 *a, ut32 a_left, const ut8 *b, ut32 b_left, ut32 *inc) {
 #define SMALL_CMP(bits) \
-	if (a_left > sizeof(ut##bits) && IS_PTR_ALIGNED(a, ut##bits) && IS_PTR_ALIGNED(b, ut##bits)) { \
+	if (a_left > sizeof(ut##bits) && b_left > sizeof(ut##bits) && IS_PTR_ALIGNED(a, ut##bits) && IS_PTR_ALIGNED(b, ut##bits)) { \
 		ut##bits *a_##bits = (ut##bits *)a; \
 		ut##bits *b_##bits = (ut##bits *)b; \
 		*inc = sizeof(ut##bits); \
@@ -40,12 +40,13 @@ static size_t byte_try_to_realign_buffer(const ut8 *a, ut32 a_size, const ut8 *b
 	const size_t max_size = RZ_MIN(a_size, b_size);
 	const size_t min_block = RZ_MIN(8, max_size);
 
-	for (size_t align = 0; align < DIFF_BYTE_REALIGN_SIZE && max_size <= (b_size - align); align++) {
-		size_t leftover = RZ_MIN(b_size - align, min_block);
+	for (size_t align = 0, b_left = b_size - align; align < DIFF_BYTE_REALIGN_SIZE && max_size <= b_left; align++, b_left = b_size - align) {
+		size_t leftover = RZ_MIN(b_left, min_block);
 		if (!memcmp(a, b + align, leftover)) {
 			return align;
 		}
 	}
+
 	return 0;
 }
 
