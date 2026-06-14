@@ -333,7 +333,7 @@ type: jmp
 type: call
 type: ujmp
 type: ucall
-type: ucall
+type: ill
 type: mov
 type: mov
 type: mov
@@ -446,7 +446,7 @@ EOF
 EXPECT=<<EOF
 arch     tms320
 cpu      c55x
-15
+16
 int main(int argc);
 arg int argc @ ar4
 7
@@ -474,7 +474,7 @@ afi @ dbg.main~^args
 EOF
 EXPECT=<<EOF
 cpu      c55x
-15
+16
 int main(int argc);
 arg int argc @ ar4
 7
@@ -496,7 +496,7 @@ afi @ dbg.main~^args
 EOF
 EXPECT=<<EOF
 cpu      c55x
-15
+16
 int main(int argc);
 arg int argc @ ar4
 7
@@ -520,7 +520,7 @@ afi @ sym._main~^call-refs
 EOF
 EXPECT=<<EOF
 cpu      c55x
-15
+16
 int main(int argc, char **argv, char **envp);
 0
 8
@@ -564,7 +564,7 @@ afi @ sym._main~^stackframe:0
 EOF
 EXPECT=<<EOF
 cpu      c55x
-15
+16
 int main(int argc, char **argv, char **envp);
 0
 stackframe: 11
@@ -675,8 +675,9 @@ NAME=c55x analysis: stackframe tracking propagates to afi (high-level summariser
 FILE=bins/tms320/emulateme_nostd.ccsv5.c55x.ticoff2.dbg.coff
 ARGS=-A
 CMDS=<<EOF
-# Each function with a prologue should have a non-zero stackframe.
-# This verifies the analyzer's stackop/stackptr fields are reaching afi.
+# dbg.main has a prologue (AADD K8, SP) so its stackframe is non-zero; the
+# leaf helpers below carry no stack frame and correctly report 0. This
+# verifies the analyzer's stackop/stackptr fields are reaching afi.
 afi @ dbg.main~^stackframe:0
 afi @ sym._decrypt~^stackframe:0
 afi @ sym._c_strlen~^stackframe:0
@@ -689,7 +690,7 @@ EOF
 EXPECT=<<EOF
 stackframe: 11
 stackframe: 0
-stackframe: 2
+stackframe: 0
 stackframe: 0
 args: 1
 locals: 0
@@ -702,8 +703,8 @@ e asm.arch=tms320
 e analysis.cpu=c55x
 # The disassembler tags each instruction with a named TMS320C55InsID, which
 # the analyzer surfaces on op->id (Capstone-style). These values are the
-# positions in the TMS320C55_INS_* enum (see tms320_insn.h): B=12, CALL=26,
-# RET=67, NOP=59, PSH=64, POP=62, AND=10, MOV=53, INTR=39, TRAP=96.
+# positions in the TMS320C55_INS_* enum (see tms320_insn.h): B=14, CALL=28,
+# RET=69, NOP=61, PSH=66, POP=64, AND=12, MOV=55, INTR=41, TRAP=98.
 wx 060020 @ 0
 ao 1 @ 0~id
 wx 080020 @ 0
@@ -726,16 +727,16 @@ wx 958f @ 0
 ao 1 @ 0~id
 EOF
 EXPECT=<<EOF
-id: 12
-id: 26
-id: 67
-id: 59
+id: 14
+id: 28
+id: 69
+id: 61
+id: 66
 id: 64
-id: 62
-id: 10
-id: 53
-id: 39
-id: 96
+id: 12
+id: 55
+id: 41
+id: 98
 EOF
 RUN
 
@@ -800,14 +801,14 @@ EXPECT=<<EOF
 |           0x00000139      mov   t0, ac0
 |           0x0000013b      bfxtr 0x00F0, ac0, ar2
 |           0x0000013f      and   0x0F, ac0, ar1
-|           0x00000142      amar  *(0x20536D), xar3
+|           0x00000142      amar  *(0x000608), xar3
 |           0x00000148      and   0xFFFF, ar2, ac1
-|           0x0000014c      mov   dbl(*(0x64626C)), xar2
+|           0x0000014c      mov   dbl(*(0x008000)), xar2
 |           0x00000152      mov   xar3, ac0
 |           0x00000154      add   ac1, ac0
 |           0x00000156      mov   xar2, ac1
 |           0x00000158      mov   ac0, xar2
-|           0x0000015a      add   dbl(*(0x64626C)), ac1
+|           0x0000015a      add   dbl(*(0x008002)), ac1
 |           0x00000160      mov   ac1, xar4
 |           0x00000162      mov   *ar2, *ar4
 |           0x00000165      mov   xar3, ac0
@@ -815,14 +816,14 @@ EXPECT=<<EOF
 |           0x0000016b      add   ac1, ac0
 |           0x0000016d      mov   ac0, xar3
 |           0x0000016f      mov   *ar3, ar1
-|           0x00000171      mov   dbl(*(0x64626C)), xar3
+|           0x00000171      mov   dbl(*(0x008000)), xar3
 |           0x00000177      mov   xar3, ac0
-|           0x00000179      add   dbl(*(0x64626C)), ac0
+|           0x00000179      add   dbl(*(0x008002)), ac0
 |           0x0000017f      mov   ac0, xar3
 |           0x00000181      mov   ar1, *(ar3 + t1)
-|           0x00000183      mov   dbl(*(0x64626C)), ac0
+|           0x00000183      mov   dbl(*(0x008002)), ac0
 |           0x00000189      add   0x2, ac0
-|           0x0000018b      mov   ac0, dbl(*(0x616330))
+|           0x0000018b      mov   ac0, dbl(*(0x008002))
 \           0x00000191      ret
 EOF
 RUN
@@ -850,21 +851,75 @@ EXPECT=<<EOF
 |       |   ;-- $C$DW$L$_uart_write_text$2$B:
 |       |   ;-- $C$L1:
 |      .--> 0x00000108      mov   xar0, ac3
-|      :|   0x0000010a      mov   dbl(*(0x64626C)), xar3
+|      :|   0x0000010a      mov   dbl(*(0x008000)), xar3
 |      :|   0x00000110      add   ac1, ac3
 |      :|   0x00000112      mov   ac3, xar2
 |      :|   0x00000114      mov   xar3, ac2
-|      :|   0x00000116      add   dbl(*(0x64626C)), ac2
+|      :|   0x00000116      add   dbl(*(0x008002)), ac2
 |      :|   0x0000011c      mov   ac2, xar3
 |      :|   0x0000011e      mov   *ar2, *ar3
-|      :|   0x00000121      mov   dbl(*(0x64626C)), ac2
+|      :|   0x00000121      mov   dbl(*(0x008002)), ac2
 |      :|   0x00000127      add   0x1, ac2
-|      :|   0x00000129      mov   ac2, dbl(*(0x616332))
+|      :|   0x00000129      mov   ac2, dbl(*(0x008002))
 |      :|   0x0000012f      add   0x1, ac1
 |      :|   0x00000131      cmpu  ac1 < ac0, tc1
 |      `==< 0x00000134      bcc   0xD1, tc1
 |       |   ;-- $C$L2:
 |       |   ;-- $C$DW$L$_uart_write_text$2$E:
 \       `-> 0x00000137      ret
+EOF
+RUN
+
+NAME=c55x analysis: flag-condition branch targets
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c55x
+wx 6d642000 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+ao 1 @ 0~^fail
+wx 6e642000 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+ao 1 @ 0~^stackptr
+EOF
+EXPECT=<<EOF
+type: cjmp
+jump: 0x00002004
+fail: 0x00000004
+type: ccall
+jump: 0x00002004
+stackptr: 2
+EOF
+RUN
+
+NAME=c55x analysis: psh/pop Smem stack effect (single / double word)
+FILE==
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c55x
+wx b501 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^stackptr
+wx bb01 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^stackptr
+wx b701 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^stackptr
+wx b801 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^stackptr
+EOF
+EXPECT=<<EOF
+type: push
+stackptr: 1
+type: pop
+stackptr: -1
+type: push
+stackptr: 2
+type: pop
+stackptr: -2
 EOF
 RUN

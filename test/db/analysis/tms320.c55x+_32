@@ -242,7 +242,7 @@ type: mul
 type: mul
 type: push
 type: pop
-type: upush
+type: push
 type: lea
 type: lea
 type: null
@@ -255,11 +255,11 @@ type: swi
 type: trap
 type: mov
 type: mov
-type: null
+type: ill
 type: cjmp
 jump: 0x00000008
 fail: 0x00000003
-type: xchg
+type: ill
 type: trap
 family: cpu
 type: trap
@@ -271,13 +271,13 @@ type: add
 type: add
 type: add
 type: mov
-type: cmp
+type: ill
 type: trap
 family: cpu
 type: trap
 family: cpu
-type: mov
-type: xchg
+type: ill
+type: ill
 type: trap
 family: cpu
 type: trap
@@ -289,12 +289,12 @@ type: add
 type: add
 type: add
 type: mov
-type: cmp
+type: ill
 type: trap
 family: cpu
 type: trap
 family: cpu
-type: mov
+type: ill
 EOF
 RUN
 
@@ -471,7 +471,7 @@ family: cpu
 type: cret
 reg: sp
 stackptr: -2
-type: upush
+type: push
 reg: sp
 direction: write
 stackptr: 2
@@ -517,8 +517,8 @@ CMDS=<<EOF
 e asm.arch=tms320
 e analysis.cpu=c55x+
 # op->id carries the named TMS320C55InsID resolved by the C55x+ token
-# decoder (positions in tms320_insn.h): AADD=1, INTR=39, NOP=59, POP=62,
-# PSH=64, RET=67, RETI=69, TRAP=96.
+# decoder (positions in tms320_insn.h): AADD=3, INTR=41, NOP=61, POP=64,
+# PSH=66, RET=69, RETI=71, TRAP=98.
 wx 21 @ 0
 ao 1 @ 0~id
 wx 0e00 @ 0
@@ -537,13 +537,13 @@ wx 0c10 @ 0
 ao 1 @ 0~id
 EOF
 EXPECT=<<EOF
-id: 67
-id: 64
-id: 62
-id: 39
-id: 96
 id: 69
-id: 59
+id: 66
+id: 64
+id: 41
+id: 98
+id: 71
+id: 61
 id: 1
 EOF
 RUN
