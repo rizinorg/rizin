@@ -278,11 +278,84 @@ bool test_message_digest_small_block_stringified() {
 	mu_end;
 }
 
+bool test_shake_edge_cases() {
+	RzHash *rh = rz_hash_new();
+	mu_assert_notnull(rh, "rz_hash_new");
+
+	{
+		ut8 data[170];
+		for (size_t i = 0; i < 170; i++) {
+			data[i] = (ut8)i;
+		}
+
+		RzHashCfg *md = rz_hash_cfg_new_with_algo2(rh, "shake-128");
+		mu_assert_notnull(md, "shake-128 cfg");
+		rz_hash_cfg_update(md, data, 3);
+		rz_hash_cfg_update(md, data + 3, 2);
+		rz_hash_cfg_update(md, data + 5, 6);
+		rz_hash_cfg_update(md, data + 11, 152);
+		rz_hash_cfg_update(md, data + 163, 6);
+		rz_hash_cfg_update(md, data + 169, 1);
+		rz_hash_cfg_final(md);
+
+		RzHashCfg *md_ref = rz_hash_cfg_new_with_algo2(rh, "shake-128");
+		mu_assert_notnull(md_ref, "shake-128 ref cfg");
+		rz_hash_cfg_update(md_ref, data, 170);
+		rz_hash_cfg_final(md_ref);
+
+		RzHashSize size, size_ref;
+		char *res = rz_hash_cfg_get_result_string(md, "shake-128", &size, false);
+		char *res_ref = rz_hash_cfg_get_result_string(md_ref, "shake-128", &size_ref, false);
+		mu_assert_streq(res, res_ref, "shake-128 chunked matches reference");
+
+		free(res);
+		free(res_ref);
+		rz_hash_cfg_free(md);
+		rz_hash_cfg_free(md_ref);
+	}
+
+	{
+		ut8 data[138];
+		for (size_t i = 0; i < 138; i++) {
+			data[i] = (ut8)i;
+		}
+
+		RzHashCfg *md = rz_hash_cfg_new_with_algo2(rh, "shake-256");
+		mu_assert_notnull(md, "shake-256 cfg");
+		rz_hash_cfg_update(md, data, 3);
+		rz_hash_cfg_update(md, data + 3, 2);
+		rz_hash_cfg_update(md, data + 5, 6);
+		rz_hash_cfg_update(md, data + 11, 120);
+		rz_hash_cfg_update(md, data + 131, 6);
+		rz_hash_cfg_update(md, data + 137, 1);
+		rz_hash_cfg_final(md);
+
+		RzHashCfg *md_ref = rz_hash_cfg_new_with_algo2(rh, "shake-256");
+		mu_assert_notnull(md_ref, "shake-256 ref cfg");
+		rz_hash_cfg_update(md_ref, data, 138);
+		rz_hash_cfg_final(md_ref);
+
+		RzHashSize size, size_ref;
+		char *res = rz_hash_cfg_get_result_string(md, "shake-256", &size, false);
+		char *res_ref = rz_hash_cfg_get_result_string(md_ref, "shake-256", &size_ref, false);
+		mu_assert_streq(res, res_ref, "shake-256 chunked matches reference");
+
+		free(res);
+		free(res_ref);
+		rz_hash_cfg_free(md);
+		rz_hash_cfg_free(md_ref);
+	}
+
+	rz_hash_free(rh);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_message_digest_configure);
 	mu_run_test(test_message_digest_api_stringified);
 	mu_run_test(test_message_digest_hmac_stringified);
 	mu_run_test(test_message_digest_small_block_stringified);
+	mu_run_test(test_shake_edge_cases);
 	return tests_passed != tests_run;
 }
 
