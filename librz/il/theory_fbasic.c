@@ -357,6 +357,10 @@ void *rz_il_handler_fexcept(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 		e = n->exception & RZ_FLOAT_E_INEXACT;
 		rz_il_vm_event_add(vm, rz_il_event_exception_new(RZ_IL_EVENT_EXC_FP_INEXACT));
 		break;
+	case RZ_FLOAT_E_INVALID_OP:
+		e = n->exception & RZ_FLOAT_E_INVALID_OP;
+		rz_il_vm_event_add(vm, rz_il_event_exception_new(RZ_IL_EVENT_EXC_FP_INVALID_OP));
+		break;
 	default:;
 	}
 

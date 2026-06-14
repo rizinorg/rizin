@@ -1394,6 +1394,19 @@ bool f32_ieee_cast_test(void) {
 	rz_float_free(expect);
 	rz_bv_free(val);
 
+	// 1-1b. zero
+	val = rz_bv_new_zero(32);
+	expect = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32, false);
+	cast_val = rz_float_cast_float(val, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect, cast_val), "test (cast-float 0)");
+	rz_float_free(cast_val);
+
+	cast_val = rz_float_cast_sfloat(val, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect, cast_val), "test (cast-sfloat 0)");
+	rz_float_free(cast_val);
+	rz_float_free(expect);
+	rz_bv_free(val);
+
 	// 1-2. normal
 	val = rz_bv_new_from_ut64(32, 12345678);
 	expect = rz_float_new_from_f32(12345678.0f);
@@ -1566,6 +1579,58 @@ static RzFloat *new_f80_from_bytes(const char *bytes) {
 	return ret;
 }
 
+bool f80_ieee_cast_sint_test(void) {
+	// binary80 has no hidden bit: the integer part of the significand is stored
+	// explicitly, unlike other IEEE-754 formats where it is implicit for normals
+	RzFloat *f80_val = new_f80_from_bytes("\x40\x00\xc0\x00\x00\x00\x00\x00\x00\x00");
+	RzBitVector *expected_bv = rz_bv_new_from_ut64(32, 3);
+	RzBitVector *cast_bv = rz_float_cast_sint(f80_val, 32, RZ_FLOAT_RMODE_RNE);
+
+	mu_assert_true(rz_bv_eq(expected_bv, cast_bv), "cast-sint preserves 3.0 in ieee754-bin80");
+
+	rz_float_free(f80_val);
+	rz_bv_free(expected_bv);
+	rz_bv_free(cast_bv);
+
+	mu_end;
+}
+
+bool f80_ieee_cast_sint_large_test(void) {
+	RzFloat *f80_val = new_f80_from_bytes("\x40\x1b\x80\x00\x00\x00\x00\x00\x00\x00");
+	RzBitVector *expected_bv = rz_bv_new_from_ut64(32, 1ULL << 28);
+	RzBitVector *cast_bv = rz_float_cast_sint(f80_val, 32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(rz_bv_eq(expected_bv, cast_bv), "cast-sint preserves 2^28 in ieee754-bin80");
+	rz_float_free(f80_val);
+	rz_bv_free(expected_bv);
+	rz_bv_free(cast_bv);
+
+	f80_val = new_f80_from_bytes("\x40\x1c\x80\x00\x00\x00\x00\x00\x00\x00");
+	expected_bv = rz_bv_new_from_ut64(32, 1ULL << 29);
+	cast_bv = rz_float_cast_sint(f80_val, 32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(rz_bv_eq(expected_bv, cast_bv), "cast-sint preserves 2^29 in ieee754-bin80");
+	rz_float_free(f80_val);
+	rz_bv_free(expected_bv);
+	rz_bv_free(cast_bv);
+
+	f80_val = new_f80_from_bytes("\x40\x1d\x80\x00\x00\x00\x00\x00\x00\x00");
+	expected_bv = rz_bv_new_from_ut64(32, 1ULL << 30);
+	cast_bv = rz_float_cast_sint(f80_val, 32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(rz_bv_eq(expected_bv, cast_bv), "cast-sint preserves 2^30 in ieee754-bin80");
+	rz_float_free(f80_val);
+	rz_bv_free(expected_bv);
+	rz_bv_free(cast_bv);
+
+	f80_val = new_f80_from_bytes("\x40\x1e\x80\x00\x00\x00\x00\x00\x00\x00");
+	expected_bv = rz_bv_new_from_ut64(32, 1ULL << 31);
+	cast_bv = rz_float_cast_sint(f80_val, 32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(rz_bv_eq(expected_bv, cast_bv), "cast-sint preserves 2^31 in ieee754-bin80");
+	rz_float_free(f80_val);
+	rz_bv_free(expected_bv);
+	rz_bv_free(cast_bv);
+
+	mu_end;
+}
+
 bool f80_ieee_add_test(void) {
 	RzFloat *x_f80 = new_f80_from_bytes("\x40\x00\xa6\x5f\x8f\x48\x12\x44\xca\x0b");
 	RzFloat *y_f80 = new_f80_from_bytes("\x3f\xfd\xc4\xf4\x67\x6e\x7d\x93\x40\x00");
@@ -1709,6 +1774,8 @@ bool all_tests() {
 	mu_run_test(f32_new_round_test);
 	mu_run_test(f32_ieee_fround_test);
 	mu_run_test(f32_ieee_cast_test);
+	mu_run_test(f80_ieee_cast_sint_test);
+	mu_run_test(f80_ieee_cast_sint_large_test);
 	mu_run_test(f80_ieee_add_test);
 	mu_run_test(f80_ieee_sub_test);
 	mu_run_test(f80_ieee_mul_test);
