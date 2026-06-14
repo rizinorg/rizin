@@ -363,6 +363,9 @@ s 0xe080
 pd 1
 s 0xe09c
 pd 1
+e asm.xrefs=false
+e asm.comments=false
+pd 3 @ 0x810
 EOF
 EXPECT=<<EOF
             ; DATA XREFS from fcn.00005b80 @ 0x5bb0, 0x5bec
@@ -375,5 +378,8 @@ EXPECT=<<EOF
 0x0000e0ac  64ca ffff 28ca ffff c8ca ffff 0000 0000  d...(...........
 0x0000e0bc  0000 0000                                ....
 
+            0x00000810      ret
+            0x00000814      ldr   x8, [x0]
+            0x00000818      add   x9, x8, 1
 EOF
 RUN

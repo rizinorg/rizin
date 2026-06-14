@@ -4010,6 +4010,43 @@ static bool addr_in_exec_section(RzBinObject *bo, ut64 addr) {
 	return sec && (sec->perm & RZ_PERM_X);
 }
 
+static bool addr_in_exec_segment(RzBinObject *bo, ut64 addr) {
+	RzBinSection *seg = rz_bin_get_segment_at(bo, addr, true);
+	return seg && (seg->perm & RZ_PERM_X);
+}
+
+/** \brief How a DATA xref's instruction relates to its target address. */
+typedef enum {
+	XREF_REF_OTHER = 0, ///< address computation, control flow, etc. — handled as before
+	XREF_REF_MEM_ACCESS, ///< load/store of the target: an unambiguous data access
+	XREF_REF_COINCIDENTAL_IMM, ///< immediate equals the target with no data access (e.g. `sub sp, sp, 0x810`)
+} XrefRefKind;
+
+/** \brief Classify how the instruction at \p from references \p target. */
+static XrefRefKind xref_ref_kind(RzCore *core, ut64 from, ut64 target) {
+	RzAnalysisOp *op = rz_core_analysis_op(core, from, RZ_ANALYSIS_OP_MASK_VAL);
+	if (!op) {
+		return XREF_REF_OTHER;
+	}
+	XrefRefKind kind = XREF_REF_OTHER;
+	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
+	case RZ_ANALYSIS_OP_TYPE_LOAD:
+	case RZ_ANALYSIS_OP_TYPE_STORE:
+		kind = XREF_REF_MEM_ACCESS;
+		break;
+	case RZ_ANALYSIS_OP_TYPE_MOV:
+	case RZ_ANALYSIS_OP_TYPE_LEA:
+		break; // address into a register: leave to the heuristic below
+	default:
+		if (op->val == target) {
+			kind = XREF_REF_COINCIDENTAL_IMM;
+		}
+		break;
+	}
+	rz_analysis_op_free(op);
+	return kind;
+}
+
 static void analysis_mark_xrefs_as_data(RzCore *core) {
 	int bits = rz_asm_get_bits(core->rasm);
 	ut64 ptr_size = bits == 64 ? 8 : 4;
@@ -4075,6 +4112,14 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 		if (!bo) {
 			continue;
 		}
+		// Only executable-region targets need classifying: reject constants that merely
+		// equal a code address (e.g. `sub sp, sp, 0x810`), while skipping the decode for
+		// the common data-section case.
+		bool in_exec_segment = addr_in_exec_segment(bo, target);
+		XrefRefKind ref_kind = in_exec_segment ? xref_ref_kind(core, xref->from, target) : XREF_REF_OTHER;
+		if (ref_kind == XREF_REF_COINCIDENTAL_IMM) {
+			continue;
+		}
 		bool target_in_exec = addr_in_exec_section(bo, target);
 		if (target_in_exec) {
 			ut8 buf[8] = { 0 };
@@ -4093,14 +4138,13 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 				// stored value is a code pointer — skip
 				continue;
 			}
-			if (!val_sec) {
-				// address do not refer to a section in ELF
+			// A load/store marks the target directly, covering whole literal pools
+			// regardless of distance (e.g. K64F sym.poweroff entries at 0x11d4/0x11d8).
+			// Other refs keep the conservative heuristic: accept only padding right
+			// after the referencing function.
+			if (ref_kind != XREF_REF_MEM_ACCESS && !val_sec) {
 				ut64 fcn_end = fcn_from->addr + rz_analysis_function_linear_size(fcn_from);
-				if (target < fcn_end) {
-					continue;
-				}
-				// not padding
-				if (target - fcn_end >= ptr_size) {
+				if (target < fcn_end || target - fcn_end >= ptr_size) {
 					continue;
 				}
 			}
