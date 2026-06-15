@@ -20,7 +20,7 @@ static ut32 chunk_lcs(const FastCDCChunk *a, const FastCDCChunk *b) {
 }
 
 /**
- * \brief      Calculates the distance between two buffers using the LCS (myers) + rolling hash (FastCDC)
+ * \brief      Calculates the distance between two buffers using the LCS (Myers) + rolling hash (FastCDC)
  *
  * \param[in]  a           Buffer A to compare
  * \param[in]  la          Length of buffer A

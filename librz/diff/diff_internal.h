@@ -14,11 +14,15 @@
 #define FASTCDC_AVG_SIZE_DEFAULT (1024 * 1024) // 1miB
 #define FASTCDC_SEED_DEFAULT     0
 
+/**
+ * The normalization levels control how aggressively FastCDC pushes
+ * chunk sizes toward the target average size.
+ */
 typedef enum {
-	FASTCDC_NORM_DISABLED = 0,
-	FASTCDC_NORM_LVL_1,
-	FASTCDC_NORM_LVL_2,
-	FASTCDC_NORM_LVL_3,
+	FASTCDC_NORM_DISABLED = 0, ///< Very wide range of chunk sizes
+	FASTCDC_NORM_LVL_1, ///< Fewer chunks outside the desired range
+	FASTCDC_NORM_LVL_2, ///< Most chunks are near the target size (default)
+	FASTCDC_NORM_LVL_3, ///< Nearly all chunks are near the target size
 	// enum size
 	FASTCDC_NORM_LVL_ENUM_SIZE,
 } NormLvl;

@@ -49,6 +49,7 @@ EXPECT=<<EOF
 602
 EOF
 RUN
+
 NAME=rz-diff distance comparison (lcs-roll)
 TOOL=rz-diff
 ARGS=-d lcs-roll bins/java/Main.java.1.7.class bins/java/Main.java.15.class
