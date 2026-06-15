@@ -1,6 +1,8 @@
 NAME=read from http
-FILE=http://127.0.0.1:8000/simple.html
+FILE=--
 CMDS=<<EOF
+!scripts/http_server.py
+o http://127.0.0.1:8000/simple.html
 r
 b 64
 ps

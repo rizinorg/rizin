@@ -296,7 +296,6 @@ jobs:
         if: matrix.run_tests && matrix.enabled
         continue-on-error: ${{ matrix.allow_failure }}
         run: |
-          python3 -m http.server --bind 127.0.0.1 --directory test/www &
           # Running the test suite
           export PATH=${HOME}/bin:$(python3 -m site --user-base)/bin:${HOME}/.local/bin:${PATH}
           export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
