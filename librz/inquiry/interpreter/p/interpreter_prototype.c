@@ -14,6 +14,22 @@
 
 #define MAX_INVOCATIONS_PER_BLOCK 3
 
+bool state_as_str(RZ_NONNULL const RzInterpAbstrState *state,
+	RZ_NONNULL RZ_OUT RzStrBuf *sb,
+	void *plugin_data);
+
+RZ_OWN RzInterpAbstrVal *clone_val(const RzInterpAbstrVal *val, void *plugin_data) {
+	RzInterpAbstrVal *r = RZ_NEW0(RzInterpAbstrVal);
+	if (!r) {
+		return NULL;
+	}
+	r->kind = val->kind;
+	r->abstr_data = RZ_NEW0(ProtoIntrprAbstrData);
+	AD(r->abstr_data)->is_const = AD(val->abstr_data)->is_const;
+	AD(r->abstr_data)->bv = rz_bv_dup(AD(val->abstr_data)->bv);
+	return r;
+}
+
 static bool eval(RZ_NONNULL RzInterpSet *iset,
 	RZ_NONNULL const RzILCacheBlock *il_bb,
 	void *plugin_data) {
@@ -45,6 +61,11 @@ static bool eval(RZ_NONNULL RzInterpSet *iset,
 		ProtoIntrprAbstrData *apc = AD(iset->astate->pc->abstr_data);
 		ut64 pc = rz_bv_to_ut64(apc->bv);
 		RZ_LOG_DEBUG("prototype: Eval PC = 0x%" PFMT64x "\n", pc);
+		RzStrBuf sb;
+		rz_strbuf_init(&sb);
+		state_as_str(iset->astate, &sb, plugin_data);
+		RZ_LOG_DEBUG("%s\n", rz_strbuf_get(&sb));
+		rz_strbuf_fini(&sb);
 		RzILCacheInsnPkt *pkt = *it;
 		if (!interpreter_prototype_eval_effect(iset, pkt->effect, pkt->insn_pkt_size, plugin_data)) {
 			return false;
@@ -222,6 +243,67 @@ static ut64 hash_state(RZ_NONNULL const RzInterpAbstrState *state, void *plugin_
 	return h;
 }
 
+/**
+ * \brief Join (least upper bound) on values
+ * \return True if a was changed
+ */
+static bool join_val(RZ_BORROW RZ_INOUT RzInterpAbstrVal *a, RZ_BORROW RZ_IN const RzInterpAbstrVal *b) {
+	ProtoIntrprAbstrData *ad = AD(a->abstr_data);
+	ProtoIntrprAbstrData *bd = AD(b->abstr_data);
+	if (ad->is_const && bd->is_const && rz_bv_eq(ad->bv, bd->bv)) {
+		// identical values, a already has the least upper bound
+		return false;
+	}
+	// for anything else, the least upper bound is top
+	bool changed = ad->is_const;
+	ad->is_const = false;
+	return changed;
+}
+
+/**
+ * \brief Join (least upper bound) on var sets
+ * \return True if a was changed
+ */
+static bool join_vars(RZ_BORROW RZ_INOUT HtUP *a, RZ_BORROW RZ_IN HtUP *b) {
+	RzIterator *it = ht_up_as_iter_keys(a);
+	ut64 *k;
+	bool changed = false;
+	rz_iterator_foreach(it, k) {
+		RzInterpAbstrVal *av = ht_up_find(a, *k, NULL);
+		RzInterpAbstrVal *bv = ht_up_find(b, *k, NULL);
+		if (!av || !bv) {
+			continue;
+		}
+		if (join_val(av, bv)) {
+			changed = true;
+		}
+	}
+	return changed;
+}
+
+bool join_state(RZ_BORROW RZ_INOUT RzInterpAbstrState *a, RZ_BORROW RZ_IN const RzInterpAbstrState *b, void *plugin_data) {
+	bool global_change = join_vars(a->globals, b->globals);
+	bool local_change = join_vars(a->locals, b->locals);
+	// lets are not be relevant here since they are immutable within their scope
+	return global_change || local_change;
+}
+
+bool val_as_str(RZ_NONNULL const RzInterpAbstrVal *val, RZ_NONNULL RZ_OUT RzStrBuf *sb, void *plugin_data) {
+	rz_return_val_if_fail(val && sb, false);
+	ProtoIntrprAbstrData *av = AD(val->abstr_data);
+	if (av->is_const) {
+		char *s = rz_bv_as_hex_string(av->bv, false);
+		if (!s) {
+			return false;
+		}
+		rz_strbuf_append(sb, s);
+		free(s);
+	} else {
+		rz_strbuf_append(sb, "⊤");
+	}
+	return true;
+}
+
 bool state_as_str(RZ_NONNULL const RzInterpAbstrState *state,
 	RZ_NONNULL RZ_OUT RzStrBuf *sb,
 	void *plugin_data) {
@@ -230,19 +312,18 @@ bool state_as_str(RZ_NONNULL const RzInterpAbstrState *state,
 	ut64 hash = hash_state(state, plugin_data);
 	rz_strbuf_appendf(sb, "hash = 0x%" PFMT64x "\n\n", hash);
 	rz_strbuf_append(sb, "Globals\n\n");
-	char *value = AD(state->pc->abstr_data)->is_const ? rz_bv_as_hex_string(AD(state->pc->abstr_data)->bv, true) : rz_str_dup("⊥");
-	rz_strbuf_appendf(sb, "\tpc = %s\n\n", value);
-	free(value);
+	rz_strbuf_append(sb, "\tpc = ");
+	val_as_str(state->pc, sb, plugin_data);
+	rz_strbuf_append(sb, "\n\n");
 
 	RzIterator *it = ht_up_as_iter_keys(state->globals);
 	ut64 *k;
 	rz_iterator_foreach(it, k) {
 		const char *gname = ht_up_find(state->var_name_hashes, *k, NULL);
+		rz_strbuf_appendf(sb, "\t%s = ", gname);
 		RzInterpAbstrVal *av = ht_up_find(state->globals, *k, NULL);
-		ProtoIntrprAbstrData *ad = av->abstr_data;
-		value = ad->is_const ? rz_bv_as_hex_string(ad->bv, true) : rz_str_dup("⊥");
-		rz_strbuf_appendf(sb, "\t%s = %s\n", gname, value);
-		free(value);
+		val_as_str(av, sb, plugin_data);
+		rz_strbuf_append(sb, "\n");
 	}
 	rz_iterator_free(it);
 	return true;
@@ -303,15 +384,17 @@ static RzInterpPlugin rz_interpreter_plugin_prototype = {
 	.init = init,
 	.reset = reset,
 	.fini = fini,
+	.clone_val = clone_val,
 	.eval = eval,
 	.successors = successors,
 	.init_state = init_state,
 	.reset_state = reset_state,
 	.fini_state = fini_state,
 	.hash_state = hash_state,
+	.join_state = join_state,
 	.set_pc = set_pc,
 	.state_as_str = state_as_str,
-	.clone_state = NULL,
+	.val_as_str = val_as_str
 };
 
 RZ_API RzInquiryPlugin rz_inquiry_plugin_interpreter_prototype = {

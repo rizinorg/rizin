@@ -146,6 +146,53 @@ RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpAbstrStat
 	free(state);
 }
 
+static HtUP *var_set_clone(const RzInterpSet *iset, HtUP *vars) {
+	HtUP *r = ht_up_new(NULL, free);
+	if (!r) {
+		return NULL;
+	}
+	RzIterator *it = ht_up_as_iter_keys(vars);
+	ut64 *key;
+	rz_iterator_foreach(it, key) {
+		RzInterpAbstrVal *val = iset->plugin->clone_val(ht_up_find(vars, *key, NULL), iset->intrpr_priv);
+		if (!val) {
+			continue;
+		}
+		ht_up_insert(r, *key, val);
+	}
+	return r;
+}
+
+RZ_API RZ_OWN RzInterpAbstrState *rz_interpreter_abstr_state_clone(RZ_NONNULL RzInterpSet *iset, const RzInterpAbstrState *state) {
+	RzInterpAbstrState *r = RZ_NEW0(RzInterpAbstrState);
+	if (!state) {
+		return NULL;
+	}
+	r->arch_name = state->arch_name;
+	r->kinds = state->kinds;
+	r->pc = iset->plugin->clone_val(state->pc, iset->intrpr_priv);
+	if (!state->pc) {
+		free(r);
+		return NULL;
+	}
+	r->var_name_hashes = ht_up_new(NULL, free);
+	RzIterator *it = ht_up_as_iter_keys(state->var_name_hashes);
+	ut64 *key;
+	rz_iterator_foreach(it, key) {
+		char *n = strdup(ht_up_find(state->var_name_hashes, *key, NULL));
+		if (!n) {
+			continue;
+		}
+		ht_up_insert(r->var_name_hashes, *key, n);
+	}
+
+	r->globals = var_set_clone(iset, state->globals);
+	r->locals = var_set_clone(iset, state->locals);
+	r->lets = var_set_clone(iset, state->lets);
+	r->il_config = state->il_config;
+	return r;
+}
+
 RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpSet *iset) {
 	if (!iset) {
 		return;

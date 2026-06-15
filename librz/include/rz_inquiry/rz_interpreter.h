@@ -177,6 +177,12 @@ typedef struct {
 	bool (*init)(void **plugin_data);
 	bool (*reset)(void *plugin_data);
 	bool (*fini)(void *plugin_data);
+
+	/**
+	 * \brief Clones the given abstract value.
+	 */
+	RZ_OWN RzInterpAbstrVal *(*clone_val)(const RzInterpAbstrVal *val, void *plugin_data);
+
 	/**
 	 * \brief Initializes the abstract state.
 	 */
@@ -190,14 +196,15 @@ typedef struct {
 	 */
 	bool (*fini_state)(RZ_BORROW RzInterpAbstrState *state, void *plugin_data);
 	/**
-	 * \brief Clones the abstract state.
-	 */
-	RZ_OWN RzInterpAbstrState *(*clone_state)(const RzInterpAbstrState *state, void *plugin_data);
-	/**
 	 * \brief Hashes the state.
 	 */
 	ut64 (*hash_state)(RZ_NONNULL const RzInterpAbstrState *state,
 		void *plugin_data);
+	/**
+	 * \brief Performs the join operation on states (least upper bound, lattice theory)
+	 * \return True if a was changed
+	 */
+	bool (*join_state)(RZ_BORROW RZ_INOUT RzInterpAbstrState *a, RZ_BORROW RZ_IN const RzInterpAbstrState *b, void *plugin_data);
 	/**
 	 * \brief Evaluates an effect with the mutable state.
 	 */
@@ -215,14 +222,23 @@ typedef struct {
 		void *plugin_data);
 
 	/**
+	 * \brief Builds a string for printing an abstract value.
+	 *
+	 * \return Returns false in case of error, True otherwise.
+	 */
+	bool (*val_as_str)(RZ_NONNULL const RzInterpAbstrVal *state,
+		RZ_NONNULL RZ_OUT RzStrBuf *str_buf,
+		void *plugin_data);
+
+	/**
 	 * \brief Builds a string for printing the current state.
 	 *
-	 * \return Returns false in case of error. The interpretation must abort.
-	 * True otherwise.
+	 * \return Returns false in case of error, True otherwise.
 	 */
 	bool (*state_as_str)(RZ_NONNULL const RzInterpAbstrState *state,
 		RZ_NONNULL RZ_OUT RzStrBuf *str_buf,
 		void *plugin_data);
+
 	/**
 	 * \brief Set the abstract PC to the given address.
 	 */
@@ -314,6 +330,7 @@ RZ_API RZ_OWN RzInterpAbstrState *rz_interpreter_abstr_state_new(
 	RZ_OWN RZ_NONNULL RzAnalysisILConfig *il_config,
 	RZ_NULLABLE const RzILRegBinding *reg_bindings);
 RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpAbstrState *state);
+RZ_API RZ_OWN RzInterpAbstrState *rz_interpreter_abstr_state_clone(RZ_NONNULL RzInterpSet *iset, const RzInterpAbstrState *state);
 
 RZ_API RZ_OWN RzInterpYieldRBuf *rz_interpreter_yield_rbuf_new(RzInterpYieldKind kind,
 	RzInterpYieldFilter filter,
