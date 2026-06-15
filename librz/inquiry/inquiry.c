@@ -507,7 +507,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		goto error_free;
 	}
 
-	collect_entry_points(core, entry_points, symbol_targets);
+	// collect_entry_points(core, entry_points, symbol_targets);
 
 	if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
 		eprintf("Total branch targets in binary: %" PFMT32d "\n", rz_set_u_size(entry_points));

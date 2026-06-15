@@ -56,25 +56,42 @@ static bool eval(RZ_NONNULL RzInterpSet *iset,
 	memset(&pdata->call_cand, 0, sizeof(pdata->call_cand));
 
 	// Now execute the actual effects of the BLOCK.
+	RzInterpAbstrState *astate = iset->astate;
 	void **it;
 	rz_pvector_foreach (il_bb->il_ops, it) {
-		ProtoIntrprAbstrData *apc = AD(iset->astate->pc->abstr_data);
-		ut64 pc = rz_bv_to_ut64(apc->bv);
+		ut64 pc = astate->pc;
 		RZ_LOG_DEBUG("prototype: Eval PC = 0x%" PFMT64x "\n", pc);
 		RzStrBuf sb;
 		rz_strbuf_init(&sb);
 		state_as_str(iset->astate, &sb, plugin_data);
 		RZ_LOG_DEBUG("%s\n", rz_strbuf_get(&sb));
 		rz_strbuf_fini(&sb);
+
+		rz_strbuf_init(&sb);
+		state_as_str_short(iset, &sb, iset->astate);
+		rz_meta_set_string(iset->a, RZ_META_TYPE_COMMENT, pc, rz_strbuf_get(&sb));
+		rz_strbuf_fini(&sb);
+
 		RzILCacheInsnPkt *pkt = *it;
+
+		// Prepare next pc, the evalutation may overwrite this.
+		ut64 next_pc = pc + pkt->insn_pkt_size;
+		set_pc(iset->astate, next_pc, plugin_data);
+
 		if (!interpreter_prototype_eval_effect(iset, pkt->effect, pkt->insn_pkt_size, plugin_data)) {
 			return false;
 		}
-		if (pc == rz_bv_to_ut64(apc->bv) && apc->is_const) {
-			// Instruction did not manipulate the PC. Set it to the next instruction (packet).
-			set_pc(iset->astate, pc + pkt->insn_pkt_size, plugin_data);
+		if (astate->pc_state != RZ_INTERP_PC_CONST || astate->pc != next_pc) {
+			// Unreachable or a jump happened somewhere other than fallthrough, so we can't continue
+			// interpreting the block linearly, but have to push the new location
+			break;
 		}
 	}
+
+	if (astate->pc_state != RZ_INTERP_PC_UNREACHABLE) {
+		rz_interp_set_push(iset, iset->astate);
+	}
+
 	return true;
 }
 
@@ -83,18 +100,13 @@ bool successors(RZ_NONNULL const RzInterpAbstrState *state,
 	void *plugin_data) {
 	rz_return_val_if_fail(state && successors, false);
 	ProtoIntrprPluginData *pdata = plugin_data;
-	ProtoIntrprAbstrData *apc = state->pc->abstr_data;
-	if (!apc->is_const) {
+	if (state->pc_state != RZ_INTERP_PC_CONST) {
 		// The PC is not a concrete value.
 		// This prototype can't estimate a reasonable concretization for it.
 		return true;
 	}
-	if (rz_bv_len(apc->bv) > 64) {
-		RZ_LOG_WARN("PC has a length of more than 64 bits!\n");
-		return true;
-	}
 
-	ut64 next_pc = rz_bv_to_ut64(apc->bv);
+	ut64 next_pc = state->pc;
 	RzInterpCtrlFlow branch = { 0 };
 	branch.target_addr = branch.actual_target = next_pc;
 	branch.src_block_addr = pdata->prev_pc;
@@ -103,10 +115,8 @@ bool successors(RZ_NONNULL const RzInterpAbstrState *state,
 }
 
 static bool init_state(RZ_BORROW RzInterpAbstrState *state, void *plugin_data) {
-	state->pc->abstr_data = RZ_NEW0(ProtoIntrprAbstrData);
-	ProtoIntrprAbstrData *apc = AD(state->pc->abstr_data);
-	apc->bv = rz_bv_new_from_ut64(state->il_config->mem_key_size, 0);
-	apc->is_const = true;
+	state->pc = 0;
+	state->pc_state = RZ_INTERP_PC_UNREACHABLE;
 
 	RzIterator *it = ht_up_as_iter_keys(state->globals);
 	ut64 *k;
@@ -123,8 +133,8 @@ static bool init_state(RZ_BORROW RzInterpAbstrState *state, void *plugin_data) {
 		AD(av->abstr_data)->bv = rz_bv_new(state->il_config->mem_key_size);
 		// TODO: This is debatable. It depends on the ABI what the default values are.
 		// Some values must be concrete, otherwise the interpretation of the prototype end too early.
-		AD(av->abstr_data)->is_const = true;
-		if (state->il_config->init_state) {
+		AD(av->abstr_data)->is_const = false;
+		/*if (state->il_config->init_state) {
 			RzAnalysisILInitStateVar *il_var;
 			rz_vector_foreach (&state->il_config->init_state->vars, il_var) {
 				if (rz_str_djb2_hash(il_var->name) != djb2_reg_name) {
@@ -135,16 +145,15 @@ static bool init_state(RZ_BORROW RzInterpAbstrState *state, void *plugin_data) {
 				rz_bv_copy(AD(av->abstr_data)->bv, default_val);
 				rz_bv_free(default_val);
 			}
-		}
+		}*/
 	}
 	rz_iterator_free(it);
 	return true;
 }
 
 static bool reset_state(RZ_BORROW RzInterpAbstrState *state, ut64 entry_point, void *plugin_data) {
-	ProtoIntrprAbstrData *apc = AD(state->pc->abstr_data);
-	rz_bv_set_from_ut64(apc->bv, entry_point);
-	apc->is_const = true;
+	state->pc_state = RZ_INTERP_PC_CONST;
+	state->pc = entry_point;
 
 	RzIterator *it = ht_up_as_iter_keys(state->globals);
 	ut64 *k;
@@ -152,8 +161,8 @@ static bool reset_state(RZ_BORROW RzInterpAbstrState *state, ut64 entry_point, v
 		ut64 djb2_reg_name = *k;
 		RzInterpAbstrVal *av = ht_up_find(state->globals, djb2_reg_name, NULL);
 		rz_bv_set_from_ut64(AD(av->abstr_data)->bv, 0);
-		AD(av->abstr_data)->is_const = true;
-		if (state->il_config->init_state) {
+		AD(av->abstr_data)->is_const = false;
+		/*if (state->il_config->init_state) {
 			RzAnalysisILInitStateVar *il_var;
 			rz_vector_foreach (&state->il_config->init_state->vars, il_var) {
 				if (rz_str_djb2_hash(il_var->name) != djb2_reg_name) {
@@ -164,7 +173,7 @@ static bool reset_state(RZ_BORROW RzInterpAbstrState *state, ut64 entry_point, v
 				rz_bv_copy(AD(av->abstr_data)->bv, default_val);
 				rz_bv_free(default_val);
 			}
-		}
+		}*/
 	}
 	rz_iterator_free(it);
 	state->bb_addr = 0;
@@ -173,13 +182,6 @@ static bool reset_state(RZ_BORROW RzInterpAbstrState *state, ut64 entry_point, v
 }
 
 static bool fini_state(RZ_BORROW RzInterpAbstrState *state, void *plugin_data) {
-	ProtoIntrprAbstrData *ad = state->pc->abstr_data;
-	if (ad && ad->bv) {
-		rz_bv_free(ad->bv);
-	}
-	free(ad);
-	state->pc->abstr_data = NULL;
-
 	RzIterator *it = ht_up_as_iter(state->globals);
 	RzInterpAbstrVal **v;
 	rz_iterator_foreach(it, v) {
@@ -226,9 +228,9 @@ static bool fini_state(RZ_BORROW RzInterpAbstrState *state, void *plugin_data) {
  */
 static ut64 hash_state(RZ_NONNULL const RzInterpAbstrState *state, void *plugin_data) {
 	ut64 h = 5381;
-	ProtoIntrprAbstrData *ad = state->pc->abstr_data;
-	if (ad->bv) {
-		h = (h ^ (h << 5)) ^ rz_bv_to_ut64(ad->bv);
+	h = (h ^ (h << 5)) ^ (ut64)state->pc_state;
+	if (state->pc_state == RZ_INTERP_PC_CONST) {
+		h = (h ^ (h << 5)) ^ state->pc;
 	}
 	RzIterator *it = ht_up_as_iter(state->globals);
 	RzInterpAbstrVal **v;
@@ -313,7 +315,11 @@ bool state_as_str(RZ_NONNULL const RzInterpAbstrState *state,
 	rz_strbuf_appendf(sb, "hash = 0x%" PFMT64x "\n\n", hash);
 	rz_strbuf_append(sb, "Globals\n\n");
 	rz_strbuf_append(sb, "\tpc = ");
-	val_as_str(state->pc, sb, plugin_data);
+	if (state->pc_state == RZ_INTERP_PC_CONST) {
+		rz_strbuf_appendf(sb, "0x%" PFMT64x, state->pc);
+	} else {
+		rz_strbuf_append(sb, state->pc_state == RZ_INTERP_PC_ANY ? "⊤" : "⊥");
+	}
 	rz_strbuf_append(sb, "\n\n");
 
 	RzIterator *it = ht_up_as_iter_keys(state->globals);
@@ -327,6 +333,27 @@ bool state_as_str(RZ_NONNULL const RzInterpAbstrState *state,
 	}
 	rz_iterator_free(it);
 	return true;
+}
+
+void state_as_str_short(RzInterpSet *iset, RZ_OUT RzStrBuf *out, RzInterpAbstrState *astate) {
+	bool first = true;
+	RzIterator *it = ht_up_as_iter_keys(astate->globals);
+	ut64 *k;
+	rz_iterator_foreach(it, k) {
+		ut64 djb2_reg_name = *k;
+		RzInterpAbstrVal *av = ht_up_find(astate->globals, djb2_reg_name, NULL);
+		ProtoIntrprAbstrData *val = av->abstr_data;
+		if (!val->is_const) {
+			continue;
+		}
+		if (!first) {
+			rz_strbuf_append(out, ", ");
+		}
+		first = false;
+		const char *varname = ht_up_find(astate->var_name_hashes, djb2_reg_name, NULL);
+		rz_strbuf_appendf(out, "%s = ", varname);
+		iset->plugin->val_as_str(av, out, iset->intrpr_priv);
+	}
 }
 
 bool init(void **plugin_data) {

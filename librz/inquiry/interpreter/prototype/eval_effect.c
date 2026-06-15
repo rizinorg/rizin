@@ -12,7 +12,7 @@ static bool value_indicates_ret_addr_write(RzInterpSet *iset, ProtoIntrprAbstrDa
 		(rz_bv_to_ut64(val->bv) == iset->astate->bb_addr + iset->astate->bb_size ||
 			// Sparc stores the call instruction PC into o8.
 			// The return instruction jumps then to o7+8.
-			(rz_str_startswith(iset->astate->arch_name, "sparc") && rz_bv_to_ut64(val->bv) == rz_bv_to_ut64(AD(iset->astate->pc->abstr_data)->bv)));
+			(rz_str_startswith(iset->astate->arch_name, "sparc") && rz_bv_to_ut64(val->bv) == iset->astate->pc));
 }
 
 RZ_IPI bool interpreter_prototype_eval_effect(RzInterpSet *iset,
@@ -20,18 +20,15 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpSet *iset,
 	size_t insn_pkt_size,
 	ProtoIntrprPluginData *plugin_data) {
 	STACK_ABSTR_DATA_OUT(eval_out);
-	ProtoIntrprAbstrData *pc = AD(iset->astate->pc->abstr_data);
+	rz_return_val_if_fail(iset->astate->pc_state == RZ_INTERP_PC_CONST, false);
+	ut64 pc = iset->astate->pc;
 
 	switch (effect->code) {
 	default:
 	case RZ_IL_OP_EMPTY:
 		break;
 	case RZ_IL_OP_NOP: {
-		if (!pc->is_const) {
-			// The PC is no longer a concrete value.
-			// This plugin has no addition for it defined.
-			break;
-		}
+#if 0
 		STACK_ABSTR_DATA_OUT(npc);
 		// First cast the bitvector, then set it.
 		// This is performance critical. Since the stack allocated bv is >64 bit
@@ -43,6 +40,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpSet *iset,
 			goto error;
 		}
 		set_abstr_pc(iset->astate, &npc, plugin_data);
+#endif
 		break;
 	}
 	case RZ_IL_OP_SEQ: {
@@ -63,7 +61,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpSet *iset,
 		write_var_to_state(iset, kind, vhash, &eval_out);
 		if (value_indicates_ret_addr_write(iset, &eval_out) &&
 			kind == RZ_IL_VAR_KIND_GLOBAL) {
-			plugin_data->call_cand.store_addr = rz_bv_to_ut64(pc->bv);
+			plugin_data->call_cand.store_addr = pc;
 			plugin_data->call_cand.npc = iset->astate->bb_addr + iset->astate->bb_size;
 			plugin_data->call_cand.bb_addr = iset->astate->bb_addr;
 			plugin_data->call_cand.in_mem = false;
@@ -75,11 +73,11 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpSet *iset,
 			goto error;
 		}
 		if (!eval_out.is_const) {
-			RZ_LOG_DEBUG("PC is going to be set to an abstract value! Current PC = 0x%" PFMT64x "\n", rz_bv_to_ut64(pc->bv));
+			RZ_LOG_DEBUG("PC is going to be set to an abstract value! Current PC = 0x%" PFMT64x "\n", pc);
 		}
 		ut64 target = rz_bv_to_ut64(eval_out.bv);
 		RZ_LOG_DEBUG("prototype: JMP - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
-			rz_bv_to_ut64(pc->bv), target,
+			pc, target,
 			eval_out.is_const ? "Concrete" : "Abstract");
 
 		if (eval_out.is_const) {
@@ -88,7 +86,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpSet *iset,
 			if (plugin_data->call_cand.store_addr) {
 				// An instruction in this basic block stored the next PC.
 				// Report a call candidate and assume this jump is a call.
-				plugin_data->call_cand.candidate_addr = rz_bv_to_ut64(pc->bv);
+				plugin_data->call_cand.candidate_addr = pc;
 				plugin_data->call_cand.target = target;
 				report_yield_call_candiate(iset, plugin_data);
 
@@ -109,7 +107,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpSet *iset,
 				xref_type = RZ_ANALYSIS_XREF_TYPE_RETURN;
 			}
 
-			report_yield_xref(iset, insn_pkt_size, rz_bv_to_ut64(pc->bv), &eval_out,
+			report_yield_xref(iset, insn_pkt_size, pc, &eval_out,
 				xref_type);
 
 			// Clear the call candidate tracking variable.
@@ -125,17 +123,33 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpSet *iset,
 		if (!interpreter_prototype_eval_pure(iset, effect->op.branch.condition, &eval_out, plugin_data)) {
 			goto error;
 		}
-		if (!eval_out.is_const) {
-			// Bottom values means we can't make a
-			// decision (in this prototype implementation).
-			break;
-		}
-
-		if (abstr_is_true(iset, &eval_out)) {
+		bool may_be_true = abstr_may_be_true(iset, &eval_out);
+		bool may_be_false = abstr_may_be_true(iset, &eval_out);
+		if (may_be_true && may_be_false) {
+			RzInterpAbstrState *true_state = rz_interpreter_abstr_state_clone(iset, iset->astate);
+			RzInterpAbstrState *false_state = iset->astate;
+			iset->astate = true_state;
 			if (!interpreter_prototype_eval_effect(iset, effect->op.branch.true_eff, insn_pkt_size, plugin_data)) {
 				goto error;
 			}
-		} else {
+			iset->astate = false_state;
+			if (!interpreter_prototype_eval_effect(iset, effect->op.branch.false_eff, insn_pkt_size, plugin_data)) {
+				goto error;
+			}
+			if (true_state->pc_state == false_state->pc_state && true_state->pc == false_state->pc) {
+				// identical target location, simply join the data and continue
+				iset->plugin->join_state(true_state, false_state, iset->intrpr_priv);
+			} else {
+				// different jump targets, branch rather than resorting to top pc
+				rz_interp_set_push(iset, true_state);
+				// true_state is already in iset->astate and will be continued automatically
+			}
+			rz_interpreter_abstr_state_free(true_state);
+		} else if (may_be_true) {
+			if (!interpreter_prototype_eval_effect(iset, effect->op.branch.true_eff, insn_pkt_size, plugin_data)) {
+				goto error;
+			}
+		} else if (may_be_false) {
 			if (!interpreter_prototype_eval_effect(iset, effect->op.branch.false_eff, insn_pkt_size, plugin_data)) {
 				goto error;
 			}
@@ -177,12 +191,12 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpSet *iset,
 			break;
 		}
 		if (value_indicates_ret_addr_write(iset, &eval_out)) {
-			plugin_data->call_cand.store_addr = rz_bv_to_ut64(pc->bv);
+			plugin_data->call_cand.store_addr = pc;
 			plugin_data->call_cand.npc = iset->astate->bb_addr + iset->astate->bb_size;
 			plugin_data->call_cand.bb_addr = iset->astate->bb_addr;
 			plugin_data->call_cand.in_mem = true;
 		}
-		report_yield_xref(iset, insn_pkt_size, rz_bv_to_ut64(pc->bv), &st_addr, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE);
+		report_yield_xref(iset, insn_pkt_size, pc, &st_addr, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE);
 		if (!store_abstr_data(iset, mem_idx, &st_addr, &eval_out)) {
 			rz_bv_fini(st_addr.bv);
 			goto error;

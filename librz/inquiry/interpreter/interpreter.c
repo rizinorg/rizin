@@ -16,6 +16,8 @@
 #include <rz_vector.h>
 #include <rz_util.h>
 
+#include "inquiry/interpreter/prototype/eval.h"
+
 RZ_API void rz_interpreter_yield_rbuf_free(RZ_OWN RZ_NULLABLE RzInterpYieldRBuf *yield_rbufs) {
 	if (!yield_rbufs) {
 		return;
@@ -77,7 +79,7 @@ RZ_API RZ_OWN RzInterpYieldRBuf *rz_interpreter_yield_rbuf_new(RzInterpYieldKind
 RZ_API RZ_OWN RzInterpAbstrState *rz_interpreter_abstr_state_new(
 	const char *arch_name,
 	RzInterpAbstraction kinds,
-	RZ_OWN RZ_NONNULL RzAnalysisILConfig *il_config,
+	RZ_BORROW RZ_NONNULL RzAnalysisILConfig *il_config,
 	RZ_NULLABLE const RzILRegBinding *reg_bindings) {
 	rz_return_val_if_fail(il_config && reg_bindings, NULL);
 	RzInterpAbstrState *state = RZ_NEW0(RzInterpAbstrState);
@@ -86,10 +88,6 @@ RZ_API RZ_OWN RzInterpAbstrState *rz_interpreter_abstr_state_new(
 	}
 	state->arch_name = arch_name;
 	state->kinds = kinds;
-	state->pc = RZ_NEW0(RzInterpAbstrVal);
-	if (!state->pc) {
-		return NULL;
-	}
 	// Initialize the register file with uninitialized abstract values.
 	state->var_name_hashes = ht_up_new(NULL, free);
 	state->globals = ht_up_new(NULL, free);
@@ -137,12 +135,6 @@ RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpAbstrStat
 	if (state->lets) {
 		ht_up_free(state->lets);
 	}
-	if (state->pc) {
-		free(state->pc);
-	}
-	if (state->il_config) {
-		rz_analysis_il_config_free(state->il_config);
-	}
 	free(state);
 }
 
@@ -170,11 +162,9 @@ RZ_API RZ_OWN RzInterpAbstrState *rz_interpreter_abstr_state_clone(RZ_NONNULL Rz
 	}
 	r->arch_name = state->arch_name;
 	r->kinds = state->kinds;
-	r->pc = iset->plugin->clone_val(state->pc, iset->intrpr_priv);
-	if (!state->pc) {
-		free(r);
-		return NULL;
-	}
+	r->pc = state->pc;
+	r->pc_state = state->pc_state;
+	r->uninterpreted = state->uninterpreted;
 	r->var_name_hashes = ht_up_new(NULL, free);
 	RzIterator *it = ht_up_as_iter_keys(state->var_name_hashes);
 	ut64 *key;
@@ -315,6 +305,7 @@ RZ_API RZ_OWN RzInterpSet *rz_interpreter_set_new(
 		return NULL;
 	}
 
+	iset->a = analysis;
 	iset->plugin = plugin;
 	iset->astate = state;
 	iset->run_state = rz_intp_run_state_new();
@@ -329,7 +320,51 @@ RZ_API RZ_OWN RzInterpSet *rz_interpreter_set_new(
 	iset->io_result_rbuf = io_result_rbuf;
 	iset->run_state_sync = rz_th_sem_new(0);
 	iset->ignored_code = ignored_code;
+
+	iset->fcn_state.pc_states = ht_up_new(NULL, free);
+	iset->fcn_state.queue = rz_list_new();
+
 	return iset;
+}
+
+RZ_API void rz_interp_set_push(RZ_BORROW RZ_NONNULL RzInterpSet *iset, RZ_BORROW RZ_NONNULL RzInterpAbstrState *as) {
+	if (as->pc_state == RZ_INTERP_PC_ANY) {
+		RZ_LOG_DEBUG("Encountered state with unknown/top pc\n");
+		return;
+	}
+	if (as->pc_state != RZ_INTERP_PC_CONST) {
+		rz_warn_if_reached();
+		return;
+	}
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	state_as_str_short(iset, &sb, as);
+	RZ_LOG_DEBUG("PUSH 0x%" PFMT64x ": %s\n", as->pc, rz_strbuf_get(&sb));
+	rz_strbuf_fini(&sb);
+	RzInterpAbstrState *existing = ht_up_find(iset->fcn_state.pc_states, as->pc, NULL);
+	if (existing) {
+		if (iset->plugin->join_state(existing, as, iset->intrpr_priv) && !existing->uninterpreted) {
+			existing->uninterpreted = true;
+			rz_list_push(iset->fcn_state.queue, existing);
+		}
+	} else {
+		RzInterpAbstrState *c = rz_interpreter_abstr_state_clone(iset, as);
+		if (!c) {
+			return;
+		}
+		ht_up_insert(iset->fcn_state.pc_states, as->pc, c);
+		c->uninterpreted = true;
+		rz_list_push(iset->fcn_state.queue, c);
+	}
+}
+
+RZ_API RZ_NULLABLE RZ_BORROW RzInterpAbstrState *rz_interp_set_pop(RZ_BORROW RZ_NONNULL RzInterpSet *iset) {
+	RzInterpAbstrState *r = rz_list_pop(iset->fcn_state.queue);
+	if (!r) {
+		return NULL;
+	}
+	r->uninterpreted = false;
+	return r;
 }
 
 static bool jumps_to_ignored_code(const RzVector *v, ut64 jump_target) {
@@ -435,7 +470,7 @@ static bool reset_intrpr_state(
 /**
  * Main interpretation.
  */
-RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpSet *iset) {
+RZ_API bool rz_interpreter_run_rot127(RZ_NONNULL RZ_OWN RzInterpSet *iset) {
 	rz_return_val_if_fail(iset &&
 			iset->astate &&
 			iset->il_request_rbuf &&
@@ -603,4 +638,160 @@ TERM: {
 	}
 	return success;
 }
+}
+
+/**
+ * Main interpretation.
+ */
+RZ_API bool rz_interpreter_run_thestr4ng3r(RZ_NONNULL RZ_OWN RzInterpSet *iset) {
+	rz_return_val_if_fail(iset &&
+			iset->astate &&
+			iset->il_request_rbuf &&
+			iset->il_queue &&
+			iset->yield_rbufs[RZ_INTERP_YIELD_KIND_XREF] &&
+			iset->yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE] &&
+			iset->yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW] &&
+			iset->run_state_sync &&
+			iset->plugin &&
+			iset->plugin->eval &&
+			iset->plugin->successors &&
+			iset->plugin->init_state &&
+			iset->plugin->fini_state &&
+			iset->plugin->hash_state,
+		false);
+
+	bool success = true;
+
+	RZ_LOG_DEBUG("interpreter: Main: Hello.\n");
+	RzInterpPlugin *plugin = iset->plugin;
+
+	//
+	// Start interpretation
+	//
+	const RzILCacheBlock *il_bb = NULL;
+
+	if (iset->plugin->init) {
+		iset->plugin->init(&iset->intrpr_priv);
+	}
+	if (!iset->plugin->init_state(iset->astate, iset->intrpr_priv)) {
+		rz_warn_if_reached();
+		return false;
+	}
+
+	// TODO: It is probably better to make the following stuff while-loops.
+	// Because otherwise it doesn't make sense without the docs.
+	// But while debugging and developing, I keep it this way to separate clearly
+	// what the interpreter does in each state.
+
+INIT: {
+	// prepare state at the procedure entrypoint
+	RZ_LOG_DEBUG("interpreter: Enter INIT\n");
+	rz_intp_run_state_set(iset->run_state, RZ_INTP_RUN_STATE_INIT);
+
+	const RzAnalysisPlugin *cur = rz_analysis_plugin_current(iset->a);
+	RzAnalysisILConfig *config = cur->il_config(iset->a);
+	RzInterpAbstrState *estate = rz_interpreter_abstr_state_new(
+		cur->arch,
+		RZ_INTERP_ABSTRACTION_CONST,
+		config,
+		iset->il_vm->reg_binding);
+
+	rz_list_purge(iset->fcn_state.queue);
+	ht_up_clear(iset->fcn_state.pc_states);
+
+	ut64 entry_point;
+	if (rz_th_ring_buf_take_blocking(iset->entry_points, &entry_point) != RZ_THREAD_RING_BUF_OK) {
+		// No more entry points to interpret => Terminate.
+		// OR.
+		success = true;
+		goto TERM;
+	}
+
+	if (iset->plugin->reset) {
+		iset->plugin->reset(iset->intrpr_priv);
+	}
+
+	if (!iset->plugin->init_state(estate, iset->intrpr_priv) || !iset->plugin->reset_state(estate, entry_point, iset->intrpr_priv)) {
+		rz_warn_if_reached();
+		return false;
+	}
+
+	rz_interp_set_push(iset, estate);
+	rz_interpreter_abstr_state_free(estate);
+}
+
+	while (true) {
+		RZ_LOG_DEBUG("interpreter: Enter EMU\n");
+		rz_intp_run_state_set(iset->run_state, RZ_INTP_RUN_STATE_EMU);
+
+		RzInterpAbstrState *next = rz_interp_set_pop(iset);
+		if (!next) {
+			// No uninterpreted states left, fixpoint reached.
+			success = true;
+			goto TERM;
+		}
+		iset->astate = rz_interpreter_abstr_state_clone(iset, next);
+
+		if (rz_th_ring_buf_put(iset->il_request_rbuf, &iset->astate->pc) != RZ_THREAD_RING_BUF_OK) {
+			// Can't request IL block => Cache closed => Terminate
+			success = false;
+			goto TERM;
+		}
+		if (!rz_th_queue_pop(iset->il_queue, false, (void **)&il_bb) ||
+			il_bb == RZ_IL_CACHE_FAILED_LIFTING_PTR || !il_bb) {
+			success = false;
+			goto TERM;
+		}
+
+		RzStrBuf sb;
+		rz_strbuf_init(&sb);
+		const char *old_cmt = rz_meta_get_string(iset->a, RZ_META_TYPE_COMMENT, il_bb->addr);
+		if (old_cmt) {
+			rz_strbuf_appendf(&sb, "%s; ", old_cmt);
+		}
+		rz_strbuf_append(&sb, "ENTRY ");
+		state_as_str_short(iset, &sb, iset->astate);
+		// rz_meta_set_string(iset->a, RZ_META_TYPE_COMMENT, il_bb->addr, rz_strbuf_get(&sb));
+		rz_strbuf_fini(&sb);
+
+		iset->astate->bb_addr = il_bb->addr;
+		iset->astate->bb_size = il_bb->size;
+		// Evaluate the effect on the abstract state.
+		if (!plugin->eval(iset, il_bb, iset->intrpr_priv)) {
+			RZ_LOG_DEBUG("interpreter: Eval failed\n");
+			goto CLEAN;
+		}
+
+		// Set effect and state for next evaluation.
+		il_bb = NULL;
+	}
+
+CLEAN: {
+	RZ_LOG_DEBUG("interpreter: Enter CLEAN\n");
+	rz_intp_run_state_set(iset->run_state, RZ_INTP_RUN_STATE_CLEAN);
+
+	// Wait until RzInquiry asks to start again.
+	rz_th_sem_wait(iset->run_state_sync);
+
+	// Clean can only transition to Init.
+	goto INIT;
+}
+
+TERM: {
+	RZ_LOG_DEBUG("interpreter: Enter TERM\n");
+	rz_intp_run_state_set(iset->run_state, RZ_INTP_RUN_STATE_TERM);
+	iset->plugin->fini_state(iset->astate, iset->intrpr_priv);
+	if (iset->plugin->fini && iset->intrpr_priv) {
+		RZ_FREE_CUSTOM(iset->intrpr_priv, iset->plugin->fini);
+	}
+
+	if (iset->plugin->fini && iset->intrpr_priv) {
+		RZ_FREE_CUSTOM(iset->intrpr_priv, iset->plugin->fini);
+	}
+	return success;
+}
+}
+
+RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpSet *iset) {
+	return rz_interpreter_run_thestr4ng3r(iset);
 }

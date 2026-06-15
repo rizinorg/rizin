@@ -100,6 +100,8 @@ void copy_abstr_data(ProtoIntrprAbstrData *dst, const ProtoIntrprAbstrData *src)
 void write_var_to_state(RzInterpSet *iset, RzILVarKind kind, ut64 var_id, const ProtoIntrprAbstrData *data);
 bool read_var_from_state(RzInterpSet *iset, RzILVarKind kind, ut64 var_id, RZ_OUT ProtoIntrprAbstrData *data);
 bool abstr_is_true(const RzInterpSet *iset, const ProtoIntrprAbstrData *data);
+bool abstr_may_be_true(const RzInterpSet *iset, const ProtoIntrprAbstrData *data);
+bool abstr_may_be_false(const RzInterpSet *iset, const ProtoIntrprAbstrData *data);
 bool store_abstr_data(
 	RzInterpSet *iset,
 	RzILMemIndex mem_idx,
@@ -143,5 +145,6 @@ void stack_frame_fini(ProtoInterprAbstrStackFrame *frame, void *unused);
 void stack_frame_push(ProtoIntrprPluginData *pdata, RzBitVector *entry_point, RzBitVector *return_addr, ut64 instance);
 void stack_frame_pop(ProtoIntrprPluginData *pdata, RZ_NULLABLE ProtoInterprAbstrStackFrame *frame);
 bool stack_frame_top_ret_addr_cmp(ProtoIntrprPluginData *pdata, RzBitVector *addr);
+void state_as_str_short(RzInterpSet *iset, RZ_OUT RzStrBuf *out, RzInterpAbstrState *astate);
 
 #endif // PROTOYPE_EVAL_H

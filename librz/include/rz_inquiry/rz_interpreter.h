@@ -102,13 +102,22 @@ typedef struct {
 	RzInquiryBCFGEdgeType type;
 } RzInterpCtrlFlow;
 
+typedef enum {
+	RZ_INTERP_PC_CONST, ///< Single known value
+	RZ_INTERP_PC_UNREACHABLE, ///< Bottom/unreachable state, if this is set, pc field is unused and undefined
+	RZ_INTERP_PC_ANY ///< Top state, if this is set, pc field is unused and undefined
+} RzInterpPCState;
+
 typedef struct {
+	ut64 pc; ///< Interpreter location in the code. This is not necessarily identical to the ISA's program counter register, but simply points to the instruction to execute.
+	RzInterpPCState pc_state;
+	bool uninterpreted; ///< True if this state has not yet been started to interpret, i.e. is part of RzInterpFunctionState.queue
+
 	RzInterpAbstraction kinds; ///< The abstractions of the state.
 	HtUP *var_name_hashes; ///< Map of DJB2 hashes to variable names.
 	HtUP /*<RzInterpAbstrVal *>*/ *globals; ///< Global variables (mostly registers). Indexed by DJB2 hash of global name.
 	HtUP /*<RzInterpAbstrVal *>*/ *locals; ///< Local variables. Indexed by DJB2 hash of the local name.
 	HtUP /*<RzInterpAbstrVal *>*/ *lets; ///< Let variables. Indexed by DJB2 hash of the let name.
-	RzInterpAbstrVal *pc; ///< In our RzIL implementation the PC is not part of the register file.
 	RzAnalysisILConfig *il_config; ///< The IL configuration of the RzArch plugin.
 	const char *arch_name; ///< Name of architecture. Used by work-arounds until we have RzArch.
 	ut64 bb_addr;
@@ -266,13 +275,22 @@ typedef struct {
 	bool req_ok; ///< Set to true if IO request succeeded.
 } RzInterpIOResult;
 
+typedef struct {
+	RzList /*<RzInterpAbstrState>*/ *queue; ///< States that have to be interpreted still. If this is empty, a fixpoint has been reached.
+	HtUP /*<RzInterpAbstrState>*/ *pc_states; ///< Currently discovered states at the entries of blocks.
+} RzInterpFunctionState;
+
 /**
  * \brief The set of required objects for an interpreter to run.
  */
 RZ_LIFETIME(RzInquiry)
 struct rz_interpreter_set {
+	RzAnalysis *a; ///< TODO: remove
+
 	// TODO: Move this one into each plugin?
 	RzInterpAbstrState *astate; ///< The abstract state of the interpreter.
+
+	RzInterpFunctionState fcn_state;
 
 	RzIntpRunState *run_state; ///< The state the interpreter is currently in.
 	/**
@@ -345,6 +363,14 @@ RZ_API RZ_OWN RzInterpSet *rz_interpreter_set_new(
 	RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM],
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code);
 RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpSet *iset);
+
+/*
+ * \brief Register a newly discovered state
+ *
+ * This will join the state with the already known one at the same pc and add it to the
+ * queue for further interpretation if there were changes.
+ */
+RZ_API void rz_interp_set_push(RZ_BORROW RZ_NONNULL RzInterpSet *iset, RZ_BORROW RZ_NONNULL RzInterpAbstrState *as);
 
 RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpSet *iset);
 

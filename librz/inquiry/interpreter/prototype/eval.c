@@ -152,6 +152,20 @@ bool abstr_is_true(const RzInterpSet *iset, const ProtoIntrprAbstrData *data) {
 	return !rz_bv_is_zero_vector(data->bv);
 }
 
+bool abstr_may_be_true(const RzInterpSet *iset, const ProtoIntrprAbstrData *data) {
+	if (!data->is_const) {
+		return true;
+	}
+	return !rz_bv_is_zero_vector(data->bv);
+}
+
+bool abstr_may_be_false(const RzInterpSet *iset, const ProtoIntrprAbstrData *data) {
+	if (!data->is_const) {
+		return true;
+	}
+	return rz_bv_is_zero_vector(data->bv);
+}
+
 bool store_abstr_data(
 	RzInterpSet *iset,
 	RzILMemIndex mem_idx,
@@ -224,15 +238,19 @@ bool set_abstr_pc(RzInterpAbstrState *state, ProtoIntrprAbstrData *pc,
 	void *plugin_data) {
 	rz_return_val_if_fail(state && pc, false);
 	ProtoIntrprPluginData *pdata = plugin_data;
-	ProtoIntrprAbstrData *apc = AD(state->pc->abstr_data);
-	if (!apc->is_const || rz_bv_len(apc->bv) > 64) {
-		pdata->prev_pc = UT64_MAX;
+	if (state->pc_state == RZ_INTERP_PC_CONST) {
+		pdata->prev_pc = state->pc;
 	} else {
-		pdata->prev_pc = rz_bv_to_ut64(apc->bv);
+		pdata->prev_pc = UT64_MAX;
 	}
-	copy_abstr_data(state->pc->abstr_data, pc);
+	if (pc->is_const) {
+		state->pc_state = RZ_INTERP_PC_CONST;
+		state->pc = rz_bv_to_ut64(pc->bv);
+	} else {
+		state->pc_state = RZ_INTERP_PC_ANY;
+	}
 	RZ_LOG_DEBUG("prototype: set_abstr_pc() - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
-		pdata->prev_pc, rz_bv_to_ut64(apc->bv), apc->is_const ? "Constant" : "Top");
+		pdata->prev_pc, state->pc, state->pc_state == RZ_INTERP_PC_CONST ? "Constant" : "Top");
 	return true;
 }
 
@@ -240,17 +258,16 @@ bool set_pc(RzInterpAbstrState *state, ut64 pc,
 	void *plugin_data) {
 	rz_return_val_if_fail(state, false);
 	ProtoIntrprPluginData *pdata = plugin_data;
-	ProtoIntrprAbstrData *apc = AD(state->pc->abstr_data);
-	if (!apc->is_const || rz_bv_len(apc->bv) > 64) {
-		pdata->prev_pc = UT64_MAX;
+	if (state->pc_state == RZ_INTERP_PC_CONST) {
+		pdata->prev_pc = state->pc;
 	} else {
-		pdata->prev_pc = rz_bv_to_ut64(apc->bv);
+		pdata->prev_pc = UT64_MAX;
 	}
-
-	apc->is_const = true;
+	state->pc = pc;
+	state->pc_state = RZ_INTERP_PC_CONST;
 	RZ_LOG_DEBUG("prototype: set_pc() - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (Constant)\n",
-		rz_bv_to_ut64(apc->bv), pc);
-	return rz_bv_set_from_ut64(apc->bv, pc);
+		pdata->prev_pc, pc);
+	return true;
 }
 
 void stack_frame_fini(ProtoInterprAbstrStackFrame *frame, void *unused) {
