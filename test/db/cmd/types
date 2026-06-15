@@ -1935,7 +1935,8 @@ s main
 afvl
 EOF
 EXPECT=<<EOF
-var void *va_args @ stack - 0x3c
+var int var_3ch @ stack - 0x3c
+var unsigned long var_38h @ stack - 0x38
 var unsigned long var_34h @ stack - 0x34
 var FILE *stream @ stack - 0x30
 var const char *s @ stack - 0x28

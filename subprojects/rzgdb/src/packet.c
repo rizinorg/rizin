@@ -73,9 +73,15 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 		}
 		ctx->sum += cur;
 		if (ctx->flags & ESC) {
+			first = false;
 			if (!append(g, cur ^ 0x20)) {
 				return -1;
 			}
+			// RLE in the GDB remote protocol operates on the raw
+			// (post-escape) byte stream, so a following '*' repeat must
+			// duplicate this raw byte rather than the previously appended
+			// literal byte. Record it as the last byte.
+			ctx->last = cur;
 			ctx->flags &= ~ESC;
 			continue;
 		}
