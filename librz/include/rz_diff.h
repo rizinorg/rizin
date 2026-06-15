@@ -94,6 +94,9 @@ RZ_API RZ_OWN PJ *rz_diff_unified_json(RZ_NONNULL RzDiff *diff, RZ_NULLABLE cons
 RZ_API bool rz_diff_myers_distance(RZ_NONNULL const ut8 *a, ut32 size_a, RZ_NONNULL const ut8 *b, ut32 size_b, RZ_NULLABLE ut32 *distance, RZ_NULLABLE double *similarity);
 RZ_API bool rz_diff_levenshtein_distance(RZ_NONNULL const ut8 *a, ut32 size_a, RZ_NONNULL const ut8 *b, ut32 size_b, RZ_NULLABLE ut32 *distance, RZ_NULLABLE double *similarity);
 
+#define RZ_DIFF_LCS_ROLL_DEFAULT_BLOCK_SIZE 128
+RZ_API bool rz_diff_lcs_rolling_distance(RZ_NONNULL const ut8 *a, ut32 la, RZ_NONNULL const ut8 *b, ut32 lb, ut32 block_size, RZ_NULLABLE ut32 *distance, RZ_NULLABLE double *similarity);
+
 #endif
 
 #ifdef __cplusplus
