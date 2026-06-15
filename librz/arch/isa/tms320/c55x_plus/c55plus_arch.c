@@ -18,29 +18,82 @@
 
 // Register tables (persistent, so reg_info hands out stable name/il_var ptrs).
 static const C55RegInfo ac_ri[32] = {
-	{ "ac0", "ac0", 40 }, { "ac1", "ac1", 40 }, { "ac2", "ac2", 40 }, { "ac3", "ac3", 40 },
-	{ "ac4", "ac4", 40 }, { "ac5", "ac5", 40 }, { "ac6", "ac6", 40 }, { "ac7", "ac7", 40 },
-	{ "ac8", "ac8", 40 }, { "ac9", "ac9", 40 }, { "ac10", "ac10", 40 }, { "ac11", "ac11", 40 },
-	{ "ac12", "ac12", 40 }, { "ac13", "ac13", 40 }, { "ac14", "ac14", 40 }, { "ac15", "ac15", 40 },
-	{ "ac16", "ac16", 40 }, { "ac17", "ac17", 40 }, { "ac18", "ac18", 40 }, { "ac19", "ac19", 40 },
-	{ "ac20", "ac20", 40 }, { "ac21", "ac21", 40 }, { "ac22", "ac22", 40 }, { "ac23", "ac23", 40 },
-	{ "ac24", "ac24", 40 }, { "ac25", "ac25", 40 }, { "ac26", "ac26", 40 }, { "ac27", "ac27", 40 },
-	{ "ac28", "ac28", 40 }, { "ac29", "ac29", 40 }, { "ac30", "ac30", 40 }, { "ac31", "ac31", 40 },
+	{ "ac0", "ac0", 40 },
+	{ "ac1", "ac1", 40 },
+	{ "ac2", "ac2", 40 },
+	{ "ac3", "ac3", 40 },
+	{ "ac4", "ac4", 40 },
+	{ "ac5", "ac5", 40 },
+	{ "ac6", "ac6", 40 },
+	{ "ac7", "ac7", 40 },
+	{ "ac8", "ac8", 40 },
+	{ "ac9", "ac9", 40 },
+	{ "ac10", "ac10", 40 },
+	{ "ac11", "ac11", 40 },
+	{ "ac12", "ac12", 40 },
+	{ "ac13", "ac13", 40 },
+	{ "ac14", "ac14", 40 },
+	{ "ac15", "ac15", 40 },
+	{ "ac16", "ac16", 40 },
+	{ "ac17", "ac17", 40 },
+	{ "ac18", "ac18", 40 },
+	{ "ac19", "ac19", 40 },
+	{ "ac20", "ac20", 40 },
+	{ "ac21", "ac21", 40 },
+	{ "ac22", "ac22", 40 },
+	{ "ac23", "ac23", 40 },
+	{ "ac24", "ac24", 40 },
+	{ "ac25", "ac25", 40 },
+	{ "ac26", "ac26", 40 },
+	{ "ac27", "ac27", 40 },
+	{ "ac28", "ac28", 40 },
+	{ "ac29", "ac29", 40 },
+	{ "ac30", "ac30", 40 },
+	{ "ac31", "ac31", 40 },
 };
 static const C55RegInfo ar_ri[16] = {
-	{ "ar0", "ar0", 16 }, { "ar1", "ar1", 16 }, { "ar2", "ar2", 16 }, { "ar3", "ar3", 16 },
-	{ "ar4", "ar4", 16 }, { "ar5", "ar5", 16 }, { "ar6", "ar6", 16 }, { "ar7", "ar7", 16 },
-	{ "ar8", "ar8", 16 }, { "ar9", "ar9", 16 }, { "ar10", "ar10", 16 }, { "ar11", "ar11", 16 },
-	{ "ar12", "ar12", 16 }, { "ar13", "ar13", 16 }, { "ar14", "ar14", 16 }, { "ar15", "ar15", 16 },
+	{ "ar0", "ar0", 16 },
+	{ "ar1", "ar1", 16 },
+	{ "ar2", "ar2", 16 },
+	{ "ar3", "ar3", 16 },
+	{ "ar4", "ar4", 16 },
+	{ "ar5", "ar5", 16 },
+	{ "ar6", "ar6", 16 },
+	{ "ar7", "ar7", 16 },
+	{ "ar8", "ar8", 16 },
+	{ "ar9", "ar9", 16 },
+	{ "ar10", "ar10", 16 },
+	{ "ar11", "ar11", 16 },
+	{ "ar12", "ar12", 16 },
+	{ "ar13", "ar13", 16 },
+	{ "ar14", "ar14", 16 },
+	{ "ar15", "ar15", 16 },
 };
+// On C55x+ the extended auxiliary registers are 24-bit (24-bit flat data
+// addressing); classic C55x keeps them 23-bit in its own table.
 static const C55RegInfo xar_ri[16] = {
-	{ "xar0", "xar0", 23 }, { "xar1", "xar1", 23 }, { "xar2", "xar2", 23 }, { "xar3", "xar3", 23 },
-	{ "xar4", "xar4", 23 }, { "xar5", "xar5", 23 }, { "xar6", "xar6", 23 }, { "xar7", "xar7", 23 },
-	{ "xar8", "xar8", 23 }, { "xar9", "xar9", 23 }, { "xar10", "xar10", 23 }, { "xar11", "xar11", 23 },
-	{ "xar12", "xar12", 23 }, { "xar13", "xar13", 23 }, { "xar14", "xar14", 23 }, { "xar15", "xar15", 23 },
+	{ "xar0", "xar0", 24 },
+	{ "xar1", "xar1", 24 },
+	{ "xar2", "xar2", 24 },
+	{ "xar3", "xar3", 24 },
+	{ "xar4", "xar4", 24 },
+	{ "xar5", "xar5", 24 },
+	{ "xar6", "xar6", 24 },
+	{ "xar7", "xar7", 24 },
+	{ "xar8", "xar8", 24 },
+	{ "xar9", "xar9", 24 },
+	{ "xar10", "xar10", 24 },
+	{ "xar11", "xar11", 24 },
+	{ "xar12", "xar12", 24 },
+	{ "xar13", "xar13", 24 },
+	{ "xar14", "xar14", 24 },
+	{ "xar15", "xar15", 24 },
 };
 static const C55RegInfo t_ri[4] = {
-	{ "t0", "t0", 16 }, { "t1", "t1", 16 }, { "t2", "t2", 16 }, { "t3", "t3", 16 },
+	{ "t0", "t0", 16 },
+	{ "t1", "t1", 16 },
+	{ "t2", "t2", 16 },
+	{ "t3", "t3", 16 },
 };
 static const C55RegInfo sp_ri[2] = { { "sp", "sp", 16 }, { "ssp", "ssp", 16 } };
 static const C55RegInfo trn_ri[8] = {
@@ -58,9 +111,9 @@ static const C55RegInfo special_ri[256] = {
 	[59] = { "brc1", "brc1", 16 },
 	[62] = { "config", NULL, 16 },
 	[63] = { "cpurev", NULL, 16 },
-	[148] = { "xssp", NULL, 23 },
-	[149] = { "xsp", NULL, 23 },
-	[150] = { "xdp", NULL, 23 },
+	[148] = { "xssp", NULL, 24 },
+	[149] = { "xsp", NULL, 24 },
+	[150] = { "xdp", NULL, 24 },
 	[152] = { "rsa0", NULL, 16 },
 	[153] = { "rsa1", NULL, 16 },
 	[154] = { "rea0", NULL, 16 },
@@ -68,9 +121,9 @@ static const C55RegInfo special_ri[256] = {
 	[156] = { "dbgpaddr", NULL, 16 },
 	[157] = { "dbgpdata", NULL, 16 },
 	[159] = { "reta", NULL, 16 },
-	[180] = { "xssp.h", NULL, 23 },
-	[181] = { "xsp.h", NULL, 23 },
-	[182] = { "xdp.h", NULL, 23 },
+	[180] = { "xssp.h", NULL, 24 },
+	[181] = { "xsp.h", NULL, 24 },
+	[182] = { "xdp.h", NULL, 24 },
 	[183] = { "pdp", "pdp", 16 },
 	[184] = { "bsa01", "bsa01", 16 },
 	[185] = { "bsa23", "bsa23", 16 },
@@ -83,14 +136,22 @@ static const C55RegInfo special_ri[256] = {
 	// st0_55 status-bit names, indexed [192 + bit position], for the bclr/bset
 	// st0_<bit> forms (opcode 0x0a). The lift recovers the bit position from the
 	// register index.
-	[192] = { "st0_dp07", NULL, 16 }, [193] = { "st0_dp08", NULL, 16 },
-	[194] = { "st0_dp09", NULL, 16 }, [195] = { "st0_dp10", NULL, 16 },
-	[196] = { "st0_dp11", NULL, 16 }, [197] = { "st0_dp12", NULL, 16 },
-	[198] = { "st0_dp13", NULL, 16 }, [199] = { "st0_dp14", NULL, 16 },
-	[200] = { "st0_dp15", NULL, 16 }, [201] = { "st0_acov1", NULL, 16 },
-	[202] = { "st0_acov0", NULL, 16 }, [203] = { "st0_carry", NULL, 16 },
-	[204] = { "st0_tc2", NULL, 16 }, [205] = { "st0_tc1", NULL, 16 },
-	[206] = { "st0_acov3", NULL, 16 }, [207] = { "st0_acov2", NULL, 16 },
+	[192] = { "st0_dp07", NULL, 16 },
+	[193] = { "st0_dp08", NULL, 16 },
+	[194] = { "st0_dp09", NULL, 16 },
+	[195] = { "st0_dp10", NULL, 16 },
+	[196] = { "st0_dp11", NULL, 16 },
+	[197] = { "st0_dp12", NULL, 16 },
+	[198] = { "st0_dp13", NULL, 16 },
+	[199] = { "st0_dp14", NULL, 16 },
+	[200] = { "st0_dp15", NULL, 16 },
+	[201] = { "st0_acov1", NULL, 16 },
+	[202] = { "st0_acov0", NULL, 16 },
+	[203] = { "st0_carry", NULL, 16 },
+	[204] = { "st0_tc2", NULL, 16 },
+	[205] = { "st0_tc1", NULL, 16 },
+	[206] = { "st0_acov3", NULL, 16 },
+	[207] = { "st0_acov2", NULL, 16 },
 	[224] = { "st0", NULL, 16 },
 	[225] = { "st1", NULL, 16 },
 	[226] = { "st2", NULL, 16 },
@@ -146,37 +207,56 @@ static void c55plus_gr1(ut8 idx, C55Reg *r) {
 	r->num = 0;
 	r->sub = C55_SUB_NONE;
 	if (idx < 32) {
-		r->cls = C55_RC_AC; r->num = idx;
+		r->cls = C55_RC_AC;
+		r->num = idx;
 	} else if (idx < 48) {
-		r->cls = C55_RC_AR; r->num = (ut8)(idx - 32);
+		r->cls = C55_RC_AR;
+		r->num = (ut8)(idx - 32);
 	} else if (idx < 52) {
-		r->cls = C55_RC_T; r->num = (ut8)(idx - 48);
+		r->cls = C55_RC_T;
+		r->num = (ut8)(idx - 48);
 	} else if (idx == 52) {
-		r->cls = C55_RC_SP; r->num = 1;
+		r->cls = C55_RC_SP;
+		r->num = 1;
 	} else if (idx == 53) {
-		r->cls = C55_RC_SP; r->num = 0;
+		r->cls = C55_RC_SP;
+		r->num = 0;
 	} else if (idx == 54) {
-		r->cls = C55_RC_DP; r->num = 0;
+		r->cls = C55_RC_DP;
+		r->num = 0;
 	} else if (idx < 64) {
-		r->cls = C55_RC_SPECIAL; r->num = idx; // 56-59,62,63 (55/60/61 -> NULL)
+		r->cls = C55_RC_SPECIAL;
+		r->num = idx; // 56-59,62,63 (55/60/61 -> NULL)
 	} else if (idx < 96) {
-		r->cls = C55_RC_AC; r->num = (ut8)(idx - 64); r->sub = C55_SUB_HI;
+		r->cls = C55_RC_AC;
+		r->num = (ut8)(idx - 64);
+		r->sub = C55_SUB_HI;
 	} else if (idx < 128) {
-		r->cls = C55_RC_AC; r->num = (ut8)(idx - 96); r->sub = C55_SUB_LO;
+		r->cls = C55_RC_AC;
+		r->num = (ut8)(idx - 96);
+		r->sub = C55_SUB_LO;
 	} else if (idx < 144) {
-		r->cls = C55_RC_XAR; r->num = (ut8)(idx - 128);
+		r->cls = C55_RC_XAR;
+		r->num = (ut8)(idx - 128);
 	} else if (idx < 160) {
-		r->cls = C55_RC_SPECIAL; r->num = idx; // 148-150 xssp/xsp/xdp, 152-159 rsa/rea/...
+		r->cls = C55_RC_SPECIAL;
+		r->num = idx; // 148-150 xssp/xsp/xdp, 152-159 rsa/rea/...
 	} else if (idx < 176) {
-		r->cls = C55_RC_XAR; r->num = (ut8)(idx - 160); r->sub = C55_SUB_HI;
+		r->cls = C55_RC_XAR;
+		r->num = (ut8)(idx - 160);
+		r->sub = C55_SUB_HI;
 	} else if (idx < 192) {
-		r->cls = C55_RC_SPECIAL; r->num = idx; // 180-191 xssp.h/pdp/bsa/bk...
+		r->cls = C55_RC_SPECIAL;
+		r->num = idx; // 180-191 xssp.h/pdp/bsa/bk...
 	} else if (idx < 208) {
-		r->cls = C55_RC_AC; r->num = (ut8)(idx - 192); r->sub = C55_SUB_GUARD; // ac0.g-ac15.g
+		r->cls = C55_RC_AC;
+		r->num = (ut8)(idx - 192);
+		r->sub = C55_SUB_GUARD; // ac0.g-ac15.g
 	} else if (idx < 224) {
 		; // 208-223 unused (ac16.g-ac31.g not decoded, matching dis55/th0rpe)
 	} else {
-		r->cls = C55_RC_SPECIAL; r->num = idx; // 224-252 st/ier/ifr/rsa.h/...
+		r->cls = C55_RC_SPECIAL;
+		r->num = idx; // 224-252 st/ier/ifr/rsa.h/...
 	}
 }
 
@@ -312,13 +392,18 @@ static void c55plus_cond_reg(ut8 idx5, C55Reg *r) {
 	r->num = 0;
 	r->sub = C55_SUB_NONE;
 	if (idx5 < 8) {
-		r->cls = C55_RC_AC; r->num = idx5;
+		r->cls = C55_RC_AC;
+		r->num = idx5;
 	} else if (idx5 < 12) {
-		r->cls = C55_RC_T; r->num = (ut8)(idx5 - 8);
+		r->cls = C55_RC_T;
+		r->num = (ut8)(idx5 - 8);
 	} else if (idx5 >= 16 && idx5 < 24) {
-		r->cls = C55_RC_AR; r->num = (ut8)(idx5 - 16);
+		r->cls = C55_RC_AR;
+		r->num = (ut8)(idx5 - 16);
 	} else if (idx5 >= 24 && idx5 < 32) {
-		r->cls = C55_RC_AC; r->num = (ut8)(idx5 - 24); r->sub = C55_SUB_LO;
+		r->cls = C55_RC_AC;
+		r->num = (ut8)(idx5 - 24);
+		r->sub = C55_SUB_LO;
 	}
 }
 
@@ -395,7 +480,6 @@ static void c55plus_x_tcflag(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	out->cond_flag = (ut8)(4 + (bits & 0x1));
 }
 
-
 // or tc2 (1); byte1[7] negates it (!tcN). The shared cmpand/cmpor lift maps
 // cond-flag ids 4/5 to tc1/tc2 and 20/21 to their negations.
 static void c55plus_x_cmp_tcin(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
@@ -407,7 +491,6 @@ static void c55plus_x_cmp_tcin(const C55ArchDesc *a, ut64 bits, const C55OpDesc 
 	out->cond_is_flag = true;
 	out->cond_flag = (ut8)((neg ? 20 : 4) + sel);
 }
-
 
 // compared to a 7-bit immediate. The 2-bit relop is split across byte1 bit 7
 // (high) and byte2 bit 7 (low): 0 ==, 1 !=, 2 <, 3 >= (TI get_cmp_op order).
@@ -1217,12 +1300,27 @@ static void c55plus_x_mac_mem(const C55ArchDesc *a, ut8 ab, bool uns, C55Operand
 	switch ((ab >> 4) & 0x7) {
 	case 0: out->amode = C55_AM_POSTDEC; break;
 	case 1: out->amode = C55_AM_POSTINC; break;
-	case 2: out->amode = C55_AM_IDXREG; c55plus_gr1(48, &out->index); break; // t0
+	case 2:
+		out->amode = C55_AM_IDXREG;
+		c55plus_gr1(48, &out->index);
+		break; // t0
 	case 3: out->amode = C55_AM_INDIRECT; break;
-	case 4: out->amode = C55_AM_POSTSUB; c55plus_gr1(48, &out->index); break; // t0
-	case 5: out->amode = C55_AM_POSTSUB; c55plus_gr1(49, &out->index); break; // t1
-	case 6: out->amode = C55_AM_POSTADD; c55plus_gr1(48, &out->index); break; // t0
-	default: out->amode = C55_AM_POSTADD; c55plus_gr1(49, &out->index); break; // t1
+	case 4:
+		out->amode = C55_AM_POSTSUB;
+		c55plus_gr1(48, &out->index);
+		break; // t0
+	case 5:
+		out->amode = C55_AM_POSTSUB;
+		c55plus_gr1(49, &out->index);
+		break; // t1
+	case 6:
+		out->amode = C55_AM_POSTADD;
+		c55plus_gr1(48, &out->index);
+		break; // t0
+	default:
+		out->amode = C55_AM_POSTADD;
+		c55plus_gr1(49, &out->index);
+		break; // t1
 	}
 }
 // Xmem of the 0xc8 multiply family: byte1[6:4] mode, byte1[3:0] ARn; byte2[5]
@@ -2014,7 +2112,6 @@ static void c55plus_x_xar_src(const C55ArchDesc *a, ut64 bits, const C55OpDesc *
 	out->width = c55plus_reg_width(a, &out->reg);
 }
 
-
 static void c55plus_x_gr6(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	ut8 b_mode = (ut8)(bits & 0xff);
@@ -2124,7 +2221,6 @@ static void c55plus_x_amar_smem(const C55ArchDesc *a, ut64 bits, const C55OpDesc
 	}
 }
 
-
 // forms are decoded: the SP-relative *sp(#k) (3 bytes, byte2[7:6]==11 with
 // byte1[7]==1, offset k = byte1[6:0]) and the long const-index *arN(#K16) (5
 // bytes, byte2[7:6]==01 with byte1[7:4]==8, base ARn = byte1[3:0], the unsigned
@@ -2214,7 +2310,6 @@ static void c55plus_x_sft7b_one(const C55ArchDesc *a, ut64 bits, const C55OpDesc
 	out->hash_dec = true;
 }
 
-
 // add uns(*Smem), ACx, ACy (opcode 0x8c, 4 bytes): a memory-source add into an
 // accumulator. The Smem operand is byte1:byte2 (the shared Smem decode reads
 // byte2[7:6] + byte1[7:4] only); byte2[5]==1 is the always-set uns marker and
@@ -2295,7 +2390,6 @@ static void c55plus_x_24_mmr(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	c55plus_gr1((ut8)((bits >> 8) & 0x7f), &out->reg); // byte2: the mmap register
 }
 
-
 // sftcc ACx, TCx (opcode 0xa9, byte1[7]==1 && byte2[7]==1, 4 bytes): conditional
 // shift -- shift ACx and write the result-condition to TCx. ACx is ac(byte1[5:0]);
 // TCx is tc1/tc2 from byte2[5]. Left unlifted, as in the legacy decoder.
@@ -2315,7 +2409,6 @@ static void c55plus_x_a9_sftcc_tc(const C55ArchDesc *a, ut64 bits, const C55OpDe
 	out->cond_is_flag = true;
 	out->cond_flag = ((bits >> 13) & 1) ? 5 : 4; // byte2[5]: 1 -> tc2, 0 -> tc1
 }
-
 
 // is a signed 16-bit pc-relative displacement (bytes 1-2), taken when the
 // condition byte (byte3) holds. The operand is rendered as the raw 16-bit field
@@ -2361,7 +2454,6 @@ static void c55plus_x_a9_bcnt_dst(const C55ArchDesc *a, ut64 bits, const C55OpDe
 	out->width = c55plus_reg_width(a, &out->reg);
 }
 
-
 // the exponent (leading-bit count) of ACsrc into the destination. SRC is
 // ac(byte3[4:0]); DST is gr1_sub7(byte1) (a whole accumulator or its .h/.l half).
 // Left unlifted, as in the legacy decoder. (The 0xa9 opcode also hosts bcnt --
@@ -2377,7 +2469,6 @@ static void c55plus_x_a9_exp_dst(const C55ArchDesc *a, ut64 bits, const C55OpDes
 	(void)d;
 	c55plus_gr1_sub7(a, (ut8)((bits >> 16) & 0x7f), out); // byte1[6:0]
 }
-
 
 // the single-repeat counter from csr, optionally adjusted by a 4-bit immediate
 // or a register. byte1[7:6] selects: 00 rptsub #k, 01 rptadd #k, 10 rptadd reg,
@@ -2406,7 +2497,6 @@ static void c55plus_x_01_reg(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	out->kind = C55_OP_REG;
 	out->width = c55plus_reg_width(a, &out->reg);
 }
-
 
 // status flag into ACy, lifted by the shared rol/ror path. byte3[7] selects rol
 // (0) / ror (1); the carry-in / carry-out flags are COND operands (carry / tc2)
@@ -2447,7 +2537,6 @@ static void c55plus_x_a8_dst(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	}
 }
 
-
 // in the st0_55 status register. byte1[5] selects bset (1) vs bclr (0); byte1[4:0]
 // is the bit position, which also selects the bit name (st0_dp07..dp15,
 // st0_acov0/1/2/3, st0_carry, st0_tc1/tc2). The bit operand is rendered as the
@@ -2472,7 +2561,6 @@ static void c55plus_x_0a_st0(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	out->width = 16;
 }
 
-
 // memory-mapped register. byte2 is the mmap register (a gr1 selector); byte3[3]
 // selects pop (1) vs psh (0). Lifted by the shared stack path (the MMR operand
 // moves through the stack as a plain register). Only the simple register form is
@@ -2491,7 +2579,6 @@ static void c55plus_x_24_mmr_stack(const C55ArchDesc *a, ut64 bits, const C55OpD
 	c55plus_gr1((ut8)((bits >> 8) & 0xff), &out->reg); // byte2: the mmap register
 }
 
-
 // rX is gr1(byte1) and rY gr1(byte2), each a full 8-bit gr1 selector (so the
 // ac.h / ac.l half-register encodings are covered). The shared stack lift emits
 // the per-register load/store and SP adjustment in operand order.
@@ -2507,7 +2594,6 @@ static void c55plus_x_pair_reg2(const C55ArchDesc *a, ut64 bits, const C55OpDesc
 	c55plus_gr1((ut8)(bits & 0xff), &out->reg); // byte2
 	out->width = c55plus_reg_width(a, &out->reg);
 }
-
 
 // pshboth / popboth <reg> (opcode 0x0d, 2 bytes): push / pop a register pair. The
 // register class is byte1[5] (0 ac / 1 xar) and the index is byte1[4:0]; byte1[7]
@@ -2555,17 +2641,50 @@ static void c55plus_x_pshpopboth_reg(const C55ArchDesc *a, ut64 bits, const C55O
 // pair table below maps byte1[4:0] to the two gr1 register indices.
 static bool c55plus_swap_pair(ut8 sel, ut8 *rx, ut8 *ry) {
 	switch (sel) {
-	case 0x01: *rx = 0; *ry = 2; return true; // ac0, ac2
-	case 0x02: *rx = 1; *ry = 3; return true; // ac1, ac3
-	case 0x04: *rx = 32; *ry = 33; return true; // ar0, ar1
-	case 0x05: *rx = 32; *ry = 34; return true; // ar0, ar2
-	case 0x06: *rx = 33; *ry = 35; return true; // ar1, ar3
-	case 0x09: *rx = 48; *ry = 50; return true; // t0, t2
-	case 0x0a: *rx = 49; *ry = 51; return true; // t1, t3
-	case 0x15: *rx = 36; *ry = 48; return true; // ar4, t0
-	case 0x16: *rx = 37; *ry = 49; return true; // ar5, t1
-	case 0x19: *rx = 38; *ry = 50; return true; // ar6, t2
-	case 0x1a: *rx = 39; *ry = 51; return true; // ar7, t3
+	case 0x01:
+		*rx = 0;
+		*ry = 2;
+		return true; // ac0, ac2
+	case 0x02:
+		*rx = 1;
+		*ry = 3;
+		return true; // ac1, ac3
+	case 0x04:
+		*rx = 32;
+		*ry = 33;
+		return true; // ar0, ar1
+	case 0x05:
+		*rx = 32;
+		*ry = 34;
+		return true; // ar0, ar2
+	case 0x06:
+		*rx = 33;
+		*ry = 35;
+		return true; // ar1, ar3
+	case 0x09:
+		*rx = 48;
+		*ry = 50;
+		return true; // t0, t2
+	case 0x0a:
+		*rx = 49;
+		*ry = 51;
+		return true; // t1, t3
+	case 0x15:
+		*rx = 36;
+		*ry = 48;
+		return true; // ar4, t0
+	case 0x16:
+		*rx = 37;
+		*ry = 49;
+		return true; // ar5, t1
+	case 0x19:
+		*rx = 38;
+		*ry = 50;
+		return true; // ar6, t2
+	case 0x1a:
+		*rx = 39;
+		*ry = 51;
+		return true; // ar7, t3
 	default: return false;
 	}
 }
@@ -2592,7 +2711,6 @@ static void c55plus_x_swap_y(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	out->width = c55plus_reg_width(a, &out->reg);
 }
 
-
 // 5-bit vector number in byte1[4:0]. byte1[7:6] selects intr (00) / trap (01) /
 // sim_trig (11). Left unlifted, as in the legacy decoder.
 static void c55plus_x_03_k5(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
@@ -2602,7 +2720,6 @@ static void c55plus_x_03_k5(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d,
 	out->imm = bits & 0x1f; // byte1[4:0]
 	out->width = 5;
 }
-
 
 // (rounding) saturate. byte1[7]==0 selects round; byte1[7]==1 selects sat, with
 // byte1[5] choosing the rounding variant (satr). SRC is the accumulator
@@ -2621,7 +2738,6 @@ static void c55plus_x_79_dst(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	out->width = c55plus_reg_width(a, &out->reg);
 }
 
-
 // value / min / max. byte1[7] and byte2[7] together select the operation
 // (00 abs, 01 neg, 10 max, 11 min); SRC is byte2[6:0] and DST byte1[6:0], both
 // 7-bit register selectors. ops = [SRC, DST], lifted by the shared register-op
@@ -2635,7 +2751,6 @@ static void c55plus_x_76_dst(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	(void)d;
 	c55plus_gr1_sub7(a, (ut8)((bits >> 8) & 0x7f), out); // byte1[6:0]
 }
-
 
 // add/sub #k16 << #sh, ACx, ACy (opcode 0xc2, base 5 bytes): an immediate
 // shifted by a variable amount combined with an accumulator. byte1[7]==0 selects
@@ -2695,7 +2810,6 @@ static void c55plus_x_c0_acy(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	c55plus_gr1((ut8)((bits >> 24) & 0x1f), &out->reg); // byte1[4:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
-
 
 // operand against a 16-bit immediate, result into TC1/TC2. The Smem operand is
 // byte1:byte2 (the shared Smem decode reads byte2[7:6] + byte1[7:4]); byte2[1:0]
@@ -2761,7 +2875,6 @@ static void c55plus_x_b2_band_k16(const C55ArchDesc *a, ut64 bits, const C55OpDe
 	out->width = 16;
 }
 
-
 // accumulator (the signed counterpart of the 0x8c uns form). The Smem operand
 // is byte1:byte2 (the shared Smem decode reads byte2[7:6] + byte1[7:4] only);
 // ACx is byte3[4:0] and ACy byte2[4:0]. Left unlifted, as in the legacy decoder.
@@ -2773,7 +2886,6 @@ static void c55plus_x_80_mem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 		out->kind = C55_OP_INVALID;
 	}
 }
-
 
 // memory move. Operand A is byte1 + byte2[7:6] decoded by the shared Smem
 // helper; operand B is byte3, whose [6:4] field selects a register-modify mode
@@ -2804,18 +2916,32 @@ static void c55plus_x_97_memB(const C55ArchDesc *a, ut64 bits, const C55OpDesc *
 	switch ((b3 >> 4) & 7) {
 	case 0: out->amode = C55_AM_POSTDEC; break;
 	case 1: out->amode = C55_AM_POSTINC; break;
-	case 2: out->amode = C55_AM_IDXREG; c55plus_gr1(48, &out->index); break; // t0
+	case 2:
+		out->amode = C55_AM_IDXREG;
+		c55plus_gr1(48, &out->index);
+		break; // t0
 	case 3: out->amode = C55_AM_INDIRECT; break;
-	case 4: out->amode = C55_AM_POSTSUB; c55plus_gr1(48, &out->index); break; // *(arN-t0)
-	case 5: out->amode = C55_AM_POSTSUB; c55plus_gr1(49, &out->index); break; // *(arN-t1)
-	case 6: out->amode = C55_AM_POSTADD; c55plus_gr1(48, &out->index); break; // *(arN+t0)
-	default: out->amode = C55_AM_POSTADD; c55plus_gr1(49, &out->index); break; // *(arN+t1)
+	case 4:
+		out->amode = C55_AM_POSTSUB;
+		c55plus_gr1(48, &out->index);
+		break; // *(arN-t0)
+	case 5:
+		out->amode = C55_AM_POSTSUB;
+		c55plus_gr1(49, &out->index);
+		break; // *(arN-t1)
+	case 6:
+		out->amode = C55_AM_POSTADD;
+		c55plus_gr1(48, &out->index);
+		break; // *(arN+t0)
+	default:
+		out->amode = C55_AM_POSTADD;
+		c55plus_gr1(49, &out->index);
+		break; // *(arN+t1)
 	}
 	if ((b_mode >> 2) & 1) {
 		out->byte_sel = 3; // byte()
 	}
 }
-
 
 // memory-source subtract. The Smem operand is byte1:byte2 (the shared Smem
 // decode reads byte2[7:6] + byte1[7:4], plus the grp==3 *sp(#k) sub-mode driven
@@ -2846,7 +2972,6 @@ static void c55plus_x_82_acy(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	out->width = c55plus_reg_width(a, &out->reg);
 }
 
-
 // into an accumulator. The Smem operand is byte1:byte2 (the shared Smem decode
 // reads byte2[7:6] + byte1[7:4] only); ACx is byte3[6:0] (a 7-bit register
 // selector); ACy is byte2[4:0] with byte3[7] selecting its high half (.h). Left
@@ -2874,7 +2999,6 @@ static void c55plus_x_85_acy(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	}
 	out->width = c55plus_reg_width(a, &out->reg);
 }
-
 
 // bytes): a double-word memory operand combined with two accumulators. byte3[7:6]
 // selects the operation and operand order (00 = add mem-first, 01 = sub
@@ -2942,285 +3066,218 @@ static const C55InsnDef c55plus_table[] = {
 	// condition byte (byte1) holds. The condition reuses the shared c55plus_x_cond
 	// decoder. No IL; the conditional-return analysis keeps a fall-through edge
 	// and the return-address stack adjustment.
-	{ .mask = 0xff000000, .match = 0x08000000, .id = TMS320C55_INS_RETCC,
-	  .ops = { { .lo = 0, .fn = c55plus_x_cond } } },
+	{ .mask = 0xff000000, .match = 0x08000000, .id = TMS320C55_INS_RETCC, .ops = { { .lo = 0, .fn = c55plus_x_cond } } },
 	{ .mask = 0xffff0000, .match = 0x00c00000, .id = TMS320C55_INS_RETI },
 	{ .mask = 0xffff0000, .match = 0x00340000, .id = TMS320C55_INS_RESET },
 	{ .mask = 0xffff0000, .match = 0x00200000, .id = TMS320C55_INS_IDLE },
 	// rpt #k16 (opcode 0x6c, 3 bytes): arm the single-instruction repeat counter
 	// with the 16-bit count in bytes 1:2. It has no data effect of its own (the
 	// shared lifter emits a nop for the REP op type, matching the legacy decoder).
-	{ .mask = 0xff000000, .match = 0x6c000000, .id = TMS320C55_INS_RPT,
-	  .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_imm16 } } },
+	{ .mask = 0xff000000, .match = 0x6c000000, .id = TMS320C55_INS_RPT, .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_imm16 } } },
 	// rptcc #k, <cond> (opcode 0x6d, 3 bytes): conditionally repeat the next
 	// instruction #k+1 times when the condition byte (byte1) holds. #k is the
 	// 8-bit immediate in byte2; the condition reuses the shared c55plus_x_cond
 	// decoder. Lifts to a nop (a repeat op type), matching the legacy decoder.
-	{ .mask = 0xff000000, .match = 0x6d000000, .id = TMS320C55_INS_RPTCC, .lop = C55_LOP_NOP, .len = 3,
-	  .ops = { { .fn = c55plus_x_k8 }, { .lo = 8, .fn = c55plus_x_cond } } },
+	{ .mask = 0xff000000, .match = 0x6d000000, .id = TMS320C55_INS_RPTCC, .lop = C55_LOP_NOP, .len = 3, .ops = { { .fn = c55plus_x_k8 }, { .lo = 8, .fn = c55plus_x_cond } } },
 	// rptblocal #l8 (opcode 0x6e, 3 bytes): local block-repeat to an 8-bit block-end
 	// label (byte2). Lifts to a nop, as the legacy decoder does.
-	{ .mask = 0xff000000, .match = 0x6e000000, .id = TMS320C55_INS_RPTBLOCAL, .lop = C55_LOP_NOP, .len = 3,
-	  .ops = { { .fn = c55plus_x_rptblocal_lbl } } },
+	{ .mask = 0xff000000, .match = 0x6e000000, .id = TMS320C55_INS_RPTBLOCAL, .lop = C55_LOP_NOP, .len = 3, .ops = { { .fn = c55plus_x_rptblocal_lbl } } },
 	// rptb #l16 (opcode 0x6f, 3 bytes): block-repeat to a 16-bit block-end label.
 	// No data effect of its own (lifts to a nop), matching the legacy decoder.
-	{ .mask = 0xff000000, .match = 0x6f000000, .id = TMS320C55_INS_RPTB, .lop = C55_LOP_NOP, .len = 3,
-	  .ops = { { .fn = c55plus_x_rptb_lbl } } },
+	{ .mask = 0xff000000, .match = 0x6f000000, .id = TMS320C55_INS_RPTB, .lop = C55_LOP_NOP, .len = 3, .ops = { { .fn = c55plus_x_rptb_lbl } } },
 	// amar *ptr1, *ptr2, *ptr3 (opcode 0xea, byte1[7]==1, 6 bytes): the triple
 	// address-register modify (three register-modify pointers). Left unlifted, as
 	// in the legacy decoder.
-	{ .mask = 0xff800000, .match = 0xea800000, .id = TMS320C55_INS_AMAR, .len = 6,
-	  .ops = { { .fn = c55plus_x_amar3_p1 }, { .fn = c55plus_x_amar3_p2 }, { .fn = c55plus_x_amar3_p3 } } },
+	{ .mask = 0xff800000, .match = 0xea800000, .id = TMS320C55_INS_AMAR, .len = 6, .ops = { { .fn = c55plus_x_amar3_p1 }, { .fn = c55plus_x_amar3_p2 }, { .fn = c55plus_x_amar3_p3 } } },
 	// amar *Smem (opcode 0x62, 3 bytes): modify auxiliary register via the Smem
 	// addressing-mode side effect. The shared LEA lift emits the AR post-modify.
-	{ .mask = 0xff000000, .match = 0x62000000, .id = TMS320C55_INS_AMAR, .len = 3,
-	  .ops = { { .fn = c55plus_x_amar_smem } } },
+	{ .mask = 0xff000000, .match = 0x62000000, .id = TMS320C55_INS_AMAR, .len = 3, .ops = { { .fn = c55plus_x_amar_smem } } },
 	// amar *sp(#k), xar (opcode 0x63, 3 bytes): load the SP-relative word
 	// effective address into an extended AR register (xar = sp + k). Only the
 	// *sp(#k) form is decoded here (see c55plus_x_amar_mem); the DP-direct,
 	// register-modify, and long const-index forms fall back to the legacy decoder.
-	{ .mask = 0xff000000, .match = 0x63000000, .id = TMS320C55_INS_AMAR,
-	  .ops = { { .fn = c55plus_x_amar_mem }, { .fn = c55plus_x_amar_xar } } },
+	{ .mask = 0xff000000, .match = 0x63000000, .id = TMS320C55_INS_AMAR, .ops = { { .fn = c55plus_x_amar_mem }, { .fn = c55plus_x_amar_xar } } },
 	// psh/pop reg (opcodes 0x0e/0x0f): single register byte
-	{ .mask = 0xff000000, .match = 0x0e000000, .id = TMS320C55_INS_PSH,
-	  .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_reg_pshpop } } },
-	{ .mask = 0xff000000, .match = 0x0f000000, .id = TMS320C55_INS_POP,
-	  .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_reg_pshpop } } },
+	{ .mask = 0xff000000, .match = 0x0e000000, .id = TMS320C55_INS_PSH, .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_reg_pshpop } } },
+	{ .mask = 0xff000000, .match = 0x0f000000, .id = TMS320C55_INS_POP, .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_reg_pshpop } } },
 	// delay *Smem / psh *Smem (opcodes 0x60 / 0x61, base 3 bytes): a single Smem
 	// operand (bytes 1:2 with the usual extension), left unlifted as in the
 	// legacy decoder. c55plus_x_smem_dest decodes the full Smem mode set
 	// (including the register-scaled *arN(Tx<<#k) forms and the absolute / mmap
 	// extensions).
-	{ .mask = 0xff000000, .match = 0x60000000, .id = TMS320C55_INS_DELAY,
-	  .ops = { { .fn = c55plus_x_smem_dest } } },
-	{ .mask = 0xff000000, .match = 0x61000000, .id = TMS320C55_INS_PSH,
-	  .ops = { { .fn = c55plus_x_smem_dest } } },
+	{ .mask = 0xff000000, .match = 0x60000000, .id = TMS320C55_INS_DELAY, .ops = { { .fn = c55plus_x_smem_dest } } },
+	{ .mask = 0xff000000, .match = 0x61000000, .id = TMS320C55_INS_PSH, .ops = { { .fn = c55plus_x_smem_dest } } },
 	// mov src, dst (opcode 0x77): src is byte 2, dst is byte 1
-	{ .mask = 0xff000000, .match = 0x77000000, .id = TMS320C55_INS_MOV,
-	  .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_reg_src }, { .lo = 8, .width = 8, .fn = c55plus_x_reg_dst } } },
+	{ .mask = 0xff000000, .match = 0x77000000, .id = TMS320C55_INS_MOV, .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_reg_src }, { .lo = 8, .width = 8, .fn = c55plus_x_reg_dst } } },
 	// b #target (opcode 0x68): 16-bit pc-relative unconditional branch, the
 	// branch sibling of call 0x69. The displacement is shown as a 24-bit
 	// address; c55_effective_type sees the immediate operand and types it JMP.
-	{ .mask = 0xff000000, .match = 0x68000000, .id = TMS320C55_INS_B,
-	  .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_addr } } },
+	{ .mask = 0xff000000, .match = 0x68000000, .id = TMS320C55_INS_B, .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_addr } } },
 	// call #target (opcode 0x69): 16-bit field shown as a 24-bit address
-	{ .mask = 0xff000000, .match = 0x69000000, .id = TMS320C55_INS_CALL,
-	  .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_addr } } },
+	{ .mask = 0xff000000, .match = 0x69000000, .id = TMS320C55_INS_CALL, .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_addr } } },
 	// call #target (opcode 0x9d, 4 bytes): direct call to a 24-bit absolute
 	// address in bytes 1:3. Lifts (like the legacy decoder) to an unconditional
 	// transfer to the resolved target; the return-address push lives in the
 	// analysis stack metadata, not the IL.
-	{ .mask = 0xff000000, .match = 0x9d000000, .id = TMS320C55_INS_CALL,
-	  .ops = { { .fn = c55plus_x_addr24 } } },
+	{ .mask = 0xff000000, .match = 0x9d000000, .id = TMS320C55_INS_CALL, .ops = { { .fn = c55plus_x_addr24 } } },
 	// b #target (opcode 0x9c, 4 bytes): the unconditional-branch sibling of the
 	// 0x9d call -- a direct transfer to a 24-bit absolute address in bytes 1:3.
 	// c55_effective_type sees the address immediate and types it JMP.
-	{ .mask = 0xff000000, .match = 0x9c000000, .id = TMS320C55_INS_B,
-	  .ops = { { .fn = c55plus_x_addr24 } } },
+	{ .mask = 0xff000000, .match = 0x9c000000, .id = TMS320C55_INS_B, .ops = { { .fn = c55plus_x_addr24 } } },
 	// callcc #target, <cond> (opcode 0x9b, 4 bytes): conditional call to a 16-bit
 	// absolute target (bytes 1:2), taken when the condition byte (byte3) holds.
 	// No IL; the conditional-call analysis records the jump, the fall-through
 	// edge, and the return-address stack adjustment.
-	{ .mask = 0xff000000, .match = 0x9b000000, .id = TMS320C55_INS_CALLCC,
-	  .ops = { { .fn = c55plus_x_callcc_target }, { .lo = 0, .fn = c55plus_x_cond } } },
+	{ .mask = 0xff000000, .match = 0x9b000000, .id = TMS320C55_INS_CALLCC, .ops = { { .fn = c55plus_x_callcc_target }, { .lo = 0, .fn = c55plus_x_cond } } },
 	// b ACx / call ACx (opcode 0x02, 2 bytes): register-indirect branch/call to
 	// the 24-bit address held in an accumulator (byte1[4:0]). byte1[7] selects
 	// the form -- 0 b, 1 call -- and the register operand refines the type to
 	// UJMP/UCALL. byte1[6]/byte1[5] add the "|| local()" / "|| far()" parallel
 	// qualifiers, rendered after the register.
-	{ .mask = 0xff800000, .match = 0x02000000, .id = TMS320C55_INS_B, .len = 2,
-	  .ops = { { .fn = c55plus_x_acc_b1lo }, { .fn = c55plus_x_b1_local }, { .fn = c55plus_x_b1_far } } },
-	{ .mask = 0xff800000, .match = 0x02800000, .id = TMS320C55_INS_CALL, .len = 2,
-	  .ops = { { .fn = c55plus_x_acc_b1lo }, { .fn = c55plus_x_b1_local }, { .fn = c55plus_x_b1_far } } },
+	{ .mask = 0xff800000, .match = 0x02000000, .id = TMS320C55_INS_B, .len = 2, .ops = { { .fn = c55plus_x_acc_b1lo }, { .fn = c55plus_x_b1_local }, { .fn = c55plus_x_b1_far } } },
+	{ .mask = 0xff800000, .match = 0x02800000, .id = TMS320C55_INS_CALL, .len = 2, .ops = { { .fn = c55plus_x_acc_b1lo }, { .fn = c55plus_x_b1_local }, { .fn = c55plus_x_b1_far } } },
 	// xccpart <cond> / xcc <cond> (opcodes 0x07 / 0x06, 2 bytes): the
 	// conditional-execution guards. byte1 is the condition, encoded exactly as in
 	// the compare-and-branch family, so the shared condition decode and the COND
 	// operand formatter render it directly. (xccpart guards a parallel slot, xcc
 	// the next instruction; both are left unlifted, as the legacy lifter does.)
-	{ .mask = 0xff000000, .match = 0x07000000, .id = TMS320C55_INS_XCCPART, .lop = C55_LOP_NOP, .xcc_guard = true, .len = 2,
-	  .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_cond } } },
+	{ .mask = 0xff000000, .match = 0x07000000, .id = TMS320C55_INS_XCCPART, .lop = C55_LOP_NOP, .xcc_guard = true, .len = 2, .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_cond } } },
 	// xccpart <cond> (opcode 0x05, 2 bytes): the same conditional-execution guard
 	// with the byte0=0x05 selector (the 0x07 / 0x05 variants differ only in which
 	// parallel slot they guard); the condition byte is encoded identically, so it
 	// reuses the shared condition decode. Left unlifted, as in the legacy decoder.
-	{ .mask = 0xff000000, .match = 0x05000000, .id = TMS320C55_INS_XCCPART, .lop = C55_LOP_NOP, .xcc_guard = true, .len = 2,
-	  .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_cond } } },
-	{ .mask = 0xff000000, .match = 0x06000000, .id = TMS320C55_INS_XCC, .lop = C55_LOP_NOP, .len = 2,
-	  .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_cond } } },
+	{ .mask = 0xff000000, .match = 0x05000000, .id = TMS320C55_INS_XCCPART, .lop = C55_LOP_NOP, .xcc_guard = true, .len = 2, .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_cond } } },
+	{ .mask = 0xff000000, .match = 0x06000000, .id = TMS320C55_INS_XCC, .lop = C55_LOP_NOP, .len = 2, .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_cond } } },
 	// bcc #target, <cond> (opcode 0x6a): byte 1 target (8-bit), byte 2 condition
-	{ .mask = 0xff000000, .match = 0x6a000000, .id = TMS320C55_INS_BCC,
-	  .ops = { { .lo = 8, .width = 8, .fn = c55plus_x_addr }, { .lo = 0, .width = 8, .fn = c55plus_x_cond } } },
+	{ .mask = 0xff000000, .match = 0x6a000000, .id = TMS320C55_INS_BCC, .ops = { { .lo = 8, .width = 8, .fn = c55plus_x_addr }, { .lo = 0, .width = 8, .fn = c55plus_x_cond } } },
 	// bcc #target, <cond> (opcode 0x9a, 4 bytes): as 0x6a but with a 16-bit
 	// target (bytes 1:2) and the condition byte in byte 3. The condition reuses
 	// the shared cond decode/lift, so the tc-flag and register/accumulator
 	// compare-with-zero forms lift while the overflow and tc-combination
 	// conditions the shared predicate builder does not model fall back to the
 	// per-arch lifter (which also leaves them unlifted).
-	{ .mask = 0xff000000, .match = 0x9a000000, .id = TMS320C55_INS_BCC, .len = 4,
-	  .ops = { { .lo = 8, .width = 16, .fn = c55plus_x_addr }, { .lo = 0, .width = 8, .fn = c55plus_x_cond } } },
+	{ .mask = 0xff000000, .match = 0x9a000000, .id = TMS320C55_INS_BCC, .len = 4, .ops = { { .lo = 8, .width = 16, .fn = c55plus_x_addr }, { .lo = 0, .width = 8, .fn = c55plus_x_cond } } },
 	// bcc #target, <cond> (opcode 0xd8, 5 bytes) and callcc #target, <cond>
 	// (opcode 0xd9): a 24-bit absolute target in bytes 1:3 with an 8-bit
 	// condition in byte 4 -- the long-immediate-target conditional transfers.
 	// The absolute target drives the jump edge; the conditional-transfer
 	// analysis adds the fall-through (and, for callcc, the return-address
 	// stack metadata).
-	{ .mask = 0xff000000, .match = 0xd8000000, .id = TMS320C55_INS_BCC, .len = 5,
-	  .ops = { { .lo = 8, .fn = c55plus_x_addr24 }, { .lo = 0, .width = 8, .fn = c55plus_x_cond } } },
-	{ .mask = 0xff000000, .match = 0xd9000000, .id = TMS320C55_INS_CALLCC, .len = 5,
-	  .ops = { { .lo = 8, .fn = c55plus_x_addr24 }, { .lo = 0, .width = 8, .fn = c55plus_x_cond } } },
+	{ .mask = 0xff000000, .match = 0xd8000000, .id = TMS320C55_INS_BCC, .len = 5, .ops = { { .lo = 8, .fn = c55plus_x_addr24 }, { .lo = 0, .width = 8, .fn = c55plus_x_cond } } },
+	{ .mask = 0xff000000, .match = 0xd9000000, .id = TMS320C55_INS_CALLCC, .len = 5, .ops = { { .lo = 8, .fn = c55plus_x_addr24 }, { .lo = 0, .width = 8, .fn = c55plus_x_cond } } },
 	// bcc/bccu #target, Ra <relop> Rb (opcodes 0xda/0xdb, 5 bytes): target bytes
 	// 3:4 (16-bit), condition bytes 1:2 (two registers + split 2-bit relop). As
 	// with the reg-immediate forms, 0xda is signed ('bcc') and 0xdb unsigned
 	// ('bccu'), selected by uns_all.
-	{ .mask = 0xff000000, .match = 0xda000000, .id = TMS320C55_INS_BCC,
-	  .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_addr }, { .lo = 16, .width = 16, .fn = c55plus_x_cond_reg } } },
-	{ .mask = 0xff000000, .match = 0xdb000000, .id = TMS320C55_INS_BCC, .uns_all = true,
-	  .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_addr }, { .lo = 16, .width = 16, .fn = c55plus_x_cond_reg } } },
+	{ .mask = 0xff000000, .match = 0xda000000, .id = TMS320C55_INS_BCC, .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_addr }, { .lo = 16, .width = 16, .fn = c55plus_x_cond_reg } } },
+	{ .mask = 0xff000000, .match = 0xdb000000, .id = TMS320C55_INS_BCC, .uns_all = true, .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_addr }, { .lo = 16, .width = 16, .fn = c55plus_x_cond_reg } } },
 	// bcc/bccu #target, reg <relop> #imm (opcodes 0xdc/0xdd, 5 bytes): target
 	// bytes 3:4 (16-bit), condition bytes 1:2 (register + split 2-bit relop +
 	// 7-bit immediate). 0xdc is the signed compare ('bcc'); 0xdd the unsigned
 	// one ('bccu') -- distinguished by uns_all, which both selects the 'u'
 	// mnemonic suffix and makes the ordered relops lift to ule/uge.
-	{ .mask = 0xff000000, .match = 0xdc000000, .id = TMS320C55_INS_BCC,
-	  .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_addr }, { .lo = 16, .width = 16, .fn = c55plus_x_cond_imm } } },
-	{ .mask = 0xff000000, .match = 0xdd000000, .id = TMS320C55_INS_BCC, .uns_all = true,
-	  .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_addr }, { .lo = 16, .width = 16, .fn = c55plus_x_cond_imm } } },
+	{ .mask = 0xff000000, .match = 0xdc000000, .id = TMS320C55_INS_BCC, .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_addr }, { .lo = 16, .width = 16, .fn = c55plus_x_cond_imm } } },
+	{ .mask = 0xff000000, .match = 0xdd000000, .id = TMS320C55_INS_BCC, .uns_all = true, .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_addr }, { .lo = 16, .width = 16, .fn = c55plus_x_cond_imm } } },
 	// bcc/bccu #target, Ra <relop> #k8 (opcodes 0xde/0xdf, 5 bytes): the
 	// upper-half (0x80-0xff) immediate variant of the reg-immediate
 	// compare-and-branch above. 0xde is signed ('bcc'), 0xdf unsigned ('bccu').
-	{ .mask = 0xff000000, .match = 0xde000000, .id = TMS320C55_INS_BCC,
-	  .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_addr }, { .lo = 16, .width = 16, .fn = c55plus_x_cond_imm_hi } } },
-	{ .mask = 0xff000000, .match = 0xdf000000, .id = TMS320C55_INS_BCC, .uns_all = true,
-	  .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_addr }, { .lo = 16, .width = 16, .fn = c55plus_x_cond_imm_hi } } },
+	{ .mask = 0xff000000, .match = 0xde000000, .id = TMS320C55_INS_BCC, .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_addr }, { .lo = 16, .width = 16, .fn = c55plus_x_cond_imm_hi } } },
+	{ .mask = 0xff000000, .match = 0xdf000000, .id = TMS320C55_INS_BCC, .uns_all = true, .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_addr }, { .lo = 16, .width = 16, .fn = c55plus_x_cond_imm_hi } } },
 	// add/sub src, dst (opcode 0x74): dst byte 1 (must be <0x80), src byte 2;
 	// bit 7 of the src byte selects add (0) vs sub (1)
-	{ .mask = 0xff808000, .match = 0x74000000, .id = TMS320C55_INS_ADD,
-	  .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 8, .width = 8, .fn = c55plus_x_gr7 } } },
-	{ .mask = 0xff808000, .match = 0x74008000, .id = TMS320C55_INS_SUB,
-	  .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 8, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff808000, .match = 0x74000000, .id = TMS320C55_INS_ADD, .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 8, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff808000, .match = 0x74008000, .id = TMS320C55_INS_SUB, .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 8, .width = 8, .fn = c55plus_x_gr7 } } },
 	// logic src, dst (opcode 0x75): byte1.bit7 and byte2.bit7 jointly select
 	// and (0,0) / or (0,1) / xor (1,0) / not (1,1, unary src->dst)
-	{ .mask = 0xff808000, .match = 0x75000000, .id = TMS320C55_INS_AND,
-	  .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 8, .width = 8, .fn = c55plus_x_gr7 } } },
-	{ .mask = 0xff808000, .match = 0x75008000, .id = TMS320C55_INS_OR,
-	  .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 8, .width = 8, .fn = c55plus_x_gr7 } } },
-	{ .mask = 0xff808000, .match = 0x75800000, .id = TMS320C55_INS_XOR,
-	  .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 8, .width = 8, .fn = c55plus_x_gr7 } } },
-	{ .mask = 0xff808000, .match = 0x75808000, .id = TMS320C55_INS_NOT,
-	  .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 8, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff808000, .match = 0x75000000, .id = TMS320C55_INS_AND, .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 8, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff808000, .match = 0x75008000, .id = TMS320C55_INS_OR, .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 8, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff808000, .match = 0x75800000, .id = TMS320C55_INS_XOR, .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 8, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff808000, .match = 0x75808000, .id = TMS320C55_INS_NOT, .ops = { { .lo = 0, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 8, .width = 8, .fn = c55plus_x_gr7 } } },
 	// sfts/sftl Rb, #S6, Ra (opcode 0xa7, 4 bytes): dst Ra byte1, src Rb byte2
 	// (both gr1, low 7 bits), 6-bit signed shift S6 in byte3[5:0]. The
 	// (byte1.7, byte2.7, byte3.7) bits select the operation; the two pure shifts
 	// are 1/0/0 (sftl, WACa = WACb <<< S6, logical) and 1/1/0 (sfts, WACa = WACb
 	// << S6, arithmetic). byte3.7 must be 0 here (it is 1 for the xor / carry
 	// variants). Operand order [src, #S6, dst] matches the SFTL/SFTS lifts.
-	{ .mask = 0xff808080, .match = 0xa7800000, .id = TMS320C55_INS_SFTL, .lop = C55_LOP_SFTL,
-	  .ops = { { .lo = 8, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 0, .width = 6, .fn = c55plus_x_shift6 }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 } } },
-	{ .mask = 0xff808080, .match = 0xa7808000, .id = TMS320C55_INS_SFTS, .lop = C55_LOP_SFTS,
-	  .ops = { { .lo = 8, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 0, .width = 6, .fn = c55plus_x_shift6 }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff808080, .match = 0xa7800000, .id = TMS320C55_INS_SFTL, .lop = C55_LOP_SFTL, .ops = { { .lo = 8, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 0, .width = 6, .fn = c55plus_x_shift6 }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff808080, .match = 0xa7808000, .id = TMS320C55_INS_SFTS, .lop = C55_LOP_SFTS, .ops = { { .lo = 8, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 0, .width = 6, .fn = c55plus_x_shift6 }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 } } },
 	// <op> Rb << #S6, Ra (opcode 0xa7 shift-ALU forms, 4 bytes): Ra = Ra <op>
 	// (Rb << S6). Same field layout as the pure shifts (dst Ra byte1, src Rb
 	// byte2, S6 byte3[5:0]); the (byte1.7, byte2.7, byte3.7) bits select the
 	// operation: add (0,0,0), sub (0,1,0), and (0,0,1), or (0,1,1), xor (1,0,1).
 	// The shift is rendered "<< #S6" on the source and lifted as an unsigned
 	// 8-bit left shift (C55_LOP_*SHL, operand order [src, #S6, dst]).
-	{ .mask = 0xff808080, .match = 0xa7000000, .id = TMS320C55_INS_ADD, .lop = C55_LOP_ADDSHL,
-	  .ops = { { .lo = 8, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 0, .width = 6, .fn = c55plus_x_shift6_shl }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 } } },
-	{ .mask = 0xff808080, .match = 0xa7008000, .id = TMS320C55_INS_SUB, .lop = C55_LOP_SUBSHL,
-	  .ops = { { .lo = 8, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 0, .width = 6, .fn = c55plus_x_shift6_shl }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 } } },
-	{ .mask = 0xff808080, .match = 0xa7000080, .id = TMS320C55_INS_AND, .lop = C55_LOP_ANDSHL,
-	  .ops = { { .lo = 8, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 0, .width = 6, .fn = c55plus_x_shift6_shl }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 } } },
-	{ .mask = 0xff808080, .match = 0xa7008080, .id = TMS320C55_INS_OR, .lop = C55_LOP_ORSHL,
-	  .ops = { { .lo = 8, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 0, .width = 6, .fn = c55plus_x_shift6_shl }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 } } },
-	{ .mask = 0xff808080, .match = 0xa7800080, .id = TMS320C55_INS_XOR, .lop = C55_LOP_XORSHL,
-	  .ops = { { .lo = 8, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 0, .width = 6, .fn = c55plus_x_shift6_shl }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff808080, .match = 0xa7000000, .id = TMS320C55_INS_ADD, .lop = C55_LOP_ADDSHL, .ops = { { .lo = 8, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 0, .width = 6, .fn = c55plus_x_shift6_shl }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff808080, .match = 0xa7008000, .id = TMS320C55_INS_SUB, .lop = C55_LOP_SUBSHL, .ops = { { .lo = 8, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 0, .width = 6, .fn = c55plus_x_shift6_shl }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff808080, .match = 0xa7000080, .id = TMS320C55_INS_AND, .lop = C55_LOP_ANDSHL, .ops = { { .lo = 8, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 0, .width = 6, .fn = c55plus_x_shift6_shl }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff808080, .match = 0xa7008080, .id = TMS320C55_INS_OR, .lop = C55_LOP_ORSHL, .ops = { { .lo = 8, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 0, .width = 6, .fn = c55plus_x_shift6_shl }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff808080, .match = 0xa7800080, .id = TMS320C55_INS_XOR, .lop = C55_LOP_XORSHL, .ops = { { .lo = 8, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 0, .width = 6, .fn = c55plus_x_shift6_shl }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 } } },
 	// cmp/cmpu Ra <relop> Rb, TCx (opcode 0xa4 CMPR_RR_10, 4 bytes): TCx = (Ra
 	// <relop> Rb). Ra byte1, Rb byte2 (both gr1), relop byte3[3:2], TCx dst
 	// byte3[0]. byte1.7/byte2.7 must be 0 (the cmpand/cmpor and Ra-vs-#0 variants
 	// set those / byte3.7). byte3[5] is the $ unsigned bit: separate rows pin it,
 	// the unsigned one carrying uns_all (the 'u' suffix and unsigned compare).
-	{ .mask = 0xff8080a0, .match = 0xa4000000, .id = TMS320C55_INS_CMP, .lop = C55_LOP_CMP,
-	  .ops = { { .fn = c55plus_x_cmpcond }, { .fn = c55plus_x_tcflag } } },
-	{ .mask = 0xff8080a0, .match = 0xa4000020, .id = TMS320C55_INS_CMP, .lop = C55_LOP_CMP, .uns_all = true,
-	  .ops = { { .fn = c55plus_x_cmpcond }, { .fn = c55plus_x_tcflag } } },
+	{ .mask = 0xff8080a0, .match = 0xa4000000, .id = TMS320C55_INS_CMP, .lop = C55_LOP_CMP, .ops = { { .fn = c55plus_x_cmpcond }, { .fn = c55plus_x_tcflag } } },
+	{ .mask = 0xff8080a0, .match = 0xa4000020, .id = TMS320C55_INS_CMP, .lop = C55_LOP_CMP, .uns_all = true, .ops = { { .fn = c55plus_x_cmpcond }, { .fn = c55plus_x_tcflag } } },
 	// cmpand/cmpor[u] Ra <relop> Rb, [!]TCx, TCz (opcode 0xa4, byte3[7]==1, 4
 	// bytes): TCz = (Ra <relop> Rb) {&&,||} [!]TCx. byte2[7] selects cmpand (0)
 	// vs cmpor (1); byte3[5] is the unsigned $ bit (the 'u' suffix, uns_all);
 	// byte3[1] picks the TCx input (negated when byte1[7] is set); byte3[0] picks
 	// the TCz output. Lifts via the shared cmpand/cmpor path, which models the
 	// compare, the negation, and the and/or with the input flag.
-	{ .mask = 0xff0080a0, .match = 0xa4000080, .id = TMS320C55_INS_CMPAND, .lop = C55_LOP_CMPAND, .len = 4,
-	  .ops = { { .fn = c55plus_x_cmpcond }, { .fn = c55plus_x_cmp_tcin }, { .fn = c55plus_x_tcflag } } },
-	{ .mask = 0xff0080a0, .match = 0xa40000a0, .id = TMS320C55_INS_CMPAND, .lop = C55_LOP_CMPAND, .len = 4, .uns_all = true,
-	  .ops = { { .fn = c55plus_x_cmpcond }, { .fn = c55plus_x_cmp_tcin }, { .fn = c55plus_x_tcflag } } },
-	{ .mask = 0xff0080a0, .match = 0xa4008080, .id = TMS320C55_INS_CMPOR, .lop = C55_LOP_CMPOR, .len = 4,
-	  .ops = { { .fn = c55plus_x_cmpcond }, { .fn = c55plus_x_cmp_tcin }, { .fn = c55plus_x_tcflag } } },
-	{ .mask = 0xff0080a0, .match = 0xa40080a0, .id = TMS320C55_INS_CMPOR, .lop = C55_LOP_CMPOR, .len = 4, .uns_all = true,
-	  .ops = { { .fn = c55plus_x_cmpcond }, { .fn = c55plus_x_cmp_tcin }, { .fn = c55plus_x_tcflag } } },
+	{ .mask = 0xff0080a0, .match = 0xa4000080, .id = TMS320C55_INS_CMPAND, .lop = C55_LOP_CMPAND, .len = 4, .ops = { { .fn = c55plus_x_cmpcond }, { .fn = c55plus_x_cmp_tcin }, { .fn = c55plus_x_tcflag } } },
+	{ .mask = 0xff0080a0, .match = 0xa40000a0, .id = TMS320C55_INS_CMPAND, .lop = C55_LOP_CMPAND, .len = 4, .uns_all = true, .ops = { { .fn = c55plus_x_cmpcond }, { .fn = c55plus_x_cmp_tcin }, { .fn = c55plus_x_tcflag } } },
+	{ .mask = 0xff0080a0, .match = 0xa4008080, .id = TMS320C55_INS_CMPOR, .lop = C55_LOP_CMPOR, .len = 4, .ops = { { .fn = c55plus_x_cmpcond }, { .fn = c55plus_x_cmp_tcin }, { .fn = c55plus_x_tcflag } } },
+	{ .mask = 0xff0080a0, .match = 0xa40080a0, .id = TMS320C55_INS_CMPOR, .lop = C55_LOP_CMPOR, .len = 4, .uns_all = true, .ops = { { .fn = c55plus_x_cmpcond }, { .fn = c55plus_x_cmp_tcin }, { .fn = c55plus_x_tcflag } } },
 	// mov/add/sub #k4, Ra (opcode 0x7b register-short forms, 3 bytes): Ra is
 	// byte1 (gr1, low 7 bits), the 4-bit immediate k4 is byte2[3:0]. The
 	// (byte1.7 A, byte2.7 B) pair selects the operation when byte2[5] (M) is 0:
 	// add (0,0), sub (0,1), mov #k4 (1,0), mov -#k4 (1,1). The M=1 forms are the
 	// shift-by-one variants, left to the legacy decoder for now (mask pins M=0).
-	{ .mask = 0xff80a000, .match = 0x7b000000, .id = TMS320C55_INS_ADD,
-	  .ops = { { .lo = 0, .width = 4, .fn = c55plus_x_k4 }, { .lo = 8, .width = 8, .fn = c55plus_x_gr7 } } },
-	{ .mask = 0xff80a000, .match = 0x7b008000, .id = TMS320C55_INS_SUB,
-	  .ops = { { .lo = 0, .width = 4, .fn = c55plus_x_k4 }, { .lo = 8, .width = 8, .fn = c55plus_x_gr7 } } },
-	{ .mask = 0xff80a000, .match = 0x7b800000, .id = TMS320C55_INS_MOV,
-	  .ops = { { .lo = 0, .width = 4, .fn = c55plus_x_k4 }, { .lo = 8, .width = 8, .fn = c55plus_x_gr7 } } },
-	{ .mask = 0xff80a000, .match = 0x7b808000, .id = TMS320C55_INS_MOV,
-	  .ops = { { .lo = 0, .width = 4, .fn = c55plus_x_negk4 }, { .lo = 8, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff80a000, .match = 0x7b000000, .id = TMS320C55_INS_ADD, .ops = { { .lo = 0, .width = 4, .fn = c55plus_x_k4 }, { .lo = 8, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff80a000, .match = 0x7b008000, .id = TMS320C55_INS_SUB, .ops = { { .lo = 0, .width = 4, .fn = c55plus_x_k4 }, { .lo = 8, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff80a000, .match = 0x7b800000, .id = TMS320C55_INS_MOV, .ops = { { .lo = 0, .width = 4, .fn = c55plus_x_k4 }, { .lo = 8, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff80a000, .match = 0x7b808000, .id = TMS320C55_INS_MOV, .ops = { { .lo = 0, .width = 4, .fn = c55plus_x_negk4 }, { .lo = 8, .width = 8, .fn = c55plus_x_gr7 } } },
 	// Ra = Rb <op> k16 (opcodes 0xc4/0xc5, 5 bytes): dst Ra byte1, src Rb byte2
 	// (both gr1, low 7 bits), 16-bit immediate bytes 3:4. The (byte1.7, byte2.7)
 	// pair selects the operation -- 0xc4: add (0,0) / sub (0,1); 0xc5: and (0,0)
 	// / or (0,1) / xor (1,0). Operand order [#k16, src, dst] matches the 0x7b-7f
 	// *K forms, so the same C55_LOP_*K lifts apply (extended to the gr1
 	// sub-register operands these forms can carry).
-	{ .mask = 0xff808000, .match = 0xc4000000, .id = TMS320C55_INS_ADD, .lop = C55_LOP_ADDK,
-	  .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_imm16 }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 24, .width = 8, .fn = c55plus_x_gr7 } } },
-	{ .mask = 0xff808000, .match = 0xc4008000, .id = TMS320C55_INS_SUB, .lop = C55_LOP_SUBK,
-	  .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_imm16 }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 24, .width = 8, .fn = c55plus_x_gr7 } } },
-	{ .mask = 0xff808000, .match = 0xc5000000, .id = TMS320C55_INS_AND, .lop = C55_LOP_ANDK,
-	  .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_imm16 }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 24, .width = 8, .fn = c55plus_x_gr7 } } },
-	{ .mask = 0xff808000, .match = 0xc5008000, .id = TMS320C55_INS_OR, .lop = C55_LOP_ORK,
-	  .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_imm16 }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 24, .width = 8, .fn = c55plus_x_gr7 } } },
-	{ .mask = 0xff808000, .match = 0xc5800000, .id = TMS320C55_INS_XOR, .lop = C55_LOP_XORK,
-	  .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_imm16 }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 24, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff808000, .match = 0xc4000000, .id = TMS320C55_INS_ADD, .lop = C55_LOP_ADDK, .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_imm16 }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 24, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff808000, .match = 0xc4008000, .id = TMS320C55_INS_SUB, .lop = C55_LOP_SUBK, .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_imm16 }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 24, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff808000, .match = 0xc5000000, .id = TMS320C55_INS_AND, .lop = C55_LOP_ANDK, .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_imm16 }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 24, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff808000, .match = 0xc5008000, .id = TMS320C55_INS_OR, .lop = C55_LOP_ORK, .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_imm16 }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 24, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff808000, .match = 0xc5800000, .id = TMS320C55_INS_XOR, .lop = C55_LOP_XORK, .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_imm16 }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 }, { .lo = 24, .width = 8, .fn = c55plus_x_gr7 } } },
 	// mov #imm16, reg (opcode 0xac, 4 bytes): dst byte 1 (high bit ignored),
 	// immediate bytes 2:3
-	{ .mask = 0xff000000, .match = 0xac000000, .id = TMS320C55_INS_MOV,
-	  .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_imm16 }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 } } },
+	{ .mask = 0xff000000, .match = 0xac000000, .id = TMS320C55_INS_MOV, .ops = { { .lo = 0, .width = 16, .fn = c55plus_x_imm16 }, { .lo = 16, .width = 8, .fn = c55plus_x_gr7 } } },
 	// mov Smem, ACx (opcode 0x58, 3 bytes): register-indirect load. The
 	// register-modify matrix and plain indirect decode here; other Smem forms
 	// fall back to the legacy decoder (see c55plus_x_smem).
-	{ .mask = 0xff000000, .match = 0x58000000, .id = TMS320C55_INS_MOV,
-	  .ops = { { .fn = c55plus_x_smem }, { .fn = c55plus_x_smem_ac } } },
+	{ .mask = 0xff000000, .match = 0x58000000, .id = TMS320C55_INS_MOV, .ops = { { .fn = c55plus_x_smem }, { .fn = c55plus_x_smem_ac } } },
 	// mov ACx.h/.l, *Smem (opcode 0x51, base 3 bytes): a 16-bit word store of an
 	// accumulator half (byte2[5] selects the half). This handles the SP-relative
 	// and absolute destinations via c55plus_x_word_mem and must precede the
 	// register-indirect-only row below, which still covers the modes
 	// c55plus_mem_addr declines (e.g. DP-direct).
-	{ .mask = 0xff000000, .match = 0x51000000, .id = TMS320C55_INS_MOV,
-	  .ops = { { .fn = c55plus_x_acc_half }, { .fn = c55plus_x_word_mem } } },
+	{ .mask = 0xff000000, .match = 0x51000000, .id = TMS320C55_INS_MOV, .ops = { { .fn = c55plus_x_acc_half }, { .fn = c55plus_x_word_mem } } },
 	// mov ACx.h/.l, Smem (opcode 0x51, 3 bytes): register-indirect store. The
 	// accumulator half is byte2[5]; the Smem destination uses the same
 	// addressing matrix as the load, with the same legacy fallback.
-	{ .mask = 0xff000000, .match = 0x51000000, .id = TMS320C55_INS_MOV,
-	  .ops = { { .fn = c55plus_x_ac_part }, { .fn = c55plus_x_smem_dest } } },
+	{ .mask = 0xff000000, .match = 0x51000000, .id = TMS320C55_INS_MOV, .ops = { { .fn = c55plus_x_ac_part }, { .fn = c55plus_x_smem_dest } } },
 	// copy Smem, reg (opcode 0x54, 3 bytes): byte2[5:0] is the destination
 	// register; the Smem source reuses the store addressing decode. Accumulator
 	// destinations (dbl() source) and reserved slots fall back to the legacy
 	// decoder.
-	{ .mask = 0xff000000, .match = 0x54000000, .id = TMS320C55_INS_COPY,
-	  .ops = { { .fn = c55plus_x_smem_dest }, { .fn = c55plus_x_gr6 } } },
+	{ .mask = 0xff000000, .match = 0x54000000, .id = TMS320C55_INS_COPY, .ops = { { .fn = c55plus_x_smem_dest }, { .fn = c55plus_x_gr6 } } },
 	// copy dbl(*Smem), xar (opcode 0x56, 3 bytes): a double-word load of a memory
 	// operand into an extended AR register. byte1 holds the base ARn (low nibble)
 	// and a short index k4 (high nibble); byte2[3:0] is the xar destination.
 	// Only the indirect / indexed dbl form is decoded here (see
 	// c55plus_x_copy_dbl_mem); the register-modify, direct, and byte/half forms
 	// fall back to the legacy decoder (the absolute-address form is opcode 0xd1).
-	{ .mask = 0xff000000, .match = 0x56000000, .id = TMS320C55_INS_COPY,
-	  .ops = { { .fn = c55plus_x_copy_dbl_mem }, { .fn = c55plus_x_copy_xar } } },
+	{ .mask = 0xff000000, .match = 0x56000000, .id = TMS320C55_INS_COPY, .ops = { { .fn = c55plus_x_copy_dbl_mem }, { .fn = c55plus_x_copy_xar } } },
 	// copy dbl(*(#addr)), xar (opcode 0xd1, 5 bytes): the absolute-address form of
 	// the double-word load. byte1[7:6]==10 selects the dbl xar destination
 	// (byte1[3:0]); the 24-bit byte address is bytes 2:4. Accumulator and
@@ -3229,200 +3286,146 @@ static const C55InsnDef c55plus_table[] = {
 	// selects the register type -- 000 ACx (dbl), 001 ARn, 010 ACx.h, 011 ACx.l,
 	// 100 XARn (dbl) -- byte1[4:0] the register, and bytes 2-4 the 24-bit byte
 	// address. The remaining types (ACx.g, XARn.h, status) fall back to legacy.
-	{ .mask = 0xffe00000, .match = 0xd0000000, .id = TMS320C55_INS_MOV, .len = 5,
-	  .ops = { { .fn = c55plus_x_acc_b1 }, { .fn = c55plus_x_abs_dbl } } },
-	{ .mask = 0xffe00000, .match = 0xd0200000, .id = TMS320C55_INS_MOV, .len = 5,
-	  .ops = { { .fn = c55plus_x_ar_src }, { .fn = c55plus_x_abs_word } } },
-	{ .mask = 0xffe00000, .match = 0xd0400000, .id = TMS320C55_INS_MOV, .len = 5,
-	  .ops = { { .fn = c55plus_x_acc_hi_b1 }, { .fn = c55plus_x_abs_word } } },
-	{ .mask = 0xffe00000, .match = 0xd0600000, .id = TMS320C55_INS_MOV, .len = 5,
-	  .ops = { { .fn = c55plus_x_acc_lo_b1 }, { .fn = c55plus_x_abs_word } } },
-	{ .mask = 0xffe00000, .match = 0xd0800000, .id = TMS320C55_INS_MOV, .len = 5,
-	  .ops = { { .fn = c55plus_x_xar_b1 }, { .fn = c55plus_x_abs_dbl } } },
-	{ .mask = 0xff000000, .match = 0xd1000000, .id = TMS320C55_INS_COPY,
-	  .ops = { { .fn = c55plus_x_copy_abs_mem }, { .fn = c55plus_x_copy_abs_xar } } },
+	{ .mask = 0xffe00000, .match = 0xd0000000, .id = TMS320C55_INS_MOV, .len = 5, .ops = { { .fn = c55plus_x_acc_b1 }, { .fn = c55plus_x_abs_dbl } } },
+	{ .mask = 0xffe00000, .match = 0xd0200000, .id = TMS320C55_INS_MOV, .len = 5, .ops = { { .fn = c55plus_x_ar_src }, { .fn = c55plus_x_abs_word } } },
+	{ .mask = 0xffe00000, .match = 0xd0400000, .id = TMS320C55_INS_MOV, .len = 5, .ops = { { .fn = c55plus_x_acc_hi_b1 }, { .fn = c55plus_x_abs_word } } },
+	{ .mask = 0xffe00000, .match = 0xd0600000, .id = TMS320C55_INS_MOV, .len = 5, .ops = { { .fn = c55plus_x_acc_lo_b1 }, { .fn = c55plus_x_abs_word } } },
+	{ .mask = 0xffe00000, .match = 0xd0800000, .id = TMS320C55_INS_MOV, .len = 5, .ops = { { .fn = c55plus_x_xar_b1 }, { .fn = c55plus_x_abs_dbl } } },
+	{ .mask = 0xff000000, .match = 0xd1000000, .id = TMS320C55_INS_COPY, .ops = { { .fn = c55plus_x_copy_abs_mem }, { .fn = c55plus_x_copy_abs_xar } } },
 	// mov ACx, dbl(*Smem) (opcode 0x50, base 3 bytes, byte2[5]==0): a 32-bit
 	// double-word store of the low 32 bits of a whole accumulator. This is the
 	// accumulator (dbl()) sub-form of the 0x50 store and must precede the general
 	// gr6 store row below; the byte2[5]==1 sub-form (mov ARx/Tx, Smem) is handled
 	// there.
-	{ .mask = 0xff002000, .match = 0x50000000, .id = TMS320C55_INS_MOV,
-	  .ops = { { .fn = c55plus_x_acc_src }, { .fn = c55plus_x_dbl_mem } } },
+	{ .mask = 0xff002000, .match = 0x50000000, .id = TMS320C55_INS_MOV, .ops = { { .fn = c55plus_x_acc_src }, { .fn = c55plus_x_dbl_mem } } },
 	// mov reg, Smem (opcode 0x50, 3 bytes): the store mirror of copy, with the
 	// register source in byte2[5:0]. Accumulator sources (dbl() memory) and
 	// reserved slots fall back to the legacy decoder.
-	{ .mask = 0xff000000, .match = 0x50000000, .id = TMS320C55_INS_MOV,
-	  .ops = { { .fn = c55plus_x_gr6 }, { .fn = c55plus_x_smem_dest } } },
+	{ .mask = 0xff000000, .match = 0x50000000, .id = TMS320C55_INS_MOV, .ops = { { .fn = c55plus_x_gr6 }, { .fn = c55plus_x_smem_dest } } },
 	// mov byte(*Smem), reg / mov reg, byte(*Smem) (opcode 0x8a, base 4 bytes):
 	// an 8-bit byte() load/store with standard Smem addressing. byte3[7]==1 marks
 	// the plain byte() forms decoded and lifted here; byte3[6] selects load (1) or
 	// store (0). The load form reads [mem, reg], the store [reg, mem]. The
 	// high_byte()/low_byte() variants (byte3[7]==0) are decoded disasm-only below.
-	{ .mask = 0xff0000c0, .match = 0x8a0000c0, .id = TMS320C55_INS_MOV,
-	  .ops = { { .fn = c55plus_x_byte_mem }, { .fn = c55plus_x_byte_reg } } },
-	{ .mask = 0xff0000c0, .match = 0x8a000080, .id = TMS320C55_INS_MOV,
-	  .ops = { { .fn = c55plus_x_byte_reg }, { .fn = c55plus_x_byte_mem } } },
+	{ .mask = 0xff0000c0, .match = 0x8a0000c0, .id = TMS320C55_INS_MOV, .ops = { { .fn = c55plus_x_byte_mem }, { .fn = c55plus_x_byte_reg } } },
+	{ .mask = 0xff0000c0, .match = 0x8a000080, .id = TMS320C55_INS_MOV, .ops = { { .fn = c55plus_x_byte_reg }, { .fn = c55plus_x_byte_mem } } },
 	// mov *Smem, ACx.l (opcode 0x5b, base 3 bytes): a 16-bit word load into the
 	// low half of an accumulator. byte2[4:0] is the accumulator.
-	{ .mask = 0xff000000, .match = 0x5b000000, .id = TMS320C55_INS_MOV,
-	  .ops = { { .fn = c55plus_x_word_mem }, { .fn = c55plus_x_acc_lo } } },
+	{ .mask = 0xff000000, .match = 0x5b000000, .id = TMS320C55_INS_MOV, .ops = { { .fn = c55plus_x_word_mem }, { .fn = c55plus_x_acc_lo } } },
 	// mov dbl(*Smem), ACx (opcode 0x5c, base 3 bytes): a 32-bit double-word load
 	// sign-extended into a whole accumulator.
-	{ .mask = 0xff000000, .match = 0x5c000000, .id = TMS320C55_INS_MOV,
-	  .ops = { { .fn = c55plus_x_dbl_mem }, { .fn = c55plus_x_acc } } },
+	{ .mask = 0xff000000, .match = 0x5c000000, .id = TMS320C55_INS_MOV, .ops = { { .fn = c55plus_x_dbl_mem }, { .fn = c55plus_x_acc } } },
 	// mov *Smem, ACx.h (opcode 0x5a, base 3 bytes): a 16-bit word load into the
 	// high half of an accumulator (byte2[5] is the uns() qualifier).
-	{ .mask = 0xff000000, .match = 0x5a000000, .id = TMS320C55_INS_MOV,
-	  .ops = { { .fn = c55plus_x_word_mem_u }, { .fn = c55plus_x_acc_hi } } },
+	{ .mask = 0xff000000, .match = 0x5a000000, .id = TMS320C55_INS_MOV, .ops = { { .fn = c55plus_x_word_mem_u }, { .fn = c55plus_x_acc_hi } } },
 	// mov #imm, *Smem (opcode 0x48, base 3 bytes): a 16-bit word store of a 6-bit
 	// immediate (byte2[5:0]).
-	{ .mask = 0xff000000, .match = 0x48000000, .id = TMS320C55_INS_MOV,
-	  .ops = { { .fn = c55plus_x_imm6 }, { .fn = c55plus_x_word_mem } } },
+	{ .mask = 0xff000000, .match = 0x48000000, .id = TMS320C55_INS_MOV, .ops = { { .fn = c55plus_x_imm6 }, { .fn = c55plus_x_word_mem } } },
 	// mov XARx, dbl(*Smem) (opcode 0x52, base 3 bytes): a 32-bit double-word store
 	// of an extended AR pointer.
-	{ .mask = 0xff000000, .match = 0x52000000, .id = TMS320C55_INS_MOV,
-	  .ops = { { .fn = c55plus_x_xar_src }, { .fn = c55plus_x_dbl_mem } } },
+	{ .mask = 0xff000000, .match = 0x52000000, .id = TMS320C55_INS_MOV, .ops = { { .fn = c55plus_x_xar_src }, { .fn = c55plus_x_dbl_mem } } },
 	// mov #imm, byte(*Smem) (opcode 0x4c, base 3 bytes): an 8-bit store of a 6-bit
 	// immediate (byte2[5:0]) to a byte() memory location.
-	{ .mask = 0xff000000, .match = 0x4c000000, .id = TMS320C55_INS_MOV,
-	  .ops = { { .fn = c55plus_x_imm6 }, { .fn = c55plus_x_byte_dst } } },
+	{ .mask = 0xff000000, .match = 0x4c000000, .id = TMS320C55_INS_MOV, .ops = { { .fn = c55plus_x_imm6 }, { .fn = c55plus_x_byte_dst } } },
 	// mov #imm, byte(*Smem) (opcodes 0x4d/0x4e/0x4f): the 0x40/0x80/0xc0 immediate
 	// ranges of the same byte store.
-	{ .mask = 0xff000000, .match = 0x4d000000, .id = TMS320C55_INS_MOV,
-	  .ops = { { .fn = c55plus_x_imm6_40 }, { .fn = c55plus_x_byte_dst } } },
-	{ .mask = 0xff000000, .match = 0x4e000000, .id = TMS320C55_INS_MOV,
-	  .ops = { { .fn = c55plus_x_imm6_80 }, { .fn = c55plus_x_byte_dst } } },
-	{ .mask = 0xff000000, .match = 0x4f000000, .id = TMS320C55_INS_MOV,
-	  .ops = { { .fn = c55plus_x_imm6_c0 }, { .fn = c55plus_x_byte_dst } } },
+	{ .mask = 0xff000000, .match = 0x4d000000, .id = TMS320C55_INS_MOV, .ops = { { .fn = c55plus_x_imm6_40 }, { .fn = c55plus_x_byte_dst } } },
+	{ .mask = 0xff000000, .match = 0x4e000000, .id = TMS320C55_INS_MOV, .ops = { { .fn = c55plus_x_imm6_80 }, { .fn = c55plus_x_byte_dst } } },
+	{ .mask = 0xff000000, .match = 0x4f000000, .id = TMS320C55_INS_MOV, .ops = { { .fn = c55plus_x_imm6_c0 }, { .fn = c55plus_x_byte_dst } } },
 	// A-unit register-register modify (opcode 0x72): mar(WDAa op WDAb). Two
 	// 6-bit WDA register fields, dst = byte1[5:0] (Aaaaaa), src = byte2[5:0]
 	// (Bbbbbb); the top bit of each byte selects the operation -- (1,0) amov
 	// (MX), (0,1) aadd (AX), (0,0) asub (SX). The amov/asub register moves
 	// reuse the shared AREG lift; aadd's address-add stays analysis-only here
 	// (no AREG-add lift op), matching the C55x register-AADD treatment.
-	{ .mask = 0xff808000, .match = 0x72800000, .id = TMS320C55_INS_AMOV, .lop = C55_LOP_AREG_MOV, .len = 3,
-	  .ops = { { .lo = 0, .fn = c55plus_x_wda }, { .lo = 8, .fn = c55plus_x_wda } } },
-	{ .mask = 0xff808000, .match = 0x72008000, .id = TMS320C55_INS_AADD, .len = 3,
-	  .ops = { { .lo = 0, .fn = c55plus_x_wda }, { .lo = 8, .fn = c55plus_x_wda } } },
-	{ .mask = 0xff808000, .match = 0x72000000, .id = TMS320C55_INS_ASUB, .lop = C55_LOP_AREG_SUB, .len = 3,
-	  .ops = { { .lo = 0, .fn = c55plus_x_wda }, { .lo = 8, .fn = c55plus_x_wda } } },
+	{ .mask = 0xff808000, .match = 0x72800000, .id = TMS320C55_INS_AMOV, .lop = C55_LOP_AREG_MOV, .len = 3, .ops = { { .lo = 0, .fn = c55plus_x_wda }, { .lo = 8, .fn = c55plus_x_wda } } },
+	{ .mask = 0xff808000, .match = 0x72008000, .id = TMS320C55_INS_AADD, .len = 3, .ops = { { .lo = 0, .fn = c55plus_x_wda }, { .lo = 8, .fn = c55plus_x_wda } } },
+	{ .mask = 0xff808000, .match = 0x72000000, .id = TMS320C55_INS_ASUB, .lop = C55_LOP_AREG_SUB, .len = 3, .ops = { { .lo = 0, .fn = c55plus_x_wda }, { .lo = 8, .fn = c55plus_x_wda } } },
 	// Bit-test register-target forms (opcode 0x89, 4 bytes), the "@#bitnum,
 	// register" variants. byte1[7]==0 selects the @#k bit-number form (the SP-mem
 	// forms are not handled here), byte2[7:6]==11 the register target. byte3[7:5]
 	// selects the operation and operand order; only the "@#k, register" orders
 	// are taken (000/010 reg-first orders fall through). byte2[5] selects
 	// bclr/bset for the clear/set group and TC1/TC2 for btst. Left unlifted.
-	{ .mask = 0xff80e0e0, .match = 0x8900c020, .id = TMS320C55_INS_BCLR, .len = 4,
-	  .ops = { { .fn = c55plus_x_bit_num }, { .fn = c55plus_x_bit_reg } } },
-	{ .mask = 0xff80e0e0, .match = 0x8900e020, .id = TMS320C55_INS_BSET, .len = 4,
-	  .ops = { { .fn = c55plus_x_bit_num }, { .fn = c55plus_x_bit_reg } } },
-	{ .mask = 0xff80c0e0, .match = 0x8900c060, .id = TMS320C55_INS_BNOT, .len = 4,
-	  .ops = { { .fn = c55plus_x_bit_num }, { .fn = c55plus_x_bit_reg } } },
-	{ .mask = 0xff80c0e0, .match = 0x8900c0a0, .id = TMS320C55_INS_BTST, .len = 4,
-	  .ops = { { .fn = c55plus_x_bit_num }, { .fn = c55plus_x_bit_reg }, { .fn = c55plus_x_bit_tc } } },
-	{ .mask = 0xff80c0e0, .match = 0x8900c0e0, .id = TMS320C55_INS_BTSTP, .len = 4,
-	  .ops = { { .fn = c55plus_x_bit_num }, { .fn = c55plus_x_bit_reg } } },
-// add/mov #k16, [dbl(]*Smem[)] (opcode 0xb1, base 5 bytes). byte2[4:3] selects
+	{ .mask = 0xff80e0e0, .match = 0x8900c020, .id = TMS320C55_INS_BCLR, .lop = C55_LOP_BITCLR, .len = 4, .ops = { { .fn = c55plus_x_bit_num }, { .fn = c55plus_x_bit_reg } } },
+	{ .mask = 0xff80e0e0, .match = 0x8900e020, .id = TMS320C55_INS_BSET, .lop = C55_LOP_BITSET, .len = 4, .ops = { { .fn = c55plus_x_bit_num }, { .fn = c55plus_x_bit_reg } } },
+	{ .mask = 0xff80c0e0, .match = 0x8900c060, .id = TMS320C55_INS_BNOT, .lop = C55_LOP_BITNOT, .len = 4, .ops = { { .fn = c55plus_x_bit_num }, { .fn = c55plus_x_bit_reg } } },
+	{ .mask = 0xff80c0e0, .match = 0x8900c0a0, .id = TMS320C55_INS_BTST, .len = 4, .ops = { { .fn = c55plus_x_bit_num }, { .fn = c55plus_x_bit_reg }, { .fn = c55plus_x_bit_tc } } },
+	{ .mask = 0xff80c0e0, .match = 0x8900c0e0, .id = TMS320C55_INS_BTSTP, .len = 4, .ops = { { .fn = c55plus_x_bit_num }, { .fn = c55plus_x_bit_reg } } },
+	// add/mov #k16, [dbl(]*Smem[)] (opcode 0xb1, base 5 bytes). byte2[4:3] selects
 	// the operation (00 = add, 11 = mov); only mov lifts (a store). The 16-bit
 	// immediate occupies bytes 3:4 of the base; addressing extensions follow.
-	{ .mask = 0xff001800, .match = 0xb1000000, .id = TMS320C55_INS_ADD, .len = 5,
-	  .ops = { { .fn = c55plus_x_b1_imm }, { .fn = c55plus_x_b1_mem } } },
-	{ .mask = 0xff001800, .match = 0xb1001800, .id = TMS320C55_INS_MOV, .len = 5,
-	  .ops = { { .fn = c55plus_x_b1_imm }, { .fn = c55plus_x_b1_mem } } },
+	{ .mask = 0xff001800, .match = 0xb1000000, .id = TMS320C55_INS_ADD, .len = 5, .ops = { { .fn = c55plus_x_b1_imm }, { .fn = c55plus_x_b1_mem } } },
+	{ .mask = 0xff001800, .match = 0xb1001800, .id = TMS320C55_INS_MOV, .len = 5, .ops = { { .fn = c55plus_x_b1_imm }, { .fn = c55plus_x_b1_mem } } },
 	// sftl/sfts REG, #1 / #-1 (opcode 0x7b, 3 bytes, byte2[6:5]==01). byte1[7]
 	// selects sftl vs sfts; byte2[7] the shift sign. Left unlifted.
-	{ .mask = 0xff806000, .match = 0x7b002000, .id = TMS320C55_INS_SFTS, .len = 3,
-	  .ops = { { .fn = c55plus_x_sft7b_reg }, { .fn = c55plus_x_sft7b_one } } },
-	{ .mask = 0xff806000, .match = 0x7b802000, .id = TMS320C55_INS_SFTL, .len = 3,
-	  .ops = { { .fn = c55plus_x_sft7b_reg }, { .fn = c55plus_x_sft7b_one } } },
+	{ .mask = 0xff806000, .match = 0x7b002000, .id = TMS320C55_INS_SFTS, .lop = C55_LOP_SFTS, .len = 3, .ops = { { .fn = c55plus_x_sft7b_reg }, { .fn = c55plus_x_sft7b_one } } },
+	{ .mask = 0xff806000, .match = 0x7b802000, .id = TMS320C55_INS_SFTL, .lop = C55_LOP_SFTL, .len = 3, .ops = { { .fn = c55plus_x_sft7b_reg }, { .fn = c55plus_x_sft7b_one } } },
 	// sftl/sfts SRC, SHIFT, DST (opcode 0xa6, byte1[7]==1, byte3[7]==0). byte2[7]
 	// selects sftl (0) vs sfts (1). The byte3[7]==1 saturating sftsc variant is
 	// handled by the row below; the saturating sftl form is invalid. Left unlifted.
-	{ .mask = 0xff808080, .match = 0xa6800000, .id = TMS320C55_INS_SFTL, .len = 4,
-	  .ops = { { .fn = c55plus_x_sft_src }, { .fn = c55plus_x_sft_shift }, { .fn = c55plus_x_sft_dst } } },
-	{ .mask = 0xff808080, .match = 0xa6808000, .id = TMS320C55_INS_SFTS, .lop = C55_LOP_SFTS, .len = 4,
-	  .ops = { { .fn = c55plus_x_sft_src }, { .fn = c55plus_x_sft_shift }, { .fn = c55plus_x_sft_dst } } },
+	{ .mask = 0xff808080, .match = 0xa6800000, .id = TMS320C55_INS_SFTL, .lop = C55_LOP_SFTL, .len = 4, .ops = { { .fn = c55plus_x_sft_src }, { .fn = c55plus_x_sft_shift }, { .fn = c55plus_x_sft_dst } } },
+	{ .mask = 0xff808080, .match = 0xa6808000, .id = TMS320C55_INS_SFTS, .lop = C55_LOP_SFTS, .len = 4, .ops = { { .fn = c55plus_x_sft_src }, { .fn = c55plus_x_sft_shift }, { .fn = c55plus_x_sft_dst } } },
 	// sftsc SRC, SHIFT, DST (opcode 0xa6, byte1[7]==1, byte2[7]==1, byte3[7]==1):
 	// the saturating variant of sfts. Same operands as sfts; left unlifted, as in
 	// the legacy decoder. (The byte2[7]==0 saturating form is invalid.)
-	{ .mask = 0xff808080, .match = 0xa6808080, .id = TMS320C55_INS_SFTSC, .len = 4,
-	  .ops = { { .fn = c55plus_x_sft_src }, { .fn = c55plus_x_sft_shift }, { .fn = c55plus_x_sft_dst } } },
+	{ .mask = 0xff808080, .match = 0xa6808080, .id = TMS320C55_INS_SFTSC, .len = 4, .ops = { { .fn = c55plus_x_sft_src }, { .fn = c55plus_x_sft_shift }, { .fn = c55plus_x_sft_dst } } },
 	// mov [byte(]*Smem[)], [byte(]*Smem[)] (opcode 0x97, 4 bytes). byte2[3] is the
 	// direction: 1 -> operand A (byte1) is the source, 0 -> operand B (byte3) is
 	// the source. Left unlifted.
-	{ .mask = 0xff000800, .match = 0x97000800, .id = TMS320C55_INS_MOV, .len = 4,
-	  .ops = { { .fn = c55plus_x_97_memA }, { .fn = c55plus_x_97_memB } } },
-	{ .mask = 0xff000800, .match = 0x97000000, .id = TMS320C55_INS_MOV, .len = 4,
-	  .ops = { { .fn = c55plus_x_97_memB }, { .fn = c55plus_x_97_memA } } },
+	{ .mask = 0xff000800, .match = 0x97000800, .id = TMS320C55_INS_MOV, .len = 4, .ops = { { .fn = c55plus_x_97_memA }, { .fn = c55plus_x_97_memB } } },
+	{ .mask = 0xff000800, .match = 0x97000000, .id = TMS320C55_INS_MOV, .len = 4, .ops = { { .fn = c55plus_x_97_memB }, { .fn = c55plus_x_97_memA } } },
 	// band *Smem, #k16, TCx (opcode 0xb2, byte2[3]==1, 5 bytes): TCx = (Smem &
 	// #k16) == 0. Shares the opcode with the cmp form below (byte2[3]==0); the
 	// band row is matched first since it is the more specific pattern. Left
 	// unlifted, as in the legacy decoder.
-	{ .mask = 0xff000800, .match = 0xb2000800, .id = TMS320C55_INS_BAND, .len = 5,
-	  .ops = { { .fn = c55plus_x_b2_band_mem }, { .fn = c55plus_x_b2_band_k16 }, { .fn = c55plus_x_b2_tc } } },
+	{ .mask = 0xff000800, .match = 0xb2000800, .id = TMS320C55_INS_BAND, .len = 5, .ops = { { .fn = c55plus_x_b2_band_mem }, { .fn = c55plus_x_b2_band_k16 }, { .fn = c55plus_x_b2_tc } } },
 	// cmp Smem <rel> #k16, TCx (opcode 0xb2, base 5 bytes, byte2[3]==0 cmp).
 	// Left unlifted.
-	{ .mask = 0xff080000, .match = 0xb2000000, .id = TMS320C55_INS_CMP, .len = 5,
-	  .ops = { { .fn = c55plus_x_b2_cmp }, { .fn = c55plus_x_b2_tc } } },
+	{ .mask = 0xff080000, .match = 0xb2000000, .id = TMS320C55_INS_CMP, .len = 5, .ops = { { .fn = c55plus_x_b2_cmp }, { .fn = c55plus_x_b2_tc } } },
 	// mov ACx.<h/l>, mmap(@reg) (opcode 0x24, byte1==0x51, byte3[6]==0). Left
 	// unlifted.
-	{ .mask = 0xffff0040, .match = 0x24510000, .id = TMS320C55_INS_MOV, .len = 4,
-	  .ops = { { .fn = c55plus_x_24_src }, { .fn = c55plus_x_24_mmr } } },
+	{ .mask = 0xffff0040, .match = 0x24510000, .id = TMS320C55_INS_MOV, .len = 4, .ops = { { .fn = c55plus_x_24_src }, { .fn = c55plus_x_24_mmr } } },
 	// sftcc ACx, TCx (opcode 0xa9, byte1[7]==1 && byte2[7]==1, 4 bytes). Left
 	// unlifted (C55_LOP_OPAQUE), as in the legacy decoder.
-	{ .mask = 0xff808000, .match = 0xa9808000, .id = TMS320C55_INS_SFTCC, .lop = C55_LOP_OPAQUE, .len = 4,
-	  .ops = { { .fn = c55plus_x_a9_sftcc_ac }, { .fn = c55plus_x_a9_sftcc_tc } } },
+	{ .mask = 0xff808000, .match = 0xa9808000, .id = TMS320C55_INS_SFTCC, .lop = C55_LOP_OPAQUE, .len = 4, .ops = { { .fn = c55plus_x_a9_sftcc_ac }, { .fn = c55plus_x_a9_sftcc_tc } } },
 	// bcnt ACa, ACb, TCx, ACdst (opcode 0xa9, byte1[7]==1 && byte2[7]==0, 4 bytes).
 	// Left unlifted (C55_LOP_OPAQUE), as in the legacy decoder. (byte2[7]==1 is
 	// the sftcc form, which stays on the legacy decoder.)
-	{ .mask = 0xff808000, .match = 0xa9800000, .id = TMS320C55_INS_BCNT, .lop = C55_LOP_OPAQUE, .len = 4,
-	  .ops = { { .fn = c55plus_x_a9_bcnt_a }, { .fn = c55plus_x_a9_bcnt_b }, { .fn = c55plus_x_a9_bcnt_tc }, { .fn = c55plus_x_a9_bcnt_dst } } },
+	{ .mask = 0xff808000, .match = 0xa9800000, .id = TMS320C55_INS_BCNT, .lop = C55_LOP_OPAQUE, .len = 4, .ops = { { .fn = c55plus_x_a9_bcnt_a }, { .fn = c55plus_x_a9_bcnt_b }, { .fn = c55plus_x_a9_bcnt_tc }, { .fn = c55plus_x_a9_bcnt_dst } } },
 	// exp ACsrc, ACdst (opcode 0xa9, byte1[7]==0 && byte2[7]==0, 4 bytes). Left
 	// unlifted (C55_LOP_OPAQUE), as in the legacy decoder.
-	{ .mask = 0xff808000, .match = 0xa9000000, .id = TMS320C55_INS_EXP, .lop = C55_LOP_OPAQUE, .len = 4,
-	  .ops = { { .fn = c55plus_x_a9_exp_src }, { .fn = c55plus_x_a9_exp_dst } } },
+	{ .mask = 0xff808000, .match = 0xa9000000, .id = TMS320C55_INS_EXP, .lop = C55_LOP_OPAQUE, .len = 4, .ops = { { .fn = c55plus_x_a9_exp_src }, { .fn = c55plus_x_a9_exp_dst } } },
 	// btst *Smem, reg, TCx (opcode 0x89, byte3[7:5]==101, 4 bytes): memory bit test
 	// against a register-selected bit number. Left unlifted, as in the legacy
 	// decoder.
-	{ .mask = 0xff0000e0, .match = 0x890000a0, .id = TMS320C55_INS_BTST, .len = 4,
-	  .ops = { { .fn = c55plus_x_btm_smem }, { .fn = c55plus_x_btm_reg }, { .fn = c55plus_x_btm_tc } } },
+	{ .mask = 0xff0000e0, .match = 0x890000a0, .id = TMS320C55_INS_BTST, .len = 4, .ops = { { .fn = c55plus_x_btm_smem }, { .fn = c55plus_x_btm_reg }, { .fn = c55plus_x_btm_tc } } },
 	// subadd Tx, [dual(]*Smem[)], ACx (opcode 0x8f, byte3[7:6]==11, 4 bytes): the
 	// dual-access subtract-add. Left unlifted, as in the legacy decoder.
-	{ .mask = 0xff0000c0, .match = 0x8f0000c0, .id = TMS320C55_INS_SUBADD, .len = 4,
-	  .ops = { { .fn = c55plus_x_subadd_tx }, { .fn = c55plus_x_subadd_mem }, { .fn = c55plus_x_subadd_acx } } },
+	{ .mask = 0xff0000c0, .match = 0x8f0000c0, .id = TMS320C55_INS_SUBADD, .len = 4, .ops = { { .fn = c55plus_x_subadd_tx }, { .fn = c55plus_x_subadd_mem }, { .fn = c55plus_x_subadd_acx } } },
 	// bfxtr ACc.<h/l>, ACb.<h/l>, *Smem, ACa.<h/l> (opcode 0xbc, byte3[6]==0, 5
 	// bytes): the memory-operand bit-field extract. byte3[6]==0 excludes bfins; the
 	// ACb extractor rejects the byte4[7:6] bfxtl / dbfxtr variants. Left unlifted.
-	{ .mask = 0xff000040, .match = 0xbc000000, .id = TMS320C55_INS_BFXTR, .len = 5,
-	  .ops = { { .fn = c55plus_x_bcx_acc }, { .fn = c55plus_x_bcx_acb }, { .fn = c55plus_x_bcx_smem }, { .fn = c55plus_x_bcx_aca } } },
+	{ .mask = 0xff000040, .match = 0xbc000000, .id = TMS320C55_INS_BFXTR, .lop = C55_LOP_OPAQUE, .len = 5, .ops = { { .fn = c55plus_x_bcx_acc }, { .fn = c55plus_x_bcx_acb }, { .fn = c55plus_x_bcx_smem }, { .fn = c55plus_x_bcx_aca } } },
 	// mpym / macm / masm t3 = Smem, ACx, [ACy,] ACz (opcode 0xbb, 5 bytes): single-
 	// memory MAC with a "t3 = Smem" side-load. byte3[7:6] selects 00 mpym (3 ops) /
 	// 01 macm / 10 masm (4 ops); byte3[5] is the whole-operation uns (mpymu/macmu/
 	// masmu). round (byte2[5]) and fractional (byte4[7]) via .mods. Left unlifted
 	// (the side-load three-accumulator form is not modelled), as in legacy.
-	{ .mask = 0xff0000e0, .match = 0xbb000000, .id = TMS320C55_INS_MPYM, .len = 5, .mods = 0x200016, .side_load = true,
-	  .ops = { { .fn = c55plus_x_bb_smem }, { .fn = c55plus_x_bb_acx }, { .fn = c55plus_x_bb_acz } } },
-	{ .mask = 0xff0000e0, .match = 0xbb000020, .id = TMS320C55_INS_MPYM, .len = 5, .mods = 0x200016, .side_load = true, .uns_all = true,
-	  .ops = { { .fn = c55plus_x_bb_smem }, { .fn = c55plus_x_bb_acx }, { .fn = c55plus_x_bb_acz } } },
-	{ .mask = 0xff0000e0, .match = 0xbb000040, .id = TMS320C55_INS_MACM, .len = 5, .mods = 0x200016, .side_load = true,
-	  .ops = { { .fn = c55plus_x_bb_smem }, { .fn = c55plus_x_bb_acx }, { .fn = c55plus_x_bb_acy }, { .fn = c55plus_x_bb_acz } } },
-	{ .mask = 0xff0000e0, .match = 0xbb000060, .id = TMS320C55_INS_MACM, .len = 5, .mods = 0x200016, .side_load = true, .uns_all = true,
-	  .ops = { { .fn = c55plus_x_bb_smem }, { .fn = c55plus_x_bb_acx }, { .fn = c55plus_x_bb_acy }, { .fn = c55plus_x_bb_acz } } },
-	{ .mask = 0xff0000e0, .match = 0xbb000080, .id = TMS320C55_INS_MASM, .len = 5, .mods = 0x200016, .side_load = true,
-	  .ops = { { .fn = c55plus_x_bb_smem }, { .fn = c55plus_x_bb_acx }, { .fn = c55plus_x_bb_acy }, { .fn = c55plus_x_bb_acz } } },
-	{ .mask = 0xff0000e0, .match = 0xbb0000a0, .id = TMS320C55_INS_MASM, .len = 5, .mods = 0x200016, .side_load = true, .uns_all = true,
-	  .ops = { { .fn = c55plus_x_bb_smem }, { .fn = c55plus_x_bb_acx }, { .fn = c55plus_x_bb_acy }, { .fn = c55plus_x_bb_acz } } },
+	{ .mask = 0xff0000e0, .match = 0xbb000000, .id = TMS320C55_INS_MPYM, .len = 5, .mods = 0x200016, .side_load = true, .ops = { { .fn = c55plus_x_bb_smem }, { .fn = c55plus_x_bb_acx }, { .fn = c55plus_x_bb_acz } } },
+	{ .mask = 0xff0000e0, .match = 0xbb000020, .id = TMS320C55_INS_MPYM, .len = 5, .mods = 0x200016, .side_load = true, .uns_all = true, .ops = { { .fn = c55plus_x_bb_smem }, { .fn = c55plus_x_bb_acx }, { .fn = c55plus_x_bb_acz } } },
+	{ .mask = 0xff0000e0, .match = 0xbb000040, .id = TMS320C55_INS_MACM, .len = 5, .mods = 0x200016, .side_load = true, .ops = { { .fn = c55plus_x_bb_smem }, { .fn = c55plus_x_bb_acx }, { .fn = c55plus_x_bb_acy }, { .fn = c55plus_x_bb_acz } } },
+	{ .mask = 0xff0000e0, .match = 0xbb000060, .id = TMS320C55_INS_MACM, .len = 5, .mods = 0x200016, .side_load = true, .uns_all = true, .ops = { { .fn = c55plus_x_bb_smem }, { .fn = c55plus_x_bb_acx }, { .fn = c55plus_x_bb_acy }, { .fn = c55plus_x_bb_acz } } },
+	{ .mask = 0xff0000e0, .match = 0xbb000080, .id = TMS320C55_INS_MASM, .len = 5, .mods = 0x200016, .side_load = true, .ops = { { .fn = c55plus_x_bb_smem }, { .fn = c55plus_x_bb_acx }, { .fn = c55plus_x_bb_acy }, { .fn = c55plus_x_bb_acz } } },
+	{ .mask = 0xff0000e0, .match = 0xbb0000a0, .id = TMS320C55_INS_MASM, .len = 5, .mods = 0x200016, .side_load = true, .uns_all = true, .ops = { { .fn = c55plus_x_bb_smem }, { .fn = c55plus_x_bb_acx }, { .fn = c55plus_x_bb_acy }, { .fn = c55plus_x_bb_acz } } },
 	// mpym / macm / masm Xmem, Ymem, ACy (opcode 0xe0, 6 bytes): the long-form
 	// dual-data-memory multiply family. byte3[7:6] selects 00 mpym / 01 macm / 10
 	// masm; round (byte2[5]), m40 (byte4[0]) and fractional (byte5[7]) via .mods.
 	// These lift via the shared multiply-accumulate path. (The byte3[7:6]==11
 	// macmz zero-accumulate form stays on the legacy decoder.)
-	{ .mask = 0xff0000c0, .match = 0xe0000000, .id = TMS320C55_INS_MPYM, .len = 6, .mods = 0x20901e,
-	  .ops = { { .fn = c55plus_x_e0_xmem }, { .fn = c55plus_x_e0_ymem }, { .fn = c55plus_x_e0_acy } } },
-	{ .mask = 0xff0000c0, .match = 0xe0000040, .id = TMS320C55_INS_MACM, .lop = C55_LOP_MAC, .len = 6, .mods = 0x20901e,
-	  .ops = { { .fn = c55plus_x_e0_xmem }, { .fn = c55plus_x_e0_ymem }, { .fn = c55plus_x_e0_acy } } },
-	{ .mask = 0xff0000c0, .match = 0xe0000080, .id = TMS320C55_INS_MASM, .lop = C55_LOP_MAS, .len = 6, .mods = 0x20901e,
-	  .ops = { { .fn = c55plus_x_e0_xmem }, { .fn = c55plus_x_e0_ymem }, { .fn = c55plus_x_e0_acy } } },
+	{ .mask = 0xff0000c0, .match = 0xe0000000, .id = TMS320C55_INS_MPYM, .len = 6, .mods = 0x20901e, .ops = { { .fn = c55plus_x_e0_xmem }, { .fn = c55plus_x_e0_ymem }, { .fn = c55plus_x_e0_acy } } },
+	{ .mask = 0xff0000c0, .match = 0xe0000040, .id = TMS320C55_INS_MACM, .lop = C55_LOP_MAC, .len = 6, .mods = 0x20901e, .ops = { { .fn = c55plus_x_e0_xmem }, { .fn = c55plus_x_e0_ymem }, { .fn = c55plus_x_e0_acy } } },
+	{ .mask = 0xff0000c0, .match = 0xe0000080, .id = TMS320C55_INS_MASM, .lop = C55_LOP_MAS, .len = 6, .mods = 0x20901e, .ops = { { .fn = c55plus_x_e0_xmem }, { .fn = c55plus_x_e0_ymem }, { .fn = c55plus_x_e0_acy } } },
 	// firsadd / firssub Xmem, Ymem, Cmem, ACx, ACy (opcode 0xeb, 6 bytes): byte1[7]
 	// (in the match head) is 0 for the firs form (the byte1[7]==1 amar::mpy form
 	// stays on the legacy decoder) and byte2[7]==1 selects firs over the other
@@ -3430,121 +3433,86 @@ static const C55InsnDef c55plus_table[] = {
 	// fractional modifier (byte5[7]) lie beyond the 4-byte match head, so they are
 	// applied via alt_bit (-> firssub) and the shared .mods fractional packing.
 	// These lift via the shared C55_LOP_FIRSADD / FIRSSUB dual-operation path.
-	{ .mask = 0xff808000, .match = 0xeb008000, .id = TMS320C55_INS_FIRSADD, .lop = C55_LOP_FIRSADD, .len = 6,
-	  .alt_bit = 15, .alt_id = TMS320C55_INS_FIRSSUB, .alt_lop = C55_LOP_FIRSSUB, .mods = (8u << 18),
-	  .ops = { { .fn = c55plus_x_fir_xmem }, { .fn = c55plus_x_fir_ymem }, { .fn = c55plus_x_fir_cmem }, { .fn = c55plus_x_fir_acx }, { .fn = c55plus_x_fir_acy } } },
+	{ .mask = 0xff808000, .match = 0xeb008000, .id = TMS320C55_INS_FIRSADD, .lop = C55_LOP_FIRSADD, .len = 6, .alt_bit = 15, .alt_id = TMS320C55_INS_FIRSSUB, .alt_lop = C55_LOP_FIRSSUB, .mods = (8u << 18), .ops = { { .fn = c55plus_x_fir_xmem }, { .fn = c55plus_x_fir_ymem }, { .fn = c55plus_x_fir_cmem }, { .fn = c55plus_x_fir_acx }, { .fn = c55plus_x_fir_acy } } },
 	// abdst / lms / lmsf / sqdst Xmem, Ymem, ACx, ACy (opcode 0xce, 5 bytes): the
 	// operation is selected by (byte1[7], byte3[7], byte2[7]): (0,0,0) sqdst,
 	// (0,0,1) abdst, (1,1,0) lms, (1,1,1) lmsf. byte4[7] is an additional
 	// fractional modifier (so lms->lmsf and lmsf->lmsff), decoded through the
 	// shared .mods packing. These lift via the shared dual-operation path.
-	{ .mask = 0xff808080, .match = 0xce000000, .id = TMS320C55_INS_SQDST, .lop = C55_LOP_SQDST, .len = 5,
-	  .ops = { { .fn = c55plus_x_dst_xmem }, { .fn = c55plus_x_dst_ymem }, { .fn = c55plus_x_dst_acx }, { .fn = c55plus_x_dst_acy } } },
-	{ .mask = 0xff808080, .match = 0xce008000, .id = TMS320C55_INS_ABDST, .lop = C55_LOP_ABDST, .len = 5,
-	  .ops = { { .fn = c55plus_x_dst_xmem }, { .fn = c55plus_x_dst_ymem }, { .fn = c55plus_x_dst_acx }, { .fn = c55plus_x_dst_acy } } },
-	{ .mask = 0xff808080, .match = 0xce800080, .id = TMS320C55_INS_LMS, .lop = C55_LOP_LMS, .len = 5, .mods = (8u << 18),
-	  .ops = { { .fn = c55plus_x_dst_xmem }, { .fn = c55plus_x_dst_ymem }, { .fn = c55plus_x_dst_acx }, { .fn = c55plus_x_dst_acy } } },
-	{ .mask = 0xff808080, .match = 0xce808080, .id = TMS320C55_INS_LMSF, .lop = C55_LOP_LMS, .len = 5, .mods = (8u << 18),
-	  .ops = { { .fn = c55plus_x_dst_xmem }, { .fn = c55plus_x_dst_ymem }, { .fn = c55plus_x_dst_acx }, { .fn = c55plus_x_dst_acy } } },
+	{ .mask = 0xff808080, .match = 0xce000000, .id = TMS320C55_INS_SQDST, .lop = C55_LOP_SQDST, .len = 5, .ops = { { .fn = c55plus_x_dst_xmem }, { .fn = c55plus_x_dst_ymem }, { .fn = c55plus_x_dst_acx }, { .fn = c55plus_x_dst_acy } } },
+	{ .mask = 0xff808080, .match = 0xce008000, .id = TMS320C55_INS_ABDST, .lop = C55_LOP_ABDST, .len = 5, .ops = { { .fn = c55plus_x_dst_xmem }, { .fn = c55plus_x_dst_ymem }, { .fn = c55plus_x_dst_acx }, { .fn = c55plus_x_dst_acy } } },
+	{ .mask = 0xff808080, .match = 0xce800080, .id = TMS320C55_INS_LMS, .lop = C55_LOP_LMS, .len = 5, .mods = (8u << 18), .ops = { { .fn = c55plus_x_dst_xmem }, { .fn = c55plus_x_dst_ymem }, { .fn = c55plus_x_dst_acx }, { .fn = c55plus_x_dst_acy } } },
+	{ .mask = 0xff808080, .match = 0xce808080, .id = TMS320C55_INS_LMSF, .lop = C55_LOP_LMS, .len = 5, .mods = (8u << 18), .ops = { { .fn = c55plus_x_dst_xmem }, { .fn = c55plus_x_dst_ymem }, { .fn = c55plus_x_dst_acx }, { .fn = c55plus_x_dst_acy } } },
 	// maxdiff / mindiff / dmaxdiff / dmindiff ACc, ACd, ACa, ACb, [pair(]trnN[)]
 	// (opcode 0xd4, 5 bytes): byte1[7] selects the d-variant (bare trn over the
 	// pair()-wrapped form), byte2[7] the min-variant. Rendered via diff_form; left
 	// unlifted, as in the legacy decoder.
-	{ .mask = 0xff808000, .match = 0xd4000000, .id = TMS320C55_INS_MAXDIFF, .len = 5, .diff_form = true, .diff_pair = true,
-	  .ops = { { .fn = c55plus_x_diff_acc }, { .fn = c55plus_x_diff_acd }, { .fn = c55plus_x_diff_aca }, { .fn = c55plus_x_diff_acb }, { .fn = c55plus_x_diff_trn } } },
-	{ .mask = 0xff808000, .match = 0xd4008000, .id = TMS320C55_INS_MINDIFF, .len = 5, .diff_form = true, .diff_pair = true,
-	  .ops = { { .fn = c55plus_x_diff_acc }, { .fn = c55plus_x_diff_acd }, { .fn = c55plus_x_diff_aca }, { .fn = c55plus_x_diff_acb }, { .fn = c55plus_x_diff_trn } } },
-	{ .mask = 0xff808000, .match = 0xd4800000, .id = TMS320C55_INS_DMAXDIFF, .len = 5, .diff_form = true,
-	  .ops = { { .fn = c55plus_x_diff_acc }, { .fn = c55plus_x_diff_acd }, { .fn = c55plus_x_diff_aca }, { .fn = c55plus_x_diff_acb }, { .fn = c55plus_x_diff_trn } } },
-	{ .mask = 0xff808000, .match = 0xd4808000, .id = TMS320C55_INS_DMINDIFF, .len = 5, .diff_form = true,
-	  .ops = { { .fn = c55plus_x_diff_acc }, { .fn = c55plus_x_diff_acd }, { .fn = c55plus_x_diff_aca }, { .fn = c55plus_x_diff_acb }, { .fn = c55plus_x_diff_trn } } },
+	{ .mask = 0xff808000, .match = 0xd4000000, .id = TMS320C55_INS_MAXDIFF, .len = 5, .diff_form = true, .diff_pair = true, .ops = { { .fn = c55plus_x_diff_acc }, { .fn = c55plus_x_diff_acd }, { .fn = c55plus_x_diff_aca }, { .fn = c55plus_x_diff_acb }, { .fn = c55plus_x_diff_trn } } },
+	{ .mask = 0xff808000, .match = 0xd4008000, .id = TMS320C55_INS_MINDIFF, .len = 5, .diff_form = true, .diff_pair = true, .ops = { { .fn = c55plus_x_diff_acc }, { .fn = c55plus_x_diff_acd }, { .fn = c55plus_x_diff_aca }, { .fn = c55plus_x_diff_acb }, { .fn = c55plus_x_diff_trn } } },
+	{ .mask = 0xff808000, .match = 0xd4800000, .id = TMS320C55_INS_DMAXDIFF, .len = 5, .diff_form = true, .ops = { { .fn = c55plus_x_diff_acc }, { .fn = c55plus_x_diff_acd }, { .fn = c55plus_x_diff_aca }, { .fn = c55plus_x_diff_acb }, { .fn = c55plus_x_diff_trn } } },
+	{ .mask = 0xff808000, .match = 0xd4808000, .id = TMS320C55_INS_DMINDIFF, .len = 5, .diff_form = true, .ops = { { .fn = c55plus_x_diff_acc }, { .fn = c55plus_x_diff_acd }, { .fn = c55plus_x_diff_aca }, { .fn = c55plus_x_diff_acb }, { .fn = c55plus_x_diff_trn } } },
 	// sqrm / sqam / sqsm *Smem, [ACx,] ACy (opcode 0x92, 4 bytes): square a memory
 	// operand. byte3[7:5] selects the operation: 000 sqrm (ACy = Smem*Smem, no
 	// accumulate), 010 sqam (ACy = ACx + Smem*Smem), 100 sqsm (subtract). round =
 	// byte2[5], fractional = byte3[5], both via the shared .mods packing. Lift via
 	// the shared squaring multiply path.
-	{ .mask = 0xff0000e0, .match = 0x92000000, .id = TMS320C55_INS_SQRM, .len = 4, .mods = 0x18000e, .square = true,
-	  .ops = { { .fn = c55plus_x_sq_mem }, { .fn = c55plus_x_sq_acy } } },
-	{ .mask = 0xff0000e0, .match = 0x92000040, .id = TMS320C55_INS_SQAM, .lop = C55_LOP_MAC, .len = 4, .mods = 0x18000e, .square = true,
-	  .ops = { { .fn = c55plus_x_sq_mem }, { .fn = c55plus_x_sq_acx }, { .fn = c55plus_x_sq_acy } } },
-	{ .mask = 0xff0000e0, .match = 0x92000080, .id = TMS320C55_INS_SQSM, .lop = C55_LOP_MAS, .len = 4, .mods = 0x18000e, .square = true,
-	  .ops = { { .fn = c55plus_x_sq_mem }, { .fn = c55plus_x_sq_acx }, { .fn = c55plus_x_sq_acy } } },
+	{ .mask = 0xff0000e0, .match = 0x92000000, .id = TMS320C55_INS_SQRM, .len = 4, .mods = 0x18000e, .square = true, .ops = { { .fn = c55plus_x_sq_mem }, { .fn = c55plus_x_sq_acy } } },
+	{ .mask = 0xff0000e0, .match = 0x92000040, .id = TMS320C55_INS_SQAM, .lop = C55_LOP_MAC, .len = 4, .mods = 0x18000e, .square = true, .ops = { { .fn = c55plus_x_sq_mem }, { .fn = c55plus_x_sq_acx }, { .fn = c55plus_x_sq_acy } } },
+	{ .mask = 0xff0000e0, .match = 0x92000080, .id = TMS320C55_INS_SQSM, .lop = C55_LOP_MAS, .len = 4, .mods = 0x18000e, .square = true, .ops = { { .fn = c55plus_x_sq_mem }, { .fn = c55plus_x_sq_acx }, { .fn = c55plus_x_sq_acy } } },
 	// mpymk Xmem, #k8, ACy (opcode 0xb8, byte3[6]==0, 5 bytes) and macmk Xmem, #k8,
 	// ACx, ACy (byte3[6]==1): constant-coefficient memory multiply / multiply-
 	// accumulate. byte3[5] is the fractional (f) modifier. Left unlifted, as in the
 	// legacy decoder.
-	{ .mask = 0xff000040, .match = 0xb8000000, .id = TMS320C55_INS_MPYMK, .len = 5, .mods = (14u << 18),
-	  .ops = { { .fn = c55plus_x_mpymk_mem }, { .fn = c55plus_x_mpymk_k8 }, { .fn = c55plus_x_mpymk_acy } } },
-	{ .mask = 0xff000040, .match = 0xb8000040, .id = TMS320C55_INS_MACMK, .len = 5, .mods = (14u << 18),
-	  .ops = { { .fn = c55plus_x_mpymk_mem }, { .fn = c55plus_x_mpymk_k8 }, { .fn = c55plus_x_mpymk_acx }, { .fn = c55plus_x_mpymk_acy } } },
+	{ .mask = 0xff000040, .match = 0xb8000000, .id = TMS320C55_INS_MPYMK, .len = 5, .mods = (14u << 18), .ops = { { .fn = c55plus_x_mpymk_mem }, { .fn = c55plus_x_mpymk_k8 }, { .fn = c55plus_x_mpymk_acy } } },
+	{ .mask = 0xff000040, .match = 0xb8000040, .id = TMS320C55_INS_MACMK, .len = 5, .mods = (14u << 18), .ops = { { .fn = c55plus_x_mpymk_mem }, { .fn = c55plus_x_mpymk_k8 }, { .fn = c55plus_x_mpymk_acx }, { .fn = c55plus_x_mpymk_acy } } },
 	// mpymk / macmk t3 = Xmem, #k8, [ACx,] ACy (opcode 0xb9, 5 bytes): the side-load
 	// ("t3 = Xmem") sibling of the 0xb8 constant-coefficient memory multiply, with
 	// the identical field layout. Left unlifted, as in the legacy decoder.
-	{ .mask = 0xff000040, .match = 0xb9000000, .id = TMS320C55_INS_MPYMK, .len = 5, .mods = (14u << 18), .side_load = true,
-	  .ops = { { .fn = c55plus_x_mpymk_mem }, { .fn = c55plus_x_mpymk_k8 }, { .fn = c55plus_x_mpymk_acy } } },
-	{ .mask = 0xff000040, .match = 0xb9000040, .id = TMS320C55_INS_MACMK, .len = 5, .mods = (14u << 18), .side_load = true,
-	  .ops = { { .fn = c55plus_x_mpymk_mem }, { .fn = c55plus_x_mpymk_k8 }, { .fn = c55plus_x_mpymk_acx }, { .fn = c55plus_x_mpymk_acy } } },
+	{ .mask = 0xff000040, .match = 0xb9000000, .id = TMS320C55_INS_MPYMK, .len = 5, .mods = (14u << 18), .side_load = true, .ops = { { .fn = c55plus_x_mpymk_mem }, { .fn = c55plus_x_mpymk_k8 }, { .fn = c55plus_x_mpymk_acy } } },
+	{ .mask = 0xff000040, .match = 0xb9000040, .id = TMS320C55_INS_MACMK, .len = 5, .mods = (14u << 18), .side_load = true, .ops = { { .fn = c55plus_x_mpymk_mem }, { .fn = c55plus_x_mpymk_k8 }, { .fn = c55plus_x_mpymk_acx }, { .fn = c55plus_x_mpymk_acy } } },
 	// mant ACa, ACb :: nexp ACa, ACc (opcode 0xa9, byte1[7]==0 && byte2[7]==1, 4
 	// bytes): dual mantissa / negated-exponent helper, rendered via the mant_nexp
 	// flag. Left unlifted, as in the legacy decoder.
-	{ .mask = 0xff808000, .match = 0xa9008000, .id = TMS320C55_INS_MANT, .len = 4, .mant_nexp = true,
-	  .ops = { { .fn = c55plus_x_mant_aca }, { .fn = c55plus_x_mant_acb }, { .fn = c55plus_x_mant_acc } } },
+	{ .mask = 0xff808000, .match = 0xa9008000, .id = TMS320C55_INS_MANT, .lop = C55_LOP_OPAQUE, .len = 4, .mant_nexp = true, .ops = { { .fn = c55plus_x_mant_aca }, { .fn = c55plus_x_mant_acb }, { .fn = c55plus_x_mant_acc } } },
 	// rpt csr / rptadd csr, #k|reg / rptsub csr, #k (opcode 0x01, 2 bytes).
 	// byte1[7:6]: 00 rptsub #k, 01 rptadd #k, 10 rptadd reg, 11 rpt. All nop-lift.
-	{ .mask = 0xffc00000, .match = 0x01000000, .id = TMS320C55_INS_RPTSUB, .lop = C55_LOP_NOP, .len = 2,
-	  .ops = { { .fn = c55plus_x_01_csr }, { .fn = c55plus_x_01_k4 } } },
-	{ .mask = 0xffc00000, .match = 0x01400000, .id = TMS320C55_INS_RPTADD, .lop = C55_LOP_NOP, .len = 2,
-	  .ops = { { .fn = c55plus_x_01_csr }, { .fn = c55plus_x_01_k4 } } },
-	{ .mask = 0xffc00000, .match = 0x01800000, .id = TMS320C55_INS_RPTADD, .lop = C55_LOP_NOP, .len = 2,
-	  .ops = { { .fn = c55plus_x_01_csr }, { .fn = c55plus_x_01_reg } } },
-	{ .mask = 0xffc00000, .match = 0x01c00000, .id = TMS320C55_INS_RPT, .lop = C55_LOP_NOP, .len = 2,
-	  .ops = { { .fn = c55plus_x_01_csr } } },
+	{ .mask = 0xffc00000, .match = 0x01000000, .id = TMS320C55_INS_RPTSUB, .lop = C55_LOP_NOP, .len = 2, .ops = { { .fn = c55plus_x_01_csr }, { .fn = c55plus_x_01_k4 } } },
+	{ .mask = 0xffc00000, .match = 0x01400000, .id = TMS320C55_INS_RPTADD, .lop = C55_LOP_NOP, .len = 2, .ops = { { .fn = c55plus_x_01_csr }, { .fn = c55plus_x_01_k4 } } },
+	{ .mask = 0xffc00000, .match = 0x01800000, .id = TMS320C55_INS_RPTADD, .lop = C55_LOP_NOP, .len = 2, .ops = { { .fn = c55plus_x_01_csr }, { .fn = c55plus_x_01_reg } } },
+	{ .mask = 0xffc00000, .match = 0x01c00000, .id = TMS320C55_INS_RPT, .lop = C55_LOP_NOP, .len = 2, .ops = { { .fn = c55plus_x_01_csr } } },
 	// rol / ror carry, ACx, carry, ACy (opcode 0xa8, 4 bytes). byte2[7] selects
 	// rol (0) / ror (1); byte3[0] the carry-in flag and byte3[1] the carry-out
 	// flag (0 carry, 1 tc2). Whole-accumulator forms only; lifted by the shared
 	// rol/ror path.
-	{ .mask = 0xff008000, .match = 0xa8000000, .id = TMS320C55_INS_ROL, .lop = C55_LOP_ROL, .len = 4,
-	  .ops = { { .lo = 0, .fn = c55plus_x_a8_flag }, { .fn = c55plus_x_a8_src }, { .lo = 1, .fn = c55plus_x_a8_flag }, { .fn = c55plus_x_a8_dst } } },
-	{ .mask = 0xff008000, .match = 0xa8008000, .id = TMS320C55_INS_ROR, .lop = C55_LOP_ROR, .len = 4,
-	  .ops = { { .lo = 0, .fn = c55plus_x_a8_flag }, { .fn = c55plus_x_a8_src }, { .lo = 1, .fn = c55plus_x_a8_flag }, { .fn = c55plus_x_a8_dst } } },
+	{ .mask = 0xff008000, .match = 0xa8000000, .id = TMS320C55_INS_ROL, .lop = C55_LOP_ROL, .len = 4, .ops = { { .lo = 0, .fn = c55plus_x_a8_flag }, { .fn = c55plus_x_a8_src }, { .lo = 1, .fn = c55plus_x_a8_flag }, { .fn = c55plus_x_a8_dst } } },
+	{ .mask = 0xff008000, .match = 0xa8008000, .id = TMS320C55_INS_ROR, .lop = C55_LOP_ROR, .len = 4, .ops = { { .lo = 0, .fn = c55plus_x_a8_flag }, { .fn = c55plus_x_a8_src }, { .lo = 1, .fn = c55plus_x_a8_flag }, { .fn = c55plus_x_a8_dst } } },
 	// bclr / bset st0_<bit>, st0_55 (opcode 0x0a, 2 bytes). byte1[5] selects
 	// bset (1) vs bclr (0); byte1[4:0] is the bit. The semantic bits (9..15)
 	// lift to an st0_55 bit set/clear; the data-page bits produce no IL.
-	{ .mask = 0xffe00000, .match = 0x0a000000, .id = TMS320C55_INS_BCLR, .lop = C55_LOP_STBITCLR, .len = 2,
-	  .ops = { { .fn = c55plus_x_0a_bit }, { .fn = c55plus_x_0a_st0 } } },
-	{ .mask = 0xffe00000, .match = 0x0a200000, .id = TMS320C55_INS_BSET, .lop = C55_LOP_STBITSET, .len = 2,
-	  .ops = { { .fn = c55plus_x_0a_bit }, { .fn = c55plus_x_0a_st0 } } },
+	{ .mask = 0xffe00000, .match = 0x0a000000, .id = TMS320C55_INS_BCLR, .lop = C55_LOP_STBITCLR, .len = 2, .ops = { { .fn = c55plus_x_0a_bit }, { .fn = c55plus_x_0a_st0 } } },
+	{ .mask = 0xffe00000, .match = 0x0a200000, .id = TMS320C55_INS_BSET, .lop = C55_LOP_STBITSET, .len = 2, .ops = { { .fn = c55plus_x_0a_bit }, { .fn = c55plus_x_0a_st0 } } },
 	// pop / psh mmap(@reg) (opcode 0x24, byte1==0x61, 4 bytes). byte3[3] selects
 	// pop (1) vs psh (0); byte2 is the mmap register. Lifted by the shared stack
 	// path.
-	{ .mask = 0xffff0008, .match = 0x24610008, .id = TMS320C55_INS_POP, .len = 4,
-	  .ops = { { .fn = c55plus_x_24_mmr_stack } } },
-	{ .mask = 0xffff0008, .match = 0x24610000, .id = TMS320C55_INS_PSH, .len = 4,
-	  .ops = { { .fn = c55plus_x_24_mmr_stack } } },
+	{ .mask = 0xffff0008, .match = 0x24610008, .id = TMS320C55_INS_POP, .len = 4, .ops = { { .fn = c55plus_x_24_mmr_stack } } },
+	{ .mask = 0xffff0008, .match = 0x24610000, .id = TMS320C55_INS_PSH, .len = 4, .ops = { { .fn = c55plus_x_24_mmr_stack } } },
 	// pop / psh rX, rY (opcodes 0x71 / 0x70, 3 bytes): register-pair pop / push.
 	// rX = gr1(byte1), rY = gr1(byte2). Lifted by the shared stack path.
-	{ .mask = 0xff000000, .match = 0x71000000, .id = TMS320C55_INS_POP, .len = 3,
-	  .ops = { { .fn = c55plus_x_pair_reg1 }, { .fn = c55plus_x_pair_reg2 } } },
-	{ .mask = 0xff000000, .match = 0x70000000, .id = TMS320C55_INS_PSH, .len = 3,
-	  .ops = { { .fn = c55plus_x_pair_reg1 }, { .fn = c55plus_x_pair_reg2 } } },
+	{ .mask = 0xff000000, .match = 0x71000000, .id = TMS320C55_INS_POP, .len = 3, .ops = { { .fn = c55plus_x_pair_reg1 }, { .fn = c55plus_x_pair_reg2 } } },
+	{ .mask = 0xff000000, .match = 0x70000000, .id = TMS320C55_INS_PSH, .len = 3, .ops = { { .fn = c55plus_x_pair_reg1 }, { .fn = c55plus_x_pair_reg2 } } },
 	// pshboth / popboth <reg> (opcode 0x0d, 2 bytes): byte1[7] selects pshboth (0)
 	// over popboth (1); byte1[5] the ac/xar register class. The "both" flag marks
 	// the register-pair stack semantics. Left unlifted, as the legacy decoder does.
-	{ .mask = 0xff800000, .match = 0x0d000000, .id = TMS320C55_INS_PSHBOTH, .len = 2, .both = true,
-	  .ops = { { .fn = c55plus_x_pshpopboth_reg } } },
-	{ .mask = 0xff800000, .match = 0x0d800000, .id = TMS320C55_INS_POPBOTH, .len = 2, .both = true,
-	  .ops = { { .fn = c55plus_x_pshpopboth_reg } } },
+	{ .mask = 0xff800000, .match = 0x0d000000, .id = TMS320C55_INS_PSHBOTH, .len = 2, .both = true, .ops = { { .fn = c55plus_x_pshpopboth_reg } } },
+	{ .mask = 0xff800000, .match = 0x0d800000, .id = TMS320C55_INS_POPBOTH, .len = 2, .both = true, .ops = { { .fn = c55plus_x_pshpopboth_reg } } },
 	// swap rX, rY (opcode 0x03, byte1[7:6]==10, 2 bytes). Single-register-pair
 	// encodings only (the extractor declines the others, which fall back to the
 	// legacy decoder). Lifts via the shared XOR-swap (XCHG) idiom.
-	{ .mask = 0xffc00000, .match = 0x03800000, .id = TMS320C55_INS_SWAP, .len = 2,
-	  .ops = { { .fn = c55plus_x_swap_x }, { .fn = c55plus_x_swap_y } } },
+	{ .mask = 0xffc00000, .match = 0x03800000, .id = TMS320C55_INS_SWAP, .len = 2, .ops = { { .fn = c55plus_x_swap_x }, { .fn = c55plus_x_swap_y } } },
 	// intr #k5 / trap #k5 / sim_trig (opcode 0x03, 2 bytes). byte1[7:6] selects:
 	// 00 intr, 01 trap, 11 sim_trig. Left unlifted.
-	{ .mask = 0xffc00000, .match = 0x03000000, .id = TMS320C55_INS_INTR, .len = 2,
-	  .ops = { { .fn = c55plus_x_03_k5 } } },
-	{ .mask = 0xffc00000, .match = 0x03400000, .id = TMS320C55_INS_TRAP, .len = 2,
-	  .ops = { { .fn = c55plus_x_03_k5 } } },
+	{ .mask = 0xffc00000, .match = 0x03000000, .id = TMS320C55_INS_INTR, .len = 2, .ops = { { .fn = c55plus_x_03_k5 } } },
+	{ .mask = 0xffc00000, .match = 0x03400000, .id = TMS320C55_INS_TRAP, .len = 2, .ops = { { .fn = c55plus_x_03_k5 } } },
 	{ .mask = 0xffc00000, .match = 0x03c00000, .id = TMS320C55_INS_SIM_TRIG, .len = 2, .ops = { { 0 } } },
 	// estop (opcode 0x23, 1 byte) and ecopr (opcode 0x0b, 2 bytes): the
 	// emulation-stop and emulation-coprocessor cpu-control instructions, typed
@@ -3555,210 +3523,149 @@ static const C55InsnDef c55plus_table[] = {
 	// round/satr/sat SRC, DST (opcode 0x79, 3 bytes). byte1[7]==0 -> round;
 	// byte1[7]==1 -> sat, byte1[5] selecting satr (the rounding 'r' suffix, round
 	// bit = byte1[5] = bit 21 of the 3-byte word). Left unlifted.
-	{ .mask = 0xff800000, .match = 0x79000000, .id = TMS320C55_INS_ROUND, .len = 3,
-	  .ops = { { .fn = c55plus_x_79_src }, { .fn = c55plus_x_79_dst } } },
-	{ .mask = 0xffa00000, .match = 0x79800000, .id = TMS320C55_INS_SAT, .len = 3,
-	  .ops = { { .fn = c55plus_x_79_src }, { .fn = c55plus_x_79_dst } } },
-	{ .mask = 0xffa00000, .match = 0x79a00000, .id = TMS320C55_INS_SAT, .len = 3, .mods = 22,
-	  .ops = { { .fn = c55plus_x_79_src }, { .fn = c55plus_x_79_dst } } },
+	{ .mask = 0xff800000, .match = 0x79000000, .id = TMS320C55_INS_ROUND, .lop = C55_LOP_ROUND, .len = 3, .ops = { { .fn = c55plus_x_79_src }, { .fn = c55plus_x_79_dst } } },
+	{ .mask = 0xffa00000, .match = 0x79800000, .id = TMS320C55_INS_SAT, .lop = C55_LOP_SAT, .len = 3, .ops = { { .fn = c55plus_x_79_src }, { .fn = c55plus_x_79_dst } } },
+	{ .mask = 0xffa00000, .match = 0x79a00000, .id = TMS320C55_INS_SAT, .lop = C55_LOP_SAT, .len = 3, .mods = 22, .ops = { { .fn = c55plus_x_79_src }, { .fn = c55plus_x_79_dst } } },
 	// sat (opcode 0x2a2d, 2 bytes) and circ (opcode 0x27, 1 byte): fixed-encoding
 	// control instructions. Left unlifted.
-	{ .mask = 0xffff0000, .match = 0x2a2d0000, .id = TMS320C55_INS_SAT, .len = 2, .ops = { { 0 } } },
+	{ .mask = 0xffff0000, .match = 0x2a2d0000, .id = TMS320C55_INS_SAT, .lop = C55_LOP_OPAQUE, .len = 2, .ops = { { 0 } } },
 	{ .mask = 0xff000000, .match = 0x27000000, .id = TMS320C55_INS_CIRC, .len = 1, .ops = { { 0 } } },
 	// neg/abs/min/max SRC, DST (opcode 0x76, 3 bytes). byte1[7] + byte2[7] select
 	// the operation. Lifted by the shared register-op path.
-	{ .mask = 0xff808000, .match = 0x76000000, .id = TMS320C55_INS_ABS, .lop = C55_LOP_ABS, .len = 3,
-	  .ops = { { .fn = c55plus_x_76_src }, { .fn = c55plus_x_76_dst } } },
-	{ .mask = 0xff808000, .match = 0x76008000, .id = TMS320C55_INS_NEG, .lop = C55_LOP_NEG, .len = 3,
-	  .ops = { { .fn = c55plus_x_76_src }, { .fn = c55plus_x_76_dst } } },
-	{ .mask = 0xff808000, .match = 0x76800000, .id = TMS320C55_INS_MAX, .lop = C55_LOP_MAX, .len = 3,
-	  .ops = { { .fn = c55plus_x_76_src }, { .fn = c55plus_x_76_dst } } },
-	{ .mask = 0xff808000, .match = 0x76808000, .id = TMS320C55_INS_MIN, .lop = C55_LOP_MIN, .len = 3,
-	  .ops = { { .fn = c55plus_x_76_src }, { .fn = c55plus_x_76_dst } } },
+	{ .mask = 0xff808000, .match = 0x76000000, .id = TMS320C55_INS_ABS, .lop = C55_LOP_ABS, .len = 3, .ops = { { .fn = c55plus_x_76_src }, { .fn = c55plus_x_76_dst } } },
+	{ .mask = 0xff808000, .match = 0x76008000, .id = TMS320C55_INS_NEG, .lop = C55_LOP_NEG, .len = 3, .ops = { { .fn = c55plus_x_76_src }, { .fn = c55plus_x_76_dst } } },
+	{ .mask = 0xff808000, .match = 0x76800000, .id = TMS320C55_INS_MAX, .lop = C55_LOP_MAX, .len = 3, .ops = { { .fn = c55plus_x_76_src }, { .fn = c55plus_x_76_dst } } },
+	{ .mask = 0xff808000, .match = 0x76808000, .id = TMS320C55_INS_MIN, .lop = C55_LOP_MIN, .len = 3, .ops = { { .fn = c55plus_x_76_src }, { .fn = c55plus_x_76_dst } } },
 	// add/sub #k16 << #16, ACx, ACy (opcode 0xc0, base 5 bytes). byte2[7] selects
 	// the operation; lifted by the shared immediate-shift ALU path.
-	{ .mask = 0xff008000, .match = 0xc0000000, .id = TMS320C55_INS_ADD, .lop = C55_LOP_ADDSHL, .len = 5,
-	  .ops = { { .fn = c55plus_x_c0_imm }, { .fn = c55plus_x_c0_acx }, { .fn = c55plus_x_c0_acy } } },
-	{ .mask = 0xff008000, .match = 0xc0008000, .id = TMS320C55_INS_SUB, .lop = C55_LOP_SUBSHL, .len = 5,
-	  .ops = { { .fn = c55plus_x_c0_imm }, { .fn = c55plus_x_c0_acx }, { .fn = c55plus_x_c0_acy } } },
+	{ .mask = 0xff008000, .match = 0xc0000000, .id = TMS320C55_INS_ADD, .lop = C55_LOP_ADDSHL, .len = 5, .ops = { { .fn = c55plus_x_c0_imm }, { .fn = c55plus_x_c0_acx }, { .fn = c55plus_x_c0_acy } } },
+	{ .mask = 0xff008000, .match = 0xc0008000, .id = TMS320C55_INS_SUB, .lop = C55_LOP_SUBSHL, .len = 5, .ops = { { .fn = c55plus_x_c0_imm }, { .fn = c55plus_x_c0_acx }, { .fn = c55plus_x_c0_acy } } },
 	// add/sub #k16 << #sh, ACx, ACy (opcode 0xc2, base 5 bytes, byte1[7]==0).
 	// byte2[7] selects add vs sub. Lifted by the shared immediate-shift ALU path.
-	{ .mask = 0xff808000, .match = 0xc2000000, .id = TMS320C55_INS_ADD, .lop = C55_LOP_ADDSHL, .len = 5,
-	  .ops = { { .fn = c55plus_x_c2_imm }, { .fn = c55plus_x_c2_acx }, { .fn = c55plus_x_c2_acy } } },
-	{ .mask = 0xff808000, .match = 0xc2008000, .id = TMS320C55_INS_SUB, .lop = C55_LOP_SUBSHL, .len = 5,
-	  .ops = { { .fn = c55plus_x_c2_imm }, { .fn = c55plus_x_c2_acx }, { .fn = c55plus_x_c2_acy } } },
+	{ .mask = 0xff808000, .match = 0xc2000000, .id = TMS320C55_INS_ADD, .lop = C55_LOP_ADDSHL, .len = 5, .ops = { { .fn = c55plus_x_c2_imm }, { .fn = c55plus_x_c2_acx }, { .fn = c55plus_x_c2_acy } } },
+	{ .mask = 0xff808000, .match = 0xc2008000, .id = TMS320C55_INS_SUB, .lop = C55_LOP_SUBSHL, .len = 5, .ops = { { .fn = c55plus_x_c2_imm }, { .fn = c55plus_x_c2_acx }, { .fn = c55plus_x_c2_acy } } },
 	// mov #k16 << #sh, ACx (opcode 0xc2, byte1[7]==1). Lifted by the shared
 	// shifted-immediate load path.
-	{ .mask = 0xff800000, .match = 0xc2800000, .id = TMS320C55_INS_MOV, .lop = C55_LOP_MOVSHL, .len = 5,
-	  .ops = { { .fn = c55plus_x_c2_imm }, { .fn = c55plus_x_c2_acy } } },
+	{ .mask = 0xff800000, .match = 0xc2800000, .id = TMS320C55_INS_MOV, .lop = C55_LOP_MOVSHL, .len = 5, .ops = { { .fn = c55plus_x_c2_imm }, { .fn = c55plus_x_c2_acy } } },
 	// add *Smem, ACx, ACy (opcode 0x80, 4 bytes). Same operand shape as 0x85.
 	// Left unlifted.
-	{ .mask = 0xff000000, .match = 0x80000000, .id = TMS320C55_INS_ADD, .len = 4,
-	  .ops = { { .fn = c55plus_x_80_mem }, { .fn = c55plus_x_85_acx }, { .fn = c55plus_x_85_acy } } },
+	{ .mask = 0xff000000, .match = 0x80000000, .id = TMS320C55_INS_ADD, .len = 4, .ops = { { .fn = c55plus_x_80_mem }, { .fn = c55plus_x_85_acx }, { .fn = c55plus_x_85_acy } } },
 	// or *Smem, ACx, ACy (opcode 0x85, 4 bytes). Left unlifted.
-	{ .mask = 0xff000000, .match = 0x85000000, .id = TMS320C55_INS_OR, .len = 4,
-	  .ops = { { .fn = c55plus_x_85_mem }, { .fn = c55plus_x_85_acx }, { .fn = c55plus_x_85_acy } } },
+	{ .mask = 0xff000000, .match = 0x85000000, .id = TMS320C55_INS_OR, .len = 4, .ops = { { .fn = c55plus_x_85_mem }, { .fn = c55plus_x_85_acx }, { .fn = c55plus_x_85_acy } } },
 	// sub ACx.<h/l>, *Smem, ACy.<h/l> (opcode 0x82, 4 bytes). Left unlifted.
-	{ .mask = 0xff000000, .match = 0x82000000, .id = TMS320C55_INS_SUB, .len = 4,
-	  .ops = { { .fn = c55plus_x_82_acx }, { .fn = c55plus_x_82_mem }, { .fn = c55plus_x_82_acy } } },
+	{ .mask = 0xff000000, .match = 0x82000000, .id = TMS320C55_INS_SUB, .len = 4, .ops = { { .fn = c55plus_x_82_acx }, { .fn = c55plus_x_82_mem }, { .fn = c55plus_x_82_acy } } },
 	// add uns(*Smem), ACx, ACy (opcode 0x8c, 4 bytes). Left unlifted.
-	{ .mask = 0xff0020e0, .match = 0x8c002000, .id = TMS320C55_INS_ADD, .len = 4,
-	  .ops = { { .fn = c55plus_x_8c_mem }, { .fn = c55plus_x_8c_acx }, { .fn = c55plus_x_8c_acy } } },
+	{ .mask = 0xff0020e0, .match = 0x8c002000, .id = TMS320C55_INS_ADD, .len = 4, .ops = { { .fn = c55plus_x_8c_mem }, { .fn = c55plus_x_8c_acx }, { .fn = c55plus_x_8c_acy } } },
 	// add [uns(]*Smem[)], carry, ACx, ACy (opcode 0x8c, byte3[7:5]==001, 4 bytes):
 	// the add-with-carry variant -- a fixed "carry" operand sits between the Smem
 	// source and the two accumulators (src byte3[4:0], dst byte2[4:0]); uns is
 	// byte2[5]. Left unlifted, as the plain 0x8c form is.
-	{ .mask = 0xff0000e0, .match = 0x8c000020, .id = TMS320C55_INS_ADD, .len = 4,
-	  .ops = { { .fn = c55plus_x_8c_carry_mem }, { .fn = c55plus_x_carry }, { .fn = c55plus_x_8c_acx }, { .fn = c55plus_x_8c_acy } } },
+	{ .mask = 0xff0000e0, .match = 0x8c000020, .id = TMS320C55_INS_ADD, .len = 4, .ops = { { .fn = c55plus_x_8c_carry_mem }, { .fn = c55plus_x_carry }, { .fn = c55plus_x_8c_acx }, { .fn = c55plus_x_8c_acy } } },
 	// add/sub dbl(*Smem), ACx, ACy and sub ACx, dbl(*Smem), ACy (opcode 0x8d).
 	// byte3[7:6] selects op + operand order. Left unlifted.
-	{ .mask = 0xff0000c0, .match = 0x8d000000, .id = TMS320C55_INS_ADD, .len = 4,
-	  .ops = { { .fn = c55plus_x_8d_mem }, { .fn = c55plus_x_8c_acx }, { .fn = c55plus_x_8c_acy } } },
-	{ .mask = 0xff0000c0, .match = 0x8d000040, .id = TMS320C55_INS_SUB, .len = 4,
-	  .ops = { { .fn = c55plus_x_8d_mem }, { .fn = c55plus_x_8c_acx }, { .fn = c55plus_x_8c_acy } } },
-	{ .mask = 0xff0000c0, .match = 0x8d000080, .id = TMS320C55_INS_SUB, .len = 4,
-	  .ops = { { .fn = c55plus_x_8c_acx }, { .fn = c55plus_x_8d_mem }, { .fn = c55plus_x_8c_acy } } },
+	{ .mask = 0xff0000c0, .match = 0x8d000000, .id = TMS320C55_INS_ADD, .len = 4, .ops = { { .fn = c55plus_x_8d_mem }, { .fn = c55plus_x_8c_acx }, { .fn = c55plus_x_8c_acy } } },
+	{ .mask = 0xff0000c0, .match = 0x8d000040, .id = TMS320C55_INS_SUB, .len = 4, .ops = { { .fn = c55plus_x_8d_mem }, { .fn = c55plus_x_8c_acx }, { .fn = c55plus_x_8c_acy } } },
+	{ .mask = 0xff0000c0, .match = 0x8d000080, .id = TMS320C55_INS_SUB, .len = 4, .ops = { { .fn = c55plus_x_8c_acx }, { .fn = c55plus_x_8d_mem }, { .fn = c55plus_x_8c_acy } } },
 	// add/sub/mov [uns](*Smem) << #sh, ... (opcode 0xb7, base 5 bytes). byte3[7:6]
 	// selects the operation. Left unlifted.
-	{ .mask = 0xff0000c0, .match = 0xb7000000, .id = TMS320C55_INS_ADD, .len = 5,
-	  .ops = { { .fn = c55plus_x_b7_mem }, { .fn = c55plus_x_b7_acx }, { .fn = c55plus_x_b7_acy } } },
-	{ .mask = 0xff0000c0, .match = 0xb7000040, .id = TMS320C55_INS_SUB, .len = 5,
-	  .ops = { { .fn = c55plus_x_b7_mem }, { .fn = c55plus_x_b7_acx }, { .fn = c55plus_x_b7_acy } } },
-	{ .mask = 0xff0000c0, .match = 0xb70000c0, .id = TMS320C55_INS_MOV, .len = 5,
-	  .ops = { { .fn = c55plus_x_b7_mem }, { .fn = c55plus_x_b7_acy } } },
+	{ .mask = 0xff0000c0, .match = 0xb7000000, .id = TMS320C55_INS_ADD, .len = 5, .ops = { { .fn = c55plus_x_b7_mem }, { .fn = c55plus_x_b7_acx }, { .fn = c55plus_x_b7_acy } } },
+	{ .mask = 0xff0000c0, .match = 0xb7000040, .id = TMS320C55_INS_SUB, .len = 5, .ops = { { .fn = c55plus_x_b7_mem }, { .fn = c55plus_x_b7_acx }, { .fn = c55plus_x_b7_acy } } },
+	{ .mask = 0xff0000c0, .match = 0xb70000c0, .id = TMS320C55_INS_MOV, .len = 5, .ops = { { .fn = c55plus_x_b7_mem }, { .fn = c55plus_x_b7_acy } } },
 	// btstclr / btstset / btst / btstnot #k5, [dbl(]*Smem[)], TCx (opcode 0x91,
 	// byte2[4:2] selecting op+access): the extended memory bit-test family. Each row
 	// pins byte2[4:2]; the shared mem extractor rejects byte3[7:5]==000 so the word
 	// btstset below still matches that form. Left unlifted, as in the legacy decoder.
-	{ .mask = 0xff001c00, .match = 0x91000400, .id = TMS320C55_INS_BTSTCLR, .len = 4,
-	  .ops = { { .fn = c55plus_x_btx_bit }, { .fn = c55plus_x_btx_mem }, { .fn = c55plus_x_btx_tc } } },
-	{ .mask = 0xff001c00, .match = 0x91000c00, .id = TMS320C55_INS_BTSTSET, .len = 4,
-	  .ops = { { .fn = c55plus_x_btx_bit }, { .fn = c55plus_x_btx_mem }, { .fn = c55plus_x_btx_tc } } },
-	{ .mask = 0xff001c00, .match = 0x91001400, .id = TMS320C55_INS_BTST, .len = 4,
-	  .ops = { { .fn = c55plus_x_btx_bit }, { .fn = c55plus_x_btx_mem }, { .fn = c55plus_x_btx_tc } } },
-	{ .mask = 0xff001c00, .match = 0x91001c00, .id = TMS320C55_INS_BTSTNOT, .len = 4,
-	  .ops = { { .fn = c55plus_x_btx_bit }, { .fn = c55plus_x_btx_mem }, { .fn = c55plus_x_btx_tc } } },
+	{ .mask = 0xff001c00, .match = 0x91000400, .id = TMS320C55_INS_BTSTCLR, .len = 4, .ops = { { .fn = c55plus_x_btx_bit }, { .fn = c55plus_x_btx_mem }, { .fn = c55plus_x_btx_tc } } },
+	{ .mask = 0xff001c00, .match = 0x91000c00, .id = TMS320C55_INS_BTSTSET, .len = 4, .ops = { { .fn = c55plus_x_btx_bit }, { .fn = c55plus_x_btx_mem }, { .fn = c55plus_x_btx_tc } } },
+	{ .mask = 0xff001c00, .match = 0x91001400, .id = TMS320C55_INS_BTST, .len = 4, .ops = { { .fn = c55plus_x_btx_bit }, { .fn = c55plus_x_btx_mem }, { .fn = c55plus_x_btx_tc } } },
+	{ .mask = 0xff001c00, .match = 0x91001c00, .id = TMS320C55_INS_BTSTNOT, .len = 4, .ops = { { .fn = c55plus_x_btx_bit }, { .fn = c55plus_x_btx_mem }, { .fn = c55plus_x_btx_tc } } },
 	// btstset #k, *Smem, TCx (opcode 0x91, byte3[7:5]==000): test-and-set a memory
 	// bit. The other 0x91 byte3[7:5] sub-codes (btstclr and the dbl-operand forms)
 	// are left to the legacy decoder.
-	{ .mask = 0xff0000e0, .match = 0x91000000, .id = TMS320C55_INS_BTSTSET, .len = 4,
-	  .ops = { { .fn = c55plus_x_btstset_bit }, { .fn = c55plus_x_btstset_mem }, { .fn = c55plus_x_btstset_tc } } },
+	{ .mask = 0xff0000e0, .match = 0x91000000, .id = TMS320C55_INS_BTSTSET, .len = 4, .ops = { { .fn = c55plus_x_btstset_bit }, { .fn = c55plus_x_btstset_mem }, { .fn = c55plus_x_btstset_tc } } },
 	// bfxtr #k16, ACsrc, ACdst (opcode 0xc6, 5 bytes): bit-field extract, left
 	// unlifted as in the legacy decoder. byte2[7:5]==011 is fixed (in the mask):
 	// byte2[7] distinguishes bfxtr from the bfxpa expand form.
-	{ .mask = 0xff00e000, .match = 0xc6006000, .id = TMS320C55_INS_BFXTR, .len = 5,
-	  .ops = { { .fn = c55plus_x_bfxtr_imm }, { .fn = c55plus_x_bfxtr_src }, { .fn = c55plus_x_bfxtr_dst } } },
+	{ .mask = 0xff00e000, .match = 0xc6006000, .id = TMS320C55_INS_BFXTR, .lop = C55_LOP_OPAQUE, .len = 5, .ops = { { .fn = c55plus_x_bfxtr_imm }, { .fn = c55plus_x_bfxtr_src }, { .fn = c55plus_x_bfxtr_dst } } },
 	// mpy / mac / mas SRC1, SRC2, ACdst (opcode 0xaa, 4 bytes): register multiply,
 	// optionally accumulating. (byte1[7], byte2[7]) selects (0,0) mpy, (0,1) mac,
 	// (1,0) mas; the four-operand (1,1) form stays on the legacy decoder. SRC1 is
 	// gr1(byte2[6:0]), SRC2 is gr1(byte3[6:0]) with byte3[7] the uns() wrapper,
 	// ACdst is ac(byte1[4:0]); byte1[5]/byte1[6] are the round (r) / fractional (f)
 	// modifiers. These lift via the shared multiply (-accumulate) path.
-	{ .mask = 0xff808000, .match = 0xaa000000, .id = TMS320C55_INS_MPY, .len = 4, .mods = 0x5c0016,
-	  .ops = { { .fn = c55plus_x_macr_src2 }, { .fn = c55plus_x_macr_src1 }, { .fn = c55plus_x_macr_acdst } } },
-	{ .mask = 0xff808000, .match = 0xaa008000, .id = TMS320C55_INS_MAC, .lop = C55_LOP_MAC, .len = 4, .mods = 0x5c0016,
-	  .ops = { { .fn = c55plus_x_macr_src1 }, { .fn = c55plus_x_macr_src2 }, { .fn = c55plus_x_macr_acdst } } },
-	{ .mask = 0xff808000, .match = 0xaa800000, .id = TMS320C55_INS_MAS, .lop = C55_LOP_MAS, .len = 4, .mods = 0x5c0016,
-	  .ops = { { .fn = c55plus_x_macr_src2 }, { .fn = c55plus_x_macr_src1 }, { .fn = c55plus_x_macr_acdst } } },
+	{ .mask = 0xff808000, .match = 0xaa000000, .id = TMS320C55_INS_MPY, .len = 4, .mods = 0x5c0016, .ops = { { .fn = c55plus_x_macr_src2 }, { .fn = c55plus_x_macr_src1 }, { .fn = c55plus_x_macr_acdst } } },
+	{ .mask = 0xff808000, .match = 0xaa008000, .id = TMS320C55_INS_MAC, .lop = C55_LOP_MAC, .len = 4, .mods = 0x5c0016, .ops = { { .fn = c55plus_x_macr_src1 }, { .fn = c55plus_x_macr_src2 }, { .fn = c55plus_x_macr_acdst } } },
+	{ .mask = 0xff808000, .match = 0xaa800000, .id = TMS320C55_INS_MAS, .lop = C55_LOP_MAS, .len = 4, .mods = 0x5c0016, .ops = { { .fn = c55plus_x_macr_src2 }, { .fn = c55plus_x_macr_src1 }, { .fn = c55plus_x_macr_acdst } } },
 	// mpym [uns(]Xmem[)], [uns(]Ymem[)], ACy (opcode 0xc8, byte1[7]==0 &&
 	// byte2[7]==0, 5 bytes): ACy = Xmem * Ymem. Xmem is byte1 (reg-modify matrix),
 	// Ymem is byte3 (reg-modify matrix), ACy is byte2[4:0]. byte2[5]/byte4[0] mark
 	// the Xmem/Ymem uns() wrappers. Lifts via the shared multiply path.
-	{ .mask = 0xff808000, .match = 0xc8000000, .id = TMS320C55_INS_MPYM, .len = 5, .mods = 0x217000,
-	  .ops = { { .fn = c55plus_x_mac_xmem }, { .fn = c55plus_x_mac_ymem }, { .fn = c55plus_x_mac_acy } } },
+	{ .mask = 0xff808000, .match = 0xc8000000, .id = TMS320C55_INS_MPYM, .len = 5, .mods = 0x217000, .ops = { { .fn = c55plus_x_mac_xmem }, { .fn = c55plus_x_mac_ymem }, { .fn = c55plus_x_mac_acy } } },
 	// macm [uns(]Xmem[)], [uns(]Ymem[)], ACx, ACy (opcode 0xc8, byte1[7]==0 &&
 	// byte2[7]==1, 5 bytes): ACy = ACx + Xmem * Ymem. masm (byte1[7]==1 &&
 	// byte2[7]==0) subtracts; the byte1[7]==1 && byte2[7]==1 form is macm with the
 	// accumulator shifted right 16 first (ACy = (ACx >> #16) + Xmem * Ymem). ACx
 	// is byte4[4:0]; all three reuse the mpym memory / ACy extractors and lift via
 	// the shared multiply-accumulate path.
-	{ .mask = 0xff808000, .match = 0xc8008000, .id = TMS320C55_INS_MACM, .lop = C55_LOP_MAC, .len = 5, .mods = 0x217000,
-	  .ops = { { .fn = c55plus_x_mac_xmem }, { .fn = c55plus_x_mac_ymem }, { .fn = c55plus_x_mac_acx }, { .fn = c55plus_x_mac_acy } } },
-	{ .mask = 0xff808000, .match = 0xc8800000, .id = TMS320C55_INS_MASM, .lop = C55_LOP_MAS, .len = 5, .mods = 0x217000,
-	  .ops = { { .fn = c55plus_x_mac_xmem }, { .fn = c55plus_x_mac_ymem }, { .fn = c55plus_x_mac_acx }, { .fn = c55plus_x_mac_acy } } },
-	{ .mask = 0xff808000, .match = 0xc8808000, .id = TMS320C55_INS_MACM, .lop = C55_LOP_MAC, .len = 5, .mods = 0x217000, .shift16 = true,
-	  .ops = { { .fn = c55plus_x_mac_xmem }, { .fn = c55plus_x_mac_ymem }, { .fn = c55plus_x_mac_acx }, { .fn = c55plus_x_mac_acy } } },
+	{ .mask = 0xff808000, .match = 0xc8008000, .id = TMS320C55_INS_MACM, .lop = C55_LOP_MAC, .len = 5, .mods = 0x217000, .ops = { { .fn = c55plus_x_mac_xmem }, { .fn = c55plus_x_mac_ymem }, { .fn = c55plus_x_mac_acx }, { .fn = c55plus_x_mac_acy } } },
+	{ .mask = 0xff808000, .match = 0xc8800000, .id = TMS320C55_INS_MASM, .lop = C55_LOP_MAS, .len = 5, .mods = 0x217000, .ops = { { .fn = c55plus_x_mac_xmem }, { .fn = c55plus_x_mac_ymem }, { .fn = c55plus_x_mac_acx }, { .fn = c55plus_x_mac_acy } } },
+	{ .mask = 0xff808000, .match = 0xc8808000, .id = TMS320C55_INS_MACM, .lop = C55_LOP_MAC, .len = 5, .mods = 0x217000, .shift16 = true, .ops = { { .fn = c55plus_x_mac_xmem }, { .fn = c55plus_x_mac_ymem }, { .fn = c55plus_x_mac_acx }, { .fn = c55plus_x_mac_acy } } },
 	// bfxpa #k16, ACsrc, ACdst (opcode 0xc6, byte2[7]==1, 5 bytes): bit-field
 	// expand and pack -- the byte2[7]==1 counterpart of bfxtr (byte2[7]==0), with
 	// the same operand layout and the same extractors. Left unlifted, as in the
 	// legacy decoder.
-	{ .mask = 0xff00e000, .match = 0xc600e000, .id = TMS320C55_INS_BFXPA, .len = 5,
-	  .ops = { { .fn = c55plus_x_bfxtr_imm }, { .fn = c55plus_x_bfxtr_src }, { .fn = c55plus_x_bfxtr_dst } } },
+	{ .mask = 0xff00e000, .match = 0xc600e000, .id = TMS320C55_INS_BFXPA, .lop = C55_LOP_OPAQUE, .len = 5, .ops = { { .fn = c55plus_x_bfxtr_imm }, { .fn = c55plus_x_bfxtr_src }, { .fn = c55plus_x_bfxtr_dst } } },
 	// addsubcc / addsub2cc / subc *Smem, ... (opcode 0xb3, 5 bytes): the Smem is
 	// byte1:byte2 (shared addressing), ACx is byte3[4:0], ACy is byte2[4:0].
 	// byte3[7:6] selects the operation: 00 addsubcc (one TCx from byte2[5]), 01
 	// addsubcc (the two-flag tc1,tc2 form), 10 addsub2cc (an extra ACz = gr1 of
 	// byte4 and tc1,tc2), 11 subc. All left unlifted, as in the legacy decoder.
-	{ .mask = 0xff0000c0, .match = 0xb3000000, .id = TMS320C55_INS_ADDSUBCC, .len = 5,
-	  .ops = { { .fn = c55plus_x_b3_mem }, { .fn = c55plus_x_b3_acx }, { .fn = c55plus_x_b3_tcx }, { .fn = c55plus_x_b3_acy } } },
-	{ .mask = 0xff0000c0, .match = 0xb3000040, .id = TMS320C55_INS_ADDSUBCC, .len = 5,
-	  .ops = { { .fn = c55plus_x_b3_mem }, { .fn = c55plus_x_b3_acx }, { .fn = c55plus_x_b3_tc1 }, { .fn = c55plus_x_b3_tc2 }, { .fn = c55plus_x_b3_acy } } },
-	{ .mask = 0xff0000c0, .match = 0xb3000080, .id = TMS320C55_INS_ADDSUB2CC, .len = 5,
-	  .ops = { { .fn = c55plus_x_b3_mem }, { .fn = c55plus_x_b3_acx }, { .fn = c55plus_x_b3_acz }, { .fn = c55plus_x_b3_tc1 }, { .fn = c55plus_x_b3_tc2 }, { .fn = c55plus_x_b3_acy } } },
-	{ .mask = 0xff0000c0, .match = 0xb30000c0, .id = TMS320C55_INS_SUBC, .len = 5,
-	  .ops = { { .fn = c55plus_x_b3_mem }, { .fn = c55plus_x_b3_acx }, { .fn = c55plus_x_b3_acy } } },
+	{ .mask = 0xff0000c0, .match = 0xb3000000, .id = TMS320C55_INS_ADDSUBCC, .len = 5, .ops = { { .fn = c55plus_x_b3_mem }, { .fn = c55plus_x_b3_acx }, { .fn = c55plus_x_b3_tcx }, { .fn = c55plus_x_b3_acy } } },
+	{ .mask = 0xff0000c0, .match = 0xb3000040, .id = TMS320C55_INS_ADDSUBCC, .len = 5, .ops = { { .fn = c55plus_x_b3_mem }, { .fn = c55plus_x_b3_acx }, { .fn = c55plus_x_b3_tc1 }, { .fn = c55plus_x_b3_tc2 }, { .fn = c55plus_x_b3_acy } } },
+	{ .mask = 0xff0000c0, .match = 0xb3000080, .id = TMS320C55_INS_ADDSUB2CC, .len = 5, .ops = { { .fn = c55plus_x_b3_mem }, { .fn = c55plus_x_b3_acx }, { .fn = c55plus_x_b3_acz }, { .fn = c55plus_x_b3_tc1 }, { .fn = c55plus_x_b3_tc2 }, { .fn = c55plus_x_b3_acy } } },
+	{ .mask = 0xff0000c0, .match = 0xb30000c0, .id = TMS320C55_INS_SUBC, .len = 5, .ops = { { .fn = c55plus_x_b3_mem }, { .fn = c55plus_x_b3_acx }, { .fn = c55plus_x_b3_acy } } },
 	// mov [rnd]([uns](*Smem) << Tx), ACx (opcode 0xb4, byte3[6]==1 && byte3[0]==0,
 	// 5 bytes): register-shifted memory load. byte3[6] selects the load over the
 	// byte3[6]==0 store forms (which stay on the legacy decoder). Left unlifted, as
 	// in the legacy decoder.
-	{ .mask = 0xff000041, .match = 0xb4000040, .id = TMS320C55_INS_MOV, .len = 5,
-	  .ops = { { .fn = c55plus_x_b4_mem }, { .fn = c55plus_x_b4_acdst } } },
+	{ .mask = 0xff000041, .match = 0xb4000040, .id = TMS320C55_INS_MOV, .len = 5, .ops = { { .fn = c55plus_x_b4_mem }, { .fn = c55plus_x_b4_acdst } } },
 	// mov [uns(][rnd(][hi(|lo(]ACx << Tx[)], [dbl(]*Smem[)] (opcode 0xb4,
 	// byte3[6]==0, 5 bytes): the register-shifted accumulator store -- source
 	// ACx (byte2[4:0]) shifted by byte4, destination Smem; byte3[0] selects the
 	// dbl 32-bit store (else a 16-bit hi/lo half store, byte3[1]). Left unlifted.
-	{ .mask = 0xff000040, .match = 0xb4000000, .id = TMS320C55_INS_MOV, .len = 5,
-	  .ops = { { .fn = c55plus_x_b4st_src }, { .fn = c55plus_x_b4st_mem } } },
+	{ .mask = 0xff000040, .match = 0xb4000000, .id = TMS320C55_INS_MOV, .len = 5, .ops = { { .fn = c55plus_x_b4st_src }, { .fn = c55plus_x_b4st_mem } } },
 	// add/sub *Smem << Tx, ACx, ACy (opcode 0xb6, 5 bytes): the register-shifted
 	// memory add/subtract -- byte4[6:0] is the shift register (rendered " << Tx"),
 	// byte3[4:0] the source accumulator, byte2[4:0] the destination, byte3[6]
 	// selecting add (0) / sub (1). Left unlifted.
-	{ .mask = 0xff000040, .match = 0xb6000000, .id = TMS320C55_INS_ADD, .len = 5,
-	  .ops = { { .fn = c55plus_x_b6_mem }, { .fn = c55plus_x_b6_acx }, { .fn = c55plus_x_b4_acdst } } },
-	{ .mask = 0xff000040, .match = 0xb6000040, .id = TMS320C55_INS_SUB, .len = 5,
-	  .ops = { { .fn = c55plus_x_b6_mem }, { .fn = c55plus_x_b6_acx }, { .fn = c55plus_x_b4_acdst } } },
+	{ .mask = 0xff000040, .match = 0xb6000000, .id = TMS320C55_INS_ADD, .len = 5, .ops = { { .fn = c55plus_x_b6_mem }, { .fn = c55plus_x_b6_acx }, { .fn = c55plus_x_b4_acdst } } },
+	{ .mask = 0xff000040, .match = 0xb6000040, .id = TMS320C55_INS_SUB, .len = 5, .ops = { { .fn = c55plus_x_b6_mem }, { .fn = c55plus_x_b6_acx }, { .fn = c55plus_x_b4_acdst } } },
 	// mpyk/mack #k8, ACsrc[, ACacc], ACdst (opcode 0xc7, 5 bytes): multiply (or
 	// multiply-accumulate) a source accumulator by an 8-bit constant. byte1[6:5]
 	// select the fractional (f) / rounding (r) variants via mods (round bit 30,
 	// fract bit 31 of the packed word); byte2[7] selects mack over mpyk.
-	{ .mask = 0xff008000, .match = 0xc7000000, .id = TMS320C55_INS_MPYK, .lop = C55_LOP_MPYK, .len = 5,
-	  .mods = 30u | (31u << 18),
-	  .ops = { { .fn = c55plus_x_mpyk_imm8 }, { .fn = c55plus_x_mpyk_src }, { .fn = c55plus_x_mpyk_dst } } },
-	{ .mask = 0xff008000, .match = 0xc7008000, .id = TMS320C55_INS_MACK, .len = 5,
-	  .mods = 30u | (31u << 18),
-	  .ops = { { .fn = c55plus_x_mpyk_imm8 }, { .fn = c55plus_x_mpyk_src }, { .fn = c55plus_x_mpyk_acc }, { .fn = c55plus_x_mpyk_dst } } },
+	{ .mask = 0xff008000, .match = 0xc7000000, .id = TMS320C55_INS_MPYK, .lop = C55_LOP_MPYK, .len = 5, .mods = 30u | (31u << 18), .ops = { { .fn = c55plus_x_mpyk_imm8 }, { .fn = c55plus_x_mpyk_src }, { .fn = c55plus_x_mpyk_dst } } },
+	{ .mask = 0xff008000, .match = 0xc7008000, .id = TMS320C55_INS_MACK, .len = 5, .mods = 30u | (31u << 18), .ops = { { .fn = c55plus_x_mpyk_imm8 }, { .fn = c55plus_x_mpyk_src }, { .fn = c55plus_x_mpyk_acc }, { .fn = c55plus_x_mpyk_dst } } },
 	// mpyk/mack #k16, ... (opcode 0xee, 6 bytes): the 16-bit-immediate counterpart
 	// of 0xc7. Same field layout shifted up one byte; round bit 38, fract bit 39.
-	{ .mask = 0xff008000, .match = 0xee000000, .id = TMS320C55_INS_MPYK, .len = 6,
-	  .mods = 38u | (39u << 18),
-	  .ops = { { .fn = c55plus_x_mpyk_imm16 }, { .fn = c55plus_x_mpyk6_src }, { .fn = c55plus_x_mpyk6_dst } } },
-	{ .mask = 0xff008000, .match = 0xee008000, .id = TMS320C55_INS_MACK, .len = 6,
-	  .mods = 38u | (39u << 18),
-	  .ops = { { .fn = c55plus_x_mpyk_imm16 }, { .fn = c55plus_x_mpyk6_src }, { .fn = c55plus_x_mpyk6_acc }, { .fn = c55plus_x_mpyk6_dst } } },
+	{ .mask = 0xff008000, .match = 0xee000000, .id = TMS320C55_INS_MPYK, .len = 6, .mods = 38u | (39u << 18), .ops = { { .fn = c55plus_x_mpyk_imm16 }, { .fn = c55plus_x_mpyk6_src }, { .fn = c55plus_x_mpyk6_dst } } },
+	{ .mask = 0xff008000, .match = 0xee008000, .id = TMS320C55_INS_MACK, .len = 6, .mods = 38u | (39u << 18), .ops = { { .fn = c55plus_x_mpyk_imm16 }, { .fn = c55plus_x_mpyk6_src }, { .fn = c55plus_x_mpyk6_acc }, { .fn = c55plus_x_mpyk6_dst } } },
 	// A-unit immediate address arithmetic. amov/aadd/asub #k16, reg (opcode 0xae,
 	// 4 bytes): byte1[7:5] selects the operation and register type -- 000 asub ARn,
 	// 001 asub XARn, 010 aadd ARn, 011 aadd XARn, 1xx amov ARn -- byte1[4:0] (or
 	// [3:0] for XAR) the register, and byte2:byte3 the 16-bit constant.
-	{ .mask = 0xffe00000, .match = 0xae000000, .id = TMS320C55_INS_ASUB, .lop = C55_LOP_AREG_SUB, .len = 4,
-	  .ops = { { .fn = c55plus_x_k16 }, { .fn = c55plus_x_areg16 } } },
-	{ .mask = 0xffe00000, .match = 0xae200000, .id = TMS320C55_INS_ASUB, .lop = C55_LOP_AREG_SUB, .len = 4,
-	  .ops = { { .fn = c55plus_x_k16 }, { .fn = c55plus_x_xar16 } } },
-	{ .mask = 0xffe00000, .match = 0xae400000, .id = TMS320C55_INS_AADD, .lop = C55_LOP_AREG_ADD, .len = 4,
-	  .ops = { { .fn = c55plus_x_k16 }, { .fn = c55plus_x_areg16 } } },
-	{ .mask = 0xffe00000, .match = 0xae600000, .id = TMS320C55_INS_AADD, .lop = C55_LOP_AREG_ADD, .len = 4,
-	  .ops = { { .fn = c55plus_x_k16 }, { .fn = c55plus_x_xar16 } } },
-	{ .mask = 0xff800000, .match = 0xae800000, .id = TMS320C55_INS_AMOV, .lop = C55_LOP_AMOV, .len = 4,
-	  .ops = { { .fn = c55plus_x_k16 }, { .fn = c55plus_x_areg16 } } },
+	{ .mask = 0xffe00000, .match = 0xae000000, .id = TMS320C55_INS_ASUB, .lop = C55_LOP_AREG_SUB, .len = 4, .ops = { { .fn = c55plus_x_k16 }, { .fn = c55plus_x_areg16 } } },
+	{ .mask = 0xffe00000, .match = 0xae200000, .id = TMS320C55_INS_ASUB, .lop = C55_LOP_AREG_SUB, .len = 4, .ops = { { .fn = c55plus_x_k16 }, { .fn = c55plus_x_xar16 } } },
+	{ .mask = 0xffe00000, .match = 0xae400000, .id = TMS320C55_INS_AADD, .lop = C55_LOP_AREG_ADD, .len = 4, .ops = { { .fn = c55plus_x_k16 }, { .fn = c55plus_x_areg16 } } },
+	{ .mask = 0xffe00000, .match = 0xae600000, .id = TMS320C55_INS_AADD, .lop = C55_LOP_AREG_ADD, .len = 4, .ops = { { .fn = c55plus_x_k16 }, { .fn = c55plus_x_xar16 } } },
+	{ .mask = 0xff800000, .match = 0xae800000, .id = TMS320C55_INS_AMOV, .lop = C55_LOP_AMOV, .len = 4, .ops = { { .fn = c55plus_x_k16 }, { .fn = c55plus_x_areg16 } } },
 	// amov/asub #k24, XARn (opcode 0xd2, 5 bytes): byte1[7] selects amov/asub,
 	// byte1[3:0] the XAR register, byte2:byte3:byte4 the 24-bit constant.
-	{ .mask = 0xff800000, .match = 0xd2800000, .id = TMS320C55_INS_AMOV, .lop = C55_LOP_AMOV, .len = 5,
-	  .ops = { { .fn = c55plus_x_k24 }, { .fn = c55plus_x_xar_dst } } },
-	{ .mask = 0xff800000, .match = 0xd2000000, .id = TMS320C55_INS_ASUB, .lop = C55_LOP_AREG_SUB, .len = 5,
-	  .ops = { { .fn = c55plus_x_k24 }, { .fn = c55plus_x_xar_dst } } },
+	{ .mask = 0xff800000, .match = 0xd2800000, .id = TMS320C55_INS_AMOV, .lop = C55_LOP_AMOV, .len = 5, .ops = { { .fn = c55plus_x_k24 }, { .fn = c55plus_x_xar_dst } } },
+	{ .mask = 0xff800000, .match = 0xd2000000, .id = TMS320C55_INS_ASUB, .lop = C55_LOP_AREG_SUB, .len = 5, .ops = { { .fn = c55plus_x_k24 }, { .fn = c55plus_x_xar_dst } } },
 	// aadd #k8, sp (opcode 0x0c, 2 bytes): add an 8-bit constant to the stack
 	// pointer.
-	{ .mask = 0xff000000, .match = 0x0c000000, .id = TMS320C55_INS_AADD, .lop = C55_LOP_AREG_ADD, .len = 2,
-	  .ops = { { .fn = c55plus_x_k8 }, { .fn = c55plus_x_sp } } },
+	{ .mask = 0xff000000, .match = 0x0c000000, .id = TMS320C55_INS_AADD, .lop = C55_LOP_AREG_ADD, .len = 2, .ops = { { .fn = c55plus_x_k8 }, { .fn = c55plus_x_sp } } },
 };
 
 const C55ArchDesc c55plus_arch_desc = {
@@ -3771,7 +3678,7 @@ const C55ArchDesc c55plus_arch_desc = {
 	.mnemonic = c55plus_mnemonic,
 	.op_type = c55plus_op_type,
 	.lift = NULL,
-	.mem = { .addr_unit_log2 = 1, .ptr_width = 23, .big_endian = false },
+	.mem = { .addr_unit_log2 = 1, .ptr_width = 24, .big_endian = false },
 	.ea = NULL,
 	.cond_exec_prefix = true,
 	.parallel_prefix = true,

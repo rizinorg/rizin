@@ -233,8 +233,9 @@ typedef enum {
 	C55_LOP_ANDMEM, ///< ACy = ACx & sx(Smem)
 	C55_LOP_ORMEM, ///< ACy = ACx | sx(Smem)
 	C55_LOP_XORMEM, ///< ACy = ACx ^ sx(Smem)
-	C55_LOP_BITCLR, ///< STx = STx & ~(1 << #k4): clear a status-register bit (bclr)
+	C55_LOP_BITCLR, ///< STx = STx & ~(1 << #k4): clear a status-register bit (bclr); also the register bit ops with an is_bit operand
 	C55_LOP_BITSET, ///< STx = STx | (1 << #k4): set a status-register bit (bset)
+	C55_LOP_BITNOT, ///< dst = dst ^ (1 << k): toggle a register bit (bnot)
 	C55_LOP_STBITCLR, ///< st0_55 = ite(0, st0_55 | (1<<bit), st0_55 & ~(1<<bit)): clear an st0_55 named bit
 	C55_LOP_STBITSET, ///< st0_55 = ite(1, st0_55 | (1<<bit), st0_55 & ~(1<<bit)): set an st0_55 named bit
 	C55_LOP_AMOV, ///< dst = zero-extend(#k16): load a 16-bit constant/address (amov)

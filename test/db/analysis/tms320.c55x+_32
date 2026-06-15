@@ -726,9 +726,9 @@ ao 1 @ 0~rzil
 EOF
 EXPECT=<<EOF
 rzil: (set ac0 (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar2)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar2)) (bv 24 0x2)))))
-rzil: (seq (set ac1 (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar3)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar3)) (bv 24 0x2))))) (set xar3 (+ (var xar3) (bv 23 0x1))))
+rzil: (seq (set ac1 (cast 40 (msb (loadw 0 16 (* (cast 24 false (var xar3)) (bv 24 0x2)))) (loadw 0 16 (* (cast 24 false (var xar3)) (bv 24 0x2))))) (set xar3 (+ (var xar3) (bv 24 0x1))))
 rzil: (storew 0 (* (cast 24 false (var xar5)) (bv 24 0x2)) (cast 16 false (var ac0)))
-rzil: (seq (storew 0 (* (cast 24 false (var xar6)) (bv 24 0x2)) (var t1)) (set xar6 (+ (var xar6) (bv 23 0x1))))
+rzil: (seq (storew 0 (* (cast 24 false (var xar6)) (bv 24 0x2)) (var t1)) (set xar6 (+ (var xar6) (bv 24 0x1))))
 rzil: (set ac0 (+ (var ac0) (var ac1)))
 rzil: (set ac0 (+ (var ac0) (cast 40 (msb (var t0)) (var t0))))
 rzil: (set ac0 (cast 40 (msb (var t0)) (var t0)))
@@ -767,7 +767,7 @@ rzil: (set xar0 (+ (var xar0) (var xar1)))
 rzil: (set xar0 (- (var xar0) (var xar3)))
 rzil: (set ac3 (- (bv 40 0x0) (var ac2)))
 rzil: (set ac1 (cast 40 (msb (cast 16 false (var ac2))) (cast 16 false (var ac2))))
-rzil: (set xar0 (cast 23 false (+ (cast 24 false (var sp)) (bv 24 0x3))))
+rzil: (set xar0 (cast 24 false (+ (cast 24 false (var sp)) (bv 24 0x3))))
 rzil: (set ac2 (| (& (var ac2) (bv 40 0xffffff0000)) (cast 40 false (& (cast 16 false (var ac0)) (bv 16 0xff)))))
 rzil: (set ac0 (| (& (var ac0) (bv 40 0xff0000ffff)) (<< (cast 40 false (^ (cast 16 false (>> (var ac0) (bv 8 0x10) false)) (cast 16 false (var ac0)))) (bv 6 0x10) false)))
 rzil: (branch (== (cast 16 false (var ac0)) (cast 16 false (>> (var ac0) (bv 8 0x10) false))) (jmp (bv 24 0x103)) nop)
@@ -780,9 +780,9 @@ FILE=malloc://64
 CMDS=<<EOF
 e asm.arch=tms320
 e analysis.cpu=c55x+
-wx 21 @ 0
+wx ee00006100b8 @ 0
 ao 1 @ 0~rzil
-wx d280816dd8 @ 0
+wx 610080 @ 0
 ao 1 @ 0~rzil
 EOF
 EXPECT=<<EOF
