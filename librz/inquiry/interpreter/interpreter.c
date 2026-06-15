@@ -432,10 +432,10 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpSet *iset) {
 		return false;
 	}
 
-// TODO: It is probably better to make the following stuff while-loops.
-// Because otherwise it doesn't make sense without the docs.
-// But while debugging and developing, I keep it this way to separate clearly
-// what the interpreter does in each state.
+	// TODO: It is probably better to make the following stuff while-loops.
+	// Because otherwise it doesn't make sense without the docs.
+	// But while debugging and developing, I keep it this way to separate clearly
+	// what the interpreter does in each state.
 
 INIT: {
 	RZ_LOG_DEBUG("interpreter: Enter INIT\n");
