@@ -510,3 +510,16 @@ d "or *ar5(short(#0x2)), ac0.l, ac0.h" 8525a0e0 0x0 (set ac0 (| (& (var ac0) (bv
 d "or *ar5(short(#0x6)), ac0.h, ac0.h" 856580c0 0x0 (set ac0 (| (& (var ac0) (bv 40 0xff0000ffff)) (<< (cast 40 false (| (cast 16 false (>> (var ac0) (bv 8 0x10) false)) (loadw 0 16 (* (+ (cast 24 false (var xar5)) (bv 24 0x6)) (bv 24 0x2))))) (bv 8 0x10) false)))
 d "sub ac0.l, *ar6(short(#0x4)), ac1.l" 8246a1e0 0x0 (set ac1 (| (& (var ac1) (bv 40 0xffffff0000)) (cast 40 false (- (loadw 0 16 (* (+ (cast 24 false (var xar6)) (bv 24 0x4)) (bv 24 0x2))) (cast 16 false (var ac0))))))
 d "sub ac0.l, *ar5(short(#0x4)), ac0.l" 8245a0e0 0x0 (set ac0 (| (& (var ac0) (bv 40 0xffffff0000)) (cast 40 false (- (loadw 0 16 (* (+ (cast 24 false (var xar5)) (bv 24 0x4)) (bv 24 0x2))) (cast 16 false (var ac0))))))
+d "btst #0x0, *(#0xa009de), tc1" 91e05000a009de
+d "btstclr #0x5, *(#0xa009de), tc1" 91e04005a009de
+d "btstset #0x5, *(#0xa009de), tc1" 91e04805a009de
+d "btstnot #0x5, *(#0xa009de), tc1" 91e05805a009de
+d "btst #0xf, *(#0xa009de), tc1" 91e0501fa009de
+d "btstnot #0x10, dbl(*ar5+), tc1" 91151c10
+d "mov t0, *(#0xa6e94e)" d030a6e94e 0x0 (storew 0 (bv 24 0xa6e94e) (var t0))
+d "mov t3, *(#0xa6e94e)" d033a6e94e 0x0 (storew 0 (bv 24 0xa6e94e) (var t3))
+d "add *(#0xa6e94e), ac5.l, t0" 80e07065a6e94e
+d "add *(#0x9bbcc8), ac0, ac0.h" 80e040809bbcc8
+d "copy dbl(*ar5(#41)), xar6" 5685460029 0x0 (set xar6 (cast 24 false (loadw 0 32 (* (+ (cast 24 false (var xar5)) (bv 24 0x29)) (bv 24 0x2)))))
+d "copy dbl(*ar5(#41)), ac0" 5485400029 0x0 (set ac0 (cast 40 (msb (loadw 0 32 (* (+ (cast 24 false (var xar5)) (bv 24 0x29)) (bv 24 0x2)))) (loadw 0 32 (* (+ (cast 24 false (var xar5)) (bv 24 0x29)) (bv 24 0x2)))))
+d "copy *ar5(#41), ar5" 5485650029 0x0 (set ar5 (loadw 0 16 (* (+ (cast 24 false (var xar5)) (bv 24 0x29)) (bv 24 0x2))))
