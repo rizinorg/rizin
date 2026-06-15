@@ -336,7 +336,13 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			"gpr xar13  .23 835 0 # Extended auxiliary register 13\n"
 			"gpr xar14  .23 838 0 # Extended auxiliary register 14\n"
 			"gpr xar15  .23 841 0 # Extended auxiliary register 15\n";
-		return rz_str_newf("%s%s", p, ext);
+		char *prof = rz_str_newf("%s%s", p, ext);
+		// On C55x+ the extended auxiliary and stack/data pointer registers
+		// (XARn, XSP, XSSP, XDP, XCDP) are 24-bit rather than the 23-bit of
+		// classic C55x; widen them so a 24-bit address immediate (amov #k,xarN)
+		// and pointer values fit. Every .23 width field in this profile is one
+		// of those registers, so a single substitution covers them.
+		return prof ? rz_str_replace(prof, ".23", ".24", 1) : NULL;
 	}
 
 	return rz_str_dup(p);

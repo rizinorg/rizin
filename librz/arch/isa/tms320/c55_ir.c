@@ -129,7 +129,7 @@ bool c55_decode(const C55ArchDesc *a, const ut8 *buf, int len, C55Insn *out) {
 		}
 		out->both = def->both;
 		out->xcc_guard = def->xcc_guard;
-	out->quad = def->quad;
+		out->quad = def->quad;
 		out->size = (ut8)ilen;
 		// Parallel-execution marker: in the parallel-capable opcode range bit 0
 		// of the leading byte is the "||" flag rather than part of the opcode.
@@ -401,6 +401,28 @@ RzILOpEffect *c55_write(const C55ArchDesc *a, const C55Operand *dst, RzILOpPure 
 	}
 	rz_il_op_pure_free(val);
 	return NULL;
+}
+
+// Write a 16-bit arithmetic result into an accumulator half per the C55x+
+// accumulator-access rules (SWPU104 1.5.1): a .L destination updates only
+// ACx[15:0]; a .H destination updates ACx[39:16], sign-extending the 16-bit
+// result through the guard bits. (Copy/move into .H instead writes ACx[31:16]
+// and is handled by c55_write.) res16 must be a 16-bit value.
+static RzILOpEffect *c55_write_half_arith(const C55ArchDesc *a, const C55Operand *dst, RzILOpPure *res16) {
+	const C55RegInfo *ri = a->reg_info ? a->reg_info(dst->reg.cls, dst->reg.num, C55_SUB_NONE) : NULL;
+	if (!ri || !ri->il_var || ri->width < 40) {
+		rz_il_op_pure_free(res16);
+		return NULL;
+	}
+	if (dst->reg.sub == C55_SUB_HI) {
+		// ACx[39:16] = sign-extend(res16); preserve ACx[15:0].
+		return SETG(ri->il_var,
+			LOGOR(LOGAND(VARG(ri->il_var), UN(ri->width, 0xffff)),
+				SHIFTL(IL_FALSE, SIGNED(ri->width, res16), UN(8, 16))));
+	}
+	// .L: ACx[15:0] = res16; preserve ACx[39:16].
+	return SETG(ri->il_var,
+		LOGOR(LOGAND(VARG(ri->il_var), UN(ri->width, 0xffffff0000ULL)), UNSIGNED(ri->width, res16)));
 }
 
 RzILOpEffect *c55_post_effect(const C55ArchDesc *a, const C55Operand *m) {
@@ -877,6 +899,9 @@ static RzILOpEffect *c55_mem_move(const C55ArchDesc *a, const C55Operand *reg, c
 		case C55_AM_POSTSUB:
 		case C55_AM_INDEXED:
 		case C55_AM_ABSOLUTE:
+		case C55_AM_CONST_IDX:
+		case C55_AM_CONST_IDX_PRE:
+		case C55_AM_ABS16:
 			break;
 		default:
 			return NULL;
@@ -932,6 +957,9 @@ static RzILOpEffect *c55_mem_move(const C55ArchDesc *a, const C55Operand *reg, c
 	case C55_AM_POSTSUB:
 	case C55_AM_INDEXED:
 	case C55_AM_ABSOLUTE:
+	case C55_AM_CONST_IDX:
+	case C55_AM_CONST_IDX_PRE:
+	case C55_AM_ABS16:
 		break;
 	default:
 		return NULL; // pre-modify (PRE*) and exotic modes -> per-arch lifter
@@ -1244,6 +1272,9 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 		if (yp.kind == C55_OP_MEM && yp.reg.cls == C55_RC_AR) {
 			yp.reg.cls = C55_RC_XAR;
 		}
+		if (cp.kind == C55_OP_MEM && cp.reg.cls == C55_RC_AR) {
+			cp.reg.cls = C55_RC_XAR; // the Cmem pointer post-modify is 24-bit, like Xmem/Ymem
+		}
 		// MAC: ACy += ACx(31-16, sign-extended) * Cmem(sign-extended)
 		C55Operand acx_hi = *acx;
 		acx_hi.reg.sub = C55_SUB_HI;
@@ -1434,10 +1465,40 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 		if (acx->kind != C55_OP_REG || acy->kind != C55_OP_REG) {
 			return NULL;
 		}
-		// A half-register source or destination (the 0xa7 .h/.l shift forms)
-		// operates on a 16-bit slice with a merge-back; the legacy leaves those
-		// unlifted, so do the same rather than shifting the full register.
-		if (acx->reg.sub != C55_SUB_NONE || acy->reg.sub != C55_SUB_NONE) {
+		// A half-register source or destination (the 0xa6/0xa7 .h/.l shift
+		// forms) operates on a 16-bit slice and merges the result back into the
+		// destination half. Both operands must be halves; a mixed full/half
+		// shape is left unlifted.
+		bool acx_half = acx->reg.sub == C55_SUB_HI || acx->reg.sub == C55_SUB_LO;
+		bool acy_half = acy->reg.sub == C55_SUB_HI || acy->reg.sub == C55_SUB_LO;
+		if (acx_half || acy_half) {
+			if (!acx_half || !acy_half) {
+				return NULL;
+			}
+			bool harith = insn->lop == C55_LOP_SFTS;
+			if (cnt->kind == C55_OP_REG) {
+				// count register (a T register or an accumulator sub-word read
+				// as its 16-bit value): its sign selects the direction.
+				RzILOpPure *fill = harith ? MSB(c55_read(a, acx)) : IL_FALSE;
+				RzILOpPure *res = ITE(
+					AND(SLE(c55_read(a, cnt), UN(16, 0)), INV(IS_ZERO(c55_read(a, cnt)))),
+					SHIFTR(fill, c55_read(a, acx), SUB(UN(16, 0), c55_read(a, cnt))),
+					SHIFTL(IL_FALSE, c55_read(a, acx), c55_read(a, cnt)));
+				return c55_write(a, acy, res);
+			}
+			// Only an immediate (decode-time) count is modelled otherwise.
+			if (cnt->kind == C55_OP_IMM) {
+				ut32 w = cnt->width ? cnt->width : 6;
+				st64 s = (st64)(cnt->imm << (64 - w)) >> (64 - w);
+				if (s == 0) {
+					return c55_write(a, acy, c55_read(a, acx));
+				}
+				if (s > 0) {
+					return c55_write(a, acy, SHIFTL(IL_FALSE, c55_read(a, acx), UN(w, (ut64)s)));
+				}
+				RzILOpPure *fill = harith ? MSB(c55_read(a, acx)) : IL_FALSE;
+				return c55_write(a, acy, SHIFTR(fill, c55_read(a, acx), UN(w, (ut64)(-s))));
+			}
 			return NULL;
 		}
 		const C55RegInfo *xi = a->reg_info ? a->reg_info(acx->reg.cls, acx->reg.num, C55_SUB_NONE) : NULL;
@@ -1571,12 +1632,38 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 		bool dst_half = dst->reg.sub == C55_SUB_HI || dst->reg.sub == C55_SUB_LO;
 		if (src_half || dst_half) {
 			if (!bitwise) {
-				return NULL; // add/sub on a half: legacy leaves it unlifted
+				// add/sub on accumulator halves: operate on the 16-bit slice.
+				// A .L destination updates [15:0]; a .H destination updates
+				// [39:16] (sign-extended through the guard) per SWPU104 1.5.1.
+				if (!dst_half) {
+					return NULL;
+				}
+				RzILOpPure *sv = c55_read(a, src);
+				if (!src_half && xi->width > 16) {
+					sv = CAST(16, IL_FALSE, sv); // truncate a full source to 16 bits
+				}
+				RzILOpPure *res16 = (insn->lop == C55_LOP_ADDK)
+					? ADD(sv, UN(16, (ut64)(imm->imm & 0xffff)))
+					: SUB(sv, UN(16, (ut64)(imm->imm & 0xffff)));
+				return c55_write_half_arith(a, dst, res16);
 			}
 			ut8 dw = dst_half ? 16 : yi->width;
 			ut8 sw = src_half ? 16 : xi->width;
 			if (sw < dw) {
-				return NULL; // narrower source than destination: unlifted
+				// bitwise with a 16-bit source (a half, or an AR/T register)
+				// into a full accumulator: the source and the immediate are
+				// zero-extended to 40 bits and a 40-bit bitwise op is performed
+				// (SWPU104 6.6.1), i.e. the result is the zero-extended 16-bit
+				// op.
+				RzILOpPure *sv = c55_read(a, src);
+				if (!src_half && xi->width > 16) {
+					sv = CAST(16, IL_FALSE, sv);
+				}
+				RzILOpPure *iv = UN(16, (ut64)(imm->imm & 0xffff));
+				RzILOpPure *r16 = insn->lop == C55_LOP_ANDK ? LOGAND(sv, iv)
+					: insn->lop == C55_LOP_ORK          ? LOGOR(sv, iv)
+									    : LOGXOR(sv, iv);
+				return SETG(yi->il_var, UNSIGNED(yi->width, r16));
 			}
 			RzILOpPure *sv = c55_read(a, src); // 16-bit for a half, else full
 			if (sw > dw) {
@@ -1584,8 +1671,8 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 			}
 			RzILOpPure *iv = UN(dw, (ut64)(imm->imm & 0xffff));
 			RzILOpPure *r = insn->lop == C55_LOP_ANDK ? LOGAND(sv, iv)
-				: insn->lop == C55_LOP_ORK	      ? LOGOR(sv, iv)
-								      : LOGXOR(sv, iv);
+				: insn->lop == C55_LOP_ORK        ? LOGOR(sv, iv)
+								  : LOGXOR(sv, iv);
 			return c55_write(a, dst, r);
 		}
 		RzILOpPure *res;
@@ -1595,7 +1682,8 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 			// width with a same-width immediate (no outer cast).
 			RzILOpPure *sv = CAST(yi->width, IL_FALSE, VARG(xi->il_var));
 			RzILOpPure *iv = UN(yi->width, (ut64)(imm->imm & 0xffff));
-			res = insn->lop == C55_LOP_ANDK ? LOGAND(sv, iv) : insn->lop == C55_LOP_ORK ? LOGOR(sv, iv) : LOGXOR(sv, iv);
+			res = insn->lop == C55_LOP_ANDK ? LOGAND(sv, iv) : insn->lop == C55_LOP_ORK ? LOGOR(sv, iv)
+												    : LOGXOR(sv, iv);
 		} else {
 			// add / sub operate at the 40-bit accumulator width. The elided
 			// 2-operand form (destination == source) zero-extends #k16; the
@@ -1643,12 +1731,33 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 			(cnt->kind != C55_OP_IMM && cnt->kind != C55_OP_REG)) {
 			return NULL;
 		}
-		// A half-register source or destination (the 0xa7 .h/.l shift-ALU forms)
-		// works on a 16-bit slice with a merge-back; the legacy leaves those
-		// unlifted, so do likewise rather than operating on the full register.
-		if (src->reg.sub != C55_SUB_NONE || dst->reg.sub != C55_SUB_NONE ||
-			(cnt->kind == C55_OP_REG && cnt->reg.sub != C55_SUB_NONE)) {
-			return NULL;
+		// Half-register shift-ALU (the 0xa7 .h/.l forms): operate on the 16-bit
+		// slice. ACy.<sub> = ACy.<sub> <op> (ACx.<sub> shifted by the signed S6
+		// count, logically). Only the immediate-count form is modelled; a .L
+		// destination merges [15:0], and for add/sub a .H destination
+		// sign-extends through the guard.
+		bool sh_src_half = src->reg.sub == C55_SUB_HI || src->reg.sub == C55_SUB_LO;
+		bool sh_dst_half = dst->reg.sub == C55_SUB_HI || dst->reg.sub == C55_SUB_LO;
+		if (sh_src_half || sh_dst_half) {
+			if (!sh_src_half || !sh_dst_half || cnt->kind != C55_OP_IMM) {
+				return NULL; // mixed half/full or register-count: unlifted
+			}
+			st32 s6 = (st32)(((ut32)(cnt->imm & 0x3f)) << 26) >> 26; // sign-extend 6-bit
+			RzILOpPure *sv = c55_read(a, src);
+			RzILOpPure *shifted = (s6 >= 0)
+				? SHIFTL(IL_FALSE, sv, UN(8, (ut64)s6))
+				: SHIFTR(IL_FALSE, sv, UN(8, (ut64)(-s6)));
+			RzILOpPure *dv = c55_read(a, dst);
+			RzILOpPure *res16;
+			switch (insn->lop) {
+			case C55_LOP_ADDSHL: res16 = ADD(dv, shifted); break;
+			case C55_LOP_SUBSHL: res16 = SUB(dv, shifted); break;
+			case C55_LOP_ANDSHL: res16 = LOGAND(dv, shifted); break;
+			case C55_LOP_ORSHL: res16 = LOGOR(dv, shifted); break;
+			default: res16 = LOGXOR(dv, shifted); break;
+			}
+			bool arith = insn->lop == C55_LOP_ADDSHL || insn->lop == C55_LOP_SUBSHL;
+			return arith ? c55_write_half_arith(a, dst, res16) : c55_write(a, dst, res16);
 		}
 		const C55RegInfo *xi = a->reg_info ? a->reg_info(src->reg.cls, src->reg.num, C55_SUB_NONE) : NULL;
 		const C55RegInfo *yi = a->reg_info ? a->reg_info(dst->reg.cls, dst->reg.num, C55_SUB_NONE) : NULL;
@@ -1711,10 +1820,14 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 				LOGAND(VARG(ri->il_var), UN(ri->width, (~one) & widthmask))));
 		return r;
 	}
-	// Status-register bit clear / set: STx = STx & ~(1 << #k4) (bclr) or
-	// STx = STx | (1 << #k4) (bset), opcode 0x46. ops[0] is the #k4 bit index,
-	// ops[1] the status register.
-	if (insn->lop == C55_LOP_BITCLR || insn->lop == C55_LOP_BITSET) {
+	// Status-register bit clear / set (opcode 0x46): STx = STx & ~(1 << #k4)
+	// (bclr) or STx | (1 << #k4) (bset), with ops[0] the #k4 bit index and
+	// ops[1] the status register. The same handler covers the register bit
+	// ops bclr/bset/bnot @#k, ACx[.h/.l]/ARx (opcode 0x89), whose bit number is
+	// a full is_bit() immediate taken relative to the addressed sub-register
+	// (so a .h operand targets bit k+16, the guard bit k+32 of the accumulator)
+	// and whose bnot form toggles the bit.
+	if (insn->lop == C55_LOP_BITCLR || insn->lop == C55_LOP_BITSET || insn->lop == C55_LOP_BITNOT) {
 		if (insn->n_ops < 2) {
 			return NULL;
 		}
@@ -1727,12 +1840,22 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 		if (!ri || !ri->il_var) {
 			return NULL;
 		}
-		unsigned b = (unsigned)(bit->imm & 0xf);
+		unsigned b;
+		if (bit->is_bit) {
+			unsigned off = (reg->reg.sub == C55_SUB_HI) ? 16 : (reg->reg.sub == C55_SUB_GUARD) ? 32
+													   : 0;
+			b = (unsigned)bit->imm + off;
+		} else {
+			b = (unsigned)(bit->imm & 0xf); // status-register #k4
+		}
+		if (b >= ri->width) {
+			return NULL;
+		}
 		ut64 one = 1ULL << b;
 		ut64 widthmask = (ri->width >= 64) ? ~0ULL : ((1ULL << ri->width) - 1);
-		RzILOpPure *res = (insn->lop == C55_LOP_BITCLR)
-			? LOGAND(VARG(ri->il_var), UN(ri->width, (~one) & widthmask))
-			: LOGOR(VARG(ri->il_var), UN(ri->width, one & widthmask));
+		RzILOpPure *res = (insn->lop == C55_LOP_BITCLR) ? LOGAND(VARG(ri->il_var), UN(ri->width, (~one) & widthmask))
+			: (insn->lop == C55_LOP_BITSET)         ? LOGOR(VARG(ri->il_var), UN(ri->width, one & widthmask))
+								: LOGXOR(VARG(ri->il_var), UN(ri->width, one & widthmask));
 		return SETG(ri->il_var, res);
 	}
 	// amov #k16, dst: load a zero-extended 16-bit constant (or address) into the
@@ -1866,9 +1989,7 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 			pred = (insn->lop == C55_LOP_CMPAND) ? AND(pred, tcin) : OR(pred, tcin);
 		}
 		ut64 zbit = (tcz->cond_flag & 1) ? 0x1000 : 0x2000;
-		return SETG("st0_55", ITE(pred,
-			LOGOR(VARG("st0_55"), UN(16, zbit)),
-			LOGAND(VARG("st0_55"), UN(16, (~zbit) & 0xffff))));
+		return SETG("st0_55", ITE(pred, LOGOR(VARG("st0_55"), UN(16, zbit)), LOGAND(VARG("st0_55"), UN(16, (~zbit) & 0xffff))));
 	}
 	// rol / ror BitIn, ACx, BitOut, ACy: rotate ACx left/right by one through a
 	// status bit. The bit shifted in comes from st0_55 (carry = bit 11, tc2 =
@@ -1908,9 +2029,7 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 			outbit = LSB(VARG(si->il_var));
 		}
 		return SEQ2(SETG(di->il_var, rotated),
-			SETG("st0_55", ITE(outbit,
-				LOGOR(VARG("st0_55"), UN(16, out_mask)),
-				LOGAND(VARG("st0_55"), UN(16, (~out_mask) & 0xffff)))));
+			SETG("st0_55", ITE(outbit, LOGOR(VARG("st0_55"), UN(16, out_mask)), LOGAND(VARG("st0_55"), UN(16, (~out_mask) & 0xffff)))));
 	}
 	// mpyk / mpykr #k, ACx[, ACy]: ACy = #k * ACx, the signed constant times the
 	// low 16 bits of ACx, sign-extended to the 40-bit accumulator. The rounding
@@ -2174,12 +2293,12 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 		case C55_LOP_MIN: // dst = (src < dst) ? src : dst
 			return SETG(dri->il_var,
 				ITE(AND(SLE(VARG(sri->il_var), VARG(dri->il_var)),
-					   INV(EQ(VARG(sri->il_var), VARG(dri->il_var)))),
+					    INV(EQ(VARG(sri->il_var), VARG(dri->il_var)))),
 					VARG(sri->il_var), VARG(dri->il_var)));
 		case C55_LOP_ABS: // dst = (src < 0) ? -src : src
 			return SETG(dri->il_var,
 				ITE(AND(SLE(VARG(sri->il_var), UN(dri->width, 0)),
-					   INV(EQ(VARG(sri->il_var), UN(dri->width, 0)))),
+					    INV(EQ(VARG(sri->il_var), UN(dri->width, 0)))),
 					SUB(UN(dri->width, 0), VARG(sri->il_var)),
 					VARG(sri->il_var)));
 		case C55_LOP_ROUND: // dst = round(src) -- (src + 0x8000) with the low word cleared
@@ -2195,7 +2314,7 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 				ITE(INV(SLE(VARG(sri->il_var), UN(dri->width, 0x7fffffffULL))),
 					UN(dri->width, 0x7fffffffULL),
 					ITE(AND(SLE(VARG(sri->il_var), UN(dri->width, 0xff80000000ULL)),
-						   INV(EQ(VARG(sri->il_var), UN(dri->width, 0xff80000000ULL)))),
+						    INV(EQ(VARG(sri->il_var), UN(dri->width, 0xff80000000ULL)))),
 						UN(dri->width, 0xff80000000ULL),
 						VARG(sri->il_var))));
 		case C55_LOP_ADDV: {
@@ -2302,12 +2421,154 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 		}
 		const C55Operand *src = &insn->ops[0];
 		const C55Operand *dst = &insn->ops[1];
+		// mmap(@reg) (memory-mapped register access) aliases the register
+		// itself, just as in the push/pop MMR handling. "mov src, mmap(@reg)"
+		// writes the source into the register; "mov mmap(@reg), dst" reads it.
+		// The value is width-adjusted (zero-extended or truncated) to bridge a
+		// 16-bit half and the register's own width.
+		if (dst->kind == C55_OP_MEM && dst->amode == C55_AM_MMR && src->kind == C55_OP_REG &&
+			!dst->shamt && !dst->mem_round) {
+			const C55RegInfo *ri = a->reg_info ? a->reg_info(dst->reg.cls, dst->reg.num, C55_SUB_NONE) : NULL;
+			if (!ri || !ri->il_var) {
+				return NULL;
+			}
+			bool s_half = src->reg.sub == C55_SUB_HI || src->reg.sub == C55_SUB_LO;
+			const C55RegInfo *si = a->reg_info ? a->reg_info(src->reg.cls, src->reg.num, C55_SUB_NONE) : NULL;
+			ut32 sw = s_half ? 16 : (si ? si->width : 16);
+			RzILOpPure *v = c55_read(a, src);
+			if (sw > ri->width) {
+				v = CAST(ri->width, IL_FALSE, v);
+			} else if (sw < ri->width) {
+				v = UNSIGNED(ri->width, v);
+			}
+			return SETG(ri->il_var, v);
+		}
+		if (src->kind == C55_OP_MEM && src->amode == C55_AM_MMR && dst->kind == C55_OP_REG &&
+			!src->shamt && !src->mem_round) {
+			const C55RegInfo *ri = a->reg_info ? a->reg_info(src->reg.cls, src->reg.num, C55_SUB_NONE) : NULL;
+			if (!ri || !ri->il_var) {
+				return NULL;
+			}
+			bool d_half = dst->reg.sub == C55_SUB_HI || dst->reg.sub == C55_SUB_LO;
+			const C55RegInfo *di = a->reg_info ? a->reg_info(dst->reg.cls, dst->reg.num, C55_SUB_NONE) : NULL;
+			ut32 dw = d_half ? 16 : (di ? di->width : 16);
+			RzILOpPure *v = VARG(ri->il_var);
+			if (ri->width > dw) {
+				v = CAST(dw, IL_FALSE, v);
+			} else if (ri->width < dw) {
+				v = UNSIGNED(dw, v);
+			}
+			return c55_write(a, dst, v);
+		}
+		// mov [uns](Smem) << #sh, ACx: load the memory word, extend it to the
+		// accumulator width (zero-extended for uns(), else sign-extended) and
+		// shift it left by the immediate count before storing. A register shift
+		// count, rounding or high/low-byte form falls back.
+		if (src->kind == C55_OP_MEM && dst->kind == C55_OP_REG && dst->reg.sub == C55_SUB_NONE &&
+			src->shamt && src->sh_left && !src->sh_by_reg && !src->sh_mem_reg_set &&
+			!src->mem_round && src->byte_sel != 1 && src->byte_sel != 2) {
+			const C55RegInfo *ri = a->reg_info ? a->reg_info(dst->reg.cls, dst->reg.num, C55_SUB_NONE) : NULL;
+			if (!ri || !ri->il_var || ri->width < 24) {
+				return NULL;
+			}
+			switch (src->amode) {
+			case C55_AM_INDIRECT:
+			case C55_AM_POSTINC:
+			case C55_AM_POSTDEC:
+			case C55_AM_IDXREG:
+			case C55_AM_POSTADD:
+			case C55_AM_POSTSUB:
+			case C55_AM_INDEXED:
+			case C55_AM_ABSOLUTE:
+			case C55_AM_CONST_IDX:
+			case C55_AM_CONST_IDX_PRE:
+			case C55_AM_ABS16:
+				break;
+			default:
+				return NULL;
+			}
+			C55Operand m = *src;
+			if (m.reg.cls == C55_RC_AR) {
+				m.reg.cls = C55_RC_XAR;
+			}
+			RzILOpPure *mem = c55_read(a, &m);
+			if (!mem) {
+				return NULL;
+			}
+			RzILOpPure *ext = src->uns ? UNSIGNED(ri->width, mem) : SIGNED(ri->width, mem);
+			RzILOpPure *sh = SHIFTL(IL_FALSE, ext, UN(8, (ut64)src->shamt));
+			RzILOpEffect *wr = SETG(ri->il_var, sh);
+			RzILOpEffect *post = c55_post_effect(a, &m);
+			return post ? SEQ2(wr, post) : wr;
+		}
 		// Smem load / copy (memory -> register) and store (register -> memory).
 		if (src->kind == C55_OP_MEM && dst->kind == C55_OP_REG) {
 			return c55_mem_move(a, dst, src, true);
 		}
 		if (dst->kind == C55_OP_MEM && src->kind == C55_OP_REG) {
 			return c55_mem_move(a, src, dst, false);
+		}
+		// mov Smem, Smem (memory-to-memory copy): load the source word (or
+		// byte) and store it to the destination, applying both operands'
+		// post-modify side effects. Both operands must use the shared mover's
+		// addressing modes and the same access width; shifted, rounded and
+		// high/low-byte forms fall back.
+		if (src->kind == C55_OP_MEM && dst->kind == C55_OP_MEM &&
+			!src->shamt && !dst->shamt && !src->sh_mem_reg_set && !dst->sh_mem_reg_set &&
+			!src->mem_round && !dst->mem_round &&
+			src->byte_sel != 1 && src->byte_sel != 2 && dst->byte_sel != 1 && dst->byte_sel != 2 &&
+			(src->byte_sel == 3) == (dst->byte_sel == 3)) {
+			const C55Operand *mm[2] = { src, dst };
+			bool ok = true;
+			for (int mi = 0; mi < 2; mi++) {
+				switch (mm[mi]->amode) {
+				case C55_AM_INDIRECT:
+				case C55_AM_POSTINC:
+				case C55_AM_POSTDEC:
+				case C55_AM_IDXREG:
+				case C55_AM_POSTADD:
+				case C55_AM_POSTSUB:
+				case C55_AM_INDEXED:
+				case C55_AM_ABSOLUTE:
+				case C55_AM_CONST_IDX:
+				case C55_AM_CONST_IDX_PRE:
+				case C55_AM_ABS16:
+					break;
+				default:
+					ok = false;
+				}
+			}
+			if (!ok) {
+				return NULL;
+			}
+			C55Operand sm = *src, dm = *dst;
+			if (sm.reg.cls == C55_RC_AR) {
+				sm.reg.cls = C55_RC_XAR;
+			}
+			if (dm.reg.cls == C55_RC_AR) {
+				dm.reg.cls = C55_RC_XAR;
+			}
+			if (sm.byte_sel == 3) {
+				sm.access = 8;
+				dm.access = 8;
+			}
+			RzILOpPure *v = c55_read(a, &sm);
+			if (!v) {
+				return NULL;
+			}
+			RzILOpEffect *wr = c55_write(a, &dm, v);
+			if (!wr) {
+				return NULL;
+			}
+			RzILOpEffect *ps = c55_post_effect(a, &sm);
+			if (ps) {
+				wr = SEQ2(wr, ps);
+			}
+			RzILOpEffect *pd = c55_post_effect(a, &dm);
+			if (pd) {
+				wr = SEQ2(wr, pd);
+			}
+			return wr;
 		}
 		// mov #imm, Smem (immediate -> memory store, e.g. the byte() form): the
 		// immediate is materialised as a 16-bit word and truncated to the access
@@ -2390,6 +2651,42 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 			}
 			return SETG(sdri->il_var,
 				LOGOR(LOGAND(VARG(sdri->il_var), UN(sdri->width, 0xffffff0000ULL)), wide));
+		}
+		// mov -#k, ACx.l/.h or mov -#k, reg (the 0x7b/0x3e negated-immediate
+		// forms): the operand already carries the two's-complement value, so it
+		// is written directly as a 16-bit value into a sub-register half
+		// (merged) or truncated to the destination register width.
+		if (src->kind == C55_OP_IMM && src->neg_imm && !src->addr &&
+			!src->sh_left && !src->shamt && dst->kind == C55_OP_REG) {
+			if (dst->reg.sub == C55_SUB_HI || dst->reg.sub == C55_SUB_LO) {
+				return c55_write(a, dst, UN(16, src->imm & 0xffff));
+			}
+			if (dst->reg.sub == C55_SUB_NONE) {
+				const C55RegInfo *ndri = a->reg_info ? a->reg_info(dst->reg.cls, dst->reg.num, C55_SUB_NONE) : NULL;
+				if (!ndri || !ndri->il_var) {
+					return NULL;
+				}
+				return SETG(ndri->il_var, UN(ndri->width, src->imm));
+			}
+		}
+		// mov srcreg, ACx.l / ACx.h: write the source's low 16 bits into the
+		// accumulator low or high word, preserving the rest. A half source is
+		// read as its 16-bit value; a whole register wider than a word is
+		// truncated to 16 bits. c55_write performs the read-modify-write merge
+		// into the destination half.
+		if (dst->kind == C55_OP_REG &&
+			(dst->reg.sub == C55_SUB_LO || dst->reg.sub == C55_SUB_HI) &&
+			src->kind == C55_OP_REG &&
+			!src->shamt && !src->sh_left && !src->sh_by_reg) {
+			RzILOpPure *sv = c55_read(a, src);
+			if (!sv) {
+				return NULL;
+			}
+			const C55RegInfo *ssri = a->reg_info ? a->reg_info(src->reg.cls, src->reg.num, C55_SUB_NONE) : NULL;
+			if (src->reg.sub == C55_SUB_NONE && ssri && ssri->width > 16) {
+				sv = CAST(16, IL_FALSE, sv); // truncate a whole register to the half width
+			}
+			return c55_write(a, dst, sv);
 		}
 		if (dst->kind != C55_OP_REG || dst->reg.sub != C55_SUB_NONE) {
 			return NULL;
@@ -2507,6 +2804,277 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 		}
 		const C55Operand *src = &insn->ops[0];
 		const C55Operand *dst = &insn->ops[1];
+		// add/sub dbl(Lmem), ACx, ACy and sub ACx, dbl(Lmem), ACy (opcode
+		// 0x8d): a 32-bit long-word memory operand, sign-extended to the
+		// accumulator width (zero-extended under uns()). When the memory is the
+		// first operand the result is ACy = ACx +/- dbl(Lmem); the reversed
+		// SUB form (memory second) is ACy = dbl(Lmem) - ACx (spru374g p572-573).
+		if (insn->n_ops == 3) {
+			int mi = -1;
+			for (int i = 0; i < 2; i++) {
+				if (insn->ops[i].kind == C55_OP_MEM && insn->ops[i].dbl) {
+					mi = i;
+					break;
+				}
+			}
+			if (mi >= 0 && !(mi == 1 && type != RZ_ANALYSIS_OP_TYPE_SUB)) {
+				const C55Operand *mem = &insn->ops[mi];
+				const C55Operand *acx = &insn->ops[mi == 0 ? 1 : 0];
+				const C55Operand *acy = &insn->ops[2];
+				if (acx->kind != C55_OP_REG || acx->reg.sub != C55_SUB_NONE ||
+					acy->kind != C55_OP_REG || acy->reg.sub != C55_SUB_NONE ||
+					mem->byte_sel || mem->shamt || mem->sh_mem_reg_set || mem->mem_round) {
+					return NULL;
+				}
+				switch (mem->amode) {
+				case C55_AM_INDIRECT:
+				case C55_AM_POSTINC:
+				case C55_AM_POSTDEC:
+				case C55_AM_IDXREG:
+				case C55_AM_POSTADD:
+				case C55_AM_POSTSUB:
+				case C55_AM_INDEXED:
+				case C55_AM_ABSOLUTE:
+				case C55_AM_CONST_IDX:
+				case C55_AM_CONST_IDX_PRE:
+				case C55_AM_ABS16:
+					break;
+				default:
+					return NULL;
+				}
+				const C55RegInfo *xri = a->reg_info ? a->reg_info(acx->reg.cls, acx->reg.num, C55_SUB_NONE) : NULL;
+				const C55RegInfo *yri = a->reg_info ? a->reg_info(acy->reg.cls, acy->reg.num, C55_SUB_NONE) : NULL;
+				if (!xri || !xri->il_var || !yri || !yri->il_var) {
+					return NULL;
+				}
+				C55Operand m = *mem;
+				if (m.reg.cls == C55_RC_AR) {
+					m.reg.cls = C55_RC_XAR;
+				}
+				RzILOpPure *dv = c55_read(a, &m);
+				if (!dv) {
+					return NULL;
+				}
+				ut32 lw = m.access ? m.access : 16;
+				if (yri->width > lw) {
+					dv = m.uns ? UNSIGNED(yri->width, dv) : SIGNED(yri->width, dv);
+				} else if (yri->width < lw) {
+					dv = UNSIGNED(yri->width, dv);
+				}
+				RzILOpPure *av = VARG(xri->il_var);
+				if (yri->width > xri->width) {
+					av = SIGNED(yri->width, av);
+				} else if (yri->width < xri->width) {
+					av = UNSIGNED(yri->width, av);
+				}
+				RzILOpPure *res = (mi == 1)
+					? SUB(dv, av) // ACy = dbl - ACx
+					: (type == RZ_ANALYSIS_OP_TYPE_ADD ? ADD(av, dv) : SUB(av, dv)); // ACy = ACx +/- dbl
+				RzILOpEffect *wr = SETG(yri->il_var, res);
+				RzILOpEffect *post = c55_post_effect(a, &m);
+				return post ? SEQ2(wr, post) : wr;
+			}
+		}
+		// sub ACx.<sub>, Smem, ACy.<sub> (reverse memory-source subtract on a
+		// 16-bit slice): ACy.<sub> = Smem - ACx.<sub> (spru374g p666, reversed
+		// form). A .L destination merges [15:0]; a .H destination sign-extends
+		// through the guard. Memory post-modify side effects follow.
+		if (type == RZ_ANALYSIS_OP_TYPE_SUB && insn->n_ops == 3 &&
+			insn->ops[0].kind == C55_OP_REG &&
+			(insn->ops[0].reg.sub == C55_SUB_HI || insn->ops[0].reg.sub == C55_SUB_LO) &&
+			insn->ops[1].kind == C55_OP_MEM && insn->ops[2].kind == C55_OP_REG &&
+			(insn->ops[2].reg.sub == C55_SUB_HI || insn->ops[2].reg.sub == C55_SUB_LO) &&
+			!insn->ops[1].byte_sel && !insn->ops[1].shamt &&
+			!insn->ops[1].sh_mem_reg_set && !insn->ops[1].mem_round) {
+			const C55Operand *areg = &insn->ops[0];
+			const C55Operand *mem = &insn->ops[1];
+			const C55Operand *dh = &insn->ops[2];
+			switch (mem->amode) {
+			case C55_AM_INDIRECT:
+			case C55_AM_POSTINC:
+			case C55_AM_POSTDEC:
+			case C55_AM_IDXREG:
+			case C55_AM_POSTADD:
+			case C55_AM_POSTSUB:
+			case C55_AM_INDEXED:
+			case C55_AM_ABSOLUTE:
+			case C55_AM_CONST_IDX:
+			case C55_AM_CONST_IDX_PRE:
+			case C55_AM_ABS16:
+				break;
+			default:
+				return NULL;
+			}
+			C55Operand m = *mem;
+			if (m.reg.cls == C55_RC_AR) {
+				m.reg.cls = C55_RC_XAR;
+			}
+			RzILOpPure *mv = c55_read(a, &m);
+			if (!mv) {
+				return NULL;
+			}
+			if ((m.access ? m.access : 16) != 16) {
+				mv = CAST(16, IL_FALSE, mv);
+			}
+			RzILOpPure *res16 = SUB(mv, c55_read(a, areg)); // ACy = Smem - ACx
+			RzILOpEffect *wr = c55_write_half_arith(a, dh, res16);
+			if (!wr) {
+				return NULL;
+			}
+			RzILOpEffect *post = c55_post_effect(a, &m);
+			return post ? SEQ2(wr, post) : wr;
+		}
+		// add Smem, [src,] dst (memory-source add): dst = src + extend(Smem),
+		// with src == dst for the two-operand form. The memory word is
+		// sign-extended to the destination width (zero-extended under uns());
+		// a narrower register source is sign-extended, matching the register
+		// add and memory-load conventions. Memory post-modify side effects
+		// follow. sub is order-sensitive and bitwise memory sources have their
+		// own extension rules, so both are left to the per-arch lifter.
+		if (type == RZ_ANALYSIS_OP_TYPE_ADD && (insn->n_ops == 2 || insn->n_ops == 3) &&
+			src->kind == C55_OP_MEM && !src->byte_sel && !src->shamt &&
+			!src->sh_mem_reg_set && !src->mem_round) {
+			const C55Operand *addend = &insn->ops[1];
+			const C55Operand *dreg = &insn->ops[insn->n_ops - 1];
+			bool addend_half = addend->kind == C55_OP_REG &&
+				(addend->reg.sub == C55_SUB_HI || addend->reg.sub == C55_SUB_LO);
+			if (addend->kind != C55_OP_REG || (addend->reg.sub != C55_SUB_NONE && !addend_half) ||
+				dreg->kind != C55_OP_REG || dreg->reg.sub != C55_SUB_NONE) {
+				return NULL;
+			}
+			switch (src->amode) {
+			case C55_AM_INDIRECT:
+			case C55_AM_POSTINC:
+			case C55_AM_POSTDEC:
+			case C55_AM_IDXREG:
+			case C55_AM_POSTADD:
+			case C55_AM_POSTSUB:
+			case C55_AM_INDEXED:
+			case C55_AM_ABSOLUTE:
+			case C55_AM_CONST_IDX:
+			case C55_AM_CONST_IDX_PRE:
+			case C55_AM_ABS16:
+				break;
+			default:
+				return NULL;
+			}
+			const C55RegInfo *ari = a->reg_info ? a->reg_info(addend->reg.cls, addend->reg.num, C55_SUB_NONE) : NULL;
+			const C55RegInfo *dri2 = a->reg_info ? a->reg_info(dreg->reg.cls, dreg->reg.num, C55_SUB_NONE) : NULL;
+			if (!ari || !ari->il_var || !dri2 || !dri2->il_var) {
+				return NULL;
+			}
+			C55Operand m = *src;
+			if (m.reg.cls == C55_RC_AR) {
+				m.reg.cls = C55_RC_XAR;
+			}
+			RzILOpPure *mv = c55_read(a, &m);
+			if (!mv) {
+				return NULL;
+			}
+			ut32 mw = m.access ? m.access : 16;
+			if (dri2->width > mw) {
+				mv = m.uns ? UNSIGNED(dri2->width, mv) : SIGNED(dri2->width, mv);
+			} else if (dri2->width < mw) {
+				mv = UNSIGNED(dri2->width, mv);
+			}
+			RzILOpPure *av;
+			if (addend_half) {
+				av = SIGNED(dri2->width, c55_read(a, addend)); // 16-bit slice sign-extended
+			} else {
+				av = VARG(ari->il_var);
+				if (dri2->width > ari->width) {
+					av = SIGNED(dri2->width, av);
+				} else if (dri2->width < ari->width) {
+					av = UNSIGNED(dri2->width, av);
+				}
+			}
+			RzILOpEffect *wr = SETG(dri2->il_var, ADD(av, mv));
+			RzILOpEffect *post = c55_post_effect(a, &m);
+			return post ? SEQ2(wr, post) : wr;
+		}
+		// Half-register add/sub (the 0xc4 / 0x7b .l/.h forms): operate on the
+		// 16-bit accumulator slice. Per SWPU104 1.5.1 a .L destination updates
+		// [15:0] and a .H destination updates [39:16] (sign-extended through the
+		// guard). Forms: 2-op "add/sub #k, ACx.l/.h" (dst op= k), 3-op
+		// "add/sub #k, ACx.l/.h, ACy.l/.h" (dst = src op k) and 2-op
+		// "add/sub ACx.l/.h, ACy.l/.h" (dst = dst op src).
+		{
+			const C55Operand *dh = &insn->ops[insn->n_ops - 1];
+			bool dst_half = dh->kind == C55_OP_REG &&
+				(dh->reg.sub == C55_SUB_HI || dh->reg.sub == C55_SUB_LO);
+			if (dst_half && (insn->n_ops == 2 || insn->n_ops == 3)) {
+				RzILOpPure *sv = NULL, *bv = NULL;
+				if (src->kind == C55_OP_IMM && !src->addr && !src->sh_left && !src->shamt) {
+					const C55Operand *sreg = (insn->n_ops == 3) ? &insn->ops[1] : dh;
+					if (sreg->kind == C55_OP_REG &&
+						(sreg->reg.sub == C55_SUB_HI || sreg->reg.sub == C55_SUB_LO)) {
+						sv = c55_read(a, sreg);
+						bv = UN(16, (ut64)src->imm & 0xffff);
+					}
+				} else if (src->kind == C55_OP_REG &&
+					(src->reg.sub == C55_SUB_HI || src->reg.sub == C55_SUB_LO) &&
+					!src->shamt && !src->sh_left && !src->sh_by_reg) {
+					if (insn->n_ops == 2) {
+						sv = c55_read(a, dh); // dst = dst op src
+						bv = c55_read(a, src);
+					} else {
+						const C55Operand *s2 = &insn->ops[1];
+						if (s2->kind == C55_OP_REG &&
+							(s2->reg.sub == C55_SUB_HI || s2->reg.sub == C55_SUB_LO)) {
+							sv = c55_read(a, src); // dst = src op src2
+							bv = c55_read(a, s2);
+						}
+					}
+				}
+				if (sv && bv) {
+					RzILOpPure *res16 = (type == RZ_ANALYSIS_OP_TYPE_ADD) ? ADD(sv, bv) : SUB(sv, bv);
+					return c55_write_half_arith(a, dh, res16);
+				}
+				rz_il_op_pure_free(sv);
+				rz_il_op_pure_free(bv);
+				return NULL;
+			}
+		}
+		// add/sub #k, Smem (memory-destination read-modify-write): Smem = Smem
+		// +/- k. The memory word is read, the immediate applied at the access
+		// width and the result stored back, with any post-modify side effect.
+		if (insn->n_ops == 2 && src->kind == C55_OP_IMM && !src->addr &&
+			!src->shamt && !src->sh_left && dst->kind == C55_OP_MEM &&
+			!dst->byte_sel && !dst->shamt && !dst->sh_mem_reg_set && !dst->mem_round) {
+			switch (dst->amode) {
+			case C55_AM_INDIRECT:
+			case C55_AM_POSTINC:
+			case C55_AM_POSTDEC:
+			case C55_AM_IDXREG:
+			case C55_AM_POSTADD:
+			case C55_AM_POSTSUB:
+			case C55_AM_INDEXED:
+			case C55_AM_ABSOLUTE:
+			case C55_AM_CONST_IDX:
+			case C55_AM_CONST_IDX_PRE:
+			case C55_AM_ABS16:
+				break;
+			default:
+				return NULL;
+			}
+			C55Operand m = *dst;
+			if (m.reg.cls == C55_RC_AR) {
+				m.reg.cls = C55_RC_XAR;
+			}
+			ut32 mw = m.access ? m.access : 16;
+			RzILOpPure *cur = c55_read(a, &m);
+			if (!cur) {
+				return NULL;
+			}
+			RzILOpPure *kv = UN(mw, (ut64)src->imm);
+			RzILOpPure *res = (type == RZ_ANALYSIS_OP_TYPE_ADD) ? ADD(cur, kv) : SUB(cur, kv);
+			RzILOpEffect *st = c55_write(a, &m, res);
+			if (!st) {
+				return NULL;
+			}
+			RzILOpEffect *post = c55_post_effect(a, &m);
+			return post ? SEQ2(st, post) : st;
+		}
 		if (src->kind == C55_OP_IMM && !src->imm_signed && !src->addr &&
 			!src->shamt && !src->sh_left && !src->sh_by_reg &&
 			dst->kind == C55_OP_REG && dst->reg.sub == C55_SUB_NONE) {
@@ -2549,9 +3117,143 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 		if (insn->n_ops < 2) {
 			return NULL;
 		}
+		// btst @#k, ACx.l/.h, TCy: test bit k of the (16-bit half of the)
+		// source register and write it to the TCy status bit in st0_55. ops[0]
+		// is the bit number, ops[1] the source register, ops[2] the TC flag.
+		if (type == RZ_ANALYSIS_OP_TYPE_AND && insn->n_ops >= 3 &&
+			insn->ops[0].kind == C55_OP_IMM && insn->ops[0].is_bit &&
+			insn->ops[1].kind == C55_OP_REG &&
+			insn->ops[2].kind == C55_OP_COND && insn->ops[2].cond_is_flag) {
+			RzILOpPure *rv = c55_read(a, &insn->ops[1]);
+			if (!rv) {
+				return NULL;
+			}
+			unsigned k = (unsigned)(insn->ops[0].imm & 0x3f);
+			RzILOpBool *bitval = LSB(SHIFTR(IL_FALSE, rv, UN(6, (ut64)k)));
+			ut64 tcbit = (insn->ops[2].cond_flag & 1) ? 0x1000 : 0x2000; // tc2 : tc1
+			return SETG("st0_55",
+				ITE(bitval,
+					LOGOR(VARG("st0_55"), UN(16, tcbit)),
+					LOGAND(VARG("st0_55"), UN(16, (~tcbit) & 0xffff))));
+		}
 		const C55Operand *src = &insn->ops[0];
 		const C55Operand *dst = &insn->ops[1];
-		// and/or #k16, Smem: read-modify-write the data-memory word in place
+		// or/and/xor Smem, ACx.<sub>, ACy.<sub> (memory-source bitwise into an
+		// accumulator half): ACy.<sub> = ACx.<sub> <op> Smem on the 16-bit
+		// slice. A .L destination merges [15:0]; a .H destination writes
+		// [31:16]. Memory post-modify side effects follow.
+		if (type != RZ_ANALYSIS_OP_TYPE_NOT && insn->n_ops == 3 &&
+			src->kind == C55_OP_MEM && insn->ops[1].kind == C55_OP_REG &&
+			insn->ops[2].kind == C55_OP_REG &&
+			(insn->ops[2].reg.sub == C55_SUB_HI || insn->ops[2].reg.sub == C55_SUB_LO) &&
+			!src->byte_sel && !src->shamt && !src->sh_mem_reg_set && !src->mem_round) {
+			const C55Operand *sreg = &insn->ops[1];
+			const C55Operand *dh = &insn->ops[2];
+			switch (src->amode) {
+			case C55_AM_INDIRECT:
+			case C55_AM_POSTINC:
+			case C55_AM_POSTDEC:
+			case C55_AM_IDXREG:
+			case C55_AM_POSTADD:
+			case C55_AM_POSTSUB:
+			case C55_AM_INDEXED:
+			case C55_AM_ABSOLUTE:
+			case C55_AM_CONST_IDX:
+			case C55_AM_CONST_IDX_PRE:
+			case C55_AM_ABS16:
+				break;
+			default:
+				return NULL;
+			}
+			const C55RegInfo *sri = a->reg_info ? a->reg_info(sreg->reg.cls, sreg->reg.num, C55_SUB_NONE) : NULL;
+			if (!sri || !sri->il_var) {
+				return NULL;
+			}
+			C55Operand m = *src;
+			if (m.reg.cls == C55_RC_AR) {
+				m.reg.cls = C55_RC_XAR;
+			}
+			RzILOpPure *mv = c55_read(a, &m);
+			if (!mv) {
+				return NULL;
+			}
+			if ((m.access ? m.access : 16) != 16) {
+				mv = CAST(16, IL_FALSE, mv);
+			}
+			RzILOpPure *sv = c55_read(a, sreg);
+			bool s_half = sreg->reg.sub == C55_SUB_HI || sreg->reg.sub == C55_SUB_LO;
+			if (!s_half && sri->width > 16) {
+				sv = CAST(16, IL_FALSE, sv);
+			}
+			RzILOpPure *r16 = type == RZ_ANALYSIS_OP_TYPE_AND ? LOGAND(sv, mv)
+				: type == RZ_ANALYSIS_OP_TYPE_OR          ? LOGOR(sv, mv)
+									  : LOGXOR(sv, mv);
+			RzILOpEffect *wr = c55_write(a, dh, r16);
+			if (!wr) {
+				return NULL;
+			}
+			RzILOpEffect *post = c55_post_effect(a, &m);
+			return post ? SEQ2(wr, post) : wr;
+		}
+		// or/and/xor Smem, src, dst (memory-source 3-operand bitwise into a
+		// full accumulator): dst = src <op> zero-extend(Smem). The 16-bit
+		// memory word is zero-extended to the destination width; a 16-bit
+		// register source (AR/T or a half) is likewise zero-extended, while a
+		// full-accumulator source is used as-is (SWPU104 6.6.1). Memory
+		// post-modify side effects follow.
+		if (type != RZ_ANALYSIS_OP_TYPE_NOT && insn->n_ops == 3 &&
+			src->kind == C55_OP_MEM && insn->ops[1].kind == C55_OP_REG &&
+			insn->ops[2].kind == C55_OP_REG && insn->ops[2].reg.sub == C55_SUB_NONE &&
+			!src->byte_sel && !src->shamt && !src->sh_mem_reg_set && !src->mem_round) {
+			const C55Operand *sreg = &insn->ops[1];
+			const C55Operand *dreg = &insn->ops[2];
+			switch (src->amode) {
+			case C55_AM_INDIRECT:
+			case C55_AM_POSTINC:
+			case C55_AM_POSTDEC:
+			case C55_AM_IDXREG:
+			case C55_AM_POSTADD:
+			case C55_AM_POSTSUB:
+			case C55_AM_INDEXED:
+			case C55_AM_ABSOLUTE:
+			case C55_AM_CONST_IDX:
+			case C55_AM_CONST_IDX_PRE:
+			case C55_AM_ABS16:
+				break;
+			default:
+				return NULL;
+			}
+			const C55RegInfo *sri = a->reg_info ? a->reg_info(sreg->reg.cls, sreg->reg.num, C55_SUB_NONE) : NULL;
+			const C55RegInfo *dri = a->reg_info ? a->reg_info(dreg->reg.cls, dreg->reg.num, C55_SUB_NONE) : NULL;
+			if (!sri || !sri->il_var || !dri || !dri->il_var) {
+				return NULL;
+			}
+			C55Operand m = *src;
+			if (m.reg.cls == C55_RC_AR) {
+				m.reg.cls = C55_RC_XAR;
+			}
+			RzILOpPure *mem16 = c55_read(a, &m);
+			if (!mem16) {
+				return NULL;
+			}
+			RzILOpPure *mv = UNSIGNED(dri->width, mem16);
+			RzILOpPure *sv;
+			if (sreg->reg.sub == C55_SUB_NONE && sri->width == dri->width) {
+				sv = VARG(sri->il_var);
+			} else {
+				RzILOpPure *s16 = c55_read(a, sreg);
+				if (sreg->reg.sub == C55_SUB_NONE && sri->width > 16) {
+					s16 = CAST(16, IL_FALSE, s16);
+				}
+				sv = UNSIGNED(dri->width, s16);
+			}
+			RzILOpPure *r = type == RZ_ANALYSIS_OP_TYPE_AND ? LOGAND(sv, mv)
+				: type == RZ_ANALYSIS_OP_TYPE_OR        ? LOGOR(sv, mv)
+									: LOGXOR(sv, mv);
+			RzILOpEffect *wr = SETG(dri->il_var, r);
+			RzILOpEffect *post = c55_post_effect(a, &m);
+			return post ? SEQ2(wr, post) : wr;
+		}
 		// (Smem op= imm). Only the addressing modes the shared effective-address
 		// primitive supports are lifted; the byte-select and shifted forms fall
 		// back. NOT has a single source and is excluded.
@@ -2608,30 +3310,64 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 			if (sr && dr && sr->il_var && dr->il_var &&
 				(src_half || dst_half || sr->width != dr->width)) {
 				RzILOpPure *sv = src_half ? c55_read(a, src)
-					: (sr->width > 16 ? CAST(16, IL_FALSE, VARG(sr->il_var)) : VARG(sr->il_var));
+							  : (sr->width > 16 ? CAST(16, IL_FALSE, VARG(sr->il_var)) : VARG(sr->il_var));
 				RzILOpPure *dv = dst_half ? c55_read(a, dst)
-					: (dr->width > 16 ? CAST(16, IL_FALSE, VARG(dr->il_var)) : VARG(dr->il_var));
+							  : (dr->width > 16 ? CAST(16, IL_FALSE, VARG(dr->il_var)) : VARG(dr->il_var));
 				if (!sv || !dv) {
 					rz_il_op_pure_free(sv);
 					rz_il_op_pure_free(dv);
 					return NULL;
 				}
 				RzILOpPure *res = type == RZ_ANALYSIS_OP_TYPE_AND ? LOGAND(dv, sv)
-					: type == RZ_ANALYSIS_OP_TYPE_OR ? LOGOR(dv, sv)
-									 : LOGXOR(dv, sv);
+					: type == RZ_ANALYSIS_OP_TYPE_OR          ? LOGOR(dv, sv)
+										  : LOGXOR(dv, sv);
 				if (dr->width > 16) {
 					if (dst->reg.sub == C55_SUB_HI) {
 						// high-word destination (bits 31-16): preserve bits 39-32
 						// and 15-0, and shift the 16-bit result up by 16.
 						ut64 keep = (dr->width >= 64 ? ~0ULL : ((1ULL << dr->width) - 1)) & ~((ut64)0xffff << 16);
-						return SETG(dr->il_var, LOGOR(LOGAND(VARG(dr->il_var), UN(dr->width, keep)),
-							SHIFTL(IL_FALSE, UNSIGNED(dr->width, res), UN(6, 16))));
+						return SETG(dr->il_var, LOGOR(LOGAND(VARG(dr->il_var), UN(dr->width, keep)), SHIFTL(IL_FALSE, UNSIGNED(dr->width, res), UN(6, 16))));
 					}
 					// low-word destination (bits 15-0): preserve bits 39-16.
 					ut64 keep = (dr->width >= 64 ? ~0ULL : ((1ULL << dr->width) - 1)) & ~(ut64)0xffff;
 					return SETG(dr->il_var, LOGOR(LOGAND(VARG(dr->il_var), UN(dr->width, keep)), UNSIGNED(dr->width, res)));
 				}
 				return SETG(dr->il_var, res);
+			}
+		}
+		// not ACx.half, ACy.half (the 0x75 .h/.l forms): invert the 16-bit
+		// slice and merge it back into the destination half. The slice handler
+		// above excludes NOT (single source), so it is handled here.
+		if (type == RZ_ANALYSIS_OP_TYPE_NOT && src->kind == C55_OP_REG && dst->kind == C55_OP_REG &&
+			(dst->reg.sub == C55_SUB_HI || dst->reg.sub == C55_SUB_LO) &&
+			!src->shamt && !src->sh_left && !src->sh_by_reg) {
+			RzILOpPure *sv = c55_read(a, src); // 16-bit for a half source
+			if (!sv) {
+				return NULL;
+			}
+			const C55RegInfo *sr = a->reg_info ? a->reg_info(src->reg.cls, src->reg.num, C55_SUB_NONE) : NULL;
+			if (src->reg.sub == C55_SUB_NONE && sr && sr->width > 16) {
+				sv = CAST(16, IL_FALSE, sv); // truncate a whole source to the half width
+			}
+			return c55_write(a, dst, LOGNOT(sv));
+		}
+		// not <src>, ARx/Tx: dst = ~src into a 16-bit register, the source read
+		// as its 16-bit value (a .h/.l half, or a whole register truncated to
+		// 16 bits). The half-destination and equal-width full-register forms are
+		// handled above; this covers e.g. not ACx.l, ARy.
+		if (type == RZ_ANALYSIS_OP_TYPE_NOT && src->kind == C55_OP_REG && dst->kind == C55_OP_REG &&
+			dst->reg.sub == C55_SUB_NONE && !src->shamt && !src->sh_left && !src->sh_by_reg) {
+			const C55RegInfo *dri = a->reg_info ? a->reg_info(dst->reg.cls, dst->reg.num, C55_SUB_NONE) : NULL;
+			if (dri && dri->il_var && dri->width == 16) {
+				RzILOpPure *sv = c55_read(a, src);
+				if (!sv) {
+					return NULL;
+				}
+				const C55RegInfo *sr = a->reg_info ? a->reg_info(src->reg.cls, src->reg.num, C55_SUB_NONE) : NULL;
+				if (src->reg.sub == C55_SUB_NONE && sr && sr->width > 16) {
+					sv = CAST(16, IL_FALSE, sv); // truncate a whole source to 16 bits
+				}
+				return SETG(dri->il_var, LOGNOT(sv));
 			}
 		}
 		if (dst->kind != C55_OP_REG || dst->reg.sub != C55_SUB_NONE ||
@@ -2648,9 +3384,8 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 			return SETG(dri->il_var, LOGNOT(VARG(sri->il_var)));
 		}
 		RzILOpPure *res =
-			type == RZ_ANALYSIS_OP_TYPE_AND ? LOGAND(VARG(dri->il_var), VARG(sri->il_var)) :
-			type == RZ_ANALYSIS_OP_TYPE_OR ? LOGOR(VARG(dri->il_var), VARG(sri->il_var)) :
-			LOGXOR(VARG(dri->il_var), VARG(sri->il_var));
+			type == RZ_ANALYSIS_OP_TYPE_AND ? LOGAND(VARG(dri->il_var), VARG(sri->il_var)) : type == RZ_ANALYSIS_OP_TYPE_OR ? LOGOR(VARG(dri->il_var), VARG(sri->il_var))
+																	: LOGXOR(VARG(dri->il_var), VARG(sri->il_var));
 		return SETG(dri->il_var, res);
 	}
 	case RZ_ANALYSIS_OP_TYPE_PUSH:
@@ -2676,8 +3411,13 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 		RzILOpEffect *acc = NULL;
 		for (ut8 i = 0; i < insn->n_ops && i < 2; i++) {
 			const C55Operand *o = &insn->ops[i];
+			bool is_sub = o->kind == C55_OP_REG &&
+				(o->reg.sub == C55_SUB_LO || o->reg.sub == C55_SUB_HI || o->reg.sub == C55_SUB_GUARD);
 			C55Reg reg;
 			if (o->kind == C55_OP_REG && o->reg.sub == C55_SUB_NONE) {
+				reg = o->reg;
+			} else if (is_sub) {
+				// psh / pop ACx.l / ACx.h / ACx.g: a sub-register half.
 				reg = o->reg;
 			} else if (o->kind == C55_OP_MEM && o->amode == C55_AM_MMR) {
 				// pop / psh mmap(@reg): the memory-mapped register moves through
@@ -2691,7 +3431,31 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 				return NULL;
 			}
 			RzILOpEffect *step = NULL;
-			if (ri->width == 40) {
+			if (is_sub) {
+				// Sub-register stack op: a single word carries the 16-bit half
+				// (or, for .g, the 8-bit guard, zero-extended to a word). psh
+				// pre-decrements SP by one word and stores; pop loads the word
+				// and merges it back into the half via c55_write's
+				// read-modify-write. SP advances by one word.
+				if (o->dbl) {
+					return NULL;
+				}
+				if (type == RZ_ANALYSIS_OP_TYPE_PUSH) {
+					RzILOpPure *hv = c55_read(a, o);
+					if (!hv) {
+						return NULL;
+					}
+					step = SEQ2(
+						SETG("sp", SUB(VARG("sp"), UN(16, 1))),
+						STOREW(MUL(UNSIGNED(24, VARG("sp")), UN(24, 2)), UNSIGNED(16, hv)));
+				} else {
+					RzILOpEffect *wr = c55_write(a, o, LOADW(16, MUL(UNSIGNED(24, VARG("sp")), UN(24, 2))));
+					if (!wr) {
+						return NULL;
+					}
+					step = SEQ2(wr, SETG("sp", ADD(VARG("sp"), UN(16, 1))));
+				}
+			} else if (ri->width == 40) {
 				// Accumulator stack op: 32 bits (two words) move through the
 				// stack. psh stores the low 32 bits; pop reloads them while
 				// preserving the guard byte. SP advances by two words.
@@ -2701,12 +3465,24 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 						STOREW(MUL(UNSIGNED(24, VARG("sp")), UN(24, 2)), UNSIGNED(32, VARG(ri->il_var))));
 				} else {
 					step = SEQ2(
-						SETG(ri->il_var, LOGOR(LOGAND(VARG(ri->il_var), UN(40, 0xff00000000ULL)),
-									       UNSIGNED(40, LOADW(32, MUL(UNSIGNED(24, VARG("sp")), UN(24, 2)))))),
+						SETG(ri->il_var, LOGOR(LOGAND(VARG(ri->il_var), UN(40, 0xff00000000ULL)), UNSIGNED(40, LOADW(32, MUL(UNSIGNED(24, VARG("sp")), UN(24, 2)))))),
+						SETG("sp", ADD(VARG("sp"), UN(16, 2))));
+				}
+			} else if (o->dbl) {
+				// psh / pop dbl(xarN): the extended pointer register stored as a
+				// 32-bit double word (two words). psh stores the zero-extended
+				// pointer; pop reloads its low bits. SP advances by two words.
+				if (type == RZ_ANALYSIS_OP_TYPE_PUSH) {
+					step = SEQ2(
+						SETG("sp", SUB(VARG("sp"), UN(16, 2))),
+						STOREW(MUL(UNSIGNED(24, VARG("sp")), UN(24, 2)), UNSIGNED(32, VARG(ri->il_var))));
+				} else {
+					step = SEQ2(
+						SETG(ri->il_var, UNSIGNED(ri->width, LOADW(32, MUL(UNSIGNED(24, VARG("sp")), UN(24, 2))))),
 						SETG("sp", ADD(VARG("sp"), UN(16, 2))));
 				}
 			} else {
-				if (o->dbl || ri->width != 16) {
+				if (ri->width != 16) {
 					return NULL;
 				}
 				if (type == RZ_ANALYSIS_OP_TYPE_PUSH) {
@@ -2759,6 +3535,38 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 			return NULL;
 		}
 		return BRANCH(pred, JMP(UN(24, c55_branch_target(insn, pc) & 0xffffff)), NOP());
+	}
+	case RZ_ANALYSIS_OP_TYPE_RET:
+	case RZ_ANALYSIS_OP_TYPE_CRET: {
+		// ret / reti / retcc: the return address sits on top of the stack,
+		// where the matching call left it (two words, the low 24 bits holding
+		// the PC). It is read first, then SP is popped by two words, then
+		// control transfers to it. SP is a 16-bit word pointer and the stack
+		// lives at byte address SP<<1, matching the push/pop model. reti also
+		// reloads status from the stack on the hardware; that state restore is
+		// not modelled (only the control transfer is). The conditional retcc
+		// performs the return when its predicate holds and otherwise falls
+		// through to the next instruction.
+		RzILOpEffect *doret = SEQ3(
+			SETL("ret_addr", LOADW(24, MUL(UNSIGNED(24, VARG("sp")), UN(24, 2)))),
+			SETG("sp", ADD(VARG("sp"), UN(16, 2))),
+			JMP(VARL("ret_addr")));
+		if (type == RZ_ANALYSIS_OP_TYPE_CRET) {
+			const C55Operand *cond = NULL;
+			for (ut8 i = 0; i < insn->n_ops; i++) {
+				if (insn->ops[i].kind == C55_OP_COND) {
+					cond = &insn->ops[i];
+					break;
+				}
+			}
+			RzILOpPure *pred = cond ? c55_cond_pred(a, cond, insn->uns_all) : NULL;
+			if (!pred) {
+				rz_il_op_effect_free(doret);
+				return NULL;
+			}
+			return BRANCH(pred, doret, NOP());
+		}
+		return doret;
 	}
 	case RZ_ANALYSIS_OP_TYPE_MUL: {
 		// Multiply, optionally accumulating. c55_mac_effect handles the register /
@@ -2926,7 +3734,8 @@ static void c55_fmt_dual_sub(RzStrBuf *sb, const C55ArchDesc *a, const C55Operan
 		c55_fmt_mem(sb, a, mem);
 		return;
 	}
-	rz_strbuf_append(sb, (lop == C55_LOP_MAC) ? "mac" : (lop == C55_LOP_MAS) ? "mas" : "mpy");
+	rz_strbuf_append(sb, (lop == C55_LOP_MAC) ? "mac" : (lop == C55_LOP_MAS) ? "mas"
+										 : "mpy");
 	if (round) {
 		rz_strbuf_append(sb, "r");
 	}
