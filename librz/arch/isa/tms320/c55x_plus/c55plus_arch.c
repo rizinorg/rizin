@@ -1129,11 +1129,13 @@ static void c55plus_x_abs_word(const C55ArchDesc *a, ut64 bits, const C55OpDesc 
 	out->access = 16;
 }
 
-// ar source ARn in byte1[3:0] of the 0xd0 ar word store.
+// 16-bit register source in byte1[5:0] of the 0xd0 word store. The byte1[7:5]==001
+// row covers AR0-15 (0x20-0x2F) and T0-3 (0x30-0x33) (plus SP/DP); decode the full
+// 6-bit field through gr1 instead of forcing AR, so e.g. 0x30 is T0 not AR0.
 static void c55plus_x_ar_src(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
-	c55plus_gr1((ut8)(32 + ((bits >> 24) & 0x0f)), &out->reg); // ar0-15
+	c55plus_gr1((ut8)((bits >> 24) & 0x3f), &out->reg); // byte1[5:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
 
@@ -1404,23 +1406,18 @@ static void c55plus_x_macr_acdst(const C55ArchDesc *a, ut64 bits, const C55OpDes
 // shared register-modify / *sp(#k) / @#k addressing (byte1:byte2) and is wrapped
 // in dual(...) when byte3[5] is set; ACx is byte2[4:0]. Left unlifted, as in the
 // legacy decoder.
-// btstclr / btstset / btst / btstnot #k5, [dbl(]*Smem[)], TCx (opcode 0x91,
-// byte2[4:2] selecting op+access, 4 bytes): the extended memory bit-test family.
-// Per the C55x+ encoding the addressing is byte1:byte2[7:6], TCx is byte2[5], the
-// operation+access selector is byte2[4:2] (byte2[4:3]: 00 btstclr / 01 btstset /
-// 10 btst / 11 btstnot; byte2[2]: 0 word / 1 dbl), and the 5-bit bit number is
-// byte3[4:0]. The pre-existing word btstset (byte3[7:5]==000) keeps its own row;
-// these extended rows reject byte3[7:5]==000 so that form still falls through to
-// it. Left unlifted, as in the legacy decoder.
+// btstclr / btstset / btst / btstnot #k, [dbl(]*Smem[)], TCx (opcode 0x91, 4
+// bytes): the memory bit-test family. Per the C55x+ encoding (verified against TI
+// dis55 and SWPU104) the addressing is byte1:byte2[7:6], TCx is byte2[5], and
+// byte2[4:2] selects operation and access width (byte2[4:3]: 00 btstclr / 01
+// btstset / 10 btst / 11 btstnot; byte2[2]: 0 word / 1 dbl). The immediate bit
+// number is byte3[4:0] in the register / indirect forms but byte3[3:0] in the
+// long-absolute *(#k24) form. Left unlifted, as in the
+// legacy decoder.
 static void c55plus_x_btx_mem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
-	if ((((bits >> 5) & 0x7)) == 0) {
-		// byte3[7:5]==000 is the word btstset form: abandon so it falls through.
-		out->kind = C55_OP_INVALID;
-		return;
-	}
 	ut8 b_ar = (ut8)((bits >> 16) & 0xff); // byte1
-	ut8 b_mode = (ut8)((bits >> 8) & 0xff); // byte2 (smem_amode reads only [7:6])
+	ut8 b_mode = (ut8)(((bits >> 8) & 0xff) & ~0x20); // byte2, TC bit (byte2[5]) cleared
 	if (!c55plus_smem_amode(b_ar, b_mode, out)) {
 		out->kind = C55_OP_INVALID;
 		return;
@@ -1432,8 +1429,18 @@ static void c55plus_x_btx_mem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *
 static void c55plus_x_btx_bit(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	(void)d;
+	// The bit-number field width depends on the addressing mode (verified against
+	// TI dis55): the long-absolute *(#k24) form uses 4 bits (byte3[3:0]); the
+	// register / indirect forms use 5 bits (byte3[4:0]).
+	C55Operand mem = { 0 };
+	ut8 b_ar = (ut8)((bits >> 16) & 0xff); // byte1
+	ut8 b_mode = (ut8)(((bits >> 8) & 0xff) & ~0x20); // byte2, TC bit (byte2[5]) cleared
+	ut64 mask = 0x1f;
+	if (c55plus_smem_amode(b_ar, b_mode, &mem) && mem.amode == C55_AM_ABSOLUTE) {
+		mask = 0xf;
+	}
 	out->kind = C55_OP_IMM;
-	out->imm = bits & 0x1f; // byte3[4:0]
+	out->imm = bits & mask;
 	out->width = 16;
 }
 static void c55plus_x_btx_tc(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
@@ -2016,34 +2023,6 @@ static void c55plus_x_b1_imm(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	out->width = 16;
 }
 
-// btstset #k, *Smem, TCx (opcode 0x91, base 4 bytes): test-and-set a memory bit.
-// The bit number is byte3[4:0]; the Smem operand is byte1:byte2 but byte2[5]
-// carries the TC selector (TC1/TC2) rather than addressing, so it is masked out
-// before the shared Smem decode. Left unlifted, as in the legacy decoder.
-static void c55plus_x_btstset_mem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
-	(void)a;
-	(void)d;
-	ut8 b_ar = (ut8)((bits >> 16) & 0xff); // byte1
-	ut8 b_mode = (ut8)(((bits >> 8) & 0xff) & ~0x20); // byte2 with the TC bit cleared
-	if (!c55plus_smem_amode(b_ar, b_mode, out)) {
-		out->kind = C55_OP_INVALID;
-	}
-}
-static void c55plus_x_btstset_bit(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
-	(void)a;
-	(void)d;
-	out->kind = C55_OP_IMM;
-	out->imm = bits & 0xf; // byte3[3:0]
-	out->width = 16;
-}
-static void c55plus_x_btstset_tc(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
-	(void)a;
-	(void)d;
-	out->kind = C55_OP_COND;
-	out->cond_is_flag = true;
-	out->cond_flag = (ut8)(4 + ((bits >> 13) & 1)); // byte2[5]
-}
-
 // Whole-accumulator destination ACx in byte2[4:0] (0x5c dbl load).
 static void c55plus_x_acc(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
@@ -2124,58 +2103,34 @@ static void c55plus_x_gr6(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C
 	out->width = c55plus_reg_width(a, &out->reg);
 }
 
-// Double-word memory source of "copy dbl(*Smem), xar" (opcode 0x56, 3 bytes).
-// The addressing differs from the standard Smem byte layout: byte1[3:0] is the
-// base ARn and byte1[7:4] is a short index k4 (0 -> plain indirect, non-zero ->
-// short(#k4)). byte2[7:6] selects the addressing group (10 = the indirect /
-// indexed dbl form decoded here); byte2[5] = 0 marks the double-word (dbl)
-// access and byte2[3:0] is the xar destination. The register-modify (00),
-// direct (11), and byte/half (byte2[5]=1) forms fall back to the legacy decoder.
-static void c55plus_x_copy_dbl_mem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
-	(void)a;
+// Memory source of the copy(ALLa = Smem) (opcode 0x54-0x57 LD_R, 3+ bytes) form.
+// The Smem addressing is the standard byte1:byte2[7:6] matrix (so the const-index
+// *ARn(#K16) and absolute forms extend the instruction); the access is dbl iff the
+// destination register is a long (>16-bit) register, matching TI dis55.
+static void c55plus_x_copy_smem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
-	ut8 b1 = (ut8)((bits >> 8) & 0xff);
-	ut8 b2 = (ut8)(bits & 0xff);
-	ut8 grp = (ut8)((b2 >> 6) & 3);
-	if ((b2 >> 5) & 1) {
-		out->kind = C55_OP_INVALID; // byte/half access, not the dbl form
+	ut8 b_ar = (ut8)((bits >> 8) & 0xff); // byte1
+	ut8 b_mode = (ut8)(bits & 0xff); // byte2
+	if (!c55plus_smem_amode(b_ar, b_mode, out)) {
+		out->kind = C55_OP_INVALID;
 		return;
 	}
-	if (grp == 2) {
-		// indirect / indexed-short: byte1 holds the base ARn (low nibble) and a
-		// short index k4 (high nibble).
-		out->kind = C55_OP_MEM;
+	C55Reg reg = { 0 };
+	ut8 alla = (ut8)((((bits >> 16) & 0x3) << 6) | (bits & 0x3f)); // byte0[1:0]:byte2[5:0]
+	c55plus_gr1(alla, &reg);
+	if (c55plus_reg_width(a, &reg) > 16) {
 		out->access = 32;
 		out->dbl = true;
-		c55plus_gr1((ut8)(32 + (b1 & 0x0f)), &out->reg); // base ARn (low half of XARn)
-		ut8 k4 = (ut8)((b1 >> 4) & 0x0f);
-		if (k4) {
-			out->amode = C55_AM_INDEXED;
-			out->disp = k4;
-		} else {
-			out->amode = C55_AM_INDIRECT;
-		}
-		return;
 	}
-	if (grp == 3 && ((b1 >> 7) & 1)) {
-		// SP-relative *sp(#k): the data address is (sp + k) << 1 (a byte
-		// address), 7-bit offset k = byte1[6:0].
-		out->kind = C55_OP_MEM;
-		out->access = 32;
-		out->dbl = true;
-		out->amode = C55_AM_INDEXED;
-		c55plus_gr1(53, &out->reg); // sp
-		out->disp = (ut8)(b1 & 0x7f);
-		return;
-	}
-	out->kind = C55_OP_INVALID; // register-modify / DP-direct -> legacy
 }
 
-// xar destination of "copy dbl(*Smem), xar" (opcode 0x56): byte2[3:0].
-static void c55plus_x_copy_xar(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
+// Destination register ALLa of copy(ALLa = Smem): the 8-bit register id is
+// byte0[1:0] (high 2 bits) joined with byte2[5:0].
+static void c55plus_x_copy_alla(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
+	ut8 alla = (ut8)((((bits >> 16) & 0x3) << 6) | (bits & 0x3f)); // byte0[1:0]:byte2[5:0]
 	out->kind = C55_OP_REG;
-	c55plus_gr1((ut8)(128 + (bits & 0x0f)), &out->reg); // xar0-15 (gr1 slots 128-143)
+	c55plus_gr1(alla, &out->reg);
 	out->width = c55plus_reg_width(a, &out->reg);
 }
 
@@ -2887,6 +2842,17 @@ static void c55plus_x_80_mem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	}
 }
 
+// Destination Ra of the 0x80 "Ra = Rb + Smem" (ADD_RM) form: a 7-bit register
+// field, low 6 bits in byte2[5:0] and the high bit in byte3[7] (so e.g. 0x30 ->
+// T0, 0x40 -> AC0.H). The source Rb shares byte3 (its 7-bit field is byte3[6:0]).
+static void c55plus_x_add_rm_ra(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
+	(void)d;
+	ut8 idx = (ut8)((((bits >> 7) & 1) << 6) | ((bits >> 8) & 0x3f)); // byte3[7]:byte2[5:0]
+	out->kind = C55_OP_REG;
+	c55plus_gr1(idx, &out->reg);
+	out->width = c55plus_reg_width(a, &out->reg);
+}
+
 // memory move. Operand A is byte1 + byte2[7:6] decoded by the shared Smem
 // helper; operand B is byte3, whose [6:4] field selects a register-modify mode
 // (0 postdec, 1 postinc, 2 *arN(t0), 3 indirect, 4 *(arN-t0), 5 *(arN-t1),
@@ -3266,18 +3232,12 @@ static const C55InsnDef c55plus_table[] = {
 	// accumulator half is byte2[5]; the Smem destination uses the same
 	// addressing matrix as the load, with the same legacy fallback.
 	{ .mask = 0xff000000, .match = 0x51000000, .id = TMS320C55_INS_MOV, .ops = { { .fn = c55plus_x_ac_part }, { .fn = c55plus_x_smem_dest } } },
-	// copy Smem, reg (opcode 0x54, 3 bytes): byte2[5:0] is the destination
-	// register; the Smem source reuses the store addressing decode. Accumulator
-	// destinations (dbl() source) and reserved slots fall back to the legacy
-	// decoder.
-	{ .mask = 0xff000000, .match = 0x54000000, .id = TMS320C55_INS_COPY, .ops = { { .fn = c55plus_x_smem_dest }, { .fn = c55plus_x_gr6 } } },
-	// copy dbl(*Smem), xar (opcode 0x56, 3 bytes): a double-word load of a memory
-	// operand into an extended AR register. byte1 holds the base ARn (low nibble)
-	// and a short index k4 (high nibble); byte2[3:0] is the xar destination.
-	// Only the indirect / indexed dbl form is decoded here (see
-	// c55plus_x_copy_dbl_mem); the register-modify, direct, and byte/half forms
-	// fall back to the legacy decoder (the absolute-address form is opcode 0xd1).
-	{ .mask = 0xff000000, .match = 0x56000000, .id = TMS320C55_INS_COPY, .ops = { { .fn = c55plus_x_copy_dbl_mem }, { .fn = c55plus_x_copy_xar } } },
+	// copy(ALLa = Smem) (opcode 0x54-0x57 LD_R, 3+ bytes): load a memory operand
+	// into any register. The 8-bit register id is byte0[1:0]:byte2[5:0]; the Smem
+	// source uses the standard byte1:byte2[7:6] addressing matrix, and the access
+	// is dbl iff the destination is a long (>16-bit) register. Verified against TI
+	// dis55 and SWPU104.
+	{ .mask = 0xfc000000, .match = 0x54000000, .id = TMS320C55_INS_COPY, .ops = { { .fn = c55plus_x_copy_smem }, { .fn = c55plus_x_copy_alla } } },
 	// copy dbl(*(#addr)), xar (opcode 0xd1, 5 bytes): the absolute-address form of
 	// the double-word load. byte1[7:6]==10 selects the dbl xar destination
 	// (byte1[3:0]); the 24-bit byte address is bytes 2:4. Accumulator and
@@ -3547,9 +3507,10 @@ static const C55InsnDef c55plus_table[] = {
 	// mov #k16 << #sh, ACx (opcode 0xc2, byte1[7]==1). Lifted by the shared
 	// shifted-immediate load path.
 	{ .mask = 0xff800000, .match = 0xc2800000, .id = TMS320C55_INS_MOV, .lop = C55_LOP_MOVSHL, .len = 5, .ops = { { .fn = c55plus_x_c2_imm }, { .fn = c55plus_x_c2_acy } } },
-	// add *Smem, ACx, ACy (opcode 0x80, 4 bytes). Same operand shape as 0x85.
-	// Left unlifted.
-	{ .mask = 0xff000000, .match = 0x80000000, .id = TMS320C55_INS_ADD, .len = 4, .ops = { { .fn = c55plus_x_80_mem }, { .fn = c55plus_x_85_acx }, { .fn = c55plus_x_85_acy } } },
+	// Ra = Rb + Smem (opcode 0x80, ADD_RM, 4 bytes): the destination Ra is the
+	// 6-bit byte2[5:0] register, the source Rb is byte3 (gr1_sub7), and Smem is
+	// byte1:byte2[7:6]. Verified against TI dis55. Left unlifted.
+	{ .mask = 0xff000000, .match = 0x80000000, .id = TMS320C55_INS_ADD, .len = 4, .ops = { { .fn = c55plus_x_80_mem }, { .fn = c55plus_x_85_acx }, { .fn = c55plus_x_add_rm_ra } } },
 	// or *Smem, ACx, ACy (opcode 0x85, 4 bytes). Left unlifted.
 	{ .mask = 0xff000000, .match = 0x85000000, .id = TMS320C55_INS_OR, .len = 4, .ops = { { .fn = c55plus_x_85_mem }, { .fn = c55plus_x_85_acx }, { .fn = c55plus_x_85_acy } } },
 	// sub ACx.<h/l>, *Smem, ACy.<h/l> (opcode 0x82, 4 bytes). Left unlifted.
@@ -3571,18 +3532,19 @@ static const C55InsnDef c55plus_table[] = {
 	{ .mask = 0xff0000c0, .match = 0xb7000000, .id = TMS320C55_INS_ADD, .len = 5, .ops = { { .fn = c55plus_x_b7_mem }, { .fn = c55plus_x_b7_acx }, { .fn = c55plus_x_b7_acy } } },
 	{ .mask = 0xff0000c0, .match = 0xb7000040, .id = TMS320C55_INS_SUB, .len = 5, .ops = { { .fn = c55plus_x_b7_mem }, { .fn = c55plus_x_b7_acx }, { .fn = c55plus_x_b7_acy } } },
 	{ .mask = 0xff0000c0, .match = 0xb70000c0, .id = TMS320C55_INS_MOV, .len = 5, .ops = { { .fn = c55plus_x_b7_mem }, { .fn = c55plus_x_b7_acy } } },
-	// btstclr / btstset / btst / btstnot #k5, [dbl(]*Smem[)], TCx (opcode 0x91,
-	// byte2[4:2] selecting op+access): the extended memory bit-test family. Each row
-	// pins byte2[4:2]; the shared mem extractor rejects byte3[7:5]==000 so the word
-	// btstset below still matches that form. Left unlifted, as in the legacy decoder.
+	// btstclr / btstset / btst / btstnot #k, [dbl(]*Smem[)], TCx (opcode 0x91, 4
+	// bytes): the memory bit-test family. byte2[4:3] selects the operation (00
+	// btstclr / 01 btstset / 10 btst / 11 btstnot) and byte2[2] the access width (0
+	// word / 1 dbl); the two rows per operation cover both widths. Verified against
+	// TI dis55 and SWPU104. Left unlifted, as in the legacy decoder.
+	{ .mask = 0xff001c00, .match = 0x91000000, .id = TMS320C55_INS_BTSTCLR, .len = 4, .ops = { { .fn = c55plus_x_btx_bit }, { .fn = c55plus_x_btx_mem }, { .fn = c55plus_x_btx_tc } } },
 	{ .mask = 0xff001c00, .match = 0x91000400, .id = TMS320C55_INS_BTSTCLR, .len = 4, .ops = { { .fn = c55plus_x_btx_bit }, { .fn = c55plus_x_btx_mem }, { .fn = c55plus_x_btx_tc } } },
+	{ .mask = 0xff001c00, .match = 0x91000800, .id = TMS320C55_INS_BTSTSET, .len = 4, .ops = { { .fn = c55plus_x_btx_bit }, { .fn = c55plus_x_btx_mem }, { .fn = c55plus_x_btx_tc } } },
 	{ .mask = 0xff001c00, .match = 0x91000c00, .id = TMS320C55_INS_BTSTSET, .len = 4, .ops = { { .fn = c55plus_x_btx_bit }, { .fn = c55plus_x_btx_mem }, { .fn = c55plus_x_btx_tc } } },
+	{ .mask = 0xff001c00, .match = 0x91001000, .id = TMS320C55_INS_BTST, .len = 4, .ops = { { .fn = c55plus_x_btx_bit }, { .fn = c55plus_x_btx_mem }, { .fn = c55plus_x_btx_tc } } },
 	{ .mask = 0xff001c00, .match = 0x91001400, .id = TMS320C55_INS_BTST, .len = 4, .ops = { { .fn = c55plus_x_btx_bit }, { .fn = c55plus_x_btx_mem }, { .fn = c55plus_x_btx_tc } } },
+	{ .mask = 0xff001c00, .match = 0x91001800, .id = TMS320C55_INS_BTSTNOT, .len = 4, .ops = { { .fn = c55plus_x_btx_bit }, { .fn = c55plus_x_btx_mem }, { .fn = c55plus_x_btx_tc } } },
 	{ .mask = 0xff001c00, .match = 0x91001c00, .id = TMS320C55_INS_BTSTNOT, .len = 4, .ops = { { .fn = c55plus_x_btx_bit }, { .fn = c55plus_x_btx_mem }, { .fn = c55plus_x_btx_tc } } },
-	// btstset #k, *Smem, TCx (opcode 0x91, byte3[7:5]==000): test-and-set a memory
-	// bit. The other 0x91 byte3[7:5] sub-codes (btstclr and the dbl-operand forms)
-	// are left to the legacy decoder.
-	{ .mask = 0xff0000e0, .match = 0x91000000, .id = TMS320C55_INS_BTSTSET, .len = 4, .ops = { { .fn = c55plus_x_btstset_bit }, { .fn = c55plus_x_btstset_mem }, { .fn = c55plus_x_btstset_tc } } },
 	// bfxtr #k16, ACsrc, ACdst (opcode 0xc6, 5 bytes): bit-field extract, left
 	// unlifted as in the legacy decoder. byte2[7:5]==011 is fixed (in the mask):
 	// byte2[7] distinguishes bfxtr from the bfxpa expand form.
