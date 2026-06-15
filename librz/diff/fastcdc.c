@@ -332,7 +332,7 @@ static void fastcdc_chunker_read_buffer(FastCDCChunker *chunker) {
 	}
 
 	if (n > 0) {
-		memcpy(chunker->buf, &chunker->buf[chunker->position], n);
+		memmove(chunker->buf, &chunker->buf[chunker->position], n);
 	}
 	chunker->position = 0;
 
