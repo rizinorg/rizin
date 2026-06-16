@@ -1,0 +1,196 @@
+NAME=md1rom synthetic GFH firmware image
+FILE=bins/mtk/md1rom
+CMDS=<<EOF
+iI
+echo ---
+iH
+echo ---
+iS
+echo ---
+ie
+echo ---
+s 0x90000000
+pi 4
+EOF
+EXPECT=<<EOF
+arch     mips
+cpu      nanomips
+features N/A
+baddr    0x90000000
+binsz    0x00000160
+bintype  firmware
+bits     32
+class    N/A
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  MediaTek Modem
+maxopsz  6
+minopsz  2
+os       N/A
+cc       N/A
+pcalign  2
+rpath    N/A
+subsys   modem
+stripped false
+havecode true
+va       true
+static   true
+linenum  false
+lsyms    false
+canary   false
+pie      false
+relrocs  false
+nx       false
+---
+gfh_file_info:
+  magic_version: 0x14d4d4d
+  header_block_size: 56
+  header_type: "file_info"
+  name: "MD1_ROM"
+  file_type: 0x0
+  flash_type: 0x0
+  sig_type: 0x0
+  load_addr: 0x90000000
+  total_size: 0x160
+  max_size: 0x160
+  hdr_size: 0x60
+  sig_size: 0x0
+  jump_offset: 0x60
+  entry_point: 0x90000000
+gfh_headers:
+  - file_offset: 0x38
+    type: "bl_info"
+    type_id: 0x1
+    size: 20
+  - file_offset: 0x4c
+    type: "brom_cfg"
+    type_id: 0x7
+    size: 16
+code_offset: 0x60
+code_size: 0x100
+
+---
+     paddr  size      vaddr vsize align perm name   type flags 
+---------------------------------------------------------------
+0x00000000  0x60 0x00000000  0x60   0x0 -r-- header      
+0x00000060 0x100 0x90000000 0x100   0x0 -r-x code        
+---
+     vaddr      paddr     hvaddr      haddr type    
+----------------------------------------------------
+0x90000000 0x00000060 ---------- ---------- program
+---
+nop
+nop
+nop
+nop
+EOF
+RUN
+
+NAME=md1img synthetic container with md1rom section
+FILE=bins/mtk/md1img
+CMDS=<<EOF
+iI
+echo ---
+iH
+echo ---
+iS
+echo ---
+ie
+echo ---
+s 0x90000000
+pi 4
+EOF
+EXPECT=<<EOF
+arch     mips
+cpu      nanomips
+features N/A
+baddr    0x90000000
+binsz    0x00000360
+bintype  firmware
+bits     32
+class    N/A
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  MediaTek Modem
+maxopsz  6
+minopsz  2
+os       N/A
+cc       N/A
+pcalign  2
+rpath    N/A
+subsys   modem
+stripped false
+havecode true
+va       true
+static   true
+linenum  false
+lsyms    false
+canary   false
+pie      false
+relrocs  false
+nx       false
+---
+num_sections: 1
+sections:
+  - name: "md1rom"
+    data_size: 0x160
+    data_offset: 0x200
+    maddr: 0x0
+    mode: 0x0
+    hdr_size: 0x200
+    hdr_version: 0x0
+    img_type: 0x0
+    img_list_end: 0x0
+    align_size: 0x0
+gfh_file_info:
+  magic_version: 0x14d4d4d
+  header_block_size: 56
+  header_type: "file_info"
+  name: "MD1_ROM"
+  file_type: 0x0
+  flash_type: 0x0
+  sig_type: 0x0
+  load_addr: 0x90000000
+  total_size: 0x160
+  max_size: 0x160
+  hdr_size: 0x60
+  sig_size: 0x0
+  jump_offset: 0x60
+  entry_point: 0x90000000
+gfh_headers:
+  - file_offset: 0x38
+    type: "bl_info"
+    type_id: 0x1
+    size: 20
+  - file_offset: 0x4c
+    type: "brom_cfg"
+    type_id: 0x7
+    size: 16
+
+---
+     paddr  size      vaddr vsize align perm name        type flags 
+--------------------------------------------------------------------
+0x00000060 0x100 0x90000000 0x100   0x0 -r-x md1rom.code      
+---
+     vaddr      paddr     hvaddr      haddr type    
+----------------------------------------------------
+0x90000000 0x00000060 ---------- ---------- program
+---
+nop
+nop
+nop
+nop
+EOF
+RUN
