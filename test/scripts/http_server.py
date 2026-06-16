@@ -12,14 +12,14 @@ import subprocess
 
 def main():
     subprocess.run(
-        "python3 -m http.server --bind 127.0.0.1 --directory www &",
+        "python3 -m http.server 9000 --bind 127.0.0.1 --directory www &",
         shell=True,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
     while True:
         try:
-            http.client.HTTPConnection("127.0.0.1", 8000, timeout=5).connect()
+            http.client.HTTPConnection("127.0.0.1", 9000, timeout=5).connect()
         except:
             continue
         break
