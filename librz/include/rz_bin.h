@@ -18,6 +18,7 @@ typedef struct rz_bin_file_t RzBinFile;
 typedef struct rz_bin_reloc_storage_t RzBinRelocStorage;
 
 #include <rz_bin_dwarf.h>
+#include <rz_bin_stabs.h>
 #include <rz_pdb.h>
 
 #ifdef __cplusplus

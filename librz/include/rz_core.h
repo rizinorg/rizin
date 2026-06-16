@@ -1015,6 +1015,7 @@ RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile);
 RZ_API bool rz_core_bin_apply_maps(RzCore *core, RzBinFile *binfile, bool va);
 RZ_API bool rz_core_bin_apply_main(RzCore *r, RzBinFile *binfile, bool va);
 RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile);
+RZ_API bool rz_core_bin_apply_stabs(RzCore *core, RzBinFile *binfile);
 RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, bool va);
 RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, bool va);
 RZ_API bool rz_core_bin_apply_relocs(RzCore *core, RzBinFile *binfile, bool va);

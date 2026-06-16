@@ -27,6 +27,7 @@ if get_option('enable_tests') and cli_enabled
     'pdb',
     'project_migrate',
     'rzpipe',
+    'stabs',
     'str_search',
   ]
 
