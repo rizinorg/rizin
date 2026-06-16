@@ -248,20 +248,17 @@ e asm.flags.real=false
 pd 1
 EOF
 EXPECT=<<EOF
-            0x0804921a      call  __x86.get_pc_thunk.si                ; sym.__x86.get_pc_thunk.si
-            0x08049249      call  QFlags<Qt::WindowType>::QFlags(int QFlags<Qt::WindowType>::Private::*) ; method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
-            0x08049278      call  imp.QLabel::QLabel(QString const&, QWidget*, QFlags<Qt::WindowType>) ; method.QLabel.QLabel_QString_const___QWidget___QFlags_Qt::WindowType
+            0x0804921a      call  __x86.get_pc_thunk.si
+            0x08049249      call  QFlags<Qt::WindowType>::QFlags(int QFlags<Qt::WindowType>::Private::*)
+            0x08049278      call  imp.QLabel::QLabel(QString const&, QWidget*, QFlags<Qt::WindowType>)
 
-            ; sym.__x86.get_pc_thunk.si
             0x0804921a      call __x86.get_pc_thunk.si
-            ; method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
             0x08049249      call QFlags<Qt::WindowType>::QFlags(int QFlags<Qt::WindowType>::Private::*)
-            ; method.QLabel.QLabel_QString_const___QWidget___QFlags_Qt::WindowType
             0x08049278      call imp.QLabel::QLabel(QString const&, QWidget*, QFlags<Qt::WindowType>)
 
-|           0x0804921a      call  __x86.get_pc_thunk.si                ; sym.__x86.get_pc_thunk.si
-|           0x08049249      call  QFlags<Qt::WindowType>::QFlags(int QFlags<Qt::WindowType>::Private::*) ; method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
-|           0x08049278      call  imp.QLabel::QLabel(QString const&, QWidget*, QFlags<Qt::WindowType>) ; method.QLabel.QLabel_QString_const___QWidget___QFlags_Qt::WindowType
+|           0x0804921a      call  __x86.get_pc_thunk.si
+|           0x08049249      call  QFlags<Qt::WindowType>::QFlags(int QFlags<Qt::WindowType>::Private::*)
+|           0x08049278      call  imp.QLabel::QLabel(QString const&, QWidget*, QFlags<Qt::WindowType>)
 
 |           0x0804921a      call  sym.__x86.get_pc_thunk.si
 |           0x08049249      call  method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::

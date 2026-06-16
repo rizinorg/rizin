@@ -3600,6 +3600,15 @@ static void ds_print_fcn_name(RzDisasmState *ds) {
 	if (ds->analysis_op.type != RZ_ANALYSIS_OP_TYPE_JMP && ds->analysis_op.type != RZ_ANALYSIS_OP_TYPE_CJMP && ds->analysis_op.type != RZ_ANALYSIS_OP_TYPE_CALL) {
 		return;
 	}
+	if (ds->core->flags && ds->core->flags->realnames) {
+		// When realnames are enabled the jump/call target is shown by its real
+		// (demangled) name directly in the operand.
+		RzFlagItem *real_flag = rz_flag_get_by_spaces(ds->core->flags, ds->analysis_op.jump,
+			RZ_FLAGS_FS_FUNCTIONS, RZ_FLAGS_FS_IMPORTS, RZ_FLAGS_FS_SYMBOLS, RZ_FLAGS_FS_CLASSES, NULL);
+		if (real_flag && real_flag->realname && strstr_opstr(ds, real_flag->realname)) {
+			return;
+		}
+	}
 	RzAnalysisFunction *f = fcnIn(ds, ds->analysis_op.jump, RZ_ANALYSIS_FCN_TYPE_NULL);
 	if (!f && ds->core->flags && (!ds->core->vmode || (!ds->subjmp && !ds->subnames))) {
 		const char *arch;
