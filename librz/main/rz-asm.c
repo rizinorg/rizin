@@ -637,7 +637,9 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			RzCore *core = rz_core_new();
 			RzAsm *tmp_asm = core->rasm;
 			core->rasm = as->a;
-			rz_core_cpu_descs_print(core, opt.arg);
+			if (rz_core_cpu_descs_print(core, opt.arg)) {
+				ret = 1;
+			};
 			rz_cons_flush();
 			core->rasm = tmp_asm;
 			rz_core_free(core);

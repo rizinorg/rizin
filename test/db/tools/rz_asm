@@ -675,3 +675,24 @@ EXPECT=<<EOF
 tricore         Generic TriCore CPU family by Infineon
 EOF
 RUN
+
+NAME=rz-asm unknown architecture
+TOOL=rz-asm
+ARGS=-m random
+EXIT_STATUS=1
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Unknown architecture: 'random'
+Use 'rz-asm -L' to list all available architectures
+EOF
+RUN
+
+NAME=rz-asm cpu desc does not exist
+TOOL=rz-asm
+ARGS=-m cbpf
+EXIT_STATUS=1
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: No CPU descriptions exist for this architecture
+EOF
+RUN
