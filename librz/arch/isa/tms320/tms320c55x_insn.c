@@ -14,6 +14,8 @@ static const char *const tms320c55x_insn_names[] = {
 	[TMS320C55_INS_ABDST] = "abdst",
 	[TMS320C55_INS_ABS] = "abs",
 	[TMS320C55_INS_ADD] = "add",
+	[TMS320C55_INS_ADDV] = "addv",
+	[TMS320C55_INS_ADDRV] = "addrv",
 	[TMS320C55_INS_ADDSUB] = "addsub",
 	[TMS320C55_INS_ADDSUB2CC] = "addsub2cc",
 	[TMS320C55_INS_ADDSUBCC] = "addsubcc",
@@ -41,6 +43,9 @@ static const char *const tms320c55x_insn_names[] = {
 	[TMS320C55_INS_CMP] = "cmp",
 	[TMS320C55_INS_CMPAND] = "cmpand",
 	[TMS320C55_INS_CMPOR] = "cmpor",
+	[TMS320C55_INS_COPY] = "copy",
+	[TMS320C55_INS_SWAPP] = "swapp",
+	[TMS320C55_INS_SWAP4] = "swap4",
 	[TMS320C55_INS_DELAY] = "delay",
 	[TMS320C55_INS_DMAXDIFF] = "dmaxdiff",
 	[TMS320C55_INS_DMINDIFF] = "dmindiff",
@@ -69,6 +74,9 @@ static const char *const tms320c55x_insn_names[] = {
 	[TMS320C55_INS_MPYMK] = "mpymk",
 	[TMS320C55_INS_NEG] = "neg",
 	[TMS320C55_INS_NOP] = "nop",
+	[TMS320C55_INS_NOP_16] = "nop_16",
+	[TMS320C55_INS_ESTOP] = "estop",
+	[TMS320C55_INS_ECOPR] = "ecopr",
 	[TMS320C55_INS_NOT] = "not",
 	[TMS320C55_INS_OR] = "or",
 	[TMS320C55_INS_POP] = "pop",
@@ -239,6 +247,15 @@ RZ_API int tms320c55x_insn_optype(TMS320C55InsID id) {
 		return RZ_ANALYSIS_OP_TYPE_LEA;
 	case TMS320C55_INS_SWAP:
 		return RZ_ANALYSIS_OP_TYPE_XCHG;
+	/* ABS is intentionally NOT mapped: although RZ_ANALYSIS_OP_TYPE_ABS
+	 * exists as an enum value, rizin renders it as "undefined", which is
+	 * worse than leaving the op at NULL. Keep it NULL. */
+	case TMS320C55_INS_ABDST:
+		/* Absolute distance |a-b| (accumulate): difference-based. */
+		return RZ_ANALYSIS_OP_TYPE_SUB;
+	case TMS320C55_INS_SAT:
+		/* Saturate: clamp a value into range — a (conditional) move. */
+		return RZ_ANALYSIS_OP_TYPE_MOV;
 	case TMS320C55_INS_NOP:
 	case TMS320C55_INS_IDLE:
 		return RZ_ANALYSIS_OP_TYPE_NOP;
@@ -262,9 +279,9 @@ RZ_API int tms320c55x_insn_optype(TMS320C55InsID id) {
 		return RZ_ANALYSIS_OP_TYPE_TRAP;
 	default:
 		/* Control flow (B/BCC/CALL/CALLCC/...), repeats (RPT*), XCC,
-		 * SAT, ABS, SIM_TRIG and anything else: leave to the byte-level
-		 * classifier, which sets jump/call targets, stack deltas and
-		 * operand fields. */
+		 * ABS (renders as "undefined" — see above), SIM_TRIG and anything
+		 * else: leave to the byte-level classifier, which sets jump/call
+		 * targets, stack deltas and operand fields. */
 		return RZ_ANALYSIS_OP_TYPE_NULL;
 	}
 }

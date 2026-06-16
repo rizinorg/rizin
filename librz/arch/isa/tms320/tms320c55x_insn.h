@@ -32,6 +32,8 @@ typedef enum {
 	TMS320C55_INS_ABDST,
 	TMS320C55_INS_ABS,
 	TMS320C55_INS_ADD,
+	TMS320C55_INS_ADDV,
+	TMS320C55_INS_ADDRV,
 	TMS320C55_INS_ADDSUB,
 	TMS320C55_INS_ADDSUB2CC,
 	TMS320C55_INS_ADDSUBCC,
@@ -127,6 +129,14 @@ typedef enum {
 	TMS320C55_INS_XCC,
 	TMS320C55_INS_XCCPART,
 	TMS320C55_INS_XOR,
+	// Appended at the end to keep the numeric ids of the entries above stable
+	// (op->id values are asserted by the analysis tests).
+	TMS320C55_INS_COPY,
+	TMS320C55_INS_SWAPP,
+	TMS320C55_INS_SWAP4,
+	TMS320C55_INS_NOP_16,
+	TMS320C55_INS_ESTOP,
+	TMS320C55_INS_ECOPR,
 } TMS320C55InsID;
 
 /** Human-readable mnemonic for a TMS320C55InsID (never NULL). */

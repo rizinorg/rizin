@@ -555,8 +555,8 @@ static bool test_rz_colorize_generic_3(void) {
 	RzPrint *p = setup_print();
 	RzAsmOp *asmop = rz_asm_op_new();
 	RzAnalysisOp *anaop = rz_analysis_op_new();
-	// "mov ac0.l, *ar2 || mov *(ar1+t0b) << t3, ac1" - 395102a0b411014033
-	ut8 buf[] = "\x39\x51\x02\xa0\xb4\x11\x01\x40\x33";
+	// "mov ac0.l, *ar2 || mov *(ar1+t0b) << t3, ac1" - 395102a0b411414033
+	ut8 buf[] = "\x39\x51\x02\xa0\xb4\x11\x41\x40\x33";
 	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
 	rz_analysis_op(a, anaop, 0x0, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 
@@ -589,8 +589,8 @@ static bool test_rz_colorize_generic_4(void) {
 	RzPrint *p = setup_print();
 	RzAsmOp *asmop = rz_asm_op_new();
 	RzAnalysisOp *anaop = rz_analysis_op_new();
-	// "mov ac0.l, *ar2 || mov *(ar1+t0b) << t3, ac1" - 395102a0b411014033
-	ut8 buf[] = "\x39\x51\x02\xa0\xb4\x11\x01\x40\x33";
+	// "mov ac0.l, *ar2 || mov *(ar1+t0b) << t3, ac1" - 395102a0b411414033
+	ut8 buf[] = "\x39\x51\x02\xa0\xb4\x11\x41\x40\x33";
 	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
 	rz_analysis_op(a, anaop, 0x0, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 

@@ -75,9 +75,32 @@ static bool coff_fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, size_
 	if (s->n_scnum < bin->hdr.f_nscns + 1 && s->n_scnum > 0) {
 		// first index is 0 that is why -1
 		sc_hdr = rz_vector_index_ptr(bin->scn_hdrs, s->n_scnum - 1);
-		ptr->paddr = sc_hdr->s_scnptr + s->n_value;
-		if (bin->scn_va) {
-			ptr->vaddr = bin->scn_va[s->n_scnum - 1] + s->n_value;
+		// In a fully linked executable (F_EXEC), a defined symbol's n_value is
+		// already the absolute virtual address, so it must not be re-based onto
+		// the section VA (that would double-count). The file offset is the
+		// section's file pointer plus the symbol's offset within the section.
+		if ((bin->hdr.f_flags & COFF_FLAGS_TI_F_EXEC) != 0) {
+			const ut32 loadable = COFF_SCN_CNT_CODE | COFF_SCN_CNT_INIT_DATA | COFF_SCN_CNT_UNIN_DATA;
+			if (sc_hdr->s_flags & loadable) {
+				ptr->vaddr = s->n_value;
+				ptr->paddr = sc_hdr->s_scnptr + (s->n_value - sc_hdr->s_vaddr);
+			} else {
+				// Symbol belongs to a non-loadable section (DWARF/debug, build
+				// attributes, .pinit). Its n_value is not an address in the
+				// loaded target space: TI in particular emits many .debug_line
+				// entries whose n_value is the *code* address of a source line.
+				// Placing those as flags drops a label in the middle of a real
+				// instruction, and "asm.flags.middle" then splits the
+				// instruction there and desyncs all following disassembly. Keep
+				// the symbol for reference but give it no loadable vaddr.
+				ptr->vaddr = UT64_MAX;
+				ptr->paddr = sc_hdr->s_scnptr + s->n_value;
+			}
+		} else {
+			ptr->paddr = sc_hdr->s_scnptr + s->n_value;
+			if (bin->scn_va) {
+				ptr->vaddr = bin->scn_va[s->n_scnum - 1] + s->n_value;
+			}
 		}
 	}
 	if (ptr->is_imported) {
@@ -260,7 +283,18 @@ static RzPVector /*<RzBinMap *>*/ *coff_maps(RzBinFile *bf) {
 
 	size_t i = 0;
 	CoffScnHdr *hdr;
+	// In a linked executable, non-loadable sections (DWARF/debug, build
+	// attributes, .pinit) carry s_vaddr == 0. Mapping them would place them at
+	// VA 0 and, given their size, shadow the real low-addressed loadable
+	// sections (e.g. .text at 0x100), so reads there return debug bytes. Only
+	// map sections that are actually loaded into the target address space:
+	// those carrying code or initialized/uninitialized data.
+	const bool is_exec = (obj->hdr.f_flags & COFF_FLAGS_TI_F_EXEC) != 0;
+	const ut32 loadable = COFF_SCN_CNT_CODE | COFF_SCN_CNT_INIT_DATA | COFF_SCN_CNT_UNIN_DATA;
 	rz_vector_enumerate (obj->scn_hdrs, hdr, i) {
+		if (is_exec && !(hdr->s_flags & loadable)) {
+			continue;
+		}
 		RzBinMap *ptr = RZ_NEW0(RzBinMap);
 		if (!ptr) {
 			return ret;

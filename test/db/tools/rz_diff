@@ -24,7 +24,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-
 NAME=rz-diff distance comparison (myers)
 TOOL=rz-diff
 ARGS=-d myers bins/java/Main.java.1.7.class bins/java/Main.java.15.class
@@ -48,6 +47,33 @@ ARGS=-qd myers bins/java/Main.java.1.7.class bins/java/Main.java.15.class
 EXPECT=<<EOF
 0.769
 602
+EOF
+RUN
+
+NAME=rz-diff distance comparison (lcs-roll)
+TOOL=rz-diff
+ARGS=-d lcs-roll bins/java/Main.java.1.7.class bins/java/Main.java.15.class
+EXPECT=<<EOF
+similarity: 0.822
+distance: 350
+chunksize: 128
+EOF
+RUN
+
+NAME=rz-diff distance comparison (lcs-roll) JSON
+TOOL=rz-diff
+ARGS=-jd lcs-roll -0 64 bins/java/Main.java.1.7.class bins/java/Main.java.15.class
+EXPECT=<<EOF
+{"similarity":0.781069,"distance":303,"chunk_size":64}
+EOF
+RUN
+
+NAME=rz-diff distance comparison (lcs-roll) QUIET
+TOOL=rz-diff
+ARGS=-qd lcs-roll -0 64 bins/java/Main.java.1.7.class bins/java/Main.java.15.class
+EXPECT=<<EOF
+0.781
+303
 EOF
 RUN
 

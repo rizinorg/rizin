@@ -8,6 +8,8 @@
 #include <rz_analysis.h>
 
 int tms320_c55x_plus_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
-	const ut8 *buf, int len);
+	const ut8 *buf, int len, RzAnalysisOpMask mask);
+
+RZ_IPI RzAnalysisILConfig *tms320_c55x_plus_il_config(RZ_NONNULL RzAnalysis *analysis);
 
 #endif /* ANALYSIS_C55_PLUS_H */

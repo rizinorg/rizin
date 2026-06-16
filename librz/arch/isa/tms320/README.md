@@ -38,7 +38,7 @@ Two distinct things share this name:
    documented in *SWPU086* (CPU Reference Guide, May 2005)
    and *SWPU104* (Algebraic Instruction Set, Dec 2006). Original name
    internally was "Ryujin"; appears in production silicon including
-   the Wrigley3G DSP baseband used in the Motorola Droid A855
+   a TMS320C55x+ DSP baseband (as used in some Motorola basebands)
    (firmware partition CG45.img, validated against version
    MSG39UPEU_A1.19_1.80 dated 2010-02-05).
    Several opcode slots differ from baseline c55x -- most notably
@@ -48,7 +48,7 @@ Two distinct things share this name:
 
 Rizin's `c55x+` plugin handles both: the byte-driven analyzer
 classifies the opcodes that overlap between the two, and the
-disassembler covers SWPU086/104 encodings used by the Wrigley3G
+disassembler covers SWPU086/104 encodings used by such
 silicon. SWPU086/104 are not redistributed in this tree.
 
 ## Selecting a cpu
