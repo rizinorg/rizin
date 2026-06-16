@@ -12,8 +12,9 @@ import subprocess
 
 def main():
     subprocess.run(
-        "python3 -m http.server 9000 --bind 127.0.0.1 --directory www &",
+        "python3 -m http.server 9000 --bind 127.0.0.1 &",
         shell=True,
+        cwd="www",
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
