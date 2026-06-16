@@ -7,6 +7,7 @@
 #include "asm_private.h"
 #include <tms320/c55x_plus/c55plus_arch.h>
 #include <tms320/c55x/c55x_analysis.h>
+#include <tms320/c54x/c54x.h>
 #include <tms320/c64x/c64x.h>
 
 typedef struct tms_cs_context_t {
@@ -18,14 +19,16 @@ static int tms320_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int l
 	if (a->cpu && !rz_str_casecmp(a->cpu, "c64x")) {
 		return tms320_c64x_disassemble(a, op, buf, len, ctx->c64x);
 	}
-	// C55x / C55x+ are decoded by the shared decode-IR engine. C54x has no
-	// instruction decoder yet, so it reports invalid; any other cpu is unknown.
+	// C55x / C55x+ / C54x are decoded by the shared decode-IR engine; any other
+	// cpu is unknown.
 	const C55ArchDesc *desc = NULL;
 	if (a->cpu && !rz_str_casecmp(a->cpu, "c55x+")) {
 		desc = &c55plus_arch_desc;
 	} else if (a->cpu && !rz_str_casecmp(a->cpu, "c55x")) {
 		desc = &c55x_arch_desc;
-	} else if (!a->cpu || rz_str_casecmp(a->cpu, "c54x")) {
+	} else if (a->cpu && !rz_str_casecmp(a->cpu, "c54x")) {
+		desc = &c54x_arch_desc;
+	} else {
 		rz_asm_op_set_asm(op, "unknown asm.cpu");
 		return op->size = -1;
 	}

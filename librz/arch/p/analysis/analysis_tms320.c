@@ -8,6 +8,7 @@
 
 #include <tms320/c55x/c55x_analysis.h>
 #include <tms320/c55x_plus/c55plus_analysis.h>
+#include <tms320/c54x/c54x.h>
 #include <tms320/c64x/c64x.h>
 
 typedef struct tms320_ctx_t {
@@ -22,6 +23,8 @@ int tms320_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 		return tms320_c55x_plus_op(analysis, op, addr, buf, len, mask);
 	} else if (cpu && rz_str_casecmp(cpu, "c64x") == 0) {
 		return tms320_c64x_op(analysis, op, addr, buf, len, mask, context->c64x);
+	} else if (cpu && rz_str_casecmp(cpu, "c54x") == 0) {
+		return tms320_c54x_op(analysis, op, addr, buf, len, mask);
 	}
 	return tms320_c55x_op_byte(analysis, op, addr, buf, len, mask);
 }

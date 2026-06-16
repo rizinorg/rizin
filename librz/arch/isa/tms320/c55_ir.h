@@ -167,6 +167,7 @@ typedef struct {
 	bool neg_imm; ///< IMM: a negated-magnitude immediate, always rendered "-0x%X" (even -0); see opcode 0x3e
 	bool shl_join; ///< IMM: render joined to the previous operand by " << " (the "ACx << #SHIFTW" syntax) rather than ", "
 	bool qual_join; ///< render joined to the previous operand by " || " (the b/call ACx "|| local()/|| far()" parallel qualifiers) rather than ", "
+	bool space_join; ///< render joined to the previous operand by " " (no comma); used for the first operand of the C54x parallel second operation ("|| add Xmem, dst")
 	C55Reg sh_mem_reg; ///< MEM: a register shift count Tx rendered as " << Tx" after the operand (the "Smem << Tx" forms), distinct from \ref index
 	bool sh_mem_reg_set; ///< MEM: \ref sh_mem_reg is present
 	bool mem_round; ///< MEM: render the whole memory operand wrapped in rnd(...) (the "mov rnd(Smem << Tx), ACx" rounding forms)
@@ -189,6 +190,8 @@ typedef struct {
 	bool cmp_imm; ///< COND: compare to an explicit immediate (#0x..) vs literal #0
 	bool cmp_mem; ///< COND: the left-hand side is a memory operand (cmp Smem <rel> #k)
 	bool elide_if_eq_prev; ///< REG: omit this operand (and its separator) when it equals the immediately preceding operand (mpyk/mack ACy defaulting to ACx)
+	bool circular; ///< MEM: C54x circular-addressing variant (the '%' suffix: *arN+%, *arN+0%, ...)
+	bool is_shift; ///< IMM: this operand is a standalone C54x shift count applied to the preceding value (\ref shamt / \ref sh_left carry the amount/direction)
 } C55Operand;
 
 /// Max operands: amar carries 3 memory operands (+dst); dmaxdiff/maxdiff reach 5.
@@ -390,6 +393,7 @@ typedef struct c55_arch_desc_t {
 	/// sub-op metadata on \ref C55Insn, returning false (-> legacy) on an
 	/// unrepresentable mode. NULL => the arch has no dual forms.
 	bool (*fill_dual)(const struct c55_arch_desc_t *a, ut64 bits, const C55InsnDef *def, C55Insn *out);
+	bool words_le; ///< instruction stream is a sequence of little-endian 16-bit words (C54x); the engine byte-swaps each word so the table can match the datasheet's MSB-first opcodes
 	bool cond_exec_prefix; ///< the arch has the 0x2e/0x2f conditional-execution prefix (C55x+); a leading 0x2e/0x2f is consumed and the following instruction decoded transparently
 	bool parallel_prefix; ///< the arch has the 0x3N parallel-pair prefix (C55x+): a leading byte in 0x30-0x3F introduces two independent sub-instructions joined by " || ", the low nibble giving the total byte length
 } C55ArchDesc;

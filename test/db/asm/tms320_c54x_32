@@ -1,0 +1,297 @@
+d "nop" 95f4
+d "b 0x100" 73f00001
+d "bd 0x100" 73f20001
+d "call 0x100" 74f00001
+d "calld 0x100" 74f20001
+d "ret" 00fc
+d "retd" 00fe
+d "rete" ebf4
+d "reted" ebf6
+d "retf" 9bf4
+d "retfd" 9bf6
+d "bacc a" e2f4
+d "baccd a" e2f6
+d "cala a" e3f4
+d "calad a" e3f6
+d "fb 0x2" 80f80200
+d "fbd 0x2" 80fa0200
+d "fcall 0xf" 80f90f00
+d "fcalld 0xf" 80fb0f00
+d "fret" e4f4
+d "fretd" e4f6
+d "frete" e5f4
+d "freted" e5f6
+d "fbacc a" e6f4
+d "reset" e0f7
+d "trap #0x1" c1f4
+d "intr #0x2" c2f7
+d "idle 1" e1f4
+d "idle 2" e1f6
+d "idle 3" e1f5
+d "ssbx sxm" b8f7
+d "ssbx intm" bbf7
+d "rsbx intm" bbf6
+d "rsbx ovm" b9f6
+d "rpt #0xf" 0fec
+d "rpt *ar3" 8347
+d "rptb 0x100" 72f00001
+d "rptbd 0x100" 72f20001
+d "rptz a, #0x1234" 71f03412
+d "ld @0x10, a" 1010
+d "ld *ar3, a" 8310
+d "ld *ar3+0, a" b310
+d "ld *ar3-, a" 8b10
+d "ld *+ar3, a" 9b10
+d "ld *(0x1234), a" fa103412
+d "ld #0x5, a" 05e8
+d "ld #0x1234, a" 20f03412
+d "ld #0x10, 5, b" 25f11000
+d "ld *ar2, 5, a" 0594
+d "ld *ar2, 16, a" 8244
+d "add *ar3, a" 8300
+d "add #0x1234, b" 00f33412
+d "add #0x10, 5, a" 05f01000
+d "add *ar2, 5, a" 0590
+d "add *ar2, *ar3, a" 01a0
+d "add *ar2, 16, a" 823c
+d "add *(0x1234), a" fa003412
+d "sub *ar3, a" 8308
+d "sub #0x1, a" 10f00100
+d "sub *ar2, 5, b" 0593
+d "sub *ar4, *ar5, b" 23a3
+d "mpy *ar2, a" 8220
+d "and *ar3, a" 8318
+d "and #0x1234, a" 30f03412
+d "or *ar3, b" 831b
+d "or #0x1234, b" 40f33412
+d "xor *ar3, a" 831c
+d "xor #0x1234, a" 50f03412
+d "stl a, *ar1" 8180
+d "stl a, 3, *ar2" 0398
+d "sth b, *ar2+" 9283
+d "sth b, 5, *ar2" 059b
+d "stlm a, ar3" 1388
+d "st t, *ar4" 848c
+d "st trn, *ar5" 858d
+d "st #0x1234, *ar1" 81763412
+d "stm #0x5678, ar2" 12777856
+d "mvdd *ar2+, *ar3+" 89e5
+d "mvdk *ar1, 0x100" 81710001
+d "mvdm 0x100, ar4" 14720001
+d "mvkd 0x100, *ar1" 81700001
+d "mvmd ar4, 0x100" 14730001
+d "mvmm ar2, ar3" 23e7
+d "mvmm sp, ar1" 81e7
+d "mvpd 0x100, *ar1" 817c0001
+d "mar *ar3+" 936d
+d "delay *ar2" 824d
+d "frame #-2" feee
+d "frame #10" 0aee
+d "bitf *ar1, #0x1234" 81613412
+d "cmpm *ar1, #0x1234" 81603412
+d "bc 0x100, agt" 46f80001
+d "bc 0x100, aeq" 45f80001
+d "cc 0x200, bneq" 4cf90002
+d "bcd 0x100, agt" 46fa0001
+d "ccd 0x200, bneq" 4cfb0002
+d "banz 0x100, *ar1-" 896c0001
+d "banzd 0x100, *ar1-" 896e0001
+d "stl a, *ar1(0xc)" e1800c00
+d "ld *ar1(0x1), a" e1100100
+d "ldm ar1, a" 1148
+d "ldm ar2, b" 1249
+d "ltd *ar3" 834c
+d "dst a, *ar4" 844e
+d "dst b, *ar5" 854f
+d "dst b, @0x0" 004f
+d "dadd *ar2, a" 8250
+d "dadd *ar2, a, b" 8251
+d "dsub *ar2, a" 8254
+d "dsubt *ar2, a" 825c
+d "dld *ar3, a" 8356
+d "dld *ar3, b" 8357
+d "mac *ar3, a" 8328
+d "mas *ar3, a" 832c
+d "macd *ar3, 0x100, a" 837a0001
+d "exp a" 8ef4
+d "norm a" 8ff4
+d "neg a, b" 84f5
+d "abs a" 85f4
+d "addc *ar3, a" 8306
+d "subb *ar3, a" 830e
+d "sftl b, -4" fcf3
+d "sftl a, 5" e5f0
+d "sftl a, 0" e0f0
+d "add a, 5, b" 05f5
+d "sub a, 5, b" 25f5
+d "and a, 5, b" 85f1
+d "or a, 5, b" a5f1
+d "xor a, 5, b" c5f1
+d "ld a, 5, b" 45f5
+d "ld b, a" 40f6
+d "add a, b" 00f5
+d "sub a, b" 20f5
+d "sfta a, -4, b" 7cf5
+d "sfta b, 5" 65f7
+d "cmpr 0, ar1" a9f4
+d "cmpr 1, ar2" aaf5
+d "cmpr 2, ar1" a9f6
+d "cmpr 3, ar2" aaf7
+d "abdst *ar2, *ar3" 01e3
+d "addm #0x1234, *ar1" 816b3412
+d "andm #0x1234, *ar1" 81683412
+d "orm #0x1234, *ar1" 81693412
+d "xorm #0x1234, *ar1" 816a3412
+d "firs *ar2, *ar3, 0x100" 01e00001
+d "lms *ar2, *ar3" 01e1
+d "max a" 86f4
+d "max b" 86f5
+d "min a" 87f4
+d "mpya *ar3" 8331
+d "mpya a" 8cf4
+d "mvdp *ar3, 0x100" 837d0001
+d "poly *ar3" 8336
+d "reada *ar3" 837e
+d "writa *ar3" 837f
+d "rnd a, b" 9ff5
+d "rol a" 91f4
+d "roltc a" 92f4
+d "ror a" 90f4
+d "sat a" 83f4
+d "sftc a" 94f4
+d "sqdst *ar2, *ar3" 01e2
+d "squr *ar3, a" 8326
+d "squr a, b" 8df5
+d "squra *ar3, a" 8338
+d "squrs *ar3, a" 833a
+d "bitt *ar3" 8334
+d "cmpl a, b" 93f5
+d "fcala a" e7f4
+d "fcalad a" e7f6
+d "exp b" 8ef5
+d "mpyu *ar3, a" 8324
+d "masa *ar3" 8333
+d "bit *ar3, 5" 1596
+d "saccd a, *ar3, aeq" 159e
+d "srccd *ar3, aeq" 159d
+d "strcd *ar3, aeq" 159c
+d "portr 0x5, *ar1" 81740500
+d "portw *ar1, 0x5" 81750500
+d "portr 0xff, *ar3" 8374ff00
+d "masa t, a, b" 8af5
+d "masar t, a, b" 8bf5
+d "adds *ar3, a" 8302
+d "subs *ar3, a" 830a
+d "subc *ar3, a" 831e
+d "ldu *ar3, a" 8312
+d "ldr *ar3, a" 8316
+d "cmps a, *ar3" 838e
+d "dadst *ar3, a" 835a
+d "drsub *ar3, a" 8358
+d "dsadt *ar3, a" 835e
+d "maca *ar3" 8335
+d "macar *ar3" 8337
+d "maca t, a, b" 88f5
+d "macar t, a, b" 89f5
+d "macp *ar3, 0x100, a" 83780001
+d "macsu *ar2, *ar3, a" 01a6
+d "add *ar3, ts, a" 8304
+d "sub *ar3, ts, a" 830c
+d "ld *ar3, ts, a" 8314
+d "add a, asm, b" 80f5
+d "sub a, asm, b" 81f5
+d "ld a, asm, b" 82f5
+d "add #0x1234, 16, a" 60f03412
+d "sub #0x1234, 16, a" 61f03412
+d "ld #0x1234, 16, a" 62f03412
+d "and #0x1234, 16, a" 63f03412
+d "or #0x1234, 16, a" 64f03412
+d "xor #0x1234, 16, a" 65f03412
+d "mpy #0x1234, a" 66f03412
+d "mac #0x1234, a" 67f03412
+d "mpy *ar2, *ar3, a" 01a4
+d "mpy *ar3, #0x1234, a" 83623412
+d "mac *ar3, #0x1234, a" 83643412
+d "ld *ar3, t" 8330
+d "ld *ar3, dp" 8346
+d "ld *ar3, asm" 8332
+d "ld #0x1ff, dp" ffeb
+d "ld #0x1f, asm" 1fed
+d "ld #0x5, arp" a5f4
+d "sth a, asm, *ar3" 8386
+d "stl a, asm, *ar3" 8384
+d "add *ar3, -1, a" 836f1f0c
+d "sub *ar3, -1, a" 836f3f0c
+d "ld *ar3, -1, a" 836f5f0c
+d "sth a, -1, *ar3" 836f7f0c
+d "stl a, -1, *ar3" 836f9f0c
+d "add *ar3, -1, a, b" 836f1f0d
+d "ld *ar3, -1, b" 836f5f0d
+d "stl b, -1, *ar3" 836f9f0d
+d "add *ar3, 5, a, b" 836f050d
+d "sub *ar3, 16, a" 8340
+d "sub *ar3, 16, a, b" 8341
+d "rpt #0x1234" 70f03412
+d "st a, *ar3 || add *ar2, b" 01c1
+d "st a, *ar3 || sub *ar2, b" 01c5
+d "st a, *ar3 || ld *ar2, b" 01c9
+d "st a, *ar3 || mpy *ar2, b" 01cd
+d "st a, *ar3 || mac *ar2, b" 01d1
+d "st a, *ar3 || macr *ar2, b" 01d5
+d "st a, *ar3 || mas *ar2, b" 01d9
+d "st a, *ar3 || masr *ar2, b" 01dd
+d "st a, *ar3 || ld *ar2, t" 01e4
+d "ld *ar2, b || mac *ar3" 01a9
+d "ld *ar2, b || macr *ar3" 01ab
+d "ld *ar2, b || mas *ar3" 01ad
+d "ld *ar2, b || masr *ar3" 01af
+d "mac *ar2, *ar3, a" 01b0
+d "macr *ar2, *ar3, a" 01b4
+d "mas *ar2, *ar3, a" 01b8
+d "masr *ar2, *ar3, a" 01bc
+d "mac *ar2, *ar3, a, b" 01b1
+d "rc aeq" 45fc
+d "rcd aeq" 45fe
+d "rc tc, c" 3cfc
+d "rc ntc, nc" 28fc
+d "rc c, bio" 0ffc
+d "rc nbio" 02fc
+d "rc bgeq" 4afc
+d "xc 1, aeq" 45fd
+d "xc 2, aeq" 45ff
+d "xc 1, tc, c" 3cfd
+d "bc 0x1234, tc, c" 3cf83412
+d "ldm imr, a" 0048
+d "ldm al, a" 0848
+d "ldm ah, a" 0948
+d "ldm ag, a" 0a48
+d "ldm bl, a" 0b48
+d "ldm bh, a" 0c48
+d "ldm bg, a" 0d48
+d "ldm ifr, a" 0148
+d "ldm xpc, a" 1e48
+d "ldm 0x25, a" 2548
+d "ld *ar3-0B, a" a310
+d "ld *ar3-%, a" c310
+d "ld *ar3+0%, a" db10
+d "ld *ar3(0x64), a" e3106400
+d "ld *+ar3(0x64), a" eb106400
+d "ld *+ar3(0x64)%, a" f3106400
+d "ld *(0x1234), a" f8103412
+d "ld @0x5, a" 0510
+d "add *ar2-, *ar3-, a" 45a0
+d "add *ar2+0%, *ar3+0%, a" cda0
+d "add *ar4, *ar5, a" 23a0
+d "ssbx frct" b6f7
+d "rsbx c16" b7f6
+d "ssbx cmpt" b5f7
+d "rsbx xf" bdf6
+d "ssbx c" bbf5
+d "ssbx tc" bcf5
+d "rsbx hm" bcf6
+d "ldm *ar0, a" 8048
+d "ldm *ar0+, a" 9048
+d "ldm *ar3-%, a" c348
+d "stlm a, *ar0" 8088
+d "stlm a, *ar4-" 8c88
+d "stl a, @0x4a" 4a80
