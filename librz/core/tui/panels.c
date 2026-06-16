@@ -1636,7 +1636,7 @@ void __handleComment(RzCore *core) {
 	char buf[4095];
 	int i;
 	rz_line_set_prompt(core->cons->line, "[Comment]> ");
-	strcpy(buf, "\"CC ");
+	strcpy(buf, "CC \"");
 	i = strlen(buf);
 	if (rz_cons_fgets(buf + i, sizeof(buf) - i, 0, NULL) > 0) {
 		ut64 addr, orig;
@@ -1650,18 +1650,18 @@ void __handleComment(RzCore *core) {
 		} else {
 			switch (buf[i]) {
 			case '-':
-				memcpy(buf, "\"CC-", 5);
+				memcpy(buf, "CC-\"", 4);
 				break;
 			case '!':
-				memcpy(buf, "\"CC!", 5);
+				memcpy(buf, "CC!\"", 4);
 				break;
 			default:
-				memcpy(buf, "\"CC ", 4);
+				memcpy(buf, "CC \"", 4);
 				break;
 			}
 			strcat(buf, "\"");
 		}
-		if (buf[3] == ' ') {
+		if (buf[2] == ' ') {
 			int j, len = strlen(buf);
 			char *duped = rz_str_dup(buf);
 			for (i = 4, j = 4; i < len; i++, j++) {
@@ -3240,7 +3240,7 @@ int __clear_layout_cb(void *user) {
 
 int __copy_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	__add_cmdf_panel(core, "How many bytes? ", "\"y %s\"");
+	__add_cmdf_panel(core, "How many bytes? ", "y %s");
 	return 0;
 }
 
@@ -3252,13 +3252,13 @@ int __paste_cb(void *user) {
 
 int __write_str_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	__add_cmdf_panel(core, "insert string: ", "\"w %s\"");
+	__add_cmdf_panel(core, "insert string: ", "w %s");
 	return 0;
 }
 
 int __write_hex_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	__add_cmdf_panel(core, "insert hexpairs: ", "\"wx %s\"");
+	__add_cmdf_panel(core, "insert hexpairs: ", "wx %s");
 	return 0;
 }
 

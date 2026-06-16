@@ -2236,13 +2236,12 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			rz_core_visual_showcursor(core, true);
 			rz_cons_flush();
 			rz_cons_set_raw(false);
-			strcpy(buf, "\"wa ");
+			strcpy(buf, "wa ");
 			rz_line_set_prompt(line, ":> ");
 			rz_cons_enable_mouse(false);
-			if (rz_cons_fgets(buf + 4, sizeof(buf) - 4, 0, NULL) < 0) {
+			if (rz_cons_fgets(buf + 3, sizeof(buf) - 3, 0, NULL) < 0) {
 				buf[0] = '\0';
 			}
-			strcat(buf, "\"");
 			bool wheel = rz_config_get_b(core->config, "scr.wheel");
 			if (wheel) {
 				rz_cons_enable_mouse(true);
@@ -2510,7 +2509,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				break;
 			}
 			if (core->print->col == 2) {
-				strcpy(buf, "\"w ");
+				strcpy(buf, "w \"");
 				rz_line_set_prompt(line, "insert string: ");
 				if (rz_cons_fgets(buf + 3, sizeof(buf) - 3, 0, NULL) < 0) {
 					buf[0] = '\0';
