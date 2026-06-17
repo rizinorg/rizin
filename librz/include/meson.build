@@ -7,6 +7,7 @@ include_files = [
   'rz_bin.h',
   'rz_bin_dwarf.h',
   'rz_bin_source_line.h',
+  'rz_bin_stabs.h',
   'rz_bind.h',
   'rz_bp.h',
   'rz_cmd.h',
