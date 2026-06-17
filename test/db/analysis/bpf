@@ -275,6 +275,57 @@ echo '----------'
 wx bf860000b26d1403
 ao
 echo '----------'
+wx ae21050000000000
+ao
+echo '----------'
+wx 6d21050000000000
+ao
+echo '----------'
+wx 7521050000000000 
+ao
+echo '----------'
+wx 8d00000002000000
+ao
+echo '----------'
+wx 85d3a5e2833dbd5d
+ao
+echo '----------'
+wx 2589da5319738ac0
+ao
+echo '----------'
+wx 35a542b95b37a13d
+ao
+echo '----------'
+wx 4512a2f214e72d1e
+ao
+echo '----------'
+wx 55b9a38090bcc896
+ao
+echo '----------'
+wx a5d4ef79d3bbdefd
+ao
+echo '----------'
+wx bd1980e82985cf51
+ao
+echo '----------'
+wx d5e9f6b250fdb0e5
+ao
+echo '----------'
+wx dd95bfb1f25f7bc4
+ao
+echo '----------'
+wx 05c771b0431fb9f5
+ao
+echo '----------'
+wx 06c70fcc431fb9f5
+ao
+echo '----------'
+wx d6c70fcc431fb9f5
+ao
+echo '----------'
+wx 56c70fcc431fb9f5
+ao
+echo '----------'
 EOF
 EXPECT=<<EOF
 address: 0x0
@@ -318,7 +369,7 @@ opex:
       value: "r8"
     - type: "mem"
       base: "r2"
-      disp: 60850
+      disp: -4686
 direction: read
 family: cpu
 ----------
@@ -339,8 +390,8 @@ opex:
   operands:
     - type: "mem"
       base: "unknown"
-      disp: 3390718426
-      is_packet: "true"
+      is_packet: true
+      disp: -904248870
 direction: read
 family: cpu
 ----------
@@ -361,8 +412,8 @@ opex:
   operands:
     - type: "mem"
       base: "r9"
+      is_packet: true
       disp: 0
-      is_packet: "true"
 direction: read
 family: cpu
 ----------
@@ -383,7 +434,7 @@ opex:
   operands:
     - type: "mem"
       base: "r7"
-      disp: 53039
+      disp: -12497
     - type: "reg"
       value: "r7"
 direction: write
@@ -576,6 +627,422 @@ opex:
       value: "r6"
     - type: "reg"
       value: "r8"
+family: cpu
+----------
+address: 0x0
+opcode: jlt32 r1, r2, +0x5
+disasm: jlt32 r1, r2, +0x5
+mnemonic: jlt32
+mask: ff00000000000000
+prefix: 0
+id: 92
+bytes: ae21050000000000
+refptr: 0
+size: 8
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r1"
+    - type: "reg"
+      value: "r2"
+    - type: "off"
+      value: 5
+jump: 0x00000030
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: jsgt r1, r2, +0x5
+disasm: jsgt r1, r2, +0x5
+mnemonic: jsgt
+mask: ff00000000000000
+prefix: 0
+id: 75
+bytes: 6d21050000000000
+refptr: 0
+size: 8
+sign: true
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r1"
+    - type: "reg"
+      value: "r2"
+    - type: "off"
+      value: 5
+jump: 0x00000030
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: jsge r1, 0x0, +0x5
+disasm: jsge r1, 0x0, +0x5
+mnemonic: jsge
+mask: ff00000000000000
+prefix: 0
+id: 76
+bytes: 7521050000000000
+refptr: 0
+size: 8
+sign: true
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r1"
+    - type: "imm"
+      value: 0
+    - type: "off"
+      value: 5
+jump: 0x00000030
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: callx r2
+disasm: callx r2
+mnemonic: callx
+mask: ffffffffffffffff
+prefix: 0
+id: 78
+bytes: 8d00000002000000
+refptr: 0
+size: 8
+sign: false
+type: rcall
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r2"
+family: cpu
+----------
+address: 0x0
+opcode: call 0x5dbd3d83
+disasm: call 0x5dbd3d83
+mnemonic: call
+mask: ffffffffffffffff
+prefix: 0
+id: 77
+bytes: 85d3a5e2833dbd5d
+refptr: 0
+size: 8
+sign: false
+type: call
+cycles: 0
+opex:
+  operands:
+    - type: "imm"
+      value: 1572683139
+family: cpu
+----------
+address: 0x0
+opcode: jgt r9, -0x3f758ce7, +0x53da
+disasm: jgt r9, -0x3f758ce7, +0x53da
+mnemonic: jgt
+mask: ff00000000000000
+prefix: 0
+id: 71
+bytes: 2589da5319738ac0
+refptr: 0
+size: 8
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r9"
+    - type: "imm"
+      value: -1064668391
+    - type: "off"
+      value: 21466
+jump: 0x00029ed8
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: jge r5, 0x3da1375b, -0x46be
+disasm: jge r5, 0x3da1375b, -0x46be
+mnemonic: jge
+mask: ff00000000000000
+prefix: 0
+id: 72
+bytes: 35a542b95b37a13d
+refptr: 0
+size: 8
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r5"
+    - type: "imm"
+      value: 1033975643
+    - type: "off"
+      value: -18110
+jump: 0x0005ca18
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: jset r2, 0x1e2de714, -0xd5e
+disasm: jset r2, 0x1e2de714, -0xd5e
+mnemonic: jset
+mask: ff00000000000000
+prefix: 0
+id: 73
+bytes: 4512a2f214e72d1e
+refptr: 0
+size: 8
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r2"
+    - type: "imm"
+      value: 506324756
+    - type: "off"
+      value: -3422
+jump: 0x00079518
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: jne r9, -0x69374370, -0x7f5d
+disasm: jne r9, -0x69374370, -0x7f5d
+mnemonic: jne
+mask: ff00000000000000
+prefix: 0
+id: 74
+bytes: 55b9a38090bcc896
+refptr: 0
+size: 8
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r9"
+    - type: "imm"
+      value: -1765229424
+    - type: "off"
+      value: -32605
+jump: 0x00040520
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: jlt r4, -0x221442d, +0x79ef
+disasm: jlt r4, -0x221442d, +0x79ef
+mnemonic: jlt
+mask: ff00000000000000
+prefix: 0
+id: 80
+bytes: a5d4ef79d3bbdefd
+refptr: 0
+size: 8
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r4"
+    - type: "imm"
+      value: -35734573
+    - type: "off"
+      value: 31215
+jump: 0x0003cf80
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: jle r9, r1, -0x1780
+disasm: jle r9, r1, -0x1780
+mnemonic: jle
+mask: ff00000000000000
+prefix: 0
+id: 81
+bytes: bd1980e82985cf51
+refptr: 0
+size: 8
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r9"
+    - type: "reg"
+      value: "r1"
+    - type: "off"
+      value: -6016
+jump: 0x00074408
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: jsle r9, -0x1a4f02b0, -0x4d0a
+disasm: jsle r9, -0x1a4f02b0, -0x4d0a
+mnemonic: jsle
+mask: ff00000000000000
+prefix: 0
+id: 83
+bytes: d5e9f6b250fdb0e5
+refptr: 0
+size: 8
+sign: true
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r9"
+    - type: "imm"
+      value: -441385648
+    - type: "off"
+      value: -19722
+jump: 0x000597b8
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: jsle r5, r9, -0x4e41
+disasm: jsle r5, r9, -0x4e41
+mnemonic: jsle
+mask: ff00000000000000
+prefix: 0
+id: 83
+bytes: dd95bfb1f25f7bc4
+refptr: 0
+size: 8
+sign: true
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r5"
+    - type: "reg"
+      value: "r9"
+    - type: "off"
+      value: -20033
+jump: 0x00058e00
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: ja -0x4f8f
+disasm: ja -0x4f8f
+mnemonic: ja
+mask: ff00000000000000
+prefix: 0
+id: 69
+bytes: 05c771b0431fb9f5
+refptr: 0
+size: 8
+sign: false
+type: jmp
+cycles: 0
+opex:
+  operands:
+    - type: "off"
+      value: -20367
+jump: 0x00058390
+family: cpu
+----------
+address: 0x0
+opcode: jal -0xa46e0bd
+disasm: jal -0xa46e0bd
+mnemonic: jal
+mask: ff00000000000000
+prefix: 0
+id: 84
+bytes: 06c70fcc431fb9f5
+refptr: 0
+size: 8
+sign: false
+type: jmp
+cycles: 0
+opex:
+  operands:
+    - type: "imm"
+      value: -172417213
+jump: 0x7adc8fa20
+family: cpu
+----------
+address: 0x0
+opcode: jsle32 r7, -0xa46e0bd, -0x33f1
+disasm: jsle32 r7, -0xa46e0bd, -0x33f1
+mnemonic: jsle32
+mask: ff00000000000000
+prefix: 0
+id: 95
+bytes: d6c70fcc431fb9f5
+refptr: 0
+size: 8
+sign: true
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r7"
+    - type: "imm"
+      value: -172417213
+    - type: "off"
+      value: -13297
+jump: 0x00066080
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: jne32 r7, -0xa46e0bd, -0x33f1
+disasm: jne32 r7, -0xa46e0bd, -0x33f1
+mnemonic: jne32
+mask: ff00000000000000
+prefix: 0
+id: 89
+bytes: 56c70fcc431fb9f5
+refptr: 0
+size: 8
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r7"
+    - type: "imm"
+      value: -172417213
+    - type: "off"
+      value: -13297
+jump: 0x00066080
+fail: 0x00000008
+cond: al
 family: cpu
 ----------
 EOF
