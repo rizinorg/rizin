@@ -8839,11 +8839,11 @@ var double c @ ...
 |           ; var struct Some *n @ r0
 |           0x0000813c      push  {r4, lr}                             ; test.c:27
 |           0x0000813e      movs  r0, 0x14                             ; test.c:28 ; size_t size
-|           0x00008140      bl    malloc                               ; sym.malloc ; void *malloc(size_t size)
+|           0x00008140      bl    malloc                               ; void *malloc(size_t size)
 |           0x00008144      mov   r4, r0
 |           0x00008146      movs  r2, 0x14                             ; test.c:29 ; size_t n
 |           0x00008148      movs  r1, 0                                ; int c
-|           0x0000814a      bl    memset                               ; sym.memset ; void *memset(void *s, int c, size_t n)
+|           0x0000814a      bl    memset                               ; void *memset(void *s, int c, size_t n)
 |           0x0000814e      mov   r0, r4                               ; test.c:30
 \           0x00008150      pop   {r4, pc}
 / __do_global_dtors_aux();

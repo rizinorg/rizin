@@ -2267,10 +2267,10 @@ pd 1 @ 0x8048566
 EOF
 EXPECT=<<EOF
             0x08048566      e829feffff     call  sym.imp.printf
-            0x08048566      e829feffff     call  printf                ; sym.imp.printf
+            0x08048566      e829feffff     call  printf
 0x08048394    1 6            sym.imp.printf
 |           0x08048566      e829feffff     call  sym.imp.printf        ; int printf(const char *format)
-|           0x08048566      e829feffff     call  printf                ; sym.imp.printf ; int printf(const char *format)
+|           0x08048566      e829feffff     call  printf                ; int printf(const char *format)
 EOF
 RUN
 
