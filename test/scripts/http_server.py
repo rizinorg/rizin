@@ -14,6 +14,7 @@ def main():
     subprocess.run(
         "python3 -m http.server 9000 --bind 127.0.0.1 &",
         shell=True,
+        check=True,
         cwd="www",
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
@@ -21,7 +22,7 @@ def main():
     while True:
         try:
             http.client.HTTPConnection("127.0.0.1", 9000, timeout=5).connect()
-        except:
+        except ConnectionRefusedError:
             continue
         break
 
