@@ -675,3 +675,12 @@ EXPECT=<<EOF
 tricore         Generic TriCore CPU family by Infineon
 EOF
 RUN
+
+NAME=rz-asm -m unknown architecture shows an error
+TOOL=rz-asm
+ARGS=-m ic
+EXIT_STATUS=1
+EXPECT_ERR=<<EOF
+ERROR: Unknown asm plugin 'ic'
+EOF
+RUN
