@@ -92,6 +92,134 @@ bool test_grep_line(void) {
 	mu_end;
 }
 
+bool test_grep_json_projection(void) {
+	rz_cons_new();
+	rz_cons_print("[{\"offset\":1,\"bytes\":\"aa\",\"opcode\":\"nop\",\"family\":\"cpu\",\"type\":\"nop\",\"jump\":2},{\"offset\":2,\"bytes\":\"bb\",\"opcode\":\"ret\",\"family\":\"cpu\",\"type\":\"ret\"}]");
+	rz_cons_grep("{.[] | {offset, bytes, opcode, family, type, jump}}");
+	mu_assert_streq(rz_cons_get_buffer(),
+		"[{\"offset\":1,\"bytes\":\"aa\",\"opcode\":\"nop\",\"family\":\"cpu\",\"type\":\"nop\",\"jump\":2},{\"offset\":2,\"bytes\":\"bb\",\"opcode\":\"ret\",\"family\":\"cpu\",\"type\":\"ret\"}]\n",
+		"json array projection");
+
+	rz_cons_free();
+	mu_end;
+}
+
+bool test_grep_json_projection_escaped_pipe(void) {
+	rz_cons_new();
+	rz_cons_print("[{\"key1\":1,\"key2\":\"aa\",\"key3\":true}]");
+	rz_cons_grep("{.[]\\|{key1, key2, key3}}");
+	mu_assert_streq(rz_cons_get_buffer(),
+		"[{\"key1\":1,\"key2\":\"aa\",\"key3\":true}]\n",
+		"json array projection with escaped pipe");
+
+	rz_cons_free();
+	mu_end;
+}
+
+bool test_grep_json_projection_whitespace_tokens(void) {
+	rz_cons_new();
+	rz_cons_print("[{\"k\":1}]");
+	rz_cons_grep("{ . \t[ \t] \t| \t{ k } }");
+	mu_assert_streq(rz_cons_get_buffer(),
+		"[{\"k\":1}]\n",
+		"json array projection accepts whitespace between tokens");
+
+	rz_cons_free();
+	mu_end;
+}
+
+bool test_grep_json_projection_escaped_pipe_whitespace_tokens(void) {
+	rz_cons_new();
+	rz_cons_print("[{\"k\":1}]");
+	rz_cons_grep("{ . [ ] \t\\| \t{ k } }");
+	mu_assert_streq(rz_cons_get_buffer(),
+		"[{\"k\":1}]\n",
+		"json array projection accepts whitespace around escaped pipe");
+
+	rz_cons_free();
+	mu_end;
+}
+
+bool test_grep_json_projection_allows_spaces_in_keys(void) {
+	rz_cons_new();
+	rz_cons_print("[{\"a b\":1},{\"a\":2}]");
+	rz_cons_grep("{.[]\\|{a b}}");
+	mu_assert_streq(rz_cons_get_buffer(),
+		"[{\"a b\":1},{}]\n",
+		"json array projection allows spaces in object keys");
+
+	rz_cons_free();
+	mu_end;
+}
+
+bool test_grep_json_projection_skips_non_objects(void) {
+	rz_cons_new();
+	rz_cons_print("[{\"k\":1},7,\"x\",null,true,[],{\"z\":2},{\"k\":3}]");
+	rz_cons_grep("{.[] | {k}}");
+	mu_assert_streq(rz_cons_get_buffer(),
+		"[{\"k\":1},{},{\"k\":3}]\n",
+		"json array projection skips non-object array items and keeps empty objects");
+
+	rz_cons_free();
+	mu_end;
+}
+
+bool test_grep_json_projection_partial_and_nested_values(void) {
+	rz_cons_new();
+	rz_cons_print("[{\"a\":1,\"nested\":{\"x\":1},\"arr\":[1,2],\"s\":\"hi\"},{\"b\":2},{\"z\":3}]");
+	rz_cons_grep("{.[] | {a, b, nested, arr}}");
+	mu_assert_streq(rz_cons_get_buffer(),
+		"[{\"a\":1,\"nested\":{\"x\":1},\"arr\":[1,2]},{\"b\":2},{}]\n",
+		"json array projection keeps partial objects and nested values");
+
+	rz_cons_free();
+	mu_end;
+}
+
+bool test_grep_json_projection_preserves_null_array_values(void) {
+	rz_cons_new();
+	rz_cons_print("[{\"arr\":[null,1]}]");
+	rz_cons_grep("{.[]\\|{arr}}");
+	mu_assert_streq(rz_cons_get_buffer(),
+		"[{\"arr\":[null,1]}]\n",
+		"json array projection preserves null elements in nested arrays");
+
+	rz_cons_free();
+	mu_end;
+}
+
+bool test_grep_json_projection_matches_keys_exactly(void) {
+	rz_cons_new();
+	rz_cons_print("[{\"offset2\":5},{\"offset\":7,\"offset2\":8}]");
+	rz_cons_grep("{.[] | {offset}}");
+	mu_assert_streq(rz_cons_get_buffer(),
+		"[{},{\"offset\":7}]\n",
+		"json array projection matches object keys exactly");
+
+	rz_cons_free();
+	mu_end;
+}
+
+bool test_grep_json_path_regression(void) {
+	rz_cons_new();
+	rz_cons_print("[{\"opcode\":\"nop\"}]");
+	rz_cons_grep("{[0].opcode}");
+	mu_assert_streq(rz_cons_get_buffer(), "nop\n", "json path still extracts one node");
+
+	rz_cons_free();
+	mu_end;
+}
+
+bool test_grep_json_path_preserves_literal_open_brace(void) {
+	rz_cons_new();
+	rz_cons_print("{\"a{b\":7}");
+	rz_cons_grep("{.a{b}");
+	mu_assert_streq(rz_cons_get_buffer(), "7\n", "json path preserves literal open brace in key");
+
+	rz_cons_free();
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_grep_parse_simple);
 	mu_run_test(test_grep_parse_multiple);
@@ -99,6 +227,17 @@ bool all_tests() {
 	mu_run_test(test_grep_parse_case_insensitive);
 	mu_run_test(test_grep_parse_line);
 	mu_run_test(test_grep_line);
+	mu_run_test(test_grep_json_projection);
+	mu_run_test(test_grep_json_projection_escaped_pipe);
+	mu_run_test(test_grep_json_projection_whitespace_tokens);
+	mu_run_test(test_grep_json_projection_escaped_pipe_whitespace_tokens);
+	mu_run_test(test_grep_json_projection_allows_spaces_in_keys);
+	mu_run_test(test_grep_json_projection_skips_non_objects);
+	mu_run_test(test_grep_json_projection_partial_and_nested_values);
+	mu_run_test(test_grep_json_projection_preserves_null_array_values);
+	mu_run_test(test_grep_json_projection_matches_keys_exactly);
+	mu_run_test(test_grep_json_path_regression);
+	mu_run_test(test_grep_json_path_preserves_literal_open_brace);
 	return tests_passed != tests_run;
 }
 

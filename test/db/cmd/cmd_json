@@ -30,6 +30,106 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=json path array object projection preserves values
+FILE==
+CMDS=<<EOF
+!printf '[{"s":"alpha","n":1,"b":true,"nil":null,"obj":{"x":1},"arr":[1,2]},{"s":"beta","n":2,"b":false,"obj":{"y":"z"}},{"s":"gamma","arr":[]}]'~{.[]\|{s,n,b,nil,obj,arr,missing}}
+EOF
+EXPECT=<<EOF
+[{"s":"alpha","n":1,"b":true,"nil":null,"obj":{"x":1},"arr":[1,2]},{"s":"beta","n":2,"b":false,"obj":{"y":"z"}},{"s":"gamma","arr":[]}]
+EOF
+RUN
+
+NAME=json path array object projection skips non objects
+FILE==
+CMDS=<<EOF
+!printf '[{"k":1},7,"x",null,true,[],{"z":2},{"k":3}]'~{.[]\|{k}}
+EOF
+EXPECT=<<EOF
+[{"k":1},{},{"k":3}]
+EOF
+RUN
+
+NAME=json path array object projection handles empty arrays
+FILE==
+CMDS=<<EOF
+!printf '[]'~{ .[] \| { key1, key2 } }
+EOF
+EXPECT=<<EOF
+[]
+EOF
+RUN
+
+NAME=json path array object projection handles token whitespace
+FILE==
+CMDS=<<EOF
+!printf '[{"key1":1}]'~{ . [ ] \| { key1 } }
+EOF
+EXPECT=<<EOF
+[{"key1":1}]
+EOF
+RUN
+
+NAME=json path array object projection allows spaces in keys
+FILE==
+CMDS=<<EOF
+!printf '[{"a b":1},{"a":2}]'~{.[]\|{a b}}
+EOF
+EXPECT=<<EOF
+[{"a b":1},{}]
+EOF
+RUN
+
+NAME=json path array object projection preserves null array elements
+FILE==
+CMDS=<<EOF
+!printf '[{"arr":[null,1]}]'~{.[]\|{arr}}
+EOF
+EXPECT=<<EOF
+[{"arr":[null,1]}]
+EOF
+RUN
+
+NAME=json path array object projection keeps empty projected objects
+FILE==
+CMDS=<<EOF
+!printf '[{"z":1},{"z":2}]'~{.[]\|{key1,key2}}
+EOF
+EXPECT=<<EOF
+[{},{}]
+EOF
+RUN
+
+NAME=json path array object projection matches keys exactly
+FILE==
+CMDS=<<EOF
+!printf '[{"offset2":5},{"offset":7,"offset2":8}]'~{.[]\|{offset}}
+EOF
+EXPECT=<<EOF
+[{},{"offset":7}]
+EOF
+RUN
+
+NAME=json path array object projection ignores non array roots
+FILE==
+CMDS=<<EOF
+!printf '{"key1":1}'~{.[]\|{key1}}
+EOF
+EXPECT=<<EOF
+[]
+EOF
+RUN
+
+NAME=json path preserves literal open brace in key
+FILE==
+CMDS=<<EOF
+!printf '{"a{b":7}'~{.a{b}
+EOF
+EXPECT=<<EOF
+7
+EOF
+RUN
+
 NAME=/zj with backslash
 FILE=bins/pe/ConsoleApplication1.exe
 CMDS=/zj ConsoleApplication1.pdb~{}
