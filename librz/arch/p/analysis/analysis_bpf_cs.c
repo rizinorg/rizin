@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Jagath-P <jagathp0210@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_util/rz_assert.h"
+#include "rz_util/rz_structured_data.h"
 #include <rz_analysis.h>
 #include <capstone/capstone.h>
 #include <capstone/bpf.h>
@@ -67,7 +69,11 @@ static RzStructuredData *bpf_opex(csh handle, cs_insn *insn) {
 		case BPF_OP_IMM:
 			rz_structured_data_map_add_string(operand, "type", "imm");
 			if (op->is_signed) {
-				rz_structured_data_map_add_signed(operand, "value", op->imm);
+				if (op->imm & (0xffffffff00000000)) {
+					rz_structured_data_map_add_signed(operand, "value", (st64)op->imm);
+				} else {
+					rz_structured_data_map_add_signed(operand, "value", (st64)(st32)op->imm);
+				}
 			} else {
 				rz_structured_data_map_add_unsigned(operand, "value", op->imm, true);
 			}
@@ -75,7 +81,7 @@ static RzStructuredData *bpf_opex(csh handle, cs_insn *insn) {
 		case BPF_OP_OFF:
 			rz_structured_data_map_add_string(operand, "type", "off");
 			if (op->is_signed) {
-				rz_structured_data_map_add_signed(operand, "value", op->off);
+				rz_structured_data_map_add_signed(operand, "value", (st32)(st16)op->off);
 			} else {
 				rz_structured_data_map_add_unsigned(operand, "value", op->off, true);
 			}
@@ -84,28 +90,18 @@ static RzStructuredData *bpf_opex(csh handle, cs_insn *insn) {
 			const char *base_name = cs_reg_name(handle, (unsigned int)op->mem.base);
 			rz_structured_data_map_add_string(operand, "type", "mem");
 			rz_structured_data_map_add_string(operand, "base", base_name ? base_name : "unknown");
-			if (op->is_signed) {
-				rz_structured_data_map_add_signed(operand, "disp", op->mem.disp);
-			} else {
-				rz_structured_data_map_add_unsigned(operand, "disp", op->mem.disp, true);
-			}
 			if (op->is_pkt) {
-				rz_structured_data_map_add_string(operand, "is_packet", "true");
+				rz_structured_data_map_add_boolean(operand, "is_packet", true);
+				rz_structured_data_map_add_unsigned(operand, "disp", op->mem.disp, true);
+			} else {
+				if (op->is_signed) {
+					rz_structured_data_map_add_signed(operand, "disp", (st32)(st16)op->mem.disp);
+				} else {
+					rz_structured_data_map_add_unsigned(operand, "disp", op->mem.disp, true);
+				}
 			}
 			break;
 		}
-		case BPF_OP_MMEM:
-			rz_structured_data_map_add_string(operand, "type", "mmem");
-			rz_structured_data_map_add_unsigned(operand, "value", op->mmem, true);
-			break;
-		case BPF_OP_MSH:
-			rz_structured_data_map_add_string(operand, "type", "msh");
-			rz_structured_data_map_add_unsigned(operand, "value", op->msh, true);
-			break;
-		case BPF_OP_EXT:
-			rz_structured_data_map_add_string(operand, "type", "ext");
-			rz_structured_data_map_add_unsigned(operand, "value", op->ext, true);
-			break;
 		default:
 			rz_structured_data_map_add_string(operand, "type", "invalid");
 			break;
@@ -150,6 +146,7 @@ static int bpf_arch_info(RzAnalysis *a, RzAnalysisInfoType query) {
 		return -1;
 	}
 }
+
 static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 	switch (insn->id) {
 	case BPF_INS_ADD: op->type = RZ_ANALYSIS_OP_TYPE_ADD; break;
@@ -187,7 +184,6 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 		op->sign = true;
 		break;
 
-#if CS_API_MAJOR >= 6
 	case BPF_INS_SDIV:
 	case BPF_INS_SDIV64:
 		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
@@ -205,7 +201,6 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->sign = true;
 		break;
-#endif /* CS_API_MAJOR >= 6 */
 
 	/* Byte Swap */
 	case BPF_INS_LE16:
@@ -258,7 +253,7 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->direction = RZ_ANALYSIS_OP_DIR_READ;
 		break;
-#if CS_API_MAJOR >= 6
+
 	case BPF_INS_LDABSW:
 	case BPF_INS_LDABSH:
 	case BPF_INS_LDABSB:
@@ -268,7 +263,6 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->direction = RZ_ANALYSIS_OP_DIR_READ;
 		break;
-#endif /* CS_API_MAJOR >= 6 */
 
 	/* Store */
 	case BPF_INS_STXW:
@@ -296,7 +290,6 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 		 * Extended atomics (AFADD, AFOR, AFAND, AFXOR, AADD, AOR, AAND, AXOR)
 		 * only exist in Capstone v6 onwards.
 		 */
-#if CS_API_MAJOR >= 6
 	case BPF_INS_AADD:
 	case BPF_INS_AOR:
 	case BPF_INS_AAND:
@@ -307,20 +300,24 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 	case BPF_INS_AFXOR:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		break;
-#endif /* CS_API_MAJOR >= 6 */
 
-#if CS_API_MAJOR >= 6
 	case BPF_INS_JA:
-#else
-	case BPF_INS_JMP:
-#endif
 		if (insn->detail->bpf.op_count > 0) {
 			op->jump = addr + (insn->detail->bpf.operands[0].off + 1) * 8;
+		} else {
+			op->type = RZ_ANALYSIS_OP_TYPE_ILL;
+			break;
 		}
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		break;
 
 	/* Conditional jump */
+	case BPF_INS_JSGT:
+	case BPF_INS_JSGE:
+	case BPF_INS_JSLT:
+	case BPF_INS_JSLE:
+		op->sign = true;
+		/* fall through */
 	case BPF_INS_JEQ:
 	case BPF_INS_JGT:
 	case BPF_INS_JGE:
@@ -330,31 +327,25 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 	case BPF_INS_JLE:
 		if (insn->detail->bpf.op_count > 2) {
 			op->jump = addr + (insn->detail->bpf.operands[2].off + 1) * 8;
+		} else {
+			op->type = RZ_ANALYSIS_OP_TYPE_ILL;
+			break;
 		}
 		op->fail = addr + 8;
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		break;
-	case BPF_INS_JSGT:
-	case BPF_INS_JSGE:
-	case BPF_INS_JSLT:
-	case BPF_INS_JSLE:
-		if (insn->detail->bpf.op_count > 2) {
-			op->jump = addr + (insn->detail->bpf.operands[2].off + 1) * 8;
-			op->fail = addr + 8;
-			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-			op->sign = insn->detail->bpf.operands[2].is_signed;
-		}
-		break;
 
 		/* Conditional jumps 32-bit operands */
-#if CS_API_MAJOR >= 6
 	case BPF_INS_JAL:
 		if (insn->detail->bpf.op_count > 0) {
 			op->jump = addr + (insn->detail->bpf.operands[0].imm + 1) * 8;
+		} else {
+			op->type = RZ_ANALYSIS_OP_TYPE_ILL;
+			break;
 		}
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		break;
-	case BPF_INS_JSET32:
+
 	case BPF_INS_JSLT32:
 	case BPF_INS_JSLE32:
 	case BPF_INS_JSGT32:
@@ -367,13 +358,16 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 	case BPF_INS_JNE32:
 	case BPF_INS_JLT32:
 	case BPF_INS_JLE32:
+	case BPF_INS_JSET32:
 		if (insn->detail->bpf.op_count > 2) {
 			op->jump = addr + (insn->detail->bpf.operands[2].off + 1) * 8;
+		} else {
+			op->type = RZ_ANALYSIS_OP_TYPE_ILL;
+			break;
 		}
 		op->fail = addr + 8;
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		break;
-#endif /* CS_API_MAJOR >= 6 */
 
 	case BPF_INS_CALL:
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
@@ -407,6 +401,7 @@ static int bpf_analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 	if (!ctx->handle) {
 		cs_err err = cs_open(CS_ARCH_BPF, mode, &ctx->handle);
 		if (err != CS_ERR_OK) {
+			rz_warn_if_reached();
 			return -1;
 		}
 		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_ON);
@@ -418,6 +413,7 @@ static int bpf_analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
 			op->mnemonic = strdup("invalid");
 		}
+		cs_free(insn, n);
 		return -1;
 	}
 	op->size = insn->size;
