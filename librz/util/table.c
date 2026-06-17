@@ -1765,7 +1765,7 @@ RZ_API RZ_OWN RzTable *rz_table_transpose(RZ_NONNULL RzTable *t) {
 	return transpose;
 }
 
-RZ_API RZ_OWN RzTable *rz_table_clone(RZ_NONNULL const RzTable *t) {
+static RzTable *table_clone(const RzTable *t, bool shallow) {
 	rz_return_val_if_fail(t, NULL);
 	RzTable *clone = rz_table_new();
 	if (!clone) {
@@ -1795,7 +1795,7 @@ RZ_API RZ_OWN RzTable *rz_table_clone(RZ_NONNULL const RzTable *t) {
 	RzTableRow *row;
 	rz_vector_foreach (t->rows, row) {
 		RzTableRow new_row = { 0 };
-		bool deep_copy = row->items && row->items->v.free_user != NULL;
+		bool deep_copy = !shallow && row->items && row->items->v.free_user != NULL;
 		new_row.items = rz_pvector_new(deep_copy ? (RzPVectorFree)row->items->v.free_user : NULL);
 		if (!new_row.items) {
 			rz_table_free(clone);
@@ -1823,50 +1823,32 @@ RZ_API RZ_OWN RzTable *rz_table_clone(RZ_NONNULL const RzTable *t) {
 	return clone;
 }
 
+/**
+ * \brief      Clone an RzTable structure (deep copy)
+ *
+ * This function performs a deep copy of the given table, duplicating all columns
+ * and rows. If the row items have a destructor (i.e. free_user is set), the items themselves
+ * are also duplicated.
+ *
+ * \param[in]  t  The RzTable to clone
+ * \return     A new RzTable instance on success, otherwise NULL
+ */
+RZ_API RZ_OWN RzTable *rz_table_clone(RZ_NONNULL const RzTable *t) {
+	return table_clone(t, false);
+}
+
+/**
+ * \brief      Clone an RzTable structure (shallow copy)
+ *
+ * This function performs a shallow copy of the given table, duplicating columns
+ * and rows structure, but keeping the same references to the row items without
+ * duplicating them or assigning a destructor to them.
+ *
+ * \param[in]  t  The RzTable to clone
+ * \return     A new RzTable instance on success, otherwise NULL
+ */
 static RzTable *rz_table_clone_shallow(const RzTable *t) {
-	rz_return_val_if_fail(t, NULL);
-	RzTable *clone = rz_table_new();
-	if (!clone) {
-		return NULL;
-	}
-	clone->totalCols = t->totalCols;
-	clone->showHeader = t->showHeader;
-	clone->showFancy = t->showFancy;
-	clone->showJSON = t->showJSON;
-	clone->showCSV = t->showCSV;
-	clone->showSum = t->showSum;
-	clone->char_mode = t->char_mode;
-	clone->color = t->color;
-	clone->color_user = t->color_user;
-
-	RzTableColumn *col;
-	rz_vector_foreach (t->cols, col) {
-		RzTableColumn new_col = *col;
-		new_col.name = col->name ? rz_str_dup(col->name) : NULL;
-		if (col->name && !new_col.name) {
-			rz_table_free(clone);
-			return NULL;
-		}
-		rz_vector_push(clone->cols, &new_col);
-	}
-
-	RzTableRow *row;
-	rz_vector_foreach (t->rows, row) {
-		RzTableRow new_row = { 0 };
-		new_row.items = rz_pvector_new(NULL);
-		if (!new_row.items) {
-			rz_table_free(clone);
-			return NULL;
-		}
-		void **pitem;
-		rz_pvector_foreach (row->items, pitem) {
-			char *item = *pitem;
-			rz_pvector_push(new_row.items, item);
-		}
-		rz_vector_push(clone->rows, &new_row);
-	}
-
-	return clone;
+	return table_clone(t, true);
 }
 
 static bool rz_table_realize(RzTable *t) {
@@ -1895,6 +1877,14 @@ static bool rz_table_realize(RzTable *t) {
 	return true;
 }
 
+/**
+ * \brief      Creates a new RzTableView from an RzTable
+ *
+ * This function initializes a view by performing a shallow clone of the input table.
+ *
+ * \param[in]  t  The source RzTable to create a view from
+ * \return     A new RzTableView instance on success, otherwise NULL
+ */
 RZ_API RZ_OWN RzTableView *rz_table_view_new(RZ_NONNULL const RzTable *t) {
 	rz_return_val_if_fail(t, NULL);
 
