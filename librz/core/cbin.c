@@ -208,6 +208,7 @@ RZ_API bool rz_core_bin_apply_info(RzCore *r, RzBinFile *binfile, ut32 mask) {
 	}
 	if (mask & RZ_CORE_BIN_ACC_DWARF) {
 		rz_core_bin_apply_dwarf(r, binfile);
+		rz_core_bin_apply_stabs(r, binfile);
 	}
 	if (mask & RZ_CORE_BIN_ACC_LUAC_DEBUG) {
 		rz_core_bin_apply_luac_debug(r, binfile);
@@ -695,6 +696,126 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
 		rz_bin_source_line_info_merge(binfile->o->lines, (rz_bin_dwarf_line(dw))->lines);
 	}
 	return true;
+}
+
+/**
+ * \brief Parse STABS debug information and apply its source line info
+ *
+ * STABS is the legacy debug format that predates DWARF and can still be found in
+ * old binaries (and in objects produced by GCC <= 12 with -gstabs). Only the
+ * source line information is consumed here; it is merged into the binary's line
+ * info so that commands such as \p ix and source-aware disassembly work the same
+ * way they do for DWARF.
+ * Look up the virtual address of a named symbol in the binary's symbol table.
+ * STABS global symbols carry no address of their own, so it is recovered here.
+ */
+static ut64 stabs_global_vaddr(RzBinFile *binfile, const char *name) {
+	if (!binfile->o || !binfile->o->symbols) {
+		return UT64_MAX;
+	}
+	void **it;
+	rz_pvector_foreach (binfile->o->symbols, it) {
+		RzBinSymbol *sym = *it;
+		if (RZ_STR_EQ(sym->name, name)) {
+			return sym->vaddr;
+		}
+	}
+	return UT64_MAX;
+}
+
+/// Turn a single recovered STABS variable into an analysis global variable.
+/// Returns true if a global variable was created.
+static bool stabs_apply_global(RzCore *core, RzBinFile *binfile, const RzBinStabsSymbol *sym) {
+	if (!sym->type) {
+		return false;
+	}
+	ut64 addr;
+	if (sym->kind == RZ_BIN_STABS_SYMBOL_STATIC) {
+		addr = sym->value;
+	} else if (sym->kind == RZ_BIN_STABS_SYMBOL_GLOBAL) {
+		// a STABS global carries no address of its own, recover it from the symbol table
+		addr = stabs_global_vaddr(binfile, sym->name);
+		if (addr == UT64_MAX) {
+			return false;
+		}
+	} else {
+		return false;
+	}
+	return rz_analysis_var_global_create(core->analysis, sym->name, rz_type_clone(sym->type), addr);
+}
+
+/// Merge the source line information recovered from STABS into the bin object.
+static bool stabs_apply_line_info(RzBinFile *binfile, RzBinStabs *stabs) {
+	RzBinSourceLineInfo *li = rz_bin_stabs_source_line_info(stabs);
+	if (!li) {
+		return false;
+	}
+	bool applied = false;
+	if (li->samples_count) {
+		if (!binfile->o->lines) {
+			binfile->o->lines = RZ_NEW0(RzBinSourceLineInfo);
+			if (binfile->o->lines) {
+				rz_str_constpool_init(&binfile->o->lines->filename_pool);
+			}
+		}
+		if (binfile->o->lines) {
+			rz_bin_source_line_info_merge(binfile->o->lines, li);
+			applied = true;
+		}
+	}
+	rz_bin_source_line_info_free(li);
+	return applied;
+}
+
+/// Recover types, function signatures and global variables from STABS. The types
+/// and the function prototypes are registered into the type database by the
+/// extractor; only the global and static variables are applied here.
+static bool stabs_apply_debug_info(RzCore *core, RzBinFile *binfile, RzBinStabs *stabs) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	if (!typedb) {
+		return false;
+	}
+	RzBinStabsDebugInfo *di = rz_bin_stabs_debug_info(stabs, typedb);
+	if (!di) {
+		return false;
+	}
+	bool applied = false;
+	void **it;
+	rz_pvector_foreach (&di->symbols, it) {
+		if (stabs_apply_global(core, binfile, *it)) {
+			applied = true;
+		}
+	}
+	rz_bin_stabs_debug_info_free(di);
+	return applied;
+}
+
+/**
+ * \brief Recover STABS debug information from a binary into the analysis
+ *
+ * Applies the source line information, registers the recovered types and
+ * function prototypes into the type database and creates analysis global
+ * variables for the recovered globals and statics.
+ *
+ * \param core The current core, whose analysis receives the recovered information
+ * \param binfile The binary file to read the STABS sections from
+ * \return true if any information was applied, false otherwise
+ */
+RZ_API bool rz_core_bin_apply_stabs(RzCore *core, RzBinFile *binfile) {
+	rz_return_val_if_fail(core && core->analysis && binfile, false);
+	if (!rz_config_get_bool(core->config, "bin.dbginfo") || !binfile->o) {
+		return false;
+	}
+	RzBinStabs *stabs = rz_bin_stabs_parse(binfile);
+	if (!stabs) {
+		return false;
+	}
+	bool applied = stabs_apply_line_info(binfile, stabs);
+	if (stabs_apply_debug_info(core, binfile, stabs)) {
+		applied = true;
+	}
+	rz_bin_stabs_free(stabs);
+	return applied;
 }
 
 static inline bool is_initfini(RzBinAddr *entry) {

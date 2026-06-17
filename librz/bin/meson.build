@@ -103,6 +103,7 @@ rz_bin_sources = [
   'filter.c',
   'golang.c',
   'relocs_patch.c',
+  'stabs.c',
   'p/bin_any.c',
   'p/bin_art.c',
   'p/bin_avr.c',
