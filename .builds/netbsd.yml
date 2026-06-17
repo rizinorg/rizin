@@ -54,5 +54,5 @@ tasks:
         # Workaround to avoid running HTTP POST test
         rm -f db/cmd/cmd_http_post 
         # Running rz-test
-        ln -s `which python3.10` /usr/local/bin/python3
+        ln -s `which python3.10` /usr/bin/python3
         MALLOC_OPTIONS=S rz-test -L -o results.json
