@@ -92,7 +92,11 @@ static RzStructuredData *bpf_opex(csh handle, cs_insn *insn) {
 			rz_structured_data_map_add_string(operand, "base", base_name ? base_name : "unknown");
 			if (op->is_pkt) {
 				rz_structured_data_map_add_boolean(operand, "is_packet", true);
-				rz_structured_data_map_add_unsigned(operand, "disp", op->mem.disp, true);
+				if (op->is_signed) {
+					rz_structured_data_map_add_signed(operand, "disp", (st32)op->mem.disp);
+				} else {
+					rz_structured_data_map_add_unsigned(operand, "disp", op->mem.disp, true);
+				}
 			} else {
 				if (op->is_signed) {
 					rz_structured_data_map_add_signed(operand, "disp", (st32)(st16)op->mem.disp);

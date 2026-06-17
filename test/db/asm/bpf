@@ -48,3 +48,88 @@ d "arsh r6, 0x2bc5687c" c4b6e2e07c68c52b
 d "le64 r3" d4533f0c40000000
 d "be32 r2" dcb2a35020000000
 d "callx r2" 8d00000002000000
+d "sub64 r5, 0x22e6dc0b" 17c560ed0bdce622
+d "sub64 r6, r0" 1f06515a39b21010
+d "ldabsh [skb+0xd0b48e8]" 284eb062e8480b0d
+d "mul64 r7, r7" 2f77c7a44c32732a
+d "div64 r4, 0x1f55843b" 378400003b84551f
+d "ldindh [skb+r7]" 487efb77eb0e5a0d
+d "jset r0, r1, +0x4467" 4d1067444d3f4d8b
+d "or64 r1, r8" 4f81eb6bde988764
+d "ldindb [skb+r3]" 503880f80470d16c
+d "and64 r0, 0x2782067c" 573012e97c068227
+d "and r2, r0" 5c0295b2bd3f3837
+d "jne r6, r5, +0x4ca3" 5d56a34c2ac84ac5
+d "and64 r9, r5" 5f59f6aa5deb27dd
+d "jsgt r8, -0x7704179, -0x1e69" 65e897e187be8ff8
+d "lsh64 r0, 0x74f6b005" 6700d7c005b0f674
+d "sth [r5-0x7344], 0x1945c4f" 6ab5bc8c4f5c9401
+d "lsh r1, r2" 6c211048013e6ef8
+d "jsgt r8, r3, -0x1c97" 6d3869e3c9ac3cdb
+d "lsh64 r4, r6" 6f6449d607a99313
+d "stxb [r4+0xf09], r4" 7344090fc107a8f4
+d "jsge r4, 0x93ccc6a, +0x188e" 75048e186acc3c09
+d "stxdw [r2+0x300f], r7" 7b720f305178d29a
+d "rsh r3, r1" 7c1312735a2065db
+d "jsge r8, r5, +0x152" 7d58520190f9309a
+d "rsh64 r8, r9" 7f98eaffcf5d5fa3
+d "call -0x242c27d" 850000e2833dbdfd
+d "neg64 r5" 87f52bbea9c731a3
+d "mod r9, 0xc9d1d20b" 943900000bd2d1c9
+d "mod64 r8, 0x99809d2" 97c80000d2099809
+d "mod r6, r9" 9c9600000f691390
+d "mod64 r5, r3" 9f350000d670d95e
+d "xor r9, 0xf790bf0d" a4896b5f0dbf90f7
+d "jlt r4, -0x221442d, +0x79ef" a5d4ef79d3bbdefd
+d "xor64 r0, 0x457434a9" a7808b18a9347445
+d "xor r6, r3" ac3616e00f523065
+d "xor64 r1, r4" af4104c22ec9f784
+d "jle r2, 0x33fc3349, +0x5a5d" b5925d5a4933fc33
+d "jle r9, r1, -0x1780" bd1980e82985cf51
+d "jslt r2, 0x4fcec0ba, -0x1b15" c5f2ebe4bac0ce4f
+d "arsh64 r8, 0x88c0ef1f" c7e8baff1fefc088
+d "arsh r8, r3" cc38c53713c0e727
+d "jslt r0, r9, -0x7799" cd9067886bd027f4
+d "arsh64 r2, r8" cf82e1cdbec32d7c
+d "jsle r9, -0x1a4f02b0, -0x4d0a" d5e9f6b250fdb0e5
+d "jsle r5, r9, -0x4e41" dd95bfb1f25f7bc4
+d "jgt r8, r1, +0x7" 2d18070000000000
+d "jal -0xa46e0bd" 06c70fcc431fb9f5
+d "jeq32 r7, -0xa46e0bd, -0x33f1" 16c70fcc431fb9f5
+d "jgt32 r7, -0xa46e0bd, -0x33f1" 26c70fcc431fb9f5
+d "jge32 r7, -0xa46e0bd, -0x33f1" 36c70fcc431fb9f5
+d "jset32 r7, -0xa46e0bd, -0x33f1" 46c70fcc431fb9f5
+d "jne32 r7, -0xa46e0bd, -0x33f1" 56c70fcc431fb9f5
+d "jsgt32 r7, -0xa46e0bd, -0x33f1" 66c70fcc431fb9f5
+d "jsge32 r7, -0xa46e0bd, -0x33f1" 76c70fcc431fb9f5
+d "jlt32 r7, -0xa46e0bd, -0x33f1" a6c70fcc431fb9f5
+d "jle32 r7, -0xa46e0bd, -0x33f1" b6c70fcc431fb9f5
+d "jslt32 r7, -0xa46e0bd, -0x33f1" c6c70fcc431fb9f5
+d "jsle32 r7, -0xa46e0bd, -0x33f1" d6c70fcc431fb9f5
+d "sdiv64 r4, 0x1f55843b" 378401003b84551f
+d "sdiv r6, 0xcbd472e1" 34460100e172d4cb
+d "smod r9, 0xc9d1d20b" 943901000bd2d1c9
+d "smod64 r5, r3" 9f350100d670d95e
+d "movsb64 r1, r3" bf31080000000000
+d "movsh64 r1, r3" bf31100000000000
+d "movsw64 r1, r3" bf31200000000000
+d "movsb r1, r3" bc31080000000000
+d "movsh r1, r3" bc31100000000000
+d "aadd64 [r10-0x4], r1" db1afcff00000000
+d "afadd64 [r10-0x4], r1" db1afcff01000000
+d "aor64 [r10-0x4], r1" db1afcff40000000
+d "afor64 [r10-0x4], r1" db1afcff41000000
+d "aand64 [r10-0x4], r1" db1afcff50000000
+d "afand64 [r10-0x4], r1" db1afcff51000000
+d "axor64 [r10-0x4], r1" db1afcffa0000000
+d "afxor64 [r10-0x4], r1" db1afcffa1000000
+d "axchg64 [r10-0x4], r1" db1afcffe1000000
+d "acmpxchg64 [r10-0x4], r1" db1afcfff1000000
+d "aadd [r10-0x4], r1" c31afcff00000000
+d "afadd [r10-0x4], r1" c31afcff01000000
+d "aor [r10-0x4], r1" c31afcff40000000
+d "afor [r10-0x4], r1" c31afcff41000000
+d "aand [r10-0x4], r1" c31afcff50000000
+d "afand [r10-0x4], r1" c31afcff51000000
+d "axor [r10-0x4], r1" c31afcffa0000000
+d "afxor [r10-0x4], r1" c31afcffa1000000
