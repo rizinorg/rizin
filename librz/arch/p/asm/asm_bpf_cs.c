@@ -22,6 +22,7 @@ static int bpf_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len)
 	if (!ctx->handle) {
 		cs_err err = cs_open(CS_ARCH_BPF, mode, &ctx->handle);
 		if (err != CS_ERR_OK) {
+			rz_warn_if_reached();
 			return -1;
 		}
 		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_OFF);
