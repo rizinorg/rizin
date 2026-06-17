@@ -165,11 +165,11 @@ d "rptcc 0x00, !tc1 ^ !tc2" 00ff00 0x0 nop
 d "rptb 0x0000" 0e0000 0x0 nop
 d "rptb 0xFF00" 0eff00 0x0 nop
 d "rpt csr" 4800 0x0 nop
-d "rptadd csr, ac0" 4801 0x0 nop
-d "rptadd csr, ar7" 48f1 0x0 nop
-d "rptadd csr, 0xF" 48f2 0x0 nop
-d "rptsub csr, 0x0" 4803 0x0 nop
-d "rptsub csr, 0xF" 48f3 0x0 nop
+d "rptadd csr, ac0" 4801 0x0 (set csr (+ (var csr) (cast 16 false (var ac0))))
+d "rptadd csr, ar7" 48f1 0x0 (set csr (+ (var csr) (var ar7)))
+d "rptadd csr, 0xF" 48f2 0x0 (set csr (+ (var csr) (bv 16 0xf)))
+d "rptsub csr, 0x0" 4803 0x0 (set csr (- (var csr) (bv 16 0x0)))
+d "rptsub csr, 0xF" 48f3 0x0 (set csr (- (var csr) (bv 16 0xf)))
 d "exp ac0, t0" 100800
 d "exp ac1, t0" 101800
 d "exp ac2, t1" 102810
@@ -263,9 +263,9 @@ d "bset 0x6, st2_55" 4665 0x0 (set st2_55 (| (var st2_55) (bv 16 0x40)))
 d "bclr 0x7, st3_55" 4676 0x0 (set st3_55 (& (var st3_55) (bv 16 0xff7f)))
 d "bset 0x8, st3_55" 4687 0x0 (set st3_55 (| (var st3_55) (bv 16 0x100)))
 d "rpt csr" 4800 0x0 nop
-d "rptadd csr, ac0" 4801 0x0 nop
-d "rptadd csr, 0x0" 4802 0x0 nop
-d "rptsub csr, 0x0" 4803 0x0 nop
+d "rptadd csr, ac0" 4801 0x0 (set csr (+ (var csr) (cast 16 false (var ac0))))
+d "rptadd csr, 0x0" 4802 0x0 (set csr (+ (var csr) (bv 16 0x0)))
+d "rptsub csr, 0x0" 4803 0x0 (set csr (- (var csr) (bv 16 0x0)))
 d "ret" 4804 0x0 (seq (set ret_addr (loadw 0 24 (* (cast 24 false (var sp)) (bv 24 0x2)))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (var ret_addr)))
 d "|| ret" 4904 0x0 nop
 d "reti" 4805 0x0 (seq (set ret_addr (loadw 0 24 (* (cast 24 false (var sp)) (bv 24 0x2)))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (var ret_addr)))

@@ -1844,9 +1844,9 @@ static const C55InsnDef c55x_table[] = {
 	// nibble 4/5 are decoded elsewhere. The operand register/immediate is byte1
 	// bits 4-7.
 	{ .mask = 0xfe0f0000, .match = 0x48000000, .id = TMS320C55_INS_RPT, .lop = C55_LOP_NOP, .len = 2, .ops = { { .fn = c55x_x_csr } } },
-	{ .mask = 0xfe0f0000, .match = 0x48010000, .id = TMS320C55_INS_RPTADD, .lop = C55_LOP_NOP, .len = 2, .ops = { { .fn = c55x_x_csr }, { .lo = 4, .fn = c55x_x_gr4 } } },
-	{ .mask = 0xfe0f0000, .match = 0x48020000, .id = TMS320C55_INS_RPTADD, .lop = C55_LOP_NOP, .len = 2, .ops = { { .fn = c55x_x_csr }, { .lo = 4, .width = 4, .fn = c55_x_imm } } },
-	{ .mask = 0xfe0f0000, .match = 0x48030000, .id = TMS320C55_INS_RPTSUB, .lop = C55_LOP_NOP, .len = 2, .ops = { { .fn = c55x_x_csr }, { .lo = 4, .width = 4, .fn = c55_x_imm } } },
+	{ .mask = 0xfe0f0000, .match = 0x48010000, .id = TMS320C55_INS_RPTADD, .lop = C55_LOP_RPTADD, .len = 2, .ops = { { .fn = c55x_x_csr }, { .lo = 4, .fn = c55x_x_gr4 } } },
+	{ .mask = 0xfe0f0000, .match = 0x48020000, .id = TMS320C55_INS_RPTADD, .lop = C55_LOP_RPTADD, .len = 2, .ops = { { .fn = c55x_x_csr }, { .lo = 4, .width = 4, .fn = c55_x_imm } } },
+	{ .mask = 0xfe0f0000, .match = 0x48030000, .id = TMS320C55_INS_RPTSUB, .lop = C55_LOP_RPTSUB, .len = 2, .ops = { { .fn = c55x_x_csr }, { .lo = 4, .width = 4, .fn = c55_x_imm } } },
 	// rpt #k16 (opcode 0x0c, 0x0d parallel): repeat the next instruction by a
 	// 16-bit immediate count (byte1 the high byte, byte2 the low byte). It has no
 	// data effect of its own, so it lifts to nop like the other repeat forms.

@@ -715,6 +715,21 @@ void c55_fill_analysis(const C55ArchDesc *a, const C55Insn *insn, RzAnalysisOp *
 	default:
 		break;
 	}
+	// Generic immediate-value exposure: record the first *data* immediate (one
+	// that is not a branch/call target) on op->val so callers that look for the
+	// constant involved in an operation (add/sub/and/or/xor/cmp/mov #k, ...)
+	// can find it. A more specific case above (the swi vector, the frame
+	// adjustment) may already have set op->val, in which case it is kept.
+	// (op->val defaults to UT64_MAX -- the "unset" sentinel -- not 0.)
+	if (op->val == UT64_MAX) {
+		for (ut8 i = 0; i < insn->n_ops; i++) {
+			const C55Operand *o = &insn->ops[i];
+			if (o->kind == C55_OP_IMM && !o->addr && !o->reltarget) {
+				op->val = o->imm;
+				break;
+			}
+		}
+	}
 }
 
 // Build the IL predicate for a register-compare branch condition (reg <relop>
@@ -1947,6 +1962,46 @@ RzILOpEffect *c55_lift(const C55ArchDesc *a, const C55Insn *insn, ut64 pc) {
 			return SETG(di->il_var, LOGXOR(VARG(di->il_var), sv));
 		}
 		return SETG(di->il_var, SUB(VARG(di->il_var), sv));
+	}
+	if (insn->lop == C55_LOP_RPTADD || insn->lop == C55_LOP_RPTSUB) {
+		// rptadd/rptsub CSR, src: CSR = CSR +/- src. Unlike the A-unit
+		// arithmetic above, the destination (CSR) is the FIRST operand and the
+		// addend the second. The repeat behaviour these instructions also set
+		// up (the following instruction executing CSR+1 times) is a hardware
+		// loop that cannot be expressed one instruction at a time, but the
+		// named CSR register write is a real architectural effect and is lifted.
+		if (insn->n_ops < 2 || !a->reg_info) {
+			return NULL;
+		}
+		const C55Operand *dst = &insn->ops[0];
+		const C55Operand *src = &insn->ops[1];
+		if (dst->kind != C55_OP_REG) {
+			return NULL;
+		}
+		const C55RegInfo *di = a->reg_info(dst->reg.cls, dst->reg.num, C55_SUB_NONE);
+		if (!di || !di->il_var) {
+			return NULL;
+		}
+		RzILOpPure *sv;
+		if (src->kind == C55_OP_IMM) {
+			if (di->width < 64 && ((ut64)src->imm >> di->width)) {
+				return NULL;
+			}
+			sv = UN(di->width, (ut64)src->imm);
+		} else if (src->kind == C55_OP_REG) {
+			const C55RegInfo *si = a->reg_info(src->reg.cls, src->reg.num, C55_SUB_NONE);
+			if (!si || !si->il_var) {
+				return NULL;
+			}
+			sv = VARG(si->il_var);
+			if (si->width != di->width) {
+				sv = UNSIGNED(di->width, sv);
+			}
+		} else {
+			return NULL;
+		}
+		return SETG(di->il_var,
+			insn->lop == C55_LOP_RPTADD ? ADD(VARG(di->il_var), sv) : SUB(VARG(di->il_var), sv));
 	}
 	// cmp / cmpand / cmpor SRC <relop> DST, [TCx,] TCz (opcode 0x12): compare two
 	// registers and write the TCz status bit. cmpand/cmpor first AND/OR the

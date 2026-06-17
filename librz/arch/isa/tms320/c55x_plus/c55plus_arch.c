@@ -3436,9 +3436,9 @@ static const C55InsnDef c55plus_table[] = {
 	{ .mask = 0xff808000, .match = 0xa9008000, .id = TMS320C55_INS_MANT, .lop = C55_LOP_OPAQUE, .len = 4, .mant_nexp = true, .ops = { { .fn = c55plus_x_mant_aca }, { .fn = c55plus_x_mant_acb }, { .fn = c55plus_x_mant_acc } } },
 	// rpt csr / rptadd csr, #k|reg / rptsub csr, #k (opcode 0x01, 2 bytes).
 	// byte1[7:6]: 00 rptsub #k, 01 rptadd #k, 10 rptadd reg, 11 rpt. All nop-lift.
-	{ .mask = 0xffc00000, .match = 0x01000000, .id = TMS320C55_INS_RPTSUB, .lop = C55_LOP_NOP, .len = 2, .ops = { { .fn = c55plus_x_01_csr }, { .fn = c55plus_x_01_k4 } } },
-	{ .mask = 0xffc00000, .match = 0x01400000, .id = TMS320C55_INS_RPTADD, .lop = C55_LOP_NOP, .len = 2, .ops = { { .fn = c55plus_x_01_csr }, { .fn = c55plus_x_01_k4 } } },
-	{ .mask = 0xffc00000, .match = 0x01800000, .id = TMS320C55_INS_RPTADD, .lop = C55_LOP_NOP, .len = 2, .ops = { { .fn = c55plus_x_01_csr }, { .fn = c55plus_x_01_reg } } },
+	{ .mask = 0xffc00000, .match = 0x01000000, .id = TMS320C55_INS_RPTSUB, .lop = C55_LOP_RPTSUB, .len = 2, .ops = { { .fn = c55plus_x_01_csr }, { .fn = c55plus_x_01_k4 } } },
+	{ .mask = 0xffc00000, .match = 0x01400000, .id = TMS320C55_INS_RPTADD, .lop = C55_LOP_RPTADD, .len = 2, .ops = { { .fn = c55plus_x_01_csr }, { .fn = c55plus_x_01_k4 } } },
+	{ .mask = 0xffc00000, .match = 0x01800000, .id = TMS320C55_INS_RPTADD, .lop = C55_LOP_RPTADD, .len = 2, .ops = { { .fn = c55plus_x_01_csr }, { .fn = c55plus_x_01_reg } } },
 	{ .mask = 0xffc00000, .match = 0x01c00000, .id = TMS320C55_INS_RPT, .lop = C55_LOP_NOP, .len = 2, .ops = { { .fn = c55plus_x_01_csr } } },
 	// rol / ror carry, ACx, carry, ACy (opcode 0xa8, 4 bytes). byte2[7] selects
 	// rol (0) / ror (1); byte3[0] the carry-in flag and byte3[1] the carry-out

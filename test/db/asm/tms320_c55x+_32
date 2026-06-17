@@ -400,9 +400,9 @@ d "btstset #0x1d, dbl(*ar1(t1<<#1)), tc2" 91316f3d
 d "callcc #0x008cce," 9b8cceef
 d "circ" 27
 d "rpt csr" 01dd 0x0 nop
-d "rptadd csr, #0x7" 0177 0x0 nop
-d "rptsub csr, #0x6" 0106 0x0 nop
-d "rptadd csr, ar0" 0180 0x0 nop
+d "rptadd csr, #0x7" 0177 0x0 (set csr (+ (var csr) (bv 16 0x7)))
+d "rptsub csr, #0x6" 0106 0x0 (set csr (- (var csr) (bv 16 0x6)))
+d "rptadd csr, ar0" 0180 0x0 (set csr (+ (var csr) (var ar0)))
 d "cmpand ac29.h < ac25, !tc1, tc2" a4dd1989 0x0 (set st0_55 (ite (&& (&& (sle (cast 40 (msb (cast 16 false (>> (var ac29) (bv 8 0x10) false))) (cast 16 false (>> (var ac29) (bv 8 0x10) false))) (var ac25)) (! (== (cast 40 (msb (cast 16 false (>> (var ac29) (bv 8 0x10) false))) (cast 16 false (>> (var ac29) (bv 8 0x10) false))) (var ac25)))) (! (! (is_zero (& (var st0_55) (bv 16 0x2000)))))) (| (var st0_55) (bv 16 0x1000)) (& (var st0_55) (bv 16 0xefff))))
 d "cmporu ac13.l >= t0, !tc2, tc2" a4edb0af 0x0 (set st0_55 (ite (|| (! (&& (ule (cast 16 false (var ac13)) (var t0)) (! (== (cast 16 false (var ac13)) (var t0))))) (! (! (is_zero (& (var st0_55) (bv 16 0x1000)))))) (| (var st0_55) (bv 16 0x1000)) (& (var st0_55) (bv 16 0xefff))))
 d "delay @#0x1b" 601bf4
@@ -453,10 +453,10 @@ d "sat ac19, ac2" 79c2d3 0x0 (set ac2 (ite (! (sle (var ac19) (bv 40 0x7fffffff)
 d "rpt csr" 01dd 0x0 nop
 d "rpt #0x3" 6c0003 0x0 nop
 d "rpt #0xffff" 6cffff 0x0 nop
-d "rptadd csr, #0x7" 0177 0x0 nop
+d "rptadd csr, #0x7" 0177 0x0 (set csr (+ (var csr) (bv 16 0x7)))
 d "rptb #0x004976" 6f4976 0x0 nop
 d "rptcc #0xed,  == #0" 6d0ded 0x0 nop
-d "rptsub csr, #0x6" 0106 0x0 nop
+d "rptsub csr, #0x6" 0106 0x0 (set csr (- (var csr) (bv 16 0x6)))
 d "sat" 2a2d
 d "sftcc ac7, tc2" a987b9b3
 d "sftsc ac27, ac17.h," a6bd9bd1
