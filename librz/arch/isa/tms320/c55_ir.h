@@ -262,6 +262,8 @@ typedef enum {
 	C55_LOP_ANDK, ///< dst = ACx & zero-extend(#k16): immediate and (opcode 0x7d)
 	C55_LOP_ORK, ///< dst = ACx | zero-extend(#k16): immediate or (opcode 0x7e)
 	C55_LOP_XORK, ///< dst = ACx ^ zero-extend(#k16): immediate xor (opcode 0x7f)
+	C55_LOP_RPTADD, ///< CSR = CSR + src: single-repeat-counter add (rptadd CSR, src). The repeat loop itself (the next instruction running CSR+1 times) is a control-flow effect that one-instruction RzIL cannot express; only the named CSR write is modelled.
+	C55_LOP_RPTSUB, ///< CSR = CSR - src: single-repeat-counter subtract (rptsub CSR, src). As with RPTADD, only the CSR write is modelled, not the repeat loop.
 } C55LiftOp;
 
 /** A fully decoded instruction: the single hand-off from decode to the consumers. */
