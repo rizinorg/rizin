@@ -58,6 +58,57 @@ static bool is_c5000(const char *cpu) {
 
 static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 	const char *p;
+	const char *cpu0 = rz_analysis_get_cpu(a);
+	if (cpu0 && rz_str_casecmp(cpu0, "c54x") == 0) {
+		// TMS320C54x: two 40-bit accumulators A/B (with the L/H 16-bit and G
+		// 8-bit guard slices overlapping their parent), eight 16-bit auxiliary
+		// registers AR0-AR7, the T/TRN temporaries, SP, the DP data page, the
+		// BK circular-buffer size, the ST0/ST1/PMST status words, the BRC/RSA/
+		// REA repeat registers, IMR/IFR and the 16-bit XPC program-page. PC is
+		// 24-bit. These names match c54x_reg_info()'s il_var bindings so the
+		// lifter's SET/VAR ops resolve in the IL VM.
+		return rz_str_dup(
+			"=PC	pc\n"
+			"=SP	sp\n"
+			"=BP	sp\n"
+			"=A0	ar0\n"
+			"=A1	ar1\n"
+			"=A2	ar2\n"
+			"=A3	ar3\n"
+			"=A4	ar4\n"
+			"=R0	a\n"
+			"ctr a    .40 0  0 # Accumulator A\n"
+			"gpr al   .16 0  0 # A low word\n"
+			"gpr ah   .16 2  0 # A high word\n"
+			"gpr ag   .8  4  0 # A guard bits\n"
+			"ctr b    .40 5  0 # Accumulator B\n"
+			"gpr bl   .16 5  0 # B low word\n"
+			"gpr bh   .16 7  0 # B high word\n"
+			"gpr bg   .8  9  0 # B guard bits\n"
+			"gpr ar0  .16 10 0 # Auxiliary register 0\n"
+			"gpr ar1  .16 12 0 # Auxiliary register 1\n"
+			"gpr ar2  .16 14 0 # Auxiliary register 2\n"
+			"gpr ar3  .16 16 0 # Auxiliary register 3\n"
+			"gpr ar4  .16 18 0 # Auxiliary register 4\n"
+			"gpr ar5  .16 20 0 # Auxiliary register 5\n"
+			"gpr ar6  .16 22 0 # Auxiliary register 6\n"
+			"gpr ar7  .16 24 0 # Auxiliary register 7\n"
+			"ctr t    .16 26 0 # Temporary register\n"
+			"ctr trn  .16 28 0 # Transition register\n"
+			"ctr sp   .16 30 0 # Stack pointer\n"
+			"ctr dp   .16 32 0 # Data page pointer\n"
+			"ctr bk   .16 34 0 # Circular buffer size\n"
+			"ctr st0  .16 36 0 # Status register 0\n"
+			"ctr st1  .16 38 0 # Status register 1\n"
+			"ctr pmst .16 40 0 # Processor mode status\n"
+			"ctr brc  .16 42 0 # Block-repeat counter\n"
+			"ctr rsa  .16 44 0 # Block-repeat start address\n"
+			"ctr rea  .16 46 0 # Block-repeat end address\n"
+			"ctr imr  .16 48 0 # Interrupt mask register\n"
+			"ctr ifr  .16 50 0 # Interrupt flag register\n"
+			"ctr xpc  .16 52 0 # Extended program counter\n"
+			"ctr pc   .24 54 0 # Program counter\n");
+	}
 	if (is_c5000(rz_analysis_get_cpu(a))) {
 		p =
 			"=PC	pc\n"
@@ -390,11 +441,15 @@ static RzList /*<RzSearchKeyword *>*/ *tms320_analysis_preludes(RzAnalysis *anal
 }
 
 static RzAnalysisILConfig *tms320_il_config(RzAnalysis *analysis) {
-	// IL is provided for the C55x/C55x+ integer core; other CPUs (c64x, plain
-	// byte-mode) have no IL yet, so return NULL to leave the VM unconfigured.
+	// IL is provided for the C55x/C55x+ integer core and the C54x core; other
+	// CPUs (c64x, plain byte-mode) have no IL yet, so return NULL to leave the
+	// VM unconfigured.
 	const char *cpu = rz_analysis_get_cpu(analysis);
 	if (cpu && (rz_str_casecmp(cpu, "c55x+") == 0 || rz_str_casecmp(cpu, "c55x") == 0)) {
 		return tms320_c55x_plus_il_config(analysis);
+	}
+	if (cpu && rz_str_casecmp(cpu, "c54x") == 0) {
+		return tms320_c54x_il_config(analysis);
 	}
 	return NULL;
 }

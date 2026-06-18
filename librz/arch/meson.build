@@ -320,6 +320,7 @@ arch_isa_sources = [
   'isa/spc700/spc700dis.c',
   'isa/tms320/c55_ir.c',
   'isa/tms320/c54x/c54x.c',
+  'isa/tms320/c54x/c54x_il.c',
   'isa/tms320/c55x_plus/c55plus_arch.c',
   'isa/tms320/c55x/c55x_analysis.c',
   'isa/tms320/c55x_plus/c55plus_analysis.c',

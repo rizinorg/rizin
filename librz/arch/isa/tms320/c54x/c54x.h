@@ -185,6 +185,14 @@ extern const C55ArchDesc c54x_arch_desc;
 RZ_IPI int tms320_c54x_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	const ut8 *buf, int len, RzAnalysisOpMask mask);
 
+/// RzIL VM configuration (register bindings) for the C54x core.
+RZ_IPI RzAnalysisILConfig *tms320_c54x_il_config(RZ_NONNULL RzAnalysis *analysis);
+
+/// Per-instruction RzIL lifter: the C55ArchDesc::lift hook wired into
+/// \ref c54x_arch_desc and dispatched by c55_lift. Defined in c54x_il.c;
+/// returns NULL for instructions that are not (yet) lifted.
+RZ_IPI RzILOpEffect *c54x_lift(const C55Insn *insn, ut64 pc);
+
 #ifdef __cplusplus
 }
 #endif

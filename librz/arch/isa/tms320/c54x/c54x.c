@@ -1330,7 +1330,6 @@ static ut8 c54x_insn_len(const ut8 *buf, int len) {
 RZ_IPI int tms320_c54x_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	(void)analysis;
-	(void)mask;
 	if (!op || !buf || len < 1) {
 		return 0;
 	}
@@ -1339,6 +1338,9 @@ RZ_IPI int tms320_c54x_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	C55Insn ci;
 	if (c55_decode(&c54x_arch_desc, buf, len, &ci)) {
 		c55_fill_analysis(&c54x_arch_desc, &ci, op);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = c55_lift(&c54x_arch_desc, &ci, op->addr);
+		}
 	} else {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		op->size = 1;
@@ -1355,7 +1357,7 @@ const C55ArchDesc c54x_arch_desc = {
 	.reg_info = c54x_reg_info,
 	.mnemonic = c54x_mnemonic,
 	.op_type = c54x_op_type,
-	.lift = NULL,
+	.lift = c54x_lift,
 	.mem = { .addr_unit_log2 = 1, .ptr_width = 16, .big_endian = false, .page_reg = "dp" },
 	.ea = NULL,
 	.fill_dual = NULL,

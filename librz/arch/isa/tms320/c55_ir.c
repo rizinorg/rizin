@@ -316,6 +316,17 @@ RzILOpPure *c55_generic_ea(const C55ArchDesc *a, const C55Operand *m) {
 		ea = a->mem.page_reg
 			? LOGOR(SHIFTL(IL_FALSE, UNSIGNED(aw, VARG(a->mem.page_reg)), UN(8, 16)), UN(aw, k16))
 			: UN(aw, k16);
+	} else if (a->arch == C55_ARCH_C54X && m->amode == C55_AM_DIRECT) {
+		// C54x direct addressing: a 7-bit offset combined with the 9-bit DP page
+		// to form a 16-bit word address, unless compiler mode (CPL = ST1[14]) is
+		// set, in which case it is SP-relative.
+		ut64 off = (ut64)((ut32)m->disp & 0x7f);
+		RzILOpPure *dp_addr = LOGOR(SHIFTL0(LOGAND(UNSIGNED(aw, VARG("dp")), UN(aw, 0x1ff)), UN(8, 7)), UN(aw, off));
+		RzILOpPure *sp_addr = ADD(UNSIGNED(aw, VARG("sp")), UN(aw, off));
+		ea = ITE(NON_ZERO(LOGAND(VARG("st1"), UN(16, 0x4000))), sp_addr, dp_addr);
+	} else if (a->arch == C55_ARCH_C54X && m->amode == C55_AM_MMR) {
+		// C54x memory-mapped register: a word address in page 0 of data memory.
+		ea = UN(aw, (ut64)m->abs_addr);
 	} else {
 		RzILOpPure *base = c55_reg_var(a, m->reg);
 		if (!base) {
@@ -348,6 +359,13 @@ RzILOpPure *c55_generic_ea(const C55ArchDesc *a, const C55Operand *m) {
 // EA for any memory operand: generic modes here, exotic modes via the arch hook.
 static RzILOpPure *c55_ea(const C55ArchDesc *a, const C55Operand *m) {
 	if (m->amode >= C55_AM_INDIRECT && m->amode <= C55_AM_ABS16) {
+		return c55_generic_ea(a, m);
+	}
+	// C54x adds direct (@dma) and reverse-carry (*arN+0B / *arN-0B) modes that
+	// sit outside the C55x amode range above but are still resolved generically.
+	if (a->arch == C55_ARCH_C54X &&
+		(m->amode == C55_AM_DIRECT || m->amode == C55_AM_BITREV ||
+			m->amode == C55_AM_BITREV_SUB || m->amode == C55_AM_MMR)) {
 		return c55_generic_ea(a, m);
 	}
 	return a->ea ? a->ea(a, m) : NULL;

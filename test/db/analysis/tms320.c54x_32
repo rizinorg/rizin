@@ -6,7 +6,7 @@ e analysis.cpu=c54x
 arp~^=PC
 EOF
 EXPECT=<<EOF
-=PC	pce1
+=PC	pc
 EOF
 RUN
 
