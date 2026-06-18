@@ -117,7 +117,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		}
 		io->cb_printf("%d\n", iop->pid);
 	} else {
-		eprintf("Try: 'R!pid'\n");
+		eprintf("Try: 'R! pid'\n");
 	}
 	return NULL;
 }
