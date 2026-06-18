@@ -56,9 +56,103 @@ bool test_rz_lzma_enc(void) {
 	mu_end;
 }
 
+// LZMA-alone (legacy LZMA1, .lzma) fixtures generated with: xz --format=lzma -c
+// They share inflated payloads with the .xz cases above so the difference is
+// purely the container header (0x5d... instead of the .xz magic).
+struct {
+	const char *inflated;
+	const unsigned char deflated[160];
+	size_t deflated_length;
+} test_cases_alone[] = {
+	{ "1234567890abcdefghijklmnopqrstuvwxyz\n",
+		{ 0x5d, 0x00, 0x00, 0x80, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+			0xff, 0x00, 0x18, 0x8c, 0x82, 0xb6, 0xc4, 0x11, 0x34, 0x5c, 0x4e, 0xe1,
+			0xd6, 0x5e, 0xd1, 0x46, 0xf2, 0x6e, 0xf8, 0x5b, 0xdf, 0x60, 0xc9, 0x34,
+			0x08, 0x05, 0x5f, 0xa3, 0xc3, 0x5d, 0x4c, 0xe6, 0xcd, 0x2d, 0x81, 0x37,
+			0xfe, 0x2c, 0x76, 0xd3, 0x09, 0xe7, 0xff, 0xff, 0xc9, 0x9d, 0x00, 0x00 },
+		60 },
+	{ "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n",
+		{ 0x5d, 0x00, 0x00, 0x80, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+			0xff, 0x00, 0x26, 0x1b, 0xca, 0x46, 0x67, 0x5a, 0xf2, 0x77, 0xb8, 0x7d,
+			0x86, 0xd8, 0x41, 0xdb, 0x05, 0x35, 0xcd, 0x83, 0xa5, 0x7c, 0x12, 0xa5,
+			0x05, 0xdb, 0x90, 0xbd, 0x2f, 0x14, 0xd3, 0x71, 0x72, 0x96, 0xa8, 0x8a,
+			0x7d, 0x84, 0x56, 0x71, 0x8d, 0x6a, 0x22, 0x98, 0xab, 0x9e, 0x3d, 0xc3,
+			0x55, 0xef, 0xcc, 0xa5, 0xc3, 0xdd, 0x5b, 0x8e, 0xbf, 0x03, 0x81, 0x21,
+			0x40, 0xd6, 0x26, 0x91, 0x02, 0x45, 0x4f, 0x92, 0xa1, 0x78, 0xbb, 0x8a,
+			0x00, 0xaf, 0x90, 0x2a, 0x26, 0x92, 0x02, 0x23, 0xe5, 0x5c, 0xb3, 0x2d,
+			0xe3, 0xe8, 0x5c, 0x2c, 0xfb, 0x32, 0x21, 0xc6, 0x6f, 0x6a, 0x37, 0xb1,
+			0x66, 0x20, 0xcd, 0xb7, 0x52, 0x7d, 0x66, 0xa4, 0x21, 0x08, 0xd1, 0x44,
+			0x0f, 0x7f, 0xad, 0x0d, 0x64, 0xff, 0xed, 0x34, 0x38, 0x00 },
+		130 },
+};
+
+bool test_rz_lzma_alone_dec(void) {
+	// Scenario 1: happy path. Two pre-compressed fixtures must round-trip
+	// byte-for-byte against their original inflated payloads. Uses a default
+	// block size large enough to consume the whole stream in one inner pass.
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(test_cases_alone); i++) {
+		size_t inflated_len = strlen(test_cases_alone[i].inflated);
+		RzBuffer *src = rz_buf_new_with_bytes(test_cases_alone[i].deflated, test_cases_alone[i].deflated_length);
+		RzBuffer *dst = rz_buf_new_empty(inflated_len);
+		mu_assert_true(rz_lzma_alone_dec_buf(src, dst, 1 << 13), "rz_lzma_alone_dec_buf failed on valid fixture");
+		mu_assert_eq(rz_buf_size(dst), inflated_len, "decompressed size mismatch");
+		char *out = calloc(inflated_len + 1, 1);
+		rz_buf_read_at(dst, 0, (ut8 *)out, inflated_len);
+		mu_assert_streq(out, test_cases_alone[i].inflated, "decompressed payload mismatch");
+		free(out);
+		rz_buf_free(src);
+		rz_buf_free(dst);
+	}
+
+	// Scenario 2: tiny block_size forces the inner while-loop to iterate many
+	// times (re-fill input, re-flush output). Exercises the multi-pass code
+	// path that the large block_size in scenario 1 hides.
+	{
+		size_t inflated_len = strlen(test_cases_alone[1].inflated);
+		RzBuffer *src = rz_buf_new_with_bytes(test_cases_alone[1].deflated, test_cases_alone[1].deflated_length);
+		RzBuffer *dst = rz_buf_new_empty(inflated_len);
+		mu_assert_true(rz_lzma_alone_dec_buf(src, dst, 16), "rz_lzma_alone_dec_buf failed with small block_size");
+		char *out = calloc(inflated_len + 1, 1);
+		rz_buf_read_at(dst, 0, (ut8 *)out, inflated_len);
+		mu_assert_streq(out, test_cases_alone[1].inflated, "small-block decompression does not match original");
+		free(out);
+		rz_buf_free(src);
+		rz_buf_free(dst);
+	}
+
+	// Scenario 3: random garbage bytes are not a valid LZMA1 stream. The
+	// decoder must fail cleanly (return false) rather than crash or produce
+	// uninitialized output.
+	{
+		const ut8 garbage[] = {
+			0xDE, 0xAD, 0xBE, 0xEF, 0x42, 0x42, 0x42, 0x42,
+			0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF
+		};
+		RzBuffer *src = rz_buf_new_with_bytes(garbage, sizeof(garbage));
+		RzBuffer *dst = rz_buf_new_empty(0);
+		mu_assert_false(rz_lzma_alone_dec_buf(src, dst, 1 << 13), "garbage input must be rejected");
+		rz_buf_free(src);
+		rz_buf_free(dst);
+	}
+
+	// Scenario 4: empty input buffer triggers the "src_readlen == 0" branch
+	// immediately, which switches the action to LZMA_FINISH on an unprimed
+	// stream. Decoder must fail without UB or crash.
+	{
+		RzBuffer *src = rz_buf_new_empty(0);
+		RzBuffer *dst = rz_buf_new_empty(0);
+		mu_assert_false(rz_lzma_alone_dec_buf(src, dst, 1 << 13), "empty input must be rejected");
+		rz_buf_free(src);
+		rz_buf_free(dst);
+	}
+
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_lzma_dec);
 	mu_run_test(test_rz_lzma_enc);
+	mu_run_test(test_rz_lzma_alone_dec);
 
 	return tests_passed != tests_run;
 }
