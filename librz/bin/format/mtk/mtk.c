@@ -333,7 +333,7 @@ RZ_IPI RzPVector /*<RzBinSection *>*/ *mtk_sections(RzBinFile *bf) {
 			code_section->paddr = mtk->code_offset;
 			code_section->size = mtk->code_size;
 			code_section->vsize = mtk->code_size;
-			code_section->vaddr = MTK_MODEM_BADDR;
+			code_section->vaddr = md1img_baddr(bf);
 			code_section->perm = RZ_PERM_RX;
 			rz_pvector_push(ret, code_section);
 		}

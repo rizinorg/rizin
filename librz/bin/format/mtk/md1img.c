@@ -435,7 +435,7 @@ RZ_IPI RzPVector /*<RzBinAddr *>*/ *md1img_entries(RzBinFile *bf) {
 	if (md1->mtk) {
 		RzBinAddr *entry = RZ_NEW0(RzBinAddr);
 		if (entry) {
-			entry->vaddr = MTK_MODEM_BADDR + (md1->mtk->file_info.jump_offset - md1->mtk->code_offset);
+			entry->vaddr = md1img_baddr(bf) + (md1->mtk->file_info.jump_offset - md1->mtk->code_offset);
 			entry->paddr = md1->gfh_offset + md1->mtk->file_info.jump_offset;
 			rz_pvector_push(ret, entry);
 		}
@@ -518,7 +518,7 @@ RZ_IPI RzPVector /*<RzBinSection *>*/ *md1img_sections(RzBinFile *bf) {
 			code->paddr = md1->gfh_offset + md1->mtk->code_offset;
 			code->size = md1->mtk->code_size;
 			code->vsize = md1->mtk->code_size;
-			code->vaddr = MTK_MODEM_BADDR;
+			code->vaddr = md1img_baddr(bf);
 			code->perm = RZ_PERM_RX;
 			rz_pvector_push(ret, code);
 		}
@@ -555,11 +555,11 @@ RZ_IPI RzPVector /*<RzBinSymbol *>*/ *md1img_symbols(RzBinFile *bf) {
 		// Compute paddr for symbols within mapped regions (kseg0 or kuseg).
 		if (md1->mtk) {
 			ut64 code_paddr = md1->gfh_offset + md1->mtk->code_offset;
-			ut64 kseg0_end = MTK_MODEM_BADDR + md1->mtk->code_size;
+			ut64 kseg0_end = md1img_baddr(bf) + md1->mtk->code_size;
 			ut64 kuseg_base = md1->mtk->file_info.load_addr + md1->mtk->code_offset;
 			ut64 kuseg_end = kuseg_base + md1->mtk->code_size;
-			if (dbg->addr >= MTK_MODEM_BADDR && dbg->addr < kseg0_end) {
-				sym->paddr = code_paddr + (dbg->addr - MTK_MODEM_BADDR);
+			if (dbg->addr >= md1img_baddr(bf) && dbg->addr < kseg0_end) {
+				sym->paddr = code_paddr + (dbg->addr - md1img_baddr(bf));
 			} else if (dbg->addr >= kuseg_base && dbg->addr < kuseg_end) {
 				sym->paddr = code_paddr + (dbg->addr - kuseg_base);
 			}
