@@ -123,7 +123,7 @@ typedef struct rz_debug_frame_t {
 	ut64 bp;
 } RzDebugFrame;
 
-typedef enum{
+typedef enum {
 	RZ_DEBUG_SIGNAL_SOURCE_UNKNOWN,
 	RZ_DEBUG_SIGNAL_SOURCE_EXTERNAL,
 	RZ_DEBUG_SIGNAL_SOURCE_INTERNAL,

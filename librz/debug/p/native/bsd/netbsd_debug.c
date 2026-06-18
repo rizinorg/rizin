@@ -31,10 +31,10 @@
  *         kill(), sigqueue(), tkill()/tgkill(), otherwise
  *         RZ_DEBUG_SIGNAL_SOURCE_INTERNAL.
  */
-static RzDebugSignalSource find_signal_source(int si_code) {
-	if (si_code == SI_USER ||
-		si_code == SI_QUEUE ||
-		si_code == SI_LWP) {
+static RzDebugSignalSource find_signal_source(int signal_code) {
+	if (signal_code == SI_USER ||
+		signal_code == SI_QUEUE ||
+		signal_code == SI_LWP) {
 		return RZ_DEBUG_SIGNAL_SOURCE_EXTERNAL;
 	}
 	return RZ_DEBUG_SIGNAL_SOURCE_INTERNAL;
