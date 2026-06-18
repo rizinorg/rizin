@@ -1778,7 +1778,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->offset = 0LL;
 	core->prompt_offset = 0LL;
 	rz_core_cmd_init(core);
-	rz_core_plugin_init(core);
 
 	RzBreakpointContext bp_ctx = {
 		.user = core,
@@ -1807,6 +1806,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	// initialize config before any corebind
 	rz_core_config_init(core);
 
+	rz_core_plugin_init(core);
 	rz_core_loadlibs_init(core);
 
 	// TODO: get arch from rz_bin or from native arch
