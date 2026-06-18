@@ -171,4 +171,875 @@ xmm0 = 0x00000000000000004010000000000000
 rax = 0x0000000000000003
 xmm0 = 0x0000000000000000401800003fc00000
 EOF
+
+NAME=Missing casting of arguments and register write issue test
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+
+echo "\n====="
+wx 4883e1f0
+pi 1
+aoip
+
+echo "\n====="
+wx 4183c801
+pi 1
+aoip
+
+echo "\n====="
+wx 83d600
+pi 1
+aoip
+
+echo "\n====="
+wx 48835c2430ff
+pi 1
+aoip
+
+echo "\n====="
+wx 838db4000000
+pi 1
+aoip
+
+echo "\n====="
+wx 48834f1008
+pi 1
+aoip
+
+echo "\n====="
+wx 4883d803
+pi 1
+aoip
+
+echo "\n====="
+wx 834b100c
+pi 1
+aoip
+
+echo "\n====="
+wx 83ce10
+pi 1
+aoip
+
+echo "\n====="
+wx 4183ceff
+pi 1
+aoip
+
+EOF
+EXPECT=<<EOF
+
+=====
+and rcx, 0xfffffffffffffff0
+0x0
+(seq
+  (set and_
+    (&
+      (var rcx)
+      (bv 64 0xfffffffffffffff0)))
+  (set rcx
+    (var and_))
+  (set of
+    false)
+  (set cf
+    false)
+  (set _result
+    (var and_))
+  (set pf
+    (!
+      (lsb
+        (let _val
+          (cast 8
+            false
+            (var _result))
+          (let _c4
+            (^
+              (var _val)
+              (>>
+                (var _val)
+                (bv 8 0x4)
+                false))
+            (let _c2
+              (^
+                (var _c4)
+                (>>
+                  (var _c4)
+                  (bv 8 0x2)
+                  false))
+              (^
+                (var _c2)
+                (>>
+                  (var _c2)
+                  (bv 8 0x1)
+                  false))))))))
+  (set zf
+    (is_zero
+      (var _result)))
+  (set sf
+    (msb
+      (var _result))))
+
+=====
+or r8d, 0x01
+0x0
+(seq
+  (set _or
+    (|
+      (cast 32
+        false
+        (var r8))
+      (cast 32
+        false
+        (bv 8 0x1))))
+  (set r8
+    (cast 64
+      false
+      (var _or)))
+  (set of
+    false)
+  (set cf
+    false)
+  (set _result
+    (var _or))
+  (set pf
+    (!
+      (lsb
+        (let _val
+          (cast 8
+            false
+            (var _result))
+          (let _c4
+            (^
+              (var _val)
+              (>>
+                (var _val)
+                (bv 8 0x4)
+                false))
+            (let _c2
+              (^
+                (var _c4)
+                (>>
+                  (var _c4)
+                  (bv 8 0x2)
+                  false))
+              (^
+                (var _c2)
+                (>>
+                  (var _c2)
+                  (bv 8 0x1)
+                  false))))))))
+  (set zf
+    (is_zero
+      (var _result)))
+  (set sf
+    (msb
+      (var _result))))
+
+=====
+adc esi, 0x00
+0x0
+(seq
+  (set _op1
+    (cast 32
+      false
+      (var rsi)))
+  (set _op2
+    (cast 32
+      false
+      (bv 8 0x0)))
+  (set sum
+    (+
+      (+
+        (var _op1)
+        (var _op2))
+      (ite
+        (var cf)
+        (bv 32 0x1)
+        (bv 32 0x0))))
+  (set rsi
+    (cast 64
+      false
+      (var sum)))
+  (set _result
+    (var sum))
+  (set pf
+    (!
+      (lsb
+        (let _val
+          (cast 8
+            false
+            (var _result))
+          (let _c4
+            (^
+              (var _val)
+              (>>
+                (var _val)
+                (bv 8 0x4)
+                false))
+            (let _c2
+              (^
+                (var _c4)
+                (>>
+                  (var _c4)
+                  (bv 8 0x2)
+                  false))
+              (^
+                (var _c2)
+                (>>
+                  (var _c2)
+                  (bv 8 0x1)
+                  false))))))))
+  (set zf
+    (is_zero
+      (var _result)))
+  (set sf
+    (msb
+      (var _result)))
+  (set _result
+    (var sum))
+  (set _x
+    (var _op1))
+  (set _y
+    (var _op2))
+  (set cf
+    (||
+      (||
+        (&&
+          (msb
+            (var _x))
+          (msb
+            (var _y)))
+        (&&
+          (!
+            (msb
+              (var _result)))
+          (msb
+            (var _y))))
+      (&&
+        (msb
+          (var _x))
+        (!
+          (msb
+            (var _result))))))
+  (set of
+    (||
+      (&&
+        (&&
+          (!
+            (msb
+              (var _result)))
+          (msb
+            (var _x)))
+        (msb
+          (var _y)))
+      (&&
+        (&&
+          (msb
+            (var _result))
+          (!
+            (msb
+              (var _x))))
+        (!
+          (msb
+            (var _y))))))
+  (set af
+    (||
+      (||
+        (&&
+          (msb
+            (cast 4
+              false
+              (var _x)))
+          (msb
+            (cast 4
+              false
+              (var _y))))
+        (&&
+          (!
+            (msb
+              (cast 4
+                false
+                (var _result))))
+          (msb
+            (cast 4
+              false
+              (var _y)))))
+      (&&
+        (msb
+          (cast 4
+            false
+            (var _x)))
+        (!
+          (msb
+            (cast 4
+              false
+              (var _result))))))))
+
+=====
+sbb qword [rsp+0x30], 0xffffffffffffffff
+0x0
+(seq
+  (set _op1
+    (loadw 0 64
+      (+
+        (var rsp)
+        (bv 64 0x30))))
+  (set _op2
+    (cast 64
+      false
+      (bv 8 0xff)))
+  (set _diff
+    (-
+      (-
+        (var _op1)
+        (var _op2))
+      (ite
+        (var cf)
+        (bv 64 0x1)
+        (bv 64 0x0))))
+  (storew 0
+    (+
+      (var rsp)
+      (bv 64 0x30))
+    (var _diff))
+  (set _result
+    (var _diff))
+  (set pf
+    (!
+      (lsb
+        (let _val
+          (cast 8
+            false
+            (var _result))
+          (let _c4
+            (^
+              (var _val)
+              (>>
+                (var _val)
+                (bv 8 0x4)
+                false))
+            (let _c2
+              (^
+                (var _c4)
+                (>>
+                  (var _c4)
+                  (bv 8 0x2)
+                  false))
+              (^
+                (var _c2)
+                (>>
+                  (var _c2)
+                  (bv 8 0x1)
+                  false))))))))
+  (set zf
+    (is_zero
+      (var _result)))
+  (set sf
+    (msb
+      (var _result)))
+  (set _result
+    (var _diff))
+  (set _x
+    (var _op1))
+  (set _y
+    (var _op2))
+  (set cf
+    (||
+      (||
+        (&&
+          (!
+            (msb
+              (var _x)))
+          (msb
+            (var _y)))
+        (&&
+          (msb
+            (var _y))
+          (msb
+            (var _result))))
+      (&&
+        (msb
+          (var _result))
+        (!
+          (msb
+            (var _x))))))
+  (set of
+    (||
+      (&&
+        (&&
+          (!
+            (msb
+              (var _result)))
+          (msb
+            (var _x)))
+        (!
+          (msb
+            (var _y))))
+      (&&
+        (&&
+          (msb
+            (var _result))
+          (!
+            (msb
+              (var _x))))
+        (msb
+          (var _y)))))
+  (set af
+    (||
+      (||
+        (&&
+          (!
+            (msb
+              (cast 4
+                false
+                (var _x))))
+          (msb
+            (cast 4
+              false
+              (var _y))))
+        (&&
+          (msb
+            (cast 4
+              false
+              (var _y)))
+          (msb
+            (cast 4
+              false
+              (var _result)))))
+      (&&
+        (msb
+          (cast 4
+            false
+            (var _result)))
+        (!
+          (msb
+            (cast 4
+              false
+              (var _x))))))))
+
+=====
+or dword [rbp+0xb4], 0x00
+0x0
+(seq
+  (set _or
+    (|
+      (loadw 0 32
+        (+
+          (var rbp)
+          (bv 64 0xb4)))
+      (cast 32
+        false
+        (bv 8 0x0))))
+  (storew 0
+    (+
+      (var rbp)
+      (bv 64 0xb4))
+    (var _or))
+  (set of
+    false)
+  (set cf
+    false)
+  (set _result
+    (var _or))
+  (set pf
+    (!
+      (lsb
+        (let _val
+          (cast 8
+            false
+            (var _result))
+          (let _c4
+            (^
+              (var _val)
+              (>>
+                (var _val)
+                (bv 8 0x4)
+                false))
+            (let _c2
+              (^
+                (var _c4)
+                (>>
+                  (var _c4)
+                  (bv 8 0x2)
+                  false))
+              (^
+                (var _c2)
+                (>>
+                  (var _c2)
+                  (bv 8 0x1)
+                  false))))))))
+  (set zf
+    (is_zero
+      (var _result)))
+  (set sf
+    (msb
+      (var _result))))
+
+=====
+or qword [rdi+0x10], 0x08
+0x0
+(seq
+  (set _or
+    (|
+      (loadw 0 64
+        (+
+          (var rdi)
+          (bv 64 0x10)))
+      (cast 64
+        false
+        (bv 8 0x8))))
+  (storew 0
+    (+
+      (var rdi)
+      (bv 64 0x10))
+    (var _or))
+  (set of
+    false)
+  (set cf
+    false)
+  (set _result
+    (var _or))
+  (set pf
+    (!
+      (lsb
+        (let _val
+          (cast 8
+            false
+            (var _result))
+          (let _c4
+            (^
+              (var _val)
+              (>>
+                (var _val)
+                (bv 8 0x4)
+                false))
+            (let _c2
+              (^
+                (var _c4)
+                (>>
+                  (var _c4)
+                  (bv 8 0x2)
+                  false))
+              (^
+                (var _c2)
+                (>>
+                  (var _c2)
+                  (bv 8 0x1)
+                  false))))))))
+  (set zf
+    (is_zero
+      (var _result)))
+  (set sf
+    (msb
+      (var _result))))
+
+=====
+sbb rax, 0x03
+0x0
+(seq
+  (set _op1
+    (var rax))
+  (set _op2
+    (cast 64
+      false
+      (bv 8 0x3)))
+  (set _diff
+    (-
+      (-
+        (var _op1)
+        (var _op2))
+      (ite
+        (var cf)
+        (bv 64 0x1)
+        (bv 64 0x0))))
+  (set rax
+    (var _diff))
+  (set _result
+    (var _diff))
+  (set pf
+    (!
+      (lsb
+        (let _val
+          (cast 8
+            false
+            (var _result))
+          (let _c4
+            (^
+              (var _val)
+              (>>
+                (var _val)
+                (bv 8 0x4)
+                false))
+            (let _c2
+              (^
+                (var _c4)
+                (>>
+                  (var _c4)
+                  (bv 8 0x2)
+                  false))
+              (^
+                (var _c2)
+                (>>
+                  (var _c2)
+                  (bv 8 0x1)
+                  false))))))))
+  (set zf
+    (is_zero
+      (var _result)))
+  (set sf
+    (msb
+      (var _result)))
+  (set _result
+    (var _diff))
+  (set _x
+    (var _op1))
+  (set _y
+    (var _op2))
+  (set cf
+    (||
+      (||
+        (&&
+          (!
+            (msb
+              (var _x)))
+          (msb
+            (var _y)))
+        (&&
+          (msb
+            (var _y))
+          (msb
+            (var _result))))
+      (&&
+        (msb
+          (var _result))
+        (!
+          (msb
+            (var _x))))))
+  (set of
+    (||
+      (&&
+        (&&
+          (!
+            (msb
+              (var _result)))
+          (msb
+            (var _x)))
+        (!
+          (msb
+            (var _y))))
+      (&&
+        (&&
+          (msb
+            (var _result))
+          (!
+            (msb
+              (var _x))))
+        (msb
+          (var _y)))))
+  (set af
+    (||
+      (||
+        (&&
+          (!
+            (msb
+              (cast 4
+                false
+                (var _x))))
+          (msb
+            (cast 4
+              false
+              (var _y))))
+        (&&
+          (msb
+            (cast 4
+              false
+              (var _y)))
+          (msb
+            (cast 4
+              false
+              (var _result)))))
+      (&&
+        (msb
+          (cast 4
+            false
+            (var _result)))
+        (!
+          (msb
+            (cast 4
+              false
+              (var _x))))))))
+
+=====
+or dword [rbx+0x10], 0x0c
+0x0
+(seq
+  (set _or
+    (|
+      (loadw 0 32
+        (+
+          (var rbx)
+          (bv 64 0x10)))
+      (cast 32
+        false
+        (bv 8 0xc))))
+  (storew 0
+    (+
+      (var rbx)
+      (bv 64 0x10))
+    (var _or))
+  (set of
+    false)
+  (set cf
+    false)
+  (set _result
+    (var _or))
+  (set pf
+    (!
+      (lsb
+        (let _val
+          (cast 8
+            false
+            (var _result))
+          (let _c4
+            (^
+              (var _val)
+              (>>
+                (var _val)
+                (bv 8 0x4)
+                false))
+            (let _c2
+              (^
+                (var _c4)
+                (>>
+                  (var _c4)
+                  (bv 8 0x2)
+                  false))
+              (^
+                (var _c2)
+                (>>
+                  (var _c2)
+                  (bv 8 0x1)
+                  false))))))))
+  (set zf
+    (is_zero
+      (var _result)))
+  (set sf
+    (msb
+      (var _result))))
+
+=====
+or esi, 0x10
+0x0
+(seq
+  (set _or
+    (|
+      (cast 32
+        false
+        (var rsi))
+      (cast 32
+        false
+        (bv 8 0x10))))
+  (set rsi
+    (cast 64
+      false
+      (var _or)))
+  (set of
+    false)
+  (set cf
+    false)
+  (set _result
+    (var _or))
+  (set pf
+    (!
+      (lsb
+        (let _val
+          (cast 8
+            false
+            (var _result))
+          (let _c4
+            (^
+              (var _val)
+              (>>
+                (var _val)
+                (bv 8 0x4)
+                false))
+            (let _c2
+              (^
+                (var _c4)
+                (>>
+                  (var _c4)
+                  (bv 8 0x2)
+                  false))
+              (^
+                (var _c2)
+                (>>
+                  (var _c2)
+                  (bv 8 0x1)
+                  false))))))))
+  (set zf
+    (is_zero
+      (var _result)))
+  (set sf
+    (msb
+      (var _result))))
+
+=====
+or r14d, 0xffffffff
+0x0
+(seq
+  (set _or
+    (|
+      (cast 32
+        false
+        (var r14))
+      (cast 32
+        false
+        (bv 8 0xff))))
+  (set r14
+    (cast 64
+      false
+      (var _or)))
+  (set of
+    false)
+  (set cf
+    false)
+  (set _result
+    (var _or))
+  (set pf
+    (!
+      (lsb
+        (let _val
+          (cast 8
+            false
+            (var _result))
+          (let _c4
+            (^
+              (var _val)
+              (>>
+                (var _val)
+                (bv 8 0x4)
+                false))
+            (let _c2
+              (^
+                (var _c4)
+                (>>
+                  (var _c4)
+                  (bv 8 0x2)
+                  false))
+              (^
+                (var _c2)
+                (>>
+                  (var _c2)
+                  (bv 8 0x1)
+                  false))))))))
+  (set zf
+    (is_zero
+      (var _result)))
+  (set sf
+    (msb
+      (var _result))))
+EOF
+EXPECT_ERR=
 RUN
