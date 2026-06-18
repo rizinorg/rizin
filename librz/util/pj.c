@@ -6,6 +6,9 @@
 
 RZ_API void pj_raw(PJ *j, const char *msg) {
 	rz_return_if_fail(j && msg);
+	if (j->level < 0) {
+		return;
+	}
 	if (*msg) {
 		rz_strbuf_append(&j->sb, msg);
 	}
@@ -13,6 +16,9 @@ RZ_API void pj_raw(PJ *j, const char *msg) {
 
 static void pj_comma(PJ *j) {
 	rz_return_if_fail(j);
+	if (j->level < 0) {
+		return;
+	}
 	if (!j->is_key) {
 		if (!j->is_first) {
 			pj_raw(j, ",");
@@ -48,19 +54,27 @@ RZ_API void pj_reset(PJ *j) {
 }
 
 RZ_API char *pj_drain(PJ *pj) {
-	rz_return_val_if_fail(pj && pj->level == 0, NULL);
+	if (!pj) {
+		return NULL;
+	}
+	if (pj->level != 0) {
+		pj_free(pj);
+		return NULL;
+	}
 	char *res = rz_strbuf_drain_nofree(&pj->sb);
 	free(pj);
 	return res;
 }
 
 RZ_API const char *pj_string(PJ *j) {
-	return j ? rz_strbuf_get(&j->sb) : NULL;
+	return (j && j->level >= 0) ? rz_strbuf_get(&j->sb) : NULL;
 }
 
 static PJ *pj_begin(PJ *j, char type) {
 	if (j) {
-		if (!j || j->level >= RZ_PRINT_JSON_DEPTH_LIMIT) {
+		if (j->level < 0 || j->level >= RZ_PRINT_JSON_DEPTH_LIMIT) {
+			j->level = -1;
+			RZ_LOG_ERROR("pj: JSON maximum depth of %d exceeded\n", RZ_PRINT_JSON_DEPTH_LIMIT);
 			return NULL;
 		}
 		char msg[2] = { type, 0 };

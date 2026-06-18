@@ -22,8 +22,19 @@ bool test_pj_reset() {
 	mu_end;
 }
 
+bool test_depth_limit() {
+	PJ *j = pj_new();
+	for (int i = 0; i < RZ_PRINT_JSON_DEPTH_LIMIT + 1; i++) {
+		pj_o(j);
+	}
+	mu_assert_null(pj_string(j), "pj_string should be null after exceeding depth limit");
+	pj_free(j);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_pj_reset);
+	mu_run_test(test_depth_limit);
 	return tests_passed != tests_run;
 }
 
