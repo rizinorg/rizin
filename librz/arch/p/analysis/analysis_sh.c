@@ -1101,13 +1101,23 @@ static int sh_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *d
 	ret = first_nibble_decode[(op_MSB >> 4) & 0x0F](analysis, op, opcode);
 
 	// RzIL uplifting
-	SHOp *ilop = sh_disassembler(opcode);
-	SHILContext *ctx = RZ_NEW0(SHILContext);
-	ctx->use_banked = true;
+	SHCpu cpu = sh_cpu_by_name(rz_analysis_get_cpu(analysis));
+	SHOp *ilop = sh_disassembler(opcode, cpu);
 	if (ilop) {
+		SHILContext *ctx = RZ_NEW0(SHILContext);
+		ctx->use_banked = true;
 		rz_sh_il_opcode(analysis, op, addr, ilop, ctx);
+		RZ_FREE(ctx);
+	} else if (cpu != SH_CPU_SH4) {
+		// The instruction may belong to a more capable CPU (e.g. an
+		// SuperH-4 only instruction decoded while targeting SuperH-3).
+		// In that case it is illegal for the selected CPU.
+		SHOp *sh4op = sh_disassembler(opcode, SH_CPU_SH4);
+		if (sh4op) {
+			op->type = RZ_ANALYSIS_OP_TYPE_ILL;
+			RZ_FREE(sh4op);
+		}
 	}
-	RZ_FREE(ctx);
 	RZ_FREE(ilop);
 
 	return ret;
@@ -1193,7 +1203,7 @@ static int sh_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 
 RzAnalysisPlugin rz_analysis_plugin_sh = {
 	.name = "sh",
-	.desc = "SH-4 code analysis plugin",
+	.desc = "SH-4/SH-3 code analysis plugin",
 	.license = "LGPL3",
 	.arch = "sh",
 	.archinfo = sh_archinfo,

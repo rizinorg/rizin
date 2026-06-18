@@ -10,7 +10,8 @@
 #include "sh/assembler.h"
 
 static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	SHOp *dis_op = sh_disassembler(rz_read_ble16(buf, a->big_endian));
+	SHCpu cpu = sh_cpu_by_name(a->cpu);
+	SHOp *dis_op = sh_disassembler(rz_read_ble16(buf, a->big_endian), cpu);
 	op->size = 2;
 	if (!dis_op) {
 		rz_strbuf_set(&op->buf_asm, "invalid");
@@ -25,7 +26,8 @@ static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 static int assemble(const RzAsm *a, RzAsmOp *ao, const char *str) {
 	bool success;
-	ut16 opcode = sh_assembler(str, a->pc, &success);
+	SHCpu cpu = sh_cpu_by_name(a->cpu);
+	ut16 opcode = sh_assembler(str, a->pc, &success, cpu);
 	if (!success) {
 		return -1;
 	}
@@ -50,7 +52,8 @@ RzAsmPlugin rz_asm_plugin_sh = {
 	.license = "LGPL3",
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
-	.desc = "Hitachi/Renesas SuperH-4 disassembler",
+	.cpus = "sh4,sh3",
+	.desc = "Hitachi/Renesas SuperH-4/SuperH-3 disassembler",
 	.disassemble = &disassemble,
 	.assemble = &assemble,
 	.sw_breakpoint = sh_sw_breakpoint,

@@ -52,7 +52,7 @@ _dA__ 32 64      riscv       BSD     RISC-V Capstone-based disassembler
 adA__ 32         rl78        LGPL3   Renesas RL78 disassembler (by Bastian Engel)
 _dA__ 32         rsp         LGPL3   Nintendo N64 Reality Signal Processor disassembler
 _dA__ 32         rx          LGPL3   Renesas RX Family disassembler (by Heersin)
-adAeI 32         sh          LGPL3   Hitachi/Renesas SuperH-4 disassembler (by DMaroo)
+adAeI 32         sh          LGPL3   Hitachi/Renesas SuperH-4/SuperH-3 disassembler (by DMaroo)
 _dA__ 8 16       snes        LGPL3   SuperNES CPU disassembler
 _dA_I 32 64      sparc       BSD     Sun SPARC Capstone-based disassembler
 _dA__ 16         spc700      LGPL3   Sony SPC700 (Nintendo SuperNES sound-chip) disassembler
