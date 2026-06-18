@@ -10,12 +10,14 @@
 #include <rz_bin.h>
 
 #define MTK_GFH_MAGIC_MASK          0x00FFFFFF
-#define MTK_GFH_MAGIC               0x004D4D4D ///< "MMM" in lower 3 bytes
+/* "MMM" in lower 3 bytes */
+#define MTK_GFH_MAGIC               0x004D4D4D 
 #define MTK_GFH_COMMON_HDR_SIZE     8
 #define MTK_GFH_FILE_INFO_BODY_SIZE 48
 #define MTK_GFH_MIN_FILE_SIZE       (MTK_GFH_COMMON_HDR_SIZE + MTK_GFH_FILE_INFO_BODY_SIZE)
 #define MTK_GFH_FILE_INFO_NAME_SIZE 12
-#define MTK_MODEM_BADDR             0x90000000ULL ///< Runtime virtual base address for modem code
+/* Runtime virtual base address for modem code */
+#define MTK_MODEM_BADDR             0x90000000ULL 
 
 typedef enum {
 	MTK_GFH_TYPE_FILE_INFO = 0x0000,
@@ -74,12 +76,12 @@ typedef struct mtk_gfh_header {
 	ut64 file_offset; ///< File offset where this header starts
 } MtkGfhHeader;
 
+/* Maximum offset to scan for GFH magic when it's not at file start */
+#define MTK_GFH_SCAN_LIMIT 0x1000
+
 /**
  * \brief Top-level parsed object stored as bin_obj.
  */
-/// Maximum offset to scan for GFH magic when it's not at file start
-#define MTK_GFH_SCAN_LIMIT 0x1000
-
 typedef struct mtk_obj {
 	MtkGfhCommonHdr first_common; ///< Common header of the first (file_info) block
 	MtkGfhFileInfo file_info; ///< Parsed file_info body
