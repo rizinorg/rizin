@@ -79,17 +79,17 @@ typedef struct md1img_obj {
 	int md1rom_idx; ///< Index of md1rom section, or -1
 } Md1imgObj;
 
-RZ_IPI bool md1img_check_buffer(RzBuffer *b);
-RZ_IPI bool md1img_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb);
-RZ_IPI void md1img_destroy(RzBinFile *bf);
-RZ_IPI RzBinInfo *md1img_info(RzBinFile *bf);
-RZ_IPI ut64 md1img_baddr(RzBinFile *bf);
-RZ_IPI RzPVector /*<RzBinAddr *>*/ *md1img_entries(RzBinFile *bf);
-RZ_IPI RzPVector /*<RzBinVirtualFile *>*/ *md1img_virtual_files(RzBinFile *bf);
-RZ_IPI RzPVector /*<RzBinMap *>*/ *md1img_maps(RzBinFile *bf);
-RZ_IPI RzPVector /*<RzBinSection *>*/ *md1img_sections(RzBinFile *bf);
-RZ_IPI RzPVector /*<RzBinSymbol *>*/ *md1img_symbols(RzBinFile *bf);
-RZ_IPI RzPVector /*<RzBinString *>*/ *md1img_strings(RzBinFile *bf);
-RZ_IPI RzStructuredData *md1img_structure(RzBinFile *bf);
+RZ_IPI bool md1img_check_buffer(RZ_BORROW RZ_NONNULL RzBuffer *b);
+RZ_IPI bool md1img_load_buffer(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_NONNULL RzBinObject *obj, RZ_BORROW RZ_NONNULL RzBuffer *b, RZ_BORROW RZ_NULLABLE Sdb *sdb);
+RZ_IPI void md1img_destroy(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+RZ_IPI RZ_OWN RzBinInfo *md1img_info(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+RZ_IPI ut64 md1img_baddr(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+RZ_IPI RZ_OWN RzPVector /*<RzBinAddr *>*/ *md1img_entries(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+RZ_IPI RZ_OWN RzPVector /*<RzBinVirtualFile *>*/ *md1img_virtual_files(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+RZ_IPI RZ_OWN RzPVector /*<RzBinMap *>*/ *md1img_maps(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+RZ_IPI RZ_OWN RzPVector /*<RzBinSection *>*/ *md1img_sections(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+RZ_IPI RZ_OWN RzPVector /*<RzBinSymbol *>*/ *md1img_symbols(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+RZ_IPI RZ_OWN RzPVector /*<RzBinString *>*/ *md1img_strings(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+RZ_IPI RZ_OWN RzStructuredData *md1img_structure(RZ_BORROW RZ_NONNULL RzBinFile *bf);
 
 #endif

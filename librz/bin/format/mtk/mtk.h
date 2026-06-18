@@ -92,19 +92,19 @@ typedef struct mtk_obj {
 	ut32 entry_vaddr; ///< = MTK_MODEM_BADDR + (jump_offset - code_offset_relative)
 } MtkObj;
 
-RZ_IPI MtkObj *mtk_obj_new(RzBuffer *b);
-RZ_IPI void mtk_obj_free(MtkObj *mtk);
-RZ_IPI const char *mtk_gfh_type_str(ut16 type);
+RZ_IPI RZ_OWN MtkObj *mtk_obj_new(RZ_BORROW RZ_NONNULL RzBuffer *b);
+RZ_IPI void mtk_obj_free(RZ_OWN RZ_NULLABLE MtkObj *mtk);
+RZ_IPI RZ_BORROW const char *mtk_gfh_type_str(ut16 type);
 
-RZ_IPI bool mtk_check_buffer(RzBuffer *b);
-RZ_IPI bool mtk_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb);
-RZ_IPI void mtk_destroy(RzBinFile *bf);
-RZ_IPI RzBinInfo *mtk_info(RzBinFile *bf);
-RZ_IPI ut64 mtk_baddr(RzBinFile *bf);
-RZ_IPI RzPVector /*<RzBinAddr *>*/ *mtk_entries(RzBinFile *bf);
-RZ_IPI RzPVector /*<RzBinSection *>*/ *mtk_sections(RzBinFile *bf);
-RZ_IPI bool mtk_append_maps(MtkObj *mtk, ut64 paddr, const char *name, RzPVector /*<RzBinMap *>*/ *ret);
-RZ_IPI RzPVector /*<RzBinMap *>*/ *mtk_maps(RzBinFile *bf);
-RZ_IPI RzStructuredData *mtk_structure(RzBinFile *bf);
+RZ_IPI bool mtk_check_buffer(RZ_BORROW RZ_NONNULL RzBuffer *b);
+RZ_IPI bool mtk_load_buffer(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_NONNULL RzBinObject *obj, RZ_BORROW RZ_NONNULL RzBuffer *b, RZ_BORROW RZ_NULLABLE Sdb *sdb);
+RZ_IPI void mtk_destroy(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+RZ_IPI RZ_OWN RzBinInfo *mtk_info(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+RZ_IPI ut64 mtk_baddr(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+RZ_IPI RZ_OWN RzPVector /*<RzBinAddr *>*/ *mtk_entries(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+RZ_IPI RZ_OWN RzPVector /*<RzBinSection *>*/ *mtk_sections(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+RZ_IPI bool mtk_append_maps(RZ_BORROW RZ_NONNULL MtkObj *mtk, ut64 paddr, RZ_BORROW RZ_NULLABLE const char *name, RZ_BORROW RZ_NONNULL RzPVector /*<RzBinMap *>*/ *ret);
+RZ_IPI RZ_OWN RzPVector /*<RzBinMap *>*/ *mtk_maps(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+RZ_IPI RZ_OWN RzStructuredData *mtk_structure(RZ_BORROW RZ_NONNULL RzBinFile *bf);
 
 #endif
