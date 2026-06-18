@@ -1862,7 +1862,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_assemble_handler(RzCore *core, int argc, const 
 	RzAsmCode *acode;
 	if (!(acode = rz_asm_massemble(core->rasm, argv[1]))) {
 		RZ_LOG_ERROR("Failed to assemble '%s'\n", argv[1]);
-		RZ_LOG_ERROR("Consider using \"/ar\" instead.\n");
+		RZ_LOG_ERROR("Consider using \"/ad\" instead.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	size_t len = acode->len;
