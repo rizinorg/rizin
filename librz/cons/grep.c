@@ -2,9 +2,13 @@
 // SPDX-FileCopyrightText: 2009-2020 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_util/rz_regex.h"
+#include "rz_util/rz_str.h"
+#include "rz_util/rz_strbuf.h"
 #include <rz_cons.h>
 #include <rz_util/rz_print.h>
 #include <sdb.h>
+#include <string.h>
 
 #define I(x) rz_cons_singleton()->x
 
@@ -20,81 +24,16 @@ static char *strchr_ns(char *s, const char ch) {
 	return p;
 }
 
-typedef struct {
-	const char *fields_start;
-	const char *fields_end;
-	const char *tail;
-} JsonArrayProjectionPath;
-
-/**
- * \brief Parse `.[] | {...}` projection syntax.
- * \param path JSON grep path without outer braces.
- * \param projection Parsed projection spans.
- */
-static bool json_array_projection_path_parse(RZ_BORROW const char *path, RZ_OUT JsonArrayProjectionPath *projection) {
-	rz_return_val_if_fail(path && projection, false);
-	*projection = (JsonArrayProjectionPath){ 0 };
-	const char *p = rz_str_trim_head_ro(path);
-	if (*p != '.') {
-		return false;
-	}
-	p = rz_str_trim_head_ro(p + 1);
-	if (*p != '[') {
-		return false;
-	}
-	p = rz_str_trim_head_ro(p + 1);
-	if (*p != ']') {
-		return false;
-	}
-	p = rz_str_trim_head_ro(p + 1);
-	if (*p == '\\' && p[1] == '|') {
-		p++;
-	}
-	if (*p != '|') {
-		return false;
-	}
-	p = rz_str_trim_head_ro(p + 1);
-	if (*p != '{') {
-		return false;
-	}
-	projection->fields_start = p + 1;
-	projection->fields_end = strchr(projection->fields_start, '}');
-	if (!projection->fields_end) {
-		return false;
-	}
-	projection->tail = rz_str_trim_head_ro(projection->fields_end + 1);
-	return true;
-}
-
 /**
  * \brief Duplicate the JSON path inside a grep `{...}` expression.
  * \param str Expression starting at `{`.
  * \return Path string, or NULL on missing delimiter.
- *
- * Projection paths balance inner braces; ordinary paths stop at the first `}`.
  */
-static RZ_OWN char *json_path_dup(RZ_BORROW const char *str) {
+static RZ_OWN char *json_path_dup(RZ_BORROW const char *str, ut32 size) {
 	rz_return_val_if_fail(str && *str == '{', NULL);
 	const char *start = str + 1;
-	JsonArrayProjectionPath projection;
-
-	if (!json_array_projection_path_parse(start, &projection)) {
-		const char *end = strchr(start, '}');
-		return end ? rz_str_ndup(start, end - start) : NULL;
-	}
-	const char *p = start;
-	int braces = 0;
-	for (; *p; p++) {
-		if (*p == '{') {
-			braces++;
-		} else if (*p == '}') {
-			if (!braces) {
-				return rz_str_ndup(start, p - start);
-			}
-			braces--;
-		}
-	}
-	return NULL;
+	const char *end = rz_str_rchr(start, str + size - 1, '}');
+	return end ? rz_str_ndup(start, end - start) : NULL;
 }
 
 /**
@@ -103,18 +42,11 @@ static RZ_OWN char *json_path_dup(RZ_BORROW const char *str) {
  * \param projection Parsed projection path.
  * \return Compact JSON string, or NULL on malformed projection/allocation failure.
  */
-static RZ_OWN char *json_array_projection(RZ_BORROW const RzJson *json, RZ_BORROW const JsonArrayProjectionPath *projection) {
-	rz_return_val_if_fail(json && projection, NULL);
-	if (*projection->tail) {
-		return NULL;
-	}
-
-	char *fields_str = rz_str_ndup(projection->fields_start, projection->fields_end - projection->fields_start);
-	if (!fields_str) {
-		return NULL;
-	}
-	RzList *fields = rz_str_split_duplist(fields_str, ",", true);
-	free(fields_str);
+static RZ_OWN char *json_path_array_projection(RZ_BORROW const RzJson *json, const char *json_path) {
+	rz_return_val_if_fail(json && json_path, NULL);
+	RzStrBuf *match = rz_regex_full_match_str("^[[:space:]]*\\.[[:space:]]*\\[[[:space:]]*\\][[:space:]]*\\\\?\\|[[:space:]]*\\{[[:space:]]*\\K[^{}|]+?(?=[[:space:]]*\\}[[:space:]]*$)", json_path, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_DEFAULT, RZ_REGEX_DEFAULT, ",");
+	RzList *fields = rz_str_split_duplist(rz_strbuf_get(match), ",", true);
+	rz_strbuf_free(match);
 	if (!fields) {
 		return NULL;
 	}
@@ -186,6 +118,37 @@ static RZ_OWN char *json_array_projection(RZ_BORROW const RzJson *json, RZ_BORRO
 	pj_end(pj);
 	rz_list_free(fields);
 	return pj_drain(pj);
+}
+
+static char *json_path_eval(const char *json_string_in, const char *json_path) {
+	char *json_text = rz_str_dup(json_string_in);
+	if (!json_text) {
+		return NULL;
+	}
+	RzJson *json = rz_json_parse(json_text);
+	if (!json) {
+		free(json_text);
+		return NULL;
+	}
+	char *out = json_path_array_projection(json, json_path);
+	if (!out) {
+		const RzJson *out_json;
+		// To simplify grep syntax we omit brackets in `[0]` for JSON paths
+		if (*json_path != '[' && *json_path != '.') {
+			char *tmppath = rz_str_newf("[%s]", json_path);
+			out_json = rz_json_get_path(json, tmppath);
+			free(tmppath);
+		} else {
+			out_json = rz_json_get_path(json, json_path);
+		}
+		// When we receive the path, it's fetched with the key name
+		// We should get only the value
+		out = out_json ? rz_json_as_string(out_json, false) : NULL;
+	}
+
+	rz_json_free(json);
+	free(json_text);
+	return out;
 }
 
 static const char *help_detail_tilde[] = {
@@ -300,7 +263,7 @@ static void parse_grep_expression(const char *str) {
 					grep->less = 1;
 				}
 			} else {
-				char *jsonPath = json_path_dup(str);
+				char *jsonPath = json_path_dup(str, strlen(str));
 				if (jsonPath) {
 					free(grep->json_path);
 					grep->json_path = jsonPath;
@@ -685,35 +648,7 @@ RZ_API void rz_cons_grepbuf(void) {
 	}
 	if (grep->json) {
 		if (grep->json_path) {
-			char *json_text = rz_str_dup(cons->context->buffer);
-			if (!json_text) {
-				RZ_FREE(grep->json_path);
-				return;
-			}
-			RzJson *json = rz_json_parse(json_text);
-			if (!json) {
-				free(json_text);
-				RZ_FREE(grep->json_path);
-				return;
-			}
-			char *out = NULL;
-			JsonArrayProjectionPath projection;
-			if (json_array_projection_path_parse(grep->json_path, &projection)) {
-				out = json_array_projection(json, &projection);
-			} else {
-				const RzJson *out_json;
-				// To simplify grep syntax we omit brackets in `[0]` for JSON paths
-				if (*grep->json_path != '[' && *grep->json_path != '.') {
-					char *tmppath = rz_str_newf("[%s]", grep->json_path);
-					out_json = rz_json_get_path(json, tmppath);
-					free(tmppath);
-				} else {
-					out_json = rz_json_get_path(json, grep->json_path);
-				}
-				// When we receive the path, it's fetched with the key name
-				// We should get only the value
-				out = out_json ? rz_json_as_string(out_json, false) : NULL;
-			}
+			char *out = json_path_eval(cons->context->buffer, grep->json_path);
 			if (out) {
 				free(cons->context->buffer);
 				cons->context->buffer = out;
@@ -722,8 +657,6 @@ RZ_API void rz_cons_grepbuf(void) {
 				grep->json = 0;
 				rz_cons_newline();
 			}
-			rz_json_free(json);
-			free(json_text);
 			RZ_FREE(grep->json_path);
 		} else {
 			const char *palette[] = {
