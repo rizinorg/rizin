@@ -10,7 +10,7 @@ concurrency:
 
 jobs:
   real_pr_shas:
-    uses: rizinorg/rizin/.github/workflows/get_real_pr_shas.yml@dev
+    uses: rot127/rizin/.github/workflows/get_real_pr_shas.yml@lsan
 
   build-and-check-leaks:
     needs:
@@ -45,6 +45,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 2
+
+      - name: Download git diff of PR
+        uses: actions/download-artifact@v8
+        with:
+          name: pr_changes.diff
+          path: pr_changes.diff
 
       - name: Install python and other dependencies
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools libcapstone4 libcapstone-dev
@@ -112,11 +118,6 @@ jobs:
           name: lsan_logs
           path: lsan_reports.tgz
 
-      - name: Download git diff of PR
-        uses: actions/download-artifact@v5
-        with:
-          name: pr_changes
-
       - name: Check for new leaks
         run: |
-          ./sys/lsan_check.py pr_changes.diff $LSAN_LOGS_DIR
+          ./sys/lsan_check.py pr_changes.diff/pr_changes.diff $LSAN_LOGS_DIR

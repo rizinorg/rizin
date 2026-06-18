@@ -78,7 +78,7 @@ def main() -> None:
     print(changed)
 
     asan_text = ""
-    for p in log_dir.rglob('*'):
+    for p in log_dir.rglob("*"):
         if p.is_dir():
             print(f"Skip dir: {p}")
             continue
