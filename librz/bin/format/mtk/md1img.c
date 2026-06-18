@@ -236,7 +236,7 @@ static bool md1img_read_section_hdr(RzBuffer *b, ut64 section_start, Md1imgSecti
 	return true;
 }
 
-RZ_IPI bool md1img_check_buffer(RzBuffer *b) {
+RZ_IPI bool md1img_check_buffer(RZ_BORROW RZ_NONNULL RzBuffer *b) {
 	rz_return_val_if_fail(b, false);
 
 	if (rz_buf_size(b) < MD1IMG_MIN_HDR_SIZE) {
@@ -250,7 +250,7 @@ RZ_IPI bool md1img_check_buffer(RzBuffer *b) {
 	return memcmp(magic, MD1IMG_MAGIC, MD1IMG_MAGIC_SIZE) == 0;
 }
 
-RZ_IPI bool md1img_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
+RZ_IPI bool md1img_load_buffer(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_NONNULL RzBinObject *obj, RZ_BORROW RZ_NONNULL RzBuffer *b, RZ_BORROW RZ_NULLABLE Sdb *sdb) {
 	rz_return_val_if_fail(bf && obj && b, false);
 
 	Md1imgObj *md1 = RZ_NEW0(Md1imgObj);
@@ -387,7 +387,7 @@ RZ_IPI bool md1img_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb
 	return true;
 }
 
-RZ_IPI void md1img_destroy(RzBinFile *bf) {
+RZ_IPI void md1img_destroy(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return;
 	}
@@ -399,7 +399,7 @@ RZ_IPI void md1img_destroy(RzBinFile *bf) {
 	free(md1);
 }
 
-RZ_IPI RzBinInfo *md1img_info(RzBinFile *bf) {
+RZ_IPI RZ_OWN RzBinInfo *md1img_info(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	RzBinInfo *info = RZ_NEW0(RzBinInfo);
 	if (!info) {
 		return NULL;
@@ -419,11 +419,11 @@ RZ_IPI RzBinInfo *md1img_info(RzBinFile *bf) {
 	return info;
 }
 
-RZ_IPI ut64 md1img_baddr(RzBinFile *bf) {
+RZ_IPI ut64 md1img_baddr(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	return MTK_MODEM_BADDR;
 }
 
-RZ_IPI RzPVector /*<RzBinAddr *>*/ *md1img_entries(RzBinFile *bf) {
+RZ_IPI RZ_OWN RzPVector /*<RzBinAddr *>*/ *md1img_entries(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	Md1imgObj *md1 = bf->o->bin_obj;
@@ -444,7 +444,7 @@ RZ_IPI RzPVector /*<RzBinAddr *>*/ *md1img_entries(RzBinFile *bf) {
 	return ret;
 }
 
-RZ_IPI RzPVector /*<RzBinVirtualFile *>*/ *md1img_virtual_files(RzBinFile *bf) {
+RZ_IPI RZ_OWN RzPVector /*<RzBinVirtualFile *>*/ *md1img_virtual_files(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	Md1imgObj *md1 = bf->o->bin_obj;
@@ -465,7 +465,7 @@ RZ_IPI RzPVector /*<RzBinVirtualFile *>*/ *md1img_virtual_files(RzBinFile *bf) {
 	return ret;
 }
 
-RZ_IPI RzPVector /*<RzBinMap *>*/ *md1img_maps(RzBinFile *bf) {
+RZ_IPI RZ_OWN RzPVector /*<RzBinMap *>*/ *md1img_maps(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	Md1imgObj *md1 = bf->o->bin_obj;
@@ -501,7 +501,7 @@ RZ_IPI RzPVector /*<RzBinMap *>*/ *md1img_maps(RzBinFile *bf) {
 	return ret;
 }
 
-RZ_IPI RzPVector /*<RzBinSection *>*/ *md1img_sections(RzBinFile *bf) {
+RZ_IPI RZ_OWN RzPVector /*<RzBinSection *>*/ *md1img_sections(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	Md1imgObj *md1 = bf->o->bin_obj;
@@ -527,7 +527,7 @@ RZ_IPI RzPVector /*<RzBinSection *>*/ *md1img_sections(RzBinFile *bf) {
 	return ret;
 }
 
-RZ_IPI RzPVector /*<RzBinSymbol *>*/ *md1img_symbols(RzBinFile *bf) {
+RZ_IPI RZ_OWN RzPVector /*<RzBinSymbol *>*/ *md1img_symbols(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	Md1imgObj *md1 = bf->o->bin_obj;
@@ -571,13 +571,13 @@ RZ_IPI RzPVector /*<RzBinSymbol *>*/ *md1img_symbols(RzBinFile *bf) {
 	return ret;
 }
 
-RZ_IPI RzPVector /*<RzBinString *>*/ *md1img_strings(RzBinFile *bf) {
+RZ_IPI RZ_OWN RzPVector /*<RzBinString *>*/ *md1img_strings(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	// Container format: suppress string scanning on the raw container buffer.
 	// Strings from the firmware payload are accessible via the mapped vfiles.
 	return rz_pvector_new(NULL);
 }
 
-RZ_IPI RzStructuredData *md1img_structure(RzBinFile *bf) {
+RZ_IPI RZ_OWN RzStructuredData *md1img_structure(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	Md1imgObj *md1 = bf->o->bin_obj;

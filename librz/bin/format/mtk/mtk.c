@@ -68,7 +68,7 @@ static bool mtk_read_file_info(RzBuffer *b, ut64 *offset, MtkGfhFileInfo *fi) {
 		rz_buf_read_le32_offset(b, offset, &fi->processed);
 }
 
-RZ_IPI const char *mtk_gfh_type_str(ut16 type) {
+RZ_IPI RZ_BORROW const char *mtk_gfh_type_str(ut16 type) {
 	switch (type) {
 	case MTK_GFH_TYPE_FILE_INFO:
 		return "file_info";
@@ -93,7 +93,7 @@ RZ_IPI const char *mtk_gfh_type_str(ut16 type) {
 
 // --- GFH format parsing ---
 
-RZ_IPI bool mtk_check_buffer(RzBuffer *b) {
+RZ_IPI bool mtk_check_buffer(RZ_BORROW RZ_NONNULL RzBuffer *b) {
 	rz_return_val_if_fail(b, false);
 
 	ut64 buf_size = rz_buf_size(b);
@@ -129,7 +129,7 @@ RZ_IPI bool mtk_check_buffer(RzBuffer *b) {
 	return true;
 }
 
-RZ_IPI MtkObj *mtk_obj_new(RzBuffer *b) {
+RZ_IPI RZ_OWN MtkObj *mtk_obj_new(RZ_BORROW RZ_NONNULL RzBuffer *b) {
 	rz_return_val_if_fail(b, NULL);
 
 	MtkObj *mtk = RZ_NEW0(MtkObj);
@@ -205,7 +205,7 @@ fail:
 	return NULL;
 }
 
-RZ_IPI void mtk_obj_free(MtkObj *mtk) {
+RZ_IPI void mtk_obj_free(RZ_OWN RZ_NULLABLE MtkObj *mtk) {
 	if (!mtk) {
 		return;
 	}
@@ -213,7 +213,7 @@ RZ_IPI void mtk_obj_free(MtkObj *mtk) {
 	free(mtk);
 }
 
-RZ_IPI bool mtk_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
+RZ_IPI bool mtk_load_buffer(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_NONNULL RzBinObject *obj, RZ_BORROW RZ_NONNULL RzBuffer *b, RZ_BORROW RZ_NULLABLE Sdb *sdb) {
 	rz_return_val_if_fail(bf && obj && b, false);
 	MtkObj *mtk = mtk_obj_new(b);
 	if (!mtk) {
@@ -223,18 +223,18 @@ RZ_IPI bool mtk_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *s
 	return true;
 }
 
-RZ_IPI void mtk_destroy(RzBinFile *bf) {
+RZ_IPI void mtk_destroy(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return;
 	}
 	mtk_obj_free(bf->o->bin_obj);
 }
 
-RZ_IPI ut64 mtk_baddr(RzBinFile *bf) {
+RZ_IPI ut64 mtk_baddr(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	return MTK_MODEM_BADDR;
 }
 
-RZ_IPI RzPVector /*<RzBinAddr *>*/ *mtk_entries(RzBinFile *bf) {
+RZ_IPI RZ_OWN RzPVector /*<RzBinAddr *>*/ *mtk_entries(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	MtkObj *mtk = bf->o->bin_obj;
@@ -253,7 +253,7 @@ RZ_IPI RzPVector /*<RzBinAddr *>*/ *mtk_entries(RzBinFile *bf) {
 	return ret;
 }
 
-RZ_IPI bool mtk_append_maps(MtkObj *mtk, ut64 paddr, const char *name, RzPVector /*<RzBinMap *>*/ *ret) {
+RZ_IPI bool mtk_append_maps(RZ_BORROW RZ_NONNULL MtkObj *mtk, ut64 paddr, RZ_BORROW RZ_NULLABLE const char *name, RZ_BORROW RZ_NONNULL RzPVector /*<RzBinMap *>*/ *ret) {
 	rz_return_val_if_fail(mtk && ret, false);
 	if (mtk->code_size == 0) {
 		return true;
@@ -291,7 +291,7 @@ RZ_IPI bool mtk_append_maps(MtkObj *mtk, ut64 paddr, const char *name, RzPVector
 	return true;
 }
 
-RZ_IPI RzPVector /*<RzBinMap *>*/ *mtk_maps(RzBinFile *bf) {
+RZ_IPI RZ_OWN RzPVector /*<RzBinMap *>*/ *mtk_maps(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	MtkObj *mtk = bf->o->bin_obj;
@@ -304,7 +304,7 @@ RZ_IPI RzPVector /*<RzBinMap *>*/ *mtk_maps(RzBinFile *bf) {
 	return ret;
 }
 
-RZ_IPI RzPVector /*<RzBinSection *>*/ *mtk_sections(RzBinFile *bf) {
+RZ_IPI RZ_OWN RzPVector /*<RzBinSection *>*/ *mtk_sections(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	MtkObj *mtk = bf->o->bin_obj;
@@ -342,7 +342,7 @@ RZ_IPI RzPVector /*<RzBinSection *>*/ *mtk_sections(RzBinFile *bf) {
 	return ret;
 }
 
-RZ_IPI RzBinInfo *mtk_info(RzBinFile *bf) {
+RZ_IPI RZ_OWN RzBinInfo *mtk_info(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	RzBinInfo *info = RZ_NEW0(RzBinInfo);
 	if (!info) {
 		return NULL;
@@ -362,7 +362,7 @@ RZ_IPI RzBinInfo *mtk_info(RzBinFile *bf) {
 	return info;
 }
 
-RZ_IPI RzStructuredData *mtk_structure(RzBinFile *bf) {
+RZ_IPI RZ_OWN RzStructuredData *mtk_structure(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	MtkObj *mtk = bf->o->bin_obj;
