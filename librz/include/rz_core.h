@@ -94,7 +94,8 @@ typedef enum {
 	RZ_CORE_WRITE_OP_SHIFT_RIGHT, ///< Write the shift right of existing byte and argument value
 } RzCoreWriteOp;
 
-typedef bool (*RzCorePluginCallback)(RzCore *core);
+typedef bool (*RzCorePluginInitCallback)(RzCore *core, RZ_OUT void **user);
+typedef bool (*RzCorePluginCallback)(RzCore *core, RZ_NULLABLE void *user);
 
 typedef struct rz_core_plugin_t {
 	const char *name;
@@ -102,9 +103,9 @@ typedef struct rz_core_plugin_t {
 	const char *license;
 	const char *author;
 	const char *version;
-	RzCorePluginCallback init; ///< Is called when the plugin is loaded by rizin
-	RzCorePluginCallback fini; ///< Is called when the plugin is unloaded by rizin
-	RzCorePluginCallback analysis; ///< Is called when automatic analysis is performed.
+	RzCorePluginInitCallback init; ///< Is called when the plugin is loaded by rizin. Stores per-core plugin state in user.
+	RzCorePluginCallback fini; ///< Is called when the plugin is unloaded by rizin with the per-core plugin state.
+	RzCorePluginCallback analysis; ///< Is called when automatic analysis is performed with the per-core plugin state.
 } RzCorePlugin;
 
 typedef struct rz_core_rtr_host_t RzCoreRtrHost;
@@ -295,6 +296,7 @@ struct rz_core_t {
 	// They are used in pointer passing hacks in rz_types.h.
 	RzIO *io;
 	HtSP /*<RzCorePlugin *>*/ *plugins; ///< List of registered core plugins
+	HtSP /*<void *>*/ *plugin_contexts; ///< Per-core plugin state
 	RzConfig *config;
 	HtSP /*<plugin_name: RzConfig>*/ *plugin_configs; ///< Pointers to plugin configurations. Indexed by plugin name
 	ut64 offset; // current seek
@@ -463,6 +465,15 @@ RZ_API bool rz_core_plugin_init(RzCore *core);
 RZ_API bool rz_core_plugin_add(RzCore *core, RZ_NONNULL RzCorePlugin *plugin);
 RZ_API bool rz_core_plugin_del(RzCore *core, RZ_NONNULL RzCorePlugin *plugin);
 RZ_API bool rz_core_plugin_fini(RzCore *core);
+RZ_API void *rz_core_plugin_context_get(RZ_NONNULL RzCore *core, RZ_NONNULL RzCorePlugin *plugin);
+RZ_API RzCmdDesc *rz_core_plugin_cmd_desc_argv_new(RZ_NONNULL RzCore *core,
+	RZ_NONNULL const char *name, RZ_NONNULL RzCmdArgvCb cb,
+	RZ_NONNULL const RzCmdDescHelp *help);
+RZ_API RzCmdDesc *rz_core_plugin_cmd_desc_group_new(RZ_NONNULL RzCore *core,
+	RZ_NONNULL const char *name, RZ_NULLABLE RzCmdArgvCb cb,
+	RZ_NULLABLE const RzCmdDescHelp *help,
+	RZ_NONNULL const RzCmdDescHelp *group_help);
+RZ_API bool rz_core_plugin_cmd_desc_remove(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdDesc *desc);
 
 // #define rz_core_ncast(x) (RzCore*)(size_t)(x)
 RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_core_get_themes(RZ_NONNULL RzCore *core);
@@ -739,7 +750,6 @@ RZ_API RzCmdStatus rz_core_lang_plugins_print(RzLang *lang, RzCmdStateOutput *st
 /* ccore.c */
 RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *state);
 
-/* cil.c */
 RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABLE RzAnalysisFunction *fcn);
 RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut64 a2);
 RZ_API int rz_core_esil_step(RzCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver);
@@ -915,6 +925,18 @@ RZ_API RZ_OWN char *rz_core_graph_to_sdb_str(RZ_NONNULL RzCore *core, RZ_NONNULL
 /*tp.c*/
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUU *addr_loop_table);
 
+/* cil.c */
+/**
+ * \brief Options for printing RzIL instructions.
+ */
+typedef struct rz_core_il_print_options {
+	bool cbytes; ///< If false, ignore the \p len byte limit and print exactly \p n_lines instructions in rz_core_print_disasm().
+	bool pretty; ///< If true, use delimiter(\n).
+	bool colorize; ///< If false, disable colorized output.
+	bool unicode; ///< If true, print RzIL using unicode formatting.
+	RzPVector /*<RzAnalysisDisasmText *>*/ *vec; ///< Output vector;
+} RzCoreILPrintOptions;
+
 /* asm.c */
 #define RZ_MIDFLAGS_HIDE     0
 #define RZ_MIDFLAGS_SHOW     1
@@ -922,9 +944,9 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 #define RZ_MIDFLAGS_SYMALIGN 3
 
 typedef struct rz_core_asm_hit {
+	ut64 addr;
 	char *code;
 	int len;
-	ut64 addr;
 	ut8 valid;
 } RzCoreAsmHit;
 
@@ -954,6 +976,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_bwdisassemble(RzCore *core, ut64
 RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble_instr(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble_byte(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 RZ_API ut32 rz_core_asm_bwdis_len(RzCore *core, int *len, ut64 *start_addr, ut32 l);
+RZ_API int rz_core_il_print_rzil(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL ut8 *buf, size_t len, size_t n_lines, RZ_NULLABLE RzCoreILPrintOptions *options);
 RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL ut8 *buf, int len, int nlines, RZ_NULLABLE RzCmdStateOutput *state, RZ_NULLABLE RzCoreDisasmOptions *options);
 RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int len, int lines, PJ *pj);
 RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address, ut8 *buf, int nb_bytes, int nb_opcodes);
@@ -992,6 +1015,7 @@ RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile);
 RZ_API bool rz_core_bin_apply_maps(RzCore *core, RzBinFile *binfile, bool va);
 RZ_API bool rz_core_bin_apply_main(RzCore *r, RzBinFile *binfile, bool va);
 RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile);
+RZ_API bool rz_core_bin_apply_stabs(RzCore *core, RzBinFile *binfile);
 RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, bool va);
 RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, bool va);
 RZ_API bool rz_core_bin_apply_relocs(RzCore *core, RzBinFile *binfile, bool va);
@@ -1033,6 +1057,7 @@ RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool arg
 #define RZ_CORE_BIN_ACC_LIBS             0x200
 #define RZ_CORE_BIN_ACC_CLASSES          0x400
 #define RZ_CORE_BIN_ACC_DWARF            0x800
+#define RZ_CORE_BIN_ACC_OMF_DEBUG        0x900
 #define RZ_CORE_BIN_ACC_SIZE             0x1000
 #define RZ_CORE_BIN_ACC_PDB              0x2000
 #define RZ_CORE_BIN_ACC_MEM              0x4000
@@ -1204,6 +1229,7 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_debug_heap(RZ_NONNU
 RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_debug_stack(RZ_NONNULL RzCore *core, const RzInterval interval);
 RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_debug_program(RZ_NONNULL RzCore *core, const RzInterval interval);
 RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_select(RZ_NONNULL RzCore *core, RZ_NONNULL const char *from_key, RZ_NONNULL const char *to_key, RZ_NONNULL const char *in_key);
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries(RZ_NONNULL RzCore *core, RzInterval interval, const char *region);
 
 RZ_API bool rz_core_hack(RzCore *core, const char *op);
 RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, int append);

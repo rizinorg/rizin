@@ -126,6 +126,7 @@ static inline bool rz_float_is_neg_zero_long_double(long double zero) {
 #define IS_NEG_ZEROLD(z) rz_float_is_neg_zero_long_double(z)
 
 RZ_API ut32 rz_float_get_format_info(RzFloatFormat format, RzFloatInfo which_info);
+RZ_API RZ_OWN char *rz_float_format_subscript(RzFloatFormat format);
 RZ_API void rz_float_fini(RZ_NONNULL RzFloat *f);
 RZ_API void rz_float_free(RZ_NULLABLE RzFloat *f);
 RZ_API bool rz_float_init(RZ_NONNULL RzFloat *f, RzFloatFormat format);

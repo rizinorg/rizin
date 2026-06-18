@@ -325,3 +325,15 @@ EXPECT=<<EOF
  3 * r-x 0x000000b4 d_/os/obj/x86fre/minkernel/crts/ucrt/src/appcrt/dll/osmode_debug_public/../not_callable_by_os/objfre/i386/clog10l.obj
 EOF
 RUN
+
+NAME=ar reopen in write mode then seek (#6414)
+FILE=ar://bins/ar/libgdbr.a
+CMDS=<<EOF
+oo+
+s 0x08090af7
+p8 16
+EOF
+EXPECT=<<EOF
+554889e5534883ec2848897dd8488b45
+EOF
+RUN

@@ -1501,6 +1501,10 @@ RZ_API RZ_OWN RzFloat *rz_float_cast_float(RZ_NONNULL RzBitVector *bv, RzFloatFo
 	ut32 exp_max_no_bias = bias;
 
 	ut32 width = rz_bv_len(bv) - rz_bv_clz(bv);
+	// Zero has no highest set bit; handle it before width - 1 underflows.
+	if (width == 0) {
+		return rz_float_new_zero(format, false);
+	}
 	ut32 order = width - 1;
 	if (order > exp_max_no_bias) {
 		// error: not representable
@@ -1584,8 +1588,9 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 	RzBitVector *sig = rz_float_get_mantissa(f);
 	bool is_zero = rz_bv_is_zero_vector(sig) && exp == 0;
 
-	// sub normal one has no hidden bit, others should set to 1
-	if (!is_subnormal) {
+	// binary80 stores the integer bit explicitly in the mantissa; all other
+	// normal formats use a hidden bit that must be injected here
+	if (!is_subnormal && format != RZ_FLOAT_IEEE754_BIN_80) {
 		rz_bv_set(sig, man_len, true);
 	}
 
@@ -1639,9 +1644,7 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 		tmp = NULL;
 	}
 
-	// WARN: possible overflow if length < exp_no_bias
-	// WARN: higher bits may be cut off
-	rz_bv_copy_nbits(ret, 0, rounded, 0, rz_bv_len(rounded));
+	rz_bv_copy_nbits(ret, 0, rounded, 0, RZ_MIN(rz_bv_len(rounded), length));
 	rz_bv_free(rounded);
 	return ret;
 }
@@ -1931,4 +1934,57 @@ RZ_API RZ_OWN RzBitVector *rz_float_round_significant(bool sign, RzBitVector *si
  */
 RZ_API RZ_OWN RzFloat *rz_float_round_bv_and_pack(bool sign, st32 exp, RzBitVector *sig, RzFloatFormat format, RzFloatRMode mode) {
 	return round_float_bv_new(sign, exp, sig, format, format, mode);
+}
+
+/**
+ * \brief Render a float format's width as a Unicode subscript string.
+ *
+ * Mirrors the bit-vector width subscript (rz_bv_width_subscript): the
+ * total bit width of \p format is rendered as Unicode subscript
+ * digits, with a leading "d" subscript marker for the decimal
+ * formats. For example IEEE-754 binary32 yields the subscript "32"
+ * and decimal64 yields "d64". This is the single source of truth for
+ * the float-format subscript shared by value formatting and the RzIL
+ * Unicode exporter.
+ *
+ * \param format The float format to annotate.
+ * \return A freshly-allocated, caller-owned string, or NULL on
+ *         allocation failure or an unknown format.
+ */
+RZ_API RZ_OWN char *rz_float_format_subscript(RzFloatFormat format) {
+	// The decimal formats are not fully implemented in RzFloat
+	// (rz_float_get_format_info returns 0 for them), so their widths
+	// are spelled out here; they render with a leading "d" marker.
+	ut32 total;
+	bool is_decimal = false;
+	switch (format) {
+	case RZ_FLOAT_IEEE754_DEC_64:
+		total = 64;
+		is_decimal = true;
+		break;
+	case RZ_FLOAT_IEEE754_DEC_128:
+		total = 128;
+		is_decimal = true;
+		break;
+	default:
+		total = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
+		break;
+	}
+	if (!total) {
+		return NULL;
+	}
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	// Decimal formats carry a "d" marker (U+1D48 modifier letter
+	// small d) before the width to distinguish them from the binary
+	// formats, matching the RzIL Unicode exporter's notation.
+	if (is_decimal && !rz_strbuf_append(&sb, "\u1d48")) {
+		rz_strbuf_fini(&sb);
+		return NULL;
+	}
+	if (!rz_str_append_num_subscript(&sb, total)) {
+		rz_strbuf_fini(&sb);
+		return NULL;
+	}
+	return rz_strbuf_drain_nofree(&sb);
 }

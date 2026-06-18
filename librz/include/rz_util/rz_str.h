@@ -7,6 +7,7 @@
 #include "rz_list.h"
 #include <rz_vector.h>
 #include "rz_types.h"
+#include "rz_strbuf.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -255,6 +256,9 @@ RZ_API RZ_OWN char *rz_str_append(RZ_OWN RZ_NULLABLE char *ptr, const char *stri
 RZ_API char *rz_str_append_owned(char *ptr, char *string);
 RZ_API RZ_OWN char *rz_str_appendf(RZ_OWN RZ_NULLABLE char *ptr, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API char *rz_str_appendch(char *x, char y);
+RZ_API bool rz_str_append_num_subscript(RZ_NONNULL RzStrBuf *sb, ut32 n);
+RZ_API bool rz_str_append_num_superscript(RZ_NONNULL RzStrBuf *sb, ut32 n);
+RZ_API RZ_OWN char *rz_str_num_subscript(ut32 n);
 RZ_API void rz_str_case(char *str, bool up);
 RZ_API void rz_str_trim_path(char *s);
 RZ_API ut8 rz_str_contains_macro(const char *input_value);

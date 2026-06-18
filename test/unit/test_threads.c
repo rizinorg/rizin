@@ -127,6 +127,69 @@ bool test_thread_queue(void) {
 	mu_end;
 }
 
+void *thread_queue_consumer(RzThreadQueue *queue) {
+	ut64 *data;
+	while (rz_th_queue_pop(queue, true, (void **)&data)) {
+		*data = *data * 2;
+	}
+	return NULL;
+}
+
+void *thread_queue_waiter(RzThreadQueue *queue) {
+	rz_th_queue_close_when_empty(queue);
+	return NULL;
+}
+
+bool test_thread_queue_multi_wait(void) {
+	// Test for correct behavior with multiple consumers and empty-waiters,
+	// specifically to discover bugs in condition variable handling.
+	RzThreadQueue *queue = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, NULL);
+	ut64 items[1000];
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(items); i++) {
+		items[i] = (ut64)i;
+		rz_th_queue_push(queue, &items[i], true);
+	}
+	RzThread *consumer[10];
+	RzThread *waiter[RZ_ARRAY_SIZE(consumer)];
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(consumer); i++) {
+		consumer[i] = rz_th_new((RzThreadFunction)thread_queue_consumer, queue);
+		waiter[i] = rz_th_new((RzThreadFunction)thread_queue_waiter, queue);
+	}
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(consumer); i++) {
+		rz_th_wait(consumer[i]);
+		rz_th_free(consumer[i]);
+		rz_th_wait(waiter[i]);
+		rz_th_free(waiter[i]);
+	}
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(items); i++) {
+		mu_assert_eq(items[i], (ut64)i * 2, "computed result");
+	}
+	rz_th_queue_free(queue);
+	mu_end;
+}
+
+void *thread_queue_closer(RzThreadQueue *queue) {
+	// raise probability that we close while rz_th_queue_close_when_empty() is already waiting on the queue's empty_cond
+	rz_sys_usleep(1000);
+
+	rz_th_queue_close(queue);
+	return NULL;
+}
+
+bool test_thread_queue_nonempty_close(void) {
+	// Test for correct behavior when a queue is closed before being fully empty.
+	RzThreadQueue *queue = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, NULL);
+	rz_th_queue_push(queue, (void *)(size_t)42, true);
+	RzThread *closer = rz_th_new((RzThreadFunction)thread_queue_closer, queue);
+	rz_th_queue_close_when_empty(queue);
+	rz_th_wait(closer);
+	rz_th_free(closer);
+	mu_assert_eq(rz_th_queue_size(queue), 1, "queue size");
+	mu_assert_true(rz_th_queue_is_closed(queue), "queue closed");
+	rz_th_queue_free(queue);
+	mu_end;
+}
+
 bool test_thread_ht(void) {
 	bool v_boolean = false;
 	const char *element = NULL;
@@ -652,6 +715,8 @@ int all_tests() {
 	mu_run_test(test_thread_limit);
 	mu_run_test(test_thread_pool_cores);
 	mu_run_test(test_thread_queue);
+	mu_run_test(test_thread_queue_multi_wait);
+	mu_run_test(test_thread_queue_nonempty_close);
 	mu_run_test(test_thread_ht);
 	mu_run_test(test_thread_iterator_list);
 	mu_run_test(test_thread_iterator_pvec);

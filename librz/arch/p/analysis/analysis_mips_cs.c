@@ -58,6 +58,18 @@
 	(op)->dst->reg = rz_reg_get(analysis->reg, REG(0), RZ_REG_TYPE_GPR); \
 	(op)->src[0]->reg = rz_reg_get(analysis->reg, REG(1), RZ_REG_TYPE_GPR);
 
+#define SET_SRC_DST_2_REG_OR_IMM(op) \
+	if (OPERAND(0).type == MIPS_OP_REG) { \
+		CREATE_SRC_DST_2(op); \
+		(op)->dst->reg = rz_reg_get(analysis->reg, REG(0), RZ_REG_TYPE_GPR); \
+		if (OPERAND(1).type == MIPS_OP_REG) { \
+			(op)->src[0]->reg = rz_reg_get(analysis->reg, REG(1), RZ_REG_TYPE_GPR); \
+		} else if (OPERAND(1).type == MIPS_OP_IMM) { \
+			(op)->src[0]->imm = IMM(1); \
+			(op)->src[0]->type = RZ_ANALYSIS_VAL_IMM; \
+		} \
+	}
+
 #define SET_SRC_DST_3_REG_OR_IMM(op) \
 	if (OPERAND(2).type == MIPS_OP_IMM) { \
 		SET_SRC_DST_3_IMM(op); \
@@ -131,15 +143,84 @@ static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num
 
 typedef struct {
 	RzRegItem reg;
-	ut64 t9_pre;
+	ut64 t9_pre; ///< address of the GOT slot $t9 points through (UT64_MAX if unknown)
+	/// For each register (indexed by capstone mips_reg id), the address of the
+	/// gp-relative GOT slot it was last loaded from, or UT64_MAX when it does
+	/// not currently hold such a value. This drives both PIC call resolution
+	/// (`lw vX, %call16(sym)(gp); move t9, vX; jalr t9`) and "GOT page + offset"
+	/// data addressing (`lw vX, %got(sym)(gp); addiu rD, vX, %lo(sym)`).
+	ut64 gp_load_slot[MIPS_REG_ENDING];
 } MIPSContext;
+
+/// Forget the GOT slot tracked for register \p reg (if any).
+static inline void mips_gp_slot_clear(MIPSContext *ctx, mips_reg reg) {
+	if (reg > MIPS_REG_INVALID && reg < MIPS_REG_ENDING) {
+		ctx->gp_load_slot[reg] = UT64_MAX;
+	}
+}
+
+/// Record that register \p reg now holds the value of gp-relative GOT slot \p slot.
+static inline void mips_gp_slot_set(MIPSContext *ctx, mips_reg reg, ut64 slot) {
+	if (reg > MIPS_REG_INVALID && reg < MIPS_REG_ENDING) {
+		ctx->gp_load_slot[reg] = slot;
+	}
+}
+
+/// \return the GOT slot tracked for register \p reg, or UT64_MAX if none.
+static inline ut64 mips_gp_slot_get(MIPSContext *ctx, mips_reg reg) {
+	return (reg > MIPS_REG_INVALID && reg < MIPS_REG_ENDING) ? ctx->gp_load_slot[reg] : UT64_MAX;
+}
+
+/// Drop all gp-load tracking (e.g. at init).
+static inline void mips_gp_slot_reset(MIPSContext *ctx) {
+	for (size_t i = 0; i < MIPS_REG_ENDING; i++) {
+		ctx->gp_load_slot[i] = UT64_MAX;
+	}
+}
 
 static bool mips_init(void **user) {
 	MIPSContext *ctx = RZ_NEW0(MIPSContext);
 	rz_return_val_if_fail(ctx, false);
 	ctx->t9_pre = UT64_MAX;
+	mips_gp_slot_reset(ctx);
 	*user = ctx;
 	return true;
+}
+
+/**
+ * \brief Read the pointer-sized value stored at \p addr (e.g. a MIPS GOT entry).
+ *
+ * \return the stored value, or UT64_MAX when it cannot be read.
+ */
+static ut64 mips_read_pointer(RzAnalysis *analysis, ut64 addr) {
+	if (addr == 0 || addr == UT64_MAX || !analysis->iob.read_at) {
+		return UT64_MAX;
+	}
+	ut8 buf[8] = { 0 };
+	int wordsize = analysis->bits == 64 ? 8 : 4;
+	if (!analysis->iob.read_at(analysis->iob.io, addr, buf, wordsize)) {
+		return UT64_MAX;
+	}
+	return wordsize == 8
+		? rz_read_ble64(buf, analysis->big_endian)
+		: (ut64)rz_read_ble32(buf, analysis->big_endian);
+}
+
+/**
+ * \brief Resolve the target of a PIC call/tail-call made through $t9.
+ *
+ * In MIPS PIC code the callee address is loaded from the GOT into $t9 (either
+ * directly via `lw t9, %call16(sym)(gp)` or via `lw vX, ...(gp)` followed by
+ * `move t9, vX`) and then reached with `jalr t9` / `jr t9`. \p got_slot is the
+ * address of that GOT slot (tracked in MIPSContext); dereferencing it yields
+ * the actual function address (the imported symbol / lazy-binding stub).
+ *
+ * \return the resolved target address, or UT64_MAX when it cannot be
+ * determined, in which case the caller leaves the op unresolved as before.
+ */
+static ut64 mips_pic_call_target(RzAnalysis *analysis, ut64 got_slot) {
+	ut64 target = mips_read_pointer(analysis, got_slot);
+	return target ? target : UT64_MAX;
 }
 
 static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh *handle, cs_insn *insn) {
@@ -173,11 +254,15 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh *handle, cs_i
 	case RZ_ANALYSIS_OP_TYPE_AND:
 	case RZ_ANALYSIS_OP_TYPE_ADD:
 	case RZ_ANALYSIS_OP_TYPE_OR:
-		SET_SRC_DST_3_REG_OR_IMM(op);
+		if (OPCOUNT() == 2) {
+			SET_SRC_DST_2_REG_OR_IMM(op);
+		} else {
+			SET_SRC_DST_3_REG_OR_IMM(op);
+		}
 		break;
 	case RZ_ANALYSIS_OP_TYPE_MOV:
-		if (OPCOUNT() == 2 && OPERAND(0).type == MIPS_OP_REG && OPERAND(1).type == MIPS_OP_REG) {
-			SET_SRC_DST_2_REGS(op);
+		if (OPCOUNT() == 2) {
+			SET_SRC_DST_2_REG_OR_IMM(op);
 		} else {
 			SET_SRC_DST_3_REG_OR_IMM(op);
 		}
@@ -259,7 +344,10 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 	cs_insn *insn = NULL;
 	cs_mode mode = 0;
 	ut32 gpr_size = 0;
-	if (!cs_mode_from_cpu(analysis->cpu, analysis->bits, analysis->big_endian, &mode, &gpr_size)) {
+	// Register whose gp-load tracking this instruction (re)establishes; used to
+	// avoid the post-switch write-invalidation clobbering it again.
+	int gp_tracked_reg = MIPS_REG_INVALID;
+	if (!cs_mode_from_cpu(rz_analysis_get_cpu(analysis), analysis->bits, analysis->big_endian, &mode, &gpr_size)) {
 		return -1;
 	}
 
@@ -331,11 +419,20 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		case MIPS_OP_MEM:
 			if (IS_REG_GP(OPERAND(1).mem.base)) {
 				op->ptr = analysis->gp + OPERAND(1).mem.disp;
+				// Remember this gp-relative load: a following `move t9, <reg>`
+				// (PIC call setup) or `addiu rD, <reg>, ofst` (GOT page+offset
+				// data addressing) can then recover/resolve the real target.
+				mips_gp_slot_set(ctx, REGID(0), op->ptr);
+				gp_tracked_reg = REGID(0);
 				if (IS_REG_T9(REGID(0))) {
 					ctx->t9_pre = op->ptr;
 				}
-			} else if (IS_REG_T9(REGID(0))) {
-				ctx->t9_pre = UT64_MAX;
+			} else {
+				if (IS_REG_T9(REGID(0))) {
+					ctx->t9_pre = UT64_MAX;
+				}
+				// A non-gp load into the register invalidates its tracking; this
+				// is handled by the post-switch write-invalidation.
 			}
 			break;
 		case MIPS_OP_IMM:
@@ -379,9 +476,17 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		op->delay = 1;
 		op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
 		if (IS_REG_T9(REGID(0))) {
-			op->jump = ctx->t9_pre;
-			ctx->t9_pre = UT64_MAX;
 			op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
+			// Resolve the PIC callee: $t9 holds (a copy of) the GOT slot
+			// address; dereference it so the call points at the imported
+			// function. For (R|U)CALL ops the core builds the CALL xref from
+			// op->ptr, so set that (and op->jump) to the resolved target.
+			ut64 target = mips_pic_call_target(analysis, ctx->t9_pre);
+			if (target != UT64_MAX) {
+				op->ptr = target;
+				op->jump = target;
+			}
+			ctx->t9_pre = UT64_MAX;
 		}
 		break;
 #if CS_NEXT_VERSION >= 6
@@ -443,6 +548,12 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		break;
 	case MIPS_INS_MOVE:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		if (IS_REG_T9(REGID(0))) {
+			// `move t9, vX` right after `lw vX, %call16(sym)(gp)` is the
+			// canonical PIC call sequence; carry the GOT slot over to $t9 so
+			// the upcoming jalr can be resolved to the imported function.
+			ctx->t9_pre = mips_gp_slot_get(ctx, REGID(1));
+		}
 		break;
 	case MIPS_INS_ADD:
 	case MIPS_INS_ADDI:
@@ -454,8 +565,33 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		SET_VAL(op, 2);
 		op->sign = (insn->id == MIPS_INS_ADDI || insn->id == MIPS_INS_ADD || insn->id == MIPS_INS_DADD);
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		// MIPS PIC "GOT page + offset" addressing of a local symbol:
+		//   lw    vX, %got(sym)(gp)   ; vX = GOT page base
+		//   addiu rD, vX, %lo(sym)    ; rD = &sym
+		// When vX still holds a gp-loaded GOT slot, dereference it and apply the
+		// immediate to recover &sym, so string/data xref detection (which reads
+		// op->ptr) can pick up the real target instead of the bare immediate.
+		// Never do this for $t9: an `addiu t9, t9, %lo(func)` computes a PIC
+		// tail-call *code* address, which the following jr/jalr resolves on its
+		// own and must not be turned into a data pointer. See issue #5203.
+		if (OPCOUNT() == 3 && OPERAND(2).type == MIPS_OP_IMM && !IS_REG_T9(REGID(0))) {
+			ut64 slot = mips_gp_slot_get(ctx, REGID(1));
+			if (slot != UT64_MAX) {
+				ut64 page = mips_read_pointer(analysis, slot);
+				if (page != UT64_MAX) {
+					op->ptr = page + IMM(2);
+				}
+			}
+		}
 		if (IS_REG_T9(REGID(0))) {
-			ctx->t9_pre += IMM(2);
+			ut64 slot = mips_gp_slot_get(ctx, REGID(1));
+			if (insn->id == MIPS_INS_ADDU && OPCOUNT() == 2 && slot != UT64_MAX) {
+				// `move t9, vX` may be emitted as the 2-operand `addu t9, vX`
+				// alias; carry the GOT slot over like MIPS_INS_MOVE does.
+				ctx->t9_pre = slot;
+			} else {
+				ctx->t9_pre += IMM(2);
+			}
 		}
 		if (IS_REG_SP(REGID(0))) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
@@ -543,6 +679,18 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 	case MIPS_INS_ORI:
 		SET_VAL(op, 2);
 		op->type = RZ_ANALYSIS_OP_TYPE_OR;
+		if (IS_REG_T9(REGID(0))) {
+			ut64 slot = mips_gp_slot_get(ctx, REGID(1));
+			if (insn->id == MIPS_INS_OR && OPCOUNT() == 2 && slot != UT64_MAX) {
+				// capstone emits `move t9, vX` as the 2-operand `or t9, vX`
+				// alias (`or t9, vX, $zero`); carry the GOT slot over so the
+				// following jalr/jr resolves to the imported function.
+				ctx->t9_pre = slot;
+			} else {
+				// any other write to $t9 invalidates the tracked slot
+				ctx->t9_pre = UT64_MAX;
+			}
+		}
 		break;
 	case MIPS_INS_DIV:
 	case MIPS_INS_DIVU:
@@ -800,7 +948,13 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 			ctx->t9_pre = UT64_MAX;
 		}
 		if (IS_REG_T9(REGID(0))) {
-			op->jump = ctx->t9_pre;
+			// PIC tail-call through $t9: resolve it like the jalr case above.
+			// For RJMP the core builds the xref from op->ptr.
+			ut64 target = mips_pic_call_target(analysis, ctx->t9_pre);
+			if (target != UT64_MAX) {
+				op->ptr = target;
+				op->jump = target;
+			}
 			ctx->t9_pre = UT64_MAX;
 		}
 
@@ -878,6 +1032,33 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		SET_VAL(op, 2);
 		break;
 	}
+	// Any instruction that writes a register clobbers the GOT page base it may
+	// have held, so drop stale gp-load tracking for the written register
+	// (operand 0 for these ALU/load/move forms). The gp-relative load above
+	// re-establishes tracking for the value it just loaded, so the register it
+	// set (gp_tracked_reg) is skipped here. Keeping this tracking precise avoids
+	// a later `addiu rD, rX, ofst` resolving against a stale base.
+	if (insn && OPERAND(0).type == MIPS_OP_REG && REGID(0) != gp_tracked_reg) {
+		switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
+		case RZ_ANALYSIS_OP_TYPE_LOAD:
+		case RZ_ANALYSIS_OP_TYPE_MOV:
+		case RZ_ANALYSIS_OP_TYPE_ADD:
+		case RZ_ANALYSIS_OP_TYPE_SUB:
+		case RZ_ANALYSIS_OP_TYPE_AND:
+		case RZ_ANALYSIS_OP_TYPE_OR:
+		case RZ_ANALYSIS_OP_TYPE_XOR:
+		case RZ_ANALYSIS_OP_TYPE_NOT:
+		case RZ_ANALYSIS_OP_TYPE_SHL:
+		case RZ_ANALYSIS_OP_TYPE_SHR:
+		case RZ_ANALYSIS_OP_TYPE_SAR:
+		case RZ_ANALYSIS_OP_TYPE_ROL:
+		case RZ_ANALYSIS_OP_TYPE_ROR:
+			mips_gp_slot_clear(ctx, REGID(0));
+			break;
+		default:
+			break;
+		}
+	}
 beach:
 	set_opdir(op);
 	if (insn && mask & RZ_ANALYSIS_OP_MASK_OPEX) {
@@ -900,7 +1081,7 @@ beach:
 static char *mips_get_reg_profile(RzAnalysis *analysis) {
 	cs_mode mode = 0;
 	ut32 gpr_size = 0;
-	if (!cs_mode_from_cpu(analysis->cpu, analysis->bits, analysis->big_endian, &mode, &gpr_size)) {
+	if (!cs_mode_from_cpu(rz_analysis_get_cpu(analysis), analysis->bits, analysis->big_endian, &mode, &gpr_size)) {
 		return NULL;
 	}
 
@@ -1086,16 +1267,16 @@ static char *mips_get_reg_profile(RzAnalysis *analysis) {
 }
 
 static bool mips_is_nanomips(RzAnalysis *a) {
-	return RZ_STR_EQ(a->cpu, "nanomips") ||
-		RZ_STR_EQ(a->cpu, "nms1") ||
-		RZ_STR_EQ(a->cpu, "i7200");
+	return rz_analysis_is_cpu(a, "nanomips") ||
+		rz_analysis_is_cpu(a, "nms1") ||
+		rz_analysis_is_cpu(a, "i7200");
 }
 
 static bool mips_is_op_2_byte(RzAnalysis *a) {
-	return RZ_STR_EQ(a->cpu, "mips16") ||
-		RZ_STR_EQ(a->cpu, "micromips") ||
-		RZ_STR_EQ(a->cpu, "micro32r3") ||
-		RZ_STR_EQ(a->cpu, "micro32r6") ||
+	return rz_analysis_is_cpu(a, "mips16") ||
+		rz_analysis_is_cpu(a, "micromips") ||
+		rz_analysis_is_cpu(a, "micro32r3") ||
+		rz_analysis_is_cpu(a, "micro32r6") ||
 		mips_is_nanomips(a);
 }
 
@@ -1127,12 +1308,136 @@ static int mips_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	}
 }
 
+#define MIPS_BE_MOVE_ZERO_RA_BAL "\x03\xe0\x00\x21\x04\x11\x00\x00"
+#define MIPS_BE_LUI_GP_IMM       "\x3c\x1c\x00\x00"
+#define MIPS_BE_ADDIU_GP_GP_IMM  "\x27\x9c\x00\x00"
+#define MIPS_BE_ADDU_GP_GP_T9    "\x03\x99\xe0\x21"
+
+#define MIPS_BE_ADDIU_SP_SP_IMM "\x27\xbd\x00\x00"
+#define MIPS_BE_SD_FP_ADDR      "\xff\xbe\x00\x00"
+#define MIPS_BE_SW_FP_ADDR      "\xaf\xbe\x00\x0c"
+#define MIPS_BE_MOVE_FP_SP      "\x03\xa0\xf0\x25"
+
+#define MIPS_LE_MOVE_ZERO_RA_BAL "\x21\x00\xe0\x03\x00\x00\x11\x04"
+#define MIPS_LE_LUI_GP_IMM       "\x00\x00\x1c\x3c"
+#define MIPS_LE_ADDIU_GP_GP_IMM  "\x00\x00\x9c\x27"
+#define MIPS_LE_ADDU_GP_GP_T9    "\x21\xe0\x99\x03"
+
+#define MIPS_LE_ADDIU_SP_SP_IMM "\x00\x00\xbd\x27"
+#define MIPS_LE_SD_FP_ADDR      "\x00\x00\xbe\xff"
+#define MIPS_LE_SW_FP_ADDR      "\x0c\x00\xbe\xaf"
+#define MIPS_LE_MOVE_FP_SP      "\x25\xf0\xa0\x03"
+
+#define MICROMIPS_BE_LUI_GP_IMM      "\x41\xbc\x00\x00"
+#define MICROMIPS_BE_ADDIU_GP_GP_IMM "\x33\x9c\x00\x00"
+#define MICROMIPS_BE_ADDU_GP_GP_T9   "\x03\x3c\xe1\x50"
+
+#define MICROMIPS_LE_LUI_GP_IMM      "\x00\x00\xbc\x41"
+#define MICROMIPS_LE_ADDIU_GP_GP_IMM "\x00\x00\x9c\x33"
+#define MICROMIPS_LE_ADDU_GP_GP_T9   "\x50\xe1\x3c\x03"
+
+#define NANOMIPS_BE_SAVE_IMM_FP_RA  "\x1c\x02"
+#define NANOMIPS_BE_ADDIU_FP_SP_IMM "\x80\x00\x83\xdd"
+#define NANOMIPS_BE_SAVE_IMM_RA_GP  "\x83\xe2\x30\x04"
+
+#define NANOMIPS_LE_SAVE_IMM_FP_RA  "\x02\x1c"
+#define NANOMIPS_LE_ADDIU_FP_SP_IMM "\xdd\x83\x00\x80"
+#define NANOMIPS_LE_SAVE_IMM_RA_GP  "\xe2\x83\x04\x30"
+
+#define KW(d, m, s) rz_list_append(l, rz_search_keyword_new((const ut8 *)d, s, (const ut8 *)m, s, NULL))
+static inline void mips32_preludes(RzList /*<RzSearchKeyword *>*/ *l, bool big_endian) {
+	if (big_endian) {
+		KW(MIPS_BE_MOVE_ZERO_RA_BAL, "\xff\xff\xff\xff\xff\xff\x00\x00", 8);
+		KW(MIPS_BE_LUI_GP_IMM
+				MIPS_BE_ADDIU_GP_GP_IMM
+					MIPS_BE_ADDU_GP_GP_T9,
+			"\xff\xff\xff\x00\xff\xff\x00\x00\xff\xff\xff\xff", 12);
+		KW(MIPS_BE_ADDIU_SP_SP_IMM
+				MIPS_BE_SW_FP_ADDR
+					MIPS_BE_MOVE_FP_SP,
+			"\xff\xff\x00\x00\xff\xff\x00\x00\xff\xff\xff\xff", 12);
+		return;
+	}
+
+	KW(MIPS_LE_MOVE_ZERO_RA_BAL, "\xff\xff\xff\xff\x00\x00\xff\xff", 8);
+	KW(MIPS_LE_LUI_GP_IMM
+			MIPS_LE_ADDIU_GP_GP_IMM
+				MIPS_LE_ADDU_GP_GP_T9,
+		"\x00\xff\xff\xff\x00\x00\xff\xff\xff\xff\xff\xff", 12);
+	KW(MIPS_LE_ADDIU_SP_SP_IMM
+			MIPS_LE_SW_FP_ADDR
+				MIPS_LE_MOVE_FP_SP,
+		"\x00\x00\xff\xff\x00\x00\xff\xff\xff\xff\xff\xff", 12);
+}
+
+static inline void mips64_preludes(RzList /*<RzSearchKeyword *>*/ *l, bool big_endian) {
+	if (big_endian) {
+		KW(MIPS_BE_MOVE_ZERO_RA_BAL, "\xff\xff\xff\xff\xff\xff\x00\x00", 8);
+		KW(MIPS_BE_LUI_GP_IMM
+				MIPS_BE_ADDIU_GP_GP_IMM
+					MIPS_BE_ADDU_GP_GP_T9,
+			"\xff\xff\xff\x00\xff\xff\x00\x00\xff\xff\xff\xff", 12);
+		KW(MIPS_BE_ADDIU_SP_SP_IMM
+				MIPS_BE_SD_FP_ADDR
+					MIPS_BE_MOVE_FP_SP,
+			"\xff\xff\x00\x00\xff\xff\x00\x00\xff\xff\xff\xff", 12);
+		return;
+	}
+
+	KW(MIPS_LE_MOVE_ZERO_RA_BAL, "\xff\xff\xff\xff\x00\x00\xff\xff", 8);
+	KW(MIPS_LE_LUI_GP_IMM
+			MIPS_LE_ADDIU_GP_GP_IMM
+				MIPS_LE_ADDU_GP_GP_T9,
+		"\x00\xff\xff\xff\x00\x00\xff\xff\xff\xff\xff\xff", 12);
+	KW(MIPS_LE_ADDIU_SP_SP_IMM
+			MIPS_LE_SD_FP_ADDR
+				MIPS_LE_MOVE_FP_SP,
+		"\x00\x00\xff\xff\x00\x00\xff\xff\xff\xff\xff\xff", 12);
+}
+
+static inline void micromips_preludes(RzList /*<RzSearchKeyword *>*/ *l, bool big_endian) {
+	if (big_endian) {
+		KW(MICROMIPS_BE_LUI_GP_IMM
+				MICROMIPS_BE_ADDIU_GP_GP_IMM
+					MICROMIPS_BE_ADDU_GP_GP_T9,
+			"\xff\xff\x00\x00\xff\xff\x00\x00\xff\xff\xff\xff", 12);
+		return;
+	}
+
+	KW(MICROMIPS_LE_LUI_GP_IMM
+			MICROMIPS_LE_ADDIU_GP_GP_IMM
+				MICROMIPS_LE_ADDU_GP_GP_T9,
+		"\x00\x00\xff\xff\x00\x00\xff\xff\xff\xff\xff\xff", 12);
+}
+
+static inline void nanomips_preludes(RzList /*<RzSearchKeyword *>*/ *l, bool big_endian) {
+	if (big_endian) {
+		KW(NANOMIPS_LE_SAVE_IMM_RA_GP, "\xff\xff\xf0\x07", 4);
+		KW(NANOMIPS_LE_SAVE_IMM_FP_RA NANOMIPS_LE_ADDIU_FP_SP_IMM,
+			"\xff\xff\xf0\x00\xff\xff", 6);
+		return;
+	}
+
+	KW(NANOMIPS_LE_SAVE_IMM_RA_GP, "\xff\xff\x07\xf0", 4);
+	KW(NANOMIPS_LE_SAVE_IMM_FP_RA NANOMIPS_LE_ADDIU_FP_SP_IMM,
+		"\xff\xff\xff\xff\x00\xf0", 6);
+}
+
 static RzList /*<RzSearchKeyword *>*/ *mips_analysis_preludes(RzAnalysis *analysis) {
-#define KW(d, ds, m, ms) rz_list_append(l, rz_search_keyword_new((const ut8 *)d, ds, (const ut8 *)m, ms, NULL))
 	RzList *l = rz_list_newf((RzListFree)rz_search_keyword_free);
-	KW("\x27\xbd\x00", 3, NULL, 0);
+
+	if (rz_analysis_is_cpu(analysis, "nanomips")) {
+		nanomips_preludes(l, analysis->big_endian);
+	} else if (rz_analysis_is_cpu(analysis, "micromips")) {
+		micromips_preludes(l, analysis->big_endian);
+	} else if (analysis->bits == 32) {
+		mips32_preludes(l, analysis->big_endian);
+	} else {
+		mips64_preludes(l, analysis->big_endian);
+	}
 	return l;
 }
+#undef KW
 
 static bool mips_fini(void *user) {
 	MIPSContext *ctx = (MIPSContext *)user;

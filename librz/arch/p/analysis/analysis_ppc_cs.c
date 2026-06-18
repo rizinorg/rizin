@@ -955,7 +955,8 @@ static int ppc_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 
 								  : 0;
 	mode |= a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 
-	if (a->cpu && strncmp(a->cpu, "vle", 3) == 0) {
+	const char *cpu = rz_analysis_get_cpu(a);
+	if (cpu && strncmp(cpu, "vle", 3) == 0) {
 		// vle is big-endian only
 		if (!a->big_endian) {
 			return -1;
@@ -964,7 +965,7 @@ static int ppc_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 
 		if (ret >= 0) {
 			return op->size;
 		}
-	} else if (a->cpu && RZ_STR_EQ(a->cpu, "qpx")) {
+	} else if (RZ_STR_EQ(cpu, "qpx")) {
 		mode |= CS_MODE_QPX;
 	}
 
@@ -1752,7 +1753,7 @@ static int ppc_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 
 }
 
 static int ppc_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
-	bool is_vle = a && a->cpu && !strncmp(a->cpu, "vle", 3);
+	bool is_vle = a && rz_analysis_get_cpu(a) && !strncmp(rz_analysis_get_cpu(a), "vle", 3);
 
 	switch (query) {
 	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:

@@ -528,7 +528,7 @@ RZ_API RZ_BORROW RzListIter *rz_list_add_sorted(RZ_NONNULL RzList *list, RZ_NONN
 		}
 		list->length++;
 	} else {
-		rz_list_append(list, data);
+		item = rz_list_append(list, data);
 	}
 	list->sorted = true;
 	return item;

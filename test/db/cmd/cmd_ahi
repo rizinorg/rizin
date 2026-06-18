@@ -345,8 +345,8 @@ pd 1
 EOF
 EXPECT=<<EOF
             0x00000000      cmp   eax, 0xffffffff                      ; -1
-            0x00000000      cmp   eax, -1                              ; 0xffffffff ; -1
-            0x00000000      cmp   eax, 4294967295                      ; 0xffffffff ; -1
+            0x00000000      cmp   eax, -1
+            0x00000000      cmp   eax, 4294967295
 EOF
 RUN
 
@@ -372,8 +372,8 @@ pd 1
 EOF
 EXPECT=<<EOF
             0x00000000      cmp   eax, 0xffffffff                      ; -1
-            0x00000000      cmp   eax, -1                              ; 0xffffffff ; -1
-            0x00000000      cmp   eax, 4294967295                      ; 0xffffffff ; -1
+            0x00000000      cmp   eax, -1
+            0x00000000      cmp   eax, 4294967295
 
             0x00000000      cmp   rax, 0xffffffffffffffff
             0x00000000      cmp   rax, -1
@@ -462,5 +462,33 @@ addi v0, zero, E.SEVEN
 mov a, #E.SEVEN
 or d0, d0, #E.MASK
 [   allocframe(SP,#E.EIGHT):raw
+EOF
+RUN
+
+NAME=ahie flag enum OR operands
+FILE==
+CMDS=<<EOF
+o malloc://256
+td "enum access_def { F_OK = 0, X_OK = 1, W_OK = 2, R_OK = 4 };"
+e asm.arch=x86
+e asm.bits=64
+e cfg.bigendian=false
+s 0
+wx b806000000
+ahie access_def
+pi 1
+s 0x10
+wx b804000000
+ahie access_def
+pi 1
+s 0x20
+wx b808000000
+ahie access_def
+pi 1
+EOF
+EXPECT=<<EOF
+mov eax, access_def.W_OK | access_def.R_OK
+mov eax, access_def.R_OK
+mov eax, 0x08
 EOF
 RUN

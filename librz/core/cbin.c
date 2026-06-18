@@ -14,6 +14,7 @@
 
 #include "../bin/dwarf/dwarf_private.h"
 #include "../bin/format/luac/luac_common.h"
+#include "omf/omf.h"
 #include "core_private.h"
 
 #define is_invalid_address_va(va, vaddr, paddr)  (((va) && (vaddr) == UT64_MAX) || (!(va) && (paddr) == UT64_MAX))
@@ -32,6 +33,8 @@
 #define bprintf \
 	if (binfile && binfile->rbin && binfile->rbin->verbose) \
 	eprintf
+
+RZ_API bool rz_core_bin_apply_omf_debug(const RzCore *core, const RzBinFile *binfile);
 
 static RZ_NULLABLE RZ_BORROW const RzPVector /*<RzBinString *>*/ *core_bin_strings(RzCore *r, RzBinFile *file);
 
@@ -205,9 +208,13 @@ RZ_API bool rz_core_bin_apply_info(RzCore *r, RzBinFile *binfile, ut32 mask) {
 	}
 	if (mask & RZ_CORE_BIN_ACC_DWARF) {
 		rz_core_bin_apply_dwarf(r, binfile);
+		rz_core_bin_apply_stabs(r, binfile);
 	}
 	if (mask & RZ_CORE_BIN_ACC_LUAC_DEBUG) {
 		rz_core_bin_apply_luac_debug(r, binfile);
+	}
+	if (mask & RZ_CORE_BIN_ACC_OMF_DEBUG) {
+		rz_core_bin_apply_omf_debug(r, binfile);
 	}
 	if (mask & RZ_CORE_BIN_ACC_ENTRIES) {
 		rz_core_bin_apply_entry(r, binfile, va);
@@ -689,6 +696,126 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
 		rz_bin_source_line_info_merge(binfile->o->lines, (rz_bin_dwarf_line(dw))->lines);
 	}
 	return true;
+}
+
+/**
+ * \brief Parse STABS debug information and apply its source line info
+ *
+ * STABS is the legacy debug format that predates DWARF and can still be found in
+ * old binaries (and in objects produced by GCC <= 12 with -gstabs). Only the
+ * source line information is consumed here; it is merged into the binary's line
+ * info so that commands such as \p ix and source-aware disassembly work the same
+ * way they do for DWARF.
+ * Look up the virtual address of a named symbol in the binary's symbol table.
+ * STABS global symbols carry no address of their own, so it is recovered here.
+ */
+static ut64 stabs_global_vaddr(RzBinFile *binfile, const char *name) {
+	if (!binfile->o || !binfile->o->symbols) {
+		return UT64_MAX;
+	}
+	void **it;
+	rz_pvector_foreach (binfile->o->symbols, it) {
+		RzBinSymbol *sym = *it;
+		if (RZ_STR_EQ(sym->name, name)) {
+			return sym->vaddr;
+		}
+	}
+	return UT64_MAX;
+}
+
+/// Turn a single recovered STABS variable into an analysis global variable.
+/// Returns true if a global variable was created.
+static bool stabs_apply_global(RzCore *core, RzBinFile *binfile, const RzBinStabsSymbol *sym) {
+	if (!sym->type) {
+		return false;
+	}
+	ut64 addr;
+	if (sym->kind == RZ_BIN_STABS_SYMBOL_STATIC) {
+		addr = sym->value;
+	} else if (sym->kind == RZ_BIN_STABS_SYMBOL_GLOBAL) {
+		// a STABS global carries no address of its own, recover it from the symbol table
+		addr = stabs_global_vaddr(binfile, sym->name);
+		if (addr == UT64_MAX) {
+			return false;
+		}
+	} else {
+		return false;
+	}
+	return rz_analysis_var_global_create(core->analysis, sym->name, rz_type_clone(sym->type), addr);
+}
+
+/// Merge the source line information recovered from STABS into the bin object.
+static bool stabs_apply_line_info(RzBinFile *binfile, RzBinStabs *stabs) {
+	RzBinSourceLineInfo *li = rz_bin_stabs_source_line_info(stabs);
+	if (!li) {
+		return false;
+	}
+	bool applied = false;
+	if (li->samples_count) {
+		if (!binfile->o->lines) {
+			binfile->o->lines = RZ_NEW0(RzBinSourceLineInfo);
+			if (binfile->o->lines) {
+				rz_str_constpool_init(&binfile->o->lines->filename_pool);
+			}
+		}
+		if (binfile->o->lines) {
+			rz_bin_source_line_info_merge(binfile->o->lines, li);
+			applied = true;
+		}
+	}
+	rz_bin_source_line_info_free(li);
+	return applied;
+}
+
+/// Recover types, function signatures and global variables from STABS. The types
+/// and the function prototypes are registered into the type database by the
+/// extractor; only the global and static variables are applied here.
+static bool stabs_apply_debug_info(RzCore *core, RzBinFile *binfile, RzBinStabs *stabs) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	if (!typedb) {
+		return false;
+	}
+	RzBinStabsDebugInfo *di = rz_bin_stabs_debug_info(stabs, typedb);
+	if (!di) {
+		return false;
+	}
+	bool applied = false;
+	void **it;
+	rz_pvector_foreach (&di->symbols, it) {
+		if (stabs_apply_global(core, binfile, *it)) {
+			applied = true;
+		}
+	}
+	rz_bin_stabs_debug_info_free(di);
+	return applied;
+}
+
+/**
+ * \brief Recover STABS debug information from a binary into the analysis
+ *
+ * Applies the source line information, registers the recovered types and
+ * function prototypes into the type database and creates analysis global
+ * variables for the recovered globals and statics.
+ *
+ * \param core The current core, whose analysis receives the recovered information
+ * \param binfile The binary file to read the STABS sections from
+ * \return true if any information was applied, false otherwise
+ */
+RZ_API bool rz_core_bin_apply_stabs(RzCore *core, RzBinFile *binfile) {
+	rz_return_val_if_fail(core && core->analysis && binfile, false);
+	if (!rz_config_get_bool(core->config, "bin.dbginfo") || !binfile->o) {
+		return false;
+	}
+	RzBinStabs *stabs = rz_bin_stabs_parse(binfile);
+	if (!stabs) {
+		return false;
+	}
+	bool applied = stabs_apply_line_info(binfile, stabs);
+	if (stabs_apply_debug_info(core, binfile, stabs)) {
+		applied = true;
+	}
+	rz_bin_stabs_free(stabs);
+	return applied;
 }
 
 static inline bool is_initfini(RzBinAddr *entry) {
@@ -1384,22 +1511,41 @@ RZ_API void rz_core_sym_name_fini(RZ_NULLABLE RzBinSymNames *names) {
 	RZ_FREE(names->methflag);
 }
 
+// ARM/AArch64 ELF mapping symbols mark the instruction set of a region of
+// bytes within a section. They are named "$<kind>" optionally followed by
+// ".<anything>" (e.g. "$t", "$t.0", "$d.realdata"), have type STT_NOTYPE and
+// binding STB_LOCAL. See the ARM ELF ABI (aaelf32/aaelf64, "Mapping symbols"):
+// $a = Arm code, $t = Thumb code, $x = AArch64 code, $d = data. Returns the
+// kind character ('a', 't', 'x', 'd', ...) or 0 if name is not a mapping symbol.
+static char arm_mapping_symbol_kind(const char *name) {
+	if (name && name[0] == '$' && name[1] && (name[2] == '\0' || name[2] == '.')) {
+		return name[1];
+	}
+	return 0;
+}
+
 static void handle_arm_special_symbol(RzCore *core, RzBinObject *o, RzBinSymbol *symbol, int va) {
 	ut64 addr = rva(o, symbol->paddr, symbol->vaddr, va);
-	if (!strcmp(symbol->name, "$a")) {
+	switch (arm_mapping_symbol_kind(symbol->name)) {
+	case 'a': // start of a region of ARM code
 		rz_analysis_hint_set_bits(core->analysis, addr, 32);
-	} else if (!strcmp(symbol->name, "$x")) {
+		break;
+	case 'x': // start of a region of AArch64 code
 		rz_analysis_hint_set_bits(core->analysis, addr, 64);
-	} else if (!strcmp(symbol->name, "$t")) {
+		break;
+	case 't': // start of a region of Thumb code
 		rz_analysis_hint_set_bits(core->analysis, addr, 16);
-	} else if (!strcmp(symbol->name, "$d")) {
+		break;
+	case 'd': // start of a region of data
 		// TODO: we could add data meta type at addr, but sometimes $d
 		// is in the middle of the code and it would make the code less
 		// readable.
-	} else {
+		break;
+	default:
 		if (core->bin->verbose) {
 			RZ_LOG_WARN("Special symbol %s not handled\n", symbol->name);
 		}
+		break;
 	}
 }
 
@@ -1444,6 +1590,18 @@ static void select_flag_space(RzCore *core, RzBinSymbol *symbol) {
 	}
 }
 
+// True if the binary carries ARM/AArch64 mapping symbols ($a/$t/$d/$x).
+static bool has_arm_mapping_symbols(RzPVector /*<RzBinSymbol *>*/ *symbols) {
+	void **it;
+	rz_pvector_foreach (symbols, it) {
+		RzBinSymbol *symbol = *it;
+		if (symbol->name && is_special_symbol(symbol)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va) {
 	rz_return_val_if_fail(core && binfile, false);
 	RzBinObject *o = binfile->o;
@@ -1463,6 +1621,13 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 	void **iter;
 	void **it;
 	RzBinSymbol *symbol;
+
+	// Mapping symbols authoritatively describe the instruction set of each code
+	// region, so when present the address-parity heuristic in handle_arm_symbol()
+	// must be disabled: such binaries place Thumb functions at even addresses,
+	// where the heuristic would wrongly force ARM mode (see issue #4357).
+	bool arm_mapping_symbols = is_arm && has_arm_mapping_symbols(symbols);
+
 	rz_pvector_foreach (symbols, it) {
 		symbol = *it;
 		if (!symbol->name) {
@@ -1481,12 +1646,14 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 			 * Skip also file symbols because not useful for now.
 			 */
 		} else if (is_special_symbol(symbol)) {
-			if (is_arm) {
-				handle_arm_special_symbol(core, o, symbol, va);
-			}
+			// ARM/AArch64 mapping symbols ($a/$t/$d/$x) are applied in a
+			// dedicated pass after regular symbols (see below) so they take
+			// precedence over the address-based ARM/Thumb heuristic that is
+			// applied to FUNC symbols by handle_arm_symbol().
 		} else {
 			// TODO: provide separate API in RzBinPlugin to let plugins handle analysis hints/metadata
-			if (is_arm) {
+			// Address-parity heuristic only when no mapping symbols (see above).
+			if (is_arm && !arm_mapping_symbols) {
 				handle_arm_symbol(core, o, symbol, va);
 			}
 			select_flag_space(core, symbol);
@@ -1557,6 +1724,26 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 		rz_pvector_foreach (o->entries, iter) {
 			entry = *iter;
 			handle_arm_entry(core, o, entry, va);
+		}
+	}
+
+	// Apply ARM/AArch64 mapping symbols ($a/$t/$d/$x) last. Per the ARM ELF
+	// ABI they are the authoritative markers of the instruction set for a
+	// region of bytes, so they must override the even/odd-address heuristic
+	// used above for FUNC symbols and entry points (e.g. a Thumb `main` at the
+	// even address tagged with `$t`, see issue #4665).
+	if (is_arm) {
+		rz_pvector_foreach (symbols, it) {
+			symbol = *it;
+			if (!symbol->name) {
+				continue;
+			}
+			if (is_invalid_address_va(va, symbol->vaddr, symbol->paddr)) {
+				continue;
+			}
+			if (is_special_symbol(symbol)) {
+				handle_arm_special_symbol(core, o, symbol, va);
+			}
 		}
 	}
 

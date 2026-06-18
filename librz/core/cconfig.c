@@ -2566,7 +2566,17 @@ static ConfigOptDescr search_in_opts[] = {
 
 static bool cb_search_in(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
+	RzCore *core = (RzCore *)user;
+	RzInterval itv = {
+		.addr = rz_config_get_i(core->config, "search.from"),
+		.size = rz_config_get_i(core->config, "search.to")
+	};
 	if (node->value[0] != '?') {
+		RzList *bounds = rz_core_get_boundaries(core, itv, node->value);
+		if (!bounds) {
+			return false;
+		}
+		rz_list_free(bounds);
 		return true;
 	} else if (strlen(node->value) > 1 && node->value[1] == '?') {
 		rz_cons_printf("Valid values for search.in (depends on .from/.to and io.va):\n");
@@ -3015,7 +3025,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("analysis.strings", "false", &cb_analysis_strings, "Identify and register strings during analysis (aar only)");
 	SETPREF("analysis.types.spec", "gcc", "Set profile for specifying format chars used in type analysis");
 	SETBPREF("analysis.types.verbose", "false", "Verbose output from type analysis");
-	SETBPREF("analysis.types.constraint", "false", "Enable constraint types analysis for variables");
+	SETBPREF("analysis.types.constraint", "true", "Enable constraint types analysis for variables");
 	SETCB("analysis.vars", "true", &cb_analysis_vars, "Analyze local variables and arguments");
 	SETBPREF("analysis.vinfun", "true", "Search values in functions (aav) (false by default to only find on non-code)");
 	SETBPREF("analysis.vinfunrange", "false", "Search values outside function ranges (requires analysis.vinfun=false)\n");
@@ -3276,7 +3286,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	update_asmbits_options(core, n);
 	SETBPREF("asm.functions", "true", "Show functions in disassembly");
 	SETBPREF("asm.xrefs", "true", "Show xrefs in disassembly");
-	SETBPREF("asm.demangle", "true", "Show demangled symbols in disasm");
 	SETBPREF("asm.describe", "false", "Show opcode description");
 	SETPREF("asm.highlight", "", "Highlight current line");
 	SETBPREF("asm.marks", "true", "Show marks before the disassembly");
@@ -3651,6 +3660,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("scr.wheel.speed", 4, "Mouse wheel speed");
 #endif
 	SETBPREF("scr.wheel.nkey", "false", "Use sn/sp and scr.nkey on wheel instead of scroll");
+	SETBPREF("scr.pf.short", "false", "Render pf offsets as +<delta> from the format base instead of absolute addresses");
 	// RENAME TO scr.mouse
 	SETBPREF("scr.wheel", "true", "Mouse wheel in Visual; temporaryly disable/reenable by right click/Enter)");
 	SETPREF("scr.layout", "", "Name of the selected layout");
@@ -3682,6 +3692,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("scr.prompt.sect", "false", "Show section name in the prompt");
 	SETCB("scr.hist.block", "true", &cb_scr_histblock, "Use blocks for histogram");
 	SETBPREF("scr.hist.ruler", "true", "Show histogram ruler");
+	SETBPREF("scr.hist.minimap", "true", "Show top minimap on visual histogram (p==v); auto-hides when data fits the screen");
+	SETI("scr.hist.width", 0, "Default width (in screen columns) of the horizontal histogram. 0 = auto-clamp to terminal width");
+	SETI("scr.hist.height", 0, "Default height (in screen rows) of the horizontal histogram. 0 = auto-clamp to terminal height");
 	SETCB("scr.prompt", "true", &cb_scrprompt, "Show user prompt (used by rizin -q)");
 	SETCB("scr.tee", "", &cb_teefile, "Pipe output to file of this name");
 	SETPREF("scr.seek", "", "Seek to the specified address on startup");
@@ -3764,7 +3777,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* gadget */
 	SETI("gadget.len", 5, "Maximum number of instructions per gadget");
-	SETBPREF("gadget.cache", "false", "Cache gadget results(experimental)");
+	SETBPREF("gadget.cache", "true", "Cache gadget search results");
 	SETBPREF("gadget.subchains", "false", "Display every length gadget from gadget.len=X to 2");
 	SETBPREF("gadget.conditional", "false", "Include conditional jump, calls and returns in gadget search");
 	SETBPREF("gadget.comments", "false", "Display comments in gadget search output");

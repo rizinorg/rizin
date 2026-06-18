@@ -773,7 +773,7 @@ int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	int n, ret, opsize = -1;
 	cs_insn *insn;
 	cs_mode mode = (analysis->bits == 64) ? CS_MODE_RISCV64 : CS_MODE_RISCV32;
-	mode |= mode_from_arch_string(analysis->cpu);
+	mode |= mode_from_arch_string(rz_analysis_get_cpu(analysis));
 
 	if (mode != ctx->omode || analysis->bits != ctx->obits || cs_option(ctx->hndl, CS_OPT_DETAIL, CS_OPT_ON | CS_OPT_DETAIL_REAL) != CS_ERR_OK) {
 		cs_close(&ctx->hndl);

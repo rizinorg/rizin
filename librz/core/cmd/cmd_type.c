@@ -299,6 +299,13 @@ RZ_IPI RzCmdStatus rz_type_del_all_handler(RzCore *core, int argc, const char **
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_type_rename_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_core_types_rename(core->analysis, argv[1], argv[2])) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_type_cc_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	const char *cc = argc > 1 ? argv[1] : NULL;
 	if (cc) {
@@ -354,6 +361,57 @@ RZ_IPI RzCmdStatus rz_type_list_c_nl_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_type_define_handler(RzCore *core, int argc, const char **argv) {
 	const char *type = argc > 1 ? argv[1] : NULL;
 	rz_types_define(core, type);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_define_from_format_handler(RzCore *core, int argc, const char **argv) {
+	const char *name = argv[1];
+	const char *format_arg = argv[2];
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+
+	/* Resolve the second argument. It may be either the name of a
+	 * format saved with pfn / pf.<name> or a literal `pf` format string.
+	 * A saved name is looked up first (a pure read of the formats hash);
+	 * otherwise the argument is parsed as a literal format. This is the
+	 * "including from existing saved ones" half of the feature, and it
+	 * deliberately uses rz_type_db_format_get rather than
+	 * rz_pf_resolve_name so that nothing but `tdf` ever writes into the
+	 * type database -- and only with the final registered type. */
+	const char *fmt_str = rz_type_db_format_get(typedb, format_arg);
+	if (!fmt_str) {
+		fmt_str = format_arg;
+	}
+
+	char *error = NULL;
+	char *c_decl = rz_type_format_to_c_declaration(name, fmt_str, &error);
+	if (!c_decl) {
+		RZ_LOG_ERROR("Cannot build a type from format \"%s\": %s\n",
+			format_arg, error ? error : "unknown error");
+		free(error);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	/* Register the synthesised declaration through the regular C type
+	 * parser, exactly as `td` does, so the new type becomes a first-class
+	 * RzBaseType that participates in type analysis. */
+	char *parse_error = NULL;
+	int rc = rz_type_parse_string_stateless(typedb->parser, c_decl, &parse_error);
+	if (rc && parse_error) {
+		rz_str_trim_tail(parse_error);
+		RZ_LOG_ERROR("Failed to define type \"%s\": %s\n", name, parse_error);
+		free(parse_error);
+		free(c_decl);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	free(parse_error);
+
+	/* Confirm the type actually landed in the database. */
+	if (!rz_type_db_get_base_type(typedb, name)) {
+		RZ_LOG_ERROR("Type \"%s\" was not registered (check the format)\n", name);
+		free(c_decl);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	free(c_decl);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -805,5 +863,43 @@ RZ_IPI RzCmdStatus rz_type_xrefs_graph_handler(RzCore *core, int argc, const cha
 
 RZ_IPI RzCmdStatus rz_type_xrefs_list_all_handler(RzCore *core, int argc, const char **argv) {
 	types_xrefs_all(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_typeclass_handler(RzCore *core, int argc, const char **argv) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, argv[1]);
+	if (!btype) {
+		RZ_LOG_ERROR("Type \"%s\" does not exist\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzTypeTypeclass typeclass = rz_base_type_typeclass(typedb, btype);
+	rz_cons_println(rz_type_typeclass_as_string(typeclass));
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_typeclass_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	rz_core_types_typeclass_print_all(core, mode);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_typeclass_set_handler(RzCore *core, int argc, const char **argv) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, argv[1]);
+	if (!btype) {
+		RZ_LOG_ERROR("Type \"%s\" does not exist\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzTypeTypeclass typeclass = rz_type_typeclass_from_string(argv[2]);
+	// rz_type_typeclass_from_string returns RZ_TYPE_TYPECLASS_NONE both for the
+	// "None" typeclass and for an unknown string, so reject unknown ones here.
+	if (typeclass == RZ_TYPE_TYPECLASS_NONE && strcmp(argv[2], "None")) {
+		RZ_LOG_ERROR("Unknown typeclass \"%s\"\n", argv[2]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!rz_base_type_set_typeclass(btype, typeclass)) {
+		RZ_LOG_ERROR("Cannot set typeclass \"%s\" on type \"%s\"\n", argv[2], argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
 	return RZ_CMD_STATUS_OK;
 }

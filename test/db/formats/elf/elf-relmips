@@ -28,6 +28,8 @@ nth      vaddr bind   type   lib name
 0x0000083c sym.varfunc
 0x00000850 str.res:__d str.res:__d
 0x00000854 sym._MIPS_STUBS(gp)
+0x0000085c sym.imp.printf
+0x00000940 [14] -r-x section size 48 named .MIPS.stubs
 EOF
 RUN
 
@@ -61,6 +63,8 @@ nth      vaddr bind   type   lib name
 0x0000080c sym.varfunc
 0x00000820 str.res:__d str.res:__d
 0x00000824 sym._MIPS_STUBS(gp)
+0x0000082c sym.imp.printf
+0x00000900 [14] -r-x section size 48 named .MIPS.stubs
 EOF
 RUN
 
@@ -172,9 +176,6 @@ nth      vaddr bind   type   lib name
 0x00413898 0x00003898 R_MIPS_JUMP_SLOT free
 0x004138b0 0x004138b0 R_MIPS_COPY      optarg
 0x004138c0 0x004138c0 R_MIPS_COPY      stderr
-0x004010b0 arg1
-0x004010b8 arg3
-0x004010cc arg4
 0x004010cc sym._init
 0x004010d4 sym._fini
 0x004010e0 sym.imp.__uClibc_main
@@ -849,9 +850,6 @@ nth      vaddr bind   type   lib name
 0x00478bd0 0x00478bd0 R_MIPS_COPY      stderr
 0x00478bd8 0x00478bd8 R_MIPS_COPY      __stdout
 ;-- _ftext:
-0x00404de0 arg1
-0x00404de8 arg3
-0x00404dfc arg4
 0x00404dfc sym._init
 0x00404e00 "%co %s\n"
 0x00404e04 sym._fini

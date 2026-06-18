@@ -120,6 +120,8 @@ static inline void *rz_vector_tail(RzVector *vec) {
 
 RZ_API void *rz_vector_assign_at(RZ_BORROW RzVector *vec, size_t index, RZ_NULLABLE const void *elem);
 
+RZ_API void rz_vector_remove_at_unsorted(RZ_BORROW RzVector *vec, size_t index, RZ_NULLABLE RZ_OUT void *into);
+
 // remove the element at the given index and write the content to into.
 // It is the caller's responsibility to free potential resources associated with the element.
 RZ_API void rz_vector_remove_at(RzVector *vec, size_t index, void *into);
@@ -335,6 +337,7 @@ RZ_API void *rz_pvector_assign_at(RZ_BORROW RZ_NONNULL RzPVector *vec, size_t in
 
 // removes and returns the pointer at the given index. Does not call free.
 RZ_API void *rz_pvector_remove_at(RzPVector *vec, size_t index);
+RZ_API void *rz_pvector_remove_at_unsorted(RZ_BORROW RzPVector *vec, size_t index);
 
 /**
  * \brief Deletes all pointers in the vector. Capacity stays the same.

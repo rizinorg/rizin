@@ -284,8 +284,13 @@ RZ_API RzCmdStatus rz_core_cpu_descs_print(RZ_NONNULL RzCore *core, RZ_NONNULL c
 	rz_list_sort(plugin_list, (RzListComparator)rz_asm_plugin_cmp, NULL);
 	RzListIter *it;
 	RzAsmPlugin *ap;
+	bool found = false;
 	rz_list_foreach (plugin_list, it, ap) {
-		if (ap->cpus && ap->get_cpu_desc && RZ_STR_EQ(plugin, ap->name)) {
+		if (!RZ_STR_EQ(plugin, ap->name)) {
+			continue;
+		}
+		found = true;
+		if (ap->cpus && ap->get_cpu_desc) {
 			char **desc = ap->get_cpu_desc();
 			if (!desc) {
 				rz_iterator_free(iter);
@@ -296,11 +301,15 @@ RZ_API RzCmdStatus rz_core_cpu_descs_print(RZ_NONNULL RzCore *core, RZ_NONNULL c
 				rz_cons_printf("%-15s %s", desc[i], desc[i + 1]);
 				rz_cons_newline();
 			}
-			break;
 		}
+		break;
 	}
 	rz_iterator_free(iter);
 	rz_list_free(plugin_list);
+	if (!found) {
+		RZ_LOG_ERROR("Unknown asm plugin '%s'\n", plugin);
+		return RZ_CMD_STATUS_ERROR;
+	}
 	return RZ_CMD_STATUS_OK;
 }
 

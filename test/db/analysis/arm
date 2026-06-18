@@ -2296,3 +2296,33 @@ EXPECT=<<EOF
 \   ````--> 0x0000791c      pop   {r4, pc}
 EOF
 RUN
+
+NAME=ARM Thumb literal pool after function marked as data
+FILE=bins/arm/elf/K64F-RIOT-SPI.elf
+CMDS=<<EOF
+aaa
+s 0x4e0
+pd 1
+s 0xd50
+pd 1
+s 0x11d0
+pd 3
+EOF
+EXPECT=<<EOF
+            ; DATA XREF from dbg.sched_run @ 0x490
+            ;-- data.000004e0:
+            0x000004e0      .dword 0x1fff0274 ; runqueue_bitcache ; section..bss ; sym..bss ; obj.runqueue_bitcache ; loc._sbss ; loc._szero ; loc._erelocate ; sched.c:135
+            ; DATA XREF from dbg.bit_clear8 @ 0xd34
+            ;-- data.00000d50:
+            0x00000d50      .dword 0x01ffffe0
+            ; DATA XREF from sym.poweroff @ 0x1192
+            ;-- data.000011d0:
+            0x000011d0      .dword 0x00002744 ; spi_config ; obj.spi_config
+            ; DATA XREF from sym.poweroff @ 0x11a0
+            ;-- data.000011d4:
+            0x000011d4      .dword 0x4002d000
+            ; DATA XREFS from sym.poweroff @ 0x11b6, 0x11c6
+            ;-- data.000011d8:
+            0x000011d8      .dword 0x40047000
+EOF
+RUN

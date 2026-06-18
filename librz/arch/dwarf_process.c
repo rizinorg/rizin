@@ -480,6 +480,7 @@ static const char *map_dwarf_reg_to_riscv_reg(ut32 reg_num) {
 #include <xtensa/xtensa_dwarf_regnum_table.h>
 #include <alpha/alpha_dwarf_regnum_table.h>
 #include <h8300/h8300_dwarf_regnum_table.h>
+#include <tms320/tms320_dwarf_regnum_table.h>
 
 /**
  * \brief Returns a function that maps a DWARF register number to a register name
@@ -559,6 +560,10 @@ static DWARF_RegisterMapping dwarf_register_mapping_query(RZ_NONNULL const char 
 	}
 	if (RZ_STR_EQ(arch, "h8300h")) {
 		return h8300h_register_name;
+	}
+
+	if (RZ_STR_EQ(arch, "tms320")) {
+		return tms320_c55x_register_name;
 	}
 
 	RZ_LOG_ERROR("No DWARF register mapping function defined for %s %d bits\n", arch, bits);
@@ -1108,7 +1113,7 @@ static RzTypeStructMember *struct_member_parse(
 	char *name = NULL;
 	RzType *type = NULL;
 	ut64 offset = 0;
-	ut64 size = 0;
+	ut64 size = 0; // bitfield width in bits, 0 if the member is not a bitfield
 	RzBinDwarfAttr *attr = NULL;
 	rz_vector_foreach (&die->attrs, attr) {
 		switch (attr->at) {
@@ -1116,7 +1121,9 @@ static RzTypeStructMember *struct_member_parse(
 			name = at_string_escaped(attr, ctx);
 			break;
 		case DW_AT_type:
-			type = type_parse_from_offset(ctx, rz_bin_dwarf_attr_udata(attr), &size);
+			// The member type's own size is not the member size; the bitfield
+			// width, if any, is taken from DW_AT_bit_size below.
+			type = type_parse_from_offset(ctx, rz_bin_dwarf_attr_udata(attr), NULL);
 			break;
 		case DW_AT_data_member_location:
 			/*
@@ -1128,10 +1135,10 @@ static RzTypeStructMember *struct_member_parse(
 			*/
 			offset = rz_bin_dwarf_attr_udata(attr);
 			break;
-		// If the size of a data member is not the same as the
-		//  size of the type given for the data member
+		// A bitfield member carries DW_AT_bit_size, whose value is the width in
+		// bits and is recorded as the member size. DW_AT_byte_size is the storage
+		// size, not a bitfield marker, so it is ignored here.
 		case DW_AT_byte_size:
-			size = rz_bin_dwarf_attr_udata(attr) * CHAR_BIT;
 			break;
 		case DW_AT_bit_size:
 			size = rz_bin_dwarf_attr_udata(attr);
@@ -1898,7 +1905,7 @@ static bool fixup_regoff_to_stackoff(RzAnalysis *a, RzAnalysisFunction *f,
 	}
 	ut16 reg = dw_var->location->register_number;
 	st64 off = dw_var->location->offset;
-	if (RZ_STR_EQ(a->cpu, "x86")) {
+	if (rz_analysis_is_cpu(a, "x86")) {
 		if (a->bits == 64) {
 			if (reg == 6) { // 6 = rbp
 				rz_analysis_var_storage_init_stack(&var->storage, off - f->bp_off);
@@ -1918,12 +1925,12 @@ static bool fixup_regoff_to_stackoff(RzAnalysis *a, RzAnalysisFunction *f,
 				return true;
 			}
 		}
-	} else if (RZ_STR_EQ(a->cpu, "ppc")) {
+	} else if (rz_analysis_is_cpu(a, "ppc")) {
 		if (reg == 1) { // 1 = r1
 			rz_analysis_var_storage_init_stack(&var->storage, off);
 			return true;
 		}
-	} else if (RZ_STR_EQ(a->cpu, "tricore")) {
+	} else if (rz_analysis_is_cpu(a, "tricore")) {
 		if (reg == 30) { // 30 = a14
 			rz_analysis_var_storage_init_stack(&var->storage, off);
 			return true;
@@ -1951,7 +1958,7 @@ static RzBinDwarfLocation *location_by_biggest_range(const RzBinDwarfLocList *lo
 	void **it;
 	rz_pvector_foreach (&loclist->entries, it) {
 		RzBinDwarfLocListEntry *entry = *it;
-		ut64 range = entry->range.begin - entry->range.end;
+		ut64 range = entry->range.end - entry->range.begin;
 		if (range > biggest_range && entry->location &&
 			(entry->location->kind == RzBinDwarfLocationKind_REGISTER_OFFSET ||
 				entry->location->kind == RzBinDwarfLocationKind_REGISTER ||

@@ -191,3 +191,39 @@ FILE=bins/omf/invalid_size
 CMDS=q!
 EXPECT=
 RUN
+
+NAME=omf166 modinfo check
+FILE=bins/omf/omf166/measure
+CMDS=<<EOF
+e asm.arch=c166
+iH
+EOF
+EXPECT=<<EOF
+omf166-modinfo:
+  DoubleUsed: false
+  FloatUsed: true
+  MOD167: true
+  CaseSensitive: true
+  Segmented: true
+  MemoryModel: "HLarge: 'huge' data, 'far' funcs"
+
+EOF
+RUN
+
+NAME=omf166 modinfo check if record not exists
+FILE=bins/omf/omf166/no_modinfo.bin
+CMDS=<<EOF
+e asm.arch=c166
+iH
+EOF
+EXPECT=<<EOF
+omf166-modinfo:
+  DoubleUsed: false
+  FloatUsed: false
+  MOD167: false
+  CaseSensitive: false
+  Segmented: false
+  MemoryModel: "XLarge: 'xhuge' data, 'far' funcs"
+
+EOF
+RUN

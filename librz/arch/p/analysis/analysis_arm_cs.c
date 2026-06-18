@@ -2131,11 +2131,12 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 	int mode = (a->bits == 16) ? CS_MODE_THUMB : CS_MODE_ARM;
 	int n, ret;
 	mode |= (a->big_endian) ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
-	if (RZ_STR_ISNOTEMPTY(a->cpu)) {
-		if (strstr(a->cpu, "cortexm") || strstr(a->cpu, "cortex-m")) {
+	const char *cpu = rz_analysis_get_cpu(a);
+	if (RZ_STR_ISNOTEMPTY(cpu)) {
+		if (strstr(cpu, "cortexm") || strstr(cpu, "cortex-m")) {
 			mode |= CS_MODE_MCLASS;
 		}
-		if (a->bits != 64 && strstr(a->cpu, "v8")) {
+		if (a->bits != 64 && strstr(cpu, "v8")) {
 			mode |= CS_MODE_V8;
 		}
 	}

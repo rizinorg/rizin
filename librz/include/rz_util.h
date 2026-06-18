@@ -48,6 +48,7 @@
 #include <rz_util/rz_lang_byte_array.h>
 #include <rz_util/rz_log.h>
 #include <rz_util/rz_luhn.h>
+#include <rz_util/rz_math.h>
 #include <rz_util/rz_mem.h>
 #include <rz_util/rz_name.h>
 #include <rz_util/rz_num.h>

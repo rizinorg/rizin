@@ -217,6 +217,7 @@ d "hlt" 52 0x0 empty
 d "hlt" 62 0x0 empty
 d "hlt" 72 0x0 empty
 d "hlt" 92 0x0 empty
+d "sha (0x0042),y" 9342 0x0 (seq (set tmp (& (& (var a) (var x)) (+ (cast 8 false (>> (+ (append (load 0 (cast 16 false (+ (bv 8 0x42) (bv 8 0x1)))) (load 0 (cast 16 false (bv 8 0x42)))) (cast 16 false (var y))) (bv 8 0x8) false)) (bv 8 0x1)))) (store 0 (+ (append (load 0 (cast 16 false (+ (bv 8 0x42) (bv 8 0x1)))) (load 0 (cast 16 false (bv 8 0x42)))) (cast 16 false (var y))) (var tmp)))
 d "hlt" b2 0x0 empty
 d "hlt" d2 0x0 empty
 d "hlt" f2 0x0 empty
@@ -245,3 +246,7 @@ d "nop 0x42,x" 5442 0x0 nop
 d "nop 0x42,x" 7442 0x0 nop
 d "nop 0x42,x" d442 0x0 nop
 d "nop 0x42,x" f442 0x0 nop
+d "invalid" ff 0x0
+d "invalid" bb 0x0
+d "sbc #0x42" eb42 0x0 (seq (set src (bv 8 0x42)) (set res (- (- (cast 9 false (var a)) (cast 9 false (var src))) (ite (var C) (bv 9 0x0) (bv 9 0x1)))) (set C (! (msb (var res)))) (set res8 (cast 8 false (var res))) (set Z (is_zero (var res8))) (set N (msb (var res8))) (set V (&& (^^ (msb (var a)) (msb (var res8))) (^^ (msb (var a)) (msb (var src))))) (set a (var res8)));empty
+d "nop 0x3412" 0c1234 0x0 nop

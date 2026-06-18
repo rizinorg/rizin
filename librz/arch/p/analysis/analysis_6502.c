@@ -448,69 +448,83 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->cycles = 5;
 		op->size = 2;
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_absolute(&addr, data[1]);
-			op->il_op = _6502_il_op_slo(&addr);
+			if (op->size > len) {
+				goto oob_read;
+			}
+			_6502_il_addr_absolute(&il_addr, data[1]);
+			op->il_op = _6502_il_op_slo(&il_addr);
 		}
 		break;
 	case 0x17: // slo $ff,x
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL | RZ_ANALYSIS_OP_TYPE_OR;
 		op->cycles = 6;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_zero_page_reg(&addr, data[1], "x");
-			op->il_op = _6502_il_op_slo(&addr);
+			_6502_il_addr_zero_page_reg(&il_addr, data[1], "x");
+			op->il_op = _6502_il_op_slo(&il_addr);
 		}
 		break;
 	case 0x03: // slo ($ff,x)
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL | RZ_ANALYSIS_OP_TYPE_OR;
 		op->cycles = 8;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_indirect_x(&addr, data[1]);
-			op->il_op = _6502_il_op_slo(&addr);
+			_6502_il_addr_indirect_x(&il_addr, data[1]);
+			op->il_op = _6502_il_op_slo(&il_addr);
 		}
 		break;
 	case 0x13: // slo ($ff),y
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL | RZ_ANALYSIS_OP_TYPE_OR;
 		op->cycles = 8;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_indirect_y(&addr, data[1]);
-			op->il_op = _6502_il_op_slo(&addr);
+			_6502_il_addr_indirect_y(&il_addr, data[1]);
+			op->il_op = _6502_il_op_slo(&il_addr);
 		}
 		break;
 	case 0x0f: // slo $ffff
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL | RZ_ANALYSIS_OP_TYPE_OR;
 		op->cycles = 6;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_absolute(&addr, data[1] | data[2] << 8);
-			op->il_op = _6502_il_op_slo(&addr);
+			_6502_il_addr_absolute(&il_addr, data[1] | data[2] << 8);
+			op->il_op = _6502_il_op_slo(&il_addr);
 		}
 		break;
 	case 0x1f: // slo $ffff,x
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL | RZ_ANALYSIS_OP_TYPE_OR;
 		op->cycles = 7;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_reg(&addr, data[1] | data[2] << 8, "x");
-			op->il_op = _6502_il_op_slo(&addr);
+			_6502_il_addr_reg(&il_addr, data[1] | data[2] << 8, "x");
+			op->il_op = _6502_il_op_slo(&il_addr);
 		}
 		break;
 	case 0x1b: // slo $ffff,y
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL | RZ_ANALYSIS_OP_TYPE_OR;
 		op->cycles = 7;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_reg(&addr, data[1] | data[2] << 8, "y");
-			op->il_op = _6502_il_op_slo(&addr);
+			_6502_il_addr_reg(&il_addr, data[1] | data[2] << 8, "y");
+			op->il_op = _6502_il_op_slo(&il_addr);
 		}
 		break;
 		// RLA
@@ -518,70 +532,84 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->type = RZ_ANALYSIS_OP_TYPE_ROL | RZ_ANALYSIS_OP_TYPE_AND;
 		op->cycles = 5;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_absolute(&addr, data[1]);
-			op->il_op = _6502_il_op_rla(&addr);
+			_6502_il_addr_absolute(&il_addr, data[1]);
+			op->il_op = _6502_il_op_rla(&il_addr);
 		}
 		break;
 	case 0x37: // rla $ff,x
 		op->type = RZ_ANALYSIS_OP_TYPE_ROL | RZ_ANALYSIS_OP_TYPE_AND;
 		op->cycles = 6;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_zero_page_reg(&addr, data[1], "x");
-			op->il_op = _6502_il_op_rla(&addr);
+			_6502_il_addr_zero_page_reg(&il_addr, data[1], "x");
+			op->il_op = _6502_il_op_rla(&il_addr);
 		}
 		break;
 	case 0x23: // rla ($ff,x)
 		op->type = RZ_ANALYSIS_OP_TYPE_ROL | RZ_ANALYSIS_OP_TYPE_AND;
 		op->cycles = 8;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_indirect_x(&addr, data[1]);
-			op->il_op = _6502_il_op_rla(&addr);
+			_6502_il_addr_indirect_x(&il_addr, data[1]);
+			op->il_op = _6502_il_op_rla(&il_addr);
 		}
 		break;
 	case 0x33: // rla ($ff),y
 		op->type = RZ_ANALYSIS_OP_TYPE_ROL | RZ_ANALYSIS_OP_TYPE_AND;
 		op->cycles = 8;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_indirect_y(&addr, data[1]);
-			op->il_op = _6502_il_op_rla(&addr);
+			_6502_il_addr_indirect_y(&il_addr, data[1]);
+			op->il_op = _6502_il_op_rla(&il_addr);
 		}
 		break;
 	case 0x2f: // rla $ffff
 		op->type = RZ_ANALYSIS_OP_TYPE_ROL | RZ_ANALYSIS_OP_TYPE_AND;
 		op->cycles = 6;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_absolute(&addr, data[1] | data[2] << 8);
-			op->il_op = _6502_il_op_rla(&addr);
+			_6502_il_addr_absolute(&il_addr, data[1] | data[2] << 8);
+			op->il_op = _6502_il_op_rla(&il_addr);
 		}
 		break;
 	case 0x3b: // rla $ffff,y
 		op->type = RZ_ANALYSIS_OP_TYPE_ROL | RZ_ANALYSIS_OP_TYPE_AND;
 		op->cycles = 7;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_reg(&addr, data[1] | data[2] << 8, "y");
-			op->il_op = _6502_il_op_rla(&addr);
+			_6502_il_addr_reg(&il_addr, data[1] | data[2] << 8, "y");
+			op->il_op = _6502_il_op_rla(&il_addr);
 		}
 		break;
 	case 0x3f: // rla $ffff,x
 		op->type = RZ_ANALYSIS_OP_TYPE_ROL | RZ_ANALYSIS_OP_TYPE_AND;
 		op->cycles = 7;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_reg(&addr, data[1] | data[2] << 8, "x");
-			op->il_op = _6502_il_op_rla(&addr);
+			_6502_il_addr_reg(&il_addr, data[1] | data[2] << 8, "x");
+			op->il_op = _6502_il_op_rla(&il_addr);
 		}
 		break;
 
@@ -590,70 +618,84 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR | RZ_ANALYSIS_OP_TYPE_OR;
 		op->cycles = 5;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_absolute(&addr, data[1]);
-			op->il_op = _6502_il_op_sre(&addr);
+			_6502_il_addr_absolute(&il_addr, data[1]);
+			op->il_op = _6502_il_op_sre(&il_addr);
 		}
 		break;
 	case 0x57: // sre $ff,x
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR | RZ_ANALYSIS_OP_TYPE_OR;
 		op->cycles = 6;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_zero_page_reg(&addr, data[1], "x");
-			op->il_op = _6502_il_op_sre(&addr);
+			_6502_il_addr_zero_page_reg(&il_addr, data[1], "x");
+			op->il_op = _6502_il_op_sre(&il_addr);
 		}
 		break;
 	case 0x43: // sre ($ff,x)
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR | RZ_ANALYSIS_OP_TYPE_OR;
 		op->cycles = 8;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_indirect_x(&addr, data[1]);
-			op->il_op = _6502_il_op_sre(&addr);
+			_6502_il_addr_indirect_x(&il_addr, data[1]);
+			op->il_op = _6502_il_op_sre(&il_addr);
 		}
 		break;
 	case 0x53: // sre ($ff),y
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR | RZ_ANALYSIS_OP_TYPE_OR;
 		op->cycles = 8;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_indirect_y(&addr, data[1]);
-			op->il_op = _6502_il_op_sre(&addr);
+			_6502_il_addr_indirect_y(&il_addr, data[1]);
+			op->il_op = _6502_il_op_sre(&il_addr);
 		}
 		break;
 	case 0x4f: // sre $ffff
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR | RZ_ANALYSIS_OP_TYPE_OR;
 		op->cycles = 6;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_absolute(&addr, data[1] | data[2] << 8);
-			op->il_op = _6502_il_op_sre(&addr);
+			_6502_il_addr_absolute(&il_addr, data[1] | data[2] << 8);
+			op->il_op = _6502_il_op_sre(&il_addr);
 		}
 		break;
 	case 0x5b: // sre $ffff,y
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR | RZ_ANALYSIS_OP_TYPE_OR;
 		op->cycles = 7;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_reg(&addr, data[1] | data[2] << 8, "y");
-			op->il_op = _6502_il_op_sre(&addr);
+			_6502_il_addr_reg(&il_addr, data[1] | data[2] << 8, "y");
+			op->il_op = _6502_il_op_sre(&il_addr);
 		}
 		break;
 	case 0x5f: // sre $ffff,x
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR | RZ_ANALYSIS_OP_TYPE_OR;
 		op->cycles = 7;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_reg(&addr, data[1] | data[2] << 8, "x");
-			op->il_op = _6502_il_op_sre(&addr);
+			_6502_il_addr_reg(&il_addr, data[1] | data[2] << 8, "x");
+			op->il_op = _6502_il_op_sre(&il_addr);
 		}
 		break;
 
@@ -662,70 +704,84 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->type = RZ_ANALYSIS_OP_TYPE_ROR | RZ_ANALYSIS_OP_TYPE_AND;
 		op->cycles = 5;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_absolute(&addr, data[1]);
-			op->il_op = _6502_il_op_rra(&addr);
+			_6502_il_addr_absolute(&il_addr, data[1]);
+			op->il_op = _6502_il_op_rra(&il_addr);
 		}
 		break;
 	case 0x77: // rra $ff,x
 		op->type = RZ_ANALYSIS_OP_TYPE_ROR | RZ_ANALYSIS_OP_TYPE_AND;
 		op->cycles = 6;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_zero_page_reg(&addr, data[1], "x");
-			op->il_op = _6502_il_op_rra(&addr);
+			_6502_il_addr_zero_page_reg(&il_addr, data[1], "x");
+			op->il_op = _6502_il_op_rra(&il_addr);
 		}
 		break;
 	case 0x63: // rra ($ff,x)
 		op->type = RZ_ANALYSIS_OP_TYPE_ROR | RZ_ANALYSIS_OP_TYPE_AND;
 		op->cycles = 8;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_indirect_x(&addr, data[1]);
-			op->il_op = _6502_il_op_rra(&addr);
+			_6502_il_addr_indirect_x(&il_addr, data[1]);
+			op->il_op = _6502_il_op_rra(&il_addr);
 		}
 		break;
 	case 0x73: // rra ($ff),y
 		op->type = RZ_ANALYSIS_OP_TYPE_ROR | RZ_ANALYSIS_OP_TYPE_AND;
 		op->cycles = 8;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_indirect_y(&addr, data[1]);
-			op->il_op = _6502_il_op_rra(&addr);
+			_6502_il_addr_indirect_y(&il_addr, data[1]);
+			op->il_op = _6502_il_op_rra(&il_addr);
 		}
 		break;
 	case 0x6f: // rra $ffff
 		op->type = RZ_ANALYSIS_OP_TYPE_ROR | RZ_ANALYSIS_OP_TYPE_AND;
 		op->cycles = 6;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_absolute(&addr, data[1] | data[2] << 8);
-			op->il_op = _6502_il_op_rra(&addr);
+			_6502_il_addr_absolute(&il_addr, data[1] | data[2] << 8);
+			op->il_op = _6502_il_op_rra(&il_addr);
 		}
 		break;
 	case 0x7f: // rra $ffff,x
 		op->type = RZ_ANALYSIS_OP_TYPE_ROR | RZ_ANALYSIS_OP_TYPE_AND;
 		op->cycles = 7;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_reg(&addr, data[1] | data[2] << 8, "x");
-			op->il_op = _6502_il_op_rra(&addr);
+			_6502_il_addr_reg(&il_addr, data[1] | data[2] << 8, "x");
+			op->il_op = _6502_il_op_rra(&il_addr);
 		}
 		break;
 	case 0x7b: // rra $ffff,y
 		op->type = RZ_ANALYSIS_OP_TYPE_ROR | RZ_ANALYSIS_OP_TYPE_AND;
 		op->cycles = 7;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_reg(&addr, data[1] | data[2] << 8, "y");
-			op->il_op = _6502_il_op_rra(&addr);
+			_6502_il_addr_reg(&il_addr, data[1] | data[2] << 8, "y");
+			op->il_op = _6502_il_op_rra(&il_addr);
 		}
 		break;
 
@@ -734,40 +790,48 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		op->cycles = 3;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_absolute(&addr, data[1]);
-			op->il_op = _6502_il_op_sax(&addr);
+			_6502_il_addr_absolute(&il_addr, data[1]);
+			op->il_op = _6502_il_op_sax(&il_addr);
 		}
 		break;
 	case 0x97: // sax $ff,y
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		op->cycles = 4;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_zero_page_reg(&addr, data[1], "y");
-			op->il_op = _6502_il_op_sax(&addr);
+			_6502_il_addr_zero_page_reg(&il_addr, data[1], "y");
+			op->il_op = _6502_il_op_sax(&il_addr);
 		}
 		break;
 	case 0x83: // sax ($ff,x)
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		op->cycles = 6;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_indirect_x(&addr, data[1]);
-			op->il_op = _6502_il_op_sax(&addr);
+			_6502_il_addr_indirect_x(&il_addr, data[1]);
+			op->il_op = _6502_il_op_sax(&il_addr);
 		}
 		break;
 	case 0x8f: // sax $ffff
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		op->cycles = 4;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_absolute(&addr, data[1] | data[2] << 8);
-			op->il_op = _6502_il_op_sax(&addr);
+			_6502_il_addr_absolute(&il_addr, data[1] | data[2] << 8);
+			op->il_op = _6502_il_op_sax(&il_addr);
 		}
 		break;
 
@@ -776,30 +840,36 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->cycles = 3;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_absolute(&addr, data[1]);
-			op->il_op = _6502_il_op_lax(&addr);
+			_6502_il_addr_absolute(&il_addr, data[1]);
+			op->il_op = _6502_il_op_lax(&il_addr);
 		}
 		break;
 	case 0xb7: // lax $ff,y
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->cycles = 4;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_zero_page_reg(&addr, data[1], "y");
-			op->il_op = _6502_il_op_lax(&addr);
+			_6502_il_addr_zero_page_reg(&il_addr, data[1], "y");
+			op->il_op = _6502_il_op_lax(&il_addr);
 		}
 		break;
 	case 0xa3: // lax ($ff,x)
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->cycles = 6;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_indirect_x(&addr, data[1]);
-			op->il_op = _6502_il_op_lax(&addr);
+			_6502_il_addr_indirect_x(&il_addr, data[1]);
+			op->il_op = _6502_il_op_lax(&il_addr);
 		}
 		break;
 	case 0xb3: // lax ($ff),y
@@ -807,20 +877,24 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->cycles = 5;
 		op->failcycles = 6;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_indirect_y(&addr, data[1]);
-			op->il_op = _6502_il_op_lax(&addr);
+			_6502_il_addr_indirect_y(&il_addr, data[1]);
+			op->il_op = _6502_il_op_lax(&il_addr);
 		}
 		break;
 	case 0xaf: // lax $ffff
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->cycles = 4;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_absolute(&addr, data[1] | data[2] << 8);
-			op->il_op = _6502_il_op_lax(&addr);
+			_6502_il_addr_absolute(&il_addr, data[1] | data[2] << 8);
+			op->il_op = _6502_il_op_lax(&il_addr);
 		}
 		break;
 	case 0xbf: // lax $ffff,y
@@ -828,20 +902,24 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->cycles = 4;
 		op->failcycles = 5;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_reg(&addr, data[1] | data[2] << 8, "y");
-			op->il_op = _6502_il_op_lax(&addr);
+			_6502_il_addr_reg(&il_addr, data[1] | data[2] << 8, "y");
+			op->il_op = _6502_il_op_lax(&il_addr);
 		}
 		break;
 	case 0xab: // lax #$ff
 		op->type = RZ_ANALYSIS_OP_TYPE_AND | RZ_ANALYSIS_OP_TYPE_OR;
 		op->cycles = 2;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_immediate(&addr, data[1]);
-			op->il_op = _6502_il_op_laximm(&addr, magic);
+			_6502_il_immediate(&il_addr, data[1]);
+			op->il_op = _6502_il_op_laximm(&il_addr, magic);
 		}
 		break;
 
@@ -850,70 +928,84 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP | RZ_ANALYSIS_OP_TYPE_STORE;
 		op->cycles = 5;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_absolute(&addr, data[1]);
-			op->il_op = _6502_il_op_dcp(&addr);
+			_6502_il_addr_absolute(&il_addr, data[1]);
+			op->il_op = _6502_il_op_dcp(&il_addr);
 		}
 		break;
 	case 0xd7: // dcp $ff,x
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP | RZ_ANALYSIS_OP_TYPE_STORE;
 		op->cycles = 6;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_zero_page_reg(&addr, data[1], "x");
-			op->il_op = _6502_il_op_dcp(&addr);
+			_6502_il_addr_zero_page_reg(&il_addr, data[1], "x");
+			op->il_op = _6502_il_op_dcp(&il_addr);
 		}
 		break;
 	case 0xc3: // dcp ($ff,x)
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP | RZ_ANALYSIS_OP_TYPE_STORE;
 		op->cycles = 8;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_indirect_x(&addr, data[1]);
-			op->il_op = _6502_il_op_dcp(&addr);
+			_6502_il_addr_indirect_x(&il_addr, data[1]);
+			op->il_op = _6502_il_op_dcp(&il_addr);
 		}
 		break;
 	case 0xd3: // dcp ($ff),y
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP | RZ_ANALYSIS_OP_TYPE_STORE;
 		op->cycles = 8;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_indirect_y(&addr, data[1]);
-			op->il_op = _6502_il_op_dcp(&addr);
+			_6502_il_addr_indirect_y(&il_addr, data[1]);
+			op->il_op = _6502_il_op_dcp(&il_addr);
 		}
 		break;
 	case 0xcf: // dcp $ffff
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP | RZ_ANALYSIS_OP_TYPE_STORE;
 		op->cycles = 6;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_absolute(&addr, data[1] | data[2] << 8);
-			op->il_op = _6502_il_op_dcp(&addr);
+			_6502_il_addr_absolute(&il_addr, data[1] | data[2] << 8);
+			op->il_op = _6502_il_op_dcp(&il_addr);
 		}
 		break;
 	case 0xdf: // dcp $ffff,x
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP | RZ_ANALYSIS_OP_TYPE_STORE;
 		op->cycles = 7;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_reg(&addr, data[1] | data[2] << 8, "x");
-			op->il_op = _6502_il_op_dcp(&addr);
+			_6502_il_addr_reg(&il_addr, data[1] | data[2] << 8, "x");
+			op->il_op = _6502_il_op_dcp(&il_addr);
 		}
 		break;
 	case 0xdb: // dcp $ffff,y
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP | RZ_ANALYSIS_OP_TYPE_STORE;
 		op->cycles = 7;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_reg(&addr, data[1] | data[2] << 8, "y");
-			op->il_op = _6502_il_op_dcp(&addr);
+			_6502_il_addr_reg(&il_addr, data[1] | data[2] << 8, "y");
+			op->il_op = _6502_il_op_dcp(&il_addr);
 		}
 		break;
 
@@ -922,70 +1014,84 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE | RZ_ANALYSIS_OP_TYPE_SUB;
 		op->cycles = 5;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_absolute(&addr, data[1]);
-			op->il_op = _6502_il_op_isc(&addr);
+			_6502_il_addr_absolute(&il_addr, data[1]);
+			op->il_op = _6502_il_op_isc(&il_addr);
 		}
 		break;
 	case 0xf7: // isc $ff,x
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE | RZ_ANALYSIS_OP_TYPE_SUB;
 		op->cycles = 6;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_zero_page_reg(&addr, data[1], "x");
-			op->il_op = _6502_il_op_isc(&addr);
+			_6502_il_addr_zero_page_reg(&il_addr, data[1], "x");
+			op->il_op = _6502_il_op_isc(&il_addr);
 		}
 		break;
 	case 0xe3: // isc ($ff,x)
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE | RZ_ANALYSIS_OP_TYPE_SUB;
 		op->cycles = 8;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_indirect_x(&addr, data[1]);
-			op->il_op = _6502_il_op_isc(&addr);
+			_6502_il_addr_indirect_x(&il_addr, data[1]);
+			op->il_op = _6502_il_op_isc(&il_addr);
 		}
 		break;
 	case 0xf3: // isc ($ff),y
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE | RZ_ANALYSIS_OP_TYPE_SUB;
 		op->cycles = 8;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_indirect_y(&addr, data[1]);
-			op->il_op = _6502_il_op_isc(&addr);
+			_6502_il_addr_indirect_y(&il_addr, data[1]);
+			op->il_op = _6502_il_op_isc(&il_addr);
 		}
 		break;
 	case 0xef: // isc $ffff
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE | RZ_ANALYSIS_OP_TYPE_SUB;
 		op->cycles = 6;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_absolute(&addr, data[1] | data[2] << 8);
-			op->il_op = _6502_il_op_isc(&addr);
+			_6502_il_addr_absolute(&il_addr, data[1] | data[2] << 8);
+			op->il_op = _6502_il_op_isc(&il_addr);
 		}
 		break;
 	case 0xff: // isc $ffff,x
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE | RZ_ANALYSIS_OP_TYPE_SUB;
 		op->cycles = 7;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_reg(&addr, data[1], "x");
-			op->il_op = _6502_il_op_isc(&addr);
+			_6502_il_addr_reg(&il_addr, data[1], "x");
+			op->il_op = _6502_il_op_isc(&il_addr);
 		}
 		break;
 	case 0xfb: // isc $ffff,y
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE | RZ_ANALYSIS_OP_TYPE_SUB;
 		op->cycles = 7;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_reg(&addr, data[1], "y");
-			op->il_op = _6502_il_op_isc(&addr);
+			_6502_il_addr_reg(&il_addr, data[1], "y");
+			op->il_op = _6502_il_op_isc(&il_addr);
 		}
 		break;
 	// ANC
@@ -994,10 +1100,12 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		op->cycles = 2;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_immediate(&addr, data[1]);
-			op->il_op = _6502_il_op_anc(&addr);
+			_6502_il_immediate(&il_addr, data[1]);
+			op->il_op = _6502_il_op_anc(&il_addr);
 		}
 		break;
 	// ALR
@@ -1005,10 +1113,12 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->type = RZ_ANALYSIS_OP_TYPE_AND | RZ_ANALYSIS_OP_TYPE_SHR;
 		op->cycles = 2;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_immediate(&addr, data[1]);
-			op->il_op = _6502_il_op_alr(&addr);
+			_6502_il_immediate(&il_addr, data[1]);
+			op->il_op = _6502_il_op_alr(&il_addr);
 		}
 		break;
 	// ARR
@@ -1016,10 +1126,12 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->type = RZ_ANALYSIS_OP_TYPE_AND | RZ_ANALYSIS_OP_TYPE_ROR;
 		op->cycles = 2;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_immediate(&addr, data[1]);
-			op->il_op = _6502_il_op_arr(&addr);
+			_6502_il_immediate(&il_addr, data[1]);
+			op->il_op = _6502_il_op_arr(&il_addr);
 		}
 		break;
 	// SBX
@@ -1027,10 +1139,12 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP | RZ_ANALYSIS_OP_TYPE_STORE;
 		op->cycles = 2;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_immediate(&addr, data[1]);
-			op->il_op = _6502_il_op_sbx(&addr);
+			_6502_il_immediate(&il_addr, data[1]);
+			op->il_op = _6502_il_op_sbx(&il_addr);
 		}
 		break;
 	// LAS
@@ -1039,10 +1153,12 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->cycles = 4;
 		op->failcycles = 5;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_reg(&addr, data[1] | data[2] << 8, "y");
-			op->il_op = _6502_il_op_las(&addr);
+			_6502_il_addr_reg(&il_addr, data[1] | data[2] << 8, "y");
+			op->il_op = _6502_il_op_las(&il_addr);
 		}
 		break;
 	// JAM
@@ -1060,6 +1176,9 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0xf2:
 		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 		op->size = 1;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		op->eob = true;
 		// data = NEG(0);
 		// addrbuf = NEG(0);
@@ -1072,66 +1191,78 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0x93: // sha ($ff),y
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		op->cycles = 6;
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_indirect_y(&addr, data[1]);
-			op->il_op = _6502_il_op_sha(&addr);
+			_6502_il_addr_indirect_y(&il_addr, data[1]);
+			op->il_op = _6502_il_op_sha(&il_addr);
 		}
 		break;
 	case 0x9f: // sha $ffff,y
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		op->cycles = 6;
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
 			ut16 imm = (data[1] | data[2] << 8);
-			_6502_il_addr_reg(&addr, imm, "y");
-			op->il_op = _6502_il_op_sha(&addr);
+			_6502_il_addr_reg(&il_addr, imm, "y");
+			op->il_op = _6502_il_op_sha(&il_addr);
 		}
 		break;
 	// SHX
 	case 0x9e: // shx $ffff,y
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		op->cycles = 5;
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_reg(&addr, data[1] | data[2] << 8, "y");
-			op->il_op = _6502_il_op_shx(&addr);
+			_6502_il_addr_reg(&il_addr, data[1] | data[2] << 8, "y");
+			op->il_op = _6502_il_op_shx(&il_addr);
 		}
 		break;
 	// SHY
 	case 0x9c: // shy $ffff,x
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		op->cycles = 5;
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_reg(&addr, data[1] | data[2] << 8, "x");
-			op->il_op = _6502_il_op_shy(&addr);
+			_6502_il_addr_reg(&il_addr, data[1] | data[2] << 8, "x");
+			op->il_op = _6502_il_op_shy(&il_addr);
 		}
 		break;
 	// TAS
 	case 0x9b: // tas $ffff,y
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		op->size = 3;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		op->cycles = 5;
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_addr_reg(&addr, data[1] | data[2] << 8, "y");
-			op->il_op = _6502_il_op_tas(&addr);
+			_6502_il_addr_reg(&il_addr, data[1] | data[2] << 8, "y");
+			op->il_op = _6502_il_op_tas(&il_addr);
 		}
 		break;
 	// ANE
 	case 0x8b: // ane #$ff
 		op->type = RZ_ANALYSIS_OP_TYPE_AND | RZ_ANALYSIS_OP_TYPE_OR;
 		op->size = 2;
+		if (op->size > len) {
+			goto oob_read;
+		}
 		op->cycles = 2;
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_immediate(&addr, data[1]);
-			op->il_op = _6502_il_op_ane(&addr, magic);
+			_6502_il_immediate(&il_addr, data[1]);
+			op->il_op = _6502_il_op_ane(&il_addr, magic);
 		}
 		break;
 
@@ -1229,9 +1360,8 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0xeb: // sbc #$ff ((sbc,nop) extended opcode)
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			_6502ILAddr addr;
-			_6502_il_immediate(&addr, data[1]);
-			op->il_op = _6502_il_op_sbc(&addr);
+			_6502_il_immediate(&il_addr, data[1]);
+			op->il_op = _6502_il_op_sbc(&il_addr);
 		}
 		break;
 	// ORA
@@ -1488,6 +1618,9 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0xb0: // bcs $ffff
 	case 0xd0: // bne $ffff
 	case 0xf0: // beq $ffff
+		if (len < 2) {
+			goto oob_read;
+		}
 		op->cycles = 3;
 		op->failcycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
@@ -1510,6 +1643,9 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		break;
 	// JSR
 	case 0x20: // jsr $ffff
+		if (len < 3) {
+			goto oob_read;
+		}
 		op->cycles = 6;
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		op->jump = (len > 2) ? data[1] | data[2] << 8 : 0;
@@ -1525,6 +1661,9 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		break;
 	// JMP
 	case 0x4c: // jmp $ffff
+		if (len < 3) {
+			goto oob_read;
+		}
 		op->cycles = 3;
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		op->jump = (len > 2) ? data[1] | data[2] << 8 : 0;
@@ -1534,6 +1673,9 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		}
 		break;
 	case 0x6c: { // jmp ($ffff)
+		if (len < 3) {
+			goto oob_read;
+		}
 		op->cycles = 5;
 		op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 		ut16 imm = len > 2 ? data[1] | data[2] << 8 : 0;
@@ -1810,6 +1952,10 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		break;
 	}
 	return op->size;
+
+oob_read:
+	RZ_FREE(op->mnemonic);
+	return 0;
 }
 
 static char *_6502_get_reg_profile(RzAnalysis *analysis) {

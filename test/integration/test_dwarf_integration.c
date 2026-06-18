@@ -128,7 +128,6 @@ static bool test_parse_dwarf_types(void) {
 }
 
 static bool test_dwarf_function_parsing_cpp(void) {
-#if WITH_GPL
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core->bin, "Couldn't create new RzBin");
 	mu_assert_notnull(core->io, "Couldn't create new RzIO");
@@ -165,7 +164,6 @@ static bool test_dwarf_function_parsing_cpp(void) {
 
 	rz_bin_dwarf_free(dw);
 	rz_core_free(core);
-#endif
 	mu_end;
 }
 

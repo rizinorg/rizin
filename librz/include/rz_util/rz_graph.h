@@ -13,23 +13,55 @@
 extern "C" {
 #endif
 
-/**
- * \brief Represents a node in a graph, node should be hashable.
- * and support both list-based graph and matrix-based graph.
- */
 typedef struct rz_graph_t_new RzGraph;
 typedef struct rz_graph_node_t_new RzGraphNode;
 typedef struct rz_graph_edge_t_new RzGraphEdge;
 typedef struct rz_graph_impl_ops_t RzGraphImplOps;
 
-typedef ut64 (*RzGraphIdentifierHash)(const void *data);
+typedef ut64 (*RzGraphIdentifierHash)(RZ_NULLABLE const void *data);
 typedef void (*RzGraphNodeDataFree)(void *data);
 typedef void (*RzGraphEdgeDataFree)(void *data);
+typedef bool (*RzGraphEdgeChooser)(const RzGraphEdge *data, void *cb_data);
+
+/**
+ * \brief Macro to cast an integer to a void pointer.
+ * Useful for graphs which use integers as node data.
+ */
+#define RZ_GRAPH_INT_AS_DATA(n) ((void *)(utptr)(n))
+
+/**
+ * \brief The default capacity in number of nodes of the adjacency
+ * matrix implementation.
+ * NOTE: The current matrix implementation is really just an adjacency matrix
+ * and has an exponential memory footprint.
+ * This default capacity has already uses up to:
+ * 256 * 256 * sizeof(RzGraphEdge *) bytes = 500 KiB
+ */
+#define RZ_GRAPH_MATRIX_DEFAULT_CAPACITY 256
 
 typedef enum {
 	RZ_GRAPH_IMPL_LIST,
+	/**
+	 * \brief A n x n adjacency matrix.
+	 * Should only be used for known small graphs. Otherwise it can quickly
+	 * lead to OOM events because its size is `O(n x n x sizeof(void *))`
+	 *
+	 * ATTENTION: This implementation is not thread-safe!
+	 * If an element is added beyond its capacity, it will reallocate the matrix
+	 * array and possibly invalidate currently in use pointers into it.
+	 */
 	RZ_GRAPH_IMPL_MATRIX
 } RzGraphImplType;
+
+typedef enum {
+	RZ_GRAPH_STATUS_OK,
+	RZ_GRAPH_STATUS_EXISTED,
+	RZ_GRAPH_STATUS_MISSING_NODE,
+	RZ_GRAPH_STATUS_MISSING_EDGE,
+	RZ_GRAPH_STATUS_UPDATED,
+	RZ_GRAPH_STATUS_NOT_UPDATED,
+	RZ_GRAPH_STATUS_ERR,
+} RzGraphStatus;
 
 // Graph
 RZ_API RZ_OWN RzGraph *rz_graph_new(RzGraphImplType impl_type, RZ_NULLABLE RzGraphIdentifierHash user_hash, RzGraphNodeDataFree node_free, RzGraphEdgeDataFree edge_free);
@@ -37,14 +69,20 @@ RZ_API void rz_graph_free(RzGraph *g);
 RZ_API void rz_graph_reset(RzGraph *g);
 
 // Nodes
-RZ_API RZ_BORROW RzGraphNode *rz_graph_add_node(RzGraph *g, void *user_data, const void *identifier);
-RZ_API bool rz_graph_del_node(RzGraph *g, RZ_OWN RzGraphNode *node);
-RZ_API RZ_BORROW RzGraphNode *rz_graph_find_node(RzGraph *g, const void *identifier);
+RZ_API RzGraphStatus rz_graph_add_node(
+	RzGraph /*<NodeType *, EdgeType *>*/ *g,
+	RZ_NULLABLE RZ_OWN void *node_data,
+	RZ_OUT RZ_NULLABLE RZ_BORROW RzGraphNode **node_ptr);
+RZ_API RzGraphStatus rz_graph_del_node(RzGraph *g, RZ_OWN RzGraphNode *node);
+RZ_API RZ_BORROW RzGraphNode *rz_graph_find_node(RzGraph *g, ut64 id);
 
 // Edges
-RZ_API bool rz_graph_add_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, void *user_data);
-RZ_API bool rz_graph_del_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, RZ_NULLABLE void *user_data);
-RZ_API bool rz_graph_has_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, RZ_NULLABLE void *user_data);
+RZ_API RzGraphStatus rz_graph_add_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, void *edge_data);
+RZ_API RzGraphStatus rz_graph_update_edge(RZ_BORROW RzGraph *g, RZ_OWN RzGraphNode *from, RZ_OWN RzGraphNode *to, RZ_OWN void *edge_data, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data);
+RZ_API RzGraphStatus rz_graph_update_edge_by_id(RZ_NONNULL RZ_BORROW RzGraph *g, ut64 from_id, ut64 to_id, RZ_NULLABLE RZ_OWN void *edge_data, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data);
+RZ_API RzGraphStatus rz_graph_del_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to);
+RZ_API RzGraphStatus rz_graph_del_edges(RZ_BORROW RzGraph *g, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data);
+RZ_API RzGraphStatus rz_graph_has_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to);
 RZ_API RZ_BORROW RzGraphEdge *rz_graph_find_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to);
 
 RZ_API RZ_OWN RzIterator *rz_graph_out_edges(RzGraph *g, RzGraphNode *node);
@@ -56,6 +94,25 @@ RZ_API RZ_OWN RzIterator *rz_graph_in_neighbors(RzGraph *g, RzGraphNode *n);
 RZ_API ut64 rz_graph_count_nodes(const RzGraph *g);
 RZ_API ut64 rz_graph_count_edges(const RzGraph *g);
 RZ_API RZ_OWN RzIterator *rz_graph_get_nodes(const RzGraph *g);
+RZ_API ut64 rz_graph_mem_usage(const RzGraph *g);
+
+/**
+ * Get a label for a dot graph edge.
+ * Can return NULL if the default arrow should be used.
+ * Otherwise it must return a string of the form: [<formatting options>]
+ */
+typedef RZ_OWN char *(*RzGraphEdgeFormatter)(const RzGraphEdge *e);
+/**
+ * Get a label for a dot graph node.
+ * Can return NULL if the node's hash id should be used as label.
+ * Otherwise it must return a string of the form: [<formatting options>]
+ */
+typedef RZ_OWN char *(*RzGraphNodeFormatter)(const RzGraphNode *n);
+
+RZ_API RZ_OWN char *rz_graph_as_dot_str(const RzGraph *g,
+	RZ_NULLABLE const char *name,
+	RZ_NULLABLE RzGraphNodeFormatter node_formatter,
+	RZ_NULLABLE RzGraphEdgeFormatter edge_formatter);
 
 // DFS and visitor mode
 typedef struct rz_graph_visitor_t_new RzGraphVisitor;
@@ -84,9 +141,6 @@ RZ_API RzGraphNode *rz_graph_nth_neighbour(const RzGraph *g, const RzGraphNode *
 RZ_API ut64 rz_graph_out_degree(const RzGraph *g, const RzGraphNode *n);
 RZ_API ut64 rz_graph_in_degree(const RzGraph *g, const RzGraphNode *n);
 
-// Node/edge lookup by raw hash_id (ut64)
-RZ_API RzGraphNode *rz_graph_find_node_by_hashid(RzGraph *g, ut64 hash_id);
-
 // Getters and setters
 RZ_DEPRECATE RZ_API ut64 rz_graph_node_get_vec_id(RZ_NONNULL const RzGraphNode *node);
 RZ_DEPRECATE RZ_API const RzPVector *rz_graph_get_node_vec(RZ_NONNULL const RzGraph *g);
@@ -104,18 +158,18 @@ RZ_API const RzGraphNode *rz_graph_edge_get_from(RZ_NONNULL const RzGraphEdge *e
 RZ_API const RzGraphNode *rz_graph_edge_get_to(RZ_NONNULL const RzGraphEdge *edge);
 
 // Node/edge operations by identifier object
-RZ_API bool rz_graph_del_node_by_id(RzGraph *g, const void *identifier);
-RZ_API bool rz_graph_add_edge_by_id(RzGraph *g, const void *from_id, const void *to_id, void *user_data);
-RZ_API bool rz_graph_del_edge_by_id(RzGraph *g, const void *from_id, const void *to_id, RZ_NULLABLE void *user_data);
-RZ_API bool rz_graph_has_edge_by_id(RzGraph *g, const void *from_id, const void *to_id, RZ_NULLABLE void *user_data);
-RZ_API RZ_NULLABLE RZ_BORROW RzGraphEdge *rz_graph_find_edge_by_id(RzGraph *g, const void *from_id, const void *to_id);
-RZ_API RZ_OWN RzIterator *rz_graph_out_edges_by_id(RzGraph *g, const void *identifier);
-RZ_API RZ_OWN RzIterator *rz_graph_in_edges_by_id(RzGraph *g, const void *identifier);
-RZ_API RZ_OWN RzIterator *rz_graph_out_neighbors_by_id(RzGraph *g, const void *identifier);
-RZ_API RZ_OWN RzIterator *rz_graph_in_neighbors_by_id(RzGraph *g, const void *identifier);
-RZ_API ut64 rz_graph_out_degree_by_id(const RzGraph *g, const void *identifier);
-RZ_API ut64 rz_graph_in_degree_by_id(const RzGraph *g, const void *identifier);
-RZ_API RZ_NULLABLE RZ_BORROW RzGraphNode *rz_graph_nth_neighbour_by_id(const RzGraph *g, const void *identifier, ut64 nth, bool out_neighbor);
+RZ_API RzGraphStatus rz_graph_del_node_by_id(RzGraph *g, ut64 id);
+RZ_API RzGraphStatus rz_graph_add_edge_by_id(RzGraph *g, ut64 from_id, ut64 to_id, RZ_OWN void *edge_data);
+RZ_API RzGraphStatus rz_graph_del_edge_by_id(RzGraph *g, ut64 from_id, ut64 to_id);
+RZ_API RzGraphStatus rz_graph_has_edge_by_id(RzGraph *g, ut64 from_id, ut64 to_id);
+RZ_API RZ_NULLABLE RZ_BORROW RzGraphEdge *rz_graph_find_edge_by_id(RzGraph *g, ut64 from_id, ut64 to_id);
+RZ_API RZ_OWN RzIterator *rz_graph_out_edges_by_id(RzGraph *g, ut64 id);
+RZ_API RZ_OWN RzIterator *rz_graph_in_edges_by_id(RzGraph *g, ut64 id);
+RZ_API RZ_OWN RzIterator *rz_graph_out_neighbors_by_id(RzGraph *g, ut64 id);
+RZ_API RZ_OWN RzIterator *rz_graph_in_neighbors_by_id(RzGraph *g, ut64 id);
+RZ_API ut64 rz_graph_out_degree_by_id(const RzGraph *g, ut64 id);
+RZ_API ut64 rz_graph_in_degree_by_id(const RzGraph *g, ut64 id);
+RZ_API RZ_NULLABLE RZ_BORROW RzGraphNode *rz_graph_nth_neighbour_by_id(const RzGraph *g, ut64 id, ut64 nth, bool out_neighbor);
 
 // Graph algorithms
 /**

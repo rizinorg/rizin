@@ -1040,52 +1040,35 @@ RZ_API void rz_analysis_var_add_constraint(RzAnalysisVar *var, RZ_BORROW RzTypeC
 }
 
 /**
+ * \brief Removes all type constraints from a \p var variable
+ */
+RZ_API void rz_analysis_var_clear_constraints(RZ_NONNULL RzAnalysisVar *var) {
+	rz_return_if_fail(var);
+	rz_vector_clear(&var->constraints);
+}
+
+/**
  * \brief Get all type constraints of a \p var variable in the text form
  */
-RZ_API char *rz_analysis_var_get_constraints_readable(RzAnalysisVar *var) {
-	size_t n = var->constraints.len;
-	if (!n) {
-		return NULL;
-	}
-	bool low = false, high = false;
-	RzStrBuf sb;
-	rz_strbuf_init(&sb);
-	size_t i;
-	for (i = 0; i < n; i += 1) {
-		RzTypeConstraint *constr = rz_vector_index_ptr(&var->constraints, i);
-		switch (constr->cond) {
-		case RZ_TYPE_COND_LE:
-			if (high) {
-				rz_strbuf_append(&sb, " && ");
-			}
-			rz_strbuf_appendf(&sb, "<= 0x%" PFMT64x, constr->val);
-			low = true;
-			break;
-		case RZ_TYPE_COND_LT:
-			if (high) {
-				rz_strbuf_append(&sb, " && ");
-			}
-			rz_strbuf_appendf(&sb, "< 0x%" PFMT64x, constr->val);
-			low = true;
-			break;
-		case RZ_TYPE_COND_GE:
-			rz_strbuf_appendf(&sb, ">= 0x%" PFMT64x, constr->val);
-			high = true;
-			break;
-		case RZ_TYPE_COND_GT:
-			rz_strbuf_appendf(&sb, "> 0x%" PFMT64x, constr->val);
-			high = true;
-			break;
-		default:
-			break;
-		}
-		if (low && high && i != n - 1) {
-			rz_strbuf_append(&sb, " || ");
-			low = false;
-			high = false;
+RZ_API char *rz_analysis_var_get_constraints_readable(RZ_NONNULL RzAnalysisVar *var) {
+	rz_return_val_if_fail(var, NULL);
+	// The inline variable listing (afvl) only shows the interval/range hint.
+	// Equality and inequality constraints, such as the "== 0" produced by the
+	// ubiquitous null/zero checks, would clutter the listing; they are still
+	// recorded and can be inspected through the dedicated `afvc` command.
+	// Render only the interval bounds here.
+	RzVector /*<RzTypeConstraint>*/ intervals;
+	rz_vector_init(&intervals, sizeof(RzTypeConstraint), NULL, NULL);
+	RzTypeConstraint *c;
+	rz_vector_foreach (&var->constraints, c) {
+		if (c->cond == RZ_TYPE_COND_LE || c->cond == RZ_TYPE_COND_LT ||
+			c->cond == RZ_TYPE_COND_GE || c->cond == RZ_TYPE_COND_GT) {
+			rz_vector_push(&intervals, c);
 		}
 	}
-	return rz_strbuf_drain_nofree(&sb);
+	char *readable = rz_type_interval_constraints_as_string(&intervals);
+	rz_vector_fini(&intervals);
+	return readable;
 }
 
 static bool stack_offset_is_arg(RzAnalysisFunction *fcn, st64 stack_off) {
@@ -1257,7 +1240,11 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 			if (*addr == ',') {
 				addr++;
 			}
-			if (!op->stackop && op->type != RZ_ANALYSIS_OP_TYPE_PUSH && op->type != RZ_ANALYSIS_OP_TYPE_POP && op->type != RZ_ANALYSIS_OP_TYPE_RET && rz_str_isnumber(addr)) {
+			if (!op->stackop &&
+				op->type != RZ_ANALYSIS_OP_TYPE_PUSH &&
+				op->type != RZ_ANALYSIS_OP_TYPE_POP &&
+				op->type != RZ_ANALYSIS_OP_TYPE_RET &&
+				rz_str_isnumber(addr)) {
 				addend = (st64)rz_num_get(NULL, addr);
 				if (addend && op->src[0] && addend == op->src[0]->imm) {
 					goto beach;
@@ -1408,7 +1395,13 @@ static inline bool op_affect_dst(RzAnalysisOp *op) {
 #define STR_EQUAL(s1, s2) (s1 && s2 && !strcmp(s1, s2))
 
 static inline bool arch_destroys_dst(const char *arch) {
-	return (STR_EQUAL(arch, "arm") || STR_EQUAL(arch, "riscv") || STR_EQUAL(arch, "ppc"));
+	if (!arch) {
+		return false;
+	}
+	return rz_str_startswith(arch, "arm") ||
+		rz_str_startswith(arch, "mips") ||
+		rz_str_startswith(arch, "ppc") ||
+		rz_str_startswith(arch, "riscv");
 }
 
 static bool is_used_like_arg(const char *regname, const char *opsreg, const char *opdreg, RzAnalysisOp *op, RzAnalysis *analysis) {
@@ -1472,6 +1465,11 @@ static size_t count_reg_arg_vars(RzAnalysisFunction *fcn) {
 	return count;
 }
 
+static inline bool is_op_call(const RzAnalysisOp *op) {
+	ut32 optype = op->type & RZ_ANALYSIS_OP_TYPE_MASK;
+	return optype == RZ_ANALYSIS_OP_TYPE_CALL || optype == RZ_ANALYSIS_OP_TYPE_UCALL;
+}
+
 RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzAnalysisFunction *fcn, int *reg_set, int *count) {
 	int i, argc = 0;
 	rz_return_if_fail(analysis && op && fcn);
@@ -1492,8 +1490,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 		argc = rz_type_func_args_count(analysis->typedb, fname);
 	}
 
-	bool is_call = (op->type & 0xf) == RZ_ANALYSIS_OP_TYPE_CALL || (op->type & 0xf) == RZ_ANALYSIS_OP_TYPE_UCALL;
-	if (is_call && *count < max_count) {
+	if (is_op_call(op) && *count < max_count) {
 		RzList *callee_rargs_l = NULL;
 		size_t callee_rargs = 0;
 		char *callee = NULL;

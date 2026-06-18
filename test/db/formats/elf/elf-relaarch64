@@ -1,0 +1,223 @@
+NAME= R_AARCH64_MOVW_UABS_* relocs
+FILE=bins/elf/aarch64_relocs.o
+CMDS=<<EOF
+ir~R_AARCH64_MOVW_UABS_
+pd 12 @ 0x08000058
+pd 4 @ 0x0800014c
+EOF
+EXPECT=<<EOF
+0x08000058 0x00000058 0x08000178 R_AARCH64_MOVW_UABS_G0        .data
+0x0800005c 0x0000005c 0x08000178 R_AARCH64_MOVW_UABS_G0_NC     .data
+0x08000060 0x00000060 0x08000178 R_AARCH64_MOVW_UABS_G1        .data
+0x08000064 0x00000064 0x08000178 R_AARCH64_MOVW_UABS_G1_NC     .data
+0x08000068 0x00000068 0x08000178 R_AARCH64_MOVW_UABS_G2        .data
+0x0800006c 0x0000006c 0x08000178 R_AARCH64_MOVW_UABS_G2_NC     .data
+0x08000070 0x00000070 0x08000178 R_AARCH64_MOVW_UABS_G3        .data
+0x08000074 0x00000074 0x08000178 R_AARCH64_MOVW_UABS_G3        .data
+0x08000078 0x00000078 0x08000178 R_AARCH64_MOVW_UABS_G2_NC     .data
+0x0800007c 0x0000007c 0x08000178 R_AARCH64_MOVW_UABS_G1_NC     .data
+0x08000080 0x00000080 0x08000178 R_AARCH64_MOVW_UABS_G0_NC     .data
+0x0800014c 0x0000014c 0x08000178 R_AARCH64_MOVW_UABS_G0        .data + 0x00000050
+0x08000150 0x00000150 0x08000178 R_AARCH64_MOVW_UABS_G1_NC     .data + 0x00000050
+0x08000154 0x00000154 0x08000178 R_AARCH64_MOVW_UABS_G2_NC     .data + 0x00000050
+0x08000158 0x00000158 0x08000178 R_AARCH64_MOVW_UABS_G3        .data + 0x00000050
+            ;-- .data:
+            ;-- test_movw_uabs:
+            0x08000058      mov   x0, 0x178                            ; RELOC 64 .data @ 0x08000178
+            ;-- .data:
+            0x0800005c      movk  x0, 0x178                            ; RELOC 64 .data @ 0x08000178
+            ;-- .data:
+            0x08000060      mov   x1, segment.ehdr                     ; RELOC 64 .data @ 0x08000178
+            ;-- .data:
+            0x08000064      movk  x1, 0x800, lsl 16                    ; RELOC 64 .data @ 0x08000178
+            ;-- .data:
+            0x08000068      movz  x2, 0, lsl 32                        ; RELOC 64 .data @ 0x08000178
+            ;-- .data:
+            0x0800006c      movk  x2, 0, lsl 32                        ; RELOC 64 .data @ 0x08000178
+            ;-- .data:
+            0x08000070      movz  x3, 0, lsl 48                        ; RELOC 64 .data @ 0x08000178
+            ;-- .data:
+            0x08000074      movz  x4, 0, lsl 48                        ; RELOC 64 .data @ 0x08000178
+            ;-- .data:
+            0x08000078      movk  x4, 0, lsl 32                        ; RELOC 64 .data @ 0x08000178
+            ;-- .data:
+            0x0800007c      movk  x4, 0x800, lsl 16                    ; RELOC 64 .data @ 0x08000178
+            ;-- .data:
+            0x08000080      movk  x4, 0x178                            ; RELOC 64 .data @ 0x08000178
+            0x08000084      ret
+            ;-- .data:
+            0x0800014c      mov   x1, 0x1c8                            ; RELOC 64 .data @ 0x08000178 + 0x50
+            ;-- .data:
+            0x08000150      movk  x1, 0x800, lsl 16                    ; RELOC 64 .data @ 0x08000178 + 0x50
+            ;-- .data:
+            0x08000154      movk  x1, 0, lsl 32                        ; RELOC 64 .data @ 0x08000178 + 0x50
+            ;-- .data:
+            0x08000158      movk  x1, 0, lsl 48                        ; RELOC 64 .data @ 0x08000178 + 0x50
+EOF
+RUN
+
+NAME= R_AARCH64_MOVW_SABS_* relocs
+FILE=bins/elf/aarch64_relocs.o
+CMDS=<<EOF
+ir~R_AARCH64_MOVW_SABS_
+pd 3 @ 0x08000088
+EOF
+EXPECT=<<EOF
+0x08000088 0x00000088 0x08000178 R_AARCH64_MOVW_SABS_G0        .data
+0x0800008c 0x0000008c 0x08000178 R_AARCH64_MOVW_SABS_G1        .data
+0x08000090 0x00000090 0x08000178 R_AARCH64_MOVW_SABS_G2        .data
+            ;-- .data:
+            ;-- test_movw_sabs:
+            0x08000088      mov   x0, 0x178                            ; RELOC 64 .data @ 0x08000178
+            ;-- .data:
+            0x0800008c      mov   x1, segment.ehdr                     ; RELOC 64 .data @ 0x08000178
+            ;-- .data:
+            0x08000090      movz  x2, 0, lsl 32                        ; RELOC 64 .data @ 0x08000178
+EOF
+RUN
+
+NAME= R_AARCH64_MOVW_PREL_* relocs
+FILE=bins/elf/aarch64_relocs.o
+CMDS=<<EOF
+ir~R_AARCH64_MOVW_PREL_
+pd 8 @ 0x0800010c
+EOF
+EXPECT=<<EOF
+0x0800010c 0x0000010c 0x08000178 R_AARCH64_MOVW_PREL_G0        .data - 0x0800010c
+0x08000110 0x00000110 0x08000178 R_AARCH64_MOVW_PREL_G0_NC     .data - 0x08000110
+0x08000114 0x00000114 0x08000178 R_AARCH64_MOVW_PREL_G1        .data - 0x08000114
+0x08000118 0x00000118 0x08000178 R_AARCH64_MOVW_PREL_G1_NC     .data - 0x08000118
+0x0800011c 0x0000011c 0x08000178 R_AARCH64_MOVW_PREL_G2        .data - 0x0800011c
+0x08000120 0x00000120 0x08000178 R_AARCH64_MOVW_PREL_G2_NC     .data - 0x08000120
+0x08000124 0x00000124 0x08000178 R_AARCH64_MOVW_PREL_G3        .data - 0x08000124
+            ;-- .data:
+            ;-- test_movw_prel:
+            0x0800010c      mov   x0, 0x6c                             ; 'l'; RELOC 64 .data @ 0x08000178 - 0x800010c
+            ;-- .data:
+            0x08000110      movk  x0, 0x68                             ; RELOC 64 .data @ 0x08000178 - 0x8000110
+            ;-- .data:
+            0x08000114      movz  x1, 0, lsl 16                        ; RELOC 64 .data @ 0x08000178 - 0x8000114
+            ;-- .data:
+            0x08000118      movk  x1, 0, lsl 16                        ; RELOC 64 .data @ 0x08000178 - 0x8000118
+            ;-- .data:
+            0x0800011c      movz  x2, 0, lsl 32                        ; RELOC 64 .data @ 0x08000178 - 0x800011c
+            ;-- .data:
+            0x08000120      movk  x2, 0, lsl 32                        ; RELOC 64 .data @ 0x08000178 - 0x8000120
+            ;-- .data:
+            0x08000124      movz  x3, 0, lsl 48                        ; RELOC 64 .data @ 0x08000178 - 0x8000124
+            0x08000128      ret
+EOF
+RUN
+
+NAME= GOT relative relocs
+FILE=bins/elf/aarch64_relocs.o
+CMDS=<<EOF
+pd 4 @ 0x0800012c
+EOF
+EXPECT=<<EOF
+            ;-- .data:
+            ;-- test_got_relative:
+            0x0800012c      adrp  x0, 0xfffffffffffff000               ; RELOC 0 .data @ 0x08000178
+            ;-- .data:
+            0x08000130      adrp  x0, 0xfffffffffffff000               ; RELOC 0 .data @ 0x08000178
+            ;-- .data:
+            0x08000134      ldr   x0, [x0, 0x6000]                     ; [0x6000:4]=-1; RELOC 0 .data @ 0x08000178
+            ;-- .data:
+            0x08000138      ldr   x1, 0x7fffffc                        ; [0x7fffffc:4]=-1; RELOC 32 .data @ 0x08000178 - 0x8000138
+EOF
+RUN
+
+NAME= R_AARCH64_LDST* relocs
+FILE=bins/elf/aarch64_relocs.o
+CMDS=<<EOF
+ir~R_AARCH64_LDST
+pd 10 @ 0x080000b8
+EOF
+EXPECT=<<EOF
+0x080000bc 0x000000bc 0x08000178 R_AARCH64_LDST8_ABS_LO12_NC   .data + 0x00000008
+0x080000c4 0x000000c4 0x08000178 R_AARCH64_LDST16_ABS_LO12_NC  .data + 0x0000000a
+0x080000cc 0x000000cc 0x08000178 R_AARCH64_LDST32_ABS_LO12_NC  .data + 0x0000000c
+0x080000d4 0x000000d4 0x08000178 R_AARCH64_LDST64_ABS_LO12_NC  .data + 0x00000010
+0x080000dc 0x000000dc 0x08000178 R_AARCH64_LDST128_ABS_LO12_NC .data + 0x00000020
+            ;-- .data:
+            ;-- test_ldst_abs_lo12:
+            0x080000b8      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 .data @ 0x08000178 + 0x8
+            ;-- .data:
+            0x080000bc      ldrb  w1, [x0]                             ; RELOC 64 .data @ 0x08000178 + 0x8
+            ;-- .data:
+            0x080000c0      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 .data @ 0x08000178 + 0xa
+            ;-- .data:
+            0x080000c4      ldrh  w1, [x0, 0x800]                      ; [0x800:4]=-1 ; 2048; RELOC 64 .data @ 0x08000178 + 0xa
+            ;-- .data:
+            0x080000c8      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 .data @ 0x08000178 + 0xc
+            ;-- .data:
+            0x080000cc      ldr   w1, [x0, 0x1000]                     ; [0x1000:4]=-1; RELOC 64 .data @ 0x08000178 + 0xc
+            ;-- .data:
+            0x080000d0      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 .data @ 0x08000178 + 0x10
+            ;-- .data:
+            0x080000d4      ldr   x1, [x0, 0x2000]                     ; [0x2000:4]=-1; RELOC 64 .data @ 0x08000178 + 0x10
+            ;-- .data:
+            0x080000d8      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 .data @ 0x08000178 + 0x20
+            ;-- .data:
+            0x080000dc      ldr   q0, [x0, 0x4000]                     ; [0x4000:4]=-1; RELOC 64 .data @ 0x08000178 + 0x20
+EOF
+RUN
+
+NAME= Static data relocations
+FILE=bins/elf/aarch64_relocs.o
+CMDS=<<EOF
+pd 2 @ 0x080001b0
+EOF
+EXPECT=<<EOF
+            ;-- .data:
+            0x080001b0      .dword 0x08000178 ; section..data ; reloc.target..data ; sym..data ; loc.defined_data; RELOC 32 .data @ 0x08000178
+            ;-- .data:
+            0x080001b4      .word 0x0178                               ; RELOC 16 .data @ 0x08000178
+EOF
+RUN
+
+NAME=Jump26 relocations
+FILE=bins/elf/aarch64-plt.o
+CMDS=<<EOF
+ir
+pd 3 @ 0x08000040
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     target type             name              
+--------------------------------------------------------------------
+0x08000040 0x00000040 0x0800004c R_AARCH64_JUMP26 foo - 0x08000040
+0x08000044 0x00000044 0x08000188 R_AARCH64_JUMP26 bar - 0x08000044
+0x08000048 0x00000048 0x08000190 R_AARCH64_JUMP26 weak - 0x08000048
+            ;-- section..text:
+            ;-- foo:
+            ;-- _start:
+        ,=< 0x08000040      b     loc.foo                              ; RELOC 64 foo @ 0x0800004c - 0x8000040 ; [02] -r-x section size 12 named .text
+        |   ;-- bar:
+       ,==< 0x08000044      b     reloc.target.bar                     ; RELOC 64 bar
+       ||   ;-- weak:
+      ,===< 0x08000048      b     reloc.target.weak                    ; RELOC 64 weak
+EOF
+RUN
+
+NAME= GOT Relocatoins
+FILE= bins/elf/aarch64-gotpage.o
+CMDS=<<EOF
+ir
+pd 3 @ 0x08000040
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     target type                        name                  
+-----------------------------------------------------------------------------------
+0x08000040 0x00000040 0x08000180 R_AARCH64_ADR_PREL_PG_HI21  _GLOBAL_OFFSET_TABLE_
+0x08000044 0x00000044 0x00000008 R_AARCH64_LD64_GOTPAGE_LO15 global1
+0x08000048 0x00000048 0x00000008 R_AARCH64_LD64_GOTPAGE_LO15 global2
+            ;-- section..text:
+            ;-- _GLOBAL_OFFSET_TABLE_:
+            ;-- _start:
+            0x08000040      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 _GLOBAL_OFFSET_TABLE_ ; [02] -r-x section size 12 named .text
+            ;-- global1:
+            0x08000044      ldr   x0, [x0, 0x7ff8]                     ; [0x7ff8:4]=-1; RELOC 0 global1 @ 0x00000008
+            ;-- global2:
+            0x08000048      ldr   x1, [x0, 0x7ff8]                     ; [0x7ff8:4]=-1; RELOC 0 global2 @ 0x00000008
+EOF
+RUN

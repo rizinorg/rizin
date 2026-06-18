@@ -2978,16 +2978,92 @@ enum {
 #define R_AARCH64_NONE 0 /* No relocation.  */
 
 /* ILP32 AArch64 relocs.  */
-#define R_AARCH64_P32_ABS32      1 /* Direct 32 bit.  */
-#define R_AARCH64_P32_COPY       180 /* Copy symbol at runtime.  */
-#define R_AARCH64_P32_GLOB_DAT   181 /* Create GOT entry.  */
-#define R_AARCH64_P32_JUMP_SLOT  182 /* Create PLT entry.  */
-#define R_AARCH64_P32_RELATIVE   183 /* Adjust by program base.  */
-#define R_AARCH64_P32_TLS_DTPMOD 184 /* Module number, 32 bit.  */
-#define R_AARCH64_P32_TLS_DTPREL 185 /* Module-relative offset, 32 bit.  */
-#define R_AARCH64_P32_TLS_TPREL  186 /* TP-relative offset, 32 bit.  */
-#define R_AARCH64_P32_TLSDESC    187 /* TLS Descriptor.  */
-#define R_AARCH64_P32_IRELATIVE  188 /* STT_GNU_IFUNC relocation. */
+#define R_AARCH64_P32_ABS32                        1 /* Direct 32 bit.  */
+#define R_AARCH64_P32_ABS16                        2
+#define R_AARCH64_P32_PREL32                       3
+#define R_AARCH64_P32_PREL16                       4
+#define R_AARCH64_P32_MOVW_UABS_G0                 5
+#define R_AARCH64_P32_MOVW_UABS_G0_NC              6
+#define R_AARCH64_P32_MOVW_UABS_G1                 7
+#define R_AARCH64_P32_MOVW_SABS_G0                 8
+#define R_AARCH64_P32_LD_PREL_LO19                 9
+#define R_AARCH64_P32_ADR_PREL_LO21                10
+#define R_AARCH64_P32_ADR_PREL_PG_HI21             11
+#define R_AARCH64_P32_ADD_ABS_LO12_NC              12
+#define R_AARCH64_P32_LDST8_ABS_LO12_NC            13
+#define R_AARCH64_P32_LDST16_ABS_LO12_NC           14
+#define R_AARCH64_P32_LDST32_ABS_LO12_NC           15
+#define R_AARCH64_P32_LDST64_ABS_LO12_NC           16
+#define R_AARCH64_P32_LDST128_ABS_LO12_NC          17
+#define R_AARCH64_P32_TSTBR14                      18
+#define R_AARCH64_P32_CONDBR19                     19
+#define R_AARCH64_P32_JUMP26                       20
+#define R_AARCH64_P32_CALL26                       21
+#define R_AARCH64_P32_MOVW_PREL_G0                 22
+#define R_AARCH64_P32_MOVW_PREL_G0_NC              23
+#define R_AARCH64_P32_MOVW_PREL_G1                 24
+#define R_AARCH64_P32_GOT_LD_PREL19                25
+#define R_AARCH64_P32_ADR_GOT_PAGE                 26
+#define R_AARCH64_P32_LD32_GOT_LO12_NC             27
+#define R_AARCH64_P32_LD32_GOTPAGE_LO14            28
+#define R_AARCH64_P32_PLT32                        29
+#define R_AARCH64_P32_TLSGD_ADR_PREL21             80
+#define R_AARCH64_P32_TLSGD_ADR_PAGE21             81
+#define R_AARCH64_P32_TLSGD_ADD_LO12_NC            82
+#define R_AARCH64_P32_TLSLD_ADR_PREL21             83
+#define R_AARCH64_P32_TLSLD_ADR_PAGE21             84
+#define R_AARCH64_P32_TLSLD_ADD_LO12_NC            85
+#define R_AARCH64_P32_TLSLD_LD_PREL19              86
+#define R_AARCH64_P32_TLSLD_MOVW_DTPREL_G1         87
+#define R_AARCH64_P32_TLSLD_MOVW_DTPREL_G0         88
+#define R_AARCH64_P32_TLSLD_MOVW_DTPREL_G0_NC      89
+#define R_AARCH64_P32_TLSLD_ADD_DTPREL_HI12        90
+#define R_AARCH64_P32_TLSLD_ADD_DTPREL_LO12        91
+#define R_AARCH64_P32_TLSLD_ADD_DTPREL_LO12_NC     92
+#define R_AARCH64_P32_TLSLD_LDST8_DTPREL_LO12      93
+#define R_AARCH64_P32_TLSLD_LDST8_DTPREL_LO12_NC   94
+#define R_AARCH64_P32_TLSLD_LDST16_DTPREL_LO12     95
+#define R_AARCH64_P32_TLSLD_LDST16_DTPREL_LO12_NC  96
+#define R_AARCH64_P32_TLSLD_LDST32_DTPREL_LO12     97
+#define R_AARCH64_P32_TLSLD_LDST32_DTPREL_LO12_NC  98
+#define R_AARCH64_P32_TLSLD_LDST64_DTPREL_LO12     99
+#define R_AARCH64_P32_TLSLD_LDST64_DTPREL_LO12_NC  100
+#define R_AARCH64_P32_TLSLD_LDST128_DTPREL_LO12    101
+#define R_AARCH64_P32_TLSLD_LDST128_DTPREL_LO12_NC 102
+#define R_AARCH64_P32_TLSIE_ADR_GOTTPREL_PAGE21    103
+#define R_AARCH64_P32_TLSIE_LD32_GOTTPREL_LO12_NC  104
+#define R_AARCH64_P32_TLSIE_LD_GOTTPREL_PREL19     105
+#define R_AARCH64_P32_TLSLE_MOVW_TPREL_G1          106
+#define R_AARCH64_P32_TLSLE_MOVW_TPREL_G0          107
+#define R_AARCH64_P32_TLSLE_MOVW_TPREL_G0_NC       108
+#define R_AARCH64_P32_TLSLE_ADD_TPREL_HI12         109
+#define R_AARCH64_P32_TLSLE_ADD_TPREL_LO12         110
+#define R_AARCH64_P32_TLSLE_ADD_TPREL_LO12_NC      111
+#define R_AARCH64_P32_TLSLE_LDST8_TPREL_LO12       112
+#define R_AARCH64_P32_TLSLE_LDST8_TPREL_LO12_NC    113
+#define R_AARCH64_P32_TLSLE_LDST16_TPREL_LO12      114
+#define R_AARCH64_P32_TLSLE_LDST16_TPREL_LO12_NC   115
+#define R_AARCH64_P32_TLSLE_LDST32_TPREL_LO12      116
+#define R_AARCH64_P32_TLSLE_LDST32_TPREL_LO12_NC   117
+#define R_AARCH64_P32_TLSLE_LDST64_TPREL_LO12      118
+#define R_AARCH64_P32_TLSLE_LDST64_TPREL_LO12_NC   119
+#define R_AARCH64_P32_TLSLE_LDST128_TPREL_LO12     120
+#define R_AARCH64_P32_TLSLE_LDST128_TPREL_LO12_NC  121
+#define R_AARCH64_P32_TLSDESC_LD_PREL19            122
+#define R_AARCH64_P32_TLSDESC_ADR_PREL21           123
+#define R_AARCH64_P32_TLSDESC_ADR_PAGE21           124
+#define R_AARCH64_P32_TLSDESC_LD32_LO12            125
+#define R_AARCH64_P32_TLSDESC_ADD_LO12             126
+#define R_AARCH64_P32_TLSDESC_CALL                 127
+#define R_AARCH64_P32_COPY                         180 /* Copy symbol at runtime.  */
+#define R_AARCH64_P32_GLOB_DAT                     181 /* Create GOT entry.  */
+#define R_AARCH64_P32_JUMP_SLOT                    182 /* Create PLT entry.  */
+#define R_AARCH64_P32_RELATIVE                     183 /* Adjust by program base.  */
+#define R_AARCH64_P32_TLS_IMPDEF1                  184 /* Module number, 32 bit.  */
+#define R_AARCH64_P32_TLS_IMPDEF2                  185 /* Module-relative offset, 32 bit.  */
+#define R_AARCH64_P32_TLS_TPREL                    186 /* TP-relative offset, 32 bit.  */
+#define R_AARCH64_P32_TLSDESC                      187 /* TLS Descriptor.  */
+#define R_AARCH64_P32_IRELATIVE                    188 /* STT_GNU_IFUNC relocation. */
 
 /* LP64 AArch64 relocs.  */
 #define R_AARCH64_ABS64                        257 /* Direct 64 bit. */
@@ -3041,6 +3117,7 @@ enum {
 #define R_AARCH64_ADR_GOT_PAGE                 311 /* P-page-rel. GOT off. ADRP 32:12.  */
 #define R_AARCH64_LD64_GOT_LO12_NC             312 /* Dir. GOT off. LD/ST imm. 11:3.  */
 #define R_AARCH64_LD64_GOTPAGE_LO15            313 /* GOT-page-rel. GOT off. LD/ST 14:3 */
+#define R_AARCH64_PLT32                        314
 #define R_AARCH64_TLSGD_ADR_PREL21             512 /* PC-relative ADR imm. 20:0.  */
 #define R_AARCH64_TLSGD_ADR_PAGE21             513 /* page-rel. ADRP imm. 32:12.  */
 #define R_AARCH64_TLSGD_ADD_LO12_NC            514 /* direct ADD imm. from 11:0.  */
@@ -3107,11 +3184,30 @@ enum {
 #define R_AARCH64_GLOB_DAT                     1025 /* Create GOT entry.  */
 #define R_AARCH64_JUMP_SLOT                    1026 /* Create PLT entry.  */
 #define R_AARCH64_RELATIVE                     1027 /* Adjust by program base.  */
-#define R_AARCH64_TLS_DTPMOD                   1028 /* Module number, 64 bit.  */
-#define R_AARCH64_TLS_DTPREL                   1029 /* Module-relative offset, 64 bit.  */
+#define R_AARCH64_TLS_IMPDEF1                  1028 /* Module number, 64 bit.  */
+#define R_AARCH64_TLS_IMPDEF2                  1029 /* Module-relative offset, 64 bit.  */
 #define R_AARCH64_TLS_TPREL                    1030 /* TP-relative offset, 64 bit.  */
 #define R_AARCH64_TLSDESC                      1031 /* TLS Descriptor.  */
 #define R_AARCH64_IRELATIVE                    1032 /* STT_GNU_IFUNC relocation.  */
+/* PAuth ABI relocations */
+#define R_AARCH64_AUTH_ABS64              580
+#define R_AARCH64_AUTH_MOVW_GOTOFF_G0     581
+#define R_AARCH64_AUTH_MOVW_GOTOFF_G0_NC  582
+#define R_AARCH64_AUTH_MOVW_GOTOFF_G1     583
+#define R_AARCH64_AUTH_MOVW_GOTOFF_G1_NC  584
+#define R_AARCH64_AUTH_MOVW_GOTOFF_G2     585
+#define R_AARCH64_AUTH_MOVW_GOTOFF_G2_NC  586
+#define R_AARCH64_AUTH_MOVW_GOTOFF_G3     587
+#define R_AARCH64_AUTH_GOT_LD_PREL19      588
+#define R_AARCH64_AUTH_LD64_GOTOFF_LO15   589
+#define R_AARCH64_AUTH_ADR_GOT_PAGE       590
+#define R_AARCH64_AUTH_LD64_GOT_LO12_NC   591
+#define R_AARCH64_AUTH_LD64_GOTPAGE_LO15  592
+#define R_AARCH64_AUTH_GOT_ADD_LO12_NC    593
+#define R_AARCH64_AUTH_GOT_ADR_PREL_LO21  594
+#define R_AARCH64_AUTH_TLSDESC_ADR_PAGE21 595
+#define R_AARCH64_AUTH_TLSDESC_LD64_LO12  596
+#define R_AARCH64_AUTH_TLSDESC_ADD_LO12   597
 
 /* AArch64 specific values for the Dyn d_tag field.  */
 #define DT_AARCH64_VARIANT_PCS (DT_LOPROC + 5)

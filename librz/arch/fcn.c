@@ -523,7 +523,12 @@ static inline bool op_is_set_bp(RzAnalysisOp *op, const char *bp_reg, const char
 }
 
 static inline bool does_arch_destroys_dst(const char *arch) {
-	return arch && (!strncmp(arch, "arm", 3) || !strcmp(arch, "riscv") || !strcmp(arch, "ppc"));
+	if (!arch) {
+		return NULL;
+	}
+	return rz_str_startswith(arch, "arm") ||
+		rz_str_startswith(arch, "riscv") ||
+		rz_str_startswith(arch, "ppc");
 }
 
 static int analyze_function_locally(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 address) {
@@ -550,7 +555,7 @@ static inline void set_bb_branches(RZ_OUT RzAnalysisBlock *bb, const ut64 jump, 
  * False otherwise.
  */
 static inline bool jumps_to_prelude(RzAnalysis *analysis, ut64 jmp_addr) {
-	ut8 buf[32] = { 0 };
+	ut8 buf[64] = { 0 };
 	(void)analysis->iob.read_at(analysis->iob.io, jmp_addr, (ut8 *)buf, sizeof(buf));
 	return rz_analysis_is_prelude(analysis, buf, sizeof(buf));
 }
@@ -558,6 +563,12 @@ static inline bool jumps_to_prelude(RzAnalysis *analysis, ut64 jmp_addr) {
 static inline bool jump_leaves_mapped_mem(RzAnalysis *analysis, ut64 insn_addr, ut64 jump_target) {
 	rz_return_val_if_fail(analysis, false);
 	RzIOMap *map = analysis->iob.map_get(analysis->iob.io, insn_addr);
+	if (!map) {
+		// The instruction itself is not part of any mapped region (e.g. analysis
+		// walked into a hole of a sparse address space such as a crash dump).
+		// Treat the jump as leaving mapped memory so we stop following it.
+		return true;
+	}
 	return (jump_target < map->itv.addr || jump_target >= map->itv.addr + map->itv.size);
 }
 
@@ -822,6 +833,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				// If previous instruction was a jump there would already be a split.
 				// So setting jump here shouldn't overwrite any real jumps.
 				bb->jump = at;
+				rz_analysis_block_unref(bb);
 				item->block = bb = next;
 				next->sp_entry = sp;
 				newbbsize = bb->size + oplen;
@@ -1894,8 +1906,13 @@ RZ_API int rz_analysis_function_get_arg_count(RzAnalysis *analysis, RzAnalysisFu
 	if (!callable) {
 		return -1;
 	}
-	rz_type_func_save(analysis->typedb, callable);
-	return rz_pvector_len(callable->args);
+	int argc = rz_pvector_len(callable->args);
+	// rz_type_func_save() does not take ownership when a callable with the
+	// same name is already registered, so free the derived one in that case.
+	if (!rz_type_func_save(analysis->typedb, callable)) {
+		rz_type_callable_free(callable);
+	}
+	return argc;
 }
 
 // tfj and afsj call this function

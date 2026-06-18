@@ -25,6 +25,7 @@
 #include <rz_platform.h>
 #include <rz_cmd.h>
 #include <rz_esil/rz_esil.h>
+#include <rz_gadget.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,6 +43,25 @@ typedef struct {
 	struct rz_analysis_function_t *fcn;
 	PJ *pj;
 } RzAnalysisMetaUserItem;
+
+/**
+ * \brief Gadget cache
+ *
+ * Stores a cache of discovered gadgets for a contiguous address range.
+ * The cache holds `RzGadgetCacheNode` nodes in an RB tree keyed by gadget start address.
+ * The cache is built for the given parameters (`from`, `to`, `max_instr`, `allow_conditional`)
+ * and is only valid for those parameters.
+ * When these parameters change, the cache must be rebuilt.
+ * The `free` callback is used to release per-node resources when the cache is cleared.
+ */
+typedef struct rz_gadget_cache_t {
+	RBTree tree; ///< root node
+	ut64 from; ///< cached address range start
+	ut64 to; ///< cached address range end
+	size_t max_instr; ///< gadget.len used during cache build
+	bool allow_conditional; ///< gadget.conditional used during cache build
+	RBNodeFree free; ///< the custom free function that frees a RzGadgetCacheNode of the tree
+} RzGadgetCache;
 
 typedef enum {
 	RZ_ANALYSIS_DATA_INFO_TYPE_NULL = 0,
@@ -1370,6 +1390,8 @@ RZ_API RZ_BORROW HtUP *rz_analysis_get_xrefs_from(RZ_NONNULL RzAnalysis *analysi
 RZ_API void rz_analysis_set_xrefs_from(RZ_NONNULL RzAnalysis *analysis, HtUP *xrefs_from);
 RZ_API RZ_BORROW HtUP *rz_analysis_get_xrefs_to(RZ_NONNULL RzAnalysis *analysis);
 RZ_API void rz_analysis_set_xrefs_to(RZ_NONNULL RzAnalysis *analysis, HtUP *xrefs_to);
+RZ_API RZ_BORROW RzGadgetCache *rz_analysis_get_gadget_cache(RZ_NONNULL RzAnalysis *analysis, RzGadgetType type);
+RZ_API void rz_analysis_set_gadget_cache(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzGadgetCache *gadget_cache, RzGadgetType type);
 RZ_API RZ_BORROW HtUP *rz_analysis_get_gadget_semantics(RZ_NONNULL RzAnalysis *analysis);
 RZ_API void rz_analysis_set_gadget_semantics(RZ_NONNULL RzAnalysis *analysis, HtUP *rop_semantics);
 RZ_API RZ_BORROW RzAnalysisCallbacks *rz_analysis_get_callbacks(RZ_NONNULL RzAnalysis *analysis);
@@ -1416,6 +1438,8 @@ RZ_API void rz_analysis_set_lines_width(RZ_NONNULL RzAnalysis *analysis, int lin
 RZ_API int rz_analysis_get_lines_width(RZ_NONNULL RzAnalysis *analysis);
 RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits);
 RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu);
+RZ_API RZ_NULLABLE const char *rz_analysis_get_cpu(RZ_NONNULL const RzAnalysis *analysis);
+RZ_API bool rz_analysis_is_cpu(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *cpu);
 RZ_API int rz_analysis_set_big_endian(RzAnalysis *analysis, int boolean);
 RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, ut32 size, const ut8 *data, ut64 at);
 RZ_API void rz_analysis_trace_bb(RzAnalysis *analysis, ut64 addr);
@@ -1583,7 +1607,8 @@ RZ_API void rz_analysis_var_set_access(RzAnalysisVar *var, const char *reg, ut64
 RZ_API void rz_analysis_var_remove_access_at(RzAnalysisVar *var, ut64 address);
 RZ_API void rz_analysis_var_clear_accesses(RzAnalysisVar *var);
 RZ_API void rz_analysis_var_add_constraint(RzAnalysisVar *var, RZ_BORROW RzTypeConstraint *constraint);
-RZ_API char *rz_analysis_var_get_constraints_readable(RzAnalysisVar *var);
+RZ_API void rz_analysis_var_clear_constraints(RZ_NONNULL RzAnalysisVar *var);
+RZ_API char *rz_analysis_var_get_constraints_readable(RZ_NONNULL RzAnalysisVar *var);
 
 RZ_API int rz_analysis_var_storage_cmp(
 	RZ_NONNULL const RzAnalysisVarStorage *a,
@@ -1668,8 +1693,9 @@ RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr_in(RzAna
 RZ_API RZ_OWN RzList /*<RzAnalysisVarGlobal *>*/ *rz_analysis_var_global_get_all(RzAnalysis *analysis);
 RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, RZ_NONNULL const char *old_name, RZ_NONNULL const char *newname);
 RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RZ_NONNULL RZ_BORROW RzType *type);
-RZ_API void rz_analysis_var_global_add_constraint(RzAnalysisVarGlobal *glob, RzTypeConstraint *constraint);
-RZ_API RZ_OWN char *rz_analysis_var_global_get_constraints_readable(RzAnalysisVarGlobal *glob);
+RZ_API void rz_analysis_var_global_add_constraint(RZ_NONNULL RzAnalysisVarGlobal *glob, RZ_NONNULL RzTypeConstraint *constraint);
+RZ_API void rz_analysis_var_global_clear_constraints(RZ_NONNULL RzAnalysisVarGlobal *glob);
+RZ_API RZ_OWN char *rz_analysis_var_global_get_constraints_readable(RZ_NONNULL RzAnalysisVarGlobal *glob);
 RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_analysis_var_global_xrefs(RzAnalysis *analysis, RZ_NONNULL const RzAnalysisVarGlobal *glob);
 RZ_API RZ_OWN RzList /*<RzTypePathTuple *>*/ *rz_analysis_type_paths_by_address(RzAnalysis *analysis, ut64 addr);
 
@@ -2031,7 +2057,7 @@ RZ_API void rz_analysis_rtti_print_all(RzAnalysis *analysis, RzOutputMode mode);
 RZ_API void rz_analysis_rtti_recover_all(RzAnalysis *analysis);
 
 RZ_API RzList /*<RzSearchKeyword *>*/ *rz_analysis_preludes(RzAnalysis *analysis);
-RZ_API bool rz_analysis_is_prelude(RzAnalysis *analysis, const ut8 *data, int len);
+RZ_API bool rz_analysis_is_prelude(RzAnalysis *analysis, const ut8 *data, size_t len);
 
 /* devirualize */
 typedef struct rz_variable_book_t {
@@ -2133,6 +2159,7 @@ RZ_API void rz_analysis_dwarf_preprocess_info(
 	RZ_NONNULL RZ_BORROW RzBinDWARF *dw);
 RZ_API void rz_analysis_dwarf_process_info(RzAnalysis *analysis, RzBinDWARF *dw);
 RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *flags);
+RZ_API void rz_analysis_omf166_integrate_functions(RzAnalysis *analysis);
 RZ_API RzAnalysisDebugInfo *rz_analysis_debug_info_new();
 RZ_API void rz_analysis_debug_info_free(RzAnalysisDebugInfo *debuginfo);
 

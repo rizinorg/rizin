@@ -617,6 +617,13 @@ EXPECT=<<EOF
 68040           Motorola 68040: High-performance 32-bit microprocessor with integrated FPU
 68060           Motorola 68060: 32-bit microprocessor, highest performer in m68k series
 cpu32           Motorola CPU32: 32-bit embedded-controller CPU core based on the 68020
+coldfire        Motorola ColdFire: 32-bit embedded-controller family based on the 68000 ISA
+cfv1            Motorola ColdFire V1 core
+cfv2            Motorola ColdFire V2 core
+cfv3            Motorola ColdFire V3 core
+cfv4            Motorola ColdFire V4 core
+cfv4e           Motorola ColdFire V4e core with enhanced MAC and FPU features
+cfv5            Motorola ColdFire V5 core
 EOF
 RUN
 
@@ -666,5 +673,14 @@ TOOL=rz-asm
 ARGS=-m tricore
 EXPECT=<<EOF
 tricore         Generic TriCore CPU family by Infineon
+EOF
+RUN
+
+NAME=rz-asm -m unknown architecture shows an error
+TOOL=rz-asm
+ARGS=-m ic
+EXIT_STATUS=1
+EXPECT_ERR=<<EOF
+ERROR: Unknown asm plugin 'ic'
 EOF
 RUN

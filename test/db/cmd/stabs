@@ -1,0 +1,54 @@
+NAME=stabs ELF source line info
+FILE=bins/elf/stabs/stabs_hello
+CMDS=<<EOF
+ix
+ixj
+ixf
+s 0x401172
+ix.
+EOF
+EXPECT=<<EOF
+0x00401136	stabs_hello.c	6	0
+0x00401144	stabs_hello.c	7	0
+0x0040114f	stabs_hello.c	8	0
+0x00401152	stabs_hello.c	9	0
+0x00401154	stabs_hello.c	11	0
+0x00401160	stabs_hello.c	12	0
+0x00401172	stabs_hello.c	13	0
+0x0040118b	stabs_hello.c	14	0
+0x00401190	stabs_hello.c	15	0
+0x00401192	-	0	0
+[{"file":"stabs_hello.c","line":6,"addr":4198710},{"file":"stabs_hello.c","line":7,"addr":4198724},{"file":"stabs_hello.c","line":8,"addr":4198735},{"file":"stabs_hello.c","line":9,"addr":4198738},{"file":"stabs_hello.c","line":11,"addr":4198740},{"file":"stabs_hello.c","line":12,"addr":4198752},{"file":"stabs_hello.c","line":13,"addr":4198770},{"file":"stabs_hello.c","line":14,"addr":4198795},{"file":"stabs_hello.c","line":15,"addr":4198800},{"line":0,"addr":4198802}]
+[Source file]
+stabs_hello.c
+0x00401172	stabs_hello.c	13	0
+EOF
+RUN
+
+NAME=stabs ELF symbol type and variable extraction
+FILE=bins/elf/stabs/stabs_syms
+CMDS=<<EOF
+t~point,color,uint_t
+ts point
+te color
+tf add
+tf scale
+avgl
+avglj
+EOF
+EXPECT=<<EOF
+color
+point
+uint_t
+pf "d4d4 x y"
+RED = 0x0
+GREEN = 0x1
+BLUE = 0x2
+int add(int a, int b);
+long scale(struct point *p, unsigned int factor);
+global int g_counter @ 0x404018
+global struct point g_origin @ 0x404030
+global unsigned char [16] s_buffer @ 0x404040
+[{"name":"g_counter","type":"int","size":4,"addr":"0x404018"},{"name":"g_origin","type":"struct point","size":8,"addr":"0x404030"},{"name":"s_buffer","type":"unsigned char [16]","size":16,"addr":"0x404040"}]
+EOF
+RUN

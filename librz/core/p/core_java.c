@@ -29,6 +29,10 @@
 #define rz_cmd_desc_argv_new_warn(rcmd, root, cmd) \
 	rz_warn_if_fail(rz_cmd_desc_argv_new(rcmd, root, #cmd, name_handler(cmd), &name_help(cmd)))
 
+typedef struct core_java_context_t {
+	RzCmdDesc *cmd_desc;
+} CoreJavaContext;
+
 static RzBinJavaClass *core_java_get_class(RzCore *core) {
 	if (!core) {
 		return NULL;
@@ -287,18 +291,20 @@ static const RzCmdDescHelp name_help(javar) = {
 	.args = name_args(javar),
 };
 
-static bool rz_cmd_java_init_handler(RzCore *core) {
-	RzCmd *rcmd = core->rcmd;
-	RzCmdDesc *root_cd = rz_cmd_get_root(rcmd);
-	if (!root_cd) {
+static bool rz_cmd_java_init_handler(RzCore *core, void **user) {
+	CoreJavaContext *ctx = RZ_NEW0(CoreJavaContext);
+	if (!ctx) {
 		return false;
 	}
 
-	RzCmdDesc *java = rz_cmd_desc_group_new(rcmd, root_cd, "java", NULL, NULL, &java_usage);
+	RzCmd *rcmd = core->rcmd;
+	RzCmdDesc *java = rz_core_plugin_cmd_desc_group_new(core, "java", NULL, NULL, &java_usage);
 	if (!java) {
 		rz_warn_if_reached();
+		free(ctx);
 		return false;
 	}
+	ctx->cmd_desc = java;
 
 	rz_cmd_desc_argv_modes_new_warn(rcmd, java, javac, RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON);
 	rz_cmd_desc_argv_modes_new_warn(rcmd, java, javaf, RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON);
@@ -308,14 +314,16 @@ static bool rz_cmd_java_init_handler(RzCore *core) {
 	rz_cmd_desc_argv_new_warn(rcmd, java, javas);
 	rz_cmd_desc_argv_new_warn(rcmd, java, javar);
 
+	*user = ctx;
 	return true;
 }
 
-static bool rz_cmd_java_fini_handler(RzCore *core) {
-	RzCmd *rcmd = core->rcmd;
-	RzCmdDesc *cd = rz_cmd_get_desc(rcmd, "java");
-	rz_return_val_if_fail(cd, false);
-	return rz_cmd_desc_remove(rcmd, cd);
+static bool rz_cmd_java_fini_handler(RzCore *core, void *user) {
+	CoreJavaContext *ctx = user;
+	rz_return_val_if_fail(ctx && ctx->cmd_desc, false);
+	bool res = rz_core_plugin_cmd_desc_remove(core, ctx->cmd_desc);
+	free(ctx);
+	return res;
 }
 
 RzCorePlugin rz_core_plugin_java = {

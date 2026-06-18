@@ -154,16 +154,20 @@ IL_LIFTER(aas) {
  *  - RM
  */
 IL_LIFTER(adc) {
-	RzILOpEffect *op1 = SETL("op1", x86_il_get_op(0));
-	RzILOpEffect *op2 = SETL("op2", x86_il_get_op(1));
+	RzILOpEffect *set_op1 = SETL("_op1", x86_il_get_op(0));
+	RzILOpPure *op2 = x86_il_get_op(1);
+	if (ins->operands[0].size != ins->operands[1].size) {
+		op2 = CAST(ins->operands[0].size * BITS_PER_BYTE, IL_FALSE, op2);
+	}
+	RzILOpEffect *set_op2 = SETL("_op2", op2);
 	RzILOpPure *cf = VARG(EFLAGS(CF));
 
-	RzILOpEffect *sum = SETL("sum", ADD(ADD(VARL("op1"), VARL("op2")), BOOL_TO_BV(cf, ins->operands[0].size * BITS_PER_BYTE)));
+	RzILOpEffect *sum = SETL("sum", ADD(ADD(VARL("_op1"), VARL("_op2")), BOOL_TO_BV(cf, ins->operands[0].size * BITS_PER_BYTE)));
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("sum"));
 	RzILOpEffect *set_res_flags = x86_il_set_result_flags(VARL("sum"));
-	RzILOpEffect *set_arith_flags = x86_il_set_arithmetic_flags(VARL("sum"), VARL("op1"), VARL("op2"), true);
+	RzILOpEffect *set_arith_flags = x86_il_set_arithmetic_flags(VARL("sum"), VARL("_op1"), VARL("_op2"), true);
 
-	return SEQ6(op1, op2, sum, set_dest, set_res_flags, set_arith_flags);
+	return SEQ6(set_op1, set_op2, sum, set_dest, set_res_flags, set_arith_flags);
 }
 
 /**
@@ -203,6 +207,10 @@ IL_LIFTER(add) {
 IL_LIFTER(and) {
 	RzILOpPure *op1 = x86_il_get_op(0);
 	RzILOpPure *op2 = x86_il_get_op(1);
+	if (ins->operands[0].size != ins->operands[1].size) {
+		op2 = CAST(ins->operands[0].size * BITS_PER_BYTE, IL_FALSE, op2);
+	}
+
 	RzILOpEffect *and = SETL("and_", LOGAND(op1, op2));
 
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("and_"));
@@ -1501,6 +1509,10 @@ IL_LIFTER(not) {
 IL_LIFTER(or) {
 	RzILOpPure *op1 = x86_il_get_op(0);
 	RzILOpPure *op2 = x86_il_get_op(1);
+	if (ins->operands[0].size != ins->operands[1].size) {
+		op2 = CAST(ins->operands[0].size * BITS_PER_BYTE, IL_FALSE, op2);
+	}
+
 	RzILOpEffect * or = SETL("_or", LOGOR(op1, op2));
 
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("_or"));
@@ -1985,8 +1997,12 @@ IL_LIFTER(shr) {
  * Encoding: I, MI, MR, RM
  */
 IL_LIFTER(sbb) {
-	RzILOpEffect *op1 = SETL("_op1", x86_il_get_op(0));
-	RzILOpEffect *op2 = SETL("_op2", x86_il_get_op(1));
+	RzILOpEffect *set_op1 = SETL("_op1", x86_il_get_op(0));
+	RzILOpPure *op2 = x86_il_get_op(1);
+	if (ins->operands[0].size != ins->operands[1].size) {
+		op2 = CAST(ins->operands[0].size * BITS_PER_BYTE, IL_FALSE, op2);
+	}
+	RzILOpEffect *set_op2 = SETL("_op2", op2);
 	RzILOpPure *cf = VARG(EFLAGS(CF));
 
 	RzILOpEffect *diff = SETL("_diff", SUB(SUB(VARL("_op1"), VARL("_op2")), BOOL_TO_BV(cf, ins->operands[0].size * BITS_PER_BYTE)));
@@ -1994,7 +2010,7 @@ IL_LIFTER(sbb) {
 	RzILOpEffect *set_res_flags = x86_il_set_result_flags(VARL("_diff"));
 	RzILOpEffect *set_arith_flags = x86_il_set_arithmetic_flags(VARL("_diff"), VARL("_op1"), VARL("_op2"), false);
 
-	return SEQ6(op1, op2, diff, set_dest, set_res_flags, set_arith_flags);
+	return SEQ6(set_op1, set_op2, diff, set_dest, set_res_flags, set_arith_flags);
 }
 
 RzILOpEffect *x86_il_scas_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis, ut8 size) {

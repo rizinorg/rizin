@@ -189,6 +189,47 @@ RZ_API RZ_OWN char *rz_bv_as_hex_string(RZ_NONNULL const RzBitVector *bv, bool p
 }
 
 /**
+ * Render a width as a run of Unicode subscript digits.
+ *
+ * This is the bit-width annotation used when rendering a bit-vector
+ * in Unicode form (e.g. the subscript 8 in 0x2c with a trailing 8).
+ * Shared so the RzIL Unicode export and the RzNum value printer
+ * cannot drift apart.
+ *
+ * \param width The width to render.
+ * \return A freshly-allocated, caller-owned string, or NULL on
+ *         allocation failure.
+ */
+RZ_API RZ_OWN char *rz_bv_width_subscript(ut32 width) {
+	return rz_str_num_subscript(width);
+}
+
+/**
+ * Render a pre-formatted bit-vector \p value followed by the
+ * bit-vector's width as a Unicode subscript.
+ *
+ * \p value is the already-stringified value (for instance the output
+ * of rz_bv_as_hex_string() or rz_bv_as_string()); only the width
+ * subscript is appended here, so the caller controls the value's
+ * base and padding. The result is a freshly-allocated, caller-owned
+ * string, e.g. "0x2c" followed by a subscript 8.
+ *
+ * \param bv    The bit-vector whose width is annotated. Must be non-NULL.
+ * \param value The pre-formatted value string. Must be non-NULL.
+ * \return The combined string, or NULL on allocation failure.
+ */
+RZ_API RZ_OWN char *rz_bv_as_unicode_string(RZ_NONNULL const RzBitVector *bv, RZ_NONNULL const char *value) {
+	rz_return_val_if_fail(bv && value, NULL);
+	char *sub = rz_bv_width_subscript(rz_bv_len(bv));
+	if (!sub) {
+		return NULL;
+	}
+	char *out = rz_str_newf("%s%s", value, sub);
+	free(sub);
+	return out;
+}
+
+/**
  * Clone a bitvector
  * \param bv RzBitVector, pointer to the source bitvector
  * \return dup RzBitVector, pointer to a new bitvector, which is a copy of source

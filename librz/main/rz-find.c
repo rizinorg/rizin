@@ -160,6 +160,8 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	}
 	if (ro->exec_command) {
 		char *command = rz_str_newf("%s %s", ro->exec_command, ro->curfile);
+		// Flush buffered output before spawning the command
+		fflush(stdout);
 		int status = rz_sys_system(command);
 		if (status == -1) {
 			RZ_LOG_ERROR("Failed to execute command: %s\n", command);
@@ -468,6 +470,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 	}
 
 	RzIO *io = rz_io_new();
+	io->ff = true;
 	if (!io) {
 		free(efile);
 		return 1;

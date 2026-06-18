@@ -159,12 +159,12 @@ NAME=rz-find -E
 TOOL=rz-find
 ARGS=-E echo -s Password bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
-bins/elf/ioli/crackme0x00
-bins/elf/ioli/crackme0x00
-bins/elf/ioli/crackme0x00
 0x581
+bins/elf/ioli/crackme0x00
 0x59e
+bins/elf/ioli/crackme0x00
 0x5a9
+bins/elf/ioli/crackme0x00
 EOF
 RUN
 

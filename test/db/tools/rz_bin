@@ -231,7 +231,7 @@ EXPECT=<<EOF
 0x00000270   0x8 0x08048270   0x8   0x0 -r-- prixfixe..rel.dyn           REL        alloc
 0x00000278  0x18 0x08048278  0x18   0x0 -r-- prixfixe..rel.plt           REL        alloc
 0x00000290  0x23 0x08048290  0x23   0x0 -r-x prixfixe..init              PROGBITS   alloc,execute
-0x000002c0  0x40 0x080482c0  0x40   0x0 -r-x prixfixe..plt               PROGBITS   alloc,execute
+0x000002c0  0x40 0x080482c0  0x40   0x0 -r-x prixfixe..plt               PLT        alloc,execute
 0x00000300 0x194 0x08048300 0x194   0x0 -r-x prixfixe..text              PROGBITS   alloc,execute
 0x00000494  0x14 0x08048494  0x14   0x0 -r-x prixfixe..fini              PROGBITS   alloc,execute
 0x000004a8  0x15 0x080484a8  0x15   0x0 -r-- prixfixe..rodata            PROGBITS   alloc
@@ -373,8 +373,14 @@ TOOL=rz-bin
 ARGS=-z
 EXPECT=<<EOF
 [Strings]
-     paddr      vaddr len size section type  string       
-----------------------------------------------------------
+     paddr      vaddr len size section type  string            
+---------------------------------------------------------------
+0x000001fd 0x080481fd   9   10 .dynstr ascii libc.so.6
+0x00000207 0x08048207  14   15 .dynstr ascii _IO_stdin_used
+0x00000216 0x08048216   4    5 .dynstr ascii puts
+0x0000021b 0x0804821b  17   18 .dynstr ascii __libc_start_main
+0x0000022d 0x0804822d  14   15 .dynstr ascii __gmon_start__
+0x0000023c 0x0804823c   9   10 .dynstr ascii GLIBC_2.0
 0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
 
 EOF
@@ -491,6 +497,11 @@ FILE=bins/elf/analysis/hello-linux-x86_64
 TOOL=rz-bin
 ARGS=-qqz
 EXPECT=<<EOF
+__gmon_start__
+libc.so.6
+puts
+__libc_start_main
+GLIBC_2.2.5
 Hello World
 EOF
 RUN
@@ -760,7 +771,7 @@ nth      paddr      vaddr bind   type   size lib name
 0x00000270   0x8 0x08048270   0x8   0x0 -r-- .rel.dyn           REL        alloc
 0x00000278  0x18 0x08048278  0x18   0x0 -r-- .rel.plt           REL        alloc
 0x00000290  0x23 0x08048290  0x23   0x0 -r-x .init              PROGBITS   alloc,execute
-0x000002c0  0x40 0x080482c0  0x40   0x0 -r-x .plt               PROGBITS   alloc,execute
+0x000002c0  0x40 0x080482c0  0x40   0x0 -r-x .plt               PLT        alloc,execute
 0x00000300 0x194 0x08048300 0x194   0x0 -r-x .text              PROGBITS   alloc,execute
 0x00000494  0x14 0x08048494  0x14   0x0 -r-x .fini              PROGBITS   alloc,execute
 0x000004a8  0x15 0x080484a8  0x15   0x0 -r-- .rodata            PROGBITS   alloc
@@ -793,8 +804,14 @@ nth      paddr      vaddr bind   type   size lib name
 0x00000000  0x34 0x08048000  0x34    0x0 -rw- ehdr
 
 [Strings]
-     paddr      vaddr len size section type  string       
-----------------------------------------------------------
+     paddr      vaddr len size section type  string            
+---------------------------------------------------------------
+0x000001fd 0x080481fd   9   10 .dynstr ascii libc.so.6
+0x00000207 0x08048207  14   15 .dynstr ascii _IO_stdin_used
+0x00000216 0x08048216   4    5 .dynstr ascii puts
+0x0000021b 0x0804821b  17   18 .dynstr ascii __libc_start_main
+0x0000022d 0x0804822d  14   15 .dynstr ascii __gmon_start__
+0x0000023c 0x0804823c   9   10 .dynstr ascii GLIBC_2.0
 0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
 
 [Main]
@@ -1289,7 +1306,7 @@ FILE=bins/pdb/minimal.pdb
 TOOL=rz-bin
 ARGS=-Pj
 EXPECT=<<EOF
-{"pdb":[{"modules":[{"module_name":"* Linker Generated Manifest RES *","object_file_name":""},{"module_name":"C:\\Users\\emuresan\\source\\repos\\minimal\\Release\\main.obj","object_file_name":"C:\\Users\\emuresan\\source\\repos\\minimal\\Release\\main.obj"},{"module_name":"* Linker *","object_file_name":""}]},{"types":[{"type":"structure","name":"struct_typedef","size":7,"members":[{"member_type":"char","member_name":"a","offset":0},{"member_type":"int16_t","member_name":"b","offset":1},{"member_type":"int32_t","member_name":"c","offset":3}]},{"type":"union","name":"type_0x1004","size":4,"members":[{"member_type":"char [4]","member_name":"a","offset":0},{"member_type":"int32_t","member_name":"b","offset":0}]},{"type":"structure","name":"unnamed_member_types_typedef","size":8,"members":[{"member_type":"union type_0x1004","member_name":"a","offset":0},{"member_type":"int32_t","member_name":"b","offset":4}]},{"type":"structure","name":"bitfield_typedef","size":1,"members":[]},{"type":"union","name":"union_typedef","size":4,"members":[{"member_type":"char","member_name":"a","offset":0},{"member_type":"int16_t","member_name":"b","offset":0},{"member_type":"int32_t","member_name":"c","offset":0}]}]},{"gvars":[{"address":12292,"symtype":4366,"section_name":".data","gdata_name":"_uninitialized_global"},{"address":12288,"symtype":4366,"section_name":".data","gdata_name":"_initialized_global"},{"address":4096,"symtype":4366,"section_name":".text","gdata_name":"_function"},{"address":4182,"symtype":4366,"section_name":".text","gdata_name":"_mainCRTStartup"},{"address":4120,"symtype":4366,"section_name":".text","gdata_name":"_main"}]}]}
+{"pdb":[{"modules":[{"module_name":"* Linker Generated Manifest RES *","object_file_name":""},{"module_name":"C:\\Users\\emuresan\\source\\repos\\minimal\\Release\\main.obj","object_file_name":"C:\\Users\\emuresan\\source\\repos\\minimal\\Release\\main.obj"},{"module_name":"* Linker *","object_file_name":""}]},{"types":[{"type":"structure","name":"struct_typedef","size":7,"members":[{"member_type":"char","member_name":"a","offset":0},{"member_type":"int16_t","member_name":"b","offset":1},{"member_type":"int32_t","member_name":"c","offset":3}]},{"type":"union","name":"type_0x1004","size":4,"members":[{"member_type":"char [4]","member_name":"a","offset":0},{"member_type":"int32_t","member_name":"b","offset":0}]},{"type":"structure","name":"unnamed_member_types_typedef","size":8,"members":[{"member_type":"union type_0x1004","member_name":"a","offset":0},{"member_type":"int32_t","member_name":"b","offset":4}]},{"type":"structure","name":"bitfield_typedef","size":1,"members":[{"member_type":"unsigned char","member_name":"a","offset":0},{"member_type":"unsigned char","member_name":"b","offset":0},{"member_type":"unsigned char","member_name":"c","offset":0}]},{"type":"union","name":"union_typedef","size":4,"members":[{"member_type":"char","member_name":"a","offset":0},{"member_type":"int16_t","member_name":"b","offset":0},{"member_type":"int32_t","member_name":"c","offset":0}]}]},{"gvars":[{"address":12292,"symtype":4366,"section_name":".data","gdata_name":"_uninitialized_global"},{"address":12288,"symtype":4366,"section_name":".data","gdata_name":"_initialized_global"},{"address":4096,"symtype":4366,"section_name":".text","gdata_name":"_function"},{"address":4182,"symtype":4366,"section_name":".text","gdata_name":"_mainCRTStartup"},{"address":4120,"symtype":4366,"section_name":".text","gdata_name":"_main"}]}]}
 EOF
 RUN
 
@@ -1299,8 +1316,16 @@ TOOL=rz-bin
 ARGS=-z -N2
 EXPECT=<<EOF
 [Strings]
-     paddr      vaddr len size section type  string 
-----------------------------------------------------
+     paddr      vaddr len size section type  string                      
+-------------------------------------------------------------------------
+0x00000471 0x00000471  17   18 .dynstr ascii __libc_start_main
+0x00000483 0x00000483  14   15 .dynstr ascii __cxa_finalize
+0x00000492 0x00000492   9   10 .dynstr ascii libc.so.6
+0x0000049c 0x0000049c  11   12 .dynstr ascii GLIBC_2.2.5
+0x000004a8 0x000004a8  10   11 .dynstr ascii GLIBC_2.34
+0x000004b3 0x000004b3  27   28 .dynstr ascii _ITM_deregisterTMCloneTable
+0x000004cf 0x000004cf  14   15 .dynstr ascii __gmon_start__
+0x000004de 0x000004de  25   26 .dynstr ascii _ITM_registerTMCloneTable
 0x00002006 0x00002006   2    3 .rodata ascii 22
 0x00002009 0x00002009   3    4 .rodata ascii 333
 0x0000200d 0x0000200d   4    5 .rodata ascii 4444

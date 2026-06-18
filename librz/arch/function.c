@@ -213,7 +213,7 @@ RZ_API RzAnalysisFunction *rz_analysis_get_function_at(const RzAnalysis *analysi
 
 typedef struct {
 	HtUP *inst_vars_new;
-	st64 delta;
+	ut64 delta;
 } InstVarsRelocateCtx;
 
 static bool inst_vars_relocate_cb(void *user, const ut64 k, const void *v) {
@@ -231,14 +231,17 @@ RZ_API bool rz_analysis_function_relocate(RzAnalysisFunction *fcn, ut64 addr) {
 	}
 	ht_up_delete(fcn->analysis->ht_addr_fun, fcn->addr);
 
-	// relocate the var accesses (their addrs are relative to the function addr)
-	st64 delta = addr - fcn->addr;
+	// relocate the var accesses (their addrs are relative to the function addr).
+	// delta and the offset arithmetic are done in ut64: addresses and their
+	// differences wrap modulo 2^64 by design, and the offsets are only ever
+	// compared/looked up as exact values, so signed overflow must be avoided.
+	ut64 delta = addr - fcn->addr;
 	void **it;
 	rz_pvector_foreach (&fcn->vars, it) {
 		RzAnalysisVar *var = *it;
 		RzAnalysisVarAccess *acc;
 		rz_vector_foreach (&var->accesses, acc) {
-			acc->offset -= delta;
+			acc->offset = (st64)((ut64)acc->offset - delta);
 		}
 	}
 	InstVarsRelocateCtx ctx = {

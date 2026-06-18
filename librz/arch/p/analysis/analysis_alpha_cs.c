@@ -399,7 +399,7 @@ static int rz_analysis_alpha_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, cons
 	}
 
 	RzAsmAlphaContext *ctx = a->plugin_data;
-	if (!alpha_setup_cs_handle(ctx, a->cpu, NULL, a->big_endian)) {
+	if (!alpha_setup_cs_handle(ctx, rz_analysis_get_cpu(a), NULL, a->big_endian)) {
 		return -1;
 	}
 

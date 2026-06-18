@@ -45,7 +45,9 @@ static const struct type_translation type_translation_table[] = {
 	{ SHT_SUNW_syminfo, "SYMINFO" },
 	{ SHT_GNU_verdef, "VERDEF" },
 	{ SHT_GNU_verneed, "VERNEED" },
-	{ SHT_GNU_versym, "VERSYM" }
+	{ SHT_GNU_versym, "VERSYM" },
+	// Rizin-internal pseudo type, see RZ_BIN_ELF_SECTION_TYPE_PLT.
+	{ RZ_BIN_ELF_SECTION_TYPE_PLT, "PLT" }
 };
 
 static const struct flag_translation flag_translation_table[] = {

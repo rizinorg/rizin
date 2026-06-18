@@ -159,7 +159,7 @@ bool test_rz_buf_mmap(void) {
 	rz_xwrite(fd, content, length);
 	close(fd);
 
-	b = rz_buf_new_mmap(filename, O_RDWR, 0);
+	b = rz_buf_new_mmap(filename, O_RDWR, 0, NULL);
 	mu_assert_notnull(b, "rz_buf_new_mmap failed");
 
 	if (test_buf(b) != MU_PASSED) {
@@ -175,7 +175,7 @@ bool test_rz_buf_mmap(void) {
 	free(filename);
 
 	filename = rz_file_temp(NULL);
-	b = rz_buf_new_mmap(filename, O_RDWR | O_CREAT, 0644);
+	b = rz_buf_new_mmap(filename, O_RDWR | O_CREAT, 0644, NULL);
 	mu_assert_notnull(b, "buffer mmaped should be created");
 
 	st64 r = rz_buf_write(b, (const ut8 *)content, length);
@@ -202,6 +202,7 @@ bool test_rz_buf_io_fd(void) {
 	const int length = 23;
 
 	RzIO *io = rz_io_new();
+	io->ff = true;
 	char *tmpfile = rz_file_temp(NULL);
 	char *filename = rz_str_newf("file://%s", tmpfile);
 	free(tmpfile);

@@ -230,6 +230,21 @@ if has_capstone_m68k_cpu32
   add_project_arguments(['-DRZ_CAPSTONE_HAS_M68K_CPU32'], language: 'c')
 endif
 
+has_capstone_m68k_coldfire = cc.compiles('''
+#include <capstone/capstone.h>
+int main(void) {
+	cs_mode mode = CS_MODE_M68K_COLDFIRE | CS_MODE_M68K_CFV1 | CS_MODE_M68K_CFV2 | CS_MODE_M68K_CFV3 | CS_MODE_M68K_CFV4 | CS_MODE_M68K_CFV4E | CS_MODE_M68K_CFV5;
+	return mode == 0;
+}
+''',
+  dependencies: capstone_check_deps,
+  include_directories: capstone_check_includes,
+  name: 'Capstone has M68K ColdFire modes'
+)
+if has_capstone_m68k_coldfire
+  add_project_arguments(['-DRZ_CAPSTONE_HAS_M68K_COLDFIRE'], language: 'c')
+endif
+
 has_capstone_m680x_hcs12x = cc.compiles('''
 #include <capstone/capstone.h>
 int main(void) {
@@ -489,6 +504,32 @@ foreach it : ccs
   if it_machine.system() == 'freebsd' or it_machine.system() == 'dragonfly'
     add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: 'c', native: it_native)
     add_project_link_arguments('-Wl,--allow-shlib-undefined', language: 'c', native: it_native)
+  endif
+
+  # Old GNU ld (binutils 2.22, shipped with Debian Wheezy) combined with the
+  # --as-needed flag that Meson passes by default drops shared libraries that
+  # are needed only indirectly -- through another shared library -- rather than
+  # directly by the linked object files. It then (defaulting to
+  # --no-copy-dt-needed-entries) also refuses to resolve the symbol through the
+  # dropped library's own DT_NEEDED entry. Linking the rizin tools against the
+  # rizin shared libraries therefore fails with:
+  #   librz_main.so.0.9.0: undefined reference to symbol 'rz_buf_size'
+  #   librz_util.so.0.9.0: could not read symbols: Invalid operation
+  # even though librz_util, which defines the symbol, is already on the link
+  # line. Disable --as-needed for these old linkers so the indirectly-needed
+  # libraries stay on the link line and resolve directly; newer linkers handle
+  # this correctly on their own and keep the optimisation.
+  if it_cc.get_linker_id() == 'ld.bfd'
+    ld_bin = find_program('ld', required: false, native: it_native)
+    if ld_bin.found()
+      ld_version_raw = run_command(ld_bin, '--version', check: false).stdout()
+      if ld_version_raw != ''
+        ld_version = ld_version_raw.split('\n')[0].split(' ')[-1].strip()
+        if ld_version.version_compare('<2.31')
+          add_project_link_arguments('-Wl,--no-as-needed', language: 'c', native: it_native)
+        endif
+      endif
+    endif
   endif
 
   if it_machine.system() == 'darwin'

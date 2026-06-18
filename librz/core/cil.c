@@ -17,6 +17,7 @@ typedef struct il_print_t {
 	const char *name;
 	void *ptr;
 } ILPrint;
+
 #define p_sb(x)  ((RzStrBuf *)x)
 #define p_tbl(x) ((RzTable *)x)
 #define p_pj(x)  ((PJ *)x)
@@ -351,10 +352,26 @@ static inline void emit_span(const char *s, size_t n, const char *color) {
 	}
 }
 
-static void core_colorify_il_statement(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr) {
-	rz_cons_printf("%s0x%" PFMT64x Color_RESET "%c", ctx->pal.label, addr, delim);
+static inline void emit_span_to_strbuf(const char *s, size_t n, const char *color, RzStrBuf *sb) {
+	if (n < 1) {
+		return;
+	}
+	if (color) {
+		rz_strbuf_appendf(sb, "%s%.*s" Color_RESET, color, (int)n, s);
+	} else {
+		rz_strbuf_append_n(sb, s, n);
+	}
+}
+
+/**
+ * \brief Colorize a stringified RzIL effect body to the cons buffer.
+ *
+ * Emits only the body (no address prefix, no newline) with the same palette
+ * as \c plf. A NULL or empty \p il_stmt emits nothing.
+ */
+RZ_IPI void rz_core_il_colorize_body(RZ_NONNULL RzConsContext *ctx, RZ_NULLABLE const char *il_stmt) {
+	rz_return_if_fail(ctx);
 	if (RZ_STR_ISEMPTY(il_stmt)) {
-		rz_cons_newline();
 		return;
 	}
 
@@ -380,7 +397,43 @@ static void core_colorify_il_statement(RzConsContext *ctx, const char *il_stmt, 
 	}
 
 	emit_span(il_stmt + prev, len - prev, color);
+}
+
+static void core_colorify_il_statement(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr) {
+	rz_cons_printf("%s0x%" PFMT64x Color_RESET "%c", ctx->pal.label, addr, delim);
+	rz_core_il_colorize_body(ctx, il_stmt);
 	rz_cons_newline();
+}
+
+static void core_colorify_il_statement_to_strbuf(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr, RzStrBuf *sb) {
+	rz_strbuf_appendf(sb, "%s0x%" PFMT64x Color_RESET "%c", ctx->pal.label, addr, delim);
+	if (RZ_STR_ISEMPTY(il_stmt)) {
+		rz_strbuf_appendf(sb, "\n");
+		return;
+	}
+
+	const char *color = NULL;
+	size_t prev = 0, len = strlen(il_stmt);
+
+	for (size_t i = 0; i < len; ++i) {
+		const char ch = il_stmt[i];
+
+		if (ch == '(' || ch == ')') {
+			emit_span_to_strbuf(il_stmt + prev, i - prev, color, sb);
+			rz_strbuf_appendf(sb, "%s%c" Color_RESET, ctx->pal.meta, ch);
+			prev = i + 1;
+			color = (ch == '(') ? ctx->pal.flow : NULL;
+		} else if (ch == ' ') {
+			emit_span_to_strbuf(il_stmt + prev, i - prev, color, sb);
+			rz_strbuf_appendf(sb, " ");
+			prev = i + 1;
+			color = NULL;
+		} else if (i == prev && prev > 0 && il_stmt[prev - 1] == ' ') {
+			color = IS_DIGIT(ch) ? ctx->pal.num : ctx->pal.comment;
+		}
+	}
+
+	emit_span_to_strbuf(il_stmt + prev, len - prev, color, sb);
 }
 
 static bool unicode_colorify_state_is_varname(RzILUnicodeColorifyState state) {
@@ -421,6 +474,30 @@ RzILUnicodeColorifyState unicode_colorify_state_next(RzILUnicodeColorifyState st
 	return UNICODE_COLORIFY_STATE_IL_OP;
 }
 
+static const char *core_il_get_token_color(RzILUnicodeColorifyState state, const char *prev_color, RZ_NONNULL RzConsContext *ctx) {
+	rz_return_val_if_fail(ctx, NULL);
+	const char *color = prev_color;
+	switch (state) {
+	default: break;
+	case UNICODE_COLORIFY_STATE_DEFAULT:
+		color = NULL;
+		break;
+	case UNICODE_COLORIFY_STATE_PARENTHESIS:
+		color = ctx->pal.meta;
+		break;
+	case UNICODE_COLORIFY_STATE_VARNAME:
+		color = ctx->pal.comment;
+		break;
+	case UNICODE_COLORIFY_STATE_NUMBER:
+		color = ctx->pal.num;
+		break;
+	case UNICODE_COLORIFY_STATE_IL_OP:
+		color = ctx->pal.flow;
+		break;
+	}
+	return color;
+}
+
 static void core_colorify_il_statement_unicode(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr) {
 	rz_cons_printf("%s0x%" PFMT64x Color_RESET "%c", ctx->pal.label, addr, delim);
 	if (RZ_STR_ISEMPTY(il_stmt)) {
@@ -444,24 +521,7 @@ static void core_colorify_il_statement_unicode(RzConsContext *ctx, const char *i
 				rz_cons_printf("%.*s", plen, il_stmt + prev_i);
 			}
 
-			switch (state) {
-			default: break;
-			case UNICODE_COLORIFY_STATE_DEFAULT:
-				color = NULL;
-				break;
-			case UNICODE_COLORIFY_STATE_PARENTHESIS:
-				color = ctx->pal.meta;
-				break;
-			case UNICODE_COLORIFY_STATE_VARNAME:
-				color = ctx->pal.comment;
-				break;
-			case UNICODE_COLORIFY_STATE_NUMBER:
-				color = ctx->pal.num;
-				break;
-			case UNICODE_COLORIFY_STATE_IL_OP:
-				color = ctx->pal.flow;
-				break;
-			}
+			color = core_il_get_token_color(state, color, ctx);
 
 			prev_state = state;
 			prev_i = i;
@@ -477,6 +537,274 @@ static void core_colorify_il_statement_unicode(RzConsContext *ctx, const char *i
 		}
 	}
 	rz_cons_newline();
+}
+
+static void core_colorify_il_statement_unicode_to_strbuf(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr, RzStrBuf *sb) {
+	rz_return_if_fail(sb);
+	rz_strbuf_appendf(sb, "%s0x%" PFMT64x Color_RESET "%c", ctx->pal.label, addr, delim);
+	if (RZ_STR_ISEMPTY(il_stmt)) {
+		rz_strbuf_appendf(sb, "\n");
+		return;
+	}
+	size_t prev_i = 0;
+	const size_t len = strlen(il_stmt);
+	const char *color = NULL;
+	RzILUnicodeColorifyState prev_state = UNICODE_COLORIFY_STATE_DEFAULT;
+	for (size_t i = 0; i < len;) {
+		RzCodePoint cp = 0;
+		const size_t utf_size = rz_utf8_decode((const ut8 *)il_stmt + i, len - i, &cp, false);
+		RzILUnicodeColorifyState state = unicode_colorify_state_next(prev_state, cp);
+		if (state == prev_state) {
+			i += utf_size > 0 ? utf_size : 1;
+			continue;
+		}
+		const int plen = i - prev_i;
+		if (color) {
+			rz_strbuf_appendf(sb, "%s%.*s" Color_RESET, color, plen, il_stmt + prev_i);
+		} else {
+			rz_strbuf_appendf(sb, "%.*s", plen, il_stmt + prev_i);
+		}
+
+		color = core_il_get_token_color(state, color, ctx);
+
+		prev_state = state;
+		prev_i = i;
+		i += utf_size > 0 ? utf_size : 1;
+	}
+	if (prev_i >= len) {
+		rz_strbuf_appendf(sb, "\n");
+		return;
+	}
+	const int plen = len - prev_i;
+	if (color) {
+		rz_strbuf_appendf(sb, "%s%.*s" Color_RESET, color, plen, il_stmt + prev_i);
+	} else {
+		rz_strbuf_appendf(sb, "%.*s", plen, il_stmt + prev_i);
+	}
+	rz_strbuf_appendf(sb, "\n");
+}
+
+static ut64 core_il_get_refline_at(ut64 vat, RZ_NONNULL RzPVector /*<RzAnalysisRefline *>*/ *reflines) {
+	rz_return_val_if_fail(reflines, UT64_MAX);
+	void **iter;
+	rz_pvector_foreach (reflines, iter) {
+		RzAnalysisRefline *ref = *iter;
+		if (ref->from == vat) {
+			return ref->to;
+		}
+	}
+	return UT64_MAX;
+}
+
+static void init_asmqjmps(RZ_NONNULL RzCore *core) {
+	rz_return_if_fail(core);
+	if (core->keep_asmqjmps) {
+		return;
+	}
+	core->asmqjmps_count = 0;
+	ut64 *p = realloc(core->asmqjmps, RZ_CORE_ASMQJMPS_NUM * sizeof(ut64));
+	if (p) {
+		core->asmqjmps_size = RZ_CORE_ASMQJMPS_NUM;
+		core->asmqjmps = p;
+		memset(core->asmqjmps, 0xff, RZ_CORE_ASMQJMPS_NUM * sizeof(ut64));
+	}
+}
+
+typedef struct il_state_t {
+	RzCore *core;
+	RzCoreILPrintOptions *options;
+
+	ut64 addr;
+	ut64 current;
+	ut64 vat;
+
+	ut8 *buf;
+	ut8 *addbuf;
+	size_t len;
+
+	size_t idx;
+	size_t inc;
+	size_t ops_count;
+	size_t n_lines;
+	ut8 min_op_size;
+
+	RzStrBuf *sb;
+	RzAnalysisDisasmText *dst;
+
+	RzPVector /*<RzAnalysisRefline *>*/ *reflines;
+} RzILState;
+
+static RzILState *il_state_init(RZ_NONNULL RzCore *core) {
+	RzILState *ils = RZ_NEW0(RzILState);
+	ils->core = core;
+	ils->sb = RZ_NEW0(RzStrBuf);
+	rz_strbuf_init(ils->sb);
+	return ils;
+}
+
+static void il_state_reflines_init(RzILState *ils) {
+	rz_return_if_fail(ils && ils->core && ils->buf && (ils->len || ils->n_lines));
+	ils->reflines = rz_analysis_reflines_get(ils->core->analysis,
+		ils->addr, ils->buf, ils->len, ils->n_lines,
+		rz_config_get_i(ils->core->config, "asm.lines.out"),
+		rz_config_get_b(ils->core->config, "asm.lines") ? rz_config_get_b(ils->core->config, "asm.lines.call") : false);
+	rz_analysis_set_reflines(ils->core->analysis, ils->reflines);
+}
+
+static void core_il_stringify_single_il(RzILState *ils) {
+	const char *il_stmt = NULL;
+	const char delim = ils->options->pretty ? '\n' : ' ';
+	RzAnalysisOp op;
+
+	ils->current = ils->addr + ils->idx;
+	ils->vat = rz_core_pava(ils->core, ils->current);
+
+	ils->dst = RZ_NEW0(RzAnalysisDisasmText);
+	ils->dst->arrow = UT64_MAX;
+
+	rz_strbuf_fini(ils->sb);
+	rz_strbuf_init(ils->sb);
+	if (ils->core->print->flags & RZ_PRINT_FLAGS_UNALLOC) {
+		if (!rz_io_is_valid_offset(ils->core->io, ils->current, 0)) {
+			rz_strbuf_appendf(ils->sb, "0x%" PFMT64x "%cunmapped", ils->current, delim);
+			ils->inc = 1;
+			goto finish_str;
+		}
+	}
+	rz_core_seek_arch_bits(ils->core, ils->current);
+	rz_analysis_op_init(&op);
+	if (rz_analysis_op(ils->core->analysis, &op, ils->current, ils->buf + ils->idx, (int)(ils->len - ils->idx), RZ_ANALYSIS_OP_MASK_IL) < 1) {
+		rz_strbuf_appendf(ils->sb, "0x%" PFMT64x "%cinvalid", ils->current, delim);
+		ils->inc = 1;
+		goto finalize;
+	}
+	ils->inc = op.size;
+	if (!op.il_op) {
+		RZ_LOG_DEBUG("Empty IL at 0x%08" PFMT64x "...", op.addr);
+		rz_strbuf_appendf(ils->sb, "0x%" PFMT64x "%cempty il", op.addr, delim);
+		goto finalize;
+	}
+	if (ils->options->unicode) {
+		const int addr_len = snprintf(NULL, 0, "0x%" PFMT64x, op.addr);
+		RzILStringifyCtx ctx = { .indent = addr_len + 1, .indent_inc = 2 };
+		if (!rz_il_op_effect_stringify_unicode(&ctx, op.il_op, ils->sb)) {
+			RZ_LOG_ERROR("Failed to stringify unicode IL at 0x%08" PFMT64x "\n", op.addr);
+			rz_strbuf_appendf(ils->sb, "0x%" PFMT64x "%c ustringify failed", op.addr, delim);
+			goto finalize;
+		}
+	} else {
+		rz_il_op_effect_stringify(op.il_op, ils->sb, ils->options->pretty);
+	}
+
+	il_stmt = rz_strbuf_drain_nofree(ils->sb);
+	rz_strbuf_init(ils->sb);
+	if (ils->options->colorize) {
+		if (ils->options->unicode) {
+			core_colorify_il_statement_unicode_to_strbuf(ils->core->cons->context, il_stmt, delim, op.addr, ils->sb);
+		} else {
+			core_colorify_il_statement_to_strbuf(ils->core->cons->context, il_stmt, delim, op.addr, ils->sb);
+		}
+	} else {
+		rz_strbuf_appendf(ils->sb, "0x%" PFMT64x "%c%s", op.addr, delim, il_stmt);
+	}
+	RZ_FREE(il_stmt);
+	ils->dst->arrow = core_il_get_refline_at(ils->vat, ils->reflines);
+finalize:
+	rz_analysis_op_fini(&op);
+finish_str:
+	ils->dst->offset = ils->vat;
+	ils->dst->text = rz_strbuf_drain_nofree(ils->sb);
+	if (!ils->inc)
+		ils->inc = RZ_MAX(1, ils->min_op_size);
+}
+
+static void il_state_reflines_fini(RzILState *ils) {
+	if (ils) {
+		rz_analysis_set_reflines(ils->core->analysis, NULL);
+		rz_pvector_free(ils->reflines);
+		ils->reflines = NULL;
+	}
+}
+
+static void il_state_free(RzILState *ils) {
+	rz_strbuf_free(ils->sb);
+	il_state_reflines_fini(ils);
+	RZ_FREE(ils->addbuf);
+	free(ils);
+}
+
+static bool il_state_complete(RzILState *ils) {
+	if (!ils->options->cbytes && ils->ops_count < ils->n_lines) {
+		ils->addr = ils->current + ils->inc;
+		if (ils->len < 16) {
+			ils->len = 16;
+		}
+		free(ils->addbuf);
+		ils->buf = ils->addbuf = malloc(ils->len);
+		if (ils->addbuf) {
+			rz_io_read_at_mapped(ils->core->io, ils->addr, ils->buf, ils->len);
+			return false;
+		}
+	}
+	return true;
+}
+
+/* \brief Format instructions and add generated RzIL code to an analysis text vector.
+ *
+ * Decode instructions starting at the specified address, format their
+ * RzIL equivalents into printable strings, using optional pretty printing,
+ * unicode conversion and syntax highlighting, then store the strings as
+ * RzAnalysisDisasmText entries in the vector provided.
+ *
+ * \param core      Pointer to the current RzCore instance.
+ * \param addr      Starting address for instruction decoding.
+ * \param buf       Pointer to memory buffer that contains instructions.
+ * \param len       Length of \p buf in bytes.
+ * \param n_lines   Maximum number of instructions to decode. Uses
+ *                  core->blocksize if value is 0.
+ * \param options   Formatting parameters and vector for storing results.
+ *
+ * \return Number of instructions decoded successfully.
+ */
+RZ_API int rz_core_il_print_rzil(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL ut8 *buf, size_t len, size_t n_lines, RZ_NULLABLE RzCoreILPrintOptions *options) {
+	rz_return_val_if_fail(core && buf && (n_lines || len), 0);
+
+	if (!options->vec) {
+		return 0;
+	}
+	if (!n_lines) {
+		n_lines = core->blocksize;
+	}
+
+	RzILState *ils = il_state_init(core);
+	ils->addr = addr;
+	ils->buf = buf;
+	ils->len = len;
+	ils->n_lines = n_lines;
+	ils->options = options;
+	ils->min_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
+
+	do {
+		il_state_reflines_init(ils);
+		init_asmqjmps(core);
+
+		for (ils->idx = 0; ils->ops_count < ils->n_lines && ils->idx < ils->len; ils->ops_count++, ils->idx += ils->inc) {
+
+			core_il_stringify_single_il(ils);
+
+			if (!rz_pvector_push(ils->options->vec, ils->dst)) {
+				free(ils->dst->text);
+				free(ils->dst);
+				ils->dst = NULL;
+			}
+		}
+		il_state_reflines_fini(ils);
+	} while (!il_state_complete(ils));
+
+	const int ops_count = ils->ops_count;
+
+	il_state_free(ils);
+	return ops_count;
 }
 
 RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzIterator *iter, bool pretty, bool unicode) {

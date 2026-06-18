@@ -344,7 +344,7 @@ nth      paddr      vaddr bind   type   size lib name
 0x000007d8   0x60 0x004007d8   0x60   0x0 -r-- .rela.dyn          RELA       alloc
 0x00000838  0x288 0x00400838  0x288   0x0 -r-- .rela.plt          RELA       alloc
 0x00000ac0    0xe 0x00400ac0    0xe   0x0 -r-x .init              PROGBITS   alloc,execute
-0x00000ad0  0x1c0 0x00400ad0  0x1c0   0x0 -r-x .plt               PROGBITS   alloc,execute
+0x00000ad0  0x1c0 0x00400ad0  0x1c0   0x0 -r-x .plt               PLT        alloc,execute
 0x00000c90 0x1614 0x00400c90 0x1614   0x0 -r-x .text              PROGBITS   alloc,execute
 0x000022a4    0x9 0x004022a4    0x9   0x0 -r-x .fini              PROGBITS   alloc,execute
 0x000022b0  0x4e5 0x004022b0  0x4e5   0x0 -r-- .rodata            PROGBITS   alloc
@@ -376,6 +376,43 @@ name size address flags mirror
 [Strings]
      paddr      vaddr len size section type  string                                                                        
 ---------------------------------------------------------------------------------------------------------------------------
+0x000005c9 0x004005c9  14   15 .dynstr ascii __gmon_start__
+0x000005d8 0x004005d8   9   10 .dynstr ascii libc.so.6
+0x000005e2 0x004005e2   6    7 .dynstr ascii socket
+0x000005e9 0x004005e9   6    7 .dynstr ascii fflush
+0x000005f0 0x004005f0   6    7 .dynstr ascii strcpy
+0x000005f7 0x004005f7  12   13 .dynstr ascii __printf_chk
+0x00000604 0x00400604   4    5 .dynstr ascii exit
+0x00000609 0x00400609   5    6 .dynstr ascii fopen
+0x0000060f 0x0040060f  15   16 .dynstr ascii __isoc99_sscanf
+0x0000061f 0x0040061f   7    8 .dynstr ascii connect
+0x00000627 0x00400627   6    7 .dynstr ascii signal
+0x0000062e 0x0040062e   4    5 .dynstr ascii puts
+0x00000633 0x00400633  16   17 .dynstr ascii __stack_chk_fail
+0x00000644 0x00400644   5    6 .dynstr ascii stdin
+0x0000064a 0x0040064a   6    7 .dynstr ascii strtol
+0x00000651 0x00400651   5    6 .dynstr ascii fgets
+0x00000657 0x00400657  16   17 .dynstr ascii __errno_location
+0x00000668 0x00400668   4    5 .dynstr ascii read
+0x0000066d 0x0040066d  13   14 .dynstr ascii __fprintf_chk
+0x0000067b 0x0040067b   6    7 .dynstr ascii stdout
+0x00000682 0x00400682  13   14 .dynstr ascii __memmove_chk
+0x00000690 0x00400690  13   14 .dynstr ascii __ctype_b_loc
+0x0000069e 0x0040069e   6    7 .dynstr ascii getenv
+0x000006a5 0x004006a5   6    7 .dynstr ascii stderr
+0x000006ac 0x004006ac   5    6 .dynstr ascii alarm
+0x000006b2 0x004006b2  13   14 .dynstr ascii gethostbyname
+0x000006c0 0x004006c0  12   13 .dynstr ascii __memcpy_chk
+0x000006cd 0x004006cd   5    6 .dynstr ascii close
+0x000006d3 0x004006d3   5    6 .dynstr ascii sleep
+0x000006d9 0x004006d9  13   14 .dynstr ascii __sprintf_chk
+0x000006e7 0x004006e7  17   18 .dynstr ascii __libc_start_main
+0x000006f9 0x004006f9   5    6 .dynstr ascii write
+0x000006ff 0x004006ff   9   10 .dynstr ascii GLIBC_2.3
+0x00000709 0x00400709   9   10 .dynstr ascii GLIBC_2.7
+0x00000713 0x00400713  11   12 .dynstr ascii GLIBC_2.3.4
+0x0000071f 0x0040071f   9   10 .dynstr ascii GLIBC_2.4
+0x00000729 0x00400729  11   12 .dynstr ascii GLIBC_2.2.5
 0x000022b6 0x004022b6  28   29 .rodata ascii %s: Error: Couldn't open %s\n
 0x000022d3 0x004022d3  25   26 .rodata ascii Usage: %s [<input_file>]\n
 0x000022ed 0x004022ed  29   30 .rodata ascii That's number 2.  Keep going!
