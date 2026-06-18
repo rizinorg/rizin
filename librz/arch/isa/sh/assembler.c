@@ -391,15 +391,16 @@ static bool sh_op_compare(SHOpRaw raw, const char *mnem, SHAddrHelper modes[]) {
 }
 
 /**
- * \brief Assemble instruction from SuperH-4 ISA
+ * \brief Assemble instruction from SuperH ISA
  * FPU instructions not implemented yet
  *
  * \param buffer Instruction string buffer
  * \param pc Current value of program counter
  * \param success Store bool whether the assembler succeeded or not (RZ_NULLABLE)
+ * \param cpu SuperH CPU model to assemble for (instructions not available on it will fail)
  * \return ut16 Opcode for the given instruction
  */
-RZ_IPI ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc, RZ_NULLABLE bool *success) {
+RZ_IPI ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc, RZ_NULLABLE bool *success, SHCpu cpu) {
 	rz_return_val_if_fail(buffer, -1);
 	if (success) {
 		*success = true;
@@ -434,8 +435,13 @@ RZ_IPI ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc, RZ_NULLABLE boo
 		j++;
 	}
 
+	SHArch want = (cpu == SH_CPU_SH3) ? SH_ARCH_SH3 : SH_ARCH_SH4;
 	for (ut16 i = 0; i < OPCODE_NUM; i++) {
 		if (!sh_op_compare(sh_op_lookup[i], mnem, sham)) {
+			continue;
+		}
+		if (!(sh_op_lookup[i].arch & want)) {
+			// instruction is not available on the selected CPU
 			continue;
 		}
 
