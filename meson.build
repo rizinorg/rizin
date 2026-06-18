@@ -506,6 +506,32 @@ foreach it : ccs
     add_project_link_arguments('-Wl,--allow-shlib-undefined', language: 'c', native: it_native)
   endif
 
+  # Old GNU ld (binutils 2.22, shipped with Debian Wheezy) combined with the
+  # --as-needed flag that Meson passes by default drops shared libraries that
+  # are needed only indirectly -- through another shared library -- rather than
+  # directly by the linked object files. It then (defaulting to
+  # --no-copy-dt-needed-entries) also refuses to resolve the symbol through the
+  # dropped library's own DT_NEEDED entry. Linking the rizin tools against the
+  # rizin shared libraries therefore fails with:
+  #   librz_main.so.0.9.0: undefined reference to symbol 'rz_buf_size'
+  #   librz_util.so.0.9.0: could not read symbols: Invalid operation
+  # even though librz_util, which defines the symbol, is already on the link
+  # line. Disable --as-needed for these old linkers so the indirectly-needed
+  # libraries stay on the link line and resolve directly; newer linkers handle
+  # this correctly on their own and keep the optimisation.
+  if it_cc.get_linker_id() == 'ld.bfd'
+    ld_bin = find_program('ld', required: false, native: it_native)
+    if ld_bin.found()
+      ld_version_raw = run_command(ld_bin, '--version', check: false).stdout()
+      if ld_version_raw != ''
+        ld_version = ld_version_raw.split('\n')[0].split(' ')[-1].strip()
+        if ld_version.version_compare('<2.31')
+          add_project_link_arguments('-Wl,--no-as-needed', language: 'c', native: it_native)
+        endif
+      endif
+    endif
+  endif
+
   if it_machine.system() == 'darwin'
     # On older Mac OS X versions (at least Lion and older), environ is only available when compiling an executable,
     # but we will use is primarily in shared libs. Unfortunately, it_cc.links() only checks for executable compiling,
