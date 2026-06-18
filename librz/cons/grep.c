@@ -2,9 +2,9 @@
 // SPDX-FileCopyrightText: 2009-2020 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_util/rz_regex.h"
-#include "rz_util/rz_str.h"
-#include "rz_util/rz_strbuf.h"
+#include <rz_util/rz_regex.h>
+#include <rz_util/rz_str.h>
+#include <rz_util/rz_strbuf.h>
 #include <rz_cons.h>
 #include <rz_util/rz_print.h>
 #include <sdb.h>
@@ -97,7 +97,7 @@ static RZ_OWN char *json_path_array_projection(RZ_BORROW const RzJson *json, con
 			const RzJson *value = NULL;
 			const RzJson *child;
 			for (child = item->children.first; child; child = child->next) {
-				if (child->key && !strcmp(child->key, field)) {
+				if (child->key && RZ_STR_EQ(child->key, field)) {
 					value = child;
 					break;
 				}
