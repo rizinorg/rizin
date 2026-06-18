@@ -246,9 +246,6 @@ ptid_t qnxr_attach(libqnxr_t *g, pid_t pid) {
 }
 
 ptid_t qnxr_run(libqnxr_t *g, const char *file, char **args, char **env) {
-	ut32 argc = 0;
-	ut32 envc = 0;
-
 	char **argv, *p;
 	int errors = 0;
 
@@ -258,8 +255,9 @@ ptid_t qnxr_run(libqnxr_t *g, const char *file, char **args, char **env) {
 	nto_send_init(g, DStMsg_env, DSMSG_ENV_CLEARENV, SET_CHANNEL_DEBUG);
 	nto_send(g, sizeof(DStMsg_env_t), 1);
 
-	for (envc = 0; *env; env++, envc++)
+	for (; *env; env++) {
 		errors += !nto_send_env(g, *env);
+	}
 
 	if (errors) {
 		eprintf("%s: error(s) occurred while sending environment\n", __func__);
@@ -270,8 +268,9 @@ ptid_t qnxr_run(libqnxr_t *g, const char *file, char **args, char **env) {
 
 	if (file != NULL) {
 		errors = !nto_send_arg(g, file);
-		if (!errors)
+		if (!errors) {
 			errors = !nto_send_arg(g, file);
+		}
 
 		if (errors) {
 			eprintf("%s: failed to send executable file name\n", __func__);
@@ -279,8 +278,9 @@ ptid_t qnxr_run(libqnxr_t *g, const char *file, char **args, char **env) {
 		}
 
 		errors = 0;
-		for (argv = args; *argv && **argv; argv++, argc++)
+		for (argv = args; *argv && **argv; argv++) {
 			errors |= !nto_send_arg(g, *argv);
+		}
 
 		if (errors) {
 			eprintf("%s: error(s) occurred while sending args\n", __func__);

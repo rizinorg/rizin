@@ -60,26 +60,36 @@ typedef enum {
 } RzGadgetType;
 
 /**
+ * \brief Gadget cache node
+ */
+typedef struct rz_gadget_cache_node_t {
+	RBNode rb; ///< intrusive RBTree node
+	ut64 addr; ///< gadget start address
+	RzPVector /*<RzCoreAsmHit *>*/ *hitlist; ///< cached hitlist object for one gadget
+	int delay_size; ///< delay size for delay slot archs
+} RzGadgetCacheNode;
+
+/**
  * \brief Types of IL instructions for Gadget constraints.
  */
 typedef enum rz_gadget_il_instr_type {
-	MOV_CONST, ///< reg <- const
-	MOV_REG, ///< reg <- reg
-	MOV_OP_CONST, ///< reg <- reg OP const
-	MOV_OP_REG, ///< reg <- reg OP reg
-	SYSCALL, ///< syscall
+	RZ_GADGET_IL_INSTR_MOV_CONST, ///< reg <- const
+	RZ_GADGET_IL_INSTR_MOV_REG, ///< reg <- reg
+	RZ_GADGET_IL_INSTR_MOV_OP_CONST, ///< reg <- reg OP const
+	RZ_GADGET_IL_INSTR_MOV_OP_REG, ///< reg <- reg OP reg
+	RZ_GADGET_IL_INSTR_SYSCALL, ///< syscall
 } RzGadgetILInstructionType;
 
 /**
  * \brief Argument types for Gadget constraints.
  */
 typedef enum {
-	SRC_REG,
-	DST_REG,
-	SRC_CONST,
-	SRC_REG_SECOND,
-	OP,
-	NUM_ARGS
+	RZ_GADGET_ARG_SRC_REG,
+	RZ_GADGET_ARG_DST_REG,
+	RZ_GADGET_ARG_SRC_CONST,
+	RZ_GADGET_ARG_SRC_REG_SECOND,
+	RZ_GADGET_ARG_OP,
+	RZ_GADGET_ARG_NUM_ARGS
 } RzGadgetArgType;
 
 /**
@@ -127,7 +137,7 @@ typedef struct rz_gadget_endlist_pair_t {
  */
 typedef struct rz_gadget_constraint_t {
 	RzGadgetILInstructionType type; ///< IL instruction type.
-	char *args[NUM_ARGS]; ///< Arguments.
+	char *args[RZ_GADGET_ARG_NUM_ARGS]; ///< Arguments.
 } RzGadgetConstraint;
 
 /**
@@ -135,7 +145,7 @@ typedef struct rz_gadget_constraint_t {
  */
 typedef struct rz_gadget_search_context_t {
 	RzGadgetType type; ///< Type of gadget to search for.
-	ut8 max_instr; ///< Gadget search max length.
+	size_t max_instr; ///< Gadget search max length.
 	bool subchains; ///< Display every length gadget from gadget.len=X to 2.
 	bool allow_conditional; ///< Include conditional jump, calls and returns in gadget search.
 	bool comments; ///< Display comments in gadget search output.

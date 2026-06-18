@@ -134,10 +134,6 @@ static RzILOpEffect *set_register_WF(PicMidrangeILContext *ctx, RzILOpPure *x) {
 
 typedef RzILOpEffect *(*pic_midrange_il_handler)(PicMidrangeILContext *, ut16);
 
-RzILOpEffect *reset() {
-	return NOP();
-}
-
 RzILOpEffect *set_z(PicMidrangeILContext *ctx, RzILOpPure *x) {
 	return SETGb(STATUS, Z, IS_ZERO(x));
 }

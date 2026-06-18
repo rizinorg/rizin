@@ -153,6 +153,11 @@ struct powerpc_regs_t {
 #include <sys/ucontext.h>
 typedef ut64 mips64_regs_t[274];
 #define RZ_DEBUG_REG_T mips64_regs_t
+
+#elif __alpha__
+#include <asm/ptrace.h>
+#define RZ_DEBUG_REG_T   struct pt_regs
+#define RZ_DEBUG_FPREG_T fpreg_t
 #endif
 #endif
 

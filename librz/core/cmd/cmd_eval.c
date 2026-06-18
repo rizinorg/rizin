@@ -533,6 +533,7 @@ RZ_IPI RzCmdStatus rz_eval_list_handler(RzCore *core, int argc, const char **arg
 }
 
 RZ_IPI RzCmdStatus rz_eval_reset_handler(RzCore *core, int argc, const char **argv) {
+	rz_config_free(core->config);
 	return rz_core_config_init(core) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 

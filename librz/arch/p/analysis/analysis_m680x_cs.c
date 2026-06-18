@@ -67,7 +67,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	int n, ret, opsize = -1;
 	cs_insn *insn;
 
-	int mode = m680xmode(a->cpu);
+	int mode = m680xmode(rz_analysis_get_cpu(a));
 
 	if (mode != ctx->omode || a->bits != ctx->obits) {
 		cs_close(&ctx->handle);

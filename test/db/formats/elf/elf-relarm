@@ -31,27 +31,27 @@ CMDS=<<EOF
 ir~?
 # ARM_RELATIVE
 s 0xb58c0
-pf bbbb
+pf x1x1x1x1
 pd 1
 echo ---
 # ARM_ABS32
 s 0xb58c4
-pf bbbb
+pf x1x1x1x1
 pd 1
 echo ---
 # ARM_ABS32
 s 0xb58d8
-pf bbbb
+pf x1x1x1x1
 pd 1
 echo ---
 # ARM_GLOB_DAT
 s 0xb5dbc
-pf bbbb
+pf x1x1x1x1
 pd 1
 echo ---
 # ARM_JUMP_SLOT
 s 0xb5e08
-pf bbbb
+pf x1x1x1x1
 pd 1
 echo ---
 s section..init_array
@@ -59,40 +59,40 @@ pd 10
 EOF
 EXPECT=<<EOF
 427
-0x000b58c0 = 0x24
-0x000b58c1 = 0x45
-0x000b58c2 = 0x00
-0x000b58c3 = 0x00
+0x000b58c0 = 0x24 [LE]
+0x000b58c1 = 0x45 [LE]
+0x000b58c2 = 0x00 [LE]
+0x000b58c3 = 0x00 [LE]
             ;-- section..fini_array:
             ;-- segment.LOAD1:
             0x000b58c0      .dword 0x00004524 ; entry0 ; entry.fini0 ; section..text; RELOC 32  ; [13] -rw- section size 4 named .fini_array
 ---
-0x000b58c4 = 0x61
-0x000b58c5 = 0x45
-0x000b58c6 = 0x00
-0x000b58c7 = 0x00
+0x000b58c4 = 0x61 [LE]
+0x000b58c5 = 0x45 [LE]
+0x000b58c6 = 0x00 [LE]
+0x000b58c7 = 0x00 [LE]
             ;-- section..init_array:
             ;-- .datadiv_decode1794556967687044894:
             0x000b58c4      .dword 0x00004561 ; reloc.target..datadiv_decode1794556967687044894 ; sym..datadiv_decode1794556967687044894; RELOC 32 .datadiv_decode1794556967687044894 @ 0x00004560 + 0x1 ; [14] -rw- section size 364 named .init_array
 ---
-0x000b58d8 = 0x45
-0x000b58d9 = 0x8b
-0x000b58da = 0x09
-0x000b58db = 0x00
+0x000b58d8 = 0x45 [LE]
+0x000b58d9 = 0x8b [LE]
+0x000b58da = 0x09 [LE]
+0x000b58db = 0x00 [LE]
             ;-- .datadiv_decode668687990735969933:
             0x000b58d8      .dword 0x00098b45 ; reloc.target..datadiv_decode668687990735969933 ; sym..datadiv_decode668687990735969933; RELOC 32 .datadiv_decode668687990735969933 @ 0x00098b44 + 0x1
 ---
-0x000b5dbc = 0x24
-0x000b5dbd = 0x35
-0x000b5dbe = 0x14
-0x000b5dbf = 0x00
+0x000b5dbc = 0x24 [LE]
+0x000b5dbd = 0x35 [LE]
+0x000b5dbe = 0x14 [LE]
+0x000b5dbf = 0x00 [LE]
             ;-- x.10:
             0x000b5dbc      .dword 0x00143524 ; reloc.target.x.10 ; obj.x.10; RELOC 32 x.10 @ 0x00143524
 ---
-0x000b5e08 = 0xb4
-0x000b5e09 = 0x37
-0x000b5e0a = 0x14
-0x000b5e0b = 0x00
+0x000b5e08 = 0xb4 [LE]
+0x000b5e09 = 0x37 [LE]
+0x000b5e0a = 0x14 [LE]
+0x000b5e0b = 0x00 [LE]
             ;-- __cxa_atexit:
             0x000b5e08      .dword 0x001437b4 ; reloc.target.__cxa_atexit; RELOC 32 __cxa_atexit
 ---
@@ -124,15 +124,15 @@ CMDS=<<EOF
 ir~?
 # ARM_THM_PC22
 s 0x08000b82
-pf bbbb
+pf x1x1x1x1
 pd 1
 EOF
 EXPECT=<<EOF
 4810
-0x08000b82 = 0x18
-0x08000b83 = 0xf0
-0x08000b84 = 0xe7
-0x08000b85 = 0xfc
+0x08000b82 = 0x18 [LE]
+0x08000b83 = 0xf0 [LE]
+0x08000b84 = 0xe7 [LE]
+0x08000b85 = 0xfc [LE]
             ;-- memset:
             0x08000b82      bl    reloc.target.memset                  ; RELOC 24 memset
 EOF
@@ -195,45 +195,45 @@ FILE=bins/elf/graphascii.c-gcc-arm64-O0.o
 CMDS=<<EOF
 ir~?
 s 0x8000444
-pf bbbb
+pf x1x1x1x1
 pi 1
 echo ---
 s 0x8000460
-pf bbbb
+pf x1x1x1x1
 pi 1
 echo ---
 s 0x800046c
-pf bbbb
+pf x1x1x1x1
 pi 1
 echo ---
 s 0x80003d8
-pf bbbb
+pf x1x1x1x1
 pi 1
 EOF
 EXPECT=<<EOF
 315
-0x08000444 = 0x00
-0x08000445 = 0x00
-0x08000446 = 0x00
-0x08000447 = 0xf0
-adrp x0, 0x8003000
+0x08000444 = 0xe0 [LE]
+0x08000445 = 0xff [LE]
+0x08000446 = 0xfb [LE]
+0x08000447 = 0xf0 [LE]
+adrp x0, 0xfffffffffffff000
 ---
-0x08000460 = 0x1c
-0x08000461 = 0x0d
-0x08000462 = 0x00
-0x08000463 = 0x94
+0x08000460 = 0x1c [LE]
+0x08000461 = 0x0d [LE]
+0x08000462 = 0x00 [LE]
+0x08000463 = 0x94 [LE]
 bl reloc.target.stackCursor
 ---
-0x0800046c = 0x00
-0x0800046d = 0x64
-0x0800046e = 0x44
-0x0800046f = 0xf9
-ldr x0, [x0, 0x8c8]
+0x0800046c = 0x00 [LE]
+0x0800046d = 0x00 [LE]
+0x0800046e = 0x70 [LE]
+0x0800046f = 0xf9 [LE]
+ldr x0, [x0, 0x6000]
 ---
-0x080003d8 = 0x3a
-0x080003d9 = 0x0d
-0x080003da = 0x00
-0x080003db = 0x94
+0x080003d8 = 0x3a [LE]
+0x080003d9 = 0x0d [LE]
+0x080003da = 0x00 [LE]
+0x080003db = 0x94 [LE]
 bl reloc.target.fputs
 EOF
 RUN
@@ -242,12 +242,12 @@ NAME=arm R_ARM_PREL31 relocation
 FILE=bins/elf/arm-reloc-prel31.o
 CMDS=<<EOF
 ir~R_ARM_PREL31?
-pf w @ 0x08000038
+pf x2 @ 0x08000038
 pd 1 @ 0x08000038
 EOF
 EXPECT=<<EOF
 1
-0x08000038 = 0x0090
+0x08000038 = 0x0090 [LE]
             ;-- section..data:
             ;-- foo:
             ;-- .data:
@@ -341,14 +341,14 @@ NAME=arm dynamic R_ARM_JUMP_SLOT relocation
 FILE=bins/elf/arm-reloc-jump-slot.so
 CMDS=<<EOF
 ir
-pf w @ 0x000011c4
+pf x2 @ 0x000011c4
 pd 1 @ 0x000011c4
 EOF
 EXPECT=<<EOF
      vaddr      paddr     target type            name        
 -------------------------------------------------------------
 0x000011c4 0x000001c4 0x000011d0 R_ARM_JUMP_SLOT target_func
-0x000011c4 = 0x11d0
+0x000011c4 = 0x11d0 [LE]
             ;-- target_func:
             0x000011c4      .dword 0x000011d0 ; reloc.target.target_func; RELOC 32 target_func
 EOF
@@ -739,7 +739,7 @@ FILE=bins/elf/arm-reloc-thm-jump24.o
 CMDS=<<EOF
 ir
 pd 1 @ 0x08000034
-pf w @ 0x08000034
+pf x2 @ 0x08000034
 EOF
 EXPECT=<<EOF
      vaddr      paddr     target type             name             
@@ -750,6 +750,6 @@ EXPECT=<<EOF
             ;-- .text:
             ;-- _start:
         ,=< 0x08000034      b.w   reloc.target.foo                     ; RELOC 24 foo ; [01] -r-x section size 4 named .text
-0x08000034 = 0xf000
+0x08000034 = 0xf000 [LE]
 EOF
 RUN

@@ -18,6 +18,7 @@ typedef struct rz_bin_file_t RzBinFile;
 typedef struct rz_bin_reloc_storage_t RzBinRelocStorage;
 
 #include <rz_bin_dwarf.h>
+#include <rz_bin_stabs.h>
 #include <rz_pdb.h>
 
 #ifdef __cplusplus
@@ -936,7 +937,7 @@ RZ_API RzPVector /*<RzBinSection *>*/ *rz_bin_sections_of_maps(RzPVector /*<RzBi
 RZ_API RzBinSection *rz_bin_section_new(const char *name);
 RZ_API void rz_bin_section_free(RZ_NULLABLE RzBinSection *bs);
 RZ_API bool rz_bin_section_is_data(RZ_NONNULL const RzBinSection *section);
-RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, int type);
+RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, ut64 type);
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_bin_section_flag_to_list(RzBin *bin, ut64 flag);
 RZ_API void rz_bin_info_free(RZ_NULLABLE RzBinInfo *rb);
 RZ_API void rz_bin_import_free(RZ_NULLABLE RzBinImport *imp);

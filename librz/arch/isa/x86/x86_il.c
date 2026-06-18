@@ -5,6 +5,7 @@
 #include "x86_il.h"
 #include "il_ops.inc"
 #include "il_fp_ops.inc"
+#include "il_sse_ops.inc"
 
 #define COMMON_REGS \
 	"cs", /* X86_REG_CS */ \
@@ -37,6 +38,17 @@
 		"st5", /* X86_REG_ST5 */ \
 		"st6", /* X86_REG_ST6 */ \
 		"st7" /* X86_REG_ST6 */
+
+/* SSE registers (xmm0-xmm7 are the only ones present in the reg profile). */
+#define XMM_REGS \
+	"xmm0", /* X86_REG_XMM0 */ \
+		"xmm1", /* X86_REG_XMM1 */ \
+		"xmm2", /* X86_REG_XMM2 */ \
+		"xmm3", /* X86_REG_XMM3 */ \
+		"xmm4", /* X86_REG_XMM4 */ \
+		"xmm5", /* X86_REG_XMM5 */ \
+		"xmm6", /* X86_REG_XMM6 */ \
+		"xmm7" /* X86_REG_XMM7 */
 
 /**
  * \brief All registers bound to IL variables for x86 16-bit
@@ -74,6 +86,7 @@ const char *x86_bound_regs_32[] = {
 	"gs", /* X86_REG_GS */
 	"cr0", /* X86_REG_CR0 */
 	"dr0", /* X86_REG_DR0 */
+	XMM_REGS,
 	NULL
 };
 
@@ -106,6 +119,7 @@ const char *x86_bound_regs_64[] = {
 	"cr0", /* X86_REG_CR0 */
 	"dr0", /* X86_REG_DR0 */
 	FPU_REGS,
+	XMM_REGS,
 	NULL
 };
 
@@ -310,6 +324,24 @@ x86_il_ins x86_ins[X86_INS_MAX_VALUE] = {
 	[X86_INS_FSQRT] = x86_il_fsqrt,
 	[X86_INS_FNOP] = x86_il_fnop,
 	[X86_INS_FISTTP] = x86_il_fisttp,
+
+	/* SSE/SSE2 scalar floating-point instructions */
+	[X86_INS_ADDSD] = x86_il_addsd,
+	[X86_INS_ADDSS] = x86_il_addss,
+	[X86_INS_SUBSD] = x86_il_subsd,
+	[X86_INS_SUBSS] = x86_il_subss,
+	[X86_INS_MULSD] = x86_il_mulsd,
+	[X86_INS_MULSS] = x86_il_mulss,
+	[X86_INS_DIVSD] = x86_il_divsd,
+	[X86_INS_DIVSS] = x86_il_divss,
+	[X86_INS_CVTSI2SD] = x86_il_cvtsi2sd,
+	[X86_INS_CVTSI2SS] = x86_il_cvtsi2ss,
+	[X86_INS_CVTSD2SI] = x86_il_cvtsd2si,
+	[X86_INS_CVTSS2SI] = x86_il_cvtss2si,
+	[X86_INS_CVTTSD2SI] = x86_il_cvttsd2si,
+	[X86_INS_CVTTSS2SI] = x86_il_cvttss2si,
+	[X86_INS_CVTSD2SS] = x86_il_cvtsd2ss,
+	[X86_INS_CVTSS2SD] = x86_il_cvtss2sd,
 
 	/* unimplemented instructions */
 	[X86_INS_IRET] = x86_il_unimpl,

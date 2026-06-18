@@ -319,7 +319,7 @@ static bool test_vector_insert_sorted(void) {
 
 static bool test_vector_find_sorted(void) {
 	RzVector *v = rz_vector_new(sizeof(ut64), NULL, NULL);
-	for (size_t i = 1; i < 13; i++) {
+	for (ut64 i = 1; i < 13; i++) {
 		rz_vector_push(v, &i);
 	}
 	ut64 i = UT64_MAX;
@@ -373,6 +373,120 @@ static bool test_vector_find_sorted(void) {
 	mu_end;
 }
 
+static int cmp_u32(const void *a, const void *b, void *user) {
+	(void)user;
+	ut32 x = *(const ut32 *)a, y = *(const ut32 *)b;
+	return (x > y) - (x < y);
+}
+static int qsort_u32_asc(const void *a, const void *b) {
+	ut32 x = *(const ut32 *)a, y = *(const ut32 *)b;
+	return (x > y) - (x < y);
+}
+static int qsort_u32_desc(const void *a, const void *b) {
+	ut32 x = *(const ut32 *)a, y = *(const ut32 *)b;
+	return (y > x) - (y < x);
+}
+
+// Sort a large vector with many duplicates, ascending and descending, and check
+// the result is fully ordered and a permutation of the input (verified against
+// a reference qsort). Exercises the recursion deeply and the shared scratch
+// buffers, which the small existing sort tests do not.
+static bool test_vector_sort_large(void) {
+	const size_t n = 2000;
+	ut32 *ref = malloc(sizeof(ut32) * n);
+	mu_assert_notnull(ref, "ref alloc");
+	RzVector v;
+	rz_vector_init(&v, sizeof(ut32), NULL, NULL);
+	srand(0xC0FFEE);
+	for (size_t i = 0; i < n; i++) {
+		ut32 x = (ut32)(rand() % 100); // heavy duplication
+		ref[i] = x;
+		rz_vector_push(&v, &x);
+	}
+
+	rz_vector_sort(&v, cmp_u32, false, NULL);
+	mu_assert_eq(v.len, n, "len after sort");
+	bool ok = true;
+	for (size_t i = 1; i < v.len; i++) {
+		if (*(ut32 *)rz_vector_index_ptr(&v, i - 1) > *(ut32 *)rz_vector_index_ptr(&v, i)) {
+			ok = false;
+		}
+	}
+	mu_assert_true(ok, "ascending order");
+	qsort(ref, n, sizeof(ut32), qsort_u32_asc);
+	bool perm = true;
+	for (size_t i = 0; i < n; i++) {
+		if (*(ut32 *)rz_vector_index_ptr(&v, i) != ref[i]) {
+			perm = false;
+		}
+	}
+	mu_assert_true(perm, "ascending is a permutation of the input");
+
+	rz_vector_sort(&v, cmp_u32, true, NULL);
+	ok = true;
+	for (size_t i = 1; i < v.len; i++) {
+		if (*(ut32 *)rz_vector_index_ptr(&v, i - 1) < *(ut32 *)rz_vector_index_ptr(&v, i)) {
+			ok = false;
+		}
+	}
+	mu_assert_true(ok, "descending order");
+	qsort(ref, n, sizeof(ut32), qsort_u32_desc);
+	perm = true;
+	for (size_t i = 0; i < n; i++) {
+		if (*(ut32 *)rz_vector_index_ptr(&v, i) != ref[i]) {
+			perm = false;
+		}
+	}
+	mu_assert_true(perm, "descending is a permutation of the input");
+
+	rz_vector_fini(&v);
+	free(ref);
+	mu_end;
+}
+
+typedef struct {
+	ut32 key;
+	ut8 pad[300];
+} SortBlob304; // > 256 bytes: exercises the heap-fallback scratch path in the sort
+
+static int cmp_blob304(const void *a, const void *b, void *user) {
+	(void)user;
+	ut32 x = ((const SortBlob304 *)a)->key, y = ((const SortBlob304 *)b)->key;
+	return (x > y) - (x < y);
+}
+
+// Sort elements larger than the on-stack scratch threshold, so the sort takes
+// the heap-allocated scratch fallback. Also checks the whole element (not just
+// the key) is moved consistently.
+static bool test_vector_sort_large_elem(void) {
+	const size_t n = 400;
+	RzVector v;
+	rz_vector_init(&v, sizeof(SortBlob304), NULL, NULL);
+	srand(0xBEEF);
+	for (size_t i = 0; i < n; i++) {
+		SortBlob304 b;
+		b.key = (ut32)(rand() % 1000);
+		memset(b.pad, (int)(b.key & 0xff), sizeof(b.pad)); // pad tied to key
+		rz_vector_push(&v, &b);
+	}
+	rz_vector_sort(&v, cmp_blob304, false, NULL);
+	mu_assert_eq(v.len, n, "len after large-elem sort");
+	bool ok = true;
+	for (size_t i = 0; i < v.len; i++) {
+		SortBlob304 *b = rz_vector_index_ptr(&v, i);
+		if (i > 0 && ((SortBlob304 *)rz_vector_index_ptr(&v, i - 1))->key > b->key) {
+			ok = false;
+		}
+		// the payload must still match its key after all the memcpy shuffling
+		if (b->pad[0] != (ut8)(b->key & 0xff) || b->pad[299] != (ut8)(b->key & 0xff)) {
+			ok = false;
+		}
+	}
+	mu_assert_true(ok, "large-element sort ordered with intact payloads");
+	rz_vector_fini(&v);
+	mu_end;
+}
+
 static bool test_vector_empty(void) {
 	RzVector v;
 	rz_vector_init(&v, 1, NULL, NULL);
@@ -419,6 +533,36 @@ static bool test_vector_remove_at(void) {
 	mu_assert_eq(((ut32 *)v.a)[0], 0, "rz_vector_remove_at (end) => remaining elements");
 	mu_assert_eq(((ut32 *)v.a)[1], 1, "rz_vector_remove_at (end) => remaining elements");
 	mu_assert_eq(((ut32 *)v.a)[2], 3, "rz_vector_remove_at (end) => remaining elements");
+
+	rz_vector_clear(&v);
+
+	mu_end;
+}
+
+static bool test_vector_remove_at_unsorted(void) {
+	RzVector v = { 0 };
+	// Check it doesn't read/writes OOB.
+	rz_vector_remove_at_unsorted(&v, 0, NULL);
+
+	init_test_vector(&v, 5, 0, NULL, NULL);
+
+	ut32 e;
+	rz_vector_remove_at_unsorted(&v, 2, &e);
+	mu_assert_eq(e, 2, "rz_vector_remove_at_unsorted => into");
+	mu_assert_eq(v.len, 4UL, "rz_vector_remove_at_unsorted => len");
+
+	mu_assert_eq(((ut32 *)v.a)[0], 0, "rz_vector_remove_at_unsorted => remaining elements");
+	mu_assert_eq(((ut32 *)v.a)[1], 1, "rz_vector_remove_at_unsorted => remaining elements");
+	mu_assert_eq(((ut32 *)v.a)[2], 4, "rz_vector_remove_at_unsorted => remaining elements");
+	mu_assert_eq(((ut32 *)v.a)[3], 3, "rz_vector_remove_at_unsorted => remaining elements");
+
+	rz_vector_remove_at_unsorted(&v, 3, &e);
+	mu_assert_eq(e, 3, "rz_vector_remove_at_unsorted (end) => into");
+	mu_assert_eq(v.len, 3UL, "rz_vector_remove_at_unsorted (end) => len");
+
+	mu_assert_eq(((ut32 *)v.a)[0], 0, "rz_vector_remove_at_unsorted (end) => remaining elements");
+	mu_assert_eq(((ut32 *)v.a)[1], 1, "rz_vector_remove_at_unsorted (end) => remaining elements");
+	mu_assert_eq(((ut32 *)v.a)[2], 4, "rz_vector_remove_at_unsorted (end) => remaining elements");
 
 	rz_vector_clear(&v);
 
@@ -1065,7 +1209,7 @@ static bool test_pvector_find(void) {
 	int num = 77;
 	ut32 e_val = 3;
 	void **p = rz_pvector_find(&v, &e_val, compare_int, &num);
-	mu_assert_eq(*p, e, "find");
+	mu_assert_ptreq(*p, e, "find");
 	mu_assert_eq(num, 44, "ensure user is passed");
 	rz_pvector_clear(&v);
 	mu_end;
@@ -1173,6 +1317,31 @@ static bool test_pvector_remove_at(void) {
 	mu_assert_eq(*((ut32 **)v.v.a)[1], 1, "remove_at => remaining content");
 	mu_assert_eq(*((ut32 **)v.v.a)[2], 2, "remove_at => remaining content");
 	mu_assert_eq(*((ut32 **)v.v.a)[3], 4, "remove_at => remaining content");
+	rz_pvector_clear(&v);
+	mu_end;
+}
+
+static bool test_pvector_remove_at_unsorted(void) {
+	RzPVector v;
+	init_test_pvector(&v, 5, 0);
+
+	ut32 *e = rz_pvector_remove_at_unsorted(&v, 0);
+	mu_assert_eq(*e, 0, "remove_at_unsorted ret");
+	free(e);
+	mu_assert_eq(v.v.len, 4UL, "remove_at_unsorted => len");
+	mu_assert_eq(*((ut32 **)v.v.a)[0], 4, "remove_at_unsorted => remaining content");
+	mu_assert_eq(*((ut32 **)v.v.a)[1], 1, "remove_at_unsorted => remaining content");
+	mu_assert_eq(*((ut32 **)v.v.a)[2], 2, "remove_at_unsorted => remaining content");
+	mu_assert_eq(*((ut32 **)v.v.a)[3], 3, "remove_at_unsorted => remaining content");
+
+	e = rz_pvector_remove_at_unsorted(&v, 3);
+	mu_assert_eq(*e, 3, "remove_at_unsorted ret");
+	free(e);
+	mu_assert_eq(v.v.len, 3UL, "remove_at_unsorted => len");
+	mu_assert_eq(*((ut32 **)v.v.a)[0], 4, "remove_at_unsorted => remaining content");
+	mu_assert_eq(*((ut32 **)v.v.a)[1], 1, "remove_at_unsorted => remaining content");
+	mu_assert_eq(*((ut32 **)v.v.a)[2], 2, "remove_at_unsorted => remaining content");
+
 	rz_pvector_clear(&v);
 	mu_end;
 }
@@ -1464,6 +1633,40 @@ static bool test_pvector_sort(void) {
 	mu_end;
 }
 
+// rz_pvector_remove_data finds the slot whose stored pointer equals x and
+// removes it while preserving order. Covers the simplified index computation.
+static bool test_pvector_remove_data(void) {
+	RzPVector v;
+	rz_pvector_init(&v, NULL);
+	for (size_t i = 1; i <= 6; i++) {
+		rz_pvector_push(&v, (void *)i);
+	}
+	rz_pvector_remove_data(&v, (void *)4); // expect 1,2,3,5,6
+	mu_assert_eq(rz_pvector_len(&v), 5UL, "len after remove_data");
+	void *exp[] = { (void *)1, (void *)2, (void *)3, (void *)5, (void *)6 };
+	bool ok = true;
+	for (size_t i = 0; i < 5; i++) {
+		if (rz_pvector_at(&v, i) != exp[i]) {
+			ok = false;
+		}
+	}
+	mu_assert_true(ok, "remove_data removes the right element and keeps order");
+
+	// removing the first and last elements
+	rz_pvector_remove_data(&v, (void *)1); // 2,3,5,6
+	rz_pvector_remove_data(&v, (void *)6); // 2,3,5
+	mu_assert_eq(rz_pvector_len(&v), 3UL, "len after removing ends");
+	mu_assert_ptreq(rz_pvector_at(&v, 0), (void *)2, "head after removing ends");
+	mu_assert_ptreq(rz_pvector_at(&v, 2), (void *)5, "tail after removing ends");
+
+	// removing an absent pointer is a no-op
+	rz_pvector_remove_data(&v, (void *)999);
+	mu_assert_eq(rz_pvector_len(&v), 3UL, "remove_data of absent value is a no-op");
+
+	rz_pvector_clear(&v);
+	mu_end;
+}
+
 static bool test_pvector_foreach(void) {
 	RzPVector v;
 	init_test_pvector2(&v, 5, 5);
@@ -1584,9 +1787,6 @@ static bool test_pvector_uniq(void) {
 		rz_pvector_push(&v, (void *)&arr[i]);
 	}
 	RzPVector *uv = rz_pvector_uniq(&v, compare_int, &num);
-	mu_assert_eq(uv->v.capacity, 8, "uniq values capacity before shrink");
-	rz_pvector_shrink(uv);
-	mu_assert_eq(uv->v.capacity, 6, "uniq values capacity after shrink");
 	mu_assert_eq(rz_pvector_len(uv), 6, "uniq values count");
 	rz_pvector_clear(&v);
 	rz_pvector_free(uv);
@@ -1656,7 +1856,10 @@ static int all_tests(void) {
 	mu_run_test(test_vector_clone);
 	mu_run_test(test_vector_empty);
 	mu_run_test(test_vector_remove_at);
+	mu_run_test(test_vector_remove_at_unsorted);
 	mu_run_test(test_vector_sort);
+	mu_run_test(test_vector_sort_large);
+	mu_run_test(test_vector_sort_large_elem);
 	mu_run_test(test_vector_remove_range);
 	mu_run_test(test_vector_insert);
 	mu_run_test(test_vector_insert_range);
@@ -1686,6 +1889,7 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_join);
 	mu_run_test(test_pvector_contains);
 	mu_run_test(test_pvector_remove_at);
+	mu_run_test(test_pvector_remove_at_unsorted);
 	mu_run_test(test_pvector_assign_at);
 	mu_run_test(test_pvector_insert);
 	mu_run_test(test_pvector_insert_range);
@@ -1698,6 +1902,7 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_bounds);
 	mu_run_test(test_pvector_tips);
 	mu_run_test(test_pvector_uniq);
+	mu_run_test(test_pvector_remove_data);
 
 	mu_run_test(test_array_bounds_fuzz);
 

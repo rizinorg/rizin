@@ -10,7 +10,6 @@ typedef struct RZARFP {
 	ut64 start;
 	ut64 end;
 	RzBuffer *buf;
-	bool shared_buf;
 	ut32 st_mode;
 } RzArFp;
 

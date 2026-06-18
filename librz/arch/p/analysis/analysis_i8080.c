@@ -13,6 +13,9 @@
 #include "i8080/i8080dis.h"
 
 static int i8080_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
+	if (len < 1) {
+		return -1;
+	}
 	char out[32];
 	int ilen = i8080_disasm(data, out, len);
 	op->addr = addr;

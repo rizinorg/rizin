@@ -211,17 +211,19 @@ fl~?
 fl~main
 EOF
 EXPECT=<<EOF
-111
+120
+0x080482ac 18 str.libc_start_main
 0x08048364 16 sym.imp.__libc_start_main
 0x08048540 256 main
 0x08048540 92 sym.renamedmain
 0x0804a000 4 reloc.__libc_start_main
 --
 --
-111
+120
+0x080482ac 18 str.libc_start_main
 0x08048364 16 sym.imp.__libc_start_main
-0x08048540 92 sym.renamedmain
 0x08048540 256 main
+0x08048540 92 sym.renamedmain
 0x0804a000 4 reloc.__libc_start_main
 EOF
 RUN
@@ -380,6 +382,9 @@ Detailed project load info:
   project migrated from version 19 to 20.
   project migrated from version 20 to 21.
   project migrated from version 21 to 22.
+  project migrated from version 22 to 23.
+  project migrated from version 23 to 24.
+  project migrated from version 24 to 25.
 EOF
 RUN
 

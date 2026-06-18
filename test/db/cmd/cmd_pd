@@ -2267,10 +2267,10 @@ pd 1 @ 0x8048566
 EOF
 EXPECT=<<EOF
             0x08048566      e829feffff     call  sym.imp.printf
-            0x08048566      e829feffff     call  printf                ; sym.imp.printf
+            0x08048566      e829feffff     call  printf
 0x08048394    1 6            sym.imp.printf
 |           0x08048566      e829feffff     call  sym.imp.printf        ; int printf(const char *format)
-|           0x08048566      e829feffff     call  printf                ; sym.imp.printf ; int printf(const char *format)
+|           0x08048566      e829feffff     call  printf                ; int printf(const char *format)
 EOF
 RUN
 
@@ -2749,7 +2749,7 @@ EXPECT=<<EOF
 | 0x08048572      call  sym.imp.printf                                 ; int printf(const char *format)
 | 0x08048577      lea   eax, dword [var_7ch]
 | 0x0804857a      mov   dword [var_88h], eax
-| 0x0804857e      mov   dword [esp], data.080486b2                     ; [0x80486b2:4]=0x7325 ; "%s" ; const char *format
+| 0x0804857e      mov   dword [esp], str.s                             ; [0x80486b2:4]=0x7325 ; "%s" ; const char *format
 | 0x08048585      call  sym.imp.scanf                                  ; int scanf(const char *format)
 | 0x0804858a      lea   eax, dword [var_7ch]
 | 0x0804858d      mov   dword [esp], eax                               ; int32_t arg_4h
@@ -3075,7 +3075,7 @@ EXPECT=<<EOF
     "fcn_last": 134514069,
     "size": 7,
     "opcode": "mov dword [esp], 0x80486b2",
-    "disasm": "mov dword [esp], data.080486b2",
+    "disasm": "mov dword [esp], str.s",
     "bytes": "c70424b2860408",
     "family": "cpu",
     "type": "mov",

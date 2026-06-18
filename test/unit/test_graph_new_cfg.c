@@ -3,6 +3,7 @@
 
 #include <rz_util.h>
 #include "minunit.h"
+#include "rz_util/rz_graph.h"
 
 // Basic block node data structure
 typedef struct bb_data {
@@ -60,7 +61,7 @@ static void edge_decorator_free(void *data) {
 }
 
 // DJB2 hash
-static ut64 string_hash(const void *data) {
+static ut64 string_hash(const char *data) {
 	const char *str = (const char *)data;
 	ut64 hash = 5381;
 	int c;
@@ -70,6 +71,11 @@ static ut64 string_hash(const void *data) {
 	}
 
 	return hash;
+}
+
+static ut64 node_hash(const void *data) {
+	const BasicBlockNodeData *n = data;
+	return string_hash(n->bb_name);
 }
 
 static BasicBlockNodeData *create_bb_data(const char *name, ut64 bb_id, ut64 entry_addr, ut64 size) {
@@ -102,7 +108,7 @@ static EdgeData *create_edge_data(ut8 edge_type, const char *condition) {
 
 // Test basic CFG creation with string identifiers
 static bool test_cfg_basic(void) {
-	RzGraph *cfg = rz_graph_new(RZ_GRAPH_IMPL_LIST, string_hash, bb_data_free, edge_decorator_free);
+	RzGraph *cfg = rz_graph_new(RZ_GRAPH_IMPL_LIST, node_hash, bb_data_free, edge_decorator_free);
 	mu_assert_notnull(cfg, "cfg creation");
 
 	// Create basic blocks
@@ -113,8 +119,10 @@ static bool test_cfg_basic(void) {
 	mu_assert_notnull(bb_ret, "bb_ret creation");
 
 	// Add nodes to CFG
-	RzGraphNode *node_entry = rz_graph_add_node(cfg, bb_entry, "bb_entry");
-	RzGraphNode *node_ret = rz_graph_add_node(cfg, bb_ret, "bb_return");
+	RzGraphNode *node_entry = NULL;
+	mu_assert_eq(rz_graph_add_node(cfg, bb_entry, &node_entry), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *node_ret = NULL;
+	mu_assert_eq(rz_graph_add_node(cfg, bb_ret, &node_ret), RZ_GRAPH_STATUS_OK, "Failed to add");
 
 	mu_assert_notnull(node_entry, "add node_entry");
 	mu_assert_notnull(node_ret, "add node_ret");
@@ -122,15 +130,14 @@ static bool test_cfg_basic(void) {
 
 	// Add edge
 	EdgeData *edge_data = create_edge_data(EDGE_TYPE_FALLTHROUGH, NULL);
-	bool success = rz_graph_add_edge(cfg, node_entry, node_ret, edge_data);
-	mu_assert_true(success, "add edge");
+	mu_assert_eq(rz_graph_add_edge(cfg, node_entry, node_ret, edge_data), RZ_GRAPH_STATUS_OK, "add edge");
 	mu_assert_eq(rz_graph_count_edges(cfg), 1, "n_edges");
 
 	// Test node lookup by name
-	RzGraphNode *found = rz_graph_find_node(cfg, "bb_entry");
+	RzGraphNode *found = rz_graph_find_node(cfg, string_hash("bb_entry"));
 	mu_assert_ptreq(found, node_entry, "find bb_entry");
 
-	found = rz_graph_find_node(cfg, "bb_return");
+	found = rz_graph_find_node(cfg, string_hash("bb_return"));
 	mu_assert_ptreq(found, node_ret, "find bb_return");
 
 	rz_graph_free(cfg);
@@ -185,7 +192,7 @@ static bool test_cfg_basic(void) {
  * 12. loop_inc -> loop_cond         (fallthrough, back edge)
  */
 static bool test_cfg_foo_function(void) {
-	RzGraph *cfg = rz_graph_new(RZ_GRAPH_IMPL_LIST, string_hash, bb_data_free, edge_decorator_free);
+	RzGraph *cfg = rz_graph_new(RZ_GRAPH_IMPL_LIST, node_hash, bb_data_free, edge_decorator_free);
 	mu_assert_notnull(cfg, "cfg creation");
 
 	// Create basic blocks for foo function
@@ -202,17 +209,28 @@ static bool test_cfg_foo_function(void) {
 	BasicBlockNodeData *bb_ret_sum = create_bb_data("bb_ret_sum", 10, 0x1060, 8);
 
 	// Add nodes to CFG
-	RzGraphNode *n_entry = rz_graph_add_node(cfg, bb_entry, "bb_entry");
-	RzGraphNode *n_check_n = rz_graph_add_node(cfg, bb_check_n, "bb_check_n");
-	RzGraphNode *n_ret_zero = rz_graph_add_node(cfg, bb_ret_zero, "bb_ret_zero");
-	RzGraphNode *n_loop_init = rz_graph_add_node(cfg, bb_loop_init, "bb_loop_init");
-	RzGraphNode *n_loop_cond = rz_graph_add_node(cfg, bb_loop_cond, "bb_loop_cond");
-	RzGraphNode *n_loop_body_check = rz_graph_add_node(cfg, bb_loop_body_check, "bb_loop_body_check");
-	RzGraphNode *n_even = rz_graph_add_node(cfg, bb_even, "bb_even");
-	RzGraphNode *n_odd = rz_graph_add_node(cfg, bb_odd, "bb_odd");
-	RzGraphNode *n_check_sum = rz_graph_add_node(cfg, bb_check_sum, "bb_check_sum");
-	RzGraphNode *n_loop_inc = rz_graph_add_node(cfg, bb_loop_inc, "bb_loop_inc");
-	RzGraphNode *n_ret_sum = rz_graph_add_node(cfg, bb_ret_sum, "bb_ret_sum");
+	RzGraphNode *n_entry = NULL;
+	mu_assert_eq(rz_graph_add_node(cfg, bb_entry, &n_entry), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n_check_n = NULL;
+	mu_assert_eq(rz_graph_add_node(cfg, bb_check_n, &n_check_n), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n_ret_zero = NULL;
+	mu_assert_eq(rz_graph_add_node(cfg, bb_ret_zero, &n_ret_zero), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n_loop_init = NULL;
+	mu_assert_eq(rz_graph_add_node(cfg, bb_loop_init, &n_loop_init), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n_loop_cond = NULL;
+	mu_assert_eq(rz_graph_add_node(cfg, bb_loop_cond, &n_loop_cond), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n_loop_body_check = NULL;
+	mu_assert_eq(rz_graph_add_node(cfg, bb_loop_body_check, &n_loop_body_check), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n_even = NULL;
+	mu_assert_eq(rz_graph_add_node(cfg, bb_even, &n_even), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n_odd = NULL;
+	mu_assert_eq(rz_graph_add_node(cfg, bb_odd, &n_odd), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n_check_sum = NULL;
+	mu_assert_eq(rz_graph_add_node(cfg, bb_check_sum, &n_check_sum), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n_loop_inc = NULL;
+	mu_assert_eq(rz_graph_add_node(cfg, bb_loop_inc, &n_loop_inc), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n_ret_sum = NULL;
+	mu_assert_eq(rz_graph_add_node(cfg, bb_ret_sum, &n_ret_sum), RZ_GRAPH_STATUS_OK, "Failed to add");
 
 	mu_assert_eq(rz_graph_count_nodes(cfg), 11, "n_nodes");
 
@@ -272,9 +290,9 @@ static bool test_cfg_foo_function(void) {
 	mu_assert_eq(rz_graph_count_edges(cfg), 13, "n_edges");
 
 	// verify some critical one
-	mu_assert_true(rz_graph_has_edge(cfg, n_entry, n_check_n, NULL), "edge: entry->check_n");
-	mu_assert_true(rz_graph_has_edge(cfg, n_loop_inc, n_loop_cond, NULL), "edge: loop_inc->loop_cond (back edge)");
-	mu_assert_true(rz_graph_has_edge(cfg, n_check_sum, n_ret_sum, NULL), "edge: check_sum->ret_sum (break)");
+	mu_assert_eq(rz_graph_has_edge(cfg, n_entry, n_check_n), RZ_GRAPH_STATUS_OK, "edge: entry->check_n");
+	mu_assert_eq(rz_graph_has_edge(cfg, n_loop_inc, n_loop_cond), RZ_GRAPH_STATUS_OK, "edge: loop_inc->loop_cond (back edge)");
+	mu_assert_eq(rz_graph_has_edge(cfg, n_check_sum, n_ret_sum), RZ_GRAPH_STATUS_OK, "edge: check_sum->ret_sum (break)");
 
 	// verify out-neighbors of bb_check_n (should have 2)
 	RzIterator *it = rz_graph_out_neighbors(cfg, n_check_n);
@@ -310,15 +328,18 @@ static bool test_cfg_foo_function(void) {
 
 // Test edge data retrieval
 static bool test_cfg_edge_data(void) {
-	RzGraph *cfg = rz_graph_new(RZ_GRAPH_IMPL_LIST, string_hash, bb_data_free, edge_decorator_free);
+	RzGraph *cfg = rz_graph_new(RZ_GRAPH_IMPL_LIST, node_hash, bb_data_free, edge_decorator_free);
 
 	BasicBlockNodeData *bb1 = create_bb_data("bb1", 1, 0x1000, 16);
 	BasicBlockNodeData *bb2 = create_bb_data("bb2", 2, 0x1010, 16);
 	BasicBlockNodeData *bb3 = create_bb_data("bb3", 3, 0x1020, 16);
 
-	RzGraphNode *n1 = rz_graph_add_node(cfg, bb1, "bb1");
-	RzGraphNode *n2 = rz_graph_add_node(cfg, bb2, "bb2");
-	RzGraphNode *n3 = rz_graph_add_node(cfg, bb3, "bb3");
+	RzGraphNode *n1 = NULL;
+	mu_assert_eq(rz_graph_add_node(cfg, bb1, &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n2 = NULL;
+	mu_assert_eq(rz_graph_add_node(cfg, bb2, &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n3 = NULL;
+	mu_assert_eq(rz_graph_add_node(cfg, bb3, &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 
 	EdgeData *edge1 = create_edge_data(EDGE_TYPE_COND_TRUE, "x > 0");
 	EdgeData *edge2 = create_edge_data(EDGE_TYPE_COND_FALSE, "x <= 0");
@@ -352,7 +373,7 @@ static void tmp_discover(RzGraphNode *n, RzGraphVisitor *v) {
 
 // Test DFS on CFG
 static bool test_cfg_dfs(void) {
-	RzGraph *cfg = rz_graph_new(RZ_GRAPH_IMPL_LIST, string_hash, bb_data_free, edge_decorator_free);
+	RzGraph *cfg = rz_graph_new(RZ_GRAPH_IMPL_LIST, node_hash, bb_data_free, edge_decorator_free);
 
 	// Create a simple CFG
 	BasicBlockNodeData *bb_entry = create_bb_data("entry", 0, 0x1000, 8);
@@ -361,11 +382,16 @@ static bool test_cfg_dfs(void) {
 	BasicBlockNodeData *bb_merge = create_bb_data("merge", 3, 0x1018, 8);
 	BasicBlockNodeData *bb_exit = create_bb_data("exit", 4, 0x1020, 8);
 
-	RzGraphNode *n_entry = rz_graph_add_node(cfg, bb_entry, "entry");
-	RzGraphNode *n_if_true = rz_graph_add_node(cfg, bb_if_true, "if_true");
-	RzGraphNode *n_if_false = rz_graph_add_node(cfg, bb_if_false, "if_false");
-	RzGraphNode *n_merge = rz_graph_add_node(cfg, bb_merge, "merge");
-	RzGraphNode *n_exit = rz_graph_add_node(cfg, bb_exit, "exit");
+	RzGraphNode *n_entry = NULL;
+	mu_assert_eq(rz_graph_add_node(cfg, bb_entry, &n_entry), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n_if_true = NULL;
+	mu_assert_eq(rz_graph_add_node(cfg, bb_if_true, &n_if_true), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n_if_false = NULL;
+	mu_assert_eq(rz_graph_add_node(cfg, bb_if_false, &n_if_false), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n_merge = NULL;
+	mu_assert_eq(rz_graph_add_node(cfg, bb_merge, &n_merge), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n_exit = NULL;
+	mu_assert_eq(rz_graph_add_node(cfg, bb_exit, &n_exit), RZ_GRAPH_STATUS_OK, "Failed to add");
 
 	// Build CFG
 	rz_graph_add_edge(cfg, n_entry, n_if_true, create_edge_data(EDGE_TYPE_COND_TRUE, NULL));
@@ -392,7 +418,7 @@ static bool test_cfg_dfs(void) {
 
 // Test string hash collisions (edge case)
 static bool test_string_hash_lookup(void) {
-	RzGraph *cfg = rz_graph_new(RZ_GRAPH_IMPL_LIST, string_hash, bb_data_free, edge_decorator_free);
+	RzGraph *cfg = rz_graph_new(RZ_GRAPH_IMPL_LIST, node_hash, bb_data_free, edge_decorator_free);
 
 	// Add several nodes with different names
 	const char *names[] = {
@@ -402,7 +428,8 @@ static bool test_string_hash_lookup(void) {
 
 	for (int i = 0; i < 8; i++) {
 		BasicBlockNodeData *bb = create_bb_data(names[i], i, 0x1000 + i * 16, 16);
-		RzGraphNode *n = rz_graph_add_node(cfg, bb, (void *)names[i]);
+		RzGraphNode *n = NULL;
+		mu_assert_eq(rz_graph_add_node(cfg, bb, &n), RZ_GRAPH_STATUS_OK, "Failed to add");
 		mu_assert_notnull(n, "add node");
 	}
 
@@ -410,7 +437,7 @@ static bool test_string_hash_lookup(void) {
 
 	// Verify all nodes can be found by name
 	for (int i = 0; i < 8; i++) {
-		RzGraphNode *found = rz_graph_find_node(cfg, (void *)names[i]);
+		RzGraphNode *found = rz_graph_find_node(cfg, string_hash(names[i]));
 		mu_assert_notnull(found, "find node by name");
 
 		const BasicBlockNodeData *data = (const BasicBlockNodeData *)rz_graph_node_get_data(found);

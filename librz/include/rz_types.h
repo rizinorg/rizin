@@ -289,6 +289,10 @@ extern "C" {
 	#else
 		#define RZ_SYS_BITS (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
 	#endif
+#elif __alpha__
+	#define RZ_SYS_ARCH "alpha"
+	#define RZ_SYS_BITS RZ_SYS_BITS_64
+	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
 #else
 	#ifdef _MSC_VER
 		#if defined(_M_X64) || defined(_M_AMD64)

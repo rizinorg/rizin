@@ -19,6 +19,17 @@ RZ_API RZ_OWN RzBitVector *rz_reg_get_bv(RZ_NONNULL RzReg *reg, RZ_NONNULL RzReg
 		return rz_bv_new_zero(item->size);
 	}
 	RzRegSet *regset = &reg->regset[item->arena];
+	if (item->size == 1 && (item->offset % 8)) {
+		// a single-bit, non-byte-aligned register (e.g. a status-word flag) is
+		// stored at a fixed physical bit position, independent of endianness.
+		RzBitVector *bv = rz_bv_new(1);
+		if (!bv) {
+			return NULL;
+		}
+		bool bit = (regset->arena->bytes[item->offset / 8] >> (item->offset % 8)) & 1;
+		rz_bv_set(bv, 0, bit);
+		return bv;
+	}
 	if (reg->big_endian) {
 		return rz_bv_new_from_bytes_be(regset->arena->bytes, item->offset, item->size);
 	} else {

@@ -165,7 +165,9 @@ RZ_API RzAnalysis *rz_analysis_new(RZ_NULLABLE const char *sdb_types_path) {
 	}
 	analysis->ht_global_var = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_analysis_var_global_free);
 	analysis->ht_gadget_semantics = NULL;
-	analysis->ht_gadget = NULL;
+	analysis->gadget_cache[0] = NULL;
+	analysis->gadget_cache[1] = NULL;
+	analysis->gadget_cache[2] = NULL;
 	analysis->global_var_tree = NULL;
 	analysis->il_vm = NULL;
 	analysis->hash = rz_hash_new();
@@ -183,6 +185,14 @@ RZ_API void plugin_fini(RzAnalysis *analysis) {
 		RZ_LOG_ERROR("analysis plugin '%s' failed to terminate.\n", p->name);
 	}
 	analysis->plugin_data = NULL;
+}
+
+static void gadget_cache_free(RzGadgetCache *gadget_cache) {
+	if (!gadget_cache) {
+		return;
+	}
+	rz_rbtree_free(gadget_cache->tree, gadget_cache->free, NULL);
+	free(gadget_cache);
 }
 
 void __block_free_rb(RBNode *node, void *user);
@@ -221,6 +231,9 @@ RZ_API void rz_analysis_free(RZ_NULLABLE RzAnalysis *a) {
 	rz_str_constpool_fini(&a->constpool);
 	ht_sp_free(a->ht_global_var);
 	ht_up_free(a->ht_gadget_semantics);
+	for (int i = 0; i < 3; i++) {
+		gadget_cache_free(a->gadget_cache[i]);
+	}
 	ht_sp_free(a->plugins);
 	rz_analysis_debug_info_free(a->debug_info);
 	ht_sp_free(a->ht_virtual_xrefs);
@@ -513,6 +526,47 @@ RZ_API void rz_analysis_set_xrefs_to(RZ_NONNULL RzAnalysis *analysis, HtUP *xref
 	analysis->ht_xrefs_to = xrefs_to;
 }
 
+/**
+ * \brief Get the gadget cache for a specific gadget type.
+ * \param analysis Pointer to the RzAnalysis object.
+ * \param type The RzGadgetType of gadget cache to retrieve.
+ * \return A pointer to the requested RzGadgetCache, or NULL if the type is invalid.
+ */
+RZ_API RZ_BORROW RzGadgetCache *rz_analysis_get_gadget_cache(RZ_NONNULL RzAnalysis *analysis, RzGadgetType type) {
+	rz_return_val_if_fail(analysis, NULL);
+	if (type >= 3) {
+		return NULL;
+	}
+	return analysis->gadget_cache[type];
+}
+
+/**
+ * \brief Set the gadget cache in the analysis object for a specific gadget type.
+ *
+ * Takes ownership of `gadget_cache` pointer.
+ * The caller must not free it after passing it to this function.
+ * If a cache already exists for the given type, it will be freed before setting the new one.
+ *
+ * \param analysis Pointer to the RzAnalysis object.
+ * \param gadget_cache Pointer to the RzGadgetCache object to set.
+ * \param type The RzGadgetType of gadget cache to set.
+ */
+RZ_API void rz_analysis_set_gadget_cache(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzGadgetCache *gadget_cache, RzGadgetType type) {
+	rz_return_if_fail(analysis);
+	if (type < 3) {
+		if (analysis->gadget_cache[type] == gadget_cache) {
+			return;
+		}
+
+		// delete old cache
+		if (analysis->gadget_cache[type]) {
+			gadget_cache_free(analysis->gadget_cache[type]);
+		}
+
+		analysis->gadget_cache[type] = gadget_cache;
+	}
+}
+
 RZ_API RZ_BORROW HtUP *rz_analysis_get_gadget_semantics(RZ_NONNULL RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 	return analysis->ht_gadget_semantics;
@@ -781,6 +835,34 @@ RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
 
 	rz_type_db_set_cpu(analysis->typedb, cpu);
 	rz_type_db_reload(analysis->typedb, analysis->sdb_types_path);
+}
+
+/**
+ * \brief Get the currently selected CPU model.
+ *
+ * Prefer rz_analysis_is_cpu() when comparing this against some string.
+ *
+ * \return The current CPU model used by the analysis plugin.
+ */
+RZ_API RZ_NULLABLE const char *rz_analysis_get_cpu(RZ_NONNULL const RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->cpu;
+}
+
+/**
+ * \brief      Returns true if the given cpu matches the current one.
+ *
+ * \param      analysis  The RzAnalysis structure to use
+ * \param[in]  cpu       The cpu expected
+ *
+ * \return     If the given CPU matches returns true, otherwise false.
+ */
+RZ_API bool rz_analysis_is_cpu(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *cpu) {
+	rz_return_val_if_fail(analysis, false);
+	if (!cpu) {
+		return false;
+	}
+	return RZ_STR_EQ(cpu, analysis->cpu);
 }
 
 RZ_API int rz_analysis_set_big_endian(RzAnalysis *analysis, int bigend) {
@@ -1204,20 +1286,72 @@ RZ_API RzList /*<RzSearchKeyword *>*/ *rz_analysis_preludes(RzAnalysis *analysis
 	return NULL;
 }
 
-RZ_API bool rz_analysis_is_prelude(RzAnalysis *analysis, const ut8 *data, int len) {
-	RzList *l = rz_analysis_preludes(analysis);
-	if (l) {
-		RzSearchKeyword *kw;
-		RzListIter *iter;
-		rz_list_foreach (l, iter, kw) {
-			int ks = kw->keyword_length;
-			if (len >= ks && !memcmp(data, kw->bin_keyword, ks)) {
-				rz_list_free(l);
-				return true;
-			}
-		}
-		rz_list_free(l);
+static bool is_prelude(RzSearchKeyword *kw, const ut8 *data, size_t len) {
+	if (len < kw->keyword_length) {
+		return false;
 	}
+
+	len = RZ_MIN(len, kw->keyword_length);
+	ut64 offset = 0;
+	for (offset = 0; (len - offset) >= sizeof(ut64); offset += sizeof(ut64)) {
+		ut64 bval = rz_read_at_be64(data, offset);
+		ut64 eval = rz_read_at_be64(kw->bin_keyword, offset);
+		if (kw->bin_binmask && kw->binmask_length - offset > sizeof(ut64)) {
+			ut64 mask = rz_read_at_be64(kw->bin_binmask, offset);
+			bval &= mask;
+		}
+		if (bval != eval) {
+			return false;
+		}
+	}
+	for (; (len - offset) >= sizeof(ut32); offset += sizeof(ut32)) {
+		ut32 bval = rz_read_at_be32(data, offset);
+		ut32 eval = rz_read_at_be32(kw->bin_keyword, offset);
+		if (kw->bin_binmask && kw->binmask_length - offset > sizeof(ut32)) {
+			ut32 mask = rz_read_at_be32(kw->bin_binmask, offset);
+			bval &= mask;
+		}
+		if (bval != eval) {
+			return false;
+		}
+	}
+	if ((len - offset) >= sizeof(ut16)) {
+		ut16 bval = rz_read_at_be16(data, offset);
+		ut16 eval = rz_read_at_be16(kw->bin_keyword, offset);
+		if (kw->bin_binmask && kw->binmask_length - offset > sizeof(ut16)) {
+			ut16 mask = rz_read_at_be16(kw->bin_binmask, offset);
+			bval &= mask;
+		}
+		if (bval != eval) {
+			return false;
+		}
+		offset += sizeof(ut16);
+	}
+	if ((len - offset) >= sizeof(ut8)) {
+		ut8 bval = rz_read_at_be8(data, offset);
+		ut8 eval = rz_read_at_be8(kw->bin_keyword, offset);
+		if (kw->bin_binmask && kw->binmask_length - offset > sizeof(ut8)) {
+			ut8 mask = rz_read_at_be16(kw->bin_binmask, offset);
+			bval &= mask;
+		}
+		if (bval != eval) {
+			return false;
+		}
+	}
+	return true;
+}
+
+RZ_API bool rz_analysis_is_prelude(RzAnalysis *analysis, const ut8 *data, size_t len) {
+	RzList *l = rz_analysis_preludes(analysis);
+	RzSearchKeyword *kw;
+	RzListIter *iter;
+	rz_list_foreach (l, iter, kw) {
+		if (is_prelude(kw, data, len)) {
+			rz_list_free(l);
+			return true;
+		}
+	}
+	rz_list_free(l);
 	return false;
 }
 

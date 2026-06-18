@@ -544,7 +544,7 @@ RUN
 NAME=flag-func_sig order
 FILE=bins/elf/abcde-qt32
 CMDS=<<EOF
-e asm.demangle=true
+e asm.flags.real=true
 e asm.bytes=false
 e asm.sub.names=false
 e asm.sub.jmp=false
@@ -946,5 +946,27 @@ EXPECT=<<EOF
 |           0x0000001b      f64.const 3.141590
 |           0x00000024      f64.add
 \           0x00000025      end
+EOF
+RUN
+
+NAME=asm.flags.real -- section flag at imported func; no dup cmt flag if color
+FILE=bins/elf/_Exit_0x91
+CMDS=<<EOF
+aa
+(pdcall real?; e asm.flags.real=${real?}; pd 1 @ $$+`aos 4`)
+e scr.color=0
+.(pdcall false)
+.(pdcall true)
+echo
+e scr.color=1
+.(pdcall false)
+.(pdcall true)
+EOF
+EXPECT=<<EOF
+\           0x0000103d      call  sym.imp._Exit                        ; void _Exit(int status)
+\           0x0000103d      call  _Exit                                ; void _Exit(int status)
+
+[36m\[0m           [32m0x0000103d[0m      [1;92mcall[0m[37m  [0m[37msym[0m[37m.[0m[37mimp[0m[37m.[0m[37m_[0m[37mExit[0m[0m[0m[31m                        ; void _Exit(int status)[0m
+[36m\[0m           [32m0x0000103d[0m      [1;92mcall[0m[37m  [0m[37m_[0m[37mExit[0m[0m[0m[31m                                ; void _Exit(int status)[0m
 EOF
 RUN

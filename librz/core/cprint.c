@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
+#include <rz_pf.h>
 
 #define STRING_CHUNK 16
 
@@ -1001,6 +1002,7 @@ static RZ_OWN pf_components *parse_named_pf_string(const char *fmt) {
 	}
 	// There is a format field specified
 	const char *dot = strchr(cur, '.');
+	bool has_field = dot != NULL;
 	if (dot) {
 		comp->name = rz_sub_str_ptr(fmt, cur, dot - 1);
 		cur = (char *)dot;
@@ -1015,9 +1017,17 @@ static RZ_OWN pf_components *parse_named_pf_string(const char *fmt) {
 	// There is a value to write specified
 	const char *eq = strchr(cur, '=');
 	if (eq) {
-		comp->field = rz_sub_str_ptr(fmt, cur + 1, eq - 1);
+		// `name.field=value` -- field is between cur+1 and eq-1, value
+		// follows eq. When no field-introducing dot was seen, the
+		// leading `cur+1` would slice into the format-name and emit a
+		// bogus field, so anchor the field extraction on the dot.
+		const char *field_start = has_field ? cur + 1 : eq;
+		if (has_field) {
+			comp->field = rz_sub_str_ptr(fmt, field_start, eq - 1);
+		}
 		comp->value = rz_sub_str_ptr(fmt, eq + 1, eq + strlen(eq));
-	} else {
+	} else if (has_field) {
+		// `name.field` (no value): field is everything after the dot.
 		comp->field = rz_sub_str_ptr(fmt, cur + 1, cur + strlen(cur));
 	}
 	return comp;
@@ -1039,6 +1049,52 @@ static RZ_OWN char *pf_get_format_name(const char *fmt) {
 	return rz_sub_str_ptr(fmt, start, end);
 }
 
+/* I/O callback for the pf parser: read \p len bytes at \p addr into
+ * \p buf from the core's I/O. Returns the byte count read or 0 on
+ * failure. The user pointer is the RzCore. */
+static int cprint_pf_read_at(void *user, ut64 addr, ut8 *buf, int len) {
+	RzCore *core = (RzCore *)user;
+	if (!core || !core->io) {
+		return 0;
+	}
+	/* Use read_at_mapped (the same callback rz_io_bind() exposes
+	 * via RzIOBind.read_at) since it honours io.cache writes at
+	 * virtual addresses that don't have a backing file map. The
+	 * stricter nread_at requires the full range to be covered by
+	 * real maps, which is wrong for pointer-deref of values that
+	 * live in cached writes (e.g. the test below).
+	 */
+	return rz_io_read_at_mapped(core->io, addr, buf, len) ? len : 0;
+}
+
+/* Map RZ_PRINT_* mode flags to RzPfMode. Centralised here so the
+ * mapping is documented next to the only caller (the new bridge),
+ * not buried in librz/type. */
+static RzPfMode cprint_pf_mode(int mode) {
+	if (mode & RZ_PRINT_JSON) {
+		return RZ_PF_MODE_JSON;
+	}
+	if (mode & RZ_PRINT_STRUCT) {
+		return RZ_PF_MODE_CSTRUCT;
+	}
+	if (mode & RZ_PRINT_DOT) {
+		return RZ_PF_MODE_DOT;
+	}
+	if (mode & RZ_PRINT_QUIET) {
+		return RZ_PF_MODE_QUIET;
+	}
+	if (mode & RZ_PRINT_VALUE) {
+		/* `pfv` -- prints just the field value(s) with no offset
+		 * /name/endian decoration. Reuses the QUIET renderer, which
+		 * already emits one bare scalar per field with no prefix. */
+		return RZ_PF_MODE_QUIET;
+	}
+	if (mode & RZ_PRINT_MUSTSET) {
+		return RZ_PF_MODE_WRITE;
+	}
+	return RZ_PF_MODE_TEXT;
+}
+
 /* Function allows to parse and print format in different syntaxes:
  * `pf .bla`
  * `pf foo.goo`
@@ -1056,51 +1112,361 @@ static RZ_OWN char *core_print_format(RzCore *core, const char *fmt, const char 
 
 	rz_core_seek(core, address, true);
 
-	// Try to parse the format string and detect if there is a possible name
+	/* Try to parse the format string and detect if there is a possible
+	 * name. The "name.field" / "name=value" syntax is decomposed here
+	 * so the rest of the pipeline never sees these convenience forms. */
 	pf_components *comp = NULL;
 	char *fmtname = pf_get_format_name(fmt);
 	if (fmtname) {
-		// To be sure it's the format name, receive the format string
 		const char *format = rz_type_db_format_get(typedb, fmtname);
 		if (format) {
 			comp = parse_named_pf_string(fmt);
-			// Value was passed not through "="
 			if (value && comp && !comp->value) {
 				comp->value = rz_str_dup(value);
 			}
 		}
 	}
-	int struct_sz = 0;
-	if (comp) {
-		// If the split into components is finished, use the only format name
-		struct_sz = rz_type_format_struct_size(typedb, comp->name, mode, 0);
-	} else {
-		struct_sz = rz_type_format_struct_size(typedb, fmt, mode, 0);
+	free(fmtname);
+
+	/* Resolve the (possibly named) format to a raw format string. */
+	const char *fmt_name_or_raw = comp ? comp->name : fmt;
+	const char *raw_fmt = fmt_name_or_raw;
+	if (typedb && !RZ_STR_ISEMPTY(fmt_name_or_raw)) {
+		const char *resolved = rz_pf_resolve_name(typedb, fmt_name_or_raw);
+		if (resolved) {
+			raw_fmt = resolved;
+		}
 	}
-	size_t size = RZ_MAX(core->blocksize, struct_sz);
-	// Make sure the whole format will be processed
-	if (size > core->blocksize) {
+
+	char *result = NULL;
+	if (RZ_STR_ISEMPTY(raw_fmt)) {
+		goto stage_left;
+	}
+
+	/* Size the read buffer to fit the structure. struct_size returns 0
+	 * for variable-length formats; in that case fall back to the
+	 * current block size. */
+	int struct_sz = rz_type_format_struct_size(typedb,
+		fmt_name_or_raw, mode, 0);
+	size_t size = RZ_MAX((size_t)core->blocksize, (size_t)struct_sz);
+	if (size > (size_t)core->blocksize) {
 		rz_core_block_size(core, size);
 	}
-	char *result = NULL;
 	ut8 *buf = calloc(1, size);
 	if (!buf) {
 		RZ_LOG_ERROR("core: cannot allocate %zu byte(s)\n", size);
 		goto stage_left;
 	}
 	memcpy(buf, core->block, core->blocksize);
-	free(fmtname);
-	// Use the component-based data formatting if split was correct
-	if (comp) {
-		result = rz_type_format_data(typedb, core->print, core->offset,
-			buf, size, comp->name, mode, comp->value, comp->field);
-	} else {
-		result = rz_type_format_data(typedb, core->print, core->offset,
-			buf, size, fmt, mode, value, NULL);
+
+	/* Build the parser context: typedb + I/O callback for pointer
+	 * dereferences + endianness/bits from the target. */
+	RzPfCtx ctx;
+	memset(&ctx, 0, sizeof(ctx));
+	ctx.typedb = typedb;
+	ctx.big_endian = typedb->target->big_endian;
+	ctx.bits = typedb->target->bits;
+	ctx.read_at = cprint_pf_read_at;
+	ctx.read_at_user = core;
+	ctx.max_depth = 32;
+
+	const char *field_filter = comp ? comp->field : NULL;
+	int pf_mode_raw = mode;
+	RzPfMode pf_mode = cprint_pf_mode(pf_mode_raw);
+
+	if (pf_mode == RZ_PF_MODE_WRITE) {
+		/* Write mode: parse the format, find the named field by its
+		 * offset and type, encode the new value, write it back via
+		 * the I/O layer. */
+		const char *write_val = comp ? comp->value : value;
+		if (RZ_STR_ISEMPTY(field_filter) || RZ_STR_ISEMPTY(write_val)) {
+			RZ_LOG_ERROR("pf: write mode requires "
+				     "<format>.<field> <value>\n");
+			free(buf);
+			goto stage_left;
+		}
+		RzPfFormat *parsed = rz_pf_parse(raw_fmt);
+		if (!parsed) {
+			RZ_LOG_ERROR("pf: cannot parse format string\n");
+			free(buf);
+			goto stage_left;
+		}
+		int nvals = 0;
+		RzPfValue *vals = rz_pf_read(parsed, buf, size, address,
+			&ctx, &nvals);
+
+		/* Locate the target field by name. The `field_filter` may
+		 * be a dotted path into nested structs (e.g. `Buh.first` or
+		 * `Buh.Boh.Bah.Bah.word`); walk through children at each
+		 * dot. */
+		const RzPfValue *target = NULL;
+		{
+			const RzPfValue *cur_vals = vals;
+			int cur_n = nvals;
+			const char *seg_start = field_filter;
+			while (seg_start && *seg_start) {
+				const char *seg_end = strchr(seg_start, '.');
+				size_t seg_len = seg_end
+					? (size_t)(seg_end - seg_start)
+					: strlen(seg_start);
+				const RzPfValue *found = NULL;
+				for (int i = 0; cur_vals && i < cur_n; i++) {
+					if (cur_vals[i].name &&
+						strlen(cur_vals[i].name) == seg_len &&
+						!strncmp(cur_vals[i].name,
+							seg_start, seg_len)) {
+						found = &cur_vals[i];
+						break;
+					}
+				}
+				if (!found) {
+					target = NULL;
+					break;
+				}
+				if (!seg_end) {
+					target = found;
+					break;
+				}
+				/* Descend into children for the next segment. */
+				cur_vals = found->children;
+				cur_n = found->nchildren;
+				seg_start = seg_end + 1;
+			}
+		}
+		if (!target) {
+			RZ_LOG_ERROR("pf: write mode: field '%s' not found\n",
+				field_filter);
+			rz_pf_format_free(parsed);
+			rz_pf_values_free(vals, nvals);
+			free(buf);
+			goto stage_left;
+		}
+
+		ut64 target_off = target->offset;
+		bool target_be = target->endian == RZ_PF_ENDIAN_BE || (target->endian == RZ_PF_ENDIAN_CTX && ctx.big_endian);
+
+		/* Right-align the field label to the widest name in the
+		 * format, so successive `pfw fmt.a` / `pfw fmt.b` lines
+		 * line up on the `=` column. */
+		int label_w = (int)strlen(field_filter);
+		for (int i = 0; vals && i < nvals; i++) {
+			if (vals[i].name) {
+				int n = (int)strlen(vals[i].name);
+				if (n > label_w) {
+					label_w = n;
+				}
+			}
+		}
+
+		RzStrBuf *out = rz_strbuf_new("");
+		if (target->type == RZ_PF_ZSTRING && !target->is_pointer) {
+			/* Inline string: encode the value according to the
+			 * field's encoding (default UTF-8) and write the
+			 * resulting bytes. The slot is not extended; residual
+			 * trailing bytes remain in place, mirroring legacy
+			 * semantics. */
+			const char *s = write_val;
+			size_t slen = strlen(s);
+			if (slen >= 2 && s[0] == '"' && s[slen - 1] == '"') {
+				s += 1;
+				slen -= 2;
+			}
+			RzStrEnc enc = target->encoding;
+			if (enc == RZ_STRING_ENC_UTF16LE || enc == RZ_STRING_ENC_UTF16BE) {
+				bool be = (enc == RZ_STRING_ENC_UTF16BE);
+				char *utf8 = rz_str_ndup(s, slen);
+				if (utf8) {
+					ut16 *wide = rz_str_utf8_to_utf16(utf8, be);
+					if (wide) {
+						int n = 0;
+						while (wide[n]) {
+							n++;
+						}
+						if (n > 0) {
+							rz_io_write_at(core->io,
+								target_off,
+								(const ut8 *)wide,
+								n * 2);
+						}
+						free(wide);
+					}
+					free(utf8);
+				}
+			} else {
+				/* UTF-8 / ASCII / unknown: raw byte write. */
+				if (slen > 0) {
+					rz_io_write_at(core->io, target_off,
+						(const ut8 *)s, slen);
+				}
+			}
+			/* Re-read the full slot to show the result of the
+			 * write. For wide encodings, decode the byte slot
+			 * back to a printable form so the confirmation
+			 * reflects what is actually in memory, not what was
+			 * passed in. If the encode/decode round-trip ever
+			 * regresses, this output will catch it instead of
+			 * silently echoing the input. For UTF-8 / ASCII the
+			 * raw bytes ARE the printable form, so the readback
+			 * is used directly. */
+			ut8 readback[256] = { 0 };
+			rz_io_read_at_mapped(core->io, target_off,
+				readback, sizeof(readback) - 1);
+			if (enc == RZ_STRING_ENC_UTF16LE || enc == RZ_STRING_ENC_UTF16BE) {
+				/* Find the wide-string length in bytes:
+				 * scan for the first 16-bit zero. The slot is
+				 * not extended on partial overwrite, so the
+				 * tail of the original wide content remains. */
+				int rlen = 0;
+				while (rlen + 1 < (int)sizeof(readback) - 1 && (readback[rlen] || readback[rlen + 1])) {
+					rlen += 2;
+				}
+				ut8 swap[256];
+				const ut8 *src = readback;
+				if (enc == RZ_STRING_ENC_UTF16BE) {
+					/* rz_str_utf16_decode expects LE byte
+					 * pairs; swap each pair for BE input. */
+					for (int i = 0; i + 1 < rlen; i += 2) {
+						swap[i] = readback[i + 1];
+						swap[i + 1] = readback[i];
+					}
+					src = swap;
+				}
+				char *decoded = rz_str_utf16_decode(src, rlen);
+				rz_strbuf_appendf(out,
+					"%*s : 0x%08" PFMT64x " = \"%s\"\n",
+					label_w, field_filter,
+					target_off - address,
+					decoded ? decoded : "");
+				free(decoded);
+			} else {
+				int rlen = 0;
+				while (rlen < (int)sizeof(readback) - 1 && readback[rlen]) {
+					rlen++;
+				}
+				rz_strbuf_appendf(out,
+					"%*s : 0x%08" PFMT64x " = \"%.*s\"\n",
+					label_w, field_filter,
+					target_off - address,
+					rlen, (const char *)readback);
+			}
+		} else {
+			/* Scalar / pointer write. */
+			ut64 v = rz_num_math(core->num, write_val);
+			int width;
+			if (target->is_pointer) {
+				width = ctx.bits / 8;
+			} else {
+				width = rz_pf_field_size(target->type);
+			}
+			if (width < 1 || width > 8) {
+				RZ_LOG_ERROR("pf: write mode: cannot determine "
+					     "size for field '%s' (type=%d)\n",
+					field_filter, (int)target->type);
+				rz_strbuf_free(out);
+				rz_pf_format_free(parsed);
+				rz_pf_values_free(vals, nvals);
+				free(buf);
+				goto stage_left;
+			}
+			ut8 wb[8] = { 0 };
+			if (target_be) {
+				for (int b = 0; b < width; b++) {
+					wb[width - 1 - b] = (v >> (b * 8)) & 0xff;
+				}
+			} else {
+				for (int b = 0; b < width; b++) {
+					wb[b] = (v >> (b * 8)) & 0xff;
+				}
+			}
+			rz_io_write_at(core->io, target_off, wb, width);
+			/* Re-read for the confirmation line. */
+			ut8 rb[8] = { 0 };
+			rz_io_read_at_mapped(core->io, target_off, rb, width);
+			ut64 readback = 0;
+			if (target_be) {
+				for (int b = 0; b < width; b++) {
+					readback = (readback << 8) | rb[b];
+				}
+			} else {
+				for (int b = width - 1; b >= 0; b--) {
+					readback = (readback << 8) | rb[b];
+				}
+			}
+			rz_strbuf_appendf(out,
+				"%*s : 0x%08" PFMT64x " = %" PFMT64u "\n",
+				label_w, field_filter,
+				target_off - address, readback);
+		}
+		result = rz_strbuf_drain(out);
+		rz_pf_format_free(parsed);
+		rz_pf_values_free(vals, nvals);
+		free(buf);
+		goto stage_left;
 	}
+
+	/* DOT mode and CSTRUCT mode use graph_label to title the output:
+	 * DOT puts it in the digraph header, CSTRUCT puts it after the
+	 * `struct` keyword (matching the legacy `struct <name> {` form).
+	 * When `pfc <name>` was used, comp->name holds the format name;
+	 * otherwise fall back to the raw format string. */
+	const char *graph_label = NULL;
+	if (pf_mode == RZ_PF_MODE_DOT || pf_mode == RZ_PF_MODE_CSTRUCT) {
+		const char *src = (comp && comp->name)
+			? comp->name
+			: fmt_name_or_raw;
+		/* Only use the resolved-name path if the typedb actually has
+		 * a format under that name -- otherwise `src` is the raw
+		 * format string (e.g. "x1cF8 a b c") which would inject the
+		 * specifier into `struct ... {`, which is wrong. */
+		if (src && rz_pf_resolve_name(typedb, src)) {
+			graph_label = src;
+		}
+	}
+
+	/* Issue rizinorg/rizin#782: when scr.color is enabled, supply a
+	 * palette so the text renderer emits ANSI escapes inline. Other
+	 * modes (json/cstruct/quiet/dot) ignore the palette.
+	 *
+	 * The palette is wired to the active color theme via
+	 * RzConsPrintablePalette so `pf` output blends with the rest of
+	 * Rizin's UI and respects user theme choices (`eco`):
+	 *   - pf field offset      <- pal->offset       (address column)
+	 *   - pf field name        <- pal->fname        (symbolic name)
+	 *   - pf endian marker     <- pal->meta         (metadata tag)
+	 *   - pf hex/number literal<- pal->num          (numeric value)
+	 *   - pf typedb label      <- pal->flag         (resolved symbol)
+	 */
+	RzPfPalette palette;
+	const RzPfPalette *palette_ptr = NULL;
+	if (pf_mode == RZ_PF_MODE_TEXT && rz_config_get_i(core->config, "scr.color") > 0) {
+		RzConsPrintablePalette *pal = &core->cons->context->pal;
+		palette.offset = pal->offset ? pal->offset : Color_GREEN;
+		palette.name = pal->fname ? pal->fname : Color_YELLOW;
+		palette.endian = pal->meta ? pal->meta : Color_BLUE;
+		palette.hex_literal = pal->num ? pal->num : Color_CYAN;
+		palette.label = pal->flag ? pal->flag : Color_MAGENTA;
+		palette.reset = pal->reset ? pal->reset : Color_RESET;
+		palette_ptr = &palette;
+	}
+
+	RzPfRenderOpts opts = {
+		.field_filter = field_filter,
+		.graph_label = graph_label,
+		.palette = palette_ptr,
+		.typedb = typedb,
+		.short_offsets = rz_config_get_b(core->config, "scr.pf.short"),
+	};
+	result = rz_pf_format(raw_fmt, buf, size, core->offset,
+		&ctx, pf_mode, &opts);
 	free(buf);
 
 stage_left:
+	if (comp) {
+		free(comp->name);
+		free(comp->field);
+		free(comp->value);
+		free(comp);
+	}
 	rz_core_seek(core, old_offset, true);
 	rz_core_block_size(core, o_blocksize);
 	return result;

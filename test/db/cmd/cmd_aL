@@ -11,6 +11,7 @@ adAeI 16 32 64   arm         BSD     ARM Capstone-based disassembler
 a____ 16 32 64   arm.as      LGPL3   as ARM Assembler (use RZ_ARM32_AS and RZ_ARM64_AS environment) (by pancake)
 adAeI 8 16       avr         LGPL3   Atmel AVR disassembler
 adA_I 16 32 64   bf          LGPL3   Brainfuck (by pancake, nibble) v4.0.0
+_dA__ 16         c166        LGPL3   Siemens/Infineon C166 microcontroller disassembler
 _dA__ 32         cbpf        LGPL3   CBPF disassembly plugin
 _dA__ 32         chip8       LGPL3   Chip8 disassembler
 _dA__ 16 32 64   cil         LGPL3   .NET CIL/MSIL (Common Intermediate Language) bytecode disassembler
@@ -37,6 +38,7 @@ _dA__ 32         m68k        BSD     Motorola 68K Capstone-based disassembler
 _dA__ 32         malbolge    LGPL3   Malbolge Ternary VM bytecode disassembler (by condret)
 _dA__ 32         mcore       LGPL3   Motorola MCORE disassembler
 _dA__ 16         mcs96       LGPL3   Intel MCS-96 disassembler (by condret)
+_dA__ 8          milstd1750  MIT     MIL-STD 1750 ISA disassembler
 adAeI 16 32 64   mips        BSD     MIPS Capstone-based disassembler
 _dA_I 16         msp430      LGPL3   Texas Instruments MSP430 disassembler
 adA__ 16 32 64   null        MIT     NULL (empty) disassembler (by pancake) v1.0.0
@@ -55,11 +57,11 @@ _dA__ 8 16       snes        LGPL3   SuperNES CPU disassembler
 _dA_I 32 64      sparc       BSD     Sun SPARC Capstone-based disassembler
 _dA__ 16         spc700      LGPL3   Sony SPC700 (Nintendo SuperNES sound-chip) disassembler
 _dA__ 32 64      sysz        BSD     IBM SystemZ (S/390) Capstone-based disassembler
-_dA__ 32         tms320      LGPL3   Texas Instruments TMS320 DSP family (c54x,c55x,c55x+,c64x) disassembler
+_dA_I 32         tms320      LGPL3   Texas Instruments TMS320 DSP family (c54x,c55x,c55x+,c64x) disassembler
 _dA_I 32         tricore     BSD     Siemens TriCore Capstone-based disassembler (by billow)
 _dAeI 32         v810        LGPL3   NEC V810 disassembler (by pancake)
 _dAeI 32         v850        LGPL3   NEC/Renesas V850 disassembler
-_dA__ 8 32       vax         GPL3    DEC VAX disassembler
+_dA__ 32         vax         LGPL3   DEC VAX-11 disassembler (by xvilka)
 adA__ 32         wasm        MIT     WebAssembly disassembler (by cgvwzq) v0.1.0
 _dAeI 16 32 64   x86         MIT     X86/X86_64 Zydis-based disassembler
 a____ 16 32 64   x86.as      LGPL3   Intel X86 GNU Assembler (Use RZ_X86_AS env)
@@ -164,6 +166,13 @@ HCS12X          Freescale HCS12X: 16-bit microcontroller (upwards compatible wit
 68040           Motorola 68040: High-performance 32-bit microprocessor with integrated FPU
 68060           Motorola 68060: 32-bit microprocessor, highest performer in m68k series
 cpu32           Motorola CPU32: 32-bit embedded-controller CPU core based on the 68020
+coldfire        Motorola ColdFire: 32-bit embedded-controller family based on the 68000 ISA
+cfv1            Motorola ColdFire V1 core
+cfv2            Motorola ColdFire V2 core
+cfv3            Motorola ColdFire V3 core
+cfv4            Motorola ColdFire V4 core
+cfv4e           Motorola ColdFire V4e core with enhanced MAC and FPU features
+cfv5            Motorola ColdFire V5 core
 baseline        Baseline 12-bit instruction set microcontrollers: PIC10Fxxx, PIC12Fxxx, and PIC16Fxxx
 midrange        Mid-Range 14-bit instruction set microcontrollers: PIC10Fxxx, PIC12Fxxx, and PIC16Fxxx
 highend         High-End 16-bit instruction set microcontrollers: PIC18Fxxxx, PIC18FxxJxx, and PIC18FxxKxx
@@ -180,4 +189,3 @@ c64x            Texas Instruments TMS320C64x DSP family
 tricore         Generic TriCore CPU family by Infineon
 EOF
 RUN
-

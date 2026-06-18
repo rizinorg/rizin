@@ -45,26 +45,11 @@ struct search_parameters {
 	bool regex_search;
 };
 
-static RzGadgetType gadget_type_from_cmd(const char *cmd_name) {
-	rz_return_val_if_fail(cmd_name && cmd_name[0] && cmd_name[1], RZ_GADGET_TYPE_ROP);
-	switch (cmd_name[1]) {
-	case 'J':
-		return RZ_GADGET_TYPE_JOP;
-	case 'C':
-		return RZ_GADGET_TYPE_COP;
-	case 'R':
-	default:
-		return RZ_GADGET_TYPE_ROP;
-	}
-}
-
-RZ_IPI RzCmdStatus rz_cmd_info_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+static RzCmdStatus gadget_info(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state, RzGadgetType gadget_type) {
 	const char *input = argc > 1 ? argv[1] : "";
 	if (!input) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-
-	RzGadgetType gadget_type = gadget_type_from_cmd(argv[0]);
 
 	RzGadgetSearchContext *context = rz_core_gadget_search_context_new(core, gadget_type, input, false, RZ_GADGET_PRINT, RZ_GADGET_DETAIL_SEARCH_NON, state);
 	RzCmdStatus status = rz_core_gadget_info(core, context);
@@ -72,7 +57,22 @@ RZ_IPI RzCmdStatus rz_cmd_info_gadget_handler(RzCore *core, int argc, const char
 	return status;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_query_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+RZ_IPI RzCmdStatus rz_cmd_info_rop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_ROP;
+	return gadget_info(core, argc, argv, state, gadget_type);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_cop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_COP;
+	return gadget_info(core, argc, argv, state, gadget_type);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_jop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_JOP;
+	return gadget_info(core, argc, argv, state, gadget_type);
+}
+
+static RzCmdStatus query_gadget(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state, RzGadgetType gadget_type) {
 	RzPVector /*<RzGadgetConstraint *>*/ *constraints = rz_core_gadget_constraint_map_parse(core, argc, argv);
 	if (!constraints) {
 		return RZ_CMD_STATUS_ERROR;
@@ -81,8 +81,6 @@ RZ_IPI RzCmdStatus rz_cmd_query_gadget_handler(RzCore *core, int argc, const cha
 		rz_pvector_free(constraints);
 		return RZ_CMD_STATUS_INVALID;
 	}
-
-	RzGadgetType gadget_type = gadget_type_from_cmd(argv[0]);
 
 	RzGadgetSearchContext *context = rz_core_gadget_search_context_new(core, gadget_type, NULL, false,
 		RZ_GADGET_PRINT | RZ_GADGET_ANALYZE, RZ_GADGET_DETAIL_SEARCH_NON, state);
@@ -96,13 +94,26 @@ RZ_IPI RzCmdStatus rz_cmd_query_gadget_handler(RzCore *core, int argc, const cha
 	return cmd_status;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_search_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+RZ_IPI RzCmdStatus rz_cmd_query_rop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_ROP;
+	return query_gadget(core, argc, argv, state, gadget_type);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_query_cop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_COP;
+	return query_gadget(core, argc, argv, state, gadget_type);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_query_jop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_JOP;
+	return query_gadget(core, argc, argv, state, gadget_type);
+}
+
+static RzCmdStatus search_gadget(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state, RzGadgetType gadget_type) {
 	const char *input = argc > 1 ? argv[1] : "";
 	if (!input) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-
-	RzGadgetType gadget_type = gadget_type_from_cmd(argv[0]);
 
 	RzGadgetSearchContext *context = rz_core_gadget_search_context_new(core, gadget_type, input, true, RZ_GADGET_PRINT, RZ_GADGET_DETAIL_SEARCH_NON, state);
 	RzCmdStatus status = rz_core_gadget_search(core, context);
@@ -110,10 +121,23 @@ RZ_IPI RzCmdStatus rz_cmd_search_gadget_handler(RzCore *core, int argc, const ch
 	return status;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_detail_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	const char *input = argc > 1 ? argv[1] : "";
+RZ_IPI RzCmdStatus rz_cmd_search_rop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_ROP;
+	return search_gadget(core, argc, argv, state, gadget_type);
+}
 
-	RzGadgetType gadget_type = gadget_type_from_cmd(argv[0]);
+RZ_IPI RzCmdStatus rz_cmd_search_cop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_COP;
+	return search_gadget(core, argc, argv, state, gadget_type);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_search_jop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_JOP;
+	return search_gadget(core, argc, argv, state, gadget_type);
+}
+
+static RzCmdStatus detail_gadget(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state, RzGadgetType gadget_type) {
+	const char *input = argc > 1 ? argv[1] : "";
 
 	RzGadgetSearchContext *context = rz_core_gadget_search_context_new(core, gadget_type, input, false, RZ_GADGET_PRINT_DETAIL | RZ_GADGET_ANALYZE, RZ_GADGET_DETAIL_SEARCH_NON, state);
 	RzCmdStatus status = rz_core_gadget_search(core, context);
@@ -121,22 +145,78 @@ RZ_IPI RzCmdStatus rz_cmd_detail_gadget_handler(RzCore *core, int argc, const ch
 	return status;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_rop_search_stack_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+RZ_IPI RzCmdStatus rz_cmd_detail_rop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzGadgetType gadget_type = RZ_GADGET_TYPE_ROP;
+	return detail_gadget(core, argc, argv, state, gadget_type);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_detail_cop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_COP;
+	return detail_gadget(core, argc, argv, state, gadget_type);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_detail_jop_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_JOP;
+	return detail_gadget(core, argc, argv, state, gadget_type);
+}
+
+static RzCmdStatus gadget_search_stack_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state, RzGadgetType gadget_type) {
 	RzGadgetSearchContext *context = rz_core_gadget_search_context_new(core, gadget_type, argv[1], false, RZ_GADGET_PRINT_DETAIL | RZ_GADGET_ANALYZE, RZ_GADGET_DETAIL_SEARCH_STACK, state);
 	RzCmdStatus status = rz_core_gadget_info(core, context);
 	rz_core_gadget_search_context_free(context);
 	return status;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_gadget_search_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+RZ_IPI RzCmdStatus rz_cmd_rop_search_stack_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_ROP;
+	return gadget_search_stack_handler(core, argc, argv, state, gadget_type);
+}
 
-	RzGadgetType gadget_type = gadget_type_from_cmd(argv[0]);
+RZ_IPI RzCmdStatus rz_cmd_cop_search_stack_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_COP;
+	return gadget_search_stack_handler(core, argc, argv, state, gadget_type);
+}
 
+RZ_IPI RzCmdStatus rz_cmd_jop_search_stack_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_JOP;
+	return gadget_search_stack_handler(core, argc, argv, state, gadget_type);
+}
+
+static RzCmdStatus gadget_search_size(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state, RzGadgetType gadget_type) {
 	RzGadgetSearchContext *context = rz_core_gadget_search_context_new(core, gadget_type, argv[1], false, RZ_GADGET_PRINT_DETAIL | RZ_GADGET_ANALYZE, RZ_GADGET_DETAIL_SEARCH_SIZE, state);
 	RzCmdStatus status = rz_core_gadget_info(core, context);
 	rz_core_gadget_search_context_free(context);
 	return status;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_rop_gadget_search_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_ROP;
+	return gadget_search_size(core, argc, argv, state, gadget_type);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_cop_gadget_search_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_COP;
+	return gadget_search_size(core, argc, argv, state, gadget_type);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_jop_gadget_search_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzGadgetType gadget_type = RZ_GADGET_TYPE_JOP;
+	return gadget_search_size(core, argc, argv, state, gadget_type);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_clear_rop_gadget_cache_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_set_gadget_cache(core->analysis, NULL, RZ_GADGET_TYPE_ROP);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_clear_cop_gadget_cache_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_set_gadget_cache(core->analysis, NULL, RZ_GADGET_TYPE_COP);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_clear_jop_gadget_cache_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_set_gadget_cache(core->analysis, NULL, RZ_GADGET_TYPE_JOP);
+	return RZ_CMD_STATUS_OK;
 }
 
 static void cmd_search_bin(RzCore *core, RzInterval itv) {
@@ -1228,6 +1308,7 @@ static void __core_cmd_search_asm_infinite(RzCore *core, const char *arg) {
 		}
 		free(buf);
 	}
+	rz_list_free(boundaries);
 }
 
 static void __core_cmd_search_asm_byteswap(RzCore *core, int nth) {
@@ -1700,6 +1781,10 @@ static RzSearchOpt *setup_search_options(RzCore *core) {
 }
 
 static RzCmdStatus byte_pattern_search(RzCore *core, RZ_OWN RzSearchBytesPattern *pattern, RzCmdStateOutput *state) {
+	if (!pattern) {
+		RZ_LOG_ERROR("Failed to parse given pattern.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	RzSearchOpt *search_opts = setup_search_options(core);
 	RzList *hits = NULL;
 	if (!search_opts) {
@@ -1708,11 +1793,6 @@ static RzCmdStatus byte_pattern_search(RzCore *core, RZ_OWN RzSearchBytesPattern
 	}
 
 	CMD_SEARCH_BEGIN();
-
-	if (!pattern) {
-		RZ_LOG_ERROR("Failed to parse given pattern.\n");
-		goto error;
-	}
 
 	bool progress = rz_search_opt_get_show_progress(search_opts) != RZ_SEARCH_PROGRESS_DISABLED;
 	if (!rz_search_opt_set_cancel_cb(search_opts, cmd_search_progress_cancel, progress ? state : NULL)) {
@@ -1731,7 +1811,6 @@ static RzCmdStatus byte_pattern_search(RzCore *core, RZ_OWN RzSearchBytesPattern
 	return cmd_core_handle_search_hits(core, state, hits);
 
 error:
-	rz_search_bytes_pattern_free(pattern);
 	rz_list_free(hits);
 	rz_search_opt_free(search_opts);
 	CMD_SEARCH_END();
@@ -1783,7 +1862,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_assemble_handler(RzCore *core, int argc, const 
 	RzAsmCode *acode;
 	if (!(acode = rz_asm_massemble(core->rasm, argv[1]))) {
 		RZ_LOG_ERROR("Failed to assemble '%s'\n", argv[1]);
-		RZ_LOG_ERROR("Consider using \"/ar\" instead.\n");
+		RZ_LOG_ERROR("Consider using \"/ad\" instead.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	size_t len = acode->len;

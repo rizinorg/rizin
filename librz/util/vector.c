@@ -34,6 +34,8 @@
 #define RESIZE_OR_RETURN_NULL(next_capacity)  RESIZE_OR_RETURN_VAL(next_capacity, NULL)
 #define RESIZE_OR_RETURN_FALSE(next_capacity) RESIZE_OR_RETURN_VAL(next_capacity, false)
 
+#define RZ_VECTOR_SWAP_TMP_SIZE 256
+
 RZ_API void rz_vector_init(RzVector *vec, size_t elem_size, RzVectorFree free, void *free_user) {
 	rz_return_if_fail(vec);
 	vec->a = NULL;
@@ -244,6 +246,28 @@ RZ_API void *rz_vector_assign_at(RZ_BORROW RzVector *vec, size_t index, RZ_NULLA
 		vec->len = index + 1;
 	}
 	return p;
+}
+
+/**
+ * \brief Removes the element at the given index.
+ * This function will not keep the order of the elements.
+ * Due to this, it won't use memmove and has much better
+ * performance than rz_vector_remove_at().
+ *
+ * \param vec The vector to remove the element from.
+ * \param index The index of the element to remove.
+ * \param into Optional pointer to copy the removed element into.
+ */
+RZ_API void rz_vector_remove_at_unsorted(RZ_BORROW RzVector *vec, size_t index, RZ_OUT RZ_NULLABLE void *into) {
+	rz_return_if_fail(vec);
+	if (rz_vector_empty(vec)) {
+		return;
+	}
+	size_t l = rz_vector_len(vec) - 1;
+	if (index < l) {
+		rz_vector_swap(vec, index, l);
+	}
+	rz_vector_pop(vec, into);
 }
 
 RZ_API void rz_vector_remove_at(RzVector *vec, size_t index, void *into) {
@@ -470,18 +494,37 @@ RZ_API bool rz_vector_contains(const RZ_NONNULL RzVector *vec, const RZ_NONNULL 
 	return false;
 }
 
+/**
+ * \brief Swaps two elements in the vector.
+ *
+ * \param vec The vector to swap elements in.
+ * \param index_a The index of an element.
+ * \param index_b The index of another element.
+ *
+ * \return True if elements were swapped. False in case of error.
+ */
 RZ_API bool rz_vector_swap(RzVector *vec, size_t index_a, size_t index_b) {
 	rz_return_val_if_fail(vec && index_a < vec->len && index_b < vec->len, false);
-	ut8 *tmp = malloc(vec->elem_size);
-	if (!tmp) {
-		return false;
+	if (index_a == index_b) {
+		return true;
 	}
 	void *elem_a = rz_vector_index_ptr(vec, index_a);
 	void *elem_b = rz_vector_index_ptr(vec, index_b);
+
+	ut8 stack_tmp[RZ_VECTOR_SWAP_TMP_SIZE];
+	void *tmp = vec->elem_size <= sizeof(stack_tmp) ? stack_tmp : malloc(vec->elem_size);
+	if (RZ_UNLIKELY(!tmp)) {
+		rz_warn_if_reached();
+		return false;
+	}
+
 	memcpy(tmp, elem_a, vec->elem_size);
 	memcpy(elem_a, elem_b, vec->elem_size);
 	memcpy(elem_b, tmp, vec->elem_size);
-	free(tmp);
+
+	if (tmp != stack_tmp) {
+		free(tmp);
+	}
 	return true;
 }
 
@@ -519,40 +562,71 @@ RZ_API RZ_OWN void *rz_vector_take_array(RZ_BORROW RzVector *vec) {
 
 // CLRS Quicksort. It is slow, but simple.
 #define VEC_INDEX(a, i) (char *)a + elem_size *(i)
+
+// Recursive quicksort. \p t and \p pivot are caller-provided scratch buffers of
+// elem_size bytes each; they are reused across the whole recursion so the sort
+// performs no per-call allocation.
+static void vector_quick_sort_rec(void *a, size_t elem_size, size_t len, RzVectorComparator cmp, bool reverse, void *user, void *t, void *pivot) {
+	if (len <= 1) {
+		return;
+	}
+	size_t i = rand() % len, j = 0;
+
+	memcpy(pivot, VEC_INDEX(a, i), elem_size);
+	if (i != len - 1) {
+		memcpy(VEC_INDEX(a, i), VEC_INDEX(a, len - 1), elem_size);
+	}
+	for (i = 0; i < len - 1; i++) {
+		int c = cmp(VEC_INDEX(a, i), pivot, user);
+		if ((c < 0 && !reverse) || (c > 0 && reverse)) {
+			if (j != i) {
+				memcpy(t, VEC_INDEX(a, i), elem_size);
+				memcpy(VEC_INDEX(a, i), VEC_INDEX(a, j), elem_size);
+				memcpy(VEC_INDEX(a, j), t, elem_size);
+			}
+			j++;
+		}
+	}
+	if (j != len - 1) {
+		memcpy(VEC_INDEX(a, len - 1), VEC_INDEX(a, j), elem_size);
+	}
+	memcpy(VEC_INDEX(a, j), pivot, elem_size);
+	vector_quick_sort_rec(a, elem_size, j, cmp, reverse, user, t, pivot);
+	vector_quick_sort_rec(VEC_INDEX(a, j + 1), elem_size, len - j - 1, cmp, reverse, user, t, pivot);
+}
+
+#define RZ_VECTOR_SORT_TMP_SIZE 256
+
 static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzVectorComparator cmp, bool reverse, void *user) {
 	rz_return_if_fail(a);
 	if (len <= 1) {
 		return;
 	}
-	size_t i = rand() % len, j = 0;
-	void *t, *pivot;
-
-	t = (void *)malloc(elem_size);
-	pivot = (void *)malloc(elem_size);
+	// Allocate the two scratch buffers once for the whole sort instead of on
+	// every recursive call. Small elements (the common case) use the stack.
+	ut8 t_buf[RZ_VECTOR_SORT_TMP_SIZE];
+	ut8 pivot_buf[RZ_VECTOR_SORT_TMP_SIZE];
+	void *t = elem_size <= RZ_VECTOR_SORT_TMP_SIZE ? (void *)t_buf : malloc(elem_size);
+	void *pivot = elem_size <= RZ_VECTOR_SORT_TMP_SIZE ? (void *)pivot_buf : malloc(elem_size);
 	if (!t || !pivot) {
-		free(t);
-		free(pivot);
+		if (t != (void *)t_buf) {
+			free(t);
+		}
+		if (pivot != (void *)pivot_buf) {
+			free(pivot);
+		}
 		RZ_LOG_ERROR("Failed to allocate memory\n");
 		return;
 	}
 
-	memcpy(pivot, VEC_INDEX(a, i), elem_size);
-	memcpy(VEC_INDEX(a, i), VEC_INDEX(a, len - 1), elem_size);
-	for (i = 0; i < len - 1; i++) {
-		if ((cmp(VEC_INDEX(a, i), pivot, user) < 0 && !reverse) ||
-			(cmp(VEC_INDEX(a, i), pivot, user) > 0 && reverse)) {
-			memcpy(t, VEC_INDEX(a, i), elem_size);
-			memcpy(VEC_INDEX(a, i), VEC_INDEX(a, j), elem_size);
-			memcpy(VEC_INDEX(a, j), t, elem_size);
-			j++;
-		}
+	vector_quick_sort_rec(a, elem_size, len, cmp, reverse, user, t, pivot);
+
+	if (t != (void *)t_buf) {
+		free(t);
 	}
-	memcpy(VEC_INDEX(a, len - 1), VEC_INDEX(a, j), elem_size);
-	memcpy(VEC_INDEX(a, j), pivot, elem_size);
-	RZ_FREE(t);
-	RZ_FREE(pivot);
-	vector_quick_sort(a, elem_size, j, cmp, reverse, user);
-	vector_quick_sort(VEC_INDEX(a, j + 1), elem_size, len - j - 1, cmp, reverse, user);
+	if (pivot != (void *)pivot_buf) {
+		free(pivot);
+	}
 }
 #undef VEC_INDEX
 
@@ -742,6 +816,24 @@ RZ_API void *rz_pvector_assign_at(RZ_BORROW RZ_NONNULL RzPVector *vec, size_t in
 	return prev;
 }
 
+/**
+ * \brief Removes the element at the given index.
+ * This function will not keep the order of the elements.
+ * Due to this, it won't use memmove and has much better
+ * performance than rz_pvector_remove_at().
+ *
+ * \param vec The vector to remove the element from.
+ * \param index The index of the element to remove.
+ *
+ * \return The removed pointer. Or NULL in case of failure.
+ */
+RZ_API void *rz_pvector_remove_at_unsorted(RZ_BORROW RzPVector *vec, size_t index) {
+	rz_return_val_if_fail(vec, NULL);
+	void *r = rz_pvector_at(vec, index);
+	rz_vector_remove_at_unsorted(&vec->v, index, NULL);
+	return r;
+}
+
 RZ_API void *rz_pvector_remove_at(RzPVector *vec, size_t index) {
 	rz_return_val_if_fail(vec, NULL);
 	void *r = rz_pvector_at(vec, index);
@@ -755,7 +847,7 @@ RZ_API void rz_pvector_remove_data(RzPVector *vec, void *x) {
 		return;
 	}
 
-	size_t index = (el - (void **)vec->v.a) * sizeof(void **) / vec->v.elem_size;
+	size_t index = el - (void **)vec->v.a;
 	rz_vector_remove_at(&vec->v, index, NULL);
 }
 

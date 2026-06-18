@@ -4610,3 +4610,82 @@ RZ_API bool rz_string_enc_requires_scanning(RzStrEnc enc) {
 	rz_warn_if_reached();
 	return true;
 }
+
+// Unicode subscript digits U+2080..U+2089 and superscript digits
+// (U+2070, U+00B9, U+00B2, U+00B3, U+2074..U+2079), indexed by the
+// digit value 0..9. These are the single source of truth for the
+// subscript/superscript number rendering shared by the bit-vector and
+// float formatters and the RzIL Unicode exporter.
+static const char *const rz_str_subscript_digits[10] = {
+	"\u2080", "\u2081", "\u2082", "\u2083", "\u2084",
+	"\u2085", "\u2086", "\u2087", "\u2088", "\u2089"
+};
+
+static const char *const rz_str_superscript_digits[10] = {
+	"\u2070", "\u00b9", "\u00b2", "\u00b3", "\u2074",
+	"\u2075", "\u2076", "\u2077", "\u2078", "\u2079"
+};
+
+static bool str_append_glyph_digits(RzStrBuf *sb, ut32 n,
+	const char *const digits[10]) {
+	char buf[16];
+	rz_strf(buf, "%u", n);
+	for (const char *d = buf; *d; d++) {
+		if (!rz_strbuf_append(sb, digits[*d - '0'])) {
+			return false;
+		}
+	}
+	return true;
+}
+
+/**
+ * \brief Append \p n rendered as Unicode subscript digits to \p sb.
+ *
+ * For example 32 becomes the subscript "32" (U+2083 U+2082). This is
+ * the shared renderer for the bit-width/format-width subscripts used
+ * by bit-vector and float value formatting and by the RzIL Unicode
+ * exporter, so all of those stay byte-for-byte identical.
+ *
+ * \param sb Destination string buffer.
+ * \param n  The number to render.
+ * \return true on success, false on allocation failure.
+ */
+RZ_API bool rz_str_append_num_subscript(RZ_NONNULL RzStrBuf *sb, ut32 n) {
+	rz_return_val_if_fail(sb, false);
+	return str_append_glyph_digits(sb, n, rz_str_subscript_digits);
+}
+
+/**
+ * \brief Append \p n rendered as Unicode superscript digits to \p sb.
+ *
+ * The superscript counterpart of rz_str_append_num_subscript(); shared so
+ * the RzIL Unicode exporter and any other consumer render run-length
+ * style annotations identically.
+ *
+ * \param sb Destination string buffer.
+ * \param n  The number to render.
+ * \return true on success, false on allocation failure.
+ */
+RZ_API bool rz_str_append_num_superscript(RZ_NONNULL RzStrBuf *sb, ut32 n) {
+	rz_return_val_if_fail(sb, false);
+	return str_append_glyph_digits(sb, n, rz_str_superscript_digits);
+}
+
+/**
+ * \brief Render \p n as a freshly-allocated Unicode subscript string.
+ *
+ * Convenience wrapper around rz_str_append_num_subscript() for callers
+ * that want an owned string rather than appending to a buffer.
+ *
+ * \param n The number to render.
+ * \return A caller-owned string, or NULL on allocation failure.
+ */
+RZ_API RZ_OWN char *rz_str_num_subscript(ut32 n) {
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	if (!rz_str_append_num_subscript(&sb, n)) {
+		rz_strbuf_fini(&sb);
+		return NULL;
+	}
+	return rz_strbuf_drain_nofree(&sb);
+}

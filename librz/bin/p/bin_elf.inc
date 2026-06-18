@@ -435,6 +435,22 @@ static bool is_wordable_section(const char *name) {
 	return false;
 }
 
+/**
+ * \brief True for sections that hold Procedure Linkage Table stubs.
+ *
+ * Covers the architecture-independent names (.plt, .plt.got, .plt.sec, .iplt)
+ * and the MIPS-specific .MIPS.stubs. The GOT-side helper section .got.plt is
+ * intentionally excluded as it holds data, not stubs; callers additionally
+ * gate on SHF_EXECINSTR so only the executable stub section is marked.
+ */
+static bool is_plt_section(const char *name) {
+	return !strcmp(name, ".plt") ||
+		!strcmp(name, ".plt.got") ||
+		!strcmp(name, ".plt.sec") ||
+		!strcmp(name, ".iplt") ||
+		!strcmp(name, ".MIPS.stubs");
+}
+
 static RzBinElfNoteFile *note_file_for_load_segment(ELFOBJ *obj, Elf_(Phdr) * phdr) {
 	if (!Elf_(rz_bin_elf_has_notes)(obj)) {
 		return false;
@@ -803,6 +819,15 @@ static RzPVector /*<RzBinSection *>*/ *sections_obj(ELFOBJ *obj, size_t psize) {
 		} else if (!strcmp(ptr->name, "C")) {
 			ptr->is_data = true;
 		}
+		// String tables (e.g. .dynstr) and sections explicitly flagged with
+		// SHF_STRINGS hold NUL-terminated strings, not code. When such a
+		// section is mapped into memory (SHF_ALLOC) mark it so the string
+		// search picks up its contents (iz) and the disassembler renders it
+		// as strings instead of trying to decode it as instructions.
+		if ((section->flags & SHF_ALLOC) &&
+			(section->type == SHT_STRTAB || (section->flags & SHF_STRINGS))) {
+			ptr->has_strings = true;
+		}
 		if (is_wordable_section(ptr->name)) {
 			ptr->layout.type = RZ_META_TYPE_DATA;
 			ptr->layout.element_size = sizeof(Elf_(Addr));
@@ -812,7 +837,15 @@ static RzPVector /*<RzBinSection *>*/ *sections_obj(ELFOBJ *obj, size_t psize) {
 		ptr->vsize = section->size;
 		ptr->paddr = section->offset;
 		ptr->vaddr = section->rva;
-		ptr->type = section->type;
+		// Mark executable PLT stub sections (.plt, .MIPS.stubs, ...) with a
+		// Rizin-internal pseudo type so `iS` reports them as PLT instead of the
+		// generic PROGBITS. The SHF_EXECINSTR check keeps data sections such as
+		// .got.plt from being misclassified.
+		if (is_plt_section(ptr->name) && (section->flags & SHF_EXECINSTR)) {
+			ptr->type = RZ_BIN_ELF_SECTION_TYPE_PLT;
+		} else {
+			ptr->type = section->type;
+		}
 		ptr->flags = section->flags;
 		ptr->perm = section_perms_from_flags(section->flags);
 		rz_pvector_push(ret, ptr);

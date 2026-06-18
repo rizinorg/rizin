@@ -393,6 +393,15 @@ RZ_OWN RzList /*<char *>*/ *Elf_(rz_bin_elf_section_flag_to_rzlist)(ut64 flag);
 RZ_OWN RzVector /*<RzBinElfSection>*/ *Elf_(rz_bin_elf_convert_sections)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinObjectLoadOptions *options, RzVector /*<Elf_(Shdr)>*/ *sections);
 RZ_OWN RzVector /*<Elf_(Shdr)>*/ *Elf_(rz_bin_elf_sections_new)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_section_type_to_string)(ut64 type);
+
+/**
+ * \brief Rizin-internal pseudo section type used to mark Procedure Linkage
+ * Table sections (e.g. .plt, .plt.got, .plt.sec, .iplt and the MIPS
+ * .MIPS.stubs) in the `iS` output. It is placed just past SHT_HIUSER so that
+ * it can never clash with a real on-disk section type.
+ */
+#define RZ_BIN_ELF_SECTION_TYPE_PLT (SHT_HIUSER + 1)
+
 bool Elf_(rz_bin_elf_has_sections)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_strtab

@@ -127,3 +127,22 @@ Process with PID
 helloworld-gcc reopened in read-write mode
 EOF
 RUN
+
+NAME=ood/doc with spaced path
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+cp `ol.t:uri:quiet` "space helloworld"
+!chmod +x "space helloworld" #as cp drops it
+o--
+o "space helloworld"
+ood > $_
+doc > $_
+ood > $_
+dc
+o--
+rm "space helloworld"
+EOF
+EXPECT=<<EOF
+Hello world!
+EOF
+RUN

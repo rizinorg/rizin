@@ -103,7 +103,7 @@ static inline st64 rz_seek_offset(ut64 cur, ut64 length, st64 addr, int whence) 
 /* constructors */
 RZ_API RZ_OWN RzBuffer *rz_buf_new_empty(ut64 len);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_file(const char *file, int perm, int mode);
-RZ_API RZ_OWN RzBuffer *rz_buf_new_mmap(const char *file, int flags, int mode);
+RZ_API RZ_OWN RzBuffer *rz_buf_new_mmap(const char *file, int flags, int mode, RZ_NULLABLE void /* RzIO */ *io);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_slice(RzBuffer *b, ut64 offset, ut64 size);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_slurp(const char *file);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_sparse(ut8 Oxff);

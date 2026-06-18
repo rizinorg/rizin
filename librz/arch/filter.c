@@ -53,7 +53,17 @@ static bool replace_enum_hint(RzParse *p, RzAnalysisHint *hint, ut64 off, char *
 	const char *member = rz_type_db_enum_member_by_val(
 		p->analb.analysis->typedb, hint->enum_name, off);
 	if (!member) {
-		return false;
+		// Not an exact member: the value may be the bitwise OR of several flag
+		// members (e.g. the access(2) mode R_OK|W_OK == 6). Render it as the OR
+		// of the matching members when it decomposes cleanly.
+		char *bitfield = rz_type_db_enum_get_bitfield(
+			p->analb.analysis->typedb, hint->enum_name, off);
+		if (!bitfield) {
+			return false;
+		}
+		replace_number_token(out, out_len, data, num_start, num_end, bitfield);
+		free(bitfield);
+		return true;
 	}
 
 	char ename[512] = "";
@@ -586,7 +596,17 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 		ptr = ptr2;
 	}
 	if (data != str) {
-		strncpy(str, data, len);
+		// `data` is a colorized operand that may be longer than the
+		// destination buffer. rz_str_ncpy() truncates and always
+		// NUL-terminates (plain strncpy did neither, letting the operand run
+		// into the adjacent strsub[] buffer). A byte-bounded cut can still
+		// split a trailing ANSI escape, so when truncation happens re-trim to
+		// the visible length: rz_str_ansi_trim() consumes escapes atomically
+		// and stops at the last visible glyph, dropping the partial escape so
+		// we never emit a garbled "\x1b[..." sequence. See issue #3831.
+		if (rz_str_ncpy(str, data, len) >= (size_t)len) {
+			rz_str_ansi_trim(str, -1, rz_str_ansi_len(str));
+		}
 	} else {
 		eprintf("Invalid str/data inputs\n");
 	}

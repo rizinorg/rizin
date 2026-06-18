@@ -132,7 +132,15 @@ static hash_data_t hashes_to_test[] = {
 	{ INDATA("password"), .algo = "entropy", .expected = "2.75000000" },
 	{ INDATA("password"), .algo = "entropy_fract", .expected = "0.91666667" },
 	{ INDATA("abcdefgh"), .algo = "temperature", .expected = "1.00000000" },
-	{ INDATA("a"), .algo = "temperature", .expected = "0.00000000" }
+	{ INDATA("a"), .algo = "temperature", .expected = "0.00000000" },
+	{ INDATA("password"), .algo = "chisquare", .expected = "312.00000000" },
+	{ INDATA("admin"), .algo = "chisquare", .expected = "251.00000000" },
+	{ INDATA("password"), .algo = "ioc", .expected = "0.03571429" },
+	{ INDATA("admin"), .algo = "ioc", .expected = "0.00000000" },
+	{ INDATA("password"), .algo = "minentropy", .expected = "2.00000000" },
+	{ INDATA("admin"), .algo = "minentropy", .expected = "2.32192809" },
+	{ INDATA("password"), .algo = "serialcorr", .expected = "-0.16463233" },
+	{ INDATA("admin"), .algo = "serialcorr", .expected = "-0.18296530" }
 #undef INDATA
 };
 

@@ -1412,7 +1412,7 @@ RZ_API bool rz_bin_map_is_data(RZ_NONNULL const RzBinMap *map) {
  * \param bin RzBin instance
  * \param type A type field of the RzBinSection (differs between formats)
  * */
-RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, int type) {
+RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, ut64 type) {
 	RzBinFile *a = rz_bin_cur(bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
 	if (plugin && plugin->section_type_to_string) {

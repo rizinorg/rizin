@@ -141,10 +141,15 @@ RZ_API RZ_OWN RzCallable *rz_type_func_new(RzTypeDB *typedb, RZ_NONNULL const ch
 }
 
 /**
- * \brief Stores RzCallable type in the types database
+ * \brief Stores the given RzCallable type in the types database
  *
- * \param typedb Type Database instance
- * \param callable RzCallable type to save
+ * \param typedb Types Database instance
+ * \param callable RzCallable to store; ownership is transferred only on success
+ * \return true if \p callable was stored, false if a callable with the same
+ *         name already exists or the arguments are invalid
+ *
+ * On failure the database does not take ownership of \p callable, so the
+ * caller remains responsible for freeing it with rz_type_callable_free().
  */
 RZ_API bool rz_type_func_save(RzTypeDB *typedb, RZ_NONNULL RzCallable *callable) {
 	rz_return_val_if_fail(typedb && callable && callable->name, false);

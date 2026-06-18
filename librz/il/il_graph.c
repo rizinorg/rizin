@@ -784,7 +784,7 @@ static void il_op_effect_graph_resolve(RzILOpEffect *op, RzGraph /*<RzGraphNodeI
  */
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *rz_il_op_pure_graph(RZ_NONNULL RzILOpPure *op, RZ_NULLABLE const char *name) {
 	rz_return_val_if_fail(op, NULL);
-	RzGraph *graph = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, NULL, NULL);
+	RzGraph *graph = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, rz_graph_free_node_info, NULL);
 	if (!graph) {
 		return NULL;
 	}
@@ -801,7 +801,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *rz_il_op_pure_graph(RZ_NO
  */
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *rz_il_op_effect_graph(RZ_NONNULL RzILOpEffect *op, RZ_NULLABLE const char *name) {
 	rz_return_val_if_fail(op, NULL);
-	RzGraph *graph = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, NULL, NULL);
+	RzGraph *graph = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, rz_graph_free_node_info, NULL);
 	if (!graph) {
 		return NULL;
 	}

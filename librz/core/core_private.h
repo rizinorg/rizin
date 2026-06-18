@@ -43,6 +43,7 @@ RZ_IPI void rz_core_debug_esil_watch_print(RzDebug *dbg, RzCmdStateOutput *state
 RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *varname, RzOutputMode mode);
 RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj);
 RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzIterator *iter, bool pretty, bool unicode);
+RZ_IPI void rz_core_il_colorize_body(RZ_NONNULL RzConsContext *ctx, RZ_NULLABLE const char *il_stmt);
 
 RZ_IPI void rz_core_analysis_devirtualize_cxx_methods(RZ_NULLABLE RzCore *core);
 RZ_IPI void rz_core_analysis_devirtualize_objc_methods(RZ_NULLABLE RzCore *core);
@@ -110,6 +111,8 @@ RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMo
 RZ_IPI void rz_core_types_struct_print_format_all(RzCore *core);
 RZ_IPI void rz_core_types_union_print_format_all(RzCore *core);
 RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode);
+RZ_IPI bool rz_core_types_rename(RzAnalysis *analysis, RZ_NONNULL const char *from, RZ_NONNULL const char *to);
+RZ_IPI void rz_core_types_typeclass_print_all(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_types_define(RzCore *core, const char *type);
 RZ_IPI bool rz_types_open_file(RzCore *core, const char *path);
 RZ_IPI bool rz_types_open_editor(RzCore *core, RZ_NONNULL const char *typename);

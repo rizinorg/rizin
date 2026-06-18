@@ -14,7 +14,9 @@ static void pdb_types_print_standard(const RzTypeDB *db, const RzPdb *pdb, const
 	RzBaseType *type;
 	RzStrBuf *buf = rz_strbuf_new(NULL);
 	rz_list_foreach (types, it, type) {
-		rz_strbuf_append(buf, rz_type_db_base_type_as_pretty_string(db, type, RZ_TYPE_PRINT_MULTILINE | RZ_TYPE_PRINT_END_NEWLINE, 1));
+		char *pretty = rz_type_db_base_type_as_pretty_string(db, type, RZ_TYPE_PRINT_MULTILINE | RZ_TYPE_PRINT_END_NEWLINE, 1);
+		rz_strbuf_append(buf, pretty);
+		free(pretty);
 	}
 	rz_cons_print(rz_strbuf_get(buf));
 	rz_strbuf_free(buf);
@@ -212,7 +214,7 @@ static void rz_core_bin_pdb_gvars_print(RzPdb *pdb, const ut64 baddr, RzCmdState
 }
 
 typedef struct {
-	const RzCore *core;
+	RzCore *core;
 	const ut64 baddr;
 	const char *file;
 } PDBLoadContext;
@@ -285,8 +287,53 @@ static bool symbol_load(RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 	return true;
 }
 
+/**
+ * \brief Second-pass callback that turns PDB public function symbols into
+ * analyzed functions.
+ *
+ * The PDB explicitly marks public symbols that are functions (cvpsfFunction).
+ * Some of these (e.g. virtual methods only reached through a vtable) are never
+ * discovered by call-following code analysis, so without this they would be
+ * present only as a flag and never show up as a function. This mirrors how
+ * \ref rz_core_analysis_all turns FUNC bin symbols into functions: it triggers
+ * analysis at the address and lets the already-set PDB flag name the function.
+ *
+ * This must run after all symbol flags have been set (see \ref pdb_symbols_load)
+ * so that functions reached by direct calls from here are also named correctly.
+ */
+static bool symbol_make_function(RzPdb *pdb, const PDBSymbol *symbol, void *u) {
+	if (!symbol || symbol->kind != PDB_Public) {
+		return true;
+	}
+	const PDBSPublic *public = symbol->data;
+	if (!public || !public->function || RZ_STR_ISEMPTY(public->name)) {
+		return true;
+	}
+	PDBLoadContext *ctx = u;
+	RzCore *core = ctx->core;
+	ut64 addr = rz_bin_pdb_to_rva(pdb, &public->offset);
+	if (addr == UT64_MAX) {
+		return true;
+	}
+	if (ctx->baddr != UT64_MAX) {
+		addr += ctx->baddr;
+	}
+	// Only create functions where executable code is actually mapped. This also
+	// keeps the symbol info (flags, types, globals) usable when no backing
+	// binary is loaded, since in that case no function will be created.
+	if (!rz_io_is_valid_offset(core->io, addr, RZ_PERM_X)) {
+		return true;
+	}
+	if (rz_analysis_get_function_at(core->analysis, addr)) {
+		return true;
+	}
+	int depth = rz_config_get_i(core->config, "analysis.depth");
+	rz_core_analysis_fcn(core, addr, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, depth);
+	return true;
+}
+
 static void pdb_symbols_load(
-	const RzCore *core, RzPdb *pdb, const char *pdbfile) {
+	RzCore *core, RzPdb *pdb, const char *pdbfile) {
 	rz_return_if_fail(core && pdb);
 	if (!(pdb->s_pe && pdb->s_gdata)) {
 		return;
@@ -307,6 +354,12 @@ static void pdb_symbols_load(
 	rz_pdb_all_symbols_foreach(pdb, symbol_load, &ctx);
 
 	rz_flag_space_pop(core->flags);
+
+	// Create functions for public function symbols in a separate pass, after
+	// every symbol flag has been set, so each function (and any function it
+	// directly calls) is named from its PDB flag.
+	rz_pdb_all_symbols_foreach(pdb, symbol_make_function, &ctx);
+
 	free(file);
 }
 

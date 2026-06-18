@@ -1,20 +1,25 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 // SPDX-FileCopyrightText: 2026 Sergey Sharshunov <s.sharshunov@gmail.com>
+// SPDX-FileCopyrightText: 2026 Arya-1-HR
 
 #include <rz_bin.h>
 #include <rz_lib.h>
 #include "librz/bin/format/luac/luac_common.h"
+#include "librz/bin/format/luac/luajit/luajit.h"
 
-#define GET_INTERNAL_BIN_INFO_OBJ(bf) ((LuacBinInfo *)(bf)->o->bin_obj)
-
-static bool luac_check_buffer(RzBuffer *b) {
-	ut8 buf[LUAC_MAGIC_SIZE] = { 0 };
-	if (rz_buf_size(b) <= LUAC_MAGIC_SIZE) {
-		return false;
+static int get_cpu_type(RzBuffer *buff) {
+	if (rz_buf_size(buff) >= LUAC_MAGIC_SIZE) { // Max size of magic is considered.
+		ut8 buf[LUAC_MAGIC_SIZE] = RZ_EMPTY;
+		rz_buf_read_at(buff, 0, buf, sizeof(buf));
+		if (!memcmp(buf, LUAC_MAGIC, LUAC_MAGIC_SIZE)) {
+			return LUAC_CPU;
+		}
+		if (!memcmp(buf, LUAJIT_MAGIC, LUAJIT_MAGIC_BYTE_SIZE)) {
+			return LUAJIT_CPU;
+		}
 	}
-	rz_buf_read_at(b, 0, buf, LUAC_MAGIC_SIZE);
-	return !memcmp(buf, LUAC_MAGIC, LUAC_MAGIC_SIZE);
+	return 0;
 }
 
 static int luac_cmp_sections(const void *a, const void *b) {
@@ -31,19 +36,23 @@ static bool luac_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb
 	const size_t header_size = parse_header(bf, header);
 	if (header_size == 0) {
 		RZ_LOG_ERROR("Invalid or truncated luac header\n");
+		RZ_FREE(header->src_file_name);
 		free(header);
 		return false;
 	}
 	LuaProto *proto = lua_parse_body(buf, header, header_size, bf->size);
 	if (!proto) {
 		RZ_LOG_ERROR("Invalid luac proto\n");
+		RZ_FREE(header->src_file_name);
 		free(header);
 		return false;
 	}
 
 	LuacBinInfo *bin_info_obj = luac_build_info(proto);
+	bin_info_obj->cpu = LUAC_CPU;
 	if (!bin_info_obj) {
 		lua_free_proto_entry(proto);
+		RZ_FREE(header->src_file_name);
 		free(bin_info_obj);
 		return false;
 	}
@@ -58,7 +67,7 @@ static bool luac_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb
 
 static RzBinInfo *luac_info(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
-	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
+	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(LuacBinInfo, bf);
 	if (!bin_info_obj) {
 		return NULL;
 	}
@@ -67,7 +76,7 @@ static RzBinInfo *luac_info(RzBinFile *bf) {
 
 static RzPVector /*<RzBinSection *>*/ *luac_sections(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
-	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
+	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(LuacBinInfo, bf);
 	if (!bin_info_obj) {
 		return NULL;
 	}
@@ -125,9 +134,18 @@ static RzPVector /*<RzBinMap *>*/ *luac_maps(RzBinFile *bf) {
 	return ret;
 }
 
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->info && bf->o->info->cpu, NULL);
+	if (rz_str_startswith(bf->o->info->cpu, "luajit")) {
+		return NULL;
+	} else {
+		return luac_maps(bf);
+	}
+}
+
 static RzPVector /*<RzBinSymbol *>*/ *luac_symbols(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
-	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
+	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(LuacBinInfo, bf);
 	if (!bin_info_obj) {
 		return NULL;
 	}
@@ -142,7 +160,7 @@ static RzPVector /*<RzBinSymbol *>*/ *luac_symbols(RzBinFile *bf) {
 
 static RzPVector /*<RzBinAddr *>*/ *luac_entries(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
-	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
+	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(LuacBinInfo, bf);
 	if (!bin_info_obj) {
 		return NULL;
 	}
@@ -157,9 +175,17 @@ static RzPVector /*<RzBinString *>*/ *luac_strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, &opt);
 }
 
-static void luac_destroy(RzBinFile *bf) {
-	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
-	luac_build_info_free(bin_info_obj);
+static void luajit_build_info_free(LuaJITBinInfo *bin_info) {
+	if (!bin_info) {
+		return;
+	}
+	RZ_FREE(bin_info->file_name);
+
+	rz_pvector_free(bin_info->entry_vec);
+	rz_list_free(bin_info->strings);
+	rz_pvector_free(bin_info->sections);
+	rz_list_free(bin_info->symbol_list);
+	free(bin_info);
 }
 
 static void luac_get_structured_data_protos(RzStructuredData *parent, LuaProto *proto, st32 minor) {
@@ -221,8 +247,11 @@ static void luac_get_structured_data_protos(RzStructuredData *parent, LuaProto *
 }
 
 static RzStructuredData *luac_structure(RzBinFile *bf) {
-	rz_return_val_if_fail(bf && bf->rbin && bf->o && bf->o->bin_obj, NULL);
-	const LuacBinInfo *obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
+	rz_return_val_if_fail(bf && bf->rbin && bf->o && bf->o->bin_obj && bf->o->info->cpu, NULL);
+	if (rz_str_startswith(bf->o->info->cpu, "luajit")) {
+		return NULL;
+	}
+	const LuacBinInfo *obj = GET_INTERNAL_BIN_INFO_OBJ(LuacBinInfo, bf);
 	const LuaHeaderInfo *header_info = (LuaHeaderInfo *)obj->header;
 
 	RzStructuredData *info = NULL;
@@ -276,21 +305,105 @@ fail:
 	return NULL;
 }
 
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	switch (get_cpu_type(buf)) {
+	case LUAJIT_CPU:
+		return luajit_load_buffer(bf, obj, buf, sdb);
+	case LUAC_CPU:
+		return luac_load_buffer(bf, obj, buf, sdb);
+	default:
+		return false;
+	}
+}
+
+static void destroy(RzBinFile *bf) {
+	rz_return_if_fail(bf && bf->o && bf->o->bin_obj);
+	int cpu_type = *(int *)bf->o->bin_obj;
+	switch (cpu_type) {
+	case LUAJIT_CPU: {
+		LuaJITBinInfo *bin_info_obj_luajit = GET_INTERNAL_BIN_INFO_OBJ(LuaJITBinInfo, bf);
+		rz_return_if_fail(bin_info_obj_luajit);
+		luajit_build_info_free(bin_info_obj_luajit);
+		break;
+	}
+	case LUAC_CPU: {
+		LuacBinInfo *bin_info_obj_luac = GET_INTERNAL_BIN_INFO_OBJ(LuacBinInfo, bf);
+		rz_return_if_fail(bin_info_obj_luac);
+		luac_build_info_free(bin_info_obj_luac);
+		break;
+	}
+	default:
+		return;
+	}
+}
+
+static bool check_buffer(RzBuffer *buff) {
+	return get_cpu_type(buff) != 0;
+}
+
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->info && bf->o->info->cpu, NULL);
+	if (rz_str_startswith(bf->o->info->cpu, "luajit")) {
+		return luajit_entries(bf);
+	} else {
+		return luac_entries(bf);
+	}
+}
+
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->info && bf->o->info->cpu, NULL);
+	if (rz_str_startswith(bf->o->info->cpu, "luajit")) {
+		return luajit_sections(bf);
+	} else {
+		return luac_sections(bf);
+	}
+}
+
+static RzPVector /*<RzBinSection *>*/ *symbols(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->info && bf->o->info->cpu, NULL);
+	if (rz_str_startswith(bf->o->info->cpu, "luajit")) {
+		return luajit_symbols(bf);
+	} else {
+		return luac_symbols(bf);
+	}
+}
+
+static RzBinInfo *info(RzBinFile *bf) {
+	rz_return_val_if_fail(bf, NULL);
+	switch (get_cpu_type(bf->buf)) {
+	case LUAJIT_CPU:
+		return luajit_info(bf);
+	case LUAC_CPU:
+		return luac_info(bf);
+	default:
+		return NULL;
+	}
+}
+
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->info && bf->o->info->cpu, NULL);
+	if (rz_str_startswith(bf->o->info->cpu, "luajit")) {
+		return luajit_strings(bf);
+	} else {
+		return luac_strings(bf);
+	}
+}
+
 RzBinPlugin rz_bin_plugin_luac = {
 	.name = "luac",
 	.desc = "Lua compiled binary",
 	.license = "LGPL3",
 	.author = "Heersin",
-	.load_buffer = &luac_load_buffer,
-	.destroy = &luac_destroy,
-	.check_buffer = &luac_check_buffer,
-	.entries = &luac_entries,
-	.sections = &luac_sections,
-	.symbols = &luac_symbols,
-	.info = &luac_info,
+	.load_buffer = &load_buffer,
+	.destroy = &destroy,
+	.check_buffer = &check_buffer,
+	.entries = &entries,
+	.sections = &sections,
+	.symbols = &symbols,
+	.info = &info,
 	.bin_structure = &luac_structure,
-	.strings = &luac_strings,
-	.maps = &luac_maps,
+	.strings = &strings,
+	.maps = &maps,
 };
 
 #ifndef RZ_PLUGIN_INCORE

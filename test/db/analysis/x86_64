@@ -552,12 +552,12 @@ afvW
   var_11ch  0x40f866
   var_100h
   var_111h
-var var_118h = 0x00177fc0 = (qword)0x1111111111111111
-var var_108h = 0x00177fd0 = (qword)0x0000000000000000
-var var_110h = 0x00177fc8 = (qword)0x0000000000000000
-var var_11ch = 0x00177fbc = (qword)0x1111111100000000
-var var_100h = 0x00177fd8 = (qword)0x0000000000000000
-var var_111h = 0x00177fc7 = (qword)0x0000000000000011
+var var_118h = 0x00177fc0 = 0x1111111111111111 [LE]
+var var_108h = 0x00177fd0 = 0x0000000000000000 [LE]
+var var_110h = 0x00177fc8 = 0x0000000000000000 [LE]
+var var_11ch = 0x00177fbc = 0x1111111100000000 [LE]
+var var_100h = 0x00177fd8 = 0x0000000000000000 [LE]
+var var_111h = 0x00177fc7 = 0x0000000000000011 [LE]
 EOF
 RUN
 
@@ -751,7 +751,7 @@ EXPECT=<<EOF
 0x00000188 0x24 0x08048188  0x24   0x0 -r-- .note.gnu.build-id NOTE alloc
 paddr size vaddr vsize align perm name type flags 
 --------------------------------------------------
-[{"name":".plt","size":240,"vsize":240,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":1888,"vaddr":134514528}]
+[{"name":".plt","size":240,"vsize":240,"perm":"-r-x","type":"PLT","flags":["alloc","execute"],"paddr":1888,"vaddr":134514528}]
 EOF
 RUN
 
@@ -912,15 +912,15 @@ e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 pd 1
-Cf 1 x
+Cf 1 x4
 pd 1
 Cf-
 pd 1
 EOF
 EXPECT=<<EOF
             0x00000000      57             push  rdi
-            0x00000000 pf x # size=1
-0x00000000 = 0x6c726f57
+            0x00000000 pf x4 # size=1
+0x00000000 = 0x6c726f57 [LE]
             0x00000000      57             push  rdi
 EOF
 RUN
@@ -1786,8 +1786,8 @@ afvd arg_8h
 afvd var_14h
 EOF
 EXPECT=<<EOF
-arg arg_8h = 0x0000000c = -1
-var var_14h = 0xfffffffffffffff0 = -1
+arg arg_8h = 0x0000000c = -1 [LE]
+var var_14h = 0xfffffffffffffff0 = -1 [LE]
 EOF
 RUN
 
@@ -4418,5 +4418,17 @@ EXPECT=<<EOF
 |           ; arg int64_t arg_fh @ stack + 0xf
 |           0x001b9b30      push  r15
 |           0x001b9b32      push  r14
+EOF
+RUN
+NAME=global variables populated from ELF OBJ symbols without DWARF
+FILE=bins/elf/dectest64
+CMDS=<<EOF
+aaa
+avgl~global_var
+avgl~global_array
+EOF
+EXPECT=<<EOF
+global uint8_t [4] global_var @ 0x404050
+global uint8_t [8] global_array @ 0x404058
 EOF
 RUN

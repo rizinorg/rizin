@@ -131,7 +131,7 @@ bool test_analysis_graph_more() {
 		"{\"id\":2,\"title\":\"str.RPISEC___CrackMe_v2.0\",\"offset\":134516134,\"out_nodes\":[]},"
 		"{\"id\":3,\"title\":\"str.\",\"offset\":134516164,\"out_nodes\":[]},"
 		"{\"id\":4,\"title\":\"str.Password:\",\"offset\":134516194,\"out_nodes\":[]},"
-		"{\"id\":5,\"title\":\"data.08048dee\",\"offset\":134516206,\"out_nodes\":[]}"
+		"{\"id\":5,\"title\":\"str.d\",\"offset\":134516206,\"out_nodes\":[]}"
 		"]}\n",
 		"graph json");
 	rz_graph_free(g);
@@ -322,11 +322,107 @@ bool test_analysis_graph_cfg() {
 	rz_core_free(core);
 	mu_end;
 }
+
+bool test_analysis_graph_entrypoints() {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "new RzCore instance");
+	const char *fpath = "bins/elf/lab1B";
+	mu_assert_true(rz_core_file_open_load(core, fpath, 0, RZ_PERM_R, false), "load file");
+
+	rz_core_analysis_all(core);
+	rz_core_analysis_everything(core, false, "esil");
+	rz_core_analysis_flag_every_function(core);
+
+	RzAnalysisFunction *f = rz_analysis_get_function_byname(core->analysis, "main");
+	mu_assert_notnull(f, "find main");
+
+	// callgraph: direct call must match the dispatcher (FUNCALL).
+	RzGraph *direct = rz_core_graph_callgraph(core, f->addr);
+	mu_assert_notnull(direct, "callgraph direct");
+	RzGraph *via = rz_core_graph(core, RZ_CORE_GRAPH_TYPE_FUNCALL, f->addr);
+	mu_assert_notnull(via, "callgraph via dispatcher");
+	mu_assert_eq(rz_graph_get_n_nodes(direct), rz_graph_get_n_nodes(via), "callgraph nodes match");
+	mu_assert_eq(rz_graph_get_n_edges(direct), rz_graph_get_n_edges(via), "callgraph edges match");
+	rz_graph_free(direct);
+	rz_graph_free(via);
+
+	// datarefs: direct call must match the dispatcher (DATAREF).
+	direct = rz_core_graph_datarefs(core, f->addr);
+	mu_assert_notnull(direct, "datarefs direct");
+	via = rz_core_graph(core, RZ_CORE_GRAPH_TYPE_DATAREF, f->addr);
+	mu_assert_notnull(via, "datarefs via dispatcher");
+	mu_assert_eq(rz_graph_get_n_nodes(direct), rz_graph_get_n_nodes(via), "datarefs nodes match");
+	mu_assert_eq(rz_graph_get_n_edges(direct), rz_graph_get_n_edges(via), "datarefs edges match");
+	rz_graph_free(direct);
+	rz_graph_free(via);
+
+	// coderefs: direct call must match the dispatcher (REF).
+	direct = rz_core_graph_coderefs(core, f->addr);
+	mu_assert_notnull(direct, "coderefs direct");
+	via = rz_core_graph(core, RZ_CORE_GRAPH_TYPE_REF, f->addr);
+	mu_assert_notnull(via, "coderefs via dispatcher");
+	mu_assert_eq(rz_graph_get_n_nodes(direct), rz_graph_get_n_nodes(via), "coderefs nodes match");
+	mu_assert_eq(rz_graph_get_n_edges(direct), rz_graph_get_n_edges(via), "coderefs edges match");
+	rz_graph_free(direct);
+	rz_graph_free(via);
+
+	// importxrefs: takes no address, must match the dispatcher (IMPORT).
+	direct = rz_core_graph_importxrefs(core);
+	mu_assert_notnull(direct, "importxrefs direct");
+	via = rz_core_graph(core, RZ_CORE_GRAPH_TYPE_IMPORT, 0);
+	mu_assert_notnull(via, "importxrefs via dispatcher");
+	mu_assert_eq(rz_graph_get_n_nodes(direct), rz_graph_get_n_nodes(via), "importxrefs nodes match");
+	mu_assert_eq(rz_graph_get_n_edges(direct), rz_graph_get_n_edges(via), "importxrefs edges match");
+	rz_graph_free(direct);
+	rz_graph_free(via);
+
+	rz_core_free(core);
+	mu_end;
+}
+
+/**
+ * rz_core_graph_to_dot_str() and rz_core_graph_to_sdb_str() turn an RzGraph
+ * into the textual representations used by the `agd`/`agk`-style commands.
+ * We assert they produce non-empty output for a real function graph.
+ */
+bool test_analysis_graph_serialize() {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "new RzCore instance");
+	const char *fpath = "bins/elf/lab1B";
+	mu_assert_true(rz_core_file_open_load(core, fpath, 0, RZ_PERM_R, false), "load file");
+
+	rz_core_analysis_all(core);
+	rz_core_analysis_everything(core, false, "esil");
+	rz_core_analysis_flag_every_function(core);
+
+	RzAnalysisFunction *f = rz_analysis_get_function_byname(core->analysis, "main");
+	mu_assert_notnull(f, "find main");
+
+	RzGraph *g = rz_core_graph_callgraph(core, f->addr);
+	mu_assert_notnull(g, "callgraph");
+
+	char *dot = rz_core_graph_to_dot_str(core, g);
+	mu_assert_notnull(dot, "dot string");
+	mu_assert_true(strstr(dot, "digraph") != NULL, "dot has digraph header");
+	free(dot);
+
+	char *sdb = rz_core_graph_to_sdb_str(core, g);
+	mu_assert_notnull(sdb, "sdb string");
+	mu_assert_true(strlen(sdb) > 0, "sdb non-empty");
+	free(sdb);
+
+	rz_graph_free(g);
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_analysis_graph);
 	mu_run_test(test_analysis_graph_more);
 	mu_run_test(test_analysis_graph_icfg);
 	mu_run_test(test_analysis_graph_cfg);
+	mu_run_test(test_analysis_graph_entrypoints);
+	mu_run_test(test_analysis_graph_serialize);
 	return tests_passed != tests_run;
 }
 

@@ -122,7 +122,7 @@ static const char *menus_Tools[] = {
 };
 
 static const char *menus_Search[] = {
-	"String (Whole Bin)", "String (Data Sections)", "ROP", "Code", "Hexpairs",
+	"String (Whole Bin)", "String (Data Sections)", "ROP", "COP", "JOP", "Code", "Hexpairs",
 	NULL
 };
 
@@ -489,6 +489,8 @@ static int __system_shell_cb(void *user);
 static int __string_whole_bin_cb(void *user);
 static int __string_data_sec_cb(void *user);
 static int __rop_cb(void *user);
+static int __cop_cb(void *user);
+static int __jop_cb(void *user);
 static int __code_cb(void *user);
 static int __hexpairs_cb(void *user);
 static int __continue_cb(void *user);
@@ -1634,7 +1636,7 @@ void __handleComment(RzCore *core) {
 	char buf[4095];
 	int i;
 	rz_line_set_prompt(core->cons->line, "[Comment]> ");
-	strcpy(buf, "\"CC ");
+	strcpy(buf, "CC \"");
 	i = strlen(buf);
 	if (rz_cons_fgets(buf + i, sizeof(buf) - i, 0, NULL) > 0) {
 		ut64 addr, orig;
@@ -1648,18 +1650,18 @@ void __handleComment(RzCore *core) {
 		} else {
 			switch (buf[i]) {
 			case '-':
-				memcpy(buf, "\"CC-", 5);
+				memcpy(buf, "CC-\"", 4);
 				break;
 			case '!':
-				memcpy(buf, "\"CC!", 5);
+				memcpy(buf, "CC!\"", 4);
 				break;
 			default:
-				memcpy(buf, "\"CC ", 4);
+				memcpy(buf, "CC \"", 4);
 				break;
 			}
 			strcat(buf, "\"");
 		}
-		if (buf[3] == ' ') {
+		if (buf[2] == ' ') {
 			int j, len = strlen(buf);
 			char *duped = rz_str_dup(buf);
 			for (i = 4, j = 4; i < len; i++, j++) {
@@ -3238,7 +3240,7 @@ int __clear_layout_cb(void *user) {
 
 int __copy_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	__add_cmdf_panel(core, "How many bytes? ", "\"y %s\"");
+	__add_cmdf_panel(core, "How many bytes? ", "y %s");
 	return 0;
 }
 
@@ -3250,13 +3252,13 @@ int __paste_cb(void *user) {
 
 int __write_str_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	__add_cmdf_panel(core, "insert string: ", "\"w %s\"");
+	__add_cmdf_panel(core, "insert string: ", "w %s");
 	return 0;
 }
 
 int __write_hex_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	__add_cmdf_panel(core, "insert hexpairs: ", "\"wx %s\"");
+	__add_cmdf_panel(core, "insert hexpairs: ", "wx %s");
 	return 0;
 }
 
@@ -3386,19 +3388,31 @@ int __string_data_sec_cb(void *user) {
 
 int __rop_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	__add_cmdf_panel(core, "rop grep: ", "\"/R %s\"");
+	__add_cmdf_panel(core, "rop grep: ", "/R %s");
+	return 0;
+}
+
+int __cop_cb(void *user) {
+	RzCore *core = (RzCore *)user;
+	__add_cmdf_panel(core, "cop grep: ", "/C %s");
+	return 0;
+}
+
+int __jop_cb(void *user) {
+	RzCore *core = (RzCore *)user;
+	__add_cmdf_panel(core, "jop grep: ", "/J %s");
 	return 0;
 }
 
 int __code_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	__add_cmdf_panel(core, "search code: ", "\"/c %s\"");
+	__add_cmdf_panel(core, "search code: ", "/a %s");
 	return 0;
 }
 
 int __hexpairs_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	__add_cmdf_panel(core, "search hexpairs: ", "\"/x %s\"");
+	__add_cmdf_panel(core, "search hexpairs: ", "/x %s");
 	return 0;
 }
 
@@ -4588,6 +4602,10 @@ bool __init_panels_menu(RzCore *core) {
 			__add_menu(core, parent, menus_Search[i], __string_data_sec_cb);
 		} else if (!strcmp(menus_Search[i], "ROP")) {
 			__add_menu(core, parent, menus_Search[i], __rop_cb);
+		} else if (!strcmp(menus_Search[i], "COP")) {
+			__add_menu(core, parent, menus_Search[i], __cop_cb);
+		} else if (!strcmp(menus_Search[i], "JOP")) {
+			__add_menu(core, parent, menus_Search[i], __jop_cb);
 		} else if (!strcmp(menus_Search[i], "Code")) {
 			__add_menu(core, parent, menus_Search[i], __code_cb);
 		} else if (!strcmp(menus_Search[i], "Hexpairs")) {

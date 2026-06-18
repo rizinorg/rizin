@@ -118,7 +118,7 @@ static struct {
 	//{0xe3, "sbc 0x%02x,s", 2},
 	//{0xf3, "sbc (0x%02x,s),y", 2},
 	{ 0xcb, "sbx 0x%02x", 2 },
-	{ 0x93, "sha 0x%04x,x", 3 },
+	{ 0x93, "sha (0x%04x),y", 2 },
 	{ 0x9f, "sha 0x%04x,y", 3 },
 	{ 0x9b, "shs 0x%04x,y", 3 },
 	{ 0x9e, "shx 0x%04x,y", 3 },
@@ -146,8 +146,8 @@ int disass_6502(ut64 pc, RzAsmOp *op, const ut8 *buf, ut64 len) {
 			continue;
 		}
 
-		int len = ops[i].len;
-		switch (len) {
+		int ops_len = ops[i].len;
+		switch (ops_len) {
 		case 1:
 			rz_asm_op_set_asm(op, ops[i].name);
 			break;
@@ -156,7 +156,7 @@ int disass_6502(ut64 pc, RzAsmOp *op, const ut8 *buf, ut64 len) {
 				rz_asm_op_setf_asm(op, ops[i].name, buf[1]);
 			} else {
 				rz_asm_op_set_asm(op, "truncated");
-				len = -1;
+				ops_len = -1;
 			}
 			break;
 		case 3:
@@ -164,7 +164,7 @@ int disass_6502(ut64 pc, RzAsmOp *op, const ut8 *buf, ut64 len) {
 				rz_asm_op_setf_asm(op, ops[i].name, buf[1] + 0x100 * buf[2]);
 			} else {
 				rz_asm_op_set_asm(op, "truncated");
-				len = -1;
+				ops_len = -1;
 			}
 			break;
 		case 4:
@@ -172,14 +172,14 @@ int disass_6502(ut64 pc, RzAsmOp *op, const ut8 *buf, ut64 len) {
 				rz_asm_op_setf_asm(op, ops[i].name, buf[1] + 0x100 * buf[2] + 0x10000 * buf[3]);
 			} else {
 				rz_asm_op_set_asm(op, "truncated");
-				len = -1;
+				ops_len = -1;
 			}
 			break;
 		default:
 			rz_asm_op_set_asm(op, "invalid");
 			goto beach;
 		}
-		return len;
+		return ops_len;
 	}
 beach:
 	return snesDisass(1, 1, pc, op, buf, len);

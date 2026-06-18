@@ -2,2791 +2,28 @@
 // SPDX-FileCopyrightText: 2007-2020 Skia <skia@libskia.so>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+/**
+ * \file format.c
+ * \brief Convert between RzType / RzBaseType values and `pf` format strings.
+ *
+ * The main direction is the *producer* side: walk an in-memory RzType
+ * tree and emit the corresponding pf format string plus the matching
+ * " name1 name2..." tail.
+ *
+ * The reverse helper rz_type_format_to_c_declaration() takes a pf format
+ * string and emits an equivalent C struct/union declaration, so a format
+ * can be promoted to a registered RzBaseType (used by the `tdf` command).
+ *
+ * The byte-level consumer -- parsing a pf string and interpreting bytes
+ * through it -- lives in the pf engine under librz/type/pf/.
+ */
+
 #include "rz_util/rz_str_util.h"
 #include <rz_util.h>
 #include <rz_util/rz_print.h>
 #include <rz_reg.h>
 #include <rz_type.h>
-
-#define NOPTR           0
-#define PTRSEEK         1
-#define PTRBACK         2
-#define NULLPTR         3
-#define STRUCTPTR       100
-#define NESTEDSTRUCT    1
-#define STRUCTFLAG      10000
-#define ARRAYINDEX_COEF 10000
-
-#define MUSTSEE       (mode & RZ_PRINT_MUSTSEE && mode & RZ_PRINT_ISFIELD && !(mode & RZ_PRINT_JSON))
-#define ISQUIET       (mode & RZ_PRINT_QUIET)
-#define MUSTSET       (mode & RZ_PRINT_MUSTSET && mode & RZ_PRINT_ISFIELD && setval)
-#define SEEVALUE      (mode & RZ_PRINT_VALUE)
-#define MUSTSEEJSON   (mode & RZ_PRINT_JSON && mode & RZ_PRINT_ISFIELD)
-#define MUSTSEESTRUCT (mode & RZ_PRINT_STRUCT)
-
-// this define is used as a way to acknowledge when updateAddr should take len
-// as real len of the buffer
-#define THRESHOLD (-4444)
-
-// Maximum depth level of structure unfolding
-#define STRUCT_MAX_NESTED_LEVELS 50
-
-// TODO REWRITE THIS IS BECOMING A NIGHTMARE
-
-static float updateAddr(const ut8 *buf, int len, int endian, ut64 *addr, ut64 *addr64, bool read_float) {
-	float f = 0.0;
-	// assert sizeof (float) == sizeof (ut32))
-	// XXX 999 is used as an implicit buffer size, we should pass the buffer size to every function too, otherwise this code will give us some problems
-	if (len >= THRESHOLD - 7 && len < THRESHOLD) {
-		len = len + THRESHOLD; // get the real len to avoid oob
-	} else {
-		len = 999;
-	}
-	if (len < 1) {
-		return 0;
-	}
-	if (read_float && len >= sizeof(float)) {
-		f = rz_read_ble_float(buf, endian);
-	}
-	if (addr && len > 3) {
-		ut32 tmpaddr = rz_read_ble32(buf, endian);
-		*addr = (ut64)tmpaddr;
-	}
-	if (addr64 && len > 7) {
-		*addr64 = rz_read_ble64(buf, endian);
-	}
-	return f;
-}
-
-static int get_size(RzNum *num, ut8 *buf, int endian, const char *s) {
-	int len = strlen(s);
-	if (s[0] == '*' && len >= 4) { // value pointed by the address
-		ut64 addr;
-		int offset = (int)rz_num_math(num, s + 1);
-		(void)updateAddr(buf + offset, 999, endian, &addr, NULL, false);
-		return addr;
-	}
-	// flag handling doesnt seems to work here
-	return rz_num_math(num, s);
-}
-
-static void rz_type_format_u128(RzStrBuf *outbuf, int endian, int mode,
-	const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
-	ut64 low = rz_read_ble64(buf, endian);
-	ut64 hig = rz_read_ble64(buf + 8, endian);
-	if (MUSTSEEJSON) {
-		rz_strbuf_append(outbuf, "\"");
-	} else if (!SEEVALUE && !ISQUIET) {
-		rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = (uint128_t)", seeki);
-	}
-	if (endian) {
-		rz_strbuf_appendf(outbuf, "0x%016" PFMT64x, low);
-		rz_strbuf_appendf(outbuf, "%016" PFMT64x, hig);
-	} else {
-		rz_strbuf_appendf(outbuf, "0x%016" PFMT64x, hig);
-		rz_strbuf_appendf(outbuf, "%016" PFMT64x, low);
-	}
-	if (MUSTSEEJSON) {
-		const char *end = endian ? "big" : "little";
-		rz_strbuf_appendf(outbuf, "\",\"endian\":\"%s\",\"ctype\":\"uint128_t\"}", end);
-	}
-}
-
-static void rz_type_format_quadword(RzStrBuf *outbuf, int endian, int mode,
-	const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
-	ut64 addr64;
-	int elem = -1;
-	if (size >= ARRAYINDEX_COEF) {
-		elem = size / ARRAYINDEX_COEF - 1;
-		size %= ARRAYINDEX_COEF;
-	}
-	updateAddr(buf + i, size - i, endian, NULL, &addr64, false);
-	if (MUSTSET) {
-		rz_strbuf_appendf(outbuf, "wv8 %s @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0) ? elem * 8 : 0));
-	} else if (MUSTSEE) {
-		if (!SEEVALUE && !ISQUIET) {
-			rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = (qword)",
-				seeki + ((elem >= 0) ? elem * 8 : 0));
-		}
-		if (size == -1) {
-			if (addr64 == UT32_MAX || ((st64)addr64 < 0 && (st64)addr64 > -4096)) {
-				rz_strbuf_appendf(outbuf, "%d", (int)(addr64));
-			} else {
-				rz_strbuf_appendf(outbuf, "0x%016" PFMT64x, addr64);
-			}
-		} else {
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, "[ ");
-			}
-			while (size--) {
-				updateAddr(buf + i, size - i, endian, NULL, &addr64, false);
-				if (elem == -1 || elem == 0) {
-					rz_strbuf_appendf(outbuf, "0x%016" PFMT64x, addr64);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_append(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i += 8;
-			}
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, " ]");
-			}
-		}
-	} else if (MUSTSEEJSON || MUSTSEESTRUCT) {
-		if (size == -1) {
-			rz_strbuf_appendf(outbuf, "%" PFMT64d, addr64);
-		} else {
-			rz_strbuf_append(outbuf, "[ ");
-			while (size--) {
-				updateAddr(buf + i, size - i, endian, NULL, &addr64, false);
-				if (elem == -1 || elem == 0) {
-					rz_strbuf_appendf(outbuf, "%" PFMT64d, addr64);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_append(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i += 8;
-			}
-			rz_strbuf_append(outbuf, " ]");
-		}
-		if (MUSTSEEJSON) {
-			rz_strbuf_append(outbuf, "}");
-		}
-	}
-}
-
-static void rz_type_format_byte(RzStrBuf *outbuf, int endian, int mode,
-	const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
-	int elem = -1;
-	if (size >= ARRAYINDEX_COEF) {
-		elem = size / ARRAYINDEX_COEF - 1;
-		size %= ARRAYINDEX_COEF;
-	}
-	if (MUSTSET) {
-		rz_strbuf_appendf(outbuf, "\"w %s\" @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0) ? elem : 0));
-	} else if (MUSTSEE) {
-		if (!SEEVALUE && !ISQUIET) {
-			rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki + ((elem >= 0) ? elem : 0));
-		}
-		if (size == -1) {
-			rz_strbuf_appendf(outbuf, "0x%02x", buf[i]);
-		} else {
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, "[ ");
-			}
-			while (size--) {
-				if (elem == -1 || elem == 0) {
-					rz_strbuf_appendf(outbuf, "0x%02x", buf[i]);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_append(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i++;
-			}
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, " ]");
-			}
-		}
-	} else if (MUSTSEEJSON || MUSTSEESTRUCT) {
-		if (size == -1) {
-			rz_strbuf_appendf(outbuf, "%d", buf[i]);
-		} else {
-			rz_strbuf_append(outbuf, "[ ");
-			const char *comma = "";
-			while (size--) {
-				if (elem == -1 || elem == 0) {
-					rz_strbuf_appendf(outbuf, "%s%d", comma, buf[i]);
-					comma = ",";
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i++;
-			}
-			rz_strbuf_append(outbuf, " ]");
-		}
-		if (MUSTSEEJSON) {
-			rz_strbuf_append(outbuf, "}");
-		}
-	}
-}
-
-// FIXME: Port to the PJ API
-// Return number of consumed bytes
-static int rz_type_format_uleb(RzStrBuf *outbuf, int endian, int mode,
-	const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
-	int elem = -1;
-	int s = 0, offset = 0;
-	ut64 value = 0;
-	if (size >= ARRAYINDEX_COEF) {
-		elem = size / ARRAYINDEX_COEF - 1;
-		size %= ARRAYINDEX_COEF;
-	}
-	if (MUSTSET) {
-		ut8 *tmp;
-		char *nbr;
-		do {
-			rz_uleb128_decode(buf + i, &s, &value);
-			i += s;
-			offset += s;
-		} while (elem--);
-		tmp = (ut8 *)rz_uleb128_encode(rz_num_math(NULL, setval), &s);
-		nbr = rz_hex_bin2strdup(tmp, s);
-		rz_strbuf_appendf(outbuf, "wx %s @ 0x%08" PFMT64x "\n", nbr, seeki + offset - s);
-		free(tmp);
-		free(nbr);
-	} else if (MUSTSEE) {
-		if (!SEEVALUE && !ISQUIET) {
-			rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki);
-		}
-		if (size == -1) {
-			rz_uleb128_decode(buf + i, &offset, &value);
-			rz_strbuf_appendf(outbuf, "%" PFMT64d, value);
-		} else {
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, "[ ");
-			}
-			while (size--) {
-				if (elem == -1 || elem == 0) {
-					rz_uleb128_decode(buf + i, &s, &value);
-					i += s;
-					offset += s;
-					rz_strbuf_appendf(outbuf, "%" PFMT64d, value);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_append(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-			}
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, " ]");
-			}
-		}
-	} else if (MUSTSEEJSON || MUSTSEESTRUCT) {
-		if (size == -1) {
-			rz_uleb128_decode(buf + i, &offset, &value);
-			rz_strbuf_appendf(outbuf, "\"%" PFMT64d "\"", value);
-		} else {
-			rz_strbuf_append(outbuf, "[ ");
-			while (size--) {
-				if (elem == -1 || elem == 0) {
-					rz_uleb128_decode(buf + i, &s, &value);
-					i += s;
-					offset += s;
-					rz_strbuf_appendf(outbuf, "\"%" PFMT64d "\"", value);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_append(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-			}
-			rz_strbuf_append(outbuf, " ]");
-		}
-		if (MUSTSEEJSON) {
-			rz_strbuf_append(outbuf, "}");
-		}
-	}
-	return offset;
-}
-
-static void rz_type_format_char(RzStrBuf *outbuf, int endian, int mode,
-	const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
-	int elem = -1;
-	if (size >= ARRAYINDEX_COEF) {
-		elem = size / ARRAYINDEX_COEF - 1;
-		size %= ARRAYINDEX_COEF;
-	}
-	if (MUSTSET) {
-		rz_strbuf_appendf(outbuf, "\"w %s\" @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0) ? elem : 0));
-	} else if (MUSTSEE) {
-		if (!SEEVALUE && !ISQUIET) {
-			rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki + ((elem >= 0) ? elem * 2 : 0)); // XXX:: shouldn't it be elem*1??
-		}
-		if (size == -1) {
-			rz_strbuf_appendf(outbuf, "'%c'", IS_PRINTABLE(buf[i]) ? buf[i] : '.');
-		} else {
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, "[ ");
-			}
-			while (size--) {
-				if (elem == -1 || elem == 0) {
-					rz_strbuf_appendf(outbuf, "'%c'", IS_PRINTABLE(buf[i]) ? buf[i] : '.');
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_append(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i++;
-			}
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, " ]");
-			}
-		}
-	} else if (MUSTSEEJSON || MUSTSEESTRUCT) {
-		if (size == -1) {
-			rz_strbuf_appendf(outbuf, "\"%c\"", IS_PRINTABLE(buf[i]) ? buf[i] : '.');
-		} else {
-			rz_strbuf_append(outbuf, "[ ");
-			while (size--) {
-				if (elem == -1 || elem == 0) {
-					rz_strbuf_appendf(outbuf, "\"%c\"", IS_PRINTABLE(buf[i]) ? buf[i] : '.');
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_append(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i++;
-			}
-			rz_strbuf_append(outbuf, " ]");
-		}
-		if (MUSTSEEJSON) {
-			rz_strbuf_append(outbuf, "}");
-		}
-	}
-}
-
-static void rz_type_format_decchar(RzStrBuf *outbuf, int endian, int mode,
-	const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
-	int elem = -1;
-	if (size >= ARRAYINDEX_COEF) {
-		elem = size / ARRAYINDEX_COEF - 1;
-		size %= ARRAYINDEX_COEF;
-	}
-	if (MUSTSET) {
-		rz_strbuf_appendf(outbuf, "\"w %s\" @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0) ? elem : 0));
-	} else if (MUSTSEE) {
-		if (!SEEVALUE && !ISQUIET) {
-			rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki + ((elem >= 0) ? elem : 0));
-		}
-		if (size == -1) {
-			rz_strbuf_appendf(outbuf, "%d", buf[i]);
-		} else {
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, "[ ");
-			}
-			while (size--) {
-				if (elem == -1 || elem == 0) {
-					rz_strbuf_appendf(outbuf, "%d", buf[i]);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_appendf(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i++;
-			}
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, " ]");
-			}
-		}
-	} else if (MUSTSEEJSON || MUSTSEESTRUCT) {
-		if (size == -1) {
-			rz_strbuf_appendf(outbuf, "\"%d\"", buf[i]);
-		} else {
-			rz_strbuf_append(outbuf, "[ ");
-			while (size--) {
-				if (elem == -1 || elem == 0) {
-					rz_strbuf_appendf(outbuf, "\"%d\"", buf[i]);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_appendf(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i++;
-			}
-			rz_strbuf_append(outbuf, " ]");
-		}
-		if (MUSTSEEJSON) {
-			rz_strbuf_append(outbuf, "}");
-		}
-	}
-}
-
-static int rz_type_format_string(const RzTypeDB *typedb, RzStrBuf *outbuf, ut64 seeki, ut64 addr64, ut64 addr, int is64, int mode) {
-	ut8 buffer[255];
-	buffer[0] = 0;
-	const ut64 at = (is64 == 1) ? addr64 : (ut64)addr;
-	int res = typedb->iob.read_at(typedb->iob.io, at, buffer, sizeof(buffer) - 8);
-	if (MUSTSEEJSON) {
-		char *encstr = rz_str_utf16_encode((const char *)buffer, -1);
-		if (encstr) {
-			rz_strbuf_appendf(outbuf, "%" PFMT64d ",\"string\":\"%s\"}", seeki, encstr);
-			free(encstr);
-		}
-	} else if (MUSTSEESTRUCT) {
-		char *encstr = rz_str_utf16_encode((const char *)buffer, -1);
-		if (encstr) {
-			rz_strbuf_appendf(outbuf, "\"%s\"", encstr);
-			free(encstr);
-		}
-	} else if (MUSTSEE) {
-		if (!SEEVALUE && !ISQUIET) {
-			rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki);
-		}
-		if (!SEEVALUE) {
-			if (ISQUIET) {
-				if (addr == 0LL) {
-					rz_strbuf_append(outbuf, "NULL");
-				} else if (addr == UT32_MAX || addr == UT64_MAX) {
-					rz_strbuf_append(outbuf, "-1");
-				} else {
-					rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " ", addr);
-				}
-			} else {
-				rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " -> 0x%08" PFMT64x " ", seeki, addr);
-			}
-		}
-		if (res > 0 && buffer[0] != 0xff && buffer[1] != 0xff) {
-			rz_strbuf_appendf(outbuf, "\"%s\"", buffer);
-		}
-	}
-	return 0;
-}
-
-static void rz_type_format_time(RzStrBuf *outbuf, int endian, int mode,
-	const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
-	ut64 addr;
-	struct tm timestruct;
-	int elem = -1;
-	if (size >= ARRAYINDEX_COEF) {
-		elem = size / ARRAYINDEX_COEF - 1;
-		size %= ARRAYINDEX_COEF;
-	}
-	updateAddr(buf + i, size - i, endian, &addr, NULL, false);
-	if (MUSTSET) {
-		rz_strbuf_appendf(outbuf, "wv4 %s @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0) ? elem * 4 : 0));
-	} else if (MUSTSEE) {
-		char *timestr = malloc(ASCTIME_BUF_MINLEN);
-		if (!timestr) {
-			return;
-		}
-		rz_asctime_r(rz_gmtime_r((time_t *)&addr, &timestruct), timestr);
-		*(timestr + 24) = '\0';
-		if (!SEEVALUE && !ISQUIET) {
-			rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki + ((elem >= 0) ? elem * 4 : 0));
-		}
-		if (size == -1) {
-			rz_strbuf_appendf(outbuf, "%s", timestr);
-		} else {
-			if (!SEEVALUE) {
-				rz_strbuf_appendf(outbuf, "[ ");
-			}
-			while (size--) {
-				updateAddr(buf + i, size - i, endian, &addr, NULL, false);
-				rz_asctime_r(rz_gmtime_r((time_t *)&addr, &timestruct), timestr);
-				*(timestr + 24) = '\0';
-				if (elem == -1 || elem == 0) {
-					rz_strbuf_appendf(outbuf, "%s", timestr);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_appendf(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i += 4;
-			}
-			if (!SEEVALUE) {
-				rz_strbuf_appendf(outbuf, " ]");
-			}
-		}
-		free(timestr);
-	} else if (MUSTSEEJSON || MUSTSEESTRUCT) {
-		char *timestr = malloc(ASCTIME_BUF_MINLEN);
-		if (!timestr) {
-			return;
-		}
-		rz_asctime_r(rz_gmtime_r((time_t *)&addr, &timestruct), timestr);
-		*(timestr + 24) = '\0';
-		if (size == -1) {
-			rz_strbuf_appendf(outbuf, "\"%s\"", timestr);
-		} else {
-			rz_strbuf_append(outbuf, "[ ");
-			while (size--) {
-				updateAddr(buf + i, size - i, endian, &addr, NULL, false);
-				rz_asctime_r(rz_gmtime_r((time_t *)&addr, &timestruct), timestr);
-				*(timestr + 24) = '\0';
-				if (elem == -1 || elem == 0) {
-					rz_strbuf_appendf(outbuf, "\"%s\"", timestr);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_append(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i += 4;
-			}
-			rz_strbuf_append(outbuf, " ]");
-		}
-		free(timestr);
-		if (MUSTSEEJSON) {
-			rz_strbuf_append(outbuf, "}");
-		}
-	}
-}
-
-// TODO: support unsigned int?
-static void rz_type_format_hex(RzStrBuf *outbuf, int endian, int mode,
-	const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
-	ut64 addr = 0;
-	int elem = -1;
-	if (size >= ARRAYINDEX_COEF) {
-		elem = size / ARRAYINDEX_COEF - 1;
-		size %= ARRAYINDEX_COEF;
-	}
-	updateAddr(buf + i, size - i, endian, &addr, NULL, false);
-	if (MUSTSET) {
-		rz_strbuf_appendf(outbuf, "wv4 %s @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0) ? elem * 4 : 0));
-	} else if ((mode & RZ_PRINT_DOT) || MUSTSEESTRUCT) {
-		rz_strbuf_appendf(outbuf, "%" PFMT64d, addr);
-	} else if (MUSTSEE) {
-		if (!SEEVALUE && !ISQUIET) {
-			rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki + ((elem >= 0) ? elem * 4 : 0));
-		}
-		if (size == -1) {
-			if (addr == UT64_MAX || addr == UT32_MAX) {
-				rz_strbuf_append(outbuf, "-1");
-			} else {
-				rz_strbuf_appendf(outbuf, "%" PFMT64d, addr);
-			}
-		} else {
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, "[ ");
-			}
-			while (size--) {
-				updateAddr(buf + i, size - i, endian, &addr, NULL, false);
-				if (elem == -1 || elem == 0) {
-					if (ISQUIET) {
-						if (addr == UT64_MAX || addr == UT32_MAX) {
-							rz_strbuf_append(outbuf, "-1");
-						} else {
-							rz_strbuf_appendf(outbuf, "%" PFMT64d, addr);
-						}
-					} else {
-						rz_strbuf_appendf(outbuf, "%" PFMT64d, addr);
-					}
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_append(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i += 4;
-			}
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, " ]");
-			}
-		}
-	} else if (MUSTSEEJSON) {
-		if (size == -1) {
-			rz_strbuf_appendf(outbuf, "%" PFMT64d, addr);
-		} else {
-			rz_strbuf_append(outbuf, "[ ");
-			while (size--) {
-				updateAddr(buf + i, size - i, endian, &addr, NULL, false);
-				if (elem == -1 || elem == 0) {
-					rz_strbuf_appendf(outbuf, "%" PFMT64d, addr);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_append(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i += 4;
-			}
-			rz_strbuf_append(outbuf, " ]");
-		}
-		rz_strbuf_append(outbuf, "}");
-	}
-}
-
-static void rz_type_format_int(RzStrBuf *outbuf, int endian, int mode,
-	const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
-	ut64 addr;
-	int elem = -1;
-	if (size >= ARRAYINDEX_COEF) {
-		elem = size / ARRAYINDEX_COEF - 1;
-		size %= ARRAYINDEX_COEF;
-	}
-	updateAddr(buf + i, size - i, endian, &addr, NULL, false);
-	if (MUSTSET) {
-		rz_strbuf_appendf(outbuf, "wv4 %s @ %" PFMT64d "\n", setval, seeki + ((elem >= 0) ? elem * 4 : 0));
-	} else if ((mode & RZ_PRINT_DOT) || MUSTSEESTRUCT) {
-		rz_strbuf_appendf(outbuf, "0x%08" PFMT64x, addr);
-	} else if (MUSTSEE) {
-		if (!SEEVALUE && !ISQUIET) {
-			rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki + ((elem >= 0) ? elem * 4 : 0));
-		}
-		if (size == -1) {
-			rz_strbuf_appendf(outbuf, "%" PFMT64d, (st64)(st32)addr);
-		} else {
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, "[ ");
-			}
-			while (size--) {
-				updateAddr(buf + i, size - i, endian, &addr, NULL, false);
-				if (elem == -1 || elem == 0) {
-					rz_strbuf_appendf(outbuf, "%" PFMT64d, (st64)(st32)addr);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_append(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i += 4;
-			}
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, " ]");
-			}
-		}
-	} else if (MUSTSEEJSON) {
-		if (size == -1) {
-			rz_strbuf_appendf(outbuf, "%" PFMT64d, addr);
-		} else {
-			rz_strbuf_append(outbuf, "[ ");
-			while (size--) {
-				updateAddr(buf + i, size - i, endian, &addr, NULL, false);
-				if (elem == -1 || elem == 0) {
-					rz_strbuf_appendf(outbuf, "%" PFMT64d, addr);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_append(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i += 4;
-			}
-			rz_strbuf_append(outbuf, " ]");
-		}
-		rz_strbuf_append(outbuf, "}");
-	}
-}
-
-/*
-static int rz_type_format_disasm(const RzPrint *p, ut64 seeki, int size) {
-	ut64 prevseeki = seeki;
-
-	if (!p->disasm || !p->user) {
-		return 0;
-	}
-
-	size = RZ_MAX(1, size);
-
-	while (size-- > 0) {
-		seeki += p->disasm(p->user, seeki);
-	}
-
-	return seeki - prevseeki;
-}
-*/
-
-static void rz_type_format_octal(RzStrBuf *outbuf, int endian, int mode,
-	const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
-	ut64 addr = 0;
-	int elem = -1;
-	if (size >= ARRAYINDEX_COEF) {
-		elem = size / ARRAYINDEX_COEF - 1;
-		size %= ARRAYINDEX_COEF;
-	}
-	updateAddr(buf + i, size - i, endian, &addr, NULL, false);
-	if (MUSTSET) {
-		rz_strbuf_appendf(outbuf, "wv4 %s @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0) ? elem * 4 : 0));
-	} else if ((mode & RZ_PRINT_DOT) || MUSTSEESTRUCT) {
-		rz_strbuf_appendf(outbuf, "0%" PFMT64o, addr);
-	} else if (MUSTSEE) {
-		if (!SEEVALUE && !ISQUIET) {
-			rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki + ((elem >= 0) ? elem * 4 : 0));
-		}
-		if (!SEEVALUE) {
-			rz_strbuf_append(outbuf, "(octal) ");
-		}
-		if (size == -1) {
-			rz_strbuf_appendf(outbuf, " 0%08" PFMT64o, addr);
-		} else {
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, "[ ");
-			}
-			while (size--) {
-				updateAddr(buf + i, size - i, endian, &addr, NULL, false);
-				if (elem == -1 || elem == 0) {
-					rz_strbuf_appendf(outbuf, "0%08" PFMT64o, addr);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_append(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i += 4;
-			}
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, " ]");
-			}
-		}
-	} else if (MUSTSEEJSON) {
-		if (size == -1) {
-			rz_strbuf_appendf(outbuf, "%" PFMT64d, addr);
-		} else {
-			rz_strbuf_append(outbuf, "[ ");
-			while (size--) {
-				updateAddr(buf, i, endian, &addr, NULL, false);
-				if (elem == -1 || elem == 0) {
-					rz_strbuf_appendf(outbuf, "%" PFMT64d, addr);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_append(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i += 4;
-			}
-			rz_strbuf_append(outbuf, " ]");
-		}
-		rz_strbuf_append(outbuf, "}");
-	}
-}
-
-static void rz_type_format_hexflag(RzStrBuf *outbuf, int endian, int mode,
-	const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
-	ut64 addr = 0;
-	int elem = -1;
-	if (size >= ARRAYINDEX_COEF) {
-		elem = size / ARRAYINDEX_COEF - 1;
-		size %= ARRAYINDEX_COEF;
-	}
-	updateAddr(buf + i, size - i, endian, &addr, NULL, false);
-	if (MUSTSET) {
-		rz_strbuf_appendf(outbuf, "wv4 %s @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0) ? elem * 4 : 0));
-	} else if ((mode & RZ_PRINT_DOT) || MUSTSEESTRUCT) {
-		rz_strbuf_appendf(outbuf, "0x%08" PFMT64x, addr & UT32_MAX);
-	} else if (MUSTSEE) {
-		ut32 addr32 = (ut32)addr;
-		if (!SEEVALUE && !ISQUIET) {
-			rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki + ((elem >= 0) ? elem * 4 : 0));
-		}
-		if (size == -1) {
-			if (ISQUIET && (addr32 == UT32_MAX)) {
-				rz_strbuf_append(outbuf, "-1");
-			} else {
-				rz_strbuf_appendf(outbuf, "0x%08" PFMT64x, (ut64)addr32);
-			}
-		} else {
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, "[ ");
-			}
-			while (size--) {
-				updateAddr(buf + i, size - i, endian, &addr, NULL, false);
-				if (elem == -1 || elem == 0) {
-					rz_strbuf_appendf(outbuf, "0x%08" PFMT64x, addr);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_append(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i += 4;
-			}
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, " ]");
-			}
-		}
-	} else if (MUSTSEEJSON) {
-		if (size == -1) {
-			rz_strbuf_appendf(outbuf, "%" PFMT64d, addr);
-		} else {
-			rz_strbuf_append(outbuf, "[ ");
-			while (size--) {
-				updateAddr(buf + i, size - i, endian, &addr, NULL, false);
-				if (elem == -1 || elem == 0) {
-					rz_strbuf_appendf(outbuf, "%" PFMT64d, addr);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_append(outbuf, ",");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i += 4;
-			}
-			rz_strbuf_append(outbuf, " ]");
-		}
-		rz_strbuf_append(outbuf, "}");
-	}
-}
-
-static int rz_type_format_10bytes(const RzTypeDB *typedb, RzStrBuf *outbuf, int mode, const char *setval,
-	ut64 seeki, ut64 addr, ut8 *buf) {
-	ut8 buffer[255];
-	int j;
-	if (MUSTSET) {
-		rz_strbuf_append(outbuf, "echo pf B not yet implemented\n");
-	} else if (mode & RZ_PRINT_DOT) {
-		for (j = 0; j < 10; j++) {
-			rz_strbuf_appendf(outbuf, "%02x ", buf[j]);
-		}
-	} else if (MUSTSEE) {
-		typedb->iob.read_at(typedb->iob.io, (ut64)addr, buffer, 248);
-		if (!SEEVALUE && !ISQUIET) {
-			rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki);
-		}
-		for (j = 0; j < 10; j++) {
-			rz_strbuf_appendf(outbuf, "%02x ", buf[j]);
-		}
-		if (!SEEVALUE) {
-			rz_strbuf_append(outbuf, " ... (");
-		}
-		for (j = 0; j < 10; j++) {
-			if (!SEEVALUE) {
-				if (IS_PRINTABLE(buf[j])) {
-					rz_strbuf_appendf(outbuf, "%c", buf[j]);
-				} else {
-					rz_strbuf_append(outbuf, ".");
-				}
-			}
-		}
-		if (!SEEVALUE) {
-			rz_strbuf_append(outbuf, ")");
-		}
-	} else if (MUSTSEEJSON) {
-		typedb->iob.read_at(typedb->iob.io, (ut64)addr, buffer, 248);
-		rz_strbuf_appendf(outbuf, "[ %d", buf[0]);
-		j = 1;
-		for (; j < 10; j++) {
-			rz_strbuf_appendf(outbuf, ", %d", buf[j]);
-		}
-		rz_strbuf_append(outbuf, "]");
-		return 0;
-	}
-	return 0;
-}
-
-static int rz_type_format_hexpairs(RzStrBuf *outbuf, int endian, int mode,
-	const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
-	int j;
-	size = (size == -1) ? 1 : size;
-	if (MUSTSET) {
-		rz_strbuf_append(outbuf, "echo pf X not yet implemented\n");
-	} else if (mode & RZ_PRINT_DOT) {
-		for (j = 0; j < size; j++) {
-			rz_strbuf_appendf(outbuf, "%02x", buf[i + j]);
-		}
-	} else if (MUSTSEE) {
-		size = (size < 1) ? 1 : size;
-		if (!SEEVALUE && !ISQUIET) {
-			rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki);
-		}
-		for (j = 0; j < size; j++) {
-			rz_strbuf_appendf(outbuf, "%02x ", buf[i + j]);
-		}
-		if (!SEEVALUE) {
-			rz_strbuf_append(outbuf, " ... (");
-		}
-		for (j = 0; j < size; j++) {
-			if (!SEEVALUE) {
-				if (IS_PRINTABLE(buf[j])) {
-					rz_strbuf_appendf(outbuf, "%c", buf[i + j]);
-				} else {
-					rz_strbuf_append(outbuf, ".");
-				}
-			}
-		}
-		rz_strbuf_append(outbuf, ")");
-	} else if (MUSTSEEJSON || MUSTSEESTRUCT) {
-		size = (size < 1) ? 1 : size;
-		rz_strbuf_appendf(outbuf, "[ %d", buf[0]);
-		j = 1;
-		for (; j < 10; j++) {
-			rz_strbuf_appendf(outbuf, ", %d", buf[j]);
-		}
-		rz_strbuf_append(outbuf, "]");
-		if (MUSTSEEJSON) {
-			rz_strbuf_append(outbuf, "}");
-		}
-		return size;
-	}
-	return size;
-}
-
-static void rz_type_format_float(RzStrBuf *outbuf, int endian, int mode,
-	const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
-	float val_f = 0.0f;
-	ut64 addr = 0;
-	int elem = -1;
-	if (size >= ARRAYINDEX_COEF) {
-		elem = size / ARRAYINDEX_COEF - 1;
-		size %= ARRAYINDEX_COEF;
-	}
-	val_f = updateAddr(buf + i, 999, endian, &addr, NULL, true);
-	if (MUSTSET) {
-		rz_strbuf_appendf(outbuf, "wv4 %s @ 0x%08" PFMT64x "\n", setval,
-			seeki + ((elem >= 0) ? elem * 4 : 0));
-	} else if ((mode & RZ_PRINT_DOT) || MUSTSEESTRUCT) {
-		rz_strbuf_appendf(outbuf, "%.9g", val_f);
-	} else {
-		if (MUSTSEE) {
-			if (!SEEVALUE && !ISQUIET) {
-				rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ",
-					seeki + ((elem >= 0) ? elem * 4 : 0));
-			}
-		}
-		if (size == -1) {
-			rz_strbuf_appendf(outbuf, "%.9g", val_f);
-		} else {
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, "[ ");
-			}
-			while (size--) {
-				val_f = updateAddr(buf + i, 9999, endian, &addr, NULL, true);
-				if (elem == -1 || elem == 0) {
-					rz_strbuf_appendf(outbuf, "%.9g", val_f);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_append(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i += 4;
-			}
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, " ]");
-			}
-		}
-		if (MUSTSEEJSON) {
-			rz_strbuf_append(outbuf, "}");
-		}
-	}
-}
-
-static void rz_type_format_double(RzStrBuf *outbuf, int endian, int mode,
-	const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
-	double val_f = 0.0;
-	ut64 addr = 0;
-	int elem = -1;
-	if (size >= ARRAYINDEX_COEF) {
-		elem = size / ARRAYINDEX_COEF - 1;
-		size %= ARRAYINDEX_COEF;
-	}
-	updateAddr(buf + i, 999, endian, &addr, NULL, false);
-	val_f = rz_read_at_ble_double(buf, i, endian);
-	if (MUSTSET) {
-		rz_strbuf_appendf(outbuf, "wv8 %s @ 0x%08" PFMT64x "\n", setval,
-			seeki + ((elem >= 0) ? elem * 8 : 0));
-	} else if ((mode & RZ_PRINT_DOT) || MUSTSEESTRUCT) {
-		rz_strbuf_appendf(outbuf, "%.17g", val_f);
-	} else {
-		if (MUSTSEE) {
-			if (!SEEVALUE && !ISQUIET) {
-				rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ",
-					seeki + ((elem >= 0) ? elem * 8 : 0));
-			}
-		}
-		if (size == -1) {
-			rz_strbuf_appendf(outbuf, "%.17g", val_f);
-		} else {
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, "[ ");
-			}
-			while (size--) {
-				// XXX this 999 is scary
-				updateAddr(buf + i, 9999, endian, &addr, NULL, false);
-				val_f = rz_read_at_ble_double(buf, i, endian);
-				if (elem == -1 || elem == 0) {
-					rz_strbuf_appendf(outbuf, "%.17g", val_f);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_append(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i += 8;
-			}
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, " ]");
-			}
-		}
-		if (MUSTSEEJSON) {
-			rz_strbuf_appendf(outbuf, "}");
-		}
-	}
-}
-
-static void rz_type_format_word(RzStrBuf *outbuf, int endian, int mode,
-	const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
-	ut64 addr;
-	int elem = -1;
-	if (size >= ARRAYINDEX_COEF) {
-		elem = size / ARRAYINDEX_COEF - 1;
-		size %= ARRAYINDEX_COEF;
-	}
-	addr = rz_read_ble16(buf + i, endian);
-	if (MUSTSET) {
-		rz_strbuf_appendf(outbuf, "wv2 %s @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0) ? elem * 2 : 0));
-	} else if ((mode & RZ_PRINT_DOT) || MUSTSEESTRUCT) {
-		if (size == -1) {
-			rz_strbuf_appendf(outbuf, "0x%04" PFMT64x, addr);
-		}
-		while ((size -= 2) > 0) {
-			addr = rz_read_ble16(buf + i, endian);
-			if (elem == -1 || elem == 0) {
-				rz_strbuf_appendf(outbuf, "%" PFMT64d, addr);
-				if (elem == 0) {
-					elem = -2;
-				}
-			}
-			if (size != 0 && elem == -1) {
-				rz_strbuf_append(outbuf, ",");
-			}
-			if (elem > -1) {
-				elem--;
-			}
-			i += 2;
-		}
-	} else if (MUSTSEE) {
-		if (!SEEVALUE && !ISQUIET) {
-			rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki + ((elem >= 0) ? elem * 2 : 0));
-		}
-		if (size == -1) {
-			rz_strbuf_appendf(outbuf, "0x%04" PFMT64x, addr);
-		} else {
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, "[ ");
-			}
-			while (size--) {
-				addr = rz_read_ble16(buf + i, endian);
-				if (elem == -1 || elem == 0) {
-					rz_strbuf_appendf(outbuf, "0x%04" PFMT64x, addr);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_append(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i += 2;
-			}
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, " ]");
-			}
-		}
-	} else if (MUSTSEEJSON) {
-		if (size == -1) {
-			rz_strbuf_appendf(outbuf, "%" PFMT64d, addr);
-		} else {
-			rz_strbuf_append(outbuf, "[ ");
-			while ((size -= 2) > 0) {
-				addr = rz_read_ble16(buf + i, endian);
-				if (elem == -1 || elem == 0) {
-					rz_strbuf_appendf(outbuf, "%" PFMT64d, addr);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_append(outbuf, ",");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i += 2;
-			}
-			rz_strbuf_append(outbuf, " ]");
-		}
-		rz_strbuf_append(outbuf, "}");
-	}
-}
-
-static void rz_type_byte_escape(const RzPrint *p, const char *src, char **dst, int dot_nl) {
-	rz_return_if_fail(p->strconv_mode);
-	RzStrEscOptions opt = { 0 };
-	opt.dot_nl = dot_nl;
-	opt.show_asciidot = !strcmp(p->strconv_mode, "asciidot");
-	opt.esc_bslash = p->esc_bslash;
-	opt.keep_printable = true;
-	RzCodePoint cp = (ut8)*src;
-	if (cp <= RZ_UNICODE_LAST_ASCII && !rz_str_escape_code_point(cp, 1, &opt)) {
-		**dst = *src;
-		(*dst)++;
-	} else {
-		rz_unicode_byte_escape(cp, dst, &opt);
-	}
-}
-
-static void rz_type_format_nulltermstring(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, int len, int endian, int mode,
-	const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
-	if (!typedb->iob.is_valid_offset(typedb->iob.io, seeki, 1)) {
-		ut8 ch = 0xff;
-		// XXX there are some cases where the memory is there but is_valid_offset fails
-		if (typedb->iob.read_at(typedb->iob.io, seeki, &ch, 1) != 1 && ch != 0xff) {
-			rz_strbuf_append(outbuf, "-1");
-			return;
-		}
-	}
-	if (p->flags & RZ_PRINT_FLAGS_UNALLOC && !(typedb->iob.io->cached & RZ_PERM_R)) {
-		ut64 total_map_left = 0;
-		ut64 addr = seeki;
-		RzIOMap *map;
-		while (total_map_left < len && (map = typedb->iob.io->va ? typedb->iob.map_get(typedb->iob.io, addr) : typedb->iob.map_get_paddr(typedb->iob.io, addr)) && map->perm & RZ_PERM_R) {
-			if (!map->itv.size) {
-				total_map_left = addr == 0 ? UT64_MAX : UT64_MAX - addr + 1;
-				break;
-			}
-			total_map_left += map->itv.size - (addr - (typedb->iob.io->va ? map->itv.addr : map->delta));
-			addr += total_map_left;
-		}
-		if (total_map_left < len) {
-			len = total_map_left;
-		}
-	}
-	int str_len = rz_str_nlen((char *)buf + i, len - i);
-	bool overflow = (size == -1 || size > len - i) && str_len == len - i;
-	if (MUSTSET) {
-		int buflen = strlen((const char *)buf + seeki);
-		int vallen = strlen(setval);
-		char *ons, *newstring = ons = rz_str_dup(setval);
-		if ((newstring[0] == '\"' && newstring[vallen - 1] == '\"') || (newstring[0] == '\'' && newstring[vallen - 1] == '\'')) {
-			newstring[vallen - 1] = '\0';
-			newstring++;
-			vallen -= 2;
-		}
-		if (vallen > buflen) {
-			eprintf("Warning: new string is longer than previous one\n");
-		}
-		rz_strbuf_append(outbuf, "wx ");
-		for (i = 0; i < vallen; i++) {
-			if (i < vallen - 3 && newstring[i] == '\\' && newstring[i + 1] == 'x') {
-				rz_strbuf_appendf(outbuf, "%c%c", newstring[i + 2], newstring[i + 3]);
-				i += 3;
-			} else {
-				rz_strbuf_appendf(outbuf, "%2x", newstring[i]);
-			}
-		}
-		rz_strbuf_appendf(outbuf, " @ 0x%08" PFMT64x "\n", seeki);
-		free(ons);
-	} else if ((mode & RZ_PRINT_DOT) || MUSTSEESTRUCT) {
-		int j = i;
-		(MUSTSEESTRUCT) ? rz_strbuf_append(outbuf, "\"") : rz_strbuf_append(outbuf, "\\\"");
-		for (; j < len && ((size == -1 || size-- > 0) && buf[j]); j++) {
-			char ch = buf[j];
-			if (ch == '"') {
-				rz_strbuf_append(outbuf, "\\\"");
-			} else if (IS_PRINTABLE(ch)) {
-				rz_strbuf_appendf(outbuf, "%c", ch);
-			} else {
-				rz_strbuf_append(outbuf, ".");
-			}
-		}
-		(MUSTSEESTRUCT) ? rz_strbuf_append(outbuf, "\"") : rz_strbuf_append(outbuf, "\\\"");
-	} else if (MUSTSEE) {
-		int j = i;
-		if (!SEEVALUE && !ISQUIET) {
-			rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = %s", seeki, overflow ? "ovf " : "");
-		}
-		rz_strbuf_append(outbuf, "\"");
-		for (; j < len && ((size == -1 || size-- > 0) && buf[j]); j++) {
-			char esc_str[5] = { 0 };
-			char *ptr = esc_str;
-			rz_type_byte_escape(p, (char *)&buf[j], &ptr, false);
-			rz_strbuf_appendf(outbuf, "%s", esc_str);
-		}
-		rz_strbuf_append(outbuf, "\"");
-	} else if (MUSTSEEJSON) {
-		char *utf_encoded_buf = NULL;
-		rz_strbuf_append(outbuf, "\"");
-		utf_encoded_buf = rz_str_escape_utf8_for_json(
-			(char *)buf + i, size == -1 ? str_len : RZ_MIN(size, str_len));
-		if (utf_encoded_buf) {
-			rz_strbuf_appendf(outbuf, "%s", utf_encoded_buf);
-			free(utf_encoded_buf);
-		}
-		rz_strbuf_append(outbuf, "\"");
-		if (overflow) {
-			rz_strbuf_append(outbuf, ",\"overflow\":true");
-		}
-		rz_strbuf_append(outbuf, "}");
-	}
-}
-
-static void rz_type_format_nulltermwidestring(RzPrint *p, RzStrBuf *outbuf, const int len, int endian, int mode,
-	const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
-	if (MUSTSET) {
-		int vallen = strlen(setval);
-		char *newstring, *ons;
-		newstring = ons = rz_str_dup(setval);
-		if ((newstring[0] == '\"' && newstring[vallen - 1] == '\"') || (newstring[0] == '\'' && newstring[vallen - 1] == '\'')) {
-			newstring[vallen - 1] = '\0';
-			newstring++;
-			vallen -= 2;
-		}
-		if (vallen > rz_wstr_clen((char *)(buf + seeki))) {
-			eprintf("Warning: new string is longer than previous one\n");
-		}
-		rz_strbuf_appendf(outbuf, "ww %s @ 0x%08" PFMT64x "\n", newstring, seeki);
-		free(ons);
-	} else if (MUSTSEE) {
-		int j = i;
-		if (!SEEVALUE && !ISQUIET) {
-			rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki);
-		}
-		for (; j < len && ((size == -1 || size-- > 0) && buf[j]); j += 2) {
-			if (IS_PRINTABLE(buf[j])) {
-				rz_strbuf_appendf(outbuf, "%c", buf[j]);
-			} else {
-				rz_strbuf_append(outbuf, ".");
-			}
-		}
-	} else if (MUSTSEEJSON) {
-		int j = i;
-		rz_strbuf_appendf(outbuf, "%" PFMT64d ",\"string\":\"", seeki);
-		for (; j < len && ((size == -1 || size-- > 0) && buf[j]); j += 2) {
-			if (IS_PRINTABLE(buf[j])) {
-				rz_strbuf_appendf(outbuf, "%c", buf[j]);
-			} else {
-				rz_strbuf_append(outbuf, ".");
-			}
-		}
-		rz_strbuf_append(outbuf, "\"}");
-	}
-}
-
-static void rz_type_format_bitfield(const RzTypeDB *typedb, RzStrBuf *outbuf, ut64 seeki, char *fmtname,
-	char *fieldname, ut64 addr, int mode, int size) {
-	char *bitfield = NULL;
-	addr &= (1ULL << (size * 8)) - 1;
-	if (MUSTSEE && !SEEVALUE) {
-		rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki);
-	}
-	bitfield = rz_type_db_enum_get_bitfield(typedb, fmtname, addr);
-	if (bitfield && *bitfield) {
-		if (MUSTSEEJSON) {
-			rz_strbuf_appendf(outbuf, "\"%s\"}", bitfield);
-		} else if (MUSTSEE) {
-			rz_strbuf_appendf(outbuf, "%s (bitfield) = %s\n", fieldname, bitfield);
-		}
-	} else {
-		if (MUSTSEEJSON) {
-			rz_strbuf_appendf(outbuf, "\"`tb %s 0x%" PFMT64x "`\"}", fmtname, addr);
-		} else if (MUSTSEE) {
-			rz_strbuf_appendf(outbuf, "%s (bitfield) = `tb %s 0x%" PFMT64x "`\n",
-				fieldname, fmtname, addr);
-		}
-	}
-	free(bitfield);
-}
-
-static void rz_type_format_enum(const RzTypeDB *typedb, RzStrBuf *outbuf, ut64 seeki, char *fmtname,
-	char *fieldname, ut64 addr, int mode, int size) {
-	const char *enumvalue = NULL;
-	addr &= (size < 0 ? 0 : (1ULL << size * 8)) - 1;
-	if (MUSTSEE && !SEEVALUE) {
-		rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki);
-	}
-	enumvalue = rz_type_db_enum_member_by_val(typedb, fmtname, addr);
-	if (enumvalue && *enumvalue) {
-		if (mode & RZ_PRINT_DOT) {
-			rz_strbuf_appendf(outbuf, "%s.%s", fmtname, enumvalue);
-		} else if (MUSTSEEJSON) {
-			rz_strbuf_appendf(outbuf, "%" PFMT64d ",\"label\":\"%s\",\"enum\":\"%s\"}",
-				addr, enumvalue, fmtname);
-		} else if (MUSTSEE) {
-			rz_strbuf_appendf(outbuf, "%s (enum %s) = 0x%" PFMT64x " ; %s\n",
-				fieldname, fmtname, addr, enumvalue);
-		} else if (MUSTSEESTRUCT) {
-			rz_strbuf_appendf(outbuf, "%s", enumvalue);
-		}
-	} else {
-		if (MUSTSEEJSON) {
-			rz_strbuf_appendf(outbuf, "%" PFMT64d ",\"enum\":\"%s\"}", addr, fmtname);
-		} else if (MUSTSEE) {
-			rz_strbuf_appendf(outbuf, "%s (enum %s) = 0x%" PFMT64x "\n", //`te %s 0x%x`\n",
-				fieldname, fmtname, addr); // enumvalue); //fmtname, addr);
-		}
-	}
-}
-
-static void rz_print_format_register(RzStrBuf *outbuf, const RzPrint *p, int mode,
-	const char *name, const char *setval) {
-	if (!p || !p->get_register || !p->reg) {
-		return;
-	}
-	RzRegItem *ri = p->get_register(p->reg, name, RZ_REG_TYPE_ANY);
-	if (ri) {
-		if (MUSTSET) {
-			rz_strbuf_appendf(outbuf, "dr %s=%s\n", name, setval);
-		} else if (MUSTSEE) {
-			if (!SEEVALUE) {
-				rz_strbuf_appendf(outbuf, "%s : 0x%08" PFMT64x "\n", ri->name, p->get_register_value(p->reg, ri));
-			} else {
-				rz_strbuf_appendf(outbuf, "0x%08" PFMT64x "\n", p->get_register_value(p->reg, ri));
-			}
-		} else if (MUSTSEEJSON) {
-			rz_strbuf_appendf(outbuf, "%" PFMT64d "}", p->get_register_value(p->reg, ri));
-		}
-	} else {
-		rz_strbuf_appendf(outbuf, "Register %s does not exists\n", name);
-	}
-}
-
-static void rz_type_format_num_specifier(RzStrBuf *outbuf, ut64 addr, int bytes, int sign) {
-#define EXT(T) (sign ? (signed T)(addr) : (unsigned T)(addr))
-	const char *fs64 = sign ? "%" PFMT64d : "%" PFMT64u;
-	const char *fs = sign ? "%d" : "%u";
-	if (bytes == 1) {
-		rz_strbuf_appendf(outbuf, fs, EXT(char));
-	} else if (bytes == 2) {
-		rz_strbuf_appendf(outbuf, fs, EXT(short));
-	} else if (bytes == 4) {
-		rz_strbuf_appendf(outbuf, fs, EXT(long));
-	} else if (bytes == 8) {
-		rz_strbuf_appendf(outbuf, fs64, addr);
-	}
-#undef EXT
-}
-
-static void rz_type_format_num(RzStrBuf *outbuf, int endian, int mode, const char *setval, ut64 seeki, ut8 *buf, int i, int bytes, int sign, int size) {
-	ut64 addr = 0LL;
-	int elem = -1;
-	if (size >= ARRAYINDEX_COEF) {
-		elem = size / ARRAYINDEX_COEF - 1;
-		size %= ARRAYINDEX_COEF;
-	}
-	if (bytes == 8) {
-		updateAddr(buf + i, size - i, endian, NULL, &addr, false);
-	} else {
-		updateAddr(buf + i, size - i, endian, &addr, NULL, false);
-	}
-	if (MUSTSET) {
-		rz_strbuf_appendf(outbuf, "wv%d %s @ 0x%08" PFMT64x "\n", bytes, setval, seeki + ((elem >= 0) ? elem * (bytes) : 0));
-	} else if ((mode & RZ_PRINT_DOT) || MUSTSEESTRUCT) {
-		rz_type_format_num_specifier(outbuf, addr, bytes, sign);
-	} else if (MUSTSEE) {
-		if (!SEEVALUE && !ISQUIET) {
-			rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki + ((elem >= 0) ? elem * bytes : 0));
-		}
-		if (size == -1) {
-			rz_type_format_num_specifier(outbuf, addr, bytes, sign);
-		} else {
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, "[ ");
-			}
-			while (size--) {
-				if (bytes == 8) {
-					updateAddr(buf + i, size - i, endian, NULL, &addr, false);
-				} else {
-					updateAddr(buf + i, size - i, endian, &addr, NULL, false);
-				}
-				if (elem == -1 || elem == 0) {
-					rz_type_format_num_specifier(outbuf, addr, bytes, sign);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_append(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i += bytes;
-			}
-			if (!SEEVALUE) {
-				rz_strbuf_append(outbuf, " ]");
-			}
-		}
-	} else if (MUSTSEEJSON) {
-		if (size == -1) {
-			rz_type_format_num_specifier(outbuf, addr, bytes, sign);
-		} else {
-			rz_strbuf_append(outbuf, "[ ");
-			while (size--) {
-				if (bytes == 8) {
-					updateAddr(buf + i, size, endian, NULL, &addr, false);
-				} else {
-					updateAddr(buf + i, size, endian, &addr, NULL, false);
-				}
-				if (elem == -1 || elem == 0) {
-					rz_type_format_num_specifier(outbuf, addr, bytes, sign);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					rz_strbuf_append(outbuf, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i += bytes;
-			}
-			rz_strbuf_append(outbuf, " ]");
-		}
-		rz_strbuf_append(outbuf, "}");
-	}
-}
-
-// XXX: this is somewhat incomplete. must be updated to handle all format chars
-static int format_struct_size(const RzTypeDB *typedb, const char *parent_format, const char *f, int mode, int depth) {
-	char *end, *args, *fmt;
-	int size = 0, tabsize = 0, i, idx = 0, biggest = 0, fmt_len = 0, times = 1;
-	bool tabsize_set = false;
-	if (!f) {
-		return -1;
-	}
-	if (parent_format && RZ_STR_EQ(parent_format, f)) {
-		return 0;
-	}
-	if (depth >= STRUCT_MAX_NESTED_LEVELS) {
-		RZ_LOG_WARN("Structure nesting depth level reached maximum...\n");
-		return 0;
-	}
-	const char *fmt2 = rz_type_db_format_get(typedb, f);
-	if (!fmt2) {
-		fmt2 = f;
-	}
-	char *o = rz_str_dup(fmt2);
-	if (!o) {
-		return -1;
-	}
-	end = strchr(o, ' ');
-	fmt = o;
-	if (!end && !(end = strchr(o, '\0'))) {
-		free(o);
-		return -1;
-	}
-	if (*end) {
-		*end = 0;
-		args = rz_str_dup(end + 1);
-	} else {
-		args = rz_str_dup("");
-	}
-
-	if (fmt[0] == '{') {
-		char *end = strchr(fmt + 1, '}');
-		if (!end) {
-			RZ_LOG_ERROR("No end curly bracket.\n");
-			free(o);
-			free(args);
-			return -1;
-		}
-		*end = '\0';
-		times = rz_num_math(NULL, fmt + 1);
-		fmt = end + 1;
-	}
-	if (fmt[0] == '0') {
-		mode |= RZ_PRINT_UNIONMODE;
-		fmt++;
-	} else {
-		mode &= ~RZ_PRINT_UNIONMODE;
-	}
-
-	int words = rz_str_word_set0_stack(args);
-	fmt_len = strlen(fmt);
-	for (i = 0; i < fmt_len; i++) {
-		if (fmt[i] == '[') {
-			char *end = strchr(fmt + i, ']');
-			if (!end) {
-				RZ_LOG_ERROR("No end bracket.\n");
-				continue;
-			}
-			*end = '\0';
-			tabsize_set = true;
-			tabsize = rz_num_math(NULL, fmt + i + 1);
-			*end = ']';
-			while (fmt[i++] != ']') {
-				;
-			}
-		} else {
-			tabsize = 1;
-		}
-
-		switch (fmt[i]) {
-		case '.':
-			idx--;
-			// fallthrough
-		case 'c':
-		case 'b':
-		case 'X':
-			size += tabsize * 1;
-			break;
-		case 'w':
-			size += tabsize * 2;
-			break;
-		case ':':
-			idx--;
-			// fallthrough
-		case 'd':
-		case 'o':
-		case 'i':
-		case 'x':
-		case 'f':
-		case 's':
-		case 't':
-			size += tabsize * 4;
-			break;
-		case 'S':
-		case 'q':
-		case 'F':
-			size += tabsize * 8;
-			break;
-		case 'Q': // uint128
-			size += tabsize * 16;
-			break;
-		case 'z':
-		case 'Z':
-			size += tabsize;
-			break;
-		case '*':
-			size += tabsize * (typedb->target->bits / 8);
-			i++;
-			idx--; // no need to go ahead for args
-			break;
-		case 'B':
-		case 'E':
-			if (tabsize_set) {
-				if (tabsize < 1 || tabsize > 8) {
-					RZ_LOG_ERROR("Unknown enum format size: %d\n", tabsize);
-					break;
-				}
-				size += tabsize;
-			} else {
-				size += 4; // Assuming by default enum as int
-			}
-			break;
-		case '?': {
-			const char *wordAtIndex = NULL;
-			const char *format = NULL;
-			char *endname = NULL, *structname = NULL;
-			char tmp = 0;
-			if (words < idx) {
-				RZ_LOG_ERROR("Index out of bounds\n");
-			} else {
-				wordAtIndex = rz_str_word_get0(args, idx);
-			}
-			if (!wordAtIndex) {
-				break;
-			}
-			structname = rz_str_dup(wordAtIndex);
-			if (*structname == '(') {
-				endname = (char *)rz_str_rchr(structname, NULL, ')');
-			} else {
-				free(structname);
-				break;
-			}
-			if (endname) {
-				*endname = '\0';
-			}
-			format = strchr(structname, ' ');
-			if (format) {
-				tmp = *format;
-				while (tmp == ' ') {
-					format++;
-					tmp = *format;
-				}
-			} else {
-				format = rz_type_db_format_get(typedb, structname + 1);
-				if (format && !strncmp(format, f, strlen(format) - 1)) { // Avoid recursion here
-					free(o);
-					free(structname);
-					return -1;
-				}
-				if (!format) { // Fetch format from types db
-					format = rz_type_format(typedb, structname + 1);
-				}
-			}
-			if (!format) {
-				RZ_LOG_ERROR("Cannot find format for struct `%s'\n", structname + 1);
-				free(structname);
-				free(o);
-				return 0;
-			}
-			int newsize = format_struct_size(typedb, f, format, mode, depth + 1);
-			if (newsize < 1) {
-				RZ_LOG_ERROR("Cannot find size for `%s'\n", format);
-				free(structname);
-				free(o);
-				return 0;
-			}
-			if (format) {
-				size += tabsize * newsize;
-			}
-			free(structname);
-		} break;
-		case '{':
-			while (fmt[i] != '}') {
-				if (!fmt[i]) {
-					free(o);
-					free(args);
-					return -1;
-				}
-				i++;
-			}
-			i++;
-			idx--;
-			break;
-		case '}':
-			free(o);
-			free(args);
-			return -1;
-		case '+':
-		case 'e':
-			idx--;
-			break;
-		case 'p':
-			if (fmt[i + 1] == '2') {
-				size += tabsize * 2;
-			} else if (fmt[i + 1] == '4') {
-				size += tabsize * 4;
-			} else if (fmt[i + 1] == '8') {
-				size += tabsize * 8;
-			} else {
-				size += tabsize * (typedb->target->bits / 8);
-				break;
-			}
-			i++;
-			break;
-		case 'r':
-			break;
-		case 'n':
-		case 'N':
-			if (fmt[i + 1] == '1') {
-				size += tabsize * 1;
-			} else if (fmt[i + 1] == '2') {
-				size += tabsize * 2;
-			} else if (fmt[i + 1] == '4') {
-				size += tabsize * 4;
-			} else if (fmt[i + 1] == '8') {
-				size += tabsize * 8;
-			} else {
-				RZ_LOG_ERROR("Invalid '%c' format in (%s)\n", fmt[i + 1], fmt);
-				free(o);
-				free(args);
-				return -2;
-			}
-			i++;
-			break;
-		case 'u':
-		case 'D':
-		case 'T':
-			// TODO complete this.
-		default:
-			// idx--; //Does this makes sense?
-			break;
-		}
-		idx++;
-		if (mode & RZ_PRINT_UNIONMODE) {
-			if (size > biggest) {
-				biggest = size;
-			}
-			size = 0;
-		}
-	}
-	size *= times;
-	free(o);
-	free(args);
-	return (mode & RZ_PRINT_UNIONMODE) ? biggest : size;
-}
-
-RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int mode, int n) {
-	return format_struct_size(typedb, NULL, f, mode, n);
-}
-
-static int rz_type_format_data_internal(RZ_BORROW RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, ut64 seek, const ut8 *b, const int len,
-	const char *formatname, int mode, const char *setval, char *ofield);
-
-static int rz_type_format_struct(RZ_BORROW RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, ut64 seek, const ut8 *b, int len, const char *name,
-	int slide, int mode, const char *setval, char *field, int anon) {
-	char *fmt;
-	int ret = 0;
-	char namefmt[128];
-	slide++;
-	if ((slide % STRUCTPTR) > STRUCT_MAX_NESTED_LEVELS || (slide % STRUCTFLAG) / STRUCTPTR > STRUCT_MAX_NESTED_LEVELS) {
-		RZ_LOG_WARN("Structure nesting depth level reached maximum...\n");
-		return 0;
-	}
-	if (anon) {
-		fmt = rz_str_dup(name);
-	} else {
-		const char *dbfmt = rz_type_db_format_get(typedb, name);
-		if (!dbfmt) { // Fetch struct info from types DB
-			fmt = rz_type_format(typedb, name);
-		} else {
-			fmt = rz_str_dup(dbfmt);
-		}
-	}
-	if (RZ_STR_ISEMPTY(fmt)) {
-		eprintf("Undefined struct '%s'.\n", name);
-		goto beach;
-	}
-	if (MUSTSEE && !SEEVALUE) {
-		snprintf(namefmt, sizeof(namefmt), "%%%ds", 10 + 6 * slide % STRUCTPTR);
-		if (fmt[0] == '0') {
-			rz_strbuf_appendf(outbuf, namefmt, "union");
-		} else {
-			rz_strbuf_appendf(outbuf, namefmt, "struct");
-		}
-		rz_strbuf_appendf(outbuf, "<%s>\n", name);
-	}
-	rz_type_format_data_internal(typedb, p, outbuf, seek, b, len, fmt, mode, setval, field);
-	ret = rz_type_format_struct_size(typedb, fmt, mode, 0);
-
-beach:
-	free(fmt);
-	return ret;
-}
-
-static const char *get_args_offset(const char *arg) {
-	const char *args = strchr(arg, ' ');
-	const char *sq_bracket = strchr(arg, '[');
-	int max = 30;
-	if (args && sq_bracket) {
-		const char *csq_bracket = strchr(arg, ']');
-		while (args && csq_bracket && csq_bracket > args && max--) {
-			args = strchr(csq_bracket, ' ');
-		}
-	}
-	return args;
-}
-
-static char *get_format_type(const char fmt, const char arg) {
-	char *type = NULL;
-	switch (fmt) {
-	case 'b':
-	case 'C':
-		type = rz_str_dup("uint8_t");
-		break;
-	case 'c':
-		type = rz_str_dup("int8_t");
-		break;
-	case 'd':
-	case 'i':
-	case 'o':
-	case 'x':
-		type = rz_str_dup("int32_t");
-		break;
-	case 'E':
-		type = rz_str_dup("enum");
-		break;
-	case 'f':
-		type = rz_str_dup("float");
-		break;
-	case 'F':
-		type = rz_str_dup("double");
-		break;
-	case 'q':
-		type = rz_str_dup("uint64_t");
-		break;
-	case 'u':
-		type = rz_str_dup("uleb128_t");
-		break;
-	case 'Q':
-		type = rz_str_dup("uint128_t");
-		break;
-	case 'w':
-		type = rz_str_dup("uint16_t");
-		break;
-	case 'X':
-		type = rz_str_dup("uint8_t[]");
-		break;
-	case 'D':
-	case 's':
-	case 'S':
-	case 't':
-	case 'z':
-	case 'Z':
-		type = rz_str_dup("char*");
-		break;
-	case 'n':
-	case 'N':
-		switch (arg) {
-		case '1':
-			type = rz_str_dup(fmt == 'n' ? "int8_t" : "uint8_t");
-			break;
-		case '2':
-			type = rz_str_dup(fmt == 'n' ? "int16_t" : "uint16_t");
-			break;
-		case '4':
-			type = rz_str_dup(fmt == 'n' ? "int32_t" : "uint32_t");
-			break;
-		case '8':
-			type = rz_str_dup(fmt == 'n' ? "int64_t" : "uint64_t");
-			break;
-		}
-		break;
-	}
-	return type;
-}
-
-#define MINUSONE ((void *)(size_t)-1)
-#define ISSTRUCT (tmp == '?' || (tmp == '*' && *(arg + 1) == '?'))
-
-RZ_API const char *rz_type_db_format_get(const RzTypeDB *typedb, const char *name) {
-	rz_return_val_if_fail(typedb && name, NULL);
-	bool found = false;
-	const char *result = ht_ss_find(typedb->formats, name, &found);
-	if (!found || !result) {
-		// eprintf("Cannot find format \"%s\"\n", name);
-		return NULL;
-	}
-	return result;
-}
-
-RZ_API void rz_type_db_format_set(RzTypeDB *typedb, const char *name, const char *fmt) {
-	rz_return_if_fail(typedb && name && fmt);
-	// TODO: We should check if the file format is valid (e.g. syntax) before storing it
-	ht_ss_insert(typedb->formats, name, rz_str_dup(fmt));
-}
-
-static bool format_collect_cb(void *user, const char *k, const char *v) {
-	rz_return_val_if_fail(user && k && v, false);
-	RzList *l = user;
-	RzTypeFormat *fmt = RZ_NEW0(RzTypeFormat);
-	fmt->name = k;
-	fmt->body = v;
-	rz_list_append(l, fmt);
-	return true;
-}
-
-RZ_API RZ_OWN RzList /*<RzTypeFormat *>*/ *rz_type_db_format_all(RzTypeDB *typedb) {
-	rz_return_val_if_fail(typedb, NULL);
-	RzList *formats = rz_list_new();
-	ht_ss_foreach(typedb->formats, format_collect_cb, formats);
-	return formats;
-}
-
-RZ_API void rz_type_db_format_delete(RzTypeDB *typedb, const char *name) {
-	rz_return_if_fail(typedb && name);
-	ht_ss_delete(typedb->formats, name);
-}
-
-static int rz_type_format_data_internal(RZ_BORROW RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, ut64 seek, const ut8 *b, const int len,
-	const char *formatname, int mode, const char *setval, char *ofield) {
-	int nargs, i, invalid, nexti, idx, times, otimes, endian, isptr = 0;
-	const int old_bits = typedb->target->bits;
-	char *args = NULL, tmp, last = 0;
-	ut64 addr = 0, addr64 = 0, seeki = 0;
-	char namefmt[32], *field = NULL;
-	const char *arg = NULL;
-	const char *fmt = NULL, *bracket = NULL;
-	const char *argend;
-	int viewflags = 0;
-	char *oarg = NULL;
-	char *internal_format = NULL;
-	RzFormatDataInternal *format_data = typedb->format_internal_data;
-
-	/* Load format from name into fmt */
-	if (!formatname) {
-		return 0;
-	}
-	fmt = rz_type_db_format_get(typedb, formatname);
-	if (!fmt) {
-		fmt = formatname;
-	}
-	internal_format = rz_str_dup(fmt);
-	fmt = internal_format;
-	while (*fmt && IS_WHITECHAR(*fmt)) {
-		fmt++;
-	}
-	argend = fmt + strlen(fmt);
-	arg = fmt;
-
-	nexti = nargs = i = 0;
-
-	if (len < 1) {
-		free(internal_format);
-		return 0;
-	}
-
-	// len+2 to save space for the null termination in wide strings
-	ut8 *buf = calloc(1, len + 2);
-	if (!buf) {
-		free(internal_format);
-		return 0;
-	}
-	memcpy(buf, b, len);
-	endian = typedb->target->big_endian;
-
-	if (ofield && ofield != MINUSONE) {
-		field = rz_str_dup(ofield);
-	}
-	/* get times */
-	otimes = times = atoi(arg);
-	if (times > 0) {
-		while (IS_DIGIT(*arg)) {
-			arg++;
-		}
-	}
-
-	bracket = strchr(arg, '{');
-	if (bracket) {
-		const char *end = strchr(arg, '}');
-		if (!end || bracket + 1 == end) {
-			eprintf("No end bracket. Try pf {ecx}b @ esi\n");
-			goto beach;
-		}
-		char *num = rz_str_ndup(bracket + 1, end - (bracket + 1));
-		times = rz_num_math(NULL, num);
-		free(num);
-		arg = end + 1;
-	}
-
-	if (*arg == '\0') {
-		goto beach;
-	}
-
-	/* get args */
-	const char *off_args = get_args_offset(arg);
-	if (off_args) {
-		int maxl = 0;
-		argend = off_args;
-		tmp = *off_args;
-		while (tmp == ' ') {
-			off_args++;
-			tmp = *off_args;
-		}
-		args = rz_str_dup(off_args);
-		nargs = rz_str_word_set0_stack(args);
-		if (nargs == 0) {
-			RZ_FREE(args);
-		}
-		for (i = 0; i < nargs; i++) {
-			const char *tmp = rz_str_word_get0(args, i);
-			const char *nm = rz_str_rchr(tmp, NULL, ')');
-			int len = strlen(nm ? nm + 1 : tmp);
-			if (len > maxl) {
-				maxl = len;
-			}
-		}
-		const char *ends = " "; // XXX trailing space warning
-		snprintf(namefmt, sizeof(namefmt), "%%%ds :%s",
-			((maxl + 1) * (1 + format_data->slide)) % STRUCTPTR, ends);
-	}
-#define ISPOINTED ((slide % STRUCTFLAG) / STRUCTPTR <= (oldslide % STRUCTFLAG) / STRUCTPTR)
-#define ISNESTED  ((slide % STRUCTPTR) <= (oldslide % STRUCTPTR))
-	if (mode == RZ_PRINT_JSON && format_data->slide == 0) {
-		rz_strbuf_append(outbuf, "[");
-	}
-	if (mode == RZ_PRINT_STRUCT) {
-		if (formatname && *formatname) {
-			if (strchr(formatname, ' ')) {
-				rz_strbuf_append(outbuf, "struct {\n");
-			} else {
-				rz_strbuf_appendf(outbuf, "struct %s {\n", formatname);
-			}
-		} else {
-			rz_strbuf_append(outbuf, "struct {\n");
-		}
-	}
-	if (mode && arg[0] == '0') {
-		mode |= RZ_PRINT_UNIONMODE;
-		arg++;
-	} else {
-		mode &= ~RZ_PRINT_UNIONMODE;
-	}
-	if (mode & RZ_PRINT_DOT) {
-		char *fmtname;
-		if (formatname && *formatname) {
-			if (strchr(formatname, ' ')) {
-				fmtname = rz_str_newf("0x%" PFMT64x, seek);
-			} else {
-				fmtname = rz_str_dup(formatname);
-			}
-		} else {
-			fmtname = rz_str_newf("0x%" PFMT64x, seek);
-		}
-		rz_strbuf_append(outbuf, "digraph g { graph [ rank=same; rankdir=LR; ];\n");
-		rz_strbuf_appendf(outbuf, "root [ rank=1; shape=record\nlabel=\"%s", fmtname);
-	}
-
-	/* go format */
-	i = 0;
-	if (!times) {
-		otimes = times = 1;
-	}
-	for (; times; times--) { // repeat N times
-		const char *orig = arg;
-		int first = 1;
-		if (otimes > 1) {
-			if (mode & RZ_PRINT_JSON) {
-				if (otimes > times) {
-					rz_strbuf_append(outbuf, ",");
-				}
-				rz_strbuf_appendf(outbuf, "[{\"index\":%d,\"offset\":%" PFMT64d "},", otimes - times, seek + i);
-			} else if (mode) {
-				rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " [%d] {\n", seek + i, otimes - times);
-			}
-		}
-		arg = orig;
-		for (idx = 0; i < len && arg < argend && *arg; arg++) {
-			int size = 0, elem = 0; /* size of the array, element of the array */
-			char *fieldname = NULL, *fmtname = NULL;
-			if (mode & RZ_PRINT_UNIONMODE) {
-				i = 0;
-			}
-			seeki = seek + i;
-			addr = 0LL;
-			invalid = 0;
-			typedb->target->bits = old_bits;
-			if (arg[0] == '[') {
-				const char *end = strchr(arg, ']');
-				if (!end || end == arg + 1) {
-					eprintf("No end bracket.\n");
-					goto beach;
-				}
-				char *copy = rz_str_ndup(arg + 1, end - (arg + 1));
-				size = get_size(typedb->num, buf, endian, copy);
-				free(copy);
-				arg = end + 1;
-			} else {
-				size = -1;
-			}
-			int fs = rz_type_format_struct_size(typedb, arg, 0, idx);
-			if (fs == -2) {
-				i = -1;
-				goto beach;
-			}
-			if (fs < 1) {
-				fs = 4;
-			}
-			if (i + fs - 1 < len) { // should be +7 to avoid oobread on 'q'
-				// Max byte number where updateAddr will look into
-				if (len - i < 7) {
-					updateAddr(buf + i, THRESHOLD - (len - i), endian, &addr, &addr64, false);
-				} else {
-					updateAddr(buf + i, len - i, endian, &addr, &addr64, false);
-				}
-				if (typedb->target->bits == 64) {
-					addr = addr64;
-				}
-			} else {
-				// eprintf ("Format strings is too big for this buffer\n");
-				goto beach;
-			}
-
-			tmp = *arg;
-
-			if (mode && !args) {
-				mode |= RZ_PRINT_ISFIELD;
-			}
-			if (!(mode & RZ_PRINT_QUIET)) {
-				if (mode & RZ_PRINT_MUSTSEE && otimes > 1) {
-					rz_strbuf_append(outbuf, "  ");
-				}
-			}
-			if (idx < nargs && tmp != 'e' && isptr == 0) {
-				char *dot = NULL, *bracket = NULL;
-				if (field) {
-					dot = strchr(field, '.');
-				}
-				if (dot) {
-					*dot = '\0';
-				}
-				free(oarg);
-				oarg = fieldname = rz_str_dup(rz_str_word_get0(args, idx));
-				if (ISSTRUCT || tmp == 'E' || tmp == 'B' || tmp == 'r') {
-					if (*fieldname == '(') {
-						fmtname = fieldname + 1;
-						fieldname = (char *)rz_str_rchr(fieldname, NULL, ')');
-						if (fieldname) {
-							*fieldname++ = '\0';
-						} else {
-							eprintf("Missing closing parenthesis in format ')'\n");
-							goto beach;
-						}
-					} else {
-						eprintf("Missing name (%s)\n", fieldname);
-						goto beach;
-					}
-				}
-				if (mode && (!args || (!field && ofield != MINUSONE) || (field && !strncmp(field, fieldname, strchr(field, '[') ? strchr(field, '[') - field : strlen(field) + 1)))) {
-					mode |= RZ_PRINT_ISFIELD;
-				} else {
-					mode &= ~RZ_PRINT_ISFIELD;
-				}
-
-				/* There we handle specific element in array */
-				if (field && (bracket = strchr(field, '[')) && mode & RZ_PRINT_ISFIELD) {
-					char *end = strchr(field, ']');
-					if (!end) {
-						eprintf("Missing closing bracket\n");
-						goto beach;
-					}
-					*end = '\0';
-					elem = rz_num_math(NULL, bracket + 1) + 1; // +1 to handle 0 index easily
-					for (; bracket < end; bracket++) {
-						*bracket = '\0';
-					}
-					size += elem * ARRAYINDEX_COEF;
-				} else {
-					elem = -1;
-				}
-				if (tmp != '.' && tmp != ':') {
-					idx++;
-					if (MUSTSEE && !SEEVALUE) {
-						if (!ISQUIET) {
-							rz_strbuf_appendf(outbuf, namefmt, fieldname);
-						}
-					}
-				}
-			}
-		feed_me_again:
-			switch (isptr) {
-			case PTRSEEK: {
-				nexti = i + (typedb->target->bits / 8);
-				i = 0;
-				if (tmp == '?') {
-					seeki = addr;
-				}
-				memset(buf, '\0', len);
-				if (MUSTSEE && !ISQUIET) {
-					rz_strbuf_appendf(outbuf, "(*0x%" PFMT64x ")", addr);
-				}
-				isptr = (addr) ? PTRBACK : NULLPTR;
-				typedb->iob.read_at(typedb->iob.io, (ut64)addr, buf, len - 4);
-				if (((i + 3) < len) || ((i + 7) < len)) {
-					// XXX this breaks pf *D
-					if (tmp != 'D') {
-						updateAddr(buf + i, len - i, endian, &addr, &addr64, false);
-					}
-				} else {
-					eprintf("(cannot read at 0x%08" PFMT64x ", block: %s, blocksize: 0x%x)\n",
-						addr, b, len);
-					rz_strbuf_append(outbuf, "\n");
-					goto beach;
-				}
-			} break;
-			case PTRBACK:
-				// restore state after pointer seek
-				i = nexti;
-				memcpy(buf, b, len);
-				isptr = NOPTR;
-				arg--;
-				continue;
-			}
-			if (tmp == 0 && last != '*') {
-				break;
-			}
-
-			/* skip chars */
-			switch (tmp) {
-			case '*': // next char is a pointer
-				isptr = PTRSEEK;
-				arg++;
-				tmp = *arg; // last;
-				goto feed_me_again;
-			case '+': // toggle view flags
-				viewflags = !viewflags;
-				continue;
-			case 'e': // tmp swap endian
-				endian ^= 1;
-				continue;
-			case ':': // skip 4 bytes
-				if (size == -1) {
-					i += 4;
-				} else {
-					while (size--) {
-						i += 4;
-					}
-				}
-				continue;
-			case '.': // skip 1 byte
-				i += (size == -1) ? 1 : size;
-				continue;
-			case 'p': // pointer reference
-				if (*(arg + 1) == '2') {
-					tmp = 'w';
-					arg++;
-				} else if (*(arg + 1) == '4') {
-					tmp = 'x';
-					arg++;
-				} else if (*(arg + 1) == '8') {
-					tmp = 'q';
-					arg++;
-				} else { // If pointer reference is not mentioned explicitly
-					switch (typedb->target->bits) {
-					case 16: tmp = 'w'; break;
-					case 32: tmp = 'x'; break;
-					default: tmp = 'q'; break;
-					}
-				}
-				break;
-			}
-
-			/* flags */
-			if (mode & RZ_PRINT_SEEFLAGS && isptr != NULLPTR) {
-				char *newname = NULL;
-				if (!fieldname) {
-					newname = fieldname = rz_str_newf("pf.%" PFMT64u, seeki);
-				}
-				if (mode & RZ_PRINT_UNIONMODE) {
-					rz_strbuf_appendf(outbuf, "f %s @ 0x%08" PFMT64x "\n", formatname, seeki);
-					free(newname);
-					goto beach;
-				} else if (tmp == '?') {
-					rz_strbuf_appendf(outbuf, "f %s.%s_", fmtname, fieldname);
-				} else if (tmp == 'E') {
-					rz_strbuf_appendf(outbuf, "f %s @ 0x%08" PFMT64x "\n", fieldname, seeki);
-				} else if (format_data->slide / STRUCTFLAG > 0 && idx == 1) {
-					rz_strbuf_appendf(outbuf, "%s @ 0x%08" PFMT64x "\n", fieldname, seeki);
-				} else {
-					rz_strbuf_appendf(outbuf, "f %s @ 0x%08" PFMT64x "\n", fieldname, seeki);
-				}
-				if (newname) {
-					RZ_FREE(newname);
-					fieldname = NULL;
-				}
-			}
-
-			/* dot */
-			if (mode & RZ_PRINT_DOT) {
-				if (fieldname) {
-					rz_strbuf_appendf(outbuf, "|{0x%" PFMT64x "|%c|%s|<%s>",
-						seeki, tmp, fieldname, fieldname);
-				} else {
-					rz_strbuf_appendf(outbuf, "|{0x%" PFMT64x "|%c|",
-						seeki, tmp);
-				}
-			}
-
-			/* json */
-			if (MUSTSEEJSON && mode & RZ_PRINT_JSON) {
-				if (format_data->oldslide <= format_data->slide) {
-					if (first) {
-						first = 0;
-					} else {
-						rz_strbuf_append(outbuf, ",");
-					}
-				} else if (format_data->oldslide) {
-					rz_strbuf_append(outbuf, "]},");
-					format_data->oldslide -= NESTEDSTRUCT;
-				}
-				if (fieldname) {
-					rz_strbuf_appendf(outbuf, "{\"name\":\"%s\",\"type\":\"", fieldname);
-				} else {
-					rz_strbuf_append(outbuf, "{\"type\":\"");
-				}
-				if (ISSTRUCT) {
-					rz_strbuf_appendf(outbuf, "%s", fmtname);
-				} else {
-					if (tmp == 'n' || tmp == 'N') {
-						rz_strbuf_appendf(outbuf, "%c%c", tmp, *(arg + 1));
-					} else {
-						rz_strbuf_appendf(outbuf, "%c", tmp);
-					}
-				}
-				if (isptr) {
-					rz_strbuf_append(outbuf, "*");
-				}
-				rz_strbuf_appendf(outbuf, "\",\"offset\":%" PFMT64d ",\"value\":",
-					isptr ? (seek + nexti - (typedb->target->bits / 8)) : seek + i);
-			}
-
-			/* c struct */
-			if (MUSTSEESTRUCT) {
-				char *type = get_format_type(tmp, (tmp == 'n' || tmp == 'N') ? arg[1] : 0);
-				if (type) {
-					rz_strbuf_appendf(outbuf, "%*c%s %s; // ", format_data->ident, ' ', type, fieldname);
-				} else {
-					rz_strbuf_appendf(outbuf, "%*cstruct %s {", format_data->ident, ' ', fieldname);
-				}
-				free(type);
-			}
-			bool noline = false;
-
-			int oi = i;
-			if (isptr == NULLPTR) {
-				if (MUSTSEEJSON) {
-					rz_strbuf_append(outbuf, "\"NULL\"}");
-				} else if (MUSTSEE) {
-					rz_strbuf_append(outbuf, " NULL\n");
-				}
-				isptr = PTRBACK;
-			} else {
-				/* format chars */
-				// before to enter in the switch statement check buf boundaries due to  updateAddr
-				// might go beyond its len and it's usually called in each of the following functions
-				switch (tmp) {
-				case 'u':
-					i += rz_type_format_uleb(outbuf, endian, mode, setval, seeki, buf, i, size);
-					break;
-				case 't':
-					rz_type_format_time(outbuf, endian, mode, setval, seeki, buf, i, size);
-					i += (size == -1) ? 4 : 4 * size;
-					break;
-				case 'q':
-					rz_type_format_quadword(outbuf, endian, mode, setval, seeki, buf, i, size);
-					i += (size == -1) ? 8 : 8 * size;
-					break;
-				case 'Q':
-					rz_type_format_u128(outbuf, endian, mode, setval, seeki, buf, i, size);
-					i += (size == -1) ? 16 : 16 * size;
-					break;
-				case 'b':
-					rz_type_format_byte(outbuf, endian, mode, setval, seeki, buf, i, size);
-					i += (size == -1) ? 1 : size;
-					break;
-				case 'C':
-					rz_type_format_decchar(outbuf, endian, mode, setval, seeki, buf, i, size);
-					i += (size == -1) ? 1 : size;
-					break;
-				case 'c':
-					rz_type_format_char(outbuf, endian, mode, setval, seeki, buf, i, size);
-					i += (size == -1) ? 1 : size;
-					break;
-				case 'X':
-					size = rz_type_format_hexpairs(outbuf, endian, mode, setval, seeki, buf, i, size);
-					i += size;
-					break;
-				case 'T':
-					if (rz_type_format_10bytes(typedb, outbuf, mode,
-						    setval, seeki, addr, buf) == 0) {
-						i += (size == -1) ? 4 : 4 * size;
-					}
-					break;
-				case 'f':
-					rz_type_format_float(outbuf, endian, mode, setval, seeki, buf, i, size);
-					i += (size == -1) ? 4 : 4 * size;
-					break;
-				case 'F':
-					rz_type_format_double(outbuf, endian, mode, setval, seeki, buf, i, size);
-					i += (size == -1) ? 8 : 8 * size;
-					break;
-				case 'i':
-					rz_type_format_int(outbuf, endian, mode, setval, seeki, buf, i, size);
-					i += (size == -1) ? 4 : 4 * size;
-					break;
-				case 'd': // WHY?? help says: 0x%%08x hexadecimal value (4 bytes)
-					rz_type_format_hex(outbuf, endian, mode, setval, seeki, buf, i, size);
-					i += (size == -1) ? 4 : 4 * size;
-					break;
-				/*
-				case 'D':
-					if (isptr) {
-						if (typedb->target->bits == 64) {
-							i += rz_print_format_disasm(p, addr64, size);
-						} else {
-							i += rz_print_format_disasm(p, addr, size);
-						}
-					} else {
-						i += rz_print_format_disasm(p, seeki, size);
-					}
-					break;
-				*/
-				case 'o':
-					rz_type_format_octal(outbuf, endian, mode, setval, seeki, buf, i, size);
-					i += (size == -1) ? 4 : 4 * size;
-					break;
-				case ';':
-					noline = true;
-					i -= (size == -1) ? 4 : 4 * size;
-					if (i < 0) {
-						i = 0;
-					}
-					break;
-				case ',':
-					noline = true;
-					i -= (size == -1) ? 1 : size;
-					if (i < 0) {
-						i = 0;
-					}
-					break;
-				case 'x':
-					rz_type_format_hexflag(outbuf, endian, mode, setval, seeki, buf, i, size);
-					i += (size == -1) ? 4 : 4 * size;
-					break;
-				case 'w':
-					rz_type_format_word(outbuf, endian, mode, setval, seeki, buf, i, size);
-					i += (size == -1) ? 2 : 2 * size;
-					break;
-				case 'z': // zero terminated string
-					rz_type_format_nulltermstring(typedb, p, outbuf, len, endian, mode, setval, seeki, buf, i, size);
-					if (size == -1) {
-						i += strlen((char *)buf + i) + 1;
-					} else {
-						while (size--) {
-							i++;
-						}
-					}
-					break;
-				case 'Z': // zero terminated wide string
-					rz_type_format_nulltermwidestring(p, outbuf, len, endian, mode, setval, seeki, buf, i, size);
-					if (size == -1) {
-						i += rz_wstr_clen((char *)(buf + i)) * 2 + 2;
-					} else {
-						while (size--) {
-							i += 2;
-						}
-					}
-					break;
-				case 's':
-					if (rz_type_format_string(typedb, outbuf, seeki, addr64, addr, 0, mode) == 0) {
-						i += (size == -1) ? 4 : 4 * size;
-					}
-					break;
-				case 'S':
-					if (rz_type_format_string(typedb, outbuf, seeki, addr64, addr, 1, mode) == 0) {
-						i += (size == -1) ? 8 : 8 * size;
-					}
-					break;
-				case 'B': // resolve bitfield
-					if (size >= ARRAYINDEX_COEF) {
-						size %= ARRAYINDEX_COEF;
-					}
-					rz_type_format_bitfield(typedb, outbuf, seeki, fmtname, fieldname, addr, mode, size);
-					i += (size == -1) ? 1 : size;
-					break;
-				case 'E': // resolve enum
-					if (size >= ARRAYINDEX_COEF) {
-						size %= ARRAYINDEX_COEF;
-					}
-					rz_type_format_enum(typedb, outbuf, seeki, fmtname, fieldname, addr, mode, size);
-					i += (size == -1) ? 1 : size;
-					break;
-				case 'r':
-					if (fmtname) {
-						rz_print_format_register(outbuf, p, mode, fmtname, setval);
-					} else {
-						eprintf("Unknown register\n");
-					}
-					break;
-				case '?': {
-					int s = 0;
-					char *nxtfield = NULL;
-					char *format = NULL;
-					int anon = 0;
-					if (size >= ARRAYINDEX_COEF) {
-						elem = size / ARRAYINDEX_COEF - 1;
-						size %= ARRAYINDEX_COEF;
-					}
-					if (!(mode & RZ_PRINT_ISFIELD)) {
-						nxtfield = MINUSONE;
-					} else if (field) {
-						nxtfield = strchr(ofield, '.');
-					}
-					if (nxtfield != MINUSONE && nxtfield) {
-						nxtfield++;
-					}
-
-					if (MUSTSEE) {
-						if (!SEEVALUE) {
-							rz_strbuf_append(outbuf, "\n");
-						}
-					}
-					if (MUSTSEEJSON) {
-						if (isptr) {
-							rz_strbuf_appendf(outbuf, "%" PFMT64d "},", seeki);
-						} else {
-							rz_strbuf_append(outbuf, "[");
-						}
-					}
-					if (MUSTSEESTRUCT) {
-						if (isptr) {
-							rz_strbuf_appendf(outbuf, "%" PFMT64d, seeki);
-						} else {
-							format_data->ident += 4;
-							rz_strbuf_append(outbuf, "\n");
-						}
-					}
-					if (mode & RZ_PRINT_SEEFLAGS) {
-						format_data->slide += STRUCTFLAG;
-					}
-					if (!fmtname) {
-						break;
-					}
-					format = strchr(fmtname, ' ');
-					if (format) {
-						anon = 1;
-						fmtname = format;
-						while (*fmtname == ' ') {
-							fmtname++;
-						}
-					}
-					format_data->oldslide = format_data->slide;
-					// slide += (isptr) ? STRUCTPTR : NESTEDSTRUCT;
-					format_data->slide += NESTEDSTRUCT;
-					if (size == -1) {
-						s = rz_type_format_struct(typedb, p, outbuf, seeki,
-							buf + i, len - i, fmtname, format_data->slide,
-							mode, setval, nxtfield, anon);
-						i += (isptr) ? (typedb->target->bits / 8) : s;
-						if (MUSTSEEJSON) {
-							if (!isptr && (!arg[1] || arg[1] == ' ')) {
-								rz_strbuf_append(outbuf, "]}");
-							}
-						}
-					} else {
-						if (mode & RZ_PRINT_ISFIELD) {
-							if (!SEEVALUE) {
-								rz_strbuf_append(outbuf, "[\n");
-							}
-						}
-						while (size--) {
-							if (mode && (elem == -1 || elem == 0)) {
-								mode |= RZ_PRINT_MUSTSEE;
-								if (elem == 0) {
-									elem = -2;
-								}
-							} else {
-								mode &= ~RZ_PRINT_MUSTSEE;
-							}
-							s = rz_type_format_struct(typedb, p, outbuf, seek + i,
-								buf + i, len - i, fmtname, format_data->slide, mode, setval, nxtfield, anon);
-							if ((MUSTSEE || MUSTSEEJSON || MUSTSEESTRUCT) && size != 0 && elem == -1) {
-								if (MUSTSEEJSON) {
-									rz_strbuf_append(outbuf, ",");
-								} else if (MUSTSEE || MUSTSEESTRUCT) {
-									rz_strbuf_append(outbuf, "\n");
-								}
-							}
-							if (elem > -1) {
-								elem--;
-							}
-							i += (isptr) ? (typedb->target->bits / 8) : s;
-						}
-						if (mode & RZ_PRINT_ISFIELD) {
-							if (!SEEVALUE) {
-								rz_strbuf_append(outbuf, "]\n");
-							}
-						}
-						if (MUSTSEEJSON) {
-							rz_strbuf_append(outbuf, "]}");
-						}
-					}
-					format_data->oldslide = format_data->slide;
-					// slide -= (isptr) ? STRUCTPTR : NESTEDSTRUCT;
-					format_data->slide -= NESTEDSTRUCT;
-					if (mode & RZ_PRINT_SEEFLAGS) {
-						format_data->oldslide = format_data->slide;
-						format_data->slide -= STRUCTFLAG;
-					}
-					break;
-				}
-				case 'n':
-				case 'N': {
-					int bytes = 0;
-					int sign = (tmp == 'n') ? 1 : 0;
-					if (arg[1] == '1') {
-						bytes = 1;
-					} else if (arg[1] == '2') {
-						bytes = 2;
-					} else if (arg[1] == '4') {
-						bytes = 4;
-					} else if (arg[1] == '8') {
-						bytes = 8;
-					} else {
-						invalid = 1;
-						break;
-						// or goto beach;???
-					}
-					rz_type_format_num(outbuf, endian, mode, setval, seeki, buf, i, bytes, sign, size);
-					i += (size == -1) ? bytes : size * bytes;
-					arg++;
-					break;
-				}
-				default:
-					/* ignore unknown chars */
-					invalid = 1;
-					break;
-				} // switch
-			}
-			if (MUSTSEESTRUCT) {
-				if (format_data->oldslide) {
-					format_data->ident -= 4;
-					rz_strbuf_appendf(outbuf, "%*c}", format_data->ident, ' ');
-					format_data->oldslide -= NESTEDSTRUCT;
-				}
-				rz_strbuf_append(outbuf, "\n");
-			}
-			if (mode & RZ_PRINT_DOT) {
-				rz_strbuf_append(outbuf, "}");
-			}
-			if (mode & RZ_PRINT_SEEFLAGS && isptr != NULLPTR) {
-				int sz = i - oi;
-				if (sz > 1) {
-					rz_strbuf_appendf(outbuf, "fL %d @ 0x%08" PFMT64x "\n", sz, seeki);
-					rz_strbuf_appendf(outbuf, "Cd %d @ 0x%08" PFMT64x "\n", sz, seeki);
-				}
-			}
-			if (viewflags && p->offname) {
-				const char *s = p->offname(p->user, seeki);
-				if (s) {
-					rz_strbuf_appendf(outbuf, "@(%s)", s);
-				}
-				s = p->offname(p->user, addr);
-				if (s) {
-					rz_strbuf_appendf(outbuf, "*(%s)", s);
-				}
-			}
-			if (!noline && tmp != 'D' && !invalid && !fmtname && MUSTSEE) {
-				rz_strbuf_append(outbuf, "\n");
-			}
-			last = tmp;
-
-			// XXX: Due to the already noted issues with the above, we need to strip
-			// args from fmt:args the same way we strip fmt BUT only for enums as
-			// nested structs seem to be handled correctly above!
-			if (arg[0] == 'E') {
-				char *end_fmt = (char *)strchr(arg, ' ');
-				if (!end_fmt) {
-					goto beach;
-				}
-				char *next_args = strchr(end_fmt + 1, ' ');
-				if (next_args) {
-					while (*next_args != '\0') {
-						*end_fmt++ = *next_args++;
-					}
-				}
-				*end_fmt = '\0';
-			}
-		}
-		if (otimes > 1) {
-			if (MUSTSEEJSON) {
-				rz_strbuf_append(outbuf, "]");
-			} else if (mode) {
-				rz_strbuf_append(outbuf, "}\n");
-			}
-		}
-		arg = orig;
-		format_data->oldslide = 0;
-	}
-	if (mode & RZ_PRINT_JSON && format_data->slide == 0) {
-		rz_strbuf_append(outbuf, "]");
-	}
-	if (MUSTSEESTRUCT && format_data->slide == 0) {
-		rz_strbuf_append(outbuf, "}\n");
-	}
-	if (mode & RZ_PRINT_DOT) {
-		rz_strbuf_append(outbuf, "\"];\n}\n");
-		// TODO: show nested structs and field reference lines
-	}
-beach:
-	if (format_data->slide == 0) {
-		format_data->oldslide = 0;
-	}
-	free(internal_format);
-	free(oarg);
-	free(buf);
-	free(field);
-	free(args);
-	return i;
-}
-
-/**
- * \brief Applies `pf` format string to a data
- *
- * \param typedb Types Database instance
- * \param p RzPrint instance
- * \param seek An offset in the binary to which apply the format
- * \param b A buffer from which take the data
- * \param len Length of the data
- * \param formatname Format name
- * \param mode RzPrint mode
- * \param setval Format field value in the writing mode
- * \param ofield Format field
- */
-RZ_API RZ_OWN char *rz_type_format_data(RZ_BORROW RzTypeDB *typedb, RzPrint *p, ut64 seek, const ut8 *b, const int len,
-	const char *formatname, int mode, const char *setval, char *ofield) {
-	RzStrBuf *outbuf = rz_strbuf_new("");
-	rz_type_format_data_internal(typedb, p, outbuf, seek, b, len, formatname, mode, setval, ofield);
-	char *outstr = rz_strbuf_drain(outbuf);
-	return outstr;
-}
+#include <rz_pf.h>
 
 /* Every format string essentially contains two parts:
  * 1. The format (`pf` string) itself
@@ -2794,18 +31,19 @@ RZ_API RZ_OWN char *rz_type_format_data(RZ_BORROW RzTypeDB *typedb, RzPrint *p, 
  * Both parts are separated from each other by space
  *
  * Example:
- * "[2]Ewtxxw[2]B (pe_machine)machine NumberOfSections TimeDateStamp PointerToSymbolTable NumberOfSymbols SizeOfOptionalHeader (pe_characteristics)Characteristics"
- * Here "[2]Ewtxxw[2]B" is the `pf` string while the rest are field names and types.
+ * "[2]Ex2t(unix32)x4x4x2[2]B (pe_machine)machine NumberOfSections TimeDateStamp PointerToSymbolTable NumberOfSymbols SizeOfOptionalHeader (pe_characteristics)Characteristics"
+ * Here "[2]Ex2t(unix32)x4x4x2[2]B" is the `pf` string while the rest are
+ * field names and types.
  * E.g. "(pe_machine)" is the field type, previously defined enum called "pe_machine"
  * "machine" here is the field name. The corresponding construction in C is:
  * struct {
- *     pe_machine machine;
- *     uint16_t NumberOfSections;
- *     datetime_t TimeDateStamp;
- *     uint32_t PointerToSymbolTable;
- *     uint32_t NumberOfSymbols;
- *     uint16_t SizeOfOptionalHeader;
- *     pe_characteristics characteristics; // (bitfield enum)
+ *     pe_machine machine;        // [2]E  (enum, 2-byte)
+ *     uint16_t NumberOfSections; // x2
+ *     datetime_t TimeDateStamp;  // t(unix32)
+ *     uint32_t PointerToSymbolTable; // x4
+ *     uint32_t NumberOfSymbols;  // x4
+ *     uint16_t SizeOfOptionalHeader; // x2
+ *     pe_characteristics characteristics; // [2]B  (bitfield enum, 2-byte)
  * };
  */
 
@@ -2902,6 +140,15 @@ static void base_type_to_format_unfold(const RzTypeDB *typedb, RZ_NONNULL RzBase
 	case RZ_BASE_TYPE_KIND_STRUCT: {
 		RzTypeStructMember *memb;
 		rz_vector_foreach (&type->struct_data.members, memb) {
+			if (rz_type_struct_member_is_bitfield(memb)) {
+				rz_warn_if_fail(typedb->target);
+				// C bitfield member: emit the pf ":N" packed-bits spec with the
+				// bit order matching the target endianness ('<' little, '>' big).
+				rz_strbuf_appendf(format, ":%u%s", (unsigned)memb->size,
+					(typedb->target && typedb->target->big_endian) ? ">" : "<");
+				rz_strbuf_appendf(fields, "%s ", memb->name);
+				continue;
+			}
 			const char *membtype = type_to_identifier(typedb, memb->type);
 			// Avoid infinite recursion in case of self-referential structures
 			if (!membtype || !strcmp(membtype, type->name)) {
@@ -2932,6 +179,15 @@ static void base_type_to_format_unfold(const RzTypeDB *typedb, RZ_NONNULL RzBase
 		rz_strbuf_append(format, "0");
 		RzTypeUnionMember *memb;
 		rz_vector_foreach (&type->union_data.members, memb) {
+			if (rz_type_union_member_is_bitfield(memb)) {
+				rz_warn_if_fail(typedb->target);
+				// C bitfield member: emit the pf ":N" packed-bits spec with the
+				// bit order matching the target endianness ('<' little, '>' big).
+				rz_strbuf_appendf(format, ":%u%s", (unsigned)memb->size,
+					(typedb->target && typedb->target->big_endian) ? ">" : "<");
+				rz_strbuf_appendf(fields, "%s ", memb->name);
+				continue;
+			}
 			const char *membtype = type_to_identifier(typedb, memb->type);
 			// Avoid infinite recursion in case of self-referential unions
 			if (!membtype || !strcmp(membtype, type->name)) {
@@ -3018,6 +274,233 @@ RZ_API RZ_OWN char *rz_type_format(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL
 	return rz_base_type_as_format(typedb, btype);
 }
 
+static const char *uint_ctype_for_bytes(int nbytes) {
+	if (nbytes <= 1) {
+		return "uint8_t";
+	}
+	if (nbytes <= 2) {
+		return "uint16_t";
+	}
+	if (nbytes <= 4) {
+		return "uint32_t";
+	}
+	return "uint64_t";
+}
+
+static const char *uint_ctype_for_bits(int nbits) {
+	if (nbits <= 8) {
+		return "uint8_t";
+	}
+	if (nbits <= 16) {
+		return "uint16_t";
+	}
+	if (nbits <= 32) {
+		return "uint32_t";
+	}
+	return "uint64_t";
+}
+
+// Fixed-width integer the timestamp wire-format is decoded from.
+static const char *pf_timefmt_ctype(RzPfTimeFmt tf) {
+	switch (tf) {
+	case RZ_PF_TIMEFMT_UNIX32:
+	case RZ_PF_TIMEFMT_DOS:
+	case RZ_PF_TIMEFMT_HFS:
+		return "uint32_t";
+	case RZ_PF_TIMEFMT_OLETIME:
+	case RZ_PF_TIMEFMT_COCOA:
+		return "double";
+	default:
+		return "uint64_t";
+	}
+}
+
+// Append a `<ctype> <name>;` member, or `<ctype> <name>[count];` when count > 1.
+static void pf_emit_member(RzStrBuf *sb, const char *ctype, const char *name, int count) {
+	if (count > 1) {
+		rz_strbuf_appendf(sb, "\t%s %s[%d];\n", ctype, name, count);
+	} else {
+		rz_strbuf_appendf(sb, "\t%s %s;\n", ctype, name);
+	}
+}
+
+static void pf_field_to_member(RzStrBuf *sb, const RzPfField *fld, int idx) {
+	char namebuf[32];
+	const char *name = fld->name;
+	if (RZ_STR_ISEMPTY(name)) {
+		snprintf(namebuf, sizeof(namebuf), "field_%d", idx);
+		name = namebuf;
+	}
+	int count = fld->array_count;
+
+	switch (fld->type) {
+	case RZ_PF_ALIGN: // cursor alignment: no storage
+	case RZ_PF_TLV: // variable, self-describing: not expressible statically
+		return;
+	case RZ_PF_BITS: {
+		int w = fld->bit_width > 0 ? fld->bit_width : 1;
+		rz_strbuf_appendf(sb, "\t%s %s : %d;\n", uint_ctype_for_bits(w), name, w);
+		return;
+	}
+	case RZ_PF_SKIP:
+	case RZ_PF_HEXDUMP:
+		pf_emit_member(sb, "uint8_t", name, count > 0 ? count : 1);
+		return;
+	case RZ_PF_GUID:
+	case RZ_PF_UINT128:
+		pf_emit_member(sb, "uint8_t", name, 16);
+		return;
+	case RZ_PF_BITVEC:
+		pf_emit_member(sb, "uint8_t", name, fld->bit_width > 0 ? (fld->bit_width + 7) / 8 : 1);
+		return;
+	case RZ_PF_ZSTRING:
+		// only a fixed-length [N]z can be sized; bare z is best-effort char *
+		if (fld->str_fixed_len > 0) {
+			rz_strbuf_appendf(sb, "\tchar %s[%d];\n", name, fld->str_fixed_len);
+		} else {
+			rz_strbuf_appendf(sb, "\tchar *%s;\n", name);
+		}
+		return;
+	case RZ_PF_STRPTR:
+		rz_strbuf_appendf(sb, "\tchar *%s;\n", name);
+		return;
+	case RZ_PF_POINTER:
+		if (count > 1) {
+			rz_strbuf_appendf(sb, "\tvoid *%s[%d];\n", name, count);
+		} else {
+			rz_strbuf_appendf(sb, "\tvoid *%s;\n", name);
+		}
+		return;
+	case RZ_PF_STRUCT:
+		if (RZ_STR_ISEMPTY(fld->type_name)) {
+			pf_emit_member(sb, "uint8_t", name, count); // anonymous: placeholder byte
+		} else if (count > 1) {
+			rz_strbuf_appendf(sb, "\tstruct %s %s[%d];\n", fld->type_name, name, count);
+		} else {
+			rz_strbuf_appendf(sb, "\tstruct %s %s;\n", fld->type_name, name);
+		}
+		return;
+	case RZ_PF_ENUM:
+		if (RZ_STR_ISEMPTY(fld->type_name)) {
+			pf_emit_member(sb, uint_ctype_for_bytes(fld->bit_width > 0 ? fld->bit_width : 4), name, count);
+		} else if (count > 1) {
+			rz_strbuf_appendf(sb, "\tenum %s %s[%d];\n", fld->type_name, name, count);
+		} else {
+			rz_strbuf_appendf(sb, "\tenum %s %s;\n", fld->type_name, name);
+		}
+		return;
+	case RZ_PF_BITFIELD:
+		pf_emit_member(sb, uint_ctype_for_bytes(fld->bitfield_size > 0 ? fld->bitfield_size : 4), name, count);
+		return;
+	case RZ_PF_TIMESTAMP:
+		pf_emit_member(sb, pf_timefmt_ctype(fld->timefmt), name, count);
+		return;
+	case RZ_PF_CHAR:
+		pf_emit_member(sb, "char", name, count);
+		return;
+	case RZ_PF_ULEB128: // variable length on the wire; modelled by widest value
+		pf_emit_member(sb, "uint64_t", name, count);
+		return;
+	case RZ_PF_SLEB128:
+		pf_emit_member(sb, "int64_t", name, count);
+		return;
+	case RZ_PF_FLOAT16: // no standard 2-byte float type; model storage width
+		pf_emit_member(sb, "uint16_t", name, count);
+		return;
+	default: // hex / signed / unsigned / octal / binary scalars
+		pf_emit_member(sb, rz_pf_field_ctype(fld->type), name, count);
+		return;
+	}
+}
+
+/**
+ * \brief Convert a `pf` format string into an equivalent C declaration
+ *
+ * Parses \p fmt_str and renders a C `struct` (or `union`, when the format
+ * begins with the `0` union marker) named \p name, using standard
+ * fixed-width types. The result is a complete declaration ending in `;`,
+ * ready to pass to rz_type_parse_string_stateless() so the format becomes
+ * a registered RzBaseType. The conversion is structural: it consumes only
+ * the parsed format, never a byte buffer. Specifiers with no exact static
+ * C form are mapped best-effort (`@N` dropped, unsized `z` -> char *,
+ * LEB128 widened, `?(Name)`/`E(Name)` -> struct/enum references).
+ *
+ * \param name Identifier for the generated struct/union
+ * \param fmt_str A `pf` format string (the `fmt fieldnames` form)
+ * \param error Optional; set to an owned error message on failure
+ * \return Owned C declaration string, or NULL on failure
+ */
+RZ_API RZ_OWN char *rz_type_format_to_c_declaration(RZ_NONNULL const char *name,
+	RZ_NONNULL const char *fmt_str, RZ_NULLABLE char **error) {
+	rz_return_val_if_fail(name && fmt_str, NULL);
+	if (RZ_STR_ISEMPTY(name) || RZ_STR_ISEMPTY(fmt_str)) {
+		if (error) {
+			*error = rz_str_dup("empty type name or format string");
+		}
+		return NULL;
+	}
+	RzPfFormat *fmt = rz_pf_parse(fmt_str);
+	if (!fmt || fmt->nfields <= 0) {
+		if (error) {
+			char *diag = fmt ? rz_pf_format_errors_to_string(fmt) : NULL;
+			*error = diag ? diag : rz_str_dup("pf format defined no fields");
+		}
+		rz_pf_format_free(fmt);
+		return NULL;
+	}
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	rz_strbuf_appendf(sb, "%s %s {\n", fmt->is_union ? "union" : "struct", name);
+	for (int i = 0; i < fmt->nfields; i++) {
+		pf_field_to_member(sb, &fmt->fields[i], i);
+	}
+	rz_strbuf_append(sb, "};");
+	rz_pf_format_free(fmt);
+	return rz_strbuf_drain(sb);
+}
+
+/* True iff `type` is a POINTER whose pointee resolves -- by walking
+ * through typedef chains in the typedb -- to an atomic base type named
+ * exactly `atomic_name`.  This is the typedb-aware counterpart of the
+ * rz_type_is_*_ptr helpers in librz/type/helpers.c, which compare the
+ * raw identifier name and so do not see through typedef chains like
+ * PVOID -> VOID -> void or LPSTR -> CHAR -> char.  Walks at most
+ * RZ_TYPE_FORMAT_PTR_RESOLVE_MAX_DEPTH typedef hops so a circular
+ * typedef cannot send the resolver into an infinite loop.
+ */
+#define RZ_TYPE_FORMAT_PTR_RESOLVE_MAX_DEPTH 16
+
+static bool ptr_pointee_resolves_to(const RzTypeDB *typedb, const RzType *type, const char *atomic_name) {
+	if (!type || type->kind != RZ_TYPE_KIND_POINTER || !atomic_name) {
+		return false;
+	}
+	const RzType *ptr = type->pointer.type;
+	if (!ptr || ptr->kind != RZ_TYPE_KIND_IDENTIFIER ||
+		ptr->identifier.kind != RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED ||
+		!ptr->identifier.name) {
+		return false;
+	}
+	const char *cur_name = ptr->identifier.name;
+	for (int i = 0; i < RZ_TYPE_FORMAT_PTR_RESOLVE_MAX_DEPTH && cur_name; i++) {
+		if (!strcmp(cur_name, atomic_name)) {
+			return true;
+		}
+		RzBaseType *btyp = rz_type_db_get_base_type(typedb, cur_name);
+		if (!btyp) {
+			return false;
+		}
+		if (btyp->kind == RZ_BASE_TYPE_KIND_ATOMIC) {
+			return btyp->name && !strcmp(btyp->name, atomic_name);
+		}
+		if (btyp->kind != RZ_BASE_TYPE_KIND_TYPEDEF || !btyp->type ||
+			btyp->type->kind != RZ_TYPE_KIND_IDENTIFIER ||
+			!btyp->type->identifier.name) {
+			return false;
+		}
+		cur_name = btyp->type->identifier.name;
+	}
+	return false;
+}
+
 static void type_to_format(const RzTypeDB *typedb, RzStrBuf *buf, RzType *type) {
 	if (type->kind == RZ_TYPE_KIND_IDENTIFIER) {
 		const char *format = rz_type_db_format_get(typedb, type->identifier.name);
@@ -3042,6 +525,26 @@ static void type_to_format(const RzTypeDB *typedb, RzStrBuf *buf, RzType *type) 
 		rz_strbuf_appendf(buf, "[%" PFMT64d "]", type->array.count);
 		type_to_format(typedb, buf, type->array.type);
 	} else if (type->kind == RZ_TYPE_KIND_POINTER) {
+		// Pointer-to-void via a typedef chain (PVOID -> VOID -> void,
+		// LPVOID -> PVOID -> VOID -> void, HANDLE -> ... -> void) must
+		// emit a self-contained `p` token rather than the recursive
+		// `*<inner>` fallback, which would leave an orphan `*` because
+		// `void` has no pf format of its own.  The rz_type_is_void_ptr
+		// helper only matches the raw identifier name "void", so it
+		// does not see through these typedef chains;
+		// ptr_pointee_resolves_to does.
+		//
+		// Pointer-to-char is intentionally NOT folded here: the
+		// recursive walker already produces `*c` (pointer-deref to a
+		// 1-byte signed char), which is a valid pf spec under the new
+		// parser and is what callers such as `avgp` for a `char *`
+		// global variable already expect (showing the pointer literal
+		// rather than reinterpreting the pointer bytes as an inline
+		// string).
+		if (ptr_pointee_resolves_to(typedb, type, "void")) {
+			rz_strbuf_append(buf, "p");
+			return;
+		}
 		rz_strbuf_append(buf, "*");
 		type_to_format(typedb, buf, type->pointer.type);
 	}
@@ -3101,6 +604,17 @@ static bool type_to_format_pair(const RzTypeDB *typedb, RzStrBuf *format, RzStrB
 			if (name) {
 				rz_strbuf_appendf(fields, "%s ", name);
 			}
+		} else if (ptr_pointee_resolves_to(typedb, type, "void")) {
+			// Same orphan-`*` issue as in type_to_format: emit a
+			// self-contained `p` and the field name so the resulting
+			// pair (e.g. "p" + "(PVOID)lpSecurityDescriptor")
+			// parses cleanly under the new pf DSL.  Pointer-to-char
+			// is intentionally NOT folded -- see the matching comment
+			// in type_to_format.
+			rz_strbuf_append(format, "p");
+			if (identifier) {
+				rz_strbuf_appendf(fields, "%s ", identifier);
+			}
 		} else {
 			rz_strbuf_append(format, "*");
 			return type_to_format_pair(typedb, format, fields, identifier, type->pointer.type);
@@ -3142,4 +656,69 @@ RZ_API RZ_OWN char *rz_type_as_format_pair(const RzTypeDB *typedb, RZ_NONNULL Rz
 	char *bufstr = rz_strbuf_drain(format);
 	rz_str_trim_tail(bufstr);
 	return bufstr;
+}
+
+/**
+ * \brief Look up a named pf format string.
+ *
+ * Format names are stored case-sensitively in the typedb's `formats` hash
+ * (RzTypeDB::formats). Returns a borrowed pointer into the table -- do
+ * not free.
+ *
+ * \param typedb Type database.
+ * \param name Format name (e.g. "pe_dos_header", "elf_section").
+ * \return Format string, or NULL if no such name is registered.
+ */
+RZ_API const char *rz_type_db_format_get(const RzTypeDB *typedb, const char *name) {
+	rz_return_val_if_fail(typedb && name, NULL);
+	bool found = false;
+	const char *result = ht_ss_find(typedb->formats, name, &found);
+	if (!found || !result) {
+		return NULL;
+	}
+	return result;
+}
+
+/**
+ * \brief Register or replace a named pf format.
+ *
+ * The stored string is owned by the hash; an internal copy is made so
+ * the caller may free \p fmt after this call.
+ */
+RZ_API void rz_type_db_format_set(RzTypeDB *typedb, const char *name, const char *fmt) {
+	rz_return_if_fail(typedb && name && fmt);
+	ht_ss_insert(typedb->formats, name, rz_str_dup(fmt));
+}
+
+static bool format_collect_cb(void *user, const char *k, const char *v) {
+	rz_return_val_if_fail(user && k && v, false);
+	RzList *l = user;
+	RzTypeFormat *fmt = RZ_NEW0(RzTypeFormat);
+	fmt->name = k;
+	fmt->body = v;
+	rz_list_append(l, fmt);
+	return true;
+}
+
+/**
+ * \brief Enumerate every registered named format.
+ *
+ * Returned list owns the RzTypeFormat shells, but their \c name and
+ * \c body pointers are borrowed from the hash and must not be freed.
+ */
+RZ_API RZ_OWN RzList /*<RzTypeFormat *>*/ *rz_type_db_format_all(RzTypeDB *typedb) {
+	rz_return_val_if_fail(typedb, NULL);
+	RzList *formats = rz_list_newf(free);
+	ht_ss_foreach(typedb->formats, format_collect_cb, formats);
+	return formats;
+}
+
+/**
+ * \brief Remove a single registered named format.
+ *
+ * No-op if the name is not registered.
+ */
+RZ_API void rz_type_db_format_delete(RzTypeDB *typedb, const char *name) {
+	rz_return_if_fail(typedb && name);
+	ht_ss_delete(typedb->formats, name);
 }

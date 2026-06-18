@@ -89,7 +89,7 @@ static void set_cpu_model(RzAnalysis *analysis, bool force) {
 		return;
 	}
 
-	const char *cpu = analysis->cpu;
+	const char *cpu = rz_analysis_get_cpu(analysis);
 	if (!cpu || !cpu[0]) {
 		cpu = cpu_models[0].name;
 	}

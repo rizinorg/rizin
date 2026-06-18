@@ -11,13 +11,15 @@ EXPECT=<<EOF
 0x0000043a  0000  (null)
             ; STRING XREFS from entry0 @ 0x40c, 0x410
             ;-- data.00000434:
-            0x00000434      lsrs  r4, r1, 0xf
-            0x00000436      movs  r1, r0
+            0x00000434      .dword 0x00010bcc
             ; DATA XREF from entry0 @ 0x414
             ;-- data.00000438:
             0x00000438      .dword 0x00000020
             ; DATA XREF from entry0 @ 0x420
             ;-- data.0000043c:
             0x0000043c      .dword 0x00000030
+            ; DATA XREF from entry0 @ 0x426
+            ;-- data.00000440:
+            0x00000440      .dword 0x00000034
 EOF
 RUN

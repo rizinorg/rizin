@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 // SPDX-FileCopyrightText: 2026 Sergey Sharshunov <s.sharshunov@gmail.com>
+// SPDX-FileCopyrightText: 2026 Arya-1-HR
 
 #include <rz_types.h>
 #include <analysis_private.h>
@@ -8,14 +9,24 @@
 
 #include <luac/lua_arch.h>
 
+int rz_luajit_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
+	LuaJITInstructions instr = rz_read_ble32(data, analysis->big_endian);
+	return luajit_analysis_op(analysis, op, addr, data, len, instr);
+}
+
 int rz_lua_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
-	if (!analysis->cpu) {
+	const char *cpu = rz_analysis_get_cpu(analysis);
+	if (!cpu) {
 		RZ_LOG_ERROR("Cannot get lua version\n");
 		return 0;
 	}
 
 	if (!op || len < 4) {
 		return 0;
+	}
+
+	if (rz_str_startswith(cpu, "luajit")) {
+		return rz_luajit_analysis_op(analysis, op, addr, data, len, mask);
 	}
 
 	if (!rz_type_db_format_get(analysis->typedb, "LuaConstant")) {
@@ -45,17 +56,17 @@ int rz_lua_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 
 	int ret = 0;
 
-	if (RZ_STR_EQ(analysis->cpu, "5.0")) {
+	if (rz_analysis_is_cpu(analysis, "5.0")) {
 		ret = lua50_analysis_op(analysis, op, ctx, data, len);
-	} else if (RZ_STR_EQ(analysis->cpu, "5.1") || RZ_STR_EQ(analysis->cpu, "openwrt-5.1") || RZ_STR_EQ(analysis->cpu, "tp-link-5.1")) {
+	} else if (rz_analysis_is_cpu(analysis, "5.1") || rz_analysis_is_cpu(analysis, "openwrt-5.1") || rz_analysis_is_cpu(analysis, "tp-link-5.1")) {
 		ret = lua51_analysis_op(analysis, op, ctx, data, len);
-	} else if (RZ_STR_EQ(analysis->cpu, "5.2")) {
+	} else if (rz_analysis_is_cpu(analysis, "5.2")) {
 		ret = lua52_analysis_op(analysis, op, ctx, data, len);
-	} else if (RZ_STR_EQ(analysis->cpu, "5.3")) {
+	} else if (rz_analysis_is_cpu(analysis, "5.3")) {
 		ret = lua53_analysis_op(analysis, op, ctx, data, len);
-	} else if (RZ_STR_EQ(analysis->cpu, "5.4")) {
+	} else if (rz_analysis_is_cpu(analysis, "5.4")) {
 		ret = lua54_analysis_op(analysis, op, ctx, data, len);
-	} else if (RZ_STR_EQ(analysis->cpu, "5.5")) {
+	} else if (rz_analysis_is_cpu(analysis, "5.5")) {
 		ret = lua55_analysis_op(analysis, op, ctx, data, len);
 	} else {
 		RZ_LOG_ERROR("Cannot find a suitable lua version to handle lua analysis.\n");

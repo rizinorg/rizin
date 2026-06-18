@@ -53,5 +53,6 @@ tasks:
         cd test
         # Workaround to avoid running HTTP POST test
         rm -f db/cmd/cmd_http_post 
-        # Running the unit tests
+        # Running rz-test
+        ln -s `which python3.10` ${HOME}/bin/python3
         MALLOC_OPTIONS=S rz-test -L -o results.json

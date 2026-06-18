@@ -293,6 +293,194 @@ RZ_API bool rz_type_db_update_base_type(const RzTypeDB *typedb, RzBaseType *type
 }
 
 /**
+ * \brief Renames every reference to the type named \p from into \p to inside \p type
+ *
+ * Recurses through pointers, arrays and callables (return type and arguments),
+ * updating the identifier name wherever it matches \p from. This is used to keep
+ * type usages consistent after a base type has been renamed, both for the types
+ * stored in the database and for type usages living elsewhere (e.g. the types of
+ * analysis global variables).
+ *
+ * \param type Type expression to update in place (may be NULL)
+ * \param from Old type name to look for
+ * \param to New type name to set
+ */
+RZ_API void rz_type_rename_references(RZ_NULLABLE RzType *type, RZ_NONNULL const char *from, RZ_NONNULL const char *to) {
+	rz_return_if_fail(from && to);
+	if (!type) {
+		return;
+	}
+	switch (type->kind) {
+	case RZ_TYPE_KIND_IDENTIFIER:
+		if (type->identifier.name && !strcmp(type->identifier.name, from)) {
+			free(type->identifier.name);
+			type->identifier.name = rz_str_dup(to);
+		}
+		break;
+	case RZ_TYPE_KIND_POINTER:
+		rz_type_rename_references(type->pointer.type, from, to);
+		break;
+	case RZ_TYPE_KIND_ARRAY:
+		rz_type_rename_references(type->array.type, from, to);
+		break;
+	case RZ_TYPE_KIND_CALLABLE:
+		if (!type->callable) {
+			break;
+		}
+		rz_type_rename_references(type->callable->ret, from, to);
+		void **it;
+		rz_pvector_foreach (type->callable->args, it) {
+			RzCallableArg *arg = *it;
+			if (arg) {
+				rz_type_rename_references(arg->type, from, to);
+			}
+		}
+		break;
+	}
+}
+
+struct base_type_rename_ctx {
+	const char *from;
+	const char *to;
+};
+
+static bool base_type_rename_refs_cb(void *user, RZ_UNUSED const char *k, const void *v) {
+	struct base_type_rename_ctx *ctx = user;
+	RzBaseType *btype = (RzBaseType *)v;
+	switch (btype->kind) {
+	case RZ_BASE_TYPE_KIND_STRUCT: {
+		RzTypeStructMember *member;
+		rz_vector_foreach (&btype->struct_data.members, member) {
+			rz_type_rename_references(member->type, ctx->from, ctx->to);
+		}
+		break;
+	}
+	case RZ_BASE_TYPE_KIND_UNION: {
+		RzTypeUnionMember *member;
+		rz_vector_foreach (&btype->union_data.members, member) {
+			rz_type_rename_references(member->type, ctx->from, ctx->to);
+		}
+		break;
+	}
+	case RZ_BASE_TYPE_KIND_ENUM:
+	case RZ_BASE_TYPE_KIND_TYPEDEF:
+	case RZ_BASE_TYPE_KIND_ATOMIC:
+		rz_type_rename_references(btype->type, ctx->from, ctx->to);
+		break;
+	}
+	return true;
+}
+
+static bool callable_rename_refs_cb(void *user, RZ_UNUSED const char *k, const void *v) {
+	struct base_type_rename_ctx *ctx = user;
+	RzCallable *callable = (RzCallable *)v;
+	rz_type_rename_references(callable->ret, ctx->from, ctx->to);
+	void **it;
+	rz_pvector_foreach (callable->args, it) {
+		RzCallableArg *arg = *it;
+		if (arg) {
+			rz_type_rename_references(arg->type, ctx->from, ctx->to);
+		}
+	}
+	return true;
+}
+
+// Keep `pf` formats consistent with a base type rename: update references to the
+// old name inside every stored format string (the "(name)" syntax) and re-key the
+// format that was stored under the old type name, if any.
+static void base_type_rename_formats(RzTypeDB *typedb, const char *from, const char *to) {
+	char from_ref[256], to_ref[256];
+	rz_strf(from_ref, "(%s)", from);
+	rz_strf(to_ref, "(%s)", to);
+	// rz_type_db_format_all returns shells with borrowed name/body pointers, so
+	// snapshot the needed updates before mutating the formats hash table.
+	RzList *formats = rz_type_db_format_all(typedb);
+	formats->free = free;
+	RzPVector renamed_names, renamed_bodies;
+	rz_pvector_init(&renamed_names, free);
+	rz_pvector_init(&renamed_bodies, free);
+	RzListIter *it;
+	RzTypeFormat *tf;
+	rz_list_foreach (formats, it, tf) {
+		if (tf->body && strstr(tf->body, from_ref)) {
+			char *newbody = rz_str_replace(rz_str_dup(tf->body), from_ref, to_ref, 1);
+			if (newbody) {
+				rz_pvector_push(&renamed_names, rz_str_dup(tf->name));
+				rz_pvector_push(&renamed_bodies, newbody);
+			}
+		}
+	}
+	rz_list_free(formats);
+	for (size_t i = 0; i < rz_pvector_len(&renamed_names); i++) {
+		const char *nm = rz_pvector_at(&renamed_names, i);
+		const char *body = rz_pvector_at(&renamed_bodies, i);
+		// rz_type_db_format_set does not overwrite, so delete first.
+		rz_type_db_format_delete(typedb, nm);
+		rz_type_db_format_set(typedb, nm, body);
+	}
+	rz_pvector_fini(&renamed_names);
+	rz_pvector_fini(&renamed_bodies);
+	const char *own_format = rz_type_db_format_get(typedb, from);
+	if (own_format) {
+		char *moved = rz_str_dup(own_format);
+		rz_type_db_format_delete(typedb, from);
+		rz_type_db_format_set(typedb, to, moved);
+		free(moved);
+	}
+}
+
+/**
+ * \brief Renames the base type \p from into \p to in the Types DB
+ *
+ * Besides changing the name of the type itself, every other base type and
+ * function type (callable) that references \p from by name is updated to use
+ * \p to instead, so the database stays consistent after the rename. This
+ * includes self-references of the renamed type, like a linked-list struct that
+ * contains a pointer to itself, as well as the `pf` formats that mention the
+ * type.
+ *
+ * \param typedb Type Database instance
+ * \param from Current name of the base type to rename
+ * \param to New name for the base type
+ * \return true if the type was renamed, false if \p from does not exist or \p to is already in use
+ */
+RZ_API bool rz_type_db_rename_base_type(RzTypeDB *typedb, RZ_NONNULL const char *from, RZ_NONNULL const char *to) {
+	rz_return_val_if_fail(typedb && from && to, false);
+	if (RZ_STR_EQ(from, to)) {
+		return true;
+	}
+	RzBaseType *type = rz_type_db_get_base_type(typedb, from);
+	if (!type) {
+		RZ_LOG_ERROR("Type \"%s\" does not exist\n", from);
+		return false;
+	}
+	if (rz_type_db_get_base_type(typedb, to)) {
+		RZ_LOG_ERROR("Type \"%s\" already exists\n", to);
+		return false;
+	}
+	// The types hash table owns its values and frees them on deletion, so we
+	// re-key the entry by inserting a clone under the new name and letting the
+	// deletion of the old entry free the original.
+	RzBaseType *renamed = rz_base_type_clone(type);
+	if (!renamed) {
+		return false;
+	}
+	free(renamed->name);
+	renamed->name = rz_str_dup(to);
+	if (!rz_type_db_save_base_type(typedb, renamed)) {
+		// rz_type_db_save_base_type frees `renamed` on failure
+		return false;
+	}
+	rz_type_db_delete_base_type(typedb, type);
+	// Update every reference to the old name across all types and callables.
+	struct base_type_rename_ctx ctx = { from, to };
+	ht_sp_foreach(typedb->types, base_type_rename_refs_cb, &ctx);
+	ht_sp_foreach(typedb->callables, callable_rename_refs_cb, &ctx);
+	base_type_rename_formats(typedb, from, to);
+	return true;
+}
+
+/**
  * \brief Returns C representation as string of RzBaseType (see rz_type_db_base_type_as_pretty_string for cusom print options)
  *
  * \param typedb type database instance
@@ -321,7 +509,19 @@ RZ_API RZ_OWN char *rz_type_db_base_type_as_pretty_string(RZ_NONNULL const RzTyp
 	rz_return_val_if_fail(typedb && btype, NULL);
 
 	RzType *type = rz_type_identifier_of_base_type(typedb, btype, false);
-	return rz_type_as_pretty_string(typedb, type, NULL, opts, unfold_level);
+	char *ret = rz_type_as_pretty_string(typedb, type, NULL, opts, unfold_level);
+	rz_type_free(type);
+	return ret;
+}
+
+RZ_API bool rz_type_struct_member_is_bitfield(RZ_NONNULL const RzTypeStructMember *member) {
+	rz_return_val_if_fail(member, false);
+	return member->size > 0;
+}
+
+RZ_API bool rz_type_union_member_is_bitfield(RZ_NONNULL const RzTypeUnionMember *member) {
+	rz_return_val_if_fail(member, false);
+	return member->size > 0;
 }
 
 /**
