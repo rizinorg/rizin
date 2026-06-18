@@ -176,7 +176,7 @@ RZ_IPI MtkObj *mtk_obj_new(RzBuffer *b) {
 	int count = 0;
 	while (offset + MTK_GFH_COMMON_HDR_SIZE <= mtk->code_offset && count < 100) {
 		ut64 hdr_start = offset;
-		MtkGfhCommonHdr extra_common;
+		MtkGfhCommonHdr extra_common = { 0 };
 		if (!mtk_read_common_hdr(b, &offset, &extra_common)) {
 			break;
 		}

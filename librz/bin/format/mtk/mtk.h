@@ -9,15 +9,15 @@
 #include <rz_lib.h>
 #include <rz_bin.h>
 
-#define MTK_GFH_MAGIC_MASK          0x00FFFFFF
+#define MTK_GFH_MAGIC_MASK 0x00FFFFFF
 /* "MMM" in lower 3 bytes */
-#define MTK_GFH_MAGIC               0x004D4D4D 
+#define MTK_GFH_MAGIC               0x004D4D4D
 #define MTK_GFH_COMMON_HDR_SIZE     8
 #define MTK_GFH_FILE_INFO_BODY_SIZE 48
 #define MTK_GFH_MIN_FILE_SIZE       (MTK_GFH_COMMON_HDR_SIZE + MTK_GFH_FILE_INFO_BODY_SIZE)
 #define MTK_GFH_FILE_INFO_NAME_SIZE 12
 /* Runtime virtual base address for modem code */
-#define MTK_MODEM_BADDR             0x90000000ULL 
+#define MTK_MODEM_BADDR 0x90000000ULL
 
 typedef enum {
 	MTK_GFH_TYPE_FILE_INFO = 0x0000,
