@@ -1900,6 +1900,14 @@ RZ_API RZ_OWN RzTableView *rz_table_view_new(RZ_NONNULL const RzTable *t) {
 	return view;
 }
 
+/**
+ * \brief      Creates a new RzTableView from another RzTableView
+ *
+ * This function creates a new view by cloning the table of the source view.
+ *
+ * \param[in]  view  The source RzTableView to clone
+ * \return     A new RzTableView instance on success, otherwise NULL
+ */
 RZ_API RZ_OWN RzTableView *rz_table_view_new_from_view(RZ_NONNULL const RzTableView *view) {
 	rz_return_val_if_fail(view && view->table, NULL);
 	RzTableView *new_view = RZ_NEW0(RzTableView);
@@ -1914,6 +1922,13 @@ RZ_API RZ_OWN RzTableView *rz_table_view_new_from_view(RZ_NONNULL const RzTableV
 	return new_view;
 }
 
+/**
+ * \brief      Frees an RzTableView
+ *
+ * This function releases the memory allocated for the RzTableView and its associated table.
+ *
+ * \param[in]  view  The RzTableView to free
+ */
 RZ_API void rz_table_view_free(RZ_NULLABLE RzTableView *view) {
 	if (!view) {
 		return;
@@ -1922,6 +1937,15 @@ RZ_API void rz_table_view_free(RZ_NULLABLE RzTableView *view) {
 	free(view);
 }
 
+/**
+ * \brief      Queries the table view
+ *
+ * This function filters the table view using a query string.
+ *
+ * \param[in]  view  The RzTableView to query
+ * \param[in]  q     The query string to apply
+ * \return     true on success, false on failure
+ */
 RZ_API bool rz_table_view_query(RZ_NONNULL RzTableView *view, RZ_NULLABLE const char *q) {
 	rz_return_val_if_fail(view && view->table, false);
 	bool res = rz_table_query(view->table, q);
@@ -1931,6 +1955,14 @@ RZ_API bool rz_table_view_query(RZ_NONNULL RzTableView *view, RZ_NULLABLE const 
 	return res;
 }
 
+/**
+ * \brief      Stringifies an RzTableView
+ *
+ * This function converts the table view to a formatted string.
+ *
+ * \param[in]  view  The RzTableView to stringify
+ * \return     A valid C string on success, otherwise NULL
+ */
 RZ_API RZ_OWN char *rz_table_view_tostring(RZ_NONNULL RzTableView *view) {
 	rz_return_val_if_fail(view && view->table, NULL);
 	return rz_table_tostring(view->table);
