@@ -570,6 +570,23 @@ bool test_config_binds() {
 	mu_end;
 }
 
+bool test_config_remove() {
+	RzConfig *cfg = rz_config_new(NULL);
+	bool ret = false;
+
+	ret = rz_config_add_integer(cfg, "universe.question", "is universe.question desc", 42);
+	mu_assert_true(ret, "added universe.question");
+
+	ret = rz_config_remove(cfg, "universe.question");
+	mu_assert_true(ret, "removed universe.question");
+
+	ret = rz_config_remove(cfg, "universe.question");
+	mu_assert_false(ret, "cannot remove universe.question again");
+
+	rz_config_free(cfg);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_config_strings);
 	mu_run_test(test_config_intergers);
@@ -578,6 +595,7 @@ bool all_tests() {
 	mu_run_test(test_config_itv);
 	mu_run_test(test_config_invalid);
 	mu_run_test(test_config_binds);
+	mu_run_test(test_config_remove);
 	return tests_passed != tests_run;
 }
 
