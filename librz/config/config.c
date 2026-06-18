@@ -502,6 +502,30 @@ RZ_API bool rz_config_add_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *
 }
 
 /**
+ * \brief Removes a config key and frees associated memory
+ * \param cfg The RzConfig which holds the key
+ * \param name Name of the variable to remove
+ *
+ * \return On success returns true, otherwise false
+ */
+RZ_API bool rz_config_remove(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
+	size_t length = rz_vector_len(&cfg->sorted_vars);
+	size_t index = rz_vector_find_sorted(&cfg->sorted_vars, (void *)name, (RzVectorComparator)find_variable, NULL);
+	if (index >= length) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return false;
+	}
+
+	RzConfigEntry *entry = rz_vector_index_ptr(&cfg->sorted_vars, index);
+
+	config_entry_fini(entry);
+	rz_vector_remove_at(&cfg->sorted_vars, index, NULL);
+
+	return true;
+}
+
+/**
  * \brief      Converts a given RzConfigVar to json.
  *
  * \param[in]  var   The variable

@@ -145,6 +145,8 @@ RZ_API bool rz_config_add_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *
 #define rz_config_add_list_bind(cfg, name, desc, get, set, opts, user)     rz_config_add_bind(cfg, name, desc, RZ_CONFIG_VAR_TYPE_LIST, get, set, opts, user)
 #define rz_config_add_interval_bind(cfg, name, desc, get, set, opts, user) rz_config_add_bind(cfg, name, desc, RZ_CONFIG_VAR_TYPE_ITV, get, set, opts, user)
 
+RZ_API bool rz_config_remove(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name);
+
 RZ_API bool rz_config_set_string(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *value);
 RZ_API bool rz_config_set_integer(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, ut64 value);
 RZ_API bool rz_config_set_bool(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, bool value);
