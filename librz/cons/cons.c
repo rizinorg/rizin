@@ -59,8 +59,14 @@ static void cons_stack_free(void *ptr) {
 	RzConsStack *s = (RzConsStack *)ptr;
 	free(s->buf);
 	if (s->grep) {
+		if (CTX(grep.str) == s->grep->str) {
+			CTX(grep.str) = NULL;
+		}
 		RZ_FREE(s->grep->str);
-		CTX(grep.str) = NULL;
+		if (CTX(grep.json_path) == s->grep->json_path) {
+			CTX(grep.json_path) = NULL;
+		}
+		RZ_FREE(s->grep->json_path);
 	}
 	free(s->grep);
 	free(s);
@@ -80,6 +86,9 @@ static RzConsStack *cons_stack_dump(bool recreate) {
 			memcpy(data->grep, &CTX(grep), sizeof(RzConsGrep));
 			if (CTX(grep).str) {
 				data->grep->str = rz_str_dup(CTX(grep).str);
+			}
+			if (CTX(grep).json_path) {
+				data->grep->json_path = rz_str_dup(CTX(grep).json_path);
 			}
 		}
 		if (recreate && CTX(buffer_sz) > 0) {
@@ -108,6 +117,7 @@ static void cons_stack_load(RzConsStack *data, bool free_current) {
 	CTX(buffer_sz) = data->buf_size;
 	if (data->grep) {
 		free(CTX(grep).str);
+		free(CTX(grep).json_path);
 		memcpy(&CTX(grep), data->grep, sizeof(RzConsGrep));
 	}
 	CTX(noflush) = data->noflush;
@@ -843,6 +853,7 @@ RZ_API void rz_cons_clear(void) {
 
 static void cons_grep_reset(RzConsGrep *grep) {
 	RZ_FREE(grep->str);
+	RZ_FREE(grep->json_path);
 	RZ_FREE(grep->sorted_lines);
 	RZ_FREE(grep->unsorted_lines);
 	ZERO_FILL(*grep);
