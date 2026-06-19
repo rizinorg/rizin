@@ -27,11 +27,13 @@
 #define MD1IMG_EXT_MAGIC      "\x89\x16\x89\x58"
 #define MD1IMG_EXT_MAGIC_SIZE 4
 #define MD1IMG_NAME_SIZE      32
-#define MD1IMG_MIN_HDR_SIZE   0x50 ///< Minimum section header size (fields before reserved)
+/* Minimum section header size (fields before reserved) */
+#define MD1IMG_MIN_HDR_SIZE 0x50
 
-#define MTK_CATI_MAGIC          "CATI"
-#define MTK_CATI_MAGIC_SIZE     4
-#define MTK_CATI_TYPE_CONTAINER 0x524E5443 ///< "CTNR" as LE u32
+#define MTK_CATI_MAGIC      "CATI"
+#define MTK_CATI_MAGIC_SIZE 4
+/* "CTNR" as LE u32 */
+#define MTK_CATI_TYPE_CONTAINER 0x524E5443
 #define MTK_CATI_TYPE_DEBUG     1
 #define MTK_CATI_TYPE_DEBUG_DSP 2
 
