@@ -488,7 +488,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 			int pagesize = tsk_pagesize(fd);
 			tsk_setperm(io, task, io->off, pagesize, perm);
 		} else {
-			eprintf("Usage: R!perm [rwx]\n");
+			eprintf("Usage: R! perm [rwx]\n");
 		}
 		return NULL;
 	}
@@ -523,7 +523,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		}
 		eprintf("io_mach_system: Invalid pid %d\n", pid);
 	} else {
-		eprintf("Try: 'R!pid' or 'R!perm'\n");
+		eprintf("Try: 'R! pid' or 'R! perm'\n");
 	}
 	return NULL;
 }
