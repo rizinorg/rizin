@@ -35,3 +35,15 @@ false
 EOF
 RUN
 
+NAME=noreturn caller block has no fall-through (#2725)
+FILE=bins/mach0/ls-osx-x86_64
+CMDS=<<EOF
+aaa
+afb @ sym.func.1000044bd~^0x1000044bd
+afb @ entry0~^0x100001407
+EOF
+EXPECT=<<EOF
+0x1000044bd 0x1000044eb 00:0000 46
+0x100001407 0x10000140c 00:0000 5
+EOF
+RUN
