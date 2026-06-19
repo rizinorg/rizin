@@ -14,7 +14,7 @@ typedef struct pj_t {
 	bool is_first;
 	bool is_key;
 	char braces[RZ_PRINT_JSON_DEPTH_LIMIT];
-	int level;
+	int level; ///< Current nesting depth. 0 = top-level, >0 = inside braces, <0 = error (depth limit exceeded).
 } PJ;
 
 /* lifecycle */
