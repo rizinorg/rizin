@@ -29,10 +29,10 @@ static ut64 mtk_find_gfh(RzBuffer *b) {
 	// GFH headers are typically aligned to 4 bytes
 	for (ut64 off = 0; off + MTK_GFH_MIN_FILE_SIZE <= limit; off += 4) {
 		ut64 cursor = off;
-		MtkGfhCommonHdr hdr;
+		MtkGfhCommonHdr hdr = { 0 };
 		if (!rz_buf_read_le32_offset(b, &cursor, &hdr.magic_version) ||
 			!rz_buf_read_le16_offset(b, &cursor, &hdr.size) ||
-			!rz_buf_read_le16_offset(b, &cursor, &hdr.type)) {
+			!rz_buf_read_le16_offset(b, &cursor, (ut16 *)&hdr.type)) {
 			continue;
 		}
 		if (mtk_is_gfh_magic(hdr.magic_version) &&
@@ -47,7 +47,7 @@ static ut64 mtk_find_gfh(RzBuffer *b) {
 static bool mtk_read_common_hdr(RzBuffer *b, ut64 *offset, MtkGfhCommonHdr *hdr) {
 	return rz_buf_read_le32_offset(b, offset, &hdr->magic_version) &&
 		rz_buf_read_le16_offset(b, offset, &hdr->size) &&
-		rz_buf_read_le16_offset(b, offset, &hdr->type);
+		rz_buf_read_le16_offset(b, offset, (ut16 *)&hdr->type);
 }
 
 static bool mtk_read_file_info(RzBuffer *b, ut64 *offset, MtkGfhFileInfo *fi) {
@@ -68,7 +68,7 @@ static bool mtk_read_file_info(RzBuffer *b, ut64 *offset, MtkGfhFileInfo *fi) {
 		rz_buf_read_le32_offset(b, offset, &fi->processed);
 }
 
-RZ_IPI RZ_BORROW const char *mtk_gfh_type_str(ut16 type) {
+RZ_IPI RZ_BORROW const char *mtk_gfh_type_str(MtkGfhType type) {
 	switch (type) {
 	case MTK_GFH_TYPE_FILE_INFO:
 		return "file_info";

@@ -42,7 +42,7 @@ typedef enum {
 typedef struct mtk_gfh_common_hdr {
 	ut32 magic_version; ///< Lower 3 bytes = "MMM" (0x4D4D4D), upper byte = version
 	ut16 size; ///< Total size of this header block (common + body)
-	ut16 type; ///< Header type (MtkGfhType)
+	MtkGfhType type; ///< Header type; on-disk wire size is 2 bytes
 } MtkGfhCommonHdr;
 
 /**
@@ -94,7 +94,7 @@ typedef struct mtk_obj {
 
 RZ_IPI RZ_OWN MtkObj *mtk_obj_new(RZ_BORROW RZ_NONNULL RzBuffer *b);
 RZ_IPI void mtk_obj_free(RZ_OWN RZ_NULLABLE MtkObj *mtk);
-RZ_IPI RZ_BORROW const char *mtk_gfh_type_str(ut16 type);
+RZ_IPI RZ_BORROW const char *mtk_gfh_type_str(MtkGfhType type);
 
 RZ_IPI bool mtk_check_buffer(RZ_BORROW RZ_NONNULL RzBuffer *b);
 RZ_IPI bool mtk_load_buffer(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_NONNULL RzBinObject *obj, RZ_BORROW RZ_NONNULL RzBuffer *b, RZ_BORROW RZ_NULLABLE Sdb *sdb);
