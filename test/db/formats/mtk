@@ -194,3 +194,34 @@ nop
 nop
 EOF
 RUN
+
+NAME=md1img sections (JSON)
+FILE=bins/mtk/md1img
+CMDS=<<EOF
+iSj
+EOF
+EXPECT=<<EOF
+[{"name":"md1rom.code","size":256,"vsize":256,"perm":"-r-x","paddr":96,"vaddr":2415919104}]
+EOF
+RUN
+
+NAME=md1img empty exports do not crash
+FILE=bins/mtk/md1img
+CMDS=<<EOF
+iE
+EOF
+EXPECT=<<EOF
+nth paddr vaddr bind type size lib name 
+----------------------------------------
+EOF
+RUN
+
+NAME=md1img exposes md1rom as a virtual file
+FILE=bins/mtk/md1img
+CMDS=<<EOF
+ol~vfile
+EOF
+EXPECT=<<EOF
+ 4 - r-x 0x00000160 vfile://0/md1rom
+EOF
+RUN
