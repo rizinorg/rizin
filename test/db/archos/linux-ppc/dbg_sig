@@ -16,4 +16,5 @@ EXPECT=<<EOF
 15 SIGTERM
 [+] signal 15 aka SIGTERM received 0
 EOF
+REGEXP_FILTER_OUT=(?m)^(?!\[\+\]).+
 RUN
