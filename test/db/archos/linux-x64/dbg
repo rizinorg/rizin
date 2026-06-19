@@ -84,8 +84,10 @@ EXPECT=<<EOF
 15 SIGTERM
 15 SIGTERM skip
 Hello world
+[+] SIGNAL 15 errno=0 
+[+] signal 15 aka SIGTERM received 2
 EOF
-REGEXP_FILTER_OUT=(?m)^(?!\[\+\]).+
+REGEXP_FILTER_OUT=(?m)^(?:(?!\b(?:addr|si_pid)=\S+\s*).)*
 RUN
 
 NAME=Ignore instruction skip for external signals
