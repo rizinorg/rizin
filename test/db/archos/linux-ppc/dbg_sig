@@ -14,7 +14,8 @@ EXPECT=<<EOF
 15 SIGTERM
 15 SIGTERM skip
 15 SIGTERM
+[+] SIGNAL 15 errno=0 
 [+] signal 15 aka SIGTERM received 0
 EOF
-REGEXP_FILTER_OUT=(?m)^(?!\[\+\]).+
+REGEXP_FILTER_OUT=(?m)^(?:(?!\b(?:addr|si_pid)=\S+\s*).)*
 RUN
