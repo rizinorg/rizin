@@ -60,6 +60,19 @@ bool c55_decode(const C55ArchDesc *a, const ut8 *buf, int len, C55Insn *out) {
 	if (!a->table) {
 		return false; // arch decodes via this engine's own front-end, not this engine
 	}
+	// C54x stores instructions as little-endian 16-bit words; byte-swap each word
+	// into a local buffer so the rest of the engine (and the per-arch table) can
+	// work in the datasheet's MSB-first order, like the byte-oriented C55x.
+	ut8 swapbuf[16];
+	if (a->words_le) {
+		int n = len < (int)sizeof(swapbuf) ? len : (int)sizeof(swapbuf);
+		memcpy(swapbuf, buf, n);
+		rz_mem_swap_bytes_2_inplace(swapbuf, n);
+		buf = swapbuf;
+		if (len > n) {
+			len = n;
+		}
+	}
 	// Conditional-execution prefix (C55x+ "if(!TC1)/if(TC1) execute D_Unit",
 	// opcodes 0x2e / 0x2f): a one-byte prefix in front of a D-unit instruction.
 	// The TI disassembler renders the prefixed instruction identically to the
@@ -135,8 +148,9 @@ bool c55_decode(const C55ArchDesc *a, const ut8 *buf, int len, C55Insn *out) {
 		// of the leading byte is the "||" flag rather than part of the opcode.
 		// A row opts into this by leaving that bit unconstrained in its mask
 		// (e.g. 0xfe000000), in which case the bit's value selects the parallel
-		// form; rows that pin the bit (0xff000000) treat it as opcode.
-		out->parallel = !def->no_parallel && (def->mask & 0x01000000) == 0 && (head & 0x01000000) != 0;
+		// form; rows that pin the bit (0xff000000) treat it as opcode. C54x is
+		// word-oriented and has no such bit, so it never carries a parallel flag.
+		out->parallel = a->arch != C55_ARCH_C54X && !def->no_parallel && (def->mask & 0x01000000) == 0 && (head & 0x01000000) != 0;
 		const ut64 bits = c55_pack(buf, ilen);
 		if (def->alt_bit && (c55_field(bits, (ut8)(def->alt_bit - 1), 1) != 0)) {
 			// a variant selector beyond the 4-byte match head (e.g. firssub vs
@@ -302,6 +316,17 @@ RzILOpPure *c55_generic_ea(const C55ArchDesc *a, const C55Operand *m) {
 		ea = a->mem.page_reg
 			? LOGOR(SHIFTL(IL_FALSE, UNSIGNED(aw, VARG(a->mem.page_reg)), UN(8, 16)), UN(aw, k16))
 			: UN(aw, k16);
+	} else if (a->arch == C55_ARCH_C54X && m->amode == C55_AM_DIRECT) {
+		// C54x direct addressing: a 7-bit offset combined with the 9-bit DP page
+		// to form a 16-bit word address, unless compiler mode (CPL = ST1[14]) is
+		// set, in which case it is SP-relative.
+		ut64 off = (ut64)((ut32)m->disp & 0x7f);
+		RzILOpPure *dp_addr = LOGOR(SHIFTL0(LOGAND(UNSIGNED(aw, VARG("dp")), UN(aw, 0x1ff)), UN(8, 7)), UN(aw, off));
+		RzILOpPure *sp_addr = ADD(UNSIGNED(aw, VARG("sp")), UN(aw, off));
+		ea = ITE(NON_ZERO(LOGAND(VARG("st1"), UN(16, 0x4000))), sp_addr, dp_addr);
+	} else if (a->arch == C55_ARCH_C54X && m->amode == C55_AM_MMR) {
+		// C54x memory-mapped register: a word address in page 0 of data memory.
+		ea = UN(aw, (ut64)m->abs_addr);
 	} else {
 		RzILOpPure *base = c55_reg_var(a, m->reg);
 		if (!base) {
@@ -334,6 +359,13 @@ RzILOpPure *c55_generic_ea(const C55ArchDesc *a, const C55Operand *m) {
 // EA for any memory operand: generic modes here, exotic modes via the arch hook.
 static RzILOpPure *c55_ea(const C55ArchDesc *a, const C55Operand *m) {
 	if (m->amode >= C55_AM_INDIRECT && m->amode <= C55_AM_ABS16) {
+		return c55_generic_ea(a, m);
+	}
+	// C54x adds direct (@dma) and reverse-carry (*arN+0B / *arN-0B) modes that
+	// sit outside the C55x amode range above but are still resolved generically.
+	if (a->arch == C55_ARCH_C54X &&
+		(m->amode == C55_AM_DIRECT || m->amode == C55_AM_BITREV ||
+			m->amode == C55_AM_BITREV_SUB || m->amode == C55_AM_MMR)) {
 		return c55_generic_ea(a, m);
 	}
 	return a->ea ? a->ea(a, m) : NULL;
@@ -663,6 +695,8 @@ void c55_fill_analysis(const C55ArchDesc *a, const C55Insn *insn, RzAnalysisOp *
 			}
 		}
 		break;
+	case RZ_ANALYSIS_OP_TYPE_LOAD:
+	case RZ_ANALYSIS_OP_TYPE_STORE:
 	case RZ_ANALYSIS_OP_TYPE_MOV: {
 		// Single data-memory load / store: expose the register operand, the
 		// addressing base register, the displacement, the access direction and
@@ -670,6 +704,9 @@ void c55_fill_analysis(const C55ArchDesc *a, const C55Insn *insn, RzAnalysisOp *
 		// has no memory operand and falls through without setting these.
 		// A single memory operand with no register (delay Smem: a memory-to-
 		// memory word move) still records the access width and write direction.
+		// The C55x `mov` family is typed MOV; the C54x ld/st family is typed
+		// LOAD/STORE - both reach this block and use the same operand layout
+		// (the data-memory operand and the register operand, source first).
 		if (insn->n_ops == 1 && insn->ops[0].kind == C55_OP_MEM) {
 			const C55Operand *mem = &insn->ops[0];
 			op->refptr = (mem->access ? mem->access : 16) / 8;
@@ -703,7 +740,9 @@ void c55_fill_analysis(const C55ArchDesc *a, const C55Insn *insn, RzAnalysisOp *
 		if (bri) {
 			op->ireg = bri->name;
 		}
-		if (mem->amode == C55_AM_INDEXED) {
+		if (mem->amode == C55_AM_INDEXED ||
+			(a->arch == C55_ARCH_C54X && mem->amode == C55_AM_DIRECT)) {
+			// indexed *ar(disp); or C54x direct @dma (a DP/SP-relative offset)
 			op->disp = mem->disp;
 		}
 		op->direction = load ? RZ_ANALYSIS_OP_DIR_READ : RZ_ANALYSIS_OP_DIR_WRITE;
@@ -3669,6 +3708,58 @@ static void c55_fmt_reg(RzStrBuf *sb, const C55ArchDesc *a, const C55Reg *r) {
 }
 
 static void c55_fmt_mem(RzStrBuf *sb, const C55ArchDesc *a, const C55Operand *m) {
+	if (a->arch == C55_ARCH_C54X) {
+		// C54x addressing syntax differs from C55x (AR0-indexed *arN+0, circular
+		// *arN+%, bit-reverse *arN+0B). Render it self-contained and return; the
+		// C55x logic below never runs for C54x.
+		switch (m->amode) {
+		case C55_AM_DIRECT:
+			rz_strbuf_appendf(sb, "@0x%" PFMT32x, (ut32)m->disp & 0x7f);
+			return;
+		case C55_AM_MMR: {
+			// a memory-mapped register resolved to its name (pshm/popm/ldm/stm);
+			// chip-specific peripheral MMRs with no core name render numerically.
+			const C55RegInfo *ri = a->reg_info ? a->reg_info(m->reg.cls, m->reg.num, m->reg.sub) : NULL;
+			if (ri) {
+				c55_fmt_reg(sb, a, &m->reg);
+			} else {
+				rz_strbuf_appendf(sb, "0x%" PFMT64x, m->abs_addr & 0xffff);
+			}
+			return;
+		}
+		case C55_AM_ABSOLUTE:
+			rz_strbuf_appendf(sb, "*(0x%" PFMT64x ")", m->abs_addr & 0xffff);
+			return;
+		case C55_AM_ABS16:
+			// *(lk): a 16-bit absolute data address (the long word lands in disp).
+			rz_strbuf_appendf(sb, "*(0x%" PFMT32x ")", (ut32)m->disp & 0xffff);
+			return;
+		default:
+			break;
+		}
+		rz_strbuf_append(sb, "*");
+		if (m->amode == C55_AM_PREINC || m->amode == C55_AM_CONST_IDX_PRE) {
+			rz_strbuf_append(sb, "+");
+		}
+		c55_fmt_reg(sb, a, &m->reg);
+		switch (m->amode) {
+		case C55_AM_POSTINC: rz_strbuf_append(sb, "+"); break;
+		case C55_AM_POSTDEC: rz_strbuf_append(sb, "-"); break;
+		case C55_AM_POSTADD: rz_strbuf_append(sb, "+0"); break;
+		case C55_AM_POSTSUB: rz_strbuf_append(sb, "-0"); break;
+		case C55_AM_BITREV: rz_strbuf_append(sb, "+0B"); break;
+		case C55_AM_BITREV_SUB: rz_strbuf_append(sb, "-0B"); break;
+		case C55_AM_CONST_IDX:
+		case C55_AM_CONST_IDX_PRE:
+			rz_strbuf_appendf(sb, "(0x%" PFMT32x ")", (ut32)m->disp & 0xffff);
+			break;
+		default: break;
+		}
+		if (m->circular) {
+			rz_strbuf_append(sb, "%");
+		}
+		return;
+	}
 	if (m->uns) {
 		rz_strbuf_append(sb, "uns(");
 	}
@@ -3984,7 +4075,7 @@ char *c55_format(const C55ArchDesc *a, const C55Insn *insn) {
 				continue;
 			}
 		}
-		rz_strbuf_append(&sb, i == 0 ? " " : (op->shl_join ? " << " : (op->qual_join ? " || " : ", ")));
+		rz_strbuf_append(&sb, i == 0 ? " " : (op->space_join ? " " : (op->shl_join ? " << " : (op->qual_join ? " || " : ", "))));
 		if (i == 0 && insn->side_load) {
 			// memory-MAC side-load: the first (Smem) operand is also written
 			// into T3, rendered as "t3=" (C55x) / "t3 = " (C55x+) before it.
@@ -4054,7 +4145,13 @@ char *c55_format(const C55ArchDesc *a, const C55Insn *insn) {
 				// with the '#' prefix (the sftl dst, #1 / #-1 forms).
 				rz_strbuf_appendf(&sb, "#%" PFMT64d, (st64)op->imm);
 			} else if (op->addr) {
-				rz_strbuf_appendf(&sb, c55x ? "%s0x%06" PFMT64X : "%s0x%06" PFMT64x, ip, op->imm);
+				if (a->arch == C55_ARCH_C54X) {
+					// C54x renders program/data addresses as a bare hex value
+					// (the '#' prefix is reserved for immediates).
+					rz_strbuf_appendf(&sb, "0x%" PFMT64x, op->imm);
+				} else {
+					rz_strbuf_appendf(&sb, c55x ? "%s0x%06" PFMT64X : "%s0x%06" PFMT64x, ip, op->imm);
+				}
 			} else if (op->imm_signed && (st64)op->imm < 0) {
 				rz_strbuf_appendf(&sb, c55x ? "%s-0x%" PFMT64X : "%s-0x%" PFMT64x, ip, (ut64)(-(st64)op->imm));
 			} else if (c55x) {
