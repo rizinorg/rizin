@@ -245,7 +245,7 @@ RZ_IPI RZ_OWN RzPVector /*<RzBinAddr *>*/ *mtk_entries(RZ_BORROW RZ_NONNULL RzBi
 
 	RzBinAddr *entry = RZ_NEW0(RzBinAddr);
 	if (entry) {
-		entry->paddr = mtk->file_info.jump_offset;
+		entry->paddr = mtk->gfh_offset + mtk->file_info.jump_offset;
 		entry->vaddr = mtk->entry_vaddr;
 		rz_pvector_push(ret, entry);
 	}
