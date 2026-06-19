@@ -111,7 +111,6 @@ RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMo
 RZ_IPI void rz_core_types_struct_print_format_all(RzCore *core);
 RZ_IPI void rz_core_types_union_print_format_all(RzCore *core);
 RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode);
-RZ_IPI bool rz_core_types_rename(RzAnalysis *analysis, RZ_NONNULL const char *from, RZ_NONNULL const char *to);
 RZ_IPI void rz_core_types_typeclass_print_all(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_types_define(RzCore *core, const char *type);
 RZ_IPI bool rz_types_open_file(RzCore *core, const char *path);
