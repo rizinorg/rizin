@@ -92,7 +92,7 @@ bool test_grep_line(void) {
 	mu_end;
 }
 
-bool test_grep_json_projection(void) {
+bool test_grep_json_path(void) {
 	static const struct {
 		const char *json;
 		const char *grep;
@@ -103,55 +103,91 @@ bool test_grep_json_projection(void) {
 			"[{\"offset\":1,\"bytes\":\"aa\",\"opcode\":\"nop\",\"family\":\"cpu\",\"type\":\"nop\",\"jump\":2},{\"offset\":2,\"bytes\":\"bb\",\"opcode\":\"ret\",\"family\":\"cpu\",\"type\":\"ret\"}]",
 			"{.[] | {offset, bytes, opcode, family, type, jump}}",
 			"[{\"offset\":1,\"bytes\":\"aa\",\"opcode\":\"nop\",\"family\":\"cpu\",\"type\":\"nop\",\"jump\":2},{\"offset\":2,\"bytes\":\"bb\",\"opcode\":\"ret\",\"family\":\"cpu\",\"type\":\"ret\"}]\n",
-			"json array projection",
+			"json path array projection",
+		},
+		{
+			"[{\"s\":\"alpha\",\"n\":1,\"b\":true,\"nil\":null,\"obj\":{\"x\":1},\"arr\":[1,2]},{\"s\":\"beta\",\"n\":2,\"b\":false,\"obj\":{\"y\":\"z\"}},{\"s\":\"gamma\",\"arr\":[]}]",
+			"{.[]\\|{s,n,b,nil,obj,arr,missing}}",
+			"[{\"s\":\"alpha\",\"n\":1,\"b\":true,\"nil\":null,\"obj\":{\"x\":1},\"arr\":[1,2]},{\"s\":\"beta\",\"n\":2,\"b\":false,\"obj\":{\"y\":\"z\"}},{\"s\":\"gamma\",\"arr\":[]}]\n",
+			"json path array projection keeps existing typed values",
 		},
 		{
 			"[{\"key1\":1,\"key2\":\"aa\",\"key3\":true}]",
 			"{.[]\\|{key1, key2, key3}}",
 			"[{\"key1\":1,\"key2\":\"aa\",\"key3\":true}]\n",
-			"json array projection with escaped pipe",
+			"json path array projection with escaped pipe",
+		},
+		{
+			"[]",
+			"{ .[] \\| { key1, key2 } }",
+			"[]\n",
+			"json path array projection handles empty arrays",
 		},
 		{
 			"[{\"k\":1}]",
 			"{ . \t[ \t] \t| \t{ k } }",
 			"[{\"k\":1}]\n",
-			"json array projection accepts whitespace between tokens",
+			"json path array projection accepts whitespace between tokens",
 		},
 		{
 			"[{\"k\":1}]",
 			"{ . [ ] \t\\| \t{ k } }",
 			"[{\"k\":1}]\n",
-			"json array projection accepts whitespace around escaped pipe",
+			"json path array projection accepts whitespace around escaped pipe",
 		},
 		{
 			"[{\"a b\":1},{\"a\":2}]",
 			"{.[]\\|{a b}}",
 			"[{\"a b\":1},{}]\n",
-			"json array projection allows spaces in object keys",
+			"json path array projection allows spaces in object keys",
 		},
 		{
 			"[{\"k\":1},7,\"x\",null,true,[],{\"z\":2},{\"k\":3}]",
 			"{.[] | {k}}",
 			"[{\"k\":1},{},{\"k\":3}]\n",
-			"json array projection skips non-object array items and keeps empty objects",
+			"json path array projection skips non-object array items and keeps empty objects",
 		},
 		{
 			"[{\"a\":1,\"nested\":{\"x\":1},\"arr\":[1,2],\"s\":\"hi\"},{\"b\":2},{\"z\":3}]",
 			"{.[] | {a, b, nested, arr}}",
 			"[{\"a\":1,\"nested\":{\"x\":1},\"arr\":[1,2]},{\"b\":2},{}]\n",
-			"json array projection keeps partial objects and nested values",
+			"json path array projection keeps partial objects and nested values",
 		},
 		{
 			"[{\"arr\":[null,1]}]",
 			"{.[]\\|{arr}}",
 			"[{\"arr\":[null,1]}]\n",
-			"json array projection preserves null elements in nested arrays",
+			"json path array projection preserves null elements in nested arrays",
+		},
+		{
+			"[{\"z\":1},{\"z\":2}]",
+			"{.[]\\|{key1,key2}}",
+			"[{},{}]\n",
+			"json path array projection emits empty objects for missing keys",
 		},
 		{
 			"[{\"offset2\":5},{\"offset\":7,\"offset2\":8}]",
 			"{.[] | {offset}}",
 			"[{},{\"offset\":7}]\n",
-			"json array projection matches object keys exactly",
+			"json path array projection matches object keys exactly",
+		},
+		{
+			"{\"key1\":1}",
+			"{.[]\\|{key1}}",
+			"[]\n",
+			"json path array projection returns empty array for non-array input",
+		},
+		{
+			"[{\"opcode\":\"nop\"}]",
+			"{[0].opcode}",
+			"nop\n",
+			"json path still extracts one node",
+		},
+		{
+			"{\"a{b\":7}",
+			"{.a{b}",
+			"7\n",
+			"json path preserves literal open brace in key",
 		},
 	};
 
@@ -165,26 +201,6 @@ bool test_grep_json_projection(void) {
 	mu_end;
 }
 
-bool test_grep_json_path_regression(void) {
-	rz_cons_new();
-	rz_cons_print("[{\"opcode\":\"nop\"}]");
-	rz_cons_grep("{[0].opcode}");
-	mu_assert_streq(rz_cons_get_buffer(), "nop\n", "json path still extracts one node");
-
-	rz_cons_free();
-	mu_end;
-}
-
-bool test_grep_json_path_preserves_literal_open_brace(void) {
-	rz_cons_new();
-	rz_cons_print("{\"a{b\":7}");
-	rz_cons_grep("{.a{b}");
-	mu_assert_streq(rz_cons_get_buffer(), "7\n", "json path preserves literal open brace in key");
-
-	rz_cons_free();
-	mu_end;
-}
-
 bool all_tests() {
 	mu_run_test(test_grep_parse_simple);
 	mu_run_test(test_grep_parse_multiple);
@@ -192,9 +208,7 @@ bool all_tests() {
 	mu_run_test(test_grep_parse_case_insensitive);
 	mu_run_test(test_grep_parse_line);
 	mu_run_test(test_grep_line);
-	mu_run_test(test_grep_json_projection);
-	mu_run_test(test_grep_json_path_regression);
-	mu_run_test(test_grep_json_path_preserves_literal_open_brace);
+	mu_run_test(test_grep_json_path);
 	return tests_passed != tests_run;
 }
 
