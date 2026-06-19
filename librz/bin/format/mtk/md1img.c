@@ -250,6 +250,80 @@ RZ_IPI bool md1img_check_buffer(RZ_BORROW RZ_NONNULL RzBuffer *b) {
 	return memcmp(magic, MD1IMG_MAGIC, MD1IMG_MAGIC_SIZE) == 0;
 }
 
+/**
+ * \brief Register the section's virtual file and run per-section parsers
+ *        (GFH for md1rom, CATI for dbginfo). Takes ownership of \p vbuf.
+ */
+static void md1img_load_section(Md1imgObj *md1, int sec_idx, RZ_BORROW RZ_NONNULL const Md1imgSection *sec, RZ_OWN RZ_NONNULL RzBuffer *vbuf) {
+	RzBinVirtualFile *vfile = RZ_NEW0(RzBinVirtualFile);
+	if (!vfile) {
+		rz_buf_free(vbuf);
+		return;
+	}
+	vfile->buf = vbuf;
+	vfile->buf_owned = true;
+	vfile->name = rz_str_dup(sec->name);
+	rz_pvector_push(md1->vfiles, vfile);
+
+	// Parse md1rom section with mtk GFH parser
+	if (rz_str_casestr(sec->name, "md1rom") && md1->md1rom_idx < 0) {
+		md1->md1rom_idx = sec_idx;
+		// Search for GFH magic within md1rom data (may not be at offset 0)
+		ut64 gfh_off = 0;
+		ut8 magic_buf[4];
+		while (gfh_off + MTK_GFH_MIN_FILE_SIZE <= sec->dsize) {
+			if (rz_buf_read_at(vbuf, gfh_off, magic_buf, 4) != 4) {
+				break;
+			}
+			ut32 magic_val = rz_read_le32(magic_buf);
+			if ((magic_val & MTK_GFH_MAGIC_MASK) == MTK_GFH_MAGIC) {
+				break;
+			}
+			gfh_off += 4;
+		}
+		if (gfh_off + MTK_GFH_MIN_FILE_SIZE <= sec->dsize) {
+			RzBuffer *gfh_buf = rz_buf_new_slice(vbuf, gfh_off, sec->dsize - gfh_off);
+			if (gfh_buf) {
+				md1->mtk = mtk_obj_new(gfh_buf);
+				rz_buf_free(gfh_buf);
+			}
+			if (md1->mtk) {
+				md1->gfh_offset = gfh_off;
+				RZ_LOG_INFO("md1img: parsed GFH from '%s' at offset 0x%" PFMT64x " (load_addr=0x%x, entry=0x%x)\n",
+					sec->name, gfh_off, md1->mtk->file_info.load_addr, md1->mtk->entry_vaddr);
+			}
+		}
+	}
+
+	// Parse CATI debug info from dbginfo sections
+	if (rz_str_casestr(sec->name, "dbginfo") && sec->dsize > MTK_CATI_MAGIC_SIZE) {
+		RzPVector *syms = md1img_parse_dbginfo(vbuf);
+		// Try LZMA alone decompression if raw CATI parsing failed (dbginfo may be LZMA-compressed)
+		if (!syms) {
+			RzBuffer *decompressed = rz_buf_new_empty(0);
+			if (decompressed && rz_lzma_alone_dec_buf(vbuf, decompressed, 4096)) {
+				syms = md1img_parse_dbginfo(decompressed);
+			}
+			rz_buf_free(decompressed);
+		}
+		if (syms) {
+			if (!md1->dbg_symbols) {
+				md1->dbg_symbols = syms;
+			} else {
+				// Merge symbols from additional dbginfo sections
+				void **it;
+				rz_pvector_foreach (syms, it) {
+					rz_pvector_push(md1->dbg_symbols, *it);
+				}
+				// Disown elements before freeing (ownership transferred)
+				syms->v.free = NULL;
+				rz_pvector_free(syms);
+			}
+			RZ_LOG_INFO("md1img: loaded debug symbols from '%s'\n", sec->name);
+		}
+	}
+}
+
 RZ_IPI bool md1img_load_buffer(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_NONNULL RzBinObject *obj, RZ_BORROW RZ_NONNULL RzBuffer *b, RZ_BORROW RZ_NULLABLE Sdb *sdb) {
 	rz_return_val_if_fail(bf && obj && b, false);
 
@@ -289,76 +363,10 @@ RZ_IPI bool md1img_load_buffer(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_
 		int sec_idx = rz_vector_len(md1->sections);
 		rz_vector_push(md1->sections, &sec);
 
-		// Create a virtual file for this section's data
+		// Create a virtual file for this section's data and parse it
 		RzBuffer *vbuf = rz_buf_new_slice(b, sec.data_offset, sec.dsize);
 		if (vbuf) {
-			RzBinVirtualFile *vfile = RZ_NEW0(RzBinVirtualFile);
-			if (vfile) {
-				vfile->buf = vbuf;
-				vfile->buf_owned = true;
-				vfile->name = rz_str_dup(sec.name);
-				rz_pvector_push(md1->vfiles, vfile);
-			} else {
-				rz_buf_free(vbuf);
-			}
-
-			// Parse md1rom section with mtk GFH parser
-			if (rz_str_casestr(sec.name, "md1rom") && md1->md1rom_idx < 0) {
-				md1->md1rom_idx = sec_idx;
-				// Search for GFH magic within md1rom data (may not be at offset 0)
-				ut64 gfh_off = 0;
-				ut8 magic_buf[4];
-				while (gfh_off + MTK_GFH_MIN_FILE_SIZE <= sec.dsize) {
-					if (rz_buf_read_at(vbuf, gfh_off, magic_buf, 4) != 4) {
-						break;
-					}
-					ut32 magic_val = rz_read_le32(magic_buf);
-					if ((magic_val & MTK_GFH_MAGIC_MASK) == MTK_GFH_MAGIC) {
-						break;
-					}
-					gfh_off += 4;
-				}
-				if (gfh_off + MTK_GFH_MIN_FILE_SIZE <= sec.dsize) {
-					RzBuffer *gfh_buf = rz_buf_new_slice(vbuf, gfh_off, sec.dsize - gfh_off);
-					if (gfh_buf) {
-						md1->mtk = mtk_obj_new(gfh_buf);
-						rz_buf_free(gfh_buf);
-					}
-					if (md1->mtk) {
-						md1->gfh_offset = gfh_off;
-						RZ_LOG_INFO("md1img: parsed GFH from '%s' at offset 0x%" PFMT64x " (load_addr=0x%x, entry=0x%x)\n",
-							sec.name, gfh_off, md1->mtk->file_info.load_addr, md1->mtk->entry_vaddr);
-					}
-				}
-			}
-
-			// Parse CATI debug info from dbginfo sections
-			if (rz_str_casestr(sec.name, "dbginfo") && sec.dsize > MTK_CATI_MAGIC_SIZE) {
-				RzPVector *syms = md1img_parse_dbginfo(vbuf);
-				// Try LZMA alone decompression if raw CATI parsing failed (dbginfo may be LZMA-compressed)
-				if (!syms) {
-					RzBuffer *decompressed = rz_buf_new_empty(0);
-					if (decompressed && rz_lzma_alone_dec_buf(vbuf, decompressed, 4096)) {
-						syms = md1img_parse_dbginfo(decompressed);
-					}
-					rz_buf_free(decompressed);
-				}
-				if (syms) {
-					if (!md1->dbg_symbols) {
-						md1->dbg_symbols = syms;
-					} else {
-						// Merge symbols from additional dbginfo sections
-						void **it;
-						rz_pvector_foreach (syms, it) {
-							rz_pvector_push(md1->dbg_symbols, *it);
-						}
-						// Disown elements before freeing (ownership transferred)
-						syms->v.free = NULL;
-						rz_pvector_free(syms);
-					}
-					RZ_LOG_INFO("md1img: loaded debug symbols from '%s'\n", sec.name);
-				}
-			}
+			md1img_load_section(md1, sec_idx, &sec, vbuf);
 		}
 
 		// Advance to next section: data_offset + dsize + alignment padding
