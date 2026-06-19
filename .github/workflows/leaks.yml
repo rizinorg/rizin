@@ -10,7 +10,7 @@ concurrency:
 
 jobs:
   real_pr_shas:
-    uses: rot127/rizin/.github/workflows/get_real_pr_shas.yml@lsan
+    uses: rizinorg/rizin/.github/workflows/get_real_pr_shas.yml@dev
 
   build-and-check-leaks:
     needs:
