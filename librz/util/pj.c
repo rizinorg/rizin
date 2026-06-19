@@ -58,6 +58,7 @@ RZ_API char *pj_drain(PJ *pj) {
 		return NULL;
 	}
 	if (pj->level != 0) {
+		// error case, invalid json, return NULL
 		pj_free(pj);
 		return NULL;
 	}
