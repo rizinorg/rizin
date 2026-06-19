@@ -149,10 +149,80 @@ bool test_rz_lzma_alone_dec(void) {
 	mu_end;
 }
 
+// --- Fault injection for lzma_alone_action_buf error-handling branches ---
+
+// A buffer back-end whose every operation reports failure. Used as the
+// source to trigger the "src_readlen < 0" branch on the first read attempt.
+static st64 failing_read(RZ_BORROW RzBuffer *b, RZ_OUT ut8 *buf, ut64 len) {
+	(void)b;
+	(void)buf;
+	(void)len;
+	return -1;
+}
+static const RzBufferMethods failing_src_methods = {
+	.read = failing_read,
+};
+
+// A buffer back-end that accepts no writes. Used as the destination to
+// trigger the "rz_buf_write(dst, ...) != write_size" branch after the
+// decoder produces its first decompressed chunk.
+static st64 failing_write(RzBuffer *b, const ut8 *buf, ut64 len) {
+	(void)b;
+	(void)buf;
+	(void)len;
+	return -1;
+}
+static const RzBufferMethods failing_dst_methods = {
+	.write = failing_write,
+};
+
+bool test_rz_lzma_alone_dec_error_paths(void) {
+	// Branch: `if (!inbuf || !outbuf)` — the inbuf/outbuf allocation in
+	// lzma_alone_action_buf fails because block_size is unallocatable.
+	// UINT64_MAX bytes is guaranteed-NULL on every sane libc.
+	{
+		RzBuffer *src = rz_buf_new_with_bytes(test_cases_alone[0].deflated, test_cases_alone[0].deflated_length);
+		RzBuffer *dst = rz_buf_new_empty(0);
+		mu_assert_false(rz_lzma_alone_dec_buf(src, dst, UINT64_MAX),
+			"UINT64_MAX block_size must make the inbuf/outbuf malloc fail");
+		rz_buf_free(src);
+		rz_buf_free(dst);
+	}
+
+	// Branch: `if (src_readlen < 0)` — the first rz_buf_read_at on the
+	// source returns -1, so the decoder bails out before processing anything.
+	{
+		RzBuffer *src = rz_buf_new_with_methods(&failing_src_methods, NULL, RZ_BUFFER_CUSTOM);
+		RzBuffer *dst = rz_buf_new_empty(0);
+		mu_assert_notnull(src, "custom failing-src buffer creation failed");
+		mu_assert_false(rz_lzma_alone_dec_buf(src, dst, 1 << 13),
+			"src read returning -1 must abort decompression");
+		rz_buf_free(src);
+		rz_buf_free(dst);
+	}
+
+	// Branch: `if (rz_buf_write(dst, outbuf, write_size) != write_size)` —
+	// a valid LZMA-alone stream feeds the decoder, the decoder emits
+	// decompressed bytes, but the destination buffer's write method always
+	// returns -1, so the loop must bail out.
+	{
+		RzBuffer *src = rz_buf_new_with_bytes(test_cases_alone[0].deflated, test_cases_alone[0].deflated_length);
+		RzBuffer *dst = rz_buf_new_with_methods(&failing_dst_methods, NULL, RZ_BUFFER_CUSTOM);
+		mu_assert_notnull(dst, "custom failing-dst buffer creation failed");
+		mu_assert_false(rz_lzma_alone_dec_buf(src, dst, 1 << 13),
+			"dst write failure must abort decompression");
+		rz_buf_free(src);
+		rz_buf_free(dst);
+	}
+
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_lzma_dec);
 	mu_run_test(test_rz_lzma_enc);
 	mu_run_test(test_rz_lzma_alone_dec);
+	mu_run_test(test_rz_lzma_alone_dec_error_paths);
 
 	return tests_passed != tests_run;
 }
