@@ -1,0 +1,67 @@
+NAME=SuperH-3 asm.cpu disassembly and control flow
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=sh
+e asm.bits=32
+e cfg.bigendian=true
+e asm.cpu=sh3
+wx 8b10
+ao~type
+wx 402b @ 0
+ao~type
+wx 000b @ 0
+ao~type
+wx 01c30009421c402b000b @ 0
+pd 5
+EOF
+EXPECT=<<EOF
+type: cjmp
+type: ujmp
+type: ret
+            0x00000000      invalid
+            0x00000002      nop
+            0x00000004      shad  r1, r2
+            0x00000006      jmp   @r0
+            0x00000008      rts
+EOF
+RUN
+
+NAME=SuperH-4 only instructions are illegal under SuperH-3
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=sh
+e asm.bits=32
+e cfg.bigendian=true
+e asm.cpu=sh3
+wx 01c3 @ 0
+ao~type
+wx 0293 @ 0
+ao~type
+wx 053a @ 0
+ao~type
+EOF
+EXPECT=<<EOF
+type: ill
+type: ill
+type: ill
+EOF
+RUN
+
+NAME=SuperH-4 only instructions are valid under SuperH-4
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=sh
+e asm.bits=32
+e cfg.bigendian=true
+e asm.cpu=sh4
+wx 01c30009421c402b000b
+pd 5
+EOF
+EXPECT=<<EOF
+            0x00000000      movca.l r0, @r1
+            0x00000002      nop
+            0x00000004      shad  r1, r2
+            0x00000006      jmp   @r0
+            0x00000008      rts
+EOF
+RUN
