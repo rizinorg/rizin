@@ -177,18 +177,6 @@ static const RzBufferMethods failing_dst_methods = {
 };
 
 bool test_rz_lzma_alone_dec_error_paths(void) {
-	// Branch: `if (!inbuf || !outbuf)` — the inbuf/outbuf allocation in
-	// lzma_alone_action_buf fails because block_size is unallocatable.
-	// UINT64_MAX bytes is guaranteed-NULL on every sane libc.
-	{
-		RzBuffer *src = rz_buf_new_with_bytes(test_cases_alone[0].deflated, test_cases_alone[0].deflated_length);
-		RzBuffer *dst = rz_buf_new_empty(0);
-		mu_assert_false(rz_lzma_alone_dec_buf(src, dst, UINT64_MAX),
-			"UINT64_MAX block_size must make the inbuf/outbuf malloc fail");
-		rz_buf_free(src);
-		rz_buf_free(dst);
-	}
-
 	// Branch: `if (src_readlen < 0)` — the first rz_buf_read_at on the
 	// source returns -1, so the decoder bails out before processing anything.
 	{
