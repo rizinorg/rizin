@@ -1890,7 +1890,11 @@ RZ_API RZ_OWN st32 rz_float_cmp(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y) {
 			cmp = -cmp;
 		}
 	} else {
-		cmp = rz_bv_ule(x_bv, y_bv) ? 1 : -1;
+		if (rz_float_is_zero(x) && rz_float_is_zero(y)) {
+			cmp = 0;
+		} else {
+			cmp = rz_bv_ule(x_bv, y_bv) ? 1 : -1;
+		}
 	}
 
 	rz_bv_free(x_bv);
