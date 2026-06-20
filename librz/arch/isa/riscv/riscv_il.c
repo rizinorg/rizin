@@ -117,15 +117,19 @@ RZ_OWN RZ_IPI RzILOpEffect *
 rz_riscv_lift_instr(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
 	rz_return_val_if_fail(analysis && op && insn, NULL);
 
-	if (insn->id > 0 && insn->id < RZ_ARRAY_SIZE(riscv_lifters)) {
+	if (insn->id == RISCV_INS_INVALID) {
+		return NULL;
+	}
+	if (insn->id >= RISCV_INS_ENDING) {
+		RZ_LOG_ERROR("Invalid RISC-V instruction id %u (0x%08x)\n", insn->id, rz_read_le32(insn->bytes));
+		return NULL;
+	}
+	if (insn->id < RZ_ARRAY_SIZE(riscv_lifters)) {
 		RiscvInstructionLifter lifter = riscv_lifters[insn->id];
 		if (lifter) {
 			return lifter(analysis, op, insn, current_addr, size);
-		} else {
-			RZ_LOG_ERROR("No lifter found for instruction %s (id: %d) (0x%08x)", insn->mnemonic, insn->id, rz_read_le32(insn->bytes));
 		}
 	}
-	rz_warn_if_reached();
 	return NULL;
 }
 
