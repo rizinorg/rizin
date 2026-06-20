@@ -2381,6 +2381,19 @@ fcn.00014d50
 EOF
 RUN
 
+NAME=tx on enum type
+FILE=bins/elf/ioli/crackme0x00
+CMDS=<<EOF
+td "enum myenum { A=0, B=1 };"
+af @ main
+afs int main(enum myenum e) @ main
+tx myenum
+EOF
+EXPECT=<<EOF
+main
+EOF
+RUN
+
 NAME=aht aligned
 FILE==
 BROKEN=1
