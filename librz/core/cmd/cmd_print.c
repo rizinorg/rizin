@@ -5321,12 +5321,12 @@ static RzCmdStatus print_visual_bytes(RzCore *core, RZ_OWN RZ_NONNULL RzHistogra
 			hist->barnumber = (hist->barnumber > 0) ? (hist->barnumber - 1) : (brange->nblocks - 1);
 			break;
 		case 'J': {
-			int jump = brange->nblocks / 10;
+			size_t jump = brange->nblocks / 10;
 			hist->barnumber = (hist->barnumber + jump) % brange->nblocks;
 			break;
 		}
 		case 'K': {
-			int jump = brange->nblocks / 10;
+			size_t jump = brange->nblocks / 10;
 			hist->barnumber = (hist->barnumber - (jump % brange->nblocks) + brange->nblocks) % brange->nblocks;
 			break;
 		}
