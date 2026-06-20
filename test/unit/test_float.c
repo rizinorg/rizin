@@ -910,6 +910,11 @@ bool f32_ieee_cmp_test(void) {
 	mu_assert_true(rz_float_cmp(pinf, a) > 0, "test positive inf");
 	mu_assert_true(rz_float_cmp(ninf, b) < 0, "test negative inf");
 
+	RzFloat *pzero = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32, false);
+	RzFloat *nzero = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32, true);
+	mu_assert_true(rz_float_cmp(pzero, nzero) == 0, "test positive and negative zero equality");
+	mu_assert_true(rz_float_cmp(nzero, pzero) == 0, "test negative and positive zero equality");
+
 	rz_float_free(a);
 	rz_float_free(b);
 	rz_float_free(c);
@@ -917,6 +922,8 @@ bool f32_ieee_cmp_test(void) {
 	rz_float_free(e);
 	rz_float_free(pinf);
 	rz_float_free(ninf);
+	rz_float_free(pzero);
+	rz_float_free(nzero);
 
 	mu_end;
 }
