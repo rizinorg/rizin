@@ -11,6 +11,15 @@
 
 RZ_LIB_VERSION(rz_debug);
 
+#if __linux__ && DEBUGGER
+// Defined by the native Linux debugger plugin, which is compiled into this same
+// library (librz_debug) under the same conditions as this file. Declared here so
+// that rz_debug_continue() can switch to a forked child without resorting to a
+// fragile runtime dlsym() lookup (the symbol has hidden visibility and cannot be
+// resolved that way).
+extern bool linux_attach_new_process(RzDebug *dbg, int pid);
+#endif
+
 // Size of the lookahead buffers used in rz_debug functions
 #define DBG_BUF_SIZE 512
 
@@ -398,8 +407,10 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	dbg->num = rz_num_new(rz_debug_num_callback, rz_debug_str_callback, dbg);
 	dbg->cur = NULL;
 	dbg->plugin_data = NULL;
-	dbg->threads = NULL;
+	// dbg->threads = NULL;
 	dbg->hitinfo = 1;
+	dbg->processes = rz_list_new();
+	dbg->cur_proc = NULL;
 	/* TODO: needs a redesign? */
 	dbg->maps = rz_debug_map_list_new();
 	dbg->maps_user = rz_debug_map_list_new();
@@ -1154,6 +1165,12 @@ RZ_API int rz_debug_continue_kill(RzDebug *dbg, int sig) {
 	RzDebugReasonType reason = RZ_DEBUG_REASON_NONE;
 	int ret = 0;
 	RzBreakpointItem *bp = NULL;
+#if __linux__
+	// Tracks the iteration on which we just followed a forked child, so its
+	// pending post-fork SIGSTOP can be swallowed on the next wait (see below).
+	bool followed_child = false;
+	bool just_followed_child = false;
+#endif
 
 	if (!dbg) {
 		return 0;
@@ -1213,6 +1230,11 @@ repeat:
 		return 0;
 	}
 
+// #if __linux__
+// 	just_followed_child = followed_child;
+// 	followed_child = false;
+// #endif
+
 	if (dbg->corebind.core) {
 		RzCore *core = (RzCore *)dbg->corebind.core;
 		RzNum *num = core->num;
@@ -1231,18 +1253,35 @@ repeat:
 	}
 
 #if __linux__
-	if (reason == RZ_DEBUG_REASON_NEW_PID && dbg->follow_child) {
-#if DEBUGGER
-		/// if the plugin is not compiled link fails, so better do runtime linking
-		/// until this code gets fixed
-		static bool (*linux_attach_new_process)(RzDebug *dbg, int pid) = NULL;
-		if (!linux_attach_new_process) {
-			linux_attach_new_process = rz_sys_dlsym(NULL, "linux_attach_new_process");
-		}
-		if (linux_attach_new_process) {
-			linux_attach_new_process(dbg, dbg->forked_pid);
-		}
-#endif
+// 	// After following a fork, the child still has the SIGSTOP that the kernel
+// 	// raised on it at fork time pending. The first continue surfaces that as a
+// 	// signal-stop at the libc fork() return instead of running on to the user's
+// 	// breakpoint. Swallow that one SIGSTOP so following a child behaves like
+// 	// gdb's "set follow-fork-mode child", which lands directly on the breakpoint.
+// 	if (just_followed_child && reason == RZ_DEBUG_REASON_SIGNAL &&
+// 		dbg->reason.signum == SIGSTOP) {
+// 		goto repeat;
+// 	}
+// 	if (reason == RZ_DEBUG_REASON_NEW_PID && dbg->follow_child) {
+// #if DEBUGGER
+// 		// dbg->pid is still the parent here. linux_attach_new_process() detaches
+// 		// the parent (without restoring its original code bytes) and switches to
+// 		// the forked child. The parent shares the inherited software breakpoints
+// 		// (int3) with the child, so the now-untraced parent would take a fatal
+// 		// SIGTRAP the moment it executed one of them. Remove the breakpoints from
+// 		// the parent before it is detached; the child keeps its own int3 bytes
+// 		// via copy-on-write, so its breakpoints keep working without reinstalling.
+// 		rz_debug_bp_update(dbg);
+// 		rz_bp_restore(dbg->bp, false);
+// 		linux_attach_new_process(dbg, dbg->forked_pid);
+// 		followed_child = true;
+// #endif
+// 		goto repeat;
+// 	}
+
+	if(reason == RZ_DEBUG_REASON_NEW_PID && dbg->follow_child){
+		rz_bp_restore(dbg->bp, false);
+		rz_debug_select(dbg, dbg->forked_pid, dbg->forked_pid);
 		goto repeat;
 	}
 
