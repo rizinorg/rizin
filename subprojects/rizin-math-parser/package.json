@@ -14,6 +14,6 @@
     "test": "tree-sitter test"
   },
   "devDependencies": {
-    "tree-sitter-cli": "^0.20.0"
+    "tree-sitter-cli": "^0.26.0"
   }
 }
