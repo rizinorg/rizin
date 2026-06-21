@@ -22,9 +22,6 @@ commands:
             comment: "Set config variable `asm.bytes` to `true`"
           - text: e
             arg_str: " search.in=?"
-            comment: "Show all possible values for config variable `search.in`"
-          - text: e
-            arg_str: " search.in=??"
             comment: "Show all possible values for config variable `search.in` together with description"
           - text: e
             arg_str: " asm.bytes=true asm.offset=false"

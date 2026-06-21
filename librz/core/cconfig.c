@@ -222,9 +222,11 @@ fail:
 static bool cb_asm_features_set(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (*node->value == '?') {
-		update_asmfeatures_options(core, node);
-		print_node_options(node);
+	if (node->value[0] == '?') {
+		if (!strcmp(node->value, "?")) {
+			update_asmfeatures_options(core, node);
+			print_node_options(node);
+		}
 		return 0;
 	}
 	rz_asm_set_features(core->rasm, node->value);
@@ -235,8 +237,10 @@ static bool cb_asm_parser_set(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->value[0] == '?') {
-		update_asmparser_options(core, node);
-		print_node_options(node);
+		if (!strcmp(node->value, "?")) {
+			update_asmparser_options(core, node);
+			print_node_options(node);
+		}
 		return false;
 	}
 
@@ -248,8 +252,10 @@ static bool cb_asm_os_set(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 
 	const char *value = node->value;
-	if (*value == '?') {
-		print_node_options(node);
+	if (value[0] == '?') {
+		if (!strcmp(value, "?")) {
+			print_node_options(node);
+		}
 		return 0;
 	}
 	if (!value[0]) {
@@ -262,14 +268,16 @@ static bool cb_asm_cpu_set(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	const char *value = node->value;
-	if (*value == '?') {
-		update_asmcpu_options(core, node);
-		/* print verbose help instead of plain option listing */
-		RzCmdStateOutput state = { 0 };
-		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, core);
-		rz_core_asm_cpu_plugin_print(core, &state, rz_config_get(core->config, "asm.arch"));
-		rz_cmd_state_output_print(&state);
-		rz_cmd_state_output_fini(&state);
+	if (value[0] == '?') {
+		if (!strcmp(value, "?")) {
+			update_asmcpu_options(core, node);
+			/* print verbose help instead of plain option listing */
+			RzCmdStateOutput state = { 0 };
+			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, core);
+			rz_core_asm_cpu_plugin_print(core, &state, rz_config_get(core->config, "asm.arch"));
+			rz_cmd_state_output_print(&state);
+			rz_cmd_state_output_fini(&state);
+		}
 		return 0;
 	}
 
@@ -282,18 +290,15 @@ static bool cb_asm_arch_set(void *user, void *data) {
 	const char *value = node->value;
 	if (value[0] == '?') {
 		update_asmarch_options(core, node);
-		if (strlen(value) > 1 && value[1] == '?') {
+		if (!strcmp(value, "?")) {
 			/* print more verbose help instead of plain option values */
 			RzCmdStateOutput state = { 0 };
 			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, core);
 			rz_core_asm_plugins_print(core, &state, NULL);
 			rz_cmd_state_output_print(&state);
 			rz_cmd_state_output_fini(&state);
-			return false;
-		} else {
-			print_node_options(node);
-			return false;
 		}
+		return false;
 	}
 
 	return rz_core_arch_configure(core, /*arch*/ value, /*bits*/ 0, /*cpu*/ NULL, /*os*/ NULL, /*platform*/ NULL);
@@ -303,9 +308,11 @@ static bool cb_asm_platform_set(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	const char *value = node->value;
-	if (*value == '?') {
-		update_asmplatforms_options(core, node);
-		print_node_options(node);
+	if (value[0] == '?') {
+		if (!strcmp(value, "?")) {
+			update_asmplatforms_options(core, node);
+			print_node_options(node);
+		}
 		return 0;
 	}
 
@@ -318,8 +325,10 @@ static bool cb_asm_bits_set(void *user, void *data) {
 
 	int value = node->i_value;
 	if (node->value[0] == '?') {
-		update_asmbits_options(core, node);
-		print_node_options(node);
+		if (!strcmp(node->value, "?")) {
+			update_asmbits_options(core, node);
+			print_node_options(node);
+		}
 		return false;
 	}
 
@@ -601,14 +610,12 @@ static bool cb_emustr(void *user, void *data) {
 
 static bool cb_emuskip(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (*node->value == '?') {
-		if (strlen(node->value) > 1 && node->value[1] == '?') {
+	if (node->value[0] == '?') {
+		if (!strcmp(node->value, "?")) {
 			rz_cons_printf("Concatenation of meta types encoded as characters:\n"
 				       "'d': data\n'c': code\n's': string\n'f': format\n'm': magic\n"
 				       "'h': hide\n'C': comment\n'r': run\n"
 				       "(default is 'ds' to skip data and strings)\n");
-		} else {
-			print_node_options(node);
 		}
 		return false;
 	}
@@ -666,24 +673,26 @@ static bool cb_usextr(void *user, void *data) {
 static bool cb_strpurge(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (*node->value == '?') {
-		rz_cons_printf(
-			"There can be multiple entries separated by commas. No whitespace before/after entries.\n"
-			"Possible entries:\n"
-			"  all          : purge all strings\n"
-			"  true         : use the false_positive() classifier in cbin.c\n"
-			"  addr         : purge string at addr\n"
-			"  addr1-addr2  : purge all strings in the range addr1-addr2 inclusive\n"
-			"  !addr        : prevent purge of string at addr by prev entries\n"
-			"  !addr1-addr2 : prevent purge of strings in range addr1-addr2 inclusive by prev entries\n"
-			"Neither !true nor !false is supported.\n"
-			"\n"
-			"Examples:\n"
-			"  e bin.str.purge=true,0-0xff,!0x1a\n"
-			"    -- purge strings using the false_positive() classifier in cbin.c and also strings \n"
-			"       with addresses in the range 0-0xff, but not the string at 0x1a.\n"
-			"  e bin.str.purge=all,!0x1000-0x1fff\n"
-			"    -- purge all strings except the strings with addresses in the range 0x1000-0x1fff.\n");
+	if (node->value[0] == '?') {
+		if (!strcmp(node->value, "?")) {
+			rz_cons_printf(
+				"There can be multiple entries separated by commas. No whitespace before/after entries.\n"
+				"Possible entries:\n"
+				"  all          : purge all strings\n"
+				"  true         : use the false_positive() classifier in cbin.c\n"
+				"  addr         : purge string at addr\n"
+				"  addr1-addr2  : purge all strings in the range addr1-addr2 inclusive\n"
+				"  !addr        : prevent purge of string at addr by prev entries\n"
+				"  !addr1-addr2 : prevent purge of strings in range addr1-addr2 inclusive by prev entries\n"
+				"Neither !true nor !false is supported.\n"
+				"\n"
+				"Examples:\n"
+				"  e bin.str.purge=true,0-0xff,!0x1a\n"
+				"    -- purge strings using the false_positive() classifier in cbin.c and also strings \n"
+				"       with addresses in the range 0-0xff, but not the string at 0x1a.\n"
+				"  e bin.str.purge=all,!0x1000-0x1fff\n"
+				"    -- purge all strings except the strings with addresses in the range 0x1000-0x1fff.\n");
+		}
 		return false;
 	}
 	free(core->bin->strpurge);
@@ -703,7 +712,9 @@ static bool cb_maxname(void *user, void *data) {
 static bool cb_midflags(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->value[0] == '?') {
-		print_node_options(node);
+		if (!strcmp(node->value, "?")) {
+			print_node_options(node);
+		}
 		return false;
 	}
 	return true;
@@ -713,7 +724,7 @@ static bool cb_strfilter(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->value[0] == '?') {
-		if (strlen(node->value) > 1 && node->value[1] == '?') {
+		if (!strcmp(node->value, "?")) {
 			rz_cons_printf("Valid values for bin.str.filter:\n"
 				       "a  only alphanumeric printable\n"
 				       "8  only strings with utf8 chars\n"
@@ -723,8 +734,6 @@ static bool cb_strfilter(void *user, void *data) {
 				       "i  IPv4 address-like strings\n"
 				       "U  only uppercase strings\n"
 				       "f  format-strings\n");
-		} else {
-			print_node_options(node);
 		}
 		return false;
 	} else {
@@ -750,8 +759,10 @@ static bool cb_bindemangle(void *user, void *data) {
 static bool cb_bindemangle_flags(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (*node->value == '?') {
-		print_node_options(node);
+	if (node->value[0] == '?') {
+		if (!strcmp(node->value, "?")) {
+			print_node_options(node);
+		}
 		return false;
 	}
 	if (!strcmp(node->value, "all")) {
@@ -770,8 +781,10 @@ static bool cb_bindemangle_flags(void *user, void *data) {
 static bool cb_asmsyntax(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (*node->value == '?') {
-		print_node_options(node);
+	if (node->value[0] == '?') {
+		if (!strcmp(node->value, "?")) {
+			print_node_options(node);
+		}
 		return false;
 	} else {
 		int syntax = rz_asm_syntax_from_string(node->value);
@@ -863,7 +876,9 @@ static bool cb_str_escbslash(void *user, void *data) {
 static bool cb_search_max_threads(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->value[0] == '?') {
-		rz_cons_printf("Available cores: %d\n", rz_th_physical_core_number());
+		if (!strcmp(node->value, "?")) {
+			rz_cons_printf("Available cores: %d\n", rz_th_physical_core_number());
+		}
 		return false;
 	}
 	return true;
@@ -947,7 +962,9 @@ static bool cb_search_str_check_ascii_freq(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->value[0] == '?') {
-		rz_cons_printf("true\nfalse\n");
+		if (!strcmp(node->value, "?")) {
+			rz_cons_printf("true\nfalse\n");
+		}
 		return false;
 	} else if (!rz_str_is_bool(node->value)) {
 		RZ_LOG_ERROR("Invalid value for search.str.check_ascii_freq (%s).\n", node->value);
@@ -985,10 +1002,12 @@ static bool cb_str_encoding(void *user, void *data) {
 	RzStrEnc encoding = RZ_STRING_ENC_GUESS;
 	bool found_enc = find_encoding(node, &encoding);
 	if (node->value[0] == '?') {
-		print_node_options(node);
-		rz_cons_printf("  -- if string's 2nd & 4th bytes are 0 then utf16le else "
-			       "if 2nd - 4th & 6th bytes are 0 & no char > 0x10ffff then utf32le else "
-			       "if utf8 char detected then utf8 else 8bit\n");
+		if (!strcmp(node->value, "?")) {
+			print_node_options(node);
+			rz_cons_printf("  -- if string's 2nd & 4th bytes are 0 then utf16le else "
+				       "if 2nd - 4th & 6th bytes are 0 & no char > 0x10ffff then utf32le else "
+				       "if utf8 char detected then utf8 else 8bit\n");
+		}
 		return false;
 	} else if (RZ_STR_EQ("settings", node->value) || (!RZ_STR_EQ("guess", node->value) && !found_enc)) {
 		RZ_LOG_ERROR("Invalid value for str.encoding (%s).\n", node->value);
@@ -1004,12 +1023,14 @@ static bool cb_str_unprintable(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->value[0] == '?') {
-		rz_cons_printf("Comma-separated list of Unicode code points treated as non-printable.\n");
-		rz_cons_printf("Examples:\n");
-		rz_cons_printf("  e str.unprintable=0x09,0x0a,0x0d,0x1b\n");
-		rz_cons_printf("  e str.unprintable=0x200B\n");
-		rz_cons_printf("  e str.unprintable=\n");
-		rz_cons_printf("    -- reset the list to empty.\n");
+		if (!strcmp(node->value, "?")) {
+			rz_cons_printf("Comma-separated list of Unicode code points treated as non-printable.\n");
+			rz_cons_printf("Examples:\n");
+			rz_cons_printf("  e str.unprintable=0x09,0x0a,0x0d,0x1b\n");
+			rz_cons_printf("  e str.unprintable=0x200B\n");
+			rz_cons_printf("  e str.unprintable=\n");
+			rz_cons_printf("    -- reset the list to empty.\n");
+		}
 		return false;
 	}
 
@@ -1070,7 +1091,9 @@ static bool cb_str_search_mode(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->value[0] == '?') {
-		print_node_options(node);
+		if (!strcmp(node->value, "?")) {
+			print_node_options(node);
+		}
 		return false;
 	} else if (!rz_str_casecmp("auto", node->value)) {
 		core->bin->str_search_cfg.mode = RZ_BIN_STRING_SEARCH_MODE_AUTO;
@@ -1099,7 +1122,9 @@ static bool cb_cfg_fortunes(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	// TODO CN_BOOL option does not receive the right hand side of assignment as an argument
 	if (node->value[0] == '?') {
-		rz_core_fortune_list(core);
+		if (!strcmp(node->value, "?")) {
+			rz_core_fortune_list(core);
+		}
 		return false;
 	}
 	return true;
@@ -1108,7 +1133,9 @@ static bool cb_cfg_fortunes(void *user, void *data) {
 static bool cb_cfg_fortunes_file(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->value[0] == '?') {
-		rz_core_fortune_list_types();
+		if (!strcmp(node->value, "?")) {
+			rz_core_fortune_list_types();
+		}
 		return false;
 	}
 	return true;
@@ -1176,8 +1203,10 @@ static bool cb_decoff(void *user, void *data) {
 
 static bool cb_dbgbep(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (*node->value == '?') {
-		print_node_options(node);
+	if (node->value[0] == '?') {
+		if (!strcmp(node->value, "?")) {
+			print_node_options(node);
+		}
 		return false;
 	}
 	return true;
@@ -1186,8 +1215,10 @@ static bool cb_dbgbep(void *user, void *data) {
 static bool cb_dbg_btalgo(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (*node->value == '?') {
-		print_node_options(node);
+	if (node->value[0] == '?') {
+		if (!strcmp(node->value, "?")) {
+			print_node_options(node);
+		}
 		return false;
 	}
 	free(core->dbg->btalgo);
@@ -2225,7 +2256,7 @@ static bool cb_scrstrconv(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->value[0] == '?') {
-		if (strlen(node->value) > 1 && node->value[1] == '?') {
+		if (!strcmp(node->value, "?")) {
 			rz_cons_printf("Valid values for scr.strconv:\n"
 				       "  asciiesc  convert to ascii with non-ascii chars escaped\n"
 				       "  asciidot  convert to ascii with non-ascii chars turned into a dot (except control chars stated below)\n"
@@ -2234,8 +2265,6 @@ static bool cb_scrstrconv(void *user, void *data) {
 				       "backspace (\\b), formfeed (\\f), newline (\\n), carriage return (\\r), horizontal tab (\\t)\n"
 				       "and vertical tab (\\v). Also, double quotes (\\\") are always escaped, but backslashes (\\\\)\n"
 				       "are only escaped if str.escbslash = true.\n");
-		} else {
-			print_node_options(node);
 		}
 		return false;
 	} else {
@@ -2294,7 +2323,12 @@ static bool cb_scrint(void *user, void *data) {
 
 static bool cb_scrnkey(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (!strcmp(node->value, "help") || *node->value == '?') {
+	if (node->value[0] == '?') {
+		if (!strcmp(node->value, "?")) {
+			print_node_options(node);
+		}
+		return false;
+	} else if (!strcmp(node->value, "help")) {
 		print_node_options(node);
 		return false;
 	}
@@ -2471,9 +2505,11 @@ static bool cb_binverbose(void *user, void *data) {
 static bool cb_binhashesdefault(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (*node->value == '?') {
-		print_node_options(node);
-		rz_cons_printf("Multiple algorithms can be specified in a comma-separated list (no spaces).\n");
+	if (node->value[0] == '?') {
+		if (!strcmp(node->value, "?")) {
+			print_node_options(node);
+			rz_cons_printf("Multiple algorithms can be specified in a comma-separated list (no spaces).\n");
+		}
 		return false;
 	}
 	rz_list_free(core->bin->default_hashes);
@@ -2571,20 +2607,18 @@ static bool cb_search_in(void *user, void *data) {
 		.addr = rz_config_get_i(core->config, "search.from"),
 		.size = rz_config_get_i(core->config, "search.to")
 	};
-	if (node->value[0] != '?') {
+	if (!strcmp(node->value, "?")) {
+		rz_cons_printf("Valid values for search.in (depends on .from/.to and io.va):\n");
+		for (size_t i = 0; i < RZ_ARRAY_SIZE(search_in_opts); ++i) {
+			rz_cons_printf("%-18s - %s\n", search_in_opts[i].option, search_in_opts[i].description);
+		}
+	} else {
 		RzList *bounds = rz_core_get_boundaries(core, itv, node->value);
 		if (!bounds) {
 			return false;
 		}
 		rz_list_free(bounds);
 		return true;
-	} else if (strlen(node->value) > 1 && node->value[1] == '?') {
-		rz_cons_printf("Valid values for search.in (depends on .from/.to and io.va):\n");
-		for (size_t i = 0; i < RZ_ARRAY_SIZE(search_in_opts); ++i) {
-			rz_cons_printf("%-18s - %s\n", search_in_opts[i].option, search_in_opts[i].description);
-		}
-	} else {
-		print_node_options(node);
 	}
 	return false;
 }
@@ -2604,32 +2638,28 @@ static bool cb_search_show_progress(void *user, void *data) {
 static bool cb_analysis_in(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] != '?') {
-		RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
-		opt->noncode = (strchr(node->value, 'x') == NULL);
-		return true;
-	} else if (strlen(node->value) > 1 && node->value[1] == '?') {
+	if (!strcmp(node->value, "?")) {
 		rz_cons_printf("Valid values for analysis.in (depends on .from/.to and io.va):\n");
 		for (size_t i = 0; i < RZ_ARRAY_SIZE(search_in_opts); ++i) {
 			rz_cons_printf("%-18s - %s\n", search_in_opts[i].option, search_in_opts[i].description);
 		}
-	} else {
-		print_node_options(node);
+	} else if (node->value[0] != '?') {
+		RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+		opt->noncode = (strchr(node->value, 'x') == NULL);
+		return true;
 	}
 	return false;
 }
 
 static bool cb_zoom_in(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] != '?') {
-		return true;
-	} else if (strlen(node->value) > 1 && node->value[1] == '?') {
+	if (!strcmp(node->value, "?")) {
 		rz_cons_printf("Valid values for zoom.in (depends on .from/.to and io.va):\n");
 		for (size_t i = 0; i < RZ_ARRAY_SIZE(search_in_opts); ++i) {
 			rz_cons_printf("%-18s - %s\n", search_in_opts[i].option, search_in_opts[i].description);
 		}
-	} else {
-		print_node_options(node);
+	} else if (node->value[0] != '?') {
+		return true;
 	}
 	return false;
 }
@@ -2828,8 +2858,10 @@ static bool cb_analysis_cpp_abi(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 
-	if (*node->value == '?') {
-		print_node_options(node);
+	if (node->value[0] == '?') {
+		if (!strcmp(node->value, "?")) {
+			print_node_options(node);
+		}
 		return false;
 	}
 
@@ -2919,8 +2951,10 @@ static bool cb_dbg_verbose(void *user, void *data) {
 static bool cb_flirt(void *user, void *data) {
 	rz_return_val_if_fail(data, false);
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (*node->value == '?') {
-		print_node_options(node);
+	if (node->value[0] == '?') {
+		if (!strcmp(node->value, "?")) {
+			print_node_options(node);
+		}
 		return false;
 	}
 	return true;
@@ -2929,8 +2963,10 @@ static bool cb_flirt(void *user, void *data) {
 static bool rzil_halt_on_exec(void *user, void *data) {
 	rz_return_val_if_fail(data, false);
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (*node->value == '?') {
-		print_node_options(node);
+	if (node->value[0] == '?') {
+		if (!strcmp(node->value, "?")) {
+			print_node_options(node);
+		}
 		return false;
 	}
 	return true;
