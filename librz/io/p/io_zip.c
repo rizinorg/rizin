@@ -337,7 +337,7 @@ static RzList /*<RzIODesc *>*/ *rz_io_zip_open_many(RzIO *io, const char *file, 
 		if (zfo) {
 			zfo->io_backref = io;
 			res = rz_io_desc_new(io, &rz_io_plugin_zip,
-				zfo->name, rw, mode, zfo);
+				zfo->name, rw, zfo);
 		}
 		rz_list_append(list_fds, res);
 	}
@@ -437,7 +437,7 @@ static char *find_apk_binary(const char *filename, int rw, int mode, RzIO *io) {
 					eprintf("Warning: File %s does not exist, creating a new one.\n", name);
 				}
 				zfo->io_backref = io;
-				RzIODesc *desc = rz_io_desc_new(io, &rz_io_plugin_zip, zfo->name, rw, mode, zfo);
+				RzIODesc *desc = rz_io_desc_new(io, &rz_io_plugin_zip, zfo->name, rw, zfo);
 				desc->name = rz_str_dup(name);
 				rz_io_desc_add(io, desc);
 			}
@@ -550,7 +550,7 @@ static RzIODesc *rz_io_zip_open(RzIO *io, const char *file, int rw, int mode) {
 		}
 		zfo->io_backref = io;
 		res = rz_io_desc_new(io, &rz_io_plugin_zip,
-			zfo->name, rw, mode, zfo);
+			zfo->name, rw, zfo);
 	}
 
 	if (!res) {

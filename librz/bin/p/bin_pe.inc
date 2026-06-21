@@ -10,7 +10,7 @@
 #include "../i/private.h"
 #include "pe/pe.h"
 
-static Sdb *get_sdb(RzBinFile *bf) {
+static Sdb *pe_get_sdb(RzBinFile *bf) {
 	RzBinObject *o = bf->o;
 	struct PE_(rz_bin_pe_obj_t) * bin;
 	if (!o || !o->bin_obj) {
@@ -20,7 +20,7 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return bin ? bin->kv : NULL;
 }
 
-static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+static bool pe_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	rz_return_val_if_fail(bf && obj && buf, false);
 	struct PE_(rz_bin_pe_obj_t) *res = PE_(rz_bin_pe_new_buf)(buf, bf->rbin->verbose);
 	if (res) {
@@ -31,16 +31,15 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	return false;
 }
 
-static void destroy(RzBinFile *bf) {
-	PE_(rz_bin_pe_free)
-	((struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj);
+static void pe_destroy(RzBinFile *bf) {
+	PE_(rz_bin_pe_free)((struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj);
 }
 
-static ut64 baddr(RzBinFile *bf) {
+static ut64 pe_baddr(RzBinFile *bf) {
 	return PE_(rz_bin_pe_get_image_base)(bf->o->bin_obj);
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
+static RzBinAddr *pe_binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	struct rz_bin_pe_addr_t *peaddr = NULL;
 	RzBinAddr *ret = NULL;
 	if (bf && bf->o && bf->o->bin_obj) {
@@ -97,7 +96,7 @@ static void add_tls_callbacks(RzBinFile *bf, RzPVector /*<RzBinAddr *>*/ *vec) {
 	} while (vaddr);
 }
 
-static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *pe_entries(RzBinFile *bf) {
 	struct rz_bin_pe_addr_t *entry = NULL;
 	RzBinAddr *ptr = NULL;
 	RzPVector *ret;
@@ -140,7 +139,7 @@ static ut32 perm_of_section_perm(ut64 perm) {
 	return r;
 }
 
-static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *pe_maps(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t) *bin = (struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj;
 	struct rz_bin_pe_section_t *sections = NULL;
 	if (!bin || !(sections = bin->sections)) {
@@ -150,7 +149,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	ut64 ba = baddr(bf);
+	ut64 ba = pe_baddr(bf);
 	RzBinMap *map = RZ_NEW0(RzBinMap);
 	if (!map) {
 		return ret;
@@ -166,8 +165,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->vsize = RZ_ROUND(map->psize, 4096);
 	map->perm = RZ_PERM_R;
 	rz_pvector_push(ret, map);
-	PE_(rz_bin_pe_check_sections)
-	(bin, &sections);
+	PE_(rz_bin_pe_check_sections)(bin, &sections);
 	for (size_t i = 0; !sections[i].last; i++) {
 		RzBinMap *map = RZ_NEW0(RzBinMap);
 		if (!map) {
@@ -195,12 +193,12 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *pe_sections(RzBinFile *bf) {
 	RzPVector *ret = NULL;
 	RzBinSection *ptr = NULL;
 	struct rz_bin_pe_section_t *sections = NULL;
 	struct PE_(rz_bin_pe_obj_t) *bin = (struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj;
-	ut64 ba = baddr(bf);
+	ut64 ba = pe_baddr(bf);
 	int n_nonzero = 0;
 	int i;
 	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
@@ -210,8 +208,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	PE_(rz_bin_pe_check_sections)
-	(bin, &sections);
+	PE_(rz_bin_pe_check_sections)(bin, &sections);
 	for (i = 0; !sections[i].last; i++) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			break;
@@ -287,7 +284,7 @@ static ut64 find_go_pclntab(RzBinFile *bf, ut32 *size, ut64 *vaddr) {
 	if (!sections) {
 		return 0;
 	}
-	ut64 ba = baddr(bf);
+	ut64 ba = pe_baddr(bf);
 	for (int i = 0; !sections[i].last; i++) {
 		if (!strstr((char *)sections[i].name, "data")) {
 			continue;
@@ -317,7 +314,7 @@ static ut64 find_go_pclntab(RzBinFile *bf, ut32 *size, ut64 *vaddr) {
 	return 0;
 }
 
-static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *pe_symbols(RzBinFile *bf) {
 	RzPVector *ret = NULL;
 	ut64 go_pclntab_paddr = 0;
 	ut64 go_pclntab_vaddr = 0;
@@ -421,7 +418,7 @@ static void filter_import(ut8 *n) {
 	}
 }
 
-static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
+static RzPVector /*<RzBinImport *>*/ *pe_imports(RzBinFile *bf) {
 	RzBinImport *ptr = NULL;
 	struct rz_bin_pe_import_t *imports = NULL;
 	int i;
@@ -430,7 +427,6 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 		return NULL;
 	}
 	RzBinPEObj *bin = (RzBinPEObj *)bf->o->bin_obj;
-	bin->has_canary = false;
 	RzPVector *ret = rz_pvector_new((RzListFree)rz_bin_import_free);
 	if (!ret) {
 		return NULL;
@@ -439,7 +435,6 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	if (!(imports = PE_(rz_bin_pe_get_imports)(bin))) {
 		return ret;
 	}
-	bool has_canary = false;
 	for (i = 0; !imports[i].last; i++) {
 		if (!(ptr = RZ_NEW0(RzBinImport))) {
 			break;
@@ -454,15 +449,7 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 		// index for the import. There is no point in exposing it.
 		// ptr->hint = imports[i].hint;
 		rz_pvector_push(ret, ptr);
-
-		// __security_init_cookie is a function imported from msvcrt.dll (libc) that when called
-		// initiliazes the stack canary. So if the function is imported, we can
-		// conclude the binary uses stack canary.
-		if (!has_canary && !strcmp(ptr->name, "__security_init_cookie")) {
-			has_canary = true;
-		}
 	}
-	bin->has_canary = has_canary;
 	free(imports);
 	return ret;
 }
@@ -503,6 +490,7 @@ static const char *get_reloc_type_name(const ut8 reloc_type, const ut32 machine_
 
 	case PE_IMAGE_REL_BASED_THUMB_MOV32_RISCV_LOW12I:
 		switch (machine_type) {
+		case PE_IMAGE_FILE_MACHINE_ARMNT:
 		case PE_IMAGE_FILE_MACHINE_THUMB:
 			return "IMAGE_REL_BASED_THUMB_MOV32";
 		case PE_IMAGE_FILE_MACHINE_RISCV32:
@@ -549,7 +537,7 @@ static const char *get_reloc_type_name(const ut8 reloc_type, const ut32 machine_
 // NOTE: No patching is needed because base relocations (as their name suggests) patch relocations based off the delta
 // between the executable expected load address, and the actual load address. And since Rizin always loads
 // the binaries at their preferred base address, the delta is always 0 and so no patching is needed.
-static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
+static RzPVector /*<RzBinReloc *>*/ *pe_relocs(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 	RzBinPEObj *bin = bf->o->bin_obj;
 
@@ -592,11 +580,11 @@ static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *pe_libs(RzBinFile *bf) {
 	return PE_(rz_bin_pe_get_libs)(bf->o->bin_obj);
 }
 
-static RzPVector /*<RzBinResource *>*/ *resources(RzBinFile *bf) {
+static RzPVector /*<RzBinResource *>*/ *pe_resources(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t) *obj = bf->o->bin_obj;
 	if (!obj) {
 		return NULL;
@@ -627,6 +615,7 @@ static RzPVector /*<RzBinResource *>*/ *resources(RzBinFile *bf) {
 			goto err;
 		}
 		br->vaddr = PE_(rz_bin_pe_get_image_base)(obj) + rs->data->OffsetToData;
+		br->paddr = PE_(bin_pe_rva_to_paddr)(obj, rs->data->OffsetToData);
 		br->size = rs->data->Size;
 		br->type = rz_str_dup(rs->type);
 		if (!br->type) {
@@ -656,7 +645,7 @@ static int compare_strings(const void *a, const void *b, RZ_UNUSED void *user) {
 	return strcmp((const char *)a, (const char *)b);
 }
 
-static RzBinInfo *info(RzBinFile *bf) {
+static RzBinInfo *pe_info(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t) * bin;
 	SDebugInfo di = { { 0 } };
 	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
@@ -699,11 +688,11 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->dbg_info = 0;
 	ret->has_canary = PE_(rz_bin_pe_has_canary)(bf->o->bin_obj);
 	ret->has_nx = haschr(bin, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT);
-	ret->has_pi = haschr(bin, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
+	ret->has_pie = haschr(bin, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
 	ret->claimed_checksum = rz_str_newf("0x%08x", claimed_checksum);
 	ret->actual_checksum = rz_str_newf("0x%08x", actual_checksum);
 	ret->pe_overlay = pe_overlay > 0;
-	ret->signature = bin ? bin->is_signed : false;
+	ret->is_signed = bin ? bin->is_signed : false;
 	Sdb *db = sdb_ns(bf->sdb, "pe", true);
 	sdb_bool_set(db, "canary", ret->has_canary);
 	sdb_bool_set(db, "highva", haschr(bin, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA));
@@ -749,11 +738,11 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static ut64 get_vaddr(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
+static ut64 pe_get_vaddr(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return baddr + vaddr;
 }
 
-static RzPVector /*<RzBinFileHash *>*/ *compute_hashes(RzBinFile *bf) {
+static RzPVector /*<RzBinFileHash *>*/ *pe_compute_hashes(RzBinFile *bf) {
 	RzPVector *file_hashes = rz_pvector_new((RzPVectorFree)rz_bin_file_hash_free);
 	const char *authentihash = PE_(bin_pe_get_authentihash)(bf->o->bin_obj);
 	if (authentihash) {
@@ -772,7 +761,7 @@ static RzPVector /*<RzBinFileHash *>*/ *compute_hashes(RzBinFile *bf) {
  * Currently only used by CIL plugin to resolve `call` and `jmp` targets
  * \returns offset on success, UT64_MAX on fail
  */
-static ut64 get_offset(RzBinFile *bf, int type, int idx) {
+static ut64 pe_get_offset(RzBinFile *bf, int type, int idx) {
 	struct PE_(rz_bin_pe_obj_t) * bin;
 	Pe_image_clr *clr;
 
@@ -788,4 +777,25 @@ static ut64 get_offset(RzBinFile *bf, int type, int idx) {
 	}
 
 	return UT64_MAX;
+}
+
+static RzPVector /*<RzBinString *>*/ *pe_strings(RzBinFile *bf) {
+	RzBinStringSearchOpt opt;
+	rz_bin_string_search_opt_init(&opt);
+	opt.mode = RZ_BIN_STRING_SEARCH_MODE_AUTO;
+	opt.min_length = RZ_BIN_STRING_SEARCH_MIN_STRING;
+	// Sticking with string guessing for now.
+	// PE doesn't specifiy the encoding, but commonly it is UTF-8 for symbol names
+	// and such, but UTF-16-le for Windows strings.
+	// Doing two searches here is easily possible
+	// but breaks a few tests which need investigation.
+	// So it should be done in a separated PR.
+	opt.string_encoding = RZ_STRING_ENC_GUESS;
+
+	RzPVector *strings = rz_bin_file_strings(bf, &opt);
+	if (!strings) {
+		RZ_LOG_ERROR("Failed to search for strings. Abort.\n");
+		return NULL;
+	}
+	return strings;
 }

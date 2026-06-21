@@ -56,8 +56,17 @@ bool test_rz_bin(void) {
 	}
 
 	const RzPVector *strings = rz_bin_object_get_strings(obj);
-	mu_assert_eq(rz_pvector_len(strings), 5, "rz_bin_object_get_strings");
+	mu_assert_eq(rz_pvector_len(strings), 13, "rz_bin_object_get_strings");
 	const char *exp_strings[] = {
+		// .dynstr is mapped (SHF_ALLOC) so its strings are now reported
+		"__gmon_start__",
+		"libc.so.6",
+		"printf",
+		"strcmp",
+		"scanf",
+		"_IO_stdin_used",
+		"__libc_start_main",
+		"GLIBC_2.0",
 		"IOLI Crackme Level 0x00\n",
 		"Password: ",
 		// "%s", // This is not automatically recognized because too short
@@ -177,7 +186,7 @@ static void event_file_del_cb(RzEvent *ev, int type, void *user, void *data) {
 		return;
 	}
 	RzEventBinFileDel *bev = data;
-	RzListIter *it = rz_list_find_ptr(tracker->expect, bev->bf);
+	RzListIter *it = rz_list_find_val(tracker->expect, bev->bf);
 	if (!it) {
 		tracker->failed_unexpected = true;
 		return;

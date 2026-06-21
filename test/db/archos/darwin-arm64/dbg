@@ -38,6 +38,47 @@ c88
 EOF
 RUN
 
+NAME=dpa issue
+FILE==
+CMDS=<<EOF
+!sh -c "./bins/mach0/sleep-macos-arm64 100 >/dev/null 2>&1 &"
+dpa $(!pgrep sleep-macos-arm64)
+pi 3 @ pc
+!pkill sleep-macos-arm64
+EOF
+REGEXP_FILTER_OUT=((b\.lo)|(pacibsp)|(stp fp, lr, \[sp, -0x10\]!))
+EXPECT=<<EOF
+b.lo
+pacibsp
+stp fp, lr, [sp, -0x10]!
+EOF
+RUN
+
+NAME=dg gcore issue 3054
+FILE=bins/mach0/hello-macos-arm64
+ARGS=-d
+BROKEN=1
+TIMEOUT=10
+CMDS=<<EOF
+!rm -f .tmp/core.issue3054
+dg .tmp/core.issue3054
+!RZ_NOPLUGINS=1 rz-bin -I .tmp/core.issue3054
+!rm -f .tmp/core.issue3054
+EOF
+REGEXP_FILTER_OUT=(\[Info\]|arch\s+arm|bintype\s+mach0|bits\s+64|class\s+MACH064|os\s+darwin)
+EXPECT=<<EOF
+[Info]
+arch     arm
+bintype  mach0
+bits     64
+class    MACH064
+os       darwin
+EOF
+EXPECT_ERR=<<EOF
+WARNING: core: Writing to file '.tmp/core.issue3054'
+EOF
+RUN
+
 NAME=maps
 FILE=bins/mach0/hello-macos-arm64
 ARGS=-d
@@ -86,9 +127,9 @@ ARGS=-d
 CMDS=<<EOF
 fl@F:maps~hello~[1-]
 echo --
-dm*~hello~[0-2]
+dmt:name/cols/perms/size~hello
 EOF
-REGEXP_FILTER_OUT=([0-9]+ [a-zA-Z0-9_-]+\.[\.rwx_]+|--\n|f\+.+\n)
+REGEXP_FILTER_OUT=([0-9]+ [a-zA-Z0-9_-]+\.[\.rwx_]+|--\n|hello-macos-arm64.+)
 EXPECT=<<EOF
 16384 hello_macos_arm64.r_x
 16384 hello_macos_arm64.rw
@@ -96,13 +137,10 @@ EXPECT=<<EOF
 16384 hello_macos_arm64.r
 --
 
-f+ map.hello_macos_arm64.r_x 0x00004000
-
-f+ map.hello_macos_arm64.rw 0x00004000
-
-f+ map.hello_macos_arm64.rw 0x00004000
-
-f+ map.hello_macos_arm64.r 0x00004000
+hello-macos-arm64 r-x   16K
+hello-macos-arm64 rw-   16K
+hello-macos-arm64 rw-   16K
+hello-macos-arm64 r--   16K
 EOF
 RUN
 
@@ -184,7 +222,7 @@ CMDS=<<EOF
 db @ main + 64
 dc
 dr x8
-dr x8 = 1337
+dr x8=1337
 dc
 EOF
 EXPECT=<<EOF

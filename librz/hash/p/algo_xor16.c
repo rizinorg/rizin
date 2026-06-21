@@ -66,6 +66,7 @@ RzHashPlugin rz_hash_plugin_xor16 = {
 	.name = "xor16",
 	.license = "LGPL3",
 	.author = "deroad",
+	.description = "XOR-16 checksum",
 	.support_hmac = false,
 	.context_new = plugin_xor16_context_new,
 	.context_free = plugin_xor16_context_free,

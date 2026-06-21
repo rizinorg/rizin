@@ -18,6 +18,7 @@
 
 #if CAPSTONE_HAS_M68K
 #include <capstone/m68k.h>
+#include "m68k/m68k_cs.h"
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/M68Kir.html
 
 #define OPERAND(x)  insn->detail->m68k.operands[x]
@@ -31,6 +32,36 @@ static inline ut64 make_64bits_address(ut64 address) {
 	return UT32_MAX & address;
 }
 
+static inline ut64 m68k_mem_operand_absolute_address(const cs_m68k_op *operand) {
+	if (!operand || operand->type != M68K_OP_MEM) {
+		return 0;
+	}
+#ifdef RZ_CAPSTONE_HAS_M68K_COLDFIRE
+	return operand->mem.address;
+#else
+	if (operand->imm) {
+		return operand->imm;
+	}
+	return (ut64)(st64)(operand->mem.disp + operand->mem.in_disp + operand->mem.out_disp);
+#endif
+}
+
+static inline bool m68k_mem_operand_is_absolute(const cs_m68k_op *operand) {
+	if (!operand || operand->type != M68K_OP_MEM) {
+		return false;
+	}
+	switch (operand->address_mode) {
+	case M68K_AM_ABSOLUTE_DATA_SHORT:
+	case M68K_AM_ABSOLUTE_DATA_LONG:
+		return true;
+	default:
+		break;
+	}
+	return operand->mem.base_reg == M68K_REG_INVALID &&
+		operand->mem.index_reg == M68K_REG_INVALID &&
+		operand->mem.in_base_reg == M68K_REG_INVALID;
+}
+
 static inline void handle_branch_instruction(RzAnalysisOp *op, ut64 addr, cs_m68k *m68k, ut32 type, int index) {
 	if (m68k->operands[index].type == M68K_OP_BR_DISP) {
 		op->type = type;
@@ -41,94 +72,611 @@ static inline void handle_branch_instruction(RzAnalysisOp *op, ut64 addr, cs_m68
 }
 
 static inline void handle_jump_instruction(RzAnalysisOp *op, ut64 addr, cs_m68k *m68k, ut32 type) {
-	op->type = type;
+	if (!m68k || m68k->op_count < 1) {
+		op->type = type;
+		return;
+	}
 
+	const cs_m68k_op *operand = &m68k->operands[0];
 	// Handle PC relative mode jump
-	if (m68k->operands[0].address_mode == M68K_AM_PCI_DISP) {
-		op->jump = make_64bits_address(addr + m68k->operands[0].mem.disp + 2);
+	if (operand->address_mode == M68K_AM_PCI_DISP) {
+		op->type = type;
+		op->jump = make_64bits_address(addr + operand->mem.disp + 2);
+	} else if (operand->type == M68K_OP_IMM) {
+		op->type = type;
+		op->jump = make_64bits_address(operand->imm);
+	} else if (m68k_mem_operand_is_absolute(operand)) {
+		op->type = type;
+		op->jump = make_64bits_address(m68k_mem_operand_absolute_address(operand));
 	} else {
-		op->jump = make_64bits_address(m68k->operands[0].imm);
+		op->type = (type == RZ_ANALYSIS_OP_TYPE_CALL) ? RZ_ANALYSIS_OP_TYPE_ICALL : RZ_ANALYSIS_OP_TYPE_IJMP;
 	}
 
 	op->fail = make_64bits_address(addr + op->size);
 }
 
-static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
-	int i;
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
+static RzStructuredData *mk68_opex(csh handle, cs_insn *insn) {
+	if (!insn->detail) {
+		return NULL;
 	}
-	pj_o(pj);
+
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
+	}
+
+	RzStructuredData *opex = rz_structured_data_map_add_map(root, "opex");
+	if (!opex) {
+		rz_structured_data_free(root);
+		return NULL;
+	}
+
+	RzStructuredData *operands = rz_structured_data_map_add_array(opex, "operands");
 	cs_m68k *x = &insn->detail->m68k;
-	pj_ka(pj, "operands");
-	for (i = 0; i < x->op_count; i++) {
+	for (st32 i = 0; i < x->op_count; i++) {
 		cs_m68k_op *op = &x->operands[i];
-		pj_o(pj);
+		RzStructuredData *operand = rz_structured_data_array_add_map(operands);
+#ifdef RZ_CAPSTONE_HAS_M68K_COLDFIRE
+		if (op->flags != M68K_OP_FLAG_NONE) {
+			rz_structured_data_map_add_unsigned(operand, "flags", op->flags, false);
+		}
+#endif
 		switch (op->type) {
 		case M68K_OP_REG:
-			pj_ks(pj, "type", "reg");
-			pj_ks(pj, "value", cs_reg_name(handle, op->reg));
+			rz_structured_data_map_add_string(operand, "type", "reg");
+			rz_structured_data_map_add_string(operand, "value", cs_reg_name(handle, op->reg));
+			break;
+		case M68K_OP_REG_PAIR:
+			rz_structured_data_map_add_string(operand, "type", "reg_pair");
+			rz_structured_data_map_add_string(operand, "reg_0", cs_reg_name(handle, op->reg_pair.reg_0));
+			rz_structured_data_map_add_string(operand, "reg_1", cs_reg_name(handle, op->reg_pair.reg_1));
 			break;
 		case M68K_OP_IMM:
-			pj_ks(pj, "type", "imm");
-			pj_kN(pj, "value", (st64)op->imm);
+			rz_structured_data_map_add_string(operand, "type", "imm");
+			rz_structured_data_map_add_signed(operand, "value", (st64)op->imm);
 			break;
+		case M68K_OP_FP_SINGLE:
+			rz_structured_data_map_add_string(operand, "type", "fp_single");
+			rz_structured_data_map_add_double(operand, "value", op->simm);
+			break;
+		case M68K_OP_FP_DOUBLE:
+			rz_structured_data_map_add_string(operand, "type", "fp_double");
+			rz_structured_data_map_add_double(operand, "value", op->dimm);
+			break;
+		case M68K_OP_REG_BITS:
+			rz_structured_data_map_add_string(operand, "type", "reg_bits");
+			rz_structured_data_map_add_unsigned(operand, "value", op->register_bits, true);
+			break;
+		case M68K_OP_BR_DISP:
+			rz_structured_data_map_add_string(operand, "type", "br_disp");
+			rz_structured_data_map_add_signed(operand, "disp", op->br_disp.disp);
+			rz_structured_data_map_add_unsigned(operand, "disp_size", op->br_disp.disp_size, false);
+			break;
+#ifdef RZ_CAPSTONE_HAS_M68K_COLDFIRE
+		case M68K_OP_SHIFT:
+			rz_structured_data_map_add_string(operand, "type", "shift");
+			break;
+#endif
 		case M68K_OP_MEM:
-			pj_ks(pj, "type", "mem");
+			rz_structured_data_map_add_string(operand, "type", "mem");
+			rz_structured_data_map_add_unsigned(operand, "address_mode", op->address_mode, false);
 			if (op->mem.base_reg != M68K_REG_INVALID) {
-				pj_ks(pj, "base_reg", cs_reg_name(handle, op->mem.base_reg));
+				rz_structured_data_map_add_string(operand, "base_reg", cs_reg_name(handle, op->mem.base_reg));
 			}
+#ifdef RZ_CAPSTONE_HAS_M68K_COLDFIRE
+			if (m68k_mem_operand_is_absolute(op)) {
+				rz_structured_data_map_add_unsigned(operand, "address", op->mem.address, false);
+			}
+#endif
 			if (op->mem.index_reg != M68K_REG_INVALID) {
-				pj_ks(pj, "index_reg", cs_reg_name(handle, op->mem.index_reg));
+				rz_structured_data_map_add_string(operand, "index_reg", cs_reg_name(handle, op->mem.index_reg));
 			}
 			if (op->mem.in_base_reg != M68K_REG_INVALID) {
-				pj_ks(pj, "in_base_reg", cs_reg_name(handle, op->mem.in_base_reg));
+				rz_structured_data_map_add_string(operand, "in_base_reg", cs_reg_name(handle, op->mem.in_base_reg));
 			}
-			pj_kN(pj, "in_disp", op->mem.in_disp);
-			pj_kN(pj, "out_disp", op->mem.out_disp);
-			pj_ki(pj, "disp", op->mem.disp);
-			pj_ki(pj, "scale", op->mem.scale);
-			pj_ki(pj, "bitfield", op->mem.bitfield);
-			pj_ki(pj, "width", op->mem.width);
-			pj_ki(pj, "offset", op->mem.offset);
-			pj_ki(pj, "index_size", op->mem.index_size);
+			rz_structured_data_map_add_signed(operand, "in_disp", op->mem.in_disp);
+			rz_structured_data_map_add_signed(operand, "out_disp", op->mem.out_disp);
+			rz_structured_data_map_add_signed(operand, "disp", op->mem.disp);
+			rz_structured_data_map_add_signed(operand, "scale", op->mem.scale);
+			rz_structured_data_map_add_signed(operand, "bitfield", op->mem.bitfield);
+			rz_structured_data_map_add_signed(operand, "width", op->mem.width);
+			rz_structured_data_map_add_signed(operand, "offset", op->mem.offset);
+			rz_structured_data_map_add_signed(operand, "index_size", op->mem.index_size);
+#ifdef RZ_CAPSTONE_HAS_M68K_COLDFIRE
+			rz_structured_data_map_add_signed(operand, "in_disp_size", op->mem.in_disp_size);
+			rz_structured_data_map_add_signed(operand, "out_disp_size", op->mem.out_disp_size);
+			rz_structured_data_map_add_signed(operand, "disp_size", op->mem.disp_size);
+#endif
 			break;
 		default:
-			pj_ks(pj, "type", "invalid");
+			rz_structured_data_map_add_string(operand, "type", "invalid");
 			break;
 		}
-		pj_end(pj); /* o operand */
 	}
-	pj_end(pj); /* a operands */
-	pj_end(pj);
 
-	rz_strbuf_init(buf);
-	rz_strbuf_append(buf, pj_string(pj));
-	pj_free(pj);
+	return root;
 }
 
-static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
-	if (!reg) {
-		return -1;
+static inline int m68k_op_memref(const cs_m68k *m68k) {
+	if (!m68k) {
+		return 0;
 	}
-	switch (OPERAND(reg_num).type) {
+	switch (m68k->op_size.type) {
+	case M68K_SIZE_TYPE_CPU:
+		switch (m68k->op_size.cpu_size) {
+		case M68K_CPU_SIZE_BYTE:
+			return 1;
+		case M68K_CPU_SIZE_WORD:
+			return 2;
+		case M68K_CPU_SIZE_LONG:
+			return 4;
+		default:
+			return 0;
+		}
+	case M68K_SIZE_TYPE_FPU:
+		switch (m68k->op_size.fpu_size) {
+		case M68K_FPU_SIZE_SINGLE:
+			return 4;
+		case M68K_FPU_SIZE_DOUBLE:
+			return 8;
+		case M68K_FPU_SIZE_EXTENDED:
+			return 12;
+		default:
+			return 0;
+		}
+	default:
+		return 0;
+	}
+}
+
+static inline RzRegItem *m68k_reg_get(RzAnalysis *a, csh handle, m68k_reg reg) {
+	if (!a || reg == M68K_REG_INVALID) {
+		return NULL;
+	}
+	const char *name = cs_reg_name(handle, reg);
+	return RZ_STR_ISNOTEMPTY(name) ? rz_reg_get(a->reg, name, RZ_REG_TYPE_ANY) : NULL;
+}
+
+static RzAnalysisValue *m68k_value_from_operand(RzAnalysis *a, csh handle, const cs_m68k_op *operand, int memref, RzAnalysisValueAccess access) {
+	if (!operand) {
+		return NULL;
+	}
+
+	RzAnalysisValue *value = rz_analysis_value_new();
+	if (!value) {
+		return NULL;
+	}
+	value->access = access;
+
+	switch (operand->type) {
 	case M68K_OP_REG:
-		reg->name = (char *)cs_reg_name(handle, OPERAND(reg_num).reg);
+		value->type = RZ_ANALYSIS_VAL_REG;
+		value->reg = m68k_reg_get(a, handle, operand->reg);
+		if (!value->reg) {
+			rz_analysis_value_free(value);
+			return NULL;
+		}
+		break;
+	case M68K_OP_IMM:
+		value->type = RZ_ANALYSIS_VAL_IMM;
+		value->imm = (st64)operand->imm;
+		break;
+	case M68K_OP_BR_DISP:
+		value->type = RZ_ANALYSIS_VAL_IMM;
+		value->imm = operand->br_disp.disp;
 		break;
 	case M68K_OP_MEM:
-		if (OPERAND(reg_num).mem.base_reg != M68K_REG_INVALID) {
-			reg->name = (char *)cs_reg_name(handle, OPERAND(reg_num).mem.base_reg);
+		value->type = RZ_ANALYSIS_VAL_MEM;
+		value->memref = memref;
+		value->reg = m68k_reg_get(a, handle, operand->mem.base_reg);
+		if (!value->reg) {
+			value->reg = m68k_reg_get(a, handle, operand->mem.in_base_reg);
 		}
+		value->regdelta = m68k_reg_get(a, handle, operand->mem.index_reg);
+		value->mul = operand->mem.scale;
+		value->delta = operand->mem.disp + operand->mem.in_disp + operand->mem.out_disp;
+		if (m68k_mem_operand_is_absolute(operand)) {
+			value->absolute = true;
+			value->base = m68k_mem_operand_absolute_address(operand);
+			value->delta = 0;
+		} else if (!value->reg && !value->regdelta && value->delta) {
+			value->absolute = true;
+			value->base = (ut64)value->delta;
+			value->delta = 0;
+		}
+		break;
+	case M68K_OP_REG_PAIR:
+		value->type = RZ_ANALYSIS_VAL_REG;
+		value->reg = m68k_reg_get(a, handle, operand->reg_pair.reg_0);
+		if (!value->reg) {
+			rz_analysis_value_free(value);
+			return NULL;
+		}
+		break;
+	default:
+		rz_analysis_value_free(value);
+		return NULL;
+	}
+
+	return value;
+}
+
+static inline void m68k_note_memref(RzAnalysisOp *op, RzAnalysisValue *value) {
+	if (value && value->type == RZ_ANALYSIS_VAL_MEM && value->memref > 0) {
+		op->refptr = value->memref;
+	}
+}
+
+static bool m68k_add_src_value(RzAnalysisOp *op, RzAnalysisValue *value) {
+	if (!value) {
+		return false;
+	}
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(op->src); i++) {
+		if (!op->src[i]) {
+			op->src[i] = value;
+			m68k_note_memref(op, value);
+			return true;
+		}
+	}
+	rz_analysis_value_free(value);
+	return false;
+}
+
+static void m68k_set_dst_value(RzAnalysisOp *op, RzAnalysisValue *value) {
+	if (!value) {
+		return;
+	}
+	if (op->dst) {
+		rz_analysis_value_free(op->dst);
+	}
+	op->dst = value;
+	m68k_note_memref(op, value);
+}
+
+static void m68k_add_src_operand(RzAnalysis *a, RzAnalysisOp *op, csh handle, const cs_m68k *m68k, int operand_index) {
+	if (!m68k || operand_index < 0 || operand_index >= m68k->op_count) {
+		return;
+	}
+	RzAnalysisValue *value = m68k_value_from_operand(a, handle, &m68k->operands[operand_index], m68k_op_memref(m68k), RZ_ANALYSIS_ACC_R);
+	m68k_add_src_value(op, value);
+}
+
+static void m68k_set_dst_operand(RzAnalysis *a, RzAnalysisOp *op, csh handle, const cs_m68k *m68k, int operand_index, RzAnalysisValueAccess access) {
+	if (!m68k || operand_index < 0 || operand_index >= m68k->op_count) {
+		return;
+	}
+	RzAnalysisValue *value = m68k_value_from_operand(a, handle, &m68k->operands[operand_index], m68k_op_memref(m68k), access);
+	m68k_set_dst_value(op, value);
+}
+
+static void m68k_fill_srcs_before_dst(RzAnalysis *a, RzAnalysisOp *op, csh handle, const cs_m68k *m68k, bool dst_is_read) {
+	if (!m68k || m68k->op_count < 1) {
+		return;
+	}
+
+	int dst_index = m68k->op_count - 1;
+	for (int i = 0; i < dst_index; i++) {
+		m68k_add_src_operand(a, op, handle, m68k, i);
+	}
+	m68k_set_dst_operand(a, op, handle, m68k, dst_index, dst_is_read ? (RZ_ANALYSIS_ACC_R | RZ_ANALYSIS_ACC_W) : RZ_ANALYSIS_ACC_W);
+}
+
+static void m68k_fill_all_srcs(RzAnalysis *a, RzAnalysisOp *op, csh handle, const cs_m68k *m68k) {
+	if (!m68k) {
+		return;
+	}
+	for (int i = 0; i < m68k->op_count; i++) {
+		m68k_add_src_operand(a, op, handle, m68k, i);
+	}
+}
+
+static void m68k_fill_unary_rw(RzAnalysis *a, RzAnalysisOp *op, csh handle, const cs_m68k *m68k) {
+	if (!m68k || m68k->op_count < 1) {
+		return;
+	}
+	m68k_set_dst_operand(a, op, handle, m68k, 0, RZ_ANALYSIS_ACC_R | RZ_ANALYSIS_ACC_W);
+	if (op->dst) {
+		RzAnalysisValue *src = rz_analysis_value_copy(op->dst);
+		if (src) {
+			src->access = RZ_ANALYSIS_ACC_R;
+			m68k_add_src_value(op, src);
+		}
+	}
+}
+
+static void m68k_fill_clear(RzAnalysis *a, RzAnalysisOp *op, csh handle, const cs_m68k *m68k) {
+	if (!m68k || m68k->op_count < 1) {
+		return;
+	}
+	m68k_set_dst_operand(a, op, handle, m68k, 0, RZ_ANALYSIS_ACC_W);
+	RzAnalysisValue *src = rz_analysis_value_new();
+	if (src) {
+		src->type = RZ_ANALYSIS_VAL_IMM;
+		src->access = RZ_ANALYSIS_ACC_R;
+		src->imm = 0;
+		m68k_add_src_value(op, src);
+	}
+}
+
+static void m68k_fill_indirect_target(RzAnalysis *a, RzAnalysisOp *op, csh handle, const cs_m68k *m68k) {
+	if (!m68k || m68k->op_count < 1) {
+		return;
+	}
+	m68k_add_src_operand(a, op, handle, m68k, 0);
+}
+
+static void m68k_fill_fpu_unknown(RzAnalysis *a, RzAnalysisOp *op, csh handle, const cs_m68k *m68k) {
+	if (!m68k || m68k->op_count < 1) {
+		return;
+	}
+	if (m68k->op_count == 1) {
+		m68k_fill_unary_rw(a, op, handle, m68k);
+	} else {
+		m68k_fill_srcs_before_dst(a, op, handle, m68k, false);
+	}
+}
+
+static void m68k_set_move_type(RzAnalysisOp *op, const cs_m68k *m68k) {
+	if (!m68k || m68k->op_count < 2) {
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		return;
+	}
+	const cs_m68k_op *src = &m68k->operands[0];
+	const cs_m68k_op *dst = &m68k->operands[m68k->op_count - 1];
+	if (dst->type == M68K_OP_MEM) {
+		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
+	} else if (src->type == M68K_OP_MEM) {
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+	} else {
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+	}
+}
+
+static RZ_UNUSED void m68k_set_cast_type(RzAnalysisOp *op, const cs_m68k *m68k) {
+	if (!m68k || m68k->op_count < 2) {
+		op->type = RZ_ANALYSIS_OP_TYPE_CAST;
+		return;
+	}
+	const cs_m68k_op *src = &m68k->operands[0];
+	const cs_m68k_op *dst = &m68k->operands[m68k->op_count - 1];
+	if (dst->type == M68K_OP_MEM) {
+		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
+	} else if (src->type == M68K_OP_MEM) {
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+	} else {
+		op->type = RZ_ANALYSIS_OP_TYPE_CAST;
+	}
+}
+
+static void m68k_set_opdir(RzAnalysisOp *op) {
+	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
+	case RZ_ANALYSIS_OP_TYPE_LOAD:
+		op->direction = RZ_ANALYSIS_OP_DIR_READ;
+		break;
+	case RZ_ANALYSIS_OP_TYPE_STORE:
+		op->direction = RZ_ANALYSIS_OP_DIR_WRITE;
+		break;
+	case RZ_ANALYSIS_OP_TYPE_LEA:
+		op->direction = RZ_ANALYSIS_OP_DIR_REF;
+		break;
+	case RZ_ANALYSIS_OP_TYPE_JMP:
+	case RZ_ANALYSIS_OP_TYPE_CJMP:
+	case RZ_ANALYSIS_OP_TYPE_UJMP:
+	case RZ_ANALYSIS_OP_TYPE_CALL:
+	case RZ_ANALYSIS_OP_TYPE_UCALL:
+		op->direction = RZ_ANALYSIS_OP_DIR_EXEC;
 		break;
 	default:
 		break;
 	}
-	return 0;
+}
+
+static void m68k_handle_fpu_instruction(RzAnalysisOp *op, ut64 addr, cs_m68k *m68k, unsigned int insn_id) {
+	op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+	switch (insn_id) {
+	case M68K_INS_FMOVE:
+	case M68K_INS_FSMOVE:
+	case M68K_INS_FDMOVE:
+	case M68K_INS_FMOVECR:
+	case M68K_INS_FMOVEM:
+		m68k_set_move_type(op, m68k);
+		break;
+	case M68K_INS_FADD:
+	case M68K_INS_FSADD:
+	case M68K_INS_FDADD:
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		break;
+	case M68K_INS_FSUB:
+	case M68K_INS_FSSUB:
+	case M68K_INS_FDSUB:
+		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
+		break;
+	case M68K_INS_FMUL:
+	case M68K_INS_FSMUL:
+	case M68K_INS_FDMUL:
+	case M68K_INS_FSGLMUL:
+		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
+		break;
+	case M68K_INS_FDIV:
+	case M68K_INS_FSDIV:
+	case M68K_INS_FDDIV:
+	case M68K_INS_FSGLDIV:
+		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
+		break;
+	case M68K_INS_FMOD:
+	case M68K_INS_FREM:
+		op->type = RZ_ANALYSIS_OP_TYPE_MOD;
+		break;
+	case M68K_INS_FCMP:
+	case M68K_INS_FTST:
+		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
+		break;
+	case M68K_INS_FABS:
+	case M68K_INS_FSABS:
+	case M68K_INS_FDABS:
+		op->type = RZ_ANALYSIS_OP_TYPE_ABS;
+		break;
+	case M68K_INS_FNEG:
+	case M68K_INS_FSNEG:
+	case M68K_INS_FDNEG:
+		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
+		break;
+	case M68K_INS_FINT:
+	case M68K_INS_FINTRZ:
+		op->type = RZ_ANALYSIS_OP_TYPE_CAST;
+		break;
+	case M68K_INS_FNOP:
+		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
+		break;
+	case M68K_INS_FSAVE:
+		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
+		break;
+	case M68K_INS_FRESTORE:
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		break;
+	case M68K_INS_FSF:
+	case M68K_INS_FSBEQ:
+	case M68K_INS_FSOGT:
+	case M68K_INS_FSOGE:
+	case M68K_INS_FSOLT:
+	case M68K_INS_FSOLE:
+	case M68K_INS_FSOGL:
+	case M68K_INS_FSOR:
+	case M68K_INS_FSUN:
+	case M68K_INS_FSUEQ:
+	case M68K_INS_FSUGT:
+	case M68K_INS_FSUGE:
+	case M68K_INS_FSULT:
+	case M68K_INS_FSULE:
+	case M68K_INS_FSNE:
+	case M68K_INS_FST:
+	case M68K_INS_FSSF:
+	case M68K_INS_FSSEQ:
+	case M68K_INS_FSGT:
+	case M68K_INS_FSGE:
+	case M68K_INS_FSLT:
+	case M68K_INS_FSLE:
+	case M68K_INS_FSGL:
+	case M68K_INS_FSGLE:
+	case M68K_INS_FSNGLE:
+	case M68K_INS_FSNGL:
+	case M68K_INS_FSNLE:
+	case M68K_INS_FSNLT:
+	case M68K_INS_FSNGE:
+	case M68K_INS_FSNGT:
+	case M68K_INS_FSSNE:
+	case M68K_INS_FSST:
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		break;
+	case M68K_INS_FTRAPF:
+	case M68K_INS_FTRAPEQ:
+	case M68K_INS_FTRAPOGT:
+	case M68K_INS_FTRAPOGE:
+	case M68K_INS_FTRAPOLT:
+	case M68K_INS_FTRAPOLE:
+	case M68K_INS_FTRAPOGL:
+	case M68K_INS_FTRAPOR:
+	case M68K_INS_FTRAPUN:
+	case M68K_INS_FTRAPUEQ:
+	case M68K_INS_FTRAPUGT:
+	case M68K_INS_FTRAPUGE:
+	case M68K_INS_FTRAPULT:
+	case M68K_INS_FTRAPULE:
+	case M68K_INS_FTRAPNE:
+	case M68K_INS_FTRAPT:
+	case M68K_INS_FTRAPSF:
+	case M68K_INS_FTRAPSEQ:
+	case M68K_INS_FTRAPGT:
+	case M68K_INS_FTRAPGE:
+	case M68K_INS_FTRAPLT:
+	case M68K_INS_FTRAPLE:
+	case M68K_INS_FTRAPGL:
+	case M68K_INS_FTRAPGLE:
+	case M68K_INS_FTRAPNGLE:
+	case M68K_INS_FTRAPNGL:
+	case M68K_INS_FTRAPNLE:
+	case M68K_INS_FTRAPNLT:
+	case M68K_INS_FTRAPNGE:
+	case M68K_INS_FTRAPNGT:
+	case M68K_INS_FTRAPSNE:
+	case M68K_INS_FTRAPST:
+		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
+		break;
+	case M68K_INS_FBF:
+	case M68K_INS_FBEQ:
+	case M68K_INS_FBOGT:
+	case M68K_INS_FBOGE:
+	case M68K_INS_FBOLT:
+	case M68K_INS_FBOLE:
+	case M68K_INS_FBOGL:
+	case M68K_INS_FBOR:
+	case M68K_INS_FBUN:
+	case M68K_INS_FBUEQ:
+	case M68K_INS_FBUGT:
+	case M68K_INS_FBUGE:
+	case M68K_INS_FBULT:
+	case M68K_INS_FBULE:
+	case M68K_INS_FBNE:
+	case M68K_INS_FBT:
+	case M68K_INS_FBSF:
+	case M68K_INS_FBSEQ:
+	case M68K_INS_FBGT:
+	case M68K_INS_FBGE:
+	case M68K_INS_FBLT:
+	case M68K_INS_FBLE:
+	case M68K_INS_FBGL:
+	case M68K_INS_FBGLE:
+	case M68K_INS_FBNGLE:
+	case M68K_INS_FBNGL:
+	case M68K_INS_FBNLE:
+	case M68K_INS_FBNLT:
+	case M68K_INS_FBNGE:
+	case M68K_INS_FBNGT:
+	case M68K_INS_FBSNE:
+	case M68K_INS_FBST:
+		handle_branch_instruction(op, addr, m68k, RZ_ANALYSIS_OP_TYPE_CJMP, 0);
+		break;
+	case M68K_INS_FDBF:
+	case M68K_INS_FDBEQ:
+	case M68K_INS_FDBOGT:
+	case M68K_INS_FDBOGE:
+	case M68K_INS_FDBOLT:
+	case M68K_INS_FDBOLE:
+	case M68K_INS_FDBOGL:
+	case M68K_INS_FDBOR:
+	case M68K_INS_FDBUN:
+	case M68K_INS_FDBUEQ:
+	case M68K_INS_FDBUGT:
+	case M68K_INS_FDBUGE:
+	case M68K_INS_FDBULT:
+	case M68K_INS_FDBULE:
+	case M68K_INS_FDBNE:
+	case M68K_INS_FDBT:
+	case M68K_INS_FDBSF:
+	case M68K_INS_FDBSEQ:
+	case M68K_INS_FDBGT:
+	case M68K_INS_FDBGE:
+	case M68K_INS_FDBLT:
+	case M68K_INS_FDBLE:
+	case M68K_INS_FDBGL:
+	case M68K_INS_FDBGLE:
+	case M68K_INS_FDBNGLE:
+	case M68K_INS_FDBNGL:
+	case M68K_INS_FDBNLE:
+	case M68K_INS_FDBNLT:
+	case M68K_INS_FDBNGE:
+	case M68K_INS_FDBNGT:
+	case M68K_INS_FDBSNE:
+	case M68K_INS_FDBST:
+		handle_branch_instruction(op, addr, m68k, RZ_ANALYSIS_OP_TYPE_CJMP, 1);
+		break;
+	default:
+		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+		break;
+	}
 }
 
 typedef struct {
-	RzRegItem reg;
 	csh handle;
 	int omode;
 	int obits;
@@ -145,72 +693,96 @@ static bool m68k_init(void **user) {
 }
 
 static void op_fillval(RzAnalysis *a, RzAnalysisOp *op, csh handle, cs_insn *insn) {
-	M68KContext *ctx = (M68KContext *)a->plugin_data;
+	cs_m68k *m68k = &insn->detail->m68k;
+	switch (insn->id) {
+	case M68K_INS_CLR:
+		m68k_fill_clear(a, op, handle, m68k);
+		return;
+	case M68K_INS_NEG:
+	case M68K_INS_NEGX:
+	case M68K_INS_NOT:
+	case M68K_INS_SWAP:
+	case M68K_INS_EXT:
+	case M68K_INS_EXTB:
+		m68k_fill_unary_rw(a, op, handle, m68k);
+		return;
+#ifdef RZ_CAPSTONE_HAS_M68K_COLDFIRE
+	case M68K_INS_BITREV:
+	case M68K_INS_BYTEREV:
+	case M68K_INS_FF1:
+	case M68K_INS_SATS:
+		m68k_fill_unary_rw(a, op, handle, m68k);
+		return;
+#endif
+	default:
+		break;
+	}
+
 	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
+	case RZ_ANALYSIS_OP_TYPE_LOAD:
 	case RZ_ANALYSIS_OP_TYPE_MOV:
-		ZERO_FILL(ctx->reg);
-		if (OPERAND(1).type == M68K_OP_MEM) {
-			op->src[0] = rz_analysis_value_new();
-			op->src[0]->type = RZ_ANALYSIS_VAL_MEM;
-			op->src[0]->reg = &ctx->reg;
-			parse_reg_name(op->src[0]->reg, handle, insn, 1);
-			op->src[0]->delta = OPERAND(0).mem.disp;
-		} else if (OPERAND(0).type == M68K_OP_MEM) {
-			op->dst = rz_analysis_value_new();
-			op->dst->type = RZ_ANALYSIS_VAL_MEM;
-			op->dst->reg = &ctx->reg;
-			parse_reg_name(op->dst->reg, handle, insn, 0);
-			op->dst->delta = OPERAND(1).mem.disp;
-		}
+	case RZ_ANALYSIS_OP_TYPE_STORE:
+	case RZ_ANALYSIS_OP_TYPE_CAST:
+		m68k_fill_srcs_before_dst(a, op, handle, m68k, false);
 		break;
 	case RZ_ANALYSIS_OP_TYPE_LEA:
-		ZERO_FILL(ctx->reg);
-		if (OPERAND(1).type == M68K_OP_MEM) {
-			op->dst = rz_analysis_value_new();
-			op->dst->type = RZ_ANALYSIS_VAL_MEM;
-			op->dst->reg = &ctx->reg;
-			parse_reg_name(op->dst->reg, handle, insn, 1);
-			op->dst->delta = OPERAND(1).mem.disp;
+		if (m68k->op_count > 1) {
+			m68k_add_src_operand(a, op, handle, m68k, 0);
+			m68k_set_dst_operand(a, op, handle, m68k, m68k->op_count - 1, RZ_ANALYSIS_ACC_W);
+		} else {
+			m68k_fill_all_srcs(a, op, handle, m68k);
+		}
+		break;
+	case RZ_ANALYSIS_OP_TYPE_ADD:
+	case RZ_ANALYSIS_OP_TYPE_SUB:
+	case RZ_ANALYSIS_OP_TYPE_MUL:
+	case RZ_ANALYSIS_OP_TYPE_DIV:
+	case RZ_ANALYSIS_OP_TYPE_MOD:
+	case RZ_ANALYSIS_OP_TYPE_SHL:
+	case RZ_ANALYSIS_OP_TYPE_SHR:
+	case RZ_ANALYSIS_OP_TYPE_SAR:
+	case RZ_ANALYSIS_OP_TYPE_SAL:
+	case RZ_ANALYSIS_OP_TYPE_OR:
+	case RZ_ANALYSIS_OP_TYPE_AND:
+	case RZ_ANALYSIS_OP_TYPE_XOR:
+	case RZ_ANALYSIS_OP_TYPE_XCHG:
+	case RZ_ANALYSIS_OP_TYPE_ROR:
+	case RZ_ANALYSIS_OP_TYPE_ROL:
+	case RZ_ANALYSIS_OP_TYPE_ABS:
+	case RZ_ANALYSIS_OP_TYPE_BCNT:
+	case RZ_ANALYSIS_OP_TYPE_REV:
+		m68k_fill_srcs_before_dst(a, op, handle, m68k, true);
+		break;
+	case RZ_ANALYSIS_OP_TYPE_CMP:
+		m68k_fill_all_srcs(a, op, handle, m68k);
+		break;
+	case RZ_ANALYSIS_OP_TYPE_UJMP:
+	case RZ_ANALYSIS_OP_TYPE_UCALL:
+		m68k_fill_indirect_target(a, op, handle, m68k);
+		break;
+	default:
+		if (op->family == RZ_ANALYSIS_OP_FAMILY_FPU &&
+			(op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_UNK) {
+			m68k_fill_fpu_unknown(a, op, handle, m68k);
 		}
 		break;
 	}
 }
 
-static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+static int m68k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	M68KContext *ctx = (M68KContext *)a->plugin_data;
 	int n, ret, opsize = -1;
 	cs_insn *insn;
 	cs_m68k *m68k;
 	cs_detail *detail;
 
-	int mode = a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
+	cs_mode mode = rz_m68k_cs_mode(rz_analysis_get_cpu(a));
 
-	// mode |= (a->bits==64)? CS_MODE_64: CS_MODE_32;
 	if (mode != ctx->omode || a->bits != ctx->obits) {
 		cs_close(&ctx->handle);
 		ctx->handle = 0;
-		ctx->omode = mode;
+		ctx->omode = -1;
 		ctx->obits = a->bits;
-	}
-	// XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
-	// replace this with the asm.features?
-	if (a->cpu && strstr(a->cpu, "68000")) {
-		mode |= CS_MODE_M68K_000;
-	}
-	if (a->cpu && strstr(a->cpu, "68010")) {
-		mode |= CS_MODE_M68K_010;
-	}
-	if (a->cpu && strstr(a->cpu, "68020")) {
-		mode |= CS_MODE_M68K_020;
-	}
-	if (a->cpu && strstr(a->cpu, "68030")) {
-		mode |= CS_MODE_M68K_030;
-	}
-	if (a->cpu && strstr(a->cpu, "68040")) {
-		mode |= CS_MODE_M68K_040;
-	}
-	if (a->cpu && strstr(a->cpu, "68060")) {
-		mode |= CS_MODE_M68K_060;
 	}
 	op->size = 4;
 	if (ctx->handle == 0) {
@@ -218,6 +790,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		if (ret != CS_ERR_OK) {
 			goto fin;
 		}
+		ctx->omode = mode;
 		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
 	n = cs_disasm(ctx->handle, (ut8 *)buf, len, addr, 1, &insn);
@@ -238,7 +811,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	op->id = insn->id;
 	opsize = op->size = insn->size;
 	if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-		opex(&op->opex, ctx->handle, insn);
+		op->opex = mk68_opex(ctx->handle, insn);
 	}
 	switch (insn->id) {
 	case M68K_INS_INVALID:
@@ -305,8 +878,10 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M68K_INS_CAS2:
 	case M68K_INS_CHK:
 	case M68K_INS_CHK2:
-	case M68K_INS_CLR:
 		// TODO:
+		break;
+	case M68K_INS_CLR:
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 	case M68K_INS_CMP:
 	case M68K_INS_CMPA:
@@ -323,6 +898,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M68K_INS_CPUSHL:
 	case M68K_INS_CPUSHP:
 	case M68K_INS_CPUSHA:
+		op->type = RZ_ANALYSIS_OP_TYPE_SYNC;
 		break;
 	case M68K_INS_DBT:
 	case M68K_INS_DBF:
@@ -354,10 +930,11 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 		break;
 	case M68K_INS_EXG:
-		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		op->type = RZ_ANALYSIS_OP_TYPE_XCHG;
 		break;
 	case M68K_INS_EXT:
 	case M68K_INS_EXTB:
+		op->type = RZ_ANALYSIS_OP_TYPE_CAST;
 		break;
 	case M68K_INS_FABS:
 	case M68K_INS_FSABS:
@@ -546,8 +1123,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M68K_INS_FTRAPST:
 	case M68K_INS_FTST:
 	case M68K_INS_FTWOTOX:
-		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
-		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		m68k_handle_fpu_instruction(op, addr, m68k, insn->id);
 		break;
 	case M68K_INS_HALT:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
@@ -587,8 +1163,70 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M68K_INS_MOVEQ:
 	case M68K_INS_MOVES:
 	case M68K_INS_MOVE16:
+		m68k_set_move_type(op, m68k);
+		break;
+#ifdef RZ_CAPSTONE_HAS_M68K_COLDFIRE
+	case M68K_INS_MOV3Q:
+	case M68K_INS_MOVCLR:
+		m68k_set_move_type(op, m68k);
+		break;
+	case M68K_INS_MVS:
+		op->sign = true;
+		m68k_set_cast_type(op, m68k);
+		break;
+	case M68K_INS_MVZ:
+		op->sign = false;
+		m68k_set_cast_type(op, m68k);
+		break;
+	case M68K_INS_MAC:
+	case M68K_INS_MSAC:
+		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
+		break;
+	case M68K_INS_SATS:
+		op->type = RZ_ANALYSIS_OP_TYPE_CAST;
+		break;
+	case M68K_INS_BITREV:
+	case M68K_INS_BYTEREV:
+		op->type = RZ_ANALYSIS_OP_TYPE_REV;
+		break;
+	case M68K_INS_FF1:
+		op->type = RZ_ANALYSIS_OP_TYPE_BCNT;
+		break;
+	case M68K_INS_INTOUCH:
+		op->type = RZ_ANALYSIS_OP_TYPE_SYNC;
+		break;
+	case M68K_INS_STRLDSR:
+	case M68K_INS_WDDATA:
+	case M68K_INS_WDEBUG:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
+	case M68K_INS_TBLS:
+	case M68K_INS_TBLU:
+	case M68K_INS_TBLSN:
+	case M68K_INS_TBLUN:
+		m68k_set_move_type(op, m68k);
+		break;
+	case M68K_INS_BGND:
+	case M68K_INS_TPF:
+		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
+		break;
+	case M68K_INS_CP0BCBUSY:
+	case M68K_INS_CP1BCBUSY:
+		handle_branch_instruction(op, addr, m68k, RZ_ANALYSIS_OP_TYPE_CJMP, 0);
+		break;
+	case M68K_INS_CP0LD:
+	case M68K_INS_CP1LD:
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		break;
+	case M68K_INS_CP0ST:
+	case M68K_INS_CP1ST:
+		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
+		break;
+	case M68K_INS_CP0NOP:
+	case M68K_INS_CP1NOP:
+		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
+		break;
+#endif
 	case M68K_INS_MULS:
 	case M68K_INS_MULU:
 		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
@@ -596,6 +1234,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M68K_INS_NBCD:
 	case M68K_INS_NEG:
 	case M68K_INS_NEGX:
+		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		break;
 	case M68K_INS_NOP:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
@@ -621,9 +1260,11 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M68K_INS_PTESTR:
 	case M68K_INS_PTESTW:
 	case M68K_INS_PULSE:
+	case M68K_INS_RESET:
+		break;
 	case M68K_INS_REMS:
 	case M68K_INS_REMU:
-	case M68K_INS_RESET:
+		op->type = RZ_ANALYSIS_OP_TYPE_MOD;
 		break;
 	case M68K_INS_ROL:
 		op->type = RZ_ANALYSIS_OP_TYPE_ROL;
@@ -709,6 +1350,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		op->stackptr = 0;
 		break;
 	}
+	m68k_set_opdir(op);
 	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
 		op_fillval(a, op, ctx->handle, insn);
 	}
@@ -719,7 +1361,10 @@ fin:
 	return opsize;
 }
 
-static char *get_reg_profile(RzAnalysis *analysis) {
+static char *m68k_get_reg_profile(RzAnalysis *analysis) {
+	// The GPR offsets follow Linux/m68k struct user_regs_struct, which is also
+	// the ELF core PRSTATUS regset layout.
+	// https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/arch/m68k/include/asm/user.h
 	const char *p =
 		"=PC    pc\n"
 		"=SP    a7\n"
@@ -728,52 +1373,64 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"=A1    a1\n"
 		"=A2    a2\n"
 		"=A3    a3\n"
-		"gpr	d0	.32	0	0\n"
-		"gpr	d1	.32	4	0\n"
-		"gpr	d2	.32	8	0\n"
-		"gpr	d3	.32	12	0\n"
-		"gpr	d4	.32	16	0\n"
-		"gpr	d5	.32	20	0\n"
-		"gpr	d6	.32	24	0\n"
-		"gpr	d7	.32	28	0\n"
-		"gpr	a0	.32	32	0\n"
-		"gpr	a1	.32	36	0\n"
-		"gpr	a2 	.32	40	0\n"
-		"gpr	a3 	.32	44	0\n"
-		"gpr	a4 	.32	48	0\n"
-		"gpr	a5	.32	52	0\n"
-		"gpr	a6 	.32	56	0\n"
-		"gpr	a7 	.32	60	0\n"
-		"gpr	fp0	.32	64	0\n" // FPU register 0, 96bits to write and read max
-		"gpr	fp1	.32	68	0\n" // FPU register 1, 96bits to write and read max
-		"gpr	fp2	.32	72	0\n" // FPU register 2, 96bits to write and read max
-		"gpr	fp3 	.32	76	0\n" // FPU register 3, 96bits to write and read max
-		"gpr	fp4 	.32	80	0\n" // FPU register 4, 96bits to write and read max
-		"gpr	fp5 	.32	84	0\n" // FPU register 5, 96bits to write and read max
-		"gpr	fp6 	.32	88	0\n" // FPU register 6, 96bits to write and read max
-		"gpr	fp7 	.32	92	0\n" // FPU register 7, 96bits to write and read max
-		"gpr	pc 	.32	96	0\n"
-		"gpr	sr 	.32	100	0\n" // only available for read and write access during supervisor mode 16bit
-		"gpr	ccr 	.32	104	0\n" // subset of the SR, available from any mode
-		"gpr	sfc 	.32	108	0\n" // source function code register
-		"gpr	dfc	.32	112	0\n" // destination function code register
-		"gpr	usp	.32	116	0\n" // user stack point this is an shadow register of A7 user mode, SR bit 0xD is 0
-		"gpr	vbr	.32	120	0\n" // vector base register, this is a Address pointer
-		"gpr	cacr	.32	124	0\n" // cache control register, implementation specific
-		"gpr	caar	.32	128	0\n" // cache address register, 68020, 68EC020, 68030 and 68EC030 only.
-		"gpr	msp	.32	132	0\n" // master stack pointer, this is an shadow register of A7 supervisor mode, SR bits 0xD && 0xC are set
-		"gpr	isp	.32	136	0\n" // interrupt stack pointer, this is an shadow register of A7  supervisor mode, SR bit 0xD is set, 0xC is not.
-		"gpr	tc	.32	140	0\n"
-		"gpr	itt0	.32	144	0\n" // in 68EC040 this is IACR0
-		"gpr	itt1	.32	148	0\n" // in 68EC040 this is IACR1
-		"gpr	dtt0	.32	156	0\n" // in 68EC040 this is DACR0
-		"gpr	dtt1	.32	160	0\n" // in 68EC040 this is DACR1
-		"gpr	mmusr	.32	164	0\n"
-		"gpr	urp	.32	168	0\n"
-		"gpr	srp	.32	172	0\n"
-		"gpr	fpcr	.32	176	0\n"
-		"gpr	fpsr	.32	180	0\n"
-		"gpr	fpiar	.32	184	0\n";
+		"gpr	d0		.32	56	0\n"
+		"gpr	d1		.32	0	0\n"
+		"gpr	d2		.32	4	0\n"
+		"gpr	d3		.32	8	0\n"
+		"gpr	d4		.32	12	0\n"
+		"gpr	d5		.32	16	0\n"
+		"gpr	d6		.32	20	0\n"
+		"gpr	d7		.32	24	0\n"
+		"gpr	a0		.32	28	0\n"
+		"gpr	a1		.32	32	0\n"
+		"gpr	a2 		.32	36	0\n"
+		"gpr	a3 		.32	40	0\n"
+		"gpr	a4 		.32	44	0\n"
+		"gpr	a5		.32	48	0\n"
+		"gpr	a6 		.32	52	0\n"
+		"gpr	a7 		.32	60	0\n"
+		"gpr	pc 		.32	72	0\n"
+		"gpr	ccr 	.8	71	0\n" // subset of the SR, available from any mode
+		"gpr	fp0		.32	80	0\n" // FPU register 0, 96bits to write and read max
+		"gpr	fp1		.32	84	0\n" // FPU register 1, 96bits to write and read max
+		"gpr	fp2		.32	88	0\n" // FPU register 2, 96bits to write and read max
+		"gpr	fp3 	.32	92	0\n" // FPU register 3, 96bits to write and read max
+		"gpr	fp4 	.32	96	0\n" // FPU register 4, 96bits to write and read max
+		"gpr	fp5 	.32	100	0\n" // FPU register 5, 96bits to write and read max
+		"gpr	fp6 	.32	104	0\n" // FPU register 6, 96bits to write and read max
+		"gpr	fp7 	.32	108	0\n" // FPU register 7, 96bits to write and read max
+		"gpr	fpcr	.32	112	0\n"
+		"gpr	fpsr	.32	116	0\n"
+		"gpr	fpiar	.32	120	0\n"
+		"gpr	sr 		.16	70	0\n" // only available for read and write access during supervisor mode
+		"gpr	sfc 	.32	124	0\n" // source function code register
+		"gpr	dfc		.32	128	0\n" // destination function code register
+		"gpr	usp		.32	60	0\n" // user stack point this is an shadow register of A7 user mode, SR bit 0xD is 0
+		"gpr	vbr		.32	132	0\n" // vector base register, this is a Address pointer
+		"gpr	cacr	.32	136	0\n" // cache control register, implementation specific
+		"gpr	caar	.32	140	0\n" // cache address register, 68020, 68EC020, 68030 and 68EC030 only.
+		"gpr	msp		.32	144	0\n" // master stack pointer, this is an shadow register of A7 supervisor mode, SR bits 0xD && 0xC are set
+		"gpr	isp		.32	148	0\n" // interrupt stack pointer, this is an shadow register of A7  supervisor mode, SR bit 0xD is set, 0xC is not.
+		"gpr	tc		.32	152	0\n"
+		"gpr	itt0	.32	156	0\n" // in 68EC040 this is IACR0
+		"gpr	itt1	.32	160	0\n" // in 68EC040 this is IACR1
+		"gpr	dtt0	.32	164	0\n" // in 68EC040 this is DACR0
+		"gpr	dtt1	.32	168	0\n" // in 68EC040 this is DACR1
+		"gpr	mmusr	.32	172	0\n"
+		"gpr	urp		.32	176	0\n"
+		"gpr	srp		.32	180	0\n"
+		"gpr	tt0		.32	184	0\n"
+		"gpr	tt1		.32	188	0\n"
+		"gpr	crp		.32	192	0\n"
+		"gpr	acc		.32	196	0\n"
+		"gpr	acc0	.32	200	0\n"
+		"gpr	acc1	.32	204	0\n"
+		"gpr	acc2	.32	208	0\n"
+		"gpr	acc3	.32	212	0\n"
+		"gpr	accext01	.32	216	0\n"
+		"gpr	accext23	.32	220	0\n"
+		"gpr	macsr	.32	224	0\n"
+		"gpr	mask	.32	228	0\n";
 	return rz_str_dup(p);
 }
 
@@ -786,18 +1443,37 @@ static bool m68k_fini(void *user) {
 	return true;
 }
 
+static int m68k_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		return 2;
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		return M68K_LONGEST_INSTRUCTION;
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		return 2;
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 1;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
+	}
+}
+
 RzAnalysisPlugin rz_analysis_plugin_m68k_cs = {
 	.name = "m68k",
 	.desc = "Capstone M68K analyzer",
 	.license = "BSD",
 	.esil = false,
 	.arch = "m68k",
-	.get_reg_profile = &get_reg_profile,
+	.get_reg_profile = &m68k_get_reg_profile,
 	.bits = 32,
-	.op = &analyze_op,
+	.op = &m68k_analyze_op,
 	.init = m68k_init,
 	.fini = m68k_fini,
+	.archinfo = m68k_archinfo,
 };
+
 #else
 RzAnalysisPlugin rz_analysis_plugin_m68k_cs = {
 	.name = "m68k (unsupported)",

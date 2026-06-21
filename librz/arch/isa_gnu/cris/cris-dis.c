@@ -28,6 +28,7 @@
 #include <common_gnu/sysdep.h>
 #include <common_gnu/opcode/cris.h>
 #include <common_gnu/libiberty.h>
+#include <cris/cris_context.h>
 
 /* Return TRUE if the start of STR matches PREFIX, FALSE otherwise.  */
 
@@ -92,18 +93,6 @@ struct cris_disasm_data
      that includes "compatible".  */
   enum cris_disass_family distype;
 };
-
-/* Value of first element in switch.  */
-static long case_offset = 0;
-
-/* How many more case-offsets to print.  */
-static long case_offset_counter = 0;
-
-/* Number of case offsets.  */
-static long no_of_case_offsets = 0;
-
-/* Candidate for next case_offset.  */
-static long last_immediate = 0;
 
 static int cris_constraint
   (const char *, unsigned, unsigned, struct cris_disasm_data *);
@@ -570,7 +559,8 @@ cris_constraint (const char *cs,
 static char *
 format_hex (unsigned long number,
 	    char *outbuffer,
-	    struct cris_disasm_data *disdata)
+	    struct cris_disasm_data *disdata, 
+		void *data)
 {
   /* Truncate negative numbers on >32-bit hosts.  */
   number &= 0xffffffff;
@@ -578,8 +568,9 @@ format_hex (unsigned long number,
   sprintf (outbuffer, "0x%lx", number);
 
   /* Save this value for the "case" support.  */
+  CrisContext *ctx = (CrisContext *)data;
   if (TRACE_CASE)
-    last_immediate = number;
+    ctx->last_immediate = number;
 
   return outbuffer + strlen (outbuffer);
 }
@@ -589,11 +580,12 @@ format_hex (unsigned long number,
    unsigned (== 0).  */
 
 static char *
-format_dec (long number, char *outbuffer, int signedp)
+format_dec (long number, char *outbuffer, int signedp, void *data)
 {
   if (!outbuffer)
     return NULL;
-  last_immediate = number;
+  CrisContext *ctx = (CrisContext *)data;
+  ctx->last_immediate = number;
   if (signedp)
     sprintf (outbuffer, "%ld", number);
   else
@@ -755,7 +747,8 @@ print_with_operands (const struct cris_opcode *opcodep,
 		     const struct cris_opcode *prefix_opcodep,
 		     unsigned int prefix_insn,
 		     unsigned char *prefix_buffer,
-		     bool with_reg_prefix)
+		     bool with_reg_prefix,
+			 void *data)
 {
   /* Get a buffer of somewhat reasonable size where we store
      intermediate parts of the insn.  */
@@ -767,8 +760,10 @@ print_with_operands (const struct cris_opcode *opcodep,
   struct cris_disasm_data *disdata
     = (struct cris_disasm_data *) info->private_data;
 
+  CrisContext *ctx = (CrisContext *)data;
+
   /* Print out the name first thing we do.  */
-  (*info->fprintf_func) (info->stream, "%s", opcodep->name);
+  (*info->fprintf_func) (info->stream, data, "%s", opcodep->name);
 
   cs = opcodep->args;
   s = cs;
@@ -871,10 +866,10 @@ print_with_operands (const struct cris_opcode *opcodep,
 	  /* Finish off and output previous formatted bytes.  */
 	  *tp = 0;
 	  if (temp[0])
-	    (*info->fprintf_func) (info->stream, "%s", temp);
+	    (*info->fprintf_func) (info->stream, data, "%s", temp);
 	  tp = temp;
 
-	  (*info->print_address_func) (addr + number, info);
+	  (*info->print_address_func) (addr + number, data, info);
 	}
 	break;
 
@@ -886,10 +881,10 @@ print_with_operands (const struct cris_opcode *opcodep,
 	  /* Finish off and output previous formatted bytes.  */
 	  *tp = 0;
 	  if (temp[0])
-	    (*info->fprintf_func) (info->stream, "%s", temp);
+	    (*info->fprintf_func) (info->stream, data, "%s", temp);
 	  tp = temp;
 
-	  (*info->print_address_func) (addr + number, info);
+	  (*info->print_address_func) (addr + number, data, info);
 	}
 	break;
 
@@ -967,7 +962,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 	    if ((*cs == 'z' && (insn & 0x20))
 		|| (opcodep->match == BDAP_QUICK_OPCODE
 		    && (nbytes <= 2 || buffer[1 + nbytes] == 0)))
-	      tp = format_dec (number, tp, signedp);
+	      tp = format_dec (number, tp, signedp, data);
 	    else
 	      {
 		unsigned int highbyte = (number >> 24) & 0xff;
@@ -987,14 +982,14 @@ print_with_operands (const struct cris_opcode *opcodep,
 		    *tp = 0;
 		    tp = temp;
 		    if (temp[0])
-		      (*info->fprintf_func) (info->stream, "%s", temp);
+		      (*info->fprintf_func) (info->stream, data, "%s", temp);
 
-		    (*info->print_address_func) ((bfd_vma) number, info);
+		    (*info->print_address_func) ((bfd_vma) number, data, info);
 
 		    info->target = number;
 		  }
 		else
-		  tp = format_hex (number, tp, disdata);
+		  tp = format_hex (number, tp, disdata, data);
 	      }
 	  }
 	else
@@ -1067,9 +1062,9 @@ print_with_operands (const struct cris_opcode *opcodep,
 			*tp = 0;
 			tp = temp;
 			if (temp[0])
-			  (*info->fprintf_func) (info->stream, "%s", temp);
+			  (*info->fprintf_func) (info->stream, data, "%s", temp);
 
-			(*info->print_address_func) ((bfd_vma) number, info);
+			(*info->print_address_func) ((bfd_vma) number, data, info);
 		      }
 		    else
 		      {
@@ -1103,7 +1098,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 				       with_reg_prefix);
 		      if (number >= 0)
 			*tp++ = '+';
-		      tp = format_dec (number, tp, 1);
+		      tp = format_dec (number, tp, 1, data);
 
 		      info->flags |= CRIS_DIS_FLAG_MEM_TARGET_IS_REG;
 		      info->target = (prefix_insn >> 12) & 15;
@@ -1133,7 +1128,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 		    /* Is it the casejump?  It's a "adds.w [pc+r%d.w],pc".  */
 		    if (insn == 0xf83f && (prefix_insn & ~0xf000) == 0x55f)
 		      /* Then start interpreting data as offsets.  */
-		      case_offset_counter = no_of_case_offsets;
+		      ctx->case_offset_counter = ctx->no_of_case_offsets;
 		    break;
 
 		  case BDAP_INDIR_OPCODE:
@@ -1193,15 +1188,15 @@ print_with_operands (const struct cris_opcode *opcodep,
 			    *tp++ = '+';
 			    *tp = 0;
 			    tp = temp;
-			    (*info->fprintf_func) (info->stream, "%s", temp);
+			    (*info->fprintf_func) (info->stream, data, "%s", temp);
 
-			    (*info->print_address_func) ((bfd_vma) number, info);
+			    (*info->print_address_func) ((bfd_vma) number, data, info);
 			  }
 			else
 			  {
 			    if (number >= 0)
 			      *tp++ = '+';
-			    tp = format_dec (number, tp, 1);
+			    tp = format_dec (number, tp, 1, data);
 			  }
 		      }
 		    else
@@ -1231,7 +1226,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 		    break;
 
 		  default:
-		    (*info->fprintf_func) (info->stream, "?prefix-bug");
+		    (*info->fprintf_func) (info->stream, data, "?prefix-bug");
 		  }
 
 		/* To mark that the prefix is used, reset it.  */
@@ -1258,7 +1253,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 	break;
 
       case 'I':
-	tp = format_dec (insn & 63, tp, 0);
+	tp = format_dec (insn & 63, tp, 0, data);
 	break;
 
       case 'b':
@@ -1279,19 +1274,19 @@ print_with_operands (const struct cris_opcode *opcodep,
 
 	  *tp = 0;
 	  tp = temp;
-	  (*info->fprintf_func) (info->stream, "%s%s ",
+	  (*info->fprintf_func) (info->stream, data, "%s%s ",
 				 temp, cris_cc_strings[insn >> 12]);
 
-	  (*info->print_address_func) ((bfd_vma) where, info);
+	  (*info->print_address_func) ((bfd_vma) where, data, info);
 	}
       break;
 
     case 'c':
-      tp = format_dec (insn & 31, tp, 0);
+      tp = format_dec (insn & 31, tp, 0, data);
       break;
 
     case 'C':
-      tp = format_dec (insn & 15, tp, 0);
+      tp = format_dec (insn & 15, tp, 0, data);
       break;
 
     case 'o':
@@ -1311,8 +1306,8 @@ print_with_operands (const struct cris_opcode *opcodep,
 	info->target = target;
 	*tp = 0;
 	tp = temp;
-	(*info->fprintf_func) (info->stream, "%s", temp);
-	(*info->print_address_func) (target, info);
+	(*info->fprintf_func) (info->stream, data, "%s", temp);
+	(*info->print_address_func) (target, data, info);
       }
       break;
 
@@ -1324,7 +1319,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 	if (number > 127)
 	  number = number - 256;
 
-	tp = format_dec (number, tp, 1);
+	tp = format_dec (number, tp, 1, data);
 	*tp++ = ',';
 	tp = format_reg (disdata, (insn >> 12) & 15, tp, with_reg_prefix);
       }
@@ -1335,7 +1330,7 @@ print_with_operands (const struct cris_opcode *opcodep,
       break;
 
     case 'i':
-      tp = format_dec ((insn & 32) ? (insn & 31) | ~31L : insn & 31, tp, 1);
+      tp = format_dec ((insn & 32) ? (insn & 31) | ~31L : insn & 31, tp, 1, data);
       break;
 
     case 'P':
@@ -1367,34 +1362,34 @@ if (sregp) {
   *tp = 0;
 
   if (prefix_opcodep)
-    (*info->fprintf_func) (info->stream, " (OOPS unused prefix \"%s: %s\")",
+    (*info->fprintf_func) (info->stream, data, " (OOPS unused prefix \"%s: %s\")",
 			   prefix_opcodep->name, prefix_opcodep->args);
 
-  (*info->fprintf_func) (info->stream, "%s", temp);
+  (*info->fprintf_func) (info->stream, data, "%s", temp);
 
   /* Get info for matching case-tables, if we don't have any active.
      We assume that the last constant seen is used; either in the insn
      itself or in a "move.d const,rN, sub.d rN,rM"-like sequence.  */
-  if (TRACE_CASE && case_offset_counter == 0)
+  if (TRACE_CASE && ctx->case_offset_counter == 0)
     {
       if (startswith (opcodep->name, "sub"))
-	case_offset = last_immediate;
+	ctx->case_offset = ctx->last_immediate;
 
       /* It could also be an "add", if there are negative case-values.  */
       else if (startswith (opcodep->name, "add"))
 	/* The first case is the negated operand to the add.  */
-	case_offset = -last_immediate;
+	ctx->case_offset = -ctx->last_immediate;
 
       /* A bound insn will tell us the number of cases.  */
       else if (startswith (opcodep->name, "bound"))
-	no_of_case_offsets = last_immediate + 1;
+	ctx->no_of_case_offsets = ctx->last_immediate + 1;
 
       /* A jump or jsr or branch breaks the chain of insns for a
 	 case-table, so assume default first-case again.  */
       else if (info->insn_type == dis_jsr
 	       || info->insn_type == dis_branch
 	       || info->insn_type == dis_condbranch)
-	case_offset = 0;
+	ctx->case_offset = 0;
     }
 }
 
@@ -1406,6 +1401,7 @@ if (sregp) {
 static int
 print_insn_cris_generic (bfd_vma memaddr,
 			 disassemble_info *info,
+			 void *data,
 			 bool with_reg_prefix)
 {
   int nbytes;
@@ -1421,6 +1417,7 @@ print_insn_cris_generic (bfd_vma memaddr,
   unsigned char *bufp;
   int status = 0;
   bfd_vma addr;
+  CrisContext *ctx = (CrisContext *)data;
 
   /* There will be an "out of range" error after the last instruction.
      Reading pairs of bytes in decreasing number, we hope that we will get
@@ -1431,7 +1428,7 @@ print_insn_cris_generic (bfd_vma memaddr,
 
   for (nbytes = MAX_BYTES_PER_CRIS_INSN; nbytes > 0; nbytes -= 2)
     {
-      status = (*info->read_memory_func) (memaddr, buffer, nbytes, info);
+      status = (*info->read_memory_func) (memaddr, buffer, nbytes, info, data);
       if (status == 0)
 	break;
     }
@@ -1461,30 +1458,30 @@ print_insn_cris_generic (bfd_vma memaddr,
       insn = bufp[0] + bufp[1] * 256;
 
       /* If we're in a case-table, don't disassemble the offsets.  */
-      if (TRACE_CASE && case_offset_counter != 0)
+      if (TRACE_CASE && ctx->case_offset_counter != 0)
 	{
 	  info->insn_type = dis_noninsn;
 	  advance += 2;
 
 	  /* If to print data as offsets, then shortcut here.  */
-	  (*info->fprintf_func) (info->stream, "case %ld%s: -> ",
-				 case_offset + no_of_case_offsets
-				 - case_offset_counter,
-				 case_offset_counter == 1 ? "/default" :
+	  (*info->fprintf_func) (info->stream, data, "case %ld%s: -> ",
+				 ctx->case_offset + ctx->no_of_case_offsets
+				 - ctx->case_offset_counter,
+				 ctx->case_offset_counter == 1 ? "/default" :
 				 "");
 
 	  (*info->print_address_func) ((bfd_vma)
 				       ((short) (insn)
 					+ (long) (addr
-						  - (no_of_case_offsets
-						     - case_offset_counter)
-						  * 2)), info);
-	  case_offset_counter--;
+						  - (ctx->no_of_case_offsets
+						     - ctx->case_offset_counter)
+						  * 2)), data, info);
+	  ctx->case_offset_counter--;
 
 	  /* The default case start (without a "sub" or "add") must be
 	     zero.  */
-	  if (case_offset_counter == 0)
-	    case_offset = 0;
+	  if (ctx->case_offset_counter == 0)
+	    ctx->case_offset = 0;
 	}
       else if (insn == 0)
 	{
@@ -1493,6 +1490,7 @@ print_insn_cris_generic (bfd_vma memaddr,
 	     of a nuiscance that we will just output "bcc .+2" for it
 	     and signal it as a noninsn.  */
 	  (*info->fprintf_func) (info->stream,
+				 data,
 				 disdata->distype == cris_dis_v32
 				 ? "bcc ." : "bcc .+2");
 	  info->insn_type = dis_noninsn;
@@ -1539,7 +1537,7 @@ print_insn_cris_generic (bfd_vma memaddr,
 
 	  if (matchedp == NULL)
 	    {
-	      (*info->fprintf_func) (info->stream, "??0x%x", insn);
+	      (*info->fprintf_func) (info->stream, data, "??0x%x", insn);
 	      advance += 2;
 
 	      info->insn_type = dis_noninsn;
@@ -1554,7 +1552,8 @@ print_insn_cris_generic (bfd_vma memaddr,
 		 to the operands.   */
 	      print_with_operands (matchedp, insn, bufp, addr, info,
 				   prefix_opcodep, prefix_insn,
-				   prefix_buffer, with_reg_prefix);
+				   prefix_buffer, with_reg_prefix,
+				   data);
 	    }
 	}
     }
@@ -1593,24 +1592,24 @@ print_insn_cris_generic (bfd_vma memaddr,
 
 int
 print_insn_cris_with_register_prefix (bfd_vma vma,
-				      disassemble_info *info)
+				      disassemble_info *info, void *data)
 {
   if (info->private_data == NULL
       && !cris_parse_disassembler_options (info, cris_dis_v0_v10))
     return -1;
-  return print_insn_cris_generic (vma, info, true);
+  return print_insn_cris_generic (vma, info, data, true);
 }
 
 /* Disassemble, prefixing register names with `$'.  CRIS v32.  */
 
 int
 print_insn_crisv32_with_register_prefix (bfd_vma vma,
-					 disassemble_info *info)
+					 disassemble_info *info, void *data)
 {
   if (info->private_data == NULL
       && !cris_parse_disassembler_options (info, cris_dis_v32))
     return -1;
-  return print_insn_cris_generic (vma, info, true);
+  return print_insn_cris_generic (vma, info, data, true);
 }
 
 /* Disassemble, prefixing register names with `$'.
@@ -1618,36 +1617,36 @@ print_insn_crisv32_with_register_prefix (bfd_vma vma,
 
 int
 print_insn_crisv10_v32_with_register_prefix (bfd_vma vma,
-					     disassemble_info *info)
+					     disassemble_info *info, void *data)
 {
   if (info->private_data == NULL
       && !cris_parse_disassembler_options (info, cris_dis_common_v10_v32))
     return -1;
-  return print_insn_cris_generic (vma, info, true);
+  return print_insn_cris_generic (vma, info, data, true);
 }
 
 /* Disassemble, no prefixes on register names.  CRIS v0..v10.  */
 
 int
 print_insn_cris_without_register_prefix (bfd_vma vma,
-					 disassemble_info *info)
+					 disassemble_info *info, void *data)
 {
   if (info->private_data == NULL
       && !cris_parse_disassembler_options (info, cris_dis_v0_v10))
     return -1;
-  return print_insn_cris_generic (vma, info, false);
+  return print_insn_cris_generic (vma, info, data, false);
 }
 
 /* Disassemble, no prefixes on register names.  CRIS v32.  */
 
 int
 print_insn_crisv32_without_register_prefix (bfd_vma vma,
-					    disassemble_info *info)
+					    disassemble_info *info, void *data)
 {
   if (info->private_data == NULL
       && !cris_parse_disassembler_options (info, cris_dis_v32))
     return -1;
-  return print_insn_cris_generic (vma, info, false);
+  return print_insn_cris_generic (vma, info, data, false);
 }
 
 /* Disassemble, no prefixes on register names.
@@ -1655,12 +1654,12 @@ print_insn_crisv32_without_register_prefix (bfd_vma vma,
 
 int
 print_insn_crisv10_v32_without_register_prefix (bfd_vma vma,
-						disassemble_info *info)
+						disassemble_info *info, void *data)
 {
   if (info->private_data == NULL
       && !cris_parse_disassembler_options (info, cris_dis_common_v10_v32))
     return -1;
-  return print_insn_cris_generic (vma, info, false);
+  return print_insn_cris_generic (vma, info, data, false);
 }
 
 /* Return a disassembler-function that prints registers with a `$' prefix,

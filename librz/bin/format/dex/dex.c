@@ -748,7 +748,6 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_dex_strings(RZ_NONNULL RzBin
 		return NULL;
 	}
 
-	ut32 ordinal = 0;
 	rz_pvector_foreach (dex->strings, it) {
 		string = (DexString *)*it;
 		RzBinString *bstr = RZ_NEW0(RzBinString);
@@ -757,7 +756,6 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_dex_strings(RZ_NONNULL RzBin
 		}
 		bstr->paddr = string->offset;
 		bstr->vaddr = RZ_DEX_VIRT_ADDRESS + string->offset;
-		bstr->ordinal = ordinal;
 		bstr->length = string->size;
 		bstr->size = string->size;
 		bstr->string = rz_str_ndup(string->data, string->size);
@@ -765,7 +763,6 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_dex_strings(RZ_NONNULL RzBin
 		if (!rz_pvector_push(strings, bstr)) {
 			free(bstr);
 		}
-		ordinal++;
 	}
 	return strings;
 }

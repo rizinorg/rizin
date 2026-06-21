@@ -26,6 +26,38 @@ try to keep the codebase consistent and clean.
 * Submit the Pull Request(PR) on Github.
 * When relevant, write a test in [test/](test).
 
+> [!IMPORTANT]
+> AI tools must not be used to fix issues labelled `good first issue`.
+> These issues are generally not urgent, and are intended to be learning opportunities for new contributors to get familiar with the codebase.
+> Whether you are a newcomer or not, fully automating the process of fixing this issue squanders the learning opportunity and doesn't add much value to the project.
+> **Using AI tools to fix issues labelled as "good first issues" is forbidden**.
+
+## Requirements for new contributors
+
+Due to the high number of AI-generated contributions,
+we raised the standard for new contributors.
+
+New contributors must ensure their code changes are fully covered by tests
+(excluding error-handling conditions) and that the CI is green.
+
+Local testing is _not_ sufficient!
+
+Rizin has different kind of tests in the `test/` subdirectory. Notable ones are:
+- `test/db/asm/`: Assembly and disassembly tests.
+- `test/db/cmd/`: Command tests.
+- `test/unit/`: Unit tests for single functions and modules.
+- `test/integration/`: Integration tests of the API.
+
+To get more help about testing please see [test/README.md](test/README.md).
+
+To test your changes against the CI, you can open a PR as a
+[Draft](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/changing-the-stage-of-a-pull-request)
+and mark it "Ready for review" once it meets the requirement.
+
+> [!IMPORTANT]
+> If this requirement is not met, we won't review the PR and will close it
+> if there are no visible attempts to meet it.
+
 ## Rebasing onto updated dev
 
 Every so often, your PR will lag behind `dev` and get conflicts.
@@ -78,6 +110,29 @@ rules to make the git history more readable and consistent:
 * If a command is inlined, use backticks
 * For extra details, add an empty line and use asterisk item list below
 * Use present simple grammar tense (Add vs Added, Fix vs Fixed/Fixes)
+
+## Usage of AI tools
+
+Following the widespread availability of large language models and generative AI,
+Rizin Organization has received a growing number of changes generated partially or
+entirely using such tools. Many of these are completely unusable in our codebase.
+
+> [!IMPORTANT]
+> While AI tools can help to draft changes, **they must NOT replace human understanding
+> and proper code modifications**.
+>
+> If you use AI tools to help prepare a code change, you must:
+>
+> - **Disclose** which AI tools were used and specify what they were used for.
+> - **Verify** that the code compiles, works and is not copyrighted by somebody else.
+> - **Avoid** fabricated code, placeholder text, or references to non-existent code.
+>
+> Changes that appear to be unverified AI output will be closed without response.
+> Repeated low-quality submissions may result in a ban.
+
+We align with similar policies adopted by other major open-source projects, which have
+described the flood of unverified AI-generated code changes as disruptive, counterproductive,
+and a drain on limited team resources.
 
 # Additional resources
 

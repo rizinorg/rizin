@@ -1,0 +1,737 @@
+NAME=Run all instructions - Sparc64
+FILE=bins/elf/sparc/sparc64_insn_all.bin
+ARGS=-eio.cache=1
+CMDS=<<EOF
+s 0x00101ee0
+aezi
+aezsu 0x00101ed8
+aezvt
+EOF
+EXPECT_ERR=
+EXPECT=<<EOF
+variable   type value              
+-----------------------------------
+PC         bitv 0x0000000000101ed8
+asi        bitv 0x0000000000000000
+asr        bitv 0x0000000000000000
+asr0       bitv 0x0000000000000000
+asr1       bitv 0x0000000000000000
+asr10      bitv 0x0000000000000000
+asr11      bitv 0x0000000000000000
+asr12      bitv 0x0000000000000000
+asr13      bitv 0x0000000000000000
+asr14      bitv 0x0000000000000000
+asr15      bitv 0x0000000000000000
+asr16      bitv 0x0000000000000000
+asr17      bitv 0x0000000000000000
+asr18      bitv 0x0000000000000000
+asr19      bitv 0x0000000000000000
+asr2       bitv 0x0000000000000000
+asr20      bitv 0x0000000000000000
+asr21      bitv 0x0000000000000000
+asr22      bitv 0x0000000000000000
+asr23      bitv 0x0000000000000000
+asr24      bitv 0x0000000000000000
+asr25      bitv 0x0000000000000000
+asr26      bitv 0x0000000000000000
+asr27      bitv 0x0000000000000000
+asr28      bitv 0x0000000000000000
+asr29      bitv 0x0000000000000000
+asr3       bitv 0x0000000000000000
+asr30      bitv 0x0000000000000000
+asr31      bitv 0x0000000000000000
+asr4       bitv 0x0000000000000000
+asr5       bitv 0x0000000000000000
+asr6       bitv 0x0000000000000000
+asr7       bitv 0x0000000000000000
+asr8       bitv 0x0000000000000000
+asr9       bitv 0x0000000000000000
+canrestore bitv 0x0000000000000000
+cansave    bitv 0x0000000000000000
+ccr        bitv 0x44
+cleanwin   bitv 0x0000000000000000
+csr        bitv 0x0000000000000000
+cwp        bitv 0x0000000000000002
+f0         bitv 0x682c5f5d
+f1         bitv 0x709b6285
+f10        bitv 0x5b5140d1
+f11        bitv 0x09107291
+f12        bitv 0x7f06d817
+f13        bitv 0xd0f2abd4
+f14        bitv 0x79ec5b2b
+f15        bitv 0x34bcbd40
+f16        bitv 0x21d28b54
+f17        bitv 0x96b08800
+f18        bitv 0xf39548b1
+f19        bitv 0x85d51880
+f2         bitv 0x32aa9fb6
+f20        bitv 0x2144e511
+f21        bitv 0x9f930b25
+f22        bitv 0x319914cc
+f23        bitv 0x70f34212
+f24        bitv 0x78249038
+f25        bitv 0x6d9ffb09
+f26        bitv 0x0fb1215e
+f27        bitv 0xccfd0b56
+f28        bitv 0x2858b12a
+f29        bitv 0x39388021
+f3         bitv 0xae96b088
+f30        bitv 0x1202b141
+f31        bitv 0xae83bfbe
+f32        bitv 0x2f699354061447e9
+f34        bitv 0x2c5f5d709b62852f
+f36        bitv 0x1fef656f47f1578f
+f38        bitv 0x77b09980fca87ef1
+f4         bitv 0x21d21742
+f40        bitv 0x746258c749423f07
+f42        bitv 0x128ee6ee1ce7324a
+f44        bitv 0x54da4cfa7faf7000
+f46        bitv 0x4ce12cd84a109754
+f48        bitv 0x30b7ee244b14ec74
+f5         bitv 0x8b54dc66
+f50        bitv 0x4c86b4723e95182f
+f52        bitv 0x76a485f2afddec0a
+f54        bitv 0x6f95e7854453d073
+f56        bitv 0x005fbcafe53dad42
+f58        bitv 0x7b4c17ee1e2703cd
+f6         bitv 0x59cf8853
+f60        bitv 0x475e1268be6010d9
+f62        bitv 0x3c64c7bd1ee3a5c7
+f7         bitv 0xdddd117f
+f8         bitv 0x78005d7e
+f9         bitv 0x1b6adfa1
+fp         bitv 0xffffffffffffff50
+fprs       bitv 0x3
+fq         bitv 0x0000000000000000
+fsr        bitv 0x0000000400000000
+g0         bitv 0x0000000000000000
+g1         bitv 0x0000000000000000
+g2         bitv 0x0000000000000000
+g3         bitv 0x0000000000000000
+g4         bitv 0x0000000000000000
+g5         bitv 0x0000000000000000
+g6         bitv 0x0000000000000000
+g7         bitv 0x0000000000000000
+gsr        bitv 0x0000000000000fff
+i0         bitv 0x00000000002027a0
+i1         bitv 0x0000000000202788
+i2         bitv 0x0000000000000000
+i3         bitv 0x0000000000000000
+i4         bitv 0x0000000000000000
+i5         bitv 0x0000000000000000
+i7         bitv 0x0000000000101eec
+l0         bitv 0x00000000ffffffff
+l1         bitv 0x00000000ffffffff
+l2         bitv 0x0000000000000000
+l3         bitv 0x0000000000000001
+l4         bitv 0x0000000000000000
+l5         bitv 0x000000002144e511
+l6         bitv 0x0000000000480008
+l7         bitv 0x0000000089fe7698
+o0         bitv 0x0000000000202750
+o1         bitv 0x00000000002023c0
+o2         bitv 0x0000000000000000
+o3         bitv 0x0000000000000000
+o4         bitv 0x00000000dddddddd
+o5         bitv 0x0000000000000000
+o7         bitv 0x0000000000000000
+otherwin   bitv 0x0000000000000000
+pil        bitv 0x0000000000000000
+pstate     bitv 0x0000000000000000
+sp         bitv 0x0000000000000000
+tba        bitv 0x0000000000000000
+tick       bitv 0x0000000000000000
+tl         bitv 0x0000000000000000
+tnpc       bitv 0x0000000000000000
+tpc        bitv 0x0000000000000000
+tstate     bitv 0x0000000000000000
+tt         bitv 0x0000000000000000
+ver        bitv 0x0000000000000000
+wstate     bitv 0x0000000000000000
+y          bitv 0x0000000000202200
+
+EOF
+RUN
+
+NAME=Run jump instructions - Sparc64
+FILE=bins/elf/sparc/sparc64_insn_jmp.bin
+ARGS=-eio.cache=1
+CMDS=<<EOF
+s 0x00101078
+aezi
+aezsu 0x0010106c
+aezvt
+EOF
+EXPECT_ERR=
+EXPECT=<<EOF
+variable   type value              
+-----------------------------------
+PC         bitv 0x000000000010106c
+asi        bitv 0x0000000000000000
+asr        bitv 0x0000000000000000
+asr0       bitv 0x0000000000000000
+asr1       bitv 0x0000000000000000
+asr10      bitv 0x0000000000000000
+asr11      bitv 0x0000000000000000
+asr12      bitv 0x0000000000000000
+asr13      bitv 0x0000000000000000
+asr14      bitv 0x0000000000000000
+asr15      bitv 0x0000000000000000
+asr16      bitv 0x0000000000000000
+asr17      bitv 0x0000000000000000
+asr18      bitv 0x0000000000000000
+asr19      bitv 0x0000000000000000
+asr2       bitv 0x0000000000000000
+asr20      bitv 0x0000000000000000
+asr21      bitv 0x0000000000000000
+asr22      bitv 0x0000000000000000
+asr23      bitv 0x0000000000000000
+asr24      bitv 0x0000000000000000
+asr25      bitv 0x0000000000000000
+asr26      bitv 0x0000000000000000
+asr27      bitv 0x0000000000000000
+asr28      bitv 0x0000000000000000
+asr29      bitv 0x0000000000000000
+asr3       bitv 0x0000000000000000
+asr30      bitv 0x0000000000000000
+asr31      bitv 0x0000000000000000
+asr4       bitv 0x0000000000000000
+asr5       bitv 0x0000000000000000
+asr6       bitv 0x0000000000000000
+asr7       bitv 0x0000000000000000
+asr8       bitv 0x0000000000000000
+asr9       bitv 0x0000000000000000
+canrestore bitv 0x0000000000000000
+cansave    bitv 0x0000000000000000
+ccr        bitv 0x00
+cleanwin   bitv 0x0000000000000000
+csr        bitv 0x0000000000000000
+cwp        bitv 0x0000000000000002
+f0         bitv 0x00000000
+f1         bitv 0x3f800000
+f10        bitv 0x00000000
+f11        bitv 0x00000000
+f12        bitv 0x00000000
+f13        bitv 0x00000000
+f14        bitv 0x00000000
+f15        bitv 0x00000000
+f16        bitv 0x00000000
+f17        bitv 0x00000000
+f18        bitv 0x00000000
+f19        bitv 0x00000000
+f2         bitv 0xbf800000
+f20        bitv 0x00000000
+f21        bitv 0x00000000
+f22        bitv 0x00000000
+f23        bitv 0x00000000
+f24        bitv 0x00000000
+f25        bitv 0x00000000
+f26        bitv 0x00000000
+f27        bitv 0x00000000
+f28        bitv 0x00000000
+f29        bitv 0x00000000
+f3         bitv 0xffc00000
+f30        bitv 0x00000000
+f31        bitv 0x00000000
+f32        bitv 0x0000000000000000
+f34        bitv 0x3ff0000000000000
+f36        bitv 0xbff0000000000000
+f38        bitv 0xfff8000000000000
+f4         bitv 0x00000000
+f40        bitv 0x0000000000000000
+f42        bitv 0x0000000000000000
+f44        bitv 0x0000000000000000
+f46        bitv 0x0000000000000000
+f48        bitv 0x0000000000000000
+f5         bitv 0x00000000
+f50        bitv 0x0000000000000000
+f52        bitv 0x0000000000000000
+f54        bitv 0x0000000000000000
+f56        bitv 0x0000000000000000
+f58        bitv 0x0000000000000000
+f6         bitv 0x00000000
+f60        bitv 0x0000000000000000
+f62        bitv 0x0000000000000000
+f7         bitv 0x00000000
+f8         bitv 0x00000000
+f9         bitv 0x00000000
+fp         bitv 0xffffffffffffff50
+fprs       bitv 0x3
+fq         bitv 0x0000000000000000
+fsr        bitv 0x0000000200000c00
+g0         bitv 0x0000000000000000
+g1         bitv 0x0000000000000000
+g2         bitv 0x0000000000000000
+g3         bitv 0x0000000000000000
+g4         bitv 0x0000000000000000
+g5         bitv 0x0000000000000000
+g6         bitv 0x0000000000000000
+g7         bitv 0x0000000000000000
+gsr        bitv 0x0000000000000000
+i0         bitv 0x0000000000000001
+i1         bitv 0xffffffffffffffff
+i2         bitv 0xffffffff80000000
+i3         bitv 0x000000007fffffff
+i4         bitv 0x0000000000000000
+i5         bitv 0x0000000000000000
+i7         bitv 0x000000000010107c
+l0         bitv 0x0000000000000000
+l1         bitv 0x0000000000000018
+l2         bitv 0x0000000000000000
+l3         bitv 0x0000000000000000
+l4         bitv 0x0000000000000000
+l5         bitv 0x0000000000000001
+l6         bitv 0x0000000000000001
+l7         bitv 0x0000000000000001
+o0         bitv 0x0000000000201110
+o1         bitv 0xffffffffffffffff
+o2         bitv 0x8000000000000000
+o3         bitv 0x7fffffffffffffff
+o4         bitv 0x0000000000000002
+o5         bitv 0x0000000000000000
+o7         bitv 0x0000000000000000
+otherwin   bitv 0x0000000000000000
+pil        bitv 0x0000000000000000
+pstate     bitv 0x0000000000000000
+sp         bitv 0x0000000000000000
+tba        bitv 0x0000000000000000
+tick       bitv 0x0000000000000000
+tl         bitv 0x0000000000000000
+tnpc       bitv 0x0000000000000000
+tpc        bitv 0x0000000000000000
+tstate     bitv 0x0000000000000000
+tt         bitv 0x0000000000000000
+ver        bitv 0x0000000000000000
+wstate     bitv 0x0000000000000000
+y          bitv 0x0000000000000000
+
+EOF
+RUN
+
+NAME=Run all instructions - Sparc32
+FILE=bins/elf/sparc/sparc32_insn_all.bin
+ARGS=-eio.cache=1
+CMDS=<<EOF
+s 0x00011690
+aezi
+aezsu 0x00010464
+aezvt
+EOF
+EXPECT_ERR=
+EXPECT=<<EOF
+variable   type value      
+---------------------------
+PC         bitv 0x00010464
+asi        bitv 0x00000000
+asr        bitv 0x00000000
+asr0       bitv 0x00000000
+asr1       bitv 0x00000000
+asr10      bitv 0x00000000
+asr11      bitv 0x00000000
+asr12      bitv 0x00000000
+asr13      bitv 0x00000000
+asr14      bitv 0x00000000
+asr15      bitv 0x00000000
+asr16      bitv 0x00000000
+asr17      bitv 0x00000000
+asr18      bitv 0x00000000
+asr19      bitv 0x00000000
+asr2       bitv 0x00000000
+asr20      bitv 0x00000000
+asr21      bitv 0x00000000
+asr22      bitv 0x00000000
+asr23      bitv 0x00000000
+asr24      bitv 0x00000000
+asr25      bitv 0x00000000
+asr26      bitv 0x00000000
+asr27      bitv 0x00000000
+asr28      bitv 0x00000000
+asr29      bitv 0x00000000
+asr3       bitv 0x00000000
+asr30      bitv 0x00000000
+asr31      bitv 0x00000000
+asr4       bitv 0x00000000
+asr5       bitv 0x00000000
+asr6       bitv 0x00000000
+asr7       bitv 0x00000000
+asr8       bitv 0x00000000
+asr9       bitv 0x00000000
+canrestore bitv 0x00000000
+cansave    bitv 0x00000000
+ccr        bitv 0x44
+cleanwin   bitv 0x00000000
+csr        bitv 0x00000000
+cwp        bitv 0x00000006
+f0         bitv 0x00000000
+f1         bitv 0x3f800000
+f10        bitv 0x00000000
+f11        bitv 0x00000000
+f12        bitv 0x00000000
+f13        bitv 0x00000000
+f14        bitv 0x00000000
+f15        bitv 0x00000000
+f16        bitv 0x00000000
+f17        bitv 0x00000000
+f18        bitv 0x00000000
+f19        bitv 0x00000000
+f2         bitv 0x40000000
+f20        bitv 0x00000000
+f21        bitv 0x00000000
+f22        bitv 0x00000000
+f23        bitv 0x00000000
+f24        bitv 0x00000000
+f25        bitv 0x00000000
+f26        bitv 0x00000000
+f27        bitv 0x00000000
+f28        bitv 0x00000000
+f29        bitv 0x00000000
+f3         bitv 0x40400000
+f30        bitv 0x00000000
+f31        bitv 0x00000000
+f4         bitv 0xffc00000
+f5         bitv 0x00000000
+f6         bitv 0x00000000
+f7         bitv 0x00000000
+f8         bitv 0x3fb504f3
+f9         bitv 0x3fddb3d7
+fp         bitv 0xffffffa0
+fprs       bitv 0x1
+fq         bitv 0x00000000
+fsr        bitv 0x00000400
+g0         bitv 0x00000000
+g1         bitv 0x00000000
+g2         bitv 0x00000000
+g3         bitv 0x00000000
+g4         bitv 0x00000000
+g5         bitv 0x00000000
+g6         bitv 0x00000000
+g7         bitv 0x00000000
+i0         bitv 0x00021da0
+i1         bitv 0x00021d88
+i2         bitv 0x00000000
+i3         bitv 0x00000000
+i4         bitv 0x00000000
+i5         bitv 0x00000000
+i7         bitv 0x0001169c
+l0         bitv 0xffffffff
+l1         bitv 0xffffffff
+l2         bitv 0x00000000
+l3         bitv 0x00000001
+l4         bitv 0x00000000
+l5         bitv 0x40d14dae
+l6         bitv 0x00000010
+l7         bitv 0x00011740
+o0         bitv 0x00021d50
+o1         bitv 0x000219c0
+o2         bitv 0x00000000
+o3         bitv 0xeeeeeeee
+o4         bitv 0xdddddddd
+o5         bitv 0xdddddddd
+o7         bitv 0x00000000
+otherwin   bitv 0x00000000
+pil        bitv 0x00000000
+psr        bitv 0x00000000
+pstate     bitv 0x00000000
+sp         bitv 0x00000000
+tba        bitv 0x00000000
+tbr        bitv 0x00000000
+tick       bitv 0x00000000
+tl         bitv 0x00000000
+tnpc       bitv 0x00000000
+tpc        bitv 0x00000000
+tstate     bitv 0x00000000
+tt         bitv 0x00000000
+ver        bitv 0x00000000
+wim        bitv 0x00000000
+wstate     bitv 0x00000000
+y          bitv 0x00021e70
+
+EOF
+RUN
+
+NAME=Run jump instructions - Sparc32
+FILE=bins/elf/sparc/sparc32_insn_jmp.bin
+ARGS=-eio.cache=1
+CMDS=<<EOF
+s 0x000106b8
+aezi
+aezsu 0x000106b0
+aezvt
+EOF
+EXPECT_ERR=
+EXPECT=<<EOF
+variable   type value      
+---------------------------
+PC         bitv 0x000106b0
+asi        bitv 0x00000000
+asr        bitv 0x00000000
+asr0       bitv 0x00000000
+asr1       bitv 0x00000000
+asr10      bitv 0x00000000
+asr11      bitv 0x00000000
+asr12      bitv 0x00000000
+asr13      bitv 0x00000000
+asr14      bitv 0x00000000
+asr15      bitv 0x00000000
+asr16      bitv 0x00000000
+asr17      bitv 0x00000000
+asr18      bitv 0x00000000
+asr19      bitv 0x00000000
+asr2       bitv 0x00000000
+asr20      bitv 0x00000000
+asr21      bitv 0x00000000
+asr22      bitv 0x00000000
+asr23      bitv 0x00000000
+asr24      bitv 0x00000000
+asr25      bitv 0x00000000
+asr26      bitv 0x00000000
+asr27      bitv 0x00000000
+asr28      bitv 0x00000000
+asr29      bitv 0x00000000
+asr3       bitv 0x00000000
+asr30      bitv 0x00000000
+asr31      bitv 0x00000000
+asr4       bitv 0x00000000
+asr5       bitv 0x00000000
+asr6       bitv 0x00000000
+asr7       bitv 0x00000000
+asr8       bitv 0x00000000
+asr9       bitv 0x00000000
+canrestore bitv 0x00000000
+cansave    bitv 0x00000000
+ccr        bitv 0x00
+cleanwin   bitv 0x00000000
+csr        bitv 0x00000000
+cwp        bitv 0x00000006
+f0         bitv 0x00000000
+f1         bitv 0x3f800000
+f10        bitv 0x00000000
+f11        bitv 0x00000000
+f12        bitv 0x00000000
+f13        bitv 0x00000000
+f14        bitv 0x00000000
+f15        bitv 0x00000000
+f16        bitv 0x00000000
+f17        bitv 0x00000000
+f18        bitv 0x00000000
+f19        bitv 0x00000000
+f2         bitv 0xbf800000
+f20        bitv 0x00000000
+f21        bitv 0x00000000
+f22        bitv 0x00000000
+f23        bitv 0x00000000
+f24        bitv 0x00000000
+f25        bitv 0x00000000
+f26        bitv 0x00000000
+f27        bitv 0x00000000
+f28        bitv 0x00000000
+f29        bitv 0x00000000
+f3         bitv 0xffc00000
+f30        bitv 0x00000000
+f31        bitv 0x00000000
+f4         bitv 0x00000000
+f5         bitv 0x00000000
+f6         bitv 0x00000000
+f7         bitv 0x00000000
+f8         bitv 0x00000000
+f9         bitv 0x00000000
+fp         bitv 0xffffffa0
+fprs       bitv 0x1
+fq         bitv 0x00000000
+fsr        bitv 0x00000c00
+g0         bitv 0x00000000
+g1         bitv 0x00000000
+g2         bitv 0x00000000
+g3         bitv 0x00000000
+g4         bitv 0x00000000
+g5         bitv 0x00000000
+g6         bitv 0x00000000
+g7         bitv 0x00000000
+i0         bitv 0x00000001
+i1         bitv 0xffffffff
+i2         bitv 0x80000000
+i3         bitv 0x7fffffff
+i4         bitv 0x00000002
+i5         bitv 0x00000000
+i7         bitv 0x000106bc
+l0         bitv 0x00000000
+l1         bitv 0x00000018
+l2         bitv 0x00000000
+l3         bitv 0x00000000
+l4         bitv 0x00000000
+l5         bitv 0x00000001
+l6         bitv 0x00000001
+l7         bitv 0x00000001
+o0         bitv 0x00020750
+o1         bitv 0x00000000
+o2         bitv 0x00000000
+o3         bitv 0x00000000
+o4         bitv 0x00000000
+o5         bitv 0x00000000
+o7         bitv 0x00000000
+otherwin   bitv 0x00000000
+pil        bitv 0x00000000
+psr        bitv 0x00000000
+pstate     bitv 0x00000000
+sp         bitv 0x00000000
+tba        bitv 0x00000000
+tbr        bitv 0x00000000
+tick       bitv 0x00000000
+tl         bitv 0x00000000
+tnpc       bitv 0x00000000
+tpc        bitv 0x00000000
+tstate     bitv 0x00000000
+tt         bitv 0x00000000
+ver        bitv 0x00000000
+wim        bitv 0x00000000
+wstate     bitv 0x00000000
+y          bitv 0x00000000
+
+EOF
+RUN
+
+NAME=Run all instructions - Sparc64
+FILE=bins/elf/sparc/sparc64_emulateme.bin
+ARGS=-eio.cache=1
+CMDS=<<EOF
+s 0x00100290
+px 16 @ section..data
+aezi
+aezsu 0x001002d0
+px 16 @ section..data
+psu @ section..data
+EOF
+EXPECT_ERR=
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00200300  5153 4d77 5814 515f 456c 177f 6e78 7f1c  QSMwX.Q_El..nx..
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00200300  4865 6c6c 6f20 6672 6f6d 2052 7a49 4c21  Hello from RzIL!
+Hello from RzIL!
+EOF
+RUN
+
+NAME=Run instructions unsupported by QEMU - Sparc64
+FILE=bins/elf/sparc/sparc64_insn_noqemu.bin
+ARGS=-eio.cache=1
+CMDS=<<EOF
+# The instructions were executed on an Sparc64 OpenBSD machine.
+# See test/bins/src/rzil/sparc/sparc64-insn-openbsd-all-regs2.txt
+# for the GDB output this test is made of.
+s 0x0010020c
+aezi
+aezsu 0x001001b0
+(print_exec; pd 1 @ pc ; aezse 1)
+.(print_exec) @@s:0x001001b0 0x00100204 4
+EOF
+EXPECT_ERR=
+EXPECT=<<EOF
+            ;-- pc:
+            0x001001b0      movdtox f32, l6
+pc_write(old: 0x1001b0, new: 0x1001b4)
+var_write(name: l6, old: 0x89fe769f, new: 0x2f699354061447e9)
+            ;-- pc:
+            0x001001b4      movdtox f0, l6
+pc_write(old: 0x1001b4, new: 0x1001b8)
+var_write(name: l6, old: 0x2f699354061447e9, new: 0x682c5f5d709b6285)
+            ;-- pc:
+            0x001001b8      movstouw f0, l6
+pc_write(old: 0x1001b8, new: 0x1001bc)
+var_write(name: l6, old: 0x682c5f5d709b6285, new: 0x682c5f5d)
+            ;-- pc:
+            0x001001bc      movstosw f0, l6
+pc_write(old: 0x1001bc, new: 0x1001c0)
+var_write(name: l6, old: 0x682c5f5d, new: 0x682c5f5d)
+            ;-- pc:
+            0x001001c0      xmulx l0, l1, l6
+pc_write(old: 0x1001c0, new: 0x1001c4)
+var_write(name: l6, old: 0x682c5f5d, new: 0xd45ef91148c2afa)
+            ;-- pc:
+            0x001001c4      xmulxhi l0, l1, l6
+pc_write(old: 0x1001c4, new: 0x1001c8)
+var_write(name: l6, old: 0xd45ef91148c2afa, new: 0x0)
+            ;-- pc:
+            0x001001c8      fhadds f0, f4, f8
+pc_write(old: 0x1001c8, new: 0x1001cc)
+var_write(name: f8, old: 0x78005d7e, new: 0x67ac5f5d)
+var_write(name: fprs, old: 0x3, new: 0x3)
+            ;-- pc:
+            0x001001cc      fhaddd f0, f4, f8
+pc_write(old: 0x1001cc, new: 0x1001d0)
+var_write(name: f9, old: 0x1b6adfa1, new: 0x709b6285)
+var_write(name: fprs, old: 0x3, new: 0x3)
+var_write(name: f8, old: 0x67ac5f5d, new: 0x681c5f5d)
+var_write(name: fprs, old: 0x3, new: 0x3)
+            ;-- pc:
+            0x001001d0      fnhadds f0, f4, f8
+pc_write(old: 0x1001d0, new: 0x1001d4)
+var_write(name: f8, old: 0x681c5f5d, new: 0xe7ac5f5d)
+var_write(name: fprs, old: 0x3, new: 0x3)
+            ;-- pc:
+            0x001001d4      fnhaddd f0, f4, f8
+pc_write(old: 0x1001d4, new: 0x1001d8)
+var_write(name: f9, old: 0x709b6285, new: 0x709b6285)
+var_write(name: fprs, old: 0x3, new: 0x3)
+var_write(name: f8, old: 0xe7ac5f5d, new: 0xe81c5f5d)
+var_write(name: fprs, old: 0x3, new: 0x3)
+            ;-- pc:
+            0x001001d8      fhsubs f0, f4, f8
+pc_write(old: 0x1001d8, new: 0x1001dc)
+var_write(name: f8, old: 0xe81c5f5d, new: 0x67ac5f5d)
+var_write(name: fprs, old: 0x3, new: 0x3)
+            ;-- pc:
+            0x001001dc      fhsubd f0, f4, f8
+pc_write(old: 0x1001dc, new: 0x1001e0)
+var_write(name: f9, old: 0x709b6285, new: 0x709b6285)
+var_write(name: fprs, old: 0x3, new: 0x3)
+var_write(name: f8, old: 0x67ac5f5d, new: 0x681c5f5d)
+var_write(name: fprs, old: 0x3, new: 0x3)
+            ;-- pc:
+            0x001001e0      fnadds f0, f4, f8
+pc_write(old: 0x1001e0, new: 0x1001e4)
+var_write(name: f8, old: 0x681c5f5d, new: 0xe82c5f5d)
+var_write(name: fprs, old: 0x3, new: 0x3)
+            ;-- pc:
+            0x001001e4      fnaddd f32, f34, f36
+pc_write(old: 0x1001e4, new: 0x1001e8)
+var_write(name: f36, old: 0x1fef656f47f1578f, new: 0xeb146cfe3a992b09)
+var_write(name: fprs, old: 0x3, new: 0x3)
+            ;-- pc:
+            0x001001e8      fpadd64 f0, f4, f16
+pc_write(old: 0x1001e8, new: 0x1001ec)
+var_write(name: f17, old: 0xb088aa32, new: 0xfbf03eeb)
+var_write(name: fprs, old: 0x3, new: 0x3)
+var_write(name: f16, old: 0x88aa6285, new: 0x89fe769f)
+var_write(name: fprs, old: 0x3, new: 0x3)
+            ;-- pc:
+            0x001001ec      lzcnt l2, l6
+pc_write(old: 0x1001ec, new: 0x1001f0)
+var_write(name: l6, old: 0x0, new: 0x21)
+            ;-- pc:
+            0x001001f0      tsubcc l0, l2, l6
+pc_write(old: 0x1001f0, new: 0x1001f4)
+var_write(name: ccr, old: 0x0, new: 0x99)
+var_write(name: l6, old: 0x21, new: 0xfffffffff02c01df)
+var_write(name: ccr, old: 0x99, new: 0x9b)
+            ;-- pc:
+            0x001001f4      taddcc l0, l2, l6
+pc_write(old: 0x1001f4, new: 0x1001f8)
+var_write(name: ccr, old: 0x9b, new: 0xa)
+var_write(name: l6, old: 0xfffffffff02c01df, new: 0xe02cbcdb)
+var_write(name: ccr, old: 0xa, new: 0xa)
+            ;-- pc:
+            0x001001f8      pdistn f0, f4, l6
+pc_write(old: 0x1001f8, new: 0x1001fc)
+var_write(name: l6, old: 0xe02cbcdb, new: 0x24b)
+            ;-- pc:
+            0x001001fc      fmean16 f0, f2, f32
+pc_write(old: 0x1001fc, new: 0x100200)
+var_write(name: f32, old: 0x2f699354061447e9, new: 0x4d6bff8a0f990987)
+var_write(name: fprs, old: 0x3, new: 0x3)
+            ;-- pc:
+            0x00100200      fchksm16 f0, f2, f32
+pc_write(old: 0x100200, new: 0x100204)
+var_write(name: f32, old: 0x4d6bff8a0f990987, new: 0x9ad6ff131f32130e)
+var_write(name: fprs, old: 0x3, new: 0x3)
+EOF
+RUN

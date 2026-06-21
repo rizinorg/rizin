@@ -132,6 +132,11 @@ static bool is_vec_signed(arm_vectordata_type vec_type) {
 	case ARM_VECTORDATA_I16:
 	case ARM_VECTORDATA_I32:
 	case ARM_VECTORDATA_I64:
+#if CS_VERSION_MAJOR > 4
+	case ARM_VECTORDATA_F16:
+	case ARM_VECTORDATA_F32:
+	case ARM_VECTORDATA_F64:
+#endif
 		return true;
 	case ARM_VECTORDATA_U8:
 	case ARM_VECTORDATA_U16:
@@ -206,23 +211,37 @@ static inline ut32 arm_data_width(arm_vectordata_type vec_type) {
 	case ARM_VECTORDATA_I32:
 	case ARM_VECTORDATA_U32:
 	case ARM_VECTORDATA_S32:
+#if CS_VERSION_MAJOR > 4
 	case ARM_VECTORDATA_F32:
+#endif
+#if CS_VERSION_MAJOR > 5
+	case ARM_VECTORDATA_P16: // 16x16 over 32 bits
+#endif
 		return 32;
 	case ARM_VECTORDATA_I8:
 	case ARM_VECTORDATA_U8:
 	case ARM_VECTORDATA_S8:
 		return 8;
 	case ARM_VECTORDATA_I16:
+#if CS_VERSION_MAJOR > 4
+	case ARM_VECTORDATA_F16:
+#endif
 	case ARM_VECTORDATA_S16:
 	case ARM_VECTORDATA_U16:
+#if CS_VERSION_MAJOR > 5
+	case ARM_VECTORDATA_P8: // 8x8 over 16 bits
+#endif
 		return 16;
 	case ARM_VECTORDATA_I64:
+#if CS_VERSION_MAJOR > 4
 	case ARM_VECTORDATA_F64:
+#endif
 	case ARM_VECTORDATA_U64:
 	case ARM_VECTORDATA_S64:
 		return 64;
 	case ARM_VECTORDATA_INVALID:
 	default:
+		eprintf("vec_type: %u\n", vec_type);
 		rz_warn_if_reached();
 		return 0;
 	}
@@ -443,6 +462,7 @@ static RzILOpBitVector *replicated_val(ut32 val_width, ut32 dreg_width, RZ_OWN R
 	ut32 repeat_times = dreg_width / val_width;
 	if (dreg_width % val_width != 0) {
 		rz_warn_if_reached();
+		rz_il_op_pure_free(val);
 		return NULL;
 	}
 
@@ -1782,6 +1802,8 @@ static RzILOpEffect *qadd16(cs_insn *insn, bool is_thumb) {
 	}
 	RzILOpEffect *eff = write_reg(REGID(0), APPEND(VARL("rh"), VARL("rl")));
 	if (!eff) {
+		rz_il_op_pure_free(a);
+		rz_il_op_pure_free(b);
 		return NULL;
 	}
 	bool is_signed = insn->id == ARM_INS_QADD16 || insn->id == ARM_INS_QSUB16 || insn->id == ARM_INS_QASX ||
@@ -2966,7 +2988,7 @@ static RzILOpEffect *vec_cmp(cs_insn *insn, bool is_thumb) {
 			RzILOpFloat *l_elem = BV2F(RZ_FLOAT_IEEE754_BIN_32,
 				read_reg_lane(REGID(1), i, vec_size));
 			RzILOpFloat *r_elem = ISIMM(2) ? F32(0.0f) : BV2F(RZ_FLOAT_IEEE754_BIN_32, read_reg_lane(REGID(2), i, vec_size));
-			RzILOpBool *cond;
+			RzILOpBool *cond = NULL;
 			switch (insn->id) {
 			case ARM_INS_VCEQ:
 				cond = FEQ(l_elem, r_elem);
@@ -2990,7 +3012,6 @@ static RzILOpEffect *vec_cmp(cs_insn *insn, bool is_thumb) {
 				cond = FORDER(FABS(r_elem), FABS(l_elem));
 				break;
 			default:
-				cond = NULL;
 				rz_il_op_pure_free(l_elem);
 				rz_il_op_pure_free(r_elem);
 				rz_il_op_effect_free(eff);
@@ -3011,7 +3032,7 @@ static RzILOpEffect *vec_cmp(cs_insn *insn, bool is_thumb) {
 		RzILOpBitVector *l_elem = read_reg_lane(REGID(1), i, vec_size);
 		RzILOpBitVector *r_elem = ISIMM(2) ? UN(vec_size, 0) : read_reg_lane(REGID(2), i, vec_size);
 
-		RzILOpBool *cond;
+		RzILOpBool *cond = NULL;
 		bool as_signed = is_vec_signed(VVEC_DT(insn));
 		switch (insn->id) {
 		case ARM_INS_VCEQ:
@@ -3030,7 +3051,6 @@ static RzILOpEffect *vec_cmp(cs_insn *insn, bool is_thumb) {
 			cond = as_signed ? SLT(l_elem, r_elem) : SLE(l_elem, r_elem);
 			break;
 		default:
-			cond = NULL;
 			rz_il_op_pure_free(l_elem);
 			rz_il_op_pure_free(r_elem);
 			rz_il_op_effect_free(eff);

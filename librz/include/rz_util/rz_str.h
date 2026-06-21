@@ -2,9 +2,12 @@
 #define RZ_STR_H
 
 #include <wchar.h>
+#include "rz_assert.h"
 #include "rz_str_util.h"
 #include "rz_list.h"
+#include <rz_vector.h>
 #include "rz_types.h"
+#include "rz_strbuf.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,15 +19,25 @@ typedef enum {
 	RZ_STRING_TYPE_SIZED, ///< Pascal-style strings with the first byte marking the size of the string
 } RzStrType;
 
+/**
+ * \brief String character encodings.
+ */
 typedef enum {
-	RZ_STRING_ENC_8BIT = 'b', // unknown 8bit encoding but with ASCII from 0 to 0x7f
+	/**
+	 * \brief Unknown 8bit encoding but with ASCII from 0 to 0x7f.
+	 * It is also used everywhere like it is ASCII.
+	 */
+	RZ_STRING_ENC_8BIT = 'b',
 	RZ_STRING_ENC_UTF8 = '8',
-	RZ_STRING_ENC_MUTF8 = 'm', // modified utf8
+	/**
+	 * \brief Modified UTF-8 from Android:
+	 * https://source.android.com/docs/core/runtime/dex-format#mutf-8
+	 */
+	RZ_STRING_ENC_MUTF8 = 'm',
 	RZ_STRING_ENC_UTF16LE = 'u',
 	RZ_STRING_ENC_UTF32LE = 'U',
 	RZ_STRING_ENC_UTF16BE = 'n',
 	RZ_STRING_ENC_UTF32BE = 'N',
-	RZ_STRING_ENC_BASE64 = '6',
 	RZ_STRING_ENC_IBM037 = 'c',
 	RZ_STRING_ENC_IBM290 = 'd',
 	RZ_STRING_ENC_EBCDIC_UK = 'k',
@@ -75,7 +88,7 @@ typedef int (*RzStrRangeCallback)(void *, int);
 RZ_API const char *rz_str_enc_as_string(RzStrEnc enc);
 RZ_API RzStrEnc rz_str_enc_string_as_type(RZ_NULLABLE const char *enc);
 RZ_API RZ_OWN char *rz_str_repeat(const char *str, ut16 times);
-RZ_API RZ_OWN char *rz_str_pad(const char ch, int len);
+RZ_API RZ_OWN char *rz_str_pad(const char ch, ssize_t len);
 RZ_API const char *rz_str_rstr(const char *base, const char *p);
 RZ_API const char *rz_strstr_ansi(RZ_NONNULL const char *a, RZ_NONNULL const char *b, bool icase);
 RZ_API const char *rz_str_rchr(const char *base, const char *p, int ch);
@@ -84,8 +97,10 @@ RZ_API int rz_str_bounds(const char *str, int *h);
 RZ_API char *rz_str_crop(const char *str, unsigned int x, unsigned int y, unsigned int x2, unsigned int y2);
 RZ_API char *rz_str_scale(const char *r, int w, int h);
 RZ_API bool rz_str_range_in(const char *r, ut64 addr);
-RZ_API size_t rz_str_len_utf8(const char *s);
-RZ_API size_t rz_str_len_utf8_ansi(const char *str);
+RZ_API size_t rz_str_utf8_cols(const char *s);
+RZ_API size_t rz_str_utf8_num_ucp(RZ_NONNULL const char *str);
+RZ_API size_t rz_str_utf8_get_width_utf16(RZ_NONNULL const char *str);
+RZ_API size_t rz_str_utf8_ansi_cols(const char *str);
 RZ_API size_t rz_str_len_utf8char(const char *s, int left);
 RZ_API size_t rz_str_utf8_charsize(const char *str);
 RZ_API size_t rz_str_utf8_charsize_prev(const char *str, int prev_len);
@@ -95,6 +110,7 @@ RZ_API size_t rz_str_utf8_codepoint(const char *s, size_t left);
 RZ_API bool rz_str_char_fullwidth(const char *s, size_t left);
 RZ_API int rz_str_write(int fd, const char *b);
 RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t n);
+RZ_API size_t rz_str_ncat(RZ_NONNULL RZ_OUT char *dst, RZ_NONNULL const char *src, size_t n);
 RZ_API void rz_str_sanitize(char *c);
 RZ_API char *rz_str_sanitize_sdb_key(const char *s);
 RZ_API const char *rz_str_casestr(const char *a, const char *b);
@@ -108,6 +124,7 @@ RZ_API RzList /*<char *>*/ *rz_str_split_duplist_n(const char *str, const char *
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_duplist_n_regex(RZ_NONNULL const char *_str, RZ_NONNULL const char *r, int n, bool trim);
 RZ_API size_t *rz_str_split_lines(char *str, size_t *count);
 RZ_API RZ_OWN char *rz_str_replace(RZ_OWN char *str, const char *key, const char *val, int g);
+RZ_API RZ_OWN char *rz_str_replace_regex(const char *str, const char *pattern, const char *val, bool global, bool icase);
 RZ_API char *rz_str_replace_icase(char *str, const char *key, const char *val, int g, int keep_case);
 RZ_API char *rz_str_replace_in(char *str, ut32 sz, const char *key, const char *val, int g);
 #define rz_str_cpy(x, y) memmove((x), (y), strlen(y) + 1);
@@ -132,7 +149,7 @@ RZ_API bool rz_str_is_ascii(const char *str);
 RZ_API bool rz_str_is_utf8(RZ_NONNULL const char *str);
 RZ_API char *rz_str_nextword(char *s, char ch);
 RZ_API bool rz_str_is_printable(const char *str);
-RZ_API bool rz_str_is_printable_limited(const char *str, int size);
+RZ_API bool rz_str_is_printable_limited(RZ_NONNULL const char *str, size_t size);
 RZ_API bool rz_str_is_printable_incl_newlines(const char *str);
 RZ_API char *rz_str_appendlen(char *ptr, const char *string, int slen);
 RZ_API char *rz_str_newf(const char *fmt, ...) RZ_PRINTF_CHECK(1, 2);
@@ -141,7 +158,7 @@ RZ_API const char *rz_str_sysbits(const int v);
 RZ_API char *rz_str_trunc_ellipsis(const char *str, int len);
 RZ_API const char *rz_str_bool(int b);
 RZ_API bool rz_str_is_true(const char *s);
-RZ_API bool rz_str_is_false(const char *s);
+RZ_API bool rz_str_is_false(RZ_NULLABLE const char *s);
 RZ_API bool rz_str_is_bool(const char *val);
 RZ_API const char *rz_str_ansi_chrn(const char *str, size_t n);
 RZ_API size_t rz_str_ansi_len(const char *str);
@@ -167,7 +184,7 @@ RZ_API void rz_str_trim_head(RZ_NONNULL RZ_INOUT char *str);
 RZ_API void rz_str_trim_head_char(RZ_NONNULL RZ_INOUT char *str, const char c);
 RZ_API const char *rz_str_trim_head_ro(RZ_NONNULL const char *str);
 RZ_API const char *rz_str_trim_head_wp(RZ_NONNULL const char *str);
-RZ_API RZ_BORROW char *rz_str_trim_tail(RZ_NONNULL char *str);
+RZ_API RZ_INOUT char *rz_str_trim_tail(RZ_NONNULL RZ_INOUT char *str);
 RZ_API void rz_str_trim_tail_char(RZ_NONNULL RZ_INOUT char *str, const char c);
 RZ_API ut64 rz_str_djb2_hash(const char *str);
 RZ_API char *rz_str_trim_nc(char *str);
@@ -188,7 +205,7 @@ RZ_API bool rz_str_cmp_list(const char *list, const char *item, char sep);
 RZ_API int rz_str_cmp(RZ_NULLABLE const char *dst, RZ_NULLABLE const char *orig, int len);
 RZ_API int rz_str_casecmp(const char *dst, const char *orig);
 RZ_API int rz_str_ncasecmp(const char *dst, const char *orig, size_t n);
-RZ_API int rz_str_ccpy(char *dst, char *orig, int ch);
+RZ_API int rz_str_ccpy(char *dst, const char *orig, int ch);
 static inline const char *rz_str_get(const char *str) {
 	return str ? str : "";
 }
@@ -224,8 +241,9 @@ RZ_API RZ_OWN char *rz_str_format_msvc_argv(size_t argc, const char **argv);
 RZ_API void rz_str_uri_decode(char *buf);
 RZ_API char *rz_str_uri_encode(const char *buf);
 RZ_API char *rz_str_utf16_decode(const ut8 *s, int len);
-RZ_API int rz_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, bool little_endian);
-RZ_API char *rz_str_utf16_encode(const char *s, int len);
+RZ_DEPRECATE RZ_API char *rz_str_utf16_encode(const char *s, int len);
+RZ_API RZ_OWN ut16 *rz_str_utf8_to_utf16(RZ_NONNULL const char *utf8_str, bool big_endian);
+RZ_API RZ_OWN ut32 *rz_str_utf8_to_utf32(RZ_NONNULL const char *utf8_str, bool big_endian);
 RZ_API char *rz_str_escape_utf8_for_json(const char *s, int len);
 RZ_API char *rz_str_escape_mutf8_for_json(const char *s, int len);
 RZ_API char *rz_str_home(const char *str);
@@ -238,6 +256,9 @@ RZ_API RZ_OWN char *rz_str_append(RZ_OWN RZ_NULLABLE char *ptr, const char *stri
 RZ_API char *rz_str_append_owned(char *ptr, char *string);
 RZ_API RZ_OWN char *rz_str_appendf(RZ_OWN RZ_NULLABLE char *ptr, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API char *rz_str_appendch(char *x, char y);
+RZ_API bool rz_str_append_num_subscript(RZ_NONNULL RzStrBuf *sb, ut32 n);
+RZ_API bool rz_str_append_num_superscript(RZ_NONNULL RzStrBuf *sb, ut32 n);
+RZ_API RZ_OWN char *rz_str_num_subscript(ut32 n);
 RZ_API void rz_str_case(char *str, bool up);
 RZ_API void rz_str_trim_path(char *s);
 RZ_API ut8 rz_str_contains_macro(const char *input_value);
@@ -255,7 +276,6 @@ RZ_API bool rz_str_isnumber(const char *str);
 RZ_API const char *rz_str_last(const char *in, const char *ch);
 RZ_API char *rz_str_highlight(char *str, const char *word, const char *color, const char *color_reset);
 RZ_API char *rz_str_from_ut64(ut64 val);
-RZ_API void rz_str_stripLine(char *str, const char *key);
 RZ_API char *rz_str_list_join(RzList /*<char *>*/ *str, const char *sep);
 RZ_API char *rz_str_array_join(const char **a, size_t n, const char *sep);
 RZ_API RzList /*<char *>*/ *rz_str_wrap(char *str, size_t width);
@@ -267,12 +287,13 @@ typedef struct rz_str_stringify_opt_t {
 	const ut8 *buffer; ///< String buffer (cannot be NULL).
 	ut32 length; ///< String buffer length.
 	RzStrEnc encoding; ///< String encoding type (cannot be RZ_STRING_ENC_GUESS)
-	ut32 wrap_at; ///< Adds a new line the output when it exeeds this value.
+	ut32 wrap_at; ///< Adds a new line the output when it exceeds this value.
 	bool escape_nl; ///< When enabled escapes new lines (\n).
 	bool json; ///< Encodes the output as a JSON string.
 	bool stop_at_nil; ///< When enabled stops printing when '\0' is found.
 	bool stop_at_unprintable; ///< When enabled stops printing at first non-printable character.
 	bool urlencode; ///< Encodes the output following RFC 3986.
+	const RzVector /*<RzCodePoint>*/ *user_unprintable; ///< Borrowed vector of user-defined non-printable code points.
 } RzStrStringifyOpt;
 
 RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, ut32 length);
@@ -280,8 +301,45 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 
 RZ_API const char *rz_str_indent(int indent);
 
-static inline bool rz_string_enc_is_utf8_compatible(RzStrEnc enc) {
+/**
+ * \brief Returns true if the given encoding has the same byte character width as UTF-8.
+ * This is only true for UTF-8 and ASCII.
+ *
+ * Examples:
+ *
+ * ```c
+ * // IBM290 character width is always one byte, but the equivalent Japanese
+ * // characters in UTF-8 are 3 bytes.
+ * assert(rz_string_enc_same_char_width_as_utf8(RZ_STR_ENC_IBM290) == false);
+ *
+ * // ASCII character width is always one byte, and the equivalent
+ * // UTF-8 characters are also always 1 byte.
+ * assert(rz_string_enc_same_char_width_as_utf8(RZ_STR_ENC_8BIT) == true);
+ * ```
+ */
+static inline bool rz_string_enc_same_char_width_as_utf8(RzStrEnc enc) {
 	return enc == RZ_STRING_ENC_UTF8 || enc == RZ_STRING_ENC_8BIT;
+}
+
+RZ_API bool rz_string_enc_is_utf(RzStrEnc enc);
+RZ_API bool rz_string_enc_is_utf_native_endian(RzStrEnc enc);
+RZ_API size_t rz_string_enc_code_point_width(RzStrEnc enc);
+RZ_API bool rz_string_enc_requires_scanning(RzStrEnc enc);
+
+static inline bool rz_string_code_points_align(RzStrEnc enc, size_t memory_alignment) {
+	rz_return_val_if_fail(memory_alignment, false);
+	if (rz_string_enc_code_point_width(enc) == memory_alignment) {
+		return true;
+	}
+	switch (enc) {
+	case RZ_STRING_ENC_SETTINGS:
+		rz_warn_if_reached();
+		return false;
+	case RZ_STRING_ENC_GUESS:
+		return false;
+	default:
+		return memory_alignment % rz_string_enc_code_point_width(enc) == 0;
+	}
 }
 
 #ifdef __cplusplus

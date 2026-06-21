@@ -1,10 +1,12 @@
 // SPDX-FileCopyrightText: 2023 Dhruv Maroo <dhruvmaru007@gmail.com>
+// SPDX-FileCopyrightText: 2024-2025 tushar3q34 <tushar3q34@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef X86_IL_COMMON_H
 #define X86_IL_COMMON_H
 
 #include "x86_il.h"
+#include "x86_mnemonics.h"
 
 #define X86_BIT(x)  UN(1, x)
 #define X86_TO32(x) UNSIGNED(32, x)
@@ -50,12 +52,12 @@
 #define x86_il_set_mem(mem, val)                 x86_il_set_mem_bits(mem, val, analysis->bits, pc)
 
 #define x86_il_get_op(opnum) \
-	x86_il_get_operand_bits(ins->structure->operands[opnum], analysis->bits, pc, 0)
+	x86_il_get_operand_bits(ins->operands[opnum], analysis->bits, pc, 0, ins)
 #define x86_il_get_op_implicit(opnum, mem_sz) \
-	x86_il_get_operand_bits(ins->structure->operands[opnum], analysis->bits, pc, mem_sz)
+	x86_il_get_operand_bits(ins->operands[opnum], analysis->bits, pc, mem_sz, ins)
 
 #define x86_il_set_operand(op, val) x86_il_set_operand_bits(op, val, analysis->bits, pc)
-#define x86_il_set_op(opnum, val)   x86_il_set_operand_bits(ins->structure->operands[opnum], val, analysis->bits, pc)
+#define x86_il_set_op(opnum, val)   x86_il_set_operand_bits(ins->operands[opnum], val, analysis->bits, pc)
 
 #define x86_il_set_result_flags(result)                            x86_il_set_result_flags_bits(result, analysis->bits)
 #define x86_il_set_arithmetic_flags(res, x, y, addition)           x86_il_set_arithmetic_flags_bits(res, x, y, addition, analysis->bits)
@@ -87,7 +89,7 @@ extern const char *x86_eflags_registers[X86_EFLAGS_ENDING];
 RZ_IPI RzILOpPure *x86_il_get_reg_bits(X86Reg reg, int bits, uint64_t pc);
 RZ_IPI RzILOpEffect *x86_il_set_reg_bits(X86Reg reg, RZ_OWN RZ_NONNULL RzILOpPure *val, int bits);
 
-RZ_IPI RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits, ut64 pc, int implicit_size);
+RZ_IPI RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits, ut64 pc, int implicit_size, const X86ILIns *ins);
 RZ_IPI RzILOpEffect *x86_il_set_operand_bits(X86Op op, RZ_OWN RZ_NONNULL RzILOpPure *val, int bits, ut64 pc);
 
 RZ_IPI RzILOpPure *x86_il_get_memaddr_bits(X86Mem mem, int bits, ut64 pc);
@@ -182,7 +184,7 @@ RZ_IPI ILPureEffectPair x86_il_fsqrt_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloa
 RZ_IPI RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int analysis_bits, ut64 pc);
 
 #define x86_il_get_floating_op(opnum) \
-	x86_il_get_floating_operand_bits(ins->structure->operands[opnum], analysis->bits, pc)
+	x86_il_get_floating_operand_bits(ins->operands[opnum], analysis->bits, pc)
 
 RZ_IPI RzFloatFormat x86_width_to_format(ut8 width);
 RZ_IPI ut8 x86_format_to_width(RzFloatFormat format);
@@ -190,7 +192,7 @@ RZ_IPI ut8 x86_format_to_width(RzFloatFormat format);
 RZ_IPI RzILOpEffect *x86_il_set_floating_operand_bits_ctx(X86Op op, RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, int bits, ut64 pc, RZ_BORROW X86ILContext *ctx);
 
 #define x86_il_set_floating_op(opnum, val, val_format) \
-	x86_il_set_floating_operand_bits_ctx(ins->structure->operands[opnum], val, val_format, analysis->bits, pc, ctx)
+	x86_il_set_floating_operand_bits_ctx(ins->operands[opnum], val, val_format, analysis->bits, pc, ctx)
 
 RZ_IPI RzILOpEffect *x86_il_clear_fpsw_flags();
 

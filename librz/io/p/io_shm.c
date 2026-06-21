@@ -123,17 +123,23 @@ static inline int getshmfd(RzIOShm *shm) {
 }
 #endif
 
-static RzIODesc *shm__open(RzIO *io, const char *uri, int rw, int mode) {
-	if (strncmp(uri, "shm://", 6)) {
+static RzIODesc *shm__open(RzIO *io, const char *file, int rw, int mode) {
+	if (strncmp(file, "shm://", 6)) {
+		return NULL;
+	}
+	char *uri = rz_str_dup(file);
+	if (!uri) {
 		return NULL;
 	}
 	RzIOShm *shm = RZ_NEW0(RzIOShm);
 	if (!shm) {
+		free(uri);
 		return NULL;
 	}
-	const char *name = strstr(uri, "://");
+	char *name = strstr(uri, "://");
 	if (!name) {
 		free(shm);
+		free(uri);
 		return NULL;
 	}
 	name += 3;
@@ -155,6 +161,7 @@ static RzIODesc *shm__open(RzIO *io, const char *uri, int rw, int mode) {
 		RZ_LOG_ERROR("Cannot open shared memory \"%s\"\n", shm->name);
 		free(shm->name);
 		free(shm);
+		free(uri);
 		return NULL;
 	}
 	size_t given_size = 0;
@@ -189,6 +196,7 @@ static RzIODesc *shm__open(RzIO *io, const char *uri, int rw, int mode) {
 		RZ_LOG_ERROR("Cannot connect to shared memory \"%s\" (0x%08x)\n", shm->name, shm->id);
 		free(shm->name);
 		free(shm);
+		free(uri);
 		return NULL;
 	}
 	ut64 given_size = 0;
@@ -203,6 +211,7 @@ static RzIODesc *shm__open(RzIO *io, const char *uri, int rw, int mode) {
 			close(shm->fd);
 			free(shm->name);
 			free(shm);
+			free(uri);
 			return NULL;
 		}
 		shm->size = st.st_size;
@@ -215,6 +224,7 @@ static RzIODesc *shm__open(RzIO *io, const char *uri, int rw, int mode) {
 		close(shm->fd);
 		free(shm->name);
 		free(shm);
+		free(uri);
 		return NULL;
 	}
 #endif
@@ -224,6 +234,7 @@ static RzIODesc *shm__open(RzIO *io, const char *uri, int rw, int mode) {
 		close(shm->fd);
 		free(shm->name);
 		free(shm);
+		free(uri);
 		return NULL;
 	}
 #else
@@ -243,13 +254,16 @@ static RzIODesc *shm__open(RzIO *io, const char *uri, int rw, int mode) {
 		RZ_LOG_ERROR("Cannot connect to shared memory (%d)\n", shm->id);
 		free(shm->name);
 		free(shm);
+		free(uri);
 		return NULL;
 	}
 #endif
 	RZ_LOG_INFO("Connected to shared memory \"%s\" (0x%08x) size 0x%x\n",
 		shm->name, shm->id, shm->size);
 #endif // __WINDOWS__
-	return rz_io_desc_new(io, &rz_io_plugin_shm, uri, rw, mode, shm);
+	RzIODesc *desc = rz_io_desc_new(io, &rz_io_plugin_shm, uri, rw, shm);
+	free(uri);
+	return desc;
 }
 
 RzIOPlugin rz_io_plugin_shm = {

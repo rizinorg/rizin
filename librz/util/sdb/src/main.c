@@ -10,12 +10,18 @@
 
 #define MODE_ZERO '0'
 #define MODE_DFLT 0
+#define OPTIONS   (SDB_OPTION_FS | SDB_OPTION_NOSTAMP)
 
-static int save = 0;
-static Sdb *s = NULL;
-static ut32 options = SDB_OPTION_FS | SDB_OPTION_NOSTAMP;
+typedef struct slurp_data_t {
+	int bufsize;
+	char *next;
+	size_t nextlen;
+} SlurpData;
 
-static void terminate(RZ_UNUSED int sig) {
+void terminate(RZ_OWN Sdb *s, int save, int sig, RZ_BORROW SlurpData *slurp_data) {
+	if (slurp_data) {
+		free(slurp_data->next);
+	}
 	if (!s) {
 		return;
 	}
@@ -34,11 +40,10 @@ static void write_null(void) {
 
 #define BS 128
 
-static char *slurp(FILE *f, size_t *sz) {
+static char *slurp(RZ_NONNULL RZ_BORROW SlurpData *slurp_data, FILE *f, size_t *sz) {
+	rz_return_val_if_fail(slurp_data, NULL);
+
 	int blocksize = BS;
-	static int bufsize = BS;
-	static char *next = NULL;
-	static size_t nextlen = 0;
 	size_t len, rr, rr2;
 	char *tmp, *buf = NULL;
 	if (sz) {
@@ -82,36 +87,36 @@ static char *slurp(FILE *f, size_t *sz) {
 
 	len = 0;
 	for (;;) {
-		if (next) {
+		if (slurp_data->next) {
 			free(buf);
-			buf = next;
-			bufsize = nextlen + blocksize;
+			buf = slurp_data->next;
+			slurp_data->bufsize = slurp_data->nextlen + blocksize;
 			// len = nextlen;
-			rr = nextlen;
-			rr2 = fread(buf + nextlen, 1, blocksize, f);
+			rr = slurp_data->nextlen;
+			rr2 = fread(buf + slurp_data->nextlen, 1, blocksize, f);
 			if (rr2 > 0) {
 				rr += rr2;
-				bufsize += rr2;
+				slurp_data->bufsize += rr2;
 			}
-			next = NULL;
-			nextlen = 0;
+			slurp_data->next = NULL;
+			slurp_data->nextlen = 0;
 		} else {
 			rr = fread(buf + len, 1, blocksize, f);
 		}
 		if (rr < 1) { // EOF
 			buf[len] = 0;
-			next = NULL;
+			slurp_data->next = NULL;
 			break;
 		}
 		len += rr;
 		// buf[len] = 0;
-		bufsize += blocksize;
-		tmp = realloc(buf, bufsize + 1);
+		slurp_data->bufsize += blocksize;
+		tmp = realloc(buf, slurp_data->bufsize + 1);
 		if (!tmp) {
-			bufsize -= blocksize;
+			slurp_data->bufsize -= blocksize;
 			break;
 		}
-		memset(tmp + bufsize - blocksize, 0, blocksize);
+		memset(tmp + slurp_data->bufsize - blocksize, 0, blocksize);
 		buf = tmp;
 	}
 	if (sz) {
@@ -125,19 +130,6 @@ static char *slurp(FILE *f, size_t *sz) {
 	return buf;
 }
 
-#if HAVE_HEADER_SYS_MMAN_H
-static void synchronize(RZ_UNUSED int sig) {
-	// TODO: must be in sdb_sync() or wat?
-	sdb_sync(s);
-	Sdb *n = sdb_new(s->path, s->name, s->lock);
-	if (n) {
-		sdb_config(n, options);
-		sdb_free(s);
-		s = n;
-	}
-}
-#endif
-
 static int sdb_grep_dump(const char *dbname, int fmt, bool grep,
 	const char *expgrep) {
 	// local db beacuse is readonly and we dont need to finalize in case of ^C
@@ -145,7 +137,7 @@ static int sdb_grep_dump(const char *dbname, int fmt, bool grep,
 	if (!db) {
 		return 1;
 	}
-	sdb_config(db, options);
+	sdb_config(db, OPTIONS);
 	sdb_dump_begin(db);
 	SdbKv it = { 0 };
 	while (sdb_dump_next(db, &it)) {
@@ -192,33 +184,36 @@ static int insertkeys(Sdb *s, const char **args, int nargs) {
 	return must_save;
 }
 
-static int createdb(const char *f, const char **args, int nargs) {
-	s = sdb_new(NULL, f, 0);
-	if (!s) {
+static int createdb(RZ_NONNULL RZ_BORROW Sdb **s, RZ_NONNULL RZ_BORROW SlurpData *slurp_data, const char *f, const char **args, int nargs) {
+	rz_return_val_if_fail(s, 0);
+	rz_return_val_if_fail(slurp_data, 0);
+
+	*s = sdb_new(NULL, f, 0);
+	if (!(*s)) {
 		eprintf("Cannot create database\n");
 		return 1;
 	}
-	sdb_config(s, options);
+	sdb_config(*s, OPTIONS);
 	int ret = 0;
 	if (args) {
 		int i;
 		for (i = 0; i < nargs; i++) {
-			if (!sdb_text_load(s, args[i])) {
+			if (!sdb_text_load(*s, args[i])) {
 				eprintf("Failed to load text sdb from %s\n", args[i]);
 			}
 		}
 	} else {
 		size_t len;
-		char *in = slurp(stdin, &len);
+		char *in = slurp(slurp_data, stdin, &len);
 		if (!in) {
 			return 0;
 		}
-		if (!sdb_text_load_buf(s, in, len)) {
+		if (!sdb_text_load_buf(*s, in, len)) {
 			eprintf("Failed to read text sdb from stdin\n");
 		}
 		free(in);
 	}
-	sdb_sync(s);
+	sdb_sync(*s);
 	return ret;
 }
 
@@ -243,10 +238,12 @@ static int showversion(void) {
 	return 0;
 }
 
-static int base64encode(void) {
+static int base64encode(RZ_NONNULL RZ_BORROW SlurpData *slurp_data) {
+	rz_return_val_if_fail(slurp_data, 0);
+
 	char *out;
 	size_t len = 0;
-	ut8 *in = (ut8 *)slurp(stdin, &len);
+	ut8 *in = (ut8 *)slurp(slurp_data, stdin, &len);
 	if (!in) {
 		return 0;
 	}
@@ -261,10 +258,12 @@ static int base64encode(void) {
 	return 0;
 }
 
-static int base64decode(void) {
+static int base64decode(RZ_NONNULL RZ_BORROW SlurpData *slurp_data) {
+	rz_return_val_if_fail(slurp_data, 0);
+
 	ut8 *out;
 	size_t len, ret = 1;
-	char *in = slurp(stdin, &len);
+	char *in = slurp(slurp_data, stdin, &len);
 	if (in) {
 		int declen;
 		out = sdb_decode(in, &declen);
@@ -310,23 +309,26 @@ static bool dbdiff(const char *a, const char *b) {
 	return equal;
 }
 
-int showcount(const char *db) {
+int showcount(Sdb **s, const char *db) {
 	ut32 d;
-	s = sdb_new(NULL, db, 0);
-	if (sdb_stats(s, &d, NULL)) {
+	*s = sdb_new(NULL, db, 0);
+	if (sdb_stats(*s, &d, NULL)) {
 		printf("%d\n", d);
 	}
 	// TODO: show version, timestamp information
-	sdb_free(s);
+	sdb_free(*s);
 	return 0;
 }
 
 int main(int argc, const char **argv) {
+	Sdb *s = NULL;
 	char *line;
 	const char *arg, *grep = NULL;
 	int i, fmt = MODE_DFLT;
-	int db0 = 1, argi = 1;
+	int db0 = 1, argi = 1, save = 0;
 	bool interactive = false;
+	SlurpData slurp_data = { 0 };
+	slurp_data.bufsize = BS;
 
 	/* terminate flags */
 	if (argc < 2) {
@@ -355,11 +357,11 @@ int main(int argc, const char **argv) {
 			grep = argv[2];
 			argi += 2;
 			break;
-		case 'c': return (argc < 3) ? showusage(1) : showcount(argv[2]);
+		case 'c': return (argc < 3) ? showusage(1) : showcount(&s, argv[2]);
 		case 'v': return showversion();
 		case 'h': return showusage(2);
-		case 'e': return base64encode();
-		case 'd': return base64decode();
+		case 'e': return base64encode(&slurp_data);
+		case 'd': return base64decode(&slurp_data);
 		case 'D':
 			if (argc == 4) {
 				return dbdiff(argv[2], argv[3]) ? 0 : 1;
@@ -390,19 +392,16 @@ int main(int argc, const char **argv) {
 		}
 		return sdb_dump(argv[db0], fmt);
 	}
-#if HAVE_HEADER_SYS_MMAN_H
-	signal(SIGINT, terminate);
-	signal(SIGHUP, synchronize);
-#endif
+
 	int ret = 0;
 	if (interactive || !strcmp(argv[db0 + 1], "-")) {
 		if ((s = sdb_new(NULL, argv[db0], 0))) {
-			sdb_config(s, options);
+			sdb_config(s, OPTIONS);
 			int kvs = db0 + 2;
 			if (kvs < argc) {
 				save |= insertkeys(s, argv + argi + 2, argc - kvs);
 			}
-			for (; (line = slurp(stdin, NULL));) {
+			for (; (line = slurp(&slurp_data, stdin, NULL));) {
 				save |= sdb_query(s, line);
 				if (fmt) {
 					fflush(stdout);
@@ -412,15 +411,15 @@ int main(int argc, const char **argv) {
 			}
 		}
 	} else if (!strcmp(argv[db0 + 1], "=")) {
-		ret = createdb(argv[db0], NULL, 0);
+		ret = createdb(&s, &slurp_data, argv[db0], NULL, 0);
 	} else if (!strcmp(argv[db0 + 1], "==")) {
-		ret = createdb(argv[db0], argv + db0 + 2, argc - (db0 + 2));
+		ret = createdb(&s, &slurp_data, argv[db0], argv + db0 + 2, argc - (db0 + 2));
 	} else {
 		s = sdb_new(NULL, argv[db0], 0);
 		if (!s) {
 			return 1;
 		}
-		sdb_config(s, options);
+		sdb_config(s, OPTIONS);
 		for (i = db0 + 1; i < argc; i++) {
 			save |= sdb_query(s, argv[i]);
 			if (fmt) {
@@ -429,6 +428,7 @@ int main(int argc, const char **argv) {
 			}
 		}
 	}
-	terminate(ret);
+
+	terminate(s, save, ret, &slurp_data);
 	return ret;
 }

@@ -1,0 +1,85 @@
+NAME=cxx virtual xrefs simple (x86-64)
+FILE=bins/elf/analysis/x86-class-C
+CMDS=<<EOF
+aaaa
+avD @ main
+avx method.C.print
+EOF
+EXPECT=<<EOF
+Virtual xrefs to method.C.print
+C 0x004008c5 call rdx
+EOF
+RUN
+
+NAME=cxx virtual xrefs multiple (arm64)
+FILE=bins/mach0/arm64-class-conditional
+CMDS=<<EOF
+aaaa
+avD @ main
+avx method.Dog.run
+EOF
+EXPECT=<<EOF
+Virtual xrefs to method.Dog.run
+C 0x10000289c blr x8
+C 0x100002958 blr x8
+C 0x10000290c blr x8
+EOF
+RUN
+
+
+NAME=cxx virtual xrefs multiple with table output (arm64)
+FILE=bins/mach0/arm64-class-conditional
+CMDS=<<EOF
+aaaa
+avD @ main
+avxt method.Dog.run
+EOF
+EXPECT=<<EOF
+       from 
+------------
+0x10000289c
+0x100002958
+0x10000290c
+EOF
+RUN
+
+NAME=objc message dispatch (amd64)
+FILE=bins/mach0/objc-employee
+CMDS=<<EOF
+aaaa
+avD @ main
+avx method_Employee_sayHello
+avxt method_Employee_sayHello
+EOF
+EXPECT=<<EOF
+Virtual xrefs to method_Employee_sayHello
+C 0x100001937 call qword [reloc.objc_msgSend]
+C 0x100001914 call qword [reloc.objc_msgSend]
+       from 
+------------
+0x100001937
+0x100001914
+EOF
+RUN
+
+NAME=objc msg dispatch (arm64)
+FILE=bins/mach0/objc-employee-ios14-arm64e
+CMDS=<<EOF
+aaaa
+avD @ main
+avx method_Employee_base
+avx method_Employee_sayHello
+avxt method_Employee_sayHello
+EOF
+EXPECT=<<EOF
+Virtual xrefs to method_Employee_base
+C 0x100007804 bl sym.imp.objc_msgSend
+Virtual xrefs to method_Employee_sayHello
+C 0x1000077d4 bl sym.imp.objc_msgSend
+C 0x1000077c0 bl sym.imp.objc_msgSend
+       from 
+------------
+0x1000077d4
+0x1000077c0
+EOF
+RUN

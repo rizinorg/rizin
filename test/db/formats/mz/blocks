@@ -1,8 +1,25 @@
-NAME=MZ: blocks.exe - open
+NAME=MZ: blocks.exe - open & header
 FILE=bins/mz/blocks.exe
 ARGS=-A
-CMDS=q!
-EXPECT=
+CMDS=iH
+EXPECT=<<EOF
+mz:
+  Signature: "MZ"
+  BytesInLastBlock: 0xcd
+  BlocksInFile: 0x1d
+  NumRelocs: 1
+  HeaderParagraphs: 0x7
+  MinExtraParagraphs: 0x835
+  MaxExtraParagraphs: 0xffff
+  InitialSs: 0x38d
+  InitialSp: 0x200
+  Checksum: 0x0
+  InitialIp: 0x100
+  InitialCs: 0xfff0
+  RelocTableOffset: 0x52
+  OverlayNumber: 0
+
+EOF
 RUN
 
 NAME=MZ: blocks.exe - entrypoint

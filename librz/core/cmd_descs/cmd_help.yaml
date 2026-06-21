@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2025 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+
+# These commands require edits in grammar.js and
+# cmd.c::DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_stmt).
+
+---
+name: cmd_help
+commands:
+  - name: "?*"
+    cname: cmd_help_search
+    summary: Search help
+    args:
+      - name: search_cmd
+        type: RZ_CMD_ARG_TYPE_STRING
+        flags: ""
+        optional: true
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+  - name: "?**"
+    summary: Search command and setting summaries.
+    subcommands:
+    - name: "?**"
+      cname: cmd_help_search_interactive
+      summary: Search command summaries interactively (alias for ?*~...).
+      args: []
+    - name: "?**e"
+      cname: cmd_help_search_interactive_settings
+      summary: Search settings interactively (alias for el~...).
+      args: []
+  - name: "?***"
+    cname: cmd_help_search_interactive_everything
+    summary: Search command summaries and their extended help interactively.
+    args: []

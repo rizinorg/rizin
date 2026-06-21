@@ -369,12 +369,17 @@ RZ_API const char *rz_utf_block_name(int idx) {
  *
  * \param buf The buffer to read from.
  * \param The buffer length in bytes.
- * \param cp The decoded code point. It is only written if a valid
- * Unicode code point was decoded.
+ * \param cp The decoded code point.
+ * \param check_is_def If true, checks the code point against the defined
+ *        Unicode table. It will not write \p cp and return 0 if the decoded code
+ *        point is undefined.
+ *        If false, it won't perform any checks and just decode.
+ *        Be aware, the check has a runtime of O(log n).
+ *        Where n: number of undefined Unicode ranges.
  *
  * \return The number of bytes decoded. Is always between 0-4.
  */
-RZ_API size_t rz_utf8_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NULLABLE RZ_OUT RzCodePoint *cp) {
+RZ_API size_t rz_utf8_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NULLABLE RZ_OUT RzCodePoint *cp, bool check_is_def) {
 	rz_return_val_if_fail(buf, 0);
 	if (buf_len < 1) {
 		return 0;
@@ -403,7 +408,7 @@ RZ_API size_t rz_utf8_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NULLA
 		}
 		bytes_used = 4;
 	}
-	if (!rz_unicode_code_point_is_legal_decode(code_point)) {
+	if (check_is_def && !rz_unicode_code_point_is_legal_decode(code_point)) {
 		return 0;
 	}
 	if (cp) {
@@ -420,11 +425,25 @@ RZ_API int rz_mutf8_decode(const ut8 *ptr, int ptrlen, RzCodePoint *ch) {
 		}
 		return 2;
 	}
-	return rz_utf8_decode(ptr, ptrlen, ch);
+	return rz_utf8_decode(ptr, ptrlen, ch, false);
 }
 
-/* Convert a unicode RzCodePoint into an UTF-8 buf */
-RZ_API int rz_utf8_encode(ut8 *ptr, const RzCodePoint ch) {
+/**
+ * \brief Encodes the Unicode code point \p ch in UTF-8 and
+ * writes it to the buffer \p ptr;
+ * The buffer must be at least 4 bytes large!
+ *
+ * \param ptr The buffer of at least 4 bytes to write the UTF-8 encoded code point.
+ * \param ch The Unicode code point to encode.
+ *
+ * \return The number of bytes written to \p ptr.
+ * 0 if the Unicode code point is larger than RZ_UNICODE_LAST_CODE_POINT.
+ */
+RZ_API size_t rz_utf8_encode(RZ_OUT RZ_NONNULL ut8 *ptr, const RzCodePoint ch) {
+	rz_return_val_if_fail(ptr, 0);
+	if (ch > RZ_UNICODE_LAST_CODE_POINT) {
+		return 0;
+	}
 	if (ch < 0x80) {
 		ptr[0] = (ut8)ch;
 		return 1;
@@ -437,7 +456,7 @@ RZ_API int rz_utf8_encode(ut8 *ptr, const RzCodePoint ch) {
 		ptr[1] = 0x80 | ((ch >> 6) & 0x3f);
 		ptr[2] = 0x80 | (ch & 0x3f);
 		return 3;
-	} else if (ch < 0x200000) {
+	} else if (ch <= RZ_UNICODE_LAST_CODE_POINT) {
 		ptr[0] = 0xf0 | (ch >> 18);
 		ptr[1] = 0x80 | ((ch >> 12) & 0x3f);
 		ptr[2] = 0x80 | ((ch >> 6) & 0x3f);
@@ -492,6 +511,30 @@ RZ_API size_t rz_utf8_strlen(const ut8 *str) {
 		}
 	}
 
+	return len;
+}
+
+/**
+ * \brief Returns the length of a string in UTF8 code points.
+ *
+ * \param str The UTF8 string.
+ * \param maxlen Maximum number of characters to look at.
+ * \return The length of \p str in UTF8 code points.
+ *
+ * NOTE: If `maxlen` cuts a multi-byte character, that character is counted as long
+ * as its leading byte is within `maxlen`.
+ */
+RZ_API size_t rz_utf8_strnlen(RZ_NULLABLE const ut8 *str, size_t maxlen) {
+	if (RZ_STR_ISEMPTY(str)) {
+		return 0;
+	}
+
+	size_t len = 0;
+	for (size_t i = 0; i < maxlen && str[i]; i++) {
+		if ((str[i] & 0xc0) != 0x80) {
+			len++;
+		}
+	}
 	return len;
 }
 
@@ -638,7 +681,7 @@ RZ_API int *rz_utf_block_list(const ut8 *str, int len, int **freq_list) {
 	RzCodePoint ch = 0;
 	while (str_ptr < str_end) {
 		int block_idx;
-		int ch_bytes = rz_utf8_decode(str_ptr, str_end - str_ptr, &ch);
+		int ch_bytes = rz_utf8_decode(str_ptr, str_end - str_ptr, &ch, true);
 		if (!ch_bytes) {
 			block_idx = RZ_UNICODE_BLOCKS_COUNT - 1;
 			ch_bytes = 1;
@@ -664,4 +707,26 @@ RZ_API int *rz_utf_block_list(const ut8 *str, int len, int **freq_list) {
 		block_freq[*list_ptr] = 0;
 	}
 	return list;
+}
+
+/**
+ * \brief Find the byte length of a unicode code point.
+ *
+ * \param c The unicode code point.
+ * \return Byte length of \p c, always between 1 and 4.
+ *
+ * NOTE: This method does not check for illegal (surrogate/undefined) code points.
+ * See the `rz_unicode_code_point_is_*` methods in `rz_unicode.h`.
+ */
+RZ_API size_t rz_utf8_byte_length(RzCodePoint c) {
+	if (c < RZ_UNICODE_FIRST_2BYTE_CODE_POINT) {
+		return 1;
+	}
+	if (c < RZ_UNICODE_FIRST_3BYTE_CODE_POINT) {
+		return 2;
+	}
+	if (c < RZ_UNICODE_FIRST_4BYTE_CODE_POINT) {
+		return 3;
+	}
+	return 4;
 }

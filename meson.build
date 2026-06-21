@@ -1,7 +1,7 @@
 project('rizin', 'c',
-  version: 'v0.8.2',
+  version: 'v0.9.0',
   license: 'LGPL-3.0-only',
-  meson_version: '>=0.57.0',
+  meson_version: '>=0.58.0',
   default_options: [
     'buildtype=debugoptimized',
     'b_vscrt=from_buildtype',
@@ -51,6 +51,7 @@ if host_machine.system() == 'windows'
     cc.find_library('ws2_32'),
     cc.find_library('wininet'),
     cc.find_library('psapi'),
+    cc.find_library('dbghelp'),
   ]
 endif
 platform_inc = include_directories(platform_inc)
@@ -190,6 +191,8 @@ cmake_package_relative_path = run_command(py3_exe, cmake_package_prefix_dir_py, 
 subproject_clean_error_msg = 'Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.'
 
 # handle capstone dependency
+capstone_check_deps = []
+capstone_check_includes = []
 capstone_dep = dependency('capstone', version: '>=4.0.2', required: get_option('use_sys_capstone'), static: is_static_build)
 if not capstone_dep.found()
   capstone_version = get_option('use_capstone_version')
@@ -203,29 +206,87 @@ if not capstone_dep.found()
     error('Wrong capstone version selected. Please use one of the supported versions.')
   endif
   capstone_dep = capstone_proj.get_variable('capstone_dep')
+  capstone_check_includes = capstone_proj.get_variable('capstone_includes')
 else
+  capstone_check_deps = [capstone_dep]
   # Package managers CS version has no meta programming macros for AArch64 -> ARM64 renaming
   # (because it is outdated).
   # With this define we includeour copy of those macros.
   add_project_arguments(['-DUSE_SYS_CAPSTONE'], language: 'c')
 endif
 
+has_capstone_m68k_cpu32 = cc.compiles('''
+#include <capstone/capstone.h>
+int main(void) {
+	cs_mode mode = CS_MODE_M68K_CPU32;
+	return mode == 0;
+}
+''',
+  dependencies: capstone_check_deps,
+  include_directories: capstone_check_includes,
+  name: 'Capstone has M68K CPU32 mode'
+)
+if has_capstone_m68k_cpu32
+  add_project_arguments(['-DRZ_CAPSTONE_HAS_M68K_CPU32'], language: 'c')
+endif
+
+has_capstone_m68k_coldfire = cc.compiles('''
+#include <capstone/capstone.h>
+int main(void) {
+	cs_mode mode = CS_MODE_M68K_COLDFIRE | CS_MODE_M68K_CFV1 | CS_MODE_M68K_CFV2 | CS_MODE_M68K_CFV3 | CS_MODE_M68K_CFV4 | CS_MODE_M68K_CFV4E | CS_MODE_M68K_CFV5;
+	return mode == 0;
+}
+''',
+  dependencies: capstone_check_deps,
+  include_directories: capstone_check_includes,
+  name: 'Capstone has M68K ColdFire modes'
+)
+if has_capstone_m68k_coldfire
+  add_project_arguments(['-DRZ_CAPSTONE_HAS_M68K_COLDFIRE'], language: 'c')
+endif
+
+has_capstone_m680x_hcs12x = cc.compiles('''
+#include <capstone/capstone.h>
+int main(void) {
+        cs_mode mode = CS_MODE_M680X_HCS12X;
+        return mode == 0;
+}
+''',
+  dependencies: capstone_check_deps,
+  include_directories: capstone_check_includes,
+  name: 'Capstone has M680X HCS12X mode'
+)
+if has_capstone_m680x_hcs12x
+  add_project_arguments(['-DRZ_CAPSTONE_HAS_M680X_HCS12X'], language: 'c')
+endif
+
 # Handle PCRE2
 cpu_jit_supported = [ 'aarch64', 'arm', 'mips', 'mips64', 'ppc', 'ppc64', 'riscv32', 'riscv64', 's390x', 'x86', 'x86_64' ]
-pcre2_jit_supported = target_machine.cpu_family() in cpu_jit_supported and cc.get_id() != 'tcc' and target_machine.system() != 'darwin'
+pcre2_jit_supported = target_machine.cpu_family() in cpu_jit_supported and cc.get_id() != 'tcc' and target_machine.system() not in ['darwin', 'serenity']
 if pcre2_jit_supported
   add_project_arguments(['-DSUPPORTS_PCRE2_JIT'], language: 'c')
 endif
 
 pcre2_dep_opt = get_option('use_sys_pcre2')
 pcre2_dep = disabler()
+sys_pcre2_found = false
 if (pcre2_dep_opt.enabled() or pcre2_dep_opt.auto()) and not meson.is_cross_build()
-  pcre2_dep = dependency('libpcre2-8', required: false, static: false)
-  if not pcre2_dep.found()
+  pcre2_deps = []
+  sys_pcre2_found = true
+  foreach utf : [8, 16, 32]
+    pcre2_utf_dep = dependency('libpcre2-@0@'.format(utf), required: false, static: false)
+    if not pcre2_utf_dep.found()
+      sys_pcre2_found = false
+    endif
+    pcre2_deps += pcre2_utf_dep
+  endforeach
+  if sys_pcre2_found
+    pcre2_dep = declare_dependency(dependencies: pcre2_deps, version: pcre2_deps[0].version())
+  else
     pcre2_dep = cc.find_library('pcre2', required: true, static: true)
   endif
 else
-  pcre2_dep = dependency('pcre2', version: '>=10.42', required: true, static: true)
+  pcre2_dep = dependency('pcre2', version: '>=10.42', required: true, static: true, allow_fallback: true)
 endif
 
 if meson.is_cross_build()
@@ -241,6 +302,22 @@ if sys_magic_opt.enabled() or sys_magic_opt.auto()
     sys_magic = cc.find_library('magic', required: sys_magic_opt, static: is_static_build)
   endif
 endif
+
+# Handle Zydis library
+sys_zydis_opt = get_option('use_sys_zydis')
+zydis_dep = disabler()
+if sys_zydis_opt.enabled() or sys_zydis_opt.auto()
+  zydis_dep = dependency('zydis', required: false, static: is_static_build)
+  if not zydis_dep.found()
+    zydis_dep = cc.find_library('zydis', required: sys_zydis_opt, static: is_static_build)
+  endif
+endif
+if (sys_zydis_opt.auto() and not zydis_dep.found()) or sys_zydis_opt.disabled()
+  zydis_proj = subproject('zydis', default_options: ['default_library=static'])
+  zydis_dep = zydis_proj.get_variable('zydis_dep')
+  add_project_arguments(['-DZYDIS_STATIC_BUILD'], language: 'c')
+endif
+
 
 # handle libmspack library
 sys_libmspack_opt = get_option('use_sys_libmspack')
@@ -280,24 +357,22 @@ if r.returncode() == 1 and get_option('subprojects_check')
   error(subproject_clean_error_msg)
 endif
 
-libdemangle_options = ['default_library=static']
-if get_option('use_gpl')
-  libdemangle_options += 'use_gpl=true'
-else
-  libdemangle_options += 'use_gpl=false'
-endif
-if get_option('use_swift_demangler')
-  libdemangle_options += 'use_swift_demangler=true'
-else
-  libdemangle_options += 'use_swift_demangler=false'
-endif
+libdemangle_options = [
+  'default_library=static',
+  'use_swift_demangler=false',
+]
 
 libdemangle_proj = subproject('libdemangle', default_options: libdemangle_options)
 libdemangle_dep = libdemangle_proj.get_variable('libdemangle_dep')
 
+blake2_dep = dependency('libblake2', fallback: ['blake2', 'libblake2_dep'])
+
 # handle blake3 algo
-blake3_proj = subproject('blake3', default_options: ['default_library=static', 'werror=false'])
-blake3_dep = blake3_proj.get_variable('blake3_dep')
+blake3_dep = dependency('libblake3', required: get_option('use_sys_blake3'), static: is_static_build)
+if not blake3_dep.found()
+  blake3_proj = subproject('blake3', default_options: ['default_library=static', 'werror=false'])
+  blake3_dep = blake3_proj.get_variable('blake3_dep')
+endif
 
 # handle openssl library
 sys_openssl = dependency('openssl', required: get_option('use_sys_openssl'), static: is_static_build)
@@ -370,7 +445,7 @@ foreach it : ccs
   if not it_cc.has_function('clock_gettime', prefix: '#include <time.h>') and it_cc.has_header_symbol('features.h', '__GLIBC__')
     it_lrt = it_cc.find_library('rt', required: true, static: is_static_build)
   endif
-  have_lrt = not ['windows', 'darwin', 'openbsd', 'android', 'haiku'].contains(it_machine.system())
+  have_lrt = not ['windows', 'darwin', 'openbsd', 'android', 'haiku', 'serenity'].contains(it_machine.system())
   if have_lrt and not it_lrt.found()
     it_lrt = it_cc.find_library('rt', required: true, static: is_static_build)
   endif
@@ -398,7 +473,6 @@ foreach it : ccs
   it_userconf.set('INCLUDEDIR', rizin_incdir)
   it_userconf.set('DATADIR_RZ', rizin_datdir_rz)
   is_ppc = it_machine.cpu_family() == 'ppc' or it_machine.cpu_family() == 'ppc64'
-  it_userconf.set10('HAVE_JEMALLOC', it_machine.system() != 'windows' and (it_machine.system() != 'darwin' or not is_ppc))
   it_userconf.set('DATADIR', rizin_datdir)
   it_userconf.set('WWWROOT', rizin_wwwroot)
   it_userconf.set('SDB', rizin_sdb)
@@ -414,7 +488,6 @@ foreach it : ccs
   it_userconf.set10('HAVE_PTRACE', have_ptrace)
   it_userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
   it_userconf.set10('WITH_GPL', get_option('use_gpl'))
-  it_userconf.set10('WITH_SWIFT_DEMANGLER', get_option('use_swift_demangler'))
   it_userconf.set10('RZ_BUILD_DEBUG', get_option('buildtype').startswith('debug'))
   ok = it_cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
   it_userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
@@ -424,12 +497,39 @@ foreach it : ccs
   it_userconf.set10('HAVE_PTHREAD', have_pthread)
   it_userconf.set10('HAVE_LZMA', get_option('use_lzma'))
   it_userconf.set10('HAVE_ZLIB', get_option('use_zlib'))
+  it_userconf.set10('USE_SYS_ZYDIS', zydis_dep.found() and zydis_dep.type_name() != 'internal')
   it_userconf.set10('SUPPORTS_PCRE2_JIT', pcre2_jit_supported)
   it_userconf.set('N_THREAD_LIMIT', get_option('n_thread_limit'))
 
   if it_machine.system() == 'freebsd' or it_machine.system() == 'dragonfly'
     add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: 'c', native: it_native)
     add_project_link_arguments('-Wl,--allow-shlib-undefined', language: 'c', native: it_native)
+  endif
+
+  # Old GNU ld (binutils 2.22, shipped with Debian Wheezy) combined with the
+  # --as-needed flag that Meson passes by default drops shared libraries that
+  # are needed only indirectly -- through another shared library -- rather than
+  # directly by the linked object files. It then (defaulting to
+  # --no-copy-dt-needed-entries) also refuses to resolve the symbol through the
+  # dropped library's own DT_NEEDED entry. Linking the rizin tools against the
+  # rizin shared libraries therefore fails with:
+  #   librz_main.so.0.9.0: undefined reference to symbol 'rz_buf_size'
+  #   librz_util.so.0.9.0: could not read symbols: Invalid operation
+  # even though librz_util, which defines the symbol, is already on the link
+  # line. Disable --as-needed for these old linkers so the indirectly-needed
+  # libraries stay on the link line and resolve directly; newer linkers handle
+  # this correctly on their own and keep the optimisation.
+  if it_cc.get_linker_id() == 'ld.bfd'
+    ld_bin = find_program('ld', required: false, native: it_native)
+    if ld_bin.found()
+      ld_version_raw = run_command(ld_bin, '--version', check: false).stdout()
+      if ld_version_raw != ''
+        ld_version = ld_version_raw.split('\n')[0].split(' ')[-1].strip()
+        if ld_version.version_compare('<2.31')
+          add_project_link_arguments('-Wl,--no-as-needed', language: 'c', native: it_native)
+        endif
+      endif
+    endif
   endif
 
   if it_machine.system() == 'darwin'
@@ -473,6 +573,7 @@ foreach it : ccs
       ['nice', '#include <unistd.h>', []],
       ['copyfile', '#include <copyfile.h>', []],
       ['strlcpy', '#include <string.h>', []],
+      ['strlcat', '#include <string.h>', []],
       ['strnlen', '#include <string.h>', []],
       ['shm_open', '#include <sys/mman.h>', [it_lrt]],
       ['openpty', '', [it_utl]],
@@ -486,6 +587,8 @@ foreach it : ccs
       ['__builtin_bswap32', '', []],
       ['__builtin_bswap64', '', []],
       ['__builtin_clzll', '', []],
+      ['__builtin_ctzll', '', []],
+      ['__builtin_expect', '', []],
       ['posix_memalign', '#include <stdlib.h>', []],
       ['_aligned_malloc', '#include <malloc.h>', []],
     ]
@@ -493,6 +596,19 @@ foreach it : ccs
     ok = it_cc.has_function(func, prefix: item[1], dependencies: item[2])
     it_userconf.set10('HAVE_@0@'.format(func.to_upper()), ok)
   endforeach
+
+  # Try to compile a basic SSE2 code snippet to discover if SSE2 is supported for the target arch
+  sse2_compiler_flag = it_cc.get_id() == 'msvc' ? '/arch:SSE2' : '-msse2'
+  sse2_code = '''#include <emmintrin.h>
+    int main (int argc, char *argv[]) { __m128i v = _mm_set_epi32(2, 3, 0, 1); return 0; }
+  '''
+  has_sse2 = it_cc.compiles(sse2_code, args : [sse2_compiler_flag], name: 'SSE2 code snippet')
+  it_userconf.set10('HAVE_SSE2', has_sse2)
+
+  # Enable SSE2 compiler support since it may not be enabled by default
+  if has_sse2 and it_machine.cpu_family() in ['x86', 'x86_64']
+    add_project_arguments([sse2_compiler_flag], language: 'c', native: it_native)
+  endif
 
   foreach item : [
       ['linux/ashmem.h', '', []],
@@ -649,6 +765,13 @@ if not libzip_dep.found()
   libzip_dep = libzip_proj.get_variable('libzip_dep')
 endif
 
+if host_machine.system() == 'serenity' and libzip_dep.found()
+  zlib_dep = dependency('zlib', required: true, static: is_static_build)
+  libzip_dep = declare_dependency(
+    dependencies: [libzip_dep, zlib_dep]
+  )
+endif
+
 # handle zstd dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'zstd', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
@@ -665,15 +788,6 @@ if not libzstd_dep.found()
   meson.override_dependency('zstd', libzstd_dep)
 endif
 
-# handle mpc dependency
-r = run_command(py3_exe, check_meson_subproject_py, 'mpc', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
-  error(subproject_clean_error_msg)
-endif
-
-mpc_proj = subproject('mpc', default_options: ['default_library=static'])
-mpc_dep = mpc_proj.get_variable('mpc_dep')
-
 # handle yxml dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'yxml', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
@@ -682,6 +796,10 @@ endif
 
 yxml_proj = subproject('yxml', default_options: ['default_library=static'])
 yxml_dep = yxml_proj.get_variable('yxml_dep')
+
+# handle rzheap dependency
+rzheap_proj = subproject('rzheap', default_options: ['default_library=static'])
+rzheap_dep = rzheap_proj.get_variable('rzheap_dep')
 
 use_rpath = false
 use_rpath_absolute = false
@@ -727,7 +845,6 @@ if host_machine.system() == 'windows'
   test_env_common_path += [
     build_root / 'librz' / 'arch',
     build_root / 'librz' / 'bin',
-    build_root / 'librz' / 'bp',
     build_root / 'librz' / 'config',
     build_root / 'librz' / 'cons',
     build_root / 'librz' / 'signature',
@@ -738,6 +855,7 @@ if host_machine.system() == 'windows'
     build_root / 'librz' / 'debug',
     build_root / 'librz' / 'egg',
     build_root / 'librz' / 'flag',
+    build_root / 'librz' / 'mark',
     build_root / 'librz' / 'hash',
     build_root / 'librz' / 'io',
     build_root / 'librz' / 'lang',
@@ -775,6 +893,8 @@ if cli_enabled
 endif
 
 subdir('test')
+subdir('examples')
+
 
 install_data(
   'doc/fortunes.fun',
@@ -809,17 +929,17 @@ summary({
 summary({
   'GPL code': get_option('use_gpl'),
   'Install sigdb': get_option('install_sigdb'),
-  'Swift demangler': get_option('use_swift_demangler'),
   'Debugger enabled': has_debugger,
   'Capstone version': capstone_dep.version(),
   'PCRE2 version': pcre2_dep.version(),
   'PCRE2 JIT': pcre2_jit_supported,
   'System magic library': sys_magic.found() and sys_magic.type_name() != 'internal',
-  'System pcre2 library': pcre2_dep.found() and pcre2_dep.type_name() != 'internal',
+  'System pcre2 library': pcre2_dep.found() and sys_pcre2_found,
   'System xxhash library': xxhash_dep.found() and xxhash_dep.type_name() != 'internal',
   'System libmspack library': libmspack_dep.found() and libmspack_dep.type_name() != 'internal',
   'System openssl library': sys_openssl.found() and sys_openssl.type_name() != 'internal',
   'System capstone library': capstone_dep.found() and capstone_dep.type_name() != 'internal',
+  'System zydis library': zydis_dep.found() and zydis_dep.type_name() != 'internal',
   'System tree-sitter library': tree_sitter_dep.found() and tree_sitter_dep.type_name() != 'internal',
   'System lz4 library': lz4_dep.found() and lz4_dep.type_name() != 'internal',
   'System lzma library': liblzma_dep.found() and liblzma_dep.type_name() != 'internal',
@@ -827,6 +947,8 @@ summary({
   'System zlib library': zlib_dep.found() and zlib_dep.type_name() != 'internal',
   'System zstd library': libzstd_dep.found() and libzstd_dep.type_name() != 'internal',
   'System zip library': libzip_dep.found() and libzip_dep.type_name() != 'internal',
+  'System blake3 library': blake3_dep.found() and blake3_dep.type_name() != 'internal',
+  'System blake2 library': blake2_dep.found() and blake2_dep.type_name() != 'internal',
   'Use ptrace-wrap': use_ptrace_wrap,
   'Use RPATH': rpath_summary,
 }, section: 'Configuration', bool_yn: true)
@@ -859,7 +981,6 @@ summary({
   'Arch Plugins': arch_plugins.get('list'),
   'Binary Plugins': bin_plugins.get('list'),
   'BinXtr Plugins': bin_xtr_plugins.get('list'),
-  'Breakpoint Plugins': bp_plugins.get('list'),
   'Core Plugins': core_plugins.get('list'),
   'Crypto Plugins': crypto_plugins.get('list'),
   'Debug Plugins': debug_plugins.get('list'),

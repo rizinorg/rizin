@@ -237,8 +237,8 @@ static int flirt_compare_module(const RzFlirtModule *a, const RzFlirtModule *b) 
 	} else if (a->crc_length != b->crc_length) {
 		return a->crc_length - b->crc_length;
 	}
-	const RzFlirtFunction *af = rz_list_first(a->public_functions);
-	const RzFlirtFunction *bf = rz_list_first(b->public_functions);
+	const RzFlirtFunction *af = rz_list_first_val(a->public_functions);
+	const RzFlirtFunction *bf = rz_list_first_val(b->public_functions);
 	return strcmp(af->name, bf->name);
 }
 
@@ -293,7 +293,7 @@ static bool flirt_node_shorten_and_insert(const RzFlirtNode *root, RzFlirtNode *
 			rz_list_sort(child->child_list, (RzListComparator)flirt_compare_node, NULL);
 		} else if (node->length == i) {
 			// partial pattern match but matches the node
-			rz_list_iter_set_data(it, node);
+			rz_list_set_val(it, node);
 			flirt_node_shorten_pattern(child, i);
 			if (!rz_list_append(node->child_list, child)) {
 				RZ_LOG_ERROR("FLIRT: cannot append child to optimized list.\n");
@@ -307,7 +307,7 @@ static bool flirt_node_shorten_and_insert(const RzFlirtNode *root, RzFlirtNode *
 				rz_sign_flirt_node_free(node);
 				return false;
 			}
-			rz_list_iter_set_data(it, middle_node);
+			rz_list_set_val(it, middle_node);
 			if (!rz_list_append(middle_node->child_list, child)) {
 				RZ_LOG_ERROR("FLIRT: cannot append child to optimized list.\n");
 				rz_sign_flirt_node_free(node);
@@ -351,7 +351,7 @@ bool flirt_node_optimize(RzFlirtNode *root) {
 	RzListIter *it;
 	RzFlirtNode *child;
 	rz_list_foreach (childs, it, child) {
-		rz_list_iter_set_data(it, NULL);
+		rz_list_set_val(it, NULL);
 		if (!flirt_node_shorten_and_insert(root, child)) {
 			goto fail;
 		}
@@ -366,6 +366,7 @@ fail:
 }
 
 static RzFlirtNode *flirt_create_child_from_function(RzAnalysis *analysis, RzAnalysisFunction *func, bool tail_bytes) {
+	RzIOBind *iob = rz_analysis_get_io_bind(analysis);
 	RzFlirtNode *child = NULL;
 	ut64 func_size = rz_analysis_function_size_from_entry(func);
 	if (func_size < 1) {
@@ -384,7 +385,7 @@ static RzFlirtNode *flirt_create_child_from_function(RzAnalysis *analysis, RzAna
 		return NULL;
 	}
 
-	if (!analysis->iob.read_at(analysis->iob.io, func->addr, pattern, (int)func_size)) {
+	if (!iob->read_at(iob->io, func->addr, pattern, (int)func_size)) {
 		RZ_LOG_WARN("FLIRT: couldn't read function %s at 0x%" PFMT64x ".\n", func->name, func->addr);
 		free(pattern);
 		return NULL;
@@ -426,8 +427,7 @@ fail:
  * \return     Generated FLIRT node.
  */
 RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_from_function(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *func, bool tail_bytes) {
-	rz_return_val_if_fail(analysis && analysis->coreb.core && func && func->name, NULL);
-
+	rz_return_val_if_fail(analysis && func && func->name, NULL);
 	RzFlirtNode *child = flirt_create_child_from_function(analysis, func, tail_bytes);
 	if (!child) {
 		return NULL;
@@ -462,13 +462,14 @@ fail:
  * \return                 Generated FLIRT root node.
  */
 RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_new(RZ_NONNULL RzAnalysis *analysis, ut32 optimization, bool ignore_unknown) {
-	rz_return_val_if_fail(analysis && analysis->coreb.core, NULL);
+	rz_return_val_if_fail(analysis, NULL);
 	if (optimization > RZ_FLIRT_NODE_OPTIMIZE_MAX) {
 		RZ_LOG_ERROR("FLIRT: optimization value is invalid (%u > RZ_FLIRT_NODE_OPTIMIZE_MAX).\n", optimization);
 		return NULL;
 	}
 
-	if (rz_list_length(analysis->fcns) < 1) {
+	RzList *fcns = rz_analysis_function_list(analysis);
+	if (rz_list_length(fcns) < 1) {
 		RZ_LOG_ERROR("FLIRT: There are no analyzed functions. Have you run 'aa'?\n");
 		return NULL;
 	}
@@ -482,7 +483,7 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_new(RZ_NONNULL RzAnalysis *analysi
 
 	RzListIter *it;
 	RzAnalysisFunction *func;
-	rz_list_foreach (analysis->fcns, it, func) {
+	rz_list_foreach (fcns, it, func) {
 		if (!func->name) {
 			RZ_LOG_ERROR("FLIRT: function at 0x%" PFMT64x " has a null name. skipping function...\n", func->addr);
 			continue;
@@ -494,7 +495,8 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_new(RZ_NONNULL RzAnalysis *analysi
 
 		RzFlirtNode *child = flirt_create_child_from_function(analysis, func, tail_bytes);
 		if (!child) {
-			goto fail;
+			// do not fail immediately, maybe is just a bad function
+			continue;
 		} else if (!rz_list_append(root->child_list, child)) {
 			RZ_LOG_ERROR("FLIRT: cannot append child to root list.\n");
 			rz_sign_flirt_node_free(child);

@@ -388,7 +388,7 @@ static void il_opdmp_fneg(RzILOpPure *op, RzStrBuf *sb, int pad) {
 }
 
 static void il_opdmp_fabs(RzILOpPure *op, RzStrBuf *sb, int pad) {
-	il_op_param_1("fpos", op->op.fabs, f);
+	il_op_param_1("fabs", op->op.fabs, f);
 }
 
 static void il_opdmp_fcast_int(RzILOpPure *op, RzStrBuf *sb, int pad) {
@@ -1069,7 +1069,7 @@ RZ_API void rz_il_event_stringify(RZ_NONNULL const RzILEvent *evt, RZ_NONNULL Rz
 
 	switch (evt->type) {
 	case RZ_IL_EVENT_EXCEPTION:
-		rz_strbuf_appendf(sb, "exception(%s)", evt->data.exception);
+		rz_strbuf_appendf(sb, "exception(%s)", rz_il_event_exception_msg(evt->data.exception));
 		break;
 	case RZ_IL_EVENT_PC_WRITE:
 		tmp0 = rz_bv_as_hex_string(evt->data.pc_write.old_pc, false);
@@ -1113,6 +1113,40 @@ RZ_API void rz_il_event_stringify(RZ_NONNULL const RzILEvent *evt, RZ_NONNULL Rz
 	free(tmp0);
 	free(tmp1);
 	free(tmp2);
+}
+
+/**
+ * Get a readable representation of \p code
+ * \return constant string, must not be freed
+ */
+RZ_API RZ_NONNULL const char *rz_il_op_effect_code_stringify(RzILOpEffectCode code) {
+	switch (code) {
+	case RZ_IL_OP_STORE:
+		return "store";
+	case RZ_IL_OP_STOREW:
+		return "storew";
+	case RZ_IL_OP_EMPTY:
+		return "empty";
+	case RZ_IL_OP_NOP:
+		return "nop";
+	case RZ_IL_OP_SET:
+		return "set";
+	case RZ_IL_OP_JMP:
+		return "jmp";
+	case RZ_IL_OP_GOTO:
+		return "goto";
+	case RZ_IL_OP_SEQ:
+		return "seq";
+	case RZ_IL_OP_BLK:
+		return "blk";
+	case RZ_IL_OP_REPEAT:
+		return "repeat";
+	case RZ_IL_OP_BRANCH:
+		return "branch";
+	case RZ_IL_OP_EFFECT_MAX:
+		break;
+	}
+	return "invalid";
 }
 
 /**

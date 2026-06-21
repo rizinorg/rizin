@@ -78,7 +78,7 @@ static RzBinFile *basefind_new_bin_file(RzCore *core) {
 	bf->file = rz_str_dup(desc->name);
 	bf->size = rz_io_desc_size(desc);
 	if (bf->size == UT64_MAX) {
-		RZ_LOG_ERROR("basefind: filesize exeeds memory size (UT64_MAX).\n");
+		RZ_LOG_ERROR("basefind: filesize exceeds memory size (UT64_MAX).\n");
 		free(bf->file);
 		free(bf);
 		return NULL;
@@ -182,7 +182,7 @@ static HtUU *basefind_create_pointer_map(RzCore *core, ut32 pointer_size) {
 		ut64 value = ht_uu_find(map, address, NULL) + 1;
 		ht_uu_insert(map, address, value);
 	}
-	RZ_LOG_INFO("basefind: located %u pointers\n", map->count);
+	RZ_LOG_INFO("basefind: located %u pointers\n", ht_uu_size(map));
 
 	return map;
 }

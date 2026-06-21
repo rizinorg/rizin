@@ -186,7 +186,7 @@ static RzBinSymbol *bin_symbol_from_symbol(RzCoreSymCacheElement *element, RzCor
 	return sym;
 }
 
-static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off, int bits, RZ_OWN char *file_name) {
+static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off, int bits, RZ_BORROW char *file_name) {
 	D eprintf("Dragons at 0x%x\n", off);
 	ut64 size = rz_buf_size(buf);
 	if (off >= size) {
@@ -203,6 +203,7 @@ static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off
 	int available = rz_buf_read_at(buf, off, b, size);
 	if (available != size) {
 		RZ_LOG_ERROR("bin: symbols: cannot read at 0x%08x\n", off);
+		free(b);
 		return NULL;
 	}
 	// after the list of sections, there's a bunch of unknown
@@ -239,6 +240,7 @@ static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off
 		available = rz_buf_read_at(buf, off - 8, b, size);
 		if (available != size) {
 			RZ_LOG_WARN("bin: symbols: rz_buf_read_at failed\n");
+			free(b);
 			return NULL;
 		}
 		if (size > 3 && !memcmp("\x1a\x2b\xb2\xa1", b, 4)) { // 0x130  ?
@@ -256,7 +258,7 @@ static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off
 	return rz_coresym_cache_element_new(bf, buf, off + 16, bits, file_name);
 }
 
-static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+static bool coresyms_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	// 	SYMBOLS HEADER
 	//
 	//  0	MAGIC	02ff01ff
@@ -297,7 +299,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	return obj->bin_obj != NULL;
 }
 
-static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *coresyms_sections(RzBinFile *bf) {
 	RzPVector *res = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	rz_return_val_if_fail(res && bf->o && bf->o->bin_obj, res);
 	RzCoreSymCacheElement *element = bf->o->bin_obj;
@@ -319,11 +321,11 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return res;
 }
 
-static ut64 baddr(RzBinFile *bf) {
+static ut64 coresyms_baddr(RzBinFile *bf) {
 	return 0LL;
 }
 
-static RzBinInfo *info(RzBinFile *bf) {
+static RzBinInfo *coresyms_info(RzBinFile *bf) {
 	SymbolsMetadata sm = { 0 };
 	if (!parseMetadata(bf->buf, 0x40, &sm)) {
 		return NULL;
@@ -344,13 +346,13 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RzBuffer *b) {
+static bool coresyms_check_buffer(RzBuffer *b) {
 	ut8 buf[4];
 	rz_buf_read_at(b, 0, buf, sizeof(buf));
 	return !memcmp(buf, "\x02\xff\x01\xff", 4);
 }
 
-static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *coresyms_symbols(RzBinFile *bf) {
 	RzPVector *res = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	rz_return_val_if_fail(res && bf->o && bf->o->bin_obj, res);
 	RzCoreSymCacheElement *element = bf->o->bin_obj;
@@ -387,53 +389,57 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return res;
 }
 
-static ut64 size(RzBinFile *bf) {
+static ut64 coresyms_size(RzBinFile *bf) {
 	return UT64_MAX;
 }
 
-static void destroy(RzBinFile *bf) {
+static void coresyms_destroy(RzBinFile *bf) {
 	rz_coresym_cache_element_free(bf->o->bin_obj);
 }
 
-static void header(RzBinFile *bf) {
-	rz_return_if_fail(bf && bf->o);
+static RzStructuredData *coresyms_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
+	char uuidstr[RZ_UUID_LENGTH] = { 0 };
 	RzCoreSymCacheElement *element = bf->o->bin_obj;
 	if (!element) {
-		return;
+		return NULL;
 	}
 
-	RzBin *bin = bf->rbin;
-	PrintfCallback p = bin->cb_printf;
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
 	}
 
-	pj_o(pj);
-	pj_kn(pj, "cs_version", element->hdr->version);
-	pj_kn(pj, "size", element->hdr->size);
-	if (element->file_name) {
-		pj_ks(pj, "name", element->file_name);
+	RzStructuredData *csyms = rz_structured_data_map_add_map(info, "symbols");
+	if (!csyms) {
+		rz_structured_data_free(info);
+		return NULL;
 	}
-	if (element->binary_version) {
-		pj_ks(pj, "version", element->binary_version);
-	}
-	char uuidstr[RZ_UUID_LENGTH];
-	rz_hex_bin2str(element->hdr->uuid, 16, uuidstr);
-	pj_ks(pj, "uuid", uuidstr);
-	pj_kn(pj, "segments", element->hdr->n_segments);
-	pj_kn(pj, "sections", element->hdr->n_sections);
-	pj_kn(pj, "symbols", element->hdr->n_symbols);
-	pj_kn(pj, "lined_symbols", element->hdr->n_lined_symbols);
-	pj_kn(pj, "line_info", element->hdr->n_line_info);
-	pj_end(pj);
 
-	p("%s\n", pj_string(pj));
-	pj_free(pj);
+	rz_structured_data_map_add_unsigned(csyms, "cs_version", element->hdr->version, false);
+	rz_structured_data_map_add_unsigned(csyms, "size", element->hdr->size, false);
+	RzStructuredData *binary = rz_structured_data_map_add_map(csyms, "binary");
+	if (!binary) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+	rz_structured_data_map_add_string(binary, "name", rz_str_get(element->file_name));
+	rz_structured_data_map_add_string(binary, "version", rz_str_get(element->binary_version));
+
+	rz_hex_bin2str(element->hdr->uuid, sizeof(element->hdr->uuid), uuidstr);
+	rz_structured_data_map_add_string(csyms, "uuid", uuidstr);
+
+	rz_structured_data_map_add_unsigned(csyms, "n_segments", element->hdr->n_segments, false);
+	rz_structured_data_map_add_unsigned(csyms, "n_sections", element->hdr->n_sections, false);
+	rz_structured_data_map_add_unsigned(csyms, "n_symbols", element->hdr->n_symbols, false);
+	rz_structured_data_map_add_unsigned(csyms, "n_lined_symbols", element->hdr->n_lined_symbols, false);
+	rz_structured_data_map_add_unsigned(csyms, "n_line_info", element->hdr->n_line_info, false);
+
+	return info;
 }
 
-static RzBinSourceLineInfo *lines(RzBinFile *bf) {
+static RzBinSourceLineInfo *coresyms_lines(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 	RzCoreSymCacheElement *element = bf->o->bin_obj;
 	if (!element || !element->hdr) {
@@ -466,17 +472,18 @@ RzBinPlugin rz_bin_plugin_symbols = {
 	.name = "symbols",
 	.desc = "Apple Symbols file",
 	.license = "MIT",
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
-	.symbols = &symbols,
+	.author = "pancake",
+	.load_buffer = &coresyms_load_buffer,
+	.check_buffer = &coresyms_check_buffer,
+	.symbols = &coresyms_symbols,
 	.maps = &rz_bin_maps_of_file_sections,
-	.sections = &sections,
-	.size = &size,
-	.baddr = &baddr,
-	.info = &info,
-	.header = &header,
-	.destroy = &destroy,
-	.lines = lines
+	.sections = &coresyms_sections,
+	.size = &coresyms_size,
+	.baddr = &coresyms_baddr,
+	.info = &coresyms_info,
+	.bin_structure = &coresyms_structure,
+	.destroy = &coresyms_destroy,
+	.lines = coresyms_lines
 };
 
 #ifndef RZ_PLUGIN_INCORE

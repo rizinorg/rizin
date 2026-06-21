@@ -149,7 +149,7 @@ static RzIODesc *io_bochs_open(RzIO *io, const char *file, int rw, int mode) {
 		eprintf("%s", output);
 	}
 
-	RzIODesc *iodesc = rz_io_desc_new(io, &rz_io_plugin_bochs, file, rw, mode, bochs);
+	RzIODesc *iodesc = rz_io_desc_new(io, &rz_io_plugin_bochs, file, rw, bochs);
 	if (!iodesc) {
 		RZ_LOG_ERROR("io: bochs: Failed create RzIODesc.\n");
 		goto fail;

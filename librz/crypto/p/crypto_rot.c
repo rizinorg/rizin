@@ -116,6 +116,7 @@ RzCryptoPlugin rz_crypto_plugin_rot = {
 	.name = "rot",
 	.author = "pancake",
 	.license = "LGPL-3",
+	.description = "Caesar symmetric-key cipher",
 	.set_key = rot_set_key,
 	.get_key_size = rot_get_key_size,
 	.use = rot_use,

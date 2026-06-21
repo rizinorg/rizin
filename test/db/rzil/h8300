@@ -1,0 +1,40 @@
+NAME=Run emulateme.h8300.elf
+FILE=bins/elf/h8300/emulateme.h8300.elf
+TIMEOUT=15
+CMDS=<<EOF
+e scr.color=0
+e io.cache=1
+s 0xc4
+aezi
+aezsu 0xf4
+ps @ obj._seckrit
+EOF
+EXPECT=<<EOF
+Hello from RzIL!
+EOF
+RUN
+
+NAME=Run main.elf
+FILE=bins/elf/h8300/main.elf
+TIMEOUT=15
+CMDS=<<EOF
+e io.cache=1
+e scr.color=0
+s 0x00000478
+aezi
+aezsu 0x4f0
+echo "expected: 0x01-0x17"
+x 32 @ 0xF7A0
+echo "expected: 0x02-0x1e"
+x 16 @ obj._data_test
+EOF
+EXPECT=<<EOF
+expected: 0x01-0x17
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000f7a0  ff01 0203 0405 0607 0809 0a0b 0c0d 0e0f  ................
+0x0000f7b0  1011 1213 1415 1617 ffff ffff ffff ffff  ................
+expected: 0x02-0x1e
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000f780  0002 0406 080a 0c0e 1012 1416 181a 1c1e  ................
+EOF
+RUN

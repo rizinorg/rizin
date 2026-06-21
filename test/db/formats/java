@@ -1,52 +1,99 @@
 NAME=Check if is Java lang
 FILE=bins/java/Hello.class
-CMDS=iI~lang
+CMDS=<<EOF
+iI~lang
+echo ---
+is
+echo ---
+ic
+icf 'Hello'
+icm 'Hello'
+echo ---
+ii
+echo ---
+iS
+EOF
 EXPECT=<<EOF
 lang     java
+---
+nth      paddr      vaddr bind   type  size lib                     name                             
+-----------------------------------------------------------------------------------------------------
+  0 0x0000022b 0x0000022b LOCAL  FUNC    42 Hello                   void <init>(String)
+  1 0x00000263 0x00000263 LOCAL  FUNC    57 Hello                   void say()
+  2 0x000002aa 0x000002aa LOCAL  FUNC    41 Hello                   void main(String[])
+  0 0x0000020b 0x0000020b LOCAL  OBJ      0 Hello                   Hello.who
+  1 0x0000000a 0x0000000a IMPORT METH     0 java.lang.Object        imp.void <init>()
+  2 0x0000000f 0x0000000f IMPORT FIELD    0 Hello                   imp.Hello.who
+  3 0x00000014 0x00000014 IMPORT FIELD    0 java.lang.System        imp.System.out
+  5 0x0000001c 0x0000001c IMPORT METH     0 java.lang.StringBuilder imp.void <init>()
+  7 0x00000024 0x00000024 IMPORT METH     0 java.lang.StringBuilder imp.StringBuilder append(String)
+  8 0x00000029 0x00000029 IMPORT METH     0 java.lang.StringBuilder imp.String toString()
+  9 0x0000002e 0x0000002e IMPORT METH     0 java.io.PrintStream     imp.void println(String)
+ 12 0x00000039 0x00000039 IMPORT METH     0 Hello                   imp.void <init>(String)
+ 13 0x0000003e 0x0000003e IMPORT METH     0 Hello                   imp.void say()
+---
+   address        min        max name  super  
+----------------------------------------------
+0x00000000 0x0000022b 0x000002d3 Hello Object
+   address index class flags name type   
+-----------------------------------------
+0x0000020b     0 Hello P     who  String
+   address index class flags name                
+-------------------------------------------------
+0x0000022b     0 Hello p     void <init>(String)
+0x00000263     1 Hello p     void say()
+0x000002aa     2 Hello sp    void main(String[])
+---
+nth      vaddr bind type  lib                     name     
+-----------------------------------------------------------
+  1 ---------- NONE METH  java.lang.Object        <init>
+  2 ---------- NONE FIELD Hello                   who
+  3 ---------- NONE FIELD java.lang.System        out
+  5 ---------- NONE METH  java.lang.StringBuilder <init>
+  7 ---------- NONE METH  java.lang.StringBuilder append
+  8 ---------- NONE METH  java.lang.StringBuilder toString
+  9 ---------- NONE METH  java.io.PrintStream     println
+ 12 ---------- NONE METH  Hello                   <init>
+ 13 ---------- NONE METH  Hello                   say
+---
+     paddr  size      vaddr vsize align perm name                             type flags 
+-----------------------------------------------------------------------------------------
+0x0000000a 0x1ff 0x0000000a 0x1ff   0x0 -r-- class.constant_pool                   
+0x0000020b   0xa 0x0000020b   0xa   0x0 -r-- class.fields.who.attr                 
+0x0000020b   0xa 0x0000020b   0xa   0x0 -r-- class.fields                          
+0x00000215  0xb8 0x00000215  0xb8   0x0 -r-- class.methods                         
+0x00000215  0x38 0x00000215  0x38   0x0 -r-- class.methods._init_.attr             
+0x0000022b  0x2a 0x0000022b  0x2a   0x0 -r-x class.methods._init_.attr.0.code      
+0x0000024d  0x47 0x0000024d  0x47   0x0 -r-- class.methods.say.attr                
+0x00000263  0x39 0x00000263  0x39   0x0 -r-x class.methods.say.attr.0.code         
+0x00000294  0x39 0x00000294  0x39   0x0 -r-- class.methods.main.attr               
+0x000002aa  0x29 0x000002aa  0x29   0x0 -r-x class.methods.main.attr.0.code        
+0x000002cd   0x8 0x000002cd   0x8   0x0 -r-- class.attr                            
 EOF
 RUN
-
 
 NAME=Check if is Kotlin lang
 FILE=bins/java/HiKt.class
-CMDS=iI~lang
+CMDS=<<EOF
+iI~lang
+echo ---
+iS ; s
+echo ---
+iz
+echo ---
+is
+echo ---
+ic
+icf 'HiKt'
+icm 'HiKt'
+echo ---
+ii
+echo ---
+iE
+EOF
 EXPECT=<<EOF
 lang     kotlin
-EOF
-RUN
-
-
-NAME=Check if is Groovy lang
-FILE=bins/java/test.class
-CMDS=iI~lang
-EXPECT=<<EOF
-lang     groovy
-EOF
-RUN
-
-
-NAME=Check if has line number
-FILE=bins/java/Main.class
-CMDS=iI~linenum
-EXPECT=<<EOF
-linenum  true
-EOF
-RUN
-
-
-NAME=Check that it does not have line number
-FILE=bins/java/TryWithResources.class
-CMDS=iI~linenum
-EXPECT=<<EOF
-linenum  false
-EOF
-RUN
-
-
-NAME=Check that entry point points to main
-FILE=bins/java/HiKt.class
-CMDS=iS ; s
-EXPECT=<<EOF
+---
      paddr  size      vaddr vsize align perm name                           type flags 
 ---------------------------------------------------------------------------------------
 0x0000000a 0x201 0x0000000a 0x201   0x0 -r-- class.constant_pool                 
@@ -55,13 +102,391 @@ EXPECT=<<EOF
 0x00000225  0x31 0x00000225  0x31   0x0 -r-x class.methods.main.attr.0.code      
 0x0000025d  0x54 0x0000025d  0x54   0x0 -r-- class.attr                          
 0x225
+---
+     paddr      vaddr len size section             type  string                                                                                                                                                                                                                                                                  
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0x0000000a 0x0000000a   4    4 class.constant_pool mutf8 HiKt
+0x00000014 0x00000014  16   16 class.constant_pool mutf8 java/lang/Object
+0x0000002a 0x0000002a   4    4 class.constant_pool mutf8 main
+0x00000031 0x00000031  22   22 class.constant_pool mutf8 ([Ljava/lang/String;)V
+0x0000004a 0x0000004a  35   35 class.constant_pool mutf8 Lorg/jetbrains/annotations/NotNull;
+0x00000070 0x00000070   4    4 class.constant_pool mutf8 args
+0x0000007a 0x0000007a  30   30 class.constant_pool mutf8 kotlin/jvm/internal/Intrinsics
+0x0000009e 0x0000009e  23   23 class.constant_pool mutf8 checkParameterIsNotNull
+0x000000b8 0x000000b8  39   39 class.constant_pool mutf8 (Ljava/lang/Object;Ljava/lang/String;)V
+0x000000ec 0x000000ec  19   19 class.constant_pool mutf8 [Ljava/lang/String;
+0x00000102 0x00000102  17   17 class.constant_pool mutf8 Lkotlin/Metadata;
+0x00000116 0x00000116   2    2 class.constant_pool mutf8 mv
+0x00000125 0x00000125   2    2 class.constant_pool mutf8 bv
+0x0000012f 0x0000012f   1    1 class.constant_pool mutf8 k
+0x00000138 0x00000138   2    2 class.constant_pool mutf8 d1
+0x0000013d 0x0000013d  53   53 class.constant_pool mutf8 \u0000\u0012\n\u0000\n\u0002\u0010\u0002\n\u0000\n\u0002\u0010\u0011\n\u0002\u0010\u000e\n\u0000\u001a\u0019\u0010\u0000\u001a\u00020\u00012\f\u0010\u0002\u001a\b\u0012\u0004\u0012\u00020\u00040\u0003¢\u0006\u0002\u0010\u0005 blocks=Basic Latin,Latin-1 Supplement
+0x00000175 0x00000175   2    2 class.constant_pool mutf8 d2
+0x0000017d 0x0000017d   5    5 class.constant_pool mutf8 hi.kt
+0x00000185 0x00000185   4    4 class.constant_pool mutf8 Code
+0x0000018c 0x0000018c  18   18 class.constant_pool mutf8 LocalVariableTable
+0x000001a1 0x000001a1  15   15 class.constant_pool mutf8 LineNumberTable
+0x000001b3 0x000001b3  36   36 class.constant_pool mutf8 RuntimeInvisibleParameterAnnotations
+0x000001da 0x000001da  10   10 class.constant_pool mutf8 SourceFile
+0x000001e7 0x000001e7  25   25 class.constant_pool mutf8 RuntimeVisibleAnnotations
+---
+nth      paddr      vaddr bind   type size lib                            name                                             
+---------------------------------------------------------------------------------------------------------------------------
+  0 0x00000225 0x00000225 GLOBAL FUNC   49 HiKt                           void main(String[])
+ 15 0x000000e7 0x000000e7 IMPORT METH    0 kotlin.jvm.internal.Intrinsics imp.void checkParameterIsNotNull(Object, String)
+---
+   address        min        max name super  
+---------------------------------------------
+0x00000000 0x00000225 0x00000256 HiKt Object
+address index class flags name type 
+------------------------------------
+   address index class flags name                
+-------------------------------------------------
+0x00000225     0 HiKt  spf   void main(String[])
+---
+nth      vaddr bind type lib                            name                    
+--------------------------------------------------------------------------------
+ 15 ---------- NONE METH kotlin.jvm.internal.Intrinsics checkParameterIsNotNull
+---
+nth      paddr      vaddr bind   type size lib  name                
+--------------------------------------------------------------------
+  0 0x00000225 0x00000225 GLOBAL FUNC   49 HiKt void main(String[])
 EOF
 RUN
 
+NAME=Check if is Groovy lang
+FILE=bins/java/test.class
+CMDS=<<EOF
+iI~lang
+echo ---
+is
+echo ---
+ic
+icf 'test'
+icm 'test'
+echo ---
+ii
+echo ---
+iS
+EOF
+EXPECT=<<EOF
+lang     groovy
+---
+nth      paddr      vaddr bind   type  size lib                                                name                                                                          
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  0 0x000008f9 0x000008f9 LOCAL  FUNC    39 test                                               void <init>()
+  1 0x0000092e 0x0000092e LOCAL  FUNC    50 test                                               void <init>(groovy.lang.Binding)
+  2 0x0000096e 0x0000096e LOCAL  FUNC    50 test                                               void main(String[])
+  3 0x000009ae 0x000009ae LOCAL  FUNC   254 test                                               Object run()
+  4 0x00000aba 0x00000aba LOCAL  FUNC    51 test                                               groovy.lang.MetaClass $getStaticMetaClass()
+  5 0x00000afb 0x00000afb LOCAL  FUNC    97 test                                               void $createCallSiteArray_1(String[])
+  6 0x00000b6a 0x00000b6a LOCAL  FUNC    33 test                                               org.codehaus.groovy.runtime.callsite.CallSiteArray $createCallSiteArray()
+  7 0x00000b99 0x00000b99 LOCAL  FUNC    52 test                                               org.codehaus.groovy.runtime.callsite.CallSite[] $getCallSiteArray()
+  0 0x000008c9 0x000008c9 LOCAL  OBJ      0 test                                               test.$staticClassInfo
+  1 0x000008d1 0x000008d1 LOCAL  OBJ      0 test                                               test.__$stMC
+  2 0x000008d9 0x000008d9 LOCAL  OBJ      0 test                                               test.$callSiteArray
+ 13 0x0000009c 0x0000009c IMPORT METH     0 groovy.lang.Script                                 imp.void <init>()
+ 17 0x000000ef 0x000000ef IMPORT METH     0 test                                               imp.org.codehaus.groovy.runtime.callsite.CallSite[] $getCallSiteArray()
+ 22 0x00000124 0x00000124 IMPORT METH     0 groovy.lang.Script                                 imp.void <init>(groovy.lang.Binding)
+ 35 0x0000022b 0x0000022b IMPORT IMETH    0 org.codehaus.groovy.runtime.callsite.CallSite      imp.Object call(Object, Object, Object)
+ 55 0x00000317 0x00000317 IMPORT IMETH    0 org.codehaus.groovy.runtime.callsite.CallSite      imp.Object callConstructor(Object, Object)
+ 61 0x0000038b 0x0000038b IMPORT METH     0 org.codehaus.groovy.runtime.ScriptBytecodeAdapter  imp.java.util.Map createMap(Object[])
+ 67 0x000003a7 0x000003a7 IMPORT IMETH    0 org.codehaus.groovy.runtime.callsite.CallSite      imp.Object call(Object, Object)
+ 71 0x00000402 0x00000402 IMPORT IMETH    0 org.codehaus.groovy.runtime.callsite.CallSite      imp.Object callCurrent(groovy.lang.GroovyObject, Object)
+ 79 0x00000459 0x00000459 IMPORT IMETH    0 org.codehaus.groovy.runtime.callsite.CallSite      imp.Object callGetProperty(Object)
+ 92 0x000004b5 0x000004b5 IMPORT IMETH    0 org.codehaus.groovy.runtime.callsite.CallSite      imp.Object call(Object)
+100 0x0000052d 0x0000052d IMPORT METH     0 java.lang.Object                                   imp.Class getClass()
+104 0x00000575 0x00000575 IMPORT METH     0 org.codehaus.groovy.runtime.ScriptBytecodeAdapter  imp.groovy.lang.MetaClass initMetaClass(Object)
+106 0x0000057f 0x0000057f IMPORT FIELD    0 test                                               imp.test.$staticClassInfo
+112 0x00000606 0x00000606 IMPORT METH     0 org.codehaus.groovy.reflection.ClassInfo           imp.org.codehaus.groovy.reflection.ClassInfo getClassInfo(Class)
+115 0x0000061f 0x0000061f IMPORT METH     0 org.codehaus.groovy.reflection.ClassInfo           imp.groovy.lang.MetaClass getMetaClass()
+147 0x00000767 0x00000767 IMPORT METH     0 test                                               imp.void $createCallSiteArray_1(String[])
+152 0x000007d3 0x000007d3 IMPORT METH     0 org.codehaus.groovy.runtime.callsite.CallSiteArray imp.void <init>(Class, String[])
+154 0x000007dd 0x000007dd IMPORT FIELD    0 test                                               imp.test.$callSiteArray
+159 0x0000080e 0x0000080e IMPORT METH     0 java.lang.ref.SoftReference                        imp.Object get()
+161 0x00000818 0x00000818 IMPORT METH     0 test                                               imp.org.codehaus.groovy.runtime.callsite.CallSiteArray $createCallSiteArray()
+164 0x0000083a 0x0000083a IMPORT METH     0 java.lang.ref.SoftReference                        imp.void <init>(Object)
+168 0x0000087f 0x0000087f IMPORT FIELD    0 org.codehaus.groovy.runtime.callsite.CallSiteArray imp.org.codehaus.groovy.runtime.callsite.CallSiteArray.array
+---
+   address        min        max name super              
+---------------------------------------------------------
+0x00000000 0x000008f9 0x00000bcd test groovy.lang.Script
+   address index class flags name             type                                     
+---------------------------------------------------------------------------------------
+0x000008c9     0 test  sPh   $staticClassInfo org.codehaus.groovy.reflection.ClassInfo
+0x000008d1     1 test  spgh  __$stMC          boolean
+0x000008d9     2 test  sPh   $callSiteArray   java.lang.ref.SoftReference
+   address index class flags name                                                                      
+-------------------------------------------------------------------------------------------------------
+0x000008f9     0 test  p     void <init>()
+0x0000092e     1 test  p     void <init>(groovy.lang.Binding)
+0x0000096e     2 test  spg   void main(String[])
+0x000009ae     3 test  p     Object run()
+0x00000aba     4 test  rh    groovy.lang.MetaClass $getStaticMetaClass()
+0x00000afb     5 test  sPh   void $createCallSiteArray_1(String[])
+0x00000b6a     6 test  sPh   org.codehaus.groovy.runtime.callsite.CallSiteArray $createCallSiteArray()
+0x00000b99     7 test  sPh   org.codehaus.groovy.runtime.callsite.CallSite[] $getCallSiteArray()
+---
+nth      vaddr bind type  lib                                                name                   
+----------------------------------------------------------------------------------------------------
+ 13 ---------- NONE METH  groovy.lang.Script                                 <init>
+ 17 ---------- NONE METH  test                                               $getCallSiteArray
+ 22 ---------- NONE METH  groovy.lang.Script                                 <init>
+ 35 ---------- NONE IMETH org.codehaus.groovy.runtime.callsite.CallSite      call
+ 55 ---------- NONE IMETH org.codehaus.groovy.runtime.callsite.CallSite      callConstructor
+ 61 ---------- NONE METH  org.codehaus.groovy.runtime.ScriptBytecodeAdapter  createMap
+ 67 ---------- NONE IMETH org.codehaus.groovy.runtime.callsite.CallSite      call
+ 71 ---------- NONE IMETH org.codehaus.groovy.runtime.callsite.CallSite      callCurrent
+ 79 ---------- NONE IMETH org.codehaus.groovy.runtime.callsite.CallSite      callGetProperty
+ 92 ---------- NONE IMETH org.codehaus.groovy.runtime.callsite.CallSite      call
+100 ---------- NONE METH  java.lang.Object                                   getClass
+104 ---------- NONE METH  org.codehaus.groovy.runtime.ScriptBytecodeAdapter  initMetaClass
+106 ---------- NONE FIELD test                                               $staticClassInfo
+112 ---------- NONE METH  org.codehaus.groovy.reflection.ClassInfo           getClassInfo
+115 ---------- NONE METH  org.codehaus.groovy.reflection.ClassInfo           getMetaClass
+147 ---------- NONE METH  test                                               $createCallSiteArray_1
+152 ---------- NONE METH  org.codehaus.groovy.runtime.callsite.CallSiteArray <init>
+154 ---------- NONE FIELD test                                               $callSiteArray
+159 ---------- NONE METH  java.lang.ref.SoftReference                        get
+161 ---------- NONE METH  test                                               $createCallSiteArray
+164 ---------- NONE METH  java.lang.ref.SoftReference                        <init>
+168 ---------- NONE FIELD org.codehaus.groovy.runtime.callsite.CallSiteArray array
+---
+     paddr  size      vaddr vsize align perm name                                             type flags 
+---------------------------------------------------------------------------------------------------------
+0x0000000a 0x8bd 0x0000000a 0x8bd   0x0 -r-- class.constant_pool                                   
+0x000008c9   0x8 0x000008c9   0x8   0x0 -r-- class.fields._staticClassInfo.attr                    
+0x000008d1   0x8 0x000008d1   0x8   0x0 -r-- class.fields.___stMC.attr                             
+0x000008d9   0xa 0x000008d9   0xa   0x0 -r-- class.fields._callSiteArray.attr                      
+0x000008c9  0x1a 0x000008c9  0x1a   0x0 -r-- class.fields                                          
+0x000008e3 0x2e4 0x000008e3 0x2e4   0x0 -r-- class.methods                                         
+0x000008e3  0x35 0x000008e3  0x35   0x0 -r-- class.methods._init_.attr                             
+0x000008f9  0x27 0x000008f9  0x27   0x0 -r-x class.methods._init_.attr.0.code                      
+0x00000918  0x40 0x00000918  0x40   0x0 -r-- class.methods._init__1.attr                           
+0x0000092e  0x32 0x0000092e  0x32   0x0 -r-x class.methods._init__1.attr.0.code                    
+0x00000958  0x40 0x00000958  0x40   0x0 -r-- class.methods.main.attr                               
+0x0000096e  0x32 0x0000096e  0x32   0x0 -r-x class.methods.main.attr.0.code                        
+0x00000998 0x10c 0x00000998 0x10c   0x0 -r-- class.methods.run.attr                                
+0x000009ae  0xfe 0x000009ae  0xfe   0x0 -r-x class.methods.run.attr.0.code                         
+0x00000aa4  0x41 0x00000aa4  0x41   0x0 -r-- class.methods._getStaticMetaClass.attr                
+0x00000aba  0x33 0x00000aba  0x33   0x0 -r-x class.methods._getStaticMetaClass.attr.0.code         
+0x00000ae5  0x6f 0x00000ae5  0x6f   0x0 -r-- class.methods._createCallSiteArray_1.attr             
+0x00000afb  0x61 0x00000afb  0x61   0x0 -r-x class.methods._createCallSiteArray_1.attr.0.code      
+0x00000b54  0x2f 0x00000b54  0x2f   0x0 -r-- class.methods._createCallSiteArray.attr               
+0x00000b6a  0x21 0x00000b6a  0x21   0x0 -r-x class.methods._createCallSiteArray.attr.0.code        
+0x00000b83  0x44 0x00000b83  0x44   0x0 -r-- class.methods._getCallSiteArray.attr                  
+0x00000b99  0x34 0x00000b99  0x34   0x0 -r-x class.methods._getCallSiteArray.attr.0.code           
+0x00000bc7   0x8 0x00000bc7   0x8   0x0 -r-- class.attr                                            
+EOF
+RUN
+
+NAME=Check if has line number
+FILE=bins/java/Main.class
+CMDS=<<EOF
+iI~linenum
+echo ---
+is
+echo ---
+ic
+icf 'Main'
+icm 'Main'
+echo ---
+ii
+echo ---
+iS
+EOF
+EXPECT=<<EOF
+linenum  true
+---
+nth      paddr      vaddr bind   type  size lib                     name                                             
+---------------------------------------------------------------------------------------------------------------------
+  0 0x00000389 0x00000389 LOCAL  FUNC    29 Main                    void <init>()
+  1 0x000003b4 0x000003b4 LOCAL  FUNC   206 Main                    void main(String[])
+  1 0x0000000a 0x0000000a IMPORT METH     0 java.lang.Object        imp.void <init>()
+  2 0x0000000f 0x0000000f IMPORT FIELD    0 java.lang.System        imp.System.out
+  4 0x00000017 0x00000017 IMPORT METH     0 java.io.PrintStream     imp.void println(String)
+  8 0x00000025 0x00000025 IMPORT METH     0 java.io.FileReader      imp.void <init>(String)
+  9 0x0000002a 0x0000002a IMPORT METH     0 java.io.BufferedReader  imp.void <init>(java.io.Reader)
+ 10 0x0000002f 0x0000002f IMPORT METH     0 java.io.BufferedReader  imp.String readLine()
+ 12 0x00000037 0x00000037 IMPORT METH     0 java.lang.StringBuilder imp.void <init>()
+ 14 0x0000003f 0x0000003f IMPORT METH     0 java.lang.StringBuilder imp.StringBuilder append(String)
+ 15 0x00000044 0x00000044 IMPORT METH     0 java.lang.StringBuilder imp.String toString()
+ 16 0x00000049 0x00000049 IMPORT METH     0 java.io.BufferedReader  imp.void close()
+ 18 0x00000051 0x00000051 IMPORT FIELD    0 java.lang.System        imp.System.err
+ 21 0x0000005c 0x0000005c IMPORT METH     0 java.io.PrintStream     imp.java.io.PrintStream format(String, Object[])
+ 22 0x00000061 0x00000061 IMPORT METH     0 java.lang.Exception     imp.void printStackTrace()
+---
+   address        min        max name super  
+---------------------------------------------
+0x00000000 0x00000389 0x00000482 Main Object
+address index class flags name type 
+------------------------------------
+   address index class flags name                
+-------------------------------------------------
+0x00000389     0 Main  p     void <init>()
+0x000003b4     1 Main  sp    void main(String[])
+---
+nth      vaddr bind type  lib                     name            
+------------------------------------------------------------------
+  1 ---------- NONE METH  java.lang.Object        <init>
+  2 ---------- NONE FIELD java.lang.System        out
+  4 ---------- NONE METH  java.io.PrintStream     println
+  8 ---------- NONE METH  java.io.FileReader      <init>
+  9 ---------- NONE METH  java.io.BufferedReader  <init>
+ 10 ---------- NONE METH  java.io.BufferedReader  readLine
+ 12 ---------- NONE METH  java.lang.StringBuilder <init>
+ 14 ---------- NONE METH  java.lang.StringBuilder append
+ 15 ---------- NONE METH  java.lang.StringBuilder toString
+ 16 ---------- NONE METH  java.io.BufferedReader  close
+ 18 ---------- NONE FIELD java.lang.System        err
+ 21 ---------- NONE METH  java.io.PrintStream     format
+ 22 ---------- NONE METH  java.lang.Exception     printStackTrace
+---
+     paddr  size      vaddr vsize align perm name                             type flags 
+-----------------------------------------------------------------------------------------
+0x0000000a 0x365 0x0000000a 0x365   0x0 -r-- class.constant_pool                   
+0x00000373 0x109 0x00000373 0x109   0x0 -r-- class.methods                         
+0x00000373  0x2b 0x00000373  0x2b   0x0 -r-- class.methods._init_.attr             
+0x00000389  0x1d 0x00000389  0x1d   0x0 -r-x class.methods._init_.attr.0.code      
+0x0000039e  0xde 0x0000039e  0xde   0x0 -r-- class.methods.main.attr               
+0x000003b4  0xce 0x000003b4  0xce   0x0 -r-x class.methods.main.attr.0.code        
+0x0000047c   0x8 0x0000047c   0x8   0x0 -r-- class.attr                            
+EOF
+RUN
+
+NAME=Check that it does not have line number
+FILE=bins/java/TryWithResources.class
+CMDS=<<EOF
+iI~linenum
+echo ---
+is
+echo ---
+ic
+icf 'TryWithResources'
+icm 'TryWithResources'
+echo ---
+ii
+echo ---
+iS
+EOF
+EXPECT=<<EOF
+linenum  false
+---
+nth      paddr      vaddr bind   type   size lib                        name                              
+----------------------------------------------------------------------------------------------------------
+  0 0x00000421 0x00000421 LOCAL  FUNC     21 TryWithResources           TryWithResources $(int)
+  1 0x00000444 0x00000444 LOCAL  FUNC     50 TryWithResources           void <init>(int)
+  2 0x00000484 0x00000484 LOCAL  FUNC     62 TryWithResources           void close()
+  3 0x000004d0 0x000004d0 LOCAL  FUNC     29 TryWithResources           void $(int, RuntimeException)
+  4 0x000004fb 0x000004fb LOCAL  FUNC     20 TryWithResources           void $(RuntimeException)
+  5 0x0000051d 0x0000051d LOCAL  FUNC     23 TryWithResources           void main(String[])
+  6 0x0000054c 0x0000054c LOCAL  FUNC  18879 TryWithResources           TryWithResources.main
+  7 0x00004f19 0x00004f19 LOCAL  FUNC     24 TryWithResources           void <clinit>()
+  0 0x000003f9 0x000003f9 LOCAL  OBJ       0 TryWithResources           TryWithResources.$
+  1 0x00000401 0x00000401 LOCAL  OBJ       0 TryWithResources           TryWithResources.i
+  2 0x0000000d 0x0000000d IMPORT METH      0 TryWithResources           imp.void <init>(int)
+  3 0x00000012 0x00000012 IMPORT METH      0 java.lang.RuntimeException imp.void <init>()
+  4 0x00000017 0x00000017 IMPORT FIELD     0 java.lang.System           imp.System.out
+  6 0x0000001f 0x0000001f IMPORT METH      0 java.lang.StringBuilder    imp.void <init>()
+  8 0x00000027 0x00000027 IMPORT METH      0 java.lang.StringBuilder    imp.StringBuilder append(String)
+  9 0x0000002c 0x0000002c IMPORT METH      0 java.lang.StringBuilder    imp.StringBuilder append(int)
+ 10 0x00000031 0x00000031 IMPORT METH      0 java.lang.StringBuilder    imp.String toString()
+ 11 0x00000036 0x00000036 IMPORT METH      0 java.io.PrintStream        imp.void println(String)
+ 12 0x0000003b 0x0000003b IMPORT FIELD     0 TryWithResources           imp.TryWithResources.i
+ 14 0x00000043 0x00000043 IMPORT METH      0 java.io.PrintStream        imp.void println(Object)
+ 15 0x00000048 0x00000048 IMPORT FIELD     0 TryWithResources           imp.TryWithResources.$
+ 17 0x00000050 0x00000050 IMPORT FUNC      0 TryWithResources           imp.TryWithResources.main
+ 19 0x00000058 0x00000058 IMPORT METH      0 TryWithResources           imp.void $(RuntimeException)
+ 20 0x0000005d 0x0000005d IMPORT METH      0 java.io.PrintStream        imp.void println(int)
+ 21 0x00000062 0x00000062 IMPORT METH      0 TryWithResources           imp.void $(int, RuntimeException)
+ 22 0x00000067 0x00000067 IMPORT METH      0 TryWithResources           imp.void close()
+ 24 0x0000006f 0x0000006f IMPORT METH      0 java.lang.Throwable        imp.void addSuppressed(Throwable)
+ 25 0x00000074 0x00000074 IMPORT METH      0 TryWithResources           imp.TryWithResources $(int)
+ 26 0x00000079 0x00000079 IMPORT IMETH     0 java.lang.AutoCloseable    imp.void close()
+ 27 0x0000007e 0x0000007e IMPORT METH      0 java.lang.Throwable        imp.void printStackTrace()
+---
+   address        min        max name             super            
+-------------------------------------------------------------------
+0x00000000 0x00000421 0x00004f31 TryWithResources RuntimeException
+   address index class            flags name type             
+--------------------------------------------------------------
+0x000003f9     0 TryWithResources sp    $    TryWithResources
+0x00000401     1 TryWithResources pf    i    int
+   address index class            flags name                          
+----------------------------------------------------------------------
+0x00000421     0 TryWithResources sp    TryWithResources $(int)
+0x00000444     1 TryWithResources p     void <init>(int)
+0x00000484     2 TryWithResources p     void close()
+0x000004d0     3 TryWithResources sp    void $(int, RuntimeException)
+0x000004fb     4 TryWithResources sp    void $(RuntimeException)
+0x0000051d     5 TryWithResources sp    void main(String[])
+0x0000054c     6 TryWithResources pg    TryWithResources.main
+0x00004f19     7 TryWithResources s     void <clinit>()
+---
+nth      vaddr bind   type  lib                        name            
+-----------------------------------------------------------------------
+  2 ---------- NONE   METH  TryWithResources           <init>
+  3 ---------- NONE   METH  java.lang.RuntimeException <init>
+  4 ---------- NONE   FIELD java.lang.System           out
+  6 ---------- NONE   METH  java.lang.StringBuilder    <init>
+  8 ---------- NONE   METH  java.lang.StringBuilder    append
+  9 ---------- NONE   METH  java.lang.StringBuilder    append
+ 10 ---------- NONE   METH  java.lang.StringBuilder    toString
+ 11 ---------- NONE   METH  java.io.PrintStream        println
+ 12 ---------- NONE   FIELD TryWithResources           i
+ 14 ---------- NONE   METH  java.io.PrintStream        println
+ 15 ---------- NONE   FIELD TryWithResources           $
+ 17 ---------- GLOBAL FUNC  TryWithResources           main
+ 19 ---------- NONE   METH  TryWithResources           $
+ 20 ---------- NONE   METH  java.io.PrintStream        println
+ 21 ---------- NONE   METH  TryWithResources           $
+ 22 ---------- NONE   METH  TryWithResources           close
+ 24 ---------- NONE   METH  java.lang.Throwable        addSuppressed
+ 25 ---------- NONE   METH  TryWithResources           $
+ 26 ---------- NONE   IMETH java.lang.AutoCloseable    close
+ 27 ---------- NONE   METH  java.lang.Throwable        printStackTrace
+  0 ---------- WEAK   IFACE java.lang.AutoCloseable    *
+---
+     paddr   size      vaddr  vsize align perm name                                type flags 
+----------------------------------------------------------------------------------------------
+0x0000000a  0x3eb 0x0000000a  0x3eb   0x0 -r-- class.constant_pool                      
+0x000003f5    0x4 0x000003f5    0x4   0x0 -r-- class.interfaces                         
+0x000003f9    0x8 0x000003f9    0x8   0x0 -r-- class.fields._.attr                      
+0x00000401    0xa 0x00000401    0xa   0x0 -r-- class.fields.i.attr                      
+0x000003f9   0x12 0x000003f9   0x12   0x0 -r-- class.fields                             
+0x0000040b 0x4b20 0x0000040b 0x4b20   0x0 -r-- class.methods                            
+0x0000040b   0x23 0x0000040b   0x23   0x0 -r-- class.methods._.attr                     
+0x00000421   0x15 0x00000421   0x15   0x0 -r-x class.methods._.attr.0.code              
+0x0000042e   0x40 0x0000042e   0x40   0x0 -r-- class.methods._init_.attr                
+0x00000444   0x32 0x00000444   0x32   0x0 -r-x class.methods._init_.attr.0.code         
+0x0000046e   0x4c 0x0000046e   0x4c   0x0 -r-- class.methods.close.attr                 
+0x00000484   0x3e 0x00000484   0x3e   0x0 -r-x class.methods.close.attr.0.code          
+0x000004ba   0x2b 0x000004ba   0x2b   0x0 -r-- class.methods.__1.attr                   
+0x000004d0   0x1d 0x000004d0   0x1d   0x0 -r-x class.methods.__1.attr.0.code            
+0x000004e5   0x22 0x000004e5   0x22   0x0 -r-- class.methods.__1.attr_0x4e5             
+0x000004fb   0x14 0x000004fb   0x14   0x0 -r-x class.methods.__1.attr.0.code_0x4fb      
+0x00000507   0x2f 0x00000507   0x2f   0x0 -r-- class.methods.main.attr                  
+0x0000051d   0x17 0x0000051d   0x17   0x0 -r-x class.methods.main.attr.0.code           
+0x00000536 0x49cd 0x00000536 0x49cd   0x0 -r-- class.methods.main_1.attr                
+0x0000054c 0x49bf 0x0000054c 0x49bf   0x0 -r-x class.methods.main_1.attr.0.code         
+0x00004f03   0x28 0x00004f03   0x28   0x0 -r-- class.methods._clinit_.attr              
+0x00004f19   0x18 0x00004f19   0x18   0x0 -r-x class.methods._clinit_.attr.0.code       
+EOF
+RUN
 
 NAME=Check that entry point points to <init>
 FILE=bins/java/jdwpexeccmd.class
-CMDS=iS ; s
+CMDS=<<EOF
+iS ; s
+echo ---
+is
+echo ---
+ic
+icf 'JDWPExecCmd'
+icm 'JDWPExecCmd'
+echo ---
+ii
+EOF
 EXPECT=<<EOF
      paddr  size      vaddr vsize align perm name                             type flags 
 -----------------------------------------------------------------------------------------
@@ -73,57 +498,96 @@ EXPECT=<<EOF
 0x00000364  0xe9 0x00000364  0xe9   0x0 -r-x class.methods.run.attr.0.code         
 0x00000447   0x8 0x00000447   0x8   0x0 -r-- class.attr                            
 0x339
+---
+nth      paddr      vaddr bind   type size lib                       name                                     
+--------------------------------------------------------------------------------------------------------------
+  0 0x00000339 0x00000339 LOCAL  FUNC   29 JDWPExecCmd               void <init>()
+  1 0x00000364 0x00000364 LOCAL  FUNC  233 JDWPExecCmd               String run(String)
+  1 0x0000000a 0x0000000a IMPORT METH    0 java.lang.Object          imp.void <init>()
+  3 0x00000012 0x00000012 IMPORT METH    0 java.lang.StringBuilder   imp.void <init>()
+  4 0x00000017 0x00000017 IMPORT METH    0 java.lang.StringBuilder   imp.StringBuilder append(String)
+  6 0x0000001f 0x0000001f IMPORT METH    0 java.lang.StringBuilder   imp.String toString()
+  7 0x00000024 0x00000024 IMPORT METH    0 java.lang.Runtime         imp.Runtime getRuntime()
+  8 0x00000029 0x00000029 IMPORT METH    0 java.lang.Runtime         imp.Process exec(String)
+ 11 0x00000034 0x00000034 IMPORT METH    0 java.lang.Process         imp.java.io.InputStream getInputStream()
+ 12 0x00000039 0x00000039 IMPORT METH    0 java.io.InputStreamReader imp.void <init>(java.io.InputStream)
+ 13 0x0000003e 0x0000003e IMPORT METH    0 java.io.BufferedReader    imp.void <init>(java.io.Reader)
+ 14 0x00000043 0x00000043 IMPORT METH    0 java.io.BufferedReader    imp.String readLine()
+ 15 0x00000048 0x00000048 IMPORT METH    0 java.lang.String          imp.String trim()
+---
+   address        min        max name        super  
+----------------------------------------------------
+0x00000000 0x00000339 0x0000044d JDWPExecCmd Object
+address index class flags name type 
+------------------------------------
+   address index class       flags name               
+------------------------------------------------------
+0x00000339     0 JDWPExecCmd p     void <init>()
+0x00000364     1 JDWPExecCmd sp    String run(String)
+---
+nth      vaddr bind type lib                       name           
+------------------------------------------------------------------
+  1 ---------- NONE METH java.lang.Object          <init>
+  3 ---------- NONE METH java.lang.StringBuilder   <init>
+  4 ---------- NONE METH java.lang.StringBuilder   append
+  6 ---------- NONE METH java.lang.StringBuilder   toString
+  7 ---------- NONE METH java.lang.Runtime         getRuntime
+  8 ---------- NONE METH java.lang.Runtime         exec
+ 11 ---------- NONE METH java.lang.Process         getInputStream
+ 12 ---------- NONE METH java.io.InputStreamReader <init>
+ 13 ---------- NONE METH java.io.BufferedReader    <init>
+ 14 ---------- NONE METH java.io.BufferedReader    readLine
+ 15 ---------- NONE METH java.lang.String          trim
 EOF
 RUN
 
-
-NAME=Check that strings are provided by Java class
-FILE=bins/java/HiKt.class
-CMDS=iz
-EXPECT=<<EOF
-nth      paddr      vaddr len size section             type  string                                                                                                                                                                                                                                                                  
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  1 0x0000000a 0x0000000a   4    4 class.constant_pool mutf8 HiKt
-  3 0x00000014 0x00000014  16   16 class.constant_pool mutf8 java/lang/Object
-  5 0x0000002a 0x0000002a   4    4 class.constant_pool mutf8 main
-  6 0x00000031 0x00000031  22   22 class.constant_pool mutf8 ([Ljava/lang/String;)V
-  7 0x0000004a 0x0000004a  35   35 class.constant_pool mutf8 Lorg/jetbrains/annotations/NotNull;
-  8 0x00000070 0x00000070   4    4 class.constant_pool mutf8 args
- 10 0x0000007a 0x0000007a  30   30 class.constant_pool mutf8 kotlin/jvm/internal/Intrinsics
- 12 0x0000009e 0x0000009e  23   23 class.constant_pool mutf8 checkParameterIsNotNull
- 13 0x000000b8 0x000000b8  39   39 class.constant_pool mutf8 (Ljava/lang/Object;Ljava/lang/String;)V
- 16 0x000000ec 0x000000ec  19   19 class.constant_pool mutf8 [Ljava/lang/String;
- 17 0x00000102 0x00000102  17   17 class.constant_pool mutf8 Lkotlin/Metadata;
- 18 0x00000116 0x00000116   2    2 class.constant_pool mutf8 mv
- 21 0x00000125 0x00000125   2    2 class.constant_pool mutf8 bv
- 23 0x0000012f 0x0000012f   1    1 class.constant_pool mutf8 k
- 25 0x00000138 0x00000138   2    2 class.constant_pool mutf8 d1
- 26 0x0000013d 0x0000013d  53   53 class.constant_pool mutf8 \u0000\u0012\n\u0000\n\u0002\u0010\u0002\n\u0000\n\u0002\u0010\u0011\n\u0002\u0010\u000e\n\u0000\u001a\u0019\u0010\u0000\u001a\u00020\u00012\f\u0010\u0002\u001a\b\u0012\u0004\u0012\u00020\u00040\u0003¢\u0006\u0002\u0010\u0005 blocks=Basic Latin,Latin-1 Supplement
- 27 0x00000175 0x00000175   2    2 class.constant_pool mutf8 d2
- 29 0x0000017d 0x0000017d   5    5 class.constant_pool mutf8 hi.kt
- 30 0x00000185 0x00000185   4    4 class.constant_pool mutf8 Code
- 31 0x0000018c 0x0000018c  18   18 class.constant_pool mutf8 LocalVariableTable
- 32 0x000001a1 0x000001a1  15   15 class.constant_pool mutf8 LineNumberTable
- 33 0x000001b3 0x000001b3  36   36 class.constant_pool mutf8 RuntimeInvisibleParameterAnnotations
- 34 0x000001da 0x000001da  10   10 class.constant_pool mutf8 SourceFile
- 35 0x000001e7 0x000001e7  25   25 class.constant_pool mutf8 RuntimeVisibleAnnotations
-EOF
-RUN
-
-
-NAME=Java list symbols crash2.class
+NAME=Java crash2.class
 FILE=bins/java/crash2.class
-CMDS=is
+CMDS=<<EOF
+is
+echo ---
+ic
+icf 'unknown_class'
+icm 'unknown_class'
+echo ---
+ii
+echo ---
+iS
+EOF
 EXPECT=<<EOF
 nth paddr vaddr bind type size lib name 
 ----------------------------------------
+---
+   address        min        max name          super         
+-------------------------------------------------------------
+0x00000000 0x00000000 0x00000000 unknown_class unknown_super
+address index class flags name type 
+------------------------------------
+address index class flags name 
+-------------------------------
+---
+nth vaddr bind type lib name 
+-----------------------------
+---
+     paddr size      vaddr vsize align perm name                type flags 
+---------------------------------------------------------------------------
+0x0000000a 0x12 0x0000000a  0x12   0x0 -r-- class.constant_pool      
 EOF
 RUN
 
-
-NAME=Java list symbols DemoTest.class
+NAME=Java DemoTest.class
 FILE=bins/java/DemoTest.class
-CMDS=is
+CMDS=<<EOF
+is
+echo ---
+ic
+icf 'DemoTest'
+icm 'DemoTest'
+echo ---
+ii
+echo ---
+iS
+EOF
 EXPECT=<<EOF
 nth      paddr      vaddr bind   type  size lib                 name                     
 -----------------------------------------------------------------------------------------
@@ -134,13 +598,54 @@ nth      paddr      vaddr bind   type  size lib                 name
   1 0x0000000a 0x0000000a IMPORT METH     0 java.lang.Object    imp.void <init>()
   3 0x00000012 0x00000012 IMPORT FIELD    0 java.lang.System    imp.System.out
   5 0x0000001a 0x0000001a IMPORT METH     0 java.io.PrintStream imp.void println(String)
+---
+   address        min        max name     super  
+-------------------------------------------------
+0x00000000 0x00000190 0x00000236 DemoTest Object
+address index class flags name type 
+------------------------------------
+   address index class    flags name                
+----------------------------------------------------
+0x00000190     0 DemoTest p     int fun()
+0x000001b9     1 DemoTest p     void <init>()
+0x000001e8     2 DemoTest p     String res()
+0x00000211     3 DemoTest sp    void main(String[])
+---
+nth      vaddr bind type  lib                 name    
+------------------------------------------------------
+  1 ---------- NONE METH  java.lang.Object    <init>
+  3 ---------- NONE FIELD java.lang.System    out
+  5 ---------- NONE METH  java.io.PrintStream println
+---
+     paddr  size      vaddr vsize align perm name                             type flags 
+-----------------------------------------------------------------------------------------
+0x0000000a 0x16c 0x0000000a 0x16c   0x0 -r-- class.constant_pool                   
+0x0000017a  0xb6 0x0000017a  0xb6   0x0 -r-- class.methods                         
+0x0000017a  0x29 0x0000017a  0x29   0x0 -r-- class.methods.fun.attr                
+0x00000190  0x1b 0x00000190  0x1b   0x0 -r-x class.methods.fun.attr.0.code         
+0x000001a3  0x2f 0x000001a3  0x2f   0x0 -r-- class.methods._init_.attr             
+0x000001b9  0x21 0x000001b9  0x21   0x0 -r-x class.methods._init_.attr.0.code      
+0x000001d2  0x29 0x000001d2  0x29   0x0 -r-- class.methods.res.attr                
+0x000001e8  0x1b 0x000001e8  0x1b   0x0 -r-x class.methods.res.attr.0.code         
+0x000001fb  0x35 0x000001fb  0x35   0x0 -r-- class.methods.main.attr               
+0x00000211  0x25 0x00000211  0x25   0x0 -r-x class.methods.main.attr.0.code        
+0x00000230   0x8 0x00000230   0x8   0x0 -r-- class.attr                            
 EOF
 RUN
 
-
-NAME=Java list symbols ExCaseTableSwitch.class
+NAME=Java ExCaseTableSwitch.class
 FILE=bins/java/ExCaseTableSwitch.class
-CMDS=is
+CMDS=<<EOF
+is
+echo ---
+ic
+icf 'CaseTableSwitch'
+icm 'CaseTableSwitch'
+echo ---
+ii
+echo ---
+iS
+EOF
 EXPECT=<<EOF
 nth      paddr      vaddr bind   type  size lib                     name                            
 ----------------------------------------------------------------------------------------------------
@@ -161,94 +666,149 @@ nth      paddr      vaddr bind   type  size lib                     name
  46 0x000001fd 0x000001fd IMPORT METH     0 java.lang.String        imp.void <init>()
  55 0x00000267 0x00000267 IMPORT METH     0 java.lang.Integer       imp.Integer valueOf(int)
  61 0x000002ab 0x000002ab IMPORT METH     0 TestVariableSwitchUp    imp.void TestMultipleVariable()
+---
+   address        min        max name            super  
+--------------------------------------------------------
+0x00000000 0x00000464 0x00000d74 CaseTableSwitch Object
+address index class flags name type 
+------------------------------------
+   address index class           flags name                         
+--------------------------------------------------------------------
+0x00000464     0 CaseTableSwitch p     void <init>()
+0x000004a1     1 CaseTableSwitch p     String a(int)
+0x000005df     2 CaseTableSwitch p     int a(String)
+0x00000623     3 CaseTableSwitch p     int a()
+0x0000065d     4 CaseTableSwitch p     void hopskip_line_switch()
+0x00000816     5 CaseTableSwitch p     void straight_line_switch()
+0x000009ea     6 CaseTableSwitch p     void straight_line_switch_()
+0x00000bb6     7 CaseTableSwitch sp    void main(String[])
+---
+nth      vaddr bind type  lib                     name                 
+-----------------------------------------------------------------------
+  8 ---------- NONE METH  java.lang.Object        <init>
+ 16 ---------- NONE FIELD java.lang.System        out
+ 26 ---------- NONE METH  java.lang.StringBuilder <init>
+ 29 ---------- NONE METH  java.lang.StringBuilder append
+ 33 ---------- NONE METH  java.lang.StringBuilder toString
+ 37 ---------- NONE METH  java.io.PrintStream     println
+ 46 ---------- NONE METH  java.lang.String        <init>
+ 55 ---------- NONE METH  java.lang.Integer       valueOf
+ 61 ---------- NONE METH  TestVariableSwitchUp    TestMultipleVariable
+---
+     paddr  size      vaddr vsize align perm name                                            type flags 
+--------------------------------------------------------------------------------------------------------
+0x0000000a 0x440 0x0000000a 0x440   0x0 -r-- class.constant_pool                                  
+0x0000044e 0x920 0x0000044e 0x920   0x0 -r-- class.methods                                        
+0x0000044e  0x3d 0x0000044e  0x3d   0x0 -r-- class.methods._init_.attr                            
+0x00000464  0x2f 0x00000464  0x2f   0x0 -r-x class.methods._init_.attr.0.code                     
+0x0000048b 0x13e 0x0000048b 0x13e   0x0 -r-- class.methods.a.attr                                 
+0x000004a1 0x130 0x000004a1 0x130   0x0 -r-x class.methods.a.attr.0.code                          
+0x000005c9  0x44 0x000005c9  0x44   0x0 -r-- class.methods.a_1.attr                               
+0x000005df  0x36 0x000005df  0x36   0x0 -r-x class.methods.a_1.attr.0.code                        
+0x0000060d  0x3a 0x0000060d  0x3a   0x0 -r-- class.methods.a_1.attr_0x60d                         
+0x00000623  0x2c 0x00000623  0x2c   0x0 -r-x class.methods.a_1.attr.0.code_0x623                  
+0x00000647 0x1b9 0x00000647 0x1b9   0x0 -r-- class.methods.hopskip_line_switch.attr               
+0x0000065d 0x1ab 0x0000065d 0x1ab   0x0 -r-x class.methods.hopskip_line_switch.attr.0.code        
+0x00000800 0x1d4 0x00000800 0x1d4   0x0 -r-- class.methods.straight_line_switch.attr              
+0x00000816 0x1c6 0x00000816 0x1c6   0x0 -r-x class.methods.straight_line_switch.attr.0.code       
+0x000009d4 0x1cc 0x000009d4 0x1cc   0x0 -r-- class.methods.straight_line_switch_.attr             
+0x000009ea 0x1be 0x000009ea 0x1be   0x0 -r-x class.methods.straight_line_switch_.attr.0.code      
+0x00000ba0 0x1ce 0x00000ba0 0x1ce   0x0 -r-- class.methods.main.attr                              
+0x00000bb6 0x1be 0x00000bb6 0x1be   0x0 -r-x class.methods.main.attr.0.code                       
+0x00000d6e   0x8 0x00000d6e   0x8   0x0 -r-- class.attr                                           
 EOF
 RUN
 
-
-NAME=Java list symbols fuckedup.class
+NAME=Java fuckedup.class
 FILE=bins/java/fuckedup.class
-CMDS=is
+CMDS=<<EOF
+is
+echo ---
+ic
+icf 'unknown_class'
+icm 'unknown_class'
+echo ---
+ii
+echo ---
+iS
+EOF
 EXPECT=<<EOF
 nth paddr vaddr bind type size lib name 
 ----------------------------------------
+---
+   address        min        max name          super         
+-------------------------------------------------------------
+0x00000000 0x00000000 0x00000000 unknown_class unknown_super
+address index class flags name type 
+------------------------------------
+address index class flags name 
+-------------------------------
+---
+nth vaddr bind type lib name 
+-----------------------------
+---
+     paddr size      vaddr vsize align perm name                type flags 
+---------------------------------------------------------------------------
+0x0000000a 0x41 0x0000000a  0x41   0x0 -r-- class.constant_pool      
 EOF
 RUN
 
-
-NAME=Java list symbols Hello.class
-FILE=bins/java/Hello.class
-CMDS=is
-EXPECT=<<EOF
-nth      paddr      vaddr bind   type  size lib                     name                             
------------------------------------------------------------------------------------------------------
-  0 0x0000022b 0x0000022b LOCAL  FUNC    42 Hello                   void <init>(String)
-  1 0x00000263 0x00000263 LOCAL  FUNC    57 Hello                   void say()
-  2 0x000002aa 0x000002aa LOCAL  FUNC    41 Hello                   void main(String[])
-  0 0x0000020b 0x0000020b LOCAL  OBJ      0 Hello                   Hello.who
-  1 0x0000000a 0x0000000a IMPORT METH     0 java.lang.Object        imp.void <init>()
-  2 0x0000000f 0x0000000f IMPORT FIELD    0 Hello                   imp.Hello.who
-  3 0x00000014 0x00000014 IMPORT FIELD    0 java.lang.System        imp.System.out
-  5 0x0000001c 0x0000001c IMPORT METH     0 java.lang.StringBuilder imp.void <init>()
-  7 0x00000024 0x00000024 IMPORT METH     0 java.lang.StringBuilder imp.StringBuilder append(String)
-  8 0x00000029 0x00000029 IMPORT METH     0 java.lang.StringBuilder imp.String toString()
-  9 0x0000002e 0x0000002e IMPORT METH     0 java.io.PrintStream     imp.void println(String)
- 12 0x00000039 0x00000039 IMPORT METH     0 Hello                   imp.void <init>(String)
- 13 0x0000003e 0x0000003e IMPORT METH     0 Hello                   imp.void say()
-EOF
-RUN
-
-
-NAME=Java list symbols HiKt.class
-FILE=bins/java/HiKt.class
-CMDS=is
-EXPECT=<<EOF
-nth      paddr      vaddr bind   type size lib                            name                                             
----------------------------------------------------------------------------------------------------------------------------
-  0 0x00000225 0x00000225 GLOBAL FUNC   49 HiKt                           void main(String[])
- 15 0x000000e7 0x000000e7 IMPORT METH    0 kotlin.jvm.internal.Intrinsics imp.void checkParameterIsNotNull(Object, String)
-EOF
-RUN
-
-
-NAME=Java list symbols invisible.class
+NAME=Java invisible.class
 FILE=bins/java/invisible.class
-CMDS=is
+CMDS=<<EOF
+is
+echo ---
+ic
+icf 'Test'
+icm 'Test'
+echo ---
+ii
+echo ---
+iS
+EOF
 EXPECT=<<EOF
 nth      paddr      vaddr bind   type  size lib                 name                     
 -----------------------------------------------------------------------------------------
   0 0x00000120 0x00000120 LOCAL  FUNC    17 Test                void main(String[])
   7 0x0000003a 0x0000003a IMPORT FIELD    0 java.lang.System    imp.System.out
   8 0x0000003f 0x0000003f IMPORT METH     0 java.io.PrintStream imp.void println(String)
+---
+   address        min        max name super  
+---------------------------------------------
+0x00000000 0x00000120 0x00000131 Test Object
+address index class flags name type 
+------------------------------------
+   address index class flags name                
+-------------------------------------------------
+0x00000120     0 Test  sp    void main(String[])
+---
+nth      vaddr bind type  lib                 name    
+------------------------------------------------------
+  7 ---------- NONE FIELD java.lang.System    out
+  8 ---------- NONE METH  java.io.PrintStream println
+---
+     paddr  size      vaddr vsize align perm name                           type flags 
+---------------------------------------------------------------------------------------
+0x0000000a 0x100 0x0000000a 0x100   0x0 -r-- class.constant_pool                 
+0x0000010e  0x21 0x0000010e  0x21   0x0 -r-- class.methods                       
+0x0000010e  0x21 0x0000010e  0x21   0x0 -r-- class.methods.main.attr             
+0x00000120  0x11 0x00000120  0x11   0x0 -r-x class.methods.main.attr.0.code      
 EOF
 RUN
 
-
-NAME=Java list symbols jdwpexeccmd.class
-FILE=bins/java/jdwpexeccmd.class
-CMDS=is
-EXPECT=<<EOF
-nth      paddr      vaddr bind   type size lib                       name                                     
---------------------------------------------------------------------------------------------------------------
-  0 0x00000339 0x00000339 LOCAL  FUNC   29 JDWPExecCmd               void <init>()
-  1 0x00000364 0x00000364 LOCAL  FUNC  233 JDWPExecCmd               String run(String)
-  1 0x0000000a 0x0000000a IMPORT METH    0 java.lang.Object          imp.void <init>()
-  3 0x00000012 0x00000012 IMPORT METH    0 java.lang.StringBuilder   imp.void <init>()
-  4 0x00000017 0x00000017 IMPORT METH    0 java.lang.StringBuilder   imp.StringBuilder append(String)
-  6 0x0000001f 0x0000001f IMPORT METH    0 java.lang.StringBuilder   imp.String toString()
-  7 0x00000024 0x00000024 IMPORT METH    0 java.lang.Runtime         imp.Runtime getRuntime()
-  8 0x00000029 0x00000029 IMPORT METH    0 java.lang.Runtime         imp.Process exec(String)
- 11 0x00000034 0x00000034 IMPORT METH    0 java.lang.Process         imp.java.io.InputStream getInputStream()
- 12 0x00000039 0x00000039 IMPORT METH    0 java.io.InputStreamReader imp.void <init>(java.io.InputStream)
- 13 0x0000003e 0x0000003e IMPORT METH    0 java.io.BufferedReader    imp.void <init>(java.io.Reader)
- 14 0x00000043 0x00000043 IMPORT METH    0 java.io.BufferedReader    imp.String readLine()
- 15 0x00000048 0x00000048 IMPORT METH    0 java.lang.String          imp.String trim()
-EOF
-RUN
-
-
-NAME=Java list symbols MainActivity.class
+NAME=Java MainActivity.class
 FILE=bins/java/MainActivity.class
-CMDS=is
+CMDS=<<EOF
+is
+echo ---
+ic
+icf 'org.radare2.installer.MainActivity'
+icm 'org.radare2.installer.MainActivity'
+echo ---
+ii
+echo ---
+iS
+EOF
 EXPECT=<<EOF
 nth      paddr      vaddr bind   type  size lib                                  name                                                                                                
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -367,308 +927,7 @@ nth      paddr      vaddr bind   type  size lib                                 
 141 0x00000260 0x00000260 IMPORT METH     0 android.app.AlarmManager             imp.void cancel(android.app.PendingIntent)
 142 0x00000265 0x00000265 IMPORT METH     0 android.os.SystemClock               imp.long elapsedRealtime()
 143 0x0000026a 0x0000026a IMPORT METH     0 android.app.AlarmManager             imp.void setInexactRepeating(int, long, long, android.app.PendingIntent)
-EOF
-RUN
-
-
-NAME=Java list symbols Main.class
-FILE=bins/java/Main.class
-CMDS=is
-EXPECT=<<EOF
-nth      paddr      vaddr bind   type  size lib                     name                                             
----------------------------------------------------------------------------------------------------------------------
-  0 0x00000389 0x00000389 LOCAL  FUNC    29 Main                    void <init>()
-  1 0x000003b4 0x000003b4 LOCAL  FUNC   206 Main                    void main(String[])
-  1 0x0000000a 0x0000000a IMPORT METH     0 java.lang.Object        imp.void <init>()
-  2 0x0000000f 0x0000000f IMPORT FIELD    0 java.lang.System        imp.System.out
-  4 0x00000017 0x00000017 IMPORT METH     0 java.io.PrintStream     imp.void println(String)
-  8 0x00000025 0x00000025 IMPORT METH     0 java.io.FileReader      imp.void <init>(String)
-  9 0x0000002a 0x0000002a IMPORT METH     0 java.io.BufferedReader  imp.void <init>(java.io.Reader)
- 10 0x0000002f 0x0000002f IMPORT METH     0 java.io.BufferedReader  imp.String readLine()
- 12 0x00000037 0x00000037 IMPORT METH     0 java.lang.StringBuilder imp.void <init>()
- 14 0x0000003f 0x0000003f IMPORT METH     0 java.lang.StringBuilder imp.StringBuilder append(String)
- 15 0x00000044 0x00000044 IMPORT METH     0 java.lang.StringBuilder imp.String toString()
- 16 0x00000049 0x00000049 IMPORT METH     0 java.io.BufferedReader  imp.void close()
- 18 0x00000051 0x00000051 IMPORT FIELD    0 java.lang.System        imp.System.err
- 21 0x0000005c 0x0000005c IMPORT METH     0 java.io.PrintStream     imp.java.io.PrintStream format(String, Object[])
- 22 0x00000061 0x00000061 IMPORT METH     0 java.lang.Exception     imp.void printStackTrace()
-EOF
-RUN
-
-
-NAME=Java list symbols sjybq.class
-FILE=bins/java/sjybq.class
-CMDS=is
-EXPECT=<<EOF
-nth paddr vaddr bind type size lib name 
-----------------------------------------
-EOF
-RUN
-
-
-NAME=Java list symbols test.class
-FILE=bins/java/test.class
-CMDS=is
-EXPECT=<<EOF
-nth      paddr      vaddr bind   type  size lib                                                name                                                                          
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  0 0x000008f9 0x000008f9 LOCAL  FUNC    39 test                                               void <init>()
-  1 0x0000092e 0x0000092e LOCAL  FUNC    50 test                                               void <init>(groovy.lang.Binding)
-  2 0x0000096e 0x0000096e LOCAL  FUNC    50 test                                               void main(String[])
-  3 0x000009ae 0x000009ae LOCAL  FUNC   254 test                                               Object run()
-  4 0x00000aba 0x00000aba LOCAL  FUNC    51 test                                               groovy.lang.MetaClass $getStaticMetaClass()
-  5 0x00000afb 0x00000afb LOCAL  FUNC    97 test                                               void $createCallSiteArray_1(String[])
-  6 0x00000b6a 0x00000b6a LOCAL  FUNC    33 test                                               org.codehaus.groovy.runtime.callsite.CallSiteArray $createCallSiteArray()
-  7 0x00000b99 0x00000b99 LOCAL  FUNC    52 test                                               org.codehaus.groovy.runtime.callsite.CallSite[] $getCallSiteArray()
-  0 0x000008c9 0x000008c9 LOCAL  OBJ      0 test                                               test.$staticClassInfo
-  1 0x000008d1 0x000008d1 LOCAL  OBJ      0 test                                               test.__$stMC
-  2 0x000008d9 0x000008d9 LOCAL  OBJ      0 test                                               test.$callSiteArray
- 13 0x0000009c 0x0000009c IMPORT METH     0 groovy.lang.Script                                 imp.void <init>()
- 17 0x000000ef 0x000000ef IMPORT METH     0 test                                               imp.org.codehaus.groovy.runtime.callsite.CallSite[] $getCallSiteArray()
- 22 0x00000124 0x00000124 IMPORT METH     0 groovy.lang.Script                                 imp.void <init>(groovy.lang.Binding)
- 35 0x0000022b 0x0000022b IMPORT IMETH    0 org.codehaus.groovy.runtime.callsite.CallSite      imp.Object call(Object, Object, Object)
- 55 0x00000317 0x00000317 IMPORT IMETH    0 org.codehaus.groovy.runtime.callsite.CallSite      imp.Object callConstructor(Object, Object)
- 61 0x0000038b 0x0000038b IMPORT METH     0 org.codehaus.groovy.runtime.ScriptBytecodeAdapter  imp.java.util.Map createMap(Object[])
- 67 0x000003a7 0x000003a7 IMPORT IMETH    0 org.codehaus.groovy.runtime.callsite.CallSite      imp.Object call(Object, Object)
- 71 0x00000402 0x00000402 IMPORT IMETH    0 org.codehaus.groovy.runtime.callsite.CallSite      imp.Object callCurrent(groovy.lang.GroovyObject, Object)
- 79 0x00000459 0x00000459 IMPORT IMETH    0 org.codehaus.groovy.runtime.callsite.CallSite      imp.Object callGetProperty(Object)
- 92 0x000004b5 0x000004b5 IMPORT IMETH    0 org.codehaus.groovy.runtime.callsite.CallSite      imp.Object call(Object)
-100 0x0000052d 0x0000052d IMPORT METH     0 java.lang.Object                                   imp.Class getClass()
-104 0x00000575 0x00000575 IMPORT METH     0 org.codehaus.groovy.runtime.ScriptBytecodeAdapter  imp.groovy.lang.MetaClass initMetaClass(Object)
-106 0x0000057f 0x0000057f IMPORT FIELD    0 test                                               imp.test.$staticClassInfo
-112 0x00000606 0x00000606 IMPORT METH     0 org.codehaus.groovy.reflection.ClassInfo           imp.org.codehaus.groovy.reflection.ClassInfo getClassInfo(Class)
-115 0x0000061f 0x0000061f IMPORT METH     0 org.codehaus.groovy.reflection.ClassInfo           imp.groovy.lang.MetaClass getMetaClass()
-147 0x00000767 0x00000767 IMPORT METH     0 test                                               imp.void $createCallSiteArray_1(String[])
-152 0x000007d3 0x000007d3 IMPORT METH     0 org.codehaus.groovy.runtime.callsite.CallSiteArray imp.void <init>(Class, String[])
-154 0x000007dd 0x000007dd IMPORT FIELD    0 test                                               imp.test.$callSiteArray
-159 0x0000080e 0x0000080e IMPORT METH     0 java.lang.ref.SoftReference                        imp.Object get()
-161 0x00000818 0x00000818 IMPORT METH     0 test                                               imp.org.codehaus.groovy.runtime.callsite.CallSiteArray $createCallSiteArray()
-164 0x0000083a 0x0000083a IMPORT METH     0 java.lang.ref.SoftReference                        imp.void <init>(Object)
-168 0x0000087f 0x0000087f IMPORT FIELD    0 org.codehaus.groovy.runtime.callsite.CallSiteArray imp.org.codehaus.groovy.runtime.callsite.CallSiteArray.array
-EOF
-RUN
-
-
-NAME=Java list symbols TryWithResources.class
-FILE=bins/java/TryWithResources.class
-CMDS=is
-EXPECT=<<EOF
-nth      paddr      vaddr bind   type   size lib                        name                              
-----------------------------------------------------------------------------------------------------------
-  0 0x00000421 0x00000421 LOCAL  FUNC     21 TryWithResources           TryWithResources $(int)
-  1 0x00000444 0x00000444 LOCAL  FUNC     50 TryWithResources           void <init>(int)
-  2 0x00000484 0x00000484 LOCAL  FUNC     62 TryWithResources           void close()
-  3 0x000004d0 0x000004d0 LOCAL  FUNC     29 TryWithResources           void $(int, RuntimeException)
-  4 0x000004fb 0x000004fb LOCAL  FUNC     20 TryWithResources           void $(RuntimeException)
-  5 0x0000051d 0x0000051d LOCAL  FUNC     23 TryWithResources           void main(String[])
-  6 0x0000054c 0x0000054c LOCAL  FUNC  18879 TryWithResources           TryWithResources.main
-  7 0x00004f19 0x00004f19 LOCAL  FUNC     24 TryWithResources           void <clinit>()
-  0 0x000003f9 0x000003f9 LOCAL  OBJ       0 TryWithResources           TryWithResources.$
-  1 0x00000401 0x00000401 LOCAL  OBJ       0 TryWithResources           TryWithResources.i
-  2 0x0000000d 0x0000000d IMPORT METH      0 TryWithResources           imp.void <init>(int)
-  3 0x00000012 0x00000012 IMPORT METH      0 java.lang.RuntimeException imp.void <init>()
-  4 0x00000017 0x00000017 IMPORT FIELD     0 java.lang.System           imp.System.out
-  6 0x0000001f 0x0000001f IMPORT METH      0 java.lang.StringBuilder    imp.void <init>()
-  8 0x00000027 0x00000027 IMPORT METH      0 java.lang.StringBuilder    imp.StringBuilder append(String)
-  9 0x0000002c 0x0000002c IMPORT METH      0 java.lang.StringBuilder    imp.StringBuilder append(int)
- 10 0x00000031 0x00000031 IMPORT METH      0 java.lang.StringBuilder    imp.String toString()
- 11 0x00000036 0x00000036 IMPORT METH      0 java.io.PrintStream        imp.void println(String)
- 12 0x0000003b 0x0000003b IMPORT FIELD     0 TryWithResources           imp.TryWithResources.i
- 14 0x00000043 0x00000043 IMPORT METH      0 java.io.PrintStream        imp.void println(Object)
- 15 0x00000048 0x00000048 IMPORT FIELD     0 TryWithResources           imp.TryWithResources.$
- 17 0x00000050 0x00000050 IMPORT FUNC      0 TryWithResources           imp.TryWithResources.main
- 19 0x00000058 0x00000058 IMPORT METH      0 TryWithResources           imp.void $(RuntimeException)
- 20 0x0000005d 0x0000005d IMPORT METH      0 java.io.PrintStream        imp.void println(int)
- 21 0x00000062 0x00000062 IMPORT METH      0 TryWithResources           imp.void $(int, RuntimeException)
- 22 0x00000067 0x00000067 IMPORT METH      0 TryWithResources           imp.void close()
- 24 0x0000006f 0x0000006f IMPORT METH      0 java.lang.Throwable        imp.void addSuppressed(Throwable)
- 25 0x00000074 0x00000074 IMPORT METH      0 TryWithResources           imp.TryWithResources $(int)
- 26 0x00000079 0x00000079 IMPORT IMETH     0 java.lang.AutoCloseable    imp.void close()
- 27 0x0000007e 0x0000007e IMPORT METH      0 java.lang.Throwable        imp.void printStackTrace()
-EOF
-RUN
-
-
-NAME=Java list classes crash2.class
-FILE=bins/java/crash2.class
-CMDS=<<EOF
-ic
-icf 'unknown_class'
-icm 'unknown_class'
-EOF
-EXPECT=<<EOF
-   address        min        max name          super         
--------------------------------------------------------------
-0x00000000 0x00000000 0x00000000 unknown_class unknown_super
-address index class flags name type 
-------------------------------------
-address index class flags name 
--------------------------------
-EOF
-RUN
-
-
-NAME=Java list classes DemoTest.class
-FILE=bins/java/DemoTest.class
-CMDS=<<EOF
-ic
-icf 'DemoTest'
-icm 'DemoTest'
-EOF
-EXPECT=<<EOF
-   address        min        max name     super  
--------------------------------------------------
-0x00000000 0x00000190 0x00000236 DemoTest Object
-address index class flags name type 
-------------------------------------
-   address index class    flags name                
-----------------------------------------------------
-0x00000190     0 DemoTest p     int fun()
-0x000001b9     1 DemoTest p     void <init>()
-0x000001e8     2 DemoTest p     String res()
-0x00000211     3 DemoTest sp    void main(String[])
-EOF
-RUN
-
-
-NAME=Java list classes ExCaseTableSwitch.class
-FILE=bins/java/ExCaseTableSwitch.class
-CMDS=<<EOF
-ic
-icf 'CaseTableSwitch'
-icm 'CaseTableSwitch'
-EOF
-EXPECT=<<EOF
-   address        min        max name            super  
---------------------------------------------------------
-0x00000000 0x00000464 0x00000d74 CaseTableSwitch Object
-address index class flags name type 
-------------------------------------
-   address index class           flags name                         
---------------------------------------------------------------------
-0x00000464     0 CaseTableSwitch p     void <init>()
-0x000004a1     1 CaseTableSwitch p     String a(int)
-0x000005df     2 CaseTableSwitch p     int a(String)
-0x00000623     3 CaseTableSwitch p     int a()
-0x0000065d     4 CaseTableSwitch p     void hopskip_line_switch()
-0x00000816     5 CaseTableSwitch p     void straight_line_switch()
-0x000009ea     6 CaseTableSwitch p     void straight_line_switch_()
-0x00000bb6     7 CaseTableSwitch sp    void main(String[])
-EOF
-RUN
-
-
-NAME=Java list classes fuckedup.class
-FILE=bins/java/fuckedup.class
-CMDS=<<EOF
-ic
-icf 'unknown_class'
-icm 'unknown_class'
-EOF
-EXPECT=<<EOF
-   address        min        max name          super         
--------------------------------------------------------------
-0x00000000 0x00000000 0x00000000 unknown_class unknown_super
-address index class flags name type 
-------------------------------------
-address index class flags name 
--------------------------------
-EOF
-RUN
-
-
-NAME=Java list classes Hello.class
-FILE=bins/java/Hello.class
-CMDS=<<EOF
-ic
-icf 'Hello'
-icm 'Hello'
-EOF
-EXPECT=<<EOF
-   address        min        max name  super  
-----------------------------------------------
-0x00000000 0x0000022b 0x000002d3 Hello Object
-   address index class flags name type   
------------------------------------------
-0x0000020b     0 Hello P     who  String
-   address index class flags name                
--------------------------------------------------
-0x0000022b     0 Hello p     void <init>(String)
-0x00000263     1 Hello p     void say()
-0x000002aa     2 Hello sp    void main(String[])
-EOF
-RUN
-
-
-NAME=Java list classes HiKt.class
-FILE=bins/java/HiKt.class
-CMDS=<<EOF
-ic
-icf 'HiKt'
-icm 'HiKt'
-EOF
-EXPECT=<<EOF
-   address        min        max name super  
----------------------------------------------
-0x00000000 0x00000225 0x00000256 HiKt Object
-address index class flags name type 
-------------------------------------
-   address index class flags name                
--------------------------------------------------
-0x00000225     0 HiKt  spf   void main(String[])
-EOF
-RUN
-
-
-NAME=Java list classes invisible.class
-FILE=bins/java/invisible.class
-CMDS=<<EOF
-ic
-icf 'Test'
-icm 'Test'
-EOF
-EXPECT=<<EOF
-   address        min        max name super  
----------------------------------------------
-0x00000000 0x00000120 0x00000131 Test Object
-address index class flags name type 
-------------------------------------
-   address index class flags name                
--------------------------------------------------
-0x00000120     0 Test  sp    void main(String[])
-EOF
-RUN
-
-
-NAME=Java list classes jdwpexeccmd.class
-FILE=bins/java/jdwpexeccmd.class
-CMDS=<<EOF
-ic
-icf 'JDWPExecCmd'
-icm 'JDWPExecCmd'
-EOF
-EXPECT=<<EOF
-   address        min        max name        super  
-----------------------------------------------------
-0x00000000 0x00000339 0x0000044d JDWPExecCmd Object
-address index class flags name type 
-------------------------------------
-   address index class       flags name               
-------------------------------------------------------
-0x00000339     0 JDWPExecCmd p     void <init>()
-0x00000364     1 JDWPExecCmd sp    String run(String)
-EOF
-RUN
-
-
-NAME=Java list classes MainActivity.class
-FILE=bins/java/MainActivity.class
-CMDS=<<EOF
-ic
-icf 'org.radare2.installer.MainActivity'
-icm 'org.radare2.installer.MainActivity'
-EOF
-EXPECT=<<EOF
+---
    address        min        max name                               super                
 -----------------------------------------------------------------------------------------
 0x00000000 0x00001c87 0x000029ea org.radare2.installer.MainActivity android.app.Activity
@@ -707,221 +966,7 @@ EXPECT=<<EOF
 0x0000291f    18 org.radare2.installer.MainActivity sh    Thread access$602(org.radare2.installer.MainActivity, Thread)
 0x00002968    19 org.radare2.installer.MainActivity sh    android.os.Handler access$700(org.radare2.installer.MainActivity)
 0x000029a5    20 org.radare2.installer.MainActivity sh    boolean access$800(org.radare2.installer.MainActivity, String, String)
-EOF
-RUN
-
-
-NAME=Java list classes Main.class
-FILE=bins/java/Main.class
-CMDS=<<EOF
-ic
-icf 'Main'
-icm 'Main'
-EOF
-EXPECT=<<EOF
-   address        min        max name super  
----------------------------------------------
-0x00000000 0x00000389 0x00000482 Main Object
-address index class flags name type 
-------------------------------------
-   address index class flags name                
--------------------------------------------------
-0x00000389     0 Main  p     void <init>()
-0x000003b4     1 Main  sp    void main(String[])
-EOF
-RUN
-
-
-NAME=Java list classes sjybq.class
-FILE=bins/java/sjybq.class
-CMDS=ic
-EXPECT=<<EOF
-address min max name super 
----------------------------
-EOF
-RUN
-
-
-NAME=Java list classes test.class
-FILE=bins/java/test.class
-CMDS=<<EOF
-ic
-icf 'test'
-icm 'test'
-EOF
-EXPECT=<<EOF
-   address        min        max name super              
----------------------------------------------------------
-0x00000000 0x000008f9 0x00000bcd test groovy.lang.Script
-   address index class flags name             type                                     
----------------------------------------------------------------------------------------
-0x000008c9     0 test  sPh   $staticClassInfo org.codehaus.groovy.reflection.ClassInfo
-0x000008d1     1 test  spgh  __$stMC          boolean
-0x000008d9     2 test  sPh   $callSiteArray   java.lang.ref.SoftReference
-   address index class flags name                                                                      
--------------------------------------------------------------------------------------------------------
-0x000008f9     0 test  p     void <init>()
-0x0000092e     1 test  p     void <init>(groovy.lang.Binding)
-0x0000096e     2 test  spg   void main(String[])
-0x000009ae     3 test  p     Object run()
-0x00000aba     4 test  rh    groovy.lang.MetaClass $getStaticMetaClass()
-0x00000afb     5 test  sPh   void $createCallSiteArray_1(String[])
-0x00000b6a     6 test  sPh   org.codehaus.groovy.runtime.callsite.CallSiteArray $createCallSiteArray()
-0x00000b99     7 test  sPh   org.codehaus.groovy.runtime.callsite.CallSite[] $getCallSiteArray()
-EOF
-RUN
-
-
-NAME=Java list classes TryWithResources.class
-FILE=bins/java/TryWithResources.class
-CMDS=<<EOF
-ic
-icf 'TryWithResources'
-icm 'TryWithResources'
-EOF
-EXPECT=<<EOF
-   address        min        max name             super            
--------------------------------------------------------------------
-0x00000000 0x00000421 0x00004f31 TryWithResources RuntimeException
-   address index class            flags name type             
---------------------------------------------------------------
-0x000003f9     0 TryWithResources sp    $    TryWithResources
-0x00000401     1 TryWithResources pf    i    int
-   address index class            flags name                          
-----------------------------------------------------------------------
-0x00000421     0 TryWithResources sp    TryWithResources $(int)
-0x00000444     1 TryWithResources p     void <init>(int)
-0x00000484     2 TryWithResources p     void close()
-0x000004d0     3 TryWithResources sp    void $(int, RuntimeException)
-0x000004fb     4 TryWithResources sp    void $(RuntimeException)
-0x0000051d     5 TryWithResources sp    void main(String[])
-0x0000054c     6 TryWithResources pg    TryWithResources.main
-0x00004f19     7 TryWithResources s     void <clinit>()
-EOF
-RUN
-
-
-
-
-NAME=Java list imports crash2.class
-FILE=bins/java/crash2.class
-CMDS=ii
-EXPECT=<<EOF
-nth vaddr bind type lib name 
------------------------------
-EOF
-RUN
-
-
-NAME=Java list imports DemoTest.class
-FILE=bins/java/DemoTest.class
-CMDS=ii
-EXPECT=<<EOF
-nth      vaddr bind type  lib                 name    
-------------------------------------------------------
-  1 ---------- NONE METH  java.lang.Object    <init>
-  3 ---------- NONE FIELD java.lang.System    out
-  5 ---------- NONE METH  java.io.PrintStream println
-EOF
-RUN
-
-
-NAME=Java list imports ExCaseTableSwitch.class
-FILE=bins/java/ExCaseTableSwitch.class
-CMDS=ii
-EXPECT=<<EOF
-nth      vaddr bind type  lib                     name                 
------------------------------------------------------------------------
-  8 ---------- NONE METH  java.lang.Object        <init>
- 16 ---------- NONE FIELD java.lang.System        out
- 26 ---------- NONE METH  java.lang.StringBuilder <init>
- 29 ---------- NONE METH  java.lang.StringBuilder append
- 33 ---------- NONE METH  java.lang.StringBuilder toString
- 37 ---------- NONE METH  java.io.PrintStream     println
- 46 ---------- NONE METH  java.lang.String        <init>
- 55 ---------- NONE METH  java.lang.Integer       valueOf
- 61 ---------- NONE METH  TestVariableSwitchUp    TestMultipleVariable
-EOF
-RUN
-
-
-NAME=Java list imports fuckedup.class
-FILE=bins/java/fuckedup.class
-CMDS=ii
-EXPECT=<<EOF
-nth vaddr bind type lib name 
------------------------------
-EOF
-RUN
-
-
-NAME=Java list imports Hello.class
-FILE=bins/java/Hello.class
-CMDS=ii
-EXPECT=<<EOF
-nth      vaddr bind type  lib                     name     
------------------------------------------------------------
-  1 ---------- NONE METH  java.lang.Object        <init>
-  2 ---------- NONE FIELD Hello                   who
-  3 ---------- NONE FIELD java.lang.System        out
-  5 ---------- NONE METH  java.lang.StringBuilder <init>
-  7 ---------- NONE METH  java.lang.StringBuilder append
-  8 ---------- NONE METH  java.lang.StringBuilder toString
-  9 ---------- NONE METH  java.io.PrintStream     println
- 12 ---------- NONE METH  Hello                   <init>
- 13 ---------- NONE METH  Hello                   say
-EOF
-RUN
-
-
-NAME=Java list imports HiKt.class
-FILE=bins/java/HiKt.class
-CMDS=ii
-EXPECT=<<EOF
-nth      vaddr bind type lib                            name                    
---------------------------------------------------------------------------------
- 15 ---------- NONE METH kotlin.jvm.internal.Intrinsics checkParameterIsNotNull
-EOF
-RUN
-
-
-NAME=Java list imports invisible.class
-FILE=bins/java/invisible.class
-CMDS=ii
-EXPECT=<<EOF
-nth      vaddr bind type  lib                 name    
-------------------------------------------------------
-  7 ---------- NONE FIELD java.lang.System    out
-  8 ---------- NONE METH  java.io.PrintStream println
-EOF
-RUN
-
-
-NAME=Java list imports jdwpexeccmd.class
-FILE=bins/java/jdwpexeccmd.class
-CMDS=ii
-EXPECT=<<EOF
-nth      vaddr bind type lib                       name           
-------------------------------------------------------------------
-  1 ---------- NONE METH java.lang.Object          <init>
-  3 ---------- NONE METH java.lang.StringBuilder   <init>
-  4 ---------- NONE METH java.lang.StringBuilder   append
-  6 ---------- NONE METH java.lang.StringBuilder   toString
-  7 ---------- NONE METH java.lang.Runtime         getRuntime
-  8 ---------- NONE METH java.lang.Runtime         exec
- 11 ---------- NONE METH java.lang.Process         getInputStream
- 12 ---------- NONE METH java.io.InputStreamReader <init>
- 13 ---------- NONE METH java.io.BufferedReader    <init>
- 14 ---------- NONE METH java.io.BufferedReader    readLine
- 15 ---------- NONE METH java.lang.String          trim
-EOF
-RUN
-
-
-NAME=Java list imports MainActivity.class
-FILE=bins/java/MainActivity.class
-CMDS=ii
-EXPECT=<<EOF
+---
 nth      vaddr bind type  lib                                  name                        
 -------------------------------------------------------------------------------------------
   1 ---------- NONE METH  org.radare2.installer.MainActivity   download
@@ -1008,249 +1053,7 @@ nth      vaddr bind type  lib                                  name
 141 ---------- NONE METH  android.app.AlarmManager             cancel
 142 ---------- NONE METH  android.os.SystemClock               elapsedRealtime
 143 ---------- NONE METH  android.app.AlarmManager             setInexactRepeating
-EOF
-RUN
-
-
-NAME=Java list imports Main.class
-FILE=bins/java/Main.class
-CMDS=ii
-EXPECT=<<EOF
-nth      vaddr bind type  lib                     name            
-------------------------------------------------------------------
-  1 ---------- NONE METH  java.lang.Object        <init>
-  2 ---------- NONE FIELD java.lang.System        out
-  4 ---------- NONE METH  java.io.PrintStream     println
-  8 ---------- NONE METH  java.io.FileReader      <init>
-  9 ---------- NONE METH  java.io.BufferedReader  <init>
- 10 ---------- NONE METH  java.io.BufferedReader  readLine
- 12 ---------- NONE METH  java.lang.StringBuilder <init>
- 14 ---------- NONE METH  java.lang.StringBuilder append
- 15 ---------- NONE METH  java.lang.StringBuilder toString
- 16 ---------- NONE METH  java.io.BufferedReader  close
- 18 ---------- NONE FIELD java.lang.System        err
- 21 ---------- NONE METH  java.io.PrintStream     format
- 22 ---------- NONE METH  java.lang.Exception     printStackTrace
-EOF
-RUN
-
-
-NAME=Java list imports sjybq.class
-FILE=bins/java/sjybq.class
-CMDS=ii
-EXPECT=<<EOF
-nth vaddr bind type lib name 
------------------------------
-EOF
-RUN
-
-
-NAME=Java list imports test.class
-FILE=bins/java/test.class
-CMDS=ii
-EXPECT=<<EOF
-nth      vaddr bind type  lib                                                name                   
-----------------------------------------------------------------------------------------------------
- 13 ---------- NONE METH  groovy.lang.Script                                 <init>
- 17 ---------- NONE METH  test                                               $getCallSiteArray
- 22 ---------- NONE METH  groovy.lang.Script                                 <init>
- 35 ---------- NONE IMETH org.codehaus.groovy.runtime.callsite.CallSite      call
- 55 ---------- NONE IMETH org.codehaus.groovy.runtime.callsite.CallSite      callConstructor
- 61 ---------- NONE METH  org.codehaus.groovy.runtime.ScriptBytecodeAdapter  createMap
- 67 ---------- NONE IMETH org.codehaus.groovy.runtime.callsite.CallSite      call
- 71 ---------- NONE IMETH org.codehaus.groovy.runtime.callsite.CallSite      callCurrent
- 79 ---------- NONE IMETH org.codehaus.groovy.runtime.callsite.CallSite      callGetProperty
- 92 ---------- NONE IMETH org.codehaus.groovy.runtime.callsite.CallSite      call
-100 ---------- NONE METH  java.lang.Object                                   getClass
-104 ---------- NONE METH  org.codehaus.groovy.runtime.ScriptBytecodeAdapter  initMetaClass
-106 ---------- NONE FIELD test                                               $staticClassInfo
-112 ---------- NONE METH  org.codehaus.groovy.reflection.ClassInfo           getClassInfo
-115 ---------- NONE METH  org.codehaus.groovy.reflection.ClassInfo           getMetaClass
-147 ---------- NONE METH  test                                               $createCallSiteArray_1
-152 ---------- NONE METH  org.codehaus.groovy.runtime.callsite.CallSiteArray <init>
-154 ---------- NONE FIELD test                                               $callSiteArray
-159 ---------- NONE METH  java.lang.ref.SoftReference                        get
-161 ---------- NONE METH  test                                               $createCallSiteArray
-164 ---------- NONE METH  java.lang.ref.SoftReference                        <init>
-168 ---------- NONE FIELD org.codehaus.groovy.runtime.callsite.CallSiteArray array
-EOF
-RUN
-
-
-NAME=Java list imports TryWithResources.class
-FILE=bins/java/TryWithResources.class
-CMDS=ii
-EXPECT=<<EOF
-nth      vaddr bind   type  lib                        name            
------------------------------------------------------------------------
-  2 ---------- NONE   METH  TryWithResources           <init>
-  3 ---------- NONE   METH  java.lang.RuntimeException <init>
-  4 ---------- NONE   FIELD java.lang.System           out
-  6 ---------- NONE   METH  java.lang.StringBuilder    <init>
-  8 ---------- NONE   METH  java.lang.StringBuilder    append
-  9 ---------- NONE   METH  java.lang.StringBuilder    append
- 10 ---------- NONE   METH  java.lang.StringBuilder    toString
- 11 ---------- NONE   METH  java.io.PrintStream        println
- 12 ---------- NONE   FIELD TryWithResources           i
- 14 ---------- NONE   METH  java.io.PrintStream        println
- 15 ---------- NONE   FIELD TryWithResources           $
- 17 ---------- GLOBAL FUNC  TryWithResources           main
- 19 ---------- NONE   METH  TryWithResources           $
- 20 ---------- NONE   METH  java.io.PrintStream        println
- 21 ---------- NONE   METH  TryWithResources           $
- 22 ---------- NONE   METH  TryWithResources           close
- 24 ---------- NONE   METH  java.lang.Throwable        addSuppressed
- 25 ---------- NONE   METH  TryWithResources           $
- 26 ---------- NONE   IMETH java.lang.AutoCloseable    close
- 27 ---------- NONE   METH  java.lang.Throwable        printStackTrace
-  0 ---------- WEAK   IFACE java.lang.AutoCloseable    *
-EOF
-RUN
-
-
-NAME=Java list sections crash2.class
-FILE=bins/java/crash2.class
-CMDS=iS
-EXPECT=<<EOF
-     paddr size      vaddr vsize align perm name                type flags 
----------------------------------------------------------------------------
-0x0000000a 0x12 0x0000000a  0x12   0x0 -r-- class.constant_pool      
-EOF
-RUN
-
-
-NAME=Java list sections DemoTest.class
-FILE=bins/java/DemoTest.class
-CMDS=iS
-EXPECT=<<EOF
-     paddr  size      vaddr vsize align perm name                             type flags 
------------------------------------------------------------------------------------------
-0x0000000a 0x16c 0x0000000a 0x16c   0x0 -r-- class.constant_pool                   
-0x0000017a  0xb6 0x0000017a  0xb6   0x0 -r-- class.methods                         
-0x0000017a  0x29 0x0000017a  0x29   0x0 -r-- class.methods.fun.attr                
-0x00000190  0x1b 0x00000190  0x1b   0x0 -r-x class.methods.fun.attr.0.code         
-0x000001a3  0x2f 0x000001a3  0x2f   0x0 -r-- class.methods._init_.attr             
-0x000001b9  0x21 0x000001b9  0x21   0x0 -r-x class.methods._init_.attr.0.code      
-0x000001d2  0x29 0x000001d2  0x29   0x0 -r-- class.methods.res.attr                
-0x000001e8  0x1b 0x000001e8  0x1b   0x0 -r-x class.methods.res.attr.0.code         
-0x000001fb  0x35 0x000001fb  0x35   0x0 -r-- class.methods.main.attr               
-0x00000211  0x25 0x00000211  0x25   0x0 -r-x class.methods.main.attr.0.code        
-0x00000230   0x8 0x00000230   0x8   0x0 -r-- class.attr                            
-EOF
-RUN
-
-
-NAME=Java list sections ExCaseTableSwitch.class
-FILE=bins/java/ExCaseTableSwitch.class
-CMDS=iS
-EXPECT=<<EOF
-     paddr  size      vaddr vsize align perm name                                            type flags 
---------------------------------------------------------------------------------------------------------
-0x0000000a 0x440 0x0000000a 0x440   0x0 -r-- class.constant_pool                                  
-0x0000044e 0x920 0x0000044e 0x920   0x0 -r-- class.methods                                        
-0x0000044e  0x3d 0x0000044e  0x3d   0x0 -r-- class.methods._init_.attr                            
-0x00000464  0x2f 0x00000464  0x2f   0x0 -r-x class.methods._init_.attr.0.code                     
-0x0000048b 0x13e 0x0000048b 0x13e   0x0 -r-- class.methods.a.attr                                 
-0x000004a1 0x130 0x000004a1 0x130   0x0 -r-x class.methods.a.attr.0.code                          
-0x000005c9  0x44 0x000005c9  0x44   0x0 -r-- class.methods.a_1.attr                               
-0x000005df  0x36 0x000005df  0x36   0x0 -r-x class.methods.a_1.attr.0.code                        
-0x0000060d  0x3a 0x0000060d  0x3a   0x0 -r-- class.methods.a_1.attr_0x60d                         
-0x00000623  0x2c 0x00000623  0x2c   0x0 -r-x class.methods.a_1.attr.0.code_0x623                  
-0x00000647 0x1b9 0x00000647 0x1b9   0x0 -r-- class.methods.hopskip_line_switch.attr               
-0x0000065d 0x1ab 0x0000065d 0x1ab   0x0 -r-x class.methods.hopskip_line_switch.attr.0.code        
-0x00000800 0x1d4 0x00000800 0x1d4   0x0 -r-- class.methods.straight_line_switch.attr              
-0x00000816 0x1c6 0x00000816 0x1c6   0x0 -r-x class.methods.straight_line_switch.attr.0.code       
-0x000009d4 0x1cc 0x000009d4 0x1cc   0x0 -r-- class.methods.straight_line_switch_.attr             
-0x000009ea 0x1be 0x000009ea 0x1be   0x0 -r-x class.methods.straight_line_switch_.attr.0.code      
-0x00000ba0 0x1ce 0x00000ba0 0x1ce   0x0 -r-- class.methods.main.attr                              
-0x00000bb6 0x1be 0x00000bb6 0x1be   0x0 -r-x class.methods.main.attr.0.code                       
-0x00000d6e   0x8 0x00000d6e   0x8   0x0 -r-- class.attr                                           
-EOF
-RUN
-
-
-NAME=Java list sections fuckedup.class
-FILE=bins/java/fuckedup.class
-CMDS=iS
-EXPECT=<<EOF
-     paddr size      vaddr vsize align perm name                type flags 
----------------------------------------------------------------------------
-0x0000000a 0x41 0x0000000a  0x41   0x0 -r-- class.constant_pool      
-EOF
-RUN
-
-
-NAME=Java list sections Hello.class
-FILE=bins/java/Hello.class
-CMDS=iS
-EXPECT=<<EOF
-     paddr  size      vaddr vsize align perm name                             type flags 
------------------------------------------------------------------------------------------
-0x0000000a 0x1ff 0x0000000a 0x1ff   0x0 -r-- class.constant_pool                   
-0x0000020b   0xa 0x0000020b   0xa   0x0 -r-- class.fields.who.attr                 
-0x0000020b   0xa 0x0000020b   0xa   0x0 -r-- class.fields                          
-0x00000215  0xb8 0x00000215  0xb8   0x0 -r-- class.methods                         
-0x00000215  0x38 0x00000215  0x38   0x0 -r-- class.methods._init_.attr             
-0x0000022b  0x2a 0x0000022b  0x2a   0x0 -r-x class.methods._init_.attr.0.code      
-0x0000024d  0x47 0x0000024d  0x47   0x0 -r-- class.methods.say.attr                
-0x00000263  0x39 0x00000263  0x39   0x0 -r-x class.methods.say.attr.0.code         
-0x00000294  0x39 0x00000294  0x39   0x0 -r-- class.methods.main.attr               
-0x000002aa  0x29 0x000002aa  0x29   0x0 -r-x class.methods.main.attr.0.code        
-0x000002cd   0x8 0x000002cd   0x8   0x0 -r-- class.attr                            
-EOF
-RUN
-
-
-NAME=Java list sections HiKt.class
-FILE=bins/java/HiKt.class
-CMDS=iS
-EXPECT=<<EOF
-     paddr  size      vaddr vsize align perm name                           type flags 
----------------------------------------------------------------------------------------
-0x0000000a 0x201 0x0000000a 0x201   0x0 -r-- class.constant_pool                 
-0x0000020f  0x4e 0x0000020f  0x4e   0x0 -r-- class.methods                       
-0x0000020f  0x4e 0x0000020f  0x4e   0x0 -r-- class.methods.main.attr             
-0x00000225  0x31 0x00000225  0x31   0x0 -r-x class.methods.main.attr.0.code      
-0x0000025d  0x54 0x0000025d  0x54   0x0 -r-- class.attr                          
-EOF
-RUN
-
-
-NAME=Java list sections invisible.class
-FILE=bins/java/invisible.class
-CMDS=iS
-EXPECT=<<EOF
-     paddr  size      vaddr vsize align perm name                           type flags 
----------------------------------------------------------------------------------------
-0x0000000a 0x100 0x0000000a 0x100   0x0 -r-- class.constant_pool                 
-0x0000010e  0x21 0x0000010e  0x21   0x0 -r-- class.methods                       
-0x0000010e  0x21 0x0000010e  0x21   0x0 -r-- class.methods.main.attr             
-0x00000120  0x11 0x00000120  0x11   0x0 -r-x class.methods.main.attr.0.code      
-EOF
-RUN
-
-
-NAME=Java list sections jdwpexeccmd.class
-FILE=bins/java/jdwpexeccmd.class
-CMDS=iS
-EXPECT=<<EOF
-     paddr  size      vaddr vsize align perm name                             type flags 
------------------------------------------------------------------------------------------
-0x0000000a 0x315 0x0000000a 0x315   0x0 -r-- class.constant_pool                   
-0x00000323 0x124 0x00000323 0x124   0x0 -r-- class.methods                         
-0x00000323  0x2b 0x00000323  0x2b   0x0 -r-- class.methods._init_.attr             
-0x00000339  0x1d 0x00000339  0x1d   0x0 -r-x class.methods._init_.attr.0.code      
-0x0000034e  0xf9 0x0000034e  0xf9   0x0 -r-- class.methods.run.attr                
-0x00000364  0xe9 0x00000364  0xe9   0x0 -r-x class.methods.run.attr.0.code         
-0x00000447   0x8 0x00000447   0x8   0x0 -r-- class.attr                            
-EOF
-RUN
-
-
-NAME=Java list sections MainActivity.class
-FILE=bins/java/MainActivity.class
-CMDS=iS
-EXPECT=<<EOF
+---
      paddr   size      vaddr  vsize align perm name                                            type flags 
 ----------------------------------------------------------------------------------------------------------
 0x0000000a 0x1c13 0x0000000a 0x1c13   0x0 -r-- class.constant_pool                                  
@@ -1312,106 +1115,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
-
-NAME=Java list sections Main.class
-FILE=bins/java/Main.class
-CMDS=iS
-EXPECT=<<EOF
-     paddr  size      vaddr vsize align perm name                             type flags 
------------------------------------------------------------------------------------------
-0x0000000a 0x365 0x0000000a 0x365   0x0 -r-- class.constant_pool                   
-0x00000373 0x109 0x00000373 0x109   0x0 -r-- class.methods                         
-0x00000373  0x2b 0x00000373  0x2b   0x0 -r-- class.methods._init_.attr             
-0x00000389  0x1d 0x00000389  0x1d   0x0 -r-x class.methods._init_.attr.0.code      
-0x0000039e  0xde 0x0000039e  0xde   0x0 -r-- class.methods.main.attr               
-0x000003b4  0xce 0x000003b4  0xce   0x0 -r-x class.methods.main.attr.0.code        
-0x0000047c   0x8 0x0000047c   0x8   0x0 -r-- class.attr                            
-EOF
-RUN
-
-
-NAME=Java list sections sjybq.class
+NAME=Java sjybq.class
 FILE=bins/java/sjybq.class
-CMDS=iS
+CMDS=<<EOF
+is
+echo ---
+ic
+echo ---
+ii
+echo ---
+iS
+EOF
 EXPECT=<<EOF
+nth paddr vaddr bind type size lib name 
+----------------------------------------
+---
+address min max name super 
+---------------------------
+---
+nth vaddr bind type lib name 
+-----------------------------
+---
 paddr size vaddr vsize align perm name type flags 
 --------------------------------------------------
 EOF
 RUN
-
-
-NAME=Java list sections test.class
-FILE=bins/java/test.class
-CMDS=iS
-EXPECT=<<EOF
-     paddr  size      vaddr vsize align perm name                                             type flags 
----------------------------------------------------------------------------------------------------------
-0x0000000a 0x8bd 0x0000000a 0x8bd   0x0 -r-- class.constant_pool                                   
-0x000008c9   0x8 0x000008c9   0x8   0x0 -r-- class.fields._staticClassInfo.attr                    
-0x000008d1   0x8 0x000008d1   0x8   0x0 -r-- class.fields.___stMC.attr                             
-0x000008d9   0xa 0x000008d9   0xa   0x0 -r-- class.fields._callSiteArray.attr                      
-0x000008c9  0x1a 0x000008c9  0x1a   0x0 -r-- class.fields                                          
-0x000008e3 0x2e4 0x000008e3 0x2e4   0x0 -r-- class.methods                                         
-0x000008e3  0x35 0x000008e3  0x35   0x0 -r-- class.methods._init_.attr                             
-0x000008f9  0x27 0x000008f9  0x27   0x0 -r-x class.methods._init_.attr.0.code                      
-0x00000918  0x40 0x00000918  0x40   0x0 -r-- class.methods._init__1.attr                           
-0x0000092e  0x32 0x0000092e  0x32   0x0 -r-x class.methods._init__1.attr.0.code                    
-0x00000958  0x40 0x00000958  0x40   0x0 -r-- class.methods.main.attr                               
-0x0000096e  0x32 0x0000096e  0x32   0x0 -r-x class.methods.main.attr.0.code                        
-0x00000998 0x10c 0x00000998 0x10c   0x0 -r-- class.methods.run.attr                                
-0x000009ae  0xfe 0x000009ae  0xfe   0x0 -r-x class.methods.run.attr.0.code                         
-0x00000aa4  0x41 0x00000aa4  0x41   0x0 -r-- class.methods._getStaticMetaClass.attr                
-0x00000aba  0x33 0x00000aba  0x33   0x0 -r-x class.methods._getStaticMetaClass.attr.0.code         
-0x00000ae5  0x6f 0x00000ae5  0x6f   0x0 -r-- class.methods._createCallSiteArray_1.attr             
-0x00000afb  0x61 0x00000afb  0x61   0x0 -r-x class.methods._createCallSiteArray_1.attr.0.code      
-0x00000b54  0x2f 0x00000b54  0x2f   0x0 -r-- class.methods._createCallSiteArray.attr               
-0x00000b6a  0x21 0x00000b6a  0x21   0x0 -r-x class.methods._createCallSiteArray.attr.0.code        
-0x00000b83  0x44 0x00000b83  0x44   0x0 -r-- class.methods._getCallSiteArray.attr                  
-0x00000b99  0x34 0x00000b99  0x34   0x0 -r-x class.methods._getCallSiteArray.attr.0.code           
-0x00000bc7   0x8 0x00000bc7   0x8   0x0 -r-- class.attr                                            
-EOF
-RUN
-
-
-NAME=Java list sections TryWithResources.class
-FILE=bins/java/TryWithResources.class
-CMDS=iS
-EXPECT=<<EOF
-     paddr   size      vaddr  vsize align perm name                                type flags 
-----------------------------------------------------------------------------------------------
-0x0000000a  0x3eb 0x0000000a  0x3eb   0x0 -r-- class.constant_pool                      
-0x000003f5    0x4 0x000003f5    0x4   0x0 -r-- class.interfaces                         
-0x000003f9    0x8 0x000003f9    0x8   0x0 -r-- class.fields._.attr                      
-0x00000401    0xa 0x00000401    0xa   0x0 -r-- class.fields.i.attr                      
-0x000003f9   0x12 0x000003f9   0x12   0x0 -r-- class.fields                             
-0x0000040b 0x4b20 0x0000040b 0x4b20   0x0 -r-- class.methods                            
-0x0000040b   0x23 0x0000040b   0x23   0x0 -r-- class.methods._.attr                     
-0x00000421   0x15 0x00000421   0x15   0x0 -r-x class.methods._.attr.0.code              
-0x0000042e   0x40 0x0000042e   0x40   0x0 -r-- class.methods._init_.attr                
-0x00000444   0x32 0x00000444   0x32   0x0 -r-x class.methods._init_.attr.0.code         
-0x0000046e   0x4c 0x0000046e   0x4c   0x0 -r-- class.methods.close.attr                 
-0x00000484   0x3e 0x00000484   0x3e   0x0 -r-x class.methods.close.attr.0.code          
-0x000004ba   0x2b 0x000004ba   0x2b   0x0 -r-- class.methods.__1.attr                   
-0x000004d0   0x1d 0x000004d0   0x1d   0x0 -r-x class.methods.__1.attr.0.code            
-0x000004e5   0x22 0x000004e5   0x22   0x0 -r-- class.methods.__1.attr_0x4e5             
-0x000004fb   0x14 0x000004fb   0x14   0x0 -r-x class.methods.__1.attr.0.code_0x4fb      
-0x00000507   0x2f 0x00000507   0x2f   0x0 -r-- class.methods.main.attr                  
-0x0000051d   0x17 0x0000051d   0x17   0x0 -r-x class.methods.main.attr.0.code           
-0x00000536 0x49cd 0x00000536 0x49cd   0x0 -r-- class.methods.main_1.attr                
-0x0000054c 0x49bf 0x0000054c 0x49bf   0x0 -r-x class.methods.main_1.attr.0.code         
-0x00004f03   0x28 0x00004f03   0x28   0x0 -r-- class.methods._clinit_.attr              
-0x00004f19   0x18 0x00004f19   0x18   0x0 -r-x class.methods._clinit_.attr.0.code       
-EOF
-RUN
-
-NAME=Java list exports HiKt.class
-FILE=bins/java/HiKt.class
-CMDS=iE
-EXPECT=<<EOF
-nth      paddr      vaddr bind   type size lib  name                
---------------------------------------------------------------------
-  0 0x00000225 0x00000225 GLOBAL FUNC   49 HiKt void main(String[])
-EOF
-RUN
-
-

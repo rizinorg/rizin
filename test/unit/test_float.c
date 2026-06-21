@@ -51,7 +51,7 @@ bool rz_float_detect_spec_test(void) {
 	RzFloat *qnan = rz_float_new_qnan(format);
 	RzFloat *pinf = rz_float_new_inf(format, false);
 	RzFloat *ninf = rz_float_new_inf(format, true);
-	RzFloat *zero = rz_float_new_zero(format);
+	RzFloat *zero = rz_float_new_zero(format, false);
 	RzFloat *snan = rz_float_new_snan(format);
 	RzFloat *cst = rz_float_new_from_f64(42.0);
 
@@ -266,6 +266,58 @@ bool f32_ieee_div_test(void) {
 	mu_end;
 }
 
+bool f32_ieee_neg_test(void) {
+	RzFloat *f0 = rz_float_new_from_f32(0.0f);
+	RzFloat *nf0 = rz_float_new_from_f32(-0.0f);
+	RzFloat *calc_negf0 = rz_float_neg(f0);
+	mu_assert_true(is_equal_bv(nf0->s, calc_negf0->s), "Negating float 0.0 failed.");
+
+	RzFloat *d0 = rz_float_new_from_f64(0.0);
+	RzFloat *nd0 = rz_float_new_from_f64(-0.0);
+	RzFloat *calc_negd0 = rz_float_neg(d0);
+	mu_assert_true(is_equal_bv(nd0->s, calc_negd0->s), "Negating double 0.0 failed.");
+
+	RzFloat *l0 = rz_float_new_from_f80(0.0);
+	RzFloat *nl0 = rz_float_new_from_f80(-0.0);
+	RzFloat *calc_negl0 = rz_float_neg(l0);
+	mu_assert_true(is_equal_bv(nl0->s, calc_negl0->s), "Negating 80bit 0.0 failed.");
+
+	RzFloat *inf32 = rz_float_new_from_f32(F32_PINF);
+	RzFloat *ninf32 = rz_float_new_from_f32(F32_NINF);
+	RzFloat *calc_neginf32 = rz_float_neg(inf32);
+	mu_assert_true(is_equal_bv(ninf32->s, calc_neginf32->s), "Negating float inf failed.");
+
+	RzFloat *inf64 = rz_float_new_from_f64(F64_PINF);
+	RzFloat *ninf64 = rz_float_new_from_f64(F64_NINF);
+	RzFloat *calc_neginf64 = rz_float_neg(inf64);
+	mu_assert_true(is_equal_bv(ninf64->s, calc_neginf64->s), "Negating double inf failed.");
+
+	RzFloat *inf80 = rz_float_new_from_f80(F80_PINF);
+	RzFloat *ninf80 = rz_float_new_from_f80(F80_NINF);
+	RzFloat *calc_neginf80 = rz_float_neg(inf80);
+	mu_assert_true(is_equal_bv(ninf80->s, calc_neginf80->s), "Negating 80bit inf failed.");
+
+	rz_float_free(f0);
+	rz_float_free(nf0);
+	rz_float_free(calc_negf0);
+	rz_float_free(d0);
+	rz_float_free(nd0);
+	rz_float_free(calc_negd0);
+	rz_float_free(l0);
+	rz_float_free(nl0);
+	rz_float_free(calc_negl0);
+	rz_float_free(inf32);
+	rz_float_free(ninf32);
+	rz_float_free(calc_neginf32);
+	rz_float_free(inf64);
+	rz_float_free(ninf64);
+	rz_float_free(calc_neginf64);
+	rz_float_free(inf80);
+	rz_float_free(ninf80);
+	rz_float_free(calc_neginf80);
+	mu_end;
+}
+
 bool rz_float_trunc_test(void) {
 	RzFloat *f1 = rz_float_new_from_f32(1.111f);
 	RzFloat *f2 = rz_float_new_from_f32(234.12345f);
@@ -470,7 +522,7 @@ bool f32_ieee_special_num_test(void) {
 	RzFloat *nan = rz_float_new_qnan(RZ_FLOAT_IEEE754_BIN_32);
 	RzFloat *pinf = rz_float_new_inf(RZ_FLOAT_IEEE754_BIN_32, false);
 	RzFloat *ninf = rz_float_new_inf(RZ_FLOAT_IEEE754_BIN_32, true);
-	RzFloat *zero = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32);
+	RzFloat *zero = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32, false);
 	RzFloat *cst_num = rz_float_new_from_f32(2.0f);
 
 	// Basic Operations
@@ -719,7 +771,7 @@ bool float_print_num(void) {
 	mu_assert_streq_free(rz_float_as_dec_string(f128), "3.125", "float128 numeric value");
 	rz_float_free(f128);
 
-	RzFloat *tmp = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32);
+	RzFloat *tmp = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32, false);
 	mu_assert_streq_free(rz_float_as_dec_string(tmp), "0.0", "float32 zero");
 	rz_float_free(tmp);
 
@@ -858,6 +910,11 @@ bool f32_ieee_cmp_test(void) {
 	mu_assert_true(rz_float_cmp(pinf, a) > 0, "test positive inf");
 	mu_assert_true(rz_float_cmp(ninf, b) < 0, "test negative inf");
 
+	RzFloat *pzero = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32, false);
+	RzFloat *nzero = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32, true);
+	mu_assert_true(rz_float_cmp(pzero, nzero) == 0, "test positive and negative zero equality");
+	mu_assert_true(rz_float_cmp(nzero, pzero) == 0, "test negative and positive zero equality");
+
 	rz_float_free(a);
 	rz_float_free(b);
 	rz_float_free(c);
@@ -865,6 +922,8 @@ bool f32_ieee_cmp_test(void) {
 	rz_float_free(e);
 	rz_float_free(pinf);
 	rz_float_free(ninf);
+	rz_float_free(pzero);
+	rz_float_free(nzero);
 
 	mu_end;
 }
@@ -1342,6 +1401,19 @@ bool f32_ieee_cast_test(void) {
 	rz_float_free(expect);
 	rz_bv_free(val);
 
+	// 1-1b. zero
+	val = rz_bv_new_zero(32);
+	expect = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32, false);
+	cast_val = rz_float_cast_float(val, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect, cast_val), "test (cast-float 0)");
+	rz_float_free(cast_val);
+
+	cast_val = rz_float_cast_sfloat(val, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect, cast_val), "test (cast-sfloat 0)");
+	rz_float_free(cast_val);
+	rz_float_free(expect);
+	rz_bv_free(val);
+
 	// 1-2. normal
 	val = rz_bv_new_from_ut64(32, 12345678);
 	expect = rz_float_new_from_f32(12345678.0f);
@@ -1461,6 +1533,24 @@ bool f32_ieee_cast_test(void) {
 	rz_bv_free(cast_bv);
 	rz_bv_free(expect_bv);
 
+	// Cast (negative) zero
+	fval = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32, true);
+	expect_bv = rz_bv_new_zero(16);
+	cast_bv = rz_float_cast_sint(fval, 16, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint -0.0f), rne");
+	rz_float_free(fval);
+	rz_bv_free(cast_bv);
+	rz_bv_free(expect_bv);
+
+	// Cast zero
+	fval = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32, false);
+	expect_bv = rz_bv_new_zero(16);
+	cast_bv = rz_float_cast_sint(fval, 16, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint -0.0f), rne");
+	rz_float_free(fval);
+	rz_bv_free(cast_bv);
+	rz_bv_free(expect_bv);
+
 	// 3. convert
 	RzFloat *old_f = rz_float_new_from_f32(42.0f);
 	RzFloat *expect_f = rz_float_new_from_f64(42.0);
@@ -1494,6 +1584,58 @@ static RzFloat *new_f80_from_bytes(const char *bytes) {
 	rz_bv_free(bv);
 
 	return ret;
+}
+
+bool f80_ieee_cast_sint_test(void) {
+	// binary80 has no hidden bit: the integer part of the significand is stored
+	// explicitly, unlike other IEEE-754 formats where it is implicit for normals
+	RzFloat *f80_val = new_f80_from_bytes("\x40\x00\xc0\x00\x00\x00\x00\x00\x00\x00");
+	RzBitVector *expected_bv = rz_bv_new_from_ut64(32, 3);
+	RzBitVector *cast_bv = rz_float_cast_sint(f80_val, 32, RZ_FLOAT_RMODE_RNE);
+
+	mu_assert_true(rz_bv_eq(expected_bv, cast_bv), "cast-sint preserves 3.0 in ieee754-bin80");
+
+	rz_float_free(f80_val);
+	rz_bv_free(expected_bv);
+	rz_bv_free(cast_bv);
+
+	mu_end;
+}
+
+bool f80_ieee_cast_sint_large_test(void) {
+	RzFloat *f80_val = new_f80_from_bytes("\x40\x1b\x80\x00\x00\x00\x00\x00\x00\x00");
+	RzBitVector *expected_bv = rz_bv_new_from_ut64(32, 1ULL << 28);
+	RzBitVector *cast_bv = rz_float_cast_sint(f80_val, 32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(rz_bv_eq(expected_bv, cast_bv), "cast-sint preserves 2^28 in ieee754-bin80");
+	rz_float_free(f80_val);
+	rz_bv_free(expected_bv);
+	rz_bv_free(cast_bv);
+
+	f80_val = new_f80_from_bytes("\x40\x1c\x80\x00\x00\x00\x00\x00\x00\x00");
+	expected_bv = rz_bv_new_from_ut64(32, 1ULL << 29);
+	cast_bv = rz_float_cast_sint(f80_val, 32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(rz_bv_eq(expected_bv, cast_bv), "cast-sint preserves 2^29 in ieee754-bin80");
+	rz_float_free(f80_val);
+	rz_bv_free(expected_bv);
+	rz_bv_free(cast_bv);
+
+	f80_val = new_f80_from_bytes("\x40\x1d\x80\x00\x00\x00\x00\x00\x00\x00");
+	expected_bv = rz_bv_new_from_ut64(32, 1ULL << 30);
+	cast_bv = rz_float_cast_sint(f80_val, 32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(rz_bv_eq(expected_bv, cast_bv), "cast-sint preserves 2^30 in ieee754-bin80");
+	rz_float_free(f80_val);
+	rz_bv_free(expected_bv);
+	rz_bv_free(cast_bv);
+
+	f80_val = new_f80_from_bytes("\x40\x1e\x80\x00\x00\x00\x00\x00\x00\x00");
+	expected_bv = rz_bv_new_from_ut64(32, 1ULL << 31);
+	cast_bv = rz_float_cast_sint(f80_val, 32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(rz_bv_eq(expected_bv, cast_bv), "cast-sint preserves 2^31 in ieee754-bin80");
+	rz_float_free(f80_val);
+	rz_bv_free(expected_bv);
+	rz_bv_free(cast_bv);
+
+	mu_end;
 }
 
 bool f80_ieee_add_test(void) {
@@ -1556,6 +1698,22 @@ bool f80_ieee_div_test(void) {
 	mu_end;
 }
 
+bool f128_ieee_div_test(void) {
+	RzFloat *x_f128 = rz_float_new_from_f128(0.0l);
+	RzFloat *y_f128 = rz_float_new_from_f128(0.0l);
+	RzFloat *quot_f128 = rz_float_div(x_f128, y_f128, RZ_FLOAT_RMODE_RNE);
+	rz_bv_rshift(quot_f128->s, 110);
+	RzBitVector *exp = rz_bv_new_from_ut64(18, 0x1ffff);
+	mu_assert_false(rz_bv_eq(quot_f128->s, exp), "Divide 128-bit 0.0/0.0");
+
+	rz_float_free(x_f128);
+	rz_float_free(y_f128);
+	rz_float_free(quot_f128);
+	rz_bv_free(exp);
+
+	mu_end;
+}
+
 bool f80_ieee_sqrt_test(void) {
 	RzFloat *x_f80 = new_f80_from_bytes("\x3f\xff\xab\x27\x32\x90\xa7\x8b\x0c\x29");
 	RzFloat *sqrt_f80 = rz_float_sqrt(x_f80, RZ_FLOAT_RMODE_RNE);
@@ -1614,6 +1772,7 @@ bool all_tests() {
 	mu_run_test(f32_ieee_rem_test);
 	mu_run_test(f32_ieee_mod_test);
 	mu_run_test(f32_ieee_special_num_test);
+	mu_run_test(f32_ieee_neg_test);
 	mu_run_test(float_load_from_bitvector);
 	mu_run_test(float_print_num);
 	mu_run_test(f32_ieee_format_extra_test);
@@ -1622,12 +1781,15 @@ bool all_tests() {
 	mu_run_test(f32_new_round_test);
 	mu_run_test(f32_ieee_fround_test);
 	mu_run_test(f32_ieee_cast_test);
+	mu_run_test(f80_ieee_cast_sint_test);
+	mu_run_test(f80_ieee_cast_sint_large_test);
 	mu_run_test(f80_ieee_add_test);
 	mu_run_test(f80_ieee_sub_test);
 	mu_run_test(f80_ieee_mul_test);
 	mu_run_test(f80_ieee_div_test);
 	mu_run_test(f80_ieee_sqrt_test);
 	mu_run_test(f80_ieee_cast_test);
+	mu_run_test(f128_ieee_div_test);
 	return tests_passed != tests_run;
 }
 

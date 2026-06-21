@@ -25,7 +25,7 @@
  *  * Implement a function like `bool rz_project_migrate_migrate_v1_v2(RzProject *prj, RzSerializeResultInfo *res)`
  *    which edits prj in-place and converts it from the previous to the current version.
  *  * Append this function to the `migrations` array below.
- *  * Implement tests in `test/unit/test_project_migrate.c` that cover all changes (see the documentation there).
+ *  * Implement tests in `test/integration/test_project_migrate.c` that cover all changes (see the documentation there).
  */
 
 // --
@@ -701,6 +701,106 @@ RZ_API bool rz_project_migrate_v18_v19(RzProject *prj, RzSerializeResultInfo *re
 	return true;
 }
 
+// --
+// Migration 19 -> 20
+//
+// Changes from c6a7acf8492881938188fc97d782b6bf2957cce7:
+//  Introduced /core/marks sub-db (Rzmark API)
+//  This prepares the project schema for the new mark system.
+
+RZ_API bool rz_project_migrate_v19_v20(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *marks_db = sdb_ns(core_db, "marks", 1);
+	if (!marks_db) {
+		return false;
+	}
+	return true;
+}
+
+// --
+// Migration 20 -> 21
+//
+// Removal of bin.debase64 option.
+
+RZ_API bool rz_project_migrate_v20_v21(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *config_db;
+	RZ_SERIALIZE_SUB(core_db, config_db, res, "config", return false;);
+	sdb_remove(config_db, "bin.debase64");
+
+	return true;
+}
+
+// --
+// Migration 21 -> 22
+//
+// Changes from <TODO:AT-LAST>:
+// Renamed ROP search configs to gadget search for generalization:
+//	- `rop.X` to `gadget.X`
+
+RZ_API bool rz_project_migrate_v21_v22(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *config_db;
+	RZ_SERIALIZE_SUB(core_db, config_db, res, "config", return false;);
+	sdb_rename(config_db, "rop.len", "gadget.len");
+	sdb_rename(config_db, "rop.cache", "gadget.cache");
+	sdb_rename(config_db, "rop.subchains", "gadget.subchains");
+	sdb_rename(config_db, "rop.conditional", "gadget.conditional");
+	sdb_rename(config_db, "rop.comments", "gadget.comments");
+
+	return true;
+}
+
+// --
+// Migration 22 -> 23
+//
+// Changes:
+// Enums can now declare a fixed underlying type ("enum E : long long { ... }"),
+// serialized under "enum.<name>.@type" in "/core/analysis/types". Older
+// projects simply lack that key and the deserializer treats its absence as a
+// classic (int-backed) enum, so there is nothing to migrate.
+
+RZ_API bool rz_project_migrate_v22_v23(RzProject *prj, RzSerializeResultInfo *res) {
+	// there is nothing to be done since the deserializer treats a missing
+	// "enum.<name>.@type" as a classic enum without a fixed underlying type
+	return true;
+}
+
+// --
+// Migration 23 -> 24
+//
+// Changes:
+// Struct and union members now keep their C bitfield width ("int a : 4;"),
+// stored as the 3rd comma-field of "struct.<name>.<member>" /
+// "union.<name>.<member>" (type,offset,bitsize) in "/core/analysis/types".
+// That field already existed and was always written as 0, so older projects
+// carry a 0 (or no 3rd field at all) and the deserializer reads that as a
+// regular, non-bitfield member -- there is nothing to migrate.
+
+RZ_API bool rz_project_migrate_v23_v24(RzProject *prj, RzSerializeResultInfo *res) {
+	// there is nothing to be done since the deserializer reads a 0 (or absent)
+	// member bitsize as a regular, non-bitfield struct/union member
+	return true;
+}
+
+// --
+// Migration 24 -> 25
+//
+// Changes from 0374f28e0384fdc6e218511f3ba986312c6d98ab:
+//      Removed "asm.demangle" option.
+
+RZ_API bool rz_project_migrate_v24_v25(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *config_db;
+	RZ_SERIALIZE_SUB(core_db, config_db, res, "config", return false;);
+	sdb_remove(config_db, "asm.demangle");
+	return true;
+}
+
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
 	rz_project_migrate_v2_v3,
@@ -720,6 +820,12 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v16_v17,
 	rz_project_migrate_v17_v18,
 	rz_project_migrate_v18_v19,
+	rz_project_migrate_v19_v20,
+	rz_project_migrate_v20_v21,
+	rz_project_migrate_v21_v22,
+	rz_project_migrate_v22_v23,
+	rz_project_migrate_v23_v24,
+	rz_project_migrate_v24_v25,
 };
 
 /// Migrate the given project to the current version in-place

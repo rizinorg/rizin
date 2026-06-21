@@ -1,988 +1,1465 @@
 // SPDX-FileCopyrightText: 2014 Fedor Sakharov <fedor.sakharov@gmail.com>
+// SPDX-FileCopyrightText: 2025 Billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
 #include <rz_util.h>
+#include <rz_util/rz_bits.h>
 #include "h8300_disas.h"
 
-static const char *commands_4bit[] = {
-	[H8300_MOV_4BIT_2] = "mov.b",
-	[H8300_MOV_4BIT_3] = "mov.b",
-	[H8300_ADD_4BIT] = "add.b",
-	[H8300_ADDX_4BIT] = "addx",
-	[H8300_CMP_4BIT] = "cmp.b",
-	[H8300_SUBX_4BIT] = "subx",
-	[H8300_OR_4BIT] = "or",
-	[H8300_XOR_4BIT] = "xor",
-	[H8300_AND_4BIT] = "and",
-	[H8300_MOV_4BIT] = "mov.b"
-};
+#define INS_OP(I) (cmd->ops[(I)])
+
+#define OPS_ADD(T, F, X) \
+	do { \
+		cmd->ops[cmd->ops_count].typ = T; \
+		cmd->ops[cmd->ops_count].F = (X); \
+		cmd->ops_count++; \
+	} while (0)
+
+#define OPS_ADD_EXT2(T, F, F1, F2, X1, X2) \
+	do { \
+		cmd->ops[cmd->ops_count].typ = T; \
+		cmd->ops[cmd->ops_count].F.F1 = (X1); \
+		cmd->ops[cmd->ops_count].F.F2 = (X2); \
+		cmd->ops_count++; \
+	} while (0)
 
 static const char *commands[] = {
-	[H8300_ANDC] = "andc",
-	[H8300_ADDB_DIRECT] = "add.b",
-	[H8300_ADDW_DIRECT] = "add.w",
-	[H8300_ADDS] = "adds",
-	[H8300_AND] = "and",
-	[H8300_ADDX] = "addx",
-	[H8300_SUBW] = "sub.w",
-	[H8300_BILD_IMM2R8] = "bld",
-	[H8300_BNOT_1] = "bnot",
-	[H8300_BNOT_2] = "bnot",
-	[H8300_BSET_1] = "bset",
-	[H8300_BSET_2] = "bset",
-	[H8300_BCLR_R2R8] = "bclr",
-	[H8300_BCLR_IMM2R8] = "bclr",
-	[H8300_BCLR_R2IND16] = "bclr",
-	[H8300_BCLR_R2ABS8] = "bclr",
-	[H8300_BOR_BIOR] = "bior",
+	[H8300_INSN_MOV_B] = "mov.b",
+	[H8300_INSN_MOV_W] = "mov.w",
+	[H8300_INSN_MOV_L] = "mov.l",
+	[H8300_INSN_MOVTPE] = "movtpe",
+	[H8300_INSN_MOVFPE] = "movfpe",
+	[H8300_INSN_ANDC] = "andc",
+	[H8300_INSN_ADD_B] = "add.b",
+	[H8300_INSN_ADD_W] = "add.w",
+	[H8300_INSN_ADD_L] = "add.l",
+	[H8300_INSN_ADDS] = "adds",
+	[H8300_INSN_AND_B] = "and.b",
+	[H8300_INSN_AND_W] = "and.w",
+	[H8300_INSN_AND_L] = "and.l",
+	[H8300_INSN_ADDX] = "addx",
+	[H8300_INSN_SUB_B] = "sub.b",
+	[H8300_INSN_SUB_W] = "sub.w",
+	[H8300_INSN_SUB_L] = "sub.l",
+	[H8300_INSN_BNOT] = "bnot",
+	[H8300_INSN_BSET] = "bset",
+	[H8300_INSN_BCLR] = "bclr",
+	[H8300_INSN_BTST] = "btst",
+	[H8300_INSN_BSR] = "bsr",
+	[H8300_INSN_NOP] = "nop",
+	[H8300_INSN_DAA] = "daa",
+	[H8300_INSN_DAS] = "das",
+	[H8300_INSN_DEC_B] = "dec.b",
+	[H8300_INSN_DEC_W] = "dec.w",
+	[H8300_INSN_DEC_L] = "dec.l",
+	[H8300_INSN_INC_B] = "inc.b",
+	[H8300_INSN_INC_W] = "inc.w",
+	[H8300_INSN_INC_L] = "inc.l",
+	[H8300_INSN_NEG_B] = "neg.b",
+	[H8300_INSN_NEG_W] = "neg.w",
+	[H8300_INSN_NEG_L] = "neg.l",
+	[H8300_INSN_NOT_B] = "not.b",
+	[H8300_INSN_NOT_W] = "not.w",
+	[H8300_INSN_NOT_L] = "not.l",
+	[H8300_INSN_OR_B] = "or.b",
+	[H8300_INSN_OR_W] = "or.w",
+	[H8300_INSN_OR_L] = "or.l",
+	[H8300_INSN_DIVXU_B] = "divxu.b",
+	[H8300_INSN_DIVXU_W] = "divxu.w",
+	[H8300_INSN_DIVXS_B] = "divxs.b",
+	[H8300_INSN_DIVXS_W] = "divxs.w",
+	[H8300_INSN_MULXU_B] = "mulxu.b",
+	[H8300_INSN_MULXU_W] = "mulxu.w",
+	[H8300_INSN_MULXS_B] = "mulxs.b",
+	[H8300_INSN_MULXS_W] = "mulxs.w",
+	[H8300_INSN_EEPMOV_B] = "eepmov.b",
+	[H8300_INSN_EEPMOV_W] = "eepmov.w",
+	[H8300_INSN_EXTS_W] = "exts.w",
+	[H8300_INSN_EXTS_L] = "exts.l",
+	[H8300_INSN_EXTU_W] = "extu.w",
+	[H8300_INSN_EXTU_L] = "extu.l",
+	[H8300_INSN_JMP] = "jmp",
+	[H8300_INSN_JSR] = "jsr",
+	[H8300_INSN_ORC] = "orc",
+	[H8300_INSN_ROTL_B] = "rotl.b",
+	[H8300_INSN_ROTR_B] = "rotr.b",
+	[H8300_INSN_ROTXL_B] = "rotxl.b",
+	[H8300_INSN_ROTXR_B] = "rotxr.b",
+	[H8300_INSN_ROTL_W] = "rotl.w",
+	[H8300_INSN_ROTR_W] = "rotr.w",
+	[H8300_INSN_ROTXL_W] = "rotxl.w",
+	[H8300_INSN_ROTXR_W] = "rotxr.w",
+	[H8300_INSN_ROTL_L] = "rotl.l",
+	[H8300_INSN_ROTR_L] = "rotr.l",
+	[H8300_INSN_ROTXL_L] = "rotxl.l",
+	[H8300_INSN_ROTXR_L] = "rotxr.l",
+	[H8300_INSN_RTE] = "rte",
+	[H8300_INSN_RTS] = "rts",
+	[H8300_INSN_SHAL_B] = "shal.b",
+	[H8300_INSN_SHAR_B] = "shar.b",
+	[H8300_INSN_SHLL_B] = "shll.b",
+	[H8300_INSN_SHLR_B] = "shlr.b",
+	[H8300_INSN_SHAL_W] = "shal.w",
+	[H8300_INSN_SHAR_W] = "shar.w",
+	[H8300_INSN_SHLL_W] = "shll.w",
+	[H8300_INSN_SHLR_W] = "shlr.w",
+	[H8300_INSN_SHAL_L] = "shal.l",
+	[H8300_INSN_SHAR_L] = "shar.l",
+	[H8300_INSN_SHLL_L] = "shll.l",
+	[H8300_INSN_SHLR_L] = "shlr.l",
+	[H8300_INSN_SLEEP] = "sleep",
+	[H8300_INSN_STC_B] = "stc.b",
+	[H8300_INSN_STC_W] = "stc.w",
+	[H8300_INSN_SUBS] = "subs",
+	[H8300_INSN_SUBX] = "subx",
+	[H8300_INSN_XOR_B] = "xor.b",
+	[H8300_INSN_XOR_W] = "xor.w",
+	[H8300_INSN_XOR_L] = "xor.l",
+	[H8300_INSN_XORC] = "xorc",
+	[H8300_INSN_LDC_B] = "ldc.b",
+	[H8300_INSN_LDC_W] = "ldc.w",
 
-	[H8300_BAND_BIAND] = "biand",
-	[H8300_BIAND_IMM2IND16] = "biand",
-	[H8300_BIAND_IMM2ABS8] = "biand",
-	[H8300_BST_BIST] = "bist",
-	[H8300_BTST] = "btst",
-	[H8300_BTST_R2R8] = "btst",
-	[H8300_BXOR] = "bixor",
-
-	[H8300_BSR] = "bsr",
-	[H8300_NOP] = "nop",
-	[H8300_DAA] = "daa",
-	[H8300_DAS] = "das",
-	[H8300_DEC] = "dec",
-	[H8300_INC] = "inc",
-	[H8300_NOT_NEG] = "neg",
-	[H8300_OR] = "or",
-	[H8300_DIVXU] = "divxu",
-	[H8300_MULXU] = "mulxu",
-	[H8300_EEPMOV] = "eepmov",
-	[H8300_JMP_1] = "jmp",
-	[H8300_JMP_2] = "jmp",
-	[H8300_JMP_3] = "jmp",
-	[H8300_JSR_1] = "jsr",
-	[H8300_JSR_2] = "jsr",
-	[H8300_JSR_3] = "jsr",
-	[H8300_ORC] = "orc",
-	[H8300_ROTL] = "rotl",
-	[H8300_ROTR] = "rotr",
-	[H8300_RTE] = "rte",
-	[H8300_RTS] = "rts",
-	[H8300_SHL] = "shal",
-	[H8300_SHR] = "shar",
-	[H8300_SLEEP] = "sleep",
-	[H8300_STC] = "stc",
-	[H8300_SUB_1] = "sub.b",
-	[H8300_SUBS] = "subs",
-	[H8300_SUBX] = "subx",
-	[H8300_XOR] = "xor",
-	[H8300_XORC] = "xorc",
-
-	[H8300_LDC] = "ldc",
-	[H8300_LDC_2] = "ldc",
-
-	[H8300_MOV_1] = "mov.b",
-	[H8300_MOV_2] = "mov.w",
-	[H8300_MOV_IMM162R16] = "mov.w",
-	[H8300_MOV_DISP162R16] = "mov.w",
-	[H8300_MOV_INDINC162R16] = "mov.w",
-	[H8300_MOV_ABS162R16] = "mov.w",
-	[H8300_MOV_IND162R16] = "mov.w",
-
-	[H8300_MOV_R82IND16] = "mov.b",
-	[H8300_MOV_R82DISPR16] = "mov.b",
-	[H8300_MOV_R82RDEC16] = "mov.b",
-	[H8300_MOV_R82ABS16] = "mov.b",
-
-	[H8300_BRA] = "bra",
-	[H8300_BRN] = "brn",
-	[H8300_BHI] = "bhi",
-	[H8300_BLS] = "bls",
-	[H8300_BCC] = "bcc",
-	[H8300_BCS] = "bcs",
-	[H8300_BNE] = "bne",
-	[H8300_BEQ] = "beq",
-	[H8300_BVC] = "bvc",
-	[H8300_BVS] = "bvs",
-	[H8300_BPL] = "bpl",
-	[H8300_BMI] = "bmi",
-	[H8300_BGE] = "bge",
-	[H8300_BLT] = "blt",
-	[H8300_BGT] = "bgt",
-	[H8300_BLE] = "ble",
-
-	[H8300_CMP_1] = "cmp.b",
-	[H8300_CMP_2] = "cmp.w",
+	[H8300_INSN_BRA] = "bra",
+	[H8300_INSN_BRN] = "brn",
+	[H8300_INSN_BHI] = "bhi",
+	[H8300_INSN_BLS] = "bls",
+	[H8300_INSN_BCC] = "bcc",
+	[H8300_INSN_BCS] = "bcs",
+	[H8300_INSN_BNE] = "bne",
+	[H8300_INSN_BEQ] = "beq",
+	[H8300_INSN_BVC] = "bvc",
+	[H8300_INSN_BVS] = "bvs",
+	[H8300_INSN_BPL] = "bpl",
+	[H8300_INSN_BMI] = "bmi",
+	[H8300_INSN_BGE] = "bge",
+	[H8300_INSN_BLT] = "blt",
+	[H8300_INSN_BGT] = "bgt",
+	[H8300_INSN_BLE] = "ble",
+	[H8300_INSN_BST] = "bst",
+	[H8300_INSN_BIST] = "bist",
+	[H8300_INSN_BOR] = "bor",
+	[H8300_INSN_BIOR] = "bior",
+	[H8300_INSN_BXOR] = "bxor",
+	[H8300_INSN_BIXOR] = "bixor",
+	[H8300_INSN_BAND] = "band",
+	[H8300_INSN_BIAND] = "biand",
+	[H8300_INSN_BLD] = "bld",
+	[H8300_INSN_BILD] = "bild",
+	[H8300_INSN_CMP_B] = "cmp.b",
+	[H8300_INSN_CMP_W] = "cmp.w",
+	[H8300_INSN_CMP_L] = "cmp.l",
+	[H8300_INSN_POP_W] = "pop.w",
+	[H8300_INSN_POP_L] = "pop.l",
+	[H8300_INSN_PUSH_W] = "push.w",
+	[H8300_INSN_PUSH_L] = "push.l",
+	[H8300_INSN_TRAPA] = "trapa",
 };
 
-static const char *commands_9bit[] = {
-	[H8300_BST] = "bst",
-	[H8300_BIST] = "bist",
-	[H8300_BOR] = "bor",
-	[H8300_BIOR] = "bior",
-	[H8300_BXOR] = "bxor",
-	[H8300_BIXOR] = "bixor",
-	[H8300_BAND] = "band",
-	[H8300_BIAND] = "biand",
-	[H8300_BLD] = "bld",
-	[H8300_BILD] = "bild",
+static const char *register_names[] = {
+	"reg_invalid",
+	"r0h",
+	"r1h",
+	"r2h",
+	"r3h",
+	"r4h",
+	"r5h",
+	"r6h",
+	"r7h",
+	"r0l",
+	"r1l",
+	"r2l",
+	"r3l",
+	"r4l",
+	"r5l",
+	"r6l",
+	"r7l",
+	"r0",
+	"r1",
+	"r2",
+	"r3",
+	"r4",
+	"r5",
+	"r6",
+	"r7",
+	"e0",
+	"e1",
+	"e2",
+	"e3",
+	"e4",
+	"e5",
+	"e6",
+	"e7",
+	"er0",
+	"er1",
+	"er2",
+	"er3",
+	"er4",
+	"er5",
+	"er6",
+	"er7",
 };
 
-static int decode_opcode_4bit(const ut8 *bytes, struct h8300_cmd *cmd) {
-	ut8 opcode = bytes[0] >> 4;
-
-	if (opcode >= sizeof(commands_4bit) / sizeof(void *) || !commands_4bit[opcode]) {
-		return -1;
+const char *h8300_get_opcode_name(H8300InsnId id) {
+	if (id >= RZ_ARRAY_SIZE(commands)) {
+		return NULL;
 	}
-
-	strncpy(cmd->instr, commands_4bit[opcode], H8300_INSTR_MAXLEN - 1);
-	cmd->instr[H8300_INSTR_MAXLEN - 1] = '\0';
-
-	return 0;
+	return commands[id];
 }
 
-static int decode_opcode(const ut8 *bytes, struct h8300_cmd *cmd) {
-	ut16 ext_opcode;
+const char *h8300_get_register_name(H8300Register id) {
+	if (id >= RZ_ARRAY_SIZE(register_names)) {
+		return NULL;
+	}
+	return register_names[id];
+}
 
-	ext_opcode = (rz_read_be16(bytes)) >> 7;
+static ut32 read_abs8(const ut8 *bytes, ut32 off) {
+	ut8 x = rz_read_at_be8(bytes, off);
+	return (ut32)x | 0xffff00;
+}
 
-	switch (ext_opcode) {
-	case H8300_BOR:
-	case H8300_BIOR:
-	case H8300_BXOR:
-	case H8300_BIXOR:
-	case H8300_BAND:
-	case H8300_BIAND:
-	case H8300_BLD:
-	case H8300_BILD:
-	case H8300_BST:
-	case H8300_BIST:
-		if (ext_opcode >= sizeof(commands_9bit) / sizeof(void *) ||
-			!commands_9bit[ext_opcode]) {
+static ut32 read_abs16(const ut8 *bytes, ut32 off) {
+	ut16 x = rz_read_at_be16(bytes, off);
+	st32 sx32 = rz_bits_sign_ext32(x, 16);
+	return sx32 & 0xffffff;
+}
+
+static ut32 read_abs24(const ut8 *bytes, ut32 off) {
+	return rz_read_at_be24(bytes, off);
+}
+
+#define read_abs(T, BS)  read_abs##T(BS, (ret - T / 8))
+#define read_disp(T, BS) (rz_bits_sign_ext32(rz_read_at_be##T(BS, (ret - T / 8)), T))
+
+#define BHIGH(B) (((B) >> 4) & 0xf)
+#define BLOW(B)  ((B) & 0xf)
+
+static ut8 r8_low(ut8 x) {
+	return BLOW(x) + H8300_REG8_BEGIN;
+}
+
+static ut8 r8_high(ut8 x) {
+	return BHIGH(x) + H8300_REG8_BEGIN;
+}
+
+#define r16_low(x)  (BLOW(x) + H8300_REG16_BEGIN)
+#define r16_high(x) (BHIGH(x) + H8300_REG16_BEGIN)
+
+static ut8 r32_low(ut8 x) {
+	return (x & 0x7) + H8300_REG32_BEGIN;
+}
+
+static ut8 r32_high(ut8 x) {
+	return (BHIGH(x) & 0x7) + H8300_REG32_BEGIN;
+}
+
+#define IMPL_APPEND_OPERAND(name, F, T) \
+	static void append_##name(H8300Instruction *cmd, ut8 reg) { \
+		if (cmd->cpu_type == CPU_H8300H) { \
+			INS_OP(cmd->ops_count).width = H8300Operand_32; \
+			OPS_ADD(T, F, r32_low(reg)); \
+		} else { \
+			INS_OP(cmd->ops_count).width = H8300Operand_16; \
+			OPS_ADD(T, F, r16_low(reg)); \
+		} \
+	}
+
+IMPL_APPEND_OPERAND(ri, reg, H8300_OP_RI);
+IMPL_APPEND_OPERAND(rpostinc, reg, H8300_OP_RPOSTINC);
+IMPL_APPEND_OPERAND(rpredec, reg, H8300_OP_RPREDEC);
+
+static void append_rd(H8300Instruction *cmd, ut8 reg, st32 disp) {
+	if (cmd->cpu_type == CPU_H8300H) {
+		INS_OP(cmd->ops_count).width = H8300Operand_32;
+		OPS_ADD_EXT2(H8300_OP_RD, rd, reg, disp, r32_low(reg), disp);
+	} else {
+		INS_OP(cmd->ops_count).width = H8300Operand_16;
+		OPS_ADD_EXT2(H8300_OP_RD, rd, reg, disp, r16_low(reg), disp);
+	}
+}
+
+static void decode_operands(H8300Instruction *cmd, H8300InstructionStr *opstr) {
+	for (int i = 0; i < cmd->ops_count; ++i) {
+		H8300Operand *op = cmd->ops + i;
+#define OPSTR opstr->ops_str
+		switch (op->typ) {
+		case H8300_OP_NONE: break;
+		case H8300_OP_R8:
+		case H8300_OP_R16:
+		case H8300_OP_R32:
+			rz_str_cat(OPSTR, register_names[op->reg]);
+			break;
+		case H8300_OP_CCR:
+			rz_str_cat(OPSTR, "ccr");
+			break;
+#define STR_APPENDF(S, F, ...) snprintf(S + strlen(S), RZ_ARRAY_SIZE(S) - strlen(S), F, __VA_ARGS__)
+		case H8300_OP_IMM:
+			STR_APPENDF(OPSTR, "#%#x", op->imm);
+			break;
+		case H8300_OP_ABS:
+			STR_APPENDF(OPSTR, "@%#x", op->imm);
+			break;
+		case H8300_OP_PCREL:
+			STR_APPENDF(OPSTR, ".%+d", op->disp);
+			break;
+		case H8300_OP_MI8:
+			STR_APPENDF(OPSTR, "@@%x:8", op->imm);
+			break;
+		case H8300_OP_RD:
+			STR_APPENDF(OPSTR, "@(%+d,%s)", op->rd.disp, register_names[op->rd.reg]);
+			break;
+		case H8300_OP_RI:
+			STR_APPENDF(OPSTR, "@%s", register_names[op->reg]);
+			break;
+		case H8300_OP_RPOSTINC:
+			STR_APPENDF(OPSTR, "@%s+", register_names[op->reg]);
+			break;
+		case H8300_OP_RPREDEC:
+			STR_APPENDF(OPSTR, "@-%s", register_names[op->reg]);
 			break;
 		}
-		strncpy(cmd->instr, commands_9bit[ext_opcode], H8300_INSTR_MAXLEN - 1);
-		cmd->instr[H8300_INSTR_MAXLEN - 1] = '\0';
-		return 0;
-	}
-
-	switch (bytes[0]) {
-	case H8300_BIAND_IMM2IND16:
-	case H8300_BIAND_IMM2ABS8:
-	case H8300_BCLR_R2IND16:
-	case H8300_BCLR_R2ABS8:
-		switch (bytes[2]) {
-		case 0x74:
-			strncpy(cmd->instr, bytes[3] & 0x80 ? "bior" : "bor",
-				H8300_INSTR_MAXLEN - 1);
-			return 0;
-		case 0x76:
-			strncpy(cmd->instr, bytes[3] & 0x80 ? "biand" : "band",
-				H8300_INSTR_MAXLEN - 1);
-			return 0;
-		case 0x77:
-			strncpy(cmd->instr, bytes[3] & 0x80 ? "bild" : "bld",
-				H8300_INSTR_MAXLEN - 1);
-			return 0;
-		case 0x67:
-			strncpy(cmd->instr, bytes[3] & 0x80 ? "bist" : "bst",
-				H8300_INSTR_MAXLEN - 1);
-			return 0;
-		case 0x75:
-			strncpy(cmd->instr, bytes[3] & 0x80 ? "bixor" : "bxor",
-				H8300_INSTR_MAXLEN - 1);
-			return 0;
-		case 0x60:
-		case 0x70:
-			strncpy(cmd->instr, "bset", H8300_INSTR_MAXLEN - 1);
-			return 0;
-		case 0x61:
-		case 0x71:
-			strncpy(cmd->instr, "bnot", H8300_INSTR_MAXLEN - 1);
-			return 0;
+		if (cmd->ops_count > 1 && i < cmd->ops_count - 1) {
+			rz_str_cat(OPSTR, ",");
 		}
-		break;
 	}
+}
 
-	if (bytes[0] >= sizeof(commands) / sizeof(void *) || !commands[bytes[0]]) {
+static int decode_opcode(const H8300Instruction *cmd, H8300InstructionStr *opstr) {
+	const char *opcode_name = h8300_get_opcode_name(cmd->id);
+	if (!opcode_name) {
 		return -1;
 	}
 
-	strncpy(cmd->instr, commands[bytes[0]], H8300_INSTR_MAXLEN - 1);
-	cmd->instr[H8300_INSTR_MAXLEN - 1] = '\0';
-
+	strncpy(opstr->instr, opcode_name, H8300_INSTR_MAXLEN - 1);
+	opstr->instr[H8300_INSTR_MAXLEN - 1] = '\0';
 	return 0;
 }
 
-static int decode_eepmov(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 4;
+static int decode_none(const ut8 *bytes, H8300Instruction *cmd, ut8 sz) {
+	return sz;
+}
 
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
-	cmd->operands[0] = '\0';
+static int decode_i8ccr(const ut8 *bytes, H8300Instruction *cmd) {
+	int ret = 2;
 
-	switch (bytes[0]) {
-	case H8300_RTS:
-	case H8300_RTE:
-		ret = 2;
-		break;
-	}
-
+	cmd->fmt = H8300_INSN_FORMAT_IMM;
+	OPS_ADD(H8300_OP_IMM, imm, bytes[1]);
+	OPS_ADD(H8300_OP_CCR, imm, 0);
 	return ret;
 }
 
-static int decode_ldc(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_ccrr8(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 2;
 
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
-
-	if (bytes[0] == H8300_LDC_2 || bytes[0] == H8300_XORC ||
-		bytes[0] == H8300_ORC) {
-		snprintf(cmd->operands, H8300_INSTR_MAXLEN,
-			"#0x%x:8,ccr", bytes[1]);
-	} else if (bytes[0] == H8300_LDC) {
-		snprintf(cmd->operands, H8300_INSTR_MAXLEN,
-			"r%u%c,ccr", bytes[1] & 0x7,
-			bytes[1] & 0x8 ? 'l' : 'h');
-	} else if (bytes[0] == H8300_STC) {
-		snprintf(cmd->operands, H8300_INSTR_MAXLEN,
-			"ccr,r%u%c", bytes[1] & 0x7,
-			bytes[1] & 0x8 ? 'l' : 'h');
-	}
-
+	cmd->fmt = H8300_INSN_FORMAT_R8;
+	OPS_ADD(H8300_OP_CCR, imm, 0);
+	OPS_ADD(H8300_OP_R8, reg, r8_low(bytes[1]));
 	return ret;
 }
 
-static int decode_r162r16(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_r8ccr(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 2;
 
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
-
-	snprintf(cmd->operands, H8300_INSTR_MAXLEN, "r%u,r%u",
-		bytes[1] >> 4,
-		bytes[1] & 0x7);
-
+	cmd->fmt = H8300_INSN_FORMAT_R8;
+	OPS_ADD(H8300_OP_R8, reg, r8_low(bytes[1]));
+	OPS_ADD(H8300_OP_CCR, imm, 0);
 	return ret;
 }
 
-static int decode_andc(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 2;
-
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
+#define RR_IMPL(B, BRS, BRD, OFBRS, OFBRD) \
+	static int decode_r##BRS##r##BRD##_##B(const ut8 *bytes, H8300Instruction *cmd) { \
+		int ret = B; \
+		cmd->fmt = H8300_INSN_FORMAT_R##BRS##R##BRD; \
+		OPS_ADD(H8300_OP_R##BRS, reg, r##BRS##_high(bytes[OFBRS])); \
+		OPS_ADD(H8300_OP_R##BRD, reg, r##BRD##_low(bytes[OFBRS])); \
+		return ret; \
 	}
 
-	snprintf(cmd->operands, H8300_INSTR_MAXLEN, "#0x%x:8,ccr", bytes[1]);
+RR_IMPL(2, 16, 16, 1, 1)
+RR_IMPL(2, 16, 32, 1, 1)
+RR_IMPL(4, 8, 16, 3, 3)
+RR_IMPL(4, 16, 32, 3, 3)
 
-	return ret;
-}
-
-static int decode_adds(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_sr16_32(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 2;
-	unsigned reg, val;
-
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
+	unsigned val;
+	switch ((bytes[1] >> 4)) {
+	case 0x0: val = 1; break;
+	case 0x8: val = 2; break;
+	case 0x9: val = 4; break;
+	default: return -1;
 	}
 
-	reg = bytes[1] & 0x7;
-
-	if (bytes[1] & 0x80) {
-		val = 2;
+	OPS_ADD(H8300_OP_IMM, imm, val);
+	if (cmd->cpu_type == CPU_H8300H) {
+		cmd->fmt = H8300_INSN_FORMAT_IMMR32;
+		OPS_ADD(H8300_OP_R32, reg, r32_low(bytes[1]));
 	} else {
-		val = 1;
+		cmd->fmt = H8300_INSN_FORMAT_IMMR16;
+		OPS_ADD(H8300_OP_R16, reg, r16_low(bytes[1]));
 	}
-
-	snprintf(cmd->operands, H8300_INSTR_MAXLEN, "#%u,r%u", val, reg);
-
 	return ret;
 }
 
-static int decode_bsr(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_xr16(const ut8 *bytes, H8300Instruction *cmd, ut16 x) {
 	int ret = 2;
+	cmd->fmt = H8300_INSN_FORMAT_IMMR16;
+	OPS_ADD(H8300_OP_IMM, imm, x);
+	OPS_ADD(H8300_OP_R16, reg, r16_low(bytes[1]));
+	return ret;
+}
 
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
+static int decode_xr32(const ut8 *bytes, H8300Instruction *cmd, ut16 x) {
+	int ret = 2;
+	unsigned reg = r32_low(bytes[1]);
 
-	snprintf(cmd->operands, H8300_INSTR_MAXLEN, ".%d",
-		(st8)bytes[1]);
+	cmd->fmt = H8300_INSN_FORMAT_IMMR32;
+	OPS_ADD(H8300_OP_IMM, imm, x);
+	OPS_ADD(H8300_OP_R32, reg, reg);
+	return ret;
+}
 
+static int decode_pc_rel(const ut8 *bytes, H8300Instruction *cmd) {
+	int ret = 2;
+	st32 disp = rz_bits_sign_ext32(bytes[1], 8);
+
+	cmd->fmt = H8300_INSN_FORMAT_PCREL8;
+	OPS_ADD(H8300_OP_PCREL, disp, disp);
+	return ret;
+}
+
+static int decode_pc_rel16(const ut8 *bytes, H8300Instruction *cmd) {
+	int ret = 4;
+	st32 disp = rz_bits_sign_ext32(rz_read_at_be16(bytes, 2), 16);
+
+	cmd->fmt = H8300_INSN_FORMAT_PCREL8;
+	OPS_ADD(H8300_OP_PCREL, disp, disp);
 	return ret;
 }
 
 /* [opcode ] [ 0000 | 0 rd] [      imm    ] */
-static int decode_imm162r16(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_i16r16_4(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 4;
-	ut16 imm;
+	ut16 imm = rz_read_at_be16(bytes, 2);
 
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
-
-	imm = rz_read_at_be16(bytes, 2);
-	snprintf(cmd->operands, H8300_INSTR_MAXLEN, "#0x%x:16,r%u",
-		imm, bytes[1] & 0x7);
-
+	cmd->fmt = H8300_INSN_FORMAT_IMMR16;
+	OPS_ADD(H8300_OP_IMM, imm, imm);
+	OPS_ADD(H8300_OP_R16, reg, r16_low(bytes[1]));
 	return ret;
 }
 
-/* [ opcode ] [ 0 rs | 0 rd ] [         disp    ] */
-static int decode_disp162r16(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 4;
-	ut16 disp;
-
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
-
-	disp = rz_read_at_be16(bytes, 2);
-
-	if (bytes[1] & 0x80) {
-		snprintf(cmd->operands, H8300_INSTR_MAXLEN,
-			"r%u,@(0x%x:16,r%u)",
-			bytes[1] & 0x7, disp,
-			(bytes[1] >> 4) & 0x7);
-	} else {
-		snprintf(cmd->operands, H8300_INSTR_MAXLEN,
-			"@(0x%x:16,r%u),r%u", disp,
-			(bytes[1] >> 4) & 0x7, bytes[1] & 0x7);
-	}
-
-	return ret;
-}
-
-static int decode_pop(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_i2_2(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 2;
-	ut8 tmp = bytes[1] >> 4;
+	cmd->fmt = H8300_INSN_FORMAT_IMM;
+	ut8 i2 = (bytes[1] >> 4) & 0x3;
+	OPS_ADD(H8300_OP_IMM, imm, i2);
+	return ret;
+}
 
-	strncpy(cmd->instr, tmp == 0x7 ? "pop" : "push",
-		H8300_INSTR_MAXLEN - 1);
-	cmd->instr[H8300_INSTR_MAXLEN - 1] = '\0';
+static int decode_r16_2(const ut8 *bytes, H8300Instruction *cmd) {
+	int ret = 2;
+	cmd->fmt = H8300_INSN_FORMAT_R16;
+	OPS_ADD(H8300_OP_R16, reg, r16_low(bytes[1]));
+	return ret;
+}
 
-	snprintf(cmd->operands, H8300_INSTR_MAXLEN,
-		"r%u", bytes[1] & 0x7);
+static int decode_r32_2(const ut8 *bytes, H8300Instruction *cmd) {
+	int ret = 2;
+	cmd->fmt = H8300_INSN_FORMAT_R32;
+	OPS_ADD(H8300_OP_R32, reg, r32_low(bytes[1]));
+	return ret;
+}
 
+static int decode_r32_4l(const ut8 *bytes, H8300Instruction *cmd) {
+	int ret = 4;
+	cmd->fmt = H8300_INSN_FORMAT_R32;
+	OPS_ADD(H8300_OP_R32, reg, r32_low(bytes[3]));
+	return ret;
+}
+
+static int decode_rinc_4(const ut8 *bytes, H8300Instruction *cmd) {
+	int ret = 4;
+	cmd->fmt = H8300_INSN_FORMAT_RPOSTINC;
+	append_rpostinc(cmd, BHIGH(bytes[3]));
+	return ret;
+}
+
+static int decode_rdec_4(const ut8 *bytes, H8300Instruction *cmd) {
+	int ret = 4;
+	cmd->fmt = H8300_INSN_FORMAT_RPREDEC;
+	append_rpredec(cmd, BHIGH(bytes[3]));
 	return ret;
 }
 
 /* [ opcode ] [ 0 r2 | 0 rd ] @rs+,@rd */
-static int decode_indinc162r16(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 2;
-	ut8 tmp = bytes[1] >> 4;
-
-	if (bytes[0] == 0x6D && (tmp == 7 || tmp == 0xF)) {
-		return decode_pop(bytes, cmd);
-	}
-
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
-
-	if (bytes[1] & 0x80) {
-		snprintf(cmd->operands, H8300_INSTR_MAXLEN, "r%u,@-r%u",
-			bytes[1] & 0x7, (bytes[1] >> 4) & 0x7);
-	} else {
-		snprintf(cmd->operands, H8300_INSTR_MAXLEN, "@r%u+,r%u",
-			(bytes[1] >> 4) & 0x7, bytes[1] & 0x7);
-	}
-
-	return ret;
-}
-
-/* [ opcode ] [ 0 rs | 0 rd ] */
-static int decode_ind162r16(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_incdecr16(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 2;
 
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
-
 	if (bytes[1] & 0x80) {
-		snprintf(cmd->operands, H8300_INSTR_MAXLEN, "r%u,@r%u",
-			bytes[1] & 0x7,
-			(bytes[1] >> 4) & 0x7);
+		cmd->fmt = H8300_INSN_FORMAT_R16RDEC;
+		OPS_ADD(H8300_OP_R16, reg, r16_low(bytes[1]));
+		append_rpredec(cmd, BHIGH(bytes[1]));
 	} else {
-		snprintf(cmd->operands, H8300_INSTR_MAXLEN, "@r%u,r%u",
-			(bytes[1] >> 4) & 0x7,
-			bytes[1] & 0x7);
+		cmd->fmt = H8300_INSN_FORMAT_RINCR16;
+		append_rpostinc(cmd, BHIGH(bytes[1]));
+		OPS_ADD(H8300_OP_R16, reg, r16_low(bytes[1]));
 	}
 
 	return ret;
 }
 
 /* [ opcode ] [0 | IMM | rd ] */
-static int decode_imm2r8(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_i3r8(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 2;
-
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
-
-	snprintf(cmd->operands, H8300_INSTR_MAXLEN, "#0x%x:3,r%u%c",
-		(bytes[1] >> 4) & 0x7, bytes[1] & 0x7,
-		bytes[1] & 0x8 ? 'l' : 'h');
-
+	cmd->fmt = H8300_INSN_FORMAT_IMMR8;
+	OPS_ADD(H8300_OP_IMM, imm, (bytes[1] >> 4) & 0x7);
+	OPS_ADD(H8300_OP_R8, reg, r8_low(bytes[1]));
 	return ret;
 }
 
 /* [opcode] [0 | rd | 0000] [opcode] [0|IMM|0000] */
-static int decode_imm2ind16(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_i3ri_4(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 4;
+	cmd->fmt = H8300_INSN_FORMAT_IMMRI;
+	OPS_ADD(H8300_OP_IMM, imm, (bytes[3] >> 4) & 0x7);
 
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
-
-	snprintf(cmd->operands, H8300_INSTR_MAXLEN, "#0x%x:3,@r%u",
-		(bytes[3] >> 4) & 0x7, bytes[1] >> 4);
-
+	append_ri(cmd, (bytes[1] >> 4));
 	return ret;
 }
 
 /* [opcode] [   abs   ] [opcode] [0|IMM | 0000] */
-static int decode_imm2abs8(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_i3abs8_4(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 4;
-
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
-
-	snprintf(cmd->operands, H8300_INSTR_MAXLEN, "#0x%x:3,@0x%x:8",
-		(bytes[3] >> 4) & 0x7, bytes[1]);
-
+	cmd->fmt = H8300_INSN_FORMAT_IMMABS;
+	OPS_ADD(H8300_OP_IMM, imm, (bytes[3] >> 4) & 0x7);
+	OPS_ADD(H8300_OP_ABS, imm, read_abs8(bytes, 1));
 	return ret;
 }
 
 /* [opcode] [ rn  |  rd ] */
-static int decode_r2r8(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_r8r8_2(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 2;
-
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
-
-	snprintf(cmd->operands, H8300_INSTR_MAXLEN, "r%u%c,r%u%c",
-		(bytes[1] >> 4) & 0x7,
-		bytes[1] & 0x80 ? 'l' : 'h',
-		bytes[1] & 0x7, bytes[1] & 0x8 ? 'l' : 'h');
-
-	return ret;
-}
-
-/* [opcode] [0| rd | 0000] [opcode] [ rn | 0 ] */
-static int decode_rzind16(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 4;
-
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
-
-	snprintf(cmd->operands, H8300_INSTR_MAXLEN, "r%u%c,@r%u",
-		(bytes[3] >> 4) & 0x7,
-		bytes[3] & 0x80 ? 'l' : 'h',
-		bytes[1] >> 4);
-
+	cmd->fmt = H8300_INSN_FORMAT_R8R8;
+	OPS_ADD(H8300_OP_R8, reg, r8_high(bytes[1]));
+	OPS_ADD(H8300_OP_R8, reg, r8_low(bytes[1]));
 	return ret;
 }
 
 /* [opcode] [ abs ] [opcode] [ rn | 0000 ] */
-static int decode_rzabs8(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_r8abs8_4(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 4;
-
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
-
-	snprintf(cmd->operands, H8300_INSTR_MAXLEN, "r%u%c,@0x%x:8",
-		(bytes[3] >> 4) & 0x7,
-		bytes[3] & 0x80 ? 'l' : 'h',
-		bytes[1]);
-
-	return ret;
-}
-
-static int decode_subs(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 2;
-
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
-
-	snprintf(cmd->operands, H8300_INSTR_MAXLEN, "#%u,r%u",
-		bytes[1] & 0x80 ? 2 : 1, bytes[1] & 0x7);
-
+	cmd->fmt = H8300_INSN_FORMAT_R8ABS;
+	OPS_ADD(H8300_OP_R8, reg, r8_high(bytes[3]));
+	OPS_ADD(H8300_OP_ABS, imm, read_abs8(bytes, 1));
 	return ret;
 }
 
 /* [ opcode ] [ 0000 |  rd ] */
-static int decode_daa(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_r8_2(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 2;
-
-	if (bytes[0] == 0x17 && bytes[1] >> 4 == 0) {
-		strncpy(cmd->instr, "not", H8300_INSTR_MAXLEN - 1);
-		cmd->instr[H8300_INSTR_MAXLEN - 1] = '\0';
-	} else if (bytes[0] == 0x12 && bytes[1] >> 4 == 0) {
-		strncpy(cmd->instr, "rotxl", H8300_INSTR_MAXLEN - 1);
-		cmd->instr[H8300_INSTR_MAXLEN - 1] = '\0';
-	} else if (bytes[0] == 0x13 && bytes[1] >> 4 == 0) {
-		strncpy(cmd->instr, "rotxr", H8300_INSTR_MAXLEN - 1);
-		cmd->instr[H8300_INSTR_MAXLEN - 1] = '\0';
-	} else if (bytes[0] == 0x10 && bytes[1] >> 4 == 0) {
-		strncpy(cmd->instr, "shll", H8300_INSTR_MAXLEN - 1);
-	} else if (bytes[0] == 0x11 && bytes[1] >> 4 == 0) {
-		strncpy(cmd->instr, "shlr", H8300_INSTR_MAXLEN - 1);
-	} else if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
-
-	snprintf(cmd->operands, H8300_INSTR_MAXLEN, "r%u%c",
-		(bytes[1]) & 0x7,
-		bytes[1] & 0x8 ? 'l' : 'h');
-
+	cmd->fmt = H8300_INSN_FORMAT_R8;
+	OPS_ADD(H8300_OP_R8, reg, r8_low(bytes[1]));
 	return ret;
 }
 
 /* [ opcode ] [ rs | 0 rd] */
-static int decode_r82r16(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_r8r16(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 2;
 
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
-
-	snprintf(cmd->operands, H8300_INSTR_MAXLEN, "r%u%c,r%u",
-		(bytes[1] >> 4) & 0x7,
-		bytes[1] & 0x80 ? 'l' : 'h',
-		bytes[1] & 0x7);
-
-	return ret;
-}
-
-/* [opcode] [0000 0000] [       abs    ] */
-int decode_jmp_abs16(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 4;
-	ut16 abs;
-
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
-
-	abs = rz_read_at_be16(bytes, 2);
-	snprintf(cmd->operands, H8300_INSTR_MAXLEN, "@0x%x:16", abs);
-
+	cmd->fmt = H8300_INSN_FORMAT_R8R16;
+	OPS_ADD(H8300_OP_R8, reg, r8_high(bytes[1]));
+	OPS_ADD(H8300_OP_R16, reg, r16_low(bytes[1]));
 	return ret;
 }
 
 /* [opcode] [  abs    ] */
-int decode_jmp_abs8(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_mi8(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 2;
-
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
-
-	snprintf(cmd->operands, H8300_INSTR_MAXLEN,
-		"@@0x%x:8", bytes[1]);
-
+	cmd->fmt = H8300_INSN_FORMAT_MI8;
+	OPS_ADD(H8300_OP_MI8, imm, bytes[1]);
 	return ret;
 }
+
+#define ABS_IMPL(B, BABS) \
+	static int decode_abs##BABS##_##B(const ut8 *bytes, H8300Instruction *cmd) { \
+		int ret = B; \
+		ut32 abs_addr = read_abs(BABS, bytes); \
+		cmd->fmt = H8300_INSN_FORMAT_ABS; \
+		OPS_ADD(H8300_OP_ABS, imm, abs_addr); \
+		return ret; \
+	}
+
+ABS_IMPL(4, 16);
+ABS_IMPL(6, 16);
+ABS_IMPL(8, 24);
+
+#define ABSR_IMPL(B, BABS, BR, OFR) \
+	static int decode_abs##BABS##r##BR##_##B(const ut8 *bytes, H8300Instruction *cmd) { \
+		int ret = B; \
+		ut32 abs = read_abs(BABS, bytes); \
+		ut8 r = r##BR##_low(bytes[OFR]); \
+		cmd->fmt = H8300_INSN_FORMAT_ABSR##BR; \
+		OPS_ADD(H8300_OP_ABS, imm, abs); \
+		OPS_ADD(H8300_OP_R##BR, reg, r); \
+		return ret; \
+	}
+#define RABS_IMPL(B, BABS, BR, OFR) \
+	static int decode_r##BR##abs##BABS##_##B(const ut8 *bytes, H8300Instruction *cmd) { \
+		int ret = B; \
+		ut32 abs = read_abs(BABS, bytes); \
+		ut8 r = r##BR##_low(bytes[OFR]); \
+		cmd->fmt = H8300_INSN_FORMAT_R##BR##ABS; \
+		OPS_ADD(H8300_OP_R##BR, reg, r); \
+		OPS_ADD(H8300_OP_ABS, imm, abs); \
+		return ret; \
+	}
+
+ABSR_IMPL(2, 8, 8, 0);
+RABS_IMPL(2, 8, 8, 0);
+
+ABSR_IMPL(4, 16, 8, 1);
+RABS_IMPL(4, 16, 8, 1);
+ABSR_IMPL(4, 16, 16, 1);
+RABS_IMPL(4, 16, 16, 1);
+
+ABSR_IMPL(6, 24, 8, 1);
+RABS_IMPL(6, 24, 8, 1);
+ABSR_IMPL(6, 24, 16, 1);
+RABS_IMPL(6, 24, 16, 1);
+
+ABSR_IMPL(6, 16, 32, 3);
+RABS_IMPL(6, 16, 32, 3);
+
+ABSR_IMPL(8, 24, 32, 3);
+RABS_IMPL(8, 24, 32, 3);
 
 /* [opcode] [0 rn 0000] */
-static int decode_jmp_ind(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_ri_2(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 2;
-
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
-
-	snprintf(cmd->operands, H8300_INSTR_MAXLEN,
-		"@r%u", (bytes[1] >> 4) & 0x7);
-
+	cmd->fmt = H8300_INSN_FORMAT_RI;
+	append_ri(cmd, BHIGH(bytes[1]));
 	return ret;
 }
 
-/* [ opcode ] [ 0000 | 0 rd ] [     abs    ] */
-static int decode_abs162r16(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_ri_4(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 4;
-	ut16 abs;
-
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
-
-	abs = rz_read_at_be16(bytes, 2);
-	if (bytes[1] & 0x80) {
-		snprintf(cmd->operands, H8300_INSTR_MAXLEN,
-			"r%u,@0x%x:16", bytes[1] & 0x7, abs);
-	} else {
-		snprintf(cmd->operands, H8300_INSTR_MAXLEN, "@0x%x:16,r%u",
-			abs, bytes[1] & 0x7);
-	}
-
+	cmd->fmt = H8300_INSN_FORMAT_RI;
+	append_ri(cmd, BHIGH(bytes[3]));
 	return ret;
 }
 
-/* [ opcode ] [ 1 rd | rs ] */
-static int decode_r82ind16(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 2;
-
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
+#define RIR_IMPL(B, BR, OFRI, OFR) \
+	static int decode_rir##BR##_##B(const ut8 *bytes, H8300Instruction *cmd) { \
+		int ret = B; \
+		if (bytes[OFRI] & 0x80) { \
+			cmd->fmt = H8300_INSN_FORMAT_R##BR##RI; \
+			OPS_ADD(H8300_OP_R##BR, reg, r##BR##_low(bytes[OFR])); \
+			append_ri(cmd, BHIGH(bytes[OFRI])); \
+		} else { \
+			cmd->fmt = H8300_INSN_FORMAT_RIR##BR; \
+			append_ri(cmd, BHIGH(bytes[OFRI])); \
+			OPS_ADD(H8300_OP_R##BR, reg, r##BR##_low(bytes[OFR])); \
+		} \
+		return ret; \
 	}
 
-	if (bytes[1] & 0x80) {
-		snprintf(cmd->operands, H8300_INSTR_MAXLEN, "r%u%c,@r%u",
-			bytes[1] & 0x7, bytes[1] & 0x8 ? 'l' : 'h',
-			(bytes[1] >> 4) & 0x7);
-	} else {
-		snprintf(cmd->operands, H8300_INSTR_MAXLEN, "@r%u,r%u%c",
-			(bytes[1] >> 4) & 0x7,
-			bytes[1] & 0x7, bytes[1] & 0x8 ? 'l' : 'h');
-	}
+RIR_IMPL(2, 16, 1, 1);
+RIR_IMPL(2, 8, 1, 1);
+RIR_IMPL(4, 32, 3, 3);
 
-	return ret;
-}
-
-/* [ opcode ] [ 1 rd |  rs ] [       disp     ] */
-static int decode_r82dispr16(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_r8ri_4(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 4;
-	ut16 disp;
-
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
-
-	disp = rz_read_at_be16(bytes, 2);
-	if (bytes[1] & 0x80) {
-		snprintf(cmd->operands, H8300_INSTR_MAXLEN,
-			"r%u%c,@(0x%x:16,r%u)",
-			bytes[1] & 0x7, bytes[1] & 0x8 ? 'l' : 'h',
-			disp, (bytes[1] >> 4) & 0x7);
-	} else {
-		snprintf(cmd->operands, H8300_INSTR_MAXLEN,
-			"@(0x%x:16,r%u),r%u%c",
-			disp, (bytes[1] >> 4) & 0x7,
-			bytes[1] & 0x7, bytes[1] & 0x8 ? 'l' : 'h');
-	}
+	cmd->fmt = H8300_INSN_FORMAT_R8RI;
+	OPS_ADD(H8300_OP_R8, reg, r8_high(bytes[3]));
+	append_ri(cmd, BHIGH(bytes[1]));
 	return ret;
 }
 
-/* [ opcode ] [1 rd rs ] */
-static int decode_r82rdec16(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_rd3216_6(const ut8 *bytes, H8300Instruction *cmd) {
+	int ret = 6;
+	cmd->fmt = H8300_INSN_FORMAT_RD;
+	append_rd(cmd, BHIGH(bytes[3]), read_disp(16, bytes));
+	return ret;
+}
+
+static int decode_rd3224_10(const ut8 *bytes, H8300Instruction *cmd) {
+	int ret = 10;
+	cmd->fmt = H8300_INSN_FORMAT_RD;
+	append_rd(cmd, BHIGH(bytes[3]), read_disp(24, bytes));
+	return ret;
+}
+
+#define RDR_IMPL(B, Br, Bd, OFRD, OFR) \
+	static int decode_rd32##Bd##r##Br##_##B(const ut8 *bytes, H8300Instruction *cmd) { \
+		int ret = B; \
+		st32 d = read_disp(Bd, bytes); \
+		ut8 rrd = BHIGH(bytes[OFRD]); \
+		ut8 r = r##Br##_low(bytes[OFR]); \
+		if (bytes[OFRD] & 0x80) { \
+			cmd->fmt = H8300_INSN_FORMAT_R##Br##RD; \
+			OPS_ADD(H8300_OP_R##Br, reg, r); \
+			append_rd(cmd, rrd, d); \
+		} else { \
+			cmd->fmt = H8300_INSN_FORMAT_RDR##Br; \
+			append_rd(cmd, rrd, d); \
+			OPS_ADD(H8300_OP_R##Br, reg, r); \
+		} \
+		return ret; \
+	}
+
+#define RDR_IMPL1(B, Br, Bd, OFRD, OFR) \
+	static int decode_rd32##Bd##r##Br##_##B(const ut8 *bytes, H8300Instruction *cmd) { \
+		int ret = B; \
+		st32 d = read_disp(Bd, bytes); \
+		ut8 rrd = BHIGH(bytes[OFRD]); \
+		ut8 r = r##Br##_low(bytes[OFR]); \
+		cmd->fmt = H8300_INSN_FORMAT_RDR##Br; \
+		append_rd(cmd, rrd, d); \
+		OPS_ADD(H8300_OP_R##Br, reg, r); \
+		return ret; \
+	}
+#define RRD_IMPL1(B, Br, Bd, OFRD, OFR) \
+	static int decode_r##Br##rd32##Bd##_##B(const ut8 *bytes, H8300Instruction *cmd) { \
+		int ret = B; \
+		st32 d = read_disp(Bd, bytes); \
+		ut8 rrd = BHIGH(bytes[OFRD]); \
+		ut8 r = r##Br##_low(bytes[OFR]); \
+		cmd->fmt = H8300_INSN_FORMAT_R##Br##RD; \
+		OPS_ADD(H8300_OP_R##Br, reg, r); \
+		append_rd(cmd, rrd, d); \
+		return ret; \
+	}
+
+RDR_IMPL(4, 8, 16, 1, 1);
+RDR_IMPL(4, 16, 16, 1, 1);
+
+RDR_IMPL(6, 32, 16, 3, 3);
+
+RDR_IMPL1(8, 8, 24, 1, 3);
+RRD_IMPL1(8, 8, 24, 1, 3);
+RDR_IMPL1(8, 16, 24, 1, 3);
+RRD_IMPL1(8, 16, 24, 1, 3);
+
+RDR_IMPL1(10, 32, 24, 3, 5);
+RRD_IMPL1(10, 32, 24, 3, 5);
+
+static int decode_nop(const ut8 *bytes, H8300Instruction *cmd) {
+	int ret = 2;
+	return ret;
+}
+
+static int decode_i8r8(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 2;
 
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
+	cmd->fmt = H8300_INSN_FORMAT_IMMR8;
+	OPS_ADD(H8300_OP_IMM, imm, bytes[1]);
+	OPS_ADD(H8300_OP_R8, reg, r8_low(bytes[0]));
+	return ret;
+}
 
-	if (bytes[1] & 0x80) {
-		snprintf(cmd->operands, H8300_INSTR_MAXLEN,
-			"r%u%c,@-r%u",
-			bytes[1] & 0x7, bytes[1] & 0x8 ? 'l' : 'h',
-			(bytes[1] >> 4) & 0x7);
-	} else {
-		snprintf(cmd->operands, H8300_INSTR_MAXLEN,
-			"@r%u+,r%u%c",
-			(bytes[1] >> 4) & 0x7,
-			bytes[1] & 0x7, bytes[1] & 0x8 ? 'l' : 'h');
-	}
+static int decode_i32r32_6(const ut8 *bytes, H8300Instruction *cmd) {
+	int ret = 6;
+
+	ut32 immval = rz_read_at_be32(bytes, 2);
+	ut8 regval = r32_low(bytes[1]);
+
+	cmd->fmt = H8300_INSN_FORMAT_IMMR32;
+	OPS_ADD(H8300_OP_IMM, imm, immval);
+	OPS_ADD(H8300_OP_R32, reg, regval);
 
 	return ret;
 }
 
-/* [opcode ] [ 8 | rs ] [    abs    ] */
-static int decode_r82abs16(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_r32r32_2(const ut8 *bytes, H8300Instruction *cmd) {
+	int ret = 2;
+
+	ut8 regsval = r32_high(bytes[1]);
+	ut8 regdval = r32_low(bytes[1]);
+
+	cmd->fmt = H8300_INSN_FORMAT_R32R32;
+	OPS_ADD(H8300_OP_R32, reg, regsval);
+	OPS_ADD(H8300_OP_R32, reg, regdval);
+
+	return ret;
+}
+
+static int decode_r32r32_4(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 4;
-	ut16 abs;
 
-	if (bytes[0] == 0x6A && bytes[1] >> 4 == 4) {
-		strncpy(cmd->instr, "movfpe", H8300_INSTR_MAXLEN);
-	} else if (bytes[0] == 0x6A && bytes[1] >> 4 == 0xC) {
-		strncpy(cmd->instr, "movtpe", H8300_INSTR_MAXLEN);
-	} else if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
+	ut8 regsval = r32_high(bytes[3]);
+	ut8 regdval = r32_low(bytes[3]);
 
-	abs = rz_read_at_be16(bytes, 2);
+	cmd->fmt = H8300_INSN_FORMAT_R32R32;
+	OPS_ADD(H8300_OP_R32, reg, regsval);
+	OPS_ADD(H8300_OP_R32, reg, regdval);
 
+	return ret;
+}
+
+static int decode_incdecr8(const ut8 *bytes, H8300Instruction *cmd) {
+	int ret = 2;
 	if (bytes[1] & 0x80) {
-		snprintf(cmd->operands, H8300_INSTR_MAXLEN, "r%u%c,@0x%x:16",
-			bytes[1] & 0x7, bytes[1] & 0x8 ? 'l' : 'h', abs);
+		cmd->fmt = H8300_INSN_FORMAT_R8RDEC;
+		OPS_ADD(H8300_OP_R8, reg, r8_low(bytes[1]));
+		append_rpredec(cmd, BHIGH(bytes[1]));
 	} else {
-		snprintf(cmd->operands, H8300_INSTR_MAXLEN, "@0x%x:16,r%u%c",
-			abs, bytes[1] & 0x7,
-			bytes[1] & 0x8 ? 'l' : 'h');
+		cmd->fmt = H8300_INSN_FORMAT_RINCR8;
+		append_rpostinc(cmd, BHIGH(bytes[1]));
+		OPS_ADD(H8300_OP_R8, reg, r8_low(bytes[1]));
 	}
-
 	return ret;
 }
 
-static int decode_nop(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 2;
-
-	if (decode_opcode(bytes, cmd)) {
-		return -1;
-	}
-
-	cmd->operands[0] = '\0';
-
+static int decode_rincr32_4(const ut8 *bytes, H8300Instruction *cmd) {
+	int ret = 4;
+	cmd->fmt = H8300_INSN_FORMAT_RINCR32;
+	append_rpostinc(cmd, BHIGH(bytes[3]));
+	OPS_ADD(H8300_OP_R32, reg, r32_low(bytes[3]));
 	return ret;
 }
 
-static int decode_abs2r_short(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 2;
-
-	if (decode_opcode_4bit(bytes, cmd)) {
-		return -1;
-	}
-
-	snprintf(cmd->operands, H8300_INSTR_MAXLEN,
-		"@0x%x:8,r%u%c",
-		bytes[1], bytes[0] & 0x7,
-		bytes[0] & 0x8 ? 'l' : 'h');
-
+static int decode_r32rdec_4(const ut8 *bytes, H8300Instruction *cmd) {
+	int ret = 4;
+	cmd->fmt = H8300_INSN_FORMAT_R32RDEC;
+	OPS_ADD(H8300_OP_R32, reg, r32_low(bytes[3]));
+	append_rpredec(cmd, BHIGH(bytes[3]));
 	return ret;
 }
 
-static int decode_rzimm_short(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 2;
+#define CASE_F_F_IMPL_BODY(F, I) \
+	cmd->id = H8300_INSN_##I; \
+	cmd->size = F(instr, cmd);
+#define CASE_F_F_IMPL(F, I) \
+	cmd->id = H8300_INSN_##I; \
+	cmd->size = F(instr, cmd); \
+	return cmd->size;
 
-	if (decode_opcode_4bit(bytes, cmd)) {
-		return -1;
+#define CASE_F_F(F, X, I) \
+	case (X): \
+		CASE_F_F_IMPL(F, I);
+#define CASE_F_R8(X, I) CASE_F_F(decode_r8_2, X, I)
+#define CASE_F_F_VA(F, X, I, ...) \
+	case (X): \
+		cmd->id = H8300_INSN_##I; \
+		cmd->size = F(instr, cmd, __VA_ARGS__); \
+		return cmd->size;
+#define CASE_F_F_CCR(F, X, I) \
+	case (X): \
+		CASE_F_F_IMPL_BODY(F, I) \
+		OPS_ADD(H8300_OP_CCR, imm, 0); \
+		return cmd->size;
+#define CASE_F_CCR_F(F, X, I) \
+	case (X): \
+		OPS_ADD(H8300_OP_CCR, imm, 0); \
+		CASE_F_F_IMPL_BODY(F, I) \
+		return cmd->size;
+#define CASE_DEFAULT_BREAK \
+	default: break;
+
+static int h8300_decode_10(const ut8 *instr, H8300Instruction *cmd) {
+	ut64 x7 = rz_read_be64(instr) >> 8;
+	if (cmd->cpu_type == CPU_H8300H) {
+		switch (x7 & 0xffffff8ffff8ff) {
+			CASE_F_F(decode_rd3224r32_10, 0x010078006b2000, MOV_L);
+			CASE_F_F(decode_r32rd3224_10, 0x010078806ba000, MOV_L);
+			CASE_DEFAULT_BREAK;
+		}
 	}
 
-	snprintf(cmd->operands, H8300_INSTR_MAXLEN,
-		"r%u%c,@0x%x:8",
-		bytes[0] & 0x7, bytes[0] & 0x8 ? 'l' : 'h',
-		bytes[1]);
-	return ret;
-}
-
-static int decode_imm2r_short(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 2;
-
-	if (decode_opcode_4bit(bytes, cmd)) {
-		return -1;
+	switch (x7 & 0xffffff8fffffff) {
+		CASE_F_F_CCR(decode_rd3224_10, 0x014078006b2000, LDC_W);
+		CASE_F_CCR_F(decode_rd3224_10, 0x014078006ba000, STC_W);
+	default: break;
 	}
 
-	snprintf(cmd->operands, H8300_INSTR_MAXLEN, "#0x%x:8,r%u%c",
-		bytes[1], bytes[0] & 0x7, bytes[0] & 0x8 ? 'l' : 'h');
+	return -1;
+}
+static int h8300_decode_8(const ut8 *instr, H8300Instruction *cmd) {
+	ut64 x5 = rz_read_be64(instr) >> 24;
+	if (cmd->cpu_type == CPU_H8300H) {
+		switch (x5 & 0xfffffff8ff) {
+			CASE_F_F(decode_abs24r32_8, 0x01006b2000, MOV_L);
+			CASE_F_F(decode_r32abs24_8, 0x01006ba000, MOV_L);
+			CASE_DEFAULT_BREAK;
+		}
+	}
 
-	return ret;
+	switch (x5) {
+		CASE_F_F_CCR(decode_abs24_8, 0x01406b2000, LDC_W);
+		CASE_F_CCR_F(decode_abs24_8, 0x01406ba000, STC_W);
+	default: break;
+	}
+	switch (x5 & 0xff8ffff0ff) {
+		CASE_F_F(decode_rd3224r8_8, 0x78006a2000, MOV_B);
+		CASE_F_F(decode_r8rd3224_8, 0x78006aa000, MOV_B);
+		CASE_F_F(decode_rd3224r16_8, 0x78006b2000, MOV_W);
+		CASE_F_F(decode_r16rd3224_8, 0x78006ba000, MOV_W);
+	default: break;
+	}
+	return -1;
 }
 
-int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd) {
-	int ret = 0;
+static int h8300_decode_6(const ut8 *instr, H8300Instruction *cmd) {
+	ut32 x2 = rz_read_be16(instr);
+	ut32 x4 = rz_read_be32(instr);
+	if (cmd->cpu_type == CPU_H8300H) {
+		switch (x2 & 0xfff8) {
+			CASE_F_F(decode_i32r32_6, 0x7a10, ADD_L);
+			CASE_F_F(decode_i32r32_6, 0x7a30, SUB_L);
+			CASE_F_F(decode_i32r32_6, 0x7a60, AND_L);
+			CASE_F_F(decode_i32r32_6, 0x7a20, CMP_L);
+			CASE_F_F(decode_i32r32_6, 0x7a00, MOV_L);
+			CASE_F_F(decode_i32r32_6, 0x7a40, OR_L);
+			CASE_F_F(decode_i32r32_6, 0x7a50, XOR_L);
+			CASE_DEFAULT_BREAK;
+		}
+		switch (x4 & 0xfffffff8) {
+			CASE_F_F(decode_abs16r32_6, 0x01006b00, MOV_L);
+			CASE_F_F(decode_r32abs16_6, 0x01006b80, MOV_L);
+			CASE_DEFAULT_BREAK;
+		}
+		switch (x4 & 0xffffff08) {
+			CASE_F_F(decode_rd3216r32_6, 0x01006f00, MOV_L);
+			CASE_DEFAULT_BREAK;
+		}
+	}
+
+	switch (x4 & 0xffffff8f) {
+		CASE_F_F_CCR(decode_rd3216_6, 0x01406f00, LDC_W);
+		CASE_F_CCR_F(decode_rd3216_6, 0x01406f80, STC_W);
+	default: break;
+	}
+	switch (x4 & 0xfff0ff00) {
+		CASE_F_F(decode_abs24r8_6, 0x6a200000, MOV_B);
+		CASE_F_F(decode_r8abs24_6, 0x6aa00000, MOV_B);
+		CASE_F_F(decode_abs24r16_6, 0x6b200000, MOV_W);
+		CASE_F_F(decode_r16abs24_6, 0x6ba00000, MOV_W);
+	default: break;
+	}
+	switch (x4) {
+		CASE_F_F_CCR(decode_abs16_6, 0x01406b00, LDC_W);
+		CASE_F_CCR_F(decode_abs16_6, 0x01406b80, STC_W);
+	default: break;
+	}
+	return -1;
+}
+
+static int h8300_decode_4(const ut8 *instr, H8300Instruction *cmd) {
+	ut32 x2 = rz_read_be16(instr);
+	ut32 x4 = rz_read_be32(instr);
+
+	if (cmd->cpu_type == CPU_H8300H) {
+		switch (x4 & 0xfffffff8) {
+			CASE_F_F(decode_r32_4l, 0x01006d70, POP_L);
+			CASE_F_F(decode_r32_4l, 0x01006df0, PUSH_L);
+			CASE_DEFAULT_BREAK;
+		}
+		switch (x4 & 0xffffff88) {
+			CASE_F_F(decode_r32r32_4, 0x01f06600, AND_L);
+
+			CASE_F_F(decode_rir32_4, 0x01006900, MOV_L);
+			CASE_F_F(decode_rir32_4, 0x01006980, MOV_L);
+			CASE_F_F(decode_rincr32_4, 0x01006d00, MOV_L);
+			CASE_F_F(decode_r32rdec_4, 0x01006d80, MOV_L);
+
+			CASE_F_F(decode_r32r32_4, 0x01f06400, OR_L);
+			CASE_F_F(decode_r32r32_4, 0x01f06500, XOR_L);
+			CASE_DEFAULT_BREAK;
+		}
+	}
+
+	if (cmd->cpu_type != CPU_H8300L) {
+		switch (x2 & 0xfff0) {
+			CASE_F_F(decode_abs16r8_4, 0x6a40, MOVFPE);
+			CASE_F_F(decode_r8abs16_4, 0x6ac0, MOVTPE);
+			CASE_DEFAULT_BREAK;
+		}
+	}
+
+	switch (x2) {
+		CASE_F_F(decode_pc_rel16, 0x5800, BRA);
+		CASE_F_F(decode_pc_rel16, 0x5810, BRN);
+		CASE_F_F(decode_pc_rel16, 0x5820, BHI);
+		CASE_F_F(decode_pc_rel16, 0x5830, BLS);
+		CASE_F_F(decode_pc_rel16, 0x5840, BCC);
+		CASE_F_F(decode_pc_rel16, 0x5850, BCS);
+		CASE_F_F(decode_pc_rel16, 0x5860, BNE);
+		CASE_F_F(decode_pc_rel16, 0x5870, BEQ);
+		CASE_F_F(decode_pc_rel16, 0x5880, BVC);
+		CASE_F_F(decode_pc_rel16, 0x5890, BVS);
+		CASE_F_F(decode_pc_rel16, 0x58a0, BPL);
+		CASE_F_F(decode_pc_rel16, 0x58b0, BMI);
+		CASE_F_F(decode_pc_rel16, 0x58c0, BGE);
+		CASE_F_F(decode_pc_rel16, 0x58d0, BLT);
+		CASE_F_F(decode_pc_rel16, 0x58e0, BGT);
+		CASE_F_F(decode_pc_rel16, 0x58f0, BLE);
+	default: break;
+	}
+
+	switch (x2 & 0xff00) {
+		CASE_F_F(decode_rd3216r16_4, 0x6f00, MOV_W);
+	default:
+		break;
+	}
+
+	switch (x2 & 0xfff0) {
+		CASE_F_F(decode_i16r16_4, 0x7960, AND_W);
+		CASE_F_F(decode_i16r16_4, 0x7910, ADD_W);
+		CASE_F_F(decode_i16r16_4, 0x7930, SUB_W);
+		CASE_F_F(decode_i16r16_4, 0x7920, CMP_W);
+		CASE_F_F(decode_i16r16_4, 0x7940, OR_W);
+		CASE_F_F(decode_i16r16_4, 0x7950, XOR_W);
+
+		CASE_F_F(decode_abs16r8_4, 0x6a00, MOV_B);
+		CASE_F_F(decode_r8abs16_4, 0x6a80, MOV_B);
+		CASE_F_F(decode_i16r16_4, 0x7900, MOV_W);
+		CASE_F_F(decode_abs16r16_4, 0x6b00, MOV_W);
+		CASE_F_F(decode_r16abs16_4, 0x6b80, MOV_W);
+	default:
+		break;
+	}
+
+	switch (x4) {
+		CASE_F_F_VA(decode_none, 0x7b5c598f, EEPMOV_B, 4);
+		CASE_F_F_VA(decode_none, 0x7bd4598f, EEPMOV_W, 4);
+	default:
+		break;
+	}
+
+	switch (x4 & ~0x00700070) {
+		CASE_F_F(decode_i3ri_4, 0x7d007000, BSET);
+		CASE_F_F(decode_i3ri_4, 0x7d007200, BCLR);
+		CASE_F_F(decode_i3ri_4, 0x7d006700, BST);
+		CASE_F_F(decode_i3ri_4, 0x7d006780, BIST);
+		CASE_F_F(decode_i3ri_4, 0x7d007100, BNOT);
+
+		CASE_F_F(decode_i3ri_4, 0x7c007600, BAND);
+		CASE_F_F(decode_i3ri_4, 0x7c007680, BIAND);
+		CASE_F_F(decode_i3ri_4, 0x7c007780, BILD);
+		CASE_F_F(decode_i3ri_4, 0x7c007480, BIOR);
+		CASE_F_F(decode_i3ri_4, 0x7c007580, BIXOR);
+		CASE_F_F(decode_i3ri_4, 0x7c007700, BLD);
+		CASE_F_F(decode_i3ri_4, 0x7c007400, BOR);
+		CASE_F_F(decode_i3ri_4, 0x7c007300, BTST);
+		CASE_F_F(decode_i3ri_4, 0x7c007500, BXOR);
+	default:
+		break;
+	}
+	switch (x4 & ~0x00ff0070) {
+		CASE_F_F(decode_i3abs8_4, 0x7f007000, BSET);
+		CASE_F_F(decode_i3abs8_4, 0x7f007200, BCLR);
+		CASE_F_F(decode_i3abs8_4, 0x7f006700, BST);
+		CASE_F_F(decode_i3abs8_4, 0x7f006780, BIST);
+		CASE_F_F(decode_i3abs8_4, 0x7f007100, BNOT);
+
+		CASE_F_F(decode_i3abs8_4, 0x7e007600, BAND);
+		CASE_F_F(decode_i3abs8_4, 0x7e007680, BIAND);
+		CASE_F_F(decode_i3abs8_4, 0x7e007780, BILD);
+		CASE_F_F(decode_i3abs8_4, 0x7e007480, BIOR);
+		CASE_F_F(decode_i3abs8_4, 0x7e007580, BIXOR);
+		CASE_F_F(decode_i3abs8_4, 0x7e007700, BLD);
+		CASE_F_F(decode_i3abs8_4, 0x7e007400, BOR);
+		CASE_F_F(decode_i3abs8_4, 0x7e007300, BTST);
+		CASE_F_F(decode_i3abs8_4, 0x7e007500, BXOR);
+	default:
+		break;
+	}
+	switch (x4 & ~0x007000f0) {
+		CASE_F_F(decode_r8ri_4, 0x7d006000, BSET);
+		CASE_F_F(decode_r8ri_4, 0x7d006200, BCLR);
+		CASE_F_F(decode_r8ri_4, 0x7d006100, BNOT);
+
+		CASE_F_F(decode_r8ri_4, 0x7c006300, BTST);
+	default:
+		break;
+	}
+	switch (x4 & ~0x00ff00f0) {
+		CASE_F_F(decode_r8abs8_4, 0x7f006000, BSET);
+		CASE_F_F(decode_r8abs8_4, 0x7f006200, BCLR);
+		CASE_F_F(decode_r8abs8_4, 0x7f006100, BNOT);
+
+		CASE_F_F(decode_r8abs8_4, 0x7e006300, BTST);
+	default:
+		break;
+	}
+	switch (x4 & 0xffffff8f) {
+		CASE_F_F_CCR(decode_ri_4, 0x01406900, LDC_W);
+		CASE_F_F_CCR(decode_rinc_4, 0x01406d00, LDC_W);
+
+		CASE_F_CCR_F(decode_ri_4, 0x01406980, STC_W);
+		CASE_F_CCR_F(decode_rdec_4, 0x01406d80, STC_W);
+	default:
+		break;
+	}
+	switch (x4 & 0xffffff00) {
+		CASE_F_F(decode_r8r16_4, 0x01d05100, DIVXS_B);
+		CASE_F_F(decode_r8r16_4, 0x01c05000, MULXS_B);
+	default:
+		break;
+	}
+	switch (x4 & 0xffffff08) {
+		CASE_F_F(decode_r16r32_4, 0x01d05300, DIVXS_W);
+		CASE_F_F(decode_r16r32_4, 0x01c05200, MULXS_W);
+	default:
+		break;
+	}
+	return -1;
+}
+
+static int h8300_decode_2(const ut8 *instr, H8300Instruction *cmd) {
+	ut32 x2 = rz_read_be16(instr);
+
+	if (cmd->cpu_type == CPU_H8300H) {
+		switch (x2 & 0xff88) {
+			CASE_F_F(decode_r32r32_2, 0x0a80, ADD_L);
+			CASE_F_F(decode_r32r32_2, 0x1a80, SUB_L);
+			CASE_F_F(decode_r32r32_2, 0x1f80, CMP_L);
+			CASE_F_F(decode_r32r32_2, 0x0f80, MOV_L);
+			CASE_DEFAULT_BREAK;
+		}
+		switch (x2 & 0xfff0) {
+			CASE_F_F(decode_r32_2, 0x17b0, NEG_L);
+			CASE_F_F(decode_r32_2, 0x1730, NOT_L);
+
+			CASE_F_F(decode_r32_2, 0x12b0, ROTL_L);
+			CASE_F_F(decode_r32_2, 0x13b0, ROTR_L);
+			CASE_F_F(decode_r32_2, 0x1230, ROTXL_L);
+			CASE_F_F(decode_r32_2, 0x1330, ROTXR_L);
+			CASE_F_F(decode_r32_2, 0x10b0, SHAL_L);
+			CASE_F_F(decode_r32_2, 0x1030, SHLL_L);
+			CASE_F_F(decode_r32_2, 0x11b0, SHAR_L);
+			CASE_F_F(decode_r32_2, 0x1130, SHLR_L);
+
+			CASE_F_F(decode_r32_2, 0x17f0, EXTS_L);
+			CASE_F_F(decode_r32_2, 0x1770, EXTU_L);
+			CASE_DEFAULT_BREAK;
+		}
+		switch (x2 & 0xfff8) {
+			CASE_F_F_VA(decode_xr32, 0x1b70, DEC_L, 1);
+			CASE_F_F_VA(decode_xr32, 0x1bf0, DEC_L, 2);
+			CASE_F_F_VA(decode_xr32, 0x0b70, INC_L, 1);
+			CASE_F_F_VA(decode_xr32, 0x0bf0, INC_L, 2);
+			CASE_DEFAULT_BREAK;
+		}
+	}
+
+	switch (x2 & 0xffcf) {
+		CASE_F_F(decode_i2_2, 0x5700, TRAPA);
+	default: break;
+	}
 
 	switch (instr[0] >> 4) {
-	case H8300_MOV_4BIT_3:
-		ret = decode_rzimm_short(instr, cmd);
-		break;
-	case H8300_MOV_4BIT_2:
-		ret = decode_abs2r_short(instr, cmd);
-		break;
-	case H8300_AND_4BIT:
-	case H8300_ADDX_4BIT:
-	case H8300_ADD_4BIT:
-	case H8300_CMP_4BIT:
-	case H8300_MOV_4BIT:
-	case H8300_OR_4BIT:
-	case H8300_SUBX_4BIT:
-	case H8300_XOR_4BIT:
-		ret = decode_imm2r_short(instr, cmd);
+		CASE_F_F(decode_abs8r8_2, 0x2, MOV_B);
+		CASE_F_F(decode_r8abs8_2, 0x3, MOV_B);
+
+		CASE_F_F(decode_i8r8, 0xf, MOV_B);
+		CASE_F_F(decode_i8r8, 0xe, AND_B);
+		CASE_F_F(decode_i8r8, 0x9, ADDX);
+		CASE_F_F(decode_i8r8, 0x8, ADD_B);
+		CASE_F_F(decode_i8r8, 0xa, CMP_B);
+		CASE_F_F(decode_i8r8, 0xc, OR_B);
+		CASE_F_F(decode_i8r8, 0xb, SUBX);
+		CASE_F_F(decode_i8r8, 0xd, XOR_B);
+	default: break;
+	}
+
+	switch (x2) {
+		CASE_F_F_VA(decode_none, 0x5670, RTE, 2);
+		CASE_F_F_VA(decode_none, 0x5470, RTS, 2);
+		CASE_F_F_VA(decode_none, 0x0180, SLEEP, 2);
+	default:
 		break;
 	}
 
-	if (ret) {
-		{
-			return ret;
-		}
+	switch (x2 & 0xfff0) {
+		CASE_F_R8(0x0f00, DAA);
+		CASE_F_R8(0x1f00, DAS);
+		CASE_F_R8(0x1a00, DEC_B);
+		CASE_F_R8(0x0a00, INC_B);
+		CASE_F_R8(0x1780, NEG_B);
+		CASE_F_F(decode_r16_2, 0x1790, NEG_W);
+		CASE_F_R8(0x1700, NOT_B);
+		CASE_F_F(decode_r16_2, 0x1710, NOT_W);
+
+		CASE_F_R8(0x1280, ROTL_B);
+		CASE_F_R8(0x1380, ROTR_B);
+		CASE_F_R8(0x1200, ROTXL_B);
+		CASE_F_R8(0x1300, ROTXR_B);
+		CASE_F_R8(0x1080, SHAL_B);
+		CASE_F_R8(0x1000, SHLL_B);
+		CASE_F_R8(0x1180, SHAR_B);
+		CASE_F_R8(0x1100, SHLR_B);
+
+		CASE_F_F(decode_r16_2, 0x1290, ROTL_W);
+		CASE_F_F(decode_r16_2, 0x1390, ROTR_W);
+		CASE_F_F(decode_r16_2, 0x1210, ROTXL_W);
+		CASE_F_F(decode_r16_2, 0x1310, ROTXR_W);
+		CASE_F_F(decode_r16_2, 0x1090, SHAL_W);
+		CASE_F_F(decode_r16_2, 0x1010, SHLL_W);
+		CASE_F_F(decode_r16_2, 0x1190, SHAR_W);
+		CASE_F_F(decode_r16_2, 0x1110, SHLR_W);
+
+		CASE_F_F(decode_r16_2, 0x17d0, EXTS_W);
+		CASE_F_F(decode_r16_2, 0x1750, EXTU_W);
+
+		CASE_F_F_VA(decode_xr16, 0x1b50, DEC_W, 1);
+		CASE_F_F_VA(decode_xr16, 0x1bd0, DEC_W, 2);
+		CASE_F_F_VA(decode_xr16, 0x0b50, INC_W, 1);
+		CASE_F_F_VA(decode_xr16, 0x0bd0, INC_W, 2);
+	default:
+		break;
 	}
 
+	switch (x2 & 0xfff8) {
+		CASE_F_F(decode_r16_2, 0x6d70, POP_W);
+		CASE_F_F(decode_r16_2, 0x6df0, PUSH_W);
+
+		CASE_F_F(decode_i16r16_4, 0x7900, MOV_W);
+		CASE_F_F(decode_abs16r8_4, 0x6b00, MOV_W);
+
+	case 0x0b00:
+	case 0x0b80:
+	case 0x0b90:
+		CASE_F_F_IMPL(decode_sr16_32, ADDS);
+
+	case 0x1b00:
+	case 0x1b80:
+	case 0x1b90:
+		CASE_F_F_IMPL(decode_sr16_32, SUBS);
+
+	default:
+		break;
+	}
+
+	switch (x2 & 0xff80) {
+		CASE_F_F(decode_i3r8, 0x7600, BAND);
+		CASE_F_F(decode_i3r8, 0x7680, BIAND)
+		CASE_F_F(decode_i3r8, 0x7200, BCLR)
+		CASE_F_F(decode_i3r8, 0x7700, BLD);
+		CASE_F_F(decode_i3r8, 0x7780, BILD);
+		CASE_F_F(decode_i3r8, 0x7480, BIOR);
+		CASE_F_F(decode_i3r8, 0x6700, BST);
+		CASE_F_F(decode_i3r8, 0x6780, BIST);
+		CASE_F_F(decode_i3r8, 0x7500, BXOR);
+		CASE_F_F(decode_i3r8, 0x7580, BIXOR);
+		CASE_F_F(decode_i3r8, 0x7100, BNOT);
+		CASE_F_F(decode_i3r8, 0x7400, BOR);
+		CASE_F_F(decode_i3r8, 0x7000, BSET);
+		CASE_F_F(decode_i3r8, 0x7300, BTST);
+	default: break;
+	}
+
+	switch (x2 & 0xff08) {
+		CASE_F_F(decode_r16r32_2, 0x5300, DIVXU_W);
+	default: break;
+	}
+
+	int ret = 0;
 	switch (instr[0]) {
+		CASE_F_F(decode_r8r8_2, 0x08, ADD_B);
+		CASE_F_F(decode_r16r16_2, 0x09, ADD_W);
+		CASE_F_F(decode_r16r32_2, 0x52, MULXU_W);
+
+		CASE_F_F(decode_r8r8_2, 0x18, SUB_B);
+		CASE_F_F(decode_r16r16_2, 0x19, SUB_W);
+
+		CASE_F_F(decode_r8r8_2, 0x14, OR_B);
+		CASE_F_F(decode_r16r16_2, 0x64, OR_W);
+
+		CASE_F_F(decode_r8r8_2, 0x1e, SUBX);
+
+		CASE_F_F(decode_r8r8_2, 0x15, XOR_B);
+		CASE_F_F(decode_r16r16_2, 0x65, XOR_W);
+
 	case H8300_ANDC:
-		ret = decode_andc(instr, cmd);
+		cmd->id = H8300_INSN_ANDC;
+		ret = decode_i8ccr(instr, cmd);
 		break;
-	case H8300_SUBS:
-		ret = decode_subs(instr, cmd);
+	case 0x1d:
+		cmd->id = H8300_INSN_CMP_W;
+		ret = decode_r16r16_2(instr, cmd);
 		break;
-	case H8300_ADDW_DIRECT:
-	case H8300_CMP_2:
-		ret = decode_r162r16(instr, cmd);
+
+		CASE_F_F(decode_r8r8_2, 0x16, AND_B);
+		CASE_F_F(decode_r16r16_2, 0x66, AND_W);
+	case 0x62:
+		cmd->id = H8300_INSN_BCLR;
+		ret = decode_r8r8_2(instr, cmd);
 		break;
-	case H8300_ADDS:
-		ret = decode_adds(instr, cmd);
+	case 0x0e:
+		cmd->id = H8300_INSN_ADDX;
+		ret = decode_r8r8_2(instr, cmd);
 		break;
-	case H8300_BAND_BIAND:
-	case H8300_BCLR_IMM2R8:
-	case H8300_BST_BIST:
-	case H8300_BTST:
-	case H8300_BILD_IMM2R8:
-	case H8300_BOR_BIOR:
-	case H8300_BXOR_BIXOR:
-	case H8300_BNOT_2:
-	case H8300_BSET_2:
-		ret = decode_imm2r8(instr, cmd);
-		break;
-	case H8300_AND:
-	case H8300_ADDB_DIRECT:
-	case H8300_BCLR_R2R8:
-	case H8300_SUB_1:
-	case H8300_SUBX:
-	case H8300_ADDX:
-	case H8300_XOR:
 	case H8300_BNOT_1:
-	case H8300_BSET_1:
-	case H8300_CMP_1:
-	case H8300_MOV_1:
+		cmd->id = H8300_INSN_BNOT;
+		ret = decode_r8r8_2(instr, cmd);
+		break;
+	case 0x60:
+		cmd->id = H8300_INSN_BSET;
+		ret = decode_r8r8_2(instr, cmd);
+		break;
+	case 0x1c:
+		cmd->id = H8300_INSN_CMP_B;
+		ret = decode_r8r8_2(instr, cmd);
+		break;
+	case 0x0c:
+		cmd->id = H8300_INSN_MOV_B;
+		ret = decode_r8r8_2(instr, cmd);
+		break;
 	case H8300_BTST_R2R8:
-		ret = decode_r2r8(instr, cmd);
-		break;
-	case H8300_BCLR_R2IND16:
-		switch (instr[2]) {
-		case 0x60:
-		case 0x61:
-		case 0x62:
-			ret = decode_rzind16(instr, cmd);
-			break;
-		case 0x70:
-		case 0x71:
-		case 0x72:
-		case 0x67:
-		case 0x75:
-			ret = decode_imm2ind16(instr, cmd);
-			break;
-		default:
-			ret = -1;
-		}
-		break;
-	case H8300_BCLR_R2ABS8:
-		switch (instr[2]) {
-		case 0x60:
-		case 0x61:
-		case 0x62:
-			ret = decode_rzabs8(instr, cmd);
-			break;
-		case 0x67:
-		case 0x70:
-		case 0x71:
-		case 0x72:
-			ret = decode_imm2abs8(instr, cmd);
-			break;
-		default:
-			ret = -1;
-		}
-		break;
-	case H8300_BIAND_IMM2IND16:
-		ret = decode_imm2ind16(instr, cmd);
-		break;
-	case H8300_BIAND_IMM2ABS8:
-		ret = decode_imm2abs8(instr, cmd);
+		cmd->id = H8300_INSN_BTST;
+		ret = decode_r8r8_2(instr, cmd);
 		break;
 	case H8300_BSR:
-		ret = decode_bsr(instr, cmd);
+		cmd->id = H8300_INSN_BSR;
+		ret = decode_pc_rel(instr, cmd);
 		break;
 	case H8300_NOP:
+		cmd->id = H8300_INSN_NOP;
 		ret = decode_nop(instr, cmd);
 		break;
-	case H8300_DAA:
-	case H8300_DAS:
-	case H8300_DEC:
-	case H8300_INC:
-	case H8300_NOT_NEG:
-	case H8300_ROTL:
-	case H8300_ROTR:
-	case H8300_SHL:
-	case H8300_SHR:
-		ret = decode_daa(instr, cmd);
+		CASE_F_F(decode_r8r16, 0x51, DIVXU_B);
+
+	case H8300_MULXU_B:
+		cmd->id = H8300_INSN_MULXU_B;
+		ret = decode_r8r16(instr, cmd);
 		break;
-	case H8300_DIVXU:
-	case H8300_MULXU:
-		ret = decode_r82r16(instr, cmd);
+	case 0x59:
+		cmd->id = H8300_INSN_JMP;
+		ret = decode_ri_2(instr, cmd);
 		break;
-	case H8300_EEPMOV:
-	case H8300_RTS:
-	case H8300_RTE:
-	case H8300_SLEEP:
-		ret = decode_eepmov(instr, cmd);
+	case 0x5a:
+		cmd->id = H8300_INSN_JMP;
+		ret = decode_abs16_4(instr, cmd);
 		break;
-	case H8300_JMP_1:
-	case H8300_JSR_1:
-		ret = decode_jmp_ind(instr, cmd);
+	case 0x5b:
+		cmd->id = H8300_INSN_JMP;
+		ret = decode_mi8(instr, cmd);
 		break;
-	case H8300_JMP_2:
-	case H8300_JSR_2:
-		ret = decode_jmp_abs16(instr, cmd);
+	case 0x5d:
+		cmd->id = H8300_INSN_JSR;
+		ret = decode_ri_2(instr, cmd);
 		break;
-	case H8300_JMP_3:
-	case H8300_JSR_3:
-	case H8300_BRA:
-	case H8300_BRN:
-	case H8300_BHI:
-	case H8300_BLS:
-	case H8300_BCC:
-	case H8300_BCS:
-	case H8300_BNE:
-	case H8300_BEQ:
-	case H8300_BVC:
-	case H8300_BVS:
-	case H8300_BPL:
-	case H8300_BMI:
-	case H8300_BGE:
-	case H8300_BLT:
-	case H8300_BGT:
-	case H8300_BLE:
-		ret = decode_jmp_abs8(instr, cmd);
+	case 0x5e:
+		cmd->id = H8300_INSN_JSR;
+		ret = decode_abs16_4(instr, cmd);
 		break;
+	case 0x5f:
+		cmd->id = H8300_INSN_JSR;
+		ret = decode_mi8(instr, cmd);
+		break;
+
+		CASE_F_F(decode_pc_rel, 0x40, BRA);
+		CASE_F_F(decode_pc_rel, 0x41, BRN);
+		CASE_F_F(decode_pc_rel, 0x42, BHI);
+		CASE_F_F(decode_pc_rel, 0x43, BLS);
+		CASE_F_F(decode_pc_rel, 0x44, BCC);
+		CASE_F_F(decode_pc_rel, 0x45, BCS);
+		CASE_F_F(decode_pc_rel, 0x46, BNE);
+		CASE_F_F(decode_pc_rel, 0x47, BEQ);
+		CASE_F_F(decode_pc_rel, 0x48, BVC);
+		CASE_F_F(decode_pc_rel, 0x49, BVS);
+		CASE_F_F(decode_pc_rel, 0x4a, BPL);
+		CASE_F_F(decode_pc_rel, 0x4b, BMI);
+		CASE_F_F(decode_pc_rel, 0x4c, BGE);
+		CASE_F_F(decode_pc_rel, 0x4d, BLT);
+		CASE_F_F(decode_pc_rel, 0x4e, BGT);
+		CASE_F_F(decode_pc_rel, 0x4f, BLE);
+
 	case H8300_ORC:
-	case H8300_LDC:
-	case H8300_LDC_2:
-	case H8300_STC:
+		cmd->id = H8300_INSN_ORC;
+		ret = decode_i8ccr(instr, cmd);
+		break;
+	case 0x03:
+		cmd->id = H8300_INSN_LDC_B;
+		ret = decode_r8ccr(instr, cmd);
+		break;
+	case 0x07:
+		cmd->id = H8300_INSN_LDC_B;
+		ret = decode_i8ccr(instr, cmd);
+		break;
+	case H8300_STC_B:
+		cmd->id = H8300_INSN_STC_B;
+		ret = decode_ccrr8(instr, cmd);
+		break;
 	case H8300_XORC:
-		ret = decode_ldc(instr, cmd);
+		cmd->id = H8300_INSN_XORC;
+		ret = decode_i8ccr(instr, cmd);
 		break;
-	case H8300_OR:
-		ret = decode_r2r8(instr, cmd);
+	case 0x0d:
+		cmd->id = H8300_INSN_MOV_W;
+		ret = decode_r16r16_2(instr, cmd);
 		break;
-	case H8300_MOV_2:
-	case H8300_SUBW:
-		ret = decode_r162r16(instr, cmd);
+	case 0x68:
+		cmd->id = H8300_INSN_MOV_B;
+		ret = decode_rir8_2(instr, cmd);
 		break;
-	case H8300_MOV_IMM162R16:
-		ret = decode_imm162r16(instr, cmd);
+	case 0x69:
+		cmd->id = H8300_INSN_MOV_W;
+		ret = decode_rir16_2(instr, cmd);
 		break;
-	case H8300_MOV_IND162R16:
-		ret = decode_ind162r16(instr, cmd);
+	case 0x6c:
+		cmd->id = H8300_INSN_MOV_B;
+		ret = decode_incdecr8(instr, cmd);
 		break;
-	case H8300_MOV_DISP162R16:
-		ret = decode_disp162r16(instr, cmd);
+	case 0x6d:
+		cmd->id = H8300_INSN_MOV_W;
+		ret = decode_incdecr16(instr, cmd);
 		break;
-	case H8300_MOV_INDINC162R16:
-		ret = decode_indinc162r16(instr, cmd);
+	case 0x6e:
+		cmd->id = H8300_INSN_MOV_B;
+		ret = decode_rd3216r8_4(instr, cmd);
 		break;
-	case H8300_MOV_ABS162R16:
-		ret = decode_abs162r16(instr, cmd);
-		break;
-	case H8300_MOV_R82IND16:
-		ret = decode_r82ind16(instr, cmd);
-		break;
-	case H8300_MOV_R82DISPR16:
-		ret = decode_r82dispr16(instr, cmd);
-		break;
-	case H8300_MOV_R82RDEC16:
-		ret = decode_r82rdec16(instr, cmd);
-		break;
-	case H8300_MOV_R82ABS16:
-		ret = decode_r82abs16(instr, cmd);
-		break;
-	default:
-		return -1;
+
+	default: break;
+	}
+	return ret;
+}
+
+H8300CpuType h8300_cpu_type(const char *cpu) {
+	if (RZ_STR_EQ(cpu, "h8300") || RZ_STR_EQ(cpu, "H8300")) {
+		return CPU_H8300;
+	}
+	if (RZ_STR_EQ(cpu, "h8300l") || RZ_STR_EQ(cpu, "H8300L")) {
+		return CPU_H8300L;
+	}
+	if (RZ_STR_EQ(cpu, "h8300h") || RZ_STR_EQ(cpu, "H8300H")) {
+		return CPU_H8300H;
+	}
+	return CPU_H8300;
+}
+
+int h8300_decode_command(const ut8 *instr, ut64 len, H8300Instruction *cmd, ut64 pc, const char *cpu) {
+	cmd->pc = pc;
+	int ret = 0;
+#define FAST_PATH(N) \
+	if (len >= N) { \
+		ret = h8300_decode_##N(instr, cmd); \
+		if (ret > 0) { \
+			goto beach; \
+		} \
 	}
 
+	cmd->cpu_type = h8300_cpu_type(cpu);
+
+	FAST_PATH(10);
+	FAST_PATH(8);
+	FAST_PATH(6);
+	FAST_PATH(4);
+	FAST_PATH(2);
+
+beach:
+	cmd->size = ret;
 	return ret;
+}
+
+bool h8300_make_opstr(H8300Instruction *cmd, H8300InstructionStr *ins_str) {
+	if (cmd->id != H8300_INSN_INVALID) {
+		if (decode_opcode(cmd, ins_str) == -1) {
+			return false;
+		}
+		decode_operands(cmd, ins_str);
+	}
+	return true;
 }

@@ -9,6 +9,7 @@ Rizin uses both regression and unit tests.
  * unit/:        Unit tests (written in C, using minunit).
  * fuzz/:        Fuzzing helper scripts
  * bins/:        Sample binaries (fetched from the [external repository](https://github.com/rizinorg/rizin-testbins))
+ * bench/:       Benchmarks
 
 # Requirements
 
@@ -46,6 +47,23 @@ to build Rizin).
 You can run one specific testcase category (e.g. the whole `test_bin.c` file) using `meson test -C build bin`.
 If you are using `meson test`, you should consider using the `--print-errorlogs` flag.
 
+## Benchmarks
+
+In order to be able to run the benchmarks, the `-Denable_benchmarks=true` switch needs to be specified
+when setting up the build directory (e.g. `meson setup build -Denable_benchmarks=true`).
+
+Afterwards use `ninja -C build test --benchmark` (or `meson test -C build --benchmark`)
+to run the benchmarks from the top directory (replace `build` with the name of the directory
+you used to build Rizin).
+
+Running a specific set of benchmarks (e.g. `bitvector`) can be done with `ninja -C build test bitvector --benchmark`.
+
+To see the detailed benchmark results (iterations, average time per operation, and throughput), you must use the verbose flag:
+
+`meson test -C build <benchmark_name> --benchmark -v`
+
+**Note**: Without the -v flag, Meson will only report if the benchmark process finished successfully, but it will not display the timing data table.
+
 # Failure Levels
 
 A test can have one of the following results:
@@ -78,6 +96,22 @@ a "ret" c3
 d "ret" c3
 a "nop" 90 # Assembly is correct
 dB "nopppp" 90 # Disassembly test is broken
+```
+
+#### Multiple instructions in a single test
+
+Some instructions change if they appear together with another instructions.
+To test two or more instructions in a single test
+the instructions' assembly text and IL representations can be concatinated with a simicolon.
+
+Example: Branch delay in Sparc:
+```
+dE "call g1;nop" 9fc0600001000000 0x40 (set o7 (bv 64 0x40));(seq nop (jmp (var g1)))
+```
+
+Example: ARM conditional blocks with `it`.
+```
+d "ite eq;moveq r0, 1" 0cbf0120 0x0 nop;(branch (var zf) (set r0 (bv 32 0x1)) nop)
 ```
 
 #### IL
@@ -161,9 +195,14 @@ Without the regex that filtered out the non-deterministic file path and addresse
 ```
 
 * **NAME** is the name of the test, it must be unique
-* **FILE** is the path of the file used for the test
-* **ARGS** (optional) are the command line argument passed to rizin (e.g -b 16)
+* **FILE** (optional when `TOOL` is set) is the file or input used for the test
+* **TOOL** (optional) allows you to override the tool to test (supports only `rizin`, `rz-ar`, `rz-asm`, `rz-ax`, `rz-bin`, `rz-diff`, `rz-find`, `rz-gg`, `rz-hash`, `rz-run`, `rz-sign`, `rz-test`)
+* **ARGS** (optional, unless `TOOL` is set) are the command line argument passed to rizin (e.g -b 16)
 * **CMDS** are the commands to be executed by the test
+* **ENVS** (optional) allows to set a custom environment variable (example `FOO=bar`)
+* **EXIT_STATUS** (optional) allows to override the default expected exit status.
+* **COLOR** (optional) allows to use colors in the test (default `0`)
+* **UTF8** (optional) allows to use utf-8 in the test (default `0`)
 * **EXPECT** is the expected output of the test from stdout. If `REGEXP_FILTER_OUT` is used, `EXPECT` matches only the filtered output.
 * **EXPECT_ERR** (optional) is the expected output of the test from stderr. Can be specified in addition or instead of `EXPECT`
 * **BROKEN** (optional) is 1 if the tests is expected to be fail, 0 or unspecified otherwise

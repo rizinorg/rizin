@@ -156,7 +156,7 @@ static pyc_object *get_int64_object(RzBuffer *buffer) {
 		return NULL;
 	}
 	ret->type = TYPE_INT64;
-	ret->data = rz_str_newf("%lld", i);
+	ret->data = rz_str_newf("%" PFMT64d, i);
 	if (!ret->data) {
 		RZ_FREE(ret);
 	}
@@ -436,7 +436,6 @@ static bool add_string_to_cache(RzBinPycObj *pyc, ut64 addr, const char *data, u
 	string->paddr = string->vaddr = addr;
 	string->size = size;
 	string->length = length;
-	string->ordinal = 0;
 	string->type = type;
 	string->string = rz_str_dup(data);
 	if (!rz_pvector_push(pyc->strings_cache, string)) {
@@ -652,6 +651,27 @@ static pyc_object *get_set_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	}
 	ret->type = TYPE_SET;
 	return ret;
+}
+
+static pyc_object *get_slice_object(RzBinPycObj *pyc, RzBuffer *buffer) {
+	pyc_object *ret = NULL;
+	bool error = false;
+	ut32 n = 3; // start, stop, step
+
+	// n = get_ut32(buffer, &error);
+	if (n > ST32_MAX) {
+		RZ_LOG_ERROR("bad marshal data (list size out of range)\n");
+		return NULL;
+	}
+	if (error) {
+		return NULL;
+	}
+	ret = get_array_object_generic(pyc, buffer, n);
+	if (ret) {
+		ret->type = TYPE_SLICE;
+		return ret;
+	}
+	return NULL;
 }
 
 static pyc_object *get_ascii_object_generic(RzBinPycObj *pyc, RzBuffer *buffer, ut32 size, bool interned) {
@@ -972,9 +992,9 @@ static pyc_object *get_code_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	bool v11_to_14 = magic_int_within(pyc->magic_int, 39170, 20117, &error); // 1.0.1 - 1.4
 	bool v15_to_22 = magic_int_within(pyc->magic_int, 20121, 60718, &error); // 1.5a1 - 2.2a1
 	bool v13_to_20 = magic_int_within(pyc->magic_int, 11913, 50824, &error); // 1.3b1 - 2.0b1
-	bool v311_to_latest = magic_int_within(pyc->magic_int, 3495, 3571, &error); // 3.11a1 - 3.13b1;
+	bool v311_to_latest = magic_int_within(pyc->magic_int, 3495, 3627, &error); // 3.11a1 - latest;
 	// bool v21_to_27 = (!v13_to_20) && magic_int_within (magic_int, 60124, 62212, &error);
-	bool has_posonlyargcount = magic_int_within(pyc->magic_int, 3410, 3571, &error); // v3.8.0a4 - latest
+	bool has_posonlyargcount = magic_int_within(pyc->magic_int, 3410, 3627, &error); // v3.8.0a4 - latest
 	if (error) {
 		free(ret);
 		free(cobj);
@@ -1250,6 +1270,9 @@ static pyc_object *get_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	case TYPE_ELLIPSIS:
 		ret = RZ_NEW0(pyc_object);
 		break;
+	case TYPE_SLICE:
+		ret = get_slice_object(pyc, buffer);
+		break;
 	case TYPE_UNKNOWN:
 		RZ_LOG_ERROR("Get not implemented for type 0x%x\n", type);
 		return NULL;
@@ -1259,10 +1282,10 @@ static pyc_object *get_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	}
 
 	if (flag && ref_idx) {
-		void *p = rz_list_iter_get_data(ref_idx);
+		void *p = rz_list_val(ref_idx);
 		free_object(p);
 		p = copy_object(ret);
-		rz_list_iter_set_data(ref_idx, p);
+		rz_list_set_val(ref_idx, p);
 	}
 	return ret;
 }

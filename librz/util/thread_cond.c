@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2009-2020 thestr4ng3r <info@florianmaerkl.de>
-// SPDX-FileCopyrightText: 2022 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2022-2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "thread.h"

@@ -18,6 +18,7 @@ typedef struct rz_bin_file_t RzBinFile;
 typedef struct rz_bin_reloc_storage_t RzBinRelocStorage;
 
 #include <rz_bin_dwarf.h>
+#include <rz_bin_stabs.h>
 #include <rz_pdb.h>
 
 #ifdef __cplusplus
@@ -165,7 +166,7 @@ typedef enum {
 } RzBinLanguage;
 
 #define RZ_BIN_LANGUAGE_MASK(x)       ((x) & ~RZ_BIN_LANGUAGE_BLOCKS)
-#define RZ_BIN_LANGUAGE_HAS_BLOCKS(x) ((x)&RZ_BIN_LANGUAGE_BLOCKS)
+#define RZ_BIN_LANGUAGE_HAS_BLOCKS(x) ((x) & RZ_BIN_LANGUAGE_BLOCKS)
 
 enum {
 	RZ_BIN_CLASS_PRIVATE,
@@ -204,8 +205,14 @@ typedef struct rz_bin_string_search_opt_t {
 	size_t min_length; ///< Smallest string length that is possible to find.
 	size_t max_length; ///< Maximum buffer size, which will also determine the maximum string length.
 	size_t max_region_size; ///< Maximum allowable size for the search interval between two memory regions.
-	size_t raw_alignment; ///< Memory sector alignment used for the raw string search.
+	/**
+	 * \brief Memory alignment of the intervals strings are searched in.
+	 * This is not the same as string alignment.
+	 * Which is always set to the alignment of the encoding or guessed.
+	 */
+	size_t raw_alignment;
 	bool check_ascii_freq; ///< If true, perform check on ASCII frequencies when looking for false positives
+	RzVector /*<RzCodePoint>*/ *user_unprintable; ///< User-defined non-printable code points
 	RzStrEnc string_encoding; ///< The default string encoding type (when set to guess, it is automatically guessed).
 	RzBinStringSearchMode mode; ///< String search mode (auto, ro sections or raw binary)
 } RzBinStringSearchOpt;
@@ -242,6 +249,15 @@ typedef struct rz_bin_file_hash_t {
 	const char *hex;
 } RzBinFileHash;
 
+typedef enum {
+	RZ_BIN_SANITIZER_NONE = 0,
+	RZ_BIN_SANITIZER_GENERIC = (1 << 0),
+	RZ_BIN_SANITIZER_UBSAN = (1 << 1),
+	RZ_BIN_SANITIZER_ASAN = (1 << 2),
+	RZ_BIN_SANITIZER_MSAN = (1 << 3),
+	RZ_BIN_SANITIZER_TSAN = (1 << 4),
+} RzBinSanitizer;
+
 typedef struct rz_bin_info_t {
 	char *file;
 	char *type;
@@ -261,27 +277,45 @@ typedef struct rz_bin_info_t {
 	char *default_cc;
 	RzPVector /*<RzBinFileHash *>*/ *file_hashes;
 	int bits;
-	int has_va;
-	int has_pi; // pic/pie
-	int has_canary;
-	int has_retguard;
-	int has_sanitizers;
-	int has_crypto;
-	int has_nx;
+	bool has_va; ///< Virtual Addressing
+	bool has_pie; ///< Position-independent executable/code
+	bool has_canary; ///< Binary has stack canaries
+	bool is_encrypted; ///< Binary is encrypted fully or partially (Apple FairPlay, encrypted region, etc..)
+	bool is_signed; ///< Binary is digitally signed
+	bool has_nx; ///< Non-Executable Memory/Bit
+	bool has_objc_arc; ///< Automatic Reference Counting (Objective-C's compile-time memory management)
+	bool has_ptr_auth; ///< ARM Pointer Authentication Code
+	bool has_fortify_source; ///< Fortify Source (FORTIFY_SOURCE)
+	bool has_retguard; ///< OpenBSD retguard stack protector
 	bool has_nobtcfi; ///< OpenBSD, linked with -Wl,-z,nobtcfi to opt-out of IBT/BTI
-	int big_endian;
+	ut32 sanitizers; ///< (RzBinSanitizer) Binary was compiled with ASan, TSan, etc..
+	bool big_endian;
 	char *actual_checksum;
 	char *claimed_checksum;
-	int pe_overlay;
-	bool signature;
+	bool pe_overlay;
 	ut64 dbg_info;
 	RzBinHash sum[3];
 	ut64 baddr;
 	char *intrp;
 	char *compiler;
+	HtSS *extra_dict;
 } RzBinInfo;
 
 typedef struct rz_bin_file_load_options_t {
+	/**
+	 * \brief This flag is a work around for the inconsistent base addresses behavior of ELF objects.
+	 * The ELF loader doesn't respect the RzBinObjectLoadOptions->baseaddr
+	 * parameter when it loads an ELF file.
+	 * Instead it either assumes a base address of: 0, the first executable section or, in case of relocatable ELFs,
+	 * RZ_BIN_ELF_DEFAULT_BADDR_RELOC.
+	 *
+	 * This is annoyingly wrong, but fixing it breaks too many other things in Rizin.
+	 * Because it was just built around it. And refactoring/replacing the old ELF module is
+	 * no priority currently.
+	 * So here we go, this flags makes Elf_(rz_bin_elf_get_baddr) always return the base address
+	 * below. Assuming these BinLoaderOtions were passed to it.
+	 */
+	bool force_elf_to_use_baddr;
 	ut64 baseaddr; ///< where the linker maps the binary in memory
 	ut64 loadaddr; ///< starting physical address to read from the target file
 	bool patch_relocs; ///< ask the bin plugin to fill relocs with valid contents for analysis
@@ -324,6 +358,7 @@ typedef struct rz_bin_object_t {
 	RzPVector /*<RzBinMem *>*/ *mem;
 	char *regstate;
 	RzBinInfo *info;
+	RzStructuredData *structured_data;
 	RzBinAddr *binsym[RZ_BIN_SPECIAL_SYMBOL_LAST];
 	struct rz_bin_plugin_t *plugin;
 	RzBinLanguage lang;
@@ -372,7 +407,6 @@ struct rz_bin_t {
 	void *user;
 	RzEvent *event;
 	/* preconfigured values */
-	int debase64;
 	ut64 maxstrbuf;
 	int rawstr;
 	RZ_DEPRECATE Sdb *sdb;
@@ -410,6 +444,7 @@ typedef struct rz_bin_xtr_metadata_t {
 	char *libname;
 	char *machine;
 	char *type;
+	bool big_endian;
 	const char *xtr_type;
 } RzBinXtrMetadata;
 
@@ -489,8 +524,24 @@ typedef struct rz_bin_plugin_t {
 	RZ_OWN RzBinSourceLineInfo *(*lines)(RzBinFile *bf); //< only called once on load, ownership is transferred to the caller
 	RzPVector /*<RzBinSymbol *>*/ *(*symbols)(RzBinFile *bf);
 	RzPVector /*<RzBinImport *>*/ *(*imports)(RzBinFile *bf);
+	/**
+	 * \brief A method to search for strings in the binary.
+	 * If the binary always has a known string encoding (ASCII, UTF-8, UTF-16 etc.),
+	 * it is advisable to implement this function.
+	 * A simple implementation like the following is enough:
+	 * ```c
+	 * RzPVector *strings(RzBinFile *bf) {
+	 *   RzBinStringSearchOpt opt;
+	 *   rz_bin_string_search_opt_init(&opt);
+	 *   opt.mode = RZ_BIN_STRING_SEARCH_MODE_READ_ONLY_SECTIONS;
+	 *   opt.string_encoding = RZ_STRING_ENC_UTF8;
+	 *   return rz_bin_file_strings(bf, &opt);
+	 * }
+	 * ```
+	 */
 	RzPVector /*<RzBinString *>*/ *(*strings)(RzBinFile *bf);
 	RzBinInfo *(*info)(RzBinFile *bf);
+	RzStructuredData *(*bin_structure)(RzBinFile *bf);
 	RzPVector /*<RzBinField *>*/ *(*fields)(RzBinFile *bf);
 	RzPVector /*<char *>*/ *(*libs)(RzBinFile *bf);
 	RzPVector /*<RzBinReloc *>*/ *(*relocs)(RzBinFile *bf);
@@ -500,7 +551,6 @@ typedef struct rz_bin_plugin_t {
 	RzPVector /*<RzBinReloc *>*/ *(*patch_relocs)(RzBinFile *bf);
 	RzPVector /*<RzBinFileHash *>*/ *(*hashes)(RzBinFile *bf);
 	RzPVector /*<RzBinResource *>*/ *(*resources)(RzBinFile *bf);
-	void (*header)(RzBinFile *bf);
 	char *(*signature)(RzBinFile *bf, bool json);
 	int (*demangle_type)(const char *str);
 	char *(*enrich_asm)(RzBinFile *bf, const char *asm_str, int asm_len);
@@ -690,6 +740,25 @@ typedef struct rz_bin_import_t {
 	ut32 visibility;
 } RzBinImport;
 
+/**
+ * \brief Base component used in relocation calculations
+ *
+ * Describes the base address or value in a relocation formula.
+ * For example, "GOT(S) + A" uses RZ_RELOC_BASE_GOT_SYMBOL as the base,
+ * where GOT(S) is the GOT entry address and A is the addend.
+ */
+typedef enum rz_bin_reloc_base {
+	RZ_RELOC_BASE_UNKNOWN = -1,
+	RZ_RELOC_BASE_SYMBOL = 0, // S: Address of the symbol
+	RZ_RELOC_BASE_GOT_SYMBOL, // GOT(S): Address of GOT entry for the symbol
+	RZ_RELOC_BASE_GOT, // GOT: Address of the Global Offset Table
+	RZ_RELOC_BASE_BASE, // B: Base address at which the shared object is loaded into memory
+	RZ_RELOC_BASE_PLT_SYMBOL, // L(S): Address of the PLT entry for the symbol
+	RZ_RELOC_BASE_SYMBOL_SIZE, // Z(S): Size of the symbol
+	// max value
+	RZ_RELOC_BASE_ENUM_SIZE
+} RzRelocBase;
+
 typedef struct rz_bin_reloc_t {
 	RzBinRelocType type;
 	RzBinSymbol *symbol;
@@ -712,6 +781,7 @@ typedef struct rz_bin_reloc_t {
 	 * cf. https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html
 	 */
 	bool is_ifunc;
+	RzRelocBase reloc_base; ///< Semantic Base for the reloc.
 } RzBinReloc;
 
 RZ_API ut64 rz_bin_reloc_size(RzBinReloc *reloc);
@@ -745,10 +815,9 @@ typedef struct rz_bin_string_t {
 	 * Note: This is not related to the physical addresses an MMU would manage!
 	 */
 	ut64 paddr;
-	ut32 ordinal;
-	ut32 size; // size of buffer containing the string in bytes
+	ut32 size; ///< Size of buffer containing the string in bytes. Including the NUL byte.
 	ut32 length; // length of string in chars
-	RzStrEnc type; // Ascii Wide cp850 utf8 mutf8 base64 ...
+	RzStrEnc type; // Ascii Wide cp850 utf8 mutf8 ...
 } RzBinString;
 
 typedef struct rz_bin_field_t {
@@ -797,6 +866,7 @@ typedef struct rz_bin_resource_t {
 	char *name;
 	char *time;
 	ut64 vaddr;
+	ut64 paddr;
 	ut64 size;
 	char *type;
 	char *language;
@@ -810,6 +880,7 @@ typedef char *(*RzBinGetName)(RzBin *bin, int type, int idx);
 typedef const RzPVector *(*RzBinGetSections)(RzBinObject *obj);
 typedef RzBinSection *(*RzBinGetSectionAt)(RzBin *bin, ut64 addr);
 typedef char *(*RzBinDemangle)(RzBin *bin, const char *language, const char *mangled);
+typedef RzBinObject *(*RzBinGetObject)(RzBin *bin);
 
 typedef struct rz_bin_bind_t {
 	RzBin *bin;
@@ -818,6 +889,7 @@ typedef struct rz_bin_bind_t {
 	RzBinGetSections get_sections;
 	RzBinGetSectionAt get_vsect_at;
 	RzBinDemangle demangle;
+	RzBinGetObject get_bin_object;
 	ut32 visibility;
 } RzBinBind;
 
@@ -855,7 +927,9 @@ RZ_API RzBinClassField *rz_bin_class_field_new(ut64 vaddr, ut64 paddr, const cha
 RZ_API void rz_bin_class_field_free(RZ_NULLABLE RzBinClassField *field);
 RZ_API void rz_bin_class_free(RZ_NULLABLE RzBinClass *k);
 
+RZ_API RZ_OWN RzBinVirtualFile *rz_bin_virtual_file_clone(RZ_BORROW RZ_NONNULL RzBinVirtualFile *vfile);
 RZ_API void rz_bin_virtual_file_free(RZ_NULLABLE RzBinVirtualFile *vfile);
+RZ_API RZ_OWN RzBinMap *rz_bin_map_clone(RZ_NONNULL RzBinMap *map);
 RZ_API void rz_bin_map_free(RZ_NULLABLE RzBinMap *map);
 RZ_API bool rz_bin_map_is_data(RZ_NONNULL const RzBinMap *map);
 RZ_API RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_maps_of_file_sections(RZ_NONNULL RzBinFile *binfile);
@@ -863,7 +937,7 @@ RZ_API RzPVector /*<RzBinSection *>*/ *rz_bin_sections_of_maps(RzPVector /*<RzBi
 RZ_API RzBinSection *rz_bin_section_new(const char *name);
 RZ_API void rz_bin_section_free(RZ_NULLABLE RzBinSection *bs);
 RZ_API bool rz_bin_section_is_data(RZ_NONNULL const RzBinSection *section);
-RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, int type);
+RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, ut64 type);
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_bin_section_flag_to_list(RzBin *bin, ut64 flag);
 RZ_API void rz_bin_info_free(RZ_NULLABLE RzBinInfo *rb);
 RZ_API void rz_bin_import_free(RZ_NULLABLE RzBinImport *imp);
@@ -952,6 +1026,7 @@ RZ_API RZ_BORROW const RzPVector /*<RzBinAddr *>*/ *rz_bin_object_get_entries(RZ
 RZ_API const RzPVector /*<RzBinField *>*/ *rz_bin_object_get_fields(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzPVector /*<RzBinImport *>*/ *rz_bin_object_get_imports(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzBinInfo *rz_bin_object_get_info(RZ_NONNULL RzBinObject *obj);
+RZ_API const RzStructuredData *rz_bin_object_get_structured_data(RZ_BORROW RZ_NONNULL RzBinObject *obj);
 RZ_API const RzPVector /*<char *>*/ *rz_bin_object_get_libs(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzPVector /*<RzBinSection *>*/ *rz_bin_object_get_sections_all(RZ_NONNULL RzBinObject *obj);
 RZ_API RZ_OWN RzPVector /*<RzBinSection *>*/ *rz_bin_object_get_sections(RZ_NONNULL RzBinObject *obj);
@@ -981,26 +1056,31 @@ RZ_API RzBinFile *rz_bin_cur(RzBin *bin);
 RZ_API RzBinObject *rz_bin_cur_object(RzBin *bin);
 
 // select/list binfiles functions
-RZ_API bool rz_bin_select(RzBin *bin, const char *arch, int bits, const char *name);
+RZ_API bool rz_bin_select(RzBin *bin, RZ_NONNULL const char *arch, int bits, RZ_NULLABLE const char *machine, RZ_NULLABLE const char *filename);
 RZ_API bool rz_bin_select_bfid(RzBin *bin, ut32 bf_id);
-RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, const char *name);
+RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, RZ_NULLABLE const char *machine, RZ_NULLABLE const char *filename);
 RZ_API RzBuffer *rz_bin_create(RzBin *bin, const char *plugin_name, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt);
 
 RZ_API const char *rz_bin_entry_type_string(int etype);
 RZ_API ut64 rz_bin_get_first_entrypoint(RZ_NULLABLE RzBinObject *obj);
 
-RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, RzBinObjectLoadOptions *opts, RzBinXtrData *data);
+RZ_API bool rz_bin_file_set_xtr_data_as_current_obj(
+	RZ_BORROW RZ_NONNULL RzBin *bin,
+	RZ_BORROW RZ_NONNULL RzBinFile *bf,
+	RZ_BORROW RZ_NONNULL RzBinObjectLoadOptions *opts,
+	RZ_BORROW RZ_NONNULL RzBinXtrData *data);
 
 // RzBinFile.get
 RZ_API RzBinFile *rz_bin_file_at(RzBin *bin, ut64 addr);
 RZ_API RzPVector /*<RzBinSymbol *>*/ *rz_bin_file_get_symbols(RzBinFile *bf);
 // RzBinFile.find
-RZ_API RzBinFile *rz_bin_file_find_by_arch_bits(RzBin *bin, const char *arch, int bits);
+RZ_API RZ_BORROW RzBinFile *rz_bin_file_find_by_arch_bits(RzBin *bin, const char *arch, int bits, RZ_NULLABLE const char *machine, RZ_NULLABLE const char *filename);
 RZ_API RzBinFile *rz_bin_file_find_by_id(RzBin *bin, ut32 bin_id);
 RZ_API RzBinFile *rz_bin_file_find_by_fd(RzBin *bin, ut32 bin_fd);
 RZ_API RzBinFile *rz_bin_file_find_by_name(RzBin *bin, const char *name);
 
-RZ_API bool rz_bin_file_set_cur_binfile(RzBin *bin, RzBinFile *bf);
+RZ_API bool rz_bin_file_set_obj(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_OWN RZ_NULLABLE RzBinObject *obj);
+RZ_API bool rz_bin_set_cur_binfile(RzBin *bin, RzBinFile *bf);
 RZ_API bool rz_bin_file_set_cur_by_fd(RzBin *bin, ut32 bin_fd);
 RZ_API bool rz_bin_file_set_cur_by_id(RzBin *bin, ut32 bin_id);
 RZ_API bool rz_bin_file_set_cur_by_name(RzBin *bin, const char *name);

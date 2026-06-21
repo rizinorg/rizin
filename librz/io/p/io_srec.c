@@ -44,7 +44,7 @@ static void write_S3_record(FILE *fd, ut32 address, const ut8 *buffer, ut16 size
 		fprintf(fd, "%02x", buffer[j]);
 	}
 
-	fprintf(fd, "%02x\n", checksum);
+	fprintf(fd, "%02" PFMT32x "\n", ~checksum & UT8_MAX);
 }
 
 static st32 __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
@@ -88,7 +88,7 @@ static st32 __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 			address = sparse->from + offset;
 			n_bytes = SREC_SIZE;
 			if (offset + SREC_SIZE > size) {
-				n_bytes = size - offset;
+				n_bytes = size - offset + 1;
 			}
 			write_S3_record(out, address, sparse->data + offset, n_bytes);
 		}
@@ -98,7 +98,7 @@ static st32 __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	fprintf(out, "S70500000000FA\n");
 	fclose(out);
 	out = NULL;
-	return 0;
+	return count;
 }
 
 static st32 __read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
@@ -290,6 +290,12 @@ static bool srecord_parse(RzBuffer *buf, char *str) {
 				RZ_LOG_ERROR("srec:parse(): invalid terminator hexadecimal address 16-bit at line %d\n", line);
 				goto fail;
 			}
+
+			eol = strchr(str + 1, 'S');
+			if (eol) {
+				*eol = 0;
+			}
+
 			record_addr &= 0xffff;
 			cksum = byte_count;
 			cksum += record_addr & 0xff;
@@ -373,11 +379,6 @@ static bool srecord_parse(RzBuffer *buf, char *str) {
 			}
 			record_addr &= 0xffffffff;
 
-			eol = strchr(str + 1, 'S');
-			if (eol) {
-				*eol = 0;
-			}
-
 			cksum = byte_count;
 			cksum += record_addr & 0xff;
 			cksum += (record_addr >> 8) & 0xff;
@@ -448,7 +449,6 @@ static bool srecord_parse(RzBuffer *buf, char *str) {
 			RZ_LOG_ERROR("srec:parse(): checksum test failed (calculated %02x, but expected %02x) at line %d\n", cksum, cksum_expect, line);
 			goto fail;
 		}
-
 		str = strchr(str + 1, 'S');
 	} while (str);
 
@@ -495,7 +495,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, st32 rw, st32 mode) {
 			return NULL;
 		}
 		free(str);
-		return rz_io_desc_new(io, &rz_io_plugin_srec, pathname, rw, mode, mal);
+		return rz_io_desc_new(io, &rz_io_plugin_srec, pathname, rw, mal);
 	}
 	return NULL;
 }

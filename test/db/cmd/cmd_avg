@@ -100,6 +100,32 @@ global char [50] foo @ 0x100
 EOF
 RUN
 
+NAME=avg array and pointer types
+FILE==
+CMDS=<<EOF
+avga gptr "char *" @ 0x100
+avga gpp "char **" @ 0x200
+avga garr "int [8]" @ 0x300
+avga gpa "int *[4]" @ 0x400
+avgl
+avglj
+avgt gptr "void **"
+avgt garr "char [3]"
+avgl
+EOF
+EXPECT=<<EOF
+global char * gptr @ 0x100
+global char ** gpp @ 0x200
+global int [8] garr @ 0x300
+global int *[4] gpa @ 0x400
+[{"name":"gptr","type":"char *","size":8,"addr":"0x100"},{"name":"gpp","type":"char **","size":8,"addr":"0x200"},{"name":"garr","type":"int [8]","size":32,"addr":"0x300"},{"name":"gpa","type":"int *[4]","size":32,"addr":"0x400"}]
+global void ** gptr @ 0x100
+global char ** gpp @ 0x200
+global char [3] garr @ 0x300
+global int *[4] gpa @ 0x400
+EOF
+RUN
+
 NAME=avgl <non-existing-var>
 FILE==
 CMDS=<<EOF
@@ -114,6 +140,8 @@ RUN
 NAME=avgp - print global variable value
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 wx 40102030405050230590909090
 w alfdjsdfgkjdhfgkdghdfgdfg @ 0x20
 avga foo int @ 0x10
@@ -130,12 +158,35 @@ avga xoo "char [5]" @ 0x30
 avgp xoo
 EOF
 EXPECT=<<EOF
- int : 0x00000010 = 0
- char : 0x00000000 = '@'
- a : 0x00000005 = 86200400
- b : 0x00000009 = '.'
- qwe : 0x00000015 = qwe (enum qwe) = 0x0 ; A
- char : (*0x68646a6b67666473)0x00000025 = '.'
- char : 0x00000030 = [ 'd', 'g', 'h', 'd', 'f' ]
+0x00000010 : int = 0 [LE]
+0x00000000 : char = '@'
+0x00000005 : a = 86200400 [LE]
+0x00000009 : b = '.'
+0x00000015 : qwe = 0x00000000 ; A
+0x00000025 : char = (*0x68646a6b67666473)
+0x00000030 : char = [ 'd', 'g', 'h', 'd', 'f' ]
+EOF
+RUN
+
+NAME=avgc set, read and clear global variable constraints (#315)
+FILE==
+CMDS=<<EOF
+avga foo int @ 0x100
+avga bar char @ 0x1000
+avgcs foo ">0,<=9"
+avgc foo
+avgcs bar "ge 5,lt 100"
+avgcj bar
+avgc
+avgc- foo
+avgc foo
+echo cleared
+EOF
+EXPECT=<<EOF
+> 0x0 && <= 0x9
+[{"name":"bar","constraints":">= 0x5 && < 0x64","conditions":[{"cond":"ge","value":5},{"cond":"lt","value":100}]}]
+foo: > 0x0 && <= 0x9
+bar: >= 0x5 && < 0x64
+cleared
 EOF
 RUN

@@ -28,6 +28,12 @@
 #define ELF_M_SYM         ELF64_M_SYM
 #define ELF_M_SIZE        ELF64_M_SIZE
 #define ELF_M_INFO        ELF64_M_INFO
+
+#define PFMTnx PFMT64x
+#define PFMTnX PFMT64X
+#define PFMTnd PFMT64d
+#define PFMTnu PFMT64u
+#define PFMTno PFMT64o
 #else
 #define Elf_(name)        Elf32_##name
 #define ELF_ST_BIND       ELF32_ST_BIND
@@ -40,7 +46,20 @@
 #define ELF_M_SYM         ELF32_M_SYM
 #define ELF_M_SIZE        ELF32_M_SIZE
 #define ELF_M_INFO        ELF32_M_INFO
+
+#define PFMTnx PFMT32x
+#define PFMTnX PFMT32X
+#define PFMTnd PFMT32d
+#define PFMTnu PFMT32u
+#define PFMTno PFMT32o
 #endif
+
+/**
+ * \brief An extension for Sparc64's ELF64.
+ */
+#define ELF64_SPARC_R_TYPE_DATA(info) (((ut64)(info) << 32) >> 40)
+#define ELF64_R_TYPE_ID(info)         (((u64)(info) << 56) >> 56)
+#define ELF64_R_TYPE_INFO(data, type) (((u64)(data) << 8) + (ut64)(type))
 
 #define E_IDENT_OFFSET      offsetof(Elf_(Ehdr), e_ident)
 #define E_TYPE_OFFSET       offsetof(Elf_(Ehdr), e_type)
@@ -74,6 +93,7 @@
 #endif
 
 #include "glibc_elf.h"
+#include "nanomips_elf.h"
 
 #ifndef _INCLUDE_ELF_SPECS_H
 #define _INCLUDE_ELF_SPECS_H

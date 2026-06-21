@@ -1,9 +1,8 @@
 // SPDX-FileCopyrightText: 2018 condret <condr3t@protonmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
-#include <rz_util.h>
-#include <rz_lib.h>
+#include <rz_esil/rz_esil.h>
+#include "analysis_private.h"
 
 static void interrupt_free(RzAnalysisEsilInterrupt *i) {
 	rz_analysis_esil_interrupt_free(i->esil, i);
@@ -73,7 +72,7 @@ RZ_API bool rz_analysis_esil_load_interrupts(RzAnalysisEsil *esil, RzAnalysisEsi
 			return false;
 		}
 		if (!rz_analysis_esil_set_interrupt(esil, intr)) {
-			free(intr);
+			rz_analysis_esil_interrupt_free(esil, intr);
 		}
 		i++;
 	}

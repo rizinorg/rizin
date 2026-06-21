@@ -28,7 +28,7 @@ static CryptographicMethod cryptographic_methods[RZ_SEARCH_COLLECTION_CRYPTOGRAP
 	[RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_SM4_LE] = { "sm4le", sm4_le_find },
 	[RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_RSA] = { "rsa", rsa_find },
 	[RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_ECC] = { "ecc", ecc_find },
-	[RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_SAFECURVES] = { "safecurves", safecurves_find },
+	[RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_PKCS8_PRIVKEY] = { "pkcs8_pkey", pkcs8_privkey_find },
 	[RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_X509] = { "x509", x509_find },
 };
 

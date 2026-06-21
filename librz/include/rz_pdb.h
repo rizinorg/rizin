@@ -288,6 +288,8 @@ typedef struct rz_pdb_t {
 	RzPdbOmapStream *s_omap;
 	RzPdbPeStream *s_pe;
 	RzPVector /*<PDBModuleInfo *>*/ *module_infos;
+	size_t RtlpHpHeapGlobalsOffset; ///< Related to windows heap
+	size_t RtlpLFHKeyOffset; ///< Related to windows heap
 } RzPdb;
 
 typedef struct {
@@ -307,8 +309,6 @@ typedef struct {
 	char *name;
 } PDBSData;
 
-RZ_IPI bool PDBSData_parse(RzBuffer *b, PDBSymbolKind kind, PDBSData *sdata);
-
 typedef struct {
 	bool code : 1;
 	bool function : 1;
@@ -317,8 +317,6 @@ typedef struct {
 	PDBSectionOffset offset;
 	char *name;
 } PDBSPublic;
-
-RZ_IPI bool PDBSPublic_parse(RzBuffer *b, PDBSymbolKind kind, PDBSPublic *s);
 
 typedef struct {
 	PDBSymbolIndex index;
@@ -372,13 +370,13 @@ RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_file(RZ_NONNULL const char *filename)
 RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_buf(RZ_NONNULL const RzBuffer *buf);
 RZ_API void rz_bin_pdb_free(RzPdb *pdb);
 RZ_API bool rz_pdb_all_symbols_foreach(
-	RZ_BORROW RZ_NONNULL const RzPdb *pdb,
-	RZ_BORROW RZ_NONNULL bool (*f)(const RzPdb *, const PDBSymbol *, void *),
+	RZ_BORROW RZ_NONNULL RzPdb *pdb,
+	RZ_BORROW RZ_NONNULL bool (*f)(RzPdb *, const PDBSymbol *, void *),
 	RZ_BORROW RZ_NULLABLE void *u);
 
 // TPI
 RZ_API RZ_BORROW RzPdbTpiType *rz_bin_pdb_get_type_by_index(RZ_NONNULL RzPdbTpiStream *stream, ut32 index);
-RZ_API RZ_OWN char *rz_bin_pdb_calling_convention_as_string(RZ_NONNULL RzPdbTpiCallingConvention idx);
+RZ_API RZ_BORROW const char *rz_bin_pdb_calling_convention_as_string(RZ_NONNULL RzPdbTpiCallingConvention idx);
 RZ_API bool rz_bin_pdb_type_is_fwdref(RZ_NONNULL RzPdbTpiType *t);
 RZ_API RZ_BORROW RzPVector /*<RzPdbTpiType *>*/ *rz_bin_pdb_get_type_members(RZ_NONNULL RzPdbTpiStream *stream, RzPdbTpiType *t);
 RZ_API RZ_BORROW char *rz_bin_pdb_get_type_name(RZ_NONNULL RzPdbTpiType *type);

@@ -132,6 +132,34 @@ copied on other systems if necessary. On *NIX systems, this adds the classic
 $ meson --buildtype=release --default-library=static -Dstatic_runtime=true build
 ```
 
+## Build and generate coverage report
+
+Use `-Db_coverage=true` during the setup phase.
+
+```
+$ meson -Db_coverage=true --buildtype=debug build
+```
+
+Run the command you need the coverage for.
+
+```sh
+# For example the ARM asm tests
+rz-test test/db/asm/arm*
+```
+
+Generate the coverage report as HTML with `gcovr`.
+
+```bash
+# Install gcovr via pip or any other way
+pip install gcovr
+mkdir cov_report
+cd cov_report
+# Generate coverage report for each directory and file
+gcovr -r .. --html-nested coverage.html
+```
+
+Open `coverage.html` in your browser and explore.
+
 ## Cross-compilation for Android
 
 You can cross-compile rizin from your main machine to target your Android
@@ -145,6 +173,8 @@ know to correctly cross-compile.
 You can find an
 [example](https://github.com/rizinorg/rizin/blob/dev/.github/meson-android-aarch64.ini)
 of such a file in our codebase, but you should adjust it to match your system.
+
+More examples are in the [doc/examples/cross_builds/](https://github.com/rizinorg/rizin/blob/dev/doc/examples/cross_builds/) directory.
 
 To make the deployment and usage of the rizin tools easier from within your
 Android device, we suggest to compile statically and by using the *blob*
@@ -225,7 +255,7 @@ If Rizin was installed using `meson`, you can run the following command from the
 same build directory where you had previously installed Rizin:
 
 ```
-$ sudo ninja -C uninstall # `sudo` may not be required based on how you configured the `build` directory with meson the first time```
+$ sudo ninja -C uninstall # `sudo` may not be required based on how you configured the `build` directory with meson the first time
 ```
 
 Furthermore, if you had installed Rizin using a distribution package, use the
@@ -243,7 +273,7 @@ $ sudo ninja -C build install # or `sudo meson install -C build`. `sudo` may not
 
 If you are a developer, it might not be necessary to run the `install` step
 (the second step from above) every time you build Rizin. You can directly use
-`rizin` from `./build/binrz/rizin/rizin.`
+`rizin` from `./build/binrz/rizin/rizin`
 
 If you encounter issues while re-building Rizin, try to remove the existing
 build directory (e.g. `rm -r ./build`) and clean the subproject files

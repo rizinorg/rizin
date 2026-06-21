@@ -305,7 +305,7 @@ bool is_compressed_pdb(RzBuffer *buf) {
  */
 RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_file(RZ_NONNULL const char *filename) {
 	rz_return_val_if_fail(filename, NULL);
-	RzBuffer *buf = rz_buf_new_slurp(filename);
+	RzBuffer *buf = rz_buf_new_file(filename, O_RDONLY, 0);
 	if (!buf) {
 		RZ_LOG_ERROR("%s: Error reading file \"%s\"\n", __FUNCTION__, filename);
 		return false;

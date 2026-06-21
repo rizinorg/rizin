@@ -1364,7 +1364,12 @@ static RzList /*<RzBinSymbol *>*/ *resolve_syscalls(RzXNUKernelCacheObj *obj, ut
 	if (!syscall) {
 		goto beach;
 	}
-	rz_syscall_setup(syscall, "arm", 64, NULL, "ios");
+	RzPath *sys_path = rz_path_new();
+	if (!sys_path) {
+		goto beach;
+	}
+	rz_syscall_setup(syscall, sys_path, "arm", 64, NULL, "ios");
+	rz_path_free(sys_path);
 	if (!syscall->db) {
 		goto beach;
 	}
@@ -1766,7 +1771,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->bits = 64;
 	ret->has_va = true;
 	ret->big_endian = big_endian;
-	ret->dbg_info = 0;
+	ret->dbg_info = RZ_BIN_DBG_STRIPPED;
 	return ret;
 }
 
@@ -1913,8 +1918,9 @@ static void rz_rebase_info_free(RzXNUKernelCacheRebaseInfo *info) {
 
 RzBinPlugin rz_bin_plugin_xnu_kernelcache = {
 	.name = "kernelcache",
-	.desc = "kernelcache bin plugin",
+	.desc = "Apple Kernelcache",
 	.license = "LGPL3",
+	.author = "mrmacete",
 	.destroy = &destroy,
 	.load_buffer = &load_buffer,
 	.entries = &entries,

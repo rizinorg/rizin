@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2020 Florian Märkl <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 
 #include "minunit.h"
 #include "test_sdb.h"
@@ -31,13 +31,13 @@ static Sdb *ref_db_self_err() {
 }
 
 static RzAnalysis *ref_analysis() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	rz_analysis_cc_set(analysis, "rax sectarian(rdx, rcx, stack)");
 	return analysis;
 }
 
 static RzAnalysis *ref_analysis_self_err() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	rz_analysis_cc_set(analysis, "rax sectarian(rdx, rcx, stack)");
 	rz_analysis_cc_set_self(analysis, "sectarian", "rsi");
 	rz_analysis_cc_set_error(analysis, "sectarian", "rdi");
@@ -46,9 +46,10 @@ static RzAnalysis *ref_analysis_self_err() {
 
 bool test_rz_analysis_cc_set() {
 	RzAnalysis *analysis = ref_analysis();
+	Sdb *analysis_cc = rz_analysis_get_sdb_cc(analysis);
 
 	Sdb *ref = ref_db();
-	assert_sdb_eq(analysis->sdb_cc, ref, "set cc");
+	assert_sdb_eq(analysis_cc, ref, "set cc");
 	sdb_free(ref);
 
 	rz_analysis_free(analysis);
@@ -57,9 +58,10 @@ bool test_rz_analysis_cc_set() {
 
 bool test_rz_analysis_cc_set_self_err() {
 	RzAnalysis *analysis = ref_analysis_self_err();
+	Sdb *analysis_cc = rz_analysis_get_sdb_cc(analysis);
 
 	Sdb *ref = ref_db_self_err();
-	assert_sdb_eq(analysis->sdb_cc, ref, "set cc");
+	assert_sdb_eq(analysis_cc, ref, "set cc");
 	sdb_free(ref);
 
 	rz_analysis_free(analysis);
@@ -94,9 +96,10 @@ bool test_rz_analysis_cc_get_self_err() {
 
 bool test_rz_analysis_cc_del() {
 	RzAnalysis *analysis = ref_analysis();
+	Sdb *analysis_cc = rz_analysis_get_sdb_cc(analysis);
 	rz_analysis_cc_del(analysis, "sectarian");
 	Sdb *ref = sdb_new0();
-	assert_sdb_eq(analysis->sdb_cc, ref, "deleted");
+	assert_sdb_eq(analysis_cc, ref, "deleted");
 	sdb_free(ref);
 	rz_analysis_free(analysis);
 	mu_end;

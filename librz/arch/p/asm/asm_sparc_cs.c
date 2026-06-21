@@ -2,20 +2,29 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 #include "cs_helper.h"
 
 CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(sparc_asm);
 
-static int sparc_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int sparc_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 
 	cs_insn *insn;
 	int n = -1, ret = -1;
-	int mode = CS_MODE_BIG_ENDIAN;
+	int mode = 0;
+	if (a->big_endian) {
+		mode = CS_MODE_BIG_ENDIAN;
+	}
 	if (a->cpu && *a->cpu) {
-		if (!strcmp(a->cpu, "v9")) {
+		if (RZ_STR_EQ(a->cpu, "v9")) {
 			mode |= CS_MODE_V9;
+		}
+		if (a->bits == 64) {
+			mode |= CS_MODE_64;
+		} else {
+			mode |= CS_MODE_32;
 		}
 	}
 	if (op) {
@@ -65,7 +74,7 @@ fin:
 	return ret;
 }
 
-char **sparc_cpu_descriptions() {
+static char **sparc_cpu_descriptions() {
 	static char *cpu_desc[] = {
 		"v9", "SPARC V9: 64-bit RISC architecture specification",
 		NULL
@@ -78,7 +87,7 @@ RzAsmPlugin rz_asm_plugin_sparc_cs = {
 	.desc = "Sun SPARC Capstone-based disassembler",
 	.license = "BSD",
 	.arch = "sparc",
-	.cpus = "v9",
+	.cpus = "v9,v8",
 	.bits = 32 | 64,
 	.endian = RZ_SYS_ENDIAN_BIG | RZ_SYS_ENDIAN_LITTLE,
 	.init = sparc_asm_init,

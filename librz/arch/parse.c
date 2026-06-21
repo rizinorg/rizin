@@ -3,8 +3,6 @@
 // SPDX-FileCopyrightText: 2009-2020 maijin <maijin21@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <stdio.h>
-
 #include <rz_types.h>
 #include <rz_arch.h>
 #include <rz_lib.h>
@@ -74,7 +72,7 @@ RZ_API bool rz_parse_plugin_del(RzParse *p, RZ_NONNULL RzParsePlugin *plugin) {
 		}
 		p->cur = NULL;
 	}
-	return rz_list_delete_data(p->parsers, plugin);
+	return rz_list_delete_val(p->parsers, plugin);
 }
 
 RZ_API bool rz_parse_use(RzParse *p, const char *name) {

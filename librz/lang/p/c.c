@@ -10,12 +10,9 @@
 #include <rz_lang.h>
 
 #if __UNIX__
-static int ac = 0;
-static const char **av = NULL;
-
 static bool lang_c_set_argv(RzLang *lang, int argc, const char **argv) {
-	ac = argc;
-	av = argv;
+	lang->argc = argc;
+	lang->argv = argv;
 	return true;
 }
 
@@ -54,7 +51,7 @@ static int lang_c_file(RzLang *lang, const char *file) {
 	if (RZ_STR_ISEMPTY(cc)) {
 		cc = rz_str_dup("gcc");
 	}
-	char *libdir = rz_path_libdir();
+	char *libdir = rz_path_libdir(lang->sys_path);
 	char *pkgconf_path = rz_file_path_join(libdir, "pkgconfig");
 	char *file_esc = rz_str_escape_sh(file);
 	char *libpath_esc = rz_str_escape_sh(libpath);
@@ -79,9 +76,9 @@ static int lang_c_file(RzLang *lang, const char *file) {
 		void (*fcn)(RzCore *, int argc, const char **argv);
 		fcn = rz_sys_dlsym(lib, "entry");
 		if (fcn) {
-			fcn(lang->user, ac, av);
-			ac = 0;
-			av = NULL;
+			fcn(lang->user, lang->argc, lang->argv);
+			lang->argc = 0;
+			lang->argv = NULL;
 		} else {
 			eprintf("Cannot find 'entry' symbol in library\n");
 		}

@@ -34,12 +34,42 @@ DEFINE_COUNT_ONES(ut16);
 DEFINE_COUNT_ONES(ut8);
 
 /**
+ * \brief Count trailing zeros of \p v.
+ * If v == 0 it returns 64.
+ *
+ * \param v The value to count the trailing zeros for.
+ *
+ * \return The number of trailing zeros.
+ */
+static inline size_t rz_bits_trailing_zeros(ut64 v) {
+#if HAVE___BUILTIN_CTZLL
+	if (v == 0) {
+		return 64;
+	}
+	return __builtin_ctzll(v);
+#else
+	// Branchless CTZ implementation using "de Bruijn" sequences
+	// https://en.wikipedia.org/wiki/Find_first_set#CTZ
+	static const unsigned char debruijn_map[64] = {
+		63, 0, 1, 52, 2, 6, 53, 26, 3, 37, 40, 7, 33, 54, 47, 27,
+		61, 4, 38, 45, 43, 41, 21, 8, 23, 34, 58, 55, 48, 17, 28, 10,
+		62, 51, 5, 25, 36, 39, 32, 46, 60, 44, 42, 20, 22, 57, 16, 9,
+		50, 24, 35, 31, 59, 19, 56, 15, 49, 30, 18, 14, 29, 13, 12, 11
+	};
+	return !v + debruijn_map[((v & (ut64)(-(st64)v)) * 0x045FBAC7992A70DA) >> 58];
+#endif
+}
+
+/**
  * \brief Get the number of leading zeros of a 64-bit integer in binary representation.
  * \param x the 64-bit integer
  * \return the number of leading zeros
  */
 static inline int rz_bits_leading_zeros(ut64 x) {
-#if HAS___BUILTIN_CLZLL
+	if (x == 0) {
+		return 64;
+	}
+#if HAVE___BUILTIN_CLZLL
 	return __builtin_clzll(x);
 #else
 	int n = 0;
@@ -73,6 +103,62 @@ static inline int rz_bits_leading_zeros(ut64 x) {
 	return n;
 #endif
 }
+
+/**
+ * \brief Copies a bit range from \p src to \p dst at specified positions
+ * \param src 64-bit unsigned integer to copy bits from
+ * \param src_pos bit position related to \p src
+ * \param dst 64-bit unsigned integer to copy bits to
+ * \param dst_pos bit position related to \p dst
+ * \param size number of bits to copy (needs to be <= 64)
+ * \return a new 64-bit unsigned integer with the specified bit range replaced
+ */
+static inline ut64 rz_bits_copy_ut64(ut64 src, ut8 src_pos, ut64 dst, ut8 dst_pos, ut8 size) {
+	if (size >= 64) {
+		return src;
+	}
+
+	ut64 mask = ((1ull) << size) - 1;
+	return (dst & ~(mask << dst_pos)) | (src >> src_pos & mask) << dst_pos;
+}
+
+/**
+ * \brief Similar to rz_bits_copy_ut64() but for 8-bit unsigned integers
+ */
+static inline ut8 rz_bits_copy_ut8(ut8 src, ut8 src_pos, ut8 dst, ut8 dst_pos, ut8 size) {
+	if (size >= 8) {
+		return src;
+	}
+
+	ut8 mask = ((1u) << size) - 1;
+	return (dst & ~(mask << dst_pos)) | (src >> src_pos & mask) << dst_pos;
+}
+
+/**
+ * \brief Sign-extends a value from a specified bit-width to full width of type.
+ *
+ * This macro defines an inline function that performs sign extension on an
+ * unsigned integer value of `bits` significant bits, extending it to a signed
+ * integer of full bit-width `B`. It works for 8, 16, 32, and 64-bit integers.
+ *
+ * The function shifts the value left to discard higher bits, then arithmetically
+ * shifts it back right, preserving the sign.
+ *
+ * \param value The input unsigned integer of type ut##B.
+ * \param bits The number of significant bits in `value` (must be less than or equal to B).
+ * \return The sign-extended signed integer of type st##B.
+ */
+#define SIGN_EXT_IMPL(B) \
+	static inline st##B rz_bits_sign_ext##B(ut##B value, ut##B bits) { \
+		return (st##B)(value << (B - bits)) >> (B - bits); \
+	}
+
+SIGN_EXT_IMPL(8);
+SIGN_EXT_IMPL(16);
+SIGN_EXT_IMPL(32);
+SIGN_EXT_IMPL(64);
+
+RZ_API ut64 rz_bits_spread(const ut64 mask, const ut64 value);
 
 #ifdef __cplusplus
 }

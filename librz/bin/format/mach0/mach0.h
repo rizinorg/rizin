@@ -170,7 +170,7 @@ struct MACH0_(obj_t) {
 	 */
 	RzPVector /*<RzBinImport *>*/ imports_by_ord;
 
-	HtPP *imports_by_name; ///< other imports created only by name
+	HtPP /*<char *, RzBinImport *>*/ *imports_by_name; ///< other imports created only by name
 
 	struct dysymtab_command dysymtab;
 	struct load_command main_cmd;
@@ -188,6 +188,8 @@ struct MACH0_(obj_t) {
 		struct ppc_thread_state64 ppc_64;
 		struct arm_thread_state32 arm_32;
 		struct arm_thread_state64 arm_64;
+		struct sparc_thread_state64 sparc_64;
+		struct mc680x0_thread_state mc680x0;
 	} thread_state;
 	char (*libs)[RZ_BIN_MACH0_STRING_LENGTH];
 	int nlibs;
@@ -199,11 +201,9 @@ struct MACH0_(obj_t) {
 	RzBuffer *b;
 	ut32 platform; ///< MACH0_PLATFORM_*, or an unknown value from the bin, or UT32_MAX if not determined
 	Sdb *kv;
-	int has_crypto;
-	int has_canary;
-	int has_retguard;
-	int has_sanitizers;
-	int has_blocks_ext;
+	bool has_pac_sections;
+	bool is_encrypted;
+	bool has_blocks_ext;
 	int dbg_info;
 	const char *lang;
 	int uuidn;
@@ -247,9 +247,11 @@ struct lib_t *MACH0_(get_libs)(struct MACH0_(obj_t) * bin);
 ut64 MACH0_(get_baddr)(struct MACH0_(obj_t) * bin);
 char *MACH0_(get_class)(struct MACH0_(obj_t) * bin);
 int MACH0_(get_bits)(struct MACH0_(obj_t) * bin);
-bool MACH0_(is_big_endian)(struct MACH0_(obj_t) * bin);
+bool MACH0_(is_big_endian)(RZ_NONNULL RzBuffer *buf);
 bool MACH0_(is_pie)(struct MACH0_(obj_t) * bin);
 bool MACH0_(has_nx)(struct MACH0_(obj_t) * bin);
+bool MACH0_(has_ptr_auth)(struct MACH0_(obj_t) * bin);
+HtSS *MACH0_(get_security)(struct MACH0_(obj_t) * bin);
 const char *MACH0_(get_intrp)(struct MACH0_(obj_t) * bin);
 const char *MACH0_(get_platform)(struct MACH0_(obj_t) * bin);
 const char *MACH0_(get_cputype)(struct MACH0_(obj_t) * bin);
@@ -260,8 +262,8 @@ char *MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) * hdr);
 ut64 MACH0_(get_main)(struct MACH0_(obj_t) * bin);
 const char *MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) * hdr);
 int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header) * hdr);
-struct MACH0_(mach_header) * MACH0_(get_hdr)(RzBuffer *buf);
-void MACH0_(mach_headerfields)(RzBinFile *bf);
+struct MACH0_(mach_header) * MACH0_(get_hdr)(RzBuffer *buf, RZ_NULLABLE RZ_OUT bool *is_big_endian);
+RzStructuredData *MACH0_(mach_structure)(RzBinFile *bf);
 RzPVector /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf);
 RZ_API RZ_OWN char *MACH0_(get_name)(struct MACH0_(obj_t) * mo, ut32 stridx, bool filter);
 RZ_API ut64 MACH0_(paddr_to_vaddr)(struct MACH0_(obj_t) * bin, ut64 offset);

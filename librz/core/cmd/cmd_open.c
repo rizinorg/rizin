@@ -57,7 +57,9 @@ static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 		.curpos = 0,
 		.color = rz_config_get_i(core->config, "scr.color")
 	};
-	RzStrBuf *strbuf = rz_progressbar(&opts, sz * 100 / u->fdsz, rz_cons_get_size(NULL) - 40);
+	// avoid divide-by-zero error when the total file size is zero.
+	int percent = u->fdsz == 0 ? 0 : sz * 100 / u->fdsz;
+	RzStrBuf *strbuf = rz_progressbar(&opts, percent, rz_cons_get_size(NULL) - 40);
 	if (!strbuf) {
 		RZ_LOG_ERROR("Cannot generate progressbar\n");
 	} else {
@@ -242,7 +244,7 @@ RZ_IPI RzCmdStatus rz_open_maps_remove_all_handler(RzCore *core, int argc, const
 }
 
 RZ_IPI RzCmdStatus rz_open_maps_list_ascii_handler(RzCore *core, int argc, const char **argv) {
-	RzList *list = rz_list_newf((RzListFree)rz_listinfo_free);
+	RzList *list = rz_list_newf((RzListFree)rz_debug_listinfo_free);
 	if (!list) {
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -252,14 +254,14 @@ RZ_IPI RzCmdStatus rz_open_maps_list_ascii_handler(RzCore *core, int argc, const
 		RzIOMap *map = *it;
 		char temp[32];
 		rz_strf(temp, "%d", map->fd);
-		RzListInfo *info = rz_listinfo_new(map->name, map->itv, map->itv, map->perm, temp);
+		RzDbgListInfo *info = rz_debug_listinfo_new(map->name, map->itv, map->itv, map->perm, temp);
 		if (!info) {
 			break;
 		}
 		rz_list_append(list, info);
 	}
 	RzTable *table = rz_core_table(core);
-	rz_table_visual_list(table, list, core->offset, core->blocksize,
+	rz_core_debug_listinfo_to_table(table, list, core->offset, core->blocksize,
 		rz_cons_get_size(NULL), rz_config_get_i(core->config, "scr.color"));
 	char *tablestr = rz_table_tostring(table);
 	rz_cons_printf("%s", tablestr);
@@ -676,7 +678,7 @@ RZ_IPI RzCmdStatus rz_open_binary_list_ascii_handler(RzCore *core, int argc, con
 	if (!bin) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzList *list = rz_list_newf((RzListFree)rz_listinfo_free);
+	RzList *list = rz_list_newf((RzListFree)rz_debug_listinfo_free);
 	if (!list) {
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -685,14 +687,14 @@ RZ_IPI RzCmdStatus rz_open_binary_list_ascii_handler(RzCore *core, int argc, con
 	rz_list_foreach (bin->binfiles, iter, bf) {
 		char temp[64];
 		RzInterval inter = (RzInterval){ bf->o->opts.baseaddr, bf->o->size };
-		RzListInfo *info = rz_listinfo_new(bf->file, inter, inter, -1, sdb_itoa(bf->fd, temp, 10));
+		RzDbgListInfo *info = rz_debug_listinfo_new(bf->file, inter, inter, -1, sdb_itoa(bf->fd, temp, 10));
 		if (!info) {
 			break;
 		}
 		rz_list_append(list, info);
 	}
 	RzTable *table = rz_core_table(core);
-	rz_table_visual_list(table, list, core->offset, core->blocksize,
+	rz_core_debug_listinfo_to_table(table, list, core->offset, core->blocksize,
 		rz_cons_get_size(NULL), rz_config_get_i(core->config, "scr.color"));
 	char *table_text = rz_table_tostring(table);
 	rz_cons_printf("\n%s\n", table_text);
@@ -752,6 +754,68 @@ RZ_IPI RzCmdStatus rz_open_binary_file_handler(RzCore *core, int argc, const cha
 
 	rz_io_desc_close(desc);
 	rz_io_use_fd(core->io, saved_fd);
+	return RZ_CMD_STATUS_OK;
+}
+
+static inline bool xtr_selection_matches(RzList /*<const char *>*/ *selection, const RzBinXtrMetadata *metadata) {
+	rz_return_val_if_fail(selection && metadata && rz_list_length(selection) >= 2, false);
+	return (RZ_STR_EQ(rz_list_get_n(selection, 0), metadata->arch) &&
+		atoi(rz_list_get_n(selection, 1)) == metadata->bits &&
+		(rz_list_length(selection) < 3 || RZ_STR_ISEMPTY(metadata->machine) || RZ_STR_EQ(rz_list_get_n(selection, 2), metadata->machine)));
+}
+
+RZ_IPI RzCmdStatus rz_open_binary_select_handler(RzCore *core, int argc, const char **argv) {
+	RzBin *bin = core->bin;
+	if (!bin) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	bool list_existing = argc == 1;
+	RzListIter *iter;
+	RzBinFile *binfile = NULL;
+	RzBinXtrData *xtr_data;
+	size_t bits = 0;
+
+	rz_list_foreach (bin->binfiles, iter, binfile) {
+		RzListIter *iter_xtr;
+		if (!binfile->xtr_data) {
+			continue;
+		}
+		rz_list_foreach (binfile->xtr_data, iter_xtr, xtr_data) {
+			if (list_existing) {
+				rz_cons_printf("%s_%i_%s\n", xtr_data->metadata->arch, xtr_data->metadata->bits, xtr_data->metadata->machine);
+				continue;
+			}
+			RzList *selection = rz_str_split_duplist(argv[1], "_", 0);
+			if (rz_list_length(selection) < 2) {
+				RZ_LOG_WARN("Invalid argument.\n");
+				return RZ_CMD_STATUS_ERROR;
+			}
+			if (xtr_selection_matches(selection, xtr_data->metadata)) {
+				// Backup and reset flag spaces with object flags (sections and such).
+				char bak_file[128] = { 0 };
+				rz_strf(bak_file, "flags.%s.sdb", argv[1]);
+				if (!rz_flag_reset_obj_flags(core->flags, bak_file)) {
+					RZ_LOG_ERROR("Failed to backup and reset flag spaces. Refusing to switch object.\n");
+					return RZ_CMD_STATUS_ERROR;
+				}
+				rz_cons_printf("Backed up flag space into '%s'. You can restore the flags with the 'ko' command.\n", bak_file);
+
+				bits = xtr_data->metadata->bits;
+				const char *mach = rz_list_length(selection) > 2 ? rz_list_get_n(selection, 2) : NULL;
+
+				if (!rz_bin_select(bin, rz_list_get_n(selection, 0), bits, mach, NULL)) {
+					rz_list_free(selection);
+					return RZ_CMD_STATUS_ERROR;
+				}
+				if (!rz_core_bin_apply_all_info(core, binfile)) {
+					rz_list_free(selection);
+					return RZ_CMD_STATUS_ERROR;
+				}
+				break;
+			}
+			rz_list_free(selection);
+		}
+	}
 	return RZ_CMD_STATUS_OK;
 }
 

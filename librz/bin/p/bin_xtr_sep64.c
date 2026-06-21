@@ -522,7 +522,7 @@ static bool read_arm64_ins(RzBuffer *b, int idx, ut64 *result) {
 
 RzBinXtrPlugin rz_bin_xtr_plugin_sep64 = {
 	.name = "xtr.sep64",
-	.desc = "64-bit SEP bin extractor plugin",
+	.desc = "64-bit SEP binary extractor",
 	.license = "LGPL3",
 	.check_buffer = check_buffer,
 	.load = &load,

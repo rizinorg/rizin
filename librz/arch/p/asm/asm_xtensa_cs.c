@@ -3,9 +3,10 @@
 
 #include <rz_types.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <xtensa/xtensa.h>
 
-static int asm_xtensa_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int asm_xtensa_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	XtensaContext *ctx = a->plugin_data;
 	if (!xtensa_open(ctx, a->cpu, a->big_endian)) {
 		goto beach;
@@ -29,7 +30,7 @@ beach:
 	return -1;
 }
 
-char **xtensa_cpu_descriptions() {
+static char **xtensa_cpu_descriptions() {
 	static char *cpu_desc[] = {
 		"esp32", "Xtensa microcontroller with Wi-Fi and Bluetooth capabilities",
 		"esp32s2", "Xtensa microcontroller with Wi-Fi and USB OTG support",

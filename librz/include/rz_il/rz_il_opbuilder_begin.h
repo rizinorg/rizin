@@ -148,10 +148,12 @@
 #define SGT(x, y)   rz_il_op_new_sgt(x, y)
 #define SGE(x, y)   rz_il_op_new_sge(x, y)
 
-#define LOAD(addr)        rz_il_op_new_load(0, addr)
-#define LOADW(n, addr)    rz_il_op_new_loadw(0, addr, n)
-#define STORE(addr, val)  rz_il_op_new_store(0, addr, val)
-#define STOREW(addr, val) rz_il_op_new_storew(0, addr, val)
+#define LOAD(addr)            rz_il_op_new_load(0, addr)
+#define LOADW(n, addr)        rz_il_op_new_loadw(0, addr, n)
+#define LOADWI(i, n, addr)    rz_il_op_new_loadw(i, addr, n)
+#define STORE(addr, val)      rz_il_op_new_store(0, addr, val)
+#define STOREW(addr, val)     rz_il_op_new_storew(0, addr, val)
+#define STOREWI(i, addr, val) rz_il_op_new_storew(i, addr, val)
 
 #define VARG(name)         rz_il_op_new_var(name, RZ_IL_VAR_KIND_GLOBAL)
 #define VARL(name)         rz_il_op_new_var(name, RZ_IL_VAR_KIND_LOCAL)

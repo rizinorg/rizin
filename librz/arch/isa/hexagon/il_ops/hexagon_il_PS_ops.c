@@ -1,16 +1,16 @@
-// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
+// SPDX-FileCopyrightText: 2021 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 // LLVM commit: 7cbf1a2591520c2491aa35339f227775f4d3adf6
 // LLVM commit date: 2023-06-10 15:58:16 -0700 (ISO 8601 format)
 // Date of code generation: 2023-11-07 17:32:44-05:00
-// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
+// SPDX-FileCopyrightText: 2021 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 // LLVM commit: 7cbf1a2591520c2491aa35339f227775f4d3adf6
 // LLVM commit date: 2023-06-10 15:58:16 -0700 (ISO 8601 format)
 // Date of code generation: 2023-11-07 14:54:00-05:00
-// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
+// SPDX-FileCopyrightText: 2021 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 // LLVM commit: 7cbf1a2591520c2491aa35339f227775f4d3adf6

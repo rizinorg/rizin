@@ -34,27 +34,29 @@ int tpi_type_node_cmp(const void *incoming, const RBNode *in_tree, void *user) {
  *
  * \param idx
  */
-RZ_API RZ_OWN char *rz_bin_pdb_calling_convention_as_string(RZ_NONNULL RzPdbTpiCallingConvention idx) {
+RZ_API RZ_BORROW const char *rz_bin_pdb_calling_convention_as_string(RZ_NONNULL RzPdbTpiCallingConvention idx) {
+	// The returned string is a static literal and must not be freed by the
+	// caller. RzCallable.cc (where these are stored) is a borrowed pointer.
 	switch (idx) {
 	case NEAR_C:
 	case FAR_C:
-		return rz_str_dup("__cdecl");
+		return "__cdecl";
 	case NEAR_PASCAL:
 	case FAR_PASCAL:
-		return rz_str_dup("__pascal");
+		return "__pascal";
 	case NEAR_FAST:
 	case FAR_FAST:
-		return rz_str_dup("__fastcall");
+		return "__fastcall";
 	case NEAR_STD:
 	case FAR_STD:
-		return rz_str_dup("__stdcall");
+		return "__stdcall";
 	case NEAR_SYS:
 	case FAR_SYS:
-		return rz_str_dup("__syscall");
+		return "__syscall";
 	case THISCALL:
-		return rz_str_dup("__thiscall");
+		return "__thiscall";
 	case NEAR_VEC:
-		return rz_str_dup("__vectorcall");
+		return "__vectorcall";
 	default:
 		return NULL;
 	}

@@ -184,59 +184,71 @@ static void print_hex_from_base2(char *base2) {
 }
 
 static void print_ascii_table(void) {
-	printf("%s", ret_ascii_table());
+	printf("%s", rz_get_ascii_table());
 }
 
 static int help(void) {
-	printf(
-		"  =[base]                      ;  rz-ax =10 0x46 -> output in base 10\n"
-		"  int     ->  hex              ;  rz-ax 10\n"
-		"  hex     ->  int              ;  rz-ax 0xa\n"
-		"  -int    ->  hex              ;  rz-ax -77\n"
-		"  -hex    ->  int              ;  rz-ax 0xffffffb3\n"
-		"  int     ->  bin              ;  rz-ax b30\n"
-		"  int     ->  ternary          ;  rz-ax t42\n"
-		"  bin     ->  int              ;  rz-ax 1010d\n"
-		"  ternary ->  int              ;  rz-ax 1010dt\n"
-		"  float   ->  hex              ;  rz-ax 3.33f\n"
-		"  hex     ->  float            ;  rz-ax Fx40551ed8\n"
-		"  oct     ->  hex              ;  rz-ax 35o\n"
-		"  hex     ->  oct              ;  rz-ax Ox12 (O is a letter)\n"
-		"  bin     ->  hex              ;  rz-ax 1100011b\n"
-		"  hex     ->  bin              ;  rz-ax Bx63\n"
-		"  ternary ->  hex              ;  rz-ax 212t\n"
-		"  hex     ->  ternary          ;  rz-ax Tx23\n"
-		"  raw     ->  hex              ;  rz-ax -S < /binfile\n"
-		"  hex     ->  raw              ;  rz-ax -s 414141\n"
-		"  -l                           ;  append newline to output (for -E/-D/-r/..\n"
-		"  -a      show ascii table     ;  rz-ax -a\n"
-		"  -b      bin -> str           ;  rz-ax -b 01000101 01110110\n"
-		"  -B      str -> bin           ;  rz-ax -B hello\n"
-		"  -d      force integer        ;  rz-ax -d 3 -> 3 instead of 0x3\n"
-		"  -e      swap endianness      ;  rz-ax -e 0x33\n"
-		"  -D      base64 decode        ;\n"
-		"  -E      base64 encode        ;\n"
-		"  -f      floating point       ;  rz-ax -f 6.3+2.1\n"
-		"  -F      stdin slurp code hex ;  rz-ax -F < shellcode.[c/py/js]\n"
-		"  -h      show this help       ;  rz-ax -h\n"
-		"  -i      dump as C byte array ;  rz-ax -i < bytes\n"
-		"  -I      IP address <-> LONG  ;  rz-ax -I 3530468537\n"
-		"  -k      keep base            ;  rz-ax -k 33+3 -> 36\n"
-		"  -L      bin -> hex(bignum)   ;  rz-ax -L 111111111 # 0x1ff\n"
-		"  -n      int value -> hexpairs;  rz-ax -n 0x1234 # 34120000\n"
-		"  -o      octalstr -> raw      ;  rz-ax -o \\162 \\172 # rz\n"
-		"  -N      binary number        ;  rz-ax -N 0x1234 # \\x34\\x12\\x00\\x00\n"
-		"  -r      rz style output      ;  rz-ax -r 0x1234\n"
-		"  -s      hexstr -> raw        ;  rz-ax -s 43 4a 50\n"
-		"  -S      raw -> hexstr        ;  rz-ax -S < /bin/ls > ls.hex\n"
-		"  -t      Unix tstamp -> str   ;  rz-ax -t 1234567890\n"
-		"  -m      MS-DOS tstamp -> str ;  rz-ax -m 1234567890\n"
-		"  -W      Win32 tstamp -> str  ;  rz-ax -W 1234567890\n"
-		"  -x      hash string          ;  rz-ax -x linux osx\n"
-		"  -u      units                ;  rz-ax -u 389289238 # 317.0M\n"
-		"  -w      signed word          ;  rz-ax -w 16 0xffff\n"
-		"  -v      version              ;  rz-ax -v\n"
-		"  -p      position of set bits ;  rz-ax -p 0xb3\n");
+	printf(Color_CYAN "Usage:" Color_RESET " rz-ax [options] [expr ...]\n"
+			  "If expr is not provided, reads from stdin\n");
+#define CF Color_GREEN
+#define CA Color_YELLOW
+#define CR Color_RESET
+	const char *options[] = {
+		// clang-format off
+		NULL, NULL,     "int     ->  hex",       "rz-ax 10",
+		NULL, NULL,     "hex     ->  int",       "rz-ax 0xa",
+		NULL, NULL,     "-int    ->  hex",       "rz-ax -77",
+		NULL, NULL,     "-hex    ->  int",       "rz-ax 0xffffffb3",
+		NULL, NULL,     "int     ->  bin",       "rz-ax b30",
+		NULL, NULL,     "int     ->  ternary",   "rz-ax t42",
+		NULL, NULL,     "bin     ->  int",       "rz-ax 1010d",
+		NULL, NULL,     "ternary ->  int",       "rz-ax 1010dt",
+		NULL, NULL,     "float   ->  hex",       "rz-ax 3.33f",
+		NULL, NULL,     "hex     ->  float",     "rz-ax Fx40551ed8",
+		NULL, NULL,     "oct     ->  hex",       "rz-ax 35o",
+		NULL, NULL,     "hex     ->  oct",       "rz-ax Ox12 (O is a letter)",
+		NULL, NULL,     "bin     ->  hex",       "rz-ax 1100011b",
+		NULL, NULL,     "hex     ->  bin",       "rz-ax Bx63",
+		NULL, NULL,     "ternary ->  hex",       "rz-ax 212t",
+		NULL, NULL,     "hex     ->  ternary",   "rz-ax Tx23",
+		NULL, NULL,     "raw     ->  hex",       "rz-ax " CF "-S" CR " < /binfile",
+		NULL, NULL,     "hex     ->  raw",       "rz-ax " CF "-s" CR " 414141",
+		"=",  "\bbase", "",                      "rz-ax " CF "=" CA "10" CR " 0x46 -> output in base 10",
+		"-l", "",       "",                      "append newline to output (for " CF "-E" CR "/" CF "-D" CR "/" CF "-r" CR "/..",
+		"-a", "",       "show ascii table",      "rz-ax " CF "-a" CR "",
+		"-b", "",       "bin -> str",            "rz-ax " CF "-b" CR " 01000101 01110110",
+		"-B", "",       "str -> bin",            "rz-ax " CF "-B" CR " hello",
+		"-d", "",       "force integer",         "rz-ax " CF "-d" CR " 3 -> 3 instead of 0x3",
+		"-e", "",       "swap endianness",       "rz-ax " CF "-e" CR " 0x33",
+		"-D", "",       "base64 decode",         NULL,
+		"-E", "",       "base64 encode",         NULL,
+		"-f", "",       "floating point",        "rz-ax " CF "-f" CR " 6.3+2.1",
+		"-F", "",       "stdin slurp code hex",  "rz-ax " CF "-F" CR " < shellcode.[c/py/js]",
+		"-h", "",       "show this help",        "rz-ax " CF "-h" CR "",
+		"-i", "",       "dump as C byte array",  "rz-ax " CF "-i" CR " < bytes",
+		"-I", "",       "IP address <-> LONG",   "rz-ax " CF "-I" CR " 3530468537",
+		"-k", "",       "keep base",             "rz-ax " CF "-k" CR " 33+3 -> 36",
+		"-L", "",       "bin -> hex(bignum)",    "rz-ax " CF "-L" CR " 111111111 # 0x1ff",
+		"-n", "",       "int value -> hexpairs", "rz-ax " CF "-n" CR " 0x1234 # 34120000",
+		"-o", "",       "octalstr -> raw",       "rz-ax " CF "-o" CR " \\162 \\172 # rz",
+		"-N", "",       "binary number",         "rz-ax " CF "-N" CR " 0x1234 # \\x34\\x12\\x00\\x00",
+		"-r", "",       "rz style output",       "rz-ax " CF "-r" CR " 0x1234",
+		"-s", "",       "hexstr -> raw",         "rz-ax " CF "-s" CR " 43 4a 50",
+		"-S", "",       "raw -> hexstr",         "rz-ax " CF "-S" CR " < /bin/ls > ls.hex",
+		"-t", "",       "Unix tstamp -> str",    "rz-ax " CF "-t" CR " 1234567890",
+		"-m", "",       "MS-DOS tstamp -> str",  "rz-ax " CF "-m" CR " 1234567890",
+		"-W", "",       "Win32 tstamp -> str",   "rz-ax " CF "-W" CR " 1234567890",
+		"-x", "",       "hash string",           "rz-ax " CF "-x" CR " linux osx",
+		"-u", "",       "units",                 "rz-ax " CF "-u" CR " 389289238 # 317.0M",
+		"-w", "",       "signed word",           "rz-ax " CF "-w" CR " 16 0xffff",
+		"-v", "",       "version",               "rz-ax " CF "-v" CR "",
+		"-p", "",       "position of set bits",  "rz-ax " CF "-p" CR " 0xb3",
+		// clang-format on
+	};
+#undef CF
+#undef CA
+#undef CR
+	rz_print_colored_help(options, RZ_ARRAY_SIZE(options), true);
 	return true;
 }
 
@@ -296,7 +308,15 @@ static int rax(RzNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 			case 'I': flags ^= RZ_AX_FLAG_IPADDR_TO_LONG; break;
 			case 'm': flags ^= RZ_AX_FLAG_DOS_TIMESTAMP_TO_STR; break;
 			case 'W': flags ^= RZ_AX_FLAG_WIN_TIMESTAMP_TO_STR; break;
-			case 'v': return rz_main_version_print("rz-ax");
+			case 'v': {
+				RzPath *sys_path = rz_path_new();
+				if (!sys_path) {
+					break;
+				}
+				size_t print_val = rz_main_version_print(sys_path, "rz-ax");
+				rz_path_free(sys_path);
+				return print_val;
+			}
 			case '\0':
 				*_flags = flags;
 				return !use_stdin(num, _flags, fm);
@@ -311,7 +331,6 @@ static int rax(RzNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 					}
 					return format_output(num, out_mode, str, *fm, flags);
 				}
-				printf("Usage: rz-ax [options] [expr ...]\n");
 				return help();
 			}
 			str++;
@@ -505,7 +524,8 @@ dotherax:
 	} else if (is_timestamp(flags)) { // -t, -m, -W
 		RzList *split = rz_str_split_list(str, "GMT", 0);
 		RzListIter *head = rz_list_head(split);
-		char *ts = rz_list_iter_get_data(head);
+		rz_return_val_if_fail(head, false);
+		char *ts = rz_list_val(head);
 		const char *gmt = rz_list_iter_get_next_data(head);
 		if (gmt && strlen(gmt) < 2) {
 			gmt = NULL;
@@ -739,10 +759,10 @@ dotherax:
 RZ_API int rz_main_rz_ax(int argc, const char **argv) {
 	int i, fm = 0;
 	RzNum *num = rz_num_new(NULL, NULL, NULL);
+	ut64 flags = 0;
 	if (argc == 1) {
-		use_stdin(num, 0, &fm);
+		use_stdin(num, &flags, &fm);
 	} else {
-		ut64 flags = 0;
 		for (i = 1; i < argc; i++) {
 			char *argv_i = rz_str_dup(argv[i]);
 			rz_str_unescape(argv_i);

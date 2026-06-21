@@ -1,10 +1,5 @@
 egg_plugins_list = [
-  # commented plugins were never built.
-  #'bind',
-  #'cb',
   'exec',
-  #'reverse',
-  #'shya',
   'xor',
 ]
 
@@ -16,18 +11,13 @@ egg_plugins = {
 
 rz_egg_sources = [
   'egg.c',
-  'egg_Cfile.c',
+  'egg_c_compile.c',
   'egg_lang.c',
-  'emit_arm.c',
-  'emit_trace.c',
-  'emit_x64.c',
-  'emit_x86.c',
-  # commented plugins were never built.
-  #'p/egg_bind.c',
-  #'p/egg_cb.c',
+  'emit/arm.c',
+  'emit/trace.c',
+  'emit/x64.c',
+  'emit/x86.c',
   'p/egg_exec.c',
-  #'p/egg_reverse.c',
-  #'p/egg_shya.c',
   'p/egg_xor.c'
 ]
 
@@ -37,7 +27,6 @@ rz_egg = library('rz_egg', rz_egg_sources,
     rz_util_dep,
     rz_syscall_dep,
     rz_arch_dep,
-    mpc_dep
   ],
   install: true,
   implicit_include_directories: false,

@@ -133,7 +133,6 @@ commands:
         type: RZ_CMD_DESC_TYPE_ARGV_MODES
         modes:
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
         args: []
       - name: cwr
         summary: Reset/revert watcher at current offset

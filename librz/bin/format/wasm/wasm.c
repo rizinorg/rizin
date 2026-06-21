@@ -127,7 +127,7 @@ static size_t consume_locals_r(RzBuffer *b, ut64 max, RzBinWasmCodeEntry *out) {
 		if (!(consume_u32_r(b, max, &out->locals[j].count))) {
 			goto beach;
 		}
-		if (!(consume_s7_r(b, max, (st8 *)&out->locals[j].type))) {
+		if (!(consume_s7_r(b, max, &out->locals[j].type))) {
 			goto beach;
 		}
 		j++;
@@ -314,24 +314,24 @@ static void *parse_type_entry(RzBuffer *b, ut64 max) {
 		goto beach;
 	}
 	if (count > 0) {
-		if (!(ptr->param_types = RZ_NEWS0(RzBinWasmValueType, count))) {
+		if (!(ptr->param_types = RZ_NEWS0(st8, count))) {
 			goto beach;
 		}
 	}
 	int j;
 	for (j = 0; j < count; j++) {
-		if (!(consume_s7_r(b, max, (st8 *)&ptr->param_types[j]))) {
+		if (!(consume_s7_r(b, max, &ptr->param_types[j]))) {
 			goto beach;
 		}
 	}
-	if (!(consume_u1_r(b, max, (ut8 *)&ptr->return_count))) {
+	if (!(consume_u1_r(b, max, &ptr->return_count))) {
 		goto beach;
 	}
 	if (ptr->return_count > 1) {
 		goto beach;
 	}
 	if (ptr->return_count == 1) {
-		if (!(consume_s7_r(b, max, (st8 *)&ptr->return_type))) {
+		if (!(consume_s7_r(b, max, &ptr->return_type))) {
 			goto beach;
 		}
 	}
@@ -363,7 +363,7 @@ static void *parse_import_entry(RzBuffer *b, ut64 max) {
 		}
 		break;
 	case RZ_BIN_WASM_EXTERNALKIND_Table:
-		if (!(consume_s7_r(b, max, (st8 *)&ptr->type_t.elem_type))) {
+		if (!(consume_s7_r(b, max, &ptr->type_t.elem_type))) {
 			goto beach;
 		}
 		if (!(consume_limits_r(b, max, &ptr->type_t.limits))) {
@@ -376,10 +376,10 @@ static void *parse_import_entry(RzBuffer *b, ut64 max) {
 		}
 		break;
 	case RZ_BIN_WASM_EXTERNALKIND_Global:
-		if (!(consume_s7_r(b, max, (st8 *)&ptr->type_g.content_type))) {
+		if (!(consume_s7_r(b, max, &ptr->type_g.content_type))) {
 			goto beach;
 		}
-		if (!(consume_u1_r(b, max, (ut8 *)&ptr->type_g.mutability))) {
+		if (!(consume_u1_r(b, max, &ptr->type_g.mutability))) {
 			goto beach;
 		}
 		break;
@@ -614,7 +614,7 @@ static void *parse_table_entry(RzBuffer *b, ut64 max) {
 	if (!ptr) {
 		return NULL;
 	}
-	if (!(consume_s7_r(b, max, (st8 *)&ptr->element_type))) {
+	if (!(consume_s7_r(b, max, &ptr->element_type))) {
 		goto beach;
 	}
 	if (!(consume_limits_r(b, max, &ptr->limits))) {
@@ -632,7 +632,7 @@ static void *parse_global_entry(RzBuffer *b, ut64 max) {
 	if (!ptr) {
 		return NULL;
 	}
-	if (!(consume_u7_r(b, max, (ut8 *)&ptr->content_type))) {
+	if (!(consume_u7_r(b, max, &ptr->content_type))) {
 		goto beach;
 	}
 	if (!(consume_u1_r(b, max, &ptr->mutability))) {
@@ -984,7 +984,7 @@ ut32 rz_bin_wasm_get_entrypoint(RzBinWasmObj *bin) {
 		start = bin->g_start;
 	} else if (!(secs = rz_bin_wasm_get_sections_by_id(bin->g_sections, RZ_BIN_WASM_SECTION_START))) {
 		return 0;
-	} else if (!(sec = (RzBinWasmSection *)rz_list_first(secs))) {
+	} else if (!(sec = (RzBinWasmSection *)rz_list_first_val(secs))) {
 		rz_list_free(secs);
 		return 0;
 	} else {
@@ -1019,7 +1019,7 @@ RzList /*<RzBinWasmImportEntry *>*/ *rz_bin_wasm_get_imports(RzBinWasmObj *bin) 
 		return rz_list_new();
 	}
 	// support for multiple import sections against spec
-	if (!(import = (RzBinWasmSection *)rz_list_first(imports))) {
+	if (!(import = (RzBinWasmSection *)rz_list_first_val(imports))) {
 		rz_list_free(imports);
 		return rz_list_new();
 	}
@@ -1042,7 +1042,7 @@ RzList /*<RzBinWasmExportEntry *>*/ *rz_bin_wasm_get_exports(RzBinWasmObj *bin) 
 		return rz_list_new();
 	}
 	// support for multiple export sections against spec
-	if (!(export = (RzBinWasmSection *)rz_list_first(exports))) {
+	if (!(export = (RzBinWasmSection *)rz_list_first_val(exports))) {
 		rz_list_free(exports);
 		return rz_list_new();
 	}
@@ -1065,7 +1065,7 @@ RzList /*<RzBinWasmTypeEntry *>*/ *rz_bin_wasm_get_types(RzBinWasmObj *bin) {
 		return rz_list_new();
 	}
 	// support for multiple export sections against spec
-	if (!(type = (RzBinWasmSection *)rz_list_first(types))) {
+	if (!(type = (RzBinWasmSection *)rz_list_first_val(types))) {
 		rz_list_free(types);
 		return rz_list_new();
 	}
@@ -1088,7 +1088,7 @@ RzList /*<RzBinWasmTableEntry *>*/ *rz_bin_wasm_get_tables(RzBinWasmObj *bin) {
 		return rz_list_new();
 	}
 	// support for multiple export sections against spec
-	if (!(table = (RzBinWasmSection *)rz_list_first(tables))) {
+	if (!(table = (RzBinWasmSection *)rz_list_first_val(tables))) {
 		rz_list_free(tables);
 		return rz_list_new();
 	}
@@ -1114,7 +1114,7 @@ RzList /*<RzBinWasmMemoryEntry *>*/ *rz_bin_wasm_get_memories(RzBinWasmObj *bin)
 	}
 
 	// support for multiple export sections against spec
-	if (!(memory = (RzBinWasmSection *)rz_list_first(memories))) {
+	if (!(memory = (RzBinWasmSection *)rz_list_first_val(memories))) {
 		rz_list_free(memories);
 		return rz_list_new();
 	}
@@ -1138,7 +1138,7 @@ RzList /*<RzBinWasmGlobalEntry *>*/ *rz_bin_wasm_get_globals(RzBinWasmObj *bin) 
 		return rz_list_new();
 	}
 	// support for multiple export sections against spec
-	if (!(global = (RzBinWasmSection *)rz_list_first(globals))) {
+	if (!(global = (RzBinWasmSection *)rz_list_first_val(globals))) {
 		rz_list_free(globals);
 		return rz_list_new();
 	}
@@ -1161,7 +1161,7 @@ RzList /*<RzBinWasmElementEntry *>*/ *rz_bin_wasm_get_elements(RzBinWasmObj *bin
 		return rz_list_new();
 	}
 	// support for multiple export sections against spec
-	if (!(element = (RzBinWasmSection *)rz_list_first(elements))) {
+	if (!(element = (RzBinWasmSection *)rz_list_first_val(elements))) {
 		rz_list_free(elements);
 		return rz_list_new();
 	}
@@ -1184,7 +1184,7 @@ RzList /*<RzBinWasmCodeEntry *>*/ *rz_bin_wasm_get_codes(RzBinWasmObj *bin) {
 		return rz_list_new();
 	}
 	// support for multiple export sections against spec
-	if (!(code = (RzBinWasmSection *)rz_list_first(codes))) {
+	if (!(code = (RzBinWasmSection *)rz_list_first_val(codes))) {
 		rz_list_free(codes);
 		return rz_list_new();
 	}
@@ -1207,7 +1207,7 @@ RzList /*<RzBinWasmDataEntry *>*/ *rz_bin_wasm_get_datas(RzBinWasmObj *bin) {
 		return rz_list_new();
 	}
 	// support for multiple export sections against spec
-	if (!(data = (RzBinWasmSection *)rz_list_first(datas))) {
+	if (!(data = (RzBinWasmSection *)rz_list_first_val(datas))) {
 		rz_list_free(datas);
 		return rz_list_new();
 	}
@@ -1229,7 +1229,7 @@ RzList /*<RzBinWasmCustomNameEntry *>*/ *rz_bin_wasm_get_custom_names(RzBinWasmO
 		return rz_list_new();
 	}
 	// support for multiple "name" sections against spec
-	if (!(cust = (RzBinWasmSection *)rz_list_first(customs)) || strncmp(cust->name, "name", 5)) {
+	if (!(cust = (RzBinWasmSection *)rz_list_first_val(customs)) || strncmp(cust->name, "name", 5)) {
 		rz_list_free(customs);
 		return rz_list_new();
 	}

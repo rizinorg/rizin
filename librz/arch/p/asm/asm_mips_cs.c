@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 #include <mips/mips_internal.h>
 #include <capstone/capstone.h>
@@ -10,7 +11,7 @@
 
 CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(mips_asm);
 
-static int mips_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int mips_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 
 	cs_insn *insn;
@@ -78,11 +79,11 @@ fin:
 	return op->size;
 }
 
-static int mips_assemble(RzAsm *a, RzAsmOp *op, const char *str) {
+static int mips_assemble(const RzAsm *a, RzAsmOp *op, const char *str) {
 	return mips_assemble_opcode(str, a->pc, &op->buf, a->big_endian);
 }
 
-char **mips_cpu_descriptions() {
+static char **mips_cpu_descriptions() {
 	static char *cpu_desc[] = {
 		"mips3", "MIPS III architecture.",
 		"mips1", "MIPS I architecture",
@@ -121,6 +122,16 @@ char **mips_cpu_descriptions() {
 	return cpu_desc;
 }
 
+static bool mips_sw_breakpoint(const RzAsm *a, ut64 addr, const RzAsmOp *original, RzAsmOp *breakpoint) {
+	// mips32/64
+	// { 32, 4, 0, "\x0d\x00\x00\x00" },
+	// { 32, 4, 1, "\x00\x00\x00\x0d" },
+	// { 64, 4, 0, "\x0d\x00\x00\x00" },
+	// { 64, 4, 1, "\x00\x00\x00\x0d" },
+	rz_asm_op_set_buf(breakpoint, a->big_endian ? (const ut8 *)"\x00\x00\x00\x0d" : (const ut8 *)"\x0d\x00\x00\x00", 4);
+	return true;
+}
+
 RzAsmPlugin rz_asm_plugin_mips_cs = {
 	.name = "mips",
 	.desc = "MIPS Capstone-based disassembler",
@@ -135,6 +146,7 @@ RzAsmPlugin rz_asm_plugin_mips_cs = {
 	.mnemonics = mips_asm_mnemonics,
 	.assemble = &mips_assemble,
 	.get_cpu_desc = mips_cpu_descriptions,
+	.sw_breakpoint = mips_sw_breakpoint,
 };
 
 #ifndef RZ_PLUGIN_INCORE

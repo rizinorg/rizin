@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
-// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2021-2026 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021-2026 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /** \file diff.c
@@ -76,6 +76,7 @@ typedef struct block_t {
 } Block;
 
 typedef void (*RzDiffMethodFree)(const void *array);
+typedef RzDiffMatch *(*RzDiffFindLongestMatch)(RzDiff *diff, Block *block);
 
 typedef struct methods_internal_t {
 	RzDiffMethodElemAt elem_at;
@@ -84,16 +85,20 @@ typedef struct methods_internal_t {
 	RzDiffMethodIgnore ignore;
 	RzDiffMethodStringify stringify;
 	RzDiffMethodFree free;
+	RzDiffFindLongestMatch find_longest_match;
 } MethodsInternal;
 
 struct rz_diff_t {
 	const void *a;
 	const void *b;
-	ut32 a_size;
-	ut32 b_size;
-	HtPP *b_hits;
+	HtPP /*<void *, RzList *>*/ *b_hits;
+	size_t a_size;
+	size_t b_size;
+	size_t block_size;
 	MethodsInternal methods;
 };
+
+static RzDiffMatch *generic_find_longest_match(RzDiff *diff, Block *block);
 
 /**
  * \brief Calculates the hash of any given data
@@ -117,6 +122,18 @@ static ut32 default_ksize(const void *a) {
 
 static bool fake_ignore(const void *value) {
 	return false;
+}
+
+static RzDiffMatch *match_new(ut32 a, ut32 b, ut32 size) {
+	RzDiffMatch *match = RZ_NEW0(RzDiffMatch);
+	if (!match) {
+		return NULL;
+	}
+
+	match->a = a;
+	match->b = b;
+	match->size = size;
+	return match;
 }
 
 #include "bytes_diff.c"
@@ -192,7 +209,7 @@ static bool set_b(RzDiff *diff, const void *b, ut32 b_size) {
  * using the methods defined in methods_bytes.
  * Allows to define an callback function to ignore bytes.
  * */
-RZ_API RZ_OWN RzDiff *rz_diff_bytes_new(RZ_BORROW const ut8 *a, ut32 a_size, RZ_BORROW const ut8 *b, ut32 b_size, RZ_NULLABLE RzDiffIgnoreByte ignore) {
+RZ_API RZ_OWN RzDiff *rz_diff_bytes_new(RZ_BORROW const ut8 *a, ut32 a_size, RZ_BORROW const ut8 *b, ut32 b_size) {
 	rz_return_val_if_fail(a && b, NULL);
 
 	RzDiff *diff = RZ_NEW0(RzDiff);
@@ -201,18 +218,11 @@ RZ_API RZ_OWN RzDiff *rz_diff_bytes_new(RZ_BORROW const ut8 *a, ut32 a_size, RZ_
 	}
 
 	diff->methods = methods_bytes;
-	if (ignore) {
-		diff->methods.ignore = (RzDiffMethodIgnore)ignore;
-	}
+	diff->a = a;
+	diff->b = b;
+	diff->a_size = a_size;
+	diff->b_size = b_size;
 
-	if (!set_a(diff, a, a_size)) {
-		rz_diff_free(diff);
-		return NULL;
-	}
-	if (!set_b(diff, b, b_size)) {
-		rz_diff_free(diff);
-		return NULL;
-	}
 	return diff;
 }
 
@@ -241,7 +251,6 @@ RZ_API RZ_OWN RzDiff *rz_diff_lines_new(RZ_BORROW const char *a, RZ_BORROW const
 	}
 
 	diff->methods = methods_lines;
-
 	if (ignore) {
 		diff->methods.ignore = (RzDiffMethodIgnore)ignore;
 	}
@@ -271,6 +280,7 @@ RZ_API RZ_OWN RzDiff *rz_diff_generic_new(RZ_BORROW const void *a, ut32 a_size, 
 		return NULL;
 	}
 
+	diff->methods.find_longest_match = generic_find_longest_match;
 	diff->methods.free = NULL;
 	diff->methods.elem_at = methods->elem_at;
 	diff->methods.elem_hash = methods->elem_hash;
@@ -341,6 +351,7 @@ static inline bool stack_append_block(RzList /*<RzDiffOp *>*/ *stack, ut32 a_low
 	block->a_hi = a_hi;
 	block->b_low = b_low;
 	block->b_hi = b_hi;
+
 	if (!rz_list_append(stack, block)) {
 		free(block);
 		return false;
@@ -348,20 +359,8 @@ static inline bool stack_append_block(RzList /*<RzDiffOp *>*/ *stack, ut32 a_low
 	return true;
 }
 
-static RzDiffMatch *match_new(ut32 a, ut32 b, ut32 size) {
-	RzDiffMatch *match = RZ_NEW0(RzDiffMatch);
-	if (!match) {
-		return NULL;
-	}
-
-	match->a = a;
-	match->b = b;
-	match->size = size;
-	return match;
-}
-
-static RzDiffMatch *find_longest_match(RzDiff *diff, Block *block) {
-	rz_return_val_if_fail(diff && diff->methods.elem_at && diff->methods.compare && diff->methods.ignore, false);
+static RzDiffMatch *generic_find_longest_match(RzDiff *diff, Block *block) {
+	rz_return_val_if_fail(diff && diff->methods.elem_at && diff->methods.compare && diff->methods.ignore, NULL);
 	RzList *list = NULL;
 	RzListIter *it = NULL;
 	RzDiffMatch *match = NULL;
@@ -387,16 +386,16 @@ static RzDiffMatch *find_longest_match(RzDiff *diff, Block *block) {
 
 	len_map = ht_uu_new();
 	if (!len_map) {
-		RZ_LOG_ERROR("find_longest_match: cannot allocate len_map\n");
-		goto find_longest_match_fail;
+		RZ_LOG_ERROR("generic_find_longest_match: cannot allocate len_map\n");
+		goto generic_find_longest_match_fail;
 	}
 
 	for (ut32 a_pos = a_low; a_pos < a_hi; ++a_pos) {
 		elem_a = elem_at(a, a_pos);
 		tmp = ht_uu_new();
 		if (!tmp) {
-			RZ_LOG_ERROR("find_longest_match: cannot allocate tmp\n");
-			goto find_longest_match_fail;
+			RZ_LOG_ERROR("generic_find_longest_match: cannot allocate tmp\n");
+			goto generic_find_longest_match_fail;
 		}
 
 		list = ht_pp_find(diff->b_hits, elem_a, NULL);
@@ -465,14 +464,14 @@ static RzDiffMatch *find_longest_match(RzDiff *diff, Block *block) {
 
 	match = match_new(hit_a, hit_b, hit_size);
 	if (!match) {
-		RZ_LOG_ERROR("find_longest_match: cannot allocate RzDiffMatch\n");
-		goto find_longest_match_fail;
+		RZ_LOG_ERROR("generic_find_longest_match: cannot allocate RzDiffMatch\n");
+		goto generic_find_longest_match_fail;
 	}
 
 	ht_uu_free(len_map);
 	return match;
 
-find_longest_match_fail:
+generic_find_longest_match_fail:
 	ht_uu_free(tmp);
 	ht_uu_free(len_map);
 	return NULL;
@@ -536,35 +535,34 @@ RZ_API RZ_OWN RzList /*<RzDiffMatch *>*/ *rz_diff_matches_new(RZ_NONNULL RzDiff 
 
 	while (rz_list_length(stack) > 0) {
 		block = (Block *)rz_list_pop(stack);
-		match = find_longest_match(diff, block);
-		if (!match) {
+		match = diff->methods.find_longest_match(diff, block);
+		if (!match || match->size < 1) {
+			free(match);
+			free(block);
 			continue;
 		}
 
-		if (match->size > 0) {
-			if (!rz_list_append(matches, match)) {
-				RZ_LOG_ERROR("rz_diff_matches_new: cannot append match into matches\n");
-				free(match);
-				goto rz_diff_matches_new_fail;
-			}
-			if (block->a_low < match->a && block->b_low < match->b) {
-				if (!stack_append_block(stack, block->a_low, match->a, block->b_low, match->b)) {
-					RZ_LOG_ERROR("rz_diff_matches_new: cannot append low block into stack\n");
-					goto rz_diff_matches_new_fail;
-				}
-			}
-			if (match->a + match->size < block->a_hi && match->b + match->size < block->b_hi) {
-				if (!stack_append_block(stack, match->a + match->size, block->a_hi, match->b + match->size, block->b_hi)) {
-					RZ_LOG_ERROR("rz_diff_matches_new: cannot append high block into stack\n");
-					goto rz_diff_matches_new_fail;
-				}
-			}
-		} else {
+		// add the match
+		if (!rz_list_add_sorted(matches, match, (RzListComparator)cmp_matches, NULL)) {
+			RZ_LOG_ERROR("rz_diff_matches_new: cannot append match into matches\n");
 			free(match);
+			free(block);
+			goto rz_diff_matches_new_fail;
+		}
+		if (block->a_low < match->a && block->b_low < match->b &&
+			!stack_append_block(stack, block->a_low, match->a, block->b_low, match->b)) {
+			RZ_LOG_ERROR("rz_diff_matches_new: cannot append low block into stack\n");
+			free(block);
+			goto rz_diff_matches_new_fail;
+		}
+		if (match->a + match->size < block->a_hi && match->b + match->size < block->b_hi &&
+			!stack_append_block(stack, match->a + match->size, block->a_hi, match->b + match->size, block->b_hi)) {
+			RZ_LOG_ERROR("rz_diff_matches_new: cannot append high block into stack\n");
+			free(block);
+			goto rz_diff_matches_new_fail;
 		}
 		free(block);
 	}
-	rz_list_sort(matches, (RzListComparator)cmp_matches, NULL);
 
 	adj_a = 0;
 	adj_b = 0;
@@ -658,6 +656,7 @@ RZ_API RZ_OWN RzList /*<RzDiffOp *>*/ *rz_diff_opcodes_new(RZ_NONNULL RzDiff *di
 
 	a = 0;
 	b = 0;
+
 	rz_list_foreach (matches, it, match) {
 		type = RZ_DIFF_OP_INVALID;
 
@@ -684,6 +683,12 @@ RZ_API RZ_OWN RzList /*<RzDiffOp *>*/ *rz_diff_opcodes_new(RZ_NONNULL RzDiff *di
 		b = match->b + match->size;
 
 		if (match->size > 0) {
+			if (op && op->type == RZ_DIFF_OP_EQUAL) {
+				// last op is equal we merge.
+				op->a_end = a;
+				op->b_end = b;
+				continue;
+			}
 			op = opcode_new(RZ_DIFF_OP_EQUAL, match->a, a, match->b, b);
 			if (!op) {
 				RZ_LOG_ERROR("rz_diff_opcodes_new: cannot allocate op\n");
@@ -750,12 +755,12 @@ RZ_API RZ_OWN RzList /*<RzList<RzDiffOp *> *>*/ *rz_diff_opcodes_grouped_new(RZ_
 		}
 	}
 
-	op = rz_list_first(opcodes);
+	op = rz_list_first_val(opcodes);
 	if (op->type == RZ_DIFF_OP_EQUAL) {
 		opcode_set(op, op->type, RZ_MAX(op->a_beg, op->a_end - n_groups), op->a_end, RZ_MAX(op->b_beg, op->b_end - n_groups), op->b_end);
 	}
 
-	op = rz_list_last(opcodes);
+	op = rz_list_last_val(opcodes);
 	if (op->type == RZ_DIFF_OP_EQUAL) {
 		opcode_set(op, op->type, op->a_beg, RZ_MIN(op->a_end, op->a_beg + n_groups), op->b_beg, RZ_MIN(op->b_end, op->b_beg + n_groups));
 	}
@@ -808,7 +813,7 @@ RZ_API RZ_OWN RzList /*<RzList<RzDiffOp *> *>*/ *rz_diff_opcodes_grouped_new(RZ_
 		}
 	}
 
-	op = rz_list_first(opcodes);
+	op = rz_list_first_val(opcodes);
 	if (!(rz_list_length(opcodes) == 1 && op->type == RZ_DIFF_OP_EQUAL)) {
 		if (!rz_list_append(groups, group)) {
 			RZ_LOG_ERROR("rz_diff_opcodes_grouped_new: cannot append group into groups\n");

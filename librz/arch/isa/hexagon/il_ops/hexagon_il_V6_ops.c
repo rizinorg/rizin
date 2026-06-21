@@ -1,9 +1,9 @@
-// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
+// SPDX-FileCopyrightText: 2021 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// LLVM commit: c2b89fc9e45d325282b8eb6536f6145282dc3fdf
-// LLVM commit date: 2024-12-23 13:36:28 -0600 (ISO 8601 format)
-// Date of code generation: 2025-02-22 07:05:24-05:00
+// LLVM commit: bc5ac5f3ebb0bc4fc65cef7160c817ca3174a68e
+// LLVM commit date: 2026-03-15 10:22:07 -0700 (ISO 8601 format)
+// Date of code generation: 2026-03-23 17:45:56+01:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -13,6 +13,21 @@
 #include "../hexagon_il.h"
 #include <hexagon/hexagon.h>
 #include <rz_il/rz_il_opcodes.h>
+
+// Vd = vgetqfext(Vu.x,Rt)
+RzILOpEffect *hex_il_op_v6_get_qfext(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vx |= vgetqfext(Vu.x,Rt)
+RzILOpEffect *hex_il_op_v6_get_qfext_oracc(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.x = vsetqfext(Vu,Rt)
+RzILOpEffect *hex_il_op_v6_set_qfext(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
 
 // Vd = vmemu(Rt+Ii)
 RzILOpEffect *hex_il_op_v6_vl32ub_ai(HexInsnPktBundle *bundle) {
@@ -509,8 +524,33 @@ RzILOpEffect *hex_il_op_v6_vs32b_srls_ppu(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
 }
 
+// Vd.f8 = vabs(Vu.f8)
+RzILOpEffect *hex_il_op_v6_vabs_f8(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
 // Vd.hf = vabs(Vu.hf)
 RzILOpEffect *hex_il_op_v6_vabs_hf(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.qf16 = vabs(Vu.hf)
+RzILOpEffect *hex_il_op_v6_vabs_qf16_hf(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.qf16 = vabs(Vu.qf16)
+RzILOpEffect *hex_il_op_v6_vabs_qf16_qf16(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.qf32 = vabs(Vu.qf32)
+RzILOpEffect *hex_il_op_v6_vabs_qf32_qf32(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.qf32 = vabs(Vu.sf)
+RzILOpEffect *hex_il_op_v6_vabs_qf32_sf(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
 }
 
@@ -521,6 +561,11 @@ RzILOpEffect *hex_il_op_v6_vabs_sf(HexInsnPktBundle *bundle) {
 
 // Vd.qf16 = vadd(Vu.hf,Vv.hf)
 RzILOpEffect *hex_il_op_v6_vadd_hf(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vdd.hf = vadd(Vu.f8,Vv.f8)
+RzILOpEffect *hex_il_op_v6_vadd_hf_f8(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
 }
 
@@ -569,13 +614,33 @@ RzILOpEffect *hex_il_op_v6_vadd_sf_sf(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
 }
 
+// Vd = valign4(Vu,Vv,Rt)
+RzILOpEffect *hex_il_op_v6_valign4(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
 // Vd.w = vfmv(Vu.w)
 RzILOpEffect *hex_il_op_v6_vassign_fp(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
 }
 
+// Vd.bf = Vuu.qf32
+RzILOpEffect *hex_il_op_v6_vconv_bf_qf32(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.f8 = Vu.qf16
+RzILOpEffect *hex_il_op_v6_vconv_f8_qf16(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
 // Vd.h = Vu.hf
 RzILOpEffect *hex_il_op_v6_vconv_h_hf(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.h = Vu.hf:rnd
+RzILOpEffect *hex_il_op_v6_vconv_h_hf_rnd(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
 }
 
@@ -594,6 +659,31 @@ RzILOpEffect *hex_il_op_v6_vconv_hf_qf32(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
 }
 
+// Vdd.qf16 = Vu.f8
+RzILOpEffect *hex_il_op_v6_vconv_qf16_f8(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.qf16 = Vu.hf
+RzILOpEffect *hex_il_op_v6_vconv_qf16_hf(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.qf16 = Vu.qf16
+RzILOpEffect *hex_il_op_v6_vconv_qf16_qf16(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.qf32 = Vu.qf32
+RzILOpEffect *hex_il_op_v6_vconv_qf32_qf32(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.qf32 = Vu.sf
+RzILOpEffect *hex_il_op_v6_vconv_qf32_sf(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
 // Vd.sf = Vu.qf32
 RzILOpEffect *hex_il_op_v6_vconv_sf_qf32(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
@@ -609,6 +699,26 @@ RzILOpEffect *hex_il_op_v6_vconv_w_sf(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
 }
 
+// Vd.b = vcvt2(Vu.hf,Vv.hf)
+RzILOpEffect *hex_il_op_v6_vcvt2_b_hf(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vdd.hf = vcvt2(Vu.b)
+RzILOpEffect *hex_il_op_v6_vcvt2_hf_b(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vdd.hf = vcvt2(Vu.ub)
+RzILOpEffect *hex_il_op_v6_vcvt2_hf_ub(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.ub = vcvt2(Vu.hf,Vv.hf)
+RzILOpEffect *hex_il_op_v6_vcvt2_ub_hf(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
 // Vd.b = vcvt(Vu.hf,Vv.hf)
 RzILOpEffect *hex_il_op_v6_vcvt_b_hf(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
@@ -619,6 +729,11 @@ RzILOpEffect *hex_il_op_v6_vcvt_bf_sf(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
 }
 
+// Vd.f8 = vcvt(Vu.hf,Vv.hf)
+RzILOpEffect *hex_il_op_v6_vcvt_f8_hf(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
 // Vd.h = vcvt(Vu.hf)
 RzILOpEffect *hex_il_op_v6_vcvt_h_hf(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
@@ -626,6 +741,11 @@ RzILOpEffect *hex_il_op_v6_vcvt_h_hf(HexInsnPktBundle *bundle) {
 
 // Vdd.hf = vcvt(Vu.b)
 RzILOpEffect *hex_il_op_v6_vcvt_hf_b(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vdd.hf = vcvt(Vu.f8)
+RzILOpEffect *hex_il_op_v6_vcvt_hf_f8(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
 }
 
@@ -674,6 +794,51 @@ RzILOpEffect *hex_il_op_v6_vdmpy_sf_hf_acc(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
 }
 
+// Qd = vcmp.eq(Vu.hf,Vv.hf)
+RzILOpEffect *hex_il_op_v6_veqhf(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Qx &= vcmp.eq(Vu.hf,Vv.hf)
+RzILOpEffect *hex_il_op_v6_veqhf_and(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Qx |= vcmp.eq(Vu.hf,Vv.hf)
+RzILOpEffect *hex_il_op_v6_veqhf_or(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Qx ^= vcmp.eq(Vu.hf,Vv.hf)
+RzILOpEffect *hex_il_op_v6_veqhf_xor(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Qd = vcmp.eq(Vu.sf,Vv.sf)
+RzILOpEffect *hex_il_op_v6_veqsf(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Qx &= vcmp.eq(Vu.sf,Vv.sf)
+RzILOpEffect *hex_il_op_v6_veqsf_and(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Qx |= vcmp.eq(Vu.sf,Vv.sf)
+RzILOpEffect *hex_il_op_v6_veqsf_or(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Qx ^= vcmp.eq(Vu.sf,Vv.sf)
+RzILOpEffect *hex_il_op_v6_veqsf_xor(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.f8 = vfmax(Vu.f8,Vv.f8)
+RzILOpEffect *hex_il_op_v6_vfmax_f8(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
 // Vd.hf = vfmax(Vu.hf,Vv.hf)
 RzILOpEffect *hex_il_op_v6_vfmax_hf(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
@@ -684,6 +849,11 @@ RzILOpEffect *hex_il_op_v6_vfmax_sf(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
 }
 
+// Vd.f8 = vfmin(Vu.f8,Vv.f8)
+RzILOpEffect *hex_il_op_v6_vfmin_f8(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
 // Vd.hf = vfmin(Vu.hf,Vv.hf)
 RzILOpEffect *hex_il_op_v6_vfmin_hf(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
@@ -691,6 +861,11 @@ RzILOpEffect *hex_il_op_v6_vfmin_hf(HexInsnPktBundle *bundle) {
 
 // Vd.sf = vfmin(Vu.sf,Vv.sf)
 RzILOpEffect *hex_il_op_v6_vfmin_sf(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.f8 = vfneg(Vu.f8)
+RzILOpEffect *hex_il_op_v6_vfneg_f8(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
 }
 
@@ -764,6 +939,26 @@ RzILOpEffect *hex_il_op_v6_vgtsf_xor(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
 }
 
+// Vd.w = vilog2(Vu.hf)
+RzILOpEffect *hex_il_op_v6_vilog2_hf(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.w = vilog2(Vu.qf16)
+RzILOpEffect *hex_il_op_v6_vilog2_qf16(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.w = vilog2(Vu.qf32)
+RzILOpEffect *hex_il_op_v6_vilog2_qf32(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.w = vilog2(Vu.sf)
+RzILOpEffect *hex_il_op_v6_vilog2_sf(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
 // Vd.bf = vmax(Vu.bf,Vv.bf)
 RzILOpEffect *hex_il_op_v6_vmax_bf(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
@@ -779,6 +974,11 @@ RzILOpEffect *hex_il_op_v6_vmax_sf(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
 }
 
+// Vd = vmerge(Vu.x,Vv.w)
+RzILOpEffect *hex_il_op_v6_vmerge_qf(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
 // Vd.bf = vmin(Vu.bf,Vv.bf)
 RzILOpEffect *hex_il_op_v6_vmin_bf(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
@@ -791,6 +991,16 @@ RzILOpEffect *hex_il_op_v6_vmin_hf(HexInsnPktBundle *bundle) {
 
 // Vd.sf = vmin(Vu.sf,Vv.sf)
 RzILOpEffect *hex_il_op_v6_vmin_sf(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vdd.hf = vmpy(Vu.f8,Vv.f8)
+RzILOpEffect *hex_il_op_v6_vmpy_hf_f8(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vxx.hf += vmpy(Vu.f8,Vv.f8)
+RzILOpEffect *hex_il_op_v6_vmpy_hf_f8_acc(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
 }
 
@@ -844,6 +1054,21 @@ RzILOpEffect *hex_il_op_v6_vmpy_qf32_sf(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
 }
 
+// Vd.qf16 = vmpy(Vu.hf,Rt.hf)
+RzILOpEffect *hex_il_op_v6_vmpy_rt_hf(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.qf16 = vmpy(Vu.qf16,Rt.hf)
+RzILOpEffect *hex_il_op_v6_vmpy_rt_qf16(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.qf32 = vmpy(Vu.sf,Rt.sf)
+RzILOpEffect *hex_il_op_v6_vmpy_rt_sf(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
 // Vdd.sf = vmpy(Vu.bf,Vv.bf)
 RzILOpEffect *hex_il_op_v6_vmpy_sf_bf(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
@@ -866,6 +1091,26 @@ RzILOpEffect *hex_il_op_v6_vmpy_sf_hf_acc(HexInsnPktBundle *bundle) {
 
 // Vd.sf = vmpy(Vu.sf,Vv.sf)
 RzILOpEffect *hex_il_op_v6_vmpy_sf_sf(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.qf16 = vneg(Vu.hf)
+RzILOpEffect *hex_il_op_v6_vneg_qf16_hf(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.qf16 = vneg(Vu.qf16)
+RzILOpEffect *hex_il_op_v6_vneg_qf16_qf16(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.qf32 = vneg(Vu.qf32)
+RzILOpEffect *hex_il_op_v6_vneg_qf32_qf32(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.qf32 = vneg(Vu.sf)
+RzILOpEffect *hex_il_op_v6_vneg_qf32_sf(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
 }
 
@@ -994,8 +1239,18 @@ RzILOpEffect *hex_il_op_v6_vsub_hf(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
 }
 
+// Vdd.hf = vsub(Vu.f8,Vv.f8)
+RzILOpEffect *hex_il_op_v6_vsub_hf_f8(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
 // Vd.hf = vsub(Vu.hf,Vv.hf)
 RzILOpEffect *hex_il_op_v6_vsub_hf_hf(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.qf16 = vsub(Vu.hf,Vv.qf16)
+RzILOpEffect *hex_il_op_v6_vsub_hf_mix(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
 }
 
@@ -1031,6 +1286,11 @@ RzILOpEffect *hex_il_op_v6_vsub_sf_bf(HexInsnPktBundle *bundle) {
 
 // Vdd.sf = vsub(Vu.hf,Vv.hf)
 RzILOpEffect *hex_il_op_v6_vsub_sf_hf(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Vd.qf32 = vsub(Vu.sf,Vv.qf32)
+RzILOpEffect *hex_il_op_v6_vsub_sf_mix(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
 }
 

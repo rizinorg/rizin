@@ -11,7 +11,9 @@
 #include <rz_util/rz_strbuf.h>
 #include <rz_vector.h>
 #include <rz_util/rz_print.h>
+#define RZ_NO_ESIL 1
 #include <rz_analysis.h>
+#undef RZ_NO_ESIL
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -294,14 +296,11 @@ static bool isAllZeros(const ut8 *buf, int len) {
 RZ_API void rz_print_hexii(RzPrint *rp, ut64 addr, const ut8 *buf, int len, int step) {
 	PrintfCallback p = (PrintfCallback)rp->cb_printf;
 	bool c = rp->flags & RZ_PRINT_FLAGS_COLOR;
-	const char *color_0xff = c ? (Pal(rp, b0xff)
-					     : Color_RED)
+	const char *color_0xff = c ? (Pal(rp, b0xff) : Color_RED)
 				   : "";
-	const char *color_text = c ? (Pal(rp, btext)
-					     : Color_MAGENTA)
+	const char *color_text = c ? (Pal(rp, btext) : Color_MAGENTA)
 				   : "";
-	const char *color_other = c ? (Pal(rp, other)
-					      : Color_WHITE)
+	const char *color_other = c ? (Pal(rp, other) : Color_WHITE)
 				    : "";
 	const char *color_reset = c ? Color_RESET : "";
 	int i, j;
@@ -329,8 +328,10 @@ RZ_API void rz_print_hexii(RzPrint *rp, ut64 addr, const ut8 *buf, int len, int 
 				p("   ");
 			} else if (ch == 0xff) {
 				p("%s ##%s", color_0xff, color_reset);
-			} else if (IS_PRINTABLE(ch)) {
+			} else if (IS_PRINTABLE(ch) && !(rp->flags & RZ_PRINT_FLAGS_NODOT)) {
 				p("%s .%c%s", color_text, ch, color_reset);
+			} else if (IS_PRINTABLE(ch) && (rp->flags & RZ_PRINT_FLAGS_NODOT)) {
+				p("%s  %c%s", color_text, ch, color_reset);
 			} else {
 				p("%s %02x%s", color_other, ch, color_reset);
 			}
@@ -891,7 +892,7 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 					oPrintValue = printValue;
 					j += step - 1;
 				} else if (base == -8) {
-					long long w = rz_read_ble64(buf + j, p->big_endian);
+					st64 w = rz_read_ble64(buf + j, p->big_endian);
 					print_cursor_l(sb, p, j, 8);
 					rz_strbuf_appendf(sb, "%23" PFMT64d " ", w);
 					print_cursor_r(sb, p, j, 8);
@@ -1086,36 +1087,35 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 	return rz_strbuf_drain(sb);
 }
 
-static const char *getbytediff(RzPrint *p, char *fmt, ut8 a, ut8 b) {
+static const char *getbytediff(RzPrint *p, char *fmt, size_t fmt_sz, ut8 a, ut8 b) {
 	if (*fmt) {
 		if (a == b) {
-			sprintf(fmt, "%s%02x" Color_RESET, p->cons->context->pal.graph_true, a);
+			snprintf(fmt, fmt_sz, "%s%02x" Color_RESET, p->cons->context->pal.graph_true, a);
 		} else {
-			sprintf(fmt, "%s%02x" Color_RESET, p->cons->context->pal.graph_false, a);
+			snprintf(fmt, fmt_sz, "%s%02x" Color_RESET, p->cons->context->pal.graph_false, a);
 		}
 	} else {
-		sprintf(fmt, "%02x", a);
+		snprintf(fmt, fmt_sz, "%02x", a);
 	}
 	return fmt;
 }
 
-static const char *getchardiff(RzPrint *p, char *fmt, ut8 a, ut8 b) {
+static const char *getchardiff(RzPrint *p, char *fmt, size_t fmt_sz, ut8 a, ut8 b) {
 	char ch = IS_PRINTABLE(a) ? a : '.';
 	if (*fmt) {
 		if (a == b) {
-			sprintf(fmt, "%s%c" Color_RESET, p->cons->context->pal.graph_true, ch);
+			snprintf(fmt, fmt_sz, "%s%c" Color_RESET, p->cons->context->pal.graph_true, ch);
 		} else {
-			sprintf(fmt, "%s%c" Color_RESET, p->cons->context->pal.graph_false, ch);
+			snprintf(fmt, fmt_sz, "%s%c" Color_RESET, p->cons->context->pal.graph_false, ch);
 		}
 	} else {
-		sprintf(fmt, "%c", ch);
+		snprintf(fmt, fmt_sz, "%c", ch);
 	}
-	// else { fmt[0] = ch; fmt[1]=0; }
 	return fmt;
 }
 
-#define BD(a, b) getbytediff(p, fmt, (a)[i + j], (b)[i + j])
-#define CD(a, b) getchardiff(p, fmt, (a)[i + j], (b)[i + j])
+#define BD(a, b) getbytediff(p, fmt, sizeof(fmt), (a)[i + j], (b)[i + j])
+#define CD(a, b) getchardiff(p, fmt, sizeof(fmt), (a)[i + j], (b)[i + j])
 
 static ut8 *M(const ut8 *b, int len) {
 	ut8 *r = malloc(len + 16);
@@ -1321,18 +1321,29 @@ RZ_API void rz_print_set_rowoff(RzPrint *p, int i, ut32 offset, bool overwrite) 
 		return;
 	}
 	if (!p->row_offsets || !p->row_offsets_sz) {
-		p->row_offsets_sz = RZ_MAX(i + 1, DFLT_ROWS);
-		p->row_offsets = RZ_NEWS(ut32, p->row_offsets_sz);
+		const int initial_size = RZ_MAX(i + 1, DFLT_ROWS);
+		ut32 *row_offsets = RZ_NEWS(ut32, initial_size);
+		// keep the row offset state unchanged if first alloc fails.
+		if (!row_offsets) {
+			return;
+		}
+		p->row_offsets = row_offsets;
+		p->row_offsets_sz = initial_size;
 	}
 	if (i >= p->row_offsets_sz) {
-		size_t new_size;
-		p->row_offsets_sz *= 2;
+		int new_row_offsets_sz = p->row_offsets_sz;
 		// XXX dangerous
-		while (i >= p->row_offsets_sz) {
-			p->row_offsets_sz *= 2;
+		while (i >= new_row_offsets_sz) {
+			new_row_offsets_sz *= 2;
 		}
-		new_size = sizeof(ut32) * p->row_offsets_sz;
-		p->row_offsets = realloc(p->row_offsets, new_size);
+		size_t new_size = sizeof(ut32) * new_row_offsets_sz;
+		ut32 *tmp = realloc(p->row_offsets, new_size);
+		// only grow the metadata after the backing arr was resized successfully.
+		if (!tmp) {
+			return;
+		}
+		p->row_offsets = tmp;
+		p->row_offsets_sz = new_row_offsets_sz;
 	}
 	p->row_offsets[i] = offset;
 }
@@ -1454,16 +1465,100 @@ RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const Rz
 	return out;
 }
 
-// Prints a help option with the option/arg strings colorized and aligned to a max length.
-RZ_API void rz_print_colored_help_option(const char *option, const char *arg, const char *description, size_t maxOptionAndArgLength) {
-	size_t optionWidth = strlen(option);
-	size_t maxSpaces = maxOptionAndArgLength + 2;
-	printf(Color_GREEN " %-.*s" Color_RESET, (int)optionWidth, option);
-	size_t remainingSpaces = maxSpaces - optionWidth;
-	if (RZ_STR_ISNOTEMPTY(arg)) {
-		printf(Color_YELLOW " %-s " Color_RESET, arg);
-		remainingSpaces -= strlen(arg) + 2;
+/**
+ * \brief Returns the maximum flag+arg length in \p options, and optionally the maximum description length.
+ *
+ * \param options Options string array, with 3 (default) or 4 strings per option depending on \p max_desc_len.
+ * \param options_len Length of \p options in strings, should be RZ_ARRAY_SIZE(options).
+ * \param max_desc_len If not NULL, this will contain the maximum description length in \p options, and function will
+ *        assume that there are 4 strings per option.
+ * \return The maximum flag+arg length in \p options.
+ */
+static size_t options_get_max_len(const char **options, size_t options_len, RZ_NULLABLE size_t *max_desc_len) {
+	int items_per_opt = max_desc_len ? 4 : 3;
+	size_t max_flag_n_arg_len = 0;
+	if (max_desc_len) {
+		*max_desc_len = 0;
 	}
-	printf("%-*.*s", (int)remainingSpaces, (int)remainingSpaces, "");
-	printf(Color_RESET "%s\n", description);
+	for (int i = 0; i < options_len; i += items_per_opt) {
+		size_t flag_len = options[i] ? strlen(options[i]) : 0;
+		size_t arg_len = options[i + 1] ? strlen(options[i + 1]) : 0;
+		size_t flag_n_arg_len = flag_len + arg_len;
+		if (flag_n_arg_len > max_flag_n_arg_len) {
+			max_flag_n_arg_len = flag_n_arg_len;
+		}
+		if (max_desc_len) {
+			size_t desc_len = strlen(options[i + 2]);
+			if (desc_len > *max_desc_len) {
+				*max_desc_len = desc_len;
+			}
+		}
+	}
+	return max_flag_n_arg_len;
+}
+
+/**
+ * \brief Prints a help option with example, with the option flag and arg strings colorized, and both description and
+ *        example aligned to columns.
+ *
+ * \param flag Option flag, will be colored green.
+ * \param arg Option arg, will be colored yellow.
+ * \param desc Option description, will be aligned in the third column unless both \p flag and \p arg are NULL. If so,
+ *        it will be aligned at the first column.
+ * \param max_flag_n_arg_len Width of column containing \p flag and \p arg. It needs to be calculated beforehand as the
+ *        max over all options, perhaps via options_get_max_len().
+ * \param example Optional option example, will be aligned in a column after the description and prefixed with ";  ".
+ * \param max_desc_len Width of column containing \p desc. It needs to be calculated beforehand as the max over all
+ *        descriptions, perhaps via options_get_max_len().
+ */
+static void print_colored_help_option(RZ_NULLABLE const char *flag, RZ_NULLABLE const char *arg, const char *desc,
+	size_t max_flag_n_arg_len, RZ_NULLABLE const char *example, size_t max_desc_len) {
+
+	rz_return_if_fail(desc);
+	bool desc_start = !flag && !arg;
+	size_t max_opt_spaces = max_flag_n_arg_len + 2;
+	printf(" ");
+	if (!desc_start) {
+		if (!flag) {
+			flag = "";
+		}
+		if (!arg) {
+			arg = "";
+		}
+		printf(Color_GREEN "%s" Color_RESET, flag);
+		size_t remaining_spaces = max_opt_spaces - strlen(flag);
+		if (RZ_STR_ISNOTEMPTY(arg)) {
+			printf(Color_YELLOW " %s " Color_RESET, arg);
+			remaining_spaces -= strlen(arg) + 2;
+			if (arg[0] == '\b') {
+				remaining_spaces += 2;
+			}
+		}
+		printf("%*s", (int)remaining_spaces, "");
+	}
+	printf(Color_RESET "%s", desc);
+	if (example) {
+		size_t max_desc_spaces = (desc_start ? max_opt_spaces : 0) + max_desc_len;
+		size_t remaining_spaces = max_desc_spaces - strlen(desc);
+		printf("%*s ;  %s", (int)remaining_spaces, "", example);
+	}
+	printf("\n");
+}
+
+/**
+ * \brief Print colored help from \p options.
+ *
+ * \param options Options string array, with 3 (default) or 4 strings per option depending on \p have_examples.
+ * \param options_len Length of \p options in strings, should be RZ_ARRAY_SIZE(options).
+ * \param have_examples If false, there are 3 strings per option: flag, argument and description. If true, there is a
+ *        4th string for each option that contains an example.
+ */
+RZ_API void rz_print_colored_help(const char **options, size_t options_len, bool have_examples) {
+	rz_return_if_fail(options_len % (have_examples ? 4 : 3) == 0);
+	size_t max_desc_len = 0;
+	size_t max_flag_n_arg_len = options_get_max_len(options, options_len, have_examples ? &max_desc_len : NULL);
+	for (int i = 0; i < options_len; i += have_examples ? 4 : 3) {
+		print_colored_help_option(options[i], options[i + 1], options[i + 2], max_flag_n_arg_len,
+			have_examples ? options[i + 3] : NULL, max_desc_len);
+	}
 }

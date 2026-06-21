@@ -28,8 +28,8 @@ CMDS=pi 5
 EXPECT=<<EOF
 push str.Low_alignment_PE_with_no_section__W7
 call dword [sym.imp.msvcrt.dll_printf]
-add esp, 4
+add esp, 0x04
 nop
-push 0
+push 0x00
 EOF
 RUN

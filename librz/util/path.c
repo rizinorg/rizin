@@ -9,30 +9,7 @@
 #include <rz_windows.h>
 
 #if RZ_IS_PORTABLE
-#include <rz_constructor.h>
 #include <rz_th.h>
-
-static char *portable_prefix = NULL;
-static bool portable_prefix_searched = false;
-static RzThreadLock *portable_prefix_mutex = NULL;
-
-#ifdef RZ_DEFINE_CONSTRUCTOR_NEEDS_PRAGMA
-#pragma RZ_DEFINE_CONSTRUCTOR_PRAGMA_ARGS(init_portable_prefix)
-#endif
-RZ_DEFINE_CONSTRUCTOR(init_portable_prefix)
-static void init_portable_prefix(void) {
-	portable_prefix_mutex = rz_th_lock_new(false);
-}
-
-#ifdef RZ_DEFINE_DESTRUCTOR_NEEDS_PRAGMA
-#pragma RZ_DEFINE_DESTRUCTOR_PRAGMA_ARGS(fini_portable_prefix)
-#endif
-RZ_DEFINE_DESTRUCTOR(fini_portable_prefix)
-static void fini_portable_prefix(void) {
-	RZ_FREE(portable_prefix);
-	portable_prefix_searched = false;
-	RZ_FREE_CUSTOM(portable_prefix_mutex, rz_th_lock_free);
-}
 
 static char *set_portable_prefix(void) {
 	char *pid_to_path = rz_sys_pid_to_path(rz_sys_getpid());
@@ -42,7 +19,6 @@ static char *set_portable_prefix(void) {
 
 	const char *filename = rz_file_basename(pid_to_path);
 	char *it = rz_file_dirname(pid_to_path);
-	free(pid_to_path);
 
 	for (int i = 0; i < RZ_BINDIR_DEPTH && it; i++) {
 		char *tmp = it;
@@ -50,6 +26,7 @@ static char *set_portable_prefix(void) {
 		free(tmp);
 	}
 	if (!it) {
+		free(pid_to_path);
 		goto err;
 	}
 
@@ -65,6 +42,7 @@ static char *set_portable_prefix(void) {
 	}
 
 	char *exe_path = rz_file_path_join(bindir_real, filename);
+	free(pid_to_path);
 	free(bindir_real);
 	char *exe_path_real = rz_path_realpath(exe_path);
 	free(exe_path);
@@ -83,24 +61,23 @@ err:
 /**
  * \brief Return \p path prefixed by the Rizin install prefix
  *
- * The install prefix is taken from the build-time configuration RZ_PREFIX,
- * unless Rizin was not compiled as "portable". In such a case the prefix is
- * either discovered from the path of the executable calling this function or
- * stored via the path variable
- *
- * \param path Path to use when to prefix or NULL to use the binary location
+ * The install prefix is taken from \p path unless path is empty. In such a case the portable prefix is
+ * computed.
+ * \param sys_path RzPath* contains install prefix and mutex.
+ * \param path Path to use when prefixing or NULL to use the executable location
  */
-RZ_API void rz_path_set_prefix(RZ_NONNULL const char *path) {
+RZ_API void rz_path_set_prefix(RZ_BORROW RZ_NONNULL RzPath *sys_path, RZ_NONNULL const char *path) {
 #if RZ_IS_PORTABLE
-	rz_th_lock_enter(portable_prefix_mutex);
-	free(portable_prefix);
+	rz_return_if_fail(sys_path && sys_path->prefix_mutex);
+	rz_th_lock_enter(sys_path->prefix_mutex);
+	free(sys_path->prefix);
 	if (RZ_STR_ISNOTEMPTY(path)) {
-		portable_prefix = rz_str_dup(path);
+		sys_path->prefix = rz_str_dup(path);
 	} else {
-		portable_prefix = set_portable_prefix();
+		sys_path->prefix = set_portable_prefix();
 	}
-	portable_prefix_searched = true;
-	rz_th_lock_leave(portable_prefix_mutex);
+	sys_path->prefix_searched = true;
+	rz_th_lock_leave(sys_path->prefix_mutex);
 #endif
 }
 
@@ -108,55 +85,58 @@ RZ_API void rz_path_set_prefix(RZ_NONNULL const char *path) {
  * \brief Return \p path prefixed by the Rizin install prefix
  *
  * The install prefix is taken from the build-time configuration RZ_PREFIX,
- * unless Rizin was not compiled as "portable". In such a case the prefix is
- * discovered from the path of the executable calling this function.
- *
- * \param path Path to put in the install prefix context or NULL to just get the install prefix
- * \return \p path prefixed by the Rizin install prefix or just the install prefix
+ * unless Rizin was compiled as "portable". In such a case the prefix is
+ * provided via \p sys_path->prefix
+ * \param sys_path RzPath* contains install prefix and mutex.
  */
-RZ_API RZ_OWN char *rz_path_prefix(RZ_NULLABLE const char *path) {
+RZ_API const char *rz_path_prefix(RZ_BORROW RZ_NONNULL RzPath *sys_path) {
 #if RZ_IS_PORTABLE
-	rz_th_lock_enter(portable_prefix_mutex);
-	if (!portable_prefix_searched) {
-		portable_prefix = set_portable_prefix();
-		portable_prefix_searched = true;
+	rz_return_val_if_fail(sys_path && sys_path->prefix_mutex, RZ_PREFIX);
+	rz_th_lock_enter(sys_path->prefix_mutex);
+	if (!sys_path->prefix_searched) {
+		sys_path->prefix = set_portable_prefix();
+		sys_path->prefix_searched = true;
 	}
-	rz_th_lock_leave(portable_prefix_mutex);
+	rz_th_lock_leave(sys_path->prefix_mutex);
 
-	if (portable_prefix) {
-		return rz_file_path_join(portable_prefix, path);
+	if (sys_path->prefix) {
+		return sys_path->prefix;
 	}
 
 #endif
-	return rz_file_path_join(RZ_PREFIX, path);
+	return RZ_PREFIX;
 }
 
 /**
  * \brief Return the directory where include files are placed
  */
-RZ_API RZ_OWN char *rz_path_incdir(void) {
-	return rz_path_prefix(RZ_INCDIR);
+RZ_API RZ_OWN char *rz_path_incdir(RZ_BORROW RZ_NULLABLE RzPath *sys_path) {
+	const char *prefix = rz_path_prefix(sys_path);
+	return rz_file_path_join(prefix, RZ_INCDIR);
 }
 
 /**
  * \brief Return the directory where the Rizin binaries are placed
  */
-RZ_API RZ_OWN char *rz_path_bindir(void) {
-	return rz_path_prefix(RZ_BINDIR);
+RZ_API RZ_OWN char *rz_path_bindir(RZ_BORROW RZ_NULLABLE RzPath *sys_path) {
+	const char *prefix = rz_path_prefix(sys_path);
+	return rz_file_path_join(prefix, RZ_BINDIR);
 }
 
 /**
  * \brief Return the directory where the Rizin libraries are placed
  */
-RZ_API RZ_OWN char *rz_path_libdir(void) {
-	return rz_path_prefix(RZ_LIBDIR);
+RZ_API RZ_OWN char *rz_path_libdir(RZ_BORROW RZ_NULLABLE RzPath *sys_path) {
+	const char *prefix = rz_path_prefix(sys_path);
+	return rz_file_path_join(prefix, RZ_LIBDIR);
 }
 
 /**
  * \brief Return the full system path of the given subpath \p path
  */
-RZ_API RZ_OWN char *rz_path_system(RZ_NULLABLE const char *path) {
-	return rz_path_prefix(path);
+RZ_API RZ_OWN char *rz_path_system(RZ_BORROW RZ_NULLABLE RzPath *sys_path, RZ_NULLABLE const char *path) {
+	const char *prefix = rz_path_prefix(sys_path);
+	return rz_file_path_join(prefix, path);
 }
 
 /**
@@ -174,9 +154,11 @@ RZ_API RZ_OWN char *rz_path_extra(RZ_NULLABLE const char *path) {
 
 /**
  * \brief Return the system path of the global rizinrc file
+ * \param sys_path RzPath* contains mutex and install prefix.
  */
-RZ_API RZ_OWN char *rz_path_system_rc(void) {
-	return rz_path_prefix(RZ_GLOBAL_RC);
+RZ_API RZ_OWN char *rz_path_system_rc(RZ_BORROW RZ_NULLABLE RzPath *sys_path) {
+	const char *prefix = rz_path_prefix(sys_path);
+	return rz_file_path_join(prefix, RZ_GLOBAL_RC);
 }
 
 /**
@@ -317,4 +299,72 @@ RZ_API RZ_OWN char *rz_path_realpath(RZ_NULLABLE const char *path) {
 	}
 #endif
 	return NULL;
+}
+
+/**
+ * \brief Return new RzPath pointer
+ */
+RZ_API RZ_OWN RzPath *rz_path_new(void) {
+	RzPath *p = RZ_NEW0(RzPath);
+	if (!p) {
+		return NULL;
+	}
+	p->prefix = NULL;
+	p->prefix_searched = false;
+	p->prefix_mutex = rz_th_lock_new(false);
+	return p;
+}
+
+/**
+ * \brief This function converts arbitrary user input into a safe, normalized path:
+ *  - Empty string ("") is converted to the current directory (".")
+ *  - Relative paths are prefixed with "./"
+ *  - Absolute paths are returned unchanged
+ *  - On Windows, drive-letter paths (e.g. "C:\\") are preserved
+ *
+ * \param usr_input The raw path string provided by the user. May be NULL or empty.
+ * \param len The lenth of the user input path , it may be a partial or a full path , will be null if path is empty.
+ * \return A new normalized path string.
+ */
+RZ_API RZ_OWN char *rz_path_normalize_expand(char *usr_input, size_t len) {
+	char *input = rz_str_ndup(usr_input, len);
+	if (RZ_STR_ISEMPTY(input)) {
+		free(input);
+		input = rz_str_dup(".");
+	} else if (!rz_file_is_abspath(input) && !rz_str_startswith(input, ".")) {
+		const char *fmt = ".%s%s";
+#if __WINDOWS__
+		if (strchr(input, ':')) {
+			fmt = "%.0s%s";
+		}
+#endif
+		char *tmp = rz_str_newf(fmt, RZ_SYS_DIR, input);
+		free(input);
+		if (!tmp) {
+			return NULL;
+		}
+		input = tmp;
+	}
+
+	char *exp_path = rz_path_home_expand(input);
+
+#if __WINDOWS__
+	rz_str_replace_ch(exp_path, '/', '\\', true);
+#endif
+
+	free(input);
+	return exp_path;
+}
+
+/**
+ * \brief Deallocate memory that the RzPath* \p p is pointing to.
+ * \param p RzPath* contains install prefix and mutex.
+ */
+RZ_API void rz_path_free(RZ_OWN RZ_NULLABLE RzPath *p) {
+	if (!p) {
+		return;
+	}
+	free(p->prefix);
+	rz_th_lock_free(p->prefix_mutex);
+	free(p);
 }

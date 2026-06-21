@@ -6,6 +6,7 @@
 #include "rz_bind.h"
 #include "rz_io.h"
 #include "rz_reg.h"
+#include "rz_cmd.h"
 #include <rz_util/rz_strbuf.h>
 
 #ifdef __cplusplus
@@ -32,13 +33,14 @@ extern "C" {
 #define RZ_PRINT_FLAGS_UNALLOC  0x00080000
 #define RZ_PRINT_FLAGS_BGFILL   0x00100000
 #define RZ_PRINT_FLAGS_SECTION  0x00200000
+#define RZ_PRINT_FLAGS_NODOT    0x00400000 /* hide the dot before printable characters */
 
 typedef const char *(*RzPrintNameCallback)(void *user, ut64 addr);
 typedef int (*RzPrintSizeCallback)(void *user, ut64 addr);
 typedef char *(*RzPrintCommentCallback)(void *user, ut64 addr);
 typedef const char *(*RzPrintSectionGet)(void *user, ut64 addr);
 typedef const char *(*RzPrintColorFor)(void *user, ut64 addr, bool verbose);
-typedef char *(*RzPrintHasRefs)(void *user, ut64 addr, int mode);
+typedef char *(*RzPrintHasRefs)(void *user, ut64 addr, RzOutputMode mode);
 
 typedef enum {
 	RZ_ASM_TOKEN_UNKNOWN = 0, ///< Does not fit to any token below.
@@ -233,7 +235,7 @@ RZ_API RZ_OWN char *rz_print_json_indent(RZ_NULLABLE const char *s, bool color, 
 RZ_API char *rz_print_json_human(const char *s);
 
 RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const RzAsmTokenString *toks);
-RZ_API void rz_print_colored_help_option(const char *option, const char *arg, const char *description, size_t maxOptionAndArgLength);
+RZ_API void rz_print_colored_help(const char **options, size_t options_len, bool have_examples);
 #endif
 
 #ifdef __cplusplus

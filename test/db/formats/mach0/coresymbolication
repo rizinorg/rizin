@@ -12,33 +12,41 @@ RUN
 
 NAME=Xcode symbols cache (header)
 FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE.symbols
-CMDS=iH~{:
+CMDS=iH
 EXPECT=<<EOF
-cs_version: 1
-size: 7406
-name: /Users/ftamagni/Library/Developer/Xcode/Archives/2020-05-12/TestRTTI 12-05-2020, 12.15.xcarchive/dSYMs/TestRTTI.app.dSYM/Contents/Resources/DWARF/TestRTTI
-uuid: d9a37b67f10a35aaa852abfbbecc03ae
-segments: 6
-sections: 35
-symbols: 67
-lined_symbols: 0
-line_info: 32
+symbols:
+  cs_version: 1
+  size: 7406
+  binary:
+    name: "/Users/ftamagni/Library/Developer/Xcode/Archives/2020-05-12/TestRTTI 12-05-2020, 12.15.xcarchive/dSYMs/TestRTTI.app.dSYM/Contents/Resources/DWARF/TestRTTI"
+    version: ""
+  uuid: "d9a37b67f10a35aaa852abfbbecc03ae"
+  n_segments: 6
+  n_sections: 35
+  n_symbols: 67
+  n_lined_symbols: 0
+  n_line_info: 32
+
 EOF
 RUN
 
 NAME=Xcode symbols cache new (header)
 FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE-new.symbols
-CMDS=iH~{:
+CMDS=iH
 EXPECT=<<EOF
-cs_version: 1
-size: 7231
-name: /Users/ftamagni/Library/Developer/Xcode/Archives/2020-05-12/TestRTTI 12-05-2020, 12.15.xcarchive/dSYMs/TestRTTI.app.dSYM/Contents/Resources/DWARF/TestRTTI
-uuid: d9a37b67f10a35aaa852abfbbecc03ae
-segments: 6
-sections: 35
-symbols: 67
-lined_symbols: 0
-line_info: 32
+symbols:
+  cs_version: 1
+  size: 7231
+  binary:
+    name: "/Users/ftamagni/Library/Developer/Xcode/Archives/2020-05-12/TestRTTI 12-05-2020, 12.15.xcarchive/dSYMs/TestRTTI.app.dSYM/Contents/Resources/DWARF/TestRTTI"
+    version: ""
+  uuid: "d9a37b67f10a35aaa852abfbbecc03ae"
+  n_segments: 6
+  n_sections: 35
+  n_symbols: 67
+  n_lined_symbols: 0
+  n_line_info: 32
+
 EOF
 RUN
 

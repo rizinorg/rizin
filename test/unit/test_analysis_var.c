@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
+#include "analysis_private.h"
 #include <rz_core.h>
 #include "test_config.h"
 #include "minunit.h"
@@ -61,7 +62,7 @@ static RzAnalysisVar *set_var_str(RzAnalysisFunction *fcn, RzAnalysisVarStorage 
 }
 
 bool test_rz_analysis_var() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
 
@@ -224,7 +225,7 @@ bool test_rz_analysis_var() {
 }
 
 bool test_rz_analysis_function_get_stack_var_in() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
 
@@ -288,7 +289,7 @@ bool test_rz_analysis_function_get_stack_var_in() {
 }
 
 bool test_rz_analysis_function_var_expr_for_reg_access_at() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
 	rz_type_db_init(analysis->typedb, TEST_BUILD_TYPES_DIR, NULL, 64, NULL);

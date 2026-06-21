@@ -5,6 +5,31 @@
 #include <rz_il/rz_il_events.h>
 
 /**
+ * Get the exception message for the exception id.
+ * \param id The exception identifier.
+ * \return The exception message.
+ */
+RZ_API const char *rz_il_event_exception_msg(const RzILEventException id) {
+	switch (id) {
+	case RZ_IL_EVENT_EXC_NONE:
+		return "None";
+	case RZ_IL_EVENT_EXC_DIV_ZERO:
+		return "division by zero";
+	case RZ_IL_EVENT_EXC_FP_INVALID_OP:
+		return "float invalid operation";
+	case RZ_IL_EVENT_EXC_FP_DIV_ZERO:
+		return "float division by zero";
+	case RZ_IL_EVENT_EXC_FP_OVERFLOW:
+		return "float overflow";
+	case RZ_IL_EVENT_EXC_FP_UNDERFLOW:
+		return "float underflow";
+	case RZ_IL_EVENT_EXC_FP_INEXACT:
+		return "float inexact";
+	}
+	return "unknown exception";
+}
+
+/**
  * Frees an RzILEvent struct
  * \param evt, RzILEvent, pointer to the RzILEvent to free
  */
@@ -14,7 +39,6 @@ RZ_API void rz_il_event_free(RZ_NULLABLE RzILEvent *evt) {
 	}
 	switch (evt->type) {
 	case RZ_IL_EVENT_EXCEPTION:
-		free(evt->data.exception);
 		break;
 	case RZ_IL_EVENT_PC_WRITE:
 		rz_bv_free(evt->data.pc_write.old_pc);
@@ -47,10 +71,11 @@ RZ_API void rz_il_event_free(RZ_NULLABLE RzILEvent *evt) {
 
 /**
  * Creates an RzILEvent of type RZ_IL_EVENT_EXCEPTION
- * \param exception, const char, pointer to the exception message
+ * \param id The exception identifier.
+ * \param msg Pointer to the exception message
  */
-RZ_API RZ_OWN RzILEvent *rz_il_event_exception_new(RZ_NONNULL const char *exception) {
-	rz_return_val_if_fail(exception, NULL);
+RZ_API RZ_OWN RzILEvent *rz_il_event_exception_new(RzILEventException id) {
+	rz_return_val_if_fail(id != RZ_IL_EVENT_EXC_NONE, NULL);
 
 	RzILEvent *evt = RZ_NEW(RzILEvent);
 	if (!evt) {
@@ -59,12 +84,7 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_exception_new(RZ_NONNULL const char *except
 	}
 
 	evt->type = RZ_IL_EVENT_EXCEPTION;
-	evt->data.exception = rz_str_dup(exception);
-	if (!evt->data.exception) {
-		rz_il_event_free(evt);
-		RZ_LOG_ERROR("RzIL: cannot allocate exception string\n");
-		return NULL;
-	}
+	evt->data.exception = id;
 	return evt;
 }
 

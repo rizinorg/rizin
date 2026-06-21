@@ -382,16 +382,15 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->bits = 64;
 	ret->has_va = true;
 	ret->big_endian = false;
-	ret->dbg_info = 0;
+	ret->dbg_info = RZ_BIN_DBG_STRIPPED;
 	return ret;
 }
 
-#if !RZ_BIN_NSO
-
 RzBinPlugin rz_bin_plugin_nso = {
 	.name = "nso",
-	.desc = "Nintendo Switch NSO0 binaries",
+	.desc = "Nintendo Switch NSO",
 	.license = "MIT",
+	.author = "rkx1209",
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_buffer = &check_buffer,
@@ -411,5 +410,4 @@ RZ_API RzLibStruct rizin_plugin = {
 	.data = &rz_bin_plugin_nso,
 	.version = RZ_VERSION
 };
-#endif
 #endif

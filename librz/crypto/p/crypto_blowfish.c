@@ -169,7 +169,7 @@ static ut32 F(struct blowfish_state *const state, const ut32 inbuf) {
 	ut8 a = (inbuf >> 24) & 0xff;
 	ut8 b = (inbuf >> 16) & 0xff;
 	ut8 c = (inbuf >> 8) & 0xff;
-	ut8 d = (inbuf)&0xff;
+	ut8 d = (inbuf) & 0xff;
 	return ((state->s[0][a] + state->s[1][b]) ^ state->s[2][c]) + state->s[3][d];
 }
 
@@ -349,6 +349,7 @@ RzCryptoPlugin rz_crypto_plugin_blowfish = {
 	.name = "blowfish",
 	.license = "LGPL3",
 	.author = "kishorbhat",
+	.description = "Blowfish symmetric-key block cipher",
 	.set_key = blowfish_set_key,
 	.get_key_size = blowfish_get_key_size,
 	.use = blowfish_use,

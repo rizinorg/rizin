@@ -6,8 +6,8 @@ EXPECT=<<EOF
 0x00401280   entry0:
 0x00401280                   55  push ebp
 0x00401281                 89e5  mov ebp, esp
-0x00401283               83ec08  sub esp, 8
-0x00401286       c7042401000000  mov dword [esp], 1
+0x00401283               83ec08  sub esp, 0x08
+0x00401286       c7042401000000  mov dword [esp], 0x01
 EOF
 RUN
 

@@ -2,9 +2,7 @@
 // SPDX-FileCopyrightText: 2010-2020 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
-#include <rz_util.h>
-#include <rz_list.h>
+#include "analysis_private.h"
 
 RZ_API RzAnalysisOp *rz_analysis_op_new(void) {
 	RzAnalysisOp *op = RZ_NEW(RzAnalysisOp);
@@ -21,35 +19,35 @@ RZ_API RzList /*<RzAnalysisOp *>*/ *rz_analysis_op_list_new(void) {
 }
 
 RZ_API void rz_analysis_op_init(RzAnalysisOp *op) {
-	if (op) {
-		memset(op, 0, sizeof(*op));
-		op->addr = UT64_MAX;
-		op->jump = UT64_MAX;
-		op->fail = UT64_MAX;
-		op->ptr = UT64_MAX;
-		op->refptr = 0;
-		op->val = UT64_MAX;
-		op->disp = UT64_MAX;
-		op->mmio_address = UT64_MAX;
-		op->stackptr = RZ_ANALYSIS_OP_INVALID_STACKPTR;
+	if (!op) {
+		return;
 	}
+	memset(op, 0, sizeof(*op));
+	op->addr = UT64_MAX;
+	op->jump = UT64_MAX;
+	op->fail = UT64_MAX;
+	op->ptr = UT64_MAX;
+	op->refptr = 0;
+	op->val = UT64_MAX;
+	op->disp = UT64_MAX;
+	op->mmio_address = UT64_MAX;
+	op->stackptr = RZ_ANALYSIS_OP_INVALID_STACKPTR;
 }
 
 RZ_API bool rz_analysis_op_fini(RzAnalysisOp *op) {
 	if (!op) {
 		return false;
 	}
-	rz_analysis_value_free(op->src[0]);
-	rz_analysis_value_free(op->src[1]);
-	rz_analysis_value_free(op->src[2]);
-	op->src[0] = NULL;
-	op->src[1] = NULL;
-	op->src[2] = NULL;
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(op->src); ++i) {
+		rz_analysis_value_free(op->src[i]);
+		op->src[i] = NULL;
+	}
 	rz_analysis_value_free(op->dst);
 	op->dst = NULL;
 	rz_list_free(op->access);
 	op->access = NULL;
-	rz_strbuf_fini(&op->opex);
+	rz_structured_data_free(op->opex);
+	op->opex = NULL;
 	rz_strbuf_fini(&op->esil);
 	rz_analysis_switch_op_free(op->switch_op);
 	op->switch_op = NULL;

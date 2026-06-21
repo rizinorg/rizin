@@ -25,6 +25,7 @@ const RzAnalysisHint empty_hint = {
 	.high = 0,
 	.nword = 0,
 	.stackframe = UT64_MAX,
+	.enum_name = NULL,
 };
 
 bool hint_equals(const RzAnalysisHint *a, const RzAnalysisHint *b) {
@@ -49,6 +50,7 @@ bool hint_equals(const RzAnalysisHint *a, const RzAnalysisHint *b) {
 	CHECK_STREQ(syntax);
 	CHECK_STREQ(esil);
 	CHECK_STREQ(offset);
+	CHECK_STREQ(enum_name);
 #undef CHECK_STREQ
 	return true;
 }
@@ -62,7 +64,7 @@ bool hint_equals(const RzAnalysisHint *a, const RzAnalysisHint *b) {
 	} while (0)
 
 bool test_rz_analysis_addr_hints() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	RzAnalysisHint *hint = rz_analysis_hint_get(analysis, 0x1337);
 	assert_hint_eq(hint, &empty_hint);
 	rz_analysis_hint_free(hint);
@@ -107,6 +109,10 @@ bool test_rz_analysis_addr_hints() {
 
 	rz_analysis_hint_set_immbase(analysis, 0x1337, 7);
 	cur.immbase = 7;
+	CHECK
+
+	rz_analysis_hint_set_enum(analysis, 0x1337, "BLA");
+	cur.enum_name = "BLA";
 	CHECK
 
 	rz_analysis_hint_set_size(analysis, 0x1337, 0x123);
@@ -175,6 +181,10 @@ bool test_rz_analysis_addr_hints() {
 	cur.immbase = 0;
 	CHECK
 
+	rz_analysis_hint_unset_enum(analysis, 0x1337);
+	cur.enum_name = NULL;
+	CHECK
+
 	rz_analysis_hint_unset_size(analysis, 0x1337);
 	cur.size = 0;
 	CHECK
@@ -221,7 +231,7 @@ bool test_rz_analysis_addr_hints() {
 
 #define RANGED_TEST(name, val, resetval, assert_val) \
 	bool test_rz_analysis_hints_##name() { \
-		RzAnalysis *analysis = rz_analysis_new(); \
+		RzAnalysis *analysis = rz_analysis_new(NULL); \
 \
 		ut64 hint_addr = 0xdead; \
 		assert_val(rz_analysis_hint_##name##_at(analysis, 0x1337, &hint_addr), resetval, "no " #name ""); \

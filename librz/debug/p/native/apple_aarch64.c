@@ -1,15 +1,15 @@
 // SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_util/rz_log.h"
 #include <errno.h>
-#if !defined(__HAIKU__) && !defined(__sun)
 #include <sys/ptrace.h>
-#endif
 #include <sys/wait.h>
 #include <signal.h>
 
 #include <sys/resource.h>
 #include "xnu/xnu_debug.h"
+#include "bt.c"
 
 #ifdef __WALL
 #define WAITPID_FLAGS __WALL
@@ -26,7 +26,7 @@
 #define PROC_UNKSTR_SZ      128
 
 static char *rz_debug_native_reg_profile(RzDebug *dbg) {
-	return xnu_reg_profile(dbg);
+#include "reg/darwin-arm64.h"
 }
 
 static bool rz_debug_native_step(RzDebug *dbg) {
@@ -42,7 +42,7 @@ static int rz_debug_native_detach(RzDebug *dbg, int pid) {
 }
 
 static int rz_debug_native_continue_syscall(RzDebug *dbg, int pid, int num) {
-	eprintf("TODO: continue syscall not implemented yet\n");
+	RZ_LOG_WARN("TODO: continue syscall not implemented yet\n");
 	return -1;
 }
 
@@ -66,7 +66,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 	RzDebugReasonType reason = RZ_DEBUG_REASON_UNKNOWN;
 
 	if (pid == -1) {
-		eprintf("ERROR: rz_debug_native_wait called with pid -1\n");
+		RZ_LOG_ERROR("rz_debug_native_wait called with pid -1\n");
 		return RZ_DEBUG_REASON_ERROR;
 	}
 	rz_cons_break_push(NULL, NULL);
@@ -120,7 +120,7 @@ static RzList /*<RzDebugPid *>*/ *rz_debug_native_pids(RzDebug *dbg, int pid) {
 RZ_API RZ_OWN RzList /*<RzDebugPid *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid) {
 	RzList *list = rz_list_new();
 	if (!list) {
-		eprintf("No list?\n");
+		RZ_LOG_ERROR("Cannot create list\n");
 		return NULL;
 	}
 	return xnu_thread_list(dbg, pid, list);
@@ -146,7 +146,9 @@ static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int
 		return xnu_reg_write(dbg, type, buf, size);
 	} else if (type == RZ_REG_TYPE_FPU) {
 		return false;
-	} // else eprintf ("TODO: reg_write_non-gpr (%d)\n", type);
+	} else {
+		RZ_LOG_DEBUG("TODO: reg_write_non-gpr (%d)\n", type);
+	}
 	return false;
 }
 
@@ -225,18 +227,8 @@ static bool rz_debug_native_kill(RzDebug *dbg, int pid, int tid, int sig) {
 	return ret;
 }
 
-struct rz_debug_desc_plugin_t rz_debug_desc_plugin_native;
-static bool rz_debug_native_init(RzDebug *dbg, void **user) {
-	dbg->cur->desc = rz_debug_desc_plugin_native;
-	return rz_xnu_debug_init(dbg, user);
-}
-
-static void rz_debug_native_fini(RzDebug *dbg, void *user) {
-	rz_xnu_debug_fini(dbg, user);
-}
-
 static int rz_debug_native_drx(RzDebug *dbg, int n, ut64 addr, int sz, int rwx, int g, int api_type) {
-	eprintf("drx: Unsupported platform\n");
+	RZ_LOG_ERROR("drx: Unsupported platform\n");
 	return -1;
 }
 
@@ -269,7 +261,7 @@ static RzList *xnu_desc_list(int pid) {
 			continue;
 		}
 		if (nb < sizeof(vi)) {
-			perror("too few bytes");
+			rz_sys_perror("too few bytes");
 			break;
 		}
 		// printf ("FD %d RWX %x ", i, vi.pfi.fi_openflags);
@@ -300,3 +292,51 @@ static bool rz_debug_gcore(RzDebug *dbg, char *path, RzBuffer *dest) {
 	(void)path;
 	return xnu_generate_corefile(dbg, dest);
 }
+
+struct rz_debug_desc_plugin_t rz_debug_desc_plugin_native = {
+	.open = rz_debug_desc_native_open,
+	.list = rz_debug_desc_native_list,
+};
+
+static bool rz_debug_native_init(RzDebug *dbg, void **user) {
+	dbg->cur->desc = rz_debug_desc_plugin_native;
+	return rz_xnu_debug_init(dbg, user);
+}
+
+static void rz_debug_native_fini(RzDebug *dbg, void *user) {
+	rz_xnu_debug_fini(dbg, user);
+}
+
+RzDebugPlugin rz_debug_plugin_native = {
+	.name = "native",
+	.license = "LGPL3",
+	.bits = RZ_SYS_BITS_16 | RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
+	.arch = "arm",
+	.canstep = 1,
+	.init = &rz_debug_native_init,
+	.fini = &rz_debug_native_fini,
+	.step = &rz_debug_native_step,
+	.cont = &rz_debug_native_continue,
+	.stop = &rz_debug_native_stop,
+	.contsc = &rz_debug_native_continue_syscall,
+	.attach = &rz_debug_native_attach,
+	.detach = &rz_debug_native_detach,
+	// TODO: add native select for other platforms?
+	.pids = &rz_debug_native_pids,
+	.threads = &rz_debug_native_threads,
+	.wait = &rz_debug_native_wait,
+	.kill = &rz_debug_native_kill,
+	.frames = &rz_debug_native_frames, // rename to backtrace ?
+	.reg_profile = rz_debug_native_reg_profile,
+	.reg_read = rz_debug_native_reg_read,
+	.info = rz_debug_native_info,
+	.reg_write = (void *)&rz_debug_native_reg_write,
+	.map_alloc = rz_debug_native_map_alloc,
+	.map_dealloc = rz_debug_native_map_dealloc,
+	.map_get = rz_debug_native_map_get,
+	.modules_get = rz_debug_native_modules_get,
+	.map_protect = rz_debug_native_map_protect,
+	.breakpoint = rz_debug_native_bp,
+	.drx = rz_debug_native_drx,
+	.gcore = rz_debug_gcore,
+};

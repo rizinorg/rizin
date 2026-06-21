@@ -5,7 +5,7 @@ name: cmd_system
 commands:
   - name: "!"
     cname: system
-    summary: Runs given commands in system(3)
+    summary: Run command via system(3) with raw output. Grepping via '~' automatically forces use of '!!' instead.
     args:
       - name: command
         type: RZ_CMD_ARG_TYPE_STRING
@@ -19,13 +19,15 @@ commands:
         entries:
           - text: "!"
             arg_str: "ls"
-            comment: "executes the 'ls' command via system(3)"
+            comment: "Execute the 'ls' command via system(3)"
           - text: "!"
-            arg_str: "echo $RZ_SIZE"
-            comment: "executes the 'echo' command via system(3) and shows the display file size"
+            arg_str: bash -c "echo $RZ_SIZE"
+            comment:
+              Execute the 'echo' command via system(3) and bash. It prints the content of the environment variable
+              '$RZ_SIZE'.
   - name: "!!"
     cname: system_to_cons
-    summary: Runs a given commands in system(3) and pipes stdout to rizin
+    summary: Run command via system(3) and pipe its stdout to rizin
     args:
       - name: command
         type: RZ_CMD_ARG_TYPE_STRING
@@ -39,4 +41,6 @@ commands:
         entries:
           - text: "!!"
             arg_str: "ls~txt"
-            comment: "executes the 'ls' command via system(3) and grep for 'txt'"
+            comment:
+              Execute the 'ls' command via system(3) and grep for 'txt'. Note that 'ls' has different output if its
+              stdout is piped.

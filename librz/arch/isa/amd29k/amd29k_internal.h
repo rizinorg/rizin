@@ -7,7 +7,7 @@ typedef void (*amd29k_decode)(amd29k_instr_t *instruction, const unsigned char *
 typedef void (*amd29k_encode)(amd29k_instr_t *instruction, char *assembly);
 
 typedef struct amd29k_instruction_s {
-	const char *cpu;
+	ut32 cpu;
 	const char *mnemonic;
 	ut64 op_type;
 	ut8 mask;

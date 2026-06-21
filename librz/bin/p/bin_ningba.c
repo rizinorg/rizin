@@ -56,10 +56,10 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->machine = rz_str_dup("GameBoy Advance");
 	ret->os = rz_str_dup("any");
 	ret->arch = rz_str_dup("arm");
-	ret->has_va = 1;
+	ret->has_va = true;
 	ret->bits = 32;
-	ret->big_endian = 0;
-	ret->dbg_info = 0;
+	ret->big_endian = false;
+	ret->dbg_info = RZ_BIN_DBG_STRIPPED;
 	return ret;
 }
 
@@ -87,8 +87,9 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_ningba = {
 	.name = "ningba",
-	.desc = "Nintendo Gameboy Advance plugin",
+	.desc = "Nintendo Game Boy Advance",
 	.license = "LGPL3",
+	.author = "condret",
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.entries = &entries,

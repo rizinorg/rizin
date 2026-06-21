@@ -2,6 +2,7 @@
 NAME=basefind via rizin
 FILE=bins/firmware/stm32f103-dapboot-v1.20-bluepill.bin
 CMDS=<<EOF
+e asm.arch=x86
 e basefind.max.threads=1
 e basefind.search.start=0x06000000
 e basefind.search.end=0x10000000

@@ -19,6 +19,6 @@ e asm.sub.names=false
 pi 1
 EOF
 EXPECT=<<EOF
-push 1
+push 0x01
 EOF
 RUN

@@ -325,7 +325,7 @@ static ut32 core_recover_golang_functions_go_1_18_plus(RzCore *core, GoPcLnTab *
 		RZ_LOG_INFO("Recovered symbol at 0x%08" PFMT64x " with name '%s'\n", func_ptr, name);
 
 		add_new_library_from_name(core, name);
-		if (rz_str_len_utf8_ansi(name) > 0) {
+		if (rz_str_utf8_ansi_cols(name) > 0) {
 			// always add it before filtering the name.
 			add_new_func_symbol(core, name, func_ptr);
 			rz_name_filter(name, 0, true);
@@ -403,7 +403,7 @@ static ut32 core_recover_golang_functions_go_1_16(RzCore *core, GoPcLnTab *pclnt
 		RZ_LOG_INFO("Recovered symbol at 0x%08" PFMT64x " with name '%s'\n", func_ptr, name);
 
 		add_new_library_from_name(core, name);
-		if (rz_str_len_utf8_ansi(name) > 0) {
+		if (rz_str_utf8_ansi_cols(name) > 0) {
 			// always add it before filtering the name.
 			add_new_func_symbol(core, name, func_ptr);
 			rz_name_filter(name, 0, true);
@@ -492,7 +492,7 @@ static ut32 core_recover_golang_functions_go_1_2(RzCore *core, GoPcLnTab *pclnta
 		RZ_LOG_INFO("Recovered symbol at 0x%08" PFMT64x " with name '%s'\n", func_ptr, name);
 
 		add_new_library_from_name(core, name);
-		if (rz_str_len_utf8_ansi(name) > 0) {
+		if (rz_str_utf8_ansi_cols(name) > 0) {
 			// always add it before filtering the name.
 			add_new_func_symbol(core, name, func_ptr);
 			rz_name_filter(name, 0, true);
@@ -643,7 +643,6 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 }
 
 static bool add_new_bin_string(RzCore *core, char *string, ut64 vaddr, ut32 size) {
-	ut32 ordinal = 0;
 	RzBinString *bstr;
 	RzBin *bin = core->bin;
 	RzBinFile *bf = rz_bin_cur(bin);
@@ -658,9 +657,6 @@ static bool add_new_bin_string(RzCore *core, char *string, ut64 vaddr, ut32 size
 		return true;
 	}
 
-	const RzPVector *strings = rz_bin_object_get_strings(bf->o);
-	ordinal = rz_pvector_len(strings);
-
 	ut64 paddr = rz_io_v2p(core->io, vaddr);
 
 	bstr = RZ_NEW0(RzBinString);
@@ -671,7 +667,6 @@ static bool add_new_bin_string(RzCore *core, char *string, ut64 vaddr, ut32 size
 	}
 	bstr->paddr = paddr;
 	bstr->vaddr = vaddr;
-	bstr->ordinal = ordinal;
 	bstr->length = bstr->size = size;
 	bstr->string = string;
 	bstr->type = RZ_STRING_ENC_UTF8;
@@ -725,7 +720,7 @@ static bool recover_string_at(GoStrRecover *ctx, ut64 str_addr, ut64 str_size) {
 		free(flag);
 		free(raw);
 		return false;
-	} else if (rz_str_len_utf8_ansi(raw) != str_size) {
+	} else if (rz_str_utf8_ansi_cols(raw) != str_size) {
 		free(flag);
 		free(raw);
 		return false;
@@ -736,7 +731,7 @@ static bool recover_string_at(GoStrRecover *ctx, ut64 str_addr, ut64 str_size) {
 	rz_name_filter(flag + n_prefix, str_size, true);
 
 	// verify is a valid flag.
-	if (rz_str_len_utf8_ansi(flag) < 5) {
+	if (rz_str_utf8_ansi_cols(flag) < 5) {
 		free(flag);
 		free(raw);
 		return false;
@@ -825,14 +820,15 @@ static ut32 decode_one_opcode_size(GoStrRecover *ctx) {
 	static GoAsmPattern go_asm_pattern_name(arch, bits, mnemonic) = { (const ut8 *)pattern, (const ut8 *)mask, (sizeof(pattern) - 1), set_xref }
 
 static bool decode_from_table(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 *buffer, const ut32 size) {
-	RzAnalysis *analysis = core->analysis;
 	ut8 tmp[16];
 	if (0 > rz_io_nread_at(core->io, info->addr, tmp, sizeof(tmp))) {
 		return false;
 	}
-	ut32 offset = analysis->bits / 8;
-	info->addr = rz_read_ble(tmp, analysis->big_endian, analysis->bits);
-	info->size = rz_read_ble(tmp + offset, analysis->big_endian, analysis->bits);
+	ut32 bits = rz_asm_get_bits(core->rasm);
+	bool big_endian = rz_asm_is_big_endian_set(core->rasm);
+	ut32 offset = bits / 8;
+	info->addr = rz_read_ble(tmp, big_endian, bits);
+	info->size = rz_read_ble(tmp + offset, big_endian, bits);
 	return true;
 }
 
@@ -1202,6 +1198,7 @@ static bool decode_ldr_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut
 	RzAnalysisOp aop = { 0 };
 	ut8 tmp[4];
 	ut64 addr = 0;
+	bool big_endian = rz_asm_is_big_endian_set(core->rasm);
 
 	rz_analysis_op_init(&aop);
 	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
@@ -1214,7 +1211,7 @@ static bool decode_ldr_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut
 	if (0 > rz_io_nread_at(core->io, addr, tmp, sizeof(tmp))) {
 		return false;
 	}
-	info->addr = rz_read_ble32(tmp, core->analysis->big_endian);
+	info->addr = rz_read_ble32(tmp, big_endian);
 	return true;
 }
 
@@ -1376,16 +1373,16 @@ static GoSignature go_mipsbe32_table_signature[] = {
 };
 
 static ut32 golang_recover_string_mips32(GoStrRecover *ctx) {
-	RzAnalysis *analysis = ctx->core->analysis;
+	bool big_endian = rz_asm_is_big_endian_set(ctx->core->rasm);
 	GoStrInfo info = { 0 };
 
-	if (analysis->big_endian &&
+	if (big_endian &&
 		!go_is_sign_match_autosize(ctx, &info, go_mipsbe32_lui_addiu_sw_addiu_signature) &&
 		!go_is_sign_match_autosize(ctx, &info, go_mipsbe32_addiu_sw_lui_addiu_signature) &&
 		!go_is_sign_match_autosize(ctx, &info, go_mipsbe32_lui_addiu_addiu_signature) &&
 		!go_is_sign_match_autosize(ctx, &info, go_mipsbe32_table_signature)) {
 		return 4;
-	} else if (!analysis->big_endian &&
+	} else if (!big_endian &&
 		!go_is_sign_match_autosize(ctx, &info, go_mipsle32_lui_addiu_sw_addiu_signature) &&
 		!go_is_sign_match_autosize(ctx, &info, go_mipsle32_addiu_sw_lui_addiu_signature) &&
 		!go_is_sign_match_autosize(ctx, &info, go_mipsle32_lui_addiu_addiu_signature) &&
@@ -1398,7 +1395,7 @@ static ut32 golang_recover_string_mips32(GoStrRecover *ctx) {
 		return 4;
 	}
 
-	rz_analysis_xrefs_set(analysis, info.xref, info.addr, RZ_ANALYSIS_XREF_TYPE_STRING);
+	rz_analysis_xrefs_set(ctx->core->analysis, info.xref, info.addr, RZ_ANALYSIS_XREF_TYPE_STRING);
 	return 4;
 }
 
@@ -1511,16 +1508,16 @@ static GoSignature go_mipsbe64_table_signature[] = {
 };
 
 static ut32 golang_recover_string_mips64(GoStrRecover *ctx) {
-	RzAnalysis *analysis = ctx->core->analysis;
+	bool big_endian = rz_asm_is_big_endian_set(ctx->core->rasm);
 	GoStrInfo info = { 0 };
 
-	if (analysis->big_endian &&
+	if (big_endian &&
 		!go_is_sign_match_autosize(ctx, &info, go_mipsbe64_lui_daddu_daddiu_sd_daddiu_signature) &&
 		!go_is_sign_match_autosize(ctx, &info, go_mipsbe64_daddiu_sd_lui_daddu_daddiu_signature) &&
 		!go_is_sign_match_autosize(ctx, &info, go_mipsbe64_lui_daddu_daddiu_daddiu_signature) &&
 		!go_is_sign_match_autosize(ctx, &info, go_mipsbe64_table_signature)) {
 		return 4;
-	} else if (!analysis->big_endian &&
+	} else if (!big_endian &&
 		!go_is_sign_match_autosize(ctx, &info, go_mipsle64_lui_daddu_daddiu_sd_daddiu_signature) &&
 		!go_is_sign_match_autosize(ctx, &info, go_mipsle64_daddiu_sd_lui_daddu_daddiu_signature) &&
 		!go_is_sign_match_autosize(ctx, &info, go_mipsle64_lui_daddu_daddiu_daddiu_signature) &&
@@ -1533,7 +1530,7 @@ static ut32 golang_recover_string_mips64(GoStrRecover *ctx) {
 		return 4;
 	}
 
-	rz_analysis_xrefs_set(analysis, info.xref, info.addr, RZ_ANALYSIS_XREF_TYPE_STRING);
+	rz_analysis_xrefs_set(ctx->core->analysis, info.xref, info.addr, RZ_ANALYSIS_XREF_TYPE_STRING);
 	return 4;
 }
 
@@ -1628,15 +1625,15 @@ static GoSignature go_ppcbe64_table_signature[] = {
 };
 
 static ut32 golang_recover_string_ppc64(GoStrRecover *ctx) {
-	RzAnalysis *analysis = ctx->core->analysis;
+	bool big_endian = rz_asm_is_big_endian_set(ctx->core->rasm);
 	GoStrInfo info = { 0 };
 
-	if (analysis->big_endian &&
+	if (big_endian &&
 		!go_is_sign_match_autosize(ctx, &info, go_ppcbe64_lis_addi_std_li_signature) &&
 		!go_is_sign_match_autosize(ctx, &info, go_ppcbe64_li_std_lis_addi_signature) &&
 		!go_is_sign_match_autosize(ctx, &info, go_ppcbe64_table_signature)) {
 		return 4;
-	} else if (!analysis->big_endian &&
+	} else if (!big_endian &&
 		!go_is_sign_match_autosize(ctx, &info, go_ppcle64_lis_addi_std_li_signature) &&
 		!go_is_sign_match_autosize(ctx, &info, go_ppcle64_li_std_lis_addi_signature) &&
 		!go_is_sign_match_autosize(ctx, &info, go_ppcle64_table_signature)) {
@@ -1645,16 +1642,16 @@ static ut32 golang_recover_string_ppc64(GoStrRecover *ctx) {
 
 	// try to recover the string.
 	if (!recover_string_at(ctx, info.addr, info.size)) {
-		if (analysis->big_endian && !go_is_sign_match_autosize(ctx, &info, go_ppcbe64_lis_addi_li_signature)) {
+		if (big_endian && !go_is_sign_match_autosize(ctx, &info, go_ppcbe64_lis_addi_li_signature)) {
 			return 4;
-		} else if (!analysis->big_endian && !go_is_sign_match_autosize(ctx, &info, go_ppcle64_lis_addi_li_signature)) {
+		} else if (!big_endian && !go_is_sign_match_autosize(ctx, &info, go_ppcle64_lis_addi_li_signature)) {
 			return 4;
 		} else if (!recover_string_at(ctx, info.addr, info.size)) {
 			return 4;
 		}
 	}
 
-	rz_analysis_xrefs_set(analysis, info.xref, info.addr, RZ_ANALYSIS_XREF_TYPE_STRING);
+	rz_analysis_xrefs_set(ctx->core->analysis, info.xref, info.addr, RZ_ANALYSIS_XREF_TYPE_STRING);
 	return 4;
 }
 
@@ -1776,8 +1773,9 @@ static ut32 golang_recover_string_riscv64(GoStrRecover *ctx) {
 static void core_recover_golang_strings_from_data_pointers(RzCore *core, GoStrRecover *ctx) {
 	rz_core_notify_begin(core, "Recovering go strings from bin maps");
 
-	RzAnalysis *analysis = core->analysis;
-	const ut32 word_size = analysis->bits / 8;
+	ut32 bits = rz_asm_get_bits(core->rasm);
+	bool big_endian = rz_asm_is_big_endian_set(core->rasm);
+	const ut32 word_size = bits / 8;
 	void **iter;
 	RzBinMap *map;
 	ut8 *buffer = NULL;
@@ -1817,8 +1815,8 @@ static void core_recover_golang_strings_from_data_pointers(RzCore *core, GoStrRe
 
 			length -= word_size;
 			for (size_t i = 0; i < length; i += word_size) {
-				string_addr = rz_read_ble(buffer + i, analysis->big_endian, analysis->bits);
-				string_size = rz_read_ble(buffer + i + word_size, analysis->big_endian, analysis->bits);
+				string_addr = rz_read_ble(buffer + i, big_endian, bits);
+				string_size = rz_read_ble(buffer + i + word_size, big_endian, bits);
 				if (!string_addr || !string_size) {
 					continue;
 				} else if (word_size == sizeof(ut32) && string_addr == UT32_MAX) {
@@ -1827,7 +1825,7 @@ static void core_recover_golang_strings_from_data_pointers(RzCore *core, GoStrRe
 					continue;
 				}
 				if (recover_string_at(ctx, string_addr, string_size)) {
-					rz_analysis_xrefs_set(analysis, current + i, string_addr, RZ_ANALYSIS_XREF_TYPE_STRING);
+					rz_analysis_xrefs_set(core->analysis, current + i, string_addr, RZ_ANALYSIS_XREF_TYPE_STRING);
 				}
 			}
 			current += length;
@@ -1845,7 +1843,12 @@ end:
  * \param      core  The RzCore struct to use
  */
 RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
-	rz_return_if_fail(core && core->analysis && core->analysis->fcns && core->io);
+	rz_return_if_fail(core && core->analysis && core->io);
+
+	RzList *fcns = rz_analysis_function_list(core->analysis);
+	if (!fcns) {
+		return;
+	}
 
 	const char *asm_arch = rz_config_get(core->config, "asm.arch");
 	ut32 asm_bits = rz_config_get_i(core->config, "asm.bits");
@@ -1929,7 +1932,7 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 		return;
 	}
 
-	rz_list_foreach (core->analysis->fcns, lit, func) {
+	rz_list_foreach (fcns, lit, func) {
 		if (rz_cons_is_breaked()) {
 			break;
 		}

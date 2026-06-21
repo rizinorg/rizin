@@ -363,3 +363,29 @@ rflags = 0x0000000000000202
 oeax = 0xffffffff
 EOF
 RUN
+
+NAME=dr multiple registers printing
+FILE=bins/elf/analysis/bigswitch_x86_64
+CMDS=<<EOF
+ood
+dr rax r13
+EOF
+EXPECT=<<EOF
+rax = 0x0000000000000000
+r13 = 0x0000000000000000
+EOF
+RUN
+
+NAME=dr multiple registers assign
+FILE=bins/elf/analysis/bigswitch_x86_64
+CMDS=<<EOF
+ood
+dr rax=0x64 r13=0x16 rip=0x8
+dr rax r13 rip
+EOF
+EXPECT=<<EOF
+rax = 0x0000000000000064
+r13 = 0x0000000000000016
+rip = 0x0000000000000008
+EOF
+RUN

@@ -30,6 +30,8 @@ RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_new(RZ_OWN ut8 *byte
 	RzSearchBytesPattern *pat = RZ_NEW0(RzSearchBytesPattern);
 	if (!pat) {
 		RZ_LOG_ERROR("Failed to allocate pattern struct.\n");
+		free(bytes);
+		free(mask);
 		return NULL;
 	}
 	pat->bytes = bytes;
@@ -220,7 +222,9 @@ static bool bytes_find(RzSearchFindOpt *fopts, void *user, ut64 address, const R
 	rz_pvector_foreach (patterns, it) {
 		RzSearchBytesPattern *hp = (RzSearchBytesPattern *)*it;
 		if (hp->regex) {
+			RzRegexMulti *re = rz_regex_multi_clone(hp->regex, true);
 			RzPVector *matches = fopts->match_overlap ? rz_regex_match_all_overlap(hp->regex, (const char *)raw_buf, size, 0, RZ_REGEX_DEFAULT) : rz_regex_match_all(hp->regex, (const char *)raw_buf, size, 0, RZ_REGEX_DEFAULT);
+			rz_regex_free_multi_clone(re);
 			void **it;
 			RzPVector *match;
 			rz_pvector_foreach (matches, it) {
@@ -301,11 +305,13 @@ RZ_API bool rz_search_collection_bytes_add_pattern(RZ_NONNULL RzSearchCollection
 
 	if (!rz_search_collection_has_find_callback(col, bytes_find)) {
 		RZ_LOG_ERROR("search: cannot add hex to non-bytes collection\n");
+		rz_search_bytes_pattern_free(bytes_pattern);
 		return false;
 	}
 
 	if (!rz_pvector_push((RzPVector *)col->user, bytes_pattern)) {
 		RZ_LOG_ERROR("search: cannot add byte pattern to search.\n");
+		rz_search_bytes_pattern_free(bytes_pattern);
 		return false;
 	}
 	return true;

@@ -312,13 +312,11 @@ static int rz_debug_gdb_reg_write(RzDebug *dbg, int type, const ut8 *buf, int si
 		return -1;
 	}
 	int buflen = 0;
-	int bits = dbg->analysis->bits;
-	const char *pcname = rz_reg_get_name(dbg->analysis->reg, RZ_REG_NAME_PC);
-	RzRegItem *reg = rz_reg_get(dbg->analysis->reg, pcname, 0);
-	if (reg) {
-		if (dbg->analysis->bits != reg->size) {
-			bits = reg->size;
-		}
+	RzReg *rreg = rz_analysis_get_reg(dbg->analysis);
+	int bits = rz_analysis_get_bits(dbg->analysis);
+	RzRegItem *reg = rz_reg_get_by_role(rreg, RZ_REG_NAME_PC);
+	if (reg && bits != reg->size) {
+		bits = reg->size;
 	}
 	free(rz_reg_get_bytes(dbg->reg, type, &buflen));
 	// some implementations of the gdb protocol are acting weird.
@@ -395,23 +393,23 @@ static RzDebugReasonType rz_debug_gdb_wait(RzDebug *dbg, int pid) {
 static int rz_debug_gdb_attach(RzDebug *dbg, int pid) {
 	RzDebugGdbCtx *ctx = dbg->plugin_data;
 	RzIODesc *d = dbg->iob.io->desc;
-	// TODO: the core must update the dbg.swstep config var when this var is changed
 	dbg->swstep = false;
 	// eprintf ("XWJSTEP TOFALSE\n");
-	if (d && d->plugin && d->plugin->name && d->data) {
-		if (!strcmp("gdb", d->plugin->name)) {
-			RzIOGdb *g = d->data;
-			ctx->origrziogdb = (RzIOGdb **)&d->data; // TODO bit of a hack, please improve
-			ctx->support_sw_bp = UNKNOWN;
-			ctx->support_hw_bp = UNKNOWN;
-			ctx->desc = &g->desc;
-			int arch = rz_sys_arch_id(dbg->arch);
-			int bits = dbg->analysis->bits;
-			gdbr_set_architecture(ctx->desc, arch, bits);
-		} else {
-			eprintf("ERROR: Underlying IO descriptor is not a GDB one..\n");
-		}
+	if (!(d && d->plugin && d->plugin->name && d->data)) {
+		return false;
+	} else if (strcmp("gdb", d->plugin->name)) {
+		eprintf("ERROR: Underlying IO descriptor is not a GDB one..\n");
+		return false;
 	}
+
+	RzIOGdb *g = d->data;
+	ctx->origrziogdb = (RzIOGdb **)&d->data; // TODO bit of a hack, please improve
+	ctx->support_sw_bp = UNKNOWN;
+	ctx->support_hw_bp = UNKNOWN;
+	ctx->desc = &g->desc;
+	int arch = rz_sys_arch_id(dbg->arch);
+	int bits = rz_analysis_get_bits(dbg->analysis);
+	gdbr_set_architecture(ctx->desc, arch, bits);
 	return true;
 }
 
@@ -434,7 +432,7 @@ static const char *rz_debug_gdb_reg_profile(RzDebug *dbg) {
 	RzDebugGdbCtx *ctx = dbg->plugin_data;
 	check_connection(dbg);
 	int arch = rz_sys_arch_id(dbg->arch);
-	int bits = dbg->analysis->bits;
+	int bits = rz_analysis_get_bits(dbg->analysis);
 	// XXX This happens when rizin set dbg.backend before opening io_gdb
 	if (!ctx->desc) {
 		return gdbr_get_reg_profile(arch, bits);

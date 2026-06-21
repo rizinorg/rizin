@@ -1,5 +1,53 @@
 ### winsock2.h ###
 
+hostent=struct
+struct.hostent=h_name,h_aliases,h_addrtype,h_length,h_addr_list
+struct.hostent.h_name=LPSTR,0,0
+struct.hostent.h_aliases=PVOID,4,0
+struct.hostent.h_addrtype=SHORT,8,0
+struct.hostent.h_length=SHORT,10,0
+struct.hostent.h_addr_list=PVOID,12,0
+
+HOSTENT=typedef
+typedef.HOSTENT=struct hostent
+
+PHOSTENT=typedef
+typedef.PHOSTENT=struct hostent *
+
+LPHOSTENT=typedef
+typedef.LPHOSTENT=struct hostent *
+
+protoent=struct
+struct.protoent=p_name,p_aliases,p_proto
+struct.protoent.p_name=LPSTR,0,0
+struct.protoent.p_aliases=PVOID,4,0
+struct.protoent.p_proto=SHORT,8,0
+
+PROTOENT=typedef
+typedef.PROTOENT=struct protoent
+
+PPROTOENT=typedef
+typedef.PPROTOENT=struct protoent *
+
+LPPROTOENT=typedef
+typedef.LPPROTOENT=struct protoent *
+
+servent=struct
+struct.servent=s_name,s_aliases,s_port,s_proto
+struct.servent.s_name=LPSTR,0,0
+struct.servent.s_aliases=PVOID,4,0
+struct.servent.s_port=SHORT,8,0
+struct.servent.s_proto=LPSTR,12,0
+
+SERVENT=typedef
+typedef.SERVENT=struct servent
+
+PSERVENT=typedef
+typedef.PSERVENT=struct servent *
+
+LPSERVENT=typedef
+typedef.LPSERVENT=struct servent *
+
 LPWSAQUERYSETA=type
 type.LPWSAQUERYSETA=p
 

@@ -78,7 +78,7 @@ typedef struct rz_bin_pe_reloc_block_t {
 
 // encoding is 12 bits for type and 4 bits for offset.
 #define PE_RELOC_ENT_TYPE(val)   ((val) >> 12)
-#define PE_RELOC_ENT_OFFSET(val) ((val)&0xfff)
+#define PE_RELOC_ENT_OFFSET(val) ((val) & 0xfff)
 
 typedef struct rz_bin_pe_reloc_ent_t {
 	ut16 raw_val; ///< Type + Offset of the relocation entry
@@ -191,7 +191,6 @@ struct PE_(rz_bin_pe_obj_t) {
 	Sdb *kv;
 	RzCMS *cms;
 	RzSpcIndirectDataContent *spcinfo;
-	bool has_canary;
 	char *authentihash;
 	bool is_authhash_valid;
 	bool is_signed;
@@ -246,7 +245,7 @@ int PE_(rz_bin_pe_is_stripped_local_syms)(RzBinPEObj *bin);
 int PE_(rz_bin_pe_is_stripped_debug)(RzBinPEObj *bin);
 int PE_(bin_pe_get_claimed_checksum)(RzBinPEObj *bin);
 int PE_(bin_pe_get_actual_checksum)(RzBinPEObj *bin);
-bool PE_(rz_bin_pe_has_canary)(const RzBinPEObj *bin);
+bool PE_(rz_bin_pe_has_canary)(RzBinPEObj *bin);
 struct rz_bin_pe_addr_t *PE_(check_unknow)(RzBinPEObj *bin);
 struct rz_bin_pe_addr_t *PE_(check_msvcseh)(RzBinPEObj *bin);
 struct rz_bin_pe_addr_t *PE_(check_mingw)(RzBinPEObj *bin);

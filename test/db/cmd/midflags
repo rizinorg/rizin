@@ -109,9 +109,8 @@ RUN
 NAME=pdj asm.flags.middle=0
 FILE=malloc://1024
 CMDS=<<EOF
-e asm.bits=64
 e asm.arch=x86
-e analysis.arch=x86
+e asm.bits=64
 wx 554889e54157415641554154534881ec
 e asm.flags.middle=0
 f dat.sym @ 2
@@ -190,9 +189,8 @@ RUN
 NAME=pdj asm.flags.middle=2
 FILE=malloc://1024
 CMDS=<<EOF
-e asm.bits=64
 e asm.arch=x86
-e analysis.arch=x86
+e asm.bits=64
 wx 554889e54157415641554154534881ec
 e asm.flags.middle=2
 f dat.sym @ 2
@@ -367,7 +365,7 @@ EXPECT=<<EOF
   0x00000002      49             dec   ecx
   0x00000003  ~   89d1           mov   ecx, edx
   ;-- mid.flag:
-  0x00000004      d15e48         rcr   dword [esi + 0x48], 1
+  0x00000004      d15e48         rcr   dword [esi+0x48], 0x01
 EOF
 RUN
 
@@ -389,8 +387,8 @@ EXPECT=<<EOF
   ;-- mid.flag:
   0x00000002      eb05           jmp   mid.flag2
   0x00000004      31c0           xor   eax, eax
-  0x00000006      74f9           je    1
-  0x00000008  ~   e890909090     call  0x9090909d
+  0x00000006      74f9           jz    0x1
+  0x00000008  ~   e890909090     call  0xffffffff9090909d
   ;-- mid.flag2:
   0x00000009      90             nop
 EOF
@@ -413,7 +411,7 @@ EXPECT=<<EOF
 |           ; CODE XREF from fcn.00000003 @ 0x5
 |           ;-- (0x00000003) fcn.00000003:
 |           0x00000000  ~   b821c10010     mov   eax, 0x1000c121
-|           0x00000005      ebf9           jmp   0
+|           0x00000005      ebf9           jmp   0x0
             0x00000007  ~   b8210011c1     mov   eax, 0xc1110021       ; '!'
             ;-- sym.dummy:
             0x00000009      0011           add   byte [rcx], dl

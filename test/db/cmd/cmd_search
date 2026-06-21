@@ -21,29 +21,6 @@ EOF
 EXPECT=
 RUN
 
-NAME=search esil
-FILE=bins/elf/ioli/crackme0x00
-CMDS=<<EOF
-/E $$,[1],0xe1,-,!
-s@ hit0_0
-EOF
-EXPECT=<<EOF
-hit0_0
-0x8048364
-EOF
-RUN
-
-NAME=search esil json
-FILE=bins/elf/ioli/crackme0x00
-CMDS=<<EOF
-/Ej $$,[1],0xe1,-,!
-s@ hit0_0
-EOF
-EXPECT=<<EOF
-[{"addr":134513508,"value":1}]
-EOF
-RUN
-
 NAME=/r push [imm] refs
 FILE=bins/pe/x.dll
 CMDS=/r 0x69682004
@@ -125,7 +102,7 @@ CMDS=<<EOF
 /zj hello
 EOF
 EXPECT=<<EOF
-[{"address":8019,"size":5,"flag":"hit.string.ascii.0"}]
+[{"address":8019,"size":5,"flag":"hit.string.ascii.0","detail":5}]
 EOF
 RUN
 
@@ -141,7 +118,7 @@ e search.str.min_length=3
 /z ELF
 EOF
 EXPECT=<<EOF
-0x00000001 3 hit.string.ascii.0
+0x00000001 3 hit.string.ascii.0 3
 EOF
 RUN
 
@@ -158,7 +135,7 @@ e search.str.min_length=3
 /z ELF
 EOF
 EXPECT=<<EOF
-0x00000001 3 hit.string.ascii.0
+0x00000001 3 hit.string.ascii.0 3
 EOF
 RUN
 
@@ -170,7 +147,7 @@ e search.str.min_length=3
 /zj foo
 EOF
 EXPECT=<<EOF
-[{"address":0,"size":3,"flag":"hit.string.ascii.0"}]
+[{"address":0,"size":3,"flag":"hit.string.ascii.0","detail":3}]
 EOF
 RUN
 
@@ -366,19 +343,19 @@ e scr.color=false
 q
 EOF
 EXPECT=<<EOF
-  0x00000000             83c408  add esp, 8
+  0x00000000             83c408  add esp, 0x08
   0x00000003                 5b  pop ebx
   0x00000004                 5d  pop ebp
   0x00000005                 c3  ret
 Gadget size: 6
 
-  0x00000001               c408  les ecx, [eax]
+  0x00000001               c408  les ecx, fword [eax]
   0x00000003                 5b  pop ebx
   0x00000004                 5d  pop ebp
   0x00000005                 c3  ret
 Gadget size: 5
 
-  0x00000002             085b5d  or byte [ebx + 0x5d], bl
+  0x00000002             085b5d  or byte [ebx+0x5d], bl
   0x00000005                 c3  ret
 Gadget size: 4
 
@@ -409,7 +386,7 @@ e scr.color=false
 q
 EOF
 EXPECT=<<EOF
-  0x00000002             085b5d  or byte [ebx + 0x5d], bl
+  0x00000002             085b5d  or byte [ebx+0x5d], bl
   0x00000005                 c3  ret
 Gadget size: 4
 
@@ -423,7 +400,7 @@ CMDS=<<EOF
 e asm.bits=32
 e asm.arch=mips
 e scr.color=false
-e rop.len=8
+e gadget.len=8
 wx 1b000000040000001a0000004c08410018000000040000000800000000000070
 /R
 q
@@ -492,7 +469,7 @@ q
 EOF
 EXPECT=<<EOF
 0x004019d2   # 2: ror esp, cl
-0x004019d5   # 2: ror bh, 1
+0x004019d5   # 2: ror bh, 0x01
 0x004019da   # 3: ror ebp, 0xe5
 EOF
 RUN
@@ -653,7 +630,8 @@ e search.from=0x100
 e search.to=0x103
 /x 41424344
 EOF
-EXPECT=
+EXPECT=<<EOF
+EOF
 RUN
 
 NAME=search range hex @(A..B)
@@ -827,9 +805,11 @@ el~RzIL
 EOF
 EXPECT=<<EOF
           asm.cmt.il: Show RzIL expressions as comments
+rzil.step.events.halt_on_exc: Enables/disable exceptions the VM should halt if reached.
 rzil.step.events.read: enables/disables printing aezse read event
 rzil.step.events.write: enables/disables printing aezse write event
 ---
+rzil.step.events.halt_on_exc: Enables/disable exceptions the VM should halt if reached.
 rzil.step.events.read: enables/disables printing aezse read event
 rzil.step.events.write: enables/disables printing aezse write event
 ---
@@ -848,10 +828,12 @@ echo "---"
 el~RzIL
 EOF
 EXPECT=<<EOF
+rzil.step.events.halt_on_exc: Enables/disable exceptions the VM should halt if reached.
 rzil.step.events.read: enables/disables printing aezse read event
 rzil.step.events.write: enables/disables printing aezse write event
 ---
           asm.cmt.il: Show RzIL expressions as comments
+rzil.step.events.halt_on_exc: Enables/disable exceptions the VM should halt if reached.
 rzil.step.events.read: enables/disables printing aezse read event
 rzil.step.events.write: enables/disables printing aezse write event
 ---
@@ -871,13 +853,16 @@ el~RzIL
 EOF
 EXPECT=<<EOF
           asm.cmt.il: Show RzIL expressions as comments
+rzil.step.events.halt_on_exc: Enables/disable exceptions the VM should halt if reached.
 rzil.step.events.read: enables/disables printing aezse read event
 rzil.step.events.write: enables/disables printing aezse write event
 ---
+rzil.step.events.halt_on_exc: Enables/disable exceptions the VM should halt if reached.
 rzil.step.events.read: enables/disables printing aezse read event
 rzil.step.events.write: enables/disables printing aezse write event
 ---
           asm.cmt.il: Show RzIL expressions as comments
+rzil.step.events.halt_on_exc: Enables/disable exceptions the VM should halt if reached.
 rzil.step.events.read: enables/disables printing aezse read event
 rzil.step.events.write: enables/disables printing aezse write event
 EOF
@@ -897,10 +882,10 @@ ww Hello World this is Rizin
 /zj world i utf16le
 EOF
 EXPECT=<<EOF
-0x0000000c 10 hit.string.utf16le.0
-0x0000000c 10 hit.string.utf16le.0
-[{"address":12,"size":10,"flag":"hit.string.utf16le.0"}]
-[{"address":12,"size":10,"flag":"hit.string.utf16le.0"}]
+0x0000000c 10 hit.string.utf16le.0 5
+0x0000000c 10 hit.string.utf16le.0 5
+[{"address":12,"size":10,"flag":"hit.string.utf16le.0","detail":5}]
+[{"address":12,"size":10,"flag":"hit.string.utf16le.0","detail":5}]
 EOF
 RUN
 
@@ -918,8 +903,8 @@ EXPECT=<<EOF
      paddr  size      vaddr vsize align perm name     type     flags         
 -----------------------------------------------------------------------------
 0x00000608  0x17 0x00000608  0x17   0x0 -r-x .init    PROGBITS alloc,execute
-0x00000620  0x70 0x00000620  0x70   0x0 -r-x .plt     PROGBITS alloc,execute
-0x00000690   0x8 0x00000690   0x8   0x0 -r-x .plt.got PROGBITS alloc,execute
+0x00000620  0x70 0x00000620  0x70   0x0 -r-x .plt     PLT      alloc,execute
+0x00000690   0x8 0x00000690   0x8   0x0 -r-x .plt.got PLT      alloc,execute
 0x000006a0 0x222 0x000006a0 0x222   0x0 -r-x .text    PROGBITS alloc,execute
 0x000008c4   0x9 0x000008c4   0x9   0x0 -r-x .fini    PROGBITS alloc,execute
  from    to size perms 
@@ -963,8 +948,8 @@ EXPECT=<<EOF
 [0x0, 0x207ff): 1
 [0x20000, 0x4000a): 2
 [0x40000, 0x4000a): 1
-0x00020000 5 hit.string.ascii.0
-0x00040000 5 hit.string.ascii.1
+0x00020000 5 hit.string.ascii.0 5
+0x00040000 5 hit.string.ascii.1 5
 ----
 [0x0, 0x1004): 0
 [0x1000, 0x2004): 0

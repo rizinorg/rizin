@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-FileCopyrightText: 2014 Fedor Sakharov <fedor.sakharov@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -11,24 +12,20 @@
 #include <rz_util/ht_up.h>
 #include <rz_util/ht_uu.h>
 
-#define COFF_IS_BIG_ENDIAN    1
-#define COFF_IS_LITTLE_ENDIAN 0
-
 #include "coff_specs.h"
 
 struct rz_bin_coff_obj {
 	struct coff_hdr hdr;
 	struct coff_opt_hdr opt_hdr;
-	struct coff_scn_hdr *scn_hdrs;
-	struct coff_symbol *symbols;
+	RzVector /*<struct coff_scn_hdr>*/ *scn_hdrs;
+	RzVector /*<struct coff_symbol>*/ *symbols;
 
 	ut16 target_id; /* TI COFF specific */
 
 	RzBuffer *b;
 	size_t size;
-	ut8 endian;
+	bool big_endian;
 	Sdb *kv;
-	bool verbose;
 	HtUP /*<symidx, RzBinSymbol>*/ *sym_ht;
 	HtUP /*<symidx, RzBinImport>*/ *imp_ht;
 	HtUU /*<symidx, ut64>*/ *imp_index; ///< locally-generated indices for imports, in particular for deterministically assigning reloc targets
@@ -39,9 +36,9 @@ struct rz_bin_coff_obj {
 	bool relocs_patched;
 };
 
-RZ_API bool rz_coff_supported_arch(const ut8 *buf); /* Reads two bytes from buf. */
+RZ_API bool rz_coff_supported_arch(RzBuffer *b);
 RZ_API ut64 rz_coff_perms_from_section_flags(ut32 flags);
-RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf, bool verbose);
+RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf);
 RZ_API void rz_bin_coff_free(struct rz_bin_coff_obj *obj);
 RZ_API RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj);
 RZ_API RZ_OWN char *rz_coff_symbol_name(RZ_NONNULL struct rz_bin_coff_obj *obj, RZ_NULLABLE const ut8 *ptr);

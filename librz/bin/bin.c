@@ -29,7 +29,7 @@ RZ_LIB_VERSION(rz_bin);
 static RzBinPlugin *bin_static_plugins[] = { RZ_BIN_STATIC_PLUGINS };
 static RzBinXtrPlugin *bin_xtr_static_plugins[] = { RZ_BIN_XTR_STATIC_PLUGINS };
 
-static ut64 __getoffset(RzBin *bin, int type, int idx) {
+static ut64 bin_bind_get_offset(RzBin *bin, int type, int idx) {
 	RzBinFile *a = rz_bin_cur(bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
 	if (plugin && plugin->get_offset) {
@@ -38,7 +38,7 @@ static ut64 __getoffset(RzBin *bin, int type, int idx) {
 	return UT64_MAX;
 }
 
-static char *__getname(RzBin *bin, int type, int idx) {
+static char *bin_bind_get_name(RzBin *bin, int type, int idx) {
 	RzBinFile *a = rz_bin_cur(bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
 	if (plugin && plugin->get_name) {
@@ -126,6 +126,7 @@ RZ_API void rz_bin_info_free(RZ_NULLABLE RzBinInfo *rb) {
 	free(rb->claimed_checksum);
 	free(rb->compiler);
 	free(rb->head_flag);
+	ht_ss_free(rb->extra_dict);
 	free(rb);
 }
 
@@ -297,7 +298,8 @@ RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) 
 			return NULL;
 		}
 	}
-	rz_bin_file_set_cur_binfile(bin, bf);
+	rz_bin_file_set_obj(bf, bf->o);
+	rz_bin_set_cur_binfile(bin, bf);
 	rz_id_storage_set(bin->ids, bin->cur, bf->id);
 	return bf;
 }
@@ -365,22 +367,69 @@ RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_name(RzBin *bin, const char *name) {
 	return NULL;
 }
 
+static RZ_OWN RzStrBuf *join_plugin_names(const RzPVector /*<char *>*/ *plugin_names) {
+	RzStrBuf *result = rz_strbuf_new("");
+	if (!result) {
+		return NULL;
+	}
+	void **it = NULL;
+	ut32 idx = 0;
+	rz_pvector_enumerate (plugin_names, it, idx) {
+		const char *name = *it;
+		rz_strbuf_append(result, name);
+		rz_strbuf_append(result, idx < rz_pvector_len(plugin_names) - 1 ? "," : "\0");
+	}
+	return result;
+}
+
+/**
+ * \brief Iterates through the registered bin plugins and selects one which can open the file contained in \p buf.
+ *
+ * \param bin bin context.
+ * \param buf buffer holding the contents of an input file.
+ * \return returns a pointer to a `RzBinPlugin` of a compatible plugin (if found), NULL otherwise.
+ */
 RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 	rz_return_val_if_fail(bin && buf, NULL);
-	RzIterator *it = ht_sp_as_iter(bin->plugins);
-	RzBinPlugin **val;
 
-	rz_iterator_foreach(it, val) {
-		RzBinPlugin *plugin = *val;
-		if (plugin->check_buffer) {
-			if (plugin->check_buffer(buf)) {
-				rz_iterator_free(it);
-				return plugin;
-			}
+	RzPVector /*<char *>*/ *compatible_plugins = rz_pvector_new((RzPVectorFree)free);
+	if (!compatible_plugins) {
+		return NULL;
+	}
+	RzIterator *it = ht_sp_as_iter_keys(bin->plugins);
+	if (!it) {
+		rz_pvector_free(compatible_plugins);
+		return NULL;
+	}
+	// Iterate all plugins and save compatible plugins to `compatible_plugins`
+	char **key;
+	rz_iterator_foreach(it, key) {
+		bool found = false;
+		RzBinPlugin *plugin = (RzBinPlugin *)ht_sp_find(bin->plugins, *key, &found);
+		if (!found) {
+			rz_warn_if_reached();
+			continue;
+		}
+		if (plugin->check_buffer && plugin->check_buffer(buf)) {
+			rz_pvector_push(compatible_plugins, rz_str_dup(*key));
 		}
 	}
 	rz_iterator_free(it);
-	return NULL;
+
+	if (rz_pvector_empty(compatible_plugins)) {
+		rz_pvector_free(compatible_plugins);
+		return NULL;
+	}
+	const char *default_plugin = rz_pvector_at(compatible_plugins, 0);
+	if (rz_pvector_len(compatible_plugins) > 1) {
+		RzStrBuf *compatible_plugin_list = join_plugin_names(compatible_plugins);
+		RZ_LOG_WARN("The input file can be opened by multiple binary plugins (%s). The '%s' plugin will be used by default.\n",
+			compatible_plugin_list ? rz_strbuf_get(compatible_plugin_list) : "", default_plugin);
+		rz_strbuf_free(compatible_plugin_list);
+	}
+	RzBinPlugin *result = (RzBinPlugin *)ht_sp_find(bin->plugins, default_plugin, NULL);
+	rz_pvector_free(compatible_plugins);
+	return result;
 }
 
 RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_filename(RzBin *bin) {
@@ -477,6 +526,7 @@ RZ_API void rz_bin_free(RZ_NULLABLE RzBin *bin) {
 	bin->file = NULL;
 	free(bin->force);
 	free(bin->srcdir);
+	rz_vector_free(bin->str_search_cfg.user_unprintable);
 	// rz_bin_free_bin_files (bin);
 	rz_list_free(bin->binfiles);
 
@@ -821,16 +871,27 @@ trashbin:
 	return NULL;
 }
 
-RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, const char *name) {
+/**
+ * \brief Sets the object file matching the \p arch, \p bits and optionally the \p machine and \p filename.
+ *
+ * \param bin The current RzBin instance.
+ * \param arch The architecture of the binary file.
+ * \param bits The architecture bits of the binary file.
+ * \param machine (Optional) The machine of the binary file.
+ * \param filename (Optional) The filename of the RzBinFile to load. Can be NULL.
+ *
+ * \return True if the binary file was successfully set according to the parameters. False otherwise.
+ */
+RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, RZ_NULLABLE const char *machine, RZ_NULLABLE const char *filename) {
 	rz_return_val_if_fail(bin && arch, false);
 
-	RzBinFile *binfile = rz_bin_file_find_by_arch_bits(bin, arch, bits);
+	RzBinFile *binfile = rz_bin_file_find_by_arch_bits(bin, arch, bits, machine, filename);
 	if (!binfile) {
 		RZ_LOG_WARN("Cannot find binfile with arch/bits %s/%d\n", arch, bits);
 		return false;
 	}
 
-	RzBinObject *obj = rz_bin_object_find_by_arch_bits(binfile, arch, bits, name);
+	RzBinObject *obj = rz_bin_object_find_by_arch_bits(binfile, arch, bits, machine, filename);
 	if (!obj && binfile->xtr_data) {
 		RzBinXtrData *xtr_data = rz_list_get_n(binfile->xtr_data, 0);
 		if (xtr_data && !xtr_data->loaded) {
@@ -838,62 +899,87 @@ RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, const char *
 				.baseaddr = UT64_MAX,
 				.loadaddr = rz_bin_get_laddr(bin)
 			};
-			if (!rz_bin_file_object_new_from_xtr_data(bin, binfile, &obj_opts, xtr_data)) {
+			if (!rz_bin_file_set_xtr_data_as_current_obj(bin, binfile, &obj_opts, xtr_data)) {
 				return false;
 			}
 		}
 		obj = binfile->o;
 	}
-	return rz_bin_file_set_obj(bin, binfile, obj);
-}
-
-RZ_API bool rz_bin_select(RzBin *bin, const char *arch, int bits, const char *name) {
-	rz_return_val_if_fail(bin, false);
-
-	RzBinFile *cur = rz_bin_cur(bin);
-	RzBinObject *obj = NULL;
-	name = !name && cur ? cur->file : name;
-	RzBinFile *binfile = rz_bin_file_find_by_arch_bits(bin, arch, bits);
-	if (binfile && name) {
-		obj = rz_bin_object_find_by_arch_bits(binfile, arch, bits, name);
+	if (!rz_bin_file_set_obj(binfile, obj)) {
+		return false;
 	}
-	return rz_bin_file_set_obj(bin, binfile, obj);
+	return rz_bin_set_cur_binfile(bin, binfile);
 }
 
-RZ_API int rz_bin_select_object(RzBinFile *binfile, const char *arch, int bits, const char *name) {
-	rz_return_val_if_fail(binfile, false);
-	RzBinObject *obj = rz_bin_object_find_by_arch_bits(binfile, arch, bits, name);
-	return rz_bin_file_set_obj(binfile->rbin, binfile, obj);
+/**
+ * \brief Selects the binfile matching \p arch, \p bits and optionally \p machine
+ * and \p filename and sets it as current binfile in RzBin.
+ *
+ * \param bin The current RzBin instance.
+ * \param arch The architecture of the binary file.
+ * \param bits The architecture bits of the binary file.
+ * \param machine (Optional) The machine of the binary file.
+ * \param filename (Optional) The filename of RzBinFile to load.
+ *
+ * \return True if the binary file was successfully set according to the parameters. False otherwise.
+ */
+RZ_API bool rz_bin_select(RzBin *bin, RZ_NONNULL const char *arch, int bits, RZ_NULLABLE const char *machine, RZ_NULLABLE const char *filename) {
+	rz_return_val_if_fail(bin && arch, false);
+
+	RzBinObject *obj = NULL;
+	RzBinFile *binfile = rz_bin_file_find_by_arch_bits(bin, arch, bits, machine, filename);
+	if (binfile) {
+		obj = rz_bin_object_find_by_arch_bits(binfile, arch, bits, machine, filename);
+	}
+	if (!rz_bin_file_set_obj(binfile, obj)) {
+		return NULL;
+	}
+	return rz_bin_set_cur_binfile(bin, binfile);
 }
 
 // NOTE: this functiona works as expected, but  we need to merge bfid and boid
 RZ_API bool rz_bin_select_bfid(RzBin *bin, ut32 bf_id) {
 	rz_return_val_if_fail(bin, false);
 	RzBinFile *bf = rz_bin_file_find_by_id(bin, bf_id);
-	return bf ? rz_bin_file_set_obj(bin, bf, NULL) : false;
+	if (!bf) {
+		return false;
+	}
+	if (!rz_bin_file_set_obj(bf, bf->o)) {
+		return false;
+	}
+	return rz_bin_set_cur_binfile(bin, bf);
 }
 
 RZ_API void rz_bin_set_user_ptr(RzBin *bin, void *user) {
 	bin->user = user;
 }
 
-static RzBinSection *__get_vsection_at(RzBin *bin, ut64 vaddr) {
+static RzBinSection *bin_bind_get_vsection_at(RzBin *bin, ut64 vaddr) {
 	rz_return_val_if_fail(bin, NULL);
-	if (!bin->cur) {
+	if (!bin->cur || !bin->cur->o) {
 		return NULL;
 	}
 	return rz_bin_get_section_at(bin->cur->o, vaddr, true);
 }
 
+static RzBinObject *bin_bind_get_bin_object(RzBin *bin) {
+	rz_return_val_if_fail(bin, NULL);
+	RzBinFile *bf = rz_bin_cur(bin);
+	return bf ? bf->o : NULL;
+}
+
 RZ_API void rz_bin_bind(RzBin *bin, RzBinBind *b) {
-	if (b) {
-		b->bin = bin;
-		b->get_offset = __getoffset;
-		b->get_name = __getname;
-		b->get_sections = rz_bin_object_get_sections_all;
-		b->get_vsect_at = __get_vsection_at;
-		b->demangle = rz_bin_demangle;
+	if (!b) {
+		return;
 	}
+
+	b->bin = bin;
+	b->get_offset = bin_bind_get_offset;
+	b->get_name = bin_bind_get_name;
+	b->get_sections = rz_bin_object_get_sections_all;
+	b->get_vsect_at = bin_bind_get_vsection_at;
+	b->demangle = rz_bin_demangle;
+	b->get_bin_object = bin_bind_get_bin_object;
 }
 
 RZ_API RzBuffer *rz_bin_create(RzBin *bin, const char *p,
@@ -1120,6 +1206,34 @@ RZ_API void rz_bin_virtual_file_free(RZ_NULLABLE RzBinVirtualFile *vfile) {
 	free(vfile);
 }
 
+/**
+ * \brief Clones the virtual file. If the buffer associated with it is owned, it will also clone the buffer.
+ * If it is not owned, it will copy the pointer.
+ *
+ * \param vfile The virtual file to clone.
+ *
+ * \return The virtual file clone or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzBinVirtualFile *rz_bin_virtual_file_clone(RZ_BORROW RZ_NONNULL RzBinVirtualFile *vfile) {
+	rz_return_val_if_fail(vfile, NULL);
+	RzBinVirtualFile *clone = RZ_NEW0(RzBinVirtualFile);
+	if (!clone) {
+		return NULL;
+	}
+	clone->buf_owned = vfile->buf_owned;
+	clone->buf = vfile->buf_owned ? rz_buf_new_with_buf(vfile->buf) : vfile->buf;
+	if (!clone->buf) {
+		rz_bin_virtual_file_free(clone);
+		return NULL;
+	}
+	clone->name = rz_str_dup(vfile->name);
+	if (!clone->name) {
+		rz_bin_virtual_file_free(clone);
+		return NULL;
+	}
+	return clone;
+}
+
 RZ_API void rz_bin_map_free(RZ_NULLABLE RzBinMap *map) {
 	if (!map) {
 		return;
@@ -1127,6 +1241,25 @@ RZ_API void rz_bin_map_free(RZ_NULLABLE RzBinMap *map) {
 	free(map->vfile_name);
 	free(map->name);
 	free(map);
+}
+
+/**
+ * \brief Clones an RzBinMap.
+ *
+ * \param map The map to clone.
+ *
+ * \return The clone of \p map or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzBinMap *rz_bin_map_clone(RZ_NONNULL RzBinMap *map) {
+	rz_return_val_if_fail(map, NULL);
+	RzBinMap *clone = RZ_NEW0(RzBinMap);
+	if (!clone) {
+		return NULL;
+	}
+	rz_mem_copy(clone, sizeof(RzBinMap), map, sizeof(RzBinMap));
+	clone->name = rz_str_dup(map->name);
+	clone->vfile_name = map->vfile_name ? rz_str_dup(map->vfile_name) : NULL;
+	return clone;
 }
 
 /**
@@ -1279,7 +1412,7 @@ RZ_API bool rz_bin_map_is_data(RZ_NONNULL const RzBinMap *map) {
  * \param bin RzBin instance
  * \param type A type field of the RzBinSection (differs between formats)
  * */
-RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, int type) {
+RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, ut64 type) {
 	RzBinFile *a = rz_bin_cur(bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
 	if (plugin && plugin->section_type_to_string) {

@@ -1,8 +1,6 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#define USE_THREADS       1
-#define ALLOW_THREADED    0
 #define UNCOLORIZE_NONTTY 0
 
 #include <rz_core.h>
@@ -10,6 +8,7 @@
 #include <rz_project.h>
 #include <rz_flirt.h>
 #include <rz_socket.h>
+#include <locale.h>
 
 static bool is_valid_gdb_file(RzCoreFile *fh) {
 	RzIODesc *d = fh && fh->core ? rz_io_desc_get(fh->core->io, fh->fd) : NULL;
@@ -45,7 +44,6 @@ static int rz_main_version_verify(int show) {
 		{ "rz_flag", rz_flag_version },
 		{ "rz_core", rz_core_version },
 		{ "rz_crypto", rz_crypto_version },
-		{ "rz_bp", rz_bp_version },
 		{ "rz_debug", rz_debug_version },
 		{ "rz_main", rz_main_version },
 		{ "rz_hash", rz_hash_version },
@@ -87,8 +85,8 @@ static int rz_main_version_verify(int show) {
 	return ret;
 }
 
-static int main_help(int line) {
-
+static int main_help(RZ_BORROW RZ_NONNULL RzCore *core, int line) {
+	rz_return_val_if_fail(core, 1);
 	if (line < 2) {
 		printf("%s%s", Color_CYAN, "Usage: ");
 		printf(Color_RESET "rizin [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
@@ -98,44 +96,42 @@ static int main_help(int line) {
 		const char *options[] = {
 			// clang-format off
 			"--",          "",          "Run rizin without opening any file",
-			"=",           "",          "Same as 'rizin malloc://512",
+			"=",           "",          "Same as 'rizin malloc://512'",
 			"- ",          "",          "Read file from stdin",
 			"-=",          "",          "Perform R=! command to run all commands remotely",
 			"-0",          "",          "Print \\x00 after init and every command",
 			"-1",          "",          "Redirect stderr to stdout",
 			"-2",          "",          "Close stderr file descriptor (silent warning messages)",
-			"-a",          "[arch]",    "Set asm.arch",
+			"-a",          "arch",      "Set asm.arch",
 			"-A",          "",          "Run 'aaa' command to analyze all referenced code",
-			"-b",          "[bits]",    "Set asm.bits",
-			"-B",          "[baddr]",   "Set base address for PIE binaries",
-			"-c 'cmd..'",  "",          "Execute rizin command",
+			"-b",          "bits",      "Set asm.bits",
+			"-B",          "baddr",     "Set base address for PIE binaries",
+			"-c",          "'cmd..'",   "Execute rizin command",
 			"-C",          "",          "File is host:port (alias for -cR+http://%%s/cmd/)",
-			"-d",          "",          "Debug the executable 'file' or running process 'pid",
-			"-D",          "[backend]", "Enable debug mode (e cfg.debug=true)",
-			"-e k=v",      "",          "Evaluate config var",
+			"-d",          "",          "Debug the executable 'file' or running process 'pid'",
+			"-D",          "backend",   "Enable debug mode (e cfg.debug=true)",
+			"-e",          "k=v",       "Evaluate config var",
+			"-E",          "endian",    "Endianness -E big or -E little",
 			"-f",          "",          "Block size = file size",
-			"-F",          "[binplug]", "Force to use that rbin plugin",
+			"-F",          "binplug",   "Force to use that rbin plugin",
 			"-h, -hh",     "",          "Show help message, -hh for long",
-			"-H",          "([var])",   "Display variable",
-			"-i",          "[file]",    "Run script file",
-			"-I",          "[file]",    "Run script file before the file is opened",
-			"-k",          "[OS/kern]", "Set asm.os (linux, macos, w32, netbsd, ...)",
-			"-l",          "[lib]",     "Load plugin file",
+			"-H",          "[var]",     "Display variable",
+			"-i",          "file",      "Run script file",
+			"-I",          "file",      "Run script file before the file is opened",
+			"-k",          "OS/kern",   "Set asm.os (linux, macos, w32, netbsd, ...)",
+			"-l",          "lib",       "Load plugin file",
 			"-L",          "",          "List supported IO plugins",
-			"-m",          "[addr]",    "Map file at given address (loadaddr)",
+			"-m",          "addr",      "Map file at given address (loadaddr)",
 			"-M",          "",          "Do not demangle symbol names",
 			"-n, -nn",     "",          "Do not load RzBin info (-nn only load bin structures)",
 			"-N",          "",          "Do not load user settings and scripts",
 			"-NN",         "",          "Do not load any script or plugin",
 			"-q",          "",          "Quiet mode (no prompt) and quit after -i and -c",
 			"-qq",         "",          "Quiet mode (no prompt) and force quit",
-			"-p",          "[p.rzdb]",  "Load project file",
-			"-r",          "[rz-run]",  "Specify rz-run profile to load (same as -e dbg.profile=X)",
-			"-R",          "[rule]",    "Specify custom rz-run directive",
-			"-s",          "[addr]",    "Initial seek",
-		#if USE_THREADS && ALLOW_THREADED
-			"-t",          "",          "load rz-bin info in thread",
-		#endif
+			"-p",          "p.rzdb",    "Load project file",
+			"-r",          "rz-run",    "Specify rz-run profile to load (same as -e dbg.profile=X)",
+			"-R",          "rule",      "Specify custom rz-run directive",
+			"-s",          "addr",      "Initial seek",
 			"-T",          "",          "Do not compute file hashes",
 			"-u",          "",          "Set bin.filter=false to get raw sym/sec/cls names",
 			"-v, -V",      "",          "Show rizin version (-V show lib versions)",
@@ -145,38 +141,25 @@ static int main_help(int line) {
 			"-z, -zz",     "",          "Do not load strings or load them even in raw",
 			// clang-format on
 		};
-		size_t maxOptionAndArgLength = 0;
-		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-			size_t optionLength = strlen(options[i]);
-			size_t argLength = strlen(options[i + 1]);
-			size_t totalLength = optionLength + argLength;
-			if (totalLength > maxOptionAndArgLength) {
-				maxOptionAndArgLength = totalLength;
-			}
-		}
-		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-			if (i + 1 < sizeof(options) / sizeof(options[0])) {
-				rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
-			}
-		}
+		rz_print_colored_help(options, RZ_ARRAY_SIZE(options), false);
 	}
 	if (line == 2) {
 		char *datahome = rz_path_home_prefix(RZ_DATADIR);
-		char *incdir = rz_path_incdir();
-		char *libdir = rz_path_libdir();
+		char *incdir = rz_path_incdir(core->sys_path);
+		char *libdir = rz_path_libdir(core->sys_path);
 		char *home_rc = rz_path_home_rc();
 		char *home_config_rc = rz_path_home_config_rc();
 		char *home_config_rcdir = rz_path_home_config_rcdir();
-		char *system_rc = rz_path_system_rc();
+		char *system_rc = rz_path_system_rc(core->sys_path);
 		char *binrc_dir = rz_path_home_prefix(RZ_BINRC);
 		char *binrc = rz_file_path_join(binrc_dir, "bin-<format>");
-		char *system_magic = rz_path_system(RZ_SDB_MAGIC);
+		char *system_magic = rz_path_system(core->sys_path, RZ_SDB_MAGIC);
 		char *home_plugins = rz_path_home_prefix(RZ_PLUGINS);
-		char *system_plugins = rz_path_system(RZ_PLUGINS);
+		char *system_plugins = rz_path_system(core->sys_path, RZ_PLUGINS);
 		char *extra_plugins = rz_path_extra(RZ_PLUGINS);
-		char *system_sigdb = rz_path_system(RZ_SIGDB);
+		char *system_sigdb = rz_path_system(core->sys_path, RZ_SIGDB);
 		char *extra_sigdb = rz_path_extra(RZ_SIGDB);
-		char *dirPrefix = rz_path_prefix(NULL);
+		const char *dirPrefix = rz_path_prefix(core->sys_path);
 		char *extra_prefix = rz_path_extra(NULL);
 		// clang-format off
 		printf(
@@ -251,27 +234,27 @@ static int main_help(int line) {
 		free(extra_plugins);
 		free(system_sigdb);
 		free(extra_sigdb);
-		free(dirPrefix);
 		free(extra_prefix);
 	}
 	return 0;
 }
 
-static int main_print_var(const char *var_name) {
+static int main_print_var(RZ_BORROW RZ_NONNULL RzCore *core, const char *var_name) {
+	rz_return_val_if_fail(core, 1);
 	int i = 0;
-	char *prefix = rz_path_prefix(NULL);
+	const char *prefix = rz_path_prefix(core->sys_path);
 	char *extra_prefix = rz_path_extra(NULL);
-	char *incdir = rz_path_incdir();
-	char *libdir = rz_path_libdir();
+	char *incdir = rz_path_incdir(core->sys_path);
+	char *libdir = rz_path_libdir(core->sys_path);
 	char *confighome = rz_path_home_config();
 	char *datahome = rz_path_home_prefix(RZ_DATADIR);
 	char *cachehome = rz_path_home_cache();
 	char *homeplugins = rz_path_home_prefix(RZ_PLUGINS);
-	char *sigdbdir = rz_path_system(RZ_SIGDB);
+	char *sigdbdir = rz_path_system(core->sys_path, RZ_SIGDB);
 	char *extrasigdbdir = rz_path_extra(RZ_SIGDB);
-	char *plugins = rz_path_system(RZ_PLUGINS);
+	char *plugins = rz_path_system(core->sys_path, RZ_PLUGINS);
 	char *extraplugins = rz_path_extra(RZ_PLUGINS);
-	char *magicpath = rz_path_system(RZ_SDB_MAGIC);
+	char *magicpath = rz_path_system(core->sys_path, RZ_SDB_MAGIC);
 	const char *is_portable = RZ_IS_PORTABLE ? "1" : "0";
 	struct rizin_var_t {
 		const char *name;
@@ -325,7 +308,6 @@ static int main_print_var(const char *var_name) {
 	free(plugins);
 	free(magicpath);
 	free(extra_prefix);
-	free(prefix);
 	return 0;
 }
 
@@ -454,6 +436,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	ut64 mapaddr = 0LL;
 	bool quiet = false;
 	int is_gdb = false;
+	ut32 endianness = RZ_SYS_ENDIAN_NONE;
 	const char *s_seek = NULL;
 	bool compute_hashes = true;
 	RzList *cmds = rz_list_new();
@@ -462,12 +445,18 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	RzList *prefiles = rz_list_new();
 	RzCmdStateOutput state = { 0 };
 
+	setlocale(LC_CTYPE, "");
+
 #define LISTS_FREE() \
 	{ \
 		rz_list_free(cmds); \
+		cmds = NULL; \
 		rz_list_free(evals); \
+		evals = NULL; \
 		rz_list_free(files); \
+		files = NULL; \
 		rz_list_free(prefiles); \
+		prefiles = NULL; \
 	}
 
 	bool stderr2stdout = false;
@@ -484,20 +473,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	// Create rz-run profile with startup environ
 	char **env = rz_sys_get_environ();
 	char *envprofile = rz_run_get_environ_profile(env);
-
-	if (rz_sys_getenv_asbool("RZ_DEBUG")) {
-		char *sysdbg = rz_sys_getenv("RZ_DEBUG_TOOL");
-		char *fmt = (sysdbg && *sysdbg)
-			? rz_str_newf("%s %%d", sysdbg)
-#if __APPLE__
-			: rz_str_newf("lldb -p %%d");
-#else
-			: rz_str_newf("gdb --pid %%d");
-#endif
-		rz_sys_crash_handler(fmt);
-		free(fmt);
-		free(sysdbg);
-	}
 
 	r = rz_core_new();
 	if (!r) {
@@ -526,8 +501,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	// -H option without argument
 	if (argc == 2 && !strcmp(argv[1], "-H")) {
-		main_print_var(NULL);
+		main_print_var(r, NULL);
 		LISTS_FREE();
+		rz_core_task_sync_end(&r->tasks);
+		rz_core_free(r);
 		return 0;
 	}
 
@@ -536,7 +513,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	char *debugbackend = rz_str_dup("native");
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "=012AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt");
+	rz_getopt_init(&opt, argc, argv, "=012AMCwxfF:H:hm:E:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt");
 	while (argc >= 2 && (c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '-':
@@ -594,30 +571,58 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 #else
 		case 'd':
 			RZ_LOG_ERROR("Sorry. No debugger backend available.\n");
-			return 1;
+			ret = 1;
+			goto beach;
 #endif
 		case 'D': {
 			debug = 2;
 			free(debugbackend);
 			debugbackend = rz_str_dup(opt.arg);
 			RzCmdStateOutput state = { 0 };
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
+			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET, r);
 			if (!strcmp(opt.arg, "?")) {
 				rz_core_debug_plugins_print(r, &state);
 				rz_cmd_state_output_print(&state);
 				rz_cmd_state_output_fini(&state);
 				rz_cons_flush();
-				LISTS_FREE();
-				return 0;
+				ret = 0;
+				goto beach;
 			}
 			break;
 		}
 		case 'e':
 			if (!strcmp(opt.arg, "q")) {
 				rz_core_cmd0(r, "eq");
+			} else if (rz_str_startswith(opt.arg, "asm.arch")) {
+				RZ_LOG_ERROR("use -a argument for setting the arch name\n");
+				ret = 1;
+				goto beach;
+			} else if (rz_str_startswith(opt.arg, "asm.bits")) {
+				RZ_LOG_ERROR("use -b argument for setting the arch bits\n");
+				ret = 1;
+				goto beach;
+			} else if (rz_str_startswith(opt.arg, "asm.os")) {
+				RZ_LOG_ERROR("use -k argument for setting the OS/kern\n");
+				ret = 1;
+				goto beach;
+			} else if (rz_str_startswith(opt.arg, "cfg.bigendian")) {
+				RZ_LOG_ERROR("use -E argument for setting the endianness\n");
+				ret = 1;
+				goto beach;
 			} else {
-				rz_config_eval(r->config, opt.arg);
+				rz_config_eval(r->config, (void *)opt.arg);
 				rz_list_append(evals, (void *)opt.arg);
+			}
+			break;
+		case 'E':
+			if (RZ_STR_EQ(opt.arg, "big")) {
+				endianness = RZ_SYS_ENDIAN_BIG;
+			} else if (RZ_STR_EQ(opt.arg, "little")) {
+				endianness = RZ_SYS_ENDIAN_LITTLE;
+			} else {
+				RZ_LOG_ERROR("Invalid endianness value '%s'\n", opt.arg);
+				ret = 1;
+				goto beach;
 			}
 			break;
 		case 'f':
@@ -630,9 +635,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			help++;
 			break;
 		case 'H':
-			main_print_var(opt.arg);
-			LISTS_FREE();
-			return 0;
+			main_print_var(r, opt.arg);
+			ret = 0;
+			goto beach;
 		case 'i':
 			if (RZ_STR_ISEMPTY(opt.arg)) {
 				RZ_LOG_ERROR("Cannot open empty script path\n");
@@ -665,7 +670,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			break;
 		case 'M':
 			rz_config_set(r->config, "bin.demangle", "false");
-			rz_config_set(r->config, "asm.demangle", "false");
 			break;
 		case 'n':
 			if (load_bin == LOAD_BIN_ALL) { // "-n"
@@ -709,15 +713,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		case 's':
 			s_seek = opt.arg;
 			break;
-#if USE_THREADS
-		case 't':
-#if ALLOW_THREADED
-			threaded = true;
-#else
-			eprintf("WARNING: -t is temporarily disabled!\n");
-#endif
-			break;
-#endif
 		case 'T':
 			compute_hashes = false;
 			break;
@@ -727,16 +722,19 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
 				free(customRarunProfile);
-				return 0;
+				ret = 0;
+				goto beach;
 			} else {
 				rz_main_version_verify(0);
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
 				free(customRarunProfile);
-				return rz_main_version_print("rizin");
+				ret = rz_main_version_print(r->sys_path, "rizin");
+				goto beach;
 			}
 		case 'V':
-			return rz_main_version_verify(1);
+			ret = rz_main_version_verify(1);
+			goto beach;
 		case 'w':
 			perms |= RZ_PERM_W;
 			break;
@@ -752,14 +750,16 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		RZ_LOG_ERROR("stderr2stdout: Failed to dup2 stderr\n");
 		LISTS_FREE();
 		RZ_FREE(debugbackend);
-		return 1;
+		ret = 1;
+		goto beach;
 	}
 	if (noStderr) {
 		if (-1 == close(2)) {
 			RZ_LOG_ERROR("Failed to close stderr\n");
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 		const char nul[] = RZ_SYS_DEVNULL;
 		int new_stderr = open(nul, O_RDWR);
@@ -767,20 +767,23 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			RZ_LOG_ERROR("Failed to open %s\n", nul);
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 		if (2 != new_stderr) {
 			if (-1 == dup2(new_stderr, 2)) {
 				RZ_LOG_ERROR("Failed to dup2 stderr\n");
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
-				return 1;
+				ret = 1;
+				goto beach;
 			}
 			if (-1 == close(new_stderr)) {
 				RZ_LOG_ERROR("Failed to close %s\n", nul);
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
-				return 1;
+				ret = 1;
+				goto beach;
 			}
 		}
 	}
@@ -824,22 +827,24 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 		run_commands(r, NULL, prefiles, false, do_analysis);
 		run_commands(r, cmds, files, quiet, do_analysis);
-		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
+		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, r);
 		rz_core_io_plugins_print(r->io, &state);
 		rz_cmd_state_output_print(&state);
 		rz_cmd_state_output_fini(&state);
 		rz_cons_flush();
 		LISTS_FREE();
-		free(pfile);
+		RZ_FREE(pfile);
 		RZ_FREE(debugbackend);
-		return 0;
+		ret = 0;
+		goto beach;
 	}
 
 	if (help > 0) {
 		LISTS_FREE();
-		free(pfile);
+		RZ_FREE(pfile);
 		RZ_FREE(debugbackend);
-		return main_help(help > 1 ? 2 : 0);
+		ret = main_help(r, help > 1 ? 2 : 0);
+		goto beach;
 	}
 	if (customRarunProfile) {
 		char *tfn = rz_file_temp(".rz-run");
@@ -856,7 +861,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			RZ_LOG_ERROR("Missing argument for -d\n");
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 		const char *src = haveRarunProfile ? pfile : argv[opt.ind];
 		if (src && *src) {
@@ -903,7 +909,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			RZ_LOG_ERROR("Missing URI for -C\n");
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 		if (strstr(uri, "://")) {
 			rz_core_rtr_add(r, uri);
@@ -937,16 +944,18 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (debug) {
 			RZ_LOG_ERROR("Error: Cannot debug directories, yet.\n");
 			LISTS_FREE();
-			free(pfile);
+			RZ_FREE(pfile);
 			RZ_FREE(debugbackend);
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 		if (rz_sys_chdir(argv[opt.ind])) {
 			RZ_LOG_ERROR("[d] Cannot open directory\n");
 			LISTS_FREE();
-			free(pfile);
+			RZ_FREE(pfile);
 			RZ_FREE(debugbackend);
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 	} else if (argv[opt.ind] && !strcmp(argv[opt.ind], "-")) {
 		int sz;
@@ -954,7 +963,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		int result = _setmode(_fileno(stdin), _O_BINARY);
 		if (result == -1) {
 			RZ_LOG_ERROR("Cannot set stdin to binary mode\n");
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 #endif
 		/* stdin/batch mode */
@@ -982,7 +992,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				RZ_LOG_ERROR("[=] Cannot open '%s'\n", path);
 				LISTS_FREE();
 				free(path);
-				return 1;
+				ret = 1;
+				goto beach;
 			}
 			rz_io_map_new(r->io, fh->fd, 7, 0LL, mapaddr,
 				rz_io_fd_size(r->io, fh->fd));
@@ -990,26 +1001,39 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			rz_core_block_read(r);
 			free(buf);
 			free(path);
+			if (asmarch) {
+				rz_config_set(r->config, "asm.arch", asmarch);
+			}
+			if (asmbits) {
+				rz_config_set(r->config, "asm.bits", asmbits);
+			}
+			if (asmos) {
+				rz_config_set(r->config, "asm.os", asmos);
+			}
+			if (endianness != RZ_SYS_ENDIAN_NONE) {
+				rz_config_set_b(r->config, "cfg.bigendian", endianness == RZ_SYS_ENDIAN_BIG);
+			}
 			// TODO: load rbin thing
 		} else {
 			RZ_LOG_ERROR("Cannot slurp from stdin\n");
 			free(buf);
-			LISTS_FREE();
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 	} else if (has_file_arg(argc, argv, &opt)) {
 		if (debug) {
 			if (asmbits) {
 				rz_config_set(r->config, "asm.bits", asmbits);
 			}
-			rz_config_set(r->config, "search.in", "dbg.map"); // implicit?
 			rz_config_set(r->config, "cfg.debug", "true");
+			rz_config_set(r->config, "search.in", "dbg.map");
 			perms = RZ_PERM_RWX;
 			if (opt.ind >= argc) {
 				RZ_LOG_ERROR("No program given to -d\n");
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
-				return 1;
+				ret = 1;
+				goto beach;
 			}
 			if (debug == 2) {
 				// autodetect backend with -D
@@ -1123,7 +1147,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (asmos) {
 			rz_config_set(r->config, "asm.os", asmos);
 		}
-
+		if (endianness != RZ_SYS_ENDIAN_NONE) {
+			rz_config_set_b(r->config, "cfg.bigendian", endianness == RZ_SYS_ENDIAN_BIG);
+		}
 		if (!debug || debug == 2) {
 			const char *dbg_profile = rz_config_get(r->config, "dbg.profile");
 			if (opt.ind == argc && dbg_profile && *dbg_profile) {
@@ -1283,10 +1309,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (mapaddr) {
 			rz_core_seek(r, mapaddr, true);
 		}
-		rz_list_foreach (evals, iter, cmdn) {
-			rz_config_eval(r->config, cmdn);
-			rz_cons_flush();
-		}
 		if (asmarch) {
 			rz_config_set(r->config, "asm.arch", asmarch);
 		}
@@ -1296,7 +1318,13 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (asmos) {
 			rz_config_set(r->config, "asm.os", asmos);
 		}
-
+		if (endianness != RZ_SYS_ENDIAN_NONE) {
+			rz_config_set_b(r->config, "cfg.bigendian", endianness == RZ_SYS_ENDIAN_BIG);
+		}
+		rz_list_foreach (evals, iter, cmdn) {
+			rz_config_eval(r->config, cmdn);
+			rz_cons_flush();
+		}
 		debug = r->file && iod && (r->file->fd == iod->fd) && iod->plugin &&
 			(iod->plugin->isdbg || (debug == 2 && !strcmp(iod->plugin->name, "dmp")));
 		if (debug) {
@@ -1370,10 +1398,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	} else {
 		rz_core_block_read(r);
 
-		rz_list_foreach (evals, iter, cmdn) {
-			rz_config_eval(r->config, cmdn);
-			rz_cons_flush();
-		}
 		if (asmarch) {
 			rz_config_set(r->config, "asm.arch", asmarch);
 		}
@@ -1383,9 +1407,16 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (asmos) {
 			rz_config_set(r->config, "asm.os", asmos);
 		}
+		if (endianness != RZ_SYS_ENDIAN_NONE) {
+			rz_config_set_b(r->config, "cfg.bigendian", endianness == RZ_SYS_ENDIAN_BIG);
+		}
+		rz_list_foreach (evals, iter, cmdn) {
+			rz_config_eval(r->config, cmdn);
+			rz_cons_flush();
+		}
 	}
 	{
-		char *global_rc = rz_path_system_rc();
+		char *global_rc = rz_path_system_rc(r->sys_path);
 		if (rz_file_exists(global_rc)) {
 			(void)rz_core_run_script(r, global_rc);
 		}

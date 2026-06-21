@@ -103,14 +103,14 @@ static inline st64 rz_seek_offset(ut64 cur, ut64 length, st64 addr, int whence) 
 /* constructors */
 RZ_API RZ_OWN RzBuffer *rz_buf_new_empty(ut64 len);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_file(const char *file, int perm, int mode);
-RZ_API RZ_OWN RzBuffer *rz_buf_new_mmap(const char *file, int flags, int mode);
+RZ_API RZ_OWN RzBuffer *rz_buf_new_mmap(const char *file, int flags, int mode, RZ_NULLABLE void /* RzIO */ *io);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_slice(RzBuffer *b, ut64 offset, ut64 size);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_slurp(const char *file);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_sparse(ut8 Oxff);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_sparse_overlay(RzBuffer *b, RzBufferSparseWriteMode write_mode);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_buf(RzBuffer *b);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE RZ_BORROW const ut8 *bytes, ut64 len);
-RZ_API RZ_OWN RzBuffer *rz_buf_new_from_bytes(RZ_NULLABLE RZ_OWN const ut8 *bytes, ut64 len);
+RZ_API RZ_OWN RzBuffer *rz_buf_new_from_bytes(RZ_NULLABLE RZ_OWN ut8 *bytes, ut64 len);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io_fd(RZ_NONNULL void /* RzIOBind */ *iob, int fd);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io(RZ_NONNULL void /* RzIOBind */ *iob);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_methods(RZ_NONNULL const RzBufferMethods *methods, void *init_user, RzBufferType type);
@@ -158,6 +158,7 @@ RZ_API void rz_buf_set_overflow_byte(RZ_NONNULL RzBuffer *b, ut8 Oxff);
 RZ_API bool rz_buf_is_bytes_buf(const RzBuffer *b);
 RZ_DEPRECATE RZ_API RZ_BORROW ut8 *rz_buf_data(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *size);
 RZ_API RZ_BORROW const ut8 *rz_buf_get_whole_hot_paths(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *sz);
+RZ_API RzBufferType rz_buf_type(RZ_NONNULL const RzBuffer *b);
 
 /**
  * \brief Callback to be used with rz_buf_fwd_scan().
@@ -187,7 +188,7 @@ static inline st64 rz_buf_sleb128_at(RzBuffer *b, ut64 addr, st64 *v) {
 
 #define DEFINE_RZ_BUF_READ_BLE(size) \
 	static inline bool rz_buf_read_ble##size(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut##size *result, bool big_endian) { \
-		rz_return_val_if_fail(b &&result, false); \
+		rz_return_val_if_fail(b && result, false); \
 \
 		ut8 tmp[sizeof(ut##size)]; \
 		if (rz_buf_read(b, tmp, sizeof(tmp)) != sizeof(tmp)) { \
@@ -199,7 +200,7 @@ static inline st64 rz_buf_sleb128_at(RzBuffer *b, ut64 addr, st64 *v) {
 	} \
 \
 	static inline bool rz_buf_read_ble##size##_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut##size *result, bool big_endian) { \
-		rz_return_val_if_fail(b &&result, false); \
+		rz_return_val_if_fail(b && result, false); \
 \
 		ut8 tmp[sizeof(ut##size)]; \
 		if (rz_buf_read_at(b, addr, tmp, sizeof(tmp)) != sizeof(tmp)) { \
@@ -253,7 +254,7 @@ DEFINE_RZ_BUF_WRITE_BLE(128)
 
 #define DEFINE_RZ_BUF_READ_OFFSET_BLE(size) \
 	static inline bool rz_buf_read_ble##size##_offset(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT ut##size *result, bool big_endian) { \
-		rz_return_val_if_fail(b &&offset &&result, false); \
+		rz_return_val_if_fail(b && offset && result, false); \
 		if (!rz_buf_read_ble##size##_at(b, *offset, result, big_endian)) { \
 			return false; \
 		} \
@@ -272,7 +273,7 @@ static inline bool rz_buf_read_offset(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_INOU
 
 #define DEFINE_RZ_BUF_WRITE_OFFSET_BLE(size) \
 	static inline bool rz_buf_write_ble##size##_offset(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_INOUT ut64 *offset, ut##size value, bool big_endian) { \
-		rz_return_val_if_fail(b &&offset, false); \
+		rz_return_val_if_fail(b && offset, false); \
 		if (!rz_buf_write_ble##size##_at(b, *offset, value, big_endian)) { \
 			return false; \
 		} \

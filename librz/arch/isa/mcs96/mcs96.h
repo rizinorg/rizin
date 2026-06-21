@@ -1,5 +1,19 @@
 // SPDX-FileCopyrightText: 2015-2019 condret <condr3t@protonmail.com>
+// SPDX-FileCopyrightText: 2025 bubblepipe <bubblepipe42@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
+
+/**
+ * \file mcs96.h
+ * \brief
+ * Intel MCS-96 microcontroller family instruction set architecture definitions
+ * References:
+ * https://www.njohnson.co.uk/pdf/Roland/Using8096.pdf
+ * https://datasheets.chipdb.org/Intel/MCS96/MANUALS/27231703.PDF
+ * https://archive.org/details/manualzilla-id-5702485/page/n469/mode/2up
+ */
+
+#ifndef MCS96_H
+#define MCS96_H
 
 #include <rz_util.h>
 #include <rz_types.h>
@@ -7,6 +21,7 @@
 typedef struct mcs96_op_t {
 	const char *ins;
 	const ut32 type;
+	const ut32 isa;
 } Mcs96Op;
 
 #define MCS96_1B 0x1
@@ -14,279 +29,708 @@ typedef struct mcs96_op_t {
 #define MCS96_3B 0x4
 #define MCS96_4B 0x8
 #define MCS96_5B 0x10
+#define MCS96_6B 0x20
 
-#define MCS96_3B_OR_4B 0x20
-#define MCS96_4B_OR_5B 0x40
-#define MCS96_5B_OR_6B 0x80
+#define MCS96_3B_OR_4B 0x40
+#define MCS96_4B_OR_5B 0x80
+#define MCS96_5B_OR_6B 0x100
+#define MCS96_6B_OR_7B 0x200
 
-#define MCS96_2OP 0x100
-#define MCS96_3OP 0x200
-#define MCS96_4OP 0x400
-#define MCS96_5OP 0x800
+#define MCS96_FMT_2OP 0x400
+#define MCS96_FMT_3OP 0x800
 
-#define MCS96_REG_8 0x1000
+// possible fixed-length 2-byte instr
+#define MCS96_FMT_OPC_BYTEOPR 0x2000
+#define MCS96_FMT_2_BYTE_NOP  0x4000
+#define MCS96_FMT_OPC_IMM11   0x8000
 
-#define MCS96_FE 0x2000 // 0xfe extension
+// possible fixed-length 3-byte instr
+#define MCS96_FMT_OPC_BYTEOPR_X2    0x10000
+#define MCS96_FMT_OPC_IMM16         0x20000
+#define MCS96_FMT_OPC_IMM11_BYTEOPR 0x40000
+
+// possible fixed-length 4-byte instr
+#define MCS96_FMT_OPC_IMM24 0x80000
+#define MCS96_FMT_TIJMP     0x100000
+
+// possible dynamic-length 3-or-4-byte instr
+#define MCS96_FMT_OPC_INDEX 0x200000
+
+// possible fixed-length 6-byte instr
+#define MCS96_FMT_EXTENDED_INDEXED 0x400000
+
+#define MCS96_REG_8 0x800000
+
+#define MCS96_FE 0x1000000 // 0xfe extension
+
+#define MCS96_8096  0x1 // supported on 8096
+#define MCS96_80196 0x2 // supported on 80196
+#define MCS96_80296 0x4 // supported on 80296
+
+#define MCS96_SUPPORT_SINCE_8096  (MCS96_8096 | MCS96_80196 | MCS96_80296)
+#define MCS96_SUPPORT_SINCE_80196 (MCS96_80196 | MCS96_80296)
 
 static Mcs96Op mcs96_op[] = {
-	{ "skip", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "shr", MCS96_3B },
-	{ "shl", MCS96_3B },
-	{ "shra", MCS96_3B }, // 0x0a
-	{ "invalid", MCS96_1B },
-	{ "shrl", MCS96_3B },
-	{ "shll", MCS96_3B },
-	{ "shral", MCS96_3B },
-	{ "norml", MCS96_3B },
-	{ "invalid", MCS96_1B }, // 0x10
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "shrb", MCS96_3B },
-	{ "shlb", MCS96_3B },
-	{ "shrab", MCS96_3B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "sjmp", MCS96_2B }, // 0x20
-	{ "sjmp", MCS96_2B },
-	{ "sjmp", MCS96_2B },
-	{ "sjmp", MCS96_2B },
-	{ "sjmp", MCS96_2B },
-	{ "sjmp", MCS96_2B },
-	{ "sjmp", MCS96_2B },
-	{ "sjmp", MCS96_2B },
-	{ "scall", MCS96_2B }, // 0x28
-	{ "scall", MCS96_2B },
-	{ "scall", MCS96_2B },
-	{ "scall", MCS96_2B },
-	{ "scall", MCS96_2B },
-	{ "scall", MCS96_2B },
-	{ "scall", MCS96_2B },
-	{ "scall", MCS96_2B },
-	{ "jbc", MCS96_3B }, // 0x30
-	{ "jbc", MCS96_3B },
-	{ "jbc", MCS96_3B },
-	{ "jbc", MCS96_3B },
-	{ "jbc", MCS96_3B },
-	{ "jbc", MCS96_3B },
-	{ "jbc", MCS96_3B },
-	{ "jbc", MCS96_3B },
-	{ "jbs", MCS96_3B }, // 0x38
-	{ "jbs", MCS96_3B },
-	{ "jbs", MCS96_3B },
-	{ "jbs", MCS96_3B },
-	{ "jbs", MCS96_3B },
-	{ "jbs", MCS96_3B },
-	{ "jbs", MCS96_3B },
-	{ "jbs", MCS96_3B },
-	{ "and", MCS96_4B | MCS96_3OP }, // 0x40
-	{ "and", MCS96_5B | MCS96_3OP },
-	{ "and", MCS96_4B | MCS96_3OP },
-	{ "and", MCS96_5B_OR_6B | MCS96_3OP },
-	{ "add", MCS96_4B | MCS96_3OP },
-	{ "add", MCS96_5B | MCS96_3OP },
-	{ "add", MCS96_4B | MCS96_3OP },
-	{ "add", MCS96_5B_OR_6B | MCS96_3OP },
-	{ "sub", MCS96_4B | MCS96_3OP },
-	{ "sub", MCS96_5B | MCS96_3OP },
-	{ "sub", MCS96_4B | MCS96_3OP },
-	{ "sub", MCS96_5B_OR_6B | MCS96_3OP },
-	{ "mulu", MCS96_4B | MCS96_3OP | MCS96_FE },
-	{ "mulu", MCS96_5B | MCS96_3OP | MCS96_FE },
-	{ "mulu", MCS96_4B | MCS96_3OP | MCS96_FE },
-	{ "mulu", MCS96_5B_OR_6B | MCS96_3OP | MCS96_FE }, // 0x4f
-	{ "andb", MCS96_4B | MCS96_3OP | MCS96_REG_8 },
-	{ "andb", MCS96_4B | MCS96_3OP },
-	{ "andb", MCS96_4B | MCS96_3OP },
-	{ "andb", MCS96_5B_OR_6B | MCS96_3OP }, // datasheet says that this is always 5 byte
+	{ "skip", MCS96_2B | MCS96_FMT_2_BYTE_NOP, MCS96_SUPPORT_SINCE_8096 },
+	{ "clr", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "not", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "neg", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "xch", MCS96_3B | MCS96_FMT_OPC_BYTEOPR_X2, MCS96_80196 | MCS96_80296 },
+	{ "dec", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "ext", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "inc", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "shr", MCS96_3B | MCS96_FMT_OPC_BYTEOPR_X2, MCS96_SUPPORT_SINCE_8096 },
+	{ "shl", MCS96_3B | MCS96_FMT_OPC_BYTEOPR_X2, MCS96_SUPPORT_SINCE_8096 },
+	{ "shra", MCS96_3B | MCS96_FMT_OPC_BYTEOPR_X2, MCS96_SUPPORT_SINCE_8096 }, // 0x0a
+	{ "xch", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_80196 | MCS96_80296 },
+	{ "shrl", MCS96_3B | MCS96_FMT_OPC_BYTEOPR_X2, MCS96_SUPPORT_SINCE_8096 },
+	{ "shll", MCS96_3B | MCS96_FMT_OPC_BYTEOPR_X2, MCS96_SUPPORT_SINCE_8096 },
+	{ "shral", MCS96_3B | MCS96_FMT_OPC_BYTEOPR_X2, MCS96_SUPPORT_SINCE_8096 },
+	{ "norml", MCS96_3B | MCS96_FMT_OPC_BYTEOPR_X2, MCS96_SUPPORT_SINCE_8096 },
+	{ "invalid", MCS96_1B, MCS96_SUPPORT_SINCE_8096 }, // 0x10
+	{ "clrb", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "notb", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "negb", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "xchb", MCS96_3B | MCS96_FMT_OPC_BYTEOPR_X2, MCS96_80196 | MCS96_80296 },
+	{ "decb", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "extb", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "incb", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "shrb", MCS96_3B | MCS96_FMT_OPC_BYTEOPR_X2, MCS96_SUPPORT_SINCE_8096 },
+	{ "shlb", MCS96_3B | MCS96_FMT_OPC_BYTEOPR_X2, MCS96_SUPPORT_SINCE_8096 },
+	{ "shrab", MCS96_3B | MCS96_FMT_OPC_BYTEOPR_X2, MCS96_SUPPORT_SINCE_8096 },
+	{ "xchb", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_80196 | MCS96_80296 },
+	{ "est", MCS96_3B | MCS96_FMT_OPC_BYTEOPR_X2, MCS96_SUPPORT_SINCE_8096 },
+	{ "est", MCS96_6B | MCS96_FMT_EXTENDED_INDEXED, MCS96_SUPPORT_SINCE_8096 },
+	{ "estb", MCS96_3B | MCS96_FMT_OPC_BYTEOPR_X2, MCS96_SUPPORT_SINCE_8096 },
+	{ "estb", MCS96_6B | MCS96_FMT_EXTENDED_INDEXED, MCS96_SUPPORT_SINCE_8096 },
+	{ "sjmp", MCS96_2B | MCS96_FMT_OPC_IMM11, MCS96_SUPPORT_SINCE_8096 }, // 0x20
+	{ "sjmp", MCS96_2B | MCS96_FMT_OPC_IMM11, MCS96_SUPPORT_SINCE_8096 },
+	{ "sjmp", MCS96_2B | MCS96_FMT_OPC_IMM11, MCS96_SUPPORT_SINCE_8096 },
+	{ "sjmp", MCS96_2B | MCS96_FMT_OPC_IMM11, MCS96_SUPPORT_SINCE_8096 },
+	{ "sjmp", MCS96_2B | MCS96_FMT_OPC_IMM11, MCS96_SUPPORT_SINCE_8096 },
+	{ "sjmp", MCS96_2B | MCS96_FMT_OPC_IMM11, MCS96_SUPPORT_SINCE_8096 },
+	{ "sjmp", MCS96_2B | MCS96_FMT_OPC_IMM11, MCS96_SUPPORT_SINCE_8096 },
+	{ "sjmp", MCS96_2B | MCS96_FMT_OPC_IMM11, MCS96_SUPPORT_SINCE_8096 },
+	{ "scall", MCS96_2B | MCS96_FMT_OPC_IMM11, MCS96_SUPPORT_SINCE_8096 }, // 0x28
+	{ "scall", MCS96_2B | MCS96_FMT_OPC_IMM11, MCS96_SUPPORT_SINCE_8096 },
+	{ "scall", MCS96_2B | MCS96_FMT_OPC_IMM11, MCS96_SUPPORT_SINCE_8096 },
+	{ "scall", MCS96_2B | MCS96_FMT_OPC_IMM11, MCS96_SUPPORT_SINCE_8096 },
+	{ "scall", MCS96_2B | MCS96_FMT_OPC_IMM11, MCS96_SUPPORT_SINCE_8096 },
+	{ "scall", MCS96_2B | MCS96_FMT_OPC_IMM11, MCS96_SUPPORT_SINCE_8096 },
+	{ "scall", MCS96_2B | MCS96_FMT_OPC_IMM11, MCS96_SUPPORT_SINCE_8096 },
+	{ "scall", MCS96_2B | MCS96_FMT_OPC_IMM11, MCS96_SUPPORT_SINCE_8096 },
+	{ "jbc", MCS96_3B | MCS96_FMT_OPC_IMM11_BYTEOPR, MCS96_SUPPORT_SINCE_8096 }, // 0x30
+	{ "jbc", MCS96_3B | MCS96_FMT_OPC_IMM11_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jbc", MCS96_3B | MCS96_FMT_OPC_IMM11_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jbc", MCS96_3B | MCS96_FMT_OPC_IMM11_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jbc", MCS96_3B | MCS96_FMT_OPC_IMM11_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jbc", MCS96_3B | MCS96_FMT_OPC_IMM11_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jbc", MCS96_3B | MCS96_FMT_OPC_IMM11_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jbc", MCS96_3B | MCS96_FMT_OPC_IMM11_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jbs", MCS96_3B | MCS96_FMT_OPC_IMM11_BYTEOPR, MCS96_SUPPORT_SINCE_8096 }, // 0x38
+	{ "jbs", MCS96_3B | MCS96_FMT_OPC_IMM11_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jbs", MCS96_3B | MCS96_FMT_OPC_IMM11_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jbs", MCS96_3B | MCS96_FMT_OPC_IMM11_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jbs", MCS96_3B | MCS96_FMT_OPC_IMM11_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jbs", MCS96_3B | MCS96_FMT_OPC_IMM11_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jbs", MCS96_3B | MCS96_FMT_OPC_IMM11_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jbs", MCS96_3B | MCS96_FMT_OPC_IMM11_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "and", MCS96_4B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 }, // 0x40
+	{ "and", MCS96_5B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "and", MCS96_4B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "and", MCS96_5B_OR_6B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "add", MCS96_4B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "add", MCS96_5B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "add", MCS96_4B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "add", MCS96_5B_OR_6B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "sub", MCS96_4B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "sub", MCS96_5B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "sub", MCS96_4B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "sub", MCS96_5B_OR_6B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "mulu", MCS96_4B | MCS96_FMT_3OP | MCS96_FE, MCS96_SUPPORT_SINCE_8096 },
+	{ "mulu", MCS96_5B | MCS96_FMT_3OP | MCS96_FE, MCS96_SUPPORT_SINCE_8096 },
+	{ "mulu", MCS96_4B | MCS96_FMT_3OP | MCS96_FE, MCS96_SUPPORT_SINCE_8096 },
+	{ "mulu", MCS96_5B_OR_6B | MCS96_FMT_3OP | MCS96_FE, MCS96_SUPPORT_SINCE_8096 }, // 0x4f
+	{ "andb", MCS96_4B | MCS96_FMT_3OP | MCS96_REG_8, MCS96_SUPPORT_SINCE_8096 },
+	{ "andb", MCS96_4B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "andb", MCS96_4B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "andb", MCS96_5B_OR_6B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 }, // datasheet says that this is always 5 byte
 	// that datasheet already has proven to have typos
-	{ "addb", MCS96_4B | MCS96_3OP },
-	{ "addb", MCS96_4B | MCS96_3OP },
-	{ "addb", MCS96_4B | MCS96_3OP },
-	{ "addb", MCS96_5B_OR_6B | MCS96_3OP },
-	{ "subb", MCS96_4B | MCS96_3OP },
-	{ "subb", MCS96_4B | MCS96_3OP },
-	{ "subb", MCS96_4B | MCS96_3OP },
-	{ "subb", MCS96_5B_OR_6B | MCS96_3OP },
-	{ "mulub", MCS96_4B | MCS96_3OP | MCS96_FE },
-	{ "mulub", MCS96_4B | MCS96_3OP | MCS96_FE },
-	{ "mulub", MCS96_4B | MCS96_3OP | MCS96_FE },
-	{ "mulub", MCS96_5B_OR_6B | MCS96_3OP | MCS96_FE }, // 0x5f
-	{ "and", MCS96_3B | MCS96_2OP },
-	{ "and", MCS96_4B | MCS96_2OP },
-	{ "and", MCS96_3B | MCS96_2OP },
-	{ "and", MCS96_4B_OR_5B | MCS96_2OP },
-	{ "add", MCS96_3B | MCS96_2OP },
-	{ "add", MCS96_4B | MCS96_2OP },
-	{ "add", MCS96_3B | MCS96_2OP },
-	{ "add", MCS96_4B_OR_5B | MCS96_2OP },
-	{ "sub", MCS96_3B | MCS96_2OP },
-	{ "sub", MCS96_4B | MCS96_2OP },
-	{ "sub", MCS96_3B | MCS96_2OP },
-	{ "sub", MCS96_4B_OR_5B | MCS96_2OP },
-	{ "mulu", MCS96_3B | MCS96_2OP | MCS96_FE },
-	{ "mulu", MCS96_4B | MCS96_2OP | MCS96_FE },
-	{ "mulu", MCS96_3B | MCS96_2OP | MCS96_FE },
-	{ "mulu", MCS96_4B_OR_5B | MCS96_2OP | MCS96_FE }, // 0x6f
-	{ "andb", MCS96_3B | MCS96_2OP | MCS96_REG_8 },
-	{ "andb", MCS96_3B | MCS96_2OP },
-	{ "andb", MCS96_3B | MCS96_2OP },
-	{ "andb", MCS96_4B_OR_5B | MCS96_2OP }, // again i don't trust the data-sheet here
-	{ "addb", MCS96_3B | MCS96_2OP | MCS96_REG_8 },
-	{ "addb", MCS96_3B | MCS96_2OP },
-	{ "addb", MCS96_3B | MCS96_2OP },
-	{ "addb", MCS96_4B_OR_5B | MCS96_2OP },
-	{ "subb", MCS96_3B | MCS96_2OP | MCS96_REG_8 },
-	{ "subb", MCS96_3B | MCS96_2OP },
-	{ "subb", MCS96_3B | MCS96_2OP },
-	{ "subb", MCS96_4B_OR_5B | MCS96_2OP },
-	{ "mulub", MCS96_3B | MCS96_2OP | MCS96_FE | MCS96_REG_8 },
-	{ "mulub", MCS96_3B | MCS96_2OP | MCS96_FE },
-	{ "mulub", MCS96_3B | MCS96_2OP | MCS96_FE },
-	{ "mulub", MCS96_4B_OR_5B | MCS96_2OP | MCS96_FE }, // 0x7f
-	{ "or", MCS96_3B | MCS96_2OP },
-	{ "or", MCS96_4B | MCS96_2OP },
-	{ "or", MCS96_3B | MCS96_2OP },
-	{ "or", MCS96_4B_OR_5B | MCS96_2OP },
-	{ "xor", MCS96_3B | MCS96_2OP },
-	{ "xor", MCS96_4B | MCS96_2OP },
-	{ "xor", MCS96_3B | MCS96_2OP },
-	{ "xor", MCS96_4B_OR_5B | MCS96_2OP },
-	{ "cmp", MCS96_3B | MCS96_2OP },
-	{ "cmp", MCS96_4B | MCS96_2OP },
-	{ "cmp", MCS96_3B | MCS96_2OP },
-	{ "cmp", MCS96_4B_OR_5B | MCS96_2OP },
-	{ "divu", MCS96_3B | MCS96_2OP | MCS96_FE },
-	{ "divu", MCS96_4B | MCS96_2OP | MCS96_FE },
-	{ "divu", MCS96_3B | MCS96_2OP | MCS96_FE },
-	{ "divu", MCS96_4B_OR_5B | MCS96_2OP | MCS96_FE }, // 0x8f
-	{ "orb", MCS96_3B | MCS96_2OP | MCS96_REG_8 },
-	{ "orb", MCS96_3B | MCS96_2OP },
-	{ "orb", MCS96_3B | MCS96_2OP },
-	{ "orb", MCS96_4B_OR_5B | MCS96_2OP },
-	{ "xorb", MCS96_3B | MCS96_2OP | MCS96_REG_8 },
-	{ "xorb", MCS96_3B | MCS96_2OP },
-	{ "xorb", MCS96_3B | MCS96_2OP },
-	{ "xorb", MCS96_4B_OR_5B | MCS96_2OP },
-	{ "cmpb", MCS96_3B | MCS96_2OP | MCS96_REG_8 },
-	{ "cmpb", MCS96_3B | MCS96_2OP },
-	{ "cmpb", MCS96_3B | MCS96_2OP },
-	{ "cmpb", MCS96_4B_OR_5B | MCS96_2OP },
-	{ "divub", MCS96_3B | MCS96_2OP | MCS96_FE | MCS96_REG_8 },
-	{ "divub", MCS96_3B | MCS96_2OP | MCS96_FE },
-	{ "divub", MCS96_3B | MCS96_2OP | MCS96_FE },
-	{ "divub", MCS96_4B_OR_5B | MCS96_2OP | MCS96_FE }, // 0x9f
-	{ "ld", MCS96_3B | MCS96_2OP },
-	{ "ld", MCS96_4B | MCS96_2OP },
-	{ "ld", MCS96_3B | MCS96_2OP },
-	{ "ld", MCS96_4B_OR_5B | MCS96_2OP },
-	{ "addc", MCS96_3B | MCS96_2OP },
-	{ "addc", MCS96_4B | MCS96_2OP },
-	{ "addc", MCS96_3B | MCS96_2OP },
-	{ "addc", MCS96_4B_OR_5B | MCS96_2OP },
-	{ "subc", MCS96_3B | MCS96_2OP },
-	{ "subc", MCS96_4B | MCS96_2OP },
-	{ "subc", MCS96_3B | MCS96_2OP },
-	{ "subc", MCS96_4B_OR_5B | MCS96_2OP },
-	{ "lbsze", MCS96_3B | MCS96_2OP },
-	{ "lbsze", MCS96_3B | MCS96_2OP },
-	{ "lbsze", MCS96_3B | MCS96_2OP },
-	{ "lbsze", MCS96_4B_OR_5B | MCS96_2OP }, // 0xaf
-	{ "ldb", MCS96_3B | MCS96_2OP | MCS96_REG_8 },
-	{ "ldb", MCS96_3B | MCS96_2OP },
-	{ "ldb", MCS96_3B | MCS96_2OP },
-	{ "ldb", MCS96_4B_OR_5B | MCS96_2OP },
-	{ "addcb", MCS96_3B | MCS96_2OP | MCS96_REG_8 },
-	{ "addcb", MCS96_3B | MCS96_2OP },
-	{ "addcb", MCS96_3B | MCS96_2OP },
-	{ "addcb", MCS96_4B_OR_5B | MCS96_2OP },
-	{ "subcb", MCS96_3B | MCS96_2OP | MCS96_REG_8 },
-	{ "subcb", MCS96_3B | MCS96_2OP },
-	{ "subcb", MCS96_3B | MCS96_2OP },
-	{ "subcb", MCS96_4B_OR_5B | MCS96_2OP },
-	{ "ldbse", MCS96_3B | MCS96_2OP | MCS96_REG_8 },
-	{ "ldbse", MCS96_3B | MCS96_2OP },
-	{ "ldbse", MCS96_3B | MCS96_2OP },
-	{ "ldbse", MCS96_4B_OR_5B | MCS96_2OP }, // 0xbf
-	{ "st", MCS96_3B | MCS96_2OP },
-	{ "invalid", MCS96_1B },
-	{ "st", MCS96_3B | MCS96_2OP },
-	{ "st", MCS96_4B_OR_5B | MCS96_2OP },
-	{ "stb", MCS96_3B | MCS96_2OP },
-	{ "invalid", MCS96_1B },
-	{ "stb", MCS96_3B | MCS96_2OP },
-	{ "stb", MCS96_4B_OR_5B | MCS96_2OP },
-	{ "push", MCS96_2B },
-	{ "push", MCS96_3B },
-	{ "push", MCS96_2B },
-	{ "push", MCS96_3B_OR_4B },
-	{ "pop", MCS96_2B },
-	{ "invalid", MCS96_1B },
-	{ "pop", MCS96_2B },
-	{ "pop", MCS96_3B_OR_4B }, // 0xcf
-	{ "jnst", MCS96_2B },
-	{ "jnh", MCS96_2B },
-	{ "jgt", MCS96_2B },
-	{ "jnc", MCS96_2B },
-	{ "jnvt", MCS96_2B },
-	{ "jnv", MCS96_2B },
-	{ "jge", MCS96_2B },
-	{ "jne", MCS96_2B },
-	{ "jst", MCS96_2B },
-	{ "jh", MCS96_2B },
-	{ "jle", MCS96_2B },
-	{ "jc", MCS96_2B },
-	{ "jvt", MCS96_2B },
-	{ "jv", MCS96_2B },
-	{ "jlt", MCS96_2B },
-	{ "je", MCS96_2B }, // 0xdf
-	{ "djnz", MCS96_3B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "br", MCS96_2B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "ljmp", MCS96_3B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "lcall", MCS96_3B }, // 0xef
-	{ "ret", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "pushf", MCS96_1B },
-	{ "popf", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "trap", MCS96_1B },
-	{ "clrc", MCS96_1B },
-	{ "setc", MCS96_1B },
-	{ "di", MCS96_1B },
-	{ "ei", MCS96_1B },
-	{ "clrvt", MCS96_1B },
-	{ "nop", MCS96_1B },
-	{ "invalid", MCS96_1B },
-	{ "rst", MCS96_1B }
+	{ "addb", MCS96_4B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "addb", MCS96_4B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "addb", MCS96_4B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "addb", MCS96_5B_OR_6B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "subb", MCS96_4B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "subb", MCS96_4B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "subb", MCS96_4B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "subb", MCS96_5B_OR_6B | MCS96_FMT_3OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "mulub", MCS96_4B | MCS96_FMT_3OP | MCS96_FE, MCS96_SUPPORT_SINCE_8096 },
+	{ "mulub", MCS96_4B | MCS96_FMT_3OP | MCS96_FE, MCS96_SUPPORT_SINCE_8096 },
+	{ "mulub", MCS96_4B | MCS96_FMT_3OP | MCS96_FE, MCS96_SUPPORT_SINCE_8096 },
+	{ "mulub", MCS96_5B_OR_6B | MCS96_FMT_3OP | MCS96_FE, MCS96_SUPPORT_SINCE_8096 }, // 0x5f
+	{ "and", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "and", MCS96_4B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "and", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "and", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "add", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "add", MCS96_4B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "add", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "add", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "sub", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "sub", MCS96_4B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "sub", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "sub", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "mulu", MCS96_3B | MCS96_FMT_2OP | MCS96_FE, MCS96_SUPPORT_SINCE_8096 },
+	{ "mulu", MCS96_4B | MCS96_FMT_2OP | MCS96_FE, MCS96_SUPPORT_SINCE_8096 },
+	{ "mulu", MCS96_3B | MCS96_FMT_2OP | MCS96_FE, MCS96_SUPPORT_SINCE_8096 },
+	{ "mulu", MCS96_4B_OR_5B | MCS96_FMT_2OP | MCS96_FE, MCS96_SUPPORT_SINCE_8096 }, // 0x6f
+	{ "andb", MCS96_3B | MCS96_FMT_2OP | MCS96_REG_8, MCS96_SUPPORT_SINCE_8096 },
+	{ "andb", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "andb", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "andb", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 }, // again i don't trust the data-sheet here
+	{ "addb", MCS96_3B | MCS96_FMT_2OP | MCS96_REG_8, MCS96_SUPPORT_SINCE_8096 },
+	{ "addb", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "addb", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "addb", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "subb", MCS96_3B | MCS96_FMT_2OP | MCS96_REG_8, MCS96_SUPPORT_SINCE_8096 },
+	{ "subb", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "subb", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "subb", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "mulub", MCS96_3B | MCS96_FMT_2OP | MCS96_FE | MCS96_REG_8, MCS96_SUPPORT_SINCE_8096 },
+	{ "mulub", MCS96_3B | MCS96_FMT_2OP | MCS96_FE, MCS96_SUPPORT_SINCE_8096 },
+	{ "mulub", MCS96_3B | MCS96_FMT_2OP | MCS96_FE, MCS96_SUPPORT_SINCE_8096 },
+	{ "mulub", MCS96_4B_OR_5B | MCS96_FMT_2OP | MCS96_FE, MCS96_SUPPORT_SINCE_8096 }, // 0x7f
+	{ "or", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "or", MCS96_4B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "or", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "or", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "xor", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "xor", MCS96_4B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "xor", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "xor", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "cmp", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "cmp", MCS96_4B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "cmp", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "cmp", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "divu", MCS96_3B | MCS96_FMT_2OP | MCS96_FE, MCS96_SUPPORT_SINCE_8096 },
+	{ "divu", MCS96_4B | MCS96_FMT_2OP | MCS96_FE, MCS96_SUPPORT_SINCE_8096 },
+	{ "divu", MCS96_3B | MCS96_FMT_2OP | MCS96_FE, MCS96_SUPPORT_SINCE_8096 },
+	{ "divu", MCS96_4B_OR_5B | MCS96_FMT_2OP | MCS96_FE, MCS96_SUPPORT_SINCE_8096 }, // 0x8f
+	{ "orb", MCS96_3B | MCS96_FMT_2OP | MCS96_REG_8, MCS96_SUPPORT_SINCE_8096 },
+	{ "orb", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "orb", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "orb", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "xorb", MCS96_3B | MCS96_FMT_2OP | MCS96_REG_8, MCS96_SUPPORT_SINCE_8096 },
+	{ "xorb", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "xorb", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "xorb", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "cmpb", MCS96_3B | MCS96_FMT_2OP | MCS96_REG_8, MCS96_SUPPORT_SINCE_8096 },
+	{ "cmpb", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "cmpb", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "cmpb", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "divub", MCS96_3B | MCS96_FMT_2OP | MCS96_FE | MCS96_REG_8, MCS96_SUPPORT_SINCE_8096 },
+	{ "divub", MCS96_3B | MCS96_FMT_2OP | MCS96_FE, MCS96_SUPPORT_SINCE_8096 },
+	{ "divub", MCS96_3B | MCS96_FMT_2OP | MCS96_FE, MCS96_SUPPORT_SINCE_8096 },
+	{ "divub", MCS96_4B_OR_5B | MCS96_FMT_2OP | MCS96_FE, MCS96_SUPPORT_SINCE_8096 }, // 0x9f
+	{ "ld", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "ld", MCS96_4B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "ld", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "ld", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "addc", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "addc", MCS96_4B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "addc", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "addc", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "subc", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "subc", MCS96_4B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "subc", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "subc", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "ldbze", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "ldbze", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "ldbze", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "ldbze", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 }, // 0xaf
+	{ "ldb", MCS96_3B | MCS96_FMT_2OP | MCS96_REG_8, MCS96_SUPPORT_SINCE_8096 },
+	{ "ldb", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "ldb", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "ldb", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "addcb", MCS96_3B | MCS96_FMT_2OP | MCS96_REG_8, MCS96_SUPPORT_SINCE_8096 },
+	{ "addcb", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "addcb", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "addcb", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "subcb", MCS96_3B | MCS96_FMT_2OP | MCS96_REG_8, MCS96_SUPPORT_SINCE_8096 },
+	{ "subcb", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "subcb", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "subcb", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "ldbse", MCS96_3B | MCS96_FMT_2OP | MCS96_REG_8, MCS96_SUPPORT_SINCE_8096 },
+	{ "ldbse", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "ldbse", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "ldbse", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 }, // 0xbf
+	{ "st", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "bmov", MCS96_3B | MCS96_FMT_OPC_BYTEOPR_X2, MCS96_80196 | MCS96_80296 },
+	{ "st", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "st", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "stb", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "cmpl", MCS96_3B | MCS96_FMT_OPC_BYTEOPR_X2, MCS96_80196 | MCS96_80296 },
+	{ "stb", MCS96_3B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "stb", MCS96_4B_OR_5B | MCS96_FMT_2OP, MCS96_SUPPORT_SINCE_8096 },
+	{ "push", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "push", MCS96_3B | MCS96_FMT_OPC_IMM16, MCS96_SUPPORT_SINCE_8096 },
+	{ "push", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "push", MCS96_3B_OR_4B | MCS96_FMT_OPC_INDEX, MCS96_SUPPORT_SINCE_8096 },
+	{ "pop", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "bmovi", MCS96_3B | MCS96_FMT_OPC_BYTEOPR_X2, MCS96_80196 | MCS96_80296 },
+	{ "pop", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "pop", MCS96_3B_OR_4B | MCS96_FMT_OPC_INDEX, MCS96_SUPPORT_SINCE_8096 }, // 0xcf
+	{ "jnst", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jnh", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jgt", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jnc", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jnvt", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jnv", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jge", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jne", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jst", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jh", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jle", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jc", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jvt", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jv", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "jlt", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "je", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 }, // 0xdf
+	{ "djnz", MCS96_3B | MCS96_FMT_OPC_BYTEOPR_X2, MCS96_SUPPORT_SINCE_8096 },
+	{ "djnzw", MCS96_3B | MCS96_FMT_OPC_BYTEOPR_X2, MCS96_80196 | MCS96_80296 },
+	{ "tijmp", MCS96_4B | MCS96_FMT_TIJMP, MCS96_80196 | MCS96_80296 },
+	{ "br", MCS96_2B | MCS96_FMT_OPC_BYTEOPR, MCS96_SUPPORT_SINCE_8096 },
+	{ "ebmovi", MCS96_3B | MCS96_FMT_OPC_BYTEOPR_X2, MCS96_80196 | MCS96_80296 },
+	{ "reti", MCS96_1B, MCS96_80296 },
+	{ "ejmp", MCS96_4B | MCS96_FMT_OPC_IMM24, MCS96_80196 | MCS96_80296 },
+	{ "ljmp", MCS96_3B | MCS96_FMT_OPC_IMM16, MCS96_SUPPORT_SINCE_8096 },
+	{ "eld", MCS96_3B | MCS96_FMT_OPC_IMM16, MCS96_80196 | MCS96_80296 },
+	{ "eld", MCS96_6B | MCS96_FMT_EXTENDED_INDEXED, MCS96_80196 | MCS96_80296 },
+	{ "eldb", MCS96_3B | MCS96_FMT_OPC_IMM16, MCS96_80196 | MCS96_80296 },
+	{ "eldb", MCS96_6B | MCS96_FMT_EXTENDED_INDEXED, MCS96_80196 | MCS96_80296 },
+	{ "dpts", MCS96_1B, MCS96_80196 | MCS96_80296 },
+	{ "epts", MCS96_1B, MCS96_80196 | MCS96_80296 },
+	{ "invalid", MCS96_1B, MCS96_SUPPORT_SINCE_8096 },
+	{ "lcall", MCS96_3B | MCS96_FMT_OPC_IMM16, MCS96_SUPPORT_SINCE_8096 }, // 0xef
+	{ "ret", MCS96_1B, MCS96_SUPPORT_SINCE_8096 },
+	{ "ecall", MCS96_4B | MCS96_FMT_OPC_IMM24, MCS96_80196 | MCS96_80296 },
+	{ "pushf", MCS96_1B, MCS96_SUPPORT_SINCE_8096 },
+	{ "popf", MCS96_1B, MCS96_SUPPORT_SINCE_8096 },
+	{ "pusha", MCS96_1B, MCS96_80196 | MCS96_80296 },
+	{ "popa", MCS96_1B, MCS96_80196 | MCS96_80296 },
+	{ "idlpd", MCS96_1B, MCS96_80196 | MCS96_80296 },
+	{ "trap", MCS96_1B, MCS96_SUPPORT_SINCE_8096 },
+	{ "clrc", MCS96_1B, MCS96_SUPPORT_SINCE_8096 },
+	{ "setc", MCS96_1B, MCS96_SUPPORT_SINCE_8096 },
+	{ "di", MCS96_1B, MCS96_SUPPORT_SINCE_8096 },
+	{ "ei", MCS96_1B, MCS96_SUPPORT_SINCE_8096 },
+	{ "clrvt", MCS96_1B, MCS96_SUPPORT_SINCE_8096 },
+	{ "nop", MCS96_1B, MCS96_SUPPORT_SINCE_8096 },
+	{ "invalid", MCS96_1B, MCS96_SUPPORT_SINCE_8096 }, // 0xfe is the opcode for signed and unsigned operation on 8096 / 80196
+	{ "rst", MCS96_1B, MCS96_SUPPORT_SINCE_8096 }
 };
+
+typedef enum {
+	MCS96_SKIP_00,
+	MCS96_CLR_01,
+	MCS96_NOT_02,
+	MCS96_NEG_03,
+	MCS96_XCH_04,
+	MCS96_DEC_05,
+	MCS96_EXT_06,
+	MCS96_INC_07,
+	MCS96_SHR_08,
+	MCS96_SHL_09,
+	MCS96_SHRA_0A,
+	MCS96_XCH_0B,
+	MCS96_SHRL_0C,
+	MCS96_SHLL_0D,
+	MCS96_SHRAL_0E,
+	MCS96_NORML_0F,
+	MCS96_INVALID_10,
+	MCS96_CLRB_11,
+	MCS96_NOTB_12,
+	MCS96_NEGB_13,
+	MCS96_XCHB_14,
+	MCS96_DECB_15,
+	MCS96_EXTB_16,
+	MCS96_INCB_17,
+	MCS96_SHRB_18,
+	MCS96_SHLB_19,
+	MCS96_SHRAB_1A,
+	MCS96_XCHB_1B,
+	MCS96_EST_1C,
+	MCS96_EST_1D,
+	MCS96_ESTB_1E,
+	MCS96_ESTB_1F,
+	MCS96_SJMP_20,
+	MCS96_SJMP_21,
+	MCS96_SJMP_22,
+	MCS96_SJMP_23,
+	MCS96_SJMP_24,
+	MCS96_SJMP_25,
+	MCS96_SJMP_26,
+	MCS96_SJMP_27,
+	MCS96_SCALL_28,
+	MCS96_SCALL_29,
+	MCS96_SCALL_2A,
+	MCS96_SCALL_2B,
+	MCS96_SCALL_2C,
+	MCS96_SCALL_2D,
+	MCS96_SCALL_2E,
+	MCS96_SCALL_2F,
+	MCS96_JBC_30,
+	MCS96_JBC_31,
+	MCS96_JBC_32,
+	MCS96_JBC_33,
+	MCS96_JBC_34,
+	MCS96_JBC_35,
+	MCS96_JBC_36,
+	MCS96_JBC_37,
+	MCS96_JBS_38,
+	MCS96_JBS_39,
+	MCS96_JBS_3A,
+	MCS96_JBS_3B,
+	MCS96_JBS_3C,
+	MCS96_JBS_3D,
+	MCS96_JBS_3E,
+	MCS96_JBS_3F,
+	MCS96_AND_40,
+	MCS96_AND_41,
+	MCS96_AND_42,
+	MCS96_AND_43,
+	MCS96_ADD_44,
+	MCS96_ADD_45,
+	MCS96_ADD_46,
+	MCS96_ADD_47,
+	MCS96_SUB_48,
+	MCS96_SUB_49,
+	MCS96_SUB_4A,
+	MCS96_SUB_4B,
+	MCS96_MULU_4C,
+	MCS96_MULU_4D,
+	MCS96_MULU_4E,
+	MCS96_MULU_4F,
+	MCS96_ANDB_50,
+	MCS96_ANDB_51,
+	MCS96_ANDB_52,
+	MCS96_ANDB_53,
+	MCS96_ADDB_54,
+	MCS96_ADDB_55,
+	MCS96_ADDB_56,
+	MCS96_ADDB_57,
+	MCS96_SUBB_58,
+	MCS96_SUBB_59,
+	MCS96_SUBB_5A,
+	MCS96_SUBB_5B,
+	MCS96_MULUB_5C,
+	MCS96_MULUB_5D,
+	MCS96_MULUB_5E,
+	MCS96_MULUB_5F,
+	MCS96_AND_60,
+	MCS96_AND_61,
+	MCS96_AND_62,
+	MCS96_AND_63,
+	MCS96_ADD_64,
+	MCS96_ADD_65,
+	MCS96_ADD_66,
+	MCS96_ADD_67,
+	MCS96_SUB_68,
+	MCS96_SUB_69,
+	MCS96_SUB_6A,
+	MCS96_SUB_6B,
+	MCS96_MULU_6C,
+	MCS96_MULU_6D,
+	MCS96_MULU_6E,
+	MCS96_MULU_6F,
+	MCS96_ANDB_70,
+	MCS96_ANDB_71,
+	MCS96_ANDB_72,
+	MCS96_ANDB_73,
+	MCS96_ADDB_74,
+	MCS96_ADDB_75,
+	MCS96_ADDB_76,
+	MCS96_ADDB_77,
+	MCS96_SUBB_78,
+	MCS96_SUBB_79,
+	MCS96_SUBB_7A,
+	MCS96_SUBB_7B,
+	MCS96_MULUB_7C,
+	MCS96_MULUB_7D,
+	MCS96_MULUB_7E,
+	MCS96_MULUB_7F,
+	MCS96_OR_80,
+	MCS96_OR_81,
+	MCS96_OR_82,
+	MCS96_OR_83,
+	MCS96_XOR_84,
+	MCS96_XOR_85,
+	MCS96_XOR_86,
+	MCS96_XOR_87,
+	MCS96_CMP_88,
+	MCS96_CMP_89,
+	MCS96_CMP_8A,
+	MCS96_CMP_8B,
+	MCS96_DIVU_8C,
+	MCS96_DIVU_8D,
+	MCS96_DIVU_8E,
+	MCS96_DIVU_8F,
+	MCS96_ORB_90,
+	MCS96_ORB_91,
+	MCS96_ORB_92,
+	MCS96_ORB_93,
+	MCS96_XORB_94,
+	MCS96_XORB_95,
+	MCS96_XORB_96,
+	MCS96_XORB_97,
+	MCS96_CMPB_98,
+	MCS96_CMPB_99,
+	MCS96_CMPB_9A,
+	MCS96_CMPB_9B,
+	MCS96_DIVUB_9C,
+	MCS96_DIVUB_9D,
+	MCS96_DIVUB_9E,
+	MCS96_DIVUB_9F,
+	MCS96_LD_A0,
+	MCS96_LD_A1,
+	MCS96_LD_A2,
+	MCS96_LD_A3,
+	MCS96_ADDC_A4,
+	MCS96_ADDC_A5,
+	MCS96_ADDC_A6,
+	MCS96_ADDC_A7,
+	MCS96_SUBC_A8,
+	MCS96_SUBC_A9,
+	MCS96_SUBC_AA,
+	MCS96_SUBC_AB,
+	MCS96_LDBZE_AC,
+	MCS96_LDBZE_AD,
+	MCS96_LDBZE_AE,
+	MCS96_LDBZE_AF,
+	MCS96_LDB_B0,
+	MCS96_LDB_B1,
+	MCS96_LDB_B2,
+	MCS96_LDB_B3,
+	MCS96_ADDCB_B4,
+	MCS96_ADDCB_B5,
+	MCS96_ADDCB_B6,
+	MCS96_ADDCB_B7,
+	MCS96_SUBCB_B8,
+	MCS96_SUBCB_B9,
+	MCS96_SUBCB_BA,
+	MCS96_SUBCB_BB,
+	MCS96_LDBSE_BC,
+	MCS96_LDBSE_BD,
+	MCS96_LDBSE_BE,
+	MCS96_LDBSE_BF,
+	MCS96_ST_C0,
+	MCS96_BMOV_C1,
+	MCS96_ST_C2,
+	MCS96_ST_C3,
+	MCS96_STB_C4,
+	MCS96_CMPL_C5,
+	MCS96_STB_C6,
+	MCS96_STB_C7,
+	MCS96_PUSH_C8,
+	MCS96_PUSH_C9,
+	MCS96_PUSH_CA,
+	MCS96_PUSH_CB,
+	MCS96_POP_CC,
+	MCS96_BMOVI_CD,
+	MCS96_POP_CE,
+	MCS96_POP_CF,
+	MCS96_JNST_D0,
+	MCS96_JNH_D1,
+	MCS96_JGT_D2,
+	MCS96_JNC_D3,
+	MCS96_JNVT_D4,
+	MCS96_JNV_D5,
+	MCS96_JGE_D6,
+	MCS96_JNE_D7,
+	MCS96_JST_D8,
+	MCS96_JH_D9,
+	MCS96_JLE_DA,
+	MCS96_JC_DB,
+	MCS96_JVT_DC,
+	MCS96_JV_DD,
+	MCS96_JLT_DE,
+	MCS96_JE_DF,
+	MCS96_DJNZ_E0,
+	MCS96_DJNZW_E1,
+	MCS96_TIJMP_E2,
+	MCS96_BR_E3,
+	MCS96_EBMOVI_E4,
+	MCS96_RETI_E5,
+	MCS96_EJMP_E6,
+	MCS96_LJMP_E7,
+	MCS96_ELD_E8,
+	MCS96_ELD_E9,
+	MCS96_ELDB_EA,
+	MCS96_ELDB_EB,
+	MCS96_DPTS_EC,
+	MCS96_EPTS_ED,
+	MCS96_INVALID_EE,
+	MCS96_LCALL_EF,
+	MCS96_RET_F0,
+	MCS96_ECALL_F1,
+	MCS96_PUSHF_F2,
+	MCS96_POPF_F3,
+	MCS96_PUSHA_F4,
+	MCS96_POPA_F5,
+	MCS96_IDLPD_F6,
+	MCS96_TRAP_F7,
+	MCS96_CLRC_F8,
+	MCS96_SETC_F9,
+	MCS96_DI_FA,
+	MCS96_EI_FB,
+	MCS96_CLRVT_FC,
+	MCS96_NOP_FD,
+	MCS96_MUL_DIV_FE,
+	MCS96_RST_FF,
+} Mcs96Instructions;
 
 static const char *mcs96_fe_op[] = { "mul", "mulb", "mul", "mulb", "div", "divb", "invalid", "invalid" };
 // in theory these invalids can never happen
+
+typedef enum {
+	MCS96_ADDRESSING_REG_DIRECT = 0,
+	MCS96_ADDRESSING_IMMEDIATE = 1,
+	MCS96_ADDRESSING_INDIRECT = 2,
+	MCS96_ADDRESSING_INDEXED = 3,
+} Mcs96AddressingMode;
+
+static inline ut32 compute_fe_index(ut8 byte) {
+	return ((byte & 0x70) >> 4) ^ 0x4;
+}
+
+/**
+ * \brief computes the length of an instruction.
+ * \return int the length of the instruction. returns -1 when invalid.
+ */
+static int mcs96_len(ut32 isa_bit, const ut8 *buf, int len) {
+	if (len < 1) {
+		return 0;
+	}
+
+	if (!(mcs96_op[buf[0]].isa & isa_bit)) { // unsupported instruction
+		return -1;
+	}
+
+	int ret = 1;
+	if (buf[0] == 0xfe) {
+		if (isa_bit == MCS96_80296) {
+			return -1;
+		}
+
+		if (len < 2) {
+			return 0;
+		}
+		if (mcs96_op[buf[1]].type & MCS96_FE) {
+			if (mcs96_op[buf[1]].type & MCS96_5B_OR_6B) {
+				if (len < 3) {
+					return 0;
+				}
+				ret = 6 + (buf[2] & 0x1);
+			}
+			if (mcs96_op[buf[1]].type & MCS96_4B_OR_5B) {
+				if (len < 3) {
+					return 0;
+				}
+				ret = 5 + (buf[2] & 0x1);
+			}
+			if (mcs96_op[buf[1]].type & MCS96_3B_OR_4B) {
+				if (len < 3) {
+					return 0;
+				}
+				ret = 4 + (buf[1] & 0x1);
+			}
+			if (mcs96_op[buf[1]].type & MCS96_5B) {
+				ret = 6;
+			}
+			if (mcs96_op[buf[1]].type & MCS96_4B) {
+				ret = 5;
+			}
+			if (mcs96_op[buf[1]].type & MCS96_3B) {
+				ret = 4;
+			}
+			if (mcs96_op[buf[1]].type & MCS96_2B) {
+				ret = 3;
+			}
+			if (ret > len) {
+				ret = 0;
+			}
+			return ret;
+		}
+	}
+	if (mcs96_op[buf[0]].type & MCS96_5B_OR_6B) {
+		if (len < 2) {
+			return 0;
+		}
+		ret = 5 + (buf[1] & 0x1);
+	}
+	if (mcs96_op[buf[0]].type & MCS96_4B_OR_5B) {
+		if (len < 2) {
+			return 0;
+		}
+		ret = 4 + (buf[1] & 0x1);
+	}
+	if (mcs96_op[buf[0]].type & MCS96_3B_OR_4B) {
+		if (len < 2) {
+			return 0;
+		}
+		ret = 3 + (buf[1] & 0x1);
+	}
+	if (mcs96_op[buf[0]].type & MCS96_6B) {
+		ret = 6;
+	}
+	if (mcs96_op[buf[0]].type & MCS96_5B) {
+		ret = 5;
+	}
+	if (mcs96_op[buf[0]].type & MCS96_4B) {
+		ret = 4;
+	}
+	if (mcs96_op[buf[0]].type & MCS96_3B) {
+		ret = 3;
+	}
+	if (mcs96_op[buf[0]].type & MCS96_2B) {
+		ret = 2;
+	}
+	if (ret > len) {
+		ret = 0;
+	}
+	return ret;
+}
+
+/**
+ * Extract addressing mode from MCS-96 instruction opcode.
+ * The lower 2 bits (aa) encode the addressing mode for many instructions.
+ * Format: (xxxxxxaa)
+ *
+ * \param opcode The instruction opcode byte
+ * \return Addressing mode (0-3)
+ */
+static inline Mcs96AddressingMode extract_addressing_mode(ut8 opcode) {
+	return (Mcs96AddressingMode)(opcode & 0x03);
+}
+
+/**
+ * Extract 11-bit signed displacement from sjmp/scall instruction.
+ * Format: (instr|xxx)(disp-low)
+ *
+ * \param opcode First byte of the instruction, containing upper 3 bits of the displacement
+ * \param disp_low Second byte of the instruction, containing lower 8 bits of the displacement
+ * \return Sign-extended 16-bit displacement (-1024 to +1023)
+ */
+static inline st16 extract_disp11(ut8 opcode, ut8 disp_low) {
+	st16 upper3bits = (st16)(opcode & 0x07); // 0b00000111
+	st16 disp = (upper3bits << 8) | disp_low;
+
+	// Sign-extend from 11 bits to 16 bits
+	if (disp & 0x400) { // Check if bit 10 (sign bit) is set
+		disp |= 0xF800; // Set bits 15-11 to extend the sign
+	}
+
+	return disp;
+}
+
+#endif /* MCS96_H */

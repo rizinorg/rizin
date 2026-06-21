@@ -258,6 +258,7 @@ RzCryptoPlugin rz_crypto_plugin_rc2 = {
 	.name = "rc2",
 	.author = "lionaneesh",
 	.license = "LGPL-3",
+	.description = "RC2 symmetric-key block cipher",
 	.set_key = rc2_set_key,
 	.get_key_size = rc2_get_key_size,
 	.use = rc2_use,

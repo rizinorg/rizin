@@ -1,0 +1,257 @@
+NAME=hunk test
+FILE=bins/hunk/test
+CMDS=<<EOF
+ia
+echo ---
+iH
+EOF
+EXPECT=<<EOF
+[Info]
+arch     m68k
+cpu      N/A
+features N/A
+baddr    ----------
+binsz    0x000067d4
+bintype  N/A
+bits     32
+class    N/A
+compiler N/A
+dbg_file N/A
+endian   BE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  68000
+maxopsz  22
+minopsz  2
+os       AmigaOS
+cc       N/A
+pcalign  2
+rpath    N/A
+subsys   
+stripped false
+havecode true
+va       true
+static   true
+linenum  false
+lsyms    false
+canary   false
+pie      false
+relrocs  false
+nx       false
+
+[Imports]
+nth vaddr bind type lib name 
+-----------------------------
+
+[Entries]
+     vaddr      paddr     hvaddr      haddr type    
+----------------------------------------------------
+0x00008000 0x00000028 ---------- 0x00000028 program
+
+[Exports]
+nth paddr vaddr bind type size lib name 
+----------------------------------------
+
+[Classes]
+address min max name super 
+---------------------------
+
+[Symbols]
+nth      paddr      vaddr bind type size lib name                           
+----------------------------------------------------------------------------
+  0 0x000000e8 0x000080c0 NONE FUNC    0     ___exit
+  0 0x000032ec 0x0000b2c4 NONE FUNC    0     __isatty_r
+  0 0x00000dcc 0x00008da4 NONE FUNC    0     ___sf_fake_stdin
+  0 0x0000126c 0x00009244 NONE FUNC    0     ___sfvwrite_r
+  0 0x000000e8 0x000080c0 NONE FUNC    0     __exit
+  0 0x00003144 0x0000b11c NONE FUNC    0     __read_r
+  0 0x0000331c 0x0000b2f4 NONE FUNC    0     ___DTOR_LIST__
+  0 0x000031f6 0x0000b1ce NONE FUNC    0     __getpid
+  0 0x00001758 0x00009730 NONE FUNC    0     _free
+  0 0x00000660 0x00008638 NONE FUNC    0     _strcat
+  0 0x00001ae8 0x00009ac0 NONE FUNC    0     ___seofread
+  0 0x0000256c 0x0000a544 NONE FUNC    0     __ZN6MemMap4freeEPc
+  0 0x00000e84 0x00008e5c NONE FUNC    0     ___sfp
+  0 0x00000d60 0x00008d38 NONE FUNC    0     __realloc_r
+  0 0x00003374 0x0000b34c NONE FUNC    0     __etext
+  0 0x00000266 0x0000823e NONE FUNC    0     ___initcpp
+  0 0x00002fd8 0x0000afb0 NONE FUNC    0     __write
+  0 0x00000f8c 0x00008f64 NONE FUNC    0     ___sfp_lock_acquire
+  0 0x00001cdc 0x00009cb4 NONE FUNC    0     ___swsetup_r
+  0 0x000022be 0x0000a296 NONE FUNC    0     __Z11__sys_allocj
+  0 0x00000fb0 0x00008f88 NONE FUNC    0     ___fp_unlock_all
+  0 0x00003020 0x0000aff8 NONE FUNC    0     __read
+  0 0x000016d8 0x000096b0 NONE FUNC    0     __fwalk_reent
+  0 0x0000329a 0x0000b272 NONE FUNC    0     __unlink
+  0 0x00000f8e 0x00008f66 NONE FUNC    0     ___sfp_lock_release
+  0 0x0000064c 0x00008624 NONE FUNC    0     _puts
+  0 0x00003094 0x0000b06c NONE FUNC    0     ___exit_fh
+  0 0x000031ae 0x0000b186 NONE FUNC    0     ___udivsi4
+  0 0x00003320 0x0000b2f8 NONE FUNC    0     ___EXIT_LIST__
+  0 0x0000319c 0x0000b174 NONE FUNC    0     ___umodsi3
+  0 0x00000f92 0x00008f6a NONE FUNC    0     ___sinit_lock_release
+  0 0x00002a90 0x0000aa68 NONE FUNC    0     ___sflush_r
+  0 0x00002ea8 0x0000ae80 NONE FUNC    0     __open
+  0 0x00002c50 0x0000ac28 NONE FUNC    0     __fflush_r
+  0 0x0000295c 0x0000a934 NONE FUNC    0     __fclose_r
+  0 0x00000304 0x000082dc NONE FUNC    0     ___nocommandline
+  0 0x0000334c 0x0000b324 NONE FUNC    0     ___INIT_LIST__
+  0 0x00001ca0 0x00009c78 NONE FUNC    0     __write_r
+  0 0x00002ea8 0x0000ae80 NONE FUNC    0     _open
+  0 0x00000d20 0x00008cf8 NONE FUNC    0     __calloc_r
+  0 0x00002e20 0x0000adf8 NONE FUNC    0     ___swhatbuf_r
+  0 0x000031f4 0x0000b1cc NONE FUNC    0     __kill
+  0 0x00001f98 0x00009f70 NONE FUNC    0     __ZN4Tree3drlEPNS_4LeafES1_
+  0 0x00002918 0x0000a8f0 NONE FUNC    0     ___divsi3
+  0 0x0000232a 0x0000a302 NONE FUNC    0     __ZN6MemMap6unlinkEPNS_4LeafE
+  0 0x000022f8 0x0000a2d0 NONE FUNC    0     __ZN6MemMap4findEi
+  0 0x00000f7c 0x00008f54 NONE FUNC    0     ___sinit
+  0 0x00002164 0x0000a13c NONE FUNC    0     __ZN4Tree9fixRemoveEPNS_4LeafE
+  0 0x000018a0 0x00009878 NONE FUNC    0     _memcpy
+  0 0x000022e4 0x0000a2bc NONE FUNC    0     __ZN6RawMem5allocEj
+  0 0x00001a10 0x000099e8 NONE FUNC    0     _memset
+  0 0x000032bc 0x0000b294 NONE FUNC    0     __fstat_r
+  0 0x00000f66 0x00008f3e NONE FUNC    0     __cleanup
+  0 0x00003370 0x0000b348 NONE FUNC    0     ___ZZZ_LIST__
+  0 0x000030ac 0x0000b084 NONE FUNC    0     __isatty
+  0 0x00001ecc 0x00009ea4 NONE FUNC    0     __ZN4Tree3drrEPNS_4LeafES1_
+  0 0x000028e0 0x0000a8b8 NONE FUNC    0     __close_r
+  0 0x00003374 0x0000b34c NONE FUNC    0     ___datadata_relocs
+  0 0x00002cd8 0x0000acb0 NONE FUNC    0     _fflush
+  0 0x00002918 0x0000a8f0 NONE FUNC    0     _ldiv
+  0 0x00001aec 0x00009ac4 NONE FUNC    0     ___swrite
+  0 0x0000056a 0x00008542 NONE FUNC    0     __puts_r
+  0 0x0000276e 0x0000a746 NONE FUNC    0     ___free_all
+  0 0x00003292 0x0000b26a NONE FUNC    0     _lseek
+  0 0x00003318 0x0000b2f0 NONE FUNC    0     ___CTOR_LIST__
+  0 0x00002066 0x0000a03e NONE FUNC    0     __ZN4Tree6fixAddEPNS_4LeafE
+  0 0x00000028 0x00008000 NONE FUNC    0     _____start
+  0 0x00000d04 0x00008cdc NONE FUNC    0     _calloc
+  0 0x0000234c 0x0000a324 NONE FUNC    0     __ZN6MemMap3putEPNS_4LeafE
+  0 0x00000dec 0x00008dc4 NONE FUNC    0     ___sf_fake_stdout
+  0 0x00000190 0x00008168 NONE FUNC    0     ___initlibraries
+  0 0x00001bae 0x00009b86 NONE FUNC    0     ___sclose
+  0 0x000023b6 0x0000a38e NONE FUNC    0     __ZN6MemMap5allocEj
+  0 0x000022a6 0x0000a27e NONE FUNC    0     __Z10__sys_freePc
+  0 0x00000226 0x000081fe NONE FUNC    0     ___exitlibraries
+  0 0x00003180 0x0000b158 NONE FUNC    0     _realloc
+  0 0x0000176c 0x00009744 NONE FUNC    0     _memchr
+  0 0x00000f9c 0x00008f74 NONE FUNC    0     ___fp_lock_all
+  0 0x0000275a 0x0000a732 NONE FUNC    0     __free_r
+  0 0x00001bc0 0x00009b98 NONE FUNC    0     _strchr
+  0 0x00003208 0x0000b1e0 NONE FUNC    0     __lseek
+  0 0x00001744 0x0000971c NONE FUNC    0     _malloc
+  0 0x00002a7c 0x0000aa54 NONE FUNC    0     _fclose
+  0 0x00002d04 0x0000acdc NONE FUNC    0     __lseek_r
+  0 0x000006ac 0x00008684 NONE FUNC    0     _strcpy
+  0 0x00001820 0x000097f8 NONE FUNC    0     _memcmp
+  0 0x00000f52 0x00008f2a NONE FUNC    0     __cleanup_r
+  0 0x00001674 0x0000964c NONE FUNC    0     __fwalk
+  0 0x0000028a 0x00008262 NONE FUNC    0     ___exitcpp
+  0 0x00001ab0 0x00009a88 NONE FUNC    0     ___sread
+  0 0x00000028 0x00008000 NONE FUNC    0     __stext
+  0 0x0000274c 0x0000a724 NONE FUNC    0     __malloc_r
+  0 0x00001b6e 0x00009b46 NONE FUNC    0     ___sseek
+  0 0x00002d40 0x0000ad18 NONE FUNC    0     ___smakebuf_r
+  0 0x00000130 0x00008108 NONE FUNC    0     _callfuncs
+  0 0x00002f90 0x0000af68 NONE FUNC    0     __close
+  0 0x00002fd8 0x0000afb0 NONE FUNC    0     _write
+  0 0x00001e8a 0x00009e62 NONE FUNC    0     __ZN4Tree4Leaf4prevEv
+  0 0x00000e0c 0x00008de4 NONE FUNC    0     ___sf_fake_stderr
+  0 0x00000f90 0x00008f68 NONE FUNC    0     ___sinit_lock_acquire
+  0 0x0000290c 0x0000a8e4 NONE FUNC    0     ___modsi3
+  0 0x000031a8 0x0000b180 NONE FUNC    0     ___udivsi3
+  0 0x00002918 0x0000a8f0 NONE FUNC    0     _div
+  0 0x000032b8 0x0000b290 NONE FUNC    0     _ioctl
+  0 0x000006c0 0x00008698 NONE FUNC    0     _strlen
+  0 0x00003020 0x0000aff8 NONE FUNC    0     _read
+  0 0x00001910 0x000098e8 NONE FUNC    0     _memmove
+  0 0x00003296 0x0000b26e NONE FUNC    0     __fstat
+  0 0x000000e8 0x000080c0 NONE FUNC    0     _exit
+  0 0x00003068 0x0000b040 NONE FUNC    0     ___init_fh
+  0 0x00001e48 0x00009e20 NONE FUNC    0     __ZN4Tree4Leaf4nextEv
+  0 0x00001f4a 0x00009f22 NONE FUNC    0     __ZN4Tree2rrEPNS_4LeafES1_
+  0 0x00000e2c 0x00008e04 NONE FUNC    0     ___sfmoreglue
+  0 0x00000534 0x0000850c NONE FUNC    0     ___exitcommandline
+  0 0x00001a84 0x00009a5c NONE FUNC    0     ___mulsi3
+  0 0x00001740 0x00009718 NONE FUNC    0     __global_impure_ptr
+  0 0x00002016 0x00009fee NONE FUNC    0     __ZN4Tree2rlEPNS_4LeafES1_
+  0 0x00000a82 0x00008a5a NONE FUNC    0     _strstr
+  0 0x000002b2 0x0000828a NONE FUNC    0     _helper_function
+  0 0x000002d6 0x000082ae NONE FUNC    0     _main
+  0 0x00002f90 0x0000af68 NONE FUNC    0     _close
+  0 0x00004388 0x0000b44c NONE OBJ     0     ___LIB_LIST__
+  0 0x0000438c 0x0000b450 NONE OBJ     0     _DOSBase
+  0 0x00004398 0x0000b45c NONE OBJ     0     __edata
+  0 0x00004290 0x0000b354 NONE OBJ     0     _message
+  0 0x00004394 0x0000b458 NONE OBJ     0     ___ZZZ_DLIST__
+  0 0x00004288 0x0000b34c NONE OBJ     0     __sdata
+  0 0x00004384 0x0000b448 NONE OBJ     0     __impure_ptr
+  0 0x0000428c 0x0000b350 NONE OBJ     0     _magic_data
+  0 0x000044dc 0x0000b4c0 NONE OBJ     0     ___maxfh
+  0 0x000044c0 0x0000b4a4 NONE OBJ     0     __WBenchMsg
+  0 0x00004478 0x0000b45c NONE OBJ     0     ___argv
+  0 0x000044e4 0x0000b4c8 NONE OBJ     0     __end
+  0 0x000044c4 0x0000b4a8 NONE OBJ     0     ___commandlen
+  0 0x00004478 0x0000b45c NONE OBJ     0     __bss_start
+  0 0x000044e0 0x0000b4c4 NONE OBJ     0     ___fh
+  0 0x000044c8 0x0000b4ac NONE OBJ     0     _SysBase
+  0 0x000044cc 0x0000b4b0 NONE OBJ     0     ___commandline
+  0 0x000044d8 0x0000b4bc NONE OBJ     0     _errno
+  0 0x000044d4 0x0000b4b8 NONE OBJ     0     _uninitialized_bss_var
+  0 0x000044d0 0x0000b4b4 NONE OBJ     0     ___argc
+  0 0x00007940 0x0000e924 NONE OBJ     0     __debug_abbrev_start
+  0 0x00007940 0x0000e924 NONE OBJ     0     __debug_line_str_start
+  0 0x00007940 0x0000e924 NONE OBJ     0     __debug_frame_start
+  0 0x00007940 0x0000e924 NONE OBJ     0     __debug_aranges_start
+  0 0x00007940 0x0000e924 NONE OBJ     0     __debug_info_start
+  0 0x00007940 0x0000e924 NONE OBJ     0     __debug_str_start
+  0 0x00007940 0x0000e924 NONE OBJ     0     __debug_loclists_start
+  0 0x00007940 0x0000e924 NONE OBJ     0     __debug_rgnlists_start
+  0 0x00007940 0x0000e924 NONE OBJ     0     __debug_line_start
+
+[Sections]
+     paddr   size      vaddr  vsize align perm name        type flags 
+----------------------------------------------------------------------
+0x00000028 0x334c 0x00008000 0x334c   0x0 -r-x hunk_0_code      
+0x00004288  0x110 0x0000b34c  0x110   0x0 -rw- hunk_1_data      
+0x00004478    0x0 0x0000b45c   0x6c   0x0 -rw- hunk_2_bss       
+
+[Memory]
+name size address flags mirror 
+-------------------------------
+
+[Strings]
+paddr vaddr len size section type string 
+-----------------------------------------
+
+---
+hunks_count: 3
+hunks:
+  - index: 0
+    type: "code"
+    vaddr: 0x8000
+    vsize: 0x334c
+    psize: 0x334c
+    relocs_count: 308
+    symbols_count: 121
+  - index: 1
+    type: "data"
+    vaddr: 0xb34c
+    vsize: 0x110
+    psize: 0x110
+    relocs_count: 7
+    symbols_count: 8
+  - index: 2
+    type: "bss"
+    vaddr: 0xb45c
+    vsize: 0x6c
+    psize: 0x0
+    relocs_count: 0
+    symbols_count: 21
+
+EOF
+RUN

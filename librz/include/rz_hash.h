@@ -29,6 +29,7 @@ typedef struct rz_hash_plugin_t {
 	const char *name;
 	const char *license;
 	const char *author;
+	const char *description;
 	bool support_hmac;
 	void *(*context_new)();
 	void (*context_free)(void *context);
@@ -95,6 +96,10 @@ RZ_API RZ_OWN char *rz_hash_ssdeep(RZ_NONNULL const ut8 *input, size_t size);
 RZ_API ut32 rz_hash_xxhash(RZ_NONNULL const ut8 *input, size_t size);
 RZ_API double rz_hash_entropy(RZ_NONNULL const ut8 *data, ut64 len);
 RZ_API double rz_hash_entropy_fraction(RZ_NONNULL const ut8 *data, ut64 len);
+RZ_API double rz_hash_chisquare(RZ_NONNULL const ut8 *data, ut64 len);
+RZ_API double rz_hash_ioc(RZ_NONNULL const ut8 *data, ut64 len);
+RZ_API double rz_hash_min_entropy(RZ_NONNULL const ut8 *data, ut64 len);
+RZ_API double rz_hash_serial_correlation(RZ_NONNULL const ut8 *data, ut64 len);
 
 #endif
 
@@ -106,11 +111,24 @@ extern RzHashPlugin rz_hash_plugin_sha1;
 extern RzHashPlugin rz_hash_plugin_sha256;
 extern RzHashPlugin rz_hash_plugin_sha384;
 extern RzHashPlugin rz_hash_plugin_sha512;
+
+extern RzHashPlugin rz_hash_plugin_sha3_224;
+extern RzHashPlugin rz_hash_plugin_sha3_256;
+extern RzHashPlugin rz_hash_plugin_sha3_384;
+extern RzHashPlugin rz_hash_plugin_sha3_512;
+extern RzHashPlugin rz_hash_plugin_keccak_256;
+extern RzHashPlugin rz_hash_plugin_keccak_384;
+extern RzHashPlugin rz_hash_plugin_keccak_512;
+extern RzHashPlugin rz_hash_plugin_murmur3_x86_32;
+extern RzHashPlugin rz_hash_plugin_murmur3_x86_128;
+extern RzHashPlugin rz_hash_plugin_murmur3_x64_128;
 extern RzHashPlugin rz_hash_plugin_fletcher8;
 extern RzHashPlugin rz_hash_plugin_fletcher16;
 extern RzHashPlugin rz_hash_plugin_fletcher32;
 extern RzHashPlugin rz_hash_plugin_fletcher64;
+extern RzHashPlugin rz_hash_plugin_fnv1a;
 extern RzHashPlugin rz_hash_plugin_adler32;
+extern RzHashPlugin rz_hash_plugin_mod255;
 extern RzHashPlugin rz_hash_plugin_crca_crc8smbus;
 extern RzHashPlugin rz_hash_plugin_crca_crc8cdma2000;
 extern RzHashPlugin rz_hash_plugin_crca_crc8darc;
@@ -171,6 +189,11 @@ extern RzHashPlugin rz_hash_plugin_entropy_fract;
 extern RzHashPlugin rz_hash_plugin_blake3;
 extern RzHashPlugin rz_hash_plugin_ssdeep;
 extern RzHashPlugin rz_hash_plugin_sm3;
+extern RzHashPlugin rz_hash_plugin_temperature;
+extern RzHashPlugin rz_hash_plugin_chisquare;
+extern RzHashPlugin rz_hash_plugin_ioc;
+extern RzHashPlugin rz_hash_plugin_minentropy;
+extern RzHashPlugin rz_hash_plugin_serialcorr;
 
 #ifdef __cplusplus
 }

@@ -14,8 +14,8 @@ run in parallel and may attempt to open the same port at the same time.
 """
 
 import argparse
+import os
 import subprocess
-import sys
 
 
 def execute(cmd):
@@ -40,21 +40,31 @@ def main():
         action="store_true",
         help="print stdout output from gdbserver",
     )
+    parser.add_argument(
+        "--multi",
+        default=False,
+        action="store_true",
+        help="start gdbserver in multi-process (extended-remote) mode",
+    )
     args = parser.parse_args()
 
     while True:
-        for output in execute(
-            ["gdbserver", "{}:{}".format(args.host, args.port), args.binary]
-        ):
+        cmd = ["gdbserver"]
+        if args.multi:
+            cmd.append("--multi")  # --multi comes before HOST:PORT
+        cmd.append(f"{args.host}:{args.port}")
+        if args.binary:
+            cmd.append(args.binary)
+        for output in execute(cmd):
             if args.output:
                 print(output)
             # Exit once gdbserver is ready for connections
             if "Listening on port" in output:
-                sys.exit(0)
+                os._exit(0)  # pylint: disable=protected-access
             # gdbserver might fail to start if the port is taken
             if "Can't bind address" in output:
                 print(output)
-                sys.exit(1)
+                os._exit(1)  # pylint: disable=protected-access
 
 
 if __name__ == "__main__":

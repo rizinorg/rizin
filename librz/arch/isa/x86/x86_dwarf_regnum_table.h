@@ -2,6 +2,11 @@
 // SPDX-FileCopyrightText: 2024 Billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#ifndef X86_DWARF_REGNUM_TABLE_H
+#define X86_DWARF_REGNUM_TABLE_H
+
+#include <rz_types_base.h>
+
 /* x86_64 https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf */
 static const char *map_dwarf_reg_to_x86_64_reg(ut32 reg_num) {
 	switch (reg_num) {
@@ -82,3 +87,5 @@ static const char *map_dwarf_reg_to_x86_reg(ut32 reg_num) {
 		return "unsupported_reg";
 	}
 }
+
+#endif // X86_DWARF_REGNUM_TABLE_H

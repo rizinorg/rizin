@@ -80,8 +80,48 @@ static RzBinPlugin *get_plugin_from_buffer(RzBin *bin, const char *pluginname, R
 	return rz_bin_get_binplugin_by_name(bin, "any");
 }
 
-RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, RzBinObjectLoadOptions *opts, RzBinXtrData *data) {
-	rz_return_val_if_fail(bin && bf && data, false);
+static inline void mark_all_xtr_as_unloaded(RzBin *bin) {
+	RzListIter *iter;
+	RzBinFile *binfile = NULL;
+	rz_list_foreach (bin->binfiles, iter, binfile) {
+		if (!binfile->xtr_data) {
+			continue;
+		}
+		RzBinXtrData *xtr_data;
+		RzListIter *iter_xtr;
+		rz_list_foreach (binfile->xtr_data, iter_xtr, xtr_data) {
+			xtr_data->loaded = false;
+		}
+	}
+}
+
+/**
+ * \brief Updates the current active object of the binfile \p bf
+ * with the RzBinXtrData \p data.
+ * It creates a new RzBinObj instance according to \p data
+ * and loads it as current object.
+ *
+ * NOTE: It will mark all other RzBinXtrData insances in all RzBinFiles
+ * as unloaded. This is a required side effect of Rizin only supporting
+ * one active object at a time.
+ * NOTE: \p data must be an element from the bf->xtr_data list.
+ * Otherwise the result is undefined.
+ *
+ * \param bin The current RzBin isntance.
+ * \param bf The RzBinFile to update.
+ * \param opts Loading options for the new object.
+ * \param data The RzBinXtrData to load.
+ *
+ * \return True if the loading was successful. False otherwise.
+ */
+RZ_API bool rz_bin_file_set_xtr_data_as_current_obj(
+	RZ_BORROW RZ_NONNULL RzBin *bin,
+	RZ_BORROW RZ_NONNULL RzBinFile *bf,
+	RZ_BORROW RZ_NONNULL RzBinObjectLoadOptions *opts,
+	RZ_BORROW RZ_NONNULL RzBinXtrData *data) {
+	rz_return_val_if_fail(bin && bf && data && opts, false);
+
+	mark_all_xtr_as_unloaded(bin);
 
 	ut64 offset = data->offset;
 	ut64 sz = data->size;
@@ -111,18 +151,19 @@ RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, RzBi
 	o->info->machine = rz_str_dup(data->metadata->machine);
 	o->info->type = rz_str_dup(data->metadata->type);
 	o->info->bits = data->metadata->bits;
-	o->info->has_crypto = bf->o->info->has_crypto;
+	o->info->big_endian = data->metadata->big_endian;
+	o->info->is_encrypted = bf->o->info->is_encrypted;
 	data->loaded = true;
 	return true;
 }
 
-static bool xtr_metadata_match(RzBinXtrData *xtr_data, const char *arch, int bits) {
+static bool xtr_metadata_match(RzBinXtrData *xtr_data, const char *arch, int bits, RZ_NULLABLE const char *machine) {
 	if (!xtr_data->metadata || !xtr_data->metadata->arch) {
 		return false;
 	}
 	const char *iter_arch = xtr_data->metadata->arch;
 	int iter_bits = xtr_data->metadata->bits;
-	return bits == iter_bits && !strcmp(iter_arch, arch) && !xtr_data->loaded;
+	return bits == iter_bits && !strcmp(iter_arch, arch) && (!machine || RZ_STR_EQ(machine, xtr_data->metadata->machine)) && !xtr_data->loaded;
 }
 
 RZ_IPI RzBinFile *rz_bin_file_new_from_buffer(RzBin *bin, const char *file, RzBuffer *buf, RzBinObjectLoadOptions *opts, int fd, const char *pluginname) {
@@ -149,7 +190,17 @@ RZ_IPI RzBinFile *rz_bin_file_new_from_buffer(RzBin *bin, const char *file, RzBu
 	return bf;
 }
 
-RZ_API RzBinFile *rz_bin_file_find_by_arch_bits(RzBin *bin, const char *arch, int bits) {
+/**
+ * \brief Search the matching binary file for \p arch \p bits and \p machine (optional).
+ *
+ * \param bin The current RzBin instance.
+ * \param arch The architecture of the binary file.
+ * \param bits The architecture bits of the binary file.
+ * \param machine (Optional) The machine the binary file is for.
+ *
+ * \return The binary file or NULL if no matching exists.
+ */
+RZ_API RZ_BORROW RzBinFile *rz_bin_file_find_by_arch_bits(RzBin *bin, const char *arch, int bits, RZ_NULLABLE const char *machine, RZ_NULLABLE const char *filename) {
 	RzListIter *iter;
 	RzBinFile *binfile = NULL;
 	RzBinXtrData *xtr_data;
@@ -163,8 +214,8 @@ RZ_API RzBinFile *rz_bin_file_find_by_arch_bits(RzBin *bin, const char *arch, in
 		}
 		// look for sub-bins in Xtr Data and Load if we need to
 		rz_list_foreach (binfile->xtr_data, iter_xtr, xtr_data) {
-			if (xtr_metadata_match(xtr_data, arch, bits)) {
-				if (!rz_bin_file_object_new_from_xtr_data(bin, binfile, &xtr_data->obj_opts, xtr_data)) {
+			if (xtr_metadata_match(xtr_data, arch, bits, machine)) {
+				if (!rz_bin_file_set_xtr_data_as_current_obj(bin, binfile, &xtr_data->obj_opts, xtr_data)) {
 					return NULL;
 				}
 				return binfile;
@@ -201,7 +252,7 @@ RZ_API ut64 rz_bin_file_delete_all(RzBin *bin) {
 
 RZ_API bool rz_bin_file_delete(RzBin *bin, RzBinFile *bf) {
 	rz_return_val_if_fail(bin && bf, false);
-	RzListIter *it = rz_list_find_ptr(bin->binfiles, bf);
+	RzListIter *it = rz_list_find_val(bin->binfiles, bf);
 	rz_return_val_if_fail(it, false); // calling del on a bf not in the bin is a programming error
 	if (bin->cur == bf) {
 		bin->cur = NULL;
@@ -241,19 +292,39 @@ RZ_API RzBinFile *rz_bin_file_find_by_name(RzBin *bin, const char *name) {
 
 RZ_API bool rz_bin_file_set_cur_by_id(RzBin *bin, ut32 bin_id) {
 	RzBinFile *bf = rz_bin_file_find_by_id(bin, bin_id);
-	return bf ? rz_bin_file_set_cur_binfile(bin, bf) : false;
+	if (!bf) {
+		return false;
+	}
+	if (!rz_bin_file_set_obj(bf, bf->o)) {
+		return false;
+	}
+	return rz_bin_set_cur_binfile(bin, bf);
 }
 
 RZ_API bool rz_bin_file_set_cur_by_fd(RzBin *bin, ut32 bin_fd) {
 	RzBinFile *bf = rz_bin_file_find_by_fd(bin, bin_fd);
-	return bf ? rz_bin_file_set_cur_binfile(bin, bf) : false;
+	if (!bf) {
+		return false;
+	}
+	if (!rz_bin_file_set_obj(bf, bf->o)) {
+		return false;
+	}
+	return rz_bin_set_cur_binfile(bin, bf);
 }
 
-RZ_IPI bool rz_bin_file_set_obj(RzBin *bin, RzBinFile *bf, RzBinObject *obj) {
-	rz_return_val_if_fail(bin && bf, false);
-	bin->file = bf->file;
-	bin->cur = bf;
-	bin->narch = bf->narch;
+/**
+ * \brief Sets the given \p obj as the object of binfile \p bf.
+ * and updates obj->info->lang.
+ * If \p obj is NULL updates the existing object bf->obj if any.
+ *
+ * \param bf The binfile to set the object.
+ * \param obj The object to set in the binfile.
+ *
+ * \return True if setting succeeded, false in case of failure or
+ * if obj->info was NULL.
+ */
+RZ_API bool rz_bin_file_set_obj(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_OWN RZ_NULLABLE RzBinObject *obj) {
+	rz_return_val_if_fail(bf, false);
 	if (obj) {
 		bf->o = obj;
 	} else {
@@ -270,15 +341,24 @@ RZ_IPI bool rz_bin_file_set_obj(RzBin *bin, RzBinFile *bf, RzBinObject *obj) {
 	return true;
 }
 
-RZ_API bool rz_bin_file_set_cur_binfile(RzBin *bin, RzBinFile *bf) {
+RZ_API bool rz_bin_set_cur_binfile(RzBin *bin, RzBinFile *bf) {
 	rz_return_val_if_fail(bin && bf, false);
-	return rz_bin_file_set_obj(bin, bf, bf->o);
+	bin->file = bf->file;
+	bin->cur = bf;
+	bin->narch = bf->narch;
+	return true;
 }
 
 RZ_API bool rz_bin_file_set_cur_by_name(RzBin *bin, const char *name) {
 	rz_return_val_if_fail(bin && name, false);
 	RzBinFile *bf = rz_bin_file_find_by_name(bin, name);
-	return rz_bin_file_set_cur_binfile(bin, bf);
+	if (!bf) {
+		return false;
+	}
+	if (!rz_bin_file_set_obj(bf, bf->o)) {
+		return false;
+	}
+	return rz_bin_set_cur_binfile(bin, bf);
 }
 
 RZ_IPI RzBinFile *rz_bin_file_xtr_load_buffer(RzBin *bin, RzBinXtrPlugin *xtr, const char *filename, RzBuffer *buf, RzBinObjectLoadOptions *obj_opts, int idx, int fd) {
@@ -366,6 +446,9 @@ static inline bool add_file_hash(RzHashCfg *md, const char *name, RzPVector /*<R
 	if (!strncmp(name, "entropy", strlen("entropy"))) {
 		double entropy = rz_read_be_double(digest);
 		rz_strf(hash, "%f", entropy);
+	} else if (!strncmp(name, "temperature", strlen("temperature"))) {
+		double temperature = rz_read_be_double(digest);
+		rz_strf(hash, "%f", temperature);
 	} else if (!strcmp(name, "ssdeep")) {
 		rz_strf(hash, "%s", (const char *)digest);
 	} else {

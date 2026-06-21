@@ -14,6 +14,10 @@
 #define RZ_TEST_OS "darwin"
 #elif __WINDOWS__
 #define RZ_TEST_OS "windows"
+#elif __NetBSD__
+#define RZ_TEST_OS "netbsd"
+#elif __OpenBSD__
+#define RZ_TEST_OS "openbsd"
 #else
 #define RZ_TEST_OS "unknown"
 #endif
@@ -24,8 +28,12 @@
 #define RZ_TEST_ARCH "x64"
 #elif __arm__
 #define RZ_TEST_ARCH "arm"
-#elif __arm64__
+#elif __arm64__ || __aarch64__
 #define RZ_TEST_ARCH "arm64"
+#elif __powerpc__ || __powerpc64__
+#define RZ_TEST_ARCH "ppc"
+#elif __s390__ || __s390x__
+#define RZ_TEST_ARCH "sysz"
 #else
 #define RZ_TEST_ARCH "unknown"
 #endif
@@ -54,6 +62,8 @@ typedef struct rz_test_cmd_test_t {
 	RzCmdTestStringRecord name;
 	RzCmdTestStringRecord file;
 	RzCmdTestStringRecord args;
+	RzCmdTestStringRecord tool;
+	RzCmdTestStringRecord envs;
 	RzCmdTestStringRecord source;
 	RzCmdTestStringRecord cmds;
 	RzCmdTestStringRecord expect;
@@ -61,7 +71,10 @@ typedef struct rz_test_cmd_test_t {
 	RzCmdTestStringRecord regexp_out;
 	RzCmdTestStringRecord regexp_err;
 	RzCmdTestBoolRecord broken;
+	RzCmdTestBoolRecord color;
+	RzCmdTestBoolRecord utf8;
 	RzCmdTestNumRecord timeout;
+	RzCmdTestNumRecord exit_status;
 	ut64 run_line;
 	bool load_plugins;
 } RzCmdTest;
@@ -75,14 +88,19 @@ typedef struct rz_test_cmd_test_t {
 	macro_str ("NAME", name) \
 	macro_str ("FILE", file) \
 	macro_str ("ARGS", args) \
+	macro_str ("TOOL", tool) \
+	macro_str ("ENVS", envs) \
 	macro_int ("TIMEOUT", timeout) \
+	macro_int ("EXIT_STATUS", exit_status) \
 	macro_str ("SOURCE", source) \
 	macro_str ("CMDS", cmds) \
 	macro_str ("EXPECT", expect) \
 	macro_str ("EXPECT_ERR", expect_err) \
 	macro_str ("REGEXP_FILTER_OUT", regexp_out) \
 	macro_str ("REGEXP_FILTER_ERR", regexp_err) \
-	macro_bool ("BROKEN", broken)
+	macro_bool ("BROKEN", broken) \
+	macro_bool ("COLOR", color) \
+	macro_bool ("UTF8", utf8)
 // clang-format on
 
 typedef enum rz_test_asm_test_mode_t {
@@ -140,8 +158,7 @@ typedef struct rz_test_test_database_t {
 } RzTestDatabase;
 
 typedef struct rz_test_run_config_t {
-	const char *rz_cmd;
-	const char *rz_asm_cmd;
+	const char *bin_path;
 	const char *json_test_file;
 	ut64 timeout_ms;
 } RzTestRunConfig;
@@ -220,5 +237,9 @@ RZ_API char *rz_test_test_name(RzTest *test);
 RZ_API bool rz_test_test_broken(RzTest *test);
 RZ_API RzTestResultInfo *rz_test_run_test(RzTestRunConfig *config, RzTest *test);
 RZ_API void rz_test_test_result_info_free(RzTestResultInfo *result);
+
+RZ_API void rz_test_load_valid_tools(RZ_OUT RZ_NONNULL const char ***tools_o, RZ_OUT RZ_NONNULL size_t *size_o);
+RZ_API RZ_OWN char *rz_test_find_executable(RZ_NULLABLE const char *exec, RZ_NULLABLE const char *bin_path);
+RZ_API bool rz_test_check_tool_available(RZ_NULLABLE const char *exec);
 
 #endif // RIZIN_RZTEST_H

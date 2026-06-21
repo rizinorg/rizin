@@ -1,0 +1,251 @@
+NAME=xcore analysis
+FILE=bins/xcore/LinkRec.xe.107788
+CMDS=<<EOF
+s main
+af
+pdf
+ao @ 0x00040358
+aoj @ 0x00040358~{}
+agf
+ar
+EOF
+EXPECT=<<EOF
+            ;-- $s.10:
+/ int main(int argc, char **argv, char **envp);
+|       .-> 0x00040344      entsp 2
+|       :   0x00040346      getr  r0, 2
+|       `=< 0x00040348      bt    r0, -2
+|           0x0004034a      ldc   r0, 0x1e02
+|           0x0004034e      ldw   r11, cp[0x34]
+|           0x00040352      setd  res[r0], r11
+|           0x00040354      outct res[r0], 1
+|           0x00040356      testct r11, res[r0]
+|       ,=< 0x00040358      bf    r11, 2
+|       |   0x0004035a      chkct res[r0], 1
+|       `-> 0x0004035c      outct res[r0], 1
+|           0x0004035e      int   r11, res[r0]
+|           0x00040360      chkct res[r0], 1
+|           0x00040362      ldc   r0, 5
+|           0x00040364      bl    0x16e
+|           0x00040368      ldaw  r11, cp[0]
+|           0x0004036c      ldc   r0, 0
+|           0x0004036e      ldc   r1, 0x20
+|       .-> 0x00040370      ldc   r4, 2
+|       :   0x00040372      ldw   r2, r11[0]
+|       :   0x00040374      shr   r3, r2, 8
+|       :   0x00040376      zext  r2, 8
+|       :   0x00040378      eq    r5, r2, r0
+|      ,==< 0x0004037a      bf    r5, 7
+|      |:   0x0004037c      shl   r2, r2, 8
+|      |:   0x0004037e      or    r2, r2, r4
+|      |:   0x00040380      shl   r3, r3, 8
+|      |:   0x00040382      or    r3, r3, r4
+|      |:   0x00040384      setd  res[r2], r3
+|      |:   0x00040386      add   r11, r11, 4
+|     ,`--> 0x00040388      bu    3
+..
+|     | :   ; CODE XREF from main @ 0x40388
+|     `---> 0x0004038e      freer res[r2]
+|       :   0x00040390      add   r0, r0, 1
+|       :   0x00040392      eq    r2, r0, r1
+|       `=< 0x00040394      bf    r2, -0x12
+|           0x00040396      bl    -0xd5
+|           0x0004039a      ldc   r0, 0
+\           0x0004039c      retsp 2
+address: 0x40358
+opcode: bf r11, 2
+disasm: bf r11, 2
+mnemonic: bf
+mask: ff00
+prefix: 0
+id: 10
+bytes: c27a
+refptr: 0
+size: 2
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r11"
+    - type: "imm"
+      value: 2
+jump: 0x0004035c
+fail: 0x0004035a
+cond: al
+family: cpu
+[
+  {
+    "opcode": "bf r11, 2",
+    "disasm": "bf r11, 2",
+    "mnemonic": "bf",
+    "mask": "ff00",
+    "jump": 263004,
+    "fail": 263002,
+    "sign": false,
+    "prefix": 0,
+    "id": 10,
+    "opex": {
+      "operands": [
+        {
+          "type": "reg",
+          "value": "r11"
+        },
+        {
+          "type": "imm",
+          "value": 2
+        }
+      ]
+    },
+    "addr": 263000,
+    "bytes": "c27a",
+    "size": 2,
+    "type": "cjmp",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "cond": "al",
+    "family": "cpu"
+  }
+]
+.----.
+|    |
+|.-----------------------------------------------.
+||  0x40344                                      |
+||   ;-- $s.10:                                  |
+|| int main(int argc, char **argv, char **envp); |
+|| entsp 2                                       |
+|| getr r0, 2                                    |
+|| bt r0, -2                                     |
+|`-----------------------------------------------'
+|      t f
+|      | |
+`------' |
+         '--------.
+                  |
+              .---------------------.
+              |  0x4034a            |
+              | ldc r0, 0x1e02      |
+              | ldw r11, cp[0x34]   |
+              | setd res[r0], r11   |
+              | outct res[r0], 1    |
+              | testct r11, res[r0] |
+              | bf r11, 2           |
+              `---------------------'
+                      f t
+                      | |
+                      | '-------.
+            .---------'         |
+            |                   |
+        .------------------.    |
+        |  0x4035a         |    |
+        | chkct res[r0], 1 |    |
+        `------------------'    |
+            v                   |
+            |                   |
+            '------.            |
+                   | .----------'
+                   | |
+             .------------------.
+             |  0x4035c         |
+             | outct res[r0], 1 |
+             | int r11, res[r0] |
+             | chkct res[r0], 1 |
+             | ldc r0, 5        |
+             | bl 0x16e         |
+             | ldaw r11, cp[0]  |
+             | ldc r0, 0        |
+             | ldc r1, 0x20     |
+             `------------------'
+                 v
+                 |
+                 '--.
+     .----------------.
+     |              | |
+     |        .----------------.
+     |        |  0x40370       |
+     |        | ldc r4, 2      |
+     |        | ldw r2, r11[0] |
+     |        | shr r3, r2, 8  |
+     |        | zext r2, 8     |
+     |        | eq r5, r2, r0  |
+     |        | bf r5, 7       |
+     |        `----------------'
+     |                f t
+     |                | |
+     |                | '-----.
+     |    .-----------'       |
+     |    |                   |
+     |.------------------.    |
+     ||  0x4037c         |    |
+     || shl r2, r2, 8    |    |
+     || or r2, r2, r4    |    |
+     || shl r3, r3, 8    |    |
+     || or r3, r3, r4    |    |
+     || setd res[r2], r3 |    |
+     || add r11, r11, 4  |    |
+     |`------------------'    |
+     |    v                   |
+     |    |                   |
+     |    '------------.      |
+     |                 | .----'
+     |                 | |
+     |           .-----------.
+     |           |  0x40388  |
+     |           | bu 3      |
+     |           `-----------'
+     |               v
+     |               |
+     |    .----------'
+     |    |
+     |.---------------------------------.
+     ||  0x4038e                        |
+     || ; CODE XREF from main @ 0x40388 |
+     || freer res[r2]                   |
+     || add r0, r0, 1                   |
+     || eq r2, r0, r1                   |
+     || bf r2, -0x12                    |
+     |`---------------------------------'
+     |        f t
+     |        | |
+     `----------'
+              '------.
+                     |
+                 .-----------.
+                 |  0x40396  |
+                 | bl -0xd5  |
+                 | ldc r0, 0 |
+                 | retsp 2   |
+                 `-----------'
+r0 = 0x00000000
+r1 = 0x00000000
+r2 = 0x00000000
+r3 = 0x00000000
+r4 = 0x00000000
+r5 = 0x00000000
+r6 = 0x00000000
+r7 = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+cp = 0x00000000
+dp = 0x00000000
+sp = 0x00000000
+lr = 0x00000000
+pc = 0x00000000
+sr = 0x00000000
+spc = 0x00000000
+ssr = 0x00000000
+et = 0x00000000
+ed = 0x00000000
+sed = 0x00000000
+kep = 0x00000000
+ksp = 0x00000000
+id = 0x00000000
+EOF
+RUN

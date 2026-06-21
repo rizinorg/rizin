@@ -167,10 +167,35 @@ static void destroy(RzBinFile *bf) {
 	RZ_FREE(bf->o->bin_obj);
 }
 
+static RzStructuredData *pyc_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
+	RzBinPycObj *pyc = bf->o->bin_obj;
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *pyc_data = rz_structured_data_map_add_map(info, "pyc");
+	if (!pyc_data) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_unsigned(pyc_data, "magic", pyc->version.magic, true);
+	rz_structured_data_map_add_string(pyc_data, "python_version", rz_str_get(pyc->version.version));
+	rz_structured_data_map_add_string(pyc_data, "revision", rz_str_get(pyc->version.revision));
+	rz_structured_data_map_add_unsigned(pyc_data, "code_start_offset", pyc->code_start_offset, true);
+
+	return info;
+}
+
 RzBinPlugin rz_bin_plugin_pyc = {
 	.name = "pyc",
-	.desc = "Python byte-compiled file plugin",
+	.desc = "Python byte-compiled",
 	.license = "LGPL3",
+	.author = "c0riolis",
 	.info = &info,
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
@@ -179,7 +204,8 @@ RzBinPlugin rz_bin_plugin_pyc = {
 	.baddr = &baddr,
 	.symbols = &symbols,
 	.strings = &strings,
-	.destroy = &destroy
+	.destroy = &destroy,
+	.bin_structure = &pyc_structure
 };
 
 #ifndef RZ_PLUGIN_INCORE

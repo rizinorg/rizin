@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022-2024 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2022-2026 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-FileCopyrightText: 2015-2019 a0rtega
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -206,7 +206,6 @@ static RzPVector /*<RzBinSection *>*/ *nds_sections(RzBinFile *bf) {
 	}
 	RzPVector *ret = NULL;
 	RzBinSection *ptr9 = NULL, *ptr7 = NULL;
-	int perm_rwx = rz_str_rwx("rwx");
 
 	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free)) ||
 		!(ptr9 = RZ_NEW0(RzBinSection)) ||
@@ -223,7 +222,7 @@ static RzPVector /*<RzBinSection *>*/ *nds_sections(RzBinFile *bf) {
 	ptr9->vsize = hdr->arm9_size;
 	ptr9->paddr = hdr->arm9_rom_offset;
 	ptr9->vaddr = hdr->arm9_ram_address;
-	ptr9->perm = perm_rwx;
+	ptr9->perm = RZ_PERM_RWX;
 	rz_pvector_push(ret, ptr9);
 
 	ptr7->name = rz_str_dup("arm7");
@@ -231,7 +230,7 @@ static RzPVector /*<RzBinSection *>*/ *nds_sections(RzBinFile *bf) {
 	ptr7->vsize = hdr->arm7_size;
 	ptr7->paddr = hdr->arm7_rom_offset;
 	ptr7->vaddr = hdr->arm7_ram_address;
-	ptr7->perm = perm_rwx;
+	ptr7->perm = RZ_PERM_RWX;
 	rz_pvector_push(ret, ptr7);
 
 	void **it;
@@ -254,7 +253,7 @@ static RzPVector /*<RzBinSection *>*/ *nds_sections(RzBinFile *bf) {
 		overlay->vsize = ovl_entry->ram_size;
 		overlay->paddr = fat_entry->file_start_offset;
 		overlay->vaddr = ovl_entry->load_address;
-		overlay->perm = perm_rwx;
+		overlay->perm = RZ_PERM_RWX;
 		rz_pvector_push(ret, overlay);
 	}
 
@@ -276,7 +275,7 @@ static RzPVector /*<RzBinSection *>*/ *nds_sections(RzBinFile *bf) {
 		overlay->vsize = ovl_entry->ram_size;
 		overlay->paddr = fat_entry->file_start_offset;
 		overlay->vaddr = ovl_entry->load_address;
-		overlay->perm = perm_rwx;
+		overlay->perm = RZ_PERM_RWX;
 		rz_pvector_push(ret, overlay);
 	}
 	return ret;
@@ -334,8 +333,9 @@ static RzBinInfo *nds_info(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_ninds = {
 	.name = "ninds",
-	.desc = "Nintendo DS plugin",
+	.desc = "Nintendo DS binary",
 	.license = "LGPL3",
+	.author = "a0rtega",
 	.load_buffer = &nds_load_buffer,
 	.check_buffer = &nds_check_buffer,
 	.destroy = &nds_destroy,

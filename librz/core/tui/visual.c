@@ -28,6 +28,9 @@ RZ_IPI RZ_OWN RzCoreVisual *rz_core_visual_new() {
 	visual->view->output_mode = -1;
 	visual->view->output_addr = -1;
 	visual->view->selectPanel = false;
+	visual->view->curtheme = NULL;
+	memset(&visual->util, 0, sizeof(RzVisualUtil));
+	visual->util.oseek = UT64_MAX;
 	return visual;
 }
 
@@ -36,8 +39,10 @@ RZ_IPI void rz_core_visual_free(RZ_NULLABLE RzCoreVisual *visual) {
 		return;
 	}
 	rz_panels_root_free(visual->panels_root);
+	rz_config_hold_free(visual->util.hold);
 	rz_list_free(visual->tabs);
 	free(visual->view->inputing);
+	free(visual->view->curtheme);
 	free(visual->view);
 	free(visual);
 }
@@ -87,7 +92,9 @@ RZ_IPI void rz_core_visual_toggle_hints(RzCore *core) {
 }
 
 RZ_IPI void rz_core_visual_toggle_decompiler_disasm(RzCore *core, bool for_graph, bool reset) {
-	static RzConfigHold *hold = NULL; // should be a tab-specific var
+	RzCoreVisual *visual = core->visual;
+	RzConfigHold *hold = visual->util.hold;
+
 	if (hold) {
 		rz_config_hold_restore(hold);
 		rz_config_hold_free(hold);
@@ -98,7 +105,7 @@ RZ_IPI void rz_core_visual_toggle_decompiler_disasm(RzCore *core, bool for_graph
 		return;
 	}
 	hold = rz_config_hold_new(core->config);
-	rz_config_hold_s(hold, "asm.hint.pos", "asm.cmt.col", "asm.offset", "asm.lines",
+	rz_config_hold_var(hold, "asm.hint.pos", "asm.cmt.col", "asm.offset", "asm.lines",
 		"asm.indent", "asm.bytes", "asm.comments", "asm.debuginfo", "asm.usercomments", "asm.instr", NULL);
 	if (for_graph) {
 		rz_config_set(core->config, "asm.hint.pos", "-2");
@@ -348,14 +355,15 @@ RZ_IPI const char **rz_core_visual_get_fcn_help() {
 
 static void rotateAsmBits(RzCore *core) {
 	RzAnalysisHint *hint = rz_analysis_hint_get(core->analysis, core->offset);
-	int bits = hint ? hint->bits : rz_config_get_i(core->config, "asm.bits");
+	int bits = hint ? hint->bits : rz_asm_get_bits(core->rasm);
+	int plugin_bits = rz_asm_get_plugin_bits(core->rasm);
 	int retries = 4;
 	while (retries > 0) {
 		int nb = bits == 64 ? 8 : bits == 32 ? 64
 			: bits == 16                 ? 32
 			: bits == 8                  ? 16
 						     : bits;
-		if ((core->rasm->cur->bits & nb) == nb) {
+		if ((plugin_bits & nb) == nb) {
 			rz_analysis_hint_set_bits(core->analysis, core->offset, nb);
 			break;
 		}
@@ -1033,11 +1041,8 @@ static void setprintmode(RzCore *core, int n) {
 
 static bool fill_hist_offset(RzCore *core, RzLine *line, RzCoreSeekItem *csi) {
 	ut64 off = csi->offset;
-	RzFlagItem *f = rz_flag_get_at(core->flags, off, false);
-	char *command = NULL;
-	if (f && f->offset == off && f->offset > 0) {
-		command = rz_str_newf("%s", f->name);
-	} else {
+	char *command = rz_core_addr_get_flag_offset(core->flags, off);
+	if (!command) {
 		command = rz_str_newf("0x%" PFMT64x, off);
 	}
 	if (!command) {
@@ -1200,7 +1205,7 @@ repeat:
 		bool asm_bytes = rz_config_get_b(core->config, "asm.bytes");
 		rz_config_set_b(core->config, "asm.bytes", false);
 		RzCmdStateOutput state;
-		if (!rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD)) {
+		if (!rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, core)) {
 			return RZ_CMD_STATUS_INVALID;
 		}
 		rz_core_flag_describe(core, core->offset, false, &state);
@@ -1219,7 +1224,7 @@ repeat:
 				rz_cons_printf("...");
 				break;
 			}
-			if (!rz_list_iter_has_next(iter) && idx < skip) {
+			if (!rz_list_has_next(iter) && idx < skip) {
 				skip = idx;
 			}
 			if (idx >= skip) {
@@ -1231,17 +1236,9 @@ repeat:
 				if (idx == skip) {
 					cur_ref_addr = xaddr1;
 				}
-				RzAnalysisFunction *fun = rz_analysis_get_fcn_in(core->analysis, xaddr1, RZ_ANALYSIS_FCN_TYPE_NULL);
-				char *name;
-				if (fun) {
-					name = rz_str_dup(fun->name);
-				} else {
-					RzFlagItem *f = rz_flag_get_at(core->flags, xaddr1, true);
-					if (f) {
-						name = rz_str_newf("%s + %" PFMT64d, f->name, xaddr1 - f->offset);
-					} else {
-						name = rz_str_dup("unk");
-					}
+				char *name = rz_core_addr_get_name_delta(core, xaddr1);
+				if (!name) {
+					name = rz_str_dup("unk");
 				}
 				if (w > 45) {
 					if (strlen(name) > w - 45) {
@@ -1267,7 +1264,7 @@ repeat:
 					if (!hc) {
 						return RZ_CMD_STATUS_ERROR;
 					}
-					rz_config_hold_i(hc, "asm.flags.limit", NULL);
+					rz_config_hold_var(hc, "asm.flags.limit", NULL);
 					rz_config_set_i(core->config, "asm.flags.limit", 1);
 					char *res = rz_core_print_cons_disassembly(core, xaddr2, 4, 0);
 					rz_config_hold_restore(hc);
@@ -1946,7 +1943,6 @@ RZ_IPI void rz_core_visual_browse(RzCore *core, const char *input) {
 		" m  maps\n"
 		" p  pids/threads\n"
 		" q  quit\n"
-		" r  ROP gadgets\n"
 		" s  symbols\n"
 		" T  themes\n"
 		" v  vars\n"
@@ -1973,9 +1969,6 @@ RZ_IPI void rz_core_visual_browse(RzCore *core, const char *input) {
 			if (rz_core_visual_view_graph(core)) {
 				return;
 			}
-			break;
-		case 'r': // "vbr"
-			rz_core_visual_view_rop(core);
 			break;
 		case 'f': // "vbf"
 			rz_core_visual_trackflags(core);
@@ -2055,26 +2048,23 @@ static bool isNumber(RzCore *core, int ch) {
 	return false;
 }
 
-static char numbuf[32] = { 0 };
-static int numbuf_i = 0;
-
-static void numbuf_append(int ch) {
-	if (numbuf_i >= sizeof(numbuf) - 1) {
-		numbuf_i = 0;
+static void numbuf_append(RzVisualUtil *util, int ch) {
+	if (util->numbuf_i >= sizeof(util->numbuf) - 1) {
+		util->numbuf_i = 0;
 	}
-	numbuf[numbuf_i++] = ch;
-	numbuf[numbuf_i] = 0;
+	util->numbuf[util->numbuf_i++] = ch;
+	util->numbuf[util->numbuf_i] = 0;
 }
 
-static int numbuf_pull(void) {
+static int numbuf_pull(RzVisualUtil *util) {
 	int distance = 1;
-	if (numbuf_i) {
-		numbuf[numbuf_i] = 0;
-		distance = atoi(numbuf);
+	if (util->numbuf_i) {
+		util->numbuf[util->numbuf_i] = 0;
+		distance = atoi(util->numbuf);
 		if (!distance) {
 			distance = 1;
 		}
-		numbuf_i = 0;
+		util->numbuf_i = 0;
 	}
 	return distance;
 }
@@ -2097,6 +2087,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 	int i, cols = core->print->cols;
 	int wheelspeed;
 	int ch = och;
+	int *numbuf_i = &visual->util.numbuf_i;
 	if ((ut8)ch == KEY_ALTQ) {
 		rz_cons_readchar();
 		ch = 'q';
@@ -2151,10 +2142,10 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			if (rz_config_get_b(core->config, "asm.hints") && (rz_config_get_b(core->config, "asm.hint.jmp") || rz_config_get_b(core->config, "asm.hint.lea") || rz_config_get_b(core->config, "asm.hint.emu") || rz_config_get_b(core->config, "asm.hint.call"))) {
 				rz_core_visual_jump(core, ch);
 			} else {
-				numbuf_append(ch);
+				numbuf_append(&visual->util, ch);
 			}
 		} else {
-			numbuf_append(ch);
+			numbuf_append(&visual->util, ch);
 		}
 	} else {
 		switch (ch) {
@@ -2245,13 +2236,12 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			rz_core_visual_showcursor(core, true);
 			rz_cons_flush();
 			rz_cons_set_raw(false);
-			strcpy(buf, "\"wa ");
+			strcpy(buf, "wa ");
 			rz_line_set_prompt(line, ":> ");
 			rz_cons_enable_mouse(false);
-			if (rz_cons_fgets(buf + 4, sizeof(buf) - 4, 0, NULL) < 0) {
+			if (rz_cons_fgets(buf + 3, sizeof(buf) - 3, 0, NULL) < 0) {
 				buf[0] = '\0';
 			}
-			strcat(buf, "\"");
 			bool wheel = rz_config_get_b(core->config, "scr.wheel");
 			if (wheel) {
 				rz_cons_enable_mouse(true);
@@ -2360,7 +2350,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 		case 'd': {
 			bool mouse_state = __holdMouseState(core);
 			rz_core_visual_showcursor(core, true);
-			int distance = numbuf_pull();
+			int distance = numbuf_pull(&visual->util);
 			rz_core_visual_define(core, arg + 1, distance - 1);
 			rz_core_visual_showcursor(core, false);
 			rz_cons_enable_mouse(mouse_state && rz_config_get_b(core->config, "scr.wheel"));
@@ -2519,7 +2509,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				break;
 			}
 			if (core->print->col == 2) {
-				strcpy(buf, "\"w ");
+				strcpy(buf, "w \"");
 				rz_line_set_prompt(line, "insert string: ");
 				if (rz_cons_fgets(buf + 3, sizeof(buf) - 3, 0, NULL) < 0) {
 					buf[0] = '\0';
@@ -2602,7 +2592,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			break;
 		case 'h':
 		case 'l': {
-			int distance = numbuf_pull();
+			int distance = numbuf_pull(&visual->util);
 			if (core->print->cur_enabled) {
 				if (ch == 'h') {
 					for (i = 0; i < distance; i++) {
@@ -2622,7 +2612,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 		} break;
 		case 'L':
 		case 'H': {
-			int distance = numbuf_pull();
+			int distance = numbuf_pull(&visual->util);
 			if (core->print->cur_enabled) {
 				if (ch == 'H') {
 					for (i = 0; i < distance; i++) {
@@ -2642,13 +2632,13 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 		} break;
 		case 'j':
 			if (core->print->cur_enabled) {
-				int distance = numbuf_pull();
+				int distance = numbuf_pull(&visual->util);
 				for (i = 0; i < distance; i++) {
 					cursor_nextrow(core, false);
 				}
 			} else {
 				if (rz_config_get_b(core->config, "scr.wheel.nkey")) {
-					int i, distance = numbuf_pull();
+					int i, distance = numbuf_pull(&visual->util);
 					if (distance < 1) {
 						distance = 1;
 					}
@@ -2667,7 +2657,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 					if (ami) {
 						rz_core_seek_delta(core, amisize, false);
 					} else {
-						int distance = numbuf_pull();
+						int distance = numbuf_pull(&visual->util);
 						if (distance > 1) {
 							times = distance;
 						}
@@ -2688,7 +2678,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			break;
 		case 'J':
 			if (core->print->cur_enabled) {
-				int distance = numbuf_pull();
+				int distance = numbuf_pull(&visual->util);
 				for (i = 0; i < distance; i++) {
 					cursor_nextrow(core, true);
 				}
@@ -2722,13 +2712,13 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			break;
 		case 'k':
 			if (core->print->cur_enabled) {
-				int distance = numbuf_pull();
+				int distance = numbuf_pull(&visual->util);
 				for (i = 0; i < distance; i++) {
 					cursor_prevrow(core, false);
 				}
 			} else {
 				if (rz_config_get_b(core->config, "scr.wheel.nkey")) {
-					int i, distance = numbuf_pull();
+					int i, distance = numbuf_pull(&visual->util);
 					if (distance < 1) {
 						distance = 1;
 					}
@@ -2740,7 +2730,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 					if (times < 1) {
 						times = 1;
 					}
-					int distance = numbuf_pull();
+					int distance = numbuf_pull(&visual->util);
 					if (distance > 1) {
 						times = distance;
 					}
@@ -2757,7 +2747,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			break;
 		case 'K':
 			if (core->print->cur_enabled) {
-				int distance = numbuf_pull();
+				int distance = numbuf_pull(&visual->util);
 				for (i = 0; i < distance; i++) {
 					cursor_prevrow(core, true);
 				}
@@ -3105,7 +3095,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			setcursor(core, false);
 			return false;
 		}
-		numbuf_i = 0;
+		*numbuf_i = 0;
 	}
 	rz_core_block_read(core);
 	return true;
@@ -3143,14 +3133,13 @@ static void visual_flagzone(RzCore *core) {
 }
 
 RZ_IPI void rz_core_visual_title(RzCore *core, int color) {
-	bool showDelta = rz_config_get_b(core->config, "scr.slow");
-	static ut64 oldpc = 0;
 	const char *BEGIN = core->cons->context->pal.prompt;
 	const char *filename;
 	char pos[512], bar[512], pcs[32];
 	RzCoreVisual *visual = core->visual;
-	if (!oldpc) {
-		oldpc = rz_debug_reg_get(core->dbg, "PC");
+	ut64 *oldpc = &visual->util.oldpc;
+	if (!*oldpc) {
+		*oldpc = rz_debug_reg_get(core->dbg, "PC");
 	}
 	/* automatic block size */
 	int pc, hexcols = rz_config_get_i(core->config, "hex.cols");
@@ -3193,7 +3182,7 @@ RZ_IPI void rz_core_visual_title(RzCore *core, int color) {
 	}
 	if (rz_config_get_b(core->config, "cfg.debug")) {
 		ut64 curpc = rz_debug_reg_get(core->dbg, "PC");
-		if (curpc && curpc != UT64_MAX && curpc != oldpc) {
+		if (curpc && curpc != UT64_MAX && curpc != *oldpc) {
 			// check dbg.follow here
 			int follow = (int)(st64)rz_config_get_i(core->config, "dbg.follow");
 			if (follow > 0) {
@@ -3203,7 +3192,7 @@ RZ_IPI void rz_core_visual_title(RzCore *core, int color) {
 			} else if (follow < 0) {
 				rz_core_seek(core, curpc + follow, true);
 			}
-			oldpc = curpc;
+			*oldpc = curpc;
 		}
 	}
 	RzIOMap *map = rz_io_map_get(core->io, core->offset);
@@ -3215,36 +3204,12 @@ RZ_IPI void rz_core_visual_title(RzCore *core, int color) {
 
 	{ /* get flag with delta */
 		ut64 addr = core->offset + (core->print->cur_enabled ? core->print->cur : 0);
-		/* TODO: we need a helper into rz_flags to do that */
-		RzFlagItem *f = NULL;
-		if (rz_flag_space_push(core->flags, RZ_FLAGS_FS_SYMBOLS)) {
-			f = rz_flag_get_at(core->flags, addr, showDelta);
-			rz_flag_space_pop(core->flags);
-		}
-		if (!f) {
-			f = rz_flag_get_at(core->flags, addr, showDelta);
-		}
-		if (f) {
-			if (f->offset == addr || !f->offset) {
-				snprintf(pos, sizeof(pos), "@ %s", f->name);
-			} else {
-				snprintf(pos, sizeof(pos), "@ %s+%d # 0x%" PFMT64x,
-					f->name, (int)(addr - f->offset), addr);
-			}
+		char *name_delta = rz_core_addr_get_flag_offset(core->flags, addr);
+		if (name_delta) {
+			snprintf(pos, sizeof(pos), "@ %s", name_delta);
+			free(name_delta);
 		} else {
-			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
-			if (fcn) {
-				int delta = addr - fcn->addr;
-				if (delta > 0) {
-					snprintf(pos, sizeof(pos), "@ %s+%d", fcn->name, delta);
-				} else if (delta < 0) {
-					snprintf(pos, sizeof(pos), "@ %s%d", fcn->name, delta);
-				} else {
-					snprintf(pos, sizeof(pos), "@ %s", fcn->name);
-				}
-			} else {
-				pos[0] = 0;
-			}
+			pos[0] = 0;
 		}
 	}
 
@@ -3624,14 +3589,14 @@ exit1:
 }
 
 static void visual_refresh(RzCore *core) {
-	static ut64 oseek = UT64_MAX;
+	RzCoreVisual *visual = core->visual;
+	ut64 *oseek = &visual->util.oseek;
 	const char *vi, *vcmd, *cmd_str;
 	if (!core) {
 		return;
 	}
 	rz_print_set_cursor(core->print, core->print->cur_enabled, core->print->ocur, core->print->cur);
 	core->cons->blankline = true;
-	RzCoreVisual *visual = core->visual;
 
 	int w = visual_responsive(core);
 
@@ -3656,17 +3621,17 @@ static void visual_refresh(RzCore *core) {
 		} else {
 			rz_cons_clear();
 			rz_cons_printf("[cmd.cprompt=%s]\n", vi);
-			if (oseek != UT64_MAX) {
-				rz_core_seek(core, oseek, true);
+			if (*oseek != UT64_MAX) {
+				rz_core_seek(core, *oseek, true);
 			}
 			rz_core_cmd0(core, vi);
 			rz_cons_column(split_w + 1);
 			if (!strncmp(vi, "p=", 2) && core->print->cur_enabled) {
-				oseek = core->offset;
+				*oseek = core->offset;
 				core->print->cur_enabled = false;
 				rz_core_seek(core, core->num->value, true);
 			} else {
-				oseek = UT64_MAX;
+				*oseek = UT64_MAX;
 			}
 		}
 		rz_cons_gotoxy(0, 0);
@@ -3684,7 +3649,6 @@ static void visual_refresh(RzCore *core) {
 		cmd_str = vcmd;
 	} else {
 		if (visual->splitView) {
-			static char debugstr[512];
 			const char *pxw = NULL;
 			int h = rz_num_get(core->num, "$r");
 			int size = (h * 16) / 2;
@@ -3697,13 +3661,13 @@ static void visual_refresh(RzCore *core) {
 				pxw = stackPrintCommand(core);
 				break;
 			}
-			snprintf(debugstr, sizeof(debugstr),
+			snprintf(visual->util.debugstr_refresh, sizeof(visual->util.debugstr_refresh),
 				"?0;%s %d @ %" PFMT64d ";cl;"
 				"?1;%s %d @ %" PFMT64d ";",
 				pxw, size, visual->splitPtr,
 				pxw, size, core->offset);
 			core->print->screen_bounds = 1LL;
-			cmd_str = debugstr;
+			cmd_str = visual->util.debugstr_refresh;
 		} else {
 			core->print->screen_bounds = 1LL;
 			cmd_str = __core_visual_print_command(core);
@@ -3733,10 +3697,6 @@ static void visual_refresh(RzCore *core) {
 		rz_cons_visual_flush();
 	} else {
 		rz_cons_reset();
-	}
-	if (core->scr_gadgets) {
-		rz_core_gadget_print(core);
-		rz_cons_flush();
 	}
 	core->cons->blankline = false;
 	core->cons->blankline = true;
@@ -3847,7 +3807,6 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 	teefile = rz_cons_singleton()->teefile;
 	rz_cons_singleton()->teefile = "";
 
-	static char debugstr[512];
 	do {
 	dodo:
 		rz_core_visual_tab_update(core);
@@ -3866,24 +3825,24 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 			const char *cmdvhex = rz_config_get(core->config, "cmd.stack");
 
 			if (cmdvhex && *cmdvhex) {
-				rz_strf(debugstr,
+				rz_strf(visual->util.debugstr_core,
 					"%%0 ; f+ tmp ; sr %s @e: cfg.seek.silent=true ; %s ; %%1 ; %s ; %%1 ; "
 					"s tmp @e: cfg.seek.silent=true ; f- tmp ; pd $r",
 					reg, cmdvhex,
 					ref ? CMD_REGISTERS_REFS : CMD_REGISTERS);
-				debugstr[sizeof(debugstr) - 1] = 0;
+				visual->util.debugstr_core[sizeof(visual->util.debugstr_core) - 1] = 0;
 			} else {
 				const char *pxw = stackPrintCommand(core);
 				const char sign = (delta < 0) ? '+' : '-';
 				const int absdelta = RZ_ABS(delta);
-				rz_strf(debugstr,
+				rz_strf(visual->util.debugstr_core,
 					"diq ; %%0 ; f+ tmp ; sr %s @e: cfg.seek.silent=true ; %s %d @ $$%c%d;"
 					"%%1 ; %s;"
 					"%%1 ; s tmp @e: cfg.seek.silent=true ; f- tmp ; afal ; pd $r",
 					reg, pxa ? "pxa" : pxw, size, sign, absdelta,
 					ref ? CMD_REGISTERS_REFS : CMD_REGISTERS);
 			}
-			printfmtSingle[2] = debugstr;
+			printfmtSingle[2] = visual->util.debugstr_core;
 		}
 #endif
 		rz_cons_enable_mouse(rz_config_get_b(core->config, "scr.wheel"));

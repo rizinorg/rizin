@@ -11,7 +11,7 @@ EXPECT=<<EOF
 0x00401000   section.sect_0:
 0x00401000           6818104000  push str.executed_via_imported_TLS
 0x00401005         ff15c8104000  call dword [sym.imp.msvcrt.dll_printf]
-0x0040100b               83c404  add esp, 4
+0x0040100b               83c404  add esp, 0x04
 0x0040100e                   90  nop
 EOF
 RUN
@@ -25,9 +25,9 @@ EOF
 EXPECT=<<EOF
 push str.executed_via_imported_TLS
 call dword [printf]
-add esp, 4
+add esp, 0x04
 nop
-push 0
+push 0x00
 call dword [ExitProcess]
 EOF
 RUN

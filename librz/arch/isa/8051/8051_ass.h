@@ -6,6 +6,6 @@
 
 #include <rz_asm.h>
 
-int assemble_8051(RzAsm *a, RzAsmOp *op, char const *user_asm);
+RZ_IPI int assemble_8051(RzAsmOp *op, ut64 pc, char const *user_asm);
 
 #endif /* ASSEMBLE_8051_H */

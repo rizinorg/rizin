@@ -1,118 +1,148 @@
-NAME=load 16 bits omf
+NAME=16 bits omf
 FILE=bins/omf/hello_world
-CMDS=iI~bits
+CMDS=<<EOF
+iI~bits
+echo ---
+iH
+echo ---
+ie:quiet
+echo ---
+is
+echo ---
+iS
+echo ---
+oml
+echo ---
+px 16 @ section.text_1
+px 16 @ section.data_1
+e asm.bytes=true
+pdq 1~mov[1]
+EOF
 EXPECT=<<EOF
 bits     16
-EOF
-RUN
+---
+omf:
+  bits: 16
+  num_names: 3
+  num_sections: 2
+  num_symbols: 1
+  names:
+    - "text"
+    - "data"
+  sections:
+    - name: "text"
+      name_idx: 2
+      vaddr: 0x0
+      size: 19
+      bits: 16
+      data_blocks:
+        - paddr: 0x73
+          size: 19
+          offset: 0x0
+    - name: "data"
+      name_idx: 3
+      vaddr: 0x13
+      size: 14
+      bits: 16
+      data_blocks:
+        - paddr: 0x95
+          size: 14
+          offset: 0x0
+  symbols:
+    - name: "_start"
+      seg_idx: 1
+      offset: 0x0
+      segment: "text"
+      paddr: 0x73
+      vaddr: 0x1000
 
-NAME=entry point 16 bits omf
-FILE=bins/omf/hello_world
-CMDS=ie:quiet
-EXPECT=<<EOF
+---
 0x00001000 0x00000073 ---------- ---------- program
-EOF
-RUN
-
-NAME=symbols 16 bits omf
-FILE=bins/omf/hello_world
-CMDS=is
-EXPECT=<<EOF
+---
 nth      paddr      vaddr bind type size lib name   
 ----------------------------------------------------
   1 0x00000073 0x00001000 NONE NONE    0     _start
-EOF
-RUN
-
-NAME=sections 16 bits omf
-FILE=bins/omf/hello_world
-CMDS=iS
-EXPECT=<<EOF
+---
      paddr size      vaddr vsize align perm name   type flags 
 --------------------------------------------------------------
 0x00000073 0x13 0x00001000  0x13   0x0 -rwx text_1      
 0x00000095  0xe 0x00001013   0xe   0x0 -rwx data_1      
-EOF
-RUN
-
-NAME=maps 16 bits omf
-FILE=bins/omf/hello_world
-CMDS=oml
-EXPECT=<<EOF
+---
  1 fd: 3 +0x00000073 0x00001000 * 0x00001012 r-x fmap.text_1
  2 fd: 3 +0x00000095 0x00001013 - 0x00001020 r-x fmap.data_1
-EOF
-RUN
-
-NAME=sections 16 bits omf - content
-FILE=bins/omf/hello_world
-CMDS=px 16 @ section.text_1; px 16 @ section.data_1
-EXPECT=<<EOF
+---
 - offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0000:1000  ba0e 00b9 0000 bb01 00b8 0400 cd80 b801  ................
 - offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0000:1013  4865 6c6c 6f2c 2077 6f72 6c64 210a ffff  Hello, world!...
-EOF
-RUN
-
-NAME=virtual address 16 bits omf
-FILE=bins/omf/hello_world
-CMDS=e asm.bytes=true;pdq 1~mov[1];
-EXPECT=<<EOF
 ba0e00
 EOF
 RUN
 
-NAME=load 32 bits omf
+NAME=32 bits omf
 FILE=bins/omf/hello_world32
-CMDS=e asm.bytes=true; iI~bits;
+CMDS=<<EOF
+iI~bits
+iH
+ie:quiet
+is
+iS
+oml
+e asm.bytes=true
+pdq 1~mov[1]
+EOF
 EXPECT=<<EOF
 bits     32
-EOF
-RUN
+omf:
+  bits: 32
+  num_names: 7
+  num_sections: 2
+  num_symbols: 1
+  names:
+    - "FLAT"
+    - "CODE"
+    - "DATA"
+    - "BSS"
+    - "CONST"
+    - ".text"
+    - ".data"
+  sections:
+    - name: ".text"
+      name_idx: 6
+      vaddr: 0x0
+      size: 29
+      bits: 32
+      data_blocks:
+        - paddr: 0x74
+          size: 29
+          offset: 0x0
+    - name: ".data"
+      name_idx: 7
+      vaddr: 0x1d
+      size: 14
+      bits: 32
+      data_blocks:
+        - paddr: 0xa3
+          size: 14
+          offset: 0x0
+  symbols:
+    - name: "_start"
+      seg_idx: 1
+      offset: 0x0
+      segment: ".text"
+      paddr: 0x74
+      vaddr: 0x1000
 
-NAME=entry point 32 bits omf
-FILE=bins/omf/hello_world32
-CMDS=ie:quiet
-EXPECT=<<EOF
 0x00001000 0x00000074 ---------- ---------- program
-EOF
-RUN
-
-NAME=symbols 32 bits omf
-FILE=bins/omf/hello_world32
-CMDS=is
-EXPECT=<<EOF
 nth      paddr      vaddr bind type size lib name   
 ----------------------------------------------------
   1 0x00000074 0x00001000 NONE NONE    0     _start
-EOF
-RUN
-
-NAME=sections 32 bits omf
-FILE=bins/omf/hello_world32
-CMDS=iS
-EXPECT=<<EOF
      paddr size      vaddr vsize align perm name    type flags 
 ---------------------------------------------------------------
 0x00000074 0x1d 0x00001000  0x1d   0x0 -rwx .text_1      
 0x000000a3  0xe 0x0000101d   0xe   0x0 -rwx .data_1      
-EOF
-RUN
-
-NAME=maps 32 bits omf
-FILE=bins/omf/hello_world32
-CMDS=oml
-EXPECT=<<EOF
  1 fd: 3 +0x00000074 0x00001000 * 0x0000101c r-x fmap..text_1
  2 fd: 3 +0x000000a3 0x0000101d - 0x0000102a r-x fmap..data_1
-EOF
-RUN
-
-NAME=virtual address 32 bits omf
-FILE=bins/omf/hello_world32
-CMDS=e asm.bytes=true; pdq 1~mov[1]
-EXPECT=<<EOF
 ba0e000000
 EOF
 RUN
@@ -160,4 +190,40 @@ NAME=invalide record size omf
 FILE=bins/omf/invalid_size
 CMDS=q!
 EXPECT=
+RUN
+
+NAME=omf166 modinfo check
+FILE=bins/omf/omf166/measure
+CMDS=<<EOF
+e asm.arch=c166
+iH
+EOF
+EXPECT=<<EOF
+omf166-modinfo:
+  DoubleUsed: false
+  FloatUsed: true
+  MOD167: true
+  CaseSensitive: true
+  Segmented: true
+  MemoryModel: "HLarge: 'huge' data, 'far' funcs"
+
+EOF
+RUN
+
+NAME=omf166 modinfo check if record not exists
+FILE=bins/omf/omf166/no_modinfo.bin
+CMDS=<<EOF
+e asm.arch=c166
+iH
+EOF
+EXPECT=<<EOF
+omf166-modinfo:
+  DoubleUsed: false
+  FloatUsed: false
+  MOD167: false
+  CaseSensitive: false
+  Segmented: false
+  MemoryModel: "XLarge: 'xhuge' data, 'far' funcs"
+
+EOF
 RUN

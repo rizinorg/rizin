@@ -416,6 +416,90 @@ static bool test_enum_types(void) {
 	mu_end;
 }
 
+static bool test_enum_get_bitfield(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+
+	// A flag enum modeled on access(2)'s mode argument, plus a member above bit
+	// 32 to exercise 64-bit handling.
+	RzBaseType *e = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ENUM);
+	mu_assert_notnull(e, "new enum base type");
+	e->name = strdup("access_def");
+	RzTypeEnumCase cases[] = {
+		{ .name = strdup("F_OK"), .val = 0x0 },
+		{ .name = strdup("X_OK"), .val = 0x1 },
+		{ .name = strdup("W_OK"), .val = 0x2 },
+		{ .name = strdup("R_OK"), .val = 0x4 },
+		{ .name = strdup("HIGH"), .val = 0x100000000LL },
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		rz_vector_push(&e->enum_data.cases, &cases[i]);
+	}
+	mu_assert_true(rz_type_db_save_base_type(typedb, e), "register enum");
+
+	// The issue #2344 case: access(2) mode 6 == R_OK | W_OK decomposes to the OR
+	// of its flag members (bits are visited low-to-high).
+	mu_assert_streq_free(rz_type_db_enum_get_bitfield(typedb, "access_def", 6),
+		"access_def.W_OK | access_def.R_OK", "OR of two flag members");
+	// A single set bit still resolves to that one (qualified) member.
+	mu_assert_streq_free(rz_type_db_enum_get_bitfield(typedb, "access_def", 4),
+		"access_def.R_OK", "single flag member");
+	// 64-bit: a member above bit 32 is matched (regression for the old 32-bit cap).
+	mu_assert_streq_free(rz_type_db_enum_get_bitfield(typedb, "access_def", 0x100000004LL),
+		"access_def.R_OK | access_def.HIGH", "64-bit flag member");
+	// A value with a set bit that has no matching member does not decompose.
+	mu_assert_null(rz_type_db_enum_get_bitfield(typedb, "access_def", 8), "no member for bit 3");
+	// Zero never decomposes (the exact F_OK=0 case belongs to enum_member_by_val).
+	mu_assert_null(rz_type_db_enum_get_bitfield(typedb, "access_def", 0), "zero value");
+	// A non-enum type, and an unknown type, both yield NULL.
+	mu_assert_null(rz_type_db_enum_get_bitfield(typedb, "int", 6), "non-enum type");
+	mu_assert_null(rz_type_db_enum_get_bitfield(typedb, "no_such_type", 6), "unknown type");
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
+static bool test_enum_underlying_type(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+
+	// C23 enum with a fixed underlying type. A single-token primitive type is
+	// used here since that is what the bundled grammar revision already parses.
+	char *error_msg = NULL;
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, "enum EU : uint64_t { A = 1, B = 2 };", &error_msg);
+	mu_assert_notnull(ttype, "enum with underlying type parses");
+	mu_assert_null(error_msg, "no parse error");
+
+	RzBaseType *base = rz_type_db_get_base_type(typedb, "EU");
+	mu_assert_notnull(base, "EU base type exists");
+	mu_assert_eq(RZ_BASE_TYPE_KIND_ENUM, base->kind, "EU is an enum");
+	mu_assert_notnull(base->type, "underlying type stored on the base type");
+	mu_assert_streq_free(rz_type_as_string(typedb, base->type), "uint64_t", "underlying type is uint64_t");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), "enum EU : uint64_t { A = 0x1, B = 0x2 }", "enum renders its underlying type");
+	// enum_bitsize() now derives the width from the underlying type via
+	// rz_type_db_base_get_bitsize(); the concrete value is exercised in the
+	// integration tests since this unit harness does not load atomic widths.
+	rz_type_free(ttype);
+
+	// A classic enum keeps a NULL underlying type and the default int width
+	error_msg = NULL;
+	RzType *plain = rz_type_parse_string_single(typedb->parser, "enum EC { X = 7 };", &error_msg);
+	mu_assert_notnull(plain, "classic enum parses");
+	RzBaseType *bc = rz_type_db_get_base_type(typedb, "EC");
+	mu_assert_notnull(bc, "EC base type exists");
+	mu_assert_null(bc->type, "classic enum has no underlying type");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, bc), "enum EC { X = 0x7 }", "classic enum renders without an underlying type");
+	mu_assert_eq(rz_type_db_base_get_bitsize(typedb, bc), 32, "classic enum defaults to 32 bits");
+	rz_type_free(plain);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 static bool test_const_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
@@ -586,6 +670,7 @@ static char *pretty_enum_multiline = "enum MCU {\n"
 				     "\tCAPM = 0x2077\n"
 				     "} enumult;";
 static char *pretty_simple_typedef = "typedef long time_t;";
+static char *pretty_nested_callable = "struct xyz { wchar_t (*((***abc)[7][5]))(int foo, const char *bar); } lmn;";
 
 static bool test_type_as_pretty_string(void) {
 	RzTypeDB *typedb = rz_type_db_new();
@@ -691,6 +776,16 @@ static bool test_type_as_pretty_string(void) {
 	mu_assert_streq_free(pretty_str, "non_t;", "non-existent type in database");
 	rz_type_free(ttype);
 
+	error_msg = NULL;
+	ttype = rz_type_parse_string_single(typedb->parser, pretty_nested_callable, &error_msg);
+	mu_assert_notnull(ttype, "nested callable type parse unsuccessful");
+	mu_assert_null(error_msg, "parsing errors");
+	/* identifier should be ignored. */
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, "lmn", RZ_TYPE_PRINT_NO_OPTS, 1);
+	mu_assert_streq(pretty_str, pretty_nested_callable, "could not pretty print nested callable type");
+	free(pretty_str);
+	rz_type_free(ttype);
+
 	rz_type_db_free(typedb);
 	mu_end;
 }
@@ -746,6 +841,32 @@ static bool test_array_types(void) {
 
 	mu_assert_streq("float", ttype->array.type->pointer.type->identifier.name, "identifer is \"float\"");
 	rz_type_free(ttype);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
+static bool test_single_typedef_aliases(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	const char *src[] = { "size_t", "uint32_t", "uint64_t", "const size_t" };
+	const char *name[] = { "size_t", "uint32_t", "uint64_t", "size_t" };
+	const bool cnst[] = { false, false, false, true };
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	rz_type_db_set_bits(typedb, 64);
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(src); i++) {
+		char *error_msg = NULL;
+		RzType *ttype = rz_type_parse_string_single(typedb->parser, src[i], &error_msg);
+		mu_assert_notnull(ttype, "typedef alias parse successful");
+		mu_assert_null(error_msg, "parsing errors");
+		mu_assert_eq(ttype->kind, RZ_TYPE_KIND_IDENTIFIER, "parsed type");
+		mu_assert_streq(ttype->identifier.name, name[i], "parsed type");
+		mu_assert_eq(ttype->identifier.is_const, cnst[i], "parsed const");
+		rz_type_free(ttype);
+	}
 
 	rz_type_db_free(typedb);
 	mu_end;
@@ -896,6 +1017,90 @@ static bool test_struct_array_types(void) {
 	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "not struct");
 	mu_assert_streq(base->name, "alb", "type name");
 	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), array_ptr_struct_test, "type as string with multidimensional array of pointers");
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
+static bool test_struct_union_bitfield(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	rz_type_db_set_bits(typedb, 64);
+
+	char *error_msg = NULL;
+
+	// Struct with C bitfields: the widths must be kept on the members (#1240)
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, "struct qwe { int a : 4; int b : 16; int c : 3; };", &error_msg);
+	mu_assert_notnull(ttype, "bitfield struct parses");
+	mu_assert_null(error_msg, "no parse error");
+	mu_assert_streq(ttype->identifier.name, "qwe", "qwe struct");
+	rz_type_free(ttype);
+
+	RzBaseType *base = rz_type_db_get_base_type(typedb, "qwe");
+	mu_assert_notnull(base, "qwe base type");
+	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "not struct");
+	mu_assert_eq(3, rz_vector_len(&base->struct_data.members), "three members");
+	RzTypeStructMember *sm0 = rz_vector_index_ptr(&base->struct_data.members, 0);
+	RzTypeStructMember *sm1 = rz_vector_index_ptr(&base->struct_data.members, 1);
+	RzTypeStructMember *sm2 = rz_vector_index_ptr(&base->struct_data.members, 2);
+	mu_assert_streq(sm0->name, "a", "struct member 0 name");
+	mu_assert_eq(sm0->size, 4, "struct member a bitfield width");
+	mu_assert_streq(sm1->name, "b", "struct member 1 name");
+	mu_assert_eq(sm1->size, 16, "struct member b bitfield width");
+	mu_assert_streq(sm2->name, "c", "struct member 2 name");
+	mu_assert_eq(sm2->size, 3, "struct member c bitfield width");
+	// the renderer prints the widths back as " : N" (#1240)
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base),
+		"struct qwe { int a : 4; int b : 16; int c : 3; }", "struct bitfields rendered");
+	// the pf format uses the packed ":N" bits spec, little-endian order (#314)
+	mu_assert_streq_free(rz_base_type_as_format(typedb, base),
+		":4<:16<:3< a b c", "struct bitfield pf format (little-endian)");
+
+	// Union with C bitfields
+	ttype = rz_type_parse_string_single(typedb->parser, "union uu { int a : 4; int b : 16; };", &error_msg);
+	mu_assert_notnull(ttype, "bitfield union parses");
+	mu_assert_null(error_msg, "no parse error");
+	rz_type_free(ttype);
+
+	base = rz_type_db_get_base_type(typedb, "uu");
+	mu_assert_notnull(base, "uu base type");
+	mu_assert_eq(RZ_BASE_TYPE_KIND_UNION, base->kind, "not union");
+	mu_assert_eq(2, rz_vector_len(&base->union_data.members), "two members");
+	RzTypeUnionMember *um0 = rz_vector_index_ptr(&base->union_data.members, 0);
+	RzTypeUnionMember *um1 = rz_vector_index_ptr(&base->union_data.members, 1);
+	mu_assert_eq(um0->size, 4, "union member a bitfield width");
+	mu_assert_eq(um1->size, 16, "union member b bitfield width");
+	mu_assert_streq_free(rz_base_type_as_format(typedb, base),
+		"0:4<:16< a b", "union bitfield pf format (little-endian)");
+
+	// Regression (#1240): loaders record a member's bitfield width in `size` and
+	// leave it 0 for a plain member (e.g. the DWARF reader for "int a"). A size of
+	// 0 must render as a plain member, a non-zero size as a bitfield.
+	RzBaseType *sr = rz_type_base_type_new(RZ_BASE_TYPE_KIND_STRUCT);
+	mu_assert_notnull(sr, "new struct base type");
+	sr->name = strdup("selfref");
+	RzTypeStructMember sm;
+	sm.name = strdup("full");
+	sm.offset = 0;
+	sm.type = rz_type_parse_string_single(typedb->parser, "int", &error_msg);
+	mu_assert_notnull(sm.type, "int type parses");
+	sm.size = 0; // plain member, as a loader such as DWARF records it
+	mu_assert_false(rz_type_struct_member_is_bitfield(&sm), "size 0 is not a bitfield");
+	rz_vector_push(&sr->struct_data.members, &sm);
+	sm.name = strdup("bits");
+	sm.offset = 4;
+	sm.type = rz_type_parse_string_single(typedb->parser, "int", &error_msg);
+	mu_assert_notnull(sm.type, "int type parses");
+	sm.size = 4; // a real bitfield
+	mu_assert_true(rz_type_struct_member_is_bitfield(&sm), "non-zero size is a bitfield");
+	rz_vector_push(&sr->struct_data.members, &sm);
+	mu_assert_true(rz_type_db_save_base_type(typedb, sr), "register selfref");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, sr),
+		"struct selfref { int full; int bits : 4; }", "plain member is not a bitfield, narrow member is");
+	mu_assert_streq_free(rz_base_type_as_format(typedb, sr),
+		"d4:4< full bits", "plain member keeps its normal pf, bitfield uses :N");
 
 	rz_type_db_free(typedb);
 	mu_end;
@@ -1841,7 +2046,86 @@ bool test_callable_unspecified_parameters(void) {
 	mu_end;
 }
 
+static bool test_type_format_to_c_declaration_struct(void) {
+	char *s = rz_type_format_to_c_declaration("rgba", "x1x1x1x1 r g b a", NULL);
+	mu_assert_streq_free(s,
+		"struct rgba {\n\tuint8_t r;\n\tuint8_t g;\n\tuint8_t b;\n\tuint8_t a;\n};",
+		"struct from inline pf format");
+	mu_end;
+}
+
+static bool test_type_format_to_c_declaration_union(void) {
+	char *s = rz_type_format_to_c_declaration("onion", "0d4d4d4 a b c", NULL);
+	mu_assert_streq_free(s,
+		"union onion {\n\tint32_t a;\n\tint32_t b;\n\tint32_t c;\n};",
+		"union from leading-0 pf format");
+	mu_end;
+}
+
+static bool test_type_format_to_c_declaration_pointers_and_strings(void) {
+	char *s = rz_type_format_to_c_declaration("ps", "ps ptr str", NULL);
+	mu_assert_streq_free(s,
+		"struct ps {\n\tvoid *ptr;\n\tchar *str;\n};",
+		"pointer and string fields");
+	mu_end;
+}
+
+static bool test_type_format_to_c_declaration_array(void) {
+	char *s = rz_type_format_to_c_declaration("arr", "[4]d4 vals", NULL);
+	mu_assert_streq_free(s,
+		"struct arr {\n\tint32_t vals[4];\n};",
+		"fixed-size array field");
+	mu_end;
+}
+
+static bool test_type_format_to_c_declaration_invalid(void) {
+	char *err = NULL;
+	char *s = rz_type_format_to_c_declaration("", "x4 a", &err);
+	mu_assert_null(s, "empty name rejected");
+	free(err);
+	err = NULL;
+	s = rz_type_format_to_c_declaration("foo", "", &err);
+	mu_assert_null(s, "empty format rejected");
+	free(err);
+	mu_end;
+}
+
+static bool test_type_format_to_c_declaration_registers_base_type(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+
+	char *decl = rz_type_format_to_c_declaration("point", "d4d4 x y", NULL);
+	mu_assert_notnull(decl, "converted format to declaration");
+
+	char *error_msg = NULL;
+	rz_type_parse_string_stateless(typedb->parser, decl, &error_msg);
+	free(decl);
+
+	RzBaseType *base = rz_type_db_get_base_type(typedb, "point");
+	mu_assert_notnull(base, "type registered in the database");
+	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "registered as struct");
+	mu_assert_eq(rz_vector_len(&base->struct_data.members), 2, "two members");
+
+	RzTypeStructMember *m = rz_vector_index_ptr(&base->struct_data.members, 0);
+	mu_assert_true(rz_type_atomic_str_eq(typedb, m->type, "int32_t"), "first member type");
+	mu_assert_streq(m->name, "x", "first member name");
+	m = rz_vector_index_ptr(&base->struct_data.members, 1);
+	mu_assert_true(rz_type_atomic_str_eq(typedb, m->type, "int32_t"), "second member type");
+	mu_assert_streq(m->name, "y", "second member name");
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 int all_tests() {
+	mu_run_test(test_type_format_to_c_declaration_struct);
+	mu_run_test(test_type_format_to_c_declaration_union);
+	mu_run_test(test_type_format_to_c_declaration_pointers_and_strings);
+	mu_run_test(test_type_format_to_c_declaration_array);
+	mu_run_test(test_type_format_to_c_declaration_invalid);
+	mu_run_test(test_type_format_to_c_declaration_registers_base_type);
 	mu_run_test(test_types_get_base_type_struct);
 	mu_run_test(test_types_get_base_type_union);
 	mu_run_test(test_types_get_base_type_enum);
@@ -1853,10 +2137,14 @@ int all_tests() {
 	mu_run_test(test_type_as_string);
 	mu_run_test(test_type_as_pretty_string);
 	mu_run_test(test_enum_types);
+	mu_run_test(test_enum_get_bitfield);
+	mu_run_test(test_enum_underlying_type);
 	mu_run_test(test_const_types);
 	mu_run_test(test_array_types);
+	mu_run_test(test_single_typedef_aliases);
 	mu_run_test(test_struct_func_types);
 	mu_run_test(test_struct_array_types);
+	mu_run_test(test_struct_union_bitfield);
 	mu_run_test(test_struct_identifier_without_specifier);
 	mu_run_test(test_union_identifier_without_specifier);
 	mu_run_test(test_edit_types);

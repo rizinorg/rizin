@@ -614,7 +614,7 @@ RZ_API void rz_cons_grepbuf(void) {
 	cons->lines = 0;
 	// used to count lines and change negative grep.line values
 	while ((int)(size_t)(in - buf) < len) {
-		char *p = strchr(in, '\n');
+		const char *p = strchr(in, '\n');
 		if (!p) {
 			break;
 		}
@@ -640,7 +640,7 @@ RZ_API void rz_cons_grepbuf(void) {
 	bool is_range_line_grep_only = grep->range_line != 2 && !*grep->str;
 	in = buf;
 	while ((int)(size_t)(in - buf) < len) {
-		char *p = strchr(in, '\n');
+		const char *p = strchr(in, '\n');
 		if (!p) {
 			break;
 		}
@@ -725,6 +725,7 @@ RZ_API void rz_cons_grepbuf(void) {
 	const int ob_len = rz_strbuf_length(ob);
 	if (ob_len >= cons->context->buffer_sz) {
 		cons->context->buffer_sz = ob_len + 1;
+		free(cons->context->buffer);
 		cons->context->buffer = rz_strbuf_drain(ob);
 	} else {
 		memcpy(cons->context->buffer, rz_strbuf_getbin(ob, NULL), ob_len);

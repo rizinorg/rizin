@@ -32,16 +32,16 @@ bool test_rz_io_ihex_read(void) {
 	free(uri);
 
 	ut8 buf[8];
-	bool r = rz_io_read_at(io, 0, buf, sizeof(buf));
+	bool r = rz_io_read_at_mapped(io, 0, buf, sizeof(buf));
 	mu_assert_true(r, "read success");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xff\xff\xff\xff\xff\xff", sizeof(buf), "read");
-	r = rz_io_read_at(io, 0x10100, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(io, 0x10100, buf, sizeof(buf));
 	mu_assert_true(r, "read success");
 	mu_assert_memeq(buf, (const ut8 *)"\x21\x46\x01\x36\x01\x21\x47\x01", sizeof(buf), "read");
-	r = rz_io_read_at(io, 0x1010e, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(io, 0x1010e, buf, sizeof(buf));
 	mu_assert_true(r, "read success");
 	mu_assert_memeq(buf, (const ut8 *)"\x19\x01\x21\x46\x01\x7e\xb7\xc2", sizeof(buf), "read");
-	r = rz_io_read_at(io, 0x200fe, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(io, 0x200fe, buf, sizeof(buf));
 	mu_assert_true(r, "read success");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\x19\x4e\x79\x23\x46\x23", sizeof(buf), "read");
 
@@ -65,42 +65,42 @@ bool test_rz_io_ihex_write(void) {
 	bool r = rz_io_write_at(io, 0x10101, (const ut8 *)"Ulu", 3);
 	mu_assert_true(r, "write success");
 	ut8 buf[8];
-	r = rz_io_read_at(io, 0x10100, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(io, 0x10100, buf, sizeof(buf));
 	mu_assert_true(r, "read success");
 	mu_assert_memeq(buf, (const ut8 *)"\x21Ulu\x01\x21\x47\x01", sizeof(buf), "read");
 
 	// write crossing source chunk boundaries
 	r = rz_io_write_at(io, 0x1010e, (const ut8 *)"Mulu", 4);
 	mu_assert_true(r, "write success");
-	r = rz_io_read_at(io, 0x1010d, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(io, 0x1010d, buf, sizeof(buf));
 	mu_assert_true(r, "read success");
 	mu_assert_memeq(buf, (const ut8 *)"\xd2Mulu\x01\x7e\xb7", sizeof(buf), "read");
 
 	// write beyond source chunk boundaries
 	r = rz_io_write_at(io, 0x1011e, (const ut8 *)"UrShak", 6);
 	mu_assert_true(r, "write success");
-	r = rz_io_read_at(io, 0x1011d, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(io, 0x1011d, buf, sizeof(buf));
 	mu_assert_true(r, "read success");
 	mu_assert_memeq(buf, (const ut8 *)"\x48UrShak\xff", sizeof(buf), "read");
 
 	// write before and into source chunk boundaries
 	r = rz_io_write_at(io, 0x200fe, (const ut8 *)"Tarrok", 6);
 	mu_assert_true(r, "write success");
-	r = rz_io_read_at(io, 0x200fd, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(io, 0x200fd, buf, sizeof(buf));
 	mu_assert_true(r, "read success");
 	mu_assert_memeq(buf, (const ut8 *)"\xffTarrok\x46", sizeof(buf), "read");
 
 	// write outside any chunks
 	r = rz_io_write_at(io, 0x10300, (const ut8 *)"Krushak", 7);
 	mu_assert_true(r, "write success");
-	r = rz_io_read_at(io, 0x102ff, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(io, 0x102ff, buf, sizeof(buf));
 	mu_assert_true(r, "read success");
 	mu_assert_memeq(buf, (const ut8 *)"\xffKrushak", sizeof(buf), "read");
 
 	// write that ends exactly at an extended addr boundary
 	r = rz_io_write_at(io, 0xfff8, (const ut8 *)"01234567", 8);
 	mu_assert_true(r, "write success");
-	r = rz_io_read_at(io, 0xfff8, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(io, 0xfff8, buf, sizeof(buf));
 	mu_assert_true(r, "read success");
 	mu_assert_memeq(buf, (const ut8 *)"01234567", sizeof(buf), "read");
 
@@ -110,7 +110,7 @@ bool test_rz_io_ihex_write(void) {
 	mu_assert_true(r, "write success");
 	// writing outside also resizes
 	mu_assert_eq(rz_io_desc_size(desc), 0x40007, "desc size");
-	r = rz_io_read_at(io, 0x3ffff, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(io, 0x3ffff, buf, sizeof(buf));
 	mu_assert_true(r, "read success");
 	mu_assert_memeq(buf, (const ut8 *)"\xff"
 					  "Arecibo",
@@ -142,25 +142,25 @@ bool test_rz_io_ihex_write(void) {
 	io->ff = true;
 	io->Oxff = 0xff;
 	rz_io_open_nomap(io, uri, RZ_PERM_R, 0);
-	r = rz_io_read_at(io, 0x10100, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(io, 0x10100, buf, sizeof(buf));
 	mu_assert_true(r, "read success");
 	mu_assert_memeq(buf, (const ut8 *)"\x21Ulu\x01\x21\x47\x01", sizeof(buf), "read");
-	r = rz_io_read_at(io, 0x1010d, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(io, 0x1010d, buf, sizeof(buf));
 	mu_assert_true(r, "read success");
 	mu_assert_memeq(buf, (const ut8 *)"\xd2Mulu\x01\x7e\xb7", sizeof(buf), "read");
-	r = rz_io_read_at(io, 0x1011d, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(io, 0x1011d, buf, sizeof(buf));
 	mu_assert_true(r, "read success");
 	mu_assert_memeq(buf, (const ut8 *)"\x48UrShak\xff", sizeof(buf), "read");
-	r = rz_io_read_at(io, 0x200fd, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(io, 0x200fd, buf, sizeof(buf));
 	mu_assert_true(r, "read success");
 	mu_assert_memeq(buf, (const ut8 *)"\xffTarrok\x46", sizeof(buf), "read");
-	r = rz_io_read_at(io, 0x102ff, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(io, 0x102ff, buf, sizeof(buf));
 	mu_assert_true(r, "read success");
 	mu_assert_memeq(buf, (const ut8 *)"\xffKrushak", sizeof(buf), "read");
-	r = rz_io_read_at(io, 0xfff8, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(io, 0xfff8, buf, sizeof(buf));
 	mu_assert_true(r, "read success");
 	mu_assert_memeq(buf, (const ut8 *)"01234567", sizeof(buf), "read");
-	r = rz_io_read_at(io, 0x3ffff, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(io, 0x3ffff, buf, sizeof(buf));
 	mu_assert_true(r, "read success");
 	mu_assert_memeq(buf, (const ut8 *)"\xff"
 					  "Arecibo",
@@ -196,7 +196,7 @@ bool test_rz_io_ihex_write_large(void) {
 
 	ut8 tmp[DATA_SIZE];
 #undef DATA_SIZE
-	r = rz_io_read_at(io, 0x1337, tmp, sizeof(tmp));
+	r = rz_io_read_at_mapped(io, 0x1337, tmp, sizeof(tmp));
 	mu_assert_true(r, "read success");
 	mu_assert_true(!memcmp(tmp, data, sizeof(data)), "re-read in memory"); // faster for this large size than mu_assert_memeq
 	rz_io_free(io);
@@ -206,7 +206,7 @@ bool test_rz_io_ihex_write_large(void) {
 	io->ff = true;
 	io->Oxff = 0xff;
 	rz_io_open_nomap(io, uri, RZ_PERM_R, 0);
-	r = rz_io_read_at(io, 0x1337, tmp, sizeof(tmp));
+	r = rz_io_read_at_mapped(io, 0x1337, tmp, sizeof(tmp));
 	mu_assert_true(r, "read success");
 	mu_assert_true(!memcmp(tmp, data, sizeof(data)), "re-read from file"); // faster for this large size than mu_assert_memeq
 	rz_io_free(io);
@@ -241,7 +241,7 @@ bool test_rz_io_ihex_resize_bigger(void) {
 	r = rz_io_write_at(io, 0x21000, (const ut8 *)"HoshPak", 7);
 	mu_assert_true(r, "write success");
 	ut8 buf[8];
-	r = rz_io_read_at(io, 0x20fff, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(io, 0x20fff, buf, sizeof(buf));
 	mu_assert_true(r, "read success");
 	mu_assert_memeq(buf, (const ut8 *)"\xffHoshPak", sizeof(buf), "read");
 
@@ -269,7 +269,7 @@ bool test_rz_io_ihex_resize_bigger(void) {
 	desc = rz_io_open_nomap(io, uri, RZ_PERM_R, 0);
 	mu_assert_notnull(desc, "reopen");
 	mu_assert_eq(rz_io_desc_size(desc), 0x30000, "desc size");
-	r = rz_io_read_at(io, 0x20fff, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(io, 0x20fff, buf, sizeof(buf));
 	mu_assert_true(r, "read success");
 	mu_assert_memeq(buf, (const ut8 *)"\xffHoshPak", sizeof(buf), "read");
 	rz_io_free(io);
@@ -296,7 +296,7 @@ bool test_rz_io_ihex_resize_smaller(void) {
 	mu_assert_eq(rz_io_desc_size(desc), 0x20108, "desc size");
 
 	ut8 buf[8];
-	r = rz_io_read_at(io, 0x20104, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(io, 0x20104, buf, sizeof(buf));
 	mu_assert_true(r, "read success");
 	mu_assert_memeq(buf, (const ut8 *)"\x46\x23\x96\x57\xff\xff\xff\xff", sizeof(buf), "read");
 
@@ -321,7 +321,7 @@ bool test_rz_io_ihex_resize_smaller(void) {
 	desc = rz_io_open_nomap(io, uri, RZ_PERM_R, 0);
 	mu_assert_notnull(desc, "reopen");
 	mu_assert_eq(rz_io_desc_size(desc), 0x20108, "desc size");
-	r = rz_io_read_at(io, 0x20104, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(io, 0x20104, buf, sizeof(buf));
 	mu_assert_true(r, "read success");
 	mu_assert_memeq(buf, (const ut8 *)"\x46\x23\x96\x57\xff\xff\xff\xff", sizeof(buf), "read");
 	rz_io_free(io);

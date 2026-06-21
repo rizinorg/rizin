@@ -35,7 +35,7 @@ static RzList /*<RzIODesc *>*/ *rz_io_ar_open_many(RzIO *io, const char *file, i
 
 	rz_list_foreach (all, it, arfp) {
 		char *uri_name = rz_str_newf("%s//%s", file, arfp->name);
-		RzIODesc *desc = rz_io_desc_new(io, &rz_io_plugin_ar, uri_name, perm, mode, arfp);
+		RzIODesc *desc = rz_io_desc_new(io, &rz_io_plugin_ar, uri_name, perm, arfp);
 		free(uri_name);
 		if (!desc) {
 			rz_list_free(all);
@@ -48,7 +48,7 @@ static RzList /*<RzIODesc *>*/ *rz_io_ar_open_many(RzIO *io, const char *file, i
 			rz_list_free(list_fds);
 			return NULL;
 		}
-		rz_list_iter_set_data(it, NULL);
+		rz_list_set_val(it, NULL);
 	}
 	rz_list_free(all);
 	return list_fds;
@@ -61,7 +61,7 @@ static RzIODesc *rz_io_ar_open(RzIO *io, const char *file, int perm, int mode) {
 	if (!uri) {
 		return NULL;
 	}
-	const char *arname = strstr(uri, "://");
+	char *arname = strstr(uri, "://");
 	if (!arname) {
 		goto err;
 	}
@@ -78,7 +78,7 @@ static RzIODesc *rz_io_ar_open(RzIO *io, const char *file, int perm, int mode) {
 	if (!arf) {
 		goto err;
 	}
-	res = rz_io_desc_new(io, &rz_io_plugin_ar, filename, perm, mode, arf);
+	res = rz_io_desc_new(io, &rz_io_plugin_ar, filename, perm, arf);
 	if (!res) {
 		goto err;
 	}

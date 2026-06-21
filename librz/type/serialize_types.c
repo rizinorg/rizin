@@ -33,8 +33,8 @@ static char *get_type_data(Sdb *sdb, const char *type, const char *sname) {
 	return members;
 }
 
-static TypeFormatPair *get_enum_type(Sdb *sdb, const char *sname) {
-	rz_return_val_if_fail(sdb && RZ_STR_ISNOTEMPTY(sname), NULL);
+static TypeFormatPair *get_enum_type(RzTypeDB *typedb, Sdb *sdb, const char *sname) {
+	rz_return_val_if_fail(typedb && sdb && RZ_STR_ISNOTEMPTY(sname), NULL);
 
 	RzBaseType *base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
@@ -75,6 +75,25 @@ static TypeFormatPair *get_enum_type(Sdb *sdb, const char *sname) {
 		sdb_aforeach_next(cur);
 	}
 	free(members);
+
+	// C23 fixed underlying type, stored by save_enum() under "enum.<name>.@type".
+	// The referenced type may not have been deserialized yet -- base types are read
+	// from the sdb in an unspecified (hash) order -- but rz_type_parse_string_single()
+	// turns an unknown name into a forward-looking identifier instead of failing, and
+	// identifiers are resolved lazily by name when used (e.g. for the enum width), so
+	// the load order of the underlying type relative to this enum does not matter.
+	RzStrBuf utkey;
+	char *underlying = sdb_get(sdb, rz_strbuf_initf(&utkey, "enum.%s.@type", sname));
+	rz_strbuf_fini(&utkey);
+	if (underlying) {
+		char *error_msg = NULL;
+		RzType *ut = rz_type_parse_string_single(typedb->parser, underlying, &error_msg);
+		free(underlying);
+		free(error_msg);
+		if (ut) {
+			base_type->type = ut;
+		}
+	}
 
 	RzStrBuf key;
 	char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname));
@@ -135,10 +154,16 @@ static TypeFormatPair *get_struct_type(RzTypeDB *typedb, Sdb *sdb, const char *s
 				goto error;
 			}
 
+			// offset still points at the "offset,bitsize" tail; split it so the
+			// 3rd field is the bitfield width in bits (0, or absent in
+			// pre-bitfield projects, if the member is not a bitfield).
+			char *member_bitsize = NULL;
+			char *member_offset = sdb_anext(offset, &member_bitsize);
 			RzTypeStructMember memb = {
 				.name = rz_str_dup(cur),
 				.type = ttype,
-				.offset = strtol(offset, NULL, 10)
+				.offset = strtol(member_offset, NULL, 10),
+				.size = member_bitsize ? (size_t)strtoull(member_bitsize, NULL, 10) : 0,
 			};
 
 			free(values);
@@ -198,7 +223,8 @@ static TypeFormatPair *get_union_type(RzTypeDB *typedb, Sdb *sdb, const char *sn
 			if (!values) {
 				goto error;
 			}
-			char *value = sdb_anext(values, NULL);
+			char *member_rest = NULL; // "offset,bitsize" tail after the type
+			char *value = sdb_anext(values, &member_rest);
 			char *error_msg = NULL;
 			RzType *ttype = rz_type_parse_string_single(typedb->parser, value, &error_msg);
 			if (!ttype || error_msg) {
@@ -206,9 +232,17 @@ static TypeFormatPair *get_union_type(RzTypeDB *typedb, Sdb *sdb, const char *sn
 				goto error;
 			}
 
+			// split the "offset,bitsize" tail; the 3rd comma-field (after the
+			// unused union member offset) is the bitfield width in bits, 0 if
+			// the member is not a bitfield.
+			char *member_bitsize = NULL;
+			if (member_rest) {
+				sdb_anext(member_rest, &member_bitsize);
+			}
 			RzTypeUnionMember memb = {
 				.name = rz_str_dup(cur),
-				.type = ttype
+				.type = ttype,
+				.size = member_bitsize ? (size_t)strtoull(member_bitsize, NULL, 10) : 0,
 			};
 			free(values);
 
@@ -327,7 +361,7 @@ bool sdb_load_base_types(RzTypeDB *typedb, Sdb *sdb) {
 		if (!strcmp(sdbkv_value(kv), "struct")) {
 			tpair = get_struct_type(typedb, sdb, sdbkv_key(kv));
 		} else if (!strcmp(sdbkv_value(kv), "enum")) {
-			tpair = get_enum_type(sdb, sdbkv_key(kv));
+			tpair = get_enum_type(typedb, sdb, sdbkv_key(kv));
 		} else if (!strcmp(sdbkv_value(kv), "union")) {
 			tpair = get_union_type(typedb, sdb, sdbkv_key(kv));
 		} else if (!strcmp(sdbkv_value(kv), "typedef")) {
@@ -382,12 +416,12 @@ static void save_struct(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type
 	int i = 0;
 	RzTypeStructMember *member;
 	rz_vector_foreach (&type->struct_data.members, member) {
-		// struct.name.param=type,offset,argsize
+		// struct.name.param=type,offset,bitsize
 		char *member_sname = rz_str_sanitize_sdb_key(member->name);
 		char *member_type = rz_type_as_string(typedb, member->type);
 		sdb_set(sdb,
 			rz_strbuf_setf(&param_key, "%s.%s.%s", kind, sname, member_sname),
-			rz_strbuf_setf(&param_val, "%s,%zu,%u", member_type, member->offset, 0));
+			rz_strbuf_setf(&param_val, "%s,%zu,%u", member_type, member->offset, (unsigned)member->size));
 		free(member_type);
 		free(member_sname);
 
@@ -430,12 +464,12 @@ static void save_union(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type)
 	int i = 0;
 	RzTypeUnionMember *member;
 	rz_vector_foreach (&type->union_data.members, member) {
-		// union.name.arg1=type,offset,argsize
+		// union.name.arg1=type,offset,bitsize
 		char *member_sname = rz_str_sanitize_sdb_key(member->name);
 		char *member_type = rz_type_as_string(typedb, member->type);
 		sdb_set(sdb,
 			rz_strbuf_setf(&param_key, "%s.%s.%s", kind, sname, member_sname),
-			rz_strbuf_setf(&param_val, "%s,%zu,%u", member_type, member->offset, 0));
+			rz_strbuf_setf(&param_val, "%s,%zu,%u", member_type, member->offset, (unsigned)member->size));
 		free(member_type);
 		free(member_sname);
 
@@ -483,10 +517,10 @@ static void save_enum(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type) 
 		char *case_sname = rz_str_sanitize_sdb_key(cas->name);
 		sdb_set(sdb,
 			rz_strbuf_setf(&param_key, "enum.%s.%s", sname, case_sname),
-			rz_strbuf_setf(&param_val, "0x%" PFMT64x "", cas->val));
+			rz_strbuf_setf(&param_val, "0x%" PFMT64x, cas->val));
 
 		sdb_set(sdb,
-			rz_strbuf_setf(&param_key, "enum.%s.0x%" PFMT64x "", sname, cas->val),
+			rz_strbuf_setf(&param_key, "enum.%s.0x%" PFMT64x, sname, cas->val),
 			case_sname);
 		free(case_sname);
 
@@ -496,6 +530,16 @@ static void save_enum(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type) 
 	char *key = rz_str_newf("enum.%s", sname);
 	sdb_set(sdb, key, rz_strbuf_get(&arglist));
 	free(key);
+
+	// C23 fixed underlying type, e.g. "enum E : long long { ... }".
+	// Stored under a key that cannot clash with a case name.
+	if (type->type) {
+		char *underlying = rz_type_as_string(typedb, type->type);
+		if (underlying) {
+			sdb_set(sdb, rz_strbuf_setf(&param_key, "enum.%s.@type", sname), underlying);
+			free(underlying);
+		}
+	}
 
 	rz_strbuf_fini(&arglist);
 	rz_strbuf_fini(&param_key);
@@ -522,7 +566,7 @@ static void save_atomic_type(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType 
 
 	sdb_set(sdb,
 		rz_strbuf_setf(&key, "type.%s.size", sname),
-		rz_strbuf_setf(&val, "%" PFMT64u "", type->size));
+		rz_strbuf_setf(&val, "%" PFMT64u, type->size));
 	sdb_set(sdb,
 		rz_strbuf_setf(&key, "type.%s.typeclass", sname),
 		rz_type_typeclass_as_string(get_base_type_typeclass(type)));

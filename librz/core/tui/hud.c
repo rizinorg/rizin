@@ -13,7 +13,7 @@
 
 RZ_IPI bool rz_core_visual_hud(RzCore *core) {
 	const char *c = rz_config_get(core->config, "hud.path");
-	char *system_hud_dir = rz_path_system(RZ_HUD);
+	char *system_hud_dir = rz_path_system(core->sys_path, RZ_HUD);
 	char *f = rz_file_path_join(system_hud_dir, "main");
 	free(system_hud_dir);
 	int use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
@@ -64,11 +64,10 @@ RZ_IPI bool rz_core_visual_hudclasses(RzCore *core) {
 	RzBinSymbol *m;
 	ut64 addr;
 	char *res;
-	RzList *list = rz_list_new();
+	RzList *list = rz_list_newf(free);
 	if (!list) {
 		return false;
 	}
-	list->free = free;
 	RzBinObject *bin_obj = rz_bin_cur_object(core->bin);
 	const RzPVector *classes = rz_bin_object_get_classes(bin_obj);
 	if (!classes) {
@@ -110,15 +109,15 @@ static bool hudstuff_append(RzFlagItem *fi, void *user) {
 RZ_IPI bool rz_core_visual_hudstuff(RzCore *core) {
 	ut64 addr;
 	char *res;
-	RzList *list = rz_list_new();
+	RzList *list = rz_list_newf(free);
 	if (!list) {
 		return false;
 	}
-	list->free = free;
 	rz_flag_foreach(core->flags, hudstuff_append, list);
 	RzIntervalTreeIter it;
 	RzAnalysisMetaItem *mi;
-	rz_interval_tree_foreach (&core->analysis->meta, it, mi) {
+	RzIntervalTree *tmeta = rz_analysis_get_meta(core->analysis);
+	rz_interval_tree_foreach (tmeta, it, mi) {
 		if (mi->type == RZ_META_TYPE_COMMENT) {
 			char *s = rz_str_newf("0x%08" PFMT64x " %s", rz_interval_tree_iter_get(&it)->start, mi->str);
 			if (s) {
@@ -140,17 +139,26 @@ RZ_IPI bool rz_core_visual_hudstuff(RzCore *core) {
 	return res != NULL;
 }
 
+bool core_visual_config_hud_append(const RzConfigEntry *entry, void *user) {
+	RzList *list = (RzList *)user;
+	const char *name = rz_config_entry_get_name(entry);
+	char *value = rz_config_entry_get_as_string(entry);
+	char *str = rz_str_newf("%s %s", name, value);
+	if (!str || !rz_list_append(list, str)) {
+		free(str);
+	}
+	free(value);
+	return true;
+}
+
 RZ_IPI bool rz_core_visual_config_hud(RzCore *core) {
-	RzListIter *iter;
-	RzConfigNode *bt;
-	RzList *list = rz_list_new();
+	RzList *list = rz_list_newf(free);
 	if (!list) {
 		return false;
 	}
-	list->free = free;
-	rz_list_foreach (core->config->nodes, iter, bt) {
-		rz_list_append(list, rz_str_newf("%s %s", bt->name, bt->value));
-	}
+
+	rz_config_iterate_over(core->config, core_visual_config_hud_append, list);
+
 	char *res = rz_cons_hud(list, NULL);
 	if (res) {
 		const char *oldvalue = NULL;

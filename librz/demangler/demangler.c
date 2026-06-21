@@ -20,18 +20,7 @@
 		.demangle = &handler##_cast, \
 	}
 
-#if WITH_GPL
-// cpp demangler contains GPL2 code and LGPL3 for delphi
-DEFINE_DEMANGLER_PLUGIN(cpp, "c++", "GPL-2,LGPL3", "FSF/deroad", libdemangle_handler_cxx);
-#else
-// cpp demangler contain only the LGPL3 for delphi
-DEFINE_DEMANGLER_PLUGIN(cpp, "c++", "LGPL3", "deroad", libdemangle_handler_cxx);
-#endif /* WITH_GPL */
-
-#if WITH_SWIFT_DEMANGLER
-DEFINE_DEMANGLER_PLUGIN(swift, "swift", "MIT", "pancake", libdemangle_handler_swift);
-#endif
-
+DEFINE_DEMANGLER_PLUGIN(cpp, "c++", "LGPL3", "billow", libdemangle_handler_cxx);
 DEFINE_DEMANGLER_PLUGIN(rust, "rust", "LGPL3", "Dhruv Maroo/RizinOrg", libdemangle_handler_rust);
 DEFINE_DEMANGLER_PLUGIN(java, "java", "LGPL3", "deroad", libdemangle_handler_java);
 DEFINE_DEMANGLER_PLUGIN(msvc, "msvc", "LGPL3", "inisider", libdemangle_handler_msvc);
@@ -188,7 +177,7 @@ RZ_API bool rz_demangler_plugin_add(RZ_NONNULL RzDemangler *dem, RZ_NONNULL RzDe
 
 RZ_API bool rz_demangler_plugin_del(RZ_NONNULL RzDemangler *dem, RZ_NONNULL RzDemanglerPlugin *plugin) {
 	rz_return_val_if_fail(dem && dem->plugins && plugin && plugin->language, false);
-	return rz_list_delete_data(dem->plugins, plugin);
+	return rz_list_delete_val(dem->plugins, plugin);
 }
 
 /**

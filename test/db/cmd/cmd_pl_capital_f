@@ -1,0 +1,227 @@
+NAME=plF
+FILE=bins/elf/ls
+CMDS=<<EOF
+e scr.utf8=true
+aaa
+plF
+echo "---"
+so 1
+plF
+EOF
+EXPECT=<<EOF
+0x5ae0 {}
+0x5ae4 ((_xor ← ((rbp ≈₃₂ ⊥) ⊕ (rbp ≈₃₂ ⊥)))
+       (rbp ← (_xor ≈₆₄ ⊥))
+         (of ← ⊥)
+           (cf ← ⊥)
+             (_result ← _xor)
+               (pf ← ¬↓(_val = (_result ≈₈ ⊥) (_c4 = (_val ⊕ (_val ≫ 0x4₈ ⊥)) (_c2 = (_c4 ⊕ (_c4 ≫ 0x2₈ ⊥)) (_c2 ⊕ (_c2 ≫ 0x1₈ ⊥))))))
+                 (zf ← _result ≡ 0) (sf ← ↑_result))
+0x5ae6 (r9 ← (rdx ≈₆₄ ⊥))
+0x5ae9 ((rsi ← (ʟᴅ₀ 64 rsp)) (rsp ← (rsp + 0x8₆₄)))
+0x5aea (rdx ← rsp)
+0x5aed ((and_ ← (rsp & 0xfffffffffffffff0₆₄))
+       (rsp ← and_)
+         (of ← ⊥)
+           (cf ← ⊥)
+             (_result ← and_)
+               (pf ← ¬↓(_val = (_result ≈₈ ⊥) (_c4 = (_val ⊕ (_val ≫ 0x4₈ ⊥)) (_c2 = (_c4 ⊕ (_c4 ≫ 0x2₈ ⊥)) (_c2 ⊕ (_c2 ≫ 0x1₈ ⊥))))))
+                 (zf ← _result ≡ 0) (sf ← ↑_result))
+0x5af1 ((final ← (rsp - 0x8₆₄))
+       (ꜱᴛ₀ (rax ≈₆₄ ⊥) final) (rsp ← final))
+0x5af2 ((final ← (rsp - 0x8₆₄))
+       (ꜱᴛ₀ (rsp ≈₆₄ ⊥) final) (rsp ← final))
+0x5af3 (r8 ← (((0x5afa₆₄ + 0x10c66₆₄) ≈₆₄ ⊥) ≈₆₄ ⊥))
+0x5afa (rcx ← ((0x5b01₆₄ + 0x10bef₆₄) ≈₆₄ ⊥))
+0x5b01 (rdi ← ((0x5b08₆₄ + 0xffffffffffffe568₆₄) ≈₆₄ ⊥))
+0x5b08 ((final ← (rsp - 0x8₆₄))
+         (ꜱᴛ₀ (0x5b0e₆₄ ≈₆₄ ⊥) final) (rsp ← final)
+       ↷ (ʟᴅ₀ 64 (0x5b0e₆₄ + 0x1c30a₆₄)))
+---
+0x5ae0 {}
+0x5ae4 ((_xor ← ((rbp ≈₃₂ ⊥) ⊕ (rbp ≈₃₂ ⊥)))
+       (rbp ← (_xor ≈₆₄ ⊥))
+         (of ← ⊥)
+           (cf ← ⊥)
+             (_result ← _xor)
+               (pf ← ¬↓(_val = (_result ≈₈ ⊥) (_c4 = (_val ⊕ (_val ≫ 0x4₈ ⊥)) (_c2 = (_c4 ⊕ (_c4 ≫ 0x2₈ ⊥)) (_c2 ⊕ (_c2 ≫ 0x1₈ ⊥))))))
+                 (zf ← _result ≡ 0) (sf ← ↑_result))
+0x5ae6 (r9 ← (rdx ≈₆₄ ⊥))
+0x5ae9 ((rsi ← (ʟᴅ₀ 64 rsp)) (rsp ← (rsp + 0x8₆₄)))
+0x5aea (rdx ← rsp)
+0x5aed ((and_ ← (rsp & 0xfffffffffffffff0₆₄))
+       (rsp ← and_)
+         (of ← ⊥)
+           (cf ← ⊥)
+             (_result ← and_)
+               (pf ← ¬↓(_val = (_result ≈₈ ⊥) (_c4 = (_val ⊕ (_val ≫ 0x4₈ ⊥)) (_c2 = (_c4 ⊕ (_c4 ≫ 0x2₈ ⊥)) (_c2 ⊕ (_c2 ≫ 0x1₈ ⊥))))))
+                 (zf ← _result ≡ 0) (sf ← ↑_result))
+0x5af1 ((final ← (rsp - 0x8₆₄))
+       (ꜱᴛ₀ (rax ≈₆₄ ⊥) final) (rsp ← final))
+0x5af2 ((final ← (rsp - 0x8₆₄))
+       (ꜱᴛ₀ (rsp ≈₆₄ ⊥) final) (rsp ← final))
+0x5af3 (r8 ← (((0x5afa₆₄ + 0x10c66₆₄) ≈₆₄ ⊥) ≈₆₄ ⊥))
+0x5afa (rcx ← ((0x5b01₆₄ + 0x10bef₆₄) ≈₆₄ ⊥))
+0x5b01 (rdi ← ((0x5b08₆₄ + 0xffffffffffffe568₆₄) ≈₆₄ ⊥))
+0x5b08 ((final ← (rsp - 0x8₆₄))
+         (ꜱᴛ₀ (0x5b0e₆₄ ≈₆₄ ⊥) final) (rsp ← final)
+       ↷ (ʟᴅ₀ 64 (0x5b0e₆₄ + 0x1c30a₆₄)))
+EOF
+RUN
+
+NAME=plF_xtensa
+FILE=malloc://27
+CMDS=<<EOF
+e scr.utf8=true
+e asm.arch=xtensa
+e asm.bits=32
+e cfg.bigendian=false
+af+ fcn
+afb+ 0x0 0x0 27
+wx 00118a b012fa 6012fa f012ba 1025d2 7014f2 76a4bb 6203c9 32409f
+plF
+EOF
+EXPECT=<<EOF
+0x0 ((fres ← (rna ⭂ (rna f1 * 0x3f800000.f₃₂)))
+    (ꜱᴛ₁ ꜰʙ fres (0x4₃₂ * (0x1₃₂ | ((windowbase + 0x0₃₂) ≪ 0x2₃₂ ⊥))))
+      (fsr_v ← fres)
+        ɴᴏᴘ (fsr ← ((fsr & ~((0xffffffff₃₂ ≫ (0x20₃₂ - 0x1₃₂) ⊥) ≪ 0xb₃₂ ⊥)) | ((((e_invalid_op ᴇ fsr_v) ↠ 0x1₃₂ 0x0₃₂) ≪ 0xb₃₂ ⊥) & ((0xffffffff₃₂ ≫ (0x20₃₂ - 0x1₃₂) ⊥) ≪ 0xb₃₂ ⊥)))))
+0x3 ((rs ← f2)
+    (frs ← rs)
+      (frs64 ← (frs ≅₆₄ rna))
+        (rs31 ← ((¬((((rs ≫ 0x1f₃₂ ⊥) & (0xffffffffffffffff₆₄ ≫ (0x40₃₂ - 0x1₃₂) ⊥)) ≡ 0x0₆₄) ↠ ⊥ ⊤) ↠ 0x1₆₄ 0x0₆₄) ≪ 0x1f₃₂ ⊥)) (f1 ← ((((rs ≫ 0x17₃₂ ⊥) & (0xffffffffffffffff₆₄ ≫ (0x40₃₂ - 0x8₃₂) ⊥)) ≡ 0xff₆₄) ↠ (((rs ≫ 0x0₃₂ ⊥) & (0xffffffffffffffff₆₄ ≫ (0x40₃₂ - 0x17₃₂) ⊥)) | (0x3f800000₆₄ | rs31)) ((((rs ≫ 0x0₃₂ ⊥) & (0xffffffffffffffff₆₄ ≫ (0x40₃₂ - 0x1f₃₂) ⊥)) ≡ 0x0₆₄) ↠ (0x40000000₆₄ | rs31) (N = (rna |frs64| / 0x4000000000000000.f₆₄) ꜰʙ −(rna frs64 / (rna 0x4010000000000000.f₆₄ ˰ N)))))))
+0x6 (f1 ← (ꜰʙ −f2 ≈₆₄ ⊥))
+0x9 ((fres ← (rna f2 * 0x47000000.f₃₂))
+    (ꜱᴛ₁ (fres ꜰ≈ɪ₃₂ rna) (0x4₃₂ * (0x1₃₂ | ((windowbase + 0x0₃₂) ≪ 0x2₃₂ ⊥))))
+      (fsr_v ← fres)
+        ɴᴏᴘ
+          (fsr ← ((fsr & ~((0xffffffff₃₂ ≫ (0x20₃₂ - 0x1₃₂) ⊥) ≪ 0xb₃₂ ⊥)) | ((((e_invalid_op ᴇ fsr_v) ↠ 0x1₃₂ 0x0₃₂) ≪ 0xb₃₂ ⊥) & ((0xffffffff₃₂ ≫ (0x20₃₂ - 0x1₃₂) ⊥) ≪ 0xb₃₂ ⊥)))) (fsr ← ((fsr & ~((0xffffffff₃₂ ≫ (0x20₃₂ - 0x1₃₂) ⊥) ≪ 0x7₃₂ ⊥)) | ((((e_inexact ᴇ fsr_v) ↠ 0x1₃₂ 0x0₃₂) ≪ 0x7₃₂ ⊥) & ((0xffffffff₃₂ ≫ (0x20₃₂ - 0x1₃₂) ⊥) ≪ 0x7₃₂ ⊥)))))
+0xc (ꜱᴛ₁ ((ʟᴅ₁ 32 (0x4₃₂ * (0x1₃₂ | ((windowbase + 0x1₃₂) ≪ 0x2₃₂ ⊥)))) /⁺ (ʟᴅ₁ 32 (0x4₃₂ * (0x1₃₂ | ((windowbase + 0x0₃₂) ≪ 0x2₃₂ ⊥))))) (0x4₃₂ * (0x2₃₂ | ((windowbase + 0x0₃₂) ≪ 0x2₃₂ ⊥))))
+0xf (ꜱᴛ₁ ((ʟᴅ₁ 32 (0x4₃₂ * (0x0₃₂ | ((windowbase + 0x1₃₂) ≪ 0x2₃₂ ⊥)))) %⁺ (ʟᴅ₁ 32 (0x4₃₂ * (0x3₃₂ | ((windowbase + 0x1₃₂) ≪ 0x2₃₂ ⊥))))) (0x4₃₂ * (0x1₃₂ | ((windowbase + 0x0₃₂) ≪ 0x2₃₂ ⊥))))
+0x12 ((lcount ← ((ʟᴅ₁ 32 (0x4₃₂ * (0x0₃₂ | ((windowbase + 0x1₃₂) ≪ 0x2₃₂ ⊥)))) - 0x1₃₂))
+       (lbeg ← 0x15₃₂) (lend ← 0xd1₃₂)
+     (((ʟᴅ₁ 32 (0x4₃₂ * (0x0₃₂ | ((windowbase + 0x1₃₂) ≪ 0x2₃₂ ⊥)))) ≦⁺ 0x0₃₂) ⅄ ↷ 0xd1₃₂ ɴᴏᴘ))
+0x15 (ꜱᴛ₁ ((ʟᴅ₀ ((ʟᴅ₁ 32 (0x4₃₂ * (0x3₃₂ | ((windowbase + 0x0₃₂) ≪ 0x2₃₂ ⊥)))) + 0xc9₃₂)) ≈₃₂ ⊥) (0x4₃₂ * (0x2₃₂ | ((windowbase + 0x1₃₂) ≪ 0x2₃₂ ⊥))))
+0x18 ((vAddr ← ((ʟᴅ₁ 32 (0x4₃₂ * (0x0₃₂ | ((windowbase + 0x0₃₂) ≪ 0x2₃₂ ⊥)))) + 0x9f₃₂)) (ꜱᴛ₀ ((ʟᴅ₁ 32 (0x4₃₂ * (0x3₃₂ | ((windowbase + 0x0₃₂) ≪ 0x2₃₂ ⊥)))) ≈₈ ⊥) vAddr))
+EOF
+RUN
+
+NAME=plF_arm
+FILE=malloc://8
+CMDS=<<EOF
+e scr.utf8=true
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+af+ fcn
+afb+ 0x0 0x0 8
+wx e70ab0ee 000000ef
+plF
+EOF
+EXPECT=<<EOF
+0x0 (d0 ← ((d0 & 0xffffffff00000000₆₄) | (ꜰʙ |((d7 ≫ 0x20₇ ⊥) ≈₃₂ ⊥)| ≈₆₄ ⊥)))
+0x4 (@ svc)
+EOF
+RUN
+
+NAME=plF_tricore
+FILE=malloc://28
+CMDS=<<EOF
+e scr.utf8=true
+e asm.arch=tricore
+e asm.bits=32
+e cfg.bigendian=false
+af+ fcn
+afb+ 0x0 0x0 28
+wx 4b099131 4b036121 0721e333 0b42d020 4b671112 bf80619e 0f00b011
+plF
+EOF
+EXPECT=<<EOF
+0x0 ((_fa ← (d9 ≅₆₄ rne))
+    (_arg_a ← (tmp = _fa (((¬(tmp ≡ ɴаɴ ∨ 0x0.f₆₄ ≡ ɴаɴ) ∧ (tmp ≷ 0x0.f₆₄)) ∧ (¬(tmp ≡ ɴаɴ ∨ 0x3810000000000000.f₆₄ ≡ ɴаɴ) ∧ (0x3810000000000000.f₆₄ ≷ tmp))) ↠ −0x0.f₆₄ (((¬(tmp ≡ ɴаɴ ∨ 0x0.f₆₄ ≡ ɴаɴ) ∧ (0x0.f₆₄ ≷ tmp)) ∧ (¬(tmp ≡ ɴаɴ ∨ 0x3810000000000000.f₆₄ ≡ ɴаɴ) ∧ (tmp ≷ 0x3810000000000000.f₆₄))) ↠ 0x0.f₆₄ tmp))))
+      (_normal_result ← (_mode = (((PSW ≫ 0x18₃₂ ⊥) & 0x3₃₂) ≈₈ ⊥) (_x = (rne ¹/√ _arg_a) ((_mode ≡ 0x0₈) ↠ (_x ≅₃₂ rne) ((_mode ≡ 0x1₈) ↠ (_x ≅₃₂ rna) ((_mode ≡ 0x2₈) ↠ (_x ≅₃₂ rtn) ((_mode ≡ 0x3₈) ↠ (_x ≅₃₂ rtp) ((_mode ≡ 0x4₈) ↠ (_x ≅₃₂ rtz) 0x0.f₃₂))))))))
+        (_result ← (_arg_a ≡ 0 ↠ 0x0.f₃₂ ((¬(_fa ≡ ɴаɴ ∨ 0x0.f₆₄ ≡ ɴаɴ) ∧ (_fa ≷ 0x0.f₆₄)) ↠ 0x7f800001.f₃₂ _normal_result)))
+          (d3 ← ꜰʙ _result)
+            (set_FI ← (_fa ≡ ɴаɴ ∨ _result ≡ ɴаɴ)) (set_FI ⅄ (PSW ← ((PSW & 0xbfffffff₃₂) | ((0x1₃₂ & 0x1₃₂) ≪ 0x1e₃₂ ⊥))) ɴᴏᴘ)
+              (PSW ← ((PSW & 0x7fffffff₃₂) | (((set_FI ↠ 0x1₃₂ 0x0₃₂) & 0x1₃₂) ≪ 0x1f₃₂ ⊥))))
+0x4 ((_a ← d3)
+    (_result ← (_mode = (((PSW ≫ 0x18₃₂ ⊥) & 0x3₃₂) ≈₈ ⊥) (_x = _a ((_mode ≡ 0x0₈) ↠ (_x ꜰ≈ꜰ₃₂ rne) ((_mode ≡ 0x1₈) ↠ (_x ꜰ≈ꜰ₃₂ rna) ((_mode ≡ 0x2₈) ↠ (_x ꜰ≈ꜰ₃₂ rtn) ((_mode ≡ 0x3₈) ↠ (_x ꜰ≈ꜰ₃₂ rtp) ((_mode ≡ 0x4₈) ↠ (_x ꜰ≈ꜰ₃₂ rtz) 0x0.f₃₂))))))))
+      (d2 ← ꜰʙ _result)
+        (set_FX ← (((_a ꜰ≈ꜰ⁺₃₂ rne) ≡ ɴаɴ ∨ _result ≡ ɴаɴ) ∨ (((_a ꜰ≈ꜰ⁺₃₂ rne) ≷ _result) ∨ (_result ≷ (_a ꜰ≈ꜰ⁺₃₂ rne))))) (set_FX ⅄ (PSW ← ((PSW & 0xfbffffff₃₂) | ((0x1₃₂ & 0x1₃₂) ≪ 0x1a₃₂ ⊥))) ɴᴏᴘ)
+          (PSW ← ((PSW & 0x7fffffff₃₂) | (((set_FX ↠ 0x1₃₂ 0x0₃₂) & 0x1₃₂) ≪ 0x1f₃₂ ⊥))))
+0x8 (d3 ← ((¬((d1 ≫ 0x3₃₂ ⊥) & 0x1₃₂) ≡ 0 ⊻ ¬((d2 ≫ 0x7₃₂ ⊥) & 0x1₃₂) ≡ 0) ↠ 0x1₃₂ 0x0₃₂))
+0xc ((result ← ((d2 + ((PSW ≫ 0x1f₃₂ ⊥) & 0x1₃₂)) - (d4 + 0x1₃₂)))
+    (d2 ← result)
+      (carry_out ← ((((d2 + −d4) + ((PSW ≫ 0x1f₃₂ ⊥) & 0x1₃₂)) ≫ 0x0₃₂ ⊥) & 0x1₃₂)) (PSW ← ((PSW & 0x7fffffff₃₂) | ((carry_out & 0x1₃₂) ≪ 0x1f₃₂ ⊥))))
+0x10 ((dividend ← d7)
+     (divisor ← d6)
+       (remainder ← ((divisor ≡ 0x0₃₂) ↠ 0x0₃₂ (dividend % divisor)))
+         (quotient ← ((divisor ≡ 0x0₃₂) ↠ 0xffffffff₃₂ ((dividend - remainder) / divisor)))
+           (temp ← (remainder ⊚ quotient))
+             (d0 ← (temp ≈₃₂ ⊥)) (d1 ← (((temp ≫ 0x20₆₄ ⊥) & 0xffffffff₆₄) ≈₃₂ ⊥)))
+0x14 (((d0 ≦ 0x8₃₂) ∧ ¬(d0 ≡ 0x8₃₂)) ⅄ ↷ 0x3cd6₃₂ ɴᴏᴘ)
+0x18 ((n ← 0x1f₃₂)
+     (((((n ≦ 0x20₃₂) ∧ ¬(n ≡ 0x20₃₂)) ∧ (¬(n ≦ 0x0₃₂) ∨ (n ≡ 0x0₃₂))) ∧ ((d0 ≫ n ⊥) & (0xffffffff₃₂ ≫ (0x20₃₂ - 0x1₃₂) ⊥)) ≡ 0) ⟳ (n ← (n + 0x1₃₂))) (d1 ← n))
+EOF
+RUN
+
+NAME=plF_v810
+FILE=malloc://4
+CMDS=<<EOF
+e scr.utf8=true
+e asm.arch=v810
+e asm.bits=32
+e cfg.bigendian=false
+af+ fcn
+afb+ 0x0 0x0 4
+wx 4bf90018
+plF
+EOF
+EXPECT=<<EOF
+0x0 ((result ← (rne r10 * r11))
+    (PSW ← (((((((¬result > 0 ↠ 0x1₃₂ 0x0₃₂) ≪ 0x3₃₂ ⊥) | ((⊥ ↠ 0x1₃₂ 0x0₃₂) ≪ 0x2₃₂ ⊥)) | (((¬(result ≡ ɴаɴ ∨ 0x0.f₃₂ ≡ ɴаɴ) ∧ (result ≷ 0x0.f₃₂)) ↠ 0x1₃₂ 0x0₃₂) ≪ 0x1₃₂ ⊥)) | ((result ≡ 0 ↠ 0x1₃₂ 0x0₃₂) ≪ 0x0₃₂ ⊥)) | (((result ≡ ɴаɴ ∨ result ≡ ∞) ↠ 0x1₃₂ 0x0₃₂) ≪ 0x9₃₂ ⊥)) | ((r11 ≡ 0 ↠ 0x1₃₂ 0x0₃₂) ≪ 0x7₃₂ ⊥))) (r10 ← ꜰʙ result))
+EOF
+RUN
+
+NAME=plF_x86
+FILE=malloc://12
+CMDS=<<EOF
+e scr.utf8=true
+e asm.arch=x86
+e asm.bits=64
+e cfg.bigendian=false
+af+ fcn
+afb+ 0x0 0x0 12
+wa fsqrt; so
+wa frndint; so
+wa 'fadd st0, st1'; so
+wa 'fsub st0, st1'; so
+wa 'fmul st0, st1'; so
+wa 'fdiv st0, st1'; so
+s 0
+plF
+EOF
+EXPECT=<<EOF
+0x0 ((_rmode ← ((cwd ≫ 0xa₈ ⊥) ≈₂ ⊥))
+    (x_rm ← st0) (st0 ← ꜰʙ ((_rmode ≡ 0x0₂) ↠ (rne ²√ x_rm) ((_rmode ≡ 0x1₂) ↠ (rtn ²√ x_rm) ((_rmode ≡ 0x2₂) ↠ (rtp ²√ x_rm) (rtz ²√ x_rm))))))
+0x2 ((_rmode ← ((cwd ≫ 0xa₈ ⊥) ≈₂ ⊥))
+    (f_val_rm ← st0)
+      (i_val_rm ← ((_rmode ≡ 0x0₂) ↠ (f_val_rm ꜰ≈ɪ⁺₆₄ rne) ((_rmode ≡ 0x1₂) ↠ (f_val_rm ꜰ≈ɪ⁺₆₄ rtn) ((_rmode ≡ 0x2₂) ↠ (f_val_rm ꜰ≈ɪ⁺₆₄ rtp) (f_val_rm ꜰ≈ɪ⁺₆₄ rtz))))) (st0 ← ꜰʙ ((_rmode ≡ 0x0₂) ↠ (i_val_rm ꜰ≈ꜰ⁺₈₀ rne) ((_rmode ≡ 0x1₂) ↠ (i_val_rm ꜰ≈ꜰ⁺₈₀ rtn) ((_rmode ≡ 0x2₂) ↠ (i_val_rm ꜰ≈ꜰ⁺₈₀ rtp) (i_val_rm ꜰ≈ꜰ⁺₈₀ rtz))))))
+0x4 ((_rmode ← ((cwd ≫ 0xa₈ ⊥) ≈₂ ⊥))
+    (f_val_rm ← st1)
+      (x_rm ← ((_rmode ≡ 0x0₂) ↠ (f_val_rm ≅₈₀ rne) ((_rmode ≡ 0x1₂) ↠ (f_val_rm ≅₈₀ rtn) ((_rmode ≡ 0x2₂) ↠ (f_val_rm ≅₈₀ rtp) (f_val_rm ≅₈₀ rtz))))) (y_rm ← st0)
+        (st0 ← ꜰʙ ((_rmode ≡ 0x0₂) ↠ (rne x_rm + y_rm) ((_rmode ≡ 0x1₂) ↠ (rtn x_rm + y_rm) ((_rmode ≡ 0x2₂) ↠ (rtp x_rm + y_rm) (rtz x_rm + y_rm))))))
+0x6 ((_rmode ← ((cwd ≫ 0xa₈ ⊥) ≈₂ ⊥))
+    (f_val_rm ← st1)
+      (x_rm ← ((_rmode ≡ 0x0₂) ↠ (f_val_rm ≅₈₀ rne) ((_rmode ≡ 0x1₂) ↠ (f_val_rm ≅₈₀ rtn) ((_rmode ≡ 0x2₂) ↠ (f_val_rm ≅₈₀ rtp) (f_val_rm ≅₈₀ rtz))))) (y_rm ← st0)
+        (st0 ← ꜰʙ ((_rmode ≡ 0x0₂) ↠ (rne y_rm - x_rm) ((_rmode ≡ 0x1₂) ↠ (rtn y_rm - x_rm) ((_rmode ≡ 0x2₂) ↠ (rtp y_rm - x_rm) (rtz y_rm - x_rm))))))
+0x8 ((_rmode ← ((cwd ≫ 0xa₈ ⊥) ≈₂ ⊥))
+    (f_val_rm ← st1)
+      (x_rm ← ((_rmode ≡ 0x0₂) ↠ (f_val_rm ≅₈₀ rne) ((_rmode ≡ 0x1₂) ↠ (f_val_rm ≅₈₀ rtn) ((_rmode ≡ 0x2₂) ↠ (f_val_rm ≅₈₀ rtp) (f_val_rm ≅₈₀ rtz))))) (y_rm ← st0)
+        (st0 ← ꜰʙ ((_rmode ≡ 0x0₂) ↠ (rne x_rm * y_rm) ((_rmode ≡ 0x1₂) ↠ (rtn x_rm * y_rm) ((_rmode ≡ 0x2₂) ↠ (rtp x_rm * y_rm) (rtz x_rm * y_rm))))))
+0xa ((_rmode ← ((cwd ≫ 0xa₈ ⊥) ≈₂ ⊥))
+    (f_val_rm ← st1)
+      (x_rm ← ((_rmode ≡ 0x0₂) ↠ (f_val_rm ≅₈₀ rne) ((_rmode ≡ 0x1₂) ↠ (f_val_rm ≅₈₀ rtn) ((_rmode ≡ 0x2₂) ↠ (f_val_rm ≅₈₀ rtp) (f_val_rm ≅₈₀ rtz))))) (y_rm ← st0)
+        (st0 ← ꜰʙ ((_rmode ≡ 0x0₂) ↠ (rne x_rm / y_rm) ((_rmode ≡ 0x1₂) ↠ (rtn x_rm / y_rm) ((_rmode ≡ 0x2₂) ↠ (rtp x_rm / y_rm) (rtz x_rm / y_rm))))))
+EOF
+RUN

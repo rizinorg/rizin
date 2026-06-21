@@ -55,6 +55,8 @@ bool test_rz_inflate_buf(void) {
 		mu_assert_notnull(inflated, "rz_buf_read failed");
 		mu_assert_memeq(inflated, (unsigned char *)test_cases[i].inflated, strlen(test_cases[i].inflated), "rz_inflate_buf does not return expected output");
 		free(inflated);
+		rz_buf_free(deflated_buf);
+		rz_buf_free(inflated_buf);
 	}
 
 	mu_end;
@@ -71,6 +73,8 @@ bool test_rz_deflate_buf(void) {
 		mu_assert_notnull(deflated, "rz_buf_read failed");
 		mu_deflated_eq(deflated, (unsigned char *)test_cases[i].deflated, test_cases[i].deflated_length, "rz_deflate_buf does not return expected output");
 		free(deflated);
+		rz_buf_free(deflated_buf);
+		rz_buf_free(inflated_buf);
 	}
 
 	mu_end;

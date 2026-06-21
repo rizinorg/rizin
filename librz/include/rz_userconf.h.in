@@ -35,18 +35,18 @@
 #define USE_LIB_MAGIC               @USE_LIB_MAGIC@
 #define HAVE_LIB_XXHASH             @HAVE_LIB_XXHASH@
 #define USE_LIB_XXHASH              @USE_LIB_XXHASH@
+#define USE_SYS_ZYDIS               @USE_SYS_ZYDIS@
 #define HAVE_LIB_SSL                @HAVE_OPENSSL@
 #define HAVE_PTRACE                 @HAVE_PTRACE@
 #define USE_PTRACE_WRAP             @USE_PTRACE_WRAP@
 #define HAVE_FORK                   @HAVE_FORK@
 #define HAVE_STRLCPY                @HAVE_STRLCPY@
+#define HAVE_STRLCAT                @HAVE_STRLCAT@
 #define HAVE_STRNLEN                @HAVE_STRNLEN@
 #define WANT_DYLINK                 @WANT_DYLINK@
 #define WITH_GPL                    @WITH_GPL@
-#define HAVE_JEMALLOC               @HAVE_JEMALLOC@
 #define IS_IOS                      @IS_IOS@
 #define RZ_BUILD_DEBUG              @RZ_BUILD_DEBUG@
-#define WITH_SWIFT_DEMANGLER        @WITH_SWIFT_DEMANGLER@
 #define N_THREAD_LIMIT              @N_THREAD_LIMIT@
 #define HAVE_COPYFILE               @HAVE_COPYFILE@
 #define HAVE_COPY_FILE_RANGE        @HAVE_COPY_FILE_RANGE@
@@ -55,8 +55,11 @@
 #define HAVE___BUILTIN_BSWAP32      @HAVE___BUILTIN_BSWAP32@
 #define HAVE___BUILTIN_BSWAP64      @HAVE___BUILTIN_BSWAP64@
 #define HAVE___BUILTIN_CLZLL        @HAVE___BUILTIN_CLZLL@
+#define HAVE___BUILTIN_CTZLL        @HAVE___BUILTIN_CTZLL@
+#define HAVE___BUILTIN_EXPECT       @HAVE___BUILTIN_EXPECT@
 #define HAVE_POSIX_MEMALIGN         @HAVE_POSIX_MEMALIGN@
 #define HAVE__ALIGNED_MALLOC        @HAVE__ALIGNED_MALLOC@
+#define HAVE_SSE2                   @HAVE_SSE2@
 
 #define HAVE_HEADER_LINUX_ASHMEM_H  @HAVE_HEADER_LINUX_ASHMEM_H@
 #define HAVE_HEADER_SYS_SHM_H       @HAVE_HEADER_SYS_SHM_H@

@@ -1311,6 +1311,32 @@
             "content": {
               "type": "ALIAS",
               "content": {
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "STRING",
+                    "value": "?**"
+                  },
+                  {
+                    "type": "STRING",
+                    "value": "?**e"
+                  },
+                  {
+                    "type": "STRING",
+                    "value": "?***"
+                  }
+                ]
+              },
+              "named": true,
+              "value": "cmd_identifier"
+            }
+          },
+          {
+            "type": "FIELD",
+            "name": "command",
+            "content": {
+              "type": "ALIAS",
+              "content": {
                 "type": "SYMBOL",
                 "name": "_help_stmt"
               },

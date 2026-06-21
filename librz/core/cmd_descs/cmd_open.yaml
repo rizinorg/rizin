@@ -256,6 +256,20 @@ commands:
           - name: file
             type: RZ_CMD_ARG_TYPE_FILE
             optional: true
+      - name: obs
+        cname: open_binary_select
+        summary: Select the binary version for the specified architecture from the fat binary.
+        args:
+          - name: arch
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+        details:
+          - name: Examples
+            entries:
+              - text: "obs"
+                comment: "List all architectures the fat binary supports contains."
+              - text: "obs sparc"
+                comment: "Select and load the binary for Sparc"
       - name: obR
         cname: open_binary_reload
         summary: Reload the current buffer for setting of the bin (use once only)

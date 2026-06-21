@@ -29,7 +29,7 @@ RZ_LIB_VERSION_HEADER(rz_main);
 typedef int (*RzMainCallback)(int argc, const char **argv);
 
 RZ_API RzMainCallback rz_main_find(const char *name);
-RZ_API int rz_main_version_print(const char *program);
+RZ_API int rz_main_version_print(RZ_BORROW RZ_NONNULL RzPath *sys_path, const char *program);
 RZ_API int rz_main_rz_ax(int argc, const char **argv);
 RZ_API int rz_main_rz_run(int argc, const char **argv);
 RZ_API int rz_main_rz_hash(int argc, const char **argv);
@@ -40,6 +40,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv);
 RZ_API int rz_main_rz_diff(int argc, const char **argv);
 RZ_API int rz_main_rz_gg(int argc, const char **argv);
 RZ_API int rz_main_rz_sign(int argc, const char **argv);
+RZ_API int rz_main_rz_ar(int argc, const char **argv);
 
 #ifdef __cplusplus
 }

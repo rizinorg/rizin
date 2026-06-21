@@ -121,7 +121,7 @@ static char *syscmd_ls(RZ_NONNULL const int argc, const char **argv) {
 	char *res = NULL;
 	const char *path = ".";
 	char *d = NULL;
-	char *p = NULL;
+	const char *p = NULL;
 	char *homepath = NULL;
 	char *pattern = NULL;
 	int printfmt = 0;
@@ -248,7 +248,7 @@ static ut32 vernum(const char *s) {
 
 // ascii
 RZ_IPI RzCmdStatus rz_cmd_shell_ascii_table_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_printf("%s", ret_ascii_table());
+	rz_cons_printf("%s", rz_get_ascii_table());
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -311,6 +311,9 @@ RZ_IPI RzCmdStatus rz_cmd_shell_sleep_handler(RzCore *core, int argc, const char
 
 // uniq
 RZ_IPI RzCmdStatus rz_cmd_shell_uniq_handler(RzCore *core, int argc, const char **argv) {
+	if (argc < 2) {
+		return RZ_CMD_STATUS_OK;
+	}
 	char *res = rz_syscmd_uniq(argv[1]);
 	if (!res) {
 		return RZ_CMD_STATUS_ERROR;
@@ -449,11 +452,15 @@ RZ_IPI RzCmdStatus rz_cmd_shell_pwd_handler(RzCore *core, int argc, const char *
 
 // sort
 RZ_IPI RzCmdStatus rz_cmd_shell_sort_handler(RzCore *core, int argc, const char **argv) {
-	char *res = rz_syscmd_sort(argv[1]);
-	if (res) {
-		rz_cons_print(res);
-		free(res);
+	if (argc < 2) {
+		return RZ_CMD_STATUS_OK;
 	}
+	char *res = rz_syscmd_sort(argv[1]);
+	if (!res) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_print(res);
+	free(res);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -559,7 +566,7 @@ RZ_IPI RzCmdStatus rz_calculate_command_time_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_show_version_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD: {
-		char *v = rz_version_str(NULL);
+		char *v = rz_version_str(core->sys_path, NULL);
 		rz_cons_printf("%s\n", v);
 		free(v);
 		break;
@@ -708,7 +715,7 @@ RZ_API RZ_OWN char *rz_core_clippy(RZ_NONNULL RzCore *core, RZ_NONNULL const cha
 	rz_return_val_if_fail(core && msg, NULL);
 	int type = RZ_AVATAR_CLIPPY;
 	if (*msg == '+' || *msg == '3') {
-		char *space = strchr(msg, ' ');
+		const char *space = strchr(msg, ' ');
 		if (!space) {
 			return NULL;
 		}
@@ -716,7 +723,7 @@ RZ_API RZ_OWN char *rz_core_clippy(RZ_NONNULL RzCore *core, RZ_NONNULL const cha
 		msg = space + 1;
 	}
 	const char *f;
-	int msglen = rz_str_len_utf8(msg);
+	int msglen = rz_str_utf8_cols(msg);
 	char *s = rz_str_pad(' ', msglen);
 	char *l;
 

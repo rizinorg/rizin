@@ -37,6 +37,7 @@ RZ_IPI bool rz_xnu_debug_init(RzDebug *dbg, void **user) {
 		return false;
 	}
 	ctx->old_pid = -1;
+	ctx->last_attached_pid = -1;
 	*user = ctx;
 	return true;
 }
@@ -152,6 +153,10 @@ int xnu_attach(RzDebug *dbg, int pid) {
 	RzXnuDebug *ctx = dbg->plugin_data;
 
 	dbg->pid = pid;
+	if (ctx->last_attached_pid == pid) {
+		RZ_LOG_INFO("Already attached to pid %d, skipping attach\n", pid);
+		return pid;
+	}
 
 	ctx->cpu = xnu_get_cpu_type(pid);
 	if (!ctx->cpu) {
@@ -180,6 +185,7 @@ int xnu_attach(RzDebug *dbg, int pid) {
 		xnu_stop(dbg, pid);
 	}
 
+	ctx->last_attached_pid = pid;
 	return pid;
 }
 
@@ -281,33 +287,6 @@ int xnu_continue(RzDebug *dbg, int pid, int tid, int sig) {
 	return true;
 }
 
-char *xnu_reg_profile(RzDebug *dbg) {
-#if __POWERPC__
-#include "reg/darwin-ppc.h"
-#else
-	RzXnuDebug *ctx = dbg->plugin_data;
-	if (!ctx || !ctx->cpu) {
-		// not yet attached, arch still unknown
-		return NULL;
-	}
-#if __i386__ || __x86_64__
-	if (ctx->cpu == CPU_TYPE_X86_64) {
-#include "reg/darwin-x64.h"
-	} else {
-#include "reg/darwin-x86.h"
-	}
-#elif __APPLE__ && (__aarch64__ || __arm64__ || __arm__)
-	if (ctx->cpu == CPU_TYPE_ARM64) {
-#include "reg/darwin-arm64.h"
-	} else {
-#include "reg/darwin-arm.h"
-	}
-#else
-#error "Unsupported Apple architecture"
-#endif
-#endif
-}
-
 // rz_debug_select
 // using getcurthread has some drawbacks. You lose the ability to select
 // the thread you want to write or read from. but how that feature
@@ -326,13 +305,13 @@ int xnu_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 		memcpy(&th->drx.uds.ds32, buf, RZ_MIN(size, sizeof(th->drx)));
 #elif __i386__
 		memcpy(&th->drx.uds.ds64, buf, RZ_MIN(size, sizeof(th->drx)));
-#elif __arm64 || __aarch64
+#elif __arm64__ || __aarch64__
 		if (dbg->bits == RZ_SYS_BITS_64) {
 			memcpy(&th->debug.drx64, buf, RZ_MIN(size, sizeof(th->debug.drx64)));
 		} else {
 			memcpy(&th->debug.drx32, buf, RZ_MIN(size, sizeof(th->debug.drx32)));
 		}
-#elif __arm || __armv7 || __arm__ || __armv7__
+#elif __arm__ || __armv7__
 		memcpy(&th->debug.drx, buf, RZ_MIN(size, sizeof(th->debug.drx)));
 #endif
 		ret = rz_xnu_thread_set_drx(ctx, th);
@@ -479,25 +458,10 @@ RzDebugInfo *xnu_info(RzDebug *dbg, const char *arg) {
 	return rdi;
 }
 
-/*
-static void xnu_free_threads_ports (RzDebugPid *p) {
-	kern_return_t kr;
-	if (!p) return;
-	free (p->path);
-	if (p->pid != old_pid) {
-		kr = mach_port_deallocate (old_pid, p->pid);
-		if (kr != KERN_SUCCESS) {
-			eprintf ("error mach_port_deallocate in "
-				"xnu_free_threads ports\n");
-		}
-	}
-}
-*/
-
 RzList *xnu_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	rz_return_val_if_fail(dbg && dbg->plugin_data, NULL);
 	RzXnuDebug *ctx = dbg->plugin_data;
-#if __arm__ || __arm64__ || __aarch_64__
+#if __arm__ || __arm64__ || __aarch64__
 #define CPU_PC (dbg->bits == RZ_SYS_BITS_64) ? state.arm64.__pc : state.arm32.__pc
 #elif __POWERPC__
 #if __DARWIN_UNIX03
@@ -582,7 +546,7 @@ int xnu_get_vmmap_entries_for_pid(RzXnuDebug *ctx, pid_t pid) {
 	kern_return_t kr = KERN_SUCCESS;
 	vm_address_t address = 0;
 	vm_size_t size = 0;
-	int n = 1;
+	int n = 0;
 
 	for (;;) {
 		mach_msg_type_number_t count;
@@ -617,15 +581,14 @@ int xnu_get_vmmap_entries_for_pid(RzXnuDebug *ctx, pid_t pid) {
 
 static void get_mach_header_sizes(size_t *mach_header_sz,
 	size_t *segment_command_sz) {
-#if __ppc64__ || __x86_64__
+#if __ppc64__ || __x86_64__ || __arm64__ || __aarch64__
 	*mach_header_sz = sizeof(struct mach_header_64);
 	*segment_command_sz = sizeof(struct segment_command_64);
-#elif __i386__ || __ppc__ || __POWERPC__
+#elif __i386__ || __ppc__ || __POWERPC__ || __arm__ || __armv7__
 	*mach_header_sz = sizeof(struct mach_header);
 	*segment_command_sz = sizeof(struct segment_command);
 #else
 #endif
-	// XXX: What about arm?
 }
 
 /**
@@ -666,7 +629,7 @@ static cpu_subtype_t xnu_get_cpu_subtype(void) {
 
 static void xnu_build_corefile_header(vm_offset_t header,
 	int segment_count, int thread_count, int command_size, pid_t pid) {
-#if __ppc64__ || __x86_64__ || (defined(TARGET_OS_MAC) && defined(__aarch64__))
+#if __ppc64__ || __x86_64__ || __arm64__ || __aarch64__
 	struct mach_header_64 *mh64;
 	mh64 = (struct mach_header_64 *)header;
 	mh64->magic = MH_MAGIC_64;
@@ -676,7 +639,7 @@ static void xnu_build_corefile_header(vm_offset_t header,
 	mh64->ncmds = segment_count + thread_count;
 	mh64->sizeofcmds = command_size;
 	mh64->reserved = 0; // 8-byte alignment
-#elif __i386__ || __ppc__ || __POWERPC__
+#elif __i386__ || __ppc__ || __POWERPC__ || __arm__ || __armv7__
 	struct mach_header *mh;
 	mh = (struct mach_header *)header;
 	mh->magic = MH_MAGIC;
@@ -713,18 +676,18 @@ static int xnu_dealloc_threads(RzXnuDebug *ctx, RzList *threads) {
 /* XXX Maybe this function needs refactoring, but I haven't come up with */
 /* XXX a better way to do it yet. */
 static int xnu_write_mem_maps_to_buffer(RzXnuDebug *ctx, RzBuffer *buffer, RzList *mem_maps, int start_offset,
-	vm_offset_t header, int header_end, int segment_command_sz, int *hoffset_out) {
+	vm_offset_t header, size_t header_end, size_t segment_command_sz, size_t *hoffset_out) {
 	RzListIter *iter, *iter2;
 	RzDebugMap *curr_map;
-	int hoffset = header_end;
+	size_t hoffset = header_end;
 	kern_return_t kr = KERN_SUCCESS;
 	int error = 0;
 	ssize_t rc = 0;
 
 #define CAST_DOWN(type, addr) (((type)((uintptr_t)(addr))))
-#if __ppc64__ || __x86_64__ || (defined(TARGET_OS_MAC) && defined(__aarch64__))
+#if __ppc64__ || __x86_64__ || __arm64__ || __aarch64__
 	struct segment_command_64 *sc64;
-#elif __i386__ || __ppc__ || __POWERPC__
+#elif __i386__ || __ppc__ || __POWERPC__ || __arm__ || __armv7__
 	struct segment_command *sc;
 	int foffset = 0; // start_offset;
 #endif
@@ -733,7 +696,7 @@ static int xnu_write_mem_maps_to_buffer(RzXnuDebug *ctx, RzBuffer *buffer, RzLis
 			curr_map->addr, curr_map->addr_end, curr_map->size);
 
 		vm_map_offset_t vmoffset = curr_map->addr;
-#if __ppc64__ || __x86_64__ || (defined(TARGET_OS_MAC) && defined(__aarch64__))
+#if __ppc64__ || __x86_64__ || __arm64__ || __aarch64__
 		sc64 = (struct segment_command_64 *)(header + hoffset);
 		sc64->cmd = LC_SEGMENT_64;
 		sc64->cmdsize = sizeof(struct segment_command_64);
@@ -743,7 +706,7 @@ static int xnu_write_mem_maps_to_buffer(RzXnuDebug *ctx, RzBuffer *buffer, RzLis
 		sc64->maxprot = xwrz_testwx(curr_map->user);
 		sc64->initprot = xwrz_testwx(curr_map->perm);
 		sc64->nsects = 0;
-#elif __i386__ || __ppc__ || __POWERPC__
+#elif __i386__ || __ppc__ || __POWERPC__ || __arm__ || __armv7__
 		sc = (struct segment_command *)(header + hoffset);
 		sc->cmd = LC_SEGMENT;
 		sc->cmdsize = sizeof(struct segment_command);
@@ -825,7 +788,6 @@ static void xnu_collect_thread_state(thread_t port, void *tirp) {
 	struct thread_command *tc;
 	vm_offset_t header;
 	ut64 hoffset;
-	int i;
 
 	header = tir->header;
 	hoffset = tir->hoffset;
@@ -837,8 +799,8 @@ static void xnu_collect_thread_state(thread_t port, void *tirp) {
 	tc->cmdsize = sizeof(struct thread_command) + tir->tstate_size;
 	hoffset += sizeof(struct thread_command);
 
-	for (i = 0; i < coredump_nflavors; i++) {
-		eprintf("[DEBUG] %d/%d\n", i + 1, coredump_nflavors);
+	for (size_t i = 0; i < COREDUMP_FLAVORS_ARRAY_SIZE; i++) {
+		eprintf("[DEBUG] %zu/%d\n", i + 1, COREDUMP_FLAVORS_ARRAY_SIZE);
 		*(coredump_thread_state_flavor_t *)(header + hoffset) = flavors[i];
 		hoffset += sizeof(coredump_thread_state_flavor_t);
 		xnu_get_thread_status(port, flavors[i].flavor,
@@ -869,10 +831,27 @@ static uid_t uidFromPid(pid_t pid) {
 	return uid;
 }
 
+static size_t xnu_get_argmax_cached(void) {
+	// TODO: consider moving this to a context in the future
+	static size_t argmax = 0;
+	size_t argmax_size = sizeof(argmax);
+	int mib[2] = { CTL_KERN, KERN_ARGMAX };
+
+	if (argmax != 0) {
+		return argmax;
+	}
+	if (sysctl(mib, RZ_ARRAY_SIZE(mib), &argmax, &argmax_size, NULL, 0) == -1 || argmax == 0) {
+		const size_t default_argmax = 4096;
+		RZ_LOG_WARN("sysctl(): failed to get argmax, defaulting to %" PFMTSZu " - %d\n", default_argmax, errno);
+		argmax = default_argmax;
+	}
+	return argmax;
+}
+
 bool xnu_generate_corefile(RzDebug *dbg, RzBuffer *dest) {
 	rz_return_val_if_fail(dbg && dbg->plugin_data, false);
 	RzXnuDebug *ctx = dbg->plugin_data;
-	int error = 0, i;
+	int error = 0;
 	int tstate_size;
 	int segment_count;
 	int command_size;
@@ -880,7 +859,7 @@ bool xnu_generate_corefile(RzDebug *dbg, RzBuffer *dest) {
 	size_t mach_header_sz;
 	size_t segment_command_sz;
 	size_t padding_sz;
-	int hoffset;
+	size_t hoffset;
 
 	RzBuffer *mem_maps_buffer;
 	vm_offset_t header;
@@ -904,7 +883,7 @@ bool xnu_generate_corefile(RzDebug *dbg, RzBuffer *dest) {
 	memcpy(thread_flavor_array, &flavors, sizeof(thread_flavor_array));
 	tstate_size = 0;
 
-	for (i = 0; i < coredump_nflavors; i++) {
+	for (size_t i = 0; i < COREDUMP_FLAVORS_ARRAY_SIZE; i++) {
 		tstate_size += sizeof(coredump_thread_state_flavor_t) +
 			(flavors[i].count * sizeof(int));
 	}
@@ -952,91 +931,81 @@ cleanup:
 }
 
 RzDebugPid *xnu_get_pid(int pid) {
-	int psnamelen, foo, nargs, mib[3], uid;
-	size_t size, argmax = 4096;
-	char *curr_arg, *start_args, *iter_args, *end_args;
-	char *procargs = NULL;
-	char psname[4096];
+	char *iter_args, *start_args, *procargs = NULL;
+	size_t size, argmax = xnu_get_argmax_cached() + 1;
+	RzDebugPid *rpid = NULL;
+	int mib[3], uid;
+	const char *end_args;
+	ut32 nargs;
+
 	uid = uidFromPid(pid);
 
-	/* Allocate space for the arguments. */
-	procargs = (char *)malloc(argmax);
+	// Allocate space for the arguments.
+	procargs = RZ_NEWS0(char, argmax);
 	if (!procargs) {
-		eprintf("getcmdargs(): insufficient memory for procargs %d\n",
-			(int)(size_t)argmax);
+		RZ_LOG_WARN("getcmdargs(): insufficient memory for procargs %" PFMTSZu "\n ", argmax);
 		return NULL;
 	}
 
-	/*
-	 * Make a sysctl() call to get the raw argument space of the process.
-	 */
+	// Make a sysctl() call to get the raw argument space of the process.
 	mib[0] = CTL_KERN;
 	mib[1] = KERN_PROCARGS2;
 	mib[2] = pid;
 
 	size = argmax;
-	procargs[0] = 0;
-	if (sysctl(mib, 3, procargs, &size, NULL, 0) == -1) {
-		if (EINVAL == errno) { // invalid == access denied for some reason
-			// eprintf("EINVAL returned fetching argument space\n");
-			free(procargs);
-			return NULL;
+	if (sysctl(mib, RZ_ARRAY_SIZE(mib), procargs, &size, NULL, 0) == -1) {
+		if (errno == EINVAL) {
+			// Some processes do not allow KERN_PROCARGS2, just skip them
+			goto err;
 		}
-		eprintf("sysctl(): unspecified sysctl error - %i\n", errno);
-		free(procargs);
-		return NULL;
+		RZ_LOG_WARN("sysctl(): unspecified sysctl error - %d\n", errno);
+		goto err;
 	}
+	// KERN_PROCARGS2 returns a flat byte buffer with this layout:
+	// [argc][exec_path][\0 (1 or more)][argv[0]][\0][argv[1]][\0]...[argv[argc-1]]
 
-	// copy the number of argument to nargs
+	if (size < sizeof(nargs)) {
+		goto err;
+	}
+	procargs[size] = 0;
 	memcpy(&nargs, procargs, sizeof(nargs));
-	iter_args = procargs + sizeof(nargs);
-	end_args = &procargs[size - 30]; // end of the argument space
-	if (iter_args >= end_args) {
-		eprintf("getcmdargs(): argument length mismatch");
-		free(procargs);
-		return NULL;
+	if (nargs <= 0 || nargs > size) {
+		RZ_LOG_WARN("getcmdargs(): invalid nargs %d\n", nargs);
+		goto err;
 	}
 
-	if (iter_args == end_args) {
-		free(procargs);
-		return NULL;
+	start_args = procargs + sizeof(nargs);
+	end_args = &procargs[size];
+
+	if (start_args >= end_args) {
+		RZ_LOG_WARN("getcmdargs(): no arguments found\n");
+		goto err;
 	}
-	curr_arg = iter_args;
-	start_args = iter_args; // reset start position to beginning of cmdline
-	foo = 1;
-	*psname = 0;
-	psnamelen = 0;
+
+	// Skip exec_path and the NULL separators to reach argv
+	start_args = (char *)rz_str_word_get_next0(start_args);
+	while (start_args < end_args && *start_args == '\0') {
+		start_args++;
+	}
+
+	iter_args = start_args;
+	nargs--;
 	while (iter_args < end_args && nargs > 0) {
-		if (*iter_args++ == '\0') {
-			int alen = strlen(curr_arg);
-			if (foo) {
-				memcpy(psname, curr_arg, alen + 1);
-				foo = 0;
-			} else {
-				psname[psnamelen] = ' ';
-				memcpy(psname + psnamelen + 1, curr_arg, alen + 1);
-			}
-			psnamelen += alen;
-			// printf("arg[%i]: %s\n", iter_args, curr_arg);
-			/* Fetch next argument */
-			curr_arg = iter_args;
+		if (*iter_args == '\0') {
+			*iter_args = ' ';
 			nargs--;
 		}
+		iter_args++;
 	}
-#if 1
-	/*
-	 * curr_arg position should be further than the start of the argspace
-	 * and number of arguments should be 0 after iterating above. Otherwise
-	 * we had an empty argument space or a missing terminating \0 etc.
-	 */
-	if (curr_arg == start_args || nargs > 0) {
-		psname[0] = 0;
-		//		eprintf ("getcmdargs(): argument parsing failed");
-		free(procargs);
-		return NULL;
+	if (nargs > 0) {
+		RZ_LOG_WARN("getcmdargs(): argument length mismatch");
+		goto err;
 	}
-#endif
-	return rz_debug_pid_new(psname, pid, uid, 's', 0); // XXX 's' ??, 0?? must set correct values
+
+	rpid = rz_debug_pid_new(start_args, pid, uid, 's', 0); // XXX 's' ??, 0?? must set correct values
+err:
+	RZ_FREE(procargs);
+	return rpid;
 }
 
 kern_return_t mach_vm_region_recurse(

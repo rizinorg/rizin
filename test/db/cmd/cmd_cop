@@ -1,0 +1,1550 @@
+NAME=cop search with(out) maxhits
+FILE=bins/elf/varsub
+CMDS=<<EOF
+echo "============ with maxhits ============="
+e search.maxhits=1
+/Cq call rax
+echo "============ without maxhits ============="
+e search.maxhits=0
+/Cq call rax
+EOF
+EXPECT=<<EOF
+============ with maxhits =============
+0x00400390: sub rsp, 0x08; mov rax, qword [rip+0x200c5d]; test rax, rax; jz 0x4003a2; call rax;
+============ without maxhits =============
+0x00400390: sub rsp, 0x08; mov rax, qword [rip+0x200c5d]; test rax, rax; jz 0x4003a2; call rax;
+0x00400391: sub esp, 0x08; mov rax, qword [rip+0x200c5d]; test rax, rax; jz 0x4003a2; call rax;
+0x00400393: or byte [rax-0x75], cl; add eax, 0x200c5d; test rax, rax; jz 0x4003a2; call rax;
+0x00400394: mov rax, qword [rip+0x200c5d]; test rax, rax; jz 0x4003a2; call rax;
+0x00400395: mov eax, dword [rip+0x200c5d]; test rax, rax; jz 0x4003a2; call rax;
+0x00400396: add eax, 0x200c5d; test rax, rax; jz 0x4003a2; call rax;
+0x00400399: and byte [rax], al; test rax, rax; jz 0x4003a2; call rax;
+0x0040039b: test rax, rax; jz 0x4003a2; call rax;
+0x0040039c: test eax, eax; jz 0x4003a2; call rax;
+0x0040039e: jz 0x4003a2; call rax;
+0x004003a0: call rax;
+0x00400492: add byte [rax], al; add byte [rax-0x7b], cl; shl byte [rcx+rsi*8+0x55], 0x48; mov ebp, esp; call rax;
+0x00400494: add byte [rax-0x7b], cl; shl byte [rcx+rsi*8+0x55], 0x48; mov ebp, esp; call rax;
+0x00400495: test rax, rax; jz 0x40048b; push rbp; mov rbp, rsp; call rax;
+0x00400496: test eax, eax; jz 0x40048b; push rbp; mov rbp, rsp; call rax;
+0x00400497: shl byte [rcx+rsi*8+0x55], 0x48; mov ebp, esp; call rax;
+0x00400498: jz 0x40048b; push rbp; mov rbp, rsp; call rax;
+0x00400499: int1; push rbp; mov rbp, rsp; call rax;
+0x0040049a: push rbp; mov rbp, rsp; call rax;
+0x0040049b: mov rbp, rsp; call rax;
+0x0040049c: mov ebp, esp; call rax;
+EOF
+RUN
+
+NAME=search all cop gadgets
+FILE=bins/elf/riscv_crypto_64
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=64
+/C
+EOF
+EXPECT=<<EOF
+  0x000104a8           83b28200  ld t0, 8(t0)
+  0x000104ac           67000e00  jr t3
+  0x000104b0           173e0000  auipc t3, 3
+  0x000104b4           033e0eb5  ld t3, -0x4b0(t3)
+  0x000104b8           67030e00  jalr t1, t3
+Gadget size: 20
+
+  0x000104aa               8200  c.slli64 ra
+  0x000104ac           67000e00  jr t3
+  0x000104b0           173e0000  auipc t3, 3
+  0x000104b4           033e0eb5  ld t3, -0x4b0(t3)
+  0x000104b8           67030e00  jalr t1, t3
+Gadget size: 18
+
+  0x000104ac           67000e00  jr t3
+  0x000104b0           173e0000  auipc t3, 3
+  0x000104b4           033e0eb5  ld t3, -0x4b0(t3)
+  0x000104b8           67030e00  jalr t1, t3
+Gadget size: 16
+
+  0x000104ae               0e00  c.slli zero, 3
+  0x000104b0           173e0000  auipc t3, 3
+  0x000104b4           033e0eb5  ld t3, -0x4b0(t3)
+  0x000104b8           67030e00  jalr t1, t3
+Gadget size: 14
+
+  0x000104b0           173e0000  auipc t3, 3
+  0x000104b4           033e0eb5  ld t3, -0x4b0(t3)
+  0x000104b8           67030e00  jalr t1, t3
+Gadget size: 12
+
+  0x000104b2               0000  unimp
+  0x000104b4           033e0eb5  ld t3, -0x4b0(t3)
+  0x000104b8           67030e00  jalr t1, t3
+Gadget size: 10
+
+  0x000104b4           033e0eb5  ld t3, -0x4b0(t3)
+  0x000104b8           67030e00  jalr t1, t3
+Gadget size: 8
+
+  0x000104b6               0eb5  fsd ft3, 0xa8(sp)
+  0x000104b8           67030e00  jalr t1, t3
+Gadget size: 6
+
+  0x000104b8           67030e00  jalr t1, t3
+Gadget size: 4
+
+  0x000104be               0000  unimp
+  0x000104c0           173e0000  auipc t3, 3
+  0x000104c4           033e8eb4  ld t3, -0x4b8(t3)
+  0x000104c8           67030e00  jalr t1, t3
+Gadget size: 14
+
+  0x000104c0           173e0000  auipc t3, 3
+  0x000104c4           033e8eb4  ld t3, -0x4b8(t3)
+  0x000104c8           67030e00  jalr t1, t3
+Gadget size: 12
+
+  0x000104c2               0000  unimp
+  0x000104c4           033e8eb4  ld t3, -0x4b8(t3)
+  0x000104c8           67030e00  jalr t1, t3
+Gadget size: 10
+
+  0x000104c4           033e8eb4  ld t3, -0x4b8(t3)
+  0x000104c8           67030e00  jalr t1, t3
+Gadget size: 8
+
+  0x000104c6               8eb4  fsd ft3, 0x68(sp)
+  0x000104c8           67030e00  jalr t1, t3
+Gadget size: 6
+
+  0x000104ce               0000  unimp
+  0x000104d0           173e0000  auipc t3, 3
+  0x000104d4           033e0eb4  ld t3, -0x4c0(t3)
+  0x000104d8           67030e00  jalr t1, t3
+Gadget size: 14
+
+  0x000104d0           173e0000  auipc t3, 3
+  0x000104d4           033e0eb4  ld t3, -0x4c0(t3)
+  0x000104d8           67030e00  jalr t1, t3
+Gadget size: 12
+
+  0x000104d2               0000  unimp
+  0x000104d4           033e0eb4  ld t3, -0x4c0(t3)
+  0x000104d8           67030e00  jalr t1, t3
+Gadget size: 10
+
+  0x000104d4           033e0eb4  ld t3, -0x4c0(t3)
+  0x000104d8           67030e00  jalr t1, t3
+Gadget size: 8
+
+  0x000104d6               0eb4  fsd ft3, 0x28(sp)
+  0x000104d8           67030e00  jalr t1, t3
+Gadget size: 6
+
+  0x000104de               0000  unimp
+  0x000104e0           173e0000  auipc t3, 3
+  0x000104e4           033e8eb3  ld t3, -0x4c8(t3)
+  0x000104e8           67030e00  jalr t1, t3
+Gadget size: 14
+
+  0x000104e0           173e0000  auipc t3, 3
+  0x000104e4           033e8eb3  ld t3, -0x4c8(t3)
+  0x000104e8           67030e00  jalr t1, t3
+Gadget size: 12
+
+  0x000104e2               0000  unimp
+  0x000104e4           033e8eb3  ld t3, -0x4c8(t3)
+  0x000104e8           67030e00  jalr t1, t3
+Gadget size: 10
+
+  0x000104e4           033e8eb3  ld t3, -0x4c8(t3)
+  0x000104e8           67030e00  jalr t1, t3
+Gadget size: 8
+
+  0x000104e6               8eb3  fsd ft3, 0x1e0(sp)
+  0x000104e8           67030e00  jalr t1, t3
+Gadget size: 6
+
+  0x00010578           e7024101  jalr t0, 0x14(sp)
+Gadget size: 4
+
+EOF
+RUN
+
+
+NAME=search cop gadgets with a regexp
+FILE=bins/elf/emulateme.arm32
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+/C/ mov r[0-9]
+EOF
+EXPECT=<<EOF
+  0x00010690           0920a0e1  mov r2, sb
+  0x00010694           0810a0e1  mov r1, r8
+  0x00010698           0700a0e1  mov r0, r7
+  0x0001069c           014084e2  add r4, r4, 1
+  0x000106a0           33ff2fe1  blx r3
+Gadget size: 20
+
+  0x00010694           0810a0e1  mov r1, r8
+  0x00010698           0700a0e1  mov r0, r7
+  0x0001069c           014084e2  add r4, r4, 1
+  0x000106a0           33ff2fe1  blx r3
+Gadget size: 16
+
+  0x00010698           0700a0e1  mov r0, r7
+  0x0001069c           014084e2  add r4, r4, 1
+  0x000106a0           33ff2fe1  blx r3
+Gadget size: 12
+
+EOF
+RUN
+
+NAME=search cop gadgets and show them linearly
+FILE=bins/elf/riscv_crypto_64
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=64
+/Cq
+EOF
+EXPECT=<<EOF
+0x000104a8: ld t0, 8(t0); jr t3; auipc t3, 3; ld t3, -0x4b0(t3); jalr t1, t3;
+0x000104aa: c.slli64 ra; jr t3; auipc t3, 3; ld t3, -0x4b0(t3); jalr t1, t3;
+0x000104ac: jr t3; auipc t3, 3; ld t3, -0x4b0(t3); jalr t1, t3;
+0x000104ae: c.slli zero, 3; auipc t3, 3; ld t3, -0x4b0(t3); jalr t1, t3;
+0x000104b0: auipc t3, 3; ld t3, -0x4b0(t3); jalr t1, t3;
+0x000104b2: unimp; ld t3, -0x4b0(t3); jalr t1, t3;
+0x000104b4: ld t3, -0x4b0(t3); jalr t1, t3;
+0x000104b6: fsd ft3, 0xa8(sp); jalr t1, t3;
+0x000104b8: jalr t1, t3;
+0x000104be: unimp; auipc t3, 3; ld t3, -0x4b8(t3); jalr t1, t3;
+0x000104c0: auipc t3, 3; ld t3, -0x4b8(t3); jalr t1, t3;
+0x000104c2: unimp; ld t3, -0x4b8(t3); jalr t1, t3;
+0x000104c4: ld t3, -0x4b8(t3); jalr t1, t3;
+0x000104c6: fsd ft3, 0x68(sp); jalr t1, t3;
+0x000104ce: unimp; auipc t3, 3; ld t3, -0x4c0(t3); jalr t1, t3;
+0x000104d0: auipc t3, 3; ld t3, -0x4c0(t3); jalr t1, t3;
+0x000104d2: unimp; ld t3, -0x4c0(t3); jalr t1, t3;
+0x000104d4: ld t3, -0x4c0(t3); jalr t1, t3;
+0x000104d6: fsd ft3, 0x28(sp); jalr t1, t3;
+0x000104de: unimp; auipc t3, 3; ld t3, -0x4c8(t3); jalr t1, t3;
+0x000104e0: auipc t3, 3; ld t3, -0x4c8(t3); jalr t1, t3;
+0x000104e2: unimp; ld t3, -0x4c8(t3); jalr t1, t3;
+0x000104e4: ld t3, -0x4c8(t3); jalr t1, t3;
+0x000104e6: fsd ft3, 0x1e0(sp); jalr t1, t3;
+0x00010578: jalr t0, 0x14(sp);
+EOF
+RUN
+
+NAME=search cop gadgets with filter
+FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=-n
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+/C ecx
+EOF
+EXPECT=<<EOF
+  0x00000397       1889442404c7  sbb byte [ecx-0x38fbdbbc], cl
+  0x0000039d               0424  add al, 0x24
+  0x0000039f               b496  mov ah, 0x96
+  0x000003a1               0408  add al, 0x08
+  0x000003a3               ffd2  call edx
+Gadget size: 14
+
+  0x0000045b       38892c248944  cmp byte [ecx+0x4489242c], cl
+  0x00000461               2408  and al, 0x08
+  0x00000463           8b442434  mov eax, dword [esp+0x34]
+  0x00000467           89442404  mov dword [esp+0x04], eax
+  0x0000046b     ff94bb08ffffff  call dword [ebx+edi*4-0xf8]
+Gadget size: 23
+
+EOF
+RUN
+
+NAME=search cop gadgets with filter and output JSON
+FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=-n
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+/Cj ecx
+EOF
+EXPECT=<<EOF
+[{"opcodes":[{"offset":919,"size":6,"opcode":"sbb byte [ecx-0x38fbdbbc], cl","type":"sub"},{"offset":925,"size":2,"opcode":"add al, 0x24","type":"add"},{"offset":927,"size":2,"opcode":"mov ah, 0x96","type":"mov"},{"offset":929,"size":2,"opcode":"add al, 0x08","type":"add"},{"offset":931,"size":2,"opcode":"call edx","type":"rcall"}],"retaddr":931,"size":14},{"opcodes":[{"offset":1115,"size":6,"opcode":"cmp byte [ecx+0x4489242c], cl","type":"cmp"},{"offset":1121,"size":2,"opcode":"and al, 0x08","type":"and"},{"offset":1123,"size":4,"opcode":"mov eax, dword [esp+0x34]","type":"mov"},{"offset":1127,"size":4,"opcode":"mov dword [esp+0x04], eax","type":"mov"},{"offset":1131,"size":7,"opcode":"call dword [ebx+edi*4-0xf8]","type":"ucall"}],"retaddr":1131,"size":23}]
+EOF
+RUN
+
+NAME=search cop gadgets with a regex of the form (a|b)
+FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=-n
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+/C/ "(ecx|eax)"
+EOF
+EXPECT=<<EOF
+  0x00000354       0085c074f655  add byte [ebp+0x55f674c0], al
+  0x0000035a               89e5  mov ebp, esp
+  0x0000035c             83ec18  sub esp, 0x18
+  0x0000035f     c70424b4960408  mov dword [esp], 0x80496b4
+  0x00000366               ffd0  call eax
+Gadget size: 20
+
+  0x00000359                 55  push ebp
+  0x0000035a               89e5  mov ebp, esp
+  0x0000035c             83ec18  sub esp, 0x18
+  0x0000035f     c70424b4960408  mov dword [esp], 0x80496b4
+  0x00000366               ffd0  call eax
+Gadget size: 15
+
+  0x0000035a               89e5  mov ebp, esp
+  0x0000035c             83ec18  sub esp, 0x18
+  0x0000035f     c70424b4960408  mov dword [esp], 0x80496b4
+  0x00000366               ffd0  call eax
+Gadget size: 14
+
+  0x0000035c             83ec18  sub esp, 0x18
+  0x0000035f     c70424b4960408  mov dword [esp], 0x80496b4
+  0x00000366               ffd0  call eax
+Gadget size: 12
+
+  0x0000035e               18c7  sbb bh, al
+  0x00000360               0424  add al, 0x24
+  0x00000362               b496  mov ah, 0x96
+  0x00000364               0408  add al, 0x08
+  0x00000366               ffd0  call eax
+Gadget size: 10
+
+  0x0000035f     c70424b4960408  mov dword [esp], 0x80496b4
+  0x00000366               ffd0  call eax
+Gadget size: 9
+
+  0x00000360               0424  add al, 0x24
+  0x00000362               b496  mov ah, 0x96
+  0x00000364               0408  add al, 0x08
+  0x00000366               ffd0  call eax
+Gadget size: 8
+
+  0x00000361               24b4  and al, 0xb4
+  0x00000363                 96  xchg esi, eax
+  0x00000364               0408  add al, 0x08
+  0x00000366               ffd0  call eax
+Gadget size: 7
+
+  0x00000362               b496  mov ah, 0x96
+  0x00000364               0408  add al, 0x08
+  0x00000366               ffd0  call eax
+Gadget size: 6
+
+  0x00000363                 96  xchg esi, eax
+  0x00000364               0408  add al, 0x08
+  0x00000366               ffd0  call eax
+Gadget size: 5
+
+  0x00000364               0408  add al, 0x08
+  0x00000366               ffd0  call eax
+Gadget size: 4
+
+  0x00000366               ffd0  call eax
+Gadget size: 2
+
+  0x00000393               89e5  mov ebp, esp
+  0x00000395             83ec18  sub esp, 0x18
+  0x00000398           89442404  mov dword [esp+0x04], eax
+  0x0000039c     c70424b4960408  mov dword [esp], 0x80496b4
+  0x000003a3               ffd2  call edx
+Gadget size: 18
+
+  0x00000395             83ec18  sub esp, 0x18
+  0x00000398           89442404  mov dword [esp+0x04], eax
+  0x0000039c     c70424b4960408  mov dword [esp], 0x80496b4
+  0x000003a3               ffd2  call edx
+Gadget size: 16
+
+  0x00000397       1889442404c7  sbb byte [ecx-0x38fbdbbc], cl
+  0x0000039d               0424  add al, 0x24
+  0x0000039f               b496  mov ah, 0x96
+  0x000003a1               0408  add al, 0x08
+  0x000003a3               ffd2  call edx
+Gadget size: 14
+
+  0x00000398           89442404  mov dword [esp+0x04], eax
+  0x0000039c     c70424b4960408  mov dword [esp], 0x80496b4
+  0x000003a3               ffd2  call edx
+Gadget size: 13
+
+  0x0000039e               24b4  and al, 0xb4
+  0x000003a0                 96  xchg esi, eax
+  0x000003a1               0408  add al, 0x08
+  0x000003a3               ffd2  call edx
+Gadget size: 7
+
+  0x000003a0                 96  xchg esi, eax
+  0x000003a1               0408  add al, 0x08
+  0x000003a3               ffd2  call edx
+Gadget size: 5
+
+  0x000003dd       0085c0741655  add byte [ebp+0x551674c0], al
+  0x000003e3               89e5  mov ebp, esp
+  0x000003e5             83ec18  sub esp, 0x18
+  0x000003e8     c70424a4950408  mov dword [esp], 0x80495a4
+  0x000003ef               ffd0  call eax
+Gadget size: 20
+
+  0x000003e2                 55  push ebp
+  0x000003e3               89e5  mov ebp, esp
+  0x000003e5             83ec18  sub esp, 0x18
+  0x000003e8     c70424a4950408  mov dword [esp], 0x80495a4
+  0x000003ef               ffd0  call eax
+Gadget size: 15
+
+  0x000003e3               89e5  mov ebp, esp
+  0x000003e5             83ec18  sub esp, 0x18
+  0x000003e8     c70424a4950408  mov dword [esp], 0x80495a4
+  0x000003ef               ffd0  call eax
+Gadget size: 14
+
+  0x000003e5             83ec18  sub esp, 0x18
+  0x000003e8     c70424a4950408  mov dword [esp], 0x80495a4
+  0x000003ef               ffd0  call eax
+Gadget size: 12
+
+  0x000003e8     c70424a4950408  mov dword [esp], 0x80495a4
+  0x000003ef               ffd0  call eax
+Gadget size: 9
+
+  0x000003e9               0424  add al, 0x24
+  0x000003eb                 a4  movsb
+  0x000003ec                 95  xchg ebp, eax
+  0x000003ed               0408  add al, 0x08
+  0x000003ef               ffd0  call eax
+Gadget size: 8
+
+  0x000003ea               24a4  and al, 0xa4
+  0x000003ec                 95  xchg ebp, eax
+  0x000003ed               0408  add al, 0x08
+  0x000003ef               ffd0  call eax
+Gadget size: 7
+
+  0x000003eb                 a4  movsb
+  0x000003ec                 95  xchg ebp, eax
+  0x000003ed               0408  add al, 0x08
+  0x000003ef               ffd0  call eax
+Gadget size: 6
+
+  0x000003ec                 95  xchg ebp, eax
+  0x000003ed               0408  add al, 0x08
+  0x000003ef               ffd0  call eax
+Gadget size: 5
+
+  0x000003f6       ff90e973ffff  call dword [eax-0x8c17]
+Gadget size: 6
+
+  0x0000045b       38892c248944  cmp byte [ecx+0x4489242c], cl
+  0x00000461               2408  and al, 0x08
+  0x00000463           8b442434  mov eax, dword [esp+0x34]
+  0x00000467           89442404  mov dword [esp+0x04], eax
+  0x0000046b     ff94bb08ffffff  call dword [ebx+edi*4-0xf8]
+Gadget size: 23
+
+  0x0000045c             892c24  mov dword [esp], ebp
+  0x0000045f           89442408  mov dword [esp+0x08], eax
+  0x00000463           8b442434  mov eax, dword [esp+0x34]
+  0x00000467           89442404  mov dword [esp+0x04], eax
+  0x0000046b     ff94bb08ffffff  call dword [ebx+edi*4-0xf8]
+Gadget size: 22
+
+  0x0000045d               2c24  sub al, 0x24
+  0x0000045f           89442408  mov dword [esp+0x08], eax
+  0x00000463           8b442434  mov eax, dword [esp+0x34]
+  0x00000467           89442404  mov dword [esp+0x04], eax
+  0x0000046b     ff94bb08ffffff  call dword [ebx+edi*4-0xf8]
+Gadget size: 21
+
+  0x0000045f           89442408  mov dword [esp+0x08], eax
+  0x00000463           8b442434  mov eax, dword [esp+0x34]
+  0x00000467           89442404  mov dword [esp+0x04], eax
+  0x0000046b     ff94bb08ffffff  call dword [ebx+edi*4-0xf8]
+Gadget size: 19
+
+  0x00000460                 44  inc esp
+  0x00000461               2408  and al, 0x08
+  0x00000463           8b442434  mov eax, dword [esp+0x34]
+  0x00000467           89442404  mov dword [esp+0x04], eax
+  0x0000046b     ff94bb08ffffff  call dword [ebx+edi*4-0xf8]
+Gadget size: 18
+
+  0x00000461               2408  and al, 0x08
+  0x00000463           8b442434  mov eax, dword [esp+0x34]
+  0x00000467           89442404  mov dword [esp+0x04], eax
+  0x0000046b     ff94bb08ffffff  call dword [ebx+edi*4-0xf8]
+Gadget size: 17
+
+  0x00000463           8b442434  mov eax, dword [esp+0x34]
+  0x00000467           89442404  mov dword [esp+0x04], eax
+  0x0000046b     ff94bb08ffffff  call dword [ebx+edi*4-0xf8]
+Gadget size: 15
+
+  0x00000464                 44  inc esp
+  0x00000465               2434  and al, 0x34
+  0x00000467           89442404  mov dword [esp+0x04], eax
+  0x0000046b     ff94bb08ffffff  call dword [ebx+edi*4-0xf8]
+Gadget size: 14
+
+  0x00000465               2434  and al, 0x34
+  0x00000467           89442404  mov dword [esp+0x04], eax
+  0x0000046b     ff94bb08ffffff  call dword [ebx+edi*4-0xf8]
+Gadget size: 13
+
+  0x00000467           89442404  mov dword [esp+0x04], eax
+  0x0000046b     ff94bb08ffffff  call dword [ebx+edi*4-0xf8]
+Gadget size: 11
+
+  0x00000533             ff1c00  call far fword [eax+eax*1]
+Gadget size: 3
+
+  0x00000e53               0000  add byte [eax], al
+  0x00000e55               0000  add byte [eax], al
+  0x00000e57             000400  add byte [eax+eax*1], al
+  0x00000e5a                 f1  int1
+  0x00000e5b               ff13  call dword [ebx]
+Gadget size: 10
+
+  0x00000e54               0000  add byte [eax], al
+  0x00000e56               0000  add byte [eax], al
+  0x00000e58               0400  add al, 0x00
+  0x00000e5a                 f1  int1
+  0x00000e5b               ff13  call dword [ebx]
+Gadget size: 9
+
+  0x00000e55               0000  add byte [eax], al
+  0x00000e57             000400  add byte [eax+eax*1], al
+  0x00000e5a                 f1  int1
+  0x00000e5b               ff13  call dword [ebx]
+Gadget size: 8
+
+  0x00000e56               0000  add byte [eax], al
+  0x00000e58               0400  add al, 0x00
+  0x00000e5a                 f1  int1
+  0x00000e5b               ff13  call dword [ebx]
+Gadget size: 7
+
+  0x00000e57             000400  add byte [eax+eax*1], al
+  0x00000e5a                 f1  int1
+  0x00000e5b               ff13  call dword [ebx]
+Gadget size: 6
+
+EOF
+RUN
+
+NAME=search cop with sequence.
+FILE=bins/elf/mips-mozi
+CMDS=<<EOF
+e asm.arch=mips
+e asm.bits=64
+/C "move $t9, $s2;jalr $t9"
+EOF
+EXPECT=<<EOF
+  0x004042e8           00000000  nop
+  0x004042ec           02a02021  move a0, s5
+  0x004042f0           0240c821  move t9, s2
+  0x004042f4           0320f809  jalr t9
+  0x004042f8           26657850  addiu a1, s3, 0x7850
+Gadget size: 20
+
+  0x004042ec           02a02021  move a0, s5
+  0x004042f0           0240c821  move t9, s2
+  0x004042f4           0320f809  jalr t9
+  0x004042f8           26657850  addiu a1, s3, 0x7850
+Gadget size: 16
+
+  0x004042f0           0240c821  move t9, s2
+  0x004042f4           0320f809  jalr t9
+  0x004042f8           26657850  addiu a1, s3, 0x7850
+Gadget size: 12
+
+  0x00404f30           0240c821  move t9, s2
+  0x00404f34           00e02021  move a0, a3
+  0x00404f38           00a08021  move s0, a1
+  0x00404f3c           0320f809  jalr t9
+  0x00404f40           00c08821  move s1, a2
+Gadget size: 20
+
+  0x00404f68           0040b021  move s6, v0
+  0x00404f6c           0240c821  move t9, s2
+  0x00404f70           0320f809  jalr t9
+  0x00404f74           02e02021  move a0, s7
+Gadget size: 16
+
+  0x00404f6c           0240c821  move t9, s2
+  0x00404f70           0320f809  jalr t9
+  0x00404f74           02e02021  move a0, s7
+Gadget size: 12
+
+  0x00405304           27b90208  addiu t9, sp, 0x208
+  0x00405308           afb903a0  sw t9, 0x3a0(sp)
+  0x0040530c           0240c821  move t9, s2
+  0x00405310           0320f809  jalr t9
+  0x00405314           02c02021  move a0, s6
+Gadget size: 20
+
+  0x00405308           afb903a0  sw t9, 0x3a0(sp)
+  0x0040530c           0240c821  move t9, s2
+  0x00405310           0320f809  jalr t9
+  0x00405314           02c02021  move a0, s6
+Gadget size: 16
+
+  0x0040530c           0240c821  move t9, s2
+  0x00405310           0320f809  jalr t9
+  0x00405314           02c02021  move a0, s6
+Gadget size: 12
+
+  0x00405508           8fa503e8  lw a1, 0x3e8(sp)
+  0x0040550c           00402021  move a0, v0
+  0x00405510           0240c821  move t9, s2
+  0x00405514           0320f809  jalr t9
+  0x00405518           afa203a8  sw v0, 0x3a8(sp)
+Gadget size: 20
+
+  0x0040550c           00402021  move a0, v0
+  0x00405510           0240c821  move t9, s2
+  0x00405514           0320f809  jalr t9
+  0x00405518           afa203a8  sw v0, 0x3a8(sp)
+Gadget size: 16
+
+  0x00405510           0240c821  move t9, s2
+  0x00405514           0320f809  jalr t9
+  0x00405518           afa203a8  sw v0, 0x3a8(sp)
+Gadget size: 12
+
+  0x00405520           27b10148  addiu s1, sp, 0x148
+  0x00405524           24450030  addiu a1, v0, 0x30
+  0x00405528           0240c821  move t9, s2
+  0x0040552c           0320f809  jalr t9
+  0x00405530           02202021  move a0, s1
+Gadget size: 20
+
+  0x00405524           24450030  addiu a1, v0, 0x30
+  0x00405528           0240c821  move t9, s2
+  0x0040552c           0320f809  jalr t9
+  0x00405530           02202021  move a0, s1
+Gadget size: 16
+
+  0x00405528           0240c821  move t9, s2
+  0x0040552c           0320f809  jalr t9
+  0x00405530           02202021  move a0, s1
+Gadget size: 12
+
+  0x00405644           8fa503e4  lw a1, 0x3e4(sp)
+  0x00405648           8fa40398  lw a0, 0x398(sp)
+  0x0040564c           0240c821  move t9, s2
+  0x00405650           0320f809  jalr t9
+  0x00405654           26f735c0  addiu s7, s7, 0x35c0
+Gadget size: 20
+
+  0x00405648           8fa40398  lw a0, 0x398(sp)
+  0x0040564c           0240c821  move t9, s2
+  0x00405650           0320f809  jalr t9
+  0x00405654           26f735c0  addiu s7, s7, 0x35c0
+Gadget size: 16
+
+  0x0040564c           0240c821  move t9, s2
+  0x00405650           0320f809  jalr t9
+  0x00405654           26f735c0  addiu s7, s7, 0x35c0
+Gadget size: 12
+
+  0x00406204           02802021  move a0, s4
+  0x00406208           02a02821  move a1, s5
+  0x0040620c           0240c821  move t9, s2
+  0x00406210           0320f809  jalr t9
+  0x00406214           2610ffff  addiu s0, s0, -1
+Gadget size: 20
+
+  0x00406208           02a02821  move a1, s5
+  0x0040620c           0240c821  move t9, s2
+  0x00406210           0320f809  jalr t9
+  0x00406214           2610ffff  addiu s0, s0, -1
+Gadget size: 16
+
+  0x0040620c           0240c821  move t9, s2
+  0x00406210           0320f809  jalr t9
+  0x00406214           2610ffff  addiu s0, s0, -1
+Gadget size: 12
+
+  0x00434384           0220202d  move a0, s1
+  0x00434388           03a0282d  move a1, sp
+  0x0043438c           0240c82d  move t9, s2
+  0x00434390           0320f809  jalr t9
+  0x00434394           24060001  addiu a2, zero, 1
+Gadget size: 20
+
+  0x00434388           03a0282d  move a1, sp
+  0x0043438c           0240c82d  move t9, s2
+  0x00434390           0320f809  jalr t9
+  0x00434394           24060001  addiu a2, zero, 1
+Gadget size: 16
+
+  0x0043438c           0240c82d  move t9, s2
+  0x00434390           0320f809  jalr t9
+  0x00434394           24060001  addiu a2, zero, 1
+Gadget size: 12
+
+  0x004343f4           18400006  blez v0, 0x434410
+  0x004343f8           0260282d  move a1, s3
+  0x004343fc           0240c82d  move t9, s2
+  0x00434400           0320f809  jalr t9
+  0x00434404           00000000  nop
+Gadget size: 20
+
+  0x004343f8           0260282d  move a1, s3
+  0x004343fc           0240c82d  move t9, s2
+  0x00434400           0320f809  jalr t9
+  0x00434404           00000000  nop
+Gadget size: 16
+
+  0x004343fc           0240c82d  move t9, s2
+  0x00434400           0320f809  jalr t9
+  0x00434404           00000000  nop
+Gadget size: 12
+
+EOF
+RUN
+
+NAME=search cop with regex sequence.
+FILE=bins/elf/mips-mozi
+CMDS=<<EOF
+e asm.arch=mips
+e asm.bits=64
+e gadget.len=3
+/C/ "jalr [$]t9;move [$]a3, [$]s[0-9]"
+EOF
+EXPECT=<<EOF
+  0x00406350           27396120  addiu t9, t9, 0x6120
+  0x00406354           0320f809  jalr t9
+  0x00406358           02603821  move a3, s3
+Gadget size: 12
+
+  0x00406354           0320f809  jalr t9
+  0x00406358           02603821  move a3, s3
+Gadget size: 8
+
+  0x00406ad8           02003021  move a2, s0
+  0x00406adc           0320f809  jalr t9
+  0x00406ae0           02603821  move a3, s3
+Gadget size: 12
+
+  0x0040a994           02203021  move a2, s1
+  0x0040a998           0320f809  jalr t9
+  0x0040a99c           02603821  move a3, s3
+Gadget size: 12
+
+  0x0040ac70           24061000  addiu a2, zero, 0x1000
+  0x0040ac74           0320f809  jalr t9
+  0x0040ac78           02403821  move a3, s2
+Gadget size: 12
+
+  0x0040ac74           0320f809  jalr t9
+  0x0040ac78           02403821  move a3, s2
+Gadget size: 8
+
+  0x0040b6e0           24c6dfac  addiu a2, a2, -0x2054
+  0x0040b6e4           0320f809  jalr t9
+  0x0040b6e8           02603821  move a3, s3
+Gadget size: 12
+
+  0x0040f30c           26f9884c  addiu t9, s7, -0x77b4
+  0x0040f310           0320f809  jalr t9
+  0x0040f314           02803821  move a3, s4
+Gadget size: 12
+
+  0x0040f310           0320f809  jalr t9
+  0x0040f314           02803821  move a3, s4
+Gadget size: 8
+
+  0x0040fab8           02302823  subu a1, s1, s0
+  0x0040fabc           0320f809  jalr t9
+  0x0040fac0           02603821  move a3, s3
+Gadget size: 12
+
+  0x0040fd04           02302021  addu a0, s1, s0
+  0x0040fd08           0320f809  jalr t9
+  0x0040fd0c           02403821  move a3, s2
+Gadget size: 12
+
+  0x0040fd60           02302021  addu a0, s1, s0
+  0x0040fd64           0320f809  jalr t9
+  0x0040fd68           02603821  move a3, s3
+Gadget size: 12
+
+  0x0040fdbc           02502823  subu a1, s2, s0
+  0x0040fdc0           0320f809  jalr t9
+  0x0040fdc4           02803821  move a3, s4
+Gadget size: 12
+
+  0x0040ffb8           02603021  move a2, s3
+  0x0040ffbc           0320f809  jalr t9
+  0x0040ffc0           02803821  move a3, s4
+Gadget size: 12
+
+  0x004100fc           02a03021  move a2, s5
+  0x00410100           0320f809  jalr t9
+  0x00410104           02c03821  move a3, s6
+Gadget size: 12
+
+  0x00410100           0320f809  jalr t9
+  0x00410104           02c03821  move a3, s6
+Gadget size: 8
+
+  0x004103bc           02302823  subu a1, s1, s0
+  0x004103c0           0320f809  jalr t9
+  0x004103c4           02803821  move a3, s4
+Gadget size: 12
+
+  0x004104a8           000632c0  sll a2, a2, 0xb
+  0x004104ac           0320f809  jalr t9
+  0x004104b0           02e03821  move a3, s7
+Gadget size: 12
+
+  0x004104ac           0320f809  jalr t9
+  0x004104b0           02e03821  move a3, s7
+Gadget size: 8
+
+  0x00410868           02d02823  subu a1, s6, s0
+  0x0041086c           0320f809  jalr t9
+  0x00410870           02403821  move a3, s2
+Gadget size: 12
+
+  0x004167d0           02603021  move a2, s3
+  0x004167d4           0320f809  jalr t9
+  0x004167d8           02203821  move a3, s1
+Gadget size: 12
+
+  0x004167d4           0320f809  jalr t9
+  0x004167d8           02203821  move a3, s1
+Gadget size: 8
+
+  0x0041fce0           2739f960  addiu t9, t9, -0x6a0
+  0x0041fce4           0320f809  jalr t9
+  0x0041fce8           02003821  move a3, s0
+Gadget size: 12
+
+  0x0041fce4           0320f809  jalr t9
+  0x0041fce8           02003821  move a3, s0
+Gadget size: 8
+
+  0x00420b48           02403021  move a2, s2
+  0x00420b4c           0320f809  jalr t9
+  0x00420b50           02e03821  move a3, s7
+Gadget size: 12
+
+  0x00421bec           afb40014  sw s4, 0x14(sp)
+  0x00421bf0           0320f809  jalr t9
+  0x00421bf4           02203821  move a3, s1
+Gadget size: 12
+
+  0x00421c6c           02603021  move a2, s3
+  0x00421c70           0320f809  jalr t9
+  0x00421c74           02c03821  move a3, s6
+Gadget size: 12
+
+  0x00422034           02c02821  move a1, s6
+  0x00422038           0320f809  jalr t9
+  0x0042203c           02e03821  move a3, s7
+Gadget size: 12
+
+  0x00424294           24c6dfac  addiu a2, a2, -0x2054
+  0x00424298           0320f809  jalr t9
+  0x0042429c           02803821  move a3, s4
+Gadget size: 12
+
+  0x00429434           02803021  move a2, s4
+  0x00429438           0320f809  jalr t9
+  0x0042943c           02603821  move a3, s3
+Gadget size: 12
+
+  0x0042968c           02c03021  move a2, s6
+  0x00429690           0320f809  jalr t9
+  0x00429694           02a03821  move a3, s5
+Gadget size: 12
+
+  0x00429690           0320f809  jalr t9
+  0x00429694           02a03821  move a3, s5
+Gadget size: 8
+
+  0x0042a4e0           02803021  move a2, s4
+  0x0042a4e4           0320f809  jalr t9
+  0x0042a4e8           02003821  move a3, s0
+Gadget size: 12
+
+EOF
+RUN
+
+NAME=search cop gadgets given the detailed stack change (=1)
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+/Cs "=1"
+EOF
+EXPECT=<<EOF
+Gadget 0x8048399
+Stack change: 0x1
+Changed registers: esp eax 
+Register dependencies:
+Var Read: eax
+
+Gadget 0x8048460
+Stack change: 0x1
+Changed registers: esp eax 
+Register dependencies:
+Var Read: eax
+Memory Write: eax Initial Value: 0xff080484 New Value: 0xffffffff
+Memory Read: edi Value: 0xffffff10
+Memory Read: ebx Value: 0xffffff10
+
+Gadget 0x8048462
+Stack change: 0x1
+Changed registers: esp eax 
+Register dependencies:
+Memory Read: ebx Value: 0x89342444
+Memory Write: ebx Initial Value: 0xff New Value: 0xff
+Memory Write: ecx Initial Value: 0xff New Value: 0xff
+Var Read: eax
+Memory Read: edi Value: 0xffffff10
+Memory Read: ebx Value: 0xffffff10
+
+Gadget 0x8048464
+Stack change: 0x1
+Changed registers: esp eax 
+Register dependencies:
+Var Read: eax
+Memory Write: eax Initial Value: 0x4080484 New Value: 0x95a40804
+Memory Read: edi Value: 0xffffff10
+Memory Read: ebx Value: 0xffffff10
+
+Gadget 0x8048466
+Stack change: 0x1
+Changed registers: eax esp 
+Register dependencies:
+Var Read: eax
+Var write: eax Initial value: 0x95a40804 New Value: 0x95a40804
+Var write: eax Initial value: 0x95a40804 New Value: 0x95a40804
+Memory Read: edi Value: 0xffffff10
+Memory Read: ebx Value: 0xffffff10
+
+Gadget 0x8048468
+Stack change: 0x1
+Changed registers: esp eax 
+Register dependencies:
+Var Read: eax
+Memory Read: edi Value: 0xffffff10
+Memory Read: ebx Value: 0xffffff10
+
+EOF
+RUN
+
+NAME=search cop gadgets given the detailed stack change (>=0x1)
+FILE=bins/arm/elf/hello-linux-arm64
+CMDS=<<EOF
+/Cs ">=0x1"
+EOF
+EXPECT=<<EOF
+Gadget 0x411680
+Stack change: 0x78
+Changed registers: x5 x7 x6 x4 x30 
+Register dependencies:
+
+Gadget 0x41a19c
+Stack change: 0x239
+Changed registers: x2 x7 x6 x4 x30 
+Register dependencies:
+
+Gadget 0x41c1e4
+Stack change: 0x40
+Changed registers: x7 x2 x6 x4 x30 
+Register dependencies:
+
+Gadget 0x42ef70
+Stack change: 0x1cf
+Changed registers: x2 x7 x6 x4 x30 
+Register dependencies:
+
+Gadget 0x4300c4
+Stack change: 0x40
+Changed registers: x2 x1 x0 x30 
+Register dependencies:
+Memory Read: x26 Value: 0x90
+Var Read: x19
+
+Gadget 0x449b38
+Stack change: 0x1b7
+Changed registers: x2 x1 x0 x30 
+Register dependencies:
+Memory Read: x21 Value: 0x91
+Var Read: x20
+
+Gadget 0x44dc50
+Stack change: 0x1a9
+Changed registers: x1 x0 x30 
+Register dependencies:
+Memory Read: x1 Value: 0x1b8
+Memory Write: x1 Initial Value: 0xffffffffffffffff New Value: 0xffffffffffffffff
+Var Read: x0
+
+Gadget 0x44def8
+Stack change: 0x1c9
+Changed registers: x1 x0 x30 
+Register dependencies:
+Memory Read: x1 Value: 0x1a8
+Memory Write: x1 Initial Value: 0xffffffffffffffff New Value: 0xffffffffffffffff
+Var Read: x0
+
+Gadget 0x451458
+Stack change: 0x1d9
+Changed registers: x1 x0 x30 
+Register dependencies:
+Memory Read: x1 Value: 0x10
+Memory Write: x1 Initial Value: 0xffffffffffffffff New Value: 0xffffffffffffffff
+Var Read: x0
+
+EOF
+RUN
+
+NAME=search cop gadgets given the detailed gadget size (>=8)
+FILE=bins/elf/analysis/crackmips
+CMDS=<<EOF
+/Cl ">=8"
+EOF
+EXPECT=<<EOF
+Gadget 0x400308
+Stack change: 0x0
+Changed registers: ra hi lo 
+Register dependencies:
+
+Gadget 0x4007c4
+Stack change: 0x0
+Changed registers: at t9 ra 
+Register dependencies:
+Var Read: at
+Memory Read: gp Value: 0xffff8034
+Var write: at Initial value: 0x0 New Value: 0x0
+Var write: at Initial value: 0x0 New Value: 0x0
+
+Gadget 0x4007c8
+Stack change: 0x0
+Changed registers: t9 at ra 
+Register dependencies:
+Memory Read: gp Value: 0xffff8034
+Var Read: at
+Var write: at Initial value: 0x0 New Value: 0x0
+
+Gadget 0x4007cc
+Stack change: 0x0
+Changed registers: at ra 
+Register dependencies:
+Var Read: at
+Var write: at Initial value: 0x0 New Value: 0x0
+
+Gadget 0x4007d0
+Stack change: 0x0
+Changed registers: ra at 
+Register dependencies:
+Var Read: at
+
+Gadget 0x40082c
+Stack change: 0x0
+Changed registers: t8 t7 ra 
+Register dependencies:
+Var Read: gp
+Var Read: t8
+Var Read: ra
+Var write: t8 Initial value: 0x0 New Value: 0x0
+Var write: t8 Initial value: 0x0 New Value: 0xfffffffe
+
+Gadget 0x400830
+Stack change: 0x0
+Changed registers: t7 t8 ra 
+Register dependencies:
+Var Read: ra
+Var Read: t8
+Var write: t8 Initial value: 0xfffffffe New Value: 0x3ffffffd
+
+Gadget 0x400834
+Stack change: 0x0
+Changed registers: t8 ra 
+Register dependencies:
+Var Read: t8
+Var write: t8 Initial value: 0x3ffffffd New Value: 0xffffffd
+
+Gadget 0x400838
+Stack change: 0x0
+Changed registers: ra t8 
+Register dependencies:
+Var Read: t8
+
+Gadget 0x400974
+Stack change: 0x0
+Changed registers: t9 at ra 
+Register dependencies:
+Memory Read: gp Value: 0xffff8030
+Var Read: at
+Var write: at Initial value: 0x0 New Value: 0x0
+
+Gadget 0x400978
+Stack change: 0x0
+Changed registers: t9 at ra 
+Register dependencies:
+Memory Read: gp Value: 0xffff8030
+Var Read: at
+Var write: at Initial value: 0x0 New Value: 0x0
+
+Gadget 0x4009e4
+Stack change: 0x0
+Changed registers: v1 t9 ra 
+Register dependencies:
+Var Read: v0
+Var Read: v1
+Var Read: s2
+Memory Read: v1 Value: 0x0
+Memory Write: s0 Initial Value: 0xffffffff New Value: 0x0
+
+Gadget 0x4009e8
+Stack change: 0x0
+Changed registers: v1 t9 ra 
+Register dependencies:
+Var Read: v1
+Var Read: s2
+Memory Read: v1 Value: 0x0
+Memory Write: v0 Initial Value: 0x0 New Value: 0x0
+Memory Write: s0 Initial Value: 0x0 New Value: 0x0
+
+Gadget 0x4009ec
+Stack change: 0x0
+Changed registers: t9 ra 
+Register dependencies:
+Memory Read: v1 Value: 0x0
+Memory Write: v0 Initial Value: 0x0 New Value: 0x0
+Memory Write: s0 Initial Value: 0x0 New Value: 0x0
+
+Gadget 0x4009f0
+Stack change: 0x0
+Changed registers: ra 
+Register dependencies:
+Memory Write: v0 Initial Value: 0x0 New Value: 0x0
+Memory Write: s0 Initial Value: 0x0 New Value: 0x0
+
+Gadget 0x403aa8
+Stack change: 0x0
+Changed registers: t9 s3 s4 ra s5 
+Register dependencies:
+Memory Read: gp Value: 0xffff8024
+Var Read: a0
+Var Read: a1
+Var Read: a2
+
+Gadget 0x403aac
+Stack change: 0x0
+Changed registers: s3 s4 ra s5 
+Register dependencies:
+Var Read: a0
+Var Read: a1
+Var Read: a2
+
+Gadget 0x403ab0
+Stack change: 0x0
+Changed registers: s4 ra s5 
+Register dependencies:
+Var Read: a1
+Var Read: a2
+
+Gadget 0x403ab4
+Stack change: 0x0
+Changed registers: ra s5 
+Register dependencies:
+Var Read: a2
+
+Gadget 0x403ae4
+Stack change: 0x0
+Changed registers: s0 a0 a1 ra a2 
+Register dependencies:
+Var Read: s0
+Var Read: s3
+Var Read: s4
+Var Read: s5
+
+Gadget 0x403ae8
+Stack change: 0x0
+Changed registers: a0 a1 ra a2 
+Register dependencies:
+Var Read: s3
+Var Read: s4
+Var Read: s5
+
+Gadget 0x403aec
+Stack change: 0x0
+Changed registers: a1 ra a2 
+Register dependencies:
+Var Read: s4
+Var Read: s5
+
+Gadget 0x403af0
+Stack change: 0x0
+Changed registers: ra a2 
+Register dependencies:
+Var Read: s5
+
+Gadget 0x403b50
+Stack change: 0x0
+Changed registers: s0 s1 ra 
+Register dependencies:
+Var Read: s0
+Var write: s0 Initial value: 0x1 New Value: 0x413ffc
+
+Gadget 0x403b54
+Stack change: 0x0
+Changed registers: s0 s1 ra 
+Register dependencies:
+Var Read: s0
+Var write: s0 Initial value: 0x413ffc New Value: 0x417ff8
+
+Gadget 0x403b58
+Stack change: 0x0
+Changed registers: s1 ra s0 
+Register dependencies:
+Var Read: s0
+
+Gadget 0x403b5c
+Stack change: 0x0
+Changed registers: ra s0 
+Register dependencies:
+Var Read: s0
+
+Gadget 0x403b8c
+Stack change: 0x0
+Changed registers: at t9 t7 ra t8 
+Register dependencies:
+Var Read: at
+Memory Read: gp Value: 0xffff8010
+Var Read: ra
+
+Gadget 0x403b90
+Stack change: 0x0
+Changed registers: t9 t7 ra t8 
+Register dependencies:
+Memory Read: gp Value: 0xffff8010
+Var Read: ra
+
+Gadget 0x403b94
+Stack change: 0x0
+Changed registers: t7 ra t8 
+Register dependencies:
+Var Read: ra
+
+Gadget 0x403b98
+Stack change: 0x0
+Changed registers: ra t8 
+Register dependencies:
+
+EOF
+RUN
+
+NAME=/Ck constraint filtering
+FILE=bins/elf/analysis/crackmips
+CMDS=<<EOF
+echo ===testing reg=reg===
+/Ck t7=ra
+echo ===testing reg=reg OP reg===
+/Ck v1=s2+v1
+echo ===testing compound operator===
+/Ck s0+=-4
+EOF
+EXPECT=<<EOF
+===testing reg=reg===
+  0x0040082c           23c01c03  subu t8, t8, gp
+  0x00400830           2178e003  move t7, ra
+  0x00400834           82c01800  srl t8, t8, 2
+  0x00400838           09f82003  jalr t9
+  0x0040083c           feff1827  addiu t8, t8, -2
+Gadget size: 20
+
+  0x00400830           2178e003  move t7, ra
+  0x00400834           82c01800  srl t8, t8, 2
+  0x00400838           09f82003  jalr t9
+  0x0040083c           feff1827  addiu t8, t8, -2
+Gadget size: 16
+
+  0x00403b8c           25082000  move at, at
+  0x00403b90           1080998f  lw t9, -0x7ff0(gp)
+  0x00403b94           2178e003  move t7, ra
+  0x00403b98           09f82003  jalr t9
+  0x00403b9c           19001824  addiu t8, zero, 0x19
+Gadget size: 20
+
+  0x00403b90           1080998f  lw t9, -0x7ff0(gp)
+  0x00403b94           2178e003  move t7, ra
+  0x00403b98           09f82003  jalr t9
+  0x00403b9c           19001824  addiu t8, zero, 0x19
+Gadget size: 16
+
+  0x00403b94           2178e003  move t7, ra
+  0x00403b98           09f82003  jalr t9
+  0x00403b9c           19001824  addiu t8, zero, 0x19
+Gadget size: 12
+
+===testing reg=reg OP reg===
+  0x004009e4           80180200  sll v1, v0, 2
+  0x004009e8           21184302  addu v1, s2, v1
+  0x004009ec           0000798c  lw t9, 0(v1)
+  0x004009f0           09f82003  jalr t9
+  0x004009f4           b45402ae  sw v0, 0x54b4(s0)
+Gadget size: 20
+
+  0x004009e8           21184302  addu v1, s2, v1
+  0x004009ec           0000798c  lw t9, 0(v1)
+  0x004009f0           09f82003  jalr t9
+  0x004009f4           b45402ae  sw v0, 0x54b4(s0)
+Gadget size: 16
+
+===testing compound operator===
+  0x00403ae4           01001026  addiu s0, s0, 1
+  0x00403ae8           21206002  move a0, s3
+  0x00403aec           21288002  move a1, s4
+  0x00403af0           09f82003  jalr t9
+  0x00403af4           2130a002  move a2, s5
+Gadget size: 20
+
+  0x00403b50           4100103c  lui s0, 0x41
+  0x00403b54           00401026  addiu s0, s0, 0x4000
+  0x00403b58           ffff1124  addiu s1, zero, -1
+  0x00403b5c           09f82003  jalr t9
+  0x00403b60           fcff1026  addiu s0, s0, -4
+Gadget size: 20
+
+  0x00403b54           00401026  addiu s0, s0, 0x4000
+  0x00403b58           ffff1124  addiu s1, zero, -1
+  0x00403b5c           09f82003  jalr t9
+  0x00403b60           fcff1026  addiu s0, s0, -4
+Gadget size: 16
+
+  0x00403b58           ffff1124  addiu s1, zero, -1
+  0x00403b5c           09f82003  jalr t9
+  0x00403b60           fcff1026  addiu s0, s0, -4
+Gadget size: 12
+
+  0x00403b5c           09f82003  jalr t9
+  0x00403b60           fcff1026  addiu s0, s0, -4
+Gadget size: 8
+
+EOF
+RUN
+
+NAME=/Cgl test
+FILE=bins/elf/analysis/crackmips
+CMDS=<<EOF
+/Cgl
+EOF
+EXPECT=<<EOF
+Gadget 0x400308 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400308  09000000         jr zero         | Stack change: 0x0
+  0x0040030c  18000000         mult zero, zero | Modified regs: ra hi lo
+
+Gadget 0x4007c4 (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004007c4  25082000         move at, at        | Stack change: 0x0
+  0x004007c8  3480998f         lw t9, -0x7fcc(gp) | Modified regs: at t9 ra
+  0x004007cc  25082000         move at, at        | Dependencies:  at gp at at
+  0x004007d0  09f82003         jalr t9            | 
+  0x004007d4  25082000         move at, at        | 
+
+Gadget 0x4007c8 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004007c8  3480998f         lw t9, -0x7fcc(gp) | Stack change: 0x0
+  0x004007cc  25082000         move at, at        | Modified regs: t9 at ra
+  0x004007d0  09f82003         jalr t9            | Dependencies:  gp at at
+  0x004007d4  25082000         move at, at        | 
+
+Gadget 0x4007cc (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004007cc  25082000         move at, at | Stack change: 0x0
+  0x004007d0  09f82003         jalr t9     | Modified regs: at ra
+  0x004007d4  25082000         move at, at | Dependencies:  at at
+
+Gadget 0x4007d0 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004007d0  09f82003         jalr t9     | Stack change: 0x0
+  0x004007d4  25082000         move at, at | Modified regs: ra at
+
+Gadget 0x40082c (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0040082c  23c01c03         subu t8, t8, gp  | Stack change: 0x0
+  0x00400830  2178e003         move t7, ra      | Modified regs: t8 t7 ra
+  0x00400834  82c01800         srl t8, t8, 2    | Dependencies:  gp t8 ra t8 t8
+  0x00400838  09f82003         jalr t9          | 
+  0x0040083c  feff1827         addiu t8, t8, -2 | 
+
+Gadget 0x400830 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400830  2178e003         move t7, ra      | Stack change: 0x0
+  0x00400834  82c01800         srl t8, t8, 2    | Modified regs: t7 t8 ra
+  0x00400838  09f82003         jalr t9          | Dependencies:  ra t8 t8
+  0x0040083c  feff1827         addiu t8, t8, -2 | 
+
+Gadget 0x400834 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400834  82c01800         srl t8, t8, 2    | Stack change: 0x0
+  0x00400838  09f82003         jalr t9          | Modified regs: t8 ra
+  0x0040083c  feff1827         addiu t8, t8, -2 | Dependencies:  t8 t8
+
+Gadget 0x400838 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400838  09f82003         jalr t9          | Stack change: 0x0
+  0x0040083c  feff1827         addiu t8, t8, -2 | Modified regs: ra t8
+
+Gadget 0x400974 (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400974  1800bdaf         sw sp, 0x18(sp)    | Stack change: 0x0
+  0x00400978  3080998f         lw t9, -0x7fd0(gp) | Modified regs: t9 at ra
+  0x0040097c  25082000         move at, at        | Dependencies:  sp sp gp at at
+  0x00400980  09f82003         jalr t9            | 
+  0x00400984  25082000         move at, at        | 
+
+Gadget 0x400978 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00400978  3080998f         lw t9, -0x7fd0(gp) | Stack change: 0x0
+  0x0040097c  25082000         move at, at        | Modified regs: t9 at ra
+  0x00400980  09f82003         jalr t9            | Dependencies:  gp at at
+  0x00400984  25082000         move at, at        | 
+
+Gadget 0x4009e4 (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004009e4  80180200         sll v1, v0, 2     | Stack change: 0x0
+  0x004009e8  21184302         addu v1, s2, v1   | Modified regs: v1 t9 ra
+  0x004009ec  0000798c         lw t9, 0(v1)      | Dependencies:  v0 v1 s2 v1 s0
+  0x004009f0  09f82003         jalr t9           | 
+  0x004009f4  b45402ae         sw v0, 0x54b4(s0) | 
+
+Gadget 0x4009e8 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004009e8  21184302         addu v1, s2, v1   | Stack change: 0x0
+  0x004009ec  0000798c         lw t9, 0(v1)      | Modified regs: v1 t9 ra
+  0x004009f0  09f82003         jalr t9           | Dependencies:  v1 s2 v1 v0 s0
+  0x004009f4  b45402ae         sw v0, 0x54b4(s0) | 
+
+Gadget 0x4009ec (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004009ec  0000798c         lw t9, 0(v1)      | Stack change: 0x0
+  0x004009f0  09f82003         jalr t9           | Modified regs: t9 ra
+  0x004009f4  b45402ae         sw v0, 0x54b4(s0) | Dependencies:  v1 v0 s0
+
+Gadget 0x4009f0 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x004009f0  09f82003         jalr t9           | Stack change: 0x0
+  0x004009f4  b45402ae         sw v0, 0x54b4(s0) | Modified regs: ra
+
+Gadget 0x403aa8 (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00403aa8  2480998f         lw t9, -0x7fdc(gp) | Stack change: 0x0
+  0x00403aac  21988000         move s3, a0        | Modified regs: t9 s3 s4 ra s5
+  0x00403ab0  21a0a000         move s4, a1        | Dependencies:  gp a0 a1 a2
+  0x00403ab4  09f82003         jalr t9            | 
+  0x00403ab8  21a8c000         move s5, a2        | 
+
+Gadget 0x403aac (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00403aac  21988000         move s3, a0 | Stack change: 0x0
+  0x00403ab0  21a0a000         move s4, a1 | Modified regs: s3 s4 ra s5
+  0x00403ab4  09f82003         jalr t9     | Dependencies:  a0 a1 a2
+  0x00403ab8  21a8c000         move s5, a2 | 
+
+Gadget 0x403ab0 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00403ab0  21a0a000         move s4, a1 | Stack change: 0x0
+  0x00403ab4  09f82003         jalr t9     | Modified regs: s4 ra s5
+  0x00403ab8  21a8c000         move s5, a2 | Dependencies:  a1 a2
+
+Gadget 0x403ab4 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00403ab4  09f82003         jalr t9     | Stack change: 0x0
+  0x00403ab8  21a8c000         move s5, a2 | Modified regs: ra s5
+
+Gadget 0x403ae4 (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00403ae4  01001026         addiu s0, s0, 1 | Stack change: 0x0
+  0x00403ae8  21206002         move a0, s3     | Modified regs: s0 a0 a1 ra a2
+  0x00403aec  21288002         move a1, s4     | Dependencies:  s0 s3 s4 s5
+  0x00403af0  09f82003         jalr t9         | 
+  0x00403af4  2130a002         move a2, s5     | 
+
+Gadget 0x403ae8 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00403ae8  21206002         move a0, s3 | Stack change: 0x0
+  0x00403aec  21288002         move a1, s4 | Modified regs: a0 a1 ra a2
+  0x00403af0  09f82003         jalr t9     | Dependencies:  s3 s4 s5
+  0x00403af4  2130a002         move a2, s5 | 
+
+Gadget 0x403aec (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00403aec  21288002         move a1, s4 | Stack change: 0x0
+  0x00403af0  09f82003         jalr t9     | Modified regs: a1 ra a2
+  0x00403af4  2130a002         move a2, s5 | Dependencies:  s4 s5
+
+Gadget 0x403af0 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00403af0  09f82003         jalr t9     | Stack change: 0x0
+  0x00403af4  2130a002         move a2, s5 | Modified regs: ra a2
+
+Gadget 0x403b50 (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00403b50  4100103c         lui s0, 0x41         | Stack change: 0x0
+  0x00403b54  00401026         addiu s0, s0, 0x4000 | Modified regs: s0 s1 ra
+  0x00403b58  ffff1124         addiu s1, zero, -1   | Dependencies:  s0 s0
+  0x00403b5c  09f82003         jalr t9              | 
+  0x00403b60  fcff1026         addiu s0, s0, -4     | 
+
+Gadget 0x403b54 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00403b54  00401026         addiu s0, s0, 0x4000 | Stack change: 0x0
+  0x00403b58  ffff1124         addiu s1, zero, -1   | Modified regs: s0 s1 ra
+  0x00403b5c  09f82003         jalr t9              | Dependencies:  s0 s0
+  0x00403b60  fcff1026         addiu s0, s0, -4     | 
+
+Gadget 0x403b58 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00403b58  ffff1124         addiu s1, zero, -1 | Stack change: 0x0
+  0x00403b5c  09f82003         jalr t9            | Modified regs: s1 ra s0
+  0x00403b60  fcff1026         addiu s0, s0, -4   | Dependencies:  s0
+
+Gadget 0x403b5c (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00403b5c  09f82003         jalr t9          | Stack change: 0x0
+  0x00403b60  fcff1026         addiu s0, s0, -4 | Modified regs: ra s0
+
+Gadget 0x403b8c (size 20 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00403b8c  25082000         move at, at          | Stack change: 0x0
+  0x00403b90  1080998f         lw t9, -0x7ff0(gp)   | Modified regs: at t9 t7 ra t8
+  0x00403b94  2178e003         move t7, ra          | Dependencies:  at gp ra
+  0x00403b98  09f82003         jalr t9              | 
+  0x00403b9c  19001824         addiu t8, zero, 0x19 | 
+
+Gadget 0x403b90 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00403b90  1080998f         lw t9, -0x7ff0(gp)   | Stack change: 0x0
+  0x00403b94  2178e003         move t7, ra          | Modified regs: t9 t7 ra t8
+  0x00403b98  09f82003         jalr t9              | Dependencies:  gp ra
+  0x00403b9c  19001824         addiu t8, zero, 0x19 | 
+
+Gadget 0x403b94 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00403b94  2178e003         move t7, ra          | Stack change: 0x0
+  0x00403b98  09f82003         jalr t9              | Modified regs: t7 ra t8
+  0x00403b9c  19001824         addiu t8, zero, 0x19 | Dependencies:  ra
+
+Gadget 0x403b98 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x00403b98  09f82003         jalr t9              | Stack change: 0x0
+  0x00403b9c  19001824         addiu t8, zero, 0x19 | Modified regs: ra t8
+
+EOF
+RUN

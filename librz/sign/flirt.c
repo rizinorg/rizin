@@ -360,7 +360,7 @@ static bool try_rename_function(RzAnalysis *analysis, RzAnalysisFunction *fcn, c
 	if (fcn->type == RZ_ANALYSIS_FCN_TYPE_SYM) {
 		// do not rename if is a symbol but check if
 		// another function has the same name
-		return ht_sp_find(analysis->ht_name_fun, name, NULL) == NULL;
+		return !rz_analysis_function_exists_with_name(analysis, name);
 	}
 	return rz_analysis_function_rename(fcn, name);
 }
@@ -382,6 +382,7 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 	RzListIter *it = NULL;
 	RzFlirtTailByte *tail_byte = NULL;
 	ut32 name_index = 0;
+	RzFlagBind *flb = rz_analysis_get_flag_bind(analysis);
 
 	if (!check_crc16(module, b, buf_size)) {
 		return false;
@@ -412,7 +413,7 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 			ut64 flirt_fcn_size = module->length - flirt_func->offset;
 			RzFlirtFunction *next_flirt_func;
 			RzListIter *next_it;
-			rz_list_foreach_iter(rz_list_iter_get_next(it), next_it, next_flirt_func) {
+			rz_list_foreach_iter(rz_list_next(it), next_it, next_flirt_func) {
 				if (!next_flirt_func->is_local && !next_flirt_func->negative_offset) {
 					flirt_fcn_size = next_flirt_func->offset - flirt_func->offset;
 					break;
@@ -421,10 +422,11 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 			// resize function if needed
 			next_module_function_size = rz_analysis_function_linear_size(next_module_function);
 			if (next_module_function_size < flirt_fcn_size) {
+				RzList *fcns = rz_analysis_function_list(analysis);
 				RzListIter *iter;
 				RzListIter *iter_tmp;
 				RzAnalysisFunction *fcn;
-				rz_list_foreach_safe (analysis->fcns, iter, iter_tmp, fcn) {
+				rz_list_foreach_safe (fcns, iter, iter_tmp, fcn) {
 					if (fcn != next_module_function &&
 						fcn->addr >= next_module_function->addr + next_module_function_size &&
 						fcn->addr < next_module_function->addr + flirt_fcn_size) {
@@ -464,13 +466,13 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 			}
 
 			// remove old flag
-			RzFlagItem *fit = analysis->flb.get_at_by_spaces(analysis->flb.f, next_module_function->addr, "fcn.", "func.", NULL);
+			RzFlagItem *fit = flb->get_at_by_spaces(flb->f, next_module_function->addr, "fcn.", "func.", NULL);
 			if (fit) {
-				analysis->flb.unset(analysis->flb.f, fit);
+				flb->unset(flb->f, fit);
 			}
 
 			// set new flag
-			analysis->flb.set(analysis->flb.f, name, next_module_function->addr, next_module_function_size);
+			flb->set(flb->f, name, next_module_function->addr, next_module_function_size);
 			RZ_LOG_DEBUG("FLIRT: Found %s\n", next_module_function->name);
 			free(name);
 		}
@@ -513,15 +515,18 @@ static int node_match_buffer(RzAnalysis *analysis, const RzFlirtNode *node, ut8 
 static bool node_match_functions(RzAnalysis *analysis, const RzFlirtNode *root_node) {
 	bool ret = true;
 
-	if (rz_list_length(analysis->fcns) == 0) {
+	if (rz_analysis_function_list_size(analysis) < 1) {
 		RZ_LOG_ERROR("FLIRT: There are no analyzed functions. Have you run 'aa'?\n");
 		return ret;
 	}
+	RzListIter *it_func = NULL;
+	RzAnalysisFunction *func = NULL;
+	RzList *fcns = rz_analysis_function_list(analysis);
+	RzIOBind *iob = rz_analysis_get_io_bind(analysis);
+	RzFlagBind *flb = rz_analysis_get_flag_bind(analysis);
 
-	analysis->flb.push_fs(analysis->flb.f, "flirt");
-	RzListIter *it_func;
-	RzAnalysisFunction *func;
-	rz_list_foreach (analysis->fcns, it_func, func) {
+	flb->push_fs(flb->f, "flirt");
+	rz_list_foreach (fcns, it_func, func) {
 		if (func->name && !strncmp(func->name, "flirt.", strlen("flirt."))) {
 			continue;
 		}
@@ -533,7 +538,7 @@ static bool node_match_functions(RzAnalysis *analysis, const RzFlirtNode *root_n
 			ret = false;
 			break;
 		}
-		if (!analysis->iob.read_at(analysis->iob.io, func->addr, func_buf, (int)func_size)) {
+		if (!iob->read_at(iob->io, func->addr, func_buf, (int)func_size)) {
 			RZ_LOG_ERROR("FLIRT: Couldn't read function %s at 0x%" PFMT64x "\n", func->name, func->addr);
 			RZ_FREE(func_buf);
 			ret = false;
@@ -548,7 +553,7 @@ static bool node_match_functions(RzAnalysis *analysis, const RzFlirtNode *root_n
 		}
 		RZ_FREE(func_buf);
 	}
-	analysis->flb.pop_fs(analysis->flb.f);
+	flb->pop_fs(flb->f);
 
 	return ret;
 }
@@ -887,7 +892,7 @@ static bool read_node_variant_mask(RzFlirtNode *node, ParseStatus *b) {
 		}
 	}
 
-	sig_dbg("dbg: variant_mask %08llx\n", node->variant_mask);
+	sig_dbg("dbg: variant_mask %08" PFMT64x "\n", node->variant_mask);
 	return true;
 }
 
@@ -1326,7 +1331,7 @@ RZ_API bool rz_sign_flirt_apply(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL cons
 		return false;
 	}
 
-	if (!(flirt_buf = rz_buf_new_slurp(flirt_file))) {
+	if (!(flirt_buf = rz_buf_new_file(flirt_file, O_RDONLY, 0))) {
 		RZ_LOG_ERROR("FLIRT: Can't open %s\n", flirt_file);
 		return false;
 	}
@@ -1545,7 +1550,7 @@ static bool flirt_write_node(RZ_NONNULL const RzFlirtNode *node, RZ_NONNULL RzBu
 		// leaf
 		ut8 flags = 0;
 
-		RzFlirtModule *last = rz_list_last(node->module_list);
+		RzFlirtModule *last = rz_list_last_val(node->module_list);
 		rz_list_foreach (node->module_list, it, module) {
 			bool already_found = !(flags & IDASIG_PARSE_MORE_MODULES_WITH_SAME_CRC);
 			if (last != module) {

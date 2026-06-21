@@ -590,10 +590,10 @@ bool pic_highend_disasm_op(PicHighendOp *op, ut64 addr, const ut8 *buff, ut64 le
 	return true;
 }
 
-int pic_highend_disassemble(RzAsm *a, RzAsmOp *asm_op, const ut8 *b, int blen) {
+int pic_highend_disassemble(RzAsmOp *asm_op, ut64 addr, const ut8 *b, int blen) {
 	asm_op->size = 2;
 	PicHighendOp op = { 0 };
-	if (!pic_highend_disasm_op(&op, a->pc, b, blen) ||
+	if (!pic_highend_disasm_op(&op, addr, b, blen) ||
 		op.code == PIC_HIGHEND_OPCODE_INVALID) {
 		rz_asm_op_set_asm(asm_op, "invalid");
 		return -1;

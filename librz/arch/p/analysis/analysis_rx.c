@@ -376,6 +376,23 @@ static char *analysis_rx_reg_profile(RzAnalysis *analysis) {
 	return rz_str_dup(p);
 }
 
+static int analysis_rx_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		return 1;
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		return 8;
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		/* fall-thru */
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 1;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
+	}
+}
+
 RzAnalysisPlugin rz_analysis_plugin_rx = {
 	.name = "rx",
 	.arch = "rx",
@@ -383,5 +400,6 @@ RzAnalysisPlugin rz_analysis_plugin_rx = {
 	.license = "LGPL3",
 	.bits = 32,
 	.op = &analysis_rx_op,
+	.archinfo = analysis_rx_archinfo,
 	.get_reg_profile = &analysis_rx_reg_profile,
 };

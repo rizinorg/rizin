@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: 2009-2018 thestr4ng3r <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_analysis.h"
+#include "analysis_private.h"
 
 RZ_API char *rz_analysis_rtti_demangle_class_name(RzAnalysis *analysis, const char *name) {
 	RVTableContext context;
@@ -85,18 +85,30 @@ RZ_API void rz_analysis_rtti_print_all(RzAnalysis *analysis, RzOutputMode mode) 
 }
 
 RZ_API void rz_analysis_rtti_recover_all(RzAnalysis *analysis) {
-	RVTableContext context;
-	rz_analysis_vtable_begin(analysis, &context);
-
-	rz_cons_break_push(NULL, NULL);
-	RzList *vtables = rz_analysis_vtable_search(&context);
-	if (vtables) {
-		if (context.abi == RZ_ANALYSIS_CPP_ABI_MSVC) {
-			rz_analysis_rtti_msvc_recover_all(&context, vtables);
-		} else {
-			rz_analysis_rtti_itanium_recover_all(&context, vtables);
-		}
+	RzBinObject *bin_obj = rz_bin_cur_object(analysis->binb.bin);
+	if (!bin_obj) {
+		return;
 	}
-	rz_list_free(vtables);
-	rz_cons_break_pop();
+	switch (bin_obj->lang) {
+	case RZ_BIN_LANGUAGE_SWIFT:
+		rz_analysis_rtti_swift(analysis);
+		break;
+	default: {
+		RVTableContext context;
+		rz_analysis_vtable_begin(analysis, &context);
+
+		rz_cons_break_push(NULL, NULL);
+		RzList *vtables = rz_analysis_vtable_search(&context);
+		if (vtables) {
+			if (context.abi == RZ_ANALYSIS_CPP_ABI_MSVC) {
+				rz_analysis_rtti_msvc_recover_all(&context, vtables);
+			} else {
+				rz_analysis_rtti_itanium_recover_all(&context, vtables);
+			}
+			rz_analysis_no_rtti_analysis(&context, vtables);
+		}
+		rz_list_free(vtables);
+		rz_cons_break_pop();
+	}
+	}
 }

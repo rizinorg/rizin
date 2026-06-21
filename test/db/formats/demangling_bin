@@ -1,6 +1,9 @@
 NAME=binsym demangling
 FILE=bins/mach0/hellocxx-osx-i386
-CMDS=!rz-bin -qsD c++ all bins/mach0/hellocxx-osx-i386
+CMDS=<<EOF
+e bin.demangle=true
+isq
+EOF
 EXPECT=<<EOF
 0x00002054 0 _NXArgc
 0x00002058 0 _NXArgv
@@ -22,16 +25,28 @@ EXPECT=<<EOF
 0x00001dfa 0 imp.std::ostream::operator<<(std::ostream& (*)(std::ostream&))
 0x00001e00 0 imp.std::ios_base::Init::Init()
 0x00001e06 0 imp.std::ios_base::Init::~Init()
-0x00001e12 0 imp.std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*)
+0x00001e12 0 imp.std::basic_ostream<char, std::char_traits<char>>& std::operator<<<std::char_traits<char>>(std::basic_ostream<char, std::char_traits<char>>&, char const*)
 0x00001e18 0 imp.__cxa_atexit
 0x00001e1e 0 imp.exit
 EOF
 RUN
 
-NAME=binsym without demangling
+NAME=binsym without demangling and simplified demangling in session
 FILE=bins/mach0/hellocxx-osx-i386
-ARGS=-M
-CMDS=isq
+ARGS=-M -e bin.demangle=true
+CMDS=<<EOF
+e bin.demangle=false
+isq
+echo ---
+e bin.demangle=true
+isq~std:
+e bin.demangle.flags=simplify
+echo ---
+isq~std:
+e bin.demangle=false
+echo ---
+isq~_Z
+EOF
 EXPECT=<<EOF
 0x00002054 0 _NXArgc
 0x00002058 0 _NXArgv
@@ -56,6 +71,55 @@ EXPECT=<<EOF
 0x00001e12 0 imp._ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc
 0x00001e18 0 imp.__cxa_atexit
 0x00001e1e 0 imp.exit
+---
+0x00001d9a 0 unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&)
+0x00001c4e 0 std::__verify_grouping(char const*, unsigned long, std::string const&)
+0x00002064 0 std::__ioinit
+0x00001dee 0 imp.std::string::size() const
+0x00001df4 0 imp.std::string::operator[](unsigned long) const
+0x00001dfa 0 imp.std::ostream::operator<<(std::ostream& (*)(std::ostream&))
+0x00001e00 0 imp.std::ios_base::Init::Init()
+0x00001e06 0 imp.std::ios_base::Init::~Init()
+0x00001e12 0 imp.std::basic_ostream<char, std::char_traits<char>>& std::operator<<<std::char_traits<char>>(std::basic_ostream<char, std::char_traits<char>>&, char const*)
+---
+0x00001d9a 0 unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&)
+0x00001c4e 0 std::__verify_grouping(char const*, unsigned long, std::string const&)
+0x00002064 0 std::__ioinit
+0x00001dee 0 imp.std::string::size() const
+0x00001df4 0 imp.std::string::operator[](unsigned long) const
+0x00001dfa 0 imp.std::ostream::operator<<(std::ostream& (*)(std::ostream&))
+0x00001e00 0 imp.std::ios_base::Init::Init()
+0x00001e06 0 imp.std::ios_base::Init::~Init()
+0x00001e12 0 imp.std::ostream& std::operator<<<std::char_traits<char>>(std::ostream&, char const*)
+---
+0x00001d9a 0 __ZSt3minImERKT_S2_S2_
+0x00001ba0 0 __Z41__static_initialization_and_destruction_0ii
+0x00001c4e 0 __ZStL17__verify_groupingPKcmRKSs
+0x00002064 0 __ZStL8__ioinit
+0x00001dee 0 imp._ZNKSs4sizeEv
+0x00001df4 0 imp._ZNKSsixEm
+0x00001dfa 0 imp._ZNSolsEPFRSoS_E
+0x00001e00 0 imp._ZNSt8ios_base4InitC1Ev
+0x00001e06 0 imp._ZNSt8ios_base4InitD1Ev
+0x00001e12 0 imp._ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc
+EOF
+RUN
+
+NAME=demangle c++ but simplified before the session.
+FILE=bins/mach0/hellocxx-osx-i386
+ARGS=-e bin.demangle.flags=simplify
+CMDS=<<EOF
+ic
+EOF
+EXPECT=<<EOF
+   address        min        max name                     super 
+----------------------------------------------------------------
+---------- 0x00001c4e 0x00001c4e std                      
+---------- 0x00001e00 0x00001e06 std::ios_base::Init      
+---------- 0x00001dfa 0x00001dfa std::ostream             
+---------- 0x00001e12 ---------- std::ostream& std        
+---------- 0x00001dee 0x00001df4 std::string              
+---------- 0x00001d9a 0x00001d9a unsigned long const& std 
 EOF
 RUN
 
@@ -112,18 +176,17 @@ sym.imp.MSVCP100.dll_public:_void___thiscall_std::basic_ostream_char__struct_std
 EOF
 RUN
 
-NAME=C++ demangle relocs
+NAME=C++ demangle relocs and exported GLIBCXX symbols
 FILE=bins/elf/libstdc++.so.6
-CMDS=e asm.bytes=true;pd 1 @ 0x00091004;
+CMDS=<<EOF
+e asm.bytes=true
+pd 1 @ 0x00091004
+echo ---
+iE~0x0008ce50
+EOF
 EXPECT=<<EOF
             0x00091004      488b159d880f.  mov   rdx, qword [reloc.vtable_for_std::bad_alloc] ; new:57 ; [0x1898a8:8]=0x180d28 obj.vtable_for_std::bad_alloc ; "(\r\U00000018"
-EOF
-RUN
-
-NAME=C++ demangle exported GLIBCXX symbols
-FILE=bins/elf/libstdc++.so.6
-CMDS=iE~0x0008ce50
-EXPECT=<<EOF
+---
 3770 0x0008ce50 0x0008ce50 GLOBAL FUNC  609     std::istream::ignore(long)
 3771 0x0008ce50 0x0008ce50 GLOBAL FUNC  609     std::istream::ignore(long)
 5087 0x0008ce50 0x0008ce50 GLOBAL FUNC  609     std::istream::ignore(long)
@@ -143,16 +206,17 @@ NAME=demangle obj in pd
 FILE=bins/elf/ch25.bin
 CMDS=e asm.bytes=true; pd 1 @ 0x08048aac;
 EXPECT=<<EOF
-            0x08048aac      c7042460b004.  mov   dword [esp], obj.std::cerr ; sym..bss
+            0x08048aac      c7042460b004.  mov   dword [esp], obj.std::cerr ; obj._ZSt4cerr__GLIBCXX_3.4
                                                                        ; [0x804b060:4]=0
 EOF
 RUN
 
-NAME=c++ disasm call demangling
+NAME=c++ disasm call demangling and xref demangling (xref from fcn)
 FILE=bins/elf/abcde-qt32
 CMDS=<<EOF
-e asm.demangle=true
+e asm.var=false
 e asm.bytes=false
+e asm.flags.real=true
 (pd_calls; pd 1 @ 0x0804921a; pd 1 @ 0x08049249; pd 1 @ 0x08049278)
 e asm.cmt.right=true
 .(pd_calls)
@@ -164,51 +228,58 @@ e asm.cmt.right=true
 aa
 .(pd_calls)
 echo
-e asm.demangle=false
+e asm.flags.real=false
 .(pd_calls)
-EOF
-EXPECT=<<EOF
-            0x0804921a      call  sym.__x86.get_pc_thunk.si
-            0x08049249      call  method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
-            0x08049278      call  method.QLabel.QLabel_QString_const___QWidget___QFlags_Qt::WindowType
-
-            0x0804921a      call sym.__x86.get_pc_thunk.si
-            0x08049249      call method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
-            0x08049278      call method.QLabel.QLabel_QString_const___QWidget___QFlags_Qt::WindowType
-
-|           0x0804921a      call  sym.__x86.get_pc_thunk.si
-|           0x08049249      call  method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
-|           0x08049278      call  method.QLabel.QLabel_QString_const___QWidget___QFlags_Qt::WindowType
-
-|           0x0804921a      call  sym.__x86.get_pc_thunk.si
-|           0x08049249      call  method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
-|           0x08049278      call  method.QLabel.QLabel_QString_const___QWidget___QFlags_Qt::WindowType
-EOF
-RUN
-
-NAME=c++ xref demangling (xref from fcn)
-FILE=bins/elf/abcde-qt32
-CMDS=<<EOF
-e asm.var=false
-e asm.bytes=false
-aa
+echo ---
 s sym.__x86.get_pc_thunk.bx
-e asm.demangle=true
+e asm.flags.real=true
 pd 1
 echo
 agf
 echo
-e asm.demangle=false
+e asm.flags.real=false
 pd 1
 echo
 s 0x08049390
-e asm.demangle=true
+e asm.flags.real=true
 pd 1
 echo
-e asm.demangle=false
+e asm.flags.real=false
 pd 1
 EOF
 EXPECT=<<EOF
+            0x0804921a      call  __x86.get_pc_thunk.si
+            0x08049249      call  QFlags<Qt::WindowType>::QFlags(int QFlags<Qt::WindowType>::Private::*)
+            0x08049278      call  imp.QLabel::QLabel(QString const&, QWidget*, QFlags<Qt::WindowType>)
+
+            0x0804921a      call __x86.get_pc_thunk.si
+            0x08049249      call QFlags<Qt::WindowType>::QFlags(int QFlags<Qt::WindowType>::Private::*)
+            0x08049278      call imp.QLabel::QLabel(QString const&, QWidget*, QFlags<Qt::WindowType>)
+
+|           0x0804921a      call  __x86.get_pc_thunk.si
+|           0x08049249      call  QFlags<Qt::WindowType>::QFlags(int QFlags<Qt::WindowType>::Private::*)
+|           0x08049278      call  imp.QLabel::QLabel(QString const&, QWidget*, QFlags<Qt::WindowType>)
+
+|           0x0804921a      call  sym.__x86.get_pc_thunk.si
+|           0x08049249      call  method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
+|           0x08049278      call  method.QLabel.QLabel_QString_const___QWidget___QFlags_Qt::WindowType
+---
+            ; CALL XREF from _init @ 0x8049008
+            ; CALL XREF from QtPrivate::RefCount::deref() @ 0x8049349
+            ; CALL XREF from QString::QString(char const*) @ 0x804939d
+            ; CALL XREF from QString::~QString() @ 0x80493e5
+            ; CALL XREF from _fini @ 0x80495d4
+/ __x86.get_pc_thunk.bx();
+|           0x08049140      mov   ebx, dword [esp]
+
+.--------------------------.
+|  0x8049140               |
+|   ; XREFS(5)             |
+| __x86.get_pc_thunk.bx(); |
+| mov ebx, dword [esp]     |
+| ret                      |
+`--------------------------'
+
             ; CALL XREF from sym._init @ 0x8049008
             ; CALL XREF from method.QtPrivate::RefCount.deref @ 0x8049349
             ; CALL XREF from method.QString.QString_char_const @ 0x804939d
@@ -217,23 +288,7 @@ EXPECT=<<EOF
 / sym.__x86.get_pc_thunk.bx();
 |           0x08049140      mov   ebx, dword [esp]
 
-.------------------------------.
-|  0x8049140                   |
-|   ; XREFS(5)                 |
-| sym.__x86.get_pc_thunk.bx(); |
-| mov ebx, dword [esp]         |
-| ret                          |
-`------------------------------'
-
-            ; CALL XREF from sym._init @ 0x8049008
-            ; CALL XREF from method.QtPrivate::RefCount.deref @ 0x8049349
-            ; CALL XREF from method.QString.QString_char_const @ 0x804939d
-            ; CALL XREF from method.QString._QString @ 0x80493e5
-            ; CALL XREF from sym._fini @ 0x80495d4
-/ sym.__x86.get_pc_thunk.bx();
-|           0x08049140      mov   ebx, dword [esp]
-
-|           ; CODE XREFS from method.QtPrivate::RefCount.deref @ 0x8049371, 0x804937e
+|           ; CODE XREFS from QtPrivate::RefCount::deref() @ 0x8049371, 0x804937e
 |           0x08049390      mov   ebx, dword [var_8h]
 
 |           ; CODE XREFS from method.QtPrivate::RefCount.deref @ 0x8049371, 0x804937e
@@ -247,26 +302,26 @@ CMDS=<<EOF
 e asm.var=false
 e asm.bytes=false
 aaa
-e asm.demangle=true
+e asm.flags.real=true
 pd 1 @ sym.imp._Unwind_Resume
 echo
-e asm.demangle=false
+e asm.flags.real=false
 pd 1 @ sym.imp._Unwind_Resume
 EOF
 EXPECT=<<EOF
             ; CALL XREF from main @ +0x222
             ; CALL XREF from fcn.00001717 @ +0xbb
-            ; CALL XREF from sym.std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::basic_string_char___void__char___char___std::allocator_char__const @ +0x66
-            ; CALL XREF from sym.void_std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::_M_construct_char___char___char___std::forward_iterator_tag @ +0x116
-/ sym.imp._Unwind_Resume();
-\           0x00000f10      jmp   dword [ebx + 0x70]
+            ; CALL XREF from std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>::basic_string<char*, void>(char*, char*, std::allocator<char> const&) @ +0x66
+            ; CALL XREF from void std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>::_M_construct<char*>(char*, char*, std::forward_iterator_tag) @ +0x116
+/ _Unwind_Resume();
+\           0x00000f10      jmp   dword [ebx+0x70]
 
             ; CALL XREF from main @ +0x222
             ; CALL XREF from fcn.00001717 @ +0xbb
-            ; CALL XREF from sym.std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::basic_string_char___void__char___char___std::allocator_char__const @ +0x66
-            ; CALL XREF from sym.void_std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::_M_construct_char___char___char___std::forward_iterator_tag @ +0x116
+            ; CALL XREF from sym.std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char__::basic_string_char___void__char___char___std::allocator_char__const @ +0x66
+            ; CALL XREF from sym.void_std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char__::_M_construct_char___char___char___std::forward_iterator_tag @ +0x116
 / sym.imp._Unwind_Resume();
-\           0x00000f10      jmp   dword [ebx + 0x70]
+\           0x00000f10      jmp   dword [ebx+0x70]
 EOF
 RUN
 
@@ -473,68 +528,5 @@ BROKEN=1
 CMDS=isq~0x004009e0
 EXPECT=<<EOF
 0x004009e0 16 Swift.String.init (_builtinStringLiteral(Builtin.RawPointer byteSize__Builtin.Word isASCII__Builtin.Int1 _) -> String
-EOF
-RUN
-
-NAME=demangle c++ but simplified in session.
-FILE=bins/mach0/hellocxx-osx-i386
-CMDS=<<EOF
-isq~std:
-e bin.demangle.flags=simplify
-echo ====================
-isq~std:
-e bin.demangle=false
-echo ====================
-isq~_Z
-EOF
-EXPECT=<<EOF
-0x00001d9a 0 unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&)
-0x00001c4e 0 std::__verify_grouping(char const*, unsigned long, std::string const&)
-0x00002064 0 std::__ioinit
-0x00001dee 0 imp.std::string::size() const
-0x00001df4 0 imp.std::string::operator[](unsigned long) const
-0x00001dfa 0 imp.std::ostream::operator<<(std::ostream& (*)(std::ostream&))
-0x00001e00 0 imp.std::ios_base::Init::Init()
-0x00001e06 0 imp.std::ios_base::Init::~Init()
-0x00001e12 0 imp.std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*)
-====================
-0x00001d9a 0 unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&)
-0x00001c4e 0 std::__verify_grouping(char const*, unsigned long, std::string const&)
-0x00002064 0 std::__ioinit
-0x00001dee 0 imp.std::string::size() const
-0x00001df4 0 imp.std::string::operator[](unsigned long) const
-0x00001dfa 0 imp.std::ostream::operator<<(std::ostream& (*)(std::ostream&))
-0x00001e00 0 imp.std::ios_base::Init::Init()
-0x00001e06 0 imp.std::ios_base::Init::~Init()
-0x00001e12 0 imp.std::ostream& std::operator<< <std::char_traits<char> >(std::ostream&, char const*)
-====================
-0x00001d9a 0 __ZSt3minImERKT_S2_S2_
-0x00001ba0 0 __Z41__static_initialization_and_destruction_0ii
-0x00001c4e 0 __ZStL17__verify_groupingPKcmRKSs
-0x00002064 0 __ZStL8__ioinit
-0x00001dee 0 imp._ZNKSs4sizeEv
-0x00001df4 0 imp._ZNKSsixEm
-0x00001dfa 0 imp._ZNSolsEPFRSoS_E
-0x00001e00 0 imp._ZNSt8ios_base4InitC1Ev
-0x00001e06 0 imp._ZNSt8ios_base4InitD1Ev
-0x00001e12 0 imp._ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc
-EOF
-RUN
-
-NAME=demangle c++ but simplified before the session.
-FILE=bins/mach0/hellocxx-osx-i386
-ARGS=-e bin.demangle.flags=simplify
-CMDS=<<EOF
-ic
-EOF
-EXPECT=<<EOF
-   address        min        max name                     super 
-----------------------------------------------------------------
----------- 0x00001c4e 0x00001c4e std                      
----------- 0x00001e00 0x00001e06 std::ios_base::Init      
----------- 0x00001dfa 0x00001dfa std::ostream             
----------- 0x00001e12 ---------- std::ostream& std        
----------- 0x00001dee 0x00001df4 std::string              
----------- 0x00001d9a 0x00001d9a unsigned long const& std 
 EOF
 RUN

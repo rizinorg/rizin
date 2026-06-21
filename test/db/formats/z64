@@ -1,25 +1,216 @@
-NAME=z64: Open/iI
+NAME=Nintendo 64
 FILE=bins/z64/demo.z64
-CMDS=iI~?n64
-EXPECT=<<EOF
-1
+CMDS=<<EOF
+ia
+iH
+oml
 EOF
-RUN
-
-NAME=z64: sections
-FILE=bins/z64/demo.z64
-CMDS=iS
 EXPECT=<<EOF
+[Info]
+arch     mips
+cpu      N/A
+features N/A
+baddr    0x80001000
+binsz    0x00140000
+bintype  N/A
+bits     64
+class    N/A
+compiler N/A
+dbg_file N/A
+endian   BE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  Nintendo 64
+maxopsz  4
+minopsz  4
+os       n64
+cc       N/A
+pcalign  4
+rpath    N/A
+subsys   
+stripped false
+havecode true
+va       true
+static   true
+linenum  false
+lsyms    false
+canary   false
+pie      false
+relrocs  false
+nx       false
+
+[Imports]
+nth vaddr bind type lib name 
+-----------------------------
+
+[Entries]
+     vaddr      paddr     hvaddr      haddr type    
+----------------------------------------------------
+0x80001000 0x00001000 0x80001000 0x00001000 init
+0x04000040 0x00000040 0x04000040 0x00000040 program
+
+[Exports]
+nth paddr vaddr bind type size lib name 
+----------------------------------------
+
+[Classes]
+address min max name super 
+---------------------------
+
+[Symbols]
+nth paddr vaddr bind type size lib name 
+----------------------------------------
+
+[Sections]
      paddr     size      vaddr    vsize align perm name type flags 
 -------------------------------------------------------------------
+0x00000000   0x1000 0x04000000   0x1000   0x0 -r-x ipl3      
 0x00001000 0x13f000 0x80001000 0x13f000   0x0 -r-x text      
+
+[Memory]
+name size address flags mirror 
+-------------------------------
+
+[Strings]
+paddr vaddr len size section type string 
+-----------------------------------------
+
+n64_rom:
+  reserved_0: 0x80
+  PI_BSD_DOM1_RLS: 0x3
+  PI_BSD_DOM1_PGS: 0x7
+  PI_BSD_DOM1_PWD: 0x12
+  PI_BSD_DOM1_LAT: 0x40
+  clock_rate: 0x3b9aca0
+  boot_address: 0x80001000
+  libultra_version: "2.0D"
+  check_code: 0x877efaee94e765a8
+  reserved_1: "0000000000000000"
+  game_title: "shut up and code    "
+  reserved_2: "00000000000000"
+  game_category: "Unset"
+  game_unique_code: ".."
+  game_destination: "Unset"
+  version: 0
+
+ 1 fd: 3 +0x00000000 0x04000000 * 0x04000fff r-x fmap.ipl3
+ 2 fd: 3 +0x00001000 0x80001000 - 0x8013ffff r-x fmap.text
 EOF
 RUN
 
-NAME=z64: maps
-FILE=bins/z64/demo.z64
-CMDS=oml
+NAME=Nintendo 64 Advanced Homebrew Transfer Pak
+FILE=bins/z64/PokeMe64.z64
+CMDS=iH
 EXPECT=<<EOF
- 1 fd: 3 +0x00001000 0x80001000 * 0x8013ffff r-x fmap.text
+n64_rom:
+  reserved_0: 0x80
+  PI_BSD_DOM1_RLS: 0x3
+  PI_BSD_DOM1_PGS: 0x7
+  PI_BSD_DOM1_PWD: 0x12
+  PI_BSD_DOM1_LAT: 0x40
+  clock_rate: 0x3b9aca0
+  boot_address: 0x80000400
+  libultra_version: "0.0"
+  check_code: 0x0
+  reserved_1: "0000000000000000"
+  game_title: "PokeMe64"
+  reserved_2: "03000000000000"
+  game_category: "Homebrew"
+  game_unique_code: "ED"
+  game_destination: "Region Free"
+  version: 2
+  homebrew:
+    controllers:
+      - description: "Transfer Pak"
+        value: 0x3
+      - description: "Not Used"
+        value: 0x0
+      - description: "Not Used"
+        value: 0x0
+      - description: "Not Used"
+        value: 0x0
+    enable_rtc: false
+    region_free: true
+    savetype_size: ""
+
+EOF
+RUN
+
+NAME=Nintendo 64 Advanced Homebrew 1M SRAM
+FILE=bins/z64/omnispeak64_ep4.z64
+CMDS=iH
+EXPECT=<<EOF
+n64_rom:
+  reserved_0: 0x80
+  PI_BSD_DOM1_RLS: 0x3
+  PI_BSD_DOM1_PGS: 0x7
+  PI_BSD_DOM1_PWD: 0x12
+  PI_BSD_DOM1_LAT: 0x40
+  clock_rate: 0x3b9aca0
+  boot_address: 0x80000400
+  libultra_version: "0.0"
+  check_code: 0x0
+  reserved_1: "0000000000000000"
+  game_title: "Made with libdragon"
+  reserved_2: "00000000000000"
+  game_category: "Homebrew"
+  game_unique_code: "ED"
+  game_destination: "Region Free"
+  version: 98
+  homebrew:
+    controllers:
+      - description: "Not Used"
+        value: 0x0
+      - description: "Not Used"
+        value: 0x0
+      - description: "Not Used"
+        value: 0x0
+      - description: "Not Used"
+        value: 0x0
+    enable_rtc: false
+    region_free: true
+    savetype_size: "1M SRAM"
+
+EOF
+RUN
+
+NAME=Nintendo 64 Advanced Homebrew 256K SRAM
+FILE=bins/z64/cosmo64_ep1.z64
+CMDS=iH
+EXPECT=<<EOF
+n64_rom:
+  reserved_0: 0x80
+  PI_BSD_DOM1_RLS: 0x3
+  PI_BSD_DOM1_PGS: 0x7
+  PI_BSD_DOM1_PWD: 0x12
+  PI_BSD_DOM1_LAT: 0x40
+  clock_rate: 0x3b9aca0
+  boot_address: 0x80000400
+  libultra_version: "2.0D"
+  check_code: 0x7fe520a3473b1fb4
+  reserved_1: "0000000000000000"
+  game_title: "cosmo64_ep1"
+  reserved_2: "00000000000000"
+  game_category: "Homebrew"
+  game_unique_code: "ED"
+  game_destination: "Region Free"
+  version: 50
+  homebrew:
+    controllers:
+      - description: "Not Used"
+        value: 0x0
+      - description: "Not Used"
+        value: 0x0
+      - description: "Not Used"
+        value: 0x0
+      - description: "Not Used"
+        value: 0x0
+    enable_rtc: false
+    region_free: true
+    savetype_size: "256K SRAM"
+
 EOF
 RUN

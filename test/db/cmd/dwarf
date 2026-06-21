@@ -394,6 +394,15 @@ Line table statements:
 0x000003b0 CCu "[04] -r-- section size 36 named .gnu.hash"
 0x000003d8 CCu "[05] -r-- section size 168 named .dynsym"
 0x00000480 CCu "[06] -r-- section size 141 named .dynstr"
+0x00000481 ascii[15] "__cxa_finalize"
+0x00000490 ascii[18] "__libc_start_main"
+0x000004a2 ascii[5] "puts"
+0x000004a7 ascii[10] "libc.so.6"
+0x000004b1 ascii[12] "GLIBC_2.2.5"
+0x000004bd ascii[11] "GLIBC_2.34"
+0x000004c8 ascii[28] "_ITM_deregisterTMCloneTable"
+0x000004e4 ascii[15] "__gmon_start__"
+0x000004f3 ascii[26] "_ITM_registerTMCloneTable"
 0x0000050e CCu "[07] -r-- section size 14 named .gnu.version"
 0x00000520 CCu "[08] -r-- section size 48 named .gnu.version_r"
 0x00000550 data Cd 8
@@ -569,7 +578,7 @@ global char [5] anonymous_var_0x59 @ 0x2010
 global char [19] anonymous_var_0xb4 @ 0x2021
 global const float qwe @ 0x2034
 global char * bla @ 0x4088
-dbg.fn2 0x11b4 [DATA] lea rax, obj.fn2.qwe
+dbg.fn2 0x11b4 [DATA] lea rax, qword obj.fn2.qwe
 dbg.fn1 0x116a [DATA] mov qword [obj.fn1.bla], rax
 dbg.fn1 0x1171 [DATA] mov rsi, qword [obj.fn1.bla]
 fn1
@@ -581,7 +590,7 @@ fn2
 arg void *q origin=DWARF @ rbp-8
 var float *arg1 @ rdi
 main
-var unsigned long long var_18h @ stack - 0x18
+var unsigned long long var_18h  { < 0x400} @ stack - 0x18
 var int64_t var_ch @ stack - 0xc
 EOF
 RUN
@@ -3165,24 +3174,24 @@ EXPECT=<<EOF
 |           ; var SmallInt i @ stack - 0x1c
 |           0x00401980      55             push  rbp                   ; unit p$mozgkigyo palya(smallint,smallint)
 |           0x00401981      4889e5         mov   rbp, rsp
-|           0x00401984      488d6424d0     lea   rsp, [rsp - 0x30]
+|           0x00401984      488d6424d0     lea   rsp, qword [rsp-0x30]
 |           0x00401989      48895dd8       mov   qword [var_30h], rbx
 |           0x0040198d      4c8965e0       mov   qword [var_28h], r12
 |           0x00401991      66897df8       mov   word [mag], di
 |           0x00401995      668975f0       mov   word [szel], si
-|           0x00401999      b801000000     mov   eax, 1
-|           0x0040199e      bf01000000     mov   edi, 1                ; int64_t arg2
+|           0x00401999      b801000000     mov   eax, 0x01
+|           0x0040199e      bf01000000     mov   edi, 0x01             ; int64_t arg2
 |           0x004019a3      89c6           mov   esi, eax              ; int64_t arg_8h
 |           0x004019a5      e8b6a10200     call  sym.unit_crt_gotoxy_tcrtcoord_tcrtcoord
 |           0x004019aa      66448b65f0     mov   r12w, word [szel]
-|           0x004019af      66c745ec0100   mov   word [i], 1
+|           0x004019af      66c745ec0100   mov   word [i], 0x01
 |           0x004019b5      66443b65ec     cmp   r12w, word [i]
 |       ,=< 0x004019ba      7c45           jl    0x401a01
-|       |   0x004019bc      66816dec0100   sub   word [i], 1
+|       |   0x004019bc      66816dec0100   sub   word [i], 0x01
 |       |   0x004019c2      66666690       nop
 |       |   0x004019c6      6690           nop
 |       |   ; CODE XREF from dbg.palya @ 0x4019ff
-|       |   0x004019c8      668145ec0100   add   word [i], 1
+|       |   0x004019c8      668145ec0100   add   word [i], 0x01
 |       |   0x004019ce      e82d280200     call  sym.fpc_get_output
 EOF
 RUN
@@ -8820,21 +8829,21 @@ var int32_t var_2ch @ stack - 0x2c
 var int32_t var_1ch @ stack - 0x1c
 var some_t *s @ stack - 0x1a
 arg int argc @ r0
+var struct Some *gg @ r0
 arg char **argv @ r1
-var struct Some *gg @ r2
 var float a @ ...
 var float b @ ...
 var double c @ ...
             ; CALL XREFS from dbg.main @ 0x817c, 0x8184
 / some_t * new_some()
-|           ; var struct Some *n @ r4
+|           ; var struct Some *n @ r0
 |           0x0000813c      push  {r4, lr}                             ; test.c:27
 |           0x0000813e      movs  r0, 0x14                             ; test.c:28 ; size_t size
-|           0x00008140      bl    malloc                               ; sym.malloc ; void *malloc(size_t size)
+|           0x00008140      bl    malloc                               ; void *malloc(size_t size)
 |           0x00008144      mov   r4, r0
 |           0x00008146      movs  r2, 0x14                             ; test.c:29 ; size_t n
 |           0x00008148      movs  r1, 0                                ; int c
-|           0x0000814a      bl    memset                               ; sym.memset ; void *memset(void *s, int c, size_t n)
+|           0x0000814a      bl    memset                               ; void *memset(void *s, int c, size_t n)
 |           0x0000814e      mov   r0, r4                               ; test.c:30
 \           0x00008150      pop   {r4, pc}
 / __do_global_dtors_aux();
@@ -8869,14 +8878,14 @@ var int32_t var_2ch @ stack - 0x2c
 var int32_t var_1ch @ stack - 0x1c
 var some_t *s @ stack - 0x1a
 arg int argc @ r0
+var struct Some *gg @ r0
 arg char **argv @ r1
-var struct Some *gg @ r2
 var float a @ ...
 var float b @ ...
 var double c @ ...
             ; CALL XREFS from dbg.main @ 0x817c, 0x8184
 / some_t * new_some()
-|           ; var struct Some *n @ r4
+|           ; var struct Some *n @ r0
 |           0x0000813c      push  {r4, lr}                             ; test.c:27
 |           0x0000813e      movs  r0, 0x14                             ; test.c:28 ; size_t size
 |           0x00008140      bl    sym.malloc                           ; void *malloc(size_t size)
@@ -8913,8 +8922,8 @@ EXPECT=<<EOF
 0x00000608  0xc0 0x00000608  0xc0   0x0 -r-- .rela.dyn          RELA       alloc
 0x000006c8  0x78 0x000006c8  0x78   0x0 -r-- .rela.plt          RELA       alloc,info
 0x00001000  0x17 0x00001000  0x17   0x0 -r-x .init              PROGBITS   alloc,execute
-0x00001020  0x60 0x00001020  0x60   0x0 -r-x .plt               PROGBITS   alloc,execute
-0x00001080   0x8 0x00001080   0x8   0x0 -r-x .plt.got           PROGBITS   alloc,execute
+0x00001020  0x60 0x00001020  0x60   0x0 -r-x .plt               PLT        alloc,execute
+0x00001080   0x8 0x00001080   0x8   0x0 -r-x .plt.got           PLT        alloc,execute
 0x00001090 0x31f 0x00001090 0x31f   0x0 -r-x .text              PROGBITS   alloc,execute
 0x000013b0   0x9 0x000013b0   0x9   0x0 -r-x .fini              PROGBITS   alloc,execute
 0x00002000  0x58 0x00002000  0x58   0x0 -r-- .rodata            PROGBITS   alloc
@@ -9612,8 +9621,8 @@ EXPECT=<<EOF
 0x00000710  0xf0 0x00001710  0xf0   0x0 -r-x .text               PROGBITS   alloc,execute
 0x00000800  0x1b 0x00001800  0x1b   0x0 -r-x .init               PROGBITS   alloc,execute
 0x0000081c   0xd 0x0000181c   0xd   0x0 -r-x .fini               PROGBITS   alloc,execute
-0x00000830  0x50 0x00001830  0x50   0x0 -r-x .plt                PROGBITS   alloc,execute
-0x00000880  0x40 0x00001880  0x40   0x0 -r-x .plt.sec            PROGBITS   alloc,execute
+0x00000830  0x50 0x00001830  0x50   0x0 -r-x .plt                PLT        alloc,execute
+0x00000880  0x40 0x00001880  0x40   0x0 -r-x .plt.sec            PLT        alloc,execute
 0x000008c0   0x8 0x000028c0   0x8   0x0 -rw- .init_array         INIT_ARRAY write,alloc
 0x000008c8   0x8 0x000028c8   0x8   0x0 -rw- .fini_array         FINI_ARRAY write,alloc
 0x000008d0 0x1b0 0x000028d0 0x1b0   0x0 -rw- .dynamic            DYNAMIC    write,alloc
@@ -9683,5 +9692,21 @@ EXPECT=<<EOF
 	DW_AT_name [DW_FORM_strx]	: (index 0x7): global_data
 	DW_AT_name [DW_FORM_strx]	: (index 0x8): main
 	DW_AT_name [DW_FORM_strx]	: (index 0x9): int
+EOF
+RUN
+
+NAME="Register arguments from DWARF location lists with CFA frame base (arm)"
+FILE=bins/elf/dwarf/test3562_arm_small
+CMDS=<<EOF
+aaa
+afvl @ dbg.do_something
+EOF
+EXPECT=<<EOF
+var const unsigned char *p @ r4
+var const unsigned char *end @ r5
+var int acc @ r6
+arg struct cSTRUCT *item @ r7
+arg parse_buffer *input_buffer @ r8
+var size_t off @ r9
 EOF
 RUN

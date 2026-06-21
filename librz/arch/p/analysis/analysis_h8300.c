@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2012-2015 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2012-2015 Fedor Sakharov <fedor.sakharov@gmail.com>
 // SPDX-FileCopyrightText: 2012-2015 Bhootravi <ravi2809@gmail.com>
+// SPDX-FileCopyrightText: 2025 billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <string.h>
@@ -12,670 +13,435 @@
 
 #include <h8300/h8300_disas.h>
 
-#define emit(frag) rz_strbuf_appendf(&op->esil, frag)
-#define emitf(...) rz_strbuf_appendf(&op->esil, __VA_ARGS__)
-// setting the appropriate flags, NOTE: semicolon included
-#define setZ      rz_strbuf_appendf(&op->esil, ",$z,Z,:=") // zero flag
-#define setN      rz_strbuf_appendf(&op->esil, ",15,$s,N,=") // negative(sign) flag
-#define setV(val) rz_strbuf_appendf(&op->esil, ",%s,V,=", val) // overflow flag
-#define setC_B    rz_strbuf_appendf(&op->esil, ",7,$c,C,:=") // carry flag for byte op
-#define setC_W    rz_strbuf_appendf(&op->esil, ",15,$c,C,:=") // carryflag for word op
-#define setCb_B   rz_strbuf_appendf(&op->esil, ",7,$b,C,:=") // borrow flag for byte
-#define setCb_W   rz_strbuf_appendf(&op->esil, ",15,$b,C,:=") // borrow flag for word
-#define setH_B    rz_strbuf_appendf(&op->esil, ",3,$c,H,:=") // half carry(byte)-bcd
-#define setH_W    rz_strbuf_appendf(&op->esil, ",11,$c,H,:=") // half carry(word)-bcd
-#define setHb_B   rz_strbuf_appendf(&op->esil, ",3,$b,H,:=") // half borrow(byte)-bcd
-#define setHb_W   rz_strbuf_appendf(&op->esil, ",11,$b,H,:=") // halfborrow(word)-bcd
+#define INS_OP(I) (cmd.ops[(I)])
 
-// get reg. from opcodes
-#define rs()  (buf[1] & 0x70) >> 4 // upper nibble used as source generally
-#define rsB() (buf[1] & 0x70) >> 4, buf[1] & 0x80 ? 'l' : 'h' // msb of nibble used for l/h
-#define rd()  buf[1] & 0x07 // lower nibble used as dest generally
-// a for compact instrs. (some instrs. have rd in 1st byte, others in 2nd byte)
-#define rdB(a) buf[a] & 0x07, buf[a] & 0x8 ? 'l' : 'h'
-// work around for z flag
-// internally r=0xff on incr. stored as 0x100, which doesn't raise the z flag
-// NOTE - use the mask and setZ at last, mask will affect other flags
-#define mask()   rz_strbuf_appendf(&op->esil, ",0xffff,r%u,&=", rd());
-#define maskB(a) rz_strbuf_appendf(&op->esil, ",0xff,r%u%c,&=", rdB(a));
-
-// immediate values are always 2nd byte
-#define imm buf[1]
-/*
- * Reference Manual:
- *
-https://www.classes.cs.uchicago.edu/archive/2006/winter/23000-1/docs/h8300.pdf
- */
-
-static void h8300_analysis_jmp(RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
-	switch (buf[0]) {
-	case H8300_JMP_1:
-		op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
+static void h8300_op2val(RzAnalysis *analysis, H8300Instruction *cmd, RzAnalysisValue *av, H8300Operand *iop) {
+	switch (iop->typ) {
+	case H8300_OP_NONE: break;
+	case H8300_OP_R8:
+	case H8300_OP_R16:
+	case H8300_OP_R32:
+		av->type = RZ_ANALYSIS_VAL_REG;
+		av->reg = rz_reg_get(analysis->reg, h8300_get_register_name(iop->reg), RZ_REG_TYPE_ANY);
 		break;
-	case H8300_JMP_2:
-		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		op->jump = rz_read_at_be16(buf, 2);
+	case H8300_OP_IMM:
+		av->type = RZ_ANALYSIS_VAL_IMM;
+		av->imm = iop->imm;
 		break;
-	case H8300_JMP_3:
-		op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
-		op->jump = buf[1];
+	case H8300_OP_ABS:
+		av->type = RZ_ANALYSIS_VAL_MEM;
+		av->absolute = iop->imm;
+		break;
+	case H8300_OP_PCREL:
+		av->type = RZ_ANALYSIS_VAL_MEM;
+		av->base = cmd->pc;
+		av->delta = iop->disp;
+		break;
+	case H8300_OP_MI8:
+		av->type = RZ_ANALYSIS_VAL_MEM;
+		av->memref = iop->imm;
+		break;
+	case H8300_OP_RD:
+		av->type = RZ_ANALYSIS_VAL_MEM;
+		av->reg = rz_reg_get(analysis->reg, h8300_get_register_name(iop->rd.reg), RZ_REG_TYPE_ANY);
+		av->delta = iop->rd.disp;
+		break;
+	case H8300_OP_RI:
+		av->type = RZ_ANALYSIS_VAL_MEM;
+		av->reg = rz_reg_get(analysis->reg, h8300_get_register_name(iop->reg), RZ_REG_TYPE_ANY);
+		break;
+	case H8300_OP_RPOSTINC:
+	case H8300_OP_RPREDEC:
+		av->type = RZ_ANALYSIS_VAL_MEM;
+		av->reg = rz_reg_get(analysis->reg, h8300_get_register_name(iop->reg), RZ_REG_TYPE_ANY);
+		break;
+	case H8300_OP_CCR:
+		av->type = RZ_ANALYSIS_VAL_REG;
+		av->reg = rz_reg_get(analysis->reg, "ccr", RZ_REG_TYPE_ANY);
 		break;
 	}
 }
 
-static void h8300_analysis_jsr(RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
-	switch (buf[0]) {
-	case H8300_JSR_1:
-		op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
-		break;
-	case H8300_JSR_2:
-		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-		op->jump = rz_read_at_be16(buf, 2);
-		op->fail = addr + 4;
-		break;
-	case H8300_JSR_3:
-		op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
-		op->jump = buf[1];
-		break;
+static void h8300_analyze_val(RzAnalysis *analysis, RzAnalysisOp *aop, H8300Instruction *cmd) {
+	uint8_t srci = 0;
+	for (uint8_t i = 0; i < cmd->ops_count; ++i) {
+		H8300Operand *iop = cmd->ops + i;
+		RzAnalysisValue *av = rz_analysis_value_new();
+		if (!av) {
+			rz_warn_if_reached();
+			return;
+		}
+		h8300_op2val(analysis, cmd, av, iop);
+		if (cmd->ops_count > 1 && i < cmd->ops_count - 1) {
+			av->access |= RZ_ANALYSIS_ACC_R;
+			aop->src[srci++] = av;
+		}
+		if (cmd->ops_count == 1 || i == cmd->ops_count - 1) {
+			av->access |= RZ_ANALYSIS_ACC_W;
+			if (aop->dst) {
+				rz_warn_if_reached();
+			}
+			if (srci > 0 && av == aop->src[srci - 1]) {
+				av = rz_mem_dup(av, sizeof(RzAnalysisValue));
+			}
+			aop->dst = av;
+		}
 	}
-}
-
-static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
-	int ret = -1;
-	ut8 opcode = buf[0];
-	if (!op) {
-		return 2;
-	}
-	rz_strbuf_init(&op->esil);
-	rz_strbuf_set(&op->esil, "");
-	switch (opcode >> 4) {
-	case H8300_CMP_4BIT:
-		// acc. to manual this is how it's done, could use == in esil
-		rz_strbuf_appendf(&op->esil, "0x%02x,r%u%c,-", imm, rdB(0));
-		// setZ
-		setV("%o");
-		setN;
-		setHb_B;
-		setCb_B;
-		maskB(0);
-		setZ;
-		return 0;
-	case H8300_OR_4BIT:
-		rz_strbuf_appendf(&op->esil, "0x%02x,r%u%c,|=", imm, rdB(0));
-		// setZ
-		setV("0");
-		setN;
-		maskB(0);
-		setZ;
-		return 0;
-	case H8300_XOR_4BIT:
-		rz_strbuf_appendf(&op->esil, "0x%02x,r%u%c,^=", imm, rdB(0));
-		// setZ
-		setN;
-		setV("0");
-		maskB(0);
-		setZ;
-		return 0;
-	case H8300_AND_4BIT:
-		rz_strbuf_appendf(&op->esil, "0x%02x,r%u%c,&=", imm, rdB(0));
-		// setZ
-		setN;
-		setV("0");
-		maskB(0);
-		setZ;
-		return 0;
-	case H8300_ADD_4BIT:
-		rz_strbuf_appendf(&op->esil, "0x%02x,r%u%c,+=", imm, rdB(0));
-		// setZ
-		setV("%o");
-		setN;
-		setH_B;
-		setC_B;
-		maskB(0);
-		setZ;
-		return 0;
-	case H8300_ADDX_4BIT:
-		rz_strbuf_appendf(&op->esil, "0x%02x,C,+,r%u%c,+= ", imm, rdB(0));
-		// setZ
-		setV("%o");
-		setN;
-		setH_B;
-		setC_B;
-		maskB(0);
-		setZ;
-		return 0;
-	case H8300_SUBX_4BIT:
-		// Rd – imm – C → Rd
-		rz_strbuf_appendf(&op->esil, "0x%02x,r%u%c,-=,C,r%u%c,-=", imm, rdB(0), rdB(0));
-		// setZ
-		setV("%o");
-		setN;
-		setHb_B;
-		setCb_B;
-		maskB(0);
-		setZ;
-		return 0;
-	case H8300_MOV_4BIT_2: /*TODO*/
-	case H8300_MOV_4BIT_3: /*TODO*/
-	case H8300_MOV_4BIT: /*TODO*/
-		return 0;
-	default:
-		break;
-	};
-
-	switch (opcode) {
-	case H8300_NOP:
-		rz_strbuf_set(&op->esil, ",");
-		return 0;
-	case H8300_SLEEP: /* TODO */
-		return 0;
-	case H8300_STC:
-		rz_strbuf_appendf(&op->esil, "ccr,r%u%c,=", rdB(1));
-		return 0;
-	case H8300_LDC:
-		rz_strbuf_appendf(&op->esil, "r%u%c,ccr,=", rdB(1));
-		return 0;
-	case H8300_ORC:
-		rz_strbuf_appendf(&op->esil, "0x%02x,ccr,|=", imm);
-		return 0;
-	case H8300_XORC:
-		rz_strbuf_appendf(&op->esil, "0x%02x,ccr,^=", imm);
-		return 0;
-	case H8300_ANDC:
-		rz_strbuf_appendf(&op->esil, "0x%02x,ccr,&=", imm);
-		return 0;
-	case H8300_LDC_2:
-		rz_strbuf_appendf(&op->esil, "0x%02x,ccr,=", imm);
-		return 0;
-	case H8300_ADDB_DIRECT:
-		rz_strbuf_appendf(&op->esil, "r%u%c,r%u%c,+=", rsB(), rdB(1));
-		setH_B;
-		setV("%o");
-		setC_B;
-		setN;
-		// setZ;
-		maskB(1);
-		setZ;
-		return 0;
-	case H8300_ADDW_DIRECT:
-		rz_strbuf_appendf(&op->esil, "r%u,r%u,+=", rs(), rd());
-		setH_W;
-		setV("%o");
-		setC_W;
-		setN;
-		mask();
-		setZ;
-		return 0;
-	case H8300_INC:
-		rz_strbuf_appendf(&op->esil, "1,r%u%c,+=", rdB(1));
-		// setZ
-		setV("%o");
-		setN;
-		maskB(1);
-		setZ;
-		return 0;
-	case H8300_ADDS:
-		rz_strbuf_appendf(&op->esil, "%d,r%u,+=",
-			((buf[1] & 0xf0) == 0x80) ? 2 : 1, rd());
-		return 0;
-	case H8300_MOV_1:
-		/*TODO check if flags are set internally or not*/
-		rz_strbuf_appendf(&op->esil, "r%u%c,r%u%c,=", rsB(), rdB(1));
-		// setZ
-		setN;
-		maskB(1);
-		setZ;
-		return 0;
-	case H8300_MOV_2:
-		rz_strbuf_appendf(&op->esil, "r%u,r%u,=", rs(), rd());
-		// setZ
-		setN;
-		mask();
-		setZ;
-		return 0;
-	case H8300_ADDX:
-		// Rd + (Rs) + C → Rd
-		rz_strbuf_appendf(&op->esil, "r%u%c,C,+,r%u%c,+=",
-			rsB(), rdB(1));
-		// setZ
-		setV("%o");
-		setN;
-		setH_B;
-		setC_B;
-		maskB(1);
-		setZ;
-		return 0;
-	case H8300_DAA: /*TODO*/
-		return 0;
-	case H8300_SHL: /*TODO*/
-		return 0;
-	case H8300_SHR: /*TODO*/
-		return 0;
-	case H8300_ROTL: /*TODO*/
-		return 0;
-	case H8300_ROTR: /*TODO*/
-		return 0;
-	case H8300_OR:
-		rz_strbuf_appendf(&op->esil, "r%u%c,r%u%c,|=", rsB(), rdB(1));
-		// setZ
-		setV("0");
-		setN;
-		maskB(1);
-		setZ;
-		return 0;
-	case H8300_XOR:
-		rz_strbuf_appendf(&op->esil, "r%u%c,r%u%c,^=", rsB(), rdB(1));
-		// setZ
-		setV("0");
-		setN;
-		maskB(1);
-		setZ;
-		return 0;
-	case H8300_AND:
-		rz_strbuf_appendf(&op->esil, "r%u%c,r%u%c,&=", rsB(), rdB(1));
-		// setZ
-		setV("0");
-		setN;
-		maskB(1);
-		setZ;
-		return 0;
-	case H8300_NOT_NEG:
-		if ((buf[1] & 0xf0) == 0x80) { // NEG
-			rz_strbuf_appendf(&op->esil, "r%u%c,0,-,r%u%c,=", rdB(1), rdB(1));
-			// setZ
-			setHb_B;
-			setV("%o");
-			setCb_B;
-			setN;
-			maskB(1);
-			setZ;
-		} else if ((buf[1] & 0xf0) == 0x00) { // NOT
-			rz_strbuf_appendf(&op->esil, "r%u%c,!=", rdB(1));
-			// setZ
-			setV("0");
-			setN;
-			maskB(1);
-			setZ;
-		}
-		return 0;
-	case H8300_SUB_1:
-		rz_strbuf_appendf(&op->esil, "r%u%c,r%u%c,-=", rsB(), rdB(1));
-		// setZ
-		setHb_B;
-		setV("%o");
-		setCb_B;
-		setN;
-		maskB(1);
-		setZ;
-		return 0;
-	case H8300_SUBW:
-		rz_strbuf_appendf(&op->esil, "r%u,r%u,-=", rs(), rd());
-		setHb_W;
-		setV("%o");
-		setCb_W;
-		setN;
-		mask();
-		setZ;
-		return 0;
-	case H8300_DEC:
-		rz_strbuf_appendf(&op->esil, "1,r%u%c,-=", rdB(1));
-		// setZ
-		setV("%o");
-		setN;
-		maskB(1);
-		setZ;
-		return 0;
-	case H8300_SUBS:
-		rz_strbuf_appendf(&op->esil, "%d,r%u,-=",
-			((buf[1] & 0xf0) == 0x80) ? 2 : 1, rd());
-		return 0;
-	case H8300_CMP_1:
-		rz_strbuf_appendf(&op->esil, "r%u%c,r%u%c,-", rsB(), rdB(1));
-		// setZ
-		setHb_B;
-		setV("%o");
-		setCb_B;
-		setN;
-		maskB(1);
-		setZ;
-		return 0;
-	case H8300_CMP_2:
-		rz_strbuf_appendf(&op->esil, "r%u,r%u,-", rs(), rd());
-		// setZ
-		setHb_W;
-		setV("%o");
-		setCb_W;
-		setN;
-		mask();
-		setZ;
-		return 0;
-	case H8300_SUBX:
-		// Rd – (Rs) – C → Rd
-		rz_strbuf_appendf(&op->esil, "r%u%c,r%u%c,-=,C,r%u%c,-=",
-			rsB(), rdB(1), rdB(1));
-		// setZ
-		setHb_B;
-		setV("%o");
-		setCb_B;
-		setN;
-		maskB(1);
-		setZ;
-		return 0;
-	case H8300_DAS: /*TODO*/
-		return 0;
-	case H8300_BRA:
-		rz_strbuf_appendf(&op->esil, "0x%02x,pc,+=", buf[1]);
-		return 0;
-	case H8300_BRN:
-		rz_strbuf_appendf(&op->esil, ",");
-		return 0;
-	case H8300_BHI:
-		rz_strbuf_appendf(&op->esil, "C,Z,|,!,?{0x%02x,pc,+=}", buf[1]);
-		return 0;
-	case H8300_BLS:
-		rz_strbuf_appendf(&op->esil, "C,Z,|,?{0x%02x,pc,+=}", buf[1]);
-		return 0;
-	case H8300_BCC:
-		rz_strbuf_appendf(&op->esil, "C,!,?{0x%02x,pc,+=}", buf[1]);
-		return 0;
-	case H8300_BCS:
-		rz_strbuf_appendf(&op->esil, "C,?{0x%02x,pc,+=}", buf[1]);
-		return 0;
-	case H8300_BNE:
-		rz_strbuf_appendf(&op->esil, "Z,!,?{0x%02x,pc,+=}", buf[1]);
-		return 0;
-	case H8300_BEQ:
-		rz_strbuf_appendf(&op->esil, "Z,?{0x%02x,pc,+=}", buf[1]);
-		return 0;
-	case H8300_BVC:
-		rz_strbuf_appendf(&op->esil, "V,!,?{0x%02x,pc,+=}", buf[1]);
-		return 0;
-	case H8300_BVS:
-		rz_strbuf_appendf(&op->esil, "V,?{0x%02x,pc,+=}", buf[1]);
-		return 0;
-	case H8300_BPL:
-		rz_strbuf_appendf(&op->esil, "N,!,?{0x%02x,pc,+=}", buf[1]);
-		return 0;
-	case H8300_BMI:
-		rz_strbuf_appendf(&op->esil, "N,?{0x%02x,pc,+=}", buf[1]);
-		return 0;
-	case H8300_BGE:
-		rz_strbuf_appendf(&op->esil, "N,V,^,!,?{0x%02x,pc,+=}", buf[1]);
-		return 0;
-	case H8300_BLT:
-		rz_strbuf_appendf(&op->esil, "N,V,^,?{0x%02x,pc,+=}", buf[1]);
-		return 0;
-	case H8300_BGT:
-		rz_strbuf_appendf(&op->esil, "Z,N,V,^,|,!,?{0x%02x,pc,+=}", buf[1]);
-		return 0;
-	case H8300_BLE:
-		rz_strbuf_appendf(&op->esil, "Z,N,V,^,|,?{0x%02x,pc,+=}", buf[1]);
-		return 0;
-	case H8300_MULXU:
-		// Refer to pg. 100 of the manual linked at the beginning
-		rz_strbuf_appendf(&op->esil, "r%u%c,r%ul,*,r%u,=",
-			rsB(), rd(), rd());
-		return 0;
-	case H8300_DIVXU: /*TODO*/ return 0;
-	case H8300_RTS: /*TODO*/ return 0;
-	case H8300_BSR: /*TODO*/ return 0;
-	case H8300_RTE: /*TODO*/ return 0;
-	case H8300_JMP_1: /*TODO*/ return 0;
-	case H8300_JMP_2: /*TODO*/ return 0;
-	case H8300_JMP_3: /*TODO*/ return 0;
-	case H8300_JSR_1: /*TODO*/ return 0;
-	case H8300_JSR_2: /*TODO*/ return 0;
-	case H8300_JSR_3: /*TODO*/
-		return 0;
-		// NOTE - cases marked with TODO have mem. access also(not impl.)
-	case H8300_BSET_1: /*TODO*/
-		// set rs&0x7th bit of rd. expr.- rd|= 1<<(rs&0x07)
-		rz_strbuf_appendf(&op->esil, "0x7,r%u%c,&,1,<<,r%u%c,|=", rsB(), rdB(1));
-		return 0;
-	case H8300_BNOT_1: /*TODO*/
-		// invert rs&0x7th bit of rd. expr.- rd^= 1<<(rs&0x07)
-		rz_strbuf_appendf(&op->esil, "0x07,r%u%c,&,1,<<,r%u%c,^=", rsB(), rdB(1));
-		return 0;
-	case H8300_BCLR_R2R8: /*TODO*/
-		// clear rs&0x7th bit of rd. expr.- rd&= !(1<<(rs&0x07))
-		rz_strbuf_appendf(&op->esil, "0x7,r%u%c,&,1,<<,!,r%u%c,&=", rsB(), rdB(1));
-		return 0;
-	case H8300_BTST_R2R8: /*TODO*/
-		// ¬ (<Bit No.> of <EAd>) → Z, extract bit value and shift it back
-		rz_strbuf_appendf(&op->esil, "0x7,r%u%c,&,0x7,r%u%c,&,1,<<,r%u%c,&,>>,!,Z,=",
-			rsB(), rsB(), rdB(1));
-		return 0;
-	case H8300_BST_BIST: /*TODO*/
-		if (!(buf[1] & 0x80)) { // BST
-			rz_strbuf_appendf(&op->esil, "%d,C,<<,r%u%c,|=", rs(), rdB(1));
-		} else { // BIST
-			rz_strbuf_appendf(&op->esil, "%d,C,!,<<,r%u%c,|=", rs(), rdB(1));
-		}
-		return 0;
-	case H8300_MOV_R82IND16: /*TODO*/ return 0;
-	case H8300_MOV_IND162R16: /*TODO*/ return 0;
-	case H8300_MOV_R82ABS16: /*TODO*/ return 0;
-	case H8300_MOV_ABS162R16: /*TODO*/ return 0;
-	case H8300_MOV_R82RDEC16: /*TODO*/ return 0;
-	case H8300_MOV_INDINC162R16: /*TODO*/ return 0;
-	case H8300_MOV_R82DISPR16: /*TODO*/ return 0;
-	case H8300_MOV_DISP162R16: /*TODO*/
-		return 0;
-	case H8300_BSET_2: /*TODO*/
-		// set imm bit of rd. expr.- rd|= (1<<imm)
-		rz_strbuf_appendf(&op->esil, "%d,1,<<,r%u%c,|=", rs(), rdB(1));
-		return 0;
-	case H8300_BNOT_2: /*TODO*/
-		// inv. imm bit of rd. expr.- rd^= (1<<imm)
-		rz_strbuf_appendf(&op->esil, "%d,1,<<,r%u%c,^=", rs(), rdB(1));
-		return 0;
-	case H8300_BCLR_IMM2R8:
-		// clear imm bit of rd. expr.- rd&= !(1<<imm)
-		rz_strbuf_appendf(&op->esil, "%d,1,<<,!,r%u%c,&=", rs(), rdB(1));
-		return 0;
-	case H8300_BTST: /*TODO*/
-		// see BTST above
-		rz_strbuf_appendf(&op->esil, "%d,%d,1,<<,r%u%c,&,>>,!,Z,=",
-			rs(), rs(), rdB(1));
-		return 0;
-	case H8300_BOR_BIOR: /*TODO*/
-		if (!(buf[1] & 0x80)) { // BOR
-			// C|=(rd&(1<<imm))>>imm
-			rz_strbuf_appendf(&op->esil, "%d,%d,1,<<,r%u%c,&,>>,C,|=",
-				rs(), rs(), rdB(1));
-		} else { // BIOR
-			// C|=!(rd&(1<<imm))>>imm
-			rz_strbuf_appendf(&op->esil, "%d,%d,1,<<,r%u%c,&,>>,!,C,|=",
-				rs(), rs(), rdB(1));
-		}
-		return 0;
-	case H8300_BXOR_BIXOR: /*TODO*/
-		if (!(buf[1] & 0x80)) { // BXOR
-			// C^=(rd&(1<<imm))>>imm
-			rz_strbuf_appendf(&op->esil, "%d,%d,1,<<,r%u%c,&,>>,C,^=",
-				rs(), rs(), rdB(1));
-		} else { // BIXOR
-			rz_strbuf_appendf(&op->esil, "%d,%d,1,<<,r%u%c,&,>>,!,C,^=",
-				rs(), rs(), rdB(1));
-		}
-		return 0;
-	case H8300_BAND_BIAND:
-		/*TODO check functionality*/
-		// C&=(rd&(1<<imm))>>imm
-		if (!(buf[1] & 0x80)) { // BAND
-			rz_strbuf_appendf(&op->esil, "%d,%d,1,<<,r%u%c,&,>>,C,&=",
-				rs(), rs(), rdB(1));
-		} else { // BIAND
-			rz_strbuf_appendf(&op->esil, "%d,%d,1,<<,r%u%c,&,>>,!,C,&=",
-				rs(), rs(), rdB(1));
-		}
-		return 0;
-	case H8300_BILD_IMM2R8:
-		/*TODO*/
-		if (!(buf[1] & 0x80)) { // BLD
-			rz_strbuf_appendf(&op->esil, "%d,%d,1,<<,r%u%c,&,>>,C,=",
-				rs(), rs(), rdB(1));
-		} else { // BILD
-			rz_strbuf_appendf(&op->esil, "%d,%d,1,<<,r%u%c,&,>>,!,C,=",
-				rs(), rs(), rdB(1));
-		}
-		return 0;
-	case H8300_MOV_IMM162R16: /*TODO*/ return 0;
-	case H8300_EEPMOV: /*TODO*/ return 0;
-	case H8300_BIAND_IMM2IND16: /*TODO*/ return 0;
-	case H8300_BCLR_R2IND16: /*TODO*/ return 0;
-	case H8300_BIAND_IMM2ABS8: /*TODO*/ return 0;
-	case H8300_BCLR_R2ABS8: /*TODO*/ return 0;
-	default:
-		break;
-	};
-
-	return ret;
 }
 
 static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	int ret;
-	ut8 opcode = buf[0];
-	struct h8300_cmd cmd;
+	H8300Instruction cmd = { 0 };
 
 	if (!op) {
 		return 2;
 	}
 
 	op->addr = addr;
-	ret = op->size = h8300_decode_command(buf, &cmd);
+	ret = op->size = h8300_decode_command(buf, len, &cmd, addr, rz_analysis_get_cpu(analysis));
 
 	if (ret < 0) {
 		return ret;
 	}
-	switch (opcode >> 4) {
-	case H8300_MOV_4BIT_2:
-	case H8300_MOV_4BIT_3:
-	case H8300_MOV_4BIT:
-		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
-		break;
-	case H8300_CMP_4BIT:
-		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
-		break;
-	case H8300_XOR_4BIT:
-		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
-		break;
-	case H8300_AND_4BIT:
-		op->type = RZ_ANALYSIS_OP_TYPE_AND;
-		break;
-	case H8300_ADD_4BIT:
-	case H8300_ADDX_4BIT:
-		op->type = RZ_ANALYSIS_OP_TYPE_AND;
-		break;
-	case H8300_SUBX_4BIT:
-		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		break;
-	default:
-		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
-		break;
-	};
 
-	if (op->type != RZ_ANALYSIS_OP_TYPE_UNK) {
-		analyze_op_esil(analysis, op, addr, buf);
-		return ret;
-	}
-	switch (opcode) {
-	case H8300_MOV_R82IND16:
-	case H8300_MOV_IND162R16:
-	case H8300_MOV_R82ABS16:
-	case H8300_MOV_ABS162R16:
-	case H8300_MOV_R82RDEC16:
-	case H8300_MOV_INDINC162R16:
-	case H8300_MOV_R82DISPR16:
-	case H8300_MOV_DISP162R16:
-	case H8300_MOV_IMM162R16:
-	case H8300_MOV_1:
-	case H8300_MOV_2:
-	case H8300_EEPMOV:
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+	op->id = cmd.id;
+
+	switch (cmd.id) {
+	case H8300_INSN_MOV_B:
+	case H8300_INSN_MOV_W:
+	case H8300_INSN_MOV_L:
+	case H8300_INSN_EEPMOV_B:
+	case H8300_INSN_EEPMOV_W:
+	case H8300_INSN_MOVFPE:
+	case H8300_INSN_MOVTPE:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		if (cmd.ops_count == 2) {
+			H8300Operand *dst = &INS_OP(1);
+			if (dst->typ == H8300_OP_R32 && dst->reg == 7) {
+				op->stackop = RZ_ANALYSIS_STACK_SET;
+			}
+		}
 		break;
-	case H8300_RTS:
-		op->type = RZ_ANALYSIS_OP_TYPE_RET;
+	case H8300_INSN_LDC_B:
+	case H8300_INSN_LDC_W:
+	case H8300_INSN_BLD:
+	case H8300_INSN_BILD:
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		break;
-	case H8300_CMP_1:
-	case H8300_CMP_2:
-	case H8300_BTST_R2R8:
-	case H8300_BTST:
+	case H8300_INSN_STC_B:
+	case H8300_INSN_STC_W:
+	case H8300_INSN_BST:
+	case H8300_INSN_BIST:
+		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
+		break;
+	case H8300_INSN_CMP_B:
+	case H8300_INSN_CMP_W:
+	case H8300_INSN_CMP_L:
+	case H8300_INSN_BTST:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
-	case H8300_SHL:
+	case H8300_INSN_AND_B:
+	case H8300_INSN_AND_W:
+	case H8300_INSN_AND_L:
+	case H8300_INSN_ANDC:
+	case H8300_INSN_BAND:
+	case H8300_INSN_BIAND:
+		op->type = RZ_ANALYSIS_OP_TYPE_AND;
+		break;
+	case H8300_INSN_RTS:
+	case H8300_INSN_RTE:
+		op->type = RZ_ANALYSIS_OP_TYPE_RET;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
+		op->stackptr = 4;
+		break;
+	case H8300_INSN_SHAL_B:
+	case H8300_INSN_SHAL_W:
+	case H8300_INSN_SHAL_L:
+		op->type = RZ_ANALYSIS_OP_TYPE_SAL;
+		break;
+	case H8300_INSN_SHAR_B:
+	case H8300_INSN_SHAR_W:
+	case H8300_INSN_SHAR_L:
+		op->type = RZ_ANALYSIS_OP_TYPE_SAR;
+		break;
+	case H8300_INSN_SHLL_B:
+	case H8300_INSN_SHLL_W:
+	case H8300_INSN_SHLL_L:
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
 		break;
-	case H8300_SHR:
+	case H8300_INSN_SHLR_B:
+	case H8300_INSN_SHLR_W:
+	case H8300_INSN_SHLR_L:
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
 		break;
-	case H8300_XOR:
-	case H8300_XORC:
+	case H8300_INSN_XOR_B:
+	case H8300_INSN_XOR_W:
+	case H8300_INSN_XOR_L:
+	case H8300_INSN_XORC:
+	case H8300_INSN_BXOR:
+	case H8300_INSN_BIXOR:
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 		break;
-	case H8300_MULXU:
-		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
+	case H8300_INSN_OR_B:
+	case H8300_INSN_OR_W:
+	case H8300_INSN_OR_L:
+	case H8300_INSN_ORC:
+	case H8300_INSN_BOR:
+	case H8300_INSN_BIOR:
+		op->type = RZ_ANALYSIS_OP_TYPE_OR;
 		break;
-	case H8300_ANDC:
-		op->type = RZ_ANALYSIS_OP_TYPE_AND;
-		break;
-	case H8300_ADDB_DIRECT:
-	case H8300_ADDW_DIRECT:
-	case H8300_ADDS:
-	case H8300_ADDX:
+	case H8300_INSN_ADD_B:
+	case H8300_INSN_ADD_W:
+	case H8300_INSN_ADD_L:
+	case H8300_INSN_ADDS:
+	case H8300_INSN_ADDX:
+	case H8300_INSN_INC_B:
+	case H8300_INSN_INC_W:
+	case H8300_INSN_INC_L:
+	case H8300_INSN_DAA:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
-	case H8300_SUB_1:
-	case H8300_SUBW:
-	case H8300_SUBS:
-	case H8300_SUBX:
+	case H8300_INSN_SUB_B:
+	case H8300_INSN_SUB_W:
+	case H8300_INSN_SUB_L:
+	case H8300_INSN_SUBS:
+	case H8300_INSN_SUBX:
+	case H8300_INSN_DEC_B:
+	case H8300_INSN_DEC_W:
+	case H8300_INSN_DEC_L:
+	case H8300_INSN_DAS:
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		break;
-	case H8300_NOP:
+	case H8300_INSN_MULXU_B:
+	case H8300_INSN_MULXU_W:
+	case H8300_INSN_MULXS_B:
+	case H8300_INSN_MULXS_W:
+		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
+		break;
+	case H8300_INSN_DIVXS_B:
+	case H8300_INSN_DIVXS_W:
+	case H8300_INSN_DIVXU_B:
+	case H8300_INSN_DIVXU_W:
+		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
+		break;
+	case H8300_INSN_NOP:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		break;
-	case H8300_JSR_1:
-	case H8300_JSR_2:
-	case H8300_JSR_3:
-		h8300_analysis_jsr(op, addr, buf);
+	case H8300_INSN_BSR:
+		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
+		op->jump = cmd.pc + cmd.size + INS_OP(0).disp;
 		break;
-	case H8300_JMP_1:
-	case H8300_JMP_2:
-	case H8300_JMP_3:
-		h8300_analysis_jmp(op, addr, buf);
+	case H8300_INSN_JSR:
+		switch (cmd.fmt) {
+		case H8300_INSN_FORMAT_RI:
+			op->type = RZ_ANALYSIS_OP_TYPE_IRCALL;
+			op->ireg = h8300_get_register_name(INS_OP(0).reg);
+			break;
+		case H8300_INSN_FORMAT_ABS:
+			op->type = RZ_ANALYSIS_OP_TYPE_CALL;
+			op->jump = INS_OP(0).imm;
+			break;
+		case H8300_INSN_FORMAT_MI8:
+			op->type = RZ_ANALYSIS_OP_TYPE_ICALL;
+			op->ptr = INS_OP(0).imm;
+			op->disp = INS_OP(0).imm;
+			break;
+		default:
+			op->type = RZ_ANALYSIS_OP_TYPE_ICALL;
+			break;
+		}
+		op->fail = addr + cmd.size;
+		op->stackop = RZ_ANALYSIS_STACK_DEC;
+		op->stackptr = 4;
 		break;
-	case H8300_BRA:
-	case H8300_BRN:
-	case H8300_BHI:
-	case H8300_BLS:
-	case H8300_BCC:
-	case H8300_BCS:
-	case H8300_BNE:
-	case H8300_BEQ:
-	case H8300_BVC:
-	case H8300_BVS:
-	case H8300_BPL:
-	case H8300_BMI:
-	case H8300_BGE:
-	case H8300_BLT:
-	case H8300_BGT:
-	case H8300_BLE:
+	case H8300_INSN_JMP:
+		switch (cmd.fmt) {
+		case H8300_INSN_FORMAT_RI:
+			op->type = RZ_ANALYSIS_OP_TYPE_IRJMP;
+			op->ireg = h8300_get_register_name(INS_OP(0).reg);
+			break;
+		case H8300_INSN_FORMAT_ABS:
+			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
+			op->jump = INS_OP(0).imm;
+			break;
+		case H8300_INSN_FORMAT_MI8:
+			op->type = RZ_ANALYSIS_OP_TYPE_MJMP;
+			op->ptr = INS_OP(0).imm;
+			op->disp = INS_OP(0).imm;
+			break;
+		default: break;
+		}
+		op->fail = addr + cmd.size;
+		break;
+	case H8300_INSN_BRA:
+	case H8300_INSN_BRN:
+	case H8300_INSN_BHI:
+	case H8300_INSN_BLS:
+	case H8300_INSN_BCC:
+	case H8300_INSN_BCS:
+	case H8300_INSN_BNE:
+	case H8300_INSN_BEQ:
+	case H8300_INSN_BVC:
+	case H8300_INSN_BVS:
+	case H8300_INSN_BPL:
+	case H8300_INSN_BMI:
+	case H8300_INSN_BGE:
+	case H8300_INSN_BLT:
+	case H8300_INSN_BGT:
+	case H8300_INSN_BLE:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->jump = addr + 2 + (st8)(buf[1]);
-		op->fail = addr + 2;
+		op->jump = addr + cmd.size + INS_OP(0).disp;
+		op->fail = addr + cmd.size;
 		break;
-	default:
+	case H8300_INSN_ROTR_B:
+	case H8300_INSN_ROTXR_B:
+	case H8300_INSN_ROTR_W:
+	case H8300_INSN_ROTXR_W:
+	case H8300_INSN_ROTR_L:
+	case H8300_INSN_ROTXR_L:
+		op->type = RZ_ANALYSIS_OP_TYPE_ROR;
+		break;
+	case H8300_INSN_ROTL_B:
+	case H8300_INSN_ROTL_W:
+	case H8300_INSN_ROTL_L:
+	case H8300_INSN_ROTXL_B:
+	case H8300_INSN_ROTXL_W:
+	case H8300_INSN_ROTXL_L:
+		op->type = RZ_ANALYSIS_OP_TYPE_ROL;
+		break;
+	case H8300_INSN_NEG_B:
+	case H8300_INSN_NEG_W:
+	case H8300_INSN_NEG_L:
+	case H8300_INSN_NOT_B:
+	case H8300_INSN_NOT_W:
+	case H8300_INSN_NOT_L:
+	case H8300_INSN_BNOT:
+		op->type = RZ_ANALYSIS_OP_TYPE_NOT;
+		break;
+	case H8300_INSN_EXTS_W:
+	case H8300_INSN_EXTS_L:
+		op->type = RZ_ANALYSIS_OP_TYPE_CAST;
+		break;
+	case H8300_INSN_EXTU_W:
+	case H8300_INSN_EXTU_L:
+		op->type = RZ_ANALYSIS_OP_TYPE_CAST;
+		break;
+	case H8300_INSN_POP_W:
+	case H8300_INSN_POP_L:
+		op->type = RZ_ANALYSIS_OP_TYPE_POP;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
+		op->stackptr = op->id == H8300_INSN_PUSH_W ? 2 : 4;
+		break;
+	case H8300_INSN_PUSH_W:
+	case H8300_INSN_PUSH_L:
+		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
+		op->stackop = RZ_ANALYSIS_STACK_DEC;
+		op->stackptr = op->id == H8300_INSN_PUSH_W ? 2 : 4;
+		break;
+	case H8300_INSN_TRAPA:
+		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
+		break;
+	case H8300_INSN_SLEEP:
+	case H8300_INSN_BSET:
+	case H8300_INSN_BCLR:
 		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 		break;
-	};
-	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
-		analyze_op_esil(analysis, op, addr, buf);
+
+	case H8300_INSN_INVALID: break;
 	}
+
+	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
+		H8300InstructionStr ins_str = { 0 };
+		if (h8300_make_opstr(&cmd, &ins_str)) {
+			op->mnemonic = rz_str_newf("%s%s%s", ins_str.instr, RZ_STR_ISEMPTY(ins_str.ops_str) ? "" : " ", ins_str.ops_str);
+		} else {
+			op->mnemonic = rz_str_dup("invalid");
+		}
+	}
+
+	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
+		h8300_analyze_val(analysis, op, &cmd);
+	}
+
+	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+		h8300_analyze_op_esil(analysis, op, addr, buf);
+	}
+
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		h8300_analyze_op_il(analysis, op, &cmd);
+	}
+
 	return ret;
 }
 
 static char *get_reg_profile(RzAnalysis *analysis) {
+	if (h8300_cpu_type(rz_analysis_get_cpu(analysis)) == CPU_H8300H) {
+		char *p =
+			"=PC	pc\n"
+			"=SP	er7\n"
+			"=A0	r0\n"
+			"gpr	er0	.32	0	0\n"
+			"gpr	r0	.16	0	0\n"
+			"gpr	r0h	.8	0	0\n"
+			"gpr	r0l	.8	1	0\n"
+			"gpr	e0	.16	2	0\n"
+
+			"gpr	er1	.32	4	0\n"
+			"gpr	r1	.16	4	0\n"
+			"gpr	r1h	.8	4	0\n"
+			"gpr	r1l	.8	5	0\n"
+			"gpr	e1	.16	6	0\n"
+
+			"gpr	er2	.32	8	0\n"
+			"gpr	r2	.16	8	0\n"
+			"gpr	r2h	.8	8	0\n"
+			"gpr	r2l	.8	9	0\n"
+			"gpr	e2	.16	10	0\n"
+
+			"gpr	er3	.32	12	0\n"
+			"gpr	r3	.16	12	0\n"
+			"gpr	r3h	.8	12	0\n"
+			"gpr	r3l	.8	13	0\n"
+			"gpr	e3	.16	14	0\n"
+
+			"gpr	er4	.32	16	0\n"
+			"gpr	r4	.16	16	0\n"
+			"gpr	r4h	.8	16	0\n"
+			"gpr	r4l	.8	17	0\n"
+			"gpr	e4	.16	18	0\n"
+
+			"gpr	er5	.32	20	0\n"
+			"gpr	r5	.16	20	0\n"
+			"gpr	r5h	.8	20	0\n"
+			"gpr	r5l	.8	21	0\n"
+			"gpr	e5	.16	22	0\n"
+
+			"gpr	er6	.32	24	0\n"
+			"gpr	r6	.16	24	0\n"
+			"gpr	r6h	.8	24	0\n"
+			"gpr	r6l	.8	25	0\n"
+			"gpr	e6	.16	26	0\n"
+
+			"gpr	er7	.32	28	0\n"
+			"gpr	r7	.16	28	0\n"
+			"gpr	r7h	.8	28	0\n"
+			"gpr	r7l	.8	29	0\n"
+			"gpr	e7	.16	30	0\n"
+
+			"gpr	pc	.24	32	0\n"
+			"gpr	ccr	.8	35	0\n"
+			"gpr	I	.1	.287	0\n"
+			"gpr	U1	.1	.286	0\n"
+			"gpr	H	.1	.285	0\n"
+			"gpr	U2	.1	.284	0\n"
+			"gpr	N	.1	.283	0\n"
+			"gpr	Z	.1	.282	0\n"
+			"gpr	V	.1	.281	0\n"
+			"gpr	C	.1	.280	0\n";
+		return strdup(p);
+	}
 	char *p =
 		"=PC	pc\n"
 		"=SP	r7\n"
@@ -717,6 +483,33 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	return rz_str_dup(p);
 }
 
+static RzList /*<RzSearchKeyword *>*/ *h8300_preludes(RzAnalysis *analysis) {
+#define KW(d, m) rz_list_append(kws, rz_search_keyword_new_hexmask(d, m))
+	RzList *kws = rz_list_newf((RzListFree)rz_search_keyword_free);
+	if (!kws) {
+		return kws;
+	}
+	KW("01006df6", "ffffffff");
+	return kws;
+}
+
+static int h8300_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		return 2;
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		return 4;
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		return 2;
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 1;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
+	}
+}
+
 RzAnalysisPlugin rz_analysis_plugin_h8300 = {
 	.name = "h8300",
 	.desc = "H8300 code analysis plugin",
@@ -726,4 +519,7 @@ RzAnalysisPlugin rz_analysis_plugin_h8300 = {
 	.op = &h8300_op,
 	.esil = true,
 	.get_reg_profile = get_reg_profile,
+	.il_config = h8300_il_config,
+	.preludes = h8300_preludes,
+	.archinfo = h8300_archinfo,
 };

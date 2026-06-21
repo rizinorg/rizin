@@ -14,9 +14,6 @@
 
 #define WASM_STACK_SIZE 256
 
-static ut64 scope_hint = UT64_MAX;
-static ut64 addr_old = UT64_MAX;
-
 // finds the address of the call function (essentially where to jump to).
 static ut64 get_cf_offset(RzAnalysis *analysis, const ut8 *data, int len) {
 	ut32 fcn_id;
@@ -74,6 +71,7 @@ static bool advance_till_scope_end(RzAnalysis *analysis, RzAnalysisOp *op, ut64 
 
 // analyzes the wasm opcode.
 static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
+	WasmContext *ctx = analysis->plugin_data;
 	WasmOp wop = { { 0 } };
 	RzAnalysisHint *hint = NULL;
 	int ret = wasm_dis(&wop, data, len);
@@ -99,7 +97,7 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		return -1;
 	}
 
-	if (addr_old == addr && (wop.type != WASM_TYPE_OP_CORE || wop.op.core != WASM_OP_END)) {
+	if (ctx->addr_old == addr && (wop.type != WASM_TYPE_OP_CORE || wop.op.core != WASM_OP_END)) {
 		goto analysis_end;
 	}
 
@@ -110,24 +108,24 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		case WASM_OP_LOOP:
 			op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 			if (!(hint = rz_analysis_hint_get(analysis, addr))) {
-				scope_hint--;
-				rz_analysis_hint_set_opcode(analysis, scope_hint, "loop");
-				rz_analysis_hint_set_jump(analysis, scope_hint, addr);
+				ctx->scope_hint--;
+				rz_analysis_hint_set_opcode(analysis, ctx->scope_hint, "loop");
+				rz_analysis_hint_set_jump(analysis, ctx->scope_hint, addr);
 			}
 			break;
 		case WASM_OP_BLOCK:
 			op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 			if (!(hint = rz_analysis_hint_get(analysis, addr))) {
-				scope_hint--;
-				rz_analysis_hint_set_opcode(analysis, scope_hint, "block");
-				rz_analysis_hint_set_jump(analysis, scope_hint, addr);
+				ctx->scope_hint--;
+				rz_analysis_hint_set_opcode(analysis, ctx->scope_hint, "block");
+				rz_analysis_hint_set_jump(analysis, ctx->scope_hint, addr);
 			}
 			break;
 		case WASM_OP_IF:
 			if (!(hint = rz_analysis_hint_get(analysis, addr))) {
-				scope_hint--;
-				rz_analysis_hint_set_opcode(analysis, scope_hint, "if");
-				rz_analysis_hint_set_jump(analysis, scope_hint, addr);
+				ctx->scope_hint--;
+				rz_analysis_hint_set_opcode(analysis, ctx->scope_hint, "if");
+				rz_analysis_hint_set_jump(analysis, ctx->scope_hint, addr);
 				if (advance_till_scope_end(analysis, op, addr + op->size, RZ_ANALYSIS_OP_TYPE_CJMP, 0, true)) {
 					op->fail = addr + op->size;
 				}
@@ -153,7 +151,7 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			if ((hint2 = rz_analysis_hint_get(analysis, addr)) && hint2->jump != UT64_MAX) {
 				op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 				op->jump = hint2->jump;
-			} else if ((hint = rz_analysis_hint_get(analysis, scope_hint))) {
+			} else if ((hint = rz_analysis_hint_get(analysis, ctx->scope_hint))) {
 				if (hint->opcode && !strncmp("loop", hint->opcode, 4)) {
 					op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 					op->jump = hint->jump;
@@ -181,7 +179,7 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 				op->jump = hint2->jump;
 				op->fail = addr + op->size;
-			} else if ((hint = rz_analysis_hint_get(analysis, scope_hint))) {
+			} else if ((hint = rz_analysis_hint_get(analysis, ctx->scope_hint))) {
 				if (hint->opcode && !strncmp("loop", hint->opcode, 4)) {
 					op->fail = addr + op->size;
 					op->jump = hint->jump;
@@ -205,8 +203,8 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		} break;
 		case WASM_OP_END: {
 			op->type = RZ_ANALYSIS_OP_TYPE_NOP;
-			if (scope_hint < UT64_MAX) {
-				hint = rz_analysis_hint_get(analysis, scope_hint);
+			if (ctx->scope_hint < UT64_MAX) {
+				hint = rz_analysis_hint_get(analysis, ctx->scope_hint);
 				if (hint && !strncmp("loop", hint->opcode, 4)) {
 					rz_analysis_hint_set_jump(analysis, addr, op->jump);
 					rz_analysis_hint_set_jump(analysis, op->jump, addr);
@@ -216,15 +214,15 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 					rz_analysis_hint_set_jump(analysis, addr, UT64_MAX);
 				}
 				if (hint) {
-					rz_analysis_hint_set_opcode(analysis, scope_hint, "invalid");
-					rz_analysis_hint_set_jump(analysis, scope_hint, UT64_MAX);
-					rz_analysis_hint_del(analysis, scope_hint, 1);
-					scope_hint++;
+					rz_analysis_hint_set_opcode(analysis, ctx->scope_hint, "invalid");
+					rz_analysis_hint_set_jump(analysis, ctx->scope_hint, UT64_MAX);
+					rz_analysis_hint_del(analysis, ctx->scope_hint, 1);
+					ctx->scope_hint++;
 				} else {
 					// all wasm routines ends with an end.
 					op->eob = true;
 					op->type = RZ_ANALYSIS_OP_TYPE_RET;
-					scope_hint = UT64_MAX;
+					ctx->scope_hint = UT64_MAX;
 				}
 			} else {
 				if (!(hint = rz_analysis_hint_get(analysis, addr))) {
@@ -422,7 +420,7 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	}
 
 analysis_end:
-	addr_old = addr;
+	ctx->addr_old = addr;
 	free(wop.txt);
 	rz_analysis_hint_free(hint);
 	return op->size;
@@ -466,4 +464,6 @@ RzAnalysisPlugin rz_analysis_plugin_wasm = {
 	.archinfo = archinfo,
 	.get_reg_profile = get_reg_profile,
 	.op = &wasm_op,
+	.init = wasm_init,
+	.fini = wasm_fini,
 };

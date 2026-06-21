@@ -60,29 +60,19 @@ static int bin_pe_init(RzBinPEObj *bin) {
 		return false;
 	}
 	bin->sections = PE_(rz_bin_pe_get_sections)(bin);
-	PE_(bin_pe_init_imports)
-	(bin);
-	PE_(bin_pe_init_exports)
-	(bin);
-	PE_(bin_pe_init_resource)
-	(bin);
-	PE_(bin_pe_init_security)
-	(bin);
-	PE_(bin_pe_init_relocs)
-	(bin);
+	PE_(bin_pe_init_imports)(bin);
+	PE_(bin_pe_init_exports)(bin);
+	PE_(bin_pe_init_resource)(bin);
+	PE_(bin_pe_init_security)(bin);
+	PE_(bin_pe_init_relocs)(bin);
 
 	bin->big_endian = PE_(rz_bin_pe_is_big_endian)(bin);
 
-	PE_(bin_pe_init_rich_info)
-	(bin);
-	PE_(bin_pe_init_tls)
-	(bin);
-	PE_(bin_pe_init_clr)
-	(bin);
-	PE_(bin_pe_init_overlay)
-	(bin);
-	PE_(bin_pe_parse_resource)
-	(bin);
+	PE_(bin_pe_init_rich_info)(bin);
+	PE_(bin_pe_init_tls)(bin);
+	PE_(bin_pe_init_clr)(bin);
+	PE_(bin_pe_init_overlay)(bin);
+	PE_(bin_pe_parse_resource)(bin);
 	return true;
 }
 
@@ -96,8 +86,7 @@ void *PE_(rz_bin_pe_free)(RzBinPEObj *bin) {
 	free(bin->export_directory);
 	free(bin->import_directory);
 	free(bin->resource_directory);
-	PE_(free_security_directory)
-	(bin->security_directory);
+	PE_(free_security_directory)(bin->security_directory);
 	free(bin->delay_import_directory);
 	bin_pe_dotnet_destroy_clr(bin->clr);
 	free(bin->tls_directory);

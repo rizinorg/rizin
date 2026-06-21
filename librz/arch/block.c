@@ -2,9 +2,8 @@
 // SPDX-FileCopyrightText: 2019-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 #include <rz_hash.h>
-#include <rz_util/ht_uu.h>
 
 #define unwrap(rbnode) ((rbnode) ? container_of(rbnode, RzAnalysisBlock, _rb) : NULL)
 
@@ -184,7 +183,7 @@ RZ_API RzAnalysisBlock *rz_analysis_create_block(RzAnalysis *analysis, ut64 addr
 RZ_API void rz_analysis_delete_block(RzAnalysisBlock *bb) {
 	rz_analysis_block_ref(bb);
 	while (!rz_list_empty(bb->fcns)) {
-		rz_analysis_function_remove_block(rz_list_first(bb->fcns), bb);
+		rz_analysis_function_remove_block(rz_list_first_val(bb->fcns), bb);
 	}
 	rz_analysis_block_unref(bb);
 }
@@ -343,7 +342,7 @@ RZ_API bool rz_analysis_block_merge(RzAnalysisBlock *a, RzAnalysisBlock *b) {
 	// Keep a ref to b, but remove all references of b from its functions
 	rz_analysis_block_ref(b);
 	while (!rz_list_empty(b->fcns)) {
-		rz_analysis_function_remove_block(rz_list_first(b->fcns), b);
+		rz_analysis_function_remove_block(rz_list_first_val(b->fcns), b);
 	}
 
 	// merge ops from b into a
@@ -526,17 +525,17 @@ RZ_API bool rz_analysis_block_recurse_depth_first(RzAnalysisBlock *block, RzAnal
 			if (cur_bb->switch_op && !cur_ctx->switch_it) {
 				cur_ctx->switch_it = rz_list_head(cur_bb->switch_op->cases);
 			} else if (cur_ctx->switch_it) {
-				cur_ctx->switch_it = rz_list_iter_get_next(cur_ctx->switch_it);
+				cur_ctx->switch_it = rz_list_next(cur_ctx->switch_it);
 			}
 			if (cur_ctx->switch_it) {
-				RzAnalysisCaseOp *cop = rz_list_iter_get_data(cur_ctx->switch_it);
+				RzAnalysisCaseOp *cop = rz_list_val(cur_ctx->switch_it);
 				while (ht_up_find_kv(visited, cop->jump, NULL)) {
-					cur_ctx->switch_it = rz_list_iter_get_next(cur_ctx->switch_it);
+					cur_ctx->switch_it = rz_list_next(cur_ctx->switch_it);
 					if (!cur_ctx->switch_it) {
 						cop = NULL;
 						break;
 					}
-					cop = rz_list_iter_get_data(cur_ctx->switch_it);
+					cop = rz_list_val(cur_ctx->switch_it);
 				}
 				cur_bb = cop ? rz_analysis_get_block_at(analysis, cop->jump) : NULL;
 			} else {
@@ -772,7 +771,12 @@ static bool noreturn_get_blocks_cb(void *user, const ut64 k, const void *v) {
 
 RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, ut64 addr) {
 	rz_return_val_if_fail(block, NULL);
-	if (!rz_analysis_block_contains(block, addr) || addr == block->addr) {
+	// `addr` is the address right after the noreturn call (where execution would
+	// fall through if the callee returned). It must lie inside the block, or be
+	// exactly the end of the block when the noreturn call is the block's last
+	// instruction. In the latter case nothing needs to be resized, but the
+	// block's outgoing edges (the bogus fall-through) still have to be removed.
+	if (addr <= block->addr || addr > block->addr + block->size) {
 		return block;
 	}
 	rz_analysis_block_ref(block);
@@ -1052,6 +1056,7 @@ RZ_API bool rz_analysis_block_set_op_offset(RzAnalysisBlock *block, size_t i, ut
 			if (!tmp_op_pos) {
 				return false;
 			}
+			memset(tmp_op_pos + block->op_pos_size, 0, (new_pos_size - block->op_pos_size) * sizeof(ut16));
 			block->op_pos_size = new_pos_size;
 			block->op_pos = tmp_op_pos;
 		}

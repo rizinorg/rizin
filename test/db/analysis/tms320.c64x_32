@@ -31,7 +31,6 @@ EXPECT=<<EOF
     "bytes": "0041bd10",
     "size": 4,
     "type": "jmp",
-    "esilcost": 0,
     "scale": 0,
     "refptr": 0,
     "cycles": 0,
@@ -218,7 +217,7 @@ e asm.cpu=c64x
 arp
 EOF
 EXPECT=<<EOF
-=PC	pc
+=PC	pce1
 =A0	a4
 =A1	b4
 =A2	a6

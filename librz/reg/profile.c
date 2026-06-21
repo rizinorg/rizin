@@ -289,7 +289,7 @@ static bool parse_reg_profile_str(RZ_OUT RzList /*<RzRegProfileAlias *>*/ *alias
 		}
 		if (rz_str_strchr(line, "#")) {
 			RzList *line_and_cmt = rz_str_split_duplist_n_regex(line, "\\#", 0, true);
-			char *raw_comment = rz_str_dup(rz_list_last(line_and_cmt));
+			char *raw_comment = rz_str_dup(rz_list_last_val(line_and_cmt));
 			if (!raw_comment) {
 				RZ_LOG_WARN("Comment could not be split from register definition. Line: \"%s\"\n", line);
 				continue;
@@ -299,7 +299,7 @@ static bool parse_reg_profile_str(RZ_OUT RzList /*<RzRegProfileAlias *>*/ *alias
 				RZ_LOG_WARN("Could not prepend # to comment. Line: \"%s\".\n", line);
 				continue;
 			}
-			toks = rz_str_split_duplist_n_regex(rz_list_first(line_and_cmt), "\\s+", 0, true);
+			toks = rz_str_split_duplist_n_regex(rz_list_first_val(line_and_cmt), "\\s+", 0, true);
 			rz_list_append(toks, comment);
 			rz_list_free(line_and_cmt);
 		} else {
@@ -382,13 +382,6 @@ RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg) {
 	rz_return_val_if_fail(reg->reg_profile.alias && reg->reg_profile.defs, false);
 
 	RzListIter *it;
-	RzRegProfileAlias *alias;
-	rz_list_foreach (reg->reg_profile.alias, it, alias) {
-		if (!rz_reg_set_name(reg, alias->role, alias->reg_name)) {
-			RZ_LOG_WARN("Invalid alias gviven.\n");
-			return false;
-		}
-	}
 	RzRegProfileDef *def;
 	rz_list_foreach (reg->reg_profile.defs, it, def) {
 		RzRegItem *item = RZ_NEW0(RzRegItem);
@@ -419,6 +412,14 @@ RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg) {
 		}
 
 		add_item_to_regset(reg, item);
+	}
+	RzRegProfileAlias *alias;
+	rz_list_foreach (reg->reg_profile.alias, it, alias) {
+		RzRegItem *item = rz_reg_get(reg, alias->reg_name, RZ_REG_TYPE_ANY);
+		if (!item) {
+			RZ_LOG_WARN("Invalid alias given in register profile: %s.\n", alias->reg_name);
+		}
+		reg->by_role[alias->role] = item;
 	}
 
 	return true;
@@ -514,6 +515,7 @@ static char *gdb_to_rz_profile(const char *gdb) {
 	if (!sb) {
 		return NULL;
 	}
+	char *copy = rz_str_dup(gdb);
 	char *ptr1, *gptr, *gptr1;
 	char name[GDB_NAME_SZ + 1], groups[GDB_GROUPS_SZ + 1], type[GDB_TYPE_SZ + 1];
 	const int all = 1, gpr = 2, save = 4, restore = 8, float_ = 16,
@@ -521,12 +523,13 @@ static char *gdb_to_rz_profile(const char *gdb) {
 	int number, rel, offset, size, type_bits, ret;
 	// Every line is -
 	// Name Number Rel Offset Size Type Groups
-	const char *ptr = rz_str_trim_head_ro(gdb);
+	char *ptr = (char *)rz_str_trim_head_ro(copy);
 
 	// It's possible someone includes the heading line too. Skip it
 	if (rz_str_startswith(ptr, "Name")) {
 		if (!(ptr = strchr(ptr, '\n'))) {
 			rz_strbuf_free(sb);
+			free(copy);
 			return NULL;
 		}
 		ptr++;
@@ -544,6 +547,7 @@ static char *gdb_to_rz_profile(const char *gdb) {
 		} else {
 			eprintf("Could not parse line: %s (missing \\n)\n", ptr);
 			rz_strbuf_free(sb);
+			free(copy);
 			return false;
 		}
 		ret = sscanf(ptr, " %" RZ_STR_DEF(GDB_NAME_SZ) "s %d %d %d %d %" RZ_STR_DEF(GDB_TYPE_SZ) "s %" RZ_STR_DEF(GDB_GROUPS_SZ) "s",
@@ -553,6 +557,7 @@ static char *gdb_to_rz_profile(const char *gdb) {
 			if (*ptr != '*') {
 				eprintf("Could not parse line: %s\n", ptr);
 				rz_strbuf_free(sb);
+				free(copy);
 				return NULL;
 			}
 			ptr = ptr1 + 1;
@@ -629,8 +634,8 @@ static char *gdb_to_rz_profile(const char *gdb) {
 			break;
 		}
 		ptr = ptr1 + 1;
-		continue;
 	}
+	free(copy);
 	return rz_strbuf_drain(sb);
 }
 

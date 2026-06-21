@@ -1,9 +1,6 @@
 project('rizin-grammar-c', 'c',
   license: 'MIT',
   meson_version: '>=0.55.0',
-  default_options: [
-    'werror=false'
-  ]
 )
 
 cc = meson.get_compiler('c')

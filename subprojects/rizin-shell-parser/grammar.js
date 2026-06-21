@@ -185,6 +185,7 @@ module.exports = grammar({
         1,
         choice(
           field("command", alias($.question_mark_identifier, $.cmd_identifier)),
+          field("command", alias(choice("?**", "?**e", "?***"), $.cmd_identifier)),
           field("command", alias($._help_stmt, $.cmd_identifier)),
         ),
       ),

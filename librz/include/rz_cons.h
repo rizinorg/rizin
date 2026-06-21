@@ -168,11 +168,15 @@ enum {
 };
 #endif
 
-enum { ALPHA_RESET = 0x00,
+enum {
+	ALPHA_RESET = 0x00,
 	ALPHA_FG = 0x01,
 	ALPHA_BG = 0x02,
-	ALPHA_FGBG = 0x03 };
-enum { RZ_CONS_ATTR_BOLD = 1u << 1,
+	ALPHA_FGBG = 0x03
+};
+
+enum {
+	RZ_CONS_ATTR_BOLD = 1u << 1,
 	RZ_CONS_ATTR_DIM = 1u << 2,
 	RZ_CONS_ATTR_ITALIC = 1u << 3,
 	RZ_CONS_ATTR_UNDERLINE = 1u << 4,
@@ -422,6 +426,23 @@ typedef struct rz_cons_canvas_t {
 #define UTF_CIRCLE           "\u25EF"
 #define UTF_BLOCK            "\u2588"
 
+// Lower partial block elements (ascending height) for the minimap density ramp.
+#define UTF_BLOCK_LOWER_EIGHTH         "\u2581" // ▁
+#define UTF_BLOCK_LOWER_QUARTER        "\u2582" // ▂
+#define UTF_BLOCK_LOWER_THREE_EIGHTHS  "\u2583" // ▃
+#define UTF_BLOCK_LOWER_HALF           "\u2584" // ▄
+#define UTF_BLOCK_LOWER_FIVE_EIGHTHS   "\u2585" // ▅
+#define UTF_BLOCK_LOWER_THREE_QUARTERS "\u2586" // ▆
+#define UTF_BLOCK_LOWER_SEVEN_EIGHTHS  "\u2587" // ▇
+
+// Heavy box-drawing pieces for the minimap window indicator.
+#define RUNE_LINE_HORIZ_HEAVY "\u2501" // ━
+#define RUNE_CORNER_TL_HEAVY  "\u250F" // ┏
+#define RUNE_CORNER_TR_HEAVY  "\u2513" // ┓
+
+#define UTF_TRIANGLE_DOWN "\u25BC" // ▼
+#define UTF_TRIANGLE_UP   "\u25B2" // ▲
+
 // Emoji
 #define UTF8_POLICE_CARS_REVOLVING_LIGHT    "🚨"
 #define UTF8_WHITE_HEAVY_CHECK_MARK         "✅"
@@ -487,6 +508,7 @@ typedef struct rz_cons_context_t {
 	bool lastMode;
 	bool lastEnabled;
 	bool is_interactive;
+	bool last_interactive_option; ///< To be deprecated for a push/pop behavior
 	bool pageable;
 	bool noflush;
 
@@ -548,10 +570,15 @@ typedef struct rz_cons_t {
 	RzConsFunctionKey cb_fkey;
 
 	void *user; // Used by <RzCore*>
+	int oldraw; ///< To be deprecated for a push/pop behavior
 #if __UNIX__
 	struct termios term_raw, term_buf;
 #elif __WINDOWS__
 	unsigned long term_raw, term_buf, term_pty;
+	void *saved_input_handle;
+	void *saved_output_handle;
+	bool saved_input_console;
+	bool saved_output_console;
 	unsigned long old_input_mode, old_output_mode;
 	ut32 old_cp;
 	ut32 old_ocp;
@@ -589,6 +616,7 @@ typedef struct rz_cons_t {
 	int click_x;
 	int click_y;
 	bool show_vals; // show which section in Vv
+	RzStrBuf *echobuf;
 	// TODO: move into instance? + avoid unnecessary copies
 } RzCons;
 
@@ -761,8 +789,8 @@ typedef struct rz_cons_t {
 #define Colors_PLAIN \
 	{ \
 		Color_BLACK, Color_RED, Color_WHITE, \
-			Color_GREEN, Color_MAGENTA, Color_YELLOW, \
-			Color_CYAN, Color_BLUE, Color_GRAY \
+		Color_GREEN, Color_MAGENTA, Color_YELLOW, \
+		Color_CYAN, Color_BLUE, Color_GRAY \
 	}
 
 enum {
@@ -827,15 +855,25 @@ typedef struct rz_cons_canvas_line_style_t {
 #define SELF_LOOP   10
 
 typedef struct rz_histogram_options_t {
-	bool unicode; //<< Use Unicode characters instead of ASCII
-	bool thinline; //<< Use thin lines instead of block lines
-	bool legend; //<< Show axes and legend
-	bool offset; //<< Show offsets
-	ut64 offpos; //<< Starting offset value
-	bool cursor; //<< Show cursor position
-	ut64 curpos; //<< Cursor position
-	bool color; //<< Use colors
-	RzConsPrintablePalette *pal; //<< Colors palette if color is enabled
+	bool unicode; ///< Use Unicode characters instead of ASCII
+	bool thinline; ///< Use thin lines instead of block lines
+	bool ruler; ///< Show ruler
+	bool legend; ///< Show axes and legend
+	bool offset; ///< Show offsets
+	bool cursor; ///< Show cursor position
+	bool color; ///< Use colors
+	bool minimap; ///< Show top minimap on visual histogram (visual mode only; auto-hides when data fits)
+	ut32 cols; ///< Screen-column width (0 = default 78)
+	ut64 offpos; ///< Starting offset value
+	ut64 curpos; ///< Cursor position
+	ut64 blocksize; ///< Bytes per data point (drives the X-axis offset ruler; 0 disables it)
+	int value_min; ///< Minimum value for ruler labels and threshold scale (0..255 default)
+	int value_max; ///< Maximum value for ruler labels and threshold scale (0 = 0..255 default)
+	int value_precision; ///< Decimal digits on ruler labels (0 = integer)
+	double value_scale; ///< Multiplier on integer row values for ruler labels (0 = 1.0)
+	const char *value_unit; ///< Optional unit suffix after ruler values (NULL = none)
+	RZ_NULLABLE const double *data_f; ///< Optional fp data buffer; overrides ut8 data when set
+	RzConsPrintablePalette *pal; ///< Colors palette if color is enabled
 } RzHistogramOptions;
 
 typedef struct rz_bar_options_t {
@@ -854,11 +892,15 @@ typedef struct rz_histogram_interactive_t {
 
 	int barnumber;
 	int size;
+	ut64 blocksize; ///< Bytes per data point (drives the X-axis offset ruler in interactive horizontal mode).
 	int zoom;
 	int movspeed;
 
 	int x, y;
 	int w, h;
+
+	const ut8 *cursor_bytes; ///< Up to 32 raw bytes read at the cursor's file offset; shown on the right of the minimap when `hist->w > 200`. NULL = no hex preview this redraw.
+	ut32 cursor_bytes_len; ///< Length of cursor_bytes (typically 32, can be less near EOF). Ignored when cursor_bytes is NULL.
 
 	RzHistogramOptions *opts;
 } RzHistogramInteractive;
@@ -1000,7 +1042,9 @@ RZ_API const char *rz_cons_pal_get_name(int index);
 RZ_API int rz_cons_pal_len(void);
 RZ_API int rz_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a);
 RZ_API char *rz_cons_rgb_tostring(ut8 r, ut8 g, ut8 b);
-RZ_API void rz_cons_pal_list(int rad, const char *arg);
+RZ_API void rz_cons_pal_list_as_json(RZ_NONNULL PJ *pj);
+RZ_API void rz_cons_pal_list_as_css(RZ_NULLABLE const char *name_prefix);
+RZ_API void rz_cons_pal_list_visual(void);
 RZ_API void rz_cons_pal_show(void);
 RZ_API int rz_cons_get_size(int *rows);
 RZ_API bool rz_cons_isatty(void);
@@ -1050,7 +1094,7 @@ RZ_API const char *rz_cons_get_rune(const ut8 ch);
 /* Histograms */
 RZ_API RZ_OWN RzStrBuf *rz_histogram_horizontal(RZ_NONNULL RzHistogramOptions *opts, RZ_NONNULL const ut8 *data, ut32 width, ut32 height);
 RZ_API RZ_OWN RzStrBuf *rz_histogram_vertical(RZ_NONNULL RzHistogramOptions *opts, RZ_NONNULL const ut8 *data, int width, int step);
-RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzHistogramInteractive *hist, const unsigned char *data);
+RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzHistogramInteractive *hist, RZ_NONNULL const ut8 *data);
 RZ_API RzHistogramOptions *rz_histogram_options_new();
 RZ_API void rz_histogram_options_free(RzHistogramOptions *histops);
 RZ_API RzHistogramInteractive *rz_histogram_interactive_new(RzConsCanvas *can, RzHistogramOptions *opts);
@@ -1136,7 +1180,7 @@ typedef struct rz_line_ns_completion_t RzLineNSCompletion;
  */
 typedef struct rz_line_ns_completion_result_t {
 	RzPVector /*<char *>*/ options; ///< Vector of options that can be used for autocompletion
-	HtPP *options_ht; ///< Hash table to keep track of duplicated autocompletion suggestions
+	HtPP /*<char *, char *>*/ *options_ht; ///< Hash table to keep track of duplicated autocompletion suggestions
 	size_t start; ///< First byte that was considered for autocompletion. Everything before this will be left intact.
 	size_t end; ///< Last byte that was considered for autocompletion. Everything after this will be left intact.
 	const char *end_string; ///< String to place after the only option available is autocompleted. By default a space is used.

@@ -36,7 +36,7 @@ RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
 
 	char *tmp = NULL;
 	char *home_themes = rz_path_home_prefix(RZ_THEMES);
-	char *system_themes = rz_path_system(RZ_THEMES);
+	char *system_themes = rz_path_system(core->sys_path, RZ_THEMES);
 	char *extra_themes = rz_path_extra(RZ_THEMES);
 	char *home_file = rz_file_path_join(home_themes, name);
 	char *system_file = rz_file_path_join(system_themes, name);
@@ -97,6 +97,32 @@ static int compare_strings(const char *s1, const char *s2, RZ_UNUSED void *user)
 }
 
 /**
+ * \brief Returns themes for autocompletion.
+ *
+ * \param core The RzCore struct to use
+ * \return Pointer to a NULL terminated array of theme names or NULL in case of failure.
+ */
+RZ_IPI RZ_OWN char **rz_core_autocomplete_rotate_theme(RzCore *core) {
+	RzPVector *themes = rz_core_get_themes(core);
+	if (!themes) {
+		return NULL;
+	}
+	size_t count = rz_pvector_len(themes);
+	char **theme_name = RZ_NEWS0(char *, count + 1);
+	if (!theme_name) {
+		rz_pvector_free(themes);
+		return NULL;
+	}
+
+	size_t i = 0;
+	void **iter;
+	rz_pvector_foreach (themes, iter) {
+		theme_name[i++] = rz_str_dup(*iter);
+	}
+	return theme_name;
+}
+
+/**
  * \brief Get names of available rizin themes.
  *
  * \param core The RzCore struct to use
@@ -116,7 +142,7 @@ RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_core_get_themes(RZ_NONNULL RzCore *core
 		RZ_FREE(path);
 	}
 
-	path = rz_path_system(RZ_THEMES);
+	path = rz_path_system(core->sys_path, RZ_THEMES);
 	if (path) {
 		list_themes_in_path(themes, path);
 		RZ_FREE(path);
@@ -174,7 +200,66 @@ RZ_API void rz_core_theme_nextpal(RzCore *core, RzConsPalSeekMode mode) {
 	rz_pvector_free(files);
 }
 
-RZ_IPI RzCmdStatus rz_cmd_eval_color_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_cmd_eval_color_list_help_handler(RzCore *core, int argc, const char **argv) {
+	RzCmdDesc *cd = rz_cmd_get_desc(core->rcmd, "ecl");
+	if (!cd || !cd->help || !cd->help->details) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	const RzCmdDescDetail *details = cd->help->details;
+	const RzCmdDescDetailEntry *entry = details[0].entries;
+
+	size_t max_len = 0;
+	const RzCmdDescDetailEntry *tmp_entry = entry;
+	while (tmp_entry && tmp_entry->text) {
+		size_t len = strlen(tmp_entry->text);
+		if (len > max_len) {
+			max_len = len;
+		}
+		tmp_entry++;
+	}
+
+	int pal_len = rz_cons_pal_len();
+	for (int i = 0; i < pal_len; i++) {
+		const char *color_name = rz_cons_pal_get_name(i);
+		if (!color_name) {
+			continue;
+		}
+
+		const char *description = NULL;
+		const RzCmdDescDetailEntry *desc_entry = details[0].entries;
+		while (desc_entry && desc_entry->text) {
+			if (!strcmp(desc_entry->text, color_name)) {
+				description = desc_entry->comment;
+				break;
+			}
+			desc_entry++;
+		}
+
+		if (!description) {
+			continue;
+		}
+
+		RzColor rcolor = rz_cons_pal_get_i(i);
+
+		char color_str[128];
+		rz_cons_rgb_str_mode(core->cons->context->color_mode, color_str, sizeof(color_str), &rcolor);
+
+		char *pad = rz_str_pad(' ', max_len + 2 - strlen(color_name));
+
+		rz_cons_printf(" %s##" Color_RESET " %s%s%s\n",
+			color_str,
+			color_name,
+			pad,
+			description);
+
+		free(pad);
+	}
+
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_eval_color_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	if (argc == 3) {
 		if (!rz_cons_pal_set(argv[1], argv[2])) {
 			return RZ_CMD_STATUS_ERROR;
@@ -188,15 +273,13 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_list_handler(RzCore *core, int argc, const 
 		eprintf("(%s)(%sCOLOR" Color_RESET ")\n", argv[1], color);
 		return RZ_CMD_STATUS_OK;
 	}
-	switch (mode) {
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_cons_pal_list(1, NULL);
-		break;
+
+	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
-		rz_cons_pal_list('j', NULL);
+		rz_cons_pal_list_as_json(state->d.pj);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_pal_list(0, NULL);
+		rz_cons_pal_list_visual();
 		break;
 	default:
 		return RZ_CMD_STATUS_ERROR;
@@ -205,7 +288,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_list_handler(RzCore *core, int argc, const 
 }
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_display_palette_css_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_pal_list('c', argv[1]);
+	rz_cons_pal_list_as_css(argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -236,7 +319,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_load_next_theme_handler(RzCore *core, int a
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	RzCmdStateOutput state = { 0 };
-	rz_cmd_state_output_init(&state, mode);
+	rz_cmd_state_output_init(&state, mode, core);
 	rz_core_meta_print_list_all(core, RZ_META_TYPE_HIGHLIGHT, &state);
 	rz_cmd_state_output_print(&state);
 	rz_cmd_state_output_fini(&state);
@@ -330,7 +413,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_instruction_word_handler(RzCore *
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_list_current_handler(RzCore *core, int argc, const char **argv) {
 	RzCmdStateOutput state = { 0 };
-	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
+	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, core);
 	rz_core_meta_print_list_in_function(core, RZ_META_TYPE_COMMENT, core->offset, &state);
 	rz_cmd_state_output_print(&state);
 	rz_cmd_state_output_fini(&state);
@@ -351,7 +434,7 @@ static void print_all_plugin_configs(const RzCore *core) {
 	// Incomplete plugin config key.
 	RzConfig **cfg;
 	RzCmdStateOutput state = { 0 };
-	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
+	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET, core);
 	RzIterator *it = ht_sp_as_iter(core->plugin_configs);
 	rz_iterator_foreach(it, cfg) {
 		rz_core_config_print_all(*cfg, "", &state);
@@ -415,22 +498,23 @@ RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **a
 		if (llen == 1 && rz_str_endswith(key, ".")) {
 			// no value was set, only key with ".". List possible sub-keys.
 			RzCmdStateOutput state = { 0 };
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
+			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET, core);
 			rz_core_config_print_all(cfg, key, &state);
 			rz_cmd_state_output_print(&state);
 			rz_cmd_state_output_fini(&state);
 		} else if (llen == 1) {
 			// no value was set, show the value of the key
-			const char *v = rz_config_get(cfg, key);
+			char *v = rz_config_get_as_string(cfg, key);
 			if (!v) {
 				RZ_LOG_ERROR("core: Invalid config key '%s'\n", key);
 				rz_list_free(l);
 				return RZ_CMD_STATUS_ERROR;
 			}
 			rz_cons_printf("%s\n", v);
+			free(v);
 		} else if (llen == 2) {
 			char *value = rz_list_get_n(l, 1);
-			rz_config_set(cfg, key, value);
+			rz_config_set_any(cfg, key, value);
 		}
 		rz_list_free(l);
 	}
@@ -449,6 +533,7 @@ RZ_IPI RzCmdStatus rz_eval_list_handler(RzCore *core, int argc, const char **arg
 }
 
 RZ_IPI RzCmdStatus rz_eval_reset_handler(RzCore *core, int argc, const char **argv) {
+	rz_config_free(core->config);
 	return rz_core_config_init(core) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
@@ -471,7 +556,7 @@ RZ_IPI RzCmdStatus rz_eval_editor_handler(RzCore *core, int argc, const char **a
 		print_all_plugin_configs(core);
 		return RZ_CMD_STATUS_OK;
 	}
-	const char *val = rz_config_get(cfg, argv[1]);
+	char *val = rz_config_get_as_string(cfg, argv[1]);
 	if (!val) {
 		RZ_LOG_ERROR("core: Invalid config key '%s'\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
@@ -481,7 +566,8 @@ RZ_IPI RzCmdStatus rz_eval_editor_handler(RzCore *core, int argc, const char **a
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_str_replace_char(p, '\n', ';');
-	rz_config_set(cfg, argv[1], p);
+	rz_config_set_any(cfg, argv[1], p);
+	free(val);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -491,7 +577,8 @@ RZ_IPI RzCmdStatus rz_eval_readonly_handler(RzCore *core, int argc, const char *
 		print_all_plugin_configs(core);
 		return RZ_CMD_STATUS_OK;
 	}
-	if (!rz_config_readonly(cfg, argv[1])) {
+
+	if (!rz_config_set_readonly(cfg, argv[1], true)) {
 		RZ_LOG_ERROR("core: Cannot make eval '%s' readonly.\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}

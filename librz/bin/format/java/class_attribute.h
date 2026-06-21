@@ -102,7 +102,7 @@ typedef struct java_attribute_module_t {
 	ut16 module_version_index;
 
 	ut16 requires_count;
-	ModuleRequire *requires;
+	ModuleRequire * requires;
 
 	ut16 exports_count;
 	ModuleExport *exports;

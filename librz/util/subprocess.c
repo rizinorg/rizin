@@ -262,7 +262,6 @@ RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubproces
 	HANDLE stdin_read = curr_stdin_handle;
 	HANDLE stdout_write = curr_stdout_handle;
 	HANDLE stderr_write = curr_stderr_handle;
-	LPWSTR lpFilePart;
 	PWCHAR cmd_exe = RZ_NEWS0(WCHAR, MAX_PATH);
 #if NTDDI_VERSION >= NTDDI_VISTA
 	LPPROC_THREAD_ATTRIBUTE_LIST attr_list = NULL;
@@ -276,10 +275,12 @@ RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubproces
 
 	if (!rz_file_exists(opt->file)) {
 		DWORD len;
-		if ((len = SearchPathW(NULL, file, L".exe", MAX_PATH, cmd_exe, &lpFilePart)) < 1) {
-			RZ_LOG_DEBUG("SearchPath failed for %s\n", opt->file);
-			free(file);
-			return NULL;
+		if ((len = SearchPathW(NULL, file, L".exe", MAX_PATH, cmd_exe, NULL)) < 1) {
+			if ((len = SearchPathW(NULL, file, L".com", MAX_PATH, cmd_exe, NULL)) < 1) {
+				RZ_LOG_DEBUG("SearchPath failed for %s\n", opt->file);
+				free(file);
+				return NULL;
+			}
 		}
 		if (len > MAX_PATH) {
 			PWCHAR tmp = realloc(cmd_exe, sizeof(WCHAR) * len);
@@ -289,7 +290,7 @@ RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubproces
 				return NULL;
 			}
 			cmd_exe = tmp;
-			SearchPathW(NULL, file, L".exe", len, cmd_exe, &lpFilePart);
+			SearchPathW(NULL, file, L".exe", len, cmd_exe, NULL);
 		}
 		free(file);
 	} else {
@@ -1549,7 +1550,7 @@ RZ_API int rz_subprocess_ret(RzSubprocess *proc) {
 }
 
 RZ_API ut8 *rz_subprocess_out(RzSubprocess *proc, int *length) {
-	int bin_len = 0;
+	size_t bin_len = 0;
 	const ut8 *bin = rz_strbuf_getbin(&proc->out, &bin_len);
 	ut8 *buf = (ut8 *)rz_str_newlen((const char *)bin, bin_len);
 	if (length) {
@@ -1560,7 +1561,7 @@ RZ_API ut8 *rz_subprocess_out(RzSubprocess *proc, int *length) {
 }
 
 RZ_API ut8 *rz_subprocess_err(RzSubprocess *proc, int *length) {
-	int bin_len = 0;
+	size_t bin_len = 0;
 	const ut8 *bin = rz_strbuf_getbin(&proc->err, &bin_len);
 	ut8 *buf = (ut8 *)rz_str_newlen((const char *)bin, bin_len);
 	if (length) {

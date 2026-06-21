@@ -101,7 +101,7 @@ static inline PTHREAD_ITEM find_thread(RzDebug *dbg, int tid) {
 		return NULL;
 	}
 	RzListIter *it = rz_list_find(dbg->threads, &tid, (RzListComparator)w32_findthread_cmp, NULL);
-	return it ? rz_list_iter_get_data(it) : NULL;
+	return it ? rz_list_val(it) : NULL;
 }
 
 static PTHREAD_ITEM add_thread(RzDebug *dbg, DWORD pid, DWORD tid, HANDLE hThread, LPVOID lpThreadLocalBase, LPVOID lpStartAddress, BOOL bFinished) {
@@ -772,11 +772,11 @@ static int findlibcmp(void *BaseOfDll, void *lib, void *user) {
 
 static void *find_library(void *BaseOfDll) {
 	RzListIter *it = rz_list_find(lib_list, BaseOfDll, (RzListComparator)findlibcmp, NULL);
-	return it ? rz_list_iter_get_data(it) : NULL;
+	return it ? rz_list_val(it) : NULL;
 }
 
 static void remove_library(PLIB_ITEM library) {
-	rz_list_delete_data(lib_list, library);
+	rz_list_delete_val(lib_list, library);
 }
 
 static void add_library(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char *dllname) {
@@ -809,7 +809,7 @@ static void add_library(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char *dllna
 }
 
 static void *last_library(void) {
-	return lib_list ? rz_list_last(lib_list) : NULL;
+	return lib_list ? rz_list_last_val(lib_list) : NULL;
 }
 
 static bool breaked = false;
@@ -1178,7 +1178,7 @@ int w32_continue(RzDebug *dbg, int pid, int tid, int sig) {
 	}
 
 	if (th && th->bFinished) {
-		rz_list_delete_data(dbg->threads, th);
+		rz_list_delete_val(dbg->threads, th);
 	}
 
 	return tid;

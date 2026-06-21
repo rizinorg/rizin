@@ -11,6 +11,7 @@ arch_plugins_list = [
   'arm_cs',
   'avr',
   'bf',
+  'c166',
   'chip8',
   'cil',
   'cr16',
@@ -19,6 +20,7 @@ arch_plugins_list = [
   'ebc',
   'gb',
   'h8300',
+  'h8500',
   'hexagon',
   'i4004',
   'i8080',
@@ -31,6 +33,7 @@ arch_plugins_list = [
   'malbolge',
   'mcore',
   'mcs96',
+  'milstd1750',
   'mips_cs',
   'msp430',
   'null',
@@ -51,13 +54,14 @@ arch_plugins_list = [
   'tms320',
   'v810',
   'v850',
+  'vax',
   'wasm',
   'x86_as',
-  'x86_cs',
   'x86_nasm',
   'x86_nz',
   'xap',
   'xcore_cs',
+  'x86_zydis',
 ]
 
 arch_plugin_sources = [
@@ -68,6 +72,7 @@ arch_plugin_sources = [
   'p/arch_arm_cs.c',
   'p/arch_avr.c',
   'p/arch_bf.c',
+  'p/arch_c166.c',
   'p/arch_chip8.c',
   'p/arch_cil.c',
   'p/arch_cr16.c',
@@ -76,6 +81,7 @@ arch_plugin_sources = [
   'p/arch_ebc.c',
   'p/arch_gb.c',
   'p/arch_h8300.c',
+  'p/arch_h8500.c',
   'p/arch_hexagon.c',
   'p/arch_i4004.c',
   'p/arch_i8080.c',
@@ -88,6 +94,7 @@ arch_plugin_sources = [
   'p/arch_malbolge.c',
   'p/arch_mcore.c',
   'p/arch_mcs96.c',
+  'p/arch_milstd1750.c',
   'p/arch_mips_cs.c',
   'p/arch_msp430.c',
   'p/arch_null.c',
@@ -108,13 +115,14 @@ arch_plugin_sources = [
   'p/arch_tms320.c',
   'p/arch_v810.c',
   'p/arch_v850.c',
+  'p/arch_vax.c',
   'p/arch_wasm.c',
   'p/arch_x86_as.c',
-  'p/arch_x86_cs.c',
   'p/arch_x86_nasm.c',
   'p/arch_x86_nz.c',
   'p/arch_xap.c',
   'p/arch_xcore_cs.c',
+  'p/arch_x86_zydis.c',
 ]
 
 arch_esil_sources = [
@@ -157,6 +165,9 @@ arch_isa_sources = [
   # 'isa/gb/gbdis.c',
   # 'isa/gb/meta_gb_cmt.c',
   'isa/h8300/h8300_disas.c',
+  'isa/h8300/h8300_esil.c',
+  'isa/h8300/h8300_il.c',
+  'isa/h8500/h8500.c',
   'isa/hexagon/hexagon.c',
   'isa/hexagon/hexagon_arch.c',
   'isa/hexagon/hexagon_disas.c',
@@ -208,6 +219,18 @@ arch_isa_sources = [
   'isa/java/jvm.c',
   'isa/lh5801/lh5801.c',
   'isa/luac/lua_arch.c',
+  'isa/luac/v50/analysis_50.c',
+  'isa/luac/v50/assembly_50.c',
+  'isa/luac/v50/disassembly_50.c',
+  'isa/luac/v50/opcode_50.c',
+  'isa/luac/v51/analysis_51.c',
+  'isa/luac/v51/assembly_51.c',
+  'isa/luac/v51/disassembly_51.c',
+  'isa/luac/v51/opcode_51.c',
+  'isa/luac/v52/analysis_52.c',
+  'isa/luac/v52/assembly_52.c',
+  'isa/luac/v52/disassembly_52.c',
+  'isa/luac/v52/opcode_52.c',
   'isa/luac/v53/analysis_53.c',
   'isa/luac/v53/assembly_53.c',
   'isa/luac/v53/disassembly_53.c',
@@ -216,7 +239,16 @@ arch_isa_sources = [
   'isa/luac/v54/assembly_54.c',
   'isa/luac/v54/disassembly_54.c',
   'isa/luac/v54/opcode_54.c',
+  'isa/luac/v55/analysis_55.c',
+  'isa/luac/v55/assembly_55.c',
+  'isa/luac/v55/disassembly_55.c',
+  'isa/luac/v55/opcode_55.c',
+  'isa/luac/luajit/analysis_2.1.c',
+  'isa/luac/luajit/arch_2.1.c',
+  'isa/luac/luajit/asm_2.1.c',
+  'isa/luac/luajit/opcode_2.1.c',
   'isa/mcore/mcore.c',
+  'isa/milstd1750/milstd1750_disas.c',
   'isa/mips/mips_assembler.c',
   'isa/mips/mips_esil.c',
   'isa/mips/mips_il.c',
@@ -257,6 +289,7 @@ arch_isa_sources = [
   'isa/pyc/opcode_311.c',
   'isa/pyc/opcode_312.c',
   'isa/pyc/opcode_313.c',
+  'isa/pyc/opcode_314.c',
   'isa/pyc/opcode_32.c',
   'isa/pyc/opcode_33.c',
   'isa/pyc/opcode_34.c',
@@ -282,21 +315,24 @@ arch_isa_sources = [
   'isa/sh/lookup.c',
   'isa/sh/sh_il.c',
   'isa/snes/snesdis.c',
+  'isa/sparc/sparc_il.c',
+  'isa/sparc/sparc_il_ops.c',
   'isa/spc700/spc700dis.c',
-  'isa/tms320/c55x_plus/c55plus.c',
+  'isa/tms320/c55_ir.c',
+  'isa/tms320/c54x/c54x.c',
+  'isa/tms320/c54x/c54x_il.c',
+  'isa/tms320/c55x_plus/c55plus_arch.c',
+  'isa/tms320/c55x/c55x_analysis.c',
   'isa/tms320/c55x_plus/c55plus_analysis.c',
-  'isa/tms320/c55x_plus/c55plus_decode.c',
-  'isa/tms320/c55x_plus/decode_funcs.c',
-  'isa/tms320/c55x_plus/hashtable.c',
-  'isa/tms320/c55x_plus/hashvector.c',
+  'isa/tms320/c55x_plus/c55plus_il_config.c',
   'isa/tms320/c55x_plus/ins.c',
-  'isa/tms320/c55x_plus/utils.c',
   'isa/tms320/c64x/c64x.c',
-  'isa/tms320/tms320_dasm.c',
+  'isa/tms320/tms320c55x_insn.c',
   'isa/v810/v810_disas.c',
   'isa/v810/v810_il.c',
   'isa/v850/v850_disas.c',
   'isa/v850/v850_il.c',
+  'isa/vax/vax_dis.c',
   'isa/wasm/wasm.c',
   'isa/x86/common.c',
   'isa/x86/x86_il.c',
@@ -307,16 +343,28 @@ arch_isa_includes = [
   'isa',
 ]
 
+if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 6
+  # plugins
+  arch_plugins_list += [
+    'cbpf_cs',
+    'riscv_cs',
+  ]
+
+  # plugins sources
+  arch_plugin_sources += [
+    'p/arch_cbpf_cs.c',
+    'p/arch_riscv_cs.c',
+  ]
+endif
+
 if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 4
   # plugins
   arch_plugins_list += [
-    'riscv_cs',
     'tricore_cs',
   ]
 
   # plugins sources
   arch_plugin_sources += [
-    'p/arch_riscv_cs.c',
     'p/arch_tricore_cs.c',
   ]
 
@@ -330,6 +378,7 @@ if capstone_dep.version() == 'next'
   # plugins
   arch_plugins_list += [
     'alpha_cs',
+    'hppa_cs',
     'loongarch_cs',
     'xtensa_cs',
   ]
@@ -338,6 +387,7 @@ if capstone_dep.version() == 'next'
   arch_plugin_sources += [
     'p/arch_alpha.c',
     'p/arch_loongarch_cs.c',
+    'p/arch_hppa_cs.c',
     'p/arch_xtensa_cs.c',
   ]
 
@@ -354,11 +404,7 @@ if get_option('use_gpl')
   arch_plugins_list += [
     'arc_gnu',
     'cris_gnu',
-    'hppa_gnu',
     'lanai_gnu',
-    'riscv_gnu',
-    'sparc_gnu',
-    'vax_gnu',
     'z80_gnu',
   ]
 
@@ -366,11 +412,7 @@ if get_option('use_gpl')
   arch_plugin_sources += [
     'p_gnu/arch_arc.c',
     'p_gnu/arch_cris.c',
-    'p_gnu/arch_hppa.c',
     'p_gnu/arch_lanai.c',
-    'p_gnu/arch_riscv.c',
-    'p_gnu/arch_sparc.c',
-    'p_gnu/arch_vax.c',
     'p_gnu/arch_z80.c',
   ]
 
@@ -382,14 +424,8 @@ if get_option('use_gpl')
     'isa_gnu/arc/arcompact-dis.c',
     'isa_gnu/cris/cris-dis.c',
     'isa_gnu/cris/cris-opc.c',
-    'isa_gnu/hppa/hppa-dis.c',
     'isa_gnu/lanai/lanai-dis.c',
     'isa_gnu/lanai/lanai-opc.c',
-    # 'isa_gnu/riscv/riscv-opc.c',
-    # 'isa_gnu/riscv/riscv.c',
-    'isa_gnu/sparc/sparc-dis.c',
-    'isa_gnu/sparc/sparc-opc.c',
-    'isa_gnu/vax/vax-dis.c',
     # 'isa_gnu/z80/expressions.c',
     # 'isa_gnu/z80/z80.c',
     # 'isa_gnu/z80/z80asm.c',
@@ -415,6 +451,7 @@ arch_common_sources = [
   'cycles.c',
   'data.c',
   'dwarf_process.c',
+  'luac_process.c',
   'fcn.c',
   'filter.c',
   'function.c',
@@ -423,6 +460,8 @@ arch_common_sources = [
   'jmptbl.c',
   'labels.c',
   'meta.c',
+  'no_rtti.c',
+  'omf_process.c',
   'op.c',
   'parse.c',
   'parse_helper.c',
@@ -435,6 +474,7 @@ arch_common_sources = [
   'rtti_msvc.c',
   'serialize_analysis.c',
   'similarity.c',
+  'swift_rtti.c',
   'switch.c',
   'types.c',
   'value.c',
@@ -478,6 +518,7 @@ rz_arch = library('rz_arch', rz_arch_sources,
     rz_type_dep,
     rz_il_dep,
     capstone_dep,
+    zydis_dep,
     mth,
     dependency('rzspp'),
   ],

@@ -35,12 +35,16 @@ static RzPVector /*<RzBinAddr *>*/ *mdmp_entries(RzBinFile *bf) {
 
 	rz_list_foreach (obj->pe32_bins, it, pe32_bin) {
 		vec = Pe32_rz_bin_mdmp_pe_get_entrypoint(pe32_bin);
-		rz_pvector_join(ret, vec);
+		if (vec) {
+			rz_pvector_join(ret, vec);
+		}
 		rz_pvector_free(vec);
 	}
 	rz_list_foreach (obj->pe64_bins, it, pe64_bin) {
 		vec = Pe64_rz_bin_mdmp_pe_get_entrypoint(pe64_bin);
-		rz_pvector_join(ret, vec);
+		if (vec) {
+			rz_pvector_join(ret, vec);
+		}
 		rz_pvector_free(vec);
 	}
 
@@ -265,12 +269,11 @@ static RzPVector /*<RzBinSection *>*/ *mdmp_sections(RzBinFile *bf) {
 			return ret;
 		}
 
-		ptr->name = RZ_NEWS0(char, ptr_name_len);
+		ptr->name = (char *)rz_str_utf16_to_utf8(str_buffer, str_length, false);
 		if (!ptr->name) {
 			free(ptr);
 			continue;
 		}
-		rz_str_utf16_to_utf8((ut8 *)ptr->name, str_length * 4, str_buffer, str_length, true);
 		ptr->vaddr = module->base_of_image;
 		ptr->vsize = module->size_of_image;
 		ptr->paddr = rz_bin_mdmp_get_paddr(obj, ptr->vaddr);
@@ -453,8 +456,9 @@ static bool mdmp_check_buffer(RzBuffer *b) {
 
 RzBinPlugin rz_bin_plugin_mdmp = {
 	.name = "mdmp",
-	.desc = "Windows MiniDump plugin",
+	.desc = "Windows MiniDump",
 	.license = "LGPL3",
+	.author = "Davis",
 	.destroy = &mdmp_destroy,
 	.entries = mdmp_entries,
 	.get_sdb = &mdmp_get_sdb,

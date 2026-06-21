@@ -33,7 +33,7 @@ RZ_IPI void rz_bin_string_decode_base64(RZ_NONNULL RzBinString *bstr) {
 	free(bstr->string);
 	bstr->string = decoded;
 	bstr->length = strlen(decoded);
-	bstr->type = RZ_STRING_ENC_BASE64;
+	bstr->type = RZ_STRING_ENC_UTF8;
 }
 
 RZ_API void rz_bin_mem_free(RZ_NULLABLE void *data) {
@@ -98,6 +98,7 @@ static int reloc_target_cmp(const void *a, const void *b, void *user) {
 RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzPVector /*<RzBinReloc *>*/ *relocs) {
 	RzBinRelocStorage *ret = RZ_NEW0(RzBinRelocStorage);
 	if (!ret) {
+		rz_pvector_free(relocs);
 		return NULL;
 	}
 	RzPVector sorter;
@@ -193,6 +194,7 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 	ht_sp_free(o->import_name_symbols);
 	ht_up_free(o->vaddr_to_class_method);
 	rz_bin_info_free(o->info);
+	rz_structured_data_free(o->structured_data);
 	rz_bin_reloc_storage_free(o->relocs);
 	rz_bin_source_line_info_free(o->lines);
 	rz_bin_string_database_free(o->strings);
@@ -524,7 +526,8 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 	// the object is created from. The reason for this is to prevent
 	// mis-reporting when the file is loaded from impartial bytes or is
 	// extracted from a set of bytes in the file
-	rz_bin_file_set_obj(bf->rbin, bf, o);
+	rz_bin_file_set_obj(bf, o);
+	rz_bin_set_cur_binfile(bf->rbin, bf);
 	rz_bin_set_baddr(bf->rbin, o->opts.baseaddr);
 	rz_bin_object_process_plugin_data(bf, o);
 
@@ -596,14 +599,15 @@ RZ_IPI RzBinObject *rz_bin_object_get_cur(RzBin *bin) {
 	return bin->cur->o;
 }
 
-RZ_IPI RzBinObject *rz_bin_object_find_by_arch_bits(RzBinFile *bf, const char *arch, int bits, const char *name) {
-	rz_return_val_if_fail(bf && arch && name, NULL);
+RZ_IPI RzBinObject *rz_bin_object_find_by_arch_bits(RzBinFile *bf, RZ_NONNULL const char *arch, int bits, RZ_NULLABLE const char *machine, RZ_NULLABLE const char *filename) {
+	rz_return_val_if_fail(bf && arch, NULL);
 	if (bf->o) {
 		RzBinInfo *info = bf->o->info;
 		if (info && info->arch && info->file &&
 			(bits == info->bits) &&
 			!strcmp(info->arch, arch) &&
-			!strcmp(info->file, name)) {
+			(!filename || RZ_STR_EQ(info->file, filename)) &&
+			(!machine || RZ_STR_EQ(info->machine, machine))) {
 			return bf->o;
 		}
 	}
@@ -688,6 +692,11 @@ RZ_API const RzPVector /*<RzBinImport *>*/ *rz_bin_object_get_imports(RZ_NONNULL
 RZ_API const RzBinInfo *rz_bin_object_get_info(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->info;
+}
+
+RZ_API const RzStructuredData *rz_bin_object_get_structured_data(RZ_BORROW RZ_NONNULL RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->structured_data;
 }
 
 /**

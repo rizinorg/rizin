@@ -1,0 +1,425 @@
+NAME=c54x analysis: register profile (PC alias resolves)
+FILE==
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c54x
+arp~^=PC
+EOF
+EXPECT=<<EOF
+=PC	pc
+EOF
+RUN
+
+NAME=c54x analysis: opcode classification (batched)
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c54x
+wx 95f4 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^size
+wx 73f00001 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+wx 73f20001 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+wx 74f00001 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+ao 1 @ 0~^fail
+ao 1 @ 0~^stackptr
+wx 45f82001 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+ao 1 @ 0~^fail
+wx 45f92001 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+ao 1 @ 0~^fail
+ao 1 @ 0~^stackptr
+wx 816c2001 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+ao 1 @ 0~^fail
+wx e2f4 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^fail
+wx e3f4 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^fail
+ao 1 @ 0~^stackptr
+wx 00fc @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^stackptr
+wx 00fe @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^stackptr
+wx 45fc @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^fail
+ao 1 @ 0~^stackptr
+wx 45fd @ 0
+ao 1 @ 0~^type
+wx ebf4 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^stackptr
+wx e0f7 @ 0
+ao 1 @ 0~^type
+wx c5f7 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^val
+wx c5f4 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^val
+wx e1f4 @ 0
+ao 1 @ 0~^type
+wx 0fec @ 0
+ao 1 @ 0~^type
+wx 72f00001 @ 0
+ao 1 @ 0~^type
+wx 8100 @ 0
+ao 1 @ 0~^type
+wx 8108 @ 0
+ao 1 @ 0~^type
+wx 8120 @ 0
+ao 1 @ 0~^type
+wx 8118 @ 0
+ao 1 @ 0~^type
+wx 811a @ 0
+ao 1 @ 0~^type
+wx 811c @ 0
+ao 1 @ 0~^type
+wx 81600500 @ 0
+ao 1 @ 0~^type
+wx 84f4 @ 0
+ao 1 @ 0~^type
+wx 93f4 @ 0
+ao 1 @ 0~^type
+wx 7ff4 @ 0
+ao 1 @ 0~^type
+wx e1f0 @ 0
+ao 1 @ 0~^type
+wx 91f4 @ 0
+ao 1 @ 0~^type
+wx 90f4 @ 0
+ao 1 @ 0~^type
+wx 85f4 @ 0
+ao 1 @ 0~^type
+wx 9ff4 @ 0
+ao 1 @ 0~^type
+wx b8f7 @ 0
+ao 1 @ 0~^type
+wx b9f6 @ 0
+ao 1 @ 0~^type
+wx 8110 @ 0
+ao 1 @ 0~^type
+wx 1148 @ 0
+ao 1 @ 0~^type
+wx 8180 @ 0
+ao 1 @ 0~^type
+wx 11770500 @ 0
+ao 1 @ 0~^type
+wx 114a @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^stackptr
+wx 118a @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^stackptr
+wx 814b @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^stackptr
+wx 818b @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^stackptr
+wx 059e @ 0
+ao 1 @ 0~^type
+wx 81740500 @ 0
+ao 1 @ 0~^type
+EOF
+EXPECT=<<EOF
+type: nop
+size: 2
+type: jmp
+jump: 0x00000100
+type: jmp
+jump: 0x00000100
+type: call
+jump: 0x00000100
+fail: 0x00000004
+stackptr: 2
+type: cjmp
+jump: 0x00000120
+fail: 0x00000004
+type: ccall
+jump: 0x00000120
+fail: 0x00000004
+stackptr: 2
+type: cjmp
+jump: 0x00000120
+fail: 0x00000004
+type: ujmp
+fail: 0x00000002
+type: ucall
+fail: 0x00000002
+stackptr: 2
+type: ret
+stackptr: -2
+type: ret
+stackptr: -2
+type: cret
+fail: 0x00000002
+stackptr: -2
+type: cmov
+type: ret
+stackptr: -2
+type: swi
+type: swi
+val: 0x00000005
+type: swi
+val: 0x00000005
+type: sync
+type: rep
+type: rep
+type: add
+type: sub
+type: mul
+type: and
+type: or
+type: xor
+type: cmp
+type: sub
+type: not
+type: sar
+type: shl
+type: rol
+type: ror
+type: mov
+type: mov
+type: or
+type: and
+type: load
+type: load
+type: store
+type: store
+type: push
+stackptr: 2
+type: pop
+stackptr: -2
+type: push
+stackptr: 1
+type: pop
+stackptr: -1
+type: store
+type: load
+EOF
+RUN
+
+NAME=c54x analysis: RzAnalysisOp operand fields (indirect branch/call)
+FILE==
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c54x
+# BACC a -- branch to address in accumulator; ireg=a, direction=exec
+wx e2f4 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^ireg
+ao 1 @ 0~^direction
+# CALA a -- call address in accumulator; ireg=a, direction=exec, stackptr=2
+wx e3f4 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^ireg
+ao 1 @ 0~^direction
+ao 1 @ 0~^stackop
+ao 1 @ 0~^stackptr
+# CALL 0x100 -- direct call; jump target + return-slot stack push
+wx 74f00001 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+ao 1 @ 0~^direction
+EOF
+EXPECT=<<EOF
+type: ujmp
+ireg: a
+direction: exec
+type: ucall
+ireg: a
+direction: exec
+stackop: inc
+stackptr: 2
+type: call
+jump: 0x00000100
+direction: exec
+EOF
+RUN
+
+NAME=c54x analysis: RzAnalysisOp operand fields (memory load/store)
+FILE==
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c54x
+# LD *ar1, a -- indirect load; reg=a (dst), ireg=ar1 (pointer), read, refptr=2
+wx 8110 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^reg
+ao 1 @ 0~^ireg
+ao 1 @ 0~^direction
+ao 1 @ 0~^refptr
+# STL a, *ar1 -- indirect store; reg=a (src), ireg=ar1, write
+wx 8180 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^reg
+ao 1 @ 0~^ireg
+ao 1 @ 0~^direction
+# LD @0x5, a -- direct (DP/SP-relative) load; reg=a, disp=0x5, read (no base reg)
+wx 0510 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^reg
+ao 1 @ 0~^disp
+ao 1 @ 0~^direction
+EOF
+EXPECT=<<EOF
+type: load
+reg: a
+ireg: ar1
+direction: read
+refptr: 2
+type: store
+reg: a
+ireg: ar1
+direction: write
+type: load
+reg: a
+disp: 0x00000005
+direction: read
+EOF
+RUN
+
+NAME=c54x analysis: data immediate on op->val (and branch target does not leak)
+FILE==
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c54x
+# LD #0x1234, a -- the data immediate is recorded on op->val
+wx 20f03412 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^val
+# ADD #0x1234, b -- arithmetic immediate
+wx 00f33412 @ 0
+ao 1 @ 0~^val
+# RPT #0xf -- repeat-count immediate
+wx 0fec @ 0
+ao 1 @ 0~^val
+# FB 0x2010 -- far branch: the target belongs in jump and must NOT leak into val
+wx 80f81020 @ 0
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+ao 1 @ 0~^val
+EOF
+EXPECT=<<EOF
+type: load
+val: 0x00001234
+val: 0x00001234
+val: 0x0000000f
+type: jmp
+jump: 0x00002010
+EOF
+RUN
+
+NAME=c54x analysis: named instruction id (op->id = C54X_INS_*)
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c54x
+# The disassembler tags each instruction with a named C54X_INS_* id, which the
+# analyzer surfaces on op->id. These are positions in the C54X_INS_* enum:
+# NOP=1, B=2, CALL=4, RET=6, RESET=14, TRAP=15, INTR=16, IDLE=17, LD=23,
+# PSHM=26, POPM=27, AND=35.
+wx 95f4 @ 0
+ao 1 @ 0~^id
+wx 73f00001 @ 0
+ao 1 @ 0~^id
+wx 74f00001 @ 0
+ao 1 @ 0~^id
+wx 00fc @ 0
+ao 1 @ 0~^id
+wx e0f7 @ 0
+ao 1 @ 0~^id
+wx c5f4 @ 0
+ao 1 @ 0~^id
+wx c5f7 @ 0
+ao 1 @ 0~^id
+wx e1f4 @ 0
+ao 1 @ 0~^id
+wx 8110 @ 0
+ao 1 @ 0~^id
+wx 114a @ 0
+ao 1 @ 0~^id
+wx 118a @ 0
+ao 1 @ 0~^id
+wx 8118 @ 0
+ao 1 @ 0~^id
+EOF
+EXPECT=<<EOF
+id: 1
+id: 2
+id: 4
+id: 6
+id: 14
+id: 15
+id: 16
+id: 17
+id: 23
+id: 26
+id: 27
+id: 35
+EOF
+RUN
+
+NAME=c54x analysis: emulateme c54x dbg.coff -- arch/cpu + function discovery
+FILE=bins/tms320/emulateme_nostd.ccsv5.c54x.ticoff2.dbg.coff
+ARGS=-A
+CMDS=<<EOF
+iI~^arch
+iI~^cpu
+iI~^bintype
+iI~^endian
+afl~?
+afl~sym._main$~?
+EOF
+EXPECT=<<EOF
+arch     tms320
+cpu      c54x
+bintype  coff
+endian   LE
+12
+1
+EOF
+RUN
+
+NAME=c54x analysis: coff1 03_branches_calls.o -- control-flow functions discovered
+FILE=bins/tms320/coff1/03_branches_calls.o
+ARGS=-A
+CMDS=<<EOF
+iI~^arch
+iI~^cpu
+afl~?
+EOF
+EXPECT=<<EOF
+arch     tms320
+cpu      c54x
+8
+EOF
+RUN
+
+NAME=c54x analysis: coff1 08_far_mode_c548.o -- far-addressing code analyzed
+FILE=bins/tms320/coff1/08_far_mode_c548.o
+ARGS=-A
+CMDS=<<EOF
+iI~^cpu
+afl~?
+EOF
+EXPECT=<<EOF
+cpu      c54x
+5
+EOF
+RUN

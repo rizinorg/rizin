@@ -171,7 +171,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 		mal->buf = rz_inflate(data, (int)len, NULL, size);
 		if (mal->buf) {
 			free(data);
-			return rz_io_desc_new(io, &rz_io_plugin_gzip, pathname, rw, mode, mal);
+			return rz_io_desc_new(io, &rz_io_plugin_gzip, pathname, rw, mal);
 		}
 		free(data);
 		eprintf("Cannot allocate (%s) %d byte(s)\n", pathname + 9, mal->size);

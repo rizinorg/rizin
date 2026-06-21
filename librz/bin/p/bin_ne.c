@@ -8,7 +8,7 @@
 #include "../i/private.h"
 #include "../format/ne/ne.h"
 
-static bool check_buffer(RzBuffer *b) {
+static bool ne_check_buffer(RzBuffer *b) {
 	ut64 length = rz_buf_size(b);
 	if (length <= 0x3d) {
 		return false;
@@ -32,9 +32,9 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+static bool ne_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	rz_return_val_if_fail(bf && obj && buf, false);
-	rz_bin_ne_obj_t *res = rz_bin_ne_new_buf(buf, bf->rbin->verbose);
+	ne_t *res = ne_new_buf(buf);
 	if (res) {
 		obj->bin_obj = res;
 		return true;
@@ -42,94 +42,134 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	return false;
 }
 
-static void destroy(RzBinFile *bf) {
-	rz_bin_ne_free(bf->o->bin_obj);
+static void ne_destroy(RzBinFile *bf) {
+	ne_free(bf->o->bin_obj);
 }
 
-static void header(RzBinFile *bf) {
-	struct rz_bin_t *rbin = bf->rbin;
-	rz_bin_ne_obj_t *ne = bf->o->bin_obj;
-	rbin->cb_printf("Signature: NE\n");
-	rbin->cb_printf("MajLinkerVersion: %d\n", ne->ne_header->MajLinkerVersion);
-	rbin->cb_printf("MinLinkerVersion: %d\n", ne->ne_header->MinLinkerVersion);
-	rbin->cb_printf("EntryTableOffset: 0x%04x\n", ne->ne_header->EntryTableOffset);
-	rbin->cb_printf("EntryTableLength: %d\n", ne->ne_header->EntryTableLength);
-	rbin->cb_printf("FileLoadCRC: %08x\n", ne->ne_header->FileLoadCRC);
-	rbin->cb_printf("ProgFlags: %d\n", ne->ne_header->ProgFlags);
-	rbin->cb_printf("ApplFlags: %d\n", ne->ne_header->ApplFlags);
-	rbin->cb_printf("AutoDataSegIndex: %d\n", ne->ne_header->AutoDataSegIndex);
-	rbin->cb_printf("InitHeapSize: %d\n", ne->ne_header->InitHeapSize);
-	rbin->cb_printf("InitStackSize: %d\n", ne->ne_header->InitStackSize);
-	rbin->cb_printf("EntryPointCSIndex: %d\n", ne->ne_header->csEntryPoint);
-	rbin->cb_printf("EntryPointIPOff: 0x%04x\n", ne->ne_header->ipEntryPoint);
-	rbin->cb_printf("InitStack: %d\n", ne->ne_header->InitStack);
-	rbin->cb_printf("SegCount: %d\n", ne->ne_header->SegCount);
-	rbin->cb_printf("ModuleRefsCount: %d\n", ne->ne_header->ModRefs);
-	rbin->cb_printf("NonResNamesTblSiz: 0x%x\n", ne->ne_header->NoResNamesTabSiz);
-	rbin->cb_printf("SegTableOffset: 0x%x\n", ne->ne_header->SegTableOffset);
-	rbin->cb_printf("ResourceTblOff: 0x%x\n", ne->ne_header->ResTableOffset);
-	rbin->cb_printf("ResidentNameTblOff: 0x%x\n", ne->ne_header->ResidNamTable);
-	rbin->cb_printf("ModuleRefTblOff: 0x%x\n", ne->ne_header->ModRefTable);
-	rbin->cb_printf("ImportNameTblOff: 0x%x\n", ne->ne_header->ImportNameTable);
-	rbin->cb_printf("OffStartNonResTab: %d\n", ne->ne_header->OffStartNonResTab);
-	rbin->cb_printf("MovEntryCount: %d\n", ne->ne_header->MovEntryCount);
-	rbin->cb_printf("FileAlnSzShftCnt: %d\n", ne->ne_header->FileAlnSzShftCnt);
-	rbin->cb_printf("nResTabEntries: %d\n", ne->ne_header->nResTabEntries);
-	rbin->cb_printf("OS: %s\n", ne->os);
-	rbin->cb_printf("OS2EXEFlags: %x\n", ne->ne_header->OS2EXEFlags);
-	rbin->cb_printf("retThunkOffset: %d\n", ne->ne_header->retThunkOffset);
-	rbin->cb_printf("segRefThunksOff: %d\n", ne->ne_header->segrefthunksoff);
-	rbin->cb_printf("mincodeswap: %d\n", ne->ne_header->mincodeswap);
-	rbin->cb_printf("winver: %d.%d\n", ne->ne_header->expctwinver[1], ne->ne_header->expctwinver[0]);
-}
+static RzStructuredData *ne_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
-RzBinInfo *info(RzBinFile *bf) {
-	rz_bin_ne_obj_t *ne = bf->o->bin_obj;
-	RzBinInfo *i = RZ_NEW0(RzBinInfo);
-	if (i) {
-		i->bits = 16;
-		i->arch = rz_str_dup("x86");
-		i->os = rz_str_dup(ne->os);
-		i->claimed_checksum = rz_str_newf("%08x", ne->ne_header->FileLoadCRC);
+	ne_t *ne_obj = bf->o->bin_obj;
+	char tmp[256] = { 0 };
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
 	}
+
+	RzStructuredData *ne = rz_structured_data_map_add_map(info, "ne");
+	if (!ne) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_unsigned(ne, "MajLinkerVersion", ne_obj->ne_header->MajLinkerVersion, false);
+	rz_structured_data_map_add_unsigned(ne, "MinLinkerVersion", ne_obj->ne_header->MinLinkerVersion, false);
+	rz_structured_data_map_add_unsigned(ne, "EntryTableOffset", ne_obj->ne_header->EntryTableOffset, true);
+	rz_structured_data_map_add_unsigned(ne, "EntryTableLength", ne_obj->ne_header->EntryTableLength, false);
+	rz_structured_data_map_add_unsigned(ne, "FileLoadCRC", ne_obj->ne_header->FileLoadCRC, true);
+	rz_structured_data_map_add_unsigned(ne, "FlagWord", ne_obj->ne_header->FlagWord, true);
+	rz_structured_data_map_add_unsigned(ne, "AutoDataSegIndex", ne_obj->ne_header->AutoDataSegIndex, false);
+	rz_structured_data_map_add_unsigned(ne, "InitHeapSize", ne_obj->ne_header->InitHeapSize, false);
+	rz_structured_data_map_add_unsigned(ne, "InitStackSize", ne_obj->ne_header->InitStackSize, false);
+	rz_structured_data_map_add_unsigned(ne, "EntryPoint CS", ne_obj->ne_header->csEntryPoint, true);
+	rz_structured_data_map_add_unsigned(ne, "EntryPoint IP", ne_obj->ne_header->ipEntryPoint, true);
+	rz_structured_data_map_add_unsigned(ne, "InitStack", ne_obj->ne_header->InitStack, true);
+	rz_structured_data_map_add_unsigned(ne, "SegCount", ne_obj->ne_header->SegCount, false);
+	rz_structured_data_map_add_unsigned(ne, "ModuleRefsCount", ne_obj->ne_header->ModRefs, false);
+	rz_structured_data_map_add_unsigned(ne, "NonResNamesTblSiz", ne_obj->ne_header->NoResNamesTabSiz, true);
+	rz_structured_data_map_add_unsigned(ne, "SegTableOffset", ne_obj->ne_header->SegTableOffset, true);
+	rz_structured_data_map_add_unsigned(ne, "ResourceTblOff", ne_obj->ne_header->ResTableOffset, true);
+	rz_structured_data_map_add_unsigned(ne, "ResidentNameTblOff", ne_obj->ne_header->ResidNamTable, true);
+	rz_structured_data_map_add_unsigned(ne, "ModuleRefTblOff", ne_obj->ne_header->ModRefTable, true);
+	rz_structured_data_map_add_unsigned(ne, "ImportNameTblOff", ne_obj->ne_header->ImportNameTable, true);
+	rz_structured_data_map_add_unsigned(ne, "OffStartNonResTab", ne_obj->ne_header->OffStartNonResTab, false);
+	rz_structured_data_map_add_unsigned(ne, "MovEntryCount", ne_obj->ne_header->MovEntryCount, false);
+	rz_structured_data_map_add_unsigned(ne, "FileAlnSzShftCnt", ne_obj->ne_header->FileAlnSzShftCnt, false);
+	rz_structured_data_map_add_unsigned(ne, "nResTabEntries", ne_obj->ne_header->nResTabEntries, false);
+	rz_structured_data_map_add_string(ne, "OS", ne_obj->os);
+	rz_structured_data_map_add_unsigned(ne, "OS2EXEFlags", ne_obj->ne_header->OS2EXEFlags, true);
+	rz_structured_data_map_add_unsigned(ne, "retThunkOffset", ne_obj->ne_header->retThunkOffset, true);
+	rz_structured_data_map_add_unsigned(ne, "segRefThunksOff", ne_obj->ne_header->segrefthunksoff, true);
+	rz_structured_data_map_add_unsigned(ne, "mincodeswap", ne_obj->ne_header->mincodeswap, false);
+
+	rz_strf(tmp, "%d.%d", ne_obj->ne_header->expctwinver[1], ne_obj->ne_header->expctwinver[0]);
+	rz_structured_data_map_add_string(ne, "winver", tmp);
+
+	return info;
+}
+
+static RzBinInfo *ne_info(RzBinFile *bf) {
+	ne_t *ne = bf->o->bin_obj;
+	RzBinInfo *i = RZ_NEW0(RzBinInfo);
+	if (!i) {
+		return NULL;
+	}
+
+	i->has_va = false;
+	i->bits = 16;
+	i->arch = rz_str_dup("x86");
+	i->os = rz_str_dup(ne->os);
+	i->claimed_checksum = rz_str_newf("%08x", ne->ne_header->FileLoadCRC);
 	return i;
 }
 
-RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	return rz_bin_ne_get_entrypoints(bf->o->bin_obj);
+static RzPVector /*<RzBinAddr *>*/ *ne_entries(RzBinFile *bf) {
+	return ne_get_entrypoints(bf->o->bin_obj);
 }
 
-RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
-	return rz_bin_ne_get_symbols(bf->o->bin_obj);
+static RzPVector /*<RzBinSymbol *>*/ *ne_symbols(RzBinFile *bf) {
+	return ne_get_symbols(bf->o->bin_obj);
 }
 
-RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
-	return rz_bin_ne_get_imports(bf->o->bin_obj);
+static RzPVector /*<RzBinImport *>*/ *ne_imports(RzBinFile *bf) {
+	return ne_get_imports(bf->o->bin_obj);
 }
 
-RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	return rz_bin_ne_get_segments(bf->o->bin_obj);
+static RzPVector /*<RzBinSection *>*/ *ne_sections(RzBinFile *bf) {
+	return ne_get_sections(bf->o->bin_obj);
 }
 
-RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
-	return rz_bin_ne_get_relocs(bf->o->bin_obj);
+static RzList /*<char *>*/ *ne_section_flag_to_rzlist(ut64 flag) {
+	return ne_convert_section_flag_to_rzlist(flag);
+}
+
+static char *ne_section_type_to_string(ut64 type) {
+	return ne_convert_section_type_to_string(type);
+}
+
+static RzPVector /*<RzBinReloc *>*/ *ne_relocs(RzBinFile *bf) {
+	return ne_get_relocs(bf->o->bin_obj);
+}
+
+static RzPVector /*<RzBinResource *>*/ *ne_resources(RzBinFile *bf) {
+	return ne_get_resources(bf->o->bin_obj);
+}
+
+static RzPVector /*<char *>*/ *ne_libraries(RzBinFile *bf) {
+	return ne_get_libraries(bf->o->bin_obj);
 }
 
 RzBinPlugin rz_bin_plugin_ne = {
 	.name = "ne",
-	.desc = "NE format plugin",
+	.desc = "NE (New Executable)",
 	.author = "GustavoLCR",
 	.license = "LGPL3",
-	.check_buffer = &check_buffer,
-	.load_buffer = &load_buffer,
-	.destroy = &destroy,
-	.header = &header,
-	.info = &info,
-	.entries = &entries,
-	.sections = &sections,
-	.symbols = &symbols,
-	.imports = &imports,
-	.relocs = &relocs,
+	.check_buffer = &ne_check_buffer,
+	.load_buffer = &ne_load_buffer,
+	.destroy = &ne_destroy,
+	.bin_structure = &ne_structure,
+	.info = &ne_info,
+	.entries = &ne_entries,
+	.sections = &ne_sections,
+	.symbols = &ne_symbols,
+	.imports = &ne_imports,
+	.relocs = &ne_relocs,
+	.resources = &ne_resources,
+	.libs = &ne_libraries,
+	.section_flag_to_rzlist = &ne_section_flag_to_rzlist,
+	.section_type_to_string = &ne_section_type_to_string,
+	.maps = &rz_bin_maps_of_file_sections,
 };
 
 #ifndef RZ_PLUGIN_INCORE

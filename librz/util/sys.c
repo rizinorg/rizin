@@ -91,6 +91,7 @@ extern char **environ;
 #define TMP_BUFSIZE 4096
 #ifdef _MSC_VER
 #include <psapi.h>
+#include <dbghelp.h>
 #include <process.h> // to allow getpid under windows msvc compilation
 #include <direct.h> // to allow getcwd under windows msvc compilation
 #endif /* _MSC_VER */
@@ -129,8 +130,8 @@ RZ_LIB_VERSION(rz_util);
 #else
 #define RZ_SYS_ASM_START_ROP() \
 	__asm__ __volatile__("leaq %0, %%rsp; ret" \
-			     : \
-			     : "m"(*bufptr));
+		: \
+		: "m"(*bufptr));
 #endif
 #elif __i386__
 #ifdef _MSC_VER
@@ -142,8 +143,8 @@ RZ_LIB_VERSION(rz_util);
 #else
 #define RZ_SYS_ASM_START_ROP() \
 	__asm__ __volatile__("leal %0, %%esp; ret" \
-			     : \
-			     : "m"(*bufptr));
+		: \
+		: "m"(*bufptr));
 #endif
 #else
 #define RZ_SYS_ASM_START_ROP() \
@@ -176,7 +177,6 @@ static const struct {
 	{ "lm32", RZ_SYS_ARCH_LM32 },
 	{ "v850", RZ_SYS_ARCH_V850 },
 	{ "tricore", RZ_SYS_ARCH_TRICORE },
-	{ NULL, 0 }
 };
 
 #if __WINDOWS__
@@ -354,7 +354,53 @@ RZ_API void rz_sys_backtrace(void) {
 	}
 #else
 #ifdef _MSC_VER
-#pragma message("TODO: rz_sys_backtrace : unimplemented")
+	SymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
+
+	HANDLE process = GetCurrentProcess();
+
+	if (!SymInitialize(process, NULL, TRUE)) {
+		eprintf("SymInitialize() failed (%d), no backtrace will be generated\n", GetLastError());
+		return;
+	}
+
+	void *stack[64];
+	ut16 frame_count = CaptureStackBackTrace(0, 64, stack, NULL);
+	eprintf("Tracing %" PFMT32u " stack frames:\n", frame_count);
+
+	ut8 *buffer = malloc(sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR));
+
+	if (!buffer) {
+		eprintf("malloc failed, no backtrace will be generated\n");
+		SymCleanup(process);
+		return;
+	}
+
+	SYMBOL_INFO *symbol = (SYMBOL_INFO *)buffer;
+	symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+	symbol->MaxNameLen = MAX_SYM_NAME;
+
+	for (ut16 i = 0; i < frame_count; i++) {
+		ut64 offset_from_sym = 0;
+		ut32 line_displacement = 0;
+		IMAGEHLP_LINE64 line = { .SizeOfStruct = sizeof(IMAGEHLP_LINE64) };
+
+		if (!SymFromAddr(process, (utptr)(stack[i]), &offset_from_sym, symbol)) {
+			// Print only symbol name + pc/rip address
+			eprintf("  [%" PFMT32u "]: 0x%" PFMT64x "\n", i, (ut64)(stack[i]));
+			continue;
+		}
+
+		if (SymGetLineFromAddr64(process, (utptr)(stack[i]), &line_displacement, &line)) {
+			// Source file and line details available
+			eprintf("  [%" PFMT32u "]: %s() at %s:%" PFMT32u "\n", i, symbol->Name, line.FileName, line.LineNumber);
+		} else {
+			// Print only symbol name + offset from symbol
+			eprintf("  [%" PFMT32u "]: %s()+0x%" PFMT64x "\n", i, symbol->Name, offset_from_sym);
+		}
+	}
+
+	free(buffer);
+	SymCleanup(process);
 #else
 #warning TODO: rz_sys_backtrace : unimplemented
 #endif
@@ -365,6 +411,9 @@ RZ_API void rz_sys_backtrace(void) {
  * \brief Sleep for \p secs seconds
  */
 RZ_API int rz_sys_sleep(int secs) {
+	if (secs < 1) {
+		return 0;
+	}
 #if HAVE_CLOCK_NANOSLEEP && defined(CLOCK_MONOTONIC)
 	struct timespec rqtp;
 	rqtp.tv_sec = secs;
@@ -382,6 +431,9 @@ RZ_API int rz_sys_sleep(int secs) {
  * \brief Sleep for \p usecs microseconds
  */
 RZ_API int rz_sys_usleep(int usecs) {
+	if (usecs < 1) {
+		return 0;
+	}
 #if HAVE_CLOCK_NANOSLEEP && defined(CLOCK_MONOTONIC)
 	struct timespec rqtp;
 	rqtp.tv_sec = usecs / 1000000;
@@ -492,56 +544,6 @@ RZ_API int rz_sys_setenv(const char *key, const char *value) {
 #warning rz_sys_setenv : unimplemented for this platform
 	return 0;
 #endif
-}
-
-#if __UNIX__
-static char *crash_handler_cmd = NULL;
-
-static void signal_handler(int signum) {
-	char cmd[1024];
-	if (!crash_handler_cmd) {
-		return;
-	}
-	snprintf(cmd, sizeof(cmd) - 1, crash_handler_cmd, getpid());
-	rz_sys_backtrace();
-	exit(rz_sys_system(cmd));
-}
-
-static int checkcmd(const char *c) {
-	char oc = 0;
-	for (; *c; c++) {
-		if (oc == '%') {
-			if (*c != 'd' && *c != '%') {
-				return 0;
-			}
-		}
-		oc = *c;
-	}
-	return 1;
-}
-#endif
-
-RZ_API int rz_sys_crash_handler(const char *cmd) {
-#ifndef __WINDOWS__
-	int sig[] = { SIGINT, SIGSEGV, SIGBUS, SIGQUIT, SIGHUP, 0 };
-
-	if (!checkcmd(cmd)) {
-		return false;
-	}
-#if HAVE_BACKTRACE
-	void *array[1];
-	/* call this outside of the signal handler to init it safely */
-	backtrace(array, 1);
-#endif
-
-	free(crash_handler_cmd);
-	crash_handler_cmd = rz_str_dup(cmd);
-
-	rz_sys_sigaction(sig, signal_handler);
-#else
-#pragma message("rz_sys_crash_handler : unimplemented for this platform")
-#endif
-	return true;
 }
 
 /**
@@ -869,31 +871,6 @@ RZ_API int rz_sys_cmdf(const char *fmt, ...) {
 	return ret;
 }
 
-RZ_API int rz_sys_cmdbg(const char *str) {
-#if __UNIX__
-	int ret, pid = rz_sys_fork();
-	if (pid == -1) {
-		return -1;
-	}
-	if (pid) {
-		return pid;
-	}
-	char *bin_sh = rz_file_binsh();
-	ret = rz_sys_execl(bin_sh, "sh", "-c", str, (const char *)NULL);
-	free(bin_sh);
-	eprintf("{exit: %d, pid: %d, cmd: \"%s\"}", ret, pid, str);
-	exit(0);
-	return -1;
-#else
-#ifdef _MSC_VER
-#pragma message("rz_sys_cmdbg is not implemented for this platform")
-#else
-#warning rz_sys_cmdbg is not implemented for this platform
-#endif
-	return -1;
-#endif
-}
-
 RZ_API char *rz_sys_cmd_str(const char *cmd, const char *input, int *len) {
 	char *output = NULL;
 	if (rz_sys_cmd_str_full(cmd, input, &output, len, NULL)) {
@@ -980,29 +957,8 @@ RZ_API void rz_sys_perror_str(const char *fun) {
 #endif /* __WINDOWS__ */
 }
 
-RZ_API bool rz_sys_arch_match(const char *archstr, const char *arch) {
-	char *ptr;
-	if (!archstr || !arch || !*archstr || !*arch) {
-		return true;
-	}
-	if (!strcmp(archstr, "*") || !strcmp(archstr, "any")) {
-		return true;
-	}
-	if (!strcmp(archstr, arch)) {
-		return true;
-	}
-	if ((ptr = strstr(archstr, arch))) {
-		char p = ptr[strlen(arch)];
-		if (!p || p == ',') {
-			return true;
-		}
-	}
-	return false;
-}
-
 RZ_API int rz_sys_arch_id(const char *arch) {
-	int i;
-	for (i = 0; arch_bit_array[i].name; i++) {
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(arch_bit_array); i++) {
 		if (!strcmp(arch, arch_bit_array[i].name)) {
 			return arch_bit_array[i].bit;
 		}
@@ -1011,9 +967,8 @@ RZ_API int rz_sys_arch_id(const char *arch) {
 }
 
 RZ_API const char *rz_sys_arch_str(int arch) {
-	int i;
-	for (i = 0; arch_bit_array[i].name; i++) {
-		if (arch & arch_bit_array[i].bit) {
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(arch_bit_array); i++) {
+		if (arch == arch_bit_array[i].bit) {
 			return arch_bit_array[i].name;
 		}
 	}

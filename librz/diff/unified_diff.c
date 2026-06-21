@@ -10,6 +10,8 @@
 #define Color_BGINSERT "\x1b[48;5;22m"
 #define Color_BGDELETE "\x1b[48;5;52m"
 
+#define RZ_DIFF_DEFAULT_N_GROUPS_BYTES 8
+
 #define FAST_MOD2(x, y)      ((x) & (y - 1))
 #define FAST_MOD64(x)        FAST_MOD2(x, 64)
 #define DIFF_COLOR(prefix)   (prefix == '+' ? Color_INSERT : (prefix == '-' ? Color_DELETE : ""))
@@ -42,8 +44,8 @@ static inline void diff_unified_append_ranges(RzList /*<RzDiffOp *>*/ *opcodes, 
 	const char *color_beg = color ? Color_RANGE : "";
 	const char *color_end = color ? Color_RESET : "";
 
-	RzDiffOp *first = rz_list_first(opcodes);
-	RzDiffOp *last = rz_list_last(opcodes);
+	RzDiffOp *first = rz_list_first_val(opcodes);
+	RzDiffOp *last = rz_list_last_val(opcodes);
 	st32 a_len = last->a_end - first->a_beg;
 	st32 b_len = last->b_end - first->b_beg;
 
@@ -51,8 +53,8 @@ static inline void diff_unified_append_ranges(RzList /*<RzDiffOp *>*/ *opcodes, 
 }
 
 static inline void diff_unified_json_ranges(RzList /*<RzDiffOp *>*/ *opcodes, PJ *pj) {
-	RzDiffOp *first = rz_list_first(opcodes);
-	RzDiffOp *last = rz_list_last(opcodes);
+	RzDiffOp *first = rz_list_first_val(opcodes);
+	RzDiffOp *last = rz_list_last_val(opcodes);
 	st32 a_len = last->a_end - first->a_beg;
 	st32 b_len = last->b_end - first->b_beg;
 
@@ -359,7 +361,10 @@ RZ_API RZ_OWN char *rz_diff_unified_text(RZ_NONNULL RzDiff *diff, RZ_NULLABLE co
 		rz_strbuf_appendf(sb, "--- %s\n+++ %s\n", from, to);
 	}
 
-	groups = rz_diff_opcodes_grouped_new(diff, RZ_DIFF_DEFAULT_N_GROUPS);
+	bool is_lines = DIFF_IS_LINES_METHOD(diff->methods);
+	bool is_bytes = DIFF_IS_BYTES_METHOD(diff->methods);
+
+	groups = rz_diff_opcodes_grouped_new(diff, is_bytes ? RZ_DIFF_DEFAULT_N_GROUPS_BYTES : RZ_DIFF_DEFAULT_N_GROUPS);
 	if (!groups) {
 		goto rz_diff_unified_text_fail;
 	}
@@ -370,16 +375,18 @@ RZ_API RZ_OWN char *rz_diff_unified_text(RZ_NONNULL RzDiff *diff, RZ_NULLABLE co
 		}
 		diff_unified_append_ranges(opcodes, sb, color);
 		rz_list_foreach (opcodes, ito, op) {
-			if (op->type == RZ_DIFF_OP_EQUAL) {
-				diff_unified_append_data(diff, diff->a, op->a_beg, op->a_end, sb, ' ', color);
-				continue;
-			}
-			if (op->type == RZ_DIFF_OP_DELETE) {
+			switch (op->type) {
+			case RZ_DIFF_OP_DELETE:
 				diff_unified_append_data(diff, diff->a, op->a_beg, op->a_end, sb, '-', color);
-			} else if (op->type == RZ_DIFF_OP_INSERT) {
+				break;
+			case RZ_DIFF_OP_EQUAL:
+				diff_unified_append_data(diff, diff->a, op->a_beg, op->a_end, sb, ' ', color);
+				break;
+			case RZ_DIFF_OP_INSERT:
 				diff_unified_append_data(diff, diff->b, op->b_beg, op->b_end, sb, '+', color);
-			} else if (op->type == RZ_DIFF_OP_REPLACE) {
-				if (!color || !DIFF_IS_LINES_METHOD(diff->methods) ||
+				break;
+			default: // RZ_DIFF_OP_REPLACE
+				if (!color || !is_lines ||
 					count_newlines(diff, diff->a, op->a_beg, op->a_end) !=
 						count_newlines(diff, diff->b, op->b_beg, op->b_end)) {
 					diff_unified_append_data(diff, diff->a, op->a_beg, op->a_end, sb, '-', color);
@@ -387,6 +394,7 @@ RZ_API RZ_OWN char *rz_diff_unified_text(RZ_NONNULL RzDiff *diff, RZ_NULLABLE co
 				} else {
 					diff_unified_lines_hl(diff, op, sb, '-', '+');
 				}
+				break;
 			}
 		}
 	}

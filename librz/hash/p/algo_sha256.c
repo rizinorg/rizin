@@ -79,6 +79,7 @@ RzHashPlugin rz_hash_plugin_sha256 = {
 	.name = "sha256",
 	.author = "Aaron D. Gifford",
 	.license = "BSD-3",
+	.description = "SHA-256 cryptographic hash",
 	.support_hmac = true,
 	.context_new = plugin_sha256_context_new,
 	.context_free = plugin_sha256_context_free,

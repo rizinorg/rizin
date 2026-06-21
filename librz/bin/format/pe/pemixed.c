@@ -45,8 +45,7 @@ RzBinPEObj *rz_bin_pemixed_init_dos(RzBinPEObj *pe_bin) {
 
 	RzBinPEObj *sub_bin_dos = RZ_NEW0(RzBinPEObj);
 	if (!(sub_bin_dos->b = rz_buf_new_with_bytes(tmp_buf, pe_hdr_off))) {
-		PE_(rz_bin_pe_free)
-		(sub_bin_dos);
+		PE_(rz_bin_pe_free)(sub_bin_dos);
 		return NULL;
 	}
 
@@ -141,8 +140,7 @@ void *rz_bin_pemixed_free(struct rz_bin_pemixed_obj_t *bin) {
 	// only one free is nessescary since they all point
 	// to the same original pe struct
 	// possible memleak here
-	PE_(rz_bin_pe_free)
-	(bin->sub_bin_net);
+	PE_(rz_bin_pe_free)(bin->sub_bin_net);
 	if (bin->sub_bin_dos) {
 		rz_buf_free(bin->sub_bin_dos->b); // dos is the only one with its own buf
 	}
@@ -169,26 +167,22 @@ struct rz_bin_pemixed_obj_t *rz_bin_pemixed_from_bytes_new(const ut8 *buf, ut64 
 	bin->size = size;
 	pe_bin = PE_(rz_bin_pe_new_buf)(bin->b, true);
 	if (!pe_bin) {
-		PE_(rz_bin_pe_free)
-		(pe_bin);
+		PE_(rz_bin_pe_free)(pe_bin);
 		return rz_bin_pemixed_free(bin);
 	}
 	if (!pe_bin->clr || !pe_bin->clr->header) {
-		PE_(rz_bin_pe_free)
-		(pe_bin);
+		PE_(rz_bin_pe_free)(pe_bin);
 		return rz_bin_pemixed_free(bin);
 	}
 	// check if binary only contains managed code
 	// check implemented here cuz we need to intialize
 	// the pe header to access the clr hdr
 	if (check_il_only(pe_bin->clr->header->Flags)) {
-		PE_(rz_bin_pe_free)
-		(pe_bin);
+		PE_(rz_bin_pe_free)(pe_bin);
 		return rz_bin_pemixed_free(bin);
 	}
 	if (!rz_bin_pemixed_init(bin, pe_bin)) {
-		PE_(rz_bin_pe_free)
-		(pe_bin);
+		PE_(rz_bin_pe_free)(pe_bin);
 		return rz_bin_pemixed_free(bin);
 	}
 	return bin;

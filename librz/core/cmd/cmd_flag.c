@@ -132,9 +132,6 @@ static RzList /*<char *>*/ *__childrenFlagsOf(RzCore *core, RzList /*<RzFlagItem
 static void __printRecursive(RzCore *core, RzList /*<RzFlagItem *>*/ *flags, const char *name, RzOutputMode mode, int depth) {
 	char *fn;
 	RzListIter *iter;
-	if (mode == RZ_OUTPUT_MODE_RIZIN && RZ_STR_ISEMPTY(name)) {
-		rz_cons_printf("agn root\n");
-	}
 	if (rz_flag_get(core->flags, name)) {
 		return;
 	}
@@ -144,15 +141,10 @@ static void __printRecursive(RzCore *core, RzList /*<RzFlagItem *>*/ *flags, con
 		if (!strcmp(fn, name)) {
 			continue;
 		}
-		if (mode == RZ_OUTPUT_MODE_RIZIN) {
-			rz_cons_printf("agn %s %s\n", fn, fn + name_len);
-			rz_cons_printf("age %s %s\n", RZ_STR_ISNOTEMPTY(name) ? name : "root", fn);
-		} else {
-			char *pad = rz_str_pad(' ', name_len);
-			rz_cons_printf("%s %s\n", pad, fn + name_len);
-			free(pad);
-		}
-		// rz_cons_printf (".fg %s\n", fn);
+		char *pad = rz_str_pad(' ', name_len);
+		rz_cons_printf("%s %s\n", pad, fn + name_len);
+		free(pad);
+
 		__printRecursive(core, flags, fn, mode, depth + 1);
 	}
 	rz_list_free(children);
@@ -278,8 +270,9 @@ RZ_IPI RzCmdStatus rz_flag_local_list_all_handler(RzCore *core, int argc, const 
 	RzAnalysisFunction *fcn;
 	RzListIter *it;
 	rz_cmd_state_output_array_start(state);
-	rz_list_foreach (core->analysis->fcns, it, fcn) {
-		if (!fcn->labels->count) {
+	RzList *fcns = rz_analysis_function_list(core->analysis);
+	rz_list_foreach (fcns, it, fcn) {
+		if (!ht_up_size(fcn->labels)) {
 			continue;
 		}
 		if (state->mode == RZ_OUTPUT_MODE_JSON) {
@@ -881,12 +874,12 @@ RZ_IPI RzCmdStatus rz_flag_comment_handler(RzCore *core, int argc, const char **
 		}
 		return bool2status(flag_set_comment(item, argv[2]));
 	} else {
-		item = rz_flag_get_i(core->flags, rz_num_math(core->num, argv[1]));
-		if (item && item->comment) {
-			rz_cons_println(item->comment);
-		} else {
+		item = rz_flag_get(core->flags, argv[1]);
+		if (!item) {
 			RZ_LOG_ERROR("Cannot find the flag\n");
 			return RZ_CMD_STATUS_ERROR;
+		} else if (item->comment) {
+			rz_cons_println(item->comment);
 		}
 	}
 	return RZ_CMD_STATUS_OK;

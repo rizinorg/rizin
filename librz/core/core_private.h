@@ -8,8 +8,21 @@
 #include <rz_core.h>
 #include <rz_il.h>
 
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_arch(RzCore *core);
+RZ_DEPRECATE RZ_IPI ut32 rz_core_get_bits(RzCore *core);
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_cpu(RzCore *core);
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_platform(RzCore *core);
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_features(RzCore *core);
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_os(RzCore *core);
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_parser(RzCore *core);
+
 RZ_IPI void rz_core_kuery_print(RzCore *core, const char *k);
 RZ_IPI int rz_output_mode_to_char(RzOutputMode mode);
+RZ_IPI void rz_core_print_warnings_after(RZ_NONNULL RzCore *core);
+RZ_IPI bool rz_core_is_core_dump(RzCore *core);
+RZ_IPI const char *rz_core_io_map_strip_prefix(const RzIOMap *map);
+RZ_IPI const char *rz_core_io_map_file_path(const RzIOMap *map);
+RZ_IPI const char *rz_core_io_map_file_path_or_relative(const RzIOMap *map);
 
 RZ_IPI int bb_cmpaddr(const void *_a, const void *_b, void *user);
 RZ_IPI int fcn_cmpaddr(const void *_a, const void *_b, void *user);
@@ -27,10 +40,15 @@ RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_default(RzCore *core);
 RZ_IPI void rz_core_debug_esil_watch_print(RzDebug *dbg, RzCmdStateOutput *state);
 
-RZ_IPI bool rz_core_analysis_il_vm_set(RzCore *core, const char *var_name, ut64 value);
 RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *varname, RzOutputMode mode);
 RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj);
-RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzIterator *iter, bool pretty);
+RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzIterator *iter, bool pretty, bool unicode);
+RZ_IPI void rz_core_il_colorize_body(RZ_NONNULL RzConsContext *ctx, RZ_NULLABLE const char *il_stmt);
+
+RZ_IPI void rz_core_analysis_devirtualize_cxx_methods(RZ_NULLABLE RzCore *core);
+RZ_IPI void rz_core_analysis_devirtualize_objc_methods(RZ_NULLABLE RzCore *core);
+RZ_IPI void rz_core_analysis_virtual_xrefs_print(RZ_NONNULL RzCore *core, RZ_NONNULL const char *vfunc);
+RZ_IPI void rz_core_analysis_virtual_xrefs_print_table(RZ_NONNULL RzCore *core, RZ_NONNULL const char *vfunc, RZ_NONNULL RzTable *table);
 
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
 RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name);
@@ -93,6 +111,7 @@ RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMo
 RZ_IPI void rz_core_types_struct_print_format_all(RzCore *core);
 RZ_IPI void rz_core_types_union_print_format_all(RzCore *core);
 RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode);
+RZ_IPI void rz_core_types_typeclass_print_all(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_types_define(RzCore *core, const char *type);
 RZ_IPI bool rz_types_open_file(RzCore *core, const char *path);
 RZ_IPI bool rz_types_open_editor(RzCore *core, RZ_NONNULL const char *typename);
@@ -114,10 +133,10 @@ RZ_IPI void rz_core_agraph_print_gml(RzCore *core);
 RZ_IPI bool rz_core_agraph_print(RzCore *core, RzCoreGraphFormat format);
 RZ_IPI bool rz_core_agraph_is_shortcuts(RzCore *core, RzAGraph *g);
 RZ_IPI bool rz_core_agraph_add_shortcut(RzCore *core, RzAGraph *g, RzANode *an, ut64 addr, char *title);
-RZ_IPI bool rz_core_agraph_apply(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph);
+RZ_IPI bool rz_core_agraph_apply(RzCore *core, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *graph);
 
 /* cgraph.c */
-RZ_IPI bool rz_core_graph_print_graph(RZ_NONNULL RzCore *core, RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph, RzCoreGraphFormat format, bool use_offset);
+RZ_IPI bool rz_core_graph_print_graph(RZ_NONNULL RzCore *core, RZ_NONNULL RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph, RzCoreGraphFormat format, bool use_offset);
 RZ_IPI bool rz_core_graph_print(RzCore *core, ut64 addr, RzCoreGraphType type, RzCoreGraphFormat format);
 
 RZ_IPI RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOutput *state);
@@ -139,10 +158,15 @@ RZ_IPI bool rz_core_debug_pid_print(RzDebug *dbg, int pid, RzCmdStateOutput *sta
 RZ_IPI bool rz_core_debug_thread_print(RzDebug *dbg, int pid, RzCmdStateOutput *state);
 RZ_IPI bool rz_core_debug_desc_print(RzDebug *dbg, RzCmdStateOutput *state);
 RZ_IPI void rz_core_debug_signal_print(RzDebug *dbg, RzCmdStateOutput *state);
+RZ_IPI void rz_core_debug_listinfo_to_table(RZ_NONNULL RzTable *table, RZ_NULLABLE RzList /*<RzDbgListInfo *>*/ *list, ut64 seek, ut64 len, int width, bool va);
 
 /* cfile.c */
 RZ_IPI RzCoreIOMapInfo *rz_core_io_map_info_new(RzCoreFile *cf, int perm_orig);
 RZ_IPI void rz_core_io_map_info_free(RzCoreIOMapInfo *info);
+
+/* cmark.c */
+RZ_IPI void rz_core_mark_print(RzMark *b, RzCmdStateOutput *state);
+RZ_IPI void rz_core_mark_range_print(RzMark *b, RzCmdStateOutput *state, ut64 range_from, ut64 range_to);
 
 /* cflag.c */
 RZ_IPI void rz_core_flag_print(RzFlag *f, RzCmdStateOutput *state);
@@ -164,12 +188,17 @@ RZ_IPI const char *rz_core_print_stack_command(RZ_NONNULL RzCore *core);
 RZ_IPI RZ_OWN char *rz_core_print_cons_disassembly(RzCore *core, ut64 addr, ut32 byte_len, ut32 inst_len);
 RZ_IPI RZ_OWN char *rz_core_print_format(RzCore *core, const char *fmt, int mode, ut64 address);
 RZ_IPI RZ_OWN char *rz_core_print_format_write(RzCore *core, const char *fmt, const char *value, ut64 address);
+RZ_IPI int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len);
 
 /* cmd_seek.c */
 RZ_IPI bool rz_core_seek_to_register(RzCore *core, const char *input, bool is_silent);
 RZ_IPI int rz_core_seek_opcode_forward(RzCore *core, int n, bool silent);
 RZ_IPI int rz_core_seek_opcode(RzCore *core, int numinstr, bool silent);
 RZ_IPI bool rz_core_seek_bb_instruction(RzCore *core, int index);
+
+/* cmd_task.c */
+RZ_IPI void rz_core_task_print(RzCore *core, RzCoreTask *task, RzOutputMode mode, PJ *j);
+RZ_IPI void rz_core_tasks_print(RzCore *core, RzOutputMode mode);
 
 /* cmd_meta.c */
 RZ_IPI void rz_core_meta_comment_add(RzCore *core, const char *comment, ut64 addr);
@@ -217,14 +246,6 @@ RZ_IPI void rz_core_print_hexdiff(RZ_NONNULL RzCore *core, ut64 aa, RZ_NONNULL c
 
 // cmd_help.c
 RZ_IPI void rz_core_clippy_print(RzCore *core, const char *msg);
-
-#if __WINDOWS__
-/* windows_heap.c */
-RZ_IPI RzList *rz_heap_blocks_list(RzCore *core);
-RZ_IPI RzList *rz_heap_list(RzCore *core);
-RZ_IPI void rz_heap_debug_block_win(RzCore *core, const char *addr, RzOutputMode mode, bool flag);
-RZ_IPI void rz_heap_list_w32(RzCore *core, RzOutputMode mode);
-#endif
 
 RZ_IPI bool rz_core_cmd_lastcmd_repeat(RzCore *core, bool next);
 
@@ -334,6 +355,17 @@ typedef struct rz_panels_root_t {
 	bool from_visual;
 } RzPanelsRoot;
 
+typedef struct rz_visual_util_t {
+	RzConfigHold *hold;
+	ut64 oldpc;
+	ut64 oseek;
+	char debugstr_refresh[512];
+	char debugstr_core[512];
+	char numbuf[32];
+	int numbuf_i;
+	int sortMode;
+} RzVisualUtil;
+
 typedef struct rz_core_visual_view_t {
 	int level;
 	st64 delta;
@@ -351,6 +383,7 @@ typedef struct rz_core_visual_view_t {
 	bool hide_legend;
 	bool is_inputing; // whether the user is inputing
 	char *inputing; // for filter on the go in Vv mode
+	char *curtheme; // track current theme to invalidate cache on change
 } RzCoreVisualView;
 
 typedef struct rz_core_visual_t {
@@ -383,12 +416,15 @@ typedef struct rz_core_visual_t {
 	float percentage;
 	/* visual view */
 	RzCoreVisualView *view;
+	/* visual util */
+	RzVisualUtil util;
 } RzCoreVisual;
 
 RZ_IPI RZ_OWN RzCoreVisual *rz_core_visual_new();
 RZ_IPI void rz_core_visual_free(RZ_NULLABLE RzCoreVisual *visual);
 
 RZ_IPI void rz_panels_root_free(RZ_NULLABLE RzPanelsRoot *panels_root);
+RZ_IPI void rz_visual_util_free(RZ_NULLABLE RzVisualUtil *visual_util);
 
 RZ_IPI void rz_core_visual_prompt_input(RzCore *core);
 RZ_IPI void rz_core_visual_toggle_hints(RzCore *core);
@@ -425,9 +461,6 @@ RZ_IPI bool rz_core_visual_hudstuff(RzCore *core);
 RZ_IPI bool rz_core_visual_hud(RzCore *core);
 RZ_IPI bool rz_core_visual_config_hud(RzCore *core);
 RZ_IPI bool rz_core_visual_hudclasses(RzCore *core);
-
-/* tui/rop.c */
-RZ_IPI int rz_core_visual_view_rop(RzCore *core);
 
 /* tui/tabs.c */
 RZ_IPI void rz_core_visual_tab_free(RzCoreVisualTab *tab);
@@ -474,6 +507,8 @@ RZ_IPI void rz_core_visual_scrollbar_bottom(RzCore *core);
 
 RZ_IPI int rz_line_hist_offset_up(RzLine *line);
 RZ_IPI int rz_line_hist_offset_down(RzLine *line);
+RZ_IPI int rz_line_hist_sdb_up(RzLine *line);
+RZ_IPI int rz_line_hist_sdb_down(RzLine *line);
 
 /* visual marks */
 RZ_IPI void rz_core_visual_mark_seek(RzCore *core, ut8 ch);
@@ -488,5 +523,13 @@ static inline char *rz_address_str(ut64 addr) {
 }
 
 RZ_IPI void rz_core_prompt_highlight(RzCore *core);
+
+/* heap_jemalloc */
+
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_a(RzCore *core, bool has_specified_addr, ut64 addr);
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_b(RzCore *core, bool has_specified_addr, ut64 addr, bool has_bin_info, ut64 bin_info_addr);
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_c(RzCore *core, bool has_specified_addr, ut64 addr);
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_e(RzCore *core, bool has_specified_addr, ut64 addr);
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_ei(RzCore *core, bool has_specified_addr, ut64 addr);
 
 #endif

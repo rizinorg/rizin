@@ -51,13 +51,13 @@ E.g.: `Bug fix did not change the general behavior of the function. No documenta
 In order to contribute with patches or plugins, we encourage you to use the same
 coding style as the rest of the code base.
 
-* Use git-clang-format 16 to format your code. If clang-format-16 is not available on
+* Use git-clang-format-20 to format your code. If clang-format-20 is not available on
   your Debian-based distribution, you can install it from https://apt.llvm.org/.
   You should invoke it as below (after making sure that your local copy of `dev`
   is up-to-date and your branch is up-to-date with `dev`):
 
 ```bash
-git-clang-format-16 --extensions c,cpp,h,hpp,inc --style file dev
+git-clang-format-20 --extensions c,cpp,h,hpp,inc --style file dev
 ```
 
   There is a script available to run on all source files; you will need python and
@@ -198,6 +198,74 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
 * Never use `offsetof()` macros - it's not supported by some compilers. Use `rz_offsetof()` instead.
 
 * Add a single space after the `//` when writing inline comments:
+
+* Don't overuse macros!
+  Moving syntactically repetitive code patterns up to 3 lines into a macro is fine.
+  But anything that hides non-trivial semantics is not allowed.
+  It makes debugging really hard, hides code logic, and screws test coverage reports.
+
+  Examples:
+  ```c
+  // OK: If the member `ops` is very often accessed in the code,
+  // it is fine to simplify the syntax with a macro.
+  #define GET_OP_N(n) insn->details->ops[n]
+  ```
+
+  ```c
+  // OK: Repetitive but **simple** initialization patterns.
+  #define TOKEN(_type, _pat) \
+  	do { \
+  		RzAsmTokenPattern *pat = RZ_NEW0(RzAsmTokenPattern); \
+  		pat->type = RZ_ASM_TOKEN_##_type; \
+  		pat->pattern = rz_str_dup(_pat); \
+  		rz_pvector_push(pvec, pat); \
+  	} while (0)
+
+  // [...]
+  void set_tokens() {
+    RzVector *pvec = rz_pvector_new();
+  	TOKEN(RZ_ASM_TOKEN_REGISTER, "(ptr)");
+  	TOKEN(RZ_ASM_TOKEN_OPERATOR, "(\\[)|(\\])");
+  	TOKEN(RZ_ASM_TOKEN_SEPARATOR, "(\\s+)");
+  }
+  ```
+
+  ```c
+  // OK: Repetitive but **simple** function definitions implemented for each **type**.
+  // This case is rare!
+  //
+  // In C++ or other languages this would be done with templates or generics.
+  // C doesn't have this, so macros are fine in this case.
+  #define DEF_TEMPLATE_FCN(T) \
+  T template_like_function() { \
+    return (T) (sizeof(T) * sizeof(T)); \
+  }
+  DEF_TEMPLATE_FCN(ut8);
+  DEF_TEMPLATE_FCN(ut16);
+  DEF_TEMPLATE_FCN(ut32);
+  DEF_TEMPLATE_FCN(ut64);
+  ```
+
+  ```c
+  // NOT OK: This hides semantics.
+  // Implement the case in a static function instead and call it.
+  #define REPETITIVE_CASE(n) \
+    int i = some_fcn(n); \
+    i <<= 8; \
+    i &= 0x80000; \
+    ret = i * other_fcn(n); \
+    break;
+
+  // [...]
+  switch(x) {
+  case 1:
+    REPETITIVE_CASE(1)
+  case 2:
+    REPETITIVE_CASE(2)
+  case 3:
+    REPETITIVE_CASE(3)
+  }
+  ```
 
 ```c
 int sum = 0; // set sum to 0
@@ -357,13 +425,13 @@ Rizin is trying to comply with the Software Package Data Exchange® (SPDX®),
 an open standard to communicate in a clear way licenses and copyrights, among
 other things, of a software. All files in the repository should either have
 an header specifying the copyright and the license that apply or an entry in
-.reuse/dep5 file. All pieces of code copied from other projects should have
-a license/copyright entry as well.
+the [REUSE.toml](REUSE.toml) file. All pieces of code copied from other projects
+should have a license/copyright entry as well.
 
 In particular, the SPDX header may look like:
 ```C
 // SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
-// SPDX-License-Identifier: LPGL-3.0-only
+// SPDX-License-Identifier: LGPL-3.0-only
 ```
 
 You can use the [REUSE Software](https://reuse.software/) to check the
@@ -376,7 +444,7 @@ In Rizin code, there are some conventions to help developers use pointers more s
 ```c
 #define RZ_IN        /* do not use, implicit */
 #define RZ_OUT       /* parameter is written, not read */
-#define RZ_INOUT     /* parameter is read and written */
+#define RZ_INOUT     /* parameter is read and written / return value is copy of RZ_INOUT parameter */
 #define RZ_OWN       /* pointer ownership is transferred */
 #define RZ_BORROW    /* pointer ownership is not transferred, it must not be freed by the receiver */
 #define RZ_NONNULL   /* pointer cannot be null */

@@ -1,0 +1,928 @@
+NAME=ADD8/16/32/64 and SUB8/16/32/64 relocs
+FILE=bins/elf/riscv_relocs_add
+CMDS=<<EOF
+iS
+s 0x08000048
+px
+EOF
+EXPECT=<<EOF
+     paddr  size      vaddr vsize align perm name             type     flags         
+-------------------------------------------------------------------------------------
+0x00000000   0x0 0x08000000   0x0   0x0 ----                  NULL     
+0x00000248  0xbd 0x08000248  0xbd   0x0 ---- .strtab          STRTAB   
+0x00000034  0x10 0x08000034  0x10   0x0 -r-x .text            PROGBITS alloc,execute
+0x00000048  0x1f 0x08000048  0x1f   0x0 -r-- .rodata          PROGBITS alloc
+0x00000170  0xc0 0x08000170  0xc0   0x0 ---- .rela.rodata     RELA     info
+0x00000067   0x8 0x08000067   0x8   0x0 ---- .debug_info      PROGBITS 
+0x00000230  0x18 0x08000230  0x18   0x0 ---- .rela.debug_info RELA     info
+0x00000070 0x100 0x08000070 0x100   0x0 ---- .symtab          SYMTAB   
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x08000048  0c00 0000 0000 0000 0c00 0000 0c00 0c00  ................
+0x08000058  0400 0000 0000 0000 0400 0000 1000 04ff  ................
+0x08000068  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x08000078  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x08000088  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x08000098  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x080000a8  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x080000b8  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x080000c8  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x080000d8  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x080000e8  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x080000f8  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x08000108  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x08000118  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x08000128  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x08000138  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+EOF
+RUN
+
+NAME=HI20, LO12_S and LO12_I relocs (32 bits)
+FILE=bins/elf/riscv_relocs_hi_lo_is_32
+CMDS=<<EOF
+pd 21
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- foo:
+            ;-- $x.0:
+            ;-- _start:
+            0x08000034      lui   a0, 0x8000                           ; RELOC 0 foo @ 0x08000088 ; [02] -r-x section size 84 named .text
+            ;-- foo:
+            0x08000038      addi  a0, a0, 0x88                         ; RELOC 0 foo @ 0x08000088
+            ;-- foo:
+            0x0800003c      lw    a0, 0x88(a0)                         ; RELOC 0 foo @ 0x08000088
+            ;-- foo:
+            0x08000040      sw    a0, 0x88(a0)                         ; RELOC 0 foo @ 0x08000088
+            ;-- bar:
+            0x08000044      lui   a0, 0x8001                           ; RELOC 0 bar @ 0x08001087
+            ;-- bar:
+            0x08000048      addi  a0, a0, 0x87                         ; RELOC 0 bar @ 0x08001087
+            ;-- bar:
+            0x0800004c      lb    a0, 0x87(a0)                         ; RELOC 0 bar @ 0x08001087
+            ;-- bar:
+            0x08000050      sb    a0, 0x87(a0)                         ; RELOC 0 bar @ 0x08001087
+            ;-- norelax:
+            0x08000054      lui   a0, 0x8001                           ; RELOC 0 norelax @ 0x08001088
+            ;-- norelax:
+            0x08000058      addi  a0, a0, 0x88                         ; RELOC 0 norelax @ 0x08001088
+            ;-- norelax:
+            0x0800005c      lw    a0, 0x88(a0)                         ; RELOC 0 norelax @ 0x08001088
+            ;-- norelax:
+            0x08000060      sw    a0, 0x88(a0)                         ; RELOC 0 norelax @ 0x08001088
+            ;-- undefined_weak:
+            0x08000064      lui   a0, 0x8001                           ; RELOC 0 undefined_weak
+            ;-- undefined_weak:
+            0x08000068      addi  a0, a0, 0x27c                        ; RELOC 0 undefined_weak
+            ;-- undefined_weak:
+            0x0800006c      lw    a0, 0x27c(a0)                        ; RELOC 0 undefined_weak
+            ;-- undefined_weak:
+            0x08000070      sw    a0, 0x27c(a0)                        ; RELOC 0 undefined_weak
+            ;-- baz:
+            0x08000074      lui   a0, 0x8001                           ; RELOC 0 baz
+            ;-- baz:
+            0x08000078      addi  a0, a0, 0x280                        ; RELOC 0 baz
+            ;-- baz:
+            0x0800007c      lw    a0, 0x280(a0)                        ; RELOC 0 baz
+            ;-- baz:
+            0x08000080      sw    a0, 0x280(a0)                        ; RELOC 0 baz
+            ;-- a:
+            0x08000084      addi  a0, a0, 1
+EOF
+RUN
+
+NAME=HI20, LO12_S and LO12_I relocs (64 bits)
+FILE=bins/elf/riscv_relocs_hi_lo_is_64
+CMDS=<<EOF
+pd 21
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- foo:
+            ;-- $x.0:
+            ;-- _start:
+            0x08000040      lui   a0, 0x8000                           ; RELOC 0 foo @ 0x08000094 ; [02] -r-x section size 84 named .text
+            ;-- foo:
+            0x08000044      addi  a0, a0, 0x94                         ; RELOC 0 foo @ 0x08000094
+            ;-- foo:
+            0x08000048      lw    a0, 0x94(a0)                         ; RELOC 0 foo @ 0x08000094
+            ;-- foo:
+            0x0800004c      sw    a0, 0x94(a0)                         ; RELOC 0 foo @ 0x08000094
+            ;-- bar:
+            0x08000050      lui   a0, 0x8001                           ; RELOC 0 bar @ 0x08001093
+            ;-- bar:
+            0x08000054      addi  a0, a0, 0x93                         ; RELOC 0 bar @ 0x08001093
+            ;-- bar:
+            0x08000058      lb    a0, 0x93(a0)                         ; RELOC 0 bar @ 0x08001093
+            ;-- bar:
+            0x0800005c      sb    a0, 0x93(a0)                         ; RELOC 0 bar @ 0x08001093
+            ;-- norelax:
+            0x08000060      lui   a0, 0x8001                           ; RELOC 0 norelax @ 0x08001094
+            ;-- norelax:
+            0x08000064      addi  a0, a0, 0x94                         ; RELOC 0 norelax @ 0x08001094
+            ;-- norelax:
+            0x08000068      lw    a0, 0x94(a0)                         ; RELOC 0 norelax @ 0x08001094
+            ;-- norelax:
+            0x0800006c      sw    a0, 0x94(a0)                         ; RELOC 0 norelax @ 0x08001094
+            ;-- undefined_weak:
+            0x08000070      lui   a0, 0x8001                           ; RELOC 0 undefined_weak
+            ;-- undefined_weak:
+            0x08000074      addi  a0, a0, 0x3c8                        ; RELOC 0 undefined_weak
+            ;-- undefined_weak:
+            0x08000078      lw    a0, 0x3c8(a0)                        ; RELOC 0 undefined_weak
+            ;-- undefined_weak:
+            0x0800007c      sw    a0, 0x3c8(a0)                        ; RELOC 0 undefined_weak
+            ;-- baz:
+            0x08000080      lui   a0, 0x8001                           ; RELOC 0 baz
+            ;-- baz:
+            0x08000084      addi  a0, a0, 0x3d0                        ; RELOC 0 baz
+            ;-- baz:
+            0x08000088      lw    a0, 0x3d0(a0)                        ; RELOC 0 baz
+            ;-- baz:
+            0x0800008c      sw    a0, 0x3d0(a0)                        ; RELOC 0 baz
+            ;-- a:
+            0x08000090      addi  a0, a0, 1
+EOF
+RUN
+
+
+NAME=JAL relocs (32 bits near)
+FILE=bins/elf/riscv_relocs_jal_near_32
+CMDS=<<EOF
+pd 2
+is 
+ir
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- foo:
+            ;-- bar:
+            ;-- $x.0:
+            ;-- _start:
+        ,=< 0x08000034      j     loc.foo                              ; RELOC 0 foo @ 0x08000038 ; [02] -r-x section size 8 named .text
+        |   ;-- foo:
+        |   ;-- bar:
+        `-> 0x08000038      jal   loc._x.0                             ; RELOC 0 bar @ 0x08000034
+nth      paddr      vaddr bind   type   size lib name   
+--------------------------------------------------------
+  1 0x00000038 0x08000038 LOCAL  NOTYPE    0     foo
+  2 0x00000034 0x08000034 LOCAL  NOTYPE    0     $x.0
+  3 0x00000034 0x08000034 LOCAL  NOTYPE    0     bar
+  4 0x00000034 0x08000034 GLOBAL NOTYPE    0     _start
+     vaddr      paddr     target type        name 
+--------------------------------------------------
+0x08000034 0x00000034 0x08000038 R_RISCV_JAL foo
+0x08000038 0x00000038 0x08000034 R_RISCV_JAL bar
+EOF
+RUN
+
+NAME=JAL relocs (64 bits near)
+FILE=bins/elf/riscv_relocs_jal_near_64
+CMDS=<<EOF
+pd 2
+is 
+ir
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- foo:
+            ;-- bar:
+            ;-- $x.0:
+            ;-- _start:
+        ,=< 0x08000040      j     loc.foo                              ; RELOC 0 foo @ 0x08000044 ; [02] -r-x section size 8 named .text
+        |   ;-- foo:
+        |   ;-- bar:
+        `-> 0x08000044      jal   loc._x.0                             ; RELOC 0 bar @ 0x08000040
+nth      paddr      vaddr bind   type   size lib name   
+--------------------------------------------------------
+  1 0x00000044 0x08000044 LOCAL  NOTYPE    0     foo
+  2 0x00000040 0x08000040 LOCAL  NOTYPE    0     $x.0
+  3 0x00000040 0x08000040 LOCAL  NOTYPE    0     bar
+  4 0x00000040 0x08000040 GLOBAL NOTYPE    0     _start
+     vaddr      paddr     target type        name 
+--------------------------------------------------
+0x08000040 0x00000040 0x08000044 R_RISCV_JAL foo
+0x08000044 0x00000044 0x08000040 R_RISCV_JAL bar
+EOF
+RUN
+
+NAME=JAL relocs (32 bits far)
+FILE=bins/elf/riscv_relocs_jal_far_32
+CMDS=<<EOF
+s 0x08100034
+pd 2
+is 
+ir
+EOF
+EXPECT=<<EOF
+            ;-- foo:
+            ;-- $x.0:
+            ;-- _start:
+        ,=< 0x08100034      j     loc.foo                              ; RELOC 0 foo @ 0x08200032
+        |   ;-- bar:
+        |   0x08100038      jal   loc.bar                              ; RELOC 0 bar @ 0x08000038
+nth      paddr      vaddr bind   type   size lib name   
+--------------------------------------------------------
+  1 0x00200032 0x08200032 LOCAL  NOTYPE    0     foo
+  2 0x00100034 0x08100034 LOCAL  NOTYPE    0     $x.0
+  3 0x00000038 0x08000038 LOCAL  NOTYPE    0     bar
+  4 0x00100034 0x08100034 GLOBAL NOTYPE    0     _start
+     vaddr      paddr     target type        name 
+--------------------------------------------------
+0x08100034 0x00100034 0x08200032 R_RISCV_JAL foo
+0x08100038 0x00100038 0x08000038 R_RISCV_JAL bar
+EOF
+RUN
+
+NAME=JAL relocs (64 bits far)
+FILE=bins/elf/riscv_relocs_jal_far_64
+CMDS=<<EOF
+s 0x08100040
+pd 2
+is 
+ir
+EOF
+EXPECT=<<EOF
+            ;-- foo:
+            ;-- $x.0:
+            ;-- _start:
+        ,=< 0x08100040      j     loc.foo                              ; RELOC 0 foo @ 0x0820003e
+        |   ;-- bar:
+        |   0x08100044      jal   loc.bar                              ; RELOC 0 bar @ 0x08000044
+nth      paddr      vaddr bind   type   size lib name   
+--------------------------------------------------------
+  1 0x0020003e 0x0820003e LOCAL  NOTYPE    0     foo
+  2 0x00100040 0x08100040 LOCAL  NOTYPE    0     $x.0
+  3 0x00000044 0x08000044 LOCAL  NOTYPE    0     bar
+  4 0x00100040 0x08100040 GLOBAL NOTYPE    0     _start
+     vaddr      paddr     target type        name 
+--------------------------------------------------
+0x08100040 0x00100040 0x0820003e R_RISCV_JAL foo
+0x08100044 0x00100044 0x08000044 R_RISCV_JAL bar
+EOF
+RUN
+
+NAME=BRANCH relocs (32 bits near)
+FILE=bins/elf/riscv_relocs_branch_near_32
+CMDS=<<EOF
+pd 6
+is
+ir
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- $x.0:
+            ;-- test:
+            0x08000034      li    a1, 3                                ; [02] -r-x section size 14 named .text
+            ;-- .LBB0_2:
+        ,=< 0x08000036      bltu  a0, a1, loc..LBB0_2                  ; RELOC 0 .LBB0_2 @ 0x0800003e
+        |   0x0800003a      li    a0, 4
+        |   0x0800003c      ret
+        |   ;-- .LBB0_2:
+        `-> 0x0800003e      addi  a0, a0, 1                            ; RELOC TARGET 0 .LBB0_2 @ 0x0800003e
+            0x08000040      ret
+nth      paddr      vaddr bind   type   size lib name           
+----------------------------------------------------------------
+  1 ---------- 0x00000000 LOCAL  FILE      0     riscv_branch.c
+  2 0x00000034 0x08000034 LOCAL  NOTYPE    0     $x.0
+  3 0x0000003e 0x0800003e LOCAL  NOTYPE    0     .LBB0_2
+  4 0x00000042 0x08000042 LOCAL  NOTYPE    0     $d.1
+  5 0x0000006a 0x0800006a LOCAL  NOTYPE    0     $d.2
+  6 0x00000034 0x08000034 GLOBAL FUNC     14     test
+     vaddr      paddr     target type           name    
+--------------------------------------------------------
+0x08000036 0x00000036 0x0800003e R_RISCV_BRANCH .LBB0_2
+EOF
+RUN
+
+NAME=BRANCH relocs (64 bits near)
+FILE=bins/elf/riscv_relocs_branch_near_64
+CMDS=<<EOF
+pd 6
+is
+ir
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- $x.0:
+            ;-- test:
+            0x08000040      li    a1, 3                                ; [02] -r-x section size 14 named .text
+            ;-- .LBB0_2:
+        ,=< 0x08000042      bltu  a0, a1, loc..LBB0_2                  ; RELOC 0 .LBB0_2 @ 0x0800004a
+        |   0x08000046      li    a0, 4
+        |   0x08000048      ret
+        |   ;-- .LBB0_2:
+        `-> 0x0800004a      addiw a0, a0, 1                            ; RELOC TARGET 0 .LBB0_2 @ 0x0800004a
+            0x0800004c      ret
+nth      paddr      vaddr bind   type   size lib name           
+----------------------------------------------------------------
+  1 ---------- 0x00000000 LOCAL  FILE      0     riscv_branch.c
+  2 0x00000040 0x08000040 LOCAL  NOTYPE    0     $x.0
+  3 0x0000004a 0x0800004a LOCAL  NOTYPE    0     .LBB0_2
+  4 0x0000004e 0x0800004e LOCAL  NOTYPE    0     $d.1
+  5 0x00000076 0x08000076 LOCAL  NOTYPE    0     $d.2
+  6 0x00000040 0x08000040 GLOBAL FUNC     14     test
+     vaddr      paddr     target type           name    
+--------------------------------------------------------
+0x08000042 0x00000042 0x0800004a R_RISCV_BRANCH .LBB0_2
+EOF
+RUN
+
+
+NAME=BRANCH relocs (32 bits far forward)
+FILE=bins/elf/riscv_relocs_branch_far_32
+CMDS=<<EOF
+aaa
+s 0x08000040
+e asm.nodup=1
+pdf
+is
+ir
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- .LBB0_2:
+            ;-- test_forward_max:
+/ loc._x.0();
+|       ,=< 0x08000034      beqz  a0, loc..LBB0_2                      ; RELOC 0 .LBB0_2 @ 0x08001032 ; [02] -r-x section size 16412 named .text
+|       |   0x08000038      nop
+...dup (2044)
+|       |   ;-- .LBB0_2:
+|       `-> 0x08001032      li    a0, 1                                ; RELOC TARGET 0 .LBB0_2 @ 0x08001032
+\           0x08001034      ret
+nth      paddr      vaddr bind   type   size lib name               
+--------------------------------------------------------------------
+  1 ---------- 0x00000000 LOCAL  FILE      0     riscv_branch_far.c
+  2 0x00000034 0x08000034 LOCAL  NOTYPE    0     $x.0
+  3 0x00001032 0x08001032 LOCAL  NOTYPE    0     .LBB0_2
+  4 0x00002038 0x08002038 LOCAL  NOTYPE    0     .LBB1_2
+  5 0x0000203c 0x0800203c LOCAL  NOTYPE    0     .LBB2_1
+  6 0x00003044 0x08003044 LOCAL  NOTYPE    0     .LBB3_1
+  7 0x00004050 0x08004050 LOCAL  NOTYPE    0     $d.1
+  8 0x00004078 0x08004078 LOCAL  NOTYPE    0     $d.2
+  9 0x00000034 0x08000034 GLOBAL FUNC   4098     test_forward_max
+ 10 0x00001036 0x08001036 GLOBAL FUNC   4102     test_forward_over
+ 11 0x0000203c 0x0800203c GLOBAL FUNC   4104     test_backward_max
+ 12 0x00003044 0x08003044 GLOBAL FUNC   4108     test_backward_over
+     vaddr      paddr     target type           name    
+--------------------------------------------------------
+0x08000034 0x00000034 0x08001032 R_RISCV_BRANCH .LBB0_2
+0x08001038 0x00001038 0x08002038 R_RISCV_JAL    .LBB1_2
+0x0800303c 0x0000303c 0x0800203c R_RISCV_BRANCH .LBB2_1
+0x08004048 0x00004048 0x08003044 R_RISCV_JAL    .LBB3_1
+EOF
+RUN
+
+NAME=BRANCH relocs (64 bits far forward)
+FILE=bins/elf/riscv_relocs_branch_far_64
+CMDS=<<EOF
+aaa
+s 0x08000040
+e asm.nodup=1
+pdf
+is
+ir
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- .LBB0_2:
+            ;-- test_forward_max:
+/ loc._x.0();
+|       ,=< 0x08000040      beqz  a0, loc..LBB0_2                      ; RELOC 0 .LBB0_2 @ 0x0800103e ; [02] -r-x section size 16412 named .text
+|       |   0x08000044      nop
+...dup (2044)
+|       |   ;-- .LBB0_2:
+|       `-> 0x0800103e      li    a0, 1                                ; RELOC TARGET 0 .LBB0_2 @ 0x0800103e
+\           0x08001040      ret
+nth      paddr      vaddr bind   type   size lib name               
+--------------------------------------------------------------------
+  1 ---------- 0x00000000 LOCAL  FILE      0     riscv_branch_far.c
+  2 0x00000040 0x08000040 LOCAL  NOTYPE    0     $x.0
+  3 0x0000103e 0x0800103e LOCAL  NOTYPE    0     .LBB0_2
+  4 0x00002044 0x08002044 LOCAL  NOTYPE    0     .LBB1_2
+  5 0x00002048 0x08002048 LOCAL  NOTYPE    0     .LBB2_1
+  6 0x00003050 0x08003050 LOCAL  NOTYPE    0     .LBB3_1
+  7 0x0000405c 0x0800405c LOCAL  NOTYPE    0     $d.1
+  8 0x00004084 0x08004084 LOCAL  NOTYPE    0     $d.2
+  9 0x00000040 0x08000040 GLOBAL FUNC   4098     test_forward_max
+ 10 0x00001042 0x08001042 GLOBAL FUNC   4102     test_forward_over
+ 11 0x00002048 0x08002048 GLOBAL FUNC   4104     test_backward_max
+ 12 0x00003050 0x08003050 GLOBAL FUNC   4108     test_backward_over
+     vaddr      paddr     target type           name    
+--------------------------------------------------------
+0x08000040 0x00000040 0x0800103e R_RISCV_BRANCH .LBB0_2
+0x08001044 0x00001044 0x08002044 R_RISCV_JAL    .LBB1_2
+0x08003048 0x00003048 0x08002048 R_RISCV_BRANCH .LBB2_1
+0x08004054 0x00004054 0x08003050 R_RISCV_JAL    .LBB3_1
+EOF
+RUN
+
+NAME=BRANCH relocs (32 bits far backward)
+FILE=bins/elf/riscv_relocs_branch_far_32
+CMDS=<<EOF
+aaa
+s 0x0800203c
+e asm.nodup=1
+pd 2051
+is
+ir
+EOF
+EXPECT=<<EOF
+|           ;-- .LBB2_1:
+|           ;-- test_backward_max:
+|           0x0800203c      nop                                        ; RELOC TARGET 0 .LBB2_1 @ 0x0800203c
+...dup (2047)
+/ reloc..LBB2_1();
+|           0x0800303c      bnez  a0, loc..LBB2_1                      ; RELOC 0 .LBB2_1 @ 0x0800203c
+|           0x08003040      li    a0, 3
+|           0x08003042      ret
+nth      paddr      vaddr bind   type   size lib name               
+--------------------------------------------------------------------
+  1 ---------- 0x00000000 LOCAL  FILE      0     riscv_branch_far.c
+  2 0x00000034 0x08000034 LOCAL  NOTYPE    0     $x.0
+  3 0x00001032 0x08001032 LOCAL  NOTYPE    0     .LBB0_2
+  4 0x00002038 0x08002038 LOCAL  NOTYPE    0     .LBB1_2
+  5 0x0000203c 0x0800203c LOCAL  NOTYPE    0     .LBB2_1
+  6 0x00003044 0x08003044 LOCAL  NOTYPE    0     .LBB3_1
+  7 0x00004050 0x08004050 LOCAL  NOTYPE    0     $d.1
+  8 0x00004078 0x08004078 LOCAL  NOTYPE    0     $d.2
+  9 0x00000034 0x08000034 GLOBAL FUNC   4098     test_forward_max
+ 10 0x00001036 0x08001036 GLOBAL FUNC   4102     test_forward_over
+ 11 0x0000203c 0x0800203c GLOBAL FUNC   4104     test_backward_max
+ 12 0x00003044 0x08003044 GLOBAL FUNC   4108     test_backward_over
+     vaddr      paddr     target type           name    
+--------------------------------------------------------
+0x08000034 0x00000034 0x08001032 R_RISCV_BRANCH .LBB0_2
+0x08001038 0x00001038 0x08002038 R_RISCV_JAL    .LBB1_2
+0x0800303c 0x0000303c 0x0800203c R_RISCV_BRANCH .LBB2_1
+0x08004048 0x00004048 0x08003044 R_RISCV_JAL    .LBB3_1
+EOF
+RUN
+
+NAME=BRANCH relocs (64 bits far backward)
+FILE=bins/elf/riscv_relocs_branch_far_64
+CMDS=<<EOF
+aaa
+s 0x08002048
+e asm.nodup=1
+pd 2051
+is
+ir
+EOF
+EXPECT=<<EOF
+|           ;-- .LBB2_1:
+|           ;-- test_backward_max:
+|           0x08002048      nop                                        ; RELOC TARGET 0 .LBB2_1 @ 0x08002048
+...dup (2047)
+/ reloc..LBB2_1();
+|           0x08003048      bnez  a0, loc..LBB2_1                      ; RELOC 0 .LBB2_1 @ 0x08002048
+|           0x0800304c      li    a0, 3
+|           0x0800304e      ret
+nth      paddr      vaddr bind   type   size lib name               
+--------------------------------------------------------------------
+  1 ---------- 0x00000000 LOCAL  FILE      0     riscv_branch_far.c
+  2 0x00000040 0x08000040 LOCAL  NOTYPE    0     $x.0
+  3 0x0000103e 0x0800103e LOCAL  NOTYPE    0     .LBB0_2
+  4 0x00002044 0x08002044 LOCAL  NOTYPE    0     .LBB1_2
+  5 0x00002048 0x08002048 LOCAL  NOTYPE    0     .LBB2_1
+  6 0x00003050 0x08003050 LOCAL  NOTYPE    0     .LBB3_1
+  7 0x0000405c 0x0800405c LOCAL  NOTYPE    0     $d.1
+  8 0x00004084 0x08004084 LOCAL  NOTYPE    0     $d.2
+  9 0x00000040 0x08000040 GLOBAL FUNC   4098     test_forward_max
+ 10 0x00001042 0x08001042 GLOBAL FUNC   4102     test_forward_over
+ 11 0x00002048 0x08002048 GLOBAL FUNC   4104     test_backward_max
+ 12 0x00003050 0x08003050 GLOBAL FUNC   4108     test_backward_over
+     vaddr      paddr     target type           name    
+--------------------------------------------------------
+0x08000040 0x00000040 0x0800103e R_RISCV_BRANCH .LBB0_2
+0x08001044 0x00001044 0x08002044 R_RISCV_JAL    .LBB1_2
+0x08003048 0x00003048 0x08002048 R_RISCV_BRANCH .LBB2_1
+0x08004054 0x00004054 0x08003050 R_RISCV_JAL    .LBB3_1
+EOF
+RUN
+
+NAME=32-bit relocations
+FILE=bins/elf/riscv_relocs_32
+CMDS=<<EOF
+aaa
+pdf
+is
+ir
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- main:
+/ loc._x.0();
+|           ; var int32_t var_8h @ stack - 0x8
+|           ; var int32_t var_4h @ stack - 0x4
+|           0x08000034      addi  sp, sp, -0x10                        ; [02] -r-x section size 44 named .text
+|           0x08000036      sw    ra, 0xc(sp)
+|           0x08000038      sw    s0, 8(sp)
+|           0x0800003a      addi  s0, sp, 0x10
+|           0x0800003c      li    a0, 0
+|           0x0800003e      sw    a0, -0xc(s0)
+|           ;-- ptr:
+|           0x08000042      lui   a0, 0x8000                           ; 0x8000000
+|                                                                      ; segment.ehdr; RELOC 0 
+|           ;-- ptr:
+|           0x08000046      lw    a0, 0x68(a0)                         ; RELOC 0 
+|           0x0800004a      lw    a0, 0(a0)
+|           ;-- ptr32:
+|           0x0800004c      lui   a1, 0x8000                           ; 0x8000000
+|                                                                      ; segment.ehdr; RELOC 0 
+|           ;-- ptr32:
+|           0x08000050      lw    a1, 0x64(a1)                         ; RELOC 0 
+|           0x08000054      lw    a1, 0(a1)
+|           0x08000056      add   a0, a0, a1
+|           0x08000058      lw    ra, 0xc(sp)
+|           0x0800005a      lw    s0, 8(sp)
+|           0x0800005c      addi  sp, sp, 0x10
+\           0x0800005e      ret
+nth      paddr      vaddr bind   type   size lib name                               
+------------------------------------------------------------------------------------
+  1 ---------- 0x00000000 LOCAL  FILE      0     riscv_relocations_relative_32_64.c
+  2 0x00000034 0x08000034 LOCAL  NOTYPE    0     $x.0
+  3 0x00000068 0x08000068 LOCAL  OBJ       4     ptr
+  4 0x00000060 0x08000060 LOCAL  NOTYPE    0     $d.1
+  5 0x0000006c 0x0800006c LOCAL  NOTYPE    0     $d.2
+  6 0x00000094 0x08000094 LOCAL  NOTYPE    0     $d.3
+  7 0x00000034 0x08000034 GLOBAL FUNC     44     main
+  8 0x00000064 0x08000064 GLOBAL OBJ       4     ptr32
+  9 0x00000060 0x08000060 GLOBAL OBJ       4     global_var
+     vaddr      paddr     target type           name       
+-----------------------------------------------------------
+0x08000042 0x00000042 0x00000000 R_RISCV_RELAX  
+0x08000042 0x00000042 0x08000068 R_RISCV_HI20   ptr
+0x08000046 0x00000046 0x00000000 R_RISCV_RELAX  
+0x08000046 0x00000046 0x08000068 R_RISCV_LO12_I ptr
+0x0800004c 0x0000004c 0x00000000 R_RISCV_RELAX  
+0x0800004c 0x0000004c 0x08000064 R_RISCV_HI20   ptr32
+0x08000050 0x00000050 0x00000000 R_RISCV_RELAX  
+0x08000050 0x00000050 0x08000064 R_RISCV_LO12_I ptr32
+0x08000064 0x00000064 0x08000060 R_RISCV_32     global_var
+0x08000068 0x00000068 0x08000060 R_RISCV_32     global_var
+EOF
+RUN
+
+NAME=64-bit relocations
+FILE=bins/elf/riscv_relocs_64
+CMDS=<<EOF
+aaa
+pdf
+is
+ir
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- .L0 :
+            ;-- .text:
+            ;-- main:
+/ loc._xrv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_v1p0_zicsr2p0_zifencei2p0_zmmul1p0_zaamo1p0_zalrsc1p0_zca1p0_zcd1p0_zve32f1p0_zve32x1p0_zve64d1p0_zve64f1p0_zve64x1p0_zvl128b1p0_zvl32b1p0_zvl64b1p0(int64_t arg6);
+|           ; arg int64_t arg6 @ a5
+|           ; var int64_t var_10h @ stack - 0x10
+|           ; var int64_t var_8h @ stack - 0x8
+|           0x08000040      addi  sp, sp, -0x10                        ; RELOC TARGET 0 .L0  @ 0x08000040 ; [01] -r-x section size 42 named .text
+|           0x08000042      sd    ra, 8(sp)
+|           0x08000044      sd    s0, 0(sp)
+|           0x08000046      addi  s0, sp, 0x10
+|           ;-- ptr:
+|           ;-- .L0 :
+|           0x08000048      lui   a5, 0x8000                           ; 0x8000000
+|                                                                      ; segment.ehdr; RELOC 0 
+|           ;-- ptr:
+|           0x0800004c      ld    a5, 0x80(a5)                         ; RELOC 0  ; arg6
+|           0x08000050      lw    a4, 0(a5)                            ; arg6
+|           ;-- ptr32:
+|           0x08000052      lui   a5, 0x8000                           ; 0x8000000
+|                                                                      ; segment.ehdr; RELOC 0 
+|           ;-- ptr32:
+|           0x08000056      ld    a5, 0x78(a5)                         ; RELOC 0  ; arg6
+|           0x0800005a      lw    a5, 0(a5)                            ; arg6
+|           0x0800005c      addw  a5, a5, a4                           ; arg6
+|           0x0800005e      sext.w a5, a5
+|           0x08000060      mv    a0, a5
+|           0x08000062      ld    ra, 8(sp)
+|           ;-- .L0 :
+|           0x08000064      ld    s0, 0(sp)                            ; RELOC TARGET 0 .L0  @ 0x08000064
+|           0x08000066      addi  sp, sp, 0x10
+\           0x08000068      ret
+nth      paddr      vaddr bind   type   size lib name                                                                                                                                                                                     
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  1 ---------- 0x00000000 LOCAL  FILE      0     riscv_relocations_relative_32_64.c
+  2 0x00000040 0x08000040 LOCAL  SECT      0     .text
+  3 0x0000006a 0x0800006a LOCAL  SECT      0     .data
+  4 0x0000006a 0x0800006a LOCAL  SECT      0     .bss
+  5 0x00000070 0x08000070 LOCAL  SECT      0     .sdata
+  6 0x00000080 0x08000080 LOCAL  OBJ       8     ptr
+  7 0x00000040 0x08000040 LOCAL  NOTYPE    0     $xrv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_v1p0_zicsr2p0_zifencei2p0_zmmul1p0_zaamo1p0_zalrsc1p0_zca1p0_zcd1p0_zve32f1p0_zve32x1p0_zve64d1p0_zve64f1p0_zve64x1p0_zvl128b1p0_zvl32b1p0_zvl64b1p0
+  8 0x00000040 0x08000040 LOCAL  NOTYPE    0     .L0 
+  9 0x00000048 0x08000048 LOCAL  NOTYPE    0     .L0 
+ 10 0x00000064 0x08000064 LOCAL  NOTYPE    0     .L0 
+ 11 0x0000006a 0x0800006a LOCAL  NOTYPE    0     .L0 
+ 12 0x000000a2 0x080000a2 LOCAL  SECT      0     .note.GNU-stack
+ 13 0x00000088 0x08000088 LOCAL  SECT      0     .comment
+ 14 0x000000a8 0x080000a8 LOCAL  SECT      0     .eh_frame
+ 15 0x000000e8 0x080000e8 LOCAL  SECT      0     .riscv.attributes
+ 16 0x00000070 0x08000070 GLOBAL OBJ       4     global_var
+ 17 0x00000078 0x08000078 GLOBAL OBJ       8     ptr32
+ 18 0x00000040 0x08000040 GLOBAL FUNC     42     main
+     vaddr      paddr     target type             name       
+-------------------------------------------------------------
+0x08000048 0x00000048 0x00000000 R_RISCV_RELAX    
+0x08000048 0x00000048 0x08000080 R_RISCV_HI20     ptr
+0x0800004c 0x0000004c 0x00000000 R_RISCV_RELAX    
+0x0800004c 0x0000004c 0x08000080 R_RISCV_LO12_I   ptr
+0x08000052 0x00000052 0x00000000 R_RISCV_RELAX    
+0x08000052 0x00000052 0x08000078 R_RISCV_HI20     ptr32
+0x08000056 0x00000056 0x00000000 R_RISCV_RELAX    
+0x08000056 0x00000056 0x08000078 R_RISCV_LO12_I   ptr32
+0x08000078 0x00000078 0x08000070 R_RISCV_64       global_var
+0x08000080 0x00000080 0x08000070 R_RISCV_64       global_var
+0x080000c4 0x000000c4 0x08000040 R_RISCV_32_PCREL .L0 
+0x080000c8 0x000000c8 0x08000040 R_RISCV_SUB32    .L0 
+0x080000c8 0x000000c8 0x0800006a R_RISCV_ADD32    .L0 
+0x080000d9 0x000000d9 0x08000048 R_RISCV_SUB6     .L0 
+0x080000d9 0x000000d9 0x08000064 R_RISCV_SET6     .L0 
+EOF
+RUN
+
+
+NAME=RVC BRANCH (near 32-bits)
+FILE=bins/elf/riscv_relocs_rvc_branch_near_32
+CMDS=<<EOF
+aaa
+pd 15
+is
+ir
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- test:
+/ loc._x.0();
+|           ; var int32_t var_8h @ stack - 0x8
+|           ; var int32_t var_4h @ stack - 0x4
+|           0x08000034      addi  sp, sp, -0x10                        ; [02] -r-x section size 36 named .text
+|           0x08000036      sw    ra, 0xc(sp)
+|           0x08000038      sw    s0, 8(sp)
+|           0x0800003a      mv    s0, a0
+|           0x0800003c      li    a1, 0x2a
+|           ;-- __mulsi3:
+|           0x08000040      auipc ra, 0                                ; RELOC 0 
+|           0x08000044      jalr  0x1d0(ra)
+|           ;-- .LBB0_2:
+|       ,=< 0x08000048      bnez  s0, loc..LBB0_2                      ; RELOC 0 .LBB0_2 @ 0x0800004e
+|       |   0x0800004a      li    a0, 1
+|       |   ;-- .LBB0_3:
+|      ,==< 0x0800004c      j     loc..LBB0_3                          ; RELOC 0 .LBB0_3 @ 0x08000050
+|      ||   ;-- .LBB0_2:
+|      |`-> 0x0800004e      addi  a0, a0, 0xf                          ; RELOC TARGET 0 .LBB0_2 @ 0x0800004e
+|      |    ; CODE XREF from loc._x.0 @ 0x800004c
+|      |    ;-- .LBB0_3:
+|      `--> 0x08000050      lw    ra, 0xc(sp)                          ; RELOC TARGET 0 .LBB0_3 @ 0x08000050
+|           0x08000052      lw    s0, 8(sp)
+|           0x08000054      addi  sp, sp, 0x10
+\           0x08000056      ret
+nth      paddr      vaddr bind   type   size lib name                           
+--------------------------------------------------------------------------------
+  1 ---------- 0x00000000 LOCAL  FILE      0     riscv_branch_compressed_near.c
+  2 0x00000034 0x08000034 LOCAL  NOTYPE    0     $x.0
+  3 0x0000004e 0x0800004e LOCAL  NOTYPE    0     .LBB0_2
+  4 0x00000050 0x08000050 LOCAL  NOTYPE    0     .LBB0_3
+  5 0x00000058 0x08000058 LOCAL  NOTYPE    0     $d.1
+  6 0x00000080 0x08000080 LOCAL  NOTYPE    0     $d.2
+  7 0x00000034 0x08000034 GLOBAL FUNC     36     test
+  8 ---------- ---------- GLOBAL NOTYPE    0     imp.__mulsi3
+     vaddr      paddr     target type               name     
+-------------------------------------------------------------
+0x08000040 0x00000040 0x00000000 R_RISCV_RELAX      
+0x08000040 0x00000040 0x08000210 R_RISCV_CALL_PLT   __mulsi3
+0x08000048 0x00000048 0x0800004e R_RISCV_RVC_BRANCH .LBB0_2
+0x0800004c 0x0000004c 0x08000050 R_RISCV_RVC_JUMP   .LBB0_3
+EOF
+RUN
+
+NAME=RVC BRANCH (near 64-bits)
+FILE=bins/elf/riscv_relocs_rvc_branch_near_64
+CMDS=<<EOF
+aaa
+pd 15
+is
+ir
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- test:
+/ loc._x.0(int64_t arg1);
+|           ; arg int64_t arg1 @ a0
+|           ; var int64_t var_10h @ stack - 0x10
+|           ; var int64_t var_8h @ stack - 0x8
+|           0x08000040      addi  sp, sp, -0x10                        ; [02] -r-x section size 36 named .text
+|           0x08000042      sd    ra, 8(sp)
+|           0x08000044      sd    s0, 0(sp)
+|           0x08000046      mv    s0, a0
+|           0x08000048      li    a1, 0x2a
+|           ;-- __muldi3:
+|           0x0800004c      auipc ra, 0                                ; RELOC 0 
+|           0x08000050      jalr  0x24c(ra)
+|           ;-- .LBB0_2:
+|       ,=< 0x08000054      bnez  s0, loc..LBB0_2                      ; RELOC 0 .LBB0_2 @ 0x0800005a
+|       |   0x08000056      li    a0, 1
+|       |   ;-- .LBB0_3:
+|      ,==< 0x08000058      j     loc..LBB0_3                          ; RELOC 0 .LBB0_3 @ 0x0800005c
+|      ||   ;-- .LBB0_2:
+|      |`-> 0x0800005a      addiw a0, a0, 0xf                          ; RELOC TARGET 0 .LBB0_2 @ 0x0800005a ; arg1
+|      |    ; CODE XREF from loc._x.0 @ 0x8000058
+|      |    ;-- .LBB0_3:
+|      `--> 0x0800005c      ld    ra, 8(sp)                            ; RELOC TARGET 0 .LBB0_3 @ 0x0800005c
+|           0x0800005e      ld    s0, 0(sp)
+|           0x08000060      addi  sp, sp, 0x10
+\           0x08000062      ret
+nth      paddr      vaddr bind   type   size lib name                           
+--------------------------------------------------------------------------------
+  1 ---------- 0x00000000 LOCAL  FILE      0     riscv_branch_compressed_near.c
+  2 0x00000040 0x08000040 LOCAL  NOTYPE    0     $x.0
+  3 0x0000005a 0x0800005a LOCAL  NOTYPE    0     .LBB0_2
+  4 0x0000005c 0x0800005c LOCAL  NOTYPE    0     .LBB0_3
+  5 0x00000064 0x08000064 LOCAL  NOTYPE    0     $d.1
+  6 0x0000008c 0x0800008c LOCAL  NOTYPE    0     $d.2
+  7 0x00000040 0x08000040 GLOBAL FUNC     36     test
+  8 ---------- ---------- GLOBAL NOTYPE    0     imp.__muldi3
+     vaddr      paddr     target type               name     
+-------------------------------------------------------------
+0x0800004c 0x0000004c 0x00000000 R_RISCV_RELAX      
+0x0800004c 0x0000004c 0x08000298 R_RISCV_CALL_PLT   __muldi3
+0x08000054 0x00000054 0x0800005a R_RISCV_RVC_BRANCH .LBB0_2
+0x08000058 0x00000058 0x0800005c R_RISCV_RVC_JUMP   .LBB0_3
+EOF
+RUN
+
+NAME=RVC BRANCH (far forward 32-bits)
+FILE=bins/elf/riscv_relocs_rvc_branch_far_32
+CMDS=<<EOF
+e asm.nodup=1
+aaa
+s 0x08000034
+pdf
+is
+ir
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- .LBB0_2:
+            ;-- test_forward_max:
+/ loc._x.0();
+|       ,=< 0x08000034      beqz  a0, loc..LBB0_2                      ; RELOC 0 .LBB0_2 @ 0x08000132 ; [02] -r-x section size 1048 named .text
+|       |   0x08000036      nop
+...dup (125)
+|       |   ;-- .LBB0_2:
+|       `-> 0x08000132      li    a0, 1                                ; RELOC TARGET 0 .LBB0_2 @ 0x08000132
+\           0x08000134      ret
+nth      paddr      vaddr bind   type   size lib name                          
+-------------------------------------------------------------------------------
+  1 ---------- 0x00000000 LOCAL  FILE      0     riscv_branch_compressed_far.c
+  2 0x00000034 0x08000034 LOCAL  NOTYPE    0     $x.0
+  3 0x00000132 0x08000132 LOCAL  NOTYPE    0     .LBB0_2
+  4 0x00000238 0x08000238 LOCAL  NOTYPE    0     .LBB1_2
+  5 0x0000023c 0x0800023c LOCAL  NOTYPE    0     .LBB2_1
+  6 0x00000342 0x08000342 LOCAL  NOTYPE    0     .LBB3_1
+  7 0x0000044c 0x0800044c LOCAL  NOTYPE    0     $d.1
+  8 0x00000474 0x08000474 LOCAL  NOTYPE    0     $d.2
+  9 0x00000034 0x08000034 GLOBAL FUNC    258     test_forward_max
+ 10 0x00000136 0x08000136 GLOBAL FUNC    262     test_forward_over
+ 11 0x0000023c 0x0800023c GLOBAL FUNC    262     test_backward_max
+ 12 0x00000342 0x08000342 GLOBAL FUNC    266     test_backward_over
+     vaddr      paddr     target type               name    
+------------------------------------------------------------
+0x08000034 0x00000034 0x08000132 R_RISCV_RVC_BRANCH .LBB0_2
+0x08000136 0x00000136 0x08000238 R_RISCV_BRANCH     .LBB1_2
+0x0800033c 0x0000033c 0x0800023c R_RISCV_RVC_BRANCH .LBB2_1
+0x08000444 0x00000444 0x08000342 R_RISCV_BRANCH     .LBB3_1
+EOF
+RUN
+
+NAME=RVC BRANCH (far backward 32-bits)
+FILE=bins/elf/riscv_relocs_rvc_branch_far_32
+CMDS=<<EOF
+e asm.nodup=1
+aaa
+s 0x0800023c
+pd 131
+is
+ir
+EOF
+EXPECT=<<EOF
+|           ;-- .LBB2_1:
+|           ;-- test_backward_max:
+|           0x0800023c      nop                                        ; RELOC TARGET 0 .LBB2_1 @ 0x0800023c
+...dup (127)
+/ reloc..LBB2_1();
+|           0x0800033c      bnez  a0, loc..LBB2_1                      ; RELOC 0 .LBB2_1 @ 0x0800023c
+|           0x0800033e      li    a0, 3
+|           0x08000340      ret
+nth      paddr      vaddr bind   type   size lib name                          
+-------------------------------------------------------------------------------
+  1 ---------- 0x00000000 LOCAL  FILE      0     riscv_branch_compressed_far.c
+  2 0x00000034 0x08000034 LOCAL  NOTYPE    0     $x.0
+  3 0x00000132 0x08000132 LOCAL  NOTYPE    0     .LBB0_2
+  4 0x00000238 0x08000238 LOCAL  NOTYPE    0     .LBB1_2
+  5 0x0000023c 0x0800023c LOCAL  NOTYPE    0     .LBB2_1
+  6 0x00000342 0x08000342 LOCAL  NOTYPE    0     .LBB3_1
+  7 0x0000044c 0x0800044c LOCAL  NOTYPE    0     $d.1
+  8 0x00000474 0x08000474 LOCAL  NOTYPE    0     $d.2
+  9 0x00000034 0x08000034 GLOBAL FUNC    258     test_forward_max
+ 10 0x00000136 0x08000136 GLOBAL FUNC    262     test_forward_over
+ 11 0x0000023c 0x0800023c GLOBAL FUNC    262     test_backward_max
+ 12 0x00000342 0x08000342 GLOBAL FUNC    266     test_backward_over
+     vaddr      paddr     target type               name    
+------------------------------------------------------------
+0x08000034 0x00000034 0x08000132 R_RISCV_RVC_BRANCH .LBB0_2
+0x08000136 0x00000136 0x08000238 R_RISCV_BRANCH     .LBB1_2
+0x0800033c 0x0000033c 0x0800023c R_RISCV_RVC_BRANCH .LBB2_1
+0x08000444 0x00000444 0x08000342 R_RISCV_BRANCH     .LBB3_1
+EOF
+RUN
+
+NAME=RVC BRANCH (far forward 64-bits)
+FILE=bins/elf/riscv_relocs_rvc_branch_far_64
+CMDS=<<EOF
+e asm.nodup=1
+aaa
+s 0x08000040
+pdf
+is
+ir
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- .LBB0_2:
+            ;-- test_forward_max:
+/ loc._x.0();
+|       ,=< 0x08000040      beqz  a0, loc..LBB0_2                      ; RELOC 0 .LBB0_2 @ 0x0800013e ; [02] -r-x section size 1048 named .text
+|       |   0x08000042      nop
+...dup (125)
+|       |   ;-- .LBB0_2:
+|       `-> 0x0800013e      li    a0, 1                                ; RELOC TARGET 0 .LBB0_2 @ 0x0800013e
+\           0x08000140      ret
+nth      paddr      vaddr bind   type   size lib name                          
+-------------------------------------------------------------------------------
+  1 ---------- 0x00000000 LOCAL  FILE      0     riscv_branch_compressed_far.c
+  2 0x00000040 0x08000040 LOCAL  NOTYPE    0     $x.0
+  3 0x0000013e 0x0800013e LOCAL  NOTYPE    0     .LBB0_2
+  4 0x00000244 0x08000244 LOCAL  NOTYPE    0     .LBB1_2
+  5 0x00000248 0x08000248 LOCAL  NOTYPE    0     .LBB2_1
+  6 0x0000034e 0x0800034e LOCAL  NOTYPE    0     .LBB3_1
+  7 0x00000458 0x08000458 LOCAL  NOTYPE    0     $d.1
+  8 0x00000480 0x08000480 LOCAL  NOTYPE    0     $d.2
+  9 0x00000040 0x08000040 GLOBAL FUNC    258     test_forward_max
+ 10 0x00000142 0x08000142 GLOBAL FUNC    262     test_forward_over
+ 11 0x00000248 0x08000248 GLOBAL FUNC    262     test_backward_max
+ 12 0x0000034e 0x0800034e GLOBAL FUNC    266     test_backward_over
+     vaddr      paddr     target type               name    
+------------------------------------------------------------
+0x08000040 0x00000040 0x0800013e R_RISCV_RVC_BRANCH .LBB0_2
+0x08000142 0x00000142 0x08000244 R_RISCV_BRANCH     .LBB1_2
+0x08000348 0x00000348 0x08000248 R_RISCV_RVC_BRANCH .LBB2_1
+0x08000450 0x00000450 0x0800034e R_RISCV_BRANCH     .LBB3_1
+EOF
+RUN
+
+NAME=RVC BRANCH (far backward 64-bits)
+FILE=bins/elf/riscv_relocs_rvc_branch_far_64
+CMDS=<<EOF
+e asm.nodup=1
+aaa
+s 0x08000248
+pd 131
+is
+ir
+EOF
+EXPECT=<<EOF
+|           ;-- .LBB2_1:
+|           ;-- test_backward_max:
+|           0x08000248      nop                                        ; RELOC TARGET 0 .LBB2_1 @ 0x08000248
+...dup (127)
+/ reloc..LBB2_1();
+|           0x08000348      bnez  a0, loc..LBB2_1                      ; RELOC 0 .LBB2_1 @ 0x08000248
+|           0x0800034a      li    a0, 3
+|           0x0800034c      ret
+nth      paddr      vaddr bind   type   size lib name                          
+-------------------------------------------------------------------------------
+  1 ---------- 0x00000000 LOCAL  FILE      0     riscv_branch_compressed_far.c
+  2 0x00000040 0x08000040 LOCAL  NOTYPE    0     $x.0
+  3 0x0000013e 0x0800013e LOCAL  NOTYPE    0     .LBB0_2
+  4 0x00000244 0x08000244 LOCAL  NOTYPE    0     .LBB1_2
+  5 0x00000248 0x08000248 LOCAL  NOTYPE    0     .LBB2_1
+  6 0x0000034e 0x0800034e LOCAL  NOTYPE    0     .LBB3_1
+  7 0x00000458 0x08000458 LOCAL  NOTYPE    0     $d.1
+  8 0x00000480 0x08000480 LOCAL  NOTYPE    0     $d.2
+  9 0x00000040 0x08000040 GLOBAL FUNC    258     test_forward_max
+ 10 0x00000142 0x08000142 GLOBAL FUNC    262     test_forward_over
+ 11 0x00000248 0x08000248 GLOBAL FUNC    262     test_backward_max
+ 12 0x0000034e 0x0800034e GLOBAL FUNC    266     test_backward_over
+     vaddr      paddr     target type               name    
+------------------------------------------------------------
+0x08000040 0x00000040 0x0800013e R_RISCV_RVC_BRANCH .LBB0_2
+0x08000142 0x00000142 0x08000244 R_RISCV_BRANCH     .LBB1_2
+0x08000348 0x00000348 0x08000248 R_RISCV_RVC_BRANCH .LBB2_1
+0x08000450 0x00000450 0x0800034e R_RISCV_BRANCH     .LBB3_1
+EOF
+RUN

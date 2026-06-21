@@ -17,6 +17,7 @@
  **/
 
 #include "float_internal.c"
+#include "rz_util/rz_float.h"
 #include <rz_userconf.h>
 #include <math.h>
 #include <fenv.h>
@@ -91,7 +92,7 @@ static inline extFloat80_t to_float80(RzFloat *f80) {
 }
 
 static inline float128_t to_float128(RzFloat *f128) {
-	rz_warn_if_fail(f128->r != RZ_FLOAT_IEEE754_BIN_128);
+	rz_warn_if_fail(f128->r == RZ_FLOAT_IEEE754_BIN_128);
 
 	float128_t ret;
 	ret.v[0] = rz_bv_to_ut64(f128->s);
@@ -613,7 +614,7 @@ RZ_API RZ_OWN RzFloat *rz_float_new_from_f32(float value) {
 	} else if (isnan(value)) {
 		return rz_float_new_qnan(RZ_FLOAT_IEEE754_BIN_32);
 	} else if (value == 0) {
-		return rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32);
+		return rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32, IS_NEG_ZERO32(value));
 	}
 
 	RzFloat *f = rz_float_new(RZ_FLOAT_IEEE754_BIN_32);
@@ -640,7 +641,7 @@ RZ_API RZ_OWN RzFloat *rz_float_new_from_f64(double value) {
 	} else if (isnan(value)) {
 		return rz_float_new_qnan(RZ_FLOAT_IEEE754_BIN_64);
 	} else if (value == 0) {
-		return rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_64);
+		return rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_64, IS_NEG_ZERO64(value));
 	}
 
 	RzFloat *f = rz_float_new(RZ_FLOAT_IEEE754_BIN_64);
@@ -669,7 +670,7 @@ RZ_API RZ_OWN RzFloat *rz_float_new_from_f80(long double value) {
 	} else if (isnan(value)) {
 		return rz_float_new_qnan(RZ_FLOAT_IEEE754_BIN_80);
 	} else if (value == 0) {
-		return rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_80);
+		return rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_80, IS_NEG_ZEROLD(value));
 	}
 
 	RzFloat *f = rz_float_new(RZ_FLOAT_IEEE754_BIN_80);
@@ -698,7 +699,7 @@ RZ_API RZ_OWN RzFloat *rz_float_new_from_f128(long double value) {
 	} else if (isnan(value)) {
 		return rz_float_new_qnan(RZ_FLOAT_IEEE754_BIN_128);
 	} else if (value == 0) {
-		return rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_128);
+		return rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_128, IS_NEG_ZEROLD(value));
 	}
 
 	RzFloat *f = rz_float_new(RZ_FLOAT_IEEE754_BIN_128);
@@ -752,7 +753,7 @@ RZ_API RZ_OWN RzFloat *rz_float_new_from_bv(RZ_NONNULL const RzBitVector *bv) {
 		return NULL;
 	}
 
-	rz_bv_copy(bv, f->s);
+	rz_bv_copy(f->s, bv);
 	return f;
 }
 
@@ -1113,12 +1114,17 @@ RZ_API RZ_OWN RzFloat *rz_float_new_inf(RzFloatFormat format, bool is_negative) 
 }
 
 /**
- * Generate a positive zero
+ * Generate a negative zero
  * \param format float format
+ * \param negative If true, the zero is a negative zero.
  * \return zero float
  */
-RZ_API RZ_OWN RzFloat *rz_float_new_zero(RzFloatFormat format) {
-	return rz_float_new(format);
+RZ_API RZ_OWN RzFloat *rz_float_new_zero(RzFloatFormat format, bool negative) {
+	RzFloat *zero = rz_float_new(format);
+	if (negative && zero) {
+		rz_bv_toggle(zero->s, rz_bv_len(zero->s) - 1);
+	}
+	return zero;
 }
 
 /**
@@ -1436,7 +1442,7 @@ RZ_API RZ_OWN RzFloat *rz_float_trunc(RZ_NONNULL RzFloat *f) {
 
 	if (exp_val < bias) {
 		// magnitude < 1.0
-		return rz_float_new_zero(f->r);
+		return rz_float_new_zero(f->r, false);
 	}
 
 	ut32 pt_pos;
@@ -1495,6 +1501,10 @@ RZ_API RZ_OWN RzFloat *rz_float_cast_float(RZ_NONNULL RzBitVector *bv, RzFloatFo
 	ut32 exp_max_no_bias = bias;
 
 	ut32 width = rz_bv_len(bv) - rz_bv_clz(bv);
+	// Zero has no highest set bit; handle it before width - 1 underflows.
+	if (width == 0) {
+		return rz_float_new_zero(format, false);
+	}
 	ut32 order = width - 1;
 	if (order > exp_max_no_bias) {
 		// error: not representable
@@ -1576,9 +1586,11 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 	// 1.MM..M * 2^exp = 1MM..M * 2^0 (integer)
 	bool should_inc = false;
 	RzBitVector *sig = rz_float_get_mantissa(f);
+	bool is_zero = rz_bv_is_zero_vector(sig) && exp == 0;
 
-	// sub normal one has no hidden bit, others should set to 1
-	if (!is_subnormal) {
+	// binary80 stores the integer bit explicitly in the mantissa; all other
+	// normal formats use a hidden bit that must be injected here
+	if (!is_subnormal && format != RZ_FLOAT_IEEE754_BIN_80) {
 		rz_bv_set(sig, man_len, true);
 	}
 
@@ -1623,7 +1635,7 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 
 	// assume we r handling absolute value
 	// now for negative, convert it to 2's complement
-	if (sign) {
+	if (sign && !is_zero) {
 		// to keep it an negative, make ret all set to bit 1
 		rz_bv_toggle_all(ret);
 		tmp = rz_bv_complement_2(rounded);
@@ -1632,9 +1644,7 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 		tmp = NULL;
 	}
 
-	// WARN: possible overflow if length < exp_no_bias
-	// WARN: higher bits may be cut off
-	rz_bv_copy_nbits(rounded, 0, ret, 0, rz_bv_len(rounded));
+	rz_bv_copy_nbits(ret, 0, rounded, 0, RZ_MIN(rz_bv_len(rounded), length));
 	rz_bv_free(rounded);
 	return ret;
 }
@@ -1658,8 +1668,7 @@ RZ_API RZ_OWN RzFloat *rz_float_convert(RZ_NONNULL RzFloat *f, RzFloatFormat for
 	}
 
 	if (rz_float_is_zero(f)) {
-		RzFloat *ret_zero = rz_float_new_zero(format);
-		rz_float_set_sign(ret_zero, rz_float_get_sign(f));
+		RzFloat *ret_zero = rz_float_new_zero(format, rz_float_get_sign(f));
 		return ret_zero;
 	}
 
@@ -1881,7 +1890,11 @@ RZ_API RZ_OWN st32 rz_float_cmp(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y) {
 			cmp = -cmp;
 		}
 	} else {
-		cmp = rz_bv_ule(x_bv, y_bv) ? 1 : -1;
+		if (rz_float_is_zero(x) && rz_float_is_zero(y)) {
+			cmp = 0;
+		} else {
+			cmp = rz_bv_ule(x_bv, y_bv) ? 1 : -1;
+		}
 	}
 
 	rz_bv_free(x_bv);
@@ -1925,4 +1938,57 @@ RZ_API RZ_OWN RzBitVector *rz_float_round_significant(bool sign, RzBitVector *si
  */
 RZ_API RZ_OWN RzFloat *rz_float_round_bv_and_pack(bool sign, st32 exp, RzBitVector *sig, RzFloatFormat format, RzFloatRMode mode) {
 	return round_float_bv_new(sign, exp, sig, format, format, mode);
+}
+
+/**
+ * \brief Render a float format's width as a Unicode subscript string.
+ *
+ * Mirrors the bit-vector width subscript (rz_bv_width_subscript): the
+ * total bit width of \p format is rendered as Unicode subscript
+ * digits, with a leading "d" subscript marker for the decimal
+ * formats. For example IEEE-754 binary32 yields the subscript "32"
+ * and decimal64 yields "d64". This is the single source of truth for
+ * the float-format subscript shared by value formatting and the RzIL
+ * Unicode exporter.
+ *
+ * \param format The float format to annotate.
+ * \return A freshly-allocated, caller-owned string, or NULL on
+ *         allocation failure or an unknown format.
+ */
+RZ_API RZ_OWN char *rz_float_format_subscript(RzFloatFormat format) {
+	// The decimal formats are not fully implemented in RzFloat
+	// (rz_float_get_format_info returns 0 for them), so their widths
+	// are spelled out here; they render with a leading "d" marker.
+	ut32 total;
+	bool is_decimal = false;
+	switch (format) {
+	case RZ_FLOAT_IEEE754_DEC_64:
+		total = 64;
+		is_decimal = true;
+		break;
+	case RZ_FLOAT_IEEE754_DEC_128:
+		total = 128;
+		is_decimal = true;
+		break;
+	default:
+		total = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
+		break;
+	}
+	if (!total) {
+		return NULL;
+	}
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	// Decimal formats carry a "d" marker (U+1D48 modifier letter
+	// small d) before the width to distinguish them from the binary
+	// formats, matching the RzIL Unicode exporter's notation.
+	if (is_decimal && !rz_strbuf_append(&sb, "\u1d48")) {
+		rz_strbuf_fini(&sb);
+		return NULL;
+	}
+	if (!rz_str_append_num_subscript(&sb, total)) {
+		rz_strbuf_fini(&sb);
+		return NULL;
+	}
+	return rz_strbuf_drain_nofree(&sb);
 }

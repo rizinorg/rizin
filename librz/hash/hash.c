@@ -128,6 +128,27 @@ RZ_API ut32 rz_hash_xxhash(RZ_NONNULL const ut8 *input, size_t size) {
 }
 
 /**
+ * \brief      Calculates the information temperature of the given input
+ *
+ * \param[in]  data  The input buffer
+ * \param[in]  size  The size of the input
+ *
+ * \return     The resulting temperature of the input
+ */
+RZ_API double rz_hash_temperature(RZ_NONNULL const ut8 *data, ut64 len) {
+	rz_return_val_if_fail(data, 0.0);
+	const RzHashPlugin *plugin = &rz_hash_plugin_temperature;
+	ut8 *digest = NULL;
+	if (!plugin->small_block(data, len, &digest, NULL)) {
+		RZ_LOG_ERROR("msg digest: cannot calculate temperature\n");
+		return 0.0;
+	}
+	double e = rz_read_be_double(digest);
+	free(digest);
+	return e;
+}
+
+/**
  * \brief      Calculates the entropy of the given input
  *
  * \param[in]  data  The input buffer
@@ -162,6 +183,90 @@ RZ_API double rz_hash_entropy_fraction(RZ_NONNULL const ut8 *data, ut64 len) {
 	ut8 *digest = NULL;
 	if (!plugin->small_block(data, len, &digest, NULL)) {
 		RZ_LOG_ERROR("msg digest: cannot calculate entropy fraction\n");
+		return 0.0;
+	}
+	double e = rz_read_be_double(digest);
+	free(digest);
+	return e;
+}
+
+/**
+ * \brief      Calculates the chi-square statistic (vs uniform) of the given input
+ *
+ * \param[in]  data  The input buffer
+ * \param[in]  len   The size of the input
+ *
+ * \return     The resulting chi-square statistic (vs uniform) of the input
+ */
+RZ_API double rz_hash_chisquare(RZ_NONNULL const ut8 *data, ut64 len) {
+	rz_return_val_if_fail(data, 0.0);
+	const RzHashPlugin *plugin = &rz_hash_plugin_chisquare;
+	ut8 *digest = NULL;
+	if (!plugin->small_block(data, len, &digest, NULL)) {
+		RZ_LOG_ERROR("msg digest: cannot calculate chisquare\n");
+		return 0.0;
+	}
+	double e = rz_read_be_double(digest);
+	free(digest);
+	return e;
+}
+
+/**
+ * \brief      Calculates the index of coincidence of the given input
+ *
+ * \param[in]  data  The input buffer
+ * \param[in]  len   The size of the input
+ *
+ * \return     The resulting index of coincidence of the input
+ */
+RZ_API double rz_hash_ioc(RZ_NONNULL const ut8 *data, ut64 len) {
+	rz_return_val_if_fail(data, 0.0);
+	const RzHashPlugin *plugin = &rz_hash_plugin_ioc;
+	ut8 *digest = NULL;
+	if (!plugin->small_block(data, len, &digest, NULL)) {
+		RZ_LOG_ERROR("msg digest: cannot calculate ioc\n");
+		return 0.0;
+	}
+	double e = rz_read_be_double(digest);
+	free(digest);
+	return e;
+}
+
+/**
+ * \brief      Calculates the min-entropy of the given input
+ *
+ * \param[in]  data  The input buffer
+ * \param[in]  len   The size of the input
+ *
+ * \return     The resulting min-entropy of the input
+ */
+RZ_API double rz_hash_min_entropy(RZ_NONNULL const ut8 *data, ut64 len) {
+	rz_return_val_if_fail(data, 0.0);
+	const RzHashPlugin *plugin = &rz_hash_plugin_minentropy;
+	ut8 *digest = NULL;
+	if (!plugin->small_block(data, len, &digest, NULL)) {
+		RZ_LOG_ERROR("msg digest: cannot calculate min-entropy\n");
+		return 0.0;
+	}
+	double e = rz_read_be_double(digest);
+	free(digest);
+	return e;
+}
+
+/**
+ * \brief      Calculates the serial correlation coefficient of the given input
+ *
+ * \param[in]  data  The input buffer
+ * \param[in]  len   The size of the input
+ *
+ * \return     The resulting serial correlation coefficient of the input
+ */
+RZ_API double rz_hash_serial_correlation(RZ_NONNULL const ut8 *data, ut64 len) {
+	rz_return_val_if_fail(data, 0.0);
+	const RzHashPlugin *plugin = &rz_hash_plugin_serialcorr;
+	ut8 *digest = NULL;
+	if (!plugin->small_block(data, len, &digest, NULL)) {
+		RZ_LOG_ERROR("msg digest: cannot calculate serial correlation\n");
 		return 0.0;
 	}
 	double e = rz_read_be_double(digest);
@@ -551,7 +656,7 @@ RZ_API RZ_BORROW const ut8 *rz_hash_cfg_get_result(RZ_NONNULL RzHashCfg *md, RZ_
 		return NULL;
 	}
 
-	HashCfgConfig *mdc = (HashCfgConfig *)rz_list_iter_get_data(it);
+	HashCfgConfig *mdc = (HashCfgConfig *)rz_list_val(it);
 	rz_return_val_if_fail(mdc, NULL);
 
 	if (size) {
@@ -576,7 +681,7 @@ RZ_API RZ_OWN char *rz_hash_cfg_get_result_string(RZ_NONNULL RzHashCfg *md, RZ_N
 		return NULL;
 	}
 
-	HashCfgConfig *mdc = (HashCfgConfig *)rz_list_iter_get_data(it);
+	HashCfgConfig *mdc = (HashCfgConfig *)rz_list_val(it);
 	rz_return_val_if_fail(mdc, NULL);
 
 	if (!strncmp(name, "entropy", strlen("entropy"))) {
@@ -584,6 +689,21 @@ RZ_API RZ_OWN char *rz_hash_cfg_get_result_string(RZ_NONNULL RzHashCfg *md, RZ_N
 		return rz_str_newf("%.8f", entropy);
 	} else if (!strcmp(name, "ssdeep")) {
 		return rz_str_dup((char *)mdc->digest);
+	} else if (!strncmp(name, "temperature", strlen("temperature"))) {
+		double temperature = rz_read_be_double(mdc->digest);
+		return rz_str_newf("%.8f", temperature);
+	} else if (!strcmp(name, "chisquare")) {
+		double chisquare = rz_read_be_double(mdc->digest);
+		return rz_str_newf("%.8f", chisquare);
+	} else if (!strcmp(name, "ioc")) {
+		double ioc = rz_read_be_double(mdc->digest);
+		return rz_str_newf("%.8f", ioc);
+	} else if (!strcmp(name, "minentropy")) {
+		double minentropy = rz_read_be_double(mdc->digest);
+		return rz_str_newf("%.8f", minentropy);
+	} else if (!strcmp(name, "serialcorr")) {
+		double serialcorr = rz_read_be_double(mdc->digest);
+		return rz_str_newf("%.8f", serialcorr);
 	}
 
 	char *string = malloc((mdc->digest_size * 2) + 1);
@@ -618,7 +738,7 @@ RZ_API RzHashSize rz_hash_cfg_size(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const ch
 		return 0;
 	}
 
-	HashCfgConfig *mdc = (HashCfgConfig *)rz_list_iter_get_data(it);
+	HashCfgConfig *mdc = (HashCfgConfig *)rz_list_val(it);
 	rz_return_val_if_fail(mdc, 0);
 	return mdc->plugin->digest_size(mdc->context);
 }
@@ -658,6 +778,26 @@ RZ_API RZ_OWN char *rz_hash_cfg_calculate_small_block_string(RZ_NONNULL RzHash *
 		double entropy = rz_read_be_double(digest);
 		free(digest);
 		return rz_str_newf("%.8f", entropy);
+	} else if (!strncmp(name, "temperature", strlen("temperature"))) {
+		double temperature = rz_read_be_double(digest);
+		free(digest);
+		return rz_str_newf("%.8f", temperature);
+	} else if (!strcmp(name, "chisquare")) {
+		double chisquare = rz_read_be_double(digest);
+		free(digest);
+		return rz_str_newf("%.8f", chisquare);
+	} else if (!strcmp(name, "ioc")) {
+		double ioc = rz_read_be_double(digest);
+		free(digest);
+		return rz_str_newf("%.8f", ioc);
+	} else if (!strcmp(name, "minentropy")) {
+		double minentropy = rz_read_be_double(digest);
+		free(digest);
+		return rz_str_newf("%.8f", minentropy);
+	} else if (!strcmp(name, "serialcorr")) {
+		double serialcorr = rz_read_be_double(digest);
+		free(digest);
+		return rz_str_newf("%.8f", serialcorr);
 	} else if (!strcmp(name, "ssdeep")) {
 		return (char *)digest;
 	}

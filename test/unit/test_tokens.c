@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022 Rot127 <unisono@quyllur.org>
+// SPDX-FileCopyrightText: 2022 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_assert.h>
@@ -12,6 +12,7 @@
 #include <rz_cons.h>
 #include <rz_util/rz_print.h>
 #include <rz_util/rz_str.h>
+#include "analysis_private.h"
 
 static RzPrint *setup_print() {
 	RzPrint *p = rz_print_new();
@@ -42,21 +43,21 @@ static RzAsm *setup_x86_asm(ut32 bits) {
 }
 
 static RzAnalysis *setup_x86_analysis(ut32 bits) {
-	RzAnalysis *a = rz_analysis_new();
+	RzAnalysis *a = rz_analysis_new(NULL);
 	rz_analysis_use(a, "x86");
 	rz_analysis_set_bits(a, bits);
 	return a;
 }
 
 static RzAnalysis *setup_arm_analysis(ut32 bits) {
-	RzAnalysis *a = rz_analysis_new();
+	RzAnalysis *a = rz_analysis_new(NULL);
 	rz_analysis_use(a, "arm");
 	rz_analysis_set_bits(a, bits);
 	return a;
 }
 
 static RzAnalysis *setup_hexagon_analysis() {
-	RzAnalysis *a = rz_analysis_new();
+	RzAnalysis *a = rz_analysis_new(NULL);
 	rz_analysis_use(a, "hexagon");
 	rz_analysis_set_bits(a, 32);
 	return a;
@@ -79,7 +80,7 @@ static ut32 hexagon_set_next_pc(RZ_BORROW RzAsm *a) {
 }
 
 static RzAnalysis *setup_tms_analysis(const char *cpu) {
-	RzAnalysis *a = rz_analysis_new();
+	RzAnalysis *a = rz_analysis_new(NULL);
 	rz_analysis_use(a, "tms320");
 	rz_analysis_set_bits(a, 32);
 	rz_analysis_set_cpu(a, cpu);
@@ -90,6 +91,15 @@ static RzAsm *setup_tms_asm(const char *cpu) {
 	RzAsm *a = rz_asm_new();
 	rz_asm_setup(a, "tms320", 32, false);
 	rz_asm_set_cpu(a, cpu);
+	return a;
+}
+
+static RzAsm *setup_mcs96_asm(const char *cpu) {
+	RzAsm *a = rz_asm_new();
+	rz_asm_setup(a, "mcs96", 16, false);
+	if (cpu) {
+		rz_asm_set_cpu(a, cpu);
+	}
 	return a;
 }
 
@@ -307,6 +317,7 @@ static bool test_rz_tokenize_generic_4(void) {
 static bool test_rz_tokenize_custom_hexagon_0(void) {
 	RzAsm *a = setup_hexagon_asm();
 	hexagon_set_next_pc(a);
+	const RzAsmPlugin *cur = rz_asm_plugin_current(a);
 
 	const ut8 buf[] = "\x0c\xc0\x00\x54"; // "[   trap0(#0x3)"
 	RzAsmToken tokens[7] = {
@@ -319,7 +330,7 @@ static bool test_rz_tokenize_custom_hexagon_0(void) {
 		{ .start = 14, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 } // )
 	};
 	RzAsmOp *op = RZ_NEW0(RzAsmOp);
-	a->cur->disassemble(a, op, buf, sizeof(buf));
+	cur->disassemble(a, op, buf, sizeof(buf));
 	if (!op->asm_toks) {
 		mu_fail("NULL check failed.\n");
 	}
@@ -345,11 +356,12 @@ static bool test_rz_tokenize_custom_hexagon_0(void) {
 static bool test_rz_tokenize_custom_hexagon_issues_tilde(void) {
 	RzAsm *a = setup_hexagon_asm();
 	hexagon_set_next_pc(a);
+	const RzAsmPlugin *cur = rz_asm_plugin_current(a);
 
 	// Check if ~ is an operator
 	const ut8 buf[] = "\x00\xc0\x81\xf1"; // [   R0 = and(R0,~R1)
 	RzAsmOp *op = RZ_NEW0(RzAsmOp);
-	a->cur->disassemble(a, op, buf, sizeof(buf));
+	cur->disassemble(a, op, buf, sizeof(buf));
 	if (!op->asm_toks) {
 		mu_fail("NULL check failed.\n");
 	}
@@ -369,11 +381,12 @@ static bool test_rz_tokenize_custom_hexagon_issues_tilde(void) {
 static bool test_rz_tokenize_custom_hexagon_issues_long_reg(void) {
 	RzAsm *a = setup_hexagon_asm();
 	hexagon_set_next_pc(a);
+	const RzAsmPlugin *cur = rz_asm_plugin_current(a);
 
 	// Check if BRKPTPC0 is a register
 	const ut8 buf[] = "\x24\xc0\x01\x67"; // [   BRKPTPC0 = R1
 	RzAsmOp *op = RZ_NEW0(RzAsmOp);
-	a->cur->disassemble(a, op, buf, sizeof(buf));
+	cur->disassemble(a, op, buf, sizeof(buf));
 	if (!op->asm_toks) {
 		mu_fail("NULL check failed.\n");
 	}
@@ -518,7 +531,7 @@ static bool test_rz_colorize_generic_2(void) {
 	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p,
 		param, asmop->asm_toks);
 
-	RzStrBuf *expected = rz_strbuf_new("\x1b[37mmovabs\x1b[0m\x1b[37m \x1b[0m\x1b[36mrax\x1b[0m\x1b[37m, \x1b[0m\x1b[33m0x1122334455667788\x1b[0m");
+	RzStrBuf *expected = rz_strbuf_new("\x1b[37mmov\x1b[0m\x1b[37m \x1b[0m\x1b[36mrax\x1b[0m\x1b[37m, \x1b[0m\x1b[33m0x1122334455667788\x1b[0m");
 	char err_msg[2048];
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
@@ -542,8 +555,8 @@ static bool test_rz_colorize_generic_3(void) {
 	RzPrint *p = setup_print();
 	RzAsmOp *asmop = rz_asm_op_new();
 	RzAnalysisOp *anaop = rz_analysis_op_new();
-	// "mov ac0.l, *ar2 || mov *(ar1+t0b) << t3, ac1" - 395102a0b411014033
-	ut8 buf[] = "\x39\x51\x02\xa0\xb4\x11\x01\x40\x33";
+	// "mov ac0.l, *ar2 || mov *(ar1+t0b) << t3, ac1" - 395102a0b411414033
+	ut8 buf[] = "\x39\x51\x02\xa0\xb4\x11\x41\x40\x33";
 	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
 	rz_analysis_op(a, anaop, 0x0, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 
@@ -576,8 +589,8 @@ static bool test_rz_colorize_generic_4(void) {
 	RzPrint *p = setup_print();
 	RzAsmOp *asmop = rz_asm_op_new();
 	RzAnalysisOp *anaop = rz_analysis_op_new();
-	// "mov ac0.l, *ar2 || mov *(ar1+t0b) << t3, ac1" - 395102a0b411014033
-	ut8 buf[] = "\x39\x51\x02\xa0\xb4\x11\x01\x40\x33";
+	// "mov ac0.l, *ar2 || mov *(ar1+t0b) << t3, ac1" - 395102a0b411414033
+	ut8 buf[] = "\x39\x51\x02\xa0\xb4\x11\x41\x40\x33";
 	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
 	rz_analysis_op(a, anaop, 0x0, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 
@@ -606,21 +619,18 @@ static bool test_rz_colorize_generic_4(void) {
 
 static bool test_rz_colorize_custom_hexagon_0(void) {
 	RzAsm *d = setup_hexagon_asm();
-	struct dummy_rz_core_t core = { 0 };
-	core.rasm = d;
-	d->core = &core;
 
 	RzPrint *p = setup_print();
 	RzAsmOp *asmop = rz_asm_op_new();
 	RzAnalysisOp *anaop = rz_analysis_op_new();
-	// "?   if (P0.new) jump:nt 0x18
+	// "[   if (P0.new) jump:nt 0x18
 	ut8 buf[] = "\x08\xe8\x00\x5c";
 
 	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
 
 	RzStrBuf *colored_asm = rz_print_colorize_asm_str(p, asmop->asm_toks);
 
-	RzStrBuf *expected = rz_strbuf_new("\x1b[90m?\x1b[0m\x1b[37m   \x1b[0m\x1b[32mif\x1b[0m\x1b[37m \x1b[0m\x1b[37m(\x1b[0m\x1b[36mP0\x1b[0m\x1b[90m.new\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[32mjump\x1b[0m\x1b[90m:nt\x1b[0m\x1b[37m \x1b[0m\x1b[33m0x210\x1b[0m");
+	RzStrBuf *expected = rz_strbuf_new("\x1b[90m[\x1b[0m\x1b[37m   \x1b[0m\x1b[32mif\x1b[0m\x1b[37m \x1b[0m\x1b[37m(\x1b[0m\x1b[36mP0\x1b[0m\x1b[90m.new\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[32mjump\x1b[0m\x1b[90m:nt\x1b[0m\x1b[37m \x1b[0m\x1b[33m0x210\x1b[0m");
 	char err_msg[2048];
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
@@ -638,9 +648,6 @@ static bool test_rz_colorize_custom_hexagon_0(void) {
 
 static bool test_rz_colorize_custom_hexagon_1(void) {
 	RzAsm *d = setup_hexagon_asm();
-	struct dummy_rz_core_t core = { 0 };
-	core.rasm = d;
-	d->core = &core;
 
 	RzPrint *p = setup_print();
 	RzAsmOp *asmop = rz_asm_op_new();
@@ -651,7 +658,7 @@ static bool test_rz_colorize_custom_hexagon_1(void) {
 
 	RzStrBuf *colored_asm = rz_print_colorize_asm_str(p, asmop->asm_toks);
 
-	RzStrBuf *expected = rz_strbuf_new("\x1b[90m?\x1b[0m\x1b[37m   \x1b[0m\x1b[36mLR\x1b[0m\x1b[37m:\x1b[0m\x1b[36mFP\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[31mdealloc_return\x1b[0m\x1b[37m(\x1b[0m\x1b[36mFP\x1b[0m\x1b[37m)\x1b[0m\x1b[90m:raw\x1b[0m");
+	RzStrBuf *expected = rz_strbuf_new("\x1b[90m[\x1b[0m\x1b[37m   \x1b[0m\x1b[36mLR\x1b[0m\x1b[37m:\x1b[0m\x1b[36mFP\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[31mdealloc_return\x1b[0m\x1b[37m(\x1b[0m\x1b[36mFP\x1b[0m\x1b[37m)\x1b[0m\x1b[90m:raw\x1b[0m");
 	char err_msg[2048];
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
@@ -668,24 +675,21 @@ static bool test_rz_colorize_custom_hexagon_1(void) {
 
 static bool test_rz_colorize_custom_hexagon_2(void) {
 	RzAsm *d = setup_hexagon_asm();
-	d->utf8 = true;
-	struct dummy_rz_core_t core = { 0 };
-	core.rasm = d;
-	d->core = &core;
+	rz_asm_set_utf8(d, true);
 
 	RzPrint *p = setup_print();
 	RzAsmOp asmop = { 0 };
 	RzStrBuf *colored_asm;
 	RzStrBuf *expected;
 	char err_msg[2048];
-	// ?   memd(R0++#0x8) = R19:18
+	// [   memd(R0++#0x8) = R19:18
 	// ┌   R7:6 = valignb(R13:12,R11:10,P2)
 	// │   P0 = cmp.gtu(R4,##0x1)
 	// │   R11:10 = memd(R1++#0x8)
 	// └   memd(R0++#0x8) = R7:6     ∎ endloop0
 	ut8 buf[] = "\x08\xd2\xc0\xab\x46\x8c\x0a\xc2\x20\x40\x84\x75\x2a\x40\xc1\x9b\x08\xc6\xc0\xab";
 	const char *expected_str[] = {
-		"\x1b[90m?\x1b[0m\x1b[37m   \x1b[0m\x1b[37mmemd\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR0\x1b[0m\x1b[37m++\x1b[0m\x1b[90m#\x1b[0m\x1b[33m0x8\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[36mR19:18\x1b[0m",
+		"\x1b[90m[\x1b[0m\x1b[37m   \x1b[0m\x1b[37mmemd\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR0\x1b[0m\x1b[37m++\x1b[0m\x1b[90m#\x1b[0m\x1b[33m0x8\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[36mR19:18\x1b[0m",
 		"\x1b[90m┌\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR7:6\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mvalignb\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR13:12\x1b[0m\x1b[37m,\x1b[0m\x1b[36mR11:10\x1b[0m\x1b[37m,\x1b[0m\x1b[36mP2\x1b[0m\x1b[37m)\x1b[0m",
 		"\x1b[90m│\x1b[0m\x1b[37m   \x1b[0m\x1b[36mP0\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mcmp\x1b[0m\x1b[37m.\x1b[0m\x1b[37mgtu\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR4\x1b[0m\x1b[37m,\x1b[0m\x1b[90m##\x1b[0m\x1b[33m0x1\x1b[0m\x1b[37m)\x1b[0m",
 		"\x1b[90m│\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR11:10\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mmemd\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR1\x1b[0m\x1b[37m++\x1b[0m\x1b[90m#\x1b[0m\x1b[33m0x8\x1b[0m\x1b[37m)\x1b[0m",
@@ -712,10 +716,7 @@ static bool test_rz_colorize_custom_hexagon_2(void) {
 
 static bool test_rz_colorize_custom_hexagon_3(void) {
 	RzAsm *d = setup_hexagon_asm();
-	d->utf8 = true;
-	struct dummy_rz_core_t core = { 0 };
-	core.rasm = d;
-	d->core = &core;
+	rz_asm_set_utf8(d, true);
 
 	RzPrint *p = setup_print();
 	RzAsmOp asmop = { 0 };
@@ -732,8 +733,8 @@ static bool test_rz_colorize_custom_hexagon_3(void) {
 	// }
 	ut8 buf[] = "\x39\x40\xe0\x88\x12\xc1\x20\x5c\x42\x40\x99\x84\x04\xc0\x41\x89";
 	const char *expected_str[] = {
-		"\x1b[90m?\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR25\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mconvert_df2w\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR1:0\x1b[0m\x1b[37m)\x1b[0m\x1b[37m:\x1b[0m\x1b[37mchop\x1b[0m",
-		"\x1b[90m?\x1b[0m\x1b[37m   \x1b[0m\x1b[32mif\x1b[0m\x1b[37m \x1b[0m\x1b[37m(\x1b[0m\x1b[37m!\x1b[0m\x1b[36mP1\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[32mjump\x1b[0m\x1b[90m:nt\x1b[0m\x1b[37m \x1b[0m\x1b[33m0x24\x1b[0m",
+		"\x1b[90m┌\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR25\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mconvert_df2w\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR1:0\x1b[0m\x1b[37m)\x1b[0m\x1b[37m:\x1b[0m\x1b[37mchop\x1b[0m",
+		"\x1b[90m└\x1b[0m\x1b[37m   \x1b[0m\x1b[32mif\x1b[0m\x1b[37m \x1b[0m\x1b[37m(\x1b[0m\x1b[37m!\x1b[0m\x1b[36mP1\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[32mjump\x1b[0m\x1b[90m:nt\x1b[0m\x1b[37m \x1b[0m\x1b[33m0x24\x1b[0m",
 		"\x1b[90m┌\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR3:2\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mconvert_W2df\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR25\x1b[0m\x1b[37m)\x1b[0m",
 		"\x1b[90m└\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR4\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[36mP1\x1b[0m",
 
@@ -741,7 +742,7 @@ static bool test_rz_colorize_custom_hexagon_3(void) {
 
 	for (int i = 0; i < 0x10; i += 4) {
 		rz_asm_set_pc(d, i);
-		rz_asm_disassemble(d, &asmop, buf + i, 4);
+		rz_asm_disassemble(d, &asmop, buf + i, 0x10 - i);
 
 		colored_asm = rz_print_colorize_asm_str(p, asmop.asm_toks);
 		expected = rz_strbuf_new(expected_str[i / 4]);
@@ -806,6 +807,124 @@ static bool test_rz_tokenize_custom_bf_0(void) {
 	mu_end;
 }
 
+static bool test_rz_tokenize_custom_mcs96_0(void) {
+	RzAsm *a = setup_mcs96_asm(NULL);
+	const RzAsmPlugin *cur = rz_asm_plugin_current(a);
+
+	// "add 0x03 0x02 0x01"
+	const ut8 buf[] = "\x44\x01\x02\x03";
+	RzAsmToken tokens[] = {
+		{ .start = 0, .len = 3, .type = RZ_ASM_TOKEN_MNEMONIC, .val.number = 0 }, // add
+		{ .start = 3, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 }, // \s
+		{ .start = 4, .len = 4, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 0x03 }, // 0x03
+		{ .start = 8, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 }, // \s
+		{ .start = 9, .len = 4, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 0x02 }, // 0x02
+		{ .start = 13, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 }, // \s
+		{ .start = 14, .len = 4, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 0x01 } // 0x01
+	};
+
+	RzAsmOp *op = RZ_NEW0(RzAsmOp);
+	cur->disassemble(a, op, buf, sizeof(buf));
+	if (!op->asm_toks) {
+		mu_fail("NULL check failed.\n");
+	}
+	mu_assert_eq(rz_pvector_len(op->asm_toks->tokens), 7, "Number of generated tokens.");
+
+	int i = 0;
+	void **it;
+	rz_pvector_foreach (op->asm_toks->tokens, it) {
+		RzAsmToken *tok = *it;
+		mu_assert_eq(tok->start, tokens[i].start, "Token start");
+		mu_assert_eq(tok->len, tokens[i].len, "Token length");
+		mu_assert_eq(tok->type, tokens[i].type, "Token type");
+		++i;
+	}
+
+	rz_asm_op_fini(op);
+	free(op);
+	rz_asm_free(a);
+	mu_end;
+}
+
+static bool test_rz_tokenize_custom_mcs96_1(void) {
+	RzAsm *a = setup_mcs96_asm(NULL);
+	const RzAsmPlugin *cur = rz_asm_plugin_current(a);
+
+	// "add 0x02 [0x00]" - indirect addressing with brackets
+	const ut8 buf[] = "\x66\x00\x02";
+	RzAsmToken tokens[] = {
+		{ .start = 0, .len = 3, .type = RZ_ASM_TOKEN_MNEMONIC, .val.number = 0 }, // add
+		{ .start = 3, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 }, // \s
+		{ .start = 4, .len = 4, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 0x02 }, // 0x02
+		{ .start = 8, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 }, // \s
+		{ .start = 9, .len = 1, .type = RZ_ASM_TOKEN_META, .val.number = 0 }, // [
+		{ .start = 10, .len = 4, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 0x00 }, // 0x00
+		{ .start = 14, .len = 1, .type = RZ_ASM_TOKEN_META, .val.number = 0 } // ]
+	};
+
+	RzAsmOp *op = RZ_NEW0(RzAsmOp);
+	cur->disassemble(a, op, buf, sizeof(buf));
+	if (!op->asm_toks) {
+		mu_fail("NULL check failed.\n");
+	}
+	mu_assert_eq(rz_pvector_len(op->asm_toks->tokens), 7, "Number of generated tokens.");
+
+	int i = 0;
+	void **it;
+	rz_pvector_foreach (op->asm_toks->tokens, it) {
+		RzAsmToken *tok = *it;
+		mu_assert_eq(tok->start, tokens[i].start, "Token start");
+		mu_assert_eq(tok->len, tokens[i].len, "Token length");
+		mu_assert_eq(tok->type, tokens[i].type, "Token type");
+		++i;
+	}
+
+	rz_asm_op_fini(op);
+	free(op);
+	rz_asm_free(a);
+	mu_end;
+}
+
+static bool test_rz_tokenize_custom_mcs96_2(void) {
+	RzAsm *a = setup_mcs96_asm(NULL);
+	const RzAsmPlugin *cur = rz_asm_plugin_current(a);
+
+	// "add 0x02 [0x00]+" - indirect addressing with brackets
+	const ut8 buf[] = "\x66\x01\x02";
+	RzAsmToken tokens[] = {
+		{ .start = 0, .len = 3, .type = RZ_ASM_TOKEN_MNEMONIC, .val.number = 0 }, // add
+		{ .start = 3, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 }, // \s
+		{ .start = 4, .len = 4, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 0x03 }, // 0x02
+		{ .start = 8, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 }, // \s
+		{ .start = 9, .len = 1, .type = RZ_ASM_TOKEN_META, .val.number = 0 }, // [
+		{ .start = 10, .len = 4, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 0x02 }, // 0x00
+		{ .start = 14, .len = 1, .type = RZ_ASM_TOKEN_META, .val.number = 0 }, // ]
+		{ .start = 15, .len = 1, .type = RZ_ASM_TOKEN_OPERATOR, .val.number = 0 } // +
+	};
+
+	RzAsmOp *op = RZ_NEW0(RzAsmOp);
+	cur->disassemble(a, op, buf, sizeof(buf));
+	if (!op->asm_toks) {
+		mu_fail("NULL check failed.\n");
+	}
+	mu_assert_eq(rz_pvector_len(op->asm_toks->tokens), 8, "Number of generated tokens.");
+
+	int i = 0;
+	void **it;
+	rz_pvector_foreach (op->asm_toks->tokens, it) {
+		RzAsmToken *tok = *it;
+		mu_assert_eq(tok->start, tokens[i].start, "Token start");
+		mu_assert_eq(tok->len, tokens[i].len, "Token length");
+		mu_assert_eq(tok->type, tokens[i].type, "Token type");
+		++i;
+	}
+
+	rz_asm_op_fini(op);
+	free(op);
+	rz_asm_free(a);
+	mu_end;
+}
+
 static int all_tests() {
 	mu_run_test(test_rz_tokenize_generic_0_no_reg_profile);
 	mu_run_test(test_rz_tokenize_generic_0);
@@ -827,6 +946,9 @@ static int all_tests() {
 	mu_run_test(test_rz_tokenize_custom_bf_0);
 	mu_run_test(test_rz_tokenize_custom_hexagon_issues_tilde);
 	mu_run_test(test_rz_tokenize_custom_hexagon_issues_long_reg);
+	mu_run_test(test_rz_tokenize_custom_mcs96_0);
+	mu_run_test(test_rz_tokenize_custom_mcs96_1);
+	mu_run_test(test_rz_tokenize_custom_mcs96_2);
 
 	return tests_passed != tests_run;
 }

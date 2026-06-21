@@ -32,11 +32,13 @@ typedef struct rz_testfile_counts_t {
 	ut64 xx;
 	ut64 br;
 	ut64 fx;
+	ut64 total_elapsed;
 } RzTestFileCounts;
 
 typedef struct rz_test_state_t {
 	RzTestRunConfig run_config;
 	bool verbose;
+	bool no_diffing; // disable diffing unless the tests fails.
 	RzTestDatabase *db;
 	PJ *test_results;
 
@@ -71,37 +73,24 @@ static int help(bool verbose) {
 			"-v",           "",               "Show version information",
 			"-q",           "",               "Quiet mode",
 			"-V",           "",               "Be verbose",
+			"-N",           "",               "Disable diffing unless the test fails.",
 			"-i",           "",               "Interactive mode",
 			"-y",           "",               "Accept all interactive changes",
 			"-n",           "",               "Do nothing (don't run any test, just load/parse them)",
 			"-L",           "",               "Log mode (better printing for CI, logfiles, etc.)",
-			"-F",           "[dir]",          "Run fuzz tests (open and default analysis) on all files in the given dir",
-			"-j",           "[threads]",      "How many threads to use for running tests concurrently (default is " WORKERS_DEFAULT_STR ")",
-			"-r",           "[rizin]",        "Path to rizin executable (default is " RIZIN_CMD_DEFAULT ")",
-			"-m",           "[rz-asm]",       "Path to rz-asm executable (default is " RZ_ASM_CMD_DEFAULT ")",
-			"-f",           "[file]",         "File to use for JSON tests (default is " JSON_TEST_FILE_DEFAULT ")",
-			"-C",           "[dir]",          "Chdir before running rz-test (default follows test pathname/cwd)",
-			"-t",           "[seconds]",      "Timeout per test (default is " TIMEOUT_DEFAULT_STR " seconds)",
-			"-o",           "[file]",         "Output test run information in JSON format to file",
-			"-e",           "[dir]",          "Exclude a particular directory while testing (this option can appear many times)",
-			"-s",           "[num]",          "Number of expected successful tests",
-			"-x",           "[num]",          "Number of expected failed tests",
+			"-F",           "dir",            "Run fuzz tests (open and default analysis) on all files in the given dir",
+			"-j",           "threads",        "How many threads to use for running tests concurrently (default is " WORKERS_DEFAULT_STR ")",
+			"-r",           "bindir",         "Path to rizin bin folder (default is $PATH)",
+			"-f",           "file",           "File to use for JSON tests (default is " JSON_TEST_FILE_DEFAULT ")",
+			"-C",           "dir",            "Chdir before running rz-test (default follows test pathname/cwd)",
+			"-t",           "seconds",        "Timeout per test (default is " TIMEOUT_DEFAULT_STR " seconds)",
+			"-o",           "file",           "Output test run information in JSON format to file",
+			"-e",           "dir",            "Exclude a particular directory while testing (this option can appear many times)",
+			"-s",           "num",            "Number of expected successful tests",
+			"-x",           "num",            "Number of expected failed tests",
 			// clang-format on
 		};
-		size_t maxOptionAndArgLength = 0;
-		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-			size_t optionLength = strlen(options[i]);
-			size_t argLength = strlen(options[i + 1]);
-			size_t totalLength = optionLength + argLength;
-			if (totalLength > maxOptionAndArgLength) {
-				maxOptionAndArgLength = totalLength;
-			}
-		}
-		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-			if (i + 1 < sizeof(options) / sizeof(options[0])) {
-				rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
-			}
-		}
+		rz_print_colored_help(options, RZ_ARRAY_SIZE(options), false);
 		printf("Supported test types: @json @unit @fuzz @cmds\n"
 		       "OS/Arch for archos tests: " RZ_TEST_ARCH_OS "\n");
 	}
@@ -170,17 +159,41 @@ static bool rz_test_chdir_fromtest(const char *test_path) {
 	return found;
 }
 
+static bool rz_test_can_find_rizin(const char *bin_path) {
+	char *exec = NULL;
+	const char **tools = NULL;
+	size_t count = 0;
+	rz_test_load_valid_tools(&tools, &count);
+
+	for (size_t i = 0; i < count; ++i) {
+		exec = rz_test_find_executable(tools[i], bin_path);
+
+		if (RZ_STR_ISEMPTY(exec)) {
+			eprintf("Cannot find %s in bin path: %s\n", tools[i], bin_path ? bin_path : "$PATH");
+			free(exec);
+			return false;
+		} else if (!rz_test_check_tool_available(exec)) {
+			eprintf("%s is not a valid executable\n", exec);
+			free(exec);
+			return false;
+		}
+		free(exec);
+	}
+
+	return true;
+}
+
 static bool log_mode = false;
 
 int rz_test_main(int argc, const char **argv) {
 	int workers_count = WORKERS_DEFAULT;
 	bool verbose = false;
+	bool no_diffing = false;
 	bool nothing = false;
 	bool quiet = false;
 	bool interactive = false;
 	bool accept = false;
-	char *rizin_cmd = NULL;
-	char *rz_asm_cmd = NULL;
+	char *bin_path = NULL;
 	char *json_test_file = NULL;
 	char *output_file = NULL;
 	char *fuzz_dir = NULL;
@@ -193,11 +206,7 @@ int rz_test_main(int argc, const char **argv) {
 	char *cwd = NULL;
 	RzTestState state = { 0 };
 
-	if (!except_dir) {
-		RZ_LOG_ERROR("Fail to create RzPVector\n");
-		ret = -1;
-		goto beach;
-	}
+	eprintf("Running rz-test on %s\n", RZ_TEST_ARCH_OS);
 
 #if __WINDOWS__
 	UINT old_cp = GetConsoleOutputCP();
@@ -213,8 +222,14 @@ int rz_test_main(int argc, const char **argv) {
 	}
 #endif
 
+	if (!except_dir) {
+		RZ_LOG_ERROR("Fail to create RzPVector\n");
+		ret = -1;
+		goto beach;
+	}
+
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:e:s:x:y");
+	rz_getopt_init(&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVNt:F:io:e:s:x:y");
 
 	int c;
 	while ((c = rz_getopt_next(&opt)) != -1) {
@@ -229,14 +244,22 @@ int rz_test_main(int argc, const char **argv) {
 			if (quiet) {
 				printf(RZ_VERSION "\n");
 			} else {
-				char *s = rz_version_str("rz-test");
+				RzPath *sys_path = rz_path_new();
+				if (!sys_path) {
+					goto beach;
+				}
+				char *s = rz_version_str(sys_path, "rz-test");
 				printf("%s\n", s);
 				free(s);
+				rz_path_free(sys_path);
 			}
 			ret = 0;
 			goto beach;
 		case 'V':
 			verbose = true;
+			break;
+		case 'N':
+			no_diffing = true;
 			break;
 		case 'i':
 			interactive = true;
@@ -260,18 +283,13 @@ int rz_test_main(int argc, const char **argv) {
 			}
 			break;
 		case 'r':
-			free(rizin_cmd);
-			rizin_cmd = strdup(opt.arg);
+			bin_path = rz_file_abspath(opt.arg);
 			break;
 		case 'C':
 			rz_test_dir = opt.arg;
 			break;
 		case 'n':
 			nothing = true;
-			break;
-		case 'm':
-			free(rz_asm_cmd);
-			rz_asm_cmd = strdup(opt.arg);
 			break;
 		case 'f':
 			free(json_test_file);
@@ -312,18 +330,17 @@ int rz_test_main(int argc, const char **argv) {
 	}
 
 	cwd = rz_sys_getdir();
-	if (rz_test_dir) {
-		if (chdir(rz_test_dir) == -1) {
-			eprintf("Cannot find %s directory.\n", rz_test_dir);
-			ret = -1;
-			goto beach;
-		}
-	} else {
+	if (!rz_test_dir) {
 		bool dir_found = rz_test_chdir_fromtest(opt.ind < argc ? argv[opt.ind] : NULL);
 		if (!dir_found) {
-			eprintf("Cannot find db/ directory related to the given test. Assuming '-C .'.\n");
-			rz_test_dir = ".";
+			eprintf("Cannot find db/ directory related to the given tests. Assuming '-C .'.\n");
+			rz_test_dir = cwd;
 		}
+	}
+	if (rz_test_dir && chdir(rz_test_dir) == -1) {
+		eprintf("Cannot find %s directory.\n", rz_test_dir);
+		ret = -1;
+		goto beach;
 	}
 
 	if (fuzz_dir) {
@@ -339,20 +356,20 @@ int rz_test_main(int argc, const char **argv) {
 	}
 	atexit(rz_subprocess_fini);
 
+	// this must be done after initializing rz_subprocess
+	if (!rz_test_can_find_rizin(bin_path)) {
+		ret = -1;
+		goto beach;
+	}
+
 	rz_sys_setenv("TZ", "UTC");
 	ut64 time_start = rz_time_now_mono();
 	// Avoid PATH search for each process launched
-	if (!rizin_cmd) {
-		rizin_cmd = rz_file_path(RIZIN_CMD_DEFAULT);
-	}
-	if (!rz_asm_cmd) {
-		rz_asm_cmd = rz_file_path(RZ_ASM_CMD_DEFAULT);
-	}
-	state.run_config.rz_cmd = rizin_cmd;
-	state.run_config.rz_asm_cmd = rz_asm_cmd;
+	state.run_config.bin_path = bin_path;
 	state.run_config.json_test_file = json_test_file ? json_test_file : JSON_TEST_FILE_DEFAULT;
 	state.run_config.timeout_ms = timeout_sec > UT64_MAX / 1000 ? UT64_MAX : timeout_sec * 1000;
 	state.verbose = verbose;
+	state.no_diffing = no_diffing;
 	state.db = rz_test_test_database_new();
 	if (!state.db) {
 		ret = -1;
@@ -440,7 +457,10 @@ int rz_test_main(int argc, const char **argv) {
 	if (!rz_pvector_empty(except_dir)) {
 		void **it;
 		rz_pvector_foreach (except_dir, it) {
-			const char *p = rz_file_abspath_rel(cwd, (char *)*it), *tp;
+			char *dir_abs_path = rz_file_abspath_rel(cwd, (char *)*it), *tp;
+			if (log_mode || verbose) {
+				printf("Removing tests in dir: %s\n", dir_abs_path);
+			}
 			for (ut32 i = 0; i < rz_pvector_len(&state.db->tests); i++) {
 				RzTest *test = rz_pvector_at(&state.db->tests, i);
 				if (rz_file_is_abspath(test->path)) {
@@ -448,13 +468,18 @@ int rz_test_main(int argc, const char **argv) {
 				} else {
 					tp = rz_file_abspath_rel(cwd, test->path);
 				}
-				if (rz_str_startswith(tp, p)) {
+				if (rz_str_startswith(tp, dir_abs_path)) {
+					if (log_mode || verbose) {
+						char *name = rz_test_test_name(test);
+						printf("Removed test %s: %s\n", test->path, name);
+						free(name);
+					}
 					rz_test_test_free(test);
 					rz_pvector_remove_at(&state.db->tests, i--);
 				}
 				RZ_FREE(tp);
 			}
-			RZ_FREE(p);
+			RZ_FREE(dir_abs_path);
 		}
 	}
 
@@ -590,9 +615,8 @@ coast:
 	rz_test_test_database_free(state.db);
 	ht_sp_free(state.path_left);
 beach:
+	free(bin_path);
 	free(output_file);
-	free(rizin_cmd);
-	free(rz_asm_cmd);
 	free(json_test_file);
 	free(fuzz_dir);
 	RZ_FREE(cwd);
@@ -607,6 +631,20 @@ beach:
 	}
 #endif
 	return ret;
+}
+
+// elapsed is in microsecs
+static char *readable_elapsed_time(ut64 elapsed) {
+	elapsed /= 1000;
+	ut32 millisecs = elapsed % 1000;
+	elapsed /= 1000;
+	ut32 secs = elapsed % 60;
+	elapsed /= 60;
+	ut32 mins = elapsed % 60;
+	elapsed /= 60;
+	ut32 hours = elapsed % 60;
+
+	return rz_str_newf("%02uh%02um%02us%03ums", hours, mins, secs, millisecs);
 }
 
 static void test_result_to_json(PJ *pj, RzTestResultInfo *result) {
@@ -634,23 +672,26 @@ static void test_result_to_json(PJ *pj, RzTestResultInfo *result) {
 		pj_ks(pj, "file", test->fuzz_test->file);
 		break;
 	}
-	pj_k(pj, "result");
 	switch (result->result) {
 	case RZ_TEST_RESULT_OK:
-		pj_s(pj, "ok");
+		pj_ks(pj, "result", "ok");
 		break;
 	case RZ_TEST_RESULT_FAILED:
-		pj_s(pj, "failed");
+		pj_ks(pj, "result", "failed");
 		break;
 	case RZ_TEST_RESULT_BROKEN:
-		pj_s(pj, "broken");
+		pj_ks(pj, "result", "broken");
 		break;
 	case RZ_TEST_RESULT_FIXED:
-		pj_s(pj, "fixed");
+		pj_ks(pj, "result", "fixed");
 		break;
 	}
+	pj_ks(pj, "path", rz_str_get(result->test->path));
 	pj_kb(pj, "run_failed", result->run_failed);
 	pj_kn(pj, "time_elapsed", result->time_elapsed);
+	char *time_human = readable_elapsed_time(result->time_elapsed);
+	pj_ks(pj, "time_elapsed_human", time_human);
+	free(time_human);
 	pj_kb(pj, "timeout", result->timeout);
 	pj_end(pj);
 }
@@ -701,6 +742,7 @@ static void *worker_th(RzTestState *state) {
 					counts->fx++;
 					break;
 				}
+				counts->total_elapsed += result->time_elapsed;
 				counts->tests_left--;
 				if (!counts->tests_left) {
 					rz_pvector_push(&state->completed_paths, (void *)test->path);
@@ -808,7 +850,7 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 		} else if (*err) {
 			printf("-- stderr\n%s\n", err);
 		}
-		if (result->proc_out->ret != 0) {
+		if (result->proc_out->ret != result->test->cmd_test->exit_status.value) {
 			printf("-- exit status: " Color_RED "%d" Color_RESET "\n", result->proc_out->ret);
 		}
 		break;
@@ -874,8 +916,7 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 static void print_new_results(RzTestState *state, ut64 prev_completed) {
 	// Detailed test result (with diff if necessary)
 	ut64 completed = (ut64)rz_pvector_len(&state->results);
-	ut64 i;
-	for (i = prev_completed; i < completed; i++) {
+	for (ut64 i = prev_completed; i < completed; i++) {
 		RzTestResultInfo *result = rz_pvector_at(&state->results, (size_t)i);
 		if (state->test_results) {
 			test_result_to_json(state->test_results, result);
@@ -906,30 +947,18 @@ static void print_new_results(RzTestState *state, ut64 prev_completed) {
 			printf(Color_CYAN " TIMEOUT" Color_RESET);
 		}
 		// time_elapsed is in microsecs
-		ut64 elapsed = result->time_elapsed;
-		const char *unit = NULL;
-		if (elapsed < 1000) {
-			unit = "usec";
-		} else if (elapsed < 1000000) {
-			elapsed /= 1000;
-			unit = "ms";
-		} else if (elapsed < 1000000000) {
-			elapsed /= 1000000;
-			unit = "secs";
-		} else {
-			elapsed /= 1000000000;
-			unit = "mins";
-		}
-		printf(Color_BLUE "%4" PFMT64u " %-4s" Color_RESET " %s " Color_YELLOW "%s" Color_RESET "\n", elapsed, unit, result->test->path, name);
-		if (result->result == RZ_TEST_RESULT_FAILED || (state->verbose && result->result == RZ_TEST_RESULT_BROKEN)) {
+		char *elapsed = readable_elapsed_time(result->time_elapsed);
+		printf(Color_BLUE " %s" Color_RESET " %s " Color_YELLOW "%s" Color_RESET "\n", elapsed, result->test->path, name);
+		if (result->result == RZ_TEST_RESULT_FAILED || (state->verbose && !state->no_diffing && result->result == RZ_TEST_RESULT_BROKEN)) {
 			print_result_diff(&state->run_config, result);
 		}
+		free(elapsed);
 		free(name);
 	}
 }
 
 static void print_state_counts(RzTestState *state) {
-	printf("%8" PFMT64u " OK  %8" PFMT64u " BR %8" PFMT64u " XX %8" PFMT64u " FX",
+	printf("%8" PFMT64u " OK  %5" PFMT64u " BR %8" PFMT64u " XX %5" PFMT64u " FX",
 		state->ok_count, state->br_count, state->xx_count, state->fx_count);
 }
 
@@ -962,15 +991,20 @@ static void print_log(RzTestState *state, ut64 prev_completed, ut64 prev_paths_c
 		if (!name) {
 			name = "unknown path. something is very wrong.";
 		}
-		printf("[**] %50s ", name);
 		if (state->path_left) {
+			char *total_elapsed = NULL;
 			RzTestFileCounts *counts = ht_sp_find(state->path_left, name, NULL);
 			if (counts) {
 				state->ok_count += counts->ok;
 				state->xx_count += counts->xx;
 				state->br_count += counts->br;
 				state->fx_count += counts->fx;
+				total_elapsed = readable_elapsed_time(counts->total_elapsed);
 			}
+			printf("%s [**] %-60s ", rz_str_get(total_elapsed), name);
+			free(total_elapsed);
+		} else {
+			printf("[**] %-60s ", name);
 		}
 		print_state_counts(state);
 		printf("\n");
@@ -1238,7 +1272,7 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 
 static bool interact_fix_cmd(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results) {
 	assert(result->test->type == RZ_TEST_TYPE_CMD);
-	if (result->run_failed || result->proc_out->ret != 0) {
+	if (result->run_failed || result->proc_out->ret != result->test->cmd_test->exit_status.value) {
 		return false;
 	}
 	RzCmdTest *test = result->test->cmd_test;

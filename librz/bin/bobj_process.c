@@ -93,47 +93,152 @@ RZ_IPI void rz_bin_process_cxx(RzBinObject *o, char *demangled, ut64 paddr, ut64
 	*name = ':';
 }
 
-#if WITH_SWIFT_DEMANGLER
-// this process function does not work with the Apple demangler.
-static char *get_swift_field(const char *demangled, const char *classname) {
-	if (!demangled || !classname) {
+static char *find_swift_methodname(RZ_NONNULL char *demangled) {
+	// methods can be main.Tost.deinit or main.Tost.init() -> main.Tost
+	// so we will return after second dot
+	char *dot = strchr(demangled, '.');
+	dot = dot ? strchr(dot + 1, '.') : NULL;
+	if (!dot) {
 		return NULL;
 	}
-
-	char *p = strstr(demangled, ".getter_");
-	if (!p) {
-		p = strstr(demangled, ".setter_");
-		if (!p) {
-			p = strstr(demangled, ".method_");
-		}
+	char *methodname = dot + 1;
+	if (RZ_STR_ISEMPTY(methodname)) {
+		return NULL;
 	}
-	if (p) {
-		char *q = strstr(demangled, classname);
-		if (q && q[strlen(classname)] == '.') {
-			q = rz_str_dup(q + strlen(classname) + 1);
-			char *r = strchr(q, '.');
-			if (r) {
-				*r = 0;
-			}
-			return q;
-		}
-	}
-	return NULL;
+	return methodname;
 }
 
-RZ_IPI void rz_bin_process_swift(RzBinObject *o, char *classname, char *demangled, ut64 paddr, ut64 vaddr) {
-	if (!classname) {
+static void bin_process_metaclass(RzBinObject *o, RzBinSymbol *symbol) {
+	if (RZ_STR_ISEMPTY(symbol->dname)) {
+		return;
+	}
+	char *no_classname = strstr(symbol->dname, "full type metadata for ");
+	char *classname = strstr(symbol->dname, "type metadata for ");
+	if (!classname || no_classname) { // only for "type metadata for class"
+		return;
+	}
+	rz_bin_object_add_field(o, classname + strlen("type metadata for "), symbol->dname, symbol->paddr, symbol->vaddr);
+}
+
+// This function is used to process Swift methods.
+static void bin_process_swift_class_method(RzBinObject *o, RzBinSymbol *symbol) {
+	// Before the second dot, we have the class name
+	char *dot = strchr(symbol->dname, '.');
+	dot = dot ? strchr(dot + 1, '.') : NULL;
+	if (!dot) {
+		return;
+	}
+	char *classname = rz_str_ndup(symbol->dname, dot - symbol->dname);
+	// classname should not have any spaces or ( or )
+	if (strchr(classname, ' ') || strchr(classname, '(') || strchr(classname, ')')) {
+		free(classname);
+		return;
+	}
+	symbol->classname = classname;
+	char *methodname = find_swift_methodname(symbol->dname);
+
+	if (!methodname) {
+		free(classname);
 		return;
 	}
 
-	char *name = get_swift_field(demangled, classname);
-	if (name) {
-		rz_bin_object_add_field(o, classname, name, paddr, vaddr);
-		free(name);
+	rz_bin_object_add_class(o, classname, NULL, UT64_MAX);
+	rz_bin_object_add_method(o, classname, methodname, symbol->paddr, symbol->vaddr);
+}
+
+// this process function does not work with the Apple demangler.
+RZ_IPI void rz_bin_process_swift(RzBinObject *o, RzBinSymbol *symbol) {
+	if (RZ_STR_ISEMPTY(symbol->dname)) {
 		return;
 	}
+	bin_process_metaclass(o, symbol);
+	bin_process_swift_class_method(o, symbol);
 }
-#endif /* WITH_SWIFT_DEMANGLER */
+
+static inline bool is_known_canary(const char *name) {
+	return strstr(name, "__stack_chk_fail") ||
+		strstr(name, "__stack_chk_guard") ||
+		strstr(name, "__intel_security_cookie") ||
+		strstr(name, "__stack_smash_handler") ||
+		strstr(name, "__security_init_cookie");
+}
+
+#define DEFINE_IS_SANITIZER(san_name) \
+	static inline bool is_##san_name(const char *var) { \
+		return strstr(var, "__" RZ_STR_DEF(san_name) "_") || \
+			strstr(var, "__" RZ_STR_DEF(san_name) "::"); \
+	}
+
+DEFINE_IS_SANITIZER(sanitizer)
+DEFINE_IS_SANITIZER(ubsan)
+DEFINE_IS_SANITIZER(asan)
+DEFINE_IS_SANITIZER(msan)
+DEFINE_IS_SANITIZER(tsan)
+
+static inline bool is_known_objc_arc(const char *name) {
+	return strstr(name, "objc_retain") ||
+		strstr(name, "objc_release") ||
+		strstr(name, "objc_storeStrong");
+}
+
+static inline bool is_known_fortify_source(const char *name) {
+	return strstr(name, "memcpy_chk") ||
+		strstr(name, "memmove_chk") ||
+		strstr(name, "memset_chk") ||
+		strstr(name, "stpcpy_chk") ||
+		strstr(name, "stpncpy_chk") ||
+		strstr(name, "strcat_chk") ||
+		strstr(name, "strcpy_chk") ||
+		strstr(name, "strncat_chk") ||
+		strstr(name, "strncpy_chk") ||
+		strstr(name, "snprintf_chk") ||
+		strstr(name, "sprintf_chk") ||
+		strstr(name, "vsnprintf_chk") ||
+		strstr(name, "vsprintf_chk");
+}
+
+static inline void bin_info_auto_detect(RzBinInfo *info, const char *name) {
+	if (RZ_STR_ISEMPTY(name)) {
+		return;
+	} else if (is_known_canary(name)) {
+		info->has_canary = true;
+	} else if (is_ubsan(name)) {
+		info->sanitizers |= RZ_BIN_SANITIZER_UBSAN;
+	} else if (is_asan(name)) {
+		info->sanitizers |= RZ_BIN_SANITIZER_ASAN;
+	} else if (is_tsan(name)) {
+		info->sanitizers |= RZ_BIN_SANITIZER_TSAN;
+	} else if (is_msan(name)) {
+		info->sanitizers |= RZ_BIN_SANITIZER_MSAN;
+	} else if (is_sanitizer(name)) {
+		info->sanitizers |= RZ_BIN_SANITIZER_GENERIC;
+	} else if (is_known_objc_arc(name)) {
+		info->has_objc_arc = true;
+	} else if (is_known_fortify_source(name)) {
+		info->has_fortify_source = true;
+	}
+}
+
+RZ_IPI void rz_bin_info_auto_resolve_fields(RzBinObject *o) {
+	void **iter;
+	RzBinImport *import;
+	RzBinSymbol *symbol;
+	RzBinInfo *info = o->info;
+	if (!info) {
+		return;
+	}
+
+	info->sanitizers = RZ_BIN_SANITIZER_NONE;
+	rz_pvector_foreach (o->imports, iter) {
+		import = *iter;
+		bin_info_auto_detect(info, import->name);
+	}
+
+	rz_pvector_foreach (o->symbols, iter) {
+		symbol = *iter;
+		bin_info_auto_detect(info, symbol->name);
+	}
+}
 
 /**
  * \brief      Initialize the data of the given RzBinObject using the defined RzBinPlugin
@@ -153,7 +258,6 @@ RZ_IPI bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNU
 	rz_bin_set_imports_from_plugin(bf, o);
 	rz_bin_set_symbols_from_plugin(bf, o);
 	rz_bin_set_and_process_sections(bf, o);
-	rz_bin_set_and_process_strings(bf, o);
 	rz_bin_set_and_process_fields(bf, o);
 	rz_bin_set_and_process_classes(bf, o);
 
@@ -180,6 +284,9 @@ RZ_IPI bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNU
 	if (RZ_BIN_LANGUAGE_MASK(o->lang) == RZ_BIN_LANGUAGE_UNKNOWN) {
 		o->lang = rz_bin_language_detect(bf);
 	}
+	// Process strings after the language was set,
+	// because some languages imply a specific encoding.
+	rz_bin_set_and_process_strings(bf, o);
 
 	// now we can process the data.
 	RzDemanglerFlag flags = rz_demangler_get_flags(bf->rbin->demangler);
@@ -189,6 +296,7 @@ RZ_IPI bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNU
 	rz_bin_process_symbols(bf, o, demangler, flags);
 	rz_bin_process_imports(bf, o, demangler, flags);
 	rz_bin_set_and_process_relocs(bf, o, demangler, flags);
+	rz_bin_info_auto_resolve_fields(o);
 
 	return true;
 }

@@ -361,7 +361,7 @@ exit_err:
 </osdata>
 */
 static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int pid, RzList *list) {
-	char pidstr[MAX_PID_CHARS + 1], status[1024], cmdline[1024];
+	char pidstr[MAX_PID_CHARS + 1], status[1024], cmdline[4096];
 	char *itemstr, *column, *column_end, *proc_filename;
 	int ret = -1, ipid, column_data_len;
 	RzDebugPid *pid_info = NULL;
@@ -408,8 +408,7 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 
 		column += sizeof("<column name=\"command\">") - 1;
 		column_data_len = column_end - column;
-
-		memcpy(cmdline, column, column_data_len);
+		memcpy(cmdline, column, RZ_MIN(column_data_len, sizeof(cmdline)));
 		cmdline[column_data_len] = '\0';
 
 		// Attempt to read the pid's info from /proc. Non UNIX systems will have the
@@ -886,7 +885,7 @@ static RzList *_extract_regs(char *regstr, RzList *flags, char *pc_alias) {
 			for (i = regnum - rz_list_length(regs); i > 0; i--) {
 				// temporary placeholder reg. we trust the xml is correct and this will be replaced.
 				rz_list_push(regs, tmpreg);
-				rz_list_iter_set_data(rz_list_tail(regs), NULL);
+				rz_list_set_val(rz_list_tail(regs), NULL);
 			}
 			rz_list_push(regs, tmpreg);
 		} else {

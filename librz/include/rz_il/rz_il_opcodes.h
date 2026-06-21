@@ -167,6 +167,7 @@ typedef struct rz_il_op_args_shift_t RzILOpArgsShiftRight;
  */
 typedef struct rz_il_op_args_set_t {
 	const char *v; ///< name of variable, const one
+	ut64 hash; ///< DJB2 hash of variable name
 	bool is_local; ///< whether a global variable should be set or a local optionally created and set
 	RzILOpPure *x; ///< value to set the variable to
 } RzILOpArgsSet;
@@ -178,6 +179,7 @@ typedef struct rz_il_op_args_set_t {
  */
 typedef struct rz_il_op_args_let_t {
 	const char *name; ///< name of variable
+	ut64 hash; ///< DJB2 hash of variable name
 	RzILOpPure *exp; ///< value/expression to bind the variable to
 	RzILOpPure *body; ///< body in which the variable will be bound and that produces the result
 } RzILOpArgsLet;
@@ -260,6 +262,7 @@ typedef struct rz_il_op_args_ite_t {
  */
 typedef struct rz_il_op_args_var_t {
 	const char *v; ///< name of variable, const one
+	ut64 hash; ///< The DJB2 hash of the name.
 	RzILVarKind kind; ///< set of variables to pick from
 } RzILOpArgsVar;
 
@@ -688,6 +691,10 @@ struct rz_il_op_pure_t {
 	} op;
 };
 
+typedef RzILOpBool *(rz_il_bool_2args_op)(RzILOpBitVector *, RzILOpBitVector *);
+typedef RzILOpBitVector *(rz_il_pure_2args_op)(RzILOpBitVector *, RzILOpBitVector *);
+typedef RzILOpBitVector *(rz_il_pure_3args_op)(RzILOpBitVector *, RzILOpBitVector *, RzILOpBitVector *);
+
 RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op);
 RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op);
 
@@ -849,16 +856,26 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_store(RzILMemIndex mem, RZ_NONNULL RzIL
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_storew(RzILMemIndex mem, RZ_NONNULL RzILOpBitVector *key, RZ_NONNULL RzILOpBitVector *value);
 
 // Printing/Export
+
+typedef struct rz_il_stringify_ctx {
+	size_t indent;
+	size_t indent_inc;
+} RzILStringifyCtx;
+
+RZ_API RZ_NONNULL const char *rz_il_op_effect_code_stringify(RzILOpEffectCode code);
 RZ_API RZ_NONNULL const char *rz_il_op_pure_code_stringify(RzILOpPureCode code);
 
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_il_op_pure_graph(RZ_NONNULL RzILOpPure *op, RZ_NULLABLE const char *name);
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_il_op_effect_graph(RZ_NONNULL RzILOpEffect *op, RZ_NULLABLE const char *name);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *rz_il_op_pure_graph(RZ_NONNULL RzILOpPure *op, RZ_NULLABLE const char *name);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *rz_il_op_effect_graph(RZ_NONNULL RzILOpEffect *op, RZ_NULLABLE const char *name);
 
 RZ_API void rz_il_op_pure_stringify(RZ_NONNULL RzILOpPure *op, RZ_NONNULL RzStrBuf *sb, bool pretty);
 RZ_API void rz_il_op_effect_stringify(RZ_NONNULL RzILOpEffect *op, RZ_NONNULL RzStrBuf *sb, bool pretty);
 
 RZ_API void rz_il_op_pure_json(RZ_NONNULL RzILOpPure *op, RZ_NONNULL PJ *pj);
 RZ_API void rz_il_op_effect_json(RZ_NONNULL RzILOpEffect *op, RZ_NONNULL PJ *pj);
+
+RZ_API bool rz_il_op_pure_stringify_unicode(RZ_NONNULL RZ_BORROW RzILStringifyCtx *ctx, RZ_NONNULL RZ_BORROW RzILOpPure *op, RZ_NONNULL RZ_BORROW RzStrBuf *sb);
+RZ_API bool rz_il_op_effect_stringify_unicode(RZ_NONNULL RZ_BORROW RzILStringifyCtx *ctx, RZ_NONNULL RZ_BORROW RzILOpEffect *op, RZ_NONNULL RZ_BORROW RzStrBuf *sb);
 
 #ifdef __cplusplus
 }

@@ -44,14 +44,16 @@ extern "C" {
 #define RZ_ASM_GET_NAME(x, y, z) \
 	(x && x->binb.bin && x->binb.get_name) ? x->binb.get_name(x->binb.bin, y, z) : NULL
 
-enum {
+typedef enum {
 	RZ_ASM_SYNTAX_NONE = 0,
 	RZ_ASM_SYNTAX_INTEL,
 	RZ_ASM_SYNTAX_ATT,
 	RZ_ASM_SYNTAX_MASM,
 	RZ_ASM_SYNTAX_REGNUM, // alias for capstone's NOREGNAME
 	RZ_ASM_SYNTAX_JZ, // hack to use jz instead of je on x86
-};
+	/* The value below is used for runtime checks */
+	RZ_ASM_ENUM_SIZE
+} RzAsmSyntax;
 
 enum {
 	RZ_ASM_MOD_RAWVALUE = 'r',
@@ -89,41 +91,7 @@ typedef struct {
 	char *value;
 } RzAsmEqu;
 
-#define _RzAsmPlugin struct rz_asm_plugin_t
-typedef struct rz_asm_t {
-	void *core;
-	ut8 ptr_alignment_I;
-	void *plugin_data;
-	ut8 ptr_alignment_II;
-	// NOTE: Do not change the order of fields above!
-	// They are used in pointer passing hacks in rz_types.h.
-	char *cpu;
-	int bits;
-	int big_endian;
-	int syntax;
-	ut64 pc;
-	_RzAsmPlugin *cur;
-	_RzAsmPlugin *acur;
-	HtSP /*<RzAsmPlugin *>*/ *plugins;
-	RzBinBind binb;
-	RzParse *ifilter;
-	RzParse *ofilter;
-	Sdb *pair;
-	RzSyscall *syscall;
-	RzNum *num;
-	char *features;
-	char *platforms;
-	int invhex; // invalid instructions displayed in hex
-	int pcalign;
-	int dataalign;
-	int bitshift;
-	bool immsign; // Print signed immediates as negative values, not their unsigned representation.
-	bool immdisp; // Display immediates with # symbol (for arm architectures). false = show hashs
-	bool utf8; // Flag for plugins: Use utf-8 characters.
-	HtSS *flags;
-	int seggrn;
-	bool pseudo;
-} RzAsm;
+typedef struct rz_asm_t RzAsm;
 
 typedef struct rz_asm_plugin_t {
 	const char *name;
@@ -137,13 +105,14 @@ typedef struct rz_asm_plugin_t {
 	int endian;
 	bool (*init)(void **user);
 	bool (*fini)(void *user);
-	int (*disassemble)(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len);
-	int (*assemble)(RzAsm *a, RzAsmOp *op, const char *buf);
-	char *(*mnemonics)(RzAsm *a, int id, bool json);
+	int (*disassemble)(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len);
+	int (*assemble)(const RzAsm *a, RzAsmOp *op, const char *buf);
+	char *(*mnemonics)(const RzAsm *a, int id, bool json);
 	RZ_OWN RzConfig *(*get_config)(void *plugin_data);
 	const char *features;
 	const char *platforms;
 	char **(*get_cpu_desc)();
+	bool (*sw_breakpoint)(const RzAsm *a, ut64 addr, const RzAsmOp *original, RzAsmOp *breakpoint);
 } RzAsmPlugin;
 
 /**
@@ -164,23 +133,64 @@ static inline int rz_asm_plugin_cmp(RZ_NULLABLE const RzAsmPlugin *a, RZ_NULLABL
 /* asm.c */
 RZ_API RzAsm *rz_asm_new(void);
 RZ_API void rz_asm_free(RzAsm *a);
-RZ_API char *rz_asm_mnemonics(RzAsm *a, int id, bool json);
-RZ_API int rz_asm_mnemonics_byname(RzAsm *a, const char *name);
+RZ_API char *rz_asm_mnemonics(const RzAsm *a, int id, bool json);
+RZ_API int rz_asm_mnemonics_byname(const RzAsm *a, const char *name);
 RZ_API bool rz_asm_plugin_add(RzAsm *a, RZ_NONNULL RzAsmPlugin *foo);
 RZ_API bool rz_asm_plugin_del(RzAsm *a, RZ_NONNULL RzAsmPlugin *foo);
+RZ_API RZ_OWN RzIterator *rz_asm_plugin_iterator(RZ_NONNULL const RzAsm *a);
+RZ_API const RzAsmPlugin *rz_asm_plugin_current(RZ_NONNULL const RzAsm *a);
+RZ_API const RzAsmPlugin *rz_asm_plugin_find(RZ_NONNULL const RzAsm *a, RZ_NONNULL const char *name);
 RZ_API bool rz_asm_setup(RzAsm *a, const char *arch, int bits, int big_endian);
-RZ_API bool rz_asm_is_valid(RzAsm *a, const char *name);
+RZ_API bool rz_asm_is_valid(const RzAsm *a, const char *name);
 RZ_API bool rz_asm_use(RzAsm *a, RZ_NULLABLE const char *name);
 RZ_API bool rz_asm_use_assembler(RzAsm *a, const char *name);
 RZ_API bool rz_asm_set_arch(RzAsm *a, const char *name, int bits);
+RZ_API const char *rz_asm_get_arch(RZ_NONNULL const RzAsm *a);
+RZ_API bool rz_asm_is_arch(RZ_NONNULL const RzAsm *a, RZ_NONNULL const char *name);
+RZ_DEPRECATE RZ_API void rz_asm_set_core(RZ_NONNULL RzAsm *a, RZ_NULLABLE void *core);
+RZ_DEPRECATE RZ_API RZ_BORROW const RzBinBind *rz_asm_get_bin_bind(const RzAsm *a);
 RZ_DEPRECATE RZ_API int rz_asm_set_bits(RzAsm *a, int bits);
+RZ_DEPRECATE RZ_API int rz_asm_get_bits(RZ_NONNULL const RzAsm *a);
+RZ_DEPRECATE RZ_API bool rz_asm_is_bits(const RzAsm *a, int bits);
+RZ_DEPRECATE RZ_API int rz_asm_get_plugin_bits(RZ_NONNULL const RzAsm *a);
+RZ_DEPRECATE RZ_API const char *rz_asm_get_plugin_cpus(RZ_NONNULL const RzAsm *a);
+RZ_DEPRECATE RZ_API const char *rz_asm_get_plugin_platforms(RZ_NONNULL const RzAsm *a);
+RZ_DEPRECATE RZ_API const char *rz_asm_get_plugin_features(RZ_NONNULL const RzAsm *a);
+RZ_API RZ_OWN RzConfig *rz_asm_get_new_config(RZ_NONNULL const RzAsm *a);
+RZ_API RZ_OWN char *rz_asm_get_sys_opcode_path(RZ_NONNULL const RzAsm *a, RZ_NONNULL const char *path);
 RZ_DEPRECATE RZ_API void rz_asm_set_cpu(RzAsm *a, const char *cpu);
+RZ_API const char *rz_asm_get_cpu(RZ_NONNULL const RzAsm *a);
+RZ_API void rz_asm_set_platforms(RZ_NONNULL RzAsm *a, RZ_NULLABLE const char *platforms);
+RZ_API const char *rz_asm_get_platforms(RZ_NONNULL const RzAsm *a);
+RZ_API void rz_asm_set_features(RZ_NONNULL RzAsm *a, RZ_NULLABLE const char *features);
+RZ_API const char *rz_asm_get_features(RZ_NONNULL const RzAsm *a);
+RZ_API void rz_asm_set_pseudo(RZ_NONNULL RzAsm *a, bool enable);
+RZ_API bool rz_asm_get_pseudo(RZ_NONNULL const RzAsm *a);
+RZ_API void rz_asm_set_utf8(RZ_NONNULL RzAsm *a, bool utf8);
+RZ_API bool rz_asm_get_utf8(RZ_NONNULL const RzAsm *a);
+RZ_API void rz_asm_set_segment_granularity(RZ_NONNULL RzAsm *a, int seggrn);
+RZ_API int rz_asm_get_segment_granularity(RZ_NONNULL const RzAsm *a);
+RZ_API void rz_asm_set_pc_align(RZ_NONNULL RzAsm *a, ut32 pc_align);
+RZ_API ut32 rz_asm_get_pc_align(RZ_NONNULL const RzAsm *a);
+RZ_API void rz_asm_set_syscall(RZ_NONNULL RzAsm *a, RzSyscall *syscall);
+RZ_API RzSyscall *rz_asm_get_syscall(RZ_NONNULL const RzAsm *a);
+RZ_API void rz_asm_set_invalid_as_hex_flag(RZ_NONNULL RzAsm *a, bool invhex);
+RZ_API bool rz_asm_get_invalid_as_hex_flag(RZ_NONNULL const RzAsm *a);
+RZ_API void rz_asm_set_show_immediate_hashtag(RZ_NONNULL RzAsm *a, bool show);
+RZ_API bool rz_asm_get_show_immediate_hashtag(RZ_NONNULL const RzAsm *a);
+RZ_API ut32 rz_asm_get_endianness(const RzAsm *a);
+RZ_API bool rz_asm_is_big_endian_set(RZ_NONNULL const RzAsm *a);
+RZ_API bool rz_asm_support_endianness(const RzAsm *a, ut32 endian);
 RZ_API bool rz_asm_set_big_endian(RzAsm *a, bool big_endian);
-RZ_API bool rz_asm_set_syntax(RzAsm *a, int syntax);
+RZ_API void rz_asm_set_syntax(RZ_NONNULL RzAsm *a, RzAsmSyntax syntax);
+RZ_API RzAsmSyntax rz_asm_get_syntax(RZ_NONNULL const RzAsm *a);
+RZ_API bool rz_asm_is_syntax(RZ_NONNULL const RzAsm *a, RzAsmSyntax syntax);
 RZ_API int rz_asm_syntax_from_string(const char *name);
-RZ_API int rz_asm_set_pc(RzAsm *a, ut64 pc);
+RZ_API void rz_asm_set_pc(RZ_NONNULL RzAsm *a, ut64 pc);
+RZ_API ut64 rz_asm_get_pc(RZ_NONNULL const RzAsm *a);
 RZ_API int rz_asm_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len);
-RZ_API int rz_asm_assemble(RzAsm *a, RzAsmOp *op, const char *buf);
+RZ_API int rz_asm_assemble(const RzAsm *a, RzAsmOp *op, const char *buf);
+RZ_API bool rz_asm_software_breakpoint(RZ_NONNULL const RzAsm *a, ut64 addr, const RZ_NONNULL RzAsmOp *original, RZ_NONNULL RzAsmOp *breakpoint);
 RZ_API RzAsmCode *rz_asm_mdisassemble(RzAsm *a, const ut8 *buf, int len);
 RZ_API RzAsmCode *rz_asm_mdisassemble_hexstr(RzAsm *a, RzParse *p, const char *hexstr);
 RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *buf);
@@ -190,8 +200,9 @@ RZ_API char *rz_asm_to_string(RzAsm *a, ut64 addr, const ut8 *b, int l);
 RZ_API ut8 *rz_asm_from_string(RzAsm *a, ut64 addr, const char *b, int *l);
 RZ_API int rz_asm_sub_names_input(RzAsm *a, const char *f);
 RZ_API int rz_asm_sub_names_output(RzAsm *a, const char *f);
-RZ_API char *rz_asm_describe(RzAsm *a, const char *str);
-RZ_API RZ_BORROW HtSP /*<RzAsmPlugin *>*/ *rz_asm_get_plugins(RZ_BORROW RZ_NONNULL RzAsm *a);
+RZ_API char *rz_asm_describe(const RzAsm *a, const char *str);
+RZ_API void rz_asm_describe_iterate(RZ_NONNULL const RzAsm *a, RZ_NONNULL SdbForeachCallback cb, RZ_NULLABLE void *user);
+RZ_API RZ_BORROW HtSP /*<RzAsmPlugin *>*/ *rz_asm_get_plugins(RZ_BORROW RZ_NONNULL const RzAsm *a);
 RZ_API void rz_asm_list_directives(void);
 
 /* code.c */

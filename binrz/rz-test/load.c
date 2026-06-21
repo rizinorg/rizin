@@ -102,6 +102,44 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 	return strdup(val);
 }
 
+static const char *rz_test_tools[] = {
+	"rizin",
+	"rz-ar",
+	"rz-asm",
+	"rz-ax",
+	"rz-bin",
+	"rz-diff",
+	"rz-find",
+	"rz-gg",
+	"rz-hash",
+	"rz-run",
+	"rz-sign",
+	"rz-test",
+};
+
+RZ_API void rz_test_load_valid_tools(RZ_OUT RZ_NONNULL const char ***tools_o, RZ_OUT RZ_NONNULL size_t *size_o) {
+	rz_return_if_fail(tools_o && size_o);
+
+	*tools_o = rz_test_tools;
+	*size_o = RZ_ARRAY_SIZE(rz_test_tools);
+}
+
+static bool is_valid_tool(const char *tool) {
+	// we always whitelist the tools to avoid malware execution.
+	if (RZ_STR_ISEMPTY(tool)) {
+		// rz-test will run rizin or rz-asm
+		return true;
+	}
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(rz_test_tools); ++i) {
+		if (RZ_STR_EQ(tool, rz_test_tools[i])) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 RZ_API RzPVector /*<RzCmdTest *>*/ *rz_test_load_cmd_test_file(const char *file) {
 	char *contents = rz_file_slurp(file, NULL);
 	if (!contents) {
@@ -147,8 +185,14 @@ RZ_API RzPVector /*<RzCmdTest *>*/ *rz_test_load_cmd_test_file(const char *file)
 		// RUN is the only cmd without value
 		if (strcmp(line, "RUN") == 0) {
 			test->run_line = linenum;
-			if (!test->cmds.value) {
-				eprintf(LINEFMT "Error: Test without CMDS key\n", file, linenum);
+			if (RZ_STR_ISEMPTY(test->tool.value) && !test->cmds.value) {
+				eprintf(LINEFMT "Error: Rizin test without CMDS key\n", file, linenum);
+				goto fail;
+			} else if (RZ_STR_ISNOTEMPTY(test->tool.value) && !test->args.value) {
+				eprintf(LINEFMT "Error: Custom test without ARGS key\n", file, linenum);
+				goto fail;
+			} else if (!is_valid_tool(test->tool.value)) {
+				eprintf(LINEFMT "Error: TOOL key is set to '%s': this is not a valid rizin tool\n", file, linenum, test->tool.value);
 				goto fail;
 			}
 			if (!(test->expect.value || test->expect_err.value)) {
@@ -283,7 +327,7 @@ static bool parse_asm_path(const char *path, RzStrConstPool *strpool, const char
 	// arm_32
 	// arm_cortex_32
 
-	char *arch = rz_list_last(file_tokens);
+	char *arch = rz_list_last_val(file_tokens);
 	if (!*arch) {
 		rz_list_free(file_tokens);
 		return false;

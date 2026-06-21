@@ -5,6 +5,7 @@
 #include <sdb.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <rz_util.h>
 #include <rz_util/rz_file.h>
 
 bool test_sdb_kv_list(void) {
@@ -76,8 +77,9 @@ bool test_sdb_list_delete(void) {
 
 bool test_sdb_list_big(void) {
 	Sdb *db = sdb_new0();
+	char k[5];
 	for (int i = 0; i < 5000; i++) {
-		sdb_num_set(db, sdb_fmt("%d", i), i + 1);
+		sdb_num_set(db, rz_strf(k, "%d", i), i + 1);
 	}
 	RzPVector *items = sdb_get_items(db, true);
 	mu_assert_eq(rz_pvector_len(items), 5000, "KV count");
@@ -108,11 +110,12 @@ bool test_sdb_delete_alot(void) {
 	const int count = 2048;
 	int i;
 
+	char k[10];
 	for (i = 0; i < count; i++) {
-		sdb_set(db, sdb_fmt("key.%d", i), "bar");
+		sdb_set(db, rz_strf(k, "key.%d", i), "bar");
 	}
 	for (i = 0; i < count; i++) {
-		sdb_unset(db, sdb_fmt("key.%d", i));
+		sdb_unset(db, rz_strf(k, "key.%d", i));
 	}
 	RzPVector *items = sdb_get_items(db, false);
 	mu_assert_eq(rz_pvector_len(items), 0, "Unmatched rows");
@@ -142,9 +145,10 @@ bool test_sdb_milset_random(void) {
 	const int MAX = 1999;
 	bool solved = true;
 	Sdb *s = sdb_new0();
+	char k[8];
 	sdb_set(s, "foo", "bar");
 	for (i = 0; i < MAX; i++) {
-		char *v = sdb_fmt("bar%d", i);
+		char *v = rz_strf(k, "bar%d", i);
 		if (!sdb_set(s, "foo", v)) {
 			solved = false;
 			break;
@@ -271,8 +275,8 @@ static const char *text_ref_simple_unsorted =
 	"bbb=other stuff\n"
 	"\n"
 	"/subnamespace\n"
-	"key in sub=value in sub\n"
 	"\\/more stuff=in sub\n"
+	"key in sub=value in sub\n"
 	"\n"
 	"/subnamespace/subsub\n"
 	"some stuff=also down here\n";

@@ -24,9 +24,9 @@ RZ_API void rz_set_s_add(RZ_NONNULL RzSetS *set, const char *str) {
 /**
  * \brief Check if hash set \p set contains element \p str.
  */
-RZ_API bool rz_set_s_contains(RZ_NONNULL RzSetS *set, const char *str) {
+RZ_API bool rz_set_s_contains(const RZ_NONNULL RzSetS *set, const char *str) {
 	rz_return_val_if_fail(set, false);
-	return ht_sp_find(set, str, NULL) != NULL;
+	return ht_sp_find((RzSetS *)set, str, NULL) != NULL;
 }
 
 /**
@@ -61,7 +61,7 @@ RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_set_s_to_vector(RZ_NONNULL RzSetS *set)
 	rz_return_val_if_fail(set, NULL);
 
 	RzPVector *vec = rz_pvector_new(set->opt.finiKV ? free : NULL);
-	if (!vec || !rz_pvector_reserve(vec, set->count)) {
+	if (!vec || !rz_pvector_reserve(vec, ht_sp_size((HtSP *)set))) {
 		rz_pvector_free(vec);
 		return NULL;
 	}
@@ -73,6 +73,14 @@ RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_set_s_to_vector(RZ_NONNULL RzSetS *set)
 
 RZ_API void rz_set_s_free(RZ_NULLABLE RzSetS *set) {
 	ht_sp_free((HtSP *)set);
+}
+
+/**
+ * \brief Cleans the set.
+ */
+RZ_API void rz_set_s_clear(RZ_NONNULL RzSetS *set) {
+	rz_return_if_fail(set);
+	ht_sp_clear(set);
 }
 
 /**
@@ -98,12 +106,38 @@ RZ_API void rz_set_u_add(RZ_NONNULL RzSetU *set, ut64 u) {
 	ht_up_insert(set, u, (void *)1);
 }
 
+static bool take_first(void *user, const ut64 k, const void *v) {
+	ut64 *out = user;
+	*out = k;
+	return false;
+}
+
+/**
+ * \brief Take an element from \p set.
+ * The element is removed from it.
+ * There is no indicator what element is taken, because a set is unordered.
+ *
+ * The set must have a size of 1+ elements.
+ * Otherwise a warning is printed and it returns UT64_MAX.
+ */
+RZ_API ut64 rz_set_u_take(RZ_NONNULL RzSetU *set) {
+	rz_return_val_if_fail(set, UT64_MAX);
+	if (rz_set_u_size(set) == 0) {
+		rz_warn_if_reached();
+		return UT64_MAX;
+	}
+	ut64 out = UT64_MAX;
+	ht_up_foreach(set, take_first, &out);
+	rz_set_u_delete(set, out);
+	return out;
+}
+
 /**
  * \brief Check if hash set \p set contains element \p u.
  */
-RZ_API bool rz_set_u_contains(RZ_NONNULL RzSetU *set, ut64 u) {
+RZ_API bool rz_set_u_contains(const RZ_NONNULL RzSetU *set, ut64 u) {
 	rz_return_val_if_fail(set, false);
-	return ht_up_find(set, u, NULL) != NULL;
+	return ht_up_find((RzSetU *)set, u, NULL) != NULL;
 }
 
 /**
@@ -112,6 +146,14 @@ RZ_API bool rz_set_u_contains(RZ_NONNULL RzSetU *set, ut64 u) {
 RZ_API void rz_set_u_delete(RZ_NONNULL RzSetU *set, ut64 u) {
 	rz_return_if_fail(set);
 	ht_up_delete(set, u);
+}
+
+/**
+ * \brief Cleans the set.
+ */
+RZ_API void rz_set_u_clear(RZ_NONNULL RzSetU *set) {
+	rz_return_if_fail(set);
+	ht_up_clear(set);
 }
 
 RZ_API void rz_set_u_free(RZ_NULLABLE RzSetU *set) {

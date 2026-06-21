@@ -197,7 +197,7 @@ static bool test_il_vm_sync_to_reg() {
 	rz_reg_setv(reg, "af", 0);
 	rz_reg_setv(reg, "bf", 0);
 
-	RzILVM *vm = rz_il_vm_new(0, 64, false);
+	RzILVM *vm = rz_il_vm_new(0, 64, false, RZ_IL_EVENT_EXC_NONE);
 	RzILRegBinding *rb = rz_il_reg_binding_exactly(reg, RZ_ARRAY_SIZE(bind), bind);
 	rz_il_vm_setup_reg_binding(vm, rb);
 
@@ -274,7 +274,7 @@ static bool test_il_vm_sync_from_reg() {
 	rz_reg_setv(reg, "af", 0);
 	rz_reg_setv(reg, "bf", 1);
 
-	RzILVM *vm = rz_il_vm_new(0, 64, false);
+	RzILVM *vm = rz_il_vm_new(0, 64, false, RZ_IL_EVENT_EXC_NONE);
 	RzILRegBinding *rb = rz_il_reg_binding_exactly(reg, RZ_ARRAY_SIZE(bind), bind);
 	rz_il_vm_setup_reg_binding(vm, rb);
 

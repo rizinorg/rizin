@@ -1,5 +1,6 @@
 rz_main_sources = [
   'main.c',
+  'rz-ar.c',
   'rz-bin.c',
   'rizin.c',
   'rz-diff.c',
@@ -24,7 +25,6 @@ rz_main_deps = [
   rz_il_dep,
   rz_io_dep,
   rz_reg_dep,
-  rz_bp_dep,
   rz_syscall_dep,
   rz_arch_dep,
   rz_egg_dep,
@@ -35,6 +35,7 @@ rz_main_deps = [
   rz_sign_dep,
   rz_core_dep,
   rz_diff_dep,
+  dependency('rzar'),
 ]
 
 rz_main = library('rz_main', rz_main_sources,

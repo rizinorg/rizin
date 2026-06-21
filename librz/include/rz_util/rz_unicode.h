@@ -43,6 +43,13 @@ typedef struct rz_unicode_range_entry_t RzUnicodeRangeTable[];
  */
 typedef ut32 RzCodePoint;
 
+typedef struct rz_unicode_case_mapping_t {
+	RzCodePoint key;
+	RzCodePoint val[3];
+} RzUnicodeCaseMapping;
+
+typedef RzUnicodeCaseMapping RzUnicodeCaseMap[];
+
 RZ_API bool rz_unicode_code_point_is_printable(const RzCodePoint c);
 RZ_API bool rz_unicode_code_point_is_defined(const RzCodePoint c);
 RZ_API bool rz_unicode_code_point_is_legal_decode(const RzCodePoint c);
@@ -53,5 +60,9 @@ RZ_API bool rz_unicode_code_point_is_format(const RzCodePoint c);
 RZ_API RzStrEnc rz_unicode_bom_encoding(const ut8 *ptr, size_t ptrlen);
 RZ_API void rz_unicode_code_point_escape(RzCodePoint code_point, RZ_NONNULL RZ_OUT char **dst, RZ_NONNULL const RzStrEscOptions *opt);
 RZ_API void rz_unicode_byte_escape(char ch, RZ_NONNULL RZ_OUT char **dst, RZ_NONNULL const RzStrEscOptions *opt);
+RZ_API RzUnicodeCaseMapping rz_unicode_case_mapping_default(RzCodePoint key);
+RZ_API bool rz_unicode_case_mapping_is_empty(RZ_NULLABLE const RzUnicodeCaseMapping *um);
+RZ_API RzUnicodeCaseMapping rz_unicode_code_point_find_lower(RzCodePoint c);
+RZ_API RzUnicodeCaseMapping rz_unicode_code_point_find_upper(RzCodePoint c);
 
 #endif // RZ_UNICODE_H

@@ -119,11 +119,11 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->subsystem = rz_str_dup("unknown");
 	ret->machine = rz_str_dup("arm");
 	ret->arch = rz_str_dup("arm");
-	ret->has_va = 1;
-	ret->has_pi = ao->art.compile_pic;
+	ret->has_va = true;
+	ret->has_pie = ao->art.compile_pic;
 	ret->bits = 16; // 32? 64?
-	ret->big_endian = 0;
-	ret->dbg_info = 0;
+	ret->big_endian = false;
+	ret->dbg_info = RZ_BIN_DBG_STRIPPED;
 	return ret;
 }
 
@@ -209,6 +209,7 @@ RzBinPlugin rz_bin_plugin_art = {
 	.name = "art",
 	.desc = "Android Runtime",
 	.license = "LGPL3",
+	.author = "pancake",
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,

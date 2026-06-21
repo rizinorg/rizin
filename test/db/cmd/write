@@ -94,7 +94,7 @@ wa "je 0x33" @ 0x10
 pi 1 @ 0x10
 EOF
 EXPECT=<<EOF
-je 0x33
+jz 0x33
 EOF
 RUN
 
@@ -147,6 +147,7 @@ NAME=wao nop (arm)
 FILE=malloc://1024
 ARGS=-a arm -b 32
 CMDS=<<EOF
+e cfg.bigendian=false
 wx 24c09fe500b0a0e304109de40d20a0e1
 pi 4
 wao nop
@@ -168,6 +169,7 @@ NAME=wao trap (arm)
 FILE=malloc://1024
 ARGS=-a arm -b 32
 CMDS=<<EOF
+e cfg.bigendian=false
 wx 24c09fe500b0a0e304109de40d20a0e1
 pi 4
 wao trap
@@ -250,8 +252,9 @@ RUN
 NAME=endian tests: wv
 FILE==
 CMDS=<<EOF
-e cfg.bigendian=false
+e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 wv4 3
 p8 4
 e cfg.bigendian=true
@@ -267,7 +270,7 @@ RUN
 NAME=wv endian
 FILE=malloc://1024
 CMDS=<<EOF
-e cfg.bigendian=false
+e asm.arch=x86
 wv4 0x1234
 p8 2
 wv4 0x12345678
@@ -282,7 +285,7 @@ RUN
 NAME=wx 0x
 FILE=malloc://1024
 CMDS=<<EOF
-e cfg.bigendian=false
+e asm.arch=x86
 wx 0x1234
 p8 2
 wx 0x12345678
@@ -442,7 +445,7 @@ izz~0x0
 px 16~0x0
 EOF
 EXPECT=<<EOF
-  0 0x00000000 0x00000000  13   14         ascii \a\b\t\n\v\f\r\e\\@\a\r~
+0x00000000 0x00000000  13   14         ascii \a\b\t\n\v\f\r\e\\@\a\r~
 0x00000000  0708 090a 0b0c 0d1b 5c40 070d 7e00 0000  ........\@..~...
 EOF
 RUN
@@ -503,7 +506,7 @@ EOF
 EXPECT=<<EOF
 / fcn.00000000();
 | 0x00000000      0000           add   byte [rax], al
-| 0x00000002      7502           jne   6
+| 0x00000002      7502           jnz   0x6
 | ----------- true: 0x00000006  false: 0x00000004
 | 0x00000004      0000           add   byte [rax], al
 | ----------- true: 0x00000006
@@ -512,9 +515,9 @@ EXPECT=<<EOF
 
 / fcn.00000000();
 | 0x00000000      0000           add   byte [rax], al
-| 0x00000002      7502           jne   6
+| 0x00000002      7502           jnz   0x6
 | ----------- true: 0x00000006  false: 0x00000004
-| 0x00000004      7502           jne   8
+| 0x00000004      7502           jnz   0x8
 | ----------- true: 0x00000008  false: 0x00000006
 | 0x00000006      0000           add   byte [rax], al
 | ----------- true: 0x00000008
@@ -523,7 +526,7 @@ EXPECT=<<EOF
 / fcn.00000000();
 | ; var int64_t var_4h @ stack - 0x4
 | 0x00000000      488b45fc       mov   rax, qword [var_4h]
-| 0x00000004      7502           jne   8
+| 0x00000004      7502           jnz   0x8
 | ----------- true: 0x00000008  false: 0x00000006
 | 0x00000006      0000           add   byte [rax], al
 | ----------- true: 0x00000008
@@ -532,7 +535,7 @@ EXPECT=<<EOF
 / fcn.00000000();
 | ; var int64_t test @ stack - 0x4
 | 0x00000000      488b45fc       mov   rax, qword [test]
-| 0x00000004      75fa           jne   fcn.00000000
+| 0x00000004      75fa           jnz   fcn.00000000
 | ----------- true: 0x00000000  false: 0x00000006
 | 0x00000006      0000           add   byte [rax], al
 \ 0x00000008      c3             ret
@@ -555,31 +558,31 @@ pdr
 EOF
 EXPECT=<<EOF
 / fcn.00000000();
-| 0x00000000      e802000000     call  7
-| 0x00000005      7502           jne   9
+| 0x00000000      e802000000     call  0x7
+| 0x00000005      7502           jnz   0x9
 | ----------- true: 0x00000009  false: 0x00000007
-| ; CALL XREF from fcn.00000000 @ 
+| ; CALL XREF from fcn.00000000 @
 | 0x00000007      0000           add   byte [rax], al
 | ----------- true: 0x00000009
 \ 0x00000009      c3             ret
 
 / fcn.00000000(int64_t arg_2h);
 | ; arg int64_t arg_2h @ stack + 0x2
-| 0x00000000      7507           jne   9
+| 0x00000000      7507           jnz   0x9
 | ----------- true: 0x00000009  false: 0x00000002
 | 0x00000002      0000           add   byte [rax], al
 | 0x00000004      007502         add   byte [arg_2h], dh
-| ; CALL XREF from fcn.00000000 @ 
+| ; CALL XREF from fcn.00000000 @
 | 0x00000007      0000           add   byte [rax], al
 | ----------- true: 0x00000009
 \ 0x00000009      c3             ret
 
 / fcn.00000000(int64_t arg_2h);
 | ; arg int64_t arg_2h @ stack + 0x2
-| 0x00000000      e802000000     call  7
-| 0x00000005      7502           jne   9
+| 0x00000000      e802000000     call  0x7
+| 0x00000005      7502           jnz   0x9
 | ----------- true: 0x00000009  false: 0x00000007
-| ; CALL XREF from fcn.00000000 @ 
+| ; CALL XREF from fcn.00000000 @
 | 0x00000007      0000           add   byte [rax], al
 | ----------- true: 0x00000009
 \ 0x00000009      c3             ret
@@ -632,29 +635,29 @@ pdr
 EOF
 EXPECT=<<EOF
 / fcn.00000000();
-| 0x00000000      eb04           jmp   6
+| 0x00000000      eb04           jmp   0x6
 | ----------- true: 0x00000006
-| 0x00000002      eb02           jmp   6
+| 0x00000002      eb02           jmp   0x6
 | ----------- true: 0x00000006
 | ; CODE XREFS from fcn.00000000 @ , 0x2
-| 0x00000006      75fa           jne   2
+| 0x00000006      75fa           jnz   0x2
 | ----------- true: 0x00000002  false: 0x00000008
 \ 0x00000008      c3             ret
 
 / fcn.00000000();
-| 0x00000000      eb02           jmp   4
+| 0x00000000      eb02           jmp   0x4
 | ----------- true: 0x00000004
-| ; CODE XREF from fcn.00000000 @ 
+| ; CODE XREF from fcn.00000000 @
 | 0x00000004      eb04           jmp   0xa
 | ----------- true: 0x0000000a
-| ; CODE XREF from fcn.00000000 @ 
+| ; CODE XREF from fcn.00000000 @
 | ; CODE XREF from fcn.00000000 @ +0x2
 | 0x00000006      0000           add   byte [rax], al
 | ; CODE XREF from fcn.00000000 @ 0x4
 | 0x00000008      eb02           jmp   0xc
 | ----------- true: 0x0000000c
 | ; CODE XREF from fcn.00000000 @ 0x4
-| 0x0000000a      75fa           jne   6
+| 0x0000000a      75fa           jnz   0x6
 | ----------- true: 0x00000006  false: 0x0000000c
 | ; CODE XREF from fcn.00000000 @ 0x8
 \ 0x0000000c      c3             ret

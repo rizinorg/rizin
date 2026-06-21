@@ -203,8 +203,9 @@ static char *java_enrich_asm(RzBinFile *bf, const char *asm_str, int asm_len) {
 
 RzBinPlugin rz_bin_plugin_java = {
 	.name = "java",
-	.desc = "java bin plugin",
+	.desc = "Java binary",
 	.license = "LGPL3",
+	.author = "deroad",
 	.get_sdb = &java_get_sdb,
 	.load_buffer = &java_load_buffer,
 	.destroy = &java_destroy,

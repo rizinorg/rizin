@@ -1,5 +1,6 @@
-.Dd Jan 24, 2024
+.Dd January 24, 2024
 .Dt RZ_TEST 1
+.Os
 .Sh NAME
 .Nm rz-test
 .Nd rizin regression testsuite
@@ -48,34 +49,29 @@ Timeout per test (default is 960 seconds)
 Output test run information in JSON format to file
 .It Fl e Ar dir
 Exclude a particular directory while testing (this option can appear many times)
-.It Fl s Ar num.
+.It Fl s Ar num
 Number of expected successful tests
 .It Fl x Ar num
 Number of expected failed tests
 .Pp
-Supported test types: @JSON @unit @fuzz @cmds
+Supported test types: @json @unit @fuzz @cmds
 .El
 .Sh ENVIRONMENT
-.Pp
 EDITOR: editor to use (eg: "vim")
-
 .Sh USAGE
-.Pp
-Use the -n flag to dont run any test. Just load them.
+Use the -n flag to dont run any test.
+Just load them.
 .Pp
   $ rz-test -n
   [rz-test] Loading tests...
 .Sh SEE ALSO
-.Pp
-.Xr rizin(1) ,
-.Xr rz-hash(1) ,
-.Xr rz-find(1) ,
-.Xr rz-bin(1) ,
-.Xr rz-find(1) ,
-.Xr rz-diff(1) ,
-.Xr rz-asm(1) ,
+.Xr rizin 1 ,
+.Xr rz-asm 1 ,
+.Xr rz-bin 1 ,
+.Xr rz-diff 1 ,
+.Xr rz-find 1 ,
+.Xr rz-hash 1
 .Sh AUTHORS
-.Pp
-pancake <pancake@nopcode.org>
+.An pancake <pancake@nopcode.org>
 .Pp
 byteninjaa0

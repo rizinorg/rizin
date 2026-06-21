@@ -5,8 +5,19 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "elf.h"
+#include "elf/glibc_elf.h"
+#include "rz_bin.h"
+#include "rz_bp.h"
+#include "rz_util/rz_buf.h"
+#include "rz_util/rz_log.h"
+#include "rz_util/rz_str.h"
+#include "rz_util/rz_strbuf.h"
 
 #define VERSYM_VERSION 0x7fff
+
+// Modes analogous to CS_MODE_*
+#define MODE_MCLASS 1
+#define MODE_V8     2
 
 struct mips_bits_translation {
 	Elf_(Word) type;
@@ -28,7 +39,7 @@ struct class_translation {
 	const char *name;
 };
 
-struct cpu_mips_translation {
+struct cpu_arch_translation {
 	Elf_(Word) arch;
 	const char *name;
 };
@@ -232,7 +243,7 @@ static const struct class_translation class_translation_table[] = {
 	{ ELFCLASS64, "ELF64" }
 };
 
-static const struct cpu_mips_translation gnu_mips_mach_translation_table[] = {
+static const struct cpu_arch_translation gnu_mips_mach_translation_table[] = {
 	{ EF_MIPS_MACH_3900, "3900 " },
 	{ EF_MIPS_MACH_4010, "4010 " },
 	{ EF_MIPS_MACH_4100, "4100 " },
@@ -271,7 +282,7 @@ static const struct mips_bits_translation mips_bits_translation_table[] = {
 	{ EF_MIPS_ARCH_64R6, 64 },
 };
 
-static const struct cpu_mips_translation gnu_mips_arch_translation_table32[] = {
+static const struct cpu_arch_translation gnu_mips_arch_translation_table32[] = {
 	{ EF_MIPS_ARCH_1, "mips32" },
 	{ EF_MIPS_ARCH_2, "mips2" },
 	{ EF_MIPS_ARCH_3, "mips3" },
@@ -285,7 +296,7 @@ static const struct cpu_mips_translation gnu_mips_arch_translation_table32[] = {
 	{ EF_MIPS_ARCH_64R6, "mips64r6" },
 };
 
-static const struct cpu_mips_translation gnu_mips_arch_translation_table64[] = {
+static const struct cpu_arch_translation gnu_mips_arch_translation_table64[] = {
 	{ EF_MIPS_ARCH_1, "mips64" }, // also used for generic mips, so we default to mips64
 	{ EF_MIPS_ARCH_2, "mips64r2" },
 	{ EF_MIPS_ARCH_3, "mips64r3" },
@@ -299,12 +310,23 @@ static const struct cpu_mips_translation gnu_mips_arch_translation_table64[] = {
 	{ EF_MIPS_ARCH_64R6, "mips64r6" },
 };
 
+static const struct cpu_arch_translation cpu_hppa_translation_table[] = {
+	{ EFA_PARISC_1_0, "hppa1.0" },
+	{ EFA_PARISC_1_1, "hppa2.0" }, // In practice many ELF file set as 1.1 version
+				       // contain 2.0 opcodes
+	{ EFA_PARISC_2_0, "hppa2.0" },
+};
+
 static const struct arch_translation arch_translation_table[] = {
 	{ EM_ALPHA, "alpha" },
 	{ EM_ARC, "arc" },
 	{ EM_ARC_A5, "arc" },
 	{ EM_ARC_COMPACT3_64, "arc" },
 	{ EM_ARC_COMPACT3, "arc" },
+	{ EM_H8_300, "h8300" },
+	{ EM_H8_300H, "h8300h" },
+	{ EM_H8S, "h8s" },
+	{ EM_H8_500, "h8500" },
 	{ EM_AVR, "avr" },
 	{ EM_BA2_NON_STANDARD, "ba2" },
 	{ EM_BA2, "ba2" },
@@ -364,6 +386,7 @@ static const struct arch_translation arch_translation_table[] = {
 	{ EM_U16_U8CORE, "u16_u8core" },
 	{ EM_TACHYUM, "tachyum" },
 	{ EM_56800EF, "56800ef" },
+	{ EM_XCORE, "xcore" },
 };
 
 static const struct ver_flags_translation ver_flags_translation_table[] = {
@@ -463,7 +486,7 @@ static ut64 get_main_offset_x86_pie(ELFOBJ *bin, ut64 entry, ut8 *buf) {
 			maddr = (ut64)rz_read_le32(&n32s[0]);
 			baddr = (bin->ehdr.e_entry >> 16) << 16;
 			if (Elf_(rz_bin_elf_has_segments)(bin)) {
-				baddr = Elf_(rz_bin_elf_get_baddr)(bin);
+				baddr = Elf_(rz_bin_elf_get_baddr)(bin, NULL);
 			}
 			maddr += baddr;
 			return maddr;
@@ -716,6 +739,142 @@ static inline bool is_elf_class32(ELFOBJ *bin) {
 	return bin->ehdr.e_ident[EI_CLASS] == ELFCLASS32;
 }
 
+static RzBuffer *get_riscv_attributes_section(ELFOBJ *bin) {
+	RzBinElfSection *section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".riscv.attributes");
+	if (!section || section->type != SHT_RISCV_ATTRIBUTES /* shouldn't really be possible */) {
+		return NULL;
+	}
+	return rz_buf_new_slice(bin->b, section->offset, section->size);
+}
+
+/// All possible results of getting a riscv attribute of a given tag
+typedef enum {
+	RISCV_ATTR_NONE = 0, //< no attribute was found with the given tag or parsing error of the section format
+	RISCV_ATTR_TRUNCATED_NT_STRING = 1, //< attribute of type null-terminated string, too long to fit into result buffer
+	RISCV_ATTR_NT_STRING = 2, //< attribute of type null-terminated string
+	RISCV_ATTR_ULEB128 = 3, //< attribute of type uleb128 integer
+	RISCV_ATTR_TRUNCATED_ULEB128 = 4, //< attribute of type uleb128 integer, too big to fit into result buffer
+} riscv_attr_type;
+
+/**
+ * \brief Get a riscv attribute of a given tag from the .riscv.attributes section
+ * 		  This section is defined in the RISC-V ELF psABI as a sequence of uleb128 encoded tags
+ *        paired with either null-terminated string or uleb128 values.
+ *
+ * \param sec The .riscv.attributes section
+ * \param attr_tag The tag of the attribute to get
+ * \param result_maxlen The maximum capacity of the result buffer
+ * \param [out] result The result buffer
+ * \param [out] result_len The length of usable data in the result buffer, always <= result_maxlen
+ * \return riscv_attr_type The type of the found attribute, indicating whether it's a string or uleb128 integer and whether it was truncated
+ */
+static riscv_attr_type get_riscv_attribute_from_section(RzBuffer *sec, ut64 attr_tag, size_t result_maxlen, ut8 *result, size_t *result_len) {
+	// format:
+	/*
+	 * <format-byte> <subsection 4-byte length> <null-terminated vendor name> <one or more tag-value pairs> */
+	/* <tag-value-pair> = <even uleb128 tag> <uleb128 value>
+	 *				    | <odd  uleb128 tag> <null-terminated string value>
+	 */
+	ut64 curr = 0;
+
+	// format byte
+	ut8 format = 0;
+	if (!sec || !rz_buf_read8_offset(sec, &curr, &format) || format != 'A') {
+		RZ_LOG_ERROR("Can't read the format byte of the RISCV attrbiute section or found a different format (expected 'A' at section start)\n");
+		return RISCV_ATTR_NONE;
+	}
+
+	// subsection length
+	ut32 subsec_len = 0;
+	if (!rz_buf_read_ble32_offset(sec, &curr, &subsec_len, /* big endian? */ false)) {
+		RZ_LOG_ERROR("Can't read the subsection length of the RISCV attribute section\n");
+		return RISCV_ATTR_NONE;
+	}
+
+	// skip vendor name
+	ut8 byte = 1;
+	while (byte != '\0') {
+		if (!rz_buf_read8_offset(sec, &curr, &byte)) {
+			RZ_LOG_ERROR("Can't read vendor name in RISCV attribute section\n");
+			return RISCV_ATTR_NONE;
+		}
+	}
+
+	// now parse the tag-value array
+	while (curr < rz_buf_size(sec)) {
+		ut64 tag = 0;
+		ut32 num_bytes_read = rz_buf_uleb128_at(sec, curr, &tag);
+		curr += num_bytes_read;
+
+		if (num_bytes_read > 8) {
+			RZ_LOG_WARN("Can't interpret tag value between offsets %" PFMT64u "-%" PFMT64u ": "
+				    "tag is too large at %d bytes, parser can only represent 64-bit tags (skipped)\n",
+				curr - num_bytes_read, curr, num_bytes_read);
+			continue;
+		}
+		if (tag != attr_tag) {
+			continue;
+		}
+
+		// RISCV ABI spec says that there are only 2 types of values associated with tags
+		// 		1- Even tags: ULEB128 values (self-delimiting, no header length necessary)
+		// 		2- Odd tags: Null-terminated strings (also self-delimiting)
+		// Like ARM but even simpler, no special cases for tags below 32
+		bool tag_is_odd = tag & 0x1;
+
+		size_t result_curr = 0;
+		// value is a null-terminated string
+		if (tag_is_odd) {
+			int string_starts_at = curr;
+			while (curr < rz_buf_size(sec) && result_curr < result_maxlen) {
+				bool succeeded = rz_buf_read8_offset(sec, &curr, &result[result_curr++]);
+				if (!succeeded) {
+					RZ_LOG_ERROR("Can't read the null-terminated string for tag %" PFMT64d ", starting at offset %d\n", tag, string_starts_at);
+					break;
+				}
+				// done
+				if (result[result_curr - 1] == '\0') {
+					break;
+				}
+			}
+
+			bool result_overflow = false;
+			// have we filled the buffer ?
+			if (result_curr >= result_maxlen) {
+				result_overflow = result[result_maxlen - 1] != '\0';
+				// must force the last byte to null, in case the original string was too long
+				result[result_maxlen - 1] = '\0';
+			}
+			*result_len = result_curr;
+			return result_overflow ? RISCV_ATTR_TRUNCATED_NT_STRING : RISCV_ATTR_NT_STRING;
+		} else { // value is a self-delimiting ULEB128 integer
+			int uleb_starts_at = curr;
+			while (curr < rz_buf_size(sec) && result_curr < result_maxlen) {
+				bool succeeded = rz_buf_read8_offset(sec, &curr, &result[result_curr++]);
+				if (!succeeded) {
+					RZ_LOG_ERROR("Can't read the ULEB128 value for tag %" PFMT64d ", starting at offset %d\n", tag, uleb_starts_at);
+					break;
+				}
+				// last byte in the variable encoding, most-significant bit not set
+				if (!(result[result_curr - 1] & 0x80)) {
+					break;
+				}
+			}
+
+			bool result_overflow = false;
+			// have we filled the buffer ?
+			if (result_curr >= result_maxlen) {
+				result_overflow = result[result_maxlen - 1] & 0x80;
+				// must force the last byte to a terminal byte, in case the original number was too long
+				result[result_maxlen - 1] = result[result_maxlen - 1] & 0x7F;
+			}
+			*result_len = result_curr;
+			return result_overflow ? RISCV_ATTR_TRUNCATED_ULEB128 : RISCV_ATTR_ULEB128;
+		}
+	}
+	return RISCV_ATTR_NONE;
+}
+
 static int get_bits_mips(ELFOBJ *bin) {
 	if (is_elf_class64(bin)) {
 		return 64;
@@ -725,21 +884,50 @@ static int get_bits_mips(ELFOBJ *bin) {
 	return get_bits_mips_common(mips_type);
 }
 
-static inline bool arch_is_nanomips(ELFOBJ *bin) {
-	return bin->ehdr.e_machine == EM_IMG1;
+static inline bool arch_is(ELFOBJ *bin, ut64 machine_id) {
+	return bin->ehdr.e_machine == machine_id;
 }
 
-static bool arch_is_mips(ELFOBJ *bin) {
+static inline bool arch_is_nanomips(ELFOBJ *bin) {
+	return arch_is(bin, EM_IMG1);
+}
+
+static inline bool arch_is_mips(ELFOBJ *bin) {
 	return bin->ehdr.e_machine == EM_MIPS ||
 		bin->ehdr.e_machine == EM_MIPS_RS3_LE ||
 		bin->ehdr.e_machine == EM_MIPS_X ||
 		arch_is_nanomips(bin);
 }
 
-static bool arch_is_arcompact(ELFOBJ *bin) {
+static inline bool arch_is_h8xx(ELFOBJ *bin) {
+	return bin->ehdr.e_machine == EM_H8_300 ||
+		bin->ehdr.e_machine == EM_H8_300H ||
+		bin->ehdr.e_machine == EM_H8S ||
+		bin->ehdr.e_machine == EM_H8_500;
+}
+
+static inline bool arch_is_sparc(ELFOBJ *bin) {
+	return bin->ehdr.e_machine == EM_SPARC ||
+		bin->ehdr.e_machine == EM_SPARC32PLUS ||
+		bin->ehdr.e_machine == EM_SPARCV9;
+}
+
+static inline bool arch_is_arm(ELFOBJ *bin) {
+	return bin->ehdr.e_machine == EM_ARM || bin->ehdr.e_machine == EM_AARCH64;
+}
+
+static inline bool arch_is_arcompact(ELFOBJ *bin) {
 	return bin->ehdr.e_machine == EM_ARC_A5 ||
 		bin->ehdr.e_machine == EM_ARC_COMPACT3_64 ||
 		bin->ehdr.e_machine == EM_ARC_COMPACT3;
+}
+
+static inline bool arch_is_parisc(ELFOBJ *bin) {
+	return arch_is(bin, EM_PARISC);
+}
+
+static inline bool arch_is_riscv(ELFOBJ *bin) {
+	return arch_is(bin, EM_RISCV);
 }
 
 static char *read_elf_intrp(ELFOBJ *bin, ut64 addr, size_t size) {
@@ -980,6 +1168,258 @@ static char *get_cpu_mips(ELFOBJ *bin) {
 	return rz_strbuf_drain_nofree(&sb);
 }
 
+typedef struct {
+	ut8 tag;
+	ut64 value_int;
+	char *value_str;
+} arm_attribute_t;
+
+static const ut8 *parse_arm_attribute(const ut8 *data, ut32 size, arm_attribute_t *attribute) {
+	const ut8 *next_data = NULL;
+	const char *error = NULL;
+	ut32 n = 0;
+
+	attribute->tag = 0;
+	attribute->value_int = 0;
+	attribute->value_str = NULL;
+
+	ut64 tmp_attribute_tag = 0;
+	const ut8 *attribute_value_data = rz_uleb128(data, size, &tmp_attribute_tag, &error);
+	if (error) {
+		RZ_LOG_WARN("ARM aeabi: cannot parse attribute tag: %s\n", error);
+		RZ_FREE(error);
+		return NULL;
+	}
+	ut32 attribute_tag_len = attribute_value_data - data;
+	ut32 attribute_value_size = size - attribute_tag_len;
+
+	if (!attribute_value_size) {
+		RZ_LOG_WARN("ARM aeabi: missing data for attribute value\n");
+		return NULL;
+	}
+
+	// For N >= 128, tag N has the same properties as tag N modulo 128.
+	attribute->tag = tmp_attribute_tag % 128;
+
+	switch (attribute->tag) {
+	// target-related attributes
+	case TAG_CPU_ARCH:
+	case TAG_CPU_ARCH_PROFILE:
+	case TAG_ARM_ISA_USE:
+	case TAG_THUMB_ISA_USE:
+	case TAG_FP_ARCH:
+	case TAG_WMMX_ARCH:
+	case TAG_ADVANCED_SIMD_ARCH:
+	// procedure call-related attributes
+	case TAG_PCS_CONFIG:
+	case TAG_ABI_PCS_R9_USE:
+	case TAG_ABI_PCS_RW_DATA:
+	case TAG_ABI_PCS_RO_DATA:
+	case TAG_ABI_PCS_GOT_USE:
+	case TAG_ABI_PCS_WCHAR_T:
+	case TAG_ABI_ENUM_SIZE:
+	case TAG_ABI_ALIGN_NEEDED:
+	case TAG_ABI_ALIGN_PRESERVED:
+	case TAG_ABI_FP_ROUNDING:
+	case TAG_ABI_FP_DENORMAL:
+	case TAG_ABI_FP_EXCEPTIONS:
+	case TAG_ABI_FP_USER_EXCEPTIONS:
+	case TAG_ABI_FP_NUMBER_MODEL:
+	case TAG_ABI_HARDFP_USE:
+	case TAG_ABI_VFP_ARGS:
+	case TAG_ABI_WMMX_ARGS:
+	// optimization attributes
+	case TAG_ABI_OPTIMIZATION_GOALS:
+	case TAG_ABI_FP_OPTIMIZATION_GOALS:
+		next_data = rz_uleb128(attribute_value_data, attribute_value_size, &attribute->value_int, &error);
+		if (error) {
+			RZ_LOG_WARN("ARM aeabi: cannot parse attribute value: %s\n", error);
+			RZ_FREE(error);
+			return NULL;
+		}
+		return next_data;
+	// target-related attributes
+	case TAG_CPU_NAME:
+	case TAG_CPU_RAW_NAME:
+	// generic compatibility tag
+	case TAG_COMPATIBILITY:
+		n = rz_str_nlen((const char *)attribute_value_data, attribute_value_size);
+		if (n < attribute_value_size) {
+			attribute->value_str = (char *)attribute_value_data;
+			return attribute_value_data + n + 1; // including terminating null byte
+		}
+		RZ_LOG_WARN("ARM aeabi: cannot parse attribute value: missing terminating null byte\n");
+		return NULL;
+	}
+
+	if (attribute->tag <= 32) {
+		RZ_LOG_WARN("ARM aeabi: unknown private attribute tag: %d\n", attribute->tag);
+		return NULL;
+	}
+
+	if (attribute->tag & 1) {
+		n = rz_str_nlen((const char *)attribute_value_data, attribute_value_size);
+		if (n < attribute_value_size) {
+			attribute->value_str = (char *)attribute_value_data;
+			return attribute_value_data + n + 1; // including terminating null byte
+		}
+		RZ_LOG_WARN("ARM aeabi: cannot parse attribute value: missing terminating null byte\n");
+		return NULL;
+	}
+	next_data = rz_uleb128(attribute_value_data, attribute_value_size, &attribute->value_int, &error);
+	if (error) {
+		RZ_LOG_WARN("ARM aeabi: cannot parse attribute value: %s\n", error);
+		RZ_FREE(error);
+		return NULL;
+	}
+	return next_data;
+}
+
+static int get_modes_from_arm_aeabi_attributes(const ut8 *data, ut32 size) {
+	int modes = 0;
+	while (size) {
+		arm_attribute_t attribute;
+		const ut8 *next = parse_arm_attribute(data, size, &attribute);
+		if (!next) {
+			break;
+		}
+
+		if (attribute.tag == TAG_CPU_ARCH_PROFILE) {
+			ut64 cpu_arch_profile = attribute.value_int;
+			if (cpu_arch_profile == ARM_PROFILE_M) {
+				modes |= MODE_MCLASS;
+			}
+		}
+
+		if (attribute.tag == TAG_CPU_ARCH) {
+			ut64 cpu_arch = attribute.value_int;
+			if (cpu_arch >= ARM_VER_V8_A && cpu_arch <= ARM_VER_V8_1_M_MAINLINE) {
+				modes |= MODE_V8;
+			}
+			if (cpu_arch >= ARM_VER_V9_A) {
+				// This is technically not V8 anymore, but probably a better approximation than "not v8".
+				modes |= MODE_V8;
+			}
+		}
+
+		size -= next - data;
+		data = next;
+	}
+
+	if (size > 0) {
+		RZ_LOG_WARN("ARM aeabi: attributes not fully parsed (%d bytes left)\n", size);
+	}
+
+	return modes;
+}
+
+static int get_modes_from_arm_aeabi_vendor_data(const char *data, ut32 size, bool big_endian) {
+	int modes = 0;
+
+	while (size >= 5) {
+		ut8 tag = rz_read_ble8(data);
+		if (tag != ARM_TAG_FILE && tag != ARM_TAG_SECTION && tag != ARM_TAG_SYMBOL) {
+			RZ_LOG_WARN("ARM aeabi: unknown sub-subsection tag=0x%02x\n", tag);
+			break;
+		}
+		ut32 subsubsection_size = rz_read_ble32(data + 1, big_endian);
+		if (subsubsection_size > size) {
+			RZ_LOG_WARN("ARM aeabi: sub-subsection size does not fit in subsection\n");
+			break;
+		}
+
+		if (tag == ARM_TAG_FILE && subsubsection_size > 5) {
+			modes |= get_modes_from_arm_aeabi_attributes((ut8 *)data + 5, subsubsection_size - 5);
+		}
+
+		// Advance to the next entry.
+		size -= subsubsection_size;
+		data += subsubsection_size;
+	}
+
+	if (size > 0) {
+		RZ_LOG_WARN("ARM aeabi: subsection not fully parsed (%d bytes left)\n", size);
+	}
+
+	return modes;
+}
+
+/**
+ * \brief Get more precise CPU details from .ARM.attributes section.
+ *
+ * - https://github.com/ARM-software/abi-aa/blob/main/aaelf32/aaelf32.rst#536build-attributes
+ * - https://github.com/ARM-software/abi-aa/blob/main/addenda32/addenda32.rst#32representing-build-attributes-in-elf-files
+ */
+static int get_modes_from_arm_attributes_section(ELFOBJ *bin) {
+	int modes = 0;
+	RzBinElfSection *section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".ARM.attributes");
+	if (!section || !section->is_valid || section->type != SHT_ARM_ATTRIBUTES || section->size < 1) {
+		return modes;
+	}
+
+	char *buf = RZ_NEWS0(char, section->size + 1);
+	if (!buf) {
+		return modes;
+	}
+	if (rz_buf_read_at(bin->b, section->offset, (ut8 *)buf, section->size) != section->size) {
+		free(buf);
+		return modes;
+	}
+	const char *buf_end = buf + section->size + 1;
+
+	// The current format-version is just 'A'.
+	if (buf[0] != 'A') {
+		free(buf);
+		return modes;
+	}
+
+	bool big_endian = Elf_(rz_bin_elf_is_big_endian)(bin);
+
+	char *subsection_ptr = buf + 1;
+	while (buf_end > subsection_ptr + 4) {
+		const ut32 subsection_size = rz_read_ble32(subsection_ptr, big_endian);
+		if (subsection_size <= 4 || buf_end <= subsection_ptr + subsection_size) {
+			RZ_LOG_WARN("ARM aeabi: subsection size\n");
+			break;
+		}
+		ut32 i = 4;
+
+		// We are only interested in public ("aeabi") attributes subsection
+		const char aeabi[] = "aeabi";
+		if (!rz_str_cmp(&subsection_ptr[i], aeabi, sizeof(aeabi))) {
+			i += sizeof(aeabi);
+			modes |= get_modes_from_arm_aeabi_vendor_data(&subsection_ptr[i], subsection_size - i, big_endian);
+		}
+
+		subsection_ptr += subsection_size;
+	}
+
+	free(buf);
+	return modes;
+}
+
+/**
+ * Because only CS_MODE_MCLASS and CS_MODE_V8 are currently used for disassembly, we only need to detect those.
+ */
+static char *get_cpu_arm(ELFOBJ *bin) {
+	int modes = get_modes_from_arm_attributes_section(bin);
+
+	// Render modes to string buffer
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	if (modes & MODE_MCLASS) {
+		rz_strbuf_append(&sb, "cortexm");
+	}
+	if (modes & MODE_V8) {
+		if (!rz_strbuf_is_empty(&sb)) {
+			rz_strbuf_append(&sb, " ");
+		}
+		rz_strbuf_append(&sb, "v8");
+	}
+
+	return rz_strbuf_drain_nofree(&sb);
+}
+
 static char *get_abi_mips(ELFOBJ *bin) {
 	Elf_(Word) mips_eflags = bin->ehdr.e_flags;
 	Elf_(Word) mips_abi = mips_eflags & EF_MIPS_ABI;
@@ -1046,6 +1486,54 @@ static char *get_abi_mips(ELFOBJ *bin) {
 	}
 
 	return rz_strbuf_drain_nofree(&sb);
+}
+
+static char *get_cpu_hppa(ELFOBJ *bin) {
+	Elf_(Word) hppa_arch = bin->ehdr.e_flags & EF_PARISC_ARCH;
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cpu_hppa_translation_table); i++) {
+		if (hppa_arch == cpu_hppa_translation_table[i].arch) {
+			return strdup(cpu_hppa_translation_table[i].name);
+		}
+	}
+
+	return strdup("Unknown HP PARISC ISA");
+}
+
+static char *get_cpu_h8xx(ELFOBJ *bin) {
+	if (bin->ehdr.e_machine == EM_H8_300H) {
+		return rz_str_dup("h8300h");
+	} else if (bin->ehdr.e_machine == EM_H8S) {
+		return rz_str_dup("h8300s");
+	} else if (bin->ehdr.e_machine == EM_H8_500) {
+		return rz_str_dup("h8500");
+	}
+
+	/// Reference:
+	/// https://gem5.googlesource.com/arm/linux/+/b24413180f5600bcb3bb70fbed5cf186b60864bd/arch/h8300/include/asm/elf.h#29
+	if (bin->ehdr.e_flags == 0x810000) {
+		return rz_str_dup("h8300h");
+	} else if (bin->ehdr.e_flags == 0x820000) {
+		// H8S
+		return rz_str_dup("h8300s");
+	} else if (bin->ehdr.e_flags == 0x830000) {
+		// cannot find this anywhere but is not H8300
+		return rz_str_dup("h8300h");
+	}
+	return rz_str_dup("h8300");
+}
+
+static char *get_cpu_riscv(ELFOBJ *bin) {
+	char bin_arch[256] = { 0 };
+	size_t len = 0;
+	riscv_attr_type typ = get_riscv_attribute_from_section(get_riscv_attributes_section(bin), T_RISCV_arch, sizeof(bin_arch), (ut8 *)bin_arch, &len);
+	len = RZ_MIN(len, sizeof(bin_arch));
+	if (typ == RISCV_ATTR_NT_STRING) {
+		return rz_str_ndup((const char *)bin_arch, len);
+	}
+
+	// some hardcoded fallback, the mafd + vector
+	return strdup("rv64i2p0_c2p0_m2p0_a2p0_f2p0_d2p0_v2p0");
 }
 
 /**
@@ -1245,6 +1733,9 @@ static bool get_versym_entry_sdb_from_verdef(ELFOBJ *bin, Sdb *sdb, const char *
 		}
 
 		if (!verdef_entry.vd_cnt || verdef_entry.vd_ndx != (versym & VERSYM_VERSION)) {
+			if (!verdef_entry.vd_next) {
+				break;
+			}
 			verdef_entry_offset += verdef_entry.vd_next;
 			continue;
 		}
@@ -1617,7 +2108,7 @@ RZ_OWN char *Elf_(rz_bin_elf_get_arch)(RZ_NONNULL ELFOBJ *bin) {
  * \param elf type
  * \return allocated string
  *
- * Only work on mips right now. Use the elf header to deduce the cpu
+ * Use the elf header to deduce the cpu
  */
 RZ_OWN char *Elf_(rz_bin_elf_get_cpu)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
@@ -1628,8 +2119,19 @@ RZ_OWN char *Elf_(rz_bin_elf_get_cpu)(RZ_NONNULL ELFOBJ *bin) {
 	} else if (arch_is_mips(bin)) {
 		// check which is the correct known mips cpus.
 		return get_cpu_mips(bin);
+	} else if (arch_is_sparc(bin)) {
+		// Capstone has only v8 and v9 for now.
+		// So no finer distinction necessary.
+		return bin->ehdr.e_machine == EM_SPARC ? strdup("v8") : strdup("v9");
+	} else if (arch_is_parisc(bin)) {
+		return get_cpu_hppa(bin);
+	} else if (arch_is_arm(bin)) {
+		return get_cpu_arm(bin);
+	} else if (arch_is_h8xx(bin)) {
+		return get_cpu_h8xx(bin);
+	} else if (arch_is_riscv(bin)) {
+		return get_cpu_riscv(bin);
 	}
-
 	return NULL;
 }
 
@@ -1897,8 +2399,9 @@ bool Elf_(rz_bin_elf_is_static)(RZ_NONNULL ELFOBJ *bin) {
 int Elf_(rz_bin_elf_get_bits)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, 0);
 
-	/* Hack for ARCompact */
-	if (arch_is_arcompact(bin)) {
+	if (arch_is_arcompact(bin) ||
+		arch_is_h8xx(bin) ||
+		arch_is(bin, EM_MSP430)) {
 		return 16;
 	}
 
@@ -1981,11 +2484,14 @@ bool Elf_(rz_bin_elf_is_big_endian)(RZ_NONNULL ELFOBJ *bin) {
  * address associated with the lowest p_vaddr value for a
  * PT_LOAD segment.
  */
-ut64 Elf_(rz_bin_elf_get_baddr)(RZ_NONNULL ELFOBJ *bin) {
+ut64 Elf_(rz_bin_elf_get_baddr)(RZ_NONNULL ELFOBJ *bin, RZ_NULLABLE RzBinObjectLoadOptions *opts) {
 	rz_return_val_if_fail(bin, 0);
+	if (opts && opts->force_elf_to_use_baddr) {
+		return opts->baseaddr;
+	}
 
 	if (Elf_(rz_bin_elf_is_relocatable)(bin)) {
-		return 0x08000000;
+		return RZ_BIN_ELF_DEFAULT_BADDR_RELOC;
 	}
 
 	if (Elf_(rz_bin_elf_has_segments)(bin)) {

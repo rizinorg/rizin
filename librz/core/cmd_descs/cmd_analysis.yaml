@@ -176,7 +176,6 @@ commands:
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
         args: []
   - name: ad
     summary: Analyze data
@@ -278,7 +277,6 @@ commands:
             cname: analysis_function_blocks_list
             modes:
               - RZ_OUTPUT_MODE_STANDARD
-              - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_QUIET
               - RZ_OUTPUT_MODE_TABLE
@@ -338,7 +336,6 @@ commands:
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_LONG
-              - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_QUIET
               - RZ_OUTPUT_MODE_TABLE
@@ -425,7 +422,6 @@ commands:
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
-              - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_TABLE
               - RZ_OUTPUT_MODE_LONG
             args: []
@@ -485,6 +481,34 @@ commands:
                 type: RZ_CMD_ARG_TYPE_FCN_VAR
               - name: type
                 type: RZ_CMD_ARG_TYPE_STRING
+          - name: afvc
+            summary: Read/change value constraints of arguments/locals
+            subcommands:
+              - name: afvc
+                cname: analysis_function_vars_constraints
+                summary: List value constraints of all variables / of the given one
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
+                modes:
+                  - RZ_OUTPUT_MODE_STANDARD
+                  - RZ_OUTPUT_MODE_JSON
+                args:
+                  - name: varname
+                    type: RZ_CMD_ARG_TYPE_FCN_VAR
+                    optional: true
+              - name: afvcs
+                cname: analysis_function_vars_constraints_set
+                summary: 'Set value constraints of a variable (e.g. afvcs var0 ">0,<=9")'
+                args:
+                  - name: varname
+                    type: RZ_CMD_ARG_TYPE_FCN_VAR
+                  - name: constraints
+                    type: RZ_CMD_ARG_TYPE_STRING
+              - name: afvc-
+                cname: analysis_function_vars_constraints_del
+                summary: Remove all value constraints of a variable
+                args:
+                  - name: varname
+                    type: RZ_CMD_ARG_TYPE_FCN_VAR
           - name: afvx
             summary: Show argument/variable xrefs in a function
             subcommands:
@@ -527,7 +551,6 @@ commands:
                 type: RZ_CMD_DESC_TYPE_ARGV_STATE
                 modes:
                   - RZ_OUTPUT_MODE_STANDARD
-                  - RZ_OUTPUT_MODE_RIZIN
                   - RZ_OUTPUT_MODE_JSON
                 args:
                   - name: delta
@@ -573,7 +596,6 @@ commands:
                 summary: List register-based arguments and locals / Define a new one
                 modes:
                   - RZ_OUTPUT_MODE_STANDARD
-                  - RZ_OUTPUT_MODE_RIZIN
                   - RZ_OUTPUT_MODE_JSON
                 args:
                   - name: reg
@@ -622,7 +644,6 @@ commands:
               - RZ_OUTPUT_MODE_LONG
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_QUIET
-              - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_TABLE
             args: []
           - name: afl.
@@ -660,7 +681,7 @@ commands:
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
-              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_TABLE
             args: []
           - name: afii
             summary: Show/add/delete imports used in function in current seek
@@ -759,7 +780,6 @@ commands:
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_LONG
-              - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_SDB
             args: []
@@ -1264,7 +1284,6 @@ commands:
         args_str: " [<filter> [= <value>]]"
         modes:
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_TABLE
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
@@ -1325,7 +1344,6 @@ commands:
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_TABLE
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
@@ -1538,8 +1556,12 @@ commands:
         cname: analysis_list_vtables
         modes:
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: avD
+        summary: Mark objects and devirtualize calls to virtual functions for function at the current offset
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: analysis_devirtualize
         args: []
       - name: avg
         summary: Global variables
@@ -1613,10 +1635,37 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_QUIET
-              - RZ_OUTPUT_MODE_RIZIN
             args:
               - name: name
                 type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
+          - name: avgc
+            summary: Read/change value constraints of global variables
+            subcommands:
+              - name: avgc
+                cname: analysis_global_variable_constraints
+                summary: List value constraints of all globals / of the given one
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
+                modes:
+                  - RZ_OUTPUT_MODE_STANDARD
+                  - RZ_OUTPUT_MODE_JSON
+                args:
+                  - name: var_name
+                    type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
+                    optional: true
+              - name: avgcs
+                cname: analysis_global_variable_constraints_set
+                summary: 'Set value constraints of a global variable (e.g. avgcs g ">0,<=9")'
+                args:
+                  - name: var_name
+                    type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
+                  - name: constraints
+                    type: RZ_CMD_ARG_TYPE_STRING
+              - name: avgc-
+                cname: analysis_global_variable_constraints_del
+                summary: Remove all value constraints of a global variable
+                args:
+                  - name: var_name
+                    type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
       - name: avr
         summary: try to parse RTTI at vtable addr (see analysis.cpp.abi)
         type: RZ_CMD_DESC_TYPE_ARGV_MODES
@@ -1644,6 +1693,16 @@ commands:
         cname: analysis_rtti_demangle_class_name
         args:
           - name: classname
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: avx
+        summary: Show the addresses of calls to the virtual function.
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        cname: analysis_virtual_xrefs
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_TABLE
+        args:
+          - name: virtual function name
             type: RZ_CMD_ARG_TYPE_STRING
   - name: ax
     summary: Cross references (xrefs)
@@ -1686,7 +1745,6 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
-          - RZ_OUTPUT_MODE_RIZIN
         args: []
       - name: axt
         summary: List xrefs to current seek
@@ -1696,7 +1754,7 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
-          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_LONG
         args: []
       - name: axf
         summary: List xrefs from current seek
@@ -1706,7 +1764,6 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
-          - RZ_OUTPUT_MODE_RIZIN
         args: []
       - name: axtg
         summary: Display commands to generate graphs according to xrefs
@@ -1738,7 +1795,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
         args: []
   - name: ah
     summary: Analysis hints
@@ -1750,7 +1806,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
         args: []
       - name: ahl.
         summary: List analysis hints at current seek
@@ -1759,7 +1814,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
         args: []
       - name: ah-
         summary: Delete analysis hints in region starting from current seek
@@ -1982,47 +2036,65 @@ commands:
         cname: analysis_hint_del_optype
         args: []
       - name: ahi
-        summary: Set immediate base hint
-        cname: analysis_hint_set_immbase
-        args:
-          - name: type
-            type: RZ_CMD_ARG_TYPE_CHOICES
-            choices: ["2", "8", "10", "10u", "16", "b", "o", "h", "i", "p", "S", "s"]
-          - name: nword
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
-        details:
-          - name: ""
-            entries:
-              - text: "ahi "
-                arg_str: <base>
-                comment: Set numeric <base> (2, 8, 10, 16)
-              - text: ahi 10|d
-                comment: Set base to signed decimal (10), sign bit should depend on receiver size
-              - text: ahi 10u|du
-                comment: Set base to unsigned decimal (11)
-              - text: ahi b
-                comment: Set base to binary (2)
-              - text: ahi o
-                comment: Set base to octal (8)
-              - text: ahi h
-                comment: Set base to hexadecimal (16)
-              - text: ahi i
-                comment: Set base to IP address (32)
-              - text: ahi p
-                comment: Set base to htons(port) (3)
-              - text: ahi S
-                comment: Set base to syscall (80)
-              - text: ahi s
-                comment: Set base to string (1)
-          - name: Set base of the N-th immediate (indexing starts from 0)
-            entries:
-              - text: ahi 16 1
-                comment: Set base of the 1-st immediate to hexadecimal
-      - name: ahi-
-        summary: Delete immediate base hint
-        cname: analysis_hint_del_immbase
-        args: []
+        summary: Manage immediate operand hints
+        subcommands:
+          - name: ahi
+            summary: Set immediate base hint
+            cname: analysis_hint_set_immbase
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+            args:
+              - name: type
+                type: RZ_CMD_ARG_TYPE_CHOICES
+                choices: ["2", "8", "10", "10u", "16", "b", "o", "h", "i", "p", "S", "s"]
+              - name: nword
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+            details:
+              - name: ""
+                entries:
+                  - text: "ahi "
+                    arg_str: <base>
+                    comment: Set numeric <base> (2, 8, 10, 16)
+                  - text: ahi 10|d
+                    comment: Set base to signed decimal (10), sign bit should depend on receiver size
+                  - text: ahi 10u|du
+                    comment: Set base to unsigned decimal (11)
+                  - text: ahi b
+                    comment: Set base to binary (2)
+                  - text: ahi o
+                    comment: Set base to octal (8)
+                  - text: ahi h
+                    comment: Set base to hexadecimal (16)
+                  - text: ahi i
+                    comment: Set base to IP address (32)
+                  - text: ahi p
+                    comment: Set base to htons(port) (3)
+                  - text: ahi S
+                    comment: Set base to syscall (80)
+                  - text: ahi s
+                    comment: Set base to string (1)
+              - name: Set base of the N-th immediate (indexing starts from 0)
+                entries:
+                  - text: ahi 16 1
+                    comment: Set base of the 1-st immediate to hexadecimal
+          - name: ahi-
+            summary: Delete immediate base hint
+            cname: analysis_hint_del_immbase
+            args: []
+          - name: ahie
+            summary: Set enum type hint for operand
+            cname: analysis_hint_set_enum
+            args:
+              - name: enum
+                type: RZ_CMD_ARG_TYPE_ENUM_TYPE
+              - name: nword
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+          - name: ahie-
+            summary: Delete enum type hint
+            cname: analysis_hint_del_enum
+            args: []
       - name: aht
         summary: Set structure offset hint
         cname: analysis_hint_set_offset
@@ -2076,7 +2148,6 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_LONG
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
         args: []
       - name: aci
         summary: Show information of class
@@ -2325,7 +2396,6 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_LONG
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
         args: []
       - name: abl
         summary: List all basic blocks
@@ -2335,7 +2405,6 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_LONG
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_TABLE
           - RZ_OUTPUT_MODE_QUIET
         args: []

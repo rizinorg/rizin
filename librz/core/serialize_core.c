@@ -10,6 +10,7 @@
  * /
  *   /config => see config.c
  *   /flags => see flag.c
+ *   /marks => see mark.c
  *   /analysis => see analysis.c
  *   /file => see below
  *   /seek => see serialize_core_seek.c
@@ -25,6 +26,7 @@ RZ_API void rz_serialize_core_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 	file_save(sdb_ns(db, "file", true), core, prj_file);
 	rz_serialize_config_save(sdb_ns(db, "config", true), core->config);
 	rz_serialize_flag_save(sdb_ns(db, "flags", true), core->flags);
+	rz_serialize_mark_save(sdb_ns(db, "marks", true), core->marks);
 	rz_serialize_analysis_save(sdb_ns(db, "analysis", true), core->analysis);
 	rz_serialize_debug_save(sdb_ns(db, "debug", true), core->dbg);
 	rz_serialize_core_seek_save(sdb_ns(db, "seek", true), core);
@@ -41,7 +43,7 @@ RZ_API void rz_serialize_core_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 	sdb_set(db, "blocksize", buf);
 }
 
-static const char *const config_exclude[] = {
+static const char *config_exclude[] = {
 	"dir.home",
 	"dir.libs",
 	"dir.magic",
@@ -77,8 +79,9 @@ RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 	if (load_bin_io) {
 		SUB("file", file_load(subdb, core, prj_file, res));
 	}
-	SUB("config", rz_serialize_config_load(subdb, core->config, config_exclude, res));
+	SUB("config", rz_serialize_config_load(subdb, core->config, config_exclude));
 	SUB("flags", rz_serialize_flag_load(subdb, core->flags, res));
+	SUB("marks", rz_serialize_mark_load(subdb, core->marks, res));
 	SUB("analysis", rz_serialize_analysis_load(subdb, core->analysis, res));
 	SUB("debug", rz_serialize_debug_load(subdb, core->dbg, res));
 	SUB("seek", rz_serialize_core_seek_load(subdb, core, res));

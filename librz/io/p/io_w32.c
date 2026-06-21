@@ -64,7 +64,7 @@ static RzIODesc *w32__open(RzIO *io, const char *pathname, int rw, int mode) {
 		free(filename_);
 		if (w32->hnd != INVALID_HANDLE_VALUE)
 			return rz_io_desc_new(io, &rz_io_plugin_w32,
-				pathname, rw, mode, w32);
+				pathname, rw, w32);
 		free(w32);
 	}
 	return NULL;

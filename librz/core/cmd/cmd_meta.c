@@ -39,17 +39,6 @@ static void meta_variable_comment_print(RzCore *Core, RzAnalysisVar *var, RzCmdS
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_cons_printf("%s : %s\n", var->name, var->comment);
 		break;
-	case RZ_OUTPUT_MODE_RIZIN: {
-		char *b64 = sdb_encode((const ut8 *)var->comment, strlen(var->comment));
-		if (!b64) {
-			return;
-		}
-		rz_cons_printf("\"Cv%c %s base64:%s @ 0x%08" PFMT64x "\"\n",
-			var->storage.type == RZ_ANALYSIS_VAR_STORAGE_REG ? 'r' : 's',
-			var->name, b64, var->fcn->addr);
-		free(b64);
-		break;
-	}
 	default:
 		rz_warn_if_reached();
 		break;
@@ -293,7 +282,8 @@ RZ_IPI RzCmdStatus rz_comment_function_remove_handler(RzCore *core, int argc, co
 RZ_IPI RzCmdStatus rz_comment_function_remove_all_handler(RzCore *core, int argc, const char **argv) {
 	RzListIter *it;
 	RzAnalysisFunction *fcn;
-	rz_list_foreach (core->analysis->fcns, it, fcn) {
+	RzList *fcns = rz_analysis_function_list(core->analysis);
+	rz_list_foreach (fcns, it, fcn) {
 		meta_function_comment_remove(core->analysis, fcn);
 	}
 	return RZ_CMD_STATUS_OK;
@@ -317,31 +307,31 @@ RZ_IPI RzCmdStatus rz_comment_unique_handler(RzCore *core, int argc, const char 
 }
 
 RZ_IPI RzCmdStatus rz_meta_space_handler(RzCore *core, int argc, const char **argv) {
-	RzSpaces *ms = &core->analysis->meta_spaces;
+	RzSpaces *ms = rz_analysis_get_meta_spaces(core->analysis);
 	rz_spaces_add(ms, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_meta_space_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	RzSpaces *ms = &core->analysis->meta_spaces;
+	RzSpaces *ms = rz_analysis_get_meta_spaces(core->analysis);
 	rz_core_spaces_print(core, ms, state);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_meta_space_rename_handler(RzCore *core, int argc, const char **argv) {
-	RzSpaces *ms = &core->analysis->meta_spaces;
+	RzSpaces *ms = rz_analysis_get_meta_spaces(core->analysis);
 	rz_spaces_rename(ms, argv[1], argv[2]);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_meta_space_remove_handler(RzCore *core, int argc, const char **argv) {
-	RzSpaces *ms = &core->analysis->meta_spaces;
+	RzSpaces *ms = rz_analysis_get_meta_spaces(core->analysis);
 	rz_spaces_unset(ms, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_meta_space_remove_all_handler(RzCore *core, int argc, const char **argv) {
-	RzSpaces *ms = &core->analysis->meta_spaces;
+	RzSpaces *ms = rz_analysis_get_meta_spaces(core->analysis);
 	rz_spaces_unset(ms, NULL);
 	return RZ_CMD_STATUS_OK;
 }

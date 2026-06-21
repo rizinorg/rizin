@@ -205,23 +205,23 @@ static st64 buf_format(RzBuffer *dst, RzBuffer *src, const char *fmt, int n) {
 					goto err_exit;
 				}
 
-				if (tok->big_endian != RZ_SYS_ENDIAN && tok->type_size > 1) {
+				if ((RZ_HOST_IS_BIG_ENDIAN != (bool)tok->big_endian) && tok->type_size > 1) {
 					// just swap endianness if the host endianness
 					// is not the same and is not one byte
 					switch (tok->type_size) {
 					case 2: {
 						ut16 value = rz_read_ble16(tmp, tok->big_endian);
-						rz_write_ble16(tmp, value, RZ_SYS_ENDIAN);
+						rz_write_ble16(tmp, value, RZ_HOST_IS_BIG_ENDIAN);
 						break;
 					}
 					case 4: {
 						ut32 value = rz_read_ble32(tmp, tok->big_endian);
-						rz_write_ble32(tmp, value, RZ_SYS_ENDIAN);
+						rz_write_ble32(tmp, value, RZ_HOST_IS_BIG_ENDIAN);
 						break;
 					}
 					case 8: {
 						ut64 value = rz_read_ble64(tmp, tok->big_endian);
-						rz_write_ble64(tmp, value, RZ_SYS_ENDIAN);
+						rz_write_ble64(tmp, value, RZ_HOST_IS_BIG_ENDIAN);
 						break;
 					}
 					default:
@@ -289,7 +289,6 @@ static ut8 *get_whole_buf(RzBuffer *b, ut64 *size) {
 	} else if (b->type == RZ_BUFFER_MMAP) {
 		return buf_mmap_get_whole_buf(b, size);
 	} else {
-
 		rz_return_val_if_fail(b && size && b->methods, NULL);
 		if (b->methods->get_whole_buf) {
 			return b->methods->get_whole_buf(b, size);
@@ -404,6 +403,7 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_file(const char *file, int perm, int mode) {
  * \param file The filename used to create the new buffer.
  * \param perm Same meaning than the symbolic constants defined in sys/stat.h.
  * \param mode Same meaning than the symbolic constants use with open (fcntl.h).
+ * \param io Optional RzIO for configuration variables.
  * \return Return the new allocated buffer.
  *
  * \see rz_file_mmap()
@@ -411,13 +411,14 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_file(const char *file, int perm, int mode) {
  * The function creates a new buffer synchronized with the file content, using
  * mmap to access the file.
  */
-RZ_API RZ_OWN RzBuffer *rz_buf_new_mmap(const char *filename, int perm, int mode) {
+RZ_API RZ_OWN RzBuffer *rz_buf_new_mmap(const char *filename, int perm, int mode, RZ_NULLABLE void /* RzIO */ *io) {
 	rz_return_val_if_fail(filename, NULL);
 
 	struct buf_mmap_user u = { 0 };
 	u.filename = filename;
 	u.perm = perm;
 	u.mode = mode;
+	u.io = io;
 
 	return new_buffer(RZ_BUFFER_MMAP, &u);
 }
@@ -559,7 +560,7 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE RZ_BORROW const ut8 *b
  * passed as argument. The bytes parameter can be NULL, but the length should
  * be set to 0.
  */
-RZ_API RZ_OWN RzBuffer *rz_buf_new_from_bytes(RZ_NULLABLE RZ_OWN const ut8 *bytes, ut64 len) {
+RZ_API RZ_OWN RzBuffer *rz_buf_new_from_bytes(RZ_NULLABLE RZ_OWN ut8 *bytes, ut64 len) {
 	rz_return_val_if_fail((bytes && len) || (!bytes && !len), NULL);
 
 	struct buf_bytes_user u = { 0 };
@@ -601,7 +602,7 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io_fd(RZ_NONNULL void *iob, int fd) {
  * \param iob Pointer to RzIOBind structure.
  * \return Return the new allocated buffer.
  *
- * This buffer will use `rz_io_read_at()`/`rz_io_write_at()` as implemented by
+ * This buffer will use `rz_io_read_at_mapped()`/`rz_io_write_at()` as implemented by
  * the RzIOBind given.
  */
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io(RZ_NONNULL void *iob) {
@@ -1224,6 +1225,22 @@ RZ_API st64 rz_buf_insert_bytes(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL co
 	return result;
 }
 
+static RzIO *get_io_from_buffer(RZ_NONNULL RzBuffer *b) {
+	rz_return_val_if_fail(b, NULL);
+	switch (b->type) {
+	case RZ_BUFFER_IO:
+	case RZ_BUFFER_IO_FD: {
+		RzIOBind *iob = b->type == RZ_BUFFER_IO ? ((BufIOPriv *)b->priv)->iob : ((struct buf_io_fd_priv *)b->priv)->iob;
+		rz_return_val_if_fail(iob, NULL);
+		return iob->io;
+	}
+	case RZ_BUFFER_MMAP:
+		return ((struct buf_mmap_priv *)b->priv)->io;
+	default:
+		return NULL;
+	}
+}
+
 /**
  * \brief Reads \p len bytes from buffer \p b into \p buf.
  * \p buf should have enough space to contain the bytes.
@@ -1247,7 +1264,16 @@ RZ_API st64 rz_buf_read(RZ_NONNULL RzBuffer *b, RZ_NONNULL ut8 RZ_OUT *buf, ut64
 	}
 
 	if (len > result) {
-		memset(buf + result, b->Oxff_priv, len - result);
+		ut8 Oxff = b->Oxff_priv;
+		RzIO *io = get_io_from_buffer(b);
+		if (io) {
+			if (!io->ff) {
+				RZ_LOG_ERROR("Incomplete buffer read: expected 0x%" PFMT64x " bytes, got %" PFMT64d " bytes.\n", len, result);
+				return -1;
+			}
+			Oxff = io->Oxff;
+		}
+		memset(buf + result, Oxff, len - result);
 	}
 
 	return result;
@@ -1570,4 +1596,9 @@ RZ_API st64 rz_buf_sleb128(RZ_NONNULL RzBuffer *buffer, RZ_NONNULL st64 *value) 
 	}
 	*value = sum;
 	return used;
+}
+
+RZ_API RzBufferType rz_buf_type(RZ_NONNULL const RzBuffer *b) {
+	rz_return_val_if_fail(b, RZ_BUFFER_INVALID);
+	return b->type;
 }

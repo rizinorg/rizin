@@ -159,13 +159,13 @@ bool test_cmd_descriptor_group(void) {
 	mu_assert_null(rz_cmd_get_desc(cmd, "afjb"), "nothing should be found for non-existing cmd");
 
 	RzCmdParsedArgs *pa = rz_cmd_parsed_args_newcmd("a??");
-	char *h = rz_cmd_get_help(cmd, pa, false);
+	char *h = rz_cmd_get_help(cmd, pa, false, 0);
 	mu_assert_streq(h, "Usage: a   # a exec help\n", "detailed help for a is a_exec_help");
 	rz_cmd_parsed_args_free(pa);
 	free(h);
 
 	pa = rz_cmd_parsed_args_newcmd("a?");
-	h = rz_cmd_get_help(cmd, pa, false);
+	h = rz_cmd_get_help(cmd, pa, false, 0);
 	const char *exp_h = "Usage: a[b]   # a group help\n"
 			    "| a  # a exec help\n"
 			    "| ab # ab help\n";
@@ -198,7 +198,7 @@ bool test_cmd_descriptor_tree(void) {
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	RzCmdDesc *a_cd = rz_cmd_desc_group_new(cmd, root, "a", NULL, NULL, &fake_help);
 	rz_cmd_desc_argv_new(cmd, a_cd, "ap", ap_handler, &fake_help);
-	rz_cmd_desc_group_new(cmd, root, "w", w_handler, NULL, NULL);
+	rz_cmd_desc_group_new(cmd, root, "w", w_handler, NULL, &fake_help);
 
 	void **it_cd;
 	rz_cmd_desc_children_foreach(root, it_cd) {
@@ -216,20 +216,20 @@ bool test_cmd_get_desc(void) {
 	RzCmdDesc *a_cd = rz_cmd_desc_group_new(cmd, root, "a", NULL, NULL, &fake_help);
 	RzCmdDesc *ap_cd = rz_cmd_desc_group_new(cmd, a_cd, "ap", ap_handler, NULL, &fake_help);
 	RzCmdDesc *apd_cd = rz_cmd_desc_argv_new(cmd, ap_cd, "apd", ap_handler, &fake_help);
-	RzCmdDesc *ae_cd = rz_cmd_desc_argv_new(cmd, a_cd, "ae", ae_handler, NULL);
+	RzCmdDesc *ae_cd = rz_cmd_desc_argv_new(cmd, a_cd, "ae", ae_handler, &fake_help);
 	RzCmdDesc *aeir_cd = rz_cmd_desc_argv_new(cmd, ae_cd, "aeir", aeir_handler, &fake_help);
-	RzCmdDesc *w_cd = rz_cmd_desc_argv_new(cmd, root, "w", w_handler, NULL);
+	rz_cmd_desc_argv_new(cmd, root, "w", w_handler, &fake_help);
 
 	mu_assert_null(rz_cmd_get_desc(cmd, "afl"), "afl does not have any handler");
 	mu_assert_ptreq(rz_cmd_get_desc(cmd, "ap"), ap_cd, "ap will be handled by ap");
-	mu_assert_ptreq(rz_cmd_get_desc(cmd, "wx"), w_cd, "wx will be handled by w");
-	mu_assert_ptreq(rz_cmd_get_desc(cmd, "wao"), w_cd, "wao will be handled by w");
+	mu_assert_null(rz_cmd_get_desc(cmd, "wx"), "wx does not have any handler");
+	mu_assert_null(rz_cmd_get_desc(cmd, "wao"), "wao does not have any handler");
 	mu_assert_null(rz_cmd_get_desc(cmd, "apx"), "apx does not have any handler");
 	mu_assert_ptreq(rz_cmd_get_desc(cmd, "apd"), apd_cd, "apd will be handled by apd");
 	mu_assert_ptreq(rz_cmd_get_desc(cmd, "ae"), ae_cd, "ae will be handled by ae");
-	mu_assert_ptreq(rz_cmd_get_desc(cmd, "aeim"), ae_cd, "aeim will be handled by ae");
+	mu_assert_null(rz_cmd_get_desc(cmd, "aeim"), "aeim does not have any handler");
 	mu_assert_ptreq(rz_cmd_get_desc(cmd, "aeir"), aeir_cd, "aeir will be handled by aeir");
-	mu_assert_ptreq(rz_cmd_get_desc(cmd, "aei"), ae_cd, "aei will be handled by ae");
+	mu_assert_null(rz_cmd_get_desc(cmd, "aei"), "aei does not have any handler");
 
 	rz_cmd_free(cmd);
 	mu_end;
@@ -350,7 +350,7 @@ bool test_cmd_help(void) {
 				 "| pd <num>                 # pd summary\n"
 				 "| px <verylongarg_str_num> # px summary\n";
 	RzCmdParsedArgs *a = rz_cmd_parsed_args_newcmd("p?");
-	char *h = rz_cmd_get_help(cmd, a, false);
+	char *h = rz_cmd_get_help(cmd, a, false, 0);
 	mu_assert_notnull(h, "help is not null");
 	mu_assert_streq(h, p_help_exp, "wrong help for p?");
 	free(h);
@@ -363,14 +363,14 @@ bool test_cmd_help(void) {
 				       "Examples:\n"
 				       "| pd 10 # print 10 disassembled instructions\n";
 	a = rz_cmd_parsed_args_newcmd("pd??");
-	h = rz_cmd_get_help(cmd, a, false);
+	h = rz_cmd_get_help(cmd, a, false, 0);
 	mu_assert_notnull(h, "help is not null");
 	mu_assert_streq(h, pd_long_help_exp, "wrong help for pd??");
 	free(h);
 	rz_cmd_parsed_args_free(a);
 
 	a = rz_cmd_parsed_args_newcmd("pd?");
-	h = rz_cmd_get_help(cmd, a, false);
+	h = rz_cmd_get_help(cmd, a, false, 0);
 	mu_assert_notnull(h, "help is not null");
 	mu_assert_streq(h, pd_long_help_exp, "wrong help for pd?");
 	free(h);
@@ -415,7 +415,7 @@ bool test_cmd_group_help(void) {
 				 "| p        # p summary\n"
 				 "| pd <num> # pd summary\n";
 	RzCmdParsedArgs *a = rz_cmd_parsed_args_newcmd("p?");
-	char *h = rz_cmd_get_help(cmd, a, false);
+	char *h = rz_cmd_get_help(cmd, a, false, 0);
 	mu_assert_notnull(h, "help is not null");
 	mu_assert_streq(h, p_help_exp, "wrong help for p?");
 	free(h);
@@ -460,7 +460,7 @@ bool test_cmd_group_exec_help(void) {
 				       "| p        # p summary\n"
 				       "| pd <num> # pd summary\n";
 	RzCmdParsedArgs *a = rz_cmd_parsed_args_newcmd("p?");
-	char *h = rz_cmd_get_help(cmd, a, false);
+	char *h = rz_cmd_get_help(cmd, a, false, 0);
 	mu_assert_notnull(h, "help is not null");
 	mu_assert_streq(h, p_group_help_exp, "wrong help for p?");
 	free(h);
@@ -470,7 +470,7 @@ bool test_cmd_group_exec_help(void) {
 				 "\n"
 				 "This is p-command description\n";
 	a = rz_cmd_parsed_args_newcmd("p??");
-	h = rz_cmd_get_help(cmd, a, false);
+	h = rz_cmd_get_help(cmd, a, false, 0);
 	mu_assert_notnull(h, "help is not null");
 	mu_assert_streq(h, p_help_exp, "wrong help for p??");
 	free(h);
@@ -480,10 +480,10 @@ bool test_cmd_group_exec_help(void) {
 				  "\n"
 				  "pd long description\n";
 	a = rz_cmd_parsed_args_newcmd("pd?");
-	char *h1 = rz_cmd_get_help(cmd, a, false);
+	char *h1 = rz_cmd_get_help(cmd, a, false, 0);
 	rz_cmd_parsed_args_free(a);
 	a = rz_cmd_parsed_args_newcmd("pd??");
-	char *h2 = rz_cmd_get_help(cmd, a, false);
+	char *h2 = rz_cmd_get_help(cmd, a, false, 0);
 	rz_cmd_parsed_args_free(a);
 	mu_assert_streq(h1, h2, "pd? should be the same as pd?? because it is a terminal command");
 	mu_assert_streq(h1, pd_help_exp, "pd?/pd?? should print full help");
@@ -540,7 +540,7 @@ bool test_cmd_args(void) {
 	mu_assert_ptreq(rz_cmd_get_desc(cmd, "x"), x_cd, "x is found");
 
 	RzCmdParsedArgs *pa = rz_cmd_parsed_args_newcmd("x??");
-	char *h = rz_cmd_get_help(cmd, pa, false);
+	char *h = rz_cmd_get_help(cmd, pa, false, 0);
 	mu_assert_streq(h, "Usage: x <c> [<from> <to> [<n>=5]]   # x summary\n", "arguments are considered");
 	rz_cmd_parsed_args_free(pa);
 	free(h);
@@ -570,7 +570,7 @@ bool test_cmd_argv_modes(void) {
 	mu_assert_null(rz_cmd_get_desc(cmd, "z*"), "z* was not defined");
 
 	RzCmdParsedArgs *pa = rz_cmd_parsed_args_newcmd("?");
-	char *h = rz_cmd_get_help(cmd, pa, false);
+	char *h = rz_cmd_get_help(cmd, pa, false, 0);
 	char *exp_h = "Usage: [.][times][cmd][~grep][@[@iter]addr][|>pipe] ; ...\n"
 		      "| z[jqJ] # z summary\n";
 	mu_assert_streq(h, exp_h, "zj, zJ and zq are considered in the help");
@@ -583,13 +583,13 @@ bool test_cmd_argv_modes(void) {
 		"| zq      # z summary (quiet mode)\n"
 		"| zJ      # z summary (verbose JSON mode)\n";
 	pa = rz_cmd_parsed_args_newcmd("z?");
-	h = rz_cmd_get_help(cmd, pa, false);
+	h = rz_cmd_get_help(cmd, pa, false, 0);
 	mu_assert_streq(h, exp_h, "zj, zJ and zq are considered in the sub help");
 	free(h);
 	rz_cmd_parsed_args_free(pa);
 
 	pa = rz_cmd_parsed_args_newcmd("z??");
-	h = rz_cmd_get_help(cmd, pa, false);
+	h = rz_cmd_get_help(cmd, pa, false, 0);
 	mu_assert_streq(h, exp_h, "zj, zJ and zq are considered in the sub help");
 	free(h);
 	rz_cmd_parsed_args_free(pa);
@@ -625,7 +625,7 @@ bool test_cmd_argv_state(void) {
 	mu_assert_null(rz_cmd_get_desc(cmd, "z*"), "z* was not defined");
 
 	RzCmdParsedArgs *pa = rz_cmd_parsed_args_newcmd("?");
-	char *h = rz_cmd_get_help(cmd, pa, false);
+	char *h = rz_cmd_get_help(cmd, pa, false, 0);
 	char *exp_h = "Usage: [.][times][cmd][~grep][@[@iter]addr][|>pipe] ; ...\n"
 		      "| z[jqJ] # group summary\n";
 	mu_assert_streq(h, exp_h, "zj, zJ and zq are considered in the help");
@@ -633,7 +633,7 @@ bool test_cmd_argv_state(void) {
 	rz_cmd_parsed_args_free(pa);
 
 	pa = rz_cmd_parsed_args_newcmd("z?");
-	h = rz_cmd_get_help(cmd, pa, false);
+	h = rz_cmd_get_help(cmd, pa, false, 0);
 	exp_h = "Usage: z[jqJ]   # group summary\n"
 		"| z[jqJ] # z summary\n";
 	mu_assert_streq(h, exp_h, "zj, zJ and zq are considered in the sub help");
@@ -673,7 +673,7 @@ bool test_cmd_group_argv_modes(void) {
 	mu_assert_ptreq(rz_cmd_get_desc(cmd, "zd"), zd_cd, "zd is handled by zd");
 
 	RzCmdParsedArgs *pa = rz_cmd_parsed_args_newcmd("?");
-	char *h = rz_cmd_get_help(cmd, pa, false);
+	char *h = rz_cmd_get_help(cmd, pa, false, 0);
 	char *exp_h = "Usage: [.][times][cmd][~grep][@[@iter]addr][|>pipe] ; ...\n"
 		      "| z[jqd] # z group summary\n";
 	mu_assert_streq(h, exp_h, "zd is considered in the help");
@@ -681,7 +681,7 @@ bool test_cmd_group_argv_modes(void) {
 	rz_cmd_parsed_args_free(pa);
 
 	pa = rz_cmd_parsed_args_newcmd("z?");
-	h = rz_cmd_get_help(cmd, pa, false);
+	h = rz_cmd_get_help(cmd, pa, false, 0);
 	exp_h = "Usage: z[jqd]   # z group summary\n"
 		"| z[jq] # z summary\n"
 		"| zd    # fake help\n";
@@ -965,7 +965,7 @@ bool test_parent_details(void) {
 	rz_cmd_desc_argv_new(cmd, z_cd, "zx", x_array_handler, &zx_help);
 
 	RzCmdParsedArgs *args = rz_cmd_parsed_args_new("zx??", 0, NULL);
-	char *h = rz_cmd_get_help(cmd, args, false);
+	char *h = rz_cmd_get_help(cmd, args, false, 0);
 	mu_assert_strcontains(h, "Examples", "zx help should include examples from parent z");
 	mu_assert_strcontains(h, "comment", "zx help should include examples from parent z");
 	free(h);
@@ -1089,7 +1089,7 @@ static void func2_output(RzCmdStateOutput *state) {
 
 bool test_state_output_concat_standard(void) {
 	RzCmdStateOutput state;
-	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD), "state is initialized correctly");
+	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, NULL), "state is initialized correctly");
 
 	rz_cons_flush();
 	rz_cons_push();
@@ -1118,11 +1118,11 @@ bool test_state_output_concat_table(void) {
 
 	rz_cons_flush();
 	rz_cons_push();
-	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_TABLE), "state is initialized correctly");
+	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_TABLE, NULL), "state is initialized correctly");
 	func1_output(&state);
 	rz_cmd_state_output_print(&state);
 	rz_cmd_state_output_fini(&state);
-	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_TABLE), "state is initialized correctly");
+	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_TABLE, NULL), "state is initialized correctly");
 	func2_output(&state);
 	rz_cmd_state_output_print(&state);
 	rz_cmd_state_output_fini(&state);
@@ -1145,11 +1145,11 @@ bool test_state_output_concat_mix(void) {
 
 	rz_cons_flush();
 	rz_cons_push();
-	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_TABLE), "state is initialized correctly");
+	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_TABLE, NULL), "state is initialized correctly");
 	func1_output(&state);
 	rz_cmd_state_output_print(&state);
 	rz_cmd_state_output_fini(&state);
-	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET), "state is initialized correctly");
+	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET, NULL), "state is initialized correctly");
 	func2_output(&state);
 	rz_cmd_state_output_print(&state);
 	rz_cmd_state_output_fini(&state);
@@ -1170,11 +1170,11 @@ bool test_state_output_concat_json(void) {
 
 	rz_cons_flush();
 	rz_cons_push();
-	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON), "state is initialized correctly");
+	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON, NULL), "state is initialized correctly");
 	func1_output(&state);
 	rz_cmd_state_output_print(&state);
 	rz_cmd_state_output_fini(&state);
-	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON), "state is initialized correctly");
+	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON, NULL), "state is initialized correctly");
 	func2_output(&state);
 	rz_cmd_state_output_print(&state);
 	rz_cmd_state_output_fini(&state);
@@ -1186,7 +1186,7 @@ bool test_state_output_concat_json(void) {
 
 	rz_cons_flush();
 	rz_cons_push();
-	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON), "state is initialized correctly");
+	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON, NULL), "state is initialized correctly");
 	pj_o(state.d.pj);
 	pj_k(state.d.pj, "first");
 	func1_output(&state);
@@ -1239,7 +1239,7 @@ bool test_default_mode(void) {
 	rz_cmd_parsed_args_free(pa);
 
 	pa = rz_cmd_parsed_args_new("x?", 0, NULL);
-	char *h = rz_cmd_get_help(cmd, pa, false);
+	char *h = rz_cmd_get_help(cmd, pa, false, 0);
 	mu_assert_strcontains(h, "x[jqJ]   # x summary (JSON mode)", "x help should contain the default=json mode");
 	mu_assert_strcontains(h, "xj      # x summary (JSON mode)", "x help should contain the json mode");
 	mu_assert_strcontains(h, "xq      # x summary (quiet mode)", "x help should contain the quiet mode");
@@ -1276,7 +1276,7 @@ bool test_details_cb(void) {
 	rz_cmd_desc_argv_modes_new(cmd, root, "z", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_LONG_JSON, z_modes_handler, &z_help);
 
 	RzCmdParsedArgs *pa = rz_cmd_parsed_args_new("z?", 0, NULL);
-	char *h = rz_cmd_get_help(cmd, pa, false);
+	char *h = rz_cmd_get_help(cmd, pa, false, 0);
 	mu_assert_strcontains(h, "# dynamically generated detail", "z help should contain result of the details_cb");
 	mu_assert_strcontains(h, "Examples 2", "z help should contain result of the details_cb 2");
 	free(h);
@@ -1292,9 +1292,9 @@ bool test_get_best_match(void) {
 	RzCmdDesc *a_cd = rz_cmd_desc_group_new(cmd, root, "a", NULL, NULL, &fake_help);
 	RzCmdDesc *ap_cd = rz_cmd_desc_group_new(cmd, a_cd, "ap", ap_handler, NULL, &fake_help);
 	RzCmdDesc *apd_cd = rz_cmd_desc_argv_new(cmd, ap_cd, "apd", ap_handler, &fake_help);
-	RzCmdDesc *ae_cd = rz_cmd_desc_argv_new(cmd, a_cd, "ae", ae_handler, NULL);
+	RzCmdDesc *ae_cd = rz_cmd_desc_argv_new(cmd, a_cd, "ae", ae_handler, &fake_help);
 	rz_cmd_desc_argv_new(cmd, ae_cd, "aeir", aeir_handler, &fake_help);
-	rz_cmd_desc_argv_new(cmd, root, "w", w_handler, NULL);
+	rz_cmd_desc_argv_new(cmd, root, "w", w_handler, &fake_help);
 
 	mu_assert_ptreq(rz_cmd_get_desc_best(cmd, "ap"), ap_cd, "ap should be best match for ap");
 	mu_assert_ptreq(rz_cmd_get_desc_best(cmd, "apn"), ap_cd, "ap should be best match for apn");
@@ -1321,7 +1321,7 @@ bool test_simple_macros(void) {
 	mu_assert_true(res, "macro1 should be added");
 	RzList *l = rz_cmd_macro_list(cmd);
 	mu_assert_eq(rz_list_length(l), 1, "no macros");
-	const RzCmdMacro *macro1 = (const RzCmdMacro *)rz_list_first(l);
+	const RzCmdMacro *macro1 = (const RzCmdMacro *)rz_list_first_val(l);
 	mu_assert_streq(macro1->name, "macro1", "macro should be named macro1");
 	mu_assert_eq(macro1->nargs, 2, "macro1 should have 2 args");
 	mu_assert_streq(macro1->args[0], "a", "macro1 first arg should be a");
@@ -1430,6 +1430,32 @@ bool test_call_multiple_macros(void) {
 	mu_end;
 }
 
+bool test_cmd_descriptor_folder_arg(void) {
+	RzCmdDescArg folder_args[] = {
+		{ .name = "folder_path", .type = RZ_CMD_ARG_TYPE_FOLDER },
+		{ 0 }
+	};
+
+	RzCmdDescHelp folder_help = {
+		.summary = "test folder argument",
+		.args = folder_args
+	};
+
+	RzCmd *cmd = rz_cmd_new(NULL, false);
+	RzCmdDesc *root = rz_cmd_get_root(cmd);
+
+	RzCmdDesc *cd = rz_cmd_desc_argv_new(cmd, root, "testfolder",
+		NULL, &folder_help);
+
+	mu_assert_notnull(cd, "folder command created");
+
+	const RzCmdDescArg *arg = rz_cmd_desc_get_arg(cd, 0);
+	mu_assert_eq(arg->type, RZ_CMD_ARG_TYPE_FOLDER, "type is FOLDER");
+
+	rz_cmd_free(cmd);
+	mu_end;
+}
+
 int all_tests() {
 	rz_cons_new();
 	mu_run_test(test_parsed_args_noargs);
@@ -1474,6 +1500,7 @@ int all_tests() {
 	mu_run_test(test_remove_macros);
 	mu_run_test(test_call_macros);
 	mu_run_test(test_call_multiple_macros);
+	mu_run_test(test_cmd_descriptor_folder_arg);
 	return tests_passed != tests_run;
 }
 

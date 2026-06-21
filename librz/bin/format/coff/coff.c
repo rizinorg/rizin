@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2019-2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-FileCopyrightText: 2008-2019 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2008-2019 inisider <inisider@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
@@ -6,31 +7,121 @@
 
 #include "coff.h"
 
-RZ_API bool rz_coff_supported_arch(const ut8 *buf) {
-	ut16 arch = rz_read_le16(buf);
+static bool coff_is_magic(ut16 arch) {
 	switch (arch) {
-	case COFF_FILE_MACHINE_MIPS16:
-	case COFF_FILE_MACHINE_MIPSFPU:
-	case COFF_FILE_MACHINE_MIPSFPU16:
+	case COFF_FILE_MACHINE_ALPHA:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_ALPHA64:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_AM33:
+		/* fall-thru */
 	case COFF_FILE_MACHINE_AMD64:
-	case COFF_FILE_MACHINE_I386:
-	case COFF_FILE_MACHINE_H8300:
-	case COFF_FILE_TI_COFF:
-	case COFF_FILE_MACHINE_R4000:
-	case COFF_FILE_MACHINE_AMD29KBE:
-	case COFF_FILE_MACHINE_AMD29KLE:
-	case COFF_FILE_MACHINE_SH3:
-	case COFF_FILE_MACHINE_SH3DSP:
-	case COFF_FILE_MACHINE_SH4:
-	case COFF_FILE_MACHINE_SH5:
-	case COFF_FILE_MACHINE_THUMB:
+		/* fall-thru */
 	case COFF_FILE_MACHINE_ARM:
-	case COFF_FILE_MACHINE_ARM64:
+		/* fall-thru */
 	case COFF_FILE_MACHINE_ARMNT:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_ARM64:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_EBC:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_I386:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_I386_PTX:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_I386_AIX:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_IA64:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_M32R:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_MIPS16:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_MIPSFPU:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_MIPSFPU16:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_AMD29KBE:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_AMD29KLE:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_POWERPC:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_POWERPCFP:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_SH3:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_SH3DSP:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_SH4:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_SH5:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_THUMB:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_WCEMIPSV2:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_H8300:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_H8500:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_M68K:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_68KAUX:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_PIC30:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_I960RO:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_I960RW:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_R3000:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_R4000:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_R10000:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_RISCV32:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_RISCV64:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_RISCV128:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_TI_1:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_TI_2:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_MIL1750:
 		return true;
 	default:
 		return false;
 	}
+}
+
+static bool coff_is_ti_machine(struct rz_bin_coff_obj *obj) {
+	return obj->hdr.f_magic == COFF_FILE_MACHINE_TI_1 ||
+		obj->hdr.f_magic == COFF_FILE_MACHINE_TI_2;
+}
+
+static bool coff_guess_endianness(RzBuffer *b, bool *big_endian) {
+	ut16 magic = 0;
+	if (!rz_buf_read_le16_at(b, 0, &magic)) {
+		return false;
+	} else if (coff_is_magic(magic)) {
+		*big_endian = false;
+		return true;
+	} else if (!rz_buf_read_be16_at(b, 0, &magic)) {
+		return false;
+	} else if (coff_is_magic(magic)) {
+		*big_endian = true;
+		return true;
+	}
+	return false;
+}
+
+RZ_API bool rz_coff_supported_arch(RzBuffer *b) {
+	bool big_endian = false;
+	return coff_guess_endianness(b, &big_endian);
 }
 
 RZ_API ut64 rz_coff_perms_from_section_flags(ut32 flags) {
@@ -63,12 +154,12 @@ RZ_API RZ_OWN char *rz_coff_symbol_name(RZ_NONNULL struct rz_bin_coff_obj *obj, 
 	if (!ptr) {
 		return rz_str_dup("");
 	}
-	ut32 zero = rz_read_at_ble32(ptr, 0, obj->endian == COFF_IS_BIG_ENDIAN);
-	ut32 offset = rz_read_at_ble32(ptr, 4, obj->endian == COFF_IS_BIG_ENDIAN);
+	ut32 zero = rz_read_at_ble32(ptr, 0, obj->big_endian);
+	ut32 offset = rz_read_at_ble32(ptr, 4, obj->big_endian);
 	if (zero) {
 		return rz_str_ndup((const char *)ptr, 8);
 	}
-	ut32 addr = obj->hdr.f_symptr + obj->hdr.f_nsyms * sizeof(struct coff_symbol) + offset;
+	ut32 addr = obj->hdr.f_symptr + (obj->hdr.f_nsyms * COFF_SYMBOL_SIZE) + offset;
 	if (addr > obj->size) {
 		return rz_str_dup("");
 	}
@@ -84,7 +175,8 @@ static bool coff_rebase_sym(struct rz_bin_coff_obj *obj, RzBinAddr *addr, struct
 	if (sym->n_scnum < 1 || sym->n_scnum > obj->hdr.f_nscns) {
 		return false;
 	}
-	addr->paddr = obj->scn_hdrs[sym->n_scnum - 1].s_scnptr + sym->n_value;
+	CoffScnHdr *scn_hdr = rz_vector_index_ptr(obj->scn_hdrs, sym->n_scnum - 1);
+	addr->paddr = scn_hdr->s_scnptr + sym->n_value;
 	return true;
 }
 
@@ -100,6 +192,10 @@ static inline bool coff_is_symbol_name(const char *name, const char *expected) {
 /* Try to get a valid entrypoint using the methods outlined in
  * http://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_mono/ld.html#SEC24 */
 RZ_API RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj) {
+	if (rz_vector_empty(obj->symbols)) {
+		return NULL;
+	}
+
 	RzBinAddr *addr = RZ_NEW0(RzBinAddr);
 	if (!addr) {
 		return NULL;
@@ -109,17 +205,12 @@ RZ_API RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj) {
 		addr->paddr = obj->opt_hdr.entry;
 		return addr;
 	}
-	/* No help from the header eh? Use the address of the symbols '_start'
-	 * or 'main' if present */
-	if (!obj->symbols) {
-		free(addr);
-		return NULL;
-	}
 
-	for (size_t i = 0; i < obj->hdr.f_nsyms; i++) {
-		if ((coff_is_symbol_name(obj->symbols[i].n_name, "start") ||
-			    coff_is_symbol_name(obj->symbols[i].n_name, "main")) &&
-			coff_rebase_sym(obj, addr, &obj->symbols[i])) {
+	CoffSym *sym;
+	rz_vector_foreach (obj->symbols, sym) {
+		if ((coff_is_symbol_name(sym->n_name, "start") ||
+			    coff_is_symbol_name(sym->n_name, "main")) &&
+			coff_rebase_sym(obj, addr, sym)) {
 			return addr;
 		}
 	}
@@ -128,150 +219,223 @@ RZ_API RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj) {
 	return NULL;
 }
 
-static bool rz_bin_coff_init_hdr(struct rz_bin_coff_obj *obj) {
-	ut16 magic;
-	if (!rz_buf_read_le16_at(obj->b, 0, &magic)) {
-		return false;
-	}
+static bool coff_init_hdr(RzBuffer *b, ut64 *offset, struct coff_hdr *hdr, bool big_endian) {
+	return rz_buf_read_ble16_offset(b, offset, &hdr->f_magic, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &hdr->f_nscns, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &hdr->f_timdat, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &hdr->f_symptr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &hdr->f_nsyms, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &hdr->f_opthdr, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &hdr->f_flags, big_endian);
+}
 
-	switch (magic) {
-	case COFF_FILE_MACHINE_H8300:
-	case COFF_FILE_MACHINE_AMD29KBE:
-		obj->endian = COFF_IS_BIG_ENDIAN;
-		break;
-	default:
-		obj->endian = COFF_IS_LITTLE_ENDIAN;
-	}
-	int ret = 0;
-	ret = rz_buf_fread_at(obj->b, 0, (ut8 *)&obj->hdr, obj->endian ? "2S3I2S" : "2s3i2s", 1);
-	if (ret != sizeof(struct coff_hdr)) {
+static bool bin_coff_init_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj, ut64 *offset) {
+	if (!coff_init_hdr(b, offset, &obj->hdr, obj->big_endian)) {
 		return false;
-	}
-	if (obj->hdr.f_magic == COFF_FILE_TI_COFF) {
-		ret = rz_buf_fread(obj->b, (ut8 *)&obj->target_id, obj->endian ? "S" : "s", 1);
-		if (ret != sizeof(ut16)) {
-			return false;
-		}
+	} else if (coff_is_ti_machine(obj)) {
+		return rz_buf_read_ble16_offset(b, offset, &obj->target_id, obj->big_endian);
 	}
 	return true;
 }
 
-static bool rz_bin_coff_init_opt_hdr(struct rz_bin_coff_obj *obj) {
-	int ret;
+static bool bin_coff_init_opt_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj, ut64 *offset) {
 	if (!obj->hdr.f_opthdr) {
-		return false;
+		// optional header is not present.
+		return true;
 	}
-	ret = rz_buf_fread_at(obj->b, sizeof(struct coff_hdr),
-		(ut8 *)&obj->opt_hdr, obj->endian ? "2S6I" : "2s6i", 1);
-	if (ret != sizeof(struct coff_opt_hdr)) {
-		return false;
-	}
-	return true;
+
+	return rz_buf_read_ble16_offset(b, offset, &obj->opt_hdr.magic, obj->big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &obj->opt_hdr.vstamp, obj->big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &obj->opt_hdr.tsize, obj->big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &obj->opt_hdr.dsize, obj->big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &obj->opt_hdr.bsize, obj->big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &obj->opt_hdr.entry, obj->big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &obj->opt_hdr.text_start, obj->big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &obj->opt_hdr.data_start, obj->big_endian);
 }
 
-static bool rz_bin_coff_init_scn_hdr(struct rz_bin_coff_obj *obj) {
-	int ret, size;
-	ut64 offset = sizeof(struct coff_hdr) + (obj->hdr.f_opthdr ? sizeof(struct coff_opt_hdr) : 0);
-	if (obj->hdr.f_magic == COFF_FILE_TI_COFF) {
-		offset += 2;
+static bool coff_init_scn_hdr(RzBuffer *b, ut64 *offset, struct coff_scn_hdr *scn, bool big_endian) {
+	return rz_buf_read_offset(b, offset, (ut8 *)scn->s_name, sizeof(scn->s_name)) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_paddr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_vaddr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_size, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_scnptr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_relptr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_lnnoptr, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &scn->s_nreloc, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &scn->s_nlnno, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_flags, big_endian);
+}
+
+/* TI COFF v2 section header is 48 bytes (vs 40 for the standard
+ * COFF1 form). The relocation and line-number counts are widened
+ * from 16 to 32 bits, and a 2-byte reserved field plus a 2-byte
+ * memory-page-number field are appended. The TI 'Common Object File
+ * Format Specification' (SPRAAO8) documents this; the asm55p /
+ * cl55 toolchain in the TI C55x+ SDK produces this layout. Mis-
+ * parsing as the 40-byte form leaves the section table walking
+ * off-by-8 per section, which in practice produces vaddr and size
+ * fields full of garbage (e.g. 0x7461642e, ASCII '.dat' from the
+ * adjacent section name). */
+static bool coff_init_scn_hdr_ti(RzBuffer *b, ut64 *offset, struct coff_scn_hdr *scn, bool big_endian) {
+	ut32 nreloc32 = 0;
+	ut32 nlnno32 = 0;
+	ut16 reserved = 0;
+	ut16 mempage = 0;
+	bool ok = rz_buf_read_offset(b, offset, (ut8 *)scn->s_name, sizeof(scn->s_name)) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_paddr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_vaddr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_size, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_scnptr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_relptr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_lnnoptr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &nreloc32, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &nlnno32, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_flags, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &reserved, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &mempage, big_endian);
+	if (ok) {
+		/* Clamp the wider TI counts to the 16-bit fields that the
+		 * rest of the COFF code uses; the section table is the only
+		 * place where TI widens these. Real-world section relocation
+		 * counts well above 64K are unheard of. */
+		scn->s_nreloc = (ut16)(nreloc32 > UT16_MAX ? UT16_MAX : nreloc32);
+		scn->s_nlnno = (ut16)(nlnno32 > UT16_MAX ? UT16_MAX : nlnno32);
 	}
-	size = obj->hdr.f_nscns * sizeof(struct coff_scn_hdr);
-	if (offset > obj->size || offset + size > obj->size || size < 0) {
-		return false;
-	}
-	obj->scn_hdrs = calloc(1, size + sizeof(struct coff_scn_hdr));
+	return ok;
+}
+
+static bool bin_coff_init_scn_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj, ut64 *offset) {
+	obj->scn_hdrs = rz_vector_new(sizeof(struct coff_scn_hdr), NULL, NULL);
 	if (!obj->scn_hdrs) {
 		return false;
 	}
-	ret = rz_buf_fread_at(obj->b, offset, (ut8 *)obj->scn_hdrs, obj->endian ? "8c6I2S1I" : "8c6i2s1i", obj->hdr.f_nscns);
-	if (ret != size) {
-		RZ_FREE(obj->scn_hdrs);
-		return false;
+
+	const bool ti_v2 = coff_is_ti_machine(obj);
+	for (size_t i = 0; i < obj->hdr.f_nscns; ++i) {
+		struct coff_scn_hdr scn = { 0 };
+		const bool ok = ti_v2
+			? coff_init_scn_hdr_ti(b, offset, &scn, obj->big_endian)
+			: coff_init_scn_hdr(b, offset, &scn, obj->big_endian);
+		if (!ok) {
+			return false;
+		}
+		rz_vector_push(obj->scn_hdrs, &scn);
 	}
+
 	return true;
 }
 
-static bool rz_bin_coff_init_symtable(struct rz_bin_coff_obj *obj) {
-	int ret, size;
+static bool coff_init_sym(RzBuffer *b, ut64 *offset, struct coff_symbol *sym, bool big_endian) {
+	return rz_buf_read_offset(b, offset, (ut8 *)sym->n_name, sizeof(sym->n_name)) &&
+		rz_buf_read_ble32_offset(b, offset, &sym->n_value, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &sym->n_scnum, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &sym->n_type, big_endian) &&
+		rz_buf_read_ble8_offset(b, offset, &sym->n_sclass, big_endian) &&
+		rz_buf_read_ble8_offset(b, offset, &sym->n_numaux, big_endian);
+}
+
+static bool bin_coff_init_symtable(RzBuffer *b, struct rz_bin_coff_obj *obj) {
 	ut64 offset = obj->hdr.f_symptr;
-	if (obj->hdr.f_nsyms >= 0xffff || !obj->hdr.f_nsyms) { // too much symbols, probably not allocatable
+	if (obj->hdr.f_nsyms >= 0xffff) {
+		// too many symbols, probably not allocatable
 		return false;
 	}
-	size = obj->hdr.f_nsyms * sizeof(struct coff_symbol);
-	if (size < 0 ||
-		size > obj->size ||
-		offset > obj->size ||
-		offset + size > obj->size) {
-		return false;
-	}
-	obj->symbols = calloc(1, size + sizeof(struct coff_symbol));
+
+	obj->symbols = rz_vector_new(sizeof(struct coff_symbol), NULL, NULL);
 	if (!obj->symbols) {
 		return false;
 	}
-	ret = rz_buf_fread_at(obj->b, offset, (ut8 *)obj->symbols, obj->endian ? "8c1I2S2c" : "8c1i2s2c", obj->hdr.f_nsyms);
-	if (ret != size) {
-		RZ_FREE(obj->symbols);
-		return false;
+
+	for (size_t i = 0; i < obj->hdr.f_nsyms; ++i) {
+		struct coff_symbol sym = { 0 };
+		if (!coff_init_sym(b, &offset, &sym, obj->big_endian)) {
+			return false;
+		}
+		rz_vector_push(obj->symbols, &sym);
 	}
+
 	return true;
 }
 
-static bool rz_bin_coff_init_scn_va(struct rz_bin_coff_obj *obj) {
+static bool bin_coff_init_scn_va(struct rz_bin_coff_obj *obj) {
 	obj->scn_va = RZ_NEWS(ut64, obj->hdr.f_nscns);
 	if (!obj->scn_va) {
 		return false;
 	}
-	int i;
+	// A fully linked executable (F_EXEC) carries the real load addresses in
+	// each section's s_vaddr; honor them so section and symbol VAs match the
+	// binary (e.g. TI COFF executables place .text at 0x100, .bss high, and
+	// vectors at 0xffff00 -- not a packed sequential layout). For relocatable
+	// objects (s_vaddr typically all zero) keep the historical sequential,
+	// 16-aligned fallback so each section still gets a distinct base.
+	const bool is_exec = (obj->hdr.f_flags & COFF_FLAGS_TI_F_EXEC) != 0;
+	size_t i = 0;
 	ut64 va = 0;
-	for (i = 0; i < obj->hdr.f_nscns; i++) {
+	CoffScnHdr *scn_hdr;
+	rz_vector_enumerate (obj->scn_hdrs, scn_hdr, i) {
+		if (is_exec) {
+			obj->scn_va[i] = scn_hdr->s_vaddr;
+			continue;
+		}
 		obj->scn_va[i] = va;
-		va += obj->scn_hdrs[i].s_size ? obj->scn_hdrs[i].s_size : 16;
+		va += scn_hdr->s_size ? scn_hdr->s_size : 16;
 		va = RZ_ROUND(va, 16ULL);
 	}
 	return true;
 }
 
-static int rz_bin_coff_init(struct rz_bin_coff_obj *obj, RzBuffer *buf, bool verbose) {
+RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf) {
+	ut64 offset = 0;
+	struct rz_bin_coff_obj *obj = RZ_NEW0(struct rz_bin_coff_obj);
+	if (!obj) {
+		return NULL;
+	}
 	obj->b = rz_buf_ref(buf);
 	obj->size = rz_buf_size(buf);
-	obj->verbose = verbose;
 	obj->sym_ht = ht_up_new(NULL, NULL);
 	obj->imp_ht = ht_up_new(NULL, NULL);
 	obj->imp_index = ht_uu_new();
-	if (!rz_bin_coff_init_hdr(obj)) {
+
+	if (!coff_guess_endianness(buf, &obj->big_endian)) {
+		RZ_LOG_ERROR("failed to guess magic & endianness\n");
+		rz_bin_coff_free(obj);
+		return NULL;
+	} else if (!bin_coff_init_hdr(buf, obj, &offset)) {
 		RZ_LOG_ERROR("failed to init hdr\n");
-		return false;
-	}
-	rz_bin_coff_init_opt_hdr(obj);
-	if (!rz_bin_coff_init_scn_hdr(obj)) {
+		rz_bin_coff_free(obj);
+		return NULL;
+	} else if (!bin_coff_init_opt_hdr(buf, obj, &offset)) {
+		RZ_LOG_ERROR("failed to init optional hdr\n");
+		rz_bin_coff_free(obj);
+		return NULL;
+	} else if (!bin_coff_init_scn_hdr(buf, obj, &offset)) {
 		RZ_LOG_ERROR("failed to init section header\n");
-		return false;
-	}
-	if (!rz_bin_coff_init_scn_va(obj)) {
+		rz_bin_coff_free(obj);
+		return NULL;
+	} else if (!bin_coff_init_scn_va(obj)) {
 		RZ_LOG_ERROR("failed to init section VA table\n");
-		return false;
-	}
-	if (!rz_bin_coff_init_symtable(obj)) {
+		rz_bin_coff_free(obj);
+		return NULL;
+	} else if (!bin_coff_init_symtable(buf, obj)) {
 		RZ_LOG_ERROR("failed to init symtable\n");
-		return false;
+		rz_bin_coff_free(obj);
+		return NULL;
 	}
-	return true;
+
+	return obj;
 }
 
 RZ_API void rz_bin_coff_free(struct rz_bin_coff_obj *obj) {
+	if (!obj) {
+		return;
+	}
 	ht_up_free(obj->sym_ht);
 	ht_up_free(obj->imp_ht);
 	ht_uu_free(obj->imp_index);
 	free(obj->scn_va);
-	free(obj->scn_hdrs);
-	free(obj->symbols);
+	rz_vector_free(obj->scn_hdrs);
+	rz_vector_free(obj->symbols);
 	rz_buf_free(obj->buf_patched);
-	rz_buf_free(obj->b);
 	free(obj);
-}
-
-RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf, bool verbose) {
-	struct rz_bin_coff_obj *bin = RZ_NEW0(struct rz_bin_coff_obj);
-	rz_bin_coff_init(bin, buf, verbose);
-	return bin;
 }

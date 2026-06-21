@@ -11,9 +11,9 @@ b 777
 EOF
 EXPECT=<<EOF
 
-0x00000000 4 hit.string.ascii.0
-0x0000014d 4 hit.string.ascii.1
-0x0000029a 4 hit.string.ascii.2
+0x00000000 4 hit.string.ascii.0 4
+0x0000014d 4 hit.string.ascii.1 4
+0x0000029a 4 hit.string.ascii.2 4
 EOF
 RUN
 

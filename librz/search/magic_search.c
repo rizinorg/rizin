@@ -10,7 +10,7 @@
 #include "search_internal.h"
 
 static RzMagic *setup_magic_instance(const char *magic_dir) {
-	RzMagic *magic = rz_magic_new(0);
+	RzMagic *magic = rz_magic_new();
 	if (!magic) {
 		RZ_LOG_ERROR("search: cannot initialize RzMagic.\n");
 		return NULL;
@@ -42,12 +42,13 @@ static bool magic_find(RzSearchFindOpt *fopt, void *user, ut64 address, const Rz
 	for (size_t i = 0; i < size; i += 2) {
 		RAW_BUF_ITER_ALIGN(fopt, address, i);
 		size_t leftovers = size - i;
-		const char *match = rz_magic_buffer(magic, raw_buf + i, leftovers);
+		char *match = rz_magic_buffer(magic, raw_buf + i, leftovers);
 		if (!match) {
 			continue;
 		}
 
 		RzSearchHitDetail *detail = rz_search_hit_detail_string_new(match);
+		free(match);
 		if (!detail) {
 			RZ_LOG_ERROR("search: failed to allocate magic hit detail.\n");
 			return false;

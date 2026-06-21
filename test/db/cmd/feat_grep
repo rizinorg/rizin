@@ -303,7 +303,7 @@ e asm.bytes=true
 pd 40~0x004005fe
 EOF
 EXPECT=<<EOF
-        `-> 0x004005fe      4883c408       add   rsp, 8
+  0x004005fe      4883c408       add   rsp, 0x08
 EOF
 RUN
 
@@ -340,7 +340,6 @@ RUN
 
 NAME=escaped chars 2
 FILE==
-BROKEN=1
 CMDS=echo Hello\n\x3bWorld~\;
 EXPECT=<<EOF
 ;World

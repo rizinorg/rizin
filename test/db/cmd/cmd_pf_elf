@@ -1,6 +1,7 @@
 NAME=32: Elf header size
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 pfo elf32
 pfs elf_header
 EOF
@@ -12,6 +13,7 @@ RUN
 NAME=64: Elf header size
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 pfo elf64
 pfs elf_header
 EOF
@@ -23,6 +25,7 @@ RUN
 NAME=32: Elf program header size
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 pfo elf32
 pfs elf_phdr
 EOF
@@ -34,6 +37,7 @@ RUN
 NAME=64: Elf program header size
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 pfo elf64
 pfs elf_phdr
 EOF
@@ -45,6 +49,7 @@ RUN
 NAME=32: Elf section header size
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 pfo elf32
 pfs elf_shdr
 EOF
@@ -56,6 +61,7 @@ RUN
 NAME=64: Elf section header size
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 pfo elf64
 pfs elf_shdr
 EOF
@@ -67,139 +73,138 @@ RUN
 NAME=32: Multiple section headers
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 pfo elf32
 pf "[2]? (elf_shdr)sections"
 EOF
 EXPECT=<<EOF
- sections : 
-[
-                struct<elf_shdr>
-                name : 0x00000000 = 0x00000000
-                type : 0x00000004 = type (enum elf_s_type) = 0x0 ; SHT_NULL
-               flags : 0x00000008 = flags (enum elf_s_flags_32) = 0x0 ; SF32_None
-                addr : 0x0000000c = 0x00000000
-              offset : 0x00000010 = 0x00000000
-                size : 0x00000014 = 0x00000000
-                link : 0x00000018 = 0x00000000
-                info : 0x0000001c = 0x00000000
-           addralign : 0x00000020 = 0x00000000
-             entsize : 0x00000024 = 0x00000000
-
-                struct<elf_shdr>
-                name : 0x00000028 = 0x00000000
-                type : 0x0000002c = type (enum elf_s_type) = 0x0 ; SHT_NULL
-               flags : 0x00000030 = flags (enum elf_s_flags_32) = 0x0 ; SF32_None
-                addr : 0x00000034 = 0x00000000
-              offset : 0x00000038 = 0x00000000
-                size : 0x0000003c = 0x00000000
-                link : 0x00000040 = 0x00000000
-                info : 0x00000044 = 0x00000000
-           addralign : 0x00000048 = 0x00000000
-             entsize : 0x0000004c = 0x00000000
-]
+0x00000000 : sections = struct<elf_shdr> {
+   0x00000000 :      name = 0x00000000
+   0x00000004 :      type = 0x00000000 ; SHT_NULL
+   0x00000008 :     flags = 0x00000000 ; SF32_None
+   0x0000000c :      addr = 0x00000000
+   0x00000010 :    offset = 0x00000000
+   0x00000014 :      size = 0x00000000
+   0x00000018 :      link = 0x00000000
+   0x0000001c :      info = 0x00000000
+   0x00000020 : addralign = 0x00000000
+   0x00000024 :   entsize = 0x00000000
+   0x00000028 :      name = 0x00000000
+   0x0000002c :      type = 0x00000000 ; SHT_NULL
+   0x00000030 :     flags = 0x00000000 ; SF32_None
+   0x00000034 :      addr = 0x00000000
+   0x00000038 :    offset = 0x00000000
+   0x0000003c :      size = 0x00000000
+   0x00000040 :      link = 0x00000000
+   0x00000044 :      info = 0x00000000
+   0x00000048 : addralign = 0x00000000
+   0x0000004c :   entsize = 0x00000000
+}
 EOF
 RUN
 
 NAME=64: Multiple section headers
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 pfo elf64
 pf "[2]? (elf_shdr)sections"
 EOF
 EXPECT=<<EOF
- sections : 
-[
-                struct<elf_shdr>
-                name : 0x00000000 = 0x00000000
-                type : 0x00000004 = type (enum elf_s_type) = 0x0 ; SHT_NULL
-               flags : 0x00000008 = flags (enum elf_s_flags_64) = 0x0 ; SF64_None
-                addr : 0x00000010 = (qword)0x0000000000000000
-              offset : 0x00000018 = (qword)0x0000000000000000
-                size : 0x00000020 = (qword)0x0000000000000000
-                link : 0x00000028 = 0x00000000
-                info : 0x0000002c = 0x00000000
-           addralign : 0x00000030 = (qword)0x0000000000000000
-             entsize : 0x00000038 = (qword)0x0000000000000000
-
-                struct<elf_shdr>
-                name : 0x00000040 = 0x00000000
-                type : 0x00000044 = type (enum elf_s_type) = 0x0 ; SHT_NULL
-               flags : 0x00000048 = flags (enum elf_s_flags_64) = 0x0 ; SF64_None
-                addr : 0x00000050 = (qword)0x0000000000000000
-              offset : 0x00000058 = (qword)0x0000000000000000
-                size : 0x00000060 = (qword)0x0000000000000000
-                link : 0x00000068 = 0x00000000
-                info : 0x0000006c = 0x00000000
-           addralign : 0x00000070 = (qword)0x0000000000000000
-             entsize : 0x00000078 = (qword)0x0000000000000000
-]
+0x00000000 : sections = struct<elf_shdr> {
+   0x00000000 :      name = 0x00000000
+   0x00000004 :      type = 0x00000000 ; SHT_NULL
+   0x00000008 :     flags = 0x00000000 ; SF64_None
+   0x00000010 :      addr = 0x0000000000000000
+   0x00000018 :    offset = 0x0000000000000000
+   0x00000020 :      size = 0x0000000000000000
+   0x00000028 :      link = 0x00000000
+   0x0000002c :      info = 0x00000000
+   0x00000030 : addralign = 0x0000000000000000
+   0x00000038 :   entsize = 0x0000000000000000
+   0x00000040 :      name = 0x00000000
+   0x00000044 :      type = 0x00000000 ; SHT_NULL
+   0x00000048 :     flags = 0x00000000 ; SF64_None
+   0x00000050 :      addr = 0x0000000000000000
+   0x00000058 :    offset = 0x0000000000000000
+   0x00000060 :      size = 0x0000000000000000
+   0x00000068 :      link = 0x00000000
+   0x0000006c :      info = 0x00000000
+   0x00000070 : addralign = 0x0000000000000000
+   0x00000078 :   entsize = 0x0000000000000000
+}
 EOF
 RUN
 
 NAME=Issue 5640 pfj produce wrong json
 FILE=bins/elf/analysis/main
-ARGS=-nn
-CMDS=pfj {1}? (elf_phdr) @ 0x0000000000000040
+ARGS=-nn -a x86
+CMDS=<<EOF
+pfo elf64
+pfj {1}? (elf_phdr) @ 0x0000000000000040
+EOF
 EXPECT=<<EOF
-[{"name":"","type":"elf_phdr","offset":64,"value":[{"name":"type","type":"E","offset":64,"value":6,"label":"PT_PHDR","enum":"elf_p_type"},{"name":"flags","type":"E","offset":68,"value":5,"label":"PF_Read_Exec","enum":"elf_p_flags"},{"name":"offset","type":"q","offset":72,"value":64},{"name":"vaddr","type":"q","offset":80,"value":4194368},{"name":"paddr","type":"q","offset":88,"value":4194368},{"name":"filesz","type":"q","offset":96,"value":448},{"name":"memsz","type":"q","offset":104,"value":448},{"name":"align","type":"q","offset":112,"value":8}]}]
+[{"name":"","type":"unknown","offset":64,"struct_type":"elf_phdr","fields":[{"name":"type","type":"enum","size":4,"offset":64,"value":6},{"name":"flags","type":"enum","size":4,"offset":68,"value":5},{"name":"offset","type":"hex","size":8,"offset":72,"value":64},{"name":"vaddr","type":"hex","size":8,"offset":80,"value":4194368},{"name":"paddr","type":"hex","size":8,"offset":88,"value":4194368},{"name":"filesz","type":"hex","size":8,"offset":96,"value":448},{"name":"memsz","type":"hex","size":8,"offset":104,"value":448},{"name":"align","type":"hex","size":8,"offset":112,"value":8}]}]
 EOF
 RUN
 
 NAME=32: Elf header
 FILE=bins/elf/analysis/tiny1
 CMDS=<<EOF
+e asm.arch=x86
 pfo elf32
 pf. elf_header @ 0x8048000
 EOF
 EXPECT=<<EOF
-     ident : 
-                struct<elf_ident>
-           magic : 0x08048000 = "\x7fELF"
-           class : 0x08048004 = class (enum elf_class) = 0x1 ; ELFCLASS32
-            data : 0x08048005 = data (enum elf_data) = 0x1 ; ELFDATA2LSB
-         version : 0x08048006 = version (enum elf_hdr_version) = 0x1 ; EV_CURRENT
-      type : 0x08048010 = type (enum elf_type) = 0x2 ; ET_EXEC
-   machine : 0x08048012 = machine (enum elf_machine) = 0x3 ; EM_386
-   version : 0x08048014 = version (enum elf_obj_version) = 0x1 ; EV_CURRENT
-     entry : 0x08048018 = 0x08048054
-     phoff : 0x0804801c = 0x00000034
-     shoff : 0x08048020 = 0x00000000
-     flags : 0x08048024 = 0x00000000
-    ehsize : 0x08048028 = 52
- phentsize : 0x0804802a = 32
-     phnum : 0x0804802c = 1
- shentsize : 0x0804802e = 0
-     shnum : 0x08048030 = 0
-  shstrndx : 0x08048032 = 0
+0x08048000 :     ident = struct<elf_ident> {
+   0x08048000 :   magic = "\x7fELF"
+   0x08048004 :   class = 0x00000001 ; ELFCLASS32
+   0x08048005 :    data = 0x00000001 ; ELFDATA2LSB
+   0x08048006 : version = 0x00000001 ; EV_CURRENT
+}
+0x08048010 :      type = 0x00000002 ; ET_EXEC
+0x08048012 :   machine = 0x00000003 ; EM_386
+0x08048014 :   version = 0x00000001 ; EV_CURRENT
+0x08048018 :     entry = 0x08048054
+0x0804801c :     phoff = 0x00000034
+0x08048020 :     shoff = 0x00000000
+0x08048024 :     flags = 0x00000000
+0x08048028 :    ehsize = 0x0034
+0x0804802a : phentsize = 0x0020
+0x0804802c :     phnum = 0x0001
+0x0804802e : shentsize = 0x0000
+0x08048030 :     shnum = 0x0000
+0x08048032 :  shstrndx = 0x0000
 EOF
 RUN
 
 NAME=64: Elf header
 FILE=bins/elf/analysis/x64-simple
 CMDS=<<EOF
+e asm.arch=x86
 pfo elf64
 pf. elf_header @ `i~baddr[1]`
 EOF
 EXPECT=<<EOF
-     ident : 
-                struct<elf_ident>
-           magic : 0x00400000 = "\x7fELF"
-           class : 0x00400004 = class (enum elf_class) = 0x2 ; ELFCLASS64
-            data : 0x00400005 = data (enum elf_data) = 0x1 ; ELFDATA2LSB
-         version : 0x00400006 = version (enum elf_hdr_version) = 0x1 ; EV_CURRENT
-      type : 0x00400010 = type (enum elf_type) = 0x2 ; ET_EXEC
-   machine : 0x00400012 = machine (enum elf_machine) = 0x3e ; EM_X86_64
-   version : 0x00400014 = version (enum elf_obj_version) = 0x1 ; EV_CURRENT
-     entry : 0x00400018 = (qword)0x0000000000400080
-     phoff : 0x00400020 = (qword)0x0000000000000040
-     shoff : 0x00400028 = (qword)0x00000000000000a8
-     flags : 0x00400030 = 0x00000000
-    ehsize : 0x00400034 = 64
- phentsize : 0x00400036 = 56
-     phnum : 0x00400038 = 1
- shentsize : 0x0040003a = 64
-     shnum : 0x0040003c = 3
-  shstrndx : 0x0040003e = 2
+0x00400000 :     ident = struct<elf_ident> {
+   0x00400000 :   magic = "\x7fELF"
+   0x00400004 :   class = 0x00000002 ; ELFCLASS64
+   0x00400005 :    data = 0x00000001 ; ELFDATA2LSB
+   0x00400006 : version = 0x00000001 ; EV_CURRENT
+}
+0x00400010 :      type = 0x00000002 ; ET_EXEC
+0x00400012 :   machine = 0x0000003e ; EM_X86_64
+0x00400014 :   version = 0x00000001 ; EV_CURRENT
+0x00400018 :     entry = 0x0000000000400080
+0x00400020 :     phoff = 0x0000000000000040
+0x00400028 :     shoff = 0x00000000000000a8
+0x00400030 :     flags = 0x00000000
+0x00400034 :    ehsize = 0x0040
+0x00400036 : phentsize = 0x0038
+0x00400038 :     phnum = 0x0001
+0x0040003a : shentsize = 0x0040
+0x0040003c :     shnum = 0x0003
+0x0040003e :  shstrndx = 0x0002
 EOF
 RUN
 
@@ -207,151 +212,158 @@ NAME=32: -nn elf header
 FILE=bins/elf/analysis/tiny1
 ARGS=-nn
 CMDS=<<EOF
+e asm.arch=x86
 e io.va=0
 pf. elf_header @ elf_header
 echo
 pf.j elf_header @ elf_header ~{}
 EOF
 EXPECT=<<EOF
-     ident : 
-                struct<elf_ident>
-           magic : 0x00000000 = "\x7fELF"
-           class : 0x00000004 = class (enum elf_class) = 0x1 ; ELFCLASS32
-            data : 0x00000005 = data (enum elf_data) = 0x1 ; ELFDATA2LSB
-         version : 0x00000006 = version (enum elf_hdr_version) = 0x1 ; EV_CURRENT
-      type : 0x00000010 = type (enum elf_type) = 0x2 ; ET_EXEC
-   machine : 0x00000012 = machine (enum elf_machine) = 0x3 ; EM_386
-   version : 0x00000014 = version (enum elf_obj_version) = 0x1 ; EV_CURRENT
-     entry : 0x00000018 = 0x08048054
-     phoff : 0x0000001c = 0x00000034
-     shoff : 0x00000020 = 0x00000000
-     flags : 0x00000024 = 0x00000000
-    ehsize : 0x00000028 = 52
- phentsize : 0x0000002a = 32
-     phnum : 0x0000002c = 1
- shentsize : 0x0000002e = 0
-     shnum : 0x00000030 = 0
-  shstrndx : 0x00000032 = 0
+0x00000000 :     ident = struct<elf_ident> {
+   0x00000000 :   magic = "\x7fELF"
+   0x00000004 :   class = 0x00000001 ; ELFCLASS32
+   0x00000005 :    data = 0x00000001 ; ELFDATA2LSB
+   0x00000006 : version = 0x00000001 ; EV_CURRENT
+}
+0x00000010 :      type = 0x00000002 ; ET_EXEC
+0x00000012 :   machine = 0x00000003 ; EM_386
+0x00000014 :   version = 0x00000001 ; EV_CURRENT
+0x00000018 :     entry = 0x08048054
+0x0000001c :     phoff = 0x00000034
+0x00000020 :     shoff = 0x00000000
+0x00000024 :     flags = 0x00000000
+0x00000028 :    ehsize = 0x0034
+0x0000002a : phentsize = 0x0020
+0x0000002c :     phnum = 0x0001
+0x0000002e : shentsize = 0x0000
+0x00000030 :     shnum = 0x0000
+0x00000032 :  shstrndx = 0x0000
 
 [
   {
     "name": "ident",
-    "type": "elf_ident",
+    "type": "unknown",
     "offset": 0,
-    "value": [
+    "struct_type": "elf_ident",
+    "fields": [
       {
         "name": "magic",
-        "type": "z",
+        "type": "char*",
         "offset": 0,
+        "encoding": "utf8",
         "value": "\u007fELF"
       },
       {
         "name": "class",
-        "type": "E",
+        "type": "enum",
+        "size": 4,
         "offset": 4,
-        "value": 1,
-        "label": "ELFCLASS32",
-        "enum": "elf_class"
+        "value": 1
       },
       {
         "name": "data",
-        "type": "E",
+        "type": "enum",
+        "size": 4,
         "offset": 5,
-        "value": 1,
-        "label": "ELFDATA2LSB",
-        "enum": "elf_data"
+        "value": 1
       },
       {
         "name": "version",
-        "type": "E",
+        "type": "enum",
+        "size": 4,
         "offset": 6,
-        "value": 1,
-        "label": "EV_CURRENT",
-        "enum": "elf_hdr_version"
+        "value": 1
       }
     ]
   },
   {
     "name": "type",
-    "type": "E",
+    "type": "enum",
+    "size": 4,
     "offset": 16,
-    "value": 2,
-    "label": "ET_EXEC",
-    "enum": "elf_type"
+    "value": 2
   },
   {
     "name": "machine",
-    "type": "E",
+    "type": "enum",
+    "size": 4,
     "offset": 18,
-    "value": 3,
-    "label": "EM_386",
-    "enum": "elf_machine"
+    "value": 3
   },
   {
     "name": "version",
-    "type": "E",
+    "type": "enum",
+    "size": 4,
     "offset": 20,
-    "value": 1,
-    "label": "EV_CURRENT",
-    "enum": "elf_obj_version"
+    "value": 1
   },
   {
     "name": "entry",
-    "type": "x",
+    "type": "hex",
+    "size": 4,
     "offset": 24,
     "value": 134512724
   },
   {
     "name": "phoff",
-    "type": "x",
+    "type": "hex",
+    "size": 4,
     "offset": 28,
     "value": 52
   },
   {
     "name": "shoff",
-    "type": "x",
+    "type": "hex",
+    "size": 4,
     "offset": 32,
     "value": 0
   },
   {
     "name": "flags",
-    "type": "x",
+    "type": "hex",
+    "size": 4,
     "offset": 36,
     "value": 0
   },
   {
     "name": "ehsize",
-    "type": "N2",
+    "type": "hex",
+    "size": 2,
     "offset": 40,
     "value": 52
   },
   {
     "name": "phentsize",
-    "type": "N2",
+    "type": "hex",
+    "size": 2,
     "offset": 42,
     "value": 32
   },
   {
     "name": "phnum",
-    "type": "N2",
+    "type": "hex",
+    "size": 2,
     "offset": 44,
     "value": 1
   },
   {
     "name": "shentsize",
-    "type": "N2",
+    "type": "hex",
+    "size": 2,
     "offset": 46,
     "value": 0
   },
   {
     "name": "shnum",
-    "type": "N2",
+    "type": "hex",
+    "size": 2,
     "offset": 48,
     "value": 0
   },
   {
     "name": "shstrndx",
-    "type": "N2",
+    "type": "hex",
+    "size": 2,
     "offset": 50,
     "value": 0
   }
@@ -363,35 +375,37 @@ NAME=64: -nn elf header
 FILE=bins/elf/analysis/x64-simple
 ARGS=-nn
 CMDS=<<EOF
+e asm.arch=x86
 e io.va=0
 pf. elf_header @ elf_header
 EOF
 EXPECT=<<EOF
-     ident : 
-                struct<elf_ident>
-           magic : 0x00000000 = "\x7fELF"
-           class : 0x00000004 = class (enum elf_class) = 0x2 ; ELFCLASS64
-            data : 0x00000005 = data (enum elf_data) = 0x1 ; ELFDATA2LSB
-         version : 0x00000006 = version (enum elf_hdr_version) = 0x1 ; EV_CURRENT
-      type : 0x00000010 = type (enum elf_type) = 0x2 ; ET_EXEC
-   machine : 0x00000012 = machine (enum elf_machine) = 0x3e ; EM_X86_64
-   version : 0x00000014 = version (enum elf_obj_version) = 0x1 ; EV_CURRENT
-     entry : 0x00000018 = (qword)0x0000000000400080
-     phoff : 0x00000020 = (qword)0x0000000000000040
-     shoff : 0x00000028 = (qword)0x00000000000000a8
-     flags : 0x00000030 = 0x00000000
-    ehsize : 0x00000034 = 64
- phentsize : 0x00000036 = 56
-     phnum : 0x00000038 = 1
- shentsize : 0x0000003a = 64
-     shnum : 0x0000003c = 3
-  shstrndx : 0x0000003e = 2
+0x00000000 :     ident = struct<elf_ident> {
+   0x00000000 :   magic = "\x7fELF"
+   0x00000004 :   class = 0x00000002 ; ELFCLASS64
+   0x00000005 :    data = 0x00000001 ; ELFDATA2LSB
+   0x00000006 : version = 0x00000001 ; EV_CURRENT
+}
+0x00000010 :      type = 0x00000002 ; ET_EXEC
+0x00000012 :   machine = 0x0000003e ; EM_X86_64
+0x00000014 :   version = 0x00000001 ; EV_CURRENT
+0x00000018 :     entry = 0x0000000000400080
+0x00000020 :     phoff = 0x0000000000000040
+0x00000028 :     shoff = 0x00000000000000a8
+0x00000030 :     flags = 0x00000000
+0x00000034 :    ehsize = 0x0040
+0x00000036 : phentsize = 0x0038
+0x00000038 :     phnum = 0x0001
+0x0000003a : shentsize = 0x0040
+0x0000003c :     shnum = 0x0003
+0x0000003e :  shstrndx = 0x0002
 EOF
 RUN
 
 NAME=pf elf_header times fix
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 pfo elf32
 pfn elf_header
 pfs elf_header
@@ -403,13 +417,13 @@ echo
 .(pfelf 2)
 EOF
 EXPECT=<<EOF
-?[2]E[2]E[4]ExxxxN2N2N2N2N2N2 (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
+?[2]E[2]E[4]En4n4n4n4n2n2n2n2n2n2 (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
 52
 
-{1}?[2]E[2]E[4]ExxxxN2N2N2N2N2N2 (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
+{1}?[2]E[2]E[4]En4n4n4n4n2n2n2n2n2n2 (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
 52
 
-{2}?[2]E[2]E[4]ExxxxN2N2N2N2N2N2 (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
+{2}?[2]E[2]E[4]En4n4n4n4n2n2n2n2n2n2 (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
 104
 EOF
 RUN
@@ -421,25 +435,25 @@ pfo elf32
 pf. elf_header @ segment.ehdr
 EOF
 EXPECT=<<EOF
-     ident : 
-                struct<elf_ident>
-           magic : 0x00000000 = "\x7fELF"
-           class : 0x00000004 = class (enum elf_class) = 0x1 ; ELFCLASS32
-            data : 0x00000005 = data (enum elf_data) = 0x1 ; ELFDATA2LSB
-         version : 0x00000006 = version (enum elf_hdr_version) = 0x1 ; EV_CURRENT
-      type : 0x00000010 = type (enum elf_type) = 0x3 ; ET_DYN
-   machine : 0x00000012 = machine (enum elf_machine) = 0x3 ; EM_386
-   version : 0x00000014 = version (enum elf_obj_version) = 0x1 ; EV_CURRENT
-     entry : 0x00000018 = 0x000004d0
-     phoff : 0x0000001c = 0x00000034
-     shoff : 0x00000020 = 0x0000182c
-     flags : 0x00000024 = 0x00000000
-    ehsize : 0x00000028 = 52
- phentsize : 0x0000002a = 32
-     phnum : 0x0000002c = 9
- shentsize : 0x0000002e = 40
-     shnum : 0x00000030 = 29
-  shstrndx : 0x00000032 = 28
+0x00000000 :     ident = struct<elf_ident> {
+   0x00000000 :   magic = "\x7fELF"
+   0x00000004 :   class = 0x00000001 ; ELFCLASS32
+   0x00000005 :    data = 0x00000001 ; ELFDATA2LSB
+   0x00000006 : version = 0x00000001 ; EV_CURRENT
+}
+0x00000010 :      type = 0x00000003 ; ET_DYN
+0x00000012 :   machine = 0x00000003 ; EM_386
+0x00000014 :   version = 0x00000001 ; EV_CURRENT
+0x00000018 :     entry = 0x000004d0
+0x0000001c :     phoff = 0x00000034
+0x00000020 :     shoff = 0x0000182c
+0x00000024 :     flags = 0x00000000
+0x00000028 :    ehsize = 0x0034
+0x0000002a : phentsize = 0x0020
+0x0000002c :     phnum = 0x0009
+0x0000002e : shentsize = 0x0028
+0x00000030 :     shnum = 0x001d
+0x00000032 :  shstrndx = 0x001c
 EOF
 RUN
 
@@ -450,24 +464,24 @@ pfo elf64
 pf. elf_header @ segment.ehdr
 EOF
 EXPECT=<<EOF
-     ident : 
-                struct<elf_ident>
-           magic : 0x00000000 = "\x7fELF"
-           class : 0x00000004 = class (enum elf_class) = 0x2 ; ELFCLASS64
-            data : 0x00000005 = data (enum elf_data) = 0x1 ; ELFDATA2LSB
-         version : 0x00000006 = version (enum elf_hdr_version) = 0x1 ; EV_CURRENT
-      type : 0x00000010 = type (enum elf_type) = 0x3 ; ET_DYN
-   machine : 0x00000012 = machine (enum elf_machine) = 0x3e ; EM_X86_64
-   version : 0x00000014 = version (enum elf_obj_version) = 0x1 ; EV_CURRENT
-     entry : 0x00000018 = (qword)0x00000000000006a0
-     phoff : 0x00000020 = (qword)0x0000000000000040
-     shoff : 0x00000028 = (qword)0x0000000000001a08
-     flags : 0x00000030 = 0x00000000
-    ehsize : 0x00000034 = 64
- phentsize : 0x00000036 = 56
-     phnum : 0x00000038 = 9
- shentsize : 0x0000003a = 64
-     shnum : 0x0000003c = 29
-  shstrndx : 0x0000003e = 28
+0x00000000 :     ident = struct<elf_ident> {
+   0x00000000 :   magic = "\x7fELF"
+   0x00000004 :   class = 0x00000002 ; ELFCLASS64
+   0x00000005 :    data = 0x00000001 ; ELFDATA2LSB
+   0x00000006 : version = 0x00000001 ; EV_CURRENT
+}
+0x00000010 :      type = 0x00000003 ; ET_DYN
+0x00000012 :   machine = 0x0000003e ; EM_X86_64
+0x00000014 :   version = 0x00000001 ; EV_CURRENT
+0x00000018 :     entry = 0x00000000000006a0
+0x00000020 :     phoff = 0x0000000000000040
+0x00000028 :     shoff = 0x0000000000001a08
+0x00000030 :     flags = 0x00000000
+0x00000034 :    ehsize = 0x0040
+0x00000036 : phentsize = 0x0038
+0x00000038 :     phnum = 0x0009
+0x0000003a : shentsize = 0x0040
+0x0000003c :     shnum = 0x001d
+0x0000003e :  shstrndx = 0x001c
 EOF
 RUN

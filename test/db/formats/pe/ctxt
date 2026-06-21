@@ -27,6 +27,6 @@ e asm.sub.names=false
 pi 1
 EOF
 EXPECT=<<EOF
-cmp dword [esp + 8], 1
+cmp dword [esp+0x08], 0x01
 EOF
 RUN

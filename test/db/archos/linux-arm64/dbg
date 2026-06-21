@@ -1,0 +1,90 @@
+NAME=dcu + read
+FILE=bins/arm/elf/hello-linux-arm64
+ARGS=-d
+CMDS=<<EOF
+dcu main
+pi 8 @ pc
+EOF
+EXPECT=<<EOF
+stp fp, lr, [sp, -0x10]!
+mov fp, sp
+adrp x0, 0x457000
+add x0, x0, 0xf8
+bl sym.__printf
+mov w0, 0
+ldp fp, lr, [sp], 0x10
+ret
+EOF
+RUN
+
+NAME=maps
+FILE=bins/arm/elf/hello-linux-arm64
+ARGS=-d
+CMDS=<<EOF
+dm~hello~[3-8]
+EOF
+EXPECT=<<EOF
+* usr 500K s r-x /home/travis/build/rizinorg/rizin/test/bins/arm/elf/hello-linux-arm64
+- usr 28K s rw- /home/travis/build/rizinorg/rizin/test/bins/arm/elf/hello-linux-arm64
+EOF
+RUN
+
+NAME=step and read register
+FILE=bins/arm/elf/hello-linux-arm64
+ARGS=-d
+CMDS=<<EOF
+db @ main
+dc
+5 ds
+dr x8
+ds
+dr x8
+EOF
+EXPECT=<<EOF
+x8 = 0x00000000000000e2
+x8 = 0x00000000000000e2
+EOF
+RUN
+
+NAME=write gpr
+FILE=bins/arm/elf/hello-linux-arm64
+ARGS=-d
+CMDS=<<EOF
+db @ main
+dc
+dr x8
+dr x8=0x1234
+dr x8
+EOF
+EXPECT=<<EOF
+x8 = 0x00000000000000e2
+x8 = 0x0000000000001234
+EOF
+RUN
+
+NAME=step and step over
+FILE=bins/arm/elf/hello-linux-arm64
+ARGS=-d
+CMDS=<<EOF
+e dbg.follow=1
+db @ main + 12
+dc
+pd 2~[1-]
+ds
+pd 2~[1-]
+dso
+pd 1~[1-]
+EOF
+EXPECT=<<EOF
+pc:
+b add x0 x0 0xf8
+bl sym.__printf
+pc:
+bl sym.__printf
+mov w0 0
+x30:
+pc:
+d30:
+mov w0 0
+EOF
+RUN

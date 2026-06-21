@@ -358,7 +358,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
       - name: wc-
         cname: write_cache_remove
         summary: Remove write operation at current offset or in the given range
@@ -396,7 +395,6 @@ commands:
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
       - name: wcpi
         cname: write_pcache_commit
         summary: Commit p-cache for specified <fd> or current file

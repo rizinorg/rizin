@@ -54,7 +54,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
       - name: shr
         cname: seek_redo
         summary: Go to position before the last undo (forward in history)

@@ -25,17 +25,13 @@ typedef enum rz_log_level {
 	RZ_LOGLVL_NONE = 0xFF
 } RzLogLevel;
 
-#if RZ_CHECKS_LEVEL >= 2
 #define RZ_DEFAULT_LOGLVL RZ_LOGLVL_WARN
-#else
-#define RZ_DEFAULT_LOGLVL RZ_LOGLVL_ERROR
-#endif
 
 typedef void (*RzLogCallback)(const char *output, const char *funcname, const char *filename,
 	ut32 lineno, RzLogLevel level, const char *tag, const char *fmtstr, ...) RZ_PRINTF_CHECK(7, 8);
 
 #define RZ_VLOG(lvl, tag, fmtstr, args) rz_vlog(MACRO_LOG_FUNC, __FILE__, \
-	__LINE__, lvl, tag, fmtstr, args);
+	__LINE__, lvl, tag, NULL, fmtstr, args);
 
 #define RZ_LOG(lvl, tag, fmtstr, ...) rz_log(MACRO_LOG_FUNC, __FILE__, \
 	__LINE__, lvl, tag, fmtstr, ##__VA_ARGS__);
@@ -64,6 +60,7 @@ extern "C" {
 #endif
 
 // Called by rz_core to set the configuration variables
+RZ_API RzLogLevel rz_log_get_level();
 RZ_API void rz_log_set_level(RzLogLevel level);
 RZ_API void rz_log_set_abortlevel(RzLogLevel level);
 RZ_API bool rz_log_set_file(RZ_NULLABLE const char *filename);
@@ -82,7 +79,8 @@ RZ_API void rz_log(const char *funcname, const char *filename,
 	ut32 lineno, RzLogLevel level, const char *tag, const char *fmtstr, ...) RZ_PRINTF_CHECK(6, 7);
 
 RZ_API void rz_vlog(const char *funcname, const char *filename,
-	ut32 lineno, RzLogLevel level, const char *tag, const char *fmtstr, va_list args);
+	ut32 lineno, RzLogLevel level, const char *tag, RZ_OWN RZ_NULLABLE const char **out,
+	const char *fmtstr, va_list args);
 
 RZ_API void rz_log_str(const char *funcname, const char *filename,
 	ut32 lineno, RzLogLevel level, const char *tag, const char *msg);

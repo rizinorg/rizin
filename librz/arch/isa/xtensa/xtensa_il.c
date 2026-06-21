@@ -78,7 +78,7 @@ static RzILOpEffect *x_setg(const char *name, RzILOpPure *x) {
 #define B2U32(X) BOOL_TO_BV(X, 32)
 
 typedef RzAnalysisLiftedILOp (*fn_analyze_op_il)(XtensaContext *ctx);
-typedef RzILOpPure *(fn_op2)(RzILOpBool *x, RzILOpBool *y);
+typedef RzILOpPure *(fn_op2)(RzILOpBool * x, RzILOpBool *y);
 
 enum {
 	PS_INTLEVEL, /// Interrupt level mask
@@ -325,9 +325,11 @@ static RzAnalysisLiftedILOp op_addx8(XtensaContext *ctx) {
 	return SETG(REGN(0), ADD(SHIFTL0(IREG(1), U32(3)), IREG(2)));
 }
 
+#if RZ_CHECKS_LEVEL != 0
 static uint8_t RRR_s(XtensaContext *ctx) {
 	return ctx->insn->bytes[1] & 0xf;
 }
+#endif
 
 static RzAnalysisLiftedILOp op_binary4(XtensaContext *ctx, fn_op2 f) {
 	rz_return_val_if_fail(FORMAT == XTENSA_INSN_FORM_RRR && RRR_s(ctx) % 4 == 0, NULL);
@@ -2125,7 +2127,7 @@ void xtensa_il_init_cb(RzAnalysisILVM *vm, RzReg *reg) {
 	if (!buf) {
 		return;
 	}
-	RzILMem *mem = rz_il_mem_new(buf, 32);
+	RzILMem *mem = rz_il_mem_new_owned(buf, 32);
 	if (!mem) {
 		rz_buf_free(buf);
 		return;

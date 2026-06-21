@@ -382,7 +382,9 @@ static SHParamHelper sh_il_get_param_pc_ctx(SHParam param, SHScaling scaling, ut
 		ret.pure = UN(sh_scaling_size[scaling] * BITS_PER_BYTE, param.param[0]);
 		break;
 	case SH_IMM_S:
-		ret.pure = SN(sh_scaling_size[scaling] * BITS_PER_BYTE, param.param[0]);
+		// the immediate is an 8 bit field which must be sign-extended to the
+		// operation width (e.g. `add #imm, Rn` and `mov #imm, Rn`)
+		ret.pure = SN(sh_scaling_size[scaling] * BITS_PER_BYTE, (st8)param.param[0]);
 		break;
 	default:
 		RZ_LOG_ERROR("RzIL: SuperH: Invalid addressing mode\n");
@@ -468,6 +470,7 @@ static RzILOpEffect *sh_il_set_param_pc_ctx(SHParam param, RZ_OWN RzILOpPure *va
 	case SH_IMM_S:
 	default:
 		RZ_LOG_ERROR("RzIL: SuperH: Cannot set value for addressing mode: %u\n", param.mode);
+		rz_il_op_pure_free(val);
 		return NULL;
 	}
 
@@ -514,10 +517,10 @@ static RzILOpBool *sh_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure 
 	RzILOpBool *xr = AND(DUP(xmsb), DUP(nres));
 
 	// bit = xy | ry | xr
-	RzILOpBool * or = OR(xy, ry);
+	RzILOpBool *or = OR(xy, ry);
 	or = OR(or, xr);
 
-	return or ;
+	return or;
 }
 
 /**
@@ -549,10 +552,10 @@ static RzILOpBool *sh_il_is_sub_borrow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure
 	RzILOpBool *rnx = AND(DUP(resmsb), DUP(nx));
 
 	// bit = nxy | rny | rnx
-	RzILOpBool * or = OR(nxy, rny);
+	RzILOpBool *or = OR(nxy, rny);
 	or = OR(or, rnx);
 
-	return or ;
+	return or;
 }
 
 /**
@@ -578,9 +581,9 @@ static RzILOpBool *sh_il_is_add_overflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPu
 	// res & !x & !y
 	RzILOpBool *rnxny = AND(AND(DUP(resmsb), INV(DUP(xmsb))), INV(DUP(ymsb)));
 	// or = nrxy | rnxny
-	RzILOpBool * or = OR(nrxy, rnxny);
+	RzILOpBool *or = OR(nrxy, rnxny);
 
-	return or ;
+	return or;
 }
 
 /**
@@ -606,9 +609,9 @@ static RzILOpBool *sh_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpP
 	// res & !x & y
 	RzILOpBool *rnxy = AND(AND(DUP(resmsb), INV(DUP(xmsb))), DUP(ymsb));
 	// or = nrxny | rnxy
-	RzILOpBool * or = OR(nrxny, rnxy);
+	RzILOpBool *or = OR(nrxny, rnxy);
 
-	return or ;
+	return or;
 }
 
 /* Instruction implementations */
@@ -1352,7 +1355,8 @@ static RzILOpEffect *sh_il_shlr16(const SHOp *op, ut64 pc, RzAnalysis *analysis,
  */
 static RzILOpEffect *sh_il_bf(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHILContext *ctx) {
 	RzILOpPure *new_pc = sh_il_get_effective_addr_param(0);
-	return BRANCH(VARG(SH_SR_T), JMP(new_pc), NOP());
+	// BF branches when T = 0, so the jump is the false-branch of the condition
+	return BRANCH(VARG(SH_SR_T), NOP(), JMP(new_pc));
 }
 
 /**
@@ -1363,7 +1367,8 @@ static RzILOpEffect *sh_il_bf(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHI
  */
 static RzILOpEffect *sh_il_bfs(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHILContext *ctx) {
 	RzILOpPure *new_pc = sh_il_get_effective_addr_param(0);
-	return BRANCH(VARG(SH_SR_T), JMP(new_pc), NOP());
+	// BF/S branches when T = 0, so the jump is the false-branch of the condition
+	return BRANCH(VARG(SH_SR_T), NOP(), JMP(new_pc));
 }
 
 /**

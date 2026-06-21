@@ -39,8 +39,8 @@ f. foobar @ 0x100001216
 pd 20~foo
 EOF
 EXPECT=<<EOF
-|       ,=< 0x10000120f      7f05           jg    .foobar              ; main.foobar
-|       |    .foobar:
+| 0x10000120f      7f05           jnle  .foobar                        ; main.foobar
+|  .foobar:
 EOF
 RUN
 
@@ -97,14 +97,13 @@ RUN
 
 NAME=af import
 FILE=bins/mach0/ls-osx-x86_64
-BROKEN=1
 CMDS=<<EOF
 s sym.imp.write
 af
 %v $FS
 EOF
 EXPECT=<<EOF
-before:
+0x6
 EOF
 RUN
 
@@ -129,15 +128,15 @@ EXPECT=<<EOF
 / sym.register_tm_clones();
 |           0x08048410      mov   eax, obj.completed.6891
 |           0x08048415      sub   eax, obj.completed.6891
-|           0x0804841a      sar   eax, 2
+|           0x0804841a      sar   eax, 0x02
 |           0x0804841d      mov   edx, eax
 |           0x0804841f      shr   edx, 0x1f
 |           0x08048422      add   eax, edx
-|           0x08048424      sar   eax, 1
-|       ,=< 0x08048426      je    0x8048448
-|       |   0x08048428      mov   edx, 0
+|           0x08048424      sar   eax, 0x01
+|       ,=< 0x08048426      jz    0x8048448
+|       |   0x08048428      mov   edx, 0x00
 |       |   0x0804842d      test  edx, edx
-|      ,==< 0x0804842f      je    0x8048448
+|      ,==< 0x0804842f      jz    0x8048448
 |      ||   0x08048431      push  ebp
 |      ||   0x08048432      mov   ebp, esp
 |      ||   0x08048434      sub   esp, 0x10
@@ -185,7 +184,7 @@ size: 13
 / fcn2.0x004017c0();
 |           0x004017c0      51             push  ecx
 |           0x004017c1      89e1           mov   ecx, esp
-|           0x004017c3      83c108         add   ecx, 8
+|           0x004017c3      83c108         add   ecx, 0x08
 |           0x004017c6      3d00100000     cmp   eax, 0x1000
 \       ,=< 0x004017cb      7210           jb    0x4017dd
 
@@ -195,7 +194,7 @@ size: 6
 / fcn2.0x004017c0();
 |           0x004017c0      51             push  ecx
 |           0x004017c1      89e1           mov   ecx, esp
-\           0x004017c3      83c108         add   ecx, 8
+\           0x004017c3      83c108         add   ecx, 0x08
 
 size: 11
 0x004017c0 0x004017cb 00:0000 11 j 0x004017dd f 0x004017cd
@@ -203,7 +202,7 @@ size: 11
 / fcn2.0x004017c0();
 |           0x004017c0      51             push  ecx
 |           0x004017c1      89e1           mov   ecx, esp
-|           0x004017c3      83c108         add   ecx, 8
+|           0x004017c3      83c108         add   ecx, 0x08
 \           0x004017c6      3d00100000     cmp   eax, 0x1000
 EOF
 EXPECT_ERR=
@@ -238,13 +237,13 @@ size: 9
 / fcn2.0x004017c0();
 |           0x004017c0      51             push  ecx
 |           0x004017c1      89e1           mov   ecx, esp
-|           0x004017c3      83c108         add   ecx, 8
+|           0x004017c3      83c108         add   ecx, 0x08
 ..
 
 / fcn2.0x004017c0();
 | 0x004017c0      51             push  ecx
 | 0x004017c1      89e1           mov   ecx, esp
-| 0x004017c3      83c108         add   ecx, 8
+| 0x004017c3      83c108         add   ecx, 0x08
 | 0x004017c6      3d             invalid
 \ 0x004017c7      0010           add   byte [eax], dl
 | ----------- true: 0x004017dd  false: 0x004017cd
@@ -255,14 +254,14 @@ size: 12
 / fcn2.0x004017c0();
 |           0x004017c0      51             push  ecx
 |           0x004017c1      89e1           mov   ecx, esp
-|           0x004017c3      83c108         add   ecx, 8
+|           0x004017c3      83c108         add   ecx, 0x08
 |           0x004017c6      3d00100000     cmp   eax, 0x1000
 ..
 
 / fcn2.0x004017c0();
 | 0x004017c0      51             push  ecx
 | 0x004017c1      89e1           mov   ecx, esp
-| 0x004017c3      83c108         add   ecx, 8
+| 0x004017c3      83c108         add   ecx, 0x08
 | 0x004017c6      3d00100000     cmp   eax, 0x1000
 | 0x004017cb      72             invalid
 | ----------- true: 0x004017dd  false: 0x004017cd
@@ -367,6 +366,60 @@ var int local_10h @ rbp-0x10
 var int local_8h @ rbp-0x8
 arg int arg1 @ xmm0
 arg int arg2 @ xmm1
+EOF
+RUN
+
+NAME=afi var display
+FILE=bins/v850/hello-v850e
+CMDS=<<EOF
+aaa
+afi @ dbg.__call_exitprocs
+EOF
+EXPECT=<<EOF
+offset: 0x00101e6c
+name: dbg.__call_exitprocs
+size: 170
+is-pure: true
+realsz: 170
+stackframe: 0
+cyclomatic-cost: 0
+cyclomatic-complexity: 18
+loops: 7
+bits: 32
+type: sym
+num-bbs: 20
+edges: 36
+end-bbs: 1
+call-refs:
+data-refs:
+code-xrefs: 0x00100122 C
+noreturn: false
+in-degree: 1
+out-degree: 0
+data-xrefs:
+locals: 6
+args: 2
+var void (*anonymous_fcn_0x4d93)() fn @ r12
+arg void *d @ r23
+arg int code @ r24
+var struct _atexit *p @ r27
+var int n @ r28
+var struct _atexit **lastp @ ...
+var struct _on_exit_args *args @ LOCLIST
+var int i @ LOCLIST
+EOF
+RUN
+
+NAME=afit table mode output
+FILE=bins/v850/hello-v850e
+CMDS=<<EOF
+aaa
+afit @ dbg.__call_exitprocs
+EOF
+EXPECT=<<EOF
+      addr name                 size xrefsTo xrefsFrom calls nbbs edges cc cost noreturn 
+-----------------------------------------------------------------------------------------
+0x00101e6c dbg.__call_exitprocs  170       1         0     0   20    36 18    0 false
 EOF
 RUN
 

@@ -20,9 +20,6 @@
 #define rtr_n    core->rtr_n
 #define rtr_host core->rtr_host
 
-static RzSocket *s = NULL;
-static RzThread *rapthread = NULL;
-
 struct rz_core_rtr_host_t {
 	int proto;
 	char host[512];
@@ -45,11 +42,6 @@ typedef struct {
 
 RZ_API void rz_core_wait(RzCore *core) {
 	rz_cons_singleton()->context->breaked = true;
-	if (rapthread) {
-		RapThread *rt = rz_th_get_user(rapthread);
-		rz_atomic_bool_set(rt->loop, false);
-		rz_th_wait(rapthread);
-	}
 }
 
 static void http_logf(RzCore *core, const char *fmt, ...) {
@@ -300,7 +292,7 @@ static int rz_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 			break;
 		case 'r': // dr
 			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, false);
-			be = rz_config_get_i(core->config, "cfg.bigendian");
+			be = rz_config_get_b(core->config, "cfg.bigendian");
 			if (isspace((ut8)cmd[2])) { // dr reg
 				const char *name, *val_ptr;
 				char new_cmd[128] = { 0 };
@@ -405,7 +397,7 @@ static int rz_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 		break;
 	case 'm':
 		sscanf(cmd + 1, "%" PFMT64x ",%x", &m_off, &ret);
-		if (rz_io_read_at(core->io, m_off, (ut8 *)out_buf, ret)) {
+		if (rz_io_read_at_mapped(core->io, m_off, (ut8 *)out_buf, ret)) {
 			return ret;
 		}
 		return -1;

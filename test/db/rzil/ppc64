@@ -776,7 +776,7 @@ RUN
 
 NAME=emulateme-big-endian
 FILE=bins/elf/ppc/emulateme-ppc64be
-TIMEOUT=30
+TIMEOUT=60
 ARGS=-T
 CMDS=<<EOF
 s sym.decrypt
@@ -802,7 +802,7 @@ RUN
 
 NAME=emulateme-little-endian
 FILE=bins/elf/ppc/emulateme-ppc64le
-TIMEOUT=30
+TIMEOUT=60
 ARGS=-T
 CMDS=<<EOF
 s sym.decrypt

@@ -2,11 +2,21 @@ NAME=t/utf32
 FILE=bins/elf/crackme0x00b
 CMDS=iz
 EXPECT=<<EOF
-nth      paddr      vaddr len size section type    string           
---------------------------------------------------------------------
-  0 0x000005d0 0x080485d0  16   17 .rodata ascii   Enter password: 
-  1 0x000005e5 0x080485e5   9   10 .rodata ascii   Congrats!
-  2 0x000005ef 0x080485ef   6    7 .rodata ascii   Wrong!
-  3 0x00001040 0x0804a040   8   36 .data   utf32le w0wgreat
+     paddr      vaddr len size section type    string            
+-----------------------------------------------------------------
+0x0000024d 0x0804824d  14   15 .dynstr ascii   __gmon_start__
+0x0000025c 0x0804825c   9   10 .dynstr ascii   libc.so.6
+0x00000266 0x08048266  14   15 .dynstr ascii   _IO_stdin_used
+0x00000275 0x08048275  14   15 .dynstr ascii   __isoc99_scanf
+0x00000284 0x08048284   4    5 .dynstr ascii   puts
+0x00000289 0x08048289   6    7 .dynstr ascii   printf
+0x00000290 0x08048290   6    7 .dynstr ascii   wcscmp
+0x00000297 0x08048297  17   18 .dynstr ascii   __libc_start_main
+0x000002a9 0x080482a9   9   10 .dynstr ascii   GLIBC_2.7
+0x000002b3 0x080482b3   9   10 .dynstr ascii   GLIBC_2.0
+0x000005d0 0x080485d0  16   17 .rodata ascii   Enter password: 
+0x000005e5 0x080485e5   9   10 .rodata ascii   Congrats!
+0x000005ef 0x080485ef   6    7 .rodata ascii   Wrong!
+0x00001040 0x0804a040   8   36 .data   utf32le w0wgreat
 EOF
 RUN

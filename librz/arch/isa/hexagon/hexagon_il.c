@@ -1,9 +1,9 @@
-// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
+// SPDX-FileCopyrightText: 2021 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2024-03-16 06:22:39-05:00
+// LLVM commit: bc5ac5f3ebb0bc4fc65cef7160c817ca3174a68e
+// LLVM commit date: 2026-03-15 10:22:07 -0700 (ISO 8601 format)
+// Date of code generation: 2026-03-23 17:45:56+01:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -347,9 +347,8 @@ static inline bool pkt_at_addr_is_emu_ready(const HexPkt *pkt, const ut32 addr) 
  * If false, the behavior is as documented above.
  * \return RzILOpEffect* Sequence of operations to emulate the packet.
  */
-RZ_IPI RZ_OWN RzILOpEffect *hex_get_il_op(const ut32 addr, const bool get_pkt_op, RZ_NONNULL HexState *state) {
+RZ_IPI RZ_OWN RzILOpEffect *hex_get_il_op(const ut32 addr, bool get_pkt_op, RZ_NONNULL HexState *state) {
 	rz_return_val_if_fail(state, NULL);
-	static bool might_has_jumped = false;
 	HexPkt *p = hex_get_pkt(state, addr);
 	if (!p) {
 		RZ_LOG_WARN("Packet was NULL although it should have been disassembled at this point.\n");
@@ -362,13 +361,14 @@ RZ_IPI RZ_OWN RzILOpEffect *hex_get_il_op(const ut32 addr, const bool get_pkt_op
 	if (hic->identifier == HEX_INS_INVALID_DECODE) {
 		return NULL;
 	}
-	if (state->just_init || might_has_jumped) {
+	if (state->just_init || state->might_have_jumped) {
 		// Assume that the instruction at the address the VM was initialized is the first instruction.
 		// Also make it valid if a jump let to this packet.
 		p->is_valid = true;
+		get_pkt_op = true;
 		hic->pkt_info.first_insn = true;
 		state->just_init = false;
-		might_has_jumped = false;
+		state->might_have_jumped = false;
 	}
 
 	if (!get_pkt_op && !hic->pkt_info.last_insn) {
@@ -382,7 +382,7 @@ RZ_IPI RZ_OWN RzILOpEffect *hex_get_il_op(const ut32 addr, const bool get_pkt_op
 	}
 
 	if (!rz_pvector_empty(p->il_ops)) {
-		check_for_jumps(p, &might_has_jumped);
+		check_for_jumps(p, &state->might_have_jumped);
 		return hex_pkt_to_il_seq(p);
 	}
 
@@ -410,7 +410,7 @@ RZ_IPI RZ_OWN RzILOpEffect *hex_get_il_op(const ut32 addr, const bool get_pkt_op
 	// Add a jump to the next packet.
 	rz_pvector_push(p->il_ops, &hex_next_jump_to_next_pkt);
 
-	check_for_jumps(p, &might_has_jumped);
+	check_for_jumps(p, &state->might_have_jumped);
 
 	return hex_pkt_to_il_seq(p);
 }

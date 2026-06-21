@@ -470,7 +470,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_QUIET
         args:
           - name: format
@@ -480,23 +479,29 @@ commands:
         cname: cmd_print_format_delete
         args:
           - name: formatname
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_PF_FORMAT_NAME
       - name: pf-*
         summary: Remove all named formats
         cname: cmd_print_format_delete_all
         args: []
+      - name: pfa
+        summary: Apply format string at given address and define flags for each field
+        cname: cmd_print_format_apply
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_PF_FORMAT_NAME
       - name: pfc
         summary: Show data using given format string with C syntax
         cname: cmd_print_format_c
         args:
           - name: format
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_PF_FORMAT_NAME
       - name: pfd
         summary: Show data using given format string as DOT
         cname: cmd_print_format_dot
         args:
           - name: format
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_PF_FORMAT_NAME
       - name: pf.
         summary: Show data using given named format
         cname: cmd_print_format_named_dot
@@ -504,18 +509,17 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_QUIET
         args:
           - name: formatname
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_PF_FORMAT_PATH
             optional: true
       - name: pfn
         summary: List named formats/Print named format string/Define a new named format
         cname: cmd_print_format_named
         args:
           - name: formatname
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_PF_FORMAT_NAME
             optional: true
           - name: formatstring
             type: RZ_CMD_ARG_TYPE_STRING
@@ -525,168 +529,212 @@ commands:
         cname: cmd_print_format_file
         args:
           - name: file
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_PF_FDF_FILE
             optional: true
       - name: pfs
         summary: Print the size of format in bytes
         cname: cmd_print_format_size
         args:
           - name: format
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_PF_FORMAT_NAME
       - name: pfv
         summary: Print the value for named format
         cname: cmd_print_format_value
         args:
           - name: format
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_PF_FORMAT_NAME
       - name: pfw
         summary: Write data using given format string
         cname: cmd_print_format_write
         args:
           - name: format
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_PF_FORMAT_PATH
           - name: value
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
     details:
-      - name: Formats
+      - name: Sized integers (lowercase=LE UPPER=BE)
         entries:
-          - text: "b"
-            comment: "byte (unsigned)"
-          - text: "B"
-            comment: "resolve enum bitfield (see t?)"
+          - text: "x1 / x2 / x4 / x8"
+            comment: "hex unsigned, N bytes"
+          - text: "d1 / d2 / d4 / d8"
+            comment: "decimal signed, N bytes"
+          - text: "u1 / u2 / u4 / u8"
+            comment: "decimal unsigned, N bytes"
+          - text: "o1 / o2 / o4 / o8"
+            comment: "octal, N bytes"
+          - text: "b1 / b2 / b4 / b8"
+            comment: "binary, N bytes"
+          - text: "n1 / n2 / n4 / n8"
+            comment: >
+              hex unsigned, N bytes; endian comes from the active pf
+              parsing context (set by pf -e, by a parent V/B's e=...,
+              or by the embedding caller), not from the spec's case;
+              useful when the byte order isn't fixed in the format
+              itself (file headers with an endian marker, embedded
+              protocols, serialised records)
+          - text: "f2 / f4 / f8"
+            comment: "IEEE 754 float, 2/4/8 bytes (half/single/double)"
+      - name: Special scalars
+        entries:
           - text: "c"
-            comment: "char (signed byte)"
-          - text: "C"
-            comment: "byte in decimal"
-          - text: "d"
-            comment: "0xHEX value (4 bytes) (see 'i' and 'x' formats)"
-          - text: "D"
-            comment: "disassemble one opcode"
-          - text: "e"
-            comment: "temporarily swap endian"
-          - text: "E"
-            comment: "resolve enum name (see t?)"
-          - text: "f"
-            comment: "float value (4 bytes)"
-          - text: "F"
-            comment: "double float value (8 bytes)"
-          - text: "i"
-            comment: "signed integer value (4 bytes) (see 'd' and 'x' formats)"
-          - text: "n"
-            comment: "next char specifies size of signed value (1, 2, 4, or 8 byte(s))"
-          - text: "N"
-            comment: "next char specifies size of unsigned value (1, 2, 4, or 8 byte(s))"
-          - text: "o"
-            comment: "octal value (4 bytes)"
-          - text: "p"
-            comment: "pointer reference (2, 4, or 8 bytes)"
-          - text: "q"
-            comment: "quadword (8 bytes)"
+            comment: "single byte rendered as character"
+          - text: "p / p2 / p4 / p8"
+            comment: "pointer: bare p uses ctx.bits (2/4/8 bytes); p2/p4/p8 force the width"
           - text: "Q"
-            comment: "octoword (uint128_t) (16 bytes)"
+            comment: "uint128_t (16 bytes, byte-sequential)"
           - text: "r"
-            comment: "CPU register (`pf r (eax)plop`)"
-          - text: "s"
-            comment: "32 bit pointer to string (4 bytes)"
-          - text: "s"
-            comment: "32 bit pointer to string (4 bytes)"
-          - text: "t"
-            comment: "32 bit UNIX timestamp (4 bytes)"
-          - text: "T"
-            comment: "show ten first bytes of buffer"
-          - text: "u"
-            comment: "uleb128 (variable length)"
-          - text: "w"
-            comment: "word (2 bytes unsigned short in hex)"
-          - text: "x"
-            comment: "0xHEX value and flag (fd @ addr) (see 'd' and 'i' formats)"
-          - text: "X"
-            comment: "show formatted hexpairs"
-          - text: "z"
-            comment: "null terminated string"
-          - text: "Z"
-            comment: "null terminated wide string"
-          - text: "?"
-            comment: "data structure `pf ? (struct_name)example_name`"
-          - text: "*"
-            comment: "next char is pointer (honors 'asm.bits')"
-          - text: "+"
-            comment: "toggle show flags for each offset"
-          - text: ":"
-            comment: "skip 4 bytes"
-          - text: "."
-            comment: "skip 1 byte"
-          - text: ";"
-            comment: "rewind 4 bytes"
-          - text: ","
-            comment: "rewind 1 byte"
-      - name: Example of usages
+            comment: "raw hex byte dump (count via [N])"
+          - text: "U / L"
+            comment: "ULEB128 / SLEB128 (variable length)"
+      - name: Strings (encoding-aware)
         entries:
-          - text: "pf '3xi foo bar'"
-            comment: "3-array of structures, each with named fields: 'foo' as hex, 'bar' as int"
-          - text: "pf 'B (BitFldType)arg_name'"
-            comment: "Resolve bitfield enum type for the arg_name"
-          - text: "pf 'E (EnumType)arg_name'"
-            comment: "Resolve enum type for the arg_name"
-          - text: "pf '*z*i*w nb name blob'"
-            comment: "Print pointers with the given labels"
-          - text: "pf 'iwq foo bar troll'"
-            comment: "Print the iwq format with foo, bar, troll as respective fields"
-          - text: "pf '0iwq foo bar troll'"
-            comment: "Same as above but considered as a union (all fields at offset 0)"
-          - text: "pfn obj 'xxdz prev next size name'"
-            comment: "Define the obj format as xxdz"
-          - text: "pf. 'plop ? (troll)mystruct'"
-            comment: "Use previously defined structure 'troll'"
-          - text: "pf.j plop @ 0x14"
-            comment: "Apply format object at the given offset"
-          - text: "pf '{N} (bifc)'"
-            comment: "Print N times the following format (bifc)"
-          - text: "pf [4]w[7]i"
-            comment: "Print an array of 4 words and then an array of 7 integers"
-          - text: "pf 'ic...?i foo bar \"(pf xw yo foo)troll\" yo'"
-            comment: "Print nested anonymous structures"
-          - text: "pf ';..x'"
-            comment: "Print value located 6 bytes from the current offset"
-          - text: "pf '[10]z[3]i[10]Zb'"
-            comment: "Print a fixed size string, widechar, and var"
-          - text: "pfj +F @ 0x14"
-            comment: "Print the content at given offset with a flag"
-          - text: "pf n2"
-            comment: "Print signed short (2 bytes) value. Use N instead of n for printing unsigned values"
-          - text: "pf '[2]? (plop)structname @ 0x10'"
-            comment: "Print an array of structures at the given offset"
-          - text: "pf 'eqew bigWord beef'"
-            comment: "Swap endianness and print with given labels"
+          - text: "z"
+            comment: "inline NUL-terminated string"
+          - text: "z(utf16le)"
+            comment: "encoding override (utf8, utf16le, utf16be, utf32le, utf32be, ibm037, ebcdic_us, ...)"
+          - text: "z[N]"
+            comment: "length-prefixed string, N-byte prefix (1/2/4/8), length is in characters"
+          - text: "z(utf16le)[2b]"
+            comment: "length prefix in BYTES (MS BSTR style); suffix 'b' switches the unit"
+          - text: "s"
+            comment: "pointer to NUL-terminated string (dereferences via read_at)"
+      - name: Timestamps (parameterised)
+        entries:
+          - text: "t(unix32) / T(unix32)"
+            comment: "wire format inside the parens; case selects LE/BE"
+          - text: "supported formats"
+            comment: "unix32, unix64, unixms, unixus, unixns, filetime (alias ntfs), dos, hfs, oletime, webkit, cocoa"
+      - name: Typed composites
+        entries:
+          - text: "E (enum_type)"
+            comment: "4-byte enum, name resolved via typedb"
+          - text: "B (bitfield_type)"
+            comment: "4-byte bitfield, name resolved via typedb"
+          - text: "B4(R=1,W=2,X=4)"
+            comment: "inline bitfield with named flags (size = 1/2/4/8 byte BN)"
+          - text: "? (struct_type)"
+            comment: "nested struct, name resolved via typedb"
+          - text: "0..."
+            comment: "leading '0' marks the format as a union (all fields share offset 0)"
+      - name: DSL extensions
+        entries:
+          - text: "@N"
+            comment: "align cursor up to next N-byte boundary (no value, no name)"
+          - text: ":N"
+            comment: "read N bits (1..64) from packed bitstream; MSB-first by default"
+          - text: ":N< / :N>"
+            comment: "explicit bit order: < = LSB-first, > = MSB-first"
+          - text: "G"
+            comment: "16-byte GUID/UUID, mixed-endian (MS) layout by default"
+          - text: "G(le) / G(be)"
+            comment: >
+              GUID layout: G(le) is LE on D1/D2/D3 (D4 stays raw,
+              effectively the MS layout); G(be) is RFC 4122 BE
+          - text: "V(t=u1,l=u2,d=table)"
+            comment: >
+              TLV record; t=tag, l=length, e=le/be, h=v/l/a (len
+              covers value / len+value / tag+len+value), d=dispatch
+              table
+          - text: "v(N) / v(N,lsb) / v(N,msb)"
+            comment: >
+              bitvector: N individual bits (1..4096) exposed as
+              separate 0/1 scalars; consumes ceil(N/8) bytes; bytes
+              are always shown low-address to high; within each byte
+              the default (msb) prints bit 7 first through bit 0,
+              while lsb flips that to bit 0 first through bit 7
+          - text: "[@field_name]T"
+            comment: "array whose length comes from an earlier scalar field"
+      - name: Skip / repeat / pointers
+        entries:
+          - text: "."
+            comment: "skip 1 byte; [N]. skips N bytes"
+          - text: "3..."
+            comment: "leading integer repeats the whole format N times"
+          - text: "{N}..."
+            comment: "alternate repeat syntax"
+          - text: "*T"
+            comment: "field is a pointer to T (dereferenced via read_at)"
+          - text: "[N]T"
+            comment: "fixed-size array of N elements of T"
+      - name: Examples
+        entries:
+          - text: "pf 'x4 d2 u8 z magic ver size name'"
+            comment: "header with hex u32, signed s16, unsigned u64, NUL-terminated string"
+          - text: "pf 'B4(R=1,W=2,X=4,KERN=0x100) perms'"
+            comment: "inline bitfield with named flags"
+          - text: "pf 'u1 [@count] x4 count items'"
+            comment: "u8 count, then that many u32 hex values"
+          - text: "pf 'z(utf16le)[2b] bstr'"
+            comment: "BSTR-style: 2-byte length prefix counting bytes, UTF-16 LE body"
+          - text: "pf ':1 :7 x4 flag rest tail'"
+            comment: "bit-level: 1 bit then 7 bits, then 4 bytes"
+          - text: "pf 'G(be) uuid'"
+            comment: "RFC 4122 big-endian UUID"
+          - text: "pf 'V(t=u1,l=u2,d=usb_desc) record'"
+            comment: "TLV dispatched via the 'usb_desc' tag-to-format table"
+          - text: "pf 't(filetime) created'"
+            comment: "8-byte Windows FILETIME timestamp"
+          - text: "pf '3 0x4d4 a b'"
+            comment: "repeat 3 times, union with fields x4 and d4"
+          - text: "pf '? (mytype) field'"
+            comment: "nested struct of typedb format 'mytype'"
+      - name: Notes
+        entries:
+          - text: "bit order"
+            comment: ":N defaults to MSB-first (matches DWARF and most network protocols); use <N for LSB-first"
+          - text: "endian via case"
+            comment: "lowercase specifier = little-endian, UPPERCASE = big-endian"
+          - text: "context endian"
+            comment: "n1/n2/n4/n8 take the active pf parsing context's current endian setting, not the spec's case"
+          - text: "skip vs alignment"
+            comment: "'.' / '[N].' skip an exact number of bytes; '@N' pads to the next N-byte boundary"
+          - text: "deprecation"
+            comment: >
+              bare-letter codes (b, C, d, f, F, i, o, q, t, T, w, x,
+              X, Z) still parse with a one-time warning; use the
+              sized or parenthesised forms in new code
+          - text: "pf 'X2D4u8 bigWord beef qword'"
+            comment: "BE u16, BE s32, LE u64 -- one of every endianness/sign combination"
           - text: "pfn foo 'rr (eax)reg1 (eip)reg2'"
-            comment: "Create obect foo referencing to register values"
-          - text: "pf 'tt troll plop'"
-            comment: "Print time stamps with labels 'troll' and 'plop'"
+            comment: "Create object foo referencing two registers"
+          - text: "pf 't(unix32)t(unix32) troll plop'"
+            comment: "Print two unix-epoch (32-bit) timestamps with labels 'troll' and 'plop'"
   - name: pF
-    summary: Print parsed ASN.1, PKCS, X509, ProtoBuf, AXML, etc.. formats
+    summary: Deserializes ASN.1, PKCS, X509, ProtoBuf, AXML, etc.. formats
     subcommands:
       - name: pFa
-        summary: Decode ASN.1 from current block
-        cname: cmd_print_asn1
-        modes:
-          - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_QUIET
-        args: []
+        summary: Deserializes the ASN.1 DER structure from the current block
+        subcommands:
+        - name: pFa
+          summary: Deserializes the ASN.1 DER structure from the current block as a hexdump.
+          cname: cmd_print_asn1
+          modes:
+            - RZ_OUTPUT_MODE_STANDARD
+          args: []
+        - name: pFas
+          summary: Deserializes the ASN.1 DER structure from the current block as a structured data format.
+          cname: cmd_print_asn1_structure
+          type: RZ_CMD_DESC_TYPE_ARGV_STATE
+          modes:
+            - RZ_OUTPUT_MODE_STANDARD
+            - RZ_OUTPUT_MODE_JSON
+            - RZ_OUTPUT_MODE_QUIET
+          args: []
       - name: pFb
-        summary: Decode raw protobuf from current block
+        summary: Deserializes raw protobuf from current block as a hexdump.
         cname: cmd_print_protobuf
         subcommands:
           - name: pFb
-            summary: Decode raw protobuf from current block
+            summary: Deserializes raw protobuf from current block as a hexdump.
             cname: cmd_print_protobuf_standard
             args: []
           - name: pFbv
-            summary: Decode raw protobuf from current block (verbose)
+            summary: Deserializes raw protobuf from current block  as a hexdump(verbose).
             cname: cmd_print_protobuf_verbose
             args: []
       - name: pFp
-        summary: Decode PKCS7 from current block
+        summary: Deserializes PKCS7 from current block as a structured data format.
         cname: cmd_print_pkcs7
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
@@ -694,62 +742,25 @@ commands:
           - RZ_OUTPUT_MODE_JSON
         args: []
       - name: pFx
-        summary: Decode X.509 from current block
+        summary: Deserializes X.509 from current block as a structured data format.
         cname: cmd_print_x509
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
         args: []
+      - name: pF8
+        summary: Deserializes PKCS#8 private keys from current block as a structured data format.
+        cname: cmd_print_pkcs8_pkey
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
       - name: pFA
-        summary: Decode Android Binary XML from current block
+        summary: Deserializes Android Binary XML from current block as XML format.
         cname: cmd_print_axml
         args: []
-  - name: pg
-    summary: Print gadgets
-    cname: cmd_print_gadget
-    subcommands:
-      - name: pg
-        summary: Add a new gadget / Print all existing gadgets
-        cname: cmd_print_gadget_add
-        args:
-          - name: x
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
-          - name: y
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
-          - name: w
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
-          - name: h
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
-          - name: cmd
-            type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
-      - name: pg*
-        summary: Print all gadgets as Rizin commands
-        cname: cmd_print_gadget_print_as_rizin
-        args: []
-      - name: pg-*
-        summary: Remove all gadgets
-        cname: cmd_print_gadget_remove
-        args: []
-      - name: pgm
-        summary: Move the position of the n-th gadget
-        cname: cmd_print_gadget_move
-        args:
-          - name: n
-            type: RZ_CMD_ARG_TYPE_NUM
-          - name: x
-            type: RZ_CMD_ARG_TYPE_NUM
-          - name: y
-            type: RZ_CMD_ARG_TYPE_NUM
-          - name: w
-            type: RZ_CMD_ARG_TYPE_NUM
-          - name: h
-            type: RZ_CMD_ARG_TYPE_NUM
   - name: ph
     summary: Print hash/message digest or entropy
     cname: cmd_print_default
@@ -766,7 +777,7 @@ commands:
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_TABLE
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
         args: []
@@ -868,10 +879,261 @@ commands:
     summary: Parse, format and print JSON at current offset.
     cname: print_current_block_json
     args: []
-  - name: plf
-    summary: Print the RzIL of the function
-    cname: print_function_rzil
-    args: []
+  - name: pl
+    summary: Print RzIL
+    cname: cmd_print_rzil
+    subcommands:
+      - name: plf
+        summary: Print RzIL of the function
+        cname: print_function_rzil
+        args: []
+      - name: plF
+        summary: Print unicode RzIL of the function at current seek.
+        description: >-
+          Prints the RzIL of the function at current seek using unicode special characters.
+          This command requires 'scr.utf8=true', use 'plf' for plain ASCII output.
+        cname: print_function_rzil_enriched
+        args: []
+        details:
+          - name: General
+            entries:
+              - text: "Set"
+                arg_str: " x ← y"
+                comment: "Set (assign) y to x."
+              - text: "Let"
+                arg_str: " (x = exp body)"
+                comment: "Let binding (expression-scoped)."
+              - text: "ITE"
+                arg_str: " (cond ↠ x y)"
+                comment: "If-Then-Else (ITE)."
+              - text: "Jump"
+                arg_str: " ↷ dst"
+                comment: "Jump to dst."
+              - text: "Goto"
+                arg_str: " @ l"
+                comment: "Goto label l."
+              - text: "Branch"
+                arg_str: " (cond ⅄ true_eff false_eff)"
+                comment: "Branch (Conditional)."
+              - text: "Repeat"
+                arg_str: " (cond ⟳ eff)"
+                comment: "Repeat eff until cond is true."
+              - text: "Empty"
+                arg_str: " {}"
+                comment: "Empty RzIL op."
+              - text: "NOP"
+                arg_str: " ɴᴏᴘ"
+                comment: "No operation."
+              - text: "Blk"
+                arg_str: " (l: deff ceff)"
+                comment: "A sequence of deff (data effect) and ceff (control effect) with label l."
+              - text: "Unk"
+                arg_str: " ?"
+                comment: "Unknown operation, usually represents an error."
+          - name: Bitvector
+            entries:
+              - text: "Bitv"
+                arg_str: " xₙ"
+                comment: "Bitvector literal x with length n."
+              - text: "Cast"
+                arg_str: " (x ≈ₙ b)"
+                comment: "Cast x to length n with fill bit b."
+              - text: "Msb"
+                arg_str: " ↑x"
+                comment: "Most significant bit of x."
+              - text: "Lsb"
+                arg_str: " ↓x"
+                comment: "Least significant bit of x."
+              - text: "Append"
+                arg_str: " (hi ⊚ lo)"
+                comment: "Concatenate (append) hi with lo."
+              - text: "Is_zero"
+                arg_str: " x ≡ 0"
+                comment: "Check if x is zero."
+              - text: "Lognot"
+                arg_str: " ~x"
+                comment: "Logical NOT of x."
+              - text: "Neg"
+                arg_str: " −x"
+                comment: "Arithmetic negation of x."
+              - text: "Add"
+                arg_str: " (x + y)"
+                comment: "Arithmetic addition of x and y."
+              - text: "Sub"
+                arg_str: " (x - y)"
+                comment: "Arithmetic subtraction of x and y."
+              - text: "Mul"
+                arg_str: " (x * y)"
+                comment: "Arithmetic multiplication of x and y."
+              - text: "Div"
+                arg_str: " (x / y)"
+                comment: "Arithmetic division of x and y."
+              - text: "Sdiv"
+                arg_str: " (x /⁺ y)"
+                comment: "Signed division of x and y."
+              - text: "Mod"
+                arg_str: " (x % y)"
+                comment: "Unsigned modulo of x and y."
+              - text: "Smod"
+                arg_str: " (x %⁺ y)"
+                comment: "Signed modulo of x and y."
+              - text: "Logand"
+                arg_str: " (x & y)"
+                comment: "Bitwise AND between x and y."
+              - text: "Logor"
+                arg_str: " (x | y)"
+                comment: "Bitwise OR between x and y."
+              - text: "Logxor"
+                arg_str: " (x ⊕ y)"
+                comment: "Bitwise XOR between x and y."
+              - text: "Lshift"
+                arg_str: " (x ≪ y b)"
+                comment: "Left shift x by y bits with fill bit b."
+              - text: "Rshift"
+                arg_str: " (x ≫ y b)"
+                comment: "Right shift x by y bits with fill bit b."
+              - text: "Eq"
+                arg_str: " (x ≡ y)"
+                comment: "x equals y."
+              - text: "Sle"
+                arg_str: " (x ≦ y)"
+                comment: "x is less than or equal to y (Unsigned)."
+              - text: "Ule"
+                arg_str: " (x ≦⁺ y)"
+                comment: "x is less than or equal to y (Signed)."
+          - name: Boolean
+            entries:
+              - text: "False"
+                arg_str: " ⊥"
+                comment: "Boolean literal false."
+              - text: "True"
+                arg_str: " ⊤"
+                comment: "Boolean literal true."
+              - text: "Boolnot"
+                arg_str: " ¬x"
+                comment: "Boolean NOT of x."
+              - text: "Boolor"
+                arg_str: " (x ∨ y)"
+                comment: "Boolean OR between x and y."
+              - text: "Booland"
+                arg_str: " (x ∧ y)"
+                comment: "Boolean AND between x and y."
+              - text: "Boolxor"
+                arg_str: " (x ⊻ y)"
+                comment: "Boolean XOR between x and y."
+          - name: Floating Point
+            entries:
+              - text: "Float"
+                arg_str: " n.fᵈₙ"
+                comment: "Bitvector literal n interpreted as a float of size n \
+                          with optional superscript d showing a decimal representation."
+              - text: "Fbits"
+                arg_str: " ꜰʙ x"
+                comment: "Bitvector representation of float x."
+              - text: "Fneg"
+                arg_str: " −x"
+                comment: "Floating-point negation of x."
+              - text: "Fadd"
+                arg_str: " (r x + y)"
+                comment: "Floating-point addition of x and y with rounding mode r."
+              - text: "Fsub"
+                arg_str: " (r x - y)"
+                comment: "Floating-point subtraction of x and y with rounding mode r."
+              - text: "Fmul"
+                arg_str: " (r x * y)"
+                comment: "Floating-point multiplication of x and y with rounding mode r."
+              - text: "Fdiv"
+                arg_str: " (r x / y)"
+                comment: "Floating-point division x and y with rounding mode r."
+              - text: "Fmod"
+                arg_str: " (r x % y)"
+                comment: "Floating-point modulo of x and y with rounding mode r."
+              - text: "Fmad"
+                arg_str: " (r x * y + z)"
+                comment: "Floating-point multiply-add of x, y and z with rounding mode r."
+              - text: "Fabs"
+                arg_str: " |x|"
+                comment: "Absolute value of x."
+              - text: "Fsucc"
+                arg_str: " ⌊x"
+                comment: "Floating-point successor of x."
+              - text: "Fpred"
+                arg_str: " ⌋x"
+                comment: "Floating-point predecessor of x."
+              - text: "Fexcept"
+                arg_str: " e ᴇ x"
+                comment: "Floating-point exception e on x."
+              - text: "Fcast int"
+                arg_str: " (x ꜰ≈ɪᵈₙ r)"
+                comment: "Cast x to unsigned integer of size n with rounding mode r and optional subscript d."
+              - text: "Fcast sint"
+                arg_str: " (x ꜰ≈ɪ⁺ᵈₙ r)"
+                comment: "Cast x to signed integer of size n with rounding mode r and optional subscript d."
+              - text: "Fcast float"
+                arg_str: " (x ꜰ≈ꜰᵈₙ r)"
+                comment: "Cast x to unsigned float of size n with rounding mode r and optional subscript d."
+              - text: "Fcast sfloat"
+                arg_str: " (x ꜰ≈ꜰ⁺ᵈₙ r)"
+                comment: "Cast x to signed float of size n with rounding mode r and optional subscript d."
+              - text: "Fconvert"
+                arg_str: " (x ≅ᵈₙ r)"
+                comment: "Convert rounding mode of x to r and its size to n."
+              - text: "Fround"
+                arg_str: " (r ⭂ x)"
+                comment: "Round x to integral value using rounding mode r and optional subscript d."
+              - text: "Fsqrt"
+                arg_str: " (r ²√ x)"
+                comment: "Square root of x using rounding mode r."
+              - text: "Frsqrt"
+                arg_str: " (r ¹/√ x)"
+                comment: "Inverse square root of x using rounding mode r."
+              - text: "Frootn"
+                arg_str: " (r n ⁿ√ x)"
+                comment: "x to the power 1/n using rounding mode r, where n is integer."
+              - text: "Fpow"
+                arg_str: " (r x ˰ y)"
+                comment: "x to the power y using rounding mode r."
+              - text: "Fpown"
+                arg_str: " (r x ˰ⁿ n)"
+                comment: "x to the power n using rounding mode r, where n is integer."
+              - text: "Forder"
+                arg_str: " (x ≷ y)"
+                comment: "Float ordering comparison between x and y."
+              - text: "Frequal"
+                arg_str: " (r1 ≡ r2)"
+                comment: "Float rounding mode equality check between r1 and r2."
+              - text: "Is_fzero"
+                arg_str: " x ≡ 0"
+                comment: "Check if x is zero."
+              - text: "Is_nan"
+                arg_str: " x ≡ ɴаɴ"
+                comment: "Check if x is Not-a-Number."
+              - text: "Is_inf"
+                arg_str: " x ≡ ∞"
+                comment: "Check if x is infine."
+              - text: "Is_finite"
+                arg_str: " x ≢ ∞"
+                comment: "Check if x is finite."
+              - text: "Is_fpos"
+                arg_str: " x > 0"
+                comment: "Check if x is positive."
+              - text: "Is_fneg"
+                arg_str: " x < 0"
+                comment: "Check if x is negative."
+              - text: "Fcompound"
+                arg_str: " (r x ∪ n)"
+                comment: "Float compound operator between x and n using rounding mode r, where n is integer."
+              - text: "Fhypot"
+                arg_str: " (r x ∠ y)"
+                comment: "Float hypotenuse."
+          - name: Memory
+            entries:
+              - text: "Load"
+                arg_str: " (ʟᴅₘ n a)"
+                comment: "Load n bits from address a of memory index m."
+              - text: "Store"
+                arg_str: " (ꜱᴛₘ v a)"
+                comment: "Store v to address a of memory index m."
   - name: pp
     summary: Print patterns
     subcommands:
@@ -924,6 +1186,13 @@ commands:
           - name: len
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
+      - name: "ppd/"
+        summary: Return the offset where <value> appears in the default De Bruijn pattern
+        description: Honors cfg.bigendian to interpret <value> before searching through the ppd pattern
+        cname: print_pattern_debrujin_find
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
       - name: ppf
         summary: Print buffer filled with 0xFF
         cname: print_pattern_oxff
@@ -1234,7 +1503,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
         args:
           - name: repeat
             type: RZ_CMD_ARG_TYPE_NUM
@@ -1246,7 +1514,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
         args:
           - name: repeat
             type: RZ_CMD_ARG_TYPE_NUM
@@ -1258,7 +1525,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
         args:
           - name: repeat
             type: RZ_CMD_ARG_TYPE_NUM
@@ -1270,7 +1536,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
         args:
           - name: repeat
             type: RZ_CMD_ARG_TYPE_NUM
@@ -1282,7 +1547,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
         args:
           - name: repeat
             type: RZ_CMD_ARG_TYPE_NUM
@@ -1474,7 +1738,6 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_TABLE
-              - RZ_OUTPUT_MODE_RIZIN
             args:
               - name: len
                 type: RZ_CMD_ARG_TYPE_RZNUM
@@ -1488,7 +1751,6 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_TABLE
-              - RZ_OUTPUT_MODE_RIZIN
             args:
               - name: len
                 type: RZ_CMD_ARG_TYPE_RZNUM
@@ -1502,7 +1764,6 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_TABLE
-              - RZ_OUTPUT_MODE_RIZIN
             args:
               - name: len
                 type: RZ_CMD_ARG_TYPE_RZNUM
@@ -1516,7 +1777,6 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_TABLE
-              - RZ_OUTPUT_MODE_RIZIN
             args:
               - name: len
                 type: RZ_CMD_ARG_TYPE_RZNUM
@@ -1530,7 +1790,6 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_TABLE
-              - RZ_OUTPUT_MODE_RIZIN
             args:
               - name: len
                 type: RZ_CMD_ARG_TYPE_RZNUM
@@ -1828,6 +2087,58 @@ commands:
           - name: skip
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
+      - name: p=C
+        summary: Show a vertical histogram of chi-square (vs uniform) per each block
+        cname: print_equal_chisquare
+        args:
+          - name: blocks
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: totalsize
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: skip
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: p=I
+        summary: Show a vertical histogram of index of coincidence per each block
+        cname: print_equal_ioc
+        args:
+          - name: blocks
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: totalsize
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: skip
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: p=M
+        summary: Show a vertical histogram of min-entropy per each block
+        cname: print_equal_minentropy
+        args:
+          - name: blocks
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: totalsize
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: skip
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: p=S
+        summary: Show a vertical histogram of serial correlation per each block
+        cname: print_equal_serialcorr
+        args:
+          - name: blocks
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: totalsize
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: skip
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
       - name: p=r
         summary: Print rising and falling entropy.
         cname: print_rising_and_falling_entropy
@@ -2061,6 +2372,86 @@ commands:
               - name: p==ev
                 summary: Show a interactive horizontal histogram of entropy per each block
                 cname: print_equal_equal_entropy_visual
+                args: []
+          - name: p==C
+            summary: Show a horizontal histogram of chi-square (vs uniform) per each block
+            subcommands:
+              - name: p==C
+                summary: Show a horizontal histogram of chi-square (vs uniform) per each block
+                cname: print_equal_equal_chisquare
+                args:
+                  - name: blocks
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: totalsize
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: skip
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+              - name: p==Cv
+                summary: Show a interactive horizontal histogram of chi-square (vs uniform) per each block
+                cname: print_equal_equal_chisquare_visual
+                args: []
+          - name: p==I
+            summary: Show a horizontal histogram of index of coincidence per each block
+            subcommands:
+              - name: p==I
+                summary: Show a horizontal histogram of index of coincidence per each block
+                cname: print_equal_equal_ioc
+                args:
+                  - name: blocks
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: totalsize
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: skip
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+              - name: p==Iv
+                summary: Show a interactive horizontal histogram of index of coincidence per each block
+                cname: print_equal_equal_ioc_visual
+                args: []
+          - name: p==M
+            summary: Show a horizontal histogram of min-entropy per each block
+            subcommands:
+              - name: p==M
+                summary: Show a horizontal histogram of min-entropy per each block
+                cname: print_equal_equal_minentropy
+                args:
+                  - name: blocks
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: totalsize
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: skip
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+              - name: p==Mv
+                summary: Show a interactive horizontal histogram of min-entropy per each block
+                cname: print_equal_equal_minentropy_visual
+                args: []
+          - name: p==S
+            summary: Show a horizontal histogram of serial correlation per each block
+            subcommands:
+              - name: p==S
+                summary: Show a horizontal histogram of serial correlation per each block
+                cname: print_equal_equal_serialcorr
+                args:
+                  - name: blocks
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: totalsize
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: skip
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+              - name: p==Sv
+                summary: Show a interactive horizontal histogram of serial correlation per each block
+                cname: print_equal_equal_serialcorr_visual
                 args: []
           - name: p==i
             summary: Show a horizontal histogram of invalid instructions per each block

@@ -1,9 +1,18 @@
+
 rz_diff_sources = [
   'diff.c',
-  'distance.c'
+  'distance.c',
+  'fastcdc.c',
 ]
 
-dependencies = [rz_util_dep]
+if host_machine.system() == 'sunos'
+  # workaround for Solaris until https://github.com/mesonbuild/meson/issues/4328 is fixed
+  dep_math = declare_dependency(link_args: '-lm')
+else
+  dep_math = cc.find_library('m', required: false, static: is_static_build)
+endif
+
+dependencies = [rz_util_dep, dep_math]
 
 rz_diff = library('rz_diff', rz_diff_sources,
   include_directories: [platform_inc],

@@ -29,7 +29,6 @@ static bool lib_core_dt(RzLibPlugin *pl, void *user, void *data) {
 CB(io, io)
 CB(crypto, crypto)
 CB(debug, dbg)
-CB(bp, dbg->bp)
 CB(lang, lang)
 CB(analysis, analysis)
 CB(asm, rasm)
@@ -90,7 +89,10 @@ static void loadSystemPlugins(RzCore *core, int where) {
 		free(hpd);
 	}
 	if (where & RZ_CORE_LOADLIBS_SYSTEM) {
-		char *spd = rz_path_system(RZ_PLUGINS);
+		char *spd = rz_path_system(core->sys_path, RZ_PLUGINS);
+		if (!spd) {
+			return;
+		}
 		rz_lib_opendir(core->lib, spd, false);
 		free(spd);
 	}
@@ -112,7 +114,6 @@ RZ_API void rz_core_loadlibs_init(RzCore *core) {
 	DF(CORE, "core plugins", core);
 	DF(CRYPTO, "crypto plugins", crypto);
 	DF(DBG, "debugger plugins", debug);
-	DF(BP, "debugger breakpoint plugins", bp);
 	DF(LANG, "language plugins", lang);
 	DF(ANALYSIS, "analysis plugins", analysis);
 	DF(ASM, "(dis)assembler plugins", asm);

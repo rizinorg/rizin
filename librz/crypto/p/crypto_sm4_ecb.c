@@ -244,6 +244,7 @@ RzCryptoPlugin rz_crypto_plugin_sm4_ecb = {
 	.name = "sm4-ecb",
 	.author = "0xSh4dy",
 	.license = "LGPL-3",
+	.description = "ShangMi 4 symmetric-key block cipher (ECB block mode)",
 	.set_key = sm4_ecb_set_key,
 	.get_key_size = sm4_ecb_get_key_size,
 	.use = sm4_use,

@@ -100,11 +100,13 @@ bool rl78_instr_to_string(RzStrBuf RZ_OUT *dst, const RL78Instr RZ_BORROW *instr
 	bool has_op0 = instr->op0.type != RL78_OP_TYPE_NONE;
 	bool has_op1 = instr->op1.type != RL78_OP_TYPE_NONE;
 
-	rz_return_val_if_fail(!has_op0 || rl78_operand_to_string(&buf_op0, &instr->op0),
-		false);
+	if (has_op0 && !rl78_operand_to_string(&buf_op0, &instr->op0)) {
+		rz_return_val_if_reached(false);
+	}
 
-	rz_return_val_if_fail(!has_op1 || rl78_operand_to_string(&buf_op1, &instr->op1),
-		false);
+	if (has_op1 && !rl78_operand_to_string(&buf_op1, &instr->op1)) {
+		rz_return_val_if_reached(false);
+	}
 
 	if (has_op0 && has_op1) {
 		rz_strbuf_appendf(dst, "%s %s, %s",

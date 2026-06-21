@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Rot127 <unisono@quyllur.org>
+// SPDX-FileCopyrightText: 2024 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_cmd.h>
@@ -8,6 +8,9 @@
 #include <rz_util/rz_panels.h>
 
 #include "../core_private.h"
+
+RZ_IPI void rz_save_panels_layout(RzCore *core, const char *_name);
+RZ_IPI bool rz_load_panels_layout(RzCore *core, const char *_name);
 
 RZ_IPI RzCmdStatus rz_interactive_panel_handler(RzCore *core, int argc, const char **argv) {
 	if (core->vmode) {

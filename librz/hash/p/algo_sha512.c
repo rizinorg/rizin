@@ -79,6 +79,7 @@ RzHashPlugin rz_hash_plugin_sha512 = {
 	.name = "sha512",
 	.author = "Aaron D. Gifford",
 	.license = "BSD-3",
+	.description = "SHA-512 cryptographic hash",
 	.support_hmac = true,
 	.context_new = plugin_sha512_context_new,
 	.context_free = plugin_sha512_context_free,

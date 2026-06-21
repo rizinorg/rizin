@@ -15,7 +15,6 @@ extern "C" {
 RZ_LIB_VERSION_HEADER(rz_search);
 
 enum {
-	RZ_SEARCH_ESIL,
 	RZ_SEARCH_KEYWORD,
 	RZ_SEARCH_REGEXP,
 	RZ_SEARCH_PATTERN,
@@ -71,7 +70,7 @@ typedef struct rz_search_t {
 	int (*update)(struct rz_search_t *s, ut64 from, const ut8 *buf, int len);
 	RzList /*<RzSearchKeyword *>*/ *kws; // TODO: Use rz_search_kw_new ()
 	RzIOBind iob;
-	char bckwrds;
+	int preludecnt; ///< Counts found preludes.
 } RzSearch;
 
 typedef struct rz_search_value_range_t {
@@ -104,7 +103,6 @@ RZ_API RzSearchKeyword *rz_search_keyword_new_regexp(const char *str, const char
 RZ_API int rz_search_kw_add(RzSearch *s, RzSearchKeyword *kw);
 RZ_API void rz_search_reset(RzSearch *s, int mode);
 RZ_API void rz_search_kw_reset(RzSearch *s);
-RZ_API void rz_search_string_prepare_backward(RzSearch *s);
 
 // TODO: is this an internal API?
 RZ_API int rz_search_mybinparse_update(RzSearch *s, ut64 from, const ut8 *buf, int len);
@@ -127,7 +125,7 @@ RZ_API bool rz_search_pattern(RzSearch *s, ut64 from, ut64 to);
 #endif // RZ_API
 
 //
-// New search.
+// NEW SEARCH BEGIN
 // Everything above is only there to not break the build.
 //
 
@@ -212,16 +210,18 @@ RZ_API void rz_search_opt_free(RZ_NULLABLE RzSearchOpt *opt);
 RZ_API bool rz_search_opt_set_max_hits(RZ_NONNULL RzSearchOpt *opt, size_t max_hits);
 RZ_API bool rz_search_opt_set_chunk_size(RZ_NONNULL RzSearchOpt *opt, ut64 chunk_size);
 RZ_API bool rz_search_opt_set_max_threads(RZ_NONNULL RzSearchOpt *opt, RzThreadNCores max_threads);
+RZ_API size_t rz_search_opt_get_max_threads(RZ_NONNULL const RzSearchOpt *opt);
 RZ_API bool rz_search_opt_set_show_progress_from_str(RZ_NONNULL RzSearchOpt *opt, const char *show_progress);
 RZ_API RzSearchProgress rz_search_opt_get_show_progress(RZ_NONNULL RzSearchOpt *opt);
 RZ_API bool rz_search_opt_set_cancel_cb(RZ_NONNULL RzSearchOpt *opt, RzSearchCancelCallback callback, void *user);
 RZ_API bool rz_search_opt_set_find_options(RZ_NONNULL RzSearchOpt *opt, RZ_OWN RzSearchFindOpt *find_opts);
+RZ_API const RzSearchFindOpt *rz_search_opt_get_find_options(RZ_NONNULL const RzSearchOpt *opt);
 
 RZ_API RZ_OWN RzSearchFindOpt *rz_search_find_opt_new();
 RZ_API void rz_search_find_opt_free(RZ_NULLABLE RzSearchFindOpt *opt);
-RZ_API bool rz_search_find_opt_set_inverse_match(RZ_NONNULL RzSearchFindOpt *opt, bool inverse_match);
 RZ_API bool rz_search_find_opt_set_overlap_match(RZ_NONNULL RzSearchFindOpt *opt, bool overlap_match);
 RZ_API bool rz_search_find_opt_set_alignment(RZ_NONNULL RzSearchFindOpt *opt, size_t alignment);
+RZ_API ut16 rz_search_find_opt_get_alignment(RZ_NONNULL const RzSearchFindOpt *opt);
 
 typedef enum {
 	RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_AES_128 = 0,
@@ -231,7 +231,7 @@ typedef enum {
 	RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_SM4_LE,
 	RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_RSA,
 	RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_ECC,
-	RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_SAFECURVES,
+	RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_PKCS8_PRIVKEY,
 	RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_X509,
 
 	// Always the last element to define enum size
@@ -264,15 +264,28 @@ RZ_API RZ_OWN RzSearchCollection *rz_search_collection_bytes();
 RZ_API bool rz_search_collection_bytes_add(RZ_NONNULL RzSearchCollection *col, RZ_NULLABLE const char *pattern_desc, RZ_NONNULL const ut8 *bytes, RZ_NULLABLE const ut8 *mask, size_t length);
 RZ_API bool rz_search_collection_bytes_add_pattern(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL RZ_OWN RzSearchBytesPattern *bytes_pattern);
 
-RZ_API RZ_OWN RzSearchCollection *rz_search_collection_strings(RZ_NONNULL RzUtilStrScanOptions *opts, RzStrEnc expected, RzRegexFlags re_flags);
-RZ_API bool rz_search_collection_string_add(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL const char *regex_pattern, RzRegexFlags re_flags);
+RZ_API RZ_OWN RzSearchCollection *rz_search_collection_strings(RZ_NULLABLE RZ_BORROW RzUtilStrScanOptions *scan_opts, size_t n_threads);
+RZ_API bool rz_search_collection_string_add(
+	RZ_NONNULL RzSearchCollection *col,
+	RZ_NONNULL const char *regex_pattern,
+	RzRegexFlags cflags,
+	size_t match_alignment,
+	RzStrEnc encoding);
+RZ_API bool rz_search_collection_strings_check_config_improvements(
+	RZ_NULLABLE const RzSearchCollection *col,
+	RZ_NULLABLE const RzList /*<RzIOMap *>*/ *boundaries,
+	RZ_NULLABLE const RzSearchOpt *search_options,
+	RZ_NULLABLE const RzUtilStrScanOptions *scan_opt,
+	bool print_msg);
 
-RZ_API bool rz_search_collection_match_any(RZ_NULLABLE RzSearchCollection *sc, RZ_NONNULL const ut8 *buffer, size_t length);
 RZ_API void rz_search_collection_free(RZ_NULLABLE RzSearchCollection *sc);
 
 RZ_API RZ_OWN RzSearchCollection *rz_search_collection_magic(RZ_NONNULL const char *magic_dir);
 
 RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_io(RZ_BORROW RZ_NONNULL RzSearchOpt *opt, RZ_BORROW RZ_NONNULL RzSearchCollection *col, RZ_BORROW RZ_NONNULL RzIO *io, RZ_BORROW RZ_NONNULL RzList /*<RzIOMap *>*/ *search_in);
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_buffer(RZ_BORROW RZ_NONNULL RzSearchOpt *opt, RZ_BORROW RZ_NONNULL RzSearchCollection *col, RZ_BORROW RZ_NONNULL RzBuffer *buffer, RZ_NULLABLE const RzList /*<RzInterval *>*/ *ranges);
+
+RZ_API bool rz_search_str_enc_needs_scanning(RzStrEnc encoding);
 
 #ifdef __cplusplus
 }

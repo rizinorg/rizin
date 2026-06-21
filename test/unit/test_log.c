@@ -56,10 +56,21 @@ bool test_log_large(void) {
 	mu_end;
 }
 
+bool test_log_set_get(void) {
+	rz_log_del_callback((RzLogCallback)small_check);
+	rz_log_del_callback((RzLogCallback)bind_check);
+	rz_log_set_level(RZ_LOGLVL_FATAL);
+	mu_assert_eq(rz_log_get_level(), RZ_LOGLVL_FATAL, "Setter/Getter");
+	rz_log_set_level(RZ_LOGLVL_DEBUG);
+	mu_assert_eq(rz_log_get_level(), RZ_LOGLVL_DEBUG, "Setter/Getter");
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_log_small);
 	mu_run_test(test_log_binding);
 	mu_run_test(test_log_large);
+	mu_run_test(test_log_set_get);
 	return tests_passed != tests_run;
 }
 

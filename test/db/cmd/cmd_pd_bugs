@@ -18,7 +18,11 @@ RUN
 NAME=pd arm cortex-m 0
 FILE==
 ARGS=-a arm -b 16
-CMDS=wx 80f30988; pi 1
+CMDS=<<EOF
+e cfg.bigendian=false
+wx 80f30988
+pi 1
+EOF
 EXPECT=<<EOF
 invalid
 EOF
@@ -28,7 +32,11 @@ RUN
 NAME=pd arm cortex-m 1
 FILE==
 ARGS=-a arm -b 16 -e asm.cpu=cortexm
-CMDS=wx 80f30988;pi 1
+CMDS=<<EOF
+e cfg.bigendian=false
+wx 80f30988
+pi 1
+EOF
 EXPECT=<<EOF
 msr psp, r0
 EOF
@@ -38,7 +46,12 @@ RUN
 NAME=pd arm cortex-m 2
 FILE==
 ARGS=-a arm -b 16
-CMDS=e asm.cpu=cortexm;wx 80f30988;pi 1
+CMDS=<<EOF
+e asm.cpu=cortexm
+e cfg.bigendian=false
+wx 80f30988
+pi 1
+EOF
 EXPECT=<<EOF
 msr psp, r0
 EOF
@@ -73,13 +86,12 @@ e asm.bytes=0
 e asm.comments=0
 EOF
 EXPECT=<<EOF
-            0x00005f16      e835ffffff     call  fcn.00005e50
+  0x00005f16      e835ffffff     call  fcn.00005e50
 EOF
 RUN
 
 NAME=call fcn eip 64bit
 FILE=bins/elf/analysis/ls-alxchk
-BROKEN=1
 CMDS=<<EOF
 s 0x5e50
 e asm.bytes=true
@@ -91,7 +103,7 @@ e asm.bytes=0
 e asm.comments=0
 EOF
 EXPECT=<<EOF
-|           0x00005f16      e835ffffff     call fcn.eip
+  0x00005f16      e835ffffff     call  eip
 EOF
 RUN
 
@@ -108,7 +120,7 @@ e asm.bytes=0
 e asm.comments=0
 EOF
 EXPECT=<<EOF
-            0x00005f16      e835ffffff     call  fcn.00005e50
+  0x00005f16      e835ffffff     call  fcn.00005e50
 EOF
 RUN
 
@@ -123,7 +135,7 @@ e asm.comments=false
 pD 6@x:8d15d0830408
 EOF
 EXPECT=<<EOF
-  0x00000000      8d15d0830408   lea   edx, [0x80483d0]
+  0x00000000      8d15d0830408   lea   edx, dword [0x80483d0]
 EOF
 RUN
 

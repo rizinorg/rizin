@@ -1146,3 +1146,20 @@ err:
 	op->txt = rz_strbuf_drain(sb);
 	return op->len;
 }
+
+RZ_IPI bool wasm_init(void **user) {
+	WasmContext *ctx = RZ_NEW0(WasmContext);
+	if (!ctx) {
+		return false;
+	}
+	ctx->scope_hint = UT64_MAX;
+	ctx->addr_old = UT64_MAX;
+	*user = ctx;
+	return true;
+}
+
+RZ_IPI bool wasm_fini(void *user) {
+	WasmContext *ctx = user;
+	free(ctx);
+	return true;
+}

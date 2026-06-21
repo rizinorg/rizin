@@ -1,0 +1,51 @@
+# SECURITY:
+#
+# This workflow runs on pull_request_target and has write privileges.
+# Those are used to add labels to the PR.
+#
+# **IF a user can run code in here, they would be able to extract our secrets.**
+#
+# This is why it doesn't run external scripts.
+# The exception is the get_real_pr_shas.yml workflow.
+# The input of it is santized.
+
+name: AI/LLM Checks
+
+on:
+  pull_request_target:
+
+jobs:
+  real_pr_shas:
+    uses: rizinorg/rizin/.github/workflows/get_real_pr_shas.yml@dev
+
+  ai_checks:
+    name: LLM checks
+    permissions:
+      pull-requests: write
+    runs-on: ubuntu-latest
+    needs: real_pr_shas
+    steps:
+      - name: Check for AI usage and label
+        id: check_authorship
+        env:
+          COMMIT_MSGS: ${{ needs.real_pr_shas.outputs.COMMIT_MSGS }}
+        run: |
+          NEEDLE="Co-authored-by agent"
+
+          if echo "$COMMIT_MSGS" | grep -q "$NEEDLE"; then
+            echo "Authored by AI agent"
+            echo "AI_CO_AUTHORED=1" >> $GITHUB_OUTPUT
+          else
+            echo "AI_CO_AUTHORED=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set AI/LLM label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.number }}
+        run: |
+          LABEL_NAME="AI/LLM"
+          if [ "${{ steps.check_authorship.outputs.AI_CO_AUTHORED }}" -eq 1 ]; then
+            gh pr --repo $REPO edit $NUMBER --add-label "$LABEL_NAME"
+          fi

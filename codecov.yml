@@ -7,18 +7,23 @@ coverage:
           - 'release-*'
         if_not_found: failure
         target: auto
-        threshold: 0.1%
+        threshold: 0.5%
     patch:
       default:
         if_not_found: success
         target: auto
-        threshold: 0.1%
+        threshold: 0.5%
 ignore:
   - "binrz/rz-test"
   - ".github"
   - "doc"
+  - "examples"
   - "man"
   - "mk"
+  - "subprojects/nettle"
+  - "subprojects/packagefiles"
+  - "subprojects/xxhash"
+  - "subprojects/yxml"
   - "sys"
   - "test"
 

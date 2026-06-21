@@ -16,6 +16,14 @@
 #define XBE_KP_CHIHIRO 0x2290059D
 
 #define XBE_MAX_THUNK 378
+
+#define SECTION_WRITEABLE          0x00000001
+#define SECTION_PRELOAD            0x00000002
+#define SECTION_EXECUTABLE         0x00000004
+#define SECTION_INSERTFILE         0x00000008
+#define SECTION_HEAD_PAGE_READONLY 0x00000010
+#define SECTION_TAIL_PAGE_READONLY 0x00000020
+
 typedef struct {
 	ut8 magic[4];
 	ut8 signature[0x100];
@@ -43,8 +51,6 @@ typedef struct {
 	ut32 padding[2];
 } xbe_header;
 
-#define SECT_FLAG_X 0x00000004
-#define SECT_FLAG_W 0x00000001
 typedef struct {
 	ut32 flags;
 	ut32 vaddr;
@@ -67,8 +73,11 @@ typedef struct {
 
 typedef struct {
 	xbe_header header;
+	char *dbg_name;
 	int kt_key;
 	int ep_key;
+	RzVector /*<xbe_section>*/ sections;
+	RzVector /*<xbe_lib>*/ libs;
 } rz_bin_xbe_obj_t;
 
 #endif

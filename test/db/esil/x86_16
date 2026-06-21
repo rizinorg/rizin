@@ -18,3 +18,16 @@ ip = 0x000c
 ip = 0x000c
 EOF
 RUN
+
+NAME=x86-16 dos syscall
+FILE==
+ARGS=-ax86 -b16 -kdos
+CMDS=<<EOF
+wa "mov ah,0x30;int 0x21"
+aecu 0x4
+as
+EOF
+EXPECT=<<EOF
+48 = GetDOSVersion ()
+EOF
+RUN

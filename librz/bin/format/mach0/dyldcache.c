@@ -511,7 +511,7 @@ static void match_bin_entries(RzDyldCache *cache, void *entries) {
 		if (!it) {
 			break;
 		}
-		bin = rz_list_iter_get_data(it);
+		bin = rz_list_val(it);
 		if (!bin) {
 			break;
 		}
@@ -526,7 +526,7 @@ static void match_bin_entries(RzDyldCache *cache, void *entries) {
 				bin->nlist_count = e->nlistCount;
 			}
 
-			it = rz_list_iter_get_next(it);
+			it = rz_list_next(it);
 		}
 	}
 

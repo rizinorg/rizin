@@ -146,6 +146,7 @@ afcl
 EOF
 EXPECT=<<EOF
 n32
+n64
 o32
 reg
 EOF
@@ -157,6 +158,7 @@ ARGS=-a mips -b 64
 CMDS=afcl
 EXPECT=<<EOF
 n32
+n64
 o32
 reg
 EOF

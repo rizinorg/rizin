@@ -277,17 +277,17 @@ static bool test_rz_annotated_code_line_offsets(void) {
 	mu_assert_eq(offsets->len, 6, "Number of offsets not expected");
 
 	ut64 *off = rz_vector_index_ptr(offsets, 0);
-	mu_assert_eq_fmt(*off, UT64_MAX, "Unexpected offset", "%llu");
+	mu_assert_eq_fmt(*off, UT64_MAX, "Unexpected offset", "%" PFMT64u);
 	off = rz_vector_index_ptr(offsets, 1);
-	mu_assert_eq_fmt(*off, UT64_MAX, "Unexpected offset", "%llu");
+	mu_assert_eq_fmt(*off, UT64_MAX, "Unexpected offset", "%" PFMT64u);
 	off = rz_vector_index_ptr(offsets, 2);
-	mu_assert_eq_fmt(*off, UT64_MAX, "Unexpected offset", "%llu");
+	mu_assert_eq_fmt(*off, UT64_MAX, "Unexpected offset", "%" PFMT64u);
 	off = rz_vector_index_ptr(offsets, 3);
-	mu_assert_eq_fmt(*off, (ut64)4440, "Unexpected offset", "%llu");
+	mu_assert_eq_fmt(*off, (ut64)4440, "Unexpected offset", "%" PFMT64u);
 	off = rz_vector_index_ptr(offsets, 4);
-	mu_assert_eq_fmt(*off, (ut64)4447, "Unexpected offset", "%llu");
+	mu_assert_eq_fmt(*off, (ut64)4447, "Unexpected offset", "%" PFMT64u);
 	off = rz_vector_index_ptr(offsets, 5);
-	mu_assert_eq_fmt(*off, UT64_MAX, "Unexpected offset", "%llu");
+	mu_assert_eq_fmt(*off, UT64_MAX, "Unexpected offset", "%" PFMT64u);
 
 	rz_vector_free(offsets);
 	rz_annotated_code_free(code);
@@ -371,8 +371,8 @@ static bool test_rz_core_annotated_code_print(void) {
 static bool test_rz_core_annotated_code_print_comment_cmds(void) {
 	RzAnnotatedCode *code = get_hello_world();
 	char *actual;
-	char *expected = "CCu base64:c3ltLmltcC5wdXRzKCJIZWxsbywgV29ybGQhIik= @ 0x1158\n"
-			 "CCu base64:cmV0dXJu @ 0x115f\n";
+	char *expected = "CCu base64:cmV0dXJu @ 0x115f\n"
+			 "CCu base64:c3ltLmltcC5wdXRzKCJIZWxsbywgV29ybGQhIik= @ 0x1158\n";
 	rz_cons_new();
 	rz_cons_push();
 	rz_core_annotated_code_print_comment_cmds(code);

@@ -1,0 +1,257 @@
+NAME=m command with space
+FILE==
+CMDS=<<EOF
+m foobar 0x2000 @ 0x1000
+ml
+EOF
+EXPECT=<<EOF
+[0x00001000 - 0x00002000] foobar
+EOF
+RUN
+
+NAME=no marks
+FILE==
+CMDS=m
+EXPECT=
+RUN
+
+NAME=mr
+FILE=malloc://1024
+CMDS=<<EOF
+m foo 0x20
+mr foo bar
+ml
+EOF
+EXPECT=<<EOF
+[0x00000000 - 0x00000020] bar
+EOF
+RUN
+
+NAME=mm
+FILE=malloc://1024
+CMDS=<<EOF
+m foo 0x20
+mm foo 0x10 0x30
+ml
+EOF
+EXPECT=<<EOF
+[0x00000010 - 0x00000030] foo
+EOF
+RUN
+
+NAME=mlj
+FILE=malloc://1024
+CMDS=<<EOF
+m foo 0x0000000c @ 0x0000000b
+m bar 0x00000003 @ 0x00000002
+mlj
+EOF
+EXPECT=<<EOF
+[{"from":2,"to":3,"name":"bar","realname":"bar","size":1},{"from":11,"to":12,"name":"foo","realname":"foo","size":1}]
+EOF
+RUN
+
+NAME=md
+FILE=malloc://1024
+CMDS=<<EOF
+m a 0x20
+md a @ 0x100
+EOF
+EXPECT=<<EOF
+[0x00000000 - 0x00000020] a + 224
+EOF
+RUN
+
+NAME=mC
+FILE=malloc://1024
+CMDS=<<EOF
+m a 0x20
+mC a foo
+mC a
+EOF
+EXPECT=<<EOF
+foo
+EOF
+RUN
+
+NAME=m-*
+FILE=malloc://1024
+CMDS=<<EOF
+m a 0x20
+m-*
+ml
+EOF
+EXPECT=
+RUN
+
+NAME=Set/get
+FILE==
+CMDS=<<EOF
+m south 0x20
+m+ alpine 0x30
+m rain 800 @ 666
+m+ air 900 @ 666
+m+ es 20 @ 12
+ml
+EOF
+EXPECT=<<EOF
+[0x00000000 - 0x00000020] south
+[0x00000000 - 0x00000030] alpine
+[0x0000000c - 0x00000014] es
+[0x0000029a - 0x00000320] rain
+[0x0000029a - 0x00000384] air
+EOF
+RUN
+
+NAME=marks (JSON)
+FILE==
+CMDS=<<EOF
+# Add marks.
+m south 0x20
+m+ alpine 0x32
+m rain 932 @ 666
+m+ air 032 @ 666
+m+ es 100 @ 12
+mlj
+EOF
+EXPECT=<<EOF
+[{"from":0,"to":32,"name":"south","realname":"south","size":32},{"from":0,"to":50,"name":"alpine","realname":"alpine","size":50},{"from":12,"to":100,"name":"es","realname":"es","size":88},{"from":666,"to":932,"name":"rain","realname":"rain","size":266},{"from":666,"to":26,"name":"air","realname":"air","size":0}]
+EOF
+RUN
+
+NAME=m and m+ behavior
+FILE==
+CMDS=<<EOF
+m foo 10
+m bar 20
+m cow 10
+m low 20
+ml~?
+m-*
+m+ foo 10
+m+ bar 20
+m+ cow 10
+m+ low 20
+ml~?
+m-*
+m foo 15 @ 10
+m bar 25 @ 20
+m cow 30 @ 10
+m low 40 @ 20
+ml~?
+m-*
+m+ foo 15 @ 10
+m+ bar 25 @ 20
+m+ cow 30 @ 10
+m+ low 40 @ 20
+ml~?
+EOF
+EXPECT=<<EOF
+1
+4
+2
+4
+EOF
+RUN
+
+NAME=mark renaming and reusing the old name for something new
+FILE=malloc://1024
+CMDS=<<EOF
+m foo 0x150 @ 0x100
+mr foo bar
+m foo 0x250 @ 0x200
+ml
+EOF
+EXPECT=<<EOF
+[0x00000100 - 0x00000150] bar
+[0x00000200 - 0x00000250] foo
+EOF
+RUN
+
+NAME=base64 armored marks
+FILE=malloc://1024
+CMDS=<<EOF
+m direct1 1 verbatim @ 0
+m direct2 21 base64:ImJhc2U2NCBhcm1vcmVkIg== @ 16
+m indirect 40 @ 32
+mC indirect base64:d29ya3MgdG9v
+mlt
+mlj
+EOF
+EXPECT=<<EOF
+      from         to name     realname 
+----------------------------------------
+0x00000000 0x00000001 direct1  direct1
+0x00000010 0x00000015 direct2  direct2
+0x00000020 0x00000028 indirect indirect
+[{"from":0,"to":1,"name":"direct1","realname":"direct1","size":1,"comment":"verbatim"},{"from":16,"to":21,"name":"direct2","realname":"direct2","size":5,"comment":"\"base64 armored\""},{"from":32,"to":40,"name":"indirect","realname":"indirect","size":8,"comment":"works too"}]
+EOF
+RUN
+
+NAME=m base64:NotB64=100
+FILE=malloc://1024
+CMDS=<<EOF
+m base64:NotB64 200 @ 100
+ml
+EOF
+EXPECT=<<EOF
+[0x00000064 - 0x000000c8] base64:NotB64
+EOF
+RUN
+
+NAME=mark list at
+FILE==
+CMDS=<<EOF
+m foo 0x0000000c @ 0x0000000b
+m bar 0x00000003 @ 0x00000002
+ml. @ 0x0000000b
+ml.j @ 0x0000000b
+ml.t @ 0x0000000b
+ml.q @ 0x0000000b
+ml. @ 0x00000002
+ml.j @ 0x00000002
+ml.t @ 0x00000002
+ml.q @ 0x00000002
+EOF
+EXPECT=<<EOF
+[0x0000000b - 0x0000000c] foo
+[{"from":11,"to":12,"name":"foo","realname":"foo","size":1}]
+      from         to name realname 
+------------------------------------
+0x0000000b 0x0000000c foo  foo
+foo
+[0x00000002 - 0x00000003] bar
+[{"from":2,"to":3,"name":"bar","realname":"bar","size":1}]
+      from         to name realname 
+------------------------------------
+0x00000002 0x00000003 bar  bar
+bar
+EOF
+RUN
+
+NAME=pxc shows the start and end of mark with name and range
+FILE=malloc://1024
+CMDS=<<EOF
+m foo 0x20
+pxc
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF  comment
+0x00000000  0000 0000 0000 0000 0000 0000 0000 0000  ................  ; [s] foo [0x0-0x20]
+0x00000010  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x00000020  0000 0000 0000 0000 0000 0000 0000 0000  ................  ; [e] foo [0x0-0x20]
+0x00000030  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x00000040  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x00000050  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x00000060  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x00000070  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x00000080  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x00000090  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x000000a0  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x000000b0  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x000000c0  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x000000d0  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x000000e0  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x000000f0  0000 0000 0000 0000 0000 0000 0000 0000  ................
+EOF
+RUN

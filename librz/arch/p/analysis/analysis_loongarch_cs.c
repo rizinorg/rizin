@@ -60,7 +60,7 @@ static char *loongarch_get_reg_profile(RzAnalysis *analysis) {
 			"gpr	s6	.32	116	0\n" // Static registers
 			"gpr	s7	.32	120	0\n" // Static registers
 			"gpr	s8	.32	124	0\n" // Static registers
-			"gpr	s8	.32	128	0\n" // Static registers
+			"gpr	orig_a0	.32	128	0\n" // Static registers
 			"gpr	pc	.32	132	0\n";
 		break;
 	case 64:
@@ -111,7 +111,7 @@ static char *loongarch_get_reg_profile(RzAnalysis *analysis) {
 			"gpr	s6	.64	232	0\n" // Static registers
 			"gpr	s7	.64	240	0\n" // Static registers
 			"gpr	s8	.64	248	0\n" // Static registers
-			"gpr	s8	.64	256	0\n" // Static registers
+			"gpr	orig_a0	.64	256	0\n" // Static registers
 			"gpr	pc	.64	264	0\n";
 		break;
 	}
@@ -154,7 +154,7 @@ static void loongarch_fillval(RzAsmLoongArchContext *ctx, RzAnalysis *a, RzAnaly
 		}
 		if (loongarchop->access & CS_AC_WRITE) {
 			av->access |= RZ_ANALYSIS_ACC_W;
-			if (av == op->src[srci - 1]) {
+			if (loongarchop->access & CS_AC_READ) {
 				av = rz_mem_dup(av, sizeof(RzAnalysisValue));
 			}
 			op->dst = av;
@@ -162,46 +162,50 @@ static void loongarch_fillval(RzAsmLoongArchContext *ctx, RzAnalysis *a, RzAnaly
 	}
 }
 
-static void loongarch_opex(RzAsmLoongArchContext *ctx, RzStrBuf *ptr) {
+static RzStructuredData *loongarch_opex(RzAsmLoongArchContext *ctx) {
 	if (!ctx->insn->detail) {
-		return;
+		return NULL;
 	}
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
+
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
 	}
-	pj_o(pj);
-	pj_ka(pj, "operands");
+
+	RzStructuredData *opex = rz_structured_data_map_add_map(root, "opex");
+	if (!opex) {
+		rz_structured_data_free(root);
+		return NULL;
+	}
+
+	RzStructuredData *operands = rz_structured_data_map_add_array(opex, "operands");
 	cs_loongarch *al = &ctx->insn->detail->loongarch;
 	for (st32 i = 0; i < al->op_count; i++) {
 		cs_loongarch_op *op = al->operands + i;
-		pj_o(pj);
+		RzStructuredData *operand = rz_structured_data_array_add_map(operands);
 		switch (op->type) {
-		default: // LOONGARCH_OP_MEM
+		case LOONGARCH_OP_MEM:
+			rz_structured_data_map_add_string(operand, "type", "mem");
+			if (op->mem.base != LOONGARCH_REG_INVALID) {
+				rz_structured_data_map_add_string(operand, "base", cs_reg_name(ctx->h, op->mem.base));
+			}
+			rz_structured_data_map_add_signed(operand, "disp", op->mem.disp);
 			break;
-		case LOONGARCH_OP_INVALID: {
-			pj_ks(pj, "type", "invalid");
+		case LOONGARCH_OP_REG:
+			rz_structured_data_map_add_string(operand, "type", "reg");
+			rz_structured_data_map_add_string(operand, "value", cs_reg_name(ctx->h, op->reg));
+			break;
+		case LOONGARCH_OP_IMM:
+			rz_structured_data_map_add_string(operand, "type", "imm");
+			rz_structured_data_map_add_signed(operand, "value", op->imm);
+			break;
+		default:
+			rz_structured_data_map_add_string(operand, "type", "invalid");
 			break;
 		}
-		case LOONGARCH_OP_REG: {
-			pj_ks(pj, "type", "reg");
-			pj_ks(pj, "value", cs_reg_name(ctx->h, op->reg));
-			break;
-		}
-		case LOONGARCH_OP_IMM: {
-			pj_ks(pj, "type", "imm");
-			pj_ki(pj, "value", op->imm);
-			break;
-		}
-		}
-		pj_end(pj);
 	}
-	pj_end(pj);
-	pj_end(pj);
 
-	rz_strbuf_init(ptr);
-	rz_strbuf_append(ptr, pj_string(pj));
-	pj_free(pj);
+	return root;
 }
 
 static void loongarch_op_set_type(RzAsmLoongArchContext *ctx, RzAnalysisOp *op) {
@@ -349,11 +353,11 @@ static void loongarch_op_set_type(RzAsmLoongArchContext *ctx, RzAnalysisOp *op) 
 	case LOONGARCH_INS_B:
 		op->delay = 1;
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		op->jump = op->addr + loongarch_op_as_imm(ctx, 0);
+		op->jump = loongarch_op_as_imm(ctx, 0);
 		break;
 	case LOONGARCH_INS_BL:
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-		op->jump = op->addr + loongarch_op_as_imm(ctx, 0);
+		op->jump = loongarch_op_as_imm(ctx, 0);
 		op->fail = op->addr + op->size;
 		op->delay = 1;
 		break;
@@ -364,7 +368,7 @@ static void loongarch_op_set_type(RzAsmLoongArchContext *ctx, RzAnalysisOp *op) 
 	case LOONGARCH_INS_BEQ:
 	case LOONGARCH_INS_BNE:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->jump = op->addr + loongarch_op_as_imm(ctx, 2);
+		op->jump = loongarch_op_as_imm(ctx, 2);
 		op->fail = op->addr + op->size;
 		op->delay = 1;
 		break;
@@ -373,7 +377,7 @@ static void loongarch_op_set_type(RzAsmLoongArchContext *ctx, RzAnalysisOp *op) 
 	case LOONGARCH_INS_BEQZ:
 	case LOONGARCH_INS_BNEZ:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->jump = op->addr + loongarch_op_as_imm(ctx, 1);
+		op->jump = loongarch_op_as_imm(ctx, 1);
 		op->fail = op->addr + op->size;
 		op->delay = 1;
 		break;
@@ -684,17 +688,17 @@ static void loongarch_op_set_type(RzAsmLoongArchContext *ctx, RzAnalysisOp *op) 
 		break;
 	case LOONGARCH_INS_PCADDI:
 		op->val = op->addr;
-		op->val += ((st64)loongarch_op_as_imm(ctx, 1) << 2);
+		op->val += ((ut64)loongarch_op_as_imm(ctx, 1) << 2);
 		op->type = RZ_ANALYSIS_OP_TYPE_LEA;
 		break;
 	case LOONGARCH_INS_PCADDU12I:
 		op->val = op->addr;
-		op->val += ((st64)loongarch_op_as_imm(ctx, 1) << 12);
+		op->val += ((ut64)loongarch_op_as_imm(ctx, 1) << 12);
 		op->type = RZ_ANALYSIS_OP_TYPE_LEA;
 		break;
 	case LOONGARCH_INS_PCADDU18I:
 		op->val = op->addr;
-		op->val += ((st64)loongarch_op_as_imm(ctx, 1) << 18);
+		op->val += ((ut64)loongarch_op_as_imm(ctx, 1) << 18);
 		op->type = RZ_ANALYSIS_OP_TYPE_LEA;
 		break;
 	case LOONGARCH_INS_PCALAU12I: {
@@ -2400,7 +2404,7 @@ static int loongarch_analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, con
 	loongarch_op_set_type(ctx, op);
 
 	if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-		loongarch_opex(ctx, &op->opex);
+		op->opex = loongarch_opex(ctx);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
 		loongarch_fillval(ctx, a, op);

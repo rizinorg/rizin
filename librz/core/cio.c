@@ -7,6 +7,7 @@
 RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool attach) {
 	int pid, *p = NULL;
 	RzIODesc *fd = r->file ? rz_io_desc_get(r->io, r->file->fd) : NULL;
+	char buf[20];
 
 	p = fd ? fd->data : NULL;
 	if (!p) {
@@ -18,11 +19,18 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 	rz_config_set_b(r->config, "io.ff", true);
 	rz_config_set(r->config, "dbg.backend", debugbackend);
 	pid = rz_io_desc_get_pid(fd);
-	rz_debug_select(r->dbg, pid, r->dbg->tid);
+	// NOTE: pid could be negative here, but it must be passed to the debug
+	// plugin as is, so we don't check it here. The plugin should handle it and
+	// return an error if it's invalid.
 	r->dbg->main_pid = pid;
+	rz_debug_select(r->dbg, pid, r->dbg->tid);
 	if (attach) {
-		rz_core_debug_attach(r, pid);
+		rz_debug_attach(r->dbg, pid);
+		rz_debug_select(r->dbg, r->dbg->pid, r->dbg->tid);
 	}
+	rz_config_set_bool(r->config, "dbg.swstep", (r->dbg->cur && !r->dbg->cur->canstep));
+	rz_io_system(r->io, rz_strf(buf, "pid %d", r->dbg->pid));
+
 	// this makes to attach twice showing warnings in the output
 	// we get "resource busy" so it seems isn't an issue
 	rz_core_reg_update_flags(r);
@@ -80,7 +88,7 @@ RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, i
 		if ((i + bs) > size) {
 			bs = size - i;
 		}
-		rz_io_read_at(core->io, addr + i, buf, bs);
+		rz_io_read_at_mapped(core->io, addr + i, buf, bs);
 		if (fwrite(buf, bs, 1, fd) < 1) {
 			RZ_LOG_ERROR("core: cannot write to buffer\n");
 			break;
@@ -233,7 +241,7 @@ RZ_API bool rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist)
 		res = false;
 	} else {
 		rz_io_use_fd(core->io, core->file->fd);
-		rz_io_read_at(core->io, addr, shift_buf, b_size);
+		rz_io_read_at_mapped(core->io, addr, shift_buf, b_size);
 		rz_io_write_at(core->io, addr + dist, shift_buf, b_size);
 		res = true;
 	}
@@ -244,7 +252,7 @@ RZ_API bool rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist)
 
 RZ_API int rz_core_block_read(RzCore *core) {
 	if (core && core->block) {
-		return rz_io_read_at(core->io, core->offset, core->block, core->blocksize);
+		return rz_io_read_at_mapped(core->io, core->offset, core->block, core->blocksize);
 	}
 	return -1;
 }
@@ -518,7 +526,7 @@ RZ_API RzCmdStatus rz_core_io_plugins_print(RZ_NONNULL RZ_BORROW RzIO *io, RzCmd
 RZ_API bool rz_core_write_value_at(RzCore *core, ut64 addr, ut64 value, int sz) {
 	rz_return_val_if_fail(sz == 0 || sz == 1 || sz == 2 || sz == 4 || sz == 8, false);
 	ut8 buf[sizeof(ut64)];
-	bool be = rz_config_get_i(core->config, "cfg.bigendian");
+	bool be = rz_config_get_b(core->config, "cfg.bigendian");
 
 	core->num->value = 0;
 	if (sz == 0) {
@@ -564,7 +572,7 @@ RZ_API bool rz_core_write_value_inc_at(RzCore *core, ut64 addr, st64 value, int 
 	rz_return_val_if_fail(sz == 1 || sz == 2 || sz == 4 || sz == 8, false);
 
 	ut8 buf[sizeof(ut64)];
-	bool be = rz_config_get_i(core->config, "cfg.bigendian");
+	bool be = rz_config_get_b(core->config, "cfg.bigendian");
 
 	if (!rz_io_read_at_mapped(core->io, addr, buf, sz)) {
 		return false;
@@ -844,18 +852,6 @@ RZ_API RzCmdStatus rz_core_io_cache_print(RzCore *core, RzCmdStateOutput *state)
 			pj_kb(state->d.pj, "written", c->written);
 			pj_end(state->d.pj);
 			break;
-		case RZ_OUTPUT_MODE_RIZIN:
-			rz_cons_printf("wx ");
-			for (i = 0; i < dataSize; i++) {
-				rz_cons_printf("%02x", (ut8)(c->data[i] & 0xff));
-			}
-			rz_cons_printf(" @ 0x%08" PFMT64x, rz_itv_begin(c->itv));
-			rz_cons_printf(" # replaces: ");
-			for (i = 0; i < dataSize; i++) {
-				rz_cons_printf("%02x", (ut8)(c->odata[i] & 0xff));
-			}
-			rz_cons_printf("\n");
-			break;
 		default:
 			rz_warn_if_reached();
 			break;
@@ -873,9 +869,6 @@ RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdSt
 	RzListIter *iter;
 	RzIOCache *c;
 
-	if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
-		rz_cons_printf("e io.va = false\n");
-	}
 	rz_list_foreach (caches, iter, c) {
 		const int cacheSize = rz_itv_size(c->itv);
 		int i;
@@ -892,13 +885,6 @@ RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdSt
 				rz_cons_printf("%02x", c->data[i]);
 			}
 			rz_cons_printf("\n");
-			break;
-		case RZ_OUTPUT_MODE_RIZIN:
-			rz_cons_printf("wx %02x", c->data[0]);
-			for (i = 1; i < cacheSize; i++) {
-				rz_cons_printf("%02x", c->data[i]);
-			}
-			rz_cons_printf(" @ 0x%08" PFMT64x " \n", rz_itv_begin(c->itv));
 			break;
 		default:
 			rz_warn_if_reached();

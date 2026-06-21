@@ -49,41 +49,6 @@ static bool print_flag_json(RzFlagItem *flag, void *user) {
 	return true;
 }
 
-static bool print_flag_rizin(RzFlagItem *flag, void *user) {
-	struct print_flag_t *u = (struct print_flag_t *)user;
-	char *comment_b64 = NULL, *tmp = NULL;
-	if (u->in_range && (flag->offset < u->range_from || flag->offset >= u->range_to)) {
-		return true;
-	}
-	if (!u->fs || flag->space != u->fs) {
-		u->fs = flag->space;
-		rz_cons_printf("fs %s\n", u->fs ? u->fs->name : "*");
-	}
-	if (RZ_STR_ISNOTEMPTY(flag->comment)) {
-		comment_b64 = rz_base64_encode_dyn((const ut8 *)flag->comment, strlen(flag->comment));
-		// prefix the armored string with "base64:"
-		if (comment_b64) {
-			tmp = rz_str_newf("base64:%s", comment_b64);
-			free(comment_b64);
-			comment_b64 = tmp;
-		}
-	}
-	if (flag->alias) {
-		rz_cons_printf("fa %s %s\n", flag->name, flag->alias);
-		if (comment_b64) {
-			rz_cons_printf("\"fC %s %s\"\n",
-				flag->name, rz_str_get(comment_b64));
-		}
-	} else {
-		rz_cons_printf("f %s %" PFMT64d " 0x%08" PFMT64x " %s\n",
-			flag->name, flag->size, flag->offset,
-			rz_str_get(comment_b64));
-	}
-
-	free(comment_b64);
-	return true;
-}
-
 static bool print_flag_orig_name(RzFlagItem *flag, void *user) {
 	struct print_flag_t *u = (struct print_flag_t *)user;
 	if (u->in_range && (flag->offset < u->range_from || flag->offset >= u->range_to)) {
@@ -134,9 +99,6 @@ static void flag_print(RzFlag *f, RzCmdStateOutput *state, ut64 range_from, ut64
 		pj_a(state->d.pj);
 		rz_flag_foreach_space(f, rz_flag_space_cur(f), print_flag_json, &u);
 		pj_end(state->d.pj);
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_flag_foreach_space(f, rz_flag_space_cur(f), print_flag_rizin, &u);
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
 		u.tbl = state->d.t;

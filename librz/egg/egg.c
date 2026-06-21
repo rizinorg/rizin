@@ -42,6 +42,18 @@ RZ_API const char *rz_egg_os_as_string(int os) {
 	}
 }
 
+static void egg_emit_init(RzEgg *egg) {
+	if (egg->remit && egg->remit->init) {
+		egg->remit->init(egg, &egg->emit_context);
+	}
+}
+
+static void egg_emit_fini(RzEgg *egg) {
+	if (egg->remit && egg->remit->fini) {
+		egg->remit->fini(egg, egg->emit_context);
+	}
+}
+
 RZ_API RzEgg *rz_egg_new(void) {
 	int i;
 	RzEgg *egg = RZ_NEW0(RzEgg);
@@ -61,6 +73,7 @@ RZ_API RzEgg *rz_egg_new(void) {
 		goto beach;
 	}
 	egg->remit = &emit_x86;
+	egg_emit_init(egg);
 	egg->syscall = rz_syscall_new();
 	if (!egg->syscall) {
 		goto beach;
@@ -83,6 +96,7 @@ RZ_API RzEgg *rz_egg_new(void) {
 	for (i = 0; i < RZ_ARRAY_SIZE(egg_static_plugins); i++) {
 		rz_egg_plugin_add(egg, egg_static_plugins[i]);
 	}
+	egg->sys_path = rz_path_new();
 	return egg;
 
 beach:
@@ -111,6 +125,10 @@ RZ_API void rz_egg_free(RzEgg *egg) {
 	if (!egg) {
 		return;
 	}
+
+	egg_emit_fini(egg);
+
+	rz_path_free(egg->sys_path);
 	rz_buf_free(egg->src);
 	rz_buf_free(egg->buf);
 	rz_buf_free(egg->bin);
@@ -136,6 +154,7 @@ RZ_API void rz_egg_reset(RzEgg *egg) {
 
 RZ_API bool rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, const char *os) {
 	const char *asmcpu = NULL; // TODO
+	egg_emit_fini(egg);
 	egg->remit = NULL;
 
 	egg->os = os ? rz_str_djb2_hash(os) : RZ_EGG_OS_DEFAULT;
@@ -143,12 +162,12 @@ RZ_API bool rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, con
 		egg->arch = RZ_SYS_ARCH_X86;
 		switch (bits) {
 		case 32:
-			rz_syscall_setup(egg->syscall, arch, bits, asmcpu, os);
+			rz_syscall_setup(egg->syscall, egg->sys_path, arch, bits, asmcpu, os);
 			egg->remit = &emit_x86;
 			egg->bits = bits;
 			break;
 		case 64:
-			rz_syscall_setup(egg->syscall, arch, bits, asmcpu, os);
+			rz_syscall_setup(egg->syscall, egg->sys_path, arch, bits, asmcpu, os);
 			egg->remit = &emit_x64;
 			egg->bits = bits;
 			break;
@@ -159,8 +178,19 @@ RZ_API bool rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, con
 		case 16:
 		case 32:
 		case 64:
-			rz_syscall_setup(egg->syscall, arch, bits, asmcpu, os);
+			rz_syscall_setup(egg->syscall, egg->sys_path, arch, bits, asmcpu, os);
 			egg->remit = &emit_arm;
+			egg->bits = bits;
+			egg->endian = endian;
+			break;
+		}
+	} else if (!strcmp(arch, "mips")) {
+		egg->arch = RZ_SYS_ARCH_MIPS;
+		switch (bits) {
+		case 16:
+		case 32:
+		case 64:
+			rz_syscall_setup(egg->syscall, egg->sys_path, arch, bits, asmcpu, os);
 			egg->bits = bits;
 			egg->endian = endian;
 			break;
@@ -173,6 +203,8 @@ RZ_API bool rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, con
 	} else {
 		return false;
 	}
+
+	egg_emit_init(egg);
 	return true;
 }
 
@@ -218,7 +250,7 @@ RZ_API bool rz_egg_load_file(RzEgg *egg, const char *file) {
 		rz_str_sanitize(fileSanitized);
 		const char *arch = rz_sys_arch_str(egg->arch);
 		const char *os = rz_egg_os_as_string(egg->os);
-		char *textFile = rz_egg_Cfile_parser(fileSanitized, arch, os, egg->bits);
+		char *textFile = rz_egg_compile_c_source(fileSanitized, arch, os, egg->bits, egg->sys_path);
 		if (!textFile) {
 			RZ_LOG_ERROR("egg: failure while parsing '%s'\n", fileSanitized);
 			free(fileSanitized);
@@ -251,8 +283,12 @@ RZ_API bool rz_egg_load_file(RzEgg *egg, const char *file) {
 }
 
 RZ_API void rz_egg_syscall(RzEgg *egg, const char *arg, ...) {
+	int num = 0;
+	if (!rz_syscall_get_num(egg->syscall, arg, &num)) {
+		return;
+	}
 	RzSyscallItem *item = rz_syscall_get(egg->syscall,
-		rz_syscall_get_num(egg->syscall, arg), -1);
+		num, -1);
 	if (!strcmp(arg, "close")) {
 		// egg->remit->syscall_args ();
 	}
@@ -263,17 +299,8 @@ RZ_API void rz_egg_syscall(RzEgg *egg, const char *arg, ...) {
 	rz_syscall_item_free(item);
 }
 
-RZ_API void rz_egg_alloc(RzEgg *egg, int n) {
-	// add esp, n
-}
-
 RZ_API void rz_egg_label(RzEgg *egg, const char *name) {
 	rz_egg_printf(egg, "%s:\n", name);
-}
-
-RZ_API void rz_egg_math(RzEgg *egg) { //, char eq, const char *vs, char type, const char *sr
-	// TODO
-	// e->mathop (egg, op, type, eq, p);
 }
 
 RZ_API int rz_egg_raw(RzEgg *egg, const ut8 *b, int len) {
@@ -324,11 +351,6 @@ static int rz_egg_append_bytes(RzEgg *egg, const ut8 *b, int len) {
 	}
 
 	return true;
-}
-
-// rz_egg_block (egg, FRAME | IF | ELSE | ENDIF | FOR | WHILE, sz)
-RZ_API void rz_egg_if(RzEgg *egg, const char *reg, char cmp, int v) {
-	//	egg->depth++;
 }
 
 RZ_API void rz_egg_printf(RzEgg *egg, const char *fmt, ...) {
@@ -422,8 +444,6 @@ RZ_API RzBuffer *rz_egg_get_bin(RzEgg *egg) {
 	// TODO increment reference
 	return egg->bin;
 }
-
-// RZ_API int rz_egg_dump (RzEgg *egg, const char *file) { }
 
 RZ_API char *rz_egg_get_source(RzEgg *egg) {
 	return rz_buf_to_string(egg->src);
@@ -519,10 +539,6 @@ RZ_API int rz_egg_padding(RzEgg *egg, const char *pad) {
 	}
 	free(o);
 	return true;
-}
-
-RZ_API void rz_egg_fill(RzEgg *egg, int pos, int type, int argc, int length) {
-	// TODO
 }
 
 RZ_API void rz_egg_option_set(RzEgg *egg, const char *key, const char *val) {

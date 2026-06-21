@@ -16,7 +16,6 @@ commands:
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         default_mode: RZ_OUTPUT_MODE_TABLE
         modes:
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
         details:
@@ -163,18 +162,9 @@ commands:
               - name: idx
                 type: RZ_CMD_ARG_TYPE_RZNUM
       - name: dbh
-        summary: List breakpoint plugin handlers / Set breakpoint plugin handler
+        summary: List archs which supports software breakpoints
         cname: cmd_debug_bp_plugin
-        args:
-          - name: handler
-            type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
-      - name: dbh-
-        summary: Remove breakpoint plugin handler
-        cname: cmd_debug_remove_bp_plugin
-        args:
-          - name: handler
-            type: RZ_CMD_ARG_TYPE_STRING
+        args: []
       - name: dbt
         summary: Backtrace commands
         subcommands:
@@ -186,7 +176,6 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_TABLE
-              - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_QUIET
             args: []
           - name: dbt=
@@ -440,7 +429,6 @@ commands:
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_TABLE
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
       - name: dec
         summary: Continue execution until matching expression
         cname: cmd_debug_esil_continue
@@ -590,7 +578,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_QUIET
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
       - name: dtl=
         summary: List all traces in ascii art
         cname: cmd_debug_traces_ascii
@@ -656,7 +643,6 @@ commands:
             args: []
             modes:
               - RZ_OUTPUT_MODE_STANDARD
-              - RZ_OUTPUT_MODE_RIZIN
           - name: dtgi
             summary: Interactive debug trace
             cname: cmd_debug_trace_interactive
@@ -677,13 +663,13 @@ commands:
             summary: Save trace sessions to disk
             args:
               - name: dir
-                type: RZ_CMD_ARG_TYPE_FILE
+                type: RZ_CMD_ARG_TYPE_FOLDER
           - name: dtsf
             cname: cmd_debug_load_trace_session
             summary: Load trace sessions to disk
             args:
               - name: dir
-                type: RZ_CMD_ARG_TYPE_FILE
+                type: RZ_CMD_ARG_TYPE_FOLDER
           - name: dtsm
             cname: cmd_debug_list_trace_session_mmap
             summary: List current memory map and hash
@@ -700,7 +686,6 @@ commands:
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     modes:
       - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_RIZIN
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_QUIET
     args: []
@@ -783,7 +768,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_TABLE
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
         args: []
@@ -800,8 +784,11 @@ commands:
         args: []
       - name: dm.
         cname: cmd_debug_map_current
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
         summary: Show map name of current address
         args: []
+        modes: 
+          - RZ_OUTPUT_MODE_STANDARD
       - name: dmm
         summary: Module memory map commands
         subcommands:
@@ -811,14 +798,14 @@ commands:
             type: RZ_CMD_DESC_TYPE_ARGV_STATE
             modes:
               - RZ_OUTPUT_MODE_STANDARD
-              - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_JSON
             args: []
           - name: dmm.
             cname: cmd_debug_current_modules
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
             modes:
               - RZ_OUTPUT_MODE_STANDARD
-              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_JSON
             summary: List memory map of current module
             args: []
       - name: dm-
@@ -844,8 +831,8 @@ commands:
             summary: Dump writable debug maps
             args: []
       - name: dmh
-        summary: Glibc heap commands
-        subcommands: cmd_heap_glibc
+        summary: Heap commands
+        subcommands: cmd_heap
       - name: dmi
         summary: List/Load symbols
         subcommands:
@@ -862,7 +849,6 @@ commands:
             type: RZ_CMD_DESC_TYPE_ARGV_STATE
             modes:
               - RZ_OUTPUT_MODE_STANDARD
-              - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_QUIET
               - RZ_OUTPUT_MODE_QUIETEST
@@ -876,7 +862,6 @@ commands:
             type: RZ_CMD_DESC_TYPE_ARGV_STATE
             modes:
               - RZ_OUTPUT_MODE_STANDARD
-              - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_QUIET
               - RZ_OUTPUT_MODE_QUIETEST
@@ -887,7 +872,6 @@ commands:
             type: RZ_CMD_DESC_TYPE_ARGV_STATE
             modes:
               - RZ_OUTPUT_MODE_STANDARD
-              - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_QUIET
               - RZ_OUTPUT_MODE_QUIETEST
@@ -920,7 +904,7 @@ commands:
         cname: cmd_debug_dmS
         modes:
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: addr|libname
             type: RZ_CMD_ARG_TYPE_STRING
@@ -928,53 +912,6 @@ commands:
           - name: sectname
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
-      - name: dmw
-        summary: Windows heap commands
-        subcommands:
-          - name: dmw
-            summary: List process heaps
-            cname: cmd_debug_process_heaps
-            modes:
-              - RZ_OUTPUT_MODE_STANDARD
-              - RZ_OUTPUT_MODE_JSON
-            args: []
-          - name: dmwb
-            summary: List allocated heap blocks
-            cname: cmd_debug_process_heap_block
-            modes:
-              - RZ_OUTPUT_MODE_STANDARD
-              - RZ_OUTPUT_MODE_JSON
-            args:
-              - name: addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-          - name: dmwbf
-            summary: Create flags for each allocated heap block
-            cname: cmd_debug_heap_block_flag
-            args: []
-      - name: dmx
-        summary: Jemalloc heap commands
-        subcommands:
-          - name: dmxa
-            summary: Show all arenas created, or print arena_type structure for given arena.
-            cname: cmd_debug_heap_jemalloc_a
-            args:
-              - name: arena_type
-                type: RZ_CMD_ARG_TYPE_STRING
-                optional: true
-          - name: dmxb
-            summary: Show all arenas created, or print arena_type structure for given arena.
-            cname: cmd_debug_heap_jemalloc_b
-            args:
-              - name: arena_type
-                type: RZ_CMD_ARG_TYPE_STRING
-                optional: true
-          - name: dmxc
-            summary: Show all chunks created in all arenas, or show all chunks created for a given arena_t instanc.
-            cname: cmd_debug_heap_jemalloc_c
-            args:
-              - name: "*|arena_type"
-                type: RZ_CMD_ARG_TYPE_STRING
   - name: dp
     summary: List or attach to process or thread
     subcommands:
@@ -1093,20 +1030,19 @@ commands:
             comment: Show all registers available
     subcommands:
       - name: dr
-        summary: Show registers with their values, or assign one (`dr reg=value`)
+        summary: Show registers with their values, or assign registers (`dr reg1=value reg2=value`)
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         cname: debug_regs
-        args_str: " [<filter> [= <value>]]"
+        args_str: " [<filter1> [= <value>] <filter2> [= <value>] ...]"
         modes:
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_TABLE
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
         args:
-          - name: filter
+          - name: filters
             type: RZ_CMD_ARG_TYPE_REG_FILTER
-            flags: RZ_CMD_ARG_FLAG_LAST
+            flags: RZ_CMD_ARG_FLAG_ARRAY
             optional: true
       - name: dr=
         summary: Show registers in columns
@@ -1136,7 +1072,7 @@ commands:
             type: RZ_CMD_ARG_TYPE_REG_FILTER
             optional: true
       - name: drA
-        summary: Show values of default function drgument registers (A0, A1, A2, ...) with telescoping
+        summary: Show values of default function argument registers (A0, A1, A2, ...) with telescoping
         cname: debug_regs_args
         type: RZ_CMD_DESC_TYPE_ARGV_MODES
         details: [] # Explicitly empty to not show parent ones
@@ -1160,7 +1096,6 @@ commands:
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_TABLE
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET

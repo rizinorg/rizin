@@ -88,10 +88,10 @@ typedef struct rz_cms_indirect_data_content_t {
 
 RZ_API RZ_OWN RzCMS *rz_pkcs7_cms_parse(RZ_NULLABLE const ut8 *buffer, ut32 length);
 RZ_API void rz_pkcs7_cms_free(RZ_NULLABLE RzCMS *container);
-RZ_API RZ_OWN char *rz_pkcs7_cms_to_string(RZ_NULLABLE RzCMS *container);
-RZ_API void rz_pkcs7_cms_json(RZ_NULLABLE RzCMS *container, RZ_NONNULL PJ *pj);
+RZ_API RZ_OWN RzStructuredData *rz_pkcs7_cms_to_structure(RZ_NULLABLE RzCMS *container);
 RZ_API RZ_OWN RzSpcIndirectDataContent *rz_pkcs7_spcinfo_parse(RZ_NONNULL RzCMS *cms);
 RZ_API void rz_pkcs7_spcinfo_free(RZ_NULLABLE RzSpcIndirectDataContent *spcinfo);
+RZ_API RZ_OWN RzStructuredData *rz_pkcs7_spcinfo_to_structure(RZ_NULLABLE RzSpcIndirectDataContent *spcinfo);
 
 #ifdef __cplusplus
 }

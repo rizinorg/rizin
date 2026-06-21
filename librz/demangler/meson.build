@@ -3,15 +3,9 @@ demangler_plugins_list = [
   'msvc',
   'objc',
   'pascal',
+  'cpp',
+  'rust'
 ]
-
-if get_option('use_gpl')
-  demangler_plugins_list += ['cpp', 'rust']
-endif
-
-if get_option('use_swift_demangler')
-  demangler_plugins_list += 'swift'
-endif
 
 demangler_plugins = {
   'base_name': 'rz_demangler',

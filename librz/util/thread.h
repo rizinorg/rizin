@@ -55,7 +55,7 @@
 #include <mach/thread_policy.h>
 #endif
 
-#if __APPLE__ || __NetBSD__ || __FreeBSD__ || __OpenBSD__ || __DragonFly__ || __sun
+#if __APPLE__ || __NetBSD__ || __FreeBSD__ || __OpenBSD__ || __DragonFly__
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #endif
@@ -86,6 +86,7 @@ struct rz_th_t {
 	RzThreadFunction function; ///< User defined thread function.
 	void *user; ///< User defined thread data to pass (can be NULL).
 	void *retv; ///< Thread return value.
+	bool terminated; ///< Set to true if the thread exited.
 };
 
 RZ_IPI RZ_TH_TID rz_th_self(void);

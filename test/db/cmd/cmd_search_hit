@@ -41,7 +41,7 @@ wx 0067
 /zj g i utf16be
 EOF
 EXPECT=<<EOF
-[{"address":0,"size":2,"flag":"hit.string.utf16be.0"}]
+[{"address":0,"size":2,"flag":"hit.string.utf16be.0","detail":1}]
 EOF
 RUN
 
@@ -108,7 +108,7 @@ wa "add esp,8;pop ebx; pop ebp; ret"
 /a add esp, 8
 EOF
 EXPECT=<<EOF
-add esp, 8
+add esp, 0x08
 pop ebx
 pop ebp
 ret

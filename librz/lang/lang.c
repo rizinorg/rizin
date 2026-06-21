@@ -23,6 +23,11 @@ RZ_API RzLang *rz_lang_new(void) {
 	if (!lang) {
 		return NULL;
 	}
+	lang->sys_path = rz_path_new();
+	if (!lang->sys_path) {
+		free(lang);
+		return NULL;
+	}
 	lang->user = NULL;
 	lang->langs = rz_list_new();
 	if (!lang->langs) {
@@ -57,6 +62,7 @@ RZ_API void rz_lang_free(RzLang *lang) {
 	rz_lang_undef(lang, NULL);
 	rz_list_free(lang->langs);
 	rz_list_free(lang->defs);
+	rz_path_free(lang->sys_path);
 	free(lang);
 }
 
@@ -135,7 +141,7 @@ RZ_API bool rz_lang_plugin_del(RzLang *lang, RZ_NONNULL RzLangPlugin *plugin) {
 	if (!plugin_fini(lang, plugin)) {
 		return false;
 	}
-	return rz_list_delete_data(lang->langs, plugin);
+	return rz_list_delete_val(lang->langs, plugin);
 }
 
 RZ_API RzLangPlugin *rz_lang_get_by_extension(RzLang *lang, const char *ext) {

@@ -52,3 +52,6 @@ script:
     pip3 install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
     pip3 install --user requests
     $SHELL travis-script
+after_script:
+  # always cleanup
+  - rm -rf "${TRAVIS_BUILD_DIR}/install" build test/bins

@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_platform.h>
-#include <string.h>
 
 /**
  * \brief Frees an RzPlatformProfile type
@@ -170,43 +169,6 @@ RZ_API bool rz_platform_load_profile_sdb(RZ_NONNULL RzPlatformTarget *t, RZ_NONN
 	return sdb_load_arch_profile_by_path(t, path);
 }
 
-static bool is_cpu_valid(const char *cpu_dir, const char *cpu) {
-	RzList *files = rz_sys_dir(cpu_dir);
-	if (!files) {
-		return false;
-	}
-	RzListIter *it;
-	char *filename = NULL;
-	char *arch_cpu = NULL;
-
-	rz_list_foreach (files, it, filename) {
-		char *cpu_name = NULL;
-		if (!strcmp(filename, "..") || !strcmp(filename, "..")) {
-			continue;
-		}
-		arch_cpu = rz_str_ndup(filename, strlen(filename) - 4);
-		if (!arch_cpu) {
-			continue;
-		}
-		cpu_name = strchr(arch_cpu, '-');
-		if (!cpu_name) {
-			free(arch_cpu);
-			continue;
-		}
-		cpu_name[0] = '\0';
-		if (!strcmp(cpu_name + 1, cpu)) {
-			rz_list_free(files);
-			free(arch_cpu);
-			return true;
-		}
-
-		free(arch_cpu);
-	}
-
-	rz_list_free(files);
-	return false;
-}
-
 /**
  * \brief Initializes RzPlatformProfile by loading the path to the SDB file
  * 		  of the CPU profile
@@ -223,17 +185,23 @@ RZ_API bool rz_platform_profiles_init(RZ_NULLABLE RzPlatformTarget *t, RZ_NULLAB
 	if (!cpu_reload_needed(t, cpu, arch)) {
 		return false;
 	}
+
+	if (cpu && RZ_STR_EQ(cpu, "avr")) {
+		cpu = "ATmega8";
+	}
+
+	if (t->arch && RZ_STR_EQ(t->arch, arch) &&
+		t->cpu && RZ_STR_EQ(t->cpu, cpu)) {
+		// already loaded.
+		return true;
+	}
+
 	char buf[50];
 	char *path = rz_file_path_join(cpus_dir, rz_strf(buf, "%s-%s.sdb", arch, cpu));
 	if (!path) {
 		return false;
 	}
-	if (!is_cpu_valid(cpus_dir, cpu)) {
-		if (!strcmp(arch, "avr")) {
-			free(path);
-			path = rz_file_path_join(cpus_dir, "avr-ATmega8.sdb");
-		}
-	}
+
 	free(t->cpu);
 	free(t->arch);
 	t->cpu = rz_str_dup(cpu);

@@ -48,7 +48,7 @@ RZ_API bool rz_debug_trace_ins_before(RzDebug *dbg) {
 	ut8 buf_pc[32];
 
 	// Analyze current instruction
-	ut64 pc = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_PC]);
+	ut64 pc = rz_debug_reg_get_by_role(dbg, RZ_REG_NAME_PC);
 	if (!dbg->iob.read_at) {
 		RZ_LOG_ERROR("dbg->iob.read_at missing\n");
 		return false;
@@ -174,12 +174,12 @@ RZ_API int rz_debug_trace_pc(RzDebug *dbg, ut64 pc) {
 	ut8 buf[32];
 	RzAnalysisOp op = { 0 };
 	if (!dbg->iob.is_valid_offset(dbg->iob.io, pc, 0)) {
-		eprintf("trace_pc: cannot read memory at 0x%" PFMT64x "\n", pc);
+		RZ_LOG_ERROR("trace_pc: cannot read memory at 0x%" PFMT64x "\n", pc);
 		return false;
 	}
 	(void)dbg->iob.read_at(dbg->iob.io, pc, buf, sizeof(buf));
 	if (rz_analysis_op(dbg->analysis, &op, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ESIL) < 1) {
-		eprintf("trace_pc: cannot get opcode size at 0x%" PFMT64x "\n", pc);
+		RZ_LOG_ERROR("trace_pc: cannot get opcode size at 0x%" PFMT64x "\n", pc);
 		return false;
 	}
 	rz_debug_trace_op(dbg, &op);
@@ -190,11 +190,13 @@ RZ_API int rz_debug_trace_pc(RzDebug *dbg, ut64 pc) {
 RZ_API void rz_debug_trace_op(RzDebug *dbg, RzAnalysisOp *op) {
 	static ut64 oldpc = UT64_MAX; // Must trace the previously traced instruction
 	if (dbg->trace->enabled) {
-		if (dbg->analysis->esil) {
-			rz_analysis_esil_trace_op(dbg->analysis->esil, op);
+		RzAnalysisEsil *esil = rz_analysis_get_esil(dbg->analysis);
+		if (esil) {
+			const char *eexpr = rz_strbuf_get(&op->esil);
+			rz_analysis_esil_trace_op(esil, op->addr, eexpr);
 		} else {
 			if (dbg->verbose) {
-				eprintf("Run aeim to get dbg->analysis->esil initialized\n");
+				RZ_LOG_WARN("debug: Run aeim to get esil initialized\n");
 			}
 		}
 	}
@@ -212,7 +214,7 @@ RZ_API RzDebugTracepoint *rz_debug_trace_get(RzDebug *dbg, ut64 addr) {
 }
 
 static int cmpaddr(const void *_a, const void *_b, void *user) {
-	const RzListInfo *a = _a, *b = _b;
+	const RzDbgListInfo *a = _a, *b = _b;
 	return (rz_itv_begin(a->pitv) > rz_itv_begin(b->pitv)) ? 1 : (rz_itv_begin(a->pitv) < rz_itv_begin(b->pitv)) ? -1
 														     : 0;
 }
@@ -221,13 +223,13 @@ static int cmpaddr(const void *_a, const void *_b, void *user) {
  * Get all trace info
  * \param dbg core->dbg
  * \param offset offset of address
- * \return a RzList of RzListInfo
+ * \return a RzList of RzDbgListInfo
  */
-RZ_API RZ_OWN RzList /*<RzListInfo *>*/ *rz_debug_traces_info(RzDebug *dbg, ut64 offset) {
+RZ_API RZ_OWN RzList /*<RzDbgListInfo *>*/ *rz_debug_traces_info(RzDebug *dbg, ut64 offset) {
 	rz_return_val_if_fail(dbg, NULL);
 	int tag = dbg->trace->tag;
 	RzListIter *iter;
-	RzList *info_list = rz_list_new();
+	RzList *info_list = rz_list_newf((RzListFree)rz_debug_listinfo_free);
 	if (!info_list) {
 		return NULL;
 	}
@@ -237,7 +239,7 @@ RZ_API RZ_OWN RzList /*<RzListInfo *>*/ *rz_debug_traces_info(RzDebug *dbg, ut64
 		if (trace->tag && !(tag & trace->tag)) {
 			continue;
 		}
-		RzListInfo *info = RZ_NEW0(RzListInfo);
+		RzDbgListInfo *info = RZ_NEW0(RzDbgListInfo);
 		if (!info) {
 			rz_list_free(info_list);
 			return NULL;
@@ -282,4 +284,26 @@ RZ_API void rz_debug_trace_reset(RzDebug *dbg) {
 	t->ht = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	t->traces = rz_list_new();
 	t->traces->free = free;
+}
+
+RZ_API RZ_OWN RzDbgListInfo *rz_debug_listinfo_new(RZ_NULLABLE const char *name, RzInterval pitv, RzInterval vitv, int perm, RZ_NULLABLE const char *extra) {
+	RzDbgListInfo *info = RZ_NEW(RzDbgListInfo);
+	if (!info) {
+		return NULL;
+	}
+	info->name = rz_str_dup(name);
+	info->pitv = pitv;
+	info->vitv = vitv;
+	info->perm = perm;
+	info->extra = rz_str_dup(extra);
+	return info;
+}
+
+RZ_API void rz_debug_listinfo_free(RZ_NULLABLE RzDbgListInfo *info) {
+	if (!info) {
+		return;
+	}
+	free(info->name);
+	free(info->extra);
+	free(info);
 }

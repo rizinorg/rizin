@@ -7,6 +7,7 @@ static RzCmdStatus core_hash_plugin_print(RzCmdStateOutput *state, const RzHashP
 	const char *name = rz_str_get(plugin->name);
 	const char *license = rz_str_get(plugin->license);
 	const char *author = rz_str_get(plugin->author);
+	const char *description = rz_str_get(plugin->description);
 
 	PJ *pj = state->d.pj;
 	switch (state->mode) {
@@ -18,13 +19,14 @@ static RzCmdStatus core_hash_plugin_print(RzCmdStateOutput *state, const RzHashP
 		pj_ks(pj, "name", name);
 		pj_ks(pj, "license", license);
 		pj_ks(pj, "author", author);
+		pj_ks(pj, "description", description);
 		pj_end(pj);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("%-14s %-10s %s\n", name, license, author);
+		rz_cons_printf("%-14s %-10s %-30s %s\n", name, license, author, description);
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
-		rz_table_add_rowf(state->d.t, "sss", name, license, author);
+		rz_table_add_rowf(state->d.t, "ssss", name, license, author, description);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -42,10 +44,10 @@ RZ_API RzCmdStatus rz_core_hash_plugins_print(RZ_NONNULL RZ_BORROW RzHash *hash,
 		rz_iterator_free(iter);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_list_sort(plugin_list, (RzListComparator)rz_crypto_plugin_cmp, NULL);
+	rz_list_sort(plugin_list, (RzListComparator)rz_hash_plugin_cmp, NULL);
 
 	rz_cmd_state_output_array_start(state);
-	rz_cmd_state_output_set_columnsf(state, "sss", "algorithm", "license", "author");
+	rz_cmd_state_output_set_columnsf(state, "ssss", "algorithm", "license", "author", "description");
 
 	RzCmdStatus status = RZ_CMD_STATUS_OK;
 	RzListIter *it;

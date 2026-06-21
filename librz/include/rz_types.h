@@ -25,20 +25,17 @@ extern "C" {
 #undef __UNIX__
 #undef __WINDOWS__
 
-// TODO: these modes should be dropped when oldshell is removed in favour of RzOutputMode.
-#define RZ_MODE_PRINT     0x000
-#define RZ_MODE_RIZINCMD  0x001
-#define RZ_MODE_SET       0x002
-#define RZ_MODE_SIMPLE    0x004
-#define RZ_MODE_JSON      0x008
-#define RZ_MODE_ARRAY     0x010
-#define RZ_MODE_SIMPLEST  0x020
-#define RZ_MODE_CLASSDUMP 0x040
-#define RZ_MODE_EQUAL     0x080
+#if HAVE___BUILTIN_EXPECT
+#define RZ_LIKELY(x)   __builtin_expect(x, 1)
+#define RZ_UNLIKELY(x) __builtin_expect(x, 0)
+#else
+#define RZ_LIKELY(x)   (x)
+#define RZ_UNLIKELY(x) (x)
+#endif
 
 #define RZ_IN    /* do not use, implicit */
 #define RZ_OUT   /* parameter is written, not read */
-#define RZ_INOUT /* parameter is read and written */
+#define RZ_INOUT /* parameter is read and written / return value is copy of RZ_INOUT parameter */
 
 #ifdef RZ_BINDINGS
 #define RZ_OWN    __attribute__((annotate("RZ_OWN")))
@@ -131,7 +128,7 @@ extern "C" {
 #define __WINDOWS__ 1
 #endif
 
-#if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__)
+#if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__) || defined(__serenity__)
 #define __BSD__  0
 #define __UNIX__ 1
 #endif
@@ -187,6 +184,156 @@ extern "C" {
 #undef _GNU_SOURCE
 #define _GNU_SOURCE
 
+// clang-format off
+#if __APPLE__
+	#if __i386__
+		#define RZ_SYS_BASE ((ut64)0x1000)
+	#elif __x86_64__
+		#define RZ_SYS_BASE ((ut64)0x100000000)
+	#else
+		#define RZ_SYS_BASE ((ut64)0x1000)
+	#endif
+#elif __WINDOWS__
+	#define RZ_SYS_BASE ((ut64)0x01001000)
+#else // linux, bsd, ...
+	#if __arm__ || __arm64__
+		#define RZ_SYS_BASE ((ut64)0x4000)
+	#else
+		#define RZ_SYS_BASE ((ut64)0x8048000)
+	#endif
+#endif
+
+#define RZ_SYS_ENDIAN_NONE   0
+#define RZ_SYS_ENDIAN_LITTLE 1
+#define RZ_SYS_ENDIAN_BIG    2
+#define RZ_SYS_ENDIAN_BI     3
+
+/* arch */
+#if __i386__
+	#define RZ_SYS_ARCH   "x86"
+	#define RZ_SYS_BITS   RZ_SYS_BITS_32
+	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+#elif __EMSCRIPTEN__
+	#define RZ_SYS_ARCH   "wasm"
+	#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+#elif __x86_64__
+	#define RZ_SYS_ARCH   "x86"
+	#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+#elif __POWERPC__
+	#define RZ_SYS_ARCH "ppc"
+	#ifdef __powerpc64__
+		#define RZ_SYS_BITS (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+	#else
+		#define RZ_SYS_BITS RZ_SYS_BITS_32
+	#endif
+	#if defined(__BYTE_ORDER__)
+		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+			#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+		#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+			#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_BIG
+		#else
+			#error "Unsupported endianness"
+		#endif
+	#else
+		#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_BIG
+	#endif
+#elif __arm__
+	#define RZ_SYS_ARCH   "arm"
+	#define RZ_SYS_BITS   RZ_SYS_BITS_32
+	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+#elif __arm64__ || __aarch64__
+	#define RZ_SYS_ARCH   "arm"
+	#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+#elif __arc__
+	#define RZ_SYS_ARCH   "arc"
+	#define RZ_SYS_BITS   RZ_SYS_BITS_32
+	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+#elif __s390x__
+	#define RZ_SYS_ARCH   "sysz"
+	#define RZ_SYS_BITS   RZ_SYS_BITS_64
+	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_BIG
+#elif __sparc__
+	#define RZ_SYS_ARCH   "sparc"
+	#ifdef __sparc64__
+		#define RZ_SYS_BITS (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+	#else
+		#define RZ_SYS_BITS RZ_SYS_BITS_32
+	#endif
+	#if defined(__BYTE_ORDER__)
+		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+			#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+		#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+			#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_BIG
+		#else
+			#error "Unsupported endianness"
+		#endif
+	#else
+		#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_BIG
+	#endif
+#elif __mips__
+	#define RZ_SYS_ARCH   "mips"
+	#define RZ_SYS_BITS   RZ_SYS_BITS_32
+	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_BIG
+#elif __EMSCRIPTEN__
+	/* we should default to wasm when ready */
+	#define RZ_SYS_ARCH "x86"
+	#define RZ_SYS_BITS RZ_SYS_BITS_32
+#elif __riscv__ || __riscv
+	#define RZ_SYS_ARCH   "riscv"
+	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+	#if __riscv_xlen == 32
+		#define RZ_SYS_BITS RZ_SYS_BITS_32
+	#else
+		#define RZ_SYS_BITS (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+	#endif
+#elif __alpha__
+	#define RZ_SYS_ARCH "alpha"
+	#define RZ_SYS_BITS RZ_SYS_BITS_64
+	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+#else
+	#ifdef _MSC_VER
+		#if defined(_M_X64) || defined(_M_AMD64)
+			#define RZ_SYS_ARCH   "x86"
+			#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+			#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+			#define __x86_64__    1
+		#elif defined(_M_IX86)
+			#define RZ_SYS_ARCH   "x86"
+			#define RZ_SYS_BITS   (RZ_SYS_BITS_32)
+			#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+			#define __i386__      1
+		#elif defined(_M_ARM64)
+			#define RZ_SYS_ARCH   "arm"
+			#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+			#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+			#define __arm64__     1
+		#elif defined(_M_ARM)
+			#define RZ_SYS_ARCH   "arm"
+			#define RZ_SYS_BITS   RZ_SYS_BITS_32
+			#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+			#define __arm__       1
+		#else
+			#error "Unhandled Windows architecture."
+		#endif
+	#else
+		#error "Unhandled bits and edianness definitions for this architecture."
+	#endif
+#endif
+
+#ifndef RZ_SYS_ENDIAN
+	#error "Endianness for this architecture is not defined. This is no longer valid."
+#elif (RZ_SYS_ENDIAN == RZ_SYS_ENDIAN_BI || RZ_SYS_ENDIAN == RZ_SYS_ENDIAN_NONE)
+	#error "RZ_SYS_ENDIAN_BI or RZ_SYS_ENDIAN_NONE are invalid values for the architecture endianness."
+#endif
+
+// clang-format on
+
+#define RZ_HOST_IS_LITTLE_ENDIAN (RZ_SYS_ENDIAN == RZ_SYS_ENDIAN_LITTLE)
+#define RZ_HOST_IS_BIG_ENDIAN    (RZ_SYS_ENDIAN == RZ_SYS_ENDIAN_BIG)
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -222,7 +369,7 @@ extern "C" {
 typedef int (*PrintfCallback)(const char *str, ...) RZ_PRINTF_CHECK(1, 2);
 
 /* compile-time introspection helpers */
-#define CTO(y, z)    ((size_t) & ((y *)0)->z)
+#define CTO(y, z)    ((size_t)&((y *)0)->z)
 #define CTA(x, y, z) (x + CTO(y, z))
 #define CTI(x, y, z) (*((size_t *)(CTA(x, y, z))))
 #define CTS(x, y, z, t, v) \
@@ -366,11 +513,27 @@ static inline void *rz_new_copy(int size, const void *data) {
 		x = NULL; \
 	}
 
+#if HAVE_HEADER_INTTYPES_H
+#define PFMT64x PRIx64
+#define PFMT64X PRIX64
+#define PFMT64d PRId64
+#define PFMT64u PRIu64
+#define PFMT64o PRIo64
+#elif __WINDOWS__
+#define PFMT64x "I64x"
+#define PFMT64X "I64X"
+#define PFMT64d "I64d"
+#define PFMT64u "I64u"
+#define PFMT64o "I64o"
+#else
+#define PFMT64x "lx"
+#define PFMT64X "lX"
+#define PFMT64d "ld"
+#define PFMT64u "lu"
+#define PFMT64o "lo"
+#endif
+
 #if __WINDOWS__
-#define PFMT64x  "I64x"
-#define PFMT64d  "I64d"
-#define PFMT64u  "I64u"
-#define PFMT64o  "I64o"
 #define PFMTSZx  "Ix"
 #define PFMTSZd  "Id"
 #define PFMTSZu  "Iu"
@@ -379,10 +542,6 @@ static inline void *rz_new_copy(int size, const void *data) {
 #define LDBLFMTf "f"
 #define HHXFMT   "x"
 #else
-#define PFMT64x  "llx"
-#define PFMT64d  "lld"
-#define PFMT64u  "llu"
-#define PFMT64o  "llo"
 #define PFMTSZx  "zx"
 #define PFMTSZd  "zd"
 #define PFMTSZu  "zu"
@@ -395,6 +554,7 @@ static inline void *rz_new_copy(int size, const void *data) {
 #define PFMTDPTR "td"
 
 #define PFMT32x "x"
+#define PFMT32X "X"
 #define PFMT32d "d"
 #define PFMT32u "u"
 #define PFMT32o "o"
@@ -402,120 +562,6 @@ static inline void *rz_new_copy(int size, const void *data) {
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
-
-#if __APPLE__
-#if __i386__
-#define RZ_SYS_BASE ((ut64)0x1000)
-#elif __x86_64__
-#define RZ_SYS_BASE ((ut64)0x100000000)
-#else
-#define RZ_SYS_BASE ((ut64)0x1000)
-#endif
-#elif __WINDOWS__
-#define RZ_SYS_BASE ((ut64)0x01001000)
-#else // linux, bsd, ...
-#if __arm__ || __arm64__
-#define RZ_SYS_BASE ((ut64)0x4000)
-#else
-#define RZ_SYS_BASE ((ut64)0x8048000)
-#endif
-#endif
-
-/* arch */
-#if __i386__
-#define RZ_SYS_ARCH   "x86"
-#define RZ_SYS_BITS   RZ_SYS_BITS_32
-#define RZ_SYS_ENDIAN 0
-#elif __EMSCRIPTEN__
-#define RZ_SYS_ARCH   "wasm"
-#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
-#define RZ_SYS_ENDIAN 0
-#elif __x86_64__
-#define RZ_SYS_ARCH   "x86"
-#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
-#define RZ_SYS_ENDIAN 0
-#elif __POWERPC__
-#define RZ_SYS_ARCH "ppc"
-#ifdef __powerpc64__
-#define RZ_SYS_BITS (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
-#else
-#define RZ_SYS_BITS RZ_SYS_BITS_32
-#endif
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#define RZ_SYS_ENDIAN 0
-#else
-#define RZ_SYS_ENDIAN 1
-#endif
-#elif __arm__
-#define RZ_SYS_ARCH   "arm"
-#define RZ_SYS_BITS   RZ_SYS_BITS_32
-#define RZ_SYS_ENDIAN 0
-#elif __arm64__ || __aarch64__
-#define RZ_SYS_ARCH   "arm"
-#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
-#define RZ_SYS_ENDIAN 0
-#elif __arc__
-#define RZ_SYS_ARCH   "arc"
-#define RZ_SYS_BITS   RZ_SYS_BITS_32
-#define RZ_SYS_ENDIAN 0
-#elif __s390x__
-#define RZ_SYS_ARCH   "sysz"
-#define RZ_SYS_BITS   RZ_SYS_BITS_64
-#define RZ_SYS_ENDIAN 1
-#elif __sparc__
-#define RZ_SYS_ARCH   "sparc"
-#define RZ_SYS_BITS   RZ_SYS_BITS_32
-#define RZ_SYS_ENDIAN 1
-#elif __mips__
-#define RZ_SYS_ARCH   "mips"
-#define RZ_SYS_BITS   RZ_SYS_BITS_32
-#define RZ_SYS_ENDIAN 1
-#elif __EMSCRIPTEN__
-/* we should default to wasm when ready */
-#define RZ_SYS_ARCH "x86"
-#define RZ_SYS_BITS RZ_SYS_BITS_32
-#elif __riscv__ || __riscv
-#define RZ_SYS_ARCH   "riscv"
-#define RZ_SYS_ENDIAN 0
-#if __riscv_xlen == 32
-#define RZ_SYS_BITS RZ_SYS_BITS_32
-#else
-#define RZ_SYS_BITS (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
-#endif
-#else
-#ifdef _MSC_VER
-#if defined(_M_X64) || defined(_M_AMD64)
-#define RZ_SYS_ARCH   "x86"
-#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
-#define RZ_SYS_ENDIAN 0
-#define __x86_64__    1
-#elif defined(_M_IX86)
-#define RZ_SYS_ARCH   "x86"
-#define RZ_SYS_BITS   (RZ_SYS_BITS_32)
-#define RZ_SYS_ENDIAN 0
-#define __i386__      1
-#elif defined(_M_ARM64)
-#define RZ_SYS_ARCH   "arm"
-#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
-#define RZ_SYS_ENDIAN 0
-#define __arm64__     1
-#elif defined(_M_ARM)
-#define RZ_SYS_ARCH   "arm"
-#define RZ_SYS_BITS   RZ_SYS_BITS_32
-#define RZ_SYS_ENDIAN 0
-#define __arm__       1
-#endif
-#else
-#define RZ_SYS_ARCH   "unknown"
-#define RZ_SYS_BITS   RZ_SYS_BITS_32
-#define RZ_SYS_ENDIAN 0
-#endif
-#endif
-
-#define RZ_SYS_ENDIAN_NONE   0
-#define RZ_SYS_ENDIAN_LITTLE 1
-#define RZ_SYS_ENDIAN_BIG    2
-#define RZ_SYS_ENDIAN_BI     3
 
 typedef enum {
 	RZ_SYS_ARCH_NONE = 0,
@@ -574,12 +620,26 @@ typedef enum {
 #define RZ_SYS_OS "freebsd"
 #elif defined(__HAIKU__)
 #define RZ_SYS_OS "haiku"
+#elif defined(__serenity__)
+#define RZ_SYS_OS "serenity"
 #else
 #define RZ_SYS_OS "unknown"
 #endif
 
 #ifdef __cplusplus
 }
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+#define RZ_PREFETCH(addr) __builtin_prefetch((addr), 0, 3)
+#elif defined(_MSC_VER)
+#include <intrin.h>
+/**
+ * \def Prefetch data from a certain memory address to memory cache
+ */
+#define RZ_PREFETCH(addr) _mm_prefetch((const char *)(addr), _MM_HINT_T0)
+#else
+#define RZ_PREFETCH(addr) ((void)0)
 #endif
 
 static inline void rz_run_call1(void *fcn, void *arg1) {
@@ -636,7 +696,7 @@ static inline void rz_run_call10(void *fcn, void *arg1, void *arg2, void *arg3, 
 
 #ifndef container_of
 #ifdef _MSC_VER
-#define container_of(ptr, type, member) ((type *)((char *)(ptr)-offsetof(type, member)))
+#define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))
 #else
 #define container_of(ptr, type, member) ((type *)((char *)(__typeof__(((type *)0)->member) *){ ptr } - offsetof(type, member)))
 #endif
@@ -695,7 +755,7 @@ struct dummy_rz_analysis_t {
  * \brief The hacky way to get the RzAsm pointer from RzAnalysis.
  * Will be removed with the RzArch refactor.
  */
-static inline void /*<RzAsm>*/ *rz_analysis_to_rz_asm(RZ_NONNULL void /*<RzAnalysis>*/ *rz_analysis) {
+static inline void /*<RzAsm>*/ *rz_analysis_to_rz_asm(RZ_NONNULL const void /*<RzAnalysis>*/ *rz_analysis) {
 	assert(rz_analysis && "This function can only be used if RzAnalysis and RzAsm were set up before.");
 	struct dummy_rz_analysis_t *analysis = (struct dummy_rz_analysis_t *)rz_analysis;
 	struct dummy_rz_core_t *core = (struct dummy_rz_core_t *)analysis->core;
@@ -711,7 +771,7 @@ static inline void /*<RzAsm>*/ *rz_analysis_to_rz_asm(RZ_NONNULL void /*<RzAnaly
  * \brief The hacky way to get the RzAnalysis pointer from RzAsm.
  * Will be removed with the RzArch refactor.
  */
-static inline void /*<RzAnalysis>*/ *rz_asm_to_rz_analysis(RZ_NONNULL void /*<RzAsm>*/ *rz_asm) {
+static inline void /*<RzAnalysis>*/ *rz_asm_to_rz_analysis(RZ_NONNULL const void /*<RzAsm>*/ *rz_asm) {
 	assert(rz_asm && "This function can only be used if RzAnalysis and RzAsm were set up before.");
 	struct dummy_rz_asm_t *rasm = (struct dummy_rz_asm_t *)rz_asm;
 	struct dummy_rz_core_t *core = (struct dummy_rz_core_t *)rasm->core;

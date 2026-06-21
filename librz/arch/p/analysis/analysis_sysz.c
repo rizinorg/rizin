@@ -19,46 +19,50 @@
 
 #define INSOP(n) insn->detail->sysz.operands[n]
 
-static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
-	int i;
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
+static RzStructuredData *sysz_opex(csh handle, cs_insn *insn) {
+	if (!insn->detail) {
+		return NULL;
 	}
-	pj_o(pj);
-	pj_ka(pj, "operands");
+
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
+	}
+
+	RzStructuredData *opex = rz_structured_data_map_add_map(root, "opex");
+	if (!opex) {
+		rz_structured_data_free(root);
+		return NULL;
+	}
+
+	RzStructuredData *operands = rz_structured_data_map_add_array(opex, "operands");
 	cs_sysz *x = &insn->detail->sysz;
-	for (i = 0; i < x->op_count; i++) {
+	for (st32 i = 0; i < x->op_count; i++) {
 		cs_sysz_op *op = x->operands + i;
-		pj_o(pj);
+		RzStructuredData *operand = rz_structured_data_array_add_map(operands);
 		switch (op->type) {
 		case SYSZ_OP_REG:
-			pj_ks(pj, "type", "reg");
-			pj_ks(pj, "value", cs_reg_name(handle, op->reg));
+			rz_structured_data_map_add_string(operand, "type", "reg");
+			rz_structured_data_map_add_string(operand, "value", cs_reg_name(handle, op->reg));
 			break;
 		case SYSZ_OP_IMM:
-			pj_ks(pj, "type", "imm");
-			pj_kN(pj, "value", op->imm);
+			rz_structured_data_map_add_string(operand, "type", "imm");
+			rz_structured_data_map_add_signed(operand, "value", op->imm);
 			break;
 		case SYSZ_OP_MEM:
-			pj_ks(pj, "type", "mem");
+			rz_structured_data_map_add_string(operand, "type", "mem");
 			if (op->mem.base != SYSZ_REG_INVALID) {
-				pj_ks(pj, "base", cs_reg_name(handle, op->mem.base));
+				rz_structured_data_map_add_string(operand, "base", cs_reg_name(handle, op->mem.base));
 			}
-			pj_kN(pj, "disp", op->mem.disp);
+			rz_structured_data_map_add_signed(operand, "disp", op->mem.disp);
 			break;
 		default:
-			pj_ks(pj, "type", "invalid");
+			rz_structured_data_map_add_string(operand, "type", "invalid");
 			break;
 		}
-		pj_end(pj); /* o operand */
 	}
-	pj_end(pj); /* a operands */
-	pj_end(pj);
 
-	rz_strbuf_init(buf);
-	rz_strbuf_append(buf, pj_string(pj));
-	pj_free(pj);
+	return root;
 }
 
 static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
@@ -74,7 +78,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		} else {
 			if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-				opex(&op->opex, handle, insn);
+				op->opex = sysz_opex(handle, insn);
 			}
 			op->size = insn->size;
 			switch (insn->id) {
@@ -155,6 +159,49 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 }
 
 static char *get_reg_profile(RzAnalysis *analysis) {
+	if (analysis->bits == 64) {
+		// linux/arch/s390/include/uapi/asm/ptrace.h: struct s390_regs { psw_t psw; unsigned long gprs[16]; unsigned int acrs[16]; unsigned long orig_gpr2; }
+		const char *p =
+			"=PC	pswa\n"
+			"=SP	r15\n"
+			"=A0	r2\n"
+			"gpr	pswm	.64	0	0\n" // psw.mask
+			"gpr	pswa	.64	8	0\n" // psw.addr = PC
+			"gpr	r0	.64	16	0\n"
+			"gpr	r1	.64	24	0\n"
+			"gpr	r2	.64	32	0\n"
+			"gpr	r3	.64	40	0\n"
+			"gpr	r4	.64	48	0\n"
+			"gpr	r5	.64	56	0\n"
+			"gpr	r6	.64	64	0\n"
+			"gpr	r7	.64	72	0\n"
+			"gpr	r8	.64	80	0\n"
+			"gpr	r9	.64	88	0\n"
+			"gpr	r10	.64	96	0\n"
+			"gpr	r11	.64	104	0\n"
+			"gpr	r12	.64	112	0\n"
+			"gpr	r13	.64	120	0\n"
+			"gpr	r14	.64	128	0\n"
+			"gpr	r15	.64	136	0\n"
+			"gpr	acr0	.32	144	0\n"
+			"gpr	acr1	.32	148	0\n"
+			"gpr	acr2	.32	152	0\n"
+			"gpr	acr3	.32	156	0\n"
+			"gpr	acr4	.32	160	0\n"
+			"gpr	acr5	.32	164	0\n"
+			"gpr	acr6	.32	168	0\n"
+			"gpr	acr7	.32	172	0\n"
+			"gpr	acr8	.32	176	0\n"
+			"gpr	acr9	.32	180	0\n"
+			"gpr	acr10	.32	184	0\n"
+			"gpr	acr11	.32	188	0\n"
+			"gpr	acr12	.32	192	0\n"
+			"gpr	acr13	.32	196	0\n"
+			"gpr	acr14	.32	200	0\n"
+			"gpr	acr15	.32	204	0\n"
+			"gpr	orig_r2	.64	208	0\n";
+		return rz_str_dup(p);
+	}
 	const char *p =
 		"=PC	r15\n"
 		"=LR	r14\n"

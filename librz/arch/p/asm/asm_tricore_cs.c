@@ -1,18 +1,17 @@
 // SPDX-FileCopyrightText: 2023 billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <string.h>
-
 #include <rz_types.h>
 #include <rz_lib.h>
 #include <rz_util.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <capstone/capstone.h>
 
 #define TRICORE_LONGEST_INSTRUCTION  4
 #define TRICORE_SHORTEST_INSTRUCTION 2
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (!buf || len < TRICORE_SHORTEST_INSTRUCTION || !a->plugin_data) {
 		return -1;
 	}
@@ -103,7 +102,7 @@ static bool fini(void *u) {
 	return true;
 }
 
-char **tricore_cpu_descriptions() {
+static char **tricore_cpu_descriptions() {
 	static char *cpu_desc[] = {
 		"tricore", "Generic TriCore CPU family by Infineon",
 		NULL

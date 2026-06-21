@@ -46,7 +46,7 @@ static int lang_cpipe_file(RzLang *lang, const char *file) {
 		free(cc);
 		cc = rz_str_dup("gcc");
 	}
-	char *libdir = rz_path_libdir();
+	char *libdir = rz_path_libdir(lang->sys_path);
 	char *pkgconf_path = rz_file_path_join(libdir, "pkgconfig");
 	char *file_esc = rz_str_escape_sh(file);
 	char *libpath_esc = rz_str_escape_sh(libpath);

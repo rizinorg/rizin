@@ -259,6 +259,7 @@ RZ_API char *rz_cons_hud(RzList /*<char *>*/ *list, const char *prompt) {
 					rz_cons_enable_mouse(false);
 					rz_cons_show_cursor(true);
 					rz_cons_set_raw(false);
+					ht_sp_free(ht);
 					return rz_str_dup(selected_entry);
 				}
 			} else {

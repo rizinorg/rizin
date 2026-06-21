@@ -10,9 +10,56 @@ RUN
 
 NAME=pe64 header
 FILE=bins/pe/tls64.exe
-CMDS=iH~Signature~0x4550?
+CMDS=iH
 EXPECT=<<EOF
-1
+pe64:
+  IMAGE_NT_HEADERS:
+    Signature: 0x4550
+  IMAGE_FILE_HEADERS:
+    Machine: 0x8664
+    NumberOfSections: 1
+    TimeDateStamp: 0
+    PointerToSymbolTable: 0x0
+    NumberOfSymbols: 0
+    SizeOfOptionalHeader: 240
+    Characteristics: 0x102
+  IMAGE_OPTIONAL_HEADERS:
+    Magic: 0x20b
+    MajorLinkerVersion: 0
+    MinorLinkerVersion: 0
+    SizeOfCode: 0
+    SizeOfInitializedData: 0
+    SizeOfUninitializedData: 0
+    AddressOfEntryPoint: 0x1015
+    BaseOfCode: 0x0
+    ImageBase: 0x400000
+    SectionAlignment: 0x1000
+    FileAlignment: 0x200
+    MajorOperatingSystemVersion: 0x0
+    MinorOperatingSystemVersion: 0x0
+    MajorImageVersion: 0x0
+    MinorImageVersion: 0x0
+    MajorSubsystemVersion: 0x4
+    MinorSubsystemVersion: 0x0
+    Win32VersionValue: 0x0
+    SizeOfImage: 8192
+    SizeOfHeaders: 368
+    CheckSum: 0x0
+    Subsystem: 0x3
+    DllCharacteristics: 0x0
+    SizeOfStackReserve: 0
+    SizeOfStackCommit: 0
+    SizeOfHeapReserve: 0
+    SizeOfHeapCommit: 0
+    LoaderFlags: 0x0
+    NumberOfRvaAndSizes: 16
+  IMAGE_DIRECTORY_ENTRY_IMPORT:
+    VirtualAddress: 0x1070
+    Size: 65535
+  IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT:
+    VirtualAddress: 0x0
+    Size: 65535
+
 EOF
 RUN
 

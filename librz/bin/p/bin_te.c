@@ -132,8 +132,8 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->subsystem = rz_bin_te_get_subsystem(bf->o->bin_obj);
 	ret->type = rz_str_dup("EXEC (Executable file)");
 	ret->bits = rz_bin_te_get_bits(bf->o->bin_obj);
-	ret->big_endian = 1;
-	ret->dbg_info = 0;
+	ret->big_endian = true;
+	ret->dbg_info = RZ_BIN_DBG_STRIPPED;
 	ret->has_va = true;
 
 	sdb_num_set(bf->sdb, "te.bits", ret->bits);
@@ -151,8 +151,9 @@ static bool check_buffer(RzBuffer *b) {
 
 RzBinPlugin rz_bin_plugin_te = {
 	.name = "te",
-	.desc = "TE bin plugin", // Terse Executable format
+	.desc = "TE (Terse Executable)", // Terse Executable format
 	.license = "LGPL3",
+	.author = "xvilka",
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,

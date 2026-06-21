@@ -3,6 +3,7 @@
 
 #include <rz_lib.h>
 #include <rz_crypto.h>
+#include <rz_crypto/rz_rc4.h>
 #include <rz_util.h>
 
 struct rc4_state {
@@ -71,6 +72,21 @@ static void rc4_crypt(struct rc4_state *const state, const ut8 *inbuf, ut8 *outb
 	}
 }
 
+/**
+ * \brief One-shot RC4 encrypt/decrypt.
+ *
+ * Initializes the RC4 state with the given key and processes the input buffer.
+ * Since RC4 is symmetric, the same function is used for both encryption and decryption.
+ */
+RZ_API void rz_rc4_crypt(RZ_NONNULL const ut8 *key, int keylen, RZ_NONNULL const ut8 *in, RZ_NONNULL ut8 *out, int len) {
+	rz_return_if_fail(key && in && out);
+	struct rc4_state state = { 0 };
+	if (!rc4_init_state(&state, key, keylen)) {
+		return;
+	}
+	rc4_crypt(&state, in, out, len);
+}
+
 ///////////////////////////////////////////////////////////
 
 static bool rc4_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
@@ -127,6 +143,7 @@ RzCryptoPlugin rz_crypto_plugin_rc4 = {
 	.name = "rc4",
 	.author = "pancake",
 	.license = "LGPL-3",
+	.description = "RC4 symmetric-key block cipher",
 	.set_key = rc4_set_key,
 	.get_key_size = rc4_get_key_size,
 	.use = rc4_use,

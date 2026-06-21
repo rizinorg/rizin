@@ -2219,7 +2219,7 @@ static RzILOpEffect *avr_il_neg(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 
 static RzILOpEffect *avr_il_or(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *x, *y;
-	RzILOpEffect * or, *S, *V, *N, *Z;
+	RzILOpEffect *or, *S, *V, *N, *Z;
 	// Rd = Rd | Rr
 	// changes S|V|N|Z
 	ut16 Rd = aop->param[0];
@@ -2252,7 +2252,7 @@ static RzILOpEffect *avr_il_or(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *
 
 static RzILOpEffect *avr_il_ori(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *x, *y;
-	RzILOpEffect * or, *S, *V, *N, *Z;
+	RzILOpEffect *or, *S, *V, *N, *Z;
 	// Rd = Rd | K
 	// changes S|V|N|Z
 	ut16 Rd = aop->param[0];

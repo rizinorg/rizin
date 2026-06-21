@@ -1,36 +1,41 @@
-NAME=baddr ==
+NAME=baddr (1)
 FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=!rz-bin -qe ${RZ_FILE};!rz-bin -B 0x400000 -qe ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-qe
 EXPECT=<<EOF
-0x00400410
-0x004004d0
-0x004004b0
 0x00400410
 0x004004d0
 0x004004b0
 EOF
 RUN
 
-NAME=baddr > 0
+NAME=baddr (2)
 FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=!rz-bin -qe ${RZ_FILE};!rz-bin -B 0x800000 -qe ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-B 0x400000 -qe
 EXPECT=<<EOF
 0x00400410
 0x004004d0
 0x004004b0
+EOF
+RUN
+
+NAME=baddr (2)
+FILE=bins/elf/analysis/hello-linux-x86_64
+TOOL=rz-bin
+ARGS=-B 0x800000 -qe
+EXPECT=<<EOF
 0x00800410
 0x008004d0
 0x008004b0
 EOF
 RUN
 
-NAME=baddr 0
+NAME=baddr (3)
 FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=!rz-bin -qe ${RZ_FILE};!rz-bin -B 0 -qe ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-B 0 -qe
 EXPECT=<<EOF
-0x00400410
-0x004004d0
-0x004004b0
 0x00000410
 0x000004d0
 0x000004b0
@@ -39,7 +44,8 @@ RUN
 
 NAME=laddr 0
 FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=!rz-bin -G 0 -e ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-G 0 -e
 EXPECT=<<EOF
 [Entries]
      vaddr      paddr     hvaddr      haddr type    
@@ -53,7 +59,8 @@ RUN
 
 NAME=laddr 0 && baddr 0
 FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=!rz-bin -G 0 -B 0 -e ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-G 0 -B 0 -e
 EXPECT=<<EOF
 [Entries]
      vaddr      paddr     hvaddr      haddr type    
@@ -67,19 +74,19 @@ RUN
 
 NAME=rz-bin -k file
 FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=!rz-bin -k ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-k
+EXIT_STATUS=1
 EXPECT=
 EXPECT_ERR=<<EOF
-WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
-WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
-WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
 Missing file.
 EOF
 RUN
 
 NAME=rz-bin -K md5 -S file
 FILE=bins/pe/a.exe
-CMDS=!rz-bin -K md5 -S ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-K md5 -S
 EXPECT=<<EOF
 [Sections]
      paddr  size      vaddr  vsize align perm name   type flags                                       md5                              
@@ -95,27 +102,119 @@ RUN
 
 NAME=rz-bin -s file pe
 FILE=bins/pe/a.exe
-CMDS=!rz-bin -s ${RZ_FILE}|wc -l|awk "{print \$1}"
+TOOL=rz-bin
+ARGS=-s
 EXPECT=<<EOF
-24
+[Symbols]
+nth      paddr      vaddr bind type size lib          name                            
+--------------------------------------------------------------------------------------
+  1 0x000012a0 0x004050a0 NONE FUNC    0 KERNEL32.dll imp.AddAtomA
+  2 0x000012a4 0x004050a4 NONE FUNC    0 KERNEL32.dll imp.ExitProcess
+  3 0x000012a8 0x004050a8 NONE FUNC    0 KERNEL32.dll imp.FindAtomA
+  4 0x000012ac 0x004050ac NONE FUNC    0 KERNEL32.dll imp.GetAtomNameA
+  5 0x000012b0 0x004050b0 NONE FUNC    0 KERNEL32.dll imp.SetUnhandledExceptionFilter
+  1 0x000012bc 0x004050bc NONE FUNC    0 msvcrt.dll   imp.__getmainargs
+  2 0x000012c0 0x004050c0 NONE FUNC    0 msvcrt.dll   imp.__p__environ
+  3 0x000012c4 0x004050c4 NONE FUNC    0 msvcrt.dll   imp.__p__fmode
+  4 0x000012c8 0x004050c8 NONE FUNC    0 msvcrt.dll   imp.__set_app_type
+  5 0x000012cc 0x004050cc NONE FUNC    0 msvcrt.dll   imp._assert
+  6 0x000012d0 0x004050d0 NONE FUNC    0 msvcrt.dll   imp._cexit
+  7 0x000012d4 0x004050d4 NONE FUNC    0 msvcrt.dll   imp._iob
+  8 0x000012d8 0x004050d8 NONE FUNC    0 msvcrt.dll   imp._onexit
+  9 0x000012dc 0x004050dc NONE FUNC    0 msvcrt.dll   imp._setmode
+ 10 0x000012e0 0x004050e0 NONE FUNC    0 msvcrt.dll   imp.abort
+ 11 0x000012e4 0x004050e4 NONE FUNC    0 msvcrt.dll   imp.atexit
+ 12 0x000012e8 0x004050e8 NONE FUNC    0 msvcrt.dll   imp.free
+ 13 0x000012ec 0x004050ec NONE FUNC    0 msvcrt.dll   imp.malloc
+ 14 0x000012f0 0x004050f0 NONE FUNC    0 msvcrt.dll   imp.printf
+ 15 0x000012f4 0x004050f4 NONE FUNC    0 msvcrt.dll   imp.signal
+
 EOF
 RUN
 
 NAME=rz-bin -s file elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=!rz-bin -s ${RZ_FILE}|wc -l|awk "{print \$1}"
+TOOL=rz-bin
+ARGS=-s
 EXPECT=<<EOF
-70
+[Symbols]
+nth      paddr      vaddr bind   type   size lib name                                   
+----------------------------------------------------------------------------------------
+  4 0x000004ac 0x080484ac GLOBAL OBJ       4     _IO_stdin_used
+  1 0x00000134 0x08048134 LOCAL  SECT      0     .interp
+  2 0x00000148 0x08048148 LOCAL  SECT      0     .note.ABI-tag
+  3 0x00000168 0x08048168 LOCAL  SECT      0     .note.gnu.build-id
+  4 0x0000018c 0x0804818c LOCAL  SECT      0     .gnu.hash
+  5 0x000001ac 0x080481ac LOCAL  SECT      0     .dynsym
+  6 0x000001fc 0x080481fc LOCAL  SECT      0     .dynstr
+  7 0x00000246 0x08048246 LOCAL  SECT      0     .gnu.version
+  8 0x00000250 0x08048250 LOCAL  SECT      0     .gnu.version_r
+  9 0x00000270 0x08048270 LOCAL  SECT      0     .rel.dyn
+ 10 0x00000278 0x08048278 LOCAL  SECT      0     .rel.plt
+ 11 0x00000290 0x08048290 LOCAL  SECT      0     .init
+ 12 0x000002c0 0x080482c0 LOCAL  SECT      0     .plt
+ 13 0x00000300 0x08048300 LOCAL  SECT      0     .text
+ 14 0x00000494 0x08048494 LOCAL  SECT      0     .fini
+ 15 0x000004a8 0x080484a8 LOCAL  SECT      0     .rodata
+ 16 0x000004c0 0x080484c0 LOCAL  SECT      0     .eh_frame_hdr
+ 17 0x000004ec 0x080484ec LOCAL  SECT      0     .eh_frame
+ 18 0x0000059c 0x0804959c LOCAL  SECT      0     .init_array
+ 19 0x000005a0 0x080495a0 LOCAL  SECT      0     .fini_array
+ 20 0x000005a4 0x080495a4 LOCAL  SECT      0     .jcr
+ 21 0x000005a8 0x080495a8 LOCAL  SECT      0     .dynamic
+ 22 0x00000690 0x08049690 LOCAL  SECT      0     .got
+ 23 0x00000694 0x08049694 LOCAL  SECT      0     .got.plt
+ 24 0x000006ac 0x080496ac LOCAL  SECT      0     .data
+ 25 ---------- 0x080496b4 LOCAL  SECT      0     .bss
+ 26 ---------- 0x00000000 LOCAL  SECT      0     .comment
+ 27 ---------- 0x00000000 LOCAL  FILE      0     init.c
+ 28 ---------- 0x00000000 LOCAL  FILE      0     unknown_28
+ 29 ---------- 0x00000000 LOCAL  FILE      0     crtstuff.c
+ 30 0x000005a4 0x080495a4 LOCAL  OBJ       0     __JCR_LIST__
+ 31 0x00000340 0x08048340 LOCAL  FUNC      0     deregister_tm_clones
+ 32 0x00000370 0x08048370 LOCAL  FUNC      0     register_tm_clones
+ 33 0x000003b0 0x080483b0 LOCAL  FUNC      0     __do_global_dtors_aux
+ 34 ---------- 0x080496b4 LOCAL  OBJ       1     completed.5979
+ 35 0x000005a0 0x080495a0 LOCAL  OBJ       0     __do_global_dtors_aux_fini_array_entry
+ 36 0x000003d0 0x080483d0 LOCAL  FUNC      0     frame_dummy
+ 37 0x0000059c 0x0804959c LOCAL  OBJ       0     __frame_dummy_init_array_entry
+ 38 ---------- 0x00000000 LOCAL  FILE      0     hello.c
+ 39 ---------- 0x00000000 LOCAL  FILE      0     crtstuff.c
+ 40 0x00000598 0x08048598 LOCAL  OBJ       0     __FRAME_END__
+ 41 0x000005a4 0x080495a4 LOCAL  OBJ       0     __JCR_END__
+ 42 ---------- 0x00000000 LOCAL  FILE      0     unknown_42
+ 43 0x000005a0 0x080495a0 LOCAL  NOTYPE    0     __init_array_end
+ 44 0x000005a8 0x080495a8 LOCAL  OBJ       0     _DYNAMIC
+ 45 0x0000059c 0x0804959c LOCAL  NOTYPE    0     __init_array_start
+ 46 0x00000694 0x08049694 LOCAL  OBJ       0     _GLOBAL_OFFSET_TABLE_
+ 47 0x00000490 0x08048490 GLOBAL FUNC      2     __libc_csu_fini
+ 49 0x00000330 0x08048330 GLOBAL FUNC      4     __x86.get_pc_thunk.bx
+ 50 0x000006ac 0x080496ac WEAK   NOTYPE    0     data_start
+ 51 ---------- 0x080496b4 GLOBAL NOTYPE    0     _edata
+ 52 0x00000494 0x08048494 GLOBAL FUNC      0     _fini
+ 53 0x000006ac 0x080496ac GLOBAL NOTYPE    0     __data_start
+ 56 0x000006b0 0x080496b0 GLOBAL OBJ       0     __dso_handle
+ 57 0x000004ac 0x080484ac GLOBAL OBJ       4     _IO_stdin_used
+ 59 0x00000420 0x08048420 GLOBAL FUNC     97     __libc_csu_init
+ 60 ---------- 0x080496b8 GLOBAL NOTYPE    0     _end
+ 61 0x00000300 0x08048300 GLOBAL FUNC      0     _start
+ 62 0x000004a8 0x080484a8 GLOBAL OBJ       4     _fp_hw
+ 63 ---------- 0x080496b4 GLOBAL NOTYPE    0     __bss_start
+ 64 0x00000400 0x08048400 GLOBAL FUNC     28     main
+ 66 ---------- 0x080496b4 GLOBAL OBJ       0     __TMC_END__
+ 68 0x00000290 0x08048290 GLOBAL FUNC      0     _init
+  1 0x000002d0 0x080482d0 GLOBAL FUNC     16     imp.puts
+  2 0x000002e0 0x080482e0 WEAK   NOTYPE   16     imp.__gmon_start__
+  3 0x000002f0 0x080482f0 GLOBAL FUNC     16     imp.__libc_start_main
+
 EOF
 RUN
 
-NAME=rz-bin -S, -SS, -rS and -rSS file elf
+NAME=rz-bin -S file elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EOF
-env RZ_BIN_PREFIX=prixfixe
-!rz-bin -S ${RZ_FILE}
-!rz-bin -SS ${RZ_FILE}
-EOF
+TOOL=rz-bin
+ARGS=-S
+ENVS=RZ_BIN_PREFIX=prixfixe
 EXPECT=<<EOF
 [Sections]
      paddr  size      vaddr vsize align perm name                        type       flags         
@@ -132,7 +231,7 @@ EXPECT=<<EOF
 0x00000270   0x8 0x08048270   0x8   0x0 -r-- prixfixe..rel.dyn           REL        alloc
 0x00000278  0x18 0x08048278  0x18   0x0 -r-- prixfixe..rel.plt           REL        alloc
 0x00000290  0x23 0x08048290  0x23   0x0 -r-x prixfixe..init              PROGBITS   alloc,execute
-0x000002c0  0x40 0x080482c0  0x40   0x0 -r-x prixfixe..plt               PROGBITS   alloc,execute
+0x000002c0  0x40 0x080482c0  0x40   0x0 -r-x prixfixe..plt               PLT        alloc,execute
 0x00000300 0x194 0x08048300 0x194   0x0 -r-x prixfixe..text              PROGBITS   alloc,execute
 0x00000494  0x14 0x08048494  0x14   0x0 -r-x prixfixe..fini              PROGBITS   alloc,execute
 0x000004a8  0x15 0x080484a8  0x15   0x0 -r-- prixfixe..rodata            PROGBITS   alloc
@@ -151,6 +250,16 @@ EXPECT=<<EOF
 0x00000c7c 0x450 ---------- 0x450   0x0 ---- prixfixe..symtab            SYMTAB     
 0x000010cc 0x257 ---------- 0x257   0x0 ---- prixfixe..strtab            STRTAB     
 
+EOF
+RUN
+
+
+NAME=rz-bin -SS file elf
+FILE=bins/elf/analysis/x86-helloworld-gcc
+TOOL=rz-bin
+ARGS=-SS
+ENVS=RZ_BIN_PREFIX=prixfixe
+EXPECT=<<EOF
 [Segments]
      paddr  size      vaddr vsize  align perm name                  
 --------------------------------------------------------------------
@@ -169,31 +278,79 @@ RUN
 
 NAME=rz-bin -SSS
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=!rz-bin -SSS ${RZ_FILE}|wc -l|awk "{print \$1}"
+TOOL=rz-bin
+ARGS=-SSS
 EXPECT=<<EOF
-13
+[Sections mapping]
+Segment      Sections                                                                                                                                                                
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+PHDR         
+INTERP       .interp
+LOAD0        .interp .note.ABI-tag .note.gnu.build-id .gnu.hash .dynsym .dynstr .gnu.version .gnu.version_r .rel.dyn .rel.plt .init .plt .text .fini .rodata .eh_frame_hdr .eh_frame
+LOAD1        .init_array .fini_array .jcr .dynamic .got .got.plt .data
+DYNAMIC      .dynamic
+NOTE         .note.ABI-tag .note.gnu.build-id
+GNU_EH_FRAME .eh_frame_hdr
+GNU_STACK    
+ehdr         
+
 EOF
 RUN
 
 NAME=rz-bin -z pe
 FILE=bins/pe/a.exe
-CMDS=!rz-bin -z ${RZ_FILE}|wc -l|awk "{print \$1}"
+TOOL=rz-bin
+ARGS=-z
 EXPECT=<<EOF
-31
+[Strings]
+     paddr      vaddr len size section type    string                                                                                                                                                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0x00001008 0x00403008  28   29 .rdata  ascii   -LIBGCCW32-EH-3-SJLJ-MINGW32
+0x00001028 0x00403028  44   45 .rdata  ascii   w32_sharedptr->size == sizeof(W32_EH_SHARED)
+0x00001058 0x00403058 202  203 .rdata  ascii   /opt/local/var/macports/build/_opt_local_var_macports_sources_rsync.macports.org_release_tarballs_ports_cross_i386-mingw32-gcc/i386-mingw32-gcc/work/gcc-3.4.5-20060117-2/gcc/config/i386/w32-shared-ptr.c
+0x00001124 0x00403124  38   39 .rdata  ascii   GetAtomNameA (atom, s, sizeof(s)) != 0
+0x000012fe 0x004050fe   8    9 .idata  ascii   AddAtomA
+0x0000130a 0x0040510a  11   12 .idata  ascii   ExitProcess
+0x00001318 0x00405118   9   10 .idata  ascii   FindAtomA
+0x00001324 0x00405124  12   13 .idata  ascii   GetAtomNameA
+0x00001334 0x00405134  27   28 .idata  ascii   SetUnhandledExceptionFilter
+0x00001352 0x00405152  13   14 .idata  ascii   __getmainargs
+0x00001362 0x00405162  12   13 .idata  ascii   __p__environ
+0x00001372 0x00405172  10   11 .idata  ascii   __p__fmode
+0x00001380 0x00405180  14   15 .idata  ascii   __set_app_type
+0x00001392 0x00405192   7    8 .idata  ascii   _assert
+0x0000139c 0x0040519c   6    7 .idata  ascii   _cexit
+0x000013a6 0x004051a6   4    5 .idata  ascii   _iob
+0x000013ae 0x004051ae   7    8 .idata  ascii   _onexit
+0x000013b8 0x004051b8   8    9 .idata  ascii   _setmode
+0x000013c4 0x004051c4   5    6 .idata  ascii   abort
+0x000013cc 0x004051cc   6    7 .idata  ascii   atexit
+0x000013d6 0x004051d6   4    5 .idata  ascii   free
+0x000013de 0x004051de   6    7 .idata  ascii   malloc
+0x000013e8 0x004051e8   6    7 .idata  ascii   printf
+0x000013f2 0x004051f2   6    7 .idata  ascii   signal
+0x000013fd 0x004051fd   4   16 .idata  utf32le PPPP
+0x00001410 0x00405210  12   13 .idata  ascii   KERNEL32.dll
+0x0000145c 0x0040525c  10   11 .idata  ascii   msvcrt.dll
+
 EOF
 RUN
 
 NAME=rz-bin -zz pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -zz ${RZ_FILE} | grep "Password:"
+TOOL=rz-bin
+ARGS=-zz
+REGEXP_FILTER_OUT=.+Password:.+
 EXPECT=<<EOF
-086 0x00002619 0x00404019 10 11 (.rdata) ascii Password: 
+0x00002619 0x00404019 10 11 (.rdata) ascii Password: 
 EOF
 RUN
 
 NAME=rz-bin -zzq pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -zzq ${RZ_FILE} | grep "Password:"
+TOOL=rz-bin
+ARGS=-zzq
+REGEXP_FILTER_OUT=.+Password:.+
 EXPECT=<<EOF
 0x404019 11 10 Password: 
 EOF
@@ -201,23 +358,38 @@ RUN
 
 NAME=rz-bin -zzqq pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -zzqq ${RZ_FILE} | grep "Password:"
+TOOL=rz-bin
+ARGS=-zzqq
+REGEXP_FILTER_OUT=Password:.+
 EXPECT=<<EOF
 Password: 
 EOF
 RUN
 
+
 NAME=rz-bin -z elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=!rz-bin -z ${RZ_FILE}|wc -l|awk "{print \$1}"
+TOOL=rz-bin
+ARGS=-z
 EXPECT=<<EOF
-5
+[Strings]
+     paddr      vaddr len size section type  string            
+---------------------------------------------------------------
+0x000001fd 0x080481fd   9   10 .dynstr ascii libc.so.6
+0x00000207 0x08048207  14   15 .dynstr ascii _IO_stdin_used
+0x00000216 0x08048216   4    5 .dynstr ascii puts
+0x0000021b 0x0804821b  17   18 .dynstr ascii __libc_start_main
+0x0000022d 0x0804822d  14   15 .dynstr ascii __gmon_start__
+0x0000023c 0x0804823c   9   10 .dynstr ascii GLIBC_2.0
+0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
+
 EOF
 RUN
 
 NAME=rz-bin -G 0x1000 -e fatmach0
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -G 0x1000 -e ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-G 0x1000 -e
 EXPECT=<<EOF
 [Entries]
       vaddr      paddr     hvaddr      haddr type    
@@ -228,20 +400,22 @@ EOF
 RUN
 
 NAME=rz-bin -e fatmach0
-BROKEN=1
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -e ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-e
 EXPECT=<<EOF
-[Entrypoints]
-vaddr=0x100000ef8 paddr=0x00001ef8 baddr=0x100000000 laddr=0x00001000 haddr=0x00000570 type=program
+[Entries]
+      vaddr      paddr     hvaddr      haddr type    
+-----------------------------------------------------
+0x100000ef8 0x00001ef8 ---------- 0x00000570 program
 
-1 entrypoints
 EOF
 RUN
 
 NAME=rz-bin -G 0x5000 -e fatmach0
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -G 0x5000 -e ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-G 0x5000 -e
 EXPECT=<<EOF
 [Entries]
      vaddr      paddr     hvaddr      haddr type    
@@ -252,20 +426,22 @@ EOF
 RUN
 
 NAME=rz-bin -a x86 -b 32 -e fatmach0
-BROKEN=1
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -a x86 -b 32 -e ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-a x86 -b 32 -e
 EXPECT=<<EOF
-[Entrypoints]
-vaddr=0x00001f44 paddr=0x00005f44 baddr=0x00001000 laddr=0x00005000 haddr=0x00000420 type=program
+[Entries]
+     vaddr      paddr     hvaddr      haddr type    
+----------------------------------------------------
+0x00001f44 0x00005f44 ---------- 0x00000420 program
 
-1 entrypoints
 EOF
 RUN
 
 NAME=rz-bin -B 0x2000000 -G 0x1000 -e fatmach0
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -B 0x2000000 -G 0x1000 -e ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-B 0x2000000 -G 0x1000 -e
 EXPECT=<<EOF
 [Entries]
      vaddr      paddr     hvaddr      haddr type    
@@ -275,18 +451,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=TODO: test on pie fatmach0
-BROKEN=1
-FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -B 0x2000000 -G 0x1000 -e ${RZ_FILE}
-EXPECT=<<EOF
-???
-EOF
-RUN
-
 NAME=rz-bin -B 0x2000000 -e arm64
 FILE=bins/mach0/hello-ios-arm64
-CMDS=!rz-bin -B 0x2000000 -e ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-B 0x2000000 -e
 EXPECT=<<EOF
 [Entries]
      vaddr      paddr     hvaddr      haddr type    
@@ -298,7 +466,8 @@ RUN
 
 NAME=rz-bin -a x86 -b 32 -i fatmach0
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -a x86 -b 32 -i ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-a x86 -b 32 -i
 EXPECT=<<EOF
 [Imports]
 nth      vaddr bind type lib name             
@@ -311,7 +480,8 @@ RUN
 
 NAME=rz-bin -G 0x5000 -i fatmach0
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -G 0x5000 -i ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-G 0x5000 -i
 EXPECT=<<EOF
 [Imports]
 nth      vaddr bind type lib name             
@@ -324,79 +494,128 @@ RUN
 
 NAME=rz-bin -qqz
 FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=!rz-bin -qqz ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-qqz
 EXPECT=<<EOF
+__gmon_start__
+libc.so.6
+puts
+__libc_start_main
+GLIBC_2.2.5
 Hello World
 EOF
 RUN
 
 NAME=rz-bin -qqzz
 FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=<<EOF
-!rz-bin -qqzz ${RZ_FILE}~do_global_dtors_aux_fini_array_entry
-!rz-bin -qqzz ${RZ_FILE}~?
-EOF
+TOOL=rz-bin
+ARGS=-qqzz
 EXPECT=<<EOF
+@8@
+/lib/ld-linux-x86-64.so.2
+__gmon_start__
+libc.so.6
+puts
+__libc_start_main
+GLIBC_2.2.5
+\$H
+l$ L
+t$(L
+|$0H
+Hello World
+
+
+;*3$"
+P
+GCC: (GNU) 4.7.2
+.symtab
+.strtab
+.shstrtab
+.interp
+.note.ABI-tag
+.note.gnu.build-id
+.gnu.hash
+.dynsym
+.dynstr
+.gnu.version
+.gnu.version_r
+.rela.dyn
+.rela.plt
+.init
+.text
+.fini
+.rodata
+.eh_frame_hdr
+.eh_frame
+.init_array
+.fini_array
+.jcr
+.dynamic
+.got
+.got.plt
+.data
+.bss
+.comment
+init.c
+crtstuff.c
+__JCR_LIST__
+deregister_tm_clones
+register_tm_clones
+__do_global_dtors_aux
+completed.6724
 __do_global_dtors_aux_fini_array_entry
-82
-EOF
-RUN
-
-NAME=rz-bin -qqzzz
-FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=<<EOF
-!rz-bin -qqzzz ${RZ_FILE}~do_global_dtors_aux_fini_array_entry
-!rz-bin -qqzzz ${RZ_FILE}~?
-EOF
-EXPECT=<<EOF
-__do_global_dtors_aux_fini_array_entry
-82
+frame_dummy
+__frame_dummy_init_array_entry
+hello.c
+__FRAME_END__
+__JCR_END__
+__init_array_end
+_DYNAMIC
+__init_array_start
+_GLOBAL_OFFSET_TABLE_
+__libc_csu_fini
+_ITM_deregisterTMCloneTable
+data_start
+puts@@GLIBC_2.2.5
+_edata
+_fini
+__libc_start_main@@GLIBC_2.2.5
+__data_start
+__gmon_start__
+__dso_handle
+_IO_stdin_used
+__libc_csu_init
+_end
+_start
+__bss_start
+main
+_Jv_RegisterClasses
+__TMC_END__
+_ITM_registerTMCloneTable
+_init
 EOF
 RUN
 
 NAME=rz-bin -qOr
 FILE=bins/elf/analysis/ls-linux-x86_64-zlul
-CMDS=<<EOF
-!rz-bin -qOr/.data/-1 ${FILE}
-!rz-bin -qOr/.data/-1 ${FILE}
-EOF
+TOOL=rz-bin
+ARGS=-qOr/.data/-1
 EXPECT=
 RUN
 
 NAME=rz-bin -ee -j
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EOF
-!rz-bin -ee -j ${RZ_FILE}~{}
-EOF
+TOOL=rz-bin
+ARGS=-ee -j
 EXPECT=<<EOF
-{
-  "initfini": [
-    {
-      "vaddr": 134513616,
-      "paddr": 976,
-      "baddr": 134512640,
-      "laddr": 0,
-      "hvaddr": 134518172,
-      "haddr": 1436,
-      "type": "init"
-    },
-    {
-      "vaddr": 134513584,
-      "paddr": 944,
-      "baddr": 134512640,
-      "laddr": 0,
-      "hvaddr": 134518176,
-      "haddr": 1440,
-      "type": "fini"
-    }
-  ]
-}
+{"initfini":[{"vaddr":134513616,"paddr":976,"baddr":134512640,"laddr":0,"hvaddr":134518172,"haddr":1436,"type":"init"},{"vaddr":134513584,"paddr":944,"baddr":134512640,"laddr":0,"hvaddr":134518176,"haddr":1440,"type":"fini"}]}
 EOF
 RUN
 
 NAME=-ee baddr 0
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=!rz-bin -ee -B 0 ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-ee -B 0
 EXPECT=<<EOF
 [Initfini]
      vaddr      paddr     hvaddr      haddr type 
@@ -409,7 +628,8 @@ RUN
 
 NAME=rz-bin -g
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=!rz-bin -g ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-g
 EXPECT=<<EOF
 [Info]
 arch     x86
@@ -438,17 +658,15 @@ relro    no
 rpath    NONE
 subsys   linux
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   false
 linenum  true
 lsyms    true
 canary   false
-PIE      false
-RELROCS  true
-NX       true
+pie      false
+relrocs  true
+nx       true
 
 [Imports]
 nth      vaddr bind   type   lib name              
@@ -553,7 +771,7 @@ nth      paddr      vaddr bind   type   size lib name
 0x00000270   0x8 0x08048270   0x8   0x0 -r-- .rel.dyn           REL        alloc
 0x00000278  0x18 0x08048278  0x18   0x0 -r-- .rel.plt           REL        alloc
 0x00000290  0x23 0x08048290  0x23   0x0 -r-x .init              PROGBITS   alloc,execute
-0x000002c0  0x40 0x080482c0  0x40   0x0 -r-x .plt               PROGBITS   alloc,execute
+0x000002c0  0x40 0x080482c0  0x40   0x0 -r-x .plt               PLT        alloc,execute
 0x00000300 0x194 0x08048300 0x194   0x0 -r-x .text              PROGBITS   alloc,execute
 0x00000494  0x14 0x08048494  0x14   0x0 -r-x .fini              PROGBITS   alloc,execute
 0x000004a8  0x15 0x080484a8  0x15   0x0 -r-- .rodata            PROGBITS   alloc
@@ -586,9 +804,15 @@ nth      paddr      vaddr bind   type   size lib name
 0x00000000  0x34 0x08048000  0x34    0x0 -rw- ehdr
 
 [Strings]
-nth      paddr      vaddr len size section type  string       
---------------------------------------------------------------
-  0 0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
+     paddr      vaddr len size section type  string            
+---------------------------------------------------------------
+0x000001fd 0x080481fd   9   10 .dynstr ascii libc.so.6
+0x00000207 0x08048207  14   15 .dynstr ascii _IO_stdin_used
+0x00000216 0x08048216   4    5 .dynstr ascii puts
+0x0000021b 0x0804821b  17   18 .dynstr ascii __libc_start_main
+0x0000022d 0x0804822d  14   15 .dynstr ascii __gmon_start__
+0x0000023c 0x0804823c   9   10 .dynstr ascii GLIBC_2.0
+0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
 
 [Main]
      vaddr      paddr 
@@ -665,23 +889,22 @@ ehdr
 EOF
 RUN
 
-NAME=rz-bin -x pemixed.exe
-BROKEN=1
-FILE=bins/pe/pemixed.exe
+NAME=rz-bin -x a.out
+FILE=bins/mach0/a.out
 CMDS=<<EOF
-!rz-bin -x bins/pe/pemixed.exe
-!rm -r pemixed.exe.fat
+!rz-bin -x bins/mach0/a.out
+!rm -r a.out.fat
 EOF
 EXPECT=<<EOF
-pemixed.exe.fat/pemixed.exe.unknown_0.0 created (248)
-pemixed.exe.fat/pemixed.exe.unknown_0.1 created (35328)
-pemixed.exe.fat/pemixed.exe.unknown_0.2 created (35328)
+a.out.fat/a.out.arm_32.0 created (49424)
+a.out.fat/a.out.arm_64.1 created (49420)
 EOF
 RUN
 
 NAME=rz-bin -I elf_cpp
 FILE=bins/elf/analysis/a.out.cpp
-CMDS=!rz-bin -I ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-I
 EXPECT=<<EOF
 [Info]
 arch     x86
@@ -710,70 +933,70 @@ relro    full
 rpath    NONE
 subsys   linux
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   false
 linenum  true
 lsyms    true
 canary   false
-PIE      true
-RELROCS  true
-NX       true
+pie      true
+relrocs  true
+nx       true
 
 EOF
 RUN
 
 NAME=rz-bin -I asan
 FILE=bins/elf/analysis/a.out.asan
-CMDS=!rz-bin -I ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-I
 EXPECT=<<EOF
 [Info]
-arch     x86
-cpu      N/A
-features N/A
-baddr    0x00400000
-binsz    0x001876b7
-bintype  elf
-bits     64
-class    ELF64
-compiler GCC: (Debian 8.2.0-5) 8.2.0 clang version 6.0.1-6 (tags/RELEASE_601/final)
-dbg_file N/A
-endian   LE
-hdr.csum N/A
-guid     N/A
-intrp    /lib64/ld-linux-x86-64.so.2
-laddr    0x00000000
-lang     c++
-machine  AMD x86-64 architecture
-maxopsz  16
-minopsz  1
-os       linux
-cc       N/A
-pcalign  1
-relro    partial
-rpath    NONE
-subsys   linux
-stripped false
-crypto   false
-havecode true
-va       true
-sanitiz  true
-static   false
-linenum  true
-lsyms    true
-canary   false
-PIE      false
-RELROCS  true
-NX       true
+arch           x86
+cpu            N/A
+features       N/A
+baddr          0x00400000
+binsz          0x001876b7
+bintype        elf
+bits           64
+class          ELF64
+compiler       GCC: (Debian 8.2.0-5) 8.2.0 clang version 6.0.1-6 (tags/RELEASE_601/final)
+dbg_file       N/A
+endian         LE
+hdr.csum       N/A
+guid           N/A
+intrp          /lib64/ld-linux-x86-64.so.2
+laddr          0x00000000
+lang           c++
+machine        AMD x86-64 architecture
+maxopsz        16
+minopsz        1
+os             linux
+cc             N/A
+pcalign        1
+relro          partial
+rpath          NONE
+subsys         linux
+stripped       false
+havecode       true
+va             true
+static         false
+linenum        true
+lsyms          true
+canary         false
+pie            false
+relrocs        true
+nx             true
+fortify_source true
+sanitizers     ubsan,asan
 
 EOF
 RUN
 
 NAME=rz-bin -I apple-blocks-ext
 FILE=bins/mach0/mach0-blocks-ext
-CMDS=!rz-bin -I ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-I
 EXPECT=<<EOF
 [Info]
 arch     x86
@@ -801,24 +1024,24 @@ pcalign  1
 rpath    N/A
 subsys   macOS
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   false
 linenum  false
 lsyms    false
 canary   false
-PIE      true
-RELROCS  false
-NX       false
+pie      true
+relrocs  false
+nx       false
 
 EOF
 RUN
 
 NAME=rz-bin -s right symbols
 FILE=bins/elf/libc.so.0
-CMDS=!rz-bin -s ${RZ_FILE} | grep 0002edb0
+TOOL=rz-bin
+ARGS=-s
+REGEXP_FILTER_OUT=.+0002edb0.+
 EXPECT=<<EOF
  149 0x0002edb0 0x0002edb0 GLOBAL FUNC    356     getc_unlocked
  402 0x0002edb0 0x0002edb0 GLOBAL FUNC    356     __fgetc_unlocked
@@ -828,7 +1051,8 @@ RUN
 
 NAME=rz-bin -V
 FILE=bins/pe/version_cust.exe
-CMDS=!rz-bin -V ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-V
 EXPECT=<<EOF
 [Versioninfo]
 === VS_VERSIONINFO ===
@@ -852,7 +1076,8 @@ RUN
 
 NAME=rz-bin -c
 FILE=bins/java/test.class
-CMDS=!rz-bin -c ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-c
 EXPECT=<<EOF
 [Classes]
    address        min        max name super              
@@ -864,40 +1089,45 @@ RUN
 
 NAME=rz-bin -cq
 FILE=bins/java/test.class
-CMDS=!rz-bin -cq ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-cq
 EXPECT=<<EOF
 0x00000000 [0x000008f9 - 0x00000bcd] test groovy.lang.Script
 EOF
 RUN
 
-
 NAME=rz-bin rust static type
-FILE==
-CMDS=!rz-bin -D rust '_ZN71_$LT$Test$u20$$u2b$$u20$$u27$static$u20$as$u20$foo..Bar$LT$Test$GT$$GT$3barE'
+FILE=_ZN71_$LT$Test$u20$$u2b$$u20$$u27$static$u20$as$u20$foo..Bar$LT$Test$GT$$GT$3barE
+TOOL=rz-bin
+ARGS=-D rust
 EXPECT=<<EOF
 <Test + 'static as foo::Bar<Test>>::bar
 EOF
 RUN
 
 NAME=rz-bin -D java
-FILE==
-CMDS=!rz-bin -D java "Fake([BCDFIJSZ)Ltest/class/name;"
+FILE=Fake([BCDFIJSZ)Ltest/class/name;
+TOOL=rz-bin
+ARGS=-D java
 EXPECT=<<EOF
 test.class.name Fake(byte[], char, double, float, int, long, short, boolean)
 EOF
 RUN
 
 NAME=rz-bin -D pascal
-FILE==
-CMDS=!rz-bin -D pascal "EXAMPLE_$$_SUMOFSQUARES$LONGINT$$LONGINT"
+FILE=EXAMPLE_$$_SUMOFSQUARES$LONGINT$$LONGINT
+TOOL=rz-bin
+ARGS=-D pascal
 EXPECT=<<EOF
 unit example sumofsquares(longint)longint
 EOF
 RUN
 
 NAME=rz-bin -D Invalid
-FILE==
-CMDS=!rz-bin -D Invalid XXXXX
+FILE=XXXXX
+TOOL=rz-bin
+ARGS=-D Invalid
+EXIT_STATUS=1
 EXPECT_ERR=
 EXPECT=<<EOF
 Language 'Invalid' is unsupported
@@ -906,103 +1136,96 @@ java   LGPL3        deroad
 msvc   LGPL3        inisider
 objc   LGPL3        pancake
 pascal LGPL3        deroad
-c++    GPL-2,LGPL3  FSF/deroad
+c++    LGPL3        billow
 rust   LGPL3        Dhruv Maroo/RizinOrg
-swift  MIT          pancake
-EOF
-RUN
-
-NAME=rz-bin -h
-FILE=bins/elf/libc.so.0
-CMDS=!rz-bin -h | grep -c Usage
-EXPECT=<<EOF
-1
 EOF
 RUN
 
 NAME=rz-bin -O help
 FILE=bins/elf/libc.so.0
-CMDS=!rz-bin -O help | grep -c Usage
+TOOL=rz-bin
+ARGS=-O help
 EXPECT=<<EOF
-1
+Usage: iO [expression]:
+ d/s/1024          dump symbols
+ d/S/.text         dump section
+ c                 show Codesign data
+ C                 show LDID entitlements
 EOF
 RUN
 
 NAME=rz-bin -O h
 FILE=bins/elf/libc.so.0
-CMDS=!rz-bin -O h | grep -c Usage
+TOOL=rz-bin
+ARGS=-O h
 EXPECT=<<EOF
-1
-EOF
-RUN
-
-NAME=rz-bin -O ?
-FILE=bins/elf/libc.so.0
-CMDS=!rz-bin -O "?" | grep -c Usage
-EXPECT=<<EOF
-1
+Usage: iO [expression]:
+ d/s/1024          dump symbols
+ d/S/.text         dump section
+ c                 show Codesign data
+ C                 show LDID entitlements
 EOF
 RUN
 
 NAME=rz-bin -O bad op
 FILE==
-CMDS=!rz-bin -O bad_op =
+TOOL=rz-bin
+ARGS=-O bad_op =
 EXPECT_ERR=<<EOF
 Unknown operation. use -O help
 EOF
 RUN
 
-NAME=rz-bin -v
-FILE==
-CMDS=!rz-bin -v | grep -c commit
-EXPECT=<<EOF
-1
-EOF
-RUN
-
 NAME=rz-bin -L
-FILE==
-CMDS=!rz-bin -L | grep -c any
+TOOL=rz-bin
+ARGS=-L any
 EXPECT=<<EOF
-1
+Name: any
+Description: Dummy format binary
+License: LGPL3
+Author: nibble
 EOF
 RUN
 
 NAME=rz-bin -Lq
 FILE==
-CMDS=!rz-bin -Lq | grep -c any
+TOOL=rz-bin
+ARGS=-Lq any
 EXPECT=<<EOF
-1
+any
 EOF
 RUN
 
 NAME=rz-bin -Lj
 FILE==
-CMDS=!rz-bin -Lj | grep -c any
+TOOL=rz-bin
+ARGS=-Lj any
 EXPECT=<<EOF
-1
-EOF
-RUN
-
-NAME=rz-bin -Lj any
-FILE==
-CMDS=!rz-bin -Lj any | grep -c Dummy
-EXPECT=<<EOF
-1
+{"name":"any","description":"Dummy format binary","license":"LGPL3"}
 EOF
 RUN
 
 NAME=rz-bin -U
 FILE=bins/pe/resource.exe
-CMDS=!rz-bin -U ${RZ_FILE} | grep -c "Resource 0"
+TOOL=rz-bin
+ARGS=-U
 EXPECT=<<EOF
-1
+[Resources]
+Resource 0
+  name: 29524
+  timestamp: Thu Jan  1 00:00:00 1970 UTC
+  vaddr: 0x00401168
+  paddr: 0x00000368
+  size: 32
+  type: UNKNOWN (789)
+  language: LANG_NEUTRAL
 EOF
 RUN
 
 NAME=rz-bin -E
 FILE=bins/pe/dll.dll
-CMDS=!rz-bin -E ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-E
 EXPECT=<<EOF
 [Exports]
 nth      paddr      vaddr bind   type size lib     name   
@@ -1014,15 +1237,16 @@ RUN
 
 NAME=rz-bin -l
 FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -l ${RZ_FILE} | grep -c kernel32.dll
-EXPECT=<<EOF
-1
-EOF
+TOOL=rz-bin
+ARGS=-l
+REGEXP_FILTER_OUT=.+kernel32\.dll.+
+EXPECT=
 RUN
 
 NAME=rz-bin -Z
 FILE=bins/pe/base.exe
-CMDS=!rz-bin -Z ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-Z
 EXPECT=<<EOF
 [Size]
 216569
@@ -1031,7 +1255,8 @@ RUN
 
 NAME=rz-bin -Zj
 FILE=bins/pe/base.exe
-CMDS=!rz-bin -Zj ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-Zj
 EXPECT=<<EOF
 {"size":216569}
 EOF
@@ -1039,23 +1264,28 @@ RUN
 
 NAME=rz-bin -H
 FILE=bins/pe/base.exe
-CMDS=!rz-bin -H ${RZ_FILE} | grep -c "Machine"
+TOOL=rz-bin
+ARGS=-H
+REGEXP_FILTER_OUT=.+Machine.+
 EXPECT=<<EOF
-1
+0x00000084 Machine                                 0x00000084 0x0000014c
 EOF
 RUN
 
 NAME=rz-bin -d
 FILE=bins/elf/analysis/dwarftest
-CMDS=!rz-bin -d ${RZ_FILE} | grep -c "0x00400535	/tmp/r2-regressions/./dwarftest.c"
+TOOL=rz-bin
+ARGS=-d
+REGEXP_FILTER_OUT=0x00400535 /tmp/r2-regressions/\./dwarftest\.c
 EXPECT=<<EOF
-1
+0x00400535	/tmp/r2-regressions/./dwarftest.c
 EOF
 RUN
 
 NAME=rz-bin -dj
 FILE=bins/elf/analysis/dwarftest
-CMDS=!rz-bin -dj ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-dj
 EXPECT=<<EOF
 {"dwarf":[{"file":"dwarftest.c","line":4,"addr":4195629},{"file":"dwarftest.c","line":7,"addr":4195637},{"file":"dwarftest.c","line":8,"addr":4195646},{"file":"dwarftest.c","line":7,"addr":4195656},{"file":"dwarftest.c","line":7,"addr":4195660},{"file":"dwarftest.c","line":11,"addr":4195666},{"file":"dwarftest.c","line":12,"addr":4195671},{"line":0,"addr":4195673}]}
 EOF
@@ -1063,212 +1293,107 @@ RUN
 
 NAME=rz-bin -P
 FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep -c R2_TEST_UNION
+TOOL=rz-bin
+ARGS=-P
+REGEXP_FILTER_OUT=.+R2_TEST_UNION.+
 EXPECT=<<EOF
-1
+union R2_TEST_UNION {
 EOF
 RUN
 
 NAME=rz-bin -Pj
 FILE=bins/pdb/minimal.pdb
-CMDS=<<EOF
-!rz-bin -Pj ${RZ_FILE}~{}
-echo
-EOF
+TOOL=rz-bin
+ARGS=-Pj
 EXPECT=<<EOF
-{
-  "pdb": [
-    {
-      "modules": [
-        {
-          "module_name": "* Linker Generated Manifest RES *",
-          "object_file_name": ""
-        },
-        {
-          "module_name": "C:\\Users\\emuresan\\source\\repos\\minimal\\Release\\main.obj",
-          "object_file_name": "C:\\Users\\emuresan\\source\\repos\\minimal\\Release\\main.obj"
-        },
-        {
-          "module_name": "* Linker *",
-          "object_file_name": ""
-        }
-      ]
-    },
-    {
-      "types": [
-        {
-          "type": "structure",
-          "name": "struct_typedef",
-          "size": 7,
-          "members": [
-            {
-              "member_type": "char",
-              "member_name": "a",
-              "offset": 0
-            },
-            {
-              "member_type": "int16_t",
-              "member_name": "b",
-              "offset": 1
-            },
-            {
-              "member_type": "int32_t",
-              "member_name": "c",
-              "offset": 3
-            }
-          ]
-        },
-        {
-          "type": "union",
-          "name": "type_0x1004",
-          "size": 4,
-          "members": [
-            {
-              "member_type": "char [4]",
-              "member_name": "a",
-              "offset": 0
-            },
-            {
-              "member_type": "int32_t",
-              "member_name": "b",
-              "offset": 0
-            }
-          ]
-        },
-        {
-          "type": "structure",
-          "name": "unnamed_member_types_typedef",
-          "size": 8,
-          "members": [
-            {
-              "member_type": "union type_0x1004",
-              "member_name": "a",
-              "offset": 0
-            },
-            {
-              "member_type": "int32_t",
-              "member_name": "b",
-              "offset": 4
-            }
-          ]
-        },
-        {
-          "type": "structure",
-          "name": "bitfield_typedef",
-          "size": 1,
-          "members": [
-            
-          ]
-        },
-        {
-          "type": "union",
-          "name": "union_typedef",
-          "size": 4,
-          "members": [
-            {
-              "member_type": "char",
-              "member_name": "a",
-              "offset": 0
-            },
-            {
-              "member_type": "int16_t",
-              "member_name": "b",
-              "offset": 0
-            },
-            {
-              "member_type": "int32_t",
-              "member_name": "c",
-              "offset": 0
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "gvars": [
-        {
-          "address": 12292,
-          "symtype": 4366,
-          "section_name": ".data",
-          "gdata_name": "_uninitialized_global"
-        },
-        {
-          "address": 12288,
-          "symtype": 4366,
-          "section_name": ".data",
-          "gdata_name": "_initialized_global"
-        },
-        {
-          "address": 4096,
-          "symtype": 4366,
-          "section_name": ".text",
-          "gdata_name": "_function"
-        },
-        {
-          "address": 4182,
-          "symtype": 4366,
-          "section_name": ".text",
-          "gdata_name": "_mainCRTStartup"
-        },
-        {
-          "address": 4120,
-          "symtype": 4366,
-          "section_name": ".text",
-          "gdata_name": "_main"
-        }
-      ]
-    }
-  ]
-}
-
-EOF
-RUN
-
-NAME=rz-bin -S ""
-FILE==
-CMDS=!rz-bin -S ""
-EXPECT_ERR=<<EOF
-Cannot open empty path
-EOF
-RUN
-
-NAME=rz_bin_prefix is used in symbols
-FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=<<EOF
-EOF
-EXPECT=
-RUN
-
-NAME=rz-bin broken MZ file
-FILE=bins/mz/broken.exe
-CMDS=!rz-bin -zzj ${RZ_FILE} ; echo ""
-EXPECT=<<EOF
-{}
-[{"vaddr":77,"paddr":77,"ordinal":0,"size":45,"length":44,"section":"","type":"ascii","string":"!This program cannot be run in DOS mode.\r\r\n$"},{"vaddr":155,"paddr":155,"ordinal":1,"size":6,"length":5,"section":"","type":"ascii","string":"Q\fb.Q"},{"vaddr":189,"paddr":189,"ordinal":2,"size":4,"length":4,"section":"","type":"ascii","string":"b.Q{"},{"vaddr":205,"paddr":205,"ordinal":3,"size":7,"length":7,"section":"","type":"ascii","string":"b.Q4<*P"},{"vaddr":213,"paddr":213,"ordinal":4,"size":5,"length":5,"section":"","type":"ascii","string":"b.Q4<"},{"vaddr":221,"paddr":221,"ordinal":5,"size":7,"length":7,"section":"","type":"ascii","string":"b.Q4<,P"},{"vaddr":229,"paddr":229,"ordinal":6,"size":7,"length":7,"section":"","type":"ascii","string":"b.QRich"},{"vaddr":241,"paddr":241,"ordinal":7,"size":30,"length":29,"section":"","type":"ascii","string":"https://malwarec2.com/drd.exe"}]
+{"pdb":[{"modules":[{"module_name":"* Linker Generated Manifest RES *","object_file_name":""},{"module_name":"C:\\Users\\emuresan\\source\\repos\\minimal\\Release\\main.obj","object_file_name":"C:\\Users\\emuresan\\source\\repos\\minimal\\Release\\main.obj"},{"module_name":"* Linker *","object_file_name":""}]},{"types":[{"type":"structure","name":"struct_typedef","size":7,"members":[{"member_type":"char","member_name":"a","offset":0},{"member_type":"int16_t","member_name":"b","offset":1},{"member_type":"int32_t","member_name":"c","offset":3}]},{"type":"union","name":"type_0x1004","size":4,"members":[{"member_type":"char [4]","member_name":"a","offset":0},{"member_type":"int32_t","member_name":"b","offset":0}]},{"type":"structure","name":"unnamed_member_types_typedef","size":8,"members":[{"member_type":"union type_0x1004","member_name":"a","offset":0},{"member_type":"int32_t","member_name":"b","offset":4}]},{"type":"structure","name":"bitfield_typedef","size":1,"members":[{"member_type":"unsigned char","member_name":"a","offset":0},{"member_type":"unsigned char","member_name":"b","offset":0},{"member_type":"unsigned char","member_name":"c","offset":0}]},{"type":"union","name":"union_typedef","size":4,"members":[{"member_type":"char","member_name":"a","offset":0},{"member_type":"int16_t","member_name":"b","offset":0},{"member_type":"int32_t","member_name":"c","offset":0}]}]},{"gvars":[{"address":12292,"symtype":4366,"section_name":".data","gdata_name":"_uninitialized_global"},{"address":12288,"symtype":4366,"section_name":".data","gdata_name":"_initialized_global"},{"address":4096,"symtype":4366,"section_name":".text","gdata_name":"_function"},{"address":4182,"symtype":4366,"section_name":".text","gdata_name":"_mainCRTStartup"},{"address":4120,"symtype":4366,"section_name":".text","gdata_name":"_main"}]}]}
 EOF
 RUN
 
 NAME=rz-bin load elf but with search.str.min_length=2
 FILE=bins/elf/smallstrings.elf
-CMDS=!rz-bin -z -N2 ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-z -N2
 EXPECT=<<EOF
 [Strings]
-nth      paddr      vaddr len size section type  string 
---------------------------------------------------------
-  0 0x00002006 0x00002006   2    3 .rodata ascii 22
-  1 0x00002009 0x00002009   3    4 .rodata ascii 333
-  2 0x0000200d 0x0000200d   4    5 .rodata ascii 4444
+     paddr      vaddr len size section type  string                      
+-------------------------------------------------------------------------
+0x00000471 0x00000471  17   18 .dynstr ascii __libc_start_main
+0x00000483 0x00000483  14   15 .dynstr ascii __cxa_finalize
+0x00000492 0x00000492   9   10 .dynstr ascii libc.so.6
+0x0000049c 0x0000049c  11   12 .dynstr ascii GLIBC_2.2.5
+0x000004a8 0x000004a8  10   11 .dynstr ascii GLIBC_2.34
+0x000004b3 0x000004b3  27   28 .dynstr ascii _ITM_deregisterTMCloneTable
+0x000004cf 0x000004cf  14   15 .dynstr ascii __gmon_start__
+0x000004de 0x000004de  25   26 .dynstr ascii _ITM_registerTMCloneTable
+0x00002006 0x00002006   2    3 .rodata ascii 22
+0x00002009 0x00002009   3    4 .rodata ascii 333
+0x0000200d 0x0000200d   4    5 .rodata ascii 4444
 
 EOF
 RUN
 
 NAME=Issue #4910 - segfault
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
-CMDS=!rz-bin -z -N ":<dH" ${RZ_FILE}
+TOOL=rz-bin
+ARGS=-z -N ":<dH"
 EXPECT=<<EOF
 [Strings]
-nth paddr vaddr len size section type string 
----------------------------------------------
+paddr vaddr len size section type string 
+-----------------------------------------
+
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=fat binary - endianness
+FILE=bins/mach0/2048-NeXTSTEP
+TOOL=rz-bin
+ARGS=-I -A
+EXPECT=<<EOF
+[Archs]
+    offset  size arch  bits machine  big_endian 
+------------------------------------------------
+0x00002000 49152 m68k    32 mc68030  true
+0x0000e000 40960 x86     32 386      false
+0x00018000 49152 hppa    32 hppa7100 true
+0x00024000 49152 sparc   32 all      true
+
+[Info]
+arch     m68k
+cpu      mc68030
+features N/A
+baddr    0x00002000
+binsz    0x0000e000
+bintype  mach0
+bits     32
+class    MACH0
+compiler N/A
+dbg_file N/A
+endian   BE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     c
+machine  mc68030
+maxopsz  22
+minopsz  2
+os       darwin
+cc       N/A
+pcalign  2
+rpath    N/A
+subsys   unknown
+stripped false
+havecode true
+va       true
+static   true
+linenum  false
+lsyms    false
+canary   false
+pie      false
+relrocs  false
+nx       false
 
 EOF
 EXPECT_ERR=

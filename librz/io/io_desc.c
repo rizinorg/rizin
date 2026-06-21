@@ -8,7 +8,7 @@
 #include <string.h>
 
 // shall be used by plugins for creating descs
-RZ_API RzIODesc *rz_io_desc_new(RzIO *io, RzIOPlugin *plugin, const char *uri, int perm, int mode, void *data) {
+RZ_API RzIODesc *rz_io_desc_new(RzIO *io, RzIOPlugin *plugin, const char *uri, int perm, void *data) {
 	ut32 fd32 = 0;
 	// this is required for emscripten builds to work, but should assert
 	if (!io || !plugin || !uri) {
@@ -202,7 +202,7 @@ RZ_API int rz_io_desc_read(RzIODesc *desc, ut8 *buf, size_t len) {
 	ut64 seek = rz_io_desc_seek(desc, 0LL, RZ_IO_SEEK_CUR);
 	if (desc->io->cachemode) {
 		if (seek != UT64_MAX && rz_io_cache_at(desc->io, seek)) {
-			return rz_io_cache_read(desc->io, seek, buf, len);
+			return rz_io_cache_read(desc->io, seek, buf, len, NULL);
 		}
 	}
 	int ret = rz_io_plugin_read(desc, buf, len);
@@ -367,7 +367,7 @@ RZ_API int rz_io_desc_write_at(RzIODesc *desc, ut64 addr, const ut8 *buf, size_t
 /* lifecycle */
 
 // TODO: move into io.c : rz_io_init
-RZ_IPI bool rz_io_desc_init(RzIO *io) {
+RZ_API bool rz_io_desc_init(RzIO *io) {
 	rz_return_val_if_fail(io, false);
 	rz_io_desc_fini(io);
 	// TODO: it leaks if called twice
@@ -389,7 +389,7 @@ static bool desc_fini_cb(void *user, void *data, ut32 id) {
 }
 
 // closes all descs and frees all descs and io->files
-RZ_IPI bool rz_io_desc_fini(RzIO *io) {
+RZ_API bool rz_io_desc_fini(RzIO *io) {
 	rz_return_val_if_fail(io, false);
 	if (io->files) {
 		rz_id_storage_foreach(io->files, desc_fini_cb, io);

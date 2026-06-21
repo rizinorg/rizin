@@ -113,7 +113,6 @@ RZ_API RzIO *rz_io_new(void) {
 
 RZ_API RzIO *rz_io_init(RzIO *io) {
 	rz_return_val_if_fail(io, NULL);
-	io->addrbytes = 1;
 	rz_io_desc_init(io);
 	rz_skyline_init(&io->map_skyline);
 	rz_io_map_init(io);
@@ -279,36 +278,17 @@ RZ_API int rz_io_pwrite_at(RzIO *io, ut64 paddr, const ut8 *buf, size_t len) {
 	return rz_io_desc_write_at(io->desc, paddr, buf, len);
 }
 
-// Returns true iff all reads on mapped regions are successful and complete.
+// Returns true if all reads on mapped regions are successful and complete.
 RZ_API bool rz_io_vread_at_mapped(RzIO *io, ut64 vaddr, ut8 *buf, size_t len) {
 	rz_return_val_if_fail(io && buf && len > 0, false);
 	if (io->ff) {
 		memset(buf, io->Oxff, len);
 	}
-	return on_map_skyline(io, vaddr, buf, len, RZ_PERM_R, fd_read_at_wrap, false);
+	return on_map_skyline(io, vaddr, buf, len, RZ_PERM_R, fd_read_at_wrap, false) > 0;
 }
 
 static bool rz_io_vwrite_at(RzIO *io, ut64 vaddr, const ut8 *buf, size_t len) {
 	return on_map_skyline(io, vaddr, (ut8 *)buf, len, RZ_PERM_W, fd_write_at_wrap, false);
-}
-
-// Deprecated, use either rz_io_read_at_mapped or rz_io_nread_at instead.
-// For virtual mode, returns true if all reads on mapped regions are successful
-// and complete.
-// For physical mode, the interface is broken because the actual read bytes are
-// not available. This requires fixes in all call sites.
-RZ_DEPRECATE RZ_API bool rz_io_read_at(RzIO *io, ut64 addr, ut8 *buf, size_t len) {
-	rz_return_val_if_fail(io && buf && len >= 0, false);
-	if (len == 0) {
-		return false;
-	}
-	bool ret = (io->va)
-		? rz_io_vread_at_mapped(io, addr, buf, len)
-		: rz_io_pread_at(io, addr, buf, len) > 0;
-	if (io->cached & RZ_PERM_R) {
-		ret |= rz_io_cache_read(io, addr, buf, len);
-	}
-	return ret;
 }
 
 /**
@@ -324,18 +304,22 @@ RZ_DEPRECATE RZ_API bool rz_io_read_at(RzIO *io, ut64 addr, ut8 *buf, size_t len
  * \return true iff all reads on mapped regions are successful and complete
  */
 RZ_API bool rz_io_read_at_mapped(RZ_NONNULL RzIO *io, ut64 addr, RZ_OUT RZ_NONNULL ut8 *buf, size_t len) {
-	bool ret;
 	rz_return_val_if_fail(io && buf, false);
+	if (len < 1) {
+		return false;
+	}
+
+	bool ret = false;
 	if (io->ff) {
 		memset(buf, io->Oxff, len);
 	}
 	if (io->va) {
-		ret = on_map_skyline(io, addr, buf, len, RZ_PERM_R, fd_read_at_wrap, false);
+		ret = on_map_skyline(io, addr, buf, len, RZ_PERM_R, fd_read_at_wrap, false) > 0;
 	} else {
 		ret = rz_io_pread_at(io, addr, buf, len) > 0;
 	}
 	if (io->cached & RZ_PERM_R) {
-		ret |= rz_io_cache_read(io, addr, buf, len);
+		ret |= rz_io_cache_read(io, addr, buf, len, NULL);
 	}
 	return ret;
 }
@@ -348,7 +332,11 @@ RZ_API bool rz_io_read_at_mapped(RZ_NONNULL RzIO *io, ut64 addr, RZ_OUT RZ_NONNU
  *
  * \param addr address to start reading at
  * \param len size of \p buf
- * \return the number of bytes read or -1 on error
+ * \return The number of bytes read or -1 on error
+ *
+ * NOTE: If IO cache is enabled this function might read beyond a memory map.
+ * If the cache holds data beyond but adjacent to the map, and addr + len covers
+ * it, the function might read this cached data.
  */
 RZ_API int rz_io_nread_at(RZ_NONNULL RzIO *io, ut64 addr, RZ_OUT RZ_NONNULL ut8 *buf, size_t len) {
 	int ret;
@@ -365,7 +353,11 @@ RZ_API int rz_io_nread_at(RZ_NONNULL RzIO *io, ut64 addr, RZ_OUT RZ_NONNULL ut8 
 		ret = rz_io_pread_at(io, addr, buf, len);
 	}
 	if (ret > 0 && io->cached & RZ_PERM_R) {
-		(void)rz_io_cache_read(io, addr, buf, len);
+		// rz_io_cache_read() reads over holes in its cache.
+		// Because of that, it can read beyond the mapped region.
+		// But cache read within boundaries is simply not possible with the
+		// current implementation.
+		rz_io_cache_read(io, addr, buf, ret, NULL);
 	}
 	return ret;
 }
@@ -436,7 +428,7 @@ RZ_API bool rz_io_write_at(RzIO *io, ut64 addr, const ut8 *buf, size_t len) {
 }
 
 RZ_API bool rz_io_read(RzIO *io, ut8 *buf, size_t len) {
-	if (io && rz_io_read_at(io, io->off, buf, len)) {
+	if (io && rz_io_read_at_mapped(io, io->off, buf, len)) {
 		io->off += len;
 		return true;
 	}
@@ -614,7 +606,7 @@ RZ_API void rz_io_bind(RzIO *io, RzIOBind *bnd) {
 	bnd->open = rz_io_open_nomap;
 	bnd->open_at = rz_io_open_at;
 	bnd->close = rz_io_fd_close;
-	bnd->read_at = rz_io_read_at;
+	bnd->read_at = rz_io_read_at_mapped;
 	bnd->write_at = rz_io_write_at;
 	bnd->system = rz_io_system;
 	bnd->fd_open = rz_io_fd_open;
@@ -670,7 +662,7 @@ RZ_API bool rz_io_shift(RzIO *io, ut64 start, ut64 end, st64 move) {
 		if (move > 0) {
 			src -= chunksize;
 		}
-		rz_io_read_at(io, src, buf, chunksize);
+		rz_io_read_at_mapped(io, src, buf, chunksize);
 		rz_io_write_at(io, src + move, buf, chunksize);
 		if (move < 0) {
 			src += chunksize;

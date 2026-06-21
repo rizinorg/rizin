@@ -15,25 +15,25 @@ EXPECT=<<EOF
 0x00401311 mov ebp, esp
 0x00401313 sub esp, 0x38
 0x00401316 and esp, 0xfffffff0
-0x00401319 mov eax, 0
-0x0040131e add eax, 0xf
-0x00401321 add eax, 0xf
-0x00401324 shr eax, 4
-0x00401327 shl eax, 4
-0x0040132a mov dword [ebp - 0x1c], eax
-0x0040132d mov eax, dword [ebp - 0x1c]
+0x00401319 mov eax, 0x00
+0x0040131e add eax, 0x0f
+0x00401321 add eax, 0x0f
+0x00401324 shr eax, 0x04
+0x00401327 shl eax, 0x04
+0x0040132a mov dword [ebp-0x1c], eax
+0x0040132d mov eax, dword [ebp-0x1c]
 0x00401330 call 0x402c70
 0x00401335 push ecx
 0x00401336 mov ecx, esp
-0x00401338 add ecx, 8
+0x00401338 add ecx, 0x08
 0x0040133b cmp eax, 0x1000
 0x00401340 jb 0x401352
 0x00402c8d sub ecx, eax
-0x00402c8f or dword [ecx], 0
+0x00402c8f or dword [ecx], 0x00
 0x00402c92 mov eax, esp
 0x00402c94 mov esp, ecx
 0x00402c96 mov ecx, dword [eax]
-0x00402c98 mov eax, dword [eax + 4]
+0x00402c98 mov eax, dword [eax+0x04]
 0x00402c9b jmp eax
 0x00401335 call sym.___main
 0x0040133a push ebp
@@ -154,10 +154,10 @@ EOF
 EXPECT=<<EOF
 xor eax, eax
 mov byte [eax], 0x20
-mov byte [eax + 0x40], 0
-mov cl, byte [eax + 0x40]
+mov byte [eax+0x40], 0x00
+mov cl, byte [eax+0x40]
 cmp cl, cl
-jne 0x1010
+jnz 0x1010
 mov al, byte [0x30]
 jmp eax
 invalid

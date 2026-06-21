@@ -8,16 +8,32 @@
 #include <rz_bin.h>
 #include <rz_magic.h>
 
+#if RZ_SYS_ENDIAN == RZ_SYS_ENDIAN_LITTLE
+#define ANY_DEFAULT_ENDIANNESS false
+#else
+#define ANY_DEFAULT_ENDIANNESS true
+#endif
+
 static char *get_filetype(RzBuffer *b) {
 	ut8 buf[4096] = { 0 };
 	char *res = NULL;
-	RzMagic *ck = rz_magic_new(0);
+	RzMagic *ck = rz_magic_new();
 	if (!ck) {
 		return NULL;
 	}
-	const char *tmp = NULL;
+	RzPath *sys_path = rz_path_new();
+	if (!sys_path) {
+		rz_magic_free(ck);
+		return NULL;
+	}
+	char *tmp = NULL;
 	// TODO: dir.magic not honored here
-	char *m = rz_path_system(RZ_SDB_MAGIC);
+	char *m = rz_path_system(sys_path, RZ_SDB_MAGIC);
+	if (!m) {
+		rz_magic_free(ck);
+		rz_path_free(sys_path);
+		return NULL;
+	}
 	rz_magic_load(ck, m);
 	free(m);
 	rz_buf_read_at(b, 0, buf, sizeof(buf));
@@ -25,7 +41,9 @@ static char *get_filetype(RzBuffer *b) {
 	if (tmp) {
 		res = rz_str_dup(tmp);
 	}
+	free(tmp);
 	rz_magic_free(ck);
+	rz_path_free(sys_path);
 	return res;
 }
 
@@ -37,13 +55,8 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->lang = "";
 	ret->file = rz_str_dup(bf->file);
 	ret->type = get_filetype(bf->buf);
-	ret->has_pi = 0;
-	ret->has_canary = 0;
-	ret->has_retguard = -1;
-	ret->big_endian = 0;
-	ret->has_va = 0;
-	ret->has_nx = 0;
-	ret->dbg_info = 0;
+	ret->has_retguard = false;
+	ret->big_endian = ANY_DEFAULT_ENDIANNESS;
 	return ret;
 }
 
@@ -61,8 +74,9 @@ static ut64 baddr(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_any = {
 	.name = "any",
-	.desc = "Dummy format rz_bin plugin",
+	.desc = "Dummy format binary",
 	.license = "LGPL3",
+	.author = "nibble",
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.baddr = &baddr,

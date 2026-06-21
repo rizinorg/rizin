@@ -131,7 +131,7 @@ RzList /*<char *>*/ *z80_tokenize(const char *assembly, size_t length) {
 		return NULL;
 	}
 
-	if (!strcmp((char *)rz_list_first(tokens), "call") && rz_list_length(tokens) == 3) {
+	if (!strcmp((char *)rz_list_first_val(tokens), "call") && rz_list_length(tokens) == 3) {
 		void *arg1 = rz_list_get_n(tokens, 1);
 		void *arg2 = rz_list_get_n(tokens, 2);
 		rz_list_set_n(tokens, 1, arg2);
@@ -142,7 +142,7 @@ RzList /*<char *>*/ *z80_tokenize(const char *assembly, size_t length) {
 		RzListIter *it;
 		rz_list_foreach (tokens, it, buf) {
 			char *repl = rz_str_replace(buf, ",", comma_replace, 1);
-			rz_list_iter_set_data(it, repl);
+			rz_list_set_val(it, repl);
 		}
 	}
 

@@ -29,7 +29,8 @@ RZ_API int rz_search_regexp_update(RzSearch *s, ut64 from, const ut8 *buf, int l
 		compiled = rz_regex_new((char *)kw->bin_keyword, cflags, 0, ccontext);
 		if (!compiled) {
 			eprintf("Cannot compile '%s' regexp\n", kw->bin_keyword);
-			return -1;
+			ret = -1;
+			goto beach;
 		}
 
 		matches = rz_regex_match_all_not_grouped(compiled, (const char *)buf, len, 0, RZ_REGEX_DEFAULT);

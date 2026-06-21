@@ -28,9 +28,9 @@ mov rbp, rsp
 sub rsp, 0x10
 mov rax, qword [section.13.__DATA.__objc_classrefs]
 mov rdi, rax
-lea rax, reloc.objc_msgSend_fixup
+lea rax, qword reloc.objc_msgSend_fixup
 mov rax, qword [rax]
-lea rsi, reloc.objc_msgSend_fixup
+lea rsi, qword reloc.objc_msgSend_fixup
 EOF
 EXPECT_ERR=<<EOF
 hit breakpoint at: 0x100000bf8

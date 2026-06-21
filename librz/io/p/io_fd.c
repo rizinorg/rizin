@@ -80,7 +80,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 			return NULL;
 		}
 	}
-	return rz_io_desc_new(io, &rz_io_plugin_fd, pathname, RZ_PERM_RW | rw, mode, fdd);
+	return rz_io_desc_new(io, &rz_io_plugin_fd, pathname, RZ_PERM_RW | rw, fdd);
 }
 
 RzIOPlugin rz_io_plugin_fd = {

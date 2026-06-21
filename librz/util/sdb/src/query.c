@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include "sdb.h"
+#include <rz_util.h>
 
 typedef struct {
 	char *buf;
@@ -165,8 +166,8 @@ static void walk_namespace(StrBuf *sb, char *root, int left, char *p, SdbNs *ns,
 
 RZ_API char *sdb_querys(Sdb *r, char *buf, size_t len, const char *_cmd) {
 	int i, d, ok, w, alength, bufset = 0, is_ref = 0, encode = 0;
-	const char *p, *q, *val = NULL;
-	char *eq, *next, *quot, *slash, *res,
+	const char *q, *val = NULL;
+	char *eq, *p, *next, *quot, *slash, *res,
 		*cmd = NULL, *newcmd = NULL, *original_cmd = NULL;
 	StrBuf *out;
 	Sdb *s = r;
@@ -214,7 +215,9 @@ repeat:
 		if (next) {
 			*next = 0;
 		}
-		out_concat(sdb_fmt("0x%08x\n", sdb_hash(p)));
+		char k[12];
+		rz_strf(k, "0x%08x\n", sdb_hash(p));
+		strbuf_append(out, k, 1);
 		if (next) {
 			*next = ';';
 		}
@@ -250,7 +253,7 @@ repeat:
 		d = 0;
 	}
 	if (!is_ref) {
-		next = strchr(val ? val : cmd, ';');
+		next = (char *)strchr(val ? val : cmd, ';');
 	}
 	// if (!val) val = eq;
 	if (!is_ref && val && *val == '"') {
@@ -337,7 +340,7 @@ repeat:
 			goto fail;
 		}
 		*tp++ = 0;
-		p = (const char *)tp;
+		p = tp;
 	} else {
 		p = cmd;
 	}
@@ -392,7 +395,10 @@ repeat:
 			int idx = sdb_atoi(cmd + 2);
 			/* +[idx]key=n */
 			/* -[idx]key=n */
-			ut64 curnum = sdb_array_get_num(s, eb + 1, idx);
+			ut64 curnum = 0;
+			if (!sdb_array_get_num(s, eb + 1, idx, &curnum)) {
+				goto fail;
+			}
 			if (eq) {
 				/* +[idx]key=n  -->  key[idx] += n */
 				/* -[idx]key=n  -->  key[idx] -= n */

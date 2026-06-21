@@ -13,7 +13,6 @@
 RZ_IPI RzBinFile *rz_bin_file_new(RzBin *bin, const char *file, ut64 file_sz, int fd, const char *xtrname, bool steal_ptr);
 RZ_IPI RzBinObject *rz_bin_file_object_find_by_id(RzBinFile *binfile, ut32 binobj_id);
 RZ_IPI RzBinFile *rz_bin_file_find_by_object_id(RzBin *bin, ut32 binobj_id);
-RZ_IPI bool rz_bin_file_set_obj(RzBin *bin, RzBinFile *bf, RzBinObject *obj);
 RZ_IPI RzBinFile *rz_bin_file_xtr_load_bytes(RzBin *bin, RzBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd);
 RZ_IPI bool rz_bin_file_set_bytes(RzBinFile *binfile, const ut8 *bytes, ut64 sz, bool steal_ptr);
 
@@ -27,7 +26,7 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o);
 RZ_IPI ut64 rz_bin_object_get_baddr(RzBinObject *o);
 RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *binfile, RzBinPlugin *plugin, RzBinObjectLoadOptions *opts, ut64 offset, ut64 sz);
 RZ_IPI RzBinObject *rz_bin_object_get_cur(RzBin *bin);
-RZ_IPI RzBinObject *rz_bin_object_find_by_arch_bits(RzBinFile *binfile, const char *arch, int bits, const char *name);
+RZ_IPI RzBinObject *rz_bin_object_find_by_arch_bits(RzBinFile *bf, RZ_NONNULL const char *arch, int bits, RZ_NULLABLE const char *machine, RZ_NULLABLE const char *filename);
 
 RZ_IPI RzBinFile *rz_bin_file_xtr_load_buffer(RzBin *bin, RzBinXtrPlugin *xtr, const char *filename, RzBuffer *buf, RzBinObjectLoadOptions *obj_opts, int idx, int fd);
 RZ_IPI RzBinFile *rz_bin_file_new_from_buffer(RzBin *bin, const char *file, RzBuffer *buf, RzBinObjectLoadOptions *opts, int fd, const char *pluginname);
@@ -44,9 +43,7 @@ RZ_IPI int rz_bin_compare_class_field(RzBinClassField *a, RzBinClassField *b);
 typedef void (*RzBinProcessLanguage)(RzBinObject *o, const void *user);
 RZ_IPI void rz_bin_process_rust(RzBinObject *o, char *demangled, ut64 paddr, ut64 vaddr, bool is_method);
 RZ_IPI void rz_bin_process_cxx(RzBinObject *o, char *demangled, ut64 paddr, ut64 vaddr);
-#if WITH_SWIFT_DEMANGLER
-RZ_IPI void rz_bin_process_swift(RzBinObject *o, char *classname, char *demangled, ut64 paddr, ut64 vaddr);
-#endif /* WITH_SWIFT_DEMANGLER */
+RZ_IPI void rz_bin_process_swift(RzBinObject *o, RzBinSymbol *symbol);
 RZ_IPI bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzBinObject *o);
 
 RZ_IPI const RzDemanglerPlugin *rz_bin_process_get_demangler_plugin_from_lang(RzBin *bin, RzBinLanguage language);

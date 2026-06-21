@@ -9,27 +9,49 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=dbg.maps.count
+NAME=dbg.maps
 FILE=bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF
+. scripts/map_clean.rz
 dm~?
+.(dm_clean)
 EOF
 EXPECT=<<EOF
-9
+10
+0x08048000 - 0x08049000 - usr     4K s r-x .../rizin/test/bins/elf/analysis/elf-nx .../rizin/test/bins/elf/analysis/elf-nx ; ..._rizin_test_bins_elf_analysis_elf_nx.r_x
+0x08049000 - 0x0804a000 - usr     4K s rw- .../rizin/test/bins/elf/analysis/elf-nx .../rizin/test/bins/elf/analysis/elf-nx ; ..._rizin_test_bins_elf_analysis_elf_nx.rw
+0x________ - 0x________ - usr     _K s r-- [vvar] [vvar] ; vvar_.r
+0x________ - 0x________ - usr     8K s r-- [vvar_vclock] [vvar_vclock] ; vvar_vclock_.r
+0x________ - 0x________ - usr     _K s r-x [vdso] [vdso] ; vdso_.r_x
+0x________ - 0x________ - usr     4K s r-- /usr/lib32/ld-linux.so.2 /usr/lib32/ld-linux.so.2 ; usr_lib32_ld_linux.so.2.r
+0x________ - 0x________ * usr   140K s r-x /usr/lib32/ld-linux.so.2 /usr/lib32/ld-linux.so.2 ; usr_lib32_ld_linux.so.2.r_x
+0x________ - 0x________ - usr    56K s r-- /usr/lib32/ld-linux.so.2 /usr/lib32/ld-linux.so.2 ; usr_lib32_ld_linux.so.2.r.________
+0x________ - 0x________ - usr    12K s rw- /usr/lib32/ld-linux.so.2 /usr/lib32/ld-linux.so.2 ; usr_lib32_ld_linux.so.2.rw
+0x________ - 0x________ - usr   1__K s rw- [stack] [stack] ; stack_.rw
 EOF
 RUN
 
-NAME=debug map flags count
+NAME=debug map flags
 FILE=bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF
+. scripts/map_clean.rz
 fl@F:maps~?
-dm*~?
+.(fl_F_maps_clean)
 EOF
 EXPECT=<<EOF
-9
-11
+10
+0x08048000 4096 ..._rizin_test_bins_elf_analysis_elf_nx.r_x
+0x08049000 4096 ..._rizin_test_bins_elf_analysis_elf_nx.rw
+0x________ ____ vvar_.r
+0x________ 8192 vvar_vclock_.r
+0x________ ____ vdso_.r_x
+0x________ 4096 usr_lib32_ld_linux.so.2.r
+0x________ 143360 usr_lib32_ld_linux.so.2.r_x
+0x________ 57344 usr_lib32_ld_linux.so.2.r.________
+0x________ 12288 usr_lib32_ld_linux.so.2.rw
+0x________ 1_____ stack_.rw
 EOF
 RUN
 
@@ -37,33 +59,41 @@ NAME=dbg.maps.count.after.map
 FILE=bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 CMDS=<<EOF
+. scripts/map_clean.rz
 dm~?
 db @ sym.imp.puts
 dc~?
 echo ----
 $dm=%b64- `dm | base64 -w 0`
-$dm~x86-helloworld-gcc~?
-$libc_count=$`$dm~/usr/lib32/libc.so.6~?`
-%= `$libc_count`-6
-%! %vi 5
-%% $libc_count
-$dm~unk~?
-$dm~[v~?
-$dm~/usr/lib32/ld-linux.so.2~?
-$dm~[stack~?
+$dm~?
+.(dm_cmd_clean $dm)
 echo ----
 dc
 EOF
 EXPECT=<<EOF
-9
+10
 0
 ----
-2
-5
-2
-2
-5
-1
+18
+0x08048000 - 0x08049000 * usr     4K s r-x .../rizin/test/bins/elf/analysis/x86-helloworld-gcc .../rizin/test/bins/elf/analysis/x86-helloworld-gcc ; ..._rizin_test_bins_elf_analysis_x86_helloworld_gcc.r_x
+0x08049000 - 0x0804a000 - usr     4K s rw- .../rizin/test/bins/elf/analysis/x86-helloworld-gcc .../rizin/test/bins/elf/analysis/x86-helloworld-gcc ; ..._rizin_test_bins_elf_analysis_x86_helloworld_gcc.rw
+0x________ - 0x________ - usr   140K s r-- /usr/lib32/libc.so.6 /usr/lib32/libc.so.6
+0x________ - 0x________ - usr   1.5M s r-x /usr/lib32/libc.so.6 /usr/lib32/libc.so.6
+0x________ - 0x________ - usr   532K s r-- /usr/lib32/libc.so.6 /usr/lib32/libc.so.6
+0x________ - 0x________ - usr     8K s r-- /usr/lib32/libc.so.6 /usr/lib32/libc.so.6
+0x________ - 0x________ - usr     4K s rw- /usr/lib32/libc.so.6 /usr/lib32/libc.so.6
+0x________ - 0x________ - usr    40K s rw- unk0 unk0
+0x________ - 0x________ - usr     8K s rw- unk1 unk1
+0x________ - 0x________ - usr     _K s r-- [vvar] [vvar] ; vvar_.r
+0x________ - 0x________ - usr     8K s r-- [vvar_vclock] [vvar_vclock] ; vvar_vclock_.r
+0x________ - 0x________ - usr     _K s r-x [vdso] [vdso] ; vdso_.r_x
+0x________ - 0x________ - usr     4K s r-- /usr/lib32/ld-linux.so.2 /usr/lib32/ld-linux.so.2 ; usr_lib32_ld_linux.so.2.r
+0x________ - 0x________ - usr   140K s r-x /usr/lib32/ld-linux.so.2 /usr/lib32/ld-linux.so.2 ; usr_lib32_ld_linux.so.2.r_x
+0x________ - 0x________ - usr    56K s r-- /usr/lib32/ld-linux.so.2 /usr/lib32/ld-linux.so.2 ; usr_lib32_ld_linux.so.2.r.________
+0x________ - 0x________ - usr     8K s r-- /usr/lib32/ld-linux.so.2 /usr/lib32/ld-linux.so.2 ; usr_lib32_ld_linux.so.2.rw
+0x________ - 0x________ - usr     4K s rw- /usr/lib32/ld-linux.so.2 /usr/lib32/ld-linux.so.2
+0x________ - 0x________ - usr   1__K s rw- [stack] [stack] ; stack_.rw
+
 ----
 Hello world!
 EOF

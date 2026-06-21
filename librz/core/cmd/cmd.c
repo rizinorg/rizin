@@ -2,10 +2,15 @@
 // SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_util/rz_assert.h"
+#include <rz_util/rz_assert.h>
+#include <rz_util/rz_file.h>
+#include <rz_util/rz_log.h>
+#include <rz_util/rz_str.h>
+#include <rz_util/rz_sys.h>
 #define INTERACTIVE_MAX_REP 1024
 
 #include <rz_core.h>
+#include <rz_types.h>
 #include <rz_analysis.h>
 #include <rz_cons.h>
 #include <rz_cmd.h>
@@ -22,9 +27,6 @@
 
 #include <tree_sitter/api.h>
 TSLanguage *tree_sitter_rzcmd();
-
-RZ_IPI void rz_save_panels_layout(RzCore *core, const char *_name);
-RZ_IPI bool rz_load_panels_layout(RzCore *core, const char *_name);
 
 #include "cmd_debug.c"
 #include "cmd_analysis.c"
@@ -189,7 +191,8 @@ RZ_API bool rz_core_run_script(RzCore *core, RZ_NONNULL const char *file) {
 	} else if (rz_file_is_c(file)) {
 		const char *dir = rz_config_get(core->config, "dir.types");
 		char *error_msg = NULL;
-		int result = rz_type_parse_file(core->analysis->typedb, file, dir, &error_msg);
+		RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+		int result = rz_type_parse_file(typedb, file, dir, &error_msg);
 		if (error_msg) {
 			rz_str_trim_tail(error_msg);
 			RZ_LOG_ERROR("core: %s\n", error_msg);
@@ -306,22 +309,24 @@ RZ_API bool rz_core_run_script(RzCore *core, RZ_NONNULL const char *file) {
 	return ret;
 }
 
-RZ_API int rz_line_hist_sdb_up(RzLine *line) {
-	if (!rz_list_iter_get_next(line->sdbshell_hist_iter)) {
+RZ_IPI int rz_line_hist_sdb_up(RzLine *line) {
+	rz_return_val_if_fail(line && line->sdbshell_hist_iter, false);
+	if (!rz_list_next(line->sdbshell_hist_iter)) {
 		return false;
 	}
-	line->sdbshell_hist_iter = rz_list_iter_get_next(line->sdbshell_hist_iter);
-	strncpy(line->buffer.data, rz_list_iter_get_data(line->sdbshell_hist_iter), RZ_LINE_BUFSIZE - 1);
+	line->sdbshell_hist_iter = rz_list_next(line->sdbshell_hist_iter);
+	strncpy(line->buffer.data, rz_list_val(line->sdbshell_hist_iter), RZ_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen(line->buffer.data);
 	return true;
 }
 
-RZ_API int rz_line_hist_sdb_down(RzLine *line) {
-	if (!rz_list_iter_get_prev(line->sdbshell_hist_iter)) {
+RZ_IPI int rz_line_hist_sdb_down(RzLine *line) {
+	rz_return_val_if_fail(line && line->sdbshell_hist_iter, false);
+	if (!rz_list_prev(line->sdbshell_hist_iter)) {
 		return false;
 	}
-	line->sdbshell_hist_iter = rz_list_iter_get_prev(line->sdbshell_hist_iter);
-	strncpy(line->buffer.data, rz_list_iter_get_data(line->sdbshell_hist_iter), RZ_LINE_BUFSIZE - 1);
+	line->sdbshell_hist_iter = rz_list_prev(line->sdbshell_hist_iter);
+	strncpy(line->buffer.data, rz_list_val(line->sdbshell_hist_iter), RZ_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen(line->buffer.data);
 	return true;
 }
@@ -348,7 +353,9 @@ static RzCmdStatus pointer_read(RzCore *core, const char *expr) {
 		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!rz_io_read_i(core->io, n, &n, core->rasm->bits / 8, core->print->big_endian)) {
+	const bool big_endian = rz_asm_is_big_endian_set(core->rasm);
+	int arch_bits = rz_asm_get_bits(core->rasm);
+	if (!rz_io_read_i(core->io, n, &n, arch_bits / 8, big_endian)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_printf("0x%" PFMT64x "\n", n);
@@ -374,7 +381,7 @@ static RzCmdStatus pointer_write(RzCore *core, const char *addr_arg, const char 
 			return RZ_CMD_STATUS_ERROR;
 		}
 
-		ok = rz_core_write_value_at(core, addr, value, core->rasm->bits / 8);
+		ok = rz_core_write_value_at(core, addr, value, rz_asm_get_bits(core->rasm) / 8);
 	}
 
 	return bool2status(ok);
@@ -635,7 +642,20 @@ static RzCmdStatus handle_ts_stmt(struct tsr2cmd_state *state, TSNode node);
 static RzCmdStatus handle_ts_stmt_tmpseek(struct tsr2cmd_state *state, TSNode node);
 static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_lines, bool log);
 
+// Piping commands and fallbacks.
+static PipeFallbacks internal_commands[] = {
+	{ "uniq", rz_syscmd_uniq_pipe },
+	{ "sort", rz_syscmd_sort_pipe }
+};
+
 static char *system_exec_stdin(bool is_pipe, int argc, char **argv, const ut8 *input, int input_len, int *length) {
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(internal_commands); i++) {
+		if (RZ_STR_EQ(argv[0], internal_commands[i].command)) {
+			return internal_commands[i].fallback_fn((const char *)input, length);
+		}
+	}
+
 	char *output = NULL;
 	if (!rz_subprocess_init()) {
 		RZ_LOG_ERROR("Cannot initialize subprocess.\n");
@@ -1082,7 +1102,7 @@ static void get_help_wrong_cmd(RzCore *core, const char *cmdname) {
 		goto cmdname_err;
 	}
 	bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
-	char *help_msg = rz_cmd_get_help(core->rcmd, help_pra, use_color);
+	char *help_msg = rz_cmd_get_help(core->rcmd, help_pra, use_color, 0);
 	if (!help_msg) {
 		goto help_pra_err;
 	}
@@ -1175,6 +1195,70 @@ err:
 	free(command_extra_str);
 	free(command_str);
 	return res;
+}
+
+static bool is_push_stmt(TSNode node, const char *in) {
+	if (ts_node_is_null(node) || strcmp(ts_node_type(node), "arged_stmt")) {
+		return false;
+	}
+	TSNode cmd = ts_node_child_by_field_name(node, "command", strlen("command"));
+	if (ts_node_is_null(cmd)) {
+		return false;
+	}
+	TSNode extra = ts_node_child_by_field_name(cmd, "extra", strlen("extra"));
+	char *s = NULL;
+	if (!ts_node_is_null(extra)) {
+		ut32 start = ts_node_start_byte(cmd);
+		ut32 end = ts_node_start_byte(extra);
+		s = rz_str_newf("%.*s", end - start, in + start);
+	} else {
+		s = ts_node_sub_string(cmd, in);
+	}
+	if (!s) {
+		return false;
+	}
+	rz_str_unescape(s);
+	bool ret = !strcmp(s, "<");
+	free(s);
+	return ret;
+}
+
+static bool has_push(TSNode node, const char *in) {
+	if (is_push_stmt(node, in)) {
+		return true;
+	}
+	uint32_t n = ts_node_named_child_count(node);
+	for (uint32_t i = 0; i < n; i++) {
+		if (has_push(ts_node_named_child(node, i), in)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+RZ_IPI bool rz_core_cmd_has_push(const char *cstr) {
+	if (RZ_STR_ISEMPTY(cstr)) {
+		return false;
+	}
+	TSParser *parser = ts_parser_new();
+	if (!parser) {
+		return false;
+	}
+	bool ok = ts_parser_set_language(parser, tree_sitter_rzcmd());
+	if (!ok) {
+		ts_parser_delete(parser);
+		return false;
+	}
+	TSTree *tree = ts_parser_parse_string(parser, NULL, cstr, strlen(cstr));
+	if (!tree) {
+		ts_parser_delete(parser);
+		return false;
+	}
+	TSNode root = ts_tree_root_node(tree);
+	bool ret = !ts_node_has_error(root) && has_push(root, cstr);
+	ts_tree_delete(tree);
+	ts_parser_delete(parser);
+	return ret;
 }
 
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(macro_stmt) {
@@ -1361,72 +1445,6 @@ fail:
 	return res;
 }
 
-typedef struct _search_help {
-	bool color;
-	RzStrBuf *sb;
-	PJ *pj;
-} RzHelpSearch;
-
-static bool help_search_cmd_desc_entry(RzCmd *cmd, const RzCmdDesc *cd, void *user) {
-	rz_return_val_if_fail(cd, false);
-	RzHelpSearch *hs = (RzHelpSearch *)user;
-	if (hs->pj) {
-		rz_cmd_get_help_json(cmd, cd, hs->pj);
-	} else {
-		rz_cmd_get_help_strbuf(cmd, cd, hs->color, hs->sb);
-	}
-	return true;
-}
-
-RZ_IPI RzCmdStatus rz_cmd_help_search_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	RzCmdStatus status = RZ_CMD_STATUS_OK;
-	RzCmdDesc *begin = NULL;
-
-	if (argc == 2) {
-		begin = rz_cmd_get_desc(core->rcmd, argv[1]);
-		if (!begin) {
-			RZ_LOG_ERROR("Command '%s' does not exist.\n", argv[1]);
-			status = RZ_CMD_STATUS_ERROR;
-			goto exit_status;
-		}
-	}
-
-	RzHelpSearch hs = {
-		.color = core->print->flags & RZ_PRINT_FLAGS_COLOR,
-		.pj = NULL,
-		.sb = NULL,
-	};
-
-	if (mode & RZ_OUTPUT_MODE_JSON) {
-		hs.pj = pj_new();
-		if (!hs.pj) {
-			status = RZ_CMD_STATUS_ERROR;
-			goto exit_status;
-		}
-		pj_o(hs.pj);
-	} else {
-		hs.sb = rz_strbuf_new(NULL);
-		if (!hs.sb) {
-			status = RZ_CMD_STATUS_ERROR;
-			goto exit_status;
-		}
-	}
-
-	rz_cmd_foreach_cmdname(core->rcmd, begin, help_search_cmd_desc_entry, &hs);
-
-	if (mode & RZ_OUTPUT_MODE_JSON) {
-		pj_end(hs.pj);
-		rz_cons_printf("%s\n", pj_string(hs.pj));
-		pj_free(hs.pj);
-	} else {
-		char *help = rz_strbuf_drain(hs.sb);
-		rz_cons_printf("%s", help);
-		free(help);
-	}
-exit_status:
-	return status;
-}
-
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_stmt) {
 	size_t node_str_len = strlen(node_string);
 	if (node_str_len >= 2 && !strcmp(node_string + node_str_len - 2, "?*")) {
@@ -1439,6 +1457,21 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_stmt) {
 		const char *argv[2] = { NULL, node_string };
 		int argc = node_str_len > 2 ? 2 : 1;
 		return rz_cmd_help_search_handler(state->core, argc, argv, RZ_OUTPUT_MODE_JSON);
+	} else if (node_str_len >= 3 && RZ_STR_EQ(node_string + node_str_len - 3, "?**")) {
+		node_string[3] = 0;
+		const char *argv[1] = { node_string };
+		int argc = 1;
+		return rz_cmd_help_search_interactive_handler(state->core, argc, argv);
+	} else if (node_str_len >= 4 && RZ_STR_EQ(node_string + node_str_len - 4, "?**e")) {
+		node_string[4] = 0;
+		const char *argv[1] = { node_string };
+		int argc = 1;
+		return rz_cmd_help_search_interactive_settings_handler(state->core, argc, argv);
+	} else if (node_str_len >= 4 && RZ_STR_EQ(node_string + node_str_len - 4, "?***")) {
+		node_string[4] = 0;
+		const char *argv[1] = { node_string };
+		int argc = 1;
+		return rz_cmd_help_search_interactive_everything_handler(state->core, argc, argv);
 	}
 
 	TSNode command = ts_node_child_by_field_name(node, "command", strlen("command"));
@@ -1463,7 +1496,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_stmt) {
 	// let's try first with the new auto-generated help, if
 	// something fails fallback to old behaviour
 	bool use_color = state->core->print->flags & RZ_PRINT_FLAGS_COLOR;
-	char *help_msg = rz_cmd_get_help(state->core->rcmd, pr_args, use_color);
+	char *help_msg = rz_cmd_get_help(state->core->rcmd, pr_args, use_color, 0);
 	if (help_msg) {
 		rz_cons_printf("%s", help_msg);
 		free(help_msg);
@@ -1564,11 +1597,11 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_fromto_op) {
 	RzConfigHold *hc = rz_config_hold_new(core->config);
 	int i;
 	for (i = 0; fromvars[i]; i++) {
-		rz_config_hold_i(hc, fromvars[i], NULL);
+		rz_config_hold_var(hc, fromvars[i], NULL);
 		rz_config_set_i(core->config, fromvars[i], from_val);
 	}
 	for (i = 0; tovars[i]; i++) {
-		rz_config_hold_i(hc, tovars[i], NULL);
+		rz_config_hold_var(hc, tovars[i], NULL);
 		rz_config_set_i(core->config, tovars[i], to_val);
 	}
 
@@ -1593,15 +1626,19 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_arch_op) {
 	bool is_arch_set = false, is_bits_set = false;
 	bool oldfixedarch = core->fixedarch, oldfixedbits = core->fixedbits;
 	int cmd_ignbithints = -1;
+	int bits = -1;
 
 	// change arch and bits
 	char *q = strchr(arg_str, ':');
 	if (q) {
 		*q++ = '\0';
-		int bits = rz_num_math(core->num, q);
-		is_bits_set = set_tmp_bits(core, bits, &tmpbits, &cmd_ignbithints);
+		bits = rz_num_math(core->num, q);
 	}
 	is_arch_set = set_tmp_arch(core, arg_str, &tmparch);
+
+	if (bits > 0) {
+		is_bits_set = set_tmp_bits(core, bits, &tmpbits, &cmd_ignbithints);
+	}
 
 	// execute command or next tmp op with changed settings
 	TSNode next = tmp_get_next_node(node);
@@ -1687,8 +1724,8 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_eval_op) {
 		char *eq = strchr(arg_str, '=');
 		if (eq) {
 			*eq = 0;
-			rz_config_hold_s(hc, arg_str, NULL);
-			rz_config_set(core->config, arg_str, eq + 1);
+			rz_config_hold_var(hc, arg_str, NULL);
+			rz_config_set_any(core->config, arg_str, eq + 1);
 		} else {
 			RZ_LOG_ERROR("core: Missing '=' in e: expression (%s)\n", arg_str);
 		}
@@ -1878,7 +1915,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_value_op) {
 
 	ut64 v = rz_num_math(core->num, arg_str);
 	ut8 buf[8] = { 0 };
-	int be = rz_config_get_i(core->config, "cfg.bigendian");
+	int be = rz_config_get_b(core->config, "cfg.bigendian");
 	int bi = rz_config_get_i(core->config, "asm.bits");
 
 	rz_write_ble(buf, v, be, bi);
@@ -2126,7 +2163,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_instrs_stmt) {
 		RZ_LOG_ERROR("core: No basic block contains current address\n");
 		return RZ_CMD_STATUS_INVALID;
 	}
-	RzAnalysisBlock *bb = rz_list_last(bbl);
+	RzAnalysisBlock *bb = rz_list_last_val(bbl);
 	rz_analysis_block_ref(bb);
 	rz_list_free(bbl);
 
@@ -2316,7 +2353,8 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_comment_stmt) {
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	RzIntervalTreeIter it;
 	RzAnalysisMetaItem *meta;
-	rz_interval_tree_foreach (&core->analysis->meta, it, meta) {
+	RzIntervalTree *meta_tree = rz_analysis_get_meta(core->analysis);
+	rz_interval_tree_foreach (meta_tree, it, meta) {
 		if (meta->type != RZ_META_TYPE_COMMENT) {
 			continue;
 		}
@@ -2388,7 +2426,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_register_stmt) {
 		RzList *list = rz_list_newf(free);
 		RzListIter *iter;
 		rz_list_foreach (head, iter, item) {
-			if (item->size != core->analysis->bits) {
+			if (!rz_asm_is_bits(core->rasm, item->size)) {
 				continue;
 			}
 			if (item->type != i) {
@@ -2583,7 +2621,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_function_stmt) {
 	ut64 obs = core->blocksize;
 	ut64 offorig = core->offset;
 	RzAnalysisFunction *fcn;
-	RzList *list = core->analysis->fcns;
+	RzList *list = rz_analysis_function_list(core->analysis);
 	RzListIter *iter;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	rz_cons_break_push(NULL, NULL);
@@ -2792,6 +2830,7 @@ DEFINE_HANDLE_TS_FCN(statements) {
 		RzCmdStatus cmd_res = handle_ts_stmt(state, command);
 		if (state->split_lines) {
 			rz_cons_flush();
+			rz_core_print_warnings_after(core);
 			rz_core_task_yield(&core->tasks);
 		}
 		core->cons->context->cmd_depth++;
@@ -2867,7 +2906,9 @@ RZ_API RzCmd *rz_core_cmd_new(RzCore *core, bool has_cons) {
 static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_lines, bool log) {
 	TSParser *parser = ts_parser_new();
 	bool language_ok = ts_parser_set_language(parser, (TSLanguage *)core->rcmd->language);
-	rz_return_val_if_fail(language_ok, RZ_CMD_STATUS_INVALID);
+	if (!language_ok) {
+		rz_return_val_if_reached(RZ_CMD_STATUS_INVALID);
+	}
 
 	char *input = rz_str_dup(rz_str_trim_head_ro(cstr));
 
@@ -2892,7 +2933,7 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	rz_pvector_init(&state.saved_input, NULL);
 	rz_pvector_init(&state.saved_tree, NULL);
 
-	if (state.log) {
+	if (state.log && !has_push(root, state.input)) {
 		rz_line_hist_add(line, state.input);
 	}
 
@@ -3032,7 +3073,7 @@ RZ_API int rz_core_flush(RzCore *core, const char *cmd) {
 
 RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 	char *tmp = NULL;
-	char *p = (*cmd != '"') ? strchr(cmd, '|') : NULL;
+	const char *p = (*cmd != '"') ? strchr(cmd, '|') : NULL;
 	if (!p && *cmd != '!' && *cmd != '.') {
 		return rz_core_cmd_str(core, cmd);
 	}
@@ -3173,9 +3214,16 @@ RZ_IPI RzCmdStatus rz_basefind_compute_handler(RzCore *core, int argc, const cha
 }
 
 RZ_IPI RzCmdStatus rz_help_handler(RzCore *core, int argc, const char **argv) {
-	const char *cmd_color = rz_cons_singleton()->context->pal.help;
-	const char *reset = rz_cons_singleton()->context->pal.reset;
+	bool use_color = rz_config_get_i(core->config, "scr.color") != 0;
+	const char *cmd_color = use_color ? rz_cons_singleton()->context->pal.help : "";
+	const char *cmd_bold = use_color ? rz_cons_singleton()->context->pal.btext : "";
+	const char *reset = use_color ? rz_cons_singleton()->context->pal.reset : "";
 	rz_cons_printf("Welcome to Rizin!\n\n");
+	rz_cons_printf("%sFastest way to help yourself%s\n", cmd_bold, reset);
+	rz_cons_printf("Type %s?**%s to search all commands' short descriptions.\n", cmd_color, reset);
+	rz_cons_printf("Type %s?***%s to search all commands' long descriptions.\n", cmd_color, reset);
+	rz_cons_printf("Type %s?**e%s to search all settings' descriptions.\n", cmd_color, reset);
+	rz_cons_printf("\n");
 	rz_cons_printf("Type %s?%s for a list of commands available.\n", cmd_color, reset);
 	rz_cons_printf("Append %s?%s to any command to get the list of sub-commands or more details about a specific command.\n", cmd_color, reset);
 	rz_cons_printf("Append %s??%s to any command to get the full description of a command, e.g. with examples.\n", cmd_color, reset);

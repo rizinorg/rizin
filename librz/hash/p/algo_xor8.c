@@ -66,6 +66,7 @@ RzHashPlugin rz_hash_plugin_xor8 = {
 	.name = "xor8",
 	.license = "LGPL3",
 	.author = "deroad",
+	.description = "XOR-8 checksum",
 	.support_hmac = false,
 	.context_new = plugin_xor8_context_new,
 	.context_free = plugin_xor8_context_free,

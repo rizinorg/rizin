@@ -2,13 +2,14 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
+#include <rz_search.h>
 #include "minunit.h"
 
 static RzUtilStrScanOptions g_opt = {
 	.max_str_length = 2048,
 	.min_str_length = 4,
 	.prefer_big_endian = false,
-	.check_ascii_freq = true
+	.check_ascii_freq = true,
 };
 
 bool test_rz_scan_strings_detect_ascii(void) {
@@ -22,7 +23,7 @@ bool test_rz_scan_strings_detect_ascii(void) {
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
 	mu_assert_streq(s->string, "I am an ASCII string", "rz_scan_strings ascii, different string");
 	mu_assert_eq(s->addr, 3, "rz_scan_strings ascii, address");
-	mu_assert_eq(s->type, RZ_STRING_ENC_8BIT, "rz_scan_strings ascii, string type");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_8BIT, "rz_scan_strings ascii, string type");
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
@@ -40,7 +41,7 @@ bool test_rz_scan_strings_detect_ibm290(void) {
 
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
 	mu_assert_streq(s->string, " 。「」、・ヲァィゥ£.<(+|&ェォャュョッー!¥*);¬アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフ¯ヘホマミムメモヤユヨラリルレロワン゛゜゜", "rz_scan_strings ibm290, different string");
-	mu_assert_eq(s->type, RZ_STRING_ENC_IBM290, "rz_scan_strings ibm290, string type");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_IBM290, "rz_scan_strings ibm290, string type");
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
@@ -58,7 +59,7 @@ bool test_rz_scan_strings_detect_ibm037(void) {
 
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
 	mu_assert_streq(s->string, "I am an IBM037 string", "rz_scan_strings ibm037, different string");
-	mu_assert_eq(s->type, RZ_STRING_ENC_IBM037, "rz_scan_strings ibm037, string type");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_IBM037, "rz_scan_strings ibm037, string type");
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
@@ -77,11 +78,11 @@ bool test_rz_scan_strings_detect_ibm037(void) {
 
 	s = rz_list_get_n(str_list, 0);
 	mu_assert_streq(s->string, "Ber. Who's there.?", "rz_scan_strings ibm037, different string");
-	mu_assert_eq(s->type, RZ_STRING_ENC_IBM037, "rz_scan_strings ibm037, string type");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_IBM037, "rz_scan_strings ibm037, string type");
 
 	s = rz_list_get_n(str_list, 1);
 	mu_assert_streq(s->string, "Fran. Nay, answer me. Stand and unfold yourself", "rz_scan_strings ibm037, different string");
-	mu_assert_eq(s->type, RZ_STRING_ENC_IBM037, "rz_scan_strings ibm037, string type");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_IBM037, "rz_scan_strings ibm037, string type");
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
@@ -98,11 +99,11 @@ bool test_rz_scan_strings_detect_ibm037(void) {
 
 	s = rz_list_get_n(str_list, 0);
 	mu_assert_streq(s->string, "I am an IBM037 string", "rz_scan_strings mix utf8 and ibm037, different string");
-	mu_assert_eq(s->type, RZ_STRING_ENC_IBM037, "rz_scan_strings mix utf8 and ibm037, string type");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_IBM037, "rz_scan_strings mix utf8 and ibm037, string type");
 
 	s = rz_list_get_n(str_list, 1);
 	mu_assert_streq(s->string, "I am a \xc3\x99TF-8 string", "rz_scan_strings mix utf8 and ibm037, different string");
-	mu_assert_eq(s->type, RZ_STRING_ENC_UTF8, "rz_scan_strings mix utf8 and ibm037, string type");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_UTF8, "rz_scan_strings mix utf8 and ibm037, string type");
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
@@ -119,11 +120,11 @@ bool test_rz_scan_strings_detect_ibm037(void) {
 
 	s = rz_list_get_n(str_list, 0);
 	mu_assert_streq(s->string, "I am an IBM037 string", "rz_scan_strings mix utf8 and ibm037, different string");
-	mu_assert_eq(s->type, RZ_STRING_ENC_IBM037, "rz_scan_strings mix utf8 and ibm037, string type");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_IBM037, "rz_scan_strings mix utf8 and ibm037, string type");
 
 	s = rz_list_get_n(str_list, 1);
 	mu_assert_streq(s->string, "%I am a \xc3\x99TF-8 string", "rz_scan_strings mix utf8 and ibm037, different string");
-	mu_assert_eq(s->type, RZ_STRING_ENC_UTF8, "rz_scan_strings mix utf8 and ibm037, string type");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_UTF8, "rz_scan_strings mix utf8 and ibm037, string type");
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
@@ -142,7 +143,7 @@ bool test_rz_scan_strings_detect_utf8(void) {
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
 	mu_assert_streq(s->string, "I am a \xc3\x99TF-8 string", "rz_scan_strings utf8, different string");
 	mu_assert_eq(s->addr, 4, "rz_scan_strings utf8, address");
-	mu_assert_eq(s->type, RZ_STRING_ENC_UTF8, "rz_scan_strings utf8, string type");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_UTF8, "rz_scan_strings utf8, string type");
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
@@ -168,7 +169,7 @@ bool test_rz_scan_strings_detect_utf16_le(void) {
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
 	mu_assert_streq(s->string, "I am a UTF-16le string", "rz_scan_strings utf16le, different string");
 	mu_assert_eq(s->addr, 3, "rz_scan_strings utf16le, address");
-	mu_assert_eq(s->type, RZ_STRING_ENC_UTF16LE, "rz_scan_strings utf16le, string type");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_UTF16LE, "rz_scan_strings utf16le, string type");
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
@@ -194,10 +195,75 @@ bool test_rz_scan_strings_detect_utf16_le_special_chars(void) {
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
 	mu_assert_streq(s->string, "\twide\\esc: \x1b[0m\xc2\xa1\r\n", "rz_scan_strings utf16le, different string");
 	mu_assert_eq(s->addr, 0, "rz_scan_strings utf16le, address");
-	mu_assert_eq(s->type, RZ_STRING_ENC_UTF16LE, "rz_scan_strings utf16le, string type");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_UTF16LE, "rz_scan_strings utf16le, string type");
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
+
+	mu_end;
+}
+
+bool test_rz_scan_strings_user_unprintable(void) {
+	// ASCII/UTF-8 string: "hello\tworld\ntest\0"
+	// With \t (0x09) and \n (0x0a) as user-defined non-printable,
+	// the scanner should produce: "hello", "world", "test"
+	static const unsigned char str[] = "hello\tworld\ntest";
+	static RzCodePoint code_points[] = { 0x09, 0x0a };
+	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
+	RzUtilStrScanOptions opt = g_opt;
+	RzVector *user_unprintable = rz_vector_new(sizeof(RzCodePoint), NULL, NULL);
+	mu_assert_notnull(user_unprintable, "user_unprintable vector alloc");
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(code_points); i++) {
+		mu_assert_true(rz_vector_push(user_unprintable, &code_points[i]), "push user_unprintable");
+	}
+	opt.user_unprintable = user_unprintable;
+	opt.min_str_length = 4;
+
+	RzList *str_list = rz_list_newf((RzListFree)rz_detected_string_free);
+	int n = rz_scan_strings(buf, str_list, &opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_8BIT);
+	mu_assert_eq(n, 3, "rz_scan_strings user_unprintable, number of strings");
+
+	RzDetectedString *s0 = rz_list_get_n(str_list, 0);
+	RzDetectedString *s1 = rz_list_get_n(str_list, 1);
+	RzDetectedString *s2 = rz_list_get_n(str_list, 2);
+	mu_assert_streq(s0->string, "hello", "rz_scan_strings user_unprintable, first string");
+	mu_assert_streq(s1->string, "world", "rz_scan_strings user_unprintable, second string");
+	mu_assert_streq(s2->string, "test", "rz_scan_strings user_unprintable, third string");
+
+	rz_list_free(str_list);
+	rz_buf_free(buf);
+	rz_vector_free(user_unprintable);
+
+	mu_end;
+}
+
+bool test_rz_scan_strings_user_unprintable_utf8(void) {
+	// UTF-8 bytes for U+00E9 (latin small letter e with acute) between "ab" and "cd".
+	static const unsigned char str[] = { 'a', 'b', 0xC3, 0xA9, 'c', 'd', 0x00 };
+	static RzCodePoint code_points[] = { 0x00e9 }; // U+00E9 (latin small letter e with acute)
+	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
+	RzUtilStrScanOptions opt = g_opt;
+	RzVector *user_unprintable = rz_vector_new(sizeof(RzCodePoint), NULL, NULL);
+	mu_assert_notnull(user_unprintable, "user_unprintable vector alloc");
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(code_points); i++) {
+		mu_assert_true(rz_vector_push(user_unprintable, &code_points[i]), "push user_unprintable");
+	}
+	opt.user_unprintable = user_unprintable;
+	opt.min_str_length = 2;
+	opt.check_ascii_freq = false;
+
+	RzList *str_list = rz_list_newf((RzListFree)rz_detected_string_free);
+	int n = rz_scan_strings(buf, str_list, &opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_UTF8);
+	mu_assert_eq(n, 2, "rz_scan_strings user_unprintable utf8, number of strings");
+
+	RzDetectedString *s0 = rz_list_get_n(str_list, 0);
+	RzDetectedString *s1 = rz_list_get_n(str_list, 1);
+	mu_assert_streq(s0->string, "ab", "rz_scan_strings user_unprintable utf8, first string");
+	mu_assert_streq(s1->string, "cd", "rz_scan_strings user_unprintable utf8, second string");
+
+	rz_list_free(str_list);
+	rz_buf_free(buf);
+	rz_vector_free(user_unprintable);
 
 	mu_end;
 }
@@ -220,7 +286,7 @@ bool test_rz_scan_strings_detect_utf16_be(void) {
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
 	mu_assert_streq(s->string, "I am a UTF-16be string", "rz_scan_strings utf16be, different string");
 	mu_assert_eq(s->addr, 3, "rz_scan_strings utf16be, address");
-	mu_assert_eq(s->type, RZ_STRING_ENC_UTF16BE, "rz_scan_strings utf16be, string type");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_UTF16BE, "rz_scan_strings utf16be, string type");
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
@@ -249,7 +315,7 @@ bool test_rz_scan_strings_detect_utf32_le(void) {
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
 	mu_assert_streq(s->string, "I am a UTF-32le string", "rz_scan_strings utf32le, different string");
 	mu_assert_eq(s->addr, 2, "rz_scan_strings utf32le, address");
-	mu_assert_eq(s->type, RZ_STRING_ENC_UTF32LE, "rz_scan_strings utf32le, string type");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_UTF32LE, "rz_scan_strings utf32le, string type");
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
@@ -278,7 +344,7 @@ bool test_rz_scan_strings_detect_utf32_be(void) {
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
 	mu_assert_streq(s->string, "I am a UTF-32be stringÿ", "rz_scan_strings utf32be, different string");
 	mu_assert_eq(s->addr, 2, "rz_scan_strings utf32be, address");
-	mu_assert_eq(s->type, RZ_STRING_ENC_UTF32BE, "rz_scan_strings utf32be, string type");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_UTF32BE, "rz_scan_strings utf32be, string type");
 	mu_assert_eq(s->size, 92, "rz_scan_strings utf32be, size"); // 92 bytes in size, no NUL byte.
 	mu_assert_eq(s->length, 23, "rz_scan_strings utf32be, length"); // 23 characters in length.
 
@@ -306,7 +372,7 @@ bool test_rz_scan_strings_utf16_be(void) {
 	// "слон, ладья" UTF-8 encoded:
 	mu_assert_streq(s->string, "\xd1\x81\xd0\xbb\xd0\xbe\xd0\xbd\x2c\x20\xd0\xbb\xd0\xb0\xd0\xb4\xd1\x8c\xd1\x8f", // This is UTF-8 encoded.
 		"rz_scan_strings utf16be, different string");
-	mu_assert_eq(s->type, RZ_STRING_ENC_UTF16BE, "rz_scan_strings utf16be, string type");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_UTF16BE, "rz_scan_strings utf16be, string type");
 	mu_assert_eq(s->size, 22, "rz_scan_strings utf16be, size"); // 22 bytes in size, no NUL byte.
 	mu_assert_eq(s->length, 11, "rz_scan_strings utf16be, length"); // 11 characters in length.
 
@@ -362,7 +428,7 @@ bool test_rz_scan_strings_detect_length_ascii(void) {
 	mu_assert_eq(s->addr, 0, "rz_scan_strings ascii, address");
 	mu_assert_eq(s->size, 38, "rz_scan_strings ascii, size (in bytes, no NUL byte)");
 	mu_assert_eq(s->length, 38, "rz_scan_strings ascii, length (in characters without NUL byte)");
-	mu_assert_eq(s->type, RZ_STRING_ENC_8BIT, "rz_scan_strings ascii, type");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_8BIT, "rz_scan_strings ascii, type");
 	rz_list_purge(str_list);
 
 	// Extra space between "a" and "NUL" to get comparable string length.
@@ -376,7 +442,7 @@ bool test_rz_scan_strings_detect_length_ascii(void) {
 	// One byte larger in size than above, due to additional NUL byte.
 	mu_assert_eq(s->size, 39, "rz_scan_strings ascii, size (in bytes, without NUL byte)");
 	mu_assert_eq(s->length, 38, "rz_scan_strings ascii, length (in characters)");
-	mu_assert_eq(s->type, RZ_STRING_ENC_8BIT, "rz_scan_strings ascii, type");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_8BIT, "rz_scan_strings ascii, type");
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
@@ -401,7 +467,7 @@ bool test_rz_scan_strings_detect_length_utf8(void) {
 	mu_assert_eq(s->addr, 0, "rz_scan_strings utf-8, address");
 	mu_assert_eq(s->size, 44, "rz_scan_strings utf-8, size (in bytes, no NUL byte)");
 	mu_assert_eq(s->length, 40, "rz_scan_strings utf-8, length (in characters without NUL byte)");
-	mu_assert_eq(s->type, RZ_STRING_ENC_UTF8, "rz_scan_strings utf-8, type");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_UTF8, "rz_scan_strings utf-8, type");
 	rz_list_purge(str_list);
 
 	// Extra space between "a" and "NUL" to get comparable string length.
@@ -415,12 +481,35 @@ bool test_rz_scan_strings_detect_length_utf8(void) {
 	// One byte larger in size than above, due to additional NUL byte.
 	mu_assert_eq(s->size, 45, "rz_scan_strings utf-8, size (in bytes, with NUL byte)");
 	mu_assert_eq(s->length, 40, "rz_scan_strings utf-8, length (in characters)");
-	mu_assert_eq(s->type, RZ_STRING_ENC_UTF8, "rz_scan_strings utf-8, type");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_UTF8, "rz_scan_strings utf-8, type");
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
 	rz_buf_free(buf_nul);
 
+	mu_end;
+}
+
+/**
+ * \brief Test that rz_search_collection_string_add() refuses to add a string if
+ * the search requires string scanning, but no scan optoins were given.
+ */
+bool test_rz_scan_strings_scan_options_error(void) {
+	RzSearchCollection *collection = rz_search_collection_strings(NULL, 4);
+	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_IBM037), "Should fail for this config");
+	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_IBM290), "Should fail for this config");
+	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_EBCDIC_UK), "Should fail for this config");
+	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_EBCDIC_US), "Should fail for this config");
+	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_EBCDIC_ES), "Should fail for this config");
+	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_GUESS), "Should fail for this config");
+	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_SETTINGS), "Should fail for this config");
+	mu_assert_true(rz_search_collection_string_add(collection, "some_pattern", 0, 1, RZ_STRING_ENC_UTF16BE), "Should succeed for this config");
+	mu_assert_true(rz_search_collection_string_add(collection, "some_pattern", 0, 1, RZ_STRING_ENC_UTF16LE), "Should succeed for this config");
+	mu_assert_true(rz_search_collection_string_add(collection, "some_pattern", 0, 1, RZ_STRING_ENC_UTF32BE), "Should succeed for this config");
+	mu_assert_true(rz_search_collection_string_add(collection, "some_pattern", 0, 1, RZ_STRING_ENC_UTF32LE), "Should succeed for this config");
+	mu_assert_true(rz_search_collection_string_add(collection, "some_pattern", 0, 1, RZ_STRING_ENC_8BIT), "Should succeed for this config");
+	mu_assert_true(rz_search_collection_string_add(collection, "some_pattern", 0, 1, RZ_STRING_ENC_UTF8), "Should succeed for this config");
+	rz_search_collection_free(collection);
 	mu_end;
 }
 
@@ -431,6 +520,8 @@ bool all_tests() {
 	mu_run_test(test_rz_scan_strings_detect_utf8);
 	mu_run_test(test_rz_scan_strings_detect_utf16_le);
 	mu_run_test(test_rz_scan_strings_detect_utf16_le_special_chars);
+	mu_run_test(test_rz_scan_strings_user_unprintable);
+	mu_run_test(test_rz_scan_strings_user_unprintable_utf8);
 	mu_run_test(test_rz_scan_strings_detect_utf16_be);
 	mu_run_test(test_rz_scan_strings_detect_utf32_le);
 	mu_run_test(test_rz_scan_strings_detect_utf32_be);
@@ -438,6 +529,7 @@ bool all_tests() {
 	mu_run_test(test_rz_scan_strings_extended_ascii);
 	mu_run_test(test_rz_scan_strings_detect_length_ascii);
 	mu_run_test(test_rz_scan_strings_detect_length_utf8);
+	mu_run_test(test_rz_scan_strings_scan_options_error);
 
 	return tests_passed != tests_run;
 }

@@ -35,14 +35,14 @@ FROM debian:11
 # rz-pipe python version
 ARG RZ_PIPE_PY_VERSION=master
 # rz-ghidra version
-ARG RZ_GHIDRA_VERSION=stable
+ARG RZ_GHIDRA_VERSION=dev
 
 ARG with_arm32_as
 ARG with_arm64_as
 ARG with_ppc_as
 
-ENV RZ_PIPE_PY_VERSION ${RZ_PIPE_PY_VERSION}
-ENV RZ_GHIDRA_VERSION ${RZ_GHIDRA_VERSION}
+ENV RZ_PIPE_PY_VERSION=${RZ_PIPE_PY_VERSION}
+ENV RZ_GHIDRA_VERSION=${RZ_GHIDRA_VERSION}
 
 RUN echo -e "Building versions:\n\
 	RZ_PIPE_PY_VERSION=${RZ_PIPE_PY_VERSION}\
@@ -59,6 +59,7 @@ RUN apt-get install -y --no-install-recommends \
 	make \
 	pkg-config \
 	libc-dev-bin libc6-dev linux-libc-dev \
+	zlib1g-dev \
 	python3-pip \
 	python3-setuptools \
 	python3-wheel \
@@ -72,7 +73,7 @@ RUN pip3 install meson tomli
 COPY . /tmp/rizin/
 
 WORKDIR /tmp/rizin
-RUN meson setup --prefix=/usr -Dinstall_sigdb=true /tmp/build && \
+RUN meson setup --prefix=/usr -Dinstall_sigdb=true -Duse_sys_zlib=enabled /tmp/build && \
 	meson compile -C /tmp/build && \
 	meson install --destdir /tmp/rizin-install -C /tmp/build
 
@@ -95,7 +96,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 
 USER rizin
 WORKDIR /home/rizin
-ENV HOME /home/rizin
+ENV HOME=/home/rizin
 
 COPY --from=0 /tmp/rizin-install/ /
 

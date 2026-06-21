@@ -24,6 +24,9 @@
 
 /**
  * \brief Minimal buffer size for each find() thread in bytes.
+ *
+ * ATTENTION: This value must be aligned to at least 4bytes.
+ * Otherwise the string search breaks.
  */
 #define RZ_SEARCH_MIN_CHUNK_SIZE 32ull
 
@@ -33,6 +36,9 @@
  *
  * ATTENTION: If you change this value, update the test
  * in cmd_search_x::"search over boundary"
+ *
+ * ATTENTION: This value must be aligned to at least 4bytes.
+ * Otherwise the string search breaks.
  */
 #define RZ_SEARCH_DEFAULT_CHUNK_SIZE 0x1000ull
 
@@ -121,7 +127,6 @@ struct rz_search_opt_t {
 };
 
 struct rz_search_find_opt_t {
-	bool match_inverse; ///< Set if the inverse of the given pattern should be matched.
 	bool match_overlap; ///< Set if hits can overlap.
 	size_t alignment; ///< The address alignment to start the search from. If >1, only `buffer + (alignment * x)` is searched.
 };
@@ -169,8 +174,8 @@ RZ_IPI int rz_search_hit_cmp(RZ_NULLABLE RzSearchHit *a, RZ_NULLABLE RzSearchHit
 RZ_IPI RZ_OWN RzSearchInterval *rz_search_interval_new(RzInterval interval, size_t n_hits);
 RZ_IPI void rz_search_interval_free(RZ_NULLABLE RzSearchInterval *interval);
 
-RZ_IPI RZ_OWN RzSearchCollection *rz_search_collection_new_bytes_space(RZ_NONNULL RzSearchFindBytesCallback find, RZ_NONNULL RzSearchIsEmptyCallback is_empty, RZ_NULLABLE RzSearchFreeCallback free, RZ_NULLABLE void *user);
-RZ_IPI RZ_OWN RzSearchCollection *rz_search_collection_new_graph_space(RZ_NONNULL RzSearchFindGraphCallback find, RZ_NONNULL RzSearchIsEmptyCallback is_empty, RZ_NULLABLE RzSearchFreeCallback free, RZ_NULLABLE void *user);
+RZ_IPI RZ_OWN RzSearchCollection *rz_search_collection_new_bytes_space(RZ_NONNULL RzSearchFindBytesCallback find, RZ_NONNULL RzSearchIsEmptyCallback is_empty, RZ_NULLABLE RzSearchFreeCallback free_user, RZ_OWN RZ_NULLABLE void *user);
+RZ_IPI RZ_OWN RzSearchCollection *rz_search_collection_new_graph_space(RZ_NONNULL RzSearchFindGraphCallback find, RZ_NONNULL RzSearchIsEmptyCallback is_empty, RZ_NULLABLE RzSearchFreeCallback free_user, RZ_OWN RZ_NULLABLE void *user);
 RZ_IPI bool rz_search_collection_has_find_callback(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL void *expected);
 RZ_IPI bool rz_search_collection_is_empty(RZ_NONNULL RzSearchCollection *col);
 RZ_IPI static inline bool rz_search_collection_on_bytes_space(RZ_NONNULL RzSearchCollection *col) {

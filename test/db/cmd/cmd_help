@@ -45,7 +45,6 @@ EXPECT=<<EOF
 | aaT [<n_bytes>]      # Prints commands to create functions after a trap call
 | aau [<min_len>]      # Print memory areas not covered by functions
 | aav                  # Analyze values referencing a specific section or map
-| aav*                 # Analyze values referencing a specific section or map (rizin mode)
 EOF
 RUN
 
@@ -65,7 +64,7 @@ CMDS=<<EOF
 ?*j aa
 EOF
 EXPECT=<<EOF
-{"aa":{"cmd":"aa","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all flags starting with sym. and entry"},"aaa":{"cmd":"aaa","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all calls, references, emulation and applies signatures"},"aaaa":{"cmd":"aaaa","type":"argv","args_str":"","args":[],"description":"","summary":"Experimental analysis"},"aac":{"cmd":"aac","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze function calls"},"aaci":{"cmd":"aaci","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all function calls to imports"},"aaC":{"cmd":"aaC","type":"argv","args_str":"","args":[],"description":"","summary":"Analysis classes from RzBin"},"aad":{"cmd":"aad","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze data references to code"},"aae":{"cmd":"aae","type":"argv","args_str":" [<len>]","args":[{"type":"expression","name":"len","is_last":true}],"description":"","summary":"Analyze references with ESIL"},"aaef":{"cmd":"aaef","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze references with ESIL in all functions"},"aaf":{"cmd":"aaf","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all functions"},"aafe":{"cmd":"aafe","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all functions using ESIL"},"aafr":{"cmd":"aafr","type":"argv","args_str":" <length>","args":[{"type":"number","name":"length","required":true}],"description":"","summary":"Analyze all consecutive functions in section"},"aaft":{"cmd":"aaft","type":"argv","args_str":"","args":[],"description":"","summary":"Performs recursive type matching in all functions"},"aai":{"cmd":"aai","type":"argv_state","args_str":"","args":[],"description":"","summary":"Print preformed analysis details"},"aaij":{"cmd":"aaij","type":"argv_state","args_str":"","args":[],"description":"","summary":"Print preformed analysis details (JSON mode)"},"aaj":{"cmd":"aaj","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all unresolved jumps"},"aalg":{"cmd":"aalg","type":"argv","args_str":"","args":[],"description":"","summary":"Recover and analyze all Golang functions and strings"},"aalor":{"cmd":"aalor","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all Objective-C references from selector usages to their implementations"},"aalos":{"cmd":"aalos","type":"argv","args_str":"","args":[],"description":"","summary":"Recover all Objective-C selector stub names (__objc_stubs section contents)"},"aan":{"cmd":"aan","type":"argv","args_str":"","args":[],"description":"","summary":"Renames all functions based on their strings or calls"},"aanr":{"cmd":"aanr","type":"argv","args_str":"","args":[],"description":"","summary":"Renames all functions which does not return"},"aap":{"cmd":"aap","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all preludes"},"aar":{"cmd":"aar","type":"argv","args_str":" [<n_bytes>]","args":[{"type":"number","name":"n_bytes"}],"description":"","summary":"Analyze xrefs in current section or by n_bytes"},"aas":{"cmd":"aas","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze only the symbols"},"aaS":{"cmd":"aaS","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze only the flags starting as sym.* and entry*"},"aat":{"cmd":"aat","type":"argv","args_str":" [<func_name>]","args":[{"type":"function","name":"func_name"}],"description":"","summary":"Analyze all/given function to convert immediate to linked structure offsets"},"aaT":{"cmd":"aaT","type":"argv","args_str":" [<n_bytes>]","args":[{"type":"number","name":"n_bytes"}],"description":"","summary":"Prints commands to create functions after a trap call"},"aau":{"cmd":"aau","type":"argv","args_str":" [<min_len>]","args":[{"type":"number","name":"min_len"}],"description":"","summary":"Print memory areas not covered by functions"},"aav":{"cmd":"aav","type":"argv_state","args_str":"","args":[],"description":"","summary":"Analyze values referencing a specific section or map"},"aav*":{"cmd":"aav*","type":"argv_state","args_str":"","args":[],"description":"","summary":"Analyze values referencing a specific section or map (rizin mode)"}}
+{"aa":{"cmd":"aa","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all flags starting with sym. and entry","details":[]},"aaa":{"cmd":"aaa","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all calls, references, emulation and applies signatures","details":[]},"aaaa":{"cmd":"aaaa","type":"argv","args_str":"","args":[],"description":"","summary":"Experimental analysis","details":[]},"aac":{"cmd":"aac","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze function calls","details":[]},"aaci":{"cmd":"aaci","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all function calls to imports","details":[]},"aaC":{"cmd":"aaC","type":"argv","args_str":"","args":[],"description":"","summary":"Analysis classes from RzBin","details":[]},"aad":{"cmd":"aad","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze data references to code","details":[]},"aae":{"cmd":"aae","type":"argv","args_str":" [<len>]","args":[{"type":"expression","name":"len","is_last":true}],"description":"","summary":"Analyze references with ESIL","details":[{"name":"Examples","entries":[{"text":"aae","comment":"analyze ranges given by analysis.in","arg_str":""},{"text":"aae","comment":"analyze the whole section","arg_str":" $SS @ $S"}]}]},"aaef":{"cmd":"aaef","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze references with ESIL in all functions","details":[]},"aaf":{"cmd":"aaf","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all functions","details":[]},"aafe":{"cmd":"aafe","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all functions using ESIL","details":[]},"aafr":{"cmd":"aafr","type":"argv","args_str":" <length>","args":[{"type":"number","name":"length","required":true}],"description":"","summary":"Analyze all consecutive functions in section","details":[]},"aaft":{"cmd":"aaft","type":"argv","args_str":"","args":[],"description":"","summary":"Performs recursive type matching in all functions","details":[]},"aai":{"cmd":"aai","type":"argv_state","args_str":"","args":[],"description":"","summary":"Print preformed analysis details","details":[]},"aaij":{"cmd":"aaij","type":"argv_state","args_str":"","args":[],"description":"","summary":"Print preformed analysis details (JSON mode)","details":[]},"aaj":{"cmd":"aaj","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all unresolved jumps","details":[]},"aalg":{"cmd":"aalg","type":"argv","args_str":"","args":[],"description":"","summary":"Recover and analyze all Golang functions and strings","details":[]},"aalor":{"cmd":"aalor","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all Objective-C references from selector usages to their implementations","details":[]},"aalos":{"cmd":"aalos","type":"argv","args_str":"","args":[],"description":"","summary":"Recover all Objective-C selector stub names (__objc_stubs section contents)","details":[]},"aan":{"cmd":"aan","type":"argv","args_str":"","args":[],"description":"","summary":"Renames all functions based on their strings or calls","details":[]},"aanr":{"cmd":"aanr","type":"argv","args_str":"","args":[],"description":"","summary":"Renames all functions which does not return","details":[]},"aap":{"cmd":"aap","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all preludes","details":[{"name":"Search a custom prelude","entries":[{"text":"e analysis.prelude='90AEF630'","comment":"Set new prelude","arg_str":""},{"text":"aap","comment":"Search for 90AEF630 and create a new function","arg_str":""}]}]},"aar":{"cmd":"aar","type":"argv","args_str":" [<n_bytes>]","args":[{"type":"number","name":"n_bytes"}],"description":"","summary":"Analyze xrefs in current section or by n_bytes","details":[]},"aas":{"cmd":"aas","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze only the symbols","details":[]},"aaS":{"cmd":"aaS","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze only the flags starting as sym.* and entry*","details":[]},"aat":{"cmd":"aat","type":"argv","args_str":" [<func_name>]","args":[{"type":"function","name":"func_name"}],"description":"","summary":"Analyze all/given function to convert immediate to linked structure offsets","details":[]},"aaT":{"cmd":"aaT","type":"argv","args_str":" [<n_bytes>]","args":[{"type":"number","name":"n_bytes"}],"description":"","summary":"Prints commands to create functions after a trap call","details":[]},"aau":{"cmd":"aau","type":"argv","args_str":" [<min_len>]","args":[{"type":"number","name":"min_len"}],"description":"","summary":"Print memory areas not covered by functions","details":[]},"aav":{"cmd":"aav","type":"argv_state","args_str":"","args":[],"description":"","summary":"Analyze values referencing a specific section or map","details":[]}}
 EOF
 RUN
 
@@ -104,7 +103,65 @@ EXPECT=<<EOF
 | aaT [<n_bytes>]      # Prints commands to create functions after a trap call
 | aau [<min_len>]      # Print memory areas not covered by functions
 | aav                  # Analyze values referencing a specific section or map
-| aav*                 # Analyze values referencing a specific section or map (rizin mode)
+EOF
+RUN
+
+NAME=help with scr.utf8=true
+FILE=--
+CMDS=e scr.utf8=true; aa?
+EXPECT=<<EOF
+Usage: aa[?]   # Analysis commands
+│ aa                # Analyze all flags starting with sym. and entry
+│ aaa               # Analyze all calls, references, emulation and applies signatures
+│ aaaa              # Experimental analysis
+│ aac[i]            # Analysis function calls commands
+│ aaC               # Analysis classes from RzBin
+│ aad               # Analyze data references to code
+│ aae[f]            # Analysis commands using ESIL
+│ aaf[ert]          # Analysis function commands
+│ aai[j]            # Print preformed analysis details
+│ aaj               # Analyze all unresolved jumps
+│ aal<g?>           # Language specific analysis commands
+│ aan[r]            # Automatic rename functions commands
+│ aap               # Analyze all preludes
+│ aar [<n_bytes>]   # Analyze xrefs in current section or by n_bytes
+│ aas               # Analyze only the symbols
+│ aaS               # Analyze only the flags starting as sym.* and entry*
+│ aat [<func_name>] # Analyze all/given function to convert immediate to linked structure offsets
+│ aaT [<n_bytes>]   # Prints commands to create functions after a trap call
+│ aau [<min_len>]   # Print memory areas not covered by functions
+│ aav[?]            # Analyze values referencing a specific section or map
+EOF
+RUN
+
+NAME=help with scr.utf8.curvy=true
+FILE=--
+CMDS=e scr.utf8=true scr.utf8.curvy=true; w?
+EXPECT=<<EOF
+Usage: w[?]   # Write commands
+╭ w <string>        # Write string
+│ wB[-]             # Set or unset bits with given value
+│ wv[1248]          # Write value of given size
+│ w0 <len>          # Write <len> bytes with value 0x00
+│ w<1248><+-> [<n>] # Increment/decrement byte, word, ...
+│ w6<de>            # Write base64 [d]ecoded or [e]ncoded string
+│ we<nsx>           # Extend write operations (insert bytes instead of replacing)
+│ wu <file>         # Apply unified hex patch (see output of cu)
+│ wr <len>          # Write <len> random bytes
+│ wc[j-+ip?]        # Write cache commands
+│ wz <string>       # Write zero-terminated string
+│ wf[xfs]           # Write data from file, socket, offset
+│ ww <string>       # Write wide (16-bit) little-endian string
+│ wx[f]             # Write hexadecimal data
+│ wa[ifo]           # Write opcodes
+│ wb <hex>          # Write in current block a hexstring cyclically
+│ wm[-]             # Set binary mask hexpair to be used as cyclic write mask
+│ wo<?>             # Write a block with a special operation
+│ wD[/]             # Write de Bruijn pattern
+│ wd <src> <len>    # Duplicate <len> bytes from <src> offset to current seek
+╰ ws <string>       # Write 1 byte for length and then the string
+
+Detailed help for w <string> is provided by w??.
 EOF
 RUN
 
@@ -114,7 +171,7 @@ CMDS=<<EOF
 aa?*j
 EOF
 EXPECT=<<EOF
-{"aa":{"cmd":"aa","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all flags starting with sym. and entry"},"aaa":{"cmd":"aaa","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all calls, references, emulation and applies signatures"},"aaaa":{"cmd":"aaaa","type":"argv","args_str":"","args":[],"description":"","summary":"Experimental analysis"},"aac":{"cmd":"aac","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze function calls"},"aaci":{"cmd":"aaci","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all function calls to imports"},"aaC":{"cmd":"aaC","type":"argv","args_str":"","args":[],"description":"","summary":"Analysis classes from RzBin"},"aad":{"cmd":"aad","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze data references to code"},"aae":{"cmd":"aae","type":"argv","args_str":" [<len>]","args":[{"type":"expression","name":"len","is_last":true}],"description":"","summary":"Analyze references with ESIL"},"aaef":{"cmd":"aaef","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze references with ESIL in all functions"},"aaf":{"cmd":"aaf","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all functions"},"aafe":{"cmd":"aafe","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all functions using ESIL"},"aafr":{"cmd":"aafr","type":"argv","args_str":" <length>","args":[{"type":"number","name":"length","required":true}],"description":"","summary":"Analyze all consecutive functions in section"},"aaft":{"cmd":"aaft","type":"argv","args_str":"","args":[],"description":"","summary":"Performs recursive type matching in all functions"},"aai":{"cmd":"aai","type":"argv_state","args_str":"","args":[],"description":"","summary":"Print preformed analysis details"},"aaij":{"cmd":"aaij","type":"argv_state","args_str":"","args":[],"description":"","summary":"Print preformed analysis details (JSON mode)"},"aaj":{"cmd":"aaj","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all unresolved jumps"},"aalg":{"cmd":"aalg","type":"argv","args_str":"","args":[],"description":"","summary":"Recover and analyze all Golang functions and strings"},"aalor":{"cmd":"aalor","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all Objective-C references from selector usages to their implementations"},"aalos":{"cmd":"aalos","type":"argv","args_str":"","args":[],"description":"","summary":"Recover all Objective-C selector stub names (__objc_stubs section contents)"},"aan":{"cmd":"aan","type":"argv","args_str":"","args":[],"description":"","summary":"Renames all functions based on their strings or calls"},"aanr":{"cmd":"aanr","type":"argv","args_str":"","args":[],"description":"","summary":"Renames all functions which does not return"},"aap":{"cmd":"aap","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all preludes"},"aar":{"cmd":"aar","type":"argv","args_str":" [<n_bytes>]","args":[{"type":"number","name":"n_bytes"}],"description":"","summary":"Analyze xrefs in current section or by n_bytes"},"aas":{"cmd":"aas","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze only the symbols"},"aaS":{"cmd":"aaS","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze only the flags starting as sym.* and entry*"},"aat":{"cmd":"aat","type":"argv","args_str":" [<func_name>]","args":[{"type":"function","name":"func_name"}],"description":"","summary":"Analyze all/given function to convert immediate to linked structure offsets"},"aaT":{"cmd":"aaT","type":"argv","args_str":" [<n_bytes>]","args":[{"type":"number","name":"n_bytes"}],"description":"","summary":"Prints commands to create functions after a trap call"},"aau":{"cmd":"aau","type":"argv","args_str":" [<min_len>]","args":[{"type":"number","name":"min_len"}],"description":"","summary":"Print memory areas not covered by functions"},"aav":{"cmd":"aav","type":"argv_state","args_str":"","args":[],"description":"","summary":"Analyze values referencing a specific section or map"},"aav*":{"cmd":"aav*","type":"argv_state","args_str":"","args":[],"description":"","summary":"Analyze values referencing a specific section or map (rizin mode)"}}
+{"aa":{"cmd":"aa","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all flags starting with sym. and entry","details":[]},"aaa":{"cmd":"aaa","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all calls, references, emulation and applies signatures","details":[]},"aaaa":{"cmd":"aaaa","type":"argv","args_str":"","args":[],"description":"","summary":"Experimental analysis","details":[]},"aac":{"cmd":"aac","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze function calls","details":[]},"aaci":{"cmd":"aaci","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all function calls to imports","details":[]},"aaC":{"cmd":"aaC","type":"argv","args_str":"","args":[],"description":"","summary":"Analysis classes from RzBin","details":[]},"aad":{"cmd":"aad","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze data references to code","details":[]},"aae":{"cmd":"aae","type":"argv","args_str":" [<len>]","args":[{"type":"expression","name":"len","is_last":true}],"description":"","summary":"Analyze references with ESIL","details":[{"name":"Examples","entries":[{"text":"aae","comment":"analyze ranges given by analysis.in","arg_str":""},{"text":"aae","comment":"analyze the whole section","arg_str":" $SS @ $S"}]}]},"aaef":{"cmd":"aaef","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze references with ESIL in all functions","details":[]},"aaf":{"cmd":"aaf","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all functions","details":[]},"aafe":{"cmd":"aafe","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all functions using ESIL","details":[]},"aafr":{"cmd":"aafr","type":"argv","args_str":" <length>","args":[{"type":"number","name":"length","required":true}],"description":"","summary":"Analyze all consecutive functions in section","details":[]},"aaft":{"cmd":"aaft","type":"argv","args_str":"","args":[],"description":"","summary":"Performs recursive type matching in all functions","details":[]},"aai":{"cmd":"aai","type":"argv_state","args_str":"","args":[],"description":"","summary":"Print preformed analysis details","details":[]},"aaij":{"cmd":"aaij","type":"argv_state","args_str":"","args":[],"description":"","summary":"Print preformed analysis details (JSON mode)","details":[]},"aaj":{"cmd":"aaj","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all unresolved jumps","details":[]},"aalg":{"cmd":"aalg","type":"argv","args_str":"","args":[],"description":"","summary":"Recover and analyze all Golang functions and strings","details":[]},"aalor":{"cmd":"aalor","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all Objective-C references from selector usages to their implementations","details":[]},"aalos":{"cmd":"aalos","type":"argv","args_str":"","args":[],"description":"","summary":"Recover all Objective-C selector stub names (__objc_stubs section contents)","details":[]},"aan":{"cmd":"aan","type":"argv","args_str":"","args":[],"description":"","summary":"Renames all functions based on their strings or calls","details":[]},"aanr":{"cmd":"aanr","type":"argv","args_str":"","args":[],"description":"","summary":"Renames all functions which does not return","details":[]},"aap":{"cmd":"aap","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all preludes","details":[{"name":"Search a custom prelude","entries":[{"text":"e analysis.prelude='90AEF630'","comment":"Set new prelude","arg_str":""},{"text":"aap","comment":"Search for 90AEF630 and create a new function","arg_str":""}]}]},"aar":{"cmd":"aar","type":"argv","args_str":" [<n_bytes>]","args":[{"type":"number","name":"n_bytes"}],"description":"","summary":"Analyze xrefs in current section or by n_bytes","details":[]},"aas":{"cmd":"aas","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze only the symbols","details":[]},"aaS":{"cmd":"aaS","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze only the flags starting as sym.* and entry*","details":[]},"aat":{"cmd":"aat","type":"argv","args_str":" [<func_name>]","args":[{"type":"function","name":"func_name"}],"description":"","summary":"Analyze all/given function to convert immediate to linked structure offsets","details":[]},"aaT":{"cmd":"aaT","type":"argv","args_str":" [<n_bytes>]","args":[{"type":"number","name":"n_bytes"}],"description":"","summary":"Prints commands to create functions after a trap call","details":[]},"aau":{"cmd":"aau","type":"argv","args_str":" [<min_len>]","args":[{"type":"number","name":"min_len"}],"description":"","summary":"Print memory areas not covered by functions","details":[]},"aav":{"cmd":"aav","type":"argv_state","args_str":"","args":[],"description":"","summary":"Analyze values referencing a specific section or map","details":[]}}
 EOF
 RUN
 
@@ -136,7 +193,7 @@ Usage: w[?]   # Write commands
 | we<nsx>           # Extend write operations (insert bytes instead of replacing)
 | wu <file>         # Apply unified hex patch (see output of cu)
 | wr <len>          # Write <len> random bytes
-| wc[j*-+ip?]       # Write cache commands
+| wc[j-+ip?]        # Write cache commands
 | wz <string>       # Write zero-terminated string
 | wf[xfs]           # Write data from file, socket, offset
 | ww <string>       # Write wide (16-bit) little-endian string
@@ -155,7 +212,7 @@ Detailed help for w <string> is provided by w??.
 
 Usage: e[?]   # List/get/set config evaluable vars
 | e <key>[=<val|?>] [<key>[=<val|?>] ...]] # Get/Set value of config variable <key>
-| el[j*qlJ] [<key>]      # List config variables with their descriptions
+| el[jqlJ] [<key>]       # List config variables with their descriptions
 | e-                     # Reset config variables
 | e! <key>               # Invert the boolean value of config variable <key>
 | ec[?]                  # Set color for given key (prompt, offset, ...)
@@ -186,5 +243,67 @@ Legend:
 | A # Assembler plugin
 | e # ESIL Support
 | I # RzIL Support
+EOF
+RUN
+
+NAME="help"
+FILE==
+CMDS=<<EOF
+help
+EOF
+EXPECT=<<EOF
+Welcome to Rizin!
+
+Fastest way to help yourself
+Type ?** to search all commands' short descriptions.
+Type ?*** to search all commands' long descriptions.
+Type ?**e to search all settings' descriptions.
+
+Type ? for a list of commands available.
+Append ? to any command to get the list of sub-commands or more details about a specific command.
+Append ?? to any command to get the full description of a command, e.g. with examples.
+
+Commands output can be redirected as in a regular shell, see >? for more info.
+You can grep commands output with the 'internal grep', see ~? for more info.
+You can pipe an internal Rizin command to a system program, see |? for more info.
+
+Chain multiple commands with ;.
+Temporary modifiers are your friends, see @? for more info, but here some useful ones:
+ - @  temporarily switch to a different address
+ - @a:<arch> temporarily switch to a different architecture
+ - @e:<varname>=<varvalue> temporarily change an eval variable
+
+There are a lot of settings that customize Rizin's behaviour, see them with el. Have a look at e? to know how to interact with them.
+You can save your preferred settings in ~/.rizinrc.
+EOF
+RUN
+
+NAME=Interactive help
+FILE==
+CMDS=<<EOF
+?*?
+EOF
+EXPECT=<<EOF
+Usage: ?*[j*?]   # Search help commands
+| ?*[j] [<search_cmd>] # Search help
+| ?**[e]               # Search command and setting summaries.
+| ?***                 # Search command summaries and their extended help interactively.
+EOF
+RUN
+
+NAME=utf8 cmd args
+FILE=--
+CMDS=<<EOF
+e scr.interactive=1
+e scr.columns=70
+/z??~:-6..
+EOF
+EXPECT=<<EOF
+| /z (ABC*)D li     # Search the exact string "(ABC*)D" but case
+                      insensitive.
+| /z \\d\\sC*\\w ri # Search the regular expression "\d\sC*\w" but
+                      case insensitive.
+| /z "и.{3}м" ei    # Search the extended regular expression
+                      "и.{3}м" but case insensitive.
 EOF
 RUN

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2013-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 
 // Common base-struct for hints which affect an entire range as opposed to only one single address
 // They are saved in a RBTree per hint type.
@@ -48,6 +48,9 @@ static void addr_hint_record_fini(void *element, void *user) {
 		break;
 	case RZ_ANALYSIS_ADDR_HINT_TYPE_ESIL:
 		free(record->esil);
+		break;
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_ENUM:
+		free(record->enum_name);
 		break;
 	default:
 		break;
@@ -198,8 +201,8 @@ static RzAnalysisRangedHintRecordBase *ensure_ranged_hint_record(RBTree *tree, u
 
 RZ_API void rz_analysis_hint_set_offset(RzAnalysis *a, ut64 addr, const char *typeoff) {
 	SET_HINT(RZ_ANALYSIS_ADDR_HINT_TYPE_TYPE_OFFSET,
-		 free(r->type_offset);
-		 r->type_offset = rz_str_dup(typeoff););
+		free(r->type_offset);
+		r->type_offset = rz_str_dup(typeoff););
 }
 
 RZ_API void rz_analysis_hint_set_nword(RzAnalysis *a, ut64 addr, int nword) {
@@ -230,6 +233,16 @@ RZ_API void rz_analysis_hint_set_immbase(RzAnalysis *a, ut64 addr, int base) {
 	}
 }
 
+RZ_API void rz_analysis_hint_set_enum(RzAnalysis *a, ut64 addr, const char *enum_name) {
+	if (RZ_STR_ISEMPTY(enum_name)) {
+		rz_analysis_hint_unset_enum(a, addr);
+		return;
+	}
+	SET_HINT(RZ_ANALYSIS_ADDR_HINT_TYPE_ENUM,
+		free(r->enum_name);
+		r->enum_name = rz_str_dup(enum_name););
+}
+
 RZ_API void rz_analysis_hint_set_pointer(RzAnalysis *a, ut64 addr, ut64 ptr) {
 	SET_HINT(RZ_ANALYSIS_ADDR_HINT_TYPE_PTR, r->ptr = ptr;);
 }
@@ -240,20 +253,20 @@ RZ_API void rz_analysis_hint_set_ret(RzAnalysis *a, ut64 addr, ut64 val) {
 
 RZ_API void rz_analysis_hint_set_syntax(RzAnalysis *a, ut64 addr, const char *syn) {
 	SET_HINT(RZ_ANALYSIS_ADDR_HINT_TYPE_SYNTAX,
-		 free(r->syntax);
-		 r->syntax = rz_str_dup(syn););
+		free(r->syntax);
+		r->syntax = rz_str_dup(syn););
 }
 
 RZ_API void rz_analysis_hint_set_opcode(RzAnalysis *a, ut64 addr, const char *opcode) {
 	SET_HINT(RZ_ANALYSIS_ADDR_HINT_TYPE_OPCODE,
-		 free(r->opcode);
-		 r->opcode = rz_str_dup(opcode););
+		free(r->opcode);
+		r->opcode = rz_str_dup(opcode););
 }
 
 RZ_API void rz_analysis_hint_set_esil(RzAnalysis *a, ut64 addr, const char *esil) {
 	SET_HINT(RZ_ANALYSIS_ADDR_HINT_TYPE_ESIL,
-		 free(r->esil);
-		 r->esil = rz_str_dup(esil););
+		free(r->esil);
+		r->esil = rz_str_dup(esil););
 }
 
 RZ_API void rz_analysis_hint_set_type(RzAnalysis *a, ut64 addr, int type) {
@@ -310,6 +323,10 @@ RZ_API void rz_analysis_hint_unset_high(RzAnalysis *a, ut64 addr) {
 
 RZ_API void rz_analysis_hint_unset_immbase(RzAnalysis *a, ut64 addr) {
 	unset_addr_hint_record(a, RZ_ANALYSIS_ADDR_HINT_TYPE_IMMBASE, addr);
+}
+
+RZ_API void rz_analysis_hint_unset_enum(RzAnalysis *a, ut64 addr) {
+	unset_addr_hint_record(a, RZ_ANALYSIS_ADDR_HINT_TYPE_ENUM, addr);
 }
 
 RZ_API void rz_analysis_hint_unset_nword(RzAnalysis *a, ut64 addr) {
@@ -371,6 +388,7 @@ RZ_API void rz_analysis_hint_free(RzAnalysisHint *h) {
 		free(h->opcode);
 		free(h->syntax);
 		free(h->offset);
+		free(h->enum_name);
 		free(h);
 	}
 }
@@ -495,6 +513,10 @@ static void hint_merge(RzAnalysisHint *hint, RzAnalysisAddrHintRecord *record) {
 		break;
 	case RZ_ANALYSIS_ADDR_HINT_TYPE_VAL:
 		hint->val = record->val;
+		break;
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_ENUM:
+		free(hint->enum_name);
+		hint->enum_name = rz_str_dup(record->enum_name);
 		break;
 	}
 }

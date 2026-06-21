@@ -10,8 +10,6 @@ echo -- default selection
 ar
 echo -- json
 arj
-echo -- assignment commands
-ar*
 echo -- table
 art
 echo -- columns
@@ -55,25 +53,6 @@ rflags = 0x0000000000000000
 rsp = 0x0000000000000000
 -- json
 {"rax":4919,"rbx":12648430,"rcx":0,"rdx":0,"rsi":0,"rdi":0,"r8":0,"r9":0,"r10":0,"r11":0,"r12":0,"r13":0,"r14":0,"r15":0,"rip":0,"rbp":0,"rflags":0,"rsp":0}
--- assignment commands
-ar rax = 0x0000000000001337
-ar rbx = 0x0000000000c0ffee
-ar rcx = 0x0000000000000000
-ar rdx = 0x0000000000000000
-ar rsi = 0x0000000000000000
-ar rdi = 0x0000000000000000
-ar r8 = 0x0000000000000000
-ar r9 = 0x0000000000000000
-ar r10 = 0x0000000000000000
-ar r11 = 0x0000000000000000
-ar r12 = 0x0000000000000000
-ar r13 = 0x0000000000000000
-ar r14 = 0x0000000000000000
-ar r15 = 0x0000000000000000
-ar rip = 0x0000000000000000
-ar rbp = 0x0000000000000000
-ar rflags = 0x0000000000000000
-ar rsp = 0x0000000000000000
 -- table
 role name        value size type 
 ---------------------------------

@@ -3,12 +3,16 @@ FILE=bins/elf/analysis/mips.elf
 ARGS=
 CMDS=<<EOF
 %v entry0
+echo ---
 iI~cpu
+echo ---
 iI~features
 EOF
 EXPECT=<<EOF
 0x400ab0
+---
 cpu      mips32r2
+---
 features noreorder cpic o32 n32
 EOF
 RUN
@@ -19,7 +23,9 @@ CMDS=<<EOF
 af
 e asm.sub.var=false
 pif
+echo ---
 iI~cpu
+echo ---
 iI~features
 EOF
 EXPECT=<<EOF
@@ -41,20 +47,22 @@ sw t0, 0x10(sp)
 sw v0, 0x14(sp)
 jal sym.imp.__uClibc_main
 sw sp, 0x18(sp)
+---
 cpu      mips32
+---
 features noreorder cpic o32 n32
 EOF
-BROKEN=1
 RUN
 
 NAME=ELF: mipsbe-busybox
 FILE=bins/elf/analysis/mipsbe-busybox
-BROKEN=1
 CMDS=<<EOF
 af
 e asm.sub.var=false
 pif
+echo ---
 iI~cpu
+echo ---
 iI~features
 EOF
 EXPECT=<<EOF
@@ -76,7 +84,9 @@ sw t0, 0x10(sp)
 sw v0, 0x14(sp)
 jal sym.imp.__uClibc_main
 sw sp, 0x18(sp)
+---
 cpu      mips32
+---
 features noreorder cpic o32 n32
 EOF
 RUN

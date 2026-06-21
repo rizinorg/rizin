@@ -105,10 +105,11 @@ static RzBinInfo *pebble_info(RzBinFile *bf) {
 	ret->subsystem = rz_str_dup("pebble");
 	ret->machine = rz_str_dup("watch");
 	ret->arch = rz_str_dup("arm"); // thumb only
-	ret->has_va = 1;
+	ret->has_retguard = false;
+	ret->has_va = true;
 	ret->bits = 16;
-	ret->big_endian = 0;
-	ret->dbg_info = 0;
+	ret->big_endian = false;
+	ret->dbg_info = RZ_BIN_DBG_STRIPPED;
 	return ret;
 }
 
@@ -196,6 +197,7 @@ RzBinPlugin rz_bin_plugin_pebble = {
 	.name = "pebble",
 	.desc = "Pebble Watch App",
 	.license = "LGPL",
+	.author = "pancake",
 	.load_buffer = &pebble_load_buffer,
 	.check_buffer = &pebble_check_buffer,
 	.baddr = &pebble_baddr,

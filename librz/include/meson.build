@@ -7,6 +7,7 @@ include_files = [
   'rz_bin.h',
   'rz_bin_dwarf.h',
   'rz_bin_source_line.h',
+  'rz_bin_stabs.h',
   'rz_bind.h',
   'rz_bp.h',
   'rz_cmd.h',
@@ -24,6 +25,7 @@ include_files = [
   'rz_flag.h',
   'rz_flirt.h',
   'rz_getopt.h',
+  'rz_hash.h',
   'rz_heap_glibc.h',
   'rz_heap_jemalloc.h',
   'rz_il.h',
@@ -33,12 +35,13 @@ include_files = [
   'rz_list.h',
   'rz_magic.h',
   'rz_main.h',
-  'rz_hash.h',
+  'rz_mark.h',
   'rz_parse.h',
   'rz_pdb.h',
   'rz_platform.h',
   'rz_project.h',
   'rz_reg.h',
+  'rz_gadget.h',
   'rz_search.h',
   'rz_sign.h',
   'rz_skiplist.h',
@@ -54,7 +57,6 @@ include_files = [
   'rz_vector.h',
   'rz_windows.h',
   'rz_windows_heap.h',
-  'rz_rop.h',
 ]
 install_headers(include_files, install_dir: rizin_incdir)
 
@@ -65,7 +67,11 @@ rz_util_files = [
   'rz_util/rz_asn1.h',
   'rz_util/rz_assert.h',
   'rz_util/rz_axml.h',
+  'rz_util/rz_base16.h',
+  'rz_util/rz_base32.h',
+  'rz_util/rz_base36.h',
   'rz_util/rz_base64.h',
+  'rz_util/rz_base85.h',
   'rz_util/rz_base91.h',
   'rz_util/rz_big.h',
   'rz_util/rz_bits.h',
@@ -80,11 +86,13 @@ rz_util_files = [
   'rz_util/rz_hex.h',
   'rz_util/rz_idpool.h',
   'rz_util/rz_intervaltree.h',
+  'rz_util/rz_iterator.h',
   'rz_util/rz_itv.h',
   'rz_util/rz_json.h',
   'rz_util/rz_lang_byte_array.h',
   'rz_util/rz_log.h',
   'rz_util/rz_luhn.h',
+  'rz_util/rz_math.h',
   'rz_util/rz_mem.h',
   'rz_util/rz_name.h',
   'rz_util/rz_num.h',
@@ -92,14 +100,14 @@ rz_util_files = [
   'rz_util/rz_path.h',
   'rz_util/rz_pj.h',
   'rz_util/rz_pkcs7.h',
+  'rz_util/rz_pkcs8.h',
   'rz_util/rz_print.h',
   'rz_util/rz_protobuf.h',
   'rz_util/rz_punycode.h',
-  'rz_util/rz_range.h',
   'rz_util/rz_rbtree.h',
   'rz_util/rz_regex.h',
-  'rz_util/rz_iterator.h',
   'rz_util/rz_serialize.h',
+  'rz_util/rz_set.h',
   'rz_util/rz_signal.h',
   'rz_util/rz_spaces.h',
   'rz_util/rz_stack.h',
@@ -109,6 +117,7 @@ rz_util_files = [
   'rz_util/rz_str_util.h',
   'rz_util/rz_strbuf.h',
   'rz_util/rz_strpool.h',
+  'rz_util/rz_structured_data.h',
   'rz_util/rz_subprocess.h',
   'rz_util/rz_sys.h',
   'rz_util/rz_table.h',
@@ -130,7 +139,6 @@ rz_util_files = [
   'rz_util/ht_sp.h',
   'rz_util/ht_ss.h',
   'rz_util/ht_su.h',
-  'rz_util/rz_set.h',
 ]
 install_headers(rz_util_files, install_dir: join_paths(rizin_incdir, 'rz_util'))
 
@@ -157,9 +165,15 @@ rz_il_files = [
 ]
 install_headers(rz_il_files, install_dir: join_paths(rizin_incdir, 'rz_il'))
 
+rz_esil_files = [
+  'rz_esil/rz_esil.h',
+]
+install_headers(rz_esil_files, install_dir: join_paths(rizin_incdir, 'rz_esil'))
+
 rz_crypto_files = [
   'rz_crypto/rz_des.h',
   'rz_crypto/rz_aes.h',
+  'rz_crypto/rz_rc4.h',
   'rz_crypto/rz_sm4.h',
 ]
 install_headers(rz_crypto_files, install_dir: join_paths(rizin_incdir, 'rz_crypto'))

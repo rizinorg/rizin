@@ -21,6 +21,12 @@ static RzConsContext rz_cons_context_default = { { { { 0 } } } };
 static RzCons rz_cons_instance = { 0 };
 #define I rz_cons_instance
 
+#if __WINDOWS__
+// restore only the console flags rizin owns instead of replaying the whole host mode word
+#define RZ_CONS_OUTPUT_MODE_MASK (ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING)
+#define RZ_CONS_INPUT_MODE_MASK  (ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_MOUSE_INPUT | ENABLE_QUICK_EDIT_MODE | ENABLE_EXTENDED_FLAGS | ENABLE_VIRTUAL_TERMINAL_INPUT)
+#endif
+
 // this structure goes into cons_stack when rz_cons_push/pop
 typedef struct {
 	char *buf;
@@ -141,6 +147,14 @@ static void cons_context_deinit(RzConsContext *context) {
 	rz_stack_free(context->break_stack);
 	context->break_stack = NULL;
 	rz_cons_pal_free(context);
+	cons_grep_reset(&context->grep);
+	free(context->buffer);
+	context->buffer = NULL;
+	context->buffer_sz = 0;
+	context->buffer_len = 0;
+	free(context->lastOutput);
+	context->lastOutput = NULL;
+	context->lastLength = 0;
 }
 
 static void __break_signal(int sig) {
@@ -252,7 +266,7 @@ RZ_API void rz_cons_strcat_justify(const char *str, int j, char c) {
 			len = 0;
 		}
 	}
-	if (len > 1) {
+	if (len > 0) {
 		rz_cons_memcat(str + o, len);
 	}
 }
@@ -288,7 +302,7 @@ RZ_API void rz_cons_strcat_at(const char *_str, int x, char y, int w, int h) {
 			rows++;
 		}
 	}
-	if (len > 1) {
+	if (len > 0) {
 		rz_cons_gotoxy(x, y + rows);
 		rz_cons_memcat(str + o, len);
 	}
@@ -527,7 +541,9 @@ RZ_API bool rz_cons_enable_mouse(const bool enable) {
 	HANDLE h;
 	bool enabled = I.mouse;
 	h = GetStdHandle(STD_INPUT_HANDLE);
-	GetConsoleMode(h, &mode);
+	if (!GetConsoleMode(h, &mode)) {
+		return enabled;
+	}
 	mode |= ENABLE_EXTENDED_FLAGS;
 	mode = enable
 		? (mode | ENABLE_MOUSE_INPUT) & ~ENABLE_QUICK_EDIT_MODE
@@ -556,34 +572,46 @@ static void set_console_codepage_to_utf8(void) {
 }
 
 static void save_console_state(void) {
-	if (rz_cons_isatty()) {
+	// Snapshot the exact std handles and their current console modes before any probing mutates them.
+	I.saved_input_handle = GetStdHandle(STD_INPUT_HANDLE);
+	I.saved_output_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	I.saved_input_console = GetConsoleMode((HANDLE)I.saved_input_handle, &I.old_input_mode);
+	I.saved_output_console = GetConsoleMode((HANDLE)I.saved_output_handle, &I.old_output_mode);
+	if (I.saved_output_console) {
 		if (!(I.old_ocp = GetConsoleOutputCP())) {
 			rz_sys_perror("GetConsoleOutputCP");
 		}
+	}
+	if (I.saved_input_console) {
 		if (!(I.old_cp = GetConsoleCP())) {
-			rz_sys_perror("GetConsoleCP");
-		}
-		if (!GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &I.old_output_mode)) {
-			rz_sys_perror("GetConsoleMode");
-		}
-		if (!GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &I.old_input_mode)) {
 			rz_sys_perror("GetConsoleCP");
 		}
 	}
 }
 
+static inline DWORD restore_console_mode_bits(DWORD mode, DWORD saved_mode, DWORD mask) {
+	return (mode & ~mask) | (saved_mode & mask);
+}
+
 static void restore_console_state(void) {
-	if (rz_cons_isatty()) {
-		if (!SetConsoleCP(I.old_cp)) {
-			rz_sys_perror("SetConsoleCP");
-		}
+	DWORD mode;
+	if (I.saved_output_console && GetConsoleMode((HANDLE)I.saved_output_handle, &mode)) {
 		if (!SetConsoleOutputCP(I.old_ocp)) {
 			rz_sys_perror("SetConsoleOutputCP");
 		}
-		if (!SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), I.old_output_mode)) {
+		// Keep unrelated host-owned bits intact and restore only the output flags we changed.
+		mode = restore_console_mode_bits(mode, I.old_output_mode, RZ_CONS_OUTPUT_MODE_MASK);
+		if (!SetConsoleMode((HANDLE)I.saved_output_handle, mode)) {
 			rz_sys_perror("SetConsoleMode");
 		}
-		if (!SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), I.old_input_mode)) {
+	}
+	if (I.saved_input_console && GetConsoleMode((HANDLE)I.saved_input_handle, &mode)) {
+		if (!SetConsoleCP(I.old_cp)) {
+			rz_sys_perror("SetConsoleCP");
+		}
+		// Input teardown mirrors output teardown for the subset of flags Rizin manages.
+		mode = restore_console_mode_bits(mode, I.old_input_mode, RZ_CONS_INPUT_MODE_MASK);
+		if (!SetConsoleMode((HANDLE)I.saved_input_handle, mode)) {
 			rz_sys_perror("SetConsoleMode");
 		}
 	}
@@ -597,6 +625,10 @@ RZ_API RzCons *rz_cons_new(void) {
 	if (I.refcnt != 1) {
 		return &I;
 	}
+#if __WINDOWS__
+	// Save the console state before rz_line_new() runs VT detection on Windows.
+	save_console_state();
+#endif
 	I.rgbstr = rz_cons_rgb_str_off;
 	I.line = rz_line_new();
 	I.enable_highlight = true;
@@ -616,6 +648,7 @@ RZ_API RzCons *rz_cons_new(void) {
 	I.fdout = 1;
 	I.break_lines = false;
 	I.lines = 0;
+	I.oldraw = -1;
 
 	I.input = RZ_NEW0(RzConsInputContext);
 	I.input->bufactive = true;
@@ -626,8 +659,9 @@ RZ_API RzCons *rz_cons_new(void) {
 	I.num = NULL;
 	I.null = 0;
 #if __WINDOWS__
-	save_console_state();
 	I.vtmode = rz_cons_detect_vt_mode();
+	// Keep line editing on the same VT mode that the main console instance selected.
+	I.line->vtmode = I.vtmode;
 	set_console_codepage_to_utf8();
 #else
 	I.vtmode = RZ_VIRT_TERM_MODE_COMPLETE;
@@ -644,8 +678,11 @@ RZ_API RzCons *rz_cons_new(void) {
 	I.term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
 	rz_sys_signal(SIGWINCH, resize);
 #elif __WINDOWS__
-	I.term_buf = I.old_input_mode | ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT;
-	I.term_raw = ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
+	if (I.saved_input_console) {
+		// Raw/buffered mode masks must be derived from the saved console input mode.
+		I.term_buf = I.old_input_mode | ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT;
+		I.term_raw = ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
+	}
 	if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)__w32_control, TRUE)) {
 		eprintf("rz_cons: Cannot set control console handler\n");
 	}
@@ -678,11 +715,11 @@ RZ_API RzCons *rz_cons_free(void) {
 	}
 	RZ_FREE(I.input->readbuffer);
 	RZ_FREE(I.input);
-	RZ_FREE(CTX(buffer));
 	RZ_FREE(I.break_word);
 	cons_context_deinit(I.context);
-	RZ_FREE(CTX(lastOutput));
-	CTX(lastLength) = 0;
+	I.context = NULL;
+	rz_strbuf_free(I.echobuf);
+	I.echobuf = NULL;
 	RZ_FREE(I.pager);
 	return NULL;
 }
@@ -950,20 +987,21 @@ static bool lastMatters(void) {
 }
 
 RZ_API void rz_cons_echo(const char *msg) {
-	static RzStrBuf *echodata = NULL; // TODO: move into RzConsInstance? maybe nope
+	RzCons *cons = rz_cons_singleton();
+
 	if (msg) {
-		if (echodata) {
-			rz_strbuf_append(echodata, msg);
-			rz_strbuf_append(echodata, "\n");
+		if (cons->echobuf) {
+			rz_strbuf_append(cons->echobuf, msg);
+			rz_strbuf_append(cons->echobuf, "\n");
 		} else {
-			echodata = rz_strbuf_new(msg);
+			cons->echobuf = rz_strbuf_new(msg);
 		}
 	} else {
-		if (echodata) {
-			char *data = rz_strbuf_drain(echodata);
+		if (cons->echobuf) {
+			char *data = rz_strbuf_drain(cons->echobuf);
 			rz_cons_strcat(data);
 			rz_cons_newline();
-			echodata = NULL;
+			cons->echobuf = NULL;
 			free(data);
 		}
 	}
@@ -1098,7 +1136,7 @@ RZ_API void rz_cons_visual_flush(void) {
 }
 
 static int real_strlen(const char *ptr, int len) {
-	int utf8len = rz_str_len_utf8(ptr);
+	int utf8len = rz_str_utf8_cols(ptr);
 	int ansilen = rz_str_ansi_len(ptr);
 	int diff = len - utf8len;
 	if (diff > 0) {
@@ -1670,9 +1708,8 @@ RZ_API void rz_cons_show_cursor(int cursor) {
  *
  */
 RZ_API void rz_cons_set_raw(bool is_raw) {
-	static int oldraw = -1;
-	if (oldraw != -1) {
-		if (is_raw == oldraw) {
+	if (I.oldraw != -1) {
+		if (is_raw == I.oldraw) {
 			return;
 		}
 	}
@@ -1689,7 +1726,12 @@ RZ_API void rz_cons_set_raw(bool is_raw) {
 #elif __WINDOWS__
 	DWORD mode;
 	HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
-	GetConsoleMode(h, &mode);
+	if (!GetConsoleMode(h, &mode)) {
+		// non console stdin is valid in batch mode.. just track state and leave the handle untouched
+		fflush(stdout);
+		I.oldraw = is_raw;
+		return;
+	}
 	if (is_raw) {
 		if (I.term_pty) {
 			rz_sys_xsystem("stty raw -echo");
@@ -1707,7 +1749,7 @@ RZ_API void rz_cons_set_raw(bool is_raw) {
 #warning No raw console supported for this platform
 #endif
 	fflush(stdout);
-	oldraw = is_raw;
+	I.oldraw = is_raw;
 }
 
 RZ_API void rz_cons_set_utf8(bool b) {
@@ -1773,16 +1815,13 @@ RZ_API void rz_cons_column(int c) {
 	free(b);
 }
 
-//  XXX deprecate must be push/pop context state
-static bool lasti = false; /* last interactive mode */
-
 RZ_API void rz_cons_set_interactive(bool x) {
-	lasti = rz_cons_singleton()->context->is_interactive;
+	rz_cons_singleton()->context->last_interactive_option = rz_cons_singleton()->context->is_interactive;
 	rz_cons_singleton()->context->is_interactive = x;
 }
 
 RZ_API void rz_cons_set_last_interactive(void) {
-	rz_cons_singleton()->context->is_interactive = lasti;
+	rz_cons_singleton()->context->is_interactive = rz_cons_singleton()->context->last_interactive_option;
 }
 
 RZ_API void rz_cons_set_title(const char *str) {

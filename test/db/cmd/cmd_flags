@@ -207,7 +207,8 @@ NAME=flj shows demangled symbols
 FILE=bins/elf/demangle-test-cpp
 CMDS=<<EOF
 aaa
-flj~{214}
+s reloc.operator_delete_void
+fl.j~{0}
 EOF
 EXPECT=<<EOF
 {"name":"reloc.operator_delete_void","realname":"operator delete(void*)","size":8,"offset":16432}
@@ -502,16 +503,15 @@ f direct1 1 verbatim @ 0
 f direct2 1 base64:ImJhc2U2NCBhcm1vcmVkIg== @ 16
 f indirect @ 32
 fC indirect base64:d29ya3MgdG9v
-fl*
+flt
 flj
 EOF
 EXPECT=<<EOF
-fs *
-f direct1 1 0x00000000 base64:dmVyYmF0aW0=
-fs *
-f direct2 1 0x00000010 base64:ImJhc2U2NCBhcm1vcmVkIg==
-fs *
-f indirect 1 0x00000020 base64:d29ya3MgdG9v
+      addr size space name     realname 
+----------------------------------------
+0x00000000    1       direct1  direct1
+0x00000010    1       direct2  direct2
+0x00000020    1       indirect indirect
 [{"name":"direct1","realname":"direct1","size":1,"offset":0,"comment":"verbatim"},{"name":"direct2","realname":"direct2","size":1,"offset":16,"comment":"\"base64 armored\""},{"name":"indirect","realname":"indirect","size":1,"offset":32,"comment":"works too"}]
 EOF
 RUN
@@ -542,41 +542,41 @@ ftll
 ftn bla
 EOF
 EXPECT=<<EOF
-fs
-env
-string
-network
-dylib
-threads
-alloc
 time
-process
+fs
 stdout
-["fs":[],"env":[],"string":[],"network":[],"dylib":[],"threads":[],"alloc":[],"time":[],"process":[],"stdout":[]]
+string
+process
+alloc
+network
+env
+threads
+dylib
+["time":[],"fs":[],"stdout":[],"string":[],"process":[],"alloc":[],"network":[],"env":[],"threads":[],"dylib":[]]
+time:
 fs:
-env:
+stdout:
 string:
+process:
+alloc:
 network:
-dylib:
+env:
 threads:
-alloc:
-time:
-process:
-stdout:
-bla
-fs:
 dylib:
-process:
-stdout:
-network:
-alloc:
-env:
-string:
+bla
 time:
+fs:
+stdout:
+string:
+process:
+alloc:
+network:
+env:
 bla:
 0x00400410  foo
 0x00400506  goo
 threads:
+dylib:
 0x00400410  foo
 0x00400506  goo
 EOF
@@ -687,15 +687,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pd shows real names and flag name in comments
+NAME=asm.flags.real shows the real name without duplicating the flag name as a comment
 FILE=bins/elf/demangle-test-cpp
 CMDS=<<EOF
 pd 1 @ 0x000011ef @e:asm.flags.real=true
 pd 1 @ 0x000011ef @e:asm.flags.real=false
 EOF
 EXPECT=<<EOF
-            0x000011ef      call  std::vector<int, std::allocator<int> >::vector() ; method.std::vector_int__std::allocator_int___.vector
-            0x000011ef      call  method.std::vector_int__std::allocator_int___.vector
+            0x000011ef      call  std::vector<int, std::allocator<int>>::vector()
+            0x000011ef      call  method.std::vector_int__std::allocator_int__.vector
 EOF
 RUN
 
@@ -704,6 +704,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 s 0x100
 wx f80202a9
 f flag_name
@@ -738,5 +739,17 @@ EXPECT_ERR=<<EOF
 ERROR: Wrong number of arguments passed to `fO`, see its help with `fO?`
 
 ERROR: Usage: fO <glob>   # Flag as ordinals (sym.* func.* method.*)
+EOF
+RUN
+
+NAME=fC for overlapping flags
+FILE==
+CMDS=<<EOF
+f foo 0x10 first
+f+ bar 0x20 second
+fC foo
+EOF
+EXPECT=<<EOF
+first
 EOF
 RUN

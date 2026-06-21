@@ -2,8 +2,8 @@ NAME=add comment
 FILE=malloc://1024
 CMDS=<<EOF
 CC hello @ 0x123
-C*~?
-C*~[3]
+C~?
+C~[0]
 EOF
 EXPECT=<<EOF
 1
@@ -28,7 +28,7 @@ NAME=add comment
 FILE=malloc://1024
 CMDS=<<EOF
 CC hello
-C*~?
+C~?
 EOF
 EXPECT=<<EOF
 1
@@ -39,12 +39,12 @@ NAME=add comment at
 FILE=malloc://1024
 CMDS=<<EOF
 CC hello @ 8
-C*~?
-CCl*
+C~?
+CCl
 EOF
 EXPECT=<<EOF
 1
-CCu base64:aGVsbG8= @ 0x00000008
+0x00000008 CCu "hello"
 EOF
 RUN
 
@@ -52,9 +52,9 @@ NAME=del comment
 FILE=malloc://1024
 CMDS=<<EOF
 CC hello
-C*~?
+C~?
 CC-
-C*~?
+C~?
 EOF
 EXPECT=<<EOF
 1
@@ -67,7 +67,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 CC hello @ 0x200
 CC world @ 0x400
-C*~?
+C~?
 EOF
 EXPECT=<<EOF
 2
@@ -80,7 +80,7 @@ CMDS=<<EOF
 CC hello @ 0x200
 CC world @ 0x400
 CC-@ 0x400
-C*~?
+C~?
 EOF
 EXPECT=<<EOF
 1

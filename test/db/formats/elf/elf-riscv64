@@ -1,17 +1,15 @@
-NAME=ELF: riscv64: entrypoint
+NAME=ELF: riscv64: entry points and symbols
 FILE=bins/elf/analysis/guess-number-riscv64
-CMDS=ie
+CMDS=<<EOF
+ie
+echo ---
+is
+EOF
 EXPECT=<<EOF
      vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x00010000 0x00001000 0x00010018 0x00000018 program
-EOF
-RUN
-
-NAME=ELF: riscv64: symbols
-FILE=bins/elf/analysis/guess-number-riscv64
-CMDS=is
-EXPECT=<<EOF
+---
 nth      paddr      vaddr bind   type   size lib name                                   
 ----------------------------------------------------------------------------------------
   1 0x00001000 0x00010000 LOCAL  SECT      0     .text
@@ -406,7 +404,7 @@ iorw     false
 block    0x100
 type     EXEC (Executable file)
 arch     riscv
-cpu      N/A
+cpu      rv64i2p0_c2p0_m2p0_a2p0_f2p0_d2p0_v2p0
 features N/A
 baddr    0x00010000
 binsz    0x0009d024
@@ -430,17 +428,15 @@ pcalign  2
 rpath    NONE
 subsys   linux
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  true
 lsyms    true
 canary   false
-PIE      false
-RELROCS  true
-NX       false
+pie      false
+relrocs  true
+nx       false
 EOF
 RUN
 
@@ -459,47 +455,47 @@ EXPECT=<<EOF
 |           ; var int64_t var_14h @ stack - 0x14
 |           ; var int64_t var_10h @ stack - 0x10
 |           ; var int64_t var_8h @ stack - 0x8
-|           0x00010150      130101fe       addi  sp, sp, -32
-|           0x00010154      233c1100       sd    ra, 24(sp)
-|           0x00010158      23388100       sd    s0, 16(sp)
-|           0x0001015c      13040102       addi  s0, sp, 32
-|           0x00010160      9307b007       li    a5, 123
-|           0x00010164      2326f4fe       sw    a5, -20(s0)
+|           0x00010150      130101fe       addi  sp, sp, -0x20
+|           0x00010154      233c1100       sd    ra, 0x18(sp)
+|           0x00010158      23388100       sd    s0, 0x10(sp)
+|           0x0001015c      13040102       addi  s0, sp, 0x20
+|           0x00010160      9307b007       li    a5, 0x7b
+|           0x00010164      2326f4fe       sw    a5, -0x14(s0)
 |           0x00010168      9307f0ff       li    a5, -1
-|           0x0001016c      2324f4fe       sw    a5, -24(s0)
+|           0x0001016c      2324f4fe       sw    a5, -0x18(s0)
 |           ; CODE XREFS from main @ 0x101c8, 0x101d8
 |      ..-> 0x00010170      b7170200       lui   a5, 0x21
-|      ::   0x00010174      1385874f       addi  a0, a5, 1272
-|      ::   0x00010178      ef00c01f       jal   ra, sym.printf
-|      ::   0x0001017c      930784fe       addi  a5, s0, -24
+|      ::   0x00010174      1385874f       addi  a0, a5, 0x4f8
+|      ::   0x00010178      ef00c01f       jal   sym.printf
+|      ::   0x0001017c      930784fe       addi  a5, s0, -0x18
 |      ::   0x00010180      93850700       mv    a1, a5
 |      ::   0x00010184      b7170200       lui   a5, 0x21
-|      ::   0x00010188      13850751       addi  a0, a5, 1296
-|      ::   0x0001018c      ef00402f       jal   ra, sym.scanf
-|      ::   0x00010190      032784fe       lw    a4, -24(s0)
-|      ::   0x00010194      8327c4fe       lw    a5, -20(s0)
+|      ::   0x00010188      13850751       addi  a0, a5, 0x510
+|      ::   0x0001018c      ef00402f       jal   sym.scanf
+|      ::   0x00010190      032784fe       lw    a4, -0x18(s0)
+|      ::   0x00010194      8327c4fe       lw    a5, -0x14(s0)
 |     ,===< 0x00010198      631cf700       bne   a4, a5, 0x101b0
 |     |::   0x0001019c      b7170200       lui   a5, 0x21
-|     |::   0x000101a0      13858751       addi  a0, a5, 1304
-|     |::   0x000101a4      ef00002d       jal   ra, sym.puts
+|     |::   0x000101a0      13858751       addi  a0, a5, 0x518
+|     |::   0x000101a4      ef00002d       jal   sym.puts
 |     |::   0x000101a8      93070000       li    a5, 0
 |    ,====< 0x000101ac      6f000003       j     0x101dc
-|    |`---> 0x000101b0      032784fe       lw    a4, -24(s0)
-|    | ::   0x000101b4      8327c4fe       lw    a5, -20(s0)
-|    |,===< 0x000101b8      635af700       ble   a5, a4, 0x101cc
+|    |`---> 0x000101b0      032784fe       lw    a4, -0x18(s0)
+|    | ::   0x000101b4      8327c4fe       lw    a5, -0x14(s0)
+|    |,===< 0x000101b8      635af700       bge   a4, a5, 0x101cc
 |    ||::   0x000101bc      b7170200       lui   a5, 0x21
-|    ||::   0x000101c0      13858752       addi  a0, a5, 1320
-|    ||::   0x000101c4      ef00002b       jal   ra, sym.puts
+|    ||::   0x000101c0      13858752       addi  a0, a5, 0x528
+|    ||::   0x000101c4      ef00002b       jal   sym.puts
 |    ||`==< 0x000101c8      6ff09ffa       j     0x10170
 |    |`---> 0x000101cc      b7170200       lui   a5, 0x21
-|    |  :   0x000101d0      13858753       addi  a0, a5, 1336
-|    |  :   0x000101d4      ef00002a       jal   ra, sym.puts
+|    |  :   0x000101d0      13858753       addi  a0, a5, 0x538
+|    |  :   0x000101d4      ef00002a       jal   sym.puts
 |    |  `=< 0x000101d8      6ff09ff9       j     0x10170
 |    |      ; CODE XREF from main @ 0x101ac
 |    `----> 0x000101dc      13850700       mv    a0, a5
-|           0x000101e0      83308101       ld    ra, 24(sp)
-|           0x000101e4      03340101       ld    s0, 16(sp)
-|           0x000101e8      13010102       addi  sp, sp, 32
+|           0x000101e0      83308101       ld    ra, 0x18(sp)
+|           0x000101e4      03340101       ld    s0, 0x10(sp)
+|           0x000101e8      13010102       addi  sp, sp, 0x20
 \           0x000101ec      67800000       ret
 EOF
 RUN
@@ -520,47 +516,47 @@ EXPECT=<<EOF
 |           ; var int64_t var_14h @ stack - 0x14
 |           ; var int64_t var_10h @ stack - 0x10
 |           ; var int64_t var_8h @ stack - 0x8
-|           0x00010150      130101fe       addi  sp, sp, -32
-|           0x00010154      233c1100       sd    ra, 24(sp)
-|           0x00010158      23388100       sd    s0, 16(sp)
-|           0x0001015c      13040102       addi  s0, sp, 32
-|           0x00010160      9307b007       li    a5, 123
-|           0x00010164      2326f4fe       sw    a5, -20(s0)
+|           0x00010150      130101fe       addi  sp, sp, -0x20
+|           0x00010154      233c1100       sd    ra, 0x18(sp)
+|           0x00010158      23388100       sd    s0, 0x10(sp)
+|           0x0001015c      13040102       addi  s0, sp, 0x20
+|           0x00010160      9307b007       li    a5, 0x7b
+|           0x00010164      2326f4fe       sw    a5, -0x14(s0)
 |           0x00010168      9307f0ff       li    a5, -1
-|           0x0001016c      2324f4fe       sw    a5, -24(s0)
+|           0x0001016c      2324f4fe       sw    a5, -0x18(s0)
 |           ; CODE XREFS from main @ 0x101c8, 0x101d8
 |      ..-> 0x00010170      b7170200       lui   a5, 0x21
-|      ::   0x00010174      1385874f       addi  a0, a5, 1272          ; const char *fmt
-|      ::   0x00010178      ef00c01f       jal   ra, dbg.printf
-|      ::   0x0001017c      930784fe       addi  a5, s0, -24
+|      ::   0x00010174      1385874f       addi  a0, a5, 0x4f8
+|      ::   0x00010178      ef00c01f       jal   dbg.printf
+|      ::   0x0001017c      930784fe       addi  a5, s0, -0x18
 |      ::   0x00010180      93850700       mv    a1, a5
 |      ::   0x00010184      b7170200       lui   a5, 0x21
-|      ::   0x00010188      13850751       addi  a0, a5, 1296          ; const char *fmt
-|      ::   0x0001018c      ef00402f       jal   ra, dbg.scanf
-|      ::   0x00010190      032784fe       lw    a4, -24(s0)
-|      ::   0x00010194      8327c4fe       lw    a5, -20(s0)
+|      ::   0x00010188      13850751       addi  a0, a5, 0x510
+|      ::   0x0001018c      ef00402f       jal   dbg.scanf
+|      ::   0x00010190      032784fe       lw    a4, -0x18(s0)
+|      ::   0x00010194      8327c4fe       lw    a5, -0x14(s0)
 |     ,===< 0x00010198      631cf700       bne   a4, a5, 0x101b0
 |     |::   0x0001019c      b7170200       lui   a5, 0x21
-|     |::   0x000101a0      13858751       addi  a0, a5, 1304          ; const char *s
-|     |::   0x000101a4      ef00002d       jal   ra, dbg.puts
+|     |::   0x000101a0      13858751       addi  a0, a5, 0x518
+|     |::   0x000101a4      ef00002d       jal   dbg.puts
 |     |::   0x000101a8      93070000       li    a5, 0
 |    ,====< 0x000101ac      6f000003       j     0x101dc
-|    |`---> 0x000101b0      032784fe       lw    a4, -24(s0)
-|    | ::   0x000101b4      8327c4fe       lw    a5, -20(s0)
-|    |,===< 0x000101b8      635af700       ble   a5, a4, 0x101cc
+|    |`---> 0x000101b0      032784fe       lw    a4, -0x18(s0)
+|    | ::   0x000101b4      8327c4fe       lw    a5, -0x14(s0)
+|    |,===< 0x000101b8      635af700       bge   a4, a5, 0x101cc
 |    ||::   0x000101bc      b7170200       lui   a5, 0x21
-|    ||::   0x000101c0      13858752       addi  a0, a5, 1320          ; const char *s
-|    ||::   0x000101c4      ef00002b       jal   ra, dbg.puts
+|    ||::   0x000101c0      13858752       addi  a0, a5, 0x528
+|    ||::   0x000101c4      ef00002b       jal   dbg.puts
 |    ||`==< 0x000101c8      6ff09ffa       j     0x10170
 |    |`---> 0x000101cc      b7170200       lui   a5, 0x21
-|    |  :   0x000101d0      13858753       addi  a0, a5, 1336          ; const char *s
-|    |  :   0x000101d4      ef00002a       jal   ra, dbg.puts
+|    |  :   0x000101d0      13858753       addi  a0, a5, 0x538
+|    |  :   0x000101d4      ef00002a       jal   dbg.puts
 |    |  `=< 0x000101d8      6ff09ff9       j     0x10170
 |    |      ; CODE XREF from main @ 0x101ac
 |    `----> 0x000101dc      13850700       mv    a0, a5
-|           0x000101e0      83308101       ld    ra, 24(sp)
-|           0x000101e4      03340101       ld    s0, 16(sp)
-|           0x000101e8      13010102       addi  sp, sp, 32
+|           0x000101e0      83308101       ld    ra, 0x18(sp)
+|           0x000101e4      03340101       ld    s0, 0x10(sp)
+|           0x000101e8      13010102       addi  sp, sp, 0x20
 \           0x000101ec      67800000       ret
 EOF
 RUN

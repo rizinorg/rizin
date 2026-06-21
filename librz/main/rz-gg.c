@@ -16,54 +16,42 @@ static int usage(int v) {
 	if (v) {
 		const char *options[] = {
 			// clang-format off
-			"-a",		"[arch]"        ,"Select architecture (x86, mips, arm)",
-			"-b",		"[bits]"        ,"Set Register size (32, 64, ..)",
-			"-B",		"[hexpairs]"    ,"Append some hexpair bytes",
-			"-c",		"[k=v]"         ,"Set configuration options",
-			"-C",		"[file]"        ,"Append contents of file",
-			"-d",		"[off:dword]"   ,"Patch dword (4 bytes) at given offset",
-			"-D",		"[off:qword]"   ,"Patch qword (8 bytes) at given offset",
-			"-e",		"[encoder]"     ,"Use specific encoder. see -L",
-			"-f",		"[format]"      ,"Output format (raw, c, pe, elf, mach0, python, javascript)",
+			"-a",		"arch"          ,"Select architecture (x86, mips, arm)",
+			"-b",		"bits"          ,"Set Register size (32, 64, ..)",
+			"-B",		"hexpairs"      ,"Append some hexpair bytes",
+			"-c",		"k=v"           ,"Set configuration options",
+			"-C",		"file"          ,"Append contents of file",
+			"-d",		"off:dword"     ,"Patch dword (4 bytes) at given offset",
+			"-D",		"off:qword"     ,"Patch qword (8 bytes) at given offset",
+			"-e",		"encoder"       ,"Use specific encoder. see -L",
+			"-f",		"format"        ,"Output format (raw, c, pe, elf, mach0, python, javascript)",
 			"-F",		""              ,"Output native format (osx=mach0, linux=elf, ..)",
 			"-h",		""              ,"Show this help",
-			"-i",		"[shellcode]"   ,"Include shellcode plugin, uses options. see -L",
-			"-I",		"[path]"        ,"Add include path",
-			"-k",		"[kernel]"      ,"Operating system's kernel (linux,bsd,osx,w32)",
+			"-i",		"shellcode"     ,"Include shellcode plugin, uses options. see -L",
+			"-I",		"path"          ,"Add include path",
+			"-k",		"kernel"        ,"Operating system's kernel (linux,bsd,osx,w32)",
 			"-L",		""              ,"List all plugins (shellcodes and encoders)",
-			"-n",		"[dword]"       ,"Append 32bit number (4 bytes)",
-			"-N",		"[dword]"       ,"Append 64bit number (8 bytes)",
-			"-o",		"[file]"        ,"Output file",
+			"-n",		"dword"         ,"Append 32bit number (4 bytes)",
+			"-N",		"qword"         ,"Append 64bit number (8 bytes)",
+			"-o",		"file"          ,"Output file",
 			"-O",		""              ,"Use default output file (filename without extension or a.out)",
-			"-p",		"[padding]"     ,"Add padding after compilation (padding=n10s32)",
+			"-p",		"padding"       ,"Add padding after compilation (padding=n10s32)",
 			"",			""              ,"ntas : begin nop, trap, 'a', sequence",
 			"",			""              ,"NTAS : same as above, but at the end",
-			"-P",		"[size]"        ,"Prepend debruijn sequence of given length",
-			"-q",		"[fragment]"    ,"Debruijn pattern offset",
+			"-P",		"size"          ,"Prepend debruijn sequence of given length",
+			"-q",		"fragment"      ,"Debruijn pattern offset",
 			"-r",		""              ,"Show raw bytes instead of hexpairs",
 			"-s",		""              ,"Show assembler",
-			"-S",		"[string]"      ,"Append a string",
+			"-S",		"string"        ,"Append a string",
 			"-v",		""              ,"Show version information",
-			"-w",		"[off:hex]"     ,"Patch hexpairs at given offset",
+			"-V",		""              ,"Increase the verbosity",
+			"-w",		"off:hex"       ,"Patch hexpairs at given offset",
 			"-x",		""              ,"Execute",
-			"-X",		"[hexpairs]"    ,"Execute rop chain, using the stack provided",
+			"-X",		""              ,"Execute rop chain, using the stack provided",
 			"-z",		""              ,"Output in C string syntax",
 			// clang-format on
 		};
-		size_t maxOptionAndArgLength = 0;
-		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-			size_t optionLength = strlen(options[i]);
-			size_t argLength = strlen(options[i + 1]);
-			size_t totalLength = optionLength + argLength;
-			if (totalLength > maxOptionAndArgLength) {
-				maxOptionAndArgLength = totalLength;
-			}
-		}
-		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-			if (i + 1 < sizeof(options) / sizeof(options[0])) {
-				rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
-			}
-		}
+		rz_print_colored_help(options, RZ_ARRAY_SIZE(options), false);
 	}
 	return 1;
 }
@@ -176,7 +164,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 	RzEgg *egg = rz_egg_new();
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "n:N:he:a:b:f:o:sxXrk:FOI:Li:c:p:P:B:C:vd:D:w:zq:S:");
+	rz_getopt_init(&opt, argc, argv, "n:N:he:a:b:f:o:sVxXrk:FOI:Li:c:p:P:B:C:vd:D:w:zq:S:");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -238,7 +226,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 		} break;
 		case 'd':
 		case 'D': {
-			char *p = strchr(opt.arg, ':');
+			char *p = (char *)strchr(opt.arg, ':');
 			if (p) {
 				*p = '\0';
 				ut64 n, off = rz_num_math(NULL, opt.arg);
@@ -281,7 +269,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			pattern = opt.arg;
 			break;
 		case 'c': {
-			char *p = strchr(opt.arg, '=');
+			char *p = (char *)strchr(opt.arg, '=');
 			if (p) {
 				*p++ = 0;
 				rz_egg_option_set(egg, opt.arg, p);
@@ -331,10 +319,15 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			rz_egg_free(egg);
 			free(sequence);
 			return usage(1);
-		case 'v':
+		case 'v': {
+			size_t print_val = rz_main_version_print(egg->sys_path, "rz-gg");
 			free(sequence);
 			rz_egg_free(egg);
-			return rz_main_version_print("rz-gg");
+			return print_val;
+		}
+		case 'V':
+			rz_log_set_level(RZ_LOGLVL_DEBUG);
+			break;
 		case 'z':
 			show_str = 1;
 			break;

@@ -64,7 +64,7 @@
 name: root
 commands:
   - name: "!"
-    summary: Run given commands as in system(3) or shows command history
+    summary: Run command via system(3)
     subcommands: cmd_system
   - name: _
     cname: last_output
@@ -157,16 +157,9 @@ commands:
     summary: Connect with other instances of rizin
     subcommands: cmd_remote
   - name: "?*"
-    cname: cmd_help_search
-    summary: Search help
-    args:
-      - name: search_cmd
-        type: RZ_CMD_ARG_TYPE_STRING
-        flags: ""
-        optional: true
-    modes:
-      - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_JSON
+    summary: Search help commands
+    type: RZ_CMD_DESC_TYPE_GROUP
+    subcommands: cmd_help
   - name: "%"
     cname: cmd_math
     summary: Math commands
@@ -242,6 +235,9 @@ commands:
   - name: f
     summary: Manage flags
     subcommands: cmd_flag
+  - name: m
+    summary: Manage marks
+    subcommands: cmd_mark
   - name: F
     summary: FLIRT signature management
     subcommands: cmd_flirt
@@ -606,10 +602,10 @@ commands:
     details:
       - name: Table format specifiers (<table_spec>)
         entries:
-          - text: "<col>/sort/<inc|dec>"
-            comment: Sort table by column <col> in increasing or decreasing order.
-          - text: "<col>/sortlen/<inc|dec>"
-            comment: Sort table length of column <col> in increasing or decreasing order.
+          - text: "<col>/sort/rev"
+            comment: Sort table by column <col> in reverse order.
+          - text: "<col>/sortlen/rev"
+            comment: Sort table by column <col> length in reverse order.
           - text: "<col>/cols[/<col2>[/<col3>...]]"
             comment: Show only specified columns in the table.
           - text: "<col>"

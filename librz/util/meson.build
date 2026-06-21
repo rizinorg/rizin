@@ -5,11 +5,10 @@ rz_util_common_sources = [
   'annotated_code.c',
   'ascii_table.c',
   'asn1.c',
+  'asn1_str.c',
   'assert.c',
-  'astr.c',
   'axml.c',
-  'base85.c',
-  'base91.c',
+  'bits.c',
   'bitvector.c',
   'buf.c',
   'calc.c',
@@ -21,11 +20,13 @@ rz_util_common_sources = [
   'file.c',
   'float/float.c',
   'getopt.c',
-  'graph.c',
   'graph_drawable.c',
+  'graph_impl.c',
+  'graph_algorithm.c',
   'hex.c',
   'idpool.c',
   'intervaltree.c',
+  'iterator.c',
   'itv.c',
   'json_indent.c',
   'json_parser.c',
@@ -34,19 +35,20 @@ rz_util_common_sources = [
   'list.c',
   'log.c',
   'luhn.c',
+  'math.c',
   'mem.c',
   'name.c',
   'path.c',
   'pj.c',
   'pkcs7.c',
+  'pkcs8.c',
   'print.c',
   'protobuf.c',
   'punycode.c',
-  'range.c',
   'rbtree.c',
   'regex.c',
-  'iterator.c',
   'serialize_spaces.c',
+  'set.c',
   'signal.c',
   'skiplist.c',
   'skyline.c',
@@ -58,6 +60,7 @@ rz_util_common_sources = [
   'str_trim.c',
   'strbuf.c',
   'strpool.c',
+  'structured_data.c',
   'subprocess.c',
   'sys.c',
   'syscmd.c',
@@ -69,17 +72,23 @@ rz_util_common_sources = [
   'thread_lock.c',
   'thread_pool.c',
   'thread_queue.c',
+  'thread_ring_buf.c',
   'thread_sem.c',
   'thread_types.c',
   'time.c',
   'tree.c',
-  'ubase64.c',
+  'base16.c',
+  'base32.c',
+  'base36.c',
+  'base64.c',
+  'base85.c',
+  'base91.c',
   'uleb128.c',
+  'unicode.c',
   'unum.c',
   'utf16.c',
   'utf32.c',
   'utf8.c',
-  'unicode.c',
   'vector.c',
   'version.c',
   'w32-sys.c',
@@ -91,11 +100,12 @@ rz_util_common_sources = [
   'ht/ht_sp.c',
   'ht/ht_ss.c',
   'ht/ht_su.c',
-  'set.c',
 ]
 rz_util_sources = rz_util_common_sources
 
 rz_util_deps = [ldl, lrt, mth, th, utl, pcre2_dep, softfloat_dep] + platform_deps
+rz_util_public_deps = []
+rz_util_public_cmake_deps = []
 if zlib_dep.found()
   rz_util_deps += [zlib_dep]
 endif
@@ -116,6 +126,8 @@ endif
 
 if sys_openssl.found()
   rz_util_deps += [sys_openssl]
+  rz_util_public_deps += [sys_openssl]
+  rz_util_public_cmake_deps += ['OpenSSL|OpenSSL::Crypto']
   rz_util_sources += ['big-ssl.c']
 else
   rz_util_sources += ['big.c']
@@ -137,6 +149,7 @@ rz_util = library('rz_util', rz_util_sources, libsdb_sources,
 
 rz_util_dep = declare_dependency(
   link_with: rz_util,
+  dependencies: rz_util_public_deps,
   include_directories: rz_util_includes,
 )
 meson.override_dependency('rz_util', rz_util_dep)
@@ -196,6 +209,7 @@ endif
 modules += { 'rz_util': {
     'target': rz_util,
     'dependencies': [],
+    'cmake_external_deps': rz_util_public_cmake_deps,
     'include_subdirs_extra': ['librz/sdb']
 }}
 

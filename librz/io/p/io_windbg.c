@@ -16,9 +16,6 @@ typedef HRESULT(__stdcall *DebugConnectWide_t)(
 	_In_ REFIID InterfaceId,
 	_Out_ PVOID *Interface);
 
-static DebugCreate_t w32_DebugCreate = NULL;
-static DebugConnectWide_t w32_DebugConnectWide = NULL;
-
 #define WINDBGURI "windbg://"
 
 typedef struct { // Keep in sync with debug_windbg.c
@@ -34,6 +31,12 @@ typedef struct { // Keep in sync with debug_windbg.c
 	PDEBUG_SYMBOLS3 dbgSymbols;
 	PDEBUG_ADVANCED3 dbgAdvanced;
 } DbgEngContext;
+
+typedef struct {
+	DebugCreate_t w32_DebugCreate;
+	DebugConnectWide_t w32_DebugConnectWide;
+	DbgEngContext *idbg;
+} RzIOWindbg;
 
 #define THISCALL(dbginterface, function, ...)  dbginterface->lpVtbl->function(dbginterface, __VA_ARGS__)
 #define ITHISCALL(dbginterface, function, ...) THISCALL(idbg->dbginterface, function, __VA_ARGS__)
@@ -264,7 +267,8 @@ fail:
 #undef RELEASE
 }
 
-static DbgEngContext *create_remote_context(const char *opts) {
+static DbgEngContext *create_remote_context(RZ_NONNULL RzIOWindbg *io_windbg, const char *opts) {
+	rz_return_val_if_fail(io_windbg, NULL);
 	DbgEngContext *idbg = RZ_NEW0(DbgEngContext);
 
 	if (!idbg) {
@@ -274,25 +278,25 @@ static DbgEngContext *create_remote_context(const char *opts) {
 	LPWSTR wopts = (LPWSTR)rz_utf8_to_utf16(opts);
 
 	// Initialize interfaces
-	if (w32_DebugConnectWide(wopts, &IID_IDebugClient5, (PVOID *)&idbg->dbgClient) != S_OK) {
+	if (io_windbg->w32_DebugConnectWide(wopts, &IID_IDebugClient5, (PVOID *)&idbg->dbgClient) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugConnectWide(wopts, &IID_IDebugControl4, (PVOID *)&idbg->dbgCtrl) != S_OK) {
+	if (io_windbg->w32_DebugConnectWide(wopts, &IID_IDebugControl4, (PVOID *)&idbg->dbgCtrl) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugConnectWide(wopts, &IID_IDebugDataSpaces4, (PVOID *)&idbg->dbgData) != S_OK) {
+	if (io_windbg->w32_DebugConnectWide(wopts, &IID_IDebugDataSpaces4, (PVOID *)&idbg->dbgData) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugConnectWide(wopts, &IID_IDebugRegisters2, (PVOID *)&idbg->dbgReg) != S_OK) {
+	if (io_windbg->w32_DebugConnectWide(wopts, &IID_IDebugRegisters2, (PVOID *)&idbg->dbgReg) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugConnectWide(wopts, &IID_IDebugSystemObjects4, (PVOID *)&idbg->dbgSysObj) != S_OK) {
+	if (io_windbg->w32_DebugConnectWide(wopts, &IID_IDebugSystemObjects4, (PVOID *)&idbg->dbgSysObj) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugConnectWide(wopts, &IID_IDebugAdvanced3, (PVOID *)&idbg->dbgAdvanced) != S_OK) {
+	if (io_windbg->w32_DebugConnectWide(wopts, &IID_IDebugAdvanced3, (PVOID *)&idbg->dbgAdvanced) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugConnectWide(wopts, &IID_IDebugSymbols3, (PVOID *)&idbg->dbgSymbols) != S_OK) {
+	if (io_windbg->w32_DebugConnectWide(wopts, &IID_IDebugSymbols3, (PVOID *)&idbg->dbgSymbols) != S_OK) {
 		goto fail;
 	}
 	if (!init_callbacks(idbg)) {
@@ -305,7 +309,9 @@ fail:
 	return NULL;
 }
 
-static DbgEngContext *create_context(void) {
+static DbgEngContext *create_context(RZ_NONNULL RzIOWindbg *io_windbg) {
+	rz_return_val_if_fail(io_windbg, NULL);
+
 	DbgEngContext *idbg = RZ_NEW0(DbgEngContext);
 
 	if (!idbg) {
@@ -313,25 +319,25 @@ static DbgEngContext *create_context(void) {
 	}
 
 	// Initialize interfaces
-	if (w32_DebugCreate(&IID_IDebugClient5, (PVOID *)&idbg->dbgClient) != S_OK) {
+	if (io_windbg->w32_DebugCreate(&IID_IDebugClient5, (PVOID *)&idbg->dbgClient) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate(&IID_IDebugControl4, (PVOID *)&idbg->dbgCtrl) != S_OK) {
+	if (io_windbg->w32_DebugCreate(&IID_IDebugControl4, (PVOID *)&idbg->dbgCtrl) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate(&IID_IDebugDataSpaces4, (PVOID *)&idbg->dbgData) != S_OK) {
+	if (io_windbg->w32_DebugCreate(&IID_IDebugDataSpaces4, (PVOID *)&idbg->dbgData) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate(&IID_IDebugRegisters2, (PVOID *)&idbg->dbgReg) != S_OK) {
+	if (io_windbg->w32_DebugCreate(&IID_IDebugRegisters2, (PVOID *)&idbg->dbgReg) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate(&IID_IDebugSystemObjects4, (PVOID *)&idbg->dbgSysObj) != S_OK) {
+	if (io_windbg->w32_DebugCreate(&IID_IDebugSystemObjects4, (PVOID *)&idbg->dbgSysObj) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate(&IID_IDebugAdvanced3, (PVOID *)&idbg->dbgAdvanced) != S_OK) {
+	if (io_windbg->w32_DebugCreate(&IID_IDebugAdvanced3, (PVOID *)&idbg->dbgAdvanced) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate(&IID_IDebugSymbols3, (PVOID *)&idbg->dbgSymbols) != S_OK) {
+	if (io_windbg->w32_DebugCreate(&IID_IDebugSymbols3, (PVOID *)&idbg->dbgSymbols) != S_OK) {
 		goto fail;
 	}
 	if (!init_callbacks(idbg)) {
@@ -344,8 +350,9 @@ fail:
 	return NULL;
 }
 
-static int windbg_init(void) {
-	if (w32_DebugCreate && w32_DebugConnectWide) {
+static int windbg_init(RZ_NONNULL RzIOWindbg *io_windbg) {
+	rz_return_val_if_fail(io_windbg, 0);
+	if (io_windbg->w32_DebugCreate && io_windbg->w32_DebugConnectWide) {
 		return 1;
 	}
 	char *ext_path = rz_sys_getenv("_NT_DEBUGGER_EXTENSION_PATH");
@@ -369,14 +376,14 @@ static int windbg_init(void) {
 		return 0;
 	}
 
-	w32_DebugCreate = (DebugCreate_t)GetProcAddress(h, "DebugCreate");
-	if (!w32_DebugCreate) {
+	io_windbg->w32_DebugCreate = (DebugCreate_t)GetProcAddress(h, "DebugCreate");
+	if (!io_windbg->w32_DebugCreate) {
 		rz_sys_perror("GetProcAddress (\"DebugCreate\")");
 		return 0;
 	}
 
-	w32_DebugConnectWide = (DebugConnectWide_t)GetProcAddress(h, "DebugConnectWide");
-	if (!w32_DebugConnectWide) {
+	io_windbg->w32_DebugConnectWide = (DebugConnectWide_t)GetProcAddress(h, "DebugConnectWide");
+	if (!io_windbg->w32_DebugConnectWide) {
 		rz_sys_perror("GetProcAddress (\"DebugConnectWide\")");
 		return 0;
 	}
@@ -404,22 +411,27 @@ static RzIODesc *windbg_open(RzIO *io, const char *uri, int perm, int mode) {
 	if (!windbg_check(io, uri, 0)) {
 		return NULL;
 	}
-	if (!windbg_init()) {
-		return NULL;
-	}
 	HRESULT hr = E_FAIL;
 	RzIODesc *fd = NULL;
 	RzCore *core = io->corebind.core;
 	DbgEngContext *idbg = NULL;
+	RzIOWindbg *io_windbg = RZ_NEW0(RzIOWindbg);
+	if (!io_windbg) {
+		return NULL;
+	}
+	if (!windbg_init(io_windbg)) {
+		RZ_FREE(io_windbg);
+		return NULL;
+	}
 	const char *args = uri + strlen(WINDBGURI);
 	if (rz_str_startswith(args, "-remote")) {
 		args += strlen("-remote") + 1;
-		idbg = create_remote_context(args);
+		idbg = create_remote_context(io_windbg, args);
 		if (idbg) {
 			goto remote_client;
 		}
 	} else {
-		idbg = create_context();
+		idbg = create_context(io_windbg);
 		if (idbg && rz_str_startswith(args, "-premote")) {
 			args += strlen("-premote") + 1;
 			if (FAILED(ITHISCALL(dbgClient, ConnectProcessServer, args, &idbg->server))) {
@@ -574,7 +586,8 @@ static RzIODesc *windbg_open(RzIO *io, const char *uri, int perm, int mode) {
 	}
 	rz_str_argv_free(argv);
 remote_client:
-	fd = rz_io_desc_new(io, &rz_io_plugin_windbg, uri, perm | RZ_PERM_X, mode, idbg);
+	io_windbg->idbg = idbg;
+	fd = rz_io_desc_new(io, &rz_io_plugin_windbg, uri, perm | RZ_PERM_X, io_windbg);
 	fd->name = rz_str_dup(args);
 	if (cur_dbg_plugin_is_windbg(core->dbg)) {
 		core->dbg->plugin_data = idbg;
@@ -583,8 +596,13 @@ remote_client:
 }
 
 static int windbg_close(RzIODesc *fd) {
-	DbgEngContext *idbg = fd->data;
+	RzIOWindbg *io_windbg = fd->data;
+	if (!io_windbg) {
+		return 0;
+	}
+	DbgEngContext *idbg = io_windbg->idbg;
 	if (!idbg) {
+		RZ_FREE(io_windbg);
 		return 0;
 	}
 	fd->data = NULL;
@@ -600,6 +618,7 @@ static int windbg_close(RzIODesc *fd) {
 		core->dbg->plugin_data = NULL;
 	}
 	__free_context(idbg);
+	RZ_FREE(io_windbg);
 	return 0;
 }
 
@@ -619,7 +638,8 @@ static ut64 windbg_lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 }
 
 static int windbg_read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
-	DbgEngContext *idbg = fd->data;
+	RzIOWindbg *io_windbg = fd->data;
+	DbgEngContext *idbg = io_windbg->idbg;
 	ULONG bytesRead = 0ULL;
 	if (FAILED(ITHISCALL(dbgData, ReadVirtual, io->off, (PVOID)buf, count, &bytesRead))) {
 		ULONG64 ValidBase;
@@ -637,14 +657,16 @@ static int windbg_read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 }
 
 static int windbg_write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
-	DbgEngContext *idbg = fd->data;
+	RzIOWindbg *io_windbg = fd->data;
+	DbgEngContext *idbg = io_windbg->idbg;
 	ULONG bytesWritten = 0ULL;
 	ITHISCALL(dbgData, WriteVirtual, io->off, (PVOID)buf, count, &bytesWritten);
 	return bytesWritten;
 }
 
 static int windbg_getpid(RzIODesc *fd) {
-	DbgEngContext *idbg = fd->data;
+	RzIOWindbg *io_windbg = fd->data;
+	DbgEngContext *idbg = io_windbg->idbg;
 	ULONG Id = 0, Class, Qualifier;
 	if (SUCCEEDED(ITHISCALL(dbgCtrl, GetDebuggeeType, &Class, &Qualifier))) {
 		if (Class == DEBUG_CLASS_KERNEL) {
@@ -657,7 +679,8 @@ static int windbg_getpid(RzIODesc *fd) {
 }
 
 static int windbg_gettid(RzIODesc *fd) {
-	DbgEngContext *idbg = fd->data;
+	RzIOWindbg *io_windbg = fd->data;
+	DbgEngContext *idbg = io_windbg->idbg;
 	ULONG Id = 0, Class, Qualifier;
 	if (SUCCEEDED(ITHISCALL(dbgCtrl, GetDebuggeeType, &Class, &Qualifier))) {
 		if (Class == DEBUG_CLASS_KERNEL) {
@@ -670,13 +693,15 @@ static int windbg_gettid(RzIODesc *fd) {
 }
 
 static bool windbg_getbase(RzIODesc *fd, ut64 *base) {
-	DbgEngContext *idbg = fd->data;
+	RzIOWindbg *io_windbg = fd->data;
+	DbgEngContext *idbg = io_windbg->idbg;
 	*base = idbg->processBase;
 	return true;
 }
 
 static char *windbg_system(RzIO *io, RzIODesc *fd, const char *cmd) {
-	DbgEngContext *idbg = fd->data;
+	RzIOWindbg *io_windbg = fd->data;
+	DbgEngContext *idbg = io_windbg->idbg;
 	if (RZ_STR_ISEMPTY(cmd) || !strncmp("pid", cmd, 3)) {
 		return NULL;
 	}
@@ -690,7 +715,6 @@ RzIOPlugin rz_io_plugin_windbg = {
 	.license = "LGPL3",
 	.uris = WINDBGURI,
 	.isdbg = true,
-	.init = windbg_init,
 	.open = windbg_open,
 	.lseek = windbg_lseek,
 	.read = windbg_read,

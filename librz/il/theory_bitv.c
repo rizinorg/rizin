@@ -230,7 +230,7 @@ void *rz_il_handler_div(RzILVM *vm, RzILOpBitVector *op, RzILTypePure *type) {
 		if (rz_bv_is_zero_vector(y)) {
 			result = rz_bv_new(y->len);
 			rz_bv_set_all(result, true);
-			rz_il_vm_event_add(vm, rz_il_event_exception_new("division by zero"));
+			rz_il_vm_event_add(vm, rz_il_event_exception_new(RZ_IL_EVENT_EXC_DIV_ZERO));
 		} else {
 			result = rz_bv_div(x, y);
 		}
@@ -353,12 +353,13 @@ void *rz_il_handler_cast(RzILVM *vm, RzILOpBitVector *op, RzILTypePure *type) {
 	}
 	RzBitVector *bv = rz_il_evaluate_bitv(vm, op_cast->val);
 	if (!bv) {
+		rz_il_bool_free(fill);
 		return NULL;
 	}
 
 	RzBitVector *ret = rz_bv_new(op_cast->length);
 	rz_bv_set_all(ret, fill->b);
-	rz_bv_copy_nbits(bv, 0, ret, 0, RZ_MIN(bv->len, ret->len));
+	rz_bv_copy_nbits(ret, 0, bv, 0, RZ_MIN(bv->len, ret->len));
 
 	rz_il_bool_free(fill);
 	rz_bv_free(bv);

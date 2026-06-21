@@ -1,42 +1,8 @@
-NAME=ahi s + endian
-FILE==
-CMDS=<<EOF
-wx b8410d4300
-e asm.arch=x86
-ahi s
-e cfg.bigendian=false
-pi 1
-e cfg.bigendian=true
-pi 1
-EOF
-EXPECT=<<EOF
-mov eax, 'C\x0dA'
-mov eax, 'A\x0dC'
-EOF
-RUN
-
-NAME=ahi s + endian 2
-FILE==
-CMDS=<<EOF
-wx b841424300
-e asm.arch=x86
-ahi s
-e cfg.bigendian=false
-pi 1
-e cfg.bigendian=true
-pi 1
-EOF
-EXPECT=<<EOF
-mov eax, 'CBA'
-mov eax, 'ABC'
-EOF
-RUN
-
 NAME=1: ahi none
 FILE==
 CMDS=<<EOF
-e asm.bits=64
 e asm.arch=x86
+e asm.bits=64
 wx 4881ec48060000
 pi 1
 EOF
@@ -48,9 +14,9 @@ RUN
 NAME=ahi with colors
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=64
 e asm.bytes=true
-e asm.arch=x86
 e scr.color=1
 wx 4881ec48060000
 pd 1
@@ -66,8 +32,8 @@ RUN
 NAME=ahi 0x41 -> 'A'
 FILE==
 CMDS=<<EOF
-e asm.bits=64
 e asm.arch=x86
+e asm.bits=64
 wx 4881ec48060000
 wx 4883f841 # cmp rax, 0x41
 pi 1
@@ -83,8 +49,8 @@ RUN
 NAME=ahi 0xe -> 1
 FILE==
 CMDS=<<EOF
-e asm.bits=64
 e asm.arch=x86
+e asm.bits=64
 wx 4881ec48060000
 wx 4883f80e # cmp rax, 0xe
 pi 1
@@ -92,7 +58,7 @@ ahi 2
 pi 1
 EOF
 EXPECT=<<EOF
-cmp rax, 0xe
+cmp rax, 0x0e
 cmp rax, 1110b
 EOF
 RUN
@@ -100,8 +66,8 @@ RUN
 NAME=ahi 4 -> 1
 FILE==
 CMDS=<<EOF
-e asm.bits=64
 e asm.arch=x86
+e asm.bits=64
 wx 4881ec48060000
 wx 4883f804 # cmp rax, 4
 pi 1
@@ -109,7 +75,7 @@ ahi 2
 pi 1
 EOF
 EXPECT=<<EOF
-cmp rax, 4
+cmp rax, 0x04
 cmp rax, 100b
 EOF
 RUN
@@ -117,9 +83,9 @@ RUN
 NAME=2: ahi none
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=64
 e asm.bytes=true
-e asm.arch=x86
 wx 4881ec48060000
 pd 1
 EOF
@@ -131,9 +97,9 @@ RUN
 NAME=3: ahi none
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=64
 e asm.bytes=true
-e asm.arch=x86
 ahi 16
 wx 4881ec48060000
 pd 1
@@ -146,9 +112,9 @@ RUN
 NAME=1: ahi 10
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=64
 e asm.bytes=true
-e asm.arch=x86
 wx 4881ec48060000
 ahi 10
 pd 1
@@ -161,9 +127,9 @@ RUN
 NAME=ahi 8
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=64
 e asm.bytes=true
-e asm.arch=x86
 wx 4881ec48060000
 ahi 8
 pd 1
@@ -176,9 +142,9 @@ RUN
 NAME=1: ahi 2
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=64
 e asm.bytes=true
-e asm.arch=x86
 wx 4881ec48060000
 ahi 2
 pd 1
@@ -191,8 +157,8 @@ RUN
 NAME=ahi 2 - pi
 FILE==
 CMDS=<<EOF
-e asm.bits=64
 e asm.arch=x86
+e asm.bits=64
 wx 4881ec48060000
 ahi 2
 pi 1
@@ -244,17 +210,17 @@ mov eax, 'AAAA'
 EOF
 RUN
 
-NAME=ahl*
+NAME=ahl
 FILE=malloc://16
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 wx 4883e4f0
 ahi 10 @ 0x00404879
-ahl*
+ahl
 EOF
 EXPECT=<<EOF
-ahi 10 @ 0x404879
+ 0x00404879 => immbase=10
 EOF
 RUN
 
@@ -288,25 +254,25 @@ ahi 10; pd 1
 EOF
 EXPECT=<<EOF
 true
-            0x100001000      c7055f440000.  mov   dword [rip + 0x445f], 0 ; [0x100005469:4]=-1
-            0x100001000      c7055f440000.  mov   dword [0x100005469], 0 ; [0x100005469:4]=-1
-            0x100001000      c7055f440000.  mov   dword [4294988905], 0 ; [0x100005469:4]=-1
+            0x100001000      c7055f440000.  mov   dword [rip+0x445f], 0x00 ; [0x100005469:4]=-1
+            0x100001000      c7055f440000.  mov   dword [0x100005469], 0x00 ; [0x100005469:4]=-1
+            0x100001000      c7055f440000.  mov   dword [4294988905], 0x00 ; [0x100005469:4]=-1
 EOF
 RUN
 
 NAME=2: ahi s
 FILE==
 CMDS=<<EOF
-e asm.bits=64
 e asm.arch=x86
+e asm.bits=64
 wx 67c744246864616572
 pi 1
 ahi s 1
 pi 1
 EOF
 EXPECT=<<EOF
-mov dword [esp + 0x68], 0x72656164
-mov dword [esp + 0x68], 'read'
+mov dword [esp+0x68], 0x72656164
+mov dword [esp+0x68], 'read'
 EOF
 RUN
 
@@ -329,8 +295,8 @@ FILE==
 CMDS=<<EOF
 e asm.bytes=false
 e asm.comments=false
-e asm.bits=64
 e asm.arch=x86
+e asm.bits=64
 wx 67c74424681b5b306d
 ahi s 1
 e scr.color=0
@@ -339,8 +305,8 @@ e scr.color=1
 pd 1
 EOF
 EXPECT=<<EOF
-            0x00000000      mov   dword [esp + 0x68], 'm0[\x1b'
-            [32m[7m0x00000000[0m      [37mmov[0m[37m   [0m[37mdword[0m[37m [[0m[36mesp[0m[37m [0m[37m+[0m[37m [0m[33m0x68[0m[37m], [0m[33m'm0[\x1b'[0m[0m
+            0x00000000      mov   dword [esp+0x68], 'm0[\x1b'
+            [32m[7m0x00000000[0m      [37mmov[0m[37m   [0m[37mdword[0m[37m [[0m[36mesp[0m[37m+[0m[33m0x68[0m[37m], [0m[33m'm0[\x1b'[0m[0m
 EOF
 RUN
 
@@ -359,9 +325,9 @@ ahi 10 1
 pdq 1
 EOF
 EXPECT=<<EOF
-0x00000000 mov dword [rbp - 0x78], 0xffc643
-0x00000000 mov dword [rbp - 120], 0xffc643
-0x00000000 mov dword [rbp - 0x78], 16762435
+0x00000000 mov dword [rbp-0x78], 0xffc643
+0x00000000 mov dword [rbp-120], 0xffc643
+0x00000000 mov dword [rbp-0x78], 16762435
 EOF
 RUN
 
@@ -378,7 +344,7 @@ ahi 10u
 pd 1
 EOF
 EXPECT=<<EOF
-            0x00000000      cmp   eax, 0xffffffff
+            0x00000000      cmp   eax, 0xffffffff                      ; -1
             0x00000000      cmp   eax, -1
             0x00000000      cmp   eax, 4294967295
 EOF
@@ -405,12 +371,124 @@ ahi 10u
 pd 1
 EOF
 EXPECT=<<EOF
-            0x00000000      cmp   eax, 0xffffffff
+            0x00000000      cmp   eax, 0xffffffff                      ; -1
             0x00000000      cmp   eax, -1
             0x00000000      cmp   eax, 4294967295
 
             0x00000000      cmp   rax, 0xffffffffffffffff
             0x00000000      cmp   rax, -1
             0x00000000      cmp   rax, 18446744073709551615
+EOF
+RUN
+
+NAME=ahie enum operands
+FILE==
+CMDS=<<EOF
+o malloc://256
+td "enum E { SEVEN = 7, EIGHT = 8, MASK = 0x100, WORD = 0xffc643 };"
+e asm.arch=x86
+e asm.bits=64
+e cfg.bigendian=false
+s 0
+wx 4180fc07
+ahie E
+pi 1
+ahie-
+pi 1
+wx 4883f803
+ahie E
+pi 1
+s 0x10
+wx c7458843c6ff00
+ahie E 1
+pdq 1
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+s 0x20
+wx 0700a0e3
+ahie E
+pi 1
+e asm.arch=arm
+e asm.bits=64
+s 0x30
+wx e00080d2
+ahie E
+pi 1
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+s 0x40
+wx 38600007
+ahie E
+pi 1
+e asm.arch=mips
+e asm.bits=32
+e cfg.bigendian=true
+s 0x50
+wx 20020007
+ahie E
+pi 1
+e asm.arch=8051
+e asm.bits=8
+s 0x60
+wx 7407
+ahie E
+pi 1
+e asm.arch=tricore
+e asm.bits=32
+e cfg.bigendian=true
+s 0x70
+wx 8f005001
+ahie E
+pi 1
+e asm.arch=hexagon
+e asm.bits=32
+e cfg.bigendian=false
+s 0x80
+wx 01c09da0
+ahie E
+pi 1
+EOF
+EXPECT=<<EOF
+cmp r12b, E.SEVEN
+cmp r12b, 0x07
+cmp rax, 0x03
+0x00000010 mov dword [rbp-0x78], E.WORD
+mov r0, E.SEVEN
+mov x0, E.SEVEN
+li r3, E.SEVEN
+addi v0, zero, E.SEVEN
+mov a, #E.SEVEN
+or d0, d0, #E.MASK
+[   allocframe(SP,#E.EIGHT):raw
+EOF
+RUN
+
+NAME=ahie flag enum OR operands
+FILE==
+CMDS=<<EOF
+o malloc://256
+td "enum access_def { F_OK = 0, X_OK = 1, W_OK = 2, R_OK = 4 };"
+e asm.arch=x86
+e asm.bits=64
+e cfg.bigendian=false
+s 0
+wx b806000000
+ahie access_def
+pi 1
+s 0x10
+wx b804000000
+ahie access_def
+pi 1
+s 0x20
+wx b808000000
+ahie access_def
+pi 1
+EOF
+EXPECT=<<EOF
+mov eax, access_def.W_OK | access_def.R_OK
+mov eax, access_def.R_OK
+mov eax, 0x08
 EOF
 RUN

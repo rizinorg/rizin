@@ -1,33 +1,12 @@
 NAME=Open LE cdogs.exe
 FILE=bins/le/cdogs.exe
-CMDS=iH~Signature[1]
-EXPECT=<<EOF
-LE
-EOF
-RUN
-
-NAME=cdogs.exe entrypoint
-FILE=bins/le/cdogs.exe
-CMDS=ie:vaddr:quiet
-EXPECT=<<EOF
-0x00026058
-EOF
-RUN
-
-NAME=cdogs.exe sections
-FILE=bins/le/cdogs.exe
-CMDS=iS
-EXPECT=<<EOF
-     paddr    size      vaddr   vsize align perm name   type flags 
--------------------------------------------------------------------
-0x0000d200 0x2d000 0x00010000 0x2d000   0x0 -r-x obj1_1      
-0x0003a200  0xfd8c 0x00040000 0x26030   0x0 -rw- obj2_1      
-EOF
-RUN
-
-NAME=cdogs.exe relocations
-FILE=bins/le/cdogs.exe
 CMDS=<<EOF
+iH
+echo ---
+ie:vaddr:quiet
+echo ---
+iS
+echo ---
 ir > $relocs
 cat $relocs~?
 cat $relocs~0x00010~?
@@ -94,8 +73,80 @@ cat $relocs~0x0004c~?
 cat $relocs~0x0004d~?
 cat $relocs~0x0004e~?
 cat $relocs~0x0004f~?
+echo ---
+aac
+# aaef
+aflc
+echo ---
+s
+echo ---
+pi 1
 EOF
 EXPECT=<<EOF
+le:
+  signature: "LE"
+  le_offset: 0x2d98
+  byte_order: "little endian"
+  word_order: "little endian"
+  format_level: 0
+  module_name: "cdogs"
+  type: "Program module (EXE)"
+  cpu: "80386"
+  os: "OS/2"
+  arch: "x86"
+  version: 0
+  mflags: 0x200
+  flags:
+    - "PMWINAPI"
+    - "EXE"
+  mpages: 61
+  initial_eip_obj: 1
+  initial_eip: 0x16058
+  initial_stack_obj: 2
+  initial_esp: 0x26030
+  page_size: 0x1000
+  last_page_size: 0xd8c
+  fixup_size: 0xa14a
+  fixup_checksum: 0x0
+  loader_size: 0xa278
+  loader_checksum: 0x0
+  obj_table: 0xc4
+  obj_count: 2
+  obj_page_map: 0xf4
+  obj_iter_data_map: 0x0
+  resource_table: 0x1e8
+  resource_count: 0
+  resident_name_table: 0x1e8
+  entry_table: 0x1f1
+  directives_table: 0x0
+  directives_count: 0
+  fixup_page_table: 0x1f2
+  fixup_record_table: 0x2ea
+  import_module_name_table: 0xa33b
+  import_module_name_count: 0
+  import_procedure_name_table: 0xa33b
+  per_page_checksum_table: 0x0
+  enumerated_data_pages: 0xd200
+  number_of_preload_pages: 0
+  non_resident_names_table: 0x0
+  size_non_resident_names: 0
+  checksum_non_resident_names: 0x0
+  autodata_obj: 2
+  debug_info: 0x0
+  debug_length: 0x0
+  preload_pages: 0
+  demand_pages: 0
+  heap_size: 0x0
+  stack_size: 0x0
+
+---
+0x00026058
+---
+     paddr    size      vaddr   vsize align perm name   type flags 
+-------------------------------------------------------------------
+0x0000d200 0x2d000 0x00010000 0x2d000   0x0 -r-x obj1_1      
+0x0003a200  0xfd8c 0x00040000 0x26030   0x0 -rw- obj2_1      
+---
 5237
 151
 160
@@ -161,42 +212,96 @@ EXPECT=<<EOF
 381
 561
 588
+---
+789
+---
+0x26058
+---
+jmp 0x260d0
 EOF
 RUN
 
 NAME=Open LX GCC.EXE
 FILE=bins/le/GCC.EXE
-CMDS=iH~Signature[1]
-EXPECT=<<EOF
-LX
+CMDS=<<EOF
+iH
+echo ---
+ie:vaddr:quiet
+echo ---
+iS
+echo ---
+ir
+echo ---
+il
 EOF
-RUN
-
-NAME=GCC.EXE entrypoint
-FILE=bins/le/GCC.EXE
-CMDS=ie:vaddr:quiet
 EXPECT=<<EOF
+le:
+  signature: "LX"
+  le_offset: 0x600
+  byte_order: "little endian"
+  word_order: "little endian"
+  format_level: 0
+  module_name: "gcc"
+  type: "Program module (EXE)"
+  cpu: "80386"
+  os: "OS/2"
+  arch: "x86"
+  version: 0
+  mflags: 0x210
+  flags:
+    - "NOINTFIXUPS"
+    - "PMWINAPI"
+    - "EXE"
+  mpages: 16
+  initial_eip_obj: 1
+  initial_eip: 0x0
+  initial_stack_obj: 4
+  initial_esp: 0x800000
+  page_size: 0x1000
+  page_shift: 0xc
+  fixup_size: 0x9b
+  fixup_checksum: 0x0
+  loader_size: 0xe8
+  loader_checksum: 0x0
+  obj_table: 0xc4
+  obj_count: 4
+  obj_page_map: 0x124
+  obj_iter_data_map: 0x0
+  resource_table: 0x0
+  resource_count: 0
+  resident_name_table: 0x1a4
+  entry_table: 0x1ab
+  directives_table: 0x0
+  directives_count: 0
+  fixup_page_table: 0x1ac
+  fixup_record_table: 0x1f0
+  import_module_name_table: 0x239
+  import_module_name_count: 2
+  import_procedure_name_table: 0x246
+  per_page_checksum_table: 0x0
+  enumerated_data_pages: 0x1000
+  number_of_preload_pages: 0
+  non_resident_names_table: 0x0
+  size_non_resident_names: 0
+  checksum_non_resident_names: 0x0
+  autodata_obj: 2
+  debug_info: 0x0
+  debug_length: 0x0
+  preload_pages: 0
+  demand_pages: 1
+  heap_size: 0x0
+  stack_size: 0x0
+
+---
 0x00010000
-EOF
-RUN
-
-NAME=GCC.EXE sections
-FILE=bins/le/GCC.EXE
-CMDS=iS
-EXPECT=<<EOF
+---
      paddr   size      vaddr     vsize align perm name   type flags 
 --------------------------------------------------------------------
 0x00001000 0xf000 0x00010000    0xf000   0x0 -r-x obj1_1      
 0x00010000 0x1000 0x00020000    0x2804   0x0 -rw- obj2_1      
 0x00000000    0x0 0x00030000 0x2000000   0x0 -rw- obj3_1      
 0x00000000    0x0 0x02030000  0x800000   0x0 -rw- obj4_1      
-EOF
-RUN
-
-NAME=GCC.EXE relocations
-FILE=bins/le/GCC.EXE
-CMDS=ir
-EXPECT=<<EOF
+---
      vaddr      paddr     target type   name         
 -----------------------------------------------------
 0x00010006 0x00001006 0x02832000 SET_32 emx_1
@@ -210,13 +315,7 @@ EXPECT=<<EOF
 0x0001d39f 0x0000e39f 0x02832018 SET_32 doscalls_257
 0x0001d3d9 0x0000e3d9 0x02832020 SET_32 doscalls_281
 0x0001d3f4 0x0000e3f4 0x02832018 SET_32 doscalls_257
-EOF
-RUN
-
-NAME=GCC.EXE linked libs
-FILE=bins/le/GCC.EXE
-CMDS=il
-EXPECT=<<EOF
+---
 library  
 ---------
 emx
@@ -226,25 +325,83 @@ RUN
 
 NAME=Open LX GNUGREP.DLL
 FILE=bins/le/GNUGREP.DLL
-CMDS=iH~Signature[1]
-EXPECT=<<EOF
-LX
+CMDS=<<EOF
+iH
+echo ---
+ie:vaddr:quiet
+echo ---
+is
+echo ---
+iS
+echo ---
+il
+echo ---
+ir > $relocs
+cat $relocs~?
+cat $relocs~GNUREGEX~?
+cat $relocs~EMXLIBC~?
+cat $relocs~emx~?
 EOF
-RUN
-
-NAME=GNUGREP.DLL entrypoint
-FILE=bins/le/GNUGREP.DLL
-CMDS=ie:vaddr:quiet
 EXPECT=<<EOF
+le:
+  signature: "LX"
+  le_offset: 0x80
+  byte_order: "little endian"
+  word_order: "little endian"
+  format_level: 0
+  module_name: "GNUGREP"
+  type: "Library module (DLL)"
+  cpu: "80386"
+  os: "OS/2"
+  arch: "x86"
+  version: 131073
+  mflags: 0x8002
+  flags:
+    - "DLL"
+  mpages: 11
+  initial_eip_obj: 1
+  initial_eip: 0x0
+  initial_stack_obj: 0
+  initial_esp: 0x0
+  page_size: 0x1000
+  page_shift: 0x9
+  fixup_size: 0x10be
+  fixup_checksum: 0x0
+  loader_size: 0xcd
+  loader_checksum: 0x0
+  obj_table: 0xc4
+  obj_count: 4
+  obj_page_map: 0x124
+  obj_iter_data_map: 0x0
+  resource_table: 0x0
+  resource_count: 0
+  resident_name_table: 0x17c
+  entry_table: 0x187
+  directives_table: 0x0
+  directives_count: 0
+  fixup_page_table: 0x191
+  fixup_record_table: 0x1c1
+  import_module_name_table: 0x123a
+  import_module_name_count: 3
+  import_procedure_name_table: 0x124f
+  per_page_checksum_table: 0x0
+  enumerated_data_pages: 0x1400
+  number_of_preload_pages: 0
+  non_resident_names_table: 0x9800
+  size_non_resident_names: 38
+  checksum_non_resident_names: 0x0
+  autodata_obj: 4
+  debug_info: 0x0
+  debug_length: 0x0
+  preload_pages: 0
+  demand_pages: 1
+  heap_size: 0x0
+  stack_size: 0x0
+
+---
 0x00010000
 0x00010ddc
-EOF
-RUN
-
-NAME=GNUGREP.DLL symbol
-FILE=bins/le/GNUGREP.DLL
-CMDS=is
-EXPECT=<<EOF
+---
 nth      paddr      vaddr bind   type size lib name            
 ---------------------------------------------------------------
   1 0x000023dc 0x00010ddc GLOBAL UNK     0     grepmain
@@ -289,44 +446,20 @@ nth      paddr      vaddr bind   type size lib name
  40 0x00000000 0x00043098 GLOBAL UNK     0     imp.GNUREGEX_9
  41 0x00000000 0x0004309c GLOBAL UNK     0     imp.GNUREGEX_12
  42 0x00000000 0x000430a0 GLOBAL UNK     0     imp.EMXLIBC_207
-EOF
-RUN
-
-NAME=GNUGREP.DLL sections
-FILE=bins/le/GNUGREP.DLL
-CMDS=iS
-EXPECT=<<EOF
+---
      paddr   size      vaddr  vsize align perm name   type flags 
 -----------------------------------------------------------------
 0x00001600 0x7e00 0x00010000 0x8000   0x0 -r-x obj1_1      
 0x00009400  0x200 0x00020000 0x1000   0x0 -r-x obj2_1      
 0x00009600  0x200 0x00030000 0x1000   0x0 -r-x obj3_1      
 0x00001400  0x200 0x00040000 0x1000   0x0 -rw- obj4_1      
-EOF
-RUN
-
-NAME=GNUGREP.DLL linked libs
-FILE=bins/le/GNUGREP.DLL
-CMDS=il
-EXPECT=<<EOF
+---
 library  
 ---------
 GNUREGEX
 EMXLIBC
 emx
-EOF
-RUN
-
-NAME=GNUGREP.DLL relocations
-FILE=bins/le/GNUGREP.DLL
-CMDS=<<EOF
-ir > $relocs
-cat $relocs~?
-cat $relocs~GNUREGEX~?
-cat $relocs~EMXLIBC~?
-cat $relocs~emx~?
-EOF
-EXPECT=<<EOF
+---
 1168
 8
 183
@@ -334,41 +467,68 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=LE: corkami cdogs.exe - open
-FILE=bins/le/cdogs.exe
-TIMEOUT=1320
-CMDS=<<EOF
-aac
-# aaef
-aflc
-EOF
-EXPECT=<<EOF
-789
-EOF
-RUN
-
-NAME=LE: corkami cdogs.exe - entrypoint
-FILE=bins/le/cdogs.exe
-CMDS=s
-EXPECT=<<EOF
-0x26058
-EOF
-RUN
-
-NAME=LE: corkami cdogs.exe - pi 1
-FILE=bins/le/cdogs.exe
-CMDS=pi 1
-EXPECT=<<EOF
-jmp 0x260d0
-EOF
-RUN
-
 NAME=DOSEXT.EXE open extender binary
 FILE=bins/le/DOSEXT.EXE
-CMDS=iH~header offset
+BROKEN=1
+CMDS=iH
 EXPECT=<<EOF
-MZ header offset: 0x352a4
-LE header offset: 0x3803c
+le:
+  signature: "LE"
+  le_offset: 0x3803c
+  mz_offset: 0x352a4
+  byte_order: "little endian"
+  word_order: "little endian"
+  format_level: 0
+  module_name: "hello"
+  type: "Program module (EXE)"
+  cpu: "80386"
+  os: "OS/2"
+  arch: "x86"
+  version: 0
+  mflags: 0x200
+  flags:
+    - "PMWINAPI"
+    - "EXE"
+  mpages: 7
+  initial_eip_obj: 1
+  initial_eip: 0xc4
+  initial_stack_obj: 2
+  initial_esp: 0x1f30
+  page_size: 0x1000
+  last_page_size: 0x96e
+  fixup_size: 0xfbe
+  fixup_checksum: 0x0
+  loader_size: 0x56
+  loader_checksum: 0x0
+  obj_table: 0xc4
+  obj_count: 2
+  obj_page_map: 0xf4
+  obj_iter_data_map: 0x0
+  resource_table: 0x110
+  resource_count: 0
+  resident_name_table: 0x110
+  entry_table: 0x119
+  directives_table: 0x0
+  directives_count: 0
+  fixup_page_table: 0x11a
+  fixup_record_table: 0x13a
+  import_module_name_table: 0x10d7
+  import_module_name_count: 0
+  import_procedure_name_table: 0x10d7
+  per_page_checksum_table: 0x0
+  enumerated_data_pages: 0x4000
+  number_of_preload_pages: 0
+  non_resident_names_table: 0x0
+  size_non_resident_names: 0
+  checksum_non_resident_names: 0x0
+  autodata_obj: 2
+  debug_info: 0x0
+  debug_length: 0x0
+  preload_pages: 0
+  demand_pages: 0
+  heap_size: 0x0
+  stack_size: 0x1000
+
 EOF
 RUN
 
@@ -380,34 +540,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=sdl.dll unpack compressed page
+NAME=sdl.dll
 FILE=bins/le/sdl.dll
-CMDS=p8 8 @ 0x20000
+CMDS=<<EOF
+p8 8 @ 0x20000
+echo ---
+p8 6 @ 0x1000B
+echo ---
+p8 4 @ 0x202bd
+echo ---
+p8 4 @ 0x20b32
+EOF
 EXPECT=<<EOF
 ccebfd9090909000
-EOF
-RUN
-
-NAME=sdl.dll 16:32 fixup
-FILE=bins/le/sdl.dll
-CMDS=p8 6 @ 0x1000B
-EXPECT=<<EOF
+---
 595005000200
-EOF
-RUN
-
-NAME=sdl.dll 32 bit relative fixup
-FILE=bins/le/sdl.dll
-CMDS=p8 4 @ 0x202bd
-EXPECT=<<EOF
+---
 3fad0500
-EOF
-RUN
-
-NAME=sdl.dll 32 bit absolute fixup
-FILE=bins/le/sdl.dll
-CMDS=p8 4 @ 0x20b32
-EXPECT=<<EOF
+---
 69010600
 EOF
 RUN

@@ -98,7 +98,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 			null = RZ_NEW0(RzIONull);
 			null->size = rz_num_math(NULL, pathname + 7) + 1; //???
 			null->offset = 0LL;
-			return rz_io_desc_new(io, &rz_io_plugin_null, pathname, rw, mode, null);
+			return rz_io_desc_new(io, &rz_io_plugin_null, pathname, rw, null);
 		}
 	}
 	return NULL;

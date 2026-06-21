@@ -112,8 +112,8 @@ RUN
 
 NAME=mach0 arm64e legacy chained imports (BIND_OPCODE_THREADED)
 FILE=bins/mach0/imports-arm64e-threaded
-ARGS=-a arm -b 64
 CMDS=<<EOF
+obs arm_64_arm64e
 ii
 ir
 pxr 0x10 @ section.13.__DATA.__objc_classrefs
@@ -121,6 +121,7 @@ pD 0x10 @ section.13.__DATA.__objc_classrefs
 ic
 EOF
 EXPECT=<<EOF
+Backed up flag space into 'flags.arm_64_arm64e.sdb'. You can restore the flags with the 'ko' command.
 nth       vaddr bind type           lib name                     
 -----------------------------------------------------------------
   0  ---------- NONE OBJC_CLASS         NSString
@@ -171,15 +172,17 @@ RUN
 
 NAME=mach0 arm64e chained imports
 FILE=bins/mach0/imports-arm64e-chained
-ARGS=-a arm -b 64
 CMDS=<<EOF
+obs arm_64_arm64e
 ii
+pd 3 @ 0x100003f48
 ir
 pxr 0x10 @ section.13.__DATA.__objc_classrefs
 pD 0x10 @ section.13.__DATA.__objc_classrefs
 ic
 EOF
 EXPECT=<<EOF
+Backed up flag space into 'flags.arm_64_arm64e.sdb'. You can restore the flags with the 'ko' command.
 nth       vaddr bind type           lib name                     
 -----------------------------------------------------------------
   0 0x100003f20 NONE FUNC               objc_alloc
@@ -191,6 +194,10 @@ nth       vaddr bind type           lib name
   6  ---------- NONE FUNC               _objc_empty_cache
   7  ---------- NONE OBJC_METACLASS     NSObject
   8  ---------- NONE OBJC_CLASS         NSObject
+            0x100003f48      ldr   x16, [x17]
+            0x100003f4c      braa  x16, x17
+            ;-- objc_autoreleasePoolPush:
+            0x100003f50      adrp  x17, reloc.objc_alloc               ; 0x100004000
       vaddr      paddr      target type   name                     
 -------------------------------------------------------------------
 0x100004000 0x00004000 0x100010008 SET_64 objc_alloc

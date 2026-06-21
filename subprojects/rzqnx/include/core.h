@@ -20,7 +20,7 @@
 #include "arch.h"
 
 #ifndef offsetof
-#define offsetof(TYPE, MEMBER) ((size_t) & ((TYPE *)0)->MEMBER)
+#define offsetof(TYPE, MEMBER) ((size_t)&((TYPE *)0)->MEMBER)
 #endif
 
 enum Breakpoint {

@@ -125,11 +125,13 @@ static bool spaces_eq(RzSpaces *actual, RzSpaces *expected) {
 	RzListIter *actual_stack_iter = rz_list_iterator(actual->spacestack);
 	RzListIter *expected_stack_iter = rz_list_iterator(expected->spacestack);
 	while (actual_stack_iter && expected_stack_iter) {
-		RzSpace *actual_space = rz_list_iter_get(actual_stack_iter);
-		RzSpace *expected_space = rz_list_iter_get(expected_stack_iter);
+		RzSpace *actual_space = rz_list_val(actual_stack_iter);
+		RzSpace *expected_space = rz_list_val(expected_stack_iter);
 		if (!space_eq(actual_space, expected_space)) {
 			return false;
 		}
+		actual_stack_iter = rz_list_next(actual_stack_iter);
+		expected_stack_iter = rz_list_next(expected_stack_iter);
 	}
 	mu_assert("spacestack count", !actual_stack_iter && !expected_stack_iter);
 

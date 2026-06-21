@@ -4,7 +4,7 @@
 #ifndef RZ_ARM_CS_H
 #define RZ_ARM_CS_H
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 
 #if CC_SUPPORTS_W_ENUM_COMPARE
 #pragma GCC diagnostic ignored "-Wenum-compare"

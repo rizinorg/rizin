@@ -10,14 +10,25 @@ rz_socket_sources = [
 
 dependencies = [utl, rz_util_dep, platform_deps]
 rz_socket_deps = []
+rz_socket_public_deps = []
+rz_socket_public_cmake_deps = []
 
 if sys_openssl.found()
   dependencies += [sys_openssl]
+  rz_socket_public_deps += [sys_openssl]
+  rz_socket_public_cmake_deps += ['OpenSSL|OpenSSL::Crypto']
 endif
 
 if host_machine.system() == 'haiku'
   dependencies += [
     cc.find_library('network')
+  ]
+endif
+
+if host_machine.system() == 'sunos'
+  dependencies += [
+    cc.find_library('socket'),
+    cc.find_library('nsl')
   ]
 endif
 
@@ -34,11 +45,12 @@ rz_socket = library('rz_socket', rz_socket_sources,
 )
 
 rz_socket_dep = declare_dependency(link_with: rz_socket,
-  dependencies: [rz_util_dep],
+  dependencies: [rz_util_dep] + rz_socket_public_deps,
   include_directories: [platform_inc])
 meson.override_dependency('rz_socket', rz_socket_dep)
 
 modules += { 'rz_socket': {
     'target': rz_socket,
-    'dependencies': ['rz_util']
+    'dependencies': ['rz_util'],
+    'cmake_external_deps': rz_socket_public_cmake_deps
 }}

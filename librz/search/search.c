@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2024 RizinOrg <info@rizin.re>
-// SPDX-FileCopyrightText: 2024 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2024-2025 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2024-2025 Rot127 <rot127@posteo.com>
+// SPDX-FileCopyrightText: 2024-2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_list.h>
@@ -102,7 +103,10 @@ RZ_API int rz_search_strings_update(RzSearch *s, ut64 from, const ut8 *buf, int 
 	rz_list_foreach (s->kws, iter, kw) {
 		RzDetectedString *dstr;
 		rz_list_foreach (str_list, iter2, dstr) {
-			rz_search_legacy_hit_new(s, kw, dstr->addr);
+			if (rz_search_legacy_hit_new(s, kw, dstr->addr) != 1) {
+				// Max hits or error
+				break;
+			}
 			matches++;
 		}
 	}
@@ -150,13 +154,13 @@ RZ_API int rz_search_legacy_hit_new(RzSearch *s, RzSearchKeyword *kw, ut64 addr)
 	if (!s->contiguous) {
 		if (kw->last && addr == kw->last) {
 			kw->count--;
-			kw->last = s->bckwrds ? addr : addr + kw->keyword_length;
+			kw->last = addr + kw->keyword_length;
 			eprintf("0x%08" PFMT64x " Sequential hit ignored.\n", addr);
 			return 1;
 		}
 	}
 	// kw->last is used by string search, the right endpoint of last match (forward search), to honor search.overlap
-	kw->last = s->bckwrds ? addr : addr + kw->keyword_length;
+	kw->last = addr + kw->keyword_length;
 
 	if (s->callback) {
 		int ret = s->callback(kw, s->user, addr);
@@ -203,32 +207,17 @@ RZ_API int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int
 		}
 		s->data = left;
 		left->len = 0;
-		if (s->bckwrds) {
-			rz_list_foreach (s->kws, iter, kw) {
-				ut8 *i = kw->bin_keyword, *j = kw->bin_keyword + kw->keyword_length;
-				for (; i < j; i++) {
-					*i = -*i;
-				}
-			}
-		}
-	}
-	if (s->bckwrds) {
-		// XXX Change function signature from const ut8 * to ut8 *
-		ut8 *i = (ut8 *)buf, *j = i + len;
-		while (i < j) {
-			ut8 t = *i;
-			*i++ = *--j;
-			*j = t;
-		}
 	}
 
 	ut64 len1 = left->len + RZ_MIN(longest - 1, len);
 	memcpy(left->data + left->len, buf, len1 - left->len);
 	rz_list_foreach (s->kws, iter, kw) {
 		ut8 *a = kw->bin_keyword;
-		i = s->overlap || !kw->count ? 0 : s->bckwrds ? kw->last - from < left->len ? from + left->len - kw->last : 0
-			: from - kw->last < left->len         ? kw->last + left->len - from
-							      : 0;
+		i = s->overlap ||
+				!kw->count
+			? 0
+			: from - kw->last < left->len ? kw->last + left->len - from
+						      : 0;
 		for (; i + kw->keyword_length < len1 && i < left->len; i++) {
 			if ((ut8)(left->data[i + 1] - left->data[i]) == a[0]) {
 				j = 1;
@@ -236,8 +225,8 @@ RZ_API int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int
 					j++;
 				}
 				if (j == kw->keyword_length) {
-					int t = rz_search_legacy_hit_new(s, kw, s->bckwrds ? from - kw->keyword_length - 1 - i + left->len : from + i - left->len);
-					kw->last += s->bckwrds ? 0 : 1;
+					int t = rz_search_legacy_hit_new(s, kw, from + i - left->len);
+					kw->last += 1;
 					if (!t) {
 						return -1;
 					}
@@ -250,9 +239,8 @@ RZ_API int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int
 				}
 			}
 		}
-		i = s->overlap || !kw->count ? 0 : s->bckwrds ? from > kw->last ? from - kw->last : 0
-			: from < kw->last                     ? kw->last - from
-							      : 0;
+		i = s->overlap || !kw->count ? 0 : from < kw->last ? kw->last - from
+								   : 0;
 		for (; i + kw->keyword_length < len; i++) {
 			if ((ut8)(buf[i + 1] - buf[i]) == a[0]) {
 				j = 1;
@@ -260,8 +248,8 @@ RZ_API int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int
 					j++;
 				}
 				if (j == kw->keyword_length) {
-					int t = rz_search_legacy_hit_new(s, kw, s->bckwrds ? from - kw->keyword_length - 1 - i : from + i);
-					kw->last += s->bckwrds ? 0 : 1;
+					int t = rz_search_legacy_hit_new(s, kw, from + i);
+					kw->last += 1;
 					if (!t) {
 						return -1;
 					}
@@ -286,7 +274,7 @@ RZ_API int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int
 		left->len = longest - 1;
 		memcpy(left->data, buf + len - longest + 1, longest - 1);
 	}
-	left->end = s->bckwrds ? from - len : from + len;
+	left->end = from + len;
 
 	return s->nhits - old_nhits;
 }
@@ -375,25 +363,15 @@ RZ_API int rz_search_mybinparse_update(RzSearch *s, ut64 from, const ut8 *buf, i
 		s->data = left;
 		left->len = 0;
 	}
-	if (s->bckwrds) {
-		// XXX Change function signature from const ut8 * to ut8 *
-		ut8 *i = (ut8 *)buf, *j = i + len;
-		while (i < j) {
-			ut8 t = *i;
-			*i++ = *--j;
-			*j = t;
-		}
-	}
 
 	ut64 len1 = left->len + RZ_MIN(longest - 1, len);
 	memcpy(left->data + left->len, buf, len1 - left->len);
 	rz_list_foreach (s->kws, iter, kw) {
-		i = s->overlap || !kw->count ? 0 : s->bckwrds ? kw->last - from < left->len ? from + left->len - kw->last : 0
-			: from - kw->last < left->len         ? kw->last + left->len - from
-							      : 0;
+		i = s->overlap || !kw->count ? 0 : from - kw->last < left->len ? kw->last + left->len - from
+									       : 0;
 		for (; i + kw->keyword_length <= len1 && i < left->len; i++) {
 			if (brute_force_match(s, kw, left->data, i) != s->inverse) {
-				int t = rz_search_legacy_hit_new(s, kw, s->bckwrds ? from - kw->keyword_length - i + left->len : from + i - left->len);
+				int t = rz_search_legacy_hit_new(s, kw, from + i - left->len);
 				if (!t) {
 					return -1;
 				}
@@ -405,12 +383,11 @@ RZ_API int rz_search_mybinparse_update(RzSearch *s, ut64 from, const ut8 *buf, i
 				}
 			}
 		}
-		i = s->overlap || !kw->count ? 0 : s->bckwrds ? from > kw->last ? from - kw->last : 0
-			: from < kw->last                     ? kw->last - from
-							      : 0;
+		i = s->overlap || !kw->count ? 0 : from < kw->last ? kw->last - from
+								   : 0;
 		for (; i + kw->keyword_length <= len; i++) {
 			if (brute_force_match(s, kw, buf, i) != s->inverse) {
-				int t = rz_search_legacy_hit_new(s, kw, s->bckwrds ? from - kw->keyword_length - i : from + i);
+				int t = rz_search_legacy_hit_new(s, kw, from + i);
 				if (!t) {
 					return -1;
 				}
@@ -434,7 +411,7 @@ RZ_API int rz_search_mybinparse_update(RzSearch *s, ut64 from, const ut8 *buf, i
 		left->len = longest - 1;
 		memcpy(left->data, buf + len - longest + 1, longest - 1);
 	}
-	left->end = s->bckwrds ? from - len : from + len;
+	left->end = from + len;
 
 	return s->nhits - old_nhits;
 }
@@ -505,28 +482,6 @@ RZ_API int rz_search_kw_add(RzSearch *s, RzSearchKeyword *kw) {
 	return true;
 }
 
-// Reverse bin_keyword & bin_binmask for backward search
-RZ_API void rz_search_string_prepare_backward(RzSearch *s) {
-	RzListIter *iter;
-	RzSearchKeyword *kw;
-	// Precondition: !kw->binmask_length || kw->keyword_length % kw->binmask_length == 0
-	rz_list_foreach (s->kws, iter, kw) {
-		ut8 *i = kw->bin_keyword, *j = kw->bin_keyword + kw->keyword_length;
-		while (i < j) {
-			ut8 t = *i;
-			*i++ = *--j;
-			*j = t;
-		}
-		i = kw->bin_binmask;
-		j = kw->bin_binmask + kw->binmask_length;
-		while (i < j) {
-			ut8 t = *i;
-			*i++ = *--j;
-			*j = t;
-		}
-	}
-}
-
 RZ_API void rz_search_reset(RzSearch *s, int mode) {
 	s->nhits = 0;
 	if (!rz_search_set_mode(s, mode)) {
@@ -541,7 +496,7 @@ RZ_API void rz_search_kw_reset(RzSearch *s) {
 }
 
 //
-// New search.
+// NEW SEARCH BEGIN
 // Everything above is only there to not break the build.
 //
 
@@ -552,6 +507,8 @@ RZ_API void rz_search_kw_reset(RzSearch *s) {
 typedef struct search_ctx {
 	RzIO *io; ///< the RzIO struct to use
 	RzThreadLock *io_lock;
+	RzBuffer *buffer; ///< RzBuffer to search in. If this is set, io should be NULL.
+	RzThreadLock *buffer_lock;
 	RzSearchCollection *col; ///< collection to use
 	RzSearchOpt *opt; ///< User options
 	RzThreadQueue /* RzSearchHits */ *hits; ///< Hits list
@@ -562,11 +519,13 @@ typedef struct search_ctx {
 static void print_intervals(RZ_NONNULL RzThreadQueue *intervals) {
 	rz_return_if_fail(intervals);
 
-	RzSearchInterval *search_interval = NULL;
-	while ((search_interval = rz_th_queue_pop(intervals, false))) {
+	void *data = NULL;
+	while (rz_th_queue_pop(intervals, false, &data) && data) {
+		RzSearchInterval *search_interval = (RzSearchInterval *)data;
 		RzInterval *itv = &search_interval->interval;
 		eprintf("[0x%" PFMT64x ", 0x%" PFMT64x "): %" PFMTSZu "\n", itv->addr, itv->addr + itv->size,
 			search_interval->n_hits);
+		data = NULL;
 	}
 }
 
@@ -607,14 +566,28 @@ static bool search_iterator_io_map_cb(void *element, void *user) {
 	ut64 at = window->addr;
 	ut64 size = window->size;
 
-	rz_th_lock_enter(ctx->io_lock);
-	RzBuffer *buffer = rz_io_nread_at_new_buf(ctx->io, at, size);
-	if (!buffer || rz_buf_size(buffer) != size) {
-		RZ_LOG_ERROR("search: failed to read at 0x%08" PFMT64x " (0x%08" PFMT64x " bytes)\n", at, size);
+	RzBuffer *buffer = NULL;
+	if (ctx->io) {
+		rz_th_lock_enter(ctx->io_lock);
+		buffer = rz_io_nread_at_new_buf(ctx->io, at, size);
+		if (!buffer || rz_buf_size(buffer) != size) {
+			RZ_LOG_ERROR("search: failed to read at 0x%08" PFMT64x " (0x%08" PFMT64x " bytes)\n", at, size);
+			rz_th_lock_leave(ctx->io_lock);
+			goto failure;
+		}
 		rz_th_lock_leave(ctx->io_lock);
-		goto failure;
+	} else {
+		ut8 *window_data = RZ_NEWS(ut8, size);
+		rz_th_lock_enter(ctx->buffer_lock);
+		size = rz_buf_read_at(ctx->buffer, at, window_data, size);
+		rz_th_lock_leave(ctx->buffer_lock);
+		buffer = rz_buf_new_with_bytes(window_data, size);
+		free(window_data);
+		if (!buffer) {
+			RZ_LOG_ERROR("search: failed to read at 0x%08" PFMT64x " (0x%08" PFMT64x " bytes)\n", at, size);
+			goto failure;
+		}
 	}
-	rz_th_lock_leave(ctx->io_lock);
 
 	size_t n_hits = 0;
 	RzSearchFindBytesCallback find = col->find;
@@ -666,6 +639,26 @@ static RzList /*<RzInterval *>*/ *assemble_search_window_list(RzList /*<RzIOMap 
 	return list;
 }
 
+static bool perform_sanity_checks(
+	RZ_BORROW RZ_NONNULL RzSearchOpt *opt,
+	RZ_BORROW RZ_NONNULL RzSearchCollection *col) {
+	if (!rz_search_collection_on_bytes_space(col)) {
+		RZ_LOG_ERROR("search: The search collection is not initialized for byte space.\n");
+		return false;
+	}
+
+	if (opt->chunk_size < RZ_SEARCH_MIN_CHUNK_SIZE) {
+		RZ_LOG_ERROR("search: cannot search when buffer size is less than %#" PFMT64x " bytes.\n", (ut64)RZ_SEARCH_MIN_CHUNK_SIZE);
+		return false;
+	}
+
+	if (rz_search_collection_is_empty(col)) {
+		RZ_LOG_ERROR("search: cannot perform the search when the search collection is empty.\n");
+		return false;
+	}
+	return true;
+}
+
 /**
  * \brief      Perform a search within the given search maps of a collection
  *
@@ -689,23 +682,12 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_io(
 	RzList /* RzInterval */ *windows = NULL;
 	RzThread *cancel_th = NULL;
 
-	if (!rz_search_collection_on_bytes_space(col)) {
-		RZ_LOG_ERROR("search: The search collection is not initialized for byte space.\n");
-		return NULL;
-	}
-
-	if (opt->chunk_size < RZ_SEARCH_MIN_CHUNK_SIZE) {
-		RZ_LOG_ERROR("search: cannot search when buffer size is less than %#" PFMT64x " bytes.\n", RZ_SEARCH_MIN_CHUNK_SIZE);
+	if (!perform_sanity_checks(opt, col)) {
 		return NULL;
 	}
 
 	if (rz_list_empty(search_in)) {
 		RZ_LOG_ERROR("search: cannot search in an empty RzIOMap list.\n");
-		return NULL;
-	}
-
-	if (rz_search_collection_is_empty(col)) {
-		RZ_LOG_ERROR("search: cannot perform the search when the search collection is empty.\n");
 		return NULL;
 	}
 
@@ -760,6 +742,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_io(
 	if (cancel_th) {
 		// stop & free cancel thread.
 		rz_atomic_bool_set(ctx.loop, false);
+		rz_th_queue_close_when_empty(intervals);
 		rz_th_wait(cancel_th);
 		rz_th_free(cancel_th);
 		rz_atomic_bool_free(ctx.loop);
@@ -775,6 +758,125 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_io(
 	return results;
 }
 
+/**
+ * \brief      Perform a search within the given search maps of a collection
+ *
+ * \param      opt        The RzSearchOpt to use
+ * \param      col        The RzSearchCollection to use
+ * \param      buffer     The RzBuffer to search in.
+ * \param      ranges     An optional list of ranges to search in. The whole
+ *                        buffer is searched if NULL.
+ *
+ * \return     On success returns all the hits.
+ */
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_buffer(
+	RZ_BORROW RZ_NONNULL RzSearchOpt *opt,
+	RZ_BORROW RZ_NONNULL RzSearchCollection *col,
+	RZ_BORROW RZ_NONNULL RzBuffer *buffer,
+	RZ_NULLABLE const RzList /*<RzInterval *>*/ *ranges) {
+	rz_return_val_if_fail(opt && col && buffer, NULL);
+	search_ctx_t ctx = { 0 };
+	RzList *results = NULL;
+	RzThreadQueue *hits = NULL;
+	RzThreadQueue *intervals = NULL;
+	RzList /* RzInterval */ *windows = NULL;
+	RzThread *cancel_th = NULL;
+
+	if (!perform_sanity_checks(opt, col)) {
+		return NULL;
+	}
+
+	hits = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, (RzListFree)rz_search_hit_free);
+	if (!hits) {
+		RZ_LOG_ERROR("search: cannot allocate RzSearchHit queue.\n");
+		return NULL;
+	}
+
+	intervals = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, (RzListFree)rz_search_interval_free);
+	if (!intervals) {
+		RZ_LOG_ERROR("search: cannot allocate RzSearchInterval queue.\n");
+		rz_th_queue_free(hits);
+		return NULL;
+	}
+
+	RzList *search_in = rz_list_new();
+	if (ranges) {
+		RzListIter *it;
+		RzInterval *itv;
+		rz_list_foreach (ranges, it, itv) {
+			RzIOMap *map = RZ_NEW0(RzIOMap);
+			map->itv.addr = itv->addr;
+			map->itv.size = itv->size;
+			rz_list_append(search_in, map);
+		}
+	} else {
+		RzIOMap *map = RZ_NEW0(RzIOMap);
+		map->itv.addr = 0;
+		map->itv.size = rz_buf_size(buffer);
+		rz_list_append(search_in, map);
+	}
+	windows = assemble_search_window_list(search_in, opt);
+	RzIOMap *map;
+	RzListIter *iter;
+	rz_list_foreach (search_in, iter, map) {
+		RZ_FREE(map);
+	}
+	rz_list_free(search_in);
+
+	if (!windows) {
+		RZ_LOG_ERROR("search: Could not prepare search window queue.\n");
+		rz_th_queue_free(hits);
+		rz_th_queue_free(intervals);
+		return NULL;
+	}
+
+	ctx.col = col;
+	ctx.opt = opt;
+	ctx.buffer = buffer;
+	ctx.buffer_lock = rz_th_lock_new(false);
+	ctx.loop = rz_atomic_bool_new(true);
+	ctx.hits = hits;
+	ctx.finished_intervals = intervals;
+
+	if (opt->cancel_cb) {
+		// create cancel thread
+		cancel_th = rz_th_new(search_cancel_th, &ctx);
+		if (!cancel_th) {
+			RZ_LOG_ERROR("search: cannot allocate cancel thread.\n");
+			rz_th_queue_free(hits);
+			rz_th_queue_free(intervals);
+			rz_atomic_bool_free(ctx.loop);
+			rz_list_free(windows);
+			return NULL;
+		}
+	}
+
+	if (!rz_th_iterate_list(windows, search_iterator_io_map_cb, opt->max_threads, &ctx)) {
+		RZ_LOG_ERROR("search: cannot iterate over list.\n");
+	} else {
+		results = rz_th_queue_pop_all(hits);
+	}
+
+	if (cancel_th) {
+		// stop & free cancel thread.
+		rz_atomic_bool_set(ctx.loop, false);
+		rz_th_wait(cancel_th);
+		rz_th_free(cancel_th);
+		rz_atomic_bool_free(ctx.loop);
+	}
+
+	rz_th_lock_free(ctx.io_lock);
+	rz_list_free(windows);
+	rz_th_queue_free(hits);
+	rz_th_queue_free(intervals);
+	rz_atomic_bool_free(ctx.loop);
+	rz_th_lock_free(ctx.buffer_lock);
+
+	rz_list_sort(results, (RzListComparator)rz_search_hit_cmp, NULL);
+	rz_list_sorted_uniq(results, (RzListComparator)rz_search_hit_cmp, NULL);
+	return results;
+}
+
 RZ_IPI int rz_search_hit_cmp(RZ_NULLABLE RzSearchHit *a, RZ_NULLABLE RzSearchHit *b, void *user) {
 	if (!a && !b) {
 		return 0;
@@ -783,9 +885,15 @@ RZ_IPI int rz_search_hit_cmp(RZ_NULLABLE RzSearchHit *a, RZ_NULLABLE RzSearchHit
 	} else if (!b) {
 		return 1;
 	}
-	if (a->address == b->address) {
+	if (a->address < b->address) {
+		return -1;
+	} else if (a->address > b->address) {
+		return 1;
+	}
+
+	if (a->size == b->size) {
 		return 0;
-	} else if (a->address < b->address) {
+	} else if (a->size < b->size) {
 		return -1;
 	}
 	return 1;
@@ -804,6 +912,7 @@ RZ_IPI int rz_search_hit_cmp(RZ_NULLABLE RzSearchHit *a, RZ_NULLABLE RzSearchHit
 RZ_IPI RZ_OWN RzSearchHit *rz_search_hit_new(RZ_NULLABLE const char *hit_desc, ut64 address, size_t size, RZ_NULLABLE RZ_OWN RzSearchHitDetail *hit_detail) {
 	RzSearchHit *hit = RZ_NEW0(RzSearchHit);
 	if (!hit) {
+		rz_search_hit_detail_free(hit_detail);
 		return NULL;
 	}
 	hit->hit_desc = rz_str_dup(hit_desc);

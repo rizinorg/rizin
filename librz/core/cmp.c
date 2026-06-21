@@ -407,10 +407,6 @@ RZ_API void rz_core_cmpwatch_show(RzCore *core, ut64 addr, RzOutputMode mode) {
 		}
 		int is_diff = w->odata ? memcmp(w->odata, w->ndata, w->size) : 0;
 		switch (mode) {
-		case RZ_OUTPUT_MODE_RIZIN:
-			rz_cons_printf("cw %d '%s' @  0x%08" PFMT64x "%s\n",
-				w->size, w->cmd, w->addr, is_diff ? " # differs" : "");
-			break;
 		case RZ_OUTPUT_MODE_STANDARD:
 			rz_cons_printf("0x%08" PFMT64x "%s\n", w->addr, is_diff ? " modified" : "");
 			snprintf(cmd, sizeof(cmd), "%s @ %" PFMT64d " @!%d", w->cmd, w->addr, w->size);

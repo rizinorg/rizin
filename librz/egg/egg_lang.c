@@ -162,9 +162,8 @@ RZ_API void rz_egg_lang_include_path(RzEgg *egg, const char *path) {
 }
 
 RZ_API void rz_egg_lang_include_init(RzEgg *egg) {
-	char *prefix = rz_path_prefix(NULL);
+	const char *prefix = rz_path_prefix(egg->sys_path);
 	char *s = rz_str_newf(".:%s/%s", prefix, RZ_EGG_INCDIR_PATH);
-	free(prefix);
 	rz_sys_setenv(RZ_EGG_INCDIR_ENV, s);
 	free(s);
 }
@@ -224,7 +223,7 @@ static void rcc_internal_mathop(RzEgg *egg, const char *ptr, char *ep, char op) 
 		p++;
 	}
 	if (is_var(p)) {
-		p = rz_egg_mkvar(egg, buf, p, 0);
+		p = rz_egg_lang_mkvar(egg, buf, p, 0);
 		if (egg->lang.varxs == '*') {
 			e->load(egg, p, egg->lang.varsize);
 			RZ_FREE(oldp);
@@ -299,7 +298,7 @@ static void rcc_mathop(RzEgg *egg, char **pos, int level) {
 
 static void rcc_pusharg(RzEgg *egg, char *str) {
 	RzEggEmit *e = egg->remit;
-	char buf[64], *p = rz_egg_mkvar(egg, buf, str, 0);
+	char buf[64], *p = rz_egg_lang_mkvar(egg, buf, str, 0);
 	if (!p) {
 		return;
 	}
@@ -506,7 +505,7 @@ static void rcc_pushstr(RzEgg *egg, char *str, int filter) {
 	RZ_FREE(egg->lang.dstvar);
 }
 
-RZ_API char *rz_egg_mkvar(RzEgg *egg, char *out, const char *_str, int delta) {
+RZ_API char *rz_egg_lang_mkvar(RzEgg *egg, char *out, const char *_str, int delta) {
 	int i, len, qi;
 	char *oldstr = NULL, *str = NULL, foo[32], *q, *ret = NULL;
 
@@ -596,16 +595,16 @@ RZ_API char *rz_egg_mkvar(RzEgg *egg, char *out, const char *_str, int delta) {
 		free(egg->lang.dstvar);
 		egg->lang.dstvar = rz_str_dup(skipspaces(foo));
 		rcc_pushstr(egg, str, mustfilter);
-		ret = rz_egg_mkvar(egg, out, foo, 0);
+		ret = rz_egg_lang_mkvar(egg, out, foo, 0);
 		free(oldstr);
 	}
 	return ret;
 }
 
-static void rcc_fun(RzEgg *egg, const char *str) {
+static void rcc_fun(RzEgg *egg, char *str) {
 	char *ptr, *ptr2;
 	RzEggEmit *e = egg->remit;
-	str = skipspaces(str);
+	str = (char *)skipspaces(str);
 	if (CTX) {
 		ptr = strchr(str, '=');
 		if (ptr) {
@@ -617,7 +616,7 @@ static void rcc_fun(RzEgg *egg, const char *str) {
 				rcc_set_callname(egg, skipspaces(ptr));
 			}
 		} else {
-			str = skipspaces(str);
+			str = (char *)skipspaces(str);
 			rcc_set_callname(egg, skipspaces(str));
 			egg->remit->comment(egg, "rcc_fun %d (%s)",
 				CTX, egg->lang.callname);
@@ -983,7 +982,7 @@ static void rcc_next(RzEgg *egg) {
 		if (!ocn) {
 			return;
 		}
-		str = rz_egg_mkvar(egg, buf, ocn, 0);
+		str = rz_egg_lang_mkvar(egg, buf, ocn, 0);
 		if (!str) {
 			eprintf("Cannot mkvar\n");
 			return;
@@ -1059,7 +1058,7 @@ static void rcc_next(RzEgg *egg) {
 		    // XXX: Probably buggy and wrong
 		    *buf = 0;
 		    free (str);
-		    str = rz_egg_mkvar (egg, buf, ocn, 0);
+		    str = rz_egg_lang_mkvar (egg, buf, ocn, 0);
 		    if (*buf)
 			e->get_result (egg, buf); // Why should get_result into ocn?
 		    //else { eprintf("external symbol %s\n", ocn); }
@@ -1071,7 +1070,7 @@ static void rcc_next(RzEgg *egg) {
 			// if (egg->lang.mode != NAKED) {
 			*buf = 0;
 			free(str);
-			str = rz_egg_mkvar(egg, buf, egg->lang.dstvar, 0);
+			str = rz_egg_lang_mkvar(egg, buf, egg->lang.dstvar, 0);
 			if (*buf == 0) {
 				eprintf("Cannot resolve variable '%s'\n", egg->lang.dstvar);
 			} else {
@@ -1099,9 +1098,9 @@ static void rcc_next(RzEgg *egg) {
 				RZ_FREE(egg->lang.mathline);
 				tmp = NULL;
 				// following code block is too ugly, oh noes
-				char *p = rz_egg_mkvar(egg, buf, ptr, 0);
+				char *p = rz_egg_lang_mkvar(egg, buf, ptr, 0);
 				if (is_var(p)) {
-					char *q = rz_egg_mkvar(egg, buf, p, 0);
+					char *q = rz_egg_lang_mkvar(egg, buf, p, 0);
 					if (q) {
 						free(p);
 						p = q;
@@ -1120,10 +1119,10 @@ static void rcc_next(RzEgg *egg) {
 				    char str2[64], *p, ch = *(eq-1);
 				    *eq = '\0';
 				    eq = (char*) skipspaces (eq+1);
-				    p = rz_egg_mkvar (egg, str2, ptr, 0);
+				    p = rz_egg_lang_mkvar (egg, str2, ptr, 0);
 				    vs = egg->lang.varsize;
 				    if (is_var (eq)) {
-					eq = rz_egg_mkvar (egg, buf, eq, 0);
+					eq = rz_egg_lang_mkvar (egg, buf, eq, 0);
 					if (egg->lang.varxs=='*')
 					    e->load (egg, eq, egg->lang.varsize);
 					else
@@ -1186,7 +1185,7 @@ RZ_API int rz_egg_lang_parsechar(RzEgg *egg, char c) {
 				if (c == '`') {
 					egg->lang.elem[egg->lang.elem_n] = 0;
 					egg->lang.elem_n = 0;
-					tmp_ptr = rz_egg_mkvar(egg, str, egg->lang.elem, 0);
+					tmp_ptr = rz_egg_lang_mkvar(egg, str, egg->lang.elem, 0);
 					rz_egg_printf(egg, "%s", tmp_ptr);
 					free(tmp_ptr);
 					egg->lang.quotelinevar = 0;

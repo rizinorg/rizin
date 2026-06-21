@@ -19,3 +19,164 @@ EXPECT_ERR=<<EOF
 Hud mode requires scr.interactive=true.
 EOF
 RUN
+
+NAME=?** search
+FILE==
+CMDS=<<EOF
+e scr.interactive=true
+e scr.utf8=true
+e scr.columns=120
+e scr.rows=4
+e scr.color=0
+< \n; ?**
+echo
+echo
+e scr.utf8=false
+< \n; ?**
+echo
+EOF
+EXPECT=<<EOF
+[?25l[0m[2J[0;0H0> |                                                                                                                   [0m[2J[0;0H0> |
+ - │ !<command> [<args1> <args2> ...] # Run command via system(3) with raw output. Grepping via '~' automatically forces
+                                        use of '!!' instead.                                                            
+   │ !!<command> [<args1> <args2> ...] # Run command via system(3) and pipe its stdout to rizin                         [?25h
+
+[?25l[0m[2J[0;0H0> |                                                                                                                   [0m[2J[0;0H0> |
+ - | !<command> [<args1> <args2> ...] # Run command via system(3) with raw output. Grepping via '~' automatically forces
+                                        use of '!!' instead.                                                            
+   | !!<command> [<args1> <args2> ...] # Run command via system(3) and pipe its stdout to rizin                         [?25h
+EOF
+RUN
+
+NAME=?** entire help string on match
+FILE=--
+CMDS=<<EOF
+e scr.interactive=true
+e scr.utf8=true
+e scr.columns=100
+e scr.rows=3
+e scr.color=0
+< f\n; ?**
+echo
+EOF
+EXPECT=<<EOF
+[?25l[0m[2J[0;0H0> |                                                                                               [0m[2J[0;0H0> |
+ - │ !<command> [<args1> <args2> ...] # Run command via system(3) with raw output. Grepping via '~' 
+                                        automatically forces use of '!!' instead.                   [0;0H0> f|                                                                                               [0;0H0> f|
+ - │ !<command> [<args1> <args2> ...] # Run command via system(3) with raw output. Grepping via '~' 
+                                        automatically Forces use oF '!!' instead.                   [?25h
+EOF
+RUN
+
+NAME=?** wrapping
+FILE=--
+CMDS=<<EOF
+e scr.interactive=true
+e scr.utf8=true
+e scr.columns=100
+e scr.rows=5
+e scr.color=0
+< q\n; ?**
+echo
+EOF
+EXPECT=<<EOF
+[?25l[0m[2J[0;0H0> |                                                                                               [0m[2J[0;0H0> |
+ - │ !<command> [<args1> <args2> ...] # Run command via system(3) with raw output. Grepping via '~' 
+                                        automatically forces use of '!!' instead.                   
+   │ !!<command> [<args1> <args2> ...] # Run command via system(3) and pipe its stdout to rizin     
+   │ #!<interpreter-name> [<arg1> <arg2> ...] # Run interpreter                                     [0;0H0> q|                                                                                               [0;0H0> q|
+ - │ %l <str>             # Calculate length of string <str>. Quiet mode stores value in `$?`       
+                            register.                                                               
+   │ %lQ <str>            # Calculate length of string <str>. Quiet mode stores value in `$?`       
+                            register. (Quiet mode)                                                  [?25h
+EOF
+RUN
+
+NAME=?**e search
+FILE==
+CMDS=<<EOF
+e scr.interactive=true
+e scr.utf8=true
+e scr.columns=120
+e scr.rows=3
+e scr.color=0
+< \n; ?**e
+echo
+EOF
+EXPECT=<<EOF
+[?25l[0m[2J[0;0H0> |                                                                                                                   [0m[2J[0;0H0> |
+ - analysis.apply.signature:       bool - enables/disables auto-applying signatures to the loaded binary (see also flirt[0J[0m
+          analysis.arch: string,bind - Select the architecture to use                                                   [?25h
+EOF
+RUN
+
+NAME=?*** search
+FILE==
+CMDS=<<EOF
+e scr.interactive=true
+e scr.utf8=true
+e scr.columns=100
+e scr.rows=6
+e scr.color=0
+< %l\n; ?***
+echo
+EOF
+EXPECT=<<EOF
+[?25l[0m[2J[0;0H0> |                                                                                               [0m[2J[0;0H0> |
+ - ! | Usage: !<command> [<args1> <args2> ...]   # Run command via system(3) with raw output.       
+   ! |                                             Grepping via '~' automatically forces use of '!!'
+   ! |                                             instead.                                         
+   ! | Examples:                                                                                    
+   ! | | !ls                     # Execute the 'ls' command via system(3)                           [0;0H0> %|                                                                                               [0;0H0> %|
+ - $ | Usage: $[alias[=cmd] [args...]]   # List all defined aliases / Define alias (see %$? for help
+   % | Usage: %[j] <expr>   # Evaluate numerical expression <expr>                                  
+   % | │ % <expr>     # Evaluate numerical expression <expr>                                        
+   % | │ %j <expr>    # Evaluate numerical expression <expr> (JSON mode)                            
+   %j | Usage: %j[j] <expr>   # Evaluate numerical expression <expr> (JSON mode)                    [0;0H0> %l|                                                                                              [0;0H0> %l|
+ - %L | Usage: %L[q] <str>   # Calculate length of string <str>. Quiet mode stores value in `$?`    
+   %L |                        register.                                                            
+   %L | │ %L <str>     # Calculate length of string <str>. Quiet mode stores value in `$?` register.
+   %L | │ %Lq <str>    # Calculate length of string <str>. Quiet mode stores value in `$?` register.
+   %L |                  (quiet mode)                                                               [?25h
+EOF
+RUN
+
+NAME=p==v visual histogram interactive (#4431 regression)
+FILE=malloc://512
+CMDS=<<EOF
+e scr.interactive=true
+e scr.utf8=true
+e scr.columns=80
+e scr.rows=12
+e scr.color=0
+e scr.hist.minimap=true
+wx 00112233445566778899aabbccddeeff @ 0
+< lq; p==v
+echo END
+EOF
+EXPECT=<<EOF
+[?25l     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+                                                                               
+ 255│▼                                                                          
+ 213│█                                                                          
+    │█                                                                          
+ 128│█                                                                          
+  85│█                                                                          
+    │█                                                                          
+   0│▲██████████████████████████████████████████████████████████████████████████
+     ^        ^        ^        ^         ^        ^        ^        ^         ^
+     0x0      0x0      0x0      0x0       0x0      0x100    0x100    0x100     0
+Index 0 data 0                                                         0x0    0%[?25l[0m[2J[0;0H     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0J[0m
+                                                                               
+ 255│                                     ▼                                     
+ 213│                                     █                                     
+    │                                     █                                     
+ 128│                                     █                                     
+  85│                                     █                                     
+    │                                     █                                     
+   0│█████████████████████████████████████▲█████████████████████████████████████
+     ^        ^        ^        ^         ^        ^        ^        ^         ^
+     0x0      0x0      0x0      0x0       0x0      0x100    0x100    0x100     0
+Index 1 data 0                                                       0x100  100%[?25h[0m[2J[0;0HEND
+EOF
+RUN

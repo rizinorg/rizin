@@ -3,6 +3,7 @@
 
 #include <rz_util.h>
 #include "minunit.h"
+#include <rz_types.h>
 
 // TODO test rz_str_chop_path
 
@@ -42,6 +43,34 @@ bool test_rz_str_replace(void) {
 	mu_end;
 }
 
+bool test_rz_str_replace_regex(void) {
+	char *str;
+
+	str = rz_str_replace_regex("attiny88.elf", "(attiny|atmega|atxmega)[[:alnum:]]*", "avrdev", false, false);
+	mu_assert_streq(str, "avrdev.elf", "error, regex replace once failed");
+	free(str);
+
+	str = rz_str_replace_regex("atmega32 atxmega16 attiny88", "(attiny|atmega|atxmega)[[:alnum:]]*", "avr", true, false);
+	mu_assert_streq(str, "avr avr avr", "error, regex replace global failed");
+	free(str);
+
+	str = rz_str_replace_regex("AtMeGa88", "atmega[[:alnum:]]*", "avr", false, true);
+	mu_assert_streq(str, "avr", "error, regex replace icase failed");
+	free(str);
+
+	str = rz_str_replace_regex("nomatch", "atmega[[:alnum:]]*", "avr", true, false);
+	mu_assert_streq(str, "nomatch", "error, regex replace should keep string when no match");
+	free(str);
+
+	RzLogLevel old_level = rz_log_get_level();
+	rz_log_set_level(RZ_LOGLVL_FATAL);
+	str = rz_str_replace_regex("nomatch", "(", "avr", true, false);
+	rz_log_set_level(old_level);
+	mu_assert_null(str, "error, regex replace should return NULL on invalid regex pattern");
+
+	mu_end;
+}
+
 bool test_rz_str_ncpy(void) {
 	char *str = strdup("hello world");
 	char buf[10];
@@ -63,6 +92,26 @@ bool test_rz_str_ncpy(void) {
 	mu_assert_eq(size, 11, "error, return value is not equal to the length of src");
 
 	free(str);
+	mu_end;
+}
+
+bool test_rz_str_ncat(void) {
+	char buf[25];
+
+	rz_str_ncpy(buf, "\0", 25); // clearing buffer.
+
+	rz_str_ncat(buf, "hello ", 25);
+	mu_assert_streq(buf, "hello ", "error, while concatenating n bytes");
+
+	rz_str_ncat(buf, "world ", 25);
+	mu_assert_streq(buf, "hello world ", "error, while concatenating n bytes");
+
+	rz_str_ncat(buf, "from ", 25);
+	mu_assert_streq(buf, "hello world from ", "error, while concatenating n bytes");
+
+	rz_str_ncat(buf, "rizin", 25);
+	mu_assert_streq(buf, "hello world from rizin", "error, while concatenating n bytes");
+
 	mu_end;
 }
 
@@ -235,6 +284,15 @@ bool test_rz_str_split_list(void) {
 	mu_assert_streq(rz_list_get_n(l3, 2), "And", "third item");
 	mu_assert_streq(rz_list_get_n(l3, 3), "Everyone", "fourth item");
 	rz_list_free(l3);
+
+	char s4[] = "Hello  World\tAnd \t Everyoneaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+	RzList *l4 = rz_str_split_list_regex(s4, "\\s+", 0);
+	mu_assert_eq(rz_list_length(l4), 4, "string has been split in 4 items");
+	mu_assert_streq(rz_list_get_n(l4, 0), "Hello", "first item");
+	mu_assert_streq(rz_list_get_n(l4, 1), "World", "second item");
+	mu_assert_streq(rz_list_get_n(l4, 2), "And", "third item");
+	mu_assert_streq(rz_list_get_n(l4, 3), "Everyoneaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "fourth item");
+	rz_list_free(l4);
 	mu_end;
 }
 
@@ -353,31 +411,31 @@ bool test_rz_str_ansi_len(void) {
 	mu_end;
 }
 
-bool test_rz_str_len_utf8_ansi(void) {
+bool test_rz_str_utf8_ansi_cols(void) {
 	int len;
 
-	len = rz_str_len_utf8_ansi("rizin");
+	len = rz_str_utf8_ansi_cols("rizin");
 	mu_assert_eq(len, 5, "len(ascii only)");
 
-	len = rz_str_len_utf8_ansi("r\x1b[38;2;208;80;0madare2");
+	len = rz_str_utf8_ansi_cols("r\x1b[38;2;208;80;0madare2");
 	mu_assert_eq(len, 7, "len(ascii + ansi ending with m)");
 
-	len = rz_str_len_utf8_ansi("r\x1b[0Jadare2");
+	len = rz_str_utf8_ansi_cols("r\x1b[0Jadare2");
 	mu_assert_eq(len, 7, "len(ascii + ansi ending with J)");
 
-	len = rz_str_len_utf8_ansi("r\x1b[42;42Hadare2");
+	len = rz_str_utf8_ansi_cols("r\x1b[42;42Hadare2");
 	mu_assert_eq(len, 7, "len(ascii + ansi ending with H)");
 
-	len = rz_str_len_utf8_ansi("r\xc3\xa4"
-				   "dare2");
+	len = rz_str_utf8_ansi_cols("r\xc3\xa4"
+				    "dare2");
 	mu_assert_eq(len, 7, "len(ascii + 2 byte utf-8 counted as 1 char)");
 
-	len = rz_str_len_utf8_ansi("radar\xe2\x82\xac"
-				   "2");
+	len = rz_str_utf8_ansi_cols("radar\xe2\x82\xac"
+				    "2");
 	mu_assert_eq(len, 7, "len(ascii + 3 byte utf-8 counted as 1 char)");
 
-	len = rz_str_len_utf8_ansi("radar\xf0\x9d\x84\x9e"
-				   "2");
+	len = rz_str_utf8_ansi_cols("radar\xf0\x9d\x84\x9e"
+				    "2");
 	mu_assert_eq(len, 7, "len(ascii + 4 byte utf-8 counted as 1 char)");
 
 	mu_end;
@@ -760,12 +818,230 @@ bool test_rz_str_isXutf8(void) {
 	mu_end;
 }
 
+bool test_rz_str_utf8_conversions(void) {
+	const char *needs_4 = "a";
+	const char *needs_6 = "🍍";
+	const char *needs_22 = "aa🍍🍍🍍aa";
+	const char *only_nul_needs_2 = "";
+
+	mu_assert_eq(rz_str_utf8_get_width_utf16(only_nul_needs_2), 2, "Should have been 0 + 2 = 2.");
+	mu_assert_eq(rz_str_utf8_get_width_utf16(needs_4), 4, "Should have been 2 + 2 = 4.");
+	mu_assert_eq(rz_str_utf8_get_width_utf16(needs_6), 6, "Should have been 4 + 2 = 6.");
+	mu_assert_eq(rz_str_utf8_get_width_utf16(needs_22), 22, "Should have been 20 + 2 = 22.");
+
+	mu_end;
+}
+
+bool test_rz_str_utf8_count_ucp(void) {
+	const char *a = "a";
+	const char *pine = "🍍";
+	const char *apine = "aa🍍🍍🍍aa";
+	const char *nul = "";
+
+	mu_assert_eq(rz_str_utf8_num_ucp(nul), 1, "Should have been 1 code point.");
+	mu_assert_eq(rz_str_utf8_num_ucp(a), 2, "Should have been 2 code points.");
+	mu_assert_eq(rz_str_utf8_num_ucp(pine), 2, "Should have been 2 code points.");
+	mu_assert_eq(rz_str_utf8_num_ucp(apine), 8, "Should have been 8 code points.");
+
+	mu_end;
+}
+
+bool test_rz_str_utf8_to_utf16(void) {
+	const char *a = "a";
+	const ut8 a16_le[] = { 0x61, 0x00, 0x00, 0x00 };
+	const ut8 a16_be[] = { 0x00, 0x61, 0x00, 0x00 };
+	const char *pine = "🍍";
+	const ut8 pine16_le[] = { 0x3c, 0xd8, 0x4d, 0xdf, 0x00, 0x00 };
+	const ut8 pine16_be[] = { 0xd8, 0x3c, 0xdf, 0x4d, 0x00, 0x00 };
+	const char *apine = "aa🍍🍍🍍aa";
+	const ut8 apine16_le[] = { 0x61, 0x00, 0x61, 0x00, 0x3c, 0xd8, 0x4d, 0xdf, 0x3c, 0xd8, 0x4d, 0xdf, 0x3c, 0xd8, 0x4d, 0xdf, 0x61, 0x00, 0x61, 0x00, 0x00, 0x00 };
+	const ut8 apine16_be[] = { 0x00, 0x61, 0x00, 0x61, 0xd8, 0x3c, 0xdf, 0x4d, 0xd8, 0x3c, 0xdf, 0x4d, 0xd8, 0x3c, 0xdf, 0x4d, 0x00, 0x61, 0x00, 0x61, 0x00, 0x00 };
+	const char *nul = "";
+	const ut8 nul16_le[] = { 0x0, 0x0 };
+	const ut8 nul16_be[] = { 0x0, 0x0 };
+
+	ut16 *out = rz_str_utf8_to_utf16(a, true);
+	mu_assert_memeq((ut8 *)out, a16_be, sizeof(a16_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf16(a, false);
+	mu_assert_memeq((ut8 *)out, a16_le, sizeof(a16_le), "string mismatch");
+	free(out);
+
+	out = rz_str_utf8_to_utf16(pine, true);
+	mu_assert_memeq((ut8 *)out, pine16_be, sizeof(pine16_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf16(pine, false);
+	mu_assert_memeq((ut8 *)out, pine16_le, sizeof(pine16_le), "string mismatch");
+	free(out);
+
+	out = rz_str_utf8_to_utf16(apine, true);
+	mu_assert_memeq((ut8 *)out, apine16_be, sizeof(apine16_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf16(apine, false);
+	mu_assert_memeq((ut8 *)out, apine16_le, sizeof(apine16_le), "string mismatch");
+	free(out);
+
+	out = rz_str_utf8_to_utf16(apine, RZ_HOST_IS_BIG_ENDIAN);
+	mu_assert_memeq((ut8 *)out, RZ_HOST_IS_BIG_ENDIAN ? apine16_be : apine16_le, RZ_HOST_IS_BIG_ENDIAN ? sizeof(apine16_be) : sizeof(apine16_le), "string with host endian mismatches");
+	free(out);
+
+	out = rz_str_utf8_to_utf16(nul, true);
+	mu_assert_memeq((ut8 *)out, nul16_be, sizeof(nul16_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf16(nul, false);
+	mu_assert_memeq((ut8 *)out, nul16_le, sizeof(nul16_le), "string mismatch");
+	free(out);
+
+	mu_end;
+}
+
+bool test_rz_str_utf8_to_utf32(void) {
+	const char *a = "a";
+	const ut8 a32_le[] = { 0x61, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	const ut8 a32_be[] = { 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x00 };
+	const char *pine = "🍍";
+	const ut8 pine32_le[] = { 0x4d, 0xf3, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	const ut8 pine32_be[] = { 0x00, 0x01, 0xf3, 0x4d, 0x00, 0x00, 0x00, 0x00 };
+	const char *apine = "aa🍍🍍🍍aa";
+	const ut8 apine32_le[] = { 0x61, 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x4d, 0xf3, 0x01, 0x00, 0x4d, 0xf3, 0x01, 0x00, 0x4d, 0xf3, 0x01, 0x00, 0x61, 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	const ut8 apine32_be[] = { 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x61, 0x00, 0x01, 0xf3, 0x4d, 0x00, 0x01, 0xf3, 0x4d, 0x00, 0x01, 0xf3, 0x4d, 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x00 };
+	const char *nul = "";
+	const ut8 nul32_le[] = { 0x0, 0x00, 0x00, 0x0 };
+	const ut8 nul32_be[] = { 0x0, 0x00, 0x00, 0x0 };
+
+	ut32 *out = rz_str_utf8_to_utf32(a, true);
+	mu_assert_memeq((ut8 *)out, a32_be, sizeof(a32_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf32(a, false);
+	mu_assert_memeq((ut8 *)out, a32_le, sizeof(a32_le), "string mismatch");
+	free(out);
+
+	out = rz_str_utf8_to_utf32(pine, true);
+	mu_assert_memeq((ut8 *)out, pine32_be, sizeof(pine32_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf32(pine, false);
+	mu_assert_memeq((ut8 *)out, pine32_le, sizeof(pine32_le), "string mismatch");
+	free(out);
+
+	out = rz_str_utf8_to_utf32(apine, true);
+	mu_assert_memeq((ut8 *)out, apine32_be, sizeof(apine32_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf32(apine, false);
+	mu_assert_memeq((ut8 *)out, apine32_le, sizeof(apine32_le), "string mismatch");
+	free(out);
+
+	out = rz_str_utf8_to_utf32(apine, RZ_HOST_IS_BIG_ENDIAN);
+	mu_assert_memeq((ut8 *)out, RZ_HOST_IS_BIG_ENDIAN ? apine32_be : apine32_le, RZ_HOST_IS_BIG_ENDIAN ? sizeof(apine32_be) : sizeof(apine32_le), "string with host endian mismatches");
+	free(out);
+
+	out = rz_str_utf8_to_utf32(nul, true);
+	mu_assert_memeq((ut8 *)out, nul32_be, sizeof(nul32_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf32(nul, false);
+	mu_assert_memeq((ut8 *)out, nul32_le, sizeof(nul32_le), "string mismatch");
+	free(out);
+
+	mu_end;
+}
+
+bool test_rz_str_utf16_to_utf8(void) {
+	const ut8 a[] = "a";
+	const ut8 a16_le[] = { 0x61, 0x00, 0x00, 0x00 };
+	const ut8 a16_be[] = { 0x00, 0x61, 0x00, 0x00 };
+	const ut8 pine[] = "🍍";
+	const ut8 pine16_le[] = { 0x3c, 0xd8, 0x4d, 0xdf, 0x00, 0x00 };
+	const ut8 pine16_be[] = { 0xd8, 0x3c, 0xdf, 0x4d, 0x00, 0x00 };
+	const ut8 apine[] = "aa🍍🍍🍍aa";
+	const ut8 apine16_le[] = { 0x61, 0x00, 0x61, 0x00, 0x3c, 0xd8, 0x4d, 0xdf, 0x3c, 0xd8, 0x4d, 0xdf, 0x3c, 0xd8, 0x4d, 0xdf, 0x61, 0x00, 0x61, 0x00, 0x00, 0x00 };
+	const ut8 apine16_be[] = { 0x00, 0x61, 0x00, 0x61, 0xd8, 0x3c, 0xdf, 0x4d, 0xd8, 0x3c, 0xdf, 0x4d, 0xd8, 0x3c, 0xdf, 0x4d, 0x00, 0x61, 0x00, 0x61, 0x00, 0x00 };
+	const ut8 nul[] = "";
+	const ut8 nul16_le[] = { 0x0, 0x0 };
+	const ut8 nul16_be[] = { 0x0, 0x0 };
+
+	ut8 *out = rz_str_utf16_to_utf8(a16_be, sizeof(a16_be), true);
+	mu_assert_memeq(out, a, sizeof(a), "string mismatch");
+	free(out);
+	out = rz_str_utf16_to_utf8(a16_le, sizeof(a16_le), false);
+	mu_assert_memeq(out, a, sizeof(a), "string mismatch");
+	free(out);
+
+	out = rz_str_utf16_to_utf8(pine16_be, sizeof(pine16_be), true);
+	mu_assert_memeq(out, pine, sizeof(pine), "string mismatch");
+	free(out);
+	out = rz_str_utf16_to_utf8(pine16_le, sizeof(pine16_le), false);
+	mu_assert_memeq(out, pine, sizeof(pine), "string mismatch");
+	free(out);
+
+	out = rz_str_utf16_to_utf8(apine16_be, sizeof(apine16_be), true);
+	mu_assert_memeq(out, apine, sizeof(apine), "string mismatch");
+	free(out);
+	out = rz_str_utf16_to_utf8(apine16_le, sizeof(apine16_le), false);
+	mu_assert_memeq(out, apine, sizeof(apine), "string mismatch");
+	free(out);
+
+	out = rz_str_utf16_to_utf8(nul16_be, sizeof(nul16_be), true);
+	mu_assert_memeq(out, nul, sizeof(nul), "string mismatch");
+	free(out);
+	out = rz_str_utf16_to_utf8(nul16_le, sizeof(nul16_le), false);
+	mu_assert_memeq(out, nul, sizeof(nul), "string mismatch");
+	free(out);
+
+	mu_end;
+}
+
+bool test_rz_str_utf32_to_utf8(void) {
+	const ut8 a[] = "a";
+	const ut8 a32_le[] = { 0x61, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	const ut8 a32_be[] = { 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x00 };
+	const ut8 pine[] = "🍍";
+	const ut8 pine32_le[] = { 0x4d, 0xf3, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	const ut8 pine32_be[] = { 0x00, 0x01, 0xf3, 0x4d, 0x00, 0x00, 0x00, 0x00 };
+	const ut8 apine[] = "aa🍍🍍🍍aa";
+	const ut8 apine32_le[] = { 0x61, 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x4d, 0xf3, 0x01, 0x00, 0x4d, 0xf3, 0x01, 0x00, 0x4d, 0xf3, 0x01, 0x00, 0x61, 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	const ut8 apine32_be[] = { 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x61, 0x00, 0x01, 0xf3, 0x4d, 0x00, 0x01, 0xf3, 0x4d, 0x00, 0x01, 0xf3, 0x4d, 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x00 };
+	const ut8 nul[] = "";
+	const ut8 nul32_le[] = { 0x0, 0x00, 0x00, 0x0 };
+	const ut8 nul32_be[] = { 0x0, 0x00, 0x00, 0x0 };
+
+	ut8 *out = rz_str_utf32_to_utf8(a32_be, sizeof(a32_be), true);
+	mu_assert_memeq(out, a, sizeof(a), "string mismatch");
+	free(out);
+	out = rz_str_utf32_to_utf8(a32_le, sizeof(a32_le), false);
+	mu_assert_memeq(out, a, sizeof(a), "string mismatch");
+	free(out);
+
+	out = rz_str_utf32_to_utf8(pine32_be, sizeof(pine32_be), true);
+	mu_assert_memeq(out, pine, sizeof(pine), "string mismatch");
+	free(out);
+	out = rz_str_utf32_to_utf8(pine32_le, sizeof(pine32_le), false);
+	mu_assert_memeq(out, pine, sizeof(pine), "string mismatch");
+	free(out);
+
+	out = rz_str_utf32_to_utf8(apine32_be, sizeof(apine32_be), true);
+	mu_assert_memeq(out, apine, sizeof(apine), "string mismatch");
+	free(out);
+	out = rz_str_utf32_to_utf8(apine32_le, sizeof(apine32_le), false);
+	mu_assert_memeq(out, apine, sizeof(apine), "string mismatch");
+	free(out);
+
+	out = rz_str_utf32_to_utf8(nul32_be, sizeof(nul32_be), true);
+	mu_assert_memeq(out, nul, sizeof(nul), "string mismatch");
+	free(out);
+	out = rz_str_utf32_to_utf8(nul32_le, sizeof(nul32_le), false);
+	mu_assert_memeq(out, nul, sizeof(nul), "string mismatch");
+	free(out);
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_str_newf);
 	mu_run_test(test_rz_str_replace_char_once);
 	mu_run_test(test_rz_str_ncpy);
+	mu_run_test(test_rz_str_ncat);
 	mu_run_test(test_rz_str_replace_char);
 	mu_run_test(test_rz_str_replace);
+	mu_run_test(test_rz_str_replace_regex);
 	mu_run_test(test_rz_str_bits64);
 	mu_run_test(test_rz_str_rwx);
 	mu_run_test(test_rz_str_rwx_i);
@@ -785,7 +1061,7 @@ bool all_tests() {
 	mu_run_test(test_rz_sub_str_rchr);
 	mu_run_test(test_rz_str_rchr);
 	mu_run_test(test_rz_str_ansi_len);
-	mu_run_test(test_rz_str_len_utf8_ansi);
+	mu_run_test(test_rz_str_utf8_ansi_cols);
 	mu_run_test(test_rz_str_utf8_charsize);
 	mu_run_test(test_rz_str_utf8_charsize_prev);
 	mu_run_test(test_rz_str_sanitize_sdb_key);
@@ -802,6 +1078,12 @@ bool all_tests() {
 	mu_run_test(test_rz_str_filter);
 	mu_run_test(test_rz_str_strchr);
 	mu_run_test(test_rz_str_isXutf8);
+	mu_run_test(test_rz_str_utf8_conversions);
+	mu_run_test(test_rz_str_utf8_count_ucp);
+	mu_run_test(test_rz_str_utf8_to_utf16);
+	mu_run_test(test_rz_str_utf8_to_utf32);
+	mu_run_test(test_rz_str_utf16_to_utf8);
+	mu_run_test(test_rz_str_utf32_to_utf8);
 	return tests_passed != tests_run;
 }
 
