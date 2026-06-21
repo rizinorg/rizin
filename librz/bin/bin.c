@@ -423,7 +423,8 @@ RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 	const char *default_plugin = rz_pvector_at(compatible_plugins, 0);
 	if (rz_pvector_len(compatible_plugins) > 1) {
 		RzStrBuf *compatible_plugin_list = join_plugin_names(compatible_plugins);
-		RZ_LOG_WARN("The input file can be opened by multiple binary plugins (%s). The '%s' plugin will be used by default.\n",
+		RZ_LOG_WARN("The input file can be opened by multiple binary plugins (%s). The '%s' plugin will be used by default.\n"
+			    "You can also open the file with 'rizin -F <bin_plugin> <binary>' to force a specific one.\n\n",
 			compatible_plugin_list ? rz_strbuf_get(compatible_plugin_list) : "", default_plugin);
 		rz_strbuf_free(compatible_plugin_list);
 	}
