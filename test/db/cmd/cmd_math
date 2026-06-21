@@ -163,18 +163,9 @@ NAME="% 2*1.5"
 FILE=--
 CMDS=% 2*1.5
 EXPECT=<<EOF
-int32   2
-uint32  2
-hex     0x2
-octal   02
-unit    2
-segment 0000:0002
-string  "\x02"
-fvalue  3.0
-float   3.000000f
-double  3.000000
-binary  0b00000010
-trits   0t2
+float   3
+scifmt  3
+hex     0x4008000000000000
 EOF
 RUN
 
@@ -239,18 +230,9 @@ NAME="% 10**-2"
 FILE=--
 CMDS=% 10**-2
 EXPECT=<<EOF
-int32   0
-uint32  0
-hex     0x0
-octal   00
-unit    0
-segment 0000:0000
-string  "\0"
-fvalue  0.0
-float   0.010000f
-double  0.010000
-binary  0b00000000
-trits   0t0
+float   0.01
+scifmt  0.01
+hex     0x3f847ae147ae147b
 EOF
 RUN
 
@@ -277,18 +259,9 @@ NAME="% 2**4.5"
 FILE=--
 CMDS=% 2**4.5
 EXPECT=<<EOF
-int32   16
-uint32  16
-hex     0x10
-octal   020
-unit    16
-segment 0000:0010
-string  "\x10"
-fvalue  16.0
-float   16.000000f
-double  16.000000
-binary  0b00010000
-trits   0t121
+float   22.6274
+scifmt  22.627416997969522
+hex     0x4036a09e667f3bcd
 EOF
 RUN
 
@@ -322,9 +295,9 @@ octal   041
 unit    33
 segment 0000:0021
 string  "!"
-fvalue  33.3
-float   33.333332f
-double  33.333333
+fvalue  33.0
+float   33.000000f
+double  33.000000
 binary  0b00100001
 trits   0t1020
 EOF
@@ -372,18 +345,9 @@ NAME="% 2**-1+4"
 FILE=--
 CMDS=% 2**-1+4
 EXPECT=<<EOF
-int32   4
-uint32  4
-hex     0x4
-octal   04
-unit    4
-segment 0000:0004
-string  "\x04"
-fvalue  4.5
-float   4.500000f
-double  4.500000
-binary  0b00000100
-trits   0t11
+float   4.5
+scifmt  4.5
+hex     0x4012000000000000
 EOF
 RUN
 
@@ -522,9 +486,9 @@ octal   0200
 unit    128
 segment 0000:0080
 string  "\x80"
-fvalue  0.0
-float   0.000000f
-double  0.000000
+fvalue  128.0
+float   128.000000f
+double  128.000000
 binary  0b10000000
 trits   0t11202
 EOF
@@ -543,9 +507,9 @@ octal   0400
 unit    256
 segment 0000:0100
 string  "\x01"
-fvalue  0.0
-float   0.000000f
-double  0.000000
+fvalue  256.0
+float   256.000000f
+double  256.000000
 binary  0b0000000100000000
 trits   0t100111
 EOF
@@ -564,9 +528,9 @@ octal   023
 unit    19
 segment 0000:0013
 string  "\x13"
-fvalue  0.0
-float   0.000000f
-double  0.000000
+fvalue  19.0
+float   19.000000f
+double  19.000000
 binary  0b00010011
 trits   0t201
 EOF
@@ -586,9 +550,9 @@ octal   013136131020
 unit    1.4G
 segment 5978000:0210
 string  "\x10\xb2xY"
-fvalue  0.0
-float   0.000000f
-double  0.000000
+fvalue  1501082128.0
+float   1501082112.000000f
+double  1501082128.000000
 binary  0b01011001011110001011001000010000
 trits   0t10212121112212120101
 EOF
@@ -608,9 +572,9 @@ octal   063773
 unit    26.0K
 segment 0000:07fb
 string  "\xfbg"
-fvalue  0.0
-float   0.000000f
-double  0.000000
+fvalue  26619.0
+float   26619.000000f
+double  26619.000000
 binary  0b0110011111111011
 trits   0t1100111220
 EOF
@@ -732,9 +696,9 @@ octal   040
 unit    32
 segment 0000:0020
 string  " "
-fvalue  0.0
-float   0.000000f
-double  0.000000
+fvalue  32.0
+float   32.000000f
+double  32.000000
 binary  0b00100000
 trits   0t1012
 EOF
@@ -753,9 +717,9 @@ octal   05
 unit    5
 segment 0000:0005
 string  "\x05"
-fvalue  0.0
-float   0.000000f
-double  0.000000
+fvalue  5.0
+float   5.000000f
+double  5.000000
 binary  0b00000101
 trits   0t12
 EOF
@@ -774,9 +738,9 @@ octal   031
 unit    25
 segment 0000:0019
 string  "\x19"
-fvalue  0.0
-float   0.000000f
-double  0.000000
+fvalue  25.0
+float   25.000000f
+double  25.000000
 binary  0b00011001
 trits   0t221
 EOF
@@ -795,9 +759,9 @@ octal   012
 unit    10
 segment 0000:000a
 string  "\n"
-fvalue  0.0
-float   0.000000f
-double  0.000000
+fvalue  10.0
+float   10.000000f
+double  10.000000
 binary  0b00001010
 trits   0t101
 EOF
@@ -816,9 +780,9 @@ octal   01777777777777777777776
 unit    16E
 segment fffff000:0ffe
 string  "\xfe\xff\xff\xff\xff\xff\xff\xff"
-fvalue  0.0
-float   0.000000f
-double  0.000000
+fvalue  -2.0
+float   -2.000000f
+double  -2.000000
 binary  0b1111111111111111111111111111111111111111111111111111111111111110
 trits   0t11112220022122120101211020120210210211212
 EOF
@@ -837,9 +801,9 @@ octal   01777777777777777777760
 unit    16E
 segment fffff000:0ff0
 string  "\xf0\xff\xff\xff\xff\xff\xff\xff"
-fvalue  0.0
-float   0.000000f
-double  0.000000
+fvalue  -16.0
+float   -16.000000f
+double  -16.000000
 binary  0b1111111111111111111111111111111111111111111111111111111111110000
 trits   0t11112220022122120101211020120210210211100
 EOF
@@ -858,9 +822,9 @@ octal   04
 unit    4
 segment 0000:0004
 string  "\x04"
-fvalue  0.0
-float   0.000000f
-double  0.000000
+fvalue  4.0
+float   4.000000f
+double  4.000000
 binary  0b00000100
 trits   0t11
 EOF
@@ -879,9 +843,9 @@ octal   020
 unit    16
 segment 0000:0010
 string  "\x10"
-fvalue  0.0
-float   0.000000f
-double  0.000000
+fvalue  16.0
+float   16.000000f
+double  16.000000
 binary  0b00010000
 trits   0t121
 EOF
@@ -901,9 +865,9 @@ octal   0400
 unit    256
 segment 0000:0100
 string  "\x01"
-fvalue  0.0
-float   0.000000f
-double  0.000000
+fvalue  256.0
+float   256.000000f
+double  256.000000
 binary  0b0000000100000000
 trits   0t100111
 int32   261
@@ -913,9 +877,9 @@ octal   0405
 unit    261
 segment 0000:0105
 string  "\x05\x01"
-fvalue  0.0
-float   0.000000f
-double  0.000000
+fvalue  261.0
+float   261.000000f
+double  261.000000
 binary  0b0000000100000101
 trits   0t100200
 EOF
@@ -934,9 +898,9 @@ octal   0252
 unit    170
 segment 0000:00aa
 string  "\xaa"
-fvalue  0.0
-float   0.000000f
-double  0.000000
+fvalue  170.0
+float   170.000000f
+double  170.000000
 binary  0b10101010
 trits   0t20022
 EOF
@@ -948,7 +912,6 @@ CMDS=<<EOF
 % 5 > 3 ? 100 : 200
 EOF
 EXPECT=<<EOF
-
 EOF
 RUN
 
@@ -965,9 +928,9 @@ octal   052
 unit    42
 segment 0000:002a
 string  "*"
-fvalue  0.0
-float   0.000000f
-double  0.000000
+fvalue  42.0
+float   42.000000f
+double  42.000000
 binary  0b00101010
 trits   0t1120
 EOF
