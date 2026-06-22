@@ -183,6 +183,7 @@ RZ_API PJ *pj_kb(PJ *j, const char *k, bool v) {
 
 RZ_API PJ *pj_null(PJ *j) {
 	rz_return_val_if_fail(j, j);
+	pj_comma(j);
 	pj_raw(j, "null");
 	return j;
 }
