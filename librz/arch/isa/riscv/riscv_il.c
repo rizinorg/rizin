@@ -2,12 +2,18 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include "riscv_il.h"
+#include "analysis_private.h"
+#include "riscv_il_base.h"
 #include "riscv_il_integer.h"
 #include "riscv_il_m.h"
 #include "riscv_il_compressed.h"
 
 static void label_ecall(RzILVM *vm, RzILOpEffect *op) {
 	// stub: ecall is handled at the analysis layer
+}
+
+static void label_ebreak(RzILVM *vm, RzILOpEffect *op) {
+	// stub: ebreak is handled at the analysis layer
 }
 
 static const RiscvInstructionLifter riscv_lifters[] = {
@@ -71,15 +77,25 @@ static const RiscvInstructionLifter riscv_lifters[] = {
 	USE_LIFTER(fence_i, FENCE_I),
 	// system
 	USE_LIFTER(ecall, ECALL),
+	USE_LIFTER(ebreak, EBREAK),
 	// RV64I extra loads
 	USE_LIFTER(lwu, LWU),
 	// M extension
 	USE_LIFTER(mul, MUL),
+	USE_LIFTER(mulh, MULH),
+	USE_LIFTER(mulhsu, MULHSU),
 	USE_LIFTER(mulhu, MULHU),
+	USE_LIFTER(div, DIV),
 	USE_LIFTER(divu, DIVU),
+	USE_LIFTER(rem, REM),
 	USE_LIFTER(remu, REMU),
+	USE_LIFTER(mulw, MULW),
+	USE_LIFTER(divw, DIVW),
+	USE_LIFTER(divuw, DIVUW),
+	USE_LIFTER(remw, REMW),
 	USE_LIFTER(remuw, REMUW),
 	/* ---------------------------------- Compressed ---------------------------------*/
+	USE_LIFTER(c_nop, C_NOP),
 	USE_LIFTER(c_addi, C_ADDI),
 	USE_LIFTER(c_addi16sp, C_ADDI16SP),
 	USE_LIFTER(c_addi4spn, C_ADDI4SPN),
@@ -90,6 +106,7 @@ static const RiscvInstructionLifter riscv_lifters[] = {
 	USE_LIFTER(c_srai, C_SRAI),
 	USE_LIFTER(c_jr, C_JR),
 	USE_LIFTER(c_jalr, C_JALR),
+	USE_LIFTER(c_ebreak, C_EBREAK),
 	USE_LIFTER(c_lwsp, C_LWSP),
 	USE_LIFTER(c_lw, C_LW),
 	USE_LIFTER(c_ld, C_LD),
@@ -102,6 +119,7 @@ static const RiscvInstructionLifter riscv_lifters[] = {
 	USE_LIFTER(c_sd, C_SD),
 	USE_LIFTER(c_mv, C_MV),
 	USE_LIFTER(c_j, C_J),
+	USE_LIFTER(c_jal, C_JAL),
 	USE_LIFTER(c_or, C_OR),
 	USE_LIFTER(c_ldsp, C_LDSP),
 	USE_LIFTER(c_sdsp, C_SDSP),
@@ -124,13 +142,14 @@ rz_riscv_lift_instr(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnal
 		RZ_LOG_ERROR("Invalid RISC-V instruction id %u (0x%08x)\n", insn->id, rz_read_le32(insn->bytes));
 		return NULL;
 	}
-	if (insn->id < RZ_ARRAY_SIZE(riscv_lifters)) {
-		RiscvInstructionLifter lifter = riscv_lifters[insn->id];
-		if (lifter) {
-			return lifter(analysis, op, insn, current_addr, size);
-		}
+	if (insn->id >= RZ_ARRAY_SIZE(riscv_lifters)) {
+		return NULL;
 	}
-	return NULL;
+	RiscvInstructionLifter lifter = riscv_lifters[insn->id];
+	if (!lifter) {
+		return NULL;
+	}
+	return lifter(analysis, op, insn, current_addr, size);
 }
 
 RZ_IPI RzAnalysisILConfig *rz_riscv_il_config(RZ_NONNULL RzAnalysis *analysis) {
@@ -141,6 +160,10 @@ RZ_IPI RzAnalysisILConfig *rz_riscv_il_config(RZ_NONNULL RzAnalysis *analysis) {
 	RzILEffectLabel *ecall_label = rz_il_effect_label_new("ecall", EFFECT_LABEL_SYSCALL);
 	ecall_label->hook = label_ecall;
 	rz_analysis_il_config_add_label(conf, ecall_label);
+
+	RzILEffectLabel *ebreak_label = rz_il_effect_label_new("ebreak", EFFECT_LABEL_SYSCALL);
+	ebreak_label->hook = label_ebreak;
+	rz_analysis_il_config_add_label(conf, ebreak_label);
 
 	return conf;
 }
