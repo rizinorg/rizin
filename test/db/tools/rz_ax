@@ -141,9 +141,6 @@ EOF
 RUN
 
 NAME=rz-ax 1010d
-# BROKEN: trailing base-suffix integer literals (e.g. 1010d/35o/1100011b) are
-# rejected by the new tree-sitter grammar, which expects 0b/0o/0x prefixes instead
-BROKEN=1
 TOOL=rz-ax
 ARGS=1010d
 EXPECT=<<EOF
@@ -168,8 +165,6 @@ EOF
 RUN
 
 NAME=rz-ax 35o
-# BROKEN: trailing-suffix octal literal (35o) rejected by the new grammar (use 0o35)
-BROKEN=1
 TOOL=rz-ax
 ARGS=35o
 EXPECT=<<EOF
@@ -186,8 +181,6 @@ EOF
 RUN
 
 NAME=rz-ax 1100011b
-# BROKEN: trailing-suffix binary literal (1100011b) rejected by new grammar (use 0b...)
-BROKEN=1
 TOOL=rz-ax
 ARGS=1100011b
 EXPECT=<<EOF

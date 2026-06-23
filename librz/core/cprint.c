@@ -714,7 +714,9 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 		ut64 addr = UT64_MAX;
 		const char *ox = strstr(line, "0x");
 		if (ox) {
-			addr = rz_num_get(NULL, ox);
+			// Evaluate only the leading "0x...." address, not the rest of
+			// the disasm line (nor a following ",0x..." operand).
+			addr = rz_num_get_leading(NULL, ox, NULL);
 		}
 		const char *qo = strchr(line, '\"');
 		const char *linecolor = NULL;

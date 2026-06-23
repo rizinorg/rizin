@@ -249,7 +249,6 @@ RZ_API RzNum *rz_num_new(RzNumCallback cb, RzNumCallback2 cb2, void *ptr);
 RZ_API void rz_num_free(RzNum *num);
 RZ_API char *rz_num_units(char *buf, size_t len, ut64 number);
 RZ_API int rz_num_conditional(RzNum *num, const char *str);
-RZ_API ut64 rz_num_calc(RzNum *num, const char *str, const char **err);
 RZ_API const char *rz_num_calc_index(RzNum *num, const char *p);
 RZ_API int rz_num_is_valid_input(RzNum *num, const char *input_value);
 RZ_API ut64 rz_num_get_input_value(RzNum *num, const char *input_value);
@@ -502,6 +501,7 @@ RZ_API RZ_OWN RzNumExpression *rz_num_expression_parse(RZ_NULLABLE RzNum *num,
 RZ_API void rz_num_expression_free(RZ_NULLABLE RzNumExpression *e);
 
 RZ_API ut64 rz_num_get(RZ_NULLABLE RzNum *num, RZ_NULLABLE const char *str);
+RZ_API ut64 rz_num_get_leading(RZ_NULLABLE RzNum *num, RZ_NONNULL const char *str, RZ_NULLABLE const char **endptr);
 RZ_API int rz_num_to_bits(char *out, ut64 num);
 RZ_API int rz_num_to_trits(char *out, ut64 num); // Rename this please
 RZ_API ut32 rz_num_rand32(ut32 max);

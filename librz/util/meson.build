@@ -11,7 +11,6 @@ rz_util_common_sources = [
   'bits.c',
   'bitvector.c',
   'buf.c',
-  'calc.c',
   'chmod.c',
   'compression.c',
   'debruijn.c',
@@ -209,7 +208,8 @@ if meson.is_cross_build()
   # No num/* here: the evaluator is replaced by native_shim.c,
   # which provides the two entry points unum.c links against without
   # pulling in tree-sitter. sdb_gen does not evaluate expressions, so the
-  # legacy calculator is all the native build ever needs.
+  # shim's degenerate "every expression is 0" behaviour is all the native
+  # build ever needs (there is no longer a legacy calculator to fall back on).
   rz_util_native_sources = rz_util_common_sources + ['big.c', 'num/native_shim.c']
 
   rz_util_native = static_library('rz_util_native', rz_util_native_sources, libsdb_sources,

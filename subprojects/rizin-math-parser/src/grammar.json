@@ -263,6 +263,39 @@
         ]
       }
     },
+    "_incdec_operand": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "number"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "address_typed"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "string_bytes"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "special_variable"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "variable"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "function"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "parenthesized_expression"
+        }
+      ]
+    },
     "increment": {
       "type": "PREC_RIGHT",
       "value": "unitary",
@@ -278,7 +311,7 @@
             "name": "right",
             "content": {
               "type": "SYMBOL",
-              "name": "_expression"
+              "name": "_incdec_operand"
             }
           }
         ]
@@ -299,7 +332,7 @@
             "name": "right",
             "content": {
               "type": "SYMBOL",
-              "name": "_expression"
+              "name": "_incdec_operand"
             }
           }
         ]
@@ -1380,29 +1413,8 @@
             "type": "CHOICE",
             "members": [
               {
-                "type": "CHOICE",
-                "members": [
-                  {
-                    "type": "STRING",
-                    "value": "8"
-                  },
-                  {
-                    "type": "STRING",
-                    "value": "16"
-                  },
-                  {
-                    "type": "STRING",
-                    "value": "32"
-                  },
-                  {
-                    "type": "STRING",
-                    "value": "64"
-                  },
-                  {
-                    "type": "STRING",
-                    "value": "128"
-                  }
-                ]
+                "type": "PATTERN",
+                "value": "[0-9]+"
               },
               {
                 "type": "BLANK"
@@ -1468,33 +1480,81 @@
         ]
       }
     },
+    "number_legacy_suffix": {
+      "type": "TOKEN",
+      "content": {
+        "type": "PATTERN",
+        "value": "[obtkmg]|[hH]|[KMG]"
+      }
+    },
+    "number_legacy_hex": {
+      "type": "TOKEN",
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "PATTERN",
+            "value": "[0-9]"
+          },
+          {
+            "type": "PATTERN",
+            "value": "[0-9a-fA-F]*"
+          },
+          {
+            "type": "PATTERN",
+            "value": "[a-fA-F]"
+          },
+          {
+            "type": "PATTERN",
+            "value": "[0-9a-fA-F]*"
+          },
+          {
+            "type": "PATTERN",
+            "value": "[hH]"
+          }
+        ]
+      }
+    },
     "number": {
-      "type": "SEQ",
+      "type": "CHOICE",
       "members": [
         {
-          "type": "SYMBOL",
-          "name": "number_value"
-        },
-        {
-          "type": "CHOICE",
+          "type": "SEQ",
           "members": [
+            {
+              "type": "SYMBOL",
+              "name": "number_value"
+            },
             {
               "type": "CHOICE",
               "members": [
                 {
-                  "type": "SYMBOL",
-                  "name": "number_suffix"
+                  "type": "CHOICE",
+                  "members": [
+                    {
+                      "type": "SYMBOL",
+                      "name": "number_suffix"
+                    },
+                    {
+                      "type": "SYMBOL",
+                      "name": "number_unit"
+                    },
+                    {
+                      "type": "SYMBOL",
+                      "name": "number_legacy_suffix"
+                    }
+                  ]
                 },
                 {
-                  "type": "SYMBOL",
-                  "name": "number_unit"
+                  "type": "BLANK"
                 }
               ]
-            },
-            {
-              "type": "BLANK"
             }
           ]
+        },
+        {
+          "type": "SYMBOL",
+          "name": "number_legacy_hex"
         }
       ]
     },

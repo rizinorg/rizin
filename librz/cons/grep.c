@@ -396,13 +396,13 @@ while_end:
 			default:
 				if (!num_is_parsed) {
 					if (is_range) {
-						range_end = rz_num_get(cons->num, ptr2);
+						range_end = rz_num_get_leading(cons->num, ptr2, NULL);
 						// check for bad value, if range_end == 0, we check if ptr2 == '0'
 						if (range_end == 0 && *ptr != '0') {
 							range_end = -1; // this allow [n- ]
 						}
 					} else {
-						range_begin = range_end = rz_num_get(cons->num, ptr2);
+						range_begin = range_end = rz_num_get_leading(cons->num, ptr2, NULL);
 					}
 					num_is_parsed = 1;
 				}
@@ -418,18 +418,18 @@ while_end:
 		char *p, *token = ptr2 + 1;
 		p = strstr(token, "..");
 		if (!p) {
-			grep->line = rz_num_get(cons->num, ptr2 + 1);
+			grep->line = rz_num_get_leading(cons->num, ptr2 + 1, NULL);
 			grep->range_line = 0;
 		} else {
 			*p = '\0';
 			grep->range_line = 1;
 			if (*token) {
-				grep->f_line = rz_num_get(cons->num, token);
+				grep->f_line = rz_num_get_leading(cons->num, token, NULL);
 			} else {
 				grep->f_line = 0;
 			}
 			if (p[2]) {
-				grep->l_line = rz_num_get(cons->num, p + 2);
+				grep->l_line = rz_num_get_leading(cons->num, p + 2, NULL);
 			} else {
 				grep->l_line = 0;
 			}

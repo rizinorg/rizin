@@ -399,6 +399,14 @@ static bool parse_int_literal(const char *t, ut64 *out, bool *overflow, char **e
 		}
 		return false;
 	}
+	if (*endp != '\0') {
+		// Trailing junk after the digit run: a digit not valid for the
+		// detected base. This catches C-style octal with an out-of-range
+		// digit (the '8' in 08 / 0187), which the permissive decimal
+		// digit class in the grammar lets through to here. Leave *err
+		// unset so the caller can categorise it as a parse error.
+		return false;
+	}
 	*out = (ut64)v;
 	return true;
 }
@@ -935,13 +943,139 @@ static TSNode skip_wrappers(TSNode n) {
 	}
 }
 
+// Legacy single-letter literal suffix support (see grammar.js
+// number_legacy_suffix). Two disjoint families: a base family
+// (o/b/t/h) that re-reads the preceding decimal-looking digit run in
+// another base, and a scale family (k/m/g, case-insensitive) that
+// multiplies the value by 1024^n.
+
+// Base for a legacy base-suffix letter, or 0 if it is not one.
+static int legacy_base_of(char s) {
+	switch (s) {
+	case 'o': return 8;
+	case 'b': return 2;
+	case 't': return 3;
+	case 'h':
+	case 'H': return 16;
+	default: return 0;
+	}
+}
+
+// Power-of-1024 exponent for a legacy scale-suffix letter, or 0 if it
+// is not one. k/K -> 1, m/M -> 2, g/G -> 3.
+static int legacy_scale_pow_of(char s) {
+	switch (s) {
+	case 'k':
+	case 'K': return 1;
+	case 'm':
+	case 'M': return 2;
+	case 'g':
+	case 'G': return 3;
+	default: return 0;
+	}
+}
+
+// Evaluate a number whose tail is a legacy single-letter suffix.
+// `digits` is the number_value text (no 0x/0b/... prefix, since the
+// grammar only matches a decimal-looking run before the suffix);
+// `suffix` is the suffix letter.
+static RzNumValue eval_legacy_suffix(EvalCtx *c, const char *digits, char suffix) {
+	int base = legacy_base_of(suffix);
+	if (base) {
+		// strtoull validates the digit run for us: an out-of-range
+		// digit (e.g. the '8' in 383o or the '3' in 131t) leaves
+		// *endp short of the terminator and is reported as a parse
+		// error, mirroring the legacy "invalid <base> number"
+		// diagnostic so the seek command leaves the cursor put.
+		errno = 0;
+		char *endp = NULL;
+		unsigned long long v = strtoull(digits, &endp, base);
+		if (endp == digits || *endp != '\0') {
+			set_err_code(c, RZ_NUM_ERR_PARSE,
+				"invalid base-%d literal: %s%c", base, digits, suffix);
+			return val_u64(0);
+		}
+		char pfx = base == 8 ? 'o' : base == 2 ? 'b'
+			: base == 3                    ? 't'
+						       : 'x';
+		RZ_LOG_WARN("'%s%c' uses a deprecated trailing base suffix; "
+			    "use the 0%c prefix (0%c%s) instead\n",
+			digits, suffix, pfx, pfx, digits);
+		if (errno == ERANGE) {
+			RzNumBig *b = big_from_base(digits, base);
+			if (!b) {
+				set_err_code(c, RZ_NUM_ERR_OUT_OF_MEMORY, "out of memory");
+				return val_u64(0);
+			}
+			return val_big(b);
+		}
+		return val_u64((ut64)v);
+	}
+	int pw = legacy_scale_pow_of(suffix);
+	if (pw < 1) {
+		// Unreachable: the grammar only emits base or scale letters.
+		set_err_code(c, RZ_NUM_ERR_PARSE, "invalid numeric suffix: %c", suffix);
+		return val_u64(0);
+	}
+	// Size suffixes (K/M/G == 1024^n) are a standard, widely-used shorthand
+	// (rizin's own config defaults use "63K", "256K", "10M", ...), so unlike
+	// the base suffixes they are accepted without a deprecation warning.
+	ut64 mult = 1ULL << (10 * pw);
+	// A decimal point is allowed on a scaled value (`1.5K`). The
+	// scaled result is an integer byte count, matching the legacy
+	// (ut64)(d * KB) projection.
+	if (strchr(digits, '.')) {
+		double d = 0.0;
+		if (!parse_float_literal(digits, &d, &c->err)) {
+			return val_u64(0);
+		}
+		return val_u64((ut64)(d * (double)mult));
+	}
+	errno = 0;
+	char *endp = NULL;
+	unsigned long long v = strtoull(digits, &endp, 10);
+	if (endp == digits || *endp != '\0' || errno == ERANGE) {
+		set_err_code(c, RZ_NUM_ERR_PARSE, "invalid scaled literal: %s%c", digits, suffix);
+		return val_u64(0);
+	}
+	return val_u64((ut64)v * mult);
+}
+
 static RzNumValue eval_number(EvalCtx *c, TSNode n) {
-	// number := number_value [ number_suffix | number_unit ]
+	// number := number_value [ number_suffix | number_unit | number_legacy_suffix ]
 	TSNode val = ts_node_named_child(n, 0);
 	char *txt = node_text(val, c->src);
 	if (!txt) {
 		set_err_code(c, RZ_NUM_ERR_OUT_OF_MEMORY, "out of memory");
 		return val_u64(0);
+	}
+	// A digit-leading legacy hex literal ("3a7fh") is lexed as a single
+	// number_legacy_hex token, because number_value's digit run stops at
+	// the first hex letter. Drop the trailing 'h'/'H' and read the run in
+	// base 16 through the shared legacy-suffix path, which validates the
+	// digits, promotes a >64-bit value to a bignum and emits the same
+	// deprecation note as the other trailing-base forms.
+	if (!strcmp(ts_node_type(val), "number_legacy_hex")) {
+		size_t len = strlen(txt);
+		char sc = txt[len - 1];
+		txt[len - 1] = '\0';
+		RzNumValue lv = eval_legacy_suffix(c, txt, sc);
+		free(txt);
+		return lv;
+	}
+	// A legacy single-letter suffix (o/b/t/h/k/m/g) reinterprets or
+	// scales the digit run; handle it before the default decimal /
+	// float reading below.
+	if (ts_node_named_child_count(n) > 1) {
+		TSNode tail0 = ts_node_named_child(n, 1);
+		if (!strcmp(ts_node_type(tail0), "number_legacy_suffix")) {
+			char *s = node_text(tail0, c->src);
+			char sc = s ? s[0] : 0;
+			free(s);
+			RzNumValue lv = eval_legacy_suffix(c, txt, sc);
+			free(txt);
+			return lv;
+		}
 	}
 	RzNumValue out;
 	if (literal_is_float(txt)) {
@@ -997,6 +1131,10 @@ static RzNumValue eval_number(EvalCtx *c, TSNode n) {
 				}
 				out = val_big(b);
 			} else {
+				// Non-overflow integer parse failure (e.g. an invalid
+				// C-octal digit). parse_int_literal leaves c->err unset
+				// in that case so we can stamp the proper category here.
+				set_err_code(c, RZ_NUM_ERR_PARSE, "invalid integer literal: %s", txt);
 				free(txt);
 				return val_u64(0);
 			}
@@ -1380,12 +1518,41 @@ static RzNumValue eval_variable(EvalCtx *c, TSNode n) {
 	if (c->num && c->num->callback) {
 		// The host callback expects the opaque userptr supplied to
 		// rz_num_new() as its first argument (e.g. RzCore), not the
-		// RzNum itself - matching how the legacy rz_num_calc path
+		// RzNum itself - matching how the historical single-token reader
 		// invokes it. Passing c->num here would make the callback
 		// cast the wrong pointer and crash.
 		v = c->num->callback(c->num->userptr, name, &ok);
 	}
 	if (!ok) {
+		// Before folding an unresolved identifier to 0, try the legacy
+		// trailing-'h' hexadecimal form: a run of hex digits followed
+		// by a single 'h'/'H' (`beach` == 0xbeac, `cafeh` == 0xcafe).
+		// The host callback was consulted first (above), so a flag or
+		// register named `beach` still wins; only an otherwise unknown
+		// name is reinterpreted. This mirrors the legacy rz_num_get(),
+		// which tried the callback before number parsing.
+		size_t nlen = strlen(name);
+		if (nlen >= 2 && (name[nlen - 1] == 'h' || name[nlen - 1] == 'H')) {
+			bool all_hex = true;
+			for (size_t i = 0; i + 1 < nlen; i++) {
+				if (!isxdigit((ut8)name[i])) {
+					all_hex = false;
+					break;
+				}
+			}
+			if (all_hex) {
+				errno = 0;
+				char *endp = NULL;
+				unsigned long long hv = strtoull(name, &endp, 16);
+				if (errno != ERANGE && endp != name && (*endp == 'h' || *endp == 'H')) {
+					RZ_LOG_WARN("'%s' uses the deprecated trailing-'h' hex form; "
+						    "use the 0x prefix (0x%.*s) instead\n",
+						name, (int)(nlen - 1), name);
+					free(name);
+					return val_u64((ut64)hv);
+				}
+			}
+		}
 		// The host could not resolve this identifier. The legacy
 		// rz_num_get() treats an unknown symbol as 0 but also records
 		// an error (its error() bumps nc.errors), which is how callers

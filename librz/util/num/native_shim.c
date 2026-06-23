@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Rizin contributors
+// SPDX-FileCopyrightText: 2026 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
@@ -14,10 +14,11 @@
  * against two of the evaluator's symbols, though, so this small shim
  * provides them with behaviour that is correct for the native build:
  *
- *   - rz_num_math_value() reports a parse error, which makes
- *     rz_num_math_ut64() fall back to the legacy rz_num_calc()
- *     evaluator. The native build therefore keeps full numeric
- *     behaviour through the legacy path.
+ *   - rz_num_math_value() reports a parse error. With the legacy
+ *     calculator now removed, rz_num_math_ut64() has no fallback and
+ *     simply yields 0 for every expression. That is harmless here:
+ *     sdb_gen, the only consumer of the native library, never
+ *     evaluates RzNum expressions.
  *
  *   - rz_num_value_store_free() is identical to the real one; the
  *     variable store is never populated here (nothing creates it
@@ -33,7 +34,9 @@ RZ_API bool rz_num_math_value(RZ_NULLABLE RzNum *num, RZ_NONNULL const char *exp
 	RZ_OUT RZ_NONNULL RzNumValue *out_value, RZ_OUT RZ_NULLABLE char **error_msg) {
 	rz_return_val_if_fail(expr && out_value, false);
 	(void)num;
-	// Signal a parse failure so callers fall back to the legacy parser.
+	// No evaluator in the native build; report a parse failure. There
+	// is no longer a legacy fallback, so rz_num_math_ut64() resolves
+	// this to 0 (acceptable: sdb_gen never evaluates expressions).
 	out_value->err = RZ_NUM_ERR_PARSE;
 	if (error_msg) {
 		*error_msg = NULL;

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2026 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 const identifier_start = /[^\p{Control}\s+\-*\/%^#&~!|<>=(){}\[\];:,\\'"\d$]/u;
@@ -107,9 +107,26 @@ module.exports = grammar({
 
     assignment: ($) => prec.right("assignment", seq(field("left", $.variable), "=", field("right", $._expression))),
 
-    increment: ($) => prec.right("unitary", seq("++", field("right", $._expression))),
+    // ++ and -- take a single primary operand - a number, variable,
+    // parenthesised expression, ... - never another ++/-- or a bare
+    // operator run. This keeps "++5" / "--5" / "++reg" working while a
+    // stray dash run like "----------" (which the table formatter feeds
+    // through rz_num to tell an invalid address apart from a number) fails
+    // to parse and folds to 0 instead of reading as a chain of decrements.
+    _incdec_operand: ($) =>
+      choice(
+        $.number,
+        $.address_typed,
+        $.string_bytes,
+        $.special_variable,
+        $.variable,
+        $.function,
+        $.parenthesized_expression,
+      ),
 
-    decrement: ($) => prec.right("unitary", seq("--", field("right", $._expression))),
+    increment: ($) => prec.right("unitary", seq("++", field("right", $._incdec_operand))),
+
+    decrement: ($) => prec.right("unitary", seq("--", field("right", $._incdec_operand))),
 
     unary_plus: ($) => prec.right("unitary", seq("+", field("right", $._expression))),
 
@@ -234,20 +251,57 @@ module.exports = grammar({
     },
 
     // Number suffix: a contiguous run of u/l/U/L/f/F optionally
-    // followed by a bit-width (8/16/32/64/128). A run with a width,
-    // e.g. "u8" / "u16" / "u32" / "u64" / "u128", denotes a
-    // fixed-width bit-vector literal; a bare run of letters keeps the
-    // old informational meaning. Defining it as a token means it
-    // competes with the identifier lexer as a whole word; the parser
-    // only accepts it in the trailing position of a `number`, so it
-    // does not shadow user identifiers like `lower` or `frob`.
-    number_suffix: () => token(seq(repeat1(/[ulUFLf]/), optional(choice("8", "16", "32", "64", "128")))),
+    // followed by a bit-width. A run with a width, e.g. "u1" / "u7" /
+    // "u8" / "u128" / "u1024", denotes a fixed-width bit-vector
+    // literal; a bare run of letters keeps the old informational
+    // meaning. The width is not constrained here: the evaluator
+    // reports an out-of-range one, which gives a better diagnostic
+    // than a parse error pointing at the digits. Defining it as a
+    // token means it competes with the identifier lexer as a whole
+    // word; the parser only accepts it in the trailing position of a
+    // `number`, so it does not shadow user identifiers like `lower`
+    // or `frob`.
+    number_suffix: () => token(seq(repeat1(/[ulUFLf]/), optional(/[0-9]+/))),
 
     // Number unit: a single token equal to one of the SI / IEC
     // suffix strings, lexed greedily.
     number_unit: () => token(choice(...unit_names)),
 
-    number: ($) => seq($.number_value, optional(choice($.number_suffix, $.number_unit))),
+    // Legacy single-letter suffix (carried over from the historical
+    // rz_num parser, kept here so the typed evaluator is a complete
+    // replacement). Two families, on disjoint letters from
+    // number_suffix (u/l/U/F/L/f) so the tail lexer stays
+    // unambiguous:
+    //   base:  o (octal) b (binary) t (ternary) h/H (hex) - the
+    //          preceding decimal-looking digit run is re-read in that
+    //          base by the evaluator (`33o` == 0o33, `101b` == 0b101,
+    //          `121t` == 1*9+2*3+1, `10h` == 0x10).
+    //   scale: k/K m/M g/G - the value is multiplied by 1024^n, with
+    //          a decimal point allowed (`1k` == 1024, `1.5K` == 1536).
+    // As with number_suffix, the token competes with the identifier
+    // lexer as a whole word but is only accepted by the parser in the
+    // trailing position of a `number`, so a bare `k` or `b` still
+    // parses as a variable.
+    number_legacy_suffix: () => token(/[obtkmg]|[hH]|[KMG]/),
+
+    // Legacy hexadecimal literal whose digit run starts with a decimal
+    // digit yet contains hex letters, written with a trailing 'h'/'H'
+    // (e.g. "3a7fh", "0ffh"). number_value only captures the leading
+    // decimal digits ("3") and the hex tail would otherwise lex as a
+    // separate identifier, breaking the parse. The whole form therefore
+    // needs its own token. Two neighbouring cases stay on their existing
+    // paths: a letter-leading run ("deadh") lexes as an identifier and is
+    // reinterpreted by the evaluator's trailing-'h' fallback, and an
+    // all-decimal run ("100h") keeps using number_value + the single-char
+    // number_legacy_suffix. The mandatory hex letter ([a-fA-F]) is what
+    // distinguishes this token from those, so "100h"/"12h" do not match.
+    number_legacy_hex: () => token(seq(/[0-9]/, /[0-9a-fA-F]*/, /[a-fA-F]/, /[0-9a-fA-F]*/, /[hH]/)),
+
+    number: ($) =>
+      choice(
+        seq($.number_value, optional(choice($.number_suffix, $.number_unit, $.number_legacy_suffix))),
+        $.number_legacy_hex,
+      ),
 
     // ---- address with explicit width and endianness ---------------
     // ---- typed-address dereference --------------------------------

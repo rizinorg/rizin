@@ -1117,16 +1117,20 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 			if (ox) {
 				char *e = strchr(ox, ']');
 				if (e) {
-					e = rz_str_dup(e);
-					ut64 addr = rz_num_get(NULL, ox);
+					// Evaluate only the address expression, not the
+					// trailing ']' and whatever follows it.
+					char *expr = rz_str_ndup(ox, e - ox);
+					ut64 addr = expr ? rz_num_get(NULL, expr) : 0;
+					free(expr);
 					if (addr > ds->min_ref_addr) {
 						RzFlagItem *fi = rz_flag_get_i(ds->core->flags, addr);
 						if (fi) {
+							char *rest = rz_str_dup(e);
 							rz_str_cpy(ox, fi->name);
-							rz_str_cat(ox, e);
+							rz_str_cat(ox, rest);
+							free(rest);
 						}
 					}
-					free(e);
 				}
 			}
 		}
@@ -5269,15 +5273,18 @@ static void ds_opstr_sub_jumps(RzDisasmState *ds) {
 		ut64 numval;
 		ptr = ds->opstr;
 		while ((nptr = _find_next_number(ptr))) {
-			ptr = nptr;
-			numval = rz_num_get(NULL, ptr);
+			// Evaluate only the leading number literal; nend marks its end.
+			const char *nend;
+			numval = rz_num_get_leading(NULL, nptr, &nend);
+			if (nend == nptr) {
+				// Not a literal after all; step past it to make progress.
+				ptr = nptr + 1;
+				continue;
+			}
 			if (numval == addr) {
-				while (*nptr && !IS_SEPARATOR(*nptr) && *nptr != 0x1b) {
-					nptr++;
-				}
 				char *kwname = rz_str_newf("%s%s", kw, name);
 				if (kwname) {
-					char *numstr = rz_str_ndup(ptr, nptr - ptr);
+					char *numstr = rz_str_ndup(nptr, nend - nptr);
 					if (numstr) {
 						ds->opstr = rz_str_replace(ds->opstr, numstr, kwname, 0);
 						free(numstr);
@@ -5286,6 +5293,7 @@ static void ds_opstr_sub_jumps(RzDisasmState *ds) {
 				}
 				break;
 			}
+			ptr = (char *)nend;
 		}
 	}
 }

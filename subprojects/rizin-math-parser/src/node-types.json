@@ -1213,107 +1213,7 @@
             "named": true
           },
           {
-            "type": "arith_shr",
-            "named": true
-          },
-          {
-            "type": "assignment",
-            "named": true
-          },
-          {
-            "type": "conditional",
-            "named": true
-          },
-          {
-            "type": "decrement",
-            "named": true
-          },
-          {
-            "type": "division",
-            "named": true
-          },
-          {
-            "type": "equal",
-            "named": true
-          },
-          {
-            "type": "exponent",
-            "named": true
-          },
-          {
             "type": "function",
-            "named": true
-          },
-          {
-            "type": "greater_equal",
-            "named": true
-          },
-          {
-            "type": "greater_than",
-            "named": true
-          },
-          {
-            "type": "increment",
-            "named": true
-          },
-          {
-            "type": "less_equal",
-            "named": true
-          },
-          {
-            "type": "less_than",
-            "named": true
-          },
-          {
-            "type": "let_assignment",
-            "named": true
-          },
-          {
-            "type": "logarithm",
-            "named": true
-          },
-          {
-            "type": "logical_and",
-            "named": true
-          },
-          {
-            "type": "logical_negation",
-            "named": true
-          },
-          {
-            "type": "logical_not",
-            "named": true
-          },
-          {
-            "type": "logical_or",
-            "named": true
-          },
-          {
-            "type": "logical_rol",
-            "named": true
-          },
-          {
-            "type": "logical_ror",
-            "named": true
-          },
-          {
-            "type": "logical_shl",
-            "named": true
-          },
-          {
-            "type": "logical_shr",
-            "named": true
-          },
-          {
-            "type": "logical_xor",
-            "named": true
-          },
-          {
-            "type": "modulo",
-            "named": true
-          },
-          {
-            "type": "not_equal",
             "named": true
           },
           {
@@ -1325,39 +1225,11 @@
             "named": true
           },
           {
-            "type": "product",
-            "named": true
-          },
-          {
-            "type": "signed_division",
-            "named": true
-          },
-          {
-            "type": "signed_modulo",
-            "named": true
-          },
-          {
             "type": "special_variable",
             "named": true
           },
           {
             "type": "string_bytes",
-            "named": true
-          },
-          {
-            "type": "subtraction",
-            "named": true
-          },
-          {
-            "type": "sum",
-            "named": true
-          },
-          {
-            "type": "unary_minus",
-            "named": true
-          },
-          {
-            "type": "unary_plus",
             "named": true
           },
           {
@@ -3223,107 +3095,7 @@
             "named": true
           },
           {
-            "type": "arith_shr",
-            "named": true
-          },
-          {
-            "type": "assignment",
-            "named": true
-          },
-          {
-            "type": "conditional",
-            "named": true
-          },
-          {
-            "type": "decrement",
-            "named": true
-          },
-          {
-            "type": "division",
-            "named": true
-          },
-          {
-            "type": "equal",
-            "named": true
-          },
-          {
-            "type": "exponent",
-            "named": true
-          },
-          {
             "type": "function",
-            "named": true
-          },
-          {
-            "type": "greater_equal",
-            "named": true
-          },
-          {
-            "type": "greater_than",
-            "named": true
-          },
-          {
-            "type": "increment",
-            "named": true
-          },
-          {
-            "type": "less_equal",
-            "named": true
-          },
-          {
-            "type": "less_than",
-            "named": true
-          },
-          {
-            "type": "let_assignment",
-            "named": true
-          },
-          {
-            "type": "logarithm",
-            "named": true
-          },
-          {
-            "type": "logical_and",
-            "named": true
-          },
-          {
-            "type": "logical_negation",
-            "named": true
-          },
-          {
-            "type": "logical_not",
-            "named": true
-          },
-          {
-            "type": "logical_or",
-            "named": true
-          },
-          {
-            "type": "logical_rol",
-            "named": true
-          },
-          {
-            "type": "logical_ror",
-            "named": true
-          },
-          {
-            "type": "logical_shl",
-            "named": true
-          },
-          {
-            "type": "logical_shr",
-            "named": true
-          },
-          {
-            "type": "logical_xor",
-            "named": true
-          },
-          {
-            "type": "modulo",
-            "named": true
-          },
-          {
-            "type": "not_equal",
             "named": true
           },
           {
@@ -3335,39 +3107,11 @@
             "named": true
           },
           {
-            "type": "product",
-            "named": true
-          },
-          {
-            "type": "signed_division",
-            "named": true
-          },
-          {
-            "type": "signed_modulo",
-            "named": true
-          },
-          {
             "type": "special_variable",
             "named": true
           },
           {
             "type": "string_bytes",
-            "named": true
-          },
-          {
-            "type": "subtraction",
-            "named": true
-          },
-          {
-            "type": "sum",
-            "named": true
-          },
-          {
-            "type": "unary_minus",
-            "named": true
-          },
-          {
-            "type": "unary_plus",
             "named": true
           },
           {
@@ -7861,6 +7605,14 @@
       "required": true,
       "types": [
         {
+          "type": "number_legacy_hex",
+          "named": true
+        },
+        {
+          "type": "number_legacy_suffix",
+          "named": true
+        },
+        {
           "type": "number_suffix",
           "named": true
         },
@@ -10160,6 +9912,14 @@
   {
     "type": "mod",
     "named": false
+  },
+  {
+    "type": "number_legacy_hex",
+    "named": true
+  },
+  {
+    "type": "number_legacy_suffix",
+    "named": true
   },
   {
     "type": "number_suffix",
