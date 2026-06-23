@@ -58,6 +58,8 @@ static hash_data_t hashes_to_test[] = {
 	{ INDATA("password"), .algo = "keccak-256", .expected = "b68fe43f0d1a0d7aef123722670be50268e15365401c442f8806ef83b612976b" },
 	{ INDATA("password"), .algo = "keccak-384", .expected = "e0779e9bb200a589bc70e499a9f7db1006e181519394990ef41800bebe452c23b4a8372fd89df8d5e0d951af240be7bc" },
 	{ INDATA("password"), .algo = "keccak-512", .expected = "a6818b8188b36c44d17784c5551f63accc5deaf8786f9d0ad1ae3cd8d887cbab4f777286dbb315fb14854c8774dc0d10b5567e4a705536cc2a1d61ec0a16a7a6" },
+	{ INDATA("password"), .algo = "shake-128", .expected = "0ac28ef634f3a8415ae5ef6e614bf11f1a18df4d1fa05a4dd1e6a0acd93bfc57" },
+	{ INDATA("password"), .algo = "shake-256", .expected = "a5ee08f8e3abe7d592f6de77f1d3298a1149eba68b97f091c90b7736a1be63ab2d425f94c5346cac64807f20f654c5ad9063a4d12902c5e45533491215754883" },
 	{ INDATA("password"), .algo = "sm3", .expected = "08594e140bcc046e345325435218f67a85c38c63de6443b197b544d70ee62f26" },
 	{ INDATA("password"), .algo = "blake3", .expected = "7f2611ba158b6dcea4a69c229c303358c5e04493abeadee106a4bfa464d55787" },
 	{ INDATA("password"), .algo = "blake2b", .expected = "7c863950ac93c93692995e4732ce1e1466ad74a775352ffbaaf2a4a4ce9b549d0b414a1f3150452be6c7c72c694a7cb46f76452917298d33e67611f0a42addb8" },
@@ -276,11 +278,84 @@ bool test_message_digest_small_block_stringified() {
 	mu_end;
 }
 
+bool test_shake_edge_cases() {
+	RzHash *rh = rz_hash_new();
+	mu_assert_notnull(rh, "rz_hash_new");
+
+	{
+		ut8 data[170];
+		for (size_t i = 0; i < 170; i++) {
+			data[i] = (ut8)i;
+		}
+
+		RzHashCfg *md = rz_hash_cfg_new_with_algo2(rh, "shake-128");
+		mu_assert_notnull(md, "shake-128 cfg");
+		rz_hash_cfg_update(md, data, 3);
+		rz_hash_cfg_update(md, data + 3, 2);
+		rz_hash_cfg_update(md, data + 5, 6);
+		rz_hash_cfg_update(md, data + 11, 152);
+		rz_hash_cfg_update(md, data + 163, 6);
+		rz_hash_cfg_update(md, data + 169, 1);
+		rz_hash_cfg_final(md);
+
+		RzHashCfg *md_ref = rz_hash_cfg_new_with_algo2(rh, "shake-128");
+		mu_assert_notnull(md_ref, "shake-128 ref cfg");
+		rz_hash_cfg_update(md_ref, data, 170);
+		rz_hash_cfg_final(md_ref);
+
+		RzHashSize size, size_ref;
+		char *res = rz_hash_cfg_get_result_string(md, "shake-128", &size, false);
+		char *res_ref = rz_hash_cfg_get_result_string(md_ref, "shake-128", &size_ref, false);
+		mu_assert_streq(res, res_ref, "shake-128 chunked matches reference");
+
+		free(res);
+		free(res_ref);
+		rz_hash_cfg_free(md);
+		rz_hash_cfg_free(md_ref);
+	}
+
+	{
+		ut8 data[138];
+		for (size_t i = 0; i < 138; i++) {
+			data[i] = (ut8)i;
+		}
+
+		RzHashCfg *md = rz_hash_cfg_new_with_algo2(rh, "shake-256");
+		mu_assert_notnull(md, "shake-256 cfg");
+		rz_hash_cfg_update(md, data, 3);
+		rz_hash_cfg_update(md, data + 3, 2);
+		rz_hash_cfg_update(md, data + 5, 6);
+		rz_hash_cfg_update(md, data + 11, 120);
+		rz_hash_cfg_update(md, data + 131, 6);
+		rz_hash_cfg_update(md, data + 137, 1);
+		rz_hash_cfg_final(md);
+
+		RzHashCfg *md_ref = rz_hash_cfg_new_with_algo2(rh, "shake-256");
+		mu_assert_notnull(md_ref, "shake-256 ref cfg");
+		rz_hash_cfg_update(md_ref, data, 138);
+		rz_hash_cfg_final(md_ref);
+
+		RzHashSize size, size_ref;
+		char *res = rz_hash_cfg_get_result_string(md, "shake-256", &size, false);
+		char *res_ref = rz_hash_cfg_get_result_string(md_ref, "shake-256", &size_ref, false);
+		mu_assert_streq(res, res_ref, "shake-256 chunked matches reference");
+
+		free(res);
+		free(res_ref);
+		rz_hash_cfg_free(md);
+		rz_hash_cfg_free(md_ref);
+	}
+
+	rz_hash_free(rh);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_message_digest_configure);
 	mu_run_test(test_message_digest_api_stringified);
 	mu_run_test(test_message_digest_hmac_stringified);
 	mu_run_test(test_message_digest_small_block_stringified);
+	mu_run_test(test_shake_edge_cases);
 	return tests_passed != tests_run;
 }
 

@@ -119,6 +119,8 @@ extern RzHashPlugin rz_hash_plugin_sha3_512;
 extern RzHashPlugin rz_hash_plugin_keccak_256;
 extern RzHashPlugin rz_hash_plugin_keccak_384;
 extern RzHashPlugin rz_hash_plugin_keccak_512;
+extern RzHashPlugin rz_hash_plugin_shake_128;
+extern RzHashPlugin rz_hash_plugin_shake_256;
 extern RzHashPlugin rz_hash_plugin_murmur3_x86_32;
 extern RzHashPlugin rz_hash_plugin_murmur3_x86_128;
 extern RzHashPlugin rz_hash_plugin_murmur3_x64_128;
