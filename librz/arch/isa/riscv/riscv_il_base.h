@@ -18,11 +18,16 @@ static inline RzILOpBitVector *riscv_il_get_reg(ut32 bits, uint32_t reg) {
 }
 
 static inline RzILOpEffect *riscv_il_set_reg(uint32_t reg, RZ_OWN RZ_NONNULL RzILOpBitVector *value) {
-	return reg != RISCV_REG_X0 ? SETG(riscv_integer_reg_name(reg), value) : ((rz_il_op_pure_free(value), NOP()));
+	if (reg != RISCV_REG_X0) {
+		return SETG(riscv_integer_reg_name(reg), value);
+	}
+	// assigning to x0 is a no-op, so the value will never be referenced in the IL tree
+	rz_il_op_pure_free(value);
+	return NOP();
 }
 
 #define DEFINE_LIFTER(name, decoder, result) \
-	static RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
+	RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
 		RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
 		decoder(analysis, insn); \
 		return riscv_il_set_reg(rd, result); \
@@ -30,7 +35,7 @@ static inline RzILOpEffect *riscv_il_set_reg(uint32_t reg, RZ_OWN RZ_NONNULL RzI
 
 // by default, a RISC-V jump both sets a destination and sets the PC (i.e., jumps)
 #define DEFINE_LIFTER_FOR_JUMP(name, decoder, result, jmp_effect) \
-	static RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
+	RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
 		RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
 		decoder(analysis, insn); \
 		return SEQ2( \
@@ -39,7 +44,7 @@ static inline RzILOpEffect *riscv_il_set_reg(uint32_t reg, RZ_OWN RZ_NONNULL RzI
 	}
 
 #define DEFINE_LIFTER_WITH_EFFECT(name, decoder, effect) \
-	static RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
+	RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
 		RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
 		decoder(analysis, insn); \
 		return effect; \
@@ -55,21 +60,9 @@ static inline RzILOpEffect *riscv_il_set_reg(uint32_t reg, RZ_OWN RZ_NONNULL RzI
 // accept it tolerantly, but TCC enforces the standard strictly and rejects it.
 // A forced-inline wrapper is an alternative for 0-indirection aliasing.
 #define DEFINE_ALIAS_LIFTER(alias, name) \
-	static inline FUNC_ATTR_ALWAYS_INLINE RzILOpEffect *rz_riscv_lift_##alias(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
+	RzILOpEffect *rz_riscv_lift_##alias(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
 		return rz_riscv_lift_##name(analysis, op, insn, current_addr, size); \
 	}
-
-#define TWICE_FOR(name1, name2, def_lifter, ...) \
-	def_lifter(name1, __VA_ARGS__) \
-		def_lifter(name2, __VA_ARGS__)
-
-#define THRICE_FOR(name1, name2, name3, def_lifter, ...) \
-	TWICE_FOR(name1, name2, def_lifter, __VA_ARGS__) \
-	def_lifter(name3, __VA_ARGS__)
-
-#define FOR_4(name1, name2, name3, name4, def_lifter, ...) \
-	TWICE_FOR(name1, name2, def_lifter, __VA_ARGS__) \
-	TWICE_FOR(name3, name4, def_lifter, __VA_ARGS__)
 
 #if RZ_CHECKS_LEVEL > 0
 static inline void riscv_il_dump_operands(RZ_NONNULL cs_insn *insn) {

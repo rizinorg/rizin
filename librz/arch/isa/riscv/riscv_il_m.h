@@ -4,18 +4,26 @@
 #ifndef RISCV_IL_M_H
 #define RISCV_IL_M_H
 
-#include "riscv_il_base.h"
+#include "riscv_il.h"
 
-#include <rz_il/rz_il_opbuilder_begin.h>
+#define DECL_LIFTER(name) \
+	RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
+		RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size)
 
-// M extension: multiply/divide/remainder (RV32M / RV64M)
-DEFINE_LIFTER(mul, DECODE_RD_RS_RS, MUL(rs1, rs2))
-DEFINE_LIFTER(mulhu, DECODE_RD_RS_RS, CAST(analysis->bits, IL_FALSE, SHIFTR0(MUL(UNSIGNED(analysis->bits * 2, rs1), UNSIGNED(analysis->bits * 2, rs2)), UN(8, analysis->bits))))
-DEFINE_LIFTER(divu, DECODE_RD_RS_RS, DIV(rs1, rs2))
-DEFINE_LIFTER(remu, DECODE_RD_RS_RS, MOD(rs1, rs2))
-// RV64M: unsigned remainder of 32-bit operands, result sign-extended to 64 bits
-DEFINE_LIFTER(remuw, DECODE_RD_RS_RS_TRUNCATE32, SIGNED(analysis->bits, MOD(rs1, rs2)))
+DECL_LIFTER(mul);
+DECL_LIFTER(mulh);
+DECL_LIFTER(mulhsu);
+DECL_LIFTER(mulhu);
+DECL_LIFTER(div);
+DECL_LIFTER(divu);
+DECL_LIFTER(rem);
+DECL_LIFTER(remu);
+DECL_LIFTER(mulw);
+DECL_LIFTER(divw);
+DECL_LIFTER(divuw);
+DECL_LIFTER(remw);
+DECL_LIFTER(remuw);
 
-#include <rz_il/rz_il_opbuilder_end.h>
+#undef DECL_LIFTER
 
 #endif // RISCV_IL_M_H
