@@ -11,6 +11,14 @@
 
 CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(m68k_asm);
 
+static int m68k_set_invalid(RzAsmOp *op, int size) {
+	if (op) {
+		op->size = size;
+		rz_asm_op_set_asm(op, "invalid");
+	}
+	return size;
+}
+
 static int m68k_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (!buf) {
 		return -1;
@@ -18,21 +26,21 @@ static int m68k_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len
 	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 	char *buf_asm = NULL;
 	cs_insn *insn = NULL;
-	int ret = 0, n = 0;
+	int op_size = -1, cs_ret = CS_ERR_OK;
 	cs_mode mode = rz_m68k_cs_mode(a->cpu);
 
-	if (op) {
-		op->size = 4;
-	}
 	if (mode != ctx->omode) {
 		cs_close(&ctx->handle);
 		ctx->handle = 0;
 		ctx->omode = -1;
 	}
+	if (len < M68K_MIN_OP_SIZE) {
+		goto beach;
+	}
+
 	if (!ctx->handle) {
-		ret = cs_open(CS_ARCH_M68K, mode, &ctx->handle);
-		if (ret) {
-			ret = -1;
+		cs_ret = cs_open(CS_ARCH_M68K, mode, &ctx->handle);
+		if (cs_ret != CS_ERR_OK) {
 			goto beach;
 		}
 		ctx->omode = mode;
@@ -43,44 +51,35 @@ static int m68k_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len
 		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
 
-	if (len > M68K_LONGEST_INSTRUCTION) {
-		len = M68K_LONGEST_INSTRUCTION;
-	}
-
-	n = cs_disasm(ctx->handle, buf, len, a->pc, 1, &insn);
-	if (n < 1) {
-		ret = -1;
+	cs_ret = cs_disasm(ctx->handle, buf, len, a->pc, 1, &insn);
+	if (cs_ret < 1 || !insn) {
+		op_size = m68k_set_invalid(op, M68K_MIN_OP_SIZE);
 		goto beach;
 	}
+	if (insn->id == M68K_INS_INVALID || insn->size < 1) {
+		op_size = m68k_set_invalid(op, insn->size > 0 ? insn->size : M68K_MIN_OP_SIZE);
+		goto beach;
+	}
+	op_size = insn->size;
 	if (op) {
-		op->size = 0;
-	}
-	if (insn->size < 1) {
-		ret = -1;
-		goto beach;
-	}
-	if (op && !op->size) {
 		op->size = insn->size;
 		buf_asm = rz_str_newf("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
-	}
-	if (op && buf_asm) {
+		if (!buf_asm) {
+			goto beach;
+		}
 		buf_asm = rz_str_replace(buf_asm, "$", "0x", true);
-		if (buf_asm) {
-			rz_str_replace_char(buf_asm, '#', 0);
-			rz_asm_op_set_asm(op, buf_asm);
-		}
+		rz_str_replace_char(buf_asm, '#', 0);
+		rz_asm_op_set_asm(op, buf_asm);
+		free(buf_asm);
 	}
-	cs_free(insn, n);
 beach:
-
-	if (op && buf_asm) {
-		if (!strncmp(buf_asm, "dc.w", 4)) {
-			rz_asm_op_set_asm(op, "invalid");
-		}
-		ret = op->size;
+	if (op) {
+		op->size = op_size;
 	}
-	free(buf_asm);
-	return ret;
+	if (insn) {
+		cs_free(insn, cs_ret);
+	}
+	return op_size;
 }
 
 static char **m68k_cpu_descriptions() {

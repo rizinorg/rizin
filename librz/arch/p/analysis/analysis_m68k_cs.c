@@ -983,7 +983,9 @@ static int m68k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 		ctx->omode = -1;
 		ctx->obits = a->bits;
 	}
-	op->size = 4;
+	if (len < M68K_MIN_OP_SIZE) {
+		return -1;
+	}
 	if (ctx->handle == 0) {
 		ret = cs_open(CS_ARCH_M68K, mode, &ctx->handle);
 		if (ret != CS_ERR_OK) {
@@ -995,7 +997,7 @@ static int m68k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 	n = cs_disasm(ctx->handle, (ut8 *)buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
-		opsize = op->size = 2;
+		opsize = op->size = M68K_MIN_OP_SIZE;
 		m68k_invalid_il_nop(op, mask);
 		goto beach;
 	}
@@ -1579,7 +1581,9 @@ static int m68k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 		op_fillval(a, op, ctx->handle, insn);
 	}
 beach:
-	cs_free(insn, n);
+	if (insn) {
+		cs_free(insn, n);
+	}
 	// cs_close (&handle);
 fin:
 	return opsize;
@@ -1671,9 +1675,9 @@ static bool m68k_fini(void *user) {
 static int m68k_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	switch (query) {
 	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
-		return 2;
+		return M68K_MIN_OP_SIZE;
 	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
-		return M68K_LONGEST_INSTRUCTION;
+		return M68K_MAX_OP_SIZE;
 	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
 		return 2;
 	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:

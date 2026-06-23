@@ -14,7 +14,8 @@
 #include <capstone/m68k.h>
 #endif
 
-#define M68K_LONGEST_INSTRUCTION 22
+#define M68K_MIN_OP_SIZE 2
+#define M68K_MAX_OP_SIZE 22
 
 static inline cs_mode rz_m68k_cs_mode(const char *cpu) {
 	if (!cpu) {

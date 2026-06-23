@@ -4927,7 +4927,7 @@ static RzILOpEffect *lift_trapv(M68KILCtx *ctx) {
 	return BRANCH(ccr_bit(M68K_CCR_V), explicit_trap_effect(ctx, M68K_TRAP_OP_TRAPV, false), EMPTY());
 }
 
-RZ_IPI RzILOpEffect *rz_m68k_cs_get_il_op(csh handle, const cs_insn *insn, ut64 addr) {
+RZ_IPI RzILOpEffect *rz_m68k_cs_get_il_op(csh handle, RZ_NONNULL const cs_insn *insn, ut64 addr) {
 	rz_return_val_if_fail(insn && insn->detail, NULL);
 	M68KILCtx ctx = {
 		.handle = handle,
@@ -5335,7 +5335,7 @@ static const char *m68k_il_regs[] = {
 	NULL
 };
 
-RZ_IPI RzAnalysisILConfig *rz_m68k_cs_il_config(RzAnalysis *analysis) {
+RZ_IPI RzAnalysisILConfig *rz_m68k_cs_il_config(RZ_NONNULL RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(32, true, 32);
 	if (!cfg) {
