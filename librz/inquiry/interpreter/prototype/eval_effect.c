@@ -76,6 +76,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpSet *iset,
 			RZ_LOG_DEBUG("PC is going to be set to an abstract value! Current PC = 0x%" PFMT64x "\n", pc);
 		}
 		ut64 target = rz_bv_to_ut64(eval_out.bv);
+		bool is_call = plugin_data->call_cand.store_addr;
 		RZ_LOG_DEBUG("prototype: JMP - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
 			pc, target,
 			eval_out.is_const ? "Concrete" : "Abstract");
@@ -83,7 +84,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpSet *iset,
 		if (eval_out.is_const) {
 			RzAnalysisXRefType xref_type = RZ_ANALYSIS_XREF_TYPE_CODE;
 
-			if (plugin_data->call_cand.store_addr) {
+			if (is_call) {
 				// An instruction in this basic block stored the next PC.
 				// Report a call candidate and assume this jump is a call.
 				plugin_data->call_cand.candidate_addr = pc;
@@ -114,9 +115,12 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpSet *iset,
 			memset(&plugin_data->call_cand, 0, sizeof(plugin_data->call_cand));
 		}
 
-		// Setting the PC to a top value is allowed here!
-		// The successor function will handle this case.
-		set_abstr_pc(iset->astate, &eval_out, plugin_data);
+		if (is_call) {
+			// For calls, assume control flow will continue like fallthrough.
+			// TODO: set data to top that may be changed by the call
+		} else {
+			set_abstr_pc(iset->astate, &eval_out, plugin_data);
+		}
 		break;
 	}
 	case RZ_IL_OP_BRANCH: {
