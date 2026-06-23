@@ -4,68 +4,47 @@
 #ifndef RISCV_IL_COMPRESSED_H
 #define RISCV_IL_COMPRESSED_H
 
-#include "riscv/riscv_il_base.h"
-#include "riscv_il_integer.h"
-#include "rz_util/rz_buf.h"
+#include "riscv_il.h"
 
-#include <rz_il/rz_il_opbuilder_begin.h>
+#define DECL_LIFTER(name) \
+	RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
+		RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size)
 
-// Compressed instruction decoder variants that suppress operands not consumed by the lifter
-#define DECODE_RD_RS_IMM_NO_RS(analysis, insn) \
-	DECODE_RD_RS_IMM(analysis, insn) \
-	(void)(rs);
+DECL_LIFTER(c_nop);
+DECL_LIFTER(c_addi);
+DECL_LIFTER(c_addi16sp);
+DECL_LIFTER(c_addi4spn);
+DECL_LIFTER(c_add);
+DECL_LIFTER(c_andi);
+DECL_LIFTER(c_slli);
+DECL_LIFTER(c_srli);
+DECL_LIFTER(c_srai);
+DECL_LIFTER(c_or);
+DECL_LIFTER(c_sub);
+DECL_LIFTER(c_and);
+DECL_LIFTER(c_xor);
+DECL_LIFTER(c_addw);
+DECL_LIFTER(c_addiw);
+DECL_LIFTER(c_subw);
+DECL_LIFTER(c_mv);
+DECL_LIFTER(c_li);
+DECL_LIFTER(c_jal);
+DECL_LIFTER(c_j);
+DECL_LIFTER(c_jr);
+DECL_LIFTER(c_ebreak);
+DECL_LIFTER(c_jalr);
+DECL_LIFTER(c_lui);
+DECL_LIFTER(c_sw);
+DECL_LIFTER(c_swsp);
+DECL_LIFTER(c_sd);
+DECL_LIFTER(c_sdsp);
+DECL_LIFTER(c_lwsp);
+DECL_LIFTER(c_lw);
+DECL_LIFTER(c_ld);
+DECL_LIFTER(c_ldsp);
+DECL_LIFTER(c_beqz);
+DECL_LIFTER(c_bnez);
 
-#define DECODE_RD_IMM_NO_RD(analysis, insn) \
-	DECODE_RD_IMM(analysis, insn) \
-	(void)(rd);
-
-#define DECODE_RS_RS_IMM_NO_RS2(analysis, insn) \
-	DECODE_RS_RS_IMM(analysis, insn) \
-	(void)(rs2);
-
-DEFINE_ALIAS_LIFTER(c_addi, addi)
-DEFINE_ALIAS_LIFTER(c_addi16sp, addi)
-DEFINE_ALIAS_LIFTER(c_addi4spn, addi)
-DEFINE_ALIAS_LIFTER(c_add, add)
-DEFINE_ALIAS_LIFTER(c_slli, slli)
-DEFINE_ALIAS_LIFTER(c_andi, andi)
-DEFINE_ALIAS_LIFTER(c_srli, srli)
-DEFINE_ALIAS_LIFTER(c_srai, srai)
-DEFINE_ALIAS_LIFTER(c_or, or)
-DEFINE_ALIAS_LIFTER(c_sub, sub)
-DEFINE_ALIAS_LIFTER(c_and, and)
-DEFINE_ALIAS_LIFTER(c_xor, xor)
-DEFINE_ALIAS_LIFTER(c_addw, addw)
-
-DEFINE_ALIAS_LIFTER(c_addiw, addiw)
-
-DEFINE_ALIAS_LIFTER(c_subw, subw)
-
-DEFINE_LIFTER(c_mv, DECODE_RD_RS, DUP(rs))
-DEFINE_LIFTER(c_li, DECODE_RD_RS_IMM_NO_RS, DUP(imm))
-
-DEFINE_LIFTER_FOR_ONEWAY_JUMP(c_j, DECODE_RD_IMM_NO_RD, JMP(imm))
-DEFINE_ALIAS_LIFTER(c_jr, jalr)
-
-DEFINE_ALIAS_LIFTER(c_jalr, jalr)
-
-DEFINE_ALIAS_LIFTER(c_lui, lui)
-
-DEFINE_ALIAS_LIFTER(c_sw, sw)
-DEFINE_ALIAS_LIFTER(c_swsp, sw)
-
-DEFINE_ALIAS_LIFTER(c_sd, sd)
-DEFINE_ALIAS_LIFTER(c_sdsp, sd)
-
-DEFINE_ALIAS_LIFTER(c_lwsp, lw)
-DEFINE_ALIAS_LIFTER(c_lw, lw)
-
-DEFINE_ALIAS_LIFTER(c_ld, ld)
-DEFINE_ALIAS_LIFTER(c_ldsp, ld)
-
-DEFINE_LIFTER_FOR_BRANCH(c_beqz, DECODE_RS_RS_IMM_NO_RS2, EQ(rs1, UN(analysis->bits, 0)))
-DEFINE_LIFTER_FOR_BRANCH(c_bnez, DECODE_RS_RS_IMM_NO_RS2, NE(rs1, UN(analysis->bits, 0)))
-
-#include <rz_il/rz_il_opbuilder_end.h>
+#undef DECL_LIFTER
 
 #endif // RISCV_IL_COMPRESSED_H
