@@ -68,6 +68,12 @@ static bool eval(RZ_NONNULL RzInterpSet *iset,
 		rz_strbuf_fini(&sb);
 
 		rz_strbuf_init(&sb);
+		if (pc == il_bb->addr) {
+			rz_strbuf_append(&sb, "ENTRY ");
+		}
+		if (rz_vector_index_ptr(&il_bb->il_ops->v, rz_pvector_len(il_bb->il_ops) - 1) == it) {
+			rz_strbuf_append(&sb, "EXIT ");
+		}
 		state_as_str_short(iset, &sb, iset->astate);
 		rz_meta_set_string(iset->a, RZ_META_TYPE_COMMENT, pc, rz_strbuf_get(&sb));
 		rz_strbuf_fini(&sb);
