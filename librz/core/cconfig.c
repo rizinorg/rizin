@@ -2212,14 +2212,14 @@ static bool cb_scrstrconv(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
-			rz_cons_printf("Valid values for scr.strconv:\n"
-				       "  asciiesc  convert to ascii with non-ascii chars escaped\n"
-				       "  asciidot  convert to ascii with non-ascii chars turned into a dot (except control chars stated below)\n"
-				       "\n"
-				       "Ascii chars are in the range 0x20-0x7e. Always escaped control chars are alert (\\a),\n"
-				       "backspace (\\b), formfeed (\\f), newline (\\n), carriage return (\\r), horizontal tab (\\t)\n"
-				       "and vertical tab (\\v). Also, double quotes (\\\") are always escaped, but backslashes (\\\\)\n"
-				       "are only escaped if str.escbslash = true.\n");
+		rz_cons_printf("Valid values for scr.strconv:\n"
+			       "  asciiesc  convert to ascii with non-ascii chars escaped\n"
+			       "  asciidot  convert to ascii with non-ascii chars turned into a dot (except control chars stated below)\n"
+			       "\n"
+			       "Ascii chars are in the range 0x20-0x7e. Always escaped control chars are alert (\\a),\n"
+			       "backspace (\\b), formfeed (\\f), newline (\\n), carriage return (\\r), horizontal tab (\\t)\n"
+			       "and vertical tab (\\v). Also, double quotes (\\\") are always escaped, but backslashes (\\\\)\n"
+			       "are only escaped if str.escbslash = true.\n");
 		return false;
 	} else {
 		free((char *)core->print->strconv_mode);
