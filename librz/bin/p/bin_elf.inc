@@ -643,25 +643,13 @@ static ut64 get_got_addr(ELFOBJ *bin) {
  * the symbol has no indirection in the GOT.
  */
 RZ_IPI ut64 Elf_(rz_bin_get_reloc_sym_offset_in_got)(RZ_NONNULL ELFOBJ *bin, ut64 sym_id) {
-	RzBinElfSection *got = Elf_(rz_bin_elf_get_section_with_name)(bin, ".got");
-	if (!got) {
-		got = Elf_(rz_bin_elf_get_section_with_name)(bin, ".got.plt");
-		if (!got) {
-			return UT64_MAX;
-		}
+	rz_return_val_if_fail(bin, UT64_MAX);
+	bool found = false;
+	ut64 offset = ht_uu_find(bin->got_sym_id_off, sym_id, &found);
+	if (!found) {
+		return UT64_MAX;
 	}
-	// Search all entries of the GOT for the matching symbol id.
-	RzBinElfReloc *reloc;
-	rz_bin_elf_foreach_relocs(bin, reloc) {
-		if (!RZ_BETWEEN(got->rva, reloc->vaddr, got->rva + got->size)) {
-			// Not a GOT entry.
-			continue;
-		}
-		if (sym_id == reloc->sym) {
-			return reloc->offset;
-		}
-	}
-	return UT64_MAX;
+	return offset;
 }
 
 static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
@@ -725,6 +713,37 @@ static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
 	rz_buf_sparse_set_write_mode(bin->buf_patched, RZ_BUF_SPARSE_WRITE_MODE_THROUGH);
 }
 
+static void fill_got_sym_id_off_map(ELFOBJ *obj) {
+	RzBinElfReloc *reloc;
+	if (ht_uu_size(obj->got_sym_id_off) > 0) {
+		// Already loaded by another ELF plugin callback.
+		return;
+	}
+	// Fill symbol id -> GOT offset map.
+	RzBinElfSection *got = Elf_(rz_bin_elf_get_section_with_name)(obj, ".got");
+	if (got) {
+		rz_bin_elf_foreach_relocs(obj, reloc) {
+			if (!RZ_BETWEEN(got->rva, reloc->vaddr, got->rva + got->size)) {
+				// Not a GOT entry.
+				continue;
+			}
+			ht_uu_insert(obj->got_sym_id_off, reloc->sym, reloc->offset);
+		}
+	}
+
+	got = Elf_(rz_bin_elf_get_section_with_name)(obj, ".got.plt");
+	if (!got) {
+		return;
+	}
+	rz_bin_elf_foreach_relocs(obj, reloc) {
+		if (!RZ_BETWEEN(got->rva, reloc->vaddr, got->rva + got->size)) {
+			// Not a GOT entry.
+			continue;
+		}
+		ht_uu_insert(obj->got_sym_id_off, reloc->sym, reloc->offset);
+	}
+}
+
 static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 	rz_return_if_fail(bf && bin);
 	RzBinObject *obj = bf->o;
@@ -744,6 +763,7 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	if (!obj) {
 		return r;
 	}
+	fill_got_sym_id_off_map(obj);
 	patch_relocs(bf, obj);
 	// virtual file for reloc targets (where the relocs will point into)
 	ut64 rtmsz = reloc_targets_vfile_size(bf, obj);
