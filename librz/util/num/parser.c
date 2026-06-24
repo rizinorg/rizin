@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2026 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
@@ -20,6 +20,80 @@
 
 // Provided by the rizin-math-parser subproject's generated parser.c.
 TSLanguage *tree_sitter_rznum(void);
+
+// Shared grammar symbol cache. Lazily initialised on first use; the
+// evaluator and the RzNumExpression builder both dispatch on its IDs so
+// the grammar's node vocabulary is defined in exactly one place.
+static RzNumSymCache g_num_syms;
+
+// Look up a symbol ID by name in the language. Returns 0 (the special
+// "no symbol" value) when the name is not in the grammar, which lets a
+// stale-grammar mismatch surface here rather than as a silent misparse.
+static TSSymbol sym_lookup(TSLanguage *lang, const char *name) {
+	return ts_language_symbol_for_name(lang, name, (uint32_t)strlen(name), true);
+}
+
+/**
+ * \brief Return the lazily-initialised RzNum grammar symbol cache.
+ * \return Borrowed pointer to the shared symbol cache; never NULL.
+ *
+ * Populated on first call from the compiled grammar and shared by every
+ * consumer in the num directory. tree_sitter_rznum() returns a
+ * process-wide singleton language whose symbol table is immutable, so
+ * two threads racing to populate the cache write identical values; the
+ * worst case is duplicate work, not corruption, and no platform-specific
+ * primitive is needed - only plain C99 accesses.
+ */
+RZ_API RZ_BORROW const RzNumSymCache *rz_num_parse_syms(void) {
+	if (g_num_syms.ready) {
+		return &g_num_syms;
+	}
+	TSLanguage *lang = tree_sitter_rznum();
+	g_num_syms.sym_number = sym_lookup(lang, "number");
+	g_num_syms.sym_variable = sym_lookup(lang, "variable");
+	g_num_syms.sym_special_variable = sym_lookup(lang, "special_variable");
+	g_num_syms.sym_address_typed = sym_lookup(lang, "address_typed");
+	g_num_syms.sym_string_bytes = sym_lookup(lang, "string_bytes");
+	g_num_syms.sym_function = sym_lookup(lang, "function");
+	g_num_syms.sym_parenthesized_expression = sym_lookup(lang, "parenthesized_expression");
+	g_num_syms.sym_source_file = sym_lookup(lang, "source_file");
+	g_num_syms.sym_argument = sym_lookup(lang, "argument");
+	g_num_syms.sym_expression = sym_lookup(lang, "expression");
+	g_num_syms.sym_sum = sym_lookup(lang, "sum");
+	g_num_syms.sym_subtraction = sym_lookup(lang, "subtraction");
+	g_num_syms.sym_product = sym_lookup(lang, "product");
+	g_num_syms.sym_division = sym_lookup(lang, "division");
+	g_num_syms.sym_signed_division = sym_lookup(lang, "signed_division");
+	g_num_syms.sym_modulo = sym_lookup(lang, "modulo");
+	g_num_syms.sym_signed_modulo = sym_lookup(lang, "signed_modulo");
+	g_num_syms.sym_exponent = sym_lookup(lang, "exponent");
+	g_num_syms.sym_logarithm = sym_lookup(lang, "logarithm");
+	g_num_syms.sym_logical_and = sym_lookup(lang, "logical_and");
+	g_num_syms.sym_logical_or = sym_lookup(lang, "logical_or");
+	g_num_syms.sym_logical_xor = sym_lookup(lang, "logical_xor");
+	g_num_syms.sym_logical_shl = sym_lookup(lang, "logical_shl");
+	g_num_syms.sym_logical_shr = sym_lookup(lang, "logical_shr");
+	g_num_syms.sym_arith_shr = sym_lookup(lang, "arith_shr");
+	g_num_syms.sym_logical_rol = sym_lookup(lang, "logical_rol");
+	g_num_syms.sym_logical_ror = sym_lookup(lang, "logical_ror");
+	g_num_syms.sym_less_than = sym_lookup(lang, "less_than");
+	g_num_syms.sym_less_equal = sym_lookup(lang, "less_equal");
+	g_num_syms.sym_greater_than = sym_lookup(lang, "greater_than");
+	g_num_syms.sym_greater_equal = sym_lookup(lang, "greater_equal");
+	g_num_syms.sym_equal = sym_lookup(lang, "equal");
+	g_num_syms.sym_not_equal = sym_lookup(lang, "not_equal");
+	g_num_syms.sym_conditional = sym_lookup(lang, "conditional");
+	g_num_syms.sym_logical_negation = sym_lookup(lang, "logical_negation");
+	g_num_syms.sym_logical_not = sym_lookup(lang, "logical_not");
+	g_num_syms.sym_increment = sym_lookup(lang, "increment");
+	g_num_syms.sym_decrement = sym_lookup(lang, "decrement");
+	g_num_syms.sym_unary_plus = sym_lookup(lang, "unary_plus");
+	g_num_syms.sym_unary_minus = sym_lookup(lang, "unary_minus");
+	g_num_syms.sym_assignment = sym_lookup(lang, "assignment");
+	g_num_syms.sym_let_assignment = sym_lookup(lang, "let_assignment");
+	g_num_syms.ready = true;
+	return &g_num_syms;
+}
 
 /**
  * Recursively walk the parse tree to find the first ERROR or MISSING
@@ -129,8 +203,7 @@ RZ_API TSNode rz_num_parse_root(RZ_NONNULL const RzNumParseResult *r) {
 /**
  * \brief Return the source text that the tree refers into.
  *
- * The returned pointer is borrowed from the RzNumParseResult and is
- * valid until rz_num_parse_result_free() is called.
+ * Valid until rz_num_parse_result_free() is called.
  */
 RZ_API RZ_BORROW const char *rz_num_parse_source(RZ_NONNULL const RzNumParseResult *r) {
 	rz_return_val_if_fail(r, NULL);

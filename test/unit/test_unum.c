@@ -1175,22 +1175,32 @@ bool test_rz_num_math_value_bignum() {
 }
 
 bool test_rz_num_math_value_timeout() {
-	// A long chain of additions that should take measurably more
-	// than 1 ms in a debug build. We assert the timeout fires; on
-	// hosts so fast that even the chain completes within 1 ms (an
-	// optimised release build on a recent CPU) the assertion would
-	// flake, so we skip in that case.
+	// A long flat sequence ("0+1;0+1;...") that visits many nodes and so
+	// should take measurably more than 1 ms in a debug build. We assert
+	// the timeout fires; on hosts so fast that even this completes within
+	// 1 ms (an optimised release build on a recent CPU) the assertion
+	// would flake, so we skip in that case.
 	//
-	// The intent here is documentary: keep the test in the suite so
-	// that anyone tweaking the deadline-check cadence in eval_node
-	// can verify the path still fires, while staying robust on
-	// future hardware.
+	// A sequence rather than a single "0+1+1+..." chain on purpose: the
+	// chain nests one binary_expression per term and eval_node() recurses
+	// once per level, so thousands of terms would exceed the evaluator's
+	// recursion-depth guard (and, before it existed, overflow a 1 MB
+	// stack). The ';' sequence is evaluated iteratively, so it exercises
+	// the deadline cadence with the same node volume but constant depth.
+	//
+	// The intent here is documentary: keep the test in the suite so that
+	// anyone tweaking the deadline-check cadence in eval_node can verify
+	// the path still fires, while staying robust on future hardware.
 	const int N = 3000;
 	char *buf = malloc(64 * N);
 	mu_assert_notnull(buf, "allocation");
 	int p = 0;
 	buf[p++] = '0';
-	for (int i = 0; i < N; i++) {
+	buf[p++] = '+';
+	buf[p++] = '1';
+	for (int i = 1; i < N; i++) {
+		buf[p++] = ';';
+		buf[p++] = '0';
 		buf[p++] = '+';
 		buf[p++] = '1';
 	}
@@ -1208,7 +1218,8 @@ bool test_rz_num_math_value_timeout() {
 	ut64 elapsed_us = rz_time_now_mono() - t0;
 	mu_assert_true(ok, "no timeout completes");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_UT64, "result is ut64");
-	mu_assert_eq(v.val.n, (ut64)N, "result value");
+	// Value of a ';' sequence is its last statement: 0 + 1 == 1.
+	mu_assert_eq(v.val.n, (ut64)1, "result value");
 	rz_num_value_fini(&v);
 	free(err);
 	err = NULL;
@@ -2435,6 +2446,49 @@ bool test_rz_num_math_ut64_legacy_compat() {
 	mu_end;
 }
 
+bool test_rz_num_math_ut64_segment() {
+	// Real-mode segment:offset addresses (x86 16-bit; the same notation
+	// appears for other segmented targets such as Infineon C166) linearise
+	// as (seg << 4) + offset. The grammar reserves ':' for typed reads, so
+	// these are recovered in rz_num_math_ut64()'s parse-error fallback. They
+	// are a ut64 address concept: the typed rz_num_math_value() entry point
+	// reports a syntax error for them rather than inventing a kind, so every
+	// case here goes through rz_num_math().
+
+	// Canonical 4-digit forms (segment and offset both 16-bit).
+	mu_assert_eq(rz_num_math(num, "0xf000:0xfff0"), 0xffff0, "0xf000:0xfff0");
+	mu_assert_eq(rz_num_math(num, "f000:ffaa"), 0xfffaa, "f000:ffaa (the udis86 seek target)");
+	mu_assert_eq(rz_num_math(num, "0000:000d"), 0xd, "0000:000d");
+	mu_assert_eq(rz_num_math(num, "0x07c0:0x0000"), 0x7c00, "0x07c0:0x0000 (boot sector)");
+	mu_assert_eq(rz_num_math(num, "1234:5678"), 0x179b8, "1234:5678");
+	// Wrap-around past 1 MiB is intentional - the old parser did not mask
+	// either, and real A20-style wrap is a property of the machine, not of
+	// the address notation.
+	mu_assert_eq(rz_num_math(num, "0xffff:0xffff"), 0x10ffef, "0xffff:0xffff");
+
+	// Non-4-digit segments and offsets. The old fixed-width sscanf matched
+	// exactly four hex digits at a fixed position, so these dropped through
+	// to the leading-number fallback and returned just the segment
+	// (e.g. 0x7c0). They now linearise correctly.
+	mu_assert_eq(rz_num_math(num, "0x7c0:0"), 0x7c00, "0x7c0:0 (3-digit segment)");
+	mu_assert_eq(rz_num_math(num, "0x7c0:0x0"), 0x7c00, "0x7c0:0x0");
+	mu_assert_eq(rz_num_math(num, "0:0x7c00"), 0x7c00, "0:0x7c00 (segment 0)");
+	mu_assert_eq(rz_num_math(num, "0x0:0x7c00"), 0x7c00, "0x0:0x7c00");
+
+	// Disambiguation from typed reads: ':' followed by a valid width
+	// (8/16/32/64) is a typed read, handled by the grammar, and is NOT a
+	// segment - with no backing IO it yields the address itself, not
+	// (addr << 4) + width.
+	mu_assert_eq(rz_num_math(num, "0x1000:8"), 0x1000, "0x1000:8 is a typed read, not a segment");
+	mu_assert_eq(rz_num_math(num, "0x1000:16"), 0x1000, "0x1000:16 is a typed read");
+	mu_assert_eq(rz_num_math(num, "0x1000:64"), 0x1000, "0x1000:64 is a typed read");
+	// A width the grammar does not recognise is not a typed read, so the
+	// fallback treats it as seg:off.
+	mu_assert_eq(rz_num_math(num, "0x1000:4"), 0x10004, "0x1000:4 is not a valid width, so seg:off");
+
+	mu_end;
+}
+
 #undef ASSERT_U64
 #undef ASSERT_F64
 #undef ASSERT_FAIL
@@ -2576,6 +2630,7 @@ bool all_tests() {
 	mu_run_test(test_rz_num_math_value_pretty_print);
 	mu_run_test(test_rz_num_math_value_bitvector_unicode);
 	mu_run_test(test_rz_num_math_ut64_legacy_compat);
+	mu_run_test(test_rz_num_math_ut64_segment);
 	mu_run_test(test_rz_num_il_lift);
 	mu_run_test(test_rz_big_decimal);
 	return tests_passed != tests_run;

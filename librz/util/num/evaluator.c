@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2026 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
@@ -26,149 +26,21 @@
 #include <rz_util/rz_num.h>
 #include <rz_util/rz_str.h>
 #include <rz_util/rz_assert.h>
+#include <rz_util/rz_bits.h>
+#include <rz_util/rz_hex.h>
+#include <rz_util/rz_regex.h>
 #include <rz_util/rz_time.h>
 #include <rz_util/ht_sp.h>
 #include <tree_sitter/api.h>
 
 #include "parser.h"
 
-// Cached tree-sitter symbol IDs.
-//
-// ts_node_type() returns a pointer to a name string for the node's
-// type; comparing those names with strcmp() in eval_node()'s
-// dispatch is roughly the dominant cost on small expressions, where
-// per-node bookkeeping has to amortise over very few real
-// operations. Tree-sitter exposes ts_node_symbol() which returns a
-// numeric TSSymbol (uint16) for the same node. Caching the symbol
-// IDs that we recognise once - keyed by their canonical name in the
-// grammar - lets eval_node use a plain switch on the integer ID
-// instead of running through up to thirty strcmp()s per call.
-//
-// The cache is populated lazily on first call. The language is a
-// process-wide singleton (tree_sitter_rznum() returns the same
-// TSLanguage* every time and the symbol table inside it is
-// immutable), so even if two threads race to populate the cache
-// they will write identical values; the worst case is duplicate
-// work, not corruption. No new platform-specific primitives are
-// needed for this - the cache uses only plain C99 reads and writes.
+// g_sym resolves to the shared grammar-symbol cache in parser.h, so this
+// evaluator and the RzNumExpression builder dispatch on the same symbol IDs.
+#define g_sym (*rz_num_parse_syms())
 
-extern TSLanguage *tree_sitter_rznum(void);
-
-typedef struct {
-	bool ready;
-	// Operand-bearing nodes.
-	TSSymbol sym_number;
-	TSSymbol sym_variable;
-	TSSymbol sym_special_variable;
-	TSSymbol sym_address_typed;
-	TSSymbol sym_string_bytes;
-	TSSymbol sym_function;
-	TSSymbol sym_parenthesized_expression;
-	TSSymbol sym_source_file;
-	TSSymbol sym_argument;
-	TSSymbol sym_expression;
-	// Binary operators.
-	TSSymbol sym_sum;
-	TSSymbol sym_subtraction;
-	TSSymbol sym_product;
-	TSSymbol sym_division;
-	TSSymbol sym_signed_division;
-	TSSymbol sym_modulo;
-	TSSymbol sym_signed_modulo;
-	TSSymbol sym_exponent;
-	TSSymbol sym_logarithm;
-	TSSymbol sym_logical_and;
-	TSSymbol sym_logical_or;
-	TSSymbol sym_logical_xor;
-	TSSymbol sym_logical_shl;
-	TSSymbol sym_logical_shr;
-	TSSymbol sym_arith_shr;
-	TSSymbol sym_logical_rol;
-	TSSymbol sym_logical_ror;
-	TSSymbol sym_less_than;
-	TSSymbol sym_less_equal;
-	TSSymbol sym_greater_than;
-	TSSymbol sym_greater_equal;
-	TSSymbol sym_equal;
-	TSSymbol sym_not_equal;
-	// Ternary.
-	TSSymbol sym_conditional;
-	// Unary operators.
-	TSSymbol sym_logical_negation;
-	TSSymbol sym_logical_not;
-	TSSymbol sym_increment;
-	TSSymbol sym_decrement;
-	TSSymbol sym_unary_plus;
-	TSSymbol sym_unary_minus;
-	// Assignment forms.
-	TSSymbol sym_assignment;
-	TSSymbol sym_let_assignment;
-} SymCache;
-
-static SymCache g_sym;
-
-// Look up a symbol ID by name in the language. Returns 0 (the
-// special "no symbol" value) if the name is not in the language;
-// the caller can branch on that to recognise a stale grammar.
-static TSSymbol sym_lookup(TSLanguage *lang, const char *name) {
-	return ts_language_symbol_for_name(lang, name, (uint32_t)strlen(name), true);
-}
-
-static void sym_cache_init(void) {
-	if (g_sym.ready) {
-		return;
-	}
-	TSLanguage *lang = tree_sitter_rznum();
-	g_sym.sym_number = sym_lookup(lang, "number");
-	g_sym.sym_variable = sym_lookup(lang, "variable");
-	g_sym.sym_special_variable = sym_lookup(lang, "special_variable");
-	g_sym.sym_address_typed = sym_lookup(lang, "address_typed");
-	g_sym.sym_string_bytes = sym_lookup(lang, "string_bytes");
-	g_sym.sym_function = sym_lookup(lang, "function");
-	g_sym.sym_parenthesized_expression = sym_lookup(lang, "parenthesized_expression");
-	g_sym.sym_source_file = sym_lookup(lang, "source_file");
-	g_sym.sym_argument = sym_lookup(lang, "argument");
-	g_sym.sym_expression = sym_lookup(lang, "expression");
-	g_sym.sym_sum = sym_lookup(lang, "sum");
-	g_sym.sym_subtraction = sym_lookup(lang, "subtraction");
-	g_sym.sym_product = sym_lookup(lang, "product");
-	g_sym.sym_division = sym_lookup(lang, "division");
-	g_sym.sym_signed_division = sym_lookup(lang, "signed_division");
-	g_sym.sym_modulo = sym_lookup(lang, "modulo");
-	g_sym.sym_signed_modulo = sym_lookup(lang, "signed_modulo");
-	g_sym.sym_exponent = sym_lookup(lang, "exponent");
-	g_sym.sym_logarithm = sym_lookup(lang, "logarithm");
-	g_sym.sym_logical_and = sym_lookup(lang, "logical_and");
-	g_sym.sym_logical_or = sym_lookup(lang, "logical_or");
-	g_sym.sym_logical_xor = sym_lookup(lang, "logical_xor");
-	g_sym.sym_logical_shl = sym_lookup(lang, "logical_shl");
-	g_sym.sym_logical_shr = sym_lookup(lang, "logical_shr");
-	g_sym.sym_arith_shr = sym_lookup(lang, "arith_shr");
-	g_sym.sym_logical_rol = sym_lookup(lang, "logical_rol");
-	g_sym.sym_logical_ror = sym_lookup(lang, "logical_ror");
-	g_sym.sym_less_than = sym_lookup(lang, "less_than");
-	g_sym.sym_less_equal = sym_lookup(lang, "less_equal");
-	g_sym.sym_greater_than = sym_lookup(lang, "greater_than");
-	g_sym.sym_greater_equal = sym_lookup(lang, "greater_equal");
-	g_sym.sym_equal = sym_lookup(lang, "equal");
-	g_sym.sym_not_equal = sym_lookup(lang, "not_equal");
-	g_sym.sym_conditional = sym_lookup(lang, "conditional");
-	g_sym.sym_logical_negation = sym_lookup(lang, "logical_negation");
-	g_sym.sym_logical_not = sym_lookup(lang, "logical_not");
-	g_sym.sym_increment = sym_lookup(lang, "increment");
-	g_sym.sym_decrement = sym_lookup(lang, "decrement");
-	g_sym.sym_unary_plus = sym_lookup(lang, "unary_plus");
-	g_sym.sym_unary_minus = sym_lookup(lang, "unary_minus");
-	g_sym.sym_assignment = sym_lookup(lang, "assignment");
-	g_sym.sym_let_assignment = sym_lookup(lang, "let_assignment");
-	g_sym.ready = true;
-}
-
-// Reserved words. The grammar's keyword-extraction mechanism cannot
-// strictly forbid these in variable position (see grammar.js for the
-// full reasoning), so the evaluator enforces reservation here. `let`
-// is omitted because it is reserved at the parser level; the others
-// can syntactically appear as a bare variable.
+// Reserved words the grammar cannot forbid in variable position (see
+// grammar.js). `let` is already reserved at the parser level.
 
 static const char *const RESERVED_WORDS[] = {
 	"mod", "log", "le", "be", "sdiv", "smod", "sar", NULL
@@ -185,11 +57,12 @@ static bool is_reserved_word(const char *s) {
 
 typedef struct {
 	RzNum *num; ///< callback host
-	const char *src; ///< source text (borrowed)
-	char *err; ///< first error message (owned)
+	const char *src; ///< source text
+	char *err; ///< first error message
 	RzNumError err_code; ///< category of the first error
 	ut64 deadline_us; ///< monotonic wall-clock deadline; 0 = unlimited
 	ut32 node_count; ///< nodes visited so far (used to amortise the clock check)
+	ut32 depth; ///< current tree-walk recursion depth (bounded to keep deep nesting off the C stack)
 	RzNumFuncRegistry *funcs; ///< user-registered functions (borrowed), may be NULL
 	RzNumIOReadCallback io_read; ///< typed-address reader (borrowed), may be NULL
 	void *io_read_user; ///< opaque for io_read
@@ -237,10 +110,10 @@ RZ_API void rz_num_func_registry_free(RZ_NULLABLE RzNumFuncRegistry *reg) {
 /**
  * \brief Register a function in the registry.
  *
- * \param reg    The registry. Must be non-NULL.
- * \param name   Function name (copied). Must be non-NULL.
+ * \param reg    The registry.
+ * \param name   Function name.
  * \param arity  Exact argument count, or -1 for variadic.
- * \param fn     Dispatcher. Must be non-NULL.
+ * \param fn     Dispatcher.
  * \param user   Opaque pointer passed to \p fn on every call.
  * \return true on success, false on allocation failure.
  */
@@ -313,10 +186,6 @@ static void set_err_code(EvalCtx *c, RzNumError code, const char *fmt, ...) {
 }
 
 // Slice the source text spanned by a node into a fresh heap buffer.
-// Avoids the printf machinery that rz_str_newf("%.*s", ...) would
-// drag in; identifier and literal slicing is the hot path of any
-// non-trivial expression evaluation, and a plain malloc+memcpy is
-// roughly three times faster than the format-string variant.
 static char *node_text(TSNode node, const char *src) {
 	uint32_t s = ts_node_start_byte(node);
 	uint32_t e = ts_node_end_byte(node);
@@ -332,52 +201,30 @@ static char *node_text(TSNode node, const char *src) {
 
 // Literal parsing
 
-// Decide whether the textual literal is a float (has '.' or, in a
-// non-0x literal, 'e'/'E'/'p'/'P'). Hex literals' 'e'/'E' are
-// ordinary digits and do not imply float; their floatness comes from
-// '.' or 'p'/'P' instead.
+// A literal is float if it has '.' or an exponent marker. In hex, 'e'/'E'
+// are digits, not exponents, so floatness there comes from '.' or 'p'/'P'.
 static bool literal_is_float(const char *t) {
-	const char *p = t;
-	if (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
-		for (const char *q = p + 2; *q; q++) {
-			if (*q == '.' || *q == 'p' || *q == 'P') {
-				return true;
-			}
-		}
-		return false;
+	size_t prefix_len = 0;
+	if (rz_num_base_prefix(t, NULL, &prefix_len) == RZ_NUM_BASE_PREFIX_HEX) {
+		// In a hex literal 'e' is a digit, so only a radix point or a
+		// 'p' binary exponent makes it a float.
+		return rz_regex_contains("[.pP]", t + prefix_len, RZ_REGEX_ZERO_TERMINATED,
+			RZ_REGEX_DEFAULT, RZ_REGEX_DEFAULT);
 	}
-	for (; *p; p++) {
-		if (*p == '.' || *p == 'e' || *p == 'E' || *p == 'p' || *p == 'P') {
-			return true;
-		}
-	}
-	return false;
+	return rz_regex_contains("[.eEpP]", t, RZ_REGEX_ZERO_TERMINATED,
+		RZ_REGEX_DEFAULT, RZ_REGEX_DEFAULT);
 }
 
 // Parse an unsigned integer literal. Returns true on success. On
 // ERANGE, sets *overflow=true so the caller can promote to bignum.
 static bool parse_int_literal(const char *t, ut64 *out, bool *overflow, char **err) {
 	const char *p = t;
-	int base = 10;
-	if (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
-		base = 16;
-		p += 2;
-	} else if (p[0] == '0' && (p[1] == 'b' || p[1] == 'B')) {
-		base = 2;
-		p += 2;
-	} else if (p[0] == '0' && (p[1] == 'o' || p[1] == 'O')) {
-		base = 8;
-		p += 2;
-	} else if (p[0] == '0' && (p[1] == 't' || p[1] == 'T')) {
-		base = 3;
-		p += 2;
-	} else if (p[0] == '0' && p[1] >= '0' && p[1] <= '9') {
-		// C-style octal: a leading 0 followed by another digit is
-		// octal, matching the legacy rz_num parser (`034` == 0o34 ==
-		// 28). The leading 0 is itself a valid octal digit, so leave
-		// p pointing at it and let strtoull() consume the run.
-		base = 8;
-	}
+	ut32 base = 10;
+	size_t prefix_len = 0;
+	// A C style leading zero reports prefix_len 0: the zero is an octal
+	// digit, so strtoull() must still see it.
+	rz_num_base_prefix(p, &base, &prefix_len);
+	p += prefix_len;
 	if (!*p) {
 		if (err && !*err) {
 			*err = rz_str_newf("empty integer literal: %s", t);
@@ -434,31 +281,56 @@ static bool parse_float_literal(const char *t, double *out, char **err) {
 // SI / IEC byte unit multiplier. Mirrors what rz_num_units() prints
 // on the output side, with the addition of PiB / PB and the decimal
 // counterparts.
+#define RZ_NUM_KIB (1ULL << 10)
+#define RZ_NUM_MIB (1ULL << 20)
+#define RZ_NUM_GIB (1ULL << 30)
+#define RZ_NUM_TIB (1ULL << 40)
+#define RZ_NUM_PIB (1ULL << 50)
+#define RZ_NUM_EIB (1ULL << 60)
+#define RZ_NUM_KB  1000ULL
+#define RZ_NUM_MB  (RZ_NUM_KB * 1000)
+#define RZ_NUM_GB  (RZ_NUM_MB * 1000)
+#define RZ_NUM_TB  (RZ_NUM_GB * 1000)
+#define RZ_NUM_PB  (RZ_NUM_TB * 1000)
+#define RZ_NUM_EB  (RZ_NUM_PB * 1000)
+
 static ut64 unit_multiplier(const char *u) {
-	if (!strcmp(u, "KiB"))
-		return 1ULL << 10;
-	if (!strcmp(u, "MiB"))
-		return 1ULL << 20;
-	if (!strcmp(u, "GiB"))
-		return 1ULL << 30;
-	if (!strcmp(u, "TiB"))
-		return 1ULL << 40;
-	if (!strcmp(u, "PiB"))
-		return 1ULL << 50;
-	if (!strcmp(u, "EiB"))
-		return 1ULL << 60;
-	if (!strcmp(u, "KB"))
-		return 1000ULL;
-	if (!strcmp(u, "MB"))
-		return 1000ULL * 1000;
-	if (!strcmp(u, "GB"))
-		return 1000ULL * 1000 * 1000;
-	if (!strcmp(u, "TB"))
-		return 1000ULL * 1000 * 1000 * 1000;
-	if (!strcmp(u, "PB"))
-		return 1000ULL * 1000 * 1000 * 1000 * 1000;
-	if (!strcmp(u, "EB"))
-		return 1000ULL * 1000 * 1000 * 1000 * 1000 * 1000;
+	if (RZ_STR_EQ(u, "KiB")) {
+		return RZ_NUM_KIB;
+	}
+	if (RZ_STR_EQ(u, "MiB")) {
+		return RZ_NUM_MIB;
+	}
+	if (RZ_STR_EQ(u, "GiB")) {
+		return RZ_NUM_GIB;
+	}
+	if (RZ_STR_EQ(u, "TiB")) {
+		return RZ_NUM_TIB;
+	}
+	if (RZ_STR_EQ(u, "PiB")) {
+		return RZ_NUM_PIB;
+	}
+	if (RZ_STR_EQ(u, "EiB")) {
+		return RZ_NUM_EIB;
+	}
+	if (RZ_STR_EQ(u, "KB")) {
+		return RZ_NUM_KB;
+	}
+	if (RZ_STR_EQ(u, "MB")) {
+		return RZ_NUM_MB;
+	}
+	if (RZ_STR_EQ(u, "GB")) {
+		return RZ_NUM_GB;
+	}
+	if (RZ_STR_EQ(u, "TB")) {
+		return RZ_NUM_TB;
+	}
+	if (RZ_STR_EQ(u, "PB")) {
+		return RZ_NUM_PB;
+	}
+	if (RZ_STR_EQ(u, "EB")) {
+		return RZ_NUM_EB;
+	}
 	return 1;
 }
 
@@ -500,9 +372,10 @@ static bool value_is_truthy(const RzNumValue *v) {
 		return v->val.bv && !rz_bv_is_zero_vector(v->val.bv);
 	case RZ_NUM_KIND_UT64:
 		return v->val.n != 0;
-	default:
+	case RZ_NUM_KIND_NONE:
 		return false;
 	}
+	return false;
 }
 
 // val_big transfers ownership of `b` into the returned RzNumValue.
@@ -561,16 +434,6 @@ static RzNumBig *big_from_u64(ut64 n) {
 // above this many bits cannot be represented exactly.
 #define RZ_BIG_MAX_BITS (RZ_BIG_ARRAY_SIZE * RZ_BIG_WORD_SIZE * 8)
 
-// Number of significant bits in a ut64 (0 for 0).
-static ut32 u64_bit_width(ut64 n) {
-	ut32 w = 0;
-	while (n) {
-		n >>= 1;
-		w++;
-	}
-	return w;
-}
-
 // Significant bit width of an integer-kind value's *magnitude*. A
 // ut64 with its top bit set is read as a negative st64, so its width
 // is that of the absolute value, not of the two's-complement pattern
@@ -582,7 +445,7 @@ static ut32 value_int_bit_width(const RzNumValue *v) {
 	if (v->kind == RZ_NUM_KIND_UT64) {
 		ut64 n = v->val.n;
 		ut64 mag = ((st64)n < 0) ? (0 - n) : n; // |n|, INT64_MIN-safe
-		return u64_bit_width(mag);
+		return rz_bits_ut64_width(mag);
 	}
 	if (v->kind == RZ_NUM_KIND_BIG && v->val.big) {
 		char *h = rz_big_to_hexstr(v->val.big);
@@ -593,8 +456,9 @@ static ut32 value_int_bit_width(const RzNumValue *v) {
 		if (p[0] == '-') {
 			p++;
 		}
-		if (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
-			p += 2;
+		size_t prefix_len = 0;
+		if (rz_num_base_prefix(p, NULL, &prefix_len) == RZ_NUM_BASE_PREFIX_HEX) {
+			p += prefix_len;
 		}
 		ut32 bits = (ut32)strlen(p) * 4;
 		free(h);
@@ -629,22 +493,8 @@ static RzNumBig *big_from_base(const char *digits, int base) {
 	rz_big_from_int(acc, 0);
 	rz_big_from_int(mul, base);
 	for (const char *p = digits; *p; p++) {
-		int v;
-		char c = *p;
-		if (c >= '0' && c <= '9') {
-			v = c - '0';
-		} else if (c >= 'a' && c <= 'f') {
-			v = c - 'a' + 10;
-		} else if (c >= 'A' && c <= 'F') {
-			v = c - 'A' + 10;
-		} else {
-			rz_big_free(acc);
-			rz_big_free(mul);
-			rz_big_free(digit);
-			rz_big_free(tmp);
-			return NULL;
-		}
-		if (v >= base) {
+		ut8 v = 0;
+		if (rz_hex_to_byte(&v, (ut8)*p) || v >= base) {
 			rz_big_free(acc);
 			rz_big_free(mul);
 			rz_big_free(digit);
@@ -716,9 +566,10 @@ static RzBigDecimal *value_to_bigdecimal(const RzNumValue *v) {
 		snprintf(buf, sizeof(buf), "%.17g", v->val.d);
 		return rz_big_decimal_new_from_str(buf);
 	}
-	default:
+	case RZ_NUM_KIND_NONE:
 		return rz_big_decimal_new_from_int(0);
 	}
+	return rz_big_decimal_new_from_int(0);
 }
 
 static double to_double(const RzNumValue *v) {
@@ -744,9 +595,10 @@ static double to_double(const RzNumValue *v) {
 		return v->val.bv ? (double)rz_bv_to_ut64(v->val.bv) : 0.0;
 	case RZ_NUM_KIND_BIGDECIMAL:
 		return v->val.bigdec ? rz_big_decimal_to_double(v->val.bigdec) : 0.0;
-	default:
+	case RZ_NUM_KIND_NONE:
 		return 0.0;
 	}
+	return 0.0;
 }
 
 static ut64 to_u64(const RzNumValue *v) {
@@ -761,9 +613,10 @@ static ut64 to_u64(const RzNumValue *v) {
 		return v->val.bv ? rz_bv_to_ut64(v->val.bv) : 0;
 	case RZ_NUM_KIND_BIGDECIMAL:
 		return v->val.bigdec ? rz_big_decimal_to_ut64(v->val.bigdec) : 0;
-	default:
+	case RZ_NUM_KIND_NONE:
 		return 0;
 	}
+	return 0;
 }
 
 // True when an integer-kind value represents a negative number: a
@@ -963,7 +816,7 @@ static RzNumValue *value_dup_heap(const RzNumValue *src) {
 		dst->val.d = src->val.d;
 		break;
 	case RZ_NUM_KIND_UT64:
-	default:
+	case RZ_NUM_KIND_NONE:
 		dst->val.n = src->val.n;
 		break;
 	}
@@ -1168,25 +1021,10 @@ static RzNumValue eval_number(EvalCtx *c, TSNode n) {
 				// rz_big parser); the other bases go through
 				// big_from_base, which builds the bignum by
 				// shift-and-add on rz_big_mul / rz_big_add.
-				const char *digits = txt;
-				int base = 10;
-				if (txt[0] == '0' && (txt[1] == 'x' || txt[1] == 'X')) {
-					base = 16;
-					digits = txt + 2;
-				} else if (txt[0] == '0' && (txt[1] == 'b' || txt[1] == 'B')) {
-					base = 2;
-					digits = txt + 2;
-				} else if (txt[0] == '0' && (txt[1] == 'o' || txt[1] == 'O')) {
-					base = 8;
-					digits = txt + 2;
-				} else if (txt[0] == '0' && (txt[1] == 't' || txt[1] == 'T')) {
-					base = 3;
-					digits = txt + 2;
-				} else if (txt[0] == '0' && txt[1] >= '0' && txt[1] <= '9') {
-					// C-style octal (see parse_int_literal). The leading
-					// 0 is a valid octal digit, so keep it in `digits`.
-					base = 8;
-				}
+				ut32 base = 10;
+				size_t prefix_len = 0;
+				rz_num_base_prefix(txt, &base, &prefix_len);
+				const char *digits = txt + prefix_len;
 				RzNumBig *b = NULL;
 				if (base == 16) {
 					b = rz_big_new();
@@ -1603,50 +1441,51 @@ static RzNumValue eval_variable(EvalCtx *c, TSNode n) {
 		// cast the wrong pointer and crash.
 		v = c->num->callback(c->num->userptr, name, &ok);
 	}
-	if (!ok) {
-		// Before folding an unresolved identifier to 0, try the legacy
-		// trailing-'h' hexadecimal form: a run of hex digits followed
-		// by a single 'h'/'H' (`beach` == 0xbeac, `cafeh` == 0xcafe).
-		// The host callback was consulted first (above), so a flag or
-		// register named `beach` still wins; only an otherwise unknown
-		// name is reinterpreted. This mirrors the legacy rz_num_get(),
-		// which tried the callback before number parsing.
-		size_t nlen = strlen(name);
-		if (nlen >= 2 && (name[nlen - 1] == 'h' || name[nlen - 1] == 'H')) {
-			bool all_hex = true;
-			for (size_t i = 0; i + 1 < nlen; i++) {
-				if (!isxdigit((ut8)name[i])) {
-					all_hex = false;
-					break;
-				}
-			}
-			if (all_hex) {
-				errno = 0;
-				char *endp = NULL;
-				unsigned long long hv = strtoull(name, &endp, 16);
-				if (errno != ERANGE && endp != name && (*endp == 'h' || *endp == 'H')) {
-					RZ_LOG_WARN("'%s' uses the deprecated trailing-'h' hex form; "
-						    "use the 0x prefix (0x%.*s) instead\n",
-						name, (int)(nlen - 1), name);
-					free(name);
-					return val_u64((ut64)hv);
-				}
+	if (ok) {
+		free(name);
+		return val_u64(v);
+	}
+	// Before folding an unresolved identifier to 0, try the legacy
+	// trailing-'h' hexadecimal form: a run of hex digits followed
+	// by a single 'h'/'H' (`beach` == 0xbeac, `cafeh` == 0xcafe).
+	// The host callback was consulted first (above), so a flag or
+	// register named `beach` still wins; only an otherwise unknown
+	// name is reinterpreted. This mirrors the legacy rz_num_get(),
+	// which tried the callback before number parsing.
+	size_t nlen = strlen(name);
+	if (nlen >= 2 && (name[nlen - 1] == 'h' || name[nlen - 1] == 'H')) {
+		bool all_hex = true;
+		for (size_t i = 0; i + 1 < nlen; i++) {
+			if (!isxdigit((ut8)name[i])) {
+				all_hex = false;
+				break;
 			}
 		}
-		// The host could not resolve this identifier. The legacy
-		// rz_num_get() treats an unknown symbol as 0 but also records
-		// an error (its error() bumps nc.errors), which is how callers
-		// like the seek command tell that `s main` did not resolve and
-		// must not move. Mirror that: fold to 0 so the rest of a larger
-		// expression (e.g. `sym + 4`) still evaluates as before, but
-		// flag the failure through nc so those callers can react.
-		v = 0;
-		if (c->num) {
-			c->num->nc.errors = 1;
+		if (all_hex) {
+			errno = 0;
+			char *endp = NULL;
+			unsigned long long hv = strtoull(name, &endp, 16);
+			if (errno != ERANGE && endp != name && (*endp == 'h' || *endp == 'H')) {
+				RZ_LOG_WARN("'%s' uses the deprecated trailing-'h' hex form; "
+					    "use the 0x prefix (0x%.*s) instead\n",
+					name, (int)(nlen - 1), name);
+				free(name);
+				return val_u64((ut64)hv);
+			}
 		}
 	}
+	// The host could not resolve this identifier. The legacy
+	// rz_num_get() treats an unknown symbol as 0 but also records
+	// an error (its error() bumps nc.errors), which is how callers
+	// like the seek command tell that `s main` did not resolve and
+	// must not move. Mirror that: fold to 0 so the rest of a larger
+	// expression (e.g. `sym + 4`) still evaluates as before, but
+	// flag the failure through nc so those callers can react.
+	if (c->num) {
+		c->num->nc.errors = 1;
+	}
 	free(name);
-	return val_u64(v);
+	return val_u64(0);
 }
 
 static RzNumValue eval_special_variable(EvalCtx *c, TSNode n) {
@@ -1682,17 +1521,6 @@ static RzNumValue eval_special_variable(EvalCtx *c, TSNode n) {
 // Forward declaration: big_cmp is defined further down, alongside
 // the other bignum helpers used by eval_binop.
 static int big_cmp(const RzNumValue *lv, const RzNumValue *rv);
-
-// Helper: count populated bits of a ut64. Used by popcount and as a
-// building block for unicode-named aliases.
-static ut64 ut64_popcount(ut64 x) {
-	ut64 n = 0;
-	while (x) {
-		n += x & 1;
-		x >>= 1;
-	}
-	return n;
-}
 
 // Collect a comma-separated argument list from a `function` node. The
 // caller passes a maximum count; we stop early if more arguments are
@@ -1807,29 +1635,22 @@ static RzNumValue builtin_popcount(EvalCtx *c, RzNumValue *a, int n) {
 		char *hex = rz_big_to_hexstr(a[0].val.big);
 		ut64 total = 0;
 		if (hex) {
-			static const ut64 nibble_pc[16] = { 0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4 };
 			const char *p = hex;
-			if (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
-				p += 2;
+			size_t prefix_len = 0;
+			if (rz_num_base_prefix(p, NULL, &prefix_len) == RZ_NUM_BASE_PREFIX_HEX) {
+				p += prefix_len;
 			}
 			for (; *p; p++) {
-				char c = *p;
-				int v = -1;
-				if (c >= '0' && c <= '9')
-					v = c - '0';
-				else if (c >= 'a' && c <= 'f')
-					v = c - 'a' + 10;
-				else if (c >= 'A' && c <= 'F')
-					v = c - 'A' + 10;
-				if (v >= 0) {
-					total += nibble_pc[v];
+				ut8 v = 0;
+				if (!rz_hex_to_byte(&v, (ut8)*p)) {
+					total += rz_bits_count_ones_ut8(v & 0xf);
 				}
 			}
 			free(hex);
 		}
 		return val_u64(total);
 	}
-	return val_u64(ut64_popcount(to_u64(&a[0])));
+	return val_u64(rz_bits_count_ones_ut64(to_u64(&a[0])));
 }
 
 // len(x): the length of the operand.
@@ -1862,8 +1683,9 @@ static RzNumValue builtin_len(EvalCtx *c, RzNumValue *a, int n) {
 		if (p[0] == '-') {
 			p++;
 		}
-		if (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
-			p += 2;
+		size_t prefix_len = 0;
+		if (rz_num_base_prefix(p, NULL, &prefix_len) == RZ_NUM_BASE_PREFIX_HEX) {
+			p += prefix_len;
 		}
 		// Skip leading zero digits.
 		while (p[0] == '0' && p[1] != '\0') {
@@ -1896,7 +1718,7 @@ static RzNumValue builtin_len(EvalCtx *c, RzNumValue *a, int n) {
 		set_err_code(c, RZ_NUM_ERR_TYPE_MISMATCH, "len is not defined on floats");
 		return val_u64(0);
 	}
-	return val_u64(u64_bit_width(a[0].val.n));
+	return val_u64(rz_bits_ut64_width(a[0].val.n));
 }
 
 // Domain-relevant math and bit functions. The transcendental ones
@@ -3047,7 +2869,35 @@ static RzNumValue eval_unop_right(EvalCtx *c, TSNode n, const char *op) {
 	return out;
 }
 
+// The depth-guarded recursive body; eval_node() below wraps it.
+static RzNumValue eval_node_inner(EvalCtx *c, TSNode n);
+
+// Cap on the tree-walk recursion depth. eval_node() recurses once per
+// nesting level, and a left-associative chain such as "1+1+...+1" nests
+// one binary_expression per term, so a few thousand terms would exhaust
+// a small thread stack (Windows defaults to 1 MB) and crash the process.
+// Report a clean error past the cap instead of overflowing. 256 is far
+// beyond any realistic hand-written expression yet stays well within the
+// smallest stack we run on.
+#define RZ_NUM_MAX_EVAL_DEPTH 256
+
 static RzNumValue eval_node(EvalCtx *c, TSNode n) {
+	if (c->depth >= RZ_NUM_MAX_EVAL_DEPTH) {
+		// Pin the first error; an already-recorded one (e.g. a timeout)
+		// keeps priority and the short-circuit below unwinds the stack.
+		if (!c->err) {
+			set_err_code(c, RZ_NUM_ERR_DEPTH,
+				"expression nesting exceeds the evaluator depth limit");
+		}
+		return val_u64(0);
+	}
+	c->depth++;
+	RzNumValue v = eval_node_inner(c, n);
+	c->depth--;
+	return v;
+}
+
+static RzNumValue eval_node_inner(EvalCtx *c, TSNode n) {
 	// Cheap-amortised deadline check. Calling rz_time_now_mono() on
 	// every node would be measurable overhead for small expressions;
 	// we only check every 256 nodes plus on entry. The mask is a
@@ -3233,7 +3083,7 @@ static RzNumValue eval_node(EvalCtx *c, TSNode n) {
  *
  * \param num         Optional RzNum instance (used for the variable
  *                    resolution callback). May be NULL.
- * \param expr        The expression to evaluate. Must be non-NULL.
+ * \param expr        The expression to evaluate.
  * \param out_value   Out-parameter receiving the evaluated value.
  *                    The caller must finalise it with
  *                    rz_num_value_fini() once done.
@@ -3285,10 +3135,9 @@ RZ_API bool rz_num_math_value_ex(RZ_NULLABLE RzNum *num, RZ_NONNULL const char *
 	}
 
 	TSNode root = rz_num_parse_root(pr);
-	// Populate the TSSymbol cache. The first call costs a handful
-	// of ts_language_symbol_for_name() lookups; subsequent calls
-	// see g_sym.ready and are a single load.
-	sym_cache_init();
+	// Warm the shared grammar symbol cache before the evaluation loop
+	// (lazily populated on first use; see rz_num_parse_syms()).
+	(void)rz_num_parse_syms();
 	ut64 deadline = 0;
 	if (options && options->timeout_ms > 0) {
 		deadline = rz_time_now_mono() + options->timeout_ms * 1000;
@@ -3300,6 +3149,7 @@ RZ_API bool rz_num_math_value_ex(RZ_NULLABLE RzNum *num, RZ_NONNULL const char *
 		.err_code = RZ_NUM_ERR_OK,
 		.deadline_us = deadline,
 		.node_count = 0,
+		.depth = 0,
 		.funcs = options ? options->funcs : NULL,
 		.io_read = options ? options->io_read : NULL,
 		.io_read_user = options ? options->io_read_user : NULL,

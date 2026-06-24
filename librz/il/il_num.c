@@ -1,36 +1,36 @@
-// SPDX-FileCopyrightText: 2026 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2026 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
  * \file
  * \brief Lift an RzNum expression to a typed RzILOpPure.
  *
- * The tree-sitter parse and the grounding of non-structural constructs
- * live in librz_util (rz_num_expression_parse), which hands back a
- * tree-sitter-free RzNumExpression. This file is the second half: it
- * walks that abstraction and builds the corresponding RzILOpPure, so the
- * caller gets a real op tree (which it can evaluate, transform, or
- * stringify) instead of pre-rendered text. The layering keeps tree-sitter
- * out of librz_il entirely.
+ * The tree-sitter parse, and the folding of non-structural constructs to
+ * constants, live in librz_util (rz_num_expression_parse), which hands back
+ * a self-contained RzNumExpression (no tree-sitter references). This file is
+ * the second half: it walks that abstraction and builds the corresponding
+ * RzILOpPure, so the caller gets a real op tree (which it can evaluate,
+ * transform, or stringify) instead of pre-rendered text. The layering keeps
+ * tree-sitter out of librz_il entirely.
  */
-
-#include <string.h>
 
 #include <rz_il/rz_il_opcodes.h>
 #include <rz_util/rz_num.h>
-#include <rz_util/rz_str.h>
+#include <rz_util/rz_num_expression.h>
 #include <rz_util/rz_bitvector.h>
 #include <rz_util/rz_float.h>
 
 static RzILOpPure *expr_to_pure(const RzNumExpression *e);
 
-// A float leaf: take the double's IEEE-754 bit pattern as a 64-bit
-// bit-vector and wrap it as a binary64 float constant - the form RzNum's
-// FLOAT kind carries. A future widening to f32/f128 changes only this.
+// A float leaf: reinterpret the double through rz_float, then wrap its
+// binary64 bit pattern as the constant RzNum's FLOAT kind carries.
 static RzILOpPure *float_leaf(double d) {
-	ut64 bits;
-	memcpy(&bits, &d, sizeof(bits));
-	RzBitVector *bv = rz_bv_new_from_ut64(64, bits);
+	RzFloat *f = rz_float_new_from_f64(d);
+	if (!f) {
+		return NULL;
+	}
+	RzBitVector *bv = rz_bv_dup(f->s);
+	rz_float_free(f);
 	if (!bv) {
 		return NULL;
 	}
@@ -73,6 +73,7 @@ static RzILOpPure *binop_to_pure(const RzNumExpression *e) {
 	case RZ_NUM_EXPRESSION_OP_FMUL: return rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE, x, y);
 	case RZ_NUM_EXPRESSION_OP_FDIV: return rz_il_op_new_fdiv(RZ_FLOAT_RMODE_RNE, x, y);
 	default:
+		rz_warn_if_reached();
 		rz_il_op_pure_free(x);
 		rz_il_op_pure_free(y);
 		return NULL;
@@ -89,6 +90,7 @@ static RzILOpPure *unop_to_pure(const RzNumExpression *e) {
 	case RZ_NUM_EXPRESSION_OP_LOGNOT: return rz_il_op_new_log_not(x);
 	case RZ_NUM_EXPRESSION_OP_IS_FZERO: return rz_il_op_new_is_fzero(x);
 	default:
+		rz_warn_if_reached();
 		rz_il_op_pure_free(x);
 		return NULL;
 	}
@@ -136,7 +138,7 @@ static RzILOpPure *expr_to_pure(const RzNumExpression *e) {
  * \brief Build an RzILOpPure from a grounded RzNumExpression.
  *
  * \param expr The expression tree produced by rz_num_expression_parse().
- * \return A newly-owned RzILOpPure, or NULL on allocation failure.
+ * \return The RzILOpPure, or NULL on allocation failure.
  */
 RZ_API RZ_OWN RzILOpPure *rz_il_op_pure_from_num_expression(RZ_NONNULL const RzNumExpression *expr) {
 	rz_return_val_if_fail(expr, NULL);
@@ -150,13 +152,12 @@ RZ_API RZ_OWN RzILOpPure *rz_il_op_pure_from_num_expression(RZ_NONNULL const RzN
  * intermediate RzNumExpression is built and freed internally.
  *
  * \param num       Optional RzNum for resolving identifiers when a
- *                  sub-expression must be grounded. May be NULL.
- * \param expr      The expression to lift. Must be non-NULL.
- * \param opts      Optional evaluation options used when grounding. May
- *                  be NULL.
- * \param error_msg Optional out-pointer for a caller-owned diagnostic on
- *                  failure. May be NULL.
- * \return A newly-owned RzILOpPure, or NULL on a parse or lift error.
+ *                  sub-expression must be grounded.
+ * \param expr      The expression to lift.
+ * \param opts      Optional evaluation options used when grounding.
+ * \param error_msg Optional out-pointer for a diagnostic on
+ *                  failure.
+ * \return The RzILOpPure, or NULL on a parse or lift error.
  */
 RZ_API RZ_OWN RzILOpPure *rz_il_lift_num(RZ_NULLABLE RzNum *num,
 	RZ_NONNULL const char *expr, RZ_NULLABLE const RzNumMathOptions *opts,
@@ -168,8 +169,5 @@ RZ_API RZ_OWN RzILOpPure *rz_il_lift_num(RZ_NULLABLE RzNum *num,
 	}
 	RzILOpPure *op = expr_to_pure(e);
 	rz_num_expression_free(e);
-	if (!op && error_msg && !*error_msg) {
-		*error_msg = rz_str_dup("out of memory");
-	}
 	return op;
 }

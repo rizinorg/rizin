@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2026 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
@@ -42,6 +42,7 @@ RZ_API const char *rz_num_error_name(RzNumError err) {
 	case RZ_NUM_ERR_UNCOMPUTABLE: return "uncomputable";
 	case RZ_NUM_ERR_NOT_IMPLEMENTED: return "not implemented";
 	case RZ_NUM_ERR_OUT_OF_MEMORY: return "out of memory";
+	case RZ_NUM_ERR_DEPTH: return "nesting too deep";
 	}
 	return "unknown";
 }
@@ -226,12 +227,10 @@ static void print_bitvector(const RzNumValue *v, RzStrBuf *sb, bool utf8) {
  *   BITVECTOR  bit-width / hex / binary
  *
  * On a value with v->err != RZ_NUM_ERR_OK, a single 'error <category>'
- * line is appended instead. The caller owns the RzStrBuf and is
- * responsible for releasing it.
+ * line is appended instead.
  *
- * \param v   The value to format. Must be a valid (initialised)
- *            RzNumValue.
- * \param sb  Destination buffer. Must be non-NULL.
+ * \param v   The value to format.
+ * \param sb  Destination buffer.
  */
 RZ_API void rz_num_value_print(RZ_NONNULL const RzNumValue *v, RZ_NONNULL RzStrBuf *sb) {
 	rz_num_value_print_ex(v, NULL, sb);
@@ -256,7 +255,7 @@ static void print_bigdecimal(const RzNumValue *v, RzStrBuf *sb) {
  *
  * \param v    The value to format. Must be a valid RzNumValue.
  * \param opts Formatting options. NULL selects the ASCII defaults.
- * \param sb   Destination buffer. Must be non-NULL.
+ * \param sb   Destination buffer.
  */
 RZ_API void rz_num_value_print_ex(RZ_NONNULL const RzNumValue *v,
 	RZ_NULLABLE const RzNumPrintOptions *opts, RZ_NONNULL RzStrBuf *sb) {
@@ -283,7 +282,6 @@ RZ_API void rz_num_value_print_ex(RZ_NONNULL const RzNumValue *v,
 		print_bitvector(v, sb, utf8);
 		break;
 	case RZ_NUM_KIND_NONE:
-	default:
 		rz_strbuf_appendf(sb, "kind    none\n");
 		break;
 	}
@@ -293,7 +291,7 @@ RZ_API void rz_num_value_print_ex(RZ_NONNULL const RzNumValue *v,
  * \brief Compact one-line stringification of an RzNumValue.
  *
  * Suitable for inline display where the multi-line print would be
- * too noisy. Returns a freshly-allocated, caller-owned string.
+ * too noisy.
  * On error returns NULL.
  */
 RZ_API RZ_OWN char *rz_num_value_tostring(RZ_NONNULL const RzNumValue *v) {
@@ -317,9 +315,7 @@ RZ_API RZ_OWN char *rz_num_value_tostring(RZ_NONNULL const RzNumValue *v) {
 	}
 	case RZ_NUM_KIND_BIG: {
 		char *hex = rz_big_to_hexstr(v->val.big);
-		// rz_big_to_hexstr already includes "0x"; copy it to a
-		// caller-owned buffer so the contract on this function
-		// (caller frees) is straightforward.
+		// rz_big_to_hexstr already includes the "0x" prefix.
 		if (!hex) {
 			return rz_str_dup("0x0");
 		}
@@ -333,7 +329,7 @@ RZ_API RZ_OWN char *rz_num_value_tostring(RZ_NONNULL const RzNumValue *v) {
 		return hex;
 	}
 	case RZ_NUM_KIND_NONE:
-	default:
 		return rz_str_dup("(none)");
 	}
+	return rz_str_dup("(none)");
 }

@@ -57,24 +57,15 @@ typedef enum {
 	RZ_NUM_ERR_UNCOMPUTABLE, ///< well-formed but mathematically undefined (log(<=0) etc.)
 	RZ_NUM_ERR_NOT_IMPLEMENTED, ///< feature parsed but evaluator does not yet support it
 	RZ_NUM_ERR_OUT_OF_MEMORY, ///< heap allocation failed
+	RZ_NUM_ERR_DEPTH, ///< expression nesting exceeded the evaluator's recursion-depth limit
 } RzNumError;
 
 /**
  * \brief Tagged-union value produced by the RzNum evaluator.
  *
- * For RZ_NUM_KIND_BIG and RZ_NUM_KIND_BITVECTOR, the union member is a
- * pointer owned by this RzNumValue (RzNumBig's underlying representation
- * depends on the configured crypto backend and RzBitVector owns a
- * heap-allocated payload, so neither can portably be stored by value).
- * RZ_NUM_KIND_FLOAT carries a plain double for now; extended-precision
- * IEEE-754 values (via RzFloat) will be added in follow-up work as new
- * kinds rather than overloading this one.
- *
- * The `err` field carries an RzNumError out-of-band. A value with
- * err != RZ_NUM_ERR_OK is still required to be a valid RzNumValue
- * (well-formed kind+val) so that callers can release it with
- * rz_num_value_fini() unconditionally; on error the payload is
- * typically RZ_NUM_KIND_UT64 / 0 but consumers must not rely on that.
+ * A value with err != RZ_NUM_ERR_OK is still a well-formed RzNumValue, so a
+ * caller can always release it with rz_num_value_fini(); on error the payload
+ * is typically RZ_NUM_KIND_UT64 / 0, but consumers must not rely on that.
  */
 typedef struct rz_num_value_t {
 	RzNumKind kind;
@@ -82,9 +73,9 @@ typedef struct rz_num_value_t {
 	union {
 		ut64 n; ///< valid when kind == RZ_NUM_KIND_UT64
 		double d; ///< valid when kind == RZ_NUM_KIND_FLOAT
-		RzNumBig *big; ///< valid when kind == RZ_NUM_KIND_BIG (owned)
-		RzBitVector *bv; ///< valid when kind == RZ_NUM_KIND_BITVECTOR (owned)
-		RzBigDecimal *bigdec; ///< valid when kind == RZ_NUM_KIND_BIGDECIMAL (owned)
+		RzNumBig *big; ///< valid when kind == RZ_NUM_KIND_BIG
+		RzBitVector *bv; ///< valid when kind == RZ_NUM_KIND_BITVECTOR
+		RzBigDecimal *bigdec; ///< valid when kind == RZ_NUM_KIND_BIGDECIMAL
 	} val;
 } RzNumValue;
 
@@ -108,11 +99,12 @@ static inline void rz_num_value_init(RzNumValue *v) {
  * the full value remains accessible on the RzNumValue itself.
  * NONE / BITVECTOR project to 0.
  *
- * \param v The value to project. Must be non-NULL.
+ * \param v The value to project.
  * \return The ut64 projection.
  */
 static inline ut64 rz_num_value_to_ut64(const RzNumValue *v) {
 	if (!v) {
+		rz_warn_if_reached();
 		return 0;
 	}
 	switch (v->kind) {
@@ -127,6 +119,7 @@ static inline ut64 rz_num_value_to_ut64(const RzNumValue *v) {
 	case RZ_NUM_KIND_BIGDECIMAL:
 		return v->val.bigdec ? rz_big_decimal_to_ut64(v->val.bigdec) : 0;
 	default:
+		rz_warn_if_reached();
 		return 0;
 	}
 }
@@ -141,11 +134,12 @@ static inline ut64 rz_num_value_to_ut64(const RzNumValue *v) {
  * through; BIG and BITVECTOR project their value (BIG via the same
  * low-64-bit narrowing as rz_num_value_to_ut64()).
  *
- * \param v The value to project. Must be non-NULL.
+ * \param v The value to project.
  * \return The double projection.
  */
 static inline double rz_num_value_to_double(const RzNumValue *v) {
 	if (!v) {
+		rz_warn_if_reached();
 		return 0.0;
 	}
 	switch (v->kind) {
@@ -160,6 +154,7 @@ static inline double rz_num_value_to_double(const RzNumValue *v) {
 	case RZ_NUM_KIND_BIGDECIMAL:
 		return v->val.bigdec ? rz_big_decimal_to_double(v->val.bigdec) : 0.0;
 	default:
+		rz_warn_if_reached();
 		return 0.0;
 	}
 }
@@ -248,7 +243,7 @@ typedef struct rz_num_t {
 	void *userptr;
 	int dbz; /// division by zero happened
 	RzNumCalc nc;
-	RZ_NULLABLE HtSP *expr_vars; ///< persistent RzNum expression variables, lazily created
+	RZ_NULLABLE HtSP *expr_vars; ///< persistent RzNum expression variables.
 } RzNum;
 
 typedef ut64 (*RzNumCallback)(struct rz_num_t *self, const char *str, int *ok);
@@ -258,7 +253,7 @@ RZ_API RzNum *rz_num_new(RzNumCallback cb, RzNumCallback2 cb2, void *ptr);
 RZ_API void rz_num_free(RzNum *num);
 RZ_API char *rz_num_units(char *buf, size_t len, ut64 number);
 RZ_API int rz_num_conditional(RzNum *num, const char *str);
-RZ_API const char *rz_num_calc_index(RzNum *num, const char *p);
+RZ_API const char *rz_num_calc_index(RZ_NULLABLE RzNum *num, RZ_NULLABLE const char *p);
 RZ_API int rz_num_is_valid_input(RzNum *num, const char *input_value);
 RZ_API ut64 rz_num_get_input_value(RzNum *num, const char *input_value);
 RZ_API char *rz_num_as_string(RzNum *___, ut64 n, bool printable_only);
@@ -271,23 +266,29 @@ RZ_API ut64 rz_num_math_ut64(RzNum *num, const char *str);
 /**
  * \brief Backwards-compatible wrapper around rz_num_math_ut64().
  *
- * New code should use rz_num_math_ut64() (or, once introduced,
- * rz_num_math_value() for typed evaluation).
+ * \deprecated Legacy name kept for the existing call sites. New code
+ * should call rz_num_math_ut64() for a ut64 result, or
+ * rz_num_math_value() when it needs to tell a genuine parse/evaluation
+ * error apart from a result that happens to be 0.
  */
-static inline ut64 rz_num_math(RzNum *num, const char *str) {
+RZ_DEPRECATE static inline ut64 rz_num_math(RzNum *num, const char *str) {
 	return rz_num_math_ut64(num, str);
 }
 
 /**
  * \brief Result of a custom function or IO-read callback.
  *
- * Callbacks fill in a kind + payload (mirroring RzNumValue's union)
- * and set ok=false to signal an error, in which case the evaluator
- * surfaces RZ_NUM_ERR_UNCOMPUTABLE with the optional message.
+ * A deliberately narrower sibling of RzNumValue: this is the ABI that
+ * user-registered callbacks fill in, so it carries a plain \p ok flag
+ * instead of RzNumValue's RzNumError envelope (the evaluator maps a
+ * failed callback to RZ_NUM_ERR_UNCOMPUTABLE with the optional message)
+ * and omits the internal-only BIGDECIMAL kind. Keeping it separate means
+ * the public callback contract stays decoupled from the evaluator's error
+ * taxonomy and internal kinds.
  *
- * Big-number and bit-vector payloads returned here transfer
- * ownership to the evaluator, which will release them via
- * rz_num_value_fini() in the normal course of evaluation.
+ * Big-number and bit-vector payloads returned here transfer ownership to
+ * the evaluator, which will release them via rz_num_value_fini() in the
+ * normal course of evaluation.
  */
 typedef struct rz_num_callback_result_t {
 	bool ok; ///< false => evaluation error
@@ -344,7 +345,7 @@ typedef int (*RzNumIOReadCallback)(void *user, ut64 addr, ut8 *buf, int len);
  * Held in an RzNumFuncRegistry. Arity -1 means variadic.
  */
 typedef struct rz_num_func_entry_t {
-	char *name; ///< owned UTF-8 name
+	char *name; ///< UTF-8 name
 	int arity; ///< exact arg count, or -1 for variadic
 	RzNumFuncCallback fn; ///< dispatcher
 	void *user; ///< opaque, passed to fn
@@ -406,11 +407,6 @@ RZ_API void rz_num_value_store_free(RZ_NULLABLE HtSP *store);
 
 /**
  * \brief Options controlling how an RzNumValue is rendered.
- *
- * Extensible for future formatting knobs; today it carries a single
- * flag selecting a Unicode-enriched layout for kinds that benefit
- * from it (currently bit-vectors, which gain a subscript width
- * annotation matching the RzIL Unicode export).
  */
 typedef struct rz_num_print_options_t {
 	bool utf8; ///< when true, use Unicode glyphs where applicable
@@ -424,90 +420,6 @@ RZ_API void rz_num_value_print_ex(RZ_NONNULL const RzNumValue *v,
 RZ_API RZ_OWN char *rz_num_value_tostring(RZ_NONNULL const RzNumValue *v);
 
 RZ_API const char *rz_num_error_name(RzNumError err);
-
-/**
- * \brief Kind of an RzNumExpression node.
- *
- * An RzNumExpression is the tree-sitter-free, fully-grounded
- * intermediate that rz_num_expression_parse() produces from a textual
- * expression. It is the lifting boundary: librz_util parses and grounds
- * here, and a higher layer (librz_il) walks it to build a typed
- * RzILOpPure without ever seeing tree-sitter. Constructs with no
- * structural counterpart (function calls, typed-address reads, host
- * variables, exponent / logarithm, ';' sequences) are evaluated to a
- * concrete value while building and appear as a constant leaf.
- */
-typedef enum {
-	RZ_NUM_EXPRESSION_KIND_BV, ///< grounded bit-vector constant (\p bv)
-	RZ_NUM_EXPRESSION_KIND_FLOAT, ///< IEEE-754 double constant (\p f)
-	RZ_NUM_EXPRESSION_KIND_BINOP, ///< binary op \p op over operands[0], operands[1]
-	RZ_NUM_EXPRESSION_KIND_UNOP, ///< unary op \p op over operands[0]
-	RZ_NUM_EXPRESSION_KIND_ITE, ///< operands[0] ? operands[1] : operands[2]
-} RzNumExpressionKind;
-
-/**
- * \brief Operator of an RzNumExpression BINOP / UNOP node.
- *
- * The float operators (FADD..FDIV, IS_FZERO) appear only over float
- * sub-expressions; the rest are bit-vector operators. The names mirror
- * the RzIL pure ops they lift to, but the enum is deliberately
- * independent of librz_il so the type can live in librz_util.
- */
-typedef enum {
-	RZ_NUM_EXPRESSION_OP_ADD,
-	RZ_NUM_EXPRESSION_OP_SUB,
-	RZ_NUM_EXPRESSION_OP_MUL,
-	RZ_NUM_EXPRESSION_OP_DIV, ///< unsigned division
-	RZ_NUM_EXPRESSION_OP_SDIV, ///< signed division
-	RZ_NUM_EXPRESSION_OP_MOD, ///< unsigned remainder
-	RZ_NUM_EXPRESSION_OP_SMOD, ///< signed remainder
-	RZ_NUM_EXPRESSION_OP_LOGAND,
-	RZ_NUM_EXPRESSION_OP_LOGOR,
-	RZ_NUM_EXPRESSION_OP_LOGXOR,
-	RZ_NUM_EXPRESSION_OP_SHL, ///< logical shift left
-	RZ_NUM_EXPRESSION_OP_SHR, ///< logical shift right
-	RZ_NUM_EXPRESSION_OP_SAR, ///< arithmetic (sign-extending) shift right
-	RZ_NUM_EXPRESSION_OP_EQ,
-	RZ_NUM_EXPRESSION_OP_ULE, ///< unsigned less-or-equal
-	RZ_NUM_EXPRESSION_OP_FADD,
-	RZ_NUM_EXPRESSION_OP_FSUB,
-	RZ_NUM_EXPRESSION_OP_FMUL,
-	RZ_NUM_EXPRESSION_OP_FDIV,
-	RZ_NUM_EXPRESSION_OP_NEG, ///< two's-complement negation
-	RZ_NUM_EXPRESSION_OP_LOGNOT, ///< bitwise not
-	RZ_NUM_EXPRESSION_OP_IS_FZERO, ///< float "is zero" predicate
-} RzNumExpressionOp;
-
-typedef struct rz_num_expression_t RzNumExpression;
-
-/**
- * \brief A grounded, tree-sitter-free expression tree (lifting boundary).
- */
-struct rz_num_expression_t {
-	RzNumExpressionKind kind;
-	RzNumExpressionOp op; ///< valid for BINOP / UNOP
-	RzBitVector *bv; ///< valid for BV (owned)
-	double f; ///< valid for FLOAT
-	RzNumExpression *operands[3]; ///< owned children; layout per \ref RzNumExpressionKind
-};
-
-/**
- * \brief Parse \p expr into a grounded, tree-sitter-free RzNumExpression.
- *
- * Sub-expressions with no structural lift (function calls, typed reads,
- * host variables, exponent / logarithm, ';' sequences) are evaluated
- * through \p num / \p opts and embedded as constant leaves. Returns NULL
- * on a parse or grounding error, setting \p error_msg (caller-owned)
- * when provided.
- */
-RZ_API RZ_OWN RzNumExpression *rz_num_expression_parse(RZ_NULLABLE RzNum *num,
-	RZ_NONNULL const char *expr, RZ_NULLABLE const RzNumMathOptions *opts,
-	RZ_NULLABLE char **error_msg);
-
-/**
- * \brief Recursively free an RzNumExpression and all of its children.
- */
-RZ_API void rz_num_expression_free(RZ_NULLABLE RzNumExpression *e);
 
 RZ_API ut64 rz_num_get(RZ_NULLABLE RzNum *num, RZ_NULLABLE const char *str);
 RZ_API ut64 rz_num_get_leading(RZ_NULLABLE RzNum *num, RZ_NONNULL const char *str, RZ_NULLABLE const char **endptr);

@@ -1,15 +1,16 @@
-// SPDX-FileCopyrightText: 2026 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2026 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
  * \file
- * \brief Parse an RzNum expression into a grounded RzNumExpression tree.
+ * \brief Build an RzNumExpression tree from an RzNum expression string.
  *
- * Walks the tree-sitter parse tree and renders it as the tree-sitter-free
- * RzNumExpression that librz_il converts into an RzILOpPure. The
- * structural shape mirrors what the RzIL pure form expects: binary and
- * unary operators become typed BINOP / UNOP nodes, ternaries become ITE
- * nodes, numeric literals become bit-vector (or float) constants.
+ * Walks the tree-sitter parse tree and renders it as a self-contained
+ * RzNumExpression - one that keeps no tree-sitter references - which
+ * librz_il converts into an RzILOpPure. The structural shape mirrors what
+ * the RzIL pure form expects: binary and unary operators become typed
+ * BINOP / UNOP nodes, ternaries become ITE nodes, numeric literals become
+ * bit-vector (or float) constants.
  *
  * Constructs that have no structural RzIL counterpart - function calls,
  * the typed-address dereference, host variables, exponent / logarithm,
@@ -28,6 +29,7 @@
 
 #include <rz_types.h>
 #include <rz_util/rz_num.h>
+#include <rz_util/rz_num_expression.h>
 #include <rz_util/rz_str.h>
 #include <rz_util/rz_bitvector.h>
 #include <tree_sitter/api.h>
@@ -42,16 +44,19 @@ typedef struct {
 	RzNum *num;
 	const char *src;
 	const RzNumMathOptions *opts;
-	char *err; // first error encountered, owned
+	char *err; // first error encountered
 } BuildCtx;
 
-// Fetch a child by field name without the caller passing the name length.
 #define EXPR_FIELD(node, name) \
 	ts_node_child_by_field_name((node), (name), (uint32_t)(sizeof(name) - 1))
 
 static RzNumExpression *build_node(BuildCtx *c, TSNode n);
 
-void rz_num_expression_free(RzNumExpression *e) {
+/**
+ * \brief Recursively free an RzNumExpression and all of its children.
+ * \param e Expression tree to free; NULL is ignored.
+ */
+RZ_API void rz_num_expression_free(RZ_NULLABLE RzNumExpression *e) {
 	if (!e) {
 		return;
 	}
@@ -75,7 +80,7 @@ static void build_set_err(BuildCtx *c, const char *fmt, ...) {
 	c->err = rz_strbuf_drain_nofree(&sb);
 }
 
-// --- node constructors (each takes ownership of its arguments) ---
+// --- node constructors ---
 
 static RzNumExpression *expr_bv(RZ_OWN RzBitVector *bv) {
 	if (!bv) {
@@ -157,7 +162,6 @@ static RzNumExpression *expr_ite(RZ_OWN RzNumExpression *cond, RZ_OWN RzNumExpre
 
 // --- float detection (mirrors the kind-promotion the evaluator does) ---
 
-// Slice the source text a node spans into a fresh NUL-terminated string.
 static char *node_text(TSNode n, const char *src) {
 	ut32 a = ts_node_start_byte(n);
 	ut32 b = ts_node_end_byte(n);
@@ -177,9 +181,8 @@ static char *node_text(TSNode n, const char *src) {
 // True if a numeric literal node's text is a float (a '.' or a non-hex
 // 'e'/'E' exponent). A hex literal like "0xea" contains 'e' but is not.
 static bool number_node_is_float(const char *src, TSNode n) {
-	const char *type = ts_node_type(n);
 	TSNode v = n;
-	if (!strcmp(type, "number")) {
+	if (ts_node_symbol(n) == rz_num_parse_syms()->sym_number) {
 		v = ts_node_named_child(n, 0);
 		if (ts_node_is_null(v)) {
 			return false;
@@ -203,36 +206,37 @@ static bool number_node_is_float(const char *src, TSNode n) {
 
 // Conservative over-approximation of "this sub-expression is a float".
 static bool is_float_subexpr(const char *src, TSNode n) {
-	const char *type = ts_node_type(n);
-	if (!strcmp(type, "number")) {
+	const RzNumSymCache *s = rz_num_parse_syms();
+	TSSymbol sym = ts_node_symbol(n);
+	if (sym == s->sym_number) {
 		return number_node_is_float(src, n);
 	}
 	// Typed reads are float only with a wired IO callback, which we
 	// cannot know statically; classify as non-float so a typed read
 	// mixed with a float literal is grounded rather than mis-lifted.
-	if (!strcmp(type, "address_typed")) {
+	if (sym == s->sym_address_typed) {
 		return false;
 	}
-	if (!strcmp(type, "expression") || !strcmp(type, "source_file") ||
-		!strcmp(type, "parenthesized_expression") || !strcmp(type, "argument")) {
+	if (sym == s->sym_expression || sym == s->sym_source_file ||
+		sym == s->sym_parenthesized_expression || sym == s->sym_argument) {
 		TSNode child = ts_node_named_child(n, 0);
 		return !ts_node_is_null(child) && is_float_subexpr(src, child);
 	}
-	if (!strcmp(type, "unary_minus") || !strcmp(type, "unary_plus")) {
-		TSNode operand = ts_node_child_by_field_name(n, "right", 5);
+	if (sym == s->sym_unary_minus || sym == s->sym_unary_plus) {
+		TSNode operand = EXPR_FIELD(n, "right");
 		return !ts_node_is_null(operand) && is_float_subexpr(src, operand);
 	}
-	if (!strcmp(type, "sum") || !strcmp(type, "subtraction") ||
-		!strcmp(type, "product") || !strcmp(type, "division") ||
-		!strcmp(type, "modulo")) {
-		TSNode l = ts_node_child_by_field_name(n, "left", 4);
-		TSNode r = ts_node_child_by_field_name(n, "right", 5);
+	if (sym == s->sym_sum || sym == s->sym_subtraction ||
+		sym == s->sym_product || sym == s->sym_division ||
+		sym == s->sym_modulo) {
+		TSNode l = EXPR_FIELD(n, "left");
+		TSNode r = EXPR_FIELD(n, "right");
 		return (!ts_node_is_null(l) && is_float_subexpr(src, l)) ||
 			(!ts_node_is_null(r) && is_float_subexpr(src, r));
 	}
-	if (!strcmp(type, "conditional")) {
-		TSNode then_n = ts_node_child_by_field_name(n, "consequence", 11);
-		TSNode else_n = ts_node_child_by_field_name(n, "alternative", 11);
+	if (sym == s->sym_conditional) {
+		TSNode then_n = EXPR_FIELD(n, "consequence");
+		TSNode else_n = EXPR_FIELD(n, "alternative");
 		return !ts_node_is_null(then_n) && !ts_node_is_null(else_n) &&
 			is_float_subexpr(src, then_n) && is_float_subexpr(src, else_n);
 	}
@@ -241,45 +245,56 @@ static bool is_float_subexpr(const char *src, TSNode n) {
 
 // --- operator maps (node type -> RzNumExpressionOp) ---
 
-static bool binop_of(const char *type, RzNumExpressionOp *out) {
-	static const struct {
-		const char *type;
-		RzNumExpressionOp op;
-	} table[] = {
-		{ "sum", RZ_NUM_EXPRESSION_OP_ADD },
-		{ "subtraction", RZ_NUM_EXPRESSION_OP_SUB },
-		{ "product", RZ_NUM_EXPRESSION_OP_MUL },
-		{ "division", RZ_NUM_EXPRESSION_OP_DIV },
-		{ "signed_division", RZ_NUM_EXPRESSION_OP_SDIV },
-		{ "modulo", RZ_NUM_EXPRESSION_OP_MOD },
-		{ "signed_modulo", RZ_NUM_EXPRESSION_OP_SMOD },
-		{ "logical_and", RZ_NUM_EXPRESSION_OP_LOGAND },
-		{ "logical_or", RZ_NUM_EXPRESSION_OP_LOGOR },
-		{ "logical_xor", RZ_NUM_EXPRESSION_OP_LOGXOR },
-		{ "logical_shl", RZ_NUM_EXPRESSION_OP_SHL },
-		{ "logical_shr", RZ_NUM_EXPRESSION_OP_SHR },
-		{ "arith_shr", RZ_NUM_EXPRESSION_OP_SAR },
-		{ "equal", RZ_NUM_EXPRESSION_OP_EQ },
-		{ "less_equal", RZ_NUM_EXPRESSION_OP_ULE },
-	};
-	for (size_t i = 0; i < RZ_ARRAY_SIZE(table); i++) {
-		if (!strcmp(type, table[i].type)) {
-			*out = table[i].op;
-			return true;
-		}
+static bool binop_of(TSSymbol sym, RzNumExpressionOp *out) {
+	const RzNumSymCache *s = rz_num_parse_syms();
+	RzNumExpressionOp op;
+	if (sym == s->sym_sum) {
+		op = RZ_NUM_EXPRESSION_OP_ADD;
+	} else if (sym == s->sym_subtraction) {
+		op = RZ_NUM_EXPRESSION_OP_SUB;
+	} else if (sym == s->sym_product) {
+		op = RZ_NUM_EXPRESSION_OP_MUL;
+	} else if (sym == s->sym_division) {
+		op = RZ_NUM_EXPRESSION_OP_DIV;
+	} else if (sym == s->sym_signed_division) {
+		op = RZ_NUM_EXPRESSION_OP_SDIV;
+	} else if (sym == s->sym_modulo) {
+		op = RZ_NUM_EXPRESSION_OP_MOD;
+	} else if (sym == s->sym_signed_modulo) {
+		op = RZ_NUM_EXPRESSION_OP_SMOD;
+	} else if (sym == s->sym_logical_and) {
+		op = RZ_NUM_EXPRESSION_OP_LOGAND;
+	} else if (sym == s->sym_logical_or) {
+		op = RZ_NUM_EXPRESSION_OP_LOGOR;
+	} else if (sym == s->sym_logical_xor) {
+		op = RZ_NUM_EXPRESSION_OP_LOGXOR;
+	} else if (sym == s->sym_logical_shl) {
+		op = RZ_NUM_EXPRESSION_OP_SHL;
+	} else if (sym == s->sym_logical_shr) {
+		op = RZ_NUM_EXPRESSION_OP_SHR;
+	} else if (sym == s->sym_arith_shr) {
+		op = RZ_NUM_EXPRESSION_OP_SAR;
+	} else if (sym == s->sym_equal) {
+		op = RZ_NUM_EXPRESSION_OP_EQ;
+	} else if (sym == s->sym_less_equal) {
+		op = RZ_NUM_EXPRESSION_OP_ULE;
+	} else {
+		return false;
 	}
-	return false;
+	*out = op;
+	return true;
 }
 
 // Float arithmetic has a direct RzIL equivalent only for + - * / .
-static bool float_binop_of(const char *type, RzNumExpressionOp *out) {
-	if (!strcmp(type, "sum")) {
+static bool float_binop_of(TSSymbol sym, RzNumExpressionOp *out) {
+	const RzNumSymCache *s = rz_num_parse_syms();
+	if (sym == s->sym_sum) {
 		*out = RZ_NUM_EXPRESSION_OP_FADD;
-	} else if (!strcmp(type, "subtraction")) {
+	} else if (sym == s->sym_subtraction) {
 		*out = RZ_NUM_EXPRESSION_OP_FSUB;
-	} else if (!strcmp(type, "product")) {
+	} else if (sym == s->sym_product) {
 		*out = RZ_NUM_EXPRESSION_OP_FMUL;
-	} else if (!strcmp(type, "division")) {
+	} else if (sym == s->sym_division) {
 		*out = RZ_NUM_EXPRESSION_OP_FDIV;
 	} else {
 		return false;
@@ -339,19 +354,20 @@ static RzNumExpression *build_node(BuildCtx *c, TSNode n) {
 	if (c->err) {
 		return NULL;
 	}
-	const char *type = ts_node_type(n);
+	const RzNumSymCache *s = rz_num_parse_syms();
+	TSSymbol sym = ts_node_symbol(n);
 
 	// A ';'-separated sequence is grounded as a whole: the evaluator
 	// computes the final value honouring earlier bindings; lifting only
 	// the last statement would lose variables bound before it.
-	if ((!strcmp(type, "source_file") || !strcmp(type, "expression")) &&
+	if ((sym == s->sym_source_file || sym == s->sym_expression) &&
 		ts_node_named_child_count(n) > 1) {
 		return build_ground(c, n);
 	}
 
 	// Wrappers: descend into the single meaningful child.
-	if (!strcmp(type, "source_file") || !strcmp(type, "expression") ||
-		!strcmp(type, "parenthesized_expression") || !strcmp(type, "argument")) {
+	if (sym == s->sym_source_file || sym == s->sym_expression ||
+		sym == s->sym_parenthesized_expression || sym == s->sym_argument) {
 		TSNode child = ts_node_named_child(n, 0);
 		if (ts_node_is_null(child)) {
 			build_set_err(c, "empty expression");
@@ -360,7 +376,7 @@ static RzNumExpression *build_node(BuildCtx *c, TSNode n) {
 		return build_node(c, child);
 	}
 
-	if (!strcmp(type, "number")) {
+	if (sym == s->sym_number) {
 		return build_number(c, n);
 	}
 
@@ -369,7 +385,7 @@ static RzNumExpression *build_node(BuildCtx *c, TSNode n) {
 	// the faithful form is is_fzero(cond) ? else : then (branches swapped
 	// because is_fzero is true exactly when the original condition was
 	// false).
-	if (!strcmp(type, "conditional")) {
+	if (sym == s->sym_conditional) {
 		TSNode cond = EXPR_FIELD(n, "condition");
 		TSNode then_n = EXPR_FIELD(n, "consequence");
 		TSNode else_n = EXPR_FIELD(n, "alternative");
@@ -391,7 +407,7 @@ static RzNumExpression *build_node(BuildCtx *c, TSNode n) {
 	// fabricating a cast the user did not write.
 	{
 		RzNumExpressionOp fop;
-		if (float_binop_of(type, &fop)) {
+		if (float_binop_of(sym, &fop)) {
 			TSNode l = EXPR_FIELD(n, "left");
 			TSNode r = EXPR_FIELD(n, "right");
 			if (!ts_node_is_null(l) && !ts_node_is_null(r)) {
@@ -410,7 +426,7 @@ static RzNumExpression *build_node(BuildCtx *c, TSNode n) {
 	// Bit-vector binary operators.
 	{
 		RzNumExpressionOp iop;
-		if (binop_of(type, &iop)) {
+		if (binop_of(sym, &iop)) {
 			TSNode l = EXPR_FIELD(n, "left");
 			TSNode r = EXPR_FIELD(n, "right");
 			if (ts_node_is_null(l) || ts_node_is_null(r)) {
@@ -423,17 +439,17 @@ static RzNumExpression *build_node(BuildCtx *c, TSNode n) {
 	}
 
 	// Unary minus / bitwise not: operand is in the "right" field.
-	if (!strcmp(type, "unary_minus") || !strcmp(type, "logical_negation")) {
+	if (sym == s->sym_unary_minus || sym == s->sym_logical_negation) {
 		TSNode operand = EXPR_FIELD(n, "right");
 		if (!ts_node_is_null(operand)) {
-			RzNumExpressionOp uop = !strcmp(type, "logical_negation")
+			RzNumExpressionOp uop = (sym == s->sym_logical_negation)
 				? RZ_NUM_EXPRESSION_OP_LOGNOT
 				: RZ_NUM_EXPRESSION_OP_NEG;
 			return expr_unop(uop, build_node(c, operand));
 		}
 	}
 	// unary_plus is a no-op on the value.
-	if (!strcmp(type, "unary_plus")) {
+	if (sym == s->sym_unary_plus) {
 		TSNode operand = EXPR_FIELD(n, "right");
 		if (!ts_node_is_null(operand)) {
 			return build_node(c, operand);
@@ -445,6 +461,19 @@ static RzNumExpression *build_node(BuildCtx *c, TSNode n) {
 	return build_ground(c, n);
 }
 
+/**
+ * \brief Parse \p expr into a self-contained RzNumExpression (no tree-sitter references).
+ * \param num Evaluation context used to fold non-structural sub-expressions to constants.
+ * \param expr Expression source string.
+ * \param opts Evaluation options forwarded to the evaluator.
+ * \param error_msg Set to an error string on failure when non-NULL.
+ * \return Expression tree, or NULL on a parse or grounding error.
+ *
+ * Sub-expressions with no structural lift (function calls, typed reads,
+ * host variables, exponent / logarithm, ';' sequences) are evaluated
+ * through \p num / \p opts and embedded as constant leaves, so the
+ * returned tree carries no tree-sitter state.
+ */
 RZ_API RZ_OWN RzNumExpression *rz_num_expression_parse(RZ_NULLABLE RzNum *num,
 	RZ_NONNULL const char *expr, RZ_NULLABLE const RzNumMathOptions *opts,
 	RZ_NULLABLE char **error_msg) {
