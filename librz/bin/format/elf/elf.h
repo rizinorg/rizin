@@ -245,6 +245,8 @@ struct Elf_(rz_bin_elf_obj_t) {
 
 	RzVector /*<RzBinElfSymbol>*/ *symbols; // RzVector<RzBinElfSymbol>
 	RzVector /*<RzBinElfSymbol>*/ *imports; // RzVector<RzBinElfSymbol>
+
+	HtUU *got_sym_id_off; ///< symbol id to GOT offset map.
 };
 
 // elf.c

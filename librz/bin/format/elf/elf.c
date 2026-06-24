@@ -371,6 +371,8 @@ static bool init(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
 	bin->bits = Elf_(rz_bin_elf_get_bits)(bin);
 	bin->imports = Elf_(rz_bin_elf_analyse_imports)(bin);
 
+	bin->got_sym_id_off = ht_uu_new();
+
 	rz_vector_free(sections);
 
 	return true;
@@ -427,6 +429,8 @@ void Elf_(rz_bin_elf_free)(RZ_NULLABLE ELFOBJ *bin) {
 
 	rz_vector_free(bin->symbols);
 	rz_vector_free(bin->imports);
+
+	ht_uu_free(bin->got_sym_id_off);
 
 	free(bin->elfctx);
 	free(bin);
