@@ -700,7 +700,7 @@ RZ_API bool rz_core_math(RZ_NONNULL RzCore *core, RZ_NONNULL const char *expr,
 	RZ_NULLABLE const RzCoreMathOptions *options,
 	RZ_OUT RZ_NONNULL RzNumValue *out_value,
 	RZ_OUT RZ_NULLABLE char **error_msg);
-RZ_API ut64 rz_core_math_ut64(RZ_NONNULL RzCore *core, RZ_NONNULL const char *expr);
+RZ_API RZ_DEPRECATE ut64 rz_core_math_ut64(RZ_NONNULL RzCore *core, RZ_NONNULL const char *expr);
 RZ_API RZ_OWN RzILOpPure *rz_core_il_lift(RZ_NONNULL RzCore *core, RZ_NONNULL const char *expr,
 	RZ_OUT RZ_NULLABLE char **error_msg);
 

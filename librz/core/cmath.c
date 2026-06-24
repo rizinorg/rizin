@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2026 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
@@ -25,57 +25,62 @@
 #include <rz_hash.h>
 #include <rz_util/rz_num.h>
 
-// --- IO-read callback for typed-address dereference -----------------
-
-// Raw-bytes reader backing RzNum's typed-address syntax (and shareable
-// verbatim with rz_pf's RzPfReadAtCb, which has the same signature -
-// see <rz_pf.h>). All byte assembly, endian swap, sign-extension and
-// IEEE-754 decoding live in the evaluator; this callback just hands
-// back the requested bytes from RzIO.
-static int core_io_read(void *user, ut64 addr, ut8 *buf, int len) {
+// Raw-bytes reader backing RzNum's typed-address syntax (same signature as
+// rz_pf's RzPfReadAtCb, see <rz_pf.h>); the evaluator does all the decoding.
+static ut64 core_io_read(void *user, ut64 addr, ut8 *buf, size_t len) {
 	RzCore *core = (RzCore *)user;
-	if (!core || !core->io || len < 1) {
+	if (!core || !core->io || !len) {
 		return 0;
 	}
-	return rz_io_nread_at(core->io, addr, buf, len);
+	int got = rz_io_nread_at(core->io, addr, buf, (int)len);
+	return got > 0 ? (ut64)got : 0;
 }
 
-// --- sha256(addr, len): hash len bytes at addr ----------------------
-
-// Read up to 64 KiB at addr into a freshly-allocated buffer. Returns
-// NULL (and leaves *out failed) on any problem. The 64 KiB bound
-// keeps a stray expression from asking the core to slurp gigabytes.
+// Read up to 64 KiB at addr into a fresh zero-filled buffer (NULL on any
+// problem). The cap stops a stray expression from slurping gigabytes; the
+// refusal and any short read are logged.
 static ut8 *core_read_block(RzCore *core, ut64 addr, ut64 len) {
-	if (!core || !core->io || len == 0 || len > 0x10000) {
+	if (!core || !core->io || len == 0) {
 		return NULL;
 	}
-	ut8 *buf = malloc(len);
+	if (len > 0x10000) {
+		RZ_LOG_WARN("rz_core_math: refusing a %" PFMT64u "-byte read at 0x%08" PFMT64x
+			    " (limit is 0x10000)\n",
+			len, addr);
+		return NULL;
+	}
+	ut8 *buf = calloc(1, len);
 	if (!buf) {
 		return NULL;
 	}
-	if (rz_io_nread_at(core->io, addr, buf, len) < 1) {
+	int nread = rz_io_nread_at(core->io, addr, buf, len);
+	if (nread < 1) {
 		free(buf);
 		return NULL;
+	}
+	if ((ut64)nread != len) {
+		RZ_LOG_WARN("rz_core_math: short read at 0x%08" PFMT64x ": got %d of %" PFMT64u
+			    " bytes (rest zero-filled)\n",
+			addr, nread, len);
 	}
 	return buf;
 }
 
 // Turn a big-endian byte buffer into an RzNumValue: a bignum when it
-// exceeds 8 bytes, otherwise a plain ut64. Consumes nothing; the
-// caller still owns `digest`.
+// exceeds 8 bytes, otherwise a plain ut64.
 static void bytes_to_result(const ut8 *digest, ut32 n, RzNumCallbackResult *out) {
 	if (n == 0) {
 		out->ok = false;
 		return;
 	}
 	if (n <= 8) {
-		ut64 v = 0;
-		for (ut32 i = 0; i < n; i++) {
-			v = (v << 8) | digest[i];
-		}
+		// Big-endian bytes -> ut64 via the rz_util reader, zero-padding
+		// the high end so any width in 1..8 is handled.
+		ut8 padded[8] = { 0 };
+		memcpy(padded + (8 - n), digest, n);
 		out->ok = true;
 		out->kind = RZ_NUM_KIND_UT64;
-		out->val.n = v;
+		out->val.n = rz_read_be64(padded);
 		return;
 	}
 	RzNumBig *big = rz_big_new();
@@ -261,13 +266,18 @@ static RzNumFuncRegistry *core_build_registry(RzCore *core) {
  * The address-typed suffix (`0x1000:le32`) is read through core->io.
  *
  * \param core      Core whose context (flags, offset, block size,
- *                  core->num callback) backs the evaluation. Must be non-NULL.
- * \param expr      Expression to evaluate. Must be non-NULL.
- * \param options   Optional options (timeout). NULL selects defaults.
+ *                  core->num callback) backs the evaluation.
+ * \param expr      Expression to evaluate.
+ * \param options   Optional options. NULL selects defaults.
  * \param out_value Out-parameter receiving the value; finalise it with
- *                  rz_num_value_fini() when done. Must be non-NULL.
- * \param error_msg Optional out-pointer for a caller-owned diagnostic.
+ *                  rz_num_value_fini() when done.
+ * \param error_msg Optional out-pointer for a diagnostic.
  * \return true on success, false on parse or evaluation error.
+ *
+ * \note On failure the typed error category is left on out_value->err (an
+ * RzNumError: RZ_NUM_ERR_PARSE, RZ_NUM_ERR_DIV_ZERO, RZ_NUM_ERR_OVERFLOW,
+ * RZ_NUM_ERR_UNCOMPUTABLE for a refused/failed memory read or function,
+ * ...), so callers that need more than the boolean can dispatch on it.
  */
 RZ_API bool rz_core_math(RZ_NONNULL RzCore *core, RZ_NONNULL const char *expr,
 	RZ_NULLABLE const RzCoreMathOptions *options,
@@ -292,11 +302,20 @@ RZ_API bool rz_core_math(RZ_NONNULL RzCore *core, RZ_NONNULL const char *expr,
 	bool ok = rz_num_math_value_ex(core->num, expr, &opt, out_value, error_msg);
 	rz_num_func_registry_free(reg);
 
-	// Mirror the legacy num->value / num->fvalue so consumers reading
-	// them observe the same state rz_num_math() would have left.
-	if (ok && core->num) {
-		core->num->value = rz_num_value_to_ut64(out_value);
-		core->num->fvalue = rz_num_value_to_double(out_value);
+	// Mirror the result into the legacy num->value / num->fvalue fields
+	// for consumers that still read them directly. These are a
+	// compatibility shim: the bool return (and \p out_value) is the
+	// authoritative success/error signal. A failed evaluation leaves
+	// both fields at 0 - as rz_num_math() did - which is
+	// indistinguishable from a real 0 result, so callers that must tell
+	// the two apart check the return value rather than these fields.
+	// The two error flags RzNum carries are narrower than that return:
+	// num->dbz is set only by a trapped divide-by-zero, and
+	// num->nc.errors only by an identifier the callbacks could not
+	// resolve. Neither covers a parse error or an overflow.
+	if (core->num) {
+		core->num->value = ok ? rz_num_value_to_ut64(out_value) : 0;
+		core->num->fvalue = ok ? rz_num_value_to_double(out_value) : 0.0;
 	}
 	return ok;
 }
@@ -304,20 +323,23 @@ RZ_API bool rz_core_math(RZ_NONNULL RzCore *core, RZ_NONNULL const char *expr,
 /**
  * \brief Convenience wrapper around rz_core_math() returning a ut64.
  *
- * Mirrors rz_num_math_ut64(): FLOAT truncates, BIG narrows to the low
- * 64 bits. Errors return 0 (core->num->dbz is still set on a trapped
- * divide-by-zero); the diagnostic is left for the caller to surface.
+ * Deprecated: a failed evaluation returns 0, which "1-1" also returns, so
+ * the caller cannot tell the two apart. The failure is logged rather than
+ * dropped, but new code should call rz_core_math() and check its bool
+ * return. Successful results follow rz_num_math_ut64(): FLOAT truncates,
+ * BIG narrows to the low 64 bits.
  *
- * \param core Core backing the evaluation. Must be non-NULL.
- * \param expr Expression to evaluate. Must be non-NULL.
+ * \param core Core backing the evaluation.
+ * \param expr Expression to evaluate.
  * \return The ut64 projection of the result, or 0 on error.
  */
-RZ_API ut64 rz_core_math_ut64(RZ_NONNULL RzCore *core, RZ_NONNULL const char *expr) {
+RZ_API RZ_DEPRECATE ut64 rz_core_math_ut64(RZ_NONNULL RzCore *core, RZ_NONNULL const char *expr) {
 	rz_return_val_if_fail(core && expr, 0);
 	RzNumValue v;
 	rz_num_value_init(&v);
 	char *err = NULL;
 	if (!rz_core_math(core, expr, NULL, &v, &err)) {
+		RZ_LOG_WARN("cannot evaluate '%s': %s\n", expr, err ? err : "evaluation failed");
 		free(err);
 		rz_num_value_fini(&v);
 		return 0;
@@ -338,10 +360,10 @@ RZ_API ut64 rz_core_math_ut64(RZ_NONNULL RzCore *core, RZ_NONNULL const char *ex
  * caller wanting the pLf text form passes it to
  * rz_il_op_pure_stringify_unicode().
  *
- * \param core      Core context. Must be non-NULL.
- * \param expr      Expression to lift. Must be non-NULL.
- * \param error_msg Optional out-pointer for a caller-owned diagnostic.
- * \return The lifted RzILOpPure (caller-owned), or NULL on error.
+ * \param core      Core context.
+ * \param expr      Expression to lift.
+ * \param error_msg Optional out-pointer for a diagnostic.
+ * \return The lifted RzILOpPure, or NULL on error.
  */
 RZ_API RZ_OWN RzILOpPure *rz_core_il_lift(RZ_NONNULL RzCore *core, RZ_NONNULL const char *expr,
 	RZ_OUT RZ_NULLABLE char **error_msg) {

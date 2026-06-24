@@ -41,7 +41,7 @@ RZ_API void rz_big_from_int(RzNumBig *b, st64 v);
 RZ_API st64 rz_big_to_int(RzNumBig *b);
 RZ_API void rz_big_from_hexstr(RzNumBig *b, const char *str);
 RZ_API char *rz_big_to_hexstr(RzNumBig *b);
-RZ_API RZ_OWN char *rz_big_to_decstr(RZ_NONNULL RzNumBig *b); /* Lossless base-10 string */
+RZ_API RZ_OWN char *rz_big_to_decstr(RZ_NONNULL RzNumBig *b);
 RZ_API void rz_big_assign(RzNumBig *dst, RzNumBig *src);
 
 /* Basic arithmetic operations */
@@ -65,12 +65,10 @@ RZ_API int rz_big_is_zero(RzNumBig *a); /* For comparison with zero */
 RZ_API void rz_big_inc(RzNumBig *a); /* Increment: add one to n */
 RZ_API void rz_big_dec(RzNumBig *a); /* Decrement: subtract one from n */
 RZ_API void rz_big_powm(RzNumBig *c, RzNumBig *a, RzNumBig *b, RzNumBig *m); /* Calculate a^b -- e.g. 2^10 => 1024 */
-RZ_API void rz_big_pow(RZ_NONNULL RzNumBig *c, RZ_NONNULL RzNumBig *a, RZ_NONNULL RzNumBig *b); /* Non-modular c = a^b */
+RZ_API void rz_big_pow(RZ_NONNULL RzNumBig *c, RZ_NONNULL RzNumBig *a, RZ_NONNULL RzNumBig *b);
 RZ_API void rz_big_isqrt(RzNumBig *c, RzNumBig *a); /* Integer square root -- e.g. isqrt(5) => 2*/
 
-/* ------------------------------------------------------------------ */
-/* Arbitrary-precision base-10 decimal.                                */
-/* ------------------------------------------------------------------ */
+/* Arbitrary-precision base-10 decimal. */
 
 /**
  * \brief Arbitrary-precision decimal: value == mantissa * 10^(-scale).
@@ -84,8 +82,8 @@ RZ_API void rz_big_isqrt(RzNumBig *c, RzNumBig *a); /* Integer square root -- e.
  * collapsing to a double.
  */
 typedef struct rz_big_decimal_t {
-	RzNumBig *mantissa; ///< signed integer significand (owned)
-	st32 scale; ///< number of base-10 fractional digits, always >= 0
+	RzNumBig *mantissa; ///< signed integer significand
+	ut32 scale; ///< number of base-10 fractional digits
 } RzBigDecimal;
 
 /** \brief Significant digits kept when dividing (IEEE decimal128 width). */
@@ -99,7 +97,6 @@ RZ_API RZ_OWN RzBigDecimal *rz_big_decimal_dup(RZ_NONNULL const RzBigDecimal *d)
 RZ_API RZ_OWN RzBigDecimal *rz_big_decimal_add(RZ_NONNULL const RzBigDecimal *a, RZ_NONNULL const RzBigDecimal *b);
 RZ_API RZ_OWN RzBigDecimal *rz_big_decimal_sub(RZ_NONNULL const RzBigDecimal *a, RZ_NONNULL const RzBigDecimal *b);
 RZ_API RZ_OWN RzBigDecimal *rz_big_decimal_mul(RZ_NONNULL const RzBigDecimal *a, RZ_NONNULL const RzBigDecimal *b);
-/** \brief a / b to \p precision significant digits; NULL if b is zero. */
 RZ_API RZ_OWN RzBigDecimal *rz_big_decimal_div(RZ_NONNULL const RzBigDecimal *a, RZ_NONNULL const RzBigDecimal *b, ut32 precision);
 RZ_API RZ_OWN RzBigDecimal *rz_big_decimal_neg(RZ_NONNULL const RzBigDecimal *a);
 

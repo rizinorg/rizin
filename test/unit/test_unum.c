@@ -178,9 +178,7 @@ bool test_rz_num_abs() {
 	mu_end;
 }
 
-// ---------------------------------------------------------------------------
 // rz_num_math_value() tests for the tree-sitter-based evaluator.
-// ---------------------------------------------------------------------------
 
 static ut64 test_var_cb(RzNum *self, const char *name, int *ok) {
 	(void)self;
@@ -1396,10 +1394,10 @@ static void tfn_sum(void *user, const RzNumValue *args, int argc,
 // `(addr ^ 0xcafe) & 0xffffffff` and a `:beN` decode of the same
 // bytes returns its byte-reversed form). The callback returns the
 // number of bytes actually written, matching RzPfReadAtCb.
-static int tio_read(void *user, ut64 addr, ut8 *buf, int len) {
+static ut64 tio_read(void *user, ut64 addr, ut8 *buf, size_t len) {
 	(void)user;
 	ut64 v = addr ^ 0xcafe;
-	for (int i = 0; i < len; i++) {
+	for (size_t i = 0; i < len; i++) {
 		buf[i] = (i < 8) ? (ut8)(v >> (8 * i)) : 0;
 	}
 	return len;
@@ -1601,9 +1599,9 @@ bool test_rz_num_math_value_io_read() {
 // the IEEE-754 bytes for 1.5; and so on. The semantic preserves what
 // the previous typed-callback mock produced through the evaluator's
 // new raw-bytes path.
-static int tio_read_pattern(void *user, ut64 addr, ut8 *buf, int len) {
+static ut64 tio_read_pattern(void *user, ut64 addr, ut8 *buf, size_t len) {
 	(void)user;
-	for (int i = 0; i < len; i++) {
+	for (size_t i = 0; i < len; i++) {
 		buf[i] = (i < 8) ? (ut8)(addr >> (8 * i)) : 0;
 	}
 	return len;
@@ -2086,7 +2084,7 @@ bool test_rz_num_math_value_torture() {
 bool test_rz_num_math_value_unicode_names() {
 	num = NULL;
 
-	// --- Variable names ------------------------------------------
+	// Variable names
 	// A name is bound with (name = v) and then read back, so the
 	// round-trip proves the same byte sequence lexes identically in
 	// both the assignment target and a later reference.
@@ -2115,7 +2113,7 @@ bool test_rz_num_math_value_unicode_names() {
 	// A bound Unicode name is independent of an ASCII one.
 	ASSERT_U64("(\xcf\x83 = 1) + (s = 2) + \xcf\x83 + s", 6); // "σ" vs "s"
 
-	// --- Function names ------------------------------------------
+	// Function names
 	// These map to built-in aliases registered in the evaluator's
 	// builtin_table (Cyrillic, Chinese/Japanese, Arabic, Greek
 	// symbol). Each is functionally identical to an English builtin.
@@ -2579,6 +2577,39 @@ bool test_rz_big_decimal() {
 	mu_end;
 }
 
+bool test_rz_num_get_leading() {
+	// rz_num_get_leading evaluates only the numeric literal at the head of
+	// the string and reports where it stopped, so a trailing operand,
+	// separator or comment (which the strict evaluator would reject) is left
+	// untouched. This is what the disasm / rz-ax number extractors rely on.
+	const char *end = NULL;
+
+	// A hex address followed by disassembly text.
+	mu_assert_eq(rz_num_get_leading(num, "0x1234 mov r0", &end), 0x1234, "hex + text");
+	mu_assert_streq(end, " mov r0", "end after 0x1234");
+
+	// Comma-separated operands: only the first literal is consumed
+	// ("0x111,0x222" must not fold into a single value).
+	mu_assert_eq(rz_num_get_leading(num, "0x111,0x222", &end), 0x111, "comma-separated first");
+	mu_assert_streq(end, ",0x222", "end at comma");
+
+	// Decimal, negative-hex and other-base forms, each with trailing syntax.
+	mu_assert_eq(rz_num_get_leading(num, "255]", NULL), 255, "decimal + ]");
+	mu_assert_eq(rz_num_get_leading(num, "-0x20]", NULL), (ut64)-0x20, "negative hex operand");
+	mu_assert_eq(rz_num_get_leading(num, "0b1010 lsl 2", NULL), 10, "binary + text");
+
+	// A full 64-bit literal is well within the extractor's buffer, so a long
+	// token stays exact rather than truncating.
+	mu_assert_eq(rz_num_get_leading(num, "0xdeadbeefcafef00d,", NULL), 0xdeadbeefcafef00dULL, "full 64-bit hex");
+
+	// No literal at the head: value 0 and the end pointer stays put.
+	const char *none = "mov r0";
+	mu_assert_eq(rz_num_get_leading(num, none, &end), 0, "no literal -> 0");
+	mu_assert_ptreq(end, none, "end unmoved when no literal");
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_num_units);
 	mu_run_test(test_rz_num_minmax_swap_i);
@@ -2633,6 +2664,7 @@ bool all_tests() {
 	mu_run_test(test_rz_num_math_ut64_segment);
 	mu_run_test(test_rz_num_il_lift);
 	mu_run_test(test_rz_big_decimal);
+	mu_run_test(test_rz_num_get_leading);
 	return tests_passed != tests_run;
 }
 

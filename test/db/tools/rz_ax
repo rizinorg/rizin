@@ -954,4 +954,123 @@ EOF
 EXPECT_ERR=<<EOF
 rz-ax: cannot resolve 'nanasd'
 EOF
+EXIT_STATUS=1
+RUN
+
+NAME=rz-ax bit-vector width below 8 bits
+TOOL=rz-ax
+ARGS=8u7
+EXPECT=<<EOF
+hex     0x08
+binary  0b0001000
+width   7 bits
+EOF
+RUN
+
+NAME=rz-ax bit-vector inside an expression
+TOOL=rz-ax
+ARGS=3-1+3u3+1
+EXPECT=<<EOF
+hex     0x6
+binary  0b110
+width   3 bits
+EOF
+RUN
+
+NAME=rz-ax out-of-range bit-vector width is rejected
+TOOL=rz-ax
+ARGS=1u99999999
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+rz-ax: bit-vector width must be 1..65536, got 99999999
+EOF
+EXIT_STATUS=1
+RUN
+
+NAME=rz-ax lone output-mode prefix is an error
+TOOL=rz-ax
+ARGS=t
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+rz-ax: missing value after 't'
+EOF
+EXIT_STATUS=1
+RUN
+
+NAME=rz-ax non-decimal literals print as decimal
+TOOL=rz-ax
+ARGS=0b1010 0o17 0t12 0x1f
+EXPECT=<<EOF
+10
+15
+5
+31
+EOF
+RUN
+
+NAME=rz-ax -N emits the full bit-vector width
+TOOL=rz-ax
+ARGS=-N 0xfffffffffffffffffffffffffu128
+EXPECT=<<EOF
+\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x0f\x00\x00\x00
+EOF
+RUN
+
+NAME=rz-ax -p reports when no bits are set
+TOOL=rz-ax
+ARGS=-p 0
+EXPECT=<<EOF
+no bits set
+EOF
+RUN
+
+NAME=rz-ax -e prints the swapped value in hex
+TOOL=rz-ax
+ARGS=-e 0xffaa
+EXPECT=<<EOF
+0xaaff0000
+EOF
+RUN
+
+NAME=rz-ax stdin reads one expression per line
+FILE==
+CMDS=!printf '33\n0x41\n' | rz-ax
+EXPECT=<<EOF
+0x21
+65
+EOF
+RUN
+
+NAME=rz-ax stdin stops at q
+FILE==
+CMDS=!printf '33\nq\n99\n' | rz-ax
+EXPECT=<<EOF
+0x21
+EOF
+RUN
+
+NAME=rz-ax -h lists only the flags
+FILE==
+CMDS=!rz-ax -h | grep -c Conversions
+EXPECT=<<EOF
+0
+EOF
+RUN
+
+NAME=rz-ax -H includes the conversion table
+FILE==
+CMDS=!rz-ax -H | grep -c Conversions
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=rz-ax -H includes the operator list
+FILE==
+CMDS=!rz-ax -H | grep -c Operators
+EXPECT=<<EOF
+1
+EOF
 RUN

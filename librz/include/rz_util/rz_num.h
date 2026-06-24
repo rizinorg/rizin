@@ -160,7 +160,7 @@ static inline double rz_num_value_to_double(const RzNumValue *v) {
 }
 
 /**
- * \brief Release any owned payload held by an RzNumValue.
+ * \brief Release any payload held by an RzNumValue.
  *
  * Safe to call on an RZ_NUM_KIND_NONE / RZ_NUM_KIND_UT64 / RZ_NUM_KIND_FLOAT
  * value. After the call the value is reset to RZ_NUM_KIND_NONE.
@@ -285,10 +285,6 @@ RZ_DEPRECATE static inline ut64 rz_num_math(RzNum *num, const char *str) {
  * and omits the internal-only BIGDECIMAL kind. Keeping it separate means
  * the public callback contract stays decoupled from the evaluator's error
  * taxonomy and internal kinds.
- *
- * Big-number and bit-vector payloads returned here transfer ownership to
- * the evaluator, which will release them via rz_num_value_fini() in the
- * normal course of evaluation.
  */
 typedef struct rz_num_callback_result_t {
 	bool ok; ///< false => evaluation error
@@ -296,8 +292,8 @@ typedef struct rz_num_callback_result_t {
 	union {
 		ut64 n;
 		double d;
-		RzNumBig *big;
-		RzBitVector *bv;
+		RZ_OWN RzNumBig *big;
+		RZ_OWN RzBitVector *bv;
 	} val;
 } RzNumCallbackResult;
 
@@ -333,11 +329,11 @@ typedef void (*RzNumFuncCallback)(void *user, const RzNumValue *args,
  * \param addr  The address to read from.
  * \param buf   Destination buffer of at least \p len bytes.
  * \param len   Number of bytes to read.
- * \return      The number of bytes actually written into \p buf
- *              (>= 0). A return < \p len signals a short read; the
- *              evaluator treats it as RZ_NUM_ERR_UNCOMPUTABLE.
+ * \return      The number of bytes actually written into \p buf. A
+ *              return < \p len signals a short read; the evaluator
+ *              treats it as RZ_NUM_ERR_UNCOMPUTABLE.
  */
-typedef int (*RzNumIOReadCallback)(void *user, ut64 addr, ut8 *buf, int len);
+typedef ut64 (*RzNumIOReadCallback)(void *user, ut64 addr, ut8 *buf, size_t len);
 
 /**
  * \brief A named, registrable expression function.
@@ -380,7 +376,7 @@ RZ_API bool rz_num_func_registry_add(RZ_NONNULL RzNumFuncRegistry *reg,
  * evaluator's tree walk; if exceeded, RZ_NUM_ERR_TIMEOUT is
  * returned. funcs, if set, supplies user-registered functions that
  * take precedence over the built-ins. io_read, if set, backs the
- * typed-address dereference syntax. vars, if set, is a caller-owned
+ * typed-address dereference syntax. vars, if set, is a
  * variable store (string name -> RzNumValue*) that PERSISTS across
  * calls: bindings made by `x = expr` / `let x = expr` are written
  * into it and remain visible to later evaluations sharing the same
@@ -388,10 +384,10 @@ RZ_API bool rz_num_func_registry_add(RZ_NONNULL RzNumFuncRegistry *reg,
  */
 typedef struct rz_num_math_options_t {
 	ut64 timeout_ms; ///< wall-clock budget, 0 = unlimited
-	RZ_NULLABLE RzNumFuncRegistry *funcs; ///< extra functions, may be NULL
-	RZ_NULLABLE RzNumIOReadCallback io_read; ///< typed-address reader, may be NULL
+	RZ_NULLABLE RzNumFuncRegistry *funcs; ///< extra functions
+	RZ_NULLABLE RzNumIOReadCallback io_read; ///< typed-address reader
 	void *io_read_user; ///< opaque passed to io_read
-	RZ_NULLABLE HtSP *vars; ///< persistent variable store, may be NULL
+	RZ_NULLABLE HtSP *vars; ///< persistent variable store
 } RzNumMathOptions;
 
 RZ_API bool rz_num_math_value(RZ_NULLABLE RzNum *num, RZ_NONNULL const char *expr,

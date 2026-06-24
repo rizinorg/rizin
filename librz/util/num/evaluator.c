@@ -63,11 +63,11 @@ typedef struct {
 	ut64 deadline_us; ///< monotonic wall-clock deadline; 0 = unlimited
 	ut32 node_count; ///< nodes visited so far (used to amortise the clock check)
 	ut32 depth; ///< current tree-walk recursion depth (bounded to keep deep nesting off the C stack)
-	RzNumFuncRegistry *funcs; ///< user-registered functions (borrowed), may be NULL
-	RzNumIOReadCallback io_read; ///< typed-address reader (borrowed), may be NULL
+	RZ_NULLABLE RzNumFuncRegistry *funcs; ///< user-registered functions
+	RZ_NULLABLE RzNumIOReadCallback io_read; ///< typed-address reader
 	void *io_read_user; ///< opaque for io_read
-	HtSP *vars; ///< variable bindings `let x = y` / `x = y`, lazily created
-	bool vars_owned; ///< true if `vars` is the ctx's own per-eval store (free it); false if a caller-owned persistent store
+	RZ_NULLABLE HtSP *vars; ///< variable bindings `let x = y` / `x = y`
+	bool vars_owned; ///< whether `vars` is this context's own store rather than the caller's persistent one
 } EvalCtx;
 
 // User-registered function registry
@@ -97,7 +97,6 @@ RZ_API RZ_OWN RzNumFuncRegistry *rz_num_func_registry_new(void) {
 
 /**
  * \brief Free a function registry and all entries it owns.
- * \param reg The registry to free. NULL is accepted and ignored.
  */
 RZ_API void rz_num_func_registry_free(RZ_NULLABLE RzNumFuncRegistry *reg) {
 	if (!reg) {
@@ -664,26 +663,84 @@ static RzNumBig *value_to_big_signed(const RzNumValue *v) {
 // suffix carries no width (a bare letter run like "u" / "ul" / "f").
 // The grammar guarantees the suffix is letters followed by an
 // optional 8/16/32/64/128 tail.
-static ut32 bitvector_width_from_suffix(const char *suf) {
+// Largest bit-vector width an explicit suffix may request. Bounded so a
+// typo like `1u99999999` fails cleanly instead of trying to allocate.
+#define RZ_NUM_MAX_BV_WIDTH 65536
+
+static ut32 bitvector_width_from_suffix(const char *suf, bool *has_width) {
 	const char *p = suf;
 	while (*p && !isdigit((ut8)*p)) {
 		p++;
 	}
+	if (has_width) {
+		*has_width = *p != '\0';
+	}
 	if (!*p) {
 		return 0;
 	}
-	return (ut32)atoi(p);
+	return (ut32)strtoul(p, NULL, 10);
 }
 
 // Make an RzNumValue of bit-vector kind holding the low \p width bits
 // of \p src. Consumes (finalises) \p src. On allocation failure
 // returns the source unchanged.
+// Widen a big number's magnitude into a bit-vector. The hex string is
+// the only exact accessor rz_big offers, so decode it a nibble at a
+// time; bits above `width` are dropped, matching the ut64 path.
+static RzBitVector *bitvector_from_big(RzNumBig *big, ut32 width) {
+	char *hex = rz_big_to_hexstr(big);
+	if (!hex) {
+		return NULL;
+	}
+	RzBitVector *bv = rz_bv_new(width);
+	if (!bv) {
+		free(hex);
+		return NULL;
+	}
+	const char *p = hex;
+	if (*p == '-') {
+		p++;
+	}
+	size_t prefix_len = 0;
+	if (rz_num_base_prefix(p, NULL, &prefix_len) == RZ_NUM_BASE_PREFIX_HEX) {
+		p += prefix_len;
+	}
+	size_t ndigits = strlen(p);
+	for (size_t i = 0; i < ndigits; i++) {
+		ut8 nib = 0;
+		if (rz_hex_to_byte(&nib, (ut8)p[ndigits - 1 - i])) {
+			continue;
+		}
+		for (ut32 b = 0; b < 4; b++) {
+			ut32 pos = (ut32)(i * 4) + b;
+			if (pos >= width) {
+				break;
+			}
+			rz_bv_set(bv, pos, (nib >> b) & 1);
+		}
+	}
+	free(hex);
+	return bv;
+}
+
 static RzNumValue value_to_bitvector_width(RzNumValue *src, ut32 width) {
 	if (width == 0) {
 		return *src;
 	}
-	ut64 raw = to_u64(src);
-	RzBitVector *bv = rz_bv_new_from_ut64(width, raw);
+	RzBitVector *bv = NULL;
+	if (src->kind == RZ_NUM_KIND_BIG && src->val.big) {
+		bv = bitvector_from_big(src->val.big, width);
+	} else if (src->kind == RZ_NUM_KIND_BITVECTOR && src->val.bv) {
+		bv = rz_bv_new(width);
+		if (bv) {
+			ut32 common = RZ_MIN(width, src->val.bv->len);
+			for (ut32 i = 0; i < common; i++) {
+				rz_bv_set(bv, i, rz_bv_get(src->val.bv, i));
+			}
+		}
+	} else {
+		bv = rz_bv_new_from_ut64(width, to_u64(src));
+	}
 	if (!bv) {
 		return *src;
 	}
@@ -1055,43 +1112,53 @@ static RzNumValue eval_number(EvalCtx *c, TSNode n) {
 	free(txt);
 
 	uint32_t nc = ts_node_named_child_count(n);
-	if (nc > 1) {
-		TSNode tail = ts_node_named_child(n, 1);
-		const char *tt = ts_node_type(tail);
-		if (!strcmp(tt, "number_unit")) {
-			char *unit = node_text(tail, c->src);
-			if (unit) {
-				ut64 m = unit_multiplier(unit);
-				if (out.kind == RZ_NUM_KIND_FLOAT) {
-					double d = to_double(&out);
+	if (nc <= 1) {
+		return out;
+	}
+	TSNode tail = ts_node_named_child(n, 1);
+	const char *tt = ts_node_type(tail);
+	if (!strcmp(tt, "number_unit")) {
+		char *unit = node_text(tail, c->src);
+		if (unit) {
+			ut64 m = unit_multiplier(unit);
+			if (out.kind == RZ_NUM_KIND_FLOAT) {
+				double d = to_double(&out);
+				rz_num_value_fini(&out);
+				out = val_f64(d * (double)m);
+			} else if (out.kind == RZ_NUM_KIND_BIGDECIMAL) {
+				RzBigDecimal *mul = rz_big_decimal_new_from_int((st64)m);
+				RzBigDecimal *res = mul ? rz_big_decimal_mul(out.val.bigdec, mul) : NULL;
+				rz_big_decimal_free(mul);
+				if (res) {
 					rz_num_value_fini(&out);
-					out = val_f64(d * (double)m);
-				} else if (out.kind == RZ_NUM_KIND_BIGDECIMAL) {
-					RzBigDecimal *mul = rz_big_decimal_new_from_int((st64)m);
-					RzBigDecimal *res = mul ? rz_big_decimal_mul(out.val.bigdec, mul) : NULL;
-					rz_big_decimal_free(mul);
-					if (res) {
-						rz_num_value_fini(&out);
-						out = val_bigdecimal(res);
-					}
-				} else {
-					out.val.n *= m;
+					out = val_bigdecimal(res);
 				}
-				free(unit);
+			} else {
+				out.val.n *= m;
 			}
-		} else if (!strcmp(tt, "number_suffix")) {
-			// A suffix carrying an explicit bit-width (e.g. u8, u16,
-			// u32, u64, u128) turns the literal into a fixed-width
-			// bit-vector. A bare letter run (u, l, ul, f, ...) stays
-			// informational and does not change the kind.
-			char *suf = node_text(tail, c->src);
-			if (suf) {
-				ut32 width = bitvector_width_from_suffix(suf);
-				if (width > 0) {
-					out = value_to_bitvector_width(&out, width);
-				}
+			free(unit);
+		}
+	} else if (!strcmp(tt, "number_suffix")) {
+		// A suffix carrying an explicit bit-width (e.g. u1, u7,
+		// u8, u128, u1024) turns the literal into a fixed-width
+		// bit-vector. A bare letter run (u, l, ul, f, ...) stays
+		// informational and does not change the kind.
+		char *suf = node_text(tail, c->src);
+		if (suf) {
+			bool has_width = false;
+			ut32 width = bitvector_width_from_suffix(suf, &has_width);
+			if (has_width && (width < 1 || width > RZ_NUM_MAX_BV_WIDTH)) {
+				set_err_code(c, RZ_NUM_ERR_PARSE,
+					"bit-vector width must be 1..%u, got %u",
+					RZ_NUM_MAX_BV_WIDTH, width);
 				free(suf);
+				rz_num_value_fini(&out);
+				return val_u64(0);
 			}
+			if (width > 0) {
+				out = value_to_bitvector_width(&out, width);
+			}
+			free(suf);
 		}
 	}
 	return out;
@@ -1227,15 +1294,13 @@ static RzNumValue eval_address_typed(EvalCtx *c, TSNode n) {
 	// does, backed by RzIO), perform the dereference: read
 	// width_bits/8 raw bytes at addr through the callback, then
 	// decode them here according to the requested endianness, the
-	// signed marker, and the float marker. The callback's job is
-	// just to hand back bytes; all interpretation lives in the
-	// evaluator so the callback can be shared verbatim with rz_pf
-	// (whose RzPfReadAtCb has the same signature).
+	// signed marker, and the float marker. The callback only hands
+	// back bytes; all interpretation lives in the evaluator.
 	if (c->io_read && width_bits <= 64) {
 		int width_bytes = width_bits / 8;
 		ut8 buf[8] = { 0 };
-		int got = c->io_read(c->io_read_user, addr, buf, width_bytes);
-		if (got < width_bytes) {
+		ut64 got = c->io_read(c->io_read_user, addr, buf, width_bytes);
+		if (got < (ut64)width_bytes) {
 			set_err_code(c, RZ_NUM_ERR_UNCOMPUTABLE,
 				"failed to read %d bytes at 0x%" PFMT64x, width_bytes, addr);
 			return val_u64(0);
@@ -1277,7 +1342,7 @@ static RzNumValue eval_address_typed(EvalCtx *c, TSNode n) {
 	// bit-vector arithmetic.
 	if (c->io_read && width_bits == 128) {
 		ut8 buf[16] = { 0 };
-		int got = c->io_read(c->io_read_user, addr, buf, 16);
+		ut64 got = c->io_read(c->io_read_user, addr, buf, 16);
 		if (got < 16) {
 			set_err_code(c, RZ_NUM_ERR_UNCOMPUTABLE,
 				"failed to read 16 bytes at 0x%" PFMT64x, addr);
@@ -3079,17 +3144,16 @@ static RzNumValue eval_node_inner(EvalCtx *c, TSNode n) {
  *
  * Unlike rz_num_math_ut64() this entry point reports the kind of the
  * result (ut64 / float / bit-vector / big number). Out-of-band errors
- * are reported through \p error_msg (which the caller must free).
+ * are reported through \p error_msg.
  *
- * \param num         Optional RzNum instance (used for the variable
- *                    resolution callback). May be NULL.
+ * \param num         RzNum instance used for the variable resolution
+ *                    callback.
  * \param expr        The expression to evaluate.
  * \param out_value   Out-parameter receiving the evaluated value.
  *                    The caller must finalise it with
  *                    rz_num_value_fini() once done.
- * \param error_msg   Optional out-parameter. If non-NULL and a parse
- *                    or evaluation error occurs, set to an owned
- *                    diagnostic string.
+ * \param error_msg   Set to a diagnostic string on a parse or
+ *                    evaluation error.
  * \return true on success, false on parse or evaluation error.
  */
 RZ_API bool rz_num_math_value(RZ_NULLABLE RzNum *num, RZ_NONNULL const char *expr,

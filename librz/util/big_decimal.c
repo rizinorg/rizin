@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2026 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
@@ -20,8 +20,6 @@
 #include <rz_util/rz_assert.h>
 #include <stdlib.h>
 #include <string.h>
-
-// ---- small RzNumBig helpers -------------------------------------------------
 
 static RzNumBig *big_zero(void) {
 	RzNumBig *b = rz_big_new();
@@ -115,9 +113,7 @@ static RzNumBig *big_abs(RZ_NONNULL RzNumBig *m) {
 	return out;
 }
 
-// ---- RzBigDecimal construction ----------------------------------------------
-
-static RzBigDecimal *bd_new(RZ_OWN RzNumBig *mantissa, st32 scale) {
+static RzBigDecimal *bd_new(RZ_OWN RzNumBig *mantissa, ut32 scale) {
 	if (!mantissa) {
 		return NULL;
 	}
@@ -131,7 +127,11 @@ static RzBigDecimal *bd_new(RZ_OWN RzNumBig *mantissa, st32 scale) {
 	return d;
 }
 
-void rz_big_decimal_free(RzBigDecimal *d) {
+/**
+ * \brief Free an RzBigDecimal and its mantissa.
+ * \param d Decimal to free; NULL is ignored.
+ */
+RZ_API void rz_big_decimal_free(RZ_NULLABLE RzBigDecimal *d) {
 	if (!d) {
 		return;
 	}
@@ -139,16 +139,30 @@ void rz_big_decimal_free(RzBigDecimal *d) {
 	free(d);
 }
 
+/**
+ * \brief Deep-copy an RzBigDecimal.
+ * \param d Decimal to copy.
+ * \return Copy, or NULL on allocation failure.
+ */
 RZ_API RZ_OWN RzBigDecimal *rz_big_decimal_dup(RZ_NONNULL const RzBigDecimal *d) {
 	rz_return_val_if_fail(d, NULL);
 	return bd_new(big_clone(d->mantissa), d->scale);
 }
 
+/**
+ * \brief Build an RzBigDecimal holding the exact integer value \p v (scale 0).
+ * \param v Integer value to store.
+ * \return Decimal, or NULL on allocation failure.
+ */
 RZ_API RZ_OWN RzBigDecimal *rz_big_decimal_new_from_int(st64 v) {
 	return bd_new(big_from_i64(v), 0);
 }
 
-// Parse "[+-]ddd[.ddd][eE[+-]ddd]" into mantissa * 10^(-scale), scale >= 0.
+/**
+ * \brief Parse a decimal string into an RzBigDecimal.
+ * \param str Source in the form "[+-]ddd[.ddd][eE[+-]ddd]".
+ * \return Decimal, or NULL on malformed input or allocation failure.
+ */
 RZ_API RZ_OWN RzBigDecimal *rz_big_decimal_new_from_str(RZ_NONNULL const char *str) {
 	rz_return_val_if_fail(str, NULL);
 	const char *p = str;
@@ -271,8 +285,6 @@ RZ_API RZ_OWN RzBigDecimal *rz_big_decimal_new_from_str(RZ_NONNULL const char *s
 	return bd_new(m, scale);
 }
 
-// ---- arithmetic -------------------------------------------------------------
-
 // Bring a and b to a common scale; outputs new mantissas and the scale.
 static bool bd_align(const RzBigDecimal *a, const RzBigDecimal *b,
 	RzNumBig **out_a, RzNumBig **out_b, st32 *out_scale) {
@@ -290,6 +302,12 @@ static bool bd_align(const RzBigDecimal *a, const RzBigDecimal *b,
 	return true;
 }
 
+/**
+ * \brief Compute the exact sum a + b.
+ * \param a First addend.
+ * \param b Second addend.
+ * \return Result, or NULL on allocation failure.
+ */
 RZ_API RZ_OWN RzBigDecimal *rz_big_decimal_add(RZ_NONNULL const RzBigDecimal *a, RZ_NONNULL const RzBigDecimal *b) {
 	rz_return_val_if_fail(a && b, NULL);
 	RzNumBig *ma, *mb;
@@ -306,6 +324,12 @@ RZ_API RZ_OWN RzBigDecimal *rz_big_decimal_add(RZ_NONNULL const RzBigDecimal *a,
 	return bd_new(r, s);
 }
 
+/**
+ * \brief Compute the exact difference a - b.
+ * \param a Minuend.
+ * \param b Subtrahend.
+ * \return Result, or NULL on allocation failure.
+ */
 RZ_API RZ_OWN RzBigDecimal *rz_big_decimal_sub(RZ_NONNULL const RzBigDecimal *a, RZ_NONNULL const RzBigDecimal *b) {
 	rz_return_val_if_fail(a && b, NULL);
 	RzNumBig *ma, *mb;
@@ -322,6 +346,12 @@ RZ_API RZ_OWN RzBigDecimal *rz_big_decimal_sub(RZ_NONNULL const RzBigDecimal *a,
 	return bd_new(r, s);
 }
 
+/**
+ * \brief Compute the exact product a * b.
+ * \param a First factor.
+ * \param b Second factor.
+ * \return Result, or NULL on allocation failure.
+ */
 RZ_API RZ_OWN RzBigDecimal *rz_big_decimal_mul(RZ_NONNULL const RzBigDecimal *a, RZ_NONNULL const RzBigDecimal *b) {
 	rz_return_val_if_fail(a && b, NULL);
 	RzNumBig *r = rz_big_new();
@@ -331,6 +361,11 @@ RZ_API RZ_OWN RzBigDecimal *rz_big_decimal_mul(RZ_NONNULL const RzBigDecimal *a,
 	return bd_new(r, a->scale + b->scale);
 }
 
+/**
+ * \brief Compute the exact negation -a.
+ * \param a Operand to negate.
+ * \return Result, or NULL on allocation failure.
+ */
 RZ_API RZ_OWN RzBigDecimal *rz_big_decimal_neg(RZ_NONNULL const RzBigDecimal *a) {
 	rz_return_val_if_fail(a, NULL);
 	RzNumBig *zero = big_zero();
@@ -392,6 +427,13 @@ static RzNumBig *big_round_drop(RZ_NONNULL RzNumBig *q, ut32 drop) {
 	return res;
 }
 
+/**
+ * \brief Divide a by b to a bounded number of significant digits.
+ * \param a Dividend.
+ * \param b Divisor.
+ * \param precision Significant digits to keep (0 selects RZ_BIG_DECIMAL_DEFAULT_PREC).
+ * \return Quotient, or NULL when b is zero or on allocation failure.
+ */
 RZ_API RZ_OWN RzBigDecimal *rz_big_decimal_div(RZ_NONNULL const RzBigDecimal *a, RZ_NONNULL const RzBigDecimal *b, ut32 precision) {
 	rz_return_val_if_fail(a && b, NULL);
 	if (rz_big_is_zero(b->mantissa)) {
@@ -423,7 +465,7 @@ RZ_API RZ_OWN RzBigDecimal *rz_big_decimal_div(RZ_NONNULL const RzBigDecimal *a,
 	rz_big_div(q, num, b->mantissa); // truncated toward zero
 	rz_big_free(num);
 
-	st32 result_scale = shift + a->scale - b->scale;
+	st32 result_scale = shift + (st32)a->scale - (st32)b->scale;
 	int dq = big_digit_count(q);
 	if (dq < 0) {
 		rz_big_free(q);
@@ -451,8 +493,12 @@ RZ_API RZ_OWN RzBigDecimal *rz_big_decimal_div(RZ_NONNULL const RzBigDecimal *a,
 	return bd_new(q, result_scale);
 }
 
-// ---- comparison / predicates ------------------------------------------------
-
+/**
+ * \brief Compare two decimals by value.
+ * \param a First operand.
+ * \param b Second operand.
+ * \return <0 if a < b, 0 if equal, >0 if a > b.
+ */
 RZ_API int rz_big_decimal_cmp(RZ_NONNULL const RzBigDecimal *a, RZ_NONNULL const RzBigDecimal *b) {
 	rz_return_val_if_fail(a && b, 0);
 	RzNumBig *ma, *mb;
@@ -466,13 +512,21 @@ RZ_API int rz_big_decimal_cmp(RZ_NONNULL const RzBigDecimal *a, RZ_NONNULL const
 	return c;
 }
 
+/**
+ * \brief Test whether a decimal is exactly zero.
+ * \param d Decimal to test.
+ * \return true when the value is zero at any scale.
+ */
 RZ_API bool rz_big_decimal_is_zero(RZ_NONNULL const RzBigDecimal *d) {
 	rz_return_val_if_fail(d, true);
 	return rz_big_is_zero(d->mantissa) != 0;
 }
 
-// ---- formatting / projection ------------------------------------------------
-
+/**
+ * \brief Render a decimal to a canonical string (no exponent).
+ * \param d Decimal to format.
+ * \return String, or NULL on allocation failure.
+ */
 RZ_API RZ_OWN char *rz_big_decimal_to_str(RZ_NONNULL const RzBigDecimal *d) {
 	rz_return_val_if_fail(d, NULL);
 	char *digits = rz_big_to_decstr(d->mantissa);
@@ -518,6 +572,11 @@ RZ_API RZ_OWN char *rz_big_decimal_to_str(RZ_NONNULL const RzBigDecimal *d) {
 	return out;
 }
 
+/**
+ * \brief Truncate a decimal towards zero to a ut64.
+ * \param d Decimal to convert.
+ * \return The low 64 bits of the integer part.
+ */
 RZ_API ut64 rz_big_decimal_to_ut64(RZ_NONNULL const RzBigDecimal *d) {
 	rz_return_val_if_fail(d, 0);
 	if (d->scale == 0) {
@@ -537,6 +596,11 @@ RZ_API ut64 rz_big_decimal_to_ut64(RZ_NONNULL const RzBigDecimal *d) {
 	return r;
 }
 
+/**
+ * \brief Convert a decimal to the nearest double.
+ * \param d Decimal to convert.
+ * \return Nearest double (+/-inf when out of range).
+ */
 RZ_API double rz_big_decimal_to_double(RZ_NONNULL const RzBigDecimal *d) {
 	rz_return_val_if_fail(d, 0.0);
 	char *s = rz_big_decimal_to_str(d);
