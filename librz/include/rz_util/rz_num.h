@@ -28,6 +28,7 @@ typedef enum {
 	RZ_NUM_KIND_BIG, ///< arbitrary-precision integer, see RzNumBig
 	RZ_NUM_KIND_BITVECTOR, ///< fixed-width bit-vector, see RzBitVector
 	RZ_NUM_KIND_FLOAT, ///< IEEE-754 float, currently double-precision
+	RZ_NUM_KIND_BIGDECIMAL, ///< arbitrary-precision base-10 decimal, see RzBigDecimal
 } RzNumKind;
 
 /**
@@ -83,6 +84,7 @@ typedef struct rz_num_value_t {
 		double d; ///< valid when kind == RZ_NUM_KIND_FLOAT
 		RzNumBig *big; ///< valid when kind == RZ_NUM_KIND_BIG (owned)
 		RzBitVector *bv; ///< valid when kind == RZ_NUM_KIND_BITVECTOR (owned)
+		RzBigDecimal *bigdec; ///< valid when kind == RZ_NUM_KIND_BIGDECIMAL (owned)
 	} val;
 } RzNumValue;
 
@@ -122,6 +124,8 @@ static inline ut64 rz_num_value_to_ut64(const RzNumValue *v) {
 		return (ut64)rz_big_to_int(v->val.big);
 	case RZ_NUM_KIND_BITVECTOR:
 		return v->val.bv ? rz_bv_to_ut64(v->val.bv) : 0;
+	case RZ_NUM_KIND_BIGDECIMAL:
+		return v->val.bigdec ? rz_big_decimal_to_ut64(v->val.bigdec) : 0;
 	default:
 		return 0;
 	}
@@ -153,6 +157,8 @@ static inline double rz_num_value_to_double(const RzNumValue *v) {
 		return v->val.big ? (double)rz_big_to_int(v->val.big) : 0.0;
 	case RZ_NUM_KIND_BITVECTOR:
 		return v->val.bv ? (double)rz_bv_to_ut64(v->val.bv) : 0.0;
+	case RZ_NUM_KIND_BIGDECIMAL:
+		return v->val.bigdec ? rz_big_decimal_to_double(v->val.bigdec) : 0.0;
 	default:
 		return 0.0;
 	}
@@ -174,6 +180,9 @@ static inline void rz_num_value_fini(RzNumValue *v) {
 		break;
 	case RZ_NUM_KIND_BITVECTOR:
 		rz_bv_free(v->val.bv);
+		break;
+	case RZ_NUM_KIND_BIGDECIMAL:
+		rz_big_decimal_free(v->val.bigdec);
 		break;
 	default:
 		break;

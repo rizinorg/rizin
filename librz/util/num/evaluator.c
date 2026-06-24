@@ -476,6 +476,13 @@ static RzNumValue val_f64(double d) {
 	return v;
 }
 
+// val_bigdecimal transfers ownership of `d` into the returned value.
+static RzNumValue val_bigdecimal(RzBigDecimal *d) {
+	RzNumValue v = { .kind = RZ_NUM_KIND_BIGDECIMAL };
+	v.val.bigdec = d;
+	return v;
+}
+
 // Truthiness for the ternary's condition: a value is "true" when it
 // is non-zero. Floats are tested as floats (so 0.0 is false but a
 // tiny non-zero value is true) rather than via the integer
@@ -485,6 +492,8 @@ static bool value_is_truthy(const RzNumValue *v) {
 	switch (v->kind) {
 	case RZ_NUM_KIND_FLOAT:
 		return v->val.d != 0.0;
+	case RZ_NUM_KIND_BIGDECIMAL:
+		return v->val.bigdec && !rz_big_decimal_is_zero(v->val.bigdec);
 	case RZ_NUM_KIND_BIG:
 		return v->val.big && !rz_big_is_zero(v->val.big);
 	case RZ_NUM_KIND_BITVECTOR:
@@ -673,8 +682,42 @@ static RzNumBig *value_to_big(const RzNumValue *v) {
 	}
 	case RZ_NUM_KIND_FLOAT:
 		return big_from_u64((ut64)v->val.d);
+	case RZ_NUM_KIND_BIGDECIMAL:
+		return big_from_u64(v->val.bigdec ? rz_big_decimal_to_ut64(v->val.bigdec) : 0);
 	default:
 		return rz_big_new();
+	}
+}
+
+// New RzBigDecimal holding the same value (for exact decimal arithmetic).
+// Integer kinds use their *signed* value, matching to_double()'s signed
+// projection so e.g. 0.5 + (-1 as ut64) behaves the same in both paths.
+static RzBigDecimal *value_to_bigdecimal(const RzNumValue *v) {
+	if (!v) {
+		return NULL;
+	}
+	switch (v->kind) {
+	case RZ_NUM_KIND_BIGDECIMAL:
+		return v->val.bigdec ? rz_big_decimal_dup(v->val.bigdec) : NULL;
+	case RZ_NUM_KIND_UT64:
+		return rz_big_decimal_new_from_int((st64)v->val.n);
+	case RZ_NUM_KIND_BIG: {
+		char *dec = v->val.big ? rz_big_to_decstr(v->val.big) : NULL;
+		RzBigDecimal *d = dec ? rz_big_decimal_new_from_str(dec) : NULL;
+		free(dec);
+		return d;
+	}
+	case RZ_NUM_KIND_BITVECTOR:
+		return rz_big_decimal_new_from_int((st64)(v->val.bv ? rz_bv_to_ut64(v->val.bv) : 0));
+	case RZ_NUM_KIND_FLOAT: {
+		// Defensive: decimal arithmetic never mixes in a raw double, but
+		// if asked, round-trip through the double's shortest decimal.
+		char buf[32];
+		snprintf(buf, sizeof(buf), "%.17g", v->val.d);
+		return rz_big_decimal_new_from_str(buf);
+	}
+	default:
+		return rz_big_decimal_new_from_int(0);
 	}
 }
 
@@ -699,6 +742,8 @@ static double to_double(const RzNumValue *v) {
 	}
 	case RZ_NUM_KIND_BITVECTOR:
 		return v->val.bv ? (double)rz_bv_to_ut64(v->val.bv) : 0.0;
+	case RZ_NUM_KIND_BIGDECIMAL:
+		return v->val.bigdec ? rz_big_decimal_to_double(v->val.bigdec) : 0.0;
 	default:
 		return 0.0;
 	}
@@ -714,6 +759,8 @@ static ut64 to_u64(const RzNumValue *v) {
 		return (ut64)rz_big_to_int(v->val.big);
 	case RZ_NUM_KIND_BITVECTOR:
 		return v->val.bv ? rz_bv_to_ut64(v->val.bv) : 0;
+	case RZ_NUM_KIND_BIGDECIMAL:
+		return v->val.bigdec ? rz_big_decimal_to_ut64(v->val.bigdec) : 0;
 	default:
 		return 0;
 	}
@@ -803,8 +850,25 @@ static RzBitVector *value_to_bv_width(const RzNumValue *v, ut32 width) {
 	return rz_bv_new_from_ut64(width, to_u64(v));
 }
 
+// True if either operand is float-like (IEEE double or arbitrary-precision
+// decimal); such operands take the float dispatch. Whether the arithmetic
+// stays exact (decimal) or projects to double is decided by
+// any_bigdecimal()/any_real_float() at the call site.
 static bool any_float(const RzNumValue *a, const RzNumValue *b) {
+	return a->kind == RZ_NUM_KIND_FLOAT || b->kind == RZ_NUM_KIND_FLOAT ||
+		a->kind == RZ_NUM_KIND_BIGDECIMAL || b->kind == RZ_NUM_KIND_BIGDECIMAL;
+}
+
+static bool any_bigdecimal(const RzNumValue *a, const RzNumValue *b) {
+	return a->kind == RZ_NUM_KIND_BIGDECIMAL || b->kind == RZ_NUM_KIND_BIGDECIMAL;
+}
+
+static bool any_real_float(const RzNumValue *a, const RzNumValue *b) {
 	return a->kind == RZ_NUM_KIND_FLOAT || b->kind == RZ_NUM_KIND_FLOAT;
+}
+
+static inline bool value_is_float_like(const RzNumValue *v) {
+	return v->kind == RZ_NUM_KIND_FLOAT || v->kind == RZ_NUM_KIND_BIGDECIMAL;
 }
 
 static bool any_big(const RzNumValue *a, const RzNumValue *b) {
@@ -891,6 +955,9 @@ static RzNumValue *value_dup_heap(const RzNumValue *src) {
 		break;
 	case RZ_NUM_KIND_BITVECTOR:
 		dst->val.bv = src->val.bv ? rz_bv_dup(src->val.bv) : NULL;
+		break;
+	case RZ_NUM_KIND_BIGDECIMAL:
+		dst->val.bigdec = src->val.bigdec ? rz_big_decimal_dup(src->val.bigdec) : NULL;
 		break;
 	case RZ_NUM_KIND_FLOAT:
 		dst->val.d = src->val.d;
@@ -1084,7 +1151,12 @@ static RzNumValue eval_number(EvalCtx *c, TSNode n) {
 			free(txt);
 			return val_u64(0);
 		}
-		out = val_f64(d);
+		// Validated as a float above; now keep full precision by parsing
+		// the literal text into an exact decimal rather than collapsing
+		// to a double. Exotic forms the decimal parser rejects (e.g. a
+		// hex float) fall back to the double value.
+		RzBigDecimal *bd = rz_big_decimal_new_from_str(txt);
+		out = bd ? val_bigdecimal(bd) : val_f64(d);
 	} else {
 		ut64 u = 0;
 		bool overflow = false;
@@ -1156,6 +1228,14 @@ static RzNumValue eval_number(EvalCtx *c, TSNode n) {
 					double d = to_double(&out);
 					rz_num_value_fini(&out);
 					out = val_f64(d * (double)m);
+				} else if (out.kind == RZ_NUM_KIND_BIGDECIMAL) {
+					RzBigDecimal *mul = rz_big_decimal_new_from_int((st64)m);
+					RzBigDecimal *res = mul ? rz_big_decimal_mul(out.val.bigdec, mul) : NULL;
+					rz_big_decimal_free(mul);
+					if (res) {
+						rz_num_value_fini(&out);
+						out = val_bigdecimal(res);
+					}
 				} else {
 					out.val.n *= m;
 				}
@@ -1663,7 +1743,7 @@ static RzNumValue builtin_min(EvalCtx *c, RzNumValue *a, int n) {
 	// answer that reflects the true ordering rather than a lossy
 	// projection. Then return the original chosen operand so the
 	// kind is preserved.
-	if (a[0].kind == RZ_NUM_KIND_FLOAT || a[1].kind == RZ_NUM_KIND_FLOAT) {
+	if (value_is_float_like(&a[0]) || value_is_float_like(&a[1])) {
 		return to_double(&a[0]) < to_double(&a[1])
 			? a[0]
 			: a[1];
@@ -1679,7 +1759,7 @@ static RzNumValue builtin_max(EvalCtx *c, RzNumValue *a, int n) {
 		set_err_code(c, RZ_NUM_ERR_NOT_IMPLEMENTED, "max expects 2 arguments, got %d", n);
 		return val_u64(0);
 	}
-	if (a[0].kind == RZ_NUM_KIND_FLOAT || a[1].kind == RZ_NUM_KIND_FLOAT) {
+	if (value_is_float_like(&a[0]) || value_is_float_like(&a[1])) {
 		return to_double(&a[0]) > to_double(&a[1])
 			? a[0]
 			: a[1];
@@ -1697,6 +1777,14 @@ static RzNumValue builtin_abs(EvalCtx *c, RzNumValue *a, int n) {
 	}
 	if (a[0].kind == RZ_NUM_KIND_FLOAT) {
 		return val_f64(fabs(a[0].val.d));
+	}
+	if (a[0].kind == RZ_NUM_KIND_BIGDECIMAL && a[0].val.bigdec) {
+		RzBigDecimal *zero = rz_big_decimal_new_from_int(0);
+		bool neg = zero && rz_big_decimal_cmp(a[0].val.bigdec, zero) < 0;
+		rz_big_decimal_free(zero);
+		RzBigDecimal *r = neg ? rz_big_decimal_neg(a[0].val.bigdec)
+				      : rz_big_decimal_dup(a[0].val.bigdec);
+		return r ? val_bigdecimal(r) : val_u64(0);
 	}
 	if (a[0].kind == RZ_NUM_KIND_UT64) {
 		st64 s = (st64)a[0].val.n;
@@ -1802,9 +1890,9 @@ static RzNumValue builtin_len(EvalCtx *c, RzNumValue *a, int n) {
 		free(hex);
 		return val_u64(bits);
 	}
-	if (a[0].kind == RZ_NUM_KIND_FLOAT) {
-		// A float has no bit-length notion here; report rather than
-		// silently returning a misleading number.
+	if (value_is_float_like(&a[0])) {
+		// A float / decimal has no bit-length notion here; report rather
+		// than silently returning a misleading number.
 		set_err_code(c, RZ_NUM_ERR_TYPE_MISMATCH, "len is not defined on floats");
 		return val_u64(0);
 	}
@@ -1890,10 +1978,10 @@ static RzNumValue builtin_floor(EvalCtx *c, RzNumValue *a, int n) {
 	}
 	// Integer kinds already are their own floor; pass them through so
 	// floor(big) keeps full precision instead of going through double.
-	if (a[0].kind != RZ_NUM_KIND_FLOAT) {
+	if (!value_is_float_like(&a[0])) {
 		return a[0];
 	}
-	return float_to_int_kind(floor(a[0].val.d));
+	return float_to_int_kind(floor(to_double(&a[0])));
 }
 
 static RzNumValue builtin_ceil(EvalCtx *c, RzNumValue *a, int n) {
@@ -1901,10 +1989,10 @@ static RzNumValue builtin_ceil(EvalCtx *c, RzNumValue *a, int n) {
 		set_err_code(c, RZ_NUM_ERR_NOT_IMPLEMENTED, "ceil expects 1 argument, got %d", n);
 		return val_u64(0);
 	}
-	if (a[0].kind != RZ_NUM_KIND_FLOAT) {
+	if (!value_is_float_like(&a[0])) {
 		return a[0];
 	}
-	return float_to_int_kind(ceil(a[0].val.d));
+	return float_to_int_kind(ceil(to_double(&a[0])));
 }
 
 static RzNumValue builtin_round(EvalCtx *c, RzNumValue *a, int n) {
@@ -1912,12 +2000,12 @@ static RzNumValue builtin_round(EvalCtx *c, RzNumValue *a, int n) {
 		set_err_code(c, RZ_NUM_ERR_NOT_IMPLEMENTED, "round expects 1 argument, got %d", n);
 		return val_u64(0);
 	}
-	if (a[0].kind != RZ_NUM_KIND_FLOAT) {
+	if (!value_is_float_like(&a[0])) {
 		return a[0];
 	}
 	// C round() rounds halves away from zero (round(2.5) == 3,
 	// round(-2.5) == -3), which is the least surprising rule here.
-	return float_to_int_kind(round(a[0].val.d));
+	return float_to_int_kind(round(to_double(&a[0])));
 }
 
 static RzNumValue builtin_gcd(EvalCtx *c, RzNumValue *a, int n) {
@@ -2134,7 +2222,8 @@ static RzNumValue eval_function(EvalCtx *c, TSNode n) {
 	// cleanup loop below. Since RzNumBig and RzBitVector are
 	// owning pointers, take ownership of the returned value's
 	// payload by stealing it from the matching arg slot.
-	if (out.kind == RZ_NUM_KIND_BIG || out.kind == RZ_NUM_KIND_BITVECTOR) {
+	if (out.kind == RZ_NUM_KIND_BIG || out.kind == RZ_NUM_KIND_BITVECTOR ||
+		out.kind == RZ_NUM_KIND_BIGDECIMAL) {
 		for (int i = 0; i < got; i++) {
 			if (args[i].kind == out.kind && args[i].val.big == out.val.big) {
 				// Disown - prevent the cleanup loop from freeing
@@ -2190,6 +2279,48 @@ static int big_cmp(const RzNumValue *lv, const RzNumValue *rv) {
 	rz_big_free(a);
 	rz_big_free(b);
 	return r;
+}
+
+// Exact decimal arithmetic for + - * /. Both operands are converted to
+// RzBigDecimal (integers included); + - * are exact and / is bounded to
+// RZ_BIG_DECIMAL_DEFAULT_PREC significant digits. A zero divisor is
+// reported the same way the other dispatch paths report it.
+static RzNumValue do_decimal_binop(EvalCtx *c, const RzNumValue *lv,
+	const RzNumValue *rv, char op) {
+	RzBigDecimal *a = value_to_bigdecimal(lv);
+	RzBigDecimal *b = value_to_bigdecimal(rv);
+	if (!a || !b) {
+		rz_big_decimal_free(a);
+		rz_big_decimal_free(b);
+		set_err_code(c, RZ_NUM_ERR_OUT_OF_MEMORY, "out of memory in decimal operation");
+		return val_u64(0);
+	}
+	RzNumValue out;
+	if (op == '/' && rz_big_decimal_is_zero(b)) {
+		if (c->num) {
+			c->num->dbz = 1;
+		}
+		set_err_code(c, RZ_NUM_ERR_DIV_ZERO, "division by zero");
+		rz_big_decimal_free(a);
+		rz_big_decimal_free(b);
+		return val_bigdecimal(rz_big_decimal_new_from_int(0));
+	}
+	RzBigDecimal *res = NULL;
+	switch (op) {
+	case '+': res = rz_big_decimal_add(a, b); break;
+	case '-': res = rz_big_decimal_sub(a, b); break;
+	case '*': res = rz_big_decimal_mul(a, b); break;
+	case '/': res = rz_big_decimal_div(a, b, RZ_BIG_DECIMAL_DEFAULT_PREC); break;
+	default: break;
+	}
+	rz_big_decimal_free(a);
+	rz_big_decimal_free(b);
+	if (!res) {
+		set_err_code(c, RZ_NUM_ERR_OUT_OF_MEMORY, "out of memory in decimal operation");
+		return val_u64(0);
+	}
+	out = val_bigdecimal(res);
+	return out;
 }
 
 // Wrap an owned RzBitVector in a value, or report OOM.
@@ -2432,6 +2563,10 @@ static RzNumValue eval_binop(EvalCtx *c, TSNode n, const char *op) {
 	// demote back to ut64 if the result fits. Plain ut64 paths
 	// match the legacy behaviour bit-for-bit.
 	bool float_mode = any_float(&lv, &rv);
+	// Exact decimal arithmetic applies when a decimal operand is present
+	// and no raw double is mixed in; otherwise the float path projects to
+	// double (math-function results, typed float reads, etc.).
+	bool decimal_mode = any_bigdecimal(&lv, &rv) && !any_real_float(&lv, &rv);
 	bool big_mode = !float_mode && any_big(&lv, &rv);
 	bool bv_mode = !float_mode && !big_mode && any_bitvector(&lv, &rv);
 
@@ -2446,7 +2581,9 @@ static RzNumValue eval_binop(EvalCtx *c, TSNode n, const char *op) {
 	}
 
 	if (!strcmp(op, "+")) {
-		if (float_mode) {
+		if (decimal_mode) {
+			out = do_decimal_binop(c, &lv, &rv, '+');
+		} else if (float_mode) {
 			out = val_f64(to_double(&lv) + to_double(&rv));
 		} else if (big_mode) {
 			out = do_big_binop(c, &lv, &rv, rz_big_add);
@@ -2454,7 +2591,9 @@ static RzNumValue eval_binop(EvalCtx *c, TSNode n, const char *op) {
 			out = val_u64(lv.val.n + rv.val.n);
 		}
 	} else if (!strcmp(op, "-")) {
-		if (float_mode) {
+		if (decimal_mode) {
+			out = do_decimal_binop(c, &lv, &rv, '-');
+		} else if (float_mode) {
 			out = val_f64(to_double(&lv) - to_double(&rv));
 		} else if (big_mode) {
 			out = do_big_binop(c, &lv, &rv, rz_big_sub);
@@ -2462,7 +2601,9 @@ static RzNumValue eval_binop(EvalCtx *c, TSNode n, const char *op) {
 			out = val_u64(lv.val.n - rv.val.n);
 		}
 	} else if (!strcmp(op, "*")) {
-		if (float_mode) {
+		if (decimal_mode) {
+			out = do_decimal_binop(c, &lv, &rv, '*');
+		} else if (float_mode) {
 			out = val_f64(to_double(&lv) * to_double(&rv));
 		} else if (big_mode) {
 			out = do_big_binop(c, &lv, &rv, rz_big_mul);
@@ -2470,7 +2611,9 @@ static RzNumValue eval_binop(EvalCtx *c, TSNode n, const char *op) {
 			out = val_u64(lv.val.n * rv.val.n);
 		}
 	} else if (!strcmp(op, "/")) {
-		if (float_mode) {
+		if (decimal_mode) {
+			out = do_decimal_binop(c, &lv, &rv, '/');
+		} else if (float_mode) {
 			double rd = to_double(&rv);
 			if (rd == 0.0) {
 				if (c->num) {
@@ -2802,20 +2945,17 @@ static RzNumValue eval_unop_right(EvalCtx *c, TSNode n, const char *op) {
 		// gives a ut64 result, while + - * etc. preserve bignum.
 		out = val_u64(~to_u64(&rv));
 	} else if (!strcmp(op, "!")) {
-		// Logical not: returns 1 for a falsy value, 0 otherwise.
-		// Float zero (including -0) is falsy.
-		bool zero;
-		if (rv.kind == RZ_NUM_KIND_FLOAT) {
-			zero = (rv.val.d == 0.0);
-		} else if (rv.kind == RZ_NUM_KIND_BIG) {
-			zero = rz_big_is_zero(rv.val.big);
-		} else {
-			zero = (to_u64(&rv) == 0);
-		}
-		out = val_u64(zero ? 1 : 0);
+		// Logical not: 1 for a falsy value, 0 otherwise. A zero of any
+		// kind (including float -0 and an exact decimal zero) is falsy.
+		out = val_u64(value_is_truthy(&rv) ? 0 : 1);
 	} else if (!strcmp(op, "++")) {
 		if (rv.kind == RZ_NUM_KIND_FLOAT) {
 			out = val_f64(rv.val.d + 1.0);
+		} else if (rv.kind == RZ_NUM_KIND_BIGDECIMAL) {
+			RzBigDecimal *one = rz_big_decimal_new_from_int(1);
+			RzBigDecimal *res = one ? rz_big_decimal_add(rv.val.bigdec, one) : NULL;
+			rz_big_decimal_free(one);
+			out = res ? val_bigdecimal(res) : val_u64(0);
 		} else if (rv.kind == RZ_NUM_KIND_BIG) {
 			RzNumBig *nb = rz_big_new();
 			if (!nb) {
@@ -2833,6 +2973,11 @@ static RzNumValue eval_unop_right(EvalCtx *c, TSNode n, const char *op) {
 	} else if (!strcmp(op, "--")) {
 		if (rv.kind == RZ_NUM_KIND_FLOAT) {
 			out = val_f64(rv.val.d - 1.0);
+		} else if (rv.kind == RZ_NUM_KIND_BIGDECIMAL) {
+			RzBigDecimal *one = rz_big_decimal_new_from_int(1);
+			RzBigDecimal *res = one ? rz_big_decimal_sub(rv.val.bigdec, one) : NULL;
+			rz_big_decimal_free(one);
+			out = res ? val_bigdecimal(res) : val_u64(0);
 		} else if (rv.kind == RZ_NUM_KIND_BIG) {
 			RzNumBig *nb = rz_big_new();
 			if (!nb) {
@@ -2851,6 +2996,9 @@ static RzNumValue eval_unop_right(EvalCtx *c, TSNode n, const char *op) {
 		// Unary plus: identity, preserves kind.
 		if (rv.kind == RZ_NUM_KIND_FLOAT) {
 			out = val_f64(rv.val.d);
+		} else if (rv.kind == RZ_NUM_KIND_BIGDECIMAL) {
+			RzBigDecimal *res = rv.val.bigdec ? rz_big_decimal_dup(rv.val.bigdec) : NULL;
+			out = res ? val_bigdecimal(res) : val_u64(0);
 		} else if (rv.kind == RZ_NUM_KIND_BIG) {
 			RzNumBig *nb = rz_big_new();
 			if (!nb) {
@@ -2868,6 +3016,9 @@ static RzNumValue eval_unop_right(EvalCtx *c, TSNode n, const char *op) {
 		// Unary minus.
 		if (rv.kind == RZ_NUM_KIND_FLOAT) {
 			out = val_f64(-rv.val.d);
+		} else if (rv.kind == RZ_NUM_KIND_BIGDECIMAL) {
+			RzBigDecimal *res = rv.val.bigdec ? rz_big_decimal_neg(rv.val.bigdec) : NULL;
+			out = res ? val_bigdecimal(res) : val_u64(0);
 		} else if (rv.kind == RZ_NUM_KIND_BIG) {
 			// rz_big has no dedicated negate; compute it as
 			// `zero - x`.

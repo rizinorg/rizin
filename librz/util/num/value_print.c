@@ -237,6 +237,15 @@ RZ_API void rz_num_value_print(RZ_NONNULL const RzNumValue *v, RZ_NONNULL RzStrB
 	rz_num_value_print_ex(v, NULL, sb);
 }
 
+// Exact base-10 decimal: the full value plus its double projection.
+static void print_bigdecimal(const RzNumValue *v, RzStrBuf *sb) {
+	char *s = v->val.bigdec ? rz_big_decimal_to_str(v->val.bigdec) : NULL;
+	rz_strbuf_appendf(sb, "decimal %s\n", s ? s : "0");
+	double d = v->val.bigdec ? rz_big_decimal_to_double(v->val.bigdec) : 0.0;
+	rz_strbuf_appendf(sb, "scifmt  %.17g\n", d);
+	free(s);
+}
+
 /**
  * \brief Like rz_num_value_print() but with explicit formatting options.
  *
@@ -263,6 +272,9 @@ RZ_API void rz_num_value_print_ex(RZ_NONNULL const RzNumValue *v,
 		break;
 	case RZ_NUM_KIND_FLOAT:
 		print_float(v, sb);
+		break;
+	case RZ_NUM_KIND_BIGDECIMAL:
+		print_bigdecimal(v, sb);
 		break;
 	case RZ_NUM_KIND_BIG:
 		print_big(v, sb);
@@ -298,6 +310,10 @@ RZ_API RZ_OWN char *rz_num_value_tostring(RZ_NONNULL const RzNumValue *v) {
 			d = -d;
 		}
 		return rz_str_newf("%g", d);
+	}
+	case RZ_NUM_KIND_BIGDECIMAL: {
+		char *s = v->val.bigdec ? rz_big_decimal_to_str(v->val.bigdec) : NULL;
+		return s ? s : rz_str_dup("0");
 	}
 	case RZ_NUM_KIND_BIG: {
 		char *hex = rz_big_to_hexstr(v->val.big);

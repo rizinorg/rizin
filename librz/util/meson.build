@@ -148,7 +148,7 @@ if sys_openssl.found()
   rz_util_public_cmake_deps += ['OpenSSL|OpenSSL::Crypto']
   rz_util_sources += ['big-ssl.c']
 else
-  rz_util_sources += ['big.c']
+  rz_util_sources += ['big.c', 'big_decimal.c']
 endif
 
 rz_util_includes = [platform_inc, include_directories('sdb/src')]
@@ -210,7 +210,7 @@ if meson.is_cross_build()
   # pulling in tree-sitter. sdb_gen does not evaluate expressions, so the
   # shim's degenerate "every expression is 0" behaviour is all the native
   # build ever needs (there is no longer a legacy calculator to fall back on).
-  rz_util_native_sources = rz_util_common_sources + ['big.c', 'num/native_shim.c']
+  rz_util_native_sources = rz_util_common_sources + ['big.c', 'big_decimal.c', 'num/native_shim.c']
 
   rz_util_native = static_library('rz_util_native', rz_util_native_sources, libsdb_sources,
     include_directories: rz_util_native_includes,

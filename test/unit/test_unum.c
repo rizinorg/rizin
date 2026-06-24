@@ -249,8 +249,9 @@ static ut64 label_cb(RzNum *self, const char *name, int *ok) {
 		char *_err = NULL; \
 		bool _ok = rz_num_math_value(num_with_cb, (expr), &_v, &_err); \
 		mu_assert_true(_ok, "evaluation failed: " expr); \
-		mu_assert_eq(_v.kind, RZ_NUM_KIND_FLOAT, "wrong kind for: " expr); \
-		mu_assert_true(_v.val.d == (double)(want), "wrong float result for: " expr); \
+		mu_assert_true(_v.kind == RZ_NUM_KIND_FLOAT || _v.kind == RZ_NUM_KIND_BIGDECIMAL, \
+			"wrong kind for: " expr); \
+		mu_assert_true(rz_num_value_to_double(&_v) == (double)(want), "wrong float result for: " expr); \
 		rz_num_value_fini(&_v); \
 		free(_err); \
 	} while (0)
@@ -353,6 +354,55 @@ bool test_rz_num_math_value_floats() {
 	ASSERT_U64("1.5 < 2.0", 1);
 	ASSERT_U64("1.5 == 1.5", 1);
 	ASSERT_U64("1.5 != 1.5", 0);
+	mu_end;
+}
+
+bool test_rz_num_math_value_bigdecimal() {
+	// Pure decimal arithmetic keeps full precision (this is the point):
+	// the result is exact, not the nearest double.
+#define ASSERT_DEC(expr, want_str) \
+	do { \
+		RzNumValue _v; \
+		rz_num_value_init(&_v); \
+		char *_err = NULL; \
+		bool _ok = rz_num_math_value(num_with_cb, (expr), &_v, &_err); \
+		mu_assert_true(_ok, "eval failed: " expr); \
+		mu_assert_eq(_v.kind, RZ_NUM_KIND_BIGDECIMAL, "expected decimal kind: " expr); \
+		char *_s = rz_num_value_tostring(&_v); \
+		mu_assert_streq_free(_s, want_str, expr); \
+		rz_num_value_fini(&_v); \
+		free(_err); \
+	} while (0)
+
+	ASSERT_DEC("0.1 + 0.2", "0.3"); // not 0.30000000000000004
+	ASSERT_DEC("0.1 * 0.1", "0.01");
+	ASSERT_DEC("1.5 + 2.5", "4");
+	ASSERT_DEC("10.0 - 0.0001", "9.9999");
+	ASSERT_DEC("-2.5", "-2.5");
+	ASSERT_DEC("1 + 0.5", "1.5"); // an integer operand promotes to decimal
+	ASSERT_DEC("0.3 / 0.1", "3"); // bounded division, exact here
+#undef ASSERT_DEC
+
+	// Modulo and transcendental functions have no exact decimal form, so
+	// they fall back to double (FLOAT); mixing a double back in stays
+	// double.
+#define ASSERT_KIND(expr, k) \
+	do { \
+		RzNumValue _v; \
+		rz_num_value_init(&_v); \
+		char *_err = NULL; \
+		bool _ok = rz_num_math_value(num_with_cb, (expr), &_v, &_err); \
+		mu_assert_true(_ok, "eval failed: " expr); \
+		mu_assert_eq(_v.kind, (k), "wrong kind: " expr); \
+		rz_num_value_fini(&_v); \
+		free(_err); \
+	} while (0)
+
+	ASSERT_KIND("3.0 % 2.0", RZ_NUM_KIND_FLOAT);
+	ASSERT_KIND("sqrt(2.0)", RZ_NUM_KIND_FLOAT);
+	ASSERT_KIND("sqrt(4.0) + 0.5", RZ_NUM_KIND_FLOAT);
+#undef ASSERT_KIND
+
 	mu_end;
 }
 
@@ -1042,11 +1092,13 @@ bool test_rz_num_math_value_bignum() {
 	free(err);
 	err = NULL;
 
-	// Float-with-big still demotes to float (float kind is the
-	// highest-precision-loss kind so it wins).
+	// BIG + decimal now keeps full precision as an exact decimal rather
+	// than collapsing to a lossy double - the decimal path wins.
 	ok = rz_num_math_value(NULL, "0x10000000000000000 + 0.5", &v, &err);
-	mu_assert_true(ok, "BIG + float");
-	mu_assert_eq(v.kind, RZ_NUM_KIND_FLOAT, "float wins over big");
+	mu_assert_true(ok, "BIG + decimal");
+	mu_assert_eq(v.kind, RZ_NUM_KIND_BIGDECIMAL, "big + decimal -> decimal");
+	char *bigdec_str = rz_num_value_tostring(&v);
+	mu_assert_streq_free(bigdec_str, "18446744073709551616.5", "exact big + decimal");
 	rz_num_value_fini(&v);
 	free(err);
 	err = NULL;
@@ -2111,13 +2163,14 @@ bool test_rz_num_math_value_pretty_print() {
 	free(err);
 	err = NULL;
 
-	// FLOAT case
+	// DECIMAL case: a decimal literal keeps full precision (BIGDECIMAL),
+	// so the print shows the exact decimal and its scientific form.
 	rz_num_math_value(NULL, "3.14159", &v, &err);
 	sb = rz_strbuf_new(NULL);
 	rz_num_value_print(&v, sb);
 	out = rz_strbuf_drain(sb);
-	mu_assert_notnull(strstr(out, "3.14"), "float value");
-	mu_assert_notnull(strstr(out, "hex"), "bit pattern");
+	mu_assert_notnull(strstr(out, "3.14159"), "decimal value");
+	mu_assert_notnull(strstr(out, "decimal"), "decimal label");
 	free(out);
 	rz_num_value_fini(&v);
 	free(err);
@@ -2386,6 +2439,92 @@ bool test_rz_num_math_ut64_legacy_compat() {
 #undef ASSERT_F64
 #undef ASSERT_FAIL
 
+bool test_rz_big_decimal() {
+#define BD_STR(input, want) \
+	do { \
+		RzBigDecimal *_d = rz_big_decimal_new_from_str(input); \
+		mu_assert_notnull(_d, input " parses"); \
+		char *_s = rz_big_decimal_to_str(_d); \
+		mu_assert_streq_free(_s, want, input); \
+		rz_big_decimal_free(_d); \
+	} while (0)
+
+	// parse + format round-trips, including exponents and normalisation
+	BD_STR("3.14", "3.14");
+	BD_STR("0.1", "0.1");
+	BD_STR("-2.5", "-2.5");
+	BD_STR("1500", "1500");
+	BD_STR("1.5e3", "1500");
+	BD_STR("1e-3", "0.001");
+	BD_STR("0.00", "0");
+	BD_STR("42", "42");
+	BD_STR("-0.001", "-0.001");
+#undef BD_STR
+
+#define BD_OP(op, sa, sb, want) \
+	do { \
+		RzBigDecimal *_a = rz_big_decimal_new_from_str(sa); \
+		RzBigDecimal *_b = rz_big_decimal_new_from_str(sb); \
+		RzBigDecimal *_r = rz_big_decimal_##op(_a, _b); \
+		char *_s = rz_big_decimal_to_str(_r); \
+		mu_assert_streq_free(_s, want, sa " " #op " " sb); \
+		rz_big_decimal_free(_a); \
+		rz_big_decimal_free(_b); \
+		rz_big_decimal_free(_r); \
+	} while (0)
+
+	// Exact addition/subtraction/multiplication - the whole point: 0.1 +
+	// 0.2 is exactly 0.3, not the 0.30000000000000004 a double gives.
+	BD_OP(add, "0.1", "0.2", "0.3");
+	BD_OP(sub, "0.3", "0.1", "0.2");
+	BD_OP(mul, "1.5", "2.5", "3.75");
+	BD_OP(mul, "0.1", "0.1", "0.01");
+	BD_OP(add, "-2.5", "2.5", "0");
+	BD_OP(sub, "1", "0.0001", "0.9999");
+#undef BD_OP
+
+	// Division is bounded to N significant digits and rounds half-up.
+	RzBigDecimal *one = rz_big_decimal_new_from_str("1");
+	RzBigDecimal *three = rz_big_decimal_new_from_str("3");
+	RzBigDecimal *four = rz_big_decimal_new_from_str("4");
+	RzBigDecimal *zero = rz_big_decimal_new_from_str("0");
+	RzBigDecimal *third = rz_big_decimal_div(one, three, 10);
+	char *ts = rz_big_decimal_to_str(third);
+	mu_assert_streq_free(ts, "0.3333333333", "1/3 to 10 digits");
+	rz_big_decimal_free(third);
+	RzBigDecimal *quarter = rz_big_decimal_div(one, four, 34);
+	char *qs = rz_big_decimal_to_str(quarter);
+	mu_assert_streq_free(qs, "0.25", "1/4 is exact");
+	rz_big_decimal_free(quarter);
+	RzBigDecimal *dz = rz_big_decimal_div(one, zero, 34);
+	mu_assert_null(dz, "division by zero is NULL");
+	rz_big_decimal_free(one);
+	rz_big_decimal_free(three);
+	rz_big_decimal_free(four);
+	rz_big_decimal_free(zero);
+
+	// Comparison aligns scales: 0.30 and 0.3 are equal.
+	RzBigDecimal *a = rz_big_decimal_new_from_str("0.1");
+	RzBigDecimal *b = rz_big_decimal_new_from_str("0.2");
+	RzBigDecimal *c = rz_big_decimal_new_from_str("0.30");
+	RzBigDecimal *d = rz_big_decimal_new_from_str("0.3");
+	mu_assert_true(rz_big_decimal_cmp(a, b) < 0, "0.1 < 0.2");
+	mu_assert_true(rz_big_decimal_cmp(c, d) == 0, "0.30 == 0.3");
+	rz_big_decimal_free(a);
+	rz_big_decimal_free(b);
+	rz_big_decimal_free(c);
+	rz_big_decimal_free(d);
+
+	// Projections to ut64 (truncate toward zero) and double.
+	RzBigDecimal *pi = rz_big_decimal_new_from_str("3.14159");
+	mu_assert_eq(rz_big_decimal_to_ut64(pi), 3, "3.14159 -> 3");
+	double pd = rz_big_decimal_to_double(pi);
+	mu_assert_true(pd > 3.1415 && pd < 3.1416, "3.14159 -> ~3.14159 double");
+	rz_big_decimal_free(pi);
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_num_units);
 	mu_run_test(test_rz_num_minmax_swap_i);
@@ -2404,6 +2543,7 @@ bool all_tests() {
 	mu_run_test(test_rz_num_math_value_unary_signs);
 	mu_run_test(test_rz_num_math_value_increment);
 	mu_run_test(test_rz_num_math_value_floats);
+	mu_run_test(test_rz_num_math_value_bigdecimal);
 	mu_run_test(test_rz_num_math_value_units);
 	mu_run_test(test_rz_num_math_value_comparisons);
 	mu_run_test(test_rz_num_math_value_special_variables);
@@ -2437,6 +2577,7 @@ bool all_tests() {
 	mu_run_test(test_rz_num_math_value_bitvector_unicode);
 	mu_run_test(test_rz_num_math_ut64_legacy_compat);
 	mu_run_test(test_rz_num_il_lift);
+	mu_run_test(test_rz_big_decimal);
 	return tests_passed != tests_run;
 }
 
