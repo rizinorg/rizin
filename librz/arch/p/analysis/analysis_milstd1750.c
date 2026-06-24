@@ -5,6 +5,22 @@
 #include <rz_analysis.h>
 #include <milstd1750/milstd1750_disas.h>
 
+// MIL-STD-1750A Jump-on-Condition: the 4-bit CC field is a mask over the
+// Condition Status register {C,P,Z,N}. The standard numbers bits MSB-first, so
+// the field's numeric weights are C=8, P=4(>0), Z=2(=0), N=1(<0); the jump is
+// taken when (CC & CS) != 0. Map the P/Z/N portion to the closest RzTypeCond.
+static RzTypeCond jc_cond_to_type(ut8 cc) {
+	switch (cc & 0x7) { // mask off carry (0x8) for the signed-comparison mapping
+	case 0x1: return RZ_TYPE_COND_LT; // N        : < 0
+	case 0x2: return RZ_TYPE_COND_EQ; // Z        : = 0
+	case 0x3: return RZ_TYPE_COND_LE; // Z|N      : <= 0
+	case 0x4: return RZ_TYPE_COND_GT; // P        : > 0
+	case 0x5: return RZ_TYPE_COND_NE; // P|N      : != 0
+	case 0x6: return RZ_TYPE_COND_GE; // P|Z      : >= 0
+	default: return RZ_TYPE_COND_AL; // P|Z|N / 0 : always
+	}
+}
+
 static void set_invalid(RzAnalysisOp *op, ut64 addr) {
 	op->family = RZ_ANALYSIS_OP_FAMILY_UNKNOWN;
 	op->type = RZ_ANALYSIS_OP_TYPE_ILL;
@@ -74,17 +90,26 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 
 	// --- ICR branches: target = addr + disp*2 (D = signed 8-bit) ---
 	case 0x74: // BR — unconditional
+		op->cond = RZ_TYPE_COND_AL;
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		op->jump = icr_target;
 		op->eob = true;
 		break;
-	case 0x75: // BEZ
-	case 0x76: // BLT
-	case 0x78: // BLE
-	case 0x79: // BGT
-	case 0x7A: // BNZ
-	case 0x7B: // BGE
+	case 0x75: // BEZ — branch if equal zero (Z)
+	case 0x76: // BLT — branch if less than zero (N)
+	case 0x78: // BLE — branch if less or equal zero (N|Z)
+	case 0x79: // BGT — branch if greater than zero (P)
+	case 0x7A: // BNZ — branch if not zero (P|N)
+	case 0x7B: // BGE — branch if greater or equal zero (P|Z)
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+		switch (op8) {
+		case 0x75: op->cond = RZ_TYPE_COND_EQ; break;
+		case 0x76: op->cond = RZ_TYPE_COND_LT; break;
+		case 0x78: op->cond = RZ_TYPE_COND_LE; break;
+		case 0x79: op->cond = RZ_TYPE_COND_GT; break;
+		case 0x7A: op->cond = RZ_TYPE_COND_NE; break;
+		case 0x7B: op->cond = RZ_TYPE_COND_GE; break;
+		}
 		op->jump = icr_target;
 		op->fail = next_pc;
 		break;
@@ -94,10 +119,12 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		if (insn.cond == 0) {
 			op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		} else if (insn.cond == 0x7 || insn.cond == 0xF) {
+			op->cond = RZ_TYPE_COND_AL;
 			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 			op->jump = abs_target;
 			op->eob = true;
 		} else {
+			op->cond = jc_cond_to_type(insn.cond);
 			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 			op->jump = abs_target;
 			op->fail = next_pc;
@@ -107,9 +134,11 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		if (insn.cond == 0) {
 			op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		} else if (insn.cond == 0x7 || insn.cond == 0xF) {
+			op->cond = RZ_TYPE_COND_AL;
 			op->type = RZ_ANALYSIS_OP_TYPE_MJMP; // unconditional indirect
 			op->eob = true;
 		} else {
+			op->cond = jc_cond_to_type(insn.cond);
 			op->type = RZ_ANALYSIS_OP_TYPE_MCJMP;
 			op->fail = next_pc;
 		}
@@ -120,8 +149,9 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		op->jump = abs_target;
 		op->fail = next_pc;
 		break;
-	case 0x73: // SOJ — Subtract One and Jump (cond on RA != 0)
+	case 0x73: // SOJ — Subtract One and Jump (taken while RA != 0)
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+		op->cond = RZ_TYPE_COND_NE;
 		op->jump = abs_target;
 		op->fail = next_pc;
 		break;
