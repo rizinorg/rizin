@@ -34,6 +34,9 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	MilStd1750Instruction insn;
 	if (!rz_milstd1750_decode(data, len, &insn)) {
 		set_invalid(op, addr);
+		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
+			op->mnemonic = rz_str_dup("invalid");
+		}
 		return -1;
 	}
 
@@ -41,6 +44,11 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	op->size = insn.size;
 	op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
 	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+
+	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
+		char *str = rz_milstd1750_stringify(&insn);
+		op->mnemonic = str ? str : rz_str_dup("invalid");
+	}
 
 	// MIL-STD-1750A: encoded addresses are word indices; rizin uses
 	// byte addresses with bits=8, so multiply by 2.
