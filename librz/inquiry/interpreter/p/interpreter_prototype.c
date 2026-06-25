@@ -358,7 +358,7 @@ void state_as_str_short(RzInterpSet *iset, RZ_OUT RzStrBuf *out, RzInterpAbstrSt
 		first = false;
 		const char *varname = ht_up_find(astate->var_name_hashes, djb2_reg_name, NULL);
 		rz_strbuf_appendf(out, "%s = ", varname);
-		iset->plugin->val_as_str(av, out, iset->intrpr_priv);
+		iset->plugin->val_as_str(av, out, iset->interp_priv);
 	}
 }
 

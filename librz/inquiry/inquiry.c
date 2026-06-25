@@ -476,7 +476,7 @@ static bool setup_yield_rbufs(
 struct ituple {
 	RzThread *ithread;
 	RzInterpSet *iset;
-	RzIntpRunStateFlag next_run_state;
+	RzInterpRunStateFlag next_run_state;
 };
 
 /**
@@ -574,7 +574,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		RzThread *interpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, intp_iset);
 		iset_map[i].ithread = interpr_th;
 		iset_map[i].iset = intp_iset;
-		iset_map[i].next_run_state = RZ_INTP_RUN_STATE_INIT;
+		iset_map[i].next_run_state = RZ_INTERP_RUN_STATE_INIT;
 	}
 
 	//
@@ -595,13 +595,13 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			break;
 		}
 		RzInterpSet *iset = iset_map[i].iset;
-		RzIntpRunStateFlag expected_rs = iset_map[i].next_run_state;
+		RzInterpRunStateFlag expected_rs = iset_map[i].next_run_state;
 
-		switch (rz_intp_run_state_get_unsafe(iset->run_state)) {
-		case RZ_INTP_RUN_STATE_OUT_OF_LOOP:
+		switch (rz_interp_run_state_get_unsafe(iset->run_state)) {
+		case RZ_INTERP_RUN_STATE_OUT_OF_LOOP:
 			break;
-		case RZ_INTP_RUN_STATE_INIT: {
-			if (expected_rs != RZ_INTP_RUN_STATE_INIT) {
+		case RZ_INTERP_RUN_STATE_INIT: {
+			if (expected_rs != RZ_INTERP_RUN_STATE_INIT) {
 				break;
 			}
 			// This interpreter is waiting for the next emulation task.
@@ -612,7 +612,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 				// None left.
 				// TODO Remove?
 				rz_th_queue_close(iset->il_queue);
-				iset_map[i].next_run_state = RZ_INTP_RUN_STATE_TERM;
+				iset_map[i].next_run_state = RZ_INTERP_RUN_STATE_TERM;
 				intpr_terminated++;
 				// RZ_LOG_DEBUG("Next: TERM\n");
 				continue;
@@ -622,7 +622,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			case RZ_THREAD_RING_BUF_OK:
 				// Successfully lifted and pushed the entry point's basic block into the queue.
 				// Expect the interpreter to emulate now.
-				iset_map[i].next_run_state = RZ_INTP_RUN_STATE_EMU;
+				iset_map[i].next_run_state = RZ_INTERP_RUN_STATE_EMU;
 				// RZ_LOG_DEBUG("Next: EMU\n");
 				break;
 			case RZ_THREAD_RING_BUF_FAIL:
@@ -633,15 +633,15 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			case RZ_THREAD_RING_BUF_CLOSED:
 				rz_warn_if_reached();
 				// Something went pretty wrong.
-				iset_map[i].next_run_state = RZ_INTP_RUN_STATE_TERM;
+				iset_map[i].next_run_state = RZ_INTERP_RUN_STATE_TERM;
 				intpr_terminated++;
 				// RZ_LOG_DEBUG("Next: TERM\n");
 				continue;
 			}
 			break;
 		}
-		case RZ_INTP_RUN_STATE_EMU: {
-			if (expected_rs != RZ_INTP_RUN_STATE_EMU) {
+		case RZ_INTERP_RUN_STATE_EMU: {
+			if (expected_rs != RZ_INTERP_RUN_STATE_EMU) {
 				break;
 			}
 			// From here on, the code plays the role of the IO handler,
@@ -685,26 +685,26 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			// This part plays the role of a yield consumer.
 			// In our prototype it only receives xrefs and call candidates.
 			if (!handle_yields(core->inquiry, iset->yield_rbufs)) {
-				iset_map[i].next_run_state = RZ_INTP_RUN_STATE_TERM;
+				iset_map[i].next_run_state = RZ_INTERP_RUN_STATE_TERM;
 				intpr_terminated++;
 				// RZ_LOG_DEBUG("Next: TERM\n");
 			}
 			break;
 		}
-		case RZ_INTP_RUN_STATE_CLEAN: {
-			if (!((expected_rs == RZ_INTP_RUN_STATE_CLEAN || expected_rs == RZ_INTP_RUN_STATE_EMU))) {
+		case RZ_INTERP_RUN_STATE_CLEAN: {
+			if (!((expected_rs == RZ_INTERP_RUN_STATE_CLEAN || expected_rs == RZ_INTERP_RUN_STATE_EMU))) {
 				break;
 			}
 			close_reset_ipc_obj(iset);
 			open_ipc_obj(iset);
 			rz_th_sem_post(iset->run_state_sync);
-			iset_map[i].next_run_state = RZ_INTP_RUN_STATE_INIT;
+			iset_map[i].next_run_state = RZ_INTERP_RUN_STATE_INIT;
 			// RZ_LOG_DEBUG("Next: INIT\n");
 			break;
 		}
-		case RZ_INTP_RUN_STATE_TERM: {
-			if (expected_rs != RZ_INTP_RUN_STATE_TERM) {
-				iset_map[i].next_run_state = RZ_INTP_RUN_STATE_TERM;
+		case RZ_INTERP_RUN_STATE_TERM: {
+			if (expected_rs != RZ_INTERP_RUN_STATE_TERM) {
+				iset_map[i].next_run_state = RZ_INTERP_RUN_STATE_TERM;
 				intpr_terminated++;
 			}
 			// RZ_LOG_DEBUG("Next: TERM\n");

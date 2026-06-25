@@ -24,19 +24,19 @@
 #define RZ_INTERP_YIELD_RBUF_SIZE        128
 #define RZ_INTERP_ENTRY_POINTS_RBUF_SIZE 4
 
-typedef struct rz_intp_run_state RzIntpRunState;
+typedef struct rz_interp_run_state RzInterpRunState;
 
-typedef enum rz_intp_state_flag {
+typedef enum rz_interp_state_flag {
 	/**
 	 * \brief Interpreter is still outside of its defined loop.
 	 * E.g. shortly after its thread was spawned.
 	 */
-	RZ_INTP_RUN_STATE_OUT_OF_LOOP,
-	RZ_INTP_RUN_STATE_INIT, ///< Initialization state.
-	RZ_INTP_RUN_STATE_EMU, ///< Emulation state.
-	RZ_INTP_RUN_STATE_CLEAN, ///< Cleaning state.
-	RZ_INTP_RUN_STATE_TERM, ///< Termination state.
-} RzIntpRunStateFlag;
+	RZ_INTERP_RUN_STATE_OUT_OF_LOOP,
+	RZ_INTERP_RUN_STATE_INIT, ///< Initialization state.
+	RZ_INTERP_RUN_STATE_EMU, ///< Emulation state.
+	RZ_INTERP_RUN_STATE_CLEAN, ///< Cleaning state.
+	RZ_INTERP_RUN_STATE_TERM, ///< Termination state.
+} RzInterpRunStateFlag;
 
 /**
  * \brief The abstractions this module supports.
@@ -292,7 +292,7 @@ struct rz_interpreter_set {
 
 	RzInterpFunctionState fcn_state;
 
-	RzIntpRunState *run_state; ///< The state the interpreter is currently in.
+	RzInterpRunState *run_state; ///< The state the interpreter is currently in.
 	/**
 	 * \brief The semaphore to sync RzInquiry and the interpreter between the Clean and Init run state.
 	 */
@@ -329,16 +329,16 @@ struct rz_interpreter_set {
 	/**
 	 * \brief The private data of a single interpreter thread.
 	 */
-	RZ_BORROW void *intrpr_priv;
+	RZ_BORROW void *interp_priv;
 };
 
-RZ_API RZ_OWN RzIntpRunState *rz_intp_run_state_new();
-RZ_API void rz_intp_run_state_free(RZ_OWN RZ_NULLABLE RzIntpRunState *state);
-RZ_API RzIntpRunStateFlag rz_intp_run_state_get(RZ_BORROW RZ_NONNULL RzIntpRunState *state);
-RZ_API RzIntpRunStateFlag rz_intp_run_state_get_unsafe(const RZ_NONNULL RzIntpRunState *state);
-RZ_API const char *rz_intp_run_state_flag_str(RzIntpRunStateFlag flag);
+RZ_API RZ_OWN RzInterpRunState *rz_interp_run_state_new();
+RZ_API void rz_interp_run_state_free(RZ_OWN RZ_NULLABLE RzInterpRunState *state);
+RZ_API RzInterpRunStateFlag rz_interp_run_state_get(RZ_BORROW RZ_NONNULL RzInterpRunState *state);
+RZ_API RzInterpRunStateFlag rz_interp_run_state_get_unsafe(const RZ_NONNULL RzInterpRunState *state);
+RZ_API const char *rz_interp_run_state_flag_str(RzInterpRunStateFlag flag);
 
-RZ_IPI void rz_intp_run_state_set(RZ_BORROW RZ_NONNULL RzIntpRunState *state, RzIntpRunStateFlag flag);
+RZ_IPI void rz_interp_run_state_set(RZ_BORROW RZ_NONNULL RzInterpRunState *state, RzInterpRunStateFlag flag);
 
 RZ_API void rz_interpreter_yield_rbuf_free(RZ_OWN RZ_NULLABLE RzInterpYieldRBuf *yield_rbuf);
 

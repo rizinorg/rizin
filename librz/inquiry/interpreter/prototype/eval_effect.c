@@ -142,7 +142,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpSet *iset,
 			}
 			if (true_state->pc_state == false_state->pc_state && true_state->pc == false_state->pc) {
 				// identical target location, simply join the data and continue
-				iset->plugin->join_state(true_state, false_state, iset->intrpr_priv);
+				iset->plugin->join_state(true_state, false_state, iset->interp_priv);
 			} else {
 				// different jump targets, branch rather than resorting to top pc
 				rz_interp_set_push(iset, true_state);
