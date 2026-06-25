@@ -99,6 +99,7 @@ RZ_API int rz_core_esil_step(RzCore *core, ut64 until_addr, const char *until_ex
 	}
 	rz_cons_break_push(NULL, NULL);
 repeat:
+	rz_analysis_op_fini(&op);
 	if (rz_cons_is_breaked()) {
 		RZ_LOG_WARN("core: esil: emulation interrupted at 0x%08" PFMT64x "\n", addr);
 		return_tail(0);
@@ -215,6 +216,7 @@ repeat:
 					esil->trap = RZ_ANALYSIS_TRAP_EXEC_ERR;
 					esil->trap_code = addr;
 					RZ_LOG_INFO("core: ESIL: Trap, trying to execute a branch in a delay slot\n");
+					rz_analysis_op_fini(&op2);
 					return_tail(1);
 					break;
 				}
