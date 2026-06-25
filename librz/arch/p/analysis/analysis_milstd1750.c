@@ -5,23 +5,22 @@
 #include <rz_analysis.h>
 #include <milstd1750/milstd1750_disas.h>
 
-
 static RzTypeCond jc_cond_to_type(ut8 cc) {
 	switch (cc & 0xF) {
-	case 0x1: return RZ_TYPE_COND_LT; 
-	case 0x2: return RZ_TYPE_COND_EQ; 
-	case 0x3: return RZ_TYPE_COND_LE; 
-	case 0x4: return RZ_TYPE_COND_GT; 
-	case 0x5: return RZ_TYPE_COND_NE; 
-	case 0x6: return RZ_TYPE_COND_GE; 
-	case 0x8: return RZ_TYPE_COND_HS; 
+	case 0x1: return RZ_TYPE_COND_LT;
+	case 0x2: return RZ_TYPE_COND_EQ;
+	case 0x3: return RZ_TYPE_COND_LE;
+	case 0x4: return RZ_TYPE_COND_GT;
+	case 0x5: return RZ_TYPE_COND_NE;
+	case 0x6: return RZ_TYPE_COND_GE;
+	case 0x8: return RZ_TYPE_COND_HS;
 	case 0x9: return RZ_TYPE_COND_LT;
 	case 0xA: return RZ_TYPE_COND_EQ;
 	case 0xB: return RZ_TYPE_COND_LE;
 	case 0xC: return RZ_TYPE_COND_GT;
 	case 0xD: return RZ_TYPE_COND_NE;
 	case 0xE: return RZ_TYPE_COND_GE;
-	default: return RZ_TYPE_COND_AL; 
+	default: return RZ_TYPE_COND_AL;
 	}
 }
 
