@@ -767,6 +767,87 @@ static bool parse_value(const char **p, ut64 *val) {
 	return true;
 }
 
+static bool parse_set(const char **p, RZ_NONNULL RzVector /*<RzTypeConstraint>*/ *constraints) {
+	(*p)++;
+	while (**p) {
+		ut64 val;
+		if (!parse_value(p, &val)) {
+			return false;
+		}
+		RzTypeConstraint c = { .cond = RZ_TYPE_COND_EQ, .val = val };
+		rz_vector_push(constraints, &c);
+		skip_whitespace(p);
+		if (**p == '}') {
+			(*p)++;
+			break;
+		} else if (**p == ',') {
+			(*p)++;
+		} else {
+			return false;
+		}
+	}
+	return true;
+}
+
+static bool parse_interval(const char **p, RZ_NONNULL RzVector /*<RzTypeConstraint>*/ *constraints) {
+	char open_bracket = **p;
+	(*p)++;
+	ut64 val1, val2;
+	if (!parse_value(p, &val1)) {
+		return false;
+	}
+	skip_whitespace(p);
+	if (**p != ',') {
+		return false;
+	}
+	(*p)++;
+	if (!parse_value(p, &val2)) {
+		return false;
+	}
+	skip_whitespace(p);
+	char close_bracket = **p;
+	if (close_bracket != ']' && close_bracket != ')') {
+		return false;
+	}
+	(*p)++;
+	RzTypeConstraint c1 = { .cond = open_bracket == '[' ? RZ_TYPE_COND_GE : RZ_TYPE_COND_GT, .val = val1 };
+	RzTypeConstraint c2 = { .cond = close_bracket == ']' ? RZ_TYPE_COND_LE : RZ_TYPE_COND_LT, .val = val2 };
+	rz_vector_push(constraints, &c1);
+	rz_vector_push(constraints, &c2);
+	return true;
+}
+
+static bool parse_operator_constraint(const char **p, RZ_NONNULL RzVector /*<RzTypeConstraint>*/ *constraints) {
+	const char *start = *p;
+	if (**p == '<' || **p == '>' || **p == '=' || **p == '!') {
+		while (**p == '<' || **p == '>' || **p == '=' || **p == '!') {
+			(*p)++;
+		}
+	} else if (isalpha((unsigned char)**p)) {
+		while (isalpha((unsigned char)**p)) {
+			(*p)++;
+		}
+	}
+	if (*p == start) {
+		return false;
+	}
+	char *op = rz_str_ndup(start, *p - start);
+	RzTypeCond cond = rz_type_cond_fromstring(op);
+	free(op);
+	if (cond != RZ_TYPE_COND_LE && cond != RZ_TYPE_COND_LT &&
+		cond != RZ_TYPE_COND_GE && cond != RZ_TYPE_COND_GT &&
+		cond != RZ_TYPE_COND_EQ && cond != RZ_TYPE_COND_NE) {
+		return false;
+	}
+	ut64 val;
+	if (!parse_value(p, &val)) {
+		return false;
+	}
+	RzTypeConstraint c = { .cond = cond, .val = val };
+	rz_vector_push(constraints, &c);
+	return true;
+}
+
 RZ_API bool rz_type_interval_constraints_from_string(RZ_NONNULL const char *str, RZ_NONNULL RzVector /*<RzTypeConstraint>*/ *constraints) {
 	rz_return_val_if_fail(str && constraints, false);
 
@@ -786,86 +867,20 @@ RZ_API bool rz_type_interval_constraints_from_string(RZ_NONNULL const char *str,
 			continue;
 		}
 		if (*p == '{') {
-			p++;
-			while (*p) {
-				ut64 val;
-				if (!parse_value(&p, &val)) {
-					ok = false;
-					break;
-				}
-				RzTypeConstraint c = { .cond = RZ_TYPE_COND_EQ, .val = val };
-				rz_vector_push(constraints, &c);
-				skip_whitespace(&p);
-				if (*p == '}') {
-					p++;
-					break;
-				} else if (*p == ',') {
-					p++;
-				} else {
-					ok = false;
-					break;
-				}
+			if (!parse_set(&p, constraints)) {
+				ok = false;
+				break;
 			}
 		} else if (*p == '[' || *p == '(') {
-			char open_bracket = *p;
-			p++;
-			ut64 val1, val2;
-			if (!parse_value(&p, &val1)) {
+			if (!parse_interval(&p, constraints)) {
 				ok = false;
 				break;
 			}
-			skip_whitespace(&p);
-			if (*p != ',') {
-				ok = false;
-				break;
-			}
-			p++;
-			if (!parse_value(&p, &val2)) {
-				ok = false;
-				break;
-			}
-			skip_whitespace(&p);
-			char close_bracket = *p;
-			if (close_bracket != ']' && close_bracket != ')') {
-				ok = false;
-				break;
-			}
-			p++;
-			RzTypeConstraint c1 = { .cond = open_bracket == '[' ? RZ_TYPE_COND_GE : RZ_TYPE_COND_GT, .val = val1 };
-			RzTypeConstraint c2 = { .cond = close_bracket == ']' ? RZ_TYPE_COND_LE : RZ_TYPE_COND_LT, .val = val2 };
-			rz_vector_push(constraints, &c1);
-			rz_vector_push(constraints, &c2);
 		} else {
-			const char *start = p;
-			if (*p == '<' || *p == '>' || *p == '=' || *p == '!') {
-				while (*p == '<' || *p == '>' || *p == '=' || *p == '!') {
-					p++;
-				}
-			} else if (isalpha((unsigned char)*p)) {
-				while (isalpha((unsigned char)*p)) {
-					p++;
-				}
-			}
-			if (p == start) {
+			if (!parse_operator_constraint(&p, constraints)) {
 				ok = false;
 				break;
 			}
-			char *op = rz_str_ndup(start, p - start);
-			RzTypeCond cond = rz_type_cond_fromstring(op);
-			free(op);
-			if (cond != RZ_TYPE_COND_LE && cond != RZ_TYPE_COND_LT &&
-				cond != RZ_TYPE_COND_GE && cond != RZ_TYPE_COND_GT &&
-				cond != RZ_TYPE_COND_EQ && cond != RZ_TYPE_COND_NE) {
-				ok = false;
-				break;
-			}
-			ut64 val;
-			if (!parse_value(&p, &val)) {
-				ok = false;
-				break;
-			}
-			RzTypeConstraint c = { .cond = cond, .val = val };
-			rz_vector_push(constraints, &c);
 		}
 	}
 	return ok;
