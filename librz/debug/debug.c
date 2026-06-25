@@ -1171,190 +1171,205 @@ static bool skip_current_instruction(RzDebug *dbg) {
 	return true;
 }
 
-RZ_API int rz_debug_continue_kill(RzDebug *dbg, int sig) {
-	RzDebugReasonType reason = RZ_DEBUG_REASON_NONE;
-	int ret = 0;
-	RzBreakpointItem *bp = NULL;
+static int session_forward_to_breakpoint(RzDebug *dbg) {
+	bool has_bp = false;
+	RzRegItem *ripc = rz_reg_get_by_role(dbg->reg, RZ_REG_NAME_PC);
+	if (!ripc) {
+		return 0;
+	}
+	RzVector *vreg = ht_up_find(dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
+	RzDebugChangeReg *reg;
+	rz_vector_foreach_prev (vreg, reg) {
+		if (reg->cnum <= dbg->session->cnum) {
+			continue;
+		}
+		has_bp = rz_bp_get_in(dbg->bp, reg->data, RZ_PERM_X) != NULL;
+		if (has_bp) {
+			eprintf("hit breakpoint at: 0x%" PFMT64x " cnum: %d\n", reg->data, reg->cnum);
+			rz_debug_goto_cnum(dbg, reg->cnum);
+			return dbg->tid;
+		}
+	}
 
+	rz_debug_goto_cnum(dbg, dbg->session->maxcnum);
+	return dbg->tid;
+}
+
+RZ_API int rz_debug_continue_kill(RzDebug *dbg, int sig) {
 	if (!dbg) {
 		return 0;
 	}
 
-	// If the debugger is not at the end of the changes
-	// Go to the end or the next breakpoint in the changes
+	// 1. Handle Time-Travel / Replay sessions first
 	if (dbg->session && dbg->session->cnum != dbg->session->maxcnum) {
-		bool has_bp = false;
-		RzRegItem *ripc = rz_reg_get_by_role(dbg->reg, RZ_REG_NAME_PC);
-		if (!ripc) {
+		return session_forward_to_breakpoint(dbg);
+	}
+
+	RzDebugReasonType reason = RZ_DEBUG_REASON_NONE;
+	int ret = 0;
+	RzBreakpointItem *bp = NULL;
+
+	// Main execution loop: Keep running until we hit an event meant for the user
+	while (true) {
+		if (rz_debug_is_dead(dbg)) {
 			return 0;
 		}
-		RzVector *vreg = ht_up_find(dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
-		RzDebugChangeReg *reg;
-		rz_vector_foreach_prev (vreg, reg) {
-			if (reg->cnum <= dbg->session->cnum) {
-				continue;
-			}
-			has_bp = rz_bp_get_in(dbg->bp, reg->data, RZ_PERM_X) != NULL;
-			if (has_bp) {
-				eprintf("hit breakpoint at: 0x%" PFMT64x " cnum: %d\n", reg->data, reg->cnum);
-				rz_debug_goto_cnum(dbg, reg->cnum);
-				return dbg->tid;
-			}
-		}
 
-		rz_debug_goto_cnum(dbg, dbg->session->maxcnum);
-		return dbg->tid;
-	}
-
-repeat:
-	if (rz_debug_is_dead(dbg)) {
-		return 0;
-	}
-	if (dbg->session && dbg->trace_continue) {
-		while (!rz_cons_is_breaked()) {
-			if (rz_debug_step(dbg, 1) != 1) {
-				break;
+		/* --- STAGE 1: Resume execution --- */
+		if (dbg->session && dbg->trace_continue) {
+			while (!rz_cons_is_breaked()) {
+				if (rz_debug_step(dbg, 1) != 1) {
+					break;
+				}
+				if (dbg->session->reasontype != RZ_DEBUG_REASON_STEP) {
+					break;
+				}
 			}
-			if (dbg->session->reasontype != RZ_DEBUG_REASON_STEP) {
-				break;
+			reason = dbg->session->reasontype;
+			bp = dbg->session->bp;
+		} else if (dbg->cur && dbg->cur->cont) {
+			/* handle the stage-2 of breakpoints */
+			if (!rz_debug_recoil(dbg, RZ_DBG_RECOIL_CONTINUE)) {
+				return 0;
 			}
-		}
-		reason = dbg->session->reasontype;
-		bp = dbg->session->bp;
-	} else if (dbg->cur && dbg->cur->cont) {
-		/* handle the stage-2 of breakpoints */
-		if (!rz_debug_recoil(dbg, RZ_DBG_RECOIL_CONTINUE)) {
+			/* tell the inferior to go! */
+			ret = dbg->cur->cont(dbg, dbg->pid, dbg->tid, sig);
+			reason = rz_debug_wait(dbg, &bp);
+		} else {
 			return 0;
 		}
-		/* tell the inferior to go! */
-		ret = dbg->cur->cont(dbg, dbg->pid, dbg->tid, sig);
-		// XXX(jjd): why? //dbg->reason.signum = 0;
-		reason = rz_debug_wait(dbg, &bp);
-	} else {
-		return 0;
-	}
 
-	if (dbg->corebind.core) {
-		RzCore *core = (RzCore *)dbg->corebind.core;
-		RzNum *num = core->num;
-		if (reason == RZ_DEBUG_REASON_COND) {
-			if (bp && bp->cond && dbg->corebind.cmd) {
-				dbg->corebind.cmd(dbg->corebind.core, bp->cond);
-			}
-			if (num->value) {
-				goto repeat;
+		/* --- STAGE 2: Filter background OS/Debugger events --- */
+
+		// Conditional Breakpoints
+		if (dbg->corebind.core) {
+			RzCore *core = (RzCore *)dbg->corebind.core;
+			RzNum *num = core->num;
+			if (reason == RZ_DEBUG_REASON_COND) {
+				if (bp && bp->cond && dbg->corebind.cmd) {
+					dbg->corebind.cmd(dbg->corebind.core, bp->cond);
+				}
+				if (num->value) {
+					continue; // Condition not met, keep running
+				}
 			}
 		}
-	}
-	if (reason == RZ_DEBUG_REASON_BREAKPOINT &&
-		((bp && !bp->enabled) || (!bp && !rz_cons_is_breaked() && dbg->corebind.core && dbg->corebind.cfggeti(dbg->corebind.core, "dbg.bpsysign")))) {
-		goto repeat;
-	}
+
+		// Disabled Breakpoints
+		if (reason == RZ_DEBUG_REASON_BREAKPOINT &&
+			((bp && !bp->enabled) || (!bp && !rz_cons_is_breaked() && dbg->corebind.core && dbg->corebind.cfggeti(dbg->corebind.core, "dbg.bpsysign")))) {
+			continue;
+		}
 
 #if __linux__
-	if (reason == RZ_DEBUG_REASON_NEW_PID && dbg->follow_child) {
+		// New Process Forked
+		if (reason == RZ_DEBUG_REASON_NEW_PID && dbg->follow_child) {
 #if DEBUGGER
-		/// if the plugin is not compiled link fails, so better do runtime linking
-		/// until this code gets fixed
-		static bool (*linux_attach_new_process)(RzDebug *dbg, int pid) = NULL;
-		if (!linux_attach_new_process) {
-			linux_attach_new_process = rz_sys_dlsym(NULL, "linux_attach_new_process");
-		}
-		if (linux_attach_new_process) {
-			linux_attach_new_process(dbg, dbg->forked_pid);
-		}
+			static bool (*linux_attach_new_process)(RzDebug *dbg, int pid) = NULL;
+			if (!linux_attach_new_process) {
+				linux_attach_new_process = rz_sys_dlsym(NULL, "linux_attach_new_process");
+			}
+			if (linux_attach_new_process) {
+				linux_attach_new_process(dbg, dbg->forked_pid);
+			}
 #endif
-		goto repeat;
-	}
+			continue;
+		}
 
-	if (reason == RZ_DEBUG_REASON_NEW_TID) {
-		ret = dbg->tid;
-		if (!dbg->trace_clone) {
-			goto repeat;
+		// New Thread Spawned
+		if (reason == RZ_DEBUG_REASON_NEW_TID) {
+			ret = dbg->tid;
+			if (!dbg->trace_clone) {
+				continue;
+			}
 		}
-	}
 
-	if (reason == RZ_DEBUG_REASON_EXIT_TID) {
-		goto repeat;
-	}
+		// Thread Exited
+		if (reason == RZ_DEBUG_REASON_EXIT_TID) {
+			continue;
+		}
 #endif
-	if (reason != RZ_DEBUG_REASON_DEAD) {
-		ret = dbg->tid;
-	}
+
+		if (reason != RZ_DEBUG_REASON_DEAD) {
+			ret = dbg->tid;
+		}
+
 #if __WINDOWS__
-	if (reason == RZ_DEBUG_REASON_NEW_LIB ||
-		reason == RZ_DEBUG_REASON_EXIT_LIB ||
-		reason == RZ_DEBUG_REASON_NEW_TID ||
-		reason == RZ_DEBUG_REASON_NONE ||
-		reason == RZ_DEBUG_REASON_EXIT_TID) {
-		goto repeat;
-	}
+		if (reason == RZ_DEBUG_REASON_NEW_LIB ||
+			reason == RZ_DEBUG_REASON_EXIT_LIB ||
+			reason == RZ_DEBUG_REASON_NEW_TID ||
+			reason == RZ_DEBUG_REASON_NONE ||
+			reason == RZ_DEBUG_REASON_EXIT_TID) {
+			continue;
+		}
 #endif
-	if (reason == RZ_DEBUG_REASON_EXIT_PID) {
+
+		if (reason == RZ_DEBUG_REASON_EXIT_PID) {
 #if __WINDOWS__
-		dbg->pid = -1;
+			dbg->pid = -1;
 #elif __linux__
-		rz_debug_bp_update(dbg);
-		rz_bp_restore(dbg->bp, false); // (vdf) there has got to be a better way
+			rz_debug_bp_update(dbg);
+			rz_bp_restore(dbg->bp, false);
 #endif
-	}
-
-	/* if continuing killed the inferior, we won't be able to get
-	 * the registers.. */
-	if (reason == RZ_DEBUG_REASON_DEAD || rz_debug_is_dead(dbg)) {
-		return 0;
-	}
-
-	/* if we hit a tracing breakpoint, we need to continue in
-	 * whatever mode the user desired. */
-	if (reason == RZ_DEBUG_REASON_TRACEPOINT) {
-		rz_debug_step(dbg, 1);
-		goto repeat;
-	}
-
-	/* choose the thread that was returned from the continue function */
-	// XXX(jjd): there must be a cleaner way to do this...
-	if (ret != dbg->tid) {
-		rz_debug_select(dbg, dbg->pid, ret);
-	}
-	sig = 0; // clear continuation after signal if needed
-
-	/* Skip the instruction which causes the kernel to send the signal, to skip the signal handler
-		Do not skip the instruction if the signal was send using kill etc types of system call*/
-	if (dbg->reason.signum != -1) {
-		int what = rz_debug_signal_what(dbg, dbg->reason.signum);
-
-		if (what & RZ_DBG_SIGNAL_CONT) {
-			sig = dbg->reason.signum;
-			eprintf("Continue into the signal %d handler\n", sig);
-			goto repeat;
-		} else if (what & RZ_DBG_SIGNAL_SKIP) {
-			const char *signame = rz_signal_to_string(dbg->reason.signum);
-
-			if (dbg->reason.sig_source == RZ_DEBUG_SIGNAL_SOURCE_EXTERNAL) {
-				eprintf("Skipped signal handler for %d (%s)\n", dbg->reason.signum, signame);
-				goto repeat;
-			}
-
-			if (skip_current_instruction(dbg)) {
-				eprintf("Skipped signal handler for %d (%s)\n", dbg->reason.signum, signame);
-				goto repeat;
-			}
-
-			ut64 pc = rz_debug_reg_get(dbg, "PC");
-			eprintf("Stalled with an exception at 0x%08" PFMT64x "\n", pc);
 		}
+
+		if (reason == RZ_DEBUG_REASON_DEAD || rz_debug_is_dead(dbg)) {
+			return 0;
+		}
+
+		// Hit a background Tracepoint
+		if (reason == RZ_DEBUG_REASON_TRACEPOINT) {
+			rz_debug_step(dbg, 1);
+			continue;
+		}
+
+		// Thread alignment context switch
+		if (ret != dbg->tid) {
+			rz_debug_select(dbg, dbg->pid, ret);
+		}
+		sig = 0;
+
+		/* --- STAGE 3: OS Signal/Exception Handling --- */
+		if (dbg->reason.signum != -1) {
+			int what = rz_debug_signal_what(dbg, dbg->reason.signum);
+
+			if (what & RZ_DBG_SIGNAL_CONT) {
+				sig = dbg->reason.signum;
+				eprintf("Continue into the signal %d handler\n", sig);
+				continue;
+			} else if (what & RZ_DBG_SIGNAL_SKIP) {
+				const char *signame = rz_signal_to_string(dbg->reason.signum);
+
+				if (dbg->reason.sig_source == RZ_DEBUG_SIGNAL_SOURCE_EXTERNAL) {
+					eprintf("Skipped signal handler for %d (%s)\n", dbg->reason.signum, signame);
+					continue;
+				}
+
+				if (skip_current_instruction(dbg)) {
+					eprintf("Skipped signal handler for %d (%s)\n", dbg->reason.signum, signame);
+					continue;
+				}
+
+				ut64 pc = rz_debug_reg_get(dbg, "PC");
+				eprintf("Stalled with an exception at 0x%08" PFMT64x "\n", pc);
+			}
+		}
+
+		// If execution reaches here, it means none of the automated filters triggered.
+		// This is a legitimate breakpoint or event that requires stopping!
+		break;
 	}
+
 #if __WINDOWS__
 	rz_cons_break_pop();
 #endif
 
-	// Unset breakpoints before leaving
+	// Clean up breakpoints before handing control back to user
 	if (reason != RZ_DEBUG_REASON_BREAKPOINT) {
 		rz_bp_restore(dbg->bp, false);
 	}
 
-	// Add a checkpoint at stops
+	// Add a Time-Travel checkpoint snapshot at this stop
 	if (dbg->session && !dbg->trace_continue) {
 		dbg->session->cnum++;
 		dbg->session->maxcnum++;
