@@ -30,7 +30,7 @@
 # Use `${{ needs.real_pr_shas.outputs.BASE_SHA }}` to get the real base sha.
 # Use `${{ needs.real_pr_shas.outputs.HEAD_SHA }}` to get the PR head commit sha.
 # Use `${{ needs.real_pr_shas.outputs.COMMIT_MSGS }}` to get the commit messages of git log --pretty=%B BASE_SHA..HEAD_SHA
-# Use `${{ needs.real_pr_shas.outputs.CHANGES }}` to get the commit messages of `git diff --unified=0 "$BASE_SHA".."$HEAD_SHA" | grep -E '^\+\+\+|^---|^@@.+@@'`
+# The commit messages of `git diff --unified=0 "$BASE_SHA".."$HEAD_SHA" | grep -E '^\+\+\+|^---|^@@.+@@'` are uploaded under the name 'pr_changes' as 'pr_changes.diff' (not archived).
 #
 # This workflow is copied from https://github.com/JensDll/should-run/blob/main/.github/workflows/main.yaml#L54
 #
@@ -52,9 +52,6 @@ on:
       COMMIT_MSGS:
         description: "The commit messages of BASE_SHA..HEAD_SHA"
         value: ${{ jobs.get_real_pr_shas.outputs.output_msgs }}
-      CHANGES:
-        description: "The commit messages of BASE_SHA..HEAD_SHA and reduced to only changed lines and files"
-        value: ${{ jobs.get_real_pr_shas.outputs.output_changes }}
 
 jobs:
   get_real_pr_shas:
@@ -63,7 +60,6 @@ jobs:
       output_base: ${{ steps.get_shas.outputs.BASE_SHA }}
       output_head: ${{ steps.get_shas.outputs.HEAD_SHA }}
       output_msgs: ${{ steps.get_shas.outputs.COMMIT_MSGS }}
-      output_changes: ${{ steps.get_shas.outputs.CHANGES }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -86,12 +82,10 @@ jobs:
             echo "Failed to get diff"
             exit 2
           fi
-          CHANGES=$(echo "$CHANGES | grep -E '^\+\+\+|^@@.+@@'")
+          echo "$CHANGES | grep -E '^\+\+\+|^@@.+@@'" > pr_changes.diff
 
           echo "BASE_SHA=$BASE_SHA"
           echo "HEAD_SHA=$HEAD_SHA"
-          echo -e "\nCHANGES=\n$CHANGES"
-          echo -e "\nCOMMIT_MSGS:\n$COMMIT_MSGS"
 
           echo "BASE_SHA=$BASE_SHA" >> $GITHUB_OUTPUT
           echo "HEAD_SHA=$HEAD_SHA" >> $GITHUB_OUTPUT
@@ -105,7 +99,8 @@ jobs:
           echo "$COMMIT_MSGS" >> $GITHUB_OUTPUT
           echo "$EOF" >> $GITHUB_OUTPUT
 
-          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-          echo "CHANGES<<$EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGES" >> $GITHUB_OUTPUT
-          echo "$EOF" >> $GITHUB_OUTPUT
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pr_changes.diff
+          archive: false
+          path: pr_changes.diff

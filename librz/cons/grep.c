@@ -2,9 +2,13 @@
 // SPDX-FileCopyrightText: 2009-2020 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_util/rz_regex.h>
+#include <rz_util/rz_str.h>
+#include <rz_util/rz_strbuf.h>
 #include <rz_cons.h>
 #include <rz_util/rz_print.h>
 #include <sdb.h>
+#include <string.h>
 
 #define I(x) rz_cons_singleton()->x
 
@@ -18,6 +22,133 @@ static char *strchr_ns(char *s, const char ch) {
 		}
 	}
 	return p;
+}
+
+/**
+ * \brief Duplicate the JSON path inside a grep `{...}` expression.
+ * \param str Expression starting at `{`.
+ * \return Path string, or NULL on missing delimiter.
+ */
+static RZ_OWN char *json_path_dup(RZ_BORROW const char *str, ut32 size) {
+	rz_return_val_if_fail(str && *str == '{', NULL);
+	const char *start = str + 1;
+	const char *end = rz_str_rchr(start, str + size - 1, '}');
+	return end ? rz_str_ndup(start, end - start) : NULL;
+}
+
+/**
+ * \brief Project selected keys from a JSON array of objects.
+ * \param json Parsed JSON input.
+ * \param projection Parsed projection path.
+ * \return Compact JSON string, or NULL on malformed projection/allocation failure.
+ */
+static RZ_OWN char *json_path_array_projection(RZ_BORROW const RzJson *json, const char *json_path) {
+	rz_return_val_if_fail(json && json_path, NULL);
+	RzStrBuf *match = rz_regex_full_match_str("^[[:space:]]*\\.[[:space:]]*\\[[[:space:]]*\\][[:space:]]*\\\\?\\|[[:space:]]*\\{[[:space:]]*\\K[^{}|]+?(?=[[:space:]]*\\}[[:space:]]*$)", json_path, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_DEFAULT, RZ_REGEX_DEFAULT, ",");
+	RzList *fields = rz_str_split_duplist(rz_strbuf_get(match), ",", true);
+	rz_strbuf_free(match);
+	if (!fields) {
+		return NULL;
+	}
+
+	RzListIter *it;
+	const char *field;
+	rz_list_foreach (fields, it, field) {
+		bool is_valid = !RZ_STR_ISEMPTY(field);
+		const char *field_ch;
+		for (field_ch = field; is_valid && *field_ch; field_ch++) {
+			switch (*field_ch) {
+			case '.':
+			case '[':
+			case ']':
+			case '{':
+			case '}':
+			case '|':
+			case ',':
+				is_valid = false;
+				break;
+			default: break;
+			}
+		}
+		if (!is_valid) {
+			rz_list_free(fields);
+			return NULL;
+		}
+	}
+
+	if (json->type != RZ_JSON_ARRAY) {
+		rz_list_free(fields);
+		return rz_str_dup("[]");
+	}
+
+	PJ *pj = pj_new();
+	if (!pj) {
+		rz_list_free(fields);
+		return NULL;
+	}
+	pj_a(pj);
+	const RzJson *item;
+	for (item = json->children.first; item; item = item->next) {
+		if (item->type != RZ_JSON_OBJECT) {
+			continue;
+		}
+		pj_o(pj);
+		rz_list_foreach (fields, it, field) {
+			const RzJson *value = NULL;
+			const RzJson *child;
+			for (child = item->children.first; child; child = child->next) {
+				if (child->key && RZ_STR_EQ(child->key, field)) {
+					value = child;
+					break;
+				}
+			}
+			if (value) {
+				char *value_json = rz_json_as_string(value, true);
+				if (!value_json) {
+					pj_free(pj);
+					rz_list_free(fields);
+					return NULL;
+				}
+				pj_j(pj, value_json);
+				free(value_json);
+			}
+		}
+		pj_end(pj);
+	}
+	pj_end(pj);
+	rz_list_free(fields);
+	return pj_drain(pj);
+}
+
+static char *json_path_eval(const char *json_string_in, const char *json_path) {
+	char *json_text = rz_str_dup(json_string_in);
+	if (!json_text) {
+		return NULL;
+	}
+	RzJson *json = rz_json_parse(json_text);
+	if (!json) {
+		free(json_text);
+		return NULL;
+	}
+	char *out = json_path_array_projection(json, json_path);
+	if (!out) {
+		const RzJson *out_json;
+		// To simplify grep syntax we omit brackets in `[0]` for JSON paths
+		if (*json_path != '[' && *json_path != '.') {
+			char *tmppath = rz_str_newf("[%s]", json_path);
+			out_json = rz_json_get_path(json, tmppath);
+			free(tmppath);
+		} else {
+			out_json = rz_json_get_path(json, json_path);
+		}
+		// When we receive the path, it's fetched with the key name
+		// We should get only the value
+		out = out_json ? rz_json_as_string(out_json, false) : NULL;
+	}
+
+	rz_json_free(json);
+	free(json_text);
+	return out;
 }
 
 static const char *help_detail_tilde[] = {
@@ -132,10 +263,8 @@ static void parse_grep_expression(const char *str) {
 					grep->less = 1;
 				}
 			} else {
-				char *jsonPath = rz_str_dup(str + 1);
-				char *jsonPathEnd = strchr(jsonPath, '}');
-				if (jsonPathEnd) {
-					*jsonPathEnd = 0;
+				char *jsonPath = json_path_dup(str, strlen(str));
+				if (jsonPath) {
 					free(grep->json_path);
 					grep->json_path = jsonPath;
 					grep->json = 1;
@@ -519,37 +648,15 @@ RZ_API void rz_cons_grepbuf(void) {
 	}
 	if (grep->json) {
 		if (grep->json_path) {
-			RzJson *json = rz_json_parse(cons->context->buffer);
-			if (!json) {
-				RZ_FREE(grep->json_path);
-				return;
-			}
-			const RzJson *excerpt;
-			// To simplify grep syntax we omit brackets in `[0]` for JSON paths
-			if (*grep->json_path != '[' && *grep->json_path != '.') {
-				char *tmppath = rz_str_newf("[%s]", grep->json_path);
-				excerpt = rz_json_get_path(json, tmppath);
-				free(tmppath);
-			} else {
-				excerpt = rz_json_get_path(json, grep->json_path);
-			}
-			if (excerpt) {
-				// When we receive the path, it's fetched with the key name
-				// We should get only the value
-				char *u = rz_json_as_string(excerpt, false);
-				if (!u) {
-					RZ_FREE(grep->json_path);
-					rz_json_free(json);
-					return;
-				}
+			char *out = json_path_eval(cons->context->buffer, grep->json_path);
+			if (out) {
 				free(cons->context->buffer);
-				cons->context->buffer = u;
-				cons->context->buffer_len = strlen(u);
+				cons->context->buffer = out;
+				cons->context->buffer_len = strlen(out);
 				cons->context->buffer_sz = cons->context->buffer_len + 1;
 				grep->json = 0;
 				rz_cons_newline();
 			}
-			rz_json_free(json);
 			RZ_FREE(grep->json_path);
 		} else {
 			const char *palette[] = {

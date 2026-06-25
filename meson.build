@@ -1,5 +1,5 @@
 project('rizin', 'c',
-  version: 'v0.9.0',
+  version: 'v1.0.0',
   license: 'LGPL-3.0-only',
   meson_version: '>=0.58.0',
   default_options: [
@@ -309,7 +309,7 @@ zydis_dep = disabler()
 if sys_zydis_opt.enabled() or sys_zydis_opt.auto()
   zydis_dep = dependency('zydis', required: false, static: is_static_build)
   if not zydis_dep.found()
-    zydis_dep = cc.find_library('zydis', required: sys_zydis_opt, static: is_static_build)
+    zydis_dep = cc.find_library('Zydis', required: sys_zydis_opt, static: is_static_build)
   endif
 endif
 if (sys_zydis_opt.auto() and not zydis_dep.found()) or sys_zydis_opt.disabled()

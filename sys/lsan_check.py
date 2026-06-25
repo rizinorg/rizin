@@ -59,8 +59,14 @@ def parse_asan_leaks(
 def main() -> None:
     if len(sys.argv) < 3:
         print("Supply ASAN output via stdin or file argument")
-        print(f"{sys.argv[0]} <some.diff> [<file.log> ...]")
+        print(f"{sys.argv[0]} <some.diff> <log_dir>")
         sys.exit(2)
+
+    log_dir = Path(sys.argv[2])
+    if not log_dir.is_dir():
+        print(f"'{sys.argv[2]}' should be a directory")
+        sys.exit(1)
+
     diff_file = sys.argv[1]
     with open(diff_file, "r", encoding="utf8") as f:
         diff = f.read()
@@ -72,8 +78,7 @@ def main() -> None:
     print(changed)
 
     asan_text = ""
-    for i in range(2, len(sys.argv)):
-        p = Path(sys.argv[i])
+    for p in log_dir.rglob("*"):
         if p.is_dir():
             print(f"Skip dir: {p}")
             continue

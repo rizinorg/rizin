@@ -13,6 +13,8 @@ hash_plugins_list = [
   'keccak_256',
   'keccak_384',
   'keccak_512',
+  'shake_128',
+  'shake_256',
   'murmur3_x86_32',
   'murmur3_x86_128',
   'murmur3_x64_128',
@@ -134,6 +136,8 @@ rz_hash_sources = [
   'p/algo_keccak_256.c',
   'p/algo_keccak_384.c',
   'p/algo_keccak_512.c',
+  'p/algo_shake_128.c',
+  'p/algo_shake_256.c',
   'p/algo_murmur3_x64_128.c',
   'p/algo_murmur3_x86_32.c',
   'p/algo_murmur3_x86_128.c',
@@ -166,6 +170,7 @@ rz_hash_sources = [
   'algorithms/ssdeep/ssdeep.c',
   'algorithms/md2/md2.c',
   'algorithms/sha3/sha3.c',
+  'algorithms/shake/shake.c',
   'algorithms/murmur3/murmur3.c',
 ]
 

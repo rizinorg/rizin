@@ -46,6 +46,12 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Download git diff of PR
+        uses: actions/download-artifact@v8
+        with:
+          name: pr_changes.diff
+          path: pr_changes.diff
+
       - name: Install python and other dependencies
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools libcapstone4 libcapstone-dev
 
@@ -113,8 +119,5 @@ jobs:
           path: lsan_reports.tgz
 
       - name: Check for new leaks
-        env:
-          CHANGES: ${{ needs.real_pr_shas.outputs.CHANGES }}
         run: |
-          echo "$CHANGES" > changes.diff
-          ./sys/lsan_check.py changes.diff $LSAN_LOGS_DIR/*
+          ./sys/lsan_check.py pr_changes.diff/pr_changes.diff $LSAN_LOGS_DIR

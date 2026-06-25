@@ -974,6 +974,18 @@ RZ_API bool rz_analysis_op_is_eob(const RzAnalysisOp *op) {
 	}
 }
 
+/**
+ * \brief Returns true if the \p op is a call.
+ */
+RZ_API bool rz_analysis_op_is_call(RZ_NONNULL const RzAnalysisOp *op) {
+	rz_return_val_if_fail(op, false);
+	if ((op->type & RZ_ANALYSIS_OP_TYPE_CALL) == RZ_ANALYSIS_OP_TYPE_CALL ||
+		(op->type & RZ_ANALYSIS_OP_TYPE_UCALL) == RZ_ANALYSIS_OP_TYPE_UCALL) {
+		return true;
+	}
+	return false;
+}
+
 RZ_API void rz_analysis_purge(RzAnalysis *analysis) {
 	rz_analysis_hint_clear(analysis);
 	rz_interval_tree_fini(&analysis->meta);

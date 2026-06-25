@@ -46,6 +46,9 @@ void elf_patch_relocs_elfobj_only(ELFOBJ *obj, RzBuffer *bin_buf, ut64 baseaddr)
 		rz_bin_reloc_target_builder_free(targets);
 		return;
 	}
+
+	fill_got_sym_id_off_map(obj);
+
 	RzBinElfReloc *reloc;
 	ut64 got_addr = get_got_addr(obj);
 	ut64 baddr = baseaddr;
