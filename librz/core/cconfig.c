@@ -222,7 +222,7 @@ fail:
 static bool cb_asm_features_set(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		update_asmfeatures_options(core, node);
 		print_node_options(node);
 		return 0;
@@ -234,7 +234,7 @@ static bool cb_asm_features_set(void *user, void *data) {
 static bool cb_asm_parser_set(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		update_asmparser_options(core, node);
 		print_node_options(node);
 		return false;
@@ -248,7 +248,7 @@ static bool cb_asm_os_set(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 
 	const char *value = node->value;
-	if (value[0] == '?' && RZ_STR_EQ(value, "?")) {
+	if (RZ_STR_EQ(value, "?")) {
 		print_node_options(node);
 		return 0;
 	}
@@ -262,7 +262,7 @@ static bool cb_asm_cpu_set(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	const char *value = node->value;
-	if (value[0] == '?' && RZ_STR_EQ(value, "?")) {
+	if (RZ_STR_EQ(value, "?")) {
 		update_asmcpu_options(core, node);
 		/* print verbose help instead of plain option listing */
 		RzCmdStateOutput state = { 0 };
@@ -280,7 +280,7 @@ static bool cb_asm_arch_set(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	const char *value = node->value;
-	if (value[0] == '?' && RZ_STR_EQ(value, "?")) {
+	if (RZ_STR_EQ(value, "?")) {
 		update_asmarch_options(core, node);
 		/* print more verbose help instead of plain option values */
 		RzCmdStateOutput state = { 0 };
@@ -298,7 +298,7 @@ static bool cb_asm_platform_set(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	const char *value = node->value;
-	if (value[0] == '?' && RZ_STR_EQ(value, "?")) {
+	if (RZ_STR_EQ(value, "?")) {
 		update_asmplatforms_options(core, node);
 		print_node_options(node);
 		return 0;
@@ -312,7 +312,7 @@ static bool cb_asm_bits_set(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 
 	int value = node->i_value;
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		update_asmbits_options(core, node);
 		print_node_options(node);
 		return false;
@@ -596,7 +596,7 @@ static bool cb_emustr(void *user, void *data) {
 
 static bool cb_emuskip(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		rz_cons_printf("Concatenation of meta types encoded as characters:\n"
 			       "'d': data\n'c': code\n's': string\n'f': format\n'm': magic\n"
 			       "'h': hide\n'C': comment\n'r': run\n"
@@ -657,7 +657,7 @@ static bool cb_usextr(void *user, void *data) {
 static bool cb_strpurge(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		rz_cons_printf(
 			"There can be multiple entries separated by commas. No whitespace before/after entries.\n"
 			"Possible entries:\n"
@@ -693,7 +693,7 @@ static bool cb_maxname(void *user, void *data) {
 
 static bool cb_midflags(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		print_node_options(node);
 		return false;
 	}
@@ -703,7 +703,7 @@ static bool cb_midflags(void *user, void *data) {
 static bool cb_strfilter(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		rz_cons_printf("Valid values for bin.str.filter:\n"
 			       "a  only alphanumeric printable\n"
 			       "8  only strings with utf8 chars\n"
@@ -737,7 +737,7 @@ static bool cb_bindemangle(void *user, void *data) {
 static bool cb_bindemangle_flags(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		print_node_options(node);
 		return false;
 	}
@@ -757,7 +757,7 @@ static bool cb_bindemangle_flags(void *user, void *data) {
 static bool cb_asmsyntax(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		print_node_options(node);
 		return false;
 	} else {
@@ -849,7 +849,7 @@ static bool cb_str_escbslash(void *user, void *data) {
 
 static bool cb_search_max_threads(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		rz_cons_printf("Available cores: %d\n", rz_th_physical_core_number());
 		return false;
 	}
@@ -933,7 +933,7 @@ static bool cb_search_str_raw_alignment(void *user, void *data) {
 static bool cb_search_str_check_ascii_freq(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		rz_cons_printf("true\nfalse\n");
 		return false;
 	} else if (!rz_str_is_bool(node->value)) {
@@ -971,7 +971,7 @@ static bool cb_str_encoding(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	RzStrEnc encoding = RZ_STRING_ENC_GUESS;
 	bool found_enc = find_encoding(node, &encoding);
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		print_node_options(node);
 		rz_cons_printf("  -- if string's 2nd & 4th bytes are 0 then utf16le else "
 			       "if 2nd - 4th & 6th bytes are 0 & no char > 0x10ffff then utf32le else "
@@ -990,7 +990,7 @@ static bool cb_str_encoding(void *user, void *data) {
 static bool cb_str_unprintable(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		rz_cons_printf("Comma-separated list of Unicode code points treated as non-printable.\n");
 		rz_cons_printf("Examples:\n");
 		rz_cons_printf("  e str.unprintable=0x09,0x0a,0x0d,0x1b\n");
@@ -1056,7 +1056,7 @@ error_free:
 static bool cb_str_search_mode(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		print_node_options(node);
 		return false;
 	} else if (!rz_str_casecmp("auto", node->value)) {
@@ -1085,7 +1085,7 @@ static bool cb_cfg_fortunes(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	// TODO CN_BOOL option does not receive the right hand side of assignment as an argument
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		rz_core_fortune_list(core);
 		return false;
 	}
@@ -1094,7 +1094,7 @@ static bool cb_cfg_fortunes(void *user, void *data) {
 
 static bool cb_cfg_fortunes_file(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		rz_core_fortune_list_types();
 		return false;
 	}
@@ -1163,7 +1163,7 @@ static bool cb_decoff(void *user, void *data) {
 
 static bool cb_dbgbep(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		print_node_options(node);
 		return false;
 	}
@@ -1173,7 +1173,7 @@ static bool cb_dbgbep(void *user, void *data) {
 static bool cb_dbg_btalgo(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		print_node_options(node);
 		return false;
 	}
@@ -2211,7 +2211,7 @@ static bool cb_scrflush(void *user, void *data) {
 static bool cb_scrstrconv(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		rz_cons_printf("Valid values for scr.strconv:\n"
 			       "  asciiesc  convert to ascii with non-ascii chars escaped\n"
 			       "  asciidot  convert to ascii with non-ascii chars turned into a dot (except control chars stated below)\n"
@@ -2277,7 +2277,7 @@ static bool cb_scrint(void *user, void *data) {
 
 static bool cb_scrnkey(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		print_node_options(node);
 		return false;
 	} else if (RZ_STR_EQ(node->value, "help")) {
@@ -2457,7 +2457,7 @@ static bool cb_binverbose(void *user, void *data) {
 static bool cb_binhashesdefault(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		print_node_options(node);
 		rz_cons_printf("Multiple algorithms can be specified in a comma-separated list (no spaces).\n");
 		return false;
@@ -2808,7 +2808,7 @@ static bool cb_analysis_cpp_abi(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		print_node_options(node);
 		return false;
 	}
@@ -2899,7 +2899,7 @@ static bool cb_dbg_verbose(void *user, void *data) {
 static bool cb_flirt(void *user, void *data) {
 	rz_return_val_if_fail(data, false);
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		print_node_options(node);
 		return false;
 	}
@@ -2909,7 +2909,7 @@ static bool cb_flirt(void *user, void *data) {
 static bool rzil_halt_on_exec(void *user, void *data) {
 	rz_return_val_if_fail(data, false);
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?' && RZ_STR_EQ(node->value, "?")) {
+	if (RZ_STR_EQ(node->value, "?")) {
 		print_node_options(node);
 		return false;
 	}
