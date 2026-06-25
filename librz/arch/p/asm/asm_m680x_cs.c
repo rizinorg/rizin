@@ -19,25 +19,25 @@ static cs_mode m680x_mode(const char *str) {
 		return CS_MODE_M680X_6801;
 	} else if (strstr(str, "6805")) {
 		return CS_MODE_M680X_6805;
-	} else if (strstr(str, "68HC08")) {
+	} else if (rz_str_casestr(str, "68hc08")) {
 		return CS_MODE_M680X_6808;
 	} else if (strstr(str, "6809")) {
 		return CS_MODE_M680X_6809;
 	} else if (strstr(str, "6811")) {
 		return CS_MODE_M680X_6811;
-	} else if (strstr(str, "cpu12")) {
+	} else if (rz_str_casestr(str, "cpu12")) {
 		return CS_MODE_M680X_CPU12;
 	} else if (strstr(str, "6301")) {
 		return CS_MODE_M680X_6301;
 	} else if (strstr(str, "6309")) {
 		return CS_MODE_M680X_6309;
-	} else if (strstr(str, "hcs08")) {
+	} else if (rz_str_casestr(str, "hcs08")) {
 		return CS_MODE_M680X_HCS08;
 	}
 #ifdef RZ_CAPSTONE_HAS_M680X_HCS12X
-	else if (strstr(str, "rs08")) {
+	else if (rz_str_casestr(str, "rs08")) {
 		return CS_MODE_M680X_RS08;
-	} else if (strstr(str, "hcs12x")) {
+	} else if (rz_str_casestr(str, "hcs12x")) {
 		return CS_MODE_M680X_HCS12X;
 	}
 #endif
