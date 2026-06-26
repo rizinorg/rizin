@@ -14,12 +14,12 @@ static RzTypeCond jc_cond_to_type(ut8 cc) {
 	case 0x5: return RZ_TYPE_COND_NE;
 	case 0x6: return RZ_TYPE_COND_GE;
 	case 0x8: return RZ_TYPE_COND_HS;
-	case 0x9: return RZ_TYPE_COND_LT;
-	case 0xA: return RZ_TYPE_COND_EQ;
-	case 0xB: return RZ_TYPE_COND_LE;
-	case 0xC: return RZ_TYPE_COND_GT;
-	case 0xD: return RZ_TYPE_COND_NE;
-	case 0xE: return RZ_TYPE_COND_GE;
+	case 0x9: return RZ_TYPE_COND_LT; //< carry or LT
+	case 0xA: return RZ_TYPE_COND_EQ; //< carry or EQ
+	case 0xB: return RZ_TYPE_COND_LE; //< carry or LE
+	case 0xC: return RZ_TYPE_COND_GT; //< carry or GT
+	case 0xD: return RZ_TYPE_COND_NE; //< carry or NE
+	case 0xE: return RZ_TYPE_COND_GE; //< carry or GE
 	default: return RZ_TYPE_COND_AL;
 	}
 }
