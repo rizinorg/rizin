@@ -596,9 +596,6 @@ static bool type_interval_append(RzStrBuf *sb, RZ_NONNULL const TypeInterval *iv
 		rz_strbuf_appendf(sb, "%s 0x%" PFMT64x, iv->low_incl ? ">=" : ">", iv->low);
 	}
 	if (iv->has_high) {
-		if (iv->has_low) {
-			rz_strbuf_append(sb, " && ");
-		}
 		rz_strbuf_appendf(sb, "%s 0x%" PFMT64x, iv->high_incl ? "<=" : "<", iv->high);
 	}
 	return true;
