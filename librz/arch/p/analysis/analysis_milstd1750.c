@@ -69,16 +69,16 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	// IM-format (0x4A): 4-bit opex selects which immediate op
 	if (insn.format == MIL_FMT_IM_OCX && op8 == 0x4A) {
 		switch (insn.opex) {
-		case 0x1: op->type = RZ_ANALYSIS_OP_TYPE_ADD; break; // AIM
-		case 0x2: op->type = RZ_ANALYSIS_OP_TYPE_SUB; break; // SIM
+		case 0x1: op->type = RZ_ANALYSIS_OP_TYPE_ADD; op->sign = true; break; // AIM
+		case 0x2: op->type = RZ_ANALYSIS_OP_TYPE_SUB; op->sign = true; break; // SIM
 		case 0x3: // MIM
-		case 0x4: op->type = RZ_ANALYSIS_OP_TYPE_MUL; break; // MSIM
+		case 0x4: op->type = RZ_ANALYSIS_OP_TYPE_MUL; op->sign = true; break; // MSIM
 		case 0x5: // DIM
-		case 0x6: op->type = RZ_ANALYSIS_OP_TYPE_DIV; break; // DVIM
+		case 0x6: op->type = RZ_ANALYSIS_OP_TYPE_DIV; op->sign = true; break; // DVIM
 		case 0x7: op->type = RZ_ANALYSIS_OP_TYPE_AND; break; // ANDM
 		case 0x8: op->type = RZ_ANALYSIS_OP_TYPE_OR; break; // ORIM
 		case 0x9: op->type = RZ_ANALYSIS_OP_TYPE_XOR; break; // XORM
-		case 0xA: op->type = RZ_ANALYSIS_OP_TYPE_CMP; break; // CIM
+		case 0xA: op->type = RZ_ANALYSIS_OP_TYPE_CMP; op->sign = true; break; // CIM
 		case 0xB: op->type = RZ_ANALYSIS_OP_TYPE_NOT; break; // NIM
 		}
 		return op->size;
@@ -204,25 +204,37 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		break;
 
 	// --- Add ---
+	case 0xA8: // FA
+	case 0xA9: // FAR
+	case 0xAA: // EFA
+	case 0xAB: // EFAR
+	case 0xAC: // FABS
+	case 0xAD: // UAR (unsigned)
+	case 0xAE: // UA  (unsigned)
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		break;
 	case 0x10: // AB
 	case 0xA0: // A
 	case 0xA1: // AR
 	case 0xA2: // AISP
 	case 0xA3: // INCM
 	case 0xA4: // ABS
-	case 0xA6: // DA
+	case 0xA6: // DA  (double-precision)
 	case 0xA7: // DAR
-	case 0xA8: // FA
-	case 0xA9: // FAR
-	case 0xAA: // EFA
-	case 0xAB: // EFAR
-	case 0xAC: // FABS
-	case 0xAD: // UAR
-	case 0xAE: // UA
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		op->sign = true;
 		break;
 
 	// --- Sub ---
+	case 0xB8: // FS
+	case 0xB9: // FSR
+	case 0xBA: // EFS
+	case 0xBB: // EFSR
+	case 0xBC: // FNEG
+	case 0xBD: // USR (unsigned)
+	case 0xBE: // US  (unsigned)
+		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
+		break;
 	case 0x14: // SBB
 	case 0xB0: // S
 	case 0xB1: // SR
@@ -230,19 +242,19 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case 0xB3: // DECM
 	case 0xB4: // NEG
 	case 0xB5: // DNEG
-	case 0xB6: // DS
+	case 0xB6: // DS  (double-precision)
 	case 0xB7: // DSR
-	case 0xB8: // FS
-	case 0xB9: // FSR
-	case 0xBA: // EFS
-	case 0xBB: // EFSR
-	case 0xBC: // FNEG
-	case 0xBD: // USR
-	case 0xBE: // US
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
+		op->sign = true;
 		break;
 
 	// --- Mul ---
+	case 0xC8: // FM
+	case 0xC9: // FMR
+	case 0xCA: // EFM
+	case 0xCB: // EFMR
+		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
+		break;
 	case 0x18: // MB
 	case 0xC0: // MS
 	case 0xC1: // MSR
@@ -252,14 +264,17 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case 0xC5: // MR
 	case 0xC6: // DM
 	case 0xC7: // DMR
-	case 0xC8: // FM
-	case 0xC9: // FMR
-	case 0xCA: // EFM
-	case 0xCB: // EFMR
 		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
+		op->sign = true;
 		break;
 
 	// --- Div ---
+	case 0xD8: // FD
+	case 0xD9: // FDR
+	case 0xDA: // EFD
+	case 0xDB: // EFDR
+		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
+		break;
 	case 0x1C: // DB
 	case 0xD0: // DV
 	case 0xD1: // DVR
@@ -269,11 +284,8 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case 0xD5: // DR
 	case 0xD6: // DD
 	case 0xD7: // DDR
-	case 0xD8: // FD
-	case 0xD9: // FDR
-	case 0xDA: // EFD
-	case 0xDB: // EFDR
 		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
+		op->sign = true;
 		break;
 
 	// --- Logical ---
@@ -305,33 +317,39 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case 0x6D: // DSLR
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
 		break;
-	case 0x61: // SRL
-	case 0x62: // SRA
-	case 0x66: // DSRL
-	case 0x67: // DSRA
-	case 0x6B: // SAR
-	case 0x6C: // SCR
-	case 0x6E: // DSAR
-	case 0x6F: // DSCR
+	case 0x61: // SRL  (logical)
+	case 0x66: // DSRL (logical)
+	case 0x6C: // SCR  (cyclic)
+	case 0x6F: // DSCR (cyclic)
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
+		break;
+	case 0x62: // SRA  (arithmetic — sign-extends)
+	case 0x67: // DSRA (arithmetic)
+	case 0x6B: // SAR  (arithmetic)
+	case 0x6E: // DSAR (arithmetic)
+		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
+		op->sign = true;
 		break;
 
 	// --- Compare ---
+	case 0xF8: // FC
+	case 0xF9: // FCR
+	case 0xFA: // EFC
+	case 0xFB: // EFCR
+	case 0xFC: // UCR (unsigned)
+	case 0xFD: // UC  (unsigned)
+		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
+		break;
 	case 0x38: // CB
 	case 0xF0: // C
 	case 0xF1: // CR
 	case 0xF2: // CISP
 	case 0xF3: // CISN
 	case 0xF4: // CBL
-	case 0xF6: // DC
+	case 0xF6: // DC  (double-precision)
 	case 0xF7: // DCR
-	case 0xF8: // FC
-	case 0xF9: // FCR
-	case 0xFA: // EFC
-	case 0xFB: // EFCR
-	case 0xFC: // UCR
-	case 0xFD: // UC
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
+		op->sign = true;
 		break;
 
 	// --- Loads ---
