@@ -45,8 +45,8 @@ DEFINE_ALIAS_LIFTER(c_subw, subw)
 DEFINE_LIFTER(c_mv, DECODE_RD_RS, DUP(rs))
 DEFINE_LIFTER(c_li, DECODE_RD_RS_IMM_NO_RS, DUP(imm))
 
-DEFINE_LIFTER_FOR_ONEWAY_JUMP(c_j, DECODE_IMM, JMP(imm))
-DEFINE_LIFTER_FOR_JUMP(c_jal, DECODE_RD_IMM, UN(analysis->bits, current_addr + size), JMP(imm))
+DEFINE_ALIAS_LIFTER(c_j, jal)
+DEFINE_ALIAS_LIFTER(c_jal, jal)
 DEFINE_ALIAS_LIFTER(c_jr, jalr)
 
 DEFINE_ALIAS_LIFTER(c_jalr, jalr)
