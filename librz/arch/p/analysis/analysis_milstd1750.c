@@ -136,16 +136,31 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	// IM-format (0x4A): 4-bit opex selects which immediate op
 	if (insn.format == MIL_FMT_IM_OCX && op8 == 0x4A) {
 		switch (insn.opex) {
-		case 0x1: op->type = RZ_ANALYSIS_OP_TYPE_ADD; op->sign = true; break; // AIM
-		case 0x2: op->type = RZ_ANALYSIS_OP_TYPE_SUB; op->sign = true; break; // SIM
+		case 0x1:
+			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+			op->sign = true;
+			break; // AIM
+		case 0x2:
+			op->type = RZ_ANALYSIS_OP_TYPE_SUB;
+			op->sign = true;
+			break; // SIM
 		case 0x3: // MIM
-		case 0x4: op->type = RZ_ANALYSIS_OP_TYPE_MUL; op->sign = true; break; // MSIM
+		case 0x4:
+			op->type = RZ_ANALYSIS_OP_TYPE_MUL;
+			op->sign = true;
+			break; // MSIM
 		case 0x5: // DIM
-		case 0x6: op->type = RZ_ANALYSIS_OP_TYPE_DIV; op->sign = true; break; // DVIM
+		case 0x6:
+			op->type = RZ_ANALYSIS_OP_TYPE_DIV;
+			op->sign = true;
+			break; // DVIM
 		case 0x7: op->type = RZ_ANALYSIS_OP_TYPE_AND; break; // ANDM
 		case 0x8: op->type = RZ_ANALYSIS_OP_TYPE_OR; break; // ORIM
 		case 0x9: op->type = RZ_ANALYSIS_OP_TYPE_XOR; break; // XORM
-		case 0xA: op->type = RZ_ANALYSIS_OP_TYPE_CMP; op->sign = true; break; // CIM
+		case 0xA:
+			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
+			op->sign = true;
+			break; // CIM
 		case 0xB: op->type = RZ_ANALYSIS_OP_TYPE_NOT; break; // NIM
 		}
 		return op->size;
