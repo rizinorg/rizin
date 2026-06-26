@@ -5,8 +5,8 @@
 #include <rz_analysis.h>
 #include <milstd1750/milstd1750_disas.h>
 
-// Reference: MIL-STD-1750A Military Standard Sixteen-Bit 
-// Computer Instruction Set Architecture 
+// Reference: MIL-STD-1750A Military Standard Sixteen-Bit
+// Computer Instruction Set Architecture
 // Section 5.24 Jump on condition
 static RzTypeCond jc_cond_to_type(ut8 cc) {
 	switch (cc & 0xF) {
@@ -94,6 +94,29 @@ static void milstd_set_direction(RzAnalysisOp *op, MilStd1750Format fmt) {
 	}
 }
 
+// Set op->val to the instruction's immediate operand, where one is encoded.
+// The B/ICR displacement fields describe branch/data targets rather than data
+// values and are deliberately left out (they surface via op->jump instead).
+static void milstd_set_val(RzAnalysisOp *op, const MilStd1750Instruction *insn) {
+	switch (insn->format) {
+	case MIL_FMT_IS: // Ra, short immediate (1..16)
+	case MIL_FMT_IMM_R: // 4-bit immediate, Rb
+	case MIL_FMT_R_IMM: // Rb, immediate (incl. shift counts)
+	case MIL_FMT_IM_0_15: // bit index / register count
+	case MIL_FMT_IM_1_16: // INCM/DECM count
+		op->val = insn->imm8;
+		break;
+	case MIL_FMT_IM_OCX: // 16-bit immediate (AIM/SIM/.../CIM)
+		op->val = insn->imm16;
+		break;
+	case MIL_FMT_XIO: // 16-bit I/O command word
+		op->val = insn->xio_cmd;
+		break;
+	default:
+		break;
+	}
+}
+
 static void set_invalid(RzAnalysisOp *op, ut64 addr) {
 	op->family = RZ_ANALYSIS_OP_FAMILY_UNKNOWN;
 	op->type = RZ_ANALYSIS_OP_TYPE_ILL;
@@ -166,6 +189,7 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 			break; // CIM
 		case 0xB: op->type = RZ_ANALYSIS_OP_TYPE_NOT; break; // NIM
 		}
+		milstd_set_val(op, &insn);
 		return op->size;
 	}
 
@@ -505,6 +529,7 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	}
 
 	milstd_set_direction(op, insn.format);
+	milstd_set_val(op, &insn);
 	return op->size;
 }
 
