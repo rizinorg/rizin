@@ -530,3 +530,12 @@ EXPECT=<<EOF
 0x004009e0 16 Swift.String.init (_builtinStringLiteral(Builtin.RawPointer byteSize__Builtin.Word isASCII__Builtin.Int1 _) -> String
 EOF
 RUN
+
+NAME=elf dlang demangling
+FILE=bins/elf/analysis/class_dlang
+CMDS=is~0x00089b24
+EXPECT=<<EOF
+ 233 0x00089b24 0x00089b24 WEAK   FUNC   4860     const pure nothrow @safe immutable(char)[] core.time.Duration.toString()
+4372 0x00089b24 0x00089b24 WEAK   FUNC   4860     const pure nothrow @safe immutable(char)[] core.time.Duration.toString()
+EOF
+RUN
