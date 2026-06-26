@@ -193,15 +193,15 @@ zoom.to=0
 EOF
 RUN
 
-NAME=List and set plugin configurations
+NAME=List and set hexagon plugin configurations
 FILE==
 CMDS=<<EOF
-el plugins
+el plugins.hexagon
 # Should print nothing
-el plugins
+el plugins.hexagon
 e asm.arch=hexagon
 # Now it should print the hexagon options.
-el plugins.
+el plugins.hexagon
 # Check if it only prints a specific sub-category.
 el plugins.hexagon.imm
 # Check if a value change is performed properly.
@@ -215,13 +215,13 @@ pi 1
 # Disable plugin.
 e asm.arch=x86
 # Should print no hexagon options anymore
-el plugins.
+el plugins.hexagon
 EOF
 EXPECT=<<EOF
-plugins.hexagon.imm.hash=true
-plugins.hexagon.imm.sign=true
-plugins.hexagon.reg.alias=true
-plugins.hexagon.sdk=false
+plugins.hexagon.imm.hash: Display ## before 32bit immediates and # before immidiates with other width.
+plugins.hexagon.imm.sign: True: Print them with sign. False: Print signed immediates in unsigned representation.
+plugins.hexagon.reg.alias: Print the alias of registers (Alias from C0 = SA0).
+ plugins.hexagon.sdk: Print packet syntax in objdump style.
 plugins.hexagon.imm.hash: Display ## before 32bit immediates and # before immidiates with other width.
 plugins.hexagon.imm.sign: True: Print them with sign. False: Print signed immediates in unsigned representation.
 [   allocframe(SP,#0x8):raw
