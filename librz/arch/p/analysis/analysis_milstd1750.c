@@ -189,7 +189,9 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 			break; // CIM
 		case 0xB: op->type = RZ_ANALYSIS_OP_TYPE_NOT; break; // NIM
 		}
-		milstd_set_val(op, &insn);
+		if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
+			milstd_set_val(op, &insn);
+		}
 		return op->size;
 	}
 
@@ -528,8 +530,10 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		break;
 	}
 
-	milstd_set_direction(op, insn.format);
-	milstd_set_val(op, &insn);
+	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
+		milstd_set_direction(op, insn.format);
+		milstd_set_val(op, &insn);
+	}
 	return op->size;
 }
 
