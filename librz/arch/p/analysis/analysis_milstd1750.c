@@ -117,6 +117,84 @@ static void milstd_set_val(RzAnalysisOp *op, const MilStd1750Instruction *insn) 
 	}
 }
 
+// Memory-operand data width in bytes for a memory-format opcode (op->ptrsize).
+static int milstd_mem_size(ut8 op8) {
+	switch (op8) {
+	// extended floating, 48-bit (EFL/EFA/EFS/EFM/EFD/EFC/EFST)
+	case 0x8A:
+	case 0xAA:
+	case 0xBA:
+	case 0xCA:
+	case 0xDA:
+	case 0xFA:
+	case 0x9A:
+		return 6;
+	// double-precision integer and single floating, 32-bit
+	case 0x86: // DL
+	case 0x88: // DLI
+	case 0xDF: // DLE
+	case 0x96: // DST
+	case 0x98: // DSTI
+	case 0xDD: // DSTE
+	case 0xA6: // DA
+	case 0xB6: // DS
+	case 0xC6: // DM
+	case 0xD6: // DD
+	case 0xF6: // DC
+	case 0xA8: // FA
+	case 0xB8: // FS
+	case 0xC8: // FM
+	case 0xD8: // FD
+	case 0xF8: // FC
+		return 4;
+	// byte operand, 8-bit (LUB/LLB/LUBI/LLBI/STUB/STLB/SUBI/SLBI)
+	case 0x8B:
+	case 0x8C:
+	case 0x8D:
+	case 0x8E:
+	case 0x9B:
+	case 0x9C:
+	case 0x9D:
+	case 0x9E:
+		return 1;
+	default:
+		return 2; // single word (16-bit)
+	}
+}
+
+// Set op->ptr / op->ptrsize for instructions that statically reference memory
+// via a direct address word. 1750 encodes word indices, so the byte address is
+// addr*2. op->refptr is intentionally left 0 (ptr is a direct reference): the
+// indirect *I forms hold a word-indexed pointer that the byte-oriented refptr
+// auto-follow would misread, so indirection is not resolved here.
+static void milstd_set_ptr(RzAnalysisOp *op, const MilStd1750Instruction *insn, ut8 op8) {
+	switch (insn->format) {
+	case MIL_FMT_MEM:
+	case MIL_FMT_IM_0_15:
+	case MIL_FMT_IM_1_16:
+		break;
+	default:
+		return; // no direct address field (register/immediate/base-relative)
+	}
+	if (op8 == 0x85) {
+		return; // LIM: the second word is an immediate value, not an address
+	}
+	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
+	case RZ_ANALYSIS_OP_TYPE_JMP:
+	case RZ_ANALYSIS_OP_TYPE_CJMP:
+	case RZ_ANALYSIS_OP_TYPE_CALL:
+	case RZ_ANALYSIS_OP_TYPE_UCALL:
+	case RZ_ANALYSIS_OP_TYPE_MJMP:
+	case RZ_ANALYSIS_OP_TYPE_MCJMP:
+	case RZ_ANALYSIS_OP_TYPE_RET:
+		return; // JS/SJS/SOJ: addr is a code target (op->jump), not data
+	default:
+		break;
+	}
+	op->ptr = (ut64)insn->addr * 2;
+	op->ptrsize = milstd_mem_size(op8);
+}
+
 static void set_invalid(RzAnalysisOp *op, ut64 addr) {
 	op->family = RZ_ANALYSIS_OP_FAMILY_UNKNOWN;
 	op->type = RZ_ANALYSIS_OP_TYPE_ILL;
@@ -533,6 +611,7 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
 		milstd_set_direction(op, insn.format);
 		milstd_set_val(op, &insn);
+		milstd_set_ptr(op, &insn, op8);
 	}
 	return op->size;
 }
