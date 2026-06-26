@@ -24,6 +24,73 @@ static RzTypeCond jc_cond_to_type(ut8 cc) {
 	}
 }
 
+// True for instruction formats that reference memory (as opposed to
+// register-only or immediate forms). Used to decide whether a data-processing
+// op actually touches memory.
+static bool milstd_format_mem(MilStd1750Format f) {
+	switch (f) {
+	case MIL_FMT_MEM:
+	case MIL_FMT_B:
+	case MIL_FMT_BX:
+	case MIL_FMT_ADDR:
+	case MIL_FMT_IM_0_15:
+	case MIL_FMT_IM_1_16:
+		return true;
+	default:
+		return false;
+	}
+}
+
+// Set op->direction (READ/WRITE/EXEC) from the resolved type and addressing
+// format. MIL-STD-1750 is memory-oriented: arithmetic/compare may take a memory
+// source operand (READ), and the in-memory bit/increment ops are
+// read-modify-write (READ|WRITE). Register/immediate forms touch no memory.
+static void milstd_set_direction(RzAnalysisOp *op, MilStd1750Format fmt) {
+	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
+	case RZ_ANALYSIS_OP_TYPE_LOAD:
+	case RZ_ANALYSIS_OP_TYPE_POP: // POPM reads from the stack
+		op->direction = RZ_ANALYSIS_OP_DIR_READ;
+		break;
+	case RZ_ANALYSIS_OP_TYPE_STORE:
+	case RZ_ANALYSIS_OP_TYPE_PUSH: // PSHM writes to the stack
+		op->direction = RZ_ANALYSIS_OP_DIR_WRITE;
+		break;
+	case RZ_ANALYSIS_OP_TYPE_JMP:
+	case RZ_ANALYSIS_OP_TYPE_CJMP:
+	case RZ_ANALYSIS_OP_TYPE_CALL:
+	case RZ_ANALYSIS_OP_TYPE_UCALL:
+	case RZ_ANALYSIS_OP_TYPE_MJMP:
+	case RZ_ANALYSIS_OP_TYPE_MCJMP:
+	case RZ_ANALYSIS_OP_TYPE_RET:
+		op->direction = RZ_ANALYSIS_OP_DIR_EXEC;
+		break;
+	case RZ_ANALYSIS_OP_TYPE_ADD:
+	case RZ_ANALYSIS_OP_TYPE_SUB:
+	case RZ_ANALYSIS_OP_TYPE_MUL:
+	case RZ_ANALYSIS_OP_TYPE_DIV:
+	case RZ_ANALYSIS_OP_TYPE_AND:
+	case RZ_ANALYSIS_OP_TYPE_OR:
+	case RZ_ANALYSIS_OP_TYPE_XOR:
+	case RZ_ANALYSIS_OP_TYPE_NOT:
+		if (fmt == MIL_FMT_IM_0_15 || fmt == MIL_FMT_IM_1_16) {
+			// in-memory bit set/reset and INCM/DECM: the memory word is both
+			// source and destination
+			op->direction = RZ_ANALYSIS_OP_DIR_READ | RZ_ANALYSIS_OP_DIR_WRITE;
+		} else if (milstd_format_mem(fmt)) {
+			// memory operand read into the accumulator (e.g. A/S/AND ADDR)
+			op->direction = RZ_ANALYSIS_OP_DIR_READ;
+		}
+		break;
+	case RZ_ANALYSIS_OP_TYPE_CMP:
+		if (milstd_format_mem(fmt)) {
+			op->direction = RZ_ANALYSIS_OP_DIR_READ;
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 static void set_invalid(RzAnalysisOp *op, ut64 addr) {
 	op->family = RZ_ANALYSIS_OP_FAMILY_UNKNOWN;
 	op->type = RZ_ANALYSIS_OP_TYPE_ILL;
@@ -419,6 +486,7 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		break;
 	}
 
+	milstd_set_direction(op, insn.format);
 	return op->size;
 }
 
