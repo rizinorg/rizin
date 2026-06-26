@@ -733,7 +733,7 @@ static void render_visual_xaxis_ruler(RzStrBuf *buf, const RzHistogramInteractiv
 		if (t + 1 < ticks) {
 			max_room = tick_cols[t + 1] - start_col - 1;
 		} else {
-			max_room = (int)data_cols - start_col;
+			max_room = sizeof(label);
 		}
 		if (max_room < 1) {
 			max_room = 1;
