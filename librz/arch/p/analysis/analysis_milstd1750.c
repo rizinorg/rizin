@@ -5,6 +5,9 @@
 #include <rz_analysis.h>
 #include <milstd1750/milstd1750_disas.h>
 
+// Reference: MIL-STD-1750A Military Standard Sixteen-Bit 
+// Computer Instruction Set Architecture 
+// Section 5.24 Jump on condition
 static RzTypeCond jc_cond_to_type(ut8 cc) {
 	switch (cc & 0xF) {
 	case 0x1: return RZ_TYPE_COND_LT;
