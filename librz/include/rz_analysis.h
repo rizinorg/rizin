@@ -1863,7 +1863,13 @@ static inline ut64 rz_meta_item_size(ut64 start, ut64 end) {
 }
 
 static inline ut64 rz_meta_node_size(RzIntervalNode *node) {
+	rz_return_val_if_fail(node, 0);
 	return rz_meta_item_size(node->start, node->end);
+}
+
+static inline ut64 rz_meta_node_start(RzIntervalNode *node) {
+	rz_return_val_if_fail(node, 0);
+	return node->start;
 }
 
 // Set a meta item at addr with the given contents in the current space.

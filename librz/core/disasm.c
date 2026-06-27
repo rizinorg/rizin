@@ -3150,7 +3150,6 @@ static bool ds_print_data_type(RzDisasmState *ds, const ut8 *buf, int ib, int si
 
 static bool ds_print_meta_infos(RzDisasmState *ds, ut8 *buf, int len, int idx, int *mi_type) {
 	bool ret = false;
-	RzAnalysisMetaItem *fmi;
 	RzCore *core = ds->core;
 	if (!ds->asm_meta) {
 		return false;
@@ -3160,7 +3159,7 @@ static bool ds_print_meta_infos(RzDisasmState *ds, ut8 *buf, int len, int idx, i
 		return false;
 	}
 	bool once = true;
-	fmi = NULL;
+	RzAnalysisMetaItem *fmi = NULL;
 	void **it;
 	rz_pvector_foreach (metas, it) {
 		RzIntervalNode *node = *it;
@@ -3188,6 +3187,9 @@ static bool ds_print_meta_infos(RzDisasmState *ds, ut8 *buf, int len, int idx, i
 	rz_pvector_foreach (metas, it) {
 		RzIntervalNode *node = *it;
 		RzAnalysisMetaItem *mi = node->data;
+		if (rz_meta_node_start(node) != ds->at) {
+			continue;
+		}
 		ut64 mi_size = rz_meta_node_size(node);
 		char *out = NULL;
 		int hexlen;
