@@ -195,6 +195,21 @@ static void milstd_set_ptr(RzAnalysisOp *op, const MilStd1750Instruction *insn, 
 	op->ptrsize = milstd_mem_size(op8);
 }
 
+// Set op->datatype: floating-point for F* (single, 32-bit) and EF* (extended,
+// 48-bit) ops, otherwise the integer width of the memory operand. 
+static void milstd_set_datatype(RzAnalysisOp *op, const MilStd1750Instruction *insn) {
+	const char *m = insn->mnemonic;
+	if (m && (m[0] == 'F' || (m[0] == 'E' && m[1] == 'F'))) {
+		op->datatype = RZ_ANALYSIS_DATATYPE_FLOAT;
+		return;
+	}
+	switch (op->ptrsize) {
+	case 2: op->datatype = RZ_ANALYSIS_DATATYPE_INT16; break;
+	case 4: op->datatype = RZ_ANALYSIS_DATATYPE_INT32; break;
+	default: break; // byte (1) or no memory operand (0): leave NULL
+	}
+}
+
 static void set_invalid(RzAnalysisOp *op, ut64 addr) {
 	op->family = RZ_ANALYSIS_OP_FAMILY_UNKNOWN;
 	op->type = RZ_ANALYSIS_OP_TYPE_ILL;
@@ -612,6 +627,7 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		milstd_set_direction(op, insn.format);
 		milstd_set_val(op, &insn);
 		milstd_set_ptr(op, &insn, op8);
+		milstd_set_datatype(op, &insn);
 	}
 	return op->size;
 }
