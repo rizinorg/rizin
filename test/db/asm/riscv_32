@@ -199,3 +199,151 @@ d "slti t0, ra, 0xc" 93a2c000 0x0 (set t0 (ite (&& (sle (var ra) (bv 32 0xc)) (!
 d "sltiu t1, sp, 0x14" 13334101 0x0 (set t1 (ite (&& (ule (var sp) (bv 32 0x14)) (! (== (var sp) (bv 32 0x14)))) (bv 32 0x1) (bv 32 0x0)))
 d "jal t0, 0x14" ef024001 0x0 (seq (set t0 (bv 32 0x4)) (jmp (bv 32 0x14)))
 d "jal t0, 0x4a" ef024001 0x36 (seq (set t0 (bv 32 0x3a)) (jmp (bv 32 0x4a)))
+# ----------------------------- AUIPC -----------------------------
+d "auipc a0, 0x4a" 17a50400 0x0 (set a0 (+ (bv 32 0x0) (<< (bv 32 0x4a) (bv 32 0xc) false)))
+d "auipc s5, 0xc8" 978a0c00 0x0 (set s5 (+ (bv 32 0x0) (<< (bv 32 0xc8) (bv 32 0xc) false)))
+d "auipc s9, 0x2c" 97cc0200 0x0 (set s9 (+ (bv 32 0x0) (<< (bv 32 0x2c) (bv 32 0xc) false)))
+# ----------------------------- AND -----------------------------
+d "and s4, a2, a4" 337ae600 0x0 (set s4 (& (var a2) (var a4)))
+d "and a4, a5, s5" 33f75701 0x0 (set a4 (& (var a5) (var s5)))
+d "and a5, a5, s10" b3f7a701 0x0 (set a5 (& (var a5) (var s10)))
+# ----------------------------- XOR -----------------------------
+d "xor a5, a3, a4" b3c7e600 0x0 (set a5 (^ (var a3) (var a4)))
+d "xor a0, a1, a6" 33c50501 0x0 (set a0 (^ (var a1) (var a6)))
+d "xor t4, s11, s2" b3ce2d01 0x0 (set t4 (^ (var s11) (var s2)))
+# ----------------------------- SLT -----------------------------
+d "slt a5, s4, a5" b327fa00 0x0 (set a5 (ite (&& (sle (var s4) (var a5)) (! (== (var s4) (var a5)))) (bv 32 0x1) (bv 32 0x0)))
+d "slt t3, a2, a4" 332ee600 0x0 (set t3 (ite (&& (sle (var a2) (var a4)) (! (== (var a2) (var a4)))) (bv 32 0x1) (bv 32 0x0)))
+d "slt a3, a5, a3" b3a6d700 0x0 (set a3 (ite (&& (sle (var a5) (var a3)) (! (== (var a5) (var a3)))) (bv 32 0x1) (bv 32 0x0)))
+# ----------------------------- SLL -----------------------------
+d "sll a5, a5, a1" b397b700 0x0 (set a5 (<< (var a5) (& (var a1) (bv 32 0x1f)) false))
+d "sll s10, s3, s10" 339da901 0x0 (set s10 (<< (var s3) (& (var s10) (bv 32 0x1f)) false))
+d "sll a1, a1, t5" b395e501 0x0 (set a1 (<< (var a1) (& (var t5) (bv 32 0x1f)) false))
+# ----------------------------- SRL -----------------------------
+d "srl a5, a5, a4" b3d7e700 0x0 (set a5 (>> (var a5) (& (var a4) (bv 32 0x1f)) false))
+d "srl a6, a3, a4" 33d8e600 0x0 (set a6 (>> (var a3) (& (var a4) (bv 32 0x1f)) false))
+d "srl t3, t3, t4" 335ede01 0x0 (set t3 (>> (var t3) (& (var t4) (bv 32 0x1f)) false))
+# ----------------------------- SRA -----------------------------
+d "sra a4, a0, a4" 3357e540 0x0 (set a4 (>> (var a0) (& (var a4) (bv 32 0x1f)) (msb (var a0))))
+d "sra a4, a1, a4" 33d7e540 0x0 (set a4 (>> (var a1) (& (var a4) (bv 32 0x1f)) (msb (var a1))))
+d "sra a2, a0, a2" 3356c540 0x0 (set a2 (>> (var a0) (& (var a2) (bv 32 0x1f)) (msb (var a0))))
+# ----------------------------- LB -----------------------------
+d "lb a4, 0x108(a0)" 03078510 0x0 (set a4 (cast 32 (msb (loadw 0 8 (+ (var a0) (bv 32 0x108)))) (loadw 0 8 (+ (var a0) (bv 32 0x108)))))
+d "lb a7, 0(t3)" 83080e00 0x0 (set a7 (cast 32 (msb (loadw 0 8 (+ (var t3) (bv 32 0x0)))) (loadw 0 8 (+ (var t3) (bv 32 0x0)))))
+d "lb a2, 1(a4)" 03061700 0x0 (set a2 (cast 32 (msb (loadw 0 8 (+ (var a4) (bv 32 0x1)))) (loadw 0 8 (+ (var a4) (bv 32 0x1)))))
+# ----------------------------- LH -----------------------------
+d "lh a5, 6(a6)" 83176800 0x0 (set a5 (cast 32 (msb (loadw 0 16 (+ (var a6) (bv 32 0x6)))) (loadw 0 16 (+ (var a6) (bv 32 0x6)))))
+d "lh a5, 0x334(s7)" 83974b33 0x0 (set a5 (cast 32 (msb (loadw 0 16 (+ (var s7) (bv 32 0x334)))) (loadw 0 16 (+ (var s7) (bv 32 0x334)))))
+d "lh a4, -0x148(a4)" 031787eb 0x0 (set a4 (cast 32 (msb (loadw 0 16 (+ (var a4) (bv 32 0xfffffeb8)))) (loadw 0 16 (+ (var a4) (bv 32 0xfffffeb8)))))
+# ----------------------------- LW -----------------------------
+d "lw s1, 8(s7)" 83a48b00 0x0 (set s1 (loadw 0 32 (+ (var s7) (bv 32 0x8))))
+d "lw a1, 0x18(sp)" e245 0x0 (set a1 (loadw 0 32 (+ (var sp) (bv 32 0x18))))
+d "lw a4, 0x9c(a4)" 0327c709 0x0 (set a4 (loadw 0 32 (+ (var a4) (bv 32 0x9c))))
+# ----------------------------- LBU -----------------------------
+d "lbu a4, 0x337(s1)" 03c77433 0x0 (set a4 (cast 32 false (loadw 0 8 (+ (var s1) (bv 32 0x337)))))
+d "lbu a4, 0x50(sp)" 03470105 0x0 (set a4 (cast 32 false (loadw 0 8 (+ (var sp) (bv 32 0x50)))))
+d "lbu a3, -0x77(s0)" 834694f8 0x0 (set a3 (cast 32 false (loadw 0 8 (+ (var s0) (bv 32 0xffffff89)))))
+# ----------------------------- LHU -----------------------------
+d "lhu a5, 4(s0)" 83574400 0x0 (set a5 (cast 32 false (loadw 0 16 (+ (var s0) (bv 32 0x4)))))
+d "lhu a5, 0xc(s11)" 83d7cd00 0x0 (set a5 (cast 32 false (loadw 0 16 (+ (var s11) (bv 32 0xc)))))
+d "lhu a2, 0xa4(sp)" 0356410a 0x0 (set a2 (cast 32 false (loadw 0 16 (+ (var sp) (bv 32 0xa4)))))
+# ----------------------------- SB -----------------------------
+d "sb a1, 3(s0)" a301b400 0x0 (storew 0 (+ (var s0) (bv 32 0x3)) (cast 8 false (var a1)))
+d "sb a1, -0x74(s0)" 2306b4f8 0x0 (storew 0 (+ (var s0) (bv 32 0xffffff8c)) (cast 8 false (var a1)))
+d "sb a3, -1(a4)" a30fd7fe 0x0 (storew 0 (+ (var a4) (bv 32 0xffffffff)) (cast 8 false (var a3)))
+# ----------------------------- SH -----------------------------
+d "sh a5, 0(s1)" 2390f400 0x0 (storew 0 (+ (var s1) (bv 32 0x0)) (cast 16 false (var a5)))
+d "sh a0, 0x80(s1)" 2390a408 0x0 (storew 0 (+ (var s1) (bv 32 0x80)) (cast 16 false (var a0)))
+d "sh s1, 0x32(a5)" 23999702 0x0 (storew 0 (+ (var a5) (bv 32 0x32)) (cast 16 false (var s1)))
+# ----------------------------- SW -----------------------------
+d "sw a5, 0x9c(s1)" 23aef408 0x0 (storew 0 (+ (var s1) (bv 32 0x9c)) (var a5))
+d "sw a5, 0(a4)" 1cc3 0x0 (storew 0 (+ (var a4) (bv 32 0x0)) (var a5))
+d "sw s3, -0x6c0(a5)" 23a03795 0x0 (storew 0 (+ (var a5) (bv 32 0xfffff940)) (var s3))
+# ----------------------------- BLTU -----------------------------
+d "bltu a5, s4, 0x48" 63e44705 0x0 (branch (&& (ule (var a5) (var s4)) (! (== (var a5) (var s4)))) (jmp (bv 32 0x48)) (jmp (bv 32 0x4)))
+d "bltu a5, a3, 0xfffffff0" e3e8d7fe 0x0 (branch (&& (ule (var a5) (var a3)) (! (== (var a5) (var a3)))) (jmp (bv 32 0xfffffff0)) (jmp (bv 32 0x4)))
+d "bltu t3, a1, 0xffffffe6" e363befe 0x0 (branch (&& (ule (var t3) (var a1)) (! (== (var t3) (var a1)))) (jmp (bv 32 0xffffffe6)) (jmp (bv 32 0x4)))
+# ----------------------------- BGEU -----------------------------
+d "bgeu a3, a4, 0x1ae" 63f7e61a 0x0 (branch (|| (! (ule (var a3) (var a4))) (== (var a3) (var a4))) (jmp (bv 32 0x1ae)) (jmp (bv 32 0x4)))
+d "bgeu s2, a5, 0xfffffff6" e37bf9fe 0x0 (branch (|| (! (ule (var s2) (var a5))) (== (var s2) (var a5))) (jmp (bv 32 0xfffffff6)) (jmp (bv 32 0x4)))
+d "bgeu s7, s0, 0xffffff64" e3f28bf6 0x0 (branch (|| (! (ule (var s7) (var s0))) (== (var s7) (var s0))) (jmp (bv 32 0xffffff64)) (jmp (bv 32 0x4)))
+# ----------------------------- FENCE -----------------------------
+d "fence rw, rw" 0f003003 0x0 nop
+d "fence rw, w" 0f001003 0x0 nop
+d "fence r, rw" 0f003002 0x0 nop
+# ----------------------------- FENCE_I -----------------------------
+d "fence.i" 0f100000 0x0 nop
+d "fence.i" 0f100000 0x0 nop
+d "fence.i" 0f100000 0x0 nop
+# ----------------------------- ECALL -----------------------------
+d "ecall" 73000000 0x0 (goto ecall)
+d "ecall" 73000000 0x0 (goto ecall)
+d "ecall" 73000000 0x0 (goto ecall)
+# ----------------------------- EBREAK -----------------------------
+d "ebreak" 73001000 0x0 (goto ebreak)
+d "ebreak" 73001000 0x0 (goto ebreak)
+d "ebreak" 73001000 0x0 (goto ebreak)
+# ----------------------------- MULH -----------------------------
+d "mulh t0, t1, t2" b3127302 0x0 (set t0 (cast 32 false (>> (* (cast 64 (msb (var t1)) (var t1)) (cast 64 (msb (var t2)) (var t2))) (bv 8 0x20) false)))
+d "mulh a0, a1, a2" 3395c502 0x0 (set a0 (cast 32 false (>> (* (cast 64 (msb (var a1)) (var a1)) (cast 64 (msb (var a2)) (var a2))) (bv 8 0x20) false)))
+d "mulh t3, t4, t5" 339eee03 0x0 (set t3 (cast 32 false (>> (* (cast 64 (msb (var t4)) (var t4)) (cast 64 (msb (var t5)) (var t5))) (bv 8 0x20) false)))
+# ----------------------------- MULHSU -----------------------------
+d "mulhsu t0, t1, t2" b3227302 0x0 (set t0 (cast 32 false (>> (* (cast 64 (msb (var t1)) (var t1)) (cast 64 false (var t2))) (bv 8 0x20) false)))
+d "mulhsu a0, a1, a2" 33a5c502 0x0 (set a0 (cast 32 false (>> (* (cast 64 (msb (var a1)) (var a1)) (cast 64 false (var a2))) (bv 8 0x20) false)))
+d "mulhsu t3, t4, t5" 33aeee03 0x0 (set t3 (cast 32 false (>> (* (cast 64 (msb (var t4)) (var t4)) (cast 64 false (var t5))) (bv 8 0x20) false)))
+# ----------------------------- DIV -----------------------------
+d "div a3, a3, a7" b3c61603 0x0 (set a3 (sdiv (var a3) (var a7)))
+d "div t4, t6, t4" b3cedf03 0x0 (set t4 (sdiv (var t6) (var t4)))
+d "div a4, a4, a3" 3347d702 0x0 (set a4 (sdiv (var a4) (var a3)))
+# ----------------------------- DIVU -----------------------------
+d "divu a6, s2, s10" 3358a903 0x0 (set a6 (div (var s2) (var s10)))
+d "divu s7, a5, t5" b3dbe703 0x0 (set s7 (div (var a5) (var t5)))
+d "divu s1, a0, s2" b3542503 0x0 (set s1 (div (var a0) (var s2)))
+# ----------------------------- REM -----------------------------
+d "rem t6, a4, a7" b36f1703 0x0 (set t6 (smod (var a4) (var a7)))
+d "rem a5, a0, a4" b367e502 0x0 (set a5 (smod (var a0) (var a4)))
+d "rem a5, t0, a5" b3e7f202 0x0 (set a5 (smod (var t0) (var a5)))
+# ----------------------------- REMU -----------------------------
+d "remu a3, s1, a3" b3f6d402 0x0 (set a3 (mod (var s1) (var a3)))
+d "remu a6, a6, s4" 33784803 0x0 (set a6 (mod (var a6) (var s4)))
+d "remu a1, s7, s2" b3f52b03 0x0 (set a1 (mod (var s7) (var s2)))
+# ----------------------------- C_NOP -----------------------------
+d "nop" 0100 0x0 nop
+d "c.nop 1" 0500 0x0 nop
+d "c.nop 2" 0900 0x0 nop
+# ----------------------------- C_JALR -----------------------------
+d "jalr ra" 8290 0x0 (seq (set ra (bv 32 0x2)) (jmp (& (+ (var ra) (bv 32 0x0)) (bv 32 0xfffffffe))))
+d "jalr s0" 0294 0x0 (seq (set ra (bv 32 0x2)) (jmp (& (+ (var s0) (bv 32 0x0)) (bv 32 0xfffffffe))))
+d "jalr a5" 8297 0x0 (seq (set ra (bv 32 0x2)) (jmp (& (+ (var a5) (bv 32 0x0)) (bv 32 0xfffffffe))))
+# ----------------------------- C_EBREAK -----------------------------
+d "ebreak" 0290 0x0 (goto ebreak)
+d "ebreak" 0290 0x0 (goto ebreak)
+d "ebreak" 0290 0x0 (goto ebreak)
+# ----------------------------- C_BEQZ -----------------------------
+d "beqz a0, 0" 01c1 0x0 (branch (== (var a0) (bv 32 0x0)) (jmp (bv 32 0x0)) (jmp (bv 32 0x2)))
+d "beqz a1, 2" 89c1 0x0 (branch (== (var a1) (bv 32 0x0)) (jmp (bv 32 0x2)) (jmp (bv 32 0x2)))
+d "beqz a5, 0xfffffffc" f5df 0x0 (branch (== (var a5) (bv 32 0x0)) (jmp (bv 32 0xfffffffc)) (jmp (bv 32 0x2)))
+# ----------------------------- C_BNEZ -----------------------------
+d "bnez a0, 0" 01e1 0x0 (branch (! (== (var a0) (bv 32 0x0))) (jmp (bv 32 0x0)) (jmp (bv 32 0x2)))
+d "bnez a1, 2" 89e1 0x0 (branch (! (== (var a1) (bv 32 0x0))) (jmp (bv 32 0x2)) (jmp (bv 32 0x2)))
+d "bnez a5, 0xfffffffc" f5ff 0x0 (branch (! (== (var a5) (bv 32 0x0))) (jmp (bv 32 0xfffffffc)) (jmp (bv 32 0x2)))
+# ----------------------------- C_SW -----------------------------
+d "sw a0, 0(s0)" 08c0 0x0 (storew 0 (+ (var s0) (bv 32 0x0)) (var a0))
+d "sw a1, 4(s1)" ccc0 0x0 (storew 0 (+ (var s1) (bv 32 0x4)) (var a1))
+d "sw a5, 0x7c(a5)" fcdf 0x0 (storew 0 (+ (var a5) (bv 32 0x7c)) (var a5))
+# ----------------------------- C_JAL -----------------------------
+d "jal 0xfffffff4" d53f 0x0 (seq (set ra (bv 32 0x2)) (jmp (bv 32 0xfffffff4)))
+d "jal 2" 0920 0x0 (seq (set ra (bv 32 0x2)) (jmp (bv 32 0x2)))
+d "jal 0xfffffff6" dd3f 0x0 (seq (set ra (bv 32 0x2)) (jmp (bv 32 0xfffffff6)))
+# ----------------------------- C_SUB -----------------------------
+d "sub a0, a0, a1" 0d8d 0x0 (set a0 (- (var a0) (var a1)))
+d "sub a2, a2, a3" 158e 0x0 (set a2 (- (var a2) (var a3)))
+d "sub a5, a5, a4" 998f 0x0 (set a5 (- (var a5) (var a4)))
+# ----------------------------- C_AND -----------------------------
+d "and a0, a0, a1" 6d8d 0x0 (set a0 (& (var a0) (var a1)))
+d "and a2, a2, a3" 758e 0x0 (set a2 (& (var a2) (var a3)))
+d "and a5, a5, a4" f98f 0x0 (set a5 (& (var a5) (var a4)))
+# ----------------------------- C_XOR -----------------------------
+d "xor a0, a0, a1" 2d8d 0x0 (set a0 (^ (var a0) (var a1)))
+d "xor a2, a2, a3" 358e 0x0 (set a2 (^ (var a2) (var a3)))
+d "xor a5, a5, a4" b98f 0x0 (set a5 (^ (var a5) (var a4)))
