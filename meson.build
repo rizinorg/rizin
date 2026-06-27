@@ -1,5 +1,5 @@
 project('rizin', 'c',
-  version: 'v0.9.0',
+  version: 'v0.9.1',
   license: 'LGPL-3.0-only',
   meson_version: '>=0.58.0',
   default_options: [
@@ -513,8 +513,8 @@ foreach it : ccs
   # --no-copy-dt-needed-entries) also refuses to resolve the symbol through the
   # dropped library's own DT_NEEDED entry. Linking the rizin tools against the
   # rizin shared libraries therefore fails with:
-  #   librz_main.so.0.9.0: undefined reference to symbol 'rz_buf_size'
-  #   librz_util.so.0.9.0: could not read symbols: Invalid operation
+  #   librz_main.so.0.9.1: undefined reference to symbol 'rz_buf_size'
+  #   librz_util.so.0.9.1: could not read symbols: Invalid operation
   # even though librz_util, which defines the symbol, is already on the link
   # line. Disable --as-needed for these old linkers so the indirectly-needed
   # libraries stay on the link line and resolve directly; newer linkers handle
