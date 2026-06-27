@@ -919,8 +919,7 @@ RZ_API int rz_cons_grep_line(char *buf, int len) {
 			} else {
 				hit = !grep->neg;
 			}
-			// TODO: optimize without strlen without breaking t/feat_grep (grep end)
-			if (grep->end && (strlen(grep->strings[i]) != strlen(p))) {
+			if (grep->end && p[strlen(grep->strings[i])] != '\0') {
 				hit = 0;
 			}
 			if (!grep->amp) {
