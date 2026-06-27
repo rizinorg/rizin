@@ -228,3 +228,29 @@ plugins.hexagon.imm.sign: True: Print them with sign. False: Print signed immedi
 [   allocframe(SP,0x8):raw
 EOF
 RUN
+
+NAME=Invalid plugin config key errors
+FILE==
+CMDS=<<EOF
+e plugins.missing
+e plugins.missing=true
+e plugins.missing.
+el plugins.missing
+e! plugins.missing
+ee plugins.missing
+er plugins.missing
+et plugins.missing
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: core: Invalid config key 'plugins.missing'
+ERROR: core: Invalid config key 'plugins.missing'
+ERROR: core: Invalid config key 'plugins.missing.'
+ERROR: core: Invalid config key 'plugins.missing'
+ERROR: core: Invalid config key 'plugins.missing'
+ERROR: core: Invalid config key 'plugins.missing'
+ERROR: core: Invalid config key 'plugins.missing'
+ERROR: core: Invalid config key 'plugins.missing'
+EOF
+RUN
+
