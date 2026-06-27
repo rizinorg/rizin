@@ -196,7 +196,7 @@ static void milstd_set_ptr(RzAnalysisOp *op, const MilStd1750Instruction *insn, 
 }
 
 // Set op->datatype: floating-point for F* (single, 32-bit) and EF* (extended,
-// 48-bit) ops, otherwise the integer width of the memory operand. 
+// 48-bit) ops, otherwise the integer width of the memory operand.
 static void milstd_set_datatype(RzAnalysisOp *op, const MilStd1750Instruction *insn) {
 	const char *m = insn->mnemonic;
 	if (m && (m[0] == 'F' || (m[0] == 'E' && m[1] == 'F'))) {
