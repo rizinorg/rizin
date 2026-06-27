@@ -180,3 +180,40 @@ Index 0 data 0                                                         0x0    0%
 Index 1 data 0                                                       0x100  100%[?25h[0m[2J[0;0HEND
 EOF
 RUN
+
+NAME=data xrefs outside functions marked as data
+FILE=bins/elf/analysis/mipsbe-ip
+CMDS=<<EOF
+e scr.utf8=false
+e scr.color=0
+aaa
+s 0x4350f8
+< q ; Vp
+echo END
+EOF
+EXPECT=<<EOF
+[?25l[0;0H[0m[0x004350f8 [xAdvc]0 90% 115 bins/elf/analysis/mipsbe-ip]> pd $r @ data.004350f8
+            ; XREFS(69)                                                         
+            ;-- data.004350f8:                                                  
+            0x004350f8      .dword 0x00430000                                   
+            ; DATA XREF from fcn.004020d0 @ 0x402108                            
+            ;-- data.004350fc:                                                  
+            0x004350fc      .dword 0x00435420 ; section..sdata                  
+            ; DATA XREF from fcn.004020d0 @ 0x402120                            
+            ;-- data.00435100:                                                  
+            0x00435100      .dword 0x0043396c ; obj.__DTOR_END                  
+            ; XREFS(156)                                                        
+            ;-- data.00435104:                                                  
+            0x00435104      .dword 0x00420000 ; str.ute_get_ADDRESS___from_ADDRE[0J[0m
+            ; DATA XREF from sym._init @ 0x402024                               
+            ; DATA XREF from sym._fini @ 0x41ecd0                               
+            ;-- data.00435108:                                                  
+            0x00435108      .dword 0x00400000 ; segment.LOAD0 ; segment.ehdr    
+            0x0043510c      .dword 0x00000000                                   
+            0x00435110      .dword 0x00000000                                   
+            0x00435114      .dword 0x00000000                                   
+            0x00435118      .dword 0x00000000                                   
+            ; DATA XREF from fcn.00414700 @ +0xbb0                              
+            ; DATA XREF from sym.rtnl_open_byproto @ 0x41a878                   [23;75H0.0%[?25h[0m[2J[0;0HEND
+EOF
+RUN

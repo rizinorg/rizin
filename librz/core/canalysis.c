@@ -5040,6 +5040,7 @@ RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
 
 	if (RZ_STR_EQ(arch, "mips")) {
 		// forbid aav on mips
+		free(tmp);
 		return;
 	}
 
