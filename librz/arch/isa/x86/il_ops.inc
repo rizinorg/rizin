@@ -1608,6 +1608,85 @@ IL_LIFTER(popfq) {
 	return SEQ2(x86_il_set_flags(pop.val, 64), pop.eff);
 }
 
+/**
+ * POPA
+ * Pop all general-purpose registers (16-bits)
+ * Encoding: ZO
+ */
+IL_LIFTER(popa) {
+	if (analysis->bits != 16) {
+		return NULL;
+	}
+
+	/* Pop DI, SI, BP, BX, DX, CX, and AX */
+	PopHelper pop_di = x86_pop_helper(2);
+	RzILOpEffect *pop = SEQ2(x86_il_set_reg(X86_REG_DI, pop_di.val), pop_di.eff);
+
+	PopHelper pop_si = x86_pop_helper(2);
+	pop = SEQ2(pop, SEQ2(x86_il_set_reg(X86_REG_SI, pop_si.val), pop_si.eff));
+
+	PopHelper pop_bp = x86_pop_helper(2);
+	pop = SEQ2(pop, SEQ2(x86_il_set_reg(X86_REG_BP, pop_bp.val), pop_bp.eff));
+
+	PopHelper pop_sp = x86_pop_helper(2);
+	rz_il_op_pure_free(pop_sp.val);
+	pop = SEQ2(pop, pop_sp.eff);
+
+	PopHelper pop_bx = x86_pop_helper(2);
+	pop = SEQ2(pop, SEQ2(x86_il_set_reg(X86_REG_BX, pop_bx.val), pop_bx.eff));
+
+	PopHelper pop_dx = x86_pop_helper(2);
+	pop = SEQ2(pop, SEQ2(x86_il_set_reg(X86_REG_DX, pop_dx.val), pop_dx.eff));
+
+	PopHelper pop_cx = x86_pop_helper(2);
+	pop = SEQ2(pop, SEQ2(x86_il_set_reg(X86_REG_CX, pop_cx.val), pop_cx.eff));
+
+	PopHelper pop_ax = x86_pop_helper(2);
+	pop = SEQ2(pop, SEQ2(x86_il_set_reg(X86_REG_AX, pop_ax.val), pop_ax.eff));
+
+	return pop;
+}
+
+/**
+ * POPAD
+ * Pop all general-purpose registers (32-bits)
+ * Encoding: ZO
+ */
+IL_LIFTER(popad) {
+
+	if (analysis->bits != 32) {
+		return NULL;
+	}
+
+	/* Pop EDI, ESI, EBP, EBX, EDX, ECX, and EAX */
+	PopHelper pop_edi = x86_pop_helper(4);
+	RzILOpEffect *pop = SEQ2(x86_il_set_reg(X86_REG_EDI, pop_edi.val), pop_edi.eff);
+
+	PopHelper pop_esi = x86_pop_helper(4);
+	pop = SEQ2(pop, SEQ2(x86_il_set_reg(X86_REG_ESI, pop_esi.val), pop_esi.eff));
+
+	PopHelper pop_ebp = x86_pop_helper(4);
+	pop = SEQ2(pop, SEQ2(x86_il_set_reg(X86_REG_EBP, pop_ebp.val), pop_ebp.eff));
+
+	PopHelper pop_esp = x86_pop_helper(4);
+	rz_il_op_pure_free(pop_esp.val);
+	pop = SEQ2(pop, pop_esp.eff);
+
+	PopHelper pop_ebx = x86_pop_helper(4);
+	pop = SEQ2(pop, SEQ2(x86_il_set_reg(X86_REG_EBX, pop_ebx.val), pop_ebx.eff));
+
+	PopHelper pop_edx = x86_pop_helper(4);
+	pop = SEQ2(pop, SEQ2(x86_il_set_reg(X86_REG_EDX, pop_edx.val), pop_edx.eff));
+
+	PopHelper pop_ecx = x86_pop_helper(4);
+	pop = SEQ2(pop, SEQ2(x86_il_set_reg(X86_REG_ECX, pop_ecx.val), pop_ecx.eff));
+
+	PopHelper pop_eax = x86_pop_helper(4);
+	pop = SEQ2(pop, SEQ2(x86_il_set_reg(X86_REG_EAX, pop_eax.val), pop_eax.eff));
+
+	return pop;
+}
+
 RzILOpEffect *x86_push_helper_impl(RzILOpPure *val, unsigned int user_op_size, unsigned int bitness, const X86ILIns *ins, ut64 pc) {
 	unsigned int dflag = user_op_size;
 	unsigned int op_size;
@@ -1712,11 +1791,12 @@ IL_LIFTER(pushfq) {
  * Push all general-purpose registers (16-bits)
  * Encoding: ZO
  */
-IL_LIFTER(pushaw) {
+IL_LIFTER(pusha) {
 	if (analysis->bits != 16) {
 		return NULL;
 	}
 
+	/*Push AX, CX, DX, BX, original SP, BP, SI, and DI*/
 	RzILOpEffect *temp = SETL("_sp", x86_il_get_reg(X86_REG_SP));
 	RzILOpEffect *push = x86_push_helper(x86_il_get_reg(X86_REG_AX), 2);
 	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_CX), 2));
@@ -1726,6 +1806,30 @@ IL_LIFTER(pushaw) {
 	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_BP), 2));
 	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_SI), 2));
 	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_DI), 2));
+
+	return SEQ2(temp, push);
+}
+
+/**
+ * PUSHAD
+ * Push all general-purpose registers (32-bits)
+ * Encoding: ZO
+ */
+IL_LIFTER(pushad) {
+	if (analysis->bits != 32) {
+		return NULL;
+	}
+
+	/*Push EAX, ECX, EDX, EBX, original ESP, EBP, ESI, and EDI*/
+	RzILOpEffect *temp = SETL("_sp", x86_il_get_reg(X86_REG_ESP));
+	RzILOpEffect *push = x86_push_helper(x86_il_get_reg(X86_REG_EAX), 4);
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_ECX), 4));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_EDX), 4));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_EBX), 4));
+	push = SEQ2(push, x86_push_helper(VARL("_sp"), 4));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_EBP), 4));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_ESI), 4));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_EDI), 4));
 
 	return SEQ2(temp, push);
 }

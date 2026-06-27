@@ -507,3 +507,63 @@ EXPECT=<<EOF
 ]
 EOF
 RUN
+
+NAME=pusha and popa analysis
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=16
+wa "pusha"
+ao
+echo "============================================================"
+wa "popa"
+ao
+EOF
+EXPECT=<<EOF
+address: 0x0
+opcode: pusha
+disasm: pusha
+pseudo: pusha 
+mnemonic: pusha
+description: push all general-purpose registers
+mask: ff
+prefix: 0
+id: 666
+bytes: 60
+refptr: 0
+size: 1
+sign: false
+type: rpush
+cycles: 1
+esil: 0,sp,+,2,sp,-=,ax,sp,=[2],2,sp,-=,cx,sp,=[2],2,sp,-=,dx,sp,=[2],2,sp,-=,bx,sp,=[2],2,sp,-=,sp,=[2],2,sp,-=,bp,sp,=[2],2,sp,-=,si,sp,=[2],2,sp,-=,di,sp,=[2]
+rzil: (seq (set _sp (var sp)) (set final (- (var sp) (bv 16 0x2))) (storew 0 (var final) (cast 16 false (var ax))) (set sp (var final)) (set final (- (var sp) (bv 16 0x2))) (storew 0 (var final) (cast 16 false (var cx))) (set sp (var final)) (set final (- (var sp) (bv 16 0x2))) (storew 0 (var final) (cast 16 false (var dx))) (set sp (var final)) (set final (- (var sp) (bv 16 0x2))) (storew 0 (var final) (cast 16 false (var bx))) (set sp (var final)) (set final (- (var sp) (bv 16 0x2))) (storew 0 (var final) (cast 16 false (var _sp))) (set sp (var final)) (set final (- (var sp) (bv 16 0x2))) (storew 0 (var final) (cast 16 false (var bp))) (set sp (var final)) (set final (- (var sp) (bv 16 0x2))) (storew 0 (var final) (cast 16 false (var si))) (set sp (var final)) (set final (- (var sp) (bv 16 0x2))) (storew 0 (var final) (cast 16 false (var di))) (set sp (var final)))
+opex:
+  operands: []
+family: cpu
+stackop: inc
+stackptr: 16
+============================================================
+address: 0x0
+opcode: popa
+disasm: popa
+pseudo: popa 
+mnemonic: popa
+description: pop all general-purpose registers
+mask: ff
+prefix: 0
+id: 610
+bytes: 61
+refptr: 0
+size: 1
+sign: false
+type: pop
+cycles: 1
+esil: sp,[2],2,sp,+=,di,=,sp,[2],2,sp,+=,si,=,sp,[2],2,sp,+=,bp,=,2,sp,+=,sp,[2],2,sp,+=,bx,=,sp,[2],2,sp,+=,dx,=,sp,[2],2,sp,+=,cx,=,sp,[2],2,sp,+=,ax,=
+rzil: (seq (set di (loadw 0 16 (+ (cast 16 false (var sp)) (<< (cast 16 false (var ss)) (bv 8 0x4) false)))) (set sp (+ (var sp) (bv 16 0x2))) (set si (loadw 0 16 (+ (cast 16 false (var sp)) (<< (cast 16 false (var ss)) (bv 8 0x4) false)))) (set sp (+ (var sp) (bv 16 0x2))) (set bp (loadw 0 16 (+ (cast 16 false (var sp)) (<< (cast 16 false (var ss)) (bv 8 0x4) false)))) (set sp (+ (var sp) (bv 16 0x2))) (set sp (+ (var sp) (bv 16 0x2))) (set bx (loadw 0 16 (+ (cast 16 false (var sp)) (<< (cast 16 false (var ss)) (bv 8 0x4) false)))) (set sp (+ (var sp) (bv 16 0x2))) (set dx (loadw 0 16 (+ (cast 16 false (var sp)) (<< (cast 16 false (var ss)) (bv 8 0x4) false)))) (set sp (+ (var sp) (bv 16 0x2))) (set cx (loadw 0 16 (+ (cast 16 false (var sp)) (<< (cast 16 false (var ss)) (bv 8 0x4) false)))) (set sp (+ (var sp) (bv 16 0x2))) (set ax (loadw 0 16 (+ (cast 16 false (var sp)) (<< (cast 16 false (var ss)) (bv 8 0x4) false)))) (set sp (+ (var sp) (bv 16 0x2))))
+opex:
+  operands: []
+family: cpu
+stackop: inc
+stackptr: -16
+EOF
+RUN

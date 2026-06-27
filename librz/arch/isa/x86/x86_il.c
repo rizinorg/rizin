@@ -225,11 +225,14 @@ x86_il_ins x86_ins[X86_INS_MAX_VALUE] = {
 	[X86_INS_POPF] = x86_il_popf,
 	[X86_INS_POPFD] = x86_il_popfd,
 	[X86_INS_POPFQ] = x86_il_popfq,
+	[X86_INS_POPA] = x86_il_popa,
+	[X86_INS_POPAD] = x86_il_popad,
 	[X86_INS_PUSH] = x86_il_push,
 	[X86_INS_PUSHF] = x86_il_pushf,
 	[X86_INS_PUSHFD] = x86_il_pushfd,
 	[X86_INS_PUSHFQ] = x86_il_pushfq,
-	[X86_INS_PUSHAD] = x86_il_pushaw,
+	[X86_INS_PUSHA] = x86_il_pusha,
+	[X86_INS_PUSHAD] = x86_il_pushad,
 	[X86_INS_RCL] = x86_il_rcl,
 	[X86_INS_RCR] = x86_il_rcr,
 	[X86_INS_ROL] = x86_il_rol,
@@ -311,6 +314,7 @@ x86_il_ins x86_ins[X86_INS_MAX_VALUE] = {
 	[X86_INS_FCOMPP] = x86_il_fcompp,
 	[X86_INS_FICOMP] = x86_il_ficomp,
 	[X86_INS_FCOMI] = x86_il_fcomi,
+	[X86_INS_FCOMIP] = x86_il_fcomip,
 
 	/* Using the same FCOM & FCOMI family IL lifters for FUCOM & FUCOMI family instructions
 	 * since we don't support invalid arithmetic operand exceptions (#IA) anyways. */
@@ -318,6 +322,7 @@ x86_il_ins x86_ins[X86_INS_MAX_VALUE] = {
 	[X86_INS_FUCOMP] = x86_il_fcomp,
 	[X86_INS_FUCOMPP] = x86_il_fcompp,
 	[X86_INS_FUCOMI] = x86_il_fcomi,
+	[X86_INS_FUCOMIP] = x86_il_fcomip,
 	[X86_INS_FCHS] = x86_il_fchs,
 	[X86_INS_FTST] = x86_il_ftst,
 	[X86_INS_FRNDINT] = x86_il_frndint,

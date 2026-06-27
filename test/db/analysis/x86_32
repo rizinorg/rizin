@@ -4261,3 +4261,63 @@ EXPECT=<<EOF
 \      |,=< 0x00401054      jmp   fcn.0040dfd0
 EOF
 RUN
+
+NAME=pushad and popad analysis
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wa "pushad"
+ao
+echo "============================================================"
+wa "popad"
+ao
+EOF
+EXPECT=<<EOF
+address: 0x0
+opcode: pushad
+disasm: pushad
+pseudo: pushad 
+mnemonic: pushad
+description: push all general-purpose registers
+mask: ff
+prefix: 0
+id: 667
+bytes: 60
+refptr: 0
+size: 1
+sign: false
+type: rpush
+cycles: 1
+esil: 0,esp,+,4,esp,-=,eax,esp,=[4],4,esp,-=,ecx,esp,=[4],4,esp,-=,edx,esp,=[4],4,esp,-=,ebx,esp,=[4],4,esp,-=,esp,=[4],4,esp,-=,ebp,esp,=[4],4,esp,-=,esi,esp,=[4],4,esp,-=,edi,esp,=[4]
+rzil: (seq (set _sp (var esp)) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var eax))) (set esp (var final)) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var ecx))) (set esp (var final)) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var edx))) (set esp (var final)) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var ebx))) (set esp (var final)) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var _sp))) (set esp (var final)) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var ebp))) (set esp (var final)) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var esi))) (set esp (var final)) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var edi))) (set esp (var final)))
+opex:
+  operands: []
+family: cpu
+stackop: inc
+stackptr: 32
+============================================================
+address: 0x0
+opcode: popad
+disasm: popad
+pseudo: popad 
+mnemonic: popad
+description: pop all general-purpose registers
+mask: ff
+prefix: 0
+id: 611
+bytes: 61
+refptr: 0
+size: 1
+sign: false
+type: pop
+cycles: 1
+esil: esp,[4],4,esp,+=,edi,=,esp,[4],4,esp,+=,esi,=,esp,[4],4,esp,+=,ebp,=,4,esp,+=,esp,[4],4,esp,+=,ebx,=,esp,[4],4,esp,+=,edx,=,esp,[4],4,esp,+=,ecx,=,esp,[4],4,esp,+=,eax,=
+rzil: (seq (set edi (loadw 0 32 (cast 32 false (var esp)))) (set esp (+ (var esp) (bv 32 0x4))) (set esi (loadw 0 32 (cast 32 false (var esp)))) (set esp (+ (var esp) (bv 32 0x4))) (set ebp (loadw 0 32 (cast 32 false (var esp)))) (set esp (+ (var esp) (bv 32 0x4))) (set esp (+ (var esp) (bv 32 0x4))) (set ebx (loadw 0 32 (cast 32 false (var esp)))) (set esp (+ (var esp) (bv 32 0x4))) (set edx (loadw 0 32 (cast 32 false (var esp)))) (set esp (+ (var esp) (bv 32 0x4))) (set ecx (loadw 0 32 (cast 32 false (var esp)))) (set esp (+ (var esp) (bv 32 0x4))) (set eax (loadw 0 32 (cast 32 false (var esp)))) (set esp (+ (var esp) (bv 32 0x4))))
+opex:
+  operands: []
+family: cpu
+stackop: inc
+stackptr: -32
+EOF
+RUN
