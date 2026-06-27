@@ -396,10 +396,10 @@ static void close_reset_ipc_obj(RzInterpSet *iset) {
 	// This also clears the buffer and queues
 	rz_th_ring_buf_close(iset->io_request_rbuf);
 	rz_th_ring_buf_close(iset->io_result_rbuf);
-	rz_th_ring_buf_close(iset->il_request_rbuf);
 	rz_th_ring_buf_close(iset->entry_points);
-	rz_th_queue_close(iset->il_queue);
-	rz_list_free(rz_th_queue_pop_all(iset->il_queue));
+	rz_th_ring_buf_close(iset->il_cache_client->req_rbuf);
+	rz_th_queue_close(iset->il_cache_client->il_queue);
+	rz_list_free(rz_th_queue_pop_all(iset->il_cache_client->il_queue));
 }
 
 static void open_ipc_obj(RzInterpSet *iset) {
@@ -407,9 +407,9 @@ static void open_ipc_obj(RzInterpSet *iset) {
 	// jump target again.
 	rz_th_ring_buf_open(iset->io_request_rbuf);
 	rz_th_ring_buf_open(iset->io_result_rbuf);
-	rz_th_ring_buf_open(iset->il_request_rbuf);
+	rz_th_ring_buf_open(iset->il_cache_client->req_rbuf);
+	rz_th_queue_open(iset->il_cache_client->il_queue);
 	rz_th_ring_buf_open(iset->entry_points);
-	rz_th_queue_open(iset->il_queue);
 }
 
 static bool collect_entry_points(RzCore *core,
@@ -549,9 +549,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 	// Initialize and spawn the interpreters.
 	//
 	for (size_t i = 0; i < n_threads; ++i) {
-		RzThreadRingBuf *il_req = NULL;
-		RzThreadQueue *il_queue = NULL;
-		if (!rz_il_cache_get_new_ring_buf(il_cache, &il_req, &il_queue)) {
+		RzILCacheClient *cache_client = rz_il_cache_new_client(il_cache);
+		if (!cache_client) {
 			return_code = false;
 			rz_warn_if_reached();
 			goto error_free;
@@ -560,7 +559,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			core->analysis,
 			prototype->p_interpreter,
 			RZ_INTERP_ABSTRACTION_CONST,
-			il_req, il_queue,
+			cache_client,
 			yield_rbufs,
 			ignored_code);
 		if (!intp_iset) {
@@ -611,7 +610,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			if (!reduce_get_entry_points(iset, il_cache, entry_points)) {
 				// None left.
 				// TODO Remove?
-				rz_th_queue_close(iset->il_queue);
+				rz_th_queue_close(iset->il_cache_client->il_queue);
 				iset_map[i].next_run_state = RZ_INTERP_RUN_STATE_TERM;
 				intpr_terminated++;
 				// RZ_LOG_DEBUG("Next: TERM\n");

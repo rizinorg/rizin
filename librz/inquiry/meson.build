@@ -16,9 +16,13 @@ rz_inquiry_sources = [
   'bcfg.c',
   'inquiry.c',
   'il_cache.c',
+  'interpreter/interpreter.c',
+  'interpreter/state.c',
+  'interpreter/p/interpreter_prototype.c',
+  'interpreter/prototype/eval_effect.c',
+  'interpreter/prototype/eval_pure.c',
+  'interpreter/prototype/eval.c',
 ]
-
-subdir('interpreter')
 
 rz_inquiry_inc = [platform_inc]
 
@@ -31,7 +35,6 @@ rz_inquiry = library('rz_inquiry', rz_inquiry_sources,
     rz_cons_dep,
     rz_hash_dep,
     rz_il_dep,
-    rz_interpreter_dep,
     rz_io_dep,
     rz_magic_dep,
     rz_reg_dep,
@@ -62,7 +65,6 @@ modules += { 'rz_inquiry': {
       'rz_cons',
       'rz_hash',
       'rz_il',
-      'rz_interpreter',
       'rz_io',
       'rz_magic',
       'rz_reg',

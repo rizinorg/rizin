@@ -45,9 +45,7 @@ struct rz_il_cache_t {
 
 	HtUP /*<block_addr, RzILCacheBlock *>*/ *cache;
 
-	// The pair of ring_buffer + queue are always at the same offset.
-	RzPVector /*<RzThreadRingBuf *>*/ *req_rbufs; ///< The ring buffers the cache receives IL block requests.
-	RzPVector /*<RzThreadQueue *>*/ *il_queues; ///< The queues the cache serves IL blocks over.
+	RzPVector /*<RzILCacheClient *>*/ clients;
 
 	RzThreadLock *skyline_lock;
 	/**
@@ -273,29 +271,28 @@ RZ_API bool rz_il_cache_serve(RZ_NONNULL RzILCache *cache) {
 	bool success = true;
 
 	rz_atomic_bool_set(cache->is_serving, true);
-	size_t clients = rz_pvector_len(cache->req_rbufs);
+	size_t clients = rz_pvector_len(&cache->clients);
 	while (rz_atomic_bool_get(cache->is_serving)) {
 		for (size_t i = 0; i < clients; ++i) {
-			RzThreadRingBuf *req_rbuf = rz_pvector_at(cache->req_rbufs, i);
-			RzThreadQueue *serve_queue = rz_pvector_at(cache->il_queues, i);
+			RzILCacheClient *client = rz_pvector_at(&cache->clients, i);
 
 			// TODO: This unsafe check permits race conditions.
 			// Not sure if it improve performance here.
 			// Needs more benchmarks.
-			if (rz_th_ring_buf_is_empty_unsafe(req_rbuf)) {
+			if (rz_th_ring_buf_is_empty_unsafe(client->req_rbuf)) {
 				continue;
 			}
 
 			ut64 req_addr = 0;
-			RzThreadRingBufResult r = rz_th_ring_buf_take(req_rbuf, &req_addr);
+			RzThreadRingBufResult r = rz_th_ring_buf_take(client->req_rbuf, &req_addr);
 			if (r == RZ_THREAD_RING_BUF_CLOSED) {
 				goto stop_serving;
 			} else if (r == RZ_THREAD_RING_BUF_OK) {
 				const RzILCacheBlock *block = lift_il_block(cache, req_addr);
 				if (block) {
-					rz_th_queue_push(serve_queue, (void *)block, true);
+					rz_th_queue_push(client->il_queue, (void *)block, true);
 				} else {
-					rz_th_queue_push(serve_queue, RZ_IL_CACHE_FAILED_LIFTING_PTR, true);
+					rz_th_queue_push(client->il_queue, RZ_IL_CACHE_FAILED_LIFTING_PTR, true);
 					RZ_LOG_DEBUG("Failed to lift IL block at 0x%" PFMT64x "\n", req_addr);
 				}
 			}
@@ -318,11 +315,10 @@ RZ_API void rz_il_cache_close(RZ_BORROW RZ_NONNULL RzILCache *cache) {
 
 	rz_atomic_bool_set(cache->is_serving, false);
 
-	for (size_t i = 0; i < rz_pvector_len(cache->req_rbufs); ++i) {
-		RzThreadRingBuf *rb = rz_pvector_at(cache->req_rbufs, i);
-		rz_th_ring_buf_close(rb);
-		RzThreadQueue *il_queue = rz_pvector_at(cache->il_queues, i);
-		rz_th_queue_close(il_queue);
+	for (size_t i = 0; i < rz_pvector_len(&cache->clients); ++i) {
+		RzILCacheClient *client = rz_pvector_at(&cache->clients, i);
+		rz_th_ring_buf_close(client->req_rbuf);
+		rz_th_queue_close(client->il_queue);
 	}
 }
 
@@ -358,8 +354,7 @@ RZ_API void rz_il_cache_free(RZ_OWN RZ_NULLABLE RzILCache *cache) {
 		rz_th_lock_leave(cache->n_serving_lock);
 	} while (!all_stopped);
 
-	rz_pvector_free(cache->req_rbufs);
-	rz_pvector_free(cache->il_queues);
+	rz_pvector_fini(&cache->clients);
 
 	ht_up_free(cache->cache);
 	rz_vector_free(cache->static_xrefs);
@@ -372,6 +367,13 @@ RZ_API void rz_il_cache_free(RZ_OWN RZ_NULLABLE RzILCache *cache) {
 		free(cache->served_regions);
 	}
 	free(cache);
+}
+
+static void rz_il_cache_client_free(void *ptr) {
+	RzILCacheClient *client = ptr;
+	rz_th_ring_buf_free(client->req_rbuf);
+	rz_th_queue_free(client->il_queue);
+	free(client);
 }
 
 RZ_API RZ_OWN RzILCache *rz_il_cache_new(
@@ -404,11 +406,7 @@ RZ_API RZ_OWN RzILCache *rz_il_cache_new(
 	}
 	rz_skyline_init(cache->served_regions);
 
-	cache->il_queues = rz_pvector_new((RzPVectorFree)rz_th_queue_free);
-	cache->req_rbufs = rz_pvector_new((RzPVectorFree)rz_th_ring_buf_free);
-	if (!cache->il_queues || !cache->req_rbufs) {
-		goto err;
-	}
+	rz_pvector_init(&cache->clients, rz_il_cache_client_free);
 
 	cache->config = config;
 	cache->us_sleep = SLEEP_NONE_US;
@@ -444,33 +442,40 @@ RZ_API bool rz_il_cache_was_requested(
 	return r;
 }
 
-RZ_API bool rz_il_cache_get_new_ring_buf(
-	RZ_BORROW RzILCache *cache,
-	RZ_NONNULL RZ_BORROW RZ_OUT RzThreadRingBuf **request_rbuf,
-	RZ_NONNULL RZ_BORROW RZ_OUT RzThreadQueue **il_queue) {
-	rz_return_val_if_fail(cache && request_rbuf && il_queue, false);
+RZ_API RZ_BORROW RzILCacheClient *rz_il_cache_new_client(RZ_NONNULL RZ_BORROW RzILCache *cache) {
+	rz_return_val_if_fail(cache, false);
 
-	*request_rbuf = NULL;
-	*il_queue = NULL;
 	// The queue to pass the Effects to the interpreter.
-	*il_queue = rz_th_queue_new(RZ_IL_OPS_CACHE_IL_QUEUE_SIZE, NULL);
-	if (!il_queue) {
-		rz_warn_if_reached();
-		goto error_free;
-	}
-	rz_pvector_push(cache->il_queues, *il_queue);
-
+	RzThreadQueue *il_queue = rz_th_queue_new(RZ_IL_OPS_CACHE_IL_QUEUE_SIZE, NULL);
 	// The ring buffer the interpreter can request new Effects over.
-	*request_rbuf = rz_th_ring_buf_new(RZ_IL_OPS_CACHE_ADDR_RBUF_SIZE, sizeof(ut64));
-	if (!*request_rbuf) {
-		rz_warn_if_reached();
+	RzThreadRingBuf *request_rbuf = rz_th_ring_buf_new(RZ_IL_OPS_CACHE_ADDR_RBUF_SIZE, sizeof(ut64));
+	if (!il_queue || !request_rbuf) {
 		goto error_free;
 	}
-	rz_pvector_push(cache->req_rbufs, *request_rbuf);
-
-	return true;
+	RzILCacheClient *client = RZ_NEW0(RzILCacheClient);
+	if (!client) {
+		goto error_free;
+	}
+	client->il_queue = il_queue;
+	client->req_rbuf = request_rbuf;
+	rz_pvector_push(&cache->clients, client);
+	return client;
 error_free:
-	rz_th_queue_free(*il_queue);
-	rz_th_ring_buf_free(*request_rbuf);
-	return false;
+	rz_th_queue_free(il_queue);
+	rz_th_ring_buf_free(request_rbuf);
+	return NULL;
+}
+
+RZ_API RZ_NULLABLE RZ_BORROW const RzILCacheBlock *rz_il_cache_client_lift_il_block(RZ_NONNULL RZ_BORROW RzILCacheClient *client, ut64 addr) {
+	rz_return_val_if_fail(client, NULL);
+	if (rz_th_ring_buf_put(client->req_rbuf, &addr) != RZ_THREAD_RING_BUF_OK) {
+		// Can't request IL block => Cache closed => Terminate
+		return NULL;
+	}
+	const RzILCacheBlock *il_bb = NULL;
+	if (!rz_th_queue_pop(client->il_queue, false, (void **)&il_bb) ||
+		il_bb == RZ_IL_CACHE_FAILED_LIFTING_PTR || !il_bb) {
+		return NULL;
+	}
+	return il_bb;
 }

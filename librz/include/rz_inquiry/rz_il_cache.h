@@ -77,10 +77,14 @@ RZ_API void rz_il_cache_stop_serving(RZ_BORROW RZ_NONNULL RzILCache *cache);
 RZ_API const RzVector /*<RzAnalysisXRef>*/ *rz_il_cache_get_static_xrefs(const RzILCache *cache);
 RZ_API RzIterator /*<const RzILCacheBlock *>*/ *rz_il_cache_get_blocks(const RzILCache *cache);
 
-RZ_API bool rz_il_cache_get_new_ring_buf(
-	RZ_BORROW RzILCache *cache,
-	RZ_NONNULL RZ_BORROW RZ_OUT RzThreadRingBuf **req_rbuf,
-	RZ_NONNULL RZ_BORROW RZ_OUT RzThreadQueue **il_queue);
+typedef struct rz_il_cache_client_t {
+	RzThreadRingBuf *req_rbuf;
+	RzThreadQueue *il_queue;
+} RzILCacheClient;
+
+RZ_API RZ_BORROW RzILCacheClient *rz_il_cache_new_client(RZ_NONNULL RZ_BORROW RzILCache *cache);
+RZ_API RZ_NULLABLE RZ_BORROW const RzILCacheBlock *rz_il_cache_client_lift_il_block(RZ_NONNULL RZ_BORROW RzILCacheClient *client, ut64 addr);
+
 RZ_API bool rz_il_cache_was_requested(
 	RZ_BORROW RzILCache *cache,
 	ut64 addr);

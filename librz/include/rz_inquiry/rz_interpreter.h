@@ -306,9 +306,7 @@ struct rz_interpreter_set {
 	RzAnalysisILVM *il_vm; ///< The RzAnalysisILVM for memory IO.
 
 	RZ_LIFETIME(RzILCache)
-	RZ_BORROW RzThreadQueue /*<const RzInterpILOp *>*/ *il_queue; ///< The queue to receive the IL effects.
-	RZ_LIFETIME(RzILCache)
-	RZ_BORROW RzThreadRingBuf /*<RzInterpBranch>*/ *il_request_rbuf; ///< The ring buffer to send requests to the cache what address to get the next IL op from.
+	RZ_BORROW RzILCacheClient *il_cache_client;
 
 	RzThreadRingBuf /*<RzInterpIORequest>*/ *io_request_rbuf; ///< The ring buffer for read/write requests to the IO layer.
 	RzThreadRingBuf /*<const RzInterpIOResult *>*/ *io_result_rbuf; ///< The ring buffer for the read/write requests' answers.
@@ -358,8 +356,7 @@ RZ_API RZ_OWN RzInterpSet *rz_interpreter_set_new(
 	RzAnalysis *analysis,
 	RZ_NONNULL RZ_OWN RzInterpPlugin *plugin,
 	RzInterpAbstraction abstraction,
-	RZ_NONNULL RZ_BORROW RzThreadRingBuf *il_request_rbuf,
-	RZ_NONNULL RZ_BORROW RzThreadQueue *il_queue,
+	RZ_NONNULL RZ_BORROW RzILCacheClient *il_cache_client,
 	RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM],
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code);
 RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpSet *iset);
