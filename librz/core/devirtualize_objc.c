@@ -208,6 +208,11 @@ static void devirtualize_msg_dispatch(RzCore *core, RzSetU *msg_dispatch_addr) {
 	ut64 start = function->addr; // start of the function
 	ut64 end = rz_analysis_function_max_addr(function);
 	RzAnalysisOp *op = rz_analysis_op_new();
+	if (!op) {
+		rz_set_u_free(xref_addrs);
+		return;
+	}
+
 	track_init(core);
 
 	ut8 *bytes = malloc(end - start);
@@ -278,6 +283,11 @@ static void devirtualize_msg_super_dispatch(RzCore *core, RzSetU *msg_super_disp
 	ut64 start = function->addr;
 	ut64 end = rz_analysis_function_max_addr(function);
 	RzAnalysisOp *op = rz_analysis_op_new();
+	if (!op) {
+		rz_set_u_free(xref_addrs);
+		return;
+	}
+
 	track_init(core);
 	ut8 *bytes = malloc(end - start);
 	if (!rz_io_read_at_mapped(core->io, start, bytes, end - start)) {
