@@ -1059,6 +1059,45 @@ typedef struct rz_analysis_il_config_t {
 } RzAnalysisILConfig;
 
 /**
+ * \brief Defines the kind of memory attached to the VM, which may alter its behaviour.
+ *
+ * At the moment only IO is supported.
+ */
+typedef enum rz_analysis_il_mem_type_t {
+	RZ_ANALYSIS_IL_MEM_TYPE_IO
+} RzAnalysisILMemType;
+
+typedef struct rz_analysis_il_mem_t {
+	RzAnalysisILMemType type;
+	ut32 key_size; ///< address size
+
+	/**
+	 * \brief Buffer that backs this memory.
+	 *
+	 * This is purely a pointer to the outside world, e.g. io.
+	 * It should not by itself contain any state that is considered local to a single VM instance.
+	 * For example if a sparse overlay on top of io is to be used locally during emulation, this
+	 * should still point to a direct io buffer and the overlay.
+	 * That is because RzAnalysisILContext is independent of any state.
+	 *
+	 * This is nullable for future memory types that may not have a backing buffer.
+	 */
+	RZ_NULLABLE RZ_OWN RzBuffer *base_buf;
+} RzAnalysisILMem;
+
+/**
+ * \brief Global context of an RzAnalysisILVM
+ *
+ * This holds information resolved from the RzAnalysisILConfig about the bindings between
+ * IL and memory/regs/...
+ */
+typedef struct rz_analysis_il_context_t {
+	RZ_NONNULL RzAnalysisILConfig *config; ///< config this context is resolved from, defined by arch plugin
+	RZ_NONNULL RzILRegBinding *reg_binding; ///< specifies which (global) variables are bound to registers
+	RzVector /*<RzAnalysisILMem>*/ memory; ///< specifies the available IL memories
+} RzAnalysisILContext;
+
+/**
  * \brief High-level RzIL vm to emulate disassembled code
  *
  * This builds upon the low-level `RzILVM`, which by itself does not know about
@@ -1066,9 +1105,8 @@ typedef struct rz_analysis_il_config_t {
  * and lifting with analysis plugins.
  */
 struct rz_analysis_il_vm_t {
+	RZ_NONNULL RZ_OWN RzAnalysisILContext *ctx;
 	RZ_NONNULL RzILVM *vm; ///< low-level vm to execute IL code
-	RZ_NONNULL RzBuffer *io_buf; ///< buffer to use for memory 0 (io)
-	RZ_NONNULL RzILRegBinding *reg_binding; ///< specifies which (global) variables are bound to registers
 } /* RzAnalysisILVM */;
 
 typedef enum {
@@ -1485,6 +1523,8 @@ RZ_API void rz_analysis_il_init_state_set_var(RZ_NONNULL RzAnalysisILInitState *
 RZ_API RZ_OWN RzAnalysisILConfig *rz_analysis_il_config_new(ut32 pc_size, bool big_endian, ut32 mem_key_size);
 RZ_API void rz_analysis_il_config_free(RzAnalysisILConfig *cfg);
 RZ_API void rz_analysis_il_config_add_label(RZ_NONNULL RzAnalysisILConfig *cfg, RZ_NONNULL RZ_OWN RzILEffectLabel *label);
+RZ_API RZ_OWN RzAnalysisILContext *rz_analysis_il_context_resolve(RzAnalysis *a);
+RZ_API void rz_analysis_il_context_free(RzAnalysisILContext *ctx);
 
 typedef bool (*RzAnalysisILVMCondCallback)(RzAnalysisILVM *vm, void *user);
 
