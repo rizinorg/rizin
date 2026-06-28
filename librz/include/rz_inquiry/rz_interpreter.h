@@ -118,7 +118,6 @@ typedef struct {
 	HtUP /*<RzInterpAbstrVal *>*/ *globals; ///< Global variables (mostly registers). Indexed by DJB2 hash of global name.
 	HtUP /*<RzInterpAbstrVal *>*/ *locals; ///< Local variables. Indexed by DJB2 hash of the local name.
 	HtUP /*<RzInterpAbstrVal *>*/ *lets; ///< Let variables. Indexed by DJB2 hash of the let name.
-	RzAnalysisILConfig *il_config; ///< The IL configuration of the RzArch plugin.
 	const char *arch_name; ///< Name of architecture. Used by work-arounds until we have RzArch.
 	ut64 bb_addr;
 	ut64 bb_size;
@@ -303,7 +302,7 @@ struct rz_interpreter_set {
 	 */
 	RzThreadRingBuf *entry_points;
 
-	RzAnalysisILVM *il_vm; ///< The RzAnalysisILVM for memory IO.
+	RzAnalysisILContext *il_ctx; ///< Context about available global vars and memory
 
 	RZ_LIFETIME(RzILCache)
 	RZ_BORROW RzILCacheClient *il_cache_client;
@@ -343,8 +342,7 @@ RZ_API void rz_interpreter_yield_rbuf_free(RZ_OWN RZ_NULLABLE RzInterpYieldRBuf 
 RZ_API RZ_OWN RzInterpAbstrState *rz_interpreter_abstr_state_new(
 	const char *arch_name,
 	RzInterpAbstraction kinds,
-	RZ_OWN RZ_NONNULL RzAnalysisILConfig *il_config,
-	RZ_NULLABLE const RzILRegBinding *reg_bindings);
+	RZ_BORROW RZ_NONNULL RzAnalysisILContext *il_context);
 RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpAbstrState *state);
 RZ_API RZ_OWN RzInterpAbstrState *rz_interpreter_abstr_state_clone(RZ_NONNULL RzInterpSet *iset, const RzInterpAbstrState *state);
 

@@ -178,7 +178,7 @@ bool store_abstr_data(
 	RzInterpIORequest io_req = { 0 };
 	io_req.n_bits = rz_bv_len(src->bv);
 	io_req.mem_idx = mem_idx;
-	io_req.big_endian = iset->astate->il_config->big_endian;
+	io_req.big_endian = iset->il_ctx->config->big_endian;
 
 	io_req.type = RZ_INTERP_IO_WRITE;
 	io_req.addr = addr->bv;
@@ -212,7 +212,7 @@ bool load_abstr_data(
 	io_req.ld_data = out->bv;
 	io_req.mem_idx = mem_idx;
 	io_req.n_bits = n_bits;
-	io_req.big_endian = iset->astate->il_config->big_endian;
+	io_req.big_endian = iset->il_ctx->config->big_endian;
 	if (rz_th_ring_buf_put(iset->io_request_rbuf, &io_req) != RZ_THREAD_RING_BUF_OK) {
 		return false;
 	}

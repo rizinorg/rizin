@@ -78,9 +78,8 @@ RZ_API RZ_OWN RzInterpYieldRBuf *rz_interpreter_yield_rbuf_new(RzInterpYieldKind
 RZ_API RZ_OWN RzInterpAbstrState *rz_interpreter_abstr_state_new(
 	const char *arch_name,
 	RzInterpAbstraction kinds,
-	RZ_BORROW RZ_NONNULL RzAnalysisILConfig *il_config,
-	RZ_NULLABLE const RzILRegBinding *reg_bindings) {
-	rz_return_val_if_fail(il_config && reg_bindings, NULL);
+	RZ_BORROW RZ_NONNULL RzAnalysisILContext *il_context) {
+	rz_return_val_if_fail(il_context, NULL);
 	RzInterpAbstrState *state = RZ_NEW0(RzInterpAbstrState);
 	if (!state) {
 		return NULL;
@@ -90,8 +89,8 @@ RZ_API RZ_OWN RzInterpAbstrState *rz_interpreter_abstr_state_new(
 	// Initialize the register file with uninitialized abstract values.
 	state->var_name_hashes = ht_up_new(NULL, free);
 	state->globals = ht_up_new(NULL, free);
-	for (size_t i = 0; i < reg_bindings->regs_count; i++) {
-		const char *rname = reg_bindings->regs[i].name;
+	for (size_t i = 0; i < il_context->reg_binding->regs_count; i++) {
+		const char *rname = il_context->reg_binding->regs[i].name;
 		RzInterpAbstrVal *aval = RZ_NEW0(RzInterpAbstrVal);
 		if (!aval) {
 			ht_up_free(state->globals);
@@ -114,7 +113,6 @@ RZ_API RZ_OWN RzInterpAbstrState *rz_interpreter_abstr_state_new(
 	}
 	state->locals = ht_up_new(NULL, free);
 	state->lets = ht_up_new(NULL, free);
-	state->il_config = il_config;
 	return state;
 }
 
@@ -178,7 +176,6 @@ RZ_API RZ_OWN RzInterpAbstrState *rz_interpreter_abstr_state_clone(RZ_NONNULL Rz
 	r->globals = var_set_clone(iset, state->globals);
 	r->locals = var_set_clone(iset, state->locals);
 	r->lets = var_set_clone(iset, state->lets);
-	r->il_config = state->il_config;
 	return r;
 }
 
@@ -204,9 +201,7 @@ RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpSet *iset) {
 	if (iset->run_state) {
 		rz_interp_run_state_free(iset->run_state);
 	}
-	if (iset->il_vm) {
-		rz_analysis_il_vm_free(iset->il_vm);
-	}
+	rz_analysis_il_context_free(iset->il_ctx);
 	free(iset);
 }
 
@@ -261,35 +256,18 @@ RZ_API RZ_OWN RzInterpSet *rz_interpreter_set_new(
 		return NULL;
 	}
 
-	// Perform the RzAnalysisILVM and abstract state setup procedure.
-	// This prototype won't use the RzAnalysisILVM directly but its components.
-	// That is because the prototypes doesn't handle the VM tasks (track PC, handle IO)
-	// in one VM object, but in separated modules.
-	// So analysis_vm->vm->vm_memorys is used for handling IO requests and
-	// analysis_vm->reg_binding is used for the abstract state setup.
-	//
-	// TODO: Is it a good idea to separate these tasks into different modules?
-	// It allows the IO handler to buffer reads in r-- sections for multiple interpreters.
-	// Possibly allows to optimize the IO access, because there is only module accessing it (not every interpreter).
-	// But is there any other advantage?
-	RzAnalysisILVM *il_vm = rz_analysis_il_vm_new(analysis, rz_analysis_get_reg(analysis));
-	if (!il_vm) {
+	RzAnalysisILContext *il_ctx = rz_analysis_il_context_resolve(analysis);
+	if (!il_ctx) {
 		free(iset);
-		RZ_LOG_ERROR("Failed during RzAnalysisILVM setup.\n");
+		RZ_LOG_ERROR("Failed to create analysis IL context.\n");
 		return NULL;
 	}
 
 	const RzAnalysisPlugin *cur = rz_analysis_plugin_current(analysis);
-	RzAnalysisILConfig *config = cur->il_config(analysis);
-	RzInterpAbstrState *state = rz_interpreter_abstr_state_new(
-		cur->arch,
-		abstraction,
-		config,
-		il_vm->reg_binding);
+	RzInterpAbstrState *state = rz_interpreter_abstr_state_new(cur->arch, abstraction, il_ctx);
 	if (!state) {
 		free(iset);
-		rz_analysis_il_vm_free(il_vm);
-		rz_analysis_il_config_free(config);
+		rz_analysis_il_context_free(il_ctx);
 		return NULL;
 	}
 
@@ -298,7 +276,7 @@ RZ_API RZ_OWN RzInterpSet *rz_interpreter_set_new(
 	RzThreadRingBuf *entry_points = NULL;
 	if (!setup_ipc_objects(&io_request_rbuf, &io_result_rbuf, &entry_points)) {
 		free(iset);
-		rz_analysis_il_vm_free(il_vm);
+		rz_analysis_il_context_free(il_ctx);
 		rz_interpreter_abstr_state_free(state);
 		return NULL;
 	}
@@ -307,7 +285,7 @@ RZ_API RZ_OWN RzInterpSet *rz_interpreter_set_new(
 	iset->plugin = plugin;
 	iset->astate = state;
 	iset->run_state = rz_interp_run_state_new();
-	iset->il_vm = il_vm;
+	iset->il_ctx = il_ctx;
 	iset->il_cache_client = il_cache_client;
 	iset->entry_points = entry_points;
 	iset->yield_rbufs[RZ_INTERP_YIELD_KIND_XREF] = yield_rbufs[RZ_INTERP_YIELD_KIND_XREF];
@@ -416,12 +394,7 @@ INIT: {
 	rz_interp_run_state_set(iset->run_state, RZ_INTERP_RUN_STATE_INIT);
 
 	const RzAnalysisPlugin *cur = rz_analysis_plugin_current(iset->a);
-	RzAnalysisILConfig *config = cur->il_config(iset->a);
-	RzInterpAbstrState *estate = rz_interpreter_abstr_state_new(
-		cur->arch,
-		RZ_INTERP_ABSTRACTION_CONST,
-		config,
-		iset->il_vm->reg_binding);
+	RzInterpAbstrState *estate = rz_interpreter_abstr_state_new(cur->arch, RZ_INTERP_ABSTRACTION_CONST, iset->il_ctx);
 
 	rz_list_purge(iset->fcn_state.queue);
 	ht_up_clear(iset->fcn_state.pc_states);

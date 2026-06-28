@@ -136,7 +136,7 @@ static bool init_state(RZ_BORROW RzInterpAbstrState *state, void *plugin_data) {
 		// TODO: Really a good idea to be so liberal?
 		// Or should the length of the globals be enforced?
 		// The bitvector arithmetic does enforce the length.
-		AD(av->abstr_data)->bv = rz_bv_new(state->il_config->mem_key_size);
+		AD(av->abstr_data)->bv = rz_bv_new(64);
 		// TODO: This is debatable. It depends on the ABI what the default values are.
 		// Some values must be concrete, otherwise the interpretation of the prototype end too early.
 		AD(av->abstr_data)->is_const = false;

@@ -196,14 +196,14 @@ RZ_API bool rz_inquiry_xref_interpreter_filter(RZ_NONNULL const RzAnalysisXRef *
 	return false;
 }
 
-static void handle_io_request(RzPVector /*<RzILMem *>*/ *il_mems, RzInterpIORequest *io_req, RZ_OUT RzInterpIOResult *io_res) {
+static void handle_io_request(RzAnalysisILContext *il_ctx, RzInterpIORequest *io_req, RZ_OUT RzInterpIOResult *io_res) {
 	RZ_LOG_DEBUG("inquiry: Received IO %s request: mem:%" PFMTSZd " 0x%" PFMT64x "\n",
 		io_req->type == RZ_INTERP_IO_WRITE ? "write" : "read",
 		io_req->mem_idx,
 		rz_bv_to_ut64(io_req->addr));
 	io_res->req_ok = false;
 	RzILMemIndex mem_idx = io_req->mem_idx;
-	if (rz_pvector_empty(il_mems) || rz_pvector_len(il_mems) <= mem_idx) {
+	if (mem_idx <= rz_vector_len(&il_ctx->memory)) {
 		rz_warn_if_reached();
 		return;
 	}
@@ -212,11 +212,14 @@ static void handle_io_request(RzPVector /*<RzILMem *>*/ *il_mems, RzInterpIORequ
 			     "63 bit set can't be addresses.\n");
 		return;
 	}
-	RzILMem *mem = rz_pvector_at(il_mems, mem_idx);
-	if (io_req->type == RZ_INTERP_IO_READ) {
-		io_res->req_ok = rz_il_mem_loadw_into(mem, io_req->ld_data, io_req->addr, io_req->n_bits, io_req->big_endian);
+	RzAnalysisILMem *mem = rz_vector_index_ptr(&il_ctx->memory, mem_idx);
+	if (!mem->base_buf) {
+		io_res->req_ok = false;
+	} else if (io_req->type == RZ_INTERP_IO_READ) {
+		io_res->req_ok = rz_il_loadw_into(mem->base_buf, io_req->ld_data, io_req->addr, io_req->n_bits, io_req->big_endian);
 	} else {
-		io_res->req_ok = rz_il_mem_storew(mem, io_req->addr, io_req->st_data, io_req->big_endian);
+		// TODO: stores from the interpreter should not be supported at all!
+		io_res->req_ok = rz_il_storew(mem->base_buf, io_req->addr, io_req->st_data, io_req->big_endian);
 	}
 	RZ_LOG_DEBUG("inquiry: Sent IO %s result. Success = %s.\n",
 		io_req->type == RZ_INTERP_IO_WRITE ? "write" : "read",
@@ -667,7 +670,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 					goto fatal_error;
 				} else if (r == RZ_THREAD_RING_BUF_OK) {
 					RzInterpIOResult io_res = { 0 };
-					handle_io_request(&iset->il_vm->vm->vm_memory, &io_req, &io_res);
+					handle_io_request(iset->il_ctx, &io_req, &io_res);
 					if (rz_th_ring_buf_put(iset->io_result_rbuf, &io_res) != RZ_THREAD_RING_BUF_OK) {
 						rz_warn_if_reached();
 						goto fatal_error;

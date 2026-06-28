@@ -154,7 +154,8 @@ static RzBitVector *read_n_bits(RzBuffer *buf, ut32 n_bits, RzBitVector *key, bo
 	return value;
 }
 
-static bool read_n_bits_into(RzBuffer *mem_buf, RZ_OUT RzBitVector *out_bv, ut32 n_bits, const RzBitVector *key, bool big_endian) {
+RZ_API bool rz_il_loadw_into(RZ_NONNULL RzBuffer *mem_buf, RZ_NONNULL RZ_OUT RzBitVector *out_bv, RZ_NONNULL const RzBitVector *key, ut32 n_bits, bool big_endian) {
+	rz_return_val_if_fail(mem_buf && out_bv && key, false);
 	ut64 address = rz_bv_to_ut64(key);
 	size_t n_bytes = rz_bv_len_bytes(out_bv);
 	ut8 *data = calloc(n_bytes, 1);
@@ -171,7 +172,9 @@ static bool read_n_bits_into(RzBuffer *mem_buf, RZ_OUT RzBitVector *out_bv, ut32
 	free(data);
 	return true;
 }
-static bool write_n_bits(RzBuffer *buf, const RzBitVector *key, const RzBitVector *value, bool big_endian) {
+
+RZ_API bool rz_il_storew(RZ_NONNULL RzBuffer *buf, RZ_NONNULL const RzBitVector *key, RZ_NONNULL const RzBitVector *value, bool big_endian) {
+	rz_return_val_if_fail(buf && key && value, false);
 	ut64 address = rz_bv_to_ut64(key);
 	ut32 n_bytes = rz_bv_len_bytes(value);
 
@@ -218,7 +221,7 @@ RZ_API bool rz_il_mem_loadw_into(RZ_NONNULL RzILMem *mem,
 	bool big_endian) {
 	rz_return_val_if_fail(mem && key && n_bits, false);
 	return_val_if_key_len_wrong(mem, key, NULL);
-	return read_n_bits_into(mem->buf, out_bv, n_bits, key, big_endian);
+	return rz_il_loadw_into(mem->buf, out_bv, key, n_bits, big_endian);
 }
 
 /**
@@ -230,5 +233,5 @@ RZ_API bool rz_il_mem_loadw_into(RZ_NONNULL RzILMem *mem,
 RZ_API bool rz_il_mem_storew(RzILMem *mem, const RzBitVector *key, const RzBitVector *value, bool big_endian) {
 	rz_return_val_if_fail(mem && key && value, false);
 	return_val_if_key_len_wrong(mem, key, false);
-	return write_n_bits(mem->buf, key, value, big_endian);
+	return rz_il_storew(mem->buf, key, value, big_endian);
 }
