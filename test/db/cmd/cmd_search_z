@@ -1548,3 +1548,30 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=Strings with new lines and \0 terminators
+FILE==
+CMDS=<<EOF
+# Searching in empty buffer should not find any strings
+/z .+ ri ascii
+
+# Now write strings with new lines and NUL byte mixed
+wx 41414141414141004141414141410a0041414141414141004141414141410a00
+
+# NUL is a new line by default
+/z .+ r ascii
+
+# Overwrite default newline (NUL), \0 can be matched now with dot.
+/z "(*LF).+" r ascii
+EOF
+EXPECT=<<EOF
+0x00000000 7 hit.string.ascii.0 7
+0x00000008 7 hit.string.ascii.1 7
+0x00000010 7 hit.string.ascii.2 7
+0x00000018 7 hit.string.ascii.3 7
+0x00000000 14 hit.string.ascii.0 14
+0x0000000f 15 hit.string.ascii.1 15
+0x0000001f 481 hit.string.ascii.2 1e1
+EOF
+EXPECT_ERR=
+RUN
