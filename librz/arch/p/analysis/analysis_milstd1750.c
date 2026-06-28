@@ -128,42 +128,42 @@ static void milstd_set_val(RzAnalysisOp *op, const MilStd1750Instruction *insn) 
 // Memory-operand data width in bytes for a memory-format opcode (op->ptrsize).
 static int milstd_mem_size(ut8 op8) {
 	switch (op8) {
-	// extended floating, 48-bit (EFL/EFA/EFS/EFM/EFD/EFC/EFST)
-	case 0x8A:
-	case 0xAA:
-	case 0xBA:
-	case 0xCA:
-	case 0xDA:
-	case 0xFA:
-	case 0x9A:
+	// extended floating, 48-bit
+	case MIL_OP_EFL >> 8:
+	case MIL_OP_EFA >> 8:
+	case MIL_OP_EFS >> 8:
+	case MIL_OP_EFM >> 8:
+	case MIL_OP_EFD >> 8:
+	case MIL_OP_EFC >> 8:
+	case MIL_OP_EFST >> 8:
 		return 6;
 	// double-precision integer and single floating, 32-bit
-	case 0x86: // DL
-	case 0x88: // DLI
-	case 0xDF: // DLE
-	case 0x96: // DST
-	case 0x98: // DSTI
-	case 0xDD: // DSTE
-	case 0xA6: // DA
-	case 0xB6: // DS
-	case 0xC6: // DM
-	case 0xD6: // DD
-	case 0xF6: // DC
-	case 0xA8: // FA
-	case 0xB8: // FS
-	case 0xC8: // FM
-	case 0xD8: // FD
-	case 0xF8: // FC
+	case MIL_OP_DL >> 8: 
+	case MIL_OP_DLI >> 8: 
+	case MIL_OP_DLE >> 8: 
+	case MIL_OP_DST >> 8: 
+	case MIL_OP_DSTI >> 8: 
+	case MIL_OP_DSTE >> 8: 
+	case MIL_OP_DA >> 8: 
+	case MIL_OP_DS >> 8: 
+	case MIL_OP_DM >> 8: 
+	case MIL_OP_DD >> 8: 
+	case MIL_OP_DC >> 8: 
+	case MIL_OP_FA >> 8: 
+	case MIL_OP_FS >> 8: 
+	case MIL_OP_FM >> 8: 
+	case MIL_OP_FD >> 8: 
+	case MIL_OP_FC >> 8: 
 		return 4;
-	// byte operand, 8-bit (LUB/LLB/LUBI/LLBI/STUB/STLB/SUBI/SLBI)
-	case 0x8B:
-	case 0x8C:
-	case 0x8D:
-	case 0x8E:
-	case 0x9B:
-	case 0x9C:
-	case 0x9D:
-	case 0x9E:
+	// byte operand, 8-bit
+	case MIL_OP_LUB >> 8:
+	case MIL_OP_LLB >> 8:
+	case MIL_OP_LUBI >> 8:
+	case MIL_OP_LLBI >> 8:
+	case MIL_OP_STUB >> 8:
+	case MIL_OP_STLB >> 8:
+	case MIL_OP_SUBI >> 8:
+	case MIL_OP_SLBI >> 8:
 		return 1;
 	default:
 		return 2; // single word (16-bit)
@@ -228,23 +228,23 @@ static void milstd_set_stack(RzAnalysisOp *op, const MilStd1750Instruction *insn
 	// PSHM/POPM transfer the inclusive register range Ra..Rb, wrapping the
 	// register selector modulo 16 (so Ra > Rb pushes Ra..R15, R0..Rb). The
 	// count is therefore ((Rb - Ra) mod 16) + 1, always 1..16.
-	case 0x9F: { // PSHM Ra, Rb — push registers (SP grows)
+	case MIL_OP_PSHM >> 8: { // PSHM Ra, Rb — push registers (SP grows)
 		int count = ((insn->rb - insn->ra) & 0xF) + 1;
 		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = count * 2;
 		break;
 	}
-	case 0x8F: { // POPM Ra, Rb — pop registers (SP shrinks)
+	case MIL_OP_POPM >> 8: { // POPM Ra, Rb — pop registers (SP shrinks)
 		int count = ((insn->rb - insn->ra) & 0xF) + 1;
 		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = -count * 2;
 		break;
 	}
-	case 0x7E: // SJS — stack the IC and jump (push one word)
+	case MIL_OP_SJS >> 8: // SJS — stack the IC and jump (push one word)
 		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = 2;
 		break;
-	case 0x7F: // URS — unstack the IC and return (pop one word)
+	case MIL_OP_URS >> 8: // URS — unstack the IC and return (pop one word)
 		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = -2;
 		break;
@@ -559,34 +559,34 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	}
 
 	// IM-format (0x4A): 4-bit opex selects which immediate op
-	if (insn.format == MIL_FMT_IM_OCX && op8 == 0x4A) {
+	if (insn.format == MIL_FMT_IM_OCX && op8 == (MIL_OP_AIM >> 8)) {
 		switch (insn.opex) {
-		case 0x1:
+		case (MIL_OP_AIM & 0xF):
 			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 			op->sign = true;
 			break; // AIM
-		case 0x2:
+		case (MIL_OP_SIM & 0xF):
 			op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 			op->sign = true;
 			break; // SIM
-		case 0x3: // MIM
-		case 0x4:
+		case (MIL_OP_MIM & 0xF): // MIM
+		case (MIL_OP_MSIM & 0xF):
 			op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 			op->sign = true;
 			break; // MSIM
-		case 0x5: // DIM
-		case 0x6:
+		case (MIL_OP_DIM & 0xF): // DIM
+		case (MIL_OP_DVIM & 0xF):
 			op->type = RZ_ANALYSIS_OP_TYPE_DIV;
 			op->sign = true;
 			break; // DVIM
-		case 0x7: op->type = RZ_ANALYSIS_OP_TYPE_AND; break; // ANDM
-		case 0x8: op->type = RZ_ANALYSIS_OP_TYPE_OR; break; // ORIM
-		case 0x9: op->type = RZ_ANALYSIS_OP_TYPE_XOR; break; // XORM
-		case 0xA:
+		case (MIL_OP_ANDM & 0xF): op->type = RZ_ANALYSIS_OP_TYPE_AND; break; // ANDM
+		case (MIL_OP_ORIM & 0xF): op->type = RZ_ANALYSIS_OP_TYPE_OR; break; // ORIM
+		case (MIL_OP_XORM & 0xF): op->type = RZ_ANALYSIS_OP_TYPE_XOR; break; // XORM
+		case (MIL_OP_CIM & 0xF):
 			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 			op->sign = true;
 			break; // CIM
-		case 0xB: op->type = RZ_ANALYSIS_OP_TYPE_NOT; break; // NIM
+		case (MIL_OP_NIM & 0xF): op->type = RZ_ANALYSIS_OP_TYPE_NOT; break; // NIM
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
 			milstd_set_val(op, &insn);
@@ -598,47 +598,47 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 
 	switch (op8) {
 	// --- Special / control flow boundaries ---
-	case 0xFF:
-		if (insn.raw_w1 == 0xFFFF) {
+	case MIL_OP_NOP >> 8:
+		if (insn.raw_w1 == MIL_OP_BPT) {
 			op->type = RZ_ANALYSIS_OP_TYPE_TRAP; // BPT
 			op->eob = true;
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		}
 		break;
-	case 0x7F: // URS — Unstack IC and Return from Subroutine
+	case MIL_OP_URS >> 8: // URS — Unstack IC and Return from Subroutine
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		op->eob = true;
 		break;
 
 	// --- ICR branches: target = addr + disp*2 (D = signed 8-bit) ---
-	case 0x74: // BR — unconditional
+	case MIL_OP_BR >> 8: // BR — unconditional
 		op->cond = RZ_TYPE_COND_AL;
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		op->jump = icr_target;
 		op->eob = true;
 		break;
-	case 0x75: // BEZ — branch if equal zero (Z)
-	case 0x76: // BLT — branch if less than zero (N)
-	case 0x78: // BLE — branch if less or equal zero (N|Z)
-	case 0x79: // BGT — branch if greater than zero (P)
-	case 0x7A: // BNZ — branch if not zero (P|N)
-	case 0x7B: // BGE — branch if greater or equal zero (P|Z)
+	case MIL_OP_BEZ >> 8: // BEZ — branch if equal zero (Z)
+	case MIL_OP_BLT >> 8: // BLT — branch if less than zero (N)
+	case MIL_OP_BLE >> 8: // BLE — branch if less or equal zero (N|Z)
+	case MIL_OP_BGT >> 8: // BGT — branch if greater than zero (P)
+	case MIL_OP_BNZ >> 8: // BNZ — branch if not zero (P|N)
+	case MIL_OP_BGE >> 8: // BGE — branch if greater or equal zero (P|Z)
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		switch (op8) {
-		case 0x75: op->cond = RZ_TYPE_COND_EQ; break;
-		case 0x76: op->cond = RZ_TYPE_COND_LT; break;
-		case 0x78: op->cond = RZ_TYPE_COND_LE; break;
-		case 0x79: op->cond = RZ_TYPE_COND_GT; break;
-		case 0x7A: op->cond = RZ_TYPE_COND_NE; break;
-		case 0x7B: op->cond = RZ_TYPE_COND_GE; break;
+		case MIL_OP_BEZ >> 8: op->cond = RZ_TYPE_COND_EQ; break;
+		case MIL_OP_BLT >> 8: op->cond = RZ_TYPE_COND_LT; break;
+		case MIL_OP_BLE >> 8: op->cond = RZ_TYPE_COND_LE; break;
+		case MIL_OP_BGT >> 8: op->cond = RZ_TYPE_COND_GT; break;
+		case MIL_OP_BNZ >> 8: op->cond = RZ_TYPE_COND_NE; break;
+		case MIL_OP_BGE >> 8: op->cond = RZ_TYPE_COND_GE; break;
 		}
 		op->jump = icr_target;
 		op->fail = next_pc;
 		break;
 
 	// --- Memory-format jumps: target word in w2 → byte = w2*2 ---
-	case 0x70: // JC C, LABEL — Jump on Condition (direct)
+	case MIL_OP_JC >> 8: // JC C, LABEL — Jump on Condition (direct)
 		if (insn.cond == 0) {
 			op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		} else if (insn.cond == 0x7 || insn.cond == 0xF) {
@@ -653,12 +653,12 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 			op->fail = next_pc;
 		}
 		break;
-	case 0x71: // JCI C, ADDR — Jump on Condition (indirect)
+	case MIL_OP_JCI >> 8: // JCI C, ADDR — Jump on Condition (indirect)
 		if (insn.cond == 0) {
 			op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		} else if (insn.cond == 0x7 || insn.cond == 0xF) {
 			op->cond = RZ_TYPE_COND_AL;
-			op->type = RZ_ANALYSIS_OP_TYPE_MJMP; // unconditional indirect
+			op->type = RZ_ANALYSIS_OP_TYPE_MJMP;
 			op->eob = true;
 		} else {
 			op->cond = jc_cond_to_type(insn.cond);
@@ -666,267 +666,267 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 			op->fail = next_pc;
 		}
 		break;
-	case 0x72: // JS — Jump to Subroutine (return addr in RA)
-	case 0x7E: // SJS — Stack IC and Jump to Subroutine
+	case MIL_OP_JS >> 8: // JS — Jump to Subroutine (return addr in RA)
+	case MIL_OP_SJS >> 8: // SJS — Stack IC and Jump to Subroutine
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		op->jump = abs_target;
 		op->fail = next_pc;
 		break;
-	case 0x73: // SOJ — Subtract One and Jump (taken while RA != 0)
+	case MIL_OP_SOJ >> 8: // SOJ — Subtract One and Jump (taken while RA != 0)
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->cond = RZ_TYPE_COND_NE;
 		op->jump = abs_target;
 		op->fail = next_pc;
 		break;
-	case 0x77: // BEX N — Branch to Executive (interrupt-vectored)
+	case MIL_OP_BEX >> 8: // BEX N — Branch to Executive (interrupt-vectored)
 		op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
 		op->eob = true;
 		break;
-	case 0x4F: // BIF — Branch on Input Flag (target unknown statically)
+	case MIL_OP_BIF >> 8: // BIF — Branch on Input Flag (target unknown statically)
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->fail = next_pc;
 		break;
 
 	// --- LST/LSTI: load (MK,SW,IC) from memory; unconditional indirect jump ---
-	case 0x7C: // LSTI ADDR — indirect load status (also reloads IC)
-	case 0x7D: // LST ADDR — direct load status (also reloads IC)
+	case MIL_OP_LSTI >> 8: // LSTI ADDR — indirect load status (also reloads IC)
+	case MIL_OP_LST >> 8: // LST ADDR — direct load status (also reloads IC)
 		op->type = RZ_ANALYSIS_OP_TYPE_MJMP;
 		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 		op->eob = true;
 		break;
 
 	// --- I/O ---
-	case 0x48: // XIO
-	case 0x49: // VIO
+	case MIL_OP_XIO >> 8:
+	case MIL_OP_VIO >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_IO;
 		op->family = RZ_ANALYSIS_OP_FAMILY_IO;
 		break;
 
 	// --- Stack ---
-	case 0x8F: op->type = RZ_ANALYSIS_OP_TYPE_POP; break; // POPM
-	case 0x9F:
+	case MIL_OP_POPM >> 8: op->type = RZ_ANALYSIS_OP_TYPE_POP; break; // POPM
+	case MIL_OP_PSHM >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
-		break; // PSHM
+		break; 
 
 	// --- Move / exchange ---
-	case 0x93: // MOV
-	case 0xEC: // XBR
-	case 0xED: // XWR
+	case MIL_OP_MOV >> 8: 
+	case MIL_OP_XBR >> 8: 
+	case MIL_OP_XWR >> 8: 
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 
 	// --- Add ---
-	case 0xA8: // FA
-	case 0xA9: // FAR
-	case 0xAA: // EFA
-	case 0xAB: // EFAR
-	case 0xAC: // FABS
-	case 0xAD: // UAR (unsigned)
-	case 0xAE: // UA  (unsigned)
+	case MIL_OP_FA >> 8: 
+	case MIL_OP_FAR >> 8: 
+	case MIL_OP_EFA >> 8: 
+	case MIL_OP_EFAR >> 8:
+	case MIL_OP_FABS >> 8:
+	case MIL_OP_UAR >> 8: 
+	case MIL_OP_UA >> 8: 
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
-	case 0x10: // AB
-	case 0xA0: // A
-	case 0xA1: // AR
-	case 0xA2: // AISP
-	case 0xA3: // INCM
-	case 0xA4: // ABS
-	case 0xA6: // DA  (double-precision)
-	case 0xA7: // DAR
+	case MIL_OP_AB >> 8: 
+	case MIL_OP_A >> 8: 
+	case MIL_OP_AR >> 8: 
+	case MIL_OP_AISP >> 8: 
+	case MIL_OP_INCM >> 8: 
+	case MIL_OP_ABS >> 8:
+	case MIL_OP_DA >> 8: 
+	case MIL_OP_DAR >> 8: 
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		op->sign = true;
 		break;
 
 	// --- Sub ---
-	case 0xB8: // FS
-	case 0xB9: // FSR
-	case 0xBA: // EFS
-	case 0xBB: // EFSR
-	case 0xBC: // FNEG
-	case 0xBD: // USR (unsigned)
-	case 0xBE: // US  (unsigned)
+	case MIL_OP_FS >> 8: 
+	case MIL_OP_FSR >> 8: 
+	case MIL_OP_EFS >> 8: 
+	case MIL_OP_EFSR >> 8: 
+	case MIL_OP_FNEG >> 8: 
+	case MIL_OP_USR >> 8: 
+	case MIL_OP_US >> 8: 
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		break;
-	case 0x14: // SBB
-	case 0xB0: // S
-	case 0xB1: // SR
-	case 0xB2: // SISP
-	case 0xB3: // DECM
-	case 0xB4: // NEG
-	case 0xB5: // DNEG
-	case 0xB6: // DS  (double-precision)
-	case 0xB7: // DSR
+	case MIL_OP_SBB >> 8:
+	case MIL_OP_S >> 8:
+	case MIL_OP_SR >> 8:
+	case MIL_OP_SISP >> 8:
+	case MIL_OP_DECM >> 8:
+	case MIL_OP_NEG >> 8:
+	case MIL_OP_DNEG >> 8:
+	case MIL_OP_DS >> 8:
+	case MIL_OP_DSR >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		op->sign = true;
 		break;
 
 	// --- Mul ---
-	case 0xC8: // FM
-	case 0xC9: // FMR
-	case 0xCA: // EFM
-	case 0xCB: // EFMR
+	case MIL_OP_FM >> 8:
+	case MIL_OP_FMR >> 8:
+	case MIL_OP_EFM >> 8:
+	case MIL_OP_EFMR >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 		break;
-	case 0x18: // MB
-	case 0xC0: // MS
-	case 0xC1: // MSR
-	case 0xC2: // MISP
-	case 0xC3: // MISN
-	case 0xC4: // M
-	case 0xC5: // MR
-	case 0xC6: // DM
-	case 0xC7: // DMR
+	case MIL_OP_MB >> 8:
+	case MIL_OP_MS >> 8:
+	case MIL_OP_MSR >> 8:
+	case MIL_OP_MISP >> 8:
+	case MIL_OP_MISN >> 8:
+	case MIL_OP_M >> 8:
+	case MIL_OP_MR >> 8:
+	case MIL_OP_DM >> 8:
+	case MIL_OP_DMR >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 		op->sign = true;
 		break;
 
 	// --- Div ---
-	case 0xD8: // FD
-	case 0xD9: // FDR
-	case 0xDA: // EFD
-	case 0xDB: // EFDR
+	case MIL_OP_FD >> 8:
+	case MIL_OP_FDR >> 8:
+	case MIL_OP_EFD >> 8:
+	case MIL_OP_EFDR >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
 		break;
-	case 0x1C: // DB
-	case 0xD0: // DV
-	case 0xD1: // DVR
-	case 0xD2: // DISP
-	case 0xD3: // DISN
-	case 0xD4: // D
-	case 0xD5: // DR
-	case 0xD6: // DD
-	case 0xD7: // DDR
+	case MIL_OP_DB >> 8:
+	case MIL_OP_DV >> 8:
+	case MIL_OP_DVR >> 8:
+	case MIL_OP_DISP >> 8:
+	case MIL_OP_DISN >> 8:
+	case MIL_OP_D >> 8:
+	case MIL_OP_DR >> 8:
+	case MIL_OP_DD >> 8:
+	case MIL_OP_DDR >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
 		op->sign = true;
 		break;
 
 	// --- Logical ---
-	case 0x34: // ANDB
-	case 0xE2: // AND
-	case 0xE3: // ANDR
+	case MIL_OP_ANDB >> 8:
+	case MIL_OP_AND >> 8:
+	case MIL_OP_ANDR >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		break;
-	case 0x30: // ORB
-	case 0xE0: // OR
-	case 0xE1: // ORR
+	case MIL_OP_ORB >> 8:
+	case MIL_OP_OR >> 8:
+	case MIL_OP_ORR >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_OR;
 		break;
-	case 0xE4: // XOR
-	case 0xE5: // XORR
+	case MIL_OP_XOR >> 8:
+	case MIL_OP_XORR >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 		break;
-	case 0xE6: // N
-	case 0xE7: // NR
+	case MIL_OP_N >> 8:
+	case MIL_OP_NR >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOT;
 		break;
 
 	// --- Shifts ---
-	case 0x60: // SLL
-	case 0x63: // SLC
-	case 0x65: // DSLL
-	case 0x68: // DSLC
-	case 0x6A: // SLR
-	case 0x6D: // DSLR
+	case MIL_OP_SLL >> 8:
+	case MIL_OP_SLC >> 8:
+	case MIL_OP_DSLL >> 8:
+	case MIL_OP_DSLC >> 8:
+	case MIL_OP_SLR >> 8:
+	case MIL_OP_DSLR >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
 		break;
-	case 0x61: // SRL  (logical)
-	case 0x66: // DSRL (logical)
-	case 0x6C: // SCR  (cyclic)
-	case 0x6F: // DSCR (cyclic)
+	case MIL_OP_SRL >> 8:
+	case MIL_OP_DSRL >> 8:
+	case MIL_OP_SCR >> 8:
+	case MIL_OP_DSCR >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
 		break;
-	case 0x62: // SRA  (arithmetic — sign-extends)
-	case 0x67: // DSRA (arithmetic)
-	case 0x6B: // SAR  (arithmetic)
-	case 0x6E: // DSAR (arithmetic)
+	case MIL_OP_SRA >> 8:
+	case MIL_OP_DSRA >> 8:
+	case MIL_OP_SAR >> 8:
+	case MIL_OP_DSAR >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
 		op->sign = true;
 		break;
 
 	// --- Compare ---
-	case 0xF8: // FC
-	case 0xF9: // FCR
-	case 0xFA: // EFC
-	case 0xFB: // EFCR
-	case 0xFC: // UCR (unsigned)
-	case 0xFD: // UC  (unsigned)
+	case MIL_OP_FC >> 8:
+	case MIL_OP_FCR >> 8:
+	case MIL_OP_EFC >> 8:
+	case MIL_OP_EFCR >> 8:
+	case MIL_OP_UCR >> 8:
+	case MIL_OP_UC >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
-	case 0x38: // CB
-	case 0xF0: // C
-	case 0xF1: // CR
-	case 0xF2: // CISP
-	case 0xF3: // CISN
-	case 0xF4: // CBL
-	case 0xF6: // DC  (double-precision)
-	case 0xF7: // DCR
+	case MIL_OP_CB >> 8:
+	case MIL_OP_C >> 8:
+	case MIL_OP_CR >> 8:
+	case MIL_OP_CISP >> 8:
+	case MIL_OP_CISN >> 8:
+	case MIL_OP_CBL >> 8:
+	case MIL_OP_DC >> 8:
+	case MIL_OP_DCR >> 8: 
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		op->sign = true;
 		break;
 
 	// --- Loads ---
-	case 0x00: // LB
-	case 0x04: // DLB
-	case 0x80: // L
-	case 0x81: // LR
-	case 0x82: // LISP
-	case 0x83: // LISN
-	case 0x84: // LI
-	case 0x85: // LIM
-	case 0x86: // DL
-	case 0x87: // DLR
-	case 0x88: // DLI
-	case 0x89: // LM
-	case 0x8A: // EFL
-	case 0x8B: // LUB
-	case 0x8C: // LLB
-	case 0x8D: // LUBI
-	case 0x8E: // LLBI
-	case 0xDE: // LE
-	case 0xDF: // DLE
+	case MIL_OP_LB >> 8:
+	case MIL_OP_DLB >> 8:
+	case MIL_OP_L >> 8:
+	case MIL_OP_LR >> 8:
+	case MIL_OP_LISP >> 8:
+	case MIL_OP_LISN >> 8:
+	case MIL_OP_LI >> 8:
+	case MIL_OP_LIM >> 8:
+	case MIL_OP_DL >> 8:
+	case MIL_OP_DLR >> 8:
+	case MIL_OP_DLI >> 8:
+	case MIL_OP_LM >> 8:
+	case MIL_OP_EFL >> 8:
+	case MIL_OP_LUB >> 8:
+	case MIL_OP_LLB >> 8:
+	case MIL_OP_LUBI >> 8:
+	case MIL_OP_LLBI >> 8:
+	case MIL_OP_LE >> 8:
+	case MIL_OP_DLE >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		break;
 
 	// --- Stores ---
-	case 0x08: // STB
-	case 0x0C: // DSTB
-	case 0x90: // ST
-	case 0x91: // STC
-	case 0x92: // STCI
-	case 0x94: // STI
-	case 0x95: // SFBS
-	case 0x96: // DST
-	case 0x97: // SRM
-	case 0x98: // DSTI
-	case 0x99: // STM
-	case 0x9A: // EFST
-	case 0x9B: // STUB
-	case 0x9C: // STLB
-	case 0x9D: // SUBI
-	case 0x9E: // SLBI
-	case 0xDC: // STE
-	case 0xDD: // DSTE
+	case MIL_OP_STB >> 8:
+	case MIL_OP_DSTB >> 8:
+	case MIL_OP_ST >> 8:
+	case MIL_OP_STC >> 8:
+	case MIL_OP_STCI >> 8:
+	case MIL_OP_STI >> 8:
+	case MIL_OP_SFBS >> 8:
+	case MIL_OP_DST >> 8:
+	case MIL_OP_SRM >> 8:
+	case MIL_OP_DSTI >> 8:
+	case MIL_OP_STM >> 8:
+	case MIL_OP_EFST >> 8:
+	case MIL_OP_STUB >> 8:
+	case MIL_OP_STLB >> 8:
+	case MIL_OP_SUBI >> 8:
+	case MIL_OP_SLBI >> 8: 
+	case MIL_OP_STE >> 8:
+	case MIL_OP_DSTE >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		break;
 
 	// --- Bit set/reset/test ---
-	case 0x50: // SB
-	case 0x51: // SBR
-	case 0x52: // SBI
-	case 0x59: // TSB
-	case 0x5A: // SVBR
+	case MIL_OP_SB >> 8:
+	case MIL_OP_SBR >> 8:
+	case MIL_OP_SBI >> 8:
+	case MIL_OP_TSB >> 8:
+	case MIL_OP_SVBR >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_OR;
 		break;
-	case 0x53: // RB
-	case 0x54: // RBR
-	case 0x55: // RBI
-	case 0x5C: // RVBR
+	case MIL_OP_RB >> 8:
+	case MIL_OP_RBR >> 8:
+	case MIL_OP_RBI >> 8:
+	case MIL_OP_RVBR >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		break;
-	case 0x56: // TB
-	case 0x57: // TBR
-	case 0x58: // TBI
-	case 0x5E: // TVBR
+	case MIL_OP_TB >> 8:
+	case MIL_OP_TBR >> 8:
+	case MIL_OP_TBI >> 8:
+	case MIL_OP_TVBR >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
 	}

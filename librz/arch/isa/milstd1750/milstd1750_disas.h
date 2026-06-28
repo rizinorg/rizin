@@ -5,6 +5,7 @@
 #define RZ_MILSTD1750_DISAS_H
 
 #include <rz_asm.h>
+#include "opcodes.h"
 
 typedef enum {
 	MIL_FMT_NONE, // no operands
