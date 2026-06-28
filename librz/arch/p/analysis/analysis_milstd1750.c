@@ -27,6 +27,14 @@ static RzTypeCond jc_cond_to_type(ut8 cc) {
 	}
 }
 
+static const char *milstd_reg_name(ut8 n) {
+	static const char *const regs[16] = {
+		"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+		"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"
+	};
+	return regs[n & 0xF];
+}
+
 // True for instruction formats that reference memory (as opposed to
 // register-only or immediate forms). Used to decide whether a data-processing
 // op actually touches memory.
@@ -245,6 +253,70 @@ static void milstd_set_stack(RzAnalysisOp *op, const MilStd1750Instruction *insn
 	}
 }
 
+// Set op->reg (destination register) and op->ireg (register used to compute a
+// memory effective address). Driven by the addressing format; op->type filters
+// out instructions that have no register destination.
+static void milstd_set_reg(RzAnalysisOp *op, const MilStd1750Instruction *insn) {
+	// Index / base register of the effective-address computation.
+	switch (insn->format) {
+	case MIL_FMT_MEM:
+	case MIL_FMT_IM_0_15:
+	case MIL_FMT_IM_1_16:
+	case MIL_FMT_ADDR:
+		if (insn->rx) { // Rx == 0 means no indexing
+			op->ireg = milstd_reg_name(insn->rx);
+		}
+		break;
+	case MIL_FMT_BX: // base-relative indexed: base R(br), index Rx
+		op->ireg = milstd_reg_name(insn->rx ? insn->rx : insn->br);
+		break;
+	case MIL_FMT_B: // base-relative: address computed from base register
+		op->ireg = milstd_reg_name(insn->br);
+		break;
+	default:
+		break;
+	}
+
+	// Destination register: Ra for the Ra-based forms, Rb for the immediate
+	// forms (IMM_R/R_IMM, e.g. shifts and register bit ops).
+	const char *dst = NULL;
+	switch (insn->format) {
+	case MIL_FMT_R:
+	case MIL_FMT_SR:
+	case MIL_FMT_IS:
+	case MIL_FMT_IM_OCX:
+	case MIL_FMT_MEM:
+		dst = milstd_reg_name(insn->ra);
+		break;
+	case MIL_FMT_IMM_R:
+	case MIL_FMT_R_IMM:
+		dst = milstd_reg_name(insn->rb);
+		break;
+	default:
+		break;
+	}
+	// Drop it for ops with no register destination: compares, stores (memory is
+	// the destination), the multi-register stack ops, and control flow.
+	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
+	case RZ_ANALYSIS_OP_TYPE_CMP:
+	case RZ_ANALYSIS_OP_TYPE_STORE:
+	case RZ_ANALYSIS_OP_TYPE_PUSH:
+	case RZ_ANALYSIS_OP_TYPE_POP:
+	case RZ_ANALYSIS_OP_TYPE_JMP:
+	case RZ_ANALYSIS_OP_TYPE_CJMP:
+	case RZ_ANALYSIS_OP_TYPE_CALL:
+	case RZ_ANALYSIS_OP_TYPE_UCALL:
+	case RZ_ANALYSIS_OP_TYPE_MJMP:
+	case RZ_ANALYSIS_OP_TYPE_MCJMP:
+	case RZ_ANALYSIS_OP_TYPE_RET:
+		dst = NULL;
+		break;
+	default:
+		break;
+	}
+	op->reg = dst;
+}
+
 static void set_invalid(RzAnalysisOp *op, ut64 addr) {
 	op->family = RZ_ANALYSIS_OP_FAMILY_UNKNOWN;
 	op->type = RZ_ANALYSIS_OP_TYPE_ILL;
@@ -319,6 +391,7 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
 			milstd_set_val(op, &insn);
+			milstd_set_reg(op, &insn);
 		}
 		return op->size;
 	}
@@ -664,6 +737,7 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		milstd_set_val(op, &insn);
 		milstd_set_ptr(op, &insn, op8);
 		milstd_set_datatype(op, &insn);
+		milstd_set_reg(op, &insn);
 	}
 	return op->size;
 }
