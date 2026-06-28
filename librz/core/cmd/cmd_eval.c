@@ -481,6 +481,21 @@ static RZ_BORROW RzConfig *eval_get_config_obj_by_key(const RzCore *core, const 
 	return cfg;
 }
 
+static RZ_BORROW RzConfig *eval_get_config_obj_by_key_or_error(RzCore *core, const char *config_str, RzCmdStatus *status) {
+	bool invalid_plugin = false;
+	RzConfig *cfg = eval_get_config_obj_by_key(core, config_str, &invalid_plugin);
+	if (!cfg) {
+		if (invalid_plugin) {
+			RZ_LOG_ERROR("core: Invalid config key '%s'\n", config_str);
+			*status = RZ_CMD_STATUS_ERROR;
+		} else {
+			print_all_plugin_configs(core);
+			*status = RZ_CMD_STATUS_OK;
+		}
+	}
+	return cfg;
+}
+
 RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **argv) {
 	int i;
 	for (i = 1; i < argc; i++) {
@@ -499,17 +514,11 @@ RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **a
 			continue;
 		}
 
-		RzConfig *cfg = NULL;
-		bool invalid_plugin = false;
-		if (!(cfg = eval_get_config_obj_by_key(core, key, &invalid_plugin))) {
-			if (invalid_plugin) {
-				RZ_LOG_ERROR("core: Invalid config key '%s'\n", key);
-				rz_list_free(l);
-				return RZ_CMD_STATUS_ERROR;
-			}
-			print_all_plugin_configs(core);
+		RzCmdStatus status;
+		RzConfig *cfg = eval_get_config_obj_by_key_or_error(core, key, &status);
+		if (!cfg) {
 			rz_list_free(l);
-			return RZ_CMD_STATUS_OK;
+			return status;
 		}
 		if (llen == 1 && rz_str_endswith(key, ".")) {
 			// no value was set, only key with ".". List possible sub-keys.
@@ -539,15 +548,10 @@ RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **a
 
 RZ_IPI RzCmdStatus rz_eval_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	const char *arg = argc > 1 ? argv[1] : "";
-	RzConfig *cfg = NULL;
-	bool invalid_plugin = false;
-	if (!(cfg = eval_get_config_obj_by_key(core, arg, &invalid_plugin))) {
-		if (invalid_plugin) {
-			RZ_LOG_ERROR("core: Invalid config key '%s'\n", arg);
-			return RZ_CMD_STATUS_ERROR;
-		}
-		print_all_plugin_configs(core);
-		return RZ_CMD_STATUS_OK;
+	RzCmdStatus status;
+	RzConfig *cfg = eval_get_config_obj_by_key_or_error(core, arg, &status);
+	if (!cfg) {
+		return status;
 	}
 	rz_core_config_print_all(cfg, arg, state);
 	return RZ_CMD_STATUS_OK;
@@ -559,15 +563,10 @@ RZ_IPI RzCmdStatus rz_eval_reset_handler(RzCore *core, int argc, const char **ar
 }
 
 RZ_IPI RzCmdStatus rz_eval_bool_invert_handler(RzCore *core, int argc, const char **argv) {
-	RzConfig *cfg = NULL;
-	bool invalid_plugin = false;
-	if (!(cfg = eval_get_config_obj_by_key(core, argv[1], &invalid_plugin))) {
-		if (invalid_plugin) {
-			RZ_LOG_ERROR("core: Invalid config key '%s'\n", argv[1]);
-			return RZ_CMD_STATUS_ERROR;
-		}
-		print_all_plugin_configs(core);
-		return RZ_CMD_STATUS_OK;
+	RzCmdStatus status;
+	RzConfig *cfg = eval_get_config_obj_by_key_or_error(core, argv[1], &status);
+	if (!cfg) {
+		return status;
 	}
 	if (!rz_config_toggle(cfg, argv[1])) {
 		RZ_LOG_ERROR("core: Cannot toggle config key '%s'\n", argv[1]);
@@ -577,15 +576,10 @@ RZ_IPI RzCmdStatus rz_eval_bool_invert_handler(RzCore *core, int argc, const cha
 }
 
 RZ_IPI RzCmdStatus rz_eval_editor_handler(RzCore *core, int argc, const char **argv) {
-	RzConfig *cfg = NULL;
-	bool invalid_plugin = false;
-	if (!(cfg = eval_get_config_obj_by_key(core, argv[1], &invalid_plugin))) {
-		if (invalid_plugin) {
-			RZ_LOG_ERROR("core: Invalid config key '%s'\n", argv[1]);
-			return RZ_CMD_STATUS_ERROR;
-		}
-		print_all_plugin_configs(core);
-		return RZ_CMD_STATUS_OK;
+	RzCmdStatus status;
+	RzConfig *cfg = eval_get_config_obj_by_key_or_error(core, argv[1], &status);
+	if (!cfg) {
+		return status;
 	}
 	char *val = rz_config_get_as_string(cfg, argv[1]);
 	if (!val) {
@@ -603,15 +597,10 @@ RZ_IPI RzCmdStatus rz_eval_editor_handler(RzCore *core, int argc, const char **a
 }
 
 RZ_IPI RzCmdStatus rz_eval_readonly_handler(RzCore *core, int argc, const char **argv) {
-	RzConfig *cfg = NULL;
-	bool invalid_plugin = false;
-	if (!(cfg = eval_get_config_obj_by_key(core, argv[1], &invalid_plugin))) {
-		if (invalid_plugin) {
-			RZ_LOG_ERROR("core: Invalid config key '%s'\n", argv[1]);
-			return RZ_CMD_STATUS_ERROR;
-		}
-		print_all_plugin_configs(core);
-		return RZ_CMD_STATUS_OK;
+	RzCmdStatus status;
+	RzConfig *cfg = eval_get_config_obj_by_key_or_error(core, argv[1], &status);
+	if (!cfg) {
+		return status;
 	}
 
 	if (!rz_config_set_readonly(cfg, argv[1], true)) {
@@ -637,15 +626,10 @@ RZ_IPI RzCmdStatus rz_eval_spaces_handler(RzCore *core, int argc, const char **a
 }
 
 RZ_IPI RzCmdStatus rz_eval_type_handler(RzCore *core, int argc, const char **argv) {
-	RzConfig *cfg = NULL;
-	bool invalid_plugin = false;
-	if (!(cfg = eval_get_config_obj_by_key(core, argv[1], &invalid_plugin))) {
-		if (invalid_plugin) {
-			RZ_LOG_ERROR("core: Invalid config key '%s'\n", argv[1]);
-			return RZ_CMD_STATUS_ERROR;
-		}
-		print_all_plugin_configs(core);
-		return RZ_CMD_STATUS_OK;
+	RzCmdStatus status;
+	RzConfig *cfg = eval_get_config_obj_by_key_or_error(core, argv[1], &status);
+	if (!cfg) {
+		return status;
 	}
 	RzConfigNode *node = rz_config_node_get(cfg, argv[1]);
 	if (!node) {
