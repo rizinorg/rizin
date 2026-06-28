@@ -138,22 +138,22 @@ static int milstd_mem_size(ut8 op8) {
 	case MIL_OP_EFST >> 8:
 		return 6;
 	// double-precision integer and single floating, 32-bit
-	case MIL_OP_DL >> 8: 
-	case MIL_OP_DLI >> 8: 
-	case MIL_OP_DLE >> 8: 
-	case MIL_OP_DST >> 8: 
-	case MIL_OP_DSTI >> 8: 
-	case MIL_OP_DSTE >> 8: 
-	case MIL_OP_DA >> 8: 
-	case MIL_OP_DS >> 8: 
-	case MIL_OP_DM >> 8: 
-	case MIL_OP_DD >> 8: 
-	case MIL_OP_DC >> 8: 
-	case MIL_OP_FA >> 8: 
-	case MIL_OP_FS >> 8: 
-	case MIL_OP_FM >> 8: 
-	case MIL_OP_FD >> 8: 
-	case MIL_OP_FC >> 8: 
+	case MIL_OP_DL >> 8:
+	case MIL_OP_DLI >> 8:
+	case MIL_OP_DLE >> 8:
+	case MIL_OP_DST >> 8:
+	case MIL_OP_DSTI >> 8:
+	case MIL_OP_DSTE >> 8:
+	case MIL_OP_DA >> 8:
+	case MIL_OP_DS >> 8:
+	case MIL_OP_DM >> 8:
+	case MIL_OP_DD >> 8:
+	case MIL_OP_DC >> 8:
+	case MIL_OP_FA >> 8:
+	case MIL_OP_FS >> 8:
+	case MIL_OP_FM >> 8:
+	case MIL_OP_FD >> 8:
+	case MIL_OP_FC >> 8:
 		return 4;
 	// byte operand, 8-bit
 	case MIL_OP_LUB >> 8:
@@ -585,7 +585,7 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		case (MIL_OP_CIM & 0xF):
 			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 			op->sign = true;
-			break; 
+			break;
 		case (MIL_OP_NIM & 0xF): op->type = RZ_ANALYSIS_OP_TYPE_NOT; break; // NIM
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
@@ -706,45 +706,45 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case MIL_OP_POPM >> 8: op->type = RZ_ANALYSIS_OP_TYPE_POP; break; // POPM
 	case MIL_OP_PSHM >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
-		break; 
+		break;
 
 	// --- Move / exchange ---
-	case MIL_OP_MOV >> 8: 
-	case MIL_OP_XBR >> 8: 
-	case MIL_OP_XWR >> 8: 
+	case MIL_OP_MOV >> 8:
+	case MIL_OP_XBR >> 8:
+	case MIL_OP_XWR >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 
 	// --- Add ---
-	case MIL_OP_FA >> 8: 
-	case MIL_OP_FAR >> 8: 
-	case MIL_OP_EFA >> 8: 
+	case MIL_OP_FA >> 8:
+	case MIL_OP_FAR >> 8:
+	case MIL_OP_EFA >> 8:
 	case MIL_OP_EFAR >> 8:
 	case MIL_OP_FABS >> 8:
-	case MIL_OP_UAR >> 8: 
-	case MIL_OP_UA >> 8: 
+	case MIL_OP_UAR >> 8:
+	case MIL_OP_UA >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
-	case MIL_OP_AB >> 8: 
-	case MIL_OP_A >> 8: 
-	case MIL_OP_AR >> 8: 
-	case MIL_OP_AISP >> 8: 
-	case MIL_OP_INCM >> 8: 
+	case MIL_OP_AB >> 8:
+	case MIL_OP_A >> 8:
+	case MIL_OP_AR >> 8:
+	case MIL_OP_AISP >> 8:
+	case MIL_OP_INCM >> 8:
 	case MIL_OP_ABS >> 8:
-	case MIL_OP_DA >> 8: 
-	case MIL_OP_DAR >> 8: 
+	case MIL_OP_DA >> 8:
+	case MIL_OP_DAR >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		op->sign = true;
 		break;
 
 	// --- Sub ---
-	case MIL_OP_FS >> 8: 
-	case MIL_OP_FSR >> 8: 
-	case MIL_OP_EFS >> 8: 
-	case MIL_OP_EFSR >> 8: 
-	case MIL_OP_FNEG >> 8: 
-	case MIL_OP_USR >> 8: 
-	case MIL_OP_US >> 8: 
+	case MIL_OP_FS >> 8:
+	case MIL_OP_FSR >> 8:
+	case MIL_OP_EFS >> 8:
+	case MIL_OP_EFSR >> 8:
+	case MIL_OP_FNEG >> 8:
+	case MIL_OP_USR >> 8:
+	case MIL_OP_US >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		break;
 	case MIL_OP_SBB >> 8:
@@ -859,7 +859,7 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case MIL_OP_CISN >> 8:
 	case MIL_OP_CBL >> 8:
 	case MIL_OP_DC >> 8:
-	case MIL_OP_DCR >> 8: 
+	case MIL_OP_DCR >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		op->sign = true;
 		break;
@@ -903,7 +903,7 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case MIL_OP_STUB >> 8:
 	case MIL_OP_STLB >> 8:
 	case MIL_OP_SUBI >> 8:
-	case MIL_OP_SLBI >> 8: 
+	case MIL_OP_SLBI >> 8:
 	case MIL_OP_STE >> 8:
 	case MIL_OP_DSTE >> 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
