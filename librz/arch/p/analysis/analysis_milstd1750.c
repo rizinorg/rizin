@@ -210,6 +210,41 @@ static void milstd_set_datatype(RzAnalysisOp *op, const MilStd1750Instruction *i
 	}
 }
 
+// Set op->stackop / op->stackptr for the stack instructions. Per MIL-STD-1750A
+// R15 is the implicit stack pointer and the stack grows toward lower addresses,
+// matching rizin's convention (RZ_ANALYSIS_STACK_INC applies sp -= stackptr, so
+// a positive stackptr means the stack grows). Each register is one 16-bit word;
+// stackptr is expressed in bytes to match the plugin's byte-addressed model.
+static void milstd_set_stack(RzAnalysisOp *op, const MilStd1750Instruction *insn, ut8 op8) {
+	switch (op8) {
+	// PSHM/POPM transfer the inclusive register range Ra..Rb, wrapping the
+	// register selector modulo 16 (so Ra > Rb pushes Ra..R15, R0..Rb). The
+	// count is therefore ((Rb - Ra) mod 16) + 1, always 1..16.
+	case 0x9F: { // PSHM Ra, Rb — push registers (SP grows)
+		int count = ((insn->rb - insn->ra) & 0xF) + 1;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
+		op->stackptr = count * 2;
+		break;
+	}
+	case 0x8F: { // POPM Ra, Rb — pop registers (SP shrinks)
+		int count = ((insn->rb - insn->ra) & 0xF) + 1;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
+		op->stackptr = -count * 2;
+		break;
+	}
+	case 0x7E: // SJS — stack the IC and jump (push one word)
+		op->stackop = RZ_ANALYSIS_STACK_INC;
+		op->stackptr = 2;
+		break;
+	case 0x7F: // URS — unstack the IC and return (pop one word)
+		op->stackop = RZ_ANALYSIS_STACK_INC;
+		op->stackptr = -2;
+		break;
+	default:
+		break;
+	}
+}
+
 static void set_invalid(RzAnalysisOp *op, ut64 addr) {
 	op->family = RZ_ANALYSIS_OP_FAMILY_UNKNOWN;
 	op->type = RZ_ANALYSIS_OP_TYPE_ILL;
@@ -623,6 +658,7 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		break;
 	}
 
+	milstd_set_stack(op, &insn, op8);
 	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
 		milstd_set_direction(op, insn.format);
 		milstd_set_val(op, &insn);
