@@ -564,28 +564,28 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		case (MIL_OP_AIM & 0xF):
 			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 			op->sign = true;
-			break; // AIM
+			break;
 		case (MIL_OP_SIM & 0xF):
 			op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 			op->sign = true;
-			break; // SIM
-		case (MIL_OP_MIM & 0xF): // MIM
+			break;
+		case (MIL_OP_MIM & 0xF):
 		case (MIL_OP_MSIM & 0xF):
 			op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 			op->sign = true;
-			break; // MSIM
-		case (MIL_OP_DIM & 0xF): // DIM
+			break;
+		case (MIL_OP_DIM & 0xF):
 		case (MIL_OP_DVIM & 0xF):
 			op->type = RZ_ANALYSIS_OP_TYPE_DIV;
 			op->sign = true;
-			break; // DVIM
+			break;
 		case (MIL_OP_ANDM & 0xF): op->type = RZ_ANALYSIS_OP_TYPE_AND; break; // ANDM
 		case (MIL_OP_ORIM & 0xF): op->type = RZ_ANALYSIS_OP_TYPE_OR; break; // ORIM
 		case (MIL_OP_XORM & 0xF): op->type = RZ_ANALYSIS_OP_TYPE_XOR; break; // XORM
 		case (MIL_OP_CIM & 0xF):
 			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 			op->sign = true;
-			break; // CIM
+			break; 
 		case (MIL_OP_NIM & 0xF): op->type = RZ_ANALYSIS_OP_TYPE_NOT; break; // NIM
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
