@@ -106,6 +106,8 @@ RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBin *bin, RZ_NULLABLE const ch
 		return rz_demangler_rust(mangled, flags);
 	case RZ_BIN_LANGUAGE_CXX:
 		return rz_demangler_cxx(mangled, flags);
+	case RZ_BIN_LANGUAGE_DLANG:
+		return rz_demangler_dlang(mangled, flags);
 	default:
 		break;
 	}
