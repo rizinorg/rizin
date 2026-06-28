@@ -753,7 +753,7 @@ jobs:
       - name: Compile jsdec in EXTRA_PREFIX
         run: |
           if ${{ (contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') }} ; then
-            git clone --depth 1 --branch master https://github.com/rizinorg/jsdec
+            git clone --depth 1 --branch stable https://github.com/rizinorg/jsdec
           else
             git clone --depth 1 --branch dev https://github.com/rizinorg/jsdec
           fi
