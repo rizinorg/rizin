@@ -1458,6 +1458,14 @@ RZ_API RzRegexFlags rz_regex_parse_flag_desc(RZ_NULLABLE const char *re_flags_de
 		flags |= RZ_REGEX_LITERAL;
 		goto return_flags;
 	}
+	if (strchr(re_flags_desc, 'd')) {
+		fcount++;
+		flags |= RZ_REGEX_DOTALL;
+	}
+	if (strchr(re_flags_desc, 'm')) {
+		fcount++;
+		flags |= RZ_REGEX_MULTILINE;
+	}
 	if (strchr(re_flags_desc, 'r')) {
 		fcount++;
 		goto return_flags;
@@ -1469,14 +1477,6 @@ RZ_API RzRegexFlags rz_regex_parse_flag_desc(RZ_NULLABLE const char *re_flags_de
 	if (strchr(re_flags_desc, 'E')) {
 		fcount++;
 		flags |= RZ_REGEX_EXTENDED_MORE;
-	}
-	if (strchr(re_flags_desc, 'm')) {
-		fcount++;
-		flags |= RZ_REGEX_MULTILINE;
-	}
-	if (strchr(re_flags_desc, 'd')) {
-		fcount++;
-		flags |= RZ_REGEX_DOTALL;
 	}
 return_flags:
 	if (fcount != strlen(re_flags_desc)) {
