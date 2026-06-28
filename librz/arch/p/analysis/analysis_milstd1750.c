@@ -317,6 +317,205 @@ static void milstd_set_reg(RzAnalysisOp *op, const MilStd1750Instruction *insn) 
 	op->reg = dst;
 }
 
+// --- RzAnalysisValue constructors (RZ_ANALYSIS_OP_MASK_VAL) ---
+// RzAnalysisValue holds no owned sub-allocations (RzRegItem* are borrowed from
+// the reg profile), so it is freed with plain free() and copied shallowly.
+
+static RzAnalysisValue *milstd_v_reg(RzAnalysis *a, ut8 n, RzAnalysisValueAccess acc) {
+	RzAnalysisValue *v = rz_analysis_value_new();
+	if (v) {
+		v->type = RZ_ANALYSIS_VAL_REG;
+		v->access = acc;
+		v->reg = rz_reg_get(a->reg, milstd_reg_name(n), RZ_REG_TYPE_ANY);
+	}
+	return v;
+}
+
+static RzAnalysisValue *milstd_v_imm(st64 imm) {
+	RzAnalysisValue *v = rz_analysis_value_new();
+	if (v) {
+		v->type = RZ_ANALYSIS_VAL_IMM;
+		v->access = RZ_ANALYSIS_ACC_R;
+		v->imm = imm;
+	}
+	return v;
+}
+
+// Direct memory operand: byte address `base` plus optional word index Rx.
+static RzAnalysisValue *milstd_v_mem(RzAnalysis *a, ut64 base, ut8 rx, int memref, RzAnalysisValueAccess acc) {
+	RzAnalysisValue *v = rz_analysis_value_new();
+	if (v) {
+		v->type = RZ_ANALYSIS_VAL_MEM;
+		v->access = acc;
+		v->memref = memref;
+		v->base = base;
+		if (rx) {
+			v->regdelta = rz_reg_get(a->reg, milstd_reg_name(rx), RZ_REG_TYPE_ANY);
+			v->mul = 2; // index counts 16-bit words
+		}
+	}
+	return v;
+}
+
+// Base-relative memory operand: base register R(br) + index Rx (BX) or disp (B).
+static RzAnalysisValue *milstd_v_basemem(RzAnalysis *a, ut8 br, ut8 rx, st64 disp, int memref, RzAnalysisValueAccess acc) {
+	RzAnalysisValue *v = rz_analysis_value_new();
+	if (v) {
+		v->type = RZ_ANALYSIS_VAL_MEM;
+		v->access = acc;
+		v->memref = memref;
+		v->reg = rz_reg_get(a->reg, milstd_reg_name(br), RZ_REG_TYPE_ANY);
+		v->delta = disp;
+		if (rx) {
+			v->regdelta = rz_reg_get(a->reg, milstd_reg_name(rx), RZ_REG_TYPE_ANY);
+			v->mul = 1; // base-relative index is added unscaled
+		}
+	}
+	return v;
+}
+
+// Fill op->src[]/op->dst (analyzable operands) and op->access (flat read/write
+// list). Driven by addressing format; op->type selects the read/write roles.
+static void milstd_fill_val(RzAnalysis *a, RzAnalysisOp *op, const MilStd1750Instruction *insn, ut8 op8) {
+	ut32 type = op->type & RZ_ANALYSIS_OP_TYPE_MASK;
+	int sz = milstd_mem_size(op8);
+
+	switch (insn->format) {
+	case MIL_FMT_R:
+		if (type == RZ_ANALYSIS_OP_TYPE_PUSH || type == RZ_ANALYSIS_OP_TYPE_POP) {
+			break; // PSHM/POPM: operands are a register range, not modelled
+		}
+		if (type == RZ_ANALYSIS_OP_TYPE_CMP) {
+			op->src[0] = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_R);
+			op->src[1] = milstd_v_reg(a, insn->rb, RZ_ANALYSIS_ACC_R);
+		} else if (type == RZ_ANALYSIS_OP_TYPE_LOAD) { // LR: Ra = Rb
+			op->dst = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_W);
+			op->src[0] = milstd_v_reg(a, insn->rb, RZ_ANALYSIS_ACC_R);
+		} else { // arithmetic / logical / shift / move: Ra = Ra (op) Rb
+			op->dst = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_W);
+			op->src[0] = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_R);
+			op->src[1] = milstd_v_reg(a, insn->rb, RZ_ANALYSIS_ACC_R);
+		}
+		break;
+	case MIL_FMT_SR:
+		op->dst = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_W);
+		op->src[0] = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_R);
+		break;
+	case MIL_FMT_IS:
+		if (type == RZ_ANALYSIS_OP_TYPE_LOAD) {
+			op->dst = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_W);
+			op->src[0] = milstd_v_imm(insn->imm8);
+		} else if (type == RZ_ANALYSIS_OP_TYPE_CMP) {
+			op->src[0] = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_R);
+			op->src[1] = milstd_v_imm(insn->imm8);
+		} else {
+			op->dst = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_W);
+			op->src[0] = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_R);
+			op->src[1] = milstd_v_imm(insn->imm8);
+		}
+		break;
+	case MIL_FMT_IMM_R:
+	case MIL_FMT_R_IMM:
+		if (type == RZ_ANALYSIS_OP_TYPE_CMP) {
+			op->src[0] = milstd_v_reg(a, insn->rb, RZ_ANALYSIS_ACC_R);
+			op->src[1] = milstd_v_imm(insn->imm8);
+		} else {
+			op->dst = milstd_v_reg(a, insn->rb, RZ_ANALYSIS_ACC_W);
+			op->src[0] = milstd_v_reg(a, insn->rb, RZ_ANALYSIS_ACC_R);
+			op->src[1] = milstd_v_imm(insn->imm8);
+		}
+		break;
+	case MIL_FMT_IM_OCX:
+		if (type == RZ_ANALYSIS_OP_TYPE_CMP) {
+			op->src[0] = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_R);
+			op->src[1] = milstd_v_imm(insn->imm16);
+		} else {
+			op->dst = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_W);
+			op->src[0] = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_R);
+			op->src[1] = milstd_v_imm(insn->imm16);
+		}
+		break;
+	case MIL_FMT_MEM: {
+		if (type == RZ_ANALYSIS_OP_TYPE_CALL || type == RZ_ANALYSIS_OP_TYPE_CJMP) {
+			break; // JS/SJS/SOJ: addr is a code target, not a data operand
+		}
+		if (op8 == 0x85) { // LIM: the second word is an immediate, not memory
+			op->dst = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_W);
+			op->src[0] = milstd_v_imm(insn->addr);
+			break;
+		}
+		ut64 ea = (ut64)insn->addr * 2;
+		if (type == RZ_ANALYSIS_OP_TYPE_LOAD) {
+			op->dst = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_W);
+			op->src[0] = milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_R);
+		} else if (type == RZ_ANALYSIS_OP_TYPE_STORE) {
+			op->dst = milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_W);
+			op->src[0] = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_R);
+		} else if (type == RZ_ANALYSIS_OP_TYPE_CMP) {
+			op->src[0] = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_R);
+			op->src[1] = milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_R);
+		} else { // arithmetic with a memory source: Ra = Ra (op) [mem]
+			op->dst = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_W);
+			op->src[0] = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_R);
+			op->src[1] = milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_R);
+		}
+		break;
+	}
+	case MIL_FMT_IM_0_15:
+	case MIL_FMT_IM_1_16: {
+		ut64 ea = (ut64)insn->addr * 2;
+		if (type == RZ_ANALYSIS_OP_TYPE_LOAD) { // LM: memory into a register range
+			op->src[0] = milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_R);
+		} else if (type == RZ_ANALYSIS_OP_TYPE_STORE) { // STM/STC/STCI
+			op->dst = milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_W);
+			op->src[0] = milstd_v_imm(insn->imm8);
+		} else if (type == RZ_ANALYSIS_OP_TYPE_CMP) { // TB: test bit in memory
+			op->src[0] = milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_R);
+			op->src[1] = milstd_v_imm(insn->imm8);
+		} else { // SB/RB/INCM/DECM: read-modify-write the memory word
+			op->dst = milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_R | RZ_ANALYSIS_ACC_W);
+			op->src[0] = milstd_v_imm(insn->imm8);
+		}
+		break;
+	}
+	case MIL_FMT_B:
+	case MIL_FMT_BX: {
+		// Base-relative; the accumulator register is implied by the opcode and
+		// not modelled. Only the memory operand is recorded.
+		ut8 rx = (insn->format == MIL_FMT_BX) ? insn->rx : 0;
+		st64 disp = (insn->format == MIL_FMT_B) ? insn->imm8 : 0;
+		if (type == RZ_ANALYSIS_OP_TYPE_STORE) {
+			op->dst = milstd_v_basemem(a, insn->br, rx, disp, sz, RZ_ANALYSIS_ACC_W);
+		} else {
+			op->src[0] = milstd_v_basemem(a, insn->br, rx, disp, sz, RZ_ANALYSIS_ACC_R);
+		}
+		break;
+	}
+	default:
+		break;
+	}
+
+	// op->access: flat list of every value touched, owning independent copies
+	// (op_fini frees src/dst and the list separately, so they must not alias).
+	RzList *acc = rz_list_newf((RzListFree)rz_analysis_value_free);
+	if (!acc) {
+		return;
+	}
+	if (op->dst) {
+		rz_list_append(acc, rz_analysis_value_copy(op->dst));
+	}
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(op->src); i++) {
+		if (op->src[i]) {
+			rz_list_append(acc, rz_analysis_value_copy(op->src[i]));
+		}
+	}
+	if (rz_list_empty(acc)) {
+		rz_list_free(acc);
+	} else {
+		op->access = acc;
+	}
+}
+
 static void set_invalid(RzAnalysisOp *op, ut64 addr) {
 	op->family = RZ_ANALYSIS_OP_FAMILY_UNKNOWN;
 	op->type = RZ_ANALYSIS_OP_TYPE_ILL;
@@ -392,6 +591,7 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
 			milstd_set_val(op, &insn);
 			milstd_set_reg(op, &insn);
+			milstd_fill_val(analysis, op, &insn, op8);
 		}
 		return op->size;
 	}
@@ -738,6 +938,7 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		milstd_set_ptr(op, &insn, op8);
 		milstd_set_datatype(op, &insn);
 		milstd_set_reg(op, &insn);
+		milstd_fill_val(analysis, op, &insn, op8);
 	}
 	return op->size;
 }
