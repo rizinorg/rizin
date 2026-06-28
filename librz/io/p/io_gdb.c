@@ -207,6 +207,56 @@ static int __gettid(RzIODesc *fd) {
 extern int send_msg(libgdbr_t *g, const char *command);
 extern int read_packet(libgdbr_t *instance, bool vcont);
 
+static bool gdbr_download_file(libgdbr_t *g, const char *remote, const char *local) {
+	rz_return_val_if_fail(g && remote && local, false);
+
+	if (!rz_file_dump(local, NULL, 0, false)) {
+		return false;
+	}
+
+	if (gdbr_open_file(g, remote, O_RDONLY, 0) < 0) {
+		return false;
+	}
+
+	uint32_t off = 0;
+	bool ok = true;
+	ut32 chunk = RZ_MAX(64, g->stub_features.pkt_sz / 2);
+	chunk = RZ_MIN(chunk, 65536);
+	ut8 *buf = malloc(chunk);
+	if (!buf) {
+		gdbr_close_file(g);
+		return false;
+	}
+
+	int ret;
+	do {
+		ret = gdbr_pread_file(g, buf, chunk, off);
+		if (ret < 0) {
+			ok = false;
+			break;
+		}
+		if (ret == 0) {
+			break;
+		}
+		if (!rz_file_dump(local, buf, ret, true)) {
+			ok = false;
+			break;
+		}
+		off += ret;
+	} while ((ut32)ret == chunk);
+	free(buf);
+	gdbr_close_file(g);
+	return ok;
+}
+
+RZ_API bool rz_io_gdb_download_file(RzIODesc *fd, const char *remote, const char *local) {
+	rz_return_val_if_fail(fd && remote && local, false);
+	if (!fd->plugin || strcmp(fd->plugin->name, "gdb")) {
+		return false;
+	}
+	return gdbr_download_file(fd->data, remote, local);
+}
+
 static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 	if (!fd || !fd->data) {
 		return NULL;
@@ -228,10 +278,22 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 			" R! pktsz           - get max packet size used\n"
 			" R! pktsz bytes     - set max. packet size as 'bytes' bytes\n"
 			" R! exec_file [pid] - get file which was executed for"
-			" current/specified pid\n");
+			" current/specified pid\n"
+			" R! download_file remote local - download remote file to local path\n");
 		return NULL;
 	}
 	libgdbr_t *desc = fd->data;
+	if (rz_str_startswith(cmd, "download_file")) {
+		int argc = 0;
+		char **argv = rz_str_argv(cmd, &argc);
+		if (!argv || argc != 3) {
+			rz_str_argv_free(argv);
+			return rz_str_dup("0");
+		}
+		bool ok = gdbr_download_file(desc, argv[1], argv[2]);
+		rz_str_argv_free(argv);
+		return rz_str_dup(ok ? "1" : "0");
+	}
 	if (rz_str_startswith(cmd, "pktsz")) {
 		const char *ptr = rz_str_trim_head_ro(cmd + 5);
 		if (!isdigit((ut8)*ptr)) {

@@ -384,6 +384,7 @@ RZ_API bool rz_io_desc_is_blockdevice(RzIODesc *desc);
 RZ_API bool rz_io_desc_is_chardevice(RzIODesc *desc);
 RZ_API bool rz_io_desc_exchange(RzIO *io, int fd, int fdx); // this should get 2 descs
 RZ_API bool rz_io_desc_is_dbg(RzIODesc *desc);
+RZ_API bool rz_io_gdb_download_file(RzIODesc *desc, const char *remote, const char *local);
 RZ_API int rz_io_desc_get_pid(RzIODesc *desc);
 RZ_API int rz_io_desc_get_tid(RzIODesc *desc);
 RZ_API bool rz_io_desc_get_base(RzIODesc *desc, ut64 *base);
