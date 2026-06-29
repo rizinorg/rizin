@@ -567,6 +567,7 @@ struct tsr2cmd_state {
 	bool log;
 	bool split_lines;
 	TSNode substitute_cmd;
+	RzCmdStatus failed; ///< Last failure of the line, which a later `q` must not hide
 };
 
 struct tsr2cmd_edit {
@@ -2837,6 +2838,11 @@ DEFINE_HANDLE_TS_FCN(statements) {
 			rz_core_task_yield(&core->tasks);
 		}
 		core->cons->context->cmd_depth++;
+		// Per statement, so that the next statement of the same line can read it
+		core->last_cmd_status = cmd_res;
+		if (cmd_res != RZ_CMD_STATUS_OK && cmd_res != RZ_CMD_STATUS_EXIT) {
+			state->failed = cmd_res;
+		}
 		if (cmd_res == RZ_CMD_STATUS_INVALID) {
 			char *command_str = ts_node_sub_string(command, state->input);
 			RZ_LOG_ERROR("core: Error while executing command: %s\n", command_str);
@@ -2933,6 +2939,7 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	state.tree = tree;
 	state.log = log;
 	state.split_lines = split_lines;
+	state.failed = RZ_CMD_STATUS_OK;
 	rz_pvector_init(&state.saved_input, NULL);
 	rz_pvector_init(&state.saved_tree, NULL);
 
@@ -2957,6 +2964,8 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	free(input);
 	rz_pvector_fini(&state.saved_input);
 	rz_pvector_fini(&state.saved_tree);
+	// Also covers the paths that run no statement, e.g. parse errors
+	core->last_cmd_status = res == RZ_CMD_STATUS_EXIT && state.failed != RZ_CMD_STATUS_OK ? state.failed : res;
 	return res;
 }
 
