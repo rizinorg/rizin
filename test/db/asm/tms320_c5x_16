@@ -1,0 +1,126 @@
+# TMS320C5x disassembly + RzIL. The C5x is source-compatible with the C2x but
+# uses a different object encoding, decoded by the dedicated C5x front-end
+# (c5x_decode). Shared-semantics instructions carry the C2x ids and lift through
+# the C2x lifter; the C5x-only instructions (ACCB ops, parallel-logic, memory-
+# mapped register access, conditional execute/call/return, block moves, ...)
+# carry the C5X_INS_* ids. Vectors are real C5x opcodes (assembled by the C5x
+# tool-chain) covering direct/indirect/shift/next-ARP forms.
+d "lacc 0x9, #0x0" 1009
+d "lacc 0x9, #0x4" 1409
+d "lacc *+, #0x0" 10a0
+d "lacc *+, #0x0, ar2" 10aa
+d "lacc 0x9, #0x10" 6a09
+d "add 0x9, #0x0" 2009
+d "add 0x9, #0x4" 2409
+d "add *-, #0x0" 2090
+d "add 0x9, #0x10" 6109
+d "sub 0x9, #0x0" 3009
+d "sub *0+, #0x0, ar3" 30eb
+d "sacl 0x10, #0x0" 9010
+d "sacl *+, #0x1" 91a0
+d "sach 0x10, #0x1" 9910
+d "and 0x9" 6e09
+d "or 0x9" 6d09
+d "xor 0x9" 6c09
+d "lacl 0x9" 6909
+d "lacl #0x42" b942
+d "lar ar0, 0x9" 0009
+d "lar ar1, #0x10" b110
+d "sar ar0, 0x9" 8009
+d "lt 0x9" 7309
+d "lta 0x9" 7009
+d "ltp 0x9" 7109
+d "ltd 0x9" 7209
+d "mpy 0x9" 5409
+d "mpyu 0x9" 5509
+d "sqra 0x9" 5209
+d "pac" be03
+d "apac" be04
+d "spac" be05
+d "abs" be00
+d "neg" be02
+d "cmpl" be01
+d "sfl" be09
+d "sfr" be0a
+d "rol" be0c
+d "ror" be0d
+d "zalr 0x9" 6809
+d "lph 0x9" 7509
+d "spl 0x9" 8c09
+d "sph 0x9" 8d09
+d "add #0x12" b812
+d "sub #0x12" ba12
+d "rpt #0x7" bb07
+d "ldp #0x4" bc04
+d "adrk #0x8" 7808
+d "sbrk #0x8" 7c08
+d "spm #0x2" bf02
+d "lacb" be1f
+d "sacb" be1e
+d "exar" be1d
+d "addb" be10
+d "sbb" be18
+d "andb" be12
+d "orb" be13
+d "xorb" be1a
+d "crgt" be1b
+d "crlt" be1c
+d "zap" be59
+d "zpr" be58
+d "setc ovm" be43
+d "clrc sxm" be46
+d "setc carry" be4f
+d "clrc tc" be4a
+d "samm 0x10" 8810
+d "lamm 0x10" 0810
+d "bldd 0x9" ac09
+d "blpd 0x9" a409
+d "splk 0x10, #0x1234" ae101234
+d "in 0x9, #0x5" af090005
+d "out 0x9, #0x5" 0c090005
+d "mac 0x9, #0x1234" a2091234
+d "macd 0x9, #0x1234" a3091234
+d "ret" ef00
+d "b 0x40, *" 79800040
+d "call 0x50, *" 7a800050
+d "bcnd 0x40, geq" e38c0040
+d "cc 0x50, neq" eb080050
+d "retc geq" ef8c
+d "bd 0x40, *" 7d800040
+d "calld 0x50, *" 7e800050
+d "rptz #0x7" bec50007
+d "rptb 0x40" bec60040
+d "bsar #0x4" bfe3
+d "lst #0x0, 0x9" 0e09
+d "sst #0x1, 0x10" 8f10
+d "tblr 0x9" a609
+d "tblw 0x9" a709
+d "dmov 0x9" 7709
+d "subc 0x9" 0a09
+d "bldp 0x9" 5709
+d "mads 0x9" aa09
+d "madd 0x9" ab09
+d "apl 0x9" 5a09
+d "opl 0x9" 5909
+d "xpl 0x9" 5809
+d "cpl 0x9" 5b09
+d "addc 0x9" 6009
+d "subb 0x9" 6409
+d "adds 0x9" 6209
+d "subs 0x9" 6609
+d "addt 0x9" 6309
+d "subt 0x9" 6709
+d "lact 0x9" 6b09
+d "bacc" be20
+d "cala" be30
+d "push" be3c
+d "pop" be32
+d "pshd 0x9" 7609
+d "popd 0x9" 8a09
+d "bit #0x9, 0x0" 4900
+d "bitt 0x9" 6f09
+d "idle" be22
+d "idle2" be23
+d "trap" be51
+d "rete" be3a
+d "reti" be38

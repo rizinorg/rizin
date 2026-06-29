@@ -10,6 +10,7 @@
 #include <tms320/c55x_plus/c55plus_analysis.h>
 #include <tms320/c54x/c54x.h>
 #include <tms320/c2x/c2x.h>
+#include <tms320/c5x/c5x.h>
 #include <tms320/c64x/c64x.h>
 
 typedef struct tms320_ctx_t {
@@ -28,6 +29,8 @@ int tms320_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 		return tms320_c54x_op(analysis, op, addr, buf, len, mask);
 	} else if (cpu && rz_str_casecmp(cpu, "c2x") == 0) {
 		return tms320_c2x_op(analysis, op, addr, buf, len, mask);
+	} else if (cpu && rz_str_casecmp(cpu, "c5x") == 0) {
+		return tms320_c5x_op(analysis, op, addr, buf, len, mask);
 	}
 	return tms320_c55x_op_byte(analysis, op, addr, buf, len, mask);
 }
@@ -161,6 +164,72 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			"gpr pm   .2 43.0 0\n" // Product shift mode
 			"gpr arb  .16 44 0\n" // Auxiliary register pointer backup
 			"gpr rptc .16 46 0\n"); // Repeat counter
+	}
+	if (cpu0 && rz_str_casecmp(cpu0, "c5x") == 0) {
+		// TMS320C5x: the C2x register file plus the C5x additions — the 32-bit
+		// accumulator buffer ACCB, the TREG1/TREG2 multiplier/shift registers,
+		// the processor-mode status PMST, the index register INDX, the
+		// auxiliary-compare register ARCR, the circular-buffer start/end
+		// pointers CBSR1/CBER1/CBSR2/CBER2, the block-repeat registers
+		// BRCR/PASR/PAER, the block-move address BMAR, the dynamic bit-mask
+		// DBMR and the global-memory register GREG. The core names match the
+		// C2x lifter's il_var bindings (the C5x lifter reuses it).
+		return rz_str_dup(
+			"=PC\tpc\n"
+			"=SP\tsp\n"
+			"=BP\tsp\n"
+			"=A0\tar0\n"
+			"=A1\tar1\n"
+			"=A2\tar2\n"
+			"=A3\tar3\n"
+			"=R0\tacc\n"
+			"ctr acc   .32 0  0\n" // Accumulator
+			"gpr accl  .16 0  0\n" // Accumulator low word
+			"gpr acch  .16 2  0\n" // Accumulator high word
+			"ctr accb  .32 4  0\n" // Accumulator buffer
+			"ctr t     .16 8  0\n" // Temporary/multiplicand register (TREG0)
+			"ctr treg1 .16 10 0\n" // TREG1 (dynamic shift count)
+			"ctr treg2 .16 12 0\n" // TREG2 (dynamic bit position)
+			"ctr p     .32 14 0\n" // Product register
+			"gpr pl    .16 14 0\n" // Product low word
+			"gpr ph    .16 16 0\n" // Product high word
+			"gpr ar0   .16 18 0\n" // Auxiliary register 0
+			"gpr ar1   .16 20 0\n" // Auxiliary register 1
+			"gpr ar2   .16 22 0\n" // Auxiliary register 2
+			"gpr ar3   .16 24 0\n" // Auxiliary register 3
+			"gpr ar4   .16 26 0\n" // Auxiliary register 4
+			"gpr ar5   .16 28 0\n" // Auxiliary register 5
+			"gpr ar6   .16 30 0\n" // Auxiliary register 6
+			"gpr ar7   .16 32 0\n" // Auxiliary register 7
+			"ctr arp   .16 34 0\n" // Auxiliary register pointer
+			"ctr dp    .16 36 0\n" // Data page pointer
+			"ctr st0   .16 38 0\n" // Status register 0
+			"ctr st1   .16 40 0\n" // Status register 1
+			"ctr pmst  .16 42 0\n" // Processor mode status register
+			"ctr indx  .16 44 0\n" // Index register
+			"ctr arcr  .16 46 0\n" // Auxiliary register compare register
+			"ctr cbsr1 .16 48 0\n" // Circular buffer 1 start address
+			"ctr cber1 .16 50 0\n" // Circular buffer 1 end address
+			"ctr cbsr2 .16 52 0\n" // Circular buffer 2 start address
+			"ctr cber2 .16 54 0\n" // Circular buffer 2 end address
+			"ctr brcr  .16 56 0\n" // Block repeat counter register
+			"ctr pasr  .16 58 0\n" // Block repeat program address start
+			"ctr paer  .16 60 0\n" // Block repeat program address end
+			"ctr bmar  .16 62 0\n" // Block move address register
+			"ctr dbmr  .16 64 0\n" // Dynamic bit manipulation register
+			"ctr greg  .16 66 0\n" // Global memory allocation register
+			"ctr sp    .16 68 0\n" // Stack pointer (synthetic)
+			"ctr pc    .16 70 0\n" // Program counter
+			// status/mode bits modelled individually for the shared C2x-core
+			// lifter (they also live inside ST0/ST1 on silicon)
+			"flg c     .1 72.0 0\n" // Carry
+			"flg ov    .1 73.0 0\n" // Overflow (sticky until tested)
+			"flg tc    .1 74.0 0\n" // Test/control bit
+			"gpr ovm   .1 75.0 0\n" // Overflow saturation mode
+			"gpr sxm   .1 76.0 0\n" // Sign-extension mode
+			"gpr pm    .2 77.0 0\n" // Product shift mode
+			"gpr arb   .16 78 0\n" // Auxiliary register pointer backup
+			"gpr rptc  .16 80 0\n"); // Repeat counter
 	}
 	if (is_c5000(rz_analysis_get_cpu(a))) {
 		p =
