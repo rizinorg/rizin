@@ -648,10 +648,34 @@ static RzBinInfo *coff_info(RzBinFile *bf) {
 		ret->cpu = rz_str_dup("r10000");
 		ret->bits = 32;
 		break;
+	case COFF_FILE_TARGET_TI_TMS320C1x2x5x:
+		// Original TI COFF (version 0) carried the target id directly in the
+		// file header's f_magic, so a target-id constant is matched here on the
+		// same field that holds COFF_FILE_MACHINE_TI_1/_2 for newer files.
+		// COFF1/COFF2 moved the id into the separate target_id field, handled
+		// by the COFF_FILE_MACHINE_TI_1/_2 case below.
+		// The id is shared by the C1x/C2x/C5x assemblers, so default to the C2x
+		// disassembler (override with -c c5x for a C5x image).
+		ret->machine = rz_str_dup("TMS320C1x/C2x/C5x");
+		ret->cpu = rz_str_dup("c2x");
+		ret->arch = rz_str_dup("tms320");
+		ret->bits = 16;
+		break;
 	case COFF_FILE_MACHINE_TI_1:
 		/* fall-thru */
 	case COFF_FILE_MACHINE_TI_2:
 		switch (obj->target_id) {
+		case COFF_FILE_TARGET_TI_TMS320C1x2x5x:
+			// First-generation TI fixed-point COFF id, shared by the TMS320C1x/
+			// C2x/C5x assemblers. Map it to the legacy single-accumulator C2x
+			// disassembler by default; override with -c for a C5x image. (The
+			// id is rarely present on raw firmware dumps; verify on real object
+			// files before relying on autodetection.)
+			ret->machine = rz_str_dup("TMS320C1x/C2x/C5x");
+			ret->cpu = rz_str_dup("c2x");
+			ret->arch = rz_str_dup("tms320");
+			ret->bits = 16;
+			break;
 		case COFF_FILE_TARGET_TI_TMS320C3x4x:
 			ret->machine = rz_str_dup("TMS320C3x/4x");
 			/* TMS320C3x/C4x is a floating-point DSP family that
