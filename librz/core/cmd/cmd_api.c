@@ -9,6 +9,7 @@
 #include <rz_cons.h>
 #include <rz_cmd.h>
 #include <rz_core.h>
+#include "../core_private.h"
 
 #define CMD_EXPORT_VERSION 1
 
@@ -136,6 +137,58 @@ RZ_API const char *rz_cmd_status_tostring(RzCmdStatus status) {
 	}
 	rz_warn_if_reached();
 	return "UNKNOWN";
+}
+
+static const char *cmd_status_message(RzCmdStatus status) {
+	switch (status) {
+	case RZ_CMD_STATUS_OK:
+		return "Command executed successfully";
+	case RZ_CMD_STATUS_WRONG_ARGS:
+		return "Wrong number or type of arguments";
+	case RZ_CMD_STATUS_ERROR:
+		return "Command execution failed";
+	case RZ_CMD_STATUS_INVALID:
+		return "Invalid command or expression";
+	case RZ_CMD_STATUS_NONEXISTINGCMD:
+		return "Command does not exist";
+	case RZ_CMD_STATUS_EXIT:
+		return "Command requested to exit the prompt";
+	}
+	rz_warn_if_reached();
+	return "Unknown command status";
+}
+
+/**
+ * \brief Print the status object reported by `_sj`.
+ *
+ * \param pj Where to print `{"error":null}` on success or
+ *           `{"error":{"code":...,"message":...}}` otherwise
+ * \param status Status to report
+ * \param args Command that returned \p status, added to the error object as
+ *             `command` and `args` unless NULL
+ */
+RZ_IPI void rz_cmd_status_json(RZ_NONNULL PJ *pj, RzCmdStatus status, RZ_NULLABLE RzCmdParsedArgs *args) {
+	rz_return_if_fail(pj);
+	pj_o(pj);
+	if (status == RZ_CMD_STATUS_OK) {
+		pj_knull(pj, "error");
+	} else {
+		pj_ko(pj, "error");
+		pj_ks(pj, "code", rz_cmd_status_tostring(status));
+		pj_ks(pj, "message", cmd_status_message(status));
+		if (args) {
+			pj_ks(pj, "command", rz_cmd_parsed_args_cmd(args));
+			pj_ka(pj, "args");
+			int i;
+			const char *arg;
+			rz_cmd_parsed_args_foreach_arg(args, i, arg) {
+				pj_s(pj, arg);
+			}
+			pj_end(pj);
+		}
+		pj_end(pj);
+	}
+	pj_end(pj);
 }
 
 #define NCMDS (sizeof(cmd->cmds) / sizeof(*cmd->cmds))

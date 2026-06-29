@@ -1,0 +1,52 @@
+NAME=_s: status of the last command
+FILE==
+ARGS=-c _s -c zzz -c _s -c wx -c _sj
+CMDS=<<EOF
+s 0
+_s
+_sj
+s foo; _s
+EOF
+EXPECT=<<EOF
+INVALID
+NONEXISTINGCMD
+{"error":{"code":"WRONG_ARGS","message":"Wrong number or type of arguments"}}
+OK
+{"error":null}
+ERROR
+EOF
+RUN
+
+NAME=_s mixed with _ and failures
+FILE==
+ARGS=-c _ -c _s -c sasdasdasd -c _s -c _ -c _s -c _ -c _s
+CMDS=<<EOF
+s 0
+_
+_s
+s foo
+_s
+_s
+_sj~{.error}
+_s~?
+echo $(_s)
+_s @@= 1 2
+EOF
+EXPECT=<<EOF
+OK
+NONEXISTINGCMD
+NONEXISTINGCMD
+OK
+OK
+OK
+OK
+OK
+ERROR
+OK
+null
+1
+OK
+OK
+OK
+EOF
+RUN
