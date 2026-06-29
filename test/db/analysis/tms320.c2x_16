@@ -69,6 +69,22 @@ type: ujmp
 EOF
 RUN
 
+NAME=c2x analysis: RzIL lift of accumulator immediates
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c2x
+wx ca00
+ao 1 @ 0~^rzil
+wx cc02
+ao 1 @ 0~^rzil
+EOF
+EXPECT=<<EOF
+rzil: (set acc (bv 32 0x0))
+rzil: (seq (set oa (var acc)) (set av (bv 32 0x2)) (set na (+ (var oa) (var av))) (set ovn (msb (& (^ (var na) (var av)) (^ (var oa) (var na))))) (set acc (ite (&& (var ovm) (var ovn)) (ite (&& (sle (var oa) (bv 32 0x0)) (! (== (var oa) (bv 32 0x0)))) (bv 32 0x80000000) (bv 32 0x7fffffff)) (var na))) (set c (&& (ule (var na) (var oa)) (! (== (var na) (var oa))))) (set ov (|| (var ov) (var ovn))))
+EOF
+RUN
+
 # Original TI COFF: the target id is the file magic. COFF2 below carries it in
 # a separate field, so the loader reaches the two by different paths.
 

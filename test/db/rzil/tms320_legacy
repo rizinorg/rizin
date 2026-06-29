@@ -1,0 +1,178 @@
+# TMS320C2x / TMS320C5x legacy binaries -- RzIL VM execution tests.
+# Binaries assembled from src/*.asm with the Python tms320c2x assembler and
+# cross-checked against the Python emulator; stepped here in Rizin's RzIL VM.
+# io.cache gives the program writable data memory beyond the raw file image.
+
+NAME=c2x RzIL VM: arithmetic + load/store legacy binary
+FILE=bins/tms320/c2x_legacy/01_arithmetic.bin
+ARGS=-a tms320 -b 16 -e asm.cpu=c2x -e analysis.cpu=c2x
+CMDS=<<EOF
+e io.cache=true
+aezi
+aezs 40
+ar acc
+ar t
+ar p
+ar dp
+ar arp
+ar ar2
+EOF
+EXPECT=<<EOF
+acc = 0x00000033
+t = 0x0006
+p = 0x0000002a
+dp = 0x0004
+arp = 0x0002
+ar2 = 0x0211
+EOF
+RUN
+
+NAME=c2x RzIL VM: logic + shift/rotate legacy binary
+FILE=bins/tms320/c2x_legacy/02_logic_shifts.bin
+ARGS=-a tms320 -b 16 -e asm.cpu=c2x -e analysis.cpu=c2x
+CMDS=<<EOF
+e io.cache=true
+aezi
+aezs 34
+ar acc
+ar t
+ar p
+ar dp
+ar arp
+ar ar2
+EOF
+EXPECT=<<EOF
+acc = 0x00000030
+t = 0x0004
+p = 0x00000000
+dp = 0x0004
+arp = 0x0000
+ar2 = 0x0000
+EOF
+RUN
+
+NAME=c2x RzIL VM: branches + CALL/RET legacy binary
+FILE=bins/tms320/c2x_legacy/03_branches_calls.bin
+ARGS=-a tms320 -b 16 -e asm.cpu=c2x -e analysis.cpu=c2x
+CMDS=<<EOF
+e io.cache=true
+aezi
+aezv sp 0x100
+aezs 23
+ar acc
+ar t
+ar p
+ar dp
+ar arp
+ar ar2
+EOF
+EXPECT=<<EOF
+sp = 0x100
+acc = 0x000000aa
+t = 0x0000
+p = 0x00000000
+dp = 0x0004
+arp = 0x0000
+ar2 = 0x0000
+EOF
+RUN
+
+NAME=c2x RzIL VM: FIR dot-product (MAC chain) legacy binary
+FILE=bins/tms320/c2x_legacy/04_fir_filter.bin
+ARGS=-a tms320 -b 16 -e asm.cpu=c2x -e analysis.cpu=c2x
+CMDS=<<EOF
+e io.cache=true
+aezi
+aezs 57
+ar acc
+ar t
+ar p
+ar dp
+ar arp
+ar ar2
+EOF
+EXPECT=<<EOF
+acc = 0x000000c8
+t = 0x0002
+p = 0x00000002
+dp = 0x0006
+arp = 0x0002
+ar2 = 0x0310
+EOF
+RUN
+
+NAME=c2x RzIL VM: status save/restore + data move legacy binary
+FILE=bins/tms320/c2x_legacy/05_status_data.bin
+ARGS=-a tms320 -b 16 -e asm.cpu=c2x -e analysis.cpu=c2x
+CMDS=<<EOF
+e io.cache=true
+aezi
+aezs 27
+ar acc
+ar t
+ar p
+ar dp
+ar arp
+ar ar2
+EOF
+EXPECT=<<EOF
+acc = 0x0000005a
+t = 0x0000
+p = 0x00000000
+dp = 0x0006
+arp = 0x0000
+ar2 = 0x0000
+EOF
+RUN
+
+NAME=c2x RzIL VM: mixed full program legacy binary
+FILE=bins/tms320/c2x_legacy/10_full_program.bin
+ARGS=-a tms320 -b 16 -e asm.cpu=c2x -e analysis.cpu=c2x
+CMDS=<<EOF
+e io.cache=true
+aezi
+aezs 48
+ar acc
+ar t
+ar p
+ar dp
+ar arp
+ar ar2
+EOF
+EXPECT=<<EOF
+acc = 0x0000005a
+t = 0x0064
+p = 0x00004e20
+dp = 0x0006
+arp = 0x0004
+ar2 = 0x0306
+EOF
+RUN
+
+NAME=c2x RzIL VM: emulateme complex exerciser (loops, MAC, XOR buffer, call/stack, fold)
+FILE=malloc://0x800
+ARGS=-a tms320 -b 16 -e asm.cpu=c2x -e analysis.cpu=c2x
+CMDS=<<EOF
+e io.cache=true
+wx c806d10003005589ca0360a0ca0160a0ca0460a0ca0160a0ca0560a0ca0960a0ca0260a0ca0660a0d1000300d4000007ca006010558920a000106010558cfb90001ad1000300d4000007ca00601155893c8038a0ce15558cfb90002768126011d1000300d2000318d4000007558920a0d006005a558a60a0558cfb9000362010fe80004e60132011d00400ffce18d0050100d00600556014ff80004cce1cce1dce18ce26
+aezi
+aezv sp 0x100
+aezsu 0x98
+p8 10 @ 0x620
+p8 16 @ 0x630
+ar acc
+ar p
+ar t
+ar arp
+EOF
+EXPECT=<<EOF
+sp = 0x100
+001f00ad0000003e010f
+0059005b005e005b005f00530058005c
+acc = 0x0000010f
+p = 0x00000024
+t = 0x0006
+arp = 0x0004
+EOF
+RUN
+
