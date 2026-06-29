@@ -104,7 +104,6 @@ RZ_API char *rz_sys_getenv(const char *key);
 RZ_API bool rz_sys_getenv_asbool(const char *key);
 RZ_API int rz_sys_setenv(const char *key, const char *value);
 RZ_API int rz_sys_clearenv(void);
-RZ_API char *rz_sys_whoami(char *buf);
 RZ_API char *rz_sys_getdir(void);
 RZ_API bool rz_sys_chdir(RZ_NONNULL const char *s);
 RZ_API bool rz_sys_aslr(bool enable);

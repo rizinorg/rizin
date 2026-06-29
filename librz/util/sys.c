@@ -1319,17 +1319,6 @@ RZ_API void rz_sys_set_environ(char **e) {
 #endif
 }
 
-RZ_API char *rz_sys_whoami(char *buf) {
-	char _buf[32];
-	int pid = getpid();
-	int hasbuf = (buf) ? 1 : 0;
-	if (!hasbuf) {
-		buf = _buf;
-	}
-	sprintf(buf, "pid%d", pid);
-	return hasbuf ? buf : rz_str_dup(buf);
-}
-
 RZ_API int rz_sys_getpid(void) {
 #if __UNIX__
 	return getpid();

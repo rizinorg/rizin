@@ -3327,7 +3327,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 #endif
 	free(p);
 	rz_config_desc(cfg, "cfg.editor", "Select default editor program");
-	SETPREF("cfg.user", rz_sys_whoami(buf), "Set current username/pid");
 	SETCB("cfg.fortunes", "true", &cb_cfg_fortunes, "If enabled show tips at start");
 	SETCB("cfg.fortunes.file", "tips", &cb_cfg_fortunes_file, "Type of fortunes to show (tips, fun)");
 	SETBPREF("cfg.fortunes.clippy", "false", "Use 'clippy' instead of 'echo'");
