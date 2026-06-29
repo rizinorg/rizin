@@ -370,3 +370,34 @@ a = 0x280
 a = 0x0000000001
 EOF
 RUN
+
+NAME=C2x RzIL VM: immediate, store/load, multiply, shift, indirect, logical, flags
+FILE=malloc://0x4000
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c2x
+e asm.bits=16
+wx c802ca05cc0360103c10a007ce14ce185589d1000040ca2a60a0ca116080d1000040ca0000a00080d00400ff1010 @ 0
+aezi
+aezs 20
+ar acc
+ar t
+ar p
+ar ar1
+ar arp
+ar dp
+ar c
+ar ov
+EOF
+EXPECT=<<EOF
+acc = 0x00000033
+t = 0x0008
+p = 0x00000038
+ar1 = 0x0041
+arp = 0x0001
+dp = 0x0002
+c = 0x1
+ov = 0x0
+EOF
+RUN
+

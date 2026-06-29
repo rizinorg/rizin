@@ -451,9 +451,9 @@ const C55ArchDesc c2x_arch_desc = {
 	.reg_info = c2x_reg_info,
 	.mnemonic = c2x_mnemonic,
 	.op_type = c2x_op_type,
-	.lift = NULL,
+	.lift = c2x_lift,
 	.mem = { .addr_unit_log2 = 0, .ptr_width = 16, .big_endian = true, .page_reg = "dp" },
-	.ea = NULL,
+	.ea = c2x_ea,
 	.fill_dual = NULL,
 	.words_le = false, // C2x words are stored MSB-first; no per-word swap
 	.cond_exec_prefix = false,
