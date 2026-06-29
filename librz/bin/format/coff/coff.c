@@ -91,6 +91,11 @@ static bool coff_is_magic(ut16 arch) {
 		/* fall-thru */
 	case COFF_FILE_MACHINE_TI_2:
 		/* fall-thru */
+	case COFF_FILE_TARGET_TI_TMS320C1x2x5x:
+		/* first-generation TI fixed-point COFF (C1x/C2x/C5x): the target id
+		 * doubles as the file magic, unlike the later COFF1/COFF2 (0xc1/0xc2)
+		 * which carry a separate target id field. */
+		/* fall-thru */
 	case COFF_FILE_MACHINE_MIL1750:
 		return true;
 	default:
@@ -138,6 +143,7 @@ RZ_API bool rz_coff_supported_arch(RzBuffer *b) {
 RZ_API ut32 rz_coff_addr_scale(RZ_NONNULL struct rz_bin_coff_obj *obj) {
 	rz_return_val_if_fail(obj, 1);
 	switch (obj->target_id) {
+	case COFF_FILE_TARGET_TI_TMS320C1x2x5x:
 	case COFF_FILE_TARGET_TI_TMS320C5400:
 	case COFF_FILE_TARGET_TI_TMS320C2800:
 		return 2;
@@ -258,6 +264,9 @@ static bool bin_coff_init_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj, ut64 *of
 		return false;
 	} else if (coff_is_ti_machine(obj)) {
 		return rz_buf_read_ble16_offset(b, offset, &obj->target_id, obj->big_endian);
+	} else if (obj->hdr.f_magic == COFF_FILE_TARGET_TI_TMS320C1x2x5x) {
+		// Original TI COFF has no separate field: the magic is the target id.
+		obj->target_id = obj->hdr.f_magic;
 	}
 	return true;
 }
