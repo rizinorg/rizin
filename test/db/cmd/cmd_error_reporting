@@ -50,3 +50,29 @@ OK
 OK
 EOF
 RUN
+
+NAME=cfg.json.status: status line after JSON commands
+FILE==
+ARGS=-e cfg.json.status=true -c pdgj -c /xj -c wx -c flj
+CMDS=<<EOF
+tj int
+flj~?
+echo $(flj)
+e cfg.json.status=false
+flj
+e cfg.json.status=true
+aflj a b c
+EOF
+EXPECT=<<EOF
+{"error":{"code":"NONEXISTINGCMD","message":"Command does not exist","command":"pdgj","args":[]}}
+{"error":{"code":"WRONG_ARGS","message":"Wrong number or type of arguments","command":"/xj","args":[]}}
+[]
+{"error":null}
+{"name":"int","kind":"atomic","format":"d4 int","size":32}
+{"error":null}
+1
+[]
+[]
+{"error":{"code":"WRONG_ARGS","message":"Wrong number or type of arguments","command":"aflj","args":["a","b","c"]}}
+EOF
+RUN

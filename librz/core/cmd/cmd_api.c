@@ -159,7 +159,7 @@ static const char *cmd_status_message(RzCmdStatus status) {
 }
 
 /**
- * \brief Print the status object reported by `_sj`.
+ * \brief Print the status object reported by `_sj` and `cfg.json.status`.
  *
  * \param pj Where to print `{"error":null}` on success or
  *           `{"error":{"code":...,"message":...}}` otherwise
@@ -888,13 +888,70 @@ static RzCmdStatus call_cd(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args) {
 	}
 }
 
-RZ_API RzCmdStatus rz_cmd_call_parsed_args(RzCmd *cmd, RzCmdParsedArgs *args) {
-	RzCmdDesc *cd = rz_cmd_get_desc(cmd, rz_cmd_parsed_args_cmd(args));
+// A missing command has no output modes, so its suffix is all there is
+static bool cmd_runs_in_json_mode(RzCmdDesc *cd, const char *cmdid) {
 	if (!cd) {
-		return RZ_CMD_STATUS_NONEXISTINGCMD;
+		return rz_str_endswith(cmdid, "j") || rz_str_endswith(cmdid, "J");
 	}
+	RzCmdDesc *exec_cd = rz_cmd_desc_get_exec(cd);
+	if (!exec_cd) {
+		return false;
+	}
+	RzOutputMode mode = cd_suffix2mode(exec_cd, cmdid);
+	return mode == RZ_OUTPUT_MODE_JSON || mode == RZ_OUTPUT_MODE_LONG_JSON;
+}
 
-	return call_cd(cmd, cd, args);
+// The line would corrupt output that is processed further: captured, e.g. by
+// $(...), a plugin, an rzpipe script run by #!pipe, `>` or `|`, or grepped (is_pipe)
+static bool cmd_output_is_consumed(RzCore *core) {
+	RzStack *stack = core->cons->context->cons_stack;
+	return core->is_pipe || (stack && !rz_stack_is_empty(stack));
+}
+
+static bool cmd_has_json_status(RzCmd *cmd, RzCmdDesc *cd, const char *cmdid) {
+	return core_config_get_b(cmd->core, "cfg.json.status") && !cmd_output_is_consumed(cmd->core) &&
+		cmd_runs_in_json_mode(cd, cmdid);
+}
+
+static void cmd_print_json_status(RzCmdParsedArgs *args, RzCmdStatus status) {
+	PJ *pj = pj_new();
+	if (!pj) {
+		return;
+	}
+	rz_cmd_status_json(pj, status, args);
+	// Consumers read the status from the last line, but e.g. `tj int` ends without a newline
+	int len = rz_cons_get_buffer_len();
+	if (len > 0 && rz_cons_get_buffer()[len - 1] != '\n') {
+		rz_cons_newline();
+	}
+	rz_cons_println(pj_string(pj));
+	pj_free(pj);
+}
+
+/**
+ * \brief Execute the command described by \p args.
+ *
+ * When `cfg.json.status` is true, a command run in a JSON output mode is
+ * followed by a line with its status object, see `_sj`, unless its output is
+ * captured, redirected, piped or grepped.
+ *
+ * \param cmd RzCmd instance
+ * \param args Name and arguments of the command, as parsed
+ * \return The status returned by the command
+ */
+RZ_API RzCmdStatus rz_cmd_call_parsed_args(RzCmd *cmd, RzCmdParsedArgs *args) {
+	const char *cmdid = rz_cmd_parsed_args_cmd(args);
+	RzCmdDesc *cd = rz_cmd_get_desc(cmd, cmdid);
+	// Copied as typed, since the command may rearrange its arguments
+	RzCmdParsedArgs *typed = cmd_has_json_status(cmd, cd, cmdid)
+		? rz_cmd_parsed_args_new(cmdid, args->argc - 1, args->argv + 1)
+		: NULL;
+	RzCmdStatus res = cd ? call_cd(cmd, cd, args) : RZ_CMD_STATUS_NONEXISTINGCMD;
+	if (typed) {
+		cmd_print_json_status(typed, res);
+		rz_cmd_parsed_args_free(typed);
+	}
+	return res;
 }
 
 static size_t utf8strcols0(const char *s) {
