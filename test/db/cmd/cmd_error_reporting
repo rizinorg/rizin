@@ -56,3 +56,31 @@ ARGS=-e cfg.json.status=true
 CMDS=afl a b c
 EXPECT=
 RUN
+
+NAME=batch exit code zero by default on failing command
+FILE==
+CMDS=zzz
+EXPECT=
+RUN
+
+NAME=batch exit code non-zero on unknown command
+FILE==
+ARGS=-e cfg.exit.errorcode=true
+CMDS=zzz
+EXIT_STATUS=1
+EXPECT=
+RUN
+
+NAME=batch exit code zero on successful command
+FILE==
+ARGS=-e cfg.exit.errorcode=true
+CMDS=s 0
+EXPECT=
+RUN
+
+NAME=batch exit code zero on quit
+FILE==
+ARGS=-e cfg.exit.errorcode=true
+CMDS=q
+EXPECT=
+RUN
