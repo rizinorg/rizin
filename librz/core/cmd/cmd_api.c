@@ -106,6 +106,36 @@ RZ_IPI const char *rz_output_mode_to_summary(RzOutputMode mode) {
 	return "";
 }
 
+/**
+ * \brief Return a stable, machine-readable string code for a \p RzCmdStatus.
+ *
+ * The returned codes are part of the structured error envelope emitted in JSON
+ * output mode (e.g. `"code":"WRONG_ARGS"`) and are meant to be relied upon by
+ * consumers driving Rizin over rzpipe or scripts, so they must not change
+ * lightly.
+ *
+ * \param status The command status to convert.
+ * \return A static, non-owned string describing \p status.
+ */
+RZ_API const char *rz_cmd_status_tostring(RzCmdStatus status) {
+	switch (status) {
+	case RZ_CMD_STATUS_OK:
+		return "OK";
+	case RZ_CMD_STATUS_WRONG_ARGS:
+		return "WRONG_ARGS";
+	case RZ_CMD_STATUS_ERROR:
+		return "ERROR";
+	case RZ_CMD_STATUS_INVALID:
+		return "INVALID";
+	case RZ_CMD_STATUS_NONEXISTINGCMD:
+		return "NONEXISTINGCMD";
+	case RZ_CMD_STATUS_EXIT:
+		return "EXIT";
+	}
+	rz_warn_if_reached();
+	return "UNKNOWN";
+}
+
 #define NCMDS (sizeof(cmd->cmds) / sizeof(*cmd->cmds))
 RZ_LIB_VERSION(rz_cmd);
 

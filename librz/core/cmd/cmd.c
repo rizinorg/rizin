@@ -2834,6 +2834,10 @@ DEFINE_HANDLE_TS_FCN(statements) {
 			rz_core_task_yield(&core->tasks);
 		}
 		core->cons->context->cmd_depth++;
+		// Track the status of each executed statement so that the `_s` command
+		// (and rzpipe consumers) can read back the status of the command that
+		// ran right before, even within a single multi-statement input.
+		core->last_cmd_status = cmd_res;
 		if (cmd_res == RZ_CMD_STATUS_INVALID) {
 			char *command_str = ts_node_sub_string(command, state->input);
 			RZ_LOG_ERROR("core: Error while executing command: %s\n", command_str);
@@ -2954,6 +2958,9 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	free(input);
 	rz_pvector_fini(&state.saved_input);
 	rz_pvector_fini(&state.saved_tree);
+	// Remember the status of the (outermost) command line so that scripts and
+	// rzpipe consumers can read it back after the command has been executed.
+	core->last_cmd_status = res;
 	return res;
 }
 
