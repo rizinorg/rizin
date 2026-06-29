@@ -337,6 +337,7 @@ RZ_API bool rz_flag_reset_obj_flags(RZ_NONNULL RZ_BORROW RzFlag *flags, RZ_NULLA
 		}
 		rz_serialize_flag_save(sdb, flags);
 		backup_succeeded = sdb_text_save(sdb, backup_filename, false);
+		sdb_free(sdb);
 	}
 	if (!backup_succeeded) {
 		RZ_LOG_WARN("Could not backup RzFlag before resetting flag space. Abort flag space reset.\n");

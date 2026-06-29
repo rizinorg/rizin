@@ -978,6 +978,7 @@ RZ_IPI void rz_types_define(RzCore *core, const char *type) {
 		RZ_LOG_ERROR("core: %s\n", error_msg);
 		free(error_msg);
 	}
+	free(tmp);
 }
 
 RZ_IPI bool rz_types_open_file(RzCore *core, const char *path) {

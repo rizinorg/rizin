@@ -6731,6 +6731,7 @@ static RzCmdStatus print_8bit_hexpair(RzCore *core, ut64 addr, size_t len) {
 	}
 	rz_io_read_at_mapped(core->io, addr, buf, len);
 	rz_print_bytes(core->print, buf, len, "%02x");
+	free(buf);
 	return RZ_CMD_STATUS_OK;
 }
 

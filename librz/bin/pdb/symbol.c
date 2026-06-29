@@ -224,6 +224,7 @@ RZ_IPI bool PDBSymbolIter_collect(PDBSymbolIter *iter, RzPVector /*<PDBSymbol *>
 			return false;
 		}
 		if (!PDBSymbolIter_next(iter, symbol)) {
+			free(symbol);
 			break;
 		}
 		rz_pvector_push(symbols, symbol);
