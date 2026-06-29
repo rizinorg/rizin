@@ -337,6 +337,7 @@ struct rz_core_t {
 	bool is_lastcmd;
 	bool is_pipe;
 	char *cmdlog;
+	RzCmdStatus last_cmd_status; ///< Status of the last executed statement or command line, RZ_CMD_STATUS_INVALID before the first one. A line ending with `q` stores its last failure, if any, instead of RZ_CMD_STATUS_EXIT.
 	int cmdrepeat; // cmd.repeat
 	const char *cmdtimes; // cmd.times
 	RZ_DEPRECATE bool cmd_in_backticks; // whether currently executing a cmd out of backticks

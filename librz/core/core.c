@@ -1830,6 +1830,8 @@ RZ_API bool rz_core_init(RzCore *core) {
 		}
 	}
 	rz_core_analysis_type_init(core);
+	// No user command ran yet. Set only now, since running tags.rz sets it too.
+	core->last_cmd_status = RZ_CMD_STATUS_INVALID;
 	return 0;
 }
 

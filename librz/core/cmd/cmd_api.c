@@ -111,6 +111,33 @@ RZ_IPI const char *rz_output_mode_to_summary(RzOutputMode mode) {
 	return "";
 }
 
+/**
+ * \brief Convert \p status to a stable, machine-readable string.
+ *
+ * Scripts and rzpipe consumers match on these strings, so they must not change.
+ *
+ * \param status The command status to convert.
+ * \return A static string, e.g. "WRONG_ARGS".
+ */
+RZ_API const char *rz_cmd_status_tostring(RzCmdStatus status) {
+	switch (status) {
+	case RZ_CMD_STATUS_OK:
+		return "OK";
+	case RZ_CMD_STATUS_WRONG_ARGS:
+		return "WRONG_ARGS";
+	case RZ_CMD_STATUS_ERROR:
+		return "ERROR";
+	case RZ_CMD_STATUS_INVALID:
+		return "INVALID";
+	case RZ_CMD_STATUS_NONEXISTINGCMD:
+		return "NONEXISTINGCMD";
+	case RZ_CMD_STATUS_EXIT:
+		return "EXIT";
+	}
+	rz_warn_if_reached();
+	return "UNKNOWN";
+}
+
 #define NCMDS (sizeof(cmd->cmds) / sizeof(*cmd->cmds))
 RZ_LIB_VERSION(rz_cmd);
 
