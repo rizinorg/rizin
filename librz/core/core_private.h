@@ -18,6 +18,7 @@ RZ_DEPRECATE RZ_IPI const char *rz_core_get_parser(RzCore *core);
 
 RZ_IPI void rz_core_kuery_print(RzCore *core, const char *k);
 RZ_IPI int rz_output_mode_to_char(RzOutputMode mode);
+RZ_IPI void rz_cmd_status_json(RZ_NONNULL PJ *pj, RzCmdStatus status, RZ_NULLABLE RzCmdParsedArgs *args);
 RZ_IPI void rz_core_print_warnings_after(RZ_NONNULL RzCore *core);
 RZ_IPI bool rz_core_is_core_dump(RzCore *core);
 RZ_IPI const char *rz_core_io_map_strip_prefix(const RzIOMap *map);

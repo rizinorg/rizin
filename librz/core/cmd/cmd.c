@@ -403,6 +403,21 @@ RZ_IPI RzCmdStatus rz_last_output_handler(RzCore *core, int argc, const char **a
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_last_cmd_status_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON:
+		rz_cmd_status_json(state->d.pj, core->last_cmd_status, NULL);
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_cons_println(rz_cmd_status_tostring(core->last_cmd_status));
+		break;
+	default:
+		rz_warn_if_reached();
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
 #if __WINDOWS__
 #include <tchar.h>
 #define __CLOSE_DUPPED_PIPES() \

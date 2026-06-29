@@ -2008,6 +2008,8 @@ static void set_prompt(RzCore *r) {
 	const char *BEGIN = "";
 	const char *END = "";
 	const char *remote = "";
+	// `_s` reports the last command of the user, not the ones run for the prompt
+	RzCmdStatus last_cmd_status = r->last_cmd_status;
 
 	if (cmdprompt && *cmdprompt) {
 		rz_core_cmd(r, cmdprompt, 0);
@@ -2019,6 +2021,7 @@ static void set_prompt(RzCore *r) {
 		free(s);
 		remote = "R!";
 	}
+	r->last_cmd_status = last_cmd_status;
 
 	if (rz_config_get_i(r->config, "scr.color")) {
 		BEGIN = r->cons->context->pal.prompt;

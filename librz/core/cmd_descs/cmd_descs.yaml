@@ -67,9 +67,27 @@ commands:
     summary: Run command via system(3)
     subcommands: cmd_system
   - name: _
-    cname: last_output
-    summary: Print last output
-    args: []
+    cname: last_cmd
+    summary: Last command introspection
+    subcommands:
+      - name: _
+        cname: last_output
+        summary: Print last output
+        args: []
+      - name: _s
+        cname: last_cmd_status
+        summary: Print the status of the last executed command
+        description: >
+          Print the status of the previous statement of the same command line,
+          or of the previous command line: OK, WRONG_ARGS, ERROR, INVALID,
+          NONEXISTINGCMD or EXIT. It is INVALID until a command runs. The JSON
+          mode prints {"error":null} on success and
+          {"error":{"code":"...","message":"..."}} otherwise.
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        args: []
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
   - name: "#!"
     cname: hash_bang
     summary: Run interpreter

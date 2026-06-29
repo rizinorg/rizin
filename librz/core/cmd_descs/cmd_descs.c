@@ -1081,12 +1081,24 @@ static const RzCmdDescHelp system_to_cons_help = {
 	.args = system_to_cons_args,
 };
 
+static const RzCmdDescHelp last_cmd_help = {
+	.summary = "Last command introspection",
+};
 static const RzCmdDescArg last_output_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp last_output_help = {
 	.summary = "Print last output",
 	.args = last_output_args,
+};
+
+static const RzCmdDescArg last_cmd_status_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp last_cmd_status_help = {
+	.summary = "Print the status of the last executed command",
+	.description = "Print the status of the previous statement of the same command line, or of the previous command line: OK, WRONG_ARGS, ERROR, INVALID, NONEXISTINGCMD or EXIT. It is INVALID until a command runs. The JSON mode prints {\"error\":null} on success and {\"error\":{\"code\":\"...\",\"message\":\"...\"}} otherwise.",
+	.args = last_cmd_status_args,
 };
 
 static const RzCmdDescDetailEntry hash_bang_Examples_detail_entries[] = {
@@ -22570,8 +22582,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *system_to_cons_cd = rz_cmd_desc_argv_new(core->rcmd, escl__cd, "!!", rz_system_to_cons_handler, &system_to_cons_help);
 	rz_warn_if_fail(system_to_cons_cd);
 
-	RzCmdDesc *last_output_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "_", rz_last_output_handler, &last_output_help);
-	rz_warn_if_fail(last_output_cd);
+	RzCmdDesc *last_cmd_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "_", rz_last_output_handler, &last_output_help, &last_cmd_help);
+	rz_warn_if_fail(last_cmd_cd);
+	RzCmdDesc *last_cmd_status_cd = rz_cmd_desc_argv_state_new(core->rcmd, last_cmd_cd, "_s", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_last_cmd_status_handler, &last_cmd_status_help);
+	rz_warn_if_fail(last_cmd_status_cd);
 
 	RzCmdDesc *hash_bang_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "#!", rz_hash_bang_handler, &hash_bang_help);
 	rz_warn_if_fail(hash_bang_cd);
