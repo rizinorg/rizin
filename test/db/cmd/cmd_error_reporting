@@ -29,3 +29,30 @@ EXPECT=<<EOF
 {"status":"NONEXISTINGCMD","code":-1}
 EOF
 RUN
+
+NAME=json status envelope disabled by default
+FILE==
+CMDS=aflj a b c
+EXPECT=
+RUN
+
+NAME=json status envelope reports success and error in json mode
+FILE==
+ARGS=-e cfg.json.status=true
+CMDS=<<EOF
+flj
+aflj a b c
+EOF
+EXPECT=<<EOF
+[]
+{"error":null}
+{"error":{"code":"WRONG_ARGS","message":"Wrong number or type of arguments","command":"afl"}}
+EOF
+RUN
+
+NAME=json status envelope only in json mode
+FILE==
+ARGS=-e cfg.json.status=true
+CMDS=afl a b c
+EXPECT=
+RUN
