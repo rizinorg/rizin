@@ -576,6 +576,9 @@ static RzAnalysisILConfig *tms320_il_config(RzAnalysis *analysis) {
 	if (cpu && rz_str_casecmp(cpu, "c2x") == 0) {
 		return tms320_c2x_il_config(analysis);
 	}
+	if (cpu && rz_str_casecmp(cpu, "c5x") == 0) {
+		return tms320_c5x_il_config(analysis);
+	}
 	return NULL;
 }
 

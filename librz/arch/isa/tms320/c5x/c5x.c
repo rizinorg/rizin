@@ -218,9 +218,9 @@ const C55ArchDesc c5x_arch_desc = {
 	.reg_info = c2x_reg_info, // operands reference only C2x reg classes (ARn)
 	.mnemonic = c5x_mnemonic,
 	.op_type = c5x_op_type,
-	.lift = NULL,
+	.lift = c5x_lift,
 	.mem = { .addr_unit_log2 = 0, .ptr_width = 16, .big_endian = true, .page_reg = "dp" },
-	.ea = NULL,
+	.ea = c2x_ea,
 	.fill_dual = NULL,
 	.words_le = false,
 	.cond_exec_prefix = false,
@@ -260,4 +260,33 @@ RZ_IPI int tms320_c5x_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		return -1;
 	}
 	return op->size;
+}
+
+// IL register bindings: the C2x core registers the shared lifter uses, plus the
+// C5x-specific registers (ACCB and friends) referenced by the C5x lifter.
+static const char *c5x_il_regs[] = {
+	"acc", "accb", "t", "treg1", "treg2", "p",
+	"ar0", "ar1", "ar2", "ar3", "ar4", "ar5", "ar6", "ar7",
+	"arp", "dp", "st0", "st1", "pmst",
+	"indx", "arcr", "cbsr1", "cber1", "cbsr2", "cber2",
+	"brcr", "pasr", "paer", "bmar", "dbmr", "greg",
+	"pc", "sp",
+	"c", "ov", "tc", "ovm", "sxm", "pm", "arb", "rptc",
+	NULL
+};
+
+/**
+ * \brief Build the RzIL VM configuration for the "c5x" CPU.
+ * \param analysis Current analysis session
+ * \return Newly allocated config carrying the C5x register bindings
+ */
+RZ_IPI RzAnalysisILConfig *tms320_c5x_il_config(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	// Same word-addressed memory model as the C2x (see C2X_MEM_ADDR_BITS).
+	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(16, true, C2X_MEM_ADDR_BITS);
+	if (!cfg) {
+		return NULL;
+	}
+	cfg->reg_bindings = c5x_il_regs;
+	return cfg;
 }

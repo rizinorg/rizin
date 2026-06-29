@@ -94,6 +94,23 @@ reg: ar0
 direction: write
 EOF
 RUN
+
+NAME=c5x analysis: RzIL lift (real C5x encoding)
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c5x
+wx 1009
+ao 1 @ 0~^rzil
+wx be03
+ao 1 @ 0~^rzil
+EOF
+EXPECT=<<EOF
+rzil: (seq (set m (loadw 0 16 (* (cast 24 false (| (<< (& (var dp) (bv 16 0x1ff)) (bv 16 0x7) false) (bv 16 0x9))) (bv 24 0x2)))) (set acc (ite (var sxm) (cast 32 (msb (var m)) (var m)) (cast 32 false (var m)))))
+rzil: (set acc (ite (== (var pm) (bv 2 0x0)) (var p) (ite (== (var pm) (bv 2 0x1)) (<< (var p) (bv 6 0x1) false) (ite (== (var pm) (bv 2 0x2)) (<< (var p) (bv 6 0x4) false) (>> (var p) (bv 6 0x6) (msb (var p)))))))
+EOF
+RUN
+
 # Same exerciser built for the C5x; "dbl" lands at word 0x4d.
 
 NAME=c5x analysis: emulateme function recovery
