@@ -1079,12 +1079,23 @@ static const RzCmdDescHelp system_to_cons_help = {
 	.args = system_to_cons_args,
 };
 
+static const RzCmdDescHelp _help = {
+	.summary = "Last command introspection",
+};
 static const RzCmdDescArg last_output_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp last_output_help = {
 	.summary = "Print last output",
 	.args = last_output_args,
+};
+
+static const RzCmdDescArg last_cmd_status_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp last_cmd_status_help = {
+	.summary = "Print the status of the last executed command line",
+	.args = last_cmd_status_args,
 };
 
 static const RzCmdDescDetailEntry hash_bang_Examples_detail_entries[] = {
@@ -22518,8 +22529,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *system_to_cons_cd = rz_cmd_desc_argv_new(core->rcmd, escl__cd, "!!", rz_system_to_cons_handler, &system_to_cons_help);
 	rz_warn_if_fail(system_to_cons_cd);
 
-	RzCmdDesc *last_output_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "_", rz_last_output_handler, &last_output_help);
-	rz_warn_if_fail(last_output_cd);
+	RzCmdDesc *_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "_", rz_last_output_handler, &last_output_help, &_help);
+	rz_warn_if_fail(_cd);
+	RzCmdDesc *last_cmd_status_cd = rz_cmd_desc_argv_modes_new(core->rcmd, _cd, "_s", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_last_cmd_status_handler, &last_cmd_status_help);
+	rz_warn_if_fail(last_cmd_status_cd);
 
 	RzCmdDesc *hash_bang_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "#!", rz_hash_bang_handler, &hash_bang_help);
 	rz_warn_if_fail(hash_bang_cd);

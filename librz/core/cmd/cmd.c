@@ -403,6 +403,36 @@ RZ_IPI RzCmdStatus rz_last_output_handler(RzCore *core, int argc, const char **a
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_last_cmd_status_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	// The status reported is the one of the command executed right before this
+	// one, so that a script or rzpipe consumer can read it back after running a
+	// command. Running this command updates the status in turn (to its own OK),
+	// exactly like reading `$?` in a shell.
+	RzCmdStatus last = core->last_cmd_status;
+	switch (mode) {
+	case RZ_OUTPUT_MODE_JSON: {
+		PJ *pj = pj_new();
+		if (!pj) {
+			return RZ_CMD_STATUS_ERROR;
+		}
+		pj_o(pj);
+		pj_ks(pj, "status", rz_cmd_status_tostring(last));
+		pj_ki(pj, "code", rz_cmd_status2int(last));
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+		break;
+	}
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_cons_println(rz_cmd_status_tostring(last));
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
 #if __WINDOWS__
 #include <tchar.h>
 #define __CLOSE_DUPPED_PIPES() \
