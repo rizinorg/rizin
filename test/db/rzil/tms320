@@ -377,7 +377,7 @@ CMDS=<<EOF
 e asm.arch=tms320
 e analysis.cpu=c2x
 e asm.bits=16
-wx c802ca05cc0360103c10a007ce14ce185589d1000040ca2a60a0ca116080d1000040ca0000a00080d00400ff1010 @ 0
+wx c802ca05cc0360103c10a007ce14ce185589d1000040ca2a60a0ca116080d1000040ca0000a00080d00400ff1010
 aezi
 aezs 20
 ar acc
@@ -401,3 +401,24 @@ ov = 0x0
 EOF
 RUN
 
+NAME=C5x RzIL VM: real C5x encoding execute (immediate + ACCB buffer ops)
+FILE=malloc://0x4000
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c5x
+e asm.bits=16
+wx b905be1eb930be1dbc02bf01
+aezi
+aezs 6
+ar acc
+ar accb
+ar dp
+ar pm
+EOF
+EXPECT=<<EOF
+acc = 0x00000005
+accb = 0x00000030
+dp = 0x0002
+pm = 0x1
+EOF
+RUN
