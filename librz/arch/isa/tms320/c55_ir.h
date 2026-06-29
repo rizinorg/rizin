@@ -36,6 +36,8 @@ typedef enum {
 	C55_ARCH_C54X = 0, ///< TMS320C54x
 	C55_ARCH_C55X, ///< TMS320C55x
 	C55_ARCH_C55XPLUS, ///< TMS320C55x+
+	C55_ARCH_C2X, ///< TMS320C2x (legacy single-accumulator fixed-point)
+	C55_ARCH_C5X, ///< TMS320C5x (second-generation fixed-point; C2x-compatible superset)
 } C55Arch;
 
 /** Register class; family-wide superset, each arch uses only its subset. */

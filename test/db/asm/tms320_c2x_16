@@ -1,0 +1,75 @@
+# TMS320C2x (legacy single-accumulator fixed-point) disassembly + RzIL.
+# Encodings are MSB-first 16-bit words (4-byte forms are two words).
+# Vectors derive from the public C2x instruction set (MAME TMS320x25 map).
+# IL is asserted only for the lifted core; indirect-addressed and
+# carry/status-dependent forms decode but carry no IL yet.
+
+# --- no-operand control / status (CE block) ---
+d "nop" 5500
+d "eint" ce00
+d "dint" ce01
+d "rovm" ce02
+d "sovm" ce03
+d "ssxm" ce07
+d "abs" ce1b
+d "push" ce1c
+d "pop" ce1d
+d "ret" ce26
+d "cala" ce24
+d "bacc" ce25
+d "pac" ce14
+d "apac" ce15
+d "spac" ce16
+
+# --- accumulator immediates ---
+d "zac" ca00
+d "lack #0x5" ca05
+d "addk #0x2" cc02
+d "subk #0x3" cd03
+d "ldpk #0x1" c801
+d "lark ar0, #0x10" c010
+d "lark ar3, #0x7f" c37f
+d "mpyk #0x100" a100
+
+# --- direct (DP-relative) data-memory forms ---
+d "add 0x9, #0x0" 0009
+d "add 0x9, #0x4" 0409
+d "sub 0x20, #0x0" 1020
+d "lac 0x20, #0x0" 2020
+d "sacl 0x10, #0x0" 6010
+d "sach 0x10, #0x0" 6810
+d "lar ar1, 0x5" 3105
+d "sar ar1, 0x5" 7105
+d "lt 0x9" 3c09
+d "mpy 0x9" 3809
+d "and 0xc" 4e0c
+d "or 0xc" 4d0c
+d "in 0x0, #0x1" 8100
+d "out 0x0, #0x1" e100
+
+# --- indirect addressing (ARP-relative; decode/disasm only, no IL) ---
+d "add *, #0x0" 0080
+d "add *+, #0x0" 00a0
+d "add *-, #0x0" 0090
+d "add *+, #0x0, ar2" 00aa
+d "lac *br0+, #0x0" 20f0
+d "sacl *0+, #0x0" 60e0
+d "mar *+" 55a0
+
+# --- long-immediate (two-word) ---
+d "lrlk ar0, #0x1234" d0001234
+d "lalk #0x5678, #0x0" d0015678
+d "andk #0xff, #0x0" d00400ff
+
+# --- control transfer (two-word: opcode + target) ---
+d "b 0x40" ff800040
+d "call 0x50" fe800050
+d "bz 0x60" f6800060
+d "bnz 0x70" f5800070
+d "bgz 0x80" f1800080
+d "blz 0x90" f3800090
+
+# --- NORM (normalize, CEx2) ---
+d "norm *" ce82
+d "norm *+" cea2
+d "norm *-" ce92

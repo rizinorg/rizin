@@ -25,6 +25,31 @@
 // decode engine
 // ---------------------------------------------------------------------------
 
+/**
+ * \brief Whether \p arch encodes a parallel-execution bit in its opcode words.
+ * \param arch Architecture being decoded
+ * \return true if instructions of \p arch can carry a parallel flag
+ *
+ * The C54x, C2x and C5x are word-oriented and have no such bit, so their
+ * instructions never decode as the parallel form.
+ */
+static inline bool c55_arch_has_parallel_bit(C55Arch arch) {
+	return arch != C55_ARCH_C54X && arch != C55_ARCH_C2X && arch != C55_ARCH_C5X;
+}
+
+/**
+ * \brief Whether \p arch counts program-memory addresses in 16-bit words.
+ * \param arch Architecture being decoded
+ * \return true if a program address operand is a word index, not a byte offset
+ *
+ * The C54x/C2x/C5x fetch 16-bit words and their branch/call operands count words,
+ * so a target has to be doubled to land in the byte address space the analysis
+ * and the RzIL memory model use.
+ */
+static inline bool c55_arch_word_addressed(C55Arch arch) {
+	return arch == C55_ARCH_C2X || arch == C55_ARCH_C5X || arch == C55_ARCH_C54X;
+}
+
 // Pack the first \p n bytes (<= 8) MSB-first into a word: byte 0 is most
 // significant, so a field's bit index counts from the LSB of the instruction.
 static ut64 c55_pack(const ut8 *buf, int n) {
@@ -148,9 +173,8 @@ bool c55_decode(const C55ArchDesc *a, const ut8 *buf, int len, C55Insn *out) {
 		// of the leading byte is the "||" flag rather than part of the opcode.
 		// A row opts into this by leaving that bit unconstrained in its mask
 		// (e.g. 0xfe000000), in which case the bit's value selects the parallel
-		// form; rows that pin the bit (0xff000000) treat it as opcode. C54x is
-		// word-oriented and has no such bit, so it never carries a parallel flag.
-		out->parallel = a->arch != C55_ARCH_C54X && !def->no_parallel && (def->mask & 0x01000000) == 0 && (head & 0x01000000) != 0;
+		// form; rows that pin the bit (0xff000000) treat it as opcode.
+		out->parallel = c55_arch_has_parallel_bit(a->arch) && !def->no_parallel && (def->mask & 0x01000000) == 0 && (head & 0x01000000) != 0;
 		const ut64 bits = c55_pack(buf, ilen);
 		if (def->alt_bit && (c55_field(bits, (ut8)(def->alt_bit - 1), 1) != 0)) {
 			// a variant selector beyond the 4-byte match head (e.g. firssub vs
@@ -500,10 +524,10 @@ static ut64 c55_branch_target(const C55Insn *insn, ut64 pc) {
 			if (o->abs_target) {
 				// Absolute target: the operand is the destination address
 				// itself (24-bit program space), not a pc-relative offset.
-				// The C54x counts program words here, so scale the target
+				// Word-addressed cores count words here, so scale the target
 				// into the byte address space the analysis works in.
 				ut64 target = v & 0xffffff;
-				return insn->arch == C55_ARCH_C54X ? target * 2 : target;
+				return c55_arch_word_addressed(insn->arch) ? target * 2 : target;
 			}
 			st64 soff = o->reltarget_unsigned
 				? (st64)v
@@ -3711,6 +3735,18 @@ static void c55_fmt_reg(RzStrBuf *sb, const C55ArchDesc *a, const C55Reg *r) {
 }
 
 static void c55_fmt_mem(RzStrBuf *sb, const C55ArchDesc *a, const C55Operand *m) {
+	if (a->arch == C55_ARCH_C2X || a->arch == C55_ARCH_C5X) {
+		// Only the direct form reaches this helper: the indirect spellings
+		// (*, *+, *BR0+ and the ",arX" next-ARP suffix) carry their own text in
+		// C55Operand.raw, which the operand loop emits before calling here.
+		// Assert it so a row that forgets to set raw is caught rather than
+		// silently rendered as a bogus data-page offset.
+		rz_warn_if_fail(m->amode == C55_AM_DIRECT);
+		// The page itself comes from DP at run time, so only the 7-bit offset
+		// is known statically.
+		rz_strbuf_appendf(sb, "0x%" PFMT32x, (ut32)m->disp & 0x7f);
+		return;
+	}
 	if (a->arch == C55_ARCH_C54X) {
 		// C54x addressing syntax differs from C55x (AR0-indexed *arN+0, circular
 		// *arN+%, bit-reverse *arN+0B). Render it self-contained and return; the
@@ -4148,8 +4184,8 @@ char *c55_format(const C55ArchDesc *a, const C55Insn *insn) {
 				// with the '#' prefix (the sftl dst, #1 / #-1 forms).
 				rz_strbuf_appendf(&sb, "#%" PFMT64d, (st64)op->imm);
 			} else if (op->addr) {
-				if (a->arch == C55_ARCH_C54X) {
-					// C54x renders program/data addresses as a bare hex value
+				if (a->arch == C55_ARCH_C54X || a->arch == C55_ARCH_C2X || a->arch == C55_ARCH_C5X) {
+					// C54x/C2x render program/data addresses as a bare hex value
 					// (the '#' prefix is reserved for immediates).
 					rz_strbuf_appendf(&sb, "0x%" PFMT64x, op->imm);
 				} else {

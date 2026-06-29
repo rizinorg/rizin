@@ -9,6 +9,7 @@
 #include <tms320/c55x/c55x_analysis.h>
 #include <tms320/c55x_plus/c55plus_analysis.h>
 #include <tms320/c54x/c54x.h>
+#include <tms320/c2x/c2x.h>
 #include <tms320/c64x/c64x.h>
 
 typedef struct tms320_ctx_t {
@@ -25,6 +26,8 @@ int tms320_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 		return tms320_c64x_op(analysis, op, addr, buf, len, mask, context->c64x);
 	} else if (cpu && rz_str_casecmp(cpu, "c54x") == 0) {
 		return tms320_c54x_op(analysis, op, addr, buf, len, mask);
+	} else if (cpu && rz_str_casecmp(cpu, "c2x") == 0) {
+		return tms320_c2x_op(analysis, op, addr, buf, len, mask);
 	}
 	return tms320_c55x_op_byte(analysis, op, addr, buf, len, mask);
 }
@@ -108,6 +111,56 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			"ctr ifr  .16 50 0 # Interrupt flag register\n"
 			"ctr xpc  .16 52 0 # Extended program counter\n"
 			"ctr pc   .24 54 0 # Program counter\n");
+	}
+	if (cpu0 && rz_str_casecmp(cpu0, "c2x") == 0) {
+		// TMS320C2x: a single 32-bit accumulator ACC (with ACCL/ACCH 16-bit
+		// halves overlapping it), the 16-bit temporary T, the 32-bit product
+		// register P (PL/PH halves), eight 16-bit auxiliary registers AR0-AR7,
+		// the 3-bit ARP pointer (held in a 16-bit slot), the 9-bit DP data page,
+		// the ST0/ST1 status words and a 16-bit PC. SP is a synthetic stack
+		// pointer (the hardware stack is not memory-mapped). These names match
+		// c2x_reg_info()'s il_var bindings so the lifter resolves in the IL VM.
+		return rz_str_dup(
+			"=PC\tpc\n"
+			"=SP\tsp\n"
+			"=BP\tsp\n"
+			"=A0\tar0\n"
+			"=A1\tar1\n"
+			"=A2\tar2\n"
+			"=A3\tar3\n"
+			"=R0\tacc\n"
+			"ctr acc  .32 0  0\n" // Accumulator
+			"gpr accl .16 0  0\n" // Accumulator low word
+			"gpr acch .16 2  0\n" // Accumulator high word
+			"ctr t    .16 4  0\n" // Temporary register
+			"ctr p    .32 6  0\n" // Product register
+			"gpr pl   .16 6  0\n" // Product low word
+			"gpr ph   .16 8  0\n" // Product high word
+			"gpr ar0  .16 10 0\n" // Auxiliary register 0
+			"gpr ar1  .16 12 0\n" // Auxiliary register 1
+			"gpr ar2  .16 14 0\n" // Auxiliary register 2
+			"gpr ar3  .16 16 0\n" // Auxiliary register 3
+			"gpr ar4  .16 18 0\n" // Auxiliary register 4
+			"gpr ar5  .16 20 0\n" // Auxiliary register 5
+			"gpr ar6  .16 22 0\n" // Auxiliary register 6
+			"gpr ar7  .16 24 0\n" // Auxiliary register 7
+			"ctr arp  .16 26 0\n" // Auxiliary register pointer
+			"ctr dp   .16 28 0\n" // Data page pointer
+			"ctr st0  .16 30 0\n" // Status register 0
+			"ctr st1  .16 32 0\n" // Status register 1
+			"ctr sp   .16 34 0\n" // Stack pointer (synthetic)
+			"ctr pc   .16 36 0\n" // Program counter
+			// status/mode bits modelled individually for the IL lifter (they
+			// also live inside ST0/ST1 on real silicon; ST0/ST1 are composed
+			// from / decomposed to these by SST/SST1/LST/LST1)
+			"flg c    .1 38.0 0\n" // Carry
+			"flg ov   .1 39.0 0\n" // Overflow (sticky until tested)
+			"flg tc   .1 40.0 0\n" // Test/control bit
+			"gpr ovm  .1 41.0 0\n" // Overflow saturation mode
+			"gpr sxm  .1 42.0 0\n" // Sign-extension mode
+			"gpr pm   .2 43.0 0\n" // Product shift mode
+			"gpr arb  .16 44 0\n" // Auxiliary register pointer backup
+			"gpr rptc .16 46 0\n"); // Repeat counter
 	}
 	if (is_c5000(rz_analysis_get_cpu(a))) {
 		p =
@@ -457,7 +510,7 @@ static RzAnalysisILConfig *tms320_il_config(RzAnalysis *analysis) {
 RzAnalysisPlugin rz_analysis_plugin_tms320 = {
 	.name = "tms320",
 	.arch = "tms320",
-	.bits = 32,
+	.bits = 16 | 32,
 	.desc = "TMS320 DSP family code analysis plugin",
 	.init = tms320_analysis_init,
 	.fini = tms320_analysis_fini,
