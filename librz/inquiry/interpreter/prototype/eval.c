@@ -171,32 +171,8 @@ bool store_abstr_data(
 	RzILMemIndex mem_idx,
 	const ProtoIntrprAbstrData *addr,
 	const ProtoIntrprAbstrData *src) {
-	if (!src->is_const) {
-		// Really don't write?
-		return true;
-	}
-	RzInterpIORequest io_req = { 0 };
-	io_req.n_bits = rz_bv_len(src->bv);
-	io_req.mem_idx = mem_idx;
-	io_req.big_endian = iset->il_ctx->config->big_endian;
-
-	io_req.type = RZ_INTERP_IO_WRITE;
-	io_req.addr = addr->bv;
-	io_req.st_data = src->bv;
-
-	char *bytes = rz_bv_as_hex_string(src->bv, true);
-	RZ_LOG_DEBUG("pprototype: ototype: STORE @ mem:%" PFMT32d " 0x%" PFMT64x " : %s\n", mem_idx, rz_bv_to_ut64(io_req.addr), bytes);
-	free(bytes);
-
-	if (rz_th_ring_buf_put(iset->io_request_rbuf, &io_req) != RZ_THREAD_RING_BUF_OK) {
-		return false;
-	}
-
-	RzInterpIOResult io_res = { 0 };
-	if (rz_th_ring_buf_take_blocking(iset->io_result_rbuf, &io_res) != RZ_THREAD_RING_BUF_OK) {
-		return false;
-	}
-	return io_res.req_ok;
+	// TODO: handle with memory abstractions
+	return true;
 }
 
 bool load_abstr_data(
@@ -205,9 +181,8 @@ bool load_abstr_data(
 	const ProtoIntrprAbstrData *addr,
 	size_t n_bits,
 	RZ_OUT ProtoIntrprAbstrData *out) {
-	RzInterpIORequest io_req = { 0 };
+	RzInterpIOReadRequest io_req = { 0 };
 	rz_bv_cast_inplace(out->bv, n_bits, 0);
-	io_req.type = RZ_INTERP_IO_READ;
 	io_req.addr = addr->bv;
 	io_req.ld_data = out->bv;
 	io_req.mem_idx = mem_idx;

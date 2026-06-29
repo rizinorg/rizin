@@ -255,20 +255,14 @@ typedef struct {
 		void *plugin_data);
 } RzInterpPlugin;
 
-typedef enum {
-	RZ_INTERP_IO_READ,
-	RZ_INTERP_IO_WRITE,
-} RzInterpIOReqType;
-
 typedef struct {
-	RzInterpIOReqType type;
 	size_t mem_idx; ///< The memory space to read/write.
 	bool big_endian; ///< Set if the data is big endian ordered.
 	const RzBitVector *addr; ///< The address to read/write.
 	const RzBitVector *st_data; ///< The data to store.
 	RzBitVector *ld_data; ///< The bit vector to load into. It is BORROWED.
 	size_t n_bits; ///< The number of bits to read/write.
-} RzInterpIORequest;
+} RzInterpIOReadRequest;
 
 typedef struct {
 	bool req_ok; ///< Set to true if IO request succeeded.

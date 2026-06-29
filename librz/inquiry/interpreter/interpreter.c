@@ -216,7 +216,7 @@ static bool setup_ipc_objects(
 	// Setup the IO queues. Each interpreter instance needs it's own queue at
 	// for writing IO. Because the writing is done on the IO cache, and each
 	// instance needs its own cache.
-	*io_request_rbuf = rz_th_ring_buf_new(RZ_INTERP_IO_RBUF_SIZE, sizeof(RzInterpIORequest));
+	*io_request_rbuf = rz_th_ring_buf_new(RZ_INTERP_IO_RBUF_SIZE, sizeof(RzInterpIOReadRequest));
 	*io_result_rbuf = rz_th_ring_buf_new(RZ_INTERP_IO_RBUF_SIZE, sizeof(RzInterpIOResult));
 	*entry_points = rz_th_ring_buf_new(RZ_INTERP_ENTRY_POINTS_RBUF_SIZE, sizeof(ut64));
 	if (!*io_request_rbuf || !*io_result_rbuf || !*entry_points) {
@@ -341,11 +341,6 @@ RZ_API RZ_NULLABLE RZ_BORROW RzInterpAbstrState *rz_interp_set_pop(RZ_BORROW RZ_
 	r->uninterpreted = false;
 	return r;
 }
-
-typedef struct {
-	RzInterpCtrlFlow ctrl_flow;
-	ut64 in_state_hash;
-} SuccessorState;
 
 /**
  * Main interpretation.

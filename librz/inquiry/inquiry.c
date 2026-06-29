@@ -196,9 +196,8 @@ RZ_API bool rz_inquiry_xref_interpreter_filter(RZ_NONNULL const RzAnalysisXRef *
 	return false;
 }
 
-static void handle_io_request(RzAnalysisILContext *il_ctx, RzInterpIORequest *io_req, RZ_OUT RzInterpIOResult *io_res) {
-	RZ_LOG_DEBUG("inquiry: Received IO %s request: mem:%" PFMTSZd " 0x%" PFMT64x "\n",
-		io_req->type == RZ_INTERP_IO_WRITE ? "write" : "read",
+static void handle_io_request(RzAnalysisILContext *il_ctx, RzInterpIOReadRequest *io_req, RZ_OUT RzInterpIOResult *io_res) {
+	RZ_LOG_DEBUG("inquiry: Received IO read request: mem:%" PFMTSZd " 0x%" PFMT64x "\n",
 		io_req->mem_idx,
 		rz_bv_to_ut64(io_req->addr));
 	io_res->req_ok = false;
@@ -215,14 +214,11 @@ static void handle_io_request(RzAnalysisILContext *il_ctx, RzInterpIORequest *io
 	RzAnalysisILMem *mem = rz_vector_index_ptr(&il_ctx->memory, mem_idx);
 	if (!mem->base_buf) {
 		io_res->req_ok = false;
-	} else if (io_req->type == RZ_INTERP_IO_READ) {
-		io_res->req_ok = rz_il_loadw_into(mem->base_buf, io_req->ld_data, io_req->addr, io_req->n_bits, io_req->big_endian);
 	} else {
-		// TODO: stores from the interpreter should not be supported at all!
-		io_res->req_ok = rz_il_storew(mem->base_buf, io_req->addr, io_req->st_data, io_req->big_endian);
+		// TODO: here only memory should be read that can be assumed to be constant!
+		io_res->req_ok = rz_il_loadw_into(mem->base_buf, io_req->ld_data, io_req->addr, io_req->n_bits, io_req->big_endian);
 	}
-	RZ_LOG_DEBUG("inquiry: Sent IO %s result. Success = %s.\n",
-		io_req->type == RZ_INTERP_IO_WRITE ? "write" : "read",
+	RZ_LOG_DEBUG("inquiry: Sent IO read result. Success = %s.\n",
 		rz_str_bool(io_res->req_ok));
 }
 
@@ -523,10 +519,6 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		goto error_free;
 	}
 
-	RZ_LOG_DEBUG("inquiry: Enforce enabling IO cache.\n");
-	const char *io_cache_opt = rz_config_get(core->config, "io.cache");
-	rz_config_set(core->config, "io.cache", "true");
-
 	// Bundle all the queues into one object to pass it to the thread.
 	// Later we would pass a unique iset to each interpreter with
 	// the required queues only.
@@ -662,7 +654,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			// But this requires multiple IO write caches
 			// (one for each interpreter instance).
 			// Because this is not yet implemented, there is only one interpreter thread for now.
-			RzInterpIORequest io_req = { 0 };
+			RzInterpIOReadRequest io_req = { 0 };
 			if (!rz_th_ring_buf_is_empty_unsafe(iset->io_request_rbuf)) {
 				RzThreadRingBufResult r = rz_th_ring_buf_take(iset->io_request_rbuf, &io_req);
 				if (r == RZ_THREAD_RING_BUF_CLOSED) {
@@ -779,8 +771,6 @@ fatal_error:
 	// free(g);
 
 	RZ_LOG_DEBUG("inquiry: inquiry: inquiry: Done\n");
-
-	rz_config_set(core->config, "io.cache", io_cache_opt);
 
 error_free:
 	rz_interpreter_yield_rbuf_free(yield_rbufs[RZ_INTERP_YIELD_KIND_XREF]);
