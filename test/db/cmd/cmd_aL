@@ -58,7 +58,7 @@ _dA__ 8 16       snes        LGPL3   SuperNES CPU disassembler
 _dA_I 32 64      sparc       BSD     Sun SPARC Capstone-based disassembler
 _dA__ 16         spc700      LGPL3   Sony SPC700 (Nintendo SuperNES sound-chip) disassembler
 _dA__ 32 64      sysz        BSD     IBM SystemZ (S/390) Capstone-based disassembler
-_dA_I 32         tms320      LGPL3   Texas Instruments TMS320 DSP family (c54x,c55x,c55x+,c64x) disassembler
+_dA_I 16 32      tms320      LGPL3   Texas Instruments TMS320 DSP family (c54x,c55x,c55x+,c2x,c64x) disassembler
 _dA_I 32         tricore     BSD     Siemens TriCore Capstone-based disassembler (by billow)
 _dAeI 32         v810        LGPL3   NEC V810 disassembler (by pancake)
 _dAeI 32         v850        LGPL3   NEC/Renesas V850 disassembler
@@ -185,6 +185,7 @@ ps              PowerPC with Paired Single SIMD extension
 qpx             PowerPC with Quad Processing eXtensions
 v9              SPARC V9: 64-bit RISC architecture specification
 c54x            Texas Instruments TMS320C54x DSP family
+c2x             Texas Instruments TMS320C2x legacy fixed-point DSP family
 c55x            Texas Instruments TMS320C55x DSP family
 c55x+           Texas Instruments TMS320C55x+ DSP family
 c64x            Texas Instruments TMS320C64x DSP family
