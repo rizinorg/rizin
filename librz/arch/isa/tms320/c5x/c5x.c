@@ -153,10 +153,10 @@ RZ_IPI ut32 c5x_op_type(ut16 id) {
 		return RZ_ANALYSIS_OP_TYPE_MOV;
 	case C5X_INS_ROLB:
 	case C5X_INS_SFLB:
-	case C5X_INS_BSAR:
 		return RZ_ANALYSIS_OP_TYPE_SHL;
 	case C5X_INS_RORB:
 	case C5X_INS_SFRB:
+	case C5X_INS_BSAR:
 		return RZ_ANALYSIS_OP_TYPE_SHR;
 	case C5X_INS_ZAP:
 	case C5X_INS_ZPR:
