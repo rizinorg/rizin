@@ -1,27 +1,15 @@
 # SPDX-FileCopyrightText: 2025 RizinOrg <info@rizin.re>
 # SPDX-License-Identifier: LGPL-3.0-only
 
-inquiry_plugins_list = [
-  'interpreter_prototype',
-]
-
-inquiry_plugins = {
-  'base_name': 'rz_inquiry',
-  'base_struct': 'RzInquiryPlugin',
-  'list': inquiry_plugins_list,
-}
-
 rz_inquiry_sources = [
   'algorithms/revng_fcn_detection.c',
   'bcfg.c',
   'inquiry.c',
   'il_cache.c',
-  'interpreter/interpreter.c',
-  'interpreter/state.c',
-  'interpreter/p/interpreter_prototype.c',
-  'interpreter/prototype/eval_effect.c',
-  'interpreter/prototype/eval_pure.c',
-  'interpreter/prototype/eval.c',
+  'interp/interpreter.c',
+  'interp/state.c',
+  'interp/val_abs_constant.c',
+  'interp/eval.c',
 ]
 
 rz_inquiry_inc = [platform_inc]
@@ -72,6 +60,5 @@ modules += { 'rz_inquiry': {
       'rz_syscall',
       'rz_type',
       'rz_util'
-    ],
-    'plugins': [inquiry_plugins]
+    ]
 }}

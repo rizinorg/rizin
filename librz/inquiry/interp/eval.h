@@ -10,11 +10,6 @@
 #include <rz_il/rz_il_opcodes.h>
 #include <rz_inquiry/rz_interpreter.h>
 
-/**
- * \brief Abstract data getter from the RzInterpAbstrVal
- */
-#define AD(av) (((ProtoIntrprAbstrData *)av))
-
 typedef struct {
 	/**
 	 * \brief Set if the abstract value represents a single constant bitvector.
@@ -89,7 +84,7 @@ static inline RZ_OWN ProtoIntrprAbstrData *adata_from_bv(const RzBitVector *bv) 
 	return ad;
 }
 
-static inline RZ_OWN ProtoIntrprAbstrData *adata_new() {
+static inline RZ_OWN ProtoIntrprAbstrData *adata_new_top() {
 	ProtoIntrprAbstrData *ad = RZ_NEW0(ProtoIntrprAbstrData);
 	ad->is_const = false;
 	ad->bv = rz_bv_new(BV_STACK_MAX_SIZE);

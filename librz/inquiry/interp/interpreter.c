@@ -15,7 +15,7 @@
 #include <rz_vector.h>
 #include <rz_util.h>
 
-#include "inquiry/interpreter/prototype/eval.h"
+#include "eval.h"
 
 RZ_API void rz_interp_yield_rbuf_free(RZ_OWN RZ_NULLABLE RzInterpYieldRBuf *yield_rbufs) {
 	if (!yield_rbufs) {
@@ -77,7 +77,6 @@ RZ_API RZ_OWN RzInterpYieldRBuf *rz_interp_yield_rbuf_new(RzInterpYieldKind kind
  */
 RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_new(
 	const char *arch_name,
-	RzInterpAbstraction kinds,
 	RZ_BORROW RZ_NONNULL RzAnalysisILContext *il_context) {
 	rz_return_val_if_fail(il_context, NULL);
 	RzInterpAbstrState *state = RZ_NEW0(RzInterpAbstrState);
@@ -85,21 +84,19 @@ RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_new(
 		return NULL;
 	}
 	state->arch_name = arch_name;
-	state->kinds = kinds;
 	// Initialize the register file with uninitialized abstract values.
 	state->var_name_hashes = ht_up_new(NULL, free);
 	state->globals = ht_up_new(NULL, free);
 	for (size_t i = 0; i < il_context->reg_binding->regs_count; i++) {
 		const char *rname = il_context->reg_binding->regs[i].name;
-		RzInterpAbstrVal *aval = RZ_NEW0(RzInterpAbstrVal);
-		if (!aval) {
-			ht_up_free(state->globals);
-			ht_up_free(state->var_name_hashes);
-			free(state);
-			return NULL;
-		}
+		RzInterpAbstrVal *aval = NULL; // RZ_NEW0(RzInterpAbstrVal);
+		// if (!aval) {
+		// 	ht_up_free(state->globals);
+		// 	ht_up_free(state->var_name_hashes);
+		// 	free(state);
+		// 	return NULL;
+		// }
 
-		aval->kind = RZ_INTERP_ABSTRACTION_UNDEF;
 		ut64 djb2_reg_hash = rz_str_djb2_hash(rname);
 		if (!ht_up_insert(state->globals, djb2_reg_hash, aval) ||
 			!ht_up_insert(state->var_name_hashes, djb2_reg_hash, rz_str_dup(rname))) {
@@ -158,7 +155,6 @@ RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_clone(RZ_NONNULL RzInter
 		return NULL;
 	}
 	r->arch_name = state->arch_name;
-	r->kinds = state->kinds;
 	r->pc = state->pc;
 	r->pc_state = state->pc_state;
 	r->uninterpreted = state->uninterpreted;
@@ -237,16 +233,10 @@ error_free:
 RZ_API RZ_OWN RzInterpInstance *rz_interp_instance_new(
 	RzAnalysis *analysis,
 	RZ_NONNULL RZ_OWN RzInterpPlugin *plugin,
-	RzInterpAbstraction abstraction,
 	RZ_NONNULL RZ_BORROW RzILCacheClient *il_cache_client,
 	RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM],
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
 	rz_return_val_if_fail(plugin && ignored_code && analysis && il_cache_client, NULL);
-
-	if (abstraction != (plugin->supported_abstractions & abstraction)) {
-		RZ_LOG_ERROR("Plugin does not support all required abstractions.\n");
-		return NULL;
-	}
 
 	RzInterpInstance *iset = RZ_NEW0(RzInterpInstance);
 	if (!iset) {
@@ -345,7 +335,7 @@ static bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 	// Prepare the initial state from the given entry point
 	// Hint: nothing speaks against supporting multiple entry points in a single run
 	const RzAnalysisPlugin *cur = rz_analysis_plugin_current(inst->a);
-	RzInterpAbstrState *estate = rz_interp_abstr_state_new(cur->arch, RZ_INTERP_ABSTRACTION_CONST, inst->il_ctx);
+	RzInterpAbstrState *estate = rz_interp_abstr_state_new(cur->arch, inst->il_ctx);
 	if (inst->plugin->reset) {
 		// TODO: should rather be local to the RzInterpRunContext if it is reset every run
 		inst->plugin->reset(inst->interp_priv);

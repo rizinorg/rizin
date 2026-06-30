@@ -40,34 +40,11 @@ typedef enum rz_interp_state_flag {
 } RzInterpRunStateFlag;
 
 /**
- * \brief The abstractions this module supports.
+ * \brief An abstract value representing a set of RzILVal
+ *
+ * The actual abstraction and structure of this is defined by the plugin in use.
  */
-typedef enum {
-	/**
-	 * \brief An undefined abstracted value.
-	 */
-	RZ_INTERP_ABSTRACTION_UNDEF = 0,
-	/**
-	 * \brief Value abstraction into constant and bottom values.
-	 */
-	RZ_INTERP_ABSTRACTION_CONST = 1 << 0,
-	/**
-	 * \brief Value abstraction into Heap[base, offset] and bottom values.
-	 */
-	RZ_INTERP_ABSTRACTION_HEAP = 1 << 1,
-	/**
-	 * \brief Value abstraction into Stack[base, offset] and bottom values.
-	 */
-	RZ_INTERP_ABSTRACTION_STACK = 1 << 2,
-} RzInterpAbstraction;
-
-/**
- * \brief An arbitrary abstract value.
- */
-typedef struct {
-	RzInterpAbstraction kind; ///< The abstraction of the value.
-	void *abstr_data; ///< The abstract data. It is managed by individual interpreter.
-} RzInterpAbstrVal;
+typedef void RzInterpAbstrVal;
 
 typedef struct {
 	RzInquiryBCFGEdgeType cf_type; ///< Control flow type.
@@ -114,7 +91,6 @@ typedef struct {
 	RzInterpPCState pc_state;
 	bool uninterpreted; ///< True if this state has not yet been started to interpret, i.e. is part of RzInterpFunctionState.queue
 
-	RzInterpAbstraction kinds; ///< The abstractions of the state.
 	HtUP *var_name_hashes; ///< Map of DJB2 hashes to variable names.
 	HtUP /*<RzInterpAbstrVal *>*/ *globals; ///< Global variables (mostly registers). Indexed by DJB2 hash of global name.
 	HtUP /*<RzInterpAbstrVal *>*/ *locals; ///< Local variables. Indexed by DJB2 hash of the local name.
@@ -175,10 +151,6 @@ typedef struct {
 	const char *version;
 	const char *desc;
 	const char *license;
-	/**
-	 * \brief Supported abstractions. Multiple flags can be set.
-	 */
-	RzInterpAbstraction supported_abstractions;
 	/**
 	 * \brief The yield type this interpreter generates.
 	 */
@@ -305,7 +277,6 @@ RZ_API void rz_interp_yield_rbuf_free(RZ_OWN RZ_NULLABLE RzInterpYieldRBuf *yiel
 
 RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_new(
 	const char *arch_name,
-	RzInterpAbstraction kinds,
 	RZ_BORROW RZ_NONNULL RzAnalysisILContext *il_context);
 RZ_API void rz_interp_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpAbstrState *state);
 RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_clone(RZ_NONNULL RzInterpInstance *iset, const RzInterpAbstrState *state);
@@ -317,7 +288,6 @@ RZ_API RZ_OWN RzInterpYieldRBuf *rz_interp_yield_rbuf_new(RzInterpYieldKind kind
 RZ_API RZ_OWN RzInterpInstance *rz_interp_instance_new(
 	RzAnalysis *analysis,
 	RZ_NONNULL RZ_OWN RzInterpPlugin *plugin,
-	RzInterpAbstraction abstraction,
 	RZ_NONNULL RZ_BORROW RzILCacheClient *il_cache_client,
 	RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM],
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code);

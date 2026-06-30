@@ -9,11 +9,9 @@
 #include "rz_bin.h"
 #include "rz_cons.h"
 #include "rz_il/definitions/mem.h"
-#include "rz_il/rz_il_vm.h"
 #include "rz_inquiry/rz_bcfg.h"
 #include "rz_inquiry/rz_il_cache.h"
 #include "rz_inquiry/rz_interpreter.h"
-#include "rz_inquiry_plugins.h"
 #include "rz_th.h"
 #include "rz_types.h"
 #include "rz_util/ht_pp.h"
@@ -32,6 +30,7 @@
 #include <rz_types_base.h>
 #include <rz_util/rz_assert.h>
 
+#if 0
 RZ_LIB_VERSION(rz_inquiry);
 
 static RzInquiryPlugin *inquiry_static_plugins[] = { RZ_INQUIRY_STATIC_PLUGINS };
@@ -46,6 +45,7 @@ RZ_API RZ_BORROW RzInquiryPlugin *rz_inquiry_get_plugin(size_t index) {
 	}
 	return inquiry_static_plugins[index];
 }
+#endif
 
 RZ_API bool rz_inquiry_plugin_add(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_OWN RZ_NONNULL RzInquiryPlugin *plugin) {
 	rz_return_val_if_fail(inquiry && plugin, false);
@@ -142,9 +142,11 @@ RZ_API RZ_OWN RzInquiry *rz_inquiry_new(void) {
 		return NULL;
 	}
 
+#if 0
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(inquiry_static_plugins); ++i) {
 		rz_inquiry_plugin_add(iq, inquiry_static_plugins[i]);
 	}
+#endif
 	return iq;
 }
 
@@ -152,9 +154,11 @@ RZ_API void rz_inquiry_free(RZ_OWN RZ_NULLABLE RzInquiry *iq) {
 	if (!iq) {
 		return;
 	}
+#if 0
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(inquiry_static_plugins); ++i) {
 		rz_inquiry_plugin_del(iq, inquiry_static_plugins[i]);
 	}
+#endif
 	ht_sp_free(iq->plugins);
 	ht_sp_free(iq->plugins_data);
 	ht_up_free(iq->call_candidates);
@@ -478,6 +482,8 @@ struct ituple {
 	RzInterpRunStateFlag next_run_state;
 };
 
+RZ_API extern RzInquiryPlugin rz_inquiry_plugin_interpreter_prototype;
+
 /**
  * A function to call the prototype interpreter.
  * Usually these tasks will be split between different caches and yield consumers.
@@ -523,7 +529,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 	// Later we would pass a unique iset to each interpreter with
 	// the required queues only.
 	// But for the prototype we have only one iset with all queues.
-	RzInquiryPlugin *prototype = ht_sp_find(core->inquiry->plugins, "abstr_int_prototype", NULL);
+	RzInquiryPlugin *prototype = &rz_inquiry_plugin_interpreter_prototype; // ht_sp_find(core->inquiry->plugins, "abstr_int_prototype", NULL);
 	if (!prototype) {
 		return_code = false;
 		rz_warn_if_reached();
@@ -553,7 +559,6 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		intp_iset = rz_interp_instance_new(
 			core->analysis,
 			prototype->p_interpreter,
-			RZ_INTERP_ABSTRACTION_CONST,
 			cache_client,
 			yield_rbufs,
 			ignored_code);
