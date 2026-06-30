@@ -205,11 +205,6 @@ typedef struct {
 	 */
 	bool (*fini_state)(RZ_BORROW RzInterpAbstrState *state, void *plugin_data);
 	/**
-	 * \brief Hashes the state.
-	 */
-	ut64 (*hash_state)(RZ_NONNULL const RzInterpAbstrState *state,
-		void *plugin_data);
-	/**
 	 * \brief Performs the join operation on states (least upper bound, lattice theory)
 	 * \return True if a was changed
 	 */
@@ -219,15 +214,6 @@ typedef struct {
 	 */
 	bool (*eval)(RZ_NONNULL RzInterpRunContext *ctx,
 		RZ_NONNULL const RzILCacheBlock *il_bb,
-		void *plugin_data);
-	/**
-	 * \brief Determines the next successor addresses from state.
-	 *
-	 * \return Returns false in case of error. The interpretation must abort.
-	 * True otherwise.
-	 */
-	bool (*successors)(RZ_NONNULL const RzInterpAbstrState *state,
-		RZ_NONNULL RZ_OUT RzVector /*<RzInterpBranch>*/ *successors,
 		void *plugin_data);
 
 	/**
@@ -246,13 +232,6 @@ typedef struct {
 	 */
 	bool (*state_as_str)(RZ_NONNULL const RzInterpAbstrState *state,
 		RZ_NONNULL RZ_OUT RzStrBuf *str_buf,
-		void *plugin_data);
-
-	/**
-	 * \brief Set the abstract PC to the given address.
-	 */
-	bool (*set_pc)(RZ_NONNULL RzInterpAbstrState *state,
-		ut64 pc,
 		void *plugin_data);
 } RzInterpPlugin;
 

@@ -414,10 +414,8 @@ RZ_API bool rz_interp_instance_th(RZ_NONNULL RZ_OWN RzInterpInstance *inst) {
 			inst->run_state_sync &&
 			inst->plugin &&
 			inst->plugin->eval &&
-			inst->plugin->successors &&
 			inst->plugin->init_state &&
-			inst->plugin->fini_state &&
-			inst->plugin->hash_state,
+			inst->plugin->fini_state,
 		false);
 
 	bool success = true;

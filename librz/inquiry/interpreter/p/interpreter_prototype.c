@@ -101,25 +101,6 @@ static bool eval(RZ_NONNULL RzInterpRunContext *ctx,
 	return true;
 }
 
-bool successors(RZ_NONNULL const RzInterpAbstrState *state,
-	RZ_NONNULL RZ_OUT RzVector /*<RzInterpBranch>*/ *successors,
-	void *plugin_data) {
-	rz_return_val_if_fail(state && successors, false);
-	ProtoIntrprPluginData *pdata = plugin_data;
-	if (state->pc_state != RZ_INTERP_PC_CONST) {
-		// The PC is not a concrete value.
-		// This prototype can't estimate a reasonable concretization for it.
-		return true;
-	}
-
-	ut64 next_pc = state->pc;
-	RzInterpCtrlFlow branch = { 0 };
-	branch.target_addr = branch.actual_target = next_pc;
-	branch.src_block_addr = pdata->prev_pc;
-	rz_vector_push(successors, &branch);
-	return true;
-}
-
 static bool init_state(RZ_BORROW RzInterpAbstrState *state, void *plugin_data) {
 	state->pc = 0;
 	state->pc_state = RZ_INTERP_PC_UNREACHABLE;
@@ -140,18 +121,6 @@ static bool init_state(RZ_BORROW RzInterpAbstrState *state, void *plugin_data) {
 		// TODO: This is debatable. It depends on the ABI what the default values are.
 		// Some values must be concrete, otherwise the interpretation of the prototype end too early.
 		AD(av->abstr_data)->is_const = false;
-		/*if (state->il_config->init_state) {
-			RzAnalysisILInitStateVar *il_var;
-			rz_vector_foreach (&state->il_config->init_state->vars, il_var) {
-				if (rz_str_djb2_hash(il_var->name) != djb2_reg_name) {
-					continue;
-				}
-				// The RzArch plugin defined a default value for this global.
-				RzBitVector *default_val = rz_il_value_to_bv(il_var->val);
-				rz_bv_copy(AD(av->abstr_data)->bv, default_val);
-				rz_bv_free(default_val);
-			}
-		}*/
 	}
 	rz_iterator_free(it);
 	return true;
@@ -168,18 +137,6 @@ static bool reset_state(RZ_BORROW RzInterpAbstrState *state, ut64 entry_point, v
 		RzInterpAbstrVal *av = ht_up_find(state->globals, djb2_reg_name, NULL);
 		rz_bv_set_from_ut64(AD(av->abstr_data)->bv, 0);
 		AD(av->abstr_data)->is_const = false;
-		/*if (state->il_config->init_state) {
-			RzAnalysisILInitStateVar *il_var;
-			rz_vector_foreach (&state->il_config->init_state->vars, il_var) {
-				if (rz_str_djb2_hash(il_var->name) != djb2_reg_name) {
-					continue;
-				}
-				// The RzArch plugin defined a default value for this global.
-				RzBitVector *default_val = rz_il_value_to_bv(il_var->val);
-				rz_bv_copy(AD(av->abstr_data)->bv, default_val);
-				rz_bv_free(default_val);
-			}
-		}*/
 	}
 	rz_iterator_free(it);
 	state->bb_addr = 0;
@@ -225,30 +182,6 @@ static bool fini_state(RZ_BORROW RzInterpAbstrState *state, void *plugin_data) {
 	}
 	rz_iterator_free(it);
 	return true;
-}
-
-/**
- * \brief This hash function is just an example implementation.
- * It is likely not sufficient to prevent collisions.
- * It is also slow.
- */
-static ut64 hash_state(RZ_NONNULL const RzInterpAbstrState *state, void *plugin_data) {
-	ut64 h = 5381;
-	h = (h ^ (h << 5)) ^ (ut64)state->pc_state;
-	if (state->pc_state == RZ_INTERP_PC_CONST) {
-		h = (h ^ (h << 5)) ^ state->pc;
-	}
-	RzIterator *it = ht_up_as_iter(state->globals);
-	RzInterpAbstrVal **v;
-	rz_iterator_foreach(it, v) {
-		RzInterpAbstrVal *av = *v;
-		ProtoIntrprAbstrData *ad = av->abstr_data;
-		if (ad->bv) {
-			h = (h ^ (h << 5)) ^ rz_bv_to_ut64(ad->bv);
-		}
-	}
-	rz_iterator_free(it);
-	return h;
 }
 
 /**
@@ -317,8 +250,6 @@ bool state_as_str(RZ_NONNULL const RzInterpAbstrState *state,
 	void *plugin_data) {
 	rz_return_val_if_fail(state && sb, false);
 
-	ut64 hash = hash_state(state, plugin_data);
-	rz_strbuf_appendf(sb, "hash = 0x%" PFMT64x "\n\n", hash);
 	rz_strbuf_append(sb, "Globals\n\n");
 	rz_strbuf_append(sb, "\tpc = ");
 	if (state->pc_state == RZ_INTERP_PC_CONST) {
@@ -419,13 +350,10 @@ static RzInterpPlugin rz_interpreter_plugin_prototype = {
 	.fini = fini,
 	.clone_val = clone_val,
 	.eval = eval,
-	.successors = successors,
 	.init_state = init_state,
 	.reset_state = reset_state,
 	.fini_state = fini_state,
-	.hash_state = hash_state,
 	.join_state = join_state,
-	.set_pc = set_pc,
 	.state_as_str = state_as_str,
 	.val_as_str = val_as_str
 };
