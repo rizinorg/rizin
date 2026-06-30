@@ -516,6 +516,18 @@ static void milstd_fill_val(RzAnalysis *a, RzAnalysisOp *op, const MilStd1750Ins
 	}
 }
 
+static void milstd_fill_operands(RzAnalysis *analysis, RzAnalysisOp *op, const MilStd1750Instruction *insn, ut8 op8, RzAnalysisOpMask mask) {
+	milstd_set_stack(op, insn, op8);
+	milstd_set_direction(op, insn->format);
+	milstd_set_val(op, insn);
+	milstd_set_ptr(op, insn, op8);
+	milstd_set_datatype(op, insn);
+	milstd_set_reg(op, insn);
+	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
+		milstd_fill_val(analysis, op, insn, op8);
+	}
+}
+
 static void set_invalid(RzAnalysisOp *op, ut64 addr) {
 	op->family = RZ_ANALYSIS_OP_FAMILY_UNKNOWN;
 	op->type = RZ_ANALYSIS_OP_TYPE_ILL;
@@ -588,11 +600,7 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 			break;
 		case (MIL_OP_NIM & 0xF): op->type = RZ_ANALYSIS_OP_TYPE_NOT; break; // NIM
 		}
-		if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
-			milstd_set_val(op, &insn);
-			milstd_set_reg(op, &insn);
-			milstd_fill_val(analysis, op, &insn, op8);
-		}
+		milstd_fill_operands(analysis, op, &insn, op8, mask);
 		return op->size;
 	}
 
@@ -931,15 +939,7 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		break;
 	}
 
-	milstd_set_stack(op, &insn, op8);
-	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
-		milstd_set_direction(op, insn.format);
-		milstd_set_val(op, &insn);
-		milstd_set_ptr(op, &insn, op8);
-		milstd_set_datatype(op, &insn);
-		milstd_set_reg(op, &insn);
-		milstd_fill_val(analysis, op, &insn, op8);
-	}
+	milstd_fill_operands(analysis, op, &insn, op8, mask);
 	return op->size;
 }
 
