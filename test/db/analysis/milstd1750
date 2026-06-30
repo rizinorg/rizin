@@ -42,73 +42,73 @@ wx FF00 A112 A0301234 7410 FFFF
 pi 5
 s 0x100
 wx 7410
-ao~type,size,jump
+ao~^type,size,jump
 s 0x100
 wx 74F8
-ao~type,size,jump
+ao~^type,size,jump
 s 0x100
 wx 7505 7610 7820 7930 7A40 7B50
-ao 6~type,size,jump,fail
+ao 6~^type,size,jump,fail
 s 0x100
 wx 705F0800
-ao~type,size,jump,fail
+ao~^type,size,jump,fail
 s 0x100
 wx 72002000
-ao~type,size,jump
+ao~^type,size,jump
 s 0x100
 wx 7E000800
-ao~type,size,jump
+ao~^type,size,jump
 s 0x100
 wx 73001500
-ao~type,size,jump,fail
+ao~^type,size,jump,fail
 s 0x100
 wx 7F00
-ao~type,size
+ao~^type,size
 s 0x100
 wx FFFF FF00
-ao 2~type,size
+ao 2~^type,size
 s 0x100
 wx A112 B112 C512 D112
-ao 4~type,size
+ao 4~^type,size
 s 0x100
 wx E312 E134 E556 E712
-ao 4~type,size
+ao 4~^type,size
 s 0x100
 wx 6043 6121 6232
-ao 3~type,size
+ao 3~^type,size
 s 0x100
 wx 80501234 90301234 0005 0805
-ao 4~type,size
+ao 4~^type,size
 s 0x100
 wx 8F35 9F35
-ao 2~type,size
+ao 2~^type,size
 s 0x100
 wx 48302000 49101234
-ao 2~type,size
+ao 2~^type,size
 s 0x100
 wx 9312
-ao~type,size
+ao~^type,size
 s 0x100
 wx F0501234 F912
-ao 2~type,size
+ao 2~^type,size
 s 0x100
 wx 4A00
-ao~type,size
+ao~^type,size
 s 0x100
 wx 70000800 70700800 70500800
-ao 3~type,size,jump,fail
+ao 3~^type,size,jump,fail
 s 0x100
 wx 71000800 71F00800 71200800
-ao 3~type,size,fail
+ao 3~^type,size,fail
 s 0x100
 wx 7D001234 7C001234
-ao 2~type,size,family
+ao 2~^type,size,family
 s 0x100
 wx 7705
-ao~type,size
+ao~^type,size
 s 0x100
 wx 72002000 7E002000
-ao 2~type,size,jump,fail
+ao 2~^type,size,jump,fail
 s 0x100
 wx 48302000 49101234
 ao 2~family
@@ -302,13 +302,13 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=milstd1750
 e asm.bits=8
-s 0x100;wx 7501;ao~type,cond
-s 0x100;wx 7610;ao~type,cond
-s 0x100;wx 7820;ao~type,cond
-s 0x100;wx 7930;ao~type,cond
-s 0x100;wx 7A40;ao~type,cond
-s 0x100;wx 7B50;ao~type,cond
-s 0x100;wx 73001500;ao~type,cond
+s 0x100;wx 7501;ao~^type,cond
+s 0x100;wx 7610;ao~^type,cond
+s 0x100;wx 7820;ao~^type,cond
+s 0x100;wx 7930;ao~^type,cond
+s 0x100;wx 7A40;ao~^type,cond
+s 0x100;wx 7B50;ao~^type,cond
+s 0x100;wx 73001500;ao~^type,cond
 EOF
 EXPECT=<<EOF
 type: cjmp
@@ -333,11 +333,11 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=milstd1750
 e asm.bits=8
-s 0x100;wx 70100800;ao~type,cond
-s 0x100;wx 70800800;ao~type,cond
-s 0x100;wx 70900800;ao~type,cond
-s 0x100;wx 70700800;ao~type,cond
-s 0x100;wx 71200800;ao~type,cond
+s 0x100;wx 70100800;ao~^type,cond
+s 0x100;wx 70800800;ao~^type,cond
+s 0x100;wx 70900800;ao~^type,cond
+s 0x100;wx 70700800;ao~^type,cond
+s 0x100;wx 71200800;ao~^type,cond
 EOF
 EXPECT=<<EOF
 type: cjmp
@@ -357,11 +357,11 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=milstd1750
 e asm.bits=8
-s 0x100;wx F0201234;ao~type,sign
-s 0x100;wx FD201234;ao~type,sign
-s 0x100;wx F8201234;ao~type,sign
-s 0x100;wx 6230;ao~type,sign
-s 0x100;wx 6130;ao~type,sign
+s 0x100;wx F0201234;ao~^type,sign
+s 0x100;wx FD201234;ao~^type,sign
+s 0x100;wx F8201234;ao~^type,sign
+s 0x100;wx 6230;ao~^type,sign
+s 0x100;wx 6130;ao~^type,sign
 EOF
 EXPECT=<<EOF
 sign: true
@@ -382,11 +382,11 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=milstd1750
 e asm.bits=8
-s 0x100;wx 9F36;ao~type,stackop,stackptr
-s 0x100;wx 8F36;ao~type,stackop,stackptr
-s 0x100;wx 7E002000;ao~type,stackop,stackptr
-s 0x100;wx 7F00;ao~type,stackop,stackptr
-s 0x100;wx 9F52;ao~type,stackop,stackptr
+s 0x100;wx 9F36;ao~^type,stackop,stackptr
+s 0x100;wx 8F36;ao~^type,stackop,stackptr
+s 0x100;wx 7E002000;ao~^type,stackop,stackptr
+s 0x100;wx 7F00;ao~^type,stackop,stackptr
+s 0x100;wx 9F52;ao~^type,stackop,stackptr
 EOF
 EXPECT=<<EOF
 type: push
@@ -412,10 +412,10 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=milstd1750
 e asm.bits=8
-s 0x100;wx 48302000;ao~type,family
-s 0x100;wx 49101234;ao~type,family
-s 0x100;wx 7D001234;ao~type,family
-s 0x100;wx 7C001234;ao~type,family
+s 0x100;wx 48302000;ao~^type,family
+s 0x100;wx 49101234;ao~^type,family
+s 0x100;wx 7D001234;ao~^type,family
+s 0x100;wx 7C001234;ao~^type,family
 EOF
 EXPECT=<<EOF
 type: io
@@ -445,5 +445,74 @@ EXPECT=<<EOF
 fcn.00000100 0x100 [DATA] L(r2, 0x0010)
 fcn.00000200 0x200 [DATA] ST(r4, 0x0018)
 fcn.00000300 0x300 [CALL] JS(r0, 0x0028)
+EOF
+RUN
+
+NAME=milstd1750: access direction (op->direction)
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=milstd1750
+e asm.bits=8
+s 0x100;wx 80201234;ao~direction
+s 0x100;wx 90201234;ao~direction
+s 0x100;wx 9F36;ao~direction
+s 0x100;wx 8F36;ao~direction
+s 0x100;wx 72002000;ao~direction
+EOF
+EXPECT=<<EOF
+direction: read
+direction: write
+direction: write
+direction: read
+direction: exec
+EOF
+RUN
+
+NAME=milstd1750: immediate values (op->val)
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=milstd1750
+e asm.bits=8
+s 0x100;wx A234;ao~val
+s 0x100;wx 6043;ao~val
+s 0x100;wx 4A011234;ao~val
+EOF
+EXPECT=<<EOF
+val: 0x00000005
+val: 0x00000005
+val: 0x00001234
+EOF
+RUN
+
+NAME=milstd1750: destination/index registers (op->reg/ireg)
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=milstd1750
+e asm.bits=8
+s 0x100;wx A112;ao~reg
+s 0x100;wx A0231234;ao~reg
+EOF
+EXPECT=<<EOF
+reg: r1
+reg: r2
+ireg: r3
+EOF
+RUN
+
+NAME=milstd1750: operand datatype (op->datatype)
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=milstd1750
+e asm.bits=8
+s 0x100;wx A0201234;ao~datatype
+s 0x100;wx A6201234;ao~datatype
+s 0x100;wx A8201234;ao~datatype
+s 0x100;wx AA201234;ao~datatype
+EOF
+EXPECT=<<EOF
+datatype: int16
+datatype: int32
+datatype: float
+datatype: float
 EOF
 RUN
