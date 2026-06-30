@@ -271,7 +271,7 @@ static bool filter_cc(void *user, const SdbKv *kv) {
 }
 
 RZ_API RzList /*<char *>*/ *rz_analysis_calling_conventions(RzAnalysis *analysis) {
-	RzList *ccl = rz_list_new();
+	RzList *ccl = rz_list_newf(free);
 	void **iter;
 	RzPVector *items = sdb_get_items_filter(analysis->sdb_cc, filter_cc, NULL, true);
 	rz_pvector_foreach (items, iter) {
