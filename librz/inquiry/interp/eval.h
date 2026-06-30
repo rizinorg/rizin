@@ -24,10 +24,6 @@ typedef struct {
 	RzBitVector *bv;
 } ProtoIntrprAbstrData;
 
-typedef struct {
-	RzAnalysisCallCandidate call_cand; ///< Data of a call candidate.
-} ProtoIntrprPluginData;
-
 /**
  * \brief In bytes
  *
@@ -84,13 +80,11 @@ bool load_abstr_data(
 
 RZ_IPI bool interpreter_prototype_eval_effect(RzInterpRunContext *ctx,
 	const RzILOpEffect *effect,
-	size_t nop_pc_inc,
-	ProtoIntrprPluginData *plugin_data);
+	size_t nop_pc_inc);
 RZ_IPI bool interpreter_prototype_eval_pure(
 	RzInterpRunContext *ctx,
 	const RzILOpPure *pure,
-	RZ_OUT ProtoIntrprAbstrData *out,
-	ProtoIntrprPluginData *plugin_data);
+	RZ_OUT ProtoIntrprAbstrData *out);
 
 bool report_yield_xref(
 	RzInterpRunContext *ctx,
@@ -100,14 +94,11 @@ bool report_yield_xref(
 	RzAnalysisXRefType type);
 
 bool report_yield_call_candiate(
-	RzInterpInstance *iset,
-	ProtoIntrprPluginData *plugin_data);
+	RzInterpRunContext *ctx);
 
-bool set_pc(RzInterpAbstrState *state, ut64 pc,
-	void *plugin_data);
+bool set_pc(RzInterpAbstrState *state, ut64 pc);
 
-bool set_abstr_pc(RzInterpAbstrState *state, ProtoIntrprAbstrData *pc,
-	void *plugin_data);
+bool set_abstr_pc(RzInterpAbstrState *state, ProtoIntrprAbstrData *pc);
 
 void state_as_str_short(RzInterpInstance *iset, RZ_OUT RzStrBuf *out, RzInterpAbstrState *astate);
 

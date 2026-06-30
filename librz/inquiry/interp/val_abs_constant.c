@@ -31,8 +31,7 @@ static void adata_free(ProtoIntrprAbstrData *adata) {
 RZ_IPI bool interpreter_prototype_eval_pure(
 	RzInterpRunContext *ctx,
 	const RzILOpPure *pure,
-	RZ_OUT ProtoIntrprAbstrData *out,
-	ProtoIntrprPluginData *plugin_data) {
+	RZ_OUT ProtoIntrprAbstrData *out) {
 	switch (pure->code) {
 	default:
 	case RZ_IL_OP_VAR: {
@@ -46,13 +45,13 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	}
 	case RZ_IL_OP_LET: {
 		ut64 vhash = pure->op.let.hash;
-		if (!interpreter_prototype_eval_pure(ctx, pure->op.let.exp, out, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, pure->op.let.exp, out)) {
 			RZ_LOG_ERROR("prototype: LET expression failed to evaluate.\n");
 			return false;
 		}
 		write_var_to_state(ctx->astate, RZ_IL_VAR_KIND_LOCAL_PURE, vhash, out);
 		// Evaluate body
-		if (!interpreter_prototype_eval_pure(ctx, pure->op.let.body, out, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, pure->op.let.body, out)) {
 			RZ_LOG_ERROR("prototype: LET body failed to evaluate.\n");
 			return false;
 		}
@@ -61,7 +60,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		break;
 	}
 	case RZ_IL_OP_ITE: {
-		if (!interpreter_prototype_eval_pure(ctx, pure->op.ite.condition, out, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, pure->op.ite.condition, out)) {
 			RZ_LOG_ERROR("prototype: ITE condition failed to evaluate.\n");
 			return false;
 		}
@@ -71,12 +70,12 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		}
 
 		if (abstr_is_true(ctx->inst, out)) {
-			if (!interpreter_prototype_eval_pure(ctx, pure->op.ite.x, out, plugin_data)) {
+			if (!interpreter_prototype_eval_pure(ctx, pure->op.ite.x, out)) {
 				RZ_LOG_ERROR("prototype: ITE x failed to evaluate.\n");
 				return false;
 			}
 		} else {
-			if (!interpreter_prototype_eval_pure(ctx, pure->op.ite.y, out, plugin_data)) {
+			if (!interpreter_prototype_eval_pure(ctx, pure->op.ite.y, out)) {
 				RZ_LOG_ERROR("prototype: ITE y failed to evaluate.\n");
 				return false;
 			}
@@ -98,7 +97,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		out->is_const = true;
 		break;
 	case RZ_IL_OP_CAST: {
-		if (!interpreter_prototype_eval_pure(ctx, pure->op.cast.val, out, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, pure->op.cast.val, out)) {
 			RZ_LOG_ERROR("prototype: CAST val failed to evaluate.\n");
 			return false;
 		}
@@ -106,7 +105,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(fill_bit);
-		if (!interpreter_prototype_eval_pure(ctx, pure->op.cast.fill, &fill_bit, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, pure->op.cast.fill, &fill_bit)) {
 			RZ_LOG_ERROR("prototype: CAST fill failed to evaluate.\n");
 			return false;
 		}
@@ -124,7 +123,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		break;
 	case RZ_IL_OP_APPEND: {
 		STACK_ABSTR_DATA_OUT(high);
-		if (!interpreter_prototype_eval_pure(ctx, pure->op.append.high, &high, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, pure->op.append.high, &high)) {
 			RZ_LOG_ERROR("prototype: APPEND high failed to evaluate.\n");
 			return false;
 		}
@@ -132,7 +131,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			rz_bv_fini(high.bv);
 			goto map_to_top;
 		}
-		if (!interpreter_prototype_eval_pure(ctx, pure->op.append.low, out, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, pure->op.append.low, out)) {
 			RZ_LOG_ERROR("prototype: APPEND low failed to evaluate.\n");
 			rz_bv_fini(high.bv);
 			return false;
@@ -150,7 +149,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	case RZ_IL_OP_LOGNOT:
 	case RZ_IL_OP_INV: {
 		RzILOpPure *x = pure->code == RZ_IL_OP_INV ? pure->op.boolinv.x : pure->op.lognot.bv;
-		if (!interpreter_prototype_eval_pure(ctx, x, out, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, x, out)) {
 			RZ_LOG_ERROR("prototype: INV x failed to evaluate.\n");
 			return false;
 		}
@@ -163,7 +162,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	case RZ_IL_OP_AND: {
 		RzILOpPure *px = pure->code == RZ_IL_OP_AND ? pure->op.booland.x : pure->op.logand.x;
 		RzILOpPure *py = pure->code == RZ_IL_OP_AND ? pure->op.booland.y : pure->op.logand.y;
-		if (!interpreter_prototype_eval_pure(ctx, px, out, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, px, out)) {
 			RZ_LOG_ERROR("prototype: AND x failed to evaluate.\n");
 			return false;
 		}
@@ -171,7 +170,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(y);
-		if (!interpreter_prototype_eval_pure(ctx, py, &y, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, py, &y)) {
 			RZ_LOG_ERROR("prototype: AND y failed to evaluate.\n");
 			return false;
 		}
@@ -190,7 +189,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	case RZ_IL_OP_OR: {
 		RzILOpPure *px = pure->code == RZ_IL_OP_OR ? pure->op.boolor.x : pure->op.logor.x;
 		RzILOpPure *py = pure->code == RZ_IL_OP_OR ? pure->op.boolor.y : pure->op.logor.y;
-		if (!interpreter_prototype_eval_pure(ctx, px, out, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, px, out)) {
 			RZ_LOG_ERROR("prototype: OR x failed to evaluate.\n");
 			return false;
 		}
@@ -198,7 +197,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(y);
-		if (!interpreter_prototype_eval_pure(ctx, py, &y, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, py, &y)) {
 			RZ_LOG_ERROR("prototype: OR y failed to evaluate.\n");
 			return false;
 		}
@@ -217,7 +216,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	case RZ_IL_OP_XOR: {
 		RzILOpPure *px = pure->code == RZ_IL_OP_XOR ? pure->op.boolxor.x : pure->op.logxor.x;
 		RzILOpPure *py = pure->code == RZ_IL_OP_XOR ? pure->op.boolxor.y : pure->op.logxor.y;
-		if (!interpreter_prototype_eval_pure(ctx, px, out, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, px, out)) {
 			RZ_LOG_ERROR("prototype: XOR x failed to evaluate.\n");
 			return false;
 		}
@@ -225,7 +224,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(y);
-		if (!interpreter_prototype_eval_pure(ctx, py, &y, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, py, &y)) {
 			RZ_LOG_ERROR("prototype: XOR y failed to evaluate.\n");
 			return false;
 		}
@@ -262,7 +261,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			truth_test = rz_bv_msb;
 			break;
 		}
-		if (!interpreter_prototype_eval_pure(ctx, bv, out, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, bv, out)) {
 			RZ_LOG_ERROR("prototype: MSB/LSB/IS_ZERO bv failed to evaluate.\n");
 			return false;
 		}
@@ -276,7 +275,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		break;
 	}
 	case RZ_IL_OP_NEG: {
-		if (!interpreter_prototype_eval_pure(ctx, pure->op.neg.bv, out, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, pure->op.neg.bv, out)) {
 			RZ_LOG_ERROR("prototype: NEG bv failed to evaluate.\n");
 			return false;
 		}
@@ -288,7 +287,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	case RZ_IL_OP_ADD: {
 		RzILOpPure *px = pure->op.add.x;
 		RzILOpPure *py = pure->op.add.y;
-		if (!interpreter_prototype_eval_pure(ctx, px, out, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, px, out)) {
 			RZ_LOG_ERROR("prototype: ADD x failed to evaluate.\n");
 			return false;
 		}
@@ -296,7 +295,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(y);
-		if (!interpreter_prototype_eval_pure(ctx, py, &y, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, py, &y)) {
 			RZ_LOG_ERROR("prototype: ADD y failed to evaluate.\n");
 			return false;
 		}
@@ -314,7 +313,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	case RZ_IL_OP_SUB: {
 		RzILOpPure *px = pure->op.sub.x;
 		RzILOpPure *py = pure->op.sub.y;
-		if (!interpreter_prototype_eval_pure(ctx, px, out, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, px, out)) {
 			RZ_LOG_ERROR("prototype: SUB x failed to evaluate.\n");
 			return false;
 		}
@@ -322,7 +321,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(y);
-		if (!interpreter_prototype_eval_pure(ctx, py, &y, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, py, &y)) {
 			RZ_LOG_ERROR("prototype: SUB y failed to evaluate.\n");
 			return false;
 		}
@@ -342,7 +341,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		RzILOpPure *px = pure->code == RZ_IL_OP_SHIFTR ? pure->op.shiftr.x : pure->op.shiftl.x;
 		RzILOpPure *py = pure->code == RZ_IL_OP_SHIFTR ? pure->op.shiftr.y : pure->op.shiftl.y;
 		RzILOpPure *pfill_bit = pure->code == RZ_IL_OP_SHIFTR ? pure->op.shiftr.fill_bit : pure->op.shiftl.fill_bit;
-		if (!interpreter_prototype_eval_pure(ctx, px, out, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, px, out)) {
 			RZ_LOG_ERROR("prototype: SHIFT(L/R) x failed to evaluate.\n");
 			return false;
 		}
@@ -350,7 +349,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(y);
-		if (!interpreter_prototype_eval_pure(ctx, py, &y, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, py, &y)) {
 			RZ_LOG_ERROR("prototype: SHIFT(L/R) y failed to evaluate.\n");
 			return false;
 		}
@@ -359,7 +358,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(fill_bit);
-		if (!interpreter_prototype_eval_pure(ctx, pfill_bit, &fill_bit, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, pfill_bit, &fill_bit)) {
 			RZ_LOG_ERROR("prototype: SHIFT(L/R) fill_bit failed to evaluate.\n");
 			return false;
 		}
@@ -405,7 +404,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			break;
 		}
 
-		if (!interpreter_prototype_eval_pure(ctx, px, out, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, px, out)) {
 			RZ_LOG_ERROR("prototype: CMP x failed to evaluate.\n");
 			return false;
 		}
@@ -413,7 +412,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(y);
-		if (!interpreter_prototype_eval_pure(ctx, py, &y, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, py, &y)) {
 			RZ_LOG_ERROR("prototype: CMP y failed to evaluate.\n");
 			return false;
 		}
@@ -432,7 +431,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		STACK_ABSTR_DATA_OUT(ld_addr);
 		RzILOpPure *key = pure->code == RZ_IL_OP_LOAD ? pure->op.load.key : pure->op.loadw.key;
 		RzILMemIndex mem_idx = pure->code == RZ_IL_OP_LOAD ? 0 : pure->op.loadw.mem;
-		if (!interpreter_prototype_eval_pure(ctx, key, &ld_addr, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, key, &ld_addr)) {
 			RZ_LOG_ERROR("prototype: LOAD/LOADW key failed to evaluate.\n");
 			rz_bv_fini(ld_addr.bv);
 			return false;
@@ -463,7 +462,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	case RZ_IL_OP_MUL: {
 		RzILOpPure *px = pure->op.mul.x;
 		RzILOpPure *py = pure->op.mul.y;
-		if (!interpreter_prototype_eval_pure(ctx, px, out, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, px, out)) {
 			RZ_LOG_ERROR("prototype: MUL x failed to evaluate.\n");
 			return false;
 		}
@@ -471,7 +470,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(y);
-		if (!interpreter_prototype_eval_pure(ctx, py, &y, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, py, &y)) {
 			RZ_LOG_ERROR("prototype: MUL y failed to evaluate.\n");
 			return false;
 		}
@@ -489,7 +488,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	case RZ_IL_OP_MOD: {
 		RzILOpPure *px = pure->op.mod.x;
 		RzILOpPure *py = pure->op.mod.y;
-		if (!interpreter_prototype_eval_pure(ctx, px, out, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, px, out)) {
 			RZ_LOG_ERROR("prototype: MOD x failed to evaluate.\n");
 			return false;
 		}
@@ -497,7 +496,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(y);
-		if (!interpreter_prototype_eval_pure(ctx, py, &y, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, py, &y)) {
 			RZ_LOG_ERROR("prototype: MOD y failed to evaluate.\n");
 			return false;
 		}
@@ -515,7 +514,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	case RZ_IL_OP_DIV: {
 		RzILOpPure *px = pure->op.div.x;
 		RzILOpPure *py = pure->op.div.y;
-		if (!interpreter_prototype_eval_pure(ctx, px, out, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, px, out)) {
 			RZ_LOG_ERROR("prototype: DIV x failed to evaluate.\n");
 			return false;
 		}
@@ -523,7 +522,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			goto map_to_top;
 		}
 		STACK_ABSTR_DATA_OUT(y);
-		if (!interpreter_prototype_eval_pure(ctx, py, &y, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(ctx, py, &y)) {
 			RZ_LOG_ERROR("prototype: DIV y failed to evaluate.\n");
 			return false;
 		}
@@ -589,10 +588,9 @@ map_to_top:
 #define MAX_INVOCATIONS_PER_BLOCK 3
 
 bool state_as_str(RZ_NONNULL const RzInterpAbstrState *state,
-	RZ_NONNULL RZ_OUT RzStrBuf *sb,
-	void *plugin_data);
+	RZ_NONNULL RZ_OUT RzStrBuf *sb);
 
-RZ_OWN RzInterpAbstrVal *clone_val(const RzInterpAbstrVal *val, void *plugin_data) {
+RZ_OWN RzInterpAbstrVal *clone_val(const RzInterpAbstrVal *val) {
 	ProtoIntrprAbstrData *r = RZ_NEW0(ProtoIntrprAbstrData);
 	if (!r) {
 		return NULL;
@@ -602,13 +600,10 @@ RZ_OWN RzInterpAbstrVal *clone_val(const RzInterpAbstrVal *val, void *plugin_dat
 	return r;
 }
 
-static bool eval(RZ_NONNULL RzInterpRunContext *ctx,
-	RZ_NONNULL const RzILCacheBlock *il_bb,
-	void *plugin_data) {
-	ProtoIntrprPluginData *pdata = plugin_data;
+static bool eval(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL const RzILCacheBlock *il_bb) {
 
 	// Reset call candidate tracking for each basic block.
-	memset(&pdata->call_cand, 0, sizeof(pdata->call_cand));
+	memset(&ctx->call_cand, 0, sizeof(ctx->call_cand));
 
 	// Now execute the actual effects of the BLOCK.
 	RzInterpAbstrState *astate = ctx->astate;
@@ -618,7 +613,7 @@ static bool eval(RZ_NONNULL RzInterpRunContext *ctx,
 		RZ_LOG_DEBUG("prototype: Eval PC = 0x%" PFMT64x "\n", pc);
 		RzStrBuf sb;
 		rz_strbuf_init(&sb);
-		state_as_str(ctx->astate, &sb, plugin_data);
+		state_as_str(ctx->astate, &sb);
 		RZ_LOG_DEBUG("%s\n", rz_strbuf_get(&sb));
 		rz_strbuf_fini(&sb);
 
@@ -637,9 +632,9 @@ static bool eval(RZ_NONNULL RzInterpRunContext *ctx,
 
 		// Prepare next pc, the evalutation may overwrite this.
 		ut64 next_pc = pc + pkt->insn_pkt_size;
-		set_pc(ctx->astate, next_pc, plugin_data);
+		set_pc(ctx->astate, next_pc);
 
-		if (!interpreter_prototype_eval_effect(ctx, pkt->effect, pkt->insn_pkt_size, plugin_data)) {
+		if (!interpreter_prototype_eval_effect(ctx, pkt->effect, pkt->insn_pkt_size)) {
 			return false;
 		}
 		if (astate->pc_state != RZ_INTERP_PC_CONST || astate->pc != next_pc) {
@@ -656,7 +651,7 @@ static bool eval(RZ_NONNULL RzInterpRunContext *ctx,
 	return true;
 }
 
-static bool init_state(RZ_BORROW RzInterpAbstrState *state, void *plugin_data) {
+static bool init_state(RZ_BORROW RzInterpAbstrState *state) {
 	state->pc = 0;
 	state->pc_state = RZ_INTERP_PC_UNREACHABLE;
 
@@ -674,7 +669,7 @@ static bool init_state(RZ_BORROW RzInterpAbstrState *state, void *plugin_data) {
 	return true;
 }
 
-static bool reset_state(RZ_BORROW RzInterpAbstrState *state, ut64 entry_point, void *plugin_data) {
+static bool reset_state(RZ_BORROW RzInterpAbstrState *state, ut64 entry_point) {
 	state->pc_state = RZ_INTERP_PC_CONST;
 	state->pc = entry_point;
 
@@ -692,7 +687,7 @@ static bool reset_state(RZ_BORROW RzInterpAbstrState *state, ut64 entry_point, v
 	return true;
 }
 
-static bool fini_state(RZ_BORROW RzInterpAbstrState *state, void *plugin_data) {
+static bool fini_state(RZ_BORROW RzInterpAbstrState *state) {
 	RzIterator *it = ht_up_as_iter(state->globals);
 	RzInterpAbstrVal **v;
 	rz_iterator_foreach(it, v) {
@@ -752,14 +747,14 @@ static bool join_vars(RZ_BORROW RZ_INOUT HtUP *a, RZ_BORROW RZ_IN HtUP *b) {
 	return changed;
 }
 
-bool join_state(RZ_BORROW RZ_INOUT RzInterpAbstrState *a, RZ_BORROW RZ_IN const RzInterpAbstrState *b, void *plugin_data) {
+bool join_state(RZ_BORROW RZ_INOUT RzInterpAbstrState *a, RZ_BORROW RZ_IN const RzInterpAbstrState *b) {
 	bool global_change = join_vars(a->globals, b->globals);
 	bool local_change = join_vars(a->locals, b->locals);
 	// lets are not be relevant here since they are immutable within their scope
 	return global_change || local_change;
 }
 
-bool val_as_str(RZ_NONNULL const RzInterpAbstrVal *val, RZ_NONNULL RZ_OUT RzStrBuf *sb, void *plugin_data) {
+bool val_as_str(RZ_NONNULL const RzInterpAbstrVal *val, RZ_NONNULL RZ_OUT RzStrBuf *sb) {
 	rz_return_val_if_fail(val && sb, false);
 	ProtoIntrprAbstrData *av = AD(val);
 	if (av->is_const) {
@@ -776,8 +771,7 @@ bool val_as_str(RZ_NONNULL const RzInterpAbstrVal *val, RZ_NONNULL RZ_OUT RzStrB
 }
 
 bool state_as_str(RZ_NONNULL const RzInterpAbstrState *state,
-	RZ_NONNULL RZ_OUT RzStrBuf *sb,
-	void *plugin_data) {
+	RZ_NONNULL RZ_OUT RzStrBuf *sb) {
 	rz_return_val_if_fail(state && sb, false);
 
 	rz_strbuf_append(sb, "Globals\n\n");
@@ -795,7 +789,7 @@ bool state_as_str(RZ_NONNULL const RzInterpAbstrState *state,
 		const char *gname = ht_up_find(state->var_name_hashes, *k, NULL);
 		rz_strbuf_appendf(sb, "\t%s = ", gname);
 		RzInterpAbstrVal *av = ht_up_find(state->globals, *k, NULL);
-		val_as_str(av, sb, plugin_data);
+		val_as_str(av, sb);
 		rz_strbuf_append(sb, "\n");
 	}
 	rz_iterator_free(it);
@@ -819,38 +813,8 @@ void state_as_str_short(RzInterpInstance *iset, RZ_OUT RzStrBuf *out, RzInterpAb
 		first = false;
 		const char *varname = ht_up_find(astate->var_name_hashes, djb2_reg_name, NULL);
 		rz_strbuf_appendf(out, "%s = ", varname);
-		iset->plugin->val_as_str(av, out, iset->interp_priv);
+		iset->plugin->val_as_str(av, out);
 	}
-}
-
-bool init(void **plugin_data) {
-	ProtoIntrprPluginData *pdata = RZ_NEW0(ProtoIntrprPluginData);
-	if (!pdata) {
-		return NULL;
-	}
-	RZ_LOG_DEBUG("prototype: init()\n");
-	*plugin_data = pdata;
-	return true;
-}
-
-bool fini(void *plugin_data) {
-	if (!plugin_data) {
-		return true;
-	}
-	RZ_LOG_DEBUG("prototype: fini()\n");
-	ProtoIntrprPluginData *pdata = plugin_data;
-	free(pdata);
-	return true;
-}
-
-bool reset(void *plugin_data) {
-	if (!plugin_data) {
-		return true;
-	}
-	RZ_LOG_DEBUG("prototype: reset()\n");
-	ProtoIntrprPluginData *pdata = plugin_data;
-	memset(&pdata->call_cand, 0, sizeof(RzAnalysisCallCandidate));
-	return true;
 }
 
 static RzInterpPlugin rz_interpreter_plugin_prototype = {
@@ -860,9 +824,6 @@ static RzInterpPlugin rz_interpreter_plugin_prototype = {
 	.desc = "A prototype interpreter for constant/top abstractions.",
 	.license = "LGPL-3.0-only",
 	.supported_yields = { RZ_INTERP_YIELD_KIND_XREF, RZ_INTERP_YIELD_KIND_CALL_CANDIDATE },
-	.init = init,
-	.reset = reset,
-	.fini = fini,
 	.clone_val = clone_val,
 	.eval = eval,
 	.init_state = init_state,

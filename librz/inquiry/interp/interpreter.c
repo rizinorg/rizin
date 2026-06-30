@@ -140,7 +140,7 @@ static HtUP *var_set_clone(const RzInterpInstance *iset, HtUP *vars) {
 	RzIterator *it = ht_up_as_iter_keys(vars);
 	ut64 *key;
 	rz_iterator_foreach(it, key) {
-		RzInterpAbstrVal *val = iset->plugin->clone_val(ht_up_find(vars, *key, NULL), iset->interp_priv);
+		RzInterpAbstrVal *val = iset->plugin->clone_val(ht_up_find(vars, *key, NULL));
 		if (!val) {
 			continue;
 		}
@@ -292,7 +292,7 @@ RZ_API void rz_interp_run_push(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx, RZ_
 	rz_strbuf_fini(&sb);
 	RzInterpAbstrState *existing = ht_up_find(ctx->pc_states, as->pc, NULL);
 	if (existing) {
-		if (ctx->inst->plugin->join_state(existing, as, ctx->inst->interp_priv) && !existing->uninterpreted) {
+		if (ctx->inst->plugin->join_state(existing, as) && !existing->uninterpreted) {
 			existing->uninterpreted = true;
 			rz_list_push(ctx->queue, existing);
 		}
@@ -338,9 +338,10 @@ static bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 	RzInterpAbstrState *estate = rz_interp_abstr_state_new(cur->arch, inst->il_ctx);
 	if (inst->plugin->reset) {
 		// TODO: should rather be local to the RzInterpRunContext if it is reset every run
-		inst->plugin->reset(inst->interp_priv);
+		// inst->plugin->reset(inst->interp_priv);
+		memset(&ctx.call_cand, 0, sizeof(ctx.call_cand));
 	}
-	if (!inst->plugin->init_state(estate, inst->interp_priv) || !inst->plugin->reset_state(estate, entry_point, inst->interp_priv)) {
+	if (!inst->plugin->init_state(estate) || !inst->plugin->reset_state(estate, entry_point)) {
 		rz_warn_if_reached();
 		rz_interp_abstr_state_free(estate);
 		goto cleanup;
@@ -379,7 +380,7 @@ static bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 		ctx.astate->bb_addr = il_bb->addr;
 		ctx.astate->bb_size = il_bb->size;
 		// Evaluate the effect on the abstract state.
-		if (!inst->plugin->eval(&ctx, il_bb, inst->interp_priv)) {
+		if (!inst->plugin->eval(&ctx, il_bb)) {
 			RZ_LOG_DEBUG("interpreter: Eval failed\n");
 			success = false;
 			break;
@@ -416,9 +417,6 @@ RZ_API bool rz_interp_instance_th(RZ_NONNULL RZ_OWN RzInterpInstance *inst) {
 	// Start interpretation
 	//
 
-	if (inst->plugin->init) {
-		inst->plugin->init(&inst->interp_priv);
-	}
 
 	// TODO: It is probably better to make the following stuff while-loops.
 	// Because otherwise it doesn't make sense without the docs.
@@ -459,13 +457,6 @@ INIT:
 TERM: {
 	RZ_LOG_DEBUG("interpreter: Enter TERM\n");
 	rz_interp_run_state_set(inst->run_state, RZ_INTERP_RUN_STATE_TERM);
-	if (inst->plugin->fini && inst->interp_priv) {
-		RZ_FREE_CUSTOM(inst->interp_priv, inst->plugin->fini);
-	}
-
-	if (inst->plugin->fini && inst->interp_priv) {
-		RZ_FREE_CUSTOM(inst->interp_priv, inst->plugin->fini);
-	}
 	return success;
 }
 }

@@ -162,31 +162,30 @@ typedef struct {
 	/**
 	 * \brief Clones the given abstract value.
 	 */
-	RZ_OWN RzInterpAbstrVal *(*clone_val)(const RzInterpAbstrVal *val, void *plugin_data);
+	RZ_OWN RzInterpAbstrVal *(*clone_val)(const RzInterpAbstrVal *val);
 
 	/**
 	 * \brief Initializes the abstract state.
 	 */
-	bool (*init_state)(RZ_BORROW RzInterpAbstrState *state, void *plugin_data);
+	bool (*init_state)(RZ_BORROW RzInterpAbstrState *state);
 	/**
 	 * \brief Reset the abstract state.
 	 */
-	bool (*reset_state)(RZ_BORROW RzInterpAbstrState *state, ut64 entry_point, void *plugin_data);
+	bool (*reset_state)(RZ_BORROW RzInterpAbstrState *state, ut64 entry_point);
 	/**
 	 * \brief Closes the abstract state and frees all its abstract data and sets the pointers to NULL.
 	 */
-	bool (*fini_state)(RZ_BORROW RzInterpAbstrState *state, void *plugin_data);
+	bool (*fini_state)(RZ_BORROW RzInterpAbstrState *state);
 	/**
 	 * \brief Performs the join operation on states (least upper bound, lattice theory)
 	 * \return True if a was changed
 	 */
-	bool (*join_state)(RZ_BORROW RZ_INOUT RzInterpAbstrState *a, RZ_BORROW RZ_IN const RzInterpAbstrState *b, void *plugin_data);
+	bool (*join_state)(RZ_BORROW RZ_INOUT RzInterpAbstrState *a, RZ_BORROW RZ_IN const RzInterpAbstrState *b);
 	/**
 	 * \brief Evaluates an effect with the mutable state.
 	 */
 	bool (*eval)(RZ_NONNULL RzInterpRunContext *ctx,
-		RZ_NONNULL const RzILCacheBlock *il_bb,
-		void *plugin_data);
+		RZ_NONNULL const RzILCacheBlock *il_bb);
 
 	/**
 	 * \brief Builds a string for printing an abstract value.
@@ -194,8 +193,7 @@ typedef struct {
 	 * \return Returns false in case of error, True otherwise.
 	 */
 	bool (*val_as_str)(RZ_NONNULL const RzInterpAbstrVal *state,
-		RZ_NONNULL RZ_OUT RzStrBuf *str_buf,
-		void *plugin_data);
+		RZ_NONNULL RZ_OUT RzStrBuf *str_buf);
 
 	/**
 	 * \brief Builds a string for printing the current state.
@@ -203,8 +201,7 @@ typedef struct {
 	 * \return Returns false in case of error, True otherwise.
 	 */
 	bool (*state_as_str)(RZ_NONNULL const RzInterpAbstrState *state,
-		RZ_NONNULL RZ_OUT RzStrBuf *str_buf,
-		void *plugin_data);
+		RZ_NONNULL RZ_OUT RzStrBuf *str_buf);
 } RzInterpPlugin;
 
 typedef struct {
@@ -259,10 +256,6 @@ struct rz_interp_instance_t {
 	 * \brief The interpreter plugin.
 	 */
 	RzInterpPlugin *plugin;
-	/**
-	 * \brief The private data of a single interpreter thread.
-	 */
-	RZ_BORROW void *interp_priv;
 };
 
 RZ_API RZ_OWN RzInterpRunState *rz_interp_run_state_new();
@@ -299,9 +292,12 @@ RZ_API void rz_interp_instance_free(RZ_OWN RZ_NULLABLE RzInterpInstance *iset);
 struct rz_interp_run_context_t {
 	RzInterpInstance *inst; //< parent interpreter thread
 
-	RzInterpAbstrState *astate; ///< The abstract state of the interpreter.
 	RzList /*<RzInterpAbstrState>*/ *queue; ///< States that have to be interpreted still. If this is empty, a fixpoint has been reached.
 	HtUP /*<RzInterpAbstrState>*/ *pc_states; ///< Currently discovered states at the entries of blocks.
+
+	// Tracking data local to a single block interpretation
+	RzInterpAbstrState *astate; ///< The abstract state of the interpreter.
+	RzAnalysisCallCandidate call_cand; ///< Data of a call candidate.
 };
 
 /*
