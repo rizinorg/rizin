@@ -30,11 +30,13 @@ static ut64 mtk_find_gfh(RzBuffer *b) {
 	for (ut64 off = 0; off + MTK_GFH_MIN_FILE_SIZE <= limit; off += 4) {
 		ut64 cursor = off;
 		MtkGfhCommonHdr hdr = { 0 };
+		ut16 type = 0;
 		if (!rz_buf_read_le32_offset(b, &cursor, &hdr.magic_version) ||
 			!rz_buf_read_le16_offset(b, &cursor, &hdr.size) ||
-			!rz_buf_read_le16_offset(b, &cursor, (ut16 *)&hdr.type)) {
+			!rz_buf_read_le16_offset(b, &cursor, &type)) {
 			continue;
 		}
+		hdr.type = type;
 		if (mtk_is_gfh_magic(hdr.magic_version) &&
 			hdr.type == MTK_GFH_TYPE_FILE_INFO &&
 			hdr.size >= MTK_GFH_MIN_FILE_SIZE) {
@@ -45,9 +47,14 @@ static ut64 mtk_find_gfh(RzBuffer *b) {
 }
 
 static bool mtk_read_common_hdr(RzBuffer *b, ut64 *offset, MtkGfhCommonHdr *hdr) {
-	return rz_buf_read_le32_offset(b, offset, &hdr->magic_version) &&
-		rz_buf_read_le16_offset(b, offset, &hdr->size) &&
-		rz_buf_read_le16_offset(b, offset, (ut16 *)&hdr->type);
+	ut16 type = 0;
+	if (!(rz_buf_read_le32_offset(b, offset, &hdr->magic_version) &&
+		    rz_buf_read_le16_offset(b, offset, &hdr->size) &&
+		    rz_buf_read_le16_offset(b, offset, &type))) {
+		return false;
+	}
+	hdr->type = type;
+	return true;
 }
 
 static bool mtk_read_file_info(RzBuffer *b, ut64 *offset, MtkGfhFileInfo *fi) {
