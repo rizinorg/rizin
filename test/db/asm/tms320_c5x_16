@@ -92,6 +92,8 @@ d "calld 0x50, *" 7e800050 0x0 (seq (set sp (- (var sp) (bv 16 0x1))) (storew 0 
 d "rptz #0x7" bec50007 0x0 nop
 d "rptb 0x40" bec60040 0x0 nop
 d "bsar #0x4" bfe3
+d "bsar #0x1" bfe0
+d "bsar #0x10" bfef
 d "lst #0x0, 0x9" 0e09
 d "sst #0x1, 0x10" 8f10
 d "tblr 0x9" a609 0x0 (storew 0 (* (cast 24 false (| (<< (& (var dp) (bv 16 0x1ff)) (bv 16 0x7) false) (bv 16 0x9))) (bv 24 0x2)) (loadw 0 16 (* (cast 24 false (cast 16 false (var acc))) (bv 24 0x2))))
