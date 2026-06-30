@@ -296,3 +296,154 @@ RUN
 
 
 
+
+NAME=milstd1750: branch conditions (op->cond)
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=milstd1750
+e asm.bits=8
+s 0x100;wx 7501;ao~type,cond
+s 0x100;wx 7610;ao~type,cond
+s 0x100;wx 7820;ao~type,cond
+s 0x100;wx 7930;ao~type,cond
+s 0x100;wx 7A40;ao~type,cond
+s 0x100;wx 7B50;ao~type,cond
+s 0x100;wx 73001500;ao~type,cond
+EOF
+EXPECT=<<EOF
+type: cjmp
+cond: eq
+type: cjmp
+cond: lt
+type: cjmp
+cond: le
+type: cjmp
+cond: gt
+type: cjmp
+cond: ne
+type: cjmp
+cond: ge
+type: cjmp
+cond: ne
+EOF
+RUN
+
+NAME=milstd1750: jump-on-condition mask mapping (op->cond)
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=milstd1750
+e asm.bits=8
+s 0x100;wx 70100800;ao~type,cond
+s 0x100;wx 70800800;ao~type,cond
+s 0x100;wx 70900800;ao~type,cond
+s 0x100;wx 70700800;ao~type,cond
+s 0x100;wx 71200800;ao~type,cond
+EOF
+EXPECT=<<EOF
+type: cjmp
+cond: lt
+type: cjmp
+cond: hs
+type: cjmp
+cond: lt
+type: jmp
+type: cjmp
+cond: eq
+EOF
+RUN
+
+NAME=milstd1750: signedness (op->sign)
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=milstd1750
+e asm.bits=8
+s 0x100;wx F0201234;ao~type,sign
+s 0x100;wx FD201234;ao~type,sign
+s 0x100;wx F8201234;ao~type,sign
+s 0x100;wx 6230;ao~type,sign
+s 0x100;wx 6130;ao~type,sign
+EOF
+EXPECT=<<EOF
+sign: true
+type: cmp
+sign: false
+type: cmp
+sign: false
+type: cmp
+sign: true
+type: shr
+sign: false
+type: shr
+EOF
+RUN
+
+NAME=milstd1750: stack effect (op->stackop/stackptr)
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=milstd1750
+e asm.bits=8
+s 0x100;wx 9F36;ao~type,stackop,stackptr
+s 0x100;wx 8F36;ao~type,stackop,stackptr
+s 0x100;wx 7E002000;ao~type,stackop,stackptr
+s 0x100;wx 7F00;ao~type,stackop,stackptr
+s 0x100;wx 9F52;ao~type,stackop,stackptr
+EOF
+EXPECT=<<EOF
+type: push
+stackop: inc
+stackptr: 8
+type: pop
+stackop: inc
+stackptr: -8
+type: call
+stackop: inc
+stackptr: 2
+type: ret
+stackop: inc
+stackptr: -2
+type: push
+stackop: inc
+stackptr: 28
+EOF
+RUN
+
+NAME=milstd1750: instruction family (io/priv)
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=milstd1750
+e asm.bits=8
+s 0x100;wx 48302000;ao~type,family
+s 0x100;wx 49101234;ao~type,family
+s 0x100;wx 7D001234;ao~type,family
+s 0x100;wx 7C001234;ao~type,family
+EOF
+EXPECT=<<EOF
+type: io
+family: io
+type: io
+family: io
+type: mjmp
+family: priv
+type: mjmp
+family: priv
+EOF
+RUN
+
+NAME=milstd1750: data references via op->ptr (xrefs)
+FILE=malloc://2048
+CMDS=<<EOF
+e asm.arch=milstd1750
+e asm.bits=8
+s 0x100;wx 80200010 7F00;af
+s 0x200;wx 90400018 7F00;af
+s 0x300;wx 72000028 7F00;af
+axt @ 0x20
+axt @ 0x30
+axt @ 0x50
+EOF
+EXPECT=<<EOF
+fcn.00000100 0x100 [DATA] L(r2, 0x0010)
+fcn.00000200 0x200 [DATA] ST(r4, 0x0018)
+fcn.00000300 0x300 [CALL] JS(r0, 0x0028)
+EOF
+RUN
