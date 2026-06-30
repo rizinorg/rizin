@@ -213,67 +213,24 @@ bool load_abstr_data(
 bool set_abstr_pc(RzInterpAbstrState *state, ProtoIntrprAbstrData *pc,
 	void *plugin_data) {
 	rz_return_val_if_fail(state && pc, false);
-	ProtoIntrprPluginData *pdata = plugin_data;
-	if (state->pc_state == RZ_INTERP_PC_CONST) {
-		pdata->prev_pc = state->pc;
-	} else {
-		pdata->prev_pc = UT64_MAX;
-	}
 	if (pc->is_const) {
 		state->pc_state = RZ_INTERP_PC_CONST;
 		state->pc = rz_bv_to_ut64(pc->bv);
 	} else {
 		state->pc_state = RZ_INTERP_PC_ANY;
 	}
-	RZ_LOG_DEBUG("prototype: set_abstr_pc() - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
-		pdata->prev_pc, state->pc, state->pc_state == RZ_INTERP_PC_CONST ? "Constant" : "Top");
+	RZ_LOG_DEBUG("prototype: set_abstr_pc() - Set PC: 0x%" PFMT64x " (%s)\n",
+		state->pc, state->pc_state == RZ_INTERP_PC_CONST ? "Constant" : "Top");
 	return true;
 }
 
 bool set_pc(RzInterpAbstrState *state, ut64 pc,
 	void *plugin_data) {
 	rz_return_val_if_fail(state, false);
-	ProtoIntrprPluginData *pdata = plugin_data;
-	if (state->pc_state == RZ_INTERP_PC_CONST) {
-		pdata->prev_pc = state->pc;
-	} else {
-		pdata->prev_pc = UT64_MAX;
-	}
 	state->pc = pc;
 	state->pc_state = RZ_INTERP_PC_CONST;
-	RZ_LOG_DEBUG("prototype: set_pc() - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (Constant)\n",
-		pdata->prev_pc, pc);
+	RZ_LOG_DEBUG("prototype: set_pc() - Set PC: 0x%" PFMT64x " (Constant)\n", pc);
 	return true;
-}
-
-void stack_frame_fini(ProtoInterprAbstrStackFrame *frame, void *unused) {
-	if (!frame) {
-		return;
-	}
-	rz_bv_fini(&frame->return_addr);
-	rz_bv_fini(&frame->entry_point);
-}
-
-void stack_frame_push(ProtoIntrprPluginData *pdata, RzBitVector *entry_point, RzBitVector *return_addr, ut64 instance) {
-	ProtoInterprAbstrStackFrame frame = { 0 };
-	rz_bv_init(&frame.return_addr, rz_bv_len(return_addr));
-	rz_bv_copy(&frame.return_addr, return_addr);
-	rz_bv_init(&frame.entry_point, rz_bv_len(entry_point));
-	rz_bv_copy(&frame.entry_point, entry_point);
-	frame.instance = instance;
-	rz_vector_push(&pdata->stack, &frame);
-}
-
-void stack_frame_pop(ProtoIntrprPluginData *pdata, RZ_NULLABLE ProtoInterprAbstrStackFrame *frame) {
-	rz_vector_pop(&pdata->stack, frame);
-}
-
-bool stack_frame_top_ret_addr_cmp(ProtoIntrprPluginData *pdata, RzBitVector *addr) {
-	ProtoInterprAbstrStackFrame *frame = rz_vector_tail(&pdata->stack);
-	if (!frame) {
-		return false;
-	}
-	return rz_bv_eq(&frame->return_addr, addr);
 }
 
 static bool value_indicates_ret_addr_write(RzInterpRunContext *ctx, ProtoIntrprAbstrData *val) {
@@ -360,6 +317,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpRunContext *ctx,
 				plugin_data->call_cand.target = target;
 				report_yield_call_candiate(ctx->inst, plugin_data);
 
+#if 0
 				// For a call, we need to push a new frame.
 				RzBitVector ret_addr = { 0 };
 				rz_bv_init(&ret_addr, rz_bv_len(eval_out.bv));
@@ -369,13 +327,16 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpRunContext *ctx,
 				ut64 ic = ht_uu_find(plugin_data->bb_invocation_count, plugin_data->call_cand.target, &found);
 				stack_frame_push(plugin_data, eval_out.bv, &ret_addr, !found ? 0 : ic);
 				rz_bv_fini(&ret_addr);
+#endif
 
 				xref_type = RZ_ANALYSIS_XREF_TYPE_CALL;
 			}
+#if 0
 			if (xref_type == RZ_ANALYSIS_XREF_TYPE_CODE && stack_frame_top_ret_addr_cmp(plugin_data, eval_out.bv)) {
 				stack_frame_pop(plugin_data, NULL);
 				xref_type = RZ_ANALYSIS_XREF_TYPE_RETURN;
 			}
+#endif
 
 			report_yield_xref(ctx, insn_pkt_size, pc, &eval_out,
 				xref_type);

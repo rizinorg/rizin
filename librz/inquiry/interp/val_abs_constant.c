@@ -10,7 +10,6 @@
 #include <rz_th.h>
 #include <rz_util.h>
 
-#include "rz_util/ht_uu.h"
 #include "rz_util/rz_bitvector.h"
 
 static void adata_free(ProtoIntrprAbstrData *adata) {
@@ -587,8 +586,6 @@ map_to_top:
 }
 
 
-#define INITIAL_STACK_CAPACITY 8
-
 #define MAX_INVOCATIONS_PER_BLOCK 3
 
 bool state_as_str(RZ_NONNULL const RzInterpAbstrState *state,
@@ -609,23 +606,6 @@ static bool eval(RZ_NONNULL RzInterpRunContext *ctx,
 	RZ_NONNULL const RzILCacheBlock *il_bb,
 	void *plugin_data) {
 	ProtoIntrprPluginData *pdata = plugin_data;
-
-	// Check invocation count of the current address.
-	// Never execute the same address more than MAX_INVOCATIONS_PER_BLOCK times.
-	bool found = false;
-	HtUUKv *ic_pc = ht_uu_find_kv(pdata->bb_invocation_count, il_bb->addr, &found);
-	if (found) {
-		ic_pc->value++;
-		RZ_LOG_DEBUG("prototype: Eval BLOCK (ic: %" PFMT64d ") = 0x%" PFMT64x "\n", ic_pc->value, il_bb->addr);
-		if (ic_pc->value > MAX_INVOCATIONS_PER_BLOCK) {
-			// TODO: Make it configurable
-			RZ_LOG_DEBUG("prototype: Reached maximum number of invocations of basic block at 0x%" PFMT64x ". Skipping it.\n", il_bb->addr)
-			set_pc(ctx->astate, il_bb->addr + il_bb->size, plugin_data);
-			return true;
-		}
-	} else {
-		ht_uu_update(pdata->bb_invocation_count, il_bb->addr, 1);
-	}
 
 	// Reset call candidate tracking for each basic block.
 	memset(&pdata->call_cand, 0, sizeof(pdata->call_cand));
@@ -849,15 +829,6 @@ bool init(void **plugin_data) {
 		return NULL;
 	}
 	RZ_LOG_DEBUG("prototype: init()\n");
-	pdata->bb_invocation_count = ht_uu_new();
-	if (!pdata->bb_invocation_count) {
-		free(pdata);
-		return false;
-	}
-	rz_vector_init(&pdata->stack,
-		sizeof(ProtoInterprAbstrStackFrame),
-		(RzVectorFree)stack_frame_fini, NULL);
-	rz_vector_reserve(&pdata->stack, INITIAL_STACK_CAPACITY);
 	*plugin_data = pdata;
 	return true;
 }
@@ -868,8 +839,6 @@ bool fini(void *plugin_data) {
 	}
 	RZ_LOG_DEBUG("prototype: fini()\n");
 	ProtoIntrprPluginData *pdata = plugin_data;
-	ht_uu_free(pdata->bb_invocation_count);
-	rz_vector_fini(&pdata->stack);
 	free(pdata);
 	return true;
 }
@@ -880,10 +849,7 @@ bool reset(void *plugin_data) {
 	}
 	RZ_LOG_DEBUG("prototype: reset()\n");
 	ProtoIntrprPluginData *pdata = plugin_data;
-	pdata->prev_pc = UT64_MAX;
-	ht_uu_clear(pdata->bb_invocation_count);
 	memset(&pdata->call_cand, 0, sizeof(RzAnalysisCallCandidate));
-	rz_vector_purge(&pdata->stack);
 	return true;
 }
 
