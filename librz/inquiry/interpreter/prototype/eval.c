@@ -11,7 +11,7 @@
 #include <rz_util/rz_bitvector.h>
 
 bool report_yield_xref(
-	RzInterpSet *iset,
+	RzInterpRunContext *ctx,
 	size_t insn_pkt_size,
 	ut64 from,
 	const ProtoIntrprAbstrData *to,
@@ -21,7 +21,7 @@ bool report_yield_xref(
 		return true;
 	}
 	if (type == RZ_ANALYSIS_XREF_TYPE_CODE &&
-		RZ_STR_EQ(iset->astate->arch_name, "hexagon") &&
+		RZ_STR_EQ(ctx->astate->arch_name, "hexagon") &&
 		from + insn_pkt_size == rz_bv_to_ut64(to->bv)) {
 		// Ugly work around.
 		// Because we don't have RzArch yet the Hexagon plugin adds a JUMP at the
@@ -33,12 +33,12 @@ bool report_yield_xref(
 		return true;
 	}
 
-	RzInterpYieldRBuf *yrbuf = iset->yield_rbufs[RZ_INTERP_YIELD_KIND_XREF];
+	RzInterpYieldRBuf *yrbuf = ctx->inst->yield_rbufs[RZ_INTERP_YIELD_KIND_XREF];
 	rz_return_val_if_fail(yrbuf, false);
 
 	ut64 to_addr = rz_bv_to_ut64(to->bv);
 	RzAnalysisXRef xref = { 0 };
-	xref.bb_addr = iset->astate->bb_addr;
+	xref.bb_addr = ctx->astate->bb_addr;
 	xref.from = from;
 	xref.to = to_addr;
 	xref.type = type;
@@ -55,7 +55,7 @@ bool report_yield_xref(
  * \brief Report the store of the next PC and report it as possible return point.
  */
 bool report_yield_call_candiate(
-	RzInterpSet *iset,
+	RzInterpInstance *iset,
 	ProtoIntrprPluginData *plugin_data) {
 	RzInterpYieldRBuf *cc_rbuf = iset->yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE];
 	rz_return_val_if_fail(cc_rbuf, false);
@@ -75,7 +75,7 @@ void copy_abstr_data(ProtoIntrprAbstrData *dst, const ProtoIntrprAbstrData *src)
 	dst->is_const = src->is_const;
 }
 
-void write_var_to_state(RzInterpSet *iset,
+void write_var_to_state(RzInterpAbstrState *astate,
 	RzILVarKind kind,
 	ut64 var_id,
 	const ProtoIntrprAbstrData *data) {
@@ -85,13 +85,13 @@ void write_var_to_state(RzInterpSet *iset,
 		rz_warn_if_reached();
 		return;
 	case RZ_IL_VAR_KIND_GLOBAL:
-		ht_vals = iset->astate->globals;
+		ht_vals = astate->globals;
 		break;
 	case RZ_IL_VAR_KIND_LOCAL:
-		ht_vals = iset->astate->locals;
+		ht_vals = astate->locals;
 		break;
 	case RZ_IL_VAR_KIND_LOCAL_PURE:
-		ht_vals = iset->astate->lets;
+		ht_vals = astate->lets;
 		break;
 	}
 	RzInterpAbstrVal *av = ht_up_find(ht_vals, var_id, NULL);
@@ -109,7 +109,7 @@ void write_var_to_state(RzInterpSet *iset,
 	copy_abstr_data(av->abstr_data, data);
 }
 
-bool read_var_from_state(RzInterpSet *iset,
+bool read_var_from_state(RzInterpAbstrState *astate,
 	RzILVarKind kind,
 	ut64 var_id,
 	RZ_OUT ProtoIntrprAbstrData *data) {
@@ -119,13 +119,13 @@ bool read_var_from_state(RzInterpSet *iset,
 		rz_warn_if_reached();
 		return false;
 	case RZ_IL_VAR_KIND_GLOBAL:
-		ht_vals = iset->astate->globals;
+		ht_vals = astate->globals;
 		break;
 	case RZ_IL_VAR_KIND_LOCAL:
-		ht_vals = iset->astate->locals;
+		ht_vals = astate->locals;
 		break;
 	case RZ_IL_VAR_KIND_LOCAL_PURE:
-		ht_vals = iset->astate->lets;
+		ht_vals = astate->lets;
 		break;
 	}
 	RzInterpAbstrVal *av = ht_up_find(ht_vals, var_id, NULL);
@@ -145,21 +145,21 @@ bool read_var_from_state(RzInterpSet *iset,
 // TODO: The assumption that true != 0 is invalid.
 // It depends on the architecture and must be decided by the RzArch plugin.
 // State is passed due to this here as well. To make later refactoring easier.
-bool abstr_is_true(const RzInterpSet *iset, const ProtoIntrprAbstrData *data) {
+bool abstr_is_true(const RzInterpInstance *iset, const ProtoIntrprAbstrData *data) {
 	if (!data->is_const) {
 		return false;
 	}
 	return !rz_bv_is_zero_vector(data->bv);
 }
 
-bool abstr_may_be_true(const RzInterpSet *iset, const ProtoIntrprAbstrData *data) {
+bool abstr_may_be_true(const RzInterpInstance *iset, const ProtoIntrprAbstrData *data) {
 	if (!data->is_const) {
 		return true;
 	}
 	return !rz_bv_is_zero_vector(data->bv);
 }
 
-bool abstr_may_be_false(const RzInterpSet *iset, const ProtoIntrprAbstrData *data) {
+bool abstr_may_be_false(const RzInterpInstance *iset, const ProtoIntrprAbstrData *data) {
 	if (!data->is_const) {
 		return true;
 	}
@@ -167,7 +167,7 @@ bool abstr_may_be_false(const RzInterpSet *iset, const ProtoIntrprAbstrData *dat
 }
 
 bool store_abstr_data(
-	RzInterpSet *iset,
+	RzInterpInstance *iset,
 	RzILMemIndex mem_idx,
 	const ProtoIntrprAbstrData *addr,
 	const ProtoIntrprAbstrData *src) {
@@ -176,7 +176,7 @@ bool store_abstr_data(
 }
 
 bool load_abstr_data(
-	RzInterpSet *iset,
+	RzInterpInstance *iset,
 	RzILMemIndex mem_idx,
 	const ProtoIntrprAbstrData *addr,
 	size_t n_bits,

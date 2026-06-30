@@ -25,6 +25,7 @@
 #define RZ_INTERP_ENTRY_POINTS_RBUF_SIZE 4
 
 typedef struct rz_interp_run_state RzInterpRunState;
+typedef struct rz_interp_run_context_t RzInterpRunContext;
 
 typedef enum rz_interp_state_flag {
 	/**
@@ -166,7 +167,7 @@ typedef struct {
 	RzThreadRingBuf *rbuf;
 } RzInterpYieldRBuf;
 
-typedef struct rz_interpreter_set RzInterpSet;
+typedef struct rz_interp_instance_t RzInterpInstance;
 
 typedef struct {
 	const char *name;
@@ -216,7 +217,7 @@ typedef struct {
 	/**
 	 * \brief Evaluates an effect with the mutable state.
 	 */
-	bool (*eval)(RZ_NONNULL RzInterpSet *iset,
+	bool (*eval)(RZ_NONNULL RzInterpRunContext *ctx,
 		RZ_NONNULL const RzILCacheBlock *il_bb,
 		void *plugin_data);
 	/**
@@ -268,22 +269,12 @@ typedef struct {
 	bool req_ok; ///< Set to true if IO request succeeded.
 } RzInterpIOResult;
 
-typedef struct {
-	RzList /*<RzInterpAbstrState>*/ *queue; ///< States that have to be interpreted still. If this is empty, a fixpoint has been reached.
-	HtUP /*<RzInterpAbstrState>*/ *pc_states; ///< Currently discovered states at the entries of blocks.
-} RzInterpFunctionState;
-
 /**
- * \brief The set of required objects for an interpreter to run.
+ * \brief Root local data of a single interpreter thread
  */
 RZ_LIFETIME(RzInquiry)
-struct rz_interpreter_set {
+struct rz_interp_instance_t {
 	RzAnalysis *a; ///< TODO: remove
-
-	// TODO: Move this one into each plugin?
-	RzInterpAbstrState *astate; ///< The abstract state of the interpreter.
-
-	RzInterpFunctionState fcn_state;
 
 	RzInterpRunState *run_state; ///< The state the interpreter is currently in.
 	/**
@@ -331,27 +322,38 @@ RZ_API const char *rz_interp_run_state_flag_str(RzInterpRunStateFlag flag);
 
 RZ_IPI void rz_interp_run_state_set(RZ_BORROW RZ_NONNULL RzInterpRunState *state, RzInterpRunStateFlag flag);
 
-RZ_API void rz_interpreter_yield_rbuf_free(RZ_OWN RZ_NULLABLE RzInterpYieldRBuf *yield_rbuf);
+RZ_API void rz_interp_yield_rbuf_free(RZ_OWN RZ_NULLABLE RzInterpYieldRBuf *yield_rbuf);
 
-RZ_API RZ_OWN RzInterpAbstrState *rz_interpreter_abstr_state_new(
+RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_new(
 	const char *arch_name,
 	RzInterpAbstraction kinds,
 	RZ_BORROW RZ_NONNULL RzAnalysisILContext *il_context);
-RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpAbstrState *state);
-RZ_API RZ_OWN RzInterpAbstrState *rz_interpreter_abstr_state_clone(RZ_NONNULL RzInterpSet *iset, const RzInterpAbstrState *state);
+RZ_API void rz_interp_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpAbstrState *state);
+RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_clone(RZ_NONNULL RzInterpInstance *iset, const RzInterpAbstrState *state);
 
-RZ_API RZ_OWN RzInterpYieldRBuf *rz_interpreter_yield_rbuf_new(RzInterpYieldKind kind,
+RZ_API RZ_OWN RzInterpYieldRBuf *rz_interp_yield_rbuf_new(RzInterpYieldKind kind,
 	RzInterpYieldFilter filter,
 	RZ_OWN RZ_NULLABLE void *filter_data);
 
-RZ_API RZ_OWN RzInterpSet *rz_interpreter_set_new(
+RZ_API RZ_OWN RzInterpInstance *rz_interp_instance_new(
 	RzAnalysis *analysis,
 	RZ_NONNULL RZ_OWN RzInterpPlugin *plugin,
 	RzInterpAbstraction abstraction,
 	RZ_NONNULL RZ_BORROW RzILCacheClient *il_cache_client,
 	RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM],
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code);
-RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpSet *iset);
+RZ_API void rz_interp_instance_free(RZ_OWN RZ_NULLABLE RzInterpInstance *iset);
+
+/**
+ * \brief Local data during an interpreter run
+ */
+struct rz_interp_run_context_t {
+	RzInterpInstance *inst; //< parent interpreter thread
+
+	RzInterpAbstrState *astate; ///< The abstract state of the interpreter.
+	RzList /*<RzInterpAbstrState>*/ *queue; ///< States that have to be interpreted still. If this is empty, a fixpoint has been reached.
+	HtUP /*<RzInterpAbstrState>*/ *pc_states; ///< Currently discovered states at the entries of blocks.
+};
 
 /*
  * \brief Register a newly discovered state
@@ -359,8 +361,8 @@ RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpSet *iset);
  * This will join the state with the already known one at the same pc and add it to the
  * queue for further interpretation if there were changes.
  */
-RZ_API void rz_interp_set_push(RZ_BORROW RZ_NONNULL RzInterpSet *iset, RZ_BORROW RZ_NONNULL RzInterpAbstrState *as);
+RZ_API void rz_interp_run_push(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx, RZ_BORROW RZ_NONNULL RzInterpAbstrState *as);
 
-RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpSet *iset);
+RZ_API bool rz_interp_instance_th(RZ_NONNULL RZ_OWN RzInterpInstance *iset);
 
 #endif // RZ_INTERPRETER

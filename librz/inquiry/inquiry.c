@@ -357,7 +357,7 @@ static bool handle_yields(RzInquiry *inquiry, RzInterpYieldRBuf *yield_rbufs[RZ_
  */
 // TODO: Optimize
 static bool reduce_get_entry_points(
-	RzInterpSet *iset,
+	RzInterpInstance *iset,
 	RzILCache *il_cache,
 	RZ_BORROW RzSetU /*<ut64>*/ *entry_points) {
 	// Add the next entry point we need to check for executable regions the interpreters did not cover.
@@ -390,7 +390,7 @@ static bool reduce_get_entry_points(
 	return true;
 }
 
-static void close_reset_ipc_obj(RzInterpSet *iset) {
+static void close_reset_ipc_obj(RzInterpInstance *iset) {
 	// Close and clear all the IPC objects of this interpreter.
 	// This also clears the buffer and queues
 	rz_th_ring_buf_close(iset->io_request_rbuf);
@@ -401,7 +401,7 @@ static void close_reset_ipc_obj(RzInterpSet *iset) {
 	rz_list_free(rz_th_queue_pop_all(iset->il_cache_client->il_queue));
 }
 
-static void open_ipc_obj(RzInterpSet *iset) {
+static void open_ipc_obj(RzInterpInstance *iset) {
 	// Open queue again, so the interpretation can start at another
 	// jump target again.
 	rz_th_ring_buf_open(iset->io_request_rbuf);
@@ -443,7 +443,7 @@ static bool setup_yield_rbufs(
 
 	RzInterpYieldKind yield_kind = RZ_INTERP_YIELD_KIND_CALL_CANDIDATE;
 	RzInterpYieldRBuf *rbuf = NULL;
-	rbuf = rz_interpreter_yield_rbuf_new(yield_kind, NULL, NULL);
+	rbuf = rz_interp_yield_rbuf_new(yield_kind, NULL, NULL);
 	if (!rbuf) {
 		rz_warn_if_reached();
 		return false;
@@ -452,7 +452,7 @@ static bool setup_yield_rbufs(
 
 	yield_kind = RZ_INTERP_YIELD_KIND_CONTROL_FLOW;
 	rbuf = NULL;
-	rbuf = rz_interpreter_yield_rbuf_new(yield_kind, NULL, NULL);
+	rbuf = rz_interp_yield_rbuf_new(yield_kind, NULL, NULL);
 	if (!rbuf) {
 		rz_warn_if_reached();
 		return false;
@@ -460,7 +460,7 @@ static bool setup_yield_rbufs(
 	yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW] = rbuf;
 
 	yield_kind = RZ_INTERP_YIELD_KIND_XREF;
-	rbuf = rz_interpreter_yield_rbuf_new(
+	rbuf = rz_interp_yield_rbuf_new(
 		yield_kind,
 		yield_filter,
 		sections);
@@ -474,7 +474,7 @@ static bool setup_yield_rbufs(
 
 struct ituple {
 	RzThread *ithread;
-	RzInterpSet *iset;
+	RzInterpInstance *iset;
 	RzInterpRunStateFlag next_run_state;
 };
 
@@ -487,7 +487,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
 	// All the things we need
 	bool return_code = true;
-	RzInterpSet *intp_iset = NULL;
+	RzInterpInstance *intp_iset = NULL;
 
 	RzBuffer *io_buf = rz_buf_new_with_io(rz_analysis_get_io_bind(core->analysis));
 	RzSetU *symbol_targets = rz_set_u_new();
@@ -550,7 +550,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			rz_warn_if_reached();
 			goto error_free;
 		}
-		intp_iset = rz_interpreter_set_new(
+		intp_iset = rz_interp_instance_new(
 			core->analysis,
 			prototype->p_interpreter,
 			RZ_INTERP_ABSTRACTION_CONST,
@@ -565,7 +565,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 
 		// Dispatch prototype interpreter into a thread.
 		RZ_LOG_DEBUG("inquiry: Start main interpretation thread.\n");
-		RzThread *interpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, intp_iset);
+		RzThread *interpr_th = rz_th_new((RzThreadFunction)rz_interp_instance_th, intp_iset);
 		iset_map[i].ithread = interpr_th;
 		iset_map[i].iset = intp_iset;
 		iset_map[i].next_run_state = RZ_INTERP_RUN_STATE_INIT;
@@ -588,7 +588,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			user_sent_signal = true;
 			break;
 		}
-		RzInterpSet *iset = iset_map[i].iset;
+		RzInterpInstance *iset = iset_map[i].iset;
 		RzInterpRunStateFlag expected_rs = iset_map[i].next_run_state;
 
 		switch (rz_interp_run_state_get_unsafe(iset->run_state)) {
@@ -733,7 +733,7 @@ fatal_error:
 				RZ_LOG_ERROR("User sent signal.\n");
 			}
 		}
-		rz_interpreter_set_free(iset_map[i].iset);
+		rz_interp_instance_free(iset_map[i].iset);
 	}
 	rz_il_cache_stop_serving(il_cache);
 
@@ -773,9 +773,9 @@ fatal_error:
 	RZ_LOG_DEBUG("inquiry: inquiry: inquiry: Done\n");
 
 error_free:
-	rz_interpreter_yield_rbuf_free(yield_rbufs[RZ_INTERP_YIELD_KIND_XREF]);
-	rz_interpreter_yield_rbuf_free(yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE]);
-	rz_interpreter_yield_rbuf_free(yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW]);
+	rz_interp_yield_rbuf_free(yield_rbufs[RZ_INTERP_YIELD_KIND_XREF]);
+	rz_interp_yield_rbuf_free(yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE]);
+	rz_interp_yield_rbuf_free(yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW]);
 	free(iset_map);
 	rz_set_u_free(entry_points);
 	rz_buf_free(io_buf);

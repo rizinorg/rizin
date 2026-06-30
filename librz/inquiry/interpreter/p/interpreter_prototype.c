@@ -30,7 +30,7 @@ RZ_OWN RzInterpAbstrVal *clone_val(const RzInterpAbstrVal *val, void *plugin_dat
 	return r;
 }
 
-static bool eval(RZ_NONNULL RzInterpSet *iset,
+static bool eval(RZ_NONNULL RzInterpRunContext *ctx,
 	RZ_NONNULL const RzILCacheBlock *il_bb,
 	void *plugin_data) {
 	ProtoIntrprPluginData *pdata = plugin_data;
@@ -45,7 +45,7 @@ static bool eval(RZ_NONNULL RzInterpSet *iset,
 		if (ic_pc->value > MAX_INVOCATIONS_PER_BLOCK) {
 			// TODO: Make it configurable
 			RZ_LOG_DEBUG("prototype: Reached maximum number of invocations of basic block at 0x%" PFMT64x ". Skipping it.\n", il_bb->addr)
-			set_pc(iset->astate, il_bb->addr + il_bb->size, plugin_data);
+			set_pc(ctx->astate, il_bb->addr + il_bb->size, plugin_data);
 			return true;
 		}
 	} else {
@@ -56,14 +56,14 @@ static bool eval(RZ_NONNULL RzInterpSet *iset,
 	memset(&pdata->call_cand, 0, sizeof(pdata->call_cand));
 
 	// Now execute the actual effects of the BLOCK.
-	RzInterpAbstrState *astate = iset->astate;
+	RzInterpAbstrState *astate = ctx->astate;
 	void **it;
 	rz_pvector_foreach (il_bb->il_ops, it) {
 		ut64 pc = astate->pc;
 		RZ_LOG_DEBUG("prototype: Eval PC = 0x%" PFMT64x "\n", pc);
 		RzStrBuf sb;
 		rz_strbuf_init(&sb);
-		state_as_str(iset->astate, &sb, plugin_data);
+		state_as_str(ctx->astate, &sb, plugin_data);
 		RZ_LOG_DEBUG("%s\n", rz_strbuf_get(&sb));
 		rz_strbuf_fini(&sb);
 
@@ -74,17 +74,17 @@ static bool eval(RZ_NONNULL RzInterpSet *iset,
 		if (rz_vector_index_ptr(&il_bb->il_ops->v, rz_pvector_len(il_bb->il_ops) - 1) == it) {
 			rz_strbuf_append(&sb, "EXIT ");
 		}
-		state_as_str_short(iset, &sb, iset->astate);
-		rz_meta_set_string(iset->a, RZ_META_TYPE_COMMENT, pc, rz_strbuf_get(&sb));
+		state_as_str_short(ctx->inst, &sb, ctx->astate);
+		rz_meta_set_string(ctx->inst->a, RZ_META_TYPE_COMMENT, pc, rz_strbuf_get(&sb));
 		rz_strbuf_fini(&sb);
 
 		RzILCacheInsnPkt *pkt = *it;
 
 		// Prepare next pc, the evalutation may overwrite this.
 		ut64 next_pc = pc + pkt->insn_pkt_size;
-		set_pc(iset->astate, next_pc, plugin_data);
+		set_pc(ctx->astate, next_pc, plugin_data);
 
-		if (!interpreter_prototype_eval_effect(iset, pkt->effect, pkt->insn_pkt_size, plugin_data)) {
+		if (!interpreter_prototype_eval_effect(ctx, pkt->effect, pkt->insn_pkt_size, plugin_data)) {
 			return false;
 		}
 		if (astate->pc_state != RZ_INTERP_PC_CONST || astate->pc != next_pc) {
@@ -95,7 +95,7 @@ static bool eval(RZ_NONNULL RzInterpSet *iset,
 	}
 
 	if (astate->pc_state != RZ_INTERP_PC_UNREACHABLE) {
-		rz_interp_set_push(iset, iset->astate);
+		rz_interp_run_push(ctx, ctx->astate);
 	}
 
 	return true;
@@ -341,7 +341,7 @@ bool state_as_str(RZ_NONNULL const RzInterpAbstrState *state,
 	return true;
 }
 
-void state_as_str_short(RzInterpSet *iset, RZ_OUT RzStrBuf *out, RzInterpAbstrState *astate) {
+void state_as_str_short(RzInterpInstance *iset, RZ_OUT RzStrBuf *out, RzInterpAbstrState *astate) {
 	bool first = true;
 	RzIterator *it = ht_up_as_iter_keys(astate->globals);
 	ut64 *k;
