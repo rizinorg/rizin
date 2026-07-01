@@ -971,13 +971,13 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 			postfix = "";
 			break;
 		case AARCH64_INS_ALIAS_CSET: // cset Wd --> Wd := (cond) ? 1 : 0
-			rz_strbuf_drain_nofree(&op->esil);
+			rz_strbuf_fini(&op->esil);
 			rz_arm64_cs_esil_prefix_cond(op, AArch64CC_getInvertedCondCode(insn->detail->arm64.cc));
 			rz_strbuf_appendf(&op->esil, "1,}{,0,},%s,=", REG64(0));
 			postfix = "";
 			break;
 		case AARCH64_INS_ALIAS_CINC: // cinc Wd, Wn --> Wd := (cond) ? (Wn+1) : Wn
-			rz_strbuf_drain_nofree(&op->esil);
+			rz_strbuf_fini(&op->esil);
 			rz_arm64_cs_esil_prefix_cond(op, AArch64CC_getInvertedCondCode(insn->detail->arm64.cc));
 			rz_strbuf_appendf(&op->esil, "1,%s,+,}{,%s,},%s,=", REG64(1), REG64(1), REG64(0));
 			postfix = "";

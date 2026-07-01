@@ -3159,6 +3159,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_core_bin_whole_strings(RZ_NONNUL
 		}
 		rz_io_read_at_mapped(core->io, 0, tmp, bf->size);
 		rz_buf_write_at(bf->buf, 0, tmp, bf->size);
+		free(tmp);
 	}
 	if (!core->file) {
 		RZ_LOG_ERROR("Core file not open\n");

@@ -1027,14 +1027,16 @@ RZ_IPI int rz_arm_cs_analysis_op_32_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 				break;
 			case ARM_SFT_LSL:
 			case ARM_SFT_LSL_REG:
-				rz_strf(move_esil, "%s", rz_strbuf_drain_nofree(&op->esil));
+				rz_strf(move_esil, "%s", rz_strbuf_get(&op->esil));
+				rz_strbuf_fini(&op->esil);
 				rz_strbuf_appendf(&op->esil, ",%s,!,!,?{,%s,32,-,%s,>>,cf,:=,},%s", ARG(1), ARG(1), ARG(0), move_esil);
 				break;
 			case ARM_SFT_LSR:
 			case ARM_SFT_LSR_REG:
 			case ARM_SFT_ASR:
 			case ARM_SFT_ASR_REG:
-				rz_strf(move_esil, "%s", rz_strbuf_drain_nofree(&op->esil));
+				rz_strf(move_esil, "%s", rz_strbuf_get(&op->esil));
+				rz_strbuf_fini(&op->esil);
 				rz_strbuf_appendf(&op->esil, "%s,!,!,?{,%s,1,%s,-,0x1,<<,&,!,!,cf,:=,},%s", ARG(1), ARG(0), ARG(1), move_esil);
 				break;
 			}

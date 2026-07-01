@@ -5504,11 +5504,15 @@ static void core_decoded_bytes_set_mnemonic(RzCoreDecodedBytes *cdb, bool is_x86
 	cdb->mnemonic = rz_str_ndup(opcode, space - opcode);
 }
 
+static void analysis_bytes_iter_fini(RzCoreDecodedBytes *cdb);
+
 static RzCoreDecodedBytes *core_decoded_bytes_next(RzIterator *it) {
 	CoreDecodedBytes *ctx = it->u;
 	if (!core_decoded_bytes_can_continue(ctx)) {
 		return NULL;
 	}
+	// release the data produced for the previous element before reusing the buffer
+	analysis_bytes_iter_fini(&ctx->cdb);
 
 	static const RzAnalysisOpMask mask = RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT;
 	RzCore *core = ctx->core;

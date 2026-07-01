@@ -1621,7 +1621,8 @@ static int pass_to_legacy_api(RzCore *core, int argc, const char **argv, RzOutpu
 	for (size_t i = 1; i < argc; i++) {
 		rz_strbuf_appendf(legacy_input, " %s", argv[i]);
 	}
-	bool succeeded = cmd_search_legacy_handler(core, rz_strbuf_drain(legacy_input));
+	bool succeeded = cmd_search_legacy_handler(core, rz_strbuf_get(legacy_input));
+	rz_strbuf_free(legacy_input);
 	return succeeded ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
