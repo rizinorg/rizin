@@ -9,7 +9,6 @@ rz_inquiry_sources = [
   'interp/interpreter.c',
   'interp/state.c',
   'interp/val_abs_constant.c',
-  'interp/eval.c',
 ]
 
 rz_inquiry_inc = [platform_inc]

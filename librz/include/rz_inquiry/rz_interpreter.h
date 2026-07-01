@@ -43,8 +43,24 @@ typedef enum rz_interp_state_flag {
  * \brief An abstract value representing a set of RzILVal
  *
  * The actual abstraction and structure of this is defined by the plugin in use.
+ * `struct rz_interp_opaque_abstr_val_t` is defined nowhere. Is is used to ensure
+ * type-checking of passing this opaque pointer.
  */
-typedef void RzInterpAbstrVal;
+typedef struct rz_interp_opaque_abstr_val_t RzInterpAbstrVal;
+
+/**
+ * \brief Helper to explicitly cast a plugin-defined abstract value to an opaque RzInterpAbstrVal
+ */
+static inline RzInterpAbstrVal *rz_interp_abstr_val_pack(void *val) {
+	return val;
+}
+
+/**
+ * \brief Helper to explicitly cast an opaque RzInterpAbstrVal to a plugin-defined abstract value
+ */
+static inline void *rz_interp_abstr_val_unpack(const RzInterpAbstrVal *val) {
+	return (void *)val;
+}
 
 typedef struct {
 	RzInquiryBCFGEdgeType cf_type; ///< Control flow type.
@@ -147,45 +163,39 @@ typedef struct rz_interp_instance_t RzInterpInstance;
 
 typedef struct {
 	const char *name;
-	const char *author;
-	const char *version;
-	const char *desc;
-	const char *license;
-	/**
-	 * \brief The yield type this interpreter generates.
-	 */
-	RzInterpYieldKind supported_yields[RZ_INTERP_YIELD_KIND_NUM];
-	bool (*init)(void **plugin_data);
-	bool (*reset)(void *plugin_data);
-	bool (*fini)(void *plugin_data);
+
+	RZ_OWN RzInterpAbstrVal *(*val_new_top)(void); ///< allocate a new abstract value and initialize it as top
+	void (*val_free)(RzInterpAbstrVal *val);
+	bool (*is_top)(RZ_NONNULL const RzInterpAbstrVal *val); ///< return whether the given value is top
+	bool (*may_be_bool)(RZ_NONNULL const RzInterpAbstrVal *val, bool value); ///< return whether the given value's concrete set contains \p value
+	void (*set_top)(RZ_OUT RZ_NONNULL RzInterpAbstrVal *dst); ///< Set \p val to be top
+	void (*set_const)(RZ_OUT RZ_NONNULL RzInterpAbstrVal *dst, RZ_IN RZ_NONNULL RzBitVector *src); ///< set \p dst to the least value that includes \p src
 
 	/**
-	 * \brief Clones the given abstract value.
+	 * \brief Concretize an abstract value to a single bit vector, if possible
+	 *
+	 * If \p val represents exactly one concrete value, this returns true.
+	 * Additionally, the concrete value is written to \p out if passed.
 	 */
-	RZ_OWN RzInterpAbstrVal *(*clone_val)(const RzInterpAbstrVal *val);
+	bool (*to_concrete_const)(RZ_NONNULL const RzInterpAbstrVal *val, RZ_NULLABLE RZ_OUT RzBitVector *out);
+
+	RZ_OWN void (*copy)(RzInterpAbstrVal *dst, const RzInterpAbstrVal *src);
 
 	/**
-	 * \brief Initializes the abstract state.
-	 */
-	bool (*init_state)(RZ_BORROW RzInterpAbstrState *state);
-	/**
-	 * \brief Reset the abstract state.
-	 */
-	bool (*reset_state)(RZ_BORROW RzInterpAbstrState *state, ut64 entry_point);
-	/**
-	 * \brief Closes the abstract state and frees all its abstract data and sets the pointers to NULL.
-	 */
-	bool (*fini_state)(RZ_BORROW RzInterpAbstrState *state);
-	/**
-	 * \brief Performs the join operation on states (least upper bound, lattice theory)
+	 * \brief Performs the join operation on two abstract values (least upper bound, lattice theory)
+	 *
+	 * This is the least upper bound (lattice theory). In detail, it means \p a should be set to the least
+	 * abstract value whose corresponding concrete value set is a superset of both the concrete value sets
+	 * of \p a and \p b.
+	 *
 	 * \return True if a was changed
 	 */
-	bool (*join_state)(RZ_BORROW RZ_INOUT RzInterpAbstrState *a, RZ_BORROW RZ_IN const RzInterpAbstrState *b);
+	bool (*join)(RZ_BORROW RZ_INOUT RzInterpAbstrVal *a, RZ_BORROW RZ_IN const RzInterpAbstrVal *b);
+
 	/**
-	 * \brief Evaluates an effect with the mutable state.
+	 * \brief Evaluate \p pure and return the result in \p out
 	 */
-	bool (*eval)(RZ_NONNULL RzInterpRunContext *ctx,
-		RZ_NONNULL const RzILCacheBlock *il_bb);
+	bool (*eval_pure)(RzInterpRunContext *ctx, const RzILOpPure *pure, RZ_OUT RzInterpAbstrVal *out);
 
 	/**
 	 * \brief Builds a string for printing an abstract value.
@@ -195,13 +205,6 @@ typedef struct {
 	bool (*val_as_str)(RZ_NONNULL const RzInterpAbstrVal *state,
 		RZ_NONNULL RZ_OUT RzStrBuf *str_buf);
 
-	/**
-	 * \brief Builds a string for printing the current state.
-	 *
-	 * \return Returns false in case of error, True otherwise.
-	 */
-	bool (*state_as_str)(RZ_NONNULL const RzInterpAbstrState *state,
-		RZ_NONNULL RZ_OUT RzStrBuf *str_buf);
 } RzInterpPlugin;
 
 typedef struct {
@@ -269,10 +272,12 @@ RZ_IPI void rz_interp_run_state_set(RZ_BORROW RZ_NONNULL RzInterpRunState *state
 RZ_API void rz_interp_yield_rbuf_free(RZ_OWN RZ_NULLABLE RzInterpYieldRBuf *yield_rbuf);
 
 RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_new(
-	const char *arch_name,
-	RZ_BORROW RZ_NONNULL RzAnalysisILContext *il_context);
-RZ_API void rz_interp_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpAbstrState *state);
+	RZ_NONNULL RzInterpInstance *inst,
+	const char *arch_name);
+RZ_API void rz_interp_abstr_state_free(RzInterpInstance *inst, RZ_OWN RZ_NULLABLE RzInterpAbstrState *state);
 RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_clone(RZ_NONNULL RzInterpInstance *iset, const RzInterpAbstrState *state);
+RZ_API bool rz_interp_abstr_state_as_str(RZ_NONNULL RzInterpInstance *inst, RZ_NONNULL const RzInterpAbstrState *state, RZ_NONNULL RZ_OUT RzStrBuf *sb);
+RZ_API void rz_interp_abstr_state_as_str_short(RZ_NONNULL RzInterpInstance *inst, RZ_NONNULL const RzInterpAbstrState *astate, RZ_NONNULL RZ_OUT RzStrBuf *sb);
 
 RZ_API RZ_OWN RzInterpYieldRBuf *rz_interp_yield_rbuf_new(RzInterpYieldKind kind,
 	RzInterpYieldFilter filter,

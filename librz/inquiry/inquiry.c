@@ -54,13 +54,13 @@ RZ_API bool rz_inquiry_plugin_add(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_OW
 		return false;
 	}
 
-	if (!ht_sp_insert(inquiry->plugins, plugin->p_interpreter->name, plugin)) {
-		RZ_LOG_WARN("Plugin '%s' was already added.\n", plugin->p_interpreter->name);
+	if (!ht_sp_insert(inquiry->plugins, plugin->name, plugin)) {
+		RZ_LOG_WARN("Plugin '%s' was already added.\n", plugin->name);
 		return true;
 	}
 
 	void **p_data = RZ_NEW0(void *);
-	if (!ht_sp_insert(inquiry->plugins_data, plugin->p_interpreter->name, p_data)) {
+	if (!ht_sp_insert(inquiry->plugins_data, plugin->name, p_data)) {
 		rz_warn_if_reached();
 		return false;
 	}
@@ -70,13 +70,15 @@ RZ_API bool rz_inquiry_plugin_add(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_OW
 RZ_API bool rz_inquiry_plugin_del(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_OWN RZ_NONNULL RzInquiryPlugin *plugin) {
 	rz_return_val_if_fail(inquiry && plugin, false);
 
-	void **p_data = ht_sp_find(inquiry->plugins_data, plugin->p_interpreter->name, NULL);
+	void **p_data = ht_sp_find(inquiry->plugins_data, plugin->name, NULL);
+#if 0
 	if (plugin->p_interpreter->fini) {
 		plugin->p_interpreter->fini(p_data ? *p_data : NULL);
 	}
+#endif
 	free(p_data);
 	if (plugin->p_interpreter) {
-		return ht_sp_delete(inquiry->plugins, plugin->p_interpreter->name);
+		return ht_sp_delete(inquiry->plugins, plugin->name);
 	}
 	rz_warn_if_reached();
 	return false;

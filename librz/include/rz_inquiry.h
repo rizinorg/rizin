@@ -24,6 +24,11 @@ extern "C" {
 #define RZ_INQUIRY_CHECK_USER_SIGNAL_ITC 1000
 
 typedef struct rz_inquiry_plugin_t {
+	const char *name;
+	const char *author;
+	const char *version;
+	const char *desc;
+	const char *license;
 	RzInterpPlugin *p_interpreter;
 } RzInquiryPlugin;
 

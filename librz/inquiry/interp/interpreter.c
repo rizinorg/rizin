@@ -76,26 +76,28 @@ RZ_API RZ_OWN RzInterpYieldRBuf *rz_interp_yield_rbuf_new(RzInterpYieldKind kind
  * The register name list should always be given if the architecture has some.
  */
 RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_new(
-	const char *arch_name,
-	RZ_BORROW RZ_NONNULL RzAnalysisILContext *il_context) {
-	rz_return_val_if_fail(il_context, NULL);
+	RZ_NONNULL RzInterpInstance *inst,
+	const char *arch_name) {
+	rz_return_val_if_fail(inst, NULL);
 	RzInterpAbstrState *state = RZ_NEW0(RzInterpAbstrState);
 	if (!state) {
 		return NULL;
 	}
+	state->pc_state = RZ_INTERP_PC_UNREACHABLE;
 	state->arch_name = arch_name;
 	// Initialize the register file with uninitialized abstract values.
 	state->var_name_hashes = ht_up_new(NULL, free);
-	state->globals = ht_up_new(NULL, free);
-	for (size_t i = 0; i < il_context->reg_binding->regs_count; i++) {
-		const char *rname = il_context->reg_binding->regs[i].name;
-		RzInterpAbstrVal *aval = NULL; // RZ_NEW0(RzInterpAbstrVal);
-		// if (!aval) {
-		// 	ht_up_free(state->globals);
-		// 	ht_up_free(state->var_name_hashes);
-		// 	free(state);
-		// 	return NULL;
-		// }
+	state->globals = ht_up_new(NULL, NULL);
+	for (size_t i = 0; i < inst->il_ctx->reg_binding->regs_count; i++) {
+		const char *rname = inst->il_ctx->reg_binding->regs[i].name;
+		RzInterpAbstrVal *aval = inst->plugin->val_new_top();
+		if (!aval) {
+			rz_warn_if_reached();
+			ht_up_free(state->globals);
+			ht_up_free(state->var_name_hashes);
+			free(state);
+			return NULL;
+		}
 
 		ut64 djb2_reg_hash = rz_str_djb2_hash(rname);
 		if (!ht_up_insert(state->globals, djb2_reg_hash, aval) ||
@@ -108,42 +110,117 @@ RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_new(
 			free(state);
 		}
 	}
-	state->locals = ht_up_new(NULL, free);
-	state->lets = ht_up_new(NULL, free);
+	state->locals = ht_up_new(NULL, NULL);
+	state->lets = ht_up_new(NULL, NULL);
 	return state;
 }
 
-RZ_API void rz_interp_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpAbstrState *state) {
+static void var_set_free(RzInterpInstance *inst, HtUP *vars) {
+	if (!vars) {
+		return;
+	}
+	RzIterator *it = ht_up_as_iter(vars);
+	RzInterpAbstrVal **v;
+	rz_iterator_foreach(it, v) {
+		inst->plugin->val_free(*v);
+	}
+	rz_iterator_free(it);
+	ht_up_free(vars);
+}
+
+RZ_API void rz_interp_abstr_state_free(RzInterpInstance *inst, RZ_OWN RZ_NULLABLE RzInterpAbstrState *state) {
 	if (!state) {
 		return;
 	}
 	if (state->var_name_hashes) {
 		ht_up_free(state->var_name_hashes);
 	}
-	if (state->globals) {
-		ht_up_free(state->globals);
-	}
-	if (state->locals) {
-		ht_up_free(state->locals);
-	}
-	if (state->lets) {
-		ht_up_free(state->lets);
-	}
+	var_set_free(inst, state->globals);
+	var_set_free(inst, state->locals);
+	var_set_free(inst, state->lets);
 	free(state);
 }
 
+static bool reset_state(RzInterpInstance *inst, RZ_BORROW RzInterpAbstrState *state, ut64 entry_point) {
+	state->pc_state = RZ_INTERP_PC_CONST;
+	state->pc = entry_point;
+
+	RzIterator *it = ht_up_as_iter_keys(state->globals);
+	ut64 *k;
+	rz_iterator_foreach(it, k) {
+		ut64 djb2_reg_name = *k;
+		RzInterpAbstrVal *av = ht_up_find(state->globals, djb2_reg_name, NULL);
+		if (av) {
+			inst->plugin->set_top(av);
+		}
+	}
+	rz_iterator_free(it);
+	state->bb_addr = 0;
+	state->bb_size = 0;
+	return true;
+}
+
+#define STR_TOP    "⊤"
+#define STR_BOTTOM "⊥"
+
+RZ_API bool rz_interp_abstr_state_as_str(RZ_NONNULL RzInterpInstance *inst, RZ_NONNULL const RzInterpAbstrState *state, RZ_NONNULL RZ_OUT RzStrBuf *sb) {
+	rz_return_val_if_fail(state && sb, false);
+
+	rz_strbuf_append(sb, "Globals\n\n");
+	rz_strbuf_append(sb, "\tpc = ");
+	if (state->pc_state == RZ_INTERP_PC_CONST) {
+		rz_strbuf_appendf(sb, "0x%" PFMT64x, state->pc);
+	} else {
+		rz_strbuf_append(sb, state->pc_state == RZ_INTERP_PC_ANY ? STR_TOP : STR_BOTTOM);
+	}
+	rz_strbuf_append(sb, "\n\n");
+
+	RzIterator *it = ht_up_as_iter_keys(state->globals);
+	ut64 *k;
+	rz_iterator_foreach(it, k) {
+		const char *gname = ht_up_find(state->var_name_hashes, *k, NULL);
+		rz_strbuf_appendf(sb, "\t%s = ", gname);
+		RzInterpAbstrVal *av = ht_up_find(state->globals, *k, NULL);
+		inst->plugin->val_as_str(av, sb);
+		rz_strbuf_append(sb, "\n");
+	}
+	rz_iterator_free(it);
+	return true;
+}
+
+RZ_API void rz_interp_abstr_state_as_str_short(RZ_NONNULL RzInterpInstance *inst, RZ_NONNULL const RzInterpAbstrState *astate, RZ_NONNULL RZ_OUT RzStrBuf *sb) {
+	bool first = true;
+	RzIterator *it = ht_up_as_iter_keys(astate->globals);
+	ut64 *k;
+	rz_iterator_foreach(it, k) {
+		ut64 djb2_reg_name = *k;
+		RzInterpAbstrVal *av = ht_up_find(astate->globals, djb2_reg_name, NULL);
+		if (!av || inst->plugin->is_top(av)) {
+			continue;
+		}
+		if (!first) {
+			rz_strbuf_append(sb, ", ");
+		}
+		first = false;
+		const char *varname = ht_up_find(astate->var_name_hashes, djb2_reg_name, NULL);
+		rz_strbuf_appendf(sb, "%s = ", varname);
+		inst->plugin->val_as_str(av, sb);
+	}
+}
+
 static HtUP *var_set_clone(const RzInterpInstance *iset, HtUP *vars) {
-	HtUP *r = ht_up_new(NULL, free);
+	HtUP *r = ht_up_new(NULL, NULL);
 	if (!r) {
 		return NULL;
 	}
 	RzIterator *it = ht_up_as_iter_keys(vars);
 	ut64 *key;
 	rz_iterator_foreach(it, key) {
-		RzInterpAbstrVal *val = iset->plugin->clone_val(ht_up_find(vars, *key, NULL));
+		RzInterpAbstrVal *val = iset->plugin->val_new_top();
 		if (!val) {
-			continue;
+			break;
 		}
+		iset->plugin->copy(val, ht_up_find(vars, *key, NULL));
 		ht_up_insert(r, *key, val);
 	}
 	return r;
@@ -227,6 +304,34 @@ error_free:
 }
 
 /**
+ * \brief Join (least upper bound) on var sets
+ * \return True if a was changed
+ */
+static bool join_vars(RzInterpInstance *inst, RZ_BORROW RZ_INOUT HtUP *a, RZ_BORROW RZ_IN HtUP *b) {
+	RzIterator *it = ht_up_as_iter_keys(a);
+	ut64 *k;
+	bool changed = false;
+	rz_iterator_foreach(it, k) {
+		RzInterpAbstrVal *av = ht_up_find(a, *k, NULL);
+		RzInterpAbstrVal *bv = ht_up_find(b, *k, NULL);
+		if (!av || !bv) {
+			continue;
+		}
+		if (inst->plugin->join(av, bv)) {
+			changed = true;
+		}
+	}
+	return changed;
+}
+
+bool join_state(RzInterpInstance *inst, RZ_BORROW RZ_INOUT RzInterpAbstrState *a, RZ_BORROW RZ_IN const RzInterpAbstrState *b) {
+	bool global_change = join_vars(inst, a->globals, b->globals);
+	bool local_change = join_vars(inst, a->locals, b->locals);
+	// lets are not be relevant here since they are immutable within their scope
+	return global_change || local_change;
+}
+
+/**
  * \brief Initializes a new RzInterpSet and returns it.
  * If it fails, all arguments are freed.
  */
@@ -287,12 +392,12 @@ RZ_API void rz_interp_run_push(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx, RZ_
 	}
 	RzStrBuf sb;
 	rz_strbuf_init(&sb);
-	state_as_str_short(ctx->inst, &sb, as);
+	rz_interp_abstr_state_as_str_short(ctx->inst, as, &sb);
 	RZ_LOG_DEBUG("PUSH 0x%" PFMT64x ": %s\n", as->pc, rz_strbuf_get(&sb));
 	rz_strbuf_fini(&sb);
 	RzInterpAbstrState *existing = ht_up_find(ctx->pc_states, as->pc, NULL);
 	if (existing) {
-		if (ctx->inst->plugin->join_state(existing, as) && !existing->uninterpreted) {
+		if (join_state(ctx->inst, existing, as) && !existing->uninterpreted) {
 			existing->uninterpreted = true;
 			rz_list_push(ctx->queue, existing);
 		}
@@ -316,6 +421,476 @@ static RzInterpAbstrState *rz_interp_run_pop(RZ_BORROW RZ_NONNULL RzInterpRunCon
 	return r;
 }
 
+bool report_yield_xref(
+	RzInterpRunContext *ctx,
+	size_t insn_pkt_size,
+	ut64 from,
+	const RzInterpAbstrVal *to,
+	RzAnalysisXRefType type) {
+	RzBitVector to_bv;
+	rz_bv_init(&to_bv, 64);
+	bool success = true;
+	if (!ctx->inst->plugin->to_concrete_const(to, &to_bv) || rz_bv_len(&to_bv) > 64) {
+		// Isn't reported
+		goto cleanup;
+	}
+	if (type == RZ_ANALYSIS_XREF_TYPE_CODE &&
+		RZ_STR_EQ(ctx->astate->arch_name, "hexagon") &&
+		from + insn_pkt_size == rz_bv_to_ut64(&to_bv)) {
+		// Ugly work around.
+		// Because we don't have RzArch yet the Hexagon plugin adds a JUMP at the
+		// end of each and every instruction packet.
+		// This is necessary because the RzIL VM would otherwise just add 4 to the PC,
+		// which is too little for a packet with 2+ instructions.
+		// We don't want to report the code references to the next instruction
+		// packet. So skip them here.
+		goto cleanup;
+	}
+
+	RzInterpYieldRBuf *yrbuf = ctx->inst->yield_rbufs[RZ_INTERP_YIELD_KIND_XREF];
+	rz_return_val_if_fail(yrbuf, false);
+
+	ut64 to_addr = rz_bv_to_ut64(&to_bv);
+	RzAnalysisXRef xref = { 0 };
+	xref.bb_addr = ctx->astate->bb_addr;
+	xref.from = from;
+	xref.to = to_addr;
+	xref.type = type;
+	if (yrbuf->filter(&xref, yrbuf->filter_data->io_boundaries)) {
+		RZ_LOG_DEBUG("prototype: REPORT xref: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n", xref.from, xref.to, rz_analysis_ref_type_tostring(xref.type));
+		if (rz_th_ring_buf_put(yrbuf->rbuf, &xref) != RZ_THREAD_RING_BUF_OK) {
+			success = false;
+			goto cleanup;
+		}
+	}
+cleanup:
+	rz_bv_fini(&to_bv);
+	return success;
+}
+
+/**
+ * \brief Report the store of the next PC and report it as possible return point.
+ */
+static bool report_yield_call_candiate(
+	RzInterpRunContext *ctx) {
+	RzInterpYieldRBuf *cc_rbuf = ctx->inst->yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE];
+	rz_return_val_if_fail(cc_rbuf, false);
+
+	RzAnalysisCallCandidate cc = { 0 };
+	memcpy(&cc, &ctx->call_cand, sizeof(ctx->call_cand));
+	if (rz_th_ring_buf_put(cc_rbuf->rbuf, &cc) != RZ_THREAD_RING_BUF_OK) {
+		return false;
+	}
+	return true;
+}
+
+void write_var_to_state(RzInterpInstance *inst,
+	RzInterpAbstrState *astate,
+	RzILVarKind kind,
+	ut64 var_id,
+	const RzInterpAbstrVal *data) {
+	HtUP *ht_vals;
+	switch (kind) {
+	default:
+		rz_warn_if_reached();
+		return;
+	case RZ_IL_VAR_KIND_GLOBAL:
+		ht_vals = astate->globals;
+		break;
+	case RZ_IL_VAR_KIND_LOCAL:
+		ht_vals = astate->locals;
+		break;
+	case RZ_IL_VAR_KIND_LOCAL_PURE:
+		ht_vals = astate->lets;
+		break;
+	}
+	RzInterpAbstrVal *av = ht_up_find(ht_vals, var_id, NULL);
+	if (!av) {
+		if (kind == RZ_IL_VAR_KIND_GLOBAL) {
+			RZ_LOG_WARN("New global variable created: 0x%" PFMT64x "\n", var_id)
+			return;
+		}
+		av = inst->plugin->val_new_top();
+		if (!av) {
+			rz_warn_if_reached();
+			return;
+		}
+		ht_up_insert(ht_vals, var_id, av);
+	}
+	inst->plugin->copy(av, data);
+}
+
+bool read_var_from_state(RzInterpInstance *inst,
+	RzInterpAbstrState *astate,
+	RzILVarKind kind,
+	ut64 var_id,
+	RZ_OUT RzInterpAbstrVal *data) {
+	HtUP *ht_vals;
+	switch (kind) {
+	default:
+		rz_warn_if_reached();
+		return false;
+	case RZ_IL_VAR_KIND_GLOBAL:
+		ht_vals = astate->globals;
+		break;
+	case RZ_IL_VAR_KIND_LOCAL:
+		ht_vals = astate->locals;
+		break;
+	case RZ_IL_VAR_KIND_LOCAL_PURE:
+		ht_vals = astate->lets;
+		break;
+	}
+	RzInterpAbstrVal *av = ht_up_find(ht_vals, var_id, NULL);
+	if (!av) {
+		// Variable doesn't exist.
+		// This should never happen and is a bug.
+		rz_warn_if_reached();
+		return false;
+	}
+	inst->plugin->copy(data, av);
+	return true;
+}
+
+static bool store_abstr_data(
+	RzInterpInstance *iset,
+	RzILMemIndex mem_idx,
+	const RzInterpAbstrVal *addr,
+	const RzInterpAbstrVal *src) {
+	// TODO: handle with memory abstractions
+	return true;
+}
+
+bool load_abstr_data(
+	RzInterpInstance *inst,
+	RzILMemIndex mem_idx,
+	const RzBitVector *addr,
+	size_t n_bits,
+	RZ_OUT RzInterpAbstrVal *out) {
+	RzInterpIOReadRequest io_req = { 0 };
+
+	RzBitVector out_bv;
+	rz_bv_init(&out_bv, n_bits);
+
+	io_req.addr = addr;
+	io_req.ld_data = &out_bv;
+	io_req.mem_idx = mem_idx;
+	io_req.n_bits = n_bits;
+	io_req.big_endian = inst->il_ctx->config->big_endian;
+	if (rz_th_ring_buf_put(inst->io_request_rbuf, &io_req) != RZ_THREAD_RING_BUF_OK) {
+		return false;
+	}
+	RzInterpIOResult io_res = { 0 };
+	if (rz_th_ring_buf_take_blocking(inst->io_result_rbuf, &io_res) != RZ_THREAD_RING_BUF_OK) {
+		return false;
+	}
+	if (!io_res.req_ok) {
+		RZ_LOG_WARN("prototype: Failed to read correct number of bytes. Requested: 0x%" PFMTSZx
+			    " Received: 0x%" PFMT32x " bits.\n",
+			n_bits, rz_bv_len(&out_bv));
+		inst->plugin->set_top(out);
+		return false;
+	}
+	inst->plugin->set_const(out, &out_bv);
+
+	char *bytes = rz_bv_as_hex_string(&out_bv, true);
+	RZ_LOG_DEBUG("prototype: READ @ mem:%" PFMT32d " 0x%" PFMT64x " : %s\n", mem_idx, rz_bv_to_ut64(io_req.addr), bytes);
+	free(bytes);
+	return true;
+}
+
+static bool set_abstr_pc(RzInterpInstance *inst, RzInterpAbstrState *state, RzInterpAbstrVal *pc) {
+	rz_return_val_if_fail(state && pc, false);
+	RzBitVector pc_bv;
+	rz_bv_init(&pc_bv, 64);
+	if (inst->plugin->to_concrete_const(pc, &pc_bv)) {
+		state->pc_state = RZ_INTERP_PC_CONST;
+		state->pc = rz_bv_to_ut64(&pc_bv);
+	} else {
+		state->pc_state = RZ_INTERP_PC_ANY;
+	}
+	rz_bv_fini(&pc_bv);
+	RZ_LOG_DEBUG("prototype: set_abstr_pc() - Set PC: 0x%" PFMT64x " (%s)\n",
+		state->pc, state->pc_state == RZ_INTERP_PC_CONST ? "Constant" : "Top");
+	return true;
+}
+
+static bool value_indicates_ret_addr_write(RzInterpRunContext *ctx, RzInterpAbstrVal *val) {
+	RzBitVector bv;
+	rz_bv_init(&bv, 64);
+	bool ret = ctx->inst->plugin->to_concrete_const(val, &bv) &&
+		(rz_bv_to_ut64(&bv) == ctx->astate->bb_addr + ctx->astate->bb_size ||
+			// Sparc stores the call instruction PC into o8.
+			// The return instruction jumps then to o7+8.
+			(rz_str_startswith(ctx->astate->arch_name, "sparc") && rz_bv_to_ut64(&bv) == ctx->astate->pc));
+	rz_bv_fini(&bv);
+	return ret;
+}
+
+static bool interpreter_prototype_eval_effect(RzInterpRunContext *ctx,
+	const RzILOpEffect *effect,
+	size_t insn_pkt_size) {
+	rz_return_val_if_fail(ctx->astate->pc_state == RZ_INTERP_PC_CONST, false);
+	ut64 pc = ctx->astate->pc;
+	RzInterpAbstrVal *eval_out = NULL;
+
+	switch (effect->code) {
+	default:
+	case RZ_IL_OP_EMPTY:
+		break;
+	case RZ_IL_OP_NOP: {
+		break;
+	}
+	case RZ_IL_OP_SEQ: {
+		if (!interpreter_prototype_eval_effect(ctx, effect->op.seq.x, insn_pkt_size)) {
+			goto error;
+		}
+		if (!interpreter_prototype_eval_effect(ctx, effect->op.seq.y, insn_pkt_size)) {
+			goto error;
+		}
+		break;
+	}
+	case RZ_IL_OP_SET: {
+		eval_out = ctx->inst->plugin->val_new_top();
+		ut64 vhash = effect->op.set.hash;
+		if (!eval_out || !ctx->inst->plugin->eval_pure(ctx, effect->op.set.x, eval_out)) {
+			goto error;
+		}
+		RzILVarKind kind = effect->op.set.is_local ? RZ_IL_VAR_KIND_LOCAL : RZ_IL_VAR_KIND_GLOBAL;
+		write_var_to_state(ctx->inst, ctx->astate, kind, vhash, eval_out);
+		if (value_indicates_ret_addr_write(ctx, eval_out) &&
+			kind == RZ_IL_VAR_KIND_GLOBAL) {
+			ctx->call_cand.store_addr = pc;
+			ctx->call_cand.npc = ctx->astate->bb_addr + ctx->astate->bb_size;
+			ctx->call_cand.bb_addr = ctx->astate->bb_addr;
+			ctx->call_cand.in_mem = false;
+		}
+		break;
+	}
+	case RZ_IL_OP_JMP: {
+		eval_out = ctx->inst->plugin->val_new_top();
+		if (!eval_out || !ctx->inst->plugin->eval_pure(ctx, effect->op.jmp.dst, eval_out)) {
+			goto error;
+		}
+		RzBitVector eval_out_bv;
+		rz_bv_init(&eval_out_bv, 64);
+		bool is_const = ctx->inst->plugin->to_concrete_const(eval_out, &eval_out_bv);
+		if (!is_const) {
+			RZ_LOG_DEBUG("PC is going to be set to an abstract value! Current PC = 0x%" PFMT64x "\n", pc);
+		}
+		bool is_call = !!ctx->call_cand.store_addr;
+
+		if (is_const) {
+			ut64 target = rz_bv_to_ut64(&eval_out_bv);
+			RZ_LOG_DEBUG("prototype: JMP - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", pc, target);
+			RzAnalysisXRefType xref_type = RZ_ANALYSIS_XREF_TYPE_CODE;
+
+			if (is_call) {
+				// An instruction in this basic block stored the next PC.
+				// Report a call candidate and assume this jump is a call.
+				ctx->call_cand.candidate_addr = pc;
+				ctx->call_cand.target = target;
+				report_yield_call_candiate(ctx);
+
+#if 0
+				// For a call, we need to push a new frame.
+				RzBitVector ret_addr = { 0 };
+				rz_bv_init(&ret_addr, rz_bv_len(eval_out.bv));
+				rz_bv_set_from_ut64(&ret_addr->call_cand.npc);
+
+				bool found = false;
+				ut64 ic = ht_uu_find(plugin_data->bb_invocation_count->call_cand.target, &found);
+				stack_frame_push(plugin_data, eval_out.bv, &ret_addr, !found ? 0 : ic);
+				rz_bv_fini(&ret_addr);
+#endif
+
+				xref_type = RZ_ANALYSIS_XREF_TYPE_CALL;
+			}
+#if 0
+			if (xref_type == RZ_ANALYSIS_XREF_TYPE_CODE && stack_frame_top_ret_addr_cmp(plugin_data, eval_out.bv)) {
+				stack_frame_pop(plugin_data, NULL);
+				xref_type = RZ_ANALYSIS_XREF_TYPE_RETURN;
+			}
+#endif
+
+			report_yield_xref(ctx, insn_pkt_size, pc, eval_out,
+				xref_type);
+
+			// Clear the call candidate tracking variable.
+			memset(&ctx->call_cand, 0, sizeof(ctx->call_cand));
+		}
+
+		if (is_call) {
+			// For calls, assume control flow will continue like fallthrough.
+			// TODO: set data to top that may be changed by the call
+		} else {
+			set_abstr_pc(ctx->inst, ctx->astate, eval_out);
+		}
+		rz_bv_fini(&eval_out_bv);
+		break;
+	}
+	case RZ_IL_OP_BRANCH: {
+		eval_out = ctx->inst->plugin->val_new_top();
+		if (!eval_out || !ctx->inst->plugin->eval_pure(ctx, effect->op.branch.condition, eval_out)) {
+			goto error;
+		}
+		bool may_be_true = ctx->inst->plugin->may_be_bool(eval_out, true);
+		bool may_be_false = ctx->inst->plugin->may_be_bool(eval_out, false);
+		if (may_be_true && may_be_false) {
+			RzInterpAbstrState *true_state = rz_interp_abstr_state_clone(ctx->inst, ctx->astate);
+			RzInterpAbstrState *false_state = ctx->astate;
+			ctx->astate = true_state;
+			if (!interpreter_prototype_eval_effect(ctx, effect->op.branch.true_eff, insn_pkt_size)) {
+				goto error;
+			}
+			ctx->astate = false_state;
+			if (!interpreter_prototype_eval_effect(ctx, effect->op.branch.false_eff, insn_pkt_size)) {
+				goto error;
+			}
+			if (true_state->pc_state == false_state->pc_state && true_state->pc == false_state->pc) {
+				// identical target location, simply join the data and continue
+				join_state(ctx->inst, true_state, false_state);
+			} else {
+				// different jump targets, branch rather than resorting to top pc
+				rz_interp_run_push(ctx, true_state);
+				// true_state is already in ctx->inst->astate and will be continued automatically
+			}
+			rz_interp_abstr_state_free(ctx->inst, true_state);
+		} else if (may_be_true) {
+			if (!interpreter_prototype_eval_effect(ctx, effect->op.branch.true_eff, insn_pkt_size)) {
+				goto error;
+			}
+		} else if (may_be_false) {
+			if (!interpreter_prototype_eval_effect(ctx, effect->op.branch.false_eff, insn_pkt_size)) {
+				goto error;
+			}
+		}
+		break;
+	}
+	case RZ_IL_OP_STORE:
+	case RZ_IL_OP_STOREW: {
+		RzInterpAbstrVal *st_addr = ctx->inst->plugin->val_new_top();
+		RzILOpPure *key = effect->code == RZ_IL_OP_STORE ? effect->op.store.key : effect->op.storew.key;
+		RzILMemIndex mem_idx = effect->code == RZ_IL_OP_STORE ? 0 : effect->op.storew.mem;
+		if (!ctx->inst->plugin->eval_pure(ctx, key, st_addr)) {
+			RZ_LOG_ERROR("prototype: STORE/STOREW key failed to evaluate.\n");
+			ctx->inst->plugin->val_free(st_addr);
+			goto error;
+		}
+		RzBitVector st_addr_bv;
+		rz_bv_init(&st_addr_bv, 64);
+		bool st_addr_is_const = st_addr && ctx->inst->plugin->to_concrete_const(st_addr, &st_addr_bv);
+		ctx->inst->plugin->val_free(st_addr);
+		if (!st_addr_is_const) {
+			rz_bv_fini(&st_addr_bv);
+			break;
+		}
+		if (rz_bv_len(&st_addr_bv) == 64) {
+			// TODO: Remove normalization.
+			// Unset bit 63 is required, because the RzBuffer API only supports
+			// st64 addresses.
+			RzBitVector mask = { 0 };
+			rz_bv_init(&mask, 64);
+			rz_bv_set_from_ut64(&mask, 0x7fffffffffffffff);
+			rz_bv_and_inplace(&st_addr_bv, &mask);
+		}
+
+		RzILOpPure *pval = effect->code == RZ_IL_OP_STORE ? effect->op.store.value : effect->op.storew.value;
+		if (!ctx->inst->plugin->eval_pure(ctx, pval, eval_out)) {
+			RZ_LOG_ERROR("prototype: SUB x failed to evaluate.\n");
+			rz_bv_fini(&st_addr_bv);
+			goto error;
+		}
+		if (!eval_out || !ctx->inst->plugin->eval_pure(ctx, effect->op.branch.condition, eval_out)) {
+			rz_bv_fini(&st_addr_bv);
+			break;
+		}
+		if (value_indicates_ret_addr_write(ctx, eval_out)) {
+			ctx->call_cand.store_addr = pc;
+			ctx->call_cand.npc = ctx->astate->bb_addr + ctx->astate->bb_size;
+			ctx->call_cand.bb_addr = ctx->astate->bb_addr;
+			ctx->call_cand.in_mem = true;
+		}
+		report_yield_xref(ctx, insn_pkt_size, pc, st_addr, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE);
+		if (!store_abstr_data(ctx->inst, mem_idx, st_addr, eval_out)) {
+			rz_bv_fini(&st_addr_bv);
+			goto error;
+		}
+		rz_bv_fini(&st_addr_bv);
+		break;
+	}
+	case RZ_IL_OP_GOTO:
+	case RZ_IL_OP_BLK:
+	case RZ_IL_OP_REPEAT:
+		RZ_LOG_ERROR("Unhandled effect %" PFMT32d "\n", effect->code);
+		// Ignore for now.
+		break;
+	}
+	ctx->inst->plugin->val_free(eval_out);
+	return true;
+error:
+	ctx->inst->plugin->val_free(eval_out);
+	return false;
+}
+
+
+static bool set_pc(RzInterpAbstrState *state, ut64 pc) {
+	rz_return_val_if_fail(state, false);
+	state->pc = pc;
+	state->pc_state = RZ_INTERP_PC_CONST;
+	RZ_LOG_DEBUG("prototype: set_pc() - Set PC: 0x%" PFMT64x " (Constant)\n", pc);
+	return true;
+}
+
+static bool eval_block(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL const RzILCacheBlock *il_bb) {
+	// Reset call candidate tracking for each basic block.
+	memset(&ctx->call_cand, 0, sizeof(ctx->call_cand));
+
+	// Now execute the actual effects of the BLOCK.
+	RzInterpAbstrState *astate = ctx->astate;
+	void **it;
+	rz_pvector_foreach (il_bb->il_ops, it) {
+		ut64 pc = astate->pc;
+		RZ_LOG_DEBUG("prototype: Eval PC = 0x%" PFMT64x "\n", pc);
+		RzStrBuf sb;
+		rz_strbuf_init(&sb);
+		rz_interp_abstr_state_as_str(ctx->inst, ctx->astate, &sb);
+		RZ_LOG_DEBUG("%s\n", rz_strbuf_get(&sb));
+		rz_strbuf_fini(&sb);
+
+		rz_strbuf_init(&sb);
+		if (pc == il_bb->addr) {
+			rz_strbuf_append(&sb, "ENTRY ");
+		}
+		if (rz_vector_index_ptr(&il_bb->il_ops->v, rz_pvector_len(il_bb->il_ops) - 1) == it) {
+			rz_strbuf_append(&sb, "EXIT ");
+		}
+		rz_interp_abstr_state_as_str_short(ctx->inst, ctx->astate, &sb);
+		rz_meta_set_string(ctx->inst->a, RZ_META_TYPE_COMMENT, pc, rz_strbuf_get(&sb));
+		rz_strbuf_fini(&sb);
+
+		RzILCacheInsnPkt *pkt = *it;
+
+		// Prepare next pc, the evalutation may overwrite this.
+		ut64 next_pc = pc + pkt->insn_pkt_size;
+		set_pc(ctx->astate, next_pc);
+
+		if (!interpreter_prototype_eval_effect(ctx, pkt->effect, pkt->insn_pkt_size)) {
+			return false;
+		}
+		if (astate->pc_state != RZ_INTERP_PC_CONST || astate->pc != next_pc) {
+			// Unreachable or a jump happened somewhere other than fallthrough, so we can't continue
+			// interpreting the block linearly, but have to push the new location
+			break;
+		}
+	}
+
+	if (astate->pc_state != RZ_INTERP_PC_UNREACHABLE) {
+		rz_interp_run_push(ctx, ctx->astate);
+	}
+
+	return true;
+}
+
 /**
  * \brief Run the interpreter from a single entrypoint until a fixpoint is reached
  */
@@ -335,19 +910,15 @@ static bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 	// Prepare the initial state from the given entry point
 	// Hint: nothing speaks against supporting multiple entry points in a single run
 	const RzAnalysisPlugin *cur = rz_analysis_plugin_current(inst->a);
-	RzInterpAbstrState *estate = rz_interp_abstr_state_new(cur->arch, inst->il_ctx);
-	if (inst->plugin->reset) {
-		// TODO: should rather be local to the RzInterpRunContext if it is reset every run
-		// inst->plugin->reset(inst->interp_priv);
-		memset(&ctx.call_cand, 0, sizeof(ctx.call_cand));
-	}
-	if (!inst->plugin->init_state(estate) || !inst->plugin->reset_state(estate, entry_point)) {
+	RzInterpAbstrState *estate = rz_interp_abstr_state_new(inst, cur->arch);
+	memset(&ctx.call_cand, 0, sizeof(ctx.call_cand));
+	if (!reset_state(inst, estate, entry_point)) {
 		rz_warn_if_reached();
-		rz_interp_abstr_state_free(estate);
+		rz_interp_abstr_state_free(inst, estate);
 		goto cleanup;
 	}
 	rz_interp_run_push(&ctx, estate);
-	rz_interp_abstr_state_free(estate);
+	rz_interp_abstr_state_free(inst, estate);
 
 	// Loop and interpret until a fixpoint has been reached
 	while (true) {
@@ -373,14 +944,14 @@ static bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 			rz_strbuf_appendf(&sb, "%s; ", old_cmt);
 		}
 		rz_strbuf_append(&sb, "ENTRY ");
-		state_as_str_short(inst, &sb, ctx.astate);
+		rz_interp_abstr_state_as_str_short(inst, ctx.astate, &sb);
 		// rz_meta_set_string(iset->a, RZ_META_TYPE_COMMENT, il_bb->addr, rz_strbuf_get(&sb));
 		rz_strbuf_fini(&sb);
 
 		ctx.astate->bb_addr = il_bb->addr;
 		ctx.astate->bb_size = il_bb->size;
 		// Evaluate the effect on the abstract state.
-		if (!inst->plugin->eval(&ctx, il_bb)) {
+		if (!eval_block(&ctx, il_bb)) {
 			RZ_LOG_DEBUG("interpreter: Eval failed\n");
 			success = false;
 			break;
@@ -403,10 +974,7 @@ RZ_API bool rz_interp_instance_th(RZ_NONNULL RZ_OWN RzInterpInstance *inst) {
 			inst->yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE] &&
 			inst->yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW] &&
 			inst->run_state_sync &&
-			inst->plugin &&
-			inst->plugin->eval &&
-			inst->plugin->init_state &&
-			inst->plugin->fini_state,
+			inst->plugin,
 		false);
 
 	bool success = true;
@@ -416,7 +984,6 @@ RZ_API bool rz_interp_instance_th(RZ_NONNULL RZ_OWN RzInterpInstance *inst) {
 	//
 	// Start interpretation
 	//
-
 
 	// TODO: It is probably better to make the following stuff while-loops.
 	// Because otherwise it doesn't make sense without the docs.
