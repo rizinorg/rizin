@@ -24,7 +24,21 @@ size: 33
 EOF
 RUN
 
-NAME=tn 0x00048550
+NAME=tn- 0x08048550
+FILE=bins/elf/analysis/hello-objc-linux
+CMDS=<<EOF
+tn-*
+tn 0x08048550
+tn- 0x08048550
+af
+afi~size
+EOF
+EXPECT=<<EOF
+size: 33
+EOF
+RUN
+
+NAME=tn-*
 FILE=bins/elf/analysis/hello-objc-linux
 CMDS=<<EOF
 tn-*
