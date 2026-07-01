@@ -28,20 +28,9 @@ NAME=tn- 0x08048550
 FILE=bins/elf/analysis/hello-objc-linux
 CMDS=<<EOF
 tn-*
+tn
 tn 0x08048550
 tn- 0x08048550
-af
-afi~size
-EOF
-EXPECT=<<EOF
-size: 34
-EOF
-RUN
-
-NAME=tn-*
-FILE=bins/elf/analysis/hello-objc-linux
-CMDS=<<EOF
-tn-*
 af
 afi~size
 EOF
