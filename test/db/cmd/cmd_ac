@@ -639,3 +639,77 @@ attr.Flaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 attrtypes.Flaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaatline=vtable,method
 EOF
 RUN
+
+NAME=Rust tree traversal
+FILE=bins/abi_bins/elf/languages/rust/tree_traversal
+CMDS=<<EOF
+aaa
+acil _T_as_core::any::Any_::get_type_id
+EOF
+EXPECT=<<EOF
+[_T_as_core::any::Any_::get_type_id]
+nth       addr  vt_offset type    name              
+----------------------------------------------------
+  1 0x00010380 ---------- DEFAULT h33190757d6ba653a
+  2 0x00010c40 ---------- DEFAULT h40f13fab156d6100
+  3 0x00010c50 ---------- DEFAULT h5b5faebc1ee3566c
+  4 0x00010c60 ---------- DEFAULT h92ee855251fbe909
+  5 0x00050900 ---------- DEFAULT hef880c24eb75b833
+
+EOF
+RUN
+
+NAME=Rust bubble sort
+FILE=bins/abi_bins/elf/languages/rust/bubble_sort
+CMDS=<<EOF
+aaa
+acil _T_as_core::any::Any_::get_type_id
+EOF
+EXPECT=<<EOF
+[_T_as_core::any::Any_::get_type_id]
+nth       addr  vt_offset type    name              
+----------------------------------------------------
+  1 0x0000bd90 ---------- DEFAULT h33190757d6ba653a
+  2 0x0000c650 ---------- DEFAULT h40f13fab156d6100
+  3 0x0000c660 ---------- DEFAULT h5b5faebc1ee3566c
+  4 0x0000c670 ---------- DEFAULT h92ee855251fbe909
+  5 0x0004c230 ---------- DEFAULT hef880c24eb75b833
+
+EOF
+RUN
+
+NAME=Rust elf
+FILE=bins/elf/rust
+CMDS=<<EOF
+aaa
+acil _T_as_core::any::Any_::get_type_id
+EOF
+EXPECT=<<EOF
+[_T_as_core::any::Any_::get_type_id]
+nth       addr  vt_offset type    name              
+----------------------------------------------------
+  1 0x0000dcc0 ---------- DEFAULT he55fe9b1ea178d93
+  2 0x0000e220 ---------- DEFAULT h34693febe9345e1a
+
+EOF
+RUN
+
+NAME=Recover Rust trait vtable
+FILE=bins/elf/rust_any
+CMDS=<<EOF
+aaa
+avrr
+acil impl_rust_any::Dog_as_rust_any::Pet
+acvl impl_rust_any::Dog_as_rust_any::Pet
+EOF
+EXPECT=<<EOF
+[impl_rust_any::Dog_as_rust_any::Pet]
+  (vtable at 0x512f8)
+nth       addr  vt_offset type    name                                                     
+-------------------------------------------------------------------------------------------
+  1 0x00013a00 0x00000018 VIRTUAL <rust_any::Dog as rust_any::Pet>::say::h068f985a4f49ea94
+
+impl_rust_any::Dog_as_rust_any::Pet:
+     0 vtable 0x512f8 @ +0x0 size:+0x20
+EOF
+RUN
