@@ -492,6 +492,7 @@ arch_common_sources = [
   'rtti_msvc.c',
   'serialize_analysis.c',
   'similarity.c',
+  'rtti_rust.c',
   'swift_rtti.c',
   'switch.c',
   'types.c',

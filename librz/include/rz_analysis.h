@@ -2093,6 +2093,7 @@ RZ_API bool rz_analysis_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 
 RZ_API void rz_analysis_rtti_msvc_recover_all(RVTableContext *vt_context, RzList /*<RVTableInfo *>*/ *vtables);
 RZ_API void rz_analysis_rtti_swift(RzAnalysis *analysis);
 RZ_API void rz_analysis_rtti_objc(RZ_NONNULL RzAnalysis *analysis);
+RZ_API void rz_analysis_rtti_rust(RZ_NONNULL RzAnalysis *analysis);
 
 RZ_API char *rz_analysis_rtti_itanium_demangle_class_name(RVTableContext *context, const char *name);
 RZ_API bool rz_analysis_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 addr, RzOutputMode mode);

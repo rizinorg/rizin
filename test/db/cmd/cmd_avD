@@ -1259,3 +1259,304 @@ EXPECT=<<EOF
 \           0x100003e94      ret
 EOF
 RUN
+
+NAME=Rust Any
+FILE=bins/elf/rust_any
+CMDS=<<EOF
+aaa
+avrr
+avD @ dbg.call
+pdf @ dbg.call
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from method.rust_any::run.h0a82aaa13d7b7fdd @ 0x13a6b
+            ;-- rust_any::call::he67fe7e46be4f205:
+            ;-- method.rust_any::call.he67fe7e46be4f205:
+            ;-- rip:
+/ void call()
+|           ; var unsigned long arg4 @ rcx
+|           ; var int64_t arg3 @ rdx
+|           ; var unsigned long arg7 @ xmm0
+|           ; arg struct &dyn rust_any::Pet p @ COMPOSITE
+|           ; arg struct &dyn core::any::Any a @ COMPOSITE
+|           0x00013a80      push  r15                                  ; rust_any.rs:23 ; rust_any::call::he67fe7e46be4f205
+|           0x00013a82      push  r14
+|           0x00013a84      push  rbx
+|           0x00013a85      sub   rsp, 0x10
+|           0x00013a89      mov   rbx, rcx                             ; arg4
+|           0x00013a8c      mov   r14, rdx                             ; arg3
+|           0x00013a8f      call  qword [rsi+0x18]                     ; rust_any.rs:24 ; Rust Virtual Call: <rust_any::Dog as rust_any::Pet>::say::h068f985a4f49ea94
+|           0x00013a92      mov   r15, rax
+|           0x00013a95      mov   rdi, rsp                             ; rust_any.rs
+|           0x00013a98      mov   rsi, r14                             ; any.rs:201 let concrete = self.type_id();
+|           0x00013a9b      call  qword [rbx+0x18]                     ; Any::type_id: impl_T
+|           0x00013a9e      movdqa xmm0, xmmword [rsp]                 ; any.rs:764 crate::mem::transmute::<_, u128>(*this) == crate::mem::transmute::<_, u128>(*other)
+|           0x00013aa3      pcmpeqb xmm0, xmmword [data.00004d30]      ; arg7 ; Any downcast: impl_T
+|           0x00013aab      pmovmskb ecx, xmm0
+|           0x00013aaf      xor   eax, eax
+|           0x00013ab1      cmp   ecx, data.0000ffff                   ; 0xffff ; "" ; arg4
+|           0x00013ab7      setz  al
+|           0x00013aba      add   rax, r15                             ; rust_any.rs:25
+|           0x00013abd      add   rsp, 0x10                            ; rust_any.rs:26
+|           0x00013ac1      pop   rbx
+|           0x00013ac2      pop   r14
+|           0x00013ac4      pop   r15
+\           0x00013ac6      ret
+EOF
+RUN
+
+NAME=Rust ARM
+FILE=bins/elf/rust_any_arm
+CMDS=<<EOF
+aaa
+avrr
+avD @ dbg.call
+pdf @ dbg.call
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from method.rust_any_9c71d8365cea50ec_.run @ 0x8160
+            ;-- rust_any[9c71d8365cea50ec]::call:
+            ;-- method.rust_any_9c71d8365cea50ec_.call:
+            ;-- pc:
+/ void call()
+|           ; var const char *arg2 @ x1
+|           ; var int64_t arg4 @ x3
+|           ; var int64_t arg3 @ x2
+|           ; var int64_t arg1 @ x0
+|           ; var int64_t var_30h @ stack - 0x30
+|           ; var int64_t var_20h @ stack - 0x20
+|           ; var int64_t var_10h @ stack - 0x10
+|           ; arg struct &dyn rust_any::Pet p @ COMPOSITE
+|           ; arg struct &dyn core::any::Any a @ COMPOSITE
+|           0x00008170      sub   sp, sp, 0x30                         ; rust_any.rs:20 ; rust_any[9c71d8365cea50ec]::call
+|           0x00008174      stp   fp, lr, [var_20h]
+|           0x00008178      stp   x20, x19, [var_10h]
+|           0x0000817c      add   fp, sp, 0x10
+|           ; DATA XREF from method._addr2line_1dc6989b2d131d62_::Context_gimli_a40298600a05aaa2_::read::endian_slice::EndianSlice_gimli_a40298600a05aaa2_::endianity::LittleEndian___.find_unit @ 0x17d38
+|           0x00008180      ldr   x8, [x1, 0x18]                       ; rust_any.rs:21 ; aav.0x00000018
+|                                                                      ; [0x18:4]=0x7fc0 sym._start ; "\xc0\U0000007f" ; arg2
+|           0x00008184      mov   x19, x3                              ; rust_any.rs ; arg4
+|           0x00008188      mov   x20, x2                              ; arg3
+|           0x0000818c      blr   x8                                   ; rust_any.rs:21 ; Rust Virtual Call: <rust_any[9c71d8365cea50ec]::Dog as rust_any[9c71d8365cea50ec]::Pet>::say
+|           0x00008190      ldr   x9, [x19, 0x18]                      ; any.rs:201 ; aav.0x00000018
+|                                                                      ; [0x18:4]=0x7fc0 sym._start ; "\xc0\U0000007f"
+|           0x00008194      mov   x19, x0                              ; rust_any.rs:21 ; arg1
+|           0x00008198      mov   x8, sp                               ; any.rs:201
+|           0x0000819c      mov   x0, x20
+|           0x000081a0      blr   x9                                   ; Any::type_id: impl_rust_any_9c71d8365cea50ec_::Dog
+|           0x000081a4      mov   x10, 0xf57b                          ; any.rs
+|           0x000081a8      ldp   x8, x9, [sp]                         ; any.rs:764
+|           0x000081ac      movk  x10, 0x1d02, lsl 16
+|           0x000081b0      movk  x10, 0x70c1, lsl 32
+|           0x000081b4      movk  x10, 0xe3bd, lsl 48
+|           0x000081b8      cmp   x8, x10
+|           0x000081bc      mov   x8, 0x5f43                           ; 'C_'
+|           0x000081c0      movk  x8, 0xfa86, lsl 16
+|           0x000081c4      movk  x8, 0x9d95, lsl 32
+|           0x000081c8      movk  x8, 0x641c, lsl 48
+|           0x000081cc      ccmp  x9, x8, 0, eq
+|           0x000081d0      cinc  x0, x19, eq                          ; rust_any.rs:22
+|           0x000081d4      ldp   x20, x19, [var_10h]                  ; rust_any.rs:23
+|           0x000081d8      ldp   fp, lr, [var_20h]
+|           0x000081dc      add   sp, sp, 0x30
+|           ; XREFS: DATA 0x0000ae50  DATA 0x00018380  DATA 0x000183c8
+|           ; XREFS: DATA 0x000183e4  DATA 0x00018400  DATA 0x0001841c
+\           0x000081e0      ret
+EOF
+RUN
+
+NAME=Rust PE
+FILE=bins/pe/rust_any.exe
+CMDS=<<EOF
+aaa
+avrr
+avD @ dbg.call
+pdf @ dbg.call
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from method.rust_any_90e241cba78717c0_.run @ 0x1400014eb
+            ;-- rust_any[90e241cba78717c0]::call:
+            ;-- method.rust_any_90e241cba78717c0_.call:
+            ;-- rip:
+/ void call()
+|           ; var int64_t arg4 @ r9
+|           ; var int64_t arg3 @ r8
+|           ; var int64_t var_28h @ stack - 0x28
+|           0x140001500      push  rsi                                 ; rust_any.rs:20 ; rust_any[90e241cba78717c0]::call
+|           0x140001501      push  rdi
+|           0x140001502      push  rbx
+|           0x140001503      sub   rsp, 0x30
+|           0x140001507      mov   rsi, r9                             ; arg4
+|           0x14000150a      mov   rdi, r8                             ; arg3
+|           0x14000150d      call  qword [rdx+0x18]                    ; rust_any.rs:21 ; 24 ; Rust Virtual Call: <rust_any[90e241cba78717c0]::Dog as rust_any[90e241cba78717c0]::Pet>::say
+|           0x140001510      mov   rbx, rax
+|           0x140001513      lea   rcx, qword [var_28h]
+|           0x140001518      mov   rdx, rdi                            ; library\core\src\any.rs:201
+|           0x14000151b      call  qword [rsi+0x18]                    ; 24 ; Any::type_id: impl_rust_any_90e241cba78717c0_::Dog
+|           0x14000151e      movdqa xmm0, xmmword [var_28h]            ; library\core\src\any.rs:764
+|           0x140001524      pcmpeqb xmm0, xmmword [section..rdata]    ; Any downcast: impl_rust_any_90e241cba78717c0_::Dog
+|           0x14000152c      pmovmskb ecx, xmm0
+|           0x140001530      xor   eax, eax
+|           0x140001532      cmp   ecx, 0xffff
+|           0x140001538      setz  al
+|           0x14000153b      add   rax, rbx                            ; rust_any.rs:22
+|           0x14000153e      add   rsp, 0x30                           ; rust_any.rs:23
+|           0x140001542      pop   rbx
+|           0x140001543      pop   rdi
+|           0x140001544      pop   rsi
+\           0x140001545      ret
+EOF
+RUN
+
+NAME=Rust devirtualization
+FILE=bins/elf/dwarf_rust_bubble
+CMDS=<<EOF
+aaa
+avD @ 0x000287e0
+pdf @ 0x000287e0
+EOF
+EXPECT=<<EOF
+            ; DATA XREF from method._core::str::Utf8Error_as_core::fmt::Debug_::fmt.h74d4f645257c333c @ 0x250eb
+            ;-- core::fmt::builders::DebugStruct::field::h1e815875a24d07eb:
+            ;-- rip:
+/ method.core::fmt::builders::DebugStruct::field.h1e815875a24d07eb(long long unsigned int arg1, int64_t arg5, int64_t arg4, int64_t arg3, int64_t arg2);
+|           ; var long long unsigned int arg1 @ rdi
+|           ; var int64_t arg5 @ r8
+|           ; var int64_t arg4 @ rcx
+|           ; var int64_t arg3 @ rdx
+|           ; var int64_t arg2 @ rsi
+|           ; var int64_t var_99h @ stack - 0x99
+|           ; var int64_t var_98h @ stack - 0x98
+|           ; var int64_t var_88h @ stack - 0x88
+|           ; var int64_t var_78h @ stack - 0x78
+|           ; var int64_t var_68h @ stack - 0x68
+|           ; var int64_t var_58h @ stack - 0x58
+|           ; var int64_t var_50h @ stack - 0x50
+|           ; var int64_t var_48h @ stack - 0x48
+|           ; var int64_t var_44h @ stack - 0x44
+|           ; var int64_t var_40h @ stack - 0x40
+|           ; arg struct DebugStruct *self @ rbx
+|           ; arg struct &str name @ ...
+|           ; arg struct &Debug value @ ...
+|           0x000287e0      push  rbp                                  ; builders.rs:136 ; core::fmt::builders::DebugStruct::field::h1e815875a24d07eb
+|           0x000287e1      push  r15
+|           0x000287e3      push  r14
+|           0x000287e5      push  r13
+|           0x000287e7      push  r12
+|           0x000287e9      push  rbx
+|           0x000287ea      sub   rsp, 0x78
+|           0x000287ee      mov   rbx, rdi                             ; arg1
+|           0x000287f1      mov   r13b, 0x01
+|           0x000287f4      cmp   byte [rdi+0x08], 0x00                ; builders.rs:137 ; arg1
+|       ,=< 0x000287f8      jz    0x28814                              ; result.rs:727
+|       |   ; CODE XREF from method.core::fmt::builders::DebugStruct::field.h1e815875a24d07eb @ 0x28984
+| ......--> 0x000287fa      mov   byte [rbx+0x08], r13b                ; builders.rs:137
+| ::::::|   0x000287fe      mov   byte [rbx+0x09], 0x01                ; builders.rs:158
+| ::::::|   0x00028802      mov   rax, rbx                             ; builders.rs:160
+| ::::::|   0x00028805      add   rsp, 0x78
+| ::::::|   0x00028809      pop   rbx
+| ::::::|   0x0002880a      pop   r12
+| ::::::|   0x0002880c      pop   r13
+| ::::::|   0x0002880e      pop   r14
+| ::::::|   0x00028810      pop   r15
+| ::::::|   0x00028812      pop   rbp
+| ::::::|   0x00028813      ret
+| ::::::`-> 0x00028814      mov   r14, r8                              ; builders.rs ; arg5
+| ::::::    0x00028817      mov   r15, rcx                             ; arg4
+| ::::::    0x0002881a      mov   r12, rdx                             ; arg3
+| ::::::    0x0002881d      mov   rbp, rsi                             ; arg2
+| ::::::    0x00028820      mov   rax, qword [rbx]                     ; builders.rs:256
+| ::::::    0x00028823      mov   edx, dword [rax+0x30]                ; mod.rs:1711
+| ::::::    0x00028826      mov   cl, byte [rbx+0x09]                  ; builders.rs
+| ::::::    0x00028829      test  dl, 0x04                             ; mod.rs:1711
+| ::::::,=< 0x0002882c      jnz   0x288a3                              ; builders.rs:138
+| ::::::|   0x0002882e      xor   edx, edx                             ; builders.rs
+| ::::::|   0x00028830      test  cl, cl
+| ::::::|   0x00028832      lea   rcx, qword obj.anon.99084305e5fecf16f700a7399605ba78.11.llvm.12252731403998365491 ; builders.rs:150 ; 0x2dde5 ; " { } }(\n(,)\n[]"
+| ::::::|   0x00028839      lea   rsi, qword obj.anon.99084305e5fecf16f700a7399605ba78.10.llvm.12252731403998365491 ; 0x2dde3 ; ",  { } }(\n(,)\n[]"
+| ::::::|   0x00028840      cmovz rsi, rcx
+| ::::::|   0x00028844      setz  dl                                   ; builders.rs
+| ::::::|   0x00028847      or    rdx, 0x02                            ; builders.rs:150
+| ::::::|   0x0002884b      mov   rdi, qword [rax+0x20]                ; mod.rs:1461
+| ::::::|   0x0002884f      mov   rax, qword [rax+0x28]
+| ::::::|   0x00028853      call  qword [rax+0x18]
+| ::::::|   0x00028856      test  al, al                               ; builders.rs:151
+| ========< 0x00028858      jnz   0x287fa
+| ::::::|   0x0002885a      mov   rax, qword [rbx]                     ; builders.rs:152
+| ::::::|   0x0002885d      mov   rdi, qword [rax+0x20]                ; mod.rs:1461
+| ::::::|   0x00028861      mov   rax, qword [rax+0x28]
+| ::::::|   0x00028865      mov   rsi, rbp
+| ::::::|   0x00028868      mov   rdx, r12
+| ::::::|   0x0002886b      call  qword [rax+0x18]
+| ::::::|   0x0002886e      test  al, al                               ; builders.rs:152
+| ========< 0x00028870      jnz   0x287fa
+| ::::::|   0x00028872      mov   rax, qword [rbx]                     ; builders.rs:153
+| ::::::|   0x00028875      mov   rdi, qword [rax+0x20]                ; mod.rs:1461
+| ::::::|   0x00028879      mov   rax, qword [rax+0x28]
+| ::::::|   0x0002887d      lea   rsi, qword obj.anon.99084305e5fecf16f700a7399605ba78.8.llvm.12252731403998365491 ; 0x2dddf ; ": ,\n,  { } }(\n(,)\n[]"
+| ::::::|   0x00028884      mov   edx, 0x02
+| ::::::|   0x00028889      call  qword [rax+0x18]
+| ::::::|   0x0002888c      test  al, al                               ; builders.rs:153
+| `=======< 0x0002888e      jnz   0x287fa
+|  :::::|   0x00028894      mov   rsi, qword [rbx]                     ; builders.rs:154
+|  :::::|   0x00028897      mov   rdi, r15
+|  :::::|   0x0002889a      call  qword [r14+0x18]
+| ,=======< 0x0002889e      jmp   0x28981
+| |:::::`-> 0x000288a3      test  cl, cl                               ; builders.rs
+| |:::::,=< 0x000288a5      jnz   0x288cc                              ; builders.rs:139
+| |:::::|   0x000288a7      mov   rdi, qword [rax+0x20]                ; mod.rs:1461
+| |:::::|   0x000288ab      mov   rax, qword [rax+0x28]
+| |:::::|   0x000288af      lea   rsi, qword obj.anon.99084305e5fecf16f700a7399605ba78.7.llvm.12252731403998365491 ; 0x2dddc ; " {\n: ,\n,  { } }(\n(,)\n[]"
+| |:::::|   0x000288b6      mov   edx, 0x03
+| |:::::|   0x000288bb      call  qword [rax+0x18]
+| |:::::|   0x000288be      test  al, al                               ; builders.rs:140
+| |`======< 0x000288c0      jnz   0x287fa
+| | ::::|   0x000288c6      mov   rax, qword [rbx]                     ; builders.rs:144
+| | ::::|   0x000288c9      mov   edx, dword [rax+0x30]                ; mod.rs:1140
+| | ::::`-> 0x000288cc      mov   byte [var_99h], 0x01                 ; builders.rs:143
+| | ::::    0x000288d1      movups xmm0, xmmword [rax+0x20]            ; mod.rs:1137
+| | ::::    0x000288d5      movaps xmmword [var_98h], xmm0             ; builders.rs:25
+| | ::::    0x000288da      lea   rcx, qword [var_99h]
+| | ::::    0x000288df      mov   qword [var_88h], rcx
+| | ::::    0x000288e4      mov   ecx, dword [rax+0x34]                ; mod.rs:1141
+| | ::::    0x000288e7      mov   sil, byte [rax+0x38]                 ; mod.rs:1142
+| | ::::    0x000288eb      movups xmm0, xmmword [rax]                 ; mod.rs:1143
+| | ::::    0x000288ee      movups xmm1, xmmword [rax+0x10]            ; mod.rs:1144
+| | ::::    0x000288f2      mov   dword [var_48h], edx                 ; mod.rs:1135
+| | ::::    0x000288f6      mov   dword [var_44h], ecx
+| | ::::    0x000288fa      mov   byte [var_40h], sil
+| | ::::    0x000288ff      movaps xmmword [var_78h], xmm0
+| | ::::    0x00028904      movaps xmmword [var_68h], xmm1
+| | ::::    0x00028909      lea   rdi, qword [var_98h]
+| | ::::    0x0002890e      mov   qword [var_58h], rdi
+| | ::::    0x00028913      lea   rax, qword vtable.impl_core::fmt::builders::PadAdapter_as_core::fmt::Write.0 ; r13
+| | ::::                                                               ; 0x396b8 ; "\xb0^\U00000002"
+| | ::::    0x0002891a      mov   qword [var_50h], rax
+| | ::::    0x0002891f      mov   rax, qword [data.000396d0]           ; mod.rs:1461 ; [0x396d0:8]=0x28360 rbp ; "`\x83\U00000002"
+| | ::::    0x00028926      mov   rsi, rbp
+| | ::::    0x00028929      mov   rdx, r12
+| | ::::    0x0002892c      mov   rbp, rax
+| | ::::    0x0002892f      call  rax
+| | ::::    0x00028931      test  al, al                               ; builders.rs:145
+| | `=====< 0x00028933      jnz   0x287fa
+| |  :::    0x00028939      lea   rsi, qword obj.anon.99084305e5fecf16f700a7399605ba78.8.llvm.12252731403998365491 ; mod.rs:1461 ; 0x2dddf ; ": ,\n,  { } }(\n(,)\n[]"
+| |  :::    0x00028940      lea   rdi, qword [var_98h]                 ; mod.rs
+| |  :::    0x00028945      mov   edx, 0x02                            ; mod.rs:1461
+| |  :::    0x0002894a      call  rbp
+| |  :::    0x0002894c      test  al, al                               ; builders.rs:146
+| |  `====< 0x0002894e      jnz   0x287fa
+| |   ::    0x00028954      lea   rsi, qword [var_78h]                 ; builders.rs
+| |   ::    0x00028959      mov   rdi, r15                             ; builders.rs:147
+| |   ::    0x0002895c      call  qword [r14+0x18]
+| |   ::    0x00028960      test  al, al
+| |   `===< 0x00028962      jnz   0x287fa
+| |    :    0x00028968      mov   rdi, qword [var_58h]                 ; mod.rs:1461
+| |    :    0x0002896d      mov   rax, qword [var_50h]
+| |    :    0x00028972      lea   rsi, qword obj.anon.99084305e5fecf16f700a7399605ba78.9.llvm.12252731403998365491 ; 0x2dde1 ; ",\n,  { } }(\n(,)\n[]"
+| |    :    0x00028979      mov   edx, 0x02
+| |    :    0x0002897e      call  qword [rax+0x18]                     ; Rust Virtual Call: <core::fmt::builders::PadAdapter as core::fmt::Write>::write_str::h31390fd94230d396
+| |    :    ; CODE XREF from method.core::fmt::builders::DebugStruct::field.h1e815875a24d07eb @ 0x2889e
+| `-------> 0x00028981      mov   r13d, eax                            ; builders.rs
+\      `==< 0x00028984      jmp   0x287fa
+EOF
+RUN
