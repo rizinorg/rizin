@@ -128,8 +128,10 @@ RZ_IPI PDBSymbol *PDBSymbolTable_symbol_by_index(PDBSymbolTable *symbol_table, P
 	map_err(symbol);
 	map_err(PDBSymbolIter_next(&iter, symbol));
 
+	rz_buf_free(iter.b);
 	return symbol;
 err:
+	rz_buf_free(iter.b);
 	free(symbol);
 	return NULL;
 }
