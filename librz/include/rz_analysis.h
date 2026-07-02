@@ -2053,7 +2053,7 @@ RZ_API bool rz_analysis_has_valid_limits(RZ_NONNULL RzAnalysis *analysis);
 
 /* no-return stuff */
 RZ_API bool rz_analysis_noreturn_add(RzAnalysis *analysis, const char *name, ut64 addr);
-RZ_API bool rz_analysis_noreturn_drop(RzAnalysis *analysis, const char *expr);
+RZ_API void rz_analysis_noreturn_drop(RzAnalysis *analysis, const char *expr);
 RZ_API bool rz_analysis_noreturn_at_addr(RzAnalysis *analysis, ut64 addr);
 RZ_API bool rz_analysis_noreturn_at(RzAnalysis *analysis, ut64 addr);
 RZ_API RzList /*<char *>*/ *rz_analysis_noreturn_functions(RzAnalysis *analysis);
