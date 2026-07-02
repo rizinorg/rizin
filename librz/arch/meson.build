@@ -461,6 +461,7 @@ arch_common_sources = [
   'labels.c',
   'meta.c',
   'no_rtti.c',
+  'objc_rtti.c',
   'omf_process.c',
   'op.c',
   'parse.c',
