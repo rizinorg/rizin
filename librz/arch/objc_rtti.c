@@ -5,16 +5,14 @@
 #include "analysis_private.h"
 
 static const RzBinSymbol *get_objc_superclass(RzAnalysis *analysis, const RzPVector /*<RzBinSymbol *>*/ *symbols, const RzBinSymbol *meta_info) {
-	ut64 addr;
-	if (!analysis->iob.read_at(analysis->iob.io, meta_info->vaddr + 8, (ut8 *)&addr, 8)) {
+	ut8 buf[8];
+	if (!analysis->iob.read_at(analysis->iob.io, meta_info->vaddr + 8, buf, sizeof(buf))) {
 		return NULL;
 	}
+	ut64 addr = rz_read_ble64(buf, analysis->big_endian);
 
 	void **it;
 	rz_pvector_foreach (symbols, it) {
-		if (!it) {
-			continue;
-		}
 		RzBinSymbol *super_meta = *it;
 		if (!super_meta) {
 			continue;
@@ -59,9 +57,6 @@ RZ_API void rz_analysis_rtti_objc(RZ_NONNULL RzAnalysis *analysis) {
 	const RzPVector *symbols = rz_bin_object_get_symbols(o);
 	void **it;
 	rz_pvector_foreach (symbols, it) {
-		if (!it) {
-			continue;
-		}
 		RzBinSymbol *sym = *it;
 		if (!sym) {
 			continue;

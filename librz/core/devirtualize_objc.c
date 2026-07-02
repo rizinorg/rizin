@@ -226,7 +226,6 @@ static void devirtualize_msg_dispatch(RzCore *core, RzSetU *msg_dispatch_addr) {
 		rz_analysis_op(core->analysis, op, start, bytes + offset, end - start, RZ_ANALYSIS_OP_MASK_ALL);
 		if (refresh_vm) {
 			rz_core_analysis_il_reinit(core);
-			refresh_vm = false;
 		}
 		refresh_vm = is_branch_type_to_method(op);
 
@@ -302,7 +301,6 @@ static void devirtualize_msg_super_dispatch(RzCore *core, RzSetU *msg_super_disp
 		}
 		if (refresh_vm) {
 			rz_core_analysis_il_reinit(core);
-			refresh_vm = false;
 		}
 
 		refresh_vm = is_branch_type_to_method(op);
