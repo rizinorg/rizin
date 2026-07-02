@@ -21,7 +21,7 @@ af
 afi~size
 EOF
 EXPECT=<<EOF
-size: 33
+size: 34
 EOF
 RUN
 
