@@ -4945,6 +4945,7 @@ static void analysis_class_print_to_json(RzAnalysis *analysis, PJ *pj, const cha
 			pj_kn(pj, "offset", vtable->offset);
 			pj_end(pj);
 		}
+		rz_vector_free(vtables);
 	}
 	pj_end(pj);
 

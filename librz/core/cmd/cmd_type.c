@@ -593,6 +593,7 @@ RZ_IPI RzCmdStatus rz_type_noreturn_del_all_handler(RzCore *core, int argc, cons
 	rz_list_foreach (noretl, iter, name) {
 		rz_type_func_noreturn_drop(typedb, name);
 	}
+	rz_list_free(noretl);
 	return RZ_CMD_STATUS_OK;
 }
 

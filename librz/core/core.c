@@ -1135,6 +1135,7 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 		if (pj) {
 			pj_end(pj);
 		}
+		rz_strbuf_free(s);
 		return NULL;
 	}
 

@@ -239,6 +239,7 @@ static bool table_query_select_columns(RzTable *t, const char *column_name, cons
 		free(op);
 		return false;
 	}
+	char *name = NULL;
 	size_t col = 0;
 	if (table_query_resolve_column(t, column_name, &col)) {
 		RzTableColumn *column = rz_vector_index_ptr(t->cols, col);
@@ -247,7 +248,7 @@ static bool table_query_select_columns(RzTable *t, const char *column_name, cons
 			free(op);
 			return false;
 		}
-		char *name = rz_str_dup(column->name);
+		name = rz_str_dup(column->name);
 		if (!name) {
 			rz_list_free(list);
 			free(op);
@@ -256,7 +257,7 @@ static bool table_query_select_columns(RzTable *t, const char *column_name, cons
 		// Normalize the first selected column before passing the list to the generic selector.
 		rz_list_prepend(list, name);
 	} else if (RZ_STR_ISNOTEMPTY(column_name)) {
-		char *name = rz_str_dup(column_name);
+		name = rz_str_dup(column_name);
 		if (!name) {
 			rz_list_free(list);
 			free(op);
@@ -267,6 +268,8 @@ static bool table_query_select_columns(RzTable *t, const char *column_name, cons
 	rz_table_columns_select(t, list);
 	rz_list_free(list);
 	free(op);
+	// the split list elements point into op; only the prepended name is owned here
+	free(name);
 	return true;
 }
 
