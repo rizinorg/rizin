@@ -1321,49 +1321,36 @@ RZ_API bool rz_interp_instance_th(RZ_NONNULL RZ_OWN RzInterpInstance *inst) {
 
 	RZ_LOG_DEBUG("interpreter: Main: Hello.\n");
 
-	//
-	// Start interpretation
-	//
+	while (true) {
+		// INIT
+		RZ_LOG_DEBUG("interpreter: Enter INIT\n");
+		rz_interp_run_state_set(inst->run_state, RZ_INTERP_RUN_STATE_INIT);
 
-	// TODO: It is probably better to make the following stuff while-loops.
-	// Because otherwise it doesn't make sense without the docs.
-	// But while debugging and developing, I keep it this way to separate clearly
-	// what the interpreter does in each state.
+		ut64 entry_point;
+		if (rz_th_ring_buf_take_blocking(inst->entry_points, &entry_point) != RZ_THREAD_RING_BUF_OK) {
+			// No more entry points to interpret => Terminate.
+			// OR.
+			success = true;
+			break;
+		}
 
-INIT:
-	// prepare state at the procedure entrypoint
-	RZ_LOG_DEBUG("interpreter: Enter INIT\n");
-	rz_interp_run_state_set(inst->run_state, RZ_INTERP_RUN_STATE_INIT);
+		// EMU
+		RZ_LOG_DEBUG("interpreter: Enter EMU\n");
+		rz_interp_run_state_set(inst->run_state, RZ_INTERP_RUN_STATE_EMU);
 
-	ut64 entry_point;
-	if (rz_th_ring_buf_take_blocking(inst->entry_points, &entry_point) != RZ_THREAD_RING_BUF_OK) {
-		// No more entry points to interpret => Terminate.
-		// OR.
-		success = true;
-		goto TERM;
+		if (!rz_interp_run(inst, entry_point)) {
+			RZ_LOG_ERROR("Interpreter run failed for entry point 0x%" PFMT64x "\n", entry_point);
+		}
+
+		// CLEAN
+		RZ_LOG_DEBUG("interpreter: Enter CLEAN\n");
+		rz_interp_run_state_set(inst->run_state, RZ_INTERP_RUN_STATE_CLEAN);
+
+		// Wait until RzInquiry asks to start again.
+		rz_th_sem_wait(inst->run_state_sync);
 	}
 
-// EMU
-	RZ_LOG_DEBUG("interpreter: Enter EMU\n");
-	rz_interp_run_state_set(inst->run_state, RZ_INTERP_RUN_STATE_EMU);
-
-	if (!rz_interp_run(inst, entry_point)) {
-		RZ_LOG_ERROR("Interpreter run failed for entry point 0x%" PFMT64x "\n", entry_point);
-	}
-
-// CLEAN
-	RZ_LOG_DEBUG("interpreter: Enter CLEAN\n");
-	rz_interp_run_state_set(inst->run_state, RZ_INTERP_RUN_STATE_CLEAN);
-
-	// Wait until RzInquiry asks to start again.
-	rz_th_sem_wait(inst->run_state_sync);
-
-	// Clean can only transition to Init.
-	goto INIT;
-
-TERM: {
 	RZ_LOG_DEBUG("interpreter: Enter TERM\n");
 	rz_interp_run_state_set(inst->run_state, RZ_INTERP_RUN_STATE_TERM);
 	return success;
-}
 }
