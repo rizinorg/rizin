@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2025 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "eval.h"
 #include "rz_util/rz_assert.h"
 #include <rz_util/rz_bitvector.h>
 
@@ -35,29 +34,10 @@ static RzInterpAbstrVal *pack(ProtoIntrprAbstrData *val) {
 	return rz_interp_abstr_val_pack(val);
 }
 
-/**
- * \brief In bytes
- *
- * TODO: find a sweet spot here where this size is as small is possible,
- * but in practice only very few heap allocations have to happen.
- */
-#define BV_STACK_MAX_SIZE 0x100
-
-/**
- * \brief Initializes an AbstractData object on the stack.
- * The bitvector pre-allocates BV_STACK_MAX_SIZE bytes on the stack for large bit vectors.
- * Any value larger than these bits will be stored in heap allocated memory.
- * Because of this the bit vector should always be passed to rz_bv_fini() after usage.
- */
-#define STACK_ABSTR_DATA_OUT(name) \
-	ut8 _##name##_bv_large_buf[BV_STACK_MAX_SIZE] = { 0 }; \
-	RzBitVector _##name##_bv_large = { .len = BV_STACK_MAX_SIZE, ._elem_len = BV_STACK_MAX_SIZE, .bits.large_a = _##name##_bv_large_buf, .stack_alloc = true }; \
-	ProtoIntrprAbstrData name = { .is_const = false, .bv = &_##name##_bv_large };
-
 static RZ_OWN RzInterpAbstrVal *val_new_top() {
 	ProtoIntrprAbstrData *ad = RZ_NEW0(ProtoIntrprAbstrData);
 	ad->is_const = false;
-	ad->bv = rz_bv_new(BV_STACK_MAX_SIZE);
+	ad->bv = rz_bv_new(64);
 	return pack(ad);
 }
 
@@ -85,559 +65,16 @@ static void val_set_top(RZ_NONNULL RzInterpAbstrVal *val) {
 	AD(val)->is_const = false;
 }
 
-static bool eval_pure(RzInterpRunContext *ctx, const RzILOpPure *pure, RZ_OUT RzInterpAbstrVal *out_val) {
-	ProtoIntrprAbstrData *out = AD(out_val);
-	switch (pure->code) {
-	default:
-	case RZ_IL_OP_VAR: {
-		if (!read_var_from_state(ctx->inst, ctx->astate, pure->op.var.kind, pure->op.var.hash, out_val)) {
-			RZ_LOG_ERROR("prototype: VAR failed to evaluate. The %s '%s' doesn't exist.\n",
-				rz_il_var_kind_name(pure->op.var.kind),
-				pure->op.var.v);
-			return false;
-		}
-		break;
-	}
-	case RZ_IL_OP_LET: {
-		ut64 vhash = pure->op.let.hash;
-		if (!eval_pure(ctx, pure->op.let.exp, out_val)) {
-			RZ_LOG_ERROR("prototype: LET expression failed to evaluate.\n");
-			return false;
-		}
-		write_var_to_state(ctx->inst, ctx->astate, RZ_IL_VAR_KIND_LOCAL_PURE, vhash, out_val);
-		// Evaluate body
-		if (!eval_pure(ctx, pure->op.let.body, out_val)) {
-			RZ_LOG_ERROR("prototype: LET body failed to evaluate.\n");
-			return false;
-		}
-		// No need to free the LET variable.
-		// It is simply overwritten next time.
-		break;
-	}
-	case RZ_IL_OP_ITE: {
-		if (!eval_pure(ctx, pure->op.ite.condition, out_val)) {
-			RZ_LOG_ERROR("prototype: ITE condition failed to evaluate.\n");
-			return false;
-		}
-		if (!out->is_const) {
-			// Can't decide which pure to evaluate.
-			goto map_to_top;
-		}
+static void val_set_const_bool(RZ_OUT RZ_NONNULL RzInterpAbstrVal *dst, bool src) {
+	AD(dst)->is_const = true;
+	rz_bv_cast_inplace(AD(dst)->bv, 1, false);
+	rz_bv_set_from_ut64(AD(dst)->bv, src ? 1 : 0);
+}
 
-		// TODO: eval both if top
-		if (!val_may_be_bool(out_val, false)) {
-			if (!eval_pure(ctx, pure->op.ite.x, out_val)) {
-				RZ_LOG_ERROR("prototype: ITE x failed to evaluate.\n");
-				return false;
-			}
-		} else {
-			if (!eval_pure(ctx, pure->op.ite.y, out_val)) {
-				RZ_LOG_ERROR("prototype: ITE y failed to evaluate.\n");
-				return false;
-			}
-		}
-		break;
-	}
-	case RZ_IL_OP_B0:
-		if (rz_bv_len(out->bv) != 1) {
-			rz_bv_cast_inplace(out->bv, 1, false);
-		}
-		rz_bv_set(out->bv, 0, false);
-		out->is_const = true;
-		break;
-	case RZ_IL_OP_B1:
-		if (rz_bv_len(out->bv) != 1) {
-			rz_bv_cast_inplace(out->bv, 1, false);
-		}
-		rz_bv_set(out->bv, 0, true);
-		out->is_const = true;
-		break;
-	case RZ_IL_OP_CAST: {
-		if (!eval_pure(ctx, pure->op.cast.val, out_val)) {
-			RZ_LOG_ERROR("prototype: CAST val failed to evaluate.\n");
-			return false;
-		}
-		if (!out->is_const) {
-			goto map_to_top;
-		}
-		STACK_ABSTR_DATA_OUT(fill_bit);
-		if (!eval_pure(ctx, pure->op.cast.fill, pack(&fill_bit))) {
-			RZ_LOG_ERROR("prototype: CAST fill failed to evaluate.\n");
-			return false;
-		}
-		if (!fill_bit.is_const) {
-			rz_bv_fini(fill_bit.bv);
-			goto map_to_top;
-		}
-		rz_bv_cast_inplace(out->bv, pure->op.cast.length, !rz_bv_is_zero_vector(fill_bit.bv));
-		break;
-	}
-	case RZ_IL_OP_BITV:
-		rz_bv_cast_inplace(out->bv, rz_bv_len(pure->op.bitv.value), false);
-		rz_bv_copy(out->bv, pure->op.bitv.value);
-		out->is_const = true;
-		break;
-	case RZ_IL_OP_APPEND: {
-		STACK_ABSTR_DATA_OUT(high);
-		if (!eval_pure(ctx, pure->op.append.high, pack(&high))) {
-			RZ_LOG_ERROR("prototype: APPEND high failed to evaluate.\n");
-			return false;
-		}
-		if (!high.is_const) {
-			rz_bv_fini(high.bv);
-			goto map_to_top;
-		}
-		if (!eval_pure(ctx, pure->op.append.low, pack(out))) {
-			RZ_LOG_ERROR("prototype: APPEND low failed to evaluate.\n");
-			rz_bv_fini(high.bv);
-			return false;
-		}
-		if (!out->is_const) {
-			rz_bv_fini(high.bv);
-			goto map_to_top;
-		}
-		rz_bv_cast_inplace(out->bv, rz_bv_len(out->bv) + rz_bv_len(high.bv), false);
-		rz_bv_copy_nbits(high.bv, 0, out->bv, rz_bv_len(out->bv), rz_bv_len(high.bv));
-		out->is_const = true;
-		rz_bv_fini(high.bv);
-		break;
-	}
-	case RZ_IL_OP_LOGNOT:
-	case RZ_IL_OP_INV: {
-		RzILOpPure *x = pure->code == RZ_IL_OP_INV ? pure->op.boolinv.x : pure->op.lognot.bv;
-		if (!eval_pure(ctx, x, out_val)) {
-			RZ_LOG_ERROR("prototype: INV x failed to evaluate.\n");
-			return false;
-		}
-		if (out->is_const) {
-			rz_bv_not_inplace(out->bv);
-		}
-		break;
-	}
-	case RZ_IL_OP_LOGAND:
-	case RZ_IL_OP_AND: {
-		RzILOpPure *px = pure->code == RZ_IL_OP_AND ? pure->op.booland.x : pure->op.logand.x;
-		RzILOpPure *py = pure->code == RZ_IL_OP_AND ? pure->op.booland.y : pure->op.logand.y;
-		if (!eval_pure(ctx, px, out_val)) {
-			RZ_LOG_ERROR("prototype: AND x failed to evaluate.\n");
-			return false;
-		}
-		if (!out->is_const) {
-			goto map_to_top;
-		}
-		STACK_ABSTR_DATA_OUT(y);
-		if (!eval_pure(ctx, py, pack(&y))) {
-			RZ_LOG_ERROR("prototype: AND y failed to evaluate.\n");
-			return false;
-		}
-		if (!y.is_const) {
-			rz_bv_fini(y.bv);
-			goto map_to_top;
-		}
-		if (!rz_bv_and_inplace(out->bv, y.bv)) {
-			rz_bv_fini(y.bv);
-			goto map_to_top;
-		}
-		rz_bv_fini(y.bv);
-		break;
-	}
-	case RZ_IL_OP_LOGOR:
-	case RZ_IL_OP_OR: {
-		RzILOpPure *px = pure->code == RZ_IL_OP_OR ? pure->op.boolor.x : pure->op.logor.x;
-		RzILOpPure *py = pure->code == RZ_IL_OP_OR ? pure->op.boolor.y : pure->op.logor.y;
-		if (!eval_pure(ctx, px, out_val)) {
-			RZ_LOG_ERROR("prototype: OR x failed to evaluate.\n");
-			return false;
-		}
-		if (!out->is_const) {
-			goto map_to_top;
-		}
-		STACK_ABSTR_DATA_OUT(y);
-		if (!eval_pure(ctx, py, pack(&y))) {
-			RZ_LOG_ERROR("prototype: OR y failed to evaluate.\n");
-			return false;
-		}
-		if (!y.is_const) {
-			rz_bv_fini(y.bv);
-			goto map_to_top;
-		}
-		if (!rz_bv_or_inplace(out->bv, y.bv)) {
-			rz_bv_fini(y.bv);
-			goto map_to_top;
-		}
-		rz_bv_fini(y.bv);
-		break;
-	}
-	case RZ_IL_OP_LOGXOR:
-	case RZ_IL_OP_XOR: {
-		RzILOpPure *px = pure->code == RZ_IL_OP_XOR ? pure->op.boolxor.x : pure->op.logxor.x;
-		RzILOpPure *py = pure->code == RZ_IL_OP_XOR ? pure->op.boolxor.y : pure->op.logxor.y;
-		if (!eval_pure(ctx, px, out_val)) {
-			RZ_LOG_ERROR("prototype: XOR x failed to evaluate.\n");
-			return false;
-		}
-		if (!out->is_const) {
-			goto map_to_top;
-		}
-		STACK_ABSTR_DATA_OUT(y);
-		if (!eval_pure(ctx, py, pack(&y))) {
-			RZ_LOG_ERROR("prototype: XOR y failed to evaluate.\n");
-			return false;
-		}
-		if (!y.is_const) {
-			rz_bv_fini(y.bv);
-			goto map_to_top;
-		}
-		if (!rz_bv_xor_inplace(out->bv, y.bv)) {
-			rz_bv_fini(y.bv);
-			goto map_to_top;
-		}
-		rz_bv_fini(y.bv);
-		break;
-	}
-	case RZ_IL_OP_IS_ZERO:
-	case RZ_IL_OP_LSB:
-	case RZ_IL_OP_MSB: {
-		bool (*truth_test)(const RzBitVector *bv);
-		RzILOpBitVector *bv;
-		switch (pure->code) {
-		default:
-			rz_warn_if_reached();
-			goto map_to_top;
-		case RZ_IL_OP_IS_ZERO:
-			bv = pure->op.is_zero.bv;
-			truth_test = rz_bv_is_zero_vector;
-			break;
-		case RZ_IL_OP_LSB:
-			bv = pure->op.lsb.bv;
-			truth_test = rz_bv_lsb;
-			break;
-		case RZ_IL_OP_MSB:
-			bv = pure->op.msb.bv;
-			truth_test = rz_bv_msb;
-			break;
-		}
-		if (!eval_pure(ctx, bv, out_val)) {
-			RZ_LOG_ERROR("prototype: MSB/LSB/IS_ZERO bv failed to evaluate.\n");
-			return false;
-		}
-		if (!out->is_const) {
-			goto map_to_top;
-		}
-		bool truth = truth_test(out->bv);
-		rz_bv_cast_inplace(out->bv, 1, false);
-		// TODO: Truth bit.
-		rz_bv_set(out->bv, 0, truth);
-		break;
-	}
-	case RZ_IL_OP_NEG: {
-		if (!eval_pure(ctx, pure->op.neg.bv, out_val)) {
-			RZ_LOG_ERROR("prototype: NEG bv failed to evaluate.\n");
-			return false;
-		}
-		if (out->is_const) {
-			rz_bv_neg_inplace(out->bv);
-		}
-		break;
-	}
-	case RZ_IL_OP_ADD: {
-		RzILOpPure *px = pure->op.add.x;
-		RzILOpPure *py = pure->op.add.y;
-		if (!eval_pure(ctx, px, out_val)) {
-			RZ_LOG_ERROR("prototype: ADD x failed to evaluate.\n");
-			return false;
-		}
-		if (!out->is_const) {
-			goto map_to_top;
-		}
-		STACK_ABSTR_DATA_OUT(y);
-		if (!eval_pure(ctx, py, pack(&y))) {
-			RZ_LOG_ERROR("prototype: ADD y failed to evaluate.\n");
-			return false;
-		}
-		if (!y.is_const) {
-			rz_bv_fini(y.bv);
-			goto map_to_top;
-		}
-		if (!rz_bv_add_inplace(out->bv, y.bv, NULL)) {
-			rz_bv_fini(y.bv);
-			goto map_to_top;
-		}
-		rz_bv_fini(y.bv);
-		break;
-	}
-	case RZ_IL_OP_SUB: {
-		RzILOpPure *px = pure->op.sub.x;
-		RzILOpPure *py = pure->op.sub.y;
-		if (!eval_pure(ctx, px, out_val)) {
-			RZ_LOG_ERROR("prototype: SUB x failed to evaluate.\n");
-			return false;
-		}
-		if (!out->is_const) {
-			goto map_to_top;
-		}
-		STACK_ABSTR_DATA_OUT(y);
-		if (!eval_pure(ctx, py, pack(&y))) {
-			RZ_LOG_ERROR("prototype: SUB y failed to evaluate.\n");
-			return false;
-		}
-		if (!y.is_const) {
-			rz_bv_fini(y.bv);
-			goto map_to_top;
-		}
-		if (!rz_bv_sub_inplace(out->bv, y.bv, NULL)) {
-			rz_bv_fini(y.bv);
-			goto map_to_top;
-		}
-		rz_bv_fini(y.bv);
-		break;
-	}
-	case RZ_IL_OP_SHIFTL:
-	case RZ_IL_OP_SHIFTR: {
-		RzILOpPure *px = pure->code == RZ_IL_OP_SHIFTR ? pure->op.shiftr.x : pure->op.shiftl.x;
-		RzILOpPure *py = pure->code == RZ_IL_OP_SHIFTR ? pure->op.shiftr.y : pure->op.shiftl.y;
-		RzILOpPure *pfill_bit = pure->code == RZ_IL_OP_SHIFTR ? pure->op.shiftr.fill_bit : pure->op.shiftl.fill_bit;
-		if (!eval_pure(ctx, px, out_val)) {
-			RZ_LOG_ERROR("prototype: SHIFT(L/R) x failed to evaluate.\n");
-			return false;
-		}
-		if (!out->is_const) {
-			goto map_to_top;
-		}
-		STACK_ABSTR_DATA_OUT(y);
-		if (!eval_pure(ctx, py, pack(&y))) {
-			RZ_LOG_ERROR("prototype: SHIFT(L/R) y failed to evaluate.\n");
-			return false;
-		}
-		if (!y.is_const) {
-			rz_bv_fini(y.bv);
-			goto map_to_top;
-		}
-		STACK_ABSTR_DATA_OUT(fill_bit);
-		if (!eval_pure(ctx, pfill_bit, pack(&fill_bit))) {
-			RZ_LOG_ERROR("prototype: SHIFT(L/R) fill_bit failed to evaluate.\n");
-			return false;
-		}
-		if (!fill_bit.is_const) {
-			rz_bv_fini(fill_bit.bv);
-			rz_bv_fini(y.bv);
-			goto map_to_top;
-		}
-		bool (*shift)(RzBitVector *bv, ut32 size, bool fill_bit);
-		shift = pure->code == RZ_IL_OP_SHIFTR ? rz_bv_rshift_fill : rz_bv_lshift_fill;
-		if (!shift(out->bv, rz_bv_to_ut64(y.bv), !rz_bv_is_zero_vector(fill_bit.bv))) {
-			rz_bv_fini(fill_bit.bv);
-			rz_bv_fini(y.bv);
-			goto map_to_top;
-		}
-		rz_bv_fini(fill_bit.bv);
-		rz_bv_fini(y.bv);
-		break;
-	}
-	case RZ_IL_OP_SLE:
-	case RZ_IL_OP_ULE:
-	case RZ_IL_OP_EQ: {
-		bool (*cmp)(RzBitVector *x, RzBitVector *y);
-		RzILOpPure *px;
-		RzILOpPure *py;
-		switch (pure->code) {
-		default:
-			goto map_to_top;
-		case RZ_IL_OP_SLE:
-			px = pure->op.sle.x;
-			py = pure->op.sle.y;
-			cmp = rz_bv_sle;
-			break;
-		case RZ_IL_OP_ULE:
-			px = pure->op.ule.x;
-			py = pure->op.ule.y;
-			cmp = rz_bv_ule;
-			break;
-		case RZ_IL_OP_EQ:
-			px = pure->op.eq.x;
-			py = pure->op.eq.y;
-			cmp = rz_bv_eq;
-			break;
-		}
-
-		if (!eval_pure(ctx, px, out_val)) {
-			RZ_LOG_ERROR("prototype: CMP x failed to evaluate.\n");
-			return false;
-		}
-		if (!out->is_const) {
-			goto map_to_top;
-		}
-		STACK_ABSTR_DATA_OUT(y);
-		if (!eval_pure(ctx, py, pack(&y))) {
-			RZ_LOG_ERROR("prototype: CMP y failed to evaluate.\n");
-			return false;
-		}
-		if (!y.is_const) {
-			rz_bv_fini(y.bv);
-			goto map_to_top;
-		}
-		bool cmp_is_true = cmp(out->bv, y.bv);
-		rz_bv_cast_inplace(out->bv, 1, false);
-		rz_bv_set(out->bv, 0, cmp_is_true);
-		rz_bv_fini(y.bv);
-		break;
-	}
-	case RZ_IL_OP_LOADW:
-	case RZ_IL_OP_LOAD: {
-		STACK_ABSTR_DATA_OUT(ld_addr);
-		RzILOpPure *key = pure->code == RZ_IL_OP_LOAD ? pure->op.load.key : pure->op.loadw.key;
-		RzILMemIndex mem_idx = pure->code == RZ_IL_OP_LOAD ? 0 : pure->op.loadw.mem;
-		if (!eval_pure(ctx, key, pack(&ld_addr))) {
-			RZ_LOG_ERROR("prototype: LOAD/LOADW key failed to evaluate.\n");
-			rz_bv_fini(ld_addr.bv);
-			return false;
-		}
-		if (!ld_addr.is_const) {
-			rz_bv_fini(ld_addr.bv);
-			goto map_to_top;
-		}
-		if (rz_bv_len(ld_addr.bv) == 64) {
-			// TODO: Remove normalization.
-			// Unset bit 63 is required, because the RzBuffer API only supports
-			// st64 addresses.
-			RzBitVector mask = { 0 };
-			rz_bv_init(&mask, 64);
-			rz_bv_set_from_ut64(&mask, 0x7fffffffffffffff);
-			rz_bv_and_inplace(ld_addr.bv, &mask);
-		}
-
-		report_yield_xref(ctx, 0, ctx->astate->pc, pack(&ld_addr), RZ_ANALYSIS_XREF_TYPE_MEM_READ);
-		size_t n_bits = pure->code == RZ_IL_OP_LOAD ? ctx->inst->il_ctx->config->mem_key_size : pure->op.loadw.n_bits;
-		if (!load_abstr_data(ctx->inst, mem_idx, ld_addr.bv, n_bits, out_val)) {
-			rz_bv_fini(ld_addr.bv);
-			goto map_to_top;
-		}
-		rz_bv_fini(ld_addr.bv);
-		break;
-	}
-	case RZ_IL_OP_MUL: {
-		RzILOpPure *px = pure->op.mul.x;
-		RzILOpPure *py = pure->op.mul.y;
-		if (!eval_pure(ctx, px, out_val)) {
-			RZ_LOG_ERROR("prototype: MUL x failed to evaluate.\n");
-			return false;
-		}
-		if (!out->is_const) {
-			goto map_to_top;
-		}
-		STACK_ABSTR_DATA_OUT(y);
-		if (!eval_pure(ctx, py, pack(&y))) {
-			RZ_LOG_ERROR("prototype: MUL y failed to evaluate.\n");
-			return false;
-		}
-		if (!y.is_const) {
-			rz_bv_fini(y.bv);
-			goto map_to_top;
-		}
-		if (!rz_bv_mul_inplace(out->bv, y.bv)) {
-			rz_bv_fini(y.bv);
-			goto map_to_top;
-		}
-		rz_bv_fini(y.bv);
-		break;
-	}
-	case RZ_IL_OP_MOD: {
-		RzILOpPure *px = pure->op.mod.x;
-		RzILOpPure *py = pure->op.mod.y;
-		if (!eval_pure(ctx, px, out_val)) {
-			RZ_LOG_ERROR("prototype: MOD x failed to evaluate.\n");
-			return false;
-		}
-		if (!out->is_const) {
-			goto map_to_top;
-		}
-		STACK_ABSTR_DATA_OUT(y);
-		if (!eval_pure(ctx, py, pack(&y))) {
-			RZ_LOG_ERROR("prototype: MOD y failed to evaluate.\n");
-			return false;
-		}
-		if (!y.is_const) {
-			rz_bv_fini(y.bv);
-			goto map_to_top;
-		}
-		if (!rz_bv_mod_inplace(out->bv, y.bv)) {
-			rz_bv_fini(y.bv);
-			goto map_to_top;
-		}
-		rz_bv_fini(y.bv);
-		break;
-	}
-	case RZ_IL_OP_DIV: {
-		RzILOpPure *px = pure->op.div.x;
-		RzILOpPure *py = pure->op.div.y;
-		if (!eval_pure(ctx, px, out_val)) {
-			RZ_LOG_ERROR("prototype: DIV x failed to evaluate.\n");
-			return false;
-		}
-		if (!out->is_const) {
-			goto map_to_top;
-		}
-		STACK_ABSTR_DATA_OUT(y);
-		if (!eval_pure(ctx, py, pack(&y))) {
-			RZ_LOG_ERROR("prototype: DIV y failed to evaluate.\n");
-			return false;
-		}
-		if (!y.is_const) {
-			rz_bv_fini(y.bv);
-			goto map_to_top;
-		}
-		if (!rz_bv_div_inplace(out->bv, y.bv)) {
-			rz_bv_fini(y.bv);
-			goto map_to_top;
-		}
-		rz_bv_fini(y.bv);
-		break;
-	}
-	case RZ_IL_OP_SDIV:
-	case RZ_IL_OP_SMOD:
-	case RZ_IL_OP_FLOAT:
-	case RZ_IL_OP_FBITS:
-	case RZ_IL_OP_IS_FINITE:
-	case RZ_IL_OP_IS_NAN:
-	case RZ_IL_OP_IS_INF:
-	case RZ_IL_OP_IS_FZERO:
-	case RZ_IL_OP_IS_FNEG:
-	case RZ_IL_OP_IS_FPOS:
-	case RZ_IL_OP_FNEG:
-	case RZ_IL_OP_FABS:
-	case RZ_IL_OP_FCAST_INT:
-	case RZ_IL_OP_FCAST_SINT:
-	case RZ_IL_OP_FCAST_FLOAT:
-	case RZ_IL_OP_FCAST_SFLOAT:
-	case RZ_IL_OP_FCONVERT:
-	case RZ_IL_OP_FREQUAL:
-	case RZ_IL_OP_FSUCC:
-	case RZ_IL_OP_FPRED:
-	case RZ_IL_OP_FORDER:
-	case RZ_IL_OP_FROUND:
-	case RZ_IL_OP_FSQRT:
-	case RZ_IL_OP_FRSQRT:
-	case RZ_IL_OP_FADD:
-	case RZ_IL_OP_FSUB:
-	case RZ_IL_OP_FMUL:
-	case RZ_IL_OP_FDIV:
-	case RZ_IL_OP_FMOD:
-	case RZ_IL_OP_FHYPOT:
-	case RZ_IL_OP_FPOW:
-	case RZ_IL_OP_FMAD:
-	case RZ_IL_OP_FROOTN:
-	case RZ_IL_OP_FPOWN:
-	case RZ_IL_OP_FCOMPOUND:
-	case RZ_IL_OP_FEXCEPT:
-		RZ_LOG_ERROR("Unhandled pure %" PFMT32d "\n", pure->code);
-		// Not implemented.
-		goto map_to_top;
-	}
-	return true;
-
-map_to_top:
-	out->is_const = false;
-	return true;
+static void val_set_const_bv(RZ_OUT RZ_NONNULL RzInterpAbstrVal *dst, RZ_IN RZ_NONNULL RzBitVector *src) {
+	AD(dst)->is_const = true;
+	rz_bv_cast_inplace(AD(dst)->bv, rz_bv_len(src), false);
+	rz_bv_copy(AD(dst)->bv, src);
 }
 
 void val_copy(RzInterpAbstrVal *dst_val, const RzInterpAbstrVal *src_val) {
@@ -693,18 +130,127 @@ static bool to_concrete_const(RZ_NONNULL const RzInterpAbstrVal *val, RZ_NULLABL
 	return true;
 }
 
-static RzInterpPlugin rz_interpreter_plugin_prototype = {
+static void eval_cast(ut32 length, RZ_NONNULL const RzInterpAbstrVal *fill, RZ_INOUT RZ_NONNULL RzInterpAbstrVal *val) {
+	if (!AD(val)->is_const || !AD(fill)->is_const) {
+		val_set_top(val);
+		return;
+	}
+	rz_bv_cast_inplace(AD(val)->bv, length, !rz_bv_is_zero_vector(AD(fill)->bv));
+}
+
+static void eval_shift(bool right, RZ_NONNULL RZ_INOUT RzInterpAbstrVal *x, RZ_NONNULL const RzInterpAbstrVal *y, RZ_NONNULL const RzInterpAbstrVal *fill_bit) {
+	if (!AD(x)->is_const || !AD(y)->is_const || !AD(fill_bit)->is_const) {
+		// Hint: there are some more cases that could be handled better:
+		// - x is either all 1 or all 0 => any shift will produce the same result
+		// - y is 0 => fill_bit may be top and the result is still known to be just x
+		// but not sure if these are worth the extra control flow for practical purposes
+		return;
+	}
+	bool (*shift)(RzBitVector *bv, ut32 size, bool fill_bit);
+	shift = right ? rz_bv_rshift_fill : rz_bv_lshift_fill;
+	shift(AD(x)->bv, rz_bv_to_ut64(AD(y)->bv), !rz_bv_is_zero_vector(AD(fill_bit)->bv));
+}
+
+static void eval_binop(RzILOpPureCode code, RZ_NONNULL RZ_INOUT RzInterpAbstrVal *x, RZ_NONNULL const RzInterpAbstrVal *y) {
+	if (!AD(x)->is_const || !AD(y)->is_const) {
+		val_set_top(x);
+		return;
+	}
+	RzBitVector *xv = AD(x)->bv;
+	RzBitVector *yv = AD(y)->bv;
+	switch (code) {
+	case RZ_IL_OP_APPEND:
+		rz_bv_append_inplace(xv, yv);
+		break;
+	case RZ_IL_OP_LOGAND:
+	case RZ_IL_OP_AND:
+		rz_bv_and_inplace(xv, yv);
+		break;
+	case RZ_IL_OP_LOGOR:
+	case RZ_IL_OP_OR:
+		rz_bv_or_inplace(xv, yv);
+		break;
+	case RZ_IL_OP_LOGXOR:
+	case RZ_IL_OP_XOR:
+		rz_bv_xor_inplace(xv, yv);
+		break;
+	case RZ_IL_OP_ADD:
+		rz_bv_add_inplace(xv, yv, NULL);
+		break;
+	case RZ_IL_OP_SUB:
+		rz_bv_sub_inplace(xv, yv, NULL);
+		break;
+	case RZ_IL_OP_SLE:
+		val_set_const_bool(x, rz_bv_sle(xv, yv));
+		break;
+	case RZ_IL_OP_ULE:
+		val_set_const_bool(x, rz_bv_ule(xv, yv));
+		break;
+	case RZ_IL_OP_EQ:
+		val_set_const_bool(x, rz_bv_eq(xv, yv));
+		break;
+	case RZ_IL_OP_MUL:
+		rz_bv_mul_inplace(xv, yv);
+		break;
+	case RZ_IL_OP_MOD:
+		rz_bv_mod_inplace(xv, yv);
+		break;
+	case RZ_IL_OP_DIV:
+		rz_bv_div_inplace(xv, yv);
+		break;
+	default:
+		// unimplemented
+		val_set_top(x);
+		break;
+	}
+}
+
+static void eval_unop(RzILOpPureCode code, RZ_NONNULL RZ_INOUT RzInterpAbstrVal *val) {
+	if (!AD(val)->is_const) {
+		return;
+	}
+	RzBitVector *bv = AD(val)->bv;
+	switch (code) {
+	case RZ_IL_OP_LOGNOT:
+	case RZ_IL_OP_INV:
+		rz_bv_not_inplace(bv);
+		break;
+	case RZ_IL_OP_IS_ZERO:
+		val_set_const_bool(val, rz_bv_is_zero_vector(bv));
+		break;
+	case RZ_IL_OP_LSB:
+		val_set_const_bool(val, rz_bv_lsb(bv));
+		break;
+	case RZ_IL_OP_MSB:
+		val_set_const_bool(val, rz_bv_msb(bv));
+		break;
+	case RZ_IL_OP_NEG:
+		rz_bv_neg_inplace(bv);
+		break;
+	default:
+		// unimplemented
+		val_set_top(val);
+		break;
+	}
+}
+
+static RzInterpValueAbstraction rz_interpreter_plugin_prototype = {
 	.name = "constant",
 	.val_new_top = val_new_top,
 	.val_free = val_free,
 	.set_top = val_set_top,
+	.set_const_bool = val_set_const_bool,
+	.set_const_bv = val_set_const_bv,
 	.is_top = val_is_top,
 	.may_be_bool = val_may_be_bool,
 	.to_concrete_const = to_concrete_const,
 	.copy = val_copy,
-	.eval_pure = eval_pure,
 	.join = join_val,
 	.val_as_str = val_as_str,
+	.eval_cast = eval_cast,
+	.eval_shift = eval_shift,
+	.eval_binop = eval_binop,
+	.eval_unop = eval_unop
 };
 
 RZ_API RzInquiryPlugin rz_inquiry_plugin_interpreter_prototype = {
@@ -713,7 +259,7 @@ RZ_API RzInquiryPlugin rz_inquiry_plugin_interpreter_prototype = {
 	.version = "0.1p",
 	.desc = "A prototype interpreter for constant/top abstractions.",
 	.license = "LGPL-3.0-only",
-	.p_interpreter = &rz_interpreter_plugin_prototype,
+	.value_abstraction = &rz_interpreter_plugin_prototype,
 };
 
 #ifndef RZ_PLUGIN_INCORE

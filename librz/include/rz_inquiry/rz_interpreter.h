@@ -169,7 +169,8 @@ typedef struct {
 	bool (*is_top)(RZ_NONNULL const RzInterpAbstrVal *val); ///< return whether the given value is top
 	bool (*may_be_bool)(RZ_NONNULL const RzInterpAbstrVal *val, bool value); ///< return whether the given value's concrete set contains \p value
 	void (*set_top)(RZ_OUT RZ_NONNULL RzInterpAbstrVal *dst); ///< Set \p val to be top
-	void (*set_const)(RZ_OUT RZ_NONNULL RzInterpAbstrVal *dst, RZ_IN RZ_NONNULL RzBitVector *src); ///< set \p dst to the least value that includes \p src
+	void (*set_const_bool)(RZ_OUT RZ_NONNULL RzInterpAbstrVal *dst, bool src); ///< set \p dst to the least value that includes \p src
+	void (*set_const_bv)(RZ_OUT RZ_NONNULL RzInterpAbstrVal *dst, RZ_IN RZ_NONNULL RzBitVector *src); ///< set \p dst to the least value that includes \p src
 
 	/**
 	 * \brief Concretize an abstract value to a single bit vector, if possible
@@ -193,11 +194,6 @@ typedef struct {
 	bool (*join)(RZ_BORROW RZ_INOUT RzInterpAbstrVal *a, RZ_BORROW RZ_IN const RzInterpAbstrVal *b);
 
 	/**
-	 * \brief Evaluate \p pure and return the result in \p out
-	 */
-	bool (*eval_pure)(RzInterpRunContext *ctx, const RzILOpPure *pure, RZ_OUT RzInterpAbstrVal *out);
-
-	/**
 	 * \brief Builds a string for printing an abstract value.
 	 *
 	 * \return Returns false in case of error, True otherwise.
@@ -205,7 +201,27 @@ typedef struct {
 	bool (*val_as_str)(RZ_NONNULL const RzInterpAbstrVal *state,
 		RZ_NONNULL RZ_OUT RzStrBuf *str_buf);
 
-} RzInterpPlugin;
+	void (*eval_cast)(ut32 length, RZ_NONNULL const RzInterpAbstrVal *fill, RZ_INOUT RZ_NONNULL RzInterpAbstrVal *val); ///< RZ_IL_OP_CAST
+	void (*eval_shift)(bool right, RZ_NONNULL RZ_INOUT RzInterpAbstrVal *x, RZ_NONNULL const RzInterpAbstrVal *y, RZ_NONNULL const RzInterpAbstrVal *fill_bit); ///< RZ_IL_OP_SHIFTL, RZ_IL_OP_SHIFTR
+
+	/**
+	 * \brief Evaluate a binary operation on two abstract values
+	 *
+	 * \param code The operation to evaluate. May be any IL op that takes exactly two bitvector or boolean operands.
+	 * \param x Output, as well as `x` (or `low`) operand
+	 * \param y `y` (or `low`) operand
+	 */
+	void (*eval_binop)(RzILOpPureCode code, RZ_NONNULL RZ_INOUT RzInterpAbstrVal *x, RZ_NONNULL const RzInterpAbstrVal *y);
+
+	/**
+	 * \brief Evaluate a unary operation on an abstract value
+	 *
+	 * \param code The operation to evaluate. May be any IL op that takes exactly one bitvector or boolean operand.
+	 * \param val Output, as well as operand
+	 */
+	void (*eval_unop)(RzILOpPureCode code, RZ_NONNULL RZ_INOUT RzInterpAbstrVal *val);
+
+} RzInterpValueAbstraction;
 
 typedef struct {
 	size_t mem_idx; ///< The memory space to read/write.
@@ -258,7 +274,7 @@ struct rz_interp_instance_t {
 	/**
 	 * \brief The interpreter plugin.
 	 */
-	RzInterpPlugin *plugin;
+	RzInterpValueAbstraction *plugin;
 };
 
 RZ_API RZ_OWN RzInterpRunState *rz_interp_run_state_new();
@@ -285,7 +301,7 @@ RZ_API RZ_OWN RzInterpYieldRBuf *rz_interp_yield_rbuf_new(RzInterpYieldKind kind
 
 RZ_API RZ_OWN RzInterpInstance *rz_interp_instance_new(
 	RzAnalysis *analysis,
-	RZ_NONNULL RZ_OWN RzInterpPlugin *plugin,
+	RZ_NONNULL RZ_OWN RzInterpValueAbstraction *plugin,
 	RZ_NONNULL RZ_BORROW RzILCacheClient *il_cache_client,
 	RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM],
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code);

@@ -29,7 +29,7 @@ typedef struct rz_inquiry_plugin_t {
 	const char *version;
 	const char *desc;
 	const char *license;
-	RzInterpPlugin *p_interpreter;
+	RzInterpValueAbstraction *value_abstraction;
 } RzInquiryPlugin;
 
 typedef struct {
