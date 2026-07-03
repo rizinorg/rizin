@@ -601,17 +601,29 @@ RZ_API RZ_OWN RzBitVector *rz_bv_cut_tail(RZ_NONNULL RzBitVector *bv, ut32 delta
 }
 
 /**
- * Append bv2 to bv1 to get new bitvector
- * \param high bitvector to occupy the most significant part of the result
+ * Append high to low to get new bitvector
  * \param low bitvector to occupy the least significant part of the result
+ * \param high bitvector to occupy the most significant part of the result
  * \return ret RzBitVector, the new bitvector
  */
-RZ_API RZ_OWN RzBitVector *rz_bv_append(RZ_NONNULL RzBitVector *high, RZ_NONNULL RzBitVector *low) {
-	rz_return_val_if_fail(high && low, NULL);
+RZ_API RZ_OWN RzBitVector *rz_bv_append(RZ_NONNULL const RzBitVector *low, RZ_NONNULL const RzBitVector *high) {
+	rz_return_val_if_fail(low && high, NULL);
 	RzBitVector *ret = rz_bv_new(high->len + low->len);
 	rz_bv_copy_nbits(ret, 0, low, 0, low->len);
 	rz_bv_copy_nbits(ret, low->len, high, 0, high->len);
 	return ret;
+}
+
+/**
+ * Append high to low to get new bitvector
+ * \param low bitvector to occupy the least significant part of the result, and pointer to write the result to
+ * \param high bitvector to occupy the most significant part of the result
+ */
+RZ_API void rz_bv_append_inplace(RZ_INOUT RZ_NONNULL RzBitVector *low, RZ_NONNULL const RzBitVector *high) {
+	rz_return_if_fail(low && low);
+	ut32 low_len = low->len;
+	rz_bv_cast_inplace(low, low->len + high->len, false);
+	rz_bv_copy_nbits(low, low_len, high, 0, high->len);
 }
 
 /**
