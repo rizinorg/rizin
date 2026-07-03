@@ -134,7 +134,7 @@ void *rz_il_handler_append(RzILVM *vm, RzILOpBitVector *op, RzILTypePure *type) 
 
 	RzBitVector *high = rz_il_evaluate_bitv(vm, op_append->high);
 	RzBitVector *low = rz_il_evaluate_bitv(vm, op_append->low);
-	RzBitVector *result = high && low ? rz_bv_append(high, low) : NULL;
+	RzBitVector *result = high && low ? rz_bv_append(low, high) : NULL;
 	rz_bv_free(low);
 	rz_bv_free(high);
 

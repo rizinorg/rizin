@@ -724,12 +724,18 @@ bool test_rz_bv_operation(void) {
 	mu_assert_streq_free(s, "0x0", "string hex value of bv");
 	rz_bv_free(res);
 
-	res = rz_bv_append(x, y);
+	res = rz_bv_append(y, x);
 	mu_assert("append x and y", is_equal_bv(res, concat));
 	s = rz_bv_as_string(res);
 	mu_assert_streq_free(s, "000010001011", "string bit value of bv");
 	s = rz_bv_as_hex_string(res, true);
 	mu_assert_streq_free(s, "0x08b", "string hex value of bv");
+	rz_bv_free(res);
+
+	res = rz_bv_new_from_ut64(4, 0x5);
+	rz_bv_append_inplace(res, x);
+	s = rz_bv_as_hex_string(res, true);
+	mu_assert_streq_free(s, "0x085", "string hex value of bv");
 	rz_bv_free(res);
 
 	rz_bv_free(prep);
