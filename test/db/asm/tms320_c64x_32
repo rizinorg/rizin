@@ -2,48 +2,86 @@
 # Instruction words are little-endian; addresses are the packet PCE1.
 # Vectors are cross-checked against TI dis6x (c6000 v7.4.4).
 # Doubleword loads/stores move register pairs (C64x+ / C67x, not C62x).
-d "lddw .d2 *+b15[0x2],a13:a12" e4433c06 0x0
-d "stdw .d2 a11:a10,*+b15[0x1]" c5233c05 0x0
-d "ldndw .d2 *b4,b11:b10" a6039005 0x0
+d "lddw .d2 *+b15[0x2],a13:a12" e4433c06 0x0 (seq (set ea (+ (var b15) (bv 32 0x10))) (set a12 (loadw 0 32 (var ea))) (set a13 (loadw 0 32 (+ (var ea) (bv 32 0x4)))))
+d "stdw .d2 a11:a10,*+b15[0x1]" c5233c05 0x0 (seq (set ea (+ (var b15) (bv 32 0x8))) (storew 0 (var ea) (var a10)) (storew 0 (+ (var ea) (bv 32 0x4)) (var a11)))
+d "ldndw .d2 *b4,b11:b10" a6039005 0x0 (seq (set ea (+ (var b4) (bv 32 0x0))) (set b10 (loadw 0 32 (var ea))) (set b11 (loadw 0 32 (+ (var ea) (bv 32 0x4)))))
 # MVK.L: the ABS opfield reused for a signed 5-bit constant move (C64x+).
-d "[!b0] mvk .l1 1,a0" 59a30430 0x0
-d "[a1] mvk .l1 0,a0" 58a30080 0x0
+d "[!b0] mvk .l1 1,a0" 59a30430 0x0 (branch (is_zero (var b0)) (set a0 (bv 32 0x1)) nop)
+d "[a1] mvk .l1 0,a0" 58a30080 0x0 (branch (! (is_zero (var a1))) (set a0 (bv 32 0x0)) nop)
 # MV on .S/.D (OR-with-zero on those units, C64x+), collapsed to the mv alias.
-d "mv .s1 a0,a1" a1068000 0x0
-d "mv .d1 a0,a2" f1080001 0x0
+d "mv .s1 a0,a1" a1068000 0x0 (set a1 (var a0))
+d "mv .d1 a0,a2" f1080001 0x0 (set a2 (var a0))
 # .D-unit extended logical/arith (C64x+): src2, src1, dst order.
-d "and .d2 -0x8,b15,b15" f209bf07 0x0
-d "or .d1x a3,b4,a4" b0781002 0x0
-d "andn .d2 b7,b5,b6" 33e81403 0x0
-d "xor .d2 0x1,b0,b13" f22b8006 0x0
+d "and .d2 -0x8,b15,b15" f209bf07 0x0 (set b15 (& (bv 32 0xfffffff8) (var b15)))
+d "or .d1x a3,b4,a4" b0781002 0x0 (set a4 (| (var a3) (var b4)))
+d "andn .d2 b7,b5,b6" 33e81403 0x0 (set b6 (& (var b5) (~ (var b7))))
+d "xor .d2 0x1,b0,b13" f22b8006 0x0 (set b13 (^ (bv 32 0x1) (var b0)))
 # .D address arithmetic: ADDAD scales src1 by 8; ADDAW by 4. src2, src1, dst.
-d "addad .d2 b15,0x4,b4" c29e3c02 0x0
-d "addaw .d1 a4,a3,a6" 417c1003 0x0
+d "addad .d2 b15,0x4,b4" c29e3c02 0x0 (set b4 (+ (var b15) (<< (bv 32 0x4) (bv 32 0x3) false)))
+d "addaw .d1 a4,a3,a6" 417c1003 0x0 (set a6 (+ (var a4) (<< (var a3) (bv 32 0x2) false)))
 # Plain .D add/sub also print src2, src1, dst with the short constant unsigned.
-d "sub .d2 b15,0x10,b15" c209be07 0x0
+d "sub .d2 b15,0x10,b15" c209be07 0x0 (set b15 (- (var b15) (bv 32 0x10)))
 # MVK on the .D unit (C64x+): 5-bit signed constant move (op-0 slot).
-d "mvk .d2 0,b4" 43000002 0x0
-d "[b0] mvk .d1 0,a12" 40000026 0x0
+d "mvk .d2 0,b4" 43000002 0x0 (set b4 (bv 32 0x0))
+d "[b0] mvk .d1 0,a12" 40000026 0x0 (branch (! (is_zero (var b0))) (set a12 (bv 32 0x0)) nop)
 # ANDN on .L (cross-path form).
-d "andn .l1x a4,b4,a0" 989f1000 0x0
+d "andn .l1x a4,b4,a0" 989f1000 0x0 (set a0 (& (var b4) (~ (var a4))))
 # ADDKPC (.S2, C64x+): dst = PCE1 + scst7*4; target shown as an address.
-d "addkpc .s2 0x54,b3,0" 62018501 0x4c
-d "addkpc .s2 0x40,b3,2" 62418801 0x34
+d "addkpc .s2 0x54,b3,0" 62018501 0x4c (set b3 (bv 32 0x54))
+d "addkpc .s2 0x40,b3,2" 62418801 0x34 (set b3 (bv 32 0x40))
 # BDEC (.S, C64x+): register-conditional loop branch, target = PCE1 + scst10*4.
-d "[a0] bdec .s1 0x18c,a0" 217000c0 0x19c
+d "[a0] bdec .s1 0x18c,a0" 217000c0 0x19c (branch (! (is_zero (var a0))) (branch (|| (! (sle (var a0) (bv 32 0x0))) (== (var a0) (bv 32 0x0))) (seq (set a0 (- (var a0) (bv 32 0x1))) (jmp (bv 32 0x18c))) nop) nop)
 # MVD (.M, C64x+): 4-cycle register move.
-d "mvd .m1 a0,a0" f0400300 0x0
+d "mvd .m1 a0,a0" f0400300 0x0 (set a0 (var a0))
 # SUB on .L with the cross-path src1 (xsint form).
-d "sub .l2x a4,b4,b4" fa921002 0x0
+d "sub .l2x a4,b4,b4" fa921002 0x0 (set b4 (- (var a4) (var b4)))
 # SUBAW on .D with a ucst5 offset.
-d "[!b0] subaw .d2 b4,0x19,b4" c33d1332 0x0
+d "[!b0] subaw .d2 b4,0x19,b4" c33d1332 0x0 (branch (is_zero (var b0)) (set b4 (- (var b4) (<< (bv 32 0x19) (bv 32 0x2) false))) nop)
 # SHL on .S of a 40-bit long (register pairs); value prints before the count.
-d "shl .s2 b9:b8,0x3,b7:b6" 226c2003 0x0
+d "shl .s2 b9:b8,0x3,b7:b6" 226c2003 0x0 (seq (set _d (& (<< (>> (<< (append (var b9) (var b8)) (bv 32 0x18) false) (bv 32 0x18) (msb (<< (append (var b9) (var b8)) (bv 32 0x18) false))) (bv 32 0x3) false) (bv 64 0xffffffffff))) (set b6 (cast 32 false (var _d))) (set b7 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
 # Long (40-bit) compare on .L: src2 is a register pair, dst a single.
-d "cmpgt .l1 0x0,a5:a4,a0" 98081000 0x0
+d "cmpgt .l1 0x0,a5:a4,a0" 98081000 0x0 (set a0 (ite (! (sle (cast 64 (msb (bv 32 0x0)) (bv 32 0x0)) (>> (<< (append (var a5) (var a4)) (bv 32 0x18) false) (bv 32 0x18) (msb (<< (append (var a5) (var a4)) (bv 32 0x18) false))))) (bv 32 0x1) (bv 32 0x0)))
 # B IRP (.S2): return from a maskable interrupt (branch to the IRP register).
-d "b .s2 irp" e2001800 0x0
+d "b .s2 irp" e2001800 0x0 (jmp (var irp))
 # ANDN on .S in the extended (bits[5:2]==1100) format.
-d "andn .s1 a5,a4,a5" b0ad9002 0x0
+d "andn .s1 a5,a4,a5" b0ad9002 0x0 (set a5 (& (var a4) (~ (var a5))))
 # MPYLI (.M, C64x+): 16x32 -> 64 multiply, writing a register pair.
-d "mpyli .m2 b6,b5,b7:b6" 73c51403 0x0
+d "mpyli .m2 b6,b5,b7:b6" 73c51403 0x0 (seq (set _d (* (cast 64 (msb (cast 32 (msb (cast 16 false (var b6))) (cast 16 false (var b6)))) (cast 32 (msb (cast 16 false (var b6))) (cast 16 false (var b6)))) (cast 64 (msb (var b5)) (var b5)))) (set b6 (cast 32 false (var _d))) (set b7 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
+d "mpy32 .m1 a0,a1,a2" 00080401 0x0 (set a2 (* (var a0) (var a1)))
+d "mpy32u .m1 a0,a1,a3:a2" 30060401 0x0 (seq (set _d (* (cast 64 false (var a0)) (cast 64 false (var a1)))) (set a2 (cast 32 false (var _d))) (set a3 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
+# C64x+ address/rotate/byte-merge/packed-shift/pack (RzIL)
+d "addad .d1 a4,a5,a6" 40be1003 0x0 (set a6 (+ (var a4) (<< (var a5) (bv 32 0x3) false)))
+d "rotl .m1 a1,a0,a2" 70270001 0x0 (set a2 (let _rv (var a0) (let _rn (& (var a1) (bv 32 0x1f)) (| (<< (var _rv) (var _rn) false) (>> (var _rv) (- (bv 32 0x20) (var _rn)) false)))))
+d "shlmb .s1 a0,a1,a2" 700e0401 0x0 (set a2 (| (<< (var a1) (bv 32 0x8) false) (& (>> (var a0) (bv 32 0x18) false) (bv 32 0xff))))
+d "shrmb .s1 a0,a1,a2" b00e0401 0x0 (set a2 (| (>> (var a1) (bv 32 0x8) false) (<< (& (var a0) (bv 32 0xff)) (bv 32 0x18) false)))
+d "shr2 .s1 a0,a1,a2" f02d0001 0x0 (set a2 (let _sv (var a0) (let _sn (cast 16 false (& (var a1) (bv 32 0xf))) (append (>> (cast 16 false (>> (var _sv) (bv 32 0x10) false)) (var _sn) (msb (cast 16 false (>> (var _sv) (bv 32 0x10) false)))) (>> (cast 16 false (var _sv)) (var _sn) (msb (cast 16 false (var _sv))))))))
+d "shru2 .s1 a0,a1,a2" 302e0001 0x0 (set a2 (let _sv (var a0) (let _sn (cast 16 false (& (var a1) (bv 32 0xf))) (append (>> (cast 16 false (>> (var _sv) (bv 32 0x10) false)) (var _sn) false) (>> (cast 16 false (var _sv)) (var _sn) false)))))
+d "swap4 .l1 a0,a2" 58230001 0x0 (set a2 (let _w4 (var a0) (| (<< (& (var _w4) (bv 32 0xff00ff)) (bv 32 0x8) false) (& (>> (var _w4) (bv 32 0x8) false) (bv 32 0xff00ff)))))
+d "packl4 .l1 a0,a1,a2" 180d0401 0x0 (set a2 (let _q1 (var a0) (let _q2 (var a1) (| (| (<< (& (>> (var _q1) (bv 32 0x10) false) (bv 32 0xff)) (bv 32 0x18) false) (<< (& (>> (var _q1) (bv 32 0x0) false) (bv 32 0xff)) (bv 32 0x10) false)) (| (<< (& (>> (var _q2) (bv 32 0x10) false) (bv 32 0xff)) (bv 32 0x8) false) (& (>> (var _q2) (bv 32 0x0) false) (bv 32 0xff)))))))
+d "packh4 .l1 a0,a1,a2" 380d0401 0x0 (set a2 (let _q1 (var a0) (let _q2 (var a1) (| (| (<< (& (>> (var _q1) (bv 32 0x18) false) (bv 32 0xff)) (bv 32 0x18) false) (<< (& (>> (var _q1) (bv 32 0x8) false) (bv 32 0xff)) (bv 32 0x10) false)) (| (<< (& (>> (var _q2) (bv 32 0x18) false) (bv 32 0xff)) (bv 32 0x8) false) (& (>> (var _q2) (bv 32 0x8) false) (bv 32 0xff)))))))
+# C64x+ bit reverse/count, deal/shuffle and expand-to-mask (RzIL)
+d "bitr .m1 a1,a2" f0e00701 0x0 (set a2 (let _r0 (var a1) (let _r1 (| (<< (& (var _r0) (bv 32 0x55555555)) (bv 32 0x1) false) (& (>> (var _r0) (bv 32 0x1) false) (bv 32 0x55555555))) (let _r2 (| (<< (& (var _r1) (bv 32 0x33333333)) (bv 32 0x2) false) (& (>> (var _r1) (bv 32 0x2) false) (bv 32 0x33333333))) (let _r3 (| (<< (& (var _r2) (bv 32 0xf0f0f0f)) (bv 32 0x4) false) (& (>> (var _r2) (bv 32 0x4) false) (bv 32 0xf0f0f0f))) (let _r4 (| (<< (& (var _r3) (bv 32 0xff00ff)) (bv 32 0x8) false) (& (>> (var _r3) (bv 32 0x8) false) (bv 32 0xff00ff))) (| (<< (& (var _r4) (bv 32 0xffff)) (bv 32 0x10) false) (& (>> (var _r4) (bv 32 0x10) false) (bv 32 0xffff)))))))))
+d "bitc4 .m1 a1,a2" f0c00701 0x0 (set a2 (let _b0 (var a1) (let _b1 (- (var _b0) (& (>> (var _b0) (bv 32 0x1) false) (bv 32 0x55555555))) (let _b2 (+ (& (var _b1) (bv 32 0x33333333)) (& (>> (var _b1) (bv 32 0x2) false) (bv 32 0x33333333))) (& (+ (var _b2) (>> (var _b2) (bv 32 0x4) false)) (bv 32 0xf0f0f0f))))))
+d "xpnd2 .m1 a1,a2" f0200701 0x0 (set a2 (let _x (var a1) (| (<< (* (& (>> (var _x) (bv 32 0x1) false) (bv 32 0x1)) (bv 32 0xffff)) (bv 32 0x10) false) (* (& (var _x) (bv 32 0x1)) (bv 32 0xffff)))))
+d "xpnd4 .m1 a1,a2" f0000701 0x0 (set a2 (let _x (var a1) (| (| (<< (* (& (>> (var _x) (bv 32 0x3) false) (bv 32 0x1)) (bv 32 0xff)) (bv 32 0x18) false) (<< (* (& (>> (var _x) (bv 32 0x2) false) (bv 32 0x1)) (bv 32 0xff)) (bv 32 0x10) false)) (| (<< (* (& (>> (var _x) (bv 32 0x1) false) (bv 32 0x1)) (bv 32 0xff)) (bv 32 0x8) false) (* (& (var _x) (bv 32 0x1)) (bv 32 0xff))))))
+d "deal .m1 a1,a2" f0a00701 0x0 (set a2 (let _dx (var a1) (let _e0 (& (var _dx) (bv 32 0x55555555)) (let _e1 (& (| (var _e0) (>> (var _e0) (bv 32 0x1) false)) (bv 32 0x33333333)) (let _e2 (& (| (var _e1) (>> (var _e1) (bv 32 0x2) false)) (bv 32 0xf0f0f0f)) (let _e3 (& (| (var _e2) (>> (var _e2) (bv 32 0x4) false)) (bv 32 0xff00ff)) (let _elo (& (| (var _e3) (>> (var _e3) (bv 32 0x8) false)) (bv 32 0xffff)) (let _o0 (& (>> (var _dx) (bv 32 0x1) false) (bv 32 0x55555555)) (let _o1 (& (| (var _o0) (>> (var _o0) (bv 32 0x1) false)) (bv 32 0x33333333)) (let _o2 (& (| (var _o1) (>> (var _o1) (bv 32 0x2) false)) (bv 32 0xf0f0f0f)) (let _o3 (& (| (var _o2) (>> (var _o2) (bv 32 0x4) false)) (bv 32 0xff00ff)) (let _ohi (& (| (var _o3) (>> (var _o3) (bv 32 0x8) false)) (bv 32 0xffff)) (| (<< (var _ohi) (bv 32 0x10) false) (var _elo))))))))))))))
+d "shfl .m1 a1,a2" f0800701 0x0 (set a2 (let _sx (var a1) (let _l0 (& (var _sx) (bv 32 0xffff)) (let _l1 (& (| (var _l0) (<< (var _l0) (bv 32 0x8) false)) (bv 32 0xff00ff)) (let _l2 (& (| (var _l1) (<< (var _l1) (bv 32 0x4) false)) (bv 32 0xf0f0f0f)) (let _l3 (& (| (var _l2) (<< (var _l2) (bv 32 0x2) false)) (bv 32 0x33333333)) (let _llo (& (| (var _l3) (<< (var _l3) (bv 32 0x1) false)) (bv 32 0x55555555)) (let _h0 (& (>> (var _sx) (bv 32 0x10) false) (bv 32 0xffff)) (let _h1 (& (| (var _h0) (<< (var _h0) (bv 32 0x8) false)) (bv 32 0xff00ff)) (let _h2 (& (| (var _h1) (<< (var _h1) (bv 32 0x4) false)) (bv 32 0xf0f0f0f)) (let _h3 (& (| (var _h2) (<< (var _h2) (bv 32 0x2) false)) (bv 32 0x33333333)) (let _hhi (& (| (var _h3) (<< (var _h3) (bv 32 0x1) false)) (bv 32 0x55555555)) (| (<< (var _hhi) (bv 32 0x1) false) (var _llo))))))))))))))
+# packed saturating add, reverse-pack, packed average, variable saturating shift
+d "saddu4 .s1 a0,a1,a2" f00c0401 0x0 (set a2 (let _a (var a0) (let _b (var a1) (| (| (<< (ite (! (ule (+ (& (>> (var _a) (bv 32 0x18) false) (bv 32 0xff)) (& (>> (var _b) (bv 32 0x18) false) (bv 32 0xff))) (bv 32 0xff))) (bv 32 0xff) (+ (& (>> (var _a) (bv 32 0x18) false) (bv 32 0xff)) (& (>> (var _b) (bv 32 0x18) false) (bv 32 0xff)))) (bv 32 0x18) false) (<< (ite (! (ule (+ (& (>> (var _a) (bv 32 0x10) false) (bv 32 0xff)) (& (>> (var _b) (bv 32 0x10) false) (bv 32 0xff))) (bv 32 0xff))) (bv 32 0xff) (+ (& (>> (var _a) (bv 32 0x10) false) (bv 32 0xff)) (& (>> (var _b) (bv 32 0x10) false) (bv 32 0xff)))) (bv 32 0x10) false)) (| (<< (ite (! (ule (+ (& (>> (var _a) (bv 32 0x8) false) (bv 32 0xff)) (& (>> (var _b) (bv 32 0x8) false) (bv 32 0xff))) (bv 32 0xff))) (bv 32 0xff) (+ (& (>> (var _a) (bv 32 0x8) false) (bv 32 0xff)) (& (>> (var _b) (bv 32 0x8) false) (bv 32 0xff)))) (bv 32 0x8) false) (<< (ite (! (ule (+ (& (>> (var _a) (bv 32 0x0) false) (bv 32 0xff)) (& (>> (var _b) (bv 32 0x0) false) (bv 32 0xff))) (bv 32 0xff))) (bv 32 0xff) (+ (& (>> (var _a) (bv 32 0x0) false) (bv 32 0xff)) (& (>> (var _b) (bv 32 0x0) false) (bv 32 0xff)))) (bv 32 0x0) false))))))
+d "rpack2 .s1 a0,a1,a2" f00e0411 0x0 (set a2 (| (<< (& (>> (let _s (<< (cast 64 (msb (var a0)) (var a0)) (bv 32 0x1) false) (ite (! (sle (var _s) (bv 64 0x7fffffff))) (bv 32 0x7fffffff) (ite (&& (sle (var _s) (bv 64 0xffffffff80000000)) (! (== (var _s) (bv 64 0xffffffff80000000)))) (bv 32 0x80000000) (cast 32 false (var _s))))) (bv 32 0x10) false) (bv 32 0xffff)) (bv 32 0x10) false) (& (>> (let _s (<< (cast 64 (msb (var a1)) (var a1)) (bv 32 0x1) false) (ite (! (sle (var _s) (bv 64 0x7fffffff))) (bv 32 0x7fffffff) (ite (&& (sle (var _s) (bv 64 0xffffffff80000000)) (! (== (var _s) (bv 64 0xffffffff80000000)))) (bv 32 0x80000000) (cast 32 false (var _s))))) (bv 32 0x10) false) (bv 32 0xffff))))
+d "avg2 .m1 a0,a1,a2" f0040401 0x0 (set a2 (let _a (var a0) (let _b (var a1) (| (<< (& (>> (+ (+ (cast 32 (msb (cast 16 false (>> (var _a) (bv 32 0x10) false))) (cast 16 false (>> (var _a) (bv 32 0x10) false))) (cast 32 (msb (cast 16 false (>> (var _b) (bv 32 0x10) false))) (cast 16 false (>> (var _b) (bv 32 0x10) false)))) (bv 32 0x1)) (bv 32 0x1) (msb (+ (+ (cast 32 (msb (cast 16 false (>> (var _a) (bv 32 0x10) false))) (cast 16 false (>> (var _a) (bv 32 0x10) false))) (cast 32 (msb (cast 16 false (>> (var _b) (bv 32 0x10) false))) (cast 16 false (>> (var _b) (bv 32 0x10) false)))) (bv 32 0x1)))) (bv 32 0xffff)) (bv 32 0x10) false) (& (>> (+ (+ (cast 32 (msb (cast 16 false (var _a))) (cast 16 false (var _a))) (cast 32 (msb (cast 16 false (var _b))) (cast 16 false (var _b)))) (bv 32 0x1)) (bv 32 0x1) (msb (+ (+ (cast 32 (msb (cast 16 false (var _a))) (cast 16 false (var _a))) (cast 32 (msb (cast 16 false (var _b))) (cast 16 false (var _b)))) (bv 32 0x1)))) (bv 32 0xffff))))))
+d "avgu4 .m1 a0,a1,a2" b0040401 0x0 (set a2 (let _a (var a0) (let _b (var a1) (| (| (<< (& (>> (+ (+ (& (>> (var _a) (bv 32 0x18) false) (bv 32 0xff)) (& (>> (var _b) (bv 32 0x18) false) (bv 32 0xff))) (bv 32 0x1)) (bv 32 0x1) false) (bv 32 0xff)) (bv 32 0x18) false) (<< (& (>> (+ (+ (& (>> (var _a) (bv 32 0x10) false) (bv 32 0xff)) (& (>> (var _b) (bv 32 0x10) false) (bv 32 0xff))) (bv 32 0x1)) (bv 32 0x1) false) (bv 32 0xff)) (bv 32 0x10) false)) (| (<< (& (>> (+ (+ (& (>> (var _a) (bv 32 0x8) false) (bv 32 0xff)) (& (>> (var _b) (bv 32 0x8) false) (bv 32 0xff))) (bv 32 0x1)) (bv 32 0x1) false) (bv 32 0xff)) (bv 32 0x8) false) (<< (& (>> (+ (+ (& (>> (var _a) (bv 32 0x0) false) (bv 32 0xff)) (& (>> (var _b) (bv 32 0x0) false) (bv 32 0xff))) (bv 32 0x1)) (bv 32 0x1) false) (bv 32 0xff)) (bv 32 0x0) false))))))
+d "saddus2 .s1 a0,a1,a2" 700c0401 0x0 (set a2 (| (<< (let _hi (+ (& (>> (var a0) (bv 32 0x10) false) (bv 32 0xffff)) (cast 32 (msb (cast 16 false (>> (var a1) (bv 32 0x10) false))) (cast 16 false (>> (var a1) (bv 32 0x10) false)))) (ite (&& (sle (var _hi) (bv 32 0x0)) (! (== (var _hi) (bv 32 0x0)))) (bv 32 0x0) (ite (! (sle (var _hi) (bv 32 0xffff))) (bv 32 0xffff) (var _hi)))) (bv 32 0x10) false) (let _lo (+ (& (var a0) (bv 32 0xffff)) (cast 32 (msb (cast 16 false (var a1))) (cast 16 false (var a1)))) (ite (&& (sle (var _lo) (bv 32 0x0)) (! (== (var _lo) (bv 32 0x0)))) (bv 32 0x0) (ite (! (sle (var _lo) (bv 32 0xffff))) (bv 32 0xffff) (var _lo))))))
+d "sshvl .m1 a0,a1,a2" 30270001 0x0 (set a2 (let _v (var a0) (let _sc (var a1) (let _n (ite (! (sle (var _sc) (bv 32 0x1f))) (bv 32 0x1f) (ite (&& (sle (var _sc) (bv 32 0xffffffe1)) (! (== (var _sc) (bv 32 0xffffffe1)))) (bv 32 0xffffffe1) (var _sc))) (ite (|| (! (sle (var _n) (bv 32 0x0))) (== (var _n) (bv 32 0x0))) (let _s (<< (cast 64 (msb (var _v)) (var _v)) (var _n) false) (ite (! (sle (var _s) (bv 64 0x7fffffff))) (bv 32 0x7fffffff) (ite (&& (sle (var _s) (bv 64 0xffffffff80000000)) (! (== (var _s) (bv 64 0xffffffff80000000)))) (bv 32 0x80000000) (cast 32 false (var _s))))) (>> (var _v) (~- (var _n)) (msb (var _v))))))))
+d "sshvr .m1 a0,a1,a2" b0260001 0x0 (set a2 (let _v (var a0) (let _sc (var a1) (let _n (ite (! (sle (var _sc) (bv 32 0x1f))) (bv 32 0x1f) (ite (&& (sle (var _sc) (bv 32 0xffffffe1)) (! (== (var _sc) (bv 32 0xffffffe1)))) (bv 32 0xffffffe1) (var _sc))) (ite (|| (! (sle (var _n) (bv 32 0x0))) (== (var _n) (bv 32 0x0))) (>> (var _v) (var _n) (msb (var _v))) (let _s (<< (cast 64 (msb (var _v)) (var _v)) (~- (var _n)) false) (ite (! (sle (var _s) (bv 64 0x7fffffff))) (bv 32 0x7fffffff) (ite (&& (sle (var _s) (bv 64 0xffffffff80000000)) (! (== (var _s) (bv 64 0xffffffff80000000)))) (bv 32 0x80000000) (cast 32 false (var _s))))))))))
+# .L-unit byte-merge shifts and C64x+ packed multiply/pack (decode + RzIL)
+d "shlmb .l1 a0,a1,a2" 380c0401 0x0 (set a2 (| (<< (var a1) (bv 32 0x8) false) (& (>> (var a0) (bv 32 0x18) false) (bv 32 0xff))))
+d "shrmb .l1 a0,a1,a2" 580c0401 0x0 (set a2 (| (>> (var a1) (bv 32 0x8) false) (<< (& (var a0) (bv 32 0xff)) (bv 32 0x18) false)))
+d "mpy2 .m1 a0,a1,a3:a2" 30000401 0x0 (seq (set _d (append (* (cast 32 (msb (cast 16 false (>> (var a0) (bv 32 0x10) false))) (cast 16 false (>> (var a0) (bv 32 0x10) false))) (cast 32 (msb (cast 16 false (>> (var a1) (bv 32 0x10) false))) (cast 16 false (>> (var a1) (bv 32 0x10) false)))) (* (cast 32 (msb (cast 16 false (var a0))) (cast 16 false (var a0))) (cast 32 (msb (cast 16 false (var a1))) (cast 16 false (var a1)))))) (set a2 (cast 32 false (var _d))) (set a3 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
+d "smpy2 .m1 a0,a1,a3:a2" 70000401 0x0 (seq (set _d (append (let _s (<< (cast 64 (msb (* (cast 32 (msb (cast 16 false (>> (var a0) (bv 32 0x10) false))) (cast 16 false (>> (var a0) (bv 32 0x10) false))) (cast 32 (msb (cast 16 false (>> (var a1) (bv 32 0x10) false))) (cast 16 false (>> (var a1) (bv 32 0x10) false))))) (* (cast 32 (msb (cast 16 false (>> (var a0) (bv 32 0x10) false))) (cast 16 false (>> (var a0) (bv 32 0x10) false))) (cast 32 (msb (cast 16 false (>> (var a1) (bv 32 0x10) false))) (cast 16 false (>> (var a1) (bv 32 0x10) false))))) (bv 32 0x1) false) (ite (! (sle (var _s) (bv 64 0x7fffffff))) (bv 32 0x7fffffff) (ite (&& (sle (var _s) (bv 64 0xffffffff80000000)) (! (== (var _s) (bv 64 0xffffffff80000000)))) (bv 32 0x80000000) (cast 32 false (var _s))))) (let _s (<< (cast 64 (msb (* (cast 32 (msb (cast 16 false (var a0))) (cast 16 false (var a0))) (cast 32 (msb (cast 16 false (var a1))) (cast 16 false (var a1))))) (* (cast 32 (msb (cast 16 false (var a0))) (cast 16 false (var a0))) (cast 32 (msb (cast 16 false (var a1))) (cast 16 false (var a1))))) (bv 32 0x1) false) (ite (! (sle (var _s) (bv 64 0x7fffffff))) (bv 32 0x7fffffff) (ite (&& (sle (var _s) (bv 64 0xffffffff80000000)) (! (== (var _s) (bv 64 0xffffffff80000000)))) (bv 32 0x80000000) (cast 32 false (var _s))))))) (set a2 (cast 32 false (var _d))) (set a3 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
+d "mpyhi .m1 a0,a1,a3:a2" 30050401 0x0 (seq (set _d (* (cast 64 (msb (cast 32 (msb (cast 16 false (>> (var a0) (bv 32 0x10) false))) (cast 16 false (>> (var a0) (bv 32 0x10) false)))) (cast 32 (msb (cast 16 false (>> (var a0) (bv 32 0x10) false))) (cast 16 false (>> (var a0) (bv 32 0x10) false)))) (cast 64 (msb (var a1)) (var a1)))) (set a2 (cast 32 false (var _d))) (set a3 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
+d "mpyli .m1 a0,a1,a3:a2" 70050401 0x0 (seq (set _d (* (cast 64 (msb (cast 32 (msb (cast 16 false (var a0))) (cast 16 false (var a0)))) (cast 32 (msb (cast 16 false (var a0))) (cast 16 false (var a0)))) (cast 64 (msb (var a1)) (var a1)))) (set a2 (cast 32 false (var _d))) (set a3 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
+d "mpyhir .m1 a0,a1,a2" 30040401 0x0 (set a2 (cast 32 false (>> (+ (* (cast 64 (msb (cast 32 (msb (cast 16 false (>> (var a0) (bv 32 0x10) false))) (cast 16 false (>> (var a0) (bv 32 0x10) false)))) (cast 32 (msb (cast 16 false (>> (var a0) (bv 32 0x10) false))) (cast 16 false (>> (var a0) (bv 32 0x10) false)))) (cast 64 (msb (var a1)) (var a1))) (bv 64 0x4000)) (bv 32 0xf) (msb (+ (* (cast 64 (msb (cast 32 (msb (cast 16 false (>> (var a0) (bv 32 0x10) false))) (cast 16 false (>> (var a0) (bv 32 0x10) false)))) (cast 32 (msb (cast 16 false (>> (var a0) (bv 32 0x10) false))) (cast 16 false (>> (var a0) (bv 32 0x10) false)))) (cast 64 (msb (var a1)) (var a1))) (bv 64 0x4000))))))
+d "mpylir .m1 a0,a1,a2" b0030401 0x0 (set a2 (cast 32 false (>> (+ (* (cast 64 (msb (cast 32 (msb (cast 16 false (var a0))) (cast 16 false (var a0)))) (cast 32 (msb (cast 16 false (var a0))) (cast 16 false (var a0)))) (cast 64 (msb (var a1)) (var a1))) (bv 64 0x4000)) (bv 32 0xf) (msb (+ (* (cast 64 (msb (cast 32 (msb (cast 16 false (var a0))) (cast 16 false (var a0)))) (cast 32 (msb (cast 16 false (var a0))) (cast 16 false (var a0)))) (cast 64 (msb (var a1)) (var a1))) (bv 64 0x4000))))))
+d "spacku4 .s1 a0,a1,a2" 300d0401 0x0 (set a2 (let _a (var a0) (let _b (var a1) (let _h3 (cast 32 (msb (cast 16 false (>> (var _a) (bv 32 0x10) false))) (cast 16 false (>> (var _a) (bv 32 0x10) false))) (let _h2 (cast 32 (msb (cast 16 false (var _a))) (cast 16 false (var _a))) (let _h1 (cast 32 (msb (cast 16 false (>> (var _b) (bv 32 0x10) false))) (cast 16 false (>> (var _b) (bv 32 0x10) false))) (let _h0 (cast 32 (msb (cast 16 false (var _b))) (cast 16 false (var _b))) (| (| (<< (ite (&& (sle (var _h3) (bv 32 0x0)) (! (== (var _h3) (bv 32 0x0)))) (bv 32 0x0) (ite (! (sle (var _h3) (bv 32 0xff))) (bv 32 0xff) (var _h3))) (bv 32 0x18) false) (<< (ite (&& (sle (var _h2) (bv 32 0x0)) (! (== (var _h2) (bv 32 0x0)))) (bv 32 0x0) (ite (! (sle (var _h2) (bv 32 0xff))) (bv 32 0xff) (var _h2))) (bv 32 0x10) false)) (| (<< (ite (&& (sle (var _h1) (bv 32 0x0)) (! (== (var _h1) (bv 32 0x0)))) (bv 32 0x0) (ite (! (sle (var _h1) (bv 32 0xff))) (bv 32 0xff) (var _h1))) (bv 32 0x8) false) (ite (&& (sle (var _h0) (bv 32 0x0)) (! (== (var _h0) (bv 32 0x0)))) (bv 32 0x0) (ite (! (sle (var _h0) (bv 32 0xff))) (bv 32 0xff) (var _h0))))))))))))
+d "norm .l1 a1:a0,a2" 180c0001 0x0 (seq (set _clzv (let _nl (>> (<< (append (var a1) (var a0)) (bv 32 0x18) false) (bv 32 0x18) (msb (<< (append (var a1) (var a0)) (bv 32 0x18) false))) (^ (var _nl) (>> (var _nl) (bv 32 0x3f) (msb (var _nl)))))) (set _n (bv 32 0x0)) (repeat (&& (&& (ule (var _n) (bv 32 0x40)) (! (== (var _n) (bv 32 0x40)))) (! (msb (var _clzv)))) (seq (set _clzv (<< (var _clzv) (bv 64 0x1) false)) (set _n (+ (var _n) (bv 32 0x1))))) (set a2 (- (var _n) (bv 32 0x19))))

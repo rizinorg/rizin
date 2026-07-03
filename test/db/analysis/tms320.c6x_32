@@ -485,3 +485,16 @@ EXPECT=<<EOF
 0x00000016      stw   .d2 b4,*+b15[0x2]
 EOF
 RUN
+
+NAME=c6x RzIL on a real C674x ELF (emulateme)
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+s 0x8148
+ao~rzil
+EOF
+EXPECT=<<EOF
+rzil: (set a4 (| (& (var a4) (bv 32 0xffff)) (bv 32 0x0)))
+EOF
+RUN
