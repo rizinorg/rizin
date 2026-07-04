@@ -766,10 +766,19 @@ RZ_API void rz_flag_item_set_comment(RzFlagItem *item, const char *comment) {
 }
 
 /* add/replace/remove the realname of a flag item */
-RZ_API void rz_flag_item_set_realname(RzFlagItem *item, const char *realname) {
+RZ_API void rz_flag_item_set_realname(RzFlag *f, RzFlagItem *item, const char *realname) {
 	rz_return_if_fail(item);
-	free_item_realname(item);
-	item->realname = RZ_STR_ISEMPTY(realname) ? NULL : rz_str_dup(realname);
+	if (RZ_STR_ISEMPTY(realname)) {
+		if (item->realname) {
+			ht_sp_delete(f->ht_name, item->realname);
+			free_item_realname(item);
+			item->realname = NULL;
+		}
+	} else {
+		free_item_realname(item);
+		item->realname = rz_str_dup(realname);
+		ht_sp_insert(f->ht_name, realname, rz_flag_item_clone(item));
+	}
 }
 
 /* add/replace/remove the color of a flag item */

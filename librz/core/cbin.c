@@ -1267,7 +1267,9 @@ static void reloc_set_flag(RzCore *core, RzBinReloc *reloc, const char *prefix, 
 	}
 	RzFlagItem *fi = rz_flag_set_next(core->flags, flag_name, flag_addr, bin_reloc_size(reloc));
 	if (fi) {
-		rz_flag_item_set_realname(fi, reloc_name);
+		char *prefixed_reloc_name = rz_str_newf("reloc.%s", reloc_name);
+		rz_flag_item_set_realname(core->flags, fi, prefixed_reloc_name);
+		free(prefixed_reloc_name);
 	}
 
 	free(reloc_name);
@@ -1667,7 +1669,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 					sn.methflag = prname;
 				}
 				if (fi) {
-					rz_flag_item_set_realname(fi, sn.methname);
+					rz_flag_item_set_realname(core->flags, fi, sn.methname);
 					if (fi->offset == addr) {
 						rz_flag_unset(core->flags, fi);
 					}
@@ -1702,7 +1704,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 
 				fi = rz_flag_set(core->flags, fnp, addr, symbol->size);
 				if (fi) {
-					rz_flag_item_set_realname(fi, n);
+					rz_flag_item_set_realname(core->flags, fi, n);
 					fi->demangled = (bool)(size_t)sn.demname;
 				} else if (fn) {
 					RZ_LOG_WARN("core: cannot set flag with name '%s'\n", fnp);
