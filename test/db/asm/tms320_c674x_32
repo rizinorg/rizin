@@ -1,0 +1,88 @@
+# TMS320C674x (unified fixed + floating-point VLIW) native disassembler
+# Instruction words are little-endian; addresses are the packet PCE1.
+# Several vectors are cross-checked against TI dis6x (c6000 v7.4.4).
+d "nop" 00000000 0x0
+d "nop 5" 00800000 0x0
+d "mvk .s1 0x0,a0" 28000000 0x0
+d "mvk .s2 0x0,b0" 2a000000 0x0
+d "mvkh .s1 0x0,a5" 68008002 0x0
+d "add .l1 a0,a1,a2" 78000401 0x0
+d "and .l1 0x8,a3,a0" 580f0d00 0x0
+d "mpysp .m1 a0,a1,a2" 000e0401 0x0
+d "adddp .l1 a1:a0,a3:a2,a5:a4" 18030802 0x0
+d "mpydp .m1 a1:a0,a3:a2,a5:a4" 00070802 0x0
+d "add2 .s1 a1,a2,a3" 60208801 0x0
+d "sub2 .s2 b1,b2,b3" 62248801 0x0
+d "ldb .d1 *a4,a3" 24029001 0x0
+d "ldbu .d1 *+a3[0x1],a3" 14228c01 0x0
+d "ldw .d2 *-b1[b5],b28" e6a8041e 0x0
+d "lddw .d1 *a4,a1:a0" 64031000 0x0
+d "[a0] stb .d2 b0,*b4++[0x1]" b63610c0 0x0
+d "[a2] ldw .d2 *+b14[0x302c],b3" 6e2cb0a1 0x0
+d "[a0] mv .l2x a5,b5" db1f94c2 0x0
+d "[a0] mv .l1x b5,a3" d91f94c1 0x0
+d "[b1] neg .l1 a6,a6" d8001843 0x0
+d "[a0] sub .l2 b4,0x1,b4" 5ae013c2 0x0
+d "bnop .s2 b3,0x4" 62838c00 0x0
+d "b .s1 0x20" 10040000 0x0
+d "b .s2 b3" 62030c00 0x0
+d ".fphead n, l, w, bu, nobr, nosat, 0001000b" 000000e1 0x1c
+d ".fphead n, l, w, b, nobr, nosat, 1111010b" 082841ef 0x5c
+d "[b0] bnop .s1 0x40,0x4" 21810820 0x38 (branch (! (is_zero (var b0))) (jmp (bv 32 0x40)) nop)
+d "dint" 00400010 0x0
+d "rint" 00600010 0x0
+d "shru .s1 a3,0x14,a6" a1890e03 0x0
+d "shr .s1 a6,0x2,a6" a04d1803 0x0
+d "cmpgtsp .s1 a10,a3,a1" 614e8d00 0x0
+d "cmpltsp .s1 a4,a3,a1" a18e8c00 0x0
+d "cmpgtdp .s2 b5:b4,b7:b6,b1" 628a9800 0x0
+d "cmpltdp .s2 b11:b10,b5:b4,b0" a24a1100 0x0
+d "absdp .s2 b11:b10,b5:b4" 224b2d02 0x0
+d "mpydp .m1 a5:a4,a7:a6,a5:a4" 00871802 0x0
+d "intsp .l2 b4,b5" 5a099002 0x0
+d "mvc .s2 csr,b4" e2030402 0x0
+d "mvc .s2 b6,csr" a2039800 0x0
+d "set .s2 b4,31,31,b4" 8aff1302 0x0
+d "extu .s2 b4,1,21,b4" 0b351002 0x0
+d "addaw .d2 b15,6,b4" fe060012 0x0
+d "addsp .s2 b5,b7,b5" 1aae9c02 0x0
+d "adddp .s1x a5:a4,b11:b10,a7:a6" 589e2803 0x0
+d "xor .d2x b7,a4,b5" b3fb9002 0x0
+d "add .d1x 0x8,b15,a4" f01a3d02 0x0
+d "mpy32u .m1 a8,a5,a7:a6" 30061503 0x0
+d "mpyspdp .m1x b4,a11:a10,a7:a6" b0952803 0x0
+d "mpysu .m1 0xc,a11,a3" 008fad01 0x0
+# Assembler idioms rendered like the TI reference (dis6x): MV/NEG/NOT/ZERO and
+# the negative-constant SUB, plus the 40-bit (slong) SUB/ADD pair destinations.
+d "zero .l1 a3" f8008001 0x0
+d "zero .l1 a7:a6" f8040003 0x0
+d "not .s1 a3,a3" a0e28f01 0x0
+d "sub .l1x b4,0x6,a1" 58509300 0x0
+d "cmpgtu .l1 a5,a7:a6,a1" b8a99800 0x0
+d "spint .l1 a2,a3" 58018801 0x0
+
+# Software-pipelined loop buffer and unsigned int/float conversions, all
+# cross-checked against TI dis6x (c6000 v7.4.4) and found in real C674x firmware.
+d "sploop 1" 00800300 0x0
+d "sploopd 1" 00a00300 0x0
+d "sploopw 1" 00e00300 0x0
+d "[a0] sploopw 6" 00e083c2 0x0
+d "spkernel 0" 01400300 0x0
+d "spkernel 40" 0140030a 0x0
+d "spmask s1" 01001300 0x0
+d "spmask l1,s2" 00002700 0x0
+d "spmask m2" 00000302 0x0
+d "intdpu .l1 a3,a5:a4" 78070c02 0x0
+d "intspu .l1 a6,a4" 39091802 0x0
+d "mpy .m2 0xc,b4,b4" 028c1102 0x0
+d "[!a0] subah .d1 a11,0x15,a3" c0bbaed1 0x0
+
+# .D address arithmetic with a 15-bit constant reuses the byte/halfword/word
+# store slots; without the creg=0/z=1 marker these stay stores. Cross-checked
+# against TI dis6x and found mis-decoded as stb/sth on real C674x firmware.
+d "addab .d2 b15,17,b4" be110012 0x0
+d "addah .d1x b15,127,a4" dd7f0012 0x0
+
+# Unsigned subtract widening into a register pair: both sources stay single and
+# the cross path feeds src1. Found on real C674x firmware, matched to TI dis6x.
+d "subu .l2x a3,b6,b7:b6" fb771803 0x0

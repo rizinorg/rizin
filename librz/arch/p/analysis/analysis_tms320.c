@@ -12,18 +12,37 @@
 #include <tms320/c2x/c2x.h>
 #include <tms320/c5x/c5x.h>
 #include <tms320/c64x/c64x.h>
+#include <tms320/c6x/c6x.h>
 
 typedef struct tms320_ctx_t {
 	void *c64x;
+	ut64 c6x_prev_end; ///< address just past the last c6x instruction analyzed
+	bool c6x_prev_par; ///< parallel bit of that instruction (for "||" continuation)
 } Tms320Context;
 
 int tms320_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	Tms320Context *context = (Tms320Context *)analysis->plugin_data;
 
 	const char *cpu = rz_analysis_get_cpu(analysis);
+	const C6xArchDesc *c6x = c6x_desc_from_cpu(cpu);
+	if (c6x) {
+		C6xInsn insn;
+		if (!c6x_decode(c6x, buf, len, addr, analysis->big_endian, &insn)) {
+			return -1;
+		}
+		c6x_fill_analysis(c6x, &insn, addr, op);
+		c6x_mark_parallel(&insn, addr, &context->c6x_prev_end, &context->c6x_prev_par);
+		if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
+			op->opex = c6x_opex(&insn);
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
+			op->mnemonic = c6x_format(c6x, &insn, addr);
+		}
+		return op->size;
+	}
 	if (cpu && rz_str_casecmp(cpu, "c55x+") == 0) {
 		return tms320_c55x_plus_op(analysis, op, addr, buf, len, mask);
-	} else if (cpu && rz_str_casecmp(cpu, "c64x") == 0) {
+	} else if (cpu && rz_str_casecmp(cpu, "c64x-capstone") == 0) {
 		return tms320_c64x_op(analysis, op, addr, buf, len, mask, context->c64x);
 	} else if (cpu && rz_str_casecmp(cpu, "c54x") == 0) {
 		return tms320_c54x_op(analysis, op, addr, buf, len, mask);
@@ -315,12 +334,22 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			"ctr ac6    .40 674 0 # Accumulator 6\n"
 			"ctr ac7    .40 679 0 # Accumulator 7\n";
 	} else {
-		p =
+		// C6000: C62x/C67x expose 16 general registers per side (A0-A15,
+		// B0-B15); C64x and later widen this to 32 and add the C64x+ control-
+		// register file. Emit the extended half only for the variants that own
+		// it, so `arp` on a C62x/C67x reads back the true 16-register machine.
+		bool wide = !(cpu0 && (rz_str_casecmp(cpu0, "c62x") == 0 || rz_str_casecmp(cpu0, "c67x") == 0));
+		RzStrBuf sb;
+		rz_strbuf_init(&sb);
+		rz_strbuf_append(&sb,
 			"=PC	pce1\n"
+			"=SP	b15\n"
+			"=BP	a15\n"
+			"=SR	csr\n"
 			"=A0	a4\n"
 			"=A1	b4\n"
 			"=A2	a6\n"
-			"=A3	a6\n"
+			"=A3	b6\n"
 			"=A4	a8\n"
 			"=A5	b8\n"
 			"=A6	a10\n"
@@ -343,25 +372,27 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			"gpr	a12	.32	48 		0\n"
 			"gpr	a13	.32	52 		0\n"
 			"gpr	a14	.32	56 		0\n"
-			"gpr	a15	.32	60 		0\n"
-#ifdef CAPSTONE_TMS320C64X_H
-			"gpr	a16	.32	64 		0\n"
-			"gpr	a17	.32	68 		0\n"
-			"gpr	a18	.32	72 		0\n"
-			"gpr	a19	.32	76 		0\n"
-			"gpr	a20	.32	80 		0\n"
-			"gpr	a21	.32	84 		0\n"
-			"gpr	a22	.32	88 		0\n"
-			"gpr	a23	.32	92 		0\n"
-			"gpr	a24	.32	96 		0\n"
-			"gpr	a25	.32	100 	0\n"
-			"gpr	a26	.32	104 	0\n"
-			"gpr	a27	.32	108 	0\n"
-			"gpr	a28	.32	112 	0\n"
-			"gpr	a29	.32	116 	0\n"
-			"gpr	a30	.32	120 	0\n"
-			"gpr	a31	.32	124 	0\n"
-#endif
+			"gpr	a15	.32	60 		0\n");
+		if (wide) {
+			rz_strbuf_append(&sb,
+				"gpr	a16	.32	64 		0\n"
+				"gpr	a17	.32	68 		0\n"
+				"gpr	a18	.32	72 		0\n"
+				"gpr	a19	.32	76 		0\n"
+				"gpr	a20	.32	80 		0\n"
+				"gpr	a21	.32	84 		0\n"
+				"gpr	a22	.32	88 		0\n"
+				"gpr	a23	.32	92 		0\n"
+				"gpr	a24	.32	96 		0\n"
+				"gpr	a25	.32	100 	0\n"
+				"gpr	a26	.32	104 	0\n"
+				"gpr	a27	.32	108 	0\n"
+				"gpr	a28	.32	112 	0\n"
+				"gpr	a29	.32	116 	0\n"
+				"gpr	a30	.32	120 	0\n"
+				"gpr	a31	.32	124 	0\n");
+		}
+		rz_strbuf_append(&sb,
 			"gpr	b0	.32	128 	0\n"
 			"gpr	b1	.32	132 	0\n"
 			"gpr	b2	.32	136 	0\n"
@@ -377,25 +408,27 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			"gpr	b12	.32	176 	0\n"
 			"gpr	b13	.32	180 	0\n"
 			"gpr	b14	.32	184 	0\n"
-			"gpr	b15	.32	188 	0\n"
-#ifdef CAPSTONE_TMS320C64X_H
-			"gpr	b16	.32	192 	0\n"
-			"gpr	b17	.32	196 	0\n"
-			"gpr	b18	.32	200 	0\n"
-			"gpr	b19	.32	204 	0\n"
-			"gpr	b20	.32	208 	0\n"
-			"gpr	b21	.32	212 	0\n"
-			"gpr	b22	.32	216 	0\n"
-			"gpr	b23	.32	220 	0\n"
-			"gpr	b24	.32	224 	0\n"
-			"gpr	b25	.32	228 	0\n"
-			"gpr	b26	.32	232 	0\n"
-			"gpr	b27	.32	236 	0\n"
-			"gpr	b28	.32	240 	0\n"
-			"gpr	b29	.32	244 	0\n"
-			"gpr	b30	.32	248 	0\n"
-			"gpr	b31	.32	252 	0\n"
-#endif
+			"gpr	b15	.32	188 	0\n");
+		if (wide) {
+			rz_strbuf_append(&sb,
+				"gpr	b16	.32	192 	0\n"
+				"gpr	b17	.32	196 	0\n"
+				"gpr	b18	.32	200 	0\n"
+				"gpr	b19	.32	204 	0\n"
+				"gpr	b20	.32	208 	0\n"
+				"gpr	b21	.32	212 	0\n"
+				"gpr	b22	.32	216 	0\n"
+				"gpr	b23	.32	220 	0\n"
+				"gpr	b24	.32	224 	0\n"
+				"gpr	b25	.32	228 	0\n"
+				"gpr	b26	.32	232 	0\n"
+				"gpr	b27	.32	236 	0\n"
+				"gpr	b28	.32	240 	0\n"
+				"gpr	b29	.32	244 	0\n"
+				"gpr	b30	.32	248 	0\n"
+				"gpr	b31	.32	252 	0\n");
+		}
+		rz_strbuf_append(&sb,
 			"ctr amr     .32 256 0  # Addressing mode register\n"
 			"ctr csr     .32 260 0  # Control status register\n"
 			"ctr gfpgfr  .32 264 0  # Galois field multiply control register\n"
@@ -406,63 +439,68 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			"ctr isr     .32 284 0  # Interrupt set register\n"
 			"ctr istp    .32 288 0  # Interrupt service table pointer register\n"
 			"ctr nrp     .32 292 0  # Nonmaskable interrupt return pointer register\n"
-			"ctr pce1    .32 296 0  # Program counter, E1 phase\n"
-#ifdef CAPSTONE_TMS320C64X_H
-			// Control Register File Extensions (C64x+ DSP)
-			"ctr dier    .32 300 0  # (C64x+ only) Debug interrupt enable register\n"
-			"ctr dnum    .32 304 0  # (C64x+ only) DSP core number register\n"
-			"ctr ecr     .32 308 0  # (C64x+ only) Exception clear register\n"
-			"ctr efr     .32 312 0  # (C64x+ only) Exception flag register\n"
-			"ctr gplya   .32 316 0  # (C64x+ only) GMPY A-side polynomial register\n"
-			"ctr gplyb   .32 320 0  # (C64x+ only) GMPY B-side polynomial register\n"
-			"ctr ierr    .32 324 0  # (C64x+ only) Internal exception report register\n"
-			"ctr ilc     .32 328 0  # (C64x+ only) Inner loop count register\n"
-			"ctr itsr    .32 332 0  # (C64x+ only) Interrupt task state register\n"
-			"ctr ntsr    .32 336 0  # (C64x+ only) NMI/Exception task state register\n"
-			"ctr rep     .32 340 0  # (C64x+ only) Restricted entry point address register\n"
-			"ctr rilc    .32 344 0  # (C64x+ only) Reload inner loop count register\n"
-			"ctr ssr     .32 348 0  # (C64x+ only) Saturation status register\n"
-			"ctr tsch    .32 352 0  # (C64x+ only) Time-stamp counter (high 32) register\n"
-			"ctr tscl    .32 356 0  # (C64x+ only) Time-stamp counter (low 32) register\n"
-			"ctr tsr     .32 360 0  # (C64x+ only) Task state register\n"
-#endif
-			"gpr	a0:a1 	.64	364	0\n"
-			"gpr	a2:a3 	.64	368	0\n"
-			"gpr	a4:a5 	.64	372	0\n"
-			"gpr	a6:a7 	.64	376	0\n"
-			"gpr	a8:a9 	.64	380	0\n"
-			"gpr	a10:a11	.64	384	0\n"
-			"gpr	a12:a13	.64	388	0\n"
-			"gpr	a14:a15	.64	392	0\n"
-#ifdef CAPSTONE_TMS320C64X_H
-			"gpr	a16:a17	.64	396	0\n"
-			"gpr	a18:a19	.64	400	0\n"
-			"gpr	a20:a21	.64	404	0\n"
-			"gpr	a22:a23	.64	408	0\n"
-			"gpr	a24:a25	.64	412	0\n"
-			"gpr	a26:a27	.64	416	0\n"
-			"gpr	a28:a29	.64	420	0\n"
-			"gpr	a30:a31	.64	424	0\n"
-#endif
-			"gpr	b0:b1 	.64	428	0\n"
-			"gpr	b2:b3 	.64	432	0\n"
-			"gpr	b4:b5 	.64	436	0\n"
-			"gpr	b6:b7 	.64	440	0\n"
-			"gpr	b8:b9 	.64	444	0\n"
-			"gpr	b10:b11	.64	448	0\n"
-			"gpr	b12:b13	.64	452	0\n"
-			"gpr	b14:b15	.64	456	0\n"
-#ifdef CAPSTONE_TMS320C64X_H
-			"gpr	b16:b17	.64	460	0\n"
-			"gpr	b18:b19	.64	464	0\n"
-			"gpr	b20:b21	.64	468	0\n"
-			"gpr	b22:b23	.64	472	0\n"
-			"gpr	b24:b25	.64	476	0\n"
-			"gpr	b26:b27	.64	480	0\n"
-			"gpr	b28:b29	.64	484	0\n"
-			"gpr	b30:b31	.64	488	0\n"
-#endif
-			;
+			"ctr pce1    .32 296 0  # Program counter, E1 phase\n");
+		if (wide) {
+			// Control register file extensions; these exist only on C64x+ and later.
+			rz_strbuf_append(&sb,
+				"ctr dier    .32 300 0  # Debug interrupt enable register\n"
+				"ctr dnum    .32 304 0  # DSP core number register\n"
+				"ctr ecr     .32 308 0  # Exception clear register\n"
+				"ctr efr     .32 312 0  # Exception flag register\n"
+				"ctr gplya   .32 316 0  # GMPY A-side polynomial register\n"
+				"ctr gplyb   .32 320 0  # GMPY B-side polynomial register\n"
+				"ctr ierr    .32 324 0  # Internal exception report register\n"
+				"ctr ilc     .32 328 0  # Inner loop count register\n"
+				"ctr itsr    .32 332 0  # Interrupt task state register\n"
+				"ctr ntsr    .32 336 0  # NMI/Exception task state register\n"
+				"ctr rep     .32 340 0  # Restricted entry point address register\n"
+				"ctr rilc    .32 344 0  # Reload inner loop count register\n"
+				"ctr ssr     .32 348 0  # Saturation status register\n"
+				"ctr tsch    .32 352 0  # Time-stamp counter (high 32) register\n"
+				"ctr tscl    .32 356 0  # Time-stamp counter (low 32) register\n"
+				"ctr tsr     .32 360 0  # Task state register\n");
+		}
+		rz_strbuf_append(&sb,
+			"gpr	a0:a1  	.64	0	0\n"
+			"gpr	a2:a3  	.64	8	0\n"
+			"gpr	a4:a5  	.64	16	0\n"
+			"gpr	a6:a7  	.64	24	0\n"
+			"gpr	a8:a9  	.64	32	0\n"
+			"gpr	a10:a11	.64	40	0\n"
+			"gpr	a12:a13	.64	48	0\n"
+			"gpr	a14:a15	.64	56	0\n");
+		if (wide) {
+			rz_strbuf_append(&sb,
+				"gpr	a16:a17	.64	64	0\n"
+				"gpr	a18:a19	.64	72	0\n"
+				"gpr	a20:a21	.64	80	0\n"
+				"gpr	a22:a23	.64	88	0\n"
+				"gpr	a24:a25	.64	96	0\n"
+				"gpr	a26:a27	.64	104	0\n"
+				"gpr	a28:a29	.64	112	0\n"
+				"gpr	a30:a31	.64	120	0\n");
+		}
+		rz_strbuf_append(&sb,
+			"gpr	b0:b1  	.64	128	0\n"
+			"gpr	b2:b3  	.64	136	0\n"
+			"gpr	b4:b5  	.64	144	0\n"
+			"gpr	b6:b7  	.64	152	0\n"
+			"gpr	b8:b9  	.64	160	0\n"
+			"gpr	b10:b11	.64	168	0\n"
+			"gpr	b12:b13	.64	176	0\n"
+			"gpr	b14:b15	.64	184	0\n");
+		if (wide) {
+			rz_strbuf_append(&sb,
+				"gpr	b16:b17	.64	192	0\n"
+				"gpr	b18:b19	.64	200	0\n"
+				"gpr	b20:b21	.64	208	0\n"
+				"gpr	b22:b23	.64	216	0\n"
+				"gpr	b24:b25	.64	224	0\n"
+				"gpr	b26:b27	.64	232	0\n"
+				"gpr	b28:b29	.64	240	0\n"
+				"gpr	b30:b31	.64	248	0\n");
+		}
+		return rz_strbuf_drain_nofree(&sb);
 	}
 
 	// C55x+ (Ryujin) has 32 accumulators and 16 (extended) auxiliary registers,
@@ -552,8 +590,8 @@ static RzList /*<RzSearchKeyword *>*/ *tms320_analysis_preludes(RzAnalysis *anal
 		KW("\x0e\x00\x0e\x00\x0e\x00", 6, "\xff\x00\xff\x00\xff\x00", 6);
 		/* two consecutive C55x+ pushes: 0e ?? 0e ?? */
 		KW("\x0e\x00\x0e\x00", 4, "\xff\x00\xff\x00", 4);
-	} else if (cpu && rz_str_casecmp(cpu, "c64x") == 0) {
-		/* C64x VLIW: no reliable fixed prologue; leave to call-graph. */
+	} else if (c6x_desc_from_cpu(cpu) || (cpu && rz_str_casecmp(cpu, "c64x-capstone") == 0)) {
+		/* C6000 VLIW: no reliable fixed prologue; leave to the call graph. */
 	} else {
 		/* plain C55x: two consecutive single pushes (0x38 0x38) */
 		KW("\x38\x38", 2, "\xff\xff", 2);

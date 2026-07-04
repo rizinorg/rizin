@@ -1,0 +1,18 @@
+# TMS320C62x (fixed-point VLIW) native disassembler
+# The shared engine serves the C62x base ISA; floating-point opcodes do
+# not decode here (see the mpysp word, which is invalid on C62x).
+d "nop" 00000000 0x0
+d "mvk .s1 0x0,a0" 28000000 0x0
+d "add .l1 a0,a1,a2" 78000401 0x0
+d "and .l1 0x8,a3,a0" 580f0d00 0x0
+d "ldb .d1 *a4,a3" 24029001 0x0
+d "b .s1 0x20" 10040000 0x0
+d "b .s2 b3" 62030c00 0x0
+
+# The loop buffer and interrupt-enable opcodes are C64x+ additions: asm6x
+# rejects them for -mv6200, so they must not decode here (idle and nop do).
+d "invalid" 00400010 0x0
+d "invalid" 00600010 0x0
+d "invalid" 00000300 0x0
+d "invalid" 00800300 0x0
+d "idle" 00e00100 0x0
