@@ -150,12 +150,11 @@ int luajit_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 
 /* Asm */
 int luajit_disasm(RzAsmOp *op, int len, LuaJITOpName opname, LuaJITInstructions instr, LuaJITOpCode opcode);
-char *luajitop_new_str_3arg(char *opname, int a, int b, int c);
-char *luajitop_new_str_2arg(char *opname, int a, int b);
-char *luajitop_new_str_1arg(char *opname, int a);
-char *luajitop_new_str_reg_reg(const char *opname, ut32 a, ut32 d);
-char *luajitop_new_str_reg_const(const char *opname, ut32 a, st32 d);
-
+void luajitop_setf_asm_3arg(RzAsmOp *op, char *opname, int a, int b, int c);
+void luajitop_setf_asm_2arg(RzAsmOp *op, char *opname, int a, int b);
+void luajitop_setf_asm_1arg(RzAsmOp *op, char *opname, int a);
+void luajitop_setf_asm_reg_const(RzAsmOp *op, const char *opname, ut32 a, st32 d);
+void luajitop_setf_asm_reg_reg(RzAsmOp *op, const char *opname, ut32 a, st32 d);
 #define LUAJIT_GET_OPCODE(i) (cast(int, (i) & 0xFF))
 #define LUAJIT_GET_A(i)      (cast(int, ((i) >> 8) & 0xFF)) /*Get A*/
 #define LUAJIT_GET_C(i)      (cast(int, ((i) >> 16) & 0xFF)) /*Get B*/

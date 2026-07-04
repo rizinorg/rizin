@@ -14,8 +14,6 @@ int luajit_disasm(RzAsmOp *op, int len, LuaJITOpName opname, LuaJITInstructions 
 	int c = LUAJIT_GET_C(instr);
 	int d = LUAJIT_GET_D(instr);
 
-	char *asm_str = NULL;
-
 	switch (opcode) {
 	// A D FORMAT (2 Operands)
 
@@ -44,7 +42,7 @@ int luajit_disasm(RzAsmOp *op, int len, LuaJITOpName opname, LuaJITInstructions 
 	case LUAJIT_OP_NOT: /* A D     R(A) := ~R(D)                                      */
 	case LUAJIT_OP_UNM: /* A D     R(A) := -R(D)                                      */
 	case LUAJIT_OP_LEN: /* A D     R(A) := length of R(D)                             */
-		asm_str = luajitop_new_str_reg_reg(opname, a, d);
+		luajitop_setf_asm_reg_reg(op, opname, a, d);
 		break;
 	/* Constant loads */
 	case LUAJIT_OP_KSTR: /* A D     R(A) := KSTR(D)                                    */
@@ -64,7 +62,7 @@ int luajit_disasm(RzAsmOp *op, int len, LuaJITOpName opname, LuaJITInstructions 
 	case LUAJIT_OP_TDUP: /* A D     R(A) := duplicate table(KTAB(D))                   */
 	case LUAJIT_OP_GGET: /* A D     R(A) := _G[KSTR(D)]                                */
 	case LUAJIT_OP_GSET: /* A D     _G[KSTR(D)] := R(A)                                */
-		asm_str = luajitop_new_str_reg_const(opname, a, d);
+		luajitop_setf_asm_reg_const(op, opname, a, d);
 		break;
 	/* Calls and vararg handling (AD only) */
 	case LUAJIT_OP_CALLMT: /* A D     return R(A)(R(A+1)...)                             */
@@ -87,18 +85,18 @@ int luajit_disasm(RzAsmOp *op, int len, LuaJITOpName opname, LuaJITInstructions 
 	case LUAJIT_OP_LOOP: /* A D     generic loop body                                  */
 	case LUAJIT_OP_ILOOP: /* A D     interpreted loop body                              */
 	case LUAJIT_OP_JLOOP: /* A D     JIT-compiled loop body                             */
-		asm_str = luajitop_new_str_2arg(opname, a, d);
+		luajitop_setf_asm_2arg(op, opname, a, d);
 		break;
 	case LUAJIT_OP_JMP: /* A D     pc += (D - 0x8000)                                 */
 		d = luajitop_get_value(instr);
-		asm_str = luajitop_new_str_2arg(opname, a, d);
+		luajitop_setf_asm_2arg(op, opname, a, d);
 		break;
 	case LUAJIT_OP_KSHORT: /* A D     R(A) := (int16_t)D                                 */
 		// Note: Needs the cast to signed 16-bit
-		asm_str = luajitop_new_str_reg_const(opname, a, (st16)d);
+		luajitop_setf_asm_reg_const(op, opname, a, (st16)d);
 		break;
 	case LUAJIT_OP_KNIL: /* A D     R(A) ... R(D) := nil                               */
-		asm_str = rz_str_newf("%s r%d...r%d", opname, a, d);
+		rz_asm_op_setf_asm(op, "%s r%d...r%d", opname, a, d);
 		break;
 
 	// A B C FORMAT (3 Operands)
@@ -136,7 +134,7 @@ int luajit_disasm(RzAsmOp *op, int len, LuaJITOpName opname, LuaJITInstructions 
 	case LUAJIT_OP_ITERC: /* A B C   R(A)... := R(A-3)(R(A-2), R(A-1))                  */
 	case LUAJIT_OP_ITERN: /* A B C   fast loop iterator                                 */
 	case LUAJIT_OP_VARG: /* A B C   R(A)...R(A+B-2) := vararg                          */
-		asm_str = luajitop_new_str_3arg(opname, a, b, c);
+		luajitop_setf_asm_3arg(op, opname, a, b, c);
 		break;
 
 	// A FORMAT (1 Operands)
@@ -149,17 +147,16 @@ int luajit_disasm(RzAsmOp *op, int len, LuaJITOpName opname, LuaJITInstructions 
 	case LUAJIT_OP_JFUNCV: /* A       JIT-compiled function header, varargs              */
 	case LUAJIT_OP_FUNCC: /* A       C function header                                  */
 	case LUAJIT_OP_FUNCCW: /* A       C function header with wrapper                     */
-		asm_str = luajitop_new_str_1arg(opname, a);
+		luajitop_setf_asm_1arg(op, opname, a);
 		break;
 	// FALLBACKS
 	case LUAJIT_OP__MAX: /* The maximum opcode */
-		asm_str = rz_str_newf("Max");
+		rz_asm_op_setf_asm(op, "%s", "Max");
 		break;
 	default:
-		asm_str = rz_str_newf("invalid");
+		rz_asm_op_setf_asm(op, "%s", "invalid");
+		break;
 	}
 	op->size = 4;
-	rz_asm_op_set_asm(op, asm_str);
-	RZ_FREE(asm_str);
 	return 4;
 }
