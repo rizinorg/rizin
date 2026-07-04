@@ -478,3 +478,45 @@ EXPECT=<<EOF
 0x001e0098 0x000e0098 R_PPC64_IRELATIVE  0x001789c0
 EOF
 RUN
+
+NAME=asm.flag.real reloc flags (non-reloc file)
+FILE=bins/elf/_Exit_0x91
+CMDS=<<EOF
+e asm.flags.real=0
+fl~_Exit
+echo
+e asm.flags.real=1
+fl~_Exit
+EOF
+EXPECT=<<EOF
+0x00001020 16 sym.imp._Exit
+0x00003ff8 8 reloc._Exit
+0x00004008 8 reloc.target._Exit
+
+0x00001020 16 _Exit
+0x00003ff8 8 _Exit
+0x00004008 8 _Exit
+EOF
+RUN
+
+NAME=asm.flag.real reloc flags (reloc file)
+FILE=bins/elf/test.ko
+CMDS=<<EOF
+e asm.flags.real=0
+fl~printk
+echo
+e asm.flags.real=1
+fl~printk
+EOF
+EXPECT=<<EOF
+0x0800008d 4 reloc.printk
+0x080000a0 4 reloc.printk.80000a0
+0x080000b4 4 reloc.printk.80000b4
+0x08000b20 4 reloc.target.printk
+
+0x0800008d 4 printk
+0x080000a0 4 printk
+0x080000b4 4 printk
+0x08000b20 4 printk
+EOF
+RUN
