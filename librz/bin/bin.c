@@ -978,6 +978,12 @@ static RzBinObject *bin_bind_get_bin_object(RzBin *bin) {
 	return bf ? bf->o : NULL;
 }
 
+static RzPVector /*<RzBinTrycatch *>*/ *bin_bind_get_trycatch(RzBin *bin) {
+	rz_return_val_if_fail(bin, NULL);
+	RzBinFile *bf = rz_bin_cur(bin);
+	return bf ? rz_bin_file_get_trycatch(bf) : NULL;
+}
+
 RZ_API void rz_bin_bind(RzBin *bin, RzBinBind *b) {
 	if (!b) {
 		return;
@@ -990,6 +996,7 @@ RZ_API void rz_bin_bind(RzBin *bin, RzBinBind *b) {
 	b->get_vsect_at = bin_bind_get_vsection_at;
 	b->demangle = rz_bin_demangle;
 	b->get_bin_object = bin_bind_get_bin_object;
+	b->get_trycatch = bin_bind_get_trycatch;
 }
 
 RZ_API RzBuffer *rz_bin_create(RzBin *bin, const char *p,

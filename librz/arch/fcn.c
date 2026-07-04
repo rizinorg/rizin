@@ -583,6 +583,49 @@ static bool is_unknown_call_from_plt(RzAnalysis *analysis, ut64 op_address) {
 		RZ_STR_EQ(s->name, ".plt");
 }
 
+typedef struct rz_analysis_trycatch_ctx_t {
+	RzAnalysis *analysis;
+	RzVector /*<RzAnalysisTaskItem>*/ *tasks;
+	RzAnalysisFunction *fcn;
+	RzStackAddr sp;
+	ut64 addr;
+	bool overlapped;
+	RzAnalysisBlock *bb;
+} RzAnalysisTrycatchCtx;
+
+static bool add_trycatch_handlers(RZ_NONNULL RzAnalysisTrycatchCtx *ctx) {
+	if (!ctx->analysis->binb.get_trycatch || !ctx->analysis->binb.bin) {
+		return false;
+	}
+
+	RzPVector *tcs = ctx->analysis->binb.get_trycatch(ctx->analysis->binb.bin);
+	if (!tcs) {
+		return false;
+	}
+
+	bool found = false;
+	void **it;
+	RzBinTrycatch *tc;
+	rz_pvector_foreach (tcs, it) {
+		tc = *it;
+		if (ctx->addr >= tc->from && ctx->addr < tc->to && tc->handler) {
+			if (!ctx->overlapped && !found && ctx->bb) {
+				ctx->bb->jump = tc->handler;
+			}
+			rz_analysis_task_item_new(ctx->analysis, ctx->tasks, ctx->fcn, NULL, tc->handler, ctx->sp);
+			found = true;
+		}
+	}
+	return found;
+}
+
+static inline bool is_x86_seh(RzAnalysis *analysis, bool is_x86, RzAnalysisOp *op, ut64 last_push_addr) {
+	return analysis->opt.trycatch && is_x86 && op->dst && op->dst->seg &&
+		RZ_STR_EQ(op->dst->seg->name, "fs") && op->dst->delta == 0 &&
+		op->dst->memref && last_push_addr != UT64_MAX &&
+		analysis->iob.is_valid_offset(analysis->iob.io, last_push_addr, 0);
+}
+
 /**
  * \brief Analyses the given task item \p item for branches.
  *
@@ -843,34 +886,21 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			rz_analysis_block_set_size(bb, newbbsize);
 			fcn->ninstr++;
 		}
-		if (analysis->opt.trycatch) {
-			const char *name = analysis->coreb.getName(analysis->coreb.core, at);
-			if (name) {
-				if (rz_str_startswith(name, "try.") && rz_str_endswith(name, ".from")) {
-					char *handle = rz_str_dup(name);
-					// handle = rz_str_replace (handle, ".from", ".to", 0);
-					ut64 from_addr = analysis->coreb.numGet(analysis->coreb.core, handle);
-					handle = rz_str_replace(handle, ".from", ".catch", 0);
-					ut64 handle_addr = analysis->coreb.numGet(analysis->coreb.core, handle);
-					handle = rz_str_replace(handle, ".catch", ".filter", 0);
-					ut64 filter_addr = analysis->coreb.numGet(analysis->coreb.core, handle);
-					if (filter_addr) {
-						rz_analysis_xrefs_set(analysis, op.addr, filter_addr, RZ_ANALYSIS_XREF_TYPE_CALL);
+		if (analysis->opt.trycatch && analysis->binb.get_trycatch) {
+			RzPVector *tcs = analysis->binb.get_trycatch(analysis->binb.bin);
+			if (tcs) {
+				void **it;
+				RzBinTrycatch *tc;
+				rz_pvector_foreach (tcs, it) {
+					tc = *it;
+					if (tc->from != at) {
+						continue;
 					}
-					bb->jump = at + oplen;
-					if (from_addr != bb->addr) {
-						bb->fail = handle_addr;
-						ret = analyze_function_locally(analysis, fcn, handle_addr);
-						if (bb->size == 0) {
-							rz_analysis_function_remove_block(fcn, bb);
-						}
-						rz_analysis_block_update_hash(bb);
-						rz_analysis_block_unref(bb);
-						bb = fcn_append_basic_block(analysis, fcn, bb->jump);
-						if (!bb) {
-							gotoBeach(RZ_ANALYSIS_RET_ERROR);
-						}
+					if (tc->filter) {
+						rz_analysis_xrefs_set(analysis, op.addr, tc->filter, RZ_ANALYSIS_XREF_TYPE_CALL);
 					}
+					rz_analysis_xrefs_set(analysis, op.addr, tc->handler, RZ_ANALYSIS_XREF_TYPE_CODE);
+					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, tc->handler, sp);
 				}
 			}
 		}
@@ -991,6 +1021,11 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				if (skip_ret == 2) {
 					gotoBeach(RZ_ANALYSIS_RET_END);
 				}
+			}
+			if (is_x86_seh(analysis, is_x86, &op, last_push_addr)) {
+				rz_analysis_xrefs_set(analysis, op.addr, last_push_addr, RZ_ANALYSIS_XREF_TYPE_CODE);
+				rz_analysis_task_item_new(analysis, tasks, fcn, NULL, last_push_addr, sp);
+				last_push_addr = UT64_MAX;
 			}
 			break;
 		case RZ_ANALYSIS_OP_TYPE_LEA:
@@ -1120,6 +1155,12 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 						set_bb_branches(bb, op.jump, op.addr + op.size);
 					}
 					gotoBeach(RZ_ANALYSIS_RET_BRANCH);
+				}
+				if (analysis->opt.trycatch) {
+					RzAnalysisTrycatchCtx ctx = { analysis, tasks, fcn, sp, at, overlapped, bb };
+					if (add_trycatch_handlers(&ctx)) {
+						gotoBeach(RZ_ANALYSIS_RET_BRANCH);
+					}
 				}
 				gotoBeach(RZ_ANALYSIS_RET_END);
 			}
@@ -1273,6 +1314,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		case RZ_ANALYSIS_OP_TYPE_RCALL:
 		case RZ_ANALYSIS_OP_TYPE_ICALL:
 		case RZ_ANALYSIS_OP_TYPE_IRCALL:
+			last_push_addr = UT64_MAX;
 			/* call [dst] */
 			// XXX: this is TYPE_MCALL or indirect-call
 			(void)rz_analysis_xrefs_set(analysis, op.addr, op.ptr, RZ_ANALYSIS_XREF_TYPE_CALL);
@@ -1283,11 +1325,18 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				if (f) {
 					f->is_noreturn = true;
 				}
+				if (analysis->opt.trycatch) {
+					RzAnalysisTrycatchCtx ctx = { analysis, tasks, fcn, sp, at, overlapped, bb };
+					if (add_trycatch_handlers(&ctx)) {
+						gotoBeach(RZ_ANALYSIS_RET_BRANCH);
+					}
+				}
 				gotoBeach(RZ_ANALYSIS_RET_END);
 			}
 			break;
 		case RZ_ANALYSIS_OP_TYPE_CCALL:
 		case RZ_ANALYSIS_OP_TYPE_CALL:
+			last_push_addr = UT64_MAX;
 			/* call dst */
 			(void)rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_XREF_TYPE_CALL);
 
@@ -1295,6 +1344,12 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				RzAnalysisFunction *f = rz_analysis_get_function_at(analysis, op.jump);
 				if (f) {
 					f->is_noreturn = true;
+				}
+				if (analysis->opt.trycatch) {
+					RzAnalysisTrycatchCtx ctx = { analysis, tasks, fcn, sp, at, overlapped, bb };
+					if (add_trycatch_handlers(&ctx)) {
+						gotoBeach(RZ_ANALYSIS_RET_BRANCH);
+					}
 				}
 				gotoBeach(RZ_ANALYSIS_RET_END);
 			}

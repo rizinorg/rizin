@@ -5654,8 +5654,6 @@ RZ_API bool rz_core_bin_trycatch_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBin
 		}
 	}
 
-	rz_pvector_free(trycatch);
-
 	rz_cmd_state_output_array_end(state);
 	return true;
 }
