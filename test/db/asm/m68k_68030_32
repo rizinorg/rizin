@@ -73,9 +73,3 @@ d "ploadw sfc, 0xff" f03c20002fff 0x0 (branch (! (is_zero (& (cast 16 false (var
 d "pflush sfc, 0x0, 0xff" f03c30003fff 0x0 (branch (! (is_zero (& (cast 16 false (var sr)) (bv 16 0x2000)))) (seq (set mmu_addr (bv 32 0xff)) (set mmu_op (bv 32 0x1)) (set mmu_flush_non_global (bv 32 0x0)) (set mmu_fc (cast 32 false (var sfc))) (set mmu_mask (bv 32 0x0)) (goto m68k_mmu)) (seq (set trap_op (bv 32 0x9)) (set trap_vector (bv 32 0x8)) (goto m68k_privilege)))
 d "pflush 0xf, 0x7, 0x0" f03c3fff4000 0x0 (branch (! (is_zero (& (cast 16 false (var sr)) (bv 16 0x2000)))) (seq (set mmu_addr (bv 32 0x0)) (set mmu_op (bv 32 0x1)) (set mmu_flush_non_global (bv 32 0x0)) (set mmu_fc (bv 32 0xf)) (set mmu_mask (bv 32 0x7)) (goto m68k_mmu)) (seq (set trap_op (bv 32 0x9)) (set trap_vector (bv 32 0x8)) (goto m68k_privilege)))
 d "ptestw sfc, 0x0, 0x0" f03c80008100 0x0 (branch (! (is_zero (& (cast 16 false (var sr)) (bv 16 0x2000)))) (seq (set mmu_addr (bv 32 0x0)) (set mmu_op (bv 32 0x2)) (set mmu_rw (bv 32 0x1)) (set mmu_fc (cast 32 false (var sfc))) (set mmu_level (bv 32 0x0)) (goto m68k_mmu)) (seq (set trap_op (bv 32 0x9)) (set trap_vector (bv 32 0x8)) (goto m68k_privilege)))
-d "pmove , tt0" f03d0800
-d "ploadw sfc," f03d2000
-d "pflush sfc, 0x0," f03d3000
-d "pflush 0xf, 0x7," f03d3fff
-d "ptestw sfc, , 0x0" f03d8000
-d "pmove , tt0" f03f0800

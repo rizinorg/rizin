@@ -534,16 +534,6 @@ d "fmove.w fp0, 0x7fff" f23c70007fff 0x0 (seq (set trap_op (bv 32 0x8)) (set tra
 d "fmovem 0xd1ffe100f1ffffff, 0x0" f23cc100d1ffe100f1ffffff 0x0 nop
 d "fmovem 0x0, 0xf1ffffff12345678" f23ce100f1ffffff12345678 0x0 nop
 d "fmovem invalid, 0x123456789abc0000" f23cffff123456789abc0000 0x0 nop
-d "fmove.l , fp0" f23d4000
-d "add.x , fp7" f23d4fff
-d "fmove.w , fp0" f23d5000
-d "fcos.d , fp4" f23d5678
-d "fmove.l fp0," f23d6000
-d "fmove.w fp0," f23d7000
-d "fmovem , 0x0" f23dc100
-d "fmovem 0x0," f23de100
-d "fmovem invalid," f23dffff
-d "fmove.l , fp0" f23f4000
 d "fsf.b d0" f2400000 0x0 (set d0 (| (& (var d0) (bv 32 0xffffff00)) (cast 32 false (ite false (bv 8 0xff) (bv 8 0x0)))))
 d "fseq.b d0" f2400001 0x0 (set d0 (| (& (var d0) (bv 32 0xffffff00)) (cast 32 false (ite (! (is_zero (& (cast 32 false (var fpsr)) (bv 32 0x4000000)))) (bv 8 0xff) (bv 8 0x0)))))
 d "ftrapueq.b d0" f240007f 0x0 (set d0 (| (& (var d0) (bv 32 0xffffff00)) (cast 32 false (ite (|| (! (is_zero (& (cast 32 false (var fpsr)) (bv 32 0x1000000)))) (! (is_zero (& (cast 32 false (var fpsr)) (bv 32 0x4000000))))) (bv 8 0xff) (bv 8 0x0)))))

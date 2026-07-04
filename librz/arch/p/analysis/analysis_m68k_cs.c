@@ -1390,7 +1390,11 @@ static int m68k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 		m68k_set_cast_type(op, m68k);
 		break;
 	case M68K_INS_MAC:
+	case M68K_INS_MAAAC:
+	case M68K_INS_MASAC:
+	case M68K_INS_MSAAC:
 	case M68K_INS_MSAC:
+	case M68K_INS_MSSAC:
 		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 		break;
 	case M68K_INS_SATS:

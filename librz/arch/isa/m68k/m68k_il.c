@@ -2020,6 +2020,73 @@ static RzILOpEffect *lift_mac_msac(M68KILCtx *ctx, bool subtract) {
 	seq = seq_append(seq, write_acc);
 	return mac_memory_update(ctx, bits, seq, mem, update_reg);
 }
+
+static RzILOpEffect *mac_dual_acc_update(M68KILCtx *ctx, RzILOpEffect *seq, const cs_m68k_op *acc_op, bool subtract) {
+	if (!rz_m68k_op_is_acc_reg(acc_op)) {
+		return m68k_invalid_free(seq);
+	}
+	RzILOpPure *acc_value = read_reg_sized(ctx, acc_op->reg, 32);
+	if (!acc_value) {
+		return m68k_invalid_free(seq);
+	}
+	seq = seq_append(seq, SETL("acc", cast_signed(64, acc_value)));
+	seq = seq_append(seq, SETL("res64", subtract ? SUB(VARL("acc"), VARL("prod")) : ADD(VARL("acc"), VARL("prod"))));
+	seq = seq_append(seq, SETL("res", cast_unsigned(32, VARL("res64"))));
+	RzILOpEffect *write_acc = write_reg_sized(ctx, acc_op->reg, 32, VARL("res"));
+	if (!write_acc) {
+		return m68k_invalid_free(seq);
+	}
+	return seq_append(seq, write_acc);
+}
+
+static RzILOpEffect *lift_mac_dual_acc(M68KILCtx *ctx, bool subtract_first, bool subtract_second) {
+	if (ctx->m68k->op_count < 4) {
+		return m68k_invalid();
+	}
+	ut32 bits = rz_m68k_detail_op_bits(ctx->m68k, 32);
+	if (bits != 16 && bits != 32) {
+		return m68k_invalid();
+	}
+	const cs_m68k_op *src0 = &ctx->m68k->operands[0];
+	const cs_m68k_op *src1 = &ctx->m68k->operands[1];
+	const cs_m68k_op *acc0 = &ctx->m68k->operands[ctx->m68k->op_count - 2];
+	const cs_m68k_op *acc1 = &ctx->m68k->operands[ctx->m68k->op_count - 1];
+	if (!rz_m68k_op_is_acc_reg(acc0) || !rz_m68k_op_is_acc_reg(acc1)) {
+		return m68k_invalid();
+	}
+	RzILOpPure *src0_value = mac_read_reg_part(ctx, src0, bits);
+	RzILOpPure *src1_value = mac_read_reg_part(ctx, src1, bits);
+	if (!src0_value || !src1_value) {
+		rz_il_op_pure_free(src0_value);
+		rz_il_op_pure_free(src1_value);
+		return m68k_invalid();
+	}
+
+	const cs_m68k_op *shift = NULL;
+	for (ut8 i = 2; i + 2 < ctx->m68k->op_count; i++) {
+		const cs_m68k_op *op = &ctx->m68k->operands[i];
+		if (op->type == M68K_OP_SHIFT) {
+			shift = op;
+		} else {
+			rz_il_op_pure_free(src0_value);
+			rz_il_op_pure_free(src1_value);
+			return m68k_invalid();
+		}
+	}
+
+	RzILOpEffect *seq = SEQ3(
+		SETL("src0", src0_value),
+		SETL("src1", src1_value),
+		SETL("prod", MUL(cast_signed(64, VARL("src0")), cast_signed(64, VARL("src1")))));
+	if (shift) {
+		seq = seq_append(seq, SETL("prod", (shift->flags & M68K_OP_FLAG_SHIFT_LEFT) ? SHIFTL0(VARL("prod"), U8(1)) : SHIFTRA(VARL("prod"), U8(1))));
+	}
+	seq = mac_dual_acc_update(ctx, seq, acc0, subtract_first);
+	if (!seq) {
+		return m68k_invalid();
+	}
+	return mac_dual_acc_update(ctx, seq, acc1, subtract_second);
+}
 #endif
 
 static RzILOpPure *div_quotient_expr(bool sign, const char *dividend_local, const char *divisor_local) {
@@ -4998,10 +5065,18 @@ RZ_IPI RzILOpEffect *rz_m68k_cs_get_il_op(csh handle, RZ_NONNULL const cs_insn *
 		return lift_rem(&ctx, false);
 	case M68K_INS_SATS:
 		return lift_sats(&ctx);
+	case M68K_INS_MAAAC:
+		return lift_mac_dual_acc(&ctx, false, false);
 	case M68K_INS_MAC:
 		return lift_mac_msac(&ctx, false);
+	case M68K_INS_MASAC:
+		return lift_mac_dual_acc(&ctx, false, true);
+	case M68K_INS_MSAAC:
+		return lift_mac_dual_acc(&ctx, true, false);
 	case M68K_INS_MSAC:
 		return lift_mac_msac(&ctx, true);
+	case M68K_INS_MSSAC:
+		return lift_mac_dual_acc(&ctx, true, true);
 #endif
 #ifdef RZ_CAPSTONE_HAS_M68K_CPU32
 	case M68K_INS_BGND:
