@@ -73,17 +73,18 @@ static const RzCmdDescHelp root_help = {
 static const struct argv_modes_t {
 	const char *suffix;
 	const char *summary_suffix;
+	const char *name;
 	RzOutputMode mode;
 } argv_modes[] = {
-	{ "", "", RZ_OUTPUT_MODE_STANDARD },
-	{ "j", " (JSON mode)", RZ_OUTPUT_MODE_JSON },
-	{ "q", " (quiet mode)", RZ_OUTPUT_MODE_QUIET },
-	{ "Q", " (quietest mode)", RZ_OUTPUT_MODE_QUIETEST },
-	{ "k", " (sdb mode)", RZ_OUTPUT_MODE_SDB },
-	{ "l", " (verbose mode)", RZ_OUTPUT_MODE_LONG },
-	{ "J", " (verbose JSON mode)", RZ_OUTPUT_MODE_LONG_JSON },
-	{ "t", " (table mode)", RZ_OUTPUT_MODE_TABLE },
-	{ "g", " (graph mode)", RZ_OUTPUT_MODE_GRAPH },
+	{ "", "", "standard", RZ_OUTPUT_MODE_STANDARD },
+	{ "j", " (JSON mode)", "json", RZ_OUTPUT_MODE_JSON },
+	{ "q", " (quiet mode)", "quiet", RZ_OUTPUT_MODE_QUIET },
+	{ "Q", " (quietest mode)", "quietest", RZ_OUTPUT_MODE_QUIETEST },
+	{ "k", " (sdb mode)", "sdb", RZ_OUTPUT_MODE_SDB },
+	{ "l", " (verbose mode)", "long", RZ_OUTPUT_MODE_LONG },
+	{ "J", " (verbose JSON mode)", "long_json", RZ_OUTPUT_MODE_LONG_JSON },
+	{ "t", " (table mode)", "table", RZ_OUTPUT_MODE_TABLE },
+	{ "g", " (graph mode)", "graph", RZ_OUTPUT_MODE_GRAPH },
 };
 
 RZ_IPI int rz_output_mode_to_char(RzOutputMode mode) {
@@ -1501,16 +1502,11 @@ static void fill_details_json(const RzCmdDescDetail *details, PJ *j) {
  *
  * \return returns false if an invalid argument was given, otherwise true.
  */
-RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
-	rz_return_val_if_fail(cmd && cd && j, false);
-	pj_ko(j, cd->name);
-	pj_ks(j, "cmd", cd->name);
-	const char *type = "unknown";
-	switch (cd->type) {
+static const char *cmd_desc_type_name(RzCmdDescType type) {
+	switch (type) {
 #define CASE_CDTYPE(x, y) \
 	case (x): \
-		type = (y); \
-		break
+		return (y)
 		CASE_CDTYPE(RZ_CMD_DESC_TYPE_ARGV, "argv");
 		CASE_CDTYPE(RZ_CMD_DESC_TYPE_GROUP, "group");
 		CASE_CDTYPE(RZ_CMD_DESC_TYPE_INNER, "inner");
@@ -1519,9 +1515,15 @@ RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
 		CASE_CDTYPE(RZ_CMD_DESC_TYPE_ARGV_STATE, "argv_state");
 #undef CASE_CDTYPE
 	default:
-		break;
+		return "unknown";
 	}
-	pj_ks(j, "type", type);
+}
+
+RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
+	rz_return_val_if_fail(cmd && cd && j, false);
+	pj_ko(j, cd->name);
+	pj_ks(j, "cmd", cd->name);
+	pj_ks(j, "type", cmd_desc_type_name(cd->type));
 	if (cd->help->args_str) {
 		pj_ks(j, "args_str", cd->help->args_str);
 	} else {
@@ -1536,6 +1538,127 @@ RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
 	pj_ks(j, "summary", rz_str_get(cd->help->summary));
 	fill_details_json(cd->help->details, j);
 	pj_end(j);
+	return true;
+}
+
+static void cmd_desc_foreach_tree(RzCmd *cmd, RzCmdDesc *cd, RzCmdDescVisitCb pre, RzCmdDescVisitCb post, void *user) {
+	if (!cd) {
+		return;
+	}
+	if (pre) {
+		pre(cmd, cd, user);
+	}
+
+	void **it_cd;
+	rz_cmd_desc_children_foreach(cd, it_cd) {
+		RzCmdDesc *child = *it_cd;
+		cmd_desc_foreach_tree(cmd, child, pre, post, user);
+	}
+
+	if (post) {
+		post(cmd, cd, user);
+	}
+}
+
+/**
+ * \brief Visit every real command descriptor in a subtree.
+ *
+ * The pre callback is called before visiting children. The post callback is
+ * called after all children have been visited. Traversal starts at the root descriptor.
+ */
+RZ_API void rz_cmd_desc_foreach_tree(RzCmd *cmd, RzCmdDescVisitCb pre, RzCmdDescVisitCb post, void *user) {
+	rz_return_if_fail(cmd);
+	cmd_desc_foreach_tree(cmd, rz_cmd_get_root(cmd), pre, post, user);
+}
+
+/**
+ * \brief Visit every real command descriptor in a subtree.
+ *
+ * The pre callback is called before visiting children. The post callback is
+ * called after all children have been visited. Traversal starts at \p begin.
+ */
+RZ_API void rz_cmd_desc_foreach_tree_from(RzCmd *cmd, RzCmdDesc *begin, RzCmdDescVisitCb pre, RzCmdDescVisitCb post, void *user) {
+	rz_return_if_fail(cmd && begin);
+	cmd_desc_foreach_tree(cmd, begin, pre, post, user);
+}
+
+static void cmd_tree_json_modes(PJ *j, const RzCmdDesc *cd) {
+	RzCmdDesc *exec_cd = rz_cmd_desc_get_exec((RzCmdDesc *)cd);
+	pj_ka(j, "modes");
+	if (exec_cd) {
+		int modes = 0;
+		switch (exec_cd->type) {
+		case RZ_CMD_DESC_TYPE_ARGV_MODES:
+			modes = exec_cd->d.argv_modes_data.modes;
+			break;
+		case RZ_CMD_DESC_TYPE_ARGV_STATE:
+			modes = exec_cd->d.argv_state_data.modes;
+			break;
+		default:
+			break;
+		}
+		for (size_t i = 0; i < RZ_ARRAY_SIZE(argv_modes); i++) {
+			if (modes & argv_modes[i].mode) {
+				pj_s(j, argv_modes[i].name);
+			}
+		}
+	}
+	pj_end(j);
+}
+
+typedef struct cmd_tree_json_t {
+	PJ *j;
+	RzStrBuf *args;
+} CmdTreeJson;
+
+static void cmd_tree_json_pre(RzCmd *cmd, const RzCmdDesc *cd, void *user) {
+	CmdTreeJson *ctx = user;
+	PJ *j = ctx->j;
+	pj_o(j);
+	pj_ks(j, "cmd", cd->name);
+	pj_ks(j, "type", cmd_desc_type_name(cd->type));
+	pj_ks(j, "summary", rz_str_get(cd->help->summary));
+	pj_ks(j, "description", rz_str_get(cd->help->description));
+	if (cd->help->args_str) {
+		pj_ks(j, "args_str", cd->help->args_str);
+	} else {
+		rz_strbuf_set(ctx->args, "");
+		fill_args(ctx->args, cd);
+		pj_ks(j, "args_str", rz_strbuf_get(ctx->args));
+	}
+	fill_args_json(cmd, cd, j);
+	fill_details_json(cd->help->details, j);
+	pj_kb(j, "executable", rz_cmd_desc_has_handler(cd));
+	pj_ki(j, "n_children", cd->n_children);
+	cmd_tree_json_modes(j, cd);
+	pj_ka(j, "children");
+}
+
+static void cmd_tree_json_post(RZ_UNUSED RzCmd *cmd, RZ_UNUSED const RzCmdDesc *cd, void *user) {
+	CmdTreeJson *ctx = user;
+	PJ *j = ctx->j;
+	pj_end(j);
+	pj_end(j);
+}
+
+/**
+ * \brief Generates a recursive JSON representation of the real command descriptor tree.
+ */
+RZ_API bool rz_cmd_get_tree_json(RzCmd *cmd, PJ *j) {
+	rz_return_val_if_fail(cmd && j, false);
+	RzStrBuf args;
+	rz_strbuf_init(&args);
+	CmdTreeJson ctx = {
+		.j = j,
+		.args = &args,
+	};
+	pj_o(j);
+	pj_ki(j, "version", 1);
+	pj_ks(j, "generated_from", "runtime");
+	pj_k(j, "root");
+	rz_cmd_desc_foreach_tree(cmd, cmd_tree_json_pre, cmd_tree_json_post, &ctx);
+	pj_end(j);
+	rz_strbuf_fini(&args);
 	return true;
 }
 
