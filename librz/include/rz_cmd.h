@@ -515,6 +515,7 @@ typedef struct rz_cmd_descriptor_t {
 } RzCmdDescriptor;
 
 typedef bool (*RzCmdForeachNameCb)(RzCmd *cmd, const RzCmdDesc *desc, void *user);
+typedef void (*RzCmdDescVisitCb)(RzCmd *cmd, const RzCmdDesc *desc, void *user);
 typedef bool (*RzCmdForeachMacroCb)(RzCmd *cmd, const RzCmdMacro *macro, void *user);
 
 #ifdef RZ_API
@@ -530,6 +531,7 @@ RZ_API RzCmdDesc *rz_cmd_get_desc(RzCmd *cmd, const char *cmd_identifier);
 RZ_API RzCmdDesc *rz_cmd_get_desc_best(RzCmd *cmd, const char *cmd_identifier);
 RZ_API RZ_OWN char *rz_cmd_get_help(RZ_BORROW RzCmd *cmd, RZ_BORROW RzCmdParsedArgs *args, bool use_color, int gutter_size);
 RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j);
+RZ_API bool rz_cmd_get_tree_json(RzCmd *cmd, PJ *j);
 RZ_API bool rz_cmd_get_help_strbuf(RzCmd *cmd, const RzCmdDesc *cd, bool use_color, RzStrBuf *sb, int gutter_size);
 
 static inline RzCmdStatus rz_cmd_int2status(int v) {
@@ -571,6 +573,8 @@ RZ_API RzCmdDesc *rz_cmd_desc_get_exec(RzCmdDesc *cd);
 RZ_API bool rz_cmd_desc_set_default_mode(RzCmdDesc *cd, RzOutputMode mode);
 RZ_API bool rz_cmd_desc_has_handler(const RzCmdDesc *cd);
 RZ_API bool rz_cmd_desc_remove(RzCmd *cmd, RzCmdDesc *cd);
+RZ_API void rz_cmd_desc_foreach_tree(RzCmd *cmd, RzCmdDescVisitCb pre, RzCmdDescVisitCb post, void *user);
+RZ_API void rz_cmd_desc_foreach_tree_from(RzCmd *cmd, RzCmdDesc *begin, RzCmdDescVisitCb pre, RzCmdDescVisitCb post, void *user);
 RZ_API void rz_cmd_foreach_cmdname(RzCmd *cmd, RzCmdDesc *begin, RzCmdForeachNameCb cb, void *user);
 RZ_API const RzCmdDescArg *rz_cmd_desc_get_arg(const RzCmdDesc *cd, size_t i);
 

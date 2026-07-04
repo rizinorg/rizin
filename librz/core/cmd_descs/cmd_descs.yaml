@@ -160,6 +160,10 @@ commands:
     summary: Search help commands
     type: RZ_CMD_DESC_TYPE_GROUP
     subcommands: cmd_help
+  - name: "?+j"
+    cname: cmd_catalog_json
+    summary: Export full command catalog as JSON
+    args: []
   - name: "%"
     cname: cmd_math
     summary: Math commands

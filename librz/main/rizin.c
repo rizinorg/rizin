@@ -126,6 +126,7 @@ static int main_help(RZ_BORROW RZ_NONNULL RzCore *core, int line) {
 			"-B",          "baddr",     "Set base address for PIE binaries",
 			"-c",          "'cmd..'",   "Execute rizin command",
 			"-C",          "",          "File is host:port (alias for -cR+http://%%s/cmd/)",
+			"--cmd-catalog", "[json]",  "Print command tree catalog and exit",
 			"-d",          "",          "Debug the executable 'file' or running process 'pid'",
 			"-D",          "backend",   "Enable debug mode (e cfg.debug=true)",
 			"-e",          "k=v",       "Evaluate config var",
@@ -444,6 +445,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	ut64 baddr = UT64_MAX;
 	ut64 seek = UT64_MAX;
 	bool do_list_io_plugins = false;
+	bool do_print_cmd_tree_json = false;
 	char *file = NULL;
 	char *pfile = NULL;
 	char *gdb_downloaded_exe = NULL;
@@ -532,6 +534,38 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	char *debugbackend = rz_str_dup("native");
 
 	RzGetopt opt;
+	for (int i = 1; i < argc; i++) {
+		bool remove_arg = false;
+		bool remove_next_arg = false;
+		if (!strcmp(argv[i], "--cmd-catalog")) {
+			do_print_cmd_tree_json = true;
+			remove_arg = true;
+			if (i + 1 < argc && argv[i + 1][0] != '-') {
+				if (strcmp(argv[i + 1], "json")) {
+					RZ_LOG_ERROR("Unsupported command catalog format '%s'\n", argv[i + 1]);
+					ret = 1;
+					goto beach;
+				}
+				remove_next_arg = true;
+			}
+		} else if (!strcmp(argv[i], "--cmd-catalog=json")) {
+			do_print_cmd_tree_json = true;
+			remove_arg = true;
+		} else if (rz_str_startswith(argv[i], "--cmd-catalog=")) {
+			RZ_LOG_ERROR("Unsupported command catalog format '%s'\n", argv[i] + strlen("--cmd-catalog="));
+			ret = 1;
+			goto beach;
+		}
+		if (remove_arg) {
+			int n_remove = remove_next_arg ? 2 : 1;
+			for (int j = i; j + n_remove < argc; j++) {
+				argv[j] = argv[j + n_remove];
+			}
+			argc -= n_remove;
+			i--;
+		}
+	}
+
 	rz_getopt_init(&opt, argc, argv, "=012AMCwxfF:H:hm:E:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt");
 	while (argc >= 2 && (c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
@@ -957,6 +991,27 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_core_parse_rizinrc(r);
 	} else {
 		rz_config_set(r->config, "scr.utf8", "false");
+	}
+
+	if (do_print_cmd_tree_json) {
+		PJ *pj = pj_new();
+		if (!pj || !rz_cmd_get_tree_json(r->rcmd, pj)) {
+			pj_free(pj);
+			RZ_LOG_ERROR("Cannot build command tree JSON\n");
+			LISTS_FREE();
+			RZ_FREE(pfile);
+			RZ_FREE(debugbackend);
+			ret = 1;
+			goto beach;
+		}
+		rz_cons_printf("%s\n", pj_string(pj));
+		pj_free(pj);
+		rz_cons_flush();
+		LISTS_FREE();
+		RZ_FREE(pfile);
+		RZ_FREE(debugbackend);
+		ret = 0;
+		goto beach;
 	}
 
 	if (pfile && rz_file_is_directory(pfile)) {

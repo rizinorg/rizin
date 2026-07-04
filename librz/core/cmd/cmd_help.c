@@ -117,6 +117,18 @@ error:
 	goto beach;
 }
 
+// "?+j"
+RZ_IPI RzCmdStatus rz_cmd_catalog_json_handler(RzCore *core, int argc, const char **argv) {
+	PJ *pj = pj_new();
+	if (!pj || !rz_cmd_get_tree_json(core->rcmd, pj)) {
+		pj_free(pj);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_println(pj_string(pj));
+	pj_free(pj);
+	return RZ_CMD_STATUS_OK;
+}
+
 // "?*"
 RZ_IPI RzCmdStatus rz_cmd_help_search_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	RzCmdStatus status = RZ_CMD_STATUS_OK;

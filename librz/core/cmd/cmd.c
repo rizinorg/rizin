@@ -1447,7 +1447,10 @@ fail:
 
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_stmt) {
 	size_t node_str_len = strlen(node_string);
-	if (node_str_len >= 2 && !strcmp(node_string + node_str_len - 2, "?*")) {
+	if (RZ_STR_EQ(node_string, "?+j")) {
+		const char *argv[1] = { node_string };
+		return rz_cmd_catalog_json_handler(state->core, 1, argv);
+	} else if (node_str_len >= 2 && !strcmp(node_string + node_str_len - 2, "?*")) {
 		node_string[node_str_len - 2] = 0;
 		const char *argv[2] = { NULL, node_string };
 		int argc = node_str_len > 2 ? 2 : 1;
