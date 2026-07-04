@@ -1,0 +1,22 @@
+# TMS320C66x (fixed + floating-point VLIW, C674x superset) native disassembler
+# Instruction words are little-endian; addresses are the packet PCE1.
+# C66x-only forms: 64-bit DADD/DSUB, quad and complex-matrix multiplies,
+# 4-way dot products, the Galois multiplies and the reciprocal-root estimate.
+# Every vector is cross-checked against TI dis6x (c6000 v7.4.4).
+d "dadd .l1 a1:a0,a3:a2,a5:a4" 78000812 0x0
+d "dsub .l1 a1:a0,a3:a2,a5:a4" f8000812 0x0
+d "dadd .l1x a1:a0,b3:b2,a5:a4" 78100812 0x0
+d "dmpysp .m1 a1:a0,a3:a2,a5:a4" 000e0812 0x0
+d "qmpy32 .m1 a3:a2:a1:a0,a7:a6:a5:a4,a11:a10:a9:a8" 00081014 0x0
+d "qmpysp .m1 a3:a2:a1:a0,a7:a6:a5:a4,a11:a10:a9:a8" 800e1014 0x0
+d "dotp4h .m1 a1:a0,a3:a2,a4" b0010812 0x0
+d "dotpsu4h .m1 a1:a0,a3:a2,a4" 70010812 0x0
+d "cmatmpy .m1 a1:a0,a7:a6:a5:a4,a11:a10:a9:a8" 00820014 0x0
+d "cmatmpyr1 .m1 a1:a0,a7:a6:a5:a4,a9:a8" 00830014 0x0
+d "gmpy .m1 a0,a1,a2" f0070411 0x0
+d "gmpy4 .m1 a0,a1,a2" 70040401 0x0
+d "xormpy .m1 a0,a1,a2" f0060411 0x0
+d "rsqrdp .s1 a1:a0,a3:a2" a00b0401 0x0
+d "dcmpyr1 .m1 a1:a0,a3:a2,a5:a4" 70030812 0x0
+d "dccmpyr1 .m1 a1:a0,a3:a2,a5:a4" b0030812 0x0
+d "qsmpy32r1 .m1 a3:a2:a1:a0,a7:a6:a5:a4,a11:a10:a9:a8" b0061014 0x0

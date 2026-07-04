@@ -1,0 +1,49 @@
+# TMS320C64x/C64x+ (fixed-point SIMD VLIW) native disassembler
+# Instruction words are little-endian; addresses are the packet PCE1.
+# Vectors are cross-checked against TI dis6x (c6000 v7.4.4).
+# Doubleword loads/stores move register pairs (C64x+ / C67x, not C62x).
+d "lddw .d2 *+b15[0x2],a13:a12" e4433c06 0x0
+d "stdw .d2 a11:a10,*+b15[0x1]" c5233c05 0x0
+d "ldndw .d2 *b4,b11:b10" a6039005 0x0
+# MVK.L: the ABS opfield reused for a signed 5-bit constant move (C64x+).
+d "[!b0] mvk .l1 1,a0" 59a30430 0x0
+d "[a1] mvk .l1 0,a0" 58a30080 0x0
+# MV on .S/.D (OR-with-zero on those units, C64x+), collapsed to the mv alias.
+d "mv .s1 a0,a1" a1068000 0x0
+d "mv .d1 a0,a2" f1080001 0x0
+# .D-unit extended logical/arith (C64x+): src2, src1, dst order.
+d "and .d2 -0x8,b15,b15" f209bf07 0x0
+d "or .d1x a3,b4,a4" b0781002 0x0
+d "andn .d2 b7,b5,b6" 33e81403 0x0
+d "xor .d2 0x1,b0,b13" f22b8006 0x0
+# .D address arithmetic: ADDAD scales src1 by 8; ADDAW by 4. src2, src1, dst.
+d "addad .d2 b15,0x4,b4" c29e3c02 0x0
+d "addaw .d1 a4,a3,a6" 417c1003 0x0
+# Plain .D add/sub also print src2, src1, dst with the short constant unsigned.
+d "sub .d2 b15,0x10,b15" c209be07 0x0
+# MVK on the .D unit (C64x+): 5-bit signed constant move (op-0 slot).
+d "mvk .d2 0,b4" 43000002 0x0
+d "[b0] mvk .d1 0,a12" 40000026 0x0
+# ANDN on .L (cross-path form).
+d "andn .l1x a4,b4,a0" 989f1000 0x0
+# ADDKPC (.S2, C64x+): dst = PCE1 + scst7*4; target shown as an address.
+d "addkpc .s2 0x54,b3,0" 62018501 0x4c
+d "addkpc .s2 0x40,b3,2" 62418801 0x34
+# BDEC (.S, C64x+): register-conditional loop branch, target = PCE1 + scst10*4.
+d "[a0] bdec .s1 0x18c,a0" 217000c0 0x19c
+# MVD (.M, C64x+): 4-cycle register move.
+d "mvd .m1 a0,a0" f0400300 0x0
+# SUB on .L with the cross-path src1 (xsint form).
+d "sub .l2x a4,b4,b4" fa921002 0x0
+# SUBAW on .D with a ucst5 offset.
+d "[!b0] subaw .d2 b4,0x19,b4" c33d1332 0x0
+# SHL on .S of a 40-bit long (register pairs); value prints before the count.
+d "shl .s2 b9:b8,0x3,b7:b6" 226c2003 0x0
+# Long (40-bit) compare on .L: src2 is a register pair, dst a single.
+d "cmpgt .l1 0x0,a5:a4,a0" 98081000 0x0
+# B IRP (.S2): return from a maskable interrupt (branch to the IRP register).
+d "b .s2 irp" e2001800 0x0
+# ANDN on .S in the extended (bits[5:2]==1100) format.
+d "andn .s1 a5,a4,a5" b0ad9002 0x0
+# MPYLI (.M, C64x+): 16x32 -> 64 multiply, writing a register pair.
+d "mpyli .m2 b6,b5,b7:b6" 73c51403 0x0
