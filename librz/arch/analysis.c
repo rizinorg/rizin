@@ -1143,8 +1143,8 @@ RZ_API void rz_analysis_noreturn_drop(RzAnalysis *analysis, const char *expr) {
 	Sdb *NDB = analysis->sdb_noret;
 	expr = rz_str_trim_head_ro(expr);
 	const char *fcnname = NULL;
-	if (!strncmp(expr, "0x", 2)) {
-		ut64 n = rz_num_math(NULL, expr);
+	ut64 n = analysis->coreb.core ? analysis->coreb.numGet(analysis->coreb.core, expr) : rz_num_math(NULL, expr);
+	if (n) {
 		sdb_noret_addr_unset(NDB, n);
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(analysis, n, -1);
 		if (!fcn) {
@@ -1156,7 +1156,6 @@ RZ_API void rz_analysis_noreturn_drop(RzAnalysis *analysis, const char *expr) {
 		fcnname = expr;
 	}
 	sdb_noret_func_unset(NDB, fcnname);
-	return;
 }
 
 static bool rz_analysis_is_noreturn(RzAnalysis *analysis, const char *name) {
