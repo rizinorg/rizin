@@ -1592,7 +1592,7 @@ RZ_IPI void rz_core_debug_bp_add(RzCore *core, ut64 addr, const char *arg_perm, 
 			rz_bp_item_set_name(bpi, name);
 			free(name);
 		} else {
-			bpi->name = rz_str_dup(f->name);
+			rz_bp_item_set_name(bpi, f->name);
 		}
 	} else {
 		char *name = rz_str_newf("0x%08" PFMT64x, addr);
