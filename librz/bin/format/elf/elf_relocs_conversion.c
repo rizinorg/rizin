@@ -1531,6 +1531,62 @@ static RzBinReloc *reloc_convert_avr(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 	}
 }
 
+// TMS320C6000 EABI. The relocation types and the value each computes are
+// SPRAB89 Table 13-5, and the field each writes is Table 13-6:
+// "C6000 Embedded Application Binary Interface", SPRAB89B, revised August 2025.
+// https://web.archive.org/web/20260906194722/https://www.ti.com/lit/an/sprab89b/sprab89b.pdf
+//
+// Data relocations (ABS8/16/32) resolve to a flat symbol value; the many
+// instruction-field relocations (MVKL/MVKH halves, static-base and PC-relative
+// displacements) patch a bit field inside a 32-bit opcode, so they are exposed
+// with their width but no directly resolvable value. Framing and attribute
+// relocations (ALIGN/FPHEAD/NOCMP) patch nothing.
+static RzBinReloc *reloc_convert_c6000(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
+	ut64 P = rel->vaddr;
+
+	switch (rel->type) {
+	case R_C6000_NONE:
+		return reloc_convert_set(bin, rel, 0, "R_C6000_NONE");
+	case R_C6000_ABS32: ADD(32, 0, "R_C6000_ABS32", RZ_RELOC_BASE_SYMBOL);
+	case R_C6000_ABS16: ADD(16, 0, "R_C6000_ABS16", RZ_RELOC_BASE_SYMBOL);
+	case R_C6000_ABS8: ADD(8, 0, "R_C6000_ABS8", RZ_RELOC_BASE_SYMBOL);
+	case R_C6000_PCR_S21: SET(32, "R_C6000_PCR_S21");
+	case R_C6000_PCR_S12: SET(16, "R_C6000_PCR_S12");
+	case R_C6000_PCR_S10: SET(16, "R_C6000_PCR_S10");
+	case R_C6000_PCR_S7: SET(16, "R_C6000_PCR_S7");
+	case R_C6000_PCR_H16: SET(16, "R_C6000_PCR_H16");
+	case R_C6000_PCR_L16: SET(16, "R_C6000_PCR_L16");
+	case R_C6000_ABS_S16: SET(16, "R_C6000_ABS_S16");
+	case R_C6000_ABS_L16: SET(16, "R_C6000_ABS_L16");
+	case R_C6000_ABS_H16: SET(16, "R_C6000_ABS_H16");
+	case R_C6000_SBR_U15_B: ADD(16, 0, "R_C6000_SBR_U15_B", RZ_RELOC_BASE_SYMBOL);
+	case R_C6000_SBR_U15_H: ADD(16, 0, "R_C6000_SBR_U15_H", RZ_RELOC_BASE_SYMBOL);
+	case R_C6000_SBR_U15_W: ADD(16, 0, "R_C6000_SBR_U15_W", RZ_RELOC_BASE_SYMBOL);
+	case R_C6000_SBR_S16: ADD(16, 0, "R_C6000_SBR_S16", RZ_RELOC_BASE_SYMBOL);
+	case R_C6000_SBR_L16_B: ADD(16, 0, "R_C6000_SBR_L16_B", RZ_RELOC_BASE_SYMBOL);
+	case R_C6000_SBR_L16_H: ADD(16, 0, "R_C6000_SBR_L16_H", RZ_RELOC_BASE_SYMBOL);
+	case R_C6000_SBR_L16_W: ADD(16, 0, "R_C6000_SBR_L16_W", RZ_RELOC_BASE_SYMBOL);
+	case R_C6000_SBR_H16_B: ADD(16, 0, "R_C6000_SBR_H16_B", RZ_RELOC_BASE_SYMBOL);
+	case R_C6000_SBR_H16_H: ADD(16, 0, "R_C6000_SBR_H16_H", RZ_RELOC_BASE_SYMBOL);
+	case R_C6000_SBR_H16_W: ADD(16, 0, "R_C6000_SBR_H16_W", RZ_RELOC_BASE_SYMBOL);
+	case R_C6000_SBR_GOT_U15_W: SET(16, "R_C6000_SBR_GOT_U15_W");
+	case R_C6000_SBR_GOT_L16_W: SET(16, "R_C6000_SBR_GOT_L16_W");
+	case R_C6000_SBR_GOT_H16_W: SET(16, "R_C6000_SBR_GOT_H16_W");
+	case R_C6000_DSBT_INDEX: SET(16, "R_C6000_DSBT_INDEX");
+	case R_C6000_PREL31: ADD(32, -P, "R_C6000_PREL31", RZ_RELOC_BASE_SYMBOL);
+	case R_C6000_COPY: ADD(32, 0, "R_C6000_COPY", RZ_RELOC_BASE_UNKNOWN);
+	case R_C6000_JUMP_SLOT: SET(32, "R_C6000_JUMP_SLOT");
+	case R_C6000_EHTYPE: SET(32, "R_C6000_EHTYPE");
+	case R_C6000_ALIGN:
+		return reloc_convert_set(bin, rel, 0, "R_C6000_ALIGN");
+	case R_C6000_FPHEAD:
+		return reloc_convert_set(bin, rel, 0, "R_C6000_FPHEAD");
+	case R_C6000_NOCMP:
+		return reloc_convert_set(bin, rel, 0, "R_C6000_NOCMP");
+	default: UNSUPP("C6000");
+	}
+}
+
 #undef UNSUPP
 #undef UNHANDL
 #undef SET
@@ -1683,7 +1739,7 @@ RZ_OWN RzBinReloc *Elf_(rz_bin_elf_convert_relocation)(RZ_NONNULL ELFOBJ *bin, R
 	case EM_VIDEOCORE3: ARCH_MISSING("EM_VIDEOCORE3");
 	case EM_LATTICEMICO32: ARCH_MISSING("EM_LATTICEMICO32");
 	case EM_SE_C17: ARCH_MISSING("EM_SE_C17");
-	case EM_TI_C6000: ARCH_MISSING("EM_TI_C6000");
+	case EM_TI_C6000: return reloc_convert_c6000(bin, rel, GOT);
 	case EM_TI_C2000: ARCH_MISSING("EM_TI_C2000");
 	case EM_TI_C5500: ARCH_MISSING("EM_TI_C5500");
 	case EM_TI_ARP32: ARCH_MISSING("EM_TI_ARP32");
