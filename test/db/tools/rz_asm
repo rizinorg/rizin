@@ -667,7 +667,11 @@ c2x             Texas Instruments TMS320C2x legacy fixed-point DSP family
 c5x             Texas Instruments TMS320C5x fixed-point DSP family (C2x-compatible superset)
 c55x            Texas Instruments TMS320C55x DSP family
 c55x+           Texas Instruments TMS320C55x+ DSP family
-c64x            Texas Instruments TMS320C64x DSP family
+c62x            Texas Instruments TMS320C62x fixed-point VLIW DSP family
+c64x            Texas Instruments TMS320C64x/C64x+ fixed-point VLIW DSP family
+c67x            Texas Instruments TMS320C67x/C67x+ floating-point VLIW DSP family
+c674x           Texas Instruments TMS320C674x unified fixed/floating-point DSP family
+c66x            Texas Instruments TMS320C66x VLIW DSP family
 EOF
 RUN
 

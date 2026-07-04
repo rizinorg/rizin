@@ -1,8 +1,8 @@
-NAME=320c64 OPEX
+NAME=320c64 OPEX (capstone)
 FILE=malloc://512280
 CMDS=<<EOF
 e asm.arch=tms320
-e asm.cpu=c64x
+e asm.cpu=c64x-capstone
 e cfg.bigendian=true
 wx 0041bd10
 aoj~{}
@@ -43,11 +43,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=320c64 pseudo
+NAME=320c64 pseudo (capstone)
 FILE=bins/elf/ld-2.27.so
 CMDS=<<EOF
 e asm.arch=tms320
-e asm.cpu=c64x
+e asm.cpu=c64x-capstone
 e cfg.bigendian=true
 e asm.pseudo=true
 pi 0x100~=
@@ -218,10 +218,13 @@ arp
 EOF
 EXPECT=<<EOF
 =PC	pce1
+=SP	b15
+=BP	a15
+=SR	csr
 =A0	a4
 =A1	b4
 =A2	a6
-=A3	a6
+=A3	b6
 =A4	a8
 =A5	b8
 =A6	a10
@@ -304,54 +307,54 @@ ctr isr     .32 284 0  # Interrupt set register
 ctr istp    .32 288 0  # Interrupt service table pointer register
 ctr nrp     .32 292 0  # Nonmaskable interrupt return pointer register
 ctr pce1    .32 296 0  # Program counter, E1 phase
-ctr dier    .32 300 0  # (C64x+ only) Debug interrupt enable register
-ctr dnum    .32 304 0  # (C64x+ only) DSP core number register
-ctr ecr     .32 308 0  # (C64x+ only) Exception clear register
-ctr efr     .32 312 0  # (C64x+ only) Exception flag register
-ctr gplya   .32 316 0  # (C64x+ only) GMPY A-side polynomial register
-ctr gplyb   .32 320 0  # (C64x+ only) GMPY B-side polynomial register
-ctr ierr    .32 324 0  # (C64x+ only) Internal exception report register
-ctr ilc     .32 328 0  # (C64x+ only) Inner loop count register
-ctr itsr    .32 332 0  # (C64x+ only) Interrupt task state register
-ctr ntsr    .32 336 0  # (C64x+ only) NMI/Exception task state register
-ctr rep     .32 340 0  # (C64x+ only) Restricted entry point address register
-ctr rilc    .32 344 0  # (C64x+ only) Reload inner loop count register
-ctr ssr     .32 348 0  # (C64x+ only) Saturation status register
-ctr tsch    .32 352 0  # (C64x+ only) Time-stamp counter (high 32) register
-ctr tscl    .32 356 0  # (C64x+ only) Time-stamp counter (low 32) register
-ctr tsr     .32 360 0  # (C64x+ only) Task state register
-gpr	a0:a1 	.64	364	0
-gpr	a2:a3 	.64	368	0
-gpr	a4:a5 	.64	372	0
-gpr	a6:a7 	.64	376	0
-gpr	a8:a9 	.64	380	0
-gpr	a10:a11	.64	384	0
-gpr	a12:a13	.64	388	0
-gpr	a14:a15	.64	392	0
-gpr	a16:a17	.64	396	0
-gpr	a18:a19	.64	400	0
-gpr	a20:a21	.64	404	0
-gpr	a22:a23	.64	408	0
-gpr	a24:a25	.64	412	0
-gpr	a26:a27	.64	416	0
-gpr	a28:a29	.64	420	0
-gpr	a30:a31	.64	424	0
-gpr	b0:b1 	.64	428	0
-gpr	b2:b3 	.64	432	0
-gpr	b4:b5 	.64	436	0
-gpr	b6:b7 	.64	440	0
-gpr	b8:b9 	.64	444	0
-gpr	b10:b11	.64	448	0
-gpr	b12:b13	.64	452	0
-gpr	b14:b15	.64	456	0
-gpr	b16:b17	.64	460	0
-gpr	b18:b19	.64	464	0
-gpr	b20:b21	.64	468	0
-gpr	b22:b23	.64	472	0
-gpr	b24:b25	.64	476	0
-gpr	b26:b27	.64	480	0
-gpr	b28:b29	.64	484	0
-gpr	b30:b31	.64	488	0
+ctr dier    .32 300 0  # Debug interrupt enable register
+ctr dnum    .32 304 0  # DSP core number register
+ctr ecr     .32 308 0  # Exception clear register
+ctr efr     .32 312 0  # Exception flag register
+ctr gplya   .32 316 0  # GMPY A-side polynomial register
+ctr gplyb   .32 320 0  # GMPY B-side polynomial register
+ctr ierr    .32 324 0  # Internal exception report register
+ctr ilc     .32 328 0  # Inner loop count register
+ctr itsr    .32 332 0  # Interrupt task state register
+ctr ntsr    .32 336 0  # NMI/Exception task state register
+ctr rep     .32 340 0  # Restricted entry point address register
+ctr rilc    .32 344 0  # Reload inner loop count register
+ctr ssr     .32 348 0  # Saturation status register
+ctr tsch    .32 352 0  # Time-stamp counter (high 32) register
+ctr tscl    .32 356 0  # Time-stamp counter (low 32) register
+ctr tsr     .32 360 0  # Task state register
+gpr	a0:a1  	.64	0	0
+gpr	a2:a3  	.64	8	0
+gpr	a4:a5  	.64	16	0
+gpr	a6:a7  	.64	24	0
+gpr	a8:a9  	.64	32	0
+gpr	a10:a11	.64	40	0
+gpr	a12:a13	.64	48	0
+gpr	a14:a15	.64	56	0
+gpr	a16:a17	.64	64	0
+gpr	a18:a19	.64	72	0
+gpr	a20:a21	.64	80	0
+gpr	a22:a23	.64	88	0
+gpr	a24:a25	.64	96	0
+gpr	a26:a27	.64	104	0
+gpr	a28:a29	.64	112	0
+gpr	a30:a31	.64	120	0
+gpr	b0:b1  	.64	128	0
+gpr	b2:b3  	.64	136	0
+gpr	b4:b5  	.64	144	0
+gpr	b6:b7  	.64	152	0
+gpr	b8:b9  	.64	160	0
+gpr	b10:b11	.64	168	0
+gpr	b12:b13	.64	176	0
+gpr	b14:b15	.64	184	0
+gpr	b16:b17	.64	192	0
+gpr	b18:b19	.64	200	0
+gpr	b20:b21	.64	208	0
+gpr	b22:b23	.64	216	0
+gpr	b24:b25	.64	224	0
+gpr	b26:b27	.64	232	0
+gpr	b28:b29	.64	240	0
+gpr	b30:b31	.64	248	0
 
 EOF
 RUN
