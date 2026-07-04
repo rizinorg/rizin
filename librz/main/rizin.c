@@ -31,7 +31,7 @@ static char *download_gdb_remote_file(RzIODesc *iod, const char *remote_path) {
 		return NULL;
 	}
 	close(fd);
-	if (!rz_io_gdb_download_file(iod, remote_path, local_path)) {
+	if (!rz_io_desc_download_file(iod, remote_path, local_path)) {
 		rz_file_rm(local_path);
 		RZ_FREE(local_path);
 	}

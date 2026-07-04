@@ -15,6 +15,9 @@
 
 #define RZ_GDB_MAGIC rz_str_djb2_hash("gdb")
 
+#define MIN_DOWNLOAD_CHUNK 64
+#define MAX_DOWNLOAD_CHUNK 65536
+
 static int __close(RzIODesc *fd);
 
 static bool __plugin_open(RzIO *io, const char *file, bool many) {
@@ -209,19 +212,20 @@ extern int read_packet(libgdbr_t *instance, bool vcont);
 
 static bool gdbr_download_file(libgdbr_t *g, const char *remote, const char *local) {
 	rz_return_val_if_fail(g && remote && local, false);
-
+	// empty the destination file by writing nothing in non-append mode
 	if (!rz_file_dump(local, NULL, 0, false)) {
 		return false;
 	}
-
+	// open the remote file on the stub side
 	if (gdbr_open_file(g, remote, O_RDONLY, 0) < 0) {
 		return false;
 	}
 
 	uint32_t off = 0;
 	bool ok = true;
-	ut32 chunk = RZ_MAX(64, g->stub_features.pkt_sz / 2);
-	chunk = RZ_MIN(chunk, 65536);
+	// clamp the download size between a reasonable MIN floor and MAX ceiling
+	ut32 chunk = RZ_MAX(MIN_DOWNLOAD_CHUNK, g->stub_features.pkt_sz / 2);
+	chunk = RZ_MIN(chunk, MAX_DOWNLOAD_CHUNK);
 	ut8 *buf = malloc(chunk);
 	if (!buf) {
 		gdbr_close_file(g);
@@ -249,9 +253,8 @@ static bool gdbr_download_file(libgdbr_t *g, const char *remote, const char *loc
 	return ok;
 }
 
-RZ_API bool rz_io_gdb_download_file(RzIODesc *fd, const char *remote, const char *local) {
-	rz_return_val_if_fail(fd && remote && local, false);
-	if (!fd->plugin || strcmp(fd->plugin->name, "gdb")) {
+static bool io_gdb_download_file(RzIO *io, RzIODesc *fd, const char *remote, const char *local) {
+	if (!fd || !fd->data) {
 		return false;
 	}
 	return gdbr_download_file(fd->data, remote, local);
@@ -492,6 +495,7 @@ RzIOPlugin rz_io_plugin_gdb = {
 	.system = __system,
 	.getpid = __getpid,
 	.gettid = __gettid,
+	.download_file = io_gdb_download_file,
 	.isdbg = true
 };
 
