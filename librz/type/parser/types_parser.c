@@ -1212,6 +1212,9 @@ int parse_typedef_node(CParserState *state, TSNode node, const char *text, Parse
 		}
 		// If parsing successfull completed - we store the state
 		if (typedef_pair) {
+			// c_parser_new_typedef() may seed btype->type with a placeholder
+			// identifier; release it before overwriting with the resolved type.
+			rz_type_free(typedef_pair->btype->type);
 			typedef_pair->btype->type = rz_type_clone(type_pair->type);
 			parser_debug(state, "storing typedef \"%s\" -> \"%s\"\n", typedef_name, base_type_name);
 			c_parser_base_type_store(state, typedef_name, typedef_pair);
@@ -1222,9 +1225,16 @@ int parse_typedef_node(CParserState *state, TSNode node, const char *text, Parse
 		}
 		// FIXME: We should return multiple types at once
 		*tpair = typedef_pair;
+		// c_parser_new_typedef()/c_parser_base_type_store() copy the name, so the
+		// declarator string extracted above can be released each iteration.
+		free(typedef_name);
 		typedef_declarator = ts_node_next_named_sibling(typedef_declarator);
 	} while (!ts_node_is_null(typedef_declarator) && is_type_declarator(ts_node_type(typedef_declarator)));
 
+	// The underlying type pair was only needed to derive the typedef target; its
+	// RzBaseType is owned by the parser state, so drop the wrapper and its RzType.
+	rz_type_free(type_pair->type);
+	free(type_pair);
 	return 0;
 }
 
