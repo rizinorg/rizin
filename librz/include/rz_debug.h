@@ -133,11 +133,11 @@ typedef struct rz_debug_reason_t {
 	int /*RzDebugReasonType*/ type;
 	int tid;
 	int signum;
-	RzDebugSignalSource sig_source;
 	ut64 bp_addr;
 	ut64 timestamp;
 	ut64 addr;
 	ut64 ptr;
+	RzDebugSignalSource sig_source;
 } RzDebugReason;
 
 typedef struct rz_debug_map_t {
