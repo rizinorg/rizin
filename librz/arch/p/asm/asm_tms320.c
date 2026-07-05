@@ -10,11 +10,9 @@
 #include <tms320/c54x/c54x.h>
 #include <tms320/c2x/c2x.h>
 #include <tms320/c5x/c5x.h>
-#include <tms320/c64x/c64x.h>
 #include <tms320/c6x/c6x.h>
 
 typedef struct tms_cs_context_t {
-	void *c64x;
 	ut64 c6x_prev_end; ///< address just past the last c6x instruction disassembled
 	bool c6x_prev_par; ///< parallel bit of that instruction (for "||" continuation)
 } TmsContext;
@@ -22,7 +20,7 @@ typedef struct tms_cs_context_t {
 static int tms320_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	TmsContext *ctx = (TmsContext *)a->plugin_data;
 	// The native shared engine handles the whole TMS320C6000 VLIW family
-	// (c62x/c64x/c67x/c674x/c66x); it supersedes the optional capstone c64x path.
+	// (c62x/c64x/c64x+/c67x/c674x/c66x).
 	const C6xArchDesc *c6x = c6x_desc_from_cpu(a->cpu);
 	if (c6x) {
 		C6xInsn insn;
@@ -38,9 +36,6 @@ static int tms320_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int l
 		rz_asm_op_set_asm(op, "invalid");
 		// an unrecognised word still occupies a full instruction slot
 		return op->size = C6X_WORD_SIZE;
-	}
-	if (a->cpu && !rz_str_casecmp(a->cpu, "c64x-capstone")) {
-		return tms320_c64x_disassemble(a, op, buf, len, ctx->c64x);
 	}
 	// C55x / C55x+ / C54x are decoded by the shared decode-IR engine; any other
 	// cpu is unknown.
@@ -86,7 +81,6 @@ static bool tms320_init(void **user) {
 	if (!ctx) {
 		return false;
 	}
-	ctx->c64x = tms320_c64x_new();
 	*user = ctx;
 	return true;
 }
@@ -94,17 +88,8 @@ static bool tms320_init(void **user) {
 static bool tms320_fini(void *user) {
 	rz_return_val_if_fail(user, false);
 	TmsContext *ctx = (TmsContext *)user;
-	tms320_c64x_free(ctx->c64x);
 	free(ctx);
 	return true;
-}
-
-static char *tms320_mnemonics(const RzAsm *a, int id, bool json) {
-	TmsContext *ctx = (TmsContext *)a->plugin_data;
-	if (!a->cpu || rz_str_casecmp(a->cpu, "c64x-capstone")) {
-		return NULL;
-	}
-	return tms320_c64x_mnemonics(a, id, json, ctx->c64x);
 }
 
 static char **tms320_cpu_descriptions() {
@@ -135,6 +120,5 @@ RzAsmPlugin rz_asm_plugin_tms320 = {
 	.init = tms320_init,
 	.fini = tms320_fini,
 	.disassemble = &tms320_disassemble,
-	.mnemonics = tms320_mnemonics,
 	.get_cpu_desc = tms320_cpu_descriptions,
 };

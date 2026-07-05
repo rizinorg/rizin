@@ -25,10 +25,8 @@ extern "C" {
  * descriptor but reuses the engine, IR and primitives.
  *
  * An arch may skip the decode engine and fill \ref C55Insn from its own
- * front-end while still using the consumers and primitives -- this is how a
- * future C64x RzIL lifter would attach to capstone's existing C64x disassembler
- * (C64x has disasm but no IL yet), so the decode-table fields of \ref C55ArchDesc
- * are optional.
+ * front-end while still using the consumers and primitives, so the
+ * decode-table fields of \ref C55ArchDesc are optional.
  */
 
 /** Family member (so shared code can special-case where unavoidable). */
@@ -371,8 +369,8 @@ typedef struct {
  * The arch extension point. Adding C54x = providing one of these; C55x/C55x+
  * each provide one but share id/register/mnemonic tables. The decode fields
  * (\ref table .. \ref insn_len) are optional: an arch may instead fill
- * \ref C55Insn from its own front-end (e.g. capstone for a future C64x lifter)
- * and still use the consumers and primitives.
+ * \ref C55Insn from its own front-end and still use the consumers and
+ * primitives.
  */
 typedef struct c55_arch_desc_t {
 	C55Arch arch; ///< family member
