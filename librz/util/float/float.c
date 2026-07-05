@@ -1342,6 +1342,7 @@ RZ_API RZ_OWN RzFloat *rz_float_mod_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 			}
 
 			rz_float_free(ret);
+			rz_float_free(right_abs);
 			ret = same_sign;
 		}
 	}
