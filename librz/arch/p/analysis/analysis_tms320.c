@@ -11,11 +11,9 @@
 #include <tms320/c54x/c54x.h>
 #include <tms320/c2x/c2x.h>
 #include <tms320/c5x/c5x.h>
-#include <tms320/c64x/c64x.h>
 #include <tms320/c6x/c6x.h>
 
 typedef struct tms320_ctx_t {
-	void *c64x;
 	ut64 c6x_prev_end; ///< address just past the last c6x instruction analyzed
 	bool c6x_prev_par; ///< parallel bit of that instruction (for "||" continuation)
 } Tms320Context;
@@ -45,8 +43,6 @@ int tms320_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 	}
 	if (cpu && rz_str_casecmp(cpu, "c55x+") == 0) {
 		return tms320_c55x_plus_op(analysis, op, addr, buf, len, mask);
-	} else if (cpu && rz_str_casecmp(cpu, "c64x-capstone") == 0) {
-		return tms320_c64x_op(analysis, op, addr, buf, len, mask, context->c64x);
 	} else if (cpu && rz_str_casecmp(cpu, "c54x") == 0) {
 		return tms320_c54x_op(analysis, op, addr, buf, len, mask);
 	} else if (cpu && rz_str_casecmp(cpu, "c2x") == 0) {
@@ -63,7 +59,6 @@ static bool tms320_analysis_init(void **user) {
 		return false;
 	}
 
-	context->c64x = tms320_c64x_new();
 	*user = context;
 	return true;
 }
@@ -72,7 +67,6 @@ static bool tms320_analysis_fini(void *user) {
 	rz_return_val_if_fail(user, false);
 	Tms320Context *context = (Tms320Context *)user;
 
-	tms320_c64x_free(context->c64x);
 	free(context);
 	return true;
 }
@@ -593,7 +587,7 @@ static RzList /*<RzSearchKeyword *>*/ *tms320_analysis_preludes(RzAnalysis *anal
 		KW("\x0e\x00\x0e\x00\x0e\x00", 6, "\xff\x00\xff\x00\xff\x00", 6);
 		/* two consecutive C55x+ pushes: 0e ?? 0e ?? */
 		KW("\x0e\x00\x0e\x00", 4, "\xff\x00\xff\x00", 4);
-	} else if (c6x_desc_from_cpu(cpu) || (cpu && rz_str_casecmp(cpu, "c64x-capstone") == 0)) {
+	} else if (c6x_desc_from_cpu(cpu)) {
 		/* C6000 VLIW: no reliable fixed prologue; leave to the call graph. */
 	} else {
 		/* plain C55x: two consecutive single pushes (0x38 0x38) */
