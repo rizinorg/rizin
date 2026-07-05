@@ -92,6 +92,48 @@ static bool tms320_fini(void *user) {
 	return true;
 }
 
+static char *tms320_mnemonics(const RzAsm *a, int id, bool json) {
+	// Only the native C6000 engine can enumerate its instruction set; the
+	// C5000/C54x decode-IR front-ends expose no such listing.
+	if (!c6x_desc_from_cpu(a->cpu)) {
+		return NULL;
+	}
+	RzPVector *mnems = c6x_mnemonics();
+	if (!mnems) {
+		return NULL;
+	}
+	char *ret = NULL;
+	if (id >= 0) {
+		// The id space is C6xInsnId, the same value RzAnalysisOp::id reports, so
+		// a mnemonic looked up by id matches the instruction that produced it.
+		const char *m = c6x_ins_name((C6xInsnId)id);
+		ret = m ? (json ? rz_str_newf("[\"%s\"]\n", m) : rz_str_dup(m)) : NULL;
+	} else {
+		RzStrBuf sb;
+		rz_strbuf_init(&sb);
+		if (json) {
+			rz_strbuf_append(&sb, "[");
+		}
+		void **it;
+		bool first = true;
+		rz_pvector_foreach (mnems, it) {
+			const char *m = *it;
+			if (json) {
+				rz_strbuf_appendf(&sb, "%s\"%s\"", first ? "" : ",", m);
+			} else {
+				rz_strbuf_appendf(&sb, "%s\n", m);
+			}
+			first = false;
+		}
+		if (json) {
+			rz_strbuf_append(&sb, "]\n");
+		}
+		ret = rz_strbuf_drain_nofree(&sb);
+	}
+	rz_pvector_free(mnems);
+	return ret;
+}
+
 static char **tms320_cpu_descriptions() {
 	static char *cpu_desc[] = {
 		"c54x", "Texas Instruments TMS320C54x DSP family",
@@ -120,5 +162,6 @@ RzAsmPlugin rz_asm_plugin_tms320 = {
 	.init = tms320_init,
 	.fini = tms320_fini,
 	.disassemble = &tms320_disassemble,
+	.mnemonics = tms320_mnemonics,
 	.get_cpu_desc = tms320_cpu_descriptions,
 };

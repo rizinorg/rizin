@@ -2527,3 +2527,26 @@ RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc
 	}
 	return true;
 }
+
+/** Every mnemonic the decoder can print, sorted and de-duplicated, for the
+ *  `rz-asm -e` listing. Elements are borrowed static strings; free the vector
+ *  only. */
+RZ_IPI RZ_OWN RzPVector /*<const char *>*/ *c6x_mnemonics(void) {
+	RzPVector *v = rz_pvector_new(NULL);
+	if (!v) {
+		return NULL;
+	}
+	// C6xInsnId enumerates every opcode the decoder can emit, whether it comes
+	// from a functional-unit table or is built inline, so walking the name table
+	// needs no second list to drift out of step. The strings are borrowed from
+	// static storage, so the pvector owns no elements.
+	for (C6xInsnId id = C6X_INS_INVALID + 1; id < C6X_INS_LAST; id++) {
+		const char *name = c6x_ins_name(id);
+		// .fphead names a fetch-packet header word, not an opcode, so it has an
+		// id to decode with but does not belong in the instruction listing
+		if (name && id != C6X_INS_FPHEAD) {
+			rz_pvector_push(v, (void *)name);
+		}
+	}
+	return v;
+}
