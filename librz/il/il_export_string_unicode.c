@@ -242,7 +242,7 @@ static bool il_opdmp_bool_xor(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStr
 }
 
 static bool il_opdmp_bitv_float(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb, const char *sym) {
-	const RzILOpArgsBv *opx = &op->op.bitv;
+	const RzILOpArgsBV *opx = &op->op.bitv;
 	char *num = rz_bv_as_hex_string(opx->value, false);
 	return_false_if_fail(num);
 	goto_if_fail(rz_strbuf_appendf(sb, "%s", num), fini);
@@ -256,7 +256,7 @@ fini:
 }
 
 static bool il_opdmp_bitv(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
-	const RzILOpArgsBv *opx = &op->op.bitv;
+	const RzILOpArgsBV *opx = &op->op.bitv;
 	char *num = rz_bv_as_hex_string(opx->value, false);
 	return_false_if_fail(num);
 	// The hex value plus the width as a Unicode subscript, via the
@@ -427,7 +427,7 @@ static bool il_opdmp_fcast_sint(RzILStringifyCtx *ctx, const RzILOpPure *op, RzS
 }
 
 static bool il_opdmp_fcast_float(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
-	const RzILOpArgsFCastfloat *opx = &op->op.fcast_float;
+	const RzILOpArgsFCastUFloat *opx = &op->op.fcast_float;
 	char *sym = sym_with_float_format(opx->format, UCD_FCAST_FLOAT);
 	return_false_if_fail(sym);
 	bool ok = rz_strbuf_append(sb, "(") &&
@@ -440,7 +440,7 @@ static bool il_opdmp_fcast_float(RzILStringifyCtx *ctx, const RzILOpPure *op, Rz
 }
 
 static bool il_opdmp_fcast_sfloat(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
-	const RzILOpArgsFCastsfloat *opx = &op->op.fcast_sfloat;
+	const RzILOpArgsFCastSFloat *opx = &op->op.fcast_sfloat;
 	char *sym = sym_with_float_format(opx->format, UCD_FCAST_SFLOAT);
 	return_false_if_fail(sym);
 	bool ok = rz_strbuf_append(sb, "(") &&
