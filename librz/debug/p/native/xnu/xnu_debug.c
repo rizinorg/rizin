@@ -1213,18 +1213,6 @@ static int cmp(const void *_a, const void *_b, void *user) {
 	return 0;
 }
 
-static RzDebugMap *rz_debug_map_clone(RzDebugMap *m) {
-	RzDebugMap *map = RZ_NEWCOPY(RzDebugMap, m);
-	// memcpy (map, m, sizeof (RzDebugMap));
-	if (m->name) {
-		map->name = rz_str_dup(m->name);
-	}
-	if (m->file) {
-		map->file = rz_str_dup(m->file);
-	}
-	return map;
-}
-
 RzList *xnu_dbg_maps(RzDebug *dbg, int only_modules) {
 	rz_return_val_if_fail(dbg && dbg->plugin_data, NULL);
 	RzXnuDebug *ctx = dbg->plugin_data;
