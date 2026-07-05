@@ -185,7 +185,8 @@ typedef enum {
 
 enum {
 	RZ_BIN_TYPE_DEFAULT = 0,
-	RZ_BIN_TYPE_CORE = 1
+	RZ_BIN_TYPE_CORE = 1,
+	RZ_BIN_TYPE_REL = 2
 };
 
 #define RZ_BIN_STRING_SEARCH_MIN_STRING         4
