@@ -195,10 +195,13 @@ RUN
 NAME=omf166 modinfo check
 FILE=bins/omf/omf166/measure
 CMDS=<<EOF
-e asm.arch=c166
+e bin.baddr
+echo
 iH
 EOF
 EXPECT=<<EOF
+0x00c00000
+
 omf166-modinfo:
   DoubleUsed: false
   FloatUsed: true
@@ -207,6 +210,61 @@ omf166-modinfo:
   Segmented: true
   MemoryModel: "HLarge: 'huge' data, 'far' funcs"
 
+EOF
+RUN
+
+NAME=omf166 modinfo check
+FILE=bins/omf/omf166/emulateme
+CMDS=<<EOF
+e bin.baddr
+echo
+iH
+EOF
+EXPECT=<<EOF
+0
+
+omf166-modinfo:
+  DoubleUsed: false
+  FloatUsed: false
+  MOD167: true
+  CaseSensitive: true
+  Segmented: true
+  MemoryModel: "Large: 'far' functions and data"
+
+EOF
+RUN
+
+NAME=omf166 THEADR overflow check
+FILE=bins/omf/omf166/sym_overflow_theadr
+CMDS=<<EOF
+e bin.baddr
+EOF
+EXPECT=<<EOF
+0
+EOF
+REGEXP_FILTER_ERR=<<EOF
+WARNING:.+
+EOF
+EXPECT_ERR=<<EOF
+WARNING: File may be corrupted (Overflow detected).
+WARNING: The binary loader searches strings only in the read only sections, but the binary has no sections.
+EOF
+RUN
+
+NAME=omf166 sym overflow check
+FILE=bins/omf/omf166/sym_overflow
+CMDS=<<EOF
+e bin.baddr
+EOF
+EXPECT=<<EOF
+0
+EOF
+REGEXP_FILTER_ERR=<<EOF
+[WARNING,ERROR]:.+
+EOF
+EXPECT_ERR=<<EOF
+R: Invalid sym record (overflow)
+G: The binary loader searches strings only in the read only sections, but the binary has no sections.
 EOF
 RUN
 

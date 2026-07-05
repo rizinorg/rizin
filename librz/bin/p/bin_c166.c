@@ -35,7 +35,7 @@ rz_bin_c166_obj *rz_bin_format_c166_load(const ut8 *buf, ut64 size) {
 		return NULL;
 	}
 	const ut8 c = rz_read_le8(buf + 1);
-	ret->base_addr = c << 16 | 0x000000;
+	ret->base_addr = (ut32)c << 16;
 	return ret;
 }
 
@@ -111,7 +111,7 @@ static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	rz_bin_c166_obj *obj = bf->o->bin_obj;
+	const rz_bin_c166_obj *obj = bf->o->bin_obj;
 
 	RzPVector *ret;
 	RzBinAddr *addr;
@@ -158,6 +158,11 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	}
 }
 
+static ut64 baddr(RzBinFile *bf) {
+	const rz_bin_c166_obj *obj = (rz_bin_c166_obj *)bf->o->bin_obj;
+	return obj->base_addr;
+}
+
 struct rz_bin_plugin_t rz_bin_plugin_c166 = {
 	.name = "c166",
 	.desc = "Siemens/Infineon C166 family microcontroller binary",
@@ -171,6 +176,7 @@ struct rz_bin_plugin_t rz_bin_plugin_c166 = {
 	.info = &info,
 	.binsym = &binsym,
 	.strings = &strings,
+	.baddr = baddr
 };
 
 #ifndef RZ_PLUGIN_INCORE

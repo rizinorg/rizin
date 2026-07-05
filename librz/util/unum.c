@@ -819,7 +819,7 @@ RZ_API ut64 rz_num_math_ut64(RzNum *num, const char *str) {
 				}
 				return segoff;
 			}
-			ut64 lead;
+			ut64 lead = 0;
 			if (num_leading_value(str, &lead)) {
 				free(new_err);
 				rz_num_value_fini(&v);
