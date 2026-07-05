@@ -81,6 +81,14 @@ static bool is_c5000(const char *cpu) {
 static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 	const char *p;
 	const char *cpu0 = rz_analysis_get_cpu(a);
+	// The tms320 arch has one cc sdb per bit width. Only the 32-bit file is
+	// ours to steer: its default (c55x) is wrong for the C6000 family, so point
+	// it at the C6000 EABI convention when a c6x cpu is selected. This callback
+	// runs on every cpu change, so switching back to a C5000 cpu restores c55x.
+	// The 16-bit file carries its own default for c2x/c5x and is left alone.
+	if (a->bits == 32) {
+		rz_analysis_set_cc_default(a, c6x_desc_from_cpu(cpu0) ? "c6x" : "c55x");
+	}
 	if (cpu0 && rz_str_casecmp(cpu0, "c54x") == 0) {
 		// TMS320C54x: two 40-bit accumulators A/B (with the L/H 16-bit and G
 		// 8-bit guard slices overlapping their parent), eight 16-bit auxiliary
