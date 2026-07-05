@@ -113,7 +113,7 @@ EXPECT=<<EOF
 0x10000320      lis   r8, 0x1000                                       ; start.S:83
 0x10000324      lwzu  r13, 0x62c(r8)                                   ; start.S:84
 0x10000328      b     reloc.__libc_start_main                          ; start.S:87
-;-- __libc_start_main:
+;-- reloc.__libc_start_main:
 0x10020074      invalid
 EOF
 RUN
