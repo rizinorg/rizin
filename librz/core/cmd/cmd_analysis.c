@@ -5394,10 +5394,10 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_handler(RzCore *core, int argc, const char *
 
 RZ_IPI RzCmdStatus rz_analyze_n_ins_size_handler(RzCore *core, int argc, const char **argv) {
 	ut32 count = 1, obs = core->blocksize;
-	st32 l;
 
 	if (argc > 1) {
-		l = (st32)rz_num_math(core->num, argv[1]);
+		// on purpose casting down to avoid mult overflow.
+		st64 l = (st32)rz_num_math(core->num, argv[1]);
 		if (l <= 0) {
 			RZ_LOG_ERROR("Invalid zero or negative arguments.\n");
 			return RZ_CMD_STATUS_ERROR;
