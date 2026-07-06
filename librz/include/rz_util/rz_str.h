@@ -168,9 +168,7 @@ RZ_API int rz_str_ansi_filter(char *str, char **out, int **cposs, int len);
 RZ_API char *rz_str_ansi_crop(const char *str, unsigned int x, unsigned int y, unsigned int x2, unsigned int y2);
 RZ_API int rz_str_word_count(const char *string);
 RZ_API int rz_str_char_count(const char *string, char ch);
-RZ_API char *rz_str_word_get0set(char *stra, int stralen, int idx, const char *newstr, int *newlen);
 RZ_API int rz_str_word_set0(char *str);
-RZ_API int rz_str_word_set0_stack(char *str);
 static inline const char *rz_str_word_get_next0(const char *str) {
 	return str + strlen(str) + 1;
 }
