@@ -986,6 +986,6 @@ EXPECT=<<EOF
             ;-- section..plt.sec:
             ;-- _Exit:
             0x00001020      endbr64                                    ; [10] -r-x section size 16 named .plt.sec
-            0x00001024      jmp   qword [reloc._Exit]                  ; [reloc._Exit:8]=0x4008 reloc.target._Exit
+            0x00001024      jmp   qword [reloc._Exit]                  ; [0x3ff8:8]=0x4008 reloc.target._Exit
 EOF
 RUN
