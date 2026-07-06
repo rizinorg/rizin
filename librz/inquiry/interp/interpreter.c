@@ -724,74 +724,15 @@ static bool eval_pure(RzInterpRunContext *ctx, const RzILOpPure *pure, RZ_OUT Rz
 	case RZ_IL_OP_DIV: {
 		RzILOpPure *px;
 		RzILOpPure *py;
-		switch (pure->code) {
-		case RZ_IL_OP_APPEND:
+		if (pure->code == RZ_IL_OP_APPEND) {
 			// we use low as the x/out value because in the case of constant operands,
 			// appending high bits to a bitvector is more efficient than prepending
 			// low bits in place.
 			px = pure->op.append.low;
 			py = pure->op.append.high;
-			break;
-		case RZ_IL_OP_LOGAND:
-			px = pure->op.logand.x;
-			py = pure->op.logand.y;
-			break;
-		case RZ_IL_OP_AND:
-			px = pure->op.booland.x;
-			py = pure->op.booland.y;
-			break;
-		case RZ_IL_OP_LOGOR:
-			px = pure->op.logor.x;
-			py = pure->op.logor.y;
-			break;
-		case RZ_IL_OP_OR:
-			px = pure->op.boolor.x;
-			py = pure->op.boolor.y;
-			break;
-		case RZ_IL_OP_LOGXOR:
-			px = pure->op.logxor.x;
-			py = pure->op.logxor.y;
-			break;
-		case RZ_IL_OP_XOR:
-			px = pure->op.boolxor.x;
-			py = pure->op.boolxor.y;
-			break;
-		case RZ_IL_OP_ADD:
-			px = pure->op.add.x;
-			py = pure->op.add.y;
-			break;
-		case RZ_IL_OP_SUB:
-			px = pure->op.sub.x;
-			py = pure->op.sub.y;
-			break;
-		case RZ_IL_OP_SLE:
-			px = pure->op.sle.x;
-			py = pure->op.sle.y;
-			break;
-		case RZ_IL_OP_ULE:
-			px = pure->op.ule.x;
-			py = pure->op.ule.y;
-			break;
-		case RZ_IL_OP_EQ:
-			px = pure->op.eq.x;
-			py = pure->op.eq.y;
-			break;
-		case RZ_IL_OP_MUL:
-			px = pure->op.mul.x;
-			py = pure->op.mul.y;
-			break;
-		case RZ_IL_OP_MOD:
-			px = pure->op.mod.x;
-			py = pure->op.mod.y;
-			break;
-		case RZ_IL_OP_DIV:
-			px = pure->op.div.x;
-			py = pure->op.div.y;
-			break;
-		default:
-			// this switch should be in sync with outer cases
-			rz_warn_if_reached();
-			return false;
+		} else {
+			px = pure->op.binop.x;
+			py = pure->op.binop.y;
 		}
 		if (!eval_pure(ctx, px, out)) {
 			RZ_LOG_ERROR("prototype: binop x failed to evaluate.\n");
@@ -817,31 +758,7 @@ static bool eval_pure(RzInterpRunContext *ctx, const RzILOpPure *pure, RZ_OUT Rz
 	case RZ_IL_OP_LSB:
 	case RZ_IL_OP_MSB:
 	case RZ_IL_OP_NEG: {
-		RzILOpPure *x;
-		switch (pure->code) {
-		case RZ_IL_OP_LOGNOT:
-			x = pure->op.lognot.bv;
-			break;
-		case RZ_IL_OP_INV:
-			x = pure->op.boolinv.x;
-			break;
-		case RZ_IL_OP_IS_ZERO:
-			x = pure->op.is_zero.bv;
-			break;
-		case RZ_IL_OP_LSB:
-			x = pure->op.lsb.bv;
-			break;
-		case RZ_IL_OP_MSB:
-			x = pure->op.msb.bv;
-			break;
-		case RZ_IL_OP_NEG:
-			x = pure->op.neg.bv;
-			break;
-		default:
-			// this switch should be in sync with outer cases
-			rz_warn_if_reached();
-			return false;
-		}
+		RzILOpPure *x = pure->op.unop.x;
 		if (!eval_pure(ctx, x, out)) {
 			RZ_LOG_ERROR("prototype: unop x failed to evaluate.\n");
 			return false;
