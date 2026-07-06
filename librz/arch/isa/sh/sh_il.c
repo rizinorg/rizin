@@ -476,7 +476,7 @@ static RzILOpEffect *sh_il_set_param_pc_ctx(SHParam param, RZ_OWN RzILOpPure *va
 
 	if (!ret) {
 		SHParamHelper ret_h = sh_il_get_param(param, scaling);
-		RZ_FREE(ret_h.pure);
+		rz_il_op_pure_free(ret_h.pure);
 		RzILOpPure *eff_addr = sh_il_get_effective_addr(param, scaling);
 		ret = STOREW(eff_addr, val);
 		pre = ret_h.pre;

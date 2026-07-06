@@ -361,11 +361,15 @@ static void destroy(RzBinFile *bf) {
 }
 
 static int get_file_type(RzBinFile *bf) {
-	struct Elf_(rz_bin_elf_obj_t) *obj = bf->o->bin_obj;
-	char *type = Elf_(rz_bin_elf_get_file_type(obj));
-	int res = type ? ((!strncmp(type, "CORE", 4)) ? RZ_BIN_TYPE_CORE : RZ_BIN_TYPE_DEFAULT) : -1;
-	free(type);
-	return res;
+	ELFOBJ *bin = rz_bin_file_get_elf(bf);
+	switch (bin->ehdr.e_type) {
+	case ET_REL:
+		return RZ_BIN_TYPE_REL;
+	case ET_CORE:
+		return RZ_BIN_TYPE_CORE;
+	default:
+		return RZ_BIN_TYPE_DEFAULT;
+	}
 }
 
 static char *regstate(RzBinFile *bf) {

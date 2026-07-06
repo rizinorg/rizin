@@ -191,6 +191,30 @@ static bool addressing_pattern2(I8051Op *op, const ut8 *buf) {
 	return true;
 }
 
+static void addressing_free(I8051OpAddressing *a) {
+	if (!a) {
+		return;
+	}
+	// Indirect addressing owns the nested addressing it points at.
+	if (a->mode == I8051_ADDRESSING_INDIRECT) {
+		addressing_free(a->d.indirect);
+	}
+	free(a);
+}
+
+RZ_IPI void rz_8051_op_free(I8051Op *op) {
+	if (!op) {
+		return;
+	}
+	if (op->argv) {
+		for (size_t i = 0; i < op->argc; i++) {
+			addressing_free(op->argv[i]);
+		}
+		free(op->argv);
+	}
+	free(op);
+}
+
 RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const ut8 *buf, int len, ut64 pc) {
 	rz_return_val_if_fail(analysis && buf && len > 0, NULL);
 	I8051Op *op = RZ_NEW0(I8051Op);

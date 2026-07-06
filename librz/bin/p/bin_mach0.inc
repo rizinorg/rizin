@@ -137,6 +137,7 @@ static void process_constructors(RzBinFile *bf, RzPVector /*<RzBinAddr *>*/ *ret
 			free(buf);
 		}
 	}
+	rz_pvector_free(secs);
 }
 
 static RzPVector /*<RzBinAddr *>*/ *mach0_entries(RzBinFile *bf) {

@@ -18,7 +18,7 @@ static void arglist_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbT
 static RzType *mfunction_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info, char *name);
 static RzType *onemethod_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info);
 static RzType *member_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info, char *name, ut64 *bitfield_width);
-static RzType *nest_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *t, char *name);
+static RzType *nest_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *t);
 static RzType *union_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type);
 static RzTypeUnionMember *union_member_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info);
 static RzType *class_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type);
@@ -328,7 +328,7 @@ static RzTypeIdentifierKind iKind_from_bKind(RzBaseTypeKind k) {
 	return RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
 }
 
-static RzType *nest_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info, char *name) {
+static RzType *nest_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info) {
 	rz_return_val_if_fail(type_info && stream && typedb, NULL);
 	Tpi_LF_NestType *lf_nest = type_info->data;
 	RzPdbTpiType *utpi = rz_bin_pdb_get_type_by_index(stream, lf_nest->index);
@@ -342,12 +342,9 @@ static RzType *nest_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbT
 			return type_new_identify(bt->name, iKind_from_bKind(bt->kind));
 		}
 	}
-
-	RzType *utype = pdb_type_parse(typedb, stream, utpi, NULL);
-	if (!utype) {
-		return NULL;
-	}
-	return rz_type_clone(utype);
+	// pdb_type_parse() already returns an owned type, so return it directly
+	// instead of cloning and leaking the original.
+	return pdb_type_parse(typedb, stream, utpi, NULL);
 }
 
 /**
@@ -384,7 +381,7 @@ static RzTypeStructMember *class_member_parse(
 	}
 	case TpiKind_NESTTYPE: {
 		name = rz_bin_pdb_get_type_name(t);
-		type = nest_parse(typedb, stream, t, rz_str_dup(name));
+		type = nest_parse(typedb, stream, t);
 		break;
 	}
 	case TpiKind_VBCLASS:
@@ -572,7 +569,7 @@ static RzTypeUnionMember *union_member_parse(const RzTypeDB *typedb, RzPdbTpiStr
 	}
 	case TpiKind_NESTTYPE: {
 		name = rz_bin_pdb_get_type_name(type_info);
-		type = nest_parse(typedb, stream, type_info, rz_str_dup(name));
+		type = nest_parse(typedb, stream, type_info);
 		break;
 	}
 	default:
@@ -861,7 +858,11 @@ RZ_API void rz_type_db_pdb_load(const RzTypeDB *typedb, const RzPdb *pdb) {
 	RzPdbTpiType *type;
 	rz_rbtree_foreach (stream->types, it, type, RzPdbTpiType, rb) {
 		if (type && is_parsable_type(type)) {
-			rz_type_db_pdb_parse(typedb, stream, type);
+			// rz_type_db_pdb_parse() returns an owned clone of the parsed type.
+			// The base type itself is saved into the typedb during parsing, so
+			// this returned clone is not needed here and must be freed, otherwise
+			// one type tree leaks for every parsable type in the PDB.
+			rz_type_free(rz_type_db_pdb_parse(typedb, stream, type));
 		}
 	}
 }

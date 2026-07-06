@@ -684,7 +684,8 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 		} else if (aop->ptr != UT64_MAX) {
 			RzFlagItem *flag = rz_flag_get_by_spaces(core->flags, aop->ptr, RZ_FLAGS_FS_IMPORTS, NULL);
 			if (flag && flag->realname) {
-				full_name = flag->realname + (rz_str_startswith(flag->realname, "reloc.") ? 6 : 0);
+				char *reloc_prefix = (char *)rz_str_rstr(flag->realname, "reloc.");
+				full_name = reloc_prefix ? reloc_prefix + 6 : flag->realname;
 				callee_addr = aop->ptr;
 			}
 		}
