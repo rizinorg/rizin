@@ -4,7 +4,7 @@
 #include <rz_hash.h>
 #include <rz_util/rz_assert.h>
 
-#if HAVE_LIB_SSL
+#if HAVE_LIB_SSL && HAVE_LIB_SSL_SM3
 /**
  * Use OpenSSL lib, not the Rizin implementation
  */
@@ -12,7 +12,7 @@
 #include "../algorithms/openssl_common.h"
 rz_openssl_plugin_define_hash_cfg(sm3, EVP_sm3, true);
 
-#else /* HAVE_LIB_SSL */
+#else /* HAVE_LIB_SSL && HAVE_LIB_SSL_SM3 */
 /**
  * Use Rizin implementation, not OpenSSL lib
  */
