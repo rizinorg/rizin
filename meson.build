@@ -483,7 +483,14 @@ foreach it : ccs
   it_userconf.set('HUD', rizin_hud)
   it_userconf.set('PLUGINS', rizin_plugins)
   it_userconf.set('BINDINGS', rizin_bindings)
-  it_userconf.set10('HAVE_OPENSSL', sys_openssl.found())
+  if sys_openssl.found()
+    it_userconf.set10('HAVE_OPENSSL', true)
+    ok = it_cc.has_function('EVP_sm3', prefix: '#include <openssl/evp.h>', dependencies: [sys_openssl])
+    it_userconf.set10('HAVE_OPENSSL_SM3', ok)
+  else
+    it_userconf.set10('HAVE_OPENSSL', false)
+    it_userconf.set10('HAVE_OPENSSL_SM3', false)
+  endif
   it_userconf.set10('WANT_DYLINK', true)
   it_userconf.set10('HAVE_PTRACE', have_ptrace)
   it_userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
