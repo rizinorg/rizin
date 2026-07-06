@@ -323,54 +323,66 @@ static void milstd_set_reg(RzAnalysisOp *op, const MilStd1750Instruction *insn) 
 
 static RzAnalysisValue *milstd_v_reg(RzAnalysis *a, ut8 n, RzAnalysisValueAccess acc) {
 	RzAnalysisValue *v = rz_analysis_value_new();
-	if (v) {
-		v->type = RZ_ANALYSIS_VAL_REG;
-		v->access = acc;
-		v->reg = rz_reg_get(a->reg, milstd_reg_name(n), RZ_REG_TYPE_ANY);
+	if (!v) {
+		return NULL;
 	}
+
+	v->type = RZ_ANALYSIS_VAL_REG;
+	v->access = acc;
+	v->reg = rz_reg_get(a->reg, milstd_reg_name(n), RZ_REG_TYPE_ANY);
+
 	return v;
 }
 
 static RzAnalysisValue *milstd_v_imm(st64 imm) {
 	RzAnalysisValue *v = rz_analysis_value_new();
-	if (v) {
-		v->type = RZ_ANALYSIS_VAL_IMM;
-		v->access = RZ_ANALYSIS_ACC_R;
-		v->imm = imm;
+	if (!v) {
+		return NULL;
 	}
+
+	v->type = RZ_ANALYSIS_VAL_IMM;
+	v->access = RZ_ANALYSIS_ACC_R;
+	v->imm = imm;
+
 	return v;
 }
 
 // Direct memory operand: byte address `base` plus optional word index Rx.
 static RzAnalysisValue *milstd_v_mem(RzAnalysis *a, ut64 base, ut8 rx, int memref, RzAnalysisValueAccess acc) {
 	RzAnalysisValue *v = rz_analysis_value_new();
-	if (v) {
-		v->type = RZ_ANALYSIS_VAL_MEM;
-		v->access = acc;
-		v->memref = memref;
-		v->base = base;
-		if (rx) {
-			v->regdelta = rz_reg_get(a->reg, milstd_reg_name(rx), RZ_REG_TYPE_ANY);
-			v->mul = 2; // index counts 16-bit words
-		}
+	if (!v) {
+		return NULL;
 	}
+
+	v->type = RZ_ANALYSIS_VAL_MEM;
+	v->access = acc;
+	v->memref = memref;
+	v->base = base;
+	if (rx) {
+		v->regdelta = rz_reg_get(a->reg, milstd_reg_name(rx), RZ_REG_TYPE_ANY);
+		v->mul = 2; // index counts 16-bit words
+	}
+
 	return v;
 }
 
 // Base-relative memory operand: base register R(br) + index Rx (BX) or disp (B).
 static RzAnalysisValue *milstd_v_basemem(RzAnalysis *a, ut8 br, ut8 rx, st64 disp, int memref, RzAnalysisValueAccess acc) {
 	RzAnalysisValue *v = rz_analysis_value_new();
-	if (v) {
-		v->type = RZ_ANALYSIS_VAL_MEM;
-		v->access = acc;
-		v->memref = memref;
-		v->reg = rz_reg_get(a->reg, milstd_reg_name(br), RZ_REG_TYPE_ANY);
-		v->delta = disp;
-		if (rx) {
-			v->regdelta = rz_reg_get(a->reg, milstd_reg_name(rx), RZ_REG_TYPE_ANY);
-			v->mul = 1; // base-relative index is added unscaled
-		}
+	if (!v) {
+		return NULL;
 	}
+
+	v->type = RZ_ANALYSIS_VAL_MEM;
+	v->access = acc;
+	v->memref = memref;
+	v->reg = rz_reg_get(a->reg, milstd_reg_name(br), RZ_REG_TYPE_ANY);
+	v->delta = disp;
+	if (rx) {
+		v->regdelta = rz_reg_get(a->reg, milstd_reg_name(rx), RZ_REG_TYPE_ANY);
+		v->mul = 1; // base-relative index is added unscaled
+	}
+
 	return v;
 }
 
