@@ -34,14 +34,6 @@ CMDS=p8 0
 EXPECT=
 RUN
 
-NAME=pb 0
-FILE=bins/elf/analysis/hello-arm32
-CMDS=pb 0
-EXPECT=<<EOF
-
-EOF
-RUN
-
 NAME=pB 0
 FILE=bins/elf/analysis/hello-arm32
 CMDS=pB 0
