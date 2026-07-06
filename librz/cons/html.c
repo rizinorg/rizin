@@ -30,6 +30,20 @@ static const char *gethtmlcolor(const char ptrch) {
 	return "";
 }
 
+static const char *gethtmlbrightcolor(const char ptrch) {
+	switch (ptrch) {
+	case '0': return "#777"; // Bright Black (Gray)
+	case '1': return "#ff5555"; // Bright Red
+	case '2': return "#55ff55"; // Bright Green
+	case '3': return "#ffff55"; // Bright Yellow
+	case '4': return "#5555ff"; // Bright Blue
+	case '5': return "#ff55ff"; // Bright Magenta
+	case '6': return "#55ffff"; // Bright Cyan
+	case '7': return "#ffffff"; // Bright White
+	}
+	return "";
+}
+
 // TODO: move into rz_util/str
 RZ_API char *rz_cons_html_filter(const char *ptr, int *newlen) {
 	const char *str = ptr;
@@ -183,6 +197,14 @@ RZ_API char *rz_cons_html_filter(const char *ptr, int *newlen) {
 				esc = 0;
 				continue;
 				// invert color
+			} else if (!strncmp(ptr, "39m", 3)) {
+				// Reset foreground to default
+				text_color[0] = '\0';
+				need_to_set = true;
+				ptr += 2;
+				str = ptr + 1;
+				esc = 0;
+				continue;
 			} else if (ptr[0] == '3' && ptr[2] == 'm') {
 				const char *htmlColor = gethtmlcolor(ptr[1]);
 				if (htmlColor) {
@@ -193,6 +215,14 @@ RZ_API char *rz_cons_html_filter(const char *ptr, int *newlen) {
 				str = ptr + 1;
 				esc = 0;
 				continue;
+			} else if (!strncmp(ptr, "49m", 3)) {
+				// Reset background to default
+				background_color[0] = '\0';
+				need_to_set = true;
+				ptr += 2;
+				str = ptr + 1;
+				esc = 0;
+				continue;
 			} else if (ptr[0] == '4' && ptr[2] == 'm') {
 				const char *htmlColor = gethtmlcolor(ptr[1]);
 				if (htmlColor) {
@@ -200,6 +230,31 @@ RZ_API char *rz_cons_html_filter(const char *ptr, int *newlen) {
 				}
 				need_to_set = true;
 				ptr = ptr + 2;
+				str = ptr + 1;
+				esc = 0;
+				continue;
+			} else if (ptr[0] == '9' && ptr[2] == 'm') {
+				const char *htmlColor = gethtmlbrightcolor(ptr[1]);
+				if (htmlColor) {
+					rz_str_ncpy(text_color, htmlColor, sizeof(text_color));
+				}
+				need_to_set = true;
+				ptr = ptr + 2;
+				str = ptr + 1;
+				esc = 0;
+				continue;
+			} else if (ptr[0] == '1' &&
+				ptr[1] == '0' &&
+				ptr[3] == 'm' &&
+				ptr[2] >= '0' &&
+				ptr[2] <= '7') {
+				const char *htmlColor = gethtmlbrightcolor(ptr[2]);
+				if (htmlColor) {
+					rz_str_ncpy(background_color, htmlColor,
+						sizeof(background_color));
+				}
+				need_to_set = true;
+				ptr = ptr + 3;
 				str = ptr + 1;
 				esc = 0;
 				continue;
