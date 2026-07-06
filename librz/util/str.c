@@ -1161,9 +1161,15 @@ RZ_API RZ_OWN char *rz_str_append(RZ_OWN RZ_NULLABLE char *ptr, const char *stri
 	if (RZ_STR_ISEMPTY(string)) {
 		return ptr;
 	}
-	int plen = strlen(ptr);
-	int slen = strlen(string);
-	char *newptr = realloc(ptr, slen + plen + 1);
+	size_t plen = strlen(ptr);
+	size_t slen = strlen(string);
+	size_t new_size = slen + plen + 1;
+	if (new_size < RZ_MAX(plen, slen)) {
+		rz_warn_if_reached();
+		free(ptr);
+		return NULL;
+	}
+	char *newptr = realloc(ptr, new_size);
 	if (!newptr) {
 		free(ptr);
 		return NULL;
