@@ -776,7 +776,9 @@ RZ_API void rz_flag_item_set_realname(RzFlag *f, RzFlagItem *item, const char *r
 	} else {
 		free_item_realname(item);
 		item->realname = rz_str_dup(realname);
-		ht_sp_insert(f->ht_name, realname, rz_flag_item_clone(item));
+		if (!ht_sp_find(f->ht_name, realname, NULL)) {
+			ht_sp_insert(f->ht_name, realname, rz_flag_item_clone(item));
+		}
 	}
 }
 
