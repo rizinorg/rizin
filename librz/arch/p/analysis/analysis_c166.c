@@ -495,10 +495,6 @@ static void c166_op_call_seg_caddr(RzAnalysis *analysis, RzAnalysisOp *op, const
 	op->stackop = RZ_ANALYSIS_STACK_INC;
 	op->stackptr = 4;
 
-	ut8 SP = (ut8)GET_A_SP;
-	SET_A_SP((ut64)SP - 2);
-	SP = (ut8)GET_A_SP;
-
 	const ut8 SGTDIS = (ut8)GET_A_SGTDIS;
 	if (SGTDIS == 0) {
 		if (!SET_A_CSP((ut64)seg)) {
