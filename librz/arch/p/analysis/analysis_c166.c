@@ -538,12 +538,6 @@ static void c166_op_pcall_reg_caddr(RzAnalysis *analysis, RzAnalysisOp *op, cons
 	const ut16 caddr = rz_read_at_le16(buf, 2);
 	op->stackop = RZ_ANALYSIS_STACK_INC;
 	op->stackptr = 4;
-
-	ut8 SP = (ut8)GET_A_SP;
-	SET_A_SP((ut64)SP - 2);
-	SP = (ut8)GET_A_SP;
-	SET_A_IP((ut64)caddr);
-
 	op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
 	c166_set_jump_target_from_caddr(op, caddr);
 	c166_set_mimo_addr_from_reg(op, buf[1]);
