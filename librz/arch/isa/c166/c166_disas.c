@@ -561,9 +561,6 @@ static ut8 c166_instr_mov_nm(C166_Inst *instr) {
 		swap = true;
 		format = FMT3;
 		break;
-	case C166_MOV_oRwn_oRwm: ///< 0xC8             [Rwn], [Rwm]
-	case C166_MOVB_oRwn_oRwm: ///< 0xC9            [Rwn], [Rwm]
-		format = FMT4;
 		break;
 	case C166_MOV_oRwnp_oRwm: ///< 0xD8            [Rwn+], [Rwm]
 	case C166_MOVB_oRwnp_oRwm: ///< 0xD9           [Rwn+], [Rwm]
@@ -573,7 +570,11 @@ static ut8 c166_instr_mov_nm(C166_Inst *instr) {
 	case C166_MOVB_oRwn_oRwmp: ///< 0xE9           [Rwn], [Rwm+]
 		format = FMT6;
 		break;
-	default: break;
+	case C166_MOV_oRwn_oRwm: ///< 0xC8             [Rwn], [Rwm]
+	case C166_MOVB_oRwn_oRwm: ///< 0xC9            [Rwn], [Rwm]
+	default:
+		format = FMT4;
+		break;
 	}
 	// clang-format on
 	if (swap) {
