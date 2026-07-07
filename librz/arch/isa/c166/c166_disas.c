@@ -1391,8 +1391,6 @@ static ut8 c166_instr_extended(C166_Inst *instr) {
 		goto end;
 	} else if ((opcode == 0xA3) && (extID == 0x32)) {
 		goto end;
-	} else if ((opcode == 0xA3) && (extID == 0xB2)) {
-		goto end;
 	} else if ((opcode == 0x83) && (extID == 0x8A)) {
 		OPERANDS("[r%i]", m); // ????? CoSHL [RWm*]
 		goto end;
