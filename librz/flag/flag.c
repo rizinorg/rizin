@@ -769,7 +769,11 @@ RZ_API void rz_flag_item_set_comment(RzFlagItem *item, const char *comment) {
 RZ_API void rz_flag_item_set_realname(RzFlag *f, RzFlagItem *item, const char *realname) {
 	rz_return_if_fail(item);
 	if (item->realname && strcmp(item->name, item->realname)) {
-		ht_sp_delete(f->ht_name, item->realname); // frees item->realname and cloned item
+		if (ht_sp_find(f->ht_name, item->realname, NULL)) {
+			ht_sp_delete(f->ht_name, item->realname); // frees item->realname and cloned item
+		} else {
+			free(item->realname);
+		}
 	}
 	if (RZ_STR_ISEMPTY(realname)) {
 		item->realname = NULL;
