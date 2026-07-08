@@ -471,130 +471,6 @@ RZ_API int rz_str_word_set0(char *str) {
 	return i;
 }
 
-RZ_API int rz_str_word_set0_stack(char *str) {
-	int i;
-	char *p, *q;
-	RzStack *s;
-	void *pop;
-	if (!str || !*str) {
-		return 0;
-	}
-	for (i = 0; str[i] && str[i + 1]; i++) {
-		if (i > 0 && str[i - 1] == ' ' && str[i] == ' ') {
-			memmove(str + i, str + i + 1, strlen(str + i));
-			i--;
-		}
-		if (i == 0 && str[i] == ' ') {
-			memmove(str + i, str + i + 1, strlen(str + i));
-		}
-	}
-	if (str[i] == ' ') {
-		str[i] = 0;
-	}
-	s = rz_stack_new(5); // Some random number
-	for (i = 1, p = str; *p; p++) {
-		q = p - 1;
-		if (p > str && (*q == '\\')) {
-			memmove(q, p, strlen(p) + 1);
-			p--;
-			continue;
-		}
-		switch (*p) {
-		case '(':
-		case '{':
-		case '[':
-			rz_stack_push(s, (void *)p);
-			continue;
-		case '\'':
-		case '"':
-			pop = rz_stack_pop(s);
-			if (pop && *(char *)pop != *p) {
-				rz_stack_push(s, pop);
-				rz_stack_push(s, (void *)p);
-			} else if (!pop) {
-				rz_stack_push(s, (void *)p);
-			}
-			continue;
-		case ')':
-		case '}':
-		case ']':
-			pop = rz_stack_pop(s);
-			if (pop) {
-				if ((*(char *)pop == '(' && *p == ')') ||
-					(*(char *)pop == '{' && *p == '}') ||
-					(*(char *)pop == '[' && *p == ']')) {
-					continue;
-				}
-			}
-			break;
-		case ' ':
-			if (p > str && !*q) {
-				memmove(p, p + 1, strlen(p + 1) + 1);
-				if (*q == '\\') {
-					*q = ' ';
-					continue;
-				}
-				p--;
-			}
-			if (rz_stack_is_empty(s)) {
-				i++;
-				*p = '\0';
-			}
-		default:
-			break;
-		}
-	}
-	rz_stack_free(s);
-	return i;
-}
-
-RZ_API char *rz_str_word_get0set(char *stra, int stralen, int idx, const char *newstr, int *newlen) {
-	char *p = NULL;
-	char *out;
-	int alen, blen, nlen;
-	if (!stra && !newstr) {
-		return NULL;
-	}
-	if (stra) {
-		p = (char *)rz_str_word_get0(stra, idx);
-	}
-	if (!p) {
-		int nslen = strlen(newstr);
-		out = malloc(nslen + 1);
-		if (!out) {
-			return NULL;
-		}
-		strcpy(out, newstr);
-		out[nslen] = 0;
-		if (newlen) {
-			*newlen = nslen;
-		}
-		return out;
-	}
-	alen = (size_t)(p - stra);
-	blen = stralen - ((alen + strlen(p)) + 1);
-	if (blen < 0) {
-		blen = 0;
-	}
-	nlen = alen + blen + strlen(newstr);
-	out = malloc(nlen + 2);
-	if (!out) {
-		return NULL;
-	}
-	if (alen > 0) {
-		memcpy(out, stra, alen);
-	}
-	memcpy(out + alen, newstr, strlen(newstr) + 1);
-	if (blen > 0) {
-		memcpy(out + alen + strlen(newstr) + 1, p + strlen(p) + 1, blen + 1);
-	}
-	out[nlen + 1] = 0;
-	if (newlen) {
-		*newlen = nlen + ((blen == 0) ? 1 : 0);
-	}
-	return out;
-}
-
 // Get the idx'th entry of a tokenized string.
 // XXX: Warning! this function is UNSAFE, check that the string has, at least,
 // idx+1 tokens.
@@ -1161,9 +1037,15 @@ RZ_API RZ_OWN char *rz_str_append(RZ_OWN RZ_NULLABLE char *ptr, const char *stri
 	if (RZ_STR_ISEMPTY(string)) {
 		return ptr;
 	}
-	int plen = strlen(ptr);
-	int slen = strlen(string);
-	char *newptr = realloc(ptr, slen + plen + 1);
+	size_t plen = strlen(ptr);
+	size_t slen = strlen(string);
+	size_t new_size = slen + plen + 1;
+	if (new_size < RZ_MAX(plen, slen)) {
+		rz_warn_if_reached();
+		free(ptr);
+		return NULL;
+	}
+	char *newptr = realloc(ptr, new_size);
 	if (!newptr) {
 		free(ptr);
 		return NULL;

@@ -3511,21 +3511,50 @@ RZ_IPI RzCmdStatus rz_cmd_base64_decode_handler(RzCore *core, int argc, const ch
 }
 
 RZ_IPI RzCmdStatus rz_print_bitstream_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	int len = (int)rz_num_math(core->num, argv[1]);
-	int skip = (int)rz_num_math(core->num, argv[2]);
-	if (len < 0 || skip < 0) {
-		RZ_LOG_ERROR("len and skip should be positive numbers\n");
+	ut64 old_offset = core->offset;
+	st32 len = (st32)rz_num_math(core->num, argv[1]);
+	st32 skip = (st32)rz_num_math(core->num, argv[2]);
+	if (len < 0 || (!len && !skip)) {
+		RZ_LOG_ERROR("`len` should be a positive number\n");
+		return RZ_CMD_STATUS_ERROR;
+	} else if (skip < 0) {
+		RZ_LOG_ERROR("`skip` should be a positive number\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	// `pb len skip` means skip <skip> bits then print <len> bits
-	char *buf = RZ_NEWS0(char, len + skip + 1);
+	const size_t skip_n_chars = skip & 7;
+	const size_t max_n_bits = ((size_t)core->blocksize) << 3;
+	const size_t buf_len = ((size_t)len) + (skip_n_chars ? 8 : 0);
+	if (buf_len > max_n_bits) {
+		RZ_LOG_ERROR("cannot print %" PFMT32d " bits when current block size is %" PFMTSZu " bits\n", len, max_n_bits);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	char *buf = RZ_NEWS0(char, buf_len + 1);
 	if (!buf) {
 		RZ_LOG_ERROR("Fail to allocate memory\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_str_bits(buf, core->block, len + skip, NULL);
-	rz_cons_println(buf + skip);
+
+	if (skip > 7) {
+		const size_t n_bytes = (skip >> 3);
+		rz_core_seek(core, old_offset + n_bytes, true);
+	}
+
+	rz_str_bits(buf, core->block, buf_len, NULL);
+
+	if (skip_n_chars) {
+		// we always show `len` bits, just shifted.
+		// so we trim the last chars.
+		buf[buf_len - (8 - skip_n_chars)] = 0;
+	}
+
+	rz_cons_println(buf + skip_n_chars);
 	free(buf);
+
+	if (skip > 7) {
+		rz_core_seek(core, old_offset, true);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
