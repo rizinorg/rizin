@@ -15,59 +15,11 @@
 #include <rz_vector.h>
 #include <rz_util.h>
 
-RZ_API void rz_interp_yield_rbuf_free(RZ_OWN RZ_NULLABLE RzInterpYieldRBuf *yield_rbufs) {
-	if (!yield_rbufs) {
-		return;
-	}
-	if (yield_rbufs->rbuf) {
-		rz_th_ring_buf_free(yield_rbufs->rbuf);
-	}
-	if (yield_rbufs->filter_data && yield_rbufs->filter_data->io_boundaries) {
-		rz_pvector_free(yield_rbufs->filter_data->io_boundaries);
-	}
-	free(yield_rbufs->filter_data);
-	free(yield_rbufs);
-}
-
-RZ_API RZ_OWN RzInterpYieldRBuf *rz_interp_yield_rbuf_new(RzInterpYieldKind kind,
-	RzInterpYieldFilter filter,
-	RZ_OWN RZ_NULLABLE void *filter_data) {
-	RzInterpYieldRBuf *yield_rbufs = RZ_NEW0(RzInterpYieldRBuf);
-	if (!yield_rbufs) {
-		return NULL;
-	}
-	RzThreadRingBuf *rbuf = NULL;
-	switch (kind) {
-	default:
-		rz_warn_if_reached();
-		return NULL;
-	case RZ_INTERP_YIELD_KIND_CALL_CANDIDATE:
-		rbuf = rz_th_ring_buf_new(RZ_INTERP_YIELD_RBUF_SIZE, sizeof(RzAnalysisCallCandidate));
-		break;
-	case RZ_INTERP_YIELD_KIND_CONTROL_FLOW:
-		rbuf = rz_th_ring_buf_new(RZ_INTERP_YIELD_RBUF_SIZE, sizeof(RzInterpCtrlFlow));
-		break;
-	case RZ_INTERP_YIELD_KIND_XREF:
-		if (filter_data) {
-			yield_rbufs->filter_data = RZ_NEW0(RzInterpYieldFilterData);
-			yield_rbufs->filter_data->io_boundaries = filter_data;
-		}
-		rbuf = rz_th_ring_buf_new(RZ_INTERP_YIELD_RBUF_SIZE, sizeof(RzAnalysisXRef));
-		if (!rbuf) {
-			rz_pvector_free(filter_data);
-			return NULL;
-		}
-		break;
-	}
-	if (!rbuf) {
-		free(yield_rbufs);
-		return NULL;
-	}
-	yield_rbufs->kind = kind;
-	yield_rbufs->rbuf = rbuf;
-	yield_rbufs->filter = filter;
-	return yield_rbufs;
-}
+/////////////////////////////////////////////////////////
+/**
+ * \name RzInterpAbstrState
+ * @{
+ */
 
 /**
  * \brief Initializes an abstract state for specified abstract kinds. Optionally with a list of registers.
@@ -192,30 +144,6 @@ RZ_API void rz_interp_abstr_state_as_str_short(RZ_NONNULL RzInterpInstance *inst
 	}
 }
 
-RZ_API void rz_interp_instance_free(RZ_OWN RZ_NULLABLE RzInterpInstance *iset) {
-	if (!iset) {
-		return;
-	}
-	ht_up_free(iset->var_name_hashes);
-	if (iset->io_request_rbuf) {
-		rz_th_ring_buf_free(iset->io_request_rbuf);
-	}
-	if (iset->io_result_rbuf) {
-		rz_th_ring_buf_free(iset->io_result_rbuf);
-	}
-	if (iset->entry_points) {
-		rz_th_ring_buf_free(iset->entry_points);
-	}
-	if (iset->run_state_sync) {
-		rz_th_sem_free(iset->run_state_sync);
-	}
-	if (iset->run_state) {
-		rz_interp_run_state_free(iset->run_state);
-	}
-	rz_analysis_il_context_free(iset->il_ctx);
-	free(iset);
-}
-
 static HtUP *var_set_clone(const RzInterpInstance *iset, HtUP *vars) {
 	HtUP *r = ht_up_new(NULL, NULL);
 	if (!r) {
@@ -247,34 +175,6 @@ RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_clone(RZ_NONNULL RzInter
 	return r;
 }
 
-static bool setup_ipc_objects(
-	RZ_OUT RzThreadRingBuf **io_request_rbuf,
-	RZ_OUT RzThreadRingBuf **io_result_rbuf,
-	RZ_OUT RzThreadRingBuf **entry_points) {
-	*io_request_rbuf = NULL;
-	*io_result_rbuf = NULL;
-	*entry_points = NULL;
-
-	// Setup the IO queues. Each interpreter instance needs it's own queue at
-	// for writing IO. Because the writing is done on the IO cache, and each
-	// instance needs its own cache.
-	*io_request_rbuf = rz_th_ring_buf_new(RZ_INTERP_IO_RBUF_SIZE, sizeof(RzInterpIOReadRequest));
-	*io_result_rbuf = rz_th_ring_buf_new(RZ_INTERP_IO_RBUF_SIZE, sizeof(RzInterpIOResult));
-	*entry_points = rz_th_ring_buf_new(RZ_INTERP_ENTRY_POINTS_RBUF_SIZE, sizeof(ut64));
-	if (!*io_request_rbuf || !*io_result_rbuf || !*entry_points) {
-		rz_warn_if_reached();
-		goto error_free;
-	}
-
-	return true;
-
-error_free:
-	rz_th_ring_buf_free(*io_request_rbuf);
-	rz_th_ring_buf_free(*io_result_rbuf);
-	rz_th_ring_buf_free(*entry_points);
-	return false;
-}
-
 /**
  * \brief Join (least upper bound) on var sets
  * \return True if a was changed
@@ -301,6 +201,161 @@ bool join_state(RzInterpInstance *inst, RZ_BORROW RZ_INOUT RzInterpAbstrState *a
 	bool local_change = join_vars(inst, a->locals, b->locals);
 	// lets are not be relevant here since they are immutable within their scope
 	return global_change || local_change;
+}
+
+/// @}
+
+/////////////////////////////////////////////////////////
+/**
+ * \name Interpreter Blocks
+ * @{
+ */
+
+static RzInterpBlock *interp_block_new(RzInterpInstance *inst, RZ_BORROW RZ_NONNULL RzInterpAbstrState *entry_state) {
+	RzInterpBlock *block = RZ_NEW0(RzInterpBlock);
+	if (!block) {
+		return NULL;
+	}
+	block->entry_state = rz_interp_abstr_state_clone(inst, entry_state);
+	if (!block->entry_state) {
+		free(block);
+		return NULL;
+	}
+	return block;
+}
+
+static void interp_block_free(RzInterpInstance *inst, RzInterpBlock *block) {
+	if (!block) {
+		return;
+	}
+	rz_interp_abstr_state_free(inst, block->entry_state);
+	free(block);
+}
+
+RZ_API void rz_interp_run_push(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx, RZ_BORROW RZ_NONNULL RzInterpAbstrState *as) {
+	if (as->pc_state == RZ_INTERP_PC_ANY) {
+		RZ_LOG_DEBUG("Encountered state with unknown/top pc\n");
+		return;
+	}
+	if (as->pc_state != RZ_INTERP_PC_CONST) {
+		rz_warn_if_reached();
+		return;
+	}
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	rz_interp_abstr_state_as_str_short(ctx->inst, as, &sb);
+	RZ_LOG_DEBUG("PUSH 0x%" PFMT64x ": %s\n", as->pc, rz_strbuf_get(&sb));
+	rz_strbuf_fini(&sb);
+	RzInterpBlock *block = ht_up_find(ctx->pc_blocks, as->pc, NULL);
+	if (block) {
+		if (join_state(ctx->inst, block->entry_state, as) && !block->uninterpreted) {
+			block->uninterpreted = true;
+			rz_list_push(ctx->queue, block);
+		}
+	} else {
+		block = interp_block_new(ctx->inst, as);
+		if (!block) {
+			return;
+		}
+		ht_up_insert(ctx->pc_blocks, as->pc, block);
+		block->uninterpreted = true;
+		rz_list_push(ctx->queue, block);
+	}
+}
+
+static RzInterpBlock *rz_interp_run_pop(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx) {
+	RzInterpBlock *r = rz_list_pop(ctx->queue);
+	if (!r) {
+		return NULL;
+	}
+	r->uninterpreted = false;
+	return r;
+}
+
+/// @}
+
+/////////////////////////////////////////////////////////
+
+RZ_API void rz_interp_yield_rbuf_free(RZ_OWN RZ_NULLABLE RzInterpYieldRBuf *yield_rbufs) {
+	if (!yield_rbufs) {
+		return;
+	}
+	if (yield_rbufs->rbuf) {
+		rz_th_ring_buf_free(yield_rbufs->rbuf);
+	}
+	if (yield_rbufs->filter_data && yield_rbufs->filter_data->io_boundaries) {
+		rz_pvector_free(yield_rbufs->filter_data->io_boundaries);
+	}
+	free(yield_rbufs->filter_data);
+	free(yield_rbufs);
+}
+
+RZ_API RZ_OWN RzInterpYieldRBuf *rz_interp_yield_rbuf_new(RzInterpYieldKind kind,
+	RzInterpYieldFilter filter,
+	RZ_OWN RZ_NULLABLE void *filter_data) {
+	RzInterpYieldRBuf *yield_rbufs = RZ_NEW0(RzInterpYieldRBuf);
+	if (!yield_rbufs) {
+		return NULL;
+	}
+	RzThreadRingBuf *rbuf = NULL;
+	switch (kind) {
+	default:
+		rz_warn_if_reached();
+		return NULL;
+	case RZ_INTERP_YIELD_KIND_CALL_CANDIDATE:
+		rbuf = rz_th_ring_buf_new(RZ_INTERP_YIELD_RBUF_SIZE, sizeof(RzAnalysisCallCandidate));
+		break;
+	case RZ_INTERP_YIELD_KIND_CONTROL_FLOW:
+		rbuf = rz_th_ring_buf_new(RZ_INTERP_YIELD_RBUF_SIZE, sizeof(RzInterpCtrlFlow));
+		break;
+	case RZ_INTERP_YIELD_KIND_XREF:
+		if (filter_data) {
+			yield_rbufs->filter_data = RZ_NEW0(RzInterpYieldFilterData);
+			yield_rbufs->filter_data->io_boundaries = filter_data;
+		}
+		rbuf = rz_th_ring_buf_new(RZ_INTERP_YIELD_RBUF_SIZE, sizeof(RzAnalysisXRef));
+		if (!rbuf) {
+			rz_pvector_free(filter_data);
+			return NULL;
+		}
+		break;
+	}
+	if (!rbuf) {
+		free(yield_rbufs);
+		return NULL;
+	}
+	yield_rbufs->kind = kind;
+	yield_rbufs->rbuf = rbuf;
+	yield_rbufs->filter = filter;
+	return yield_rbufs;
+}
+
+static bool setup_ipc_objects(
+	RZ_OUT RzThreadRingBuf **io_request_rbuf,
+	RZ_OUT RzThreadRingBuf **io_result_rbuf,
+	RZ_OUT RzThreadRingBuf **entry_points) {
+	*io_request_rbuf = NULL;
+	*io_result_rbuf = NULL;
+	*entry_points = NULL;
+
+	// Setup the IO queues. Each interpreter instance needs it's own queue at
+	// for writing IO. Because the writing is done on the IO cache, and each
+	// instance needs its own cache.
+	*io_request_rbuf = rz_th_ring_buf_new(RZ_INTERP_IO_RBUF_SIZE, sizeof(RzInterpIOReadRequest));
+	*io_result_rbuf = rz_th_ring_buf_new(RZ_INTERP_IO_RBUF_SIZE, sizeof(RzInterpIOResult));
+	*entry_points = rz_th_ring_buf_new(RZ_INTERP_ENTRY_POINTS_RBUF_SIZE, sizeof(ut64));
+	if (!*io_request_rbuf || !*io_result_rbuf || !*entry_points) {
+		rz_warn_if_reached();
+		goto error_free;
+	}
+
+	return true;
+
+error_free:
+	rz_th_ring_buf_free(*io_request_rbuf);
+	rz_th_ring_buf_free(*io_result_rbuf);
+	rz_th_ring_buf_free(*entry_points);
+	return false;
 }
 
 /**
@@ -375,65 +430,28 @@ err_inst:
 	return NULL;
 }
 
-static RzInterpBlock *interp_block_new(RzInterpInstance *inst, RZ_BORROW RZ_NONNULL RzInterpAbstrState *entry_state) {
-	RzInterpBlock *block = RZ_NEW(RzInterpBlock);
-	if (!block) {
-		return NULL;
-	}
-	block->entry_state = rz_interp_abstr_state_clone(inst, entry_state);
-	if (!block->entry_state) {
-		free(block);
-		return NULL;
-	}
-	return block;
-}
-
-static void interp_block_free(RzInterpInstance *inst, RzInterpBlock *block) {
-	if (!block) {
+RZ_API void rz_interp_instance_free(RZ_OWN RZ_NULLABLE RzInterpInstance *iset) {
+	if (!iset) {
 		return;
 	}
-	rz_interp_abstr_state_free(inst, block->entry_state);
-	free(block);
-}
-
-RZ_API void rz_interp_run_push(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx, RZ_BORROW RZ_NONNULL RzInterpAbstrState *as) {
-	if (as->pc_state == RZ_INTERP_PC_ANY) {
-		RZ_LOG_DEBUG("Encountered state with unknown/top pc\n");
-		return;
+	ht_up_free(iset->var_name_hashes);
+	if (iset->io_request_rbuf) {
+		rz_th_ring_buf_free(iset->io_request_rbuf);
 	}
-	if (as->pc_state != RZ_INTERP_PC_CONST) {
-		rz_warn_if_reached();
-		return;
+	if (iset->io_result_rbuf) {
+		rz_th_ring_buf_free(iset->io_result_rbuf);
 	}
-	RzStrBuf sb;
-	rz_strbuf_init(&sb);
-	rz_interp_abstr_state_as_str_short(ctx->inst, as, &sb);
-	RZ_LOG_DEBUG("PUSH 0x%" PFMT64x ": %s\n", as->pc, rz_strbuf_get(&sb));
-	rz_strbuf_fini(&sb);
-	RzInterpBlock *block = ht_up_find(ctx->pc_blocks, as->pc, NULL);
-	if (block) {
-		if (join_state(ctx->inst, block->entry_state, as) && !block->uninterpreted) {
-			block->uninterpreted = true;
-			rz_list_push(ctx->queue, block);
-		}
-	} else {
-		block = interp_block_new(ctx->inst, as);
-		if (!block) {
-			return;
-		}
-		ht_up_insert(ctx->pc_blocks, as->pc, block);
-		block->uninterpreted = true;
-		rz_list_push(ctx->queue, block);
+	if (iset->entry_points) {
+		rz_th_ring_buf_free(iset->entry_points);
 	}
-}
-
-static RzInterpBlock *rz_interp_run_pop(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx) {
-	RzInterpBlock *r = rz_list_pop(ctx->queue);
-	if (!r) {
-		return NULL;
+	if (iset->run_state_sync) {
+		rz_th_sem_free(iset->run_state_sync);
 	}
-	r->uninterpreted = false;
-	return r;
+	if (iset->run_state) {
+		rz_interp_run_state_free(iset->run_state);
+	}
+	rz_analysis_il_context_free(iset->il_ctx);
+	free(iset);
 }
 
 bool report_yield_xref(

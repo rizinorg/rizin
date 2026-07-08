@@ -116,7 +116,7 @@ typedef struct {
  * Represents a block of instructions of which only the last may have a control effect.
  * Unlike IL blocks, the last instruction may also not have a control effect, which is
  * the case when the instruction directly following this block has an in-edge.
- * And unlike regular basic blocks, a call instruction also terminates an interpreter block.
+ * And unlike in RzAnalysisBlock, a call instruction also terminates an interpreter block.
  */
 typedef struct {
 	/**
