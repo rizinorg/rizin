@@ -4004,11 +4004,6 @@ static bool addr_in_exec_section(RzBinObject *bo, ut64 addr) {
 	return sec && (sec->perm & RZ_PERM_X);
 }
 
-static bool addr_in_exec_segment(RzBinObject *bo, ut64 addr) {
-	RzBinSection *seg = rz_bin_get_segment_at(bo, addr, true);
-	return seg && (seg->perm & RZ_PERM_X);
-}
-
 /** \brief How a DATA xref's instruction relates to its target address. */
 typedef enum {
 	XREF_REF_OTHER = 0, ///< address computation, control flow, etc. — handled as before
@@ -4106,11 +4101,9 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 		if (!bo) {
 			continue;
 		}
-		// Only executable-region targets need classifying: reject constants that merely
-		// equal a code address (e.g. `sub sp, sp, 0x810`), while skipping the decode for
-		// the common data-section case.
-		bool in_exec_segment = addr_in_exec_segment(bo, target);
-		XrefRefKind ref_kind = in_exec_segment ? xref_ref_kind(core, xref->from, target) : XREF_REF_OTHER;
+
+		// reject constants that merely equal a code address (e.g. `sub sp, sp, 0x810`)
+		XrefRefKind ref_kind = xref_ref_kind(core, xref->from, target);
 		if (ref_kind == XREF_REF_COINCIDENTAL_IMM) {
 			continue;
 		}

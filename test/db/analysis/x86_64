@@ -4521,3 +4521,16 @@ EXPECT=<<EOF
 \           0x1400010ae      ret
 EOF
 RUN
+
+NAME=do not mark coincidental imm in non-exec segment as data
+FILE=bins/elf/hello-freebsd-x64
+CMDS=<<EOF
+e io.cache=true
+s 0x002015ae
+wa "and dword [rbp-8], 0x0020001f"
+aaa
+Cdl~0x0020001f
+EOF
+EXPECT=<<EOF
+EOF
+RUN
