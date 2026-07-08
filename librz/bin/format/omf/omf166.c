@@ -584,7 +584,7 @@ static int load_linnum_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const 
 		}
 		linnum->LineNumber = rz_read_le16_offset(buf, &ct); // start with ct = 5
 		const ut16 offset = rz_read_le16_offset(buf, &ct);
-		linnum->address = (FrameNumber << 16) | offset;
+		linnum->address = ((ut64)FrameNumber << 16) | offset;
 		OMF_coments *comment = rz_pvector_tail(obj->coments_vec);
 		if (!comment) {
 			RZ_FREE(linnum);
