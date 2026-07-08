@@ -833,9 +833,13 @@ static int load_omf_typnew(rz_bin_omf166_obj *obj, const ut8 *buf) {
 		 *  0x20 | NrOfComp16 | Components [*]  { TI16 | OFFS32 | REP8 | POS8 | n,’name’ }
 		 * \endcode
 		 */
+		const ut16 raw_count = rz_read_le16_offset(buf, &cct);
+		if (raw_count == 0 || raw_count > UINT16_MAX) {
+			return false;
+		}
 		newtype->label = rz_str_dup("COMPONENT_LIST_DESCRIPTOR");
 		newtype->descriptor.components.index = obj->TI_INDEX;
-		newtype->descriptor.components.count = rz_read_le16_offset(buf, &cct);
+		newtype->descriptor.components.count = raw_count;
 		newtype->descriptor.components.comp =
 			RZ_NEWS0(OMF_component, newtype->descriptor.components.count);
 		if (!newtype->descriptor.components.comp) {
@@ -844,7 +848,7 @@ static int load_omf_typnew(rz_bin_omf166_obj *obj, const ut8 *buf) {
 			return false;
 		}
 
-		for (int i = 0; i < newtype->descriptor.components.count; i++) {
+		for (ut16 i = 0; i < newtype->descriptor.components.count; i++) {
 			OMF_component *component = newtype->descriptor.components.comp + i;
 			component->index = obj->TI_INDEX;
 			component->ti = rz_read_le16_offset(buf, &cct);
