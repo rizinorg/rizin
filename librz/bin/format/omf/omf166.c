@@ -686,6 +686,9 @@ static int load_omf_unk4(const ut8 *buf, const size_t buf_size, const OMF_record
 	RZ_LOG_DEBUG("load_omf = UNKNOWN4  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10" PFMTSZu ")\n", record->size, global_ct, record->type, buf_size);
 	size_t ct = 3;
 	const ut16 count = rz_read_le16_offset(buf, &ct);
+	if (count == 0 || count > UINT16_MAX) {
+		return false;
+	}
 
 	RZ_LOG_DEBUG("count: %2d [%02x %02x]\n%02x %02x\n",
 		count, buf[ct], buf[ct + 1], buf[ct + 2], buf[ct + 3]);
