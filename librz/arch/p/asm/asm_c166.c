@@ -342,10 +342,12 @@ static st32 disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, st32 len) {
 		return op->size;
 	}
 
-	C166State *state = (C166State *)a->plugin_data;
-	if (!state) {
+	if (!a->plugin_data) {
 		RZ_LOG_FATAL("C166State was NULL.\n");
+		return -1;
 	}
+
+	C166State *state = (C166State *)a->plugin_data;
 
 	C166_Inst inst = RZ_EMPTY;
 	inst.addr = (ut32)a->pc;
