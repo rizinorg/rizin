@@ -5220,6 +5220,7 @@ static const char *help_msg_visual_hist[] = {
 	"?", "", "show this help",
 	"hl", "", "move cursor left / right one bar",
 	"+/-", "", "zoom in / out",
+	"PgUp/PgDn", "", "jump left/right by 1/10 of the histogram width",
 	":cmd", "", "run a rizin command",
 	"q", "", "back to Visual mode (or Q / Space)",
 	NULL
