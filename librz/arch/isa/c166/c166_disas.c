@@ -980,10 +980,6 @@ static const char *c166_instr_extended_name(C166_Inst *instr) {
 		return "CoNEG";
 	}
 
-	if ((opcode == 0x83) && (extID == 0x9A)) {
-		return "CoSHR";
-	}
-
 	if ((opcode == 0x93) && (extID == 0x5A)) {
 		return "CoNOP";
 	}

@@ -55,7 +55,7 @@ static void destroy(RzBinFile *bf) {
 	}
 
 	rz_bin_omf166_obj *omf_obj = (rz_bin_omf166_obj *)bf->o->bin_obj;
-	if (omf_obj) {
+	if (!omf_obj) {
 		return;
 	}
 	ht_up_free(omf_obj->ht_types);
