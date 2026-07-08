@@ -139,7 +139,6 @@ RZ_API RZ_OWN RzILCacheBlock *rz_il_cache_lift_il_block(const RzILCache *cache, 
 		goto fail;
 	}
 	il_block->addr = addr;
-	RZ_LOG_DEBUG("ILCache: Gen block:\n");
 	bool sparc_add_delayed_insn = false;
 	bool changes_cf = true;
 	do {
@@ -196,7 +195,6 @@ RZ_API RZ_OWN RzILCacheBlock *rz_il_cache_lift_il_block(const RzILCache *cache, 
 			}
 		}
 
-		RZ_LOG_DEBUG("ILCache: \t0x%" PFMT64x "\n", addr);
 		addr += op.size;
 		rz_analysis_op_fini(&op);
 		rz_mem_memzero(buf, max_read_size);
@@ -226,11 +224,9 @@ static const RzILCacheBlock *lift_il_block(RzILCache *cache, ut64 addr) {
 	RzILCacheBlock *block = ht_up_find(cache->cache, addr, NULL);
 	if (block) {
 		char *bstr = rz_il_cache_block_str(block);
-		RZ_LOG_DEBUG("ILCache: Serve block %s from cache\n", bstr);
 		free(bstr);
 		return block;
 	}
-	RZ_LOG_DEBUG("ILCache: Lift new block\n");
 	block = rz_il_cache_lift_il_block(cache, addr);
 	if (!block) {
 		RZ_LOG_DEBUG("ILCache: Failed to lift block at 0x%" PFMT64x "\n", addr);

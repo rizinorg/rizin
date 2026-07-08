@@ -74,17 +74,14 @@ RZ_API RZ_OWN RzInterpYieldRBuf *rz_interp_yield_rbuf_new(RzInterpYieldKind kind
  * The register name list should always be given if the architecture has some.
  */
 RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_new(
-	RZ_NONNULL RzInterpInstance *inst,
-	const char *arch_name) {
+	RZ_NONNULL RzInterpInstance *inst) {
 	rz_return_val_if_fail(inst, NULL);
 	RzInterpAbstrState *state = RZ_NEW0(RzInterpAbstrState);
 	if (!state) {
 		return NULL;
 	}
 	state->pc_state = RZ_INTERP_PC_UNREACHABLE;
-	state->arch_name = arch_name;
 	// Initialize the register file with uninitialized abstract values.
-	state->var_name_hashes = ht_up_new(NULL, free);
 	state->globals = ht_up_new(NULL, NULL);
 	for (size_t i = 0; i < inst->il_ctx->reg_binding->regs_count; i++) {
 		const char *rname = inst->il_ctx->reg_binding->regs[i].name;
@@ -92,19 +89,13 @@ RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_new(
 		if (!aval) {
 			rz_warn_if_reached();
 			ht_up_free(state->globals);
-			ht_up_free(state->var_name_hashes);
 			free(state);
 			return NULL;
 		}
-
 		ut64 djb2_reg_hash = rz_str_djb2_hash(rname);
-		if (!ht_up_insert(state->globals, djb2_reg_hash, aval) ||
-			!ht_up_insert(state->var_name_hashes, djb2_reg_hash, rz_str_dup(rname))) {
-			RZ_LOG_ERROR("Failed to add %s to the global variable map. "
-				     "DJB2 hash collision of the register name. DJB2 hash = 0x%" PFMT64x "\n",
-				rname, djb2_reg_hash);
+		if (!ht_up_insert(state->globals, djb2_reg_hash, aval)) {
+			RZ_LOG_ERROR("Failed to add %s to the global variable map.", rname);
 			ht_up_free(state->globals);
-			ht_up_free(state->var_name_hashes);
 			free(state);
 		}
 	}
@@ -130,9 +121,6 @@ RZ_API void rz_interp_abstr_state_free(RzInterpInstance *inst, RZ_OWN RZ_NULLABL
 	if (!state) {
 		return;
 	}
-	if (state->var_name_hashes) {
-		ht_up_free(state->var_name_hashes);
-	}
 	var_set_free(inst, state->globals);
 	var_set_free(inst, state->locals);
 	var_set_free(inst, state->lets);
@@ -153,8 +141,6 @@ static bool reset_state(RzInterpInstance *inst, RZ_BORROW RzInterpAbstrState *st
 		}
 	}
 	rz_iterator_free(it);
-	state->bb_addr = 0;
-	state->bb_size = 0;
 	return true;
 }
 
@@ -176,7 +162,7 @@ RZ_API bool rz_interp_abstr_state_as_str(RZ_NONNULL RzInterpInstance *inst, RZ_N
 	RzIterator *it = ht_up_as_iter_keys(state->globals);
 	ut64 *k;
 	rz_iterator_foreach(it, k) {
-		const char *gname = ht_up_find(state->var_name_hashes, *k, NULL);
+		const char *gname = ht_up_find(inst->var_name_hashes, *k, NULL);
 		rz_strbuf_appendf(sb, "\t%s = ", gname);
 		RzInterpAbstrVal *av = ht_up_find(state->globals, *k, NULL);
 		inst->plugin->val_as_str(av, sb);
@@ -200,10 +186,34 @@ RZ_API void rz_interp_abstr_state_as_str_short(RZ_NONNULL RzInterpInstance *inst
 			rz_strbuf_append(sb, ", ");
 		}
 		first = false;
-		const char *varname = ht_up_find(astate->var_name_hashes, djb2_reg_name, NULL);
+		const char *varname = ht_up_find(inst->var_name_hashes, djb2_reg_name, NULL);
 		rz_strbuf_appendf(sb, "%s = ", varname);
 		inst->plugin->val_as_str(av, sb);
 	}
+}
+
+RZ_API void rz_interp_instance_free(RZ_OWN RZ_NULLABLE RzInterpInstance *iset) {
+	if (!iset) {
+		return;
+	}
+	ht_up_free(iset->var_name_hashes);
+	if (iset->io_request_rbuf) {
+		rz_th_ring_buf_free(iset->io_request_rbuf);
+	}
+	if (iset->io_result_rbuf) {
+		rz_th_ring_buf_free(iset->io_result_rbuf);
+	}
+	if (iset->entry_points) {
+		rz_th_ring_buf_free(iset->entry_points);
+	}
+	if (iset->run_state_sync) {
+		rz_th_sem_free(iset->run_state_sync);
+	}
+	if (iset->run_state) {
+		rz_interp_run_state_free(iset->run_state);
+	}
+	rz_analysis_il_context_free(iset->il_ctx);
+	free(iset);
 }
 
 static HtUP *var_set_clone(const RzInterpInstance *iset, HtUP *vars) {
@@ -229,48 +239,13 @@ RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_clone(RZ_NONNULL RzInter
 	if (!state) {
 		return NULL;
 	}
-	r->arch_name = state->arch_name;
 	r->pc = state->pc;
 	r->pc_state = state->pc_state;
 	r->uninterpreted = state->uninterpreted;
-	r->var_name_hashes = ht_up_new(NULL, free);
-	RzIterator *it = ht_up_as_iter_keys(state->var_name_hashes);
-	ut64 *key;
-	rz_iterator_foreach(it, key) {
-		char *n = strdup(ht_up_find(state->var_name_hashes, *key, NULL));
-		if (!n) {
-			continue;
-		}
-		ht_up_insert(r->var_name_hashes, *key, n);
-	}
-
 	r->globals = var_set_clone(iset, state->globals);
 	r->locals = var_set_clone(iset, state->locals);
 	r->lets = var_set_clone(iset, state->lets);
 	return r;
-}
-
-RZ_API void rz_interp_instance_free(RZ_OWN RZ_NULLABLE RzInterpInstance *iset) {
-	if (!iset) {
-		return;
-	}
-	if (iset->io_request_rbuf) {
-		rz_th_ring_buf_free(iset->io_request_rbuf);
-	}
-	if (iset->io_result_rbuf) {
-		rz_th_ring_buf_free(iset->io_result_rbuf);
-	}
-	if (iset->entry_points) {
-		rz_th_ring_buf_free(iset->entry_points);
-	}
-	if (iset->run_state_sync) {
-		rz_th_sem_free(iset->run_state_sync);
-	}
-	if (iset->run_state) {
-		rz_interp_run_state_free(iset->run_state);
-	}
-	rz_analysis_il_context_free(iset->il_ctx);
-	free(iset);
 }
 
 static bool setup_ipc_objects(
@@ -341,42 +316,64 @@ RZ_API RZ_OWN RzInterpInstance *rz_interp_instance_new(
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
 	rz_return_val_if_fail(plugin && ignored_code && analysis && il_cache_client, NULL);
 
-	RzInterpInstance *iset = RZ_NEW0(RzInterpInstance);
-	if (!iset) {
+	RzInterpInstance *inst = RZ_NEW0(RzInterpInstance);
+	if (!inst) {
 		return NULL;
 	}
 
+	const RzAnalysisPlugin *cur = rz_analysis_plugin_current(analysis);
+	if (!cur || !cur->arch) {
+		goto err_inst;
+	}
+	inst->arch_name = cur->arch;
+
 	RzAnalysisILContext *il_ctx = rz_analysis_il_context_resolve(analysis);
 	if (!il_ctx) {
-		free(iset);
 		RZ_LOG_ERROR("Failed to create analysis IL context.\n");
-		return NULL;
+		goto err_inst;
 	}
 
 	RzThreadRingBuf *io_request_rbuf = NULL;
 	RzThreadRingBuf *io_result_rbuf = NULL;
 	RzThreadRingBuf *entry_points = NULL;
 	if (!setup_ipc_objects(&io_request_rbuf, &io_result_rbuf, &entry_points)) {
-		free(iset);
-		rz_analysis_il_context_free(il_ctx);
-		return NULL;
+		goto err_il_ctx;
 	}
 
-	iset->a = analysis;
-	iset->plugin = plugin;
-	iset->run_state = rz_interp_run_state_new();
-	iset->il_ctx = il_ctx;
-	iset->il_cache_client = il_cache_client;
-	iset->entry_points = entry_points;
-	iset->yield_rbufs[RZ_INTERP_YIELD_KIND_XREF] = yield_rbufs[RZ_INTERP_YIELD_KIND_XREF];
-	iset->yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE] = yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE];
-	iset->yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW] = yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW];
-	iset->io_request_rbuf = io_request_rbuf;
-	iset->io_result_rbuf = io_result_rbuf;
-	iset->run_state_sync = rz_th_sem_new(0);
-	iset->ignored_code = ignored_code;
+	inst->a = analysis;
+	inst->plugin = plugin;
+	inst->run_state = rz_interp_run_state_new();
+	inst->il_ctx = il_ctx;
 
-	return iset;
+	inst->var_name_hashes = ht_up_new(NULL, free);
+	for (size_t i = 0; i < il_ctx->reg_binding->regs_count; i++) {
+		const char *rname = il_ctx->reg_binding->regs[i].name;
+		ut64 djb2_reg_hash = rz_str_djb2_hash(rname);
+		if (!ht_up_insert(inst->var_name_hashes, djb2_reg_hash, rz_str_dup(rname))) {
+			RZ_LOG_ERROR("DJB2 hash collision of the register name %s. DJB2 hash = 0x%" PFMT64x "\n",
+				rname, djb2_reg_hash);
+			goto err_var_name_hashes;
+		}
+	}
+
+	inst->il_cache_client = il_cache_client;
+	inst->entry_points = entry_points;
+	inst->yield_rbufs[RZ_INTERP_YIELD_KIND_XREF] = yield_rbufs[RZ_INTERP_YIELD_KIND_XREF];
+	inst->yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE] = yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE];
+	inst->yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW] = yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW];
+	inst->io_request_rbuf = io_request_rbuf;
+	inst->io_result_rbuf = io_result_rbuf;
+	inst->run_state_sync = rz_th_sem_new(0);
+	inst->ignored_code = ignored_code;
+
+	return inst;
+err_var_name_hashes:
+	ht_up_free(inst->var_name_hashes);
+err_il_ctx:
+	rz_analysis_il_context_free(il_ctx);
+err_inst:
+	free(inst);
+	return NULL;
 }
 
 RZ_API void rz_interp_run_push(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx, RZ_BORROW RZ_NONNULL RzInterpAbstrState *as) {
@@ -433,7 +430,7 @@ bool report_yield_xref(
 		goto cleanup;
 	}
 	if (type == RZ_ANALYSIS_XREF_TYPE_CODE &&
-		RZ_STR_EQ(ctx->astate->arch_name, "hexagon") &&
+		RZ_STR_EQ(ctx->inst->arch_name, "hexagon") &&
 		from + insn_pkt_size == rz_bv_to_ut64(&to_bv)) {
 		// Ugly work around.
 		// Because we don't have RzArch yet the Hexagon plugin adds a JUMP at the
@@ -450,7 +447,7 @@ bool report_yield_xref(
 
 	ut64 to_addr = rz_bv_to_ut64(&to_bv);
 	RzAnalysisXRef xref = { 0 };
-	xref.bb_addr = ctx->astate->bb_addr;
+	xref.bb_addr = 0; // TODO? ctx->astate->bb_addr;
 	xref.from = from;
 	xref.to = to_addr;
 	xref.type = type;
@@ -475,6 +472,7 @@ static bool report_yield_call_candiate(
 	rz_return_val_if_fail(cc_rbuf, false);
 
 	RzAnalysisCallCandidate cc = { 0 };
+	// TODO? put the bb addr into the call candidate? Currently we do not know it.
 	memcpy(&cc, &ctx->call_cand, sizeof(ctx->call_cand));
 	if (rz_th_ring_buf_put(cc_rbuf->rbuf, &cc) != RZ_THREAD_RING_BUF_OK) {
 		return false;
@@ -615,11 +613,23 @@ static bool set_abstr_pc(RzInterpInstance *inst, RzInterpAbstrState *state, RzIn
 static bool value_indicates_ret_addr_write(RzInterpRunContext *ctx, RzInterpAbstrVal *val) {
 	RzBitVector bv;
 	rz_bv_init(&bv, 64);
+	// Hint: pc addrs coming from the lifters are currently just opaque bitvectors.
+	// So we do not know whether the constant contents of val are actually taken from the architecture's
+	// pc register or match the instruction address by chance only.
+	// We could add a flag to RzILOpArgsBV that would be set by lifters to indicate that the constant value
+	// originates from the pc and use that here.
+	// This may also help with the sparc workaround.
+	// The downside is that a pattern like this in non-relocatable code would not be detected as call:
+	// 0x42 mov lr, 0x4a
+	// 0x46 mov pc, r0
+	// 0x4a ...
+	// but it is questionable whether that should be even detected at all, since there is no way to know
+	// if it is intended as call or jump.
 	bool ret = ctx->inst->plugin->to_concrete_const(val, &bv) &&
-		(rz_bv_to_ut64(&bv) == ctx->astate->bb_addr + ctx->astate->bb_size ||
+		(rz_bv_to_ut64(&bv) == ctx->il_block_end ||
 			// Sparc stores the call instruction PC into o8.
 			// The return instruction jumps then to o7+8.
-			(rz_str_startswith(ctx->astate->arch_name, "sparc") && rz_bv_to_ut64(&bv) == ctx->astate->pc));
+			(rz_str_startswith(ctx->inst->arch_name, "sparc") && rz_bv_to_ut64(&bv) == ctx->astate->pc));
 	rz_bv_fini(&bv);
 	return ret;
 }
@@ -918,8 +928,7 @@ static bool eval_effect(RzInterpRunContext *ctx,
 		if (value_indicates_ret_addr_write(ctx, eval_out) &&
 			kind == RZ_IL_VAR_KIND_GLOBAL) {
 			ctx->call_cand.store_addr = pc;
-			ctx->call_cand.npc = ctx->astate->bb_addr + ctx->astate->bb_size;
-			ctx->call_cand.bb_addr = ctx->astate->bb_addr;
+			ctx->call_cand.npc = ctx->il_block_end;
 			ctx->call_cand.in_mem = false;
 		}
 		break;
@@ -1064,8 +1073,7 @@ static bool eval_effect(RzInterpRunContext *ctx,
 		}
 		if (value_indicates_ret_addr_write(ctx, eval_out)) {
 			ctx->call_cand.store_addr = pc;
-			ctx->call_cand.npc = ctx->astate->bb_addr + ctx->astate->bb_size;
-			ctx->call_cand.bb_addr = ctx->astate->bb_addr;
+			ctx->call_cand.npc = ctx->il_block_end;
 			ctx->call_cand.in_mem = true;
 		}
 		report_yield_xref(ctx, insn_pkt_size, pc, st_addr, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE);
@@ -1166,8 +1174,7 @@ static bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 
 	// Prepare the initial state from the given entry point
 	// Hint: nothing speaks against supporting multiple entry points in a single run
-	const RzAnalysisPlugin *cur = rz_analysis_plugin_current(inst->a);
-	RzInterpAbstrState *estate = rz_interp_abstr_state_new(inst, cur->arch);
+	RzInterpAbstrState *estate = rz_interp_abstr_state_new(inst);
 	memset(&ctx.call_cand, 0, sizeof(ctx.call_cand));
 	if (!reset_state(inst, estate, entry_point)) {
 		rz_warn_if_reached();
@@ -1189,7 +1196,8 @@ static bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 
 		const RzILCacheBlock *il_bb = rz_il_cache_client_lift_il_block(inst->il_cache_client, ctx.astate->pc);
 		if (!il_bb) {
-			// Lifting failed, TODO: handle this better
+			RZ_LOG_ERROR("interpreter: Lifting failed\n");
+			// TODO: handle this better
 			break;
 		}
 
@@ -1205,11 +1213,10 @@ static bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 		// rz_meta_set_string(iset->a, RZ_META_TYPE_COMMENT, il_bb->addr, rz_strbuf_get(&sb));
 		rz_strbuf_fini(&sb);
 
-		ctx.astate->bb_addr = il_bb->addr;
-		ctx.astate->bb_size = il_bb->size;
+		ctx.il_block_end = il_bb->addr + il_bb->size;
 		// Evaluate the effect on the abstract state.
 		if (!eval_block(&ctx, il_bb)) {
-			RZ_LOG_DEBUG("interpreter: Eval failed\n");
+			RZ_LOG_ERROR("interpreter: Eval failed\n");
 			success = false;
 			break;
 		}

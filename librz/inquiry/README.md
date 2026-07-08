@@ -28,3 +28,98 @@ Ideas for optimization (do not implement any of these without profiling first):
   So the plugin must decide whether to short-circuit or not. It has to be
   profiled if the cost of asking the plugin all the time is really compensated
   by avoided evalutations in practical code.
+
+## CFG recovery irregularities TODO:
+
+Code:
+B> fallthrough
+   fallthrough
+A> ...
+
+Case 1:
+  A was already discovered.
+  B is discovered later.
+  => It must extend only until the start of A.
+
+Case 2:
+  B was already discovered.
+  A is discovered later.
+  => B must be split.
+
+Special cases:
+Jump into the middle of an instruction. Perhaps when an instruction meets again
+with one from another block, this should be merged.
+
+### Problem with blocks that do not end in a jump, or ones that have more prepended instructions to be discovered later:
+Call detection is based on a store of the block end addr before the jump.
+Consider the following ARMv4 code for an indirect call (blx was introduced in ARMv5):
+
+A> mov lr, pc
+B> mov pc, r0
+C> ...
+
+both A and B are block entries.
+
+1. If A is discovered before B, the call is recognized and C is also added as a fallthrough entry.
+2. If B is discovered before A, the call is not recognized because A and B are two separate blocks already.
+
+The ideal outcome is probably that this is **not** recognized as a call since
+it is unlikely to be meant to be one in this pattern, but this is not practical
+as explained in detail in the section below.
+Since for this special case, we will not decide whether the jump is a call, we
+have to simply interpret it as both a call and a direct jump.
+
+Idea: have some flags per block, something like:
+- Fallthrough
+- Stores bb-end, WARNING: bb-end must be detected from the IL cache block that definitely ends with an explicit jmp
+
+#### Detailed reasoning why avoiding call detection is not possible
+
+Consider patterns like this, where there is an in-edge to A and to B.
+
+A>    mov lr, pc
+B>    jmp 1324
+C>    ...
+
+For all such patterns across an entire interpretation, we now want to **not**
+consider the jmp as a call, but only because of the in-edge B. However:
+
+* To make the decision whether a block from entry A is calling, it is necessary
+  to know that there is no entry B into the block splitting pc storage and
+  jump.
+* This is only possible to know once a fixpoint has been reached already. But
+  reaching the final fixpoint also depends on whether A is calling, so there is
+  a circular dependency.
+
+One might try to approach this by postponing adding any successor states of A
+if it is detected that it might be calling, then loop until a temporary
+fixpoint is reached, then continue from A, again postponing deciding on
+successors of potentially calling blocks and do this until a final fixpoint has
+been reached.
+But if wethen  detect an edge B, we have violated our condition that we want
+this pattern to always not be recognized as calling. But if from this we might
+rewind and conclude that A is not calling, that edge B would disappear, so A
+should be calling again and it is a circular dependency again.
+
+We could weaken our initial condition to allow for A to be calling while B is
+there if B is detected only because of A later on, but then consider this
+example:
+
+A>    mov lr, pc
+B>    jmp 1234
+C>    jmp B'
+...
+A'>   mov lr, pc
+B'>   jmp 4321
+C'>   jmp B
+
+There is no unique solution for minimizing calling blocks with edges into them
+anymore. Either A is considered calling and A' is not, or the other way around.
+
+In conclusion, it is impossible to guarantee that blocks that have a
+call-splitting in-edge are never treated as calling, and it is also impossible
+to minimize the number of such occurrences deterministically (avoiding
+arbitrary heuristics).
+And even if we tried to minimize these cases and use some heuristics to decide
+between multiple solutions, the added complexity to the algorithm would likely
+be justified by how little practical usefulness this has.

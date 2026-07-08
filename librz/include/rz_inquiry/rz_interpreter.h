@@ -103,17 +103,13 @@ typedef enum {
 } RzInterpPCState;
 
 typedef struct {
-	ut64 pc; ///< Interpreter location in the code. This is not necessarily identical to the ISA's program counter register, but simply points to the instruction to execute.
+	ut64 pc; ///< Interpreter location in the code. This is not necessarily identical to the ISA's program counter register, but simply points to the instruction to execute next.
 	RzInterpPCState pc_state;
 	bool uninterpreted; ///< True if this state has not yet been started to interpret, i.e. is part of RzInterpFunctionState.queue
 
-	HtUP *var_name_hashes; ///< Map of DJB2 hashes to variable names.
 	HtUP /*<RzInterpAbstrVal *>*/ *globals; ///< Global variables (mostly registers). Indexed by DJB2 hash of global name.
 	HtUP /*<RzInterpAbstrVal *>*/ *locals; ///< Local variables. Indexed by DJB2 hash of the local name.
 	HtUP /*<RzInterpAbstrVal *>*/ *lets; ///< Let variables. Indexed by DJB2 hash of the let name.
-	const char *arch_name; ///< Name of architecture. Used by work-arounds until we have RzArch.
-	ut64 bb_addr;
-	ut64 bb_size;
 } RzInterpAbstrState;
 
 typedef enum {
@@ -255,6 +251,8 @@ struct rz_interp_instance_t {
 	RzThreadRingBuf *entry_points;
 
 	RzAnalysisILContext *il_ctx; ///< Context about available global vars and memory
+	HtUP *var_name_hashes; ///< Map of DJB2 hashes to variable names.
+	RZ_DEPRECATE const char *arch_name; ///< Name of architecture. Used only by work-arounds until we have RzArch.
 
 	RZ_LIFETIME(RzILCache)
 	RZ_BORROW RzILCacheClient *il_cache_client;
@@ -288,8 +286,7 @@ RZ_IPI void rz_interp_run_state_set(RZ_BORROW RZ_NONNULL RzInterpRunState *state
 RZ_API void rz_interp_yield_rbuf_free(RZ_OWN RZ_NULLABLE RzInterpYieldRBuf *yield_rbuf);
 
 RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_new(
-	RZ_NONNULL RzInterpInstance *inst,
-	const char *arch_name);
+	RZ_NONNULL RzInterpInstance *inst);
 RZ_API void rz_interp_abstr_state_free(RzInterpInstance *inst, RZ_OWN RZ_NULLABLE RzInterpAbstrState *state);
 RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_clone(RZ_NONNULL RzInterpInstance *iset, const RzInterpAbstrState *state);
 RZ_API bool rz_interp_abstr_state_as_str(RZ_NONNULL RzInterpInstance *inst, RZ_NONNULL const RzInterpAbstrState *state, RZ_NONNULL RZ_OUT RzStrBuf *sb);
@@ -317,6 +314,7 @@ struct rz_interp_run_context_t {
 	HtUP /*<RzInterpAbstrState>*/ *pc_states; ///< Currently discovered states at the entries of blocks.
 
 	// Tracking data local to a single block interpretation
+	ut64 il_block_end; ///< The address directly after the last instruction of the currently interpreted IL block
 	RzInterpAbstrState *astate; ///< The abstract state of the interpreter.
 	RzAnalysisCallCandidate call_cand; ///< Data of a call candidate.
 };
