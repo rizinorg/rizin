@@ -779,7 +779,10 @@ RZ_API void rz_flag_item_set_realname(RzFlag *f, RzFlagItem *item, const char *r
 		free_item_realname(item);
 		item->realname = rz_str_dup(realname);
 		if (!ht_sp_find(f->ht_name, realname, NULL)) {
-			ht_sp_insert(f->ht_name, realname, rz_flag_item_clone(item));
+			RzFlagItem *cloned_item = rz_flag_item_clone(item);
+			free_item_name(cloned_item);
+			cloned_item->name = cloned_item->realname;
+			ht_sp_insert(f->ht_name, realname, cloned_item);
 		}
 	}
 }
@@ -801,7 +804,8 @@ RZ_API int rz_flag_rename(RzFlag *f, RzFlagItem *item, const char *name) {
 
 /* \brief unset the given flag \p item.
  *
- * return true if the item is successfully unset, false otherwise.
+ * Return true if the item is successfully unset, false otherwise. Assumes that item is
+ * inserted in f->ht_name under item->name.
  * NOTE: the item is freed.
  */
 RZ_API bool rz_flag_unset(RzFlag *f, RzFlagItem *item) {
