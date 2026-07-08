@@ -576,7 +576,7 @@ id: 17
 bytes: c4b6e2e07c68c52b
 refptr: 0
 size: 8
-sign: true
+sign: false
 type: sar
 cycles: 0
 opex:
@@ -792,7 +792,7 @@ opex:
       value: 1033975643
     - type: "off"
       value: -18110
-jump: 0x0005ca18
+jump: 0xfffffffffffdca18
 fail: 0x00000008
 cond: al
 family: cpu
@@ -818,7 +818,7 @@ opex:
       value: 506324756
     - type: "off"
       value: -3422
-jump: 0x00079518
+jump: 0xffffffffffff9518
 fail: 0x00000008
 cond: al
 family: cpu
@@ -844,7 +844,7 @@ opex:
       value: -1765229424
     - type: "off"
       value: -32605
-jump: 0x00040520
+jump: 0xfffffffffffc0520
 fail: 0x00000008
 cond: al
 family: cpu
@@ -896,7 +896,7 @@ opex:
       value: "r1"
     - type: "off"
       value: -6016
-jump: 0x00074408
+jump: 0xffffffffffff4408
 fail: 0x00000008
 cond: al
 family: cpu
@@ -922,7 +922,7 @@ opex:
       value: -441385648
     - type: "off"
       value: -19722
-jump: 0x000597b8
+jump: 0xfffffffffffd97b8
 fail: 0x00000008
 cond: al
 family: cpu
@@ -948,7 +948,7 @@ opex:
       value: "r9"
     - type: "off"
       value: -20033
-jump: 0x00058e00
+jump: 0xfffffffffffd8e00
 fail: 0x00000008
 cond: al
 family: cpu
@@ -970,7 +970,7 @@ opex:
   operands:
     - type: "off"
       value: -20367
-jump: 0x00058390
+jump: 0xfffffffffffd8390
 family: cpu
 ----------
 address: 0x0
@@ -990,7 +990,7 @@ opex:
   operands:
     - type: "imm"
       value: -172417213
-jump: 0x7adc8fa20
+jump: 0xffffffffadc8fa20
 family: cpu
 ----------
 address: 0x0
@@ -1014,7 +1014,7 @@ opex:
       value: -172417213
     - type: "off"
       value: -13297
-jump: 0x00066080
+jump: 0xfffffffffffe6080
 fail: 0x00000008
 cond: al
 family: cpu
@@ -1040,7 +1040,7 @@ opex:
       value: -172417213
     - type: "off"
       value: -13297
-jump: 0x00066080
+jump: 0xfffffffffffe6080
 fail: 0x00000008
 cond: al
 family: cpu

@@ -1,8 +1,6 @@
 // SPDX-FileCopyrightText: 2026 Jagath-P <jagathp0210@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_util/rz_assert.h"
-#include "rz_util/rz_structured_data.h"
 #include <rz_analysis.h>
 #include <capstone/capstone.h>
 #include <capstone/bpf.h>
@@ -111,9 +109,9 @@ static RzStructuredData *bpf_opex(csh handle, cs_insn *insn) {
 			break;
 		}
 	}
-
 	return root;
 }
+
 static bool bpf_anal_init(void **user) {
 	BPFContext *ctx = RZ_NEW0(BPFContext);
 	rz_return_val_if_fail(ctx, false);
@@ -167,10 +165,9 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 	case BPF_INS_MOV: op->type = RZ_ANALYSIS_OP_TYPE_MOV; break;
 	case BPF_INS_ARSH:
 		op->type = RZ_ANALYSIS_OP_TYPE_SAR;
-		op->sign = true;
 		break;
 
-	/* ALU64 */
+		/* ALU64 */
 	case BPF_INS_ADD64: op->type = RZ_ANALYSIS_OP_TYPE_ADD; break;
 	case BPF_INS_SUB64: op->type = RZ_ANALYSIS_OP_TYPE_SUB; break;
 	case BPF_INS_MUL64: op->type = RZ_ANALYSIS_OP_TYPE_MUL; break;
@@ -185,7 +182,6 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 	case BPF_INS_MOV64: op->type = RZ_ANALYSIS_OP_TYPE_MOV; break;
 	case BPF_INS_ARSH64:
 		op->type = RZ_ANALYSIS_OP_TYPE_SAR;
-		op->sign = true;
 		break;
 
 	case BPF_INS_SDIV:
@@ -213,6 +209,9 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 	case BPF_INS_BE16:
 	case BPF_INS_BE32:
 	case BPF_INS_BE64:
+	case BPF_INS_BSWAP16:
+	case BPF_INS_BSWAP32:
+	case BPF_INS_BSWAP64:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV; // endian-swap into same reg
 		break;
 
@@ -268,14 +267,11 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 		op->direction = RZ_ANALYSIS_OP_DIR_READ;
 		break;
 
-	/* Store */
+		/* Store */
 	case BPF_INS_STXW:
 	case BPF_INS_STXH:
 	case BPF_INS_STXB:
 	case BPF_INS_STXDW:
-		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
-		op->direction = RZ_ANALYSIS_OP_DIR_WRITE;
-		break;
 	case BPF_INS_STW:
 	case BPF_INS_STH:
 	case BPF_INS_STB:
@@ -291,8 +287,8 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 		break;
 
 		/*
-		 * Extended atomics (AFADD, AFOR, AFAND, AFXOR, AADD, AOR, AAND, AXOR)
-		 * only exist in Capstone v6 onwards.
+		 * Atomics (AFADD, AFOR, AFAND, AFXOR, AADD, AOR, AAND, AXOR)
+		 * only exist in Capstone versions after v6.
 		 */
 	case BPF_INS_AADD:
 	case BPF_INS_AOR:
@@ -302,12 +298,22 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 	case BPF_INS_AFOR:
 	case BPF_INS_AFAND:
 	case BPF_INS_AFXOR:
+	case BPF_INS_AXCHG64:
+	case BPF_INS_ACMPXCHG64:
+	case BPF_INS_AADD64:
+	case BPF_INS_AOR64:
+	case BPF_INS_AAND64:
+	case BPF_INS_AXOR64:
+	case BPF_INS_AFADD64:
+	case BPF_INS_AFOR64:
+	case BPF_INS_AFAND64:
+	case BPF_INS_AFXOR64:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		break;
 
 	case BPF_INS_JA:
 		if (insn->detail->bpf.op_count > 0) {
-			op->jump = addr + (insn->detail->bpf.operands[0].off + 1) * 8;
+			op->jump = addr + 8 + ((st16)insn->detail->bpf.operands[0].off) * 8;
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 			break;
@@ -330,7 +336,7 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 	case BPF_INS_JLT:
 	case BPF_INS_JLE:
 		if (insn->detail->bpf.op_count > 2) {
-			op->jump = addr + (insn->detail->bpf.operands[2].off + 1) * 8;
+			op->jump = addr + 8 + ((st16)insn->detail->bpf.operands[2].off) * 8;
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 			break;
@@ -342,7 +348,7 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 		/* Conditional jumps 32-bit operands */
 	case BPF_INS_JAL:
 		if (insn->detail->bpf.op_count > 0) {
-			op->jump = addr + (insn->detail->bpf.operands[0].imm + 1) * 8;
+			op->jump = addr + 8 + ((st32)insn->detail->bpf.operands[0].imm) * 8;
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 			break;
@@ -364,7 +370,7 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 	case BPF_INS_JLE32:
 	case BPF_INS_JSET32:
 		if (insn->detail->bpf.op_count > 2) {
-			op->jump = addr + (insn->detail->bpf.operands[2].off + 1) * 8;
+			op->jump = addr + 8 + ((st16)insn->detail->bpf.operands[2].off) * 8;
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 			break;
@@ -437,9 +443,11 @@ static int bpf_analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 	cs_free(insn, n);
 	return op->size;
 }
+
 RzAnalysisPlugin rz_analysis_plugin_bpf_cs = {
 	.name = "bpf",
 	.desc = "Extended BPF analysis plugin",
+	.author = "Jagath-P",
 	.license = "LGPL3",
 	.arch = "bpf",
 	.bits = 64,
