@@ -1081,7 +1081,11 @@ static OMF_record *rz_bin_format_omf166_load_record(rz_bin_omf166_obj *obj, cons
 	}
 	size_t offset = 0;
 	new->type = rz_read_le8_offset(buf, &offset);
-	new->size = rz_read_le16_offset(buf, &offset);
+	const ut16 raw_count = rz_read_le16_offset(buf, &offset);
+	if (raw_count == 0 || raw_count > UINT16_MAX) {
+		return false;
+	}
+	new->size = raw_count;
 
 	// at least a record has a type, a size and a checksum
 	if (new->size > (buf_size - offset) || buf_size < (offset + 1)) {
@@ -1089,7 +1093,7 @@ static OMF_record *rz_bin_format_omf166_load_record(rz_bin_omf166_obj *obj, cons
 		RZ_FREE(new);
 		return NULL;
 	}
-	if (!(rz_bin_format_omf166_load_content(obj, new, buf, global_ct, buf_size))) {
+	if (!rz_bin_format_omf166_load_content(obj, new, buf, global_ct, buf_size)) {
 		RZ_FREE(new);
 		return NULL;
 	}
