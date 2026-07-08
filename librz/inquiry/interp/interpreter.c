@@ -241,7 +241,6 @@ RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_clone(RZ_NONNULL RzInter
 	}
 	r->pc = state->pc;
 	r->pc_state = state->pc_state;
-	r->uninterpreted = state->uninterpreted;
 	r->globals = var_set_clone(iset, state->globals);
 	r->locals = var_set_clone(iset, state->locals);
 	r->lets = var_set_clone(iset, state->lets);
@@ -376,6 +375,27 @@ err_inst:
 	return NULL;
 }
 
+static RzInterpBlock *interp_block_new(RzInterpInstance *inst, RZ_BORROW RZ_NONNULL RzInterpAbstrState *entry_state) {
+	RzInterpBlock *block = RZ_NEW(RzInterpBlock);
+	if (!block) {
+		return NULL;
+	}
+	block->entry_state = rz_interp_abstr_state_clone(inst, entry_state);
+	if (!block->entry_state) {
+		free(block);
+		return NULL;
+	}
+	return block;
+}
+
+static void interp_block_free(RzInterpInstance *inst, RzInterpBlock *block) {
+	if (!block) {
+		return;
+	}
+	rz_interp_abstr_state_free(inst, block->entry_state);
+	free(block);
+}
+
 RZ_API void rz_interp_run_push(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx, RZ_BORROW RZ_NONNULL RzInterpAbstrState *as) {
 	if (as->pc_state == RZ_INTERP_PC_ANY) {
 		RZ_LOG_DEBUG("Encountered state with unknown/top pc\n");
@@ -390,25 +410,25 @@ RZ_API void rz_interp_run_push(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx, RZ_
 	rz_interp_abstr_state_as_str_short(ctx->inst, as, &sb);
 	RZ_LOG_DEBUG("PUSH 0x%" PFMT64x ": %s\n", as->pc, rz_strbuf_get(&sb));
 	rz_strbuf_fini(&sb);
-	RzInterpAbstrState *existing = ht_up_find(ctx->pc_states, as->pc, NULL);
-	if (existing) {
-		if (join_state(ctx->inst, existing, as) && !existing->uninterpreted) {
-			existing->uninterpreted = true;
-			rz_list_push(ctx->queue, existing);
+	RzInterpBlock *block = ht_up_find(ctx->pc_blocks, as->pc, NULL);
+	if (block) {
+		if (join_state(ctx->inst, block->entry_state, as) && !block->uninterpreted) {
+			block->uninterpreted = true;
+			rz_list_push(ctx->queue, block);
 		}
 	} else {
-		RzInterpAbstrState *c = rz_interp_abstr_state_clone(ctx->inst, as);
-		if (!c) {
+		block = interp_block_new(ctx->inst, as);
+		if (!block) {
 			return;
 		}
-		ht_up_insert(ctx->pc_states, as->pc, c);
-		c->uninterpreted = true;
-		rz_list_push(ctx->queue, c);
+		ht_up_insert(ctx->pc_blocks, as->pc, block);
+		block->uninterpreted = true;
+		rz_list_push(ctx->queue, block);
 	}
 }
 
-static RzInterpAbstrState *rz_interp_run_pop(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx) {
-	RzInterpAbstrState *r = rz_list_pop(ctx->queue);
+static RzInterpBlock *rz_interp_run_pop(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx) {
+	RzInterpBlock *r = rz_list_pop(ctx->queue);
 	if (!r) {
 		return NULL;
 	}
@@ -1019,7 +1039,7 @@ static bool eval_effect(RzInterpRunContext *ctx,
 			} else {
 				// different jump targets, branch rather than resorting to top pc
 				rz_interp_run_push(ctx, true_state);
-				// true_state is already in ctx->inst->astate and will be continued automatically
+				// false_state is already in ctx->inst->astate and will be continued automatically
 			}
 			rz_interp_abstr_state_free(ctx->inst, true_state);
 		} else if (may_be_true) {
@@ -1166,9 +1186,9 @@ static bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 		.inst = inst,
 		.astate = NULL,
 		.queue = rz_list_new(),
-		.pc_states = ht_up_new(NULL, free)
+		.pc_blocks = ht_up_new(NULL, NULL)
 	};
-	if (!ctx.queue || !ctx.pc_states) {
+	if (!ctx.queue || !ctx.pc_blocks) {
 		goto cleanup;
 	}
 
@@ -1186,16 +1206,16 @@ static bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 
 	// Loop and interpret until a fixpoint has been reached
 	while (true) {
-		RzInterpAbstrState *next = rz_interp_run_pop(&ctx);
-		if (!next) {
+		RzInterpBlock *interp_block = rz_interp_run_pop(&ctx);
+		if (!interp_block) {
 			// No uninterpreted states left, fixpoint reached.
 			success = true;
 			break;
 		}
-		ctx.astate = rz_interp_abstr_state_clone(inst, next);
+		ctx.astate = rz_interp_abstr_state_clone(inst, interp_block->entry_state);
 
-		const RzILCacheBlock *il_bb = rz_il_cache_client_lift_il_block(inst->il_cache_client, ctx.astate->pc);
-		if (!il_bb) {
+		const RzILCacheBlock *il_block = rz_il_cache_client_lift_il_block(inst->il_cache_client, ctx.astate->pc);
+		if (!il_block) {
 			RZ_LOG_ERROR("interpreter: Lifting failed\n");
 			// TODO: handle this better
 			break;
@@ -1204,7 +1224,7 @@ static bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 		// DEBUG comments
 		RzStrBuf sb;
 		rz_strbuf_init(&sb);
-		const char *old_cmt = rz_meta_get_string(inst->a, RZ_META_TYPE_COMMENT, il_bb->addr);
+		const char *old_cmt = rz_meta_get_string(inst->a, RZ_META_TYPE_COMMENT, il_block->addr);
 		if (old_cmt) {
 			rz_strbuf_appendf(&sb, "%s; ", old_cmt);
 		}
@@ -1213,9 +1233,9 @@ static bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 		// rz_meta_set_string(iset->a, RZ_META_TYPE_COMMENT, il_bb->addr, rz_strbuf_get(&sb));
 		rz_strbuf_fini(&sb);
 
-		ctx.il_block_end = il_bb->addr + il_bb->size;
+		ctx.il_block_end = il_block->addr + il_block->size;
 		// Evaluate the effect on the abstract state.
-		if (!eval_block(&ctx, il_bb)) {
+		if (!eval_block(&ctx, il_block)) {
 			RZ_LOG_ERROR("interpreter: Eval failed\n");
 			success = false;
 			break;
@@ -1224,7 +1244,13 @@ static bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 
 cleanup:
 	rz_list_free(ctx.queue);
-	ht_up_free(ctx.pc_states);
+	RzIterator *it = ht_up_as_iter(ctx.pc_blocks);
+	RzInterpBlock **b;
+	rz_iterator_foreach(it, b) {
+		interp_block_free(inst, *b);
+	}
+	rz_iterator_free(it);
+	ht_up_free(ctx.pc_blocks);
 	return success;
 }
 

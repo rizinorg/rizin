@@ -54,9 +54,11 @@ with one from another block, this should be merged.
 Call detection is based on a store of the block end addr before the jump.
 Consider the following ARMv4 code for an indirect call (blx was introduced in ARMv5):
 
+```
 A> mov lr, pc
 B> mov pc, r0
 C> ...
+```
 
 both A and B are block entries.
 
@@ -77,9 +79,11 @@ Idea: have some flags per block, something like:
 
 Consider patterns like this, where there is an in-edge to A and to B.
 
+```
 A>    mov lr, pc
 B>    jmp 1324
 C>    ...
+```
 
 For all such patterns across an entire interpretation, we now want to **not**
 consider the jmp as a call, but only because of the in-edge B. However:
@@ -105,6 +109,7 @@ We could weaken our initial condition to allow for A to be calling while B is
 there if B is detected only because of A later on, but then consider this
 example:
 
+```
 A>    mov lr, pc
 B>    jmp 1234
 C>    jmp B'
@@ -112,6 +117,7 @@ C>    jmp B'
 A'>   mov lr, pc
 B'>   jmp 4321
 C'>   jmp B
+```
 
 There is no unique solution for minimizing calling blocks with edges into them
 anymore. Either A is considered calling and A' is not, or the other way around.

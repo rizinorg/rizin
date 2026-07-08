@@ -105,12 +105,27 @@ typedef enum {
 typedef struct {
 	ut64 pc; ///< Interpreter location in the code. This is not necessarily identical to the ISA's program counter register, but simply points to the instruction to execute next.
 	RzInterpPCState pc_state;
-	bool uninterpreted; ///< True if this state has not yet been started to interpret, i.e. is part of RzInterpFunctionState.queue
 
 	HtUP /*<RzInterpAbstrVal *>*/ *globals; ///< Global variables (mostly registers). Indexed by DJB2 hash of global name.
 	HtUP /*<RzInterpAbstrVal *>*/ *locals; ///< Local variables. Indexed by DJB2 hash of the local name.
 	HtUP /*<RzInterpAbstrVal *>*/ *lets; ///< Let variables. Indexed by DJB2 hash of the let name.
 } RzInterpAbstrState;
+
+/**
+ * \brief Basic Block as part of the abstract interpretation loop
+ * Represents a block of instructions of which only the last may have a control effect.
+ * Unlike IL blocks, the last instruction may also not have a control effect, which is
+ * the case when the instruction directly following this block has an in-edge.
+ * And unlike regular basic blocks, a call instruction also terminates an interpreter block.
+ */
+typedef struct {
+	/**
+	 * Least upper bound of all states discovered at the entry of the block.
+	 * pc_state of this state must be RZ_INTERP_PC_CONST and pc points to the first instruction of the block.
+	 */
+	RzInterpAbstrState *entry_state; // TODO: flatten to remove indirection
+	bool uninterpreted; ///< True if the entry state has not yet been started to interpret, i.e. the block is part of RzInterpFunctionState.queue
+} RzInterpBlock;
 
 typedef enum {
 	/**
@@ -310,8 +325,8 @@ RZ_API void rz_interp_instance_free(RZ_OWN RZ_NULLABLE RzInterpInstance *iset);
 struct rz_interp_run_context_t {
 	RzInterpInstance *inst; //< parent interpreter thread
 
-	RzList /*<RzInterpAbstrState>*/ *queue; ///< States that have to be interpreted still. If this is empty, a fixpoint has been reached.
-	HtUP /*<RzInterpAbstrState>*/ *pc_states; ///< Currently discovered states at the entries of blocks.
+	RzList /*<RzInterpBlock>*/ *queue; ///< States that have to be interpreted still. If this is empty, a fixpoint has been reached.
+	HtUP /*<RzInterpBlock>*/ *pc_blocks; ///< Currently discovered blocks.
 
 	// Tracking data local to a single block interpretation
 	ut64 il_block_end; ///< The address directly after the last instruction of the currently interpreted IL block
