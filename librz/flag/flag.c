@@ -772,7 +772,7 @@ RZ_API void rz_flag_item_set_realname(RzFlag *f, RzFlagItem *item, const char *r
 		if (ht_sp_find(f->ht_name, item->realname, NULL)) {
 			ht_sp_delete(f->ht_name, item->realname); // frees item->realname and cloned item
 		} else {
-			free(item->realname);
+			free_item_realname(item);
 		}
 	}
 	if (RZ_STR_ISEMPTY(realname)) {
