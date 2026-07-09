@@ -12133,8 +12133,7 @@ static const RzCmdDescHelp e_help = {
 static const RzCmdDescDetailEntry eval_getset_Examples_detail_entries[] = {
 	{ .text = "e", .arg_str = " asm.bytes", .comment = "Show current value of config variable `asm.bytes`" },
 	{ .text = "e", .arg_str = " asm.bytes=true", .comment = "Set config variable `asm.bytes` to `true`" },
-	{ .text = "e", .arg_str = " search.in=?", .comment = "Show all possible values for config variable `search.in`" },
-	{ .text = "e", .arg_str = " search.in=??", .comment = "Show all possible values for config variable `search.in` together with description" },
+	{ .text = "e", .arg_str = " search.in=?", .comment = "Show all possible values for config variable `search.in` together with description" },
 	{ .text = "e", .arg_str = " asm.bytes=true asm.offset=false", .comment = "Set asm.bytes to true and asm.offset to false" },
 	{ 0 },
 };
