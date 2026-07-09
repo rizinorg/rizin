@@ -46,11 +46,14 @@ RZ_API bool rz_itv_str_to_bounded_itv_ut64(RZ_NONNULL const char *itv_str, RZ_OU
 		if (num == 0 && itv_str[0] != '0') {
 			RZ_LOG_ERROR("Failed to parse: '%s'.\n", itv_str);
 			rz_pvector_free(matches);
+			rz_regex_free(re_interval);
 			return false;
 		}
 		out_itv->a = num;
 		out_itv->b = num;
 		out_itv->bound = RZ_INTERVAL_BOUND_CLOSED;
+		rz_pvector_free(matches);
+		rz_regex_free(re_interval);
 		return true;
 	}
 	int lb_group = rz_regex_get_group_idx_by_name(re_interval, "left_bound");
