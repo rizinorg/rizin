@@ -211,6 +211,8 @@ bool join_state(RzInterpInstance *inst, RZ_BORROW RZ_INOUT RzInterpAbstrState *a
  * @{
  */
 
+#define UNWRAP_BLOCK(rbnode) ((rbnode) ? container_of(rbnode, RzInterpBlock, _rb) : NULL)
+
 static RzInterpBlock *interp_block_new(RzInterpInstance *inst, RZ_BORROW RZ_NONNULL RzInterpAbstrState *entry_state) {
 	RzInterpBlock *block = RZ_NEW0(RzInterpBlock);
 	if (!block) {
@@ -232,6 +234,62 @@ static void interp_block_free(RzInterpInstance *inst, RzInterpBlock *block) {
 	free(block);
 }
 
+static void interp_block_free_rb(RBNode *node, void *user) {
+	RzInterpBlock *block = UNWRAP_BLOCK(node);
+	interp_block_free(user, block);
+}
+
+static void interp_blocks_free(RzInterpInstance *inst, RBTree root) {
+	rz_rbtree_free(root, interp_block_free_rb, inst);
+}
+
+/** cmp function for RzInterpRunContext.blocks */
+static int interp_block_addr_cmp(const void *incoming, const RBNode *in_tree, void *user) {
+	ut64 incoming_addr = *(ut64 *)incoming;
+	const RzInterpBlock *in_tree_block = container_of(in_tree, const RzInterpBlock, _rb);
+	if (incoming_addr < in_tree_block->entry_state->pc) {
+		return -1;
+	}
+	if (incoming_addr > in_tree_block->entry_state->pc) {
+		return 1;
+	}
+	return 0;
+}
+
+/** sum function for RzInterpRunContext.blocks */
+static void interp_block_max_end(RBNode *node) {
+	RzInterpBlock *block = UNWRAP_BLOCK(node);
+	block->_max_end = block->entry_state->pc + 0; // TODO: + block->size;
+	int i;
+	for (i = 0; i < 2; i++) {
+		if (node->child[i]) {
+			ut64 end = UNWRAP_BLOCK(node->child[i])->_max_end;
+			if (end > block->_max_end) {
+				block->_max_end = end;
+			}
+		}
+	}
+}
+
+static RzInterpBlock *interp_block_create(RzInterpRunContext *ctx, RZ_BORROW RZ_NONNULL RzInterpAbstrState *as) {
+	rz_return_val_if_fail(ctx && as && as->pc_state == RZ_INTERP_PC_CONST, NULL);
+	RzInterpBlock *block = interp_block_new(ctx->inst, as);
+	if (!block) {
+		return NULL;
+	}
+	bool succ = rz_rbtree_aug_insert(&ctx->blocks, &block->entry_state->pc, &block->_rb, interp_block_addr_cmp, NULL, interp_block_max_end);
+	if (!succ) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+	return block;
+}
+
+static RzInterpBlock *interp_block_at(RzInterpRunContext *ctx, ut64 addr) {
+	RBNode *node = rz_rbtree_find(ctx->blocks, &addr, interp_block_addr_cmp, NULL);
+	return UNWRAP_BLOCK(node);
+}
+
 RZ_API void rz_interp_run_push(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx, RZ_BORROW RZ_NONNULL RzInterpAbstrState *as) {
 	if (as->pc_state == RZ_INTERP_PC_ANY) {
 		RZ_LOG_DEBUG("Encountered state with unknown/top pc\n");
@@ -246,18 +304,17 @@ RZ_API void rz_interp_run_push(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx, RZ_
 	rz_interp_abstr_state_as_str_short(ctx->inst, as, &sb);
 	RZ_LOG_DEBUG("PUSH 0x%" PFMT64x ": %s\n", as->pc, rz_strbuf_get(&sb));
 	rz_strbuf_fini(&sb);
-	RzInterpBlock *block = ht_up_find(ctx->pc_blocks, as->pc, NULL);
+	RzInterpBlock *block = interp_block_at(ctx, as->pc);
 	if (block) {
 		if (join_state(ctx->inst, block->entry_state, as) && !block->uninterpreted) {
 			block->uninterpreted = true;
 			rz_list_push(ctx->queue, block);
 		}
 	} else {
-		block = interp_block_new(ctx->inst, as);
+		block = interp_block_create(ctx, as);
 		if (!block) {
 			return;
 		}
-		ht_up_insert(ctx->pc_blocks, as->pc, block);
 		block->uninterpreted = true;
 		rz_list_push(ctx->queue, block);
 	}
@@ -1204,9 +1261,9 @@ static bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 		.inst = inst,
 		.astate = NULL,
 		.queue = rz_list_new(),
-		.pc_blocks = ht_up_new(NULL, NULL)
+		.blocks = NULL
 	};
-	if (!ctx.queue || !ctx.pc_blocks) {
+	if (!ctx.queue) {
 		goto cleanup;
 	}
 
@@ -1262,13 +1319,7 @@ static bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 
 cleanup:
 	rz_list_free(ctx.queue);
-	RzIterator *it = ht_up_as_iter(ctx.pc_blocks);
-	RzInterpBlock **b;
-	rz_iterator_foreach(it, b) {
-		interp_block_free(inst, *b);
-	}
-	rz_iterator_free(it);
-	ht_up_free(ctx.pc_blocks);
+	interp_blocks_free(inst, ctx.blocks);
 	return success;
 }
 

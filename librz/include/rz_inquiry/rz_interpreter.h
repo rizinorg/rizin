@@ -119,6 +119,9 @@ typedef struct {
  * And unlike in RzAnalysisBlock, a call instruction also terminates an interpreter block.
  */
 typedef struct {
+	RBNode _rb; // private, node in the RBTree. Key is entry_state->p.
+	ut64 _max_end; // private, augmented value for RBTree.
+
 	/**
 	 * Least upper bound of all states discovered at the entry of the block.
 	 * pc_state of this state must be RZ_INTERP_PC_CONST and pc points to the first instruction of the block.
@@ -326,7 +329,7 @@ struct rz_interp_run_context_t {
 	RzInterpInstance *inst; //< parent interpreter thread
 
 	RzList /*<RzInterpBlock>*/ *queue; ///< States that have to be interpreted still. If this is empty, a fixpoint has been reached.
-	HtUP /*<RzInterpBlock>*/ *pc_blocks; ///< Currently discovered blocks.
+	RBTree /*<RzInterpBlock>*/ blocks; // All currently discovered blocks by address. They can overlap each other, but must never start at the same address.
 
 	// Tracking data local to a single block interpretation
 	ut64 il_block_end; ///< The address directly after the last instruction of the currently interpreted IL block
