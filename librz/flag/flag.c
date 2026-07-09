@@ -768,8 +768,8 @@ RZ_API void rz_flag_item_set_comment(RzFlagItem *item, const char *comment) {
 /* add/replace/remove the realname of a flag item */
 RZ_API void rz_flag_item_set_realname(RzFlag *f, RzFlagItem *item, const char *realname) {
 	rz_return_if_fail(item);
-	if (item->realname && strcmp(item->name, item->realname)) {
-		if (ht_sp_find(f->ht_name, item->realname, NULL)) {
+	if (item->realname) {
+		if (strcmp(item->name, item->realname) && ht_sp_find(f->ht_name, item->realname, NULL)) {
 			ht_sp_delete(f->ht_name, item->realname); // frees item->realname and cloned item
 		} else {
 			free_item_realname(item);
