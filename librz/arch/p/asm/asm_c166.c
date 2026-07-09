@@ -342,10 +342,12 @@ static st32 disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, st32 len) {
 		return op->size;
 	}
 
-	C166State *state = (C166State *)a->plugin_data;
-	if (!state) {
+	if (!a->plugin_data) {
 		RZ_LOG_FATAL("C166State was NULL.\n");
+		return -1;
 	}
+
+	C166State *state = (C166State *)a->plugin_data;
 
 	C166_Inst inst = RZ_EMPTY;
 	inst.addr = (ut32)a->pc;
@@ -360,8 +362,6 @@ static st32 disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, st32 len) {
 		rz_asm_op_setf_asm(op, FMT_2WORD, buf[0], buf[1], buf[2], 0x00);
 	} else if (op->size == 4 && len == 2) {
 		rz_asm_op_setf_asm(op, FMT_2WORD, buf[0], buf[1], 0x00, 0x00);
-	} else if (op->size == 2 && len == 1) {
-		rz_asm_op_setf_asm(op, FMT_WORD, buf[0], 0x00);
 	} else if (RZ_STR_EQ(inst.instr, "invalid")) {
 		if (op->size == 2)
 			rz_asm_op_setf_asm(op, FMT_WORD, buf[0], buf[1]);

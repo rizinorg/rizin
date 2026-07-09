@@ -443,7 +443,7 @@ Environment:
  RZ_BIN_MAXSTRBUF:        e search.str.max_length       # specify maximum buffer size
  RZ_BIN_PDBSERVER:        e pdb.server                  # use alternative PDB server
  RZ_BIN_PREFIX:           e bin.prefix                  # prefix symbols/sections/relocs with a specific string
- RZ_BIN_STRFILTER:        e bin.str.filter              # rizin -qc 'e bin.str.filter=??' -
+ RZ_BIN_STRFILTER:        e bin.str.filter              # rizin -qc 'e bin.str.filter=?' -
  RZ_BIN_STRPURGE:         e bin.str.purge               # try to purge false positives
  RZ_BIN_SYMSTORE:         e pdb.symstore                # path to downstream PDB symbol store
  RZ_CONFIG:                                             # config file

@@ -561,9 +561,6 @@ static ut8 c166_instr_mov_nm(C166_Inst *instr) {
 		swap = true;
 		format = FMT3;
 		break;
-	case C166_MOV_oRwn_oRwm: ///< 0xC8             [Rwn], [Rwm]
-	case C166_MOVB_oRwn_oRwm: ///< 0xC9            [Rwn], [Rwm]
-		format = FMT4;
 		break;
 	case C166_MOV_oRwnp_oRwm: ///< 0xD8            [Rwn+], [Rwm]
 	case C166_MOVB_oRwnp_oRwm: ///< 0xD9           [Rwn+], [Rwm]
@@ -573,7 +570,11 @@ static ut8 c166_instr_mov_nm(C166_Inst *instr) {
 	case C166_MOVB_oRwn_oRwmp: ///< 0xE9           [Rwn], [Rwm+]
 		format = FMT6;
 		break;
-	default: break;
+	case C166_MOV_oRwn_oRwm: ///< 0xC8             [Rwn], [Rwm]
+	case C166_MOVB_oRwn_oRwm: ///< 0xC9            [Rwn], [Rwm]
+	default:
+		format = FMT4;
+		break;
 	}
 	// clang-format on
 	if (swap) {
@@ -977,10 +978,6 @@ static const char *c166_instr_extended_name(C166_Inst *instr) {
 
 	if ((opcode == 0xA3) && (extID == 0x72)) {
 		return "CoNEG";
-	}
-
-	if ((opcode == 0x83) && (extID == 0x9A)) {
-		return "CoSHR";
 	}
 
 	if ((opcode == 0x93) && (extID == 0x5A)) {
@@ -1390,8 +1387,6 @@ static ut8 c166_instr_extended(C166_Inst *instr) {
 	} else if ((opcode == 0xA3) && (extID == 0x1A)) {
 		goto end;
 	} else if ((opcode == 0xA3) && (extID == 0x32)) {
-		goto end;
-	} else if ((opcode == 0xA3) && (extID == 0xB2)) {
 		goto end;
 	} else if ((opcode == 0x83) && (extID == 0x8A)) {
 		OPERANDS("[r%i]", m); // ????? CoSHL [RWm*]
