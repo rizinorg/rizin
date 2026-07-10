@@ -239,6 +239,7 @@ RZ_API RzFlagItem *rz_flag_item_clone(RzFlagItem *item) {
 	if (!n) {
 		return NULL;
 	}
+	n->refcount = 1;
 	n->color = STRDUP_OR_NULL(item->color);
 	n->comment = STRDUP_OR_NULL(item->comment);
 	n->alias = STRDUP_OR_NULL(item->alias);
@@ -252,6 +253,11 @@ RZ_API RzFlagItem *rz_flag_item_clone(RzFlagItem *item) {
 
 RZ_API void rz_flag_item_free(RzFlagItem *item) {
 	if (!item) {
+		return;
+	}
+	rz_return_if_fail(item->refcount > 0);
+	item->refcount--;
+	if (item->refcount > 0) {
 		return;
 	}
 	free(item->color);
@@ -737,6 +743,7 @@ RZ_API RzFlagItem *rz_flag_set(RzFlag *f, const char *name, ut64 off, ut32 size)
 		if (!item) {
 			goto err;
 		}
+		item->refcount = 1;
 		is_new = true;
 	}
 

@@ -33,6 +33,7 @@ typedef struct rz_flags_at_offset_t {
 } RzFlagsAtOffset;
 
 typedef struct rz_flag_item_t {
+	ut8 refcount; /* reference count */
 	char *name; /* unique name, escaped to avoid issues with rizin shell */
 	char *realname; /* real name, without any escaping */
 	bool demangled; /* real name from demangling? */
