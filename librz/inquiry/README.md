@@ -29,12 +29,37 @@ Ideas for optimization (do not implement any of these without profiling first):
   profiled if the cost of asking the plugin all the time is really compensated
   by avoided evalutations in practical code.
 
-## CFG recovery irregularities TODO:
+## Multiple entrypoints in one block
 
 Code:
+```
 B> fallthrough
    fallthrough
-A> ...
+A> fallthrough
+   jmp
+```
+
+B and A are in-edges. When interpreting, we first only get the full IL blocks
+where B extends until the jmp and A does not know there may be instructions
+before.
+Desired outcome is to have blocks like this without overlap:
+
+```
+------------------
+| B> fallthrough |
+|    fallthrough |
+------------------
+        |
+------------------
+| A> fallthrough |
+|    jmp         |
+------------------
+```
+
+rot127 solved it by just interpreting the IL blocks as they come and at the end
+reducing the overlapping blocks.
+
+thestr4ng3r's approach is to handle the reduction as part of the interpreter loop:
 
 Case 1:
   A was already discovered.
@@ -47,10 +72,12 @@ Case 2:
   => B must be split.
 
 Special cases:
-Jump into the middle of an instruction. Perhaps when an instruction meets again
-with one from another block, this should be merged.
+Jump into the middle of an instruction. In such cases, overlaps between blocks
+are permitted. Perhaps when an instruction meets again with one from another
+block, this should be merged.
 
-### Problem with blocks that do not end in a jump, or ones that have more prepended instructions to be discovered later:
+### Call detection issues
+
 Call detection is based on a store of the block end addr before the jump.
 Consider the following ARMv4 code for an indirect call (blx was introduced in ARMv5):
 

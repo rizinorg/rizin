@@ -495,7 +495,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
 	// All the things we need
 	bool return_code = true;
-	RzInterpInstance *intp_iset = NULL;
+	RzInterpInstance *inst = NULL;
 
 	RzBuffer *io_buf = rz_buf_new_with_io(rz_analysis_get_io_bind(core->analysis));
 	RzSetU *symbol_targets = rz_set_u_new();
@@ -558,13 +558,13 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			rz_warn_if_reached();
 			goto error_free;
 		}
-		intp_iset = rz_interp_instance_new(
+		inst = rz_interp_instance_new(
 			core->analysis,
 			prototype->value_abstraction,
 			cache_client,
 			yield_rbufs,
 			ignored_code);
-		if (!intp_iset) {
+		if (!inst) {
 			return_code = false;
 			rz_warn_if_reached();
 			goto error_free;
@@ -572,9 +572,9 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 
 		// Dispatch prototype interpreter into a thread.
 		RZ_LOG_DEBUG("inquiry: Start main interpretation thread.\n");
-		RzThread *interpr_th = rz_th_new((RzThreadFunction)rz_interp_instance_th, intp_iset);
+		RzThread *interpr_th = rz_th_new((RzThreadFunction)rz_interp_instance_th, inst);
 		iset_map[i].ithread = interpr_th;
-		iset_map[i].iset = intp_iset;
+		iset_map[i].iset = inst;
 		iset_map[i].next_run_state = RZ_INTERP_RUN_STATE_INIT;
 	}
 
@@ -740,13 +740,25 @@ fatal_error:
 				RZ_LOG_ERROR("User sent signal.\n");
 			}
 		}
-		rz_interp_instance_free(iset_map[i].iset);
 	}
 	rz_il_cache_stop_serving(il_cache);
 
 	if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
 		eprintf("\n");
 	}
+
+	// Apply results
+	void **it;
+	rz_pvector_foreach (&inst->results, it) {
+		RzInterpResult *res = *it;
+		rz_interp_result_apply_to_analysis(res, core->analysis);
+	}
+
+	for (size_t i = 0; i < n_threads; i++) {
+		rz_interp_instance_free(iset_map[i].iset);
+	}
+
+#if 0
 	RzIterator *iter = rz_il_cache_get_blocks(il_cache);
 	if (!iter) {
 		rz_warn_if_reached();
@@ -776,6 +788,7 @@ fatal_error:
 	// g = rz_inquiry_bcfg_as_dot(core->inquiry->bcfg, "reduced");
 	// printf("%s\n", g);
 	// free(g);
+#endif
 
 	RZ_LOG_DEBUG("inquiry: inquiry: inquiry: Done\n");
 

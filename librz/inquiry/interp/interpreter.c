@@ -223,6 +223,8 @@ static RzInterpBlock *interp_block_new(RzInterpInstance *inst, RZ_BORROW RZ_NONN
 		free(block);
 		return NULL;
 	}
+	rz_vector_init(&block->insn_offsets, sizeof(ut16), NULL, NULL);
+	rz_vector_init(&block->jump_targets, sizeof(ut64), NULL, NULL);
 	return block;
 }
 
@@ -231,44 +233,22 @@ static void interp_block_free(RzInterpInstance *inst, RzInterpBlock *block) {
 		return;
 	}
 	rz_interp_abstr_state_free(inst, block->entry_state);
+	rz_vector_fini(&block->insn_offsets);
+	rz_vector_fini(&block->jump_targets);
 	free(block);
 }
 
-static void interp_block_free_rb(RBNode *node, void *user) {
-	RzInterpBlock *block = UNWRAP_BLOCK(node);
-	interp_block_free(user, block);
+static void interp_blocks_init(RzInterpRunContext *ctx) {
+	rz_interval_tree_init(&ctx->blocks, NULL);
 }
 
-static void interp_blocks_free(RzInterpInstance *inst, RBTree root) {
-	rz_rbtree_free(root, interp_block_free_rb, inst);
-}
-
-/** cmp function for RzInterpRunContext.blocks */
-static int interp_block_addr_cmp(const void *incoming, const RBNode *in_tree, void *user) {
-	ut64 incoming_addr = *(ut64 *)incoming;
-	const RzInterpBlock *in_tree_block = container_of(in_tree, const RzInterpBlock, _rb);
-	if (incoming_addr < in_tree_block->entry_state->pc) {
-		return -1;
+static void interp_blocks_free(RzInterpRunContext *ctx) {
+	RzIntervalTreeIter it;
+	RzInterpBlock *block;
+	rz_interval_tree_foreach(&ctx->blocks, it, block) {
+		interp_block_free(ctx->inst, block);
 	}
-	if (incoming_addr > in_tree_block->entry_state->pc) {
-		return 1;
-	}
-	return 0;
-}
-
-/** sum function for RzInterpRunContext.blocks */
-static void interp_block_max_end(RBNode *node) {
-	RzInterpBlock *block = UNWRAP_BLOCK(node);
-	block->_max_end = block->entry_state->pc + 0; // TODO: + block->size;
-	int i;
-	for (i = 0; i < 2; i++) {
-		if (node->child[i]) {
-			ut64 end = UNWRAP_BLOCK(node->child[i])->_max_end;
-			if (end > block->_max_end) {
-				block->_max_end = end;
-			}
-		}
-	}
+	rz_interval_tree_fini(&ctx->blocks);
 }
 
 static RzInterpBlock *interp_block_create(RzInterpRunContext *ctx, RZ_BORROW RZ_NONNULL RzInterpAbstrState *as) {
@@ -277,17 +257,101 @@ static RzInterpBlock *interp_block_create(RzInterpRunContext *ctx, RZ_BORROW RZ_
 	if (!block) {
 		return NULL;
 	}
-	bool succ = rz_rbtree_aug_insert(&ctx->blocks, &block->entry_state->pc, &block->_rb, interp_block_addr_cmp, NULL, interp_block_max_end);
-	if (!succ) {
+	RzIntervalNode *node = rz_interval_tree_insert(&ctx->blocks, block->entry_state->pc, block->entry_state->pc, block);
+	if (!node) {
 		rz_warn_if_reached();
 		return NULL;
 	}
+	block->node = node;
 	return block;
 }
 
+static ut64 interp_block_get_start(RzInterpBlock *block) {
+	return block->entry_state->pc;
+}
+
+/** end is inclusive */
+static ut64 interp_block_get_end(RzInterpBlock *block) {
+	return block->node->end;
+}
+
+static ut64 interp_block_get_size(RzInterpBlock *block) {
+	return interp_block_get_end(block) - interp_block_get_start(block) + 1;
+}
+
+static void interp_block_add_non_fallthrough_target(RzInterpBlock *block, ut64 target) {
+	// linear search may be inefficient, but practically the number of targets is often small
+	if (rz_vector_contains(&block->jump_targets, &target)) {
+		return;
+	}
+	rz_vector_push(&block->jump_targets, &target);
+}
+
 static RzInterpBlock *interp_block_at(RzInterpRunContext *ctx, ut64 addr) {
-	RBNode *node = rz_rbtree_find(ctx->blocks, &addr, interp_block_addr_cmp, NULL);
-	return UNWRAP_BLOCK(node);
+	return rz_interval_tree_at(&ctx->blocks, addr);
+}
+
+static int interp_block_addr_cmp(const void *incoming, const RBNode *in_tree, void *user) {
+	ut64 incoming_start = *(ut64 *)incoming;
+	ut64 other_start = container_of(in_tree, const RzIntervalNode, node)->start;
+	if (incoming_start < other_start) {
+		return -1;
+	}
+	if (incoming_start > other_start) {
+		return 1;
+	}
+	return 0;
+}
+
+/**
+ * Resize the block to cover the instructions, or until the following block
+ * and fill instruction offsets.
+ */
+static void interp_block_apply_instructions(RzInterpRunContext *ctx, RzInterpBlock *interp_block, const RzILCacheBlock *il_block) {
+	if (interp_block->insns_resolved) {
+		return;
+	}
+	interp_block->insns_resolved = true;
+	// Blocks may overlap, but another block must not start at one of our instruction addresses.
+	// So we close our block once any of our instructions hit exactly the start of another block.
+	// (There is also the case where two non-start instructions hit, but we ignore this for now since results will
+	// still be correct)
+	// The next candidate for hitting is always the first whose address is greater than or equal to the instruction
+	// address (excluding the block start itself, since that would find our own block) so we search forward
+	// from a lower bound.
+	ut64 search_next_addr = interp_block->node->start + 1;
+	RBIter next_it = rz_rbtree_lower_bound_forward(&ctx->blocks.root->node, &search_next_addr, interp_block_addr_cmp, NULL);
+
+	ut64 block_start = interp_block->node->start;
+	size_t insns_count = rz_pvector_len(il_block->il_ops);
+	rz_return_if_fail(insns_count > 0);
+	// interp_block->instruction_offsets is assumed to be empty here
+	ut64 cur = block_start;
+	rz_vector_reserve(&interp_block->insn_offsets, insns_count);
+	for (size_t i = 0; i < rz_pvector_len(il_block->il_ops); i++) {
+		RzILCacheInsnPkt *insn = rz_pvector_at(il_block->il_ops, i);
+		if (i > 0) {
+			// Close block if hitting another block's start address
+			while (rz_rbtree_iter_has(&next_it)) {
+				RzIntervalNode *next_node = rz_interval_tree_iter_get(&next_it);
+				if (next_node->start > cur) {
+					break;
+				}
+				if (next_node->start == cur) {
+					// hit found, the block will not include this instruction anymore.
+					goto close;
+				}
+			}
+
+			ut16 off = cur - block_start;
+			rz_vector_push(&interp_block->insn_offsets, &off);
+		}
+		cur += insn->insn_pkt_size;
+	}
+close:
+	// Warning: the resize operation may invalidate the node pointer! But in reality, it only does so
+	// if the start address has changed, so it is ok to leave the reference in interp_block->node as-is.
+	rz_interval_tree_resize(&ctx->blocks, interp_block->node, block_start, cur - 1);
 }
 
 RZ_API void rz_interp_run_push(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx, RZ_BORROW RZ_NONNULL RzInterpAbstrState *as) {
@@ -472,6 +536,7 @@ RZ_API RZ_OWN RzInterpInstance *rz_interp_instance_new(
 	inst->yield_rbufs[RZ_INTERP_YIELD_KIND_XREF] = yield_rbufs[RZ_INTERP_YIELD_KIND_XREF];
 	inst->yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE] = yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE];
 	inst->yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW] = yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW];
+	rz_pvector_init(&inst->results, NULL);
 	inst->io_request_rbuf = io_request_rbuf;
 	inst->io_result_rbuf = io_result_rbuf;
 	inst->run_state_sync = rz_th_sem_new(0);
@@ -1114,6 +1179,7 @@ static bool eval_effect(RzInterpRunContext *ctx,
 			} else {
 				// different jump targets, branch rather than resorting to top pc
 				rz_interp_run_push(ctx, true_state);
+				rz_vector_push(&ctx->block->jump_targets, &true_state->pc);
 				// false_state is already in ctx->inst->astate and will be continued automatically
 			}
 			rz_interp_abstr_state_free(ctx->inst, true_state);
@@ -1205,11 +1271,19 @@ static bool eval_block(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL const RzIL
 	// Reset call candidate tracking for each basic block.
 	memset(&ctx->call_cand, 0, sizeof(ctx->call_cand));
 
+	ut64 interp_block_end = interp_block_get_end(ctx->block);
+
 	// Now execute the actual effects of the BLOCK.
 	RzInterpAbstrState *astate = ctx->astate;
 	void **it;
 	rz_pvector_foreach (il_bb->il_ops, it) {
 		ut64 pc = astate->pc;
+
+		if (pc > interp_block_end) {
+			// block is truncated
+			break;
+		}
+
 		RZ_LOG_DEBUG("prototype: Eval PC = 0x%" PFMT64x "\n", pc);
 		RzStrBuf sb;
 		rz_strbuf_init(&sb);
@@ -1237,14 +1311,21 @@ static bool eval_block(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL const RzIL
 		if (!eval_effect(ctx, pkt->effect, pkt->insn_pkt_size)) {
 			return false;
 		}
-		if (astate->pc_state != RZ_INTERP_PC_CONST || astate->pc != next_pc) {
-			// Unreachable or a jump happened somewhere other than fallthrough, so we can't continue
-			// interpreting the block linearly, but have to push the new location
+		if (astate->pc_state != RZ_INTERP_PC_CONST) {
+			// unreachable or unknown jump
+			break;
+		}
+		if (astate->pc != next_pc) {
+			// Constant jump other than fallthrough, meaning interpretation will continue in another block
+			interp_block_add_non_fallthrough_target(ctx->block, astate->pc);
 			break;
 		}
 	}
 
 	if (astate->pc_state != RZ_INTERP_PC_UNREACHABLE) {
+		if (astate->pc_state == RZ_INTERP_PC_CONST && astate->pc == interp_block_end + 1) {
+			ctx->block->fallthrough = true;
+		}
 		rz_interp_run_push(ctx, ctx->astate);
 	}
 
@@ -1260,12 +1341,12 @@ static bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 	RzInterpRunContext ctx = {
 		.inst = inst,
 		.astate = NULL,
-		.queue = rz_list_new(),
-		.blocks = NULL
+		.queue = rz_list_new()
 	};
 	if (!ctx.queue) {
 		goto cleanup;
 	}
+	interp_blocks_init(&ctx);
 
 	// Prepare the initial state from the given entry point
 	// Hint: nothing speaks against supporting multiple entry points in a single run
@@ -1296,6 +1377,8 @@ static bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 			break;
 		}
 
+		interp_block_apply_instructions(&ctx, interp_block, il_block);
+
 		// DEBUG comments
 		RzStrBuf sb;
 		rz_strbuf_init(&sb);
@@ -1308,6 +1391,7 @@ static bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 		// rz_meta_set_string(iset->a, RZ_META_TYPE_COMMENT, il_bb->addr, rz_strbuf_get(&sb));
 		rz_strbuf_fini(&sb);
 
+		ctx.block = interp_block;
 		ctx.il_block_end = il_block->addr + il_block->size;
 		// Evaluate the effect on the abstract state.
 		if (!eval_block(&ctx, il_block)) {
@@ -1317,9 +1401,15 @@ static bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 		}
 	}
 
+	RzInterpResult *res = RZ_NEW0(RzInterpResult);
+	res->entry = entry_point;
+	memmove(&res->blocks, &ctx.blocks, sizeof(ctx.blocks));
+	memset(&ctx.blocks, 0, sizeof(ctx.blocks));
+	rz_pvector_push(&inst->results, res);
+
 cleanup:
 	rz_list_free(ctx.queue);
-	interp_blocks_free(inst, ctx.blocks);
+	interp_blocks_free(&ctx);
 	return success;
 }
 
@@ -1372,4 +1462,48 @@ RZ_API bool rz_interp_instance_th(RZ_NONNULL RZ_OWN RzInterpInstance *inst) {
 	RZ_LOG_DEBUG("interpreter: Enter TERM\n");
 	rz_interp_run_state_set(inst->run_state, RZ_INTERP_RUN_STATE_TERM);
 	return success;
+}
+
+static void bb_add_target(RzAnalysisBlock *abb, ut64 target) {
+	if (abb->jump == UT64_MAX && abb->fail != target) {
+		abb->jump = target;
+	} else if (abb->fail == UT64_MAX && abb->jump != target) {
+		abb->fail = target;
+	} else if (abb->fail != target && abb->jump != target) {
+		RZ_LOG_WARN("The basic block at 0x%" PFMT64x " has more than two outgoing edges.\n"
+			    "\t\tHas jump = 0x%" PFMT64x " fail = 0x%" PFMT64x ". Will miss = 0x%" PFMT64x "\n",
+			abb->addr, abb->jump, abb->fail,
+			target);
+	}
+}
+
+RZ_API void rz_interp_result_apply_to_analysis(RZ_NONNULL RzInterpResult *res, RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_if_fail(res && analysis);
+	// partially copied from rz_inquiry_convert_and_add_to_analysis()
+	char name[128];
+	RzAnalysisFunction *func = rz_analysis_create_function(analysis, rz_strf(name, "inquiry.0x%" PFMT64x, res->entry), res->entry, RZ_ANALYSIS_FCN_TYPE_FCN);
+	RzIntervalTreeIter it;
+	RzInterpBlock *block;
+	rz_interval_tree_foreach (&res->blocks, it, block) {
+		ut64 start = interp_block_get_start(block);
+		ut64 size = interp_block_get_size(block);
+		// TODO: add_bb should eventually not be used here since it does its own analysis.
+		// Instead, we should create the block by hand and apply our analysis info to it.
+		rz_analysis_add_bb(analysis, start, size);
+		RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, interp_block_get_start(block));
+		rz_analysis_function_add_block(func, abb);
+
+		// TODO: check if this is a calling block (thus fallthrough) and the following block
+		// has no in-edge from somewhere else. If so, merge them.
+
+		abb->jump = UT64_MAX;
+		abb->fail = UT64_MAX;
+		ut64 *target;
+		rz_vector_foreach(&block->jump_targets, target) {
+			bb_add_target(abb, *target);
+		}
+		if (block->fallthrough) {
+			bb_add_target(abb, start + size);
+		}
+	}
 }

@@ -119,15 +119,19 @@ typedef struct {
  * And unlike in RzAnalysisBlock, a call instruction also terminates an interpreter block.
  */
 typedef struct {
-	RBNode _rb; // private, node in the RBTree. Key is entry_state->p.
-	ut64 _max_end; // private, augmented value for RBTree.
-
+	RzIntervalNode *node; ///< Backref to the node containing this block. end value is inclusive. TODO: remove this if RBTree is used directly
 	/**
 	 * Least upper bound of all states discovered at the entry of the block.
 	 * pc_state of this state must be RZ_INTERP_PC_CONST and pc points to the first instruction of the block.
 	 */
 	RzInterpAbstrState *entry_state; // TODO: flatten to remove indirection
+	RzVector /*<ut16>*/ insn_offsets; ///< starting at the second instruction in the block (since first is always 0), offsets from the start of the block
+	bool insns_resolved; ///< Set to true once instruction_offsets and node->end are filled.
 	bool uninterpreted; ///< True if the entry state has not yet been started to interpret, i.e. the block is part of RzInterpFunctionState.queue
+
+	// Out-edges
+	bool fallthrough; ///< if true, there is an edge to the block after the end of this one
+	RzVector /*<ut64>*/ jump_targets; ///< Explicit jump targets, does not contain fallthrough address
 } RzInterpBlock;
 
 typedef enum {
@@ -283,6 +287,9 @@ struct rz_interp_instance_t {
 	 * These ring buffers are shared with other interpreter sets.
 	 */
 	RZ_BORROW RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM];
+
+	RzPVector /*<RzInterpRunResult>*/ results; ///< TODO: replace this by a queue/rbuf/... to handle interp and results concurrently
+
 	/**
 	 * \brief Ignored address ranges.
 	 */
@@ -329,13 +336,24 @@ struct rz_interp_run_context_t {
 	RzInterpInstance *inst; //< parent interpreter thread
 
 	RzList /*<RzInterpBlock>*/ *queue; ///< States that have to be interpreted still. If this is empty, a fixpoint has been reached.
-	RBTree /*<RzInterpBlock>*/ blocks; // All currently discovered blocks by address. They can overlap each other, but must never start at the same address.
+	/**
+	 * \brief All currently discovered blocks by address.
+	 * TODO: If the interval tree concept is kept, this should eventually be refactored to use RBTree directly and embed RBNode
+	 * inside RzInterpBlock to remove the additional indirection.
+	 */
+	RzIntervalTree /*<RzInterpBlock>*/ blocks;
 
 	// Tracking data local to a single block interpretation
-	ut64 il_block_end; ///< The address directly after the last instruction of the currently interpreted IL block
+	RzInterpBlock *block; ///< The currently interpreted interp block
+	ut64 il_block_end; ///< The address directly after the last instruction of the currently interpreted IL block, may be further than the last instruction of the interp block!
 	RzInterpAbstrState *astate; ///< The abstract state of the interpreter.
 	RzAnalysisCallCandidate call_cand; ///< Data of a call candidate.
 };
+
+typedef struct rz_interp_run_result_t {
+	ut64 entry;
+	RzIntervalTree /*<RzInterpBlock>*/ blocks;
+} RzInterpResult;
 
 /*
  * \brief Register a newly discovered state
@@ -346,5 +364,6 @@ struct rz_interp_run_context_t {
 RZ_API void rz_interp_run_push(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx, RZ_BORROW RZ_NONNULL RzInterpAbstrState *as);
 
 RZ_API bool rz_interp_instance_th(RZ_NONNULL RZ_OWN RzInterpInstance *iset);
+RZ_API void rz_interp_result_apply_to_analysis(RZ_NONNULL RzInterpResult *res, RZ_NONNULL RzAnalysis *analysis);
 
 #endif // RZ_INTERPRETER
