@@ -42,8 +42,7 @@ typedef struct rz_interval_tree_t {
 RZ_API void rz_interval_tree_init(RzIntervalTree *tree, RzIntervalNodeFree free);
 RZ_API void rz_interval_tree_fini(RzIntervalTree *tree);
 
-// return false if the insertion failed.
-RZ_API bool rz_interval_tree_insert(RzIntervalTree *tree, ut64 start, ut64 end, void *data);
+RZ_API RZ_NULLABLE RzIntervalNode *rz_interval_tree_insert(RzIntervalTree *tree, ut64 start, ut64 end, void *data);
 
 // Removes a given node from the tree. The node will be freed.
 // If free is true, the data in the node is freed as well.
