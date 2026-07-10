@@ -778,12 +778,10 @@ RZ_API void rz_flag_item_set_realname(RzFlag *f, RzFlagItem *item, const char *r
 		item->realname = NULL;
 	} else {
 		item->realname = rz_str_dup(realname);
-		if (!ht_sp_find(f->ht_name, realname, NULL)) {
-			RzFlagItem *cloned_item = rz_flag_item_clone(item);
-			free_item_name(cloned_item);
-			cloned_item->name = cloned_item->realname;
-			ht_sp_insert(f->ht_name, realname, cloned_item);
-		}
+		RzFlagItem *cloned_item = rz_flag_item_clone(item);
+		free_item_name(cloned_item);
+		cloned_item->name = cloned_item->realname;
+		ht_sp_update(f->ht_name, realname, cloned_item);
 	}
 }
 
