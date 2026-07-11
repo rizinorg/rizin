@@ -1178,20 +1178,20 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		memset(reg, '\0', sizeof(reg));
 		switch (gb_op[data[0]].type) {
 		case GB_8BIT:
-			sprintf(mn, "%s", gb_op[data[0]].name);
+			snprintf(mn, sizeof(mn), "%s", gb_op[data[0]].name);
 			break;
 		case GB_16BIT:
-			sprintf(mn, "%s %s", cb_ops[data[1] >> 3], cb_regs[data[1] & 7]);
+			snprintf(mn, sizeof(mn), "%s %s", cb_ops[data[1] >> 3], cb_regs[data[1] & 7]);
 			break;
 		case GB_8BIT + ARG_8:
-			sprintf(mn, gb_op[data[0]].name, data[1]);
+			snprintf(mn, sizeof(mn), gb_op[data[0]].name, data[1]);
 			break;
 		case GB_8BIT + ARG_16:
-			sprintf(mn, gb_op[data[0]].name, data[1] | (data[2] << 8));
+			snprintf(mn, sizeof(mn), gb_op[data[0]].name, data[1] | (data[2] << 8));
 			break;
 		case GB_8BIT + ARG_8 + GB_IO:
-			gb_hardware_register_name(reg, data[1]);
-			sprintf(mn, gb_op[data[0]].name, reg);
+			gb_hardware_register_name(reg, sizeof(reg), data[1]);
+			snprintf(mn, sizeof(mn), gb_op[data[0]].name, reg);
 			break;
 		}
 		op->mnemonic = rz_str_dup(mn);
