@@ -76,6 +76,82 @@ bool test_cons_to_html() {
 	html = rz_cons_html_filter(Color_RED Color_BGGREEN "aaa" Color_RESET_BG Color_RESET "bbb", NULL);
 	mu_assert_streq_free(html, "<font color='#f00' style='background-color:#0f0'>aaa</font>bbb", "Two different resets opposite order");
 
+	/* Bright foreground colors (90-97) */
+
+	html = rz_cons_html_filter("\x1b[90mBright foreground\x1b[0m", NULL);
+	mu_assert_streq_free(html, "<font color='#777'>Bright&nbsp;foreground</font>", "Bright black");
+
+	html = rz_cons_html_filter("\x1b[91mBright foreground\x1b[0m", NULL);
+	mu_assert_streq_free(html, "<font color='#ff5555'>Bright&nbsp;foreground</font>", "Bright red");
+
+	html = rz_cons_html_filter("\x1b[92mBright foreground\x1b[0m", NULL);
+	mu_assert_streq_free(html, "<font color='#55ff55'>Bright&nbsp;foreground</font>", "Bright green");
+
+	html = rz_cons_html_filter("\x1b[93mBright foreground\x1b[0m", NULL);
+	mu_assert_streq_free(html, "<font color='#ffff55'>Bright&nbsp;foreground</font>", "Bright yellow");
+
+	html = rz_cons_html_filter("\x1b[94mBright foreground\x1b[0m", NULL);
+	mu_assert_streq_free(html, "<font color='#5555ff'>Bright&nbsp;foreground</font>", "Bright blue");
+
+	html = rz_cons_html_filter("\x1b[95mBright foreground\x1b[0m", NULL);
+	mu_assert_streq_free(html, "<font color='#ff55ff'>Bright&nbsp;foreground</font>", "Bright magenta");
+
+	html = rz_cons_html_filter("\x1b[96mBright foreground\x1b[0m", NULL);
+	mu_assert_streq_free(html, "<font color='#55ffff'>Bright&nbsp;foreground</font>", "Bright cyan");
+
+	html = rz_cons_html_filter("\x1b[97mBright foreground\x1b[0m", NULL);
+	mu_assert_streq_free(html, "<font color='#ffffff'>Bright&nbsp;foreground</font>", "Bright white");
+
+	/* Bright background colors (100-107) */
+
+	html = rz_cons_html_filter("\x1b[100mBright background\x1b[0m", NULL);
+	mu_assert_streq_free(html, "<font style='background-color:#777'>Bright&nbsp;background</font>", "Bright background black");
+
+	html = rz_cons_html_filter("\x1b[101mBright background\x1b[0m", NULL);
+	mu_assert_streq_free(html, "<font style='background-color:#ff5555'>Bright&nbsp;background</font>", "Bright background red");
+
+	html = rz_cons_html_filter("\x1b[102mBright background\x1b[0m", NULL);
+	mu_assert_streq_free(html, "<font style='background-color:#55ff55'>Bright&nbsp;background</font>", "Bright background green");
+
+	html = rz_cons_html_filter("\x1b[103mBright background\x1b[0m", NULL);
+	mu_assert_streq_free(html, "<font style='background-color:#ffff55'>Bright&nbsp;background</font>", "Bright background yellow");
+
+	html = rz_cons_html_filter("\x1b[104mBright background\x1b[0m", NULL);
+	mu_assert_streq_free(html, "<font style='background-color:#5555ff'>Bright&nbsp;background</font>", "Bright background blue");
+
+	html = rz_cons_html_filter("\x1b[105mBright background\x1b[0m", NULL);
+	mu_assert_streq_free(html, "<font style='background-color:#ff55ff'>Bright&nbsp;background</font>", "Bright background magenta");
+
+	html = rz_cons_html_filter("\x1b[106mBright background\x1b[0m", NULL);
+	mu_assert_streq_free(html, "<font style='background-color:#55ffff'>Bright&nbsp;background</font>", "Bright background cyan");
+
+	html = rz_cons_html_filter("\x1b[107mBright background\x1b[0m", NULL);
+	mu_assert_streq_free(html, "<font style='background-color:#ffffff'>Bright&nbsp;background</font>", "Bright background white");
+
+	/* Explicit foreground reset (39m) */
+
+	html = rz_cons_html_filter("\x1b[91mAA\x1b[39mBB", NULL);
+	mu_assert_streq_free(html,
+		"<font color='#ff5555'>AA</font>BB",
+		"Reset bright foreground");
+
+	html = rz_cons_html_filter("\x1b[91m\x1b[42mAA\x1b[39mBB", NULL);
+	mu_assert_streq_free(html,
+		"<font color='#ff5555' style='background-color:#0f0'>AA</font>"
+		"<font style='background-color:#0f0'>BB</font>",
+		"Reset foreground preserve background");
+
+	html = rz_cons_html_filter("\x1b[101mAA\x1b[49mBB", NULL);
+	mu_assert_streq_free(html,
+		"<font style='background-color:#ff5555'>AA</font>BB",
+		"Reset bright background");
+
+	html = rz_cons_html_filter("\x1b[91m\x1b[101mAA\x1b[49mBB", NULL);
+	mu_assert_streq_free(html,
+		"<font color='#ff5555' style='background-color:#ff5555'>AA</font>"
+		"<font color='#ff5555'>BB</font>",
+		"Reset background preserve foreground");
+
 	mu_end;
 }
 
