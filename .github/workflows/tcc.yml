@@ -67,9 +67,8 @@ jobs:
 
     - name: Checkout meson from ret2libc git
       run: |
-          git clone https://github.com/ret2libc/meson.git
+          git clone --depth 1 -b tiny-cc https://github.com/ret2libc/meson.git
           cd meson
-          git checkout tiny-cc
           python3 setup.py build
           sudo python3 setup.py install
 

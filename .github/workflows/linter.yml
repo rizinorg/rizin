@@ -81,10 +81,10 @@ jobs:
           path: rizin
       - name: Checkout rz-bindgen (stable)
         if: github.ref == 'refs/heads/stable'
-        run: git clone -b stable https://github.com/rizinorg/rz-bindgen
+        run: git clone --depth 1 -b stable https://github.com/rizinorg/rz-bindgen
       - name: Checkout rz-bindgen (dev)
         if: github.ref != 'refs/heads/stable'
-        run: git clone -b dev https://github.com/rizinorg/rz-bindgen
+        run: git clone --depth 1 -b dev https://github.com/rizinorg/rz-bindgen
       - name: Install dependencies
         run: |
           sudo pip install meson ninja
