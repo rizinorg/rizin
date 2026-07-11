@@ -275,10 +275,6 @@ static ut64 interp_block_get_end(RzInterpBlock *block) {
 	return block->node->end;
 }
 
-static ut64 interp_block_get_size(RzInterpBlock *block) {
-	return interp_block_get_end(block) - interp_block_get_start(block) + 1;
-}
-
 static void interp_block_add_non_fallthrough_target(RzInterpBlock *block, ut64 target) {
 	// linear search may be inefficient, but practically the number of targets is often small
 	if (rz_vector_contains(&block->jump_targets, &target)) {
@@ -354,7 +350,7 @@ close:
 	rz_interval_tree_resize(&ctx->blocks, interp_block->node, block_start, cur - 1);
 }
 
-RZ_API void rz_interp_run_push(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx, RZ_BORROW RZ_NONNULL RzInterpAbstrState *as) {
+RZ_API void rz_interp_run_push(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx, RZ_BORROW RZ_NONNULL RzInterpAbstrState *as, bool is_fallthrough) {
 	if (as->pc_state == RZ_INTERP_PC_ANY) {
 		RZ_LOG_DEBUG("Encountered state with unknown/top pc\n");
 		return;
@@ -381,6 +377,9 @@ RZ_API void rz_interp_run_push(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx, RZ_
 		}
 		block->uninterpreted = true;
 		rz_list_push(ctx->queue, block);
+	}
+	if (!is_fallthrough) {
+		block->non_fallthrough_in = true;
 	}
 }
 
@@ -1162,6 +1161,7 @@ static bool eval_effect(RzInterpRunContext *ctx,
 		}
 		bool may_be_true = ctx->inst->plugin->may_be_bool(eval_out, true);
 		bool may_be_false = ctx->inst->plugin->may_be_bool(eval_out, false);
+		ut64 fallthrough_pc = ctx->astate->pc;
 		if (may_be_true && may_be_false) {
 			RzInterpAbstrState *true_state = rz_interp_abstr_state_clone(ctx->inst, ctx->astate);
 			RzInterpAbstrState *false_state = ctx->astate;
@@ -1178,8 +1178,10 @@ static bool eval_effect(RzInterpRunContext *ctx,
 				join_state(ctx->inst, true_state, false_state);
 			} else {
 				// different jump targets, branch rather than resorting to top pc
-				rz_interp_run_push(ctx, true_state);
-				rz_vector_push(&ctx->block->jump_targets, &true_state->pc);
+				rz_interp_run_push(ctx, true_state, true_state->pc_state == RZ_INTERP_PC_CONST && true_state->pc == fallthrough_pc);
+				if (true_state->pc_state == RZ_INTERP_PC_CONST) {
+					rz_vector_push(&ctx->block->jump_targets, &true_state->pc);
+				}
 				// false_state is already in ctx->inst->astate and will be continued automatically
 			}
 			rz_interp_abstr_state_free(ctx->inst, true_state);
@@ -1323,10 +1325,12 @@ static bool eval_block(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL const RzIL
 	}
 
 	if (astate->pc_state != RZ_INTERP_PC_UNREACHABLE) {
+		bool fallthrough = false;
 		if (astate->pc_state == RZ_INTERP_PC_CONST && astate->pc == interp_block_end + 1) {
+			fallthrough = true;
 			ctx->block->fallthrough = true;
 		}
-		rz_interp_run_push(ctx, ctx->astate);
+		rz_interp_run_push(ctx, ctx->astate, fallthrough);
 	}
 
 	return true;
@@ -1357,7 +1361,7 @@ static bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 		rz_interp_abstr_state_free(inst, estate);
 		goto cleanup;
 	}
-	rz_interp_run_push(&ctx, estate);
+	rz_interp_run_push(&ctx, estate, false);
 	rz_interp_abstr_state_free(inst, estate);
 
 	// Loop and interpret until a fixpoint has been reached
@@ -1485,12 +1489,46 @@ RZ_API void rz_interp_result_apply_to_analysis(RZ_NONNULL RzInterpResult *res, R
 	RzIntervalTreeIter it;
 	RzInterpBlock *block;
 	rz_interval_tree_foreach (&res->blocks, it, block) {
+		if (block->added_to_analysis) {
+			// has been merged into the previous already
+			continue;
+		}
 		ut64 start = interp_block_get_start(block);
-		ut64 size = interp_block_get_size(block);
+		ut64 end_excl = interp_block_get_end(block) + 1;
+
+		if (block->fallthrough && rz_vector_empty(&block->jump_targets)) {
+			// Merge consecutive blocks if there is no in-edge between them.
+			// Splits like this happen in the first place because interp blocks only reach until the
+			// first jump. This may be a call however, which just falls through.
+			RzIntervalTreeIter next_it = it;
+			while (true) {
+				rz_rbtree_iter_next(&next_it);
+				RzIntervalNode *next_node = NULL;
+				while (rz_rbtree_iter_has(&next_it)) {
+					RzIntervalNode *n = rz_interval_tree_iter_get(&next_it);
+					if (n->start >= end_excl) {
+						if (n->start == end_excl) {
+							next_node = n;
+						}
+						break;
+					}
+				}
+				RzInterpBlock *next_block;
+				if (!next_node || (next_block = next_node->data)->non_fallthrough_in) {
+					// no consecutive block or there is a consecutive block, but is has an in-edge from somewhere else
+					break;
+				}
+				next_block->added_to_analysis = true;
+				end_excl = next_node->end + 1;
+				block = next_block;
+			}
+		}
+
 		// TODO: add_bb should eventually not be used here since it does its own analysis.
 		// Instead, we should create the block by hand and apply our analysis info to it.
-		rz_analysis_add_bb(analysis, start, size);
-		RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, interp_block_get_start(block));
+		// Keep in mind we might have to add info from multiple merged blocks here if (see merging above)
+		rz_analysis_add_bb(analysis, start, end_excl - start);
+		RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, start);
 		rz_analysis_function_add_block(func, abb);
 
 		// TODO: check if this is a calling block (thus fallthrough) and the following block
@@ -1503,7 +1541,7 @@ RZ_API void rz_interp_result_apply_to_analysis(RZ_NONNULL RzInterpResult *res, R
 			bb_add_target(abb, *target);
 		}
 		if (block->fallthrough) {
-			bb_add_target(abb, start + size);
+			bb_add_target(abb, end_excl);
 		}
 	}
 }

@@ -128,6 +128,8 @@ typedef struct {
 	RzVector /*<ut16>*/ insn_offsets; ///< starting at the second instruction in the block (since first is always 0), offsets from the start of the block
 	bool insns_resolved; ///< Set to true once instruction_offsets and node->end are filled.
 	bool uninterpreted; ///< True if the entry state has not yet been started to interpret, i.e. the block is part of RzInterpFunctionState.queue
+	bool non_fallthrough_in; ///< True if there is an in-edge to this block that is not only a fallthrough. Used when merging consecutive blocks after interpretation.
+	bool added_to_analysis; ///< Only used after interpretation, when adding to analysis. Marks blocks that have been merged with the previous.
 
 	// Out-edges
 	bool fallthrough; ///< if true, there is an edge to the block after the end of this one
@@ -361,7 +363,7 @@ typedef struct rz_interp_run_result_t {
  * This will join the state with the already known one at the same pc and add it to the
  * queue for further interpretation if there were changes.
  */
-RZ_API void rz_interp_run_push(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx, RZ_BORROW RZ_NONNULL RzInterpAbstrState *as);
+RZ_API void rz_interp_run_push(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx, RZ_BORROW RZ_NONNULL RzInterpAbstrState *as, bool is_fallthrough);
 
 RZ_API bool rz_interp_instance_th(RZ_NONNULL RZ_OWN RzInterpInstance *iset);
 RZ_API void rz_interp_result_apply_to_analysis(RZ_NONNULL RzInterpResult *res, RZ_NONNULL RzAnalysis *analysis);
