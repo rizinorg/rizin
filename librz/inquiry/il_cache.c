@@ -30,7 +30,7 @@ struct rz_il_cache_t {
 	RZ_BORROW RzAnalysis *analysis;
 	RZ_BORROW RzIO *io;
 
-	RzPVector /*<RzBinSection *>*/ *bin_sections;
+	RZ_NULLABLE RzPVector /*<RzBinSection *>*/ *bin_sections;
 
 	size_t n_serving; ///< Number of caches serving currently.
 	RzThreadLock *n_serving_lock;
@@ -313,8 +313,10 @@ RZ_API void rz_il_cache_close(RZ_BORROW RZ_NONNULL RzILCache *cache) {
 
 	for (size_t i = 0; i < rz_pvector_len(&cache->clients); ++i) {
 		RzILCacheClient *client = rz_pvector_at(&cache->clients, i);
-		rz_th_ring_buf_close(client->req_rbuf);
-		rz_th_queue_close(client->il_queue);
+		if (client->async) {
+			rz_th_ring_buf_close(client->req_rbuf);
+			rz_th_queue_close(client->il_queue);
+		}
 	}
 }
 
@@ -375,9 +377,9 @@ static void rz_il_cache_client_free(void *ptr) {
 RZ_API RZ_OWN RzILCache *rz_il_cache_new(
 	RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
 	RZ_BORROW RZ_NONNULL RzIO *io,
-	RZ_OWN RZ_NONNULL RzPVector /*<RzBinSection *>*/ *bin_sections,
+	RZ_OWN RZ_NULLABLE RzPVector /*<RzBinSection *>*/ *bin_sections,
 	RzILCacheConfig config) {
-	rz_return_val_if_fail(analysis && io && bin_sections, NULL);
+	rz_return_val_if_fail(analysis && io, NULL);
 	RzILCache *cache = RZ_NEW0(RzILCache);
 	if (!cache) {
 		rz_warn_if_reached();
@@ -438,32 +440,42 @@ RZ_API bool rz_il_cache_was_requested(
 	return r;
 }
 
-RZ_API RZ_BORROW RzILCacheClient *rz_il_cache_new_client(RZ_NONNULL RZ_BORROW RzILCache *cache) {
+/**
+ * \brief Create a new client to access the IL cache
+ * \param async If false, the client will directly call into the IL cache, for single-threaded applications only.
+ *              If true, the client requires another thread to run rz_il_cache_serve() when it requests data, for concurrent applications.
+ */
+RZ_API RZ_BORROW RzILCacheClient *rz_il_cache_new_client(RZ_NONNULL RZ_BORROW RzILCache *cache, bool async) {
 	rz_return_val_if_fail(cache, false);
-
-	// The queue to pass the Effects to the interpreter.
-	RzThreadQueue *il_queue = rz_th_queue_new(RZ_IL_OPS_CACHE_IL_QUEUE_SIZE, NULL);
-	// The ring buffer the interpreter can request new Effects over.
-	RzThreadRingBuf *request_rbuf = rz_th_ring_buf_new(RZ_IL_OPS_CACHE_ADDR_RBUF_SIZE, sizeof(ut64));
-	if (!il_queue || !request_rbuf) {
-		goto error_free;
-	}
 	RzILCacheClient *client = RZ_NEW0(RzILCacheClient);
 	if (!client) {
-		goto error_free;
+		return NULL;
 	}
-	client->il_queue = il_queue;
-	client->req_rbuf = request_rbuf;
+	client->cache = cache;
+	if (async) {
+		client->async = true;
+		// The queue to pass the Effects to the interpreter.
+		client->il_queue = rz_th_queue_new(RZ_IL_OPS_CACHE_IL_QUEUE_SIZE, NULL);
+		// The ring buffer the interpreter can request new Effects over.
+		client->req_rbuf = rz_th_ring_buf_new(RZ_IL_OPS_CACHE_ADDR_RBUF_SIZE, sizeof(ut64));
+		if (!client->il_queue || !client->req_rbuf) {
+			goto error_free;
+		}
+	}
 	rz_pvector_push(&cache->clients, client);
 	return client;
 error_free:
-	rz_th_queue_free(il_queue);
-	rz_th_ring_buf_free(request_rbuf);
+	rz_th_queue_free(client->il_queue);
+	rz_th_ring_buf_free(client->req_rbuf);
+	free(client);
 	return NULL;
 }
 
 RZ_API RZ_NULLABLE RZ_BORROW const RzILCacheBlock *rz_il_cache_client_lift_il_block(RZ_NONNULL RZ_BORROW RzILCacheClient *client, ut64 addr) {
 	rz_return_val_if_fail(client, NULL);
+	if (!client->async) {
+		return lift_il_block(client->cache, addr);
+	}
 	if (rz_th_ring_buf_put(client->req_rbuf, &addr) != RZ_THREAD_RING_BUF_OK) {
 		// Can't request IL block => Cache closed => Terminate
 		return NULL;

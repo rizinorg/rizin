@@ -484,15 +484,12 @@ struct ituple {
 	RzInterpRunStateFlag next_run_state;
 };
 
-RZ_API extern RzInquiryPlugin rz_inquiry_plugin_interpreter_prototype;
-
 /**
  * A function to call the prototype interpreter.
  * Usually these tasks will be split between different caches and yield consumers.
  */
 RZ_API bool rz_inquiry_interpreter(RzCore *core,
-	RZ_OWN RzSetU *entry_points,
-	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
+	RZ_OWN RzSetU *entry_points) {
 	// All the things we need
 	bool return_code = true;
 	RzInterpInstance *inst = NULL;
@@ -531,12 +528,6 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 	// Later we would pass a unique iset to each interpreter with
 	// the required queues only.
 	// But for the prototype we have only one iset with all queues.
-	RzInquiryPlugin *prototype = &rz_inquiry_plugin_interpreter_prototype; // ht_sp_find(core->inquiry->plugins, "abstr_int_prototype", NULL);
-	if (!prototype) {
-		return_code = false;
-		rz_warn_if_reached();
-		goto error_free;
-	}
 	size_t n_threads = 1;
 	iset_map = RZ_NEWS0(struct ituple, n_threads);
 
@@ -552,7 +543,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 	// Initialize and spawn the interpreters.
 	//
 	for (size_t i = 0; i < n_threads; ++i) {
-		RzILCacheClient *cache_client = rz_il_cache_new_client(il_cache);
+		RzILCacheClient *cache_client = rz_il_cache_new_client(il_cache, true);
 		if (!cache_client) {
 			return_code = false;
 			rz_warn_if_reached();
@@ -560,10 +551,9 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		}
 		inst = rz_interp_instance_new(
 			core->analysis,
-			prototype->value_abstraction,
+			&rz_interp_value_domain_const,
 			cache_client,
-			yield_rbufs,
-			ignored_code);
+			yield_rbufs);
 		if (!inst) {
 			return_code = false;
 			rz_warn_if_reached();

@@ -486,9 +486,8 @@ RZ_API RZ_OWN RzInterpInstance *rz_interp_instance_new(
 	RzAnalysis *analysis,
 	RZ_NONNULL RZ_OWN RzInterpValueAbstraction *plugin,
 	RZ_NONNULL RZ_BORROW RzILCacheClient *il_cache_client,
-	RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM],
-	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
-	rz_return_val_if_fail(plugin && ignored_code && analysis && il_cache_client, NULL);
+	RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM]) {
+	rz_return_val_if_fail(plugin && analysis && il_cache_client, NULL);
 
 	RzInterpInstance *inst = RZ_NEW0(RzInterpInstance);
 	if (!inst) {
@@ -532,14 +531,15 @@ RZ_API RZ_OWN RzInterpInstance *rz_interp_instance_new(
 
 	inst->il_cache_client = il_cache_client;
 	inst->entry_points = entry_points;
-	inst->yield_rbufs[RZ_INTERP_YIELD_KIND_XREF] = yield_rbufs[RZ_INTERP_YIELD_KIND_XREF];
-	inst->yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE] = yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE];
-	inst->yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW] = yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW];
+	if (yield_rbufs) {
+		inst->yield_rbufs[RZ_INTERP_YIELD_KIND_XREF] = yield_rbufs[RZ_INTERP_YIELD_KIND_XREF];
+		inst->yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE] = yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE];
+		inst->yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW] = yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW];
+	}
 	rz_pvector_init(&inst->results, NULL);
 	inst->io_request_rbuf = io_request_rbuf;
 	inst->io_result_rbuf = io_result_rbuf;
 	inst->run_state_sync = rz_th_sem_new(0);
-	inst->ignored_code = ignored_code;
 
 	return inst;
 err_var_name_hashes:
@@ -581,6 +581,11 @@ bool report_yield_xref(
 	ut64 from,
 	const RzInterpAbstrVal *to,
 	RzAnalysisXRefType type) {
+	RzInterpYieldRBuf *yrbuf = ctx->inst->yield_rbufs[RZ_INTERP_YIELD_KIND_XREF];
+	if (!yrbuf) {
+		return true;
+	}
+
 	RzBitVector to_bv;
 	rz_bv_init(&to_bv, 64);
 	bool success = true;
@@ -600,9 +605,6 @@ bool report_yield_xref(
 		// packet. So skip them here.
 		goto cleanup;
 	}
-
-	RzInterpYieldRBuf *yrbuf = ctx->inst->yield_rbufs[RZ_INTERP_YIELD_KIND_XREF];
-	rz_return_val_if_fail(yrbuf, false);
 
 	ut64 to_addr = rz_bv_to_ut64(&to_bv);
 	RzAnalysisXRef xref = { 0 };
@@ -628,7 +630,9 @@ cleanup:
 static bool report_yield_call_candiate(
 	RzInterpRunContext *ctx) {
 	RzInterpYieldRBuf *cc_rbuf = ctx->inst->yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE];
-	rz_return_val_if_fail(cc_rbuf, false);
+	if (!cc_rbuf) {
+		return true;
+	}
 
 	RzAnalysisCallCandidate cc = { 0 };
 	// TODO? put the bb addr into the call candidate? Currently we do not know it.
@@ -1339,7 +1343,9 @@ static bool eval_block(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL const RzIL
 /**
  * \brief Run the interpreter from a single entrypoint until a fixpoint is reached
  */
-static bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
+RZ_API bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
+	rz_return_val_if_fail(inst, false);
+
 	// Initialization
 	bool success = false;
 	RzInterpRunContext ctx = {
@@ -1423,9 +1429,6 @@ cleanup:
 RZ_API bool rz_interp_instance_th(RZ_NONNULL RZ_OWN RzInterpInstance *inst) {
 	rz_return_val_if_fail(inst &&
 			inst->il_cache_client &&
-			inst->yield_rbufs[RZ_INTERP_YIELD_KIND_XREF] &&
-			inst->yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE] &&
-			inst->yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW] &&
 			inst->run_state_sync &&
 			inst->plugin,
 		false);
@@ -1530,10 +1533,6 @@ RZ_API void rz_interp_result_apply_to_analysis(RZ_NONNULL RzInterpResult *res, R
 		rz_analysis_add_bb(analysis, start, end_excl - start);
 		RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, start);
 		rz_analysis_function_add_block(func, abb);
-
-		// TODO: check if this is a calling block (thus fallthrough) and the following block
-		// has no in-edge from somewhere else. If so, merge them.
-
 		abb->jump = UT64_MAX;
 		abb->fail = UT64_MAX;
 		ut64 *target;

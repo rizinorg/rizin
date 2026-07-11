@@ -234,7 +234,7 @@ static void eval_unop(RzILOpPureCode code, RZ_NONNULL RZ_INOUT RzInterpAbstrVal 
 	}
 }
 
-static RzInterpValueAbstraction rz_interpreter_plugin_prototype = {
+RZ_API RzInterpValueAbstraction rz_interp_value_domain_const = {
 	.name = "constant",
 	.val_new_top = val_new_top,
 	.val_free = val_free,
@@ -259,7 +259,7 @@ RZ_API RzInquiryPlugin rz_inquiry_plugin_interpreter_prototype = {
 	.version = "0.1p",
 	.desc = "A prototype interpreter for constant/top abstractions.",
 	.license = "LGPL-3.0-only",
-	.value_abstraction = &rz_interpreter_plugin_prototype,
+	.value_abstraction = &rz_interp_value_domain_const,
 };
 
 #ifndef RZ_PLUGIN_INCORE

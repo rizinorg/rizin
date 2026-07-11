@@ -64,20 +64,14 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 			rz_set_u_add(entry_points, entry_point);
 		}
 	}
-	RzVector *ignored_code_regions = get_ignored_code_regions(
-		rz_bin_object_get_symbols(core->bin->cur->o),
-		rz_bin_object_get_sections(core->bin->cur->o),
-		rz_io_maps(core->io));
-	bool success = rz_inquiry_interpreter(core, entry_points, ignored_code_regions);
+	bool success = rz_inquiry_interpreter(core, entry_points);
 	eprintf("Finished reference recovery: %s\n", success ? "OK" : "FAIL");
 	if (!success) {
-		rz_vector_free(ignored_code_regions);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
 	RzSetU *symbol_addresses = rz_set_u_new();
 	if (!symbol_addresses || !rz_inquiry_get_fcn_symbol_addr(core, symbol_addresses)) {
-		rz_vector_free(ignored_code_regions);
 		rz_warn_if_reached();
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -88,12 +82,16 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (run_fcn_detection) {
+		RzVector *ignored_code_regions = get_ignored_code_regions(
+			rz_bin_object_get_symbols(core->bin->cur->o),
+			rz_bin_object_get_sections(core->bin->cur->o),
+			rz_io_maps(core->io));
 		eprintf("Perform function deduction: ");
 		success &= rz_inquiry_function_deduction(core->analysis, core->inquiry, symbol_addresses, symbols, ignored_code_regions, fcns);
+		rz_vector_free(ignored_code_regions);
 		eprintf("%s\n", success ? "OK" : "FAIL");
 	}
 	rz_set_u_free(symbol_addresses);
-	rz_vector_free(ignored_code_regions);
 
 	success &= rz_inquiry_convert_and_add_to_analysis(core->analysis, core->inquiry, fcns, symbols);
 	rz_pvector_free(fcns);

@@ -288,7 +288,7 @@ struct rz_interp_instance_t {
 	 * \brief The ring buffers to push the yield of interpretation into.
 	 * These ring buffers are shared with other interpreter sets.
 	 */
-	RZ_BORROW RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM];
+	RZ_BORROW RZ_NULLABLE RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM];
 
 	RzPVector /*<RzInterpRunResult>*/ results; ///< TODO: replace this by a queue/rbuf/... to handle interp and results concurrently
 
@@ -327,8 +327,7 @@ RZ_API RZ_OWN RzInterpInstance *rz_interp_instance_new(
 	RzAnalysis *analysis,
 	RZ_NONNULL RZ_OWN RzInterpValueAbstraction *plugin,
 	RZ_NONNULL RZ_BORROW RzILCacheClient *il_cache_client,
-	RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM],
-	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code);
+	RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM]);
 RZ_API void rz_interp_instance_free(RZ_OWN RZ_NULLABLE RzInterpInstance *iset);
 
 /**
@@ -365,7 +364,10 @@ typedef struct rz_interp_run_result_t {
  */
 RZ_API void rz_interp_run_push(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx, RZ_BORROW RZ_NONNULL RzInterpAbstrState *as, bool is_fallthrough);
 
+RZ_API bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point);
 RZ_API bool rz_interp_instance_th(RZ_NONNULL RZ_OWN RzInterpInstance *iset);
 RZ_API void rz_interp_result_apply_to_analysis(RZ_NONNULL RzInterpResult *res, RZ_NONNULL RzAnalysis *analysis);
+
+extern RZ_API RzInterpValueAbstraction rz_interp_value_domain_const;
 
 #endif // RZ_INTERPRETER
