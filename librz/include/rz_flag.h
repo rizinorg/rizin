@@ -123,6 +123,7 @@ RZ_API void rz_flag_item_set_comment(RzFlagItem *item, const char *comment);
 RZ_API void rz_flag_item_set_realname(RzFlag *f, RzFlagItem *item, const char *realname);
 RZ_API const char *rz_flag_item_set_color(RzFlagItem *item, const char *color);
 RZ_API RzFlagItem *rz_flag_item_clone(RzFlagItem *item);
+RZ_API RzFlagItem *rz_flag_item_add_ref(RzFlagItem *item);
 RZ_API int rz_flag_unset_glob(RzFlag *f, const char *name);
 RZ_API int rz_flag_rename(RzFlag *f, RzFlagItem *item, const char *name);
 RZ_API int rz_flag_relocate(RzFlag *f, ut64 off, ut64 off_mask, ut64 to);

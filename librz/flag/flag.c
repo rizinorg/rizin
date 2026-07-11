@@ -251,6 +251,15 @@ RZ_API RzFlagItem *rz_flag_item_clone(RzFlagItem *item) {
 	return n;
 }
 
+/**
+ * \brief Add a reference to the given flag item.
+ */
+RZ_API RzFlagItem *rz_flag_item_add_ref(RzFlagItem *item) {
+	rz_return_val_if_fail(item && item->refcount < UT8_MAX, NULL);
+	item->refcount++;
+	return item;
+}
+
 RZ_API void rz_flag_item_free(RzFlagItem *item) {
 	if (!item) {
 		return;
@@ -777,11 +786,7 @@ RZ_API void rz_flag_item_set_realname(RzFlag *f, RzFlagItem *item, const char *r
 	rz_return_if_fail(item);
 	if (item->realname) {
 		if (strcmp(item->name, item->realname)) {
-			RzFlagItem *cloned_item = ht_sp_find(f->ht_name, item->realname, NULL);
-			if (cloned_item) {
-				remove_offsetmap(f, cloned_item);
-				ht_sp_delete(f->ht_name, item->realname); // frees cloned item
-			}
+			ht_sp_delete(f->ht_name, item->realname);
 		}
 		free_item_realname(item);
 	}
@@ -789,11 +794,11 @@ RZ_API void rz_flag_item_set_realname(RzFlag *f, RzFlagItem *item, const char *r
 		item->realname = NULL;
 	} else {
 		item->realname = rz_str_dup(realname);
-		if (!ht_sp_find(f->ht_name, realname, NULL)) {
-			RzFlagItem *cloned_item = rz_flag_item_clone(item);
-			free_item_name(cloned_item);
-			cloned_item->name = cloned_item->realname;
-			ht_sp_insert(f->ht_name, realname, cloned_item);
+		if (strcmp(item->name, item->realname)) {
+			RzFlagItem *item_ref = rz_flag_item_add_ref(item);
+			if (!ht_sp_insert(f->ht_name, realname, item_ref)) {
+				rz_flag_item_free(item_ref);
+			}
 		}
 	}
 }
@@ -815,13 +820,15 @@ RZ_API int rz_flag_rename(RzFlag *f, RzFlagItem *item, const char *name) {
 
 /* \brief unset the given flag \p item.
  *
- * Return true if the item is successfully unset, false otherwise. Assumes that item is
- * inserted in f->ht_name under item->name.
+ * return true if the item is successfully unset, false otherwise.
  * NOTE: the item is freed.
  */
 RZ_API bool rz_flag_unset(RzFlag *f, RzFlagItem *item) {
 	rz_return_val_if_fail(f && item, false);
 	remove_offsetmap(f, item);
+	if (item->realname && strcmp(item->name, item->realname)) {
+		ht_sp_delete(f->ht_name, item->realname);
+	}
 	ht_sp_delete(f->ht_name, item->name);
 	return true;
 }
