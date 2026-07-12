@@ -386,6 +386,83 @@ static RzAnalysisValue *milstd_v_basemem(RzAnalysis *a, ut8 br, ut8 rx, st64 dis
 	return v;
 }
 
+// --- Operand-shape combinators ------------------------------------------
+
+// Ra = Rb
+static void milstd_reg_reg(RzAnalysis *a, RzAnalysisOp *op, ut8 rd, ut8 rs) {
+	op->dst = milstd_v_reg(a, rd, RZ_ANALYSIS_ACC_W);
+	op->src[0] = milstd_v_reg(a, rs, RZ_ANALYSIS_ACC_R);
+}
+
+// Ra = imm
+static void milstd_reg_imm(RzAnalysis *a, RzAnalysisOp *op, ut8 rd, st64 imm) {
+	op->dst = milstd_v_reg(a, rd, RZ_ANALYSIS_ACC_W);
+	op->src[0] = milstd_v_imm(imm);
+}
+
+// Ra = [mem]
+static void milstd_reg_mem(RzAnalysis *a, RzAnalysisOp *op, ut8 rd, RzAnalysisValue *mem) {
+	op->dst = milstd_v_reg(a, rd, RZ_ANALYSIS_ACC_W);
+	op->src[0] = mem;
+}
+
+// [mem] = Ra
+static void milstd_mem_reg(RzAnalysis *a, RzAnalysisOp *op, RzAnalysisValue *mem, ut8 rs) {
+	op->dst = mem;
+	op->src[0] = milstd_v_reg(a, rs, RZ_ANALYSIS_ACC_R);
+}
+
+// [mem] = imm (store, or read-modify-write when the mem value carries ACC_R|ACC_W)
+static void milstd_mem_imm(RzAnalysisOp *op, RzAnalysisValue *mem, st64 imm) {
+	op->dst = mem;
+	op->src[0] = milstd_v_imm(imm);
+}
+
+// Ra = Ra (op) Rb
+static void milstd_acc_reg(RzAnalysis *a, RzAnalysisOp *op, ut8 ra, ut8 rb) {
+	op->dst = milstd_v_reg(a, ra, RZ_ANALYSIS_ACC_W);
+	op->src[0] = milstd_v_reg(a, ra, RZ_ANALYSIS_ACC_R);
+	op->src[1] = milstd_v_reg(a, rb, RZ_ANALYSIS_ACC_R);
+}
+
+// Ra = Ra (op) imm
+static void milstd_acc_imm(RzAnalysis *a, RzAnalysisOp *op, ut8 ra, st64 imm) {
+	op->dst = milstd_v_reg(a, ra, RZ_ANALYSIS_ACC_W);
+	op->src[0] = milstd_v_reg(a, ra, RZ_ANALYSIS_ACC_R);
+	op->src[1] = milstd_v_imm(imm);
+}
+
+// Ra = Ra (op) [mem]
+static void milstd_acc_mem(RzAnalysis *a, RzAnalysisOp *op, ut8 ra, RzAnalysisValue *mem) {
+	op->dst = milstd_v_reg(a, ra, RZ_ANALYSIS_ACC_W);
+	op->src[0] = milstd_v_reg(a, ra, RZ_ANALYSIS_ACC_R);
+	op->src[1] = mem;
+}
+
+// cmp Ra, Rb (two read sources, no destination)
+static void milstd_cmp_reg_reg(RzAnalysis *a, RzAnalysisOp *op, ut8 r0, ut8 r1) {
+	op->src[0] = milstd_v_reg(a, r0, RZ_ANALYSIS_ACC_R);
+	op->src[1] = milstd_v_reg(a, r1, RZ_ANALYSIS_ACC_R);
+}
+
+// cmp Ra, imm
+static void milstd_cmp_reg_imm(RzAnalysis *a, RzAnalysisOp *op, ut8 r, st64 imm) {
+	op->src[0] = milstd_v_reg(a, r, RZ_ANALYSIS_ACC_R);
+	op->src[1] = milstd_v_imm(imm);
+}
+
+// cmp Ra, [mem]
+static void milstd_cmp_reg_mem(RzAnalysis *a, RzAnalysisOp *op, ut8 r, RzAnalysisValue *mem) {
+	op->src[0] = milstd_v_reg(a, r, RZ_ANALYSIS_ACC_R);
+	op->src[1] = mem;
+}
+
+// cmp [mem], imm (test bit in memory)
+static void milstd_cmp_mem_imm(RzAnalysisOp *op, RzAnalysisValue *mem, st64 imm) {
+	op->src[0] = mem;
+	op->src[1] = milstd_v_imm(imm);
+}
+
 // Fill op->src[]/op->dst (analyzable operands) and op->access (flat read/write
 // list). Driven by addressing format; op->type selects the read/write roles.
 static void milstd_fill_val(RzAnalysis *a, RzAnalysisOp *op, const MilStd1750Instruction *insn, ut8 op8) {
@@ -398,53 +475,38 @@ static void milstd_fill_val(RzAnalysis *a, RzAnalysisOp *op, const MilStd1750Ins
 			break; // PSHM/POPM: operands are a register range, not modelled
 		}
 		if (type == RZ_ANALYSIS_OP_TYPE_CMP) {
-			op->src[0] = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_R);
-			op->src[1] = milstd_v_reg(a, insn->rb, RZ_ANALYSIS_ACC_R);
-		} else if (type == RZ_ANALYSIS_OP_TYPE_LOAD) { // LR: Ra = Rb
-			op->dst = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_W);
-			op->src[0] = milstd_v_reg(a, insn->rb, RZ_ANALYSIS_ACC_R);
-		} else { // arithmetic / logical / shift / move: Ra = Ra (op) Rb
-			op->dst = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_W);
-			op->src[0] = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_R);
-			op->src[1] = milstd_v_reg(a, insn->rb, RZ_ANALYSIS_ACC_R);
+			milstd_cmp_reg_reg(a, op, insn->ra, insn->rb);
+		} else if (type == RZ_ANALYSIS_OP_TYPE_LOAD) {
+			milstd_reg_reg(a, op, insn->ra, insn->rb); // LR: Ra = Rb
+		} else {
+			milstd_acc_reg(a, op, insn->ra, insn->rb); // Ra = Ra (op) Rb
 		}
 		break;
 	case MIL_FMT_SR:
-		op->dst = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_W);
-		op->src[0] = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_R);
+		milstd_reg_reg(a, op, insn->ra, insn->ra); // Ra = (op) Ra
 		break;
 	case MIL_FMT_IS:
 		if (type == RZ_ANALYSIS_OP_TYPE_LOAD) {
-			op->dst = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_W);
-			op->src[0] = milstd_v_imm(insn->imm8);
+			milstd_reg_imm(a, op, insn->ra, insn->imm8);
 		} else if (type == RZ_ANALYSIS_OP_TYPE_CMP) {
-			op->src[0] = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_R);
-			op->src[1] = milstd_v_imm(insn->imm8);
+			milstd_cmp_reg_imm(a, op, insn->ra, insn->imm8);
 		} else {
-			op->dst = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_W);
-			op->src[0] = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_R);
-			op->src[1] = milstd_v_imm(insn->imm8);
+			milstd_acc_imm(a, op, insn->ra, insn->imm8);
 		}
 		break;
 	case MIL_FMT_IMM_R:
 	case MIL_FMT_R_IMM:
 		if (type == RZ_ANALYSIS_OP_TYPE_CMP) {
-			op->src[0] = milstd_v_reg(a, insn->rb, RZ_ANALYSIS_ACC_R);
-			op->src[1] = milstd_v_imm(insn->imm8);
+			milstd_cmp_reg_imm(a, op, insn->rb, insn->imm8);
 		} else {
-			op->dst = milstd_v_reg(a, insn->rb, RZ_ANALYSIS_ACC_W);
-			op->src[0] = milstd_v_reg(a, insn->rb, RZ_ANALYSIS_ACC_R);
-			op->src[1] = milstd_v_imm(insn->imm8);
+			milstd_acc_imm(a, op, insn->rb, insn->imm8);
 		}
 		break;
 	case MIL_FMT_IM_OCX:
 		if (type == RZ_ANALYSIS_OP_TYPE_CMP) {
-			op->src[0] = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_R);
-			op->src[1] = milstd_v_imm(insn->imm16);
+			milstd_cmp_reg_imm(a, op, insn->ra, insn->imm16);
 		} else {
-			op->dst = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_W);
-			op->src[0] = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_R);
-			op->src[1] = milstd_v_imm(insn->imm16);
+			milstd_acc_imm(a, op, insn->ra, insn->imm16);
 		}
 		break;
 	case MIL_FMT_MEM: {
@@ -452,24 +514,18 @@ static void milstd_fill_val(RzAnalysis *a, RzAnalysisOp *op, const MilStd1750Ins
 			break; // JS/SJS/SOJ: addr is a code target, not a data operand
 		}
 		if (op8 == 0x85) { // LIM: the second word is an immediate, not memory
-			op->dst = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_W);
-			op->src[0] = milstd_v_imm(insn->addr);
+			milstd_reg_imm(a, op, insn->ra, insn->addr);
 			break;
 		}
 		ut64 ea = (ut64)insn->addr * 2;
 		if (type == RZ_ANALYSIS_OP_TYPE_LOAD) {
-			op->dst = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_W);
-			op->src[0] = milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_R);
+			milstd_reg_mem(a, op, insn->ra, milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_R));
 		} else if (type == RZ_ANALYSIS_OP_TYPE_STORE) {
-			op->dst = milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_W);
-			op->src[0] = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_R);
+			milstd_mem_reg(a, op, milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_W), insn->ra);
 		} else if (type == RZ_ANALYSIS_OP_TYPE_CMP) {
-			op->src[0] = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_R);
-			op->src[1] = milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_R);
-		} else { // arithmetic with a memory source: Ra = Ra (op) [mem]
-			op->dst = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_W);
-			op->src[0] = milstd_v_reg(a, insn->ra, RZ_ANALYSIS_ACC_R);
-			op->src[1] = milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_R);
+			milstd_cmp_reg_mem(a, op, insn->ra, milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_R));
+		} else { // Ra = Ra (op) [mem]
+			milstd_acc_mem(a, op, insn->ra, milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_R));
 		}
 		break;
 	}
@@ -479,14 +535,11 @@ static void milstd_fill_val(RzAnalysis *a, RzAnalysisOp *op, const MilStd1750Ins
 		if (type == RZ_ANALYSIS_OP_TYPE_LOAD) { // LM: memory into a register range
 			op->src[0] = milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_R);
 		} else if (type == RZ_ANALYSIS_OP_TYPE_STORE) { // STM/STC/STCI
-			op->dst = milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_W);
-			op->src[0] = milstd_v_imm(insn->imm8);
+			milstd_mem_imm(op, milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_W), insn->imm8);
 		} else if (type == RZ_ANALYSIS_OP_TYPE_CMP) { // TB: test bit in memory
-			op->src[0] = milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_R);
-			op->src[1] = milstd_v_imm(insn->imm8);
+			milstd_cmp_mem_imm(op, milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_R), insn->imm8);
 		} else { // SB/RB/INCM/DECM: read-modify-write the memory word
-			op->dst = milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_R | RZ_ANALYSIS_ACC_W);
-			op->src[0] = milstd_v_imm(insn->imm8);
+			milstd_mem_imm(op, milstd_v_mem(a, ea, insn->rx, sz, RZ_ANALYSIS_ACC_R | RZ_ANALYSIS_ACC_W), insn->imm8);
 		}
 		break;
 	}
@@ -496,10 +549,12 @@ static void milstd_fill_val(RzAnalysis *a, RzAnalysisOp *op, const MilStd1750Ins
 		// not modelled. Only the memory operand is recorded.
 		ut8 rx = (insn->format == MIL_FMT_BX) ? insn->rx : 0;
 		st64 disp = (insn->format == MIL_FMT_B) ? insn->imm8 : 0;
+		RzAnalysisValueAccess acc = (type == RZ_ANALYSIS_OP_TYPE_STORE) ? RZ_ANALYSIS_ACC_W : RZ_ANALYSIS_ACC_R;
+		RzAnalysisValue *mem = milstd_v_basemem(a, insn->br, rx, disp, sz, acc);
 		if (type == RZ_ANALYSIS_OP_TYPE_STORE) {
-			op->dst = milstd_v_basemem(a, insn->br, rx, disp, sz, RZ_ANALYSIS_ACC_W);
+			op->dst = mem;
 		} else {
-			op->src[0] = milstd_v_basemem(a, insn->br, rx, disp, sz, RZ_ANALYSIS_ACC_R);
+			op->src[0] = mem;
 		}
 		break;
 	}
