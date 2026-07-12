@@ -23,6 +23,421 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=m68k aez MOVEM predecrement uses CPU-specific base value
+FILE=malloc://256
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+wx 48e08080 @ 0
+wx 48e14040 @ 0x40
+e asm.cpu=68020
+s 0
+aezi
+aezv a0 0x20
+aezv d0 0x11223344
+aezs
+ar a0
+pxwj 8 @ 0x18
+e asm.cpu=68000
+s 0x40
+aezi
+aezv a1 0x60
+aezv d1 0x11223344
+aezs
+ar a1
+pxwj 8 @ 0x58
+EOF
+EXPECT=<<EOF
+a0 = 0x20
+d0 = 0x11223344
+a0 = 0x00000018
+[287454020,28]
+a1 = 0x60
+d1 = 0x11223344
+a1 = 0x00000058
+[287454020,96]
+EOF
+RUN
+
+NAME=m68k aez MOVE16 aligns transfers but increments raw address
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68040
+wx f60800000001 @ 0x40
+wx 000102030405060708090a0b0c0d0e0f @ 0
+s 0x40
+aezi
+aezv a0 0x21
+aezs
+ar a0
+pxj 16 @ 0x20
+EOF
+EXPECT=<<EOF
+a0 = 0x21
+a0 = 0x00000031
+[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+EOF
+RUN
+
+NAME=m68k aez RTE consumes format 2 frame and restores USP
+FILE=malloc://256
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 4e73
+wx 000000000020200000000000 @ 0x40
+aezi
+aezv sr 0x2000
+aezv a7 0x40
+aezv usp 0x80
+aezs
+ar sr
+ar pc
+ar a7
+ar isp
+EOF
+EXPECT=<<EOF
+sr = 0x2000
+a7 = 0x40
+usp = 0x80
+sr = 0x0000
+pc = 0x00000020
+a7 = 0x00000080
+isp = 0x0000004c
+EOF
+RUN
+
+NAME=m68k aez privileged MOVE forms trap in user mode
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 4e60 @ 0
+wx 40c0 @ 0x10
+s 0
+aezi
+aezv sr 0
+aezv a0 0x12345678
+aezv usp 0xabcdef00
+aezs
+ar usp
+s 0x10
+aezi
+aezv sr 0
+aezv d0 0x12345678
+aezs
+ar d0
+ar sr
+EOF
+EXPECT=<<EOF
+sr = 0x0
+a0 = 0x12345678
+usp = 0xabcdef00
+usp = 0xabcdef00
+sr = 0x0
+d0 = 0x12345678
+d0 = 0x12345678
+sr = 0x0000
+EOF
+RUN
+
+NAME=m68k aez special MOVE forms preserve condition codes
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 4e6040c0
+aezi
+aezv sr 0x201f
+aezv a0 0x12345678
+aezs 2
+ar usp
+ar d0
+ar sr
+EOF
+EXPECT=<<EOF
+sr = 0x201f
+a0 = 0x12345678
+usp = 0x12345678
+d0 = 0x0000201f
+sr = 0x201f
+EOF
+RUN
+
+NAME=m68k aez RTE rejects MC68010 format on MC68040
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68040
+wx 4e73
+wx 2000 @ 0x40
+wx 12345678 @ 0x42
+wx 8000 @ 0x46
+aezi
+aezv sr 0x2000
+aezv a7 0x40
+aezs
+ar a7
+ar pc
+ar sr
+EOF
+EXPECT=<<EOF
+sr = 0x2000
+a7 = 0x40
+a7 = 0x00000040
+pc = 0x00000002
+sr = 0x2000
+EOF
+RUN
+
+NAME=m68k aez zero-count shift and rotate flags
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx e028 @ 0
+wx e030 @ 0x10
+wx e038 @ 0x20
+s 0
+aezi
+aezv d0 0
+aezv sr 0x11
+aezs
+ar sr
+s 0x10
+aezi
+aezv d0 0
+aezv sr 0x10
+aezs
+ar sr
+s 0x20
+aezi
+aezv d0 0
+aezv sr 0x1
+aezs
+ar sr
+EOF
+EXPECT=<<EOF
+d0 = 0x0
+sr = 0x11
+sr = 0x0014
+d0 = 0x0
+sr = 0x10
+sr = 0x0015
+d0 = 0x0
+sr = 0x1
+sr = 0x0004
+EOF
+RUN
+
+NAME=m68k aez FINT respects FPCR round toward negative infinity
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c54803ff8000000000000 @ 0
+wx f2000501 @ 0xc
+aezi
+aezv fpcr 0x20
+aezs 2
+ar fp1
+ar fp2
+EOF
+EXPECT=<<EOF
+fpcr = 0x20
+fp1 = 0x3fffc000000000000000
+fp2 = 0x3fff8000000000000000
+EOF
+RUN
+
+NAME=m68k aez CAS2 failure updates both compare registers
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 0cfc808090c1 @ 0
+wx 1111 @ 0x40
+wx 2222 @ 0x50
+aezi
+aezv a0 0x40
+aezv a1 0x50
+aezv d0 0x9999
+aezv d1 0x3333
+aezv d2 0xaaaa
+aezv d3 0xbbbb
+aezs
+ar d0
+ar d1
+EOF
+EXPECT=<<EOF
+a0 = 0x40
+a1 = 0x50
+d0 = 0x9999
+d1 = 0x3333
+d2 = 0xaaaa
+d3 = 0xbbbb
+d0 = 0x00001111
+d1 = 0x00002222
+EOF
+RUN
+
+NAME=m68k aez CAS2 shared compare register keeps first memory operand
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 0cfc808090c0 @ 0
+wx 1111 @ 0x40
+wx 2222 @ 0x50
+aezi
+aezv a0 0x40
+aezv a1 0x50
+aezv d0 0x1111
+aezv d2 0xaaaa
+aezv d3 0xbbbb
+aezs
+ar d0
+EOF
+EXPECT=<<EOF
+a0 = 0x40
+a1 = 0x50
+d0 = 0x1111
+d2 = 0xaaaa
+d3 = 0xbbbb
+d0 = 0x00001111
+EOF
+RUN
+
+NAME=m68k aez FADD respects FPCR round toward positive infinity
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c54803bf0000000000000 @ 0
+wx f23c55003ff0000000000000 @ 0xc
+wx f2000522 @ 0x18
+aezi
+aezv fpcr 0x30
+aezs 3
+ar fp2
+EOF
+EXPECT=<<EOF
+fpcr = 0x30
+fp2 = 0x3fff8000000000000001
+EOF
+RUN
+
+NAME=m68k aez FADD respects FPCR single precision
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c54803e70000000000000 @ 0
+wx f23c55003ff0000000000000 @ 0xc
+wx f2000522 @ 0x18
+aezi
+aezv fpcr 0x40
+aezs 3
+ar fp2
+EOF
+EXPECT=<<EOF
+fpcr = 0x40
+fp2 = 0x3fff8000000000000000
+EOF
+RUN
+
+NAME=m68k aez FSADD overrides FPCR precision
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68040
+wx f23c54803e70000000000000 @ 0
+wx f23c55003ff0000000000000 @ 0xc
+wx f2000562 @ 0x18
+aezi
+aezv fpcr 0x80
+aezs 3
+ar fp2
+EOF
+EXPECT=<<EOF
+fpcr = 0x80
+fp2 = 0x3fff8000000000000000
+EOF
+RUN
+
+NAME=m68k aez FMOVE register transfer respects FPCR precision
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c54803ff0000010000000 @ 0
+wx f2000500 @ 0xc
+aezi
+aezv fpcr 0x40
+aezs 2
+ar fp2
+EOF
+EXPECT=<<EOF
+fpcr = 0x40
+fp2 = 0x3fff8000000000000000
+EOF
+RUN
+
+NAME=m68k aez FSMOVE respects FPCR directed rounding
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68040
+wx f23c54803ff0000010000000 @ 0
+wx f2000540 @ 0xc
+aezi
+aezv fpcr 0x30
+aezs 2
+ar fp2
+EOF
+EXPECT=<<EOF
+fpcr = 0x30
+fp2 = 0x3fff8000010000000000
+EOF
+RUN
+
+NAME=m68k aez FABS respects FPCR precision
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68040
+wx f23c54803ff0000010000000 @ 0
+wx f2000518 @ 0xc
+aezi
+aezv fpcr 0x40
+aezs 2
+ar fp2
+EOF
+EXPECT=<<EOF
+fpcr = 0x40
+fp2 = 0x3fff8000000000000000
+EOF
+RUN
+
+NAME=m68k aez FADD rounds the result without pre-rounding operands
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c5480bff0000000000000 @ 0
+wx f23c55003ff0000010000000 @ 0xc
+wx f2000522 @ 0x18
+aezi
+aezv fpcr 0x40
+aezs 3
+ar fp2
+EOF
+EXPECT=<<EOF
+fpcr = 0x40
+fp2 = 0x3fe78000000000000000
+EOF
+RUN
+
 NAME=m68k aez dbra taken
 FILE=malloc://128
 ARGS=-a m68k -b 32 -E big

@@ -490,12 +490,15 @@ static void m68k_fill_strldsr(RzAnalysis *a, RzAnalysisOp *op, csh handle, const
 	m68k_set_dst_value(op, m68k_value_from_reg(a, handle, M68K_REG_SR, RZ_ANALYSIS_ACC_W));
 }
 
-static void m68k_fill_coprocessor_transfer(RzAnalysis *a, RzAnalysisOp *op, csh handle, const cs_m68k *m68k) {
-	if (!m68k || m68k->op_count < 2) {
+static void m68k_fill_coprocessor_transfer(RzAnalysis *a, RzAnalysisOp *op, csh handle, const cs_m68k *m68k, bool store) {
+	if (!m68k || m68k->op_count < (store ? 2 : 1)) {
 		return;
 	}
-	m68k_add_src_operand(a, op, handle, m68k, 0);
-	m68k_set_dst_operand(a, op, handle, m68k, 1, RZ_ANALYSIS_ACC_W);
+	if (store) {
+		m68k_set_dst_operand(a, op, handle, m68k, 1, RZ_ANALYSIS_ACC_W);
+	} else {
+		m68k_add_src_operand(a, op, handle, m68k, 0);
+	}
 }
 #endif
 
@@ -858,9 +861,11 @@ static void op_fillval(RzAnalysis *a, RzAnalysisOp *op, csh handle, cs_insn *ins
 		return;
 	case M68K_INS_CP0LD:
 	case M68K_INS_CP1LD:
+		m68k_fill_coprocessor_transfer(a, op, handle, m68k, false);
+		return;
 	case M68K_INS_CP0ST:
 	case M68K_INS_CP1ST:
-		m68k_fill_coprocessor_transfer(a, op, handle, m68k);
+		m68k_fill_coprocessor_transfer(a, op, handle, m68k, true);
 		return;
 #endif
 	case M68K_INS_FSAVE:
@@ -1009,7 +1014,7 @@ static int m68k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 		op->opex = mk68_opex(ctx->handle, insn);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-		op->il_op = rz_m68k_cs_get_il_op(ctx->handle, insn, addr);
+		op->il_op = rz_m68k_cs_get_il_op(ctx->handle, mode, insn, addr);
 	}
 	switch (insn->id) {
 	case M68K_INS_INVALID:
