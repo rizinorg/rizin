@@ -126,44 +126,44 @@ static void milstd_set_val(RzAnalysisOp *op, const MilStd1750Instruction *insn) 
 }
 
 // Memory-operand data width in bytes for a memory-format opcode (op->ptrsize).
-static int milstd_mem_size(ut8 op8) {
-	switch (op8) {
+static int milstd_mem_size(ut16 opc) {
+	switch (opc) {
 	// extended floating, 48-bit
-	case MIL_OP_EFL >> 8:
-	case MIL_OP_EFA >> 8:
-	case MIL_OP_EFS >> 8:
-	case MIL_OP_EFM >> 8:
-	case MIL_OP_EFD >> 8:
-	case MIL_OP_EFC >> 8:
-	case MIL_OP_EFST >> 8:
+	case MIL_OP_EFL:
+	case MIL_OP_EFA:
+	case MIL_OP_EFS:
+	case MIL_OP_EFM:
+	case MIL_OP_EFD:
+	case MIL_OP_EFC:
+	case MIL_OP_EFST:
 		return 6;
 	// double-precision integer and single floating, 32-bit
-	case MIL_OP_DL >> 8:
-	case MIL_OP_DLI >> 8:
-	case MIL_OP_DLE >> 8:
-	case MIL_OP_DST >> 8:
-	case MIL_OP_DSTI >> 8:
-	case MIL_OP_DSTE >> 8:
-	case MIL_OP_DA >> 8:
-	case MIL_OP_DS >> 8:
-	case MIL_OP_DM >> 8:
-	case MIL_OP_DD >> 8:
-	case MIL_OP_DC >> 8:
-	case MIL_OP_FA >> 8:
-	case MIL_OP_FS >> 8:
-	case MIL_OP_FM >> 8:
-	case MIL_OP_FD >> 8:
-	case MIL_OP_FC >> 8:
+	case MIL_OP_DL:
+	case MIL_OP_DLI:
+	case MIL_OP_DLE:
+	case MIL_OP_DST:
+	case MIL_OP_DSTI:
+	case MIL_OP_DSTE:
+	case MIL_OP_DA:
+	case MIL_OP_DS:
+	case MIL_OP_DM:
+	case MIL_OP_DD:
+	case MIL_OP_DC:
+	case MIL_OP_FA:
+	case MIL_OP_FS:
+	case MIL_OP_FM:
+	case MIL_OP_FD:
+	case MIL_OP_FC:
 		return 4;
 	// byte operand, 8-bit
-	case MIL_OP_LUB >> 8:
-	case MIL_OP_LLB >> 8:
-	case MIL_OP_LUBI >> 8:
-	case MIL_OP_LLBI >> 8:
-	case MIL_OP_STUB >> 8:
-	case MIL_OP_STLB >> 8:
-	case MIL_OP_SUBI >> 8:
-	case MIL_OP_SLBI >> 8:
+	case MIL_OP_LUB:
+	case MIL_OP_LLB:
+	case MIL_OP_LUBI:
+	case MIL_OP_LLBI:
+	case MIL_OP_STUB:
+	case MIL_OP_STLB:
+	case MIL_OP_SUBI:
+	case MIL_OP_SLBI:
 		return 1;
 	default:
 		return 2; // single word (16-bit)
@@ -175,7 +175,7 @@ static int milstd_mem_size(ut8 op8) {
 // addr*2. op->refptr is intentionally left 0 (ptr is a direct reference): the
 // indirect *I forms hold a word-indexed pointer that the byte-oriented refptr
 // auto-follow would misread, so indirection is not resolved here.
-static void milstd_set_ptr(RzAnalysisOp *op, const MilStd1750Instruction *insn, ut8 op8) {
+static void milstd_set_ptr(RzAnalysisOp *op, const MilStd1750Instruction *insn, ut16 opc) {
 	switch (insn->format) {
 	case MIL_FMT_MEM:
 	case MIL_FMT_IM_0_15:
@@ -184,7 +184,7 @@ static void milstd_set_ptr(RzAnalysisOp *op, const MilStd1750Instruction *insn, 
 	default:
 		return; // no direct address field (register/immediate/base-relative)
 	}
-	if (op8 == 0x85) {
+	if (opc == MIL_OP_LIM) {
 		return; // LIM: the second word is an immediate value, not an address
 	}
 	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
@@ -200,7 +200,7 @@ static void milstd_set_ptr(RzAnalysisOp *op, const MilStd1750Instruction *insn, 
 		break;
 	}
 	op->ptr = (ut64)insn->addr * 2;
-	op->ptrsize = milstd_mem_size(op8);
+	op->ptrsize = milstd_mem_size(opc);
 }
 
 // Set op->datatype: floating-point for F* (single, 32-bit) and EF* (extended,
@@ -223,28 +223,28 @@ static void milstd_set_datatype(RzAnalysisOp *op, const MilStd1750Instruction *i
 // matching rizin's convention (RZ_ANALYSIS_STACK_INC applies sp -= stackptr, so
 // a positive stackptr means the stack grows). Each register is one 16-bit word;
 // stackptr is expressed in bytes to match the plugin's byte-addressed model.
-static void milstd_set_stack(RzAnalysisOp *op, const MilStd1750Instruction *insn, ut8 op8) {
-	switch (op8) {
+static void milstd_set_stack(RzAnalysisOp *op, const MilStd1750Instruction *insn, ut16 opc) {
+	switch (opc) {
 	// PSHM/POPM transfer the inclusive register range Ra..Rb, wrapping the
 	// register selector modulo 16 (so Ra > Rb pushes Ra..R15, R0..Rb). The
 	// count is therefore ((Rb - Ra) mod 16) + 1, always 1..16.
-	case MIL_OP_PSHM >> 8: { // PSHM Ra, Rb — push registers (SP grows)
+	case MIL_OP_PSHM: { // PSHM Ra, Rb — push registers (SP grows)
 		int count = ((insn->rb - insn->ra) & 0xF) + 1;
 		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = count * 2;
 		break;
 	}
-	case MIL_OP_POPM >> 8: { // POPM Ra, Rb — pop registers (SP shrinks)
+	case MIL_OP_POPM: { // POPM Ra, Rb — pop registers (SP shrinks)
 		int count = ((insn->rb - insn->ra) & 0xF) + 1;
 		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = -count * 2;
 		break;
 	}
-	case MIL_OP_SJS >> 8: // SJS — stack the IC and jump (push one word)
+	case MIL_OP_SJS: // SJS — stack the IC and jump (push one word)
 		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = 2;
 		break;
-	case MIL_OP_URS >> 8: // URS — unstack the IC and return (pop one word)
+	case MIL_OP_URS: // URS — unstack the IC and return (pop one word)
 		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = -2;
 		break;
@@ -465,9 +465,9 @@ static void milstd_cmp_mem_imm(RzAnalysisOp *op, RzAnalysisValue *mem, st64 imm)
 
 // Fill op->src[]/op->dst (analyzable operands) and op->access (flat read/write
 // list). Driven by addressing format; op->type selects the read/write roles.
-static void milstd_fill_val(RzAnalysis *a, RzAnalysisOp *op, const MilStd1750Instruction *insn, ut8 op8) {
+static void milstd_fill_val(RzAnalysis *a, RzAnalysisOp *op, const MilStd1750Instruction *insn, ut16 opc) {
 	ut32 type = op->type & RZ_ANALYSIS_OP_TYPE_MASK;
-	int sz = milstd_mem_size(op8);
+	int sz = milstd_mem_size(opc);
 
 	switch (insn->format) {
 	case MIL_FMT_R:
@@ -513,7 +513,7 @@ static void milstd_fill_val(RzAnalysis *a, RzAnalysisOp *op, const MilStd1750Ins
 		if (type == RZ_ANALYSIS_OP_TYPE_CALL || type == RZ_ANALYSIS_OP_TYPE_CJMP) {
 			break; // JS/SJS/SOJ: addr is a code target, not a data operand
 		}
-		if (op8 == 0x85) { // LIM: the second word is an immediate, not memory
+		if (opc == MIL_OP_LIM) { // LIM: the second word is an immediate, not memory
 			milstd_reg_imm(a, op, insn->ra, insn->addr);
 			break;
 		}
@@ -583,15 +583,15 @@ static void milstd_fill_val(RzAnalysis *a, RzAnalysisOp *op, const MilStd1750Ins
 	}
 }
 
-static void milstd_fill_operands(RzAnalysis *analysis, RzAnalysisOp *op, const MilStd1750Instruction *insn, ut8 op8, RzAnalysisOpMask mask) {
-	milstd_set_stack(op, insn, op8);
+static void milstd_fill_operands(RzAnalysis *analysis, RzAnalysisOp *op, const MilStd1750Instruction *insn, ut16 opc, RzAnalysisOpMask mask) {
+	milstd_set_stack(op, insn, opc);
 	milstd_set_direction(op, insn->format);
 	milstd_set_val(op, insn);
-	milstd_set_ptr(op, insn, op8);
+	milstd_set_ptr(op, insn, opc);
 	milstd_set_datatype(op, insn);
 	milstd_set_reg(op, insn);
 	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
-		milstd_fill_val(analysis, op, insn, op8);
+		milstd_fill_val(analysis, op, insn, opc);
 	}
 }
 
@@ -630,15 +630,16 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	ut64 abs_target = (ut64)insn.addr * 2;
 	ut64 next_pc = addr + insn.size;
 
-	// B-format opcodes encode the 2-bit BR field in the low bits of the
-	// opcode byte; mask off to get the canonical opcode for type lookup.
-	ut8 op8 = insn.raw_w1 >> 8;
+	// Canonical opcode: the first word with its operand bits cleared, so it can
+	// be compared against the MIL_OP_* patterns directly. B-format opcodes encode
+	// the 2-bit BR field in the low bits of the opcode byte; mask that off too.
+	ut16 opc = insn.raw_w1 & 0xFF00;
 	if (insn.format == MIL_FMT_B) {
-		op8 &= 0xFC;
+		opc &= 0xFC00;
 	}
 
 	// IM-format (0x4A): 4-bit opex selects which immediate op
-	if (insn.format == MIL_FMT_IM_OCX && op8 == (MIL_OP_AIM >> 8)) {
+	if (insn.format == MIL_FMT_IM_OCX && opc == (MIL_OP_AIM & 0xFF00)) {
 		switch (insn.opex) {
 		case (MIL_OP_AIM & 0xF):
 			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
@@ -667,13 +668,13 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 			break;
 		case (MIL_OP_NIM & 0xF): op->type = RZ_ANALYSIS_OP_TYPE_NOT; break; // NIM
 		}
-		milstd_fill_operands(analysis, op, &insn, op8, mask);
+		milstd_fill_operands(analysis, op, &insn, opc, mask);
 		return op->size;
 	}
 
-	switch (op8) {
+	switch (opc) {
 	// --- Special / control flow boundaries ---
-	case MIL_OP_NOP >> 8:
+	case MIL_OP_NOP:
 		if (insn.raw_w1 == MIL_OP_BPT) {
 			op->type = RZ_ANALYSIS_OP_TYPE_TRAP; // BPT
 			op->eob = true;
@@ -681,39 +682,39 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 			op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		}
 		break;
-	case MIL_OP_URS >> 8: // URS — Unstack IC and Return from Subroutine
+	case MIL_OP_URS: // URS — Unstack IC and Return from Subroutine
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		op->eob = true;
 		break;
 
 	// --- ICR branches: target = addr + disp*2 (D = signed 8-bit) ---
-	case MIL_OP_BR >> 8: // BR — unconditional
+	case MIL_OP_BR: // BR — unconditional
 		op->cond = RZ_TYPE_COND_AL;
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		op->jump = icr_target;
 		op->eob = true;
 		break;
-	case MIL_OP_BEZ >> 8: // BEZ — branch if equal zero (Z)
-	case MIL_OP_BLT >> 8: // BLT — branch if less than zero (N)
-	case MIL_OP_BLE >> 8: // BLE — branch if less or equal zero (N|Z)
-	case MIL_OP_BGT >> 8: // BGT — branch if greater than zero (P)
-	case MIL_OP_BNZ >> 8: // BNZ — branch if not zero (P|N)
-	case MIL_OP_BGE >> 8: // BGE — branch if greater or equal zero (P|Z)
+	case MIL_OP_BEZ: // BEZ — branch if equal zero (Z)
+	case MIL_OP_BLT: // BLT — branch if less than zero (N)
+	case MIL_OP_BLE: // BLE — branch if less or equal zero (N|Z)
+	case MIL_OP_BGT: // BGT — branch if greater than zero (P)
+	case MIL_OP_BNZ: // BNZ — branch if not zero (P|N)
+	case MIL_OP_BGE: // BGE — branch if greater or equal zero (P|Z)
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		switch (op8) {
-		case MIL_OP_BEZ >> 8: op->cond = RZ_TYPE_COND_EQ; break;
-		case MIL_OP_BLT >> 8: op->cond = RZ_TYPE_COND_LT; break;
-		case MIL_OP_BLE >> 8: op->cond = RZ_TYPE_COND_LE; break;
-		case MIL_OP_BGT >> 8: op->cond = RZ_TYPE_COND_GT; break;
-		case MIL_OP_BNZ >> 8: op->cond = RZ_TYPE_COND_NE; break;
-		case MIL_OP_BGE >> 8: op->cond = RZ_TYPE_COND_GE; break;
+		switch (opc) {
+		case MIL_OP_BEZ: op->cond = RZ_TYPE_COND_EQ; break;
+		case MIL_OP_BLT: op->cond = RZ_TYPE_COND_LT; break;
+		case MIL_OP_BLE: op->cond = RZ_TYPE_COND_LE; break;
+		case MIL_OP_BGT: op->cond = RZ_TYPE_COND_GT; break;
+		case MIL_OP_BNZ: op->cond = RZ_TYPE_COND_NE; break;
+		case MIL_OP_BGE: op->cond = RZ_TYPE_COND_GE; break;
 		}
 		op->jump = icr_target;
 		op->fail = next_pc;
 		break;
 
 	// --- Memory-format jumps: target word in w2 → byte = w2*2 ---
-	case MIL_OP_JC >> 8: // JC C, LABEL — Jump on Condition (direct)
+	case MIL_OP_JC: // JC C, LABEL — Jump on Condition (direct)
 		if (insn.cond == 0) {
 			op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		} else if (insn.cond == 0x7 || insn.cond == 0xF) {
@@ -728,7 +729,7 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 			op->fail = next_pc;
 		}
 		break;
-	case MIL_OP_JCI >> 8: // JCI C, ADDR — Jump on Condition (indirect)
+	case MIL_OP_JCI: // JCI C, ADDR — Jump on Condition (indirect)
 		if (insn.cond == 0) {
 			op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		} else if (insn.cond == 0x7 || insn.cond == 0xF) {
@@ -741,272 +742,272 @@ int rz_milstd1750_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 			op->fail = next_pc;
 		}
 		break;
-	case MIL_OP_JS >> 8: // JS — Jump to Subroutine (return addr in RA)
-	case MIL_OP_SJS >> 8: // SJS — Stack IC and Jump to Subroutine
+	case MIL_OP_JS: // JS — Jump to Subroutine (return addr in RA)
+	case MIL_OP_SJS: // SJS — Stack IC and Jump to Subroutine
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		op->jump = abs_target;
 		op->fail = next_pc;
 		break;
-	case MIL_OP_SOJ >> 8: // SOJ — Subtract One and Jump (taken while RA != 0)
+	case MIL_OP_SOJ: // SOJ — Subtract One and Jump (taken while RA != 0)
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->cond = RZ_TYPE_COND_NE;
 		op->jump = abs_target;
 		op->fail = next_pc;
 		break;
-	case MIL_OP_BEX >> 8: // BEX N — Branch to Executive (interrupt-vectored)
+	case MIL_OP_BEX: // BEX N — Branch to Executive (interrupt-vectored)
 		op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
 		op->eob = true;
 		break;
-	case MIL_OP_BIF >> 8: // BIF — Branch on Input Flag (target unknown statically)
+	case MIL_OP_BIF: // BIF — Branch on Input Flag (target unknown statically)
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->fail = next_pc;
 		break;
 
 	// --- LST/LSTI: load (MK,SW,IC) from memory; unconditional indirect jump ---
-	case MIL_OP_LSTI >> 8: // LSTI ADDR — indirect load status (also reloads IC)
-	case MIL_OP_LST >> 8: // LST ADDR — direct load status (also reloads IC)
+	case MIL_OP_LSTI: // LSTI ADDR — indirect load status (also reloads IC)
+	case MIL_OP_LST: // LST ADDR — direct load status (also reloads IC)
 		op->type = RZ_ANALYSIS_OP_TYPE_MJMP;
 		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 		op->eob = true;
 		break;
 
 	// --- I/O ---
-	case MIL_OP_XIO >> 8:
-	case MIL_OP_VIO >> 8:
+	case MIL_OP_XIO:
+	case MIL_OP_VIO:
 		op->type = RZ_ANALYSIS_OP_TYPE_IO;
 		op->family = RZ_ANALYSIS_OP_FAMILY_IO;
 		break;
 
 	// --- Stack ---
-	case MIL_OP_POPM >> 8: op->type = RZ_ANALYSIS_OP_TYPE_POP; break; // POPM
-	case MIL_OP_PSHM >> 8:
+	case MIL_OP_POPM: op->type = RZ_ANALYSIS_OP_TYPE_POP; break; // POPM
+	case MIL_OP_PSHM:
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 		break;
 
 	// --- Move / exchange ---
-	case MIL_OP_MOV >> 8:
-	case MIL_OP_XBR >> 8:
-	case MIL_OP_XWR >> 8:
+	case MIL_OP_MOV:
+	case MIL_OP_XBR:
+	case MIL_OP_XWR:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 
 	// --- Add ---
-	case MIL_OP_FA >> 8:
-	case MIL_OP_FAR >> 8:
-	case MIL_OP_EFA >> 8:
-	case MIL_OP_EFAR >> 8:
-	case MIL_OP_FABS >> 8:
-	case MIL_OP_UAR >> 8:
-	case MIL_OP_UA >> 8:
+	case MIL_OP_FA:
+	case MIL_OP_FAR:
+	case MIL_OP_EFA:
+	case MIL_OP_EFAR:
+	case MIL_OP_FABS:
+	case MIL_OP_UAR:
+	case MIL_OP_UA:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
-	case MIL_OP_AB >> 8:
-	case MIL_OP_A >> 8:
-	case MIL_OP_AR >> 8:
-	case MIL_OP_AISP >> 8:
-	case MIL_OP_INCM >> 8:
-	case MIL_OP_ABS >> 8:
-	case MIL_OP_DA >> 8:
-	case MIL_OP_DAR >> 8:
+	case MIL_OP_AB:
+	case MIL_OP_A:
+	case MIL_OP_AR:
+	case MIL_OP_AISP:
+	case MIL_OP_INCM:
+	case MIL_OP_ABS:
+	case MIL_OP_DA:
+	case MIL_OP_DAR:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		op->sign = true;
 		break;
 
 	// --- Sub ---
-	case MIL_OP_FS >> 8:
-	case MIL_OP_FSR >> 8:
-	case MIL_OP_EFS >> 8:
-	case MIL_OP_EFSR >> 8:
-	case MIL_OP_FNEG >> 8:
-	case MIL_OP_USR >> 8:
-	case MIL_OP_US >> 8:
+	case MIL_OP_FS:
+	case MIL_OP_FSR:
+	case MIL_OP_EFS:
+	case MIL_OP_EFSR:
+	case MIL_OP_FNEG:
+	case MIL_OP_USR:
+	case MIL_OP_US:
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		break;
-	case MIL_OP_SBB >> 8:
-	case MIL_OP_S >> 8:
-	case MIL_OP_SR >> 8:
-	case MIL_OP_SISP >> 8:
-	case MIL_OP_DECM >> 8:
-	case MIL_OP_NEG >> 8:
-	case MIL_OP_DNEG >> 8:
-	case MIL_OP_DS >> 8:
-	case MIL_OP_DSR >> 8:
+	case MIL_OP_SBB:
+	case MIL_OP_S:
+	case MIL_OP_SR:
+	case MIL_OP_SISP:
+	case MIL_OP_DECM:
+	case MIL_OP_NEG:
+	case MIL_OP_DNEG:
+	case MIL_OP_DS:
+	case MIL_OP_DSR:
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		op->sign = true;
 		break;
 
 	// --- Mul ---
-	case MIL_OP_FM >> 8:
-	case MIL_OP_FMR >> 8:
-	case MIL_OP_EFM >> 8:
-	case MIL_OP_EFMR >> 8:
+	case MIL_OP_FM:
+	case MIL_OP_FMR:
+	case MIL_OP_EFM:
+	case MIL_OP_EFMR:
 		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 		break;
-	case MIL_OP_MB >> 8:
-	case MIL_OP_MS >> 8:
-	case MIL_OP_MSR >> 8:
-	case MIL_OP_MISP >> 8:
-	case MIL_OP_MISN >> 8:
-	case MIL_OP_M >> 8:
-	case MIL_OP_MR >> 8:
-	case MIL_OP_DM >> 8:
-	case MIL_OP_DMR >> 8:
+	case MIL_OP_MB:
+	case MIL_OP_MS:
+	case MIL_OP_MSR:
+	case MIL_OP_MISP:
+	case MIL_OP_MISN:
+	case MIL_OP_M:
+	case MIL_OP_MR:
+	case MIL_OP_DM:
+	case MIL_OP_DMR:
 		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 		op->sign = true;
 		break;
 
 	// --- Div ---
-	case MIL_OP_FD >> 8:
-	case MIL_OP_FDR >> 8:
-	case MIL_OP_EFD >> 8:
-	case MIL_OP_EFDR >> 8:
+	case MIL_OP_FD:
+	case MIL_OP_FDR:
+	case MIL_OP_EFD:
+	case MIL_OP_EFDR:
 		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
 		break;
-	case MIL_OP_DB >> 8:
-	case MIL_OP_DV >> 8:
-	case MIL_OP_DVR >> 8:
-	case MIL_OP_DISP >> 8:
-	case MIL_OP_DISN >> 8:
-	case MIL_OP_D >> 8:
-	case MIL_OP_DR >> 8:
-	case MIL_OP_DD >> 8:
-	case MIL_OP_DDR >> 8:
+	case MIL_OP_DB:
+	case MIL_OP_DV:
+	case MIL_OP_DVR:
+	case MIL_OP_DISP:
+	case MIL_OP_DISN:
+	case MIL_OP_D:
+	case MIL_OP_DR:
+	case MIL_OP_DD:
+	case MIL_OP_DDR:
 		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
 		op->sign = true;
 		break;
 
 	// --- Logical ---
-	case MIL_OP_ANDB >> 8:
-	case MIL_OP_AND >> 8:
-	case MIL_OP_ANDR >> 8:
+	case MIL_OP_ANDB:
+	case MIL_OP_AND:
+	case MIL_OP_ANDR:
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		break;
-	case MIL_OP_ORB >> 8:
-	case MIL_OP_OR >> 8:
-	case MIL_OP_ORR >> 8:
+	case MIL_OP_ORB:
+	case MIL_OP_OR:
+	case MIL_OP_ORR:
 		op->type = RZ_ANALYSIS_OP_TYPE_OR;
 		break;
-	case MIL_OP_XOR >> 8:
-	case MIL_OP_XORR >> 8:
+	case MIL_OP_XOR:
+	case MIL_OP_XORR:
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 		break;
-	case MIL_OP_N >> 8:
-	case MIL_OP_NR >> 8:
+	case MIL_OP_N:
+	case MIL_OP_NR:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOT;
 		break;
 
 	// --- Shifts ---
-	case MIL_OP_SLL >> 8:
-	case MIL_OP_SLC >> 8:
-	case MIL_OP_DSLL >> 8:
-	case MIL_OP_DSLC >> 8:
-	case MIL_OP_SLR >> 8:
-	case MIL_OP_DSLR >> 8:
+	case MIL_OP_SLL:
+	case MIL_OP_SLC:
+	case MIL_OP_DSLL:
+	case MIL_OP_DSLC:
+	case MIL_OP_SLR:
+	case MIL_OP_DSLR:
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
 		break;
-	case MIL_OP_SRL >> 8:
-	case MIL_OP_DSRL >> 8:
-	case MIL_OP_SCR >> 8:
-	case MIL_OP_DSCR >> 8:
+	case MIL_OP_SRL:
+	case MIL_OP_DSRL:
+	case MIL_OP_SCR:
+	case MIL_OP_DSCR:
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
 		break;
-	case MIL_OP_SRA >> 8:
-	case MIL_OP_DSRA >> 8:
-	case MIL_OP_SAR >> 8:
-	case MIL_OP_DSAR >> 8:
+	case MIL_OP_SRA:
+	case MIL_OP_DSRA:
+	case MIL_OP_SAR:
+	case MIL_OP_DSAR:
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
 		op->sign = true;
 		break;
 
 	// --- Compare ---
-	case MIL_OP_FC >> 8:
-	case MIL_OP_FCR >> 8:
-	case MIL_OP_EFC >> 8:
-	case MIL_OP_EFCR >> 8:
-	case MIL_OP_UCR >> 8:
-	case MIL_OP_UC >> 8:
+	case MIL_OP_FC:
+	case MIL_OP_FCR:
+	case MIL_OP_EFC:
+	case MIL_OP_EFCR:
+	case MIL_OP_UCR:
+	case MIL_OP_UC:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
-	case MIL_OP_CB >> 8:
-	case MIL_OP_C >> 8:
-	case MIL_OP_CR >> 8:
-	case MIL_OP_CISP >> 8:
-	case MIL_OP_CISN >> 8:
-	case MIL_OP_CBL >> 8:
-	case MIL_OP_DC >> 8:
-	case MIL_OP_DCR >> 8:
+	case MIL_OP_CB:
+	case MIL_OP_C:
+	case MIL_OP_CR:
+	case MIL_OP_CISP:
+	case MIL_OP_CISN:
+	case MIL_OP_CBL:
+	case MIL_OP_DC:
+	case MIL_OP_DCR:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		op->sign = true;
 		break;
 
 	// --- Loads ---
-	case MIL_OP_LB >> 8:
-	case MIL_OP_DLB >> 8:
-	case MIL_OP_L >> 8:
-	case MIL_OP_LR >> 8:
-	case MIL_OP_LISP >> 8:
-	case MIL_OP_LISN >> 8:
-	case MIL_OP_LI >> 8:
-	case MIL_OP_LIM >> 8:
-	case MIL_OP_DL >> 8:
-	case MIL_OP_DLR >> 8:
-	case MIL_OP_DLI >> 8:
-	case MIL_OP_LM >> 8:
-	case MIL_OP_EFL >> 8:
-	case MIL_OP_LUB >> 8:
-	case MIL_OP_LLB >> 8:
-	case MIL_OP_LUBI >> 8:
-	case MIL_OP_LLBI >> 8:
-	case MIL_OP_LE >> 8:
-	case MIL_OP_DLE >> 8:
+	case MIL_OP_LB:
+	case MIL_OP_DLB:
+	case MIL_OP_L:
+	case MIL_OP_LR:
+	case MIL_OP_LISP:
+	case MIL_OP_LISN:
+	case MIL_OP_LI:
+	case MIL_OP_LIM:
+	case MIL_OP_DL:
+	case MIL_OP_DLR:
+	case MIL_OP_DLI:
+	case MIL_OP_LM:
+	case MIL_OP_EFL:
+	case MIL_OP_LUB:
+	case MIL_OP_LLB:
+	case MIL_OP_LUBI:
+	case MIL_OP_LLBI:
+	case MIL_OP_LE:
+	case MIL_OP_DLE:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		break;
 
 	// --- Stores ---
-	case MIL_OP_STB >> 8:
-	case MIL_OP_DSTB >> 8:
-	case MIL_OP_ST >> 8:
-	case MIL_OP_STC >> 8:
-	case MIL_OP_STCI >> 8:
-	case MIL_OP_STI >> 8:
-	case MIL_OP_SFBS >> 8:
-	case MIL_OP_DST >> 8:
-	case MIL_OP_SRM >> 8:
-	case MIL_OP_DSTI >> 8:
-	case MIL_OP_STM >> 8:
-	case MIL_OP_EFST >> 8:
-	case MIL_OP_STUB >> 8:
-	case MIL_OP_STLB >> 8:
-	case MIL_OP_SUBI >> 8:
-	case MIL_OP_SLBI >> 8:
-	case MIL_OP_STE >> 8:
-	case MIL_OP_DSTE >> 8:
+	case MIL_OP_STB:
+	case MIL_OP_DSTB:
+	case MIL_OP_ST:
+	case MIL_OP_STC:
+	case MIL_OP_STCI:
+	case MIL_OP_STI:
+	case MIL_OP_SFBS:
+	case MIL_OP_DST:
+	case MIL_OP_SRM:
+	case MIL_OP_DSTI:
+	case MIL_OP_STM:
+	case MIL_OP_EFST:
+	case MIL_OP_STUB:
+	case MIL_OP_STLB:
+	case MIL_OP_SUBI:
+	case MIL_OP_SLBI:
+	case MIL_OP_STE:
+	case MIL_OP_DSTE:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		break;
 
 	// --- Bit set/reset/test ---
-	case MIL_OP_SB >> 8:
-	case MIL_OP_SBR >> 8:
-	case MIL_OP_SBI >> 8:
-	case MIL_OP_TSB >> 8:
-	case MIL_OP_SVBR >> 8:
+	case MIL_OP_SB:
+	case MIL_OP_SBR:
+	case MIL_OP_SBI:
+	case MIL_OP_TSB:
+	case MIL_OP_SVBR:
 		op->type = RZ_ANALYSIS_OP_TYPE_OR;
 		break;
-	case MIL_OP_RB >> 8:
-	case MIL_OP_RBR >> 8:
-	case MIL_OP_RBI >> 8:
-	case MIL_OP_RVBR >> 8:
+	case MIL_OP_RB:
+	case MIL_OP_RBR:
+	case MIL_OP_RBI:
+	case MIL_OP_RVBR:
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		break;
-	case MIL_OP_TB >> 8:
-	case MIL_OP_TBR >> 8:
-	case MIL_OP_TBI >> 8:
-	case MIL_OP_TVBR >> 8:
+	case MIL_OP_TB:
+	case MIL_OP_TBR:
+	case MIL_OP_TBI:
+	case MIL_OP_TVBR:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
 	}
 
-	milstd_fill_operands(analysis, op, &insn, op8, mask);
+	milstd_fill_operands(analysis, op, &insn, opc, mask);
 	return op->size;
 }
 

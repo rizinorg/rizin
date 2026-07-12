@@ -7,7 +7,8 @@
 // Full 16-bit opcode match patterns for MIL-STD-1750A instructions. The low
 // byte is zero for one-word opcodes; IM-format (0x4A0x) and the special words
 // (BPT/NOP) carry meaningful low bits. Shared between the disassembler table
-// and the analysis plugin (which compares the high byte: MIL_OP_x >> 8).
+// and the analysis plugin, which compares against the instruction word with its
+// operand bits cleared.
 
 #define MIL_OP_LB   0x0000
 #define MIL_OP_DLB  0x0400
