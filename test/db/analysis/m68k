@@ -812,7 +812,7 @@ e asm.bits=32
 e asm.cpu=cfv4e
 e asm.lines=false
 (pdjp n;echo `pdj ${n}~{.[]\|{offset,bytes,size,opcode,family,type,jump,fail}}`~{})
-wx f2004000f2006000f23c44803f800000f23c5480400921fb54442d18f2105000f2106400f210c003f210e003f2800000f2800010f2c000000010f24800000010f2500000f27c0000f27a00001234f27b000012345678f200053af2000522f2000a28f2000523f2000520f2000521f2000525f2000538f2000518f200051af2000501f2000503f310f350f200051d
+wx f2004000f2006000f23c44803f800000f23c5480400921fb54442d18f2105000f2106400f210d003f210f003f2800000f2800010f2c000000010f24800000010f2500000f27c0000f27a00001234f27b000012345678f200053af2000522f2000a28f2000523f2000520f2000521f2000525f2000538f2000518f200051af2000501f2000503f310f350f200051d
 .(pdjp 31)
 echo -- fpu operand opex --
 s 0
@@ -871,17 +871,17 @@ EXPECT=<<EOF
   },
   {
     "offset": 36,
-    "bytes": "f210c003",
+    "bytes": "f210d003",
     "size": 4,
-    "opcode": "fmovem (a0), fp0-fp1",
+    "opcode": "fmovem (a0), fp6-fp7",
     "family": "fpu",
     "type": "load"
   },
   {
     "offset": 40,
-    "bytes": "f210e003",
+    "bytes": "f210f003",
     "size": 4,
-    "opcode": "fmovem fp0-fp1, (a0)",
+    "opcode": "fmovem fp6-fp7, (a0)",
     "family": "fpu",
     "type": "store"
   },
@@ -951,7 +951,7 @@ EXPECT=<<EOF
     "offset": 78,
     "bytes": "f27b000012345678",
     "size": 8,
-    "opcode": "ftrapf.w 0x12345678",
+    "opcode": "ftrapf.l 0x12345678",
     "family": "fpu",
     "type": "trap"
   },
@@ -1348,6 +1348,6 @@ EXPECT=<<EOF
   }
 ]
 -- 68020 fpu branch opex --
-[{"bytes":"f2408170","size":4,"opcode":"fsub.b d0","type":"sub","family":"fpu","opex":{"operands":[{"type":"reg","value":"d0"},{"type":"reg","value":"fp2"}]}},{"bytes":"f24800000001","size":6,"opcode":"fdbf d0, 0x9","type":"cjmp","family":"fpu","jump":9,"fail":10,"opex":{"operands":[{"type":"reg","value":"d0"},{"type":"br_disp","disp":3,"disp_size":2}]}},{"bytes":"f27a00001234","size":6,"opcode":"ftrapf.w 0x1234","type":"trap","family":"fpu","opex":{"operands":[{"type":"imm","value":4660}]}},{"bytes":"f27c0000","size":4,"opcode":"ftrapf","type":"trap","family":"fpu","opex":{"operands":[]}},{"bytes":"f2800001","size":4,"opcode":"fbf.w 0x17","type":"cjmp","family":"fpu","jump":23,"fail":24,"opex":{"operands":[{"type":"br_disp","disp":1,"disp_size":2}]}},{"bytes":"f2c000000001","size":6,"opcode":"fbf.l 0x1b","type":"cjmp","family":"fpu","jump":27,"fail":30,"opex":{"operands":[{"type":"br_disp","disp":1,"disp_size":4}]}}]
+[{"bytes":"f2408170","size":4,"opcode":"fssf.b d0","type":"mov","family":"fpu","opex":{"operands":[{"type":"reg","value":"d0"}]}},{"bytes":"f24800000001","size":6,"opcode":"fdbf d0, 0x9","type":"cjmp","family":"fpu","jump":9,"fail":10,"opex":{"operands":[{"type":"reg","value":"d0"},{"type":"br_disp","disp":3,"disp_size":2}]}},{"bytes":"f27a00001234","size":6,"opcode":"ftrapf.w 0x1234","type":"trap","family":"fpu","opex":{"operands":[{"type":"imm","value":4660}]}},{"bytes":"f27c0000","size":4,"opcode":"ftrapf","type":"trap","family":"fpu","opex":{"operands":[]}},{"bytes":"f2800001","size":4,"opcode":"fbf.w 0x17","type":"cjmp","family":"fpu","jump":23,"fail":24,"opex":{"operands":[{"type":"br_disp","disp":1,"disp_size":2}]}},{"bytes":"f2c000000001","size":6,"opcode":"fbf.l 0x1b","type":"cjmp","family":"fpu","jump":27,"fail":30,"opex":{"operands":[{"type":"br_disp","disp":1,"disp_size":4}]}}]
 EOF
 RUN

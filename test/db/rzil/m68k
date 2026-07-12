@@ -383,6 +383,29 @@ fp2 = 0x3fff8000000000000000
 EOF
 RUN
 
+NAME=m68k aez FMOVE integer destination respects FPCR and preserves FPCC
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c54003ff8000000000000 @ 0
+wx f2006000 @ 0xc
+aezi
+aezs
+aezv fpcr 0x10
+aezv fpsr 0xa5000000
+aezs
+ar d0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x10
+fpsr = 0xa5000000
+d0 = 0x00000001
+fpsr = 0xa5000000
+EOF
+RUN
+
 NAME=m68k aez FSMOVE respects FPCR directed rounding
 FILE=malloc://128
 ARGS=-a m68k -b 32 -E big

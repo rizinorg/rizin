@@ -4409,6 +4409,10 @@ static RzILOpFloat *fpu_convert_with_rmode(RzFloatRMode mode, RzFloatFormat form
 	return FCONVERT(format, mode, value);
 }
 
+static RzILOpPure *fpu_to_sint_with_rmode(RzFloatRMode mode, ut32 bits, RzILOpFloat *value) {
+	return F2SINT(bits, mode, value);
+}
+
 static RzILOpFloat *fpu_to_format_with_fpcr_rmode(RzILOpFloat *value, RzFloatFormat format) {
 	return LET("fpcr_value", value,
 		FPU_EXEC_WITH_RMODE(fpu_convert_with_rmode, format, VARLP("fpcr_value")));
@@ -4613,7 +4617,7 @@ static RzILOpEffect *fpu_write_float_local(M68KILCtx *ctx, const cs_m68k_op *dst
 			value = F2BV(fpu_to_format_with_fpcr_rmode(VARL(name), format));
 		}
 	} else if (bits == 8 || bits == 16 || bits == 32) {
-		value = F2SINT(bits, RZ_FLOAT_RMODE_RNE, VARL(name));
+		value = FPU_EXEC_WITH_RMODE(fpu_to_sint_with_rmode, bits, VARL(name));
 	} else {
 		return m68k_null_free(seq);
 	}
@@ -4933,7 +4937,9 @@ static RzILOpEffect *lift_fpu_move_data(M68KILCtx *ctx, ut32 insn_id) {
 	if (!seq) {
 		return fpu_write_failure_label(ctx, dst);
 	}
-	return seq_append(seq, set_fpsr_cc_from_float_local("res_fp"));
+	return dst_data_fpu
+		? seq_append(seq, set_fpsr_cc_from_float_local("res_fp"))
+		: seq;
 }
 
 static RzILOpEffect *lift_fpu_unary_data(M68KILCtx *ctx, ut32 insn_id) {
