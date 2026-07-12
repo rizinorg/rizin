@@ -126,7 +126,7 @@ typedef struct {
 	 */
 	RzInterpAbstrState *entry_state; // TODO: flatten to remove indirection
 	RzVector /*<ut16>*/ insn_offsets; ///< starting at the second instruction in the block (since first is always 0), offsets from the start of the block
-	bool insns_resolved; ///< Set to true once instruction_offsets and node->end are filled.
+	bool bounds_resolved; ///< Set to true once insn_offsets and node->end are filled.
 	bool uninterpreted; ///< True if the entry state has not yet been started to interpret, i.e. the block is part of RzInterpFunctionState.queue
 	bool non_fallthrough_in; ///< True if there is an in-edge to this block that is not only a fallthrough. Used when merging consecutive blocks after interpretation.
 	bool added_to_analysis; ///< Only used after interpretation, when adding to analysis. Marks blocks that have been merged with the previous.
@@ -312,13 +312,6 @@ RZ_IPI void rz_interp_run_state_set(RZ_BORROW RZ_NONNULL RzInterpRunState *state
 
 RZ_API void rz_interp_yield_rbuf_free(RZ_OWN RZ_NULLABLE RzInterpYieldRBuf *yield_rbuf);
 
-RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_new(
-	RZ_NONNULL RzInterpInstance *inst);
-RZ_API void rz_interp_abstr_state_free(RzInterpInstance *inst, RZ_OWN RZ_NULLABLE RzInterpAbstrState *state);
-RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_clone(RZ_NONNULL RzInterpInstance *iset, const RzInterpAbstrState *state);
-RZ_API bool rz_interp_abstr_state_as_str(RZ_NONNULL RzInterpInstance *inst, RZ_NONNULL const RzInterpAbstrState *state, RZ_NONNULL RZ_OUT RzStrBuf *sb);
-RZ_API void rz_interp_abstr_state_as_str_short(RZ_NONNULL RzInterpInstance *inst, RZ_NONNULL const RzInterpAbstrState *astate, RZ_NONNULL RZ_OUT RzStrBuf *sb);
-
 RZ_API RZ_OWN RzInterpYieldRBuf *rz_interp_yield_rbuf_new(RzInterpYieldKind kind,
 	RzInterpYieldFilter filter,
 	RZ_OWN RZ_NULLABLE void *filter_data);
@@ -355,14 +348,6 @@ typedef struct rz_interp_run_result_t {
 	ut64 entry;
 	RzIntervalTree /*<RzInterpBlock>*/ blocks;
 } RzInterpResult;
-
-/*
- * \brief Register a newly discovered state
- *
- * This will join the state with the already known one at the same pc and add it to the
- * queue for further interpretation if there were changes.
- */
-RZ_API void rz_interp_run_push(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx, RZ_BORROW RZ_NONNULL RzInterpAbstrState *as, bool is_fallthrough);
 
 RZ_API bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point);
 RZ_API bool rz_interp_instance_th(RZ_NONNULL RZ_OWN RzInterpInstance *iset);

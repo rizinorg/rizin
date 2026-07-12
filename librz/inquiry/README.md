@@ -5,6 +5,12 @@
 
 Module implementing basic and advanced binary analysis.
 
+## TODO
+
+* Finish and test cfg recovery for all cases
+* Also make sure to test fallthrough and jump target fields of interp blocks
+* Add final pass for analysis and integrate xrefs and other yield info in result
+
 ## Interpreter Notes
 
 Ideas for optimization (do not implement any of these without profiling first):
