@@ -454,11 +454,11 @@ RZ_API RZ_OWN char *rz_diff_op_stringify(RZ_NONNULL RzDiff *diff, RZ_NONNULL RzD
 	const void *array = is_a ? diff->a : diff->b;
 	st32 beg = is_a ? op->a_beg : op->b_beg;
 	st32 end = is_a ? op->a_end : op->b_end;
-	size_t array_size = is_a ? diff->a_size : diff->b_size;
 
-	if (beg < 0 || end < 0 || (size_t)beg >= array_size || (size_t)end >= array_size || end < beg) {
-		return rz_str_dup("");
+	if (beg < 0) {
+		beg = 0;
 	}
+
 	rz_strbuf_init(&sb);
 	for (st32 i = beg; i < end; ++i) {
 		if (newline || (is_bytes && count > 0 && !FAST_MOD64(count))) {
