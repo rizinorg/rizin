@@ -439,8 +439,6 @@ bool rz_milstd1750_decode(const ut8 *buf, int len, MilStd1750Instruction *out) {
 	out->format = m->format;
 	out->size = size;
 	out->opcode = m->opcode;
-	out->raw_w1 = w1;
-	out->raw_w2 = w2;
 
 	switch (m->format) {
 	case MIL_FMT_NONE:
