@@ -31,6 +31,9 @@
 #ifndef I8080DIS_H
 #define I8080DIS_H
 
-int i8080_disasm(unsigned char const *const code, char *text, int text_sz);
+#include <rz_types.h>
+#include <rz_util/rz_strbuf.h>
+
+int i8080_disasm(const ut8 *code, size_t code_sz, RZ_NONNULL RzStrBuf *out);
 
 #endif
