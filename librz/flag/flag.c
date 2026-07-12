@@ -784,9 +784,12 @@ RZ_API void rz_flag_item_set_comment(RzFlagItem *item, const char *comment) {
 /* add/replace/remove the realname of a flag item */
 RZ_API void rz_flag_item_set_realname(RzFlag *f, RzFlagItem *item, const char *realname) {
 	rz_return_if_fail(item);
-	if (item->realname) {
+	if (item->realname) { // item realname already exists
 		if (strcmp(item->name, item->realname)) {
-			ht_sp_delete(f->ht_name, item->realname);
+			// There appear to be too many cases where the following
+			// accidentally deletes a flag item whose name is the same as
+			// another item's realname, causing hanging pointers.
+			// ht_sp_delete(f->ht_name, item->realname);
 		}
 		free_item_realname(item);
 	}
