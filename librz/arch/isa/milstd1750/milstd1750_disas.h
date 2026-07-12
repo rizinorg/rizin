@@ -31,6 +31,7 @@ typedef struct {
 	const char *mnemonic;
 	MilStd1750Format format;
 	ut8 size; // 2 or 4 (bytes)
+	ut16 opcode; // canonical opcode (a MIL_OP_* pattern): operand bits cleared
 	ut16 raw_w1;
 	ut16 raw_w2;
 
