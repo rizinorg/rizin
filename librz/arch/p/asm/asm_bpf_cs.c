@@ -50,8 +50,9 @@ static int bpf_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len)
 
 RzAsmPlugin rz_asm_plugin_bpf_cs = {
 	.name = "bpf",
+	.author = "Jagath-P",
 	.license = "LGPL3",
-	.desc = "EBPF disassembly plugin",
+	.desc = "eBPF disassembler",
 	.arch = "bpf",
 	.bits = 64,
 	.endian = RZ_SYS_ENDIAN_BIG | RZ_SYS_ENDIAN_LITTLE,

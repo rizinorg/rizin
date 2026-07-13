@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: 2026 Jagath-P <jagathp0210@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+// https://www.kernel.org/doc/html/latest/bpf/standardization/instruction-set.html
+// linux kernel 7.2.0-rc3 docs
+
 #include <rz_analysis.h>
 #include <capstone/capstone.h>
 #include <capstone/bpf.h>
@@ -68,8 +71,10 @@ static RzStructuredData *bpf_opex(csh handle, cs_insn *insn) {
 			rz_structured_data_map_add_string(operand, "type", "imm");
 			if (op->is_signed) {
 				if (op->imm & (0xffffffff00000000)) {
+					// 64-bit signed immediate
 					rz_structured_data_map_add_signed(operand, "value", (st64)op->imm);
 				} else {
+					// 32-bit signed immediate
 					rz_structured_data_map_add_signed(operand, "value", (st64)(st32)op->imm);
 				}
 			} else {
@@ -446,7 +451,7 @@ static int bpf_analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 
 RzAnalysisPlugin rz_analysis_plugin_bpf_cs = {
 	.name = "bpf",
-	.desc = "Extended BPF analysis plugin",
+	.desc = "Capstone eBPF analyzer",
 	.author = "Jagath-P",
 	.license = "LGPL3",
 	.arch = "bpf",

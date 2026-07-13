@@ -51,7 +51,8 @@ static int cbpf_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len
 RzAsmPlugin rz_asm_plugin_cbpf_cs = {
 	.name = "cbpf",
 	.license = "LGPL3",
-	.desc = "CBPF disassembly plugin",
+	.desc = "cBPF disassembler",
+	.author = "Jagath-P",
 	.arch = "cbpf",
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_BIG | RZ_SYS_ENDIAN_LITTLE,
