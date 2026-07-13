@@ -302,12 +302,7 @@ typedef struct interp_block_with_op_at_ctx_t {
 static int interp_block_with_op_at_cmp(const void *a, const void *b, void *user) {
 	const ut16 *av = a;
 	const ut16 *bv = b;
-	if (*av > *bv) {
-		return 1;
-	} else if (*av < *bv) {
-		return -1;
-	}
-	return 0;
+	return (st32)*av - (st32)*bv;
 }
 
 static bool interp_block_with_op_at_cb(RzIntervalNode *node, void *user) {
