@@ -4467,29 +4467,120 @@ static RzILOpFloat *fpu_result_with_fpcr_precision(RzILOpFloat *value) {
 				fpu_result_to_fp80_with_fpcr_rmode(VARLP("unrounded_fp"), RZ_FLOAT_IEEE754_BIN_80))));
 }
 
-static RzILOpPure *fpu_quotient_low7(void) {
-	RzILOpPure *shifted = ITE(UGE(VARL("quot_exp"), U32(0x3fff + 63)),
-		SHIFTL0(VARL("quot_mant"), cast_unsigned(8, SUB(VARL("quot_exp"), U32(0x3fff + 63)))),
-		SHIFTR0(VARL("quot_mant"), cast_unsigned(8, SUB(U32(0x3fff + 63), VARL("quot_exp")))));
-	return ITE(OR(ULT(VARL("quot_exp"), U32(0x3fff)), UGE(VARL("quot_exp"), U32(0x3fff + 70))),
-		U32(0),
-		cast_unsigned(32, LOGAND(shifted, U64(0x7f))));
+static RzILOpEffect *normalize_fpu_quotient_operand(const char *float_name, const char *bits_name,
+	const char *exp_field_name, const char *exp_name, const char *mant_name) {
+	RzILOpEffect *seq = SETL(bits_name, F2BV(fpu_to_format(VARL(float_name), RZ_FLOAT_IEEE754_BIN_80)));
+	seq = seq_append(seq, SETL(exp_field_name, cast_unsigned(32, LOGAND(cast_unsigned(16, SHIFTR0(VARL(bits_name), U8(64))), U16(0x7fff)))));
+	seq = seq_append(seq, SETL(exp_name, ITE(IS_ZERO(VARL(exp_field_name)), U32(1), VARL(exp_field_name))));
+	seq = seq_append(seq, SETL(mant_name, cast_unsigned(64, VARL(bits_name))));
+	return seq_append(seq, REPEAT(AND(NON_ZERO(VARL(mant_name)), INV(MSB(VARL(mant_name)))), SEQ2(SETL(mant_name, SHIFTL0(VARL(mant_name), U8(1))), SETL(exp_name, SUB(VARL(exp_name), U32(1))))));
+}
+
+static RzILOpPure *fpu_quotient_add_mod(RzILOpPure *left, RzILOpPure *right) {
+	return LET("quot_mod_sum", ADD(left, right),
+		ITE(UGE(VARLP("quot_mod_sum"), VARL("quot_modulus")),
+			SUB(VARLP("quot_mod_sum"), VARL("quot_modulus")),
+			VARLP("quot_mod_sum")));
+}
+
+static RzILOpEffect *multiply_fpu_quotient_mod(const char *left_name, const char *right_name, const char *result_name) {
+	RzILOpEffect *seq = SETL("quot_mul_result", cast_unsigned(128, U32(0)));
+	seq = seq_append(seq, SETL("quot_mul_addend", VARL(left_name)));
+	seq = seq_append(seq, SETL("quot_mul_factor", VARL(right_name)));
+	RzILOpEffect *add = BRANCH(
+		LSB(VARL("quot_mul_factor")),
+		SETL("quot_mul_result", fpu_quotient_add_mod(VARL("quot_mul_result"), VARL("quot_mul_addend"))),
+		EMPTY());
+	RzILOpEffect *double_addend = SETL("quot_mul_addend",
+		fpu_quotient_add_mod(VARL("quot_mul_addend"), VARL("quot_mul_addend")));
+	RzILOpEffect *shift_factor = SETL("quot_mul_factor", SHIFTR0(VARL("quot_mul_factor"), U8(1)));
+	seq = seq_append(seq, REPEAT(NON_ZERO(VARL("quot_mul_factor")), SEQ3(add, double_addend, shift_factor)));
+	return seq_append(seq, SETL(result_name, VARL("quot_mul_result")));
+}
+
+/* For normalized FP80 operands, the quotient magnitude is
+ * dst_mant * 2^quot_exp_delta / src_mant. Reduce the scaled numerator
+ * modulo 128 * src_mant so the exact low seven quotient bits survive even
+ * when the full quotient exceeds FP80 precision. */
+static RzILOpEffect *set_fpu_nonnegative_quotient_low7(ut32 insn_id) {
+	RzILOpEffect *seq = SETL("quot_modulus",
+		SHIFTL0(cast_unsigned(128, VARL("quot_src_mant")), U8(7)));
+	seq = seq_append(seq, SETL("quot_mod_value", cast_unsigned(128, VARL("quot_dst_mant"))));
+	seq = seq_append(seq, SETL("quot_mod_factor", cast_unsigned(128, U32(2))));
+	seq = seq_append(seq, SETL("quot_mod_exp", VARL("quot_exp_delta")));
+	RzILOpEffect *multiply_factor = BRANCH(
+		LSB(VARL("quot_mod_exp")),
+		multiply_fpu_quotient_mod("quot_mod_value", "quot_mod_factor", "quot_mod_value"),
+		EMPTY());
+	RzILOpEffect *square_factor = multiply_fpu_quotient_mod("quot_mod_factor", "quot_mod_factor", "quot_mod_factor");
+	RzILOpEffect *shift_exp = SETL("quot_mod_exp", SHIFTR0(VARL("quot_mod_exp"), U8(1)));
+	seq = seq_append(seq, REPEAT(NON_ZERO(VARL("quot_mod_exp")), SEQ3(multiply_factor, square_factor, shift_exp)));
+	seq = seq_append(seq, SETL("quot_den", cast_unsigned(128, VARL("quot_src_mant"))));
+	seq = seq_append(seq, SETL("quot_floor", U32(0)));
+	seq = seq_append(seq, SETL("quot_remainder", VARL("quot_mod_value")));
+	seq = seq_append(seq, REPEAT(UGE(VARL("quot_remainder"), VARL("quot_den")), SEQ2(SETL("quot_remainder", SUB(VARL("quot_remainder"), VARL("quot_den"))), SETL("quot_floor", ADD(VARL("quot_floor"), U32(1))))));
+	seq = seq_append(seq, SETL("quot_trunc_low7", LOGAND(VARL("quot_floor"), U32(0x7f))));
+	RzILOpPure *quotient = VARL("quot_floor");
+	if (insn_id == M68K_INS_FREM) {
+		RzILOpPure *round_up = BOOL_TO_BV(
+			OR(UGT(SHIFTL0(VARL("quot_remainder"), U8(1)), VARL("quot_den")),
+				AND(EQ(SHIFTL0(VARL("quot_remainder"), U8(1)), VARL("quot_den")),
+					LSB(VARL("quot_floor")))),
+			32);
+		quotient = ADD(quotient, round_up);
+	}
+	return seq_append(seq, SETL("quot_low7", LOGAND(quotient, U32(0x7f))));
+}
+
+static RzILOpEffect *set_fpu_negative_quotient_low7(ut32 insn_id) {
+	RzILOpPure *round_up = insn_id == M68K_INS_FREM
+		? BOOL_TO_BV(AND(EQ(VARL("quot_exp_delta"), S32(-1)),
+				     UGT(VARL("quot_dst_mant"), VARL("quot_src_mant"))),
+			  32)
+		: U32(0);
+	return SEQ2(SETL("quot_trunc_low7", U32(0)), SETL("quot_low7", round_up));
 }
 
 static RzILOpEffect *set_fpsr_quotient_byte(ut32 insn_id) {
-	RzFloatRMode quotient_mode = insn_id == M68K_INS_FMOD ? RZ_FLOAT_RMODE_RTZ : RZ_FLOAT_RMODE_RNE;
-	RzILOpFloat *quotient = FROUND(quotient_mode,
-		FDIV(RZ_FLOAT_RMODE_RNE,
-			fpu_to_format(VARL("dst_fp"), RZ_FLOAT_IEEE754_BIN_80),
-			fpu_to_format(VARL("src_fp"), RZ_FLOAT_IEEE754_BIN_80)));
-	RzILOpEffect *seq = SETL("quot_fp", quotient);
-	seq = seq_append(seq, SETL("quot_bits", F2BV(fpu_to_format(VARL("quot_fp"), RZ_FLOAT_IEEE754_BIN_80))));
-	seq = seq_append(seq, SETL("quot_exp", cast_unsigned(32, LOGAND(cast_unsigned(16, SHIFTR0(VARL("quot_bits"), U8(64))), U16(0x7fff)))));
-	seq = seq_append(seq, SETL("quot_mant", cast_unsigned(64, VARL("quot_bits"))));
+	RzILOpEffect *seq = normalize_fpu_quotient_operand("src_fp", "quot_src_bits",
+		"quot_src_exp_field", "quot_src_exp", "quot_src_mant");
+	seq = seq_append(seq, normalize_fpu_quotient_operand("dst_fp", "quot_dst_bits", "quot_dst_exp_field", "quot_dst_exp", "quot_dst_mant"));
+	seq = seq_append(seq, SETL("quot_exp_delta", SUB(VARL("quot_dst_exp"), VARL("quot_src_exp"))));
+	RzILOpBool *valid = AND(
+		AND(NE(VARL("quot_src_exp_field"), U32(0x7fff)),
+			NE(VARL("quot_dst_exp_field"), U32(0x7fff))),
+		NON_ZERO(VARL("quot_src_mant")));
+	RzILOpEffect *set_valid_quotient = BRANCH(
+		SLT(VARL("quot_exp_delta"), S32(0)),
+		set_fpu_negative_quotient_low7(insn_id),
+		set_fpu_nonnegative_quotient_low7(insn_id));
+	seq = seq_append(seq, BRANCH(valid, set_valid_quotient, SEQ2(SETL("quot_trunc_low7", U32(0)), SETL("quot_low7", U32(0)))));
 	RzILOpPure *quotient_byte = LOGOR(
 		SHIFTL0(BOOL_TO_BV(XOR(IS_FNEG(VARL("dst_fp")), IS_FNEG(VARL("src_fp"))), 32), U8(7)),
-		fpu_quotient_low7());
+		VARL("quot_low7"));
 	return seq_append(seq, SETG("fpsr", LOGOR(LOGAND(cast_unsigned(32, VARG("fpsr")), U32(~M68K_FPSR_QUOTIENT_MASK)), SHIFTL0(quotient_byte, U8(M68K_FPSR_QUOTIENT_SHIFT)))));
+}
+
+static RzILOpFloat *fpu_nearest_remainder_result(void) {
+	RzILOpFloat *truncated = FPU_EXEC_WITH_RMODE(rz_il_op_new_fmod,
+		VARLP("dst_ext"), VARLP("src_ext"));
+	RzILOpFloat *twice_remainder = FPU_EXEC_WITH_RMODE(FADD,
+		FABS(VARLP("trunc_rem")), FABS(VARLP("trunc_rem")));
+	RzILOpBool *adjust = OR(
+		FLT(VARLP("abs_src"), VARLP("twice_rem")),
+		AND(FEQ(VARLP("abs_src"), VARLP("twice_rem")),
+			LSB(VARL("quot_trunc_low7"))));
+	RzILOpFloat *signed_src_magnitude = ITE(
+		IS_FNEG(VARLP("dst_ext")),
+		FNEG(VARLP("abs_src")),
+		VARLP("abs_src"));
+	RzILOpFloat *adjusted = FPU_EXEC_WITH_RMODE(FSUB,
+		VARLP("trunc_rem"), VARLP("signed_src_magnitude"));
+	return LET("trunc_rem", truncated,
+		LET("abs_src", FABS(VARLP("src_ext")),
+			LET("twice_rem", twice_remainder,
+				LET("signed_src_magnitude", signed_src_magnitude,
+					ITE(adjust, adjusted, VARLP("trunc_rem"))))));
 }
 
 static RzILOpFloat *fpu_binary_unrounded_result(ut32 insn_id) {
@@ -4523,11 +4614,7 @@ static RzILOpFloat *fpu_binary_unrounded_result(ut32 insn_id) {
 		result = FPU_EXEC_WITH_RMODE(rz_il_op_new_fmod, VARLP("dst_ext"), VARLP("src_ext"));
 		break;
 	case M68K_INS_FREM:
-		result = LET("quot_fp",
-			FROUND(RZ_FLOAT_RMODE_RNE, FPU_EXEC_WITH_RMODE(FDIV, VARLP("dst_ext"), VARLP("src_ext"))),
-			LET("prod_fp",
-				FPU_EXEC_WITH_RMODE(FMUL, VARLP("quot_fp"), VARLP("src_ext")),
-				FPU_EXEC_WITH_RMODE(FSUB, VARLP("dst_ext"), VARLP("prod_fp"))));
+		result = fpu_nearest_remainder_result();
 		break;
 	default:
 		rz_il_op_pure_free(src_value);
@@ -5171,6 +5258,9 @@ static RzILOpEffect *lift_fpu_binary_data(M68KILCtx *ctx, ut32 insn_id) {
 	if (fpu_binary_uses_fpcr_precision(insn_id)) {
 		seq = seq_append(seq, SETL("precision", fpu_fpcr_precision()));
 	}
+	if (insn_id == M68K_INS_FMOD || insn_id == M68K_INS_FREM) {
+		seq = seq_append(seq, set_fpsr_quotient_byte(insn_id));
+	}
 	RzILOpFloat *result = fpu_binary_result(ctx, insn_id);
 	if (!result) {
 		return m68k_effect_free(seq, m68k_label("m68k_unimplemented"));
@@ -5178,9 +5268,6 @@ static RzILOpEffect *lift_fpu_binary_data(M68KILCtx *ctx, ut32 insn_id) {
 
 	seq = seq_append(seq, SETL("res_fp", result));
 	seq = seq_append(seq, write_reg_sized(ctx, dst->reg, 80, F2BV(VARL("res_fp"))));
-	if (insn_id == M68K_INS_FMOD || insn_id == M68K_INS_FREM) {
-		seq = seq_append(seq, set_fpsr_quotient_byte(insn_id));
-	}
 	return seq_append(seq, set_fpsr_cc_from_float_local("res_fp"));
 }
 

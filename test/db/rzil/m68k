@@ -501,6 +501,30 @@ fpsr = 0x08830000
 EOF
 RUN
 
+NAME=m68k aez FMOD preserves quotient bits beyond FP80 precision
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+REGEXP_FILTER_ERR=INFO.*\n
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c54804008000000000000 @ 0
+wx f23c55004450000000000000 @ 0xc
+wx f2000521 @ 0x18
+aezi
+aezs 2
+aezv fpsr 0
+aezs
+ar fp2
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fp2 = 0x3fff8000000000000000
+fpsr = 0x00550000
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=m68k aez FREM uses the nearest quotient in FPSR
 FILE=malloc://128
 ARGS=-a m68k -b 32 -E big
@@ -521,6 +545,30 @@ fpsr = 0x5a0000
 fp2 = 0xbfff8000000000000000
 fpsr = 0x08040000
 EOF
+RUN
+
+NAME=m68k aez FREM preserves rounded quotient bits beyond FP80 precision
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+REGEXP_FILTER_ERR=INFO.*\n
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c54804014000000000000 @ 0
+wx f23c55004450000000000000 @ 0xc
+wx f2000525 @ 0x18
+aezi
+aezs 2
+aezv fpsr 0
+aezs
+ar fp2
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fp2 = 0xbfff8000000000000000
+fpsr = 0x084d0000
+EOF
+EXPECT_ERR=
 RUN
 
 NAME=m68k aez FGETEXP normalizes an FP80 subnormal
