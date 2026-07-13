@@ -451,13 +451,113 @@ wx f23c5480bff0000000000000 @ 0
 wx f23c55003ff0000010000000 @ 0xc
 wx f2000522 @ 0x18
 aezi
+aezs 2
 aezv fpcr 0x40
-aezs 3
+aezs
 ar fp2
 EOF
 EXPECT=<<EOF
 fpcr = 0x40
 fp2 = 0x3fe78000000000000000
+EOF
+RUN
+
+NAME=m68k aez FMOVE double source respects FPCR precision
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c54803ff0000010000000 @ 0
+aezi
+aezv fpcr 0x40
+aezs
+ar fp1
+EOF
+EXPECT=<<EOF
+fpcr = 0x40
+fp1 = 0x3fff8000000000000000
+EOF
+RUN
+
+NAME=m68k aez FMOD updates the FPSR quotient byte
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c54804008000000000000 @ 0
+wx f23c5500c024000000000000 @ 0xc
+wx f2000521 @ 0x18
+aezi
+aezs 2
+aezv fpsr 0x5a0000
+aezs
+ar fp2
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x5a0000
+fp2 = 0xbfff8000000000000000
+fpsr = 0x08830000
+EOF
+RUN
+
+NAME=m68k aez FREM uses the nearest quotient in FPSR
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c54804000000000000000 @ 0
+wx f23c5500401c000000000000 @ 0xc
+wx f2000525 @ 0x18
+aezi
+aezs 2
+aezv fpsr 0x5a0000
+aezs
+ar fp2
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x5a0000
+fp2 = 0xbfff8000000000000000
+fpsr = 0x08040000
+EOF
+RUN
+
+NAME=m68k aez FGETEXP normalizes an FP80 subnormal
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f200051e @ 0
+aezi
+aezv fp1 1
+aezs
+ar fp1
+ar fp2
+EOF
+EXPECT=<<EOF
+fp1 = 0x1
+fp1 = 0x00000000000000000001
+fp2 = 0xc00d807a000000000000
+EOF
+RUN
+
+NAME=m68k aez FGETMAN normalizes an FP80 subnormal
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f200051f @ 0
+aezi
+aezv fp1 1
+aezs
+ar fp1
+ar fp2
+EOF
+EXPECT=<<EOF
+fp1 = 0x1
+fp1 = 0x00000000000000000001
+fp2 = 0x3fff8000000000000000
 EOF
 RUN
 
@@ -574,6 +674,42 @@ EXPECT=<<EOF
 d0 = 0x00000012
 sr = 0x0009
 pc = 0x00000002
+EOF
+RUN
+
+NAME=m68k aez one-bit memory field writes one byte
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+REGEXP_FILTER_ERR=INFO.*\n
+CMDS=<<EOF
+e asm.cpu=68020
+wx eed00001 @ 0
+wx 0011223344556677 @ 0x40
+aezi
+aezv a0 0x40
+aezsej
+EOF
+EXPECT=<<EOF
+a0 = 0x40
+[{"type":"pc_write","old":"0x0","new":"0x4"},{"type":"mem_write","address":"0x40","old":"0x0","new":"0x80"},{"type":"var_write","name":"sr","old":"0x0","new":"0x4"}]
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=m68k aez maximum memory field writes five bytes
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx eed001c0 @ 0
+wx 0011223344556677 @ 0x40
+aezi
+aezv a0 0x40
+aezsej
+EOF
+EXPECT=<<EOF
+a0 = 0x40
+[{"type":"pc_write","old":"0x0","new":"0x4"},{"type":"mem_write","address":"0x40","old":"0x0","new":"0x1"},{"type":"mem_write","address":"0x41","old":"0x11","new":"0xff"},{"type":"mem_write","address":"0x42","old":"0x22","new":"0xff"},{"type":"mem_write","address":"0x43","old":"0x33","new":"0xff"},{"type":"mem_write","address":"0x44","old":"0x44","new":"0xfe"},{"type":"var_write","name":"sr","old":"0x0","new":"0x0"}]
 EOF
 RUN
 
