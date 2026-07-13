@@ -1143,6 +1143,17 @@ map_to_top:
 	return true;
 }
 
+static void eval_call(RzInterpRunContext *ctx) {
+	// For calls, assume control flow will continue like fallthrough.
+	// But any data that may be modified by the callee must be set to top.
+	// TODO: this should depend on the ABI, some data may be preserved.
+	RzIterator *it = ht_up_as_iter(ctx->astate->globals);
+	RzInterpAbstrVal **av;
+	rz_iterator_foreach(it, av) {
+		ctx->inst->plugin->set_top(*av);
+	}
+}
+
 static bool eval_effect(RzInterpRunContext *ctx,
 	const RzILOpEffect *effect,
 	size_t insn_pkt_size) {
@@ -1236,8 +1247,7 @@ static bool eval_effect(RzInterpRunContext *ctx,
 		}
 
 		if (is_call) {
-			// For calls, assume control flow will continue like fallthrough.
-			// TODO: set data to top that may be changed by the call
+			eval_call(ctx);
 		} else {
 			set_abstr_pc(ctx->inst, ctx->astate, eval_out);
 		}

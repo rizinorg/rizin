@@ -542,6 +542,58 @@ bool test_interp_cfg_multi_entry_fallthrough_jmp_inside_other() {
 	mu_end;
 }
 
+bool test_interp_cfg_call(void) {
+	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://"
+		"600880d2"  // 0x00  mov   x0, 0x43
+		"ff430094"  // 0x04  bl    0x11000
+		"c0035fd6"  // 0x08  ret
+	);
+	mu_assert_notnull(interp, "init");
+	bool succ = rz_interp_run(interp->inst, 0x10000);
+	mu_assert_true(succ, "run success");
+
+	EXTRACT_RESULT(interp, 2);
+	mu_assert_eq(res->entry, 0x10000, "result entry");
+	ASSERT_BLOCK(0, 0x10000, 0x10008, true, UT64_MAX);
+	ASSERT_BLOCK(1, 0x10008, 0x1000c, false, UT64_MAX);
+
+	rz_interp_result_apply_to_analysis(res, interp->analysis);
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
+	mu_assert_notnull(fcn, "analysis function");
+	mu_assert_eq(rz_pvector_len(fcn->bbs), 1, "analysis block count");
+	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 0), 0x10000, 0x1000c, UT64_MAX, UT64_MAX);
+
+	interp_free(interp);
+	mu_end;
+}
+
+bool test_interp_cfg_call_multi_insn(void) {
+	TestInterp *interp = interp_new("arm", 32, 0x10000, "hex://"
+		// this pattern is common on ARMv4 to perform an indirect call
+		"110aa0e3"  // 0x00  mov   r0, 0xff000
+		"0fe0a0e1"  // 0x04  mov   lr, pc
+		"00f0a0e1"  // 0x08  mov   pc, r0
+		"1eff2fe1"  // 0x0c  bx    lr
+	);
+	mu_assert_notnull(interp, "init");
+	bool succ = rz_interp_run(interp->inst, 0x10000);
+	mu_assert_true(succ, "run success");
+
+	EXTRACT_RESULT(interp, 2);
+	mu_assert_eq(res->entry, 0x10000, "result entry");
+	ASSERT_BLOCK(0, 0x10000, 0x1000c, true, UT64_MAX);
+	ASSERT_BLOCK(1, 0x1000c, 0x10010, false, UT64_MAX);
+
+	rz_interp_result_apply_to_analysis(res, interp->analysis);
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
+	mu_assert_notnull(fcn, "analysis function");
+	mu_assert_eq(rz_pvector_len(fcn->bbs), 1, "analysis block count");
+	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 0), 0x10000, 0x10010, UT64_MAX, UT64_MAX);
+
+	interp_free(interp);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_interp_block_resolve_bounds_single);
 	mu_run_test(test_interp_block_resolve_bounds_prepend, false, false);
@@ -561,6 +613,8 @@ bool all_tests() {
 	mu_run_test(test_interp_cfg_multi_entry_fallthrough_jmp_before);
 	mu_run_test(test_interp_cfg_multi_entry_fallthrough_jmp_inside_self);
 	mu_run_test(test_interp_cfg_multi_entry_fallthrough_jmp_inside_other);
+	mu_run_test(test_interp_cfg_call);
+	mu_run_test(test_interp_cfg_call_multi_insn);
 	return tests_passed != tests_run;
 }
 
