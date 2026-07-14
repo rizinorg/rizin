@@ -211,6 +211,24 @@ bool join_state(RzInterpInstance *inst, RZ_BORROW RZ_INOUT RzInterpAbstrState *a
 
 /// @}
 
+// Our analysis loop works by first performing abstract interpretation until a fixpoint is reached,
+// and only in a second pass collecting analysis information from it such as xrefs.
+// That is because before the fixpoint, abstract states will not yet represent all possible concrete states.
+//
+// Other approaches are conceivable, such as doing analysis every time a block is evaluated and if
+// it is evaluated again, throwing away the previous results, so we encapsulate the logic for when to
+// do what in these functions:
+
+/** Whether during evaluation, analysis results should be collected */
+static inline bool interp_is_analyzing(RzInterpRunContext *ctx) {
+	return ctx->res != NULL;
+}
+
+/** Whether during evaluation, new states may be discoveres */
+static inline bool interp_is_collecting_states(RzInterpRunContext *ctx) {
+	return ctx->res == NULL;
+}
+
 /////////////////////////////////////////////////////////
 /**
  * \name Interpreter Blocks
@@ -361,7 +379,7 @@ RZ_API void rz_interp_block_resolve_bounds(RzInterpRunContext *ctx, RzInterpBloc
 
 	// Blocks may overlap, but one block must not start at an instruction start of another.
 	// We have to consider two cases here, depending on the order in which blocks have been discovered.
-	
+
 	// Case A: Our block would start at an instruction start of another block that starts before us and falls through.
 	// We can move the instruction information from the preceding block in that case. This way, case B is already handled as well.
 	size_t hit_op_idx = 0;
@@ -439,6 +457,7 @@ close:
  * queue for further interpretation if there were changes.
  */
 RZ_API void rz_interp_run_push(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx, RZ_BORROW RZ_NONNULL RzInterpAbstrState *as, bool is_fallthrough) {
+	rz_return_if_fail(interp_is_collecting_states(ctx));
 	if (as->pc_state == RZ_INTERP_PC_ANY) {
 		RZ_LOG_DEBUG("Encountered state with unknown/top pc\n");
 		return;
@@ -661,22 +680,20 @@ RZ_API void rz_interp_instance_free(RZ_OWN RZ_NULLABLE RzInterpInstance *iset) {
 	free(iset);
 }
 
-bool report_yield_xref(
+static void report_yield_xref(
 	RzInterpRunContext *ctx,
 	size_t insn_pkt_size,
 	ut64 from,
 	const RzInterpAbstrVal *to,
 	RzAnalysisXRefType type) {
-	RzInterpYieldRBuf *yrbuf = ctx->inst->yield_rbufs[RZ_INTERP_YIELD_KIND_XREF];
-	if (!yrbuf) {
-		return true;
+	if (!interp_is_analyzing(ctx)) {
+		return;
 	}
-
 	RzBitVector to_bv;
 	rz_bv_init(&to_bv, 64);
-	bool success = true;
 	if (!ctx->inst->plugin->to_concrete_const(to, &to_bv) || rz_bv_len(&to_bv) > 64) {
 		// Isn't reported
+		// TODO: we might also want to report multiple values here depending on the value domain
 		goto cleanup;
 	}
 	if (type == RZ_ANALYSIS_XREF_TYPE_CODE &&
@@ -693,21 +710,16 @@ bool report_yield_xref(
 	}
 
 	ut64 to_addr = rz_bv_to_ut64(&to_bv);
-	RzAnalysisXRef xref = { 0 };
-	xref.bb_addr = 0; // TODO? ctx->astate->bb_addr;
-	xref.from = from;
-	xref.to = to_addr;
-	xref.type = type;
-	if (yrbuf->filter(&xref, yrbuf->filter_data->io_boundaries)) {
-		RZ_LOG_DEBUG("prototype: REPORT xref: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n", xref.from, xref.to, rz_analysis_ref_type_tostring(xref.type));
-		if (rz_th_ring_buf_put(yrbuf->rbuf, &xref) != RZ_THREAD_RING_BUF_OK) {
-			success = false;
-			goto cleanup;
-		}
+	RzAnalysisXRef *xref = rz_vector_push(&ctx->res->xrefs, NULL);
+	if (!xref) {
+		goto cleanup;
 	}
+	xref->bb_addr = 0; // TODO? ctx->astate->bb_addr;
+	xref->from = from;
+	xref->to = to_addr;
+	xref->type = type;
 cleanup:
 	rz_bv_fini(&to_bv);
-	return success;
 }
 
 /**
@@ -1187,6 +1199,27 @@ static bool eval_effect(RzInterpRunContext *ctx,
 		write_var_to_state(ctx->inst, ctx->astate, kind, vhash, eval_out);
 		if (value_indicates_ret_addr_write(ctx, eval_out) &&
 			kind == RZ_IL_VAR_KIND_GLOBAL) {
+			// Hint: this ret-addr store detection currently only works across a single interp block.
+			// Consider the following ARMv4 code for an indirect call (blx was introduced in ARMv5):
+			// ```
+			// A> mov lr, pc
+			// B> mov pc, r0
+			// C> ...
+			// ```
+			//
+			// both A and B are block entries.
+			//
+			// 1. If A is discovered before B, the call is recognized at that point. Once B is detected, C will not be
+			//    reached by fallthrough anymore.
+			// 2. If B is discovered before A, the call is not recognized in the first place because A and B are two
+			//    separate blocks already.
+			//
+			// It is inconvenient that we may have a fixpoint where C could be considered only partially evaluated,
+			// but as long as we don't find a practical example where this happens and thus also don't have a good
+			// example for the expected analysis outcome, we leave it as-is.
+			//
+			// Making C reachable even with the in-edge at B could work by for example by marking A as ret-addr-storing
+			// and using that information when evaluating B.
 			ctx->call_cand.store_addr = pc;
 			ctx->call_cand.npc = ctx->il_block_end;
 			ctx->call_cand.in_mem = false;
@@ -1276,7 +1309,7 @@ static bool eval_effect(RzInterpRunContext *ctx,
 			if (true_state->pc_state == false_state->pc_state && true_state->pc == false_state->pc) {
 				// identical target location, simply join the data and continue
 				join_state(ctx->inst, true_state, false_state);
-			} else {
+			} else if (interp_is_collecting_states(ctx)) {
 				// different jump targets, branch rather than resorting to top pc
 				rz_interp_run_push(ctx, true_state, true_state->pc_state == RZ_INTERP_PC_CONST && true_state->pc == fallthrough_pc);
 				if (true_state->pc_state == RZ_INTERP_PC_CONST && !rz_vector_contains(&ctx->block->jump_targets, &true_state->pc)) {
@@ -1416,7 +1449,7 @@ static bool eval_block(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL const RzIL
 		}
 	}
 
-	if (astate->pc_state != RZ_INTERP_PC_UNREACHABLE) {
+	if (interp_is_collecting_states(ctx) && astate->pc_state != RZ_INTERP_PC_UNREACHABLE) {
 		bool fallthrough = false;
 		if (astate->pc_state == RZ_INTERP_PC_CONST && astate->pc == interp_block_end + 1) {
 			fallthrough = true;
@@ -1431,6 +1464,7 @@ static bool eval_block(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL const RzIL
 RZ_API bool rz_interp_run_context_init(RzInterpRunContext *ctx, RzInterpInstance *inst) {
 	ctx->inst = inst;
 	ctx->astate = NULL;
+	ctx->res = NULL;
 	ctx->queue = rz_list_new();
 	if (!ctx->queue) {
 		return false;
@@ -1504,17 +1538,47 @@ RZ_API bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 		ctx.il_block_end = il_block->addr + il_block->size;
 		// Evaluate the effect on the abstract state.
 		if (!eval_block(&ctx, il_block)) {
+			// TODO: should this even be able to fail at all?
+			RZ_LOG_ERROR("interpreter: Eval failed\n");
+			success = false;
+			goto cleanup;
+		}
+	}
+
+	// Fixpoint reached, evaluate all blocks again once to collect analysis information.
+	// We do this in an additional pass because until now, the collected abstract states
+	// did not fully represent all reachable concrete states.
+
+	ctx.res = RZ_NEW0(RzInterpResult);
+	if (!ctx.res) {
+		success = false;
+		goto cleanup;
+	}
+	ctx.res->entry = entry_point;
+	rz_vector_init(&ctx.res->xrefs, sizeof(RzAnalysisXRef), NULL, NULL);
+
+	RzIntervalTreeIter it;
+	RzInterpBlock *interp_block;
+	rz_interval_tree_foreach (&ctx.blocks, it, interp_block) {
+		ctx.astate = rz_interp_abstr_state_clone(inst, interp_block->entry_state);
+		const RzILCacheBlock *il_block = rz_il_cache_client_lift_il_block(inst->il_cache_client, ctx.astate->pc);
+		if (!il_block) {
+			RZ_LOG_ERROR("interpreter: Lifting failed\n");
+			// TODO: handle this better
+			break;
+		}
+		if (!eval_block(&ctx, il_block)) {
+			// TODO: should this even be able to fail at all?
 			RZ_LOG_ERROR("interpreter: Eval failed\n");
 			success = false;
 			break;
 		}
 	}
 
-	RzInterpResult *res = RZ_NEW0(RzInterpResult);
-	res->entry = entry_point;
-	memmove(&res->blocks, &ctx.blocks, sizeof(ctx.blocks));
+	memmove(&ctx.res->blocks, &ctx.blocks, sizeof(ctx.blocks));
 	memset(&ctx.blocks, 0, sizeof(ctx.blocks));
-	rz_pvector_push(&inst->results, res);
+	rz_pvector_push(&inst->results, ctx.res);
+	ctx.res = NULL;
 
 cleanup:
 	rz_interp_run_context_fini(&ctx);
@@ -1639,6 +1703,13 @@ RZ_API void rz_interp_result_apply_to_analysis(RZ_NONNULL RzInterpResult *res, R
 		}
 		if (block->fallthrough) {
 			bb_add_target(abb, end_excl);
+		}
+	}
+
+	RzAnalysisXRef *xref;
+	rz_vector_foreach (&res->xrefs, xref) {
+		if (!rz_analysis_xrefs_set(analysis, xref->from, xref->to, xref->type)) {
+			RZ_LOG_ERROR("failed to set xref\n");
 		}
 	}
 }

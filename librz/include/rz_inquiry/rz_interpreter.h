@@ -26,6 +26,7 @@
 
 typedef struct rz_interp_run_state RzInterpRunState;
 typedef struct rz_interp_run_context_t RzInterpRunContext;
+typedef struct rz_interp_result_t RzInterpResult;
 
 typedef enum rz_interp_state_flag {
 	/**
@@ -171,6 +172,7 @@ typedef struct {
 
 /**
  * \brief A ring buffer to push interpretation yields into.
+ * TODO: remove
  */
 typedef struct {
 	RzInterpYieldKind kind;
@@ -288,6 +290,7 @@ struct rz_interp_instance_t {
 	 * \brief The ring buffers to push the yield of interpretation into.
 	 * These ring buffers are shared with other interpreter sets.
 	 */
+	// TODO: remove
 	RZ_BORROW RZ_NULLABLE RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM];
 
 	RzPVector /*<RzInterpRunResult>*/ results; ///< TODO: replace this by a queue/rbuf/... to handle interp and results concurrently
@@ -336,6 +339,7 @@ struct rz_interp_run_context_t {
 	 * inside RzInterpBlock to remove the additional indirection.
 	 */
 	RzIntervalTree /*<RzInterpBlock>*/ blocks;
+	RzInterpResult *res; ///< If not NULL, a fixpoint has been reached already and we are now collecting results
 
 	// Tracking data local to a single block interpretation
 	RzInterpBlock *block; ///< The currently interpreted interp block
@@ -344,10 +348,11 @@ struct rz_interp_run_context_t {
 	RzAnalysisCallCandidate call_cand; ///< Data of a call candidate.
 };
 
-typedef struct rz_interp_run_result_t {
+struct rz_interp_result_t {
 	ut64 entry;
 	RzIntervalTree /*<RzInterpBlock>*/ blocks;
-} RzInterpResult;
+	RzVector /*<RzAnalysisXRef>*/ xrefs;
+} /*RzInterpResult*/;
 
 RZ_API bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point);
 RZ_API bool rz_interp_instance_th(RZ_NONNULL RZ_OWN RzInterpInstance *iset);

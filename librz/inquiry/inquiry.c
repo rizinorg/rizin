@@ -208,7 +208,7 @@ static void handle_io_request(RzAnalysisILContext *il_ctx, RzInterpIOReadRequest
 		rz_bv_to_ut64(io_req->addr));
 	io_res->req_ok = false;
 	RzILMemIndex mem_idx = io_req->mem_idx;
-	if (mem_idx <= rz_vector_len(&il_ctx->memory)) {
+	if (mem_idx > rz_vector_len(&il_ctx->memory)) {
 		rz_warn_if_reached();
 		return;
 	}
