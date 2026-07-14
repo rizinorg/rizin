@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2026 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2012 Alexander Demin <alexander@demin.ws>
 // SPDX-License-Identifier: MIT
 
@@ -28,9 +29,10 @@
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#include <string.h>
-#include <stdio.h>
-#include <assert.h>
+#include "i8080dis.h"
+
+#include <rz_util/rz_assert.h>
+#include <rz_util/rz_strbuf.h>
 
 static char *reg[] = { "b", "c", "d", "e", "h", "l", "m", "a" };
 static char *rp[] = { "b", "d", "h", "sp" };
@@ -112,23 +114,29 @@ static struct opcode_t {
 	{ 0x00, 0 }
 };
 
-static void arg(char *s, int const cmd, struct arg_t const *arg, int val) {
+static void arg(RzStrBuf *out, int const cmd, struct arg_t const *arg, int val) {
 	if (arg->type == 3) {
-		strcat(s, arg->fmt[(cmd >> arg->shift) & arg->mask]);
-	} else {
-		if (arg->type == 1)
-			sprintf(s, "%02X", val & 0xff);
-		else if (arg->type == 2)
-			sprintf(s, "%04X", val);
+		rz_strbuf_append(out, arg->fmt[(cmd >> arg->shift) & arg->mask]);
+	} else if (arg->type == 1) {
+		rz_strbuf_appendf(out, "0x%02x", (unsigned int)(val & 0xff));
+	} else if (arg->type == 2) {
+		rz_strbuf_appendf(out, "0x%04x", (unsigned int)val);
 	}
 }
 
-int i8080_disasm(unsigned char const *const code, char *text, int text_sz) {
-	if (text_sz < 3) {
+int i8080_disasm(const ut8 *code, size_t code_sz, RZ_NONNULL RzStrBuf *out) {
+	rz_return_val_if_fail(code && out, -1);
+	if (code_sz < 1) {
 		return -1;
 	}
 	int const cmd = code[0];
-	int const p = code[1] | (code[2] << 8);
+	int p = 0;
+	if (code_sz > 1) {
+		p |= code[1];
+		if (code_sz > 2) {
+			p |= (code[2] << 8);
+		}
+	}
 
 	struct opcode_t const *op;
 	for (op = &opcodes[0]; op->size; ++op) {
@@ -137,16 +145,17 @@ int i8080_disasm(unsigned char const *const code, char *text, int text_sz) {
 				(op->arg2.mask << op->arg2.shift));
 		int const branch = (grp == 0xc0 || grp == 0xc2 || grp == 0xc4);
 		if (grp == op->cmd) {
-			strcpy(text, op->name);
-			if (!branch)
-				strcat(text, " ");
-			arg(text + strlen(text), cmd, &op->arg1, p);
+			rz_strbuf_set(out, op->name);
+			if (!branch) {
+				rz_strbuf_append(out, " ");
+			}
+			arg(out, cmd, &op->arg1, p);
 			if (op->arg2.type != 0)
-				strcat(text, (branch ? " " : ", "));
-			arg(text + strlen(text), cmd, &op->arg2, p);
+				rz_strbuf_append(out, (branch ? " " : ", "));
+			arg(out, cmd, &op->arg2, p);
 			return op->size;
 		}
 	}
-	snprintf(text, text_sz, "db @ 0x%02x", cmd);
+	rz_strbuf_set(out, "invalid");
 	return 1;
 }

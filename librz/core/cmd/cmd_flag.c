@@ -837,7 +837,7 @@ RZ_IPI RzCmdStatus rz_flag_realname_handler(RzCore *core, int argc, const char *
 	if (argc < 3) {
 		rz_cons_printf("%s\n", item->realname);
 	} else {
-		rz_flag_item_set_realname(item, argv[2]);
+		rz_flag_item_set_realname(core->flags, item, argv[2]);
 	}
 	return RZ_CMD_STATUS_OK;
 }
