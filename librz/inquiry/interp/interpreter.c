@@ -1393,7 +1393,9 @@ error:
 	return false;
 }
 
-static bool eval_block(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL const RzILCacheBlock *il_bb) {
+static bool eval_block(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL RzInterpBlock *interp_block, RZ_NONNULL const RzILCacheBlock *il_block) {
+	ctx->block = interp_block;
+	ctx->il_block_end = il_block->addr + il_block->size;
 	// Reset call candidate tracking for each basic block.
 	memset(&ctx->call_cand, 0, sizeof(ctx->call_cand));
 
@@ -1402,7 +1404,7 @@ static bool eval_block(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL const RzIL
 	// Now execute the actual effects of the BLOCK.
 	RzInterpAbstrState *astate = ctx->astate;
 	void **it;
-	rz_pvector_foreach (il_bb->il_ops, it) {
+	rz_pvector_foreach (il_block->il_ops, it) {
 		ut64 pc = astate->pc;
 
 		if (pc > interp_block_end) {
@@ -1418,10 +1420,10 @@ static bool eval_block(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL const RzIL
 		rz_strbuf_fini(&sb);
 
 		rz_strbuf_init(&sb);
-		if (pc == il_bb->addr) {
+		if (pc == il_block->addr) {
 			rz_strbuf_append(&sb, "ENTRY ");
 		}
-		if (rz_vector_index_ptr(&il_bb->il_ops->v, rz_pvector_len(il_bb->il_ops) - 1) == it) {
+		if (rz_vector_index_ptr(&il_block->il_ops->v, rz_pvector_len(il_block->il_ops) - 1) == it) {
 			rz_strbuf_append(&sb, "EXIT ");
 		}
 		rz_interp_abstr_state_as_str_short(ctx->inst, ctx->astate, &sb);
@@ -1443,7 +1445,7 @@ static bool eval_block(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL const RzIL
 			// unreachable or unknown jump
 			break;
 		}
-		if (astate->pc != next_pc) {
+		if (interp_is_collecting_states(ctx) && astate->pc != next_pc) {
 			// Constant jump other than fallthrough, meaning interpretation will continue in another block
 			interp_block_add_non_fallthrough_target(ctx->block, astate->pc);
 			break;
@@ -1534,11 +1536,8 @@ RZ_API bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 		rz_interp_abstr_state_as_str_short(inst, ctx.astate, &sb);
 		// rz_meta_set_string(iset->a, RZ_META_TYPE_COMMENT, il_bb->addr, rz_strbuf_get(&sb));
 		rz_strbuf_fini(&sb);
-
-		ctx.block = interp_block;
-		ctx.il_block_end = il_block->addr + il_block->size;
 		// Evaluate the effect on the abstract state.
-		if (!eval_block(&ctx, il_block)) {
+		if (!eval_block(&ctx, interp_block, il_block)) {
 			// TODO: should this even be able to fail at all?
 			RZ_LOG_ERROR("interpreter: Eval failed\n");
 			success = false;
@@ -1568,7 +1567,7 @@ RZ_API bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 			// TODO: handle this better
 			break;
 		}
-		if (!eval_block(&ctx, il_block)) {
+		if (!eval_block(&ctx, interp_block, il_block)) {
 			// TODO: should this even be able to fail at all?
 			RZ_LOG_ERROR("interpreter: Eval failed\n");
 			success = false;
