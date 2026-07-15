@@ -5220,6 +5220,7 @@ static const char *help_msg_visual_hist[] = {
 	"?", "", "show this help",
 	"hl", "", "move cursor left / right one bar",
 	"+/-", "", "zoom in / out",
+	"PgUp/PgDn", "", "jump left/right by 1/10 of the histogram width",
 	":cmd", "", "run a rizin command",
 	"q", "", "back to Visual mode (or Q / Space)",
 	NULL
@@ -5320,6 +5321,16 @@ static RzCmdStatus print_visual_bytes(RzCore *core, RZ_OWN RZ_NONNULL RzHistogra
 		case 'h':
 			hist->barnumber = (hist->barnumber > 0) ? (hist->barnumber - 1) : (brange->nblocks - 1);
 			break;
+		case 'J': {
+			size_t jump = brange->nblocks / 10;
+			hist->barnumber = (hist->barnumber + jump) % brange->nblocks;
+			break;
+		}
+		case 'K': {
+			size_t jump = brange->nblocks / 10;
+			hist->barnumber = (hist->barnumber - (jump % brange->nblocks) + brange->nblocks) % brange->nblocks;
+			break;
+		}
 		case 'l':
 			hist->barnumber = (hist->barnumber == brange->nblocks - 1) ? (0) : (hist->barnumber + 1);
 			break;
