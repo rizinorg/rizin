@@ -1099,7 +1099,7 @@ static bool eval_pure(RzInterpRunContext *ctx, const RzILOpPure *pure, RZ_OUT Rz
 			rz_bv_and_inplace(&ld_addr, &mask);
 		}
 
-		report_yield_xref(ctx, 0, ctx->astate->pc, out, RZ_ANALYSIS_XREF_TYPE_MEM_READ);
+		report_yield_xref(ctx, 0, ctx->insn_addr, out, RZ_ANALYSIS_XREF_TYPE_MEM_READ);
 		size_t n_bits = pure->code == RZ_IL_OP_LOAD ? ctx->inst->il_ctx->config->mem_key_size : pure->op.loadw.n_bits;
 		if (!load_abstr_data(ctx->inst, mem_idx, &ld_addr, n_bits, out)) {
 			rz_bv_fini(&ld_addr);
@@ -1272,8 +1272,7 @@ static bool eval_effect(RzInterpRunContext *ctx,
 			}
 #endif
 
-			report_yield_xref(ctx, insn_pkt_size, pc, eval_out,
-				xref_type);
+			report_yield_xref(ctx, insn_pkt_size, ctx->insn_addr, eval_out, xref_type);
 
 			// Clear the call candidate tracking variable.
 			memset(&ctx->call_cand, 0, sizeof(ctx->call_cand));
@@ -1372,7 +1371,7 @@ static bool eval_effect(RzInterpRunContext *ctx,
 			ctx->call_cand.npc = ctx->il_block_end;
 			ctx->call_cand.in_mem = true;
 		}
-		report_yield_xref(ctx, insn_pkt_size, pc, st_addr, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE);
+		report_yield_xref(ctx, insn_pkt_size, ctx->insn_addr, st_addr, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE);
 		if (!store_abstr_data(ctx->inst, mem_idx, st_addr, eval_out)) {
 			rz_bv_fini(&st_addr_bv);
 			goto error;
@@ -1430,6 +1429,8 @@ static bool eval_block(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL const RzIL
 		rz_strbuf_fini(&sb);
 
 		RzILCacheInsnPkt *pkt = *it;
+
+		ctx->insn_addr = pc;
 
 		// Prepare next pc, the evalutation may overwrite this.
 		ut64 next_pc = pc + pkt->insn_pkt_size;

@@ -345,6 +345,7 @@ struct rz_interp_run_context_t {
 	RzInterpBlock *block; ///< The currently interpreted interp block
 	ut64 il_block_end; ///< The address directly after the last instruction of the currently interpreted IL block, may be further than the last instruction of the interp block!
 	RzInterpAbstrState *astate; ///< The abstract state of the interpreter.
+	ut64 insn_addr; ///< The address of the currently evaluated instruction. This is not equal to astate->pc since that is already advanced by the instruction size.
 	RzAnalysisCallCandidate call_cand; ///< Data of a call candidate.
 };
 
