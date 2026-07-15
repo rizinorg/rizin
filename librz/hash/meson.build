@@ -184,6 +184,11 @@ else
     'algorithms/md5/md5.c',
     'algorithms/sha1/sha1.c',
     'algorithms/sha2/sha2.c',
+  ]
+endif
+
+if userconf.get('HAVE_OPENSSL_SM3', 0) == 0
+  rz_hash_sources += [
     'algorithms/sm3/sm3.c',
   ]
 endif

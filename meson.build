@@ -945,6 +945,7 @@ summary({
   'System xxhash library': xxhash_dep.found() and xxhash_dep.type_name() != 'internal',
   'System libmspack library': libmspack_dep.found() and libmspack_dep.type_name() != 'internal',
   'System openssl library': sys_openssl.found() and sys_openssl.type_name() != 'internal',
+  'System openssl has SM3': userconf.get('HAVE_OPENSSL_SM3', 0) != 0,
   'System capstone library': capstone_dep.found() and capstone_dep.type_name() != 'internal',
   'System zydis library': zydis_dep.found() and zydis_dep.type_name() != 'internal',
   'System tree-sitter library': tree_sitter_dep.found() and tree_sitter_dep.type_name() != 'internal',
