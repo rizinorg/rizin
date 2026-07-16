@@ -327,6 +327,19 @@ RZ_API RZ_OWN RzInterpInstance *rz_interp_instance_new(
 RZ_API void rz_interp_instance_free(RZ_OWN RZ_NULLABLE RzInterpInstance *iset);
 
 /**
+ * \brief Dimensions describing what kind of information should be retrieved from the interpreter run
+ */
+typedef enum rz_interp_result_dimen_t {
+	/**
+	 * \brief The basic information that is always included in every run
+	 * This includes block boundaries, control flow edges and entry states for each block.
+	 */
+	RZ_INTERP_RESULT_DIMEN_BASE = 0,
+	RZ_INTERP_RESULT_DIMEN_XREFS = 1 << 0, ///< fills RzInterpResult.xrefs
+	RZ_INTERP_RESULT_DIMEN_COMMENTS = 1 << 1 ///< per-address textual state description for debugging, fills RzInterpResult.comments
+} RzInterpResultDimen;
+
+/**
  * \brief Local data during an interpreter run
  */
 struct rz_interp_run_context_t {
@@ -339,6 +352,7 @@ struct rz_interp_run_context_t {
 	 * inside RzInterpBlock to remove the additional indirection.
 	 */
 	RzIntervalTree /*<RzInterpBlock>*/ blocks;
+	RzInterpResultDimen res_dimen;
 	RzInterpResult *res; ///< If not NULL, a fixpoint has been reached already and we are now collecting results
 
 	// Tracking data local to a single block interpretation
@@ -350,12 +364,13 @@ struct rz_interp_run_context_t {
 };
 
 struct rz_interp_result_t {
-	ut64 entry;
-	RzIntervalTree /*<RzInterpBlock>*/ blocks;
-	RzVector /*<RzAnalysisXRef>*/ xrefs;
+	ut64 entry; ///< always filled
+	RzIntervalTree /*<RzInterpBlock>*/ blocks; ///< always filled
+	RzVector /*<RzAnalysisXRef>*/ xrefs; ///< filled if RZ_INTERP_RESULT_DIMEN_XREFS is requested
+	HtUP /*<char *>*/ *comments; ///< filled if RZ_INTERP_RESULT_DIMEN_COMMENTS
 } /*RzInterpResult*/;
 
-RZ_API bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point);
+RZ_API RzInterpResult *rz_interp_run(RzInterpInstance *inst, ut64 entry_point, RzInterpResultDimen dimen);
 RZ_API bool rz_interp_instance_th(RZ_NONNULL RZ_OWN RzInterpInstance *iset);
 RZ_API void rz_interp_result_apply_to_analysis(RZ_NONNULL RzInterpResult *res, RZ_NONNULL RzAnalysis *analysis);
 

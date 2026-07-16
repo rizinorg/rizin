@@ -5,10 +5,6 @@
 
 Module implementing basic and advanced binary analysis.
 
-## TODO
-
-* Add final pass for analysis and integrate xrefs and other yield info in result
-
 ## Interpreter Notes
 
 Ideas for optimization (do not implement any of these without profiling first):

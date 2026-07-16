@@ -11,7 +11,27 @@ typedef struct test_interp_t {
 	RzILCache *il_cache;
 	RzILCacheClient *il_cache_client;
 	RzInterpInstance *inst;
+	RzThread *io_server;
 } TestInterp;
+
+static void *io_server_th(void *user) {
+	TestInterp *interp = user;
+	RzInterpIOReadRequest io_req = { 0 };
+	while (true) {
+		RzThreadRingBufResult r = rz_th_ring_buf_take_blocking(interp->inst->io_request_rbuf, &io_req);
+		if (r == RZ_THREAD_RING_BUF_CLOSED) {
+			return NULL;
+		} else if (r == RZ_THREAD_RING_BUF_OK) {
+			RzInterpIOResult io_res = { 0 };
+			io_res.req_ok = false; // Currently we do not care about contents, just make the interpreter continue
+			if (rz_th_ring_buf_put(interp->inst->io_result_rbuf, &io_res) != RZ_THREAD_RING_BUF_OK) {
+				rz_warn_if_reached();
+			}
+		} else {
+			rz_warn_if_reached();
+		}
+	}
+}
 
 static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char *url) {
 	// for debugging, uncomment:
@@ -30,10 +50,14 @@ static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char
 		mu_perror("load code");
 		return NULL;
 	}
+	interp->io_server = rz_th_new(io_server_th, interp);
 	return interp;
 }
 
 static void interp_free(TestInterp *interp) {
+	rz_th_ring_buf_close(interp->inst->io_request_rbuf);
+	rz_th_wait(interp->io_server);
+	rz_th_free(interp->io_server);
 	rz_interp_instance_free(interp->inst);
 	rz_il_cache_free(interp->il_cache);
 	rz_io_free(interp->io);
@@ -66,9 +90,8 @@ static ut64 block_end(RzInterpBlock *block) {
 #define STR(x) STR_HELPER(x)
 
 /** Extract single result from interp as well as its blocks into local vars for easy assertion */
-#define EXTRACT_RESULT(interp, blocks_count) \
-	mu_assert_eq(rz_pvector_len(&interp->inst->results), 1, "results len"); \
-	RzInterpResult *res = rz_pvector_at(&interp->inst->results, 0); \
+#define EXTRACT_RESULT(res, blocks_count) \
+	mu_assert_notnull(res, "result"); \
 	RzInterpBlock *blocks[blocks_count]; \
 	mu_assert_eq(do_extract_blocks(res, blocks, blocks_count), blocks_count, "blocks count")
 
@@ -82,6 +105,13 @@ static ut64 block_end(RzInterpBlock *block) {
 		} else { \
 			mu_assert_eq(rz_vector_len(&blocks[i]->jump_targets), 0, "jump targets count"); \
 		} \
+	} while (0)
+
+#define ASSERT_XREF(i, from_v, to_v, type_v) do { \
+		RzAnalysisXRef *xref = rz_vector_index_ptr(&res->xrefs, i); \
+		mu_assert_eq(xref->from, from_v, "xref " STR(i) " from"); \
+		mu_assert_eq(xref->to, to_v, "xref " STR(i) " to"); \
+		mu_assert_eq(xref->type, type_v, "xref " STR(i) " type"); \
 	} while (0)
 
 #define ASSERT_ANALYSIS_BLOCK(block, start, end, jumpv, failv) do { \
@@ -106,7 +136,7 @@ bool test_interp_block_resolve_bounds_single(void) {
 		"000080d2"  // 0x00  mov   x0, 0
 					// ---
 		"200080d2"  // 0x04  mov   x0, 1 <- entry
-		"400080d2"  // 0x08  mov   x0, 2 
+		"400080d2"  // 0x08  mov   x0, 2
 		"600080d2"  // 0x0c  mov   x0, 3
 		"800080d2"  // 0x10  mov   x0, 4
 		"a00080d2"  // 0x14  mov   x0, 5
@@ -291,10 +321,9 @@ bool test_interp_cfg_single_block(void) {
 		"c0035fd6"  // 0x04  ret
 	);
 	mu_assert_notnull(interp, "init");
-	bool succ = rz_interp_run(interp->inst, 0x10000);
-	mu_assert_true(succ, "run success");
+	RzInterpResult *res = rz_interp_run(interp->inst, 0x10000, RZ_INTERP_RESULT_DIMEN_BASE);
 
-	EXTRACT_RESULT(interp, 1);
+	EXTRACT_RESULT(res, 1);
 	mu_assert_eq(res->entry, 0x10000, "result entry");
 	ASSERT_BLOCK(0, 0x10000, 0x10008, false, UT64_MAX);
 
@@ -318,10 +347,9 @@ bool test_interp_cfg_direct_jmp(void) {
 		"c0035fd6"  // 0x14  ret
 	);
 	mu_assert_notnull(interp, "init");
-	bool succ = rz_interp_run(interp->inst, 0x10000);
-	mu_assert_true(succ, "run success");
+	RzInterpResult *res = rz_interp_run(interp->inst, 0x10000, RZ_INTERP_RESULT_DIMEN_BASE);
 
-	EXTRACT_RESULT(interp, 2);
+	EXTRACT_RESULT(res, 2);
 	mu_assert_eq(res->entry, 0x10000, "result entry");
 	ASSERT_BLOCK(0, 0x10000, 0x10008, false, 0x10010);
 	ASSERT_BLOCK(1, 0x10010, 0x10018, false, UT64_MAX);
@@ -347,10 +375,9 @@ bool test_interp_cfg_branch(void) {
 		"c0035fd6"  // 0x14  ret
 	);
 	mu_assert_notnull(interp, "init");
-	bool succ = rz_interp_run(interp->inst, 0x10000);
-	mu_assert_true(succ, "run success");
+	RzInterpResult *res = rz_interp_run(interp->inst, 0x10000, RZ_INTERP_RESULT_DIMEN_BASE);
 
-	EXTRACT_RESULT(interp, 3);
+	EXTRACT_RESULT(res, 3);
 	mu_assert_eq(res->entry, 0x10000, "result entry");
 	ASSERT_BLOCK(0, 0x10000, 0x10008, true, 0x10010);
 	ASSERT_BLOCK(1, 0x10008, 0x10010, false, UT64_MAX);
@@ -381,10 +408,9 @@ bool test_interp_cfg_branch_join(void) {
 		"c0035fd6"  // 0x14  ret             <------
 	);
 	mu_assert_notnull(interp, "init");
-	bool succ = rz_interp_run(interp->inst, 0x10000);
-	mu_assert_true(succ, "run success");
+	RzInterpResult *res = rz_interp_run(interp->inst, 0x10000, RZ_INTERP_RESULT_DIMEN_BASE);
 
-	EXTRACT_RESULT(interp, 4);
+	EXTRACT_RESULT(res, 4);
 	mu_assert_eq(res->entry, 0x10000, "result entry");
 	ASSERT_BLOCK(0, 0x10000, 0x10008, true, 0x10010);
 	ASSERT_BLOCK(1, 0x10008, 0x10010, false, 0x10014);
@@ -428,10 +454,9 @@ bool test_interp_cfg_multi_entry_fallthrough_jmp(bool swap) {
 			"c0035fd6"  // 0x18  ret
 	);
 	mu_assert_notnull(interp, "init");
-	bool succ = rz_interp_run(interp->inst, 0x10000);
-	mu_assert_true(succ, "run success");
+	RzInterpResult *res = rz_interp_run(interp->inst, 0x10000, RZ_INTERP_RESULT_DIMEN_BASE);
 
-	EXTRACT_RESULT(interp, 4);
+	EXTRACT_RESULT(res, 4);
 	mu_assert_eq(res->entry, 0x10000, "result entry");
 	ASSERT_BLOCK(0, 0x10000, 0x10004, true, !swap ? 0x10014 : 0x1000c);
 	ASSERT_BLOCK(1, 0x10004, 0x10008, false, !swap ? 0x1000c : 0x10014);
@@ -459,10 +484,9 @@ bool test_interp_cfg_multi_entry_fallthrough_jmp_before() {
 		"c0035fd6"  // 0x0c  ret
 	);
 	mu_assert_notnull(interp, "init");
-	bool succ = rz_interp_run(interp->inst, 0x10008);
-	mu_assert_true(succ, "run success");
+	RzInterpResult *res = rz_interp_run(interp->inst, 0x10008, RZ_INTERP_RESULT_DIMEN_BASE);
 
-	EXTRACT_RESULT(interp, 3);
+	EXTRACT_RESULT(res, 3);
 	mu_assert_eq(res->entry, 0x10008, "result entry");
 	ASSERT_BLOCK(0, 0x10000, 0x10008, true, UT64_MAX);
 	ASSERT_BLOCK(1, 0x10008, 0x1000c, true, 0x10000);
@@ -488,10 +512,9 @@ bool test_interp_cfg_multi_entry_fallthrough_jmp_inside_self() {
 		"c0035fd6"  // 0x0c  ret
 	);
 	mu_assert_notnull(interp, "init");
-	bool succ = rz_interp_run(interp->inst, 0x10000);
-	mu_assert_true(succ, "run success");
+	RzInterpResult *res = rz_interp_run(interp->inst, 0x10000, RZ_INTERP_RESULT_DIMEN_BASE);
 
-	EXTRACT_RESULT(interp, 3);
+	EXTRACT_RESULT(res, 3);
 	mu_assert_eq(res->entry, 0x10000, "result entry");
 	ASSERT_BLOCK(0, 0x10000, 0x10004, true, UT64_MAX);
 	ASSERT_BLOCK(1, 0x10004, 0x1000c, true, 0X10004);
@@ -519,10 +542,9 @@ bool test_interp_cfg_multi_entry_fallthrough_jmp_inside_other() {
 		"c0035fd6"  // 0x14  ret
 	);
 	mu_assert_notnull(interp, "init");
-	bool succ = rz_interp_run(interp->inst, 0x10000);
-	mu_assert_true(succ, "run success");
+	RzInterpResult *res = rz_interp_run(interp->inst, 0x10000, RZ_INTERP_RESULT_DIMEN_BASE);
 
-	EXTRACT_RESULT(interp, 4);
+	EXTRACT_RESULT(res, 4);
 	mu_assert_eq(res->entry, 0x10000, "result entry");
 	ASSERT_BLOCK(0, 0x10000, 0x10004, true, UT64_MAX);
 	ASSERT_BLOCK(1, 0x10004, 0x1000c, false, 0x10010);
@@ -549,10 +571,9 @@ bool test_interp_cfg_call(void) {
 		"c0035fd6"  // 0x08  ret
 	);
 	mu_assert_notnull(interp, "init");
-	bool succ = rz_interp_run(interp->inst, 0x10000);
-	mu_assert_true(succ, "run success");
+	RzInterpResult *res = rz_interp_run(interp->inst, 0x10000, RZ_INTERP_RESULT_DIMEN_BASE);
 
-	EXTRACT_RESULT(interp, 2);
+	EXTRACT_RESULT(res, 2);
 	mu_assert_eq(res->entry, 0x10000, "result entry");
 	ASSERT_BLOCK(0, 0x10000, 0x10008, true, UT64_MAX);
 	ASSERT_BLOCK(1, 0x10008, 0x1000c, false, UT64_MAX);
@@ -576,10 +597,9 @@ bool test_interp_cfg_call_multi_insn(void) {
 		"1eff2fe1"  // 0x0c  bx    lr
 	);
 	mu_assert_notnull(interp, "init");
-	bool succ = rz_interp_run(interp->inst, 0x10000);
-	mu_assert_true(succ, "run success");
+	RzInterpResult *res = rz_interp_run(interp->inst, 0x10000, RZ_INTERP_RESULT_DIMEN_BASE);
 
-	EXTRACT_RESULT(interp, 2);
+	EXTRACT_RESULT(res, 2);
 	mu_assert_eq(res->entry, 0x10000, "result entry");
 	ASSERT_BLOCK(0, 0x10000, 0x1000c, true, UT64_MAX);
 	ASSERT_BLOCK(1, 0x1000c, 0x10010, false, UT64_MAX);
@@ -589,6 +609,97 @@ bool test_interp_cfg_call_multi_insn(void) {
 	mu_assert_notnull(fcn, "analysis function");
 	mu_assert_eq(rz_pvector_len(fcn->bbs), 1, "analysis block count");
 	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 0), 0x10000, 0x10010, UT64_MAX, UT64_MAX);
+
+	interp_free(interp);
+	mu_end;
+}
+
+static int xref_cmp(const void *a, const void *b, void *user) {
+	const RzAnalysisXRef *ax = a;
+	const RzAnalysisXRef *bx = b;
+	return (st64)ax->from - (st64)bx->from; // addrs in our tests are small enough that this is fine
+}
+
+bool test_interp_xrefs(void) {
+	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://"
+		"600880d2"  // 0x00  mov   x0, 0x43
+		"a9000054"  // 0x04  b.ls  0x18      ------
+		"81000090"  // 0x08  adrp  x1, 0x20000     |
+		"230440f9"  // 0x0c  ldr   x3, [x1, 8]     |
+		"200800f9"  // 0x10  str   x0, [x1, 0x10]  |
+		"fb030094"  // 0x14  bl    0x1000          |
+		"400880d2"  // 0x18  mov   x0, 0x42  <-----
+		"c0035fd6"  // 0x1c  ret
+	);
+	mu_assert_notnull(interp, "init");
+	RzIODesc *data_desc = rz_io_open_at(interp->io, "malloc://0x100", RZ_PERM_RW, 0644, 0x20000, NULL);
+	mu_assert_notnull(data_desc, "load data");
+	RzInterpResult *res = rz_interp_run(interp->inst, 0x10000, RZ_INTERP_RESULT_DIMEN_XREFS);
+
+	EXTRACT_RESULT(res, 3);
+	mu_assert_eq(res->entry, 0x10000, "result entry");
+	ASSERT_BLOCK(0, 0x10000, 0x10008, true, 0x10018);
+	ASSERT_BLOCK(1, 0x10008, 0x10018, true, UT64_MAX);
+	ASSERT_BLOCK(2, 0x10018, 0x10020, false, UT64_MAX);
+
+	mu_assert_eq(rz_vector_len(&res->xrefs), 4, "xrefs count");
+	rz_vector_sort(&res->xrefs, xref_cmp, false, NULL);
+	ASSERT_XREF(0, 0x10004, 0x10018, RZ_ANALYSIS_XREF_TYPE_CODE);
+	ASSERT_XREF(1, 0x1000c, 0x20008, RZ_ANALYSIS_XREF_TYPE_MEM_READ);
+	ASSERT_XREF(2, 0x10010, 0x20010, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE);
+	ASSERT_XREF(3, 0x10014, 0x11000, RZ_ANALYSIS_XREF_TYPE_CALL);
+
+	rz_interp_result_apply_to_analysis(res, interp->analysis);
+	RzList *l = rz_analysis_xrefs_get_from(interp->analysis, 0x1000c);
+	mu_assert_eq(rz_list_length(l), 1, "analysis xref");
+	RzAnalysisXRef *x = rz_list_first_val(l);
+	mu_assert_eq(x->from, 0x1000c, "analysis xref from");
+	mu_assert_eq(x->to, 0x20008, "analysis xref to");
+	mu_assert_eq(x->type, RZ_ANALYSIS_XREF_TYPE_MEM_READ, "analysis xref type");
+
+	interp_free(interp);
+	mu_end;
+}
+
+bool test_interp_comments(void) {
+	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://"
+		"600880d2"  // 0x00  mov   x0, 0x43
+		"a9000054"  // 0x04  b.ls  0x18      ------
+		"81000090"  // 0x08  adrp  x1, 0x20000     |
+		"230440f9"  // 0x0c  ldr   x3, [x1, 8]     |
+		"200800f9"  // 0x10  str   x0, [x1, 0x10]  |
+		"fb030094"  // 0x14  bl    0x1000          |
+		"400880d2"  // 0x18  mov   x0, 0x42  <-----
+		"c0035fd6"  // 0x1c  ret
+	);
+	mu_assert_notnull(interp, "init");
+	RzIODesc *data_desc = rz_io_open_at(interp->io, "malloc://0x100", RZ_PERM_RW, 0644, 0x20000, NULL);
+	mu_assert_notnull(data_desc, "load data");
+	RzInterpResult *res = rz_interp_run(interp->inst, 0x10000, RZ_INTERP_RESULT_DIMEN_COMMENTS);
+
+	EXTRACT_RESULT(res, 3);
+	mu_assert_eq(res->entry, 0x10000, "result entry");
+	ASSERT_BLOCK(0, 0x10000, 0x10008, true, 0x10018);
+	ASSERT_BLOCK(1, 0x10008, 0x10018, true, UT64_MAX);
+	ASSERT_BLOCK(2, 0x10018, 0x10020, false, UT64_MAX);
+
+	mu_assert_eq(ht_up_size(res->comments), 8, "comments count");
+	mu_assert_streq(ht_up_find(res->comments, 0x10000, NULL), "⊤; <-", "comment");
+	mu_assert_streq(ht_up_find(res->comments, 0x10004, NULL), "x0 = 0x43; ->", "comment");
+	mu_assert_streq(ht_up_find(res->comments, 0x10008, NULL), "x0 = 0x43; <-", "comment");
+	mu_assert_streq(ht_up_find(res->comments, 0x1000c, NULL), "x1 = 0x20000, x0 = 0x43", "comment");
+
+	// contents from here could become different when mem is implemented
+	mu_assert_streq(ht_up_find(res->comments, 0x10010, NULL), "x1 = 0x20000, x0 = 0x43", "comment");
+	mu_assert_streq(ht_up_find(res->comments, 0x10014, NULL), "x1 = 0x20000, x0 = 0x43; ->", "comment");
+	mu_assert_streq(ht_up_find(res->comments, 0x10018, NULL), "⊤; <-", "comment");
+	mu_assert_streq(ht_up_find(res->comments, 0x10010, NULL), "x1 = 0x20000, x0 = 0x43", "comment");
+	mu_assert_streq(ht_up_find(res->comments, 0x1001c, NULL), "x0 = 0x42; ->", "comment");
+
+	rz_interp_result_apply_to_analysis(res, interp->analysis);
+
+	const char *acmt = rz_meta_get_string(interp->analysis, RZ_META_TYPE_COMMENT, 0x10008);
+	mu_assert_streq(acmt, "x0 = 0x43; <-", "analysis comment");
 
 	interp_free(interp);
 	mu_end;
@@ -615,6 +726,8 @@ bool all_tests() {
 	mu_run_test(test_interp_cfg_multi_entry_fallthrough_jmp_inside_other);
 	mu_run_test(test_interp_cfg_call);
 	mu_run_test(test_interp_cfg_call_multi_insn);
+	mu_run_test(test_interp_xrefs);
+	mu_run_test(test_interp_comments);
 	return tests_passed != tests_run;
 }
 

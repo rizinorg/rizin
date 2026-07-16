@@ -134,12 +134,14 @@ RZ_API void rz_interp_abstr_state_as_str_short(RZ_NONNULL RzInterpInstance *inst
 	bool first = true;
 	RzIterator *it = ht_up_as_iter_keys(astate->globals);
 	ut64 *k;
+	bool all_top = true;
 	rz_iterator_foreach(it, k) {
 		ut64 djb2_reg_name = *k;
 		RzInterpAbstrVal *av = ht_up_find(astate->globals, djb2_reg_name, NULL);
 		if (!av || inst->plugin->is_top(av)) {
 			continue;
 		}
+		all_top = false;
 		if (!first) {
 			rz_strbuf_append(sb, ", ");
 		}
@@ -147,6 +149,9 @@ RZ_API void rz_interp_abstr_state_as_str_short(RZ_NONNULL RzInterpInstance *inst
 		const char *varname = ht_up_find(inst->var_name_hashes, djb2_reg_name, NULL);
 		rz_strbuf_appendf(sb, "%s = ", varname);
 		inst->plugin->val_as_str(av, sb);
+	}
+	if (all_top) {
+		rz_strbuf_append(sb, STR_TOP);
 	}
 }
 
@@ -227,6 +232,23 @@ static inline bool interp_is_analyzing(RzInterpRunContext *ctx) {
 /** Whether during evaluation, new states may be discoveres */
 static inline bool interp_is_collecting_states(RzInterpRunContext *ctx) {
 	return ctx->res == NULL;
+}
+
+static void interp_add_comment(RzInterpRunContext *ctx, ut64 addr, const char *cmt) {
+	// building the commment string passed to this function is expensive, so assert that it is only called
+	// when actually requested.
+	rz_return_if_fail(interp_is_analyzing(ctx) && (ctx->res_dimen & RZ_INTERP_RESULT_DIMEN_COMMENTS));
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	char *existing = ht_up_find(ctx->res->comments, addr, NULL);
+	if (existing) {
+		rz_strbuf_appendf(&sb, "%s; ", existing);
+	}
+	rz_strbuf_append(&sb, cmt);
+	char *val = rz_strbuf_drain_nofree(&sb);
+	if (!ht_up_update(ctx->res->comments, addr, val)) {
+		free(val);
+	}
 }
 
 /////////////////////////////////////////////////////////
@@ -686,7 +708,7 @@ static void report_yield_xref(
 	ut64 from,
 	const RzInterpAbstrVal *to,
 	RzAnalysisXRefType type) {
-	if (!interp_is_analyzing(ctx)) {
+	if (!interp_is_analyzing(ctx) || !(ctx->res_dimen & RZ_INTERP_RESULT_DIMEN_XREFS)) {
 		return;
 	}
 	RzBitVector to_bv;
@@ -841,11 +863,8 @@ bool load_abstr_data(
 		return false;
 	}
 	if (!io_res.req_ok) {
-		RZ_LOG_WARN("prototype: Failed to read correct number of bytes. Requested: 0x%" PFMTSZx
-			    " Received: 0x%" PFMT32x " bits.\n",
-			n_bits, rz_bv_len(&out_bv));
 		inst->plugin->set_top(out);
-		return false;
+		return true;
 	}
 	inst->plugin->set_const_bv(out, &out_bv);
 
@@ -1341,9 +1360,9 @@ static bool eval_effect(RzInterpRunContext *ctx,
 		RzBitVector st_addr_bv;
 		rz_bv_init(&st_addr_bv, 64);
 		bool st_addr_is_const = st_addr && ctx->inst->plugin->to_concrete_const(st_addr, &st_addr_bv);
-		ctx->inst->plugin->val_free(st_addr);
 		if (!st_addr_is_const) {
 			rz_bv_fini(&st_addr_bv);
+			ctx->inst->plugin->val_free(st_addr);
 			break;
 		}
 		if (rz_bv_len(&st_addr_bv) == 64) {
@@ -1357,14 +1376,12 @@ static bool eval_effect(RzInterpRunContext *ctx,
 		}
 
 		RzILOpPure *pval = effect->code == RZ_IL_OP_STORE ? effect->op.store.value : effect->op.storew.value;
-		if (!eval_pure(ctx, pval, eval_out)) {
+		eval_out = ctx->inst->plugin->val_new_top();
+		if (!eval_out || !eval_pure(ctx, pval, eval_out)) {
 			RZ_LOG_ERROR("prototype: SUB x failed to evaluate.\n");
 			rz_bv_fini(&st_addr_bv);
+			ctx->inst->plugin->val_free(st_addr);
 			goto error;
-		}
-		if (!eval_out || !eval_pure(ctx, effect->op.branch.condition, eval_out)) {
-			rz_bv_fini(&st_addr_bv);
-			break;
 		}
 		if (value_indicates_ret_addr_write(ctx, eval_out)) {
 			ctx->call_cand.store_addr = pc;
@@ -1372,6 +1389,7 @@ static bool eval_effect(RzInterpRunContext *ctx,
 			ctx->call_cand.in_mem = true;
 		}
 		report_yield_xref(ctx, insn_pkt_size, ctx->insn_addr, st_addr, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE);
+		ctx->inst->plugin->val_free(st_addr);
 		if (!store_abstr_data(ctx->inst, mem_idx, st_addr, eval_out)) {
 			rz_bv_fini(&st_addr_bv);
 			goto error;
@@ -1412,31 +1430,26 @@ static bool eval_block(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL RzInterpBl
 			break;
 		}
 
-		RZ_LOG_DEBUG("prototype: Eval PC = 0x%" PFMT64x "\n", pc);
-		RzStrBuf sb;
-		rz_strbuf_init(&sb);
-		rz_interp_abstr_state_as_str(ctx->inst, ctx->astate, &sb);
-		RZ_LOG_DEBUG("%s\n", rz_strbuf_get(&sb));
-		rz_strbuf_fini(&sb);
-
-		rz_strbuf_init(&sb);
-		if (pc == il_block->addr) {
-			rz_strbuf_append(&sb, "ENTRY ");
-		}
-		if (rz_vector_index_ptr(&il_block->il_ops->v, rz_pvector_len(il_block->il_ops) - 1) == it) {
-			rz_strbuf_append(&sb, "EXIT ");
-		}
-		rz_interp_abstr_state_as_str_short(ctx->inst, ctx->astate, &sb);
-		rz_meta_set_string(ctx->inst->a, RZ_META_TYPE_COMMENT, pc, rz_strbuf_get(&sb));
-		rz_strbuf_fini(&sb);
-
 		RzILCacheInsnPkt *pkt = *it;
-
 		ctx->insn_addr = pc;
 
 		// Prepare next pc, the evalutation may overwrite this.
 		ut64 next_pc = pc + pkt->insn_pkt_size;
 		rz_interp_abstr_state_set_pc_const(ctx->astate, next_pc);
+
+		if (interp_is_analyzing(ctx) && (ctx->res_dimen & RZ_INTERP_RESULT_DIMEN_COMMENTS)) {
+			RzStrBuf sb;
+			rz_strbuf_init(&sb);
+			rz_interp_abstr_state_as_str_short(ctx->inst, ctx->astate, &sb);
+			interp_add_comment(ctx, ctx->insn_addr, rz_strbuf_get(&sb));
+			rz_strbuf_fini(&sb);
+			if (pc == il_block->addr) {
+				interp_add_comment(ctx, ctx->insn_addr, "<-");
+			}
+			if (rz_vector_index_ptr(&il_block->il_ops->v, rz_pvector_len(il_block->il_ops) - 1) == it) {
+				interp_add_comment(ctx, ctx->insn_addr, "->");
+			}
+		}
 
 		if (!eval_effect(ctx, pkt->effect, pkt->insn_pkt_size)) {
 			return false;
@@ -1484,14 +1497,14 @@ RZ_API void rz_interp_run_context_fini(RzInterpRunContext *ctx) {
 /**
  * \brief Run the interpreter from a single entrypoint until a fixpoint is reached
  */
-RZ_API bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
-	rz_return_val_if_fail(inst, false);
+RZ_API RzInterpResult *rz_interp_run(RzInterpInstance *inst, ut64 entry_point, RzInterpResultDimen dimen) {
+	rz_return_val_if_fail(inst, NULL);
 
 	// Initialization
-	bool success = false;
-	RzInterpRunContext ctx;
+	RzInterpResult *res = NULL;
+	RzInterpRunContext ctx = { 0 };
 	if (!rz_interp_run_context_init(&ctx, inst)) {
-		return false;
+		return NULL;
 	}
 
 	// Prepare the initial state from the given entry point
@@ -1511,7 +1524,6 @@ RZ_API bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 		RzInterpBlock *interp_block = rz_interp_run_pop(&ctx);
 		if (!interp_block) {
 			// No uninterpreted states left, fixpoint reached.
-			success = true;
 			break;
 		}
 		ctx.astate = rz_interp_abstr_state_clone(inst, interp_block->entry_state);
@@ -1525,64 +1537,61 @@ RZ_API bool rz_interp_run(RzInterpInstance *inst, ut64 entry_point) {
 
 		rz_interp_block_resolve_bounds(&ctx, interp_block, il_block);
 
-		// DEBUG comments
-		RzStrBuf sb;
-		rz_strbuf_init(&sb);
-		const char *old_cmt = rz_meta_get_string(inst->a, RZ_META_TYPE_COMMENT, il_block->addr);
-		if (old_cmt) {
-			rz_strbuf_appendf(&sb, "%s; ", old_cmt);
-		}
-		rz_strbuf_append(&sb, "ENTRY ");
-		rz_interp_abstr_state_as_str_short(inst, ctx.astate, &sb);
-		// rz_meta_set_string(iset->a, RZ_META_TYPE_COMMENT, il_bb->addr, rz_strbuf_get(&sb));
-		rz_strbuf_fini(&sb);
 		// Evaluate the effect on the abstract state.
 		if (!eval_block(&ctx, interp_block, il_block)) {
 			// TODO: should this even be able to fail at all?
 			RZ_LOG_ERROR("interpreter: Eval failed\n");
-			success = false;
 			goto cleanup;
 		}
 	}
 
-	// Fixpoint reached, evaluate all blocks again once to collect analysis information.
-	// We do this in an additional pass because until now, the collected abstract states
-	// did not fully represent all reachable concrete states.
-
-	ctx.res = RZ_NEW0(RzInterpResult);
-	if (!ctx.res) {
-		success = false;
+	// Fixpoint reached, collect results.
+	res = RZ_NEW0(RzInterpResult);
+	if (!res) {
 		goto cleanup;
 	}
-	ctx.res->entry = entry_point;
-	rz_vector_init(&ctx.res->xrefs, sizeof(RzAnalysisXRef), NULL, NULL);
+	res->entry = entry_point;
 
-	RzIntervalTreeIter it;
-	RzInterpBlock *interp_block;
-	rz_interval_tree_foreach (&ctx.blocks, it, interp_block) {
-		ctx.astate = rz_interp_abstr_state_clone(inst, interp_block->entry_state);
-		const RzILCacheBlock *il_block = rz_il_cache_client_lift_il_block(inst->il_cache_client, ctx.astate->pc);
-		if (!il_block) {
-			RZ_LOG_ERROR("interpreter: Lifting failed\n");
-			// TODO: handle this better
-			break;
+	if (dimen != RZ_INTERP_RESULT_DIMEN_BASE) {
+		// Evaluate all blocks again once to collect analysis information.
+		// We do this in an additional pass because until now, the collected abstract states
+		// did not fully represent all reachable concrete states.
+		if (dimen & RZ_INTERP_RESULT_DIMEN_XREFS) {
+			rz_vector_init(&res->xrefs, sizeof(RzAnalysisXRef), NULL, NULL);
 		}
-		if (!eval_block(&ctx, interp_block, il_block)) {
-			// TODO: should this even be able to fail at all?
-			RZ_LOG_ERROR("interpreter: Eval failed\n");
-			success = false;
-			break;
+		if (dimen & RZ_INTERP_RESULT_DIMEN_COMMENTS) {
+			res->comments = ht_up_new(NULL, free);
+			if (!res->comments) {
+				free(res);
+				goto cleanup;
+			}
+		}
+		ctx.res = res;
+		ctx.res_dimen = dimen;
+		RzIntervalTreeIter it;
+		RzInterpBlock *interp_block;
+		rz_interval_tree_foreach (&ctx.blocks, it, interp_block) {
+			ctx.astate = rz_interp_abstr_state_clone(inst, interp_block->entry_state);
+			const RzILCacheBlock *il_block = rz_il_cache_client_lift_il_block(inst->il_cache_client, ctx.astate->pc);
+			if (!il_block) {
+				RZ_LOG_ERROR("interpreter: Lifting failed\n");
+				// TODO: handle this better
+				break;
+			}
+			if (!eval_block(&ctx, interp_block, il_block)) {
+				// TODO: should this even be able to fail at all?
+				RZ_LOG_ERROR("interpreter: Eval failed\n");
+				break;
+			}
 		}
 	}
 
-	memmove(&ctx.res->blocks, &ctx.blocks, sizeof(ctx.blocks));
+	memmove(&res->blocks, &ctx.blocks, sizeof(ctx.blocks));
 	memset(&ctx.blocks, 0, sizeof(ctx.blocks));
-	rz_pvector_push(&inst->results, ctx.res);
-	ctx.res = NULL;
 
 cleanup:
 	rz_interp_run_context_fini(&ctx);
-	return success;
+	return res;
 }
 
 /**
@@ -1616,7 +1625,11 @@ RZ_API bool rz_interp_instance_th(RZ_NONNULL RZ_OWN RzInterpInstance *inst) {
 		RZ_LOG_DEBUG("interpreter: Enter EMU\n");
 		rz_interp_run_state_set(inst->run_state, RZ_INTERP_RUN_STATE_EMU);
 
-		if (!rz_interp_run(inst, entry_point)) {
+		RzInterpResult *res = rz_interp_run(inst, entry_point, RZ_INTERP_RESULT_DIMEN_XREFS | RZ_INTERP_RESULT_DIMEN_COMMENTS); // TODO: make dimensions configurable
+		if (res) {
+			// TODO: use some sort of channel for delivering results
+			rz_pvector_push(&inst->results, res);
+		} else {
 			RZ_LOG_ERROR("Interpreter run failed for entry point 0x%" PFMT64x "\n", entry_point);
 		}
 
@@ -1706,10 +1719,25 @@ RZ_API void rz_interp_result_apply_to_analysis(RZ_NONNULL RzInterpResult *res, R
 		}
 	}
 
+	// Hint: Some of the xrefs, specifically code and call ones, could be determined from
+	// the information in blocks as well. So an optimization could be to make the interpreter
+	// only emit explicit xref info for all remaining events, e.g. mem read/write.
 	RzAnalysisXRef *xref;
 	rz_vector_foreach (&res->xrefs, xref) {
 		if (!rz_analysis_xrefs_set(analysis, xref->from, xref->to, xref->type)) {
 			RZ_LOG_ERROR("failed to set xref\n");
 		}
+	}
+
+	if (res->comments) {
+		RzIterator *it = ht_up_as_iter_keys(res->comments);
+		ut64 *k;
+		rz_iterator_foreach(it, k) {
+			const char *cmt = ht_up_find(res->comments, *k, NULL);
+			if (cmt) {
+				rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, *k, cmt);
+			}
+		}
+		rz_iterator_free(it);
 	}
 }
