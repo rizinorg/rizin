@@ -215,6 +215,22 @@ else
   add_project_arguments(['-DUSE_SYS_CAPSTONE'], language: 'c')
 endif
 
+has_capstone_alpha_uppercase_insns = cc.compiles('''
+#include <capstone/capstone.h>
+#include <capstone/alpha.h>
+int main(void) {
+	alpha_insn insn = ALPHA_INS_INVALID;
+	return insn == ALPHA_INS_INVALID;
+}
+''',
+  dependencies: capstone_check_deps,
+  include_directories: capstone_check_includes,
+  name: 'Capstone has uppercase Alpha instruction IDs'
+)
+if has_capstone_alpha_uppercase_insns
+  add_project_arguments(['-DRZ_CAPSTONE_ALPHA_INSNS_UPPERCASE'], language: 'c')
+endif
+
 has_capstone_m68k_cpu32 = cc.compiles('''
 #include <capstone/capstone.h>
 int main(void) {

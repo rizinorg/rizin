@@ -11,6 +11,12 @@
 
 #include <alpha/alpha.inc>
 
+#ifdef RZ_CAPSTONE_ALPHA_INSNS_UPPERCASE
+#define RZ_ALPHA_INS(name) ALPHA_INS_##name
+#else
+#define RZ_ALPHA_INS(name) Alpha_INS_##name
+#endif
+
 static char *get_reg_profile(RzAnalysis *_) {
 	const char *p =
 		"=PC	r31\n"
@@ -197,198 +203,198 @@ static void alpha_op_set_type(RzAsmAlphaContext *ctx, RzAnalysisOp *op) {
 		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 		break;
 	}
-	case Alpha_INS_BEQ:
-	case Alpha_INS_BGE:
-	case Alpha_INS_BGT:
-	case Alpha_INS_BLBC:
-	case Alpha_INS_BLBS:
-	case Alpha_INS_BLE:
-	case Alpha_INS_BLT:
-	case Alpha_INS_BNE:
+	case RZ_ALPHA_INS(BEQ):
+	case RZ_ALPHA_INS(BGE):
+	case RZ_ALPHA_INS(BGT):
+	case RZ_ALPHA_INS(BLBC):
+	case RZ_ALPHA_INS(BLBS):
+	case RZ_ALPHA_INS(BLE):
+	case RZ_ALPHA_INS(BLT):
+	case RZ_ALPHA_INS(BNE):
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->jump = alpha_calc_64bit_jump(op->addr, ctx, 1);
 		op->fail = op->addr + op->size;
 		break;
-	case Alpha_INS_BR:
+	case RZ_ALPHA_INS(BR):
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		op->jump = alpha_calc_64bit_jump(op->addr, ctx, 0);
 		break;
-	case Alpha_INS_BSR:
+	case RZ_ALPHA_INS(BSR):
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		op->jump = alpha_calc_64bit_jump(op->addr, ctx, 0);
 		op->fail = op->addr + op->size;
 		break;
-	case Alpha_INS_RET:
+	case RZ_ALPHA_INS(RET):
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		op->stackop = RZ_ANALYSIS_STACK_GET;
 		op->stackptr = 8;
 		op->fail = op->addr + op->size;
 		break;
-	case Alpha_INS_JMP:
+	case RZ_ALPHA_INS(JMP):
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		op->jump = op->addr + 4;
 		op->fail = op->addr + op->size;
 		break;
-	case Alpha_INS_JSR:
+	case RZ_ALPHA_INS(JSR):
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		op->stackop = RZ_ANALYSIS_STACK_SET;
 		op->jump = op->addr + 4;
 		op->stackptr = 8;
 		op->fail = UT64_MAX;
 		break;
-	case Alpha_INS_JSR_COROUTINE:
+	case RZ_ALPHA_INS(JSR_COROUTINE):
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		// This one is a weird one, pops from stack then pushes PC
 		op->stackop = RZ_ANALYSIS_STACK_GET;
 		op->fail = op->addr + op->size;
 		break;
-	case Alpha_INS_LDA:
-	case Alpha_INS_LDAH:
+	case RZ_ALPHA_INS(LDA):
+	case RZ_ALPHA_INS(LDAH):
 		op->type = RZ_ANALYSIS_OP_TYPE_LEA;
 		break;
-	case Alpha_INS_LDBU:
-	case Alpha_INS_LDL:
-	case Alpha_INS_LDL_L:
-	case Alpha_INS_LDQ:
-	case Alpha_INS_LDQ_L:
-	case Alpha_INS_LDQ_U:
-	case Alpha_INS_LDS:
-	case Alpha_INS_LDT:
-	case Alpha_INS_LDWU:
+	case RZ_ALPHA_INS(LDBU):
+	case RZ_ALPHA_INS(LDL):
+	case RZ_ALPHA_INS(LDL_L):
+	case RZ_ALPHA_INS(LDQ):
+	case RZ_ALPHA_INS(LDQ_L):
+	case RZ_ALPHA_INS(LDQ_U):
+	case RZ_ALPHA_INS(LDS):
+	case RZ_ALPHA_INS(LDT):
+	case RZ_ALPHA_INS(LDWU):
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		break;
 
-	case Alpha_INS_STB:
-	case Alpha_INS_STL:
-	case Alpha_INS_STL_C:
-	case Alpha_INS_STQ:
-	case Alpha_INS_STQ_C:
-	case Alpha_INS_STQ_U:
-	case Alpha_INS_STW:
+	case RZ_ALPHA_INS(STB):
+	case RZ_ALPHA_INS(STL):
+	case RZ_ALPHA_INS(STL_C):
+	case RZ_ALPHA_INS(STQ):
+	case RZ_ALPHA_INS(STQ_C):
+	case RZ_ALPHA_INS(STQ_U):
+	case RZ_ALPHA_INS(STW):
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		break;
 
-	case Alpha_INS_XOR:
+	case RZ_ALPHA_INS(XOR):
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 		break;
 
-	case Alpha_INS_ADDL:
-	case Alpha_INS_ADDQ:
-	case Alpha_INS_ADDSsSU:
-	case Alpha_INS_ADDTsSU:
-	case Alpha_INS_AND:
-	case Alpha_INS_BIC:
-	case Alpha_INS_BIS:
-	case Alpha_INS_CMOVEQ:
-	case Alpha_INS_CMOVGE:
-	case Alpha_INS_CMOVGT:
-	case Alpha_INS_CMOVLBC:
-	case Alpha_INS_CMOVLBS:
-	case Alpha_INS_CMOVLE:
-	case Alpha_INS_CMOVLT:
-	case Alpha_INS_CMOVNE:
-	case Alpha_INS_CMPBGE:
-	case Alpha_INS_CMPEQ:
-	case Alpha_INS_CMPLE:
-	case Alpha_INS_CMPLT:
-	case Alpha_INS_CMPTEQsSU:
-	case Alpha_INS_CMPTLEsSU:
-	case Alpha_INS_CMPTLTsSU:
-	case Alpha_INS_CMPTUNsSU:
-	case Alpha_INS_CMPULE:
-	case Alpha_INS_CMPULT:
-	case Alpha_INS_COND_BRANCH:
-	case Alpha_INS_CPYSE:
-	case Alpha_INS_CPYSN:
-	case Alpha_INS_CPYS:
-	case Alpha_INS_CTLZ:
-	case Alpha_INS_CTPOP:
-	case Alpha_INS_CTTZ:
-	case Alpha_INS_CVTQSsSUI:
-	case Alpha_INS_CVTQTsSUI:
-	case Alpha_INS_CVTSTsS:
-	case Alpha_INS_CVTTQsSVC:
-	case Alpha_INS_CVTTSsSUI:
-	case Alpha_INS_DIVSsSU:
-	case Alpha_INS_DIVTsSU:
-	case Alpha_INS_ECB:
-	case Alpha_INS_EQV:
-	case Alpha_INS_EXCB:
-	case Alpha_INS_EXTBL:
-	case Alpha_INS_EXTLH:
-	case Alpha_INS_EXTLL:
-	case Alpha_INS_EXTQH:
-	case Alpha_INS_EXTQL:
-	case Alpha_INS_EXTWH:
-	case Alpha_INS_EXTWL:
-	case Alpha_INS_FBEQ:
-	case Alpha_INS_FBGE:
-	case Alpha_INS_FBGT:
-	case Alpha_INS_FBLE:
-	case Alpha_INS_FBLT:
-	case Alpha_INS_FBNE:
-	case Alpha_INS_FCMOVEQ:
-	case Alpha_INS_FCMOVGE:
-	case Alpha_INS_FCMOVGT:
-	case Alpha_INS_FCMOVLE:
-	case Alpha_INS_FCMOVLT:
-	case Alpha_INS_FCMOVNE:
-	case Alpha_INS_FETCH:
-	case Alpha_INS_FETCH_M:
-	case Alpha_INS_FTOIS:
-	case Alpha_INS_FTOIT:
-	case Alpha_INS_INSBL:
-	case Alpha_INS_INSLH:
-	case Alpha_INS_INSLL:
-	case Alpha_INS_INSQH:
-	case Alpha_INS_INSQL:
-	case Alpha_INS_INSWH:
-	case Alpha_INS_INSWL:
-	case Alpha_INS_ITOFS:
-	case Alpha_INS_ITOFT:
-	case Alpha_INS_MB:
-	case Alpha_INS_MSKBL:
-	case Alpha_INS_MSKLH:
-	case Alpha_INS_MSKLL:
-	case Alpha_INS_MSKQH:
-	case Alpha_INS_MSKQL:
-	case Alpha_INS_MSKWH:
-	case Alpha_INS_MSKWL:
-	case Alpha_INS_MULL:
-	case Alpha_INS_MULQ:
-	case Alpha_INS_MULSsSU:
-	case Alpha_INS_MULTsSU:
-	case Alpha_INS_ORNOT:
-	case Alpha_INS_RC:
-	case Alpha_INS_RPCC:
-	case Alpha_INS_RS:
-	case Alpha_INS_S4ADDL:
-	case Alpha_INS_S4ADDQ:
-	case Alpha_INS_S4SUBL:
-	case Alpha_INS_S4SUBQ:
-	case Alpha_INS_S8ADDL:
-	case Alpha_INS_S8ADDQ:
-	case Alpha_INS_S8SUBL:
-	case Alpha_INS_S8SUBQ:
-	case Alpha_INS_SEXTB:
-	case Alpha_INS_SEXTW:
-	case Alpha_INS_SLL:
-	case Alpha_INS_SQRTSsSU:
-	case Alpha_INS_SQRTTsSU:
-	case Alpha_INS_SRA:
-	case Alpha_INS_SRL:
-	case Alpha_INS_STS:
-	case Alpha_INS_STT:
-	case Alpha_INS_SUBL:
-	case Alpha_INS_SUBQ:
-	case Alpha_INS_SUBSsSU:
-	case Alpha_INS_SUBTsSU:
-	case Alpha_INS_TRAPB:
-	case Alpha_INS_UMULH:
-	case Alpha_INS_WH64:
-	case Alpha_INS_WH64EN:
-	case Alpha_INS_WMB:
-	case Alpha_INS_ZAPNOT:
+	case RZ_ALPHA_INS(ADDL):
+	case RZ_ALPHA_INS(ADDQ):
+	case RZ_ALPHA_INS(ADDSsSU):
+	case RZ_ALPHA_INS(ADDTsSU):
+	case RZ_ALPHA_INS(AND):
+	case RZ_ALPHA_INS(BIC):
+	case RZ_ALPHA_INS(BIS):
+	case RZ_ALPHA_INS(CMOVEQ):
+	case RZ_ALPHA_INS(CMOVGE):
+	case RZ_ALPHA_INS(CMOVGT):
+	case RZ_ALPHA_INS(CMOVLBC):
+	case RZ_ALPHA_INS(CMOVLBS):
+	case RZ_ALPHA_INS(CMOVLE):
+	case RZ_ALPHA_INS(CMOVLT):
+	case RZ_ALPHA_INS(CMOVNE):
+	case RZ_ALPHA_INS(CMPBGE):
+	case RZ_ALPHA_INS(CMPEQ):
+	case RZ_ALPHA_INS(CMPLE):
+	case RZ_ALPHA_INS(CMPLT):
+	case RZ_ALPHA_INS(CMPTEQsSU):
+	case RZ_ALPHA_INS(CMPTLEsSU):
+	case RZ_ALPHA_INS(CMPTLTsSU):
+	case RZ_ALPHA_INS(CMPTUNsSU):
+	case RZ_ALPHA_INS(CMPULE):
+	case RZ_ALPHA_INS(CMPULT):
+	case RZ_ALPHA_INS(COND_BRANCH):
+	case RZ_ALPHA_INS(CPYSE):
+	case RZ_ALPHA_INS(CPYSN):
+	case RZ_ALPHA_INS(CPYS):
+	case RZ_ALPHA_INS(CTLZ):
+	case RZ_ALPHA_INS(CTPOP):
+	case RZ_ALPHA_INS(CTTZ):
+	case RZ_ALPHA_INS(CVTQSsSUI):
+	case RZ_ALPHA_INS(CVTQTsSUI):
+	case RZ_ALPHA_INS(CVTSTsS):
+	case RZ_ALPHA_INS(CVTTQsSVC):
+	case RZ_ALPHA_INS(CVTTSsSUI):
+	case RZ_ALPHA_INS(DIVSsSU):
+	case RZ_ALPHA_INS(DIVTsSU):
+	case RZ_ALPHA_INS(ECB):
+	case RZ_ALPHA_INS(EQV):
+	case RZ_ALPHA_INS(EXCB):
+	case RZ_ALPHA_INS(EXTBL):
+	case RZ_ALPHA_INS(EXTLH):
+	case RZ_ALPHA_INS(EXTLL):
+	case RZ_ALPHA_INS(EXTQH):
+	case RZ_ALPHA_INS(EXTQL):
+	case RZ_ALPHA_INS(EXTWH):
+	case RZ_ALPHA_INS(EXTWL):
+	case RZ_ALPHA_INS(FBEQ):
+	case RZ_ALPHA_INS(FBGE):
+	case RZ_ALPHA_INS(FBGT):
+	case RZ_ALPHA_INS(FBLE):
+	case RZ_ALPHA_INS(FBLT):
+	case RZ_ALPHA_INS(FBNE):
+	case RZ_ALPHA_INS(FCMOVEQ):
+	case RZ_ALPHA_INS(FCMOVGE):
+	case RZ_ALPHA_INS(FCMOVGT):
+	case RZ_ALPHA_INS(FCMOVLE):
+	case RZ_ALPHA_INS(FCMOVLT):
+	case RZ_ALPHA_INS(FCMOVNE):
+	case RZ_ALPHA_INS(FETCH):
+	case RZ_ALPHA_INS(FETCH_M):
+	case RZ_ALPHA_INS(FTOIS):
+	case RZ_ALPHA_INS(FTOIT):
+	case RZ_ALPHA_INS(INSBL):
+	case RZ_ALPHA_INS(INSLH):
+	case RZ_ALPHA_INS(INSLL):
+	case RZ_ALPHA_INS(INSQH):
+	case RZ_ALPHA_INS(INSQL):
+	case RZ_ALPHA_INS(INSWH):
+	case RZ_ALPHA_INS(INSWL):
+	case RZ_ALPHA_INS(ITOFS):
+	case RZ_ALPHA_INS(ITOFT):
+	case RZ_ALPHA_INS(MB):
+	case RZ_ALPHA_INS(MSKBL):
+	case RZ_ALPHA_INS(MSKLH):
+	case RZ_ALPHA_INS(MSKLL):
+	case RZ_ALPHA_INS(MSKQH):
+	case RZ_ALPHA_INS(MSKQL):
+	case RZ_ALPHA_INS(MSKWH):
+	case RZ_ALPHA_INS(MSKWL):
+	case RZ_ALPHA_INS(MULL):
+	case RZ_ALPHA_INS(MULQ):
+	case RZ_ALPHA_INS(MULSsSU):
+	case RZ_ALPHA_INS(MULTsSU):
+	case RZ_ALPHA_INS(ORNOT):
+	case RZ_ALPHA_INS(RC):
+	case RZ_ALPHA_INS(RPCC):
+	case RZ_ALPHA_INS(RS):
+	case RZ_ALPHA_INS(S4ADDL):
+	case RZ_ALPHA_INS(S4ADDQ):
+	case RZ_ALPHA_INS(S4SUBL):
+	case RZ_ALPHA_INS(S4SUBQ):
+	case RZ_ALPHA_INS(S8ADDL):
+	case RZ_ALPHA_INS(S8ADDQ):
+	case RZ_ALPHA_INS(S8SUBL):
+	case RZ_ALPHA_INS(S8SUBQ):
+	case RZ_ALPHA_INS(SEXTB):
+	case RZ_ALPHA_INS(SEXTW):
+	case RZ_ALPHA_INS(SLL):
+	case RZ_ALPHA_INS(SQRTSsSU):
+	case RZ_ALPHA_INS(SQRTTsSU):
+	case RZ_ALPHA_INS(SRA):
+	case RZ_ALPHA_INS(SRL):
+	case RZ_ALPHA_INS(STS):
+	case RZ_ALPHA_INS(STT):
+	case RZ_ALPHA_INS(SUBL):
+	case RZ_ALPHA_INS(SUBQ):
+	case RZ_ALPHA_INS(SUBSsSU):
+	case RZ_ALPHA_INS(SUBTsSU):
+	case RZ_ALPHA_INS(TRAPB):
+	case RZ_ALPHA_INS(UMULH):
+	case RZ_ALPHA_INS(WH64):
+	case RZ_ALPHA_INS(WH64EN):
+	case RZ_ALPHA_INS(WMB):
+	case RZ_ALPHA_INS(ZAPNOT):
 		break;
 	}
 }

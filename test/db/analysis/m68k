@@ -1403,7 +1403,7 @@ e asm.arch=m68k
 e asm.bits=32
 e asm.cpu=cfv4e
 e asm.lines=false
-wx f2004000f2006000f23c44803f800000f23c5480400921fb54442d18f2105000f2106400f210c003f210e003f2800000f2800010f2c000000010f24800000010f2500000f27c0000f27a00001234f27b000012345678f200053af2000522f2000a28f2000523f2000520f2000521f2000525f2000538f2000518f200051af2000501f2000503f310f350f200051d
+wx f2004000f2006000f23c44803f800000f23c5480400921fb54442d18f2105000f2106400f210d003f210f003f2800000f2800010f2c000000010f24800000010f2500000f27c0000f27a00001234f27b000012345678f200053af2000522f2000a28f2000523f2000520f2000521f2000525f2000538f2000518f200051af2000501f2000503f310f350f200051d
 pdj 31~{}
 EOF
 EXPECT=<<EOF
@@ -1511,9 +1511,9 @@ EXPECT=<<EOF
     "fcn_addr": 0,
     "fcn_last": 0,
     "size": 4,
-    "opcode": "fmovem (a0), fp0-fp1",
-    "disasm": "fmovem (a0), fp0-fp1",
-    "bytes": "f210c003",
+    "opcode": "fmovem (a0), fp6-fp7",
+    "disasm": "fmovem (a0), fp6-fp7",
+    "bytes": "f210d003",
     "family": "fpu",
     "type": "load",
     "reloc": false,
@@ -1527,9 +1527,9 @@ EXPECT=<<EOF
     "fcn_addr": 0,
     "fcn_last": 0,
     "size": 4,
-    "opcode": "fmovem fp0-fp1, (a0)",
-    "disasm": "fmovem fp0-fp1, (a0)",
-    "bytes": "f210e003",
+    "opcode": "fmovem fp6-fp7, (a0)",
+    "disasm": "fmovem fp6-fp7, (a0)",
+    "bytes": "f210f003",
     "family": "fpu",
     "type": "store",
     "reloc": false,
@@ -1661,8 +1661,8 @@ EXPECT=<<EOF
     "fcn_addr": 0,
     "fcn_last": 0,
     "size": 8,
-    "opcode": "ftrapf.w 0x12345678",
-    "disasm": "ftrapf.w 0x12345678",
+    "opcode": "ftrapf.l 0x12345678",
+    "disasm": "ftrapf.l 0x12345678",
     "bytes": "f27b000012345678",
     "family": "fpu",
     "type": "trap",
