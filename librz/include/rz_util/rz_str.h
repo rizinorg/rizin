@@ -13,8 +13,6 @@
 extern "C" {
 #endif
 
-typedef struct ht_sp_t RzSetS;
-
 typedef enum {
 	RZ_STRING_TYPE_RAW, ///< The raw sequence of bytes without any marker of beginning or end
 	RZ_STRING_TYPE_ZERO, ///< C-style strings (ASCII or UTF-8) with zero as the end marker
@@ -122,7 +120,6 @@ RZ_API size_t rz_str_split(char *str, char ch);
 RZ_API RzList /*<char *>*/ *rz_str_split_list(char *str, const char *c, int n);
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_list_regex(RZ_NONNULL char *str, RZ_NONNULL const char *r, int n);
 RZ_API RzList /*<char *>*/ *rz_str_split_duplist(const char *str, const char *c, bool trim);
-RZ_API RZ_OWN RzSetS *rz_str_split_dupset(RZ_NONNULL const char *_str, RZ_NONNULL const char *c, bool trim);
 RZ_API RzList /*<char *>*/ *rz_str_split_duplist_n(const char *str, const char *c, int n, bool trim);
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_duplist_n_regex(RZ_NONNULL const char *_str, RZ_NONNULL const char *r, int n, bool trim);
 RZ_API size_t *rz_str_split_lines(char *str, size_t *count);

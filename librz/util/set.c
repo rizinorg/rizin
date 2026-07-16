@@ -4,6 +4,8 @@
 
 #include <rz_util/rz_set.h>
 #include <rz_util/rz_assert.h>
+#include <rz_util/rz_str.h>
+#include <rz_list.h>
 
 /**
  * \brief Create a new hash set with C-string as elements.
@@ -11,6 +13,37 @@
  */
 RZ_API RZ_OWN RzSetS *rz_set_s_new(HtStrOption opt) {
 	return ht_sp_new(opt, NULL, NULL);
+}
+
+/**
+ * \brief Split the string \p str according to the substring \p c and returns a \p RzSetS with the result.
+ *
+ * Split a string \p str according to the delimiter specified in \p c. It can
+ * optionally trim (aka remove spaces) the tokens. The result is a \p RzSetS with newly allocated strings for each
+ * token.
+ *
+ * \param _str Input string to split
+ * \param c Delimiter string used to split \p str
+ * \param trim If true each token is considered without trailing/leading whitespaces.
+ */
+RZ_API RZ_OWN RzSetS *rz_str_split_dupset(RZ_NONNULL const char *_str, RZ_NONNULL const char *c, bool trim) {
+	rz_return_val_if_fail(_str && c, NULL);
+	RzList *list = rz_str_split_duplist(_str, c, trim);
+	if (!list) {
+		return NULL;
+	}
+	RzSetS *set = rz_set_s_new(HT_STR_DUP);
+	if (!set) {
+		rz_list_free(list);
+		return NULL;
+	}
+	RzListIter *it;
+	const char *val;
+	rz_list_foreach (list, it, val) {
+		rz_set_s_add(set, val);
+	}
+	rz_list_free(list);
+	return set;
 }
 
 /**
