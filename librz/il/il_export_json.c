@@ -182,7 +182,7 @@ static void il_opdmp_bool_xor(RzILOpPure *op, PJ *pj) {
 }
 
 static void il_opdmp_bitv(RzILOpPure *op, PJ *pj) {
-	RzILOpArgsBv *opx = &op->op.bitv;
+	RzILOpArgsBV *opx = &op->op.bitv;
 	char *num = rz_bv_as_hex_string(opx->value, false);
 	pj_o(pj);
 	pj_ks(pj, "opcode", "bitv");
@@ -357,7 +357,7 @@ static void il_opdmp_fcast_sint(RzILOpPure *op, PJ *pj) {
 }
 
 static void il_opdmp_fcast_float(RzILOpPure *op, PJ *pj) {
-	RzILOpArgsFCastfloat *opx = &op->op.fcast_float;
+	RzILOpArgsFCastUFloat *opx = &op->op.fcast_float;
 	pj_o(pj);
 	pj_ks(pj, "opcode", "fcast_float");
 	pj_ks(pj, "format", rz_il_float_stringify_format(opx->format));
@@ -368,7 +368,7 @@ static void il_opdmp_fcast_float(RzILOpPure *op, PJ *pj) {
 }
 
 static void il_opdmp_fcast_sfloat(RzILOpPure *op, PJ *pj) {
-	RzILOpArgsFCastsfloat *opx = &op->op.fcast_sfloat;
+	RzILOpArgsFCastSFloat *opx = &op->op.fcast_sfloat;
 	pj_o(pj);
 	pj_ks(pj, "opcode", "fcast_sfloat");
 	pj_ks(pj, "format", rz_il_float_stringify_format(opx->format));

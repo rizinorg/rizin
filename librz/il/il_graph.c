@@ -137,7 +137,7 @@ static void il_op_graph_bool_xor(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, N
 }
 
 static void il_op_graph_bitv(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
-	RzILOpArgsBv *opx = &op->op.bitv;
+	RzILOpArgsBV *opx = &op->op.bitv;
 	char *num = rz_bv_as_hex_string(opx->value, false);
 	il_op_graph_add_edge_f(g, from, "bv: %u %s", opx->value->len, num);
 	free(num);
@@ -303,7 +303,7 @@ static void il_op_graph_fcast_sint(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *,
 }
 
 static void il_op_graph_fcast_float(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
-	RzILOpArgsFCastfloat *opx = &op->op.fcast_float;
+	RzILOpArgsFCastUFloat *opx = &op->op.fcast_float;
 	const char *format_str = rz_il_float_stringify_format(opx->format);
 	const char *rmode_str = rz_il_float_stringify_rmode(opx->mode);
 	char *value = rz_str_newf("fcast_float: %s %s", format_str, rmode_str);
@@ -314,7 +314,7 @@ static void il_op_graph_fcast_float(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *
 }
 
 static void il_op_graph_fcast_sfloat(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
-	RzILOpArgsFCastsfloat *opx = &op->op.fcast_sfloat;
+	RzILOpArgsFCastSFloat *opx = &op->op.fcast_sfloat;
 	const char *format_str = rz_il_float_stringify_format(opx->format);
 	const char *rmode_str = rz_il_float_stringify_rmode(opx->mode);
 	char *value = rz_str_newf("fcast_sfloat: %s %s", format_str, rmode_str);

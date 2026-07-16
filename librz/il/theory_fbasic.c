@@ -200,7 +200,7 @@ void *rz_il_handler_fcast_sint(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 void *rz_il_handler_fcast_float(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
-	RzILOpArgsFCastfloat cast = op->op.fcast_float;
+	RzILOpArgsFCastUFloat cast = op->op.fcast_float;
 	RzBitVector *bv = rz_il_evaluate_bitv(vm, cast.bv);
 	RzFloatFormat format = cast.format;
 	RzFloatRMode mode = cast.mode;
@@ -215,7 +215,7 @@ void *rz_il_handler_fcast_float(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) 
 void *rz_il_handler_fcast_sfloat(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
-	RzILOpArgsFCastsfloat cast = op->op.fcast_sfloat;
+	RzILOpArgsFCastSFloat cast = op->op.fcast_sfloat;
 	RzBitVector *bv = rz_il_evaluate_bitv(vm, cast.bv);
 	RzFloatFormat format = cast.format;
 	RzFloatRMode mode = cast.mode;
