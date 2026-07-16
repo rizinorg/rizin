@@ -30,10 +30,18 @@ extern "C" {
  *           o       o        o        o       o
  *         Init    RzILBool     Bitv    Memory   Effect
  *
- * See also the references :
+ * See also the references:
  * 0. A gentle introduction to core theory http://binaryanalysisplatform.github.io/bap/api/odoc/bap-core-theory/Bap_core_theory/index.html
  * 1. http://binaryanalysisplatform.github.io/bap/api/odoc/bap-core-theory/Bap_core_theory/Theory/index.html
  * 2. For core and array theories https://smtlib.cs.uiowa.edu/theories.shtml
+ *
+ * Note about the intended usage of the operand structs:
+ * Many operations share the same operand structure, e.g. (add x y) and (sub x y).
+ * The C struct for the operands of both ops will thus be RzILOpArgsBinopBV, but there are also per-op typedefs
+ * like `RzILOpArgsAdd` and `RzILOpArgsSub`.
+ * The op-specific ones can be used when the opcode is known to be exactly that to avoid type confusion mistakes,
+ * but when reasoning about operands of possibly different opcodes but with the same structure, the generic ones
+ * can be used.
  */
 
 typedef struct rz_il_op_pure_t RzILOpPure;
@@ -51,35 +59,25 @@ typedef struct rz_il_op_effect_t RzILOpEffect;
  */
 typedef struct rz_il_op_args_bv_t {
 	RzBitVector *value; ///< value of bitvector
-} RzILOpArgsBv;
-
-/**
- *  \brief op structure for `'s bitv -> bool`
- *  [MSB] msb x is the most significant bit of x.
- *  [LSB] lsb x is the least significant bit of x.
- *  [IS_ZERO] is_zero x holds if x is a bitvector of all zeros.
- */
-struct rz_il_op_args_un_bv_b_t {
-	RzILOpBitVector *bv;
-};
-
-typedef struct rz_il_op_args_un_bv_b_t RzILOpArgsMsb;
-typedef struct rz_il_op_args_un_bv_b_t RzILOpArgsLsb;
-typedef struct rz_il_op_args_un_bv_b_t RzILOpArgsIsZero;
+} RzILOpArgsBV;
 
 /**
  * op structure for
- * `not` ('s bitv -> 's bitv)
- *   not x is one-complement negation.
- * `neg` ('s bitv -> 's bitv)
- *   neg x is two-complement unary minus
+ * [MSB] msb x is the most significant bit of x.
+ * [LSB] lsb x is the least significant bit of x.
+ * [IS_ZERO] is_zero x holds if x is a bitvector of all zeros.
+ * [LOGNOT] not x is one-complement negation.
+ * [NEG] neg x is two-complement unary minus
  */
-struct rz_il_op_args_bv_unop_t {
+typedef struct rz_il_op_args_bv_unop_t {
 	RzILOpBitVector *bv; ///< unary operand
-};
+} RzILOpArgsUnopBV;
 
-typedef struct rz_il_op_args_bv_unop_t RzILOpArgsLogNot;
-typedef struct rz_il_op_args_bv_unop_t RzILOpArgsNeg;
+typedef RzILOpArgsUnopBV RzILOpArgsMsb;
+typedef RzILOpArgsUnopBV RzILOpArgsLsb;
+typedef RzILOpArgsUnopBV RzILOpArgsIsZero;
+typedef RzILOpArgsUnopBV RzILOpArgsLogNot;
+typedef RzILOpArgsUnopBV RzILOpArgsNeg;
 
 /**
  *  \brief op structure for two-operand algorithm and logical operations ('s bitv -> 's bitv -> 's bitv)
@@ -94,45 +92,35 @@ typedef struct rz_il_op_args_bv_unop_t RzILOpArgsNeg;
  *  [LOGAND] logand x y is a bitwise logical and of x and y.
  *  [LOGOR] logor x y is a bitwise logical or of x and y.
  *  [LOGXOR] logxor x y is a bitwise logical xor of x and y.
- */
-struct rz_il_op_args_alg_log_operations_t {
-	RzILOpBitVector *x; ///< left operand
-	RzILOpBitVector *y; ///< right operand
-};
-
-typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsAdd;
-typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsSub;
-typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsMul;
-typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsDiv;
-typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsSdiv;
-typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsMod;
-typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsSmod;
-typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsLogand;
-typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsLogor;
-typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsLogxor;
-
-/**
- *  \brief op structure for binary comparison ops ('a bitv -> 'a bitv -> bool)
- *
  *  [EQ] eq x y binary predicate for bitwise equality
- *  [SLE] sle x y binary predicate for singed less than or equal
+ *  [SLE] sle x y binary predicate for signed less than or equal
  *  [ULE] ule x y binary predicate for unsigned less than or equal
  */
-struct rz_il_op_args_cmp_t {
-	RzILOpBitVector *x; ///< index of operand 1
-	RzILOpBitVector *y; ///< index of operand 2
-};
+typedef struct rz_il_op_args_binop_bv_t {
+	RzILOpBitVector *x; ///< left operand
+	RzILOpBitVector *y; ///< right operand
+} RzILOpArgsBinopBV;
 
-typedef struct rz_il_op_args_cmp_t RzILOpArgsEq;
-typedef struct rz_il_op_args_cmp_t RzILOpArgsSle;
-typedef struct rz_il_op_args_cmp_t RzILOpArgsUle;
+typedef RzILOpArgsBinopBV RzILOpArgsAdd;
+typedef RzILOpArgsBinopBV RzILOpArgsSub;
+typedef RzILOpArgsBinopBV RzILOpArgsMul;
+typedef RzILOpArgsBinopBV RzILOpArgsDiv;
+typedef RzILOpArgsBinopBV RzILOpArgsSdiv;
+typedef RzILOpArgsBinopBV RzILOpArgsMod;
+typedef RzILOpArgsBinopBV RzILOpArgsSmod;
+typedef RzILOpArgsBinopBV RzILOpArgsLogAnd;
+typedef RzILOpArgsBinopBV RzILOpArgsLogOr;
+typedef RzILOpArgsBinopBV RzILOpArgsLogXor;
+typedef RzILOpArgsBinopBV RzILOpArgsEq;
+typedef RzILOpArgsBinopBV RzILOpArgsSle;
+typedef RzILOpArgsBinopBV RzILOpArgsUle;
 
 /**
- *  \brief op structure for casting bitv
+ * \brief op structure for casting bitv
  */
 typedef struct rz_il_op_args_cast_t {
 	ut32 length; ///< new bits length
-	RzILOpBool *fill; ///< If m = size val - length > 0 then m fill-bits are prepended to the most significant part of the vector.
+	RzILOpBool *fill; ///< If m = length - size val > 0 then m fill-bits are prepended to the most significant part of the vector.
 	RzILOpBitVector *val; ///< value to cast
 } RzILOpArgsCast;
 
@@ -151,14 +139,14 @@ typedef struct rz_il_op_args_append_t {
  *  [LSHIFT] shiftl s x m shifts x left by m bits filling with s.
  *  [RSHIFT] shiftr s x m shifts x right by m bits filling with s.
  */
-struct rz_il_op_args_shift_t {
+typedef struct rz_il_op_args_shift_t {
 	RzILOpBool *fill_bit; ///< index of fill bit
 	RzILOpBitVector *x; ///< index of operand 1
 	RzILOpBitVector *y; ///< index of operand 2
-};
+} RzILOpArgsShift;
 
-typedef struct rz_il_op_args_shift_t RzILOpArgsShiftLeft;
-typedef struct rz_il_op_args_shift_t RzILOpArgsShiftRight;
+typedef RzILOpArgsShift RzILOpArgsShiftLeft;
+typedef RzILOpArgsShift RzILOpArgsShiftRight;
 
 /**
  * \brief op structure for `set` ('a var -> 'a pure -> data eff)
@@ -217,7 +205,7 @@ typedef struct rz_il_op_args_seq_t {
  *
  *  blk lbl data ctrl a labeled sequence of effects.
  */
-typedef struct rzil_op_blk_t {
+typedef struct rz_il_op_blk_t {
 	const char *label; ///< name of the label, const one
 	RzILOpEffect *data_eff; ///< index of data_eff
 	RzILOpEffect *ctrl_eff; ///< index of ctrl_eff
@@ -228,7 +216,7 @@ typedef struct rzil_op_blk_t {
  *
  *  repeat c data repeats data effects till the condition c holds.
  */
-typedef struct rzil_op_repeat_t {
+typedef struct rz_il_op_repeat_t {
 	RzILOpBool *condition; ///< index of BOOL condition
 	RzILOpEffect *data_eff; ///< index of data effect
 } RzILOpArgsRepeat;
@@ -267,36 +255,34 @@ typedef struct rz_il_op_args_var_t {
 } RzILOpArgsVar;
 
 /**
- *  \brief op structure for `and`, `or` and `xor` (bool -> bool -> bool)
- *
- *  BAP equivalent:
- *    val and_ : bool -> bool -> bool
- *    val or_ : bool -> bool -> bool
- *  and(x, y) is a conjunction of x and y.
- *  or(x, y)  is a conjunction of x or y.
- *  xor(x, y) is a conjunction of x xor y.
- */
-struct rz_il_op_args_bool_operation_t {
-	RzILOpBool *x; ///< left operand
-	RzILOpBool *y; ///< right operand
-};
-
-typedef struct rz_il_op_args_bool_operation_t RzILOpArgsBoolAnd;
-typedef struct rz_il_op_args_bool_operation_t RzILOpArgsBoolOr;
-typedef struct rz_il_op_args_bool_operation_t RzILOpArgsBoolXor;
-
-/**
  *  \brief op structure for `inv` (!bool -> bool)
  *
  *	BAP equivalent:
  *	  val inv : bool -> bool
  *  inv(x) inverts x (also known as not operation).
  */
-struct rz_il_op_args_bool_inv_t {
+typedef struct rz_il_op_args_bool_inv_t {
 	RzILOpBool *x; ///< single operand
-};
+} RzILOpArgsBoolInv;
 
-typedef struct rz_il_op_args_bool_inv_t RzILOpArgsBoolInv;
+/**
+ *  \brief op structure for `and`, `or` and `xor` (bool -> bool -> bool)
+ *
+ *  BAP equivalent:
+ *    val and_ : bool -> bool -> bool
+ *    val or_ : bool -> bool -> bool
+ * [AND] and x y is a conjunction of x and y.
+ * [OR] or x y  is an inclusive disjunction of x and y.
+ * [XOR] xor x y is an exclusive disjunction of x and y.
+ */
+typedef struct rz_il_op_args_binop_bool_t {
+	RzILOpBool *x; ///< left operand
+	RzILOpBool *y; ///< right operand
+} RzILOpArgsBinopBool;
+
+typedef RzILOpArgsBinopBool RzILOpArgsBoolAnd;
+typedef RzILOpArgsBinopBool RzILOpArgsBoolOr;
+typedef RzILOpArgsBinopBool RzILOpArgsBoolXor;
 
 /**
  *  \brief op structure for `load` (('a, 'b) mem -> 'a bitv -> 'b bitv)
@@ -352,88 +338,76 @@ typedef struct rz_il_op_args_float_t {
 } RzILOpArgsFloat;
 
 /**
- * \brief op structure for unary without rmode
- */
-struct rz_il_op_args_float_unary_t {
-	RzILOpFloat *f;
-};
-
-/**
- * \brief opstructure for fbits : ( 'r, 's ) format float -> 's bitv
- * fbits x is a bitvector representation of the floating-point number x.
- */
-typedef struct rz_il_op_args_float_unary_t RzILOpArgsFbits;
-
-/**
- * \brief op structure for 'f float -> bool
+ * \brief op structure for 'f float -> 'a
+ * [FBITS] fbits x is a bitvector representation of the floating-point number x.
  * [IS_FINITE] is_finite x holds if x represents a finite number.
  * [IS_NAN] is_nan x holds if x represents a not-a-number (NaN).
  * [IS_INF] is_inf x holds if x represents an infinite number.
  * [IS_FZERO] is_fzero x holds if x represents a zero.
- * [IS_FNEG] is_fpos x holds if x represents a positive number.
- * [IS_FPOS] is_fneg x hold if x represents a negative number.
- */
-typedef struct rz_il_op_args_float_unary_t RzILOpArgsIsFinite;
-typedef struct rz_il_op_args_float_unary_t RzILOpArgsIsNan;
-typedef struct rz_il_op_args_float_unary_t RzILOpArgsIsInf;
-typedef struct rz_il_op_args_float_unary_t RzILOpArgsIsFzero;
-typedef struct rz_il_op_args_float_unary_t RzILOpArgsIsFpos;
-typedef struct rz_il_op_args_float_unary_t RzILOpArgsIsFneg;
-
-/**
- * op structure for 'f float -> float
+ * [IS_FPOS] is_fpos x holds if x represents a positive number.
+ * [IS_FNEG] is_fneg x holds if x represents a negative number.
  * [FNEG] fneg x is -x
  * [FABS] fabs x is absolute value of x (|x|)
  * [FSUCC] fsucc x is the least floating-point number representable in (sort x) that is greater than x.
  * [FPRED] fpred x is the greatest floating-point number representable in (sort x) that is less than x.
  */
-typedef struct rz_il_op_args_float_unary_t RzILOpArgsFneg;
-typedef struct rz_il_op_args_float_unary_t RzILOpArgsFabs;
-typedef struct rz_il_op_args_float_unary_t RzILOpArgsFsucc;
-typedef struct rz_il_op_args_float_unary_t RzILOpArgsFpred;
+typedef struct rz_il_op_args_unop_float_t {
+	RzILOpFloat *f;
+} RzILOpArgsUnopFloat;
+
+typedef RzILOpArgsUnopFloat RzILOpArgsFbits;
+typedef RzILOpArgsUnopFloat RzILOpArgsIsFinite;
+typedef RzILOpArgsUnopFloat RzILOpArgsIsNan;
+typedef RzILOpArgsUnopFloat RzILOpArgsIsInf;
+typedef RzILOpArgsUnopFloat RzILOpArgsIsFzero;
+typedef RzILOpArgsUnopFloat RzILOpArgsIsFpos;
+typedef RzILOpArgsUnopFloat RzILOpArgsIsFneg;
+typedef RzILOpArgsUnopFloat RzILOpArgsFneg;
+typedef RzILOpArgsUnopFloat RzILOpArgsFabs;
+typedef RzILOpArgsUnopFloat RzILOpArgsFsucc;
+typedef RzILOpArgsUnopFloat RzILOpArgsFpred;
 
 /**
  * \brief op structure for cast to bv from float
  * [FCAST_INT] `f_cast_int s rm x` returns an integer closest to x.
  * [FCAST_SINT] `f_cast_sint s rm x` returns an integer closest to x.
  */
-struct rz_il_op_args_float_cast_int_t {
+typedef struct rz_il_op_args_float_cast_int_t {
 	ut32 length;
 	RzFloatRMode mode;
 	RzILOpFloat *f;
-};
+} RzILOpArgsFCastInt;
 
-typedef struct rz_il_op_args_float_cast_int_t RzILOpArgsFCastint;
-typedef struct rz_il_op_args_float_cast_int_t RzILOpArgsFCastsint;
+typedef RzILOpArgsFCastInt RzILOpArgsFCastint;
+typedef RzILOpArgsFCastInt RzILOpArgsFCastsint;
 
 /**
  * \brief for cast to float from bv
  * 'f Float.t Value.sort -> rmode -> 'a bitv -> 'f float
- * [FCAST_FLOAT] `cast_float s rm x` is the closest to x floating-point number of sort x.
+ * [FCAST_FLOAT] `cast_float s rm x` is the closest to x floating-point number of sort s.
  * 	note that : The bitvector x is interpreted as an unsigned integer in the two-complement form.
- * [FCAST_SFLOAT] `cast_sfloat s rm x` is the closest to x floating-point number of sort x.
+ * [FCAST_SFLOAT] `cast_sfloat s rm x` is the closest to x floating-point number of sort s.
  * 	note that : The bitvector x is interpreted as a signed integer in the two-complement form.
  */
-struct rz_il_op_args_float_cast_float_t {
+typedef struct rz_il_op_args_float_cast_float_t {
 	RzFloatFormat format;
 	RzFloatRMode mode;
 	RzILOpBitVector *bv;
-};
+} RzILOpArgsFCastFloat;
 
-typedef struct rz_il_op_args_float_cast_float_t RzILOpArgsFCastfloat;
-typedef struct rz_il_op_args_float_cast_float_t RzILOpArgsFCastsfloat;
+typedef struct rz_il_op_args_float_cast_float_t RzILOpArgsFCastUFloat;
+typedef struct rz_il_op_args_float_cast_float_t RzILOpArgsFCastSFloat;
 
 /**
  * \brief convert between different float format
  * 'f Float.t Value.sort -> rmode -> _ float -> 'f float
  * [FCONVERT] `fconvert f r x` is the closest to x floating number in format f.
  */
-struct rz_il_op_args_float_fconvert_t {
+typedef struct rz_il_op_args_float_fconvert_t {
 	RzFloatFormat format;
 	RzFloatRMode mode;
 	RzILOpFloat *f;
-};
-typedef struct rz_il_op_args_float_fconvert_t RzILOpArgsFconvert;
+} RzILOpArgsFconvert;
 
 /**
  * \brief op structure of requal
@@ -447,7 +421,7 @@ typedef struct rz_il_op_args_float_requal_t {
 
 /**
  * \brief op structure of binary op without rmode
- * ('float -> 'flaat -> bool)
+ * ('f float -> 'f float -> bool)
  * forder x y holds if floating-point number x is less than y.
  */
 typedef struct rz_il_op_args_float_binop_t {
@@ -462,13 +436,14 @@ typedef struct rz_il_op_args_float_binop_t {
  * [FSQRT] fsqrt m x returns the closest floating-point number to r, where r is such number that r*r is equal to x.
  * [FRSQRT] reverse sqrt, rsqrt m x is the closest floating-point number to 1 / sqrt x.
  */
-struct rz_il_op_args_float_alg_unop_t {
+typedef struct rz_il_op_args_float_alg_unop_t {
 	RzFloatRMode rmode;
 	RzILOpFloat *f;
-};
-typedef struct rz_il_op_args_float_alg_unop_t RzILOpArgsFround;
-typedef struct rz_il_op_args_float_alg_unop_t RzILOpArgsFsqrt;
-typedef struct rz_il_op_args_float_alg_unop_t RzILOpArgsFrsqrt;
+} RzILOpArgsFloatAlgUnop;
+
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFround;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFsqrt;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFrsqrt;
 
 typedef struct rz_il_op_args_float_expect_t {
 	RzFloatException e;
@@ -480,45 +455,45 @@ typedef struct rz_il_op_args_float_expect_t {
  * rmode -> 'f float -> 'f float -> 'f float
  * [FADD]
  */
-struct rz_il_op_args_float_alg_binop_t {
+typedef struct rz_il_op_args_float_alg_binop_t {
 	RzFloatRMode rmode;
 	RzILOpFloat *x;
 	RzILOpFloat *y;
-};
+} RzILOpArgsFloatAlgBinop;
 
-typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFadd;
-typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFsub;
-typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFmul;
-typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFdiv;
-typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFmod;
-typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFhypot;
-typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFpow;
+typedef RzILOpArgsFloatAlgBinop RzILOpArgsFadd;
+typedef RzILOpArgsFloatAlgBinop RzILOpArgsFsub;
+typedef RzILOpArgsFloatAlgBinop RzILOpArgsFmul;
+typedef RzILOpArgsFloatAlgBinop RzILOpArgsFdiv;
+typedef RzILOpArgsFloatAlgBinop RzILOpArgsFmod;
+typedef RzILOpArgsFloatAlgBinop RzILOpArgsFhypot;
+typedef RzILOpArgsFloatAlgBinop RzILOpArgsFpow;
 
 /**
  * \brief op structure of ternary op in float
  * rmode -> 'f float -> 'f float -> 'f float -> 'f float
  */
-struct rz_il_op_args_float_alg_terop_t {
+typedef struct rz_il_op_args_float_alg_terop_t {
 	RzFloatRMode rmode;
 	RzILOpFloat *x;
 	RzILOpFloat *y;
 	RzILOpFloat *z;
-};
-typedef struct rz_il_op_args_float_alg_terop_t RzILOpArgsFmad;
+} RzILOpArgsFloatAlgTernop;
+typedef RzILOpArgsFloatAlgTernop RzILOpArgsFmad;
 
 /**
  * \brief op structure for some float binary op requiring `int`
  * rmode -> 'f float -> 'a bitv -> 'f float
  */
-struct rz_il_op_args_float_alg_hybrid_binop_t {
+typedef struct rz_il_op_args_float_alg_hybrid_binop_t {
 	RzFloatRMode rmode;
 	RzILOpFloat *f;
 	RzILOpBitVector *n;
-};
+} RzILOpArgsFloatAlgHybridBinop;
 
-typedef struct rz_il_op_args_float_alg_hybrid_binop_t RzILOpArgsFrootn;
-typedef struct rz_il_op_args_float_alg_hybrid_binop_t RzILOpArgsFpown;
-typedef struct rz_il_op_args_float_alg_hybrid_binop_t RzILOpArgsFcompound;
+typedef RzILOpArgsFloatAlgHybridBinop RzILOpArgsFrootn;
+typedef RzILOpArgsFloatAlgHybridBinop RzILOpArgsFpown;
+typedef RzILOpArgsFloatAlgHybridBinop RzILOpArgsFcompound;
 
 /////////////////////////////
 // Opcodes of type 'a pure //
@@ -618,76 +593,129 @@ typedef enum {
 struct rz_il_op_pure_t {
 	RzILOpPureCode code;
 	union {
-		RzILOpArgsIte ite;
-		RzILOpArgsVar var;
-		RzILOpArgsLet let;
+		//////////
+		// Init //
+		RzILOpArgsVar var; ///< RZ_IL_OP_VAR
+		RzILOpArgsIte ite; ///< RZ_IL_OP_ITE
+		RzILOpArgsLet let; ///< RZ_IL_OP_LET
 
-		RzILOpArgsBoolAnd booland;
-		RzILOpArgsBoolOr boolor;
-		RzILOpArgsBoolXor boolxor;
-		RzILOpArgsBoolInv boolinv;
+		struct {
+			RzILOpPure *x;
+			RzILOpPure *y;
+		} binop; ///< any op that uses binop_bool or binop_bv
+		struct {
+			RzILOpPure *x;
+		} unop; ///< RZ_IL_OP_INV or any other op that uses unop_bv
 
-		RzILOpArgsBv bitv;
-		RzILOpArgsMsb msb;
-		RzILOpArgsLsb lsb;
-		RzILOpArgsIsZero is_zero;
-		RzILOpArgsEq eq;
-		RzILOpArgsUle ule;
-		RzILOpArgsSle sle;
-		RzILOpArgsCast cast;
-		RzILOpArgsNeg neg;
-		RzILOpArgsLogNot lognot;
-		RzILOpArgsAdd add;
-		RzILOpArgsSub sub;
-		RzILOpArgsMul mul;
-		RzILOpArgsDiv div;
-		RzILOpArgsSdiv sdiv;
-		RzILOpArgsSmod smod;
-		RzILOpArgsMod mod;
-		RzILOpArgsLogand logand;
-		RzILOpArgsLogor logor;
-		RzILOpArgsLogxor logxor;
-		RzILOpArgsShiftLeft shiftl;
-		RzILOpArgsShiftRight shiftr;
-		RzILOpArgsAppend append;
+		//////////
+		// Bool //
+		RzILOpArgsBoolInv boolinv; ///< RZ_IL_OP_INV
 
-		RzILOpArgsLoad load;
-		RzILOpArgsLoadW loadw;
+		RzILOpArgsBinopBool binop_bool; ///< RZ_IL_OP_AND, RZ_IL_OP_OR, RZ_IL_OP_XOR
+		RzILOpArgsBoolAnd booland; ///< RZ_IL_OP_AND
+		RzILOpArgsBoolOr boolor; ///< RZ_IL_OP_OR
+		RzILOpArgsBoolXor boolxor; ///< RZ_IL_OP_XOR
 
-		RzILOpArgsFloat float_;
-		RzILOpArgsFbits fbits;
-		RzILOpArgsIsFinite is_finite;
-		RzILOpArgsIsNan is_nan;
-		RzILOpArgsIsInf is_inf;
-		RzILOpArgsIsFzero is_fzero;
-		RzILOpArgsIsFneg is_fneg;
-		RzILOpArgsIsFpos is_fpos;
-		RzILOpArgsFneg fneg;
-		RzILOpArgsFabs fabs;
-		RzILOpArgsFCastint fcast_int;
-		RzILOpArgsFCastsint fcast_sint;
-		RzILOpArgsFCastfloat fcast_float;
-		RzILOpArgsFCastsfloat fcast_sfloat;
-		RzILOpArgsFconvert fconvert;
-		RzILOpArgsFrequal frequal;
-		RzILOpArgsFsucc fsucc;
-		RzILOpArgsFpred fpred;
-		RzILOpArgsForder forder;
-		RzILOpArgsFround fround;
-		RzILOpArgsFsqrt fsqrt;
-		RzILOpArgsFrsqrt frsqrt;
-		RzILOpArgsFexcept fexcept;
-		RzILOpArgsFadd fadd;
-		RzILOpArgsFsub fsub;
-		RzILOpArgsFmul fmul;
-		RzILOpArgsFdiv fdiv;
-		RzILOpArgsFmod fmod;
-		RzILOpArgsFmad fmad;
-		RzILOpArgsFpow fpow;
-		RzILOpArgsFpown fpown;
-		RzILOpArgsFrootn frootn;
-		RzILOpArgsFcompound fcompound;
-		RzILOpArgsFhypot fhypot;
+		///////////////
+		// Bitvector //
+		RzILOpArgsBV bitv; ///< RZ_IL_OP_BITV
+
+		RzILOpArgsUnopBV unop_bv; ///< RZ_IL_OP_MSB, RZ_IL_OP_LSB, RZ_IL_OP_IS_ZERO, RZ_IL_OP_NEG, RZ_IL_OP_LOGNOT
+		RzILOpArgsMsb msb; ///< RZ_IL_OP_MSB
+		RzILOpArgsLsb lsb; ///< RZ_IL_OP_LSB
+		RzILOpArgsIsZero is_zero; ///< RZ_IL_OP_IS_ZERO
+		RzILOpArgsNeg neg; ///< RZ_IL_OP_NEG
+		RzILOpArgsLogNot lognot; ///< RZ_IL_OP_LOGNOT
+
+		/**
+		 * RZ_IL_OP_EQ, RZ_IL_OP_ULE, RZ_IL_OP_SLE, RZ_IL_OP_ADD, RZ_IL_OP_SUB, RZ_IL_OP_MUL,
+		 * RZ_IL_OP_DIV, RZ_IL_OP_SDIV, RZ_IL_OP_SMOD, RZ_IL_OP_MOD, RZ_IL_OP_LOGAND,
+		 * RZ_IL_OP_LOGOR, RZ_IL_OP_LOGXOR
+		 */
+		RzILOpArgsBinopBV binop_bv;
+		RzILOpArgsEq eq; ///< RZ_IL_OP_EQ
+		RzILOpArgsUle ule; ///< RZ_IL_OP_ULE
+		RzILOpArgsSle sle; ///< RZ_IL_OP_SLE
+		RzILOpArgsAdd add; ///< RZ_IL_OP_ADD
+		RzILOpArgsSub sub; ///< RZ_IL_OP_SUB
+		RzILOpArgsMul mul; ///< RZ_IL_OP_MUL
+		RzILOpArgsDiv div; ///< RZ_IL_OP_DIV
+		RzILOpArgsSdiv sdiv; ///< RZ_IL_OP_SDIV
+		RzILOpArgsSmod smod; ///< RZ_IL_OP_SMOD
+		RzILOpArgsMod mod; ///< RZ_IL_OP_MOD
+		RzILOpArgsLogAnd logand; ///< RZ_IL_OP_LOGAND
+		RzILOpArgsLogOr logor; ///< RZ_IL_OP_LOGOR
+		RzILOpArgsLogXor logxor; ///< RZ_IL_OP_LOGXOR
+
+		RzILOpArgsShift shift; ///< RZ_IL_OP_SHIFTL, RZ_IL_OP_SHIFTR
+		RzILOpArgsShiftLeft shiftl; ///< RZ_IL_OP_SHIFTL
+		RzILOpArgsShiftRight shiftr; ///< RZ_IL_OP_SHIFTR
+
+		RzILOpArgsCast cast; ///< RZ_IL_OP_CAST
+		RzILOpArgsAppend append; ///< RZ_IL_OP_APPEND
+
+		////////////
+		// Memory //
+		RzILOpArgsLoad load; ///< RZ_IL_OP_LOAD
+		RzILOpArgsLoadW loadw; ///< RZ_IL_OP_LOADW
+
+		///////////
+		// Float //
+		RzILOpArgsFloat float_; ///< RZ_IL_OP_FLOAT
+
+		/**
+		 * RZ_IL_OP_FBITS, RZ_IL_OP_IS_FINITE, RZ_IL_OP_IS_NAN, RZ_IL_OP_IS_INF, RZ_IL_OP_IS_FZERO
+		 * RZ_IL_OP_IS_FNEG, RZ_IL_OP_IS_FPOS, RZ_IL_OP_FNEG, RZ_IL_OP_FABS, RZ_IL_OP_FSUCC,
+		 * RZ_IL_OP_FPRED
+		 */
+		RzILOpArgsUnopFloat unop_float;
+		RzILOpArgsFbits fbits; ///< RZ_IL_OP_FBITS
+		RzILOpArgsIsFinite is_finite; ///< RZ_IL_OP_IS_FINITE
+		RzILOpArgsIsNan is_nan; ///< RZ_IL_OP_IS_NAN
+		RzILOpArgsIsInf is_inf; ///< RZ_IL_OP_IS_INF
+		RzILOpArgsIsFzero is_fzero; ///< RZ_IL_OP_IS_FZERO
+		RzILOpArgsIsFneg is_fneg; ///< RZ_IL_OP_IS_FNEG
+		RzILOpArgsIsFpos is_fpos; ///< RZ_IL_OP_IS_FPOS
+		RzILOpArgsFneg fneg; ///< RZ_IL_OP_FNEG
+		RzILOpArgsFabs fabs; ///< RZ_IL_OP_FABS
+		RzILOpArgsFsucc fsucc; ///< RZ_IL_OP_FSUCC
+		RzILOpArgsFpred fpred; ///< RZ_IL_OP_FPRED
+
+		RzILOpArgsFCastint fcast_int; ///< RZ_IL_OP_FCAST_INT
+		RzILOpArgsFCastsint fcast_sint; ///< RZ_IL_OP_FCAST_SINT
+
+		RzILOpArgsFCastUFloat fcast_float; ///< RZ_IL_OP_FCAST_FLOAT
+		RzILOpArgsFCastSFloat fcast_sfloat; ///< RZ_IL_OP_FCAST_SFLOAT
+
+		RzILOpArgsFconvert fconvert; ///< RZ_IL_OP_FCONVERT
+		RzILOpArgsFrequal frequal; ///< RZ_IL_OP_FREQUAL
+		RzILOpArgsForder forder; ///< RZ_IL_OP_FORDER
+
+		RzILOpArgsFround fround; ///< RZ_IL_OP_FROUND
+		RzILOpArgsFsqrt fsqrt; ///< RZ_IL_OP_FSQRT
+		RzILOpArgsFrsqrt frsqrt; ///< RZ_IL_OP_FRSQRT
+
+		/**
+		 * RZ_IL_OP_FADD, RZ_IL_OP_FSUB, RZ_IL_OP_FMUL, RZ_IL_OP_FDIV, RZ_IL_OP_FMOD,
+		 * RZ_IL_OP_FHYPOT, RZ_IL_OP_FPOW
+		 */
+		RzILOpArgsFloatAlgBinop binop_float_alg;
+		RzILOpArgsFadd fadd; ///< RZ_IL_OP_FADD
+		RzILOpArgsFsub fsub; ///< RZ_IL_OP_FSUB
+		RzILOpArgsFmul fmul; ///< RZ_IL_OP_FMUL
+		RzILOpArgsFdiv fdiv; ///< RZ_IL_OP_FDIV
+		RzILOpArgsFmod fmod; ///< RZ_IL_OP_FMOD
+		RzILOpArgsFhypot fhypot; ///< RZ_IL_OP_FHYPOT
+		RzILOpArgsFpow fpow; ///< RZ_IL_OP_FPOW
+
+		RzILOpArgsFmad fmad; ///< RZ_IL_OP_FMAD
+
+		RzILOpArgsFloatAlgHybridBinop binop_float_alg_hybrid; ///< RZ_IL_OP_FROOTN, RZ_IL_OP_FPOWN, RZ_IL_OP_FCOMPOUND
+		RzILOpArgsFrootn frootn; ///< RZ_IL_OP_FROOTN
+		RzILOpArgsFpown fpown; ///< RZ_IL_OP_FPOWN
+		RzILOpArgsFcompound fcompound; ///< RZ_IL_OP_FCOMPOUND
+
+		RzILOpArgsFexcept fexcept; ///< RZ_IL_OP_FEXCEPT
 	} op;
 };
 
@@ -710,7 +738,6 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bool_inv(RZ_NONNULL RzILOpBool *x);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv(RZ_NONNULL RzBitVector *value);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv_from_ut64(ut32 length, ut64 number);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv_from_st64(ut32 length, st64 number);
-RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bitv_max(ut32 length);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_msb(RZ_NONNULL RzILOpPure *val);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_lsb(RZ_NONNULL RzILOpPure *val);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_zero(RZ_NONNULL RzILOpPure *bv);

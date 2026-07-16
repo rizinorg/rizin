@@ -1882,13 +1882,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 						count++;
 					}
 					break;
-				default: {
-					rz_analysis_op_init(&op);
-					if (rz_analysis_op(core->analysis, &op, at + i, buf + i, core->blocksize - i, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
-						rz_analysis_op_fini(&op);
-						continue;
-					}
-				}
+				default:
 					if (op.ptr != UT64_MAX &&
 						core_analysis_followptr(core, RZ_ANALYSIS_XREF_TYPE_DATA, at + i, op.ptr, ref, false, ptrdepth)) {
 						count++;
@@ -5040,6 +5034,7 @@ RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
 
 	if (RZ_STR_EQ(arch, "mips")) {
 		// forbid aav on mips
+		free(tmp);
 		return;
 	}
 
@@ -5509,11 +5504,15 @@ static void core_decoded_bytes_set_mnemonic(RzCoreDecodedBytes *cdb, bool is_x86
 	cdb->mnemonic = rz_str_ndup(opcode, space - opcode);
 }
 
+static void analysis_bytes_iter_fini(RzCoreDecodedBytes *cdb);
+
 static RzCoreDecodedBytes *core_decoded_bytes_next(RzIterator *it) {
 	CoreDecodedBytes *ctx = it->u;
 	if (!core_decoded_bytes_can_continue(ctx)) {
 		return NULL;
 	}
+	// release the data produced for the previous element before reusing the buffer
+	analysis_bytes_iter_fini(&ctx->cdb);
 
 	static const RzAnalysisOpMask mask = RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT;
 	RzCore *core = ctx->core;

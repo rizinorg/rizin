@@ -1139,24 +1139,23 @@ RZ_API bool rz_analysis_noreturn_add(RzAnalysis *analysis, const char *name, ut6
 	return true;
 }
 
-RZ_API bool rz_analysis_noreturn_drop(RzAnalysis *analysis, const char *expr) {
+RZ_API void rz_analysis_noreturn_drop(RzAnalysis *analysis, const char *expr) {
 	Sdb *NDB = analysis->sdb_noret;
 	expr = rz_str_trim_head_ro(expr);
 	const char *fcnname = NULL;
-	if (!strncmp(expr, "0x", 2)) {
-		ut64 n = rz_num_math(NULL, expr);
+	ut64 n = analysis->coreb.core ? analysis->coreb.numGet(analysis->coreb.core, expr) : rz_num_math(NULL, expr);
+	if (n) {
 		sdb_noret_addr_unset(NDB, n);
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(analysis, n, -1);
 		if (!fcn) {
 			// eprintf ("can't find function at 0x%"PFMT64x"\n", n);
-			return false;
+			return;
 		}
 		fcnname = fcn->name;
 	} else {
 		fcnname = expr;
 	}
 	sdb_noret_func_unset(NDB, fcnname);
-	return false;
 }
 
 static bool rz_analysis_is_noreturn(RzAnalysis *analysis, const char *name) {

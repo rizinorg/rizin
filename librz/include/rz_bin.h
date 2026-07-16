@@ -185,7 +185,8 @@ typedef enum {
 
 enum {
 	RZ_BIN_TYPE_DEFAULT = 0,
-	RZ_BIN_TYPE_CORE = 1
+	RZ_BIN_TYPE_CORE = 1,
+	RZ_BIN_TYPE_REL = 2
 };
 
 #define RZ_BIN_STRING_SEARCH_MIN_STRING         4
@@ -338,6 +339,7 @@ typedef struct rz_bin_object_t {
 	RzPVector /*<RzBinSection *>*/ *sections;
 	RzPVector /*<RzBinImport *>*/ *imports;
 	RzPVector /*<RzBinSymbol *>*/ *symbols;
+	RzPVector /*<RzBinTrycatch *>*/ *trycatch;
 	RzPVector /*<RzBinResource *>*/ *resources;
 	/**
 	 * \brief Acceleration structure for fast access of the symbol for a given import.
@@ -881,6 +883,7 @@ typedef const RzPVector *(*RzBinGetSections)(RzBinObject *obj);
 typedef RzBinSection *(*RzBinGetSectionAt)(RzBin *bin, ut64 addr);
 typedef char *(*RzBinDemangle)(RzBin *bin, const char *language, const char *mangled);
 typedef RzBinObject *(*RzBinGetObject)(RzBin *bin);
+typedef RzPVector /*<RzBinTrycatch *>*/ *(*RzBinGetTrycatch)(RzBin *bin);
 
 typedef struct rz_bin_bind_t {
 	RzBin *bin;
@@ -890,6 +893,7 @@ typedef struct rz_bin_bind_t {
 	RzBinGetSectionAt get_vsect_at;
 	RzBinDemangle demangle;
 	RzBinGetObject get_bin_object;
+	RzBinGetTrycatch get_trycatch;
 	ut32 visibility;
 } RzBinBind;
 
@@ -1020,7 +1024,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 
 // use RzBinFile instead
 RZ_DEPRECATE RZ_API int rz_bin_is_static(RZ_NONNULL RzBin *bin);
-RZ_API RZ_OWN RzPVector /*<RzBinTrycatch *>*/ *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFile *bf);
+RZ_API RZ_BORROW RzPVector /*<RzBinTrycatch *>*/ *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFile *bf);
 
 RZ_API RZ_BORROW const RzPVector /*<RzBinAddr *>*/ *rz_bin_object_get_entries(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzPVector /*<RzBinField *>*/ *rz_bin_object_get_fields(RZ_NONNULL RzBinObject *obj);

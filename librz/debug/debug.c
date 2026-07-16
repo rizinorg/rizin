@@ -625,7 +625,7 @@ RZ_API bool rz_debug_select(RzDebug *dbg, int pid, int tid) {
 		dbg->tid = tid;
 	}
 
-	rz_io_system(dbg->iob.io, rz_strf(tmpbuf, "pid %d", dbg->tid));
+	free(rz_io_system(dbg->iob.io, rz_strf(tmpbuf, "pid %d", dbg->tid)));
 
 	// Synchronize with the current thread's data
 	if (dbg->corebind.core) {

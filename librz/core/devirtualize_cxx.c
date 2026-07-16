@@ -807,33 +807,32 @@ static void devirtualize_variable_vtable(RzCore *core, RzCppVariableBook *var_bo
 	rz_analysis_op_free(op);
 }
 
+typedef struct {
+	RzStrBuf *comment;
+	bool first;
+} VirtualCallCommentCtx;
+
+static bool build_virtual_call_comment(void *user, const char *vfunc_name, RZ_UNUSED const void *v) {
+	VirtualCallCommentCtx *ctx = (VirtualCallCommentCtx *)user;
+	if (ctx->first) {
+		rz_strbuf_setf(ctx->comment, "Virtual Call : %s", vfunc_name);
+		ctx->first = false;
+	} else {
+		rz_strbuf_appendf(ctx->comment, " / %s", vfunc_name);
+	}
+	return true;
+}
+
 static bool add_comment(void *user, const ut64 key, const void *v) {
 	RzCore *core = (RzCore *)user;
 	RzSetS *set = (RzSetS *)v;
 
-	RzPVector *vect = rz_set_s_to_vector(set);
-	void **it;
-
 	RzStrBuf *comment = rz_strbuf_new(NULL);
-	bool first = true;
-	rz_pvector_foreach (vect, it) {
-		const char *vfunc_name = *it;
-		if (first) {
-			rz_strbuf_setf(comment, "Virtual Call : %s", vfunc_name);
-			first = false;
-			continue;
-		}
-		rz_strbuf_appendf(comment, " / %s", vfunc_name);
-	}
-	const char *str_comment = rz_strbuf_drain(comment);
+	VirtualCallCommentCtx ctx = { comment, true };
+	ht_sp_foreach((HtSP *)set, build_virtual_call_comment, &ctx);
+	char *str_comment = rz_strbuf_drain(comment);
 	rz_core_meta_comment_add(core, str_comment, key);
-
-	rz_pvector_fini(vect);
-
-	rz_pvector_foreach (vect, it) {
-		free(*it);
-	}
-	rz_pvector_free(vect);
+	free(str_comment);
 
 	return true;
 }
@@ -844,20 +843,27 @@ static bool free_virt_calls(void *user, const ut64 key, const void *v) {
 	return true;
 }
 
+typedef struct {
+	HtSP *virtual_xref;
+	ut64 key;
+} VirtualXrefCtx;
+
+static bool collect_virtual_xref(void *user, const char *vfunc, RZ_UNUSED const void *v) {
+	VirtualXrefCtx *ctx = (VirtualXrefCtx *)user;
+	bool found = false;
+	RzSetU *set = ht_sp_find(ctx->virtual_xref, vfunc, &found);
+	if (!found) {
+		set = rz_set_u_new();
+		ht_sp_insert(ctx->virtual_xref, vfunc, set);
+	}
+	rz_set_u_add(set, ctx->key);
+	return true;
+}
+
 static bool add_virtual_xref(RzAnalysis *analysis, const ut64 key, RzSetS *vfunc_set) {
 	HtSP *virtual_xref = rz_analysis_get_virtual_xrefs(analysis);
-	RzPVector *pvect = rz_set_s_to_vector(vfunc_set);
-	void **it;
-	rz_pvector_foreach (pvect, it) {
-		const char *vfunc = *it;
-		bool found = false;
-		RzSetU *set = ht_sp_find(virtual_xref, vfunc, &found);
-		if (!found) {
-			set = rz_set_u_new();
-			ht_sp_insert(virtual_xref, vfunc, set);
-		}
-		rz_set_u_add(set, key);
-	}
+	VirtualXrefCtx ctx = { virtual_xref, key };
+	ht_sp_foreach((HtSP *)vfunc_set, collect_virtual_xref, &ctx);
 	return true;
 }
 

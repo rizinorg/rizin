@@ -864,6 +864,14 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr,
 		return false;
 	}
 	rz_core_bin_print(core, bf, action, filter, state, NULL);
+	// rz_bin_object_new() registers bf->sdb under core->bin->sdb ("cur" and
+	// "fd.<fd>") and takes an extra reference. Restoring the previous binfile
+	// below only updates bin->cur, so drop every reference to this temporary sdb
+	// here, otherwise it dangles in core->bin->sdb and is double-freed on teardown.
+	while (sdb_ns_unset(core->bin->sdb, NULL, bf->sdb)) {
+		;
+	}
+	sdb_free(bf->sdb);
 	rz_bin_file_delete(core->bin, bf);
 	rz_bin_file_set_obj(obf, obf->o);
 	rz_bin_set_cur_binfile(core->bin, obf);
@@ -1584,7 +1592,7 @@ RZ_IPI void rz_core_debug_bp_add(RzCore *core, ut64 addr, const char *arg_perm, 
 			rz_bp_item_set_name(bpi, name);
 			free(name);
 		} else {
-			bpi->name = rz_str_dup(f->name);
+			rz_bp_item_set_name(bpi, f->name);
 		}
 	} else {
 		char *name = rz_str_newf("0x%08" PFMT64x, addr);

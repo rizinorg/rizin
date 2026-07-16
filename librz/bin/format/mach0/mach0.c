@@ -1872,6 +1872,9 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * mo) {
 	rz_skiplist_free(mo->relocs);
 	rz_hash_free(mo->hash);
 	rz_buf_free(mo->b);
+	rz_buf_free(mo->buf_patched);
+	rz_pvector_free(mo->sections_cache);
+	sdb_free(mo->kv);
 	free(mo);
 	return NULL;
 }
@@ -2449,7 +2452,7 @@ static int walk_exports(struct MACH0_(obj_t) * bin, ExportsIterator iterator, vo
 			goto beach;
 		}
 		if (state->i == child_count) {
-			rz_list_pop(states);
+			free(rz_list_pop(states));
 			continue;
 		}
 		if (!state->next_child) {

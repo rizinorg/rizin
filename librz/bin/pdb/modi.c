@@ -45,8 +45,18 @@ RZ_IPI bool PDBModuleInfo_parse(const RzPdb *pdb, const PDB_DBIModule *m, PDBMod
 	if (!PDBModuleInfo_symbols(modi, &iter)) {
 		return false;
 	}
-	if (!PDBSymbolIter_collect(&iter, &modi->symbols)) {
-		return false;
+	bool collected = PDBSymbolIter_collect(&iter, &modi->symbols);
+	rz_buf_free(iter.b);
+	return collected;
+}
+
+RZ_IPI void PDBModuleInfo_free(void *x) {
+	PDBModuleInfo *modi = (PDBModuleInfo *)x;
+	if (!modi) {
+		return;
 	}
-	return true;
+	// modi->stream is borrowed from the module's raw MSF stream, so only the
+	// collected symbols and the module info itself are owned here.
+	rz_pvector_free(modi->symbols);
+	free(modi);
 }

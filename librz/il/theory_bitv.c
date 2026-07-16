@@ -134,7 +134,7 @@ void *rz_il_handler_append(RzILVM *vm, RzILOpBitVector *op, RzILTypePure *type) 
 
 	RzBitVector *high = rz_il_evaluate_bitv(vm, op_append->high);
 	RzBitVector *low = rz_il_evaluate_bitv(vm, op_append->low);
-	RzBitVector *result = high && low ? rz_bv_append(high, low) : NULL;
+	RzBitVector *result = high && low ? rz_bv_append(low, high) : NULL;
 	rz_bv_free(low);
 	rz_bv_free(high);
 
@@ -145,10 +145,10 @@ void *rz_il_handler_append(RzILVM *vm, RzILOpBitVector *op, RzILTypePure *type) 
 void *rz_il_handler_logical_and(RzILVM *vm, RzILOpBitVector *op, RzILTypePure *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
-	RzILOpArgsAdd *op_add = &op->op.add;
+	RzILOpArgsLogAnd *op_and = &op->op.logand;
 
-	RzBitVector *x = rz_il_evaluate_bitv(vm, op_add->x);
-	RzBitVector *y = rz_il_evaluate_bitv(vm, op_add->y);
+	RzBitVector *x = rz_il_evaluate_bitv(vm, op_and->x);
+	RzBitVector *y = rz_il_evaluate_bitv(vm, op_and->y);
 	RzBitVector *result = x && y ? rz_bv_and(x, y) : NULL;
 	rz_bv_free(x);
 	rz_bv_free(y);
@@ -160,10 +160,10 @@ void *rz_il_handler_logical_and(RzILVM *vm, RzILOpBitVector *op, RzILTypePure *t
 void *rz_il_handler_logical_or(RzILVM *vm, RzILOpBitVector *op, RzILTypePure *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
-	RzILOpArgsAdd *op_add = &op->op.add;
+	RzILOpArgsAdd *op_or = &op->op.logor;
 
-	RzBitVector *x = rz_il_evaluate_bitv(vm, op_add->x);
-	RzBitVector *y = rz_il_evaluate_bitv(vm, op_add->y);
+	RzBitVector *x = rz_il_evaluate_bitv(vm, op_or->x);
+	RzBitVector *y = rz_il_evaluate_bitv(vm, op_or->y);
 	RzBitVector *result = x && y ? rz_bv_or(x, y) : NULL;
 	rz_bv_free(x);
 	rz_bv_free(y);
@@ -175,10 +175,10 @@ void *rz_il_handler_logical_or(RzILVM *vm, RzILOpBitVector *op, RzILTypePure *ty
 void *rz_il_handler_logical_xor(RzILVM *vm, RzILOpBitVector *op, RzILTypePure *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
-	RzILOpArgsAdd *op_add = &op->op.add;
+	RzILOpArgsAdd *op_xor = &op->op.logxor;
 
-	RzBitVector *x = rz_il_evaluate_bitv(vm, op_add->x);
-	RzBitVector *y = rz_il_evaluate_bitv(vm, op_add->y);
+	RzBitVector *x = rz_il_evaluate_bitv(vm, op_xor->x);
+	RzBitVector *y = rz_il_evaluate_bitv(vm, op_xor->y);
 	RzBitVector *result = x && y ? rz_bv_xor(x, y) : NULL;
 	rz_bv_free(x);
 	rz_bv_free(y);
@@ -335,7 +335,7 @@ void *rz_il_handler_shiftr(RzILVM *vm, RzILOpBitVector *op, RzILTypePure *type) 
 
 void *rz_il_handler_bitv(RzILVM *vm, RzILOpBitVector *op, RzILTypePure *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
-	RzILOpArgsBv *op_bitv = &op->op.bitv;
+	RzILOpArgsBV *op_bitv = &op->op.bitv;
 
 	RzBitVector *bv = rz_bv_dup(op_bitv->value);
 

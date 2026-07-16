@@ -229,7 +229,7 @@ RZ_IPI RzCmdStatus rz_mark_realname_handler(RzCore *core, int argc, const char *
 	} else {
 		rz_mark_item_set_realname(item, argv[2]);
 		RzFlagItem *fi = rz_flag_get(core->flags, item->name);
-		rz_flag_item_set_realname(fi, argv[2]);
+		rz_flag_item_set_realname(core->flags, fi, argv[2]);
 	}
 	return RZ_CMD_STATUS_OK;
 }

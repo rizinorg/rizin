@@ -238,6 +238,9 @@ static bool symbol_load(RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 
 		ut64 addr = rz_bin_pdb_to_rva(pdb, &public->offset);
 		if (addr == UT64_MAX) {
+			free(filtered_name);
+			free(fname);
+			free(name);
 			return true;
 		}
 		if (ctx->baddr != UT64_MAX) {
@@ -246,7 +249,7 @@ static bool symbol_load(RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 
 		RzFlagItem *item = rz_flag_set(ctx->core->flags, fname, addr, 0);
 		if (item) {
-			rz_flag_item_set_realname(item, name);
+			rz_flag_item_set_realname(ctx->core->flags, item, name);
 		}
 		free(filtered_name);
 		free(fname);

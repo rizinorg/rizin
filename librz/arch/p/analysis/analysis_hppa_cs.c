@@ -193,16 +193,25 @@ static void hppa_fillvals(const RzAsmHPPAContext *ctx, RzAnalysis *a, RzAnalysis
 		cs_hppa_op *hop = &hc->operands[i];
 		RzAnalysisValue *av = rz_analysis_value_new();
 		hppa_fillval(a->reg, ctx->h, av, hop);
-		if (hop->access & CS_AC_READ) {
+		bool owned = false;
+		if ((hop->access & CS_AC_READ) && srci < RZ_ARRAY_SIZE(op->src)) {
 			av->access |= RZ_ANALYSIS_ACC_R;
 			op->src[srci++] = av;
+			owned = true;
 		}
 		if (hop->access & CS_AC_WRITE) {
 			av->access |= RZ_ANALYSIS_ACC_W;
 			if (srci > 0 && av == op->src[srci - 1]) {
 				av = rz_mem_dup(av, sizeof(RzAnalysisValue));
 			}
+			// a single op->dst slot: release the previous write operand
+			rz_analysis_value_free(op->dst);
 			op->dst = av;
+			owned = true;
+		}
+		if (!owned) {
+			// operand is neither read nor written, so nothing takes ownership
+			rz_analysis_value_free(av);
 		}
 	}
 }

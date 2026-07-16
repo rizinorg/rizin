@@ -29,7 +29,7 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 		rz_debug_select(r->dbg, r->dbg->pid, r->dbg->tid);
 	}
 	rz_config_set_bool(r->config, "dbg.swstep", (r->dbg->cur && !r->dbg->cur->canstep));
-	rz_io_system(r->io, rz_strf(buf, "pid %d", r->dbg->pid));
+	free(rz_io_system(r->io, rz_strf(buf, "pid %d", r->dbg->pid)));
 
 	// this makes to attach twice showing warnings in the output
 	// we get "resource busy" so it seems isn't an issue
@@ -1047,6 +1047,7 @@ RZ_API bool rz_core_write_block_op_at(RzCore *core, ut64 addr, RzCoreWriteOp op,
 		return false;
 	}
 
+	free(buf);
 	return true;
 }
 

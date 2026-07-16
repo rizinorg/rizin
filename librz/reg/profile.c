@@ -663,9 +663,6 @@ RZ_API char *rz_reg_parse_gdb_profile(const char *profile_file) {
 RZ_API char *rz_reg_profile_to_cc(RzReg *reg) {
 	const char *r0 = rz_reg_get_name_by_type(reg, "R0");
 	const char *a0 = rz_reg_get_name_by_type(reg, "A0");
-	const char *a1 = rz_reg_get_name_by_type(reg, "A1");
-	const char *a2 = rz_reg_get_name_by_type(reg, "A2");
-	const char *a3 = rz_reg_get_name_by_type(reg, "A3");
 
 	if (!a0) {
 		RZ_LOG_WARN("It is mandatory to have at least one argument register defined in the register profile.\n");
@@ -674,14 +671,21 @@ RZ_API char *rz_reg_profile_to_cc(RzReg *reg) {
 	if (!r0) {
 		r0 = a0;
 	}
-	if (a3 && a2 && a1) {
-		return rz_str_newf("%s reg(%s, %s, %s, %s)", r0, a0, a1, a2, a3);
+	// Gather every consecutive argument register the profile declares (A0..A9),
+	// stopping at the first undefined role, so an arch that passes more than four
+	// arguments in registers gets a complete convention rather than a truncated
+	// one.
+	static const char *arg_roles[] = { "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9" };
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	rz_strbuf_appendf(&sb, "%s reg(%s", r0, a0);
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(arg_roles); i++) {
+		const char *an = rz_reg_get_name_by_type(reg, arg_roles[i]);
+		if (!an) {
+			break;
+		}
+		rz_strbuf_appendf(&sb, ", %s", an);
 	}
-	if (a2 && a1) {
-		return rz_str_newf("%s reg(%s, %s, %s)", r0, a0, a1, a2);
-	}
-	if (a1) {
-		return rz_str_newf("%s reg(%s, %s)", r0, a0, a1);
-	}
-	return rz_str_newf("%s reg(%s)", r0, a0);
+	rz_strbuf_append(&sb, ")");
+	return rz_strbuf_drain_nofree(&sb);
 }

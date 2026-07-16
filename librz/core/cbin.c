@@ -1250,27 +1250,42 @@ static void reloc_set_flag(RzCore *core, RzBinReloc *reloc, const char *prefix, 
 		free(reloc_name);
 		return;
 	}
+	char *flag_prefix = NULL;
 	char *flag_name = NULL;
 	if (core->bin->prefix) {
-		flag_name = rz_str_newf("%s.%s.%s", core->bin->prefix, prefix, reloc_name);
+		flag_prefix = rz_str_newf("%s.%s", core->bin->prefix, prefix);
 	} else {
-		flag_name = rz_str_newf("%s.%s", prefix, reloc_name);
+		flag_prefix = strdup(prefix);
 	}
+	flag_name = rz_str_newf("%s.%s", flag_prefix, reloc_name);
 	rz_name_filter(flag_name, 0, true);
 	RzFlagItem *existing = rz_flag_get(core->flags, flag_name);
 	if (existing && existing->offset == flag_addr) {
 		// Mostly important for target flags.
 		// We don't want hundreds of reloc.target.<fcnname>.<xyz> flags at the same location
-		free(reloc_name);
-		free(flag_name);
-		return;
+		goto beach;
 	}
 	RzFlagItem *fi = rz_flag_set_next(core->flags, flag_name, flag_addr, bin_reloc_size(reloc));
 	if (fi) {
-		rz_flag_item_set_realname(fi, reloc_name);
+		RzBinFile *binfile = rz_bin_cur(core->bin);
+		RzBinPlugin *plugin = rz_bin_file_cur_plugin(binfile);
+		if (plugin && binfile && plugin->file_type &&
+			(plugin->file_type(binfile) != RZ_BIN_TYPE_REL || strcmp(prefix, "reloc.target"))) {
+			char *suffix = "";
+			if (strcmp(flag_name, fi->name)) { // there is a suffix
+				suffix = strrchr(fi->name, '.');
+			}
+			char *prefixed_reloc_name = rz_str_newf("%s.%s%s", flag_prefix, reloc_name, suffix);
+			rz_flag_item_set_realname(core->flags, fi, prefixed_reloc_name);
+			free(prefixed_reloc_name);
+		} else {
+			rz_flag_item_set_realname(core->flags, fi, reloc_name);
+		}
 	}
 
+beach:
 	free(reloc_name);
+	free(flag_prefix);
 	free(flag_name);
 }
 
@@ -1667,7 +1682,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 					sn.methflag = prname;
 				}
 				if (fi) {
-					rz_flag_item_set_realname(fi, sn.methname);
+					rz_flag_item_set_realname(core->flags, fi, sn.methname);
 					if (fi->offset == addr) {
 						rz_flag_unset(core->flags, fi);
 					}
@@ -1702,7 +1717,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 
 				fi = rz_flag_set(core->flags, fnp, addr, symbol->size);
 				if (fi) {
-					rz_flag_item_set_realname(fi, n);
+					rz_flag_item_set_realname(core->flags, fi, n);
 					fi->demangled = (bool)(size_t)sn.demname;
 				} else if (fn) {
 					RZ_LOG_WARN("core: cannot set flag with name '%s'\n", fnp);
@@ -3159,6 +3174,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_core_bin_whole_strings(RZ_NONNUL
 		}
 		rz_io_read_at_mapped(core->io, 0, tmp, bf->size);
 		rz_buf_write_at(bf->buf, 0, tmp, bf->size);
+		free(tmp);
 	}
 	if (!core->file) {
 		RZ_LOG_ERROR("Core file not open\n");
@@ -5652,8 +5668,6 @@ RZ_API bool rz_core_bin_trycatch_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBin
 			break;
 		}
 	}
-
-	rz_pvector_free(trycatch);
 
 	rz_cmd_state_output_array_end(state);
 	return true;

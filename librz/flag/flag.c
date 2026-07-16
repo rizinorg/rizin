@@ -239,6 +239,7 @@ RZ_API RzFlagItem *rz_flag_item_clone(RzFlagItem *item) {
 	if (!n) {
 		return NULL;
 	}
+	n->refcount = 1;
 	n->color = STRDUP_OR_NULL(item->color);
 	n->comment = STRDUP_OR_NULL(item->comment);
 	n->alias = STRDUP_OR_NULL(item->alias);
@@ -250,8 +251,22 @@ RZ_API RzFlagItem *rz_flag_item_clone(RzFlagItem *item) {
 	return n;
 }
 
+/**
+ * \brief Add a reference to the given flag item.
+ */
+RZ_API RzFlagItem *rz_flag_item_add_ref(RzFlagItem *item) {
+	rz_return_val_if_fail(item && item->refcount < UT8_MAX, NULL);
+	item->refcount++;
+	return item;
+}
+
 RZ_API void rz_flag_item_free(RzFlagItem *item) {
 	if (!item) {
+		return;
+	}
+	rz_return_if_fail(item->refcount > 0);
+	item->refcount--;
+	if (item->refcount > 0) {
 		return;
 	}
 	free(item->color);
@@ -337,6 +352,7 @@ RZ_API bool rz_flag_reset_obj_flags(RZ_NONNULL RZ_BORROW RzFlag *flags, RZ_NULLA
 		}
 		rz_serialize_flag_save(sdb, flags);
 		backup_succeeded = sdb_text_save(sdb, backup_filename, false);
+		sdb_free(sdb);
 	}
 	if (!backup_succeeded) {
 		RZ_LOG_WARN("Could not backup RzFlag before resetting flag space. Abort flag space reset.\n");
@@ -736,6 +752,7 @@ RZ_API RzFlagItem *rz_flag_set(RzFlag *f, const char *name, ut64 off, ut32 size)
 		if (!item) {
 			goto err;
 		}
+		item->refcount = 1;
 		is_new = true;
 	}
 
@@ -765,10 +782,28 @@ RZ_API void rz_flag_item_set_comment(RzFlagItem *item, const char *comment) {
 }
 
 /* add/replace/remove the realname of a flag item */
-RZ_API void rz_flag_item_set_realname(RzFlagItem *item, const char *realname) {
+RZ_API void rz_flag_item_set_realname(RzFlag *f, RzFlagItem *item, const char *realname) {
 	rz_return_if_fail(item);
-	free_item_realname(item);
-	item->realname = RZ_STR_ISEMPTY(realname) ? NULL : rz_str_dup(realname);
+	if (item->realname) { // item realname already exists
+		if (strcmp(item->name, item->realname)) {
+			// There appear to be too many cases where the following
+			// accidentally deletes a flag item whose name is the same as
+			// another item's realname, causing hanging pointers.
+			// ht_sp_delete(f->ht_name, item->realname);
+		}
+		free_item_realname(item);
+	}
+	if (RZ_STR_ISEMPTY(realname)) {
+		item->realname = NULL;
+	} else {
+		item->realname = rz_str_dup(realname);
+		if (strcmp(item->name, item->realname)) {
+			RzFlagItem *item_ref = rz_flag_item_add_ref(item);
+			if (!ht_sp_insert(f->ht_name, realname, item_ref)) {
+				rz_flag_item_free(item_ref);
+			}
+		}
+	}
 }
 
 /* add/replace/remove the color of a flag item */
@@ -794,6 +829,9 @@ RZ_API int rz_flag_rename(RzFlag *f, RzFlagItem *item, const char *name) {
 RZ_API bool rz_flag_unset(RzFlag *f, RzFlagItem *item) {
 	rz_return_val_if_fail(f && item, false);
 	remove_offsetmap(f, item);
+	if (item->realname && strcmp(item->name, item->realname)) {
+		ht_sp_delete(f->ht_name, item->realname);
+	}
 	ht_sp_delete(f->ht_name, item->name);
 	return true;
 }

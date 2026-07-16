@@ -511,7 +511,7 @@ static void apply_selector_stub_at(RzCore *core, ut64 addr, ut32 size, char *sel
 	if (!fi) {
 		return;
 	}
-	rz_flag_item_set_realname(fi, rz_strf(name, "objc_msgSend$%s", selector));
+	rz_flag_item_set_realname(core->flags, fi, rz_strf(name, "objc_msgSend$%s", selector));
 	// If there is already a function (e.g. from aa), rename it too
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
 	if (fcn) {

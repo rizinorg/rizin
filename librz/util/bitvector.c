@@ -601,17 +601,29 @@ RZ_API RZ_OWN RzBitVector *rz_bv_cut_tail(RZ_NONNULL RzBitVector *bv, ut32 delta
 }
 
 /**
- * Append bv2 to bv1 to get new bitvector
- * \param high bitvector to occupy the most significant part of the result
+ * Append high to low to get new bitvector
  * \param low bitvector to occupy the least significant part of the result
+ * \param high bitvector to occupy the most significant part of the result
  * \return ret RzBitVector, the new bitvector
  */
-RZ_API RZ_OWN RzBitVector *rz_bv_append(RZ_NONNULL RzBitVector *high, RZ_NONNULL RzBitVector *low) {
-	rz_return_val_if_fail(high && low, NULL);
+RZ_API RZ_OWN RzBitVector *rz_bv_append(RZ_NONNULL const RzBitVector *low, RZ_NONNULL const RzBitVector *high) {
+	rz_return_val_if_fail(low && high, NULL);
 	RzBitVector *ret = rz_bv_new(high->len + low->len);
 	rz_bv_copy_nbits(ret, 0, low, 0, low->len);
 	rz_bv_copy_nbits(ret, low->len, high, 0, high->len);
 	return ret;
+}
+
+/**
+ * Append high to low to get new bitvector
+ * \param low bitvector to occupy the least significant part of the result, and pointer to write the result to
+ * \param high bitvector to occupy the most significant part of the result
+ */
+RZ_API void rz_bv_append_inplace(RZ_INOUT RZ_NONNULL RzBitVector *low, RZ_NONNULL const RzBitVector *high) {
+	rz_return_if_fail(low && low);
+	ut32 low_len = low->len;
+	rz_bv_cast_inplace(low, low->len + high->len, false);
+	rz_bv_copy_nbits(low, low_len, high, 0, high->len);
 }
 
 /**
@@ -1798,14 +1810,10 @@ RZ_API bool rz_bv_set_from_ut64(RZ_NONNULL RzBitVector *bv, ut64 value) {
 		bv->bits.small_u &= (UT64_MAX >> (64 - bv->len));
 		return true;
 	}
-	if (value == 0) {
-		memset(bv->bits.large_a, 0, bv->_elem_len);
-		return true;
-	}
 
-	for (ut32 i = 0; i < bv->len; ++i) {
-		rz_bv_set(bv, i, value & 1);
-		value >>= 1;
+	memset(bv->bits.large_a, 0, bv->_elem_len);
+	for (size_t i = 0; i < 8 && value; ++i, value >>= 8) {
+		bv->bits.large_a[i] = value & 0xff;
 	}
 	return true;
 }
@@ -1827,10 +1835,21 @@ RZ_API bool rz_bv_set_from_st64(RZ_NONNULL RzBitVector *bv, st64 value) {
 		return true;
 	}
 
-	for (ut32 i = 0; i < bv->len; ++i) {
-		rz_bv_set(bv, i, value & 1);
-		value >>= 1;
+	ut64 uval = (ut64)value;
+	for (size_t i = 0; i < 8; ++i, uval >>= 8) {
+		bv->bits.large_a[i] = uval & 0xff;
 	}
+	if (value >= 0) {
+		memset(bv->bits.large_a + 8, 0x00, bv->_elem_len - 8);
+		return true;
+	}
+
+	memset(bv->bits.large_a + 8, 0xff, bv->_elem_len - 8 - 1);
+
+	// set high bits
+	size_t min_bytes_needed = ((bv->len + 7) / 8);
+	size_t unset_bits = (min_bytes_needed * 8) - bv->len;
+	bv->bits.large_a[min_bytes_needed - 1] = 0xff >> unset_bits;
 	return true;
 }
 

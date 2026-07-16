@@ -341,7 +341,7 @@ EXPECT=<<EOF
         ,=< 0x00005b02      7d0a           jnl   0x5b0e                ; rip=0x5b0e -> 0x8d4890f4 ; likely
        ,==< 0x00005b04      7f08           jnle  0x5b0e                ; rip=0x5b0e -> 0x8d4890f4 ; likely
       ,===< 0x00005b06      eb00           jmp   0x5b08                ; rip=0x5b08 -> 0xc30a15ff
-      `---> 0x00005b08      ff150ac30100   call  qword [reloc.__libc_start_main] ; [reloc.__libc_start_main:8]=0x23708 reloc.target.__libc_start_main ; rsp=0xfffffffffffffff8 ; rip=0x23708 -> 0x464c457f reloc.target.__libc_start_main
+      `---> 0x00005b08      ff150ac30100   call  qword [reloc.__libc_start_main] ; [0x21e18:8]=0x23708 reloc.target.__libc_start_main ; rsp=0xfffffffffffffff8 ; rip=0x23708 -> 0x464c457f reloc.target.__libc_start_main
 EOF
 RUN
 
@@ -968,5 +968,24 @@ EXPECT=<<EOF
 
 [36m\[0m           [32m0x0000103d[0m      [1;92mcall[0m[37m  [0m[37msym[0m[37m.[0m[37mimp[0m[37m.[0m[37m_[0m[37mExit[0m[0m[0m[31m                        ; void _Exit(int status)[0m
 [36m\[0m           [32m0x0000103d[0m      [1;92mcall[0m[37m  [0m[37m_[0m[37mExit[0m[0m[0m[31m                                ; void _Exit(int status)[0m
+EOF
+RUN
+
+NAME=seek to flag realname
+FILE=bins/elf/_Exit_0x91
+CMDS=<<EOF
+s _Exit
+fl.
+echo
+pd 2
+EOF
+EXPECT=<<EOF
+0x00001020 16 section..plt.sec
+0x00001020 16 sym.imp._Exit
+
+            ;-- section..plt.sec:
+            ;-- _Exit:
+            0x00001020      endbr64                                    ; [10] -r-x section size 16 named .plt.sec
+            0x00001024      jmp   qword [reloc._Exit]                  ; [0x3ff8:8]=0x4008 reloc.target._Exit
 EOF
 RUN

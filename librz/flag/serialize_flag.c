@@ -222,7 +222,7 @@ static bool flag_load_cb(void *user, const SdbKv *kv) {
 
 	RzFlagItem *item = rz_flag_set(ctx->flag, sdbkv_key(kv), proto.offset, proto.size);
 	if (proto.realname) {
-		rz_flag_item_set_realname(item, proto.realname);
+		rz_flag_item_set_realname(ctx->flag, item, proto.realname);
 	}
 	item->demangled = proto.demangled;
 	item->space = proto.space;

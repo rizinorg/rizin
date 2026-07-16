@@ -252,6 +252,15 @@ RZ_API RzBinFile *rz_bin_reload(RzBin *bin, RzBinFile *bf, ut64 baseaddr) {
 	opt.filename = bf->file;
 	rz_buf_seek(bf->buf, 0, RZ_BUF_SET);
 	RzBinFile *nbf = rz_bin_open_buf(bin, bf->buf, &opt);
+	// On reload the new file reuses the same fd, so opening it overwrites the
+	// old file's "cur" and "fd.<fd>" entries in bin->sdb. That releases fewer
+	// references to the old sdb than the regular teardown path does, leaving
+	// the extra reference rz_bin_object_new took on bf->sdb dangling, so the
+	// old sdb would leak once the old file is deleted below. Drop it here:
+	// sdb_free is reference-counted, so this only decrements the counter and
+	// the sdb is actually released when rz_bin_file_delete() drops the last
+	// reference.
+	sdb_free(bf->sdb);
 	rz_bin_file_delete(bin, bf);
 	return nbf;
 }
@@ -969,6 +978,12 @@ static RzBinObject *bin_bind_get_bin_object(RzBin *bin) {
 	return bf ? bf->o : NULL;
 }
 
+static RzPVector /*<RzBinTrycatch *>*/ *bin_bind_get_trycatch(RzBin *bin) {
+	rz_return_val_if_fail(bin, NULL);
+	RzBinFile *bf = rz_bin_cur(bin);
+	return bf ? rz_bin_file_get_trycatch(bf) : NULL;
+}
+
 RZ_API void rz_bin_bind(RzBin *bin, RzBinBind *b) {
 	if (!b) {
 		return;
@@ -981,6 +996,7 @@ RZ_API void rz_bin_bind(RzBin *bin, RzBinBind *b) {
 	b->get_vsect_at = bin_bind_get_vsection_at;
 	b->demangle = rz_bin_demangle;
 	b->get_bin_object = bin_bind_get_bin_object;
+	b->get_trycatch = bin_bind_get_trycatch;
 }
 
 RZ_API RzBuffer *rz_bin_create(RzBin *bin, const char *p,

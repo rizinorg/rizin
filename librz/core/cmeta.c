@@ -396,6 +396,13 @@ static bool meta_string_guess_add(RzCore *core, ut64 addr, size_t limit, char **
 		return false;
 	}
 	*ds = rz_list_first_val(str_list);
+	RzListIter *it;
+	RzDetectedString *s;
+	rz_list_foreach (str_list, it, s) {
+		if (s != *ds) {
+			rz_detected_string_free(s);
+		}
+	}
 	rz_list_free(str_list);
 	rz_str_ncpy(name, (*ds)->string, limit);
 	name[limit] = '\0';
@@ -434,6 +441,7 @@ RZ_API bool rz_core_meta_string_add(RzCore *core, ut64 addr, ut64 size, RzStrEnc
 		}
 		encoding = ds->encoding;
 		n = ds->size;
+		rz_detected_string_free(ds);
 	}
 	if (!name) {
 		result = rz_meta_set_with_subtype(core->analysis, RZ_META_TYPE_STRING, encoding, addr, n, guessname);

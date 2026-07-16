@@ -336,8 +336,8 @@ VALIDATOR_PURE(bitv) {
  * e.g. add, sub, mul, div, ...
  */
 VALIDATOR_PURE(bitv_binop) {
-	RzILOpPure *x = op->op.add.x; // just add is fine, all ops in here use the same struct
-	RzILOpPure *y = op->op.add.y;
+	RzILOpPure *x = op->op.binop_bv.x;
+	RzILOpPure *y = op->op.binop_bv.y;
 	RzILSortPure sx;
 	VALIDATOR_DESCEND(x, &sx);
 	VALIDATOR_ASSERT(sx.type == RZ_IL_TYPE_PURE_BITVECTOR, "Left operand of %s op is not a bitvector.\n", rz_il_op_pure_code_stringify(op->code));
@@ -396,8 +396,8 @@ VALIDATOR_PURE(inv) {
  * e.g. and, or, ...
  */
 VALIDATOR_PURE(bool_binop) {
-	RzILOpPure *x = op->op.booland.x; // just booland is fine, all ops in here use the same struct
-	RzILOpPure *y = op->op.booland.y;
+	RzILOpPure *x = op->op.binop_bool.x;
+	RzILOpPure *y = op->op.binop_bool.y;
 	RzILSortPure sx;
 	VALIDATOR_DESCEND(x, &sx);
 	VALIDATOR_ASSERT(sx.type == RZ_IL_TYPE_PURE_BOOL, "Left operand of %s op is not bool.\n", rz_il_op_pure_code_stringify(op->code));
@@ -413,7 +413,7 @@ VALIDATOR_PURE(bool_binop) {
  * e.g. msb, lsb
  */
 VALIDATOR_PURE(bitv_bool_unop) {
-	RzILOpPure *x = op->op.msb.bv; // just msb is fine, all ops in here use the same struct
+	RzILOpPure *x = op->op.unop_bv.bv;
 	RzILSortPure sx;
 	VALIDATOR_DESCEND(x, &sx);
 	VALIDATOR_ASSERT(sx.type == RZ_IL_TYPE_PURE_BITVECTOR, "Operand of %s op is not a bitvector.\n", rz_il_op_pure_code_stringify(op->code));
@@ -426,7 +426,7 @@ VALIDATOR_PURE(bitv_bool_unop) {
  * e.g. bitwise negation
  */
 VALIDATOR_PURE(bitv_unop) {
-	RzILOpPure *x = op->op.lognot.bv; // just lognot is fine, all ops in here use the same struct
+	RzILOpPure *x = op->op.unop_bv.bv;
 	RzILSortPure sx;
 	VALIDATOR_DESCEND(x, &sx);
 	VALIDATOR_ASSERT(sx.type == RZ_IL_TYPE_PURE_BITVECTOR, "Operand of %s op is not a bitvector.\n", rz_il_op_pure_code_stringify(op->code));
@@ -435,7 +435,7 @@ VALIDATOR_PURE(bitv_unop) {
 }
 
 VALIDATOR_PURE(shift) {
-	RzILOpArgsShiftLeft *args = &op->op.shiftl;
+	RzILOpArgsShiftLeft *args = &op->op.shift;
 	RzILSortPure sf;
 	VALIDATOR_DESCEND(args->fill_bit, &sf);
 	VALIDATOR_ASSERT(sf.type == RZ_IL_TYPE_PURE_BOOL, "Fill operand of %s op is not bool.\n", rz_il_op_pure_code_stringify(op->code));
@@ -450,7 +450,7 @@ VALIDATOR_PURE(shift) {
 }
 
 VALIDATOR_PURE(cmp) {
-	RzILOpArgsEq *args = &op->op.eq;
+	RzILOpArgsEq *args = &op->op.binop_bv;
 	RzILSortPure sx;
 	VALIDATOR_DESCEND(args->x, &sx);
 	VALIDATOR_ASSERT(sx.type == RZ_IL_TYPE_PURE_BITVECTOR, "Left operand of %s op is not a bitvector.\n", rz_il_op_pure_code_stringify(op->code));
@@ -574,7 +574,7 @@ VALIDATOR_PURE(fcast_to_int) {
 }
 
 VALIDATOR_PURE(icast_to_float) {
-	RzILOpArgsFCastfloat *args = &op->op.fcast_float;
+	RzILOpArgsFCastUFloat *args = &op->op.fcast_float;
 	RzILSortPure sort;
 
 	VALIDATOR_DESCEND(args->bv, &sort);

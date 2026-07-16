@@ -4432,3 +4432,92 @@ global uint8_t [4] global_var @ 0x404050
 global uint8_t [8] global_array @ 0x404058
 EOF
 RUN
+
+NAME=x64 structured exception handling xframe
+FILE=bins/pe/microsoft_seh_tests/x64/xframe_eh_exe.exe
+CMDS=<<EOF
+aaa
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from entry0 @ 0x1400019cb
+/ int main(int argc, char **argv, char **envp);
+|           0x140001770      sub   rsp, 0x28
+|           0x140001774      call  fcn.140001590
+|           0x140001779      call  fcn.140001000
+|           0x14000177e      call  fcn.140001220
+|           0x140001783      lea   rcx, qword str.Caught_Exceptions_Test_PASSED. ; 0x140003320 ; "Caught Exceptions Test PASSED." ; const char *s
+|           0x14000178a      call  qword [sym.imp.api_ms_win_crt_stdio_l1_1_0.dll_puts] ; [0x1400031a0:8]=0x3e22 ; "\">" ; int puts(const char *s)
+|           0x140001790      call  fcn.1400016a0
+|           0x140001795      lea   rcx, qword str.Resumed_Exceptions_Test_PASSED. ; 0x140003340 ; "Resumed Exceptions Test PASSED." ; const char *s
+|           0x14000179c      call  qword [sym.imp.api_ms_win_crt_stdio_l1_1_0.dll_puts] ; [0x1400031a0:8]=0x3e22 ; "\">" ; int puts(const char *s)
+|           0x1400017a2      xor   eax, eax
+|           0x1400017a4      add   rsp, 0x28
+\           0x1400017a8      ret
+EOF
+RUN
+
+NAME=x64 structured exception handling
+FILE=bins/pe/seh_x64.exe
+CMDS=<<EOF
+aaa
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from entry0 @ 0x140001433
+/ int main(int argc, char **argv, char **envp);
+|           ; arg int argc @ rcx
+|           ; arg char **argv @ rdx
+|           ; var int64_t var_18h @ stack - 0x18
+|           ; var int64_t var_8h @ stack + 0x8
+|           0x140001010      mov   qword [var_8h], rbx
+|           0x140001015      push  rdi
+|           0x140001016      sub   rsp, 0x30
+|           0x14000101a      mov   rbx, rdx                            ; argv
+|           0x14000101d      mov   edi, 0xbadbeef
+|           0x140001022      cmp   ecx, 0x01                           ; 1 ; argc
+|       ,=< 0x140001025      jle   0x140001048
+|       |   0x140001027      lea   rcx, qword str.Writing_to_invalid_pointer. ; 0x140002330 ; "Writing to invalid pointer." ; const char *s
+|       |   0x14000102e      call  qword [sym.imp.api_ms_win_crt_stdio_l1_1_0.dll_puts] ; [0x140002180:8]=0x2cbe ; int puts(const char *s)
+|       |   0x140001034      mov   rcx, qword [rbx+0x08]               ; const char *str
+|       |   0x140001038      call  qword [sym.imp.api_ms_win_crt_convert_l1_1_0.dll_atoi] ; [0x140002098:8]=0x2ca4 ; int atoi(const char *str)
+|       |   0x14000103e      mov   ebx, eax
+|       |   0x140001040      mov   dword [var_18h], eax
+|       |   0x140001044      mov   dword [rdi], eax
+|      ,==< 0x140001046      jmp   0x14000104c
+|      |`-> 0x140001048      mov   ebx, dword [var_18h]
+|      |    ; CODE XREF from main @ 0x140001046
+|      `--> 0x14000104c      lea   rcx, qword str.Try_dividing_by_zero. ; 0x140002350 ; "Try dividing by zero." ; const char *s
+|           0x140001053      call  qword [sym.imp.api_ms_win_crt_stdio_l1_1_0.dll_puts] ; [0x140002180:8]=0x2cbe ; int puts(const char *s)
+|           0x140001059      mov   eax, ebx
+|           0x14000105b      cdq
+|           0x14000105c      xor   ecx, ecx
+|           0x14000105e      idiv  ecx
+|           0x140001060      mov   dword [var_18h], eax
+|       ,=< 0x140001064      jmp   0x140001074
+|       |   ; CODE XREF from main @ 0x14000104c
+|       |   0x140001066      lea   rcx, qword str.Inside_nested_except_block ; 0x140002368 ; "Inside nested except block!" ; const char *s
+|       |   0x14000106d      call  qword [sym.imp.api_ms_win_crt_stdio_l1_1_0.dll_puts] ; [0x140002180:8]=0x2cbe ; int puts(const char *s)
+|       |   0x140001073      nop
+|       |   ; CODE XREF from main @ 0x140001064
+|      ,`-> 0x140001074      jmp   0x1400010a2
+|      |    ; CODE XREF from main @ 0x140001022
+|      |    0x140001076      lea   rcx, qword str.Inside_exception_handler ; 0x140002388 ; "Inside exception handler!\n" ; const char *s
+|      |    0x14000107d      call  qword [sym.imp.api_ms_win_crt_stdio_l1_1_0.dll_puts] ; [0x140002180:8]=0x2cbe ; int puts(const char *s)
+|      |    0x140001083      nop
+|      |    0x140001084      mov   edx, 0xbadbeef                      ; int64_t arg2
+|      |    0x140001089      mov   ecx, dword [var_18h]                ; int64_t arg1
+|      |    0x14000108d      call  fcn.140001170
+|      |,=< 0x140001092      jmp   0x1400010a2
+|      ||   ; CODE XREF from main @ 0x140001084
+|      ||   0x140001094      lea   rcx, qword str.Divide_by_zero_exception ; 0x1400023a8 ; "Divide by zero exception!" ; const char *s
+|      ||   0x14000109b      call  qword [sym.imp.api_ms_win_crt_stdio_l1_1_0.dll_puts] ; [0x140002180:8]=0x2cbe ; int puts(const char *s)
+|      ||   0x1400010a1      nop
+|      ||   ; CODE XREFS from main @ 0x140001074, 0x140001092
+|      ``-> 0x1400010a2      xor   eax, eax
+|           0x1400010a4      mov   rbx, qword [var_8h]
+|           0x1400010a9      add   rsp, 0x30
+|           0x1400010ad      pop   rdi
+\           0x1400010ae      ret
+EOF
+RUN

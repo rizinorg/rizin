@@ -483,7 +483,14 @@ foreach it : ccs
   it_userconf.set('HUD', rizin_hud)
   it_userconf.set('PLUGINS', rizin_plugins)
   it_userconf.set('BINDINGS', rizin_bindings)
-  it_userconf.set10('HAVE_OPENSSL', sys_openssl.found())
+  if sys_openssl.found()
+    it_userconf.set10('HAVE_OPENSSL', true)
+    ok = it_cc.has_function('EVP_sm3', prefix: '#include <openssl/evp.h>', dependencies: [sys_openssl])
+    it_userconf.set10('HAVE_OPENSSL_SM3', ok)
+  else
+    it_userconf.set10('HAVE_OPENSSL', false)
+    it_userconf.set10('HAVE_OPENSSL_SM3', false)
+  endif
   it_userconf.set10('WANT_DYLINK', true)
   it_userconf.set10('HAVE_PTRACE', have_ptrace)
   it_userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
@@ -938,6 +945,7 @@ summary({
   'System xxhash library': xxhash_dep.found() and xxhash_dep.type_name() != 'internal',
   'System libmspack library': libmspack_dep.found() and libmspack_dep.type_name() != 'internal',
   'System openssl library': sys_openssl.found() and sys_openssl.type_name() != 'internal',
+  'System openssl has SM3': userconf.get('HAVE_OPENSSL_SM3', 0) != 0,
   'System capstone library': capstone_dep.found() and capstone_dep.type_name() != 'internal',
   'System zydis library': zydis_dep.found() and zydis_dep.type_name() != 'internal',
   'System tree-sitter library': tree_sitter_dep.found() and tree_sitter_dep.type_name() != 'internal',

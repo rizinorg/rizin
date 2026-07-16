@@ -328,63 +328,6 @@ RZ_API char *rz_hex_from_c(const char *code) {
 	return ret;
 }
 
-RZ_API char *rz_hex_from_js(const char *code) {
-	const char *s1 = (const char *)strchr(code, '\'');
-	const char *s2 = (const char *)strchr(code, '"');
-
-	/* there are no strings in the input */
-	if (!(s1 || s2)) {
-		return NULL;
-	}
-
-	const char *start, *end;
-	if (s1 < s2) {
-		start = s1;
-		end = (const char *)strchr(start + 1, '\'');
-	} else {
-		start = s2;
-		end = (const char *)strchr(start + 1, '"');
-	}
-
-	/* the string isn't properly terminated */
-	if (!end) {
-		return NULL;
-	}
-
-	char *str = rz_str_ndup(start + 1, end - start - 1);
-
-	/* assuming base64 input, output will always be shorter */
-	ut8 *b64d = malloc(end - start);
-	if (!b64d) {
-		free(str);
-		return NULL;
-	}
-
-	rz_base64_decode(b64d, str, end - start - 1);
-	if (!b64d) {
-		free(str);
-		free(b64d);
-		return NULL;
-	}
-
-	// TODO: use rz_str_bin2hex
-	int i, len = strlen((const char *)b64d);
-	char *out = malloc(len * 2 + 1);
-	if (!out) {
-		free(str);
-		free(b64d);
-		return NULL;
-	}
-	for (i = 0; i < len; i++) {
-		sprintf(&out[i * 2], "%02x", b64d[i]);
-	}
-	out[len * 2] = '\0';
-
-	free(str);
-	free(b64d);
-	return out;
-}
-
 /* convert
  * "\x41\x23\x42\x1b"
  * "\x41\x23\x42\x1b"
@@ -423,10 +366,6 @@ RZ_API char *rz_hex_from_code(const char *code) {
 	/* C language */
 	if (strstr(code, "char") || strstr(code, "int")) {
 		return rz_hex_from_c(code);
-	}
-	/* JavaScript */
-	if (strstr(code, "var")) {
-		return rz_hex_from_js(code);
 	}
 	/* Python */
 	return rz_hex_from_py(code);

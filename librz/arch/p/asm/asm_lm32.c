@@ -10,8 +10,7 @@
 
 #define LM32_UNUSED 0
 
-// str has to be at least 8 chars elements long
-static int reg_number_to_string(ut8 reg, char *str) {
+static int reg_number_to_string(ut8 reg, char *str, size_t str_sz) {
 	ut8 match_idx = 0xff;
 	int i;
 	for (i = 0; i < RzAsmLm32RegNumber; i++) {
@@ -24,7 +23,7 @@ static int reg_number_to_string(ut8 reg, char *str) {
 	if (match_idx == 0xff) {
 		return -1;
 	}
-	strcpy(str, RzAsmLm32Regs[match_idx].name);
+	rz_str_ncpy(str, RzAsmLm32Regs[match_idx].name, str_sz);
 	return 0;
 }
 
@@ -77,8 +76,7 @@ static int string_to_opcode(const char *str, ut8 *num) {
 }
 #endif
 
-// str has to be at least 8 chars elements long
-static int csr_number_to_string(ut8 csr, char *str) {
+static int csr_number_to_string(ut8 csr, char *str, size_t str_sz) {
 	ut8 match_idx = 0xff;
 	int i;
 	for (i = 0; i < RzAsmLm32CsrNumber; i++) {
@@ -91,7 +89,7 @@ static int csr_number_to_string(ut8 csr, char *str) {
 	if (match_idx == 0xff) {
 		return -1;
 	}
-	strcpy(str, RzAsmLm32Csrs[match_idx].name);
+	rz_str_ncpy(str, RzAsmLm32Csrs[match_idx].name, str_sz);
 	return 0;
 }
 
@@ -154,7 +152,7 @@ static bool is_pseudo_instr_nop(RzAsmLm32Instruction *instr) {
 
 // raise instruction is used for break, scall
 static bool is_pseudo_instr_raise(RzAsmLm32Instruction *instr) {
-	return instr->op == raise_instr;
+	return instr->op == lm32_op_raise;
 }
 
 static int rz_asm_lm32_decode(RzAsmLm32Instruction *instr) {
@@ -213,8 +211,8 @@ static int rz_asm_lm32_decode(RzAsmLm32Instruction *instr) {
 		break;
 	case three_regs:
 		instr->dest_reg = extract_reg_w(instr->value);
-		instr->src0_reg = extract_reg_v(instr->value);
-		instr->src1_reg = extract_reg_u(instr->value);
+		instr->src0_reg = extract_reg_u(instr->value);
+		instr->src1_reg = extract_reg_v(instr->value);
 		break;
 	case reg_csr: // wcsr
 		if (is_invalid_wcsr_instr(instr)) {
@@ -255,42 +253,42 @@ static int write_reg_names_to_struct(RzAsmLm32Instruction *instr) {
 	case reg_imm16_zeroextend:
 	case reg_imm5:
 	case two_regs:
-		if (reg_number_to_string(instr->dest_reg, instr->dest_reg_str)) {
+		if (reg_number_to_string(instr->dest_reg, instr->dest_reg_str, sizeof(instr->dest_reg_str))) {
 			return -1;
 		}
-		if (reg_number_to_string(instr->src0_reg, instr->src0_reg_str)) {
+		if (reg_number_to_string(instr->src0_reg, instr->src0_reg_str, sizeof(instr->src0_reg_str))) {
 			return -1;
 		}
 		break;
 	case one_reg:
-		if (reg_number_to_string(instr->src0_reg, instr->src0_reg_str)) {
+		if (reg_number_to_string(instr->src0_reg, instr->src0_reg_str, sizeof(instr->src0_reg_str))) {
 			return -1;
 		}
 		break;
 	case three_regs:
-		if (reg_number_to_string(instr->dest_reg, instr->dest_reg_str)) {
+		if (reg_number_to_string(instr->dest_reg, instr->dest_reg_str, sizeof(instr->dest_reg_str))) {
 			return -1;
 		}
-		if (reg_number_to_string(instr->src0_reg, instr->src0_reg_str)) {
+		if (reg_number_to_string(instr->src0_reg, instr->src0_reg_str, sizeof(instr->src0_reg_str))) {
 			return -1;
 		}
-		if (reg_number_to_string(instr->src1_reg, instr->src1_reg_str)) {
+		if (reg_number_to_string(instr->src1_reg, instr->src1_reg_str, sizeof(instr->src1_reg_str))) {
 			return -1;
 		}
 		break;
 	case reg_csr:
-		if (reg_number_to_string(instr->src0_reg, instr->src0_reg_str)) {
+		if (reg_number_to_string(instr->src0_reg, instr->src0_reg_str, sizeof(instr->src0_reg_str))) {
 			return -1;
 		}
-		if (csr_number_to_string(instr->csr, instr->csr_reg_str)) {
+		if (csr_number_to_string(instr->csr, instr->csr_reg_str, sizeof(instr->csr_reg_str))) {
 			return -1;
 		}
 		break;
 	case csr_reg:
-		if (reg_number_to_string(instr->dest_reg, instr->dest_reg_str)) {
+		if (reg_number_to_string(instr->dest_reg, instr->dest_reg_str, sizeof(instr->dest_reg_str))) {
 			return -1;
 		}
-		if (csr_number_to_string(instr->csr, instr->csr_reg_str)) {
+		if (csr_number_to_string(instr->csr, instr->csr_reg_str, sizeof(instr->csr_reg_str))) {
 			return -1;
 		}
 		break;
@@ -303,44 +301,45 @@ static int write_reg_names_to_struct(RzAsmLm32Instruction *instr) {
 	return 0;
 }
 
-static int print_pseudo_instruction(RzAsmLm32Instruction *instr, char *str) {
+static int print_pseudo_instruction(RzAsmLm32Instruction *instr, RzStrBuf *sb_out) {
 	if (!instr->pseudoInstruction) {
 		return -1;
 	}
 	switch (instr->op) {
 	// ret == b ra
 	case lm32_op_b:
-		strcpy(str, "ret");
+		rz_strbuf_set(sb_out, "ret");
 		break;
 	// mv rX, rY == or rX, rY, r0
 	case lm32_op_or:
-		sprintf(str, "mv %s, %s", instr->dest_reg_str, instr->src0_reg_str);
+		rz_strbuf_setf(sb_out, "mv %s, %s", instr->dest_reg_str, instr->src0_reg_str);
 		break;
 	// mvhi rX, imm16 == orhi rX, r0, imm16
 	case lm32_op_orhi:
-		sprintf(str, "mvhi %s, 0x%x", instr->dest_reg_str, instr->immediate);
+		rz_strbuf_setf(sb_out, "mvhi %s, 0x%x", instr->dest_reg_str, instr->immediate);
 		break;
 	// not rX, rY == xnor rX, rY, r0
 	case lm32_op_xnor:
-		sprintf(str, "not %s, %s", instr->dest_reg_str, instr->src0_reg_str);
+		rz_strbuf_setf(sb_out, "not %s, %s", instr->dest_reg_str, instr->src0_reg_str);
 		break;
 	// mvi rX, imm16 == addi rX, r0, imm16
 	// nop == addi r0, r0, 0
 	case lm32_op_addi:
 		if (is_pseudo_instr_nop(instr)) { // nop
-			strcpy(str, "nop");
+			rz_strbuf_set(sb_out, "nop");
 		} else { // mvi
-			sprintf(str, "mvi %s, 0x%x", instr->dest_reg_str, instr->immediate);
+			rz_strbuf_setf(sb_out, "mvi %s, 0x%x", instr->dest_reg_str, instr->immediate);
 		}
 		break;
 	// break, scall
 	case lm32_op_raise:
+		eprintf("immediate: %#x\n", instr->immediate);
 		switch (instr->immediate) {
 		case 0x2: // break
-			strcpy(str, "break");
+			rz_strbuf_set(sb_out, "break");
 			break;
 		case 0x7: // scall
-			strcpy(str, "scall");
+			rz_strbuf_set(sb_out, "scall");
 			break;
 		default:
 			return -1;
@@ -352,7 +351,7 @@ static int print_pseudo_instruction(RzAsmLm32Instruction *instr, char *str) {
 	return 0;
 }
 
-static int rz_asm_lm32_stringify(RzAsmLm32Instruction *instr, char *str) {
+static int rz_asm_lm32_stringify(RzAsmLm32Instruction *instr, RzStrBuf *sb_out) {
 	if (write_reg_names_to_struct(instr)) {
 		return -1;
 	}
@@ -360,47 +359,47 @@ static int rz_asm_lm32_stringify(RzAsmLm32Instruction *instr, char *str) {
 	// pseudo instructions need some special handling
 	if (instr->pseudoInstruction) {
 		// return after printing the decoded pseudo instruction, so it doesn't get overwritten
-		return print_pseudo_instruction(instr, str);
+		return print_pseudo_instruction(instr, sb_out);
 	}
 
 	// get opcode string
-	strcpy(str, instr->op_decode.name);
+	rz_strbuf_set(sb_out, instr->op_decode.name);
 
 	// get parameters (registers, immediate) string
 	switch (instr->op_decode.type) {
 	case reg_imm16_signextend:
-		sprintf(str, "%s %s, %s, 0x%x", instr->op_decode.name, instr->dest_reg_str, instr->src0_reg_str,
+		rz_strbuf_setf(sb_out, "%s %s, %s, 0x%x", instr->op_decode.name, instr->dest_reg_str, instr->src0_reg_str,
 			instr->immediate);
 		break;
 	case reg_imm16_zeroextend:
 	case reg_imm5:
-		sprintf(str, "%s %s, %s, 0x%x", instr->op_decode.name, instr->dest_reg_str, instr->src0_reg_str,
+		rz_strbuf_setf(sb_out, "%s %s, %s, 0x%x", instr->op_decode.name, instr->dest_reg_str, instr->src0_reg_str,
 			instr->immediate);
 		break;
 	case reg_imm16_shift2_signextend:
 		// print the branch/call destination address
-		sprintf(str, "%s %s, %s, 0x%x", instr->op_decode.name, instr->dest_reg_str, instr->src0_reg_str,
+		rz_strbuf_setf(sb_out, "%s %s, %s, 0x%x", instr->op_decode.name, instr->dest_reg_str, instr->src0_reg_str,
 			instr->immediate + instr->addr);
 		break;
 	case one_reg:
-		sprintf(str, "%s %s", instr->op_decode.name, instr->src0_reg_str);
+		rz_strbuf_setf(sb_out, "%s %s", instr->op_decode.name, instr->src0_reg_str);
 		break;
 	case two_regs:
-		sprintf(str, "%s %s, %s", instr->op_decode.name, instr->dest_reg_str, instr->src0_reg_str);
+		rz_strbuf_setf(sb_out, "%s %s, %s", instr->op_decode.name, instr->dest_reg_str, instr->src0_reg_str);
 		break;
 	case three_regs:
-		sprintf(str, "%s %s, %s, %s", instr->op_decode.name, instr->dest_reg_str, instr->src0_reg_str,
+		rz_strbuf_setf(sb_out, "%s %s, %s, %s", instr->op_decode.name, instr->dest_reg_str, instr->src0_reg_str,
 			instr->src1_reg_str);
 		break;
 	case reg_csr:
-		sprintf(str, "%s %s, %s", instr->op_decode.name, instr->csr_reg_str, instr->src0_reg_str);
+		rz_strbuf_setf(sb_out, "%s %s, %s", instr->op_decode.name, instr->csr_reg_str, instr->src0_reg_str);
 		break;
 	case csr_reg:
-		sprintf(str, "%s %s, %s", instr->op_decode.name, instr->dest_reg_str, instr->csr_reg_str);
+		rz_strbuf_setf(sb_out, "%s %s, %s", instr->op_decode.name, instr->dest_reg_str, instr->csr_reg_str);
 		break;
 	case imm26:
 		// print the branch/call destination address
-		sprintf(str, "%s 0x%x", instr->op_decode.name, instr->immediate + instr->addr);
+		rz_strbuf_setf(sb_out, "%s 0x%x", instr->op_decode.name, instr->immediate + instr->addr);
 		break;
 	// case raise_instr: //unneeded; handled as pseudo instruction
 	default:
@@ -417,8 +416,7 @@ static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		rz_strbuf_set(&op->buf_asm, "invalid");
 		return -1;
 	}
-	// op->buf_asm is 256 chars long, which is more than sufficient
-	if (rz_asm_lm32_stringify(&instr, rz_strbuf_get(&op->buf_asm))) {
+	if (rz_asm_lm32_stringify(&instr, &op->buf_asm)) {
 		rz_strbuf_set(&op->buf_asm, "invalid");
 		return -1;
 	}

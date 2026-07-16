@@ -46,7 +46,7 @@ RzFlag *ref_0_flag() {
 
 	RzFlagItem *foobars = rz_flag_set(flag, "foobars", 0x1337, 0x10);
 	foobars->demangled = true;
-	rz_flag_item_set_realname(foobars, "Foobars");
+	rz_flag_item_set_realname(flag, foobars, "Foobars");
 	rz_flag_item_set_color(foobars, "white");
 	rz_flag_item_set_comment(foobars, "windowpane");
 	rz_flag_item_set_alias(foobars, "f00b4r5");

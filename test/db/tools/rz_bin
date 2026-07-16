@@ -1138,6 +1138,7 @@ objc   LGPL3        pancake
 pascal LGPL3        deroad
 c++    LGPL3        billow
 rust   LGPL3        Dhruv Maroo/RizinOrg
+dlang  LGPL3        historicattle
 EOF
 RUN
 
