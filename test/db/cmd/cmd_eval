@@ -53,15 +53,15 @@ FILE==
 CMDS=e asm.os=?
 EXPECT=<<EOF
 ios
-dos
-darwin
 linux
-freebsd
-openbsd
-netbsd
-windows
 s110
 none
+darwin
+freebsd
+windows
+dos
+openbsd
+netbsd
 EOF
 RUN
 
@@ -174,7 +174,7 @@ elq zoom
 EOF
 EXPECT=<<EOF
 {"zoom.byte":"h","zoom.from":0,"zoom.in":"io.map","zoom.maxsz":512,"zoom.to":0}
-[{"name":"zoom.byte","desc":"Zoom callback to calculate each byte (See pz? for help)","flags":"string,bind","options":[],"value":"h"},{"name":"zoom.from","desc":"Zoom start address","flags":"integer","options":[],"value":0},{"name":"zoom.in","desc":"Specify  boundaries for zoom","flags":"string,bind","options":["raw","block","bin.section","bin.sections","bin.sections.rwx","bin.sections.r","bin.sections.rw","bin.sections.rx","bin.sections.wx","bin.sections.x","io.map","io.maps","io.maps.rwx","io.maps.r","io.maps.rw","io.maps.rx","io.maps.wx","io.maps.x","dbg.stack","dbg.heap","dbg.map","dbg.maps","dbg.maps.rwx","dbg.maps.r","dbg.maps.rw","dbg.maps.rx","dbg.maps.wx","dbg.maps.x","analysis.fcn","analysis.bb"],"value":"io.map"},{"name":"zoom.maxsz","desc":"Zoom max size of block","flags":"integer","options":[],"value":512},{"name":"zoom.to","desc":"Zoom end address","flags":"integer","options":[],"value":0}]
+[{"name":"zoom.byte","desc":"Zoom callback to calculate each byte (See pz? for help)","flags":"string,bind","options":[],"value":"h"},{"name":"zoom.from","desc":"Zoom start address","flags":"integer","options":[],"value":0},{"name":"zoom.in","desc":"Specify  boundaries for zoom","flags":"string,bind","options":["io.maps.rw","block","bin.sections.rx","io.maps.rwx","dbg.heap","io.map","dbg.maps.rwx","io.maps.r","bin.sections.r","dbg.maps.r","io.maps.x","analysis.fcn","bin.sections.x","analysis.bb","dbg.maps.rw","dbg.maps.x","dbg.map","io.maps.wx","bin.sections.wx","raw","bin.section","bin.sections.rw","bin.sections.rwx","io.maps","dbg.maps.rx","dbg.maps.wx","bin.sections","dbg.stack","io.maps.rx","dbg.maps"],"value":"io.map"},{"name":"zoom.maxsz","desc":"Zoom max size of block","flags":"integer","options":[],"value":512},{"name":"zoom.to","desc":"Zoom end address","flags":"integer","options":[],"value":0}]
            zoom.byte: Zoom callback to calculate each byte (See pz? for help)
            zoom.from: Zoom start address
              zoom.in: Specify  boundaries for zoom
@@ -182,7 +182,7 @@ EXPECT=<<EOF
              zoom.to: Zoom end address
            zoom.byte = h (string,bind); Zoom callback to calculate each byte (See pz? for help) 
            zoom.from = 0 (integer); Zoom start address 
-             zoom.in = io.map (string,bind); Specify  boundaries for zoom [raw, block, bin.section, bin.sections, bin.sections.rwx, bin.sections.r, bin.sections.rw, bin.sections.rx, bin.sections.wx, bin.sections.x, io.map, io.maps, io.maps.rwx, io.maps.r, io.maps.rw, io.maps.rx, io.maps.wx, io.maps.x, dbg.stack, dbg.heap, dbg.map, dbg.maps, dbg.maps.rwx, dbg.maps.r, dbg.maps.rw, dbg.maps.rx, dbg.maps.wx, dbg.maps.x, analysis.fcn, analysis.bb]
+             zoom.in = io.map (string,bind); Specify  boundaries for zoom [io.maps.rw, block, bin.sections.rx, io.maps.rwx, dbg.heap, io.map, dbg.maps.rwx, io.maps.r, bin.sections.r, dbg.maps.r, io.maps.x, analysis.fcn, bin.sections.x, analysis.bb, dbg.maps.rw, dbg.maps.x, dbg.map, io.maps.wx, bin.sections.wx, raw, bin.section, bin.sections.rw, bin.sections.rwx, io.maps, dbg.maps.rx, dbg.maps.wx, bin.sections, dbg.stack, io.maps.rx, dbg.maps]
           zoom.maxsz = 512 (integer); Zoom max size of block 
              zoom.to = 0 (integer); Zoom end address 
 zoom.byte=h
