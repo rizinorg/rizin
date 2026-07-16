@@ -698,7 +698,7 @@ static void render_visual_xaxis_ruler(RzStrBuf *buf, const RzHistogramInteractiv
 		space = 1;
 	}
 	for (int t = 0; t < ticks; t++) {
-    	tick_cols[t] = (int)((ut64)t * space / (ticks - 1));
+		tick_cols[t] = (int)((ut64)t * space / (ticks - 1));
 	}
 	rz_strbuf_appendf(buf, "%*s", gutter_w, "");
 	next_tick = 0;
