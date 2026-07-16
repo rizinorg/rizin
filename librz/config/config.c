@@ -75,9 +75,7 @@ RZ_IPI RZ_OWN RzSetS *rz_config_dup_set(RZ_NULLABLE const RzSetS *set) {
 	if (!safe_set) {
 		return NULL;
 	}
-	if (!set) {
-		return safe_set;
-	}
+
 	RzIterator *it = rz_set_s_as_iter(set);
 	const char **elem;
 	rz_iterator_foreach(it, elem) {
@@ -381,11 +379,10 @@ RZ_API bool rz_config_add_options(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const cha
 	}
 
 	va_start(argp, desc);
-	va_list argp_copy;
-	va_copy(argp_copy, argp);
-	const char *first = va_arg(argp_copy, const char *);
-	va_end(argp_copy);
-
+	const char *first = va_arg(argp, const char *);
+	if (first) {
+		rz_set_s_add(set, first);
+	}
 	bool ok = config_var_args_to_set(argp, set);
 	va_end(argp);
 	if (!ok) {
@@ -567,13 +564,11 @@ RZ_API RZ_OWN char *rz_config_var_as_string(RZ_NONNULL const RzConfigVar *var) {
 		RzStrBuf *sb = rz_strbuf_new("");
 		RzIterator *it = rz_set_s_as_iter(set);
 		const char **val;
-		bool first = true;
 		rz_iterator_foreach(it, val) {
-			if (!first) {
+			if (rz_strbuf_length(sb) > 0) {
 				rz_strbuf_append(sb, ",");
 			}
 			rz_strbuf_append(sb, *val);
-			first = false;
 		}
 		rz_iterator_free(it);
 		char *value = rz_strbuf_drain(sb);

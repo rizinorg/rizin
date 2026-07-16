@@ -1660,24 +1660,22 @@ typedef struct core_config_print_s {
 } CoreConfigPrint;
 
 static void core_config_print_set_as_string(const RzSetS *set, bool allow_empty) {
-	if ((!set || rz_set_s_size(set) < 1) && !allow_empty) {
+	if (rz_set_s_size(set) < 1 && !allow_empty) {
 		return;
 	}
 	rz_cons_print("[");
-	if (set) {
-		RzIterator *iter = rz_set_s_as_iter(set);
-		const char **entry;
-		bool first = true;
-		rz_iterator_foreach(iter, entry) {
-			if (!first) {
-				rz_cons_printf(", %s", *entry);
-			} else {
-				rz_cons_print(*entry);
-				first = false;
-			}
+	RzIterator *iter = rz_set_s_as_iter(set);
+	const char **entry;
+	bool first = true;
+	rz_iterator_foreach(iter, entry) {
+		if (!first) {
+			rz_cons_printf(", %s", *entry);
+		} else {
+			rz_cons_print(*entry);
+			first = false;
 		}
-		rz_iterator_free(iter);
 	}
+	rz_iterator_free(iter);
 	rz_cons_print("]");
 }
 

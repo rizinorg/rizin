@@ -892,7 +892,7 @@ static void autocmplt_cmd_arg_eval_full(RzCore *core, RzLineNSCompletionResult *
 	if (rz_set_s_size(options) > 0) {
 		RzIterator *iter = rz_set_s_as_iter(options);
 		const char **opt;
-		rz_iterator_foreach (iter, opt) {
+		rz_iterator_foreach(iter, opt) {
 			if (!strncmp(*opt, v, len)) {
 				rz_line_ns_completion_result_add(res, *opt);
 			}
