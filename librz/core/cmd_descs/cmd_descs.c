@@ -43,7 +43,6 @@ static const RzCmdDescDetail compare_and_set_core_num_value_details[2];
 static const RzCmdDescDetail exec_cmd_if_core_num_value_positive_details[2];
 static const RzCmdDescDetail exec_cmd_if_core_num_value_negative_details[2];
 static const RzCmdDescDetail push_escaped_details[3];
-static const RzCmdDescDetail inquiry_interpreter_prototype_details[2];
 static const RzCmdDescDetail analysis_all_esil_details[2];
 static const RzCmdDescDetail analyze_all_preludes_details[2];
 static const RzCmdDescDetail analysis_functions_merge_details[2];
@@ -67,6 +66,7 @@ static const RzCmdDescDetail analysis_hint_set_optype_details[2];
 static const RzCmdDescDetail analysis_hint_set_immbase_details[3];
 static const RzCmdDescDetail analysis_hint_set_offset_details[2];
 static const RzCmdDescDetail analyze_esil_insn_access_details[4];
+static const RzCmdDescDetail inquiry_interpreter_prototype_details[2];
 static const RzCmdDescDetail basefind_compute_details[2];
 static const RzCmdDescDetail cmd_cmp_unified_details[2];
 static const RzCmdDescDetail cw_details[2];
@@ -252,7 +252,6 @@ static const RzCmdDescArg input_msg_args[2];
 static const RzCmdDescArg input_conditional_args[2];
 static const RzCmdDescArg get_addr_references_args[2];
 static const RzCmdDescArg push_escaped_args[2];
-static const RzCmdDescArg inquiry_interpreter_prototype_args[3];
 static const RzCmdDescArg analysis_all_esil_args[2];
 static const RzCmdDescArg analyze_all_consecutive_functions_in_section_args[2];
 static const RzCmdDescArg analyze_xrefs_section_bytes_args[2];
@@ -430,6 +429,7 @@ static const RzCmdDescArg analyze_esil_emu_fcn_find_args_args[2];
 static const RzCmdDescArg analyze_esil_int_list_load_args[2];
 static const RzCmdDescArg analyze_esil_int_remove_args[2];
 static const RzCmdDescArg analyze_esil_insn_access_args[4];
+static const RzCmdDescArg inquiry_interpreter_prototype_args[3];
 static const RzCmdDescArg block_args[2];
 static const RzCmdDescArg block_decrease_args[2];
 static const RzCmdDescArg block_increase_args[2];
@@ -4040,51 +4040,12 @@ static const RzCmdDescHelp analyze_everything_help = {
 	.args = analyze_everything_args,
 };
 
-static const RzCmdDescHelp aaaa_help = {
-	.summary = "Experimental analysis",
-};
 static const RzCmdDescArg analyze_everything_experimental_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp analyze_everything_experimental_help = {
-	.summary = "Legacy experimental analysis",
+	.summary = "Experimental analysis",
 	.args = analyze_everything_experimental_args,
-};
-
-static const RzCmdDescHelp aaaaI_help = {
-	.summary = "New RzInquiry analysis.",
-};
-static const RzCmdDescDetailEntry inquiry_interpreter_prototype_Examples_detail_entries[] = {
-	{ .text = "aaaaIp", .arg_str = "", .comment = "Run prototype RzIL analysis detecting cross references." },
-	{ .text = "aaaaIp", .arg_str = " 0x1000", .comment = "Run prototype RzIL analysis starting at address 0x1000." },
-	{ .text = "aaaaIp", .arg_str = " -f", .comment = "Run prototype RzIL analysis with function detection." },
-	{ 0 },
-};
-static const RzCmdDescDetail inquiry_interpreter_prototype_details[] = {
-	{ .name = "Examples", .entries = inquiry_interpreter_prototype_Examples_detail_entries },
-	{ 0 },
-};
-static const RzCmdDescArg inquiry_interpreter_prototype_args[] = {
-	{
-		.name = "f",
-		.type = RZ_CMD_ARG_TYPE_OPTION,
-		.flags = RZ_CMD_ARG_FLAG_OPTION,
-		.default_value = "0",
-
-	},
-	{
-		.name = "entry_points",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_ARRAY,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp inquiry_interpreter_prototype_help = {
-	.summary = "Abstract Interpreter Prototype",
-	.details = inquiry_interpreter_prototype_details,
-	.args = inquiry_interpreter_prototype_args,
 };
 
 static const RzCmdDescHelp aac_help = {
@@ -8488,6 +8449,50 @@ static const RzCmdDescHelp analyze_esil_insn_access_help = {
 	.summary = "Show register and memory access of the next [len] instructions or bytes.",
 	.details = analyze_esil_insn_access_details,
 	.args = analyze_esil_insn_access_args,
+};
+
+static const RzCmdDescHelp aI_help = {
+	.summary = "New experimental RzInquiry analysis",
+};
+static const RzCmdDescArg inquiry_function_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp inquiry_function_help = {
+	.summary = "analyze function at current seek",
+	.args = inquiry_function_args,
+};
+
+static const RzCmdDescDetailEntry inquiry_interpreter_prototype_Examples_detail_entries[] = {
+	{ .text = "aIp", .arg_str = "", .comment = "Run prototype RzIL analysis detecting cross references." },
+	{ .text = "aIp", .arg_str = " 0x1000", .comment = "Run prototype RzIL analysis starting at address 0x1000." },
+	{ .text = "aIp", .arg_str = " -f", .comment = "Run prototype RzIL analysis with function detection." },
+	{ 0 },
+};
+static const RzCmdDescDetail inquiry_interpreter_prototype_details[] = {
+	{ .name = "Examples", .entries = inquiry_interpreter_prototype_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg inquiry_interpreter_prototype_args[] = {
+	{
+		.name = "f",
+		.type = RZ_CMD_ARG_TYPE_OPTION,
+		.flags = RZ_CMD_ARG_FLAG_OPTION,
+		.default_value = "0",
+
+	},
+	{
+		.name = "entry_points",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp inquiry_interpreter_prototype_help = {
+	.summary = "Abstract Interpreter Prototype",
+	.details = inquiry_interpreter_prototype_details,
+	.args = inquiry_interpreter_prototype_args,
 };
 
 static const RzCmdDescHelp b_help = {
@@ -23036,12 +23041,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analyze_everything_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aaa", rz_analyze_everything_handler, &analyze_everything_help);
 	rz_warn_if_fail(analyze_everything_cd);
 
-	RzCmdDesc *aaaa_cd = rz_cmd_desc_group_new(core->rcmd, aa_cd, "aaaa", rz_analyze_everything_experimental_handler, &analyze_everything_experimental_help, &aaaa_help);
-	rz_warn_if_fail(aaaa_cd);
-	RzCmdDesc *aaaaI_cd = rz_cmd_desc_group_new(core->rcmd, aaaa_cd, "aaaaI", NULL, NULL, &aaaaI_help);
-	rz_warn_if_fail(aaaaI_cd);
-	RzCmdDesc *inquiry_interpreter_prototype_cd = rz_cmd_desc_argv_new(core->rcmd, aaaaI_cd, "aaaaIp", rz_inquiry_interpreter_prototype_handler, &inquiry_interpreter_prototype_help);
-	rz_warn_if_fail(inquiry_interpreter_prototype_cd);
+	RzCmdDesc *analyze_everything_experimental_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aaaa", rz_analyze_everything_experimental_handler, &analyze_everything_experimental_help);
+	rz_warn_if_fail(analyze_everything_experimental_cd);
 
 	RzCmdDesc *aac_cd = rz_cmd_desc_group_new(core->rcmd, aa_cd, "aac", rz_analyze_all_function_calls_handler, &analyze_all_function_calls_help, &aac_help);
 	rz_warn_if_fail(aac_cd);
@@ -23951,6 +23952,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *aea_cd = rz_cmd_desc_group_modes_new(core->rcmd, ae_cd, "aea", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analyze_esil_insn_access_handler, &analyze_esil_insn_access_help, &aea_help);
 	rz_warn_if_fail(aea_cd);
+
+	RzCmdDesc *aI_cd = rz_cmd_desc_group_new(core->rcmd, ae_cd, "aI", NULL, NULL, &aI_help);
+	rz_warn_if_fail(aI_cd);
+	RzCmdDesc *inquiry_function_cd = rz_cmd_desc_argv_new(core->rcmd, aI_cd, "aIf", rz_inquiry_function_handler, &inquiry_function_help);
+	rz_warn_if_fail(inquiry_function_cd);
+
+	RzCmdDesc *inquiry_interpreter_prototype_cd = rz_cmd_desc_argv_new(core->rcmd, aI_cd, "aIp", rz_inquiry_interpreter_prototype_handler, &inquiry_interpreter_prototype_help);
+	rz_warn_if_fail(inquiry_interpreter_prototype_cd);
 
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);

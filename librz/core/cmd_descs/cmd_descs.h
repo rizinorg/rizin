@@ -342,8 +342,6 @@ RZ_IPI RzCmdStatus rz_analyze_simple_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_analyze_everything_handler(RzCore *core, int argc, const char **argv);
 // "aaaa"
 RZ_IPI RzCmdStatus rz_analyze_everything_experimental_handler(RzCore *core, int argc, const char **argv);
-// "aaaaIp"
-RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int argc, const char **argv);
 // "aac"
 RZ_IPI RzCmdStatus rz_analyze_all_function_calls_handler(RzCore *core, int argc, const char **argv);
 // "aaci"
@@ -967,6 +965,10 @@ RZ_IPI RzCmdStatus rz_analyze_esil_int_list_load_handler(RzCore *core, int argc,
 RZ_IPI RzCmdStatus rz_analyze_esil_int_remove_handler(RzCore *core, int argc, const char **argv);
 // "aea"
 RZ_IPI RzCmdStatus rz_analyze_esil_insn_access_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "aIf"
+RZ_IPI RzCmdStatus rz_inquiry_function_handler(RzCore *core, int argc, const char **argv);
+// "aIp"
+RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int argc, const char **argv);
 // "b"
 RZ_IPI RzCmdStatus rz_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "b-"

@@ -11,6 +11,21 @@
 #include <rz_inquiry/rz_interpreter.h>
 #include <rz_util/rz_assert.h>
 
+RZ_IPI RzCmdStatus rz_inquiry_function_handler(RzCore *core, int argc, const char **argv) {
+	rz_return_val_if_fail(core->analysis && core->io && core->bin->cur && core->bin->cur->o, RZ_CMD_STATUS_ERROR);
+	RzSetU *entry_points = rz_set_u_new();
+	if (!entry_points) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_set_u_add(entry_points, core->offset);
+	bool success = rz_inquiry_interpreter(core, entry_points);
+	if (!success) {
+		RZ_LOG_ERROR("Analysis failed.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
 static RzVector /*<RzInterval>*/ *get_ignored_code_regions(
 	const RzPVector /*<RzBinSymbol *>*/ *symbols,
 	RzPVector /*<RzBinSection *>*/ *sections,

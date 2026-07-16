@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-FileCopyrightTiext: 2021 RizinOrg <info@rizin.re>
 # SPDX-License-Identifier: LGPL-3.0-only
 ---
 name: cmd_analysis
@@ -16,38 +16,8 @@ commands:
         args: []
       - name: aaaa
         summary: Experimental analysis
-        subcommands:
-          - name: aaaa
-            summary: Legacy experimental analysis
-            cname: analyze_everything_experimental
-            args: []
-          - name: aaaaI
-            summary: New RzInquiry analysis.
-            subcommands:
-              - name: aaaaIp
-                summary: Abstract Interpreter Prototype
-                cname: inquiry_interpreter_prototype
-                args:
-                - name: f
-                  type: RZ_CMD_ARG_TYPE_OPTION
-                  flags: RZ_CMD_ARG_FLAG_OPTION
-                  default_value: 0
-                - name: entry_points
-                  type: RZ_CMD_ARG_TYPE_RZNUM
-                  flags: RZ_CMD_ARG_FLAG_ARRAY
-                  optional: true
-                details:
-                  - name: Examples
-                    entries:
-                      - text: "aaaaIp"
-                        arg_str: ""
-                        comment: "Run prototype RzIL analysis detecting cross references."
-                      - text: "aaaaIp"
-                        arg_str: " 0x1000"
-                        comment: "Run prototype RzIL analysis starting at address 0x1000."
-                      - text: "aaaaIp"
-                        arg_str: " -f"
-                        comment: "Run prototype RzIL analysis with function detection."
+        cname: analyze_everything_experimental
+        args: []
       - name: aac
         summary: Analysis function calls commands
         subcommands:
@@ -2649,3 +2619,34 @@ commands:
                     comment: "memwrites"
                   - text: "NOTE:"
                     comment: "mem{reads,writes} with PIC only fetch the offset"
+      - name: aI
+        summary: New experimental RzInquiry analysis
+        subcommands:
+          - name: aIf
+            summary: analyze function at current seek
+            cname: inquiry_function
+            args: []
+          - name: aIp
+            summary: Abstract Interpreter Prototype
+            cname: inquiry_interpreter_prototype
+            args:
+            - name: f
+              type: RZ_CMD_ARG_TYPE_OPTION
+              flags: RZ_CMD_ARG_FLAG_OPTION
+              default_value: 0
+            - name: entry_points
+              type: RZ_CMD_ARG_TYPE_RZNUM
+              flags: RZ_CMD_ARG_FLAG_ARRAY
+              optional: true
+            details:
+              - name: Examples
+                entries:
+                  - text: "aIp"
+                    arg_str: ""
+                    comment: "Run prototype RzIL analysis detecting cross references."
+                  - text: "aIp"
+                    arg_str: " 0x1000"
+                    comment: "Run prototype RzIL analysis starting at address 0x1000."
+                  - text: "aIp"
+                    arg_str: " -f"
+                    comment: "Run prototype RzIL analysis with function detection."

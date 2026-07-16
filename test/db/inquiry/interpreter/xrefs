@@ -1,7 +1,7 @@
 NAME=Indirect call x86
 FILE=bins/inquiry/interpreter/prototype/x86_icall_malloc
 CMDS=<<EOF
-aaaaIp -f sym.main
+aIp -f sym.main
 pd 48 @ sym.main
 axl
 ablt
@@ -106,7 +106,7 @@ RUN
 NAME=Indirect call hexagon
 FILE=bins/inquiry/interpreter/prototype/hexagon_icall_malloc
 CMDS=<<EOF
-aaaaIp -f
+aIp -f
 pd 47
 axl
 ablt
@@ -242,7 +242,7 @@ RUN
 NAME=Indirect call sparc
 FILE=bins/inquiry/interpreter/prototype/sparc_icall_malloc
 CMDS=<<EOF
-aaaaIp -f sym.main
+aIp -f sym.main
 pd 60 @ sym.some_ptr
 axl
 ablt
@@ -386,7 +386,7 @@ RUN
 NAME=Indirect call arm
 FILE=bins/inquiry/interpreter/prototype/arm_icall_malloc
 CMDS=<<EOF
-aaaaIp -f sym.main
+aIp -f sym.main
 pd 69
 axl
 ablt
@@ -551,7 +551,7 @@ FILE=bins/inquiry/interpreter/prototype/mips64_icall_malloc
 CMDS=<<EOF
 # Mips misses many relocations.
 # So the interpreter doesn't come far before a jump to 0x0 happens.
-aaaaIp -f 0x08000164
+aIp -f 0x08000164
 pd 41 @ 0x08000164
 axl
 ablt
