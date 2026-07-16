@@ -203,70 +203,58 @@ bool test_config_booleans() {
 	mu_end;
 }
 
-bool test_config_lists() {
+bool test_config_sets() {
 	RzConfig *cfg = rz_config_new(NULL);
 	bool ret = false;
-	const char *elem = NULL;
-	RzList *list = NULL;
-	RzListIter *it;
+	RzSetS *set = NULL;
 
-	// list variables
-	ret = rz_config_add_list(cfg, "thy.list", "is thy.list desc", "r1", "r2", "r3", NULL);
-	mu_assert_true(ret, "added thy.list");
+	// set variables
+	ret = rz_config_add_set(cfg, "thy.set", "is thy.set desc", "r1", "r2", "r3", NULL);
+	mu_assert_true(ret, "added thy.set");
 
-	ret = rz_config_set_validator(cfg, "thy.list", test_config_validator, &ret);
-	mu_assert_true(ret, "can set validator for list");
+	ret = rz_config_set_validator(cfg, "thy.set", test_config_validator, &ret);
+	mu_assert_true(ret, "can set validator for set");
 
-	list = rz_config_get_list(cfg, "thy.list");
-	mu_assert_notnull(list, "List is not null variable");
-	mu_assert_eq(rz_list_length(list), 3, "List size is 3");
+	set = rz_config_get_set(cfg, "thy.set");
+	mu_assert_notnull(set, "Set is not null variable");
+	mu_assert_eq(rz_set_s_size(set), 3, "Set size is 3");
 
-	it = rz_list_head(list);
-	elem = rz_list_val(it);
-	mu_assert_streq(elem, "r1", "list[0] is r1");
+	mu_assert_true(rz_set_s_contains(set, "r1"), "set contains r1");
+	mu_assert_true(rz_set_s_contains(set, "r2"), "set contains r2");
+	mu_assert_true(rz_set_s_contains(set, "r3"), "set contains r3");
+	rz_set_s_free(set);
 
-	it = rz_list_next(it);
-	elem = rz_list_val(it);
-	mu_assert_streq(elem, "r2", "list[1] is r2");
+	ret = rz_config_set_set2(cfg, "thy.set", "x0", "x1", "x2", "x3", "x4", NULL);
+	mu_assert_true(ret, "set thy.set");
 
-	it = rz_list_next(it);
-	elem = rz_list_val(it);
-	mu_assert_streq(elem, "r3", "list[2] is r3");
-	rz_list_free(list);
+	set = rz_config_get_set(cfg, "thy.set");
+	mu_assert_notnull(set, "Set is not null variable");
+	mu_assert_eq(rz_set_s_size(set), 5, "Set size is 5");
 
-	ret = rz_config_set_list2(cfg, "thy.list", "x0", "x1", "x2", "x3", "x4", NULL);
-	mu_assert_true(ret, "set thy.list");
+	mu_assert_true(rz_set_s_contains(set, "x0"), "set contains x0");
+	mu_assert_true(rz_set_s_contains(set, "x1"), "set contains x1");
+	mu_assert_true(rz_set_s_contains(set, "x2"), "set contains x2");
+	mu_assert_true(rz_set_s_contains(set, "x3"), "set contains x3");
+	mu_assert_true(rz_set_s_contains(set, "x4"), "set contains x4");
+	rz_set_s_free(set);
 
-	list = rz_config_get_list(cfg, "thy.list");
-	mu_assert_notnull(list, "List is not null variable");
-	mu_assert_eq(rz_list_length(list), 5, "List size is 5");
+	ret = rz_config_set_set3(cfg, "thy.set", "rax,rbx");
+	mu_assert_true(ret, "set thy.set as string");
 
-	char *s = rz_config_get_as_string(cfg, "thy.list");
-	mu_assert_streq(s, "x0,x1,x2,x3,x4", "get as string thy.list");
-	free(s);
+	set = rz_config_get_set(cfg, "thy.set");
+	mu_assert_notnull(set, "Set is not null variable");
+	mu_assert_eq(rz_set_s_size(set), 2, "Set size is 2");
+	mu_assert_true(rz_set_s_contains(set, "rax"), "set contains rax");
+	mu_assert_true(rz_set_s_contains(set, "rbx"), "set contains rbx");
+	rz_set_s_free(set);
 
-	elem = rz_list_first_val(list);
-	mu_assert_streq(elem, "x0", "list[first] is x0");
+	ret = rz_config_set_set(cfg, "thy.set", NULL);
+	mu_assert_true(ret, "set thy.set as string");
 
-	elem = rz_list_last_val(list);
-	mu_assert_streq(elem, "x4", "list[last] is x4");
-	rz_list_free(list);
-
-	ret = rz_config_set_list3(cfg, "thy.list", "rax,rbx");
-	mu_assert_true(ret, "set thy.list as string");
-
-	list = rz_config_get_list(cfg, "thy.list");
-	mu_assert_notnull(list, "List is not null variable");
-	mu_assert_eq(rz_list_length(list), 2, "List size is 2");
-	rz_list_free(list);
-
-	ret = rz_config_set_list(cfg, "thy.list", NULL);
-	mu_assert_true(ret, "set thy.list as string");
-
-	list = rz_config_get_list(cfg, "thy.list");
-	mu_assert_notnull(list, "List is not null variable");
-	mu_assert_eq(rz_list_length(list), 0, "List is empty");
-	rz_list_free(list);
+	set = rz_config_get_set(cfg, "thy.set");
+	mu_assert_notnull(set, "Set is not null variable");
+	mu_assert_eq(rz_set_s_size(set), 0, "Set is empty");
+	rz_set_s_free(set);
 
 	rz_config_free(cfg);
 	mu_end;
@@ -360,7 +348,7 @@ bool test_config_invalid() {
 	RzConfig *cfg = rz_config_new(NULL);
 
 	mu_assert_null(rz_config_get_string(cfg, "string.here"), "string.here does not exist");
-	mu_assert_null(rz_config_get_list(cfg, "list.here"), "list.here does not exist");
+	mu_assert_null(rz_config_get_set(cfg, "set.here"), "set.here does not exist");
 	mu_assert_eq(rz_config_get_integer(cfg, "int.here"), 0, "int.here does not exist");
 	mu_assert_false(rz_config_get_bool(cfg, "bool.here"), "bool.here does not exist");
 	mu_assert_false(rz_config_set_validator(cfg, "self.validator", test_config_validator, &itv), "self.validator does not exist");
@@ -378,7 +366,7 @@ typedef struct bind_test_s {
 	ut32 opts;
 	ut32 bind;
 	const void *set_val;
-	RzList *list;
+	RzSetS *set_val_set;
 } bind_test_t;
 
 static bool any_get(void *user, void *p) {
@@ -402,9 +390,16 @@ static bool any_get(void *user, void *p) {
 		bt->get++;
 		return true;
 	}
-	case RZ_CONFIG_VAR_TYPE_LIST: {
-		const RzList **value = p;
-		*value = bt->list;
+	case RZ_CONFIG_VAR_TYPE_SET: {
+		RzSetS **value = p;
+		RzSetS *dup = rz_set_s_new(HT_STR_DUP);
+		RzIterator *iter = rz_set_s_as_iter(bt->set_val_set);
+		const char **elem;
+		rz_iterator_foreach(iter, elem) {
+			rz_set_s_add(dup, *elem);
+		}
+		rz_iterator_free(iter);
+		*value = dup;
 		bt->get++;
 		return true;
 	}
@@ -433,7 +428,7 @@ static bool any_set(void *user, const void *p) {
 		return true;
 	case RZ_CONFIG_VAR_TYPE_STR:
 		/* fall-thru */
-	case RZ_CONFIG_VAR_TYPE_LIST:
+	case RZ_CONFIG_VAR_TYPE_SET:
 		bt->set_val = p;
 		bt->set++;
 		return true;
@@ -449,18 +444,22 @@ static bool any_set(void *user, const void *p) {
 	}
 }
 
-static bool any_opts(void *user, RzList /*<char *>*/ **options) {
+static bool any_opts(void *user, RzSetS **options) {
 	bind_test_t *bt = user;
 	switch (bt->bind) {
-	case RZ_CONFIG_VAR_TYPE_STR:
-		*options = rz_str_split_duplist("foo,bar", ",", true);
+	case RZ_CONFIG_VAR_TYPE_STR: {
+		RzSetS *opts_set = rz_set_s_new(HT_STR_DUP);
+		rz_set_s_add(opts_set, "foo");
+		rz_set_s_add(opts_set, "bar");
+		*options = opts_set;
 		bt->opts++;
 		return true;
+	}
 	case RZ_CONFIG_VAR_TYPE_BOOL:
 		/* fall-thru */
 	case RZ_CONFIG_VAR_TYPE_INT:
 		/* fall-thru */
-	case RZ_CONFIG_VAR_TYPE_LIST:
+	case RZ_CONFIG_VAR_TYPE_SET:
 		/* fall-thru */
 	case RZ_CONFIG_VAR_TYPE_ITV:
 		bt->opts++;
@@ -478,8 +477,10 @@ bool test_config_binds() {
 	RzConfig *cfg = rz_config_new(NULL);
 	mu_assert_notnull(cfg, "alloc RzConfig");
 
-	bt.list = rz_str_split_duplist("init,fini", ",", true);
-	mu_assert_notnull(bt.list, "alloc list");
+	bt.set_val_set = rz_set_s_new(HT_STR_DUP);
+	rz_set_s_add(bt.set_val_set, "init");
+	rz_set_s_add(bt.set_val_set, "fini");
+	mu_assert_notnull(bt.set_val_set, "alloc set");
 
 	// add binds
 	bt.bind = RZ_CONFIG_VAR_TYPE_BOOL;
@@ -503,11 +504,11 @@ bool test_config_binds() {
 	ret = rz_config_set_validator(cfg, "bind.string", test_config_validator, &ret);
 	mu_assert_false(ret, "cannot set validator when bind");
 
-	bt.bind = RZ_CONFIG_VAR_TYPE_LIST;
-	ret = rz_config_add_list_bind(cfg, "bind.list", "is bind.list desc", any_get, any_set, any_opts, &bt);
-	mu_assert_true(ret, "added bind.list");
+	bt.bind = RZ_CONFIG_VAR_TYPE_SET;
+	ret = rz_config_add_set_bind(cfg, "bind.set", "is bind.set desc", any_get, any_set, any_opts, &bt);
+	mu_assert_true(ret, "added bind.set");
 
-	ret = rz_config_set_validator(cfg, "bind.list", test_config_validator, &ret);
+	ret = rz_config_set_validator(cfg, "bind.set", test_config_validator, &ret);
 	mu_assert_false(ret, "cannot set validator when bind");
 
 	bt.bind = RZ_CONFIG_VAR_TYPE_ITV;
@@ -526,8 +527,15 @@ bool test_config_binds() {
 	bt.bind = RZ_CONFIG_VAR_TYPE_STR;
 	mu_assert_streq(rz_config_get_string(cfg, "bind.string"), "what", "get bind.string");
 
-	bt.bind = RZ_CONFIG_VAR_TYPE_LIST;
-	mu_assert_ptreq(rz_config_get_list(cfg, "bind.list"), bt.list, "get bind.list");
+	bt.bind = RZ_CONFIG_VAR_TYPE_SET;
+	{
+		RzSetS *bind_set = rz_config_get_set(cfg, "bind.set");
+		mu_assert_notnull(bind_set, "get bind.set");
+		mu_assert_eq(rz_set_s_size(bind_set), 2, "bind.set size is 2");
+		mu_assert_true(rz_set_s_contains(bind_set, "init"), "bind.set contains init");
+		mu_assert_true(rz_set_s_contains(bind_set, "fini"), "bind.set contains fini");
+		rz_set_s_free(bind_set);
+	}
 
 	bt.bind = RZ_CONFIG_VAR_TYPE_ITV;
 	itv = rz_config_get_interval(cfg, "bind.interval");
@@ -549,10 +557,10 @@ bool test_config_binds() {
 	mu_assert_true(ret, "set bind.string");
 	mu_assert_streq(bt.set_val, "foo", "has actually set bind.string");
 
-	bt.bind = RZ_CONFIG_VAR_TYPE_LIST;
-	ret = rz_config_set_list(cfg, "bind.list", bt.list);
-	mu_assert_true(ret, "set bind.list");
-	mu_assert_ptreq(bt.set_val, bt.list, "has actually set bind.list");
+	bt.bind = RZ_CONFIG_VAR_TYPE_SET;
+	ret = rz_config_set_set(cfg, "bind.set", bt.set_val_set);
+	mu_assert_true(ret, "set bind.set");
+	mu_assert_notnull(bt.set_val, "has actually set bind.set");
 
 	bt.bind = RZ_CONFIG_VAR_TYPE_ITV;
 	bt.set_val = &itv;
@@ -566,7 +574,7 @@ bool test_config_binds() {
 	mu_assert_eq(bt.set, 5, "called bind.set_value");
 
 	rz_config_free(cfg);
-	rz_list_free(bt.list);
+	rz_set_s_free(bt.set_val_set);
 	mu_end;
 }
 
@@ -574,7 +582,7 @@ bool all_tests() {
 	mu_run_test(test_config_strings);
 	mu_run_test(test_config_intergers);
 	mu_run_test(test_config_booleans);
-	mu_run_test(test_config_lists);
+	mu_run_test(test_config_sets);
 	mu_run_test(test_config_itv);
 	mu_run_test(test_config_invalid);
 	mu_run_test(test_config_binds);
