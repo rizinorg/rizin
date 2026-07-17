@@ -7,7 +7,6 @@ rz_inquiry_sources = [
   'inquiry.c',
   'il_cache.c',
   'interp/interpreter.c',
-  'interp/state.c',
   'interp/val_abs_constant.c',
   'interp/driver.c'
 ]

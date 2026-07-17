@@ -22,21 +22,8 @@
 #define RZ_INTERP_IO_RBUF_SIZE           128
 #define RZ_INTERP_ENTRY_POINTS_RBUF_SIZE 4
 
-typedef struct rz_interp_run_state RzInterpRunState;
 typedef struct rz_interp_run_context_t RzInterpRunContext;
 typedef struct rz_interp_result_t RzInterpResult;
-
-typedef enum rz_interp_state_flag {
-	/**
-	 * \brief Interpreter is still outside of its defined loop.
-	 * E.g. shortly after its thread was spawned.
-	 */
-	RZ_INTERP_RUN_STATE_OUT_OF_LOOP,
-	RZ_INTERP_RUN_STATE_INIT, ///< Initialization state.
-	RZ_INTERP_RUN_STATE_EMU, ///< Emulation state.
-	RZ_INTERP_RUN_STATE_CLEAN, ///< Cleaning state.
-	RZ_INTERP_RUN_STATE_TERM, ///< Termination state.
-} RzInterpRunStateFlag;
 
 /**
  * \brief An abstract value representing a set of RzILVal
@@ -165,7 +152,7 @@ typedef struct {
 
 } RzInterpValueAbstraction;
 
-typedef struct {
+typedef struct ry_interp_io_read_request_t {
 	size_t mem_idx; ///< The memory space to read/write.
 	bool big_endian; ///< Set if the data is big endian ordered.
 	const RzBitVector *addr; ///< The address to read/write.
@@ -174,56 +161,31 @@ typedef struct {
 	size_t n_bits; ///< The number of bits to read/write.
 } RzInterpIOReadRequest;
 
-typedef struct {
-	bool req_ok; ///< Set to true if IO request succeeded.
-} RzInterpIOResult;
+typedef struct rz_interp_config_t {
+	RzInterpValueAbstraction *val_domain;
+
+	RZ_LIFETIME(RzILCache)
+	RZ_BORROW RzILCacheClient *il_cache_client;
+
+	void *cb_user;
+	bool (*io_read)(RZ_NONNULL RZ_OWN RzInterpIOReadRequest *req, void *user);
+} RzInterpConfig;
 
 /**
  * \brief Root local data of a single interpreter thread
  */
 RZ_LIFETIME(RzInquiry)
 struct rz_interp_instance_t {
-	RzInterpRunState *run_state; ///< The state the interpreter is currently in.
-	/**
-	 * \brief The semaphore to sync RzInquiry and the interpreter between the Clean and Init run state.
-	 */
-	RzThreadSemaphore *run_state_sync;
-
-	/**
-	 * \brief Entry points the interpreter starts interpreting from.
-	 */
-	RzThreadRingBuf *entry_points;
+	RzInterpConfig config;
 
 	RzAnalysisILContext *il_ctx; ///< Context about available global vars and memory
 	HtUP *var_name_hashes; ///< Map of DJB2 hashes to variable names.
 	RZ_DEPRECATE const char *arch_name; ///< Name of architecture. Used only by work-arounds until we have RzArch.
 
-	RZ_LIFETIME(RzILCache)
-	RZ_BORROW RzILCacheClient *il_cache_client;
-
-	RzThreadRingBuf /*<RzInterpIORequest>*/ *io_request_rbuf; ///< The ring buffer for read/write requests to the IO layer.
-	RzThreadRingBuf /*<const RzInterpIOResult *>*/ *io_result_rbuf; ///< The ring buffer for the read/write requests' answers.
-
 	RzPVector /*<RzInterpRunResult>*/ results; ///< TODO: replace this by a queue/rbuf/... to handle interp and results concurrently
-
-	/**
-	 * \brief The interpreter plugin.
-	 */
-	RzInterpValueAbstraction *plugin;
 };
 
-RZ_API RZ_OWN RzInterpRunState *rz_interp_run_state_new();
-RZ_API void rz_interp_run_state_free(RZ_OWN RZ_NULLABLE RzInterpRunState *state);
-RZ_API RzInterpRunStateFlag rz_interp_run_state_get(RZ_BORROW RZ_NONNULL RzInterpRunState *state);
-RZ_API RzInterpRunStateFlag rz_interp_run_state_get_unsafe(const RZ_NONNULL RzInterpRunState *state);
-RZ_API const char *rz_interp_run_state_flag_str(RzInterpRunStateFlag flag);
-
-RZ_IPI void rz_interp_run_state_set(RZ_BORROW RZ_NONNULL RzInterpRunState *state, RzInterpRunStateFlag flag);
-
-RZ_API RZ_OWN RzInterpInstance *rz_interp_instance_new(
-	RzAnalysis *analysis,
-	RZ_NONNULL RZ_OWN RzInterpValueAbstraction *plugin,
-	RZ_NONNULL RZ_BORROW RzILCacheClient *il_cache_client);
+RZ_API RZ_OWN RzInterpInstance *rz_interp_instance_new(RzAnalysis *analysis, RZ_NONNULL RZ_BORROW const RzInterpConfig *config);
 RZ_API void rz_interp_instance_free(RZ_OWN RZ_NULLABLE RzInterpInstance *iset);
 
 /**
@@ -271,7 +233,6 @@ struct rz_interp_result_t {
 } /*RzInterpResult*/;
 
 RZ_API RzInterpResult *rz_interp_run(RzInterpInstance *inst, ut64 entry_point, RzInterpResultDimen dimen);
-RZ_API bool rz_interp_instance_th(RZ_NONNULL RZ_OWN RzInterpInstance *iset);
 RZ_API void rz_interp_result_apply_to_analysis(RZ_NONNULL RzInterpResult *res, RZ_NONNULL RzAnalysis *analysis);
 
 extern RZ_API RzInterpValueAbstraction rz_interp_value_domain_const;

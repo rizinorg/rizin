@@ -11,26 +11,10 @@ typedef struct test_interp_t {
 	RzILCache *il_cache;
 	RzILCacheClient *il_cache_client;
 	RzInterpInstance *inst;
-	RzThread *io_server;
 } TestInterp;
 
-static void *io_server_th(void *user) {
-	TestInterp *interp = user;
-	RzInterpIOReadRequest io_req = { 0 };
-	while (true) {
-		RzThreadRingBufResult r = rz_th_ring_buf_take_blocking(interp->inst->io_request_rbuf, &io_req);
-		if (r == RZ_THREAD_RING_BUF_CLOSED) {
-			return NULL;
-		} else if (r == RZ_THREAD_RING_BUF_OK) {
-			RzInterpIOResult io_res = { 0 };
-			io_res.req_ok = false; // Currently we do not care about contents, just make the interpreter continue
-			if (rz_th_ring_buf_put(interp->inst->io_result_rbuf, &io_res) != RZ_THREAD_RING_BUF_OK) {
-				rz_warn_if_reached();
-			}
-		} else {
-			rz_warn_if_reached();
-		}
-	}
+static bool io_read(RzInterpIOReadRequest *req, void *user) {
+	return false; // Currently we do not care about contents, just make the interpreter continue
 }
 
 static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char *url) {
@@ -44,20 +28,22 @@ static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char
 	interp->io->va = 1;
 	interp->il_cache = rz_il_cache_new(interp->analysis, interp->io, NULL, RZ_IL_CACHE_CONFIG_NOP_UNLIFTED | RZ_IL_CACHE_CONFIG_NO_SLEEP);
 	interp->il_cache_client = rz_il_cache_new_client(interp->il_cache, false);
-	interp->inst = rz_interp_instance_new(interp->analysis, &rz_interp_value_domain_const, interp->il_cache_client);
+	RzInterpConfig config = {
+		.val_domain = &rz_interp_value_domain_const,
+		.il_cache_client = interp->il_cache_client,
+		.cb_user = NULL,
+		.io_read = io_read
+	};
+	interp->inst = rz_interp_instance_new(interp->analysis, &config);
 	RzIODesc *desc = rz_io_open_at(interp->io, url, RZ_PERM_RX, 0644, baddr, NULL);
 	if (!desc) {
 		mu_perror("load code");
 		return NULL;
 	}
-	interp->io_server = rz_th_new(io_server_th, interp);
 	return interp;
 }
 
 static void interp_free(TestInterp *interp) {
-	rz_th_ring_buf_close(interp->inst->io_request_rbuf);
-	rz_th_wait(interp->io_server);
-	rz_th_free(interp->io_server);
 	rz_interp_instance_free(interp->inst);
 	rz_il_cache_free(interp->il_cache);
 	rz_io_free(interp->io);

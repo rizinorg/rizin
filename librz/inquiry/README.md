@@ -7,7 +7,6 @@ Module implementing basic and advanced binary analysis.
 
 ## TODO
 
-* remove yield bufs
 * rename interp to absint
 * rename valeabstraction to valuedomain
 
