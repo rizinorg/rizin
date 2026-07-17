@@ -11,14 +11,14 @@
 #include <rz_inquiry/rz_interpreter.h>
 #include <rz_util/rz_assert.h>
 
-RZ_IPI RzCmdStatus rz_inquiry_function_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_inquiry_analyze_function_handler(RzCore *core, int argc, const char **argv) {
 	rz_return_val_if_fail(core->analysis && core->io && core->bin->cur && core->bin->cur->o, RZ_CMD_STATUS_ERROR);
 	RzSetU *entry_points = rz_set_u_new();
 	if (!entry_points) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_set_u_add(entry_points, core->offset);
-	bool success = rz_inquiry_interpreter(core, entry_points);
+	bool success = rz_interp_driver_run(core, entry_points);
 	if (!success) {
 		RZ_LOG_ERROR("Analysis failed.\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -79,7 +79,7 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 			rz_set_u_add(entry_points, entry_point);
 		}
 	}
-	bool success = rz_inquiry_interpreter(core, entry_points);
+	bool success = rz_interp_driver_run(core, entry_points);
 	eprintf("Finished reference recovery: %s\n", success ? "OK" : "FAIL");
 	if (!success) {
 		return RZ_CMD_STATUS_ERROR;

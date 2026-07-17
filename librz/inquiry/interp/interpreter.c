@@ -1,4 +1,5 @@
-// SPDX-FileCopyrightText: 2025 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2026 Florian Märkl <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2025-2026 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**

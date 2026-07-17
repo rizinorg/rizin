@@ -376,4 +376,6 @@ RZ_API void rz_interp_result_apply_to_analysis(RZ_NONNULL RzInterpResult *res, R
 
 extern RZ_API RzInterpValueAbstraction rz_interp_value_domain_const;
 
+RZ_API bool rz_interp_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points);
+
 #endif // RZ_INTERPRETER

@@ -8454,12 +8454,12 @@ static const RzCmdDescHelp analyze_esil_insn_access_help = {
 static const RzCmdDescHelp aI_help = {
 	.summary = "New experimental RzInquiry analysis",
 };
-static const RzCmdDescArg inquiry_function_args[] = {
+static const RzCmdDescArg inquiry_analyze_function_args[] = {
 	{ 0 },
 };
-static const RzCmdDescHelp inquiry_function_help = {
+static const RzCmdDescHelp inquiry_analyze_function_help = {
 	.summary = "analyze function at current seek",
-	.args = inquiry_function_args,
+	.args = inquiry_analyze_function_args,
 };
 
 static const RzCmdDescDetailEntry inquiry_interpreter_prototype_Examples_detail_entries[] = {
@@ -23955,8 +23955,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *aI_cd = rz_cmd_desc_group_new(core->rcmd, ae_cd, "aI", NULL, NULL, &aI_help);
 	rz_warn_if_fail(aI_cd);
-	RzCmdDesc *inquiry_function_cd = rz_cmd_desc_argv_new(core->rcmd, aI_cd, "aIf", rz_inquiry_function_handler, &inquiry_function_help);
-	rz_warn_if_fail(inquiry_function_cd);
+	RzCmdDesc *inquiry_analyze_function_cd = rz_cmd_desc_argv_new(core->rcmd, aI_cd, "aIf", rz_inquiry_analyze_function_handler, &inquiry_analyze_function_help);
+	rz_warn_if_fail(inquiry_analyze_function_cd);
 
 	RzCmdDesc *inquiry_interpreter_prototype_cd = rz_cmd_desc_argv_new(core->rcmd, aI_cd, "aIp", rz_inquiry_interpreter_prototype_handler, &inquiry_interpreter_prototype_help);
 	rz_warn_if_fail(inquiry_interpreter_prototype_cd);

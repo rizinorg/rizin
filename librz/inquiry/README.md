@@ -5,6 +5,12 @@
 
 Module implementing basic and advanced binary analysis.
 
+## TODO
+
+* remove yield bufs
+* rename interp to absint
+* rename valeabstraction to valuedomain
+
 ## Interpreter Notes
 
 Ideas for optimization (do not implement any of these without profiling first):

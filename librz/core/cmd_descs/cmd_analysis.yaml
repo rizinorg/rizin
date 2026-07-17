@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightTiext: 2021 RizinOrg <info@rizin.re>
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
 # SPDX-License-Identifier: LGPL-3.0-only
 ---
 name: cmd_analysis
@@ -2624,7 +2624,7 @@ commands:
         subcommands:
           - name: aIf
             summary: analyze function at current seek
-            cname: inquiry_function
+            cname: inquiry_analyze_function
             args: []
           - name: aIp
             summary: Abstract Interpreter Prototype
