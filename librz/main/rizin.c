@@ -1134,39 +1134,58 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				}
 			} else {
 				const char *f = (haveRarunProfile && pfile) ? pfile : argv[opt.ind];
+				char *f_copy = rz_str_dup(f); // Create a safe, independent copy
+
+				if (f_copy && *f_copy) {
+					char *uri = rz_str_dup(f_copy);
+					if (uri) {
+						char *p = strstr(uri, "://");
+						if (p) {
+							*p = 0;
+							if (!strcmp(uri, "winedbg")) {
+								debugbackend = rz_str_dup("io");
+							} else {
+								debugbackend = uri;
+								uri = NULL;
+							}
+							debug = 2;
+						}
+						free(uri);
+					}
+				}
 				is_gdb = (!memcmp(f, "gdb://", RZ_MIN(f ? strlen(f) : 0, 6)));
 				if (!is_gdb) {
+					RZ_FREE(pfile);
 					pfile = rz_str_dup("dbg://");
 				}
 #if __UNIX__
 				/* implicit ./ to make unix behave like windows */
-				if (f) {
+				if (f_copy) {
 					char *path, *escaped_path;
-					if (strchr(f, '/')) {
-						// f is a path
-						path = rz_str_dup(f);
+					if (strchr(f_copy, '/')) {
+						path = rz_str_dup(f_copy);
 					} else {
-						// f is a filename
-						if (rz_file_exists(f)) {
-							path = rz_str_prepend(rz_str_dup(f), "./");
+						if (rz_file_exists(f_copy)) {
+							path = rz_str_prepend(rz_str_dup(f_copy), "./");
 						} else {
-							path = rz_file_path(f);
+							path = rz_file_path(f_copy);
 						}
 					}
 					escaped_path = rz_str_arg_escape(path);
 					pfile = rz_str_append(pfile, escaped_path);
-					file = pfile; // probably leaks
+					file = pfile;
 					RZ_FREE(escaped_path);
 					RZ_FREE(path);
 				}
 #else
-				if (f) {
-					char *escaped_path = rz_str_arg_escape(f);
+				if (f_copy) {
+					char *escaped_path = rz_str_arg_escape(f_copy);
 					pfile = rz_str_append(pfile, escaped_path);
 					free(escaped_path);
 					file = pfile; // rz_str_append (file, escaped_path);
 				}
 #endif
+				RZ_FREE(f_copy);	
 				opt.ind++;
 				while (opt.ind < argc) {
 					char *escaped_arg = rz_str_arg_escape(argv[opt.ind]);
