@@ -9,7 +9,6 @@
 #ifndef RZ_INTERPRETER
 #define RZ_INTERPRETER
 
-#include <rz_inquiry/rz_bcfg.h>
 #include <rz_inquiry/rz_il_cache.h>
 #include <rz_arch.h>
 #include <rz_io.h>
@@ -21,7 +20,6 @@
  * \brief Only one IO request at a time is possible (currently).
  */
 #define RZ_INTERP_IO_RBUF_SIZE           128
-#define RZ_INTERP_YIELD_RBUF_SIZE        128
 #define RZ_INTERP_ENTRY_POINTS_RBUF_SIZE 4
 
 typedef struct rz_interp_run_state RzInterpRunState;
@@ -47,7 +45,7 @@ typedef enum rz_interp_state_flag {
  * `struct rz_interp_opaque_abstr_val_t` is defined nowhere. Is is used to ensure
  * type-checking of passing this opaque pointer.
  */
-typedef struct rz_interp_opaque_abstr_val_t RzInterpAbstrVal;
+typedef struct rz_interp_abstr_val_t RzInterpAbstrVal;
 
 /**
  * \brief Helper to explicitly cast a plugin-defined abstract value to an opaque RzInterpAbstrVal
@@ -62,40 +60,6 @@ static inline RzInterpAbstrVal *rz_interp_abstr_val_pack(void *val) {
 static inline void *rz_interp_abstr_val_unpack(const RzInterpAbstrVal *val) {
 	return (void *)val;
 }
-
-typedef struct {
-	RzInquiryBCFGEdgeType cf_type; ///< Control flow type.
-	/**
-	 * \brief The address of the block which changes the control flow.
-	 * This might be UT64_MAX, if there was no jump that flow originated from.
-	 * If the interpreter was just initialized, for example.
-	 */
-	ut64 src_block_addr;
-	/**
-	 * \brief The original target address a block branches to.
-	 */
-	ut64 target_addr;
-	/**
-	 * \brief Set after a attempted jump to an ignored code region.
-	 * This is almost always a call to an unloaded imported symbol.
-	 * 0 is an invalid address here.
-	 */
-	ut64 alt_target;
-	/**
-	 * \brief Equal to alt_target if alt_target != 0.
-	 * Otherwise equal to target_addr
-	 */
-	ut64 actual_target;
-	/**
-	 * \brief Number of bytes of the destination code block.
-	 * Only set after the IL block was provided by the cache.
-	 */
-	size_t target_block_size;
-	/**
-	 * \brief Control flow type.
-	 */
-	RzInquiryBCFGEdgeType type;
-} RzInterpCtrlFlow;
 
 typedef enum {
 	RZ_INTERP_PC_CONST, ///< Single known value
@@ -136,50 +100,6 @@ typedef struct {
 	bool fallthrough; ///< if true, there is an edge to the block after the end of this one
 	RzVector /*<ut64>*/ jump_targets; ///< Explicit jump targets, does not contain fallthrough address
 } RzInterpBlock;
-
-typedef enum {
-	/**
-	 * \brief The yield is an cross reference.
-	 */
-	RZ_INTERP_YIELD_KIND_XREF = 0,
-
-	/**
-	 * \brief This yield is a simple flag, signaling if the current basic block
-	 * storing the next PC (address _after_ the basic block) to memory or an register.
-	 *
-	 * If the last branch instruction does not jump to the neighboring basic block
-	 * it is a strong indicator that the jump is a call and the next address a return point.
-	 */
-	RZ_INTERP_YIELD_KIND_CALL_CANDIDATE,
-
-	/**
-	 * \brief Yield is a RzInterpCtrlFlow.
-	 * Reported by every interpreter.
-	 */
-	RZ_INTERP_YIELD_KIND_CONTROL_FLOW,
-	RZ_INTERP_YIELD_KIND_NUM,
-} RzInterpYieldKind;
-
-/**
- * \brief A filter for abstract values to decide if they should be pushed into
- * the yield ring buffer or not.
- */
-typedef bool (*RzInterpYieldFilter)(const void *element, const void *filter_data);
-
-typedef struct {
-	RzPVector /*<RzBinSection *>*/ *io_boundaries;
-} RzInterpYieldFilterData;
-
-/**
- * \brief A ring buffer to push interpretation yields into.
- * TODO: remove
- */
-typedef struct {
-	RzInterpYieldKind kind;
-	RzInterpYieldFilter filter;
-	RzInterpYieldFilterData *filter_data;
-	RzThreadRingBuf *rbuf;
-} RzInterpYieldRBuf;
 
 typedef struct rz_interp_instance_t RzInterpInstance;
 
@@ -263,8 +183,6 @@ typedef struct {
  */
 RZ_LIFETIME(RzInquiry)
 struct rz_interp_instance_t {
-	RzAnalysis *a; ///< TODO: remove
-
 	RzInterpRunState *run_state; ///< The state the interpreter is currently in.
 	/**
 	 * \brief The semaphore to sync RzInquiry and the interpreter between the Clean and Init run state.
@@ -286,19 +204,8 @@ struct rz_interp_instance_t {
 	RzThreadRingBuf /*<RzInterpIORequest>*/ *io_request_rbuf; ///< The ring buffer for read/write requests to the IO layer.
 	RzThreadRingBuf /*<const RzInterpIOResult *>*/ *io_result_rbuf; ///< The ring buffer for the read/write requests' answers.
 
-	/**
-	 * \brief The ring buffers to push the yield of interpretation into.
-	 * These ring buffers are shared with other interpreter sets.
-	 */
-	// TODO: remove
-	RZ_BORROW RZ_NULLABLE RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM];
-
 	RzPVector /*<RzInterpRunResult>*/ results; ///< TODO: replace this by a queue/rbuf/... to handle interp and results concurrently
 
-	/**
-	 * \brief Ignored address ranges.
-	 */
-	const RzVector /*<RzInterval>*/ *ignored_code;
 	/**
 	 * \brief The interpreter plugin.
 	 */
@@ -313,17 +220,10 @@ RZ_API const char *rz_interp_run_state_flag_str(RzInterpRunStateFlag flag);
 
 RZ_IPI void rz_interp_run_state_set(RZ_BORROW RZ_NONNULL RzInterpRunState *state, RzInterpRunStateFlag flag);
 
-RZ_API void rz_interp_yield_rbuf_free(RZ_OWN RZ_NULLABLE RzInterpYieldRBuf *yield_rbuf);
-
-RZ_API RZ_OWN RzInterpYieldRBuf *rz_interp_yield_rbuf_new(RzInterpYieldKind kind,
-	RzInterpYieldFilter filter,
-	RZ_OWN RZ_NULLABLE void *filter_data);
-
 RZ_API RZ_OWN RzInterpInstance *rz_interp_instance_new(
 	RzAnalysis *analysis,
 	RZ_NONNULL RZ_OWN RzInterpValueAbstraction *plugin,
-	RZ_NONNULL RZ_BORROW RzILCacheClient *il_cache_client,
-	RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM]);
+	RZ_NONNULL RZ_BORROW RzILCacheClient *il_cache_client);
 RZ_API void rz_interp_instance_free(RZ_OWN RZ_NULLABLE RzInterpInstance *iset);
 
 /**

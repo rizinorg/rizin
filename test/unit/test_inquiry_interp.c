@@ -44,7 +44,7 @@ static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char
 	interp->io->va = 1;
 	interp->il_cache = rz_il_cache_new(interp->analysis, interp->io, NULL, RZ_IL_CACHE_CONFIG_NOP_UNLIFTED | RZ_IL_CACHE_CONFIG_NO_SLEEP);
 	interp->il_cache_client = rz_il_cache_new_client(interp->il_cache, false);
-	interp->inst = rz_interp_instance_new(interp->analysis, &rz_interp_value_domain_const, interp->il_cache_client, NULL);
+	interp->inst = rz_interp_instance_new(interp->analysis, &rz_interp_value_domain_const, interp->il_cache_client);
 	RzIODesc *desc = rz_io_open_at(interp->io, url, RZ_PERM_RX, 0644, baddr, NULL);
 	if (!desc) {
 		mu_perror("load code");

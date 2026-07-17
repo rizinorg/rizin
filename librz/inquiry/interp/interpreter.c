@@ -258,8 +258,6 @@ static void interp_add_comment(RzInterpRunContext *ctx, ut64 addr, const char *c
  * @{
  */
 
-#define UNWRAP_BLOCK(rbnode) ((rbnode) ? container_of(rbnode, RzInterpBlock, _rb) : NULL)
-
 static RzInterpBlock *interp_block_new(RzInterpInstance *inst, RZ_BORROW RZ_NONNULL RzInterpAbstrState *entry_state) {
 	RzInterpBlock *block = RZ_NEW0(RzInterpBlock);
 	if (!block) {
@@ -524,60 +522,6 @@ static RzInterpBlock *rz_interp_run_pop(RZ_BORROW RZ_NONNULL RzInterpRunContext 
 
 /////////////////////////////////////////////////////////
 
-RZ_API void rz_interp_yield_rbuf_free(RZ_OWN RZ_NULLABLE RzInterpYieldRBuf *yield_rbufs) {
-	if (!yield_rbufs) {
-		return;
-	}
-	if (yield_rbufs->rbuf) {
-		rz_th_ring_buf_free(yield_rbufs->rbuf);
-	}
-	if (yield_rbufs->filter_data && yield_rbufs->filter_data->io_boundaries) {
-		rz_pvector_free(yield_rbufs->filter_data->io_boundaries);
-	}
-	free(yield_rbufs->filter_data);
-	free(yield_rbufs);
-}
-
-RZ_API RZ_OWN RzInterpYieldRBuf *rz_interp_yield_rbuf_new(RzInterpYieldKind kind,
-	RzInterpYieldFilter filter,
-	RZ_OWN RZ_NULLABLE void *filter_data) {
-	RzInterpYieldRBuf *yield_rbufs = RZ_NEW0(RzInterpYieldRBuf);
-	if (!yield_rbufs) {
-		return NULL;
-	}
-	RzThreadRingBuf *rbuf = NULL;
-	switch (kind) {
-	default:
-		rz_warn_if_reached();
-		return NULL;
-	case RZ_INTERP_YIELD_KIND_CALL_CANDIDATE:
-		rbuf = rz_th_ring_buf_new(RZ_INTERP_YIELD_RBUF_SIZE, sizeof(RzAnalysisCallCandidate));
-		break;
-	case RZ_INTERP_YIELD_KIND_CONTROL_FLOW:
-		rbuf = rz_th_ring_buf_new(RZ_INTERP_YIELD_RBUF_SIZE, sizeof(RzInterpCtrlFlow));
-		break;
-	case RZ_INTERP_YIELD_KIND_XREF:
-		if (filter_data) {
-			yield_rbufs->filter_data = RZ_NEW0(RzInterpYieldFilterData);
-			yield_rbufs->filter_data->io_boundaries = filter_data;
-		}
-		rbuf = rz_th_ring_buf_new(RZ_INTERP_YIELD_RBUF_SIZE, sizeof(RzAnalysisXRef));
-		if (!rbuf) {
-			rz_pvector_free(filter_data);
-			return NULL;
-		}
-		break;
-	}
-	if (!rbuf) {
-		free(yield_rbufs);
-		return NULL;
-	}
-	yield_rbufs->kind = kind;
-	yield_rbufs->rbuf = rbuf;
-	yield_rbufs->filter = filter;
-	return yield_rbufs;
-}
-
 static bool setup_ipc_objects(
 	RZ_OUT RzThreadRingBuf **io_request_rbuf,
 	RZ_OUT RzThreadRingBuf **io_result_rbuf,
@@ -613,8 +557,7 @@ error_free:
 RZ_API RZ_OWN RzInterpInstance *rz_interp_instance_new(
 	RzAnalysis *analysis,
 	RZ_NONNULL RZ_OWN RzInterpValueAbstraction *plugin,
-	RZ_NONNULL RZ_BORROW RzILCacheClient *il_cache_client,
-	RzInterpYieldRBuf *yield_rbufs[RZ_INTERP_YIELD_KIND_NUM]) {
+	RZ_NONNULL RZ_BORROW RzILCacheClient *il_cache_client) {
 	rz_return_val_if_fail(plugin && analysis && il_cache_client, NULL);
 
 	RzInterpInstance *inst = RZ_NEW0(RzInterpInstance);
@@ -641,7 +584,6 @@ RZ_API RZ_OWN RzInterpInstance *rz_interp_instance_new(
 		goto err_il_ctx;
 	}
 
-	inst->a = analysis;
 	inst->plugin = plugin;
 	inst->run_state = rz_interp_run_state_new();
 	inst->il_ctx = il_ctx;
@@ -659,11 +601,6 @@ RZ_API RZ_OWN RzInterpInstance *rz_interp_instance_new(
 
 	inst->il_cache_client = il_cache_client;
 	inst->entry_points = entry_points;
-	if (yield_rbufs) {
-		inst->yield_rbufs[RZ_INTERP_YIELD_KIND_XREF] = yield_rbufs[RZ_INTERP_YIELD_KIND_XREF];
-		inst->yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE] = yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE];
-		inst->yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW] = yield_rbufs[RZ_INTERP_YIELD_KIND_CONTROL_FLOW];
-	}
 	rz_pvector_init(&inst->results, NULL);
 	inst->io_request_rbuf = io_request_rbuf;
 	inst->io_result_rbuf = io_result_rbuf;
@@ -750,17 +687,16 @@ cleanup:
  */
 static bool report_yield_call_candiate(
 	RzInterpRunContext *ctx) {
-	RzInterpYieldRBuf *cc_rbuf = ctx->inst->yield_rbufs[RZ_INTERP_YIELD_KIND_CALL_CANDIDATE];
-	if (!cc_rbuf) {
-		return true;
-	}
 
+	// TODO
+#if 0
 	RzAnalysisCallCandidate cc = { 0 };
 	// TODO? put the bb addr into the call candidate? Currently we do not know it.
 	memcpy(&cc, &ctx->call_cand, sizeof(ctx->call_cand));
 	if (rz_th_ring_buf_put(cc_rbuf->rbuf, &cc) != RZ_THREAD_RING_BUF_OK) {
 		return false;
 	}
+#endif
 	return true;
 }
 
@@ -1271,26 +1207,8 @@ static bool eval_effect(RzInterpRunContext *ctx,
 				ctx->call_cand.target = target;
 				report_yield_call_candiate(ctx);
 
-#if 0
-				// For a call, we need to push a new frame.
-				RzBitVector ret_addr = { 0 };
-				rz_bv_init(&ret_addr, rz_bv_len(eval_out.bv));
-				rz_bv_set_from_ut64(&ret_addr->call_cand.npc);
-
-				bool found = false;
-				ut64 ic = ht_uu_find(plugin_data->bb_invocation_count->call_cand.target, &found);
-				stack_frame_push(plugin_data, eval_out.bv, &ret_addr, !found ? 0 : ic);
-				rz_bv_fini(&ret_addr);
-#endif
-
 				xref_type = RZ_ANALYSIS_XREF_TYPE_CALL;
 			}
-#if 0
-			if (xref_type == RZ_ANALYSIS_XREF_TYPE_CODE && stack_frame_top_ret_addr_cmp(plugin_data, eval_out.bv)) {
-				stack_frame_pop(plugin_data, NULL);
-				xref_type = RZ_ANALYSIS_XREF_TYPE_RETURN;
-			}
-#endif
 
 			report_yield_xref(ctx, insn_pkt_size, ctx->insn_addr, eval_out, xref_type);
 
