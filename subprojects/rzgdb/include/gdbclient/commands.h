@@ -130,7 +130,13 @@ int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len);
 int gdbr_close_file(libgdbr_t *g);
 
 /*!
- * \brief get list of threads for given pid
+ * \brief Get a list of threads for the given pid.
+ * Attempts to read uid, gid and status from /proc/<pid>/task/<tid>/status
+ * via remote file access. Falls back to defaults if the remote target
+ * does not support it.
+ * \param g libgdbr instance
+ * \param pid process id to list threads for
+ * \return RzList of RzDebugPid or NULL on failure
  */
 RzList /*<RzDebugPid *>*/ *gdbr_threads_list(libgdbr_t *g, int pid);
 
