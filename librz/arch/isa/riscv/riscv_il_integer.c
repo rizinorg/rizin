@@ -45,9 +45,16 @@ DEFINE_LIFTER_FOR_JUMP(jal, DECODE_RD_IMM,
 	/*RETURN ADDR*/ UN(analysis->bits, current_addr + size),
 	/*GOTO ADDR*/ JMP(imm))
 
-DEFINE_LIFTER_FOR_JUMP(jalr, DECODE_RD_RS_IMM,
-	/*RETURN ADDR*/ UN(analysis->bits, current_addr + size),
-	/*GOTO ADDR*/ JMP(LOGAND(ADD(rs, imm), UN(analysis->bits, ~1ULL))))
+RzILOpEffect *rz_riscv_lift_jalr(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	DECODE_RD_RS_IMM(analysis, insn);
+	(void)op;
+
+	return SEQ3(
+		SETL("jalr_target", LOGAND(ADD(rs, imm), UN(analysis->bits, ~1ULL))),
+		riscv_il_set_reg(rd, UN(analysis->bits, current_addr + size)),
+		JMP(VARL("jalr_target")));
+}
 
 // Intentional: on RV32 imm is already 32-bit and the result needs no sign-extension,
 // so CAST(32) and SIGNED(32) would both be no-ops; on RV64 CAST(32) truncates imm and SIGNED(64)

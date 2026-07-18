@@ -50,7 +50,7 @@ d "lw s9, 0x64(sp)" 965c 0x40 (set s9 (cast 64 (msb (loadw 0 32 (+ (var sp) (bv 
 d "lw s10, 0x60(sp)" 065d 0x40 (set s10 (cast 64 (msb (loadw 0 32 (+ (var sp) (bv 64 0x60)))) (loadw 0 32 (+ (var sp) (bv 64 0x60)))))
 d "lw s11, 0x5c(sp)" f64d 0x40 (set s11 (cast 64 (msb (loadw 0 32 (+ (var sp) (bv 64 0x5c)))) (loadw 0 32 (+ (var sp) (bv 64 0x5c)))))
 d "addi sp, sp, 0x90" 4961 0x40 (set sp (+ (var sp) (bv 64 0x90)))
-d "ret" 8280 0x40 (seq nop (jmp (& (+ (var ra) (bv 64 0x0)) (bv 64 0xfffffffffffffffe))))
+d "ret" 8280 0x40 (seq (set jalr_target (& (+ (var ra) (bv 64 0x0)) (bv 64 0xfffffffffffffffe))) nop (jmp (var jalr_target)))
 d "lw a5, 0x18(sp)" e247 0x40 (set a5 (cast 64 (msb (loadw 0 32 (+ (var sp) (bv 64 0x18)))) (loadw 0 32 (+ (var sp) (bv 64 0x18)))))
 d "beqz a5, 0x2d8" 63890726 0x66 (branch (== (var a5) (bv 64 0x0)) (jmp (bv 64 0x2d8)) (jmp (bv 64 0x6a)))
 d "lw s0, 0x1c(sp)" 7244 0x40 (set s0 (cast 64 (msb (loadw 0 32 (+ (var sp) (bv 64 0x1c)))) (loadw 0 32 (+ (var sp) (bv 64 0x1c)))))
@@ -192,7 +192,8 @@ d "mv t2, a4" ba83 0x1c0 (set t2 (var a4))
 d "add t6, t6, a3" b69f 0x1c0 (set t6 (+ (var t6) (var a3)))
 d "ori a5, a5, 0x89" 93e79708 0x0 (set a5 (| (var a5) (bv 64 0x89)))
 d "xori a5, a5, 0x431" 93c71743 0x0 (set a5 (^ (var a5) (bv 64 0x431)))
-d "jalr ra" e7800000 0x30 (seq (set ra (bv 64 0x34)) (jmp (& (+ (var ra) (bv 64 0x0)) (bv 64 0xfffffffffffffffe))))
+d "jalr ra" e7800000 0x30 (seq (set jalr_target (& (+ (var ra) (bv 64 0x0)) (bv 64 0xfffffffffffffffe))) (set ra (bv 64 0x34)) (jmp (var jalr_target)))
+d "jalr a0, 4(a0)" 67054500 0x0 (seq (set jalr_target (& (+ (var a0) (bv 64 0x4)) (bv 64 0xfffffffffffffffe))) (set a0 (bv 64 0x4)) (jmp (var jalr_target)))
 d "slti zero, ra, 0xc" 13a0c000 0x0 nop
 d "sltiu zero, ra, 0xc" 13b0c000 0x0 nop
 d "slti t0, ra, 0xc" 93a2c000 0x0 (set t0 (ite (&& (sle (var ra) (bv 64 0xc)) (! (== (var ra) (bv 64 0xc)))) (bv 64 0x1) (bv 64 0x0)))
@@ -292,13 +293,19 @@ d "mulhsu t0, t1, t2" b3227302 0x0 (set t0 (cast 64 false (>> (* (cast 128 (msb 
 d "mulhsu a0, a1, a2" 33a5c502 0x0 (set a0 (cast 64 false (>> (* (cast 128 (msb (var a1)) (var a1)) (cast 128 false (var a2))) (bv 8 0x40) false)))
 d "mulhsu t3, t4, t5" 33aeee03 0x0 (set t3 (cast 64 false (>> (* (cast 128 (msb (var t4)) (var t4)) (cast 128 false (var t5))) (bv 8 0x40) false)))
 # ----------------------------- DIV -----------------------------
-d "div a3, a3, a7" b3c61603 0x0 (set a3 (sdiv (var a3) (var a7)))
-d "div t4, t6, t4" b3cedf03 0x0 (set t4 (sdiv (var t6) (var t4)))
-d "div a4, a4, a3" 3347d702 0x0 (set a4 (sdiv (var a4) (var a3)))
+d "div a0, a1, a2" 33c5c502 0x0 (set a0 (ite (is_zero (var a2)) (bv 64 0xffffffffffffffff) (sdiv (var a1) (var a2))))
+d "div a3, a3, a7" b3c61603 0x0 (set a3 (ite (is_zero (var a7)) (bv 64 0xffffffffffffffff) (sdiv (var a3) (var a7))))
+d "div t4, t6, t4" b3cedf03 0x0 (set t4 (ite (is_zero (var t4)) (bv 64 0xffffffffffffffff) (sdiv (var t6) (var t4))))
+d "div a4, a4, a3" 3347d702 0x0 (set a4 (ite (is_zero (var a3)) (bv 64 0xffffffffffffffff) (sdiv (var a4) (var a3))))
 # ----------------------------- DIVU -----------------------------
-d "divu a6, s2, s10" 3358a903 0x0 (set a6 (div (var s2) (var s10)))
-d "divu s7, a5, t5" b3dbe703 0x0 (set s7 (div (var a5) (var t5)))
-d "divu s1, a0, s2" b3542503 0x0 (set s1 (div (var a0) (var s2)))
+d "divu a0, a1, a2" 33d5c502 0x0 (set a0 (ite (is_zero (var a2)) (bv 64 0xffffffffffffffff) (div (var a1) (var a2))))
+d "divu a6, s2, s10" 3358a903 0x0 (set a6 (ite (is_zero (var s10)) (bv 64 0xffffffffffffffff) (div (var s2) (var s10))))
+d "divu s7, a5, t5" b3dbe703 0x0 (set s7 (ite (is_zero (var t5)) (bv 64 0xffffffffffffffff) (div (var a5) (var t5))))
+d "divu s1, a0, s2" b3542503 0x0 (set s1 (ite (is_zero (var s2)) (bv 64 0xffffffffffffffff) (div (var a0) (var s2))))
+# ----------------------------- DIVW -----------------------------
+d "divw a0, a1, a2" 3bc5c502 0x0 (set a0 (cast 64 (msb (ite (is_zero (cast 32 false (var a2))) (bv 32 0xffffffff) (sdiv (cast 32 false (var a1)) (cast 32 false (var a2))))) (ite (is_zero (cast 32 false (var a2))) (bv 32 0xffffffff) (sdiv (cast 32 false (var a1)) (cast 32 false (var a2))))))
+# ----------------------------- DIVUW -----------------------------
+d "divuw a0, a1, a2" 3bd5c502 0x0 (set a0 (cast 64 (msb (ite (is_zero (cast 32 false (var a2))) (bv 32 0xffffffff) (div (cast 32 false (var a1)) (cast 32 false (var a2))))) (ite (is_zero (cast 32 false (var a2))) (bv 32 0xffffffff) (div (cast 32 false (var a1)) (cast 32 false (var a2))))))
 # ----------------------------- REM -----------------------------
 d "rem t6, a4, a7" b36f1703 0x0 (set t6 (smod (var a4) (var a7)))
 d "rem a5, a0, a4" b367e502 0x0 (set a5 (smod (var a0) (var a4)))
@@ -312,9 +319,9 @@ d "nop" 0100 0x0 nop
 d "c.nop 1" 0500 0x0 nop
 d "c.nop 2" 0900 0x0 nop
 # ----------------------------- C_JALR -----------------------------
-d "jalr ra" 8290 0x0 (seq (set ra (bv 64 0x2)) (jmp (& (+ (var ra) (bv 64 0x0)) (bv 64 0xfffffffffffffffe))))
-d "jalr s0" 0294 0x0 (seq (set ra (bv 64 0x2)) (jmp (& (+ (var s0) (bv 64 0x0)) (bv 64 0xfffffffffffffffe))))
-d "jalr a5" 8297 0x0 (seq (set ra (bv 64 0x2)) (jmp (& (+ (var a5) (bv 64 0x0)) (bv 64 0xfffffffffffffffe))))
+d "jalr ra" 8290 0x0 (seq (set jalr_target (& (+ (var ra) (bv 64 0x0)) (bv 64 0xfffffffffffffffe))) (set ra (bv 64 0x2)) (jmp (var jalr_target)))
+d "jalr s0" 0294 0x0 (seq (set jalr_target (& (+ (var s0) (bv 64 0x0)) (bv 64 0xfffffffffffffffe))) (set ra (bv 64 0x2)) (jmp (var jalr_target)))
+d "jalr a5" 8297 0x0 (seq (set jalr_target (& (+ (var a5) (bv 64 0x0)) (bv 64 0xfffffffffffffffe))) (set ra (bv 64 0x2)) (jmp (var jalr_target)))
 # ----------------------------- C_EBREAK -----------------------------
 d "ebreak" 0290 0x0 (goto ebreak)
 d "ebreak" 0290 0x0 (goto ebreak)
