@@ -333,7 +333,7 @@ d "sw a1, 4(s1)" ccc0 0x0 (storew 0 (+ (var s1) (bv 64 0x4)) (cast 32 false (var
 d "sw a5, 0x7c(a5)" fcdf 0x0 (storew 0 (+ (var a5) (bv 64 0x7c)) (cast 32 false (var a5)))
 # ----------------------------- C_JAL -----------------------------
 d "addiw t6, t6, -0xb" d53f 0x0 (set t6 (cast 64 (msb (+ (cast 32 false (var t6)) (bv 32 0xfffffff5))) (+ (cast 32 false (var t6)) (bv 32 0xfffffff5))))
-d "jal 2" 0920 0x0 (seq (set ra (bv 32 0x2)) (jmp (bv 32 0x2)))
+d "invalid" 0920 0x0
 d "addiw t6, t6, -9" dd3f 0x0 (set t6 (cast 64 (msb (+ (cast 32 false (var t6)) (bv 32 0xfffffff7))) (+ (cast 32 false (var t6)) (bv 32 0xfffffff7))))
 # ----------------------------- C_SUB -----------------------------
 d "sub a0, a0, a1" 0d8d 0x0 (set a0 (- (var a0) (var a1)))
