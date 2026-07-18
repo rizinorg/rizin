@@ -7,6 +7,7 @@
  * Some of them should be moved to rz_util/float in the future and resolve conflict to merge
  */
 #include <rz_il/definitions/float.h>
+#include <rz_il/rz_il_opcodes.h>
 
 /**
  * create a float by specifying `format` and `bitv`

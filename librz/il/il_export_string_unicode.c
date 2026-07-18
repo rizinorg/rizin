@@ -178,6 +178,17 @@ static bool il_op_effect_string_resolve(RzILStringifyCtx *ctx, const RzILOpEffec
 		return rz_strbuf_append(sb, ")"); \
 	} while (0);
 
+#define il_op_param_2_with_runtime_rmode(sym, opx, v0, sort0, v1, sort1, vr) \
+	do { \
+		return_false_if_fail(rz_strbuf_append(sb, "(")); \
+		return_false_if_fail(il_op_pure_string_resolve(ctx, opx.vr, sb)); \
+		return_false_if_fail(rz_strbuf_append(sb, " ")); \
+		return_false_if_fail(il_op_##sort0##_string_resolve(ctx, opx.v0, sb)); \
+		return_false_if_fail(rz_strbuf_append(sb, " " sym " ")); \
+		return_false_if_fail(il_op_##sort1##_string_resolve(ctx, opx.v1, sb)); \
+		return rz_strbuf_append(sb, ")"); \
+	} while (0)
+
 // Combine a prefix with the float format's Unicode width subscript,
 // via the shared RzUtil renderer (rz_float_format_subscript) so the
 // notation matches the rest of the codebase. Returns a caller-owned
@@ -458,6 +469,19 @@ static bool il_opdmp_fconvert(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStr
 	il_op_param_1_with_mode_format(sym, opx, f, pure, mode, format);
 }
 
+static bool il_opdmp_fconvert_with_rmode(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	const RzILOpArgsFconvertWithRmode *opx = &op->op.fconvert_with_rmode;
+	char *sym = sym_with_float_format(opx->format, UCD_FCONVERT);
+	return_false_if_fail(sym);
+	bool ok = rz_strbuf_append(sb, "(") &&
+		il_op_pure_string_resolve(ctx, opx->f, sb) &&
+		rz_strbuf_appendf(sb, " %s ", sym) &&
+		il_op_pure_string_resolve(ctx, opx->rmode, sb) &&
+		rz_strbuf_append(sb, ")");
+	free(sym);
+	return ok;
+}
+
 static bool il_opdmp_fwith_rprec(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
 	const RzILOpArgsFwithRprec *opx = &op->op.fwith_rprec;
 	return_false_if_fail(rz_strbuf_appendf(sb, "fwith_rprec[%s](", rz_il_float_stringify_rprecision(opx->precision)));
@@ -475,6 +499,14 @@ static bool il_opdmp_frsqrt(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBu
 
 static bool il_opdmp_fround(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
 	il_op_param_1_with_rmode(UCD_FROUND, op->op.fround, f, pure, rmode);
+}
+
+static bool il_opdmp_fround_with_rmode(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_2(UCD_FROUND, op->op.fround_with_rmode, pure, rmode, pure, f);
+}
+
+static bool il_opdmp_fsqrt_with_rmode(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_2(UCD_FSQRT, op->op.fsqrt_with_rmode, pure, rmode, pure, f);
 }
 
 static bool il_opdmp_frequal(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
@@ -523,6 +555,26 @@ static bool il_opdmp_fdiv(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf 
 
 static bool il_opdmp_fmod(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
 	il_op_param_2_with_rmode(UCD_FMOD, op->op.fmod, x, pure, y, pure, rmode);
+}
+
+static bool il_opdmp_fadd_with_rmode(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_2_with_runtime_rmode(UCD_FADD, op->op.fadd_with_rmode, x, pure, y, pure, rmode);
+}
+
+static bool il_opdmp_fsub_with_rmode(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_2_with_runtime_rmode(UCD_FSUB, op->op.fsub_with_rmode, x, pure, y, pure, rmode);
+}
+
+static bool il_opdmp_fmul_with_rmode(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_2_with_runtime_rmode(UCD_FMUL, op->op.fmul_with_rmode, x, pure, y, pure, rmode);
+}
+
+static bool il_opdmp_fdiv_with_rmode(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_2_with_runtime_rmode(UCD_FDIV, op->op.fdiv_with_rmode, x, pure, y, pure, rmode);
+}
+
+static bool il_opdmp_fmod_with_rmode(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_2_with_runtime_rmode(UCD_FMOD, op->op.fmod_with_rmode, x, pure, y, pure, rmode);
 }
 
 static bool il_opdmp_fhypot(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
@@ -720,6 +772,7 @@ static bool il_op_pure_string_resolve(RzILStringifyCtx *ctx, const RzILOpPure *o
 		CASE_IL_OP(FCAST_FLOAT, fcast_float);
 		CASE_IL_OP(FCAST_SFLOAT, fcast_sfloat);
 		CASE_IL_OP(FCONVERT, fconvert);
+		CASE_IL_OP(FCONVERT_WITH_RMODE, fconvert_with_rmode);
 		CASE_IL_OP(FWITH_RPREC, fwith_rprec);
 		CASE_IL_OP(FREQUAL, frequal);
 		CASE_IL_OP(FSUCC, fsucc);
@@ -728,12 +781,19 @@ static bool il_op_pure_string_resolve(RzILStringifyCtx *ctx, const RzILOpPure *o
 		CASE_IL_OP(FROUND, fround);
 		CASE_IL_OP(FSQRT, fsqrt);
 		CASE_IL_OP(FRSQRT, frsqrt);
+		CASE_IL_OP(FROUND_WITH_RMODE, fround_with_rmode);
+		CASE_IL_OP(FSQRT_WITH_RMODE, fsqrt_with_rmode);
 		CASE_IL_OP(FEXCEPT, fexcept);
 		CASE_IL_OP(FADD, fadd);
 		CASE_IL_OP(FSUB, fsub);
 		CASE_IL_OP(FMUL, fmul);
 		CASE_IL_OP(FDIV, fdiv);
 		CASE_IL_OP(FMOD, fmod);
+		CASE_IL_OP(FADD_WITH_RMODE, fadd_with_rmode);
+		CASE_IL_OP(FSUB_WITH_RMODE, fsub_with_rmode);
+		CASE_IL_OP(FMUL_WITH_RMODE, fmul_with_rmode);
+		CASE_IL_OP(FDIV_WITH_RMODE, fdiv_with_rmode);
+		CASE_IL_OP(FMOD_WITH_RMODE, fmod_with_rmode);
 		CASE_IL_OP(FHYPOT, fhypot);
 		CASE_IL_OP(FPOW, fpow);
 		CASE_IL_OP(FMAD, fmad);

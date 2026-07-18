@@ -335,6 +335,16 @@ static void il_op_graph_fconvert(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, N
 	il_op_pure_graph_resolve(opx->f, g, to);
 }
 
+static void il_op_graph_fconvert_with_rmode(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	RzILOpArgsFconvertWithRmode *opx = &op->op.fconvert_with_rmode;
+	char *value = rz_str_newf("fconvert_with_rmode: %s", rz_il_float_stringify_format(opx->format));
+	RzGraphNode *to = graph_add_node_il(g, value);
+	free(value);
+	rz_graph_add_edge(g, from, to, NULL);
+	il_op_pure_graph_resolve(opx->rmode, g, to);
+	il_op_pure_graph_resolve(opx->f, g, to);
+}
+
 static void il_op_graph_fwith_rprec(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsFwithRprec *opx = &op->op.fwith_rprec;
 	const char *precision = rz_il_float_stringify_rprecision(opx->precision);
@@ -353,6 +363,14 @@ static void il_op_graph_fround(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NUL
 	free(value);
 	rz_graph_add_edge(g, from, to, NULL);
 	il_op_pure_graph_resolve(opx->f, g, to);
+}
+
+static void il_op_graph_fround_with_rmode(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_2("fround_with_rmode", op->op.fround_with_rmode, pure, rmode, pure, f);
+}
+
+static void il_op_graph_fsqrt_with_rmode(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_2("fsqrt_with_rmode", op->op.fsqrt_with_rmode, pure, rmode, pure, f);
 }
 
 static void il_op_graph_frequal(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
@@ -402,6 +420,26 @@ static void il_op_graph_fdiv(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL 
 
 static void il_op_graph_fmod(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2_with_rmode("fmod", op->op.fmod, pure, x, pure, y, rmode);
+}
+
+static void il_op_graph_fadd_with_rmode(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_3("fadd_with_rmode", op->op.fadd_with_rmode, pure, rmode, pure, x, pure, y);
+}
+
+static void il_op_graph_fsub_with_rmode(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_3("fsub_with_rmode", op->op.fsub_with_rmode, pure, rmode, pure, x, pure, y);
+}
+
+static void il_op_graph_fmul_with_rmode(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_3("fmul_with_rmode", op->op.fmul_with_rmode, pure, rmode, pure, x, pure, y);
+}
+
+static void il_op_graph_fdiv_with_rmode(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_3("fdiv_with_rmode", op->op.fdiv_with_rmode, pure, rmode, pure, x, pure, y);
+}
+
+static void il_op_graph_fmod_with_rmode(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_3("fmod_with_rmode", op->op.fmod_with_rmode, pure, rmode, pure, x, pure, y);
 }
 
 static void il_op_graph_fhypot(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
@@ -679,6 +717,9 @@ static void il_op_pure_graph_resolve(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo 
 	case RZ_IL_OP_FCONVERT:
 		il_op_graph_fconvert(op, g, from);
 		return;
+	case RZ_IL_OP_FCONVERT_WITH_RMODE:
+		il_op_graph_fconvert_with_rmode(op, g, from);
+		return;
 	case RZ_IL_OP_FWITH_RPREC:
 		il_op_graph_fwith_rprec(op, g, from);
 		return;
@@ -703,6 +744,12 @@ static void il_op_pure_graph_resolve(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo 
 	case RZ_IL_OP_FRSQRT:
 		il_op_graph_frsqrt(op, g, from);
 		return;
+	case RZ_IL_OP_FROUND_WITH_RMODE:
+		il_op_graph_fround_with_rmode(op, g, from);
+		return;
+	case RZ_IL_OP_FSQRT_WITH_RMODE:
+		il_op_graph_fsqrt_with_rmode(op, g, from);
+		return;
 	case RZ_IL_OP_FADD:
 		il_op_graph_fadd(op, g, from);
 		return;
@@ -717,6 +764,21 @@ static void il_op_pure_graph_resolve(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo 
 		return;
 	case RZ_IL_OP_FMOD:
 		il_op_graph_fmod(op, g, from);
+		return;
+	case RZ_IL_OP_FADD_WITH_RMODE:
+		il_op_graph_fadd_with_rmode(op, g, from);
+		return;
+	case RZ_IL_OP_FSUB_WITH_RMODE:
+		il_op_graph_fsub_with_rmode(op, g, from);
+		return;
+	case RZ_IL_OP_FMUL_WITH_RMODE:
+		il_op_graph_fmul_with_rmode(op, g, from);
+		return;
+	case RZ_IL_OP_FDIV_WITH_RMODE:
+		il_op_graph_fdiv_with_rmode(op, g, from);
+		return;
+	case RZ_IL_OP_FMOD_WITH_RMODE:
+		il_op_graph_fmod_with_rmode(op, g, from);
 		return;
 	case RZ_IL_OP_FHYPOT:
 		il_op_graph_fhypot(op, g, from);

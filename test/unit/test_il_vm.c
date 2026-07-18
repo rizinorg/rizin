@@ -1197,6 +1197,163 @@ static bool test_rzil_vm_op_fwith_rprec() {
 	mu_end;
 }
 
+static bool runtime_rmode_result_is(RzILVM *vm, RzILOpFloat *op, const char *expected) {
+	if (!op) {
+		return false;
+	}
+	RzFloat *actual = rz_il_evaluate_float(vm, op);
+	char *hex = actual ? rz_float_as_hex_string(actual, true) : NULL;
+	bool matches = hex && !strcmp(hex, expected);
+	free(hex);
+	rz_float_free(actual);
+	rz_il_op_pure_free(op);
+	return matches;
+}
+
+static bool test_rzil_vm_runtime_rmode_helpers() {
+	RzILVM *vm = rz_il_vm_new(0, 32, false, RZ_IL_EVENT_EXC_NONE);
+	const struct {
+		ut32 mode;
+		const char *expected;
+	} add_cases[] = {
+		{ RZ_FLOAT_RMODE_RNE, "0x3f800000" },
+		{ RZ_FLOAT_RMODE_RNA, "0x3f800001" },
+		{ RZ_FLOAT_RMODE_RTP, "0x3f800001" },
+		{ RZ_FLOAT_RMODE_RTN, "0x3f800000" },
+		{ RZ_FLOAT_RMODE_RTZ, "0x3f800000" },
+		{ RZ_FLOAT_RMODE_UNK + 1, "0x3f800000" },
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(add_cases); i++) {
+		RzILOpFloat *op = rz_il_op_new_fadd_with_rmode(
+			rz_il_op_new_bitv_from_ut64(32, add_cases[i].mode),
+			rz_il_op_new_float_from_f32(1.0f),
+			rz_il_op_new_float_from_f32(0x1p-24f));
+		mu_assert_true(runtime_rmode_result_is(vm, op, add_cases[i].expected), "runtime fadd rounding-mode selection");
+	}
+
+	RzILOpFloat *op = rz_il_op_new_fconvert_with_rmode(
+		RZ_FLOAT_IEEE754_BIN_32,
+		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RTP),
+		rz_il_op_new_float_from_f64(1.0 + 0x1p-24));
+	mu_assert_true(runtime_rmode_result_is(vm, op, "0x3f800001"), "runtime fconvert rounding mode");
+
+	op = rz_il_op_new_fround_with_rmode(
+		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNA),
+		rz_il_op_new_float_from_f64(0.5));
+	mu_assert_true(runtime_rmode_result_is(vm, op, "0x3ff0000000000000"), "runtime fround rounding mode");
+
+	op = rz_il_op_new_fsqrt_with_rmode(
+		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RTZ),
+		rz_il_op_new_float_from_f64(4.0));
+	mu_assert_true(runtime_rmode_result_is(vm, op, "0x4000000000000000"), "runtime fsqrt rounding mode");
+
+	op = rz_il_op_new_fsub_with_rmode(
+		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE),
+		rz_il_op_new_float_from_f32(3.0f),
+		rz_il_op_new_float_from_f32(2.0f));
+	mu_assert_true(runtime_rmode_result_is(vm, op, "0x3f800000"), "runtime fsub rounding mode");
+
+	op = rz_il_op_new_fmul_with_rmode(
+		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE),
+		rz_il_op_new_float_from_f32(3.0f),
+		rz_il_op_new_float_from_f32(2.0f));
+	mu_assert_true(runtime_rmode_result_is(vm, op, "0x40c00000"), "runtime fmul rounding mode");
+
+	op = rz_il_op_new_fdiv_with_rmode(
+		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE),
+		rz_il_op_new_float_from_f32(6.0f),
+		rz_il_op_new_float_from_f32(2.0f));
+	mu_assert_true(runtime_rmode_result_is(vm, op, "0x40400000"), "runtime fdiv rounding mode");
+
+	op = rz_il_op_new_fmod_with_rmode(
+		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE),
+		rz_il_op_new_float_from_f32(5.0f),
+		rz_il_op_new_float_from_f32(2.0f));
+	mu_assert_true(runtime_rmode_result_is(vm, op, "0x3f800000"), "runtime fmod rounding mode");
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
+static bool test_rzil_vm_runtime_rmode_avoids_let_capture() {
+	const char *name = "_rz_il_runtime_rmode";
+	RzILOpFloat *op = rz_il_op_new_let(
+		name,
+		rz_il_op_new_bitv_from_ut64(32, 0x3f800000),
+		rz_il_op_new_fadd_with_rmode(
+			rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RTZ),
+			rz_il_op_new_float(
+				RZ_FLOAT_IEEE754_BIN_32,
+				rz_il_op_new_var(name, RZ_IL_VAR_KIND_LOCAL_PURE)),
+			rz_il_op_new_float_from_f32(0.0f)));
+
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(32);
+	RzILSortPure sort;
+	RzILValidateReport report = NULL;
+	mu_assert_true(rz_il_validate_pure(op, ctx, &sort, &report), "same-named outer let validates");
+	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_32)), "captured expression sort");
+	mu_assert_null(report, "no validation report");
+	rz_il_validate_global_context_free(ctx);
+
+	RzILVM *vm = rz_il_vm_new(0, 32, false, RZ_IL_EVENT_EXC_NONE);
+	RzFloat *result = rz_il_evaluate_float(vm, op);
+	char *hex = result ? rz_float_as_hex_string(result, true) : NULL;
+	mu_assert_streq(hex, "0x3f800000", "runtime rmode does not capture the outer let value");
+	free(hex);
+	rz_float_free(result);
+	rz_il_op_pure_free(op);
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
+static bool test_rzil_vm_runtime_rmode_compact_composition() {
+	RzILOpFloat *op = rz_il_op_new_float_from_f32(1.0f);
+	for (size_t i = 0; i < 8; i++) {
+		op = rz_il_op_new_fadd_with_rmode(
+			rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE),
+			op,
+			rz_il_op_new_float_from_f32(0.0f));
+	}
+	mu_assert_notnull(op, "nested runtime-rmode expression");
+	mu_assert_streq(rz_il_op_pure_code_stringify(op->code), "fadd_with_rmode", "runtime-rmode opcode string");
+
+	RzILOpPure *copy = rz_il_op_pure_dup(op);
+	mu_assert_notnull(copy, "runtime-rmode expression copy");
+
+	RzStrBuf original;
+	RzStrBuf copied;
+	rz_strbuf_init(&original);
+	rz_strbuf_init(&copied);
+	rz_il_op_pure_stringify(op, &original, false);
+	rz_il_op_pure_stringify(copy, &copied, false);
+	mu_assert("nested runtime-rmode stringify stays below 64 KiB", rz_strbuf_length(&original) < 64 * 1024);
+	mu_assert_streq(rz_strbuf_get(&copied), rz_strbuf_get(&original), "copied runtime-rmode expression output");
+	mu_assert_strcontains(rz_strbuf_get(&original), "(fadd_with_rmode (bv 32", "compact runtime-rmode string form");
+	rz_strbuf_fini(&original);
+	rz_strbuf_fini(&copied);
+
+	PJ *pj = pj_new();
+	rz_il_op_pure_json(copy, pj);
+	char *json = pj_drain(pj);
+	mu_assert_strcontains(json, "\"opcode\":\"fadd_with_rmode\"", "runtime-rmode JSON opcode");
+	mu_assert_strcontains(json, "\"rmode\":{\"opcode\":\"bitv\"", "runtime rmode is a JSON child node");
+	free(json);
+
+	RzILStringifyCtx stringify_ctx = { .indent = 0, .indent_inc = 2 };
+	RzStrBuf unicode;
+	rz_strbuf_init(&unicode);
+	mu_assert_true(rz_il_op_pure_stringify_unicode(&stringify_ctx, copy, &unicode), "runtime-rmode Unicode export");
+	mu_assert("runtime-rmode Unicode output stays compact", rz_strbuf_length(&unicode) < 64 * 1024);
+	rz_strbuf_fini(&unicode);
+
+	RzGraph *graph = rz_il_op_pure_graph(copy, "runtime-rmode");
+	mu_assert_notnull(graph, "runtime-rmode graph export");
+	rz_graph_free(graph);
+	rz_il_op_pure_free(copy);
+	rz_il_op_pure_free(op);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rzil_vm_init);
 	mu_run_test(test_rzil_vm_global_vars);
@@ -1227,6 +1384,9 @@ bool all_tests() {
 	mu_run_test(test_rzil_vm_op_fcast);
 	mu_run_test(test_rzil_vm_op_fexcept);
 	mu_run_test(test_rzil_vm_op_fwith_rprec);
+	mu_run_test(test_rzil_vm_runtime_rmode_helpers);
+	mu_run_test(test_rzil_vm_runtime_rmode_avoids_let_capture);
+	mu_run_test(test_rzil_vm_runtime_rmode_compact_composition);
 	mu_run_test(test_rzil_vm_halt_on_exc);
 	return tests_passed != tests_run;
 }

@@ -39,6 +39,7 @@
 #undef INT2F
 #undef SINT2F
 #undef FCONVERT
+#undef FCONVERT_WITH_RMODE
 #undef FWITH_RPREC
 #undef FLOATV16
 #undef FLOATV32
@@ -48,12 +49,19 @@
 #undef FPRED
 #undef FORDER
 #undef FROUND
+#undef FROUND_WITH_RMODE
 #undef FSQRT
+#undef FSQRT_WITH_RMODE
 #undef FADD
+#undef FADD_WITH_RMODE
 #undef FSUB
+#undef FSUB_WITH_RMODE
 #undef FMUL
+#undef FMUL_WITH_RMODE
 #undef FDIV
+#undef FDIV_WITH_RMODE
 #undef FMOD
+#undef FMOD_WITH_RMODE
 #undef FPOW
 #undef FMAD
 #undef FNE

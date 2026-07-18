@@ -92,6 +92,15 @@
 #define FPOW(rmode, flx, fly)      rz_il_op_new_fpow(rmode, flx, fly)
 #define FMAD(rmode, flx, fly, flz) rz_il_op_new_fmad(rmode, flx, fly, flz)
 
+#define FCONVERT_WITH_RMODE(fmt, rmode, fl) rz_il_op_new_fconvert_with_rmode(fmt, rmode, fl)
+#define FROUND_WITH_RMODE(rmode, fl)        rz_il_op_new_fround_with_rmode(rmode, fl)
+#define FSQRT_WITH_RMODE(rmode, fl)         rz_il_op_new_fsqrt_with_rmode(rmode, fl)
+#define FADD_WITH_RMODE(rmode, flx, fly)    rz_il_op_new_fadd_with_rmode(rmode, flx, fly)
+#define FSUB_WITH_RMODE(rmode, flx, fly)    rz_il_op_new_fsub_with_rmode(rmode, flx, fly)
+#define FMUL_WITH_RMODE(rmode, flx, fly)    rz_il_op_new_fmul_with_rmode(rmode, flx, fly)
+#define FDIV_WITH_RMODE(rmode, flx, fly)    rz_il_op_new_fdiv_with_rmode(rmode, flx, fly)
+#define FMOD_WITH_RMODE(rmode, flx, fly)    rz_il_op_new_fmod_with_rmode(rmode, flx, fly)
+
 #define IL_FQNAN(f) rz_il_op_new_float_from_rz_float(rz_float_new_qnan(f))
 #define IL_FSNAN(f) rz_il_op_new_float_from_rz_float(rz_float_new_snan(f))
 

@@ -488,6 +488,23 @@ static void il_opdmp_fconvert(RzILOpPure *op, RzStrBuf *sb, int pad) {
 	}
 }
 
+static void il_opdmp_fconvert_with_rmode(RzILOpPure *op, RzStrBuf *sb, int pad) {
+	RzILOpArgsFconvertWithRmode *opx = &op->op.fconvert_with_rmode;
+	if (pad < 0) {
+		rz_strbuf_appendf(sb, "(fconvert_with_rmode %s ", rz_il_float_stringify_format(opx->format));
+		il_op_pure_string_resolve(opx->rmode, sb, pad);
+		rz_strbuf_append(sb, " ");
+		il_op_pure_string_resolve(opx->f, sb, pad);
+		rz_strbuf_append(sb, ")");
+	} else {
+		rz_strbuf_appendf(sb, "%*.s(fconvert_with_rmode %s\n", pad, "", rz_il_float_stringify_format(opx->format));
+		il_op_pure_string_resolve(opx->rmode, sb, pad + PRETTY_PAD);
+		rz_strbuf_append(sb, "\n");
+		il_op_pure_string_resolve(opx->f, sb, pad + PRETTY_PAD);
+		rz_strbuf_append(sb, ")");
+	}
+}
+
 static void il_opdmp_fwith_rprec(RzILOpPure *op, RzStrBuf *sb, int pad) {
 	RzILOpArgsFwithRprec *opx = &op->op.fwith_rprec;
 	if (pad < 0) {
@@ -516,6 +533,14 @@ static void il_opdmp_fround(RzILOpPure *op, RzStrBuf *sb, int pad) {
 		il_op_pure_string_resolve(opx->f, sb, pad + PRETTY_PAD);
 		rz_strbuf_append(sb, ")");
 	}
+}
+
+static void il_opdmp_fround_with_rmode(RzILOpPure *op, RzStrBuf *sb, int pad) {
+	il_op_param_2("fround_with_rmode", op->op.fround_with_rmode, pure, rmode, pure, f);
+}
+
+static void il_opdmp_fsqrt_with_rmode(RzILOpPure *op, RzStrBuf *sb, int pad) {
+	il_op_param_2("fsqrt_with_rmode", op->op.fsqrt_with_rmode, pure, rmode, pure, f);
 }
 
 static void il_opdmp_frequal(RzILOpPure *op, RzStrBuf *sb, int pad) {
@@ -576,6 +601,26 @@ static void il_opdmp_fdiv(RzILOpPure *op, RzStrBuf *sb, int pad) {
 
 static void il_opdmp_fmod(RzILOpPure *op, RzStrBuf *sb, int pad) {
 	il_op_param_2_with_rmode("%%.", op->op.fmod, pure, x, pure, y, rmode);
+}
+
+static void il_opdmp_fadd_with_rmode(RzILOpPure *op, RzStrBuf *sb, int pad) {
+	il_op_param_3("fadd_with_rmode", op->op.fadd_with_rmode, pure, rmode, pure, x, pure, y);
+}
+
+static void il_opdmp_fsub_with_rmode(RzILOpPure *op, RzStrBuf *sb, int pad) {
+	il_op_param_3("fsub_with_rmode", op->op.fsub_with_rmode, pure, rmode, pure, x, pure, y);
+}
+
+static void il_opdmp_fmul_with_rmode(RzILOpPure *op, RzStrBuf *sb, int pad) {
+	il_op_param_3("fmul_with_rmode", op->op.fmul_with_rmode, pure, rmode, pure, x, pure, y);
+}
+
+static void il_opdmp_fdiv_with_rmode(RzILOpPure *op, RzStrBuf *sb, int pad) {
+	il_op_param_3("fdiv_with_rmode", op->op.fdiv_with_rmode, pure, rmode, pure, x, pure, y);
+}
+
+static void il_opdmp_fmod_with_rmode(RzILOpPure *op, RzStrBuf *sb, int pad) {
+	il_op_param_3("fmod_with_rmode", op->op.fmod_with_rmode, pure, rmode, pure, x, pure, y);
 }
 
 static void il_opdmp_fhypot(RzILOpPure *op, RzStrBuf *sb, int pad) {
@@ -911,6 +956,9 @@ static void il_op_pure_string_resolve(RzILOpPure *op, RzStrBuf *sb, int pad) {
 	case RZ_IL_OP_FCONVERT:
 		il_opdmp_fconvert(op, sb, pad);
 		return;
+	case RZ_IL_OP_FCONVERT_WITH_RMODE:
+		il_opdmp_fconvert_with_rmode(op, sb, pad);
+		return;
 	case RZ_IL_OP_FWITH_RPREC:
 		il_opdmp_fwith_rprec(op, sb, pad);
 		return;
@@ -935,6 +983,12 @@ static void il_op_pure_string_resolve(RzILOpPure *op, RzStrBuf *sb, int pad) {
 	case RZ_IL_OP_FRSQRT:
 		il_opdmp_frsqrt(op, sb, pad);
 		return;
+	case RZ_IL_OP_FROUND_WITH_RMODE:
+		il_opdmp_fround_with_rmode(op, sb, pad);
+		return;
+	case RZ_IL_OP_FSQRT_WITH_RMODE:
+		il_opdmp_fsqrt_with_rmode(op, sb, pad);
+		return;
 	case RZ_IL_OP_FEXCEPT:
 		il_opdmp_fexcept(op, sb, pad);
 		return;
@@ -952,6 +1006,21 @@ static void il_op_pure_string_resolve(RzILOpPure *op, RzStrBuf *sb, int pad) {
 		return;
 	case RZ_IL_OP_FMOD:
 		il_opdmp_fmod(op, sb, pad);
+		return;
+	case RZ_IL_OP_FADD_WITH_RMODE:
+		il_opdmp_fadd_with_rmode(op, sb, pad);
+		return;
+	case RZ_IL_OP_FSUB_WITH_RMODE:
+		il_opdmp_fsub_with_rmode(op, sb, pad);
+		return;
+	case RZ_IL_OP_FMUL_WITH_RMODE:
+		il_opdmp_fmul_with_rmode(op, sb, pad);
+		return;
+	case RZ_IL_OP_FDIV_WITH_RMODE:
+		il_opdmp_fdiv_with_rmode(op, sb, pad);
+		return;
+	case RZ_IL_OP_FMOD_WITH_RMODE:
+		il_opdmp_fmod_with_rmode(op, sb, pad);
 		return;
 	case RZ_IL_OP_FHYPOT:
 		il_opdmp_fhypot(op, sb, pad);
@@ -1270,6 +1339,8 @@ RZ_API RZ_NONNULL const char *rz_il_op_pure_code_stringify(RzILOpPureCode code) 
 		return "fcast_sfloat";
 	case RZ_IL_OP_FCONVERT:
 		return "fconvert";
+	case RZ_IL_OP_FCONVERT_WITH_RMODE:
+		return "fconvert_with_rmode";
 	case RZ_IL_OP_FWITH_RPREC:
 		return "fwith_rprec";
 	case RZ_IL_OP_FREQUAL:
@@ -1286,6 +1357,10 @@ RZ_API RZ_NONNULL const char *rz_il_op_pure_code_stringify(RzILOpPureCode code) 
 		return "fsqrt";
 	case RZ_IL_OP_FRSQRT:
 		return "frsqrt";
+	case RZ_IL_OP_FROUND_WITH_RMODE:
+		return "fround_with_rmode";
+	case RZ_IL_OP_FSQRT_WITH_RMODE:
+		return "fsqrt_with_rmode";
 	case RZ_IL_OP_FEXCEPT:
 		return "fexcept";
 	case RZ_IL_OP_FADD:
@@ -1298,6 +1373,16 @@ RZ_API RZ_NONNULL const char *rz_il_op_pure_code_stringify(RzILOpPureCode code) 
 		return "fdiv";
 	case RZ_IL_OP_FMOD:
 		return "fmod";
+	case RZ_IL_OP_FADD_WITH_RMODE:
+		return "fadd_with_rmode";
+	case RZ_IL_OP_FSUB_WITH_RMODE:
+		return "fsub_with_rmode";
+	case RZ_IL_OP_FMUL_WITH_RMODE:
+		return "fmul_with_rmode";
+	case RZ_IL_OP_FDIV_WITH_RMODE:
+		return "fdiv_with_rmode";
+	case RZ_IL_OP_FMOD_WITH_RMODE:
+		return "fmod_with_rmode";
 	case RZ_IL_OP_FHYPOT:
 		return "fhypot";
 	case RZ_IL_OP_FPOW:

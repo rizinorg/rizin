@@ -389,6 +389,18 @@ static void il_opdmp_fconvert(RzILOpPure *op, PJ *pj) {
 	pj_end(pj);
 }
 
+static void il_opdmp_fconvert_with_rmode(RzILOpPure *op, PJ *pj) {
+	RzILOpArgsFconvertWithRmode *opx = &op->op.fconvert_with_rmode;
+	pj_o(pj);
+	pj_ks(pj, "opcode", "fconvert_with_rmode");
+	pj_ks(pj, "format", rz_il_float_stringify_format(opx->format));
+	pj_k(pj, "rmode");
+	il_op_pure_json_resolve(opx->rmode, pj);
+	pj_k(pj, "value");
+	il_op_pure_json_resolve(opx->f, pj);
+	pj_end(pj);
+}
+
 static void il_opdmp_fwith_rprec(RzILOpPure *op, PJ *pj) {
 	RzILOpArgsFwithRprec *opx = &op->op.fwith_rprec;
 	pj_o(pj);
@@ -407,6 +419,14 @@ static void il_opdmp_fround(RzILOpPure *op, PJ *pj) {
 	pj_k(pj, "value");
 	il_op_pure_json_resolve(opx->f, pj);
 	pj_end(pj);
+}
+
+static void il_opdmp_fround_with_rmode(RzILOpPure *op, PJ *pj) {
+	il_op_param_2("fround_with_rmode", op->op.fround_with_rmode, pure, rmode, pure, f);
+}
+
+static void il_opdmp_fsqrt_with_rmode(RzILOpPure *op, PJ *pj) {
+	il_op_param_2("fsqrt_with_rmode", op->op.fsqrt_with_rmode, pure, rmode, pure, f);
 }
 
 static void il_opdmp_frequal(RzILOpPure *op, PJ *pj) {
@@ -455,6 +475,26 @@ static void il_opdmp_fdiv(RzILOpPure *op, PJ *pj) {
 
 static void il_opdmp_fmod(RzILOpPure *op, PJ *pj) {
 	il_op_param_2_with_rmode("%.", op->op.fmod, pure, x, pure, y, rmode);
+}
+
+static void il_opdmp_fadd_with_rmode(RzILOpPure *op, PJ *pj) {
+	il_op_param_3("fadd_with_rmode", op->op.fadd_with_rmode, pure, rmode, pure, x, pure, y);
+}
+
+static void il_opdmp_fsub_with_rmode(RzILOpPure *op, PJ *pj) {
+	il_op_param_3("fsub_with_rmode", op->op.fsub_with_rmode, pure, rmode, pure, x, pure, y);
+}
+
+static void il_opdmp_fmul_with_rmode(RzILOpPure *op, PJ *pj) {
+	il_op_param_3("fmul_with_rmode", op->op.fmul_with_rmode, pure, rmode, pure, x, pure, y);
+}
+
+static void il_opdmp_fdiv_with_rmode(RzILOpPure *op, PJ *pj) {
+	il_op_param_3("fdiv_with_rmode", op->op.fdiv_with_rmode, pure, rmode, pure, x, pure, y);
+}
+
+static void il_opdmp_fmod_with_rmode(RzILOpPure *op, PJ *pj) {
+	il_op_param_3("fmod_with_rmode", op->op.fmod_with_rmode, pure, rmode, pure, x, pure, y);
 }
 
 static void il_opdmp_fhypot(RzILOpPure *op, PJ *pj) {
@@ -736,6 +776,9 @@ static void il_op_pure_json_resolve(RzILOpPure *op, PJ *pj) {
 	case RZ_IL_OP_FCONVERT:
 		il_opdmp_fconvert(op, pj);
 		return;
+	case RZ_IL_OP_FCONVERT_WITH_RMODE:
+		il_opdmp_fconvert_with_rmode(op, pj);
+		return;
 	case RZ_IL_OP_FWITH_RPREC:
 		il_opdmp_fwith_rprec(op, pj);
 		return;
@@ -760,6 +803,12 @@ static void il_op_pure_json_resolve(RzILOpPure *op, PJ *pj) {
 	case RZ_IL_OP_FRSQRT:
 		il_opdmp_frsqrt(op, pj);
 		return;
+	case RZ_IL_OP_FROUND_WITH_RMODE:
+		il_opdmp_fround_with_rmode(op, pj);
+		return;
+	case RZ_IL_OP_FSQRT_WITH_RMODE:
+		il_opdmp_fsqrt_with_rmode(op, pj);
+		return;
 	case RZ_IL_OP_FADD:
 		il_opdmp_fadd(op, pj);
 		return;
@@ -774,6 +823,21 @@ static void il_op_pure_json_resolve(RzILOpPure *op, PJ *pj) {
 		return;
 	case RZ_IL_OP_FMOD:
 		il_opdmp_fmod(op, pj);
+		return;
+	case RZ_IL_OP_FADD_WITH_RMODE:
+		il_opdmp_fadd_with_rmode(op, pj);
+		return;
+	case RZ_IL_OP_FSUB_WITH_RMODE:
+		il_opdmp_fsub_with_rmode(op, pj);
+		return;
+	case RZ_IL_OP_FMUL_WITH_RMODE:
+		il_opdmp_fmul_with_rmode(op, pj);
+		return;
+	case RZ_IL_OP_FDIV_WITH_RMODE:
+		il_opdmp_fdiv_with_rmode(op, pj);
+		return;
+	case RZ_IL_OP_FMOD_WITH_RMODE:
+		il_opdmp_fmod_with_rmode(op, pj);
 		return;
 	case RZ_IL_OP_FHYPOT:
 		il_opdmp_fhypot(op, pj);

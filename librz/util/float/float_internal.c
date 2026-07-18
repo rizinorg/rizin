@@ -119,7 +119,7 @@ static bool rz_bv_shift_right_jammed(RzBitVector *bv, ut32 dist) {
 	}
 
 	rz_bv_rshift(bv, dist);
-	rz_bv_set(bv, 0, lsb);
+	rz_bv_set(bv, 0, rz_bv_get(bv, 0) || lsb);
 	return true;
 }
 

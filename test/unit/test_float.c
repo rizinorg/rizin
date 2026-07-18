@@ -1440,6 +1440,18 @@ bool f32_ieee_cast_test(void) {
 	rz_float_free(expect);
 	rz_bv_free(val);
 
+	// Preserve a lone bit shifted into the sticky position.
+	val = rz_bv_new_from_ut64(32, 134217730);
+	cast_val = rz_float_cast_float(val, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_streq_free(rz_float_as_hex_string(cast_val, true), "0x4d000000", "sticky bit rounds integer conversion down with rne");
+	mu_assert_true(cast_val->exception & RZ_FLOAT_E_INEXACT, "sticky bit marks integer conversion inexact");
+	rz_float_free(cast_val);
+	cast_val = rz_float_cast_float(val, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RTP);
+	mu_assert_streq_free(rz_float_as_hex_string(cast_val, true), "0x4d000001", "sticky bit rounds integer conversion up with rtp");
+	mu_assert_true(cast_val->exception & RZ_FLOAT_E_INEXACT, "directed integer conversion remains inexact");
+	rz_float_free(cast_val);
+	rz_bv_free(val);
+
 	// 1-4. cast-float negative
 	// 1111 1111 1111 1111 -> unsigned : 2^16 - 1 = 65535, signed : -1
 	val = rz_bv_new_from_st64(16, -1);
@@ -1475,6 +1487,14 @@ bool f32_ieee_cast_test(void) {
 	expect_bv = rz_bv_new_from_ut64(32, 12345678);
 	cast_bv = rz_float_cast_sint(fval, 32, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint 12345678.0f)");
+	rz_float_free(fval);
+	rz_bv_free(cast_bv);
+	rz_bv_free(expect_bv);
+
+	fval = rz_float_new_from_f32(1.125f);
+	expect_bv = rz_bv_new_from_ut64(32, 2);
+	cast_bv = rz_float_cast_sint(fval, 32, RZ_FLOAT_RMODE_RTP);
+	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "sticky bit rounds 1.125f toward positive infinity");
 	rz_float_free(fval);
 	rz_bv_free(cast_bv);
 	rz_bv_free(expect_bv);
@@ -1682,6 +1702,8 @@ bool float_convert_range_test(void) {
 bool f80_ieee_special_num_test(void) {
 	RzFloat *pinf = rz_float_new_inf(RZ_FLOAT_IEEE754_BIN_80, false);
 	RzFloat *pseudo_inf = new_f80_from_bytes("\x7f\xff\x00\x00\x00\x00\x00\x00\x00\x00");
+	RzFloat *ninf = rz_float_new_inf(RZ_FLOAT_IEEE754_BIN_80, true);
+	RzFloat *pseudo_ninf = new_f80_from_bytes("\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00");
 	RzFloat *qnan = rz_float_new_qnan(RZ_FLOAT_IEEE754_BIN_80);
 	RzFloat *snan = rz_float_new_snan(RZ_FLOAT_IEEE754_BIN_80);
 	RzFloat *one = new_f80_from_bytes("\x3f\xff\x80\x00\x00\x00\x00\x00\x00\x00");
@@ -1691,8 +1713,17 @@ bool f80_ieee_special_num_test(void) {
 	mu_assert_streq_free(rz_float_as_hex_string(snan, true), "0x7fff8000000000000001", "binary80 signaling NaN keeps the quiet bit clear");
 	mu_assert_true(rz_float_is_inf(pinf), "detect canonical binary80 infinity");
 	mu_assert_true(rz_float_is_inf(pseudo_inf), "detect binary80 pseudo-infinity");
+	mu_assert_eq(rz_float_cmp(pinf, pseudo_inf), 0, "canonical and pseudo positive infinity compare equal");
+	mu_assert_eq(rz_float_cmp(pseudo_inf, pinf), 0, "positive infinity comparison is symmetric");
+	mu_assert_eq(rz_float_cmp(ninf, pseudo_ninf), 0, "canonical and pseudo negative infinity compare equal");
+	mu_assert_eq(rz_float_cmp(pseudo_ninf, ninf), 0, "negative infinity comparison is symmetric");
 	mu_assert_true(rz_float_detect_spec(qnan) == RZ_FLOAT_SPEC_QNAN, "detect binary80 quiet NaN");
 	mu_assert_true(rz_float_detect_spec(snan) == RZ_FLOAT_SPEC_SNAN, "detect binary80 signaling NaN");
+
+	RzFloat *pred_inf = rz_float_pred(pinf);
+	RzFloat *succ_ninf = rz_float_succ(ninf);
+	mu_assert_streq_free(rz_float_as_hex_string(pred_inf, true), "0x7ffeffffffffffffffff", "predecessor of binary80 positive infinity is the largest finite value");
+	mu_assert_streq_free(rz_float_as_hex_string(succ_ninf, true), "0xfffeffffffffffffffff", "successor of binary80 negative infinity is the largest finite negative value");
 
 	RzFloat *inf_product = rz_float_mul(pinf, pinf, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(rz_float_is_inf(inf_product), "binary80 infinity multiplied by infinity stays infinite");
@@ -1712,9 +1743,13 @@ bool f80_ieee_special_num_test(void) {
 	rz_float_free(neg_nan);
 	rz_float_free(nan_sum);
 	rz_float_free(inf_product);
+	rz_float_free(succ_ninf);
+	rz_float_free(pred_inf);
 	rz_float_free(one);
 	rz_float_free(snan);
 	rz_float_free(qnan);
+	rz_float_free(pseudo_ninf);
+	rz_float_free(ninf);
 	rz_float_free(pseudo_inf);
 	rz_float_free(pinf);
 	mu_end;

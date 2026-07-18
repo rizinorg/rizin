@@ -1972,6 +1972,14 @@ RZ_API RZ_OWN RzFloat *rz_float_neg(RZ_NONNULL RzFloat *f) {
 	return ret;
 }
 
+static void normalize_f80_infinity(RzFloat *f, RzBitVector *bv) {
+	if (f->r != RZ_FLOAT_IEEE754_BIN_80 || !rz_float_is_inf(f)) {
+		return;
+	}
+	ut32 significand_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
+	rz_bv_set(bv, significand_len - 1, true);
+}
+
 /**
  * get least floating-point number representable in (sort x) that is greater than given float
  * BAP ref: val fsucc : 'f float -> 'f float
@@ -1987,6 +1995,11 @@ RZ_API RZ_OWN RzFloat *rz_float_succ(RZ_NONNULL RzFloat *f) {
 	RzBitVector *bv_next;
 	RzFloat *ret = NULL;
 	if (rz_float_is_negative(f)) {
+		if (f->r == RZ_FLOAT_IEEE754_BIN_80 && rz_float_detect_spec(f) == RZ_FLOAT_SPEC_NINF) {
+			/* Step from the pseudo-infinity boundary immediately above the
+			 * largest finite negative value. */
+			rz_bv_set(bv, rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN) - 1, false);
+		}
 		// neg succ is x - unit(1)
 		bv_next = rz_bv_sub(bv, one, NULL);
 	} else {
@@ -2021,6 +2034,11 @@ RZ_API RZ_OWN RzFloat *rz_float_pred(RZ_NONNULL RzFloat *f) {
 		// neg pred is x + unit(1)
 		bv_next = rz_bv_add(bv, one, NULL);
 	} else {
+		if (f->r == RZ_FLOAT_IEEE754_BIN_80 && rz_float_detect_spec(f) == RZ_FLOAT_SPEC_PINF) {
+			/* Step from the pseudo-infinity boundary immediately above the
+			 * largest finite positive value. */
+			rz_bv_set(bv, rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN) - 1, false);
+		}
 		// pos pred is x - unit(1)
 		bv_next = rz_bv_sub(bv, one, NULL);
 	}
@@ -2046,6 +2064,8 @@ RZ_API RZ_OWN st32 rz_float_cmp(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y) {
 
 	RZ_BORROW RzBitVector *x_bv = rz_bv_dup(x->s);
 	RZ_BORROW RzBitVector *y_bv = rz_bv_dup(y->s);
+	normalize_f80_infinity(x, x_bv);
+	normalize_f80_infinity(y, y_bv);
 
 	bool x_sign = rz_bv_msb(x_bv);
 	bool y_sign = rz_bv_msb(y_bv);
