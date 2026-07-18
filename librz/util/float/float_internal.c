@@ -295,8 +295,8 @@ static RZ_OWN RzBitVector *pack_float_bv(bool sign, RZ_BORROW RZ_NONNULL const R
  * 1 means caller should round by adding ULP to `return bitv`
  * \return new bitvector would be 0001MM...M, which length is `precision + 1 + 3`
  */
-static RzBitVector *round_significant(bool sign, RzBitVector *sig, ut32 precision, RzFloatRMode mode, bool *should_inc) {
-	rz_return_val_if_fail(sig && should_inc, NULL);
+static RzBitVector *round_significant(bool sign, RzBitVector *sig, ut32 precision, RzFloatRMode mode, bool *should_inc, bool *inexact) {
+	rz_return_val_if_fail(sig && should_inc && inexact, NULL);
 
 	ut32 sig_len = rz_bv_len(sig) - rz_bv_clz(sig);
 	ut32 mantissa_len = sig_len - 1;
@@ -322,6 +322,7 @@ static RzBitVector *round_significant(bool sign, RzBitVector *sig, ut32 precisio
 
 	// default is drop
 	*should_inc = false;
+	*inexact = rz_bv_get(ret, 2) || rz_bv_get(ret, 1) || rz_bv_get(ret, 0);
 
 	if (mode == RZ_FLOAT_RMODE_RNE || mode == RZ_FLOAT_RMODE_RNA) {
 		bool guard_bit = rz_bv_get(ret, 2);
@@ -352,7 +353,7 @@ static RzBitVector *round_significant(bool sign, RzBitVector *sig, ut32 precisio
 	}
 
 	if (mode == (sign ? RZ_FLOAT_RMODE_RTN : RZ_FLOAT_RMODE_RTP)) {
-		*should_inc = 1;
+		*should_inc = *inexact;
 		// rshift to remove RGS
 		rz_bv_rshift(ret, 3);
 		return ret;
@@ -403,8 +404,9 @@ static RZ_OWN RzFloat *round_float_bv_new(bool sign, st32 exp, RzBitVector *sig,
 	}
 
 	bool should_inc = false;
+	bool inexact = false;
 	ut32 bit_prec = new_man_len;
-	RzBitVector *rounded_tmp = round_significant(sign, sig, bit_prec, mode, &should_inc);
+	RzBitVector *rounded_tmp = round_significant(sign, sig, bit_prec, mode, &should_inc, &inexact);
 
 	if (rounded_tmp == NULL) {
 		// TODO: error and report in code
@@ -469,6 +471,9 @@ static RZ_OWN RzFloat *round_float_bv_new(bool sign, st32 exp, RzBitVector *sig,
 	}
 	ret->s = pack_float_bv(sign, exp_bv, rounded_sig, new_format);
 	ret->r = new_format;
+	if (inexact) {
+		ret->exception |= RZ_FLOAT_E_INEXACT;
+	}
 
 	rz_bv_free(exp_bv);
 	rz_bv_free(rounded_sig);

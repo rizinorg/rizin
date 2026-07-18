@@ -59,6 +59,14 @@ define_types_gen_inf(f128, long double);
 /** \defgroup Helper utilities to inter-operate with SoftFloat.
  * @ {
  */
+static inline float16_t to_float16(RzFloat *f16) {
+	rz_warn_if_fail(f16->r == RZ_FLOAT_IEEE754_BIN_16);
+	float16_t ret = {
+		.v = (ut16)rz_bv_to_ut32(f16->s)
+	};
+	return ret;
+}
+
 static inline float32_t to_float32(RzFloat *f32) {
 	rz_warn_if_fail(f32->r == RZ_FLOAT_IEEE754_BIN_32);
 	float32_t ret = {
@@ -126,6 +134,13 @@ static inline RzFloat *set_exception_flags(RzFloat *f) {
 
 	softfloat_exceptionFlags = 0;
 	return f;
+}
+
+static inline RzFloat *of_float16(float16_t f16) {
+	RzFloat *ret = rz_float_new(RZ_FLOAT_IEEE754_BIN_16);
+
+	rz_bv_set_from_ut64(ret->s, f16.v);
+	return set_exception_flags(ret);
 }
 
 static inline RzFloat *of_float32(float32_t f32) {
@@ -928,12 +943,24 @@ RZ_API RzFloatSpec rz_float_detect_spec(RZ_NONNULL RzFloat *f) {
 	bool sign = get_sign(f->s, f->r);
 
 	if (rz_bv_is_all_one(exp_squashed)) {
+		bool mantissa_is_zero;
+		bool is_quiet;
+		if (f->r == RZ_FLOAT_IEEE754_BIN_80) {
+			/* The binary80 integer bit is explicit and is not part of the
+			 * NaN payload. Both of its infinity encodings therefore have a
+			 * zero fractional significand, and the quiet bit is bit 62. */
+			rz_bv_set(mantissa_squashed, 63, false);
+			mantissa_is_zero = rz_bv_is_zero_vector(mantissa_squashed);
+			is_quiet = rz_bv_get(mantissa_squashed, 62);
+		} else {
+			mantissa_is_zero = rz_bv_is_zero_vector(mantissa_squashed);
+			is_quiet = rz_bv_msb(mantissa_squashed);
+		}
 		// full exp with 0 mantissa -> inf
-		if (rz_bv_is_zero_vector(mantissa_squashed)) {
+		if (mantissa_is_zero) {
 			ret = sign ? RZ_FLOAT_SPEC_NINF : RZ_FLOAT_SPEC_PINF;
 		} else {
 			// detect signal or quiet nan
-			bool is_quiet = rz_bv_msb(mantissa_squashed);
 			ret = is_quiet ? RZ_FLOAT_SPEC_QNAN : RZ_FLOAT_SPEC_SNAN;
 		}
 	}
@@ -1015,10 +1042,15 @@ static void set_inf(RzFloat *f, bool is_negative) {
 	ut32 exp_start = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
 	ut32 exp_end = exp_start + rz_float_get_format_info(f->r, RZ_FLOAT_INFO_EXP_LEN);
 
+	rz_bv_set_all(bv, false);
 	// set exponent part to all 1
 	rz_bv_set_range(bv, exp_start, exp_end - 1, true);
+	if (f->r == RZ_FLOAT_IEEE754_BIN_80) {
+		// binary80 stores its integer bit explicitly.
+		rz_bv_set(bv, exp_start - 1, true);
+	}
 
-	// set sign bit (MSB), keep mantissa as zero-bv
+	// set sign bit (MSB), keep the fractional mantissa as zero-bv
 	rz_bv_set(bv, bv->len - 1, is_negative);
 }
 
@@ -1027,11 +1059,18 @@ static void set_qnan(RzFloat *f) {
 	ut32 exp_start = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
 	ut32 exp_end = exp_start + rz_float_get_format_info(f->r, RZ_FLOAT_INFO_EXP_LEN);
 
+	rz_bv_set_all(bv, false);
 	// set exponent part to all 1
 	rz_bv_set_range(bv, exp_start, exp_end - 1, true);
 
-	// set is_quiet to 1
-	rz_bv_set(bv, exp_start - 1, true);
+	if (f->r == RZ_FLOAT_IEEE754_BIN_80) {
+		// Set the explicit integer bit and the distinct quiet bit.
+		rz_bv_set(bv, exp_start - 1, true);
+		rz_bv_set(bv, exp_start - 2, true);
+	} else {
+		// set is_quiet to 1
+		rz_bv_set(bv, exp_start - 1, true);
+	}
 
 	// set sig as non-zero
 	rz_bv_set(bv, 0, true);
@@ -1042,11 +1081,14 @@ static void set_snan(RzFloat *f) {
 	ut32 exp_start = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
 	ut32 exp_end = exp_start + rz_float_get_format_info(f->r, RZ_FLOAT_INFO_EXP_LEN);
 
+	rz_bv_set_all(bv, false);
 	// set exponent part to all 1
 	rz_bv_set_range(bv, exp_start, exp_end - 1, true);
 
-	// set is_quiet to 0 (msb of mantissa part)
-	rz_bv_set(bv, exp_start - 1, false);
+	if (f->r == RZ_FLOAT_IEEE754_BIN_80) {
+		// The explicit integer bit is set; the quiet bit remains clear.
+		rz_bv_set(bv, exp_start - 1, true);
+	}
 
 	// set sig as non-zero
 	rz_bv_set(bv, 0, true);
@@ -1585,6 +1627,7 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 	// drop extra bits or append zeros
 	// 1.MM..M * 2^exp = 1MM..M * 2^0 (integer)
 	bool should_inc = false;
+	bool inexact = false;
 	RzBitVector *sig = rz_float_get_mantissa(f);
 	bool is_zero = rz_bv_is_zero_vector(sig) && exp == 0;
 
@@ -1596,7 +1639,7 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 
 	if (exp_no_bias >= 0) {
 		// has `exp_no_bias` + 3 + 1 length
-		tmp = round_significant(sign, sig, exp_no_bias, mode, &should_inc);
+		tmp = round_significant(sign, sig, exp_no_bias, mode, &should_inc, &inexact);
 	} else {
 		// float 1.M..M * 2^exp, when exp < 0
 		// flatten it and we have 0.0..1M..M (|exp|+1 zeros before 1MMM...)
@@ -1610,7 +1653,7 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 			fake_f = rz_bv_dup(sig);
 		}
 		rz_bv_set(fake_f, rz_bv_len(fake_f) - 1, true);
-		tmp = round_significant(sign, fake_f, 0, mode, &should_inc);
+		tmp = round_significant(sign, fake_f, 0, mode, &should_inc, &inexact);
 
 		// unset the fake 1 in tmp
 		// tmp has 3 + 1 + precision = 4
@@ -1660,38 +1703,146 @@ RZ_API RZ_OWN RzFloat *rz_float_convert(RZ_NONNULL RzFloat *f, RzFloatFormat for
 	rz_return_val_if_fail(f, NULL);
 
 	if (rz_float_is_nan(f)) {
-		return rz_float_new_qnan(format);
+		RzFloat *ret = rz_float_new_qnan(format);
+		if (ret) {
+			rz_float_set_sign(ret, rz_float_get_sign(f));
+			ret->exception |= f->exception;
+		}
+		return ret;
 	}
 
 	if (rz_float_is_inf(f)) {
-		return rz_float_new_inf(format, rz_float_get_sign(f));
+		RzFloat *ret = rz_float_new_inf(format, rz_float_get_sign(f));
+		if (ret) {
+			ret->exception |= f->exception;
+		}
+		return ret;
 	}
 
 	if (rz_float_is_zero(f)) {
 		RzFloat *ret_zero = rz_float_new_zero(format, rz_float_get_sign(f));
+		if (ret_zero) {
+			ret_zero->exception |= f->exception;
+		}
 		return ret_zero;
 	}
 
-	ut32 exp = float_exponent(f);
-	RzFloatFormat old_format = f->r;
-	bool sign = get_sign(f->s, old_format);
-	ut32 man_len = rz_float_get_format_info(old_format, RZ_FLOAT_INFO_MAN_LEN);
-	if (old_format == RZ_FLOAT_IEEE754_BIN_80) {
-		/* Special case, see [rz_float_info_bin80] for more. */
-		man_len--;
+	if (f->r == format) {
+		return rz_float_dup(f);
 	}
 
-	// recover hidden bit if it's a normal float
-	// for sub-normal, we also set a fake hidden bit 1 to use round_float
-	RzBitVector *sig = rz_float_get_mantissa(f);
-	rz_bv_set(sig, man_len, 1);
-
-	// shift to make significant a integer
-	// 1.MM..M * 2^exp_no_bias == 1MM..M * 2^(exp_no_bias - man_len)
-	// 0.MM..M * 2^exp_no_bias == 00..1X..X * 2^(exp_no_bias - man_len)
-	RzFloat *ret = round_float_bv_new(sign, exp, sig, old_format, format, mode);
-
-	rz_bv_free(sig);
+	set_float_rounding_mode(mode);
+	softfloat_exceptionFlags = 0;
+	RzFloat *ret = NULL;
+	switch (f->r) {
+	case RZ_FLOAT_IEEE754_BIN_16: {
+		float16_t value = to_float16(f);
+		switch (format) {
+		case RZ_FLOAT_IEEE754_BIN_32:
+			ret = of_float32(f16_to_f32(value));
+			break;
+		case RZ_FLOAT_IEEE754_BIN_64:
+			ret = of_float64(f16_to_f64(value));
+			break;
+		case RZ_FLOAT_IEEE754_BIN_80:
+			ret = of_float80(f16_to_extF80(value));
+			break;
+		case RZ_FLOAT_IEEE754_BIN_128:
+			ret = of_float128(f16_to_f128(value));
+			break;
+		default:
+			break;
+		}
+		break;
+	}
+	case RZ_FLOAT_IEEE754_BIN_32: {
+		float32_t value = to_float32(f);
+		switch (format) {
+		case RZ_FLOAT_IEEE754_BIN_16:
+			ret = of_float16(f32_to_f16(value));
+			break;
+		case RZ_FLOAT_IEEE754_BIN_64:
+			ret = of_float64(f32_to_f64(value));
+			break;
+		case RZ_FLOAT_IEEE754_BIN_80:
+			ret = of_float80(f32_to_extF80(value));
+			break;
+		case RZ_FLOAT_IEEE754_BIN_128:
+			ret = of_float128(f32_to_f128(value));
+			break;
+		default:
+			break;
+		}
+		break;
+	}
+	case RZ_FLOAT_IEEE754_BIN_64: {
+		float64_t value = to_float64(f);
+		switch (format) {
+		case RZ_FLOAT_IEEE754_BIN_16:
+			ret = of_float16(f64_to_f16(value));
+			break;
+		case RZ_FLOAT_IEEE754_BIN_32:
+			ret = of_float32(f64_to_f32(value));
+			break;
+		case RZ_FLOAT_IEEE754_BIN_80:
+			ret = of_float80(f64_to_extF80(value));
+			break;
+		case RZ_FLOAT_IEEE754_BIN_128:
+			ret = of_float128(f64_to_f128(value));
+			break;
+		default:
+			break;
+		}
+		break;
+	}
+	case RZ_FLOAT_IEEE754_BIN_80: {
+		extFloat80_t value = to_float80(f);
+		switch (format) {
+		case RZ_FLOAT_IEEE754_BIN_16:
+			ret = of_float16(extF80_to_f16(value));
+			break;
+		case RZ_FLOAT_IEEE754_BIN_32:
+			ret = of_float32(extF80_to_f32(value));
+			break;
+		case RZ_FLOAT_IEEE754_BIN_64:
+			ret = of_float64(extF80_to_f64(value));
+			break;
+		case RZ_FLOAT_IEEE754_BIN_128:
+			ret = of_float128(extF80_to_f128(value));
+			break;
+		default:
+			break;
+		}
+		break;
+	}
+	case RZ_FLOAT_IEEE754_BIN_128: {
+		float128_t value = to_float128(f);
+		switch (format) {
+		case RZ_FLOAT_IEEE754_BIN_16:
+			ret = of_float16(f128_to_f16(value));
+			break;
+		case RZ_FLOAT_IEEE754_BIN_32:
+			ret = of_float32(f128_to_f32(value));
+			break;
+		case RZ_FLOAT_IEEE754_BIN_64:
+			ret = of_float64(f128_to_f64(value));
+			break;
+		case RZ_FLOAT_IEEE754_BIN_80:
+			ret = of_float80(f128_to_extF80(value));
+			break;
+		default:
+			break;
+		}
+		break;
+	}
+	default:
+		break;
+	}
+	if (ret) {
+		ret->exception |= f->exception;
+	} else {
+		softfloat_exceptionFlags = 0;
+	}
 	return ret;
 }
 
@@ -1919,7 +2070,8 @@ RZ_API RZ_OWN st32 rz_float_cmp(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y) {
  * \return new bitvector would be 0001MM...M, which length is `precision + 1 + 3`
  */
 RZ_API RZ_OWN RzBitVector *rz_float_round_significant(bool sign, RzBitVector *sig, ut32 precision, RzFloatRMode mode, bool *should_inc) {
-	return round_significant(sign, sig, precision, mode, should_inc);
+	bool inexact = false;
+	return round_significant(sign, sig, precision, mode, should_inc, &inexact);
 }
 
 /**

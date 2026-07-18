@@ -1586,6 +1586,140 @@ static RzFloat *new_f80_from_bytes(const char *bytes) {
 	return ret;
 }
 
+bool float_convert_range_test(void) {
+	/* Exact values in the target subnormal range must survive narrowing. */
+	RzFloat *source = rz_float_new_from_f64(0x1p-127);
+	RzFloat *converted = rz_float_convert(source, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_streq_free(rz_float_as_hex_string(converted, true), "0x00400000", "exact binary32 subnormal conversion");
+	mu_assert_eq(converted->exception, 0, "exact subnormal conversion has no IEEE exception");
+	rz_float_free(converted);
+	rz_float_free(source);
+
+	/* A half-ULP below the minimum subnormal exercises gradual underflow and
+	 * the sign-dependent directed rounding modes. */
+	source = rz_float_new_from_f64(0x1p-150);
+	converted = rz_float_convert(source, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_streq_free(rz_float_as_hex_string(converted, true), "0x00000000", "ties-to-even rounds half a minimum subnormal to zero");
+	mu_assert_true(converted->exception & RZ_FLOAT_E_UNDERFLOW, "tiny inexact conversion raises underflow");
+	mu_assert_true(converted->exception & RZ_FLOAT_E_INEXACT, "tiny inexact conversion raises inexact");
+	rz_float_free(converted);
+	converted = rz_float_convert(source, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RTP);
+	mu_assert_streq_free(rz_float_as_hex_string(converted, true), "0x00000001", "round-positive produces the minimum positive subnormal");
+	rz_float_free(converted);
+	converted = rz_float_convert(source, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RTZ);
+	mu_assert_streq_free(rz_float_as_hex_string(converted, true), "0x00000000", "round-zero produces positive zero");
+	rz_float_free(converted);
+	rz_float_free(source);
+
+	source = rz_float_new_from_f64(-0x1p-150);
+	converted = rz_float_convert(source, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RTN);
+	mu_assert_streq_free(rz_float_as_hex_string(converted, true), "0x80000001", "round-negative produces the minimum negative subnormal");
+	rz_float_free(converted);
+	converted = rz_float_convert(source, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RTP);
+	mu_assert_streq_free(rz_float_as_hex_string(converted, true), "0x80000000", "round-positive produces negative zero");
+	rz_float_free(converted);
+	rz_float_free(source);
+
+	/* Narrowing must round once at the target precision. */
+	source = rz_float_new_from_f64(1.0 + 0x1p-24);
+	converted = rz_float_convert(source, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_streq_free(rz_float_as_hex_string(converted, true), "0x3f800000", "ties-to-even rounds to 1.0f");
+	mu_assert_true(converted->exception & RZ_FLOAT_E_INEXACT, "precision loss raises inexact");
+	rz_float_free(converted);
+	converted = rz_float_convert(source, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RTP);
+	mu_assert_streq_free(rz_float_as_hex_string(converted, true), "0x3f800001", "round-positive selects the next binary32 value");
+	rz_float_free(converted);
+	rz_float_free(source);
+
+	/* Overflow chooses infinity or the largest finite value according to the
+	 * rounding direction, while always reporting overflow and inexact. */
+	source = rz_float_new_from_f64(0x1p128);
+	converted = rz_float_convert(source, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_streq_free(rz_float_as_hex_string(converted, true), "0x7f800000", "nearest overflow produces positive infinity");
+	mu_assert_true(converted->exception & RZ_FLOAT_E_OVERFLOW, "overflow conversion raises overflow");
+	mu_assert_true(converted->exception & RZ_FLOAT_E_INEXACT, "overflow conversion raises inexact");
+	rz_float_free(converted);
+	converted = rz_float_convert(source, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RTZ);
+	mu_assert_streq_free(rz_float_as_hex_string(converted, true), "0x7f7fffff", "round-zero overflow produces the largest finite value");
+	rz_float_free(converted);
+	rz_float_free(source);
+
+	source = rz_float_new_from_f64(-0x1p128);
+	converted = rz_float_convert(source, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RTN);
+	mu_assert_streq_free(rz_float_as_hex_string(converted, true), "0xff800000", "round-negative overflow produces negative infinity");
+	rz_float_free(converted);
+	converted = rz_float_convert(source, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RTP);
+	mu_assert_streq_free(rz_float_as_hex_string(converted, true), "0xff7fffff", "round-positive overflow produces the largest finite negative value");
+	rz_float_free(converted);
+	rz_float_free(source);
+
+	/* Exercise the binary80 source path used by the M68K lifter. */
+	source = new_f80_from_bytes("\x3f\x80\x80\x00\x00\x00\x00\x00\x00\x00");
+	converted = rz_float_convert(source, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_streq_free(rz_float_as_hex_string(converted, true), "0x00400000", "binary80 narrows to an exact binary32 subnormal");
+	mu_assert_eq(converted->exception, 0, "exact binary80 subnormal conversion has no IEEE exception");
+	rz_float_free(converted);
+	rz_float_free(source);
+
+	/* Existing exception metadata is cumulative across conversions. */
+	source = rz_float_new_from_f64(1.0);
+	source->exception = RZ_FLOAT_E_DIV_ZERO;
+	converted = rz_float_convert(source, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(converted->exception & RZ_FLOAT_E_DIV_ZERO, "conversion preserves source exception metadata");
+	rz_float_free(converted);
+	rz_float_free(source);
+
+	/* Keep the binary16 dispatch covered as well. */
+	source = rz_float_new_from_f32(1.5f);
+	converted = rz_float_convert(source, RZ_FLOAT_IEEE754_BIN_16, RZ_FLOAT_RMODE_RNE);
+	mu_assert_streq_free(rz_float_as_hex_string(converted, true), "0x3e00", "binary32 converts to binary16");
+	rz_float_free(converted);
+	rz_float_free(source);
+
+	mu_end;
+}
+
+bool f80_ieee_special_num_test(void) {
+	RzFloat *pinf = rz_float_new_inf(RZ_FLOAT_IEEE754_BIN_80, false);
+	RzFloat *pseudo_inf = new_f80_from_bytes("\x7f\xff\x00\x00\x00\x00\x00\x00\x00\x00");
+	RzFloat *qnan = rz_float_new_qnan(RZ_FLOAT_IEEE754_BIN_80);
+	RzFloat *snan = rz_float_new_snan(RZ_FLOAT_IEEE754_BIN_80);
+	RzFloat *one = new_f80_from_bytes("\x3f\xff\x80\x00\x00\x00\x00\x00\x00\x00");
+
+	mu_assert_streq_free(rz_float_as_hex_string(pinf, true), "0x7fff8000000000000000", "binary80 infinity has an explicit integer bit");
+	mu_assert_streq_free(rz_float_as_hex_string(qnan, true), "0x7fffc000000000000001", "binary80 quiet NaN has distinct integer and quiet bits");
+	mu_assert_streq_free(rz_float_as_hex_string(snan, true), "0x7fff8000000000000001", "binary80 signaling NaN keeps the quiet bit clear");
+	mu_assert_true(rz_float_is_inf(pinf), "detect canonical binary80 infinity");
+	mu_assert_true(rz_float_is_inf(pseudo_inf), "detect binary80 pseudo-infinity");
+	mu_assert_true(rz_float_detect_spec(qnan) == RZ_FLOAT_SPEC_QNAN, "detect binary80 quiet NaN");
+	mu_assert_true(rz_float_detect_spec(snan) == RZ_FLOAT_SPEC_SNAN, "detect binary80 signaling NaN");
+
+	RzFloat *inf_product = rz_float_mul(pinf, pinf, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(rz_float_is_inf(inf_product), "binary80 infinity multiplied by infinity stays infinite");
+	mu_assert_false(inf_product->exception & RZ_FLOAT_E_INVALID_OP, "infinity multiplied by infinity is valid");
+
+	RzFloat *nan_sum = rz_float_add(qnan, one, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(rz_float_is_nan(nan_sum), "binary80 quiet NaN propagates through arithmetic");
+	mu_assert_false(nan_sum->exception & RZ_FLOAT_E_INVALID_OP, "quiet NaN propagation does not raise invalid");
+
+	RzFloat *neg_nan = rz_float_neg(qnan);
+	RzFloat *nan32 = rz_float_convert(neg_nan, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	RzFloat *roundtrip_nan = rz_float_convert(nan32, RZ_FLOAT_IEEE754_BIN_80, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(rz_float_get_sign(roundtrip_nan), "NaN conversion preserves its sign");
+
+	rz_float_free(roundtrip_nan);
+	rz_float_free(nan32);
+	rz_float_free(neg_nan);
+	rz_float_free(nan_sum);
+	rz_float_free(inf_product);
+	rz_float_free(one);
+	rz_float_free(snan);
+	rz_float_free(qnan);
+	rz_float_free(pseudo_inf);
+	rz_float_free(pinf);
+	mu_end;
+}
+
 bool f80_ieee_cast_sint_test(void) {
 	// binary80 has no hidden bit: the integer part of the significand is stored
 	// explicitly, unlike other IEEE-754 formats where it is implicit for normals
@@ -1783,6 +1917,8 @@ bool all_tests() {
 	mu_run_test(f32_ieee_cast_test);
 	mu_run_test(f80_ieee_cast_sint_test);
 	mu_run_test(f80_ieee_cast_sint_large_test);
+	mu_run_test(float_convert_range_test);
+	mu_run_test(f80_ieee_special_num_test);
 	mu_run_test(f80_ieee_add_test);
 	mu_run_test(f80_ieee_sub_test);
 	mu_run_test(f80_ieee_mul_test);
