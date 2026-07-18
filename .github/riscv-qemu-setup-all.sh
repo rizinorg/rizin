@@ -1,8 +1,7 @@
 #!/bin/sh
 set -eux
 
-LINUX_IMG=linux-image-6.12.73+deb13-riscv64_6.12.73-1_riscv64.deb
-DEBIAN_SERVER=https://ftp.debian.org/debian/pool/main/l/linux
+LINUX_IMG_URL=https://snapshot.debian.org/archive/debian/20260220T023858Z/pool/main/l/linux/linux-image-6.12.73%2Bdeb13-riscv64_6.12.73-1_riscv64.deb
 BUSYBOX_PATH=busybox-1.30.1-riscv64
 BUSYBOX_VERSION=9d220791e5917fc2190c5cf405a014a483c01d86
 LIB_PATH=/usr/riscv64-linux-gnu/lib
@@ -11,9 +10,10 @@ LIB_M=libm.so.6
 DYN_LD=ld-linux-riscv64-lp64d.so.1
 TEST_BIN_URL=https://raw.githubusercontent.com/rizinorg/rizin-testbins/master/elf/riscv_bitmanip
 # Fetch the kernel package
-wget "$DEBIAN_SERVER/$LINUX_IMG"
+wget "$LINUX_IMG_URL"
 # Extract
-dpkg-deb -x "$LINUX_IMG" linux-image
+# DO NOT try to derieve this from the URL via basename please, %x encodings will break this
+dpkg-deb -x 'linux-image-6.12.73+deb13-riscv64_6.12.73-1_riscv64.deb' linux-image
 
 # Fetch busybox
 git clone https://github.com/rcore-os/busybox-prebuilts.git busybox
