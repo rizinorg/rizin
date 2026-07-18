@@ -10,18 +10,20 @@
 
 #include <rz_il/rz_il_opbuilder_begin.h>
 
-// Compressed instruction decoder variants that suppress operands not consumed by the lifter
-#define DECODE_RD_RS_IMM_NO_RS(analysis, insn) \
-	DECODE_RD_RS_IMM(analysis, insn) \
-	(void)(rs);
+#define DECODE_C_MV(analysis, insn) \
+	REQUIRE_2OPS(RISCV_OP_REG, RISCV_OP_REG); \
+	uint32_t rd = insn->detail->riscv.operands[0].reg; \
+	RzILOpBitVector *rs = riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[1].reg);
 
-#define DECODE_RD_IMM_NO_RD(analysis, insn) \
-	DECODE_RD_IMM(analysis, insn) \
-	(void)(rd);
+#define DECODE_C_LI(analysis, insn) \
+	REQUIRE_3OPS(RISCV_OP_REG, RISCV_OP_REG, RISCV_OP_IMM); \
+	uint32_t rd = insn->detail->riscv.operands[0].reg; \
+	RzILOpBitVector *imm = SN(analysis->bits, insn->detail->riscv.operands[2].imm);
 
-#define DECODE_RS_RS_IMM_NO_RS2(analysis, insn) \
-	DECODE_RS_RS_IMM(analysis, insn) \
-	(void)(rs2);
+#define DECODE_C_BRANCH_ZERO(analysis, insn) \
+	REQUIRE_3OPS(RISCV_OP_REG, RISCV_OP_REG, RISCV_OP_IMM); \
+	RzILOpBitVector *rs1 = riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[0].reg); \
+	RzILOpBitVector *imm = SN(analysis->bits, insn->detail->riscv.operands[2].imm);
 
 DEFINE_LIFTER_WITH_EFFECT(c_nop, DECODE_NONE, NOP())
 DEFINE_ALIAS_LIFTER(c_addi, addi)
@@ -42,8 +44,8 @@ DEFINE_ALIAS_LIFTER(c_addiw, addiw)
 
 DEFINE_ALIAS_LIFTER(c_subw, subw)
 
-DEFINE_LIFTER(c_mv, DECODE_RD_RS, DUP(rs))
-DEFINE_LIFTER(c_li, DECODE_RD_RS_IMM_NO_RS, DUP(imm))
+DEFINE_LIFTER(c_mv, DECODE_C_MV, rs)
+DEFINE_LIFTER(c_li, DECODE_C_LI, imm)
 
 DEFINE_ALIAS_LIFTER(c_j, jal)
 DEFINE_ALIAS_LIFTER(c_jal, jal)
@@ -66,8 +68,8 @@ DEFINE_ALIAS_LIFTER(c_lw, lw)
 DEFINE_ALIAS_LIFTER(c_ld, ld)
 DEFINE_ALIAS_LIFTER(c_ldsp, ld)
 
-DEFINE_LIFTER_FOR_ONEWAY_JUMP(c_beqz, DECODE_RS_RS_IMM_NO_RS2, BRANCH(EQ(rs1, UN(analysis->bits, 0)), JMP(imm), JMP(UN(analysis->bits, current_addr + size))))
-DEFINE_LIFTER_FOR_ONEWAY_JUMP(c_bnez, DECODE_RS_RS_IMM_NO_RS2, BRANCH(NE(rs1, UN(analysis->bits, 0)), JMP(imm), JMP(UN(analysis->bits, current_addr + size))))
+DEFINE_LIFTER_FOR_ONEWAY_JUMP(c_beqz, DECODE_C_BRANCH_ZERO, BRANCH(EQ(rs1, UN(analysis->bits, 0)), JMP(imm), JMP(UN(analysis->bits, current_addr + size))))
+DEFINE_LIFTER_FOR_ONEWAY_JUMP(c_bnez, DECODE_C_BRANCH_ZERO, BRANCH(NE(rs1, UN(analysis->bits, 0)), JMP(imm), JMP(UN(analysis->bits, current_addr + size))))
 
 #include <rz_il/rz_il_opbuilder_end.h>
 
