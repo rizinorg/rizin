@@ -411,6 +411,17 @@ typedef struct rz_il_op_args_float_fconvert_t {
 } RzILOpArgsFconvert;
 
 /**
+ * \brief Evaluate a binary80 expression using the requested significand precision.
+ *
+ * [FWITH_RPREC] temporarily sets SoftFloat binary80 arithmetic precision for its
+ * child expression. The child must have binary80 format.
+ */
+typedef struct rz_il_op_args_float_with_rprec_t {
+	RzFloatRPrecision precision;
+	RzILOpFloat *f;
+} RzILOpArgsFwithRprec;
+
+/**
  * \brief op structure of requal
  *  rmode -> rmode -> bool
  * requal x y holds if rounding modes are equal.
@@ -579,6 +590,9 @@ typedef enum {
 	RZ_IL_OP_LOAD,
 	RZ_IL_OP_LOADW,
 
+	// Keep new pure opcodes here to preserve existing public enum values.
+	RZ_IL_OP_FWITH_RPREC,
+
 	RZ_IL_OP_PURE_MAX
 } RzILOpPureCode;
 
@@ -689,6 +703,7 @@ struct rz_il_op_pure_t {
 		RzILOpArgsFCastSFloat fcast_sfloat; ///< RZ_IL_OP_FCAST_SFLOAT
 
 		RzILOpArgsFconvert fconvert; ///< RZ_IL_OP_FCONVERT
+		RzILOpArgsFwithRprec fwith_rprec; ///< RZ_IL_OP_FWITH_RPREC
 		RzILOpArgsFrequal frequal; ///< RZ_IL_OP_FREQUAL
 		RzILOpArgsForder forder; ///< RZ_IL_OP_FORDER
 
@@ -794,6 +809,7 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_sint(ut32 length, RzFloatRMode
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcast_float(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpBitVector *bv);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcast_sfloat(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpBitVector *bv);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fconvert(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fwith_rprec(RzFloatRPrecision precision, RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_frequal(RzFloatRMode x, RzFloatRMode y);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsucc(RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpred(RZ_NONNULL RzILOpFloat *f);

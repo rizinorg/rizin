@@ -1732,6 +1732,34 @@ static bool test_il_validate_pure_fconvert() {
 	mu_end;
 }
 
+static bool test_il_validate_pure_fwith_rprec() {
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+	RzILSortPure sort;
+	RzILValidateReport report = NULL;
+
+	RzILOpPure *op = rz_il_op_new_fwith_rprec(RZ_FLOAT_RPREC_32, rz_il_op_new_float_from_f80(1.0L));
+	bool val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_true(val, "valid binary80 precision scope");
+	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_80)), "sort");
+	mu_assert_null(report, "no report");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fwith_rprec(RZ_FLOAT_RPREC_32, rz_il_op_new_float_from_f64(1.0));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "non-binary80 rejected");
+	mu_assert_streq_free(report, "operand of fwith_rprec op is not binary80.", "report");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fwith_rprec(RZ_FLOAT_RPREC_UNK, rz_il_op_new_float_from_f80(1.0L));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid precision rejected");
+	mu_assert_streq_free(report, "Precision of fwith_rprec op is invalid.", "report");
+	rz_il_op_pure_free(op);
+
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_il_validate_pure_null);
 	mu_run_test(test_il_validate_pure_bitv);
@@ -1775,6 +1803,7 @@ bool all_tests() {
 	mu_run_test(test_il_validate_pure_fcast_to_int);
 	mu_run_test(test_il_validate_pure_icast_to_float);
 	mu_run_test(test_il_validate_pure_fconvert);
+	mu_run_test(test_il_validate_pure_fwith_rprec);
 
 	return tests_passed != tests_run;
 }

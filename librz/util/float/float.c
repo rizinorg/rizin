@@ -23,6 +23,29 @@
 #include <fenv.h>
 #include <softfloat.h>
 
+RZ_API RzFloatRPrecision rz_float_ext80_get_rounding_precision(void) {
+	switch (extF80_roundingPrecision) {
+	case RZ_FLOAT_RPREC_32:
+	case RZ_FLOAT_RPREC_64:
+	case RZ_FLOAT_RPREC_80:
+		return (RzFloatRPrecision)extF80_roundingPrecision;
+	default:
+		return RZ_FLOAT_RPREC_UNK;
+	}
+}
+
+RZ_API bool rz_float_ext80_set_rounding_precision(RzFloatRPrecision precision) {
+	switch (precision) {
+	case RZ_FLOAT_RPREC_32:
+	case RZ_FLOAT_RPREC_64:
+	case RZ_FLOAT_RPREC_80:
+		extF80_roundingPrecision = precision;
+		return true;
+	default:
+		return false;
+	}
+}
+
 /**
  * \defgroup Generate Nan and infinite for float/double/long double
  * @ {

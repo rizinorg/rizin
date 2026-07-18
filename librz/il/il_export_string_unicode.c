@@ -458,6 +458,13 @@ static bool il_opdmp_fconvert(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStr
 	il_op_param_1_with_mode_format(sym, opx, f, pure, mode, format);
 }
 
+static bool il_opdmp_fwith_rprec(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	const RzILOpArgsFwithRprec *opx = &op->op.fwith_rprec;
+	return_false_if_fail(rz_strbuf_appendf(sb, "fwith_rprec[%s](", rz_il_float_stringify_rprecision(opx->precision)));
+	return_false_if_fail(il_op_pure_string_resolve(ctx, opx->f, sb));
+	return rz_strbuf_append(sb, ")");
+}
+
 static bool il_opdmp_fsqrt(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
 	il_op_param_1_with_rmode(UCD_FSQRT, op->op.fsqrt, f, pure, rmode);
 }
@@ -713,6 +720,7 @@ static bool il_op_pure_string_resolve(RzILStringifyCtx *ctx, const RzILOpPure *o
 		CASE_IL_OP(FCAST_FLOAT, fcast_float);
 		CASE_IL_OP(FCAST_SFLOAT, fcast_sfloat);
 		CASE_IL_OP(FCONVERT, fconvert);
+		CASE_IL_OP(FWITH_RPREC, fwith_rprec);
 		CASE_IL_OP(FREQUAL, frequal);
 		CASE_IL_OP(FSUCC, fsucc);
 		CASE_IL_OP(FPRED, fpred);

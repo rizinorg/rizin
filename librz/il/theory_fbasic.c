@@ -245,6 +245,25 @@ void *rz_il_handler_fconvert(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	return ret;
 }
 
+void *rz_il_handler_fwith_rprec(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+
+	RzILOpArgsFwithRprec args = op->op.fwith_rprec;
+	RzFloatRPrecision saved = rz_float_ext80_get_rounding_precision();
+	if (saved == RZ_FLOAT_RPREC_UNK || !rz_float_ext80_set_rounding_precision(args.precision)) {
+		return NULL;
+	}
+	RzFloat *ret = rz_il_evaluate_float(vm, args.f);
+	rz_float_ext80_set_rounding_precision(saved);
+	if (!ret || ret->r != RZ_FLOAT_IEEE754_BIN_80) {
+		rz_float_free(ret);
+		return NULL;
+	}
+
+	*type = RZ_IL_TYPE_PURE_FLOAT;
+	return ret;
+}
+
 void *rz_il_handler_frequal(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 	RzILOpArgsFrequal frequal = op->op.frequal;

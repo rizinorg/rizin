@@ -72,6 +72,7 @@
 #define INT2F(fmt, rmode, bv)      rz_il_op_new_fcast_float(fmt, rmode, bv)
 #define SINT2F(fmt, rmode, bv)     rz_il_op_new_fcast_sfloat(fmt, rmode, bv)
 #define FCONVERT(fmt, rmode, fl)   rz_il_op_new_fconvert(fmt, rmode, fl)
+#define FWITH_RPREC(precision, fl) rz_il_op_new_fwith_rprec(precision, fl)
 #define FLOATV16(bv)               rz_il_op_new_float(RZ_FLOAT_IEEE754_BIN_16, bv)
 #define FLOATV32(bv)               rz_il_op_new_float(RZ_FLOAT_IEEE754_BIN_32, bv)
 #define FLOATV64(bv)               rz_il_op_new_float(RZ_FLOAT_IEEE754_BIN_64, bv)

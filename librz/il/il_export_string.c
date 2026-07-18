@@ -488,6 +488,19 @@ static void il_opdmp_fconvert(RzILOpPure *op, RzStrBuf *sb, int pad) {
 	}
 }
 
+static void il_opdmp_fwith_rprec(RzILOpPure *op, RzStrBuf *sb, int pad) {
+	RzILOpArgsFwithRprec *opx = &op->op.fwith_rprec;
+	if (pad < 0) {
+		rz_strbuf_appendf(sb, "(fwith_rprec %s ", rz_il_float_stringify_rprecision(opx->precision));
+		il_op_pure_string_resolve(opx->f, sb, pad);
+		rz_strbuf_append(sb, ")");
+	} else {
+		rz_strbuf_appendf(sb, "%*.s(fwith_rprec %s\n", pad, "", rz_il_float_stringify_rprecision(opx->precision));
+		il_op_pure_string_resolve(opx->f, sb, pad + PRETTY_PAD);
+		rz_strbuf_append(sb, ")");
+	}
+}
+
 static void il_opdmp_fround(RzILOpPure *op, RzStrBuf *sb, int pad) {
 	RzILOpArgsFround *opx = &op->op.fround;
 	if (pad < 0) {
@@ -898,6 +911,9 @@ static void il_op_pure_string_resolve(RzILOpPure *op, RzStrBuf *sb, int pad) {
 	case RZ_IL_OP_FCONVERT:
 		il_opdmp_fconvert(op, sb, pad);
 		return;
+	case RZ_IL_OP_FWITH_RPREC:
+		il_opdmp_fwith_rprec(op, sb, pad);
+		return;
 	case RZ_IL_OP_FREQUAL:
 		il_opdmp_frequal(op, sb, pad);
 		return;
@@ -1254,6 +1270,8 @@ RZ_API RZ_NONNULL const char *rz_il_op_pure_code_stringify(RzILOpPureCode code) 
 		return "fcast_sfloat";
 	case RZ_IL_OP_FCONVERT:
 		return "fconvert";
+	case RZ_IL_OP_FWITH_RPREC:
+		return "fwith_rprec";
 	case RZ_IL_OP_FREQUAL:
 		return "frequal";
 	case RZ_IL_OP_FSUCC:

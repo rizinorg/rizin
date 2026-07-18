@@ -1131,6 +1131,72 @@ static bool test_rzil_vm_op_fexcept() {
 	mu_end;
 }
 
+static bool test_rzil_vm_op_fwith_rprec() {
+	RzILVM *vm = rz_il_vm_new(0, 32, false, RZ_IL_EVENT_EXC_NONE);
+	const long double input = 1.0L + 0x1.8p-23L;
+
+	mu_assert_true(rz_float_ext80_set_rounding_precision(RZ_FLOAT_RPREC_64), "set initial precision");
+	RzILOpFloat *op = rz_il_op_new_fwith_rprec(RZ_FLOAT_RPREC_32,
+		rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE,
+			rz_il_op_new_float_from_f80(input),
+			rz_il_op_new_float_from_f80(1.0L)));
+	RzFloat *actual = rz_il_evaluate_float(vm, op);
+	RzFloat *expected = rz_float_new_from_f80(1.0L + 0x1p-22L);
+	mu_assert_notnull(actual, "precision-scoped multiply");
+	mu_assert_false(rz_float_cmp(actual, expected), "binary80 exponent with single significand precision");
+	mu_assert_eq(rz_float_ext80_get_rounding_precision(), RZ_FLOAT_RPREC_64, "precision restored after success");
+	rz_float_free(actual);
+	rz_float_free(expected);
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fwith_rprec(RZ_FLOAT_RPREC_32,
+		rz_il_op_new_fwith_rprec(RZ_FLOAT_RPREC_64,
+			rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE,
+				rz_il_op_new_float_from_f80(input),
+				rz_il_op_new_float_from_f80(1.0L))));
+	actual = rz_il_evaluate_float(vm, op);
+	expected = rz_float_new_from_f80(input);
+	mu_assert_notnull(actual, "nested precision scope");
+	mu_assert_false(rz_float_cmp(actual, expected), "inner precision overrides outer precision");
+	mu_assert_eq(rz_float_ext80_get_rounding_precision(), RZ_FLOAT_RPREC_64, "precision restored after nesting");
+	rz_float_free(actual);
+	rz_float_free(expected);
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fwith_rprec(RZ_FLOAT_RPREC_32,
+		rz_il_op_new_frsqrt(RZ_FLOAT_RMODE_RNE, rz_il_op_new_float_from_f80(1.0L)));
+	actual = rz_il_evaluate_float(vm, op);
+	mu_assert_null(actual, "child evaluation failure propagates");
+	mu_assert_eq(rz_float_ext80_get_rounding_precision(), RZ_FLOAT_RPREC_64, "precision restored after failure");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fwith_rprec(RZ_FLOAT_RPREC_32, rz_il_op_new_float_from_f64(1.0));
+	actual = rz_il_evaluate_float(vm, op);
+	mu_assert_null(actual, "non-binary80 child rejected by evaluator");
+	mu_assert_eq(rz_float_ext80_get_rounding_precision(), RZ_FLOAT_RPREC_64, "precision restored after invalid child");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fwith_rprec(RZ_FLOAT_RPREC_80, rz_il_op_new_float_from_f80(1.0L));
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	rz_il_op_pure_stringify(op, &sb, false);
+	mu_assert_notnull(strstr(rz_strbuf_get(&sb), "fwith_rprec 80"), "string export includes precision");
+	rz_strbuf_fini(&sb);
+	PJ *pj = pj_new();
+	rz_il_op_pure_json(op, pj);
+	char *json = pj_drain(pj);
+	mu_assert_notnull(strstr(json, "\"opcode\":\"fwith_rprec\""), "JSON export includes opcode");
+	mu_assert_notnull(strstr(json, "\"precision\":80"), "JSON export includes precision");
+	free(json);
+	rz_il_op_pure_free(op);
+
+	mu_assert_false(rz_float_ext80_set_rounding_precision(RZ_FLOAT_RPREC_UNK), "invalid precision rejected by accessor");
+	mu_assert_eq(rz_float_ext80_get_rounding_precision(), RZ_FLOAT_RPREC_64, "invalid precision leaves state unchanged");
+	rz_float_ext80_set_rounding_precision(RZ_FLOAT_RPREC_80);
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rzil_vm_init);
 	mu_run_test(test_rzil_vm_global_vars);
@@ -1160,6 +1226,7 @@ bool all_tests() {
 	mu_run_test(test_rzil_vm_op_float);
 	mu_run_test(test_rzil_vm_op_fcast);
 	mu_run_test(test_rzil_vm_op_fexcept);
+	mu_run_test(test_rzil_vm_op_fwith_rprec);
 	mu_run_test(test_rzil_vm_halt_on_exc);
 	return tests_passed != tests_run;
 }

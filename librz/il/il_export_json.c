@@ -389,6 +389,16 @@ static void il_opdmp_fconvert(RzILOpPure *op, PJ *pj) {
 	pj_end(pj);
 }
 
+static void il_opdmp_fwith_rprec(RzILOpPure *op, PJ *pj) {
+	RzILOpArgsFwithRprec *opx = &op->op.fwith_rprec;
+	pj_o(pj);
+	pj_ks(pj, "opcode", "fwith_rprec");
+	pj_ki(pj, "precision", opx->precision);
+	pj_k(pj, "value");
+	il_op_pure_json_resolve(opx->f, pj);
+	pj_end(pj);
+}
+
 static void il_opdmp_fround(RzILOpPure *op, PJ *pj) {
 	RzILOpArgsFround *opx = &op->op.fround;
 	pj_o(pj);
@@ -725,6 +735,9 @@ static void il_op_pure_json_resolve(RzILOpPure *op, PJ *pj) {
 		return;
 	case RZ_IL_OP_FCONVERT:
 		il_opdmp_fconvert(op, pj);
+		return;
+	case RZ_IL_OP_FWITH_RPREC:
+		il_opdmp_fwith_rprec(op, pj);
 		return;
 	case RZ_IL_OP_FREQUAL:
 		il_opdmp_frequal(op, pj);

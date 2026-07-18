@@ -642,6 +642,20 @@ VALIDATOR_PURE(float_uop_except) {
 	return true;
 }
 
+VALIDATOR_PURE(float_with_rprec) {
+	RzILOpArgsFwithRprec *args = &op->op.fwith_rprec;
+	RzILSortPure sort;
+
+	VALIDATOR_ASSERT(args->precision == RZ_FLOAT_RPREC_32 || args->precision == RZ_FLOAT_RPREC_64 || args->precision == RZ_FLOAT_RPREC_80,
+		"Precision of %s op is invalid.\n", rz_il_op_pure_code_stringify(op->code));
+	VALIDATOR_DESCEND(args->f, &sort);
+	VALIDATOR_ASSERT(sort.type == RZ_IL_TYPE_PURE_FLOAT, "operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
+	VALIDATOR_ASSERT(sort.props.f.format == RZ_FLOAT_IEEE754_BIN_80, "operand of %s op is not binary80.\n", rz_il_op_pure_code_stringify(op->code));
+
+	*sort_out = sort;
+	return true;
+}
+
 VALIDATOR_PURE(float_binop_with_round) {
 	RzILOpArgsFadd *args = &op->op.fadd;
 	RzILSortPure sx, sy;
@@ -762,6 +776,7 @@ static ValidatePureFn validate_pure_table[RZ_IL_OP_PURE_MAX] = {
 	[RZ_IL_OP_FCAST_FLOAT] = VALIDATOR_PURE_NAME(icast_to_float),
 	[RZ_IL_OP_FCAST_SFLOAT] = VALIDATOR_PURE_NAME(icast_to_float),
 	[RZ_IL_OP_FCONVERT] = VALIDATOR_PURE_NAME(fconvert),
+	[RZ_IL_OP_FWITH_RPREC] = VALIDATOR_PURE_NAME(float_with_rprec),
 
 	// unimplemented
 	[RZ_IL_OP_FHYPOT] = VALIDATOR_PURE_NAME(float_binop_with_round),

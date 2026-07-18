@@ -63,6 +63,19 @@ RZ_API const char *rz_il_float_stringify_rmode(RzFloatRMode mode) {
 	}
 }
 
+RZ_API const char *rz_il_float_stringify_rprecision(RzFloatRPrecision precision) {
+	switch (precision) {
+	case RZ_FLOAT_RPREC_32:
+		return "32";
+	case RZ_FLOAT_RPREC_64:
+		return "64";
+	case RZ_FLOAT_RPREC_80:
+		return "80";
+	default:
+		return "unk_precision";
+	}
+}
+
 /**
  * convert RzFloatException into const string for exporting info
  * \param e RzFloatException

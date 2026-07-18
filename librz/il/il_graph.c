@@ -335,6 +335,16 @@ static void il_op_graph_fconvert(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, N
 	il_op_pure_graph_resolve(opx->f, g, to);
 }
 
+static void il_op_graph_fwith_rprec(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	RzILOpArgsFwithRprec *opx = &op->op.fwith_rprec;
+	const char *precision = rz_il_float_stringify_rprecision(opx->precision);
+	char *value = rz_str_newf("fwith_rprec: %s", precision);
+	RzGraphNode *to = graph_add_node_il(g, value);
+	free(value);
+	rz_graph_add_edge(g, from, to, NULL);
+	il_op_pure_graph_resolve(opx->f, g, to);
+}
+
 static void il_op_graph_fround(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsFround *opx = &op->op.fround;
 	const char *rmode_str = rz_il_float_stringify_rmode(opx->rmode);
@@ -668,6 +678,9 @@ static void il_op_pure_graph_resolve(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo 
 		return;
 	case RZ_IL_OP_FCONVERT:
 		il_op_graph_fconvert(op, g, from);
+		return;
+	case RZ_IL_OP_FWITH_RPREC:
+		il_op_graph_fwith_rprec(op, g, from);
 		return;
 	case RZ_IL_OP_FREQUAL:
 		il_op_graph_frequal(op, g, from);

@@ -900,6 +900,13 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fconvert(RzFloatFormat format, RzFloatRM
 	return ret;
 }
 
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fwith_rprec(RzFloatRPrecision precision, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FWITH_RPREC, RzILOpArgsFwithRprec, fwith_rprec, precision, f);
+	return ret;
+}
+
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_frequal(RzFloatRMode x, RzFloatRMode y) {
 	RzILOpBool *ret;
 	rz_il_op_new_2(Bool, RZ_IL_OP_FREQUAL, RzILOpArgsFrequal, frequal, x, y);
@@ -1250,6 +1257,10 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 		CONST_CP2(fconvert, format, mode);
 		DUP_OP1(fconvert, f);
 		break;
+	case RZ_IL_OP_FWITH_RPREC:
+		CONST_CP1(fwith_rprec, precision);
+		DUP_OP1(fwith_rprec, f);
+		break;
 	case RZ_IL_OP_FREQUAL:
 		CONST_CP2(frequal, x, y);
 		break;
@@ -1466,6 +1477,9 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op) {
 	case RZ_IL_OP_FCAST_SINT:
 	case RZ_IL_OP_FCONVERT:
 		rz_il_op_free_1(pure, fconvert, f);
+		break;
+	case RZ_IL_OP_FWITH_RPREC:
+		rz_il_op_free_1(pure, fwith_rprec, f);
 		break;
 	case RZ_IL_OP_FCAST_FLOAT:
 	case RZ_IL_OP_FCAST_SFLOAT:

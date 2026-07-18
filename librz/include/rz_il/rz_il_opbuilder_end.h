@@ -39,6 +39,7 @@
 #undef INT2F
 #undef SINT2F
 #undef FCONVERT
+#undef FWITH_RPREC
 #undef FLOATV16
 #undef FLOATV32
 #undef FLOATV64
