@@ -26,3 +26,19 @@ EXPECT=<<EOF
 s bins/elf/analysis/pie
 EOF
 RUN
+
+NAME=gdbserver download_file
+FILE=bins/elf/analysis/pie
+CMDS=<<EOF
+!rm -f gdbserver_download_file.tmp
+!scripts/gdbserver.py --port 12348 --binary bins/elf/analysis/pie
+oodf gdb://127.0.0.1:12348
+R! download_file bins/elf/analysis/pie gdbserver_download_file.tmp
+!rz-hash -qqa sha256 gdbserver_download_file.tmp
+!rm -f gdbserver_download_file.tmp
+EOF
+EXPECT=<<EOF
+1
+7f1c67175bc493d6008bec675f0a05ed281d3867c4f2320300f0b4ebecff3f27
+EOF
+RUN
