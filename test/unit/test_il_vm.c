@@ -1090,8 +1090,11 @@ static bool test_rzil_vm_op_fexcept() {
 
 	mu_assert_true(rz_float_is_inf(result), "div by zero should result in infinity");
 	mu_assert_true(e->b, "div by zero exception should be set");
+	mu_assert_eq(rz_pvector_len(vm->events), 1, "div by zero exception event");
 	rz_float_free(result);
 	rz_il_op_pure_free(eop);
+	rz_il_bool_free(e);
+	rz_il_vm_clear_events(vm);
 
 	// 2. Test overflow
 	op = rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE,
@@ -1103,9 +1106,11 @@ static bool test_rzil_vm_op_fexcept() {
 
 	mu_assert_true(rz_float_is_inf(result), "overflow should result in infinity");
 	mu_assert_true(e->b, "overflow exception should be set");
+	mu_assert_eq(rz_pvector_len(vm->events), 1, "overflow exception event");
 	rz_float_free(result);
 	rz_il_op_pure_free(eop);
 	rz_il_bool_free(e);
+	rz_il_vm_clear_events(vm);
 
 	// 3. Test underflow
 	op = rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE,
@@ -1114,8 +1119,10 @@ static bool test_rzil_vm_op_fexcept() {
 	eop = rz_il_op_new_fexcept(RZ_FLOAT_E_UNDERFLOW, op);
 	e = rz_il_evaluate_bool(vm, eop);
 	mu_assert_true(e->b, "underflow exception should be set");
+	mu_assert_eq(rz_pvector_len(vm->events), 1, "underflow exception event");
 	rz_il_op_pure_free(eop);
 	rz_il_bool_free(e);
+	rz_il_vm_clear_events(vm);
 
 	// 4. Test inexact result
 	op = rz_il_op_new_fdiv(RZ_FLOAT_RMODE_RNE,
@@ -1124,6 +1131,40 @@ static bool test_rzil_vm_op_fexcept() {
 	eop = rz_il_op_new_fexcept(RZ_FLOAT_E_INEXACT, op);
 	e = rz_il_evaluate_bool(vm, eop);
 	mu_assert_true(e->b, "inexact exception should be set");
+	mu_assert_eq(rz_pvector_len(vm->events), 1, "inexact exception event");
+	rz_il_op_pure_free(eop);
+	rz_il_bool_free(e);
+	rz_il_vm_clear_events(vm);
+
+	// Querying an exception that is not present must not emit an event.
+	op = rz_il_op_new_fdiv(RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(1.0),
+		rz_il_op_new_float_from_f64(1.0));
+	eop = rz_il_op_new_fexcept(RZ_FLOAT_E_INVALID_OP, op);
+	e = rz_il_evaluate_bool(vm, eop);
+	mu_assert_false(e->b, "invalid-operation exception should be clear");
+	mu_assert_eq(rz_pvector_len(vm->events), 0, "absent float exception emits no event");
+	rz_il_op_pure_free(eop);
+	rz_il_bool_free(e);
+
+	// Float conversions must preserve exceptions from nested operations.
+	op = rz_il_op_new_fconvert(RZ_FLOAT_IEEE754_BIN_64, RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_fconvert(RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE,
+			rz_il_op_new_float_from_f64(1.0 + 0x1p-30)));
+	eop = rz_il_op_new_fexcept(RZ_FLOAT_E_INEXACT, op);
+	e = rz_il_evaluate_bool(vm, eop);
+	mu_assert_true(e->b, "float conversion preserves nested inexact exception");
+	rz_il_op_pure_free(eop);
+	rz_il_bool_free(e);
+	rz_il_vm_clear_events(vm);
+
+	op = rz_il_op_new_fconvert(RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_fsub(RZ_FLOAT_RMODE_RNE,
+			rz_il_op_new_float_from_f64(F64_PINF),
+			rz_il_op_new_float_from_f64(F64_PINF)));
+	eop = rz_il_op_new_fexcept(RZ_FLOAT_E_INVALID_OP, op);
+	e = rz_il_evaluate_bool(vm, eop);
+	mu_assert_true(e->b, "float conversion preserves nested invalid-operation exception");
 	rz_il_op_pure_free(eop);
 	rz_il_bool_free(e);
 
