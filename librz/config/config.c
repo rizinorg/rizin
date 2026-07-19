@@ -75,6 +75,9 @@ RZ_IPI RZ_OWN RzSetS *rz_config_dup_set(RZ_NULLABLE const RzSetS *set) {
 	if (!safe_set) {
 		return NULL;
 	}
+	if (!set) {
+		return safe_set;
+	}
 
 	RzIterator *it = rz_set_s_as_iter(set);
 	const char **elem;
@@ -876,7 +879,7 @@ RZ_IPI bool rz_config_var_set_integer(RzConfigVar *var, ut64 value) {
 }
 
 static bool config_var_has_option(RzConfigVar *var, const char *value) {
-	if (rz_set_s_size(var->options) < 1) {
+	if (!var->options || rz_set_s_size(var->options) < 1) {
 		// there are no options so the value is always valid.
 		return true;
 	}
