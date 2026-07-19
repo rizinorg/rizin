@@ -5,26 +5,26 @@
 #include "capstone.h"
 #include "cs_helper.h"
 
-CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(cbpf_asm);
+CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(bpf_asm);
 
-static int cbpf_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int bpf_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 	cs_insn *insn;
 	int n;
-	cs_mode mode = CS_MODE_BPF_CLASSIC | (a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN);
-	memset(op, 0, sizeof(RzAsmOp));
+	cs_mode mode = CS_MODE_BPF_EXTENDED | (a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN);
 	op->size = 8;
-
 	if (ctx->omode != mode) {
-		cs_close(&ctx->handle);
-		ctx->omode = -1;
+		if (ctx->handle) {
+			cs_close(&ctx->handle);
+		}
+		ctx->omode = mode;
 	}
 	if (!ctx->handle) {
 		cs_err err = cs_open(CS_ARCH_BPF, mode, &ctx->handle);
 		if (err != CS_ERR_OK) {
+			rz_warn_if_reached();
 			return -1;
 		}
-		ctx->omode = mode;
 		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
 
@@ -34,7 +34,7 @@ static int cbpf_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len
 		cs_free(insn, n);
 		return -1;
 	}
-	if (insn->size != 8) {
+	if (insn->size != 8 && insn->size != 16) {
 		cs_free(insn, n);
 		return -1;
 	}
@@ -48,24 +48,24 @@ static int cbpf_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len
 	return op->size;
 }
 
-RzAsmPlugin rz_asm_plugin_cbpf_cs = {
-	.name = "cbpf",
-	.license = "LGPL3",
-	.desc = "cBPF disassembler",
+RzAsmPlugin rz_asm_plugin_bpf_cs = {
+	.name = "bpf",
 	.author = "Jagath-P",
-	.arch = "cbpf",
-	.bits = 32,
+	.license = "LGPL3",
+	.desc = "eBPF disassembler",
+	.arch = "bpf",
+	.bits = 64,
 	.endian = RZ_SYS_ENDIAN_BIG | RZ_SYS_ENDIAN_LITTLE,
-	.init = &cbpf_asm_init,
-	.fini = &cbpf_asm_fini,
-	.disassemble = &cbpf_disassemble,
-	.mnemonics = &cbpf_asm_mnemonics
+	.init = &bpf_asm_init,
+	.fini = &bpf_asm_fini,
+	.disassemble = &bpf_disassemble,
+	.mnemonics = &bpf_asm_mnemonics
 };
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_ASM,
-	.data = &rz_asm_plugin_cbpf_cs,
+	.data = &rz_asm_plugin_bpf_cs,
 	.version = RZ_VERSION
 };
 #endif

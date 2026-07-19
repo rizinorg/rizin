@@ -357,6 +357,18 @@ if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_i
   ]
 endif
 
+if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 5
+  # plugins
+  arch_plugins_list += [
+    'bpf_cs',
+  ]
+
+  # plugins sources
+  arch_plugin_sources += [
+    'p/arch_bpf_cs.c',
+  ]
+endif
+
 if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 4
   # plugins
   arch_plugins_list += [
