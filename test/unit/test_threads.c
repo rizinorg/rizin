@@ -333,29 +333,34 @@ bool test_thread_iterator_pvec(void) {
 	mu_end;
 }
 
-bool test_thread_ring_buf_seq(void) {
+bool test_thread_ring_buf_seq(bool size_one) {
 	// Full buffer + read 1 -> Signaling waiting
 	// Full buffer + clear -> Signaling waiting
 	ut64 in_1 = 1;
 	ut64 in_2 = 2;
 	ut64 in_3 = 3;
 	ut64 out = 0;
-	RzThreadRingBuf *rbuf = rz_th_ring_buf_new(3, sizeof(ut64));
+	RzThreadRingBuf *rbuf = rz_th_ring_buf_new(size_one ? 1 : 3, sizeof(ut64));
 	mu_assert_true(rz_th_ring_buf_is_open(rbuf), "is open");
 	mu_assert_eq(rz_th_ring_buf_is_empty(rbuf), RZ_THREAD_RING_BUF_OK, "empty");
 	mu_assert_eq(rz_th_ring_buf_is_full(rbuf), RZ_THREAD_RING_BUF_FAIL, "full");
 
-	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_1), RZ_THREAD_RING_BUF_OK, "put");
-	mu_assert_eq(rz_th_ring_buf_is_empty(rbuf), RZ_THREAD_RING_BUF_FAIL, "empty");
-	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_2), RZ_THREAD_RING_BUF_OK, "put");
+	if (!size_one) {
+		mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_1), RZ_THREAD_RING_BUF_OK, "put");
+		mu_assert_eq(rz_th_ring_buf_is_empty(rbuf), RZ_THREAD_RING_BUF_FAIL, "empty");
+		mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_2), RZ_THREAD_RING_BUF_OK, "put");
+	}
 	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_3), RZ_THREAD_RING_BUF_OK, "put");
+
 	mu_assert_eq(rz_th_ring_buf_is_full(rbuf), RZ_THREAD_RING_BUF_OK, "full check");
 	mu_assert_eq(rz_th_ring_buf_is_empty(rbuf), RZ_THREAD_RING_BUF_FAIL, "empty");
 
-	mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
-	mu_assert_eq(out, in_1, "Take mismatch");
-	mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
-	mu_assert_eq(out, in_2, "Take mismatch");
+	if (!size_one) {
+		mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
+		mu_assert_eq(out, in_1, "Take mismatch");
+		mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
+		mu_assert_eq(out, in_2, "Take mismatch");
+	}
 	mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
 	mu_assert_eq(out, in_3, "Take mismatch");
 	mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_FAIL, "take on empty");
@@ -385,19 +390,21 @@ utptr thread_queue_put_100(RzThreadRingBuf *rbuf) {
 	return (utptr)rz_th_ring_buf_put(rbuf, &in_100);
 }
 
-bool test_thread_ring_buf_writer_cond(void) {
+bool test_thread_ring_buf_writer_cond(bool size_one) {
 	// Full buffer + clear -> Signaling waiting
 	ut64 in_1 = 1;
 	ut64 in_2 = 2;
 	ut64 in_3 = 3;
 	ut64 out = 0;
-	RzThreadRingBuf *rbuf = rz_th_ring_buf_new(3, sizeof(ut64));
+	RzThreadRingBuf *rbuf = rz_th_ring_buf_new(size_one ? 1 : 3, sizeof(ut64));
 
 	// Test wake up of writers.
 	// Fill buffer.
 	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_1), RZ_THREAD_RING_BUF_OK, "put");
-	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_2), RZ_THREAD_RING_BUF_OK, "put");
-	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_3), RZ_THREAD_RING_BUF_OK, "put");
+	if (!size_one) {
+		mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_2), RZ_THREAD_RING_BUF_OK, "put");
+		mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_3), RZ_THREAD_RING_BUF_OK, "put");
+	}
 
 	// Start writers waiting on condition.
 	RzThread *th_97 = rz_th_new((RzThreadFunction)thread_queue_put_97, rbuf);
@@ -424,25 +431,35 @@ bool test_thread_ring_buf_writer_cond(void) {
 	}
 	mu_assert_eq(termed, 1, "Incorrect number of threads terminated");
 
-	mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
-	mu_assert_eq(out, in_2, "Take mismatch");
-	rz_sys_sleep(1);
+	if (!size_one) {
+		mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
+		mu_assert_eq(out, in_2, "Take mismatch");
+		rz_sys_sleep(1);
 
-	mu_assert_true(rz_th_terminated(th_97) && rz_th_terminated(th_98), "Both threads should be termined by now");
-	mu_assert_eq(rz_th_get_retv(th_97), RZ_THREAD_RING_BUF_OK, "Wrong return value");
-	mu_assert_eq(rz_th_get_retv(th_98), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		mu_assert_true(rz_th_terminated(th_97) && rz_th_terminated(th_98), "Both threads should be termined by now");
+		mu_assert_eq(rz_th_get_retv(th_97), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		mu_assert_eq(rz_th_get_retv(th_98), RZ_THREAD_RING_BUF_OK, "Wrong return value");
 
-	mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
-	mu_assert_eq(out, in_3, "Take mismatch");
+		mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
+		mu_assert_eq(out, in_3, "Take mismatch");
+	}
 
 	// Check writers values
 	mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
 	if (out == 97) {
-		mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
+		mu_assert_eq(rz_th_ring_buf_take_blocking(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
 		mu_assert_eq(out, 98, "Should be 98, 97 was already taken");
 	} else {
-		mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
+		eprintf("got: %d\n", (int)out);
+		mu_assert_eq(rz_th_ring_buf_take_blocking(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
 		mu_assert_eq(out, 97, "Should be 97, 98 was already taken");
+	}
+
+	if (size_one) {
+		rz_sys_sleep(1);
+		mu_assert_true(rz_th_terminated(th_97) && rz_th_terminated(th_98), "Both threads should be termined by now");
+		mu_assert_eq(rz_th_get_retv(th_97), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		mu_assert_eq(rz_th_get_retv(th_98), RZ_THREAD_RING_BUF_OK, "Wrong return value");
 	}
 
 	rz_th_free(th_97);
@@ -720,8 +737,10 @@ int all_tests() {
 	mu_run_test(test_thread_ht);
 	mu_run_test(test_thread_iterator_list);
 	mu_run_test(test_thread_iterator_pvec);
-	mu_run_test(test_thread_ring_buf_seq);
-	mu_run_test(test_thread_ring_buf_writer_cond);
+	mu_run_test(test_thread_ring_buf_seq, false);
+	mu_run_test(test_thread_ring_buf_seq, true);
+	mu_run_test(test_thread_ring_buf_writer_cond, false);
+	mu_run_test(test_thread_ring_buf_writer_cond, true);
 	mu_run_test(test_thread_ring_buf_writer_clear);
 	mu_run_test(test_thread_ring_buf_writer_close);
 	mu_run_test(test_thread_ring_buf_reader_cond);
