@@ -527,7 +527,7 @@ static RzInterpBlock *rz_interp_run_pop(RZ_BORROW RZ_NONNULL RzInterpRunContext 
 /////////////////////////////////////////////////////////
 
 RZ_API RZ_OWN RzInterpInstance *rz_interp_instance_new(RzAnalysis *analysis, RZ_NONNULL RZ_BORROW const RzInterpConfig *config) {
-	rz_return_val_if_fail(analysis && config && config->val_domain && config->il_cache_client && config->io_read, NULL);
+	rz_return_val_if_fail(analysis && config && config->val_domain && config->io_read && config->lift_block, NULL);
 
 	RzInterpInstance *inst = RZ_NEW0(RzInterpInstance);
 	if (!inst) {
@@ -1352,6 +1352,10 @@ RZ_API void rz_interp_run_context_fini(RzInterpRunContext *ctx) {
 	interp_blocks_free(ctx);
 }
 
+static const RzILCacheBlock *interp_lift_block(RzInterpInstance *inst, ut64 addr) {
+	return inst->config.lift_block(addr, inst->config.cb_user);
+}
+
 /**
  * \brief Run the interpreter from a single entrypoint until a fixpoint is reached
  */
@@ -1386,7 +1390,7 @@ RZ_API RzInterpResult *rz_interp_run(RzInterpInstance *inst, ut64 entry_point, R
 		}
 		ctx.astate = rz_interp_abstr_state_clone(inst, interp_block->entry_state);
 
-		const RzILCacheBlock *il_block = rz_il_cache_client_lift_il_block(inst->config.il_cache_client, ctx.astate->pc);
+		const RzILCacheBlock *il_block = interp_lift_block(inst, ctx.astate->pc);
 		if (!il_block) {
 			RZ_LOG_ERROR("interpreter: Lifting failed\n");
 			// TODO: handle this better
@@ -1430,7 +1434,7 @@ RZ_API RzInterpResult *rz_interp_run(RzInterpInstance *inst, ut64 entry_point, R
 		RzInterpBlock *interp_block;
 		rz_interval_tree_foreach (&ctx.blocks, it, interp_block) {
 			ctx.astate = rz_interp_abstr_state_clone(inst, interp_block->entry_state);
-			const RzILCacheBlock *il_block = rz_il_cache_client_lift_il_block(inst->config.il_cache_client, ctx.astate->pc);
+			const RzILCacheBlock *il_block = interp_lift_block(inst, ctx.astate->pc);
 			if (!il_block) {
 				RZ_LOG_ERROR("interpreter: Lifting failed\n");
 				// TODO: handle this better

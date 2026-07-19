@@ -63,6 +63,7 @@ typedef struct interp_thread_message_t {
 
 struct interp_thread {
 	InterpDriver *driver;
+	RzILCacheClient *il_cache_client;
 	RzThread *th;
 	RzInterpInstance *inst;
 
@@ -100,44 +101,6 @@ static void *interp_th(void *user) {
 	return NULL;
 }
 
-static InterpThread *interp_thread_new(InterpDriver *driver, RZ_OWN RzInterpInstance *inst) {
-	InterpThread *ctx = RZ_NEW(InterpThread);
-	if (!ctx) {
-		return NULL;
-	}
-	ctx->driver = driver;
-	ctx->inst = inst;
-	ctx->ch = rz_th_ring_buf_new(1, sizeof(InterpThreadMessage)); // At the moment, threads directly wait after a single request, so size 1 is enough
-	if (!ctx->ch) {
-		goto err_ctx;
-	}
-
-	inst->config.cb_user = ctx; // TODO: remove this hack
-
-	ctx->th = rz_th_new(interp_th, ctx);
-	if (!ctx->th) {
-		goto err_ch;
-	}
-
-	return ctx;
-err_ch:
-	rz_th_ring_buf_free(ctx->ch);
-err_ctx:
-	free(ctx);
-	return NULL;
-}
-
-static void interp_thread_free(InterpThread *th) {
-	if (!th) {
-		return;
-	}
-	rz_th_wait(th->th);
-	rz_th_free(th->th);
-	rz_th_ring_buf_free(th->ch);
-	rz_interp_instance_free(th->inst);
-	free(th);
-}
-
 static RzInterpIOReadResult send_io_read(RZ_NONNULL RzInterpIOReadRequest *req, void *user) {
 	InterpThread *th = user;
 	InterpDriverMessage msg = {
@@ -158,6 +121,57 @@ static RzInterpIOReadResult send_io_read(RZ_NONNULL RzInterpIOReadRequest *req, 
 	}
 	rz_return_val_if_fail(ret.type != INTERP_MESSAGE_IO_READ_RESULT, RZ_INTERP_IO_READ_RESULT_BREAK);
 	return ret.payload.io_read_result;
+}
+
+static const RzILCacheBlock *send_lift_il_block(ut64 addr, void *user) {
+	InterpThread *th = user;
+	return rz_il_cache_client_lift_il_block(th->il_cache_client, addr);
+}
+
+static InterpThread *interp_thread_new(RzAnalysis *analysis, InterpDriver *driver, RZ_OWN RzILCacheClient *il_cache_client) {
+	InterpThread *ctx = RZ_NEW(InterpThread);
+	if (!ctx) {
+		return NULL;
+	}
+	ctx->driver = driver;
+	ctx->il_cache_client = il_cache_client;
+	ctx->ch = rz_th_ring_buf_new(1, sizeof(InterpThreadMessage)); // At the moment, threads directly wait after a single request, so size 1 is enough
+	if (!ctx->ch) {
+		goto err_ctx;
+	}
+	RzInterpConfig interp_config = {
+		.val_domain = &rz_interp_value_domain_const,
+		.cb_user = ctx,
+		.io_read = send_io_read,
+		.lift_block = send_lift_il_block
+	};
+	ctx->inst = rz_interp_instance_new(analysis, &interp_config);
+	if (!ctx->inst) {
+		goto err_ch;
+	}
+	ctx->th = rz_th_new(interp_th, ctx);
+	if (!ctx->th) {
+		goto err_inst;
+	}
+	return ctx;
+err_inst:
+	rz_interp_instance_free(ctx->inst);
+err_ch:
+	rz_th_ring_buf_free(ctx->ch);
+err_ctx:
+	free(ctx);
+	return NULL;
+}
+
+static void interp_thread_free(InterpThread *th) {
+	if (!th) {
+		return;
+	}
+	rz_th_wait(th->th);
+	rz_th_free(th->th);
+	rz_th_ring_buf_free(th->ch);
+	rz_interp_instance_free(th->inst);
+	free(th);
 }
 
 static RzInterpIOReadResult handle_io_request(const RzAnalysisILContext *il_ctx, RzInterpIOReadRequest *io_req) {
@@ -240,22 +254,8 @@ RZ_API bool rz_interp_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points) {
 			rz_warn_if_reached();
 			goto err_threads;
 		}
-		RzInterpConfig config = {
-			.val_domain = &rz_interp_value_domain_const,
-			.il_cache_client = cache_client,
-			.cb_user = NULL, // TODO, injected by hack
-			.io_read = send_io_read
-		};
-		RzInterpInstance *inst = rz_interp_instance_new(core->analysis, &config);
-		if (!inst) {
-			return_code = false;
-			rz_warn_if_reached();
-			goto err_threads;
-		}
-		RZ_LOG_DEBUG("inquiry: Start main interpretation thread.\n");
-		threads[i] = interp_thread_new(&driver, inst);
+		threads[i] = interp_thread_new(core->analysis, &driver, cache_client);
 		if (!threads[i]) {
-			rz_interp_instance_free(inst);
 			goto err_threads;
 		}
 	}

@@ -17,6 +17,11 @@ static RzInterpIOReadResult io_read(RzInterpIOReadRequest *req, void *user) {
 	return RZ_INTERP_IO_READ_RESULT_TOP; // Currently we do not care about contents, just make the interpreter continue
 }
 
+static const RzILCacheBlock *lift_block(ut64 addr, void *user) {
+	TestInterp *interp = user;
+	return rz_il_cache_client_lift_il_block(interp->il_cache_client, addr);
+}
+
 static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char *url) {
 	// for debugging, uncomment:
 	// eprintf("rz -a %s -b %d -m 0x%" PFMT64x " %s\n", arch, bits, baddr, url);
@@ -30,9 +35,9 @@ static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char
 	interp->il_cache_client = rz_il_cache_new_client(interp->il_cache, false);
 	RzInterpConfig config = {
 		.val_domain = &rz_interp_value_domain_const,
-		.il_cache_client = interp->il_cache_client,
-		.cb_user = NULL,
-		.io_read = io_read
+		.cb_user = interp,
+		.io_read = io_read,
+		.lift_block = lift_block
 	};
 	interp->inst = rz_interp_instance_new(interp->analysis, &config);
 	RzIODesc *desc = rz_io_open_at(interp->io, url, RZ_PERM_RX, 0644, baddr, NULL);

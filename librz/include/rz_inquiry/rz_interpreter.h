@@ -162,11 +162,9 @@ typedef enum rz_interp_io_read_result_t {
 typedef struct rz_interp_config_t {
 	RzInterpValueAbstraction *val_domain;
 
-	RZ_LIFETIME(RzILCache)
-	RZ_BORROW RzILCacheClient *il_cache_client;
-
 	void *cb_user;
 	RzInterpIOReadResult (*io_read)(RZ_NONNULL RZ_OWN RzInterpIOReadRequest *req, void *user);
+	const RzILCacheBlock *(*lift_block)(ut64 addr, void *user);
 } RzInterpConfig;
 
 /**
