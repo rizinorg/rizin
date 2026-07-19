@@ -1717,12 +1717,24 @@ bool f80_ieee_special_num_test(void) {
 	mu_assert_eq(rz_float_cmp(pseudo_inf, pinf), 0, "positive infinity comparison is symmetric");
 	mu_assert_eq(rz_float_cmp(ninf, pseudo_ninf), 0, "canonical and pseudo negative infinity compare equal");
 	mu_assert_eq(rz_float_cmp(pseudo_ninf, ninf), 0, "negative infinity comparison is symmetric");
+	mu_assert_true(rz_float_is_equal(pinf, pseudo_inf), "canonical and pseudo positive infinity are equal");
+	mu_assert_true(rz_float_is_equal(pseudo_inf, pinf), "positive infinity equality is symmetric");
+	mu_assert_true(rz_float_is_equal(ninf, pseudo_ninf), "canonical and pseudo negative infinity are equal");
+	mu_assert_true(rz_float_is_equal(pseudo_ninf, ninf), "negative infinity equality is symmetric");
 	mu_assert_true(rz_float_detect_spec(qnan) == RZ_FLOAT_SPEC_QNAN, "detect binary80 quiet NaN");
 	mu_assert_true(rz_float_detect_spec(snan) == RZ_FLOAT_SPEC_SNAN, "detect binary80 signaling NaN");
+	RzFloat *pseudo_qnan = rz_float_dup(qnan);
+	rz_bv_set(pseudo_qnan->s, 63, false);
+	mu_assert_true(rz_float_is_nan(pseudo_qnan), "detect binary80 NaN with a clear integer bit");
+	mu_assert_false(rz_float_is_equal(qnan, pseudo_qnan), "binary80 NaN integer bits are not normalized by equality");
 
 	RzFloat *pred_inf = rz_float_pred(pinf);
+	RzFloat *succ_pred_inf = rz_float_succ(pred_inf);
 	RzFloat *succ_ninf = rz_float_succ(ninf);
 	mu_assert_streq_free(rz_float_as_hex_string(pred_inf, true), "0x7ffeffffffffffffffff", "predecessor of binary80 positive infinity is the largest finite value");
+	mu_assert_streq_free(rz_float_as_hex_string(succ_pred_inf, true), "0x7fff0000000000000000", "successor of the largest finite binary80 value is pseudo-infinity");
+	mu_assert_true(rz_float_is_equal(pinf, succ_pred_inf), "successor pseudo-infinity equals canonical positive infinity");
+	mu_assert_true(rz_float_is_equal(succ_pred_inf, pinf), "successor pseudo-infinity equality is symmetric");
 	mu_assert_streq_free(rz_float_as_hex_string(succ_ninf, true), "0xfffeffffffffffffffff", "successor of binary80 negative infinity is the largest finite negative value");
 
 	RzFloat *inf_product = rz_float_mul(pinf, pinf, RZ_FLOAT_RMODE_RNE);
@@ -1744,7 +1756,9 @@ bool f80_ieee_special_num_test(void) {
 	rz_float_free(nan_sum);
 	rz_float_free(inf_product);
 	rz_float_free(succ_ninf);
+	rz_float_free(succ_pred_inf);
 	rz_float_free(pred_inf);
+	rz_float_free(pseudo_qnan);
 	rz_float_free(one);
 	rz_float_free(snan);
 	rz_float_free(qnan);

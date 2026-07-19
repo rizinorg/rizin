@@ -220,6 +220,18 @@ static int8_t rounding_mode_mapping[] = {
 static inline void set_float_rounding_mode(RzFloatRMode mode) {
 	softfloat_roundingMode = rounding_mode_mapping[mode];
 }
+
+static inline bool f128_is_special(float128_t value) {
+	return (value.v[1] & UINT64_C(0x7fff000000000000)) == UINT64_C(0x7fff000000000000);
+}
+
+static inline bool f128_is_zero(float128_t value) {
+	return !value.v[0] && !(value.v[1] & UINT64_C(0x7fffffffffffffff));
+}
+
+static inline bool ext_f80_is_special(extFloat80_t value) {
+	return (value.signExp & 0x7fff) == 0x7fff;
+}
 /**@}*/
 
 /**
@@ -1033,6 +1045,25 @@ RZ_API bool rz_float_is_zero(RZ_NONNULL RzFloat *f) {
 	return type == RZ_FLOAT_SPEC_ZERO;
 }
 
+static inline bool is_f80_infinity(RzFloat *f) {
+	if (f->r != RZ_FLOAT_IEEE754_BIN_80) {
+		return false;
+	}
+	ut32 significand_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
+	ut32 exponent_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_EXP_LEN);
+	for (ut32 i = 0; i < significand_len - 1; ++i) {
+		if (rz_bv_get(f->s, i)) {
+			return false;
+		}
+	}
+	for (ut32 i = significand_len; i < significand_len + exponent_len; ++i) {
+		if (!rz_bv_get(f->s, i)) {
+			return false;
+		}
+	}
+	return true;
+}
+
 /**
  * \brief      Compares 2 float numbers allowing imperfect bits
  *
@@ -1051,8 +1082,13 @@ RZ_API bool rz_float_is_equal(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y) {
 		return false;
 	}
 
+	bool x_f80_inf = is_f80_infinity(x);
+	bool y_f80_inf = is_f80_infinity(y);
+	ut32 f80_integer_bit = rz_float_get_format_info(RZ_FLOAT_IEEE754_BIN_80, RZ_FLOAT_INFO_MAN_LEN) - 1;
 	for (ut32 i = 1; i < xb->len; ++i) {
-		if (rz_bv_get(xb, i) != rz_bv_get(yb, i)) {
+		bool x_bit = x_f80_inf && i == f80_integer_bit ? true : rz_bv_get(xb, i);
+		bool y_bit = y_f80_inf && i == f80_integer_bit ? true : rz_bv_get(yb, i);
+		if (x_bit != y_bit) {
 			return false;
 		}
 	}
@@ -1439,8 +1475,58 @@ RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL R
 		float128_t b_resized = extF80_to_f128(to_float80(b));
 		float128_t c_resized = extF80_to_f128(to_float80(c));
 
+		if (extF80_roundingPrecision != RZ_FLOAT_RPREC_32 && extF80_roundingPrecision != RZ_FLOAT_RPREC_64) {
+			float128_t fma_resized = f128_mulAdd(a_resized, b_resized, c_resized);
+			return of_float80(f128_to_extF80(fma_resized));
+		}
+
+		/* SoftFloat's f128-to-extF80 conversion always rounds to full binary80
+		 * precision. Use round-to-odd intermediates so that the final extF80
+		 * operation can round once to the requested reduced precision without
+		 * a double-rounding error. */
+		uint_fast8_t requested_mode = softfloat_roundingMode;
+		uint_fast8_t accumulated_flags = softfloat_exceptionFlags;
+		softfloat_exceptionFlags = 0;
+		softfloat_roundingMode = softfloat_round_minMag;
+
 		float128_t fma_resized = f128_mulAdd(a_resized, b_resized, c_resized);
-		return of_float80(f128_to_extF80(fma_resized));
+		uint_fast8_t fma_flags = softfloat_exceptionFlags;
+		if (!(fma_flags & softfloat_flag_inexact) && f128_is_zero(fma_resized)) {
+			/* Exact cancellation gets its zero sign from the rounding mode. */
+			softfloat_exceptionFlags = 0;
+			softfloat_roundingMode = requested_mode;
+			fma_resized = f128_mulAdd(a_resized, b_resized, c_resized);
+			fma_flags |= softfloat_exceptionFlags;
+			softfloat_roundingMode = softfloat_round_minMag;
+		}
+		if ((fma_flags & softfloat_flag_inexact) && !f128_is_special(fma_resized)) {
+			fma_resized.v[0] |= 1;
+		}
+
+		softfloat_exceptionFlags = 0;
+		extFloat80_t fma_f80 = f128_to_extF80(fma_resized);
+		uint_fast8_t convert_flags = softfloat_exceptionFlags;
+		if ((convert_flags & softfloat_flag_inexact) && !ext_f80_is_special(fma_f80)) {
+			fma_f80.signif |= 1;
+		}
+
+		softfloat_exceptionFlags = 0;
+		softfloat_roundingMode = requested_mode;
+		extFloat80_t rounded = fma_f80;
+		if (!ext_f80_is_special(fma_f80) && ((fma_f80.signExp & 0x7fff) || fma_f80.signif)) {
+			extFloat80_t zero = {
+				.signif = 0,
+				.signExp = fma_f80.signExp & 0x8000,
+			};
+			rounded = extF80_add(fma_f80, zero);
+		}
+
+		/* Intermediate underflow is precision-dependent. Let the final extF80
+		 * rounding decide it, while preserving all other accumulated flags. */
+		fma_flags &= ~softfloat_flag_underflow;
+		convert_flags &= ~softfloat_flag_underflow;
+		softfloat_exceptionFlags |= accumulated_flags | fma_flags | convert_flags;
+		return of_float80(rounded);
 	}
 	case RZ_FLOAT_IEEE754_BIN_128:
 		return of_float128(f128_mulAdd(to_float128(a), to_float128(b), to_float128(c)));
@@ -1973,7 +2059,7 @@ RZ_API RZ_OWN RzFloat *rz_float_neg(RZ_NONNULL RzFloat *f) {
 }
 
 static void normalize_f80_infinity(RzFloat *f, RzBitVector *bv) {
-	if (f->r != RZ_FLOAT_IEEE754_BIN_80 || !rz_float_is_inf(f)) {
+	if (!is_f80_infinity(f)) {
 		return;
 	}
 	ut32 significand_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);

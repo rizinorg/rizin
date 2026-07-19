@@ -7,6 +7,13 @@
 #include "rz_il/rz_il_events.h"
 #include "rz_il/rz_il_opcodes.h"
 
+static RzFloat *new_f80_from_bytes(const char *bytes) {
+	RzBitVector *bv = rz_bv_new_from_bytes_be((const ut8 *)bytes, 0, 80);
+	RzFloat *ret = rz_float_new_from_bv(bv);
+	rz_bv_free(bv);
+	return ret;
+}
+
 static bool test_rzil_vm_init() {
 	RzILVM *vm = rz_il_vm_new(0, 8, true, RZ_IL_EVENT_EXC_NONE);
 	mu_assert_eq(vm->addr_size, 8, "VM Init");
@@ -1186,6 +1193,58 @@ static bool test_rzil_vm_op_fwith_rprec() {
 	mu_assert_notnull(actual, "precision-scoped multiply");
 	mu_assert_false(rz_float_cmp(actual, expected), "binary80 exponent with single significand precision");
 	mu_assert_eq(rz_float_ext80_get_rounding_precision(), RZ_FLOAT_RPREC_64, "precision restored after success");
+	rz_float_free(actual);
+	rz_float_free(expected);
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fwith_rprec(RZ_FLOAT_RPREC_32,
+		rz_il_op_new_fmad(RZ_FLOAT_RMODE_RNE,
+			rz_il_op_new_float_from_f80(1.0L),
+			rz_il_op_new_float_from_f80(1.0L),
+			rz_il_op_new_float_from_f80(0x1p-30L)));
+	actual = rz_il_evaluate_float(vm, op);
+	expected = rz_float_new_from_f80(1.0L);
+	mu_assert_notnull(actual, "precision-scoped fused multiply-add");
+	mu_assert_false(rz_float_cmp(actual, expected), "binary80 FMA honors single significand precision");
+	mu_assert_true(actual->exception & RZ_FLOAT_E_INEXACT, "precision-scoped FMA reports inexact");
+	mu_assert_eq(rz_float_ext80_get_rounding_precision(), RZ_FLOAT_RPREC_64, "precision restored after FMA");
+	rz_float_free(actual);
+	rz_float_free(expected);
+	rz_il_op_pure_free(op);
+
+	const RzFloatRPrecision reduced_precisions[] = {
+		RZ_FLOAT_RPREC_32,
+		RZ_FLOAT_RPREC_64,
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(reduced_precisions); i++) {
+		op = rz_il_op_new_fwith_rprec(reduced_precisions[i],
+			rz_il_op_new_fmad(RZ_FLOAT_RMODE_RTN,
+				rz_il_op_new_float_from_f80(1.0L),
+				rz_il_op_new_float_from_f80(1.0L),
+				rz_il_op_new_float_from_f80(-1.0L)));
+		actual = rz_il_evaluate_float(vm, op);
+		mu_assert_notnull(actual, "precision-scoped cancelling FMA");
+		mu_assert_true(rz_float_is_zero(actual), "cancelling FMA returns zero");
+		mu_assert_true(rz_float_is_negative(actual), "round-toward-negative cancellation returns negative zero");
+		mu_assert_eq(actual->exception, 0, "exact cancellation has no exception");
+		mu_assert_eq(rz_float_ext80_get_rounding_precision(), RZ_FLOAT_RPREC_64, "precision restored after cancelling FMA");
+		rz_float_free(actual);
+		rz_il_op_pure_free(op);
+	}
+
+	/* The exact result is 1 + 2^-24 + 2^-114. Rounding first to binary128
+	 * would turn it into a tie at single precision and incorrectly round down. */
+	op = rz_il_op_new_fwith_rprec(RZ_FLOAT_RPREC_32,
+		rz_il_op_new_fmad(RZ_FLOAT_RMODE_RNE,
+			rz_il_op_new_float_from_rz_float(new_f80_from_bytes("\x3f\xff\x80\x00\x00\x00\x00\x00\x00\x01")),
+			rz_il_op_new_float_from_rz_float(new_f80_from_bytes("\x3f\xcc\x80\x00\x00\x00\x00\x00\x00\x00")),
+			rz_il_op_new_float_from_rz_float(new_f80_from_bytes("\x3f\xff\x80\x00\x00\x7f\xff\xff\xf0\x00"))));
+	actual = rz_il_evaluate_float(vm, op);
+	expected = new_f80_from_bytes("\x3f\xff\x80\x00\x01\x00\x00\x00\x00\x00");
+	mu_assert_notnull(actual, "precision-scoped FMA double-rounding boundary");
+	mu_assert_false(rz_float_cmp(actual, expected), "binary80 FMA preserves the side of a single-precision tie");
+	mu_assert_true(actual->exception & RZ_FLOAT_E_INEXACT, "double-rounding boundary reports inexact");
+	mu_assert_eq(rz_float_ext80_get_rounding_precision(), RZ_FLOAT_RPREC_64, "precision restored after FMA boundary");
 	rz_float_free(actual);
 	rz_float_free(expected);
 	rz_il_op_pure_free(op);
