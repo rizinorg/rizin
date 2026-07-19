@@ -13,6 +13,99 @@ void print_float(RzFloat *f) {
 	free(str);
 }
 
+typedef struct float_precision_thread_ctx_t {
+	RzFloatRPrecision precision;
+	RzFloatRPrecision saved;
+	RzFloatRPrecision observed;
+	RzThreadSemaphore *ready;
+	RzThreadSemaphore *release;
+	bool set_ok;
+	bool restore_ok;
+} FloatPrecisionThreadCtx;
+
+static void *float_precision_thread(void *user) {
+	FloatPrecisionThreadCtx *ctx = user;
+	ctx->saved = rz_float_ext80_get_rounding_precision();
+	ctx->set_ok = rz_float_ext80_set_rounding_precision(ctx->precision);
+	rz_th_sem_post(ctx->ready);
+	rz_th_sem_wait(ctx->release);
+	ctx->observed = rz_float_ext80_get_rounding_precision();
+	ctx->restore_ok = rz_float_ext80_set_rounding_precision(ctx->saved);
+	return NULL;
+}
+
+static bool ext80_rounding_precision_thread_local_test(void) {
+	RzThreadSemaphore *ready = rz_th_sem_new(0);
+	RzThreadSemaphore *release_32 = rz_th_sem_new(0);
+	RzThreadSemaphore *release_64 = rz_th_sem_new(0);
+	bool semaphores_ok = ready && release_32 && release_64;
+	if (!semaphores_ok) {
+		rz_th_sem_free(ready);
+		rz_th_sem_free(release_32);
+		rz_th_sem_free(release_64);
+		mu_assert_true(semaphores_ok, "create precision test semaphores");
+	}
+
+	FloatPrecisionThreadCtx ctx_32 = {
+		.precision = RZ_FLOAT_RPREC_32,
+		.ready = ready,
+		.release = release_32,
+	};
+	FloatPrecisionThreadCtx ctx_64 = {
+		.precision = RZ_FLOAT_RPREC_64,
+		.ready = ready,
+		.release = release_64,
+	};
+
+	bool main_set_ok = rz_float_ext80_set_rounding_precision(RZ_FLOAT_RPREC_80);
+	RzThread *thread_32 = rz_th_new(float_precision_thread, &ctx_32);
+	if (!thread_32) {
+		rz_th_sem_free(ready);
+		rz_th_sem_free(release_32);
+		rz_th_sem_free(release_64);
+		mu_assert_notnull(thread_32, "create 32-bit precision thread");
+	}
+	rz_th_sem_wait(ready);
+
+	RzThread *thread_64 = rz_th_new(float_precision_thread, &ctx_64);
+	if (!thread_64) {
+		rz_th_sem_post(release_32);
+		rz_th_wait(thread_32);
+		rz_th_free(thread_32);
+		rz_th_sem_free(ready);
+		rz_th_sem_free(release_32);
+		rz_th_sem_free(release_64);
+		mu_assert_notnull(thread_64, "create 64-bit precision thread");
+	}
+	rz_th_sem_wait(ready);
+
+	RzFloatRPrecision main_during_scopes = rz_float_ext80_get_rounding_precision();
+	rz_th_sem_post(release_32);
+	bool wait_32_ok = rz_th_wait(thread_32);
+	rz_th_free(thread_32);
+	rz_th_sem_post(release_64);
+	bool wait_64_ok = rz_th_wait(thread_64);
+	rz_th_free(thread_64);
+	RzFloatRPrecision main_after_scopes = rz_float_ext80_get_rounding_precision();
+
+	rz_th_sem_free(ready);
+	rz_th_sem_free(release_32);
+	rz_th_sem_free(release_64);
+	rz_float_ext80_set_rounding_precision(RZ_FLOAT_RPREC_80);
+
+	mu_assert_true(main_set_ok, "set main thread precision");
+	mu_assert_true(wait_32_ok && wait_64_ok, "join precision test threads");
+	mu_assert_true(ctx_32.set_ok && ctx_64.set_ok, "set worker thread precisions");
+	mu_assert_true(ctx_32.restore_ok && ctx_64.restore_ok, "restore worker thread precisions");
+	mu_assert_eq(ctx_32.saved, RZ_FLOAT_RPREC_80, "32-bit worker starts with default precision");
+	mu_assert_eq(ctx_64.saved, RZ_FLOAT_RPREC_80, "64-bit worker starts with default precision");
+	mu_assert_eq(ctx_32.observed, RZ_FLOAT_RPREC_32, "32-bit worker retains its precision");
+	mu_assert_eq(ctx_64.observed, RZ_FLOAT_RPREC_64, "64-bit worker retains its precision");
+	mu_assert_eq(main_during_scopes, RZ_FLOAT_RPREC_80, "worker scopes do not alter main thread precision");
+	mu_assert_eq(main_after_scopes, RZ_FLOAT_RPREC_80, "interleaved restores do not alter main thread precision");
+	mu_end;
+}
+
 bool f32_ieee_format_test(void) {
 	float val = 1.5f;
 	RzFloat *f = rz_float_new_from_f32(val);
@@ -1940,6 +2033,7 @@ bool f80_ieee_cast_test(void) {
 }
 
 bool all_tests() {
+	mu_run_test(ext80_rounding_precision_thread_local_test);
 	mu_run_test(rz_float_new_from_hex_test);
 	mu_run_test(f32_ieee_format_test);
 	mu_run_test(rz_float_detect_spec_test);
