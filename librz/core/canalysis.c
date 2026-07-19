@@ -4045,6 +4045,12 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 		return;
 	}
 
+	RzBinObject *bo = rz_bin_cur_object(core->bin);
+	if (!bo) {
+		rz_list_free(all_xrefs);
+		return;
+	}
+
 	// collect every target address that has at least one CODE/CALL xref
 	RzSetU *code_call_targets = rz_set_u_new();
 	if (!code_call_targets) {
@@ -4097,10 +4103,6 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 		// ; DATA XREF from dbg.sched_run @ 0x490
 		// ;-- data.000004e0:
 		// 0x000004e0      .dword 0x1fff0274 ; runqueue_bitcache ; section..bss ; sym..bss ; obj.runqueue_bitcache ; loc._sbss ; loc._szero ; loc._erelocate ; sched.c:135
-		RzBinObject *bo = rz_bin_cur_object(core->bin);
-		if (!bo) {
-			continue;
-		}
 
 		// reject constants that merely equal a code address (e.g. `sub sp, sp, 0x810`)
 		XrefRefKind ref_kind = xref_ref_kind(core, xref->from, target);
@@ -4195,6 +4197,44 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 			}
 		}
 		ut64 upper = RZ_MIN(next_data, next_fcn);
+		// cap upper to curr section boundary or map
+		RzBinSection *sec = rz_bin_get_section_at(bo, target, true);
+		if (sec) {
+			ut64 sec_end = sec->vaddr + sec->vsize;
+			if (upper > sec_end)
+				upper = sec_end;
+
+		} else {
+			// target is in a section gap or we are in a binary w/o metadata
+			ut64 next_sec_start = UT64_MAX;
+
+			RzBinSection *s;
+			void **iter;
+			rz_pvector_foreach (bo->sections, iter) {
+				s = *iter;
+				if (s->is_segment) {
+					continue;
+				}
+				ut64 vaddr = rz_bin_object_addr_with_base(bo, s->vaddr);
+				if (vaddr > target && vaddr < next_sec_start) {
+					next_sec_start = vaddr;
+				}
+			}
+
+			// cap upper to next section start if exists
+			if (next_sec_start != UT64_MAX && upper > next_sec_start) {
+				upper = next_sec_start;
+			}
+			// last fallback, cap upper to map_end
+			// also if target was in last section before unmapped region
+			RzIOMap *map = rz_io_map_get(core->io, target);
+			if (map) {
+				ut64 map_end = rz_io_map_get_to(map) + 1;
+				if (upper > map_end) {
+					upper = map_end;
+				}
+			}
+		}
 		ut64 size;
 		if (upper != UT64_MAX) {
 			size = rz_set_u_contains(exec_targets, target)
