@@ -666,10 +666,16 @@ VALIDATOR_PURE(float_binop_with_round) {
 	VALIDATOR_ASSERT(sy.type == RZ_IL_TYPE_PURE_FLOAT, "Right operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
 
 	// flatten validator assert
-	VALIDATOR_ASSERT(sx.props.f.format == sy.props.f.format, "Op %s formats of left operand (%s) and right operand (%s) do not agree.\n",
-		rz_il_op_pure_code_stringify(op->code),
-		rz_il_sort_pure_stringify(sx),
-		rz_il_sort_pure_stringify(sy));
+	if (sx.props.f.format != sy.props.f.format) {
+		rz_warn_if_reached();
+		char *sx_s = rz_il_sort_pure_stringify(sx);
+		char *sy_s = rz_il_sort_pure_stringify(sy);
+		rz_strbuf_appendf(report_builder, "Op %s formats of left operand (%s) and right operand (%s) do not agree.\n",
+			rz_il_op_pure_code_stringify(op->code), sx_s, sy_s);
+		free(sx_s);
+		free(sy_s);
+		return false;
+	}
 
 	*sort_out = sx;
 	return true;
