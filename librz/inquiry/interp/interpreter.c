@@ -563,8 +563,6 @@ RZ_API RZ_OWN RzInterpInstance *rz_interp_instance_new(RzAnalysis *analysis, RZ_
 		}
 	}
 
-	rz_pvector_init(&inst->results, NULL);
-
 	return inst;
 err_var_name_hashes:
 	ht_up_free(inst->var_name_hashes);
@@ -736,8 +734,11 @@ bool load_abstr_data(
 	io_req.mem_idx = mem_idx;
 	io_req.n_bits = n_bits;
 	io_req.big_endian = inst->il_ctx->config->big_endian;
-	bool req_ok = inst->config.io_read(&io_req, inst->config.cb_user);
-	if (!req_ok) {
+	RzInterpIOReadResult read_res = inst->config.io_read(&io_req, inst->config.cb_user);
+	if (read_res == RZ_INTERP_IO_READ_RESULT_BREAK) {
+		// TODO: break
+	}
+	if (read_res != RZ_INTERP_IO_READ_RESULT_OK) {
 		val_domain(inst)->set_top(out);
 		return true;
 	}

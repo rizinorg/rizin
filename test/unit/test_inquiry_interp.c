@@ -13,8 +13,8 @@ typedef struct test_interp_t {
 	RzInterpInstance *inst;
 } TestInterp;
 
-static bool io_read(RzInterpIOReadRequest *req, void *user) {
-	return false; // Currently we do not care about contents, just make the interpreter continue
+static RzInterpIOReadResult io_read(RzInterpIOReadRequest *req, void *user) {
+	return RZ_INTERP_IO_READ_RESULT_TOP; // Currently we do not care about contents, just make the interpreter continue
 }
 
 static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char *url) {

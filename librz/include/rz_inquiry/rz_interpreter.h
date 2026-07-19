@@ -12,15 +12,8 @@
 #include <rz_inquiry/rz_il_cache.h>
 #include <rz_arch.h>
 #include <rz_io.h>
-#include <rz_th.h>
 #include <rz_types.h>
 #include <rz_util.h>
-
-/**
- * \brief Only one IO request at a time is possible (currently).
- */
-#define RZ_INTERP_IO_RBUF_SIZE           128
-#define RZ_INTERP_ENTRY_POINTS_RBUF_SIZE 4
 
 typedef struct rz_interp_run_context_t RzInterpRunContext;
 typedef struct rz_interp_result_t RzInterpResult;
@@ -152,14 +145,19 @@ typedef struct {
 
 } RzInterpValueAbstraction;
 
-typedef struct ry_interp_io_read_request_t {
+typedef struct rz_interp_io_read_request_t {
 	size_t mem_idx; ///< The memory space to read/write.
 	bool big_endian; ///< Set if the data is big endian ordered.
 	const RzBitVector *addr; ///< The address to read/write.
-	const RzBitVector *st_data; ///< The data to store.
 	RzBitVector *ld_data; ///< The bit vector to load into. It is BORROWED.
 	size_t n_bits; ///< The number of bits to read/write.
 } RzInterpIOReadRequest;
+
+typedef enum rz_interp_io_read_result_t {
+	RZ_INTERP_IO_READ_RESULT_OK, ///< ld_data fully written
+	RZ_INTERP_IO_READ_RESULT_TOP, ///< result should be considered top (memory contents unknown)
+	RZ_INTERP_IO_READ_RESULT_BREAK ///< interpreter is signaled to stop
+} RzInterpIOReadResult;
 
 typedef struct rz_interp_config_t {
 	RzInterpValueAbstraction *val_domain;
@@ -168,7 +166,7 @@ typedef struct rz_interp_config_t {
 	RZ_BORROW RzILCacheClient *il_cache_client;
 
 	void *cb_user;
-	bool (*io_read)(RZ_NONNULL RZ_OWN RzInterpIOReadRequest *req, void *user);
+	RzInterpIOReadResult (*io_read)(RZ_NONNULL RZ_OWN RzInterpIOReadRequest *req, void *user);
 } RzInterpConfig;
 
 /**
@@ -181,8 +179,6 @@ struct rz_interp_instance_t {
 	RzAnalysisILContext *il_ctx; ///< Context about available global vars and memory
 	HtUP *var_name_hashes; ///< Map of DJB2 hashes to variable names.
 	RZ_DEPRECATE const char *arch_name; ///< Name of architecture. Used only by work-arounds until we have RzArch.
-
-	RzPVector /*<RzInterpRunResult>*/ results; ///< TODO: replace this by a queue/rbuf/... to handle interp and results concurrently
 };
 
 RZ_API RZ_OWN RzInterpInstance *rz_interp_instance_new(RzAnalysis *analysis, RZ_NONNULL RZ_BORROW const RzInterpConfig *config);
