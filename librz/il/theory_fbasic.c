@@ -475,53 +475,20 @@ void *rz_il_handler_fmod(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	return ret;
 }
 
-static RzFloatRMode runtime_rmode_from_value(const RzBitVector *value) {
-	switch (rz_bv_to_ut64(value)) {
-	case RZ_FLOAT_RMODE_RNE:
-		return RZ_FLOAT_RMODE_RNE;
-	case RZ_FLOAT_RMODE_RNA:
-		return RZ_FLOAT_RMODE_RNA;
-	case RZ_FLOAT_RMODE_RTP:
-		return RZ_FLOAT_RMODE_RTP;
-	case RZ_FLOAT_RMODE_RTN:
-		return RZ_FLOAT_RMODE_RTN;
-	case RZ_FLOAT_RMODE_RTZ:
-		return RZ_FLOAT_RMODE_RTZ;
-	default:
-		return RZ_FLOAT_RMODE_RNE;
+static bool runtime_rmode_from_value(const RzBitVector *value, RzFloatRMode *out) {
+	ut64 v = rz_bv_to_ut64(value);
+	if (v >= RZ_FLOAT_RMODE_UNK) {
+		return false;
 	}
+	*out = (RzFloatRMode)v;
+	return true;
 }
 
 void *rz_il_handler_float_with_rmode(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
-	RzILOpBitVector *rmode_op;
-	switch (op->code) {
-	case RZ_IL_OP_FCONVERT_WITH_RMODE:
-		rmode_op = op->op.fconvert_with_rmode.rmode;
-		break;
-	case RZ_IL_OP_FROUND_WITH_RMODE:
-		rmode_op = op->op.fround_with_rmode.rmode;
-		break;
-	case RZ_IL_OP_FSQRT_WITH_RMODE:
-		rmode_op = op->op.fsqrt_with_rmode.rmode;
-		break;
-	case RZ_IL_OP_FADD_WITH_RMODE:
-		rmode_op = op->op.fadd_with_rmode.rmode;
-		break;
-	case RZ_IL_OP_FSUB_WITH_RMODE:
-		rmode_op = op->op.fsub_with_rmode.rmode;
-		break;
-	case RZ_IL_OP_FMUL_WITH_RMODE:
-		rmode_op = op->op.fmul_with_rmode.rmode;
-		break;
-	case RZ_IL_OP_FDIV_WITH_RMODE:
-		rmode_op = op->op.fdiv_with_rmode.rmode;
-		break;
-	case RZ_IL_OP_FMOD_WITH_RMODE:
-		rmode_op = op->op.fmod_with_rmode.rmode;
-		break;
-	default:
+	RzILOpBitVector *rmode_op = rz_il_op_pure_float_rmode_operand(op);
+	if (!rmode_op) {
 		rz_warn_if_reached();
 		return NULL;
 	}
@@ -530,7 +497,13 @@ void *rz_il_handler_float_with_rmode(RzILVM *vm, RzILOpPure *op, RzILTypePure *t
 	if (!rmode_value) {
 		return NULL;
 	}
-	RzFloatRMode rmode = runtime_rmode_from_value(rmode_value);
+	RzFloatRMode rmode;
+	if (!runtime_rmode_from_value(rmode_value, &rmode)) {
+		RZ_LOG_ERROR("IL: %s got an invalid rounding-mode value 0x%" PFMT64x "\n",
+			rz_il_op_pure_code_stringify(op->code), rz_bv_to_ut64(rmode_value));
+		rz_bv_free(rmode_value);
+		return NULL;
+	}
 	rz_bv_free(rmode_value);
 
 	RzILOpPure delegated = { 0 };
@@ -546,66 +519,54 @@ void *rz_il_handler_float_with_rmode(RzILVM *vm, RzILOpPure *op, RzILTypePure *t
 		handler = rz_il_handler_fconvert;
 		break;
 	case RZ_IL_OP_FROUND_WITH_RMODE:
-		delegated.code = RZ_IL_OP_FROUND;
+	case RZ_IL_OP_FSQRT_WITH_RMODE: {
+		/* fround_with_rmode and fsqrt_with_rmode share
+		 * RzILOpArgsFloatAlgUnopWithRmode. */
+		bool is_round = op->code == RZ_IL_OP_FROUND_WITH_RMODE;
+		delegated.code = is_round ? RZ_IL_OP_FROUND : RZ_IL_OP_FSQRT;
 		delegated.op.fround = (RzILOpArgsFround){
 			.rmode = rmode,
 			.f = op->op.fround_with_rmode.f,
 		};
-		handler = rz_il_handler_fround;
+		handler = is_round ? rz_il_handler_fround : rz_il_handler_fsqrt;
 		break;
-	case RZ_IL_OP_FSQRT_WITH_RMODE:
-		delegated.code = RZ_IL_OP_FSQRT;
-		delegated.op.fsqrt = (RzILOpArgsFsqrt){
-			.rmode = rmode,
-			.f = op->op.fsqrt_with_rmode.f,
-		};
-		handler = rz_il_handler_fsqrt;
-		break;
+	}
 	case RZ_IL_OP_FADD_WITH_RMODE:
-		delegated.code = RZ_IL_OP_FADD;
-		delegated.op.fadd = (RzILOpArgsFadd){
-			.rmode = rmode,
-			.x = op->op.fadd_with_rmode.x,
-			.y = op->op.fadd_with_rmode.y,
-		};
-		handler = rz_il_handler_fadd;
-		break;
 	case RZ_IL_OP_FSUB_WITH_RMODE:
-		delegated.code = RZ_IL_OP_FSUB;
-		delegated.op.fsub = (RzILOpArgsFsub){
-			.rmode = rmode,
-			.x = op->op.fsub_with_rmode.x,
-			.y = op->op.fsub_with_rmode.y,
-		};
-		handler = rz_il_handler_fsub;
-		break;
 	case RZ_IL_OP_FMUL_WITH_RMODE:
-		delegated.code = RZ_IL_OP_FMUL;
-		delegated.op.fmul = (RzILOpArgsFmul){
-			.rmode = rmode,
-			.x = op->op.fmul_with_rmode.x,
-			.y = op->op.fmul_with_rmode.y,
-		};
-		handler = rz_il_handler_fmul;
-		break;
 	case RZ_IL_OP_FDIV_WITH_RMODE:
-		delegated.code = RZ_IL_OP_FDIV;
-		delegated.op.fdiv = (RzILOpArgsFdiv){
+	case RZ_IL_OP_FMOD_WITH_RMODE: {
+		/* All binop-with-rmode args share RzILOpArgsFloatAlgBinopWithRmode. */
+		const RzILOpArgsFloatAlgBinopWithRmode *args = &op->op.fadd_with_rmode;
+		delegated.op.binop_float_alg = (RzILOpArgsFloatAlgBinop){
 			.rmode = rmode,
-			.x = op->op.fdiv_with_rmode.x,
-			.y = op->op.fdiv_with_rmode.y,
+			.x = args->x,
+			.y = args->y,
 		};
-		handler = rz_il_handler_fdiv;
+		switch (op->code) {
+		case RZ_IL_OP_FADD_WITH_RMODE:
+			delegated.code = RZ_IL_OP_FADD;
+			handler = rz_il_handler_fadd;
+			break;
+		case RZ_IL_OP_FSUB_WITH_RMODE:
+			delegated.code = RZ_IL_OP_FSUB;
+			handler = rz_il_handler_fsub;
+			break;
+		case RZ_IL_OP_FMUL_WITH_RMODE:
+			delegated.code = RZ_IL_OP_FMUL;
+			handler = rz_il_handler_fmul;
+			break;
+		case RZ_IL_OP_FDIV_WITH_RMODE:
+			delegated.code = RZ_IL_OP_FDIV;
+			handler = rz_il_handler_fdiv;
+			break;
+		default:
+			delegated.code = RZ_IL_OP_FMOD;
+			handler = rz_il_handler_fmod;
+			break;
+		}
 		break;
-	case RZ_IL_OP_FMOD_WITH_RMODE:
-		delegated.code = RZ_IL_OP_FMOD;
-		delegated.op.fmod = (RzILOpArgsFmod){
-			.rmode = rmode,
-			.x = op->op.fmod_with_rmode.x,
-			.y = op->op.fmod_with_rmode.y,
-		};
-		handler = rz_il_handler_fmod;
-		break;
+	}
 	default:
 		rz_warn_if_reached();
 		return NULL;

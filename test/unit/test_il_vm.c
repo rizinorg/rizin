@@ -1321,7 +1321,6 @@ static bool test_rzil_vm_runtime_rmode_helpers() {
 		{ RZ_FLOAT_RMODE_RTP, "0x3f800001" },
 		{ RZ_FLOAT_RMODE_RTN, "0x3f800000" },
 		{ RZ_FLOAT_RMODE_RTZ, "0x3f800000" },
-		{ RZ_FLOAT_RMODE_UNK + 1, "0x3f800000" },
 	};
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(add_cases); i++) {
 		RzILOpFloat *op = rz_il_op_new_fadd_with_rmode(
@@ -1330,6 +1329,17 @@ static bool test_rzil_vm_runtime_rmode_helpers() {
 			rz_il_op_new_float_from_f32(0x1p-24f));
 		mu_assert_true(runtime_rmode_result_is(vm, op, add_cases[i].expected), "runtime fadd rounding-mode selection");
 	}
+
+	/* An out-of-range rounding-mode value must fail evaluation instead of
+	 * silently rounding to nearest. */
+	RzILOpFloat *bad_op = rz_il_op_new_fadd_with_rmode(
+		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_UNK + 1),
+		rz_il_op_new_float_from_f32(1.0f),
+		rz_il_op_new_float_from_f32(0x1p-24f));
+	RzFloat *bad_result = rz_il_evaluate_float(vm, bad_op);
+	mu_assert_null(bad_result, "invalid runtime rounding mode fails evaluation");
+	rz_float_free(bad_result);
+	rz_il_op_pure_free(bad_op);
 
 	RzILOpFloat *op = rz_il_op_new_fconvert_with_rmode(
 		RZ_FLOAT_IEEE754_BIN_32,

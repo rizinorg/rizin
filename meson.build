@@ -750,11 +750,15 @@ use_bundled_softfloat = not softfloat_dep.found()
 if softfloat_dep.found()
   softfloat_tls_probe = '''
     #include <stdint.h>
+    #include <softfloat.h>
     #if defined(_MSC_VER)
     #define RZ_SOFTFLOAT_THREAD_LOCAL __declspec(thread)
     #else
     #define RZ_SOFTFLOAT_THREAD_LOCAL __thread
     #endif
+    /* Fails to compile unless <softfloat.h> itself declares the mutable state
+     * as thread-local, and fails to link unless the library definitions agree
+     * with those declarations. */
     extern RZ_SOFTFLOAT_THREAD_LOCAL uint_fast8_t softfloat_detectTininess;
     extern RZ_SOFTFLOAT_THREAD_LOCAL uint_fast8_t softfloat_roundingMode;
     extern RZ_SOFTFLOAT_THREAD_LOCAL uint_fast8_t softfloat_exceptionFlags;

@@ -1049,19 +1049,10 @@ static inline bool is_f80_infinity(RzFloat *f) {
 	if (f->r != RZ_FLOAT_IEEE754_BIN_80) {
 		return false;
 	}
-	ut32 significand_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
-	ut32 exponent_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_EXP_LEN);
-	for (ut32 i = 0; i < significand_len - 1; ++i) {
-		if (rz_bv_get(f->s, i)) {
-			return false;
-		}
-	}
-	for (ut32 i = significand_len; i < significand_len + exponent_len; ++i) {
-		if (!rz_bv_get(f->s, i)) {
-			return false;
-		}
-	}
-	return true;
+	/* rz_float_detect_spec treats both binary80 infinity encodings (the
+	 * explicit integer bit set or clear) as infinity. */
+	RzFloatSpec spec = rz_float_detect_spec(f);
+	return spec == RZ_FLOAT_SPEC_PINF || spec == RZ_FLOAT_SPEC_NINF;
 }
 
 /**
@@ -1082,9 +1073,16 @@ RZ_API bool rz_float_is_equal(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y) {
 		return false;
 	}
 
-	bool x_f80_inf = is_f80_infinity(x);
-	bool y_f80_inf = is_f80_infinity(y);
-	ut32 f80_integer_bit = rz_float_get_format_info(RZ_FLOAT_IEEE754_BIN_80, RZ_FLOAT_INFO_MAN_LEN) - 1;
+	/* Only binary80 needs the pseudo-infinity canonicalization below; keep
+	 * other formats on the plain bit-wise compare. */
+	bool x_f80_inf = false;
+	bool y_f80_inf = false;
+	ut32 f80_integer_bit = 0;
+	if (x->r == RZ_FLOAT_IEEE754_BIN_80) {
+		x_f80_inf = is_f80_infinity(x);
+		y_f80_inf = is_f80_infinity(y);
+		f80_integer_bit = rz_float_get_format_info(RZ_FLOAT_IEEE754_BIN_80, RZ_FLOAT_INFO_MAN_LEN) - 1;
+	}
 	for (ut32 i = 1; i < xb->len; ++i) {
 		bool x_bit = x_f80_inf && i == f80_integer_bit ? true : rz_bv_get(xb, i);
 		bool y_bit = y_f80_inf && i == f80_integer_bit ? true : rz_bv_get(yb, i);
@@ -1468,22 +1466,16 @@ RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL R
 		return of_float64(f64_mulAdd(to_float64(a), to_float64(b), to_float64(c)));
 	case RZ_FLOAT_IEEE754_BIN_80: {
 		/* We don't have a 80-bit FMA available in SoftFloat, so we cast the
-		 * float to 128-bit, perform FMA and cast it back. This should be fine
-		 * since th 80-bit and the 128-bit format differ only in the size of
-		 * their mantissa. */
+		 * float to 128-bit, perform FMA and cast it back. The exact product of
+		 * two 64-bit significands needs up to 128 significant bits while f128
+		 * carries only 113, so a plain f128_mulAdd + f128_to_extF80 rounds
+		 * twice and can be off by 1 ulp. Use a round-to-odd intermediate
+		 * instead: 113 bits keep enough information (more than 64 + 2) for
+		 * the final extF80 rounding to produce the correctly rounded result. */
 		float128_t a_resized = extF80_to_f128(to_float80(a));
 		float128_t b_resized = extF80_to_f128(to_float80(b));
 		float128_t c_resized = extF80_to_f128(to_float80(c));
 
-		if (extF80_roundingPrecision != RZ_FLOAT_RPREC_32 && extF80_roundingPrecision != RZ_FLOAT_RPREC_64) {
-			float128_t fma_resized = f128_mulAdd(a_resized, b_resized, c_resized);
-			return of_float80(f128_to_extF80(fma_resized));
-		}
-
-		/* SoftFloat's f128-to-extF80 conversion always rounds to full binary80
-		 * precision. Use round-to-odd intermediates so that the final extF80
-		 * operation can round once to the requested reduced precision without
-		 * a double-rounding error. */
 		uint_fast8_t requested_mode = softfloat_roundingMode;
 		uint_fast8_t accumulated_flags = softfloat_exceptionFlags;
 		softfloat_exceptionFlags = 0;
@@ -1503,6 +1495,25 @@ RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL R
 			fma_resized.v[0] |= 1;
 		}
 
+		if (extF80_roundingPrecision != RZ_FLOAT_RPREC_32 && extF80_roundingPrecision != RZ_FLOAT_RPREC_64) {
+			/* Full binary80 precision: the round-to-odd intermediate rounds
+			 * exactly once to the 64-bit significand with the requested mode. */
+			softfloat_exceptionFlags = 0;
+			softfloat_roundingMode = requested_mode;
+			extFloat80_t rounded = f128_to_extF80(fma_resized);
+			uint_fast8_t convert_flags = softfloat_exceptionFlags;
+
+			/* Intermediate underflow is decided by this final conversion,
+			 * while all other accumulated flags are preserved. */
+			fma_flags &= ~softfloat_flag_underflow;
+			softfloat_exceptionFlags |= accumulated_flags | fma_flags | convert_flags;
+			return of_float80(rounded);
+		}
+
+		/* SoftFloat's f128-to-extF80 conversion always rounds to full binary80
+		 * precision. Chain another round-to-odd intermediate so that the final
+		 * extF80 operation can round once to the requested reduced precision
+		 * without a double-rounding error. */
 		softfloat_exceptionFlags = 0;
 		extFloat80_t fma_f80 = f128_to_extF80(fma_resized);
 		uint_fast8_t convert_flags = softfloat_exceptionFlags;
@@ -1801,6 +1812,74 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 	return ret;
 }
 
+/* SoftFloat conversion thunks for rz_float_convert. One row per source format
+ * keeps the dispatch in a single place: adding a conversion path means adding
+ * one thunk and one table cell instead of touching symmetric switch cases. */
+typedef RzFloat *(*RzFloatConvertThunk)(RzFloat *f);
+
+#define RZ_FLOAT_CONVERT_THUNK(name, FROM, TO, FN) \
+	static RzFloat *name(RzFloat *f) { \
+		return of_float##TO(FN(to_float##FROM(f))); \
+	}
+
+RZ_FLOAT_CONVERT_THUNK(convert_f16_to_f32, 16, 32, f16_to_f32)
+RZ_FLOAT_CONVERT_THUNK(convert_f16_to_f64, 16, 64, f16_to_f64)
+RZ_FLOAT_CONVERT_THUNK(convert_f16_to_f80, 16, 80, f16_to_extF80)
+RZ_FLOAT_CONVERT_THUNK(convert_f16_to_f128, 16, 128, f16_to_f128)
+RZ_FLOAT_CONVERT_THUNK(convert_f32_to_f16, 32, 16, f32_to_f16)
+RZ_FLOAT_CONVERT_THUNK(convert_f32_to_f64, 32, 64, f32_to_f64)
+RZ_FLOAT_CONVERT_THUNK(convert_f32_to_f80, 32, 80, f32_to_extF80)
+RZ_FLOAT_CONVERT_THUNK(convert_f32_to_f128, 32, 128, f32_to_f128)
+RZ_FLOAT_CONVERT_THUNK(convert_f64_to_f16, 64, 16, f64_to_f16)
+RZ_FLOAT_CONVERT_THUNK(convert_f64_to_f32, 64, 32, f64_to_f32)
+RZ_FLOAT_CONVERT_THUNK(convert_f64_to_f80, 64, 80, f64_to_extF80)
+RZ_FLOAT_CONVERT_THUNK(convert_f64_to_f128, 64, 128, f64_to_f128)
+RZ_FLOAT_CONVERT_THUNK(convert_f80_to_f16, 80, 16, extF80_to_f16)
+RZ_FLOAT_CONVERT_THUNK(convert_f80_to_f32, 80, 32, extF80_to_f32)
+RZ_FLOAT_CONVERT_THUNK(convert_f80_to_f64, 80, 64, extF80_to_f64)
+RZ_FLOAT_CONVERT_THUNK(convert_f80_to_f128, 80, 128, extF80_to_f128)
+RZ_FLOAT_CONVERT_THUNK(convert_f128_to_f16, 128, 16, f128_to_f16)
+RZ_FLOAT_CONVERT_THUNK(convert_f128_to_f32, 128, 32, f128_to_f32)
+RZ_FLOAT_CONVERT_THUNK(convert_f128_to_f64, 128, 64, f128_to_f64)
+RZ_FLOAT_CONVERT_THUNK(convert_f128_to_f80, 128, 80, f128_to_extF80)
+
+/* The five IEEE-754 binary formats are the leading, densely numbered members
+ * of RzFloatFormat. */
+#define RZ_FLOAT_BINARY_FORMAT_COUNT (RZ_FLOAT_IEEE754_BIN_16 + 1)
+
+static RzFloatConvertThunk const softfloat_convert_table[RZ_FLOAT_BINARY_FORMAT_COUNT][RZ_FLOAT_BINARY_FORMAT_COUNT] = {
+	[RZ_FLOAT_IEEE754_BIN_16] = {
+		[RZ_FLOAT_IEEE754_BIN_32] = convert_f16_to_f32,
+		[RZ_FLOAT_IEEE754_BIN_64] = convert_f16_to_f64,
+		[RZ_FLOAT_IEEE754_BIN_80] = convert_f16_to_f80,
+		[RZ_FLOAT_IEEE754_BIN_128] = convert_f16_to_f128,
+	},
+	[RZ_FLOAT_IEEE754_BIN_32] = {
+		[RZ_FLOAT_IEEE754_BIN_16] = convert_f32_to_f16,
+		[RZ_FLOAT_IEEE754_BIN_64] = convert_f32_to_f64,
+		[RZ_FLOAT_IEEE754_BIN_80] = convert_f32_to_f80,
+		[RZ_FLOAT_IEEE754_BIN_128] = convert_f32_to_f128,
+	},
+	[RZ_FLOAT_IEEE754_BIN_64] = {
+		[RZ_FLOAT_IEEE754_BIN_16] = convert_f64_to_f16,
+		[RZ_FLOAT_IEEE754_BIN_32] = convert_f64_to_f32,
+		[RZ_FLOAT_IEEE754_BIN_80] = convert_f64_to_f80,
+		[RZ_FLOAT_IEEE754_BIN_128] = convert_f64_to_f128,
+	},
+	[RZ_FLOAT_IEEE754_BIN_80] = {
+		[RZ_FLOAT_IEEE754_BIN_16] = convert_f80_to_f16,
+		[RZ_FLOAT_IEEE754_BIN_32] = convert_f80_to_f32,
+		[RZ_FLOAT_IEEE754_BIN_64] = convert_f80_to_f64,
+		[RZ_FLOAT_IEEE754_BIN_128] = convert_f80_to_f128,
+	},
+	[RZ_FLOAT_IEEE754_BIN_128] = {
+		[RZ_FLOAT_IEEE754_BIN_16] = convert_f128_to_f16,
+		[RZ_FLOAT_IEEE754_BIN_32] = convert_f128_to_f32,
+		[RZ_FLOAT_IEEE754_BIN_64] = convert_f128_to_f64,
+		[RZ_FLOAT_IEEE754_BIN_80] = convert_f128_to_f80,
+	},
+};
+
 /**
  * convert float from format A to a new format B
  * \param f float
@@ -1816,6 +1895,11 @@ RZ_API RZ_OWN RzFloat *rz_float_convert(RZ_NONNULL RzFloat *f, RzFloatFormat for
 		if (ret) {
 			rz_float_set_sign(ret, rz_float_get_sign(f));
 			ret->exception |= f->exception;
+			if (rz_float_detect_spec(f) == RZ_FLOAT_SPEC_SNAN) {
+				/* Quieting a signaling NaN raises the invalid-operation
+				 * exception, like the SoftFloat conversions below do. */
+				ret->exception |= RZ_FLOAT_E_INVALID_OP;
+			}
 		}
 		return ret;
 	}
@@ -1843,109 +1927,11 @@ RZ_API RZ_OWN RzFloat *rz_float_convert(RZ_NONNULL RzFloat *f, RzFloatFormat for
 	set_float_rounding_mode(mode);
 	softfloat_exceptionFlags = 0;
 	RzFloat *ret = NULL;
-	switch (f->r) {
-	case RZ_FLOAT_IEEE754_BIN_16: {
-		float16_t value = to_float16(f);
-		switch (format) {
-		case RZ_FLOAT_IEEE754_BIN_32:
-			ret = of_float32(f16_to_f32(value));
-			break;
-		case RZ_FLOAT_IEEE754_BIN_64:
-			ret = of_float64(f16_to_f64(value));
-			break;
-		case RZ_FLOAT_IEEE754_BIN_80:
-			ret = of_float80(f16_to_extF80(value));
-			break;
-		case RZ_FLOAT_IEEE754_BIN_128:
-			ret = of_float128(f16_to_f128(value));
-			break;
-		default:
-			break;
+	if (f->r < RZ_FLOAT_BINARY_FORMAT_COUNT && format < RZ_FLOAT_BINARY_FORMAT_COUNT) {
+		RzFloatConvertThunk thunk = softfloat_convert_table[f->r][format];
+		if (thunk) {
+			ret = thunk(f);
 		}
-		break;
-	}
-	case RZ_FLOAT_IEEE754_BIN_32: {
-		float32_t value = to_float32(f);
-		switch (format) {
-		case RZ_FLOAT_IEEE754_BIN_16:
-			ret = of_float16(f32_to_f16(value));
-			break;
-		case RZ_FLOAT_IEEE754_BIN_64:
-			ret = of_float64(f32_to_f64(value));
-			break;
-		case RZ_FLOAT_IEEE754_BIN_80:
-			ret = of_float80(f32_to_extF80(value));
-			break;
-		case RZ_FLOAT_IEEE754_BIN_128:
-			ret = of_float128(f32_to_f128(value));
-			break;
-		default:
-			break;
-		}
-		break;
-	}
-	case RZ_FLOAT_IEEE754_BIN_64: {
-		float64_t value = to_float64(f);
-		switch (format) {
-		case RZ_FLOAT_IEEE754_BIN_16:
-			ret = of_float16(f64_to_f16(value));
-			break;
-		case RZ_FLOAT_IEEE754_BIN_32:
-			ret = of_float32(f64_to_f32(value));
-			break;
-		case RZ_FLOAT_IEEE754_BIN_80:
-			ret = of_float80(f64_to_extF80(value));
-			break;
-		case RZ_FLOAT_IEEE754_BIN_128:
-			ret = of_float128(f64_to_f128(value));
-			break;
-		default:
-			break;
-		}
-		break;
-	}
-	case RZ_FLOAT_IEEE754_BIN_80: {
-		extFloat80_t value = to_float80(f);
-		switch (format) {
-		case RZ_FLOAT_IEEE754_BIN_16:
-			ret = of_float16(extF80_to_f16(value));
-			break;
-		case RZ_FLOAT_IEEE754_BIN_32:
-			ret = of_float32(extF80_to_f32(value));
-			break;
-		case RZ_FLOAT_IEEE754_BIN_64:
-			ret = of_float64(extF80_to_f64(value));
-			break;
-		case RZ_FLOAT_IEEE754_BIN_128:
-			ret = of_float128(extF80_to_f128(value));
-			break;
-		default:
-			break;
-		}
-		break;
-	}
-	case RZ_FLOAT_IEEE754_BIN_128: {
-		float128_t value = to_float128(f);
-		switch (format) {
-		case RZ_FLOAT_IEEE754_BIN_16:
-			ret = of_float16(f128_to_f16(value));
-			break;
-		case RZ_FLOAT_IEEE754_BIN_32:
-			ret = of_float32(f128_to_f32(value));
-			break;
-		case RZ_FLOAT_IEEE754_BIN_64:
-			ret = of_float64(f128_to_f64(value));
-			break;
-		case RZ_FLOAT_IEEE754_BIN_80:
-			ret = of_float80(f128_to_extF80(value));
-			break;
-		default:
-			break;
-		}
-		break;
-	}
-	default:
-		break;
 	}
 	if (ret) {
 		ret->exception |= f->exception;

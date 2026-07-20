@@ -606,10 +606,16 @@ VALIDATOR_PURE(forder) {
 	VALIDATOR_ASSERT(sy.type == RZ_IL_TYPE_PURE_FLOAT, "Right operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
 
 	// flatten validator assert
-	VALIDATOR_ASSERT(sx.props.f.format == sy.props.f.format, "Op %s formats of left operand (%s) and right operand (%s) do not agree.\n",
-		rz_il_op_pure_code_stringify(op->code),
-		rz_il_sort_pure_stringify(sx),
-		rz_il_sort_pure_stringify(sy));
+	if (sx.props.f.format != sy.props.f.format) {
+		rz_warn_if_reached();
+		char *sx_s = rz_il_sort_pure_stringify(sx);
+		char *sy_s = rz_il_sort_pure_stringify(sy);
+		rz_strbuf_appendf(report_builder, "Op %s formats of left operand (%s) and right operand (%s) do not agree.\n",
+			rz_il_op_pure_code_stringify(op->code), sx_s, sy_s);
+		free(sx_s);
+		free(sy_s);
+		return false;
+	}
 
 	*sort_out = rz_il_sort_pure_bool();
 	return true;
@@ -682,33 +688,8 @@ VALIDATOR_PURE(float_binop_with_round) {
 }
 
 VALIDATOR_PURE(float_with_runtime_rmode) {
-	RzILOpBitVector *rmode;
-	switch (op->code) {
-	case RZ_IL_OP_FCONVERT_WITH_RMODE:
-		rmode = op->op.fconvert_with_rmode.rmode;
-		break;
-	case RZ_IL_OP_FROUND_WITH_RMODE:
-		rmode = op->op.fround_with_rmode.rmode;
-		break;
-	case RZ_IL_OP_FSQRT_WITH_RMODE:
-		rmode = op->op.fsqrt_with_rmode.rmode;
-		break;
-	case RZ_IL_OP_FADD_WITH_RMODE:
-		rmode = op->op.fadd_with_rmode.rmode;
-		break;
-	case RZ_IL_OP_FSUB_WITH_RMODE:
-		rmode = op->op.fsub_with_rmode.rmode;
-		break;
-	case RZ_IL_OP_FMUL_WITH_RMODE:
-		rmode = op->op.fmul_with_rmode.rmode;
-		break;
-	case RZ_IL_OP_FDIV_WITH_RMODE:
-		rmode = op->op.fdiv_with_rmode.rmode;
-		break;
-	case RZ_IL_OP_FMOD_WITH_RMODE:
-		rmode = op->op.fmod_with_rmode.rmode;
-		break;
-	default:
+	RzILOpBitVector *rmode = rz_il_op_pure_float_rmode_operand(op);
+	if (!rmode) {
 		rz_warn_if_reached();
 		return false;
 	}
@@ -731,57 +712,30 @@ VALIDATOR_PURE(float_with_runtime_rmode) {
 		};
 		return VALIDATOR_PURE_NAME(fconvert)(&delegated, sort_out, report_builder, ctx, local_pure_var_stack);
 	case RZ_IL_OP_FROUND_WITH_RMODE:
+	case RZ_IL_OP_FSQRT_WITH_RMODE:
+		/* fround_with_rmode and fsqrt_with_rmode share
+		 * RzILOpArgsFloatAlgUnopWithRmode. */
 		delegated.op.fround = (RzILOpArgsFround){
 			.rmode = RZ_FLOAT_RMODE_RNE,
 			.f = op->op.fround_with_rmode.f,
 		};
 		return VALIDATOR_PURE_NAME(float_uop_with_round)(&delegated, sort_out, report_builder, ctx, local_pure_var_stack);
-	case RZ_IL_OP_FSQRT_WITH_RMODE:
-		delegated.op.fround = (RzILOpArgsFround){
-			.rmode = RZ_FLOAT_RMODE_RNE,
-			.f = op->op.fsqrt_with_rmode.f,
-		};
-		return VALIDATOR_PURE_NAME(float_uop_with_round)(&delegated, sort_out, report_builder, ctx, local_pure_var_stack);
 	case RZ_IL_OP_FADD_WITH_RMODE:
+	case RZ_IL_OP_FSUB_WITH_RMODE:
+	case RZ_IL_OP_FMUL_WITH_RMODE:
+	case RZ_IL_OP_FDIV_WITH_RMODE:
+	case RZ_IL_OP_FMOD_WITH_RMODE:
+		/* All binop-with-rmode args share RzILOpArgsFloatAlgBinopWithRmode. */
 		delegated.op.fadd = (RzILOpArgsFadd){
 			.rmode = RZ_FLOAT_RMODE_RNE,
 			.x = op->op.fadd_with_rmode.x,
 			.y = op->op.fadd_with_rmode.y,
 		};
-		break;
-	case RZ_IL_OP_FSUB_WITH_RMODE:
-		delegated.op.fadd = (RzILOpArgsFadd){
-			.rmode = RZ_FLOAT_RMODE_RNE,
-			.x = op->op.fsub_with_rmode.x,
-			.y = op->op.fsub_with_rmode.y,
-		};
-		break;
-	case RZ_IL_OP_FMUL_WITH_RMODE:
-		delegated.op.fadd = (RzILOpArgsFadd){
-			.rmode = RZ_FLOAT_RMODE_RNE,
-			.x = op->op.fmul_with_rmode.x,
-			.y = op->op.fmul_with_rmode.y,
-		};
-		break;
-	case RZ_IL_OP_FDIV_WITH_RMODE:
-		delegated.op.fadd = (RzILOpArgsFadd){
-			.rmode = RZ_FLOAT_RMODE_RNE,
-			.x = op->op.fdiv_with_rmode.x,
-			.y = op->op.fdiv_with_rmode.y,
-		};
-		break;
-	case RZ_IL_OP_FMOD_WITH_RMODE:
-		delegated.op.fadd = (RzILOpArgsFadd){
-			.rmode = RZ_FLOAT_RMODE_RNE,
-			.x = op->op.fmod_with_rmode.x,
-			.y = op->op.fmod_with_rmode.y,
-		};
-		break;
+		return VALIDATOR_PURE_NAME(float_binop_with_round)(&delegated, sort_out, report_builder, ctx, local_pure_var_stack);
 	default:
 		rz_warn_if_reached();
 		return false;
 	}
-	return VALIDATOR_PURE_NAME(float_binop_with_round)(&delegated, sort_out, report_builder, ctx, local_pure_var_stack);
 }
 
 VALIDATOR_PURE(float_terop_with_round) {
@@ -797,12 +751,18 @@ VALIDATOR_PURE(float_terop_with_round) {
 	VALIDATOR_DESCEND(args->z, &sz);
 	VALIDATOR_ASSERT(sz.type == RZ_IL_TYPE_PURE_FLOAT, "3rd operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
 
-	VALIDATOR_ASSERT((sx.props.f.format == sy.props.f.format) && (sx.props.f.format == sz.props.f.format),
-		"types of operand in op %s do not agree: operand1 (%s) operand2 (%s) operand3 (%s)",
-		rz_il_op_pure_code_stringify(op->code),
-		rz_il_sort_pure_stringify(sx),
-		rz_il_sort_pure_stringify(sy),
-		rz_il_sort_pure_stringify(sz));
+	if ((sx.props.f.format != sy.props.f.format) || (sx.props.f.format != sz.props.f.format)) {
+		rz_warn_if_reached();
+		char *sx_s = rz_il_sort_pure_stringify(sx);
+		char *sy_s = rz_il_sort_pure_stringify(sy);
+		char *sz_s = rz_il_sort_pure_stringify(sz);
+		rz_strbuf_appendf(report_builder, "types of operand in op %s do not agree: operand1 (%s) operand2 (%s) operand3 (%s)",
+			rz_il_op_pure_code_stringify(op->code), sx_s, sy_s, sz_s);
+		free(sx_s);
+		free(sy_s);
+		free(sz_s);
+		return false;
+	}
 
 	*sort_out = sx;
 	return true;

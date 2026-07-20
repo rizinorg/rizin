@@ -1792,6 +1792,54 @@ bool float_convert_range_test(void) {
 	mu_end;
 }
 
+bool float_convert_snan_test(void) {
+	/* Converting a signaling NaN quiets it and must raise the
+	 * invalid-operation exception, like the SoftFloat conversion paths do. */
+	RzFloat *snan32 = rz_float_new_snan(RZ_FLOAT_IEEE754_BIN_32);
+	RzFloat *converted = rz_float_convert(snan32, RZ_FLOAT_IEEE754_BIN_64, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(rz_float_is_nan(converted), "sNaN converts to a NaN");
+	mu_assert_eq(rz_float_detect_spec(converted), RZ_FLOAT_SPEC_QNAN, "sNaN conversion quiets the NaN");
+	mu_assert_true(converted->exception & RZ_FLOAT_E_INVALID_OP, "sNaN conversion raises invalid operation");
+	rz_float_free(converted);
+
+	converted = rz_float_convert(snan32, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_eq(rz_float_detect_spec(converted), RZ_FLOAT_SPEC_QNAN, "same-format sNaN conversion quiets the NaN");
+	mu_assert_true(converted->exception & RZ_FLOAT_E_INVALID_OP, "same-format sNaN conversion raises invalid operation");
+	rz_float_free(converted);
+	rz_float_free(snan32);
+
+	/* Quiet NaNs convert without raising invalid operation. */
+	RzFloat *qnan32 = rz_float_new_qnan(RZ_FLOAT_IEEE754_BIN_32);
+	converted = rz_float_convert(qnan32, RZ_FLOAT_IEEE754_BIN_64, RZ_FLOAT_RMODE_RNE);
+	mu_assert_eq(rz_float_detect_spec(converted), RZ_FLOAT_SPEC_QNAN, "qNaN converts to a quiet NaN");
+	mu_assert_false(converted->exception & RZ_FLOAT_E_INVALID_OP, "qNaN conversion does not raise invalid operation");
+	rz_float_free(converted);
+	rz_float_free(qnan32);
+	mu_end;
+}
+
+bool f80_ieee_fma_test(void) {
+	/* The exact product-sum (1 + 2^-63) * 1 + (2^-64 - 2^-113) rounds to
+	 * 1 + 2^-63 in a single rounding. Staging it through an f128 FMA double
+	 * rounds (113 bits, then 64) and the staged tie carries twice, yielding
+	 * 1 + 2^-62 instead; a round-to-odd intermediate prevents that. */
+	RzFloatRPrecision saved_precision = rz_float_ext80_get_rounding_precision();
+	rz_float_ext80_set_rounding_precision(RZ_FLOAT_RPREC_80);
+	RzFloat *a = new_f80_from_bytes("\x3f\xff\x80\x00\x00\x00\x00\x00\x00\x01");
+	RzFloat *b = new_f80_from_bytes("\x3f\xff\x80\x00\x00\x00\x00\x00\x00\x00");
+	RzFloat *c = new_f80_from_bytes("\x3f\xbe\xff\xff\xff\xff\xff\xff\x80\x00");
+	RzFloat *res = rz_float_fma(a, b, c, RZ_FLOAT_RMODE_RNE);
+	mu_assert_streq_free(rz_float_as_hex_string(res, true), "0x3fff8000000000000001",
+		"binary80 fma rounds the product-sum once");
+	mu_assert_true(res->exception & RZ_FLOAT_E_INEXACT, "binary80 fma of an inexact result raises inexact");
+	rz_float_free(res);
+	rz_float_free(c);
+	rz_float_free(b);
+	rz_float_free(a);
+	rz_float_ext80_set_rounding_precision(saved_precision);
+	mu_end;
+}
+
 bool f80_ieee_special_num_test(void) {
 	RzFloat *pinf = rz_float_new_inf(RZ_FLOAT_IEEE754_BIN_80, false);
 	RzFloat *pseudo_inf = new_f80_from_bytes("\x7f\xff\x00\x00\x00\x00\x00\x00\x00\x00");
@@ -2068,6 +2116,8 @@ bool all_tests() {
 	mu_run_test(f80_ieee_div_test);
 	mu_run_test(f80_ieee_sqrt_test);
 	mu_run_test(f80_ieee_cast_test);
+	mu_run_test(float_convert_snan_test);
+	mu_run_test(f80_ieee_fma_test);
 	mu_run_test(f128_ieee_div_test);
 	return tests_passed != tests_run;
 }

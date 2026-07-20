@@ -1105,6 +1105,35 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcompound(RzFloatRMode rmode, RZ_NONNULL
 #undef rz_il_op_new_3
 
 /**
+ * \brief Get the rounding-mode operand of a float op with a runtime rounding
+ * mode (RZ_IL_OP_F*_WITH_RMODE).
+ * \param op pure IL op
+ * \return the rmode bitvector operand, or NULL if \p op has no runtime
+ * rounding mode
+ */
+RZ_API RZ_NULLABLE RzILOpBitVector *rz_il_op_pure_float_rmode_operand(RZ_NONNULL const RzILOpPure *op) {
+	rz_return_val_if_fail(op, NULL);
+	switch (op->code) {
+	case RZ_IL_OP_FCONVERT_WITH_RMODE:
+		return op->op.fconvert_with_rmode.rmode;
+	case RZ_IL_OP_FROUND_WITH_RMODE:
+	case RZ_IL_OP_FSQRT_WITH_RMODE:
+		/* fround_with_rmode and fsqrt_with_rmode share
+		 * RzILOpArgsFloatAlgUnopWithRmode. */
+		return op->op.fround_with_rmode.rmode;
+	case RZ_IL_OP_FADD_WITH_RMODE:
+	case RZ_IL_OP_FSUB_WITH_RMODE:
+	case RZ_IL_OP_FMUL_WITH_RMODE:
+	case RZ_IL_OP_FDIV_WITH_RMODE:
+	case RZ_IL_OP_FMOD_WITH_RMODE:
+		/* All binop-with-rmode args share RzILOpArgsFloatAlgBinopWithRmode. */
+		return op->op.fadd_with_rmode.rmode;
+	default:
+		return NULL;
+	}
+}
+
+/**
  * Duplicate the given op recursively, for example to reuse it multiple times in another op.
  */
 RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
