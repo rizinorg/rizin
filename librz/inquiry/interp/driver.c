@@ -51,6 +51,7 @@ typedef struct interp_driver_message_t {
 typedef struct interp_driver_t {
 	RzThreadQueue /*<ut64>*/ *entry_points_ch; ///< Main delivers entry points to multiple interpreters with this. TODO: linked list is not optimal, but rbuf may lead to starvation
 	RzThreadRingBuf *main_ch; ///< Channel to main. Multiple interpreters send info requests and analysis results with this.
+	RzInterpResultDimen dimens;
 } InterpDriver;
 
 /**
@@ -91,7 +92,7 @@ static void *interp_th(void *user) {
 		}
 		ut64 entry_point_val = *entry_point;
 		free(entry_point);
-		RzInterpResult *res = rz_interp_run(inst, entry_point_val, RZ_INTERP_RESULT_DIMEN_XREFS | RZ_INTERP_RESULT_DIMEN_COMMENTS); // TODO: make dimensions configurable
+		RzInterpResult *res = rz_interp_run(inst, entry_point_val, ctx->driver->dimens);
 		if (res) {
 			InterpDriverMessage msg = {
 				.type = DRIVER_MESSAGE_INTERP_RESULT,
@@ -225,7 +226,7 @@ static RzInterpIOReadResult handle_io_request(const RzAnalysisILContext *il_ctx,
 	return ok ? RZ_INTERP_IO_READ_RESULT_TOP : RZ_INTERP_IO_READ_RESULT_TOP;
 }
 
-RZ_API bool rz_interp_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points) {
+RZ_API bool rz_interp_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points, RzInterpResultDimen dimens) {
 	bool return_code = false;
 
 	bool user_sent_signal = false;
@@ -235,7 +236,9 @@ RZ_API bool rz_interp_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points) {
 		goto err_none;
 	}
 
-	InterpDriver driver;
+	InterpDriver driver = {
+		.dimens = dimens
+	};
 	driver.entry_points_ch = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, free);
 	if (!driver.entry_points_ch) {
 		goto err_il_cache;

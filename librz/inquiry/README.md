@@ -8,7 +8,10 @@ Module implementing basic and advanced binary analysis.
 ## TODO
 
 * rename interp to absint
-* rename valeabstraction to valuedomain
+* rename valueabstraction to valuedomain
+* update tests
+* branch and remove everything that should not be merged at first
+* rebase/squash abstr-intr-prototype on top of new branch
 
 ## Interpreter Notes
 

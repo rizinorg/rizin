@@ -32,6 +32,7 @@ static bool file_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
  */
 
 static const char *config_exclude_save[] = {
+	"inquiry.comment", // experimental
 	NULL
 };
 
@@ -59,6 +60,7 @@ static const char *config_exclude_load[] = {
 	"scr.utf8",
 	"scr.utf8.curvy",
 	"ghidra.sleighhome", // also important for Cutter
+	"inquiry.comment", // experimental
 	NULL
 };
 
