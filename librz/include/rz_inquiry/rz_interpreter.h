@@ -233,7 +233,7 @@ struct rz_interp_result_t {
 } /*RzInterpResult*/;
 
 RZ_API RzInterpResult *rz_interp_run(RzInterpInstance *inst, ut64 entry_point, RzInterpResultDimen dimen);
-RZ_API void rz_interp_result_apply_to_analysis(RZ_NONNULL RzInterpResult *res, RZ_NONNULL RzAnalysis *analysis);
+RZ_API bool rz_interp_result_apply_to_analysis(RZ_NONNULL RzInterpResult *res, RZ_NONNULL RzAnalysis *analysis);
 
 extern RZ_API RzInterpValueAbstraction rz_interp_value_domain_const;
 

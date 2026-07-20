@@ -316,7 +316,9 @@ RZ_API bool rz_interp_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points) {
 		}
 		case DRIVER_MESSAGE_INTERP_RESULT: {
 			RzInterpResult *res = msg.payload.interp_result;
-			rz_interp_result_apply_to_analysis(res, core->analysis);
+			if (!rz_interp_result_apply_to_analysis(res, core->analysis)) {
+				RZ_LOG_WARN("Failed to apply to analysis\n");
+			}
 			entries_finished++;
 			break;
 		}

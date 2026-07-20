@@ -1472,11 +1472,15 @@ static void bb_add_target(RzAnalysisBlock *abb, ut64 target) {
 	}
 }
 
-RZ_API void rz_interp_result_apply_to_analysis(RZ_NONNULL RzInterpResult *res, RZ_NONNULL RzAnalysis *analysis) {
-	rz_return_if_fail(res && analysis);
+RZ_API bool rz_interp_result_apply_to_analysis(RZ_NONNULL RzInterpResult *res, RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(res && analysis, false);
 	// partially copied from rz_inquiry_convert_and_add_to_analysis()
 	char name[128];
 	RzAnalysisFunction *func = rz_analysis_create_function(analysis, rz_strf(name, "inquiry.0x%" PFMT64x, res->entry), res->entry, RZ_ANALYSIS_FCN_TYPE_FCN);
+	if (!func) {
+		// TODO: handle better than skipping everything
+		return false;
+	}
 	RzIntervalTreeIter it;
 	RzInterpBlock *block;
 	rz_interval_tree_foreach (&res->blocks, it, block) {
@@ -1553,4 +1557,6 @@ RZ_API void rz_interp_result_apply_to_analysis(RZ_NONNULL RzInterpResult *res, R
 		}
 		rz_iterator_free(it);
 	}
+
+	return true;
 }
