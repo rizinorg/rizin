@@ -159,12 +159,18 @@ typedef enum rz_interp_io_read_result_t {
 	RZ_INTERP_IO_READ_RESULT_BREAK ///< interpreter is signaled to stop
 } RzInterpIOReadResult;
 
+typedef enum rz_interp_lift_block_result_t {
+	RZ_INTERP_LIFT_BLOCK_RESULT_OK, ///< block_out is filled
+	RZ_INTERP_LIFT_BLOCK_RESULT_FAILED,
+	RZ_INTERP_LIFT_BLOCK_RESULT_BREAK ///< interpreter is signaled to stop
+} RzInterpLiftBlockResult;
+
 typedef struct rz_interp_config_t {
 	RzInterpValueAbstraction *val_domain;
 
 	void *cb_user;
 	RzInterpIOReadResult (*io_read)(RZ_NONNULL RZ_OWN RzInterpIOReadRequest *req, void *user);
-	const RzILCacheBlock *(*lift_block)(ut64 addr, void *user);
+	RzInterpLiftBlockResult (*lift_block)(ut64 addr, RZ_OUT const RzILCacheBlock **block_out, void *user);
 } RzInterpConfig;
 
 /**

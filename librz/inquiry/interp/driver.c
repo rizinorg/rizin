@@ -30,6 +30,7 @@ typedef struct interp_thread InterpThread;
 typedef struct interp_driver_message_t {
 	enum {
 		DRIVER_MESSAGE_IO_READ,
+		DRIVER_MESSAGE_LIFT_BLOCK,
 		DRIVER_MESSAGE_INTERP_RESULT
 	} type;
 	union {
@@ -37,6 +38,10 @@ typedef struct interp_driver_message_t {
 			RzInterpIOReadRequest *request;
 			InterpThread *requester;
 		} io_read;
+		struct {
+			ut64 addr;
+			InterpThread *requester;
+		} lift_block;
 		RzInterpResult *interp_result;
 	} payload;
 } InterpDriverMessage;
@@ -54,16 +59,17 @@ typedef struct interp_driver_t {
  */
 typedef struct interp_thread_message_t {
 	enum {
-		INTERP_MESSAGE_IO_READ_RESULT
+		INTERP_MESSAGE_IO_READ_RESULT,
+		INTERP_MESSAGE_LIFT_BLOCK_RESULT
 	} type;
 	union {
 		RzInterpIOReadResult io_read_result;
+		const RzILCacheBlock *lift_block_result;
 	} payload;
 } InterpThreadMessage;
 
 struct interp_thread {
 	InterpDriver *driver;
-	RzILCacheClient *il_cache_client;
 	RzThread *th;
 	RzInterpInstance *inst;
 
@@ -123,18 +129,38 @@ static RzInterpIOReadResult send_io_read(RZ_NONNULL RzInterpIOReadRequest *req, 
 	return ret.payload.io_read_result;
 }
 
-static const RzILCacheBlock *send_lift_il_block(ut64 addr, void *user) {
+static RzInterpLiftBlockResult send_lift_il_block(ut64 addr, const RzILCacheBlock **block_out, void *user) {
 	InterpThread *th = user;
-	return rz_il_cache_client_lift_il_block(th->il_cache_client, addr);
+	InterpDriverMessage msg = {
+		.type = DRIVER_MESSAGE_LIFT_BLOCK,
+		.payload = {
+			.lift_block = {
+				.addr = addr,
+				.requester = th
+			}
+		}
+	};
+	if (rz_th_ring_buf_put(th->driver->main_ch, &msg) != RZ_THREAD_RING_BUF_OK) {
+		return RZ_INTERP_LIFT_BLOCK_RESULT_BREAK;
+	}
+	InterpThreadMessage ret;
+	if (rz_th_ring_buf_take_blocking(th->ch, &ret) != RZ_THREAD_RING_BUF_OK) {
+		return RZ_INTERP_LIFT_BLOCK_RESULT_BREAK;
+	}
+	rz_return_val_if_fail(ret.type == INTERP_MESSAGE_LIFT_BLOCK_RESULT, RZ_INTERP_LIFT_BLOCK_RESULT_BREAK);
+	if (ret.payload.lift_block_result) {
+		*block_out = ret.payload.lift_block_result;
+		return RZ_INTERP_LIFT_BLOCK_RESULT_OK;
+	}
+	return RZ_INTERP_LIFT_BLOCK_RESULT_FAILED;
 }
 
-static InterpThread *interp_thread_new(RzAnalysis *analysis, InterpDriver *driver, RZ_OWN RzILCacheClient *il_cache_client) {
+static InterpThread *interp_thread_new(RzAnalysis *analysis, InterpDriver *driver) {
 	InterpThread *ctx = RZ_NEW(InterpThread);
 	if (!ctx) {
 		return NULL;
 	}
 	ctx->driver = driver;
-	ctx->il_cache_client = il_cache_client;
 	ctx->ch = rz_th_ring_buf_new(1, sizeof(InterpThreadMessage)); // At the moment, threads directly wait after a single request, so size 1 is enough
 	if (!ctx->ch) {
 		goto err_ctx;
@@ -204,20 +230,15 @@ RZ_API bool rz_interp_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points) {
 
 	bool user_sent_signal = false;
 
-	RzILCache *il_cache = rz_il_cache_new(core->analysis, core->io, rz_bin_object_get_sections(core->bin->cur->o),
-		RZ_IL_CACHE_CONFIG_NOP_UNLIFTED | RZ_IL_CACHE_CONFIG_NO_SLEEP);
+	RzILCache *il_cache = rz_il_cache_new(core->analysis, core->io, RZ_IL_CACHE_CONFIG_NOP_UNLIFTED);
 	if (!il_cache) {
 		goto err_none;
-	}
-	RzThread *il_cache_th = rz_th_new((RzThreadFunction)rz_il_cache_serve, il_cache);
-	if (!il_cache_th) {
-		goto err_il_cache;
 	}
 
 	InterpDriver driver;
 	driver.entry_points_ch = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, free);
 	if (!driver.entry_points_ch) {
-		goto err_il_cache_th;
+		goto err_il_cache;
 	}
 	driver.main_ch = rz_th_ring_buf_new(DRIVER_MAIN_CH_SIZE, sizeof(InterpDriverMessage));
 	if (!driver.main_ch) {
@@ -248,13 +269,7 @@ RZ_API bool rz_interp_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points) {
 
 	// Initialize and spawn the interpreters.
 	for (size_t i = 0; i < n_threads; ++i) {
-		RzILCacheClient *cache_client = rz_il_cache_new_client(il_cache, true);
-		if (!cache_client) {
-			return_code = false;
-			rz_warn_if_reached();
-			goto err_threads;
-		}
-		threads[i] = interp_thread_new(core->analysis, &driver, cache_client);
+		threads[i] = interp_thread_new(core->analysis, &driver);
 		if (!threads[i]) {
 			goto err_threads;
 		}
@@ -285,6 +300,20 @@ RZ_API bool rz_interp_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points) {
 			}
 			break;
 		}
+		case DRIVER_MESSAGE_LIFT_BLOCK: {
+			const RzILCacheBlock *block = rz_il_cache_lift_il_block(il_cache, msg.payload.lift_block.addr);
+			InterpThreadMessage res_msg = {
+				.type = INTERP_MESSAGE_LIFT_BLOCK_RESULT,
+				.payload = {
+					.lift_block_result = block
+				}
+			};
+			if (rz_th_ring_buf_put(msg.payload.lift_block.requester->ch, &res_msg) != RZ_THREAD_RING_BUF_OK) {
+				// should not be closed
+				rz_warn_if_reached();
+			}
+			break;
+		}
 		case DRIVER_MESSAGE_INTERP_RESULT: {
 			RzInterpResult *res = msg.payload.interp_result;
 			rz_interp_result_apply_to_analysis(res, core->analysis);
@@ -310,9 +339,6 @@ err_main_ch:
 	rz_th_ring_buf_free(driver.main_ch);
 err_entry_points_ch:
 	rz_th_queue_free(driver.entry_points_ch);
-err_il_cache_th:
-	rz_il_cache_stop_serving(il_cache);
-	rz_th_wait(il_cache_th);
 err_il_cache:
 	rz_il_cache_free(il_cache);
 err_none:

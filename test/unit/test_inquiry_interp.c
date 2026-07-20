@@ -9,7 +9,6 @@ typedef struct test_interp_t {
 	RzAnalysis *analysis;
 	RzIO *io;
 	RzILCache *il_cache;
-	RzILCacheClient *il_cache_client;
 	RzInterpInstance *inst;
 } TestInterp;
 
@@ -17,9 +16,14 @@ static RzInterpIOReadResult io_read(RzInterpIOReadRequest *req, void *user) {
 	return RZ_INTERP_IO_READ_RESULT_TOP; // Currently we do not care about contents, just make the interpreter continue
 }
 
-static const RzILCacheBlock *lift_block(ut64 addr, void *user) {
+static RzInterpLiftBlockResult lift_block(ut64 addr, const RzILCacheBlock **block_out, void *user) {
 	TestInterp *interp = user;
-	return rz_il_cache_client_lift_il_block(interp->il_cache_client, addr);
+	const RzILCacheBlock *block = rz_il_cache_lift_il_block(interp->il_cache, addr);
+	if (block) {
+		*block_out = block;
+		return RZ_INTERP_LIFT_BLOCK_RESULT_OK;
+	}
+	return RZ_INTERP_LIFT_BLOCK_RESULT_FAILED;
 }
 
 static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char *url) {
@@ -31,8 +35,7 @@ static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char
 	rz_analysis_set_bits(interp->analysis, bits);
 	interp->io = rz_io_new();
 	interp->io->va = 1;
-	interp->il_cache = rz_il_cache_new(interp->analysis, interp->io, NULL, RZ_IL_CACHE_CONFIG_NOP_UNLIFTED | RZ_IL_CACHE_CONFIG_NO_SLEEP);
-	interp->il_cache_client = rz_il_cache_new_client(interp->il_cache, false);
+	interp->il_cache = rz_il_cache_new(interp->analysis, interp->io, RZ_IL_CACHE_CONFIG_NOP_UNLIFTED);
 	RzInterpConfig config = {
 		.val_domain = &rz_interp_value_domain_const,
 		.cb_user = interp,
@@ -147,7 +150,7 @@ bool test_interp_block_resolve_bounds_single(void) {
 	RzInterpBlock *block = rz_interp_block_at(&ctx, 0x10008);
 	mu_assert_notnull(block, "block");
 
-	RzILCacheBlock *il_block = rz_il_cache_lift_il_block(interp->il_cache, 0x10008);
+	const RzILCacheBlock *il_block = rz_il_cache_lift_il_block(interp->il_cache, 0x10008);
 	rz_interp_block_resolve_bounds(&ctx, block, il_block);
 	mu_assert_true(block->bounds_resolved, "bounds resolved");
 	mu_assert_eq(rz_interp_block_get_start(block), 0x10008, "block start");
@@ -206,7 +209,7 @@ bool test_interp_block_resolve_bounds_prepend(bool single_op_existing_block, boo
 	RzInterpBlock *block = rz_interp_block_at(&ctx, prepended_block_start);
 	mu_assert_notnull(block, "block");
 
-	RzILCacheBlock *il_block = rz_il_cache_lift_il_block(interp->il_cache, prepended_block_start);
+	const RzILCacheBlock *il_block = rz_il_cache_lift_il_block(interp->il_cache, prepended_block_start);
 	rz_interp_block_resolve_bounds(&ctx, block, il_block);
 
 	mu_assert_true(block->bounds_resolved, "bounds resolved");
@@ -256,7 +259,7 @@ bool test_interp_block_resolve_bounds_split(bool single_op_existing_block, bool 
 	RzInterpBlock *existing_block = rz_interp_block_at(&ctx, existing_block_start);
 	mu_assert_notnull(existing_block, "block");
 
-	RzILCacheBlock *il_block = rz_il_cache_lift_il_block(interp->il_cache, existing_block_start);
+	const RzILCacheBlock *il_block = rz_il_cache_lift_il_block(interp->il_cache, existing_block_start);
 	rz_interp_block_resolve_bounds(&ctx, existing_block, il_block);
 	mu_assert_true(existing_block->bounds_resolved, "bounds resolved");
 	mu_assert_eq(rz_interp_block_get_start(existing_block), existing_block_start, "block start");

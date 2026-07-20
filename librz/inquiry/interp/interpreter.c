@@ -1353,7 +1353,10 @@ RZ_API void rz_interp_run_context_fini(RzInterpRunContext *ctx) {
 }
 
 static const RzILCacheBlock *interp_lift_block(RzInterpInstance *inst, ut64 addr) {
-	return inst->config.lift_block(addr, inst->config.cb_user);
+	const RzILCacheBlock *block;
+	RzInterpLiftBlockResult res = inst->config.lift_block(addr, &block, inst->config.cb_user);
+	// TODO: handle break
+	return res == RZ_INTERP_LIFT_BLOCK_RESULT_OK ? block : NULL;
 }
 
 /**
