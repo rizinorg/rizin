@@ -7,20 +7,23 @@
  *
  * Main loop spawning and serving interpreter threads,
  * as well as integrating results as they are emitted.
+ *
+ * Threads:
+ * - rz_interp_driver_run is the entrypoint and contains the single main loop that has access to all of rizin.
+ * - n interpreter threads are started that take care of the actual interpretation and analysis work.
+ *   They communicate with the main loop through channels whenever they need any information from rizin.
+ *
+ * Channels:
+ * - 1 InterpDriver.entry_points_ch      (1 main -> n threads)
+ *     Main fills it with entrypoints and interpreters pop and analyze them until the queue is empty.
+ * - 1 InterpDriver.main_ch              (n threads -> 1 main)
+ *     Interpreters push io, instruction request and analysis results to this for the main loop to handle.
+ * - n InterpThread.ch                   (1 main -> 1 thread)
+ *     For io and instruction requests, main replies with the result to the thread that sent the request.
  */
 
 #include <rz_inquiry/rz_interpreter.h>
 #include <rz_core.h>
-
-/**
- *
- * 1         queue for entry points main -> interps
- * 1         request_rbuf for requests from interps -> main
- * n_thread  response_rbuf for responses main -> interp (rbuf here only works if for every request that causes a response, the requester always also waits for the response)
- *
- * break must close at least request_rbuf
- *
- */
 
 typedef struct interp_thread InterpThread;
 
@@ -42,7 +45,10 @@ typedef struct interp_driver_message_t {
 			ut64 addr;
 			InterpThread *requester;
 		} lift_block;
-		RzInterpResult *interp_result;
+		struct {
+			ut64 entry;
+			RzInterpResult *res;
+		} interp_result;
 	} payload;
 } InterpDriverMessage;
 
@@ -92,18 +98,21 @@ static void *interp_th(void *user) {
 		}
 		ut64 entry_point_val = *entry_point;
 		free(entry_point);
-		RzInterpResult *res = rz_interp_run(inst, entry_point_val, ctx->driver->dimens);
-		if (res) {
-			InterpDriverMessage msg = {
-				.type = DRIVER_MESSAGE_INTERP_RESULT,
-				.payload = {
-					.interp_result = res
-				}
-			};
-			rz_th_ring_buf_put(ctx->driver->main_ch, &msg);
-		} else {
-			RZ_LOG_ERROR("Interpreter run failed for entry point 0x%" PFMT64x "\n", entry_point_val);
+		RzInterpResult *res = NULL;
+		RzInterpResultCode code = rz_interp_run(inst, entry_point_val, ctx->driver->dimens, &res);
+		if (code == RZ_INTERP_RESULT_BREAK) {
+			break;
 		}
+		InterpDriverMessage msg = {
+			.type = DRIVER_MESSAGE_INTERP_RESULT,
+			.payload = {
+				.interp_result = {
+					.entry = entry_point_val,
+					.res = res
+				}
+			}
+		};
+		rz_th_ring_buf_put(ctx->driver->main_ch, &msg);
 	}
 	return NULL;
 }
@@ -194,6 +203,7 @@ static void interp_thread_free(InterpThread *th) {
 	if (!th) {
 		return;
 	}
+	rz_th_ring_buf_close(th->ch);
 	rz_th_wait(th->th);
 	rz_th_free(th->th);
 	rz_th_ring_buf_free(th->ch);
@@ -278,14 +288,17 @@ RZ_API bool rz_interp_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points, RzIn
 		}
 	}
 
-	// TODO: rz_cons_break_push
+	rz_cons_break_push(NULL, NULL);
 
 	// Serve the interpreters
 	size_t entries_finished = 0;
-	while (entries_finished < entries_pushed) {
+	while (entries_finished < entries_pushed && !rz_cons_is_breaked()) {
 		InterpDriverMessage msg;
 		if (rz_th_ring_buf_take_blocking(driver.main_ch, &msg) != RZ_THREAD_RING_BUF_OK) {
 			// closed
+			break;
+		}
+		if (rz_cons_is_breaked()) {
 			break;
 		}
 		switch (msg.type) {
@@ -318,9 +331,13 @@ RZ_API bool rz_interp_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points, RzIn
 			break;
 		}
 		case DRIVER_MESSAGE_INTERP_RESULT: {
-			RzInterpResult *res = msg.payload.interp_result;
-			if (!rz_interp_result_apply_to_analysis(res, core->analysis)) {
-				RZ_LOG_WARN("Failed to apply to analysis\n");
+			RzInterpResult *res = msg.payload.interp_result.res;
+			if (res) {
+				if (!rz_interp_result_apply_to_analysis(res, core->analysis)) {
+					RZ_LOG_WARN("Failed to apply to analysis\n");
+				}
+			} else {
+				RZ_LOG_WARN("Failed to analyze entry point 0x%" PFMT64x "\n", msg.payload.interp_result.entry);
 			}
 			entries_finished++;
 			break;
@@ -333,9 +350,12 @@ RZ_API bool rz_interp_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points, RzIn
 
 	return_code = true;
 
+	rz_cons_break_pop();
+
 err_threads:
-	// Close channel to make interp threads stop.
+	// Close channels to make interp threads stop.
 	rz_th_queue_close(driver.entry_points_ch);
+	rz_th_ring_buf_close(driver.main_ch);
 	for (size_t i = 0; i < n_threads; i++) {
 		interp_thread_free(threads[i]);
 	}

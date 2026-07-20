@@ -232,7 +232,14 @@ struct rz_interp_result_t {
 	HtUP /*<char *>*/ *comments; ///< filled if RZ_INTERP_RESULT_DIMEN_COMMENTS
 } /*RzInterpResult*/;
 
-RZ_API RzInterpResult *rz_interp_run(RzInterpInstance *inst, ut64 entry_point, RzInterpResultDimen dimen);
+typedef enum rz_interp_result_code_t {
+	RZ_INTERP_RESULT_OK,
+	RZ_INTERP_RESULT_FAILED,
+	RZ_INTERP_RESULT_BREAK
+} RzInterpResultCode;
+
+RZ_API RzInterpResultCode rz_interp_run(RzInterpInstance *inst, ut64 entry_point, RzInterpResultDimen dimen, RZ_NONNULL RZ_OUT RzInterpResult **res_out);
+RZ_API void rz_interp_result_free(RzInterpResult *res);
 RZ_API bool rz_interp_result_apply_to_analysis(RZ_NONNULL RzInterpResult *res, RZ_NONNULL RzAnalysis *analysis);
 
 extern RZ_API RzInterpValueAbstraction rz_interp_value_domain_const;

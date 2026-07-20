@@ -16,6 +16,12 @@
 #include <rz_vector.h>
 #include <rz_util.h>
 
+typedef enum {
+	EVAL_RESULT_OK,
+	EVAL_RESULT_ERROR,
+	EVAL_RESULT_BREAK
+} EvalResult;
+
 static RzInterpValueAbstraction *val_domain(const RzInterpInstance *inst) {
 	return inst->config.val_domain;
 }
@@ -709,16 +715,15 @@ bool read_var_from_state(RzInterpInstance *inst,
 	return true;
 }
 
-static bool store_abstr_data(
+static void store_abstr_data(
 	RzInterpInstance *iset,
 	RzILMemIndex mem_idx,
 	const RzInterpAbstrVal *addr,
 	const RzInterpAbstrVal *src) {
 	// TODO: handle with memory abstractions
-	return true;
 }
 
-bool load_abstr_data(
+EvalResult load_abstr_data(
 	RzInterpInstance *inst,
 	RzILMemIndex mem_idx,
 	const RzBitVector *addr,
@@ -736,18 +741,18 @@ bool load_abstr_data(
 	io_req.big_endian = inst->il_ctx->config->big_endian;
 	RzInterpIOReadResult read_res = inst->config.io_read(&io_req, inst->config.cb_user);
 	if (read_res == RZ_INTERP_IO_READ_RESULT_BREAK) {
-		// TODO: break
+		return EVAL_RESULT_BREAK;
 	}
 	if (read_res != RZ_INTERP_IO_READ_RESULT_OK) {
 		val_domain(inst)->set_top(out);
-		return true;
+		return EVAL_RESULT_OK;
 	}
 	val_domain(inst)->set_const_bv(out, &out_bv);
 
 	char *bytes = rz_bv_as_hex_string(&out_bv, true);
 	RZ_LOG_DEBUG("prototype: READ @ mem:%" PFMT32d " 0x%" PFMT64x " : %s\n", mem_idx, rz_bv_to_ut64(io_req.addr), bytes);
 	free(bytes);
-	return true;
+	return EVAL_RESULT_OK;
 }
 
 static bool set_abstr_pc(RzInterpInstance *inst, RzInterpAbstrState *state, RzInterpAbstrVal *pc) {
@@ -790,7 +795,20 @@ static bool value_indicates_ret_addr_write(RzInterpRunContext *ctx, RzInterpAbst
 	return ret;
 }
 
-static bool eval_pure(RzInterpRunContext *ctx, const RzILOpPure *pure, RZ_OUT RzInterpAbstrVal *out) {
+static EvalResult eval_pure(RzInterpRunContext *ctx, const RzILOpPure *pure, RZ_OUT RzInterpAbstrVal *out) {
+#define EVAL_SUB_OR_RETURN_CLEANUP(op, out, cleanup) do { \
+	EvalResult res = eval_pure(ctx, (op), (out)); \
+	if (RZ_UNLIKELY(res == EVAL_RESULT_BREAK)) { \
+		cleanup \
+		return EVAL_RESULT_BREAK; \
+	} \
+	if (RZ_UNLIKELY(res != EVAL_RESULT_OK)) { \
+		RZ_LOG_ERROR("eval_pure failed to evaluate " #op "\n"); \
+		cleanup \
+		goto map_to_top; \
+	} \
+} while (0)
+#define EVAL_SUB_OR_RETURN(op, out) EVAL_SUB_OR_RETURN_CLEANUP(op, out,)
 	switch (pure->code) {
 	default:
 	case RZ_IL_OP_VAR: {
@@ -798,52 +816,37 @@ static bool eval_pure(RzInterpRunContext *ctx, const RzILOpPure *pure, RZ_OUT Rz
 			RZ_LOG_ERROR("prototype: VAR failed to evaluate. The %s '%s' doesn't exist.\n",
 				rz_il_var_kind_name(pure->op.var.kind),
 				pure->op.var.v);
-			return false;
+			return EVAL_RESULT_ERROR;
 		}
 		break;
 	}
 	case RZ_IL_OP_LET: {
 		ut64 vhash = pure->op.let.hash;
-		if (!eval_pure(ctx, pure->op.let.exp, out)) {
-			RZ_LOG_ERROR("prototype: LET expression failed to evaluate.\n");
-			return false;
-		}
+		EVAL_SUB_OR_RETURN(pure->op.let.exp, out);
 		write_var_to_state(ctx->inst, ctx->astate, RZ_IL_VAR_KIND_LOCAL_PURE, vhash, out);
-		// Evaluate body
-		if (!eval_pure(ctx, pure->op.let.body, out)) {
-			RZ_LOG_ERROR("prototype: LET body failed to evaluate.\n");
-			return false;
-		}
+		EVAL_SUB_OR_RETURN(pure->op.let.body, out);
 		// No need to free the LET variable.
 		// It is simply overwritten next time.
 		break;
 	}
 	case RZ_IL_OP_ITE: {
-		if (!eval_pure(ctx, pure->op.ite.condition, out)) {
-			RZ_LOG_ERROR("prototype: ITE condition failed to evaluate.\n");
-			return false;
-		}
-
+		EVAL_SUB_OR_RETURN(pure->op.ite.condition, out);
 		RzBitVector cond_bv;
 		rz_bv_init(&cond_bv, 64);
 		if (!val_domain(ctx->inst)->to_concrete_const(out, &cond_bv)) {
 			// Can't decide which pure to evaluate.
+			// TODO: must eval both and join instead!
 			rz_bv_fini(&cond_bv);
 			goto map_to_top;
 		}
 		bool cond_bool = !rz_bv_is_zero_vector(&cond_bv);
+		rz_bv_fini(&cond_bv);
 
 		// TODO: eval both if top
 		if (cond_bool) {
-			if (!eval_pure(ctx, pure->op.ite.x, out)) {
-				RZ_LOG_ERROR("prototype: ITE x failed to evaluate.\n");
-				return false;
-			}
+			EVAL_SUB_OR_RETURN(pure->op.ite.x, out);
 		} else {
-			if (!eval_pure(ctx, pure->op.ite.y, out)) {
-				RZ_LOG_ERROR("prototype: ITE y failed to evaluate.\n");
-				return false;
-			}
+			EVAL_SUB_OR_RETURN(pure->op.ite.y, out);
 		}
 		break;
 	}
@@ -854,18 +857,14 @@ static bool eval_pure(RzInterpRunContext *ctx, const RzILOpPure *pure, RZ_OUT Rz
 		val_domain(ctx->inst)->set_const_bool(out, false);
 		break;
 	case RZ_IL_OP_CAST: {
-		if (!eval_pure(ctx, pure->op.cast.val, out)) {
-			RZ_LOG_ERROR("prototype: CAST val failed to evaluate.\n");
-			return false;
-		}
+		EVAL_SUB_OR_RETURN(pure->op.cast.val, out);
 		RzInterpAbstrVal *fill_bit = val_domain(ctx->inst)->val_new_top();
 		if (!fill_bit) {
-			return false;
+			return EVAL_RESULT_ERROR;
 		}
-		if (!eval_pure(ctx, pure->op.cast.fill, fill_bit)) {
-			RZ_LOG_ERROR("prototype: CAST fill failed to evaluate.\n");
-			return false;
-		}
+		EVAL_SUB_OR_RETURN_CLEANUP(pure->op.cast.fill, fill_bit, {
+			val_domain(ctx->inst)->val_free(fill_bit);
+		});
 		val_domain(ctx->inst)->eval_cast(pure->op.cast.length, fill_bit, out);
 		val_domain(ctx->inst)->val_free(fill_bit);
 		break;
@@ -900,20 +899,16 @@ static bool eval_pure(RzInterpRunContext *ctx, const RzILOpPure *pure, RZ_OUT Rz
 			px = pure->op.binop.x;
 			py = pure->op.binop.y;
 		}
-		if (!eval_pure(ctx, px, out)) {
-			RZ_LOG_ERROR("prototype: binop x failed to evaluate.\n");
-			return false;
-		}
+		EVAL_SUB_OR_RETURN(px, out);
 		// Hint: As an optimization, we could short-circuit if out is top here.
 		// However it entirely depends on the plugin whether this is possible, or we lose a lot of precision by doing so.
 		RzInterpAbstrVal *y = val_domain(ctx->inst)->val_new_top();
 		if (!y) {
-			return false;
+			return EVAL_RESULT_ERROR;
 		}
-		if (!eval_pure(ctx, py, y)) {
-			RZ_LOG_ERROR("prototype: binop y failed to evaluate.\n");
-			return false;
-		}
+		EVAL_SUB_OR_RETURN_CLEANUP(py, y, {
+			val_domain(ctx->inst)->val_free(y);
+		});
 		val_domain(ctx->inst)->eval_binop(pure->code, out, y);
 		val_domain(ctx->inst)->val_free(y);
 		break;
@@ -924,11 +919,7 @@ static bool eval_pure(RzInterpRunContext *ctx, const RzILOpPure *pure, RZ_OUT Rz
 	case RZ_IL_OP_LSB:
 	case RZ_IL_OP_MSB:
 	case RZ_IL_OP_NEG: {
-		RzILOpPure *x = pure->op.unop.x;
-		if (!eval_pure(ctx, x, out)) {
-			RZ_LOG_ERROR("prototype: unop x failed to evaluate.\n");
-			return false;
-		}
+		EVAL_SUB_OR_RETURN(pure->op.unop.x, out);
 		val_domain(ctx->inst)->eval_unop(pure->code, out);
 		break;
 	}
@@ -937,30 +928,25 @@ static bool eval_pure(RzInterpRunContext *ctx, const RzILOpPure *pure, RZ_OUT Rz
 		RzILOpPure *px = pure->code == RZ_IL_OP_SHIFTR ? pure->op.shiftr.x : pure->op.shiftl.x;
 		RzILOpPure *py = pure->code == RZ_IL_OP_SHIFTR ? pure->op.shiftr.y : pure->op.shiftl.y;
 		RzILOpPure *pfill_bit = pure->code == RZ_IL_OP_SHIFTR ? pure->op.shiftr.fill_bit : pure->op.shiftl.fill_bit;
-		if (!eval_pure(ctx, px, out)) {
-			RZ_LOG_ERROR("prototype: SHIFT(L/R) x failed to evaluate.\n");
-			return false;
-		}
+		EVAL_SUB_OR_RETURN(px, out);
 		// Hint: As an optimization, we could short-circuit if out is top here.
 		// However it entirely depends on the plugin whether this is possible, or we lose a lot of precision by doing so.
 		RzInterpAbstrVal *y = val_domain(ctx->inst)->val_new_top();
 		if (!y) {
-			return false;
+			return EVAL_RESULT_ERROR;
 		}
-		if (!eval_pure(ctx, py, y)) {
-			RZ_LOG_ERROR("prototype: SHIFT(L/R) y failed to evaluate.\n");
-			return false;
-		}
+		EVAL_SUB_OR_RETURN_CLEANUP(py, y, {
+			val_domain(ctx->inst)->val_free(y);
+		});
 		RzInterpAbstrVal *fill_bit = val_domain(ctx->inst)->val_new_top();
 		if (!fill_bit) {
 			val_domain(ctx->inst)->val_free(y);
-			return false;
+			return EVAL_RESULT_ERROR;
 		}
-		if (!eval_pure(ctx, pfill_bit, fill_bit)) {
-			RZ_LOG_ERROR("prototype: SHIFT(L/R) fill_bit failed to evaluate.\n");
+		EVAL_SUB_OR_RETURN_CLEANUP(pfill_bit, fill_bit, {
 			val_domain(ctx->inst)->val_free(y);
-			return false;
-		}
+			val_domain(ctx->inst)->val_free(fill_bit);
+		});
 		val_domain(ctx->inst)->eval_shift(pure->code == RZ_IL_OP_SHIFTR, out, y, fill_bit);
 		val_domain(ctx->inst)->val_free(y);
 		val_domain(ctx->inst)->val_free(fill_bit);
@@ -970,10 +956,7 @@ static bool eval_pure(RzInterpRunContext *ctx, const RzILOpPure *pure, RZ_OUT Rz
 	case RZ_IL_OP_LOAD: {
 		RzILOpPure *key = pure->code == RZ_IL_OP_LOAD ? pure->op.load.key : pure->op.loadw.key;
 		RzILMemIndex mem_idx = pure->code == RZ_IL_OP_LOAD ? 0 : pure->op.loadw.mem;
-		if (!eval_pure(ctx, key, out)) {
-			RZ_LOG_ERROR("prototype: LOAD/LOADW key failed to evaluate.\n");
-			return false;
-		}
+		EVAL_SUB_OR_RETURN(key, out);
 
 		// Hint: Instead of supporting only a single constant load addr and mapping all other
 		// loads to top, if the concrete set of the address is reasonably small, we could load
@@ -996,11 +979,14 @@ static bool eval_pure(RzInterpRunContext *ctx, const RzILOpPure *pure, RZ_OUT Rz
 
 		report_yield_xref(ctx, 0, ctx->insn_addr, out, RZ_ANALYSIS_XREF_TYPE_MEM_READ);
 		size_t n_bits = pure->code == RZ_IL_OP_LOAD ? ctx->inst->il_ctx->config->mem_key_size : pure->op.loadw.n_bits;
-		if (!load_abstr_data(ctx->inst, mem_idx, &ld_addr, n_bits, out)) {
-			rz_bv_fini(&ld_addr);
+		EvalResult res = load_abstr_data(ctx->inst, mem_idx, &ld_addr, n_bits, out);
+		rz_bv_fini(&ld_addr);
+		if (res == EVAL_RESULT_BREAK) {
+			return EVAL_RESULT_BREAK;
+		}
+		if (res != EVAL_RESULT_OK) {
 			goto map_to_top;
 		}
-		rz_bv_fini(&ld_addr);
 		break;
 	}
 	case RZ_IL_OP_SDIV:
@@ -1043,11 +1029,13 @@ static bool eval_pure(RzInterpRunContext *ctx, const RzILOpPure *pure, RZ_OUT Rz
 		// Not implemented.
 		goto map_to_top;
 	}
-	return true;
+	return EVAL_RESULT_OK;
 
 map_to_top:
 	val_domain(ctx->inst)->set_top(out);
-	return true;
+	return EVAL_RESULT_OK;
+#undef EVAL_SUB_OR_RETURN_CLEANUP
+#undef EVAL_SUB_OR_RETURN
 }
 
 static void eval_call(RzInterpRunContext *ctx) {
@@ -1061,12 +1049,37 @@ static void eval_call(RzInterpRunContext *ctx) {
 	}
 }
 
-static bool eval_effect(RzInterpRunContext *ctx,
-	const RzILOpEffect *effect,
-	size_t insn_pkt_size) {
+static EvalResult eval_effect(RzInterpRunContext *ctx, const RzILOpEffect *effect, size_t insn_pkt_size) {
 	rz_return_val_if_fail(ctx->astate->pc_state == RZ_INTERP_PC_CONST, false);
+#define EVAL_SUB_OR_RETURN_CLEANUP(op, cleanup_local) do { \
+	res = eval_effect(ctx, (op), insn_pkt_size); \
+	if (RZ_UNLIKELY(res != EVAL_RESULT_OK)) { \
+		if (res != EVAL_RESULT_BREAK) { \
+			RZ_LOG_ERROR("eval_effect failed to evaluate " #op "\n"); \
+		} \
+		cleanup_local \
+		goto cleanup; \
+	} \
+} while (0)
+#define EVAL_SUB_OR_RETURN(op) EVAL_SUB_OR_RETURN_CLEANUP(op,)
+#define EVAL_PURE_OR_RETURN_CLEANUP(op, dst, cleanup_local) do { \
+	dst = val_domain(ctx->inst)->val_new_top(); \
+	if (RZ_UNLIKELY(!(dst))) { \
+		res = EVAL_RESULT_ERROR; \
+	} \
+	res = eval_pure(ctx, (op), (dst)); \
+	if (RZ_UNLIKELY(res != EVAL_RESULT_OK)) { \
+		if (res != EVAL_RESULT_BREAK) { \
+			RZ_LOG_ERROR("eval_effect failed to evaluate " #op "\n"); \
+		} \
+		cleanup_local \
+		goto cleanup; \
+	} \
+} while (0);
+#define EVAL_PURE_OR_RETURN(op) EVAL_PURE_OR_RETURN_CLEANUP(op, eval_out,)
 	ut64 pc = ctx->astate->pc;
 	RzInterpAbstrVal *eval_out = NULL;
+	EvalResult res = EVAL_RESULT_OK;
 
 	switch (effect->code) {
 	default:
@@ -1076,20 +1089,13 @@ static bool eval_effect(RzInterpRunContext *ctx,
 		break;
 	}
 	case RZ_IL_OP_SEQ: {
-		if (!eval_effect(ctx, effect->op.seq.x, insn_pkt_size)) {
-			goto error;
-		}
-		if (!eval_effect(ctx, effect->op.seq.y, insn_pkt_size)) {
-			goto error;
-		}
+		EVAL_SUB_OR_RETURN(effect->op.seq.x);
+		EVAL_SUB_OR_RETURN(effect->op.seq.y);
 		break;
 	}
 	case RZ_IL_OP_SET: {
-		eval_out = val_domain(ctx->inst)->val_new_top();
 		ut64 vhash = effect->op.set.hash;
-		if (!eval_out || !eval_pure(ctx, effect->op.set.x, eval_out)) {
-			goto error;
-		}
+		EVAL_PURE_OR_RETURN(effect->op.set.x);
 		RzILVarKind kind = effect->op.set.is_local ? RZ_IL_VAR_KIND_LOCAL : RZ_IL_VAR_KIND_GLOBAL;
 		write_var_to_state(ctx->inst, ctx->astate, kind, vhash, eval_out);
 		if (value_indicates_ret_addr_write(ctx, eval_out) &&
@@ -1122,10 +1128,7 @@ static bool eval_effect(RzInterpRunContext *ctx,
 		break;
 	}
 	case RZ_IL_OP_JMP: {
-		eval_out = val_domain(ctx->inst)->val_new_top();
-		if (!eval_out || !eval_pure(ctx, effect->op.jmp.dst, eval_out)) {
-			goto error;
-		}
+		EVAL_PURE_OR_RETURN(effect->op.jmp.dst);
 		RzBitVector eval_out_bv;
 		rz_bv_init(&eval_out_bv, 64);
 		bool is_const = val_domain(ctx->inst)->to_concrete_const(eval_out, &eval_out_bv);
@@ -1164,10 +1167,7 @@ static bool eval_effect(RzInterpRunContext *ctx,
 		break;
 	}
 	case RZ_IL_OP_BRANCH: {
-		eval_out = val_domain(ctx->inst)->val_new_top();
-		if (!eval_out || !eval_pure(ctx, effect->op.branch.condition, eval_out)) {
-			goto error;
-		}
+		EVAL_PURE_OR_RETURN(effect->op.branch.condition);
 		bool may_be_true = val_domain(ctx->inst)->may_be_bool(eval_out, true);
 		bool may_be_false = val_domain(ctx->inst)->may_be_bool(eval_out, false);
 		ut64 fallthrough_pc = ctx->astate->pc;
@@ -1175,13 +1175,9 @@ static bool eval_effect(RzInterpRunContext *ctx,
 			RzInterpAbstrState *true_state = rz_interp_abstr_state_clone(ctx->inst, ctx->astate);
 			RzInterpAbstrState *false_state = ctx->astate;
 			ctx->astate = true_state;
-			if (!eval_effect(ctx, effect->op.branch.true_eff, insn_pkt_size)) {
-				goto error;
-			}
+			EVAL_SUB_OR_RETURN(effect->op.branch.true_eff);
 			ctx->astate = false_state;
-			if (!eval_effect(ctx, effect->op.branch.false_eff, insn_pkt_size)) {
-				goto error;
-			}
+			EVAL_SUB_OR_RETURN(effect->op.branch.false_eff);
 			if (true_state->pc_state == false_state->pc_state && true_state->pc == false_state->pc) {
 				// identical target location, simply join the data and continue
 				join_state(ctx->inst, true_state, false_state);
@@ -1195,29 +1191,20 @@ static bool eval_effect(RzInterpRunContext *ctx,
 			}
 			rz_interp_abstr_state_free(ctx->inst, true_state);
 		} else if (may_be_true) {
-			if (!eval_effect(ctx, effect->op.branch.true_eff, insn_pkt_size)) {
-				goto error;
-			}
+			EVAL_SUB_OR_RETURN(effect->op.branch.true_eff);
 		} else if (may_be_false) {
-			if (!eval_effect(ctx, effect->op.branch.false_eff, insn_pkt_size)) {
-				goto error;
-			}
+			EVAL_SUB_OR_RETURN(effect->op.branch.false_eff);
 		}
 		break;
 	}
 	case RZ_IL_OP_STORE:
 	case RZ_IL_OP_STOREW: {
-		RzInterpAbstrVal *st_addr = val_domain(ctx->inst)->val_new_top();
-		if (!st_addr) {
-			goto error;
-		}
 		RzILOpPure *key = effect->code == RZ_IL_OP_STORE ? effect->op.store.key : effect->op.storew.key;
-		RzILMemIndex mem_idx = effect->code == RZ_IL_OP_STORE ? 0 : effect->op.storew.mem;
-		if (!eval_pure(ctx, key, st_addr)) {
-			RZ_LOG_ERROR("prototype: STORE/STOREW key failed to evaluate.\n");
+		RzInterpAbstrVal *st_addr;
+		EVAL_PURE_OR_RETURN_CLEANUP(key, st_addr, {
 			val_domain(ctx->inst)->val_free(st_addr);
-			goto error;
-		}
+		});
+		RzILMemIndex mem_idx = effect->code == RZ_IL_OP_STORE ? 0 : effect->op.storew.mem;
 		RzBitVector st_addr_bv;
 		rz_bv_init(&st_addr_bv, 64);
 		if (val_domain(ctx->inst)->to_concrete_const(st_addr, &st_addr_bv)) {
@@ -1234,22 +1221,16 @@ static bool eval_effect(RzInterpRunContext *ctx,
 		}
 
 		RzILOpPure *pval = effect->code == RZ_IL_OP_STORE ? effect->op.store.value : effect->op.storew.value;
-		eval_out = val_domain(ctx->inst)->val_new_top();
-		if (!eval_out || !eval_pure(ctx, pval, eval_out)) {
-			RZ_LOG_ERROR("prototype: STORE/STOREW x failed to evaluate.\n");
+		EVAL_PURE_OR_RETURN_CLEANUP(pval, eval_out, {
 			rz_bv_fini(&st_addr_bv);
 			val_domain(ctx->inst)->val_free(st_addr);
-			goto error;
-		}
+		});
 		if (value_indicates_ret_addr_write(ctx, eval_out)) {
 			ctx->call_cand.store_addr = pc;
 			ctx->call_cand.npc = ctx->il_block_end;
 			ctx->call_cand.in_mem = true;
 		}
-		if (!store_abstr_data(ctx->inst, mem_idx, st_addr, eval_out)) {
-			rz_bv_fini(&st_addr_bv);
-			goto error;
-		}
+		store_abstr_data(ctx->inst, mem_idx, st_addr, eval_out);
 		val_domain(ctx->inst)->val_free(st_addr);
 		rz_bv_fini(&st_addr_bv);
 		break;
@@ -1261,14 +1242,16 @@ static bool eval_effect(RzInterpRunContext *ctx,
 		// Ignore for now.
 		break;
 	}
+cleanup:
 	val_domain(ctx->inst)->val_free(eval_out);
-	return true;
-error:
-	val_domain(ctx->inst)->val_free(eval_out);
-	return false;
+	return res;
+#undef EVAL_SUB_OR_RETURN_CLEANUP
+#undef EVAL_SUB_OR_RETURN
+#undef EVAL_PURE_OR_RETURN_CLEANUP
+#undef EVAL_PURE_OR_RETURN
 }
 
-static bool eval_block(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL RzInterpBlock *interp_block, RZ_NONNULL const RzILCacheBlock *il_block) {
+static EvalResult eval_block(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL RzInterpBlock *interp_block, RZ_NONNULL const RzILCacheBlock *il_block) {
 	ctx->block = interp_block;
 	ctx->il_block_end = il_block->addr + il_block->size;
 	// Reset call candidate tracking for each basic block.
@@ -1308,8 +1291,12 @@ static bool eval_block(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL RzInterpBl
 			}
 		}
 
-		if (!eval_effect(ctx, pkt->effect, pkt->insn_pkt_size)) {
-			return false;
+		EvalResult res = eval_effect(ctx, pkt->effect, pkt->insn_pkt_size);
+		if (RZ_UNLIKELY(res != EVAL_RESULT_OK)) {
+			if (res != EVAL_RESULT_BREAK) {
+				RZ_LOG_ERROR("Failed to evaluate op at 0x%" PFMT64x "\n", ctx->insn_addr);
+			}
+			return res;
 		}
 		if (astate->pc_state != RZ_INTERP_PC_CONST) {
 			// unreachable or unknown jump
@@ -1331,7 +1318,7 @@ static bool eval_block(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL RzInterpBl
 		rz_interp_run_push(ctx, ctx->astate, fallthrough);
 	}
 
-	return true;
+	return EVAL_RESULT_OK;
 }
 
 RZ_API bool rz_interp_run_context_init(RzInterpRunContext *ctx, RzInterpInstance *inst) {
@@ -1351,24 +1338,26 @@ RZ_API void rz_interp_run_context_fini(RzInterpRunContext *ctx) {
 	interp_blocks_free(ctx);
 }
 
-static const RzILCacheBlock *interp_lift_block(RzInterpInstance *inst, ut64 addr) {
-	const RzILCacheBlock *block;
-	RzInterpLiftBlockResult res = inst->config.lift_block(addr, &block, inst->config.cb_user);
-	// TODO: handle break
-	return res == RZ_INTERP_LIFT_BLOCK_RESULT_OK ? block : NULL;
+static RzInterpLiftBlockResult interp_lift_block(RzInterpInstance *inst, ut64 addr, const RzILCacheBlock **block_out) {
+	RzInterpLiftBlockResult res = inst->config.lift_block(addr, block_out, inst->config.cb_user);
+	if (res == RZ_INTERP_LIFT_BLOCK_RESULT_FAILED) {
+		RZ_LOG_ERROR("Failed to lift block at 0x%" PFMT64X "\n", addr);
+	}
+	return res;
 }
 
 /**
  * \brief Run the interpreter from a single entrypoint until a fixpoint is reached
  */
-RZ_API RzInterpResult *rz_interp_run(RzInterpInstance *inst, ut64 entry_point, RzInterpResultDimen dimen) {
-	rz_return_val_if_fail(inst, NULL);
+RZ_API RzInterpResultCode rz_interp_run(RzInterpInstance *inst, ut64 entry_point, RzInterpResultDimen dimen, RZ_NONNULL RZ_OUT RzInterpResult **res_out) {
+	rz_return_val_if_fail(inst && res_out, RZ_INTERP_RESULT_FAILED);
 
 	// Initialization
 	RzInterpResult *res = NULL;
+	RzInterpResultCode ret = RZ_INTERP_RESULT_FAILED;
 	RzInterpRunContext ctx = { 0 };
 	if (!rz_interp_run_context_init(&ctx, inst)) {
-		return NULL;
+		return RZ_INTERP_RESULT_FAILED;
 	}
 
 	// Prepare the initial state from the given entry point
@@ -1376,7 +1365,6 @@ RZ_API RzInterpResult *rz_interp_run(RzInterpInstance *inst, ut64 entry_point, R
 	RzInterpAbstrState *estate = rz_interp_abstr_state_new(inst);
 	memset(&ctx.call_cand, 0, sizeof(ctx.call_cand));
 	if (!reset_state(inst, estate, entry_point)) {
-		rz_warn_if_reached();
 		rz_interp_abstr_state_free(inst, estate);
 		goto cleanup;
 	}
@@ -1392,19 +1380,22 @@ RZ_API RzInterpResult *rz_interp_run(RzInterpInstance *inst, ut64 entry_point, R
 		}
 		ctx.astate = rz_interp_abstr_state_clone(inst, interp_block->entry_state);
 
-		const RzILCacheBlock *il_block = interp_lift_block(inst, ctx.astate->pc);
-		if (!il_block) {
-			RZ_LOG_ERROR("interpreter: Lifting failed\n");
-			// TODO: handle this better
-			break;
+		const RzILCacheBlock *il_block;
+		RzInterpLiftBlockResult lift_res = interp_lift_block(inst, ctx.astate->pc, &il_block);
+		if (lift_res == RZ_INTERP_LIFT_BLOCK_RESULT_BREAK) {
+			ret = RZ_INTERP_RESULT_BREAK;
+			goto cleanup;
+		}
+		if (lift_res != RZ_INTERP_LIFT_BLOCK_RESULT_OK) {
+			// Failed lifting, keep the entry state unimplemented
+			continue;
 		}
 
 		rz_interp_block_resolve_bounds(&ctx, interp_block, il_block);
 
 		// Evaluate the effect on the abstract state.
-		if (!eval_block(&ctx, interp_block, il_block)) {
-			// TODO: should this even be able to fail at all?
-			RZ_LOG_ERROR("interpreter: Eval failed\n");
+		if (eval_block(&ctx, interp_block, il_block) == EVAL_RESULT_BREAK) {
+			ret = RZ_INTERP_RESULT_BREAK;
 			goto cleanup;
 		}
 	}
@@ -1426,8 +1417,7 @@ RZ_API RzInterpResult *rz_interp_run(RzInterpInstance *inst, ut64 entry_point, R
 		if (dimen & RZ_INTERP_RESULT_DIMEN_COMMENTS) {
 			res->comments = ht_up_new(NULL, free);
 			if (!res->comments) {
-				free(res);
-				goto cleanup;
+				goto cleanup_res;
 			}
 		}
 		ctx.res = res;
@@ -1436,26 +1426,40 @@ RZ_API RzInterpResult *rz_interp_run(RzInterpInstance *inst, ut64 entry_point, R
 		RzInterpBlock *interp_block;
 		rz_interval_tree_foreach (&ctx.blocks, it, interp_block) {
 			ctx.astate = rz_interp_abstr_state_clone(inst, interp_block->entry_state);
-			const RzILCacheBlock *il_block = interp_lift_block(inst, ctx.astate->pc);
-			if (!il_block) {
-				RZ_LOG_ERROR("interpreter: Lifting failed\n");
-				// TODO: handle this better
-				break;
+			const RzILCacheBlock *il_block;
+			RzInterpLiftBlockResult lift_res = interp_lift_block(inst, ctx.astate->pc, &il_block);
+			if (lift_res == RZ_INTERP_LIFT_BLOCK_RESULT_BREAK) {
+				ret = RZ_INTERP_RESULT_BREAK;
+				goto cleanup;
 			}
-			if (!eval_block(&ctx, interp_block, il_block)) {
-				// TODO: should this even be able to fail at all?
-				RZ_LOG_ERROR("interpreter: Eval failed\n");
-				break;
+			if (lift_res != RZ_INTERP_LIFT_BLOCK_RESULT_OK) {
+				continue;
+			}
+			if (eval_block(&ctx, interp_block, il_block) == EVAL_RESULT_BREAK) {
+				ret = RZ_INTERP_RESULT_BREAK;
+				goto cleanup_res;
 			}
 		}
 	}
 
 	memmove(&res->blocks, &ctx.blocks, sizeof(ctx.blocks));
 	memset(&ctx.blocks, 0, sizeof(ctx.blocks));
+	ret = RZ_INTERP_RESULT_OK;
+	*res_out = res;
+	goto cleanup;
 
+cleanup_res:
+	rz_interp_result_free(res);
 cleanup:
 	rz_interp_run_context_fini(&ctx);
-	return res;
+	return ret;
+}
+
+RZ_API void rz_interp_result_free(RzInterpResult *res) {
+	if (!res) {
+		return;
+	}
+	free(res);
 }
 
 static void bb_add_target(RzAnalysisBlock *abb, ut64 target) {
