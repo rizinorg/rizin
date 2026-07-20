@@ -28,7 +28,7 @@ static char *config_path(RzCore *core) {
 		free(path);
 		return NULL;
 	}
-	rz_serialize_config_save(sdb, core->config);
+	rz_serialize_config_save(sdb, core->config, NULL);
 	sdb_sync(sdb);
 	sdb_free(sdb);
 
