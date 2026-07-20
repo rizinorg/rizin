@@ -558,7 +558,7 @@ bool test_interp_cfg_multi_entry_fallthrough_jmp_inside_other() {
 	mu_end;
 }
 
-bool test_interp_cfg_call(void) {
+bool test_interp_cfg_call_link_register(void) {
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://"
 		"600880d2"  // 0x00  mov   x0, 0x43
 		"ff430094"  // 0x04  bl    0x11000
@@ -603,6 +603,30 @@ bool test_interp_cfg_call_multi_insn(void) {
 	mu_assert_notnull(fcn, "analysis function");
 	mu_assert_eq(rz_pvector_len(fcn->bbs), 1, "analysis block count");
 	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 0), 0x10000, 0x10010, UT64_MAX, UT64_MAX);
+
+	interp_free(interp);
+	mu_end;
+}
+
+bool test_interp_cfg_call_ret_in_memory(void) {
+	TestInterp *interp = interp_new("x86", 64, 0x10000, "hex://"
+		"89c1"            // 0x00  mov   ecx, eax
+		"ff14cde0000008"  // 0x02  call  qword [rcx*8+0x80000e0]
+		"c3"              // 0x09  ret
+	);
+	mu_assert_notnull(interp, "init");
+	RzInterpResult *res = rz_interp_run(interp->inst, 0x10000, RZ_INTERP_RESULT_DIMEN_BASE);
+
+	EXTRACT_RESULT(res, 2);
+	mu_assert_eq(res->entry, 0x10000, "result entry");
+	ASSERT_BLOCK(0, 0x10000, 0x10009, true, UT64_MAX);
+	ASSERT_BLOCK(1, 0x10009, 0x1000a, false, UT64_MAX);
+
+	rz_interp_result_apply_to_analysis(res, interp->analysis);
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
+	mu_assert_notnull(fcn, "analysis function");
+	mu_assert_eq(rz_pvector_len(fcn->bbs), 1, "analysis block count");
+	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 0), 0x10000, 0x1000a, UT64_MAX, UT64_MAX);
 
 	interp_free(interp);
 	mu_end;
@@ -718,8 +742,9 @@ bool all_tests() {
 	mu_run_test(test_interp_cfg_multi_entry_fallthrough_jmp_before);
 	mu_run_test(test_interp_cfg_multi_entry_fallthrough_jmp_inside_self);
 	mu_run_test(test_interp_cfg_multi_entry_fallthrough_jmp_inside_other);
-	mu_run_test(test_interp_cfg_call);
+	mu_run_test(test_interp_cfg_call_link_register);
 	mu_run_test(test_interp_cfg_call_multi_insn);
+	mu_run_test(test_interp_cfg_call_ret_in_memory);
 	mu_run_test(test_interp_xrefs);
 	mu_run_test(test_interp_comments);
 	return tests_passed != tests_run;

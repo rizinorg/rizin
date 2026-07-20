@@ -1208,6 +1208,9 @@ static bool eval_effect(RzInterpRunContext *ctx,
 	case RZ_IL_OP_STORE:
 	case RZ_IL_OP_STOREW: {
 		RzInterpAbstrVal *st_addr = val_domain(ctx->inst)->val_new_top();
+		if (!st_addr) {
+			goto error;
+		}
 		RzILOpPure *key = effect->code == RZ_IL_OP_STORE ? effect->op.store.key : effect->op.storew.key;
 		RzILMemIndex mem_idx = effect->code == RZ_IL_OP_STORE ? 0 : effect->op.storew.mem;
 		if (!eval_pure(ctx, key, st_addr)) {
@@ -1217,26 +1220,23 @@ static bool eval_effect(RzInterpRunContext *ctx,
 		}
 		RzBitVector st_addr_bv;
 		rz_bv_init(&st_addr_bv, 64);
-		bool st_addr_is_const = st_addr && val_domain(ctx->inst)->to_concrete_const(st_addr, &st_addr_bv);
-		if (!st_addr_is_const) {
-			rz_bv_fini(&st_addr_bv);
-			val_domain(ctx->inst)->val_free(st_addr);
-			break;
-		}
-		if (rz_bv_len(&st_addr_bv) == 64) {
-			// TODO: Remove normalization.
-			// Unset bit 63 is required, because the RzBuffer API only supports
-			// st64 addresses.
-			RzBitVector mask = { 0 };
-			rz_bv_init(&mask, 64);
-			rz_bv_set_from_ut64(&mask, 0x7fffffffffffffff);
-			rz_bv_and_inplace(&st_addr_bv, &mask);
+		if (val_domain(ctx->inst)->to_concrete_const(st_addr, &st_addr_bv)) {
+			if (rz_bv_len(&st_addr_bv) == 64) {
+				// TODO: Remove normalization.
+				// Unset bit 63 is required, because the RzBuffer API only supports
+				// st64 addresses.
+				RzBitVector mask = { 0 };
+				rz_bv_init(&mask, 64);
+				rz_bv_set_from_ut64(&mask, 0x7fffffffffffffff);
+				rz_bv_and_inplace(&st_addr_bv, &mask);
+			}
+			report_yield_xref(ctx, insn_pkt_size, ctx->insn_addr, st_addr, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE);
 		}
 
 		RzILOpPure *pval = effect->code == RZ_IL_OP_STORE ? effect->op.store.value : effect->op.storew.value;
 		eval_out = val_domain(ctx->inst)->val_new_top();
 		if (!eval_out || !eval_pure(ctx, pval, eval_out)) {
-			RZ_LOG_ERROR("prototype: SUB x failed to evaluate.\n");
+			RZ_LOG_ERROR("prototype: STORE/STOREW x failed to evaluate.\n");
 			rz_bv_fini(&st_addr_bv);
 			val_domain(ctx->inst)->val_free(st_addr);
 			goto error;
@@ -1246,12 +1246,11 @@ static bool eval_effect(RzInterpRunContext *ctx,
 			ctx->call_cand.npc = ctx->il_block_end;
 			ctx->call_cand.in_mem = true;
 		}
-		report_yield_xref(ctx, insn_pkt_size, ctx->insn_addr, st_addr, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE);
-		val_domain(ctx->inst)->val_free(st_addr);
 		if (!store_abstr_data(ctx->inst, mem_idx, st_addr, eval_out)) {
 			rz_bv_fini(&st_addr_bv);
 			goto error;
 		}
+		val_domain(ctx->inst)->val_free(st_addr);
 		rz_bv_fini(&st_addr_bv);
 		break;
 	}
