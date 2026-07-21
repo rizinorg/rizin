@@ -42,7 +42,7 @@ jobs:
     name: ubuntu-tcc-test
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
     - name: Checkout TinyCC repository
       run: |
@@ -78,7 +78,7 @@ jobs:
           sudo cp build/muon /usr/bin/muon
 
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
           repository: rizinorg/rizin-testbins
           path: test/bins
