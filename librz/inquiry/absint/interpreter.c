@@ -856,7 +856,7 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 		val_domain(ctx->inst)->set_const_bool(out, false);
 		break;
 	case RZ_IL_OP_B1:
-		val_domain(ctx->inst)->set_const_bool(out, false);
+		val_domain(ctx->inst)->set_const_bool(out, true);
 		break;
 	case RZ_IL_OP_CAST: {
 		EVAL_SUB_OR_RETURN(pure->op.cast.val, out);
