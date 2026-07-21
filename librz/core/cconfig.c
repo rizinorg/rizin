@@ -3459,6 +3459,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	rz_config_add_bool_bind(cfg, "dbg.swstep", "Force use of software steps (code analysis+breakpoint)", core_dbg_swstep_get, core_dbg_swstep_set, NULL, core);
 	SETBPREF("dbg.trace.inrange", "false", "While tracing, avoid following calls outside specified range");
 	SETBPREF("dbg.trace.libs", "true", "Trace library code too");
+	SETBPREF("dbg.trace_persistent", "false", "Automatically enable tracing when a debugger session starts");
 	SETBPREF("dbg.exitkills", "true", "Kill process on exit");
 	SETPREF("dbg.exe.path", "", "Path to binary being debugged");
 	SETCB("dbg.execs", "false", &cb_dbg_execs, "Stop execution if new thread is created");

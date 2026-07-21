@@ -585,6 +585,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		case 'C':
 			do_connect = true;
 			break;
+		case 't':
+			rz_config_set_b(r->config, "dbg.trace_persistent", true);
+			break;
 #if DEBUGGER
 		case 'd': debug = 1; break;
 #else
