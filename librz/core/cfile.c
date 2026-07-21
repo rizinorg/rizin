@@ -609,7 +609,7 @@ RZ_API void rz_core_sysenv_begin(RzCore *core) {
 	rz_sys_setenv("RZ_ENDIAN", rz_asm_is_big_endian_set(core->rasm) ? "big" : "little");
 	rz_sys_setenv("RZ_BSIZE", rz_strf(tmpbuf, "%d", core->blocksize));
 
-	// dump current config file so other r2 tools can use the same options
+	// dump current config file so other rizin tools can use the same options
 	char *config_sdb_path = NULL;
 	int config_sdb_fd = rz_file_mkstemp(NULL, &config_sdb_path);
 	if (config_sdb_fd >= 0) {
@@ -617,7 +617,7 @@ RZ_API void rz_core_sysenv_begin(RzCore *core) {
 	}
 
 	Sdb *config_sdb = sdb_new(NULL, config_sdb_path, 0);
-	rz_serialize_config_save(config_sdb, core->config);
+	rz_serialize_config_save(config_sdb, core->config, NULL);
 	sdb_sync(config_sdb);
 	sdb_free(config_sdb);
 	rz_sys_setenv("RZ_CONFIG", config_sdb_path);
