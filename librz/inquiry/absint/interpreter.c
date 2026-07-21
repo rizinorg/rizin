@@ -165,6 +165,7 @@ RZ_API void rz_absint_state_as_str_short(RZ_NONNULL RzAbsIntInstance *inst, RZ_N
 		rz_strbuf_appendf(sb, "%s = ", varname);
 		val_domain(inst)->val_as_str(av, sb);
 	}
+	rz_iterator_free(it);
 	if (all_top) {
 		rz_strbuf_append(sb, STR_TOP);
 	}
@@ -185,6 +186,7 @@ static HtUP *var_set_clone(const RzAbsIntInstance *inst, HtUP *vars) {
 		val_domain(inst)->copy(val, ht_up_find(vars, *key, NULL));
 		ht_up_insert(r, *key, val);
 	}
+	rz_iterator_free(it);
 	return r;
 }
 
@@ -219,6 +221,7 @@ static bool join_vars(RzAbsIntInstance *inst, RZ_BORROW RZ_INOUT HtUP *a, RZ_BOR
 			changed = true;
 		}
 	}
+	rz_iterator_free(it);
 	return changed;
 }
 
@@ -301,13 +304,13 @@ static void interp_blocks_init(RzAbsIntRunContext *ctx) {
 	rz_interval_tree_init(&ctx->blocks, NULL);
 }
 
-static void interp_blocks_free(RzAbsIntRunContext *ctx) {
+static void interp_blocks_fini(RzAbsIntInstance *inst, RzIntervalTree *blocks) {
 	RzIntervalTreeIter it;
 	RzAbsIntBlock *block;
-	rz_interval_tree_foreach(&ctx->blocks, it, block) {
-		interp_block_free(ctx->inst, block);
+	rz_interval_tree_foreach(blocks, it, block) {
+		interp_block_free(inst, block);
 	}
-	rz_interval_tree_fini(&ctx->blocks);
+	rz_interval_tree_fini(blocks);
 }
 
 static RzAbsIntBlock *interp_block_create(RzAbsIntRunContext *ctx, RZ_BORROW RZ_NONNULL RzAbsIntState *as) {
@@ -501,11 +504,6 @@ RZ_API void rz_absint_run_push(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx, RZ_
 		rz_warn_if_reached();
 		return;
 	}
-	RzStrBuf sb;
-	rz_strbuf_init(&sb);
-	rz_absint_state_as_str_short(ctx->inst, as, &sb);
-	RZ_LOG_DEBUG("PUSH 0x%" PFMT64x ": %s\n", as->pc, rz_strbuf_get(&sb));
-	rz_strbuf_fini(&sb);
 	RzAbsIntBlock *block = rz_absint_block_at(ctx, as->pc);
 	if (block) {
 		if (join_state(ctx->inst, block->entry_state, as)) {
@@ -1051,6 +1049,7 @@ static void eval_call(RzAbsIntRunContext *ctx) {
 	rz_iterator_foreach(it, av) {
 		val_domain(ctx->inst)->set_top(*av);
 	}
+	rz_iterator_free(it);
 }
 
 static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effect, size_t insn_pkt_size) {
@@ -1339,7 +1338,7 @@ RZ_API bool rz_absint_run_context_init(RzAbsIntRunContext *ctx, RzAbsIntInstance
 
 RZ_API void rz_absint_run_context_fini(RzAbsIntRunContext *ctx) {
 	rz_list_free(ctx->queue);
-	interp_blocks_free(ctx);
+	interp_blocks_fini(ctx->inst, &ctx->blocks);
 }
 
 static RzAbsIntLiftBlockResult interp_lift_block(RzAbsIntInstance *inst, ut64 addr, const RzILCacheBlock **block_out) {
@@ -1388,10 +1387,12 @@ RZ_API RzAbsIntResultCode rz_absint_run(RzAbsIntInstance *inst, ut64 entry_point
 		RzAbsIntLiftBlockResult lift_res = interp_lift_block(inst, ctx.astate->pc, &il_block);
 		if (lift_res == RZ_ABSINT_LIFT_BLOCK_RESULT_BREAK) {
 			ret = RZ_ABSINT_RESULT_BREAK;
+			rz_absint_state_free(inst, ctx.astate);
 			goto cleanup;
 		}
 		if (lift_res != RZ_ABSINT_LIFT_BLOCK_RESULT_OK) {
 			// Failed lifting, keep the entry state unimplemented
+			rz_absint_state_free(inst, ctx.astate);
 			continue;
 		}
 
@@ -1400,8 +1401,11 @@ RZ_API RzAbsIntResultCode rz_absint_run(RzAbsIntInstance *inst, ut64 entry_point
 		// Evaluate the effect on the abstract state.
 		if (eval_block(&ctx, interp_block, il_block) == EVAL_RESULT_BREAK) {
 			ret = RZ_ABSINT_RESULT_BREAK;
+			rz_absint_state_free(inst, ctx.astate);
 			goto cleanup;
 		}
+		// TODO: ctx.astate could be moved instead of freeing, or it could be reused for the next iteration
+		rz_absint_state_free(inst, ctx.astate);
 	}
 
 	// Fixpoint reached, collect results.
@@ -1429,20 +1433,26 @@ RZ_API RzAbsIntResultCode rz_absint_run(RzAbsIntInstance *inst, ut64 entry_point
 		RzIntervalTreeIter it;
 		RzAbsIntBlock *interp_block;
 		rz_interval_tree_foreach (&ctx.blocks, it, interp_block) {
+			// Note: depending on what info is requested, i.e. whether the entry states are read again later,
+			// this might not have to be cloned but could just be interpreted further.
 			ctx.astate = rz_absint_state_clone(inst, interp_block->entry_state);
 			const RzILCacheBlock *il_block;
 			RzAbsIntLiftBlockResult lift_res = interp_lift_block(inst, ctx.astate->pc, &il_block);
 			if (lift_res == RZ_ABSINT_LIFT_BLOCK_RESULT_BREAK) {
 				ret = RZ_ABSINT_RESULT_BREAK;
+				rz_absint_state_free(inst, ctx.astate);
 				goto cleanup;
 			}
 			if (lift_res != RZ_ABSINT_LIFT_BLOCK_RESULT_OK) {
+				rz_absint_state_free(inst, ctx.astate);
 				continue;
 			}
 			if (eval_block(&ctx, interp_block, il_block) == EVAL_RESULT_BREAK) {
 				ret = RZ_ABSINT_RESULT_BREAK;
+				rz_absint_state_free(inst, ctx.astate);
 				goto cleanup_res;
 			}
+			rz_absint_state_free(inst, ctx.astate);
 		}
 	}
 
@@ -1453,16 +1463,19 @@ RZ_API RzAbsIntResultCode rz_absint_run(RzAbsIntInstance *inst, ut64 entry_point
 	goto cleanup;
 
 cleanup_res:
-	rz_absint_result_free(res);
+	rz_absint_result_free(inst, res);
 cleanup:
 	rz_absint_run_context_fini(&ctx);
 	return ret;
 }
 
-RZ_API void rz_absint_result_free(RzAbsIntResult *res) {
+RZ_API void rz_absint_result_free(RzAbsIntInstance *inst, RzAbsIntResult *res) {
 	if (!res) {
 		return;
 	}
+	interp_blocks_fini(inst, &res->blocks);
+	rz_vector_fini(&res->xrefs);
+	ht_up_free(res->comments);
 	free(res);
 }
 

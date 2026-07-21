@@ -36,14 +36,13 @@ typedef struct interp_driver_message_t {
 		DRIVER_MESSAGE_LIFT_BLOCK,
 		DRIVER_MESSAGE_INTERP_RESULT
 	} type;
+	InterpThread *sender;
 	union {
 		struct {
 			RzAbsIntIOReadRequest *request;
-			InterpThread *requester;
 		} io_read;
 		struct {
 			ut64 addr;
-			InterpThread *requester;
 		} lift_block;
 		struct {
 			ut64 entry;
@@ -105,6 +104,7 @@ static void *interp_th(void *user) {
 		}
 		InterpDriverMessage msg = {
 			.type = DRIVER_MESSAGE_INTERP_RESULT,
+			.sender = ctx,
 			.payload = {
 				.interp_result = {
 					.entry = entry_point_val,
@@ -121,10 +121,10 @@ static RzAbsIntIOReadResult send_io_read(RZ_NONNULL RzAbsIntIOReadRequest *req, 
 	InterpThread *th = user;
 	InterpDriverMessage msg = {
 		.type = DRIVER_MESSAGE_IO_READ,
+		.sender = th,
 		.payload = {
 			.io_read = {
-				.request = req,
-				.requester = th
+				.request = req
 			}
 		}
 	};
@@ -143,10 +143,10 @@ static RzAbsIntLiftBlockResult send_lift_il_block(ut64 addr, const RzILCacheBloc
 	InterpThread *th = user;
 	InterpDriverMessage msg = {
 		.type = DRIVER_MESSAGE_LIFT_BLOCK,
+		.sender = th,
 		.payload = {
 			.lift_block = {
-				.addr = addr,
-				.requester = th
+				.addr = addr
 			}
 		}
 	};
@@ -236,12 +236,13 @@ static RzAbsIntIOReadResult handle_io_request(const RzAnalysisILContext *il_ctx,
 	return ok ? RZ_ABSINT_IO_READ_RESULT_TOP : RZ_ABSINT_IO_READ_RESULT_TOP;
 }
 
-RZ_API bool rz_absint_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points, RzAbsIntResultDimen dimens) {
+RZ_API bool rz_absint_driver_run(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzIO *io, RZ_NONNULL RZ_BORROW RzSetU *entry_points, RzAbsIntResultDimen dimens) {
+	rz_return_val_if_fail(analysis && io && entry_points, false);
 	bool return_code = false;
 
 	bool user_sent_signal = false;
 
-	RzILCache *il_cache = rz_il_cache_new(core->analysis, core->io, RZ_IL_CACHE_CONFIG_NOP_UNLIFTED);
+	RzILCache *il_cache = rz_il_cache_new(analysis, io, RZ_IL_CACHE_CONFIG_NOP_UNLIFTED);
 	if (!il_cache) {
 		goto err_none;
 	}
@@ -265,14 +266,17 @@ RZ_API bool rz_absint_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points, RzAb
 	rz_iterator_foreach (it, entry) {
 		ut64 *tmp = RZ_NEW(ut64);
 		if (!tmp) {
+			rz_iterator_free(it);
 			goto err_main_ch;
 		}
 		*tmp = *entry;
 		if (!rz_th_queue_push(driver.entry_points_ch, tmp, true)) {
+			rz_iterator_free(it);
 			goto err_main_ch;
 		}
 		entries_pushed++;
 	}
+	rz_iterator_free(it);
 
 	size_t n_threads = 1;
 	InterpThread **threads = RZ_NEWS0(InterpThread *, n_threads);
@@ -282,7 +286,7 @@ RZ_API bool rz_absint_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points, RzAb
 
 	// Initialize and spawn the interpreters.
 	for (size_t i = 0; i < n_threads; ++i) {
-		threads[i] = interp_thread_new(core->analysis, &driver);
+		threads[i] = interp_thread_new(analysis, &driver);
 		if (!threads[i]) {
 			goto err_threads;
 		}
@@ -303,14 +307,14 @@ RZ_API bool rz_absint_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points, RzAb
 		}
 		switch (msg.type) {
 		case DRIVER_MESSAGE_IO_READ: {
-			RzAbsIntIOReadResult res = handle_io_request(msg.payload.io_read.requester->inst->il_ctx, msg.payload.io_read.request);
+			RzAbsIntIOReadResult res = handle_io_request(msg.sender->inst->il_ctx, msg.payload.io_read.request);
 			InterpThreadMessage res_msg = {
 				.type = INTERP_MESSAGE_IO_READ_RESULT,
 				.payload = {
 					.io_read_result = res
 				}
 			};
-			if (rz_th_ring_buf_put(msg.payload.io_read.requester->ch, &res_msg) != RZ_THREAD_RING_BUF_OK) {
+			if (rz_th_ring_buf_put(msg.sender->ch, &res_msg) != RZ_THREAD_RING_BUF_OK) {
 				// should not be closed
 				rz_warn_if_reached();
 			}
@@ -324,7 +328,7 @@ RZ_API bool rz_absint_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points, RzAb
 					.lift_block_result = block
 				}
 			};
-			if (rz_th_ring_buf_put(msg.payload.lift_block.requester->ch, &res_msg) != RZ_THREAD_RING_BUF_OK) {
+			if (rz_th_ring_buf_put(msg.sender->ch, &res_msg) != RZ_THREAD_RING_BUF_OK) {
 				// should not be closed
 				rz_warn_if_reached();
 			}
@@ -333,9 +337,10 @@ RZ_API bool rz_absint_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points, RzAb
 		case DRIVER_MESSAGE_INTERP_RESULT: {
 			RzAbsIntResult *res = msg.payload.interp_result.res;
 			if (res) {
-				if (!rz_absint_result_apply_to_analysis(res, core->analysis)) {
+				if (!rz_absint_result_apply_to_analysis(res, analysis)) {
 					RZ_LOG_WARN("Failed to apply to analysis\n");
 				}
+				rz_absint_result_free(msg.sender->inst, res);
 			} else {
 				RZ_LOG_WARN("Failed to analyze entry point 0x%" PFMT64x "\n", msg.payload.interp_result.entry);
 			}

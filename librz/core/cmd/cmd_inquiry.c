@@ -21,7 +21,8 @@ static bool core_absint_run(RzCore *core) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_set_u_add(entry_points, core->offset);
-	bool success = rz_absint_driver_run(core, entry_points, dimens);
+	bool success = rz_absint_driver_run(core->analysis, core->io, entry_points, dimens);
+	rz_set_u_free(entry_points);
 	if (!success) {
 		RZ_LOG_ERROR("Analysis failed.\n");
 	}
@@ -86,7 +87,8 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 			rz_set_u_add(entry_points, entry_point);
 		}
 	}
-	bool success = rz_absint_driver_run(core, entry_points, RZ_ABSINT_RESULT_DIMEN_XREFS);
+	bool success = rz_absint_driver_run(core->analysis, core->io, entry_points, RZ_ABSINT_RESULT_DIMEN_XREFS);
+	rz_set_u_free(entry_points);
 	eprintf("Finished reference recovery: %s\n", success ? "OK" : "FAIL");
 	if (!success) {
 		return RZ_CMD_STATUS_ERROR;

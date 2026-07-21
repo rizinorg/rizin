@@ -239,11 +239,11 @@ typedef enum rz_absint_result_code_t {
 } RzAbsIntResultCode;
 
 RZ_API RzAbsIntResultCode rz_absint_run(RzAbsIntInstance *inst, ut64 entry_point, RzAbsIntResultDimen dimen, RZ_NONNULL RZ_OUT RzAbsIntResult **res_out);
-RZ_API void rz_absint_result_free(RzAbsIntResult *res);
+RZ_API void rz_absint_result_free(RzAbsIntInstance *inst, RzAbsIntResult *res);
 RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, RZ_NONNULL RzAnalysis *analysis);
 
 extern RZ_API RzAbsIntValueDomain rz_absint_value_domain_const;
 
-RZ_API bool rz_absint_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points, RzAbsIntResultDimen dimens);
+RZ_API bool rz_absint_driver_run(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzIO *io, RZ_NONNULL RZ_BORROW RzSetU *entry_points, RzAbsIntResultDimen dimens);
 
 #endif // RZ_ABSINT
