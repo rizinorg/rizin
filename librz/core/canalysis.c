@@ -4004,11 +4004,6 @@ static bool addr_in_exec_section(RzBinObject *bo, ut64 addr) {
 	return sec && (sec->perm & RZ_PERM_X);
 }
 
-static bool addr_in_exec_segment(RzBinObject *bo, ut64 addr) {
-	RzBinSection *seg = rz_bin_get_segment_at(bo, addr, true);
-	return seg && (seg->perm & RZ_PERM_X);
-}
-
 /** \brief How a DATA xref's instruction relates to its target address. */
 typedef enum {
 	XREF_REF_OTHER = 0, ///< address computation, control flow, etc. — handled as before
@@ -4047,6 +4042,12 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 
 	RzList *all_xrefs = rz_analysis_xrefs_list(core->analysis);
 	if (!all_xrefs) {
+		return;
+	}
+
+	RzBinObject *bo = rz_bin_cur_object(core->bin);
+	if (!bo) {
+		rz_list_free(all_xrefs);
 		return;
 	}
 
@@ -4102,15 +4103,9 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 		// ; DATA XREF from dbg.sched_run @ 0x490
 		// ;-- data.000004e0:
 		// 0x000004e0      .dword 0x1fff0274 ; runqueue_bitcache ; section..bss ; sym..bss ; obj.runqueue_bitcache ; loc._sbss ; loc._szero ; loc._erelocate ; sched.c:135
-		RzBinObject *bo = rz_bin_cur_object(core->bin);
-		if (!bo) {
-			continue;
-		}
-		// Only executable-region targets need classifying: reject constants that merely
-		// equal a code address (e.g. `sub sp, sp, 0x810`), while skipping the decode for
-		// the common data-section case.
-		bool in_exec_segment = addr_in_exec_segment(bo, target);
-		XrefRefKind ref_kind = in_exec_segment ? xref_ref_kind(core, xref->from, target) : XREF_REF_OTHER;
+
+		// reject constants that merely equal a code address (e.g. `sub sp, sp, 0x810`)
+		XrefRefKind ref_kind = xref_ref_kind(core, xref->from, target);
 		if (ref_kind == XREF_REF_COINCIDENTAL_IMM) {
 			continue;
 		}
@@ -4202,6 +4197,44 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 			}
 		}
 		ut64 upper = RZ_MIN(next_data, next_fcn);
+		// cap upper to curr section boundary or map
+		RzBinSection *sec = rz_bin_get_section_at(bo, target, true);
+		if (sec) {
+			ut64 sec_end = sec->vaddr + sec->vsize;
+			if (upper > sec_end)
+				upper = sec_end;
+
+		} else {
+			// target is in a section gap or we are in a binary w/o metadata
+			ut64 next_sec_start = UT64_MAX;
+
+			RzBinSection *s;
+			void **iter;
+			rz_pvector_foreach (bo->sections, iter) {
+				s = *iter;
+				if (s->is_segment) {
+					continue;
+				}
+				ut64 vaddr = rz_bin_object_addr_with_base(bo, s->vaddr);
+				if (vaddr > target && vaddr < next_sec_start) {
+					next_sec_start = vaddr;
+				}
+			}
+
+			// cap upper to next section start if exists
+			if (next_sec_start != UT64_MAX && upper > next_sec_start) {
+				upper = next_sec_start;
+			}
+			// last fallback, cap upper to map_end
+			// also if target was in last section before unmapped region
+			RzIOMap *map = rz_io_map_get(core->io, target);
+			if (map) {
+				ut64 map_end = rz_io_map_get_to(map) + 1;
+				if (upper > map_end) {
+					upper = map_end;
+				}
+			}
+		}
 		ut64 size;
 		if (upper != UT64_MAX) {
 			size = rz_set_u_contains(exec_targets, target)
