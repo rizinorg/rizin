@@ -6,9 +6,9 @@ rz_inquiry_sources = [
   'bcfg.c',
   'inquiry.c',
   'il_cache.c',
-  'interp/interpreter.c',
-  'interp/val_abs_constant.c',
-  'interp/driver.c'
+  'absint/interpreter.c',
+  'absint/driver.c',
+  'absint/val_domain_constant.c',
 ]
 
 rz_inquiry_inc = [platform_inc]

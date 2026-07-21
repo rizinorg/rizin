@@ -42,7 +42,7 @@ RZ_API RZ_BORROW RzInquiryPlugin *rz_inquiry_get_plugin(size_t index) {
 
 RZ_API bool rz_inquiry_plugin_add(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_OWN RZ_NONNULL RzInquiryPlugin *plugin) {
 	rz_return_val_if_fail(inquiry && plugin, false);
-	if (!plugin->value_abstraction) {
+	if (!plugin->value_domain) {
 		rz_warn_if_reached();
 		return false;
 	}
@@ -70,7 +70,7 @@ RZ_API bool rz_inquiry_plugin_del(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_OW
 	}
 #endif
 	free(p_data);
-	if (plugin->value_abstraction) {
+	if (plugin->value_domain) {
 		return ht_sp_delete(inquiry->plugins, plugin->name);
 	}
 	rz_warn_if_reached();

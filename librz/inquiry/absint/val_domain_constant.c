@@ -5,7 +5,7 @@
 #include <rz_util/rz_bitvector.h>
 
 #include <rz_inquiry.h>
-#include <rz_inquiry/rz_interpreter.h>
+#include <rz_inquiry/rz_absint.h>
 #include <rz_th.h>
 #include <rz_util.h>
 
@@ -23,63 +23,63 @@ typedef struct {
 	 * If is_const is unset this might hold garbage.
 	 */
 	RzBitVector *bv;
-} ProtoIntrprAbstrData;
+} ValueData;
 
 /**
- * \brief Abstract data getter from the RzInterpAbstrVal
+ * \brief Abstract data getter from the RzAbsIntVal
  */
-#define AD(av) ((ProtoIntrprAbstrData *)rz_interp_abstr_val_unpack(av))
+#define AD(av) ((ValueData *)rz_absint_val_unpack(av))
 
-static RzInterpAbstrVal *pack(ProtoIntrprAbstrData *val) {
-	return rz_interp_abstr_val_pack(val);
+static RzAbsIntVal *pack(ValueData *val) {
+	return rz_absint_val_pack(val);
 }
 
-static RZ_OWN RzInterpAbstrVal *val_new_top() {
-	ProtoIntrprAbstrData *ad = RZ_NEW0(ProtoIntrprAbstrData);
+static RZ_OWN RzAbsIntVal *val_new_top() {
+	ValueData *ad = RZ_NEW0(ValueData);
 	ad->is_const = false;
 	ad->bv = rz_bv_new(64);
 	return pack(ad);
 }
 
-static void val_free(RzInterpAbstrVal *val) {
+static void val_free(RzAbsIntVal *val) {
 	if (!val) {
 		return;
 	}
-	ProtoIntrprAbstrData *adata = AD(val);
+	ValueData *adata = AD(val);
 	rz_bv_free(adata->bv);
 	free(adata);
 }
 
-static bool val_is_top(RZ_NONNULL const RzInterpAbstrVal *val) {
+static bool val_is_top(RZ_NONNULL const RzAbsIntVal *val) {
 	return !AD(val)->is_const;
 }
 
-bool static val_may_be_bool(RZ_NONNULL const RzInterpAbstrVal *val, bool value) {
+bool static val_may_be_bool(RZ_NONNULL const RzAbsIntVal *val, bool value) {
 	if (!AD(val)->is_const) {
 		return true;
 	}
 	return value != rz_bv_is_zero_vector(AD(val)->bv);
 }
 
-static void val_set_top(RZ_NONNULL RzInterpAbstrVal *val) {
+static void val_set_top(RZ_NONNULL RzAbsIntVal *val) {
 	AD(val)->is_const = false;
 }
 
-static void val_set_const_bool(RZ_OUT RZ_NONNULL RzInterpAbstrVal *dst, bool src) {
+static void val_set_const_bool(RZ_OUT RZ_NONNULL RzAbsIntVal *dst, bool src) {
 	AD(dst)->is_const = true;
 	rz_bv_cast_inplace(AD(dst)->bv, 1, false);
 	rz_bv_set_from_ut64(AD(dst)->bv, src ? 1 : 0);
 }
 
-static void val_set_const_bv(RZ_OUT RZ_NONNULL RzInterpAbstrVal *dst, RZ_IN RZ_NONNULL RzBitVector *src) {
+static void val_set_const_bv(RZ_OUT RZ_NONNULL RzAbsIntVal *dst, RZ_IN RZ_NONNULL RzBitVector *src) {
 	AD(dst)->is_const = true;
 	rz_bv_cast_inplace(AD(dst)->bv, rz_bv_len(src), false);
 	rz_bv_copy(AD(dst)->bv, src);
 }
 
-void val_copy(RzInterpAbstrVal *dst_val, const RzInterpAbstrVal *src_val) {
-	ProtoIntrprAbstrData *dst = AD(dst_val);
-	ProtoIntrprAbstrData *src = AD(src_val);
+void val_copy(RzAbsIntVal *dst_val, const RzAbsIntVal *src_val) {
+	ValueData *dst = AD(dst_val);
+	ValueData *src = AD(src_val);
 	rz_return_if_fail(dst && src && dst->bv && src->bv);
 	rz_bv_cast_inplace(dst->bv, rz_bv_len(src->bv), false);
 	rz_bv_copy(dst->bv, src->bv);
@@ -90,9 +90,9 @@ void val_copy(RzInterpAbstrVal *dst_val, const RzInterpAbstrVal *src_val) {
  * \brief Join (least upper bound) on values
  * \return True if a was changed
  */
-static bool join_val(RZ_BORROW RZ_INOUT RzInterpAbstrVal *a, RZ_BORROW RZ_IN const RzInterpAbstrVal *b) {
-	ProtoIntrprAbstrData *ad = AD(a);
-	ProtoIntrprAbstrData *bd = AD(b);
+static bool join_val(RZ_BORROW RZ_INOUT RzAbsIntVal *a, RZ_BORROW RZ_IN const RzAbsIntVal *b) {
+	ValueData *ad = AD(a);
+	ValueData *bd = AD(b);
 	if (ad->is_const && bd->is_const && rz_bv_eq(ad->bv, bd->bv)) {
 		// identical values, a already has the least upper bound
 		return false;
@@ -103,9 +103,9 @@ static bool join_val(RZ_BORROW RZ_INOUT RzInterpAbstrVal *a, RZ_BORROW RZ_IN con
 	return changed;
 }
 
-bool val_as_str(RZ_NONNULL const RzInterpAbstrVal *val, RZ_NONNULL RZ_OUT RzStrBuf *sb) {
+bool val_as_str(RZ_NONNULL const RzAbsIntVal *val, RZ_NONNULL RZ_OUT RzStrBuf *sb) {
 	rz_return_val_if_fail(val && sb, false);
-	ProtoIntrprAbstrData *av = AD(val);
+	ValueData *av = AD(val);
 	if (av->is_const) {
 		char *s = rz_bv_as_hex_string(av->bv, false);
 		if (!s) {
@@ -119,7 +119,7 @@ bool val_as_str(RZ_NONNULL const RzInterpAbstrVal *val, RZ_NONNULL RZ_OUT RzStrB
 	return true;
 }
 
-static bool to_concrete_const(RZ_NONNULL const RzInterpAbstrVal *val, RZ_NULLABLE RZ_OUT RzBitVector *out) {
+static bool to_concrete_const(RZ_NONNULL const RzAbsIntVal *val, RZ_NULLABLE RZ_OUT RzBitVector *out) {
 	if (!AD(val)->is_const) {
 		return false;
 	}
@@ -130,7 +130,7 @@ static bool to_concrete_const(RZ_NONNULL const RzInterpAbstrVal *val, RZ_NULLABL
 	return true;
 }
 
-static void eval_cast(ut32 length, RZ_NONNULL const RzInterpAbstrVal *fill, RZ_INOUT RZ_NONNULL RzInterpAbstrVal *val) {
+static void eval_cast(ut32 length, RZ_NONNULL const RzAbsIntVal *fill, RZ_INOUT RZ_NONNULL RzAbsIntVal *val) {
 	if (!AD(val)->is_const || !AD(fill)->is_const) {
 		val_set_top(val);
 		return;
@@ -138,7 +138,7 @@ static void eval_cast(ut32 length, RZ_NONNULL const RzInterpAbstrVal *fill, RZ_I
 	rz_bv_cast_inplace(AD(val)->bv, length, !rz_bv_is_zero_vector(AD(fill)->bv));
 }
 
-static void eval_shift(bool right, RZ_NONNULL RZ_INOUT RzInterpAbstrVal *x, RZ_NONNULL const RzInterpAbstrVal *y, RZ_NONNULL const RzInterpAbstrVal *fill_bit) {
+static void eval_shift(bool right, RZ_NONNULL RZ_INOUT RzAbsIntVal *x, RZ_NONNULL const RzAbsIntVal *y, RZ_NONNULL const RzAbsIntVal *fill_bit) {
 	if (!AD(x)->is_const || !AD(y)->is_const || !AD(fill_bit)->is_const) {
 		// Hint: there are some more cases that could be handled better:
 		// - x is either all 1 or all 0 => any shift will produce the same result
@@ -151,7 +151,7 @@ static void eval_shift(bool right, RZ_NONNULL RZ_INOUT RzInterpAbstrVal *x, RZ_N
 	shift(AD(x)->bv, rz_bv_to_ut64(AD(y)->bv), !rz_bv_is_zero_vector(AD(fill_bit)->bv));
 }
 
-static void eval_binop(RzILOpPureCode code, RZ_NONNULL RZ_INOUT RzInterpAbstrVal *x, RZ_NONNULL const RzInterpAbstrVal *y) {
+static void eval_binop(RzILOpPureCode code, RZ_NONNULL RZ_INOUT RzAbsIntVal *x, RZ_NONNULL const RzAbsIntVal *y) {
 	if (!AD(x)->is_const || !AD(y)->is_const) {
 		val_set_top(x);
 		return;
@@ -205,7 +205,7 @@ static void eval_binop(RzILOpPureCode code, RZ_NONNULL RZ_INOUT RzInterpAbstrVal
 	}
 }
 
-static void eval_unop(RzILOpPureCode code, RZ_NONNULL RZ_INOUT RzInterpAbstrVal *val) {
+static void eval_unop(RzILOpPureCode code, RZ_NONNULL RZ_INOUT RzAbsIntVal *val) {
 	if (!AD(val)->is_const) {
 		return;
 	}
@@ -234,7 +234,7 @@ static void eval_unop(RzILOpPureCode code, RZ_NONNULL RZ_INOUT RzInterpAbstrVal 
 	}
 }
 
-RZ_API RzInterpValueAbstraction rz_interp_value_domain_const = {
+RZ_API RzAbsIntValueDomain rz_absint_value_domain_const = {
 	.name = "constant",
 	.val_new_top = val_new_top,
 	.val_free = val_free,
@@ -259,7 +259,7 @@ RZ_API RzInquiryPlugin rz_inquiry_plugin_interpreter_prototype = {
 	.version = "0.1p",
 	.desc = "A prototype interpreter for constant/top abstractions.",
 	.license = "LGPL-3.0-only",
-	.value_abstraction = &rz_interp_value_domain_const,
+	.value_domain = &rz_absint_value_domain_const,
 };
 
 #ifndef RZ_PLUGIN_INCORE

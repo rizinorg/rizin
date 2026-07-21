@@ -87,7 +87,7 @@ if get_option('enable_tests')
     'il_vm',
     'il_helpers',
     'intervaltree',
-    'inquiry_interp',
+    'inquiry_absint',
     'io',
     'io_ihex',
     'itv',

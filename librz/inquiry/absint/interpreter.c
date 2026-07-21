@@ -3,14 +3,18 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
- * \file The API implementation for all analysis interpreters.
+ * \file Core abstract interpretation
+ *
+ * The implementation here delegates the actual value abstraction to pluggable RzAbsIntValueDomains
+ * and requests information from rizin through callbacks. It is thus able to run on arbitrary threads
+ * if the callbacks behave accordingly.
  */
 
 #include "rz_analysis.h"
 #include "rz_util/rz_assert.h"
 #include "rz_util/rz_log.h"
 #include <rz_il/rz_il_opcodes.h>
-#include "interp_priv.h"
+#include "absint_priv.h"
 #include <rz_th.h>
 #include <rz_types.h>
 #include <rz_vector.h>
@@ -22,13 +26,13 @@ typedef enum {
 	EVAL_RESULT_BREAK
 } EvalResult;
 
-static RzInterpValueAbstraction *val_domain(const RzInterpInstance *inst) {
+static RzAbsIntValueDomain *val_domain(const RzAbsIntInstance *inst) {
 	return inst->config.val_domain;
 }
 
 /////////////////////////////////////////////////////////
 /**
- * \name RzInterpAbstrState
+ * \name RzAbsIntAbstrState
  * @{
  */
 
@@ -36,19 +40,19 @@ static RzInterpValueAbstraction *val_domain(const RzInterpInstance *inst) {
  * \brief Initializes an abstract state for specified abstract kinds. Optionally with a list of registers.
  * The register name list should always be given if the architecture has some.
  */
-RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_new(
-	RZ_NONNULL RzInterpInstance *inst) {
+RZ_API RZ_OWN RzAbsIntState *rz_absint_state_new(
+	RZ_NONNULL RzAbsIntInstance *inst) {
 	rz_return_val_if_fail(inst, NULL);
-	RzInterpAbstrState *state = RZ_NEW0(RzInterpAbstrState);
+	RzAbsIntState *state = RZ_NEW0(RzAbsIntState);
 	if (!state) {
 		return NULL;
 	}
-	state->pc_state = RZ_INTERP_PC_UNREACHABLE;
+	state->pc_state = RZ_ABSINT_PC_UNREACHABLE;
 	// Initialize the register file with uninitialized abstract values.
 	state->globals = ht_up_new(NULL, NULL);
 	for (size_t i = 0; i < inst->il_ctx->reg_binding->regs_count; i++) {
 		const char *rname = inst->il_ctx->reg_binding->regs[i].name;
-		RzInterpAbstrVal *aval = val_domain(inst)->val_new_top();
+		RzAbsIntVal *aval = val_domain(inst)->val_new_top();
 		if (!aval) {
 			rz_warn_if_reached();
 			ht_up_free(state->globals);
@@ -67,12 +71,12 @@ RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_new(
 	return state;
 }
 
-static void var_set_free(RzInterpInstance *inst, HtUP *vars) {
+static void var_set_free(RzAbsIntInstance *inst, HtUP *vars) {
 	if (!vars) {
 		return;
 	}
 	RzIterator *it = ht_up_as_iter(vars);
-	RzInterpAbstrVal **v;
+	RzAbsIntVal **v;
 	rz_iterator_foreach(it, v) {
 		val_domain(inst)->val_free(*v);
 	}
@@ -80,7 +84,7 @@ static void var_set_free(RzInterpInstance *inst, HtUP *vars) {
 	ht_up_free(vars);
 }
 
-RZ_API void rz_interp_abstr_state_free(RzInterpInstance *inst, RZ_OWN RZ_NULLABLE RzInterpAbstrState *state) {
+RZ_API void rz_absint_state_free(RzAbsIntInstance *inst, RZ_OWN RZ_NULLABLE RzAbsIntState *state) {
 	if (!state) {
 		return;
 	}
@@ -90,21 +94,21 @@ RZ_API void rz_interp_abstr_state_free(RzInterpInstance *inst, RZ_OWN RZ_NULLABL
 	free(state);
 }
 
-RZ_API void rz_interp_abstr_state_set_pc_const(RzInterpAbstrState *state, ut64 pc) {
+RZ_API void rz_absint_state_set_pc_const(RzAbsIntState *state, ut64 pc) {
 	rz_return_if_fail(state);
 	state->pc = pc;
-	state->pc_state = RZ_INTERP_PC_CONST;
+	state->pc_state = RZ_ABSINT_PC_CONST;
 }
 
-static bool reset_state(RzInterpInstance *inst, RZ_BORROW RzInterpAbstrState *state, ut64 entry_point) {
-	state->pc_state = RZ_INTERP_PC_CONST;
+static bool reset_state(RzAbsIntInstance *inst, RZ_BORROW RzAbsIntState *state, ut64 entry_point) {
+	state->pc_state = RZ_ABSINT_PC_CONST;
 	state->pc = entry_point;
 
 	RzIterator *it = ht_up_as_iter_keys(state->globals);
 	ut64 *k;
 	rz_iterator_foreach(it, k) {
 		ut64 djb2_reg_name = *k;
-		RzInterpAbstrVal *av = ht_up_find(state->globals, djb2_reg_name, NULL);
+		RzAbsIntVal *av = ht_up_find(state->globals, djb2_reg_name, NULL);
 		if (av) {
 			val_domain(inst)->set_top(av);
 		}
@@ -116,15 +120,15 @@ static bool reset_state(RzInterpInstance *inst, RZ_BORROW RzInterpAbstrState *st
 #define STR_TOP    "⊤"
 #define STR_BOTTOM "⊥"
 
-RZ_API bool rz_interp_abstr_state_as_str(RZ_NONNULL RzInterpInstance *inst, RZ_NONNULL const RzInterpAbstrState *state, RZ_NONNULL RZ_OUT RzStrBuf *sb) {
+RZ_API bool rz_absint_state_as_str(RZ_NONNULL RzAbsIntInstance *inst, RZ_NONNULL const RzAbsIntState *state, RZ_NONNULL RZ_OUT RzStrBuf *sb) {
 	rz_return_val_if_fail(state && sb, false);
 
 	rz_strbuf_append(sb, "Globals\n\n");
 	rz_strbuf_append(sb, "\tpc = ");
-	if (state->pc_state == RZ_INTERP_PC_CONST) {
+	if (state->pc_state == RZ_ABSINT_PC_CONST) {
 		rz_strbuf_appendf(sb, "0x%" PFMT64x, state->pc);
 	} else {
-		rz_strbuf_append(sb, state->pc_state == RZ_INTERP_PC_ANY ? STR_TOP : STR_BOTTOM);
+		rz_strbuf_append(sb, state->pc_state == RZ_ABSINT_PC_ANY ? STR_TOP : STR_BOTTOM);
 	}
 	rz_strbuf_append(sb, "\n\n");
 
@@ -133,7 +137,7 @@ RZ_API bool rz_interp_abstr_state_as_str(RZ_NONNULL RzInterpInstance *inst, RZ_N
 	rz_iterator_foreach(it, k) {
 		const char *gname = ht_up_find(inst->var_name_hashes, *k, NULL);
 		rz_strbuf_appendf(sb, "\t%s = ", gname);
-		RzInterpAbstrVal *av = ht_up_find(state->globals, *k, NULL);
+		RzAbsIntVal *av = ht_up_find(state->globals, *k, NULL);
 		val_domain(inst)->val_as_str(av, sb);
 		rz_strbuf_append(sb, "\n");
 	}
@@ -141,14 +145,14 @@ RZ_API bool rz_interp_abstr_state_as_str(RZ_NONNULL RzInterpInstance *inst, RZ_N
 	return true;
 }
 
-RZ_API void rz_interp_abstr_state_as_str_short(RZ_NONNULL RzInterpInstance *inst, RZ_NONNULL const RzInterpAbstrState *astate, RZ_NONNULL RZ_OUT RzStrBuf *sb) {
+RZ_API void rz_absint_state_as_str_short(RZ_NONNULL RzAbsIntInstance *inst, RZ_NONNULL const RzAbsIntState *astate, RZ_NONNULL RZ_OUT RzStrBuf *sb) {
 	bool first = true;
 	RzIterator *it = ht_up_as_iter_keys(astate->globals);
 	ut64 *k;
 	bool all_top = true;
 	rz_iterator_foreach(it, k) {
 		ut64 djb2_reg_name = *k;
-		RzInterpAbstrVal *av = ht_up_find(astate->globals, djb2_reg_name, NULL);
+		RzAbsIntVal *av = ht_up_find(astate->globals, djb2_reg_name, NULL);
 		if (!av || val_domain(inst)->is_top(av)) {
 			continue;
 		}
@@ -166,7 +170,7 @@ RZ_API void rz_interp_abstr_state_as_str_short(RZ_NONNULL RzInterpInstance *inst
 	}
 }
 
-static HtUP *var_set_clone(const RzInterpInstance *inst, HtUP *vars) {
+static HtUP *var_set_clone(const RzAbsIntInstance *inst, HtUP *vars) {
 	HtUP *r = ht_up_new(NULL, NULL);
 	if (!r) {
 		return NULL;
@@ -174,7 +178,7 @@ static HtUP *var_set_clone(const RzInterpInstance *inst, HtUP *vars) {
 	RzIterator *it = ht_up_as_iter_keys(vars);
 	ut64 *key;
 	rz_iterator_foreach(it, key) {
-		RzInterpAbstrVal *val = val_domain(inst)->val_new_top();
+		RzAbsIntVal *val = val_domain(inst)->val_new_top();
 		if (!val) {
 			break;
 		}
@@ -184,8 +188,8 @@ static HtUP *var_set_clone(const RzInterpInstance *inst, HtUP *vars) {
 	return r;
 }
 
-RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_clone(RZ_NONNULL RzInterpInstance *iset, const RzInterpAbstrState *state) {
-	RzInterpAbstrState *r = RZ_NEW0(RzInterpAbstrState);
+RZ_API RZ_OWN RzAbsIntState *rz_absint_state_clone(RZ_NONNULL RzAbsIntInstance *iset, const RzAbsIntState *state) {
+	RzAbsIntState *r = RZ_NEW0(RzAbsIntState);
 	if (!state) {
 		return NULL;
 	}
@@ -201,13 +205,13 @@ RZ_API RZ_OWN RzInterpAbstrState *rz_interp_abstr_state_clone(RZ_NONNULL RzInter
  * \brief Join (least upper bound) on var sets
  * \return True if a was changed
  */
-static bool join_vars(RzInterpInstance *inst, RZ_BORROW RZ_INOUT HtUP *a, RZ_BORROW RZ_IN HtUP *b) {
+static bool join_vars(RzAbsIntInstance *inst, RZ_BORROW RZ_INOUT HtUP *a, RZ_BORROW RZ_IN HtUP *b) {
 	RzIterator *it = ht_up_as_iter_keys(a);
 	ut64 *k;
 	bool changed = false;
 	rz_iterator_foreach(it, k) {
-		RzInterpAbstrVal *av = ht_up_find(a, *k, NULL);
-		RzInterpAbstrVal *bv = ht_up_find(b, *k, NULL);
+		RzAbsIntVal *av = ht_up_find(a, *k, NULL);
+		RzAbsIntVal *bv = ht_up_find(b, *k, NULL);
 		if (!av || !bv) {
 			continue;
 		}
@@ -218,7 +222,7 @@ static bool join_vars(RzInterpInstance *inst, RZ_BORROW RZ_INOUT HtUP *a, RZ_BOR
 	return changed;
 }
 
-bool join_state(RzInterpInstance *inst, RZ_BORROW RZ_INOUT RzInterpAbstrState *a, RZ_BORROW RZ_IN const RzInterpAbstrState *b) {
+bool join_state(RzAbsIntInstance *inst, RZ_BORROW RZ_INOUT RzAbsIntState *a, RZ_BORROW RZ_IN const RzAbsIntState *b) {
 	bool global_change = join_vars(inst, a->globals, b->globals);
 	bool local_change = join_vars(inst, a->locals, b->locals);
 	// lets are not be relevant here since they are immutable within their scope
@@ -236,19 +240,19 @@ bool join_state(RzInterpInstance *inst, RZ_BORROW RZ_INOUT RzInterpAbstrState *a
 // do what in these functions:
 
 /** Whether during evaluation, analysis results should be collected */
-static inline bool interp_is_analyzing(RzInterpRunContext *ctx) {
+static inline bool interp_is_analyzing(RzAbsIntRunContext *ctx) {
 	return ctx->res != NULL;
 }
 
 /** Whether during evaluation, new states may be discoveres */
-static inline bool interp_is_collecting_states(RzInterpRunContext *ctx) {
+static inline bool interp_is_collecting_states(RzAbsIntRunContext *ctx) {
 	return ctx->res == NULL;
 }
 
-static void interp_add_comment(RzInterpRunContext *ctx, ut64 addr, const char *cmt) {
+static void interp_add_comment(RzAbsIntRunContext *ctx, ut64 addr, const char *cmt) {
 	// building the commment string passed to this function is expensive, so assert that it is only called
 	// when actually requested.
-	rz_return_if_fail(interp_is_analyzing(ctx) && (ctx->res_dimen & RZ_INTERP_RESULT_DIMEN_COMMENTS));
+	rz_return_if_fail(interp_is_analyzing(ctx) && (ctx->res_dimen & RZ_ABSINT_RESULT_DIMEN_COMMENTS));
 	RzStrBuf sb;
 	rz_strbuf_init(&sb);
 	char *existing = ht_up_find(ctx->res->comments, addr, NULL);
@@ -268,12 +272,12 @@ static void interp_add_comment(RzInterpRunContext *ctx, ut64 addr, const char *c
  * @{
  */
 
-static RzInterpBlock *interp_block_new(RzInterpInstance *inst, RZ_BORROW RZ_NONNULL RzInterpAbstrState *entry_state) {
-	RzInterpBlock *block = RZ_NEW0(RzInterpBlock);
+static RzAbsIntBlock *interp_block_new(RzAbsIntInstance *inst, RZ_BORROW RZ_NONNULL RzAbsIntState *entry_state) {
+	RzAbsIntBlock *block = RZ_NEW0(RzAbsIntBlock);
 	if (!block) {
 		return NULL;
 	}
-	block->entry_state = rz_interp_abstr_state_clone(inst, entry_state);
+	block->entry_state = rz_absint_state_clone(inst, entry_state);
 	if (!block->entry_state) {
 		free(block);
 		return NULL;
@@ -283,32 +287,32 @@ static RzInterpBlock *interp_block_new(RzInterpInstance *inst, RZ_BORROW RZ_NONN
 	return block;
 }
 
-static void interp_block_free(RzInterpInstance *inst, RzInterpBlock *block) {
+static void interp_block_free(RzAbsIntInstance *inst, RzAbsIntBlock *block) {
 	if (!block) {
 		return;
 	}
-	rz_interp_abstr_state_free(inst, block->entry_state);
+	rz_absint_state_free(inst, block->entry_state);
 	rz_vector_fini(&block->insn_offsets);
 	rz_vector_fini(&block->jump_targets);
 	free(block);
 }
 
-static void interp_blocks_init(RzInterpRunContext *ctx) {
+static void interp_blocks_init(RzAbsIntRunContext *ctx) {
 	rz_interval_tree_init(&ctx->blocks, NULL);
 }
 
-static void interp_blocks_free(RzInterpRunContext *ctx) {
+static void interp_blocks_free(RzAbsIntRunContext *ctx) {
 	RzIntervalTreeIter it;
-	RzInterpBlock *block;
+	RzAbsIntBlock *block;
 	rz_interval_tree_foreach(&ctx->blocks, it, block) {
 		interp_block_free(ctx->inst, block);
 	}
 	rz_interval_tree_fini(&ctx->blocks);
 }
 
-static RzInterpBlock *interp_block_create(RzInterpRunContext *ctx, RZ_BORROW RZ_NONNULL RzInterpAbstrState *as) {
-	rz_return_val_if_fail(ctx && as && as->pc_state == RZ_INTERP_PC_CONST, NULL);
-	RzInterpBlock *block = interp_block_new(ctx->inst, as);
+static RzAbsIntBlock *interp_block_create(RzAbsIntRunContext *ctx, RZ_BORROW RZ_NONNULL RzAbsIntState *as) {
+	rz_return_val_if_fail(ctx && as && as->pc_state == RZ_ABSINT_PC_CONST, NULL);
+	RzAbsIntBlock *block = interp_block_new(ctx->inst, as);
 	if (!block) {
 		return NULL;
 	}
@@ -321,7 +325,7 @@ static RzInterpBlock *interp_block_create(RzInterpRunContext *ctx, RZ_BORROW RZ_
 	return block;
 }
 
-static void interp_block_add_non_fallthrough_target(RzInterpBlock *block, ut64 target) {
+static void interp_block_add_non_fallthrough_target(RzAbsIntBlock *block, ut64 target) {
 	// linear search may be inefficient, but practically the number of targets is often small
 	if (rz_vector_contains(&block->jump_targets, &target)) {
 		return;
@@ -329,12 +333,12 @@ static void interp_block_add_non_fallthrough_target(RzInterpBlock *block, ut64 t
 	rz_vector_push(&block->jump_targets, &target);
 }
 
-RZ_API RzInterpBlock *rz_interp_block_at(RzInterpRunContext *ctx, ut64 addr) {
+RZ_API RzAbsIntBlock *rz_absint_block_at(RzAbsIntRunContext *ctx, ut64 addr) {
 	return rz_interval_tree_at(&ctx->blocks, addr);
 }
 
 /** Mark a block that its current entry_state has not been explored fully yet */
-static void interp_block_mark_uninterpreted(RzInterpRunContext *ctx, RzInterpBlock *block) {
+static void interp_block_mark_uninterpreted(RzAbsIntRunContext *ctx, RzAbsIntBlock *block) {
 	if (block->uninterpreted) {
 		return;
 	}
@@ -344,7 +348,7 @@ static void interp_block_mark_uninterpreted(RzInterpRunContext *ctx, RzInterpBlo
 
 typedef struct interp_block_with_op_at_ctx_t {
 	ut64 addr;
-	RzInterpBlock *found;
+	RzAbsIntBlock *found;
 	size_t *hit_op_idx;
 } InterpBlockWithOpAtCtx;
 
@@ -356,8 +360,8 @@ static int interp_block_with_op_at_cmp(const void *a, const void *b, void *user)
 
 static bool interp_block_with_op_at_cb(RzIntervalNode *node, void *user) {
 	InterpBlockWithOpAtCtx *lctx = user;
-	RzInterpBlock *block = node->data;
-	ut16 off = (ut16)(lctx->addr - rz_interp_block_get_start(block));
+	RzAbsIntBlock *block = node->data;
+	ut16 off = (ut16)(lctx->addr - rz_absint_block_get_start(block));
 	// insn_offsets does not contain the first instruction, which is just fine here since we are not looking for that
 	size_t hit_op_idx = rz_vector_find_sorted(&block->insn_offsets, &off, interp_block_with_op_at_cmp, NULL);
 	if (hit_op_idx != SZT_MAX) {
@@ -368,7 +372,7 @@ static bool interp_block_with_op_at_cb(RzIntervalNode *node, void *user) {
 	return true;
 }
 
-static RzInterpBlock *interp_block_with_op_at(RzInterpRunContext *ctx, ut64 addr, size_t *hit_op_idx) {
+static RzAbsIntBlock *interp_block_with_op_at(RzAbsIntRunContext *ctx, ut64 addr, size_t *hit_op_idx) {
 	InterpBlockWithOpAtCtx lctx = {
 		.addr = addr,
 		.found = NULL,
@@ -390,10 +394,10 @@ static int interp_block_addr_cmp(const void *incoming, const RBNode *in_tree, vo
 	return 0;
 }
 
-static void interp_block_resize(RzInterpRunContext *ctx, RzInterpBlock *block, ut64 new_end) {
+static void interp_block_resize(RzAbsIntRunContext *ctx, RzAbsIntBlock *block, ut64 new_end) {
 	// Warning: the resize operation may invalidate the node pointer! But in reality, it only does so
 	// if the start address has changed, so it is ok to leave the reference in interp_block->node as-is.
-	rz_interval_tree_resize(&ctx->blocks, block->node, rz_interp_block_get_start(block), new_end);
+	rz_interval_tree_resize(&ctx->blocks, block->node, rz_absint_block_get_start(block), new_end);
 }
 
 /**
@@ -401,12 +405,12 @@ static void interp_block_resize(RzInterpRunContext *ctx, RzInterpBlock *block, u
  * and fill instruction offsets.
  * It may also split another block if \p interp_block starts at one of its instruction addresses.
  */
-RZ_API void rz_interp_block_resolve_bounds(RzInterpRunContext *ctx, RzInterpBlock *interp_block, const RzILCacheBlock *il_block) {
+RZ_API void rz_absint_block_resolve_bounds(RzAbsIntRunContext *ctx, RzAbsIntBlock *interp_block, const RzILCacheBlock *il_block) {
 	if (interp_block->bounds_resolved) {
 		return;
 	}
 	interp_block->bounds_resolved = true;
-	ut64 block_start = rz_interp_block_get_start(interp_block);
+	ut64 block_start = rz_absint_block_get_start(interp_block);
 
 	// Blocks may overlap, but one block must not start at an instruction start of another.
 	// We have to consider two cases here, depending on the order in which blocks have been discovered.
@@ -414,21 +418,21 @@ RZ_API void rz_interp_block_resolve_bounds(RzInterpRunContext *ctx, RzInterpBloc
 	// Case A: Our block would start at an instruction start of another block that starts before us and falls through.
 	// We can move the instruction information from the preceding block in that case. This way, case B is already handled as well.
 	size_t hit_op_idx = 0;
-	RzInterpBlock *preceding = interp_block_with_op_at(ctx, rz_interp_block_get_start(interp_block), &hit_op_idx);
+	RzAbsIntBlock *preceding = interp_block_with_op_at(ctx, rz_absint_block_get_start(interp_block), &hit_op_idx);
 	if (preceding) {
 		size_t total_ops_count = rz_vector_len(&preceding->insn_offsets) + 1;
 		size_t our_ops_count = total_ops_count - hit_op_idx;
 		rz_vector_reserve(&interp_block->insn_offsets, our_ops_count - 1);
 		for (size_t i = hit_op_idx + 1; i < total_ops_count; i++) {
 			ut64 addr = *(ut16 *)rz_vector_index_ptr(&preceding->insn_offsets, i - 1);
-			addr += rz_interp_block_get_start(preceding);
+			addr += rz_absint_block_get_start(preceding);
 			addr -= block_start;
 			ut16 off = (ut16)addr;
 			rz_vector_push(&interp_block->insn_offsets, &off);
 		}
 		rz_vector_remove_range(&preceding->insn_offsets, hit_op_idx - 1, rz_vector_len(&preceding->insn_offsets) - (hit_op_idx -1), NULL);
 		rz_vector_shrink(&preceding->insn_offsets);
-		interp_block_resize(ctx, interp_block, rz_interp_block_get_end(preceding));
+		interp_block_resize(ctx, interp_block, rz_absint_block_get_end(preceding));
 		interp_block_resize(ctx, preceding, block_start - 1);
 		preceding->fallthrough = true;
 		rz_vector_fini(&interp_block->jump_targets);
@@ -487,22 +491,22 @@ close:
  * This will join the state with the already known one at the same pc and add it to the
  * queue for further interpretation if there were changes.
  */
-RZ_API void rz_interp_run_push(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx, RZ_BORROW RZ_NONNULL RzInterpAbstrState *as, bool is_fallthrough) {
+RZ_API void rz_absint_run_push(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx, RZ_BORROW RZ_NONNULL RzAbsIntState *as, bool is_fallthrough) {
 	rz_return_if_fail(interp_is_collecting_states(ctx));
-	if (as->pc_state == RZ_INTERP_PC_ANY) {
+	if (as->pc_state == RZ_ABSINT_PC_ANY) {
 		RZ_LOG_DEBUG("Encountered state with unknown/top pc\n");
 		return;
 	}
-	if (as->pc_state != RZ_INTERP_PC_CONST) {
+	if (as->pc_state != RZ_ABSINT_PC_CONST) {
 		rz_warn_if_reached();
 		return;
 	}
 	RzStrBuf sb;
 	rz_strbuf_init(&sb);
-	rz_interp_abstr_state_as_str_short(ctx->inst, as, &sb);
+	rz_absint_state_as_str_short(ctx->inst, as, &sb);
 	RZ_LOG_DEBUG("PUSH 0x%" PFMT64x ": %s\n", as->pc, rz_strbuf_get(&sb));
 	rz_strbuf_fini(&sb);
-	RzInterpBlock *block = rz_interp_block_at(ctx, as->pc);
+	RzAbsIntBlock *block = rz_absint_block_at(ctx, as->pc);
 	if (block) {
 		if (join_state(ctx->inst, block->entry_state, as)) {
 			interp_block_mark_uninterpreted(ctx, block);
@@ -519,8 +523,8 @@ RZ_API void rz_interp_run_push(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx, RZ_
 	}
 }
 
-static RzInterpBlock *rz_interp_run_pop(RZ_BORROW RZ_NONNULL RzInterpRunContext *ctx) {
-	RzInterpBlock *r = rz_list_pop(ctx->queue);
+static RzAbsIntBlock *rz_absint_run_pop(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx) {
+	RzAbsIntBlock *r = rz_list_pop(ctx->queue);
 	if (!r) {
 		return NULL;
 	}
@@ -532,10 +536,10 @@ static RzInterpBlock *rz_interp_run_pop(RZ_BORROW RZ_NONNULL RzInterpRunContext 
 
 /////////////////////////////////////////////////////////
 
-RZ_API RZ_OWN RzInterpInstance *rz_interp_instance_new(RzAnalysis *analysis, RZ_NONNULL RZ_BORROW const RzInterpConfig *config) {
+RZ_API RZ_OWN RzAbsIntInstance *rz_absint_instance_new(RzAnalysis *analysis, RZ_NONNULL RZ_BORROW const RzAbsIntConfig *config) {
 	rz_return_val_if_fail(analysis && config && config->val_domain && config->io_read && config->lift_block, NULL);
 
-	RzInterpInstance *inst = RZ_NEW0(RzInterpInstance);
+	RzAbsIntInstance *inst = RZ_NEW0(RzAbsIntInstance);
 	if (!inst) {
 		return NULL;
 	}
@@ -579,7 +583,7 @@ err_inst:
 	return NULL;
 }
 
-RZ_API void rz_interp_instance_free(RZ_OWN RZ_NULLABLE RzInterpInstance *inst) {
+RZ_API void rz_absint_instance_free(RZ_OWN RZ_NULLABLE RzAbsIntInstance *inst) {
 	if (!inst) {
 		return;
 	}
@@ -589,12 +593,12 @@ RZ_API void rz_interp_instance_free(RZ_OWN RZ_NULLABLE RzInterpInstance *inst) {
 }
 
 static void report_yield_xref(
-	RzInterpRunContext *ctx,
+	RzAbsIntRunContext *ctx,
 	size_t insn_pkt_size,
 	ut64 from,
-	const RzInterpAbstrVal *to,
+	const RzAbsIntVal *to,
 	RzAnalysisXRefType type) {
-	if (!interp_is_analyzing(ctx) || !(ctx->res_dimen & RZ_INTERP_RESULT_DIMEN_XREFS)) {
+	if (!interp_is_analyzing(ctx) || !(ctx->res_dimen & RZ_ABSINT_RESULT_DIMEN_XREFS)) {
 		return;
 	}
 	RzBitVector to_bv;
@@ -634,7 +638,7 @@ cleanup:
  * \brief Report the store of the next PC and report it as possible return point.
  */
 static bool report_yield_call_candiate(
-	RzInterpRunContext *ctx) {
+	RzAbsIntRunContext *ctx) {
 
 	// TODO
 #if 0
@@ -648,11 +652,11 @@ static bool report_yield_call_candiate(
 	return true;
 }
 
-void write_var_to_state(RzInterpInstance *inst,
-	RzInterpAbstrState *astate,
+void write_var_to_state(RzAbsIntInstance *inst,
+	RzAbsIntState *astate,
 	RzILVarKind kind,
 	ut64 var_id,
-	const RzInterpAbstrVal *data) {
+	const RzAbsIntVal *data) {
 	HtUP *ht_vals;
 	switch (kind) {
 	default:
@@ -668,7 +672,7 @@ void write_var_to_state(RzInterpInstance *inst,
 		ht_vals = astate->lets;
 		break;
 	}
-	RzInterpAbstrVal *av = ht_up_find(ht_vals, var_id, NULL);
+	RzAbsIntVal *av = ht_up_find(ht_vals, var_id, NULL);
 	if (!av) {
 		if (kind == RZ_IL_VAR_KIND_GLOBAL) {
 			RZ_LOG_WARN("New global variable created: 0x%" PFMT64x "\n", var_id)
@@ -684,11 +688,11 @@ void write_var_to_state(RzInterpInstance *inst,
 	val_domain(inst)->copy(av, data);
 }
 
-bool read_var_from_state(RzInterpInstance *inst,
-	RzInterpAbstrState *astate,
+bool read_var_from_state(RzAbsIntInstance *inst,
+	RzAbsIntState *astate,
 	RzILVarKind kind,
 	ut64 var_id,
-	RZ_OUT RzInterpAbstrVal *data) {
+	RZ_OUT RzAbsIntVal *data) {
 	HtUP *ht_vals;
 	switch (kind) {
 	default:
@@ -704,7 +708,7 @@ bool read_var_from_state(RzInterpInstance *inst,
 		ht_vals = astate->lets;
 		break;
 	}
-	RzInterpAbstrVal *av = ht_up_find(ht_vals, var_id, NULL);
+	RzAbsIntVal *av = ht_up_find(ht_vals, var_id, NULL);
 	if (!av) {
 		// Variable doesn't exist.
 		// This should never happen and is a bug.
@@ -716,20 +720,20 @@ bool read_var_from_state(RzInterpInstance *inst,
 }
 
 static void store_abstr_data(
-	RzInterpInstance *iset,
+	RzAbsIntInstance *iset,
 	RzILMemIndex mem_idx,
-	const RzInterpAbstrVal *addr,
-	const RzInterpAbstrVal *src) {
+	const RzAbsIntVal *addr,
+	const RzAbsIntVal *src) {
 	// TODO: handle with memory abstractions
 }
 
 EvalResult load_abstr_data(
-	RzInterpInstance *inst,
+	RzAbsIntInstance *inst,
 	RzILMemIndex mem_idx,
 	const RzBitVector *addr,
 	size_t n_bits,
-	RZ_OUT RzInterpAbstrVal *out) {
-	RzInterpIOReadRequest io_req = { 0 };
+	RZ_OUT RzAbsIntVal *out) {
+	RzAbsIntIOReadRequest io_req = { 0 };
 
 	RzBitVector out_bv;
 	rz_bv_init(&out_bv, n_bits);
@@ -739,11 +743,11 @@ EvalResult load_abstr_data(
 	io_req.mem_idx = mem_idx;
 	io_req.n_bits = n_bits;
 	io_req.big_endian = inst->il_ctx->config->big_endian;
-	RzInterpIOReadResult read_res = inst->config.io_read(&io_req, inst->config.cb_user);
-	if (read_res == RZ_INTERP_IO_READ_RESULT_BREAK) {
+	RzAbsIntIOReadResult read_res = inst->config.io_read(&io_req, inst->config.cb_user);
+	if (read_res == RZ_ABSINT_IO_READ_RESULT_BREAK) {
 		return EVAL_RESULT_BREAK;
 	}
-	if (read_res != RZ_INTERP_IO_READ_RESULT_OK) {
+	if (read_res != RZ_ABSINT_IO_READ_RESULT_OK) {
 		val_domain(inst)->set_top(out);
 		return EVAL_RESULT_OK;
 	}
@@ -755,23 +759,23 @@ EvalResult load_abstr_data(
 	return EVAL_RESULT_OK;
 }
 
-static bool set_abstr_pc(RzInterpInstance *inst, RzInterpAbstrState *state, RzInterpAbstrVal *pc) {
+static bool set_abstr_pc(RzAbsIntInstance *inst, RzAbsIntState *state, RzAbsIntVal *pc) {
 	rz_return_val_if_fail(state && pc, false);
 	RzBitVector pc_bv;
 	rz_bv_init(&pc_bv, 64);
 	if (val_domain(inst)->to_concrete_const(pc, &pc_bv)) {
-		state->pc_state = RZ_INTERP_PC_CONST;
+		state->pc_state = RZ_ABSINT_PC_CONST;
 		state->pc = rz_bv_to_ut64(&pc_bv);
 	} else {
-		state->pc_state = RZ_INTERP_PC_ANY;
+		state->pc_state = RZ_ABSINT_PC_ANY;
 	}
 	rz_bv_fini(&pc_bv);
 	RZ_LOG_DEBUG("prototype: set_abstr_pc() - Set PC: 0x%" PFMT64x " (%s)\n",
-		state->pc, state->pc_state == RZ_INTERP_PC_CONST ? "Constant" : "Top");
+		state->pc, state->pc_state == RZ_ABSINT_PC_CONST ? "Constant" : "Top");
 	return true;
 }
 
-static bool value_indicates_ret_addr_write(RzInterpRunContext *ctx, RzInterpAbstrVal *val) {
+static bool value_indicates_ret_addr_write(RzAbsIntRunContext *ctx, RzAbsIntVal *val) {
 	RzBitVector bv;
 	rz_bv_init(&bv, 64);
 	// Hint: pc addrs coming from the lifters are currently just opaque bitvectors.
@@ -795,7 +799,7 @@ static bool value_indicates_ret_addr_write(RzInterpRunContext *ctx, RzInterpAbst
 	return ret;
 }
 
-static EvalResult eval_pure(RzInterpRunContext *ctx, const RzILOpPure *pure, RZ_OUT RzInterpAbstrVal *out) {
+static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_OUT RzAbsIntVal *out) {
 #define EVAL_SUB_OR_RETURN_CLEANUP(op, out, cleanup) do { \
 	EvalResult res = eval_pure(ctx, (op), (out)); \
 	if (RZ_UNLIKELY(res == EVAL_RESULT_BREAK)) { \
@@ -858,7 +862,7 @@ static EvalResult eval_pure(RzInterpRunContext *ctx, const RzILOpPure *pure, RZ_
 		break;
 	case RZ_IL_OP_CAST: {
 		EVAL_SUB_OR_RETURN(pure->op.cast.val, out);
-		RzInterpAbstrVal *fill_bit = val_domain(ctx->inst)->val_new_top();
+		RzAbsIntVal *fill_bit = val_domain(ctx->inst)->val_new_top();
 		if (!fill_bit) {
 			return EVAL_RESULT_ERROR;
 		}
@@ -902,7 +906,7 @@ static EvalResult eval_pure(RzInterpRunContext *ctx, const RzILOpPure *pure, RZ_
 		EVAL_SUB_OR_RETURN(px, out);
 		// Hint: As an optimization, we could short-circuit if out is top here.
 		// However it entirely depends on the plugin whether this is possible, or we lose a lot of precision by doing so.
-		RzInterpAbstrVal *y = val_domain(ctx->inst)->val_new_top();
+		RzAbsIntVal *y = val_domain(ctx->inst)->val_new_top();
 		if (!y) {
 			return EVAL_RESULT_ERROR;
 		}
@@ -931,14 +935,14 @@ static EvalResult eval_pure(RzInterpRunContext *ctx, const RzILOpPure *pure, RZ_
 		EVAL_SUB_OR_RETURN(px, out);
 		// Hint: As an optimization, we could short-circuit if out is top here.
 		// However it entirely depends on the plugin whether this is possible, or we lose a lot of precision by doing so.
-		RzInterpAbstrVal *y = val_domain(ctx->inst)->val_new_top();
+		RzAbsIntVal *y = val_domain(ctx->inst)->val_new_top();
 		if (!y) {
 			return EVAL_RESULT_ERROR;
 		}
 		EVAL_SUB_OR_RETURN_CLEANUP(py, y, {
 			val_domain(ctx->inst)->val_free(y);
 		});
-		RzInterpAbstrVal *fill_bit = val_domain(ctx->inst)->val_new_top();
+		RzAbsIntVal *fill_bit = val_domain(ctx->inst)->val_new_top();
 		if (!fill_bit) {
 			val_domain(ctx->inst)->val_free(y);
 			return EVAL_RESULT_ERROR;
@@ -1038,19 +1042,19 @@ map_to_top:
 #undef EVAL_SUB_OR_RETURN
 }
 
-static void eval_call(RzInterpRunContext *ctx) {
+static void eval_call(RzAbsIntRunContext *ctx) {
 	// For calls, assume control flow will continue like fallthrough.
 	// But any data that may be modified by the callee must be set to top.
 	// TODO: this should depend on the ABI, some data may be preserved.
 	RzIterator *it = ht_up_as_iter(ctx->astate->globals);
-	RzInterpAbstrVal **av;
+	RzAbsIntVal **av;
 	rz_iterator_foreach(it, av) {
 		val_domain(ctx->inst)->set_top(*av);
 	}
 }
 
-static EvalResult eval_effect(RzInterpRunContext *ctx, const RzILOpEffect *effect, size_t insn_pkt_size) {
-	rz_return_val_if_fail(ctx->astate->pc_state == RZ_INTERP_PC_CONST, false);
+static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effect, size_t insn_pkt_size) {
+	rz_return_val_if_fail(ctx->astate->pc_state == RZ_ABSINT_PC_CONST, false);
 #define EVAL_SUB_OR_RETURN_CLEANUP(op, cleanup_local) do { \
 	res = eval_effect(ctx, (op), insn_pkt_size); \
 	if (RZ_UNLIKELY(res != EVAL_RESULT_OK)) { \
@@ -1078,7 +1082,7 @@ static EvalResult eval_effect(RzInterpRunContext *ctx, const RzILOpEffect *effec
 } while (0);
 #define EVAL_PURE_OR_RETURN(op) EVAL_PURE_OR_RETURN_CLEANUP(op, eval_out,)
 	ut64 pc = ctx->astate->pc;
-	RzInterpAbstrVal *eval_out = NULL;
+	RzAbsIntVal *eval_out = NULL;
 	EvalResult res = EVAL_RESULT_OK;
 
 	switch (effect->code) {
@@ -1172,8 +1176,8 @@ static EvalResult eval_effect(RzInterpRunContext *ctx, const RzILOpEffect *effec
 		bool may_be_false = val_domain(ctx->inst)->may_be_bool(eval_out, false);
 		ut64 fallthrough_pc = ctx->astate->pc;
 		if (may_be_true && may_be_false) {
-			RzInterpAbstrState *true_state = rz_interp_abstr_state_clone(ctx->inst, ctx->astate);
-			RzInterpAbstrState *false_state = ctx->astate;
+			RzAbsIntState *true_state = rz_absint_state_clone(ctx->inst, ctx->astate);
+			RzAbsIntState *false_state = ctx->astate;
 			ctx->astate = true_state;
 			EVAL_SUB_OR_RETURN(effect->op.branch.true_eff);
 			ctx->astate = false_state;
@@ -1183,13 +1187,13 @@ static EvalResult eval_effect(RzInterpRunContext *ctx, const RzILOpEffect *effec
 				join_state(ctx->inst, true_state, false_state);
 			} else if (interp_is_collecting_states(ctx)) {
 				// different jump targets, branch rather than resorting to top pc
-				rz_interp_run_push(ctx, true_state, true_state->pc_state == RZ_INTERP_PC_CONST && true_state->pc == fallthrough_pc);
-				if (true_state->pc_state == RZ_INTERP_PC_CONST && !rz_vector_contains(&ctx->block->jump_targets, &true_state->pc)) {
+				rz_absint_run_push(ctx, true_state, true_state->pc_state == RZ_ABSINT_PC_CONST && true_state->pc == fallthrough_pc);
+				if (true_state->pc_state == RZ_ABSINT_PC_CONST && !rz_vector_contains(&ctx->block->jump_targets, &true_state->pc)) {
 					rz_vector_push(&ctx->block->jump_targets, &true_state->pc);
 				}
 				// false_state is already in ctx->inst->astate and will be continued automatically
 			}
-			rz_interp_abstr_state_free(ctx->inst, true_state);
+			rz_absint_state_free(ctx->inst, true_state);
 		} else if (may_be_true) {
 			EVAL_SUB_OR_RETURN(effect->op.branch.true_eff);
 		} else if (may_be_false) {
@@ -1200,7 +1204,7 @@ static EvalResult eval_effect(RzInterpRunContext *ctx, const RzILOpEffect *effec
 	case RZ_IL_OP_STORE:
 	case RZ_IL_OP_STOREW: {
 		RzILOpPure *key = effect->code == RZ_IL_OP_STORE ? effect->op.store.key : effect->op.storew.key;
-		RzInterpAbstrVal *st_addr;
+		RzAbsIntVal *st_addr;
 		EVAL_PURE_OR_RETURN_CLEANUP(key, st_addr, {
 			val_domain(ctx->inst)->val_free(st_addr);
 		});
@@ -1251,16 +1255,16 @@ cleanup:
 #undef EVAL_PURE_OR_RETURN
 }
 
-static EvalResult eval_block(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL RzInterpBlock *interp_block, RZ_NONNULL const RzILCacheBlock *il_block) {
+static EvalResult eval_block(RZ_NONNULL RzAbsIntRunContext *ctx, RZ_NONNULL RzAbsIntBlock *interp_block, RZ_NONNULL const RzILCacheBlock *il_block) {
 	ctx->block = interp_block;
 	ctx->il_block_end = il_block->addr + il_block->size;
 	// Reset call candidate tracking for each basic block.
 	memset(&ctx->call_cand, 0, sizeof(ctx->call_cand));
 
-	ut64 interp_block_end = rz_interp_block_get_end(ctx->block);
+	ut64 interp_block_end = rz_absint_block_get_end(ctx->block);
 
 	// Now execute the actual effects of the BLOCK.
-	RzInterpAbstrState *astate = ctx->astate;
+	RzAbsIntState *astate = ctx->astate;
 	void **it;
 	rz_pvector_foreach (il_block->il_ops, it) {
 		ut64 pc = astate->pc;
@@ -1275,12 +1279,12 @@ static EvalResult eval_block(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL RzIn
 
 		// Prepare next pc, the evalutation may overwrite this.
 		ut64 next_pc = pc + pkt->insn_pkt_size;
-		rz_interp_abstr_state_set_pc_const(ctx->astate, next_pc);
+		rz_absint_state_set_pc_const(ctx->astate, next_pc);
 
-		if (interp_is_analyzing(ctx) && (ctx->res_dimen & RZ_INTERP_RESULT_DIMEN_COMMENTS)) {
+		if (interp_is_analyzing(ctx) && (ctx->res_dimen & RZ_ABSINT_RESULT_DIMEN_COMMENTS)) {
 			RzStrBuf sb;
 			rz_strbuf_init(&sb);
-			rz_interp_abstr_state_as_str_short(ctx->inst, ctx->astate, &sb);
+			rz_absint_state_as_str_short(ctx->inst, ctx->astate, &sb);
 			interp_add_comment(ctx, ctx->insn_addr, rz_strbuf_get(&sb));
 			rz_strbuf_fini(&sb);
 			if (pc == il_block->addr) {
@@ -1298,7 +1302,7 @@ static EvalResult eval_block(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL RzIn
 			}
 			return res;
 		}
-		if (astate->pc_state != RZ_INTERP_PC_CONST) {
+		if (astate->pc_state != RZ_ABSINT_PC_CONST) {
 			// unreachable or unknown jump
 			break;
 		}
@@ -1309,19 +1313,19 @@ static EvalResult eval_block(RZ_NONNULL RzInterpRunContext *ctx, RZ_NONNULL RzIn
 		}
 	}
 
-	if (interp_is_collecting_states(ctx) && astate->pc_state != RZ_INTERP_PC_UNREACHABLE) {
+	if (interp_is_collecting_states(ctx) && astate->pc_state != RZ_ABSINT_PC_UNREACHABLE) {
 		bool fallthrough = false;
-		if (astate->pc_state == RZ_INTERP_PC_CONST && astate->pc == interp_block_end + 1) {
+		if (astate->pc_state == RZ_ABSINT_PC_CONST && astate->pc == interp_block_end + 1) {
 			fallthrough = true;
 			ctx->block->fallthrough = true;
 		}
-		rz_interp_run_push(ctx, ctx->astate, fallthrough);
+		rz_absint_run_push(ctx, ctx->astate, fallthrough);
 	}
 
 	return EVAL_RESULT_OK;
 }
 
-RZ_API bool rz_interp_run_context_init(RzInterpRunContext *ctx, RzInterpInstance *inst) {
+RZ_API bool rz_absint_run_context_init(RzAbsIntRunContext *ctx, RzAbsIntInstance *inst) {
 	ctx->inst = inst;
 	ctx->astate = NULL;
 	ctx->res = NULL;
@@ -1333,14 +1337,14 @@ RZ_API bool rz_interp_run_context_init(RzInterpRunContext *ctx, RzInterpInstance
 	return true;
 }
 
-RZ_API void rz_interp_run_context_fini(RzInterpRunContext *ctx) {
+RZ_API void rz_absint_run_context_fini(RzAbsIntRunContext *ctx) {
 	rz_list_free(ctx->queue);
 	interp_blocks_free(ctx);
 }
 
-static RzInterpLiftBlockResult interp_lift_block(RzInterpInstance *inst, ut64 addr, const RzILCacheBlock **block_out) {
-	RzInterpLiftBlockResult res = inst->config.lift_block(addr, block_out, inst->config.cb_user);
-	if (res == RZ_INTERP_LIFT_BLOCK_RESULT_FAILED) {
+static RzAbsIntLiftBlockResult interp_lift_block(RzAbsIntInstance *inst, ut64 addr, const RzILCacheBlock **block_out) {
+	RzAbsIntLiftBlockResult res = inst->config.lift_block(addr, block_out, inst->config.cb_user);
+	if (res == RZ_ABSINT_LIFT_BLOCK_RESULT_FAILED) {
 		RZ_LOG_ERROR("Failed to lift block at 0x%" PFMT64X "\n", addr);
 	}
 	return res;
@@ -1349,72 +1353,72 @@ static RzInterpLiftBlockResult interp_lift_block(RzInterpInstance *inst, ut64 ad
 /**
  * \brief Run the interpreter from a single entrypoint until a fixpoint is reached
  */
-RZ_API RzInterpResultCode rz_interp_run(RzInterpInstance *inst, ut64 entry_point, RzInterpResultDimen dimen, RZ_NONNULL RZ_OUT RzInterpResult **res_out) {
-	rz_return_val_if_fail(inst && res_out, RZ_INTERP_RESULT_FAILED);
+RZ_API RzAbsIntResultCode rz_absint_run(RzAbsIntInstance *inst, ut64 entry_point, RzAbsIntResultDimen dimen, RZ_NONNULL RZ_OUT RzAbsIntResult **res_out) {
+	rz_return_val_if_fail(inst && res_out, RZ_ABSINT_RESULT_FAILED);
 
 	// Initialization
-	RzInterpResult *res = NULL;
-	RzInterpResultCode ret = RZ_INTERP_RESULT_FAILED;
-	RzInterpRunContext ctx = { 0 };
-	if (!rz_interp_run_context_init(&ctx, inst)) {
-		return RZ_INTERP_RESULT_FAILED;
+	RzAbsIntResult *res = NULL;
+	RzAbsIntResultCode ret = RZ_ABSINT_RESULT_FAILED;
+	RzAbsIntRunContext ctx = { 0 };
+	if (!rz_absint_run_context_init(&ctx, inst)) {
+		return RZ_ABSINT_RESULT_FAILED;
 	}
 
 	// Prepare the initial state from the given entry point
 	// Hint: nothing speaks against supporting multiple entry points in a single run
-	RzInterpAbstrState *estate = rz_interp_abstr_state_new(inst);
+	RzAbsIntState *estate = rz_absint_state_new(inst);
 	memset(&ctx.call_cand, 0, sizeof(ctx.call_cand));
 	if (!reset_state(inst, estate, entry_point)) {
-		rz_interp_abstr_state_free(inst, estate);
+		rz_absint_state_free(inst, estate);
 		goto cleanup;
 	}
-	rz_interp_run_push(&ctx, estate, false);
-	rz_interp_abstr_state_free(inst, estate);
+	rz_absint_run_push(&ctx, estate, false);
+	rz_absint_state_free(inst, estate);
 
 	// Loop and interpret until a fixpoint has been reached
 	while (true) {
-		RzInterpBlock *interp_block = rz_interp_run_pop(&ctx);
+		RzAbsIntBlock *interp_block = rz_absint_run_pop(&ctx);
 		if (!interp_block) {
 			// No uninterpreted states left, fixpoint reached.
 			break;
 		}
-		ctx.astate = rz_interp_abstr_state_clone(inst, interp_block->entry_state);
+		ctx.astate = rz_absint_state_clone(inst, interp_block->entry_state);
 
 		const RzILCacheBlock *il_block;
-		RzInterpLiftBlockResult lift_res = interp_lift_block(inst, ctx.astate->pc, &il_block);
-		if (lift_res == RZ_INTERP_LIFT_BLOCK_RESULT_BREAK) {
-			ret = RZ_INTERP_RESULT_BREAK;
+		RzAbsIntLiftBlockResult lift_res = interp_lift_block(inst, ctx.astate->pc, &il_block);
+		if (lift_res == RZ_ABSINT_LIFT_BLOCK_RESULT_BREAK) {
+			ret = RZ_ABSINT_RESULT_BREAK;
 			goto cleanup;
 		}
-		if (lift_res != RZ_INTERP_LIFT_BLOCK_RESULT_OK) {
+		if (lift_res != RZ_ABSINT_LIFT_BLOCK_RESULT_OK) {
 			// Failed lifting, keep the entry state unimplemented
 			continue;
 		}
 
-		rz_interp_block_resolve_bounds(&ctx, interp_block, il_block);
+		rz_absint_block_resolve_bounds(&ctx, interp_block, il_block);
 
 		// Evaluate the effect on the abstract state.
 		if (eval_block(&ctx, interp_block, il_block) == EVAL_RESULT_BREAK) {
-			ret = RZ_INTERP_RESULT_BREAK;
+			ret = RZ_ABSINT_RESULT_BREAK;
 			goto cleanup;
 		}
 	}
 
 	// Fixpoint reached, collect results.
-	res = RZ_NEW0(RzInterpResult);
+	res = RZ_NEW0(RzAbsIntResult);
 	if (!res) {
 		goto cleanup;
 	}
 	res->entry = entry_point;
 
-	if (dimen != RZ_INTERP_RESULT_DIMEN_BASE) {
+	if (dimen != RZ_ABSINT_RESULT_DIMEN_BASE) {
 		// Evaluate all blocks again once to collect analysis information.
 		// We do this in an additional pass because until now, the collected abstract states
 		// did not fully represent all reachable concrete states.
-		if (dimen & RZ_INTERP_RESULT_DIMEN_XREFS) {
+		if (dimen & RZ_ABSINT_RESULT_DIMEN_XREFS) {
 			rz_vector_init(&res->xrefs, sizeof(RzAnalysisXRef), NULL, NULL);
 		}
-		if (dimen & RZ_INTERP_RESULT_DIMEN_COMMENTS) {
+		if (dimen & RZ_ABSINT_RESULT_DIMEN_COMMENTS) {
 			res->comments = ht_up_new(NULL, free);
 			if (!res->comments) {
 				goto cleanup_res;
@@ -1423,20 +1427,20 @@ RZ_API RzInterpResultCode rz_interp_run(RzInterpInstance *inst, ut64 entry_point
 		ctx.res = res;
 		ctx.res_dimen = dimen;
 		RzIntervalTreeIter it;
-		RzInterpBlock *interp_block;
+		RzAbsIntBlock *interp_block;
 		rz_interval_tree_foreach (&ctx.blocks, it, interp_block) {
-			ctx.astate = rz_interp_abstr_state_clone(inst, interp_block->entry_state);
+			ctx.astate = rz_absint_state_clone(inst, interp_block->entry_state);
 			const RzILCacheBlock *il_block;
-			RzInterpLiftBlockResult lift_res = interp_lift_block(inst, ctx.astate->pc, &il_block);
-			if (lift_res == RZ_INTERP_LIFT_BLOCK_RESULT_BREAK) {
-				ret = RZ_INTERP_RESULT_BREAK;
+			RzAbsIntLiftBlockResult lift_res = interp_lift_block(inst, ctx.astate->pc, &il_block);
+			if (lift_res == RZ_ABSINT_LIFT_BLOCK_RESULT_BREAK) {
+				ret = RZ_ABSINT_RESULT_BREAK;
 				goto cleanup;
 			}
-			if (lift_res != RZ_INTERP_LIFT_BLOCK_RESULT_OK) {
+			if (lift_res != RZ_ABSINT_LIFT_BLOCK_RESULT_OK) {
 				continue;
 			}
 			if (eval_block(&ctx, interp_block, il_block) == EVAL_RESULT_BREAK) {
-				ret = RZ_INTERP_RESULT_BREAK;
+				ret = RZ_ABSINT_RESULT_BREAK;
 				goto cleanup_res;
 			}
 		}
@@ -1444,18 +1448,18 @@ RZ_API RzInterpResultCode rz_interp_run(RzInterpInstance *inst, ut64 entry_point
 
 	memmove(&res->blocks, &ctx.blocks, sizeof(ctx.blocks));
 	memset(&ctx.blocks, 0, sizeof(ctx.blocks));
-	ret = RZ_INTERP_RESULT_OK;
+	ret = RZ_ABSINT_RESULT_OK;
 	*res_out = res;
 	goto cleanup;
 
 cleanup_res:
-	rz_interp_result_free(res);
+	rz_absint_result_free(res);
 cleanup:
-	rz_interp_run_context_fini(&ctx);
+	rz_absint_run_context_fini(&ctx);
 	return ret;
 }
 
-RZ_API void rz_interp_result_free(RzInterpResult *res) {
+RZ_API void rz_absint_result_free(RzAbsIntResult *res) {
 	if (!res) {
 		return;
 	}
@@ -1475,7 +1479,7 @@ static void bb_add_target(RzAnalysisBlock *abb, ut64 target) {
 	}
 }
 
-RZ_API bool rz_interp_result_apply_to_analysis(RZ_NONNULL RzInterpResult *res, RZ_NONNULL RzAnalysis *analysis) {
+RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, RZ_NONNULL RzAnalysis *analysis) {
 	rz_return_val_if_fail(res && analysis, false);
 	// partially copied from rz_inquiry_convert_and_add_to_analysis()
 	char name[128];
@@ -1485,14 +1489,14 @@ RZ_API bool rz_interp_result_apply_to_analysis(RZ_NONNULL RzInterpResult *res, R
 		return false;
 	}
 	RzIntervalTreeIter it;
-	RzInterpBlock *block;
+	RzAbsIntBlock *block;
 	rz_interval_tree_foreach (&res->blocks, it, block) {
 		if (block->added_to_analysis) {
 			// has been merged into the previous already
 			continue;
 		}
-		ut64 start = rz_interp_block_get_start(block);
-		ut64 end_excl = rz_interp_block_get_end(block) + 1;
+		ut64 start = rz_absint_block_get_start(block);
+		ut64 end_excl = rz_absint_block_get_end(block) + 1;
 
 		if (block->fallthrough && rz_vector_empty(&block->jump_targets)) {
 			// Merge consecutive blocks if there is no in-edge between them.
@@ -1511,7 +1515,7 @@ RZ_API bool rz_interp_result_apply_to_analysis(RZ_NONNULL RzInterpResult *res, R
 						break;
 					}
 				}
-				RzInterpBlock *next_block;
+				RzAbsIntBlock *next_block;
 				if (!next_node || (next_block = next_node->data)->non_fallthrough_in) {
 					// no consecutive block or there is a consecutive block, but is has an in-edge from somewhere else
 					break;

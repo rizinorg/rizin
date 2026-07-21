@@ -9,7 +9,7 @@
  * as well as integrating results as they are emitted.
  *
  * Threads:
- * - rz_interp_driver_run is the entrypoint and contains the single main loop that has access to all of rizin.
+ * - rz_absint_driver_run is the entrypoint and contains the single main loop that has access to all of rizin.
  * - n interpreter threads are started that take care of the actual interpretation and analysis work.
  *   They communicate with the main loop through channels whenever they need any information from rizin.
  *
@@ -22,7 +22,7 @@
  *     For io and instruction requests, main replies with the result to the thread that sent the request.
  */
 
-#include <rz_inquiry/rz_interpreter.h>
+#include <rz_inquiry/rz_absint.h>
 #include <rz_core.h>
 
 typedef struct interp_thread InterpThread;
@@ -38,7 +38,7 @@ typedef struct interp_driver_message_t {
 	} type;
 	union {
 		struct {
-			RzInterpIOReadRequest *request;
+			RzAbsIntIOReadRequest *request;
 			InterpThread *requester;
 		} io_read;
 		struct {
@@ -47,7 +47,7 @@ typedef struct interp_driver_message_t {
 		} lift_block;
 		struct {
 			ut64 entry;
-			RzInterpResult *res;
+			RzAbsIntResult *res;
 		} interp_result;
 	} payload;
 } InterpDriverMessage;
@@ -57,7 +57,7 @@ typedef struct interp_driver_message_t {
 typedef struct interp_driver_t {
 	RzThreadQueue /*<ut64>*/ *entry_points_ch; ///< Main delivers entry points to multiple interpreters with this. TODO: linked list is not optimal, but rbuf may lead to starvation
 	RzThreadRingBuf *main_ch; ///< Channel to main. Multiple interpreters send info requests and analysis results with this.
-	RzInterpResultDimen dimens;
+	RzAbsIntResultDimen dimens;
 } InterpDriver;
 
 /**
@@ -70,7 +70,7 @@ typedef struct interp_thread_message_t {
 		INTERP_MESSAGE_LIFT_BLOCK_RESULT
 	} type;
 	union {
-		RzInterpIOReadResult io_read_result;
+		RzAbsIntIOReadResult io_read_result;
 		const RzILCacheBlock *lift_block_result;
 	} payload;
 } InterpThreadMessage;
@@ -78,7 +78,7 @@ typedef struct interp_thread_message_t {
 struct interp_thread {
 	InterpDriver *driver;
 	RzThread *th;
-	RzInterpInstance *inst;
+	RzAbsIntInstance *inst;
 
 	/**
 	 * \brief Channel to this thread.
@@ -89,7 +89,7 @@ struct interp_thread {
 
 static void *interp_th(void *user) {
 	InterpThread *ctx = user;
-	RzInterpInstance *inst = ctx->inst;
+	RzAbsIntInstance *inst = ctx->inst;
 	while (true) {
 		ut64 *entry_point;
 		if (!rz_th_queue_pop(ctx->driver->entry_points_ch, false, (void **)&entry_point)) {
@@ -98,9 +98,9 @@ static void *interp_th(void *user) {
 		}
 		ut64 entry_point_val = *entry_point;
 		free(entry_point);
-		RzInterpResult *res = NULL;
-		RzInterpResultCode code = rz_interp_run(inst, entry_point_val, ctx->driver->dimens, &res);
-		if (code == RZ_INTERP_RESULT_BREAK) {
+		RzAbsIntResult *res = NULL;
+		RzAbsIntResultCode code = rz_absint_run(inst, entry_point_val, ctx->driver->dimens, &res);
+		if (code == RZ_ABSINT_RESULT_BREAK) {
 			break;
 		}
 		InterpDriverMessage msg = {
@@ -117,7 +117,7 @@ static void *interp_th(void *user) {
 	return NULL;
 }
 
-static RzInterpIOReadResult send_io_read(RZ_NONNULL RzInterpIOReadRequest *req, void *user) {
+static RzAbsIntIOReadResult send_io_read(RZ_NONNULL RzAbsIntIOReadRequest *req, void *user) {
 	InterpThread *th = user;
 	InterpDriverMessage msg = {
 		.type = DRIVER_MESSAGE_IO_READ,
@@ -129,17 +129,17 @@ static RzInterpIOReadResult send_io_read(RZ_NONNULL RzInterpIOReadRequest *req, 
 		}
 	};
 	if (rz_th_ring_buf_put(th->driver->main_ch, &msg) != RZ_THREAD_RING_BUF_OK) {
-		return RZ_INTERP_IO_READ_RESULT_BREAK;
+		return RZ_ABSINT_IO_READ_RESULT_BREAK;
 	}
 	InterpThreadMessage ret;
 	if (rz_th_ring_buf_take_blocking(th->ch, &ret) != RZ_THREAD_RING_BUF_OK) {
-		return RZ_INTERP_IO_READ_RESULT_BREAK;
+		return RZ_ABSINT_IO_READ_RESULT_BREAK;
 	}
-	rz_return_val_if_fail(ret.type != INTERP_MESSAGE_IO_READ_RESULT, RZ_INTERP_IO_READ_RESULT_BREAK);
+	rz_return_val_if_fail(ret.type != INTERP_MESSAGE_IO_READ_RESULT, RZ_ABSINT_IO_READ_RESULT_BREAK);
 	return ret.payload.io_read_result;
 }
 
-static RzInterpLiftBlockResult send_lift_il_block(ut64 addr, const RzILCacheBlock **block_out, void *user) {
+static RzAbsIntLiftBlockResult send_lift_il_block(ut64 addr, const RzILCacheBlock **block_out, void *user) {
 	InterpThread *th = user;
 	InterpDriverMessage msg = {
 		.type = DRIVER_MESSAGE_LIFT_BLOCK,
@@ -151,18 +151,18 @@ static RzInterpLiftBlockResult send_lift_il_block(ut64 addr, const RzILCacheBloc
 		}
 	};
 	if (rz_th_ring_buf_put(th->driver->main_ch, &msg) != RZ_THREAD_RING_BUF_OK) {
-		return RZ_INTERP_LIFT_BLOCK_RESULT_BREAK;
+		return RZ_ABSINT_LIFT_BLOCK_RESULT_BREAK;
 	}
 	InterpThreadMessage ret;
 	if (rz_th_ring_buf_take_blocking(th->ch, &ret) != RZ_THREAD_RING_BUF_OK) {
-		return RZ_INTERP_LIFT_BLOCK_RESULT_BREAK;
+		return RZ_ABSINT_LIFT_BLOCK_RESULT_BREAK;
 	}
-	rz_return_val_if_fail(ret.type == INTERP_MESSAGE_LIFT_BLOCK_RESULT, RZ_INTERP_LIFT_BLOCK_RESULT_BREAK);
+	rz_return_val_if_fail(ret.type == INTERP_MESSAGE_LIFT_BLOCK_RESULT, RZ_ABSINT_LIFT_BLOCK_RESULT_BREAK);
 	if (ret.payload.lift_block_result) {
 		*block_out = ret.payload.lift_block_result;
-		return RZ_INTERP_LIFT_BLOCK_RESULT_OK;
+		return RZ_ABSINT_LIFT_BLOCK_RESULT_OK;
 	}
-	return RZ_INTERP_LIFT_BLOCK_RESULT_FAILED;
+	return RZ_ABSINT_LIFT_BLOCK_RESULT_FAILED;
 }
 
 static InterpThread *interp_thread_new(RzAnalysis *analysis, InterpDriver *driver) {
@@ -175,13 +175,13 @@ static InterpThread *interp_thread_new(RzAnalysis *analysis, InterpDriver *drive
 	if (!ctx->ch) {
 		goto err_ctx;
 	}
-	RzInterpConfig interp_config = {
-		.val_domain = &rz_interp_value_domain_const,
+	RzAbsIntConfig interp_config = {
+		.val_domain = &rz_absint_value_domain_const,
 		.cb_user = ctx,
 		.io_read = send_io_read,
 		.lift_block = send_lift_il_block
 	};
-	ctx->inst = rz_interp_instance_new(analysis, &interp_config);
+	ctx->inst = rz_absint_instance_new(analysis, &interp_config);
 	if (!ctx->inst) {
 		goto err_ch;
 	}
@@ -191,7 +191,7 @@ static InterpThread *interp_thread_new(RzAnalysis *analysis, InterpDriver *drive
 	}
 	return ctx;
 err_inst:
-	rz_interp_instance_free(ctx->inst);
+	rz_absint_instance_free(ctx->inst);
 err_ch:
 	rz_th_ring_buf_free(ctx->ch);
 err_ctx:
@@ -207,36 +207,36 @@ static void interp_thread_free(InterpThread *th) {
 	rz_th_wait(th->th);
 	rz_th_free(th->th);
 	rz_th_ring_buf_free(th->ch);
-	rz_interp_instance_free(th->inst);
+	rz_absint_instance_free(th->inst);
 	free(th);
 }
 
-static RzInterpIOReadResult handle_io_request(const RzAnalysisILContext *il_ctx, RzInterpIOReadRequest *io_req) {
+static RzAbsIntIOReadResult handle_io_request(const RzAnalysisILContext *il_ctx, RzAbsIntIOReadRequest *io_req) {
 	RZ_LOG_DEBUG("inquiry: Received IO read request: mem:%" PFMTSZd " 0x%" PFMT64x "\n",
 		io_req->mem_idx,
 		rz_bv_to_ut64(io_req->addr));
 	RzILMemIndex mem_idx = io_req->mem_idx;
 	if (mem_idx > rz_vector_len(&il_ctx->memory)) {
 		rz_warn_if_reached();
-		return RZ_INTERP_IO_READ_RESULT_TOP;
+		return RZ_ABSINT_IO_READ_RESULT_TOP;
 	}
 	if (rz_bv_len(io_req->addr) == 64 && rz_bv_msb(io_req->addr)) {
 		// TODO: remove this
 		RZ_LOG_ERROR("Due to the Unix seek() implementation, addresses with the "
 			     "63 bit set can't be addresses.\n");
-		return RZ_INTERP_IO_READ_RESULT_TOP;
+		return RZ_ABSINT_IO_READ_RESULT_TOP;
 	}
 	RzAnalysisILMem *mem = rz_vector_index_ptr(&il_ctx->memory, mem_idx);
 	if (!mem->base_buf) {
-		return RZ_INTERP_IO_READ_RESULT_TOP;
+		return RZ_ABSINT_IO_READ_RESULT_TOP;
 	}
 	// TODO: here only memory should be read that can be assumed to be constant!
 	bool ok = rz_il_loadw_into(mem->base_buf, io_req->ld_data, io_req->addr, io_req->n_bits, io_req->big_endian);
 	RZ_LOG_DEBUG("inquiry: Sent IO read result. Success = %s.\n", rz_str_bool(ok));
-	return ok ? RZ_INTERP_IO_READ_RESULT_TOP : RZ_INTERP_IO_READ_RESULT_TOP;
+	return ok ? RZ_ABSINT_IO_READ_RESULT_TOP : RZ_ABSINT_IO_READ_RESULT_TOP;
 }
 
-RZ_API bool rz_interp_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points, RzInterpResultDimen dimens) {
+RZ_API bool rz_absint_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points, RzAbsIntResultDimen dimens) {
 	bool return_code = false;
 
 	bool user_sent_signal = false;
@@ -303,7 +303,7 @@ RZ_API bool rz_interp_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points, RzIn
 		}
 		switch (msg.type) {
 		case DRIVER_MESSAGE_IO_READ: {
-			RzInterpIOReadResult res = handle_io_request(msg.payload.io_read.requester->inst->il_ctx, msg.payload.io_read.request);
+			RzAbsIntIOReadResult res = handle_io_request(msg.payload.io_read.requester->inst->il_ctx, msg.payload.io_read.request);
 			InterpThreadMessage res_msg = {
 				.type = INTERP_MESSAGE_IO_READ_RESULT,
 				.payload = {
@@ -331,9 +331,9 @@ RZ_API bool rz_interp_driver_run(RzCore *core, RZ_OWN RzSetU *entry_points, RzIn
 			break;
 		}
 		case DRIVER_MESSAGE_INTERP_RESULT: {
-			RzInterpResult *res = msg.payload.interp_result.res;
+			RzAbsIntResult *res = msg.payload.interp_result.res;
 			if (res) {
-				if (!rz_interp_result_apply_to_analysis(res, core->analysis)) {
+				if (!rz_absint_result_apply_to_analysis(res, core->analysis)) {
 					RZ_LOG_WARN("Failed to apply to analysis\n");
 				}
 			} else {

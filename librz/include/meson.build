@@ -146,7 +146,7 @@ rz_util_files = [
 install_headers(rz_util_files, install_dir: join_paths(rizin_incdir, 'rz_util'))
 
 rz_inquiry_sub_files = [
-  'rz_inquiry/rz_interpreter.h',
+  'rz_inquiry/rz_absint.h',
   'rz_inquiry/rz_il_cache.h',
   'rz_inquiry/rz_bcfg.h',
 ]

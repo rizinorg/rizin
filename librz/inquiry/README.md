@@ -8,8 +8,6 @@ Module implementing basic and advanced binary analysis.
 ## TODO
 
 * fix leaks
-* rename interp to absint
-* rename valueabstraction to valuedomain
 * update tests
 * branch (with bsd- prefix and so on) and remove everything that should not be merged at first
 * rebase/squash abstr-intr-prototype on top of new branch

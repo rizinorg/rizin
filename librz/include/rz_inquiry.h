@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 #include <rz_inquiry/rz_il_cache.h>
-#include <rz_inquiry/rz_interpreter.h>
+#include <rz_inquiry/rz_absint.h>
 #include <rz_inquiry/rz_bcfg.h>
 
 /**
@@ -29,7 +29,7 @@ typedef struct rz_inquiry_plugin_t {
 	const char *version;
 	const char *desc;
 	const char *license;
-	RzInterpValueAbstraction *value_abstraction;
+	RzAbsIntValueDomain *value_domain;
 } RzInquiryPlugin;
 
 typedef struct {
