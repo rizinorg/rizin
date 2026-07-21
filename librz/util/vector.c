@@ -23,9 +23,14 @@
 #define RESIZE_OR_RETURN_VAL(next_capacity, retval) \
 	do { \
 		size_t new_capacity = next_capacity; \
-		void **new_a = realloc(vec->a, vec->elem_size * new_capacity); \
-		if (!new_a && new_capacity) { \
-			return retval; \
+		void **new_a = NULL; \
+		if (new_capacity) { \
+			new_a = realloc(vec->a, vec->elem_size * new_capacity); \
+			if (!new_a) { \
+				return retval; \
+			} \
+		} else { \
+			free(vec->a); \
 		} \
 		vec->a = new_a; \
 		vec->capacity = new_capacity; \

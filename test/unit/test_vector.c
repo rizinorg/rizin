@@ -1011,6 +1011,17 @@ static bool test_vector_shrink(void) {
 
 	init_test_vector(&v, 0, 8, NULL, NULL);
 	rz_vector_shrink(&v);
+	mu_assert_eq(v.len, 0, "shrink to 0");
+	mu_assert_eq(rz_vector_capacity(&v), 0, "shrink to 0");
+	mu_assert_null(v.a, "shrink to 0 frees");
+	rz_vector_fini(&v);
+
+	init_test_vector(&v, 0, 8, NULL, NULL);
+	rz_vector_shrink(&v);
+	rz_vector_reserve(&v, 8);
+	mu_assert_eq(v.len, 0, "reserve after 0-shrink");
+	mu_assert_eq(rz_vector_capacity(&v), 8, "reserve after 0-shrink");
+	mu_assert_notnull(v.a, "sreserve after 0-shrink");
 	rz_vector_fini(&v);
 
 	mu_end;
