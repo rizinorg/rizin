@@ -13,6 +13,7 @@ void print_float(RzFloat *f) {
 	free(str);
 }
 
+#if !defined(__TINYC__)
 typedef struct float_precision_thread_ctx_t {
 	RzFloatRPrecision precision;
 	RzFloatRPrecision saved;
@@ -105,6 +106,7 @@ static bool ext80_rounding_precision_thread_local_test(void) {
 	mu_assert_eq(main_after_scopes, RZ_FLOAT_RPREC_80, "interleaved restores do not alter main thread precision");
 	mu_end;
 }
+#endif
 
 bool f32_ieee_format_test(void) {
 	float val = 1.5f;
@@ -2081,7 +2083,9 @@ bool f80_ieee_cast_test(void) {
 }
 
 bool all_tests() {
+#if !defined(__TINYC__)
 	mu_run_test(ext80_rounding_precision_thread_local_test);
+#endif
 	mu_run_test(rz_float_new_from_hex_test);
 	mu_run_test(f32_ieee_format_test);
 	mu_run_test(rz_float_detect_spec_test);

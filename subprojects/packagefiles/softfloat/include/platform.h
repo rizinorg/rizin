@@ -52,7 +52,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #ifndef THREAD_LOCAL
-#if defined(_MSC_VER)
+#if defined(__TINYC__)
+#define THREAD_LOCAL
+#elif defined(_MSC_VER)
 #define THREAD_LOCAL __declspec(thread)
 #else
 #define THREAD_LOCAL __thread

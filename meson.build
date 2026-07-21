@@ -745,7 +745,16 @@ if r.returncode() == 1 and get_option('subprojects_check')
 endif
 
 use_sys_softfloat = get_option('use_sys_softfloat')
-softfloat_dep = dependency('softfloat', required: use_sys_softfloat, static: is_static_build)
+# Keep the system probes method-specific so a rejected system dependency does
+# not occupy the generic name overridden by the bundled subproject.
+softfloat_probe_required = use_sys_softfloat.disabled() ? use_sys_softfloat : false
+softfloat_dep = dependency('softfloat', required: softfloat_probe_required, static: is_static_build, method: 'pkg-config')
+if not softfloat_dep.found() and not use_sys_softfloat.disabled() and host_machine.system() in ['darwin', 'ios', 'tvos', 'visionos', 'watchos']
+  softfloat_dep = dependency('softfloat', required: false, static: is_static_build, method: 'extraframework')
+endif
+if not softfloat_dep.found() and not use_sys_softfloat.disabled()
+  softfloat_dep = dependency('softfloat', required: use_sys_softfloat, static: is_static_build, method: 'cmake')
+endif
 use_bundled_softfloat = not softfloat_dep.found()
 if softfloat_dep.found()
   softfloat_tls_probe = '''
