@@ -22,28 +22,20 @@ static void file_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 static bool file_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE const char *prj_file,
 	RZ_NULLABLE RzSerializeResultInfo *res);
 
-RZ_API void rz_serialize_core_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE const char *prj_file) {
-	file_save(sdb_ns(db, "file", true), core, prj_file);
-	rz_serialize_config_save(sdb_ns(db, "config", true), core->config);
-	rz_serialize_flag_save(sdb_ns(db, "flags", true), core->flags);
-	rz_serialize_mark_save(sdb_ns(db, "marks", true), core->marks);
-	rz_serialize_analysis_save(sdb_ns(db, "analysis", true), core->analysis);
-	rz_serialize_debug_save(sdb_ns(db, "debug", true), core->dbg);
-	rz_serialize_core_seek_save(sdb_ns(db, "seek", true), core);
+/*
+ * Config Exclusions:
+ * Most exlusions only affect loading and are still written to the file, in case
+ * they become interesting to load later, or for informative purposes.
+ * Some other config vars may be considered experimental and subject to frequent change,
+ * so they should also be exluded from saving to avoid polluting project files and
+ * having to introduce migrations.
+ */
 
-	char buf[0x20];
-	if (snprintf(buf, sizeof(buf), "0x%" PFMT64x, core->offset) < 0) {
-		return;
-	}
-	sdb_set(db, "offset", buf);
+static const char *config_exclude_save[] = {
+	NULL
+};
 
-	if (snprintf(buf, sizeof(buf), "0x%" PFMT32x, core->blocksize) < 0) {
-		return;
-	}
-	sdb_set(db, "blocksize", buf);
-}
-
-static const char *config_exclude[] = {
+static const char *config_exclude_load[] = {
 	"dir.home",
 	"dir.libs",
 	"dir.magic",
@@ -70,6 +62,27 @@ static const char *config_exclude[] = {
 	NULL
 };
 
+RZ_API void rz_serialize_core_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE const char *prj_file) {
+	file_save(sdb_ns(db, "file", true), core, prj_file);
+	rz_serialize_config_save(sdb_ns(db, "config", true), core->config, config_exclude_save);
+	rz_serialize_flag_save(sdb_ns(db, "flags", true), core->flags);
+	rz_serialize_mark_save(sdb_ns(db, "marks", true), core->marks);
+	rz_serialize_analysis_save(sdb_ns(db, "analysis", true), core->analysis);
+	rz_serialize_debug_save(sdb_ns(db, "debug", true), core->dbg);
+	rz_serialize_core_seek_save(sdb_ns(db, "seek", true), core);
+
+	char buf[0x20];
+	if (snprintf(buf, sizeof(buf), "0x%" PFMT64x, core->offset) < 0) {
+		return;
+	}
+	sdb_set(db, "offset", buf);
+
+	if (snprintf(buf, sizeof(buf), "0x%" PFMT32x, core->blocksize) < 0) {
+		return;
+	}
+	sdb_set(db, "blocksize", buf);
+}
+
 RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, bool load_bin_io,
 	RZ_NULLABLE const char *prj_file, RZ_NULLABLE RzSerializeResultInfo *res) {
 	Sdb *subdb;
@@ -79,7 +92,7 @@ RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 	if (load_bin_io) {
 		SUB("file", file_load(subdb, core, prj_file, res));
 	}
-	SUB("config", rz_serialize_config_load(subdb, core->config, config_exclude));
+	SUB("config", rz_serialize_config_load(subdb, core->config, config_exclude_load));
 	SUB("flags", rz_serialize_flag_load(subdb, core->flags, res));
 	SUB("marks", rz_serialize_mark_load(subdb, core->marks, res));
 	SUB("analysis", rz_serialize_analysis_load(subdb, core->analysis, res));

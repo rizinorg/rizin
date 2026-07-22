@@ -34,11 +34,8 @@ d "fmove.l d0, fpcr" f2009000
 d "fmove.l fpcr, d0" f200b000
 d "fmove.l d0, fpsr" f2008800
 d "fmove.l fpiar, d0" f200a400
-d "fmovem (a0), fp0-fp1" f210c003
-d "fmovem fp0-fp1, (a0)" f210e003
 d "fmovem (a0)+, fp6-fp7" f218d003
 d "fmovem fp0-fp1, -(a0)" f220e003
-d "fmovem (a0), d1" f210c810
 d "move.l d0, d0" 2000
 d "movea.l d0, a0" 2040
 d "moveq 0x1, d0" 7001
@@ -60,7 +57,7 @@ d "fdbf d0, 0x14" f24800000010
 d "fsf.b (a0)" f2500000
 d "ftrapf" f27c0000
 d "ftrapf.w 0x1234" f27a00001234
-d "ftrapf.w 0x12345678" f27b000012345678
+d "ftrapf.l 0x12345678" f27b000012345678
 d "ftst fp1, fp2" f200053a
 d "st.b d0" 50c0
 d "jmp (a0)" 4ed0

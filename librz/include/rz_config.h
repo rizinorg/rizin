@@ -233,7 +233,7 @@ static inline bool rz_config_node_is_str(const RzConfigNode *node) {
 
 /* serialize */
 
-RZ_API void rz_serialize_config_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzConfig *config);
+RZ_API void rz_serialize_config_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzConfig *config, RZ_NULLABLE const char **exclude);
 RZ_API bool rz_serialize_config_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzConfig *config, RZ_NULLABLE const char **exclude);
 #endif
 

@@ -215,6 +215,22 @@ else
   add_project_arguments(['-DUSE_SYS_CAPSTONE'], language: 'c')
 endif
 
+has_capstone_alpha_uppercase_insns = cc.compiles('''
+#include <capstone/capstone.h>
+#include <capstone/alpha.h>
+int main(void) {
+	alpha_insn insn = ALPHA_INS_INVALID;
+	return insn == ALPHA_INS_INVALID;
+}
+''',
+  dependencies: capstone_check_deps,
+  include_directories: capstone_check_includes,
+  name: 'Capstone has uppercase Alpha instruction IDs'
+)
+if has_capstone_alpha_uppercase_insns
+  add_project_arguments(['-DRZ_CAPSTONE_ALPHA_INSNS_UPPERCASE'], language: 'c')
+endif
+
 has_capstone_m68k_cpu32 = cc.compiles('''
 #include <capstone/capstone.h>
 int main(void) {
@@ -945,6 +961,7 @@ summary({
   'System xxhash library': xxhash_dep.found() and xxhash_dep.type_name() != 'internal',
   'System libmspack library': libmspack_dep.found() and libmspack_dep.type_name() != 'internal',
   'System openssl library': sys_openssl.found() and sys_openssl.type_name() != 'internal',
+  'System openssl has SM3': userconf.get('HAVE_OPENSSL_SM3', 0) != 0,
   'System capstone library': capstone_dep.found() and capstone_dep.type_name() != 'internal',
   'System zydis library': zydis_dep.found() and zydis_dep.type_name() != 'internal',
   'System tree-sitter library': tree_sitter_dep.found() and tree_sitter_dep.type_name() != 'internal',

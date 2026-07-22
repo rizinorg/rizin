@@ -197,3 +197,25 @@ EXPECT=<<EOF
 🟪🟪
 EOF
 RUN
+
+NAME=Unicode 17.0.0 Tolong Siki script
+FILE==
+CMDS=<<EOF
+wx f091b6b0
+ps
+EOF
+EXPECT=<<EOF
+𑶰
+EOF
+RUN
+
+NAME=Unicode 17.0.0 Tai Yo script
+FILE==
+CMDS=<<EOF
+wx f09e9b80
+ps
+EOF
+EXPECT=<<EOF
+𞛀
+EOF
+RUN

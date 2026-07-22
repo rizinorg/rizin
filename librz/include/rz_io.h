@@ -138,6 +138,7 @@ typedef struct rz_io_plugin_t {
 	int (*create)(RzIO *io, const char *file, int mode, int type);
 	bool (*check)(RzIO *io, const char *, bool many);
 	ut8 *(*get_buf)(RzIODesc *desc, ut64 *size);
+	bool (*download_file)(RzIO *io, RzIODesc *fd, const char *remote, const char *local);
 } RzIOPlugin;
 
 typedef struct rz_io_map_t {
@@ -384,6 +385,7 @@ RZ_API bool rz_io_desc_is_blockdevice(RzIODesc *desc);
 RZ_API bool rz_io_desc_is_chardevice(RzIODesc *desc);
 RZ_API bool rz_io_desc_exchange(RzIO *io, int fd, int fdx); // this should get 2 descs
 RZ_API bool rz_io_desc_is_dbg(RzIODesc *desc);
+RZ_API bool rz_io_desc_download_file(RzIODesc *desc, const char *remote, const char *local);
 RZ_API int rz_io_desc_get_pid(RzIODesc *desc);
 RZ_API int rz_io_desc_get_tid(RzIODesc *desc);
 RZ_API bool rz_io_desc_get_base(RzIODesc *desc, ut64 *base);

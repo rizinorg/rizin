@@ -49,7 +49,7 @@ jobs:
 
     - name: Checkout Muon repository
       run: |
-          git clone https://git.sr.ht/~lattis/muon
+          git clone --depth 1 https://git.sr.ht/~lattis/muon
 
     - name: Compiling and installing Muon
       working-directory: muon

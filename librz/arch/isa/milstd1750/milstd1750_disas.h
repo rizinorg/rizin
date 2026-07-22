@@ -5,6 +5,7 @@
 #define RZ_MILSTD1750_DISAS_H
 
 #include <rz_asm.h>
+#include "opcodes.h"
 
 typedef enum {
 	MIL_FMT_NONE, // no operands
@@ -30,8 +31,7 @@ typedef struct {
 	const char *mnemonic;
 	MilStd1750Format format;
 	ut8 size; // 2 or 4 (bytes)
-	ut16 raw_w1;
-	ut16 raw_w2;
+	ut16 opcode; // canonical opcode (a MIL_OP_* pattern): operand bits cleared
 
 	// Decoded operand fields. Only those relevant to `format` are valid.
 	ut8 ra; // R, SR, IS, XIO, MEM, IM_OCX

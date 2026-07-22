@@ -307,6 +307,13 @@ RZ_API bool rz_io_desc_is_dbg(RzIODesc *desc) {
 	return false;
 }
 
+RZ_API bool rz_io_desc_download_file(RzIODesc *desc, const char *remote, const char *local) {
+	if (!desc || !desc->plugin || !desc->plugin->download_file || RZ_STR_ISEMPTY(remote) || RZ_STR_ISEMPTY(local)) {
+		return false;
+	}
+	return desc->plugin->download_file(desc->io, desc, remote, local);
+}
+
 RZ_API int rz_io_desc_get_pid(RzIODesc *desc) {
 	//-1 and -2 are reserved
 	if (!desc) {

@@ -231,7 +231,7 @@ static void il_opdmp_bool_xor(RzILOpPure *op, RzStrBuf *sb, int pad) {
 }
 
 static void il_opdmp_bitv(RzILOpPure *op, RzStrBuf *sb, int pad) {
-	RzILOpArgsBv *opx = &op->op.bitv;
+	RzILOpArgsBV *opx = &op->op.bitv;
 	char *num = rz_bv_as_hex_string(opx->value, false);
 	if (pad < 0) {
 		rz_strbuf_appendf(sb, "(bv %u %s)", opx->value->len, num);
@@ -426,7 +426,7 @@ static void il_opdmp_fcast_sint(RzILOpPure *op, RzStrBuf *sb, int pad) {
 }
 
 static void il_opdmp_fcast_float(RzILOpPure *op, RzStrBuf *sb, int pad) {
-	RzILOpArgsFCastfloat *opx = &op->op.fcast_float;
+	RzILOpArgsFCastUFloat *opx = &op->op.fcast_float;
 	if (pad < 0) {
 		rz_strbuf_append(sb, "(fcast_float ");
 		rz_strbuf_append(sb, rz_il_float_stringify_format(opx->format));
@@ -447,7 +447,7 @@ static void il_opdmp_fcast_float(RzILOpPure *op, RzStrBuf *sb, int pad) {
 }
 
 static void il_opdmp_fcast_sfloat(RzILOpPure *op, RzStrBuf *sb, int pad) {
-	RzILOpArgsFCastsfloat *opx = &op->op.fcast_sfloat;
+	RzILOpArgsFCastSFloat *opx = &op->op.fcast_sfloat;
 	if (pad < 0) {
 		rz_strbuf_append(sb, "(fcast_sfloat ");
 		rz_strbuf_append(sb, rz_il_float_stringify_format(opx->format));

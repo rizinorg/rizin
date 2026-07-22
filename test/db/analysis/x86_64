@@ -4521,3 +4521,66 @@ EXPECT=<<EOF
 \           0x1400010ae      ret
 EOF
 RUN
+
+NAME=do not mark coincidental imm in non-exec segment as data
+FILE=bins/elf/hello-freebsd-x64
+CMDS=<<EOF
+e io.cache=true
+s 0x002015ae
+wa "and dword [rbp-8], 0x0020001f"
+aaa
+Cdl~0x0020001f
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=data block should not bleed across section or map boundary
+FILE=bins/elf/hello-freebsd-x64
+CMDS=<<EOF
+aaa
+# map at 0x200000 ends at 0x0020059b = 1435 bytes
+oml~0x00200000
+# should not be 5536 bytes (upto next fxn at 0x002015a0), cap at next section
+Cdl~0x00200000
+echo "===not bleed across section==="
+e io.cache=true
+s 0x002015ae
+wa "add dword [0x00200546], 1"
+aaa
+# 0x00200546 is in section gap
+# should be caped at next section, 2 bytes ahead
+# should not be 4186 bytes (upto next fxn at 0x002015a0)
+Cdl~0x00200546
+echo "===handle section gap==="
+wa "add dword [0x00200544], 1"
+aaa
+# 0x00200544 is in .rodata
+s 0x00200544
+iS.
+# should be caped to curr section end, 2 bytes ahead
+# should not be 4188 bytes (upto next fxn at 0x002015a0)
+Cdl~0x00200544
+echo "===cap at map end==="
+s 0x002015ae
+wa "add dword [0x00200562], 1"
+aaa
+# 0x00200562 is last section before unmapped
+# so data block should cap at curr map end 0x0020059b = 57 bytes, 
+# should not be 4158 bytes (upto next fxn at 0x002015a0)
+Cdl~0x00200562
+EOF
+EXPECT=<<EOF
+ 2 fd: 3 +0x00000000 0x00200000 - 0x0020059b r-- fmap.LOAD0
+0x00200000 data Cd 680
+===not bleed across section===
+0x00200546 data Cd 2
+===handle section gap===
+     paddr size      vaddr vsize align perm name    type     flags               
+---------------------------------------------------------------------------------
+0x00000538  0xe 0x00200538   0xe   0x0 -r-- .rodata PROGBITS alloc,merge,strings
+0x00200544 data Cd 2
+===cap at map end===
+0x00200562 data Cd 58
+EOF
+RUN
