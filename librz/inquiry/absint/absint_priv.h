@@ -7,6 +7,8 @@
 // These functions are actually internal, but need RZ_API to be called from unit tests
 RZ_API bool rz_absint_run_context_init(RzAbsIntRunContext *ctx, RzAbsIntInstance *inst);
 RZ_API void rz_absint_run_context_fini(RzAbsIntRunContext *ctx);
+
+RZ_API RzAbsIntBlock *rz_absint_block_create(RzAbsIntInstance *inst, RzIntervalTree *dst, RZ_BORROW RZ_NONNULL RzAbsIntState *entry_state);
 RZ_API RzAbsIntBlock *rz_absint_block_at(RzAbsIntRunContext *ctx, ut64 addr);
 RZ_API void rz_absint_block_resolve_bounds(RzAbsIntRunContext *ctx, RzAbsIntBlock *interp_block, const RzILCacheBlock *il_block);
 

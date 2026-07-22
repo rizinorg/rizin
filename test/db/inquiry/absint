@@ -1,0 +1,115 @@
+# Note: the multiple call targets in the indirect call are not
+# yet resolved, but may be later with different value domains.
+NAME=Indirect call x86
+FILE=bins/inquiry/interpreter/prototype/x86_icall_malloc
+CMDS=<<EOF
+s sym.main
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x08000040    4 86           inquiry.0x8000040
+                        section..text+33 0x8000061 ->      CODE -> 0x800008d reloc..data+32
+                          reloc..data+30 0x800008b ->      CODE -> 0x800005d section..text+29
+     addr size traced ninstr jump       fail       fcns        calls xrefs       
+---------------------------------------------------------------------------------
+0x8000040   29      0      6 0x0800005d             0x08000040       
+0x800005d    6      0      2 0x0800008d 0x08000063  0x08000040        0x0800008b
+0x8000063   42      0     13 0x0800005d             0x08000040       
+0x800008d    9      0      4                        0x08000040        0x08000061
+EOF
+RUN
+
+# Note: the jump at 0x08000068 is still missed, but it should not be!
+# So the results below are only a momentary snapshot and may be updated.
+# Also same as with x86, the multiple call targets are currently missed.
+NAME=Indirect call hexagon
+FILE=bins/inquiry/interpreter/prototype/hexagon_icall_malloc
+CMDS=<<EOF
+s sym.main
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x08000040    4 116          inquiry.0x8000040
+                        section..text+40 0x8000068 ->      CODE -> 0x80000ac reloc..data.8000078+52
+                  reloc..data.8000078+48 0x80000a8 ->      CODE -> 0x8000060 section..text+32
+     addr size traced ninstr jump       fail       fcns        calls xrefs       
+---------------------------------------------------------------------------------
+0x8000040   32      0      8 0x08000060             0x08000040       
+0x8000060   12      0      3 0x080000ac 0x0800006c  0x08000040        0x080000a8
+0x800006c   64      0     16 0x08000060             0x08000040       
+0x80000ac    8      0      2                        0x08000040        0x08000068
+EOF
+RUN
+
+NAME=Indirect call sparc
+FILE=bins/inquiry/interpreter/prototype/sparc_icall_malloc
+CMDS=<<EOF
+s sym.main
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x080000ac    4 128          inquiry.0x80000ac
+                             sym.main+12 0x80000b8 ->      CODE -> 0x8000108 reloc..data.80000c4+68
+                  reloc..data.80000c4+76 0x8000110 ->      CODE -> 0x80000c0 reloc..data
+     addr size traced ninstr jump       fail       fcns        calls xrefs       
+---------------------------------------------------------------------------------
+0x80000ac   20      0      5 0x08000108             0x080000ac       
+0x80000c0   72      0     18 0x08000108             0x080000ac        0x08000110
+0x8000108   16      0      4 0x080000c0 0x08000118  0x080000ac        0x080000b8
+0x8000118   20      0      5                        0x080000ac       
+EOF
+RUN
+
+NAME=Indirect call arm
+FILE=bins/inquiry/interpreter/prototype/arm_icall_malloc
+CMDS=<<EOF
+s sym.main
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x080000b4    4 124          inquiry.0x80000b4
+                             sym.main+28 0x80000d0 ->      CODE -> 0x8000110 sym.main+92
+                             sym.main+32 0x80000d4 ->      DATA -> 0x8000130 reloc..data
+                            sym.main+100 0x8000118 ->      CODE -> 0x80000d4 sym.main+32
+     addr size traced ninstr jump       fail       fcns        calls xrefs       
+---------------------------------------------------------------------------------
+0x80000b4   32      0      8 0x08000110             0x080000b4       
+0x80000d4   60      0     15 0x08000110             0x080000b4        0x08000118
+0x8000110   12      0      3 0x080000d4 0x0800011c  0x080000b4        0x080000d0
+0x800011c   20      0      5                        0x080000b4       
+EOF
+RUN
+
+NAME=Indirect call mips
+FILE=bins/inquiry/interpreter/prototype/mips64_icall_malloc
+CMDS=<<EOF
+s sym.main
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x08000164    4 168          inquiry.0x8000164
+                   reloc.main.8000180+12 0x800018c ->      CODE -> 0x80001dc reloc..data.rel.local.80001a0+60
+        reloc..data.rel.local.80001a0+68 0x80001e4 ->      CODE -> 0x8000194 reloc..data.rel.local
+     addr size traced ninstr jump       fail       fcns        calls xrefs       
+---------------------------------------------------------------------------------
+0x8000164   48      0     12 0x080001dc             0x08000164       
+0x8000194   72      0     18 0x080001dc             0x08000164        0x080001e4
+0x80001dc   16      0      4 0x08000194 0x080001ec  0x08000164        0x0800018c
+0x80001ec   32      0      8                        0x08000164       
+EOF
+RUN

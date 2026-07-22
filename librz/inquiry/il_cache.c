@@ -73,9 +73,15 @@ RZ_OWN RzILCacheBlock *lift_il_block(const RzILCache *cache, ut64 addr) {
 		goto fail;
 	}
 	il_block->addr = addr;
-	bool sparc_add_delayed_insn = false;
-	bool changes_cf = true;
-	do {
+
+	// sparc plugin already does the reordering itself through stateful hacks
+	bool reorder_delay = !RZ_STR_EQ(rz_analysis_plugin_current(cache->analysis)->arch, "sparc");
+
+	RzILCacheInsnPkt *pkt = NULL;
+	RzILOpEffect *delay_slot_effect = NULL;
+	bool have_cf = false;
+	ut32 delay = 0;
+	while (!have_cf || delay) {
 		// Don't use rz_io_read_at_mapped() here.
 		// It fails if it reads beyond a mapped memory region.
 		// Although this is expected here. rz_io_nread_at() on the other hand just
@@ -94,34 +100,41 @@ RZ_OWN RzILCacheBlock *lift_il_block(const RzILCache *cache, ut64 addr) {
 			lifted = false;
 			op.il_op = rz_il_op_new_nop();
 		}
-		RzILCacheInsnPkt *pkt = RZ_NEW0(RzILCacheInsnPkt);
-		pkt->effect = op.il_op;
+		il_block->size += op.size;
+		if (lifted && rz_analysis_op_changes_control_flow(&op)) {
+			have_cf = true;
+		}
+
+		if (delay) {
+			// For delay slots, reorder the instruction from the delay slots before the jump.
+			// This is actually wrong because the semantics of delay slots are more complex than this,
+			// but it is the best approximation we can do until RzArch.
+			delay_slot_effect = delay_slot_effect ? rz_il_op_new_seq(delay_slot_effect, op.il_op) : op.il_op;
+			pkt->insn_pkt_size += op.size;
+			delay--;
+			if (!delay) {
+				pkt->effect = reorder_delay ? rz_il_op_new_seq(delay_slot_effect, pkt->effect) : rz_il_op_new_seq(pkt->effect, delay_slot_effect);
+				delay_slot_effect = NULL;
+			}
+		} else {
+			pkt = RZ_NEW0(RzILCacheInsnPkt);
+			if (!pkt) {
+				goto fail;
+			}
+			pkt->insn_pkt_size = op.size;
+			pkt->effect = op.il_op;
+			rz_pvector_push(il_block->il_ops, pkt);
+			if (op.delay > 0 && have_cf) {
+				delay = op.delay;
+			}
+		}
 		// Take ownership of IL op pointer.
 		op.il_op = NULL;
-		pkt->insn_pkt_size = op.size;
-		il_block->size += op.size;
-		rz_pvector_push(il_block->il_ops, pkt);
-
-		if (lifted) {
-			changes_cf = rz_analysis_op_changes_control_flow(&op);
-		} else {
-			changes_cf = false;
-		}
 
 		addr += op.size;
 		rz_analysis_op_fini(&op);
 		rz_mem_memzero(buf, max_read_size);
-		if (sparc_add_delayed_insn) {
-			// Instruction was added, now the block is complete.
-			break;
-		}
-		if (changes_cf && RZ_STR_EQ(rz_analysis_plugin_current(cache->analysis)->arch, "sparc")) {
-			// We need to add the instruction after the branch.
-			// So one more iteration is needed.
-			sparc_add_delayed_insn = true;
-			changes_cf = false;
-		}
-	} while (!changes_cf);
+	}
 
 	free(buf);
 

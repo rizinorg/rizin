@@ -136,7 +136,7 @@ static RzAbsIntIOReadResult send_io_read(RZ_NONNULL RzAbsIntIOReadRequest *req, 
 	if (rz_th_ring_buf_take_blocking(th->ch, &ret) != RZ_THREAD_RING_BUF_OK) {
 		return RZ_ABSINT_IO_READ_RESULT_BREAK;
 	}
-	rz_return_val_if_fail(ret.type != INTERP_MESSAGE_IO_READ_RESULT, RZ_ABSINT_IO_READ_RESULT_BREAK);
+	rz_return_val_if_fail(ret.type == INTERP_MESSAGE_IO_READ_RESULT, RZ_ABSINT_IO_READ_RESULT_BREAK);
 	return ret.payload.io_read_result;
 }
 

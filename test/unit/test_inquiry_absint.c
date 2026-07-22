@@ -655,6 +655,53 @@ bool test_absint_cfg_call_ret_in_memory(void) {
 	mu_end;
 }
 
+bool test_absint_cfg_merge_multiple_consecutive(void) {
+	// multiple consecutive interp blocks should be merged, but only until the next in-edge
+	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://"
+		"c1000054"  // 0x00  b.ne  0x8      ---
+		"200080d2"  // 0x04  mov   x0, 0x1     |
+		"fe030094"  // 0x08  bl    0x11000     |
+		"400080d2"  // 0x0c  mov   x0, 0x2     |
+		"fc070094"  // 0x10  bl    0x11000     |
+		"600080d2"  // 0x14  mov   x0, 0x3     |
+		"c0035fd6"  // 0x18  ret            <--
+	);
+	mu_assert_notnull(interp, "init");
+	RzAbsIntResult *res;
+	RzAbsIntResultCode code = rz_absint_run(interp->inst, 0x10000, RZ_ABSINT_RESULT_DIMEN_BASE, &res);
+
+	EXTRACT_RESULT(code, res, 5);
+	mu_assert_eq(res->entry, 0x10000, "result entry");
+	ASSERT_BLOCK(0, 0x10000, 0x10004, true, 0x10018);
+	ASSERT_BLOCK(1, 0x10004, 0x1000c, true, UT64_MAX);
+	ASSERT_BLOCK(2, 0x1000c, 0x10014, true, UT64_MAX);
+	ASSERT_BLOCK(3, 0x10014, 0x10018, true, UT64_MAX);
+	ASSERT_BLOCK(4, 0x10018, 0x1001c, false, UT64_MAX);
+
+	// Insert an unaligned block that should not be merged with when applying to analysis
+	RzAbsIntState *as = rz_absint_state_new(interp->inst);
+	as->pc_state = RZ_ABSINT_PC_CONST;
+	as->pc = 0x10006;
+	RzAbsIntBlock *b = rz_absint_block_create(interp->inst, &res->blocks, as);
+	rz_absint_state_free(interp->inst, as);
+	rz_interval_tree_resize(&res->blocks, b->node, 0x10006, 0x10009);
+	b->bounds_resolved = true;
+	b->uninterpreted = false;
+
+	rz_absint_result_apply_to_analysis(res, interp->analysis);
+	rz_absint_result_free(interp->inst, res);
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
+	mu_assert_notnull(fcn, "analysis function");
+	mu_assert_eq(rz_pvector_len(fcn->bbs), 4, "analysis block count");
+	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 0), 0x10000, 0x10004, 0x10018, 0x10004);
+	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 1), 0x10004, 0x10018, 0x10018, UT64_MAX);
+	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 2), 0x10006, 0x1000a, UT64_MAX, UT64_MAX);
+	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 3), 0x10018, 0x1001c, UT64_MAX, UT64_MAX);
+
+	interp_free(interp);
+	mu_end;
+}
+
 static int xref_cmp(const void *a, const void *b, void *user) {
 	const RzAnalysisXRef *ax = a;
 	const RzAnalysisXRef *bx = b;
@@ -813,6 +860,7 @@ bool all_tests() {
 	mu_run_test(test_absint_cfg_call_link_register);
 	mu_run_test(test_absint_cfg_call_multi_insn);
 	mu_run_test(test_absint_cfg_call_ret_in_memory);
+	mu_run_test(test_absint_cfg_merge_multiple_consecutive);
 	mu_run_test(test_absint_xrefs);
 	mu_run_test(test_absint_comments);
 	mu_run_test(test_absint_driver);

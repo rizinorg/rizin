@@ -23,6 +23,9 @@ static RzAbsIntTraceOptions absint_trace_opts(RzCore *core) {
 	if (rz_set_s_contains(trace_opts_s, "evalblock")) {
 		r |= RZ_ABSINT_TRACE_EVAL_BLOCK;
 	}
+	if (rz_set_s_contains(trace_opts_s, "bounds")) {
+		r |= RZ_ABSINT_TRACE_BOUNDS;
+	}
 	rz_set_s_free(trace_opts_s);
 	return r;
 }

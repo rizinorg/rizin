@@ -18,7 +18,8 @@
 typedef enum rz_inquiry_trace_options_t {
 	RZ_ABSINT_TRACE_NONE = 0,
 	RZ_ABSINT_TRACE_IL_BLOCK = (1 << 0), ///< log il blocks as they are lifted
-	RZ_ABSINT_TRACE_EVAL_BLOCK = (1 << 1) ///< log coarse information about absint blocks as they are evaluated
+	RZ_ABSINT_TRACE_EVAL_BLOCK = (1 << 1), ///< log coarse information about absint blocks as they are evaluated
+	RZ_ABSINT_TRACE_BOUNDS = (1 << 2) ///< log resolving absint block bounds based on instruction offsets and in-edges
 } RzAbsIntTraceOptions;
 
 typedef struct rz_absint_run_context_t RzAbsIntRunContext;

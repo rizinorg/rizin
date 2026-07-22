@@ -313,13 +313,13 @@ static void interp_blocks_fini(RzAbsIntInstance *inst, RzIntervalTree *blocks) {
 	rz_interval_tree_fini(blocks);
 }
 
-static RzAbsIntBlock *interp_block_create(RzAbsIntRunContext *ctx, RZ_BORROW RZ_NONNULL RzAbsIntState *as) {
-	rz_return_val_if_fail(ctx && as && as->pc_state == RZ_ABSINT_PC_CONST, NULL);
-	RzAbsIntBlock *block = interp_block_new(ctx->inst, as);
+RZ_API RzAbsIntBlock *rz_absint_block_create(RzAbsIntInstance *inst, RzIntervalTree *dst, RZ_BORROW RZ_NONNULL RzAbsIntState *entry_state) {
+	rz_return_val_if_fail(inst && dst && entry_state && entry_state->pc_state == RZ_ABSINT_PC_CONST, NULL);
+	RzAbsIntBlock *block = interp_block_new(inst, entry_state);
 	if (!block) {
 		return NULL;
 	}
-	RzIntervalNode *node = rz_interval_tree_insert(&ctx->blocks, block->entry_state->pc, block->entry_state->pc, block);
+	RzIntervalNode *node = rz_interval_tree_insert(dst, block->entry_state->pc, block->entry_state->pc, block);
 	if (!node) {
 		rz_warn_if_reached();
 		return NULL;
@@ -412,8 +412,13 @@ RZ_API void rz_absint_block_resolve_bounds(RzAbsIntRunContext *ctx, RzAbsIntBloc
 	if (interp_block->bounds_resolved) {
 		return;
 	}
+	bool trace = (ctx->inst->config.trace_opts & RZ_ABSINT_TRACE_BOUNDS) != 0;
 	interp_block->bounds_resolved = true;
 	ut64 block_start = rz_absint_block_get_start(interp_block);
+
+	if (trace) {
+		RZ_LOG_INFO("Resolving bounds of absint block @ 0x%" PFMT64x "\n", block_start);
+	}
 
 	// Blocks may overlap, but one block must not start at an instruction start of another.
 	// We have to consider two cases here, depending on the order in which blocks have been discovered.
@@ -446,6 +451,10 @@ RZ_API void rz_absint_block_resolve_bounds(RzAbsIntRunContext *ctx, RzAbsIntBloc
 		// Hint: For performance, it would actually be better to reinterpret the preceding block before our block, otherwise
 		// ours will likely be interperted twice.
 		interp_block_mark_uninterpreted(ctx, preceding);
+
+		if (trace) {
+			RZ_LOG_INFO("  hit an instruction of a preceding block @ 0x%" PFMT64x "\n\n", rz_absint_block_get_start(preceding));
+		}
 		return;
 	}
 
@@ -475,14 +484,24 @@ RZ_API void rz_absint_block_resolve_bounds(RzAbsIntRunContext *ctx, RzAbsIntBloc
 				}
 				if (next_node->start == cur) {
 					// hit found, the block will not include this instruction anymore.
+					if (trace) {
+						RZ_LOG_INFO("  closing early because an op hit a following block @ 0x%" PFMT64x "\n\n", next_node->start);
+					}
 					goto close;
 				}
+				rz_rbtree_iter_next(&next_it);
 			}
 
 			ut16 off = cur - block_start;
 			rz_vector_push(&interp_block->insn_offsets, &off);
 		}
+		if (trace) {
+			RZ_LOG_INFO("  insn packet @ 0x%" PFMT64x "\n", cur);
+		}
 		cur += insn->insn_pkt_size;
+	}
+	if (trace) {
+		RZ_LOG_INFO("  resolved until 0x%" PFMT64x " (exclusive) without touching another block\n\n", cur);
 	}
 close:
 	interp_block_resize(ctx, interp_block, cur - 1);
@@ -510,7 +529,7 @@ RZ_API void rz_absint_run_push(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx, RZ_
 			interp_block_mark_uninterpreted(ctx, block);
 		}
 	} else {
-		block = interp_block_create(ctx, as);
+		block = rz_absint_block_create(ctx->inst, &ctx->blocks, as);
 		if (!block) {
 			return;
 		}
@@ -792,7 +811,7 @@ static bool value_indicates_ret_addr_write(RzAbsIntRunContext *ctx, RzAbsIntVal 
 		(rz_bv_to_ut64(&bv) == ctx->il_block_end ||
 			// Sparc stores the call instruction PC into o8.
 			// The return instruction jumps then to o7+8.
-			(rz_str_startswith(ctx->inst->arch_name, "sparc") && rz_bv_to_ut64(&bv) == ctx->astate->pc - 4));
+			(rz_str_startswith(ctx->inst->arch_name, "sparc") && rz_bv_to_ut64(&bv) == ctx->astate->pc - 8));
 	rz_bv_fini(&bv);
 	return ret;
 }
@@ -1545,6 +1564,7 @@ RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, R
 						}
 						break;
 					}
+					rz_rbtree_iter_next(&next_it);
 				}
 				RzAbsIntBlock *next_block;
 				if (!next_node || (next_block = next_node->data)->non_fallthrough_in) {
