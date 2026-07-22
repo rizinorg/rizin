@@ -792,7 +792,7 @@ static bool value_indicates_ret_addr_write(RzAbsIntRunContext *ctx, RzAbsIntVal 
 		(rz_bv_to_ut64(&bv) == ctx->il_block_end ||
 			// Sparc stores the call instruction PC into o8.
 			// The return instruction jumps then to o7+8.
-			(rz_str_startswith(ctx->inst->arch_name, "sparc") && rz_bv_to_ut64(&bv) == ctx->astate->pc));
+			(rz_str_startswith(ctx->inst->arch_name, "sparc") && rz_bv_to_ut64(&bv) == ctx->astate->pc - 4));
 	rz_bv_fini(&bv);
 	return ret;
 }
