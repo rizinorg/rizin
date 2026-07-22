@@ -13,7 +13,16 @@
 
 RZ_API RZ_OWN char *rz_il_cache_block_str(RZ_NONNULL const RzILCacheBlock *block) {
 	rz_return_val_if_fail(block, NULL);
-	return rz_str_newf("[0x%" PFMT64x ", 0x%" PFMT64x ")", block->addr, block->addr + block->size);
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	rz_strbuf_appendf(&sb, "[0x%" PFMT64x ", 0x%" PFMT64x ")\n", block->addr, block->addr + block->size);
+	void **it;
+	rz_pvector_foreach (block->il_ops, it) {
+		RzILCacheInsnPkt *insn = *it;
+		rz_il_op_effect_stringify(insn->effect, &sb, false);
+		rz_strbuf_append(&sb, "\n");
+	}
+	return rz_strbuf_drain_nofree(&sb);
 }
 
 struct rz_il_cache_t {
@@ -115,6 +124,13 @@ RZ_OWN RzILCacheBlock *lift_il_block(const RzILCache *cache, ut64 addr) {
 	} while (!changes_cf);
 
 	free(buf);
+
+	if (cache->config & RZ_IL_CACHE_CONFIG_TRACE) {
+		char *s = rz_il_cache_block_str(il_block);
+		RZ_LOG_INFO("Lifted IL Block: %s\n", rz_str_get_null(s));
+		free(s);
+	}
+
 	return il_block;
 
 fail:

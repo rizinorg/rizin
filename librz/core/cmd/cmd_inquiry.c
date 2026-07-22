@@ -11,6 +11,22 @@
 #include <rz_inquiry/rz_absint.h>
 #include <rz_util/rz_assert.h>
 
+static RzAbsIntTraceOptions absint_trace_opts(RzCore *core) {
+	RzSetS *trace_opts_s = rz_config_get_set(core->config, "inquiry.trace");
+	RzAbsIntTraceOptions r = RZ_ABSINT_TRACE_NONE;
+	if (!trace_opts_s) {
+		return r;
+	}
+	if (rz_set_s_contains(trace_opts_s, "ilblock")) {
+		r |= RZ_ABSINT_TRACE_IL_BLOCK;
+	}
+	if (rz_set_s_contains(trace_opts_s, "evalblock")) {
+		r |= RZ_ABSINT_TRACE_EVAL_BLOCK;
+	}
+	rz_set_s_free(trace_opts_s);
+	return r;
+}
+
 static bool core_absint_run(RzCore *core) {
 	RzAbsIntResultDimen dimens = RZ_ABSINT_RESULT_DIMEN_XREFS;
 	if (rz_config_get_bool(core->config, "inquiry.comment")) {
@@ -21,7 +37,7 @@ static bool core_absint_run(RzCore *core) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_set_u_add(entry_points, core->offset);
-	bool success = rz_absint_driver_run(core->analysis, core->io, entry_points, dimens);
+	bool success = rz_absint_driver_run(core->analysis, core->io, entry_points, dimens, absint_trace_opts(core));
 	rz_set_u_free(entry_points);
 	if (!success) {
 		RZ_LOG_ERROR("Analysis failed.\n");
@@ -87,7 +103,7 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 			rz_set_u_add(entry_points, entry_point);
 		}
 	}
-	bool success = rz_absint_driver_run(core->analysis, core->io, entry_points, RZ_ABSINT_RESULT_DIMEN_XREFS);
+	bool success = rz_absint_driver_run(core->analysis, core->io, entry_points, RZ_ABSINT_RESULT_DIMEN_XREFS, RZ_ABSINT_TRACE_NONE);
 	rz_set_u_free(entry_points);
 	eprintf("Finished reference recovery: %s\n", success ? "OK" : "FAIL");
 	if (!success) {

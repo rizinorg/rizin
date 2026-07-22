@@ -773,7 +773,7 @@ bool test_absint_driver(void) {
 
 	RzSetU *entry_points = rz_set_u_new();
 	rz_set_u_add(entry_points, 0x10000);
-	rz_absint_driver_run(analysis, io, entry_points, RZ_ABSINT_RESULT_DIMEN_XREFS | RZ_ABSINT_RESULT_DIMEN_COMMENTS);
+	rz_absint_driver_run(analysis, io, entry_points, RZ_ABSINT_RESULT_DIMEN_XREFS | RZ_ABSINT_RESULT_DIMEN_COMMENTS, RZ_ABSINT_TRACE_NONE);
 	rz_set_u_free(entry_points);
 
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(analysis, 0x10000);

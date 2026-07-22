@@ -15,6 +15,12 @@
 #include <rz_types.h>
 #include <rz_util.h>
 
+typedef enum rz_inquiry_trace_options_t {
+	RZ_ABSINT_TRACE_NONE = 0,
+	RZ_ABSINT_TRACE_IL_BLOCK = (1 << 0), ///< log il blocks as they are lifted
+	RZ_ABSINT_TRACE_EVAL_BLOCK = (1 << 1) ///< log coarse information about absint blocks as they are evaluated
+} RzAbsIntTraceOptions;
+
 typedef struct rz_absint_run_context_t RzAbsIntRunContext;
 typedef struct rz_absint_result_t RzAbsIntResult;
 
@@ -167,6 +173,7 @@ typedef enum rz_absint_lift_block_result_t {
 
 typedef struct rz_absint_config_t {
 	RzAbsIntValueDomain *val_domain;
+	RzAbsIntTraceOptions trace_opts;
 
 	void *cb_user;
 	RzAbsIntIOReadResult (*io_read)(RZ_NONNULL RZ_OWN RzAbsIntIOReadRequest *req, void *user);
@@ -244,6 +251,7 @@ RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, R
 
 extern RZ_API RzAbsIntValueDomain rz_absint_value_domain_const;
 
-RZ_API bool rz_absint_driver_run(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzIO *io, RZ_NONNULL RZ_BORROW RzSetU *entry_points, RzAbsIntResultDimen dimens);
+RZ_API bool rz_absint_driver_run(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzIO *io, RZ_NONNULL RZ_BORROW RzSetU *entry_points,
+	RzAbsIntResultDimen dimens, RzAbsIntTraceOptions trace_opts);
 
 #endif // RZ_ABSINT

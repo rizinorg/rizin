@@ -27,11 +27,8 @@ typedef struct {
 
 typedef enum {
 	RZ_IL_CACHE_CONFIG_DEFAULT = 0,
-	/**
-	 * \brief The IL cache will replace un-lifted instructions
-	 * with a NOP.
-	 */
-	RZ_IL_CACHE_CONFIG_NOP_UNLIFTED = 1 << 0
+	RZ_IL_CACHE_CONFIG_NOP_UNLIFTED = 1 << 0, ///< replace un-lifted instructions with a NOP
+	RZ_IL_CACHE_CONFIG_TRACE = 1 << 1 ///< Log lifted blocks for debugging
 } RzILCacheConfig;
 
 RZ_API RZ_OWN char *rz_il_cache_block_str(RZ_NONNULL const RzILCacheBlock *block);
@@ -42,7 +39,6 @@ RZ_API RZ_OWN RzILCache *rz_il_cache_new(
 	RzILCacheConfig config);
 RZ_API void rz_il_cache_free(RZ_OWN RZ_NULLABLE RzILCache *cache);
 
-RZ_API bool rz_il_cache_serve(RZ_NONNULL RzILCache *cache);
 RZ_API RZ_OWN const RzILCacheBlock *rz_il_cache_lift_il_block(RzILCache *cache, ut64 addr);
 
 #endif // RZ_INQUIRY_IL_CACHE_H

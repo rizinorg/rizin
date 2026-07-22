@@ -1127,6 +1127,9 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 			ctx->call_cand.store_addr = pc;
 			ctx->call_cand.npc = ctx->il_block_end;
 			ctx->call_cand.in_mem = false;
+			if (ctx->inst->config.trace_opts & RZ_ABSINT_TRACE_EVAL_BLOCK) {
+				RZ_LOG_INFO("  set: value indicates ret addr write\n");
+			}
 		}
 		break;
 	}
@@ -1162,6 +1165,9 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 		}
 
 		if (is_call) {
+			if (ctx->inst->config.trace_opts & RZ_ABSINT_TRACE_EVAL_BLOCK) {
+				RZ_LOG_INFO("  call detected\n");
+			}
 			eval_call(ctx);
 		} else {
 			set_abstr_pc(ctx->inst, ctx->astate, eval_out);
@@ -1232,6 +1238,9 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 			ctx->call_cand.store_addr = pc;
 			ctx->call_cand.npc = ctx->il_block_end;
 			ctx->call_cand.in_mem = true;
+			if (ctx->inst->config.trace_opts & RZ_ABSINT_TRACE_EVAL_BLOCK) {
+				RZ_LOG_INFO("  store/storew: value indicates ret addr write\n");
+			}
 		}
 		store_abstr_data(ctx->inst, mem_idx, st_addr, eval_out);
 		val_domain(ctx->inst)->val_free(st_addr);
@@ -1261,6 +1270,10 @@ static EvalResult eval_block(RZ_NONNULL RzAbsIntRunContext *ctx, RZ_NONNULL RzAb
 	memset(&ctx->call_cand, 0, sizeof(ctx->call_cand));
 
 	ut64 interp_block_end = rz_absint_block_get_end(ctx->block);
+
+	if (ctx->inst->config.trace_opts & RZ_ABSINT_TRACE_EVAL_BLOCK) {
+		RZ_LOG_INFO("Evaluating absint block @ 0x%" PFMT64x "\n", interp_block->entry_state->pc);
+	}
 
 	// Now execute the actual effects of the BLOCK.
 	RzAbsIntState *astate = ctx->astate;
@@ -1319,6 +1332,11 @@ static EvalResult eval_block(RZ_NONNULL RzAbsIntRunContext *ctx, RZ_NONNULL RzAb
 			ctx->block->fallthrough = true;
 		}
 		rz_absint_run_push(ctx, ctx->astate, fallthrough);
+	}
+
+
+	if (ctx->inst->config.trace_opts & RZ_ABSINT_TRACE_EVAL_BLOCK) {
+		RZ_LOG_INFO("Finished evaluating absint block @ 0x%" PFMT64x "\n\n", interp_block->entry_state->pc);
 	}
 
 	return EVAL_RESULT_OK;

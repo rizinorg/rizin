@@ -57,6 +57,7 @@ typedef struct interp_driver_t {
 	RzThreadQueue /*<ut64>*/ *entry_points_ch; ///< Main delivers entry points to multiple interpreters with this. TODO: linked list is not optimal, but rbuf may lead to starvation
 	RzThreadRingBuf *main_ch; ///< Channel to main. Multiple interpreters send info requests and analysis results with this.
 	RzAbsIntResultDimen dimens;
+	RzAbsIntTraceOptions trace_opts;
 } InterpDriver;
 
 /**
@@ -177,6 +178,7 @@ static InterpThread *interp_thread_new(RzAnalysis *analysis, InterpDriver *drive
 	}
 	RzAbsIntConfig interp_config = {
 		.val_domain = &rz_absint_value_domain_const,
+		.trace_opts = driver->trace_opts,
 		.cb_user = ctx,
 		.io_read = send_io_read,
 		.lift_block = send_lift_il_block
@@ -236,19 +238,25 @@ static RzAbsIntIOReadResult handle_io_request(const RzAnalysisILContext *il_ctx,
 	return ok ? RZ_ABSINT_IO_READ_RESULT_TOP : RZ_ABSINT_IO_READ_RESULT_TOP;
 }
 
-RZ_API bool rz_absint_driver_run(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzIO *io, RZ_NONNULL RZ_BORROW RzSetU *entry_points, RzAbsIntResultDimen dimens) {
+RZ_API bool rz_absint_driver_run(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzIO *io, RZ_NONNULL RZ_BORROW RzSetU *entry_points,
+	RzAbsIntResultDimen dimens, RzAbsIntTraceOptions trace_opts) {
 	rz_return_val_if_fail(analysis && io && entry_points, false);
 	bool return_code = false;
 
 	bool user_sent_signal = false;
 
-	RzILCache *il_cache = rz_il_cache_new(analysis, io, RZ_IL_CACHE_CONFIG_NOP_UNLIFTED);
+	RzILCacheConfig il_cache_config = RZ_IL_CACHE_CONFIG_NOP_UNLIFTED;
+	if (trace_opts & RZ_ABSINT_TRACE_IL_BLOCK) {
+		il_cache_config |= RZ_IL_CACHE_CONFIG_TRACE;
+	}
+	RzILCache *il_cache = rz_il_cache_new(analysis, io, il_cache_config);
 	if (!il_cache) {
 		goto err_none;
 	}
 
 	InterpDriver driver = {
-		.dimens = dimens
+		.dimens = dimens,
+		.trace_opts = trace_opts
 	};
 	driver.entry_points_ch = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, free);
 	if (!driver.entry_points_ch) {
