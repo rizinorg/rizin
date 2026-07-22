@@ -1143,7 +1143,7 @@ RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ *Ht_(as_iter_keys)(const RZ_NONNULL
  *
  * \return The iterator over the hash table key-value pairs or NULL in case of failure.
  */
-RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ *Ht_(as_iter_kv)(const RZ_NONNULL HtName_(Ht) *ht) {
+RZ_API RZ_OWN RzIterator /* <const HtName_(Ht)> */ *Ht_(as_iter_kv)(const RZ_NONNULL HtName_(Ht) *ht) {
 	rz_return_val_if_fail(ht, NULL);
 	HT_(IterState) *state = Ht_(new_iter_state)(ht);
 	rz_return_val_if_fail(state, NULL);
