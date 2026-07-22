@@ -1183,7 +1183,7 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 			EVAL_SUB_OR_RETURN(effect->op.branch.false_eff);
 			if (true_state->pc_state == false_state->pc_state && true_state->pc == false_state->pc) {
 				// identical target location, simply join the data and continue
-				join_state(ctx->inst, true_state, false_state);
+				join_state(ctx->inst, false_state, true_state);
 			} else if (interp_is_collecting_states(ctx)) {
 				// different jump targets, branch rather than resorting to top pc
 				rz_absint_run_push(ctx, true_state, true_state->pc_state == RZ_ABSINT_PC_CONST && true_state->pc == fallthrough_pc);
