@@ -62,6 +62,7 @@ jobs:
 
     - name: Install dependencies
       run: |
+          sudo apt update
           sudo apt-get --assume-yes install python3-wheel python3-setuptools pkgconf libcurl4-openssl-dev libarchive-dev
           sudo python3 -m pip install ninja
 
