@@ -12,6 +12,7 @@
 #ifndef HEXAGON_H
 #define HEXAGON_H
 
+#include "rz_il/rz_il_opcodes.h"
 #include <rz_asm.h>
 #include <rz_config.h>
 #include <rz_list.h>
@@ -243,6 +244,21 @@ typedef struct {
 typedef struct {
 	const HexInsn *insn;
 	HexPkt *pkt;
+
+	/**
+	 * \brief Every packet has a jump target.
+	 * Either it is the next packet, or one or two jump/call instructions
+	 * set a target.
+	 *
+	 * For our abstract interpretation it is required that every target address
+	 * is written to a local variable before the rest of the packet is executed.
+	 * The different elements for that procedure are below.
+	 * Check out the code to see how they are used.
+	 */
+	const char *jmp_targets[2]; ///< The name of the local variables holding the jump/call targets.
+	const char *jmp_flags[2]; ///< The local flags a jump/call sets if it is taken.
+	RzILOpEffect *jmp_set_addr[2]; ///< Effects to set the respective target addresses.
+	size_t jmp_cnt; ///< Number of calls/jumps lifted.
 } HexInsnPktBundle;
 
 typedef struct {

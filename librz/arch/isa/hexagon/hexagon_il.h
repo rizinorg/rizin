@@ -62,6 +62,8 @@ RZ_IPI RZ_OWN RzILOpEffect *hex_get_npc(const HexPkt *pkt);
 RZ_IPI RZ_OWN RzILOpEffect *hex_il_op_jump_flag_init(HexInsnPktBundle *bundle);
 RZ_IPI RZ_OWN RzILOpEffect *hex_il_op_next_pkt_jmp(HexInsnPktBundle *bundle);
 RZ_IPI RZ_OWN RzILOpEffect *hex_commit_packet(HexInsnPktBundle *bundle);
+RZ_IPI RZ_OWN RzILOpEffect *hex_il_op_set_jmp_target_0(HexInsnPktBundle *bundle);
+RZ_IPI RZ_OWN RzILOpEffect *hex_il_op_set_jmp_target_1(HexInsnPktBundle *bundle);
 RZ_IPI RZ_OWN RzILOpEffect *hex_write_reg(RZ_BORROW HexInsnPktBundle *bundle, const HexOp *op, RzILOpPure *val);
 RZ_IPI RZ_OWN RzILOpPure *hex_read_reg(RZ_BORROW HexPkt *pkt, const HexOp *op, bool tmp_reg);
 RZ_IPI RZ_OWN RzILOpEffect *hex_cancel_slot(RZ_BORROW HexPkt *pkt, ut8 slot);
