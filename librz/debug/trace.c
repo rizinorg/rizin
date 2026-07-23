@@ -42,6 +42,11 @@ RZ_API int rz_debug_trace_tag(RzDebug *dbg, int tag) {
 	return (dbg->trace->tag = (tag > 0) ? tag : UT32_MAX);
 }
 
+// Largest single memory write recorded into a debug session. Sized to hold
+// an x86 XSAVE area (576 bytes for the legacy region plus header, more with
+// AVX-512 state), which the glibc PLT/IFUNC resolvers write on every call.
+#define RZ_DEBUG_TRACE_MEMREF_MAX 4096
+
 RZ_API bool rz_debug_trace_ins_before(RzDebug *dbg) {
 	RzListIter *it, *it_tmp;
 	RzAnalysisValue *val;
@@ -78,8 +83,10 @@ RZ_API bool rz_debug_trace_ins_before(RzDebug *dbg) {
 			}
 			break;
 		case RZ_ANALYSIS_VAL_MEM:
-			if (val->memref > 32) {
-				eprintf("Error: adding changes to %d bytes in memory.\n", val->memref);
+			if (val->memref < 1 || val->memref > RZ_DEBUG_TRACE_MEMREF_MAX) {
+				RZ_LOG_WARN("not recording a %d byte memory write at 0x%" PFMT64x
+					    "; stepping back over it will restore stale memory\n",
+					val->memref, dbg->cur_op->addr);
 				rz_list_delete(dbg->cur_op->access, it);
 				break;
 			}
@@ -145,17 +152,25 @@ RZ_API bool rz_debug_trace_ins_after(RZ_NONNULL RzDebug *dbg) {
 			break;
 		}
 		case RZ_ANALYSIS_VAL_MEM: {
-			ut8 buf[32] = { 0 };
+			if (val->memref < 1 || val->memref > RZ_DEBUG_TRACE_MEMREF_MAX) {
+				break;
+			}
+			ut8 *buf = RZ_NEWS0(ut8, val->memref);
+			if (!buf) {
+				break;
+			}
 			if (!dbg->iob.read_at(dbg->iob.io, val->base, buf, val->memref)) {
-				eprintf("Error reading memory at 0x%" PFMT64x "\n", val->base);
+				RZ_LOG_ERROR("cannot read %d byte(s) at 0x%" PFMT64x "\n",
+					val->memref, val->base);
+				free(buf);
 				break;
 			}
 
 			// add mem write
-			size_t i;
-			for (i = 0; i < val->memref; i++) {
+			for (int i = 0; i < val->memref; i++) {
 				rz_debug_session_add_mem_change(dbg->session, val->base + i, buf[i]);
 			}
+			free(buf);
 			break;
 		}
 		default:
