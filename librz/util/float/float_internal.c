@@ -393,9 +393,7 @@ static RZ_OWN RzFloat *round_float_bv_new(bool sign, st32 exp, RzBitVector *sig,
 
 	// check overflow and underflow
 	if (exp_val > exp_max) {
-		ret = rz_float_new_inf(new_format, sign);
-		ret->exception = RZ_FLOAT_E_OVERFLOW;
-		return ret;
+		return float_overflow_result(new_format, sign, mode);
 	}
 	if (exp_val < exp_min) {
 		ret = rz_float_new_qnan(new_format);
@@ -433,8 +431,7 @@ static RZ_OWN RzFloat *round_float_bv_new(bool sign, st32 exp, RzBitVector *sig,
 			exp_val += 1;
 			if (exp_val > exp_max) {
 				// overflow
-				ret = rz_float_new_inf(new_format, sign);
-				ret->exception = RZ_FLOAT_E_OVERFLOW;
+				ret = float_overflow_result(new_format, sign, mode);
 				rz_bv_free(rounded_sig);
 				rz_bv_free(rounded_tmp);
 				return ret;

@@ -16,8 +16,11 @@
  * 	exponent value range : -16382 ~ 16383
  **/
 
-#include "float_internal.c"
 #include "rz_util/rz_float.h"
+
+static RzFloat *float_overflow_result(RzFloatFormat format, bool sign, RzFloatRMode mode);
+
+#include "float_internal.c"
 #include <rz_userconf.h>
 #include <math.h>
 #include <fenv.h>
@@ -214,11 +217,36 @@ static int8_t rounding_mode_mapping[] = {
 	[RZ_FLOAT_RMODE_RTP] = softfloat_round_max,
 	[RZ_FLOAT_RMODE_RTN] = softfloat_round_min,
 	[RZ_FLOAT_RMODE_RTZ] = softfloat_round_minMag,
-	[RZ_FLOAT_RMODE_UNK] = 6,
 };
 
-static inline void set_float_rounding_mode(RzFloatRMode mode) {
+static inline bool set_float_rounding_mode(RzFloatRMode mode) {
+	if (mode < RZ_FLOAT_RMODE_RNE || mode >= RZ_FLOAT_RMODE_UNK) {
+		return false;
+	}
 	softfloat_roundingMode = rounding_mode_mapping[mode];
+	return true;
+}
+
+static RzFloat *float_overflow_result(RzFloatFormat format, bool sign, RzFloatRMode mode) {
+	bool to_infinity = mode == RZ_FLOAT_RMODE_RNE || mode == RZ_FLOAT_RMODE_RNA ||
+		(!sign && mode == RZ_FLOAT_RMODE_RTP) || (sign && mode == RZ_FLOAT_RMODE_RTN);
+	RzFloat *ret = to_infinity ? rz_float_new_inf(format, sign) : rz_float_new(format);
+	if (!ret) {
+		return NULL;
+	}
+	if (!to_infinity) {
+		ut32 total_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
+		ut32 exp_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
+		ut32 man_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
+		rz_bv_set_range(ret->s, 0, man_len - 1, true);
+		rz_bv_set_range(ret->s, man_len + 1, man_len + exp_len - 1, true);
+		if (format == RZ_FLOAT_IEEE754_BIN_80) {
+			rz_bv_set(ret->s, man_len - 1, true);
+		}
+		rz_bv_set(ret->s, total_len - 1, sign);
+	}
+	ret->exception = RZ_FLOAT_E_OVERFLOW | RZ_FLOAT_E_INEXACT;
+	return ret;
 }
 
 static inline bool f128_is_special(float128_t value) {
@@ -981,12 +1009,12 @@ RZ_API RzFloatSpec rz_float_detect_spec(RZ_NONNULL RzFloat *f) {
 		bool mantissa_is_zero;
 		bool is_quiet;
 		if (f->r == RZ_FLOAT_IEEE754_BIN_80) {
-			/* The binary80 integer bit is explicit and is not part of the
-			 * NaN payload. Both of its infinity encodings therefore have a
-			 * zero fractional significand, and the quiet bit is bit 62. */
+			/* The binary80 integer bit is explicit. Infinity and NaN encodings
+			 * require it to be set; a clear integer bit is non-canonical. */
+			bool integer_bit = rz_bv_get(mantissa_squashed, 63);
 			rz_bv_set(mantissa_squashed, 63, false);
-			mantissa_is_zero = rz_bv_is_zero_vector(mantissa_squashed);
-			is_quiet = rz_bv_get(mantissa_squashed, 62);
+			mantissa_is_zero = integer_bit && rz_bv_is_zero_vector(mantissa_squashed);
+			is_quiet = !integer_bit || rz_bv_get(mantissa_squashed, 62);
 		} else {
 			mantissa_is_zero = rz_bv_is_zero_vector(mantissa_squashed);
 			is_quiet = rz_bv_msb(mantissa_squashed);
@@ -1001,8 +1029,13 @@ RZ_API RzFloatSpec rz_float_detect_spec(RZ_NONNULL RzFloat *f) {
 	}
 
 	if (rz_bv_is_zero_vector(exp_squashed)) {
-		if (rz_bv_is_zero_vector(mantissa_squashed))
+		bool mantissa_is_zero = rz_bv_is_zero_vector(mantissa_squashed);
+		if (f->r == RZ_FLOAT_IEEE754_BIN_80) {
+			mantissa_is_zero = !rz_bv_get(mantissa_squashed, 63) && mantissa_is_zero;
+		}
+		if (mantissa_is_zero) {
 			ret = RZ_FLOAT_SPEC_ZERO;
+		}
 	}
 
 	rz_bv_free(exp_squashed);
@@ -1049,8 +1082,6 @@ static inline bool is_f80_infinity(RzFloat *f) {
 	if (f->r != RZ_FLOAT_IEEE754_BIN_80) {
 		return false;
 	}
-	/* rz_float_detect_spec treats both binary80 infinity encodings (the
-	 * explicit integer bit set or clear) as infinity. */
 	RzFloatSpec spec = rz_float_detect_spec(f);
 	return spec == RZ_FLOAT_SPEC_PINF || spec == RZ_FLOAT_SPEC_NINF;
 }
@@ -1273,9 +1304,13 @@ RZ_API RZ_OWN RzFloat *rz_float_add_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	rz_return_val_if_fail(left && right && left->r == right->r, NULL);
 
 	RzFloatFormat format = left->r;
-	set_float_rounding_mode(mode);
+	if (!set_float_rounding_mode(mode)) {
+		return NULL;
+	}
 
 	switch (format) {
+	case RZ_FLOAT_IEEE754_BIN_16:
+		return of_float16(f16_add(to_float16(left), to_float16(right)));
 	case RZ_FLOAT_IEEE754_BIN_32:
 		return of_float32(f32_add(to_float32(left), to_float32(right)));
 	case RZ_FLOAT_IEEE754_BIN_64:
@@ -1299,9 +1334,13 @@ RZ_API RZ_OWN RzFloat *rz_float_sub_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	rz_return_val_if_fail(left && right && left->r == right->r, NULL);
 
 	RzFloatFormat format = left->r;
-	set_float_rounding_mode(mode);
+	if (!set_float_rounding_mode(mode)) {
+		return NULL;
+	}
 
 	switch (format) {
+	case RZ_FLOAT_IEEE754_BIN_16:
+		return of_float16(f16_sub(to_float16(left), to_float16(right)));
 	case RZ_FLOAT_IEEE754_BIN_32:
 		return of_float32(f32_sub(to_float32(left), to_float32(right)));
 	case RZ_FLOAT_IEEE754_BIN_64:
@@ -1325,9 +1364,13 @@ RZ_API RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	rz_return_val_if_fail(left && right && left->r == right->r, NULL);
 
 	RzFloatFormat format = left->r;
-	set_float_rounding_mode(mode);
+	if (!set_float_rounding_mode(mode)) {
+		return NULL;
+	}
 
 	switch (format) {
+	case RZ_FLOAT_IEEE754_BIN_16:
+		return of_float16(f16_mul(to_float16(left), to_float16(right)));
 	case RZ_FLOAT_IEEE754_BIN_32:
 		return of_float32(f32_mul(to_float32(left), to_float32(right)));
 	case RZ_FLOAT_IEEE754_BIN_64:
@@ -1357,9 +1400,13 @@ RZ_API RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	rz_return_val_if_fail(left && right && left->r == right->r, NULL);
 
 	RzFloatFormat format = left->r;
-	set_float_rounding_mode(mode);
+	if (!set_float_rounding_mode(mode)) {
+		return NULL;
+	}
 
 	switch (format) {
+	case RZ_FLOAT_IEEE754_BIN_16:
+		return of_float16(f16_div(to_float16(left), to_float16(right)));
 	case RZ_FLOAT_IEEE754_BIN_32:
 		return of_float32(f32_div(to_float32(left), to_float32(right)));
 	case RZ_FLOAT_IEEE754_BIN_64:
@@ -1390,9 +1437,13 @@ RZ_API RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	rz_return_val_if_fail(left && right && left->r == right->r, NULL);
 
 	RzFloatFormat format = left->r;
-	set_float_rounding_mode(mode);
+	if (!set_float_rounding_mode(mode)) {
+		return NULL;
+	}
 
 	switch (format) {
+	case RZ_FLOAT_IEEE754_BIN_16:
+		return of_float16(f16_rem(to_float16(left), to_float16(right)));
 	case RZ_FLOAT_IEEE754_BIN_32:
 		return of_float32(f32_rem(to_float32(left), to_float32(right)));
 	case RZ_FLOAT_IEEE754_BIN_64:
@@ -1426,6 +1477,9 @@ RZ_API RZ_OWN RzFloat *rz_float_mod_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	rz_return_val_if_fail(left && right && left->r == right->r, NULL);
 
 	RzFloat *ret = rz_float_rem_ieee_bin(left, right, mode);
+	if (!ret) {
+		return NULL;
+	}
 	if (rz_float_get_sign(ret) != rz_float_get_sign(left)) {
 		if (rz_float_is_zero(ret)) {
 			/* If a zero is returned, it should still have the same sign as the dividend. */
@@ -1440,6 +1494,7 @@ RZ_API RZ_OWN RzFloat *rz_float_mod_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 				same_sign = rz_float_sub(ret, right_abs, mode);
 			}
 
+			rz_float_free(right_abs);
 			rz_float_free(ret);
 			ret = same_sign;
 		}
@@ -1457,9 +1512,13 @@ RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL R
 	rz_return_val_if_fail(a && b && c && a->r == b->r && b->r == c->r, NULL);
 
 	RzFloatFormat format = a->r;
-	set_float_rounding_mode(mode);
+	if (!set_float_rounding_mode(mode)) {
+		return NULL;
+	}
 
 	switch (format) {
+	case RZ_FLOAT_IEEE754_BIN_16:
+		return of_float16(f16_mulAdd(to_float16(a), to_float16(b), to_float16(c)));
 	case RZ_FLOAT_IEEE754_BIN_32:
 		return of_float32(f32_mulAdd(to_float32(a), to_float32(b), to_float32(c)));
 	case RZ_FLOAT_IEEE754_BIN_64:
@@ -1556,9 +1615,13 @@ RZ_API RZ_OWN RzFloat *rz_float_sqrt_ieee_bin(RZ_NONNULL RzFloat *n, RzFloatRMod
 	rz_return_val_if_fail(n, NULL);
 
 	RzFloatFormat format = n->r;
-	set_float_rounding_mode(mode);
+	if (!set_float_rounding_mode(mode)) {
+		return NULL;
+	}
 
 	switch (format) {
+	case RZ_FLOAT_IEEE754_BIN_16:
+		return of_float16(f16_sqrt(to_float16(n)));
 	case RZ_FLOAT_IEEE754_BIN_32:
 		return of_float32(f32_sqrt(to_float32(n)));
 	case RZ_FLOAT_IEEE754_BIN_64:
@@ -1632,9 +1695,13 @@ RZ_API RZ_OWN RzFloat *rz_float_round_to_integral(RZ_NONNULL RzFloat *f, RzFloat
 	rz_return_val_if_fail(f, NULL);
 
 	RzFloatFormat format = f->r;
-	set_float_rounding_mode(mode);
+	if (!set_float_rounding_mode(mode)) {
+		return NULL;
+	}
 
 	switch (format) {
+	case RZ_FLOAT_IEEE754_BIN_16:
+		return of_float16(f16_roundToInt(to_float16(f), softfloat_roundingMode, false));
 	case RZ_FLOAT_IEEE754_BIN_32:
 		return of_float32(f32_roundToInt(to_float32(f), softfloat_roundingMode, false));
 	case RZ_FLOAT_IEEE754_BIN_64:
@@ -1657,25 +1724,26 @@ RZ_API RZ_OWN RzFloat *rz_float_round_to_integral(RZ_NONNULL RzFloat *f, RzFloat
  * \param mode rounding mode
  * \return closest float of given integer
  */
-RZ_API RZ_OWN RzFloat *rz_float_cast_float(RZ_NONNULL RzBitVector *bv, RzFloatFormat format, RzFloatRMode mode) {
-	rz_return_val_if_fail(bv, NULL);
+static RzFloat *float_cast_from_abs(RzBitVector *bv, RzFloatFormat format, RzFloatRMode mode, bool sign) {
 	ut32 bias = rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
 	ut32 exp_max_no_bias = bias;
 
 	ut32 width = rz_bv_len(bv) - rz_bv_clz(bv);
 	// Zero has no highest set bit; handle it before width - 1 underflows.
 	if (width == 0) {
-		return rz_float_new_zero(format, false);
+		return rz_float_new_zero(format, sign);
 	}
 	ut32 order = width - 1;
 	if (order > exp_max_no_bias) {
-		// error: not representable
-		return rz_float_new_inf(format, 0);
+		return float_overflow_result(format, sign, mode);
 	}
 
-	// unsigned bv, as positive one
-	RzFloat *cast_float = rz_float_round_bv_and_pack(0, order + bias, bv, format, mode);
-	return cast_float;
+	return rz_float_round_bv_and_pack(sign, order + bias, bv, format, mode);
+}
+
+RZ_API RZ_OWN RzFloat *rz_float_cast_float(RZ_NONNULL RzBitVector *bv, RzFloatFormat format, RzFloatRMode mode) {
+	rz_return_val_if_fail(bv, NULL);
+	return float_cast_from_abs(bv, format, mode, false);
 }
 
 /**
@@ -1695,15 +1763,8 @@ RZ_API RZ_OWN RzFloat *rz_float_cast_sfloat(RZ_NONNULL RzBitVector *bv, RzFloatF
 	bool sign = rz_bv_msb(bv);
 	bv_abs = sign ? rz_bv_complement_2(bv) : rz_bv_dup(bv);
 
-	RzFloat *cast_float = rz_float_cast_float(bv_abs, format, mode);
+	RzFloat *cast_float = float_cast_from_abs(bv_abs, format, mode, sign);
 	rz_bv_free(bv_abs);
-
-	if (!cast_float) {
-		return NULL;
-	}
-
-	// set sign of float
-	rz_float_set_sign(cast_float, sign);
 	return cast_float;
 }
 
@@ -1924,7 +1985,9 @@ RZ_API RZ_OWN RzFloat *rz_float_convert(RZ_NONNULL RzFloat *f, RzFloatFormat for
 		return rz_float_dup(f);
 	}
 
-	set_float_rounding_mode(mode);
+	if (!set_float_rounding_mode(mode)) {
+		return NULL;
+	}
 	softfloat_exceptionFlags = 0;
 	RzFloat *ret = NULL;
 	if (f->r < RZ_FLOAT_BINARY_FORMAT_COUNT && format < RZ_FLOAT_BINARY_FORMAT_COUNT) {
@@ -2067,11 +2130,6 @@ RZ_API RZ_OWN RzFloat *rz_float_succ(RZ_NONNULL RzFloat *f) {
 	RzBitVector *bv_next;
 	RzFloat *ret = NULL;
 	if (rz_float_is_negative(f)) {
-		if (f->r == RZ_FLOAT_IEEE754_BIN_80 && rz_float_detect_spec(f) == RZ_FLOAT_SPEC_NINF) {
-			/* Step from the pseudo-infinity boundary immediately above the
-			 * largest finite negative value. */
-			rz_bv_set(bv, rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN) - 1, false);
-		}
 		// neg succ is x - unit(1)
 		bv_next = rz_bv_sub(bv, one, NULL);
 	} else {
@@ -2106,11 +2164,6 @@ RZ_API RZ_OWN RzFloat *rz_float_pred(RZ_NONNULL RzFloat *f) {
 		// neg pred is x + unit(1)
 		bv_next = rz_bv_add(bv, one, NULL);
 	} else {
-		if (f->r == RZ_FLOAT_IEEE754_BIN_80 && rz_float_detect_spec(f) == RZ_FLOAT_SPEC_PINF) {
-			/* Step from the pseudo-infinity boundary immediately above the
-			 * largest finite positive value. */
-			rz_bv_set(bv, rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN) - 1, false);
-		}
 		// pos pred is x - unit(1)
 		bv_next = rz_bv_sub(bv, one, NULL);
 	}

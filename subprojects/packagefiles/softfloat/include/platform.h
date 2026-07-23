@@ -56,6 +56,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define THREAD_LOCAL
 #elif defined(_MSC_VER)
 #define THREAD_LOCAL __declspec(thread)
+#elif defined(__has_feature)
+#if __has_feature(tls)
+#define THREAD_LOCAL __thread
+#else
+#define THREAD_LOCAL
+#endif
 #else
 #define THREAD_LOCAL __thread
 #endif

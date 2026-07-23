@@ -320,6 +320,8 @@ void *rz_il_handler_forder(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	return order;
 }
 
+static void float_merge_operand_exceptions(RzFloat *ret, const RzFloat *x, const RzFloat *y, const RzFloat *z);
+
 void *rz_il_handler_fround(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
@@ -330,6 +332,7 @@ void *rz_il_handler_fround(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	}
 	RzFloatRMode mode = fround.rmode;
 	RzFloat *ret = rz_float_round_to_integral(f, mode);
+	float_merge_operand_exceptions(ret, f, NULL, NULL);
 
 	rz_float_free(f);
 
@@ -343,6 +346,7 @@ void *rz_il_handler_fsqrt(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	RzFloat *n = rz_il_evaluate_float(vm, sqrt.f);
 	RzFloatRMode mode = sqrt.rmode;
 	RzFloat *ret = rz_float_sqrt(n, mode);
+	float_merge_operand_exceptions(ret, n, NULL, NULL);
 
 	rz_float_free(n);
 
@@ -400,6 +404,21 @@ void *rz_il_handler_frsqrt(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	return NULL;
 }
 
+static void float_merge_operand_exceptions(RzFloat *ret, const RzFloat *x, const RzFloat *y, const RzFloat *z) {
+	if (!ret) {
+		return;
+	}
+	if (x) {
+		ret->exception |= x->exception;
+	}
+	if (y) {
+		ret->exception |= y->exception;
+	}
+	if (z) {
+		ret->exception |= z->exception;
+	}
+}
+
 void *rz_il_handler_fadd(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 	RzILOpArgsFadd fadd = op->op.fadd;
@@ -407,6 +426,7 @@ void *rz_il_handler_fadd(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	RzFloat *y = rz_il_evaluate_float(vm, fadd.y);
 	RzFloatRMode mode = fadd.rmode;
 	RzFloat *ret = rz_float_add(x, y, mode);
+	float_merge_operand_exceptions(ret, x, y, NULL);
 
 	rz_float_free(x);
 	rz_float_free(y);
@@ -422,6 +442,7 @@ void *rz_il_handler_fsub(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	RzFloat *y = rz_il_evaluate_float(vm, fsub.y);
 	RzFloatRMode mode = fsub.rmode;
 	RzFloat *ret = rz_float_sub(x, y, mode);
+	float_merge_operand_exceptions(ret, x, y, NULL);
 
 	rz_float_free(x);
 	rz_float_free(y);
@@ -437,6 +458,7 @@ void *rz_il_handler_fdiv(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	RzFloat *y = rz_il_evaluate_float(vm, fdiv.y);
 	RzFloatRMode mode = fdiv.rmode;
 	RzFloat *ret = rz_float_div(x, y, mode);
+	float_merge_operand_exceptions(ret, x, y, NULL);
 
 	rz_float_free(x);
 	rz_float_free(y);
@@ -452,6 +474,7 @@ void *rz_il_handler_fmul(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	RzFloat *y = rz_il_evaluate_float(vm, fmul.y);
 	RzFloatRMode mode = fmul.rmode;
 	RzFloat *ret = rz_float_mul(x, y, mode);
+	float_merge_operand_exceptions(ret, x, y, NULL);
 
 	rz_float_free(x);
 	rz_float_free(y);
@@ -467,6 +490,7 @@ void *rz_il_handler_fmod(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	RzFloat *y = rz_il_evaluate_float(vm, fmod.y);
 	RzFloatRMode mode = fmod.rmode;
 	RzFloat *ret = rz_float_mod(x, y, mode);
+	float_merge_operand_exceptions(ret, x, y, NULL);
 
 	rz_float_free(x);
 	rz_float_free(y);
@@ -476,6 +500,9 @@ void *rz_il_handler_fmod(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 }
 
 static bool runtime_rmode_from_value(const RzBitVector *value, RzFloatRMode *out) {
+	if (rz_bv_len(value) != 32) {
+		return false;
+	}
 	ut64 v = rz_bv_to_ut64(value);
 	if (v >= RZ_FLOAT_RMODE_UNK) {
 		return false;
@@ -594,6 +621,7 @@ void *rz_il_handler_fmad(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	RzFloat *z = rz_il_evaluate_float(vm, fmad.z);
 	RzFloatRMode mode = fmad.rmode;
 	RzFloat *ret = rz_float_fma(x, y, z, mode);
+	float_merge_operand_exceptions(ret, x, y, z);
 
 	rz_float_free(x);
 	rz_float_free(y);

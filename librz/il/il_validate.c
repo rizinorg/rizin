@@ -588,6 +588,8 @@ VALIDATOR_PURE(fconvert) {
 	RzILOpArgsFconvert *args = &op->op.fconvert;
 	RzILSortPure sort;
 
+	VALIDATOR_ASSERT(args->format >= RZ_FLOAT_IEEE754_BIN_32 && args->format <= RZ_FLOAT_IEEE754_BIN_16,
+		"Target format of %s op is invalid.\n", rz_il_op_pure_code_stringify(op->code));
 	VALIDATOR_DESCEND(args->f, &sort);
 	VALIDATOR_ASSERT(sort.type == RZ_IL_TYPE_PURE_FLOAT, "operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
 
@@ -689,10 +691,7 @@ VALIDATOR_PURE(float_binop_with_round) {
 
 VALIDATOR_PURE(float_with_runtime_rmode) {
 	RzILOpBitVector *rmode = rz_il_op_pure_float_rmode_operand(op);
-	if (!rmode) {
-		rz_warn_if_reached();
-		return false;
-	}
+	VALIDATOR_ASSERT(rmode, "Rounding-mode operand of %s op is NULL.\n", rz_il_op_pure_code_stringify(op->code));
 
 	RzILSortPure rmode_sort;
 	VALIDATOR_DESCEND(rmode, &rmode_sort);

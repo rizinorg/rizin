@@ -174,6 +174,39 @@ bool rz_float_detect_spec_test(void) {
 	mu_end;
 }
 
+bool f16_ieee_arithmetic_test(void) {
+	RzFloat *source = rz_float_new_from_f32(1.0f);
+	RzFloat *one = rz_float_convert(source, RZ_FLOAT_IEEE754_BIN_16, RZ_FLOAT_RMODE_RNE);
+	rz_float_free(source);
+	source = rz_float_new_from_f32(2.0f);
+	RzFloat *two = rz_float_convert(source, RZ_FLOAT_IEEE754_BIN_16, RZ_FLOAT_RMODE_RNE);
+	rz_float_free(source);
+	source = rz_float_new_from_f32(3.0f);
+	RzFloat *three = rz_float_convert(source, RZ_FLOAT_IEEE754_BIN_16, RZ_FLOAT_RMODE_RNE);
+	rz_float_free(source);
+	RzFloat *sum = rz_float_add(one, two, RZ_FLOAT_RMODE_RNE);
+	RzFloat *product = rz_float_mul(one, two, RZ_FLOAT_RMODE_RNE);
+	RzFloat *quotient = rz_float_div(two, two, RZ_FLOAT_RMODE_RNE);
+	RzFloat *root = rz_float_sqrt(one, RZ_FLOAT_RMODE_RNE);
+	RzFloat *fma = rz_float_fma(one, two, one, RZ_FLOAT_RMODE_RNE);
+
+	mu_assert_true(rz_float_is_equal(sum, three), "binary16 add");
+	mu_assert_true(rz_float_is_equal(product, two), "binary16 multiply");
+	mu_assert_true(rz_float_is_equal(quotient, one), "binary16 divide");
+	mu_assert_true(rz_float_is_equal(root, one), "binary16 square root");
+	mu_assert_true(rz_float_is_equal(fma, three), "binary16 fused multiply-add");
+
+	rz_float_free(fma);
+	rz_float_free(root);
+	rz_float_free(quotient);
+	rz_float_free(product);
+	rz_float_free(sum);
+	rz_float_free(three);
+	rz_float_free(two);
+	rz_float_free(one);
+	mu_end;
+}
+
 bool f32_ieee_add_test(void) {
 
 	RzFloat *f0 = rz_float_new_from_f32(1.5f);
@@ -1547,6 +1580,21 @@ bool f32_ieee_cast_test(void) {
 	rz_float_free(cast_val);
 	rz_bv_free(val);
 
+	// Integer overflow follows the requested rounding direction and is inexact.
+	val = rz_bv_new(129);
+	rz_bv_set(val, 128, true);
+	cast_val = rz_float_cast_float(val, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_streq_free(rz_float_as_hex_string(cast_val, true), "0x7f800000", "nearest integer overflow produces infinity");
+	mu_assert_true(cast_val->exception & RZ_FLOAT_E_OVERFLOW, "integer overflow raises overflow");
+	mu_assert_true(cast_val->exception & RZ_FLOAT_E_INEXACT, "integer overflow raises inexact");
+	rz_float_free(cast_val);
+	cast_val = rz_float_cast_float(val, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RTZ);
+	mu_assert_streq_free(rz_float_as_hex_string(cast_val, true), "0x7f7fffff", "round-zero integer overflow produces the largest finite value");
+	mu_assert_true(cast_val->exception & RZ_FLOAT_E_OVERFLOW, "directed integer overflow raises overflow");
+	mu_assert_true(cast_val->exception & RZ_FLOAT_E_INEXACT, "directed integer overflow raises inexact");
+	rz_float_free(cast_val);
+	rz_bv_free(val);
+
 	// 1-4. cast-float negative
 	// 1111 1111 1111 1111 -> unsigned : 2^16 - 1 = 65535, signed : -1
 	val = rz_bv_new_from_st64(16, -1);
@@ -1850,22 +1898,23 @@ bool f80_ieee_special_num_test(void) {
 	RzFloat *qnan = rz_float_new_qnan(RZ_FLOAT_IEEE754_BIN_80);
 	RzFloat *snan = rz_float_new_snan(RZ_FLOAT_IEEE754_BIN_80);
 	RzFloat *one = new_f80_from_bytes("\x3f\xff\x80\x00\x00\x00\x00\x00\x00\x00");
+	RzFloat *pseudo_denormal = new_f80_from_bytes("\x00\x00\x80\x00\x00\x00\x00\x00\x00\x00");
 
 	mu_assert_streq_free(rz_float_as_hex_string(pinf, true), "0x7fff8000000000000000", "binary80 infinity has an explicit integer bit");
 	mu_assert_streq_free(rz_float_as_hex_string(qnan, true), "0x7fffc000000000000001", "binary80 quiet NaN has distinct integer and quiet bits");
 	mu_assert_streq_free(rz_float_as_hex_string(snan, true), "0x7fff8000000000000001", "binary80 signaling NaN keeps the quiet bit clear");
 	mu_assert_true(rz_float_is_inf(pinf), "detect canonical binary80 infinity");
-	mu_assert_true(rz_float_is_inf(pseudo_inf), "detect binary80 pseudo-infinity");
-	mu_assert_eq(rz_float_cmp(pinf, pseudo_inf), 0, "canonical and pseudo positive infinity compare equal");
-	mu_assert_eq(rz_float_cmp(pseudo_inf, pinf), 0, "positive infinity comparison is symmetric");
-	mu_assert_eq(rz_float_cmp(ninf, pseudo_ninf), 0, "canonical and pseudo negative infinity compare equal");
-	mu_assert_eq(rz_float_cmp(pseudo_ninf, ninf), 0, "negative infinity comparison is symmetric");
-	mu_assert_true(rz_float_is_equal(pinf, pseudo_inf), "canonical and pseudo positive infinity are equal");
-	mu_assert_true(rz_float_is_equal(pseudo_inf, pinf), "positive infinity equality is symmetric");
-	mu_assert_true(rz_float_is_equal(ninf, pseudo_ninf), "canonical and pseudo negative infinity are equal");
-	mu_assert_true(rz_float_is_equal(pseudo_ninf, ninf), "negative infinity equality is symmetric");
+	mu_assert_true(rz_float_is_nan(pseudo_inf), "detect unsupported binary80 pseudo-infinity as NaN");
+	mu_assert_true(rz_float_is_nan(pseudo_ninf), "detect unsupported negative binary80 pseudo-infinity as NaN");
+	mu_assert_true(rz_float_cmp(pinf, pseudo_inf) != 0, "canonical and unsupported positive infinity differ");
+	mu_assert_true(rz_float_cmp(ninf, pseudo_ninf) != 0, "canonical and unsupported negative infinity differ");
+	mu_assert_false(rz_float_is_equal(pinf, pseudo_inf), "canonical and unsupported positive infinity are unequal");
+	mu_assert_false(rz_float_is_equal(pseudo_inf, pinf), "unsupported positive infinity equality is symmetric");
+	mu_assert_false(rz_float_is_equal(ninf, pseudo_ninf), "canonical and unsupported negative infinity are unequal");
+	mu_assert_false(rz_float_is_equal(pseudo_ninf, ninf), "unsupported negative infinity equality is symmetric");
 	mu_assert_true(rz_float_detect_spec(qnan) == RZ_FLOAT_SPEC_QNAN, "detect binary80 quiet NaN");
 	mu_assert_true(rz_float_detect_spec(snan) == RZ_FLOAT_SPEC_SNAN, "detect binary80 signaling NaN");
+	mu_assert_false(rz_float_is_zero(pseudo_denormal), "binary80 pseudo-denormal is nonzero");
 	RzFloat *pseudo_qnan = rz_float_dup(qnan);
 	rz_bv_set(pseudo_qnan->s, 63, false);
 	mu_assert_true(rz_float_is_nan(pseudo_qnan), "detect binary80 NaN with a clear integer bit");
@@ -1874,11 +1923,11 @@ bool f80_ieee_special_num_test(void) {
 	RzFloat *pred_inf = rz_float_pred(pinf);
 	RzFloat *succ_pred_inf = rz_float_succ(pred_inf);
 	RzFloat *succ_ninf = rz_float_succ(ninf);
-	mu_assert_streq_free(rz_float_as_hex_string(pred_inf, true), "0x7ffeffffffffffffffff", "predecessor of binary80 positive infinity is the largest finite value");
-	mu_assert_streq_free(rz_float_as_hex_string(succ_pred_inf, true), "0x7fff0000000000000000", "successor of the largest finite binary80 value is pseudo-infinity");
-	mu_assert_true(rz_float_is_equal(pinf, succ_pred_inf), "successor pseudo-infinity equals canonical positive infinity");
-	mu_assert_true(rz_float_is_equal(succ_pred_inf, pinf), "successor pseudo-infinity equality is symmetric");
-	mu_assert_streq_free(rz_float_as_hex_string(succ_ninf, true), "0xfffeffffffffffffffff", "successor of binary80 negative infinity is the largest finite negative value");
+	mu_assert_streq_free(rz_float_as_hex_string(pred_inf, true), "0x7fff7fffffffffffffff", "predecessor follows the binary80 encoding order");
+	mu_assert_streq_free(rz_float_as_hex_string(succ_pred_inf, true), "0x7fff8000000000000000", "successor returns canonical binary80 infinity");
+	mu_assert_true(rz_float_is_equal(pinf, succ_pred_inf), "successor is canonical infinity");
+	mu_assert_true(rz_float_is_equal(succ_pred_inf, pinf), "successor infinity equality is symmetric");
+	mu_assert_streq_free(rz_float_as_hex_string(succ_ninf, true), "0xffff7fffffffffffffff", "successor follows the binary80 encoding order");
 
 	RzFloat *inf_product = rz_float_mul(pinf, pinf, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(rz_float_is_inf(inf_product), "binary80 infinity multiplied by infinity stays infinite");
@@ -1902,6 +1951,7 @@ bool f80_ieee_special_num_test(void) {
 	rz_float_free(succ_pred_inf);
 	rz_float_free(pred_inf);
 	rz_float_free(pseudo_qnan);
+	rz_float_free(pseudo_denormal);
 	rz_float_free(one);
 	rz_float_free(snan);
 	rz_float_free(qnan);
@@ -2089,6 +2139,7 @@ bool all_tests() {
 	mu_run_test(rz_float_new_from_hex_test);
 	mu_run_test(f32_ieee_format_test);
 	mu_run_test(rz_float_detect_spec_test);
+	mu_run_test(f16_ieee_arithmetic_test);
 	mu_run_test(f32_ieee_add_test);
 	mu_run_test(f32_ieee_sub_test);
 	mu_run_test(f32_ieee_mul_test);

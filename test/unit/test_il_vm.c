@@ -1165,6 +1165,19 @@ static bool test_rzil_vm_op_fexcept() {
 	rz_il_bool_free(e);
 	rz_il_vm_clear_events(vm);
 
+	// Arithmetic composition must preserve exceptions raised by child operations.
+	op = rz_il_op_new_fadd(RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f32(0.0f),
+		rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE,
+			rz_il_op_new_float_from_f32(1e38f),
+			rz_il_op_new_float_from_f32(1e38f)));
+	eop = rz_il_op_new_fexcept(RZ_FLOAT_E_OVERFLOW, op);
+	e = rz_il_evaluate_bool(vm, eop);
+	mu_assert_true(e->b, "float arithmetic preserves nested overflow exception");
+	rz_il_op_pure_free(eop);
+	rz_il_bool_free(e);
+	rz_il_vm_clear_events(vm);
+
 	op = rz_il_op_new_fconvert(RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE,
 		rz_il_op_new_fsub(RZ_FLOAT_RMODE_RNE,
 			rz_il_op_new_float_from_f64(F64_PINF),
@@ -1339,6 +1352,14 @@ static bool test_rzil_vm_runtime_rmode_helpers() {
 	RzFloat *bad_result = rz_il_evaluate_float(vm, bad_op);
 	mu_assert_null(bad_result, "invalid runtime rounding mode fails evaluation");
 	rz_float_free(bad_result);
+	rz_il_op_pure_free(bad_op);
+
+	bad_op = rz_il_op_new_fadd_with_rmode(
+		rz_il_op_new_bitv_from_ut64(8, RZ_FLOAT_RMODE_RNE),
+		rz_il_op_new_float_from_f32(1.0f),
+		rz_il_op_new_float_from_f32(0.0f));
+	bad_result = rz_il_evaluate_float(vm, bad_op);
+	mu_assert_null(bad_result, "non-32-bit runtime rounding mode fails direct evaluation");
 	rz_il_op_pure_free(bad_op);
 
 	RzILOpFloat *op = rz_il_op_new_fconvert_with_rmode(

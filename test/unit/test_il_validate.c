@@ -1814,6 +1814,15 @@ static bool test_il_validate_runtime_rmode_helper() {
 	mu_assert_null(report, "no report");
 	rz_il_op_pure_free(op);
 
+	op = rz_il_op_new_fconvert_with_rmode(
+		RZ_FLOAT_UNK,
+		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE),
+		rz_il_op_new_float_from_f64(1.0));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "runtime-rmode fconvert rejects an invalid target format");
+	mu_assert_streq_free(report, "Target format of fconvert_with_rmode op is invalid.", "report");
+	rz_il_op_pure_free(op);
+
 	rz_il_validate_global_context_free(ctx);
 	mu_end;
 }

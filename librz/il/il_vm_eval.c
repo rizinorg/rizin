@@ -370,6 +370,23 @@ static const char *pure_type_name(RzILTypePure type) {
 	}
 }
 
+static void pure_result_free(void *res, RzILTypePure type) {
+	switch (type) {
+	case RZ_IL_TYPE_PURE_BITVECTOR:
+		rz_bv_free(res);
+		break;
+	case RZ_IL_TYPE_PURE_BOOL:
+		rz_il_bool_free(res);
+		break;
+	case RZ_IL_TYPE_PURE_FLOAT:
+		rz_float_free(res);
+		break;
+	default:
+		free(res);
+		break;
+	}
+}
+
 /**
  * Evaluate the given pure op, asserting it returns a bitvector.
  * \return value in bitvector, or NULL if an error occurred (e.g. the op returned some other type)
@@ -385,6 +402,7 @@ RZ_API RZ_NULLABLE RZ_OWN RzBitVector *rz_il_evaluate_bitv(RZ_NONNULL RzILVM *vm
 	}
 	if (type != RZ_IL_TYPE_PURE_BITVECTOR) {
 		RZ_LOG_ERROR("RzIL: type error: expected bitvector, got %s\n", pure_type_name(type));
+		pure_result_free(res, type);
 		return NULL;
 	}
 	return res;
@@ -405,6 +423,7 @@ RZ_API RZ_NULLABLE RZ_OWN RzILBool *rz_il_evaluate_bool(RZ_NONNULL RzILVM *vm, R
 	}
 	if (type != RZ_IL_TYPE_PURE_BOOL) {
 		RZ_LOG_ERROR("RzIL: type error: expected bool, got %s\n", pure_type_name(type));
+		pure_result_free(res, type);
 		return NULL;
 	}
 	return res;
@@ -469,6 +488,7 @@ RZ_API RZ_NULLABLE RZ_OWN RzFloat *rz_il_evaluate_float(RZ_NONNULL RzILVM *vm, R
 	}
 	if (type != RZ_IL_TYPE_PURE_FLOAT) {
 		RZ_LOG_ERROR("RzIL: type error: expected float, got %s\n", pure_type_name(type));
+		pure_result_free(res, type);
 		return NULL;
 	}
 	return res;
