@@ -979,11 +979,18 @@ RZ_API bool rz_analysis_op_is_eob(const RzAnalysisOp *op) {
  */
 RZ_API bool rz_analysis_op_is_call(RZ_NONNULL const RzAnalysisOp *op) {
 	rz_return_val_if_fail(op, false);
-	if ((op->type & RZ_ANALYSIS_OP_TYPE_CALL) == RZ_ANALYSIS_OP_TYPE_CALL ||
-		(op->type & RZ_ANALYSIS_OP_TYPE_UCALL) == RZ_ANALYSIS_OP_TYPE_UCALL) {
+	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
+	case RZ_ANALYSIS_OP_TYPE_CALL:
+	case RZ_ANALYSIS_OP_TYPE_UCALL:
+	case RZ_ANALYSIS_OP_TYPE_RCALL:
+	case RZ_ANALYSIS_OP_TYPE_ICALL:
+	case RZ_ANALYSIS_OP_TYPE_IRCALL:
+	case RZ_ANALYSIS_OP_TYPE_CCALL:
+	case RZ_ANALYSIS_OP_TYPE_UCCALL:
 		return true;
+	default:
+		return false;
 	}
-	return false;
 }
 
 RZ_API void rz_analysis_purge(RzAnalysis *analysis) {
