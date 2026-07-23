@@ -142,7 +142,9 @@ RZ_API bool rz_debug_trace_ins_after(RZ_NONNULL RzDebug *dbg) {
 		switch (val->type) {
 		case RZ_ANALYSIS_VAL_REG: {
 			if (!val->reg) {
-				RZ_LOG_ERROR("invalid register, unable to trace register state\n");
+				RZ_LOG_DEBUG("no register profile entry for a write at 0x%" PFMT64x
+					     "; the change is not recorded\n",
+					dbg->cur_op->addr);
 				continue;
 			}
 			ut64 data = rz_reg_get_value(dbg->reg, val->reg);
