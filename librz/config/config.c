@@ -18,7 +18,7 @@ static void config_var_fini(RzConfigVar *var) {
 
 	free(var->name);
 	free(var->desc);
-	rz_list_free(var->options);
+	rz_set_s_free(var->options);
 	if (RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND)) {
 		// if is bind, we do not own the value.
 		return;
@@ -26,8 +26,8 @@ static void config_var_fini(RzConfigVar *var) {
 
 	if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_STR)) {
 		free(var->value.string);
-	} else if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_LIST)) {
-		rz_list_free(var->value.list);
+	} else if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_SET)) {
+		rz_set_s_free(var->value.set);
 	}
 }
 
@@ -61,30 +61,31 @@ static inline bool config_var_set_readonly(RzConfigVar *var, bool read_only) {
 	return true;
 }
 
-static bool config_var_args_to_list(va_list argp, RzList /*<char *>*/ *list) {
+static bool config_var_args_to_set(va_list argp, RzSetS *set) {
 	const char *value = va_arg(argp, const char *);
 	while (value) {
-		char *copy = rz_str_dup(value);
-		if (!copy || !rz_list_append(list, copy)) {
-			free(copy);
-			return false;
-		}
+		rz_set_s_add(set, value);
 		value = va_arg(argp, const char *);
 	}
 	return true;
 }
 
-RZ_IPI RZ_OWN RzList /*<char *>*/ *rz_config_dup_list(RZ_NULLABLE const RzList /*<const char *>*/ *list) {
-	RzListIter *it;
-	const char *elem;
-	RzList *safe_list = rz_list_newf(free);
-	if (!safe_list) {
+RZ_IPI RZ_OWN RzSetS *rz_config_dup_set(RZ_NULLABLE const RzSetS *set) {
+	RzSetS *safe_set = rz_set_s_new(HT_STR_DUP);
+	if (!safe_set) {
 		return NULL;
 	}
-	rz_list_foreach (list, it, elem) {
-		rz_list_append(safe_list, rz_str_dup(elem));
+	if (!set) {
+		return safe_set;
 	}
-	return safe_list;
+
+	RzIterator *it = rz_set_s_as_iter(set);
+	const char **elem;
+	rz_iterator_foreach(it, elem) {
+		rz_set_s_add(safe_set, *elem);
+	}
+	rz_iterator_free(it);
+	return safe_set;
 }
 
 /**
@@ -221,14 +222,14 @@ static inline bool config_init_var_string(RzConfigVar *var, const char *name, co
 	return true;
 }
 
-static inline bool config_init_var_list(RzConfigVar *var, const char *name, const char *desc, RZ_OWN RzList /*<char *>*/ *value) {
+static inline bool config_init_var_set(RzConfigVar *var, const char *name, const char *desc, RZ_OWN RzSetS *value) {
 	var->name = rz_str_dup(name);
-	var->value.list = value;
-	if (!var->name || !var->value.list) {
+	var->value.set = value;
+	if (!var->name || !var->value.set) {
 		return false;
 	}
 	var->desc = rz_str_dup(desc);
-	var->flags = RZ_CONFIG_VAR_FLAG_WRITABLE | RZ_CONFIG_VAR_TYPE_LIST;
+	var->flags = RZ_CONFIG_VAR_FLAG_WRITABLE | RZ_CONFIG_VAR_TYPE_SET;
 	return true;
 }
 
@@ -253,11 +254,11 @@ static inline bool config_var_bind_set_options(RzConfigVar *var) {
 		return true;
 	}
 
-	RzList *options = NULL;
+	RzSetS *options = NULL;
 	if (!var->bind.get_options(var->bind.user, &options)) {
 		return false;
 	}
-	rz_list_free(var->options);
+	rz_set_s_free(var->options);
 	var->options = options;
 	return true;
 }
@@ -373,37 +374,39 @@ RZ_API bool rz_config_add_options(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const cha
 	}
 
 	va_list argp;
-	RzList *list = rz_list_newf(free);
-	if (!list) {
-		RZ_LOG_ERROR("config: failed to initialize options list for '%s'.\n", name);
+	RzSetS *set = rz_set_s_new(HT_STR_DUP);
+	if (!set) {
+		RZ_LOG_ERROR("config: failed to initialize options set for '%s'.\n", name);
 		config_var_fini(&new_entry.var);
 		return false;
 	}
 
 	va_start(argp, desc);
-	bool ok = config_var_args_to_list(argp, list);
+	const char *first = va_arg(argp, const char *);
+	if (first) {
+		rz_set_s_add(set, first);
+	}
+	bool ok = config_var_args_to_set(argp, set);
 	va_end(argp);
 	if (!ok) {
-		RZ_LOG_ERROR("config: failed to initialize options list for '%s'.\n", name);
-		rz_list_free(list);
+		RZ_LOG_ERROR("config: failed to initialize options set for '%s'.\n", name);
+		rz_set_s_free(set);
 		config_var_fini(&new_entry.var);
 		return false;
 	}
-
-	const char *first = rz_list_first_val(list);
 	if (!config_init_var_string(&new_entry.var, name, desc, first)) {
 		RZ_LOG_ERROR("config: failed to initialize '%s'.\n", name);
 		config_var_fini(&new_entry.var);
 		return false;
 	}
-	new_entry.var.options = list;
+	new_entry.var.options = set;
 
 	config_add_entry(cfg, name, &new_entry, true);
 	return true;
 }
 
 /**
- * \brief      Adds a list variable if doesn't exists.
+ * \brief      Adds a set variable if doesn't exists.
  *
  * \param      cfg    The configuration where to add the variable
  * \param[in]  name   The name of the variable to add
@@ -412,7 +415,7 @@ RZ_API bool rz_config_add_options(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const cha
  *
  * \return     On success returns true, otherwise false
  */
-RZ_API bool rz_config_add_list(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ...) {
+RZ_API bool rz_config_add_set(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ...) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
 	RzConfigEntry new_entry = { 0 };
 	if (config_find_entry(cfg, name)) {
@@ -421,18 +424,18 @@ RZ_API bool rz_config_add_list(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *
 	}
 
 	va_list argp;
-	RzList *list = rz_list_newf(free);
-	if (!list) {
+	RzSetS *set = rz_set_s_new(HT_STR_DUP);
+	if (!set) {
 		return false;
 	}
 
 	va_start(argp, desc);
-	bool ok = config_var_args_to_list(argp, list);
+	bool ok = config_var_args_to_set(argp, set);
 	va_end(argp);
 	if (!ok) {
-		rz_list_free(list);
+		rz_set_s_free(set);
 		return false;
-	} else if (!config_init_var_list(&new_entry.var, name, desc, list)) {
+	} else if (!config_init_var_set(&new_entry.var, name, desc, set)) {
 		RZ_LOG_ERROR("config: failed to initialize '%s'.\n", name);
 		config_var_fini(&new_entry.var);
 		return false;
@@ -519,16 +522,17 @@ RZ_API bool rz_config_var_as_json(RZ_NONNULL const RzConfigVar *var, RZ_NONNULL 
 		pj_kn(pj, key, rz_config_var_get_integer(var));
 	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_STR)) {
 		pj_ks(pj, key, rz_config_var_get_string(var));
-	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_LIST)) {
-		const char *value;
-		RzListIter *it;
-		RzList *list = rz_config_var_get_list(var);
+	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_SET)) {
+		const char **value;
+		RzSetS *set = rz_config_var_get_set(var);
+		RzIterator *it = rz_set_s_as_iter(set);
 		pj_ka(pj, key);
-		rz_list_foreach (list, it, value) {
-			pj_s(pj, value);
+		rz_iterator_foreach(it, value) {
+			pj_s(pj, *value);
 		}
+		rz_iterator_free(it);
 		pj_end(pj);
-		rz_list_free(list);
+		rz_set_s_free(set);
 	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_ITV)) {
 		RzInterval itv = rz_config_var_get_interval(var);
 		pj_ko(pj, key);
@@ -558,10 +562,20 @@ RZ_API RZ_OWN char *rz_config_var_as_string(RZ_NONNULL const RzConfigVar *var) {
 	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_STR)) {
 		const char *str = rz_config_var_get_string(var);
 		return rz_str_dup(str);
-	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_LIST)) {
-		RzList *list = rz_config_var_get_list(var);
-		char *value = rz_list_to_str(list, ',', false);
-		rz_list_free(list);
+	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_SET)) {
+		RzSetS *set = rz_config_var_get_set(var);
+		RzStrBuf *sb = rz_strbuf_new("");
+		RzIterator *it = rz_set_s_as_iter(set);
+		const char **val;
+		rz_iterator_foreach(it, val) {
+			if (rz_strbuf_length(sb) > 0) {
+				rz_strbuf_append(sb, ",");
+			}
+			rz_strbuf_append(sb, *val);
+		}
+		rz_iterator_free(it);
+		char *value = rz_strbuf_drain(sb);
+		rz_set_s_free(set);
 		return value;
 	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_ITV)) {
 		RzInterval itv = rz_config_var_get_interval(var);
@@ -658,22 +672,22 @@ RZ_API const char *rz_config_var_get_string(RZ_NONNULL const RzConfigVar *var) {
 }
 
 /**
- * \brief      Returns the list held by the RzConfigVar (must be a list type)
+ * \brief      Returns the set held by the RzConfigVar (must be a set type)
  *
  * \param[in]  var   The RzConfigVar to use
  *
  * \return     Returns the value held by the RzConfigVar
  */
-RZ_API RZ_OWN RzList /*<const char *>*/ *rz_config_var_get_list(RZ_NONNULL const RzConfigVar *var) {
-	config_var_assert_return(var && RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_LIST), var ? var->name : "(null)", false);
+RZ_API RZ_OWN RzSetS *rz_config_var_get_set(RZ_NONNULL const RzConfigVar *var) {
+	config_var_assert_return(var && RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_SET), var ? var->name : "(null)", false);
 
 	if (!(RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND))) {
-		return rz_list_clone(var->value.list);
+		return rz_config_dup_set(var->value.set);
 	}
 
-	RzList /*<char *>*/ *value = NULL;
+	RzSetS *value = NULL;
 	if (!config_var_bind_get_value(var, &value) || !value) {
-		return rz_list_new();
+		return rz_set_s_new(HT_STR_DUP);
 	}
 	return value;
 }
@@ -769,7 +783,7 @@ RZ_API const char *rz_config_var_get_desc(RZ_NONNULL const RzConfigVar *var) {
  *
  * \return     The options (can be NULL)
  */
-RZ_API const RzList /*<char *>*/ *rz_config_var_get_options(RZ_NONNULL const RzConfigVar *var) {
+RZ_API const RzSetS *rz_config_var_get_options(RZ_NONNULL const RzConfigVar *var) {
 	rz_return_val_if_fail(var, NULL);
 	return var->options;
 }
@@ -798,8 +812,8 @@ RZ_API RZ_OWN char *rz_config_var_flags_as_string(ut32 flags) {
 	case RZ_CONFIG_VAR_TYPE_STR:
 		rz_strbuf_append(&sb, "string");
 		break;
-	case RZ_CONFIG_VAR_TYPE_LIST:
-		rz_strbuf_append(&sb, "list");
+	case RZ_CONFIG_VAR_TYPE_SET:
+		rz_strbuf_append(&sb, "set");
 		break;
 	case RZ_CONFIG_VAR_TYPE_ITV:
 		rz_strbuf_append(&sb, "interval");
@@ -865,20 +879,22 @@ RZ_IPI bool rz_config_var_set_integer(RzConfigVar *var, ut64 value) {
 }
 
 static bool config_var_has_option(RzConfigVar *var, const char *value) {
-	if (rz_list_length(var->options) < 1) {
+	if (!var->options || rz_set_s_size(var->options) < 1) {
 		// there are no options so the value is always valid.
 		return true;
 	}
 	// we consider NULL as "" (empty string)
 	value = rz_str_get(value);
 
-	const char *opt;
-	RzListIter *it;
-	rz_list_foreach (var->options, it, opt) {
-		if (RZ_STR_EQ(opt, value)) {
+	const char **opt;
+	RzIterator *it = rz_set_s_as_iter(var->options);
+	rz_iterator_foreach(it, opt) {
+		if (RZ_STR_EQ(*opt, value)) {
+			rz_iterator_free(it);
 			return true;
 		}
 	}
+	rz_iterator_free(it);
 	return false;
 }
 
@@ -903,8 +919,8 @@ RZ_IPI bool rz_config_var_set_string(RzConfigVar *var, const char *value) {
 	return true;
 }
 
-RZ_IPI bool rz_config_var_set_list(RzConfigVar *var, const RzList /*<const char *>*/ *value) {
-	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_LIST), var->name, false);
+RZ_IPI bool rz_config_var_set_set(RzConfigVar *var, const RzSetS *value) {
+	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_SET), var->name, false);
 	if (rz_config_var_is_readonly(var)) {
 		RZ_LOG_ERROR("config: '%s' is a read only variable\n", var->name);
 		return false;
@@ -916,13 +932,13 @@ RZ_IPI bool rz_config_var_set_list(RzConfigVar *var, const RzList /*<const char 
 		return false;
 	}
 
-	rz_list_free(var->value.list);
-	var->value.list = rz_config_dup_list(value);
+	rz_set_s_free(var->value.set);
+	var->value.set = rz_config_dup_set(value);
 	return true;
 }
 
-RZ_IPI bool rz_config_var_set_list2(RzConfigVar *var, RZ_OWN RzList /*<char *>*/ *value) {
-	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_LIST), var->name, false);
+RZ_IPI bool rz_config_var_set_set2(RzConfigVar *var, RZ_OWN RzSetS *value) {
+	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_SET), var->name, false);
 	if (rz_config_var_is_readonly(var)) {
 		RZ_LOG_ERROR("config: '%s' is a read only variable\n", var->name);
 		return false;
@@ -930,15 +946,15 @@ RZ_IPI bool rz_config_var_set_list2(RzConfigVar *var, RZ_OWN RzList /*<char *>*/
 
 	if (RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND)) {
 		bool ret = config_var_bind_set_value(var, value);
-		rz_list_free(value);
+		rz_set_s_free(value);
 		return ret;
 	} else if (!config_var_is_valid_value(var, value)) {
-		rz_list_free(value);
+		rz_set_s_free(value);
 		return false;
 	}
 
-	rz_list_free(var->value.list);
-	var->value.list = value;
+	rz_set_s_free(var->value.set);
+	var->value.set = value;
 	return true;
 }
 
@@ -959,16 +975,16 @@ RZ_IPI bool rz_config_var_set_interval(RzConfigVar *var, RzInterval value) {
 	return true;
 }
 
-static bool config_set_var_list_from_string(RzConfigVar *var, const char *value) {
-	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_LIST), var->name, false);
-	RzList *list = NULL;
+static bool config_set_var_set_from_string(RzConfigVar *var, const char *value) {
+	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_SET), var->name, false);
+	RzSetS *set = NULL;
 	if (value) {
-		list = rz_str_split_duplist(value, ",", true);
+		set = rz_str_split_dupset(value, ",", true);
 	} else {
-		list = rz_list_new();
+		set = rz_set_s_new(HT_STR_DUP);
 	}
 
-	return rz_config_var_set_list2(var, list);
+	return rz_config_var_set_set2(var, set);
 }
 
 static bool config_set_var_interval_from_string(RzConfigVar *var, const char *value) {
@@ -1000,8 +1016,8 @@ RZ_IPI bool rz_config_var_set_any(RzConfigVar *var, const char *value) {
 		return rz_config_var_set_integer(var, ivalue);
 	} else if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_STR)) {
 		return rz_config_var_set_string(var, value);
-	} else if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_LIST)) {
-		return config_set_var_list_from_string(var, value);
+	} else if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_SET)) {
+		return config_set_var_set_from_string(var, value);
 	} else if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_ITV)) {
 		return config_set_var_interval_from_string(var, value);
 	}
@@ -1112,7 +1128,7 @@ RZ_API bool rz_config_set_bool(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *
 }
 
 /**
- * \brief      Sets the value of a given list variable (must be list type)
+ * \brief      Sets the value of a given set variable (must be set type)
  *
  * \param      cfg    The configuration to use
  * \param[in]  name   The name of the variable to change
@@ -1120,7 +1136,7 @@ RZ_API bool rz_config_set_bool(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *
  *
  * \return     On success return true, otherwise false
  */
-RZ_API bool rz_config_set_list(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const RzList /*<const char *>*/ *value) {
+RZ_API bool rz_config_set_set(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const RzSetS *value) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
 
 	RzConfigEntry *entry = config_find_entry(cfg, name);
@@ -1132,19 +1148,19 @@ RZ_API bool rz_config_set_list(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *
 		return false;
 	}
 
-	return rz_config_var_set_list(&entry->var, value);
+	return rz_config_var_set_set(&entry->var, value);
 }
 
 /**
- * \brief      Sets the value of a given list variable (must be list type)
+ * \brief      Sets the value of a given set variable (must be set type)
  *
  * \param      cfg    The configuration to use
  * \param[in]  name   The name of the variable to change
- * \param[in]  ...    The list of values to set (terminated by a NULL)
+ * \param[in]  ...    The set of values to set (terminated by a NULL)
  *
  * \return     On success return true, otherwise false
  */
-RZ_API bool rz_config_set_list2(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, ...) {
+RZ_API bool rz_config_set_set2(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, ...) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
 
 	RzConfigEntry *entry = config_find_entry(cfg, name);
@@ -1157,25 +1173,25 @@ RZ_API bool rz_config_set_list2(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char 
 	}
 
 	va_list argp;
-	RzList *list = rz_list_newf(free);
-	if (!list) {
+	RzSetS *set = rz_set_s_new(HT_STR_DUP);
+	if (!set) {
 		return false;
 	}
 
 	va_start(argp, name);
-	bool ok = config_var_args_to_list(argp, list);
+	bool ok = config_var_args_to_set(argp, set);
 	va_end(argp);
 	if (!ok) {
-		RZ_LOG_ERROR("config: failed to initialize list for '%s'.\n", name);
-		rz_list_free(list);
+		RZ_LOG_ERROR("config: failed to initialize set for '%s'.\n", name);
+		rz_set_s_free(set);
 		return false;
 	}
 
-	return rz_config_var_set_list2(&entry->var, list);
+	return rz_config_var_set_set2(&entry->var, set);
 }
 
 /**
- * \brief      Sets the value of a given list variable (must be list type)
+ * \brief      Sets the value of a given set variable (must be set type)
  *
  * \param      cfg         The configuration to use
  * \param[in]  name        The name of the variable to change
@@ -1183,7 +1199,7 @@ RZ_API bool rz_config_set_list2(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char 
  *
  * \return     On success return true, otherwise false
  */
-RZ_API bool rz_config_set_list3(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *comma_list) {
+RZ_API bool rz_config_set_set3(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *comma_list) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
 
 	RzConfigEntry *entry = config_find_entry(cfg, name);
@@ -1195,7 +1211,7 @@ RZ_API bool rz_config_set_list3(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char 
 		return false;
 	}
 
-	return config_set_var_list_from_string(&entry->var, comma_list);
+	return config_set_var_set_from_string(&entry->var, comma_list);
 }
 
 /**
@@ -1283,7 +1299,7 @@ RZ_API bool rz_config_set_interval3(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const c
  * 	- bool, the value `true` is set if `rz_str_is_true` returns true, otherwise is false (on NULL is set to false).
  * 	- integer, the value is parsed via RzNum (on NULL is set to 0)
  * 	- string, the value is kept as is (on NULL is set to "")
- * 	- list, the expected value is a comma separated list like `a,b,c` (on NULL is set to empty list)
+ * 	- set, the expected value is a comma separated set like `a,b,c` (on NULL is set to empty set)
  * 	- interval, the expected value is a comma separated range (inclusive) like `from,to` where from <= to (on NULL is set to [0,0])
  *
  * \param      cfg    The configuration to use
@@ -1381,14 +1397,14 @@ RZ_API const char *rz_config_get_string(RZ_NONNULL const RzConfig *cfg, RZ_NONNU
 }
 
 /**
- * \brief      Returns the list held by the RzConfig (must be a list type)
+ * \brief      Returns the set held by the RzConfig (must be a set type)
  *
  * \param[in]  cfg   The RzConfig to use
- * \param[in]  name  The name of the list variable
+ * \param[in]  name  The name of the set variable
  *
  * \return     Returns the value held by the RzConfig
  */
-RZ_API RZ_OWN RzList /*<const char *>*/ *rz_config_get_list(RZ_NONNULL const RzConfig *cfg, RZ_NONNULL const char *name) {
+RZ_API RZ_OWN RzSetS *rz_config_get_set(RZ_NONNULL const RzConfig *cfg, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
 
 	const RzConfigEntry *entry = config_find_entry_ro(cfg, name);
@@ -1402,7 +1418,7 @@ RZ_API RZ_OWN RzList /*<const char *>*/ *rz_config_get_list(RZ_NONNULL const RzC
 		return NULL;
 	}
 
-	return rz_config_var_get_list(&entry->var);
+	return rz_config_var_get_set(&entry->var);
 }
 
 /**
@@ -1467,7 +1483,7 @@ RZ_API RZ_OWN char *rz_config_get_as_string(RZ_NONNULL const RzConfig *cfg, RZ_N
  *
  * \return     On success returns a pointer, can be NULL.
  */
-RZ_API const RzList /*<char *>*/ *rz_config_get_options(RZ_NONNULL const RzConfig *cfg, RZ_NONNULL const char *name) {
+RZ_API const RzSetS *rz_config_get_options(RZ_NONNULL const RzConfig *cfg, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
 	const RzConfigEntry *entry = config_find_entry_ro(cfg, name);
 	if (!entry) {
@@ -1510,20 +1526,20 @@ RZ_API ut32 rz_config_get_flags(RZ_NONNULL const RzConfig *cfg, RZ_NONNULL const
 	return rz_config_node_get_var_flags(&entry->node);
 }
 
-static bool config_entry_set_options(RzConfigEntry *entry, RZ_NULLABLE RZ_OWN RzList /*<char *>*/ *options) {
+static bool config_entry_set_options(RzConfigEntry *entry, RZ_NULLABLE RZ_OWN RzSetS *options) {
 	ut32 flags = config_entry_get_flags(entry);
 	if (!(RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_STR))) {
 		const char *name = rz_config_entry_get_name(entry);
 		RZ_LOG_ERROR("config: variable '%s' is not a string.\n", name);
-		rz_list_free(options);
+		rz_set_s_free(options);
 		return false;
 	}
 
 	if (entry->is_variable) {
-		rz_list_free(entry->var.options);
+		rz_set_s_free(entry->var.options);
 		entry->var.options = options;
 	} else {
-		rz_list_free(entry->node.options);
+		rz_set_s_free(entry->node.options);
 		entry->node.options = options;
 	}
 
@@ -1539,12 +1555,12 @@ static bool config_entry_set_options(RzConfigEntry *entry, RZ_NULLABLE RZ_OWN Rz
  *
  * \return     On success returns a true, otherwise false.
  */
-RZ_API bool rz_config_set_options(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE RZ_OWN RzList /*<char *>*/ *options) {
+RZ_API bool rz_config_set_options(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE RZ_OWN RzSetS *options) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
 	RzConfigEntry *entry = config_find_entry(cfg, name);
 	if (!entry) {
 		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
-		rz_list_free(options);
+		rz_set_s_free(options);
 		return false;
 	}
 
@@ -1556,7 +1572,7 @@ RZ_API bool rz_config_set_options(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const cha
  *
  * \param[in]  cfg   The RzConfig to use
  * \param[in]  name  The name of the string type variable to update
- * \param[in]  ...   The list of options to set (NULL terminated)
+ * \param[in]  ...   The set of options to set (NULL terminated)
  *
  * \return     On success returns a true, otherwise false.
  */
@@ -1569,16 +1585,16 @@ RZ_API bool rz_config_set_options2(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const ch
 	}
 
 	va_list argp;
-	RzList *options = rz_list_newf(free);
+	RzSetS *options = rz_set_s_new(HT_STR_DUP);
 	if (!options) {
 		return false;
 	}
 
 	va_start(argp, name);
-	bool ok = config_var_args_to_list(argp, options);
+	bool ok = config_var_args_to_set(argp, options);
 	va_end(argp);
 	if (!ok) {
-		rz_list_free(options);
+		rz_set_s_free(options);
 		return false;
 	}
 

@@ -12,7 +12,7 @@ static bool config_node_init(RzConfigNode *node, RZ_NONNULL const char *name, RZ
 	node->value = rz_str_dup(value);
 	node->flags = CN_STR;
 	node->i_value = rz_num_get(NULL, value);
-	node->options = rz_list_new();
+	node->options = rz_set_s_new(HT_STR_DUP);
 
 	return node->name && node->value && node->options;
 }
@@ -24,7 +24,7 @@ RZ_IPI void rz_config_node_fini(RZ_NULLABLE RzConfigNode *node) {
 	free(node->name);
 	free(node->desc);
 	free(node->value);
-	rz_list_free(node->options);
+	rz_set_s_free(node->options);
 }
 
 RZ_API RZ_BORROW RzConfigNode *rz_config_node_get(RZ_BORROW RzConfig *cfg, RZ_NONNULL const char *name) {

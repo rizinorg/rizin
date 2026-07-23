@@ -16,6 +16,7 @@ extern "C" {
 typedef HtSP RzSetS;
 
 RZ_API RZ_OWN RzSetS *rz_set_s_new(HtStrOption opt);
+RZ_API RZ_OWN RzSetS *rz_str_split_dupset(RZ_NONNULL const char *_str, RZ_NONNULL const char *c, bool trim);
 RZ_API void rz_set_s_free(RZ_NULLABLE RzSetS *set);
 RZ_API void rz_set_s_add(RZ_NONNULL RzSetS *set, const char *str);
 RZ_API bool rz_set_s_contains(const RZ_NONNULL RzSetS *set, const char *str);

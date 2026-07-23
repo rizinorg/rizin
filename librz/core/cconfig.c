@@ -39,7 +39,7 @@ static void set_options(RzConfigNode *node, ...) {
 	va_start(argp, node);
 	option = va_arg(argp, char *);
 	while (option) {
-		rz_list_append(node->options, option);
+		rz_set_s_add(node->options, option);
 		option = va_arg(argp, char *);
 	}
 	va_end(argp);
@@ -55,11 +55,12 @@ static bool isGdbPlugin(RzCore *core) {
 }
 
 static void print_node_options(RzConfigNode *node) {
-	RzListIter *iter;
-	char *option;
-	rz_list_foreach (node->options, iter, option) {
-		rz_cons_printf("%s\n", option);
+	RzIterator *iter = rz_set_s_as_iter(node->options);
+	const char **option;
+	rz_iterator_foreach(iter, option) {
+		rz_cons_printf("%s\n", *option);
 	}
+	rz_iterator_free(iter);
 }
 
 static int compareName(const RzAnalysisFunction *a, const RzAnalysisFunction *b, void *user) {
@@ -98,7 +99,7 @@ static void update_asmarch_options(RzCore *core, RzConfigNode *node) {
 
 	RzAsmPlugin **val;
 	RzIterator *it = rz_asm_plugin_iterator(core->rasm);
-	rz_list_purge(node->options);
+	rz_set_s_clear(node->options);
 	rz_iterator_foreach(it, val) {
 		RzAsmPlugin *h = *val;
 		SETOPTIONS(node, h->name, NULL);
@@ -112,8 +113,7 @@ static void update_asmbits_options(RzCore *core, RzConfigNode *node) {
 	}
 
 	int bits = rz_asm_get_plugin_bits(core->rasm);
-	node->options->free = free;
-	rz_list_purge(node->options);
+	rz_set_s_clear(node->options);
 	for (int i = 1; i <= bits; i <<= 1) {
 		if (i & bits) {
 			SETOPTIONS(node, rz_str_newf("%d", i), NULL);
@@ -128,12 +128,12 @@ static void update_asmfeatures_options(RzCore *core, RzConfigNode *node) {
 
 	const char *features = rz_asm_get_plugin_features(core->rasm);
 	if (RZ_STR_ISEMPTY(features)) {
-		rz_list_purge(node->options);
+		rz_set_s_clear(node->options);
 		return;
 	}
 
-	rz_list_free(node->options);
-	node->options = rz_str_split_duplist(features, ",", true);
+	rz_set_s_free(node->options);
+	node->options = rz_str_split_dupset(features, ",", true);
 }
 
 static void update_asmplatforms_options(RzCore *core, RzConfigNode *node) {
@@ -143,19 +143,19 @@ static void update_asmplatforms_options(RzCore *core, RzConfigNode *node) {
 
 	const char *platforms = rz_asm_get_plugin_platforms(core->rasm);
 	if (RZ_STR_ISEMPTY(platforms)) {
-		rz_list_purge(node->options);
+		rz_set_s_clear(node->options);
 		return;
 	}
 
-	rz_list_free(node->options);
-	node->options = rz_str_split_duplist(platforms, ",", true);
+	rz_set_s_free(node->options);
+	node->options = rz_str_split_dupset(platforms, ",", true);
 }
 
 static void update_asmparser_options(RzCore *core, RzConfigNode *node) {
 	RzListIter *iter;
 	RzParsePlugin *parser;
 	if (core && node && core->parser && core->parser->parsers) {
-		rz_list_purge(node->options);
+		rz_set_s_clear(node->options);
 		rz_list_foreach (core->parser->parsers, iter, parser) {
 			SETOPTIONS(node, parser->name, NULL);
 		}
@@ -167,12 +167,12 @@ static void update_asmcpu_options(RzCore *core, RzConfigNode *node) {
 
 	const char *cpus = rz_asm_get_plugin_cpus(core->rasm);
 	if (RZ_STR_ISEMPTY(cpus)) {
-		rz_list_purge(node->options);
+		rz_set_s_clear(node->options);
 		return;
 	}
 
-	rz_list_free(node->options);
-	node->options = rz_str_split_duplist(cpus, ",", true);
+	rz_set_s_free(node->options);
+	node->options = rz_str_split_dupset(cpus, ",", true);
 }
 
 static bool cb_search_case_sensitive(void *_core, void *_node) {
@@ -459,7 +459,7 @@ static void update_analysis_arch_options(RzCore *core, RzConfigNode *node) {
 	RzIterator *it = rz_analysis_plugin_iterator(core->analysis);
 	RzAnalysisPlugin **val;
 	if (core && core->analysis && node) {
-		rz_list_purge(node->options);
+		rz_set_s_clear(node->options);
 		rz_iterator_foreach(it, val) {
 			RzAnalysisPlugin *h = *val;
 			SETOPTIONS(node, h->name, NULL);
@@ -946,18 +946,20 @@ static bool cb_search_str_check_ascii_freq(void *user, void *data) {
 }
 
 static bool find_encoding(RzConfigNode *node, RzStrEnc *encoding) {
-	RzListIter *iter;
-	const char *option;
-	rz_list_foreach (node->options, iter, option) {
-		if (rz_str_casecmp(option, node->value)) {
+	RzIterator *iter = rz_set_s_as_iter(node->options);
+	const char **option;
+	rz_iterator_foreach(iter, option) {
+		if (rz_str_casecmp(*option, node->value)) {
 			continue;
 		}
 		free(node->value);
-		node->value = rz_str_dup(option);
-		*encoding = rz_str_enc_string_as_type(option);
+		node->value = rz_str_dup(*option);
+		*encoding = rz_str_enc_string_as_type(*option);
+		rz_iterator_free(iter);
 		return true;
 	}
-	if (rz_list_empty(node->options)) {
+	rz_iterator_free(iter);
+	if (rz_set_s_size(node->options) == 0) {
 		// Edge case when the node was just initialized but the options
 		// were not added yet.
 		*encoding = rz_str_enc_string_as_type(node->value);
@@ -1594,12 +1596,15 @@ static bool cb_iopcachewrite(void *user, void *data) {
 	return true;
 }
 
-static void config_print_options_as_json(PJ *pj, const RzList /*<char *>*/ *options) {
-	RzListIter *iter;
-	const char *option;
+static void config_print_options_as_json(PJ *pj, const RzSetS *options) {
 	pj_ka(pj, "options");
-	rz_list_foreach (options, iter, option) {
-		pj_s(pj, option);
+	if (options) {
+		RzIterator *iter = rz_set_s_as_iter(options);
+		const char **option;
+		rz_iterator_foreach(iter, option) {
+			pj_s(pj, *option);
+		}
+		rz_iterator_free(iter);
 	}
 	pj_end(pj);
 }
@@ -1636,7 +1641,7 @@ static void config_print_node_as_long_json(const RzConfigNode *node, PJ *pj) {
 static void config_print_var_as_long_json(const RzConfigVar *var, PJ *pj) {
 	const char *name = rz_config_var_get_name(var);
 	const char *desc = rz_config_var_get_desc(var);
-	const RzList *options = rz_config_var_get_options(var);
+	const RzSetS *options = rz_config_var_get_options(var);
 	ut32 flags = rz_config_var_get_flags(var);
 	pj_o(pj);
 	config_print_long_json(pj, name, desc, flags);
@@ -1654,20 +1659,23 @@ typedef struct core_config_print_s {
 	char reset_str[32];
 } CoreConfigPrint;
 
-static void core_config_print_array_as_string(const RzList /*<char *>*/ *list, bool allow_empty) {
-	const char *entry;
-	const RzListIter *it;
-	if (rz_list_empty(list) && !allow_empty) {
+static void core_config_print_set_as_string(const RzSetS *set, bool allow_empty) {
+	if (rz_set_s_size(set) < 1 && !allow_empty) {
 		return;
 	}
 	rz_cons_print("[");
-	rz_list_foreach (list, it, entry) {
-		if (rz_list_head(list) != it) {
-			rz_cons_printf(", %s", entry);
+	RzIterator *iter = rz_set_s_as_iter(set);
+	const char **entry;
+	bool first = true;
+	rz_iterator_foreach(iter, entry) {
+		if (!first) {
+			rz_cons_printf(", %s", *entry);
 		} else {
-			rz_cons_print(entry);
+			rz_cons_print(*entry);
+			first = false;
 		}
 	}
+	rz_iterator_free(iter);
 	rz_cons_print("]");
 }
 
@@ -1685,10 +1693,10 @@ static void core_config_print_var_as_string(const RzConfigEntry *entry, ut32 fla
 	} else if (RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_STR)) {
 		const char *value = rz_config_entry_get_string(entry);
 		rz_cons_print(value);
-	} else if (RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_LIST)) {
-		RzList *list = rz_config_var_get_list(&entry->var);
-		core_config_print_array_as_string(list, true);
-		rz_list_free(list);
+	} else if (RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_SET)) {
+		RzSetS *set = rz_config_var_get_set(&entry->var);
+		core_config_print_set_as_string(set, true);
+		rz_set_s_free(set);
 	} else if (RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_ITV)) {
 		RzInterval itv = rz_config_var_get_interval(&entry->var);
 		rz_cons_printf("[0x%08" PFMT64x ",0x%08" PFMT64x "]", rz_itv_begin(itv), rz_itv_end(itv));
@@ -1704,7 +1712,7 @@ static bool core_config_print_iterator(const RzConfigEntry *entry, void *user) {
 
 	const char *name = NULL;
 	const char *desc = "";
-	const RzList *options = NULL;
+	const RzSetS *options = NULL;
 	ut32 e_flags = 0;
 	RzOutputMode mode = ccp->state->mode;
 	PJ *pj = ccp->state->d.pj;
@@ -1742,7 +1750,7 @@ static bool core_config_print_iterator(const RzConfigEntry *entry, void *user) {
 		rz_cons_printf("%s%20s = %s", ccp->color_name, name, ccp->color_value);
 		core_config_print_var_as_string(entry, e_flags);
 		rz_cons_printf(" %s(%s); %s%s ", ccp->color_meta, s_flags, ccp->reset_str, desc);
-		core_config_print_array_as_string(options, false);
+		core_config_print_set_as_string(options, false);
 		rz_cons_println("");
 		break;
 	}

@@ -15,7 +15,7 @@ typedef struct config_value_t {
 		char *string;
 		ut64 integer;
 		bool boolean;
-		RzList /*<char *>*/ *list;
+		RzSetS *set;
 		RzInterval interval;
 	} value; ///< Copy of the variable value
 } ConfigValue;
@@ -54,13 +54,13 @@ static inline void config_add_entry(RzConfig *cfg, const char *name, RzConfigEnt
 	rz_vector_insert_sorted(&cfg->sorted_vars, entry, (RzVectorComparator)sort_variables, NULL);
 }
 
-RZ_IPI RZ_OWN RzList /*<char *>*/ *rz_config_dup_list(RZ_NULLABLE const RzList /*<const char *>*/ *list);
+RZ_IPI RZ_OWN RzSetS *rz_config_dup_set(RZ_NULLABLE const RzSetS *set);
 
 RZ_IPI bool rz_config_var_set_bool(RzConfigVar *var, bool value);
 RZ_IPI bool rz_config_var_set_integer(RzConfigVar *var, ut64 value);
 RZ_IPI bool rz_config_var_set_string(RzConfigVar *var, const char *value);
-RZ_IPI bool rz_config_var_set_list(RzConfigVar *var, const RzList /*<const char *>*/ *value);
-RZ_IPI bool rz_config_var_set_list2(RzConfigVar *var, RZ_OWN RzList /*<char *>*/ *value);
+RZ_IPI bool rz_config_var_set_set(RzConfigVar *var, const RzSetS *set);
+RZ_IPI bool rz_config_var_set_set2(RzConfigVar *var, RZ_OWN RzSetS *value);
 RZ_IPI bool rz_config_var_set_interval(RzConfigVar *var, RzInterval value);
 RZ_IPI bool rz_config_var_set_any(RzConfigVar *var, const char *value);
 RZ_IPI bool rz_config_toggle_var_bool(RzConfigVar *var);

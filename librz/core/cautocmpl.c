@@ -878,7 +878,7 @@ static void autocmplt_cmd_arg_eval_full(RzCore *core, RzLineNSCompletionResult *
 
 	char *k = rz_str_ndup(s, eq - s);
 	char *v = NULL;
-	const RzList *options = rz_config_get_options(core->config, k);
+	const RzSetS *options = rz_config_get_options(core->config, k);
 	if (!options) {
 		goto err;
 	}
@@ -889,14 +889,15 @@ static void autocmplt_cmd_arg_eval_full(RzCore *core, RzLineNSCompletionResult *
 
 	res->start += strlen(k) + 1;
 
-	if (rz_list_length(options) > 0) {
-		const RzListIter *iter;
-		const char *opt;
-		rz_list_foreach (options, iter, opt) {
-			if (!strncmp(opt, v, len)) {
-				rz_line_ns_completion_result_add(res, opt);
+	if (rz_set_s_size(options) > 0) {
+		RzIterator *iter = rz_set_s_as_iter(options);
+		const char **opt;
+		rz_iterator_foreach(iter, opt) {
+			if (!strncmp(*opt, v, len)) {
+				rz_line_ns_completion_result_add(res, *opt);
 			}
 		}
+		rz_iterator_free(iter);
 	} else if (RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_BOOL)) {
 		if (!strncmp("true", v, len)) {
 			rz_line_ns_completion_result_add(res, "true");
