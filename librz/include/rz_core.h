@@ -685,6 +685,25 @@ RZ_API RZ_OWN char *rz_core_addr_get_function_offset(RZ_NONNULL RzCore *core, ut
 RZ_API RZ_OWN char *rz_core_addr_get_flag_offset(RZ_NONNULL RzFlag *flags, ut64 addr);
 RZ_API RZ_OWN char *rz_core_addr_get_flag_offset_prompt(RZ_NONNULL RzFlag *flags, ut64 addr);
 
+/* cmath.c */
+
+/**
+ * \brief Optional configuration for rz_core_math().
+ *
+ * Defaults: timeout_ms == 0 means "no timeout".
+ */
+typedef struct rz_core_math_options_t {
+	ut64 timeout_ms; ///< wall-clock budget in ms, 0 = unlimited
+} RzCoreMathOptions;
+
+RZ_API bool rz_core_math(RZ_NONNULL RzCore *core, RZ_NONNULL const char *expr,
+	RZ_NULLABLE const RzCoreMathOptions *options,
+	RZ_OUT RZ_NONNULL RzNumValue *out_value,
+	RZ_OUT RZ_NULLABLE char **error_msg);
+RZ_API RZ_DEPRECATE ut64 rz_core_math_ut64(RZ_NONNULL RzCore *core, RZ_NONNULL const char *expr);
+RZ_API RZ_OWN RzILOpPure *rz_core_il_lift(RZ_NONNULL RzCore *core, RZ_NONNULL const char *expr,
+	RZ_OUT RZ_NULLABLE char **error_msg);
+
 /* chash.c */
 RZ_API RzCmdStatus rz_core_hash_plugins_print(RZ_NONNULL RZ_BORROW RzHash *hash, RZ_OUT RzCmdStateOutput *state);
 

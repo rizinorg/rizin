@@ -16,6 +16,7 @@ rz_il_sources = [
    'il_export_string_unicode.c',
    'il_export_json.c',
    'il_graph.c',
+   'il_num.c',
    'il_opcodes.c',
    'il_routines.c',
    'il_reg.c',

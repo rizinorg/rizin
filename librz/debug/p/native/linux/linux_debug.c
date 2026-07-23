@@ -1687,6 +1687,11 @@ RzList /*<RzDebugMap *>*/ *linux_map_get(RzDebug *dbg) {
 			continue;
 		}
 		strncpy(&region2[2], pos_c + 1, sizeof(region2) - 2 - 1);
+		// Terminate the start token at the '-'. rz_num_get() now parses
+		// its whole argument strictly, so an un-split "0x<start>-<end>"
+		// would evaluate as a subtraction - with the leading-zero <end>
+		// read as C-style octal - instead of yielding the start address.
+		*pos_c = 0;
 
 		if (!*name) {
 			snprintf(name, sizeof(name), "unk%d", unk++);

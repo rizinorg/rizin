@@ -317,56 +317,46 @@ NAME=rz-ax -h
 TOOL=rz-ax
 ARGS=-h
 EXPECT=<<EOF
-[36mUsage:[0m rz-ax [options] [expr ...]
-If expr is not provided, reads from stdin
- [0mint     ->  hex               ;  rz-ax 10
- [0mhex     ->  int               ;  rz-ax 0xa
- [0m-int    ->  hex               ;  rz-ax -77
- [0m-hex    ->  int               ;  rz-ax 0xffffffb3
- [0mint     ->  bin               ;  rz-ax b30
- [0mint     ->  ternary           ;  rz-ax t42
- [0mbin     ->  int               ;  rz-ax 1010d
- [0mternary ->  int               ;  rz-ax 1010dt
- [0mfloat   ->  hex               ;  rz-ax 3.33f
- [0mhex     ->  float             ;  rz-ax Fx40551ed8
- [0moct     ->  hex               ;  rz-ax 35o
- [0mhex     ->  oct               ;  rz-ax Ox12 (O is a letter)
- [0mbin     ->  hex               ;  rz-ax 1100011b
- [0mhex     ->  bin               ;  rz-ax Bx63
- [0mternary ->  hex               ;  rz-ax 212t
- [0mhex     ->  ternary           ;  rz-ax Tx23
- [0mraw     ->  hex               ;  rz-ax [32m-S[0m < /binfile
- [0mhex     ->  raw               ;  rz-ax [32m-s[0m 414141
- [32m=[0m[33m base [0m  [0m                      ;  rz-ax [32m=[33m10[0m 0x46 -> output in base 10
- [32m-l[0m      [0m                      ;  append newline to output (for [32m-E[0m/[32m-D[0m/[32m-r[0m/..
- [32m-a[0m      [0mshow ascii table      ;  rz-ax [32m-a[0m
- [32m-b[0m      [0mbin -> str            ;  rz-ax [32m-b[0m 01000101 01110110
- [32m-B[0m      [0mstr -> bin            ;  rz-ax [32m-B[0m hello
- [32m-d[0m      [0mforce integer         ;  rz-ax [32m-d[0m 3 -> 3 instead of 0x3
- [32m-e[0m      [0mswap endianness       ;  rz-ax [32m-e[0m 0x33
- [32m-D[0m      [0mbase64 decode
- [32m-E[0m      [0mbase64 encode
- [32m-f[0m      [0mfloating point        ;  rz-ax [32m-f[0m 6.3+2.1
- [32m-F[0m      [0mstdin slurp code hex  ;  rz-ax [32m-F[0m < shellcode.[c/py/js]
- [32m-h[0m      [0mshow this help        ;  rz-ax [32m-h[0m
- [32m-i[0m      [0mdump as C byte array  ;  rz-ax [32m-i[0m < bytes
- [32m-I[0m      [0mIP address <-> LONG   ;  rz-ax [32m-I[0m 3530468537
- [32m-k[0m      [0mkeep base             ;  rz-ax [32m-k[0m 33+3 -> 36
- [32m-L[0m      [0mbin -> hex(bignum)    ;  rz-ax [32m-L[0m 111111111 # 0x1ff
- [32m-n[0m      [0mint value -> hexpairs ;  rz-ax [32m-n[0m 0x1234 # 34120000
- [32m-o[0m      [0moctalstr -> raw       ;  rz-ax [32m-o[0m \162 \172 # rz
- [32m-N[0m      [0mbinary number         ;  rz-ax [32m-N[0m 0x1234 # \x34\x12\x00\x00
- [32m-r[0m      [0mrz style output       ;  rz-ax [32m-r[0m 0x1234
- [32m-s[0m      [0mhexstr -> raw         ;  rz-ax [32m-s[0m 43 4a 50
- [32m-S[0m      [0mraw -> hexstr         ;  rz-ax [32m-S[0m < /bin/ls > ls.hex
- [32m-t[0m      [0mUnix tstamp -> str    ;  rz-ax [32m-t[0m 1234567890
- [32m-m[0m      [0mMS-DOS tstamp -> str  ;  rz-ax [32m-m[0m 1234567890
- [32m-W[0m      [0mWin32 tstamp -> str   ;  rz-ax [32m-W[0m 1234567890
- [32m-x[0m      [0mhash string           ;  rz-ax [32m-x[0m linux osx
- [32m-u[0m      [0munits                 ;  rz-ax [32m-u[0m 389289238 # 317.0M
- [32m-w[0m      [0msigned word           ;  rz-ax [32m-w[0m 16 0xffff
- [32m-v[0m      [0mversion               ;  rz-ax [32m-v[0m
- [32m-p[0m      [0mposition of set bits  ;  rz-ax [32m-p[0m 0xb3
+[36mUsage:[0m rz-ax [options] [expression ...]
+
+Converts numbers between bases and evaluates RzNum expressions.
+Without an expression, reads one per line from stdin.
+
+[36mOptions[0m
+ [32m=N[0m  [0mprint the result in base N   ;  rz-ax [32m=[33m10[0m 0x46
+ [32m-a[0m  [0mshow the ascii table         ;  rz-ax [32m-a[0m
+ [32m-b[0m  [0mbin -> str                   ;  rz-ax [32m-b[0m 01000101 01110110
+ [32m-B[0m  [0mstr -> bin                   ;  rz-ax [32m-B[0m hello
+ [32m-d[0m  [0mprint integers in base 10    ;  rz-ax [32m-d[0m 3           # 3, not 0x3
+ [32m-D[0m  [0mbase64 decode                ;  rz-ax [32m-D[0m cml6aW4=
+ [32m-e[0m  [0mswap endianness              ;  rz-ax [32m-e[0m 0x33
+ [32m-E[0m  [0mbase64 encode                ;  rz-ax [32m-E[0m rizin
+ [32m-f[0m  [0mkeep the fractional part     ;  rz-ax [32m-f[0m 6.3+2.1
+ [32m-F[0m  [0mslurp code from stdin as hex ;  rz-ax [32m-F[0m < shellcode.[c/py/js]
+ [32m-h[0m  [0mshow this help
+ [32m-H[0m  [0mshow the long help           ;  conversions, syntax, operators
+ [32m-i[0m  [0mdump as a C byte array       ;  rz-ax [32m-i[0m < bytes
+ [32m-I[0m  [0mIP address <-> LONG          ;  rz-ax [32m-I[0m 3530468537
+ [32m-k[0m  [0mkeep the input base          ;  rz-ax [32m-k[0m 33+3       # 36
+ [32m-l[0m  [0mappend a newline to output   ;  for [32m-E[0m / [32m-D[0m / [32m-r[0m / ...
+ [32m-L[0m  [0mbin -> hex (big number)      ;  rz-ax [32m-L[0m 111111111  # 0x1ff
+ [32m-m[0m  [0mMS-DOS timestamp -> str      ;  rz-ax [32m-m[0m 1234567890
+ [32m-n[0m  [0mint -> hex pairs             ;  rz-ax [32m-n[0m 0x1234     # 34120000
+ [32m-N[0m  [0mint -> escaped raw bytes     ;  rz-ax [32m-N[0m 0x1234     # \x34\x12\x00\x00
+ [32m-o[0m  [0moctal str -> raw             ;  rz-ax [32m-o[0m \162 \172   # rz
+ [32m-p[0m  [0mpositions of the set bits    ;  rz-ax [32m-p[0m 0xb3
+ [32m-r[0m  [0mrizin command output         ;  rz-ax [32m-r[0m 0x1234
+ [32m-s[0m  [0mhex str -> raw               ;  rz-ax [32m-s[0m 43 4a 50
+ [32m-S[0m  [0mraw -> hex str               ;  rz-ax [32m-S[0m < /bin/ls > ls.hex
+ [32m-t[0m  [0mUnix timestamp -> str        ;  rz-ax [32m-t[0m 1234567890
+ [32m-u[0m  [0mhuman readable units         ;  rz-ax [32m-u[0m 389289238  # 371.3M
+ [32m-v[0m  [0mshow the version
+ [32m-w[0m  [0msign-extend a signed word    ;  rz-ax [32m-w[0m 16 0xffff
+ [32m-W[0m  [0mWin32 timestamp -> str       ;  rz-ax [32m-W[0m 1234567890
+ [32m-x[0m  [0mdjb2 hash of a string        ;  rz-ax [32m-x[0m linux osx
+
+Run [32mrz-ax -H[0m for the conversion table, the expression
+syntax and the operator list, or see the rz-ax(1) man page.
 EOF
 RUN
 

@@ -38,12 +38,51 @@
 #define STDIN_BUFFER_SIZE 354096
 static int rax(RzNum *num, char *str, int len, int last, ut64 *flags, int *fm);
 
+// Flags whose operand is the raw stdin buffer, newlines included, rather
+// than one expression per line.
+#define RZ_AX_RAW_STDIN_FLAGS \
+	(RZ_AX_FLAG_RAW_TO_HEX | RZ_AX_FLAG_BASE64_ENCODE | RZ_AX_FLAG_BASE64_DECODE | \
+		RZ_AX_FLAG_STR_TO_DJB2 | RZ_AX_FLAG_DUMP_C_BYTES | RZ_AX_FLAG_STR_TO_BIN | \
+		RZ_AX_FLAG_RAW_TO_LANGBYTES)
+
+static int rax(RzNum *num, char *str, int len, int last, ut64 *flags, int *fm);
+
+// Hand one stdin read to rax(). Conversions take one expression per line,
+// so the chunk is split and the newlines dropped: a trailing newline would
+// otherwise make `0xff` a compound expression rather than a bare literal,
+// and print it in the wrong base.
+static bool stdin_chunk(RzNum *num, char *buf, int len, ut64 *flags, int *fm, bool *quit) {
+	if (*flags & RZ_AX_RAW_STDIN_FLAGS) {
+		return rax(num, buf, len, 0, flags, fm);
+	}
+	char *line = buf;
+	while (line < buf + len) {
+		char *nl = strchr(line, '\n');
+		if (nl) {
+			*nl = '\0';
+		}
+		if (!strcmp(line, "q")) {
+			*quit = true;
+			return false;
+		}
+		if (*line && !rax(num, line, strlen(line), 0, flags, fm)) {
+			return false;
+		}
+		if (!nl) {
+			break;
+		}
+		line = nl + 1;
+	}
+	return true;
+}
+
 static int use_stdin(RzNum *num, ut64 *flags, int *fm) {
 	if (!flags) {
 		return 0;
 	}
 	char *buf = calloc(1, STDIN_BUFFER_SIZE + 1);
 	int l;
+	bool quit = false;
 	if (!buf) {
 		return 0;
 	}
@@ -59,10 +98,18 @@ static int use_stdin(RzNum *num, ut64 *flags, int *fm) {
 				l--;
 				continue;
 			}
-			buf[n] = 0;
+			buf[l] = 0;
 			// if (sflag && strlen (buf) < STDIN_BUFFER_SIZE) // -S
 			buf[STDIN_BUFFER_SIZE] = '\0';
-			if (!rax(num, buf, l, 0, flags, fm)) {
+			// `q` on its own line ends the session. Only stdin has one, so
+			// on the command line `q` stays an ordinary (unresolvable) name.
+			// The buffer itself must not be touched: the raw-input flags
+			// (-S, -E) hash or encode it verbatim, newline included.
+			if (!strcmp(buf, "q") || !strcmp(buf, "q\n")) {
+				quit = true;
+				break;
+			}
+			if (!stdin_chunk(num, buf, l, flags, fm, &quit)) {
 				break;
 			}
 			l = -1;
@@ -70,24 +117,120 @@ static int use_stdin(RzNum *num, ut64 *flags, int *fm) {
 	} else {
 		l = 1;
 	}
-	if (l > 0) {
-		rax(num, buf, l, 0, flags, fm);
+	if (l > 0 && !quit) {
+		stdin_chunk(num, buf, l, flags, fm, &quit);
 	}
 	free(buf);
 	return 0;
 }
 
+// Sentinel force-mode meaning a preceding `=N` requested an unsupported base;
+// the expression that follows must not be printed (the error was reported).
+#define RZ_AX_INVALID_BASE (-1)
+
+// Evaluate \p s, reporting any diagnostic on stderr. An identifier the
+// evaluator cannot resolve folds to 0 but raises num->nc.errors; rz-ax has no
+// flag or register context of its own, so a raised flag means the input was
+// not a number rather than a lookup miss, and is reported as such.
+// True when \p c is a valid digit for \p base (2, 3, 8, 10 or 16).
+static bool is_digit_in_base(ut8 c, ut32 base) {
+	ut8 v = 0;
+	if (rz_hex_to_byte(&v, c)) {
+		return false;
+	}
+	return v < base;
+}
+
+static bool rax_eval(RzNum *num, const char *s, RzNumValue *out) {
+	rz_num_value_init(out);
+	char *err = NULL;
+	if (num) {
+		num->nc.errors = 0;
+	}
+	if (!rz_num_math_value(num, s, out, &err)) {
+		eprintf("rz-ax: %s\n", err ? err : "evaluation failed");
+		free(err);
+		rz_num_value_fini(out);
+		return false;
+	}
+	free(err);
+	if (num && num->nc.errors) {
+		eprintf("rz-ax: cannot resolve '%s'\n", s);
+		rz_num_value_fini(out);
+		return false;
+	}
+	return true;
+}
+
+// rax_eval() narrowed to the 64 bits the single-width conversions work on.
+static bool rax_eval_u64(RzNum *num, const char *s, ut64 *out) {
+	RzNumValue v;
+	if (!rax_eval(num, s, &v)) {
+		return false;
+	}
+	*out = rz_num_value_to_ut64(&v);
+	rz_num_value_fini(&v);
+	return true;
+}
+
 static int format_output(RzNum *num, char mode, const char *s, int force_mode, ut64 flags) {
-	ut64 n = rz_num_math(num, s);
-	char strbits[65];
+	if (force_mode == RZ_AX_INVALID_BASE) {
+		return false;
+	}
+	RzNumValue v;
+	if (!rax_eval(num, s, &v)) {
+		return false;
+	}
+
 	if (force_mode) {
 		mode = force_mode;
 	}
+	if (v.kind == RZ_NUM_KIND_FLOAT && mode == 'l') {
+		// `Nf` asks for the compact 32-bit pattern, which the multi-line
+		// float table below would not give.
+		RZ_STATIC_ASSERT(sizeof(float) == 4);
+		float f32 = (float)v.val.d;
+		ut32 bits;
+		memcpy(&bits, &f32, sizeof(bits));
+		printf("Fx%08x\n", bits);
+		rz_num_value_fini(&v);
+		return true;
+	}
+
+	// Other format-flag modes have no sensible interpretation on a float
+	// or a 1024-bit big number, so fall back to the multi-line
+	// pretty-print.
+	if (v.kind != RZ_NUM_KIND_UT64) {
+		RzStrBuf *sb = rz_strbuf_new(NULL);
+		if (sb) {
+			rz_num_value_print(&v, sb);
+			char *block = rz_strbuf_drain(sb);
+			if (block) {
+				printf("%s", block);
+				free(block);
+			}
+		}
+		rz_num_value_fini(&v);
+		return true;
+	}
+
+	ut64 n = v.val.n;
+	if (num) {
+		num->value = n;
+	}
+	rz_num_value_fini(&v);
+
+	char strbits[65];
 	if (has_flag(flags, RZ_AX_FLAG_SWAP_ENDIANNESS)) {
 		ut64 n2 = n;
 		n = rz_swap_ut64(n2);
 		if (!(int)n) {
 			n >>= 32;
+		}
+		// The swapped value is no longer "the other base of the input",
+		// so the bare-literal decimal toggle does not apply to it.
+		if (mode == 'I' && !force_mode) {
+			mode = '0';
 		}
 	}
 	switch (mode) {
@@ -187,68 +330,114 @@ static void print_ascii_table(void) {
 	printf("%s", rz_get_ascii_table());
 }
 
-static int help(void) {
-	printf(Color_CYAN "Usage:" Color_RESET " rz-ax [options] [expr ...]\n"
-			  "If expr is not provided, reads from stdin\n");
+static int help(bool verbose) {
+	printf(Color_CYAN "Usage:" Color_RESET " rz-ax [options] [expression ...]\n"
+			  "\n"
+			  "Converts numbers between bases and evaluates RzNum expressions.\n"
+			  "Without an expression, reads one per line from stdin.\n");
 #define CF Color_GREEN
 #define CA Color_YELLOW
 #define CR Color_RESET
+	const char *conversions[] = {
+		// clang-format off
+		NULL, NULL, "int     -> hex",     "rz-ax 10",
+		NULL, NULL, "hex     -> int",     "rz-ax 0xa",
+		NULL, NULL, "-int    -> hex",     "rz-ax -77",
+		NULL, NULL, "-hex    -> int",     "rz-ax 0xffffffb3",
+		NULL, NULL, "int     -> bin",     "rz-ax b30",
+		NULL, NULL, "int     -> ternary", "rz-ax t42",
+		NULL, NULL, "int     -> oct",     "rz-ax Ox12",
+		NULL, NULL, "bin     -> int",     "rz-ax 0b1010",
+		NULL, NULL, "oct     -> int",     "rz-ax 0o17",
+		NULL, NULL, "ternary -> int",     "rz-ax 0t212",
+		NULL, NULL, "float   -> hex",     "rz-ax 3.33f",
+		NULL, NULL, "hex     -> float",   "rz-ax Fx40551ed8",
+		NULL, NULL, "hex     -> bin",     "rz-ax Bx63",
+		NULL, NULL, "hex     -> ternary", "rz-ax Tx23",
+		NULL, NULL, "raw     -> hex",     "rz-ax " CF "-S" CR " < /binfile",
+		NULL, NULL, "hex     -> raw",     "rz-ax " CF "-s" CR " 414141",
+		// clang-format on
+	};
+	const char *expressions[] = {
+		// clang-format off
+		NULL, NULL, "arithmetic",         "rz-ax '3 * (10 + 2)'",
+		NULL, NULL, "bit-vector width",   "rz-ax 5u8+3u8",
+		NULL, NULL, "automatic big number", "rz-ax 2**64",
+		NULL, NULL, "built-in function",  "rz-ax min(0x10,0x20)",
+		NULL, NULL, "variable binding",   "rz-ax 'x=10;x*4'",
+		// clang-format on
+	};
 	const char *options[] = {
 		// clang-format off
-		NULL, NULL,     "int     ->  hex",       "rz-ax 10",
-		NULL, NULL,     "hex     ->  int",       "rz-ax 0xa",
-		NULL, NULL,     "-int    ->  hex",       "rz-ax -77",
-		NULL, NULL,     "-hex    ->  int",       "rz-ax 0xffffffb3",
-		NULL, NULL,     "int     ->  bin",       "rz-ax b30",
-		NULL, NULL,     "int     ->  ternary",   "rz-ax t42",
-		NULL, NULL,     "bin     ->  int",       "rz-ax 1010d",
-		NULL, NULL,     "ternary ->  int",       "rz-ax 1010dt",
-		NULL, NULL,     "float   ->  hex",       "rz-ax 3.33f",
-		NULL, NULL,     "hex     ->  float",     "rz-ax Fx40551ed8",
-		NULL, NULL,     "oct     ->  hex",       "rz-ax 35o",
-		NULL, NULL,     "hex     ->  oct",       "rz-ax Ox12 (O is a letter)",
-		NULL, NULL,     "bin     ->  hex",       "rz-ax 1100011b",
-		NULL, NULL,     "hex     ->  bin",       "rz-ax Bx63",
-		NULL, NULL,     "ternary ->  hex",       "rz-ax 212t",
-		NULL, NULL,     "hex     ->  ternary",   "rz-ax Tx23",
-		NULL, NULL,     "raw     ->  hex",       "rz-ax " CF "-S" CR " < /binfile",
-		NULL, NULL,     "hex     ->  raw",       "rz-ax " CF "-s" CR " 414141",
-		"=",  "\bbase", "",                      "rz-ax " CF "=" CA "10" CR " 0x46 -> output in base 10",
-		"-l", "",       "",                      "append newline to output (for " CF "-E" CR "/" CF "-D" CR "/" CF "-r" CR "/..",
-		"-a", "",       "show ascii table",      "rz-ax " CF "-a" CR "",
-		"-b", "",       "bin -> str",            "rz-ax " CF "-b" CR " 01000101 01110110",
-		"-B", "",       "str -> bin",            "rz-ax " CF "-B" CR " hello",
-		"-d", "",       "force integer",         "rz-ax " CF "-d" CR " 3 -> 3 instead of 0x3",
-		"-e", "",       "swap endianness",       "rz-ax " CF "-e" CR " 0x33",
-		"-D", "",       "base64 decode",         NULL,
-		"-E", "",       "base64 encode",         NULL,
-		"-f", "",       "floating point",        "rz-ax " CF "-f" CR " 6.3+2.1",
-		"-F", "",       "stdin slurp code hex",  "rz-ax " CF "-F" CR " < shellcode.[c/py/js]",
-		"-h", "",       "show this help",        "rz-ax " CF "-h" CR "",
-		"-i", "",       "dump as C byte array",  "rz-ax " CF "-i" CR " < bytes",
-		"-I", "",       "IP address <-> LONG",   "rz-ax " CF "-I" CR " 3530468537",
-		"-k", "",       "keep base",             "rz-ax " CF "-k" CR " 33+3 -> 36",
-		"-L", "",       "bin -> hex(bignum)",    "rz-ax " CF "-L" CR " 111111111 # 0x1ff",
-		"-n", "",       "int value -> hexpairs", "rz-ax " CF "-n" CR " 0x1234 # 34120000",
-		"-o", "",       "octalstr -> raw",       "rz-ax " CF "-o" CR " \\162 \\172 # rz",
-		"-N", "",       "binary number",         "rz-ax " CF "-N" CR " 0x1234 # \\x34\\x12\\x00\\x00",
-		"-r", "",       "rz style output",       "rz-ax " CF "-r" CR " 0x1234",
-		"-s", "",       "hexstr -> raw",         "rz-ax " CF "-s" CR " 43 4a 50",
-		"-S", "",       "raw -> hexstr",         "rz-ax " CF "-S" CR " < /bin/ls > ls.hex",
-		"-t", "",       "Unix tstamp -> str",    "rz-ax " CF "-t" CR " 1234567890",
-		"-m", "",       "MS-DOS tstamp -> str",  "rz-ax " CF "-m" CR " 1234567890",
-		"-W", "",       "Win32 tstamp -> str",   "rz-ax " CF "-W" CR " 1234567890",
-		"-x", "",       "hash string",           "rz-ax " CF "-x" CR " linux osx",
-		"-u", "",       "units",                 "rz-ax " CF "-u" CR " 389289238 # 317.0M",
-		"-w", "",       "signed word",           "rz-ax " CF "-w" CR " 16 0xffff",
-		"-v", "",       "version",               "rz-ax " CF "-v" CR "",
-		"-p", "",       "position of set bits",  "rz-ax " CF "-p" CR " 0xb3",
+		"=N", "", "print the result in base N",  "rz-ax " CF "=" CA "10" CR " 0x46",
+		"-a", "", "show the ascii table",        "rz-ax " CF "-a" CR,
+		"-b", "", "bin -> str",                  "rz-ax " CF "-b" CR " 01000101 01110110",
+		"-B", "", "str -> bin",                  "rz-ax " CF "-B" CR " hello",
+		"-d", "", "print integers in base 10",   "rz-ax " CF "-d" CR " 3           # 3, not 0x3",
+		"-D", "", "base64 decode",               "rz-ax " CF "-D" CR " cml6aW4=",
+		"-e", "", "swap endianness",             "rz-ax " CF "-e" CR " 0x33",
+		"-E", "", "base64 encode",               "rz-ax " CF "-E" CR " rizin",
+		"-f", "", "keep the fractional part",    "rz-ax " CF "-f" CR " 6.3+2.1",
+		"-F", "", "slurp code from stdin as hex", "rz-ax " CF "-F" CR " < shellcode.[c/py/js]",
+		"-h", "", "show this help",              NULL,
+		"-H", "", "show the long help",          "conversions, syntax, operators",
+		"-i", "", "dump as a C byte array",      "rz-ax " CF "-i" CR " < bytes",
+		"-I", "", "IP address <-> LONG",         "rz-ax " CF "-I" CR " 3530468537",
+		"-k", "", "keep the input base",         "rz-ax " CF "-k" CR " 33+3       # 36",
+		"-l", "", "append a newline to output",  "for " CF "-E" CR " / " CF "-D" CR " / " CF "-r" CR " / ...",
+		"-L", "", "bin -> hex (big number)",     "rz-ax " CF "-L" CR " 111111111  # 0x1ff",
+		"-m", "", "MS-DOS timestamp -> str",     "rz-ax " CF "-m" CR " 1234567890",
+		"-n", "", "int -> hex pairs",            "rz-ax " CF "-n" CR " 0x1234     # 34120000",
+		"-N", "", "int -> escaped raw bytes",    "rz-ax " CF "-N" CR " 0x1234     # \\x34\\x12\\x00\\x00",
+		"-o", "", "octal str -> raw",            "rz-ax " CF "-o" CR " \\162 \\172   # rz",
+		"-p", "", "positions of the set bits",   "rz-ax " CF "-p" CR " 0xb3",
+		"-r", "", "rizin command output",        "rz-ax " CF "-r" CR " 0x1234",
+		"-s", "", "hex str -> raw",              "rz-ax " CF "-s" CR " 43 4a 50",
+		"-S", "", "raw -> hex str",              "rz-ax " CF "-S" CR " < /bin/ls > ls.hex",
+		"-t", "", "Unix timestamp -> str",       "rz-ax " CF "-t" CR " 1234567890",
+		"-u", "", "human readable units",        "rz-ax " CF "-u" CR " 389289238  # 371.3M",
+		"-v", "", "show the version",            NULL,
+		"-w", "", "sign-extend a signed word",   "rz-ax " CF "-w" CR " 16 0xffff",
+		"-W", "", "Win32 timestamp -> str",      "rz-ax " CF "-W" CR " 1234567890",
+		"-x", "", "djb2 hash of a string",       "rz-ax " CF "-x" CR " linux osx",
 		// clang-format on
 	};
 #undef CF
 #undef CA
 #undef CR
+	printf("\n" Color_CYAN "Options" Color_RESET "\n");
 	rz_print_colored_help(options, RZ_ARRAY_SIZE(options), true);
+	if (!verbose) {
+		printf("\nRun " Color_GREEN "rz-ax -H" Color_RESET " for the conversion table, the expression\n"
+		       "syntax and the operator list, or see the rz-ax(1) man page.\n");
+		return true;
+	}
+
+	printf("\n" Color_CYAN "Conversions" Color_RESET "\n");
+	rz_print_colored_help(conversions, RZ_ARRAY_SIZE(conversions), true);
+	printf(" Trailing base suffixes (101b, 35o, 212t) still work but are\n"
+	       " deprecated; prefer the 0b / 0o / 0t prefixes.\n");
+	printf("\n" Color_CYAN "Expressions" Color_RESET "\n");
+	rz_print_colored_help(expressions, RZ_ARRAY_SIZE(expressions), true);
+	printf(" Quote an expression containing spaces so it stays a single\n"
+	       " argument; otherwise every argument is converted on its own.\n");
+	printf("\n" Color_CYAN "Operators" Color_RESET " (C precedence)\n"
+	       "  **                power     (2**10; note ^ is XOR, not power)\n"
+	       "  * / %%             multiply, divide, modulo\n"
+	       "  sdiv smod         signed divide, signed modulo\n"
+	       "  + -               add, subtract (unary - negates)\n"
+	       "  << >>             logical shift left, right\n"
+	       "  sar               arithmetic (sign-extending) shift right\n"
+	       "  <<< >>>           rotate left, right\n"
+	       "  & | ^ ~           and, or, xor, not\n"
+	       "  < <= > >= == !=   comparisons, yielding 0 or 1\n"
+	       "  ?:                ternary   (cond ? a : b)\n"
+	       "\n" Color_CYAN "Literals" Color_RESET "\n"
+	       "  0x 0o 0t 0b       hex, octal, ternary, binary\n"
+	       "  uN                bit-vector of N bits   (5u8, 1u32, 3u1024)\n"
+	       "  KiB MiB GiB ...   size units             (4KiB)\n"
+	       "  fn(...)           built-ins: min max gcd sqrt log2 popcount clz ctz ...\n"
+	       "\nSee the rz-ax(1) man page for the complete reference.\n");
 	return true;
 }
 
@@ -273,6 +462,14 @@ static int rax(RzNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 		case 10: force_mode = 'I'; break;
 		case 16: force_mode = '0'; break;
 		case 0: force_mode = str[1]; break;
+		default:
+			// A numeric but unsupported output base (=4, =7, ...) used to be
+			// dropped silently, leaving the result in the default base. Report
+			// it and mark the base invalid so the following expression is not
+			// printed in a misleading base.
+			eprintf("rz-ax: invalid output base '%s' (use =2, =3, =8, =10, or =16)\n", str + 1);
+			*fm = RZ_AX_INVALID_BASE;
+			return true;
 		}
 		*fm = force_mode;
 		return true;
@@ -282,7 +479,9 @@ static int rax(RzNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 		while (str[1] && str[1] != ' ') {
 			switch (str[1]) {
 			case 'l': break;
-			case 'a': print_ascii_table(); return 0;
+			case 'h': return help(false);
+			case 'H': return help(true);
+			case 'a': print_ascii_table(); return true;
 			case 's': flags ^= RZ_AX_FLAG_HEX_TO_RAW; break;
 			case 'e': flags ^= RZ_AX_FLAG_SWAP_ENDIANNESS; break;
 			case 'S': flags ^= RZ_AX_FLAG_RAW_TO_HEX; break;
@@ -313,9 +512,10 @@ static int rax(RzNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 				if (!sys_path) {
 					break;
 				}
-				size_t print_val = rz_main_version_print(sys_path, "rz-ax");
+				rz_main_version_print(sys_path, "rz-ax");
 				rz_path_free(sys_path);
-				return print_val;
+				// Printing the version is not a conversion failure.
+				return true;
 			}
 			case '\0':
 				*_flags = flags;
@@ -331,7 +531,7 @@ static int rax(RzNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 					}
 					return format_output(num, out_mode, str, *fm, flags);
 				}
-				return help();
+				return help(false);
 			}
 			str++;
 		}
@@ -343,12 +543,11 @@ static int rax(RzNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 	}
 	*_flags = flags;
 	if (!flags && rz_str_nlen(str, 2) == 1) {
-		if (*str == 'q') {
-			return false;
-		}
 		if (*str == 'h' || *str == '?') {
-			help();
-			return false;
+			return help(false);
+		}
+		if (*str == 'H') {
+			return help(true);
 		}
 	}
 dotherax:
@@ -396,7 +595,10 @@ dotherax:
 	} else if (has_flag(flags, RZ_AX_FLAG_FLOATING_POINT)) { // -f
 		out_mode = 'f';
 	} else if (has_flag(flags, RZ_AX_FLAG_NUMBER_TO_HEX)) { // -n
-		ut64 n = rz_num_math(num, str);
+		ut64 n = 0;
+		if (!rax_eval_u64(num, str, &n)) {
+			return false;
+		}
 		if (n >> 32) {
 			/* is 64 bit value */
 			if (has_flag(flags, RZ_AX_FLAG_HEX_TO_RAW)) {
@@ -441,42 +643,49 @@ dotherax:
 		}
 		return true;
 	} else if (has_flag(flags, RZ_AX_FLAG_SET_BITS)) { // -p (find position of set bits)
-		ut64 n = rz_num_math(num, str);
-		char strbits[65] = { 0 };
-		int i = 0, set_bits_ctr = 0;
-		rz_num_to_bits(strbits, n);
-		rz_str_reverse(strbits); // because we count Right to Left
-		char last_char = 0;
-		while (strbits[i] != '\0') {
-			if (strbits[i] == '1') {
-				++set_bits_ctr;
-				if (i == 0) {
-					printf("[%d", i);
-				} else if (strbits[i] == '1' && last_char == '0') {
-					printf("[%d", i);
-				}
-			}
-			if (strbits[i] == '0' && last_char == '1') {
-				if (set_bits_ctr == 1) {
-					printf("]: 1\n");
-				} else if (strbits[i + 1] == '\0') {
-					printf("-%d]: 1\n", i);
-				} else
-					printf("-%d]: 1\n", i - 1);
-				set_bits_ctr = 0;
-			} else if (strbits[i] == '1' && strbits[i + 1] == '\0') {
-				if (set_bits_ctr == 1) {
-					printf("]: 1\n");
-				} else
-					printf("-%d]: 1\n", i);
-				set_bits_ctr = 0;
-			}
-			last_char = strbits[i];
-			++i;
+		RzNumValue v;
+		if (!rax_eval(num, str, &v)) {
+			return false;
 		}
+		// Runs are reported over the value's own width, so a bit-vector
+		// literal wider than 64 bits is covered in full.
+		ut32 width = 64;
+		if (v.kind == RZ_NUM_KIND_BITVECTOR && v.val.bv) {
+			width = v.val.bv->len;
+		}
+		ut64 n = rz_num_value_to_ut64(&v);
+		ut32 run_start = 0;
+		bool in_run = false, any = false;
+		for (ut32 i = 0; i <= width; i++) {
+			bool set = false;
+			if (i < width) {
+				set = (v.kind == RZ_NUM_KIND_BITVECTOR && v.val.bv)
+					? rz_bv_get(v.val.bv, i)
+					: (i < 64 && ((n >> i) & 1));
+			}
+			if (set && !in_run) {
+				run_start = i;
+				in_run = true;
+			} else if (!set && in_run) {
+				if (run_start == i - 1) {
+					printf("[%u]: 1\n", run_start);
+				} else {
+					printf("[%u-%u]: 1\n", run_start, i - 1);
+				}
+				in_run = false;
+				any = true;
+			}
+		}
+		if (!any) {
+			printf("no bits set\n");
+		}
+		rz_num_value_fini(&v);
 		return true;
 	} else if (has_flag(flags, RZ_AX_FLAG_SIGNED_WORD)) { // -w
-		ut64 n = rz_num_math(num, str);
+		ut64 n = 0;
+		if (!rax_eval_u64(num, str, &n)) {
+			return false;
+		}
 		if (n >> 31) {
 			// is >32bit
 			n = (st64)(st32)n;
@@ -488,37 +697,53 @@ dotherax:
 		printf("%" PFMT64d "\n", n);
 		return true;
 	} else if (has_flag(flags, RZ_AX_FLAG_NUMBER_TO_HEXSTR)) { // -N
-		ut64 n = rz_num_math(num, str);
-		if (n >> 32) {
-			/* is 64 bit value */
-			if (has_flag(flags, RZ_AX_FLAG_HEX_TO_RAW)) {
-				fwrite(&n, sizeof(n), 1, stdout);
-			} else {
-				int i;
-				for (i = 0; i < 8; i++) {
-					printf("\\x%02x", (int)(n & 0xff));
-					n >>= 8;
+		RzNumValue v;
+		if (!rax_eval(num, str, &v)) {
+			return false;
+		}
+		// A bit-vector literal carries its own width, so emit exactly that
+		// many bytes; a plain integer keeps the historical 4-or-8 choice.
+		ut32 nbytes = 4;
+		if (v.kind == RZ_NUM_KIND_BITVECTOR && v.val.bv) {
+			nbytes = (v.val.bv->len + 7) / 8;
+		} else if (rz_num_value_to_ut64(&v) >> 32) {
+			nbytes = 8;
+		}
+		ut8 *bytes = calloc(nbytes, 1);
+		if (!bytes) {
+			rz_num_value_fini(&v);
+			return false;
+		}
+		if (v.kind == RZ_NUM_KIND_BITVECTOR && v.val.bv) {
+			for (ut32 i = 0; i < v.val.bv->len; i++) {
+				if (rz_bv_get(v.val.bv, i)) {
+					bytes[i / 8] |= 1 << (i % 8);
 				}
-				printf("\n");
 			}
 		} else {
-			/* is 32 bit value */
-			ut32 n32 = (ut32)n;
-			if (has_flag(flags, RZ_AX_FLAG_HEX_TO_RAW)) {
-				fwrite(&n32, sizeof(n32), 1, stdout);
-			} else {
-				int i;
-				for (i = 0; i < 4; i++) {
-					printf("\\x%02x", n32 & 0xff);
-					n32 >>= 8;
-				}
-				printf("\n");
+			ut64 n = rz_num_value_to_ut64(&v);
+			for (ut32 i = 0; i < nbytes; i++) {
+				bytes[i] = (ut8)(n >> (8 * i));
 			}
 		}
+		if (has_flag(flags, RZ_AX_FLAG_HEX_TO_RAW)) {
+			fwrite(bytes, nbytes, 1, stdout);
+		} else {
+			for (ut32 i = 0; i < nbytes; i++) {
+				printf("\\x%02x", bytes[i]);
+			}
+			printf("\n");
+		}
+		free(bytes);
+		rz_num_value_fini(&v);
 		return true;
 	} else if (has_flag(flags, RZ_AX_FLAG_UNITS)) { // -u
 		char buf[8];
-		rz_num_units(buf, sizeof(buf), rz_num_math(NULL, str));
+		ut64 n = 0;
+		if (!rax_eval_u64(num, str, &n)) {
+			return false;
+		}
+		rz_num_units(buf, sizeof(buf), n);
 		printf("%s\n", buf);
 		return true;
 	} else if (is_timestamp(flags)) { // -t, -m, -W
@@ -530,8 +755,15 @@ dotherax:
 		if (gmt && strlen(gmt) < 2) {
 			gmt = NULL;
 		}
-		ut64 n = rz_num_math(num, ts);
-		int timezone = (int)rz_num_math(num, gmt);
+		ut64 n = 0;
+		if (!rax_eval_u64(num, ts, &n)) {
+			return false;
+		}
+		ut64 tzv = 0;
+		if (gmt && !rax_eval_u64(num, gmt, &tzv)) {
+			return false;
+		}
+		int timezone = (int)tzv;
 		n += timezone * (60 * 60);
 		char *date = NULL;
 		if (has_flag(flags, RZ_AX_FLAG_TIMESTAMP_TO_STR)) {
@@ -590,7 +822,10 @@ dotherax:
 		ut32 n32, s, a;
 		double d;
 		float f;
-		ut64 n = rz_num_math(num, str);
+		ut64 n = 0;
+		if (!rax_eval_u64(num, str, &n)) {
+			return false;
+		}
 
 		if (num->dbz) {
 			eprintf("RzNum ERROR: Division by Zero\n");
@@ -684,8 +919,12 @@ dotherax:
 			modified_str = rz_str_dup(str);
 		}
 
-		ut64 n = rz_num_math(num, modified_str);
+		ut64 n = 0;
+		bool eval_ok = rax_eval_u64(num, modified_str, &n);
 		free(modified_str);
+		if (!eval_ok) {
+			return false;
+		}
 		if (num->dbz) {
 			eprintf("RzNum ERROR: Division by Zero\n");
 			return false;
@@ -707,20 +946,39 @@ dotherax:
 			ut32 ip32 = ip[0] | (ip[1] << 8) | (ip[2] << 16) | (ip[3] << 24);
 			printf("0x%08x\n", ip32);
 		} else {
-			ut32 ip32 = (ut32)rz_num_math(NULL, str);
+			ut64 ipv = 0;
+			if (!rax_eval_u64(num, str, &ipv)) {
+				return false;
+			}
+			ut32 ip32 = (ut32)ipv;
 			ut8 ip[4] = { ip32 & 0xff, (ip32 >> 8) & 0xff, (ip32 >> 16) & 0xff, ip32 >> 24 };
 			printf("%d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
 		}
 		return true;
 	}
 
-	if (str[0] == '0' && (tolower(str[1]) == 'x')) {
+	// A bare literal in a non-decimal base prints as decimal, preserving the
+	// rax2 "show the other base" conversion; everything else, including any
+	// compound expression, keeps the default hex output so the radix stays
+	// predictable for scripting.
+	size_t prefix_len = 0;
+	ut32 lit_base = 10;
+	bool bare_literal = rz_num_base_prefix(str, &lit_base, &prefix_len) != RZ_NUM_BASE_PREFIX_NONE && str[prefix_len];
+	for (const char *q = str + prefix_len; bare_literal && *q; q++) {
+		if (!is_digit_in_base((ut8)*q, lit_base)) {
+			bare_literal = false;
+		}
+	}
+	const char *consumed_prefix = NULL;
+	if (bare_literal) {
 		out_mode = (has_flag(flags, RZ_AX_FLAG_KEEP_BASE)) ? '0' : 'I';
 	} else if (rz_str_startswith(str, "b")) {
 		out_mode = 'B';
+		consumed_prefix = "b";
 		str++;
 	} else if (rz_str_startswith(str, "t")) {
 		out_mode = 'T';
+		consumed_prefix = "t";
 		str++;
 	} else if (rz_str_startswith(str, "Fx")) {
 		out_mode = 'F';
@@ -734,43 +992,107 @@ dotherax:
 	} else if (rz_str_startswith(str, "Ox")) {
 		out_mode = 'O';
 		*str = '0';
-	} else if (rz_str_endswith(str, "d")) {
+	} else if (isdigit((ut8)str[0]) && rz_str_endswith(str, "d")) {
 		out_mode = 'I';
 		str[strlen(str) - 1] = 'b';
 		// TODO: Move print into format_output
-	} else if (rz_str_endswith(str, "f")) {
+	} else if (isdigit((ut8)str[0]) && rz_str_endswith(str, "f")) {
 		out_mode = 'l';
-	} else if (rz_str_endswith(str, "dt")) {
+	} else if (isdigit((ut8)str[0]) && rz_str_endswith(str, "dt")) {
 		out_mode = 'I';
 		str[strlen(str) - 2] = 't';
 		str[strlen(str) - 1] = '\0';
 	}
+	if (consumed_prefix && !*str) {
+		// A lone output-mode prefix (`rz-ax b`, `rz-ax t`) has nothing to
+		// convert; without this it printed nothing and exited 0.
+		eprintf("rz-ax: missing value after '%s'\n", consumed_prefix);
+		return false;
+	}
+	// The RzNum grammar accepts internal whitespace, so an argument like
+	// "1 + 2" is a single expression. Try the whole space-containing string
+	// first and only fall back to the historical "whitespace separates
+	// independent values" splitting when that parse fails, so both
+	// `rz-ax '1 + 2'` (-> 3) and `rz-ax '10 0x20'` (two values) keep working.
+	if (strchr(str, ' ')) {
+		RzNumValue probe;
+		rz_num_value_init(&probe);
+		char *whole_err = NULL;
+		bool whole_ok = rz_num_math_value(num, str, &probe, &whole_err);
+		rz_num_value_fini(&probe);
+		if (whole_ok) {
+			free(whole_err);
+			return format_output(num, out_mode, str, *fm, flags);
+		}
+		// The whole string is not one expression. Only fall back to the
+		// historical "whitespace separates independent values" splitting if
+		// every piece parses on its own; otherwise this was a single bad
+		// expression and its own diagnostic is the useful one, rather than
+		// one error per fragment.
+		bool split_ok = true;
+		char *probe_str = rz_str_dup(str);
+		if (probe_str) {
+			char *tok = probe_str;
+			char *sp = NULL;
+			while (split_ok) {
+				sp = strchr(tok, ' ');
+				if (sp) {
+					*sp = 0;
+				}
+				if (*tok) {
+					RzNumValue piece;
+					rz_num_value_init(&piece);
+					char *piece_err = NULL;
+					split_ok = rz_num_math_value(num, tok, &piece, &piece_err);
+					rz_num_value_fini(&piece);
+					free(piece_err);
+				}
+				if (!sp) {
+					break;
+				}
+				tok = sp + 1;
+			}
+			free(probe_str);
+		}
+		if (!split_ok) {
+			eprintf("rz-ax: %s\n", whole_err ? whole_err : "evaluation failed");
+			free(whole_err);
+			return false;
+		}
+		free(whole_err);
+	}
+	bool all_ok = true;
 	while ((p = strchr(str, ' '))) {
 		*p = 0;
-		format_output(num, out_mode, str, *fm, flags);
+		if (*str && !format_output(num, out_mode, str, *fm, flags)) {
+			all_ok = false;
+		}
 		str = p + 1;
 	}
-	if (*str) {
-		format_output(num, out_mode, str, *fm, flags);
+	if (*str && !format_output(num, out_mode, str, *fm, flags)) {
+		all_ok = false;
 	}
-	return true;
+	return all_ok;
 }
 
 RZ_API int rz_main_rz_ax(int argc, const char **argv) {
 	int i, fm = 0;
 	RzNum *num = rz_num_new(NULL, NULL, NULL);
 	ut64 flags = 0;
+	bool ok = true;
 	if (argc == 1) {
 		use_stdin(num, &flags, &fm);
 	} else {
 		for (i = 1; i < argc; i++) {
 			char *argv_i = rz_str_dup(argv[i]);
 			rz_str_unescape(argv_i);
-			rax(num, argv_i, 0, i == argc - 1, &flags, &fm);
+			if (!rax(num, argv_i, 0, i == argc - 1, &flags, &fm)) {
+				ok = false;
+			}
 			free(argv_i);
 		}
 	}
 	rz_num_free(num);
 	num = NULL;
-	return 0;
+	return ok ? 0 : 1;
 }

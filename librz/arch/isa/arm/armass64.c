@@ -90,6 +90,12 @@ typedef struct Opcode_t {
 		return data; \
 	}
 
+// The operand tokeniser splits on ',' only, so an offset token keeps a
+// trailing ']' or pre-index '!'; evaluate just the leading number.
+static ut64 arm64_getnum(const char *tok) {
+	return rz_num_get_leading(NULL, tok, NULL);
+}
+
 static int get_mem_option(char *token) {
 	// values 4, 8, 12, are unused. XXX to adjust
 	const char *options[] = { "sy", "st", "ld", "xxx", "ish", "ishst",
@@ -1120,7 +1126,7 @@ static bool parseOperands(char *str, ArmOp *op) {
 				free(t);
 				return false;
 			}
-			op->operands[operand].shift_amount = rz_num_math(NULL, token);
+			op->operands[operand].shift_amount = arm64_getnum(token);
 			op->operands[operand].amount_present = true;
 			if (op->operands[operand].shift_amount > 63) {
 				free(t);
@@ -1148,7 +1154,7 @@ static bool parseOperands(char *str, ArmOp *op) {
 				op->operands[operand].shift_amount = 0;
 				op->operands[operand].amount_present = false;
 			} else {
-				op->operands[operand].shift_amount = rz_num_math(NULL, token);
+				op->operands[operand].shift_amount = arm64_getnum(token);
 				op->operands[operand].amount_present = true;
 			}
 			operand++;
@@ -1170,7 +1176,7 @@ static bool parseOperands(char *str, ArmOp *op) {
 				// XZR
 				op->operands[operand].reg = 31;
 			} else {
-				op->operands[operand].reg = rz_num_math(NULL, token + 1);
+				op->operands[operand].reg = arm64_getnum(token + 1);
 			}
 
 			if (op->operands[operand].reg > 31) {
@@ -1191,7 +1197,7 @@ static bool parseOperands(char *str, ArmOp *op) {
 				op->operands[operand].reg = 31;
 				op->operands[operand].reg_type |= ARM_SP;
 			} else {
-				op->operands[operand].reg = rz_num_math(NULL, token + 1);
+				op->operands[operand].reg = arm64_getnum(token + 1);
 			}
 
 			if (op->operands[operand].reg > 31) {
@@ -1202,7 +1208,7 @@ static bool parseOperands(char *str, ArmOp *op) {
 		case 'v':
 			op->operands_count++;
 			op->operands[operand].type = ARM_FP;
-			op->operands[operand].reg = rz_num_math(NULL, token + 1);
+			op->operands[operand].reg = arm64_getnum(token + 1);
 			break;
 		case 's':
 		case 'S':
@@ -1268,7 +1274,7 @@ static bool parseOperands(char *str, ArmOp *op) {
 			}
 			op->operands_count++;
 			op->operands[operand].type = ARM_CONSTANT;
-			op->operands[operand].immediate = rz_num_math(NULL, token + 1);
+			op->operands[operand].immediate = arm64_getnum(token + 1);
 			op->operands[operand].preindex = token - t < index_bound;
 			break;
 		case '-':
@@ -1277,7 +1283,7 @@ static bool parseOperands(char *str, ArmOp *op) {
 		default:
 			op->operands_count++;
 			op->operands[operand].type = ARM_CONSTANT;
-			op->operands[operand].immediate = rz_num_math(NULL, token);
+			op->operands[operand].immediate = arm64_getnum(token);
 			op->operands[operand].preindex = token - t < index_bound;
 			break;
 		}

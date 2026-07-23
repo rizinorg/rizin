@@ -261,7 +261,15 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				;
 			}
 		}
+		// Evaluate only the number token, not the trailing operand
+		// syntax (']', separators, comments) that follows it. ptr2 is
+		// the token boundary computed just above; terminate the string
+		// there so the evaluator receives a clean expression, then put
+		// the byte back so the surrounding code can keep using it.
+		char saved_sep = *ptr2;
+		*ptr2 = '\0';
 		off = rz_num_math(NULL, ptr);
+		*ptr2 = saved_sep;
 		if (off >= p->minval) {
 			fcn = p->analb.get_fcn_in(p->analb.analysis, off, 0);
 			if (fcn && fcn->addr == off) {
