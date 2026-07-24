@@ -3,7 +3,7 @@
 
 // LLVM commit: bc5ac5f3ebb0bc4fc65cef7160c817ca3174a68e
 // LLVM commit date: 2026-03-15 10:22:07 -0700 (ISO 8601 format)
-// Date of code generation: 2026-07-23 14:24:05+02:00
+// Date of code generation: 2026-07-24 15:06:07+02:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -106,6 +106,7 @@ RzILOpEffect *hex_il_op_j2_endloop01(HexInsnPktBundle *bundle) {
 
 	// jump(sa0);
 	RzILOpEffect *jump_sa0_48 = SETL(bundle->jmp_flags[bundle->jmp_cnt], IL_TRUE);
+	rz_return_val_if_fail(bundle->jmp_cnt < 2, NULL);
 	bundle->jmp_set_addr[bundle->jmp_cnt] = SETL(bundle->jmp_targets[bundle->jmp_cnt], sa0);
 	bundle->jmp_cnt++;
 
@@ -115,6 +116,7 @@ RzILOpEffect *hex_il_op_j2_endloop01(HexInsnPktBundle *bundle) {
 
 	// jump(sa1);
 	RzILOpEffect *jump_sa1_59 = SETL(bundle->jmp_flags[bundle->jmp_cnt], IL_TRUE);
+	rz_return_val_if_fail(bundle->jmp_cnt < 2, NULL);
 	bundle->jmp_set_addr[bundle->jmp_cnt] = SETL(bundle->jmp_targets[bundle->jmp_cnt], sa1);
 	bundle->jmp_cnt++;
 
@@ -153,6 +155,7 @@ RzILOpEffect *hex_il_op_j2_endloop1(HexInsnPktBundle *bundle) {
 
 	// jump(sa1);
 	RzILOpEffect *jump_sa1_5 = SETL(bundle->jmp_flags[bundle->jmp_cnt], IL_TRUE);
+	rz_return_val_if_fail(bundle->jmp_cnt < 2, NULL);
 	bundle->jmp_set_addr[bundle->jmp_cnt] = SETL(bundle->jmp_targets[bundle->jmp_cnt], sa1);
 	bundle->jmp_cnt++;
 
@@ -260,6 +263,7 @@ RzILOpEffect *hex_il_op_j2_endloop0(HexInsnPktBundle *bundle) {
 
 	// jump(sa0);
 	RzILOpEffect *jump_sa0_48 = SETL(bundle->jmp_flags[bundle->jmp_cnt], IL_TRUE);
+	rz_return_val_if_fail(bundle->jmp_cnt < 2, NULL);
 	bundle->jmp_set_addr[bundle->jmp_cnt] = SETL(bundle->jmp_targets[bundle->jmp_cnt], sa0);
 	bundle->jmp_cnt++;
 
