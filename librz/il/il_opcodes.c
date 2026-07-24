@@ -1111,7 +1111,7 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcompound(RzFloatRMode rmode, RZ_NONNULL
  * \return the rmode bitvector operand, or NULL if \p op has no runtime
  * rounding mode
  */
-RZ_API RZ_NULLABLE RzILOpBitVector *rz_il_op_pure_float_rmode_operand(RZ_NONNULL const RzILOpPure *op) {
+RZ_API RZ_NULLABLE RZ_BORROW RzILOpBitVector *rz_il_op_pure_float_rmode_operand(RZ_NONNULL const RzILOpPure *op) {
 	rz_return_val_if_fail(op, NULL);
 	switch (op->code) {
 	case RZ_IL_OP_FCONVERT_WITH_RMODE:
