@@ -325,6 +325,8 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_native_map_get(RzDebug *dbg) {
 			continue;
 		}
 		strncpy(&region2[2], pos_c + 1, sizeof(region2) - 2 - 1);
+		// Terminate the start token at the '-'
+		*pos_c = 0;
 
 		if (!*name) {
 			snprintf(name, sizeof(name), "unk%d", unk++);
