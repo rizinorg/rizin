@@ -96,6 +96,7 @@ rz_util_files = [
   'rz_util/rz_mem.h',
   'rz_util/rz_name.h',
   'rz_util/rz_num.h',
+  'rz_util/rz_num_expression.h',
   'rz_util/rz_panels.h',
   'rz_util/rz_path.h',
   'rz_util/rz_pj.h',
