@@ -273,10 +273,14 @@ RUN
 NAME="% 2**4.5"
 FILE=--
 CMDS=% 2**4.5
+# pow() is not correctly rounded on every libm. FreeBSD and NetBSD (msun)
+# return 22.627416997969519, one ULP below the correctly rounded
+# 22.627416997969522 that glibc and the UCRT give, so scifmt and hex cannot
+# be pinned here. Assert the rounded line, which any implementation within
+# one ULP agrees on.
+REGEXP_FILTER_OUT=float[[:space:]]+22\.6274
 EXPECT=<<EOF
 float   22.6274
-scifmt  22.627416997969522
-hex     0x4036a09e667f3bcd
 EOF
 RUN
 
