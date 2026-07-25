@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2007-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <errno.h>
 #include <math.h> /* for ceill */
 #include <rz_util.h>
 
@@ -581,6 +582,59 @@ static bool num_is_flagname_token(const char *str) {
 }
 
 /**
+ * \brief Check whether \p str is a bare integer literal, and parse it.
+ *
+ * A bare integer literal is an optional base prefix (see \ref rz_num_base_prefix)
+ * followed only by digits valid in that base, and nothing else. Signs,
+ * whitespace, operators, radix points, exponents, bit-vector widths, unit
+ * suffixes and the deprecated trailing base suffixes all make \p str not a
+ * bare literal.
+ *
+ * This is the cheap path around rz_num_math(): it needs no expression parser.
+ *
+ * \param str Text to examine.
+ * \param value Set to the parsed value when the function returns true.
+ * \param overflow Set to true when \p str is a valid integer literal too large
+ *                 for a ut64. The function still returns false; a caller that
+ *                 supports arbitrary precision can use this to promote it.
+ *
+ * \return true if \p str is a bare integer literal that fits in a ut64.
+ */
+RZ_API bool rz_num_is_int_literal(RZ_NONNULL const char *str, RZ_NULLABLE RZ_OUT ut64 *value,
+	RZ_NULLABLE RZ_OUT bool *overflow) {
+	rz_return_val_if_fail(str, false);
+	ut32 base = 10;
+	size_t prefix_len = 0;
+	rz_num_base_prefix(str, &base, &prefix_len);
+	const char *digits = str + prefix_len;
+	if (!*digits) {
+		return false;
+	}
+	for (const char *p = digits; *p; p++) {
+		ut8 v = 0;
+		if (rz_hex_to_byte(&v, (ut8)*p) || v >= base) {
+			return false;
+		}
+	}
+	errno = 0;
+	char *endp = NULL;
+	unsigned long long v = strtoull(digits, &endp, base);
+	if (errno == ERANGE) {
+		if (overflow) {
+			*overflow = true;
+		}
+		return false;
+	}
+	if (*endp) {
+		return false;
+	}
+	if (value) {
+		*value = (ut64)v;
+	}
+	return true;
+}
+
+/**
  * \brief Compute a numerical expression yielding a ut64.
  *
  * \param num RzNum instance.
@@ -619,6 +673,16 @@ RZ_API ut64 rz_num_math_ut64(RzNum *num, const char *str) {
 		// failure (again, the seek command) names the actual input
 		// rather than a stale or null buffer.
 		num->nc.calc_buf = str;
+	}
+
+	ut64 plain = 0;
+	// Bare integer literals are the common input here and need no
+	// expression parser; see rz_num_is_int_literal().
+	if (rz_num_is_int_literal(str, &plain, NULL)) {
+		if (num) {
+			num->value = plain;
+		}
+		return plain;
 	}
 
 	// Legacy `[addr]` dereference. The bracket read predates the typed

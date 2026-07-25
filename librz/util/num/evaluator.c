@@ -216,45 +216,30 @@ static bool literal_is_float(const char *t) {
 
 // Parse an unsigned integer literal. Returns true on success. On
 // ERANGE, sets *overflow=true so the caller can promote to bignum.
+// Thin wrapper over rz_num_is_int_literal() adding the evaluator's own
+// diagnostics. The three outcomes the caller distinguishes are: nothing after
+// the base prefix, no valid digit at all, and a digit run followed by a digit
+// invalid for the base (the '8' in 08 / 0187, which the grammar's permissive
+// decimal digit class lets through to here). The last one leaves *err unset so
+// the caller categorises it as a plain parse error.
 static bool parse_int_literal(const char *t, ut64 *out, bool *overflow, char **err) {
-	const char *p = t;
+	if (rz_num_is_int_literal(t, out, overflow)) {
+		return true;
+	}
+	if (!err || *err || (overflow && *overflow)) {
+		return false;
+	}
 	ut32 base = 10;
 	size_t prefix_len = 0;
-	// A C style leading zero reports prefix_len 0: the zero is an octal
-	// digit, so strtoull() must still see it.
-	rz_num_base_prefix(p, &base, &prefix_len);
-	p += prefix_len;
-	if (!*p) {
-		if (err && !*err) {
-			*err = rz_str_newf("empty integer literal: %s", t);
-		}
-		return false;
+	rz_num_base_prefix(t, &base, &prefix_len);
+	const char *digits = t + prefix_len;
+	ut8 first = 0;
+	if (!*digits) {
+		*err = rz_str_newf("empty integer literal: %s", t);
+	} else if (rz_hex_to_byte(&first, (ut8)*digits) || first >= base) {
+		*err = rz_str_newf("not an integer: %s", t);
 	}
-	errno = 0;
-	char *endp = NULL;
-	unsigned long long v = strtoull(p, &endp, base);
-	if (errno == ERANGE) {
-		if (overflow) {
-			*overflow = true;
-		}
-		return false;
-	}
-	if (endp == p) {
-		if (err && !*err) {
-			*err = rz_str_newf("not an integer: %s", t);
-		}
-		return false;
-	}
-	if (*endp != '\0') {
-		// Trailing junk after the digit run: a digit not valid for the
-		// detected base. This catches C-style octal with an out-of-range
-		// digit (the '8' in 08 / 0187), which the permissive decimal
-		// digit class in the grammar lets through to here. Leave *err
-		// unset so the caller can categorise it as a parse error.
-		return false;
-	}
-	*out = (ut64)v;
-	return true;
+	return false;
 }
 
 static bool parse_float_literal(const char *t, double *out, char **err) {
