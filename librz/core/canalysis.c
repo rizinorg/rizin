@@ -6140,7 +6140,7 @@ static void _analysis_calls(RzCore *core, ut64 addr, ut64 addr_end, bool imports
 	free(block1);
 }
 
-/*
+/**
  * \brief Performs analysis on each call sight, creates new functions whenever necessary.
  * \param core RzCore instance
  * \param imports_only if true it analyses calls only of imported functions, otherwise - every flag
