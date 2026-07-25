@@ -449,6 +449,8 @@ typedef enum {
 
 RZ_API RzNumBasePrefix rz_num_base_prefix(RZ_NONNULL const char *p, RZ_NULLABLE RZ_OUT ut32 *base,
 	RZ_NULLABLE RZ_OUT size_t *prefix_len);
+RZ_API bool rz_num_is_int_literal(RZ_NONNULL const char *str, RZ_NULLABLE RZ_OUT ut64 *value,
+	RZ_NULLABLE RZ_OUT bool *overflow);
 
 /**
  * \brief Absolute value of a 64-bit number. Store result in `ut64`
