@@ -36,6 +36,7 @@ RZ_API bool rz_file_chmod(const char *file, const char *mod, int recursive);
 RZ_API char *rz_file_temp(const char *prefix);
 RZ_API char *rz_file_path(const char *bin);
 RZ_API RZ_OWN char *rz_file_path_join(RZ_NONNULL const char *s1, RZ_NULLABLE const char *s2);
+RZ_API const char *rz_file_extension(const char *path);
 RZ_API const char *rz_file_basename(const char *path);
 RZ_API const char *rz_file_dos_basename(RZ_BORROW RZ_NONNULL const char *path);
 RZ_API char *rz_file_dirname(const char *path);

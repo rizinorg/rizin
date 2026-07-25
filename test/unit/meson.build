@@ -35,6 +35,7 @@ if get_option('enable_tests')
     'bits',
     'marks',
     'buf',
+    'bytes_search',
     'cmd',
     'compare',
     'config',

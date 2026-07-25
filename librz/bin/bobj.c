@@ -622,8 +622,9 @@ RZ_API ut64 rz_bin_object_addr_with_base(RzBinObject *o, ut64 addr) {
 	return o ? addr + o->baddr_shift : addr;
 }
 
-/* \brief Resolve the given address pair to a vaddr if possible
- * returns vaddr, rebased with the baseaddr of bin, if va is enabled for bin,
+/**
+ * \brief Resolve the given address pair to a vaddr if possible
+ * \return vaddr, rebased with the baseaddr of bin, if va is enabled for bin,
  * paddr otherwise
  */
 RZ_API ut64 rz_bin_object_get_vaddr(RzBinObject *o, ut64 paddr, ut64 vaddr) {
