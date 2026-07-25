@@ -520,6 +520,7 @@ RZ_API int rz_debug_map_dealloc(RzDebug *dbg, RzDebugMap *map);
 RZ_API RzList /*<RzDebugMap *>*/ *rz_debug_map_list_new(void);
 RZ_API RzDebugMap *rz_debug_map_get(RzDebug *dbg, ut64 addr);
 RZ_API RZ_OWN RzDebugMap *rz_debug_map_new(RZ_NULLABLE char *name, ut64 begin, ut64 end, int perm, int user);
+RZ_API RZ_OWN RzDebugMap *rz_debug_map_clone(RZ_NONNULL RzDebugMap *m);
 RZ_API void rz_debug_map_free(RZ_NULLABLE RzDebugMap *map);
 RZ_API void rz_debug_map_list_visual(RzDebug *dbg, ut64 addr, const char *input, int colors);
 RZ_API RZ_BORROW RzList /*<RzDebugMap *>*/ *rz_debug_map_list(RzDebug *dbg, bool user_map);

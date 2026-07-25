@@ -80,6 +80,17 @@ RZ_API void rz_debug_map_free(RZ_NULLABLE RzDebugMap *map) {
 	free(map);
 }
 
+RZ_API RZ_OWN RzDebugMap *rz_debug_map_clone(RZ_NONNULL RzDebugMap *m) {
+	rz_return_val_if_fail(m, NULL);
+	RzDebugMap *c = rz_debug_map_new(m->name, m->addr, m->addr_end, m->perm, m->user);
+	if (c) {
+		c->offset = m->offset;
+		c->shared = m->shared;
+		c->file = rz_str_dup(m->file);
+	}
+	return c;
+}
+
 RZ_API RzList /*<RzDebugMap *>*/ *rz_debug_map_list_new(void) {
 	RzList *list = rz_list_new();
 	if (!list) {

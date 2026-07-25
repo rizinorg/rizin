@@ -768,10 +768,16 @@ static ut64 addroflib(RzCore *core, const char *libname) {
 	rz_debug_map_sync(core->dbg);
 	// RzList *list = rz_debug_native_modules_get (core->dbg);
 	RzList *list = rz_debug_modules_list(core->dbg);
+	ut64 addr = UT64_MAX;
 	rz_list_foreach (list, iter, map) {
 		if (strstr(rz_file_basename(map->name), libname)) {
-			return map->addr;
+			addr = map->addr;
+			break;
 		}
+	}
+	rz_list_free(list);
+	if (addr != UT64_MAX) {
+		return addr;
 	}
 	rz_list_foreach (core->dbg->maps, iter, map) {
 		if (strstr(rz_file_basename(map->name), libname)) {
@@ -787,14 +793,20 @@ static RzDebugMap *get_closest_map(RzCore *core, ut64 addr) {
 
 	rz_debug_map_sync(core->dbg);
 	RzList *list = rz_debug_modules_list(core->dbg);
+	RzDebugMap *found = NULL;
 	rz_list_foreach (list, iter, map) {
 		if (addr != UT64_MAX && (addr >= map->addr && addr < map->addr_end)) {
-			return map;
+			found = rz_debug_map_clone(map);
+			break;
 		}
+	}
+	rz_list_free(list);
+	if (found) {
+		return found;
 	}
 	rz_list_foreach (core->dbg->maps, iter, map) {
 		if (addr != UT64_MAX && (addr >= map->addr && addr < map->addr_end)) {
-			return map;
+			return rz_debug_map_clone(map);
 		}
 	}
 	return NULL;
@@ -1076,11 +1088,12 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmi_handler(RzCore *core, int argc, const char *
 		return RZ_CMD_STATUS_ERROR;
 	}
 	const char *file = map->file ? map->file : map->name;
-	if (!get_bin_info(core, file, map->addr, state, action, &filter)) {
+	bool ok = get_bin_info(core, file, map->addr, state, action, &filter);
+	if (!ok) {
 		RZ_LOG_ERROR("Failed to get binary information for map: '%s' in file: '%s'\n", map->name, file);
-		return RZ_CMD_STATUS_ERROR;
 	}
-	return RZ_CMD_STATUS_OK;
+	rz_debug_map_free(map);
+	return ok ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_debug_dmi_all_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -1126,11 +1139,12 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmi_all_handler(RzCore *core, int argc, const ch
 		return RZ_CMD_STATUS_ERROR;
 	}
 	const char *file = map->file ? map->file : map->name;
-	if (!get_bin_info(core, file, map->addr, state, action, &filter)) {
+	bool ok = get_bin_info(core, file, map->addr, state, action, &filter);
+	if (!ok) {
 		RZ_LOG_ERROR("Failed to get binary information for map: '%s' in file: '%s'\n", map->name, file);
-		return RZ_CMD_STATUS_ERROR;
 	}
-	return RZ_CMD_STATUS_OK;
+	rz_debug_map_free(map);
+	return ok ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_debug_dmi_closest_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
