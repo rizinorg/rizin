@@ -76,6 +76,7 @@ rz_util_common_sources = [
   'thread_types.c',
   'time.c',
   'tree.c',
+  'trie.c',
   'base16.c',
   'base32.c',
   'base36.c',
