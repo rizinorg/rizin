@@ -10,6 +10,17 @@
 #include <rz_socket.h>
 #include <locale.h>
 
+static const char *cmd_catalog_values[] = { "json", NULL };
+
+enum {
+	RZ_MAIN_LONG_CMD_CATALOG = RZ_GETOPT_LONG_BASE,
+};
+
+static const RzGetoptLong rizin_longopts[] = {
+	{ "cmd-catalog", RZ_MAIN_LONG_CMD_CATALOG, cmd_catalog_values, "json" },
+	{ NULL, 0, NULL, NULL },
+};
+
 static bool is_valid_gdb_file(RzCoreFile *fh) {
 	RzIODesc *d = fh && fh->core ? rz_io_desc_get(fh->core->io, fh->fd) : NULL;
 	return d && strncmp(d->name, "gdb://", 6);
@@ -534,45 +545,23 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	char *debugbackend = rz_str_dup("native");
 
 	RzGetopt opt;
-	for (int i = 1; i < argc; i++) {
-		bool remove_arg = false;
-		bool remove_next_arg = false;
-		if (!strcmp(argv[i], "--cmd-catalog")) {
-			do_print_cmd_tree_json = true;
-			remove_arg = true;
-			if (i + 1 < argc && argv[i + 1][0] != '-') {
-				if (strcmp(argv[i + 1], "json")) {
-					RZ_LOG_ERROR("Unsupported command catalog format '%s'\n", argv[i + 1]);
-					ret = 1;
-					goto beach;
-				}
-				remove_next_arg = true;
-			}
-		} else if (!strcmp(argv[i], "--cmd-catalog=json")) {
-			do_print_cmd_tree_json = true;
-			remove_arg = true;
-		} else if (rz_str_startswith(argv[i], "--cmd-catalog=")) {
-			RZ_LOG_ERROR("Unsupported command catalog format '%s'\n", argv[i] + strlen("--cmd-catalog="));
-			ret = 1;
-			goto beach;
-		}
-		if (remove_arg) {
-			int n_remove = remove_next_arg ? 2 : 1;
-			for (int j = i; j + n_remove < argc; j++) {
-				argv[j] = argv[j + n_remove];
-			}
-			argc -= n_remove;
-			i--;
-		}
-	}
-
-	rz_getopt_init(&opt, argc, argv, "=012AMCwxfF:H:hm:E:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt");
+	rz_getopt_init_long(&opt, argc, argv, "=012AMCwxfF:H:hm:E:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt", rizin_longopts);
 	while (argc >= 2 && (c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '-':
 			RZ_LOG_ERROR("%c: invalid combinations of argument flags - %s\n", opt.opt, opt.argv[2]);
 			ret = 1;
 			goto beach;
+			break;
+		case RZ_MAIN_LONG_CMD_CATALOG:
+			do_print_cmd_tree_json = true;
+			break;
+		case '?':
+			if (opt.opt == '-') {
+				ret = 1;
+				goto beach;
+			}
+			help++;
 			break;
 		case '=':
 			RZ_FREE(r->cmdremote);

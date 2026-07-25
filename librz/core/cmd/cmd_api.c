@@ -1,12 +1,15 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_types.h"
 #include <rz_cmd.h>
 #include <rz_util.h>
 #include <stdio.h>
 #include <rz_cons.h>
 #include <rz_cmd.h>
 #include <rz_core.h>
+
+#define CMD_EXPORT_VERSION 1
 
 /*!
  * Number of sub-commands to show as options when displaying the help of a
@@ -1518,8 +1521,15 @@ static const char *cmd_desc_type_name(RzCmdDescType type) {
 		return "unknown";
 	}
 }
-
-RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
+/**
+* \brief Generates a JSON tree describing the command tree
+* \param cmd Reference to RzCmd
+* \param cd Reference to RzCmdDesc
+* \param j Reference to the PJ builder helper object
+* 
+* \return returns false if any argument is null, otherwise it builds in PJ and returns true.
+*/
+RZ_API bool rz_cmd_get_help_json(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const RzCmdDesc *cd, RZ_NONNULL PJ *j) {
 	rz_return_val_if_fail(cmd && cd && j, false);
 	pj_ko(j, cd->name);
 	pj_ks(j, "cmd", cd->name);
@@ -1541,8 +1551,8 @@ RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
 	return true;
 }
 
-static void cmd_desc_foreach_tree(RzCmd *cmd, RzCmdDesc *cd, RzCmdDescVisitCb pre, RzCmdDescVisitCb post, void *user) {
-	if (!cd) {
+static void cmd_desc_foreach_tree(RZ_NONNULL RzCmd *cmd, RZ_NONNULL RzCmdDesc *cd, RzCmdDescVisitCb pre, RzCmdDescVisitCb post, void *user) {
+	if (!cd || !cmd) {
 		return;
 	}
 	if (pre) {
@@ -1566,7 +1576,7 @@ static void cmd_desc_foreach_tree(RzCmd *cmd, RzCmdDesc *cd, RzCmdDescVisitCb pr
  * The pre callback is called before visiting children. The post callback is
  * called after all children have been visited. Traversal starts at the root descriptor.
  */
-RZ_API void rz_cmd_desc_foreach_tree(RzCmd *cmd, RzCmdDescVisitCb pre, RzCmdDescVisitCb post, void *user) {
+RZ_API void rz_cmd_desc_foreach_tree(RZ_NONNULL RzCmd *cmd, RzCmdDescVisitCb pre, RzCmdDescVisitCb post, void *user) {
 	rz_return_if_fail(cmd);
 	cmd_desc_foreach_tree(cmd, rz_cmd_get_root(cmd), pre, post, user);
 }
@@ -1577,7 +1587,7 @@ RZ_API void rz_cmd_desc_foreach_tree(RzCmd *cmd, RzCmdDescVisitCb pre, RzCmdDesc
  * The pre callback is called before visiting children. The post callback is
  * called after all children have been visited. Traversal starts at \p begin.
  */
-RZ_API void rz_cmd_desc_foreach_tree_from(RzCmd *cmd, RzCmdDesc *begin, RzCmdDescVisitCb pre, RzCmdDescVisitCb post, void *user) {
+RZ_API void rz_cmd_desc_foreach_tree_from(RZ_NONNULL RzCmd *cmd, RZ_NONNULL RzCmdDesc *begin, RzCmdDescVisitCb pre, RzCmdDescVisitCb post, void *user) {
 	rz_return_if_fail(cmd && begin);
 	cmd_desc_foreach_tree(cmd, begin, pre, post, user);
 }
@@ -1644,7 +1654,7 @@ static void cmd_tree_json_post(RZ_UNUSED RzCmd *cmd, RZ_UNUSED const RzCmdDesc *
 /**
  * \brief Generates a recursive JSON representation of the real command descriptor tree.
  */
-RZ_API bool rz_cmd_get_tree_json(RzCmd *cmd, PJ *j) {
+RZ_API bool rz_cmd_get_tree_json(RZ_NONNULL RzCmd *cmd, RZ_NONNULL PJ *j) {
 	rz_return_val_if_fail(cmd && j, false);
 	RzStrBuf args;
 	rz_strbuf_init(&args);
@@ -1653,7 +1663,7 @@ RZ_API bool rz_cmd_get_tree_json(RzCmd *cmd, PJ *j) {
 		.args = &args,
 	};
 	pj_o(j);
-	pj_ki(j, "version", 1);
+	pj_ki(j, "version", CMD_EXPORT_VERSION);
 	pj_ks(j, "generated_from", "runtime");
 	pj_k(j, "root");
 	rz_cmd_desc_foreach_tree(cmd, cmd_tree_json_pre, cmd_tree_json_post, &ctx);
