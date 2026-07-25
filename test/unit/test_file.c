@@ -111,6 +111,27 @@ bool test_rz_file_mmap(void) {
 	mu_end;
 }
 
+bool test_rz_file_extension(void) {
+	const char *ext = NULL;
+	ext = rz_file_extension("universes/v2.1/init.exe");
+	mu_assert_notnull(ext, "handle dot in dir name");
+	mu_assert_streq(ext, "exe", "extension should be exe");
+	ext = rz_file_extension("universes/v2.1/universal.constants.ini");
+	mu_assert_notnull(ext, "handle multiple dots");
+	mu_assert_streq(ext, "ini", "extension should be ini");
+	ext = rz_file_extension("universes/v2.1/assets");
+	mu_assert_null(ext, "no extension should return null");
+	ext = rz_file_extension("universes/v2.1/.env");
+	mu_assert_null(ext, "dot file should return null");
+	ext = rz_file_extension("universes/v2.1/..env");
+	mu_assert_null(ext, "double dotfile should return null");
+	ext = rz_file_extension("universes/v2.1/pulsar.");
+	mu_assert_null(ext, "trailing dot should return null");
+	ext = rz_file_extension("");
+	mu_assert_null(ext, "empty string path should return null");
+	mu_end;
+}
+
 int all_tests() {
 	size_t i;
 	for (i = 0; i < RELPATH_CASES_COUNT; i++) {
@@ -120,6 +141,7 @@ int all_tests() {
 	mu_run_test(test_rz_file_basename);
 	mu_run_test(test_rz_file_dos_basename);
 	mu_run_test(test_rz_file_mmap);
+	mu_run_test(test_rz_file_extension);
 	return tests_passed != tests_run;
 }
 
