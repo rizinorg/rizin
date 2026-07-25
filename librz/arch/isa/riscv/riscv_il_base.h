@@ -41,7 +41,7 @@ static inline RzILOpEffect *riscv_il_set_reg(uint32_t reg, RZ_OWN RZ_NONNULL RzI
 		decoder(analysis, insn); \
 		return SEQ2( \
 			riscv_il_set_reg(rd, result), \
-			post_effect); \
+			jmp_effect); \
 	}
 
 // pre_effect, then rd = result (e.g. store-conditional: store first, then write success flag)

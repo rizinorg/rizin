@@ -20,10 +20,6 @@ static void label_ebreak(RzILVM *vm, RzILOpEffect *op) {
 	// stub: syscalls aren't modelled in RzIL
 }
 
-static void label_ebreak(RzILVM *vm, RzILOpEffect *op) {
-	// stub: ebreak is handled at the analysis layer
-}
-
 static const RiscvInstructionLifter riscv_lifters[] = {
 	/* ---------------------------------- Integer ---------------------------------*/
 	// arithmetic, immediate
@@ -260,14 +256,6 @@ RZ_IPI RzAnalysisILConfig *rz_riscv_il_config(RZ_NONNULL RzAnalysis *analysis) {
 
 	RzAnalysisILConfig *conf = rz_analysis_il_config_new(rz_analysis_get_bits(analysis), rz_analysis_is_big_endian_set(analysis), rz_analysis_get_bits(analysis));
 	conf->reg_bindings = &riscv_integer_reg_names[1];
-
-	RzILEffectLabel *ecall_label = rz_il_effect_label_new("ecall", EFFECT_LABEL_SYSCALL);
-	ecall_label->hook = label_ecall;
-	rz_analysis_il_config_add_label(conf, ecall_label);
-
-	RzILEffectLabel *ebreak_label = rz_il_effect_label_new("ebreak", EFFECT_LABEL_SYSCALL);
-	ebreak_label->hook = label_ebreak;
-	rz_analysis_il_config_add_label(conf, ebreak_label);
 
 	RzILEffectLabel *ecall_label = rz_il_effect_label_new("ecall", EFFECT_LABEL_SYSCALL);
 	ecall_label->hook = label_ecall;
