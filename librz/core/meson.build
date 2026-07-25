@@ -1,6 +1,7 @@
 core_plugins_list = [
   'java',
   'dex',
+  'prologues_generator',
 ]
 
 core_plugins = {
@@ -74,6 +75,7 @@ rz_core_sources = [
   'yank.c',
   'p/core_dex.c',
   'p/core_java.c',
+  'p/prologues_generator.c',
   cmd_descs_ch,
   'cmd/cmd.c',
   'cmd/cmd_alias.c',
