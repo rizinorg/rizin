@@ -355,3 +355,1111 @@ aezsu 0x000211dc # End of main
 EOF
 EXPECT=
 RUN
+
+NAME=Semantic of different jump configurations
+ARGS=-a hexagon
+FILE==
+CMDS=<<EOF
+wx 50704a5cd8f14e5c6040535de8c0775d70605b5df8ff1f580040005c88c0045c00c0617010d1005898e00c5c0180627000c0007f014062700080007f00c0007f018062700080007f00c0007f
+
+echo
+echo "Semantic of two conditional jumps"
+echo "---------"
+pd 2 @ 0x0
+aoip 1 @ 0x0
+echo "---------"
+pd 2 @ 0x8
+aoip 1 @ 0x8
+echo "---------"
+pd 2 @ 0x10
+aoip 1 @ 0x10
+echo "---------"
+echo "This last case is an edge case."
+echo "The condition is the same for both jumps."
+echo "The first jump (lower address) must be taken in this case."
+pd 2 @ 0x18
+aoip 1 @ 0x18
+
+echo
+echo "Semantic of single jumps"
+
+echo "---------"
+pd 1 @ 0x20
+aoip 1 @ 0x20
+echo "---------"
+pd 1 @ 0x24
+aoip 1 @ 0x24
+echo "---------"
+pd 1 @ 0x28
+aoip 1 @ 0x28
+
+echo
+echo "Semantic of endloop jumps"
+
+echo "---------"
+pd 2 @ 0x2c
+aoip 1 @ 0x2c
+echo "---------"
+pd 3 @ 0x34
+aoip 1 @ 0x34
+echo "---------"
+pd 3 @ 0x40
+aoip 1 @ 0x40
+EOF
+EXPECT=<<EOF
+
+Semantic of two conditional jumps
+---------
+        ,=< 0x00000000      /       if (P0) jump:t 0xaaa0
+       ,==< 0x00000004      \       if (P1) jump:t 0xbbb0
+0x0
+(seq
+  empty
+  (set jump_flag_0
+    false)
+  (set jump_flag_1
+    false)
+  (set r
+    (bv 32 0xaaa0))
+  (branch
+    (!
+      (is_zero
+        (&
+          (cast 32
+            (msb
+              (var P0))
+            (var P0))
+          (bv 32 0x1))))
+    (seq
+      (set r
+        (&
+          (var r)
+          (bv 32 0xfffffffc)))
+      (set jump_flag_0
+        true))
+    empty)
+  (set jump_target_0
+    (+
+      (bv 32 0x0)
+      (cast 32
+        false
+        (var r))))
+  (set r
+    (bv 32 0xbbb0))
+  (branch
+    (!
+      (is_zero
+        (&
+          (cast 32
+            (msb
+              (var P1))
+            (var P1))
+          (bv 32 0x1))))
+    (seq
+      (set r
+        (&
+          (var r)
+          (bv 32 0xfffffffc)))
+      (set jump_flag_1
+        true))
+    empty)
+  (set jump_target_1
+    (+
+      (bv 32 0x0)
+      (cast 32
+        false
+        (var r))))
+  empty
+  (branch
+    (var jump_flag_0)
+    (jmp
+      (var jump_target_0))
+    (branch
+      (var jump_flag_1)
+      (jmp
+        (var jump_target_1))
+      (jmp
+        (bv 32 0x8)))))
+---------
+            0x00000008      /       if (P0) call 0xccc8
+            0x0000000c      \       if (!P0) call 0xddd8
+0x8
+(seq
+  empty
+  (set jump_flag_0
+    false)
+  (set jump_flag_1
+    false)
+  (set r
+    (bv 32 0xccc0))
+  (set r
+    (&
+      (var r)
+      (bv 32 0xfffffffc)))
+  (branch
+    (!
+      (is_zero
+        (&
+          (cast 32
+            (msb
+              (var P0))
+            (var P0))
+          (bv 32 0x1))))
+    (seq
+      (set ret_val
+        (bv 64 0x10))
+      (set h_tmp163
+        (cast 32
+          false
+          (var ret_val)))
+      (set R31_tmp
+        (cast 32
+          false
+          (cast 32
+            false
+            (&
+              (var h_tmp163)
+              (cast 32
+                false
+                (bv 32 0xfffffffe))))))
+      (set jump_flag_0
+        true))
+    empty)
+  (set jump_target_0
+    (+
+      (bv 32 0x8)
+      (cast 32
+        false
+        (var r))))
+  (set r
+    (bv 32 0xddd0))
+  (set r
+    (&
+      (var r)
+      (bv 32 0xfffffffc)))
+  (branch
+    (!
+      (!
+        (is_zero
+          (&
+            (cast 32
+              (msb
+                (var P0))
+              (var P0))
+            (bv 32 0x1)))))
+    (seq
+      (set ret_val
+        (bv 64 0x10))
+      (set h_tmp158
+        (cast 32
+          false
+          (var ret_val)))
+      (set R31_tmp
+        (cast 32
+          false
+          (cast 32
+            false
+            (&
+              (var h_tmp158)
+              (cast 32
+                false
+                (bv 32 0xfffffffe))))))
+      (set jump_flag_1
+        true))
+    empty)
+  (set jump_target_1
+    (+
+      (bv 32 0x8)
+      (cast 32
+        false
+        (var r))))
+  empty
+  (set R31
+    (var R31_tmp))
+  (branch
+    (var jump_flag_0)
+    (jmp
+      (var jump_target_0))
+    (branch
+      (var jump_flag_1)
+      (jmp
+        (var jump_target_1))
+      (jmp
+        (bv 32 0x10)))))
+---------
+            0x00000010      /       if (P0) call 0xeef0
+        ,=< 0x00000014      \       jump 0x100000
+0x10
+(seq
+  empty
+  (set jump_flag_0
+    false)
+  (set jump_flag_1
+    false)
+  (set r
+    (bv 32 0xeee0))
+  (set r
+    (&
+      (var r)
+      (bv 32 0xfffffffc)))
+  (branch
+    (!
+      (is_zero
+        (&
+          (cast 32
+            (msb
+              (var P0))
+            (var P0))
+          (bv 32 0x1))))
+    (seq
+      (set ret_val
+        (bv 64 0x18))
+      (set h_tmp163
+        (cast 32
+          false
+          (var ret_val)))
+      (set R31_tmp
+        (cast 32
+          false
+          (cast 32
+            false
+            (&
+              (var h_tmp163)
+              (cast 32
+                false
+                (bv 32 0xfffffffe))))))
+      (set jump_flag_0
+        true))
+    empty)
+  (set jump_target_0
+    (+
+      (bv 32 0x10)
+      (cast 32
+        false
+        (var r))))
+  (set r
+    (bv 32 0xffff0))
+  (set r
+    (&
+      (var r)
+      (bv 32 0xfffffffc)))
+  (set jump_flag_1
+    true)
+  (set jump_target_1
+    (+
+      (bv 32 0x10)
+      (cast 32
+        false
+        (var r))))
+  empty
+  (set R31
+    (var R31_tmp))
+  (branch
+    (var jump_flag_0)
+    (jmp
+      (var jump_target_0))
+    (branch
+      (var jump_flag_1)
+      (jmp
+        (var jump_target_1))
+      (jmp
+        (bv 32 0x18)))))
+---------
+This last case is an edge case.
+The condition is the same for both jumps.
+The first jump (lower address) must be taken in this case.
+        @-> 0x00000018      /       if (P0) jump:nt 0x18
+        ,=< 0x0000001c      \       if (P0) jump:nt 0x1128
+0x18
+(seq
+  empty
+  (set jump_flag_0
+    false)
+  (set jump_flag_1
+    false)
+  (set r
+    (bv 32 0x0))
+  (branch
+    (!
+      (is_zero
+        (&
+          (cast 32
+            (msb
+              (var P0))
+            (var P0))
+          (bv 32 0x1))))
+    (seq
+      (set r
+        (&
+          (var r)
+          (bv 32 0xfffffffc)))
+      (set jump_flag_0
+        true))
+    empty)
+  (set jump_target_0
+    (+
+      (bv 32 0x18)
+      (cast 32
+        false
+        (var r))))
+  (set r
+    (bv 32 0x1110))
+  (branch
+    (!
+      (is_zero
+        (&
+          (cast 32
+            (msb
+              (var P0))
+            (var P0))
+          (bv 32 0x1))))
+    (seq
+      (set r
+        (&
+          (var r)
+          (bv 32 0xfffffffc)))
+      (set jump_flag_1
+        true))
+    empty)
+  (set jump_target_1
+    (+
+      (bv 32 0x18)
+      (cast 32
+        false
+        (var r))))
+  empty
+  (branch
+    (var jump_flag_0)
+    (jmp
+      (var jump_target_0))
+    (branch
+      (var jump_flag_1)
+      (jmp
+        (var jump_target_1))
+      (jmp
+        (bv 32 0x20)))))
+
+Semantic of single jumps
+---------
+            0x00000020      [   R0 = R1
+0x20
+(seq
+  empty
+  (set jump_flag_0
+    false)
+  (set jump_flag_1
+    false)
+  (set R0_tmp
+    (cast 32
+      false
+      (cast 32
+        false
+        (var R1))))
+  empty
+  (set R0
+    (var R0_tmp))
+  (jmp
+    (bv 32 0x24)))
+---------
+        ,=< 0x00000024      [   jump 0x2244
+0x24
+(seq
+  empty
+  (set jump_flag_0
+    false)
+  (set jump_flag_1
+    false)
+  (set r
+    (bv 32 0x2220))
+  (set r
+    (&
+      (var r)
+      (bv 32 0xfffffffc)))
+  (set jump_flag_0
+    true)
+  (set jump_target_0
+    (+
+      (bv 32 0x24)
+      (cast 32
+        false
+        (var r))))
+  empty
+  (branch
+    (var jump_flag_0)
+    (jmp
+      (var jump_target_0))
+    (jmp
+      (bv 32 0x28))))
+---------
+        ,=< 0x00000028      [   if (P0) jump:nt 0x3358
+0x28
+(seq
+  empty
+  (set jump_flag_0
+    false)
+  (set jump_flag_1
+    false)
+  (set r
+    (bv 32 0x3330))
+  (branch
+    (!
+      (is_zero
+        (&
+          (cast 32
+            (msb
+              (var P0))
+            (var P0))
+          (bv 32 0x1))))
+    (seq
+      (set r
+        (&
+          (var r)
+          (bv 32 0xfffffffc)))
+      (set jump_flag_0
+        true))
+    empty)
+  (set jump_target_0
+    (+
+      (bv 32 0x28)
+      (cast 32
+        false
+        (var r))))
+  empty
+  (branch
+    (var jump_flag_0)
+    (jmp
+      (var jump_target_0))
+    (jmp
+      (bv 32 0x2c))))
+
+Semantic of endloop jumps
+---------
+            0x0000002c      /       R1 = R2
+            0x00000030      \       nop     < endloop0
+0x2c
+(seq
+  empty
+  (set jump_flag_0
+    false)
+  (set jump_flag_1
+    false)
+  (set R1_tmp
+    (cast 32
+      false
+      (cast 32
+        false
+        (var R2))))
+  empty
+  (set ret_val
+    (ite
+      (!
+        (is_zero
+          (bv 32 0x2)))
+      (&
+        (>>
+          (cast 64
+            false
+            (var C8))
+          (cast 32
+            false
+            (bv 32 0x8))
+          false)
+        (>>
+          (bv 64 0xffffffffffffffff)
+          (-
+            (bv 32 0x40)
+            (cast 32
+              false
+              (bv 32 0x2)))
+          false))
+      (cast 64
+        false
+        (bv 64 0x0))))
+  (set h_tmp624
+    (cast 32
+      false
+      (var ret_val)))
+  (branch
+    (!
+      (is_zero
+        (var h_tmp624)))
+    (seq
+      (set ret_val
+        (ite
+          (!
+            (is_zero
+              (bv 32 0x2)))
+          (&
+            (>>
+              (cast 64
+                false
+                (var C8))
+              (cast 32
+                false
+                (bv 32 0x8))
+              false)
+            (>>
+              (bv 64 0xffffffffffffffff)
+              (-
+                (bv 32 0x40)
+                (cast 32
+                  false
+                  (bv 32 0x2)))
+              false))
+          (cast 64
+            false
+            (bv 64 0x0))))
+      (set h_tmp627
+        (cast 32
+          false
+          (var ret_val)))
+      (set ret_val
+        (ite
+          (!
+            (is_zero
+              (bv 32 0x2)))
+          (&
+            (>>
+              (cast 64
+                false
+                (var C8))
+              (cast 32
+                false
+                (bv 32 0x8))
+              false)
+            (>>
+              (bv 64 0xffffffffffffffff)
+              (-
+                (bv 32 0x40)
+                (cast 32
+                  false
+                  (bv 32 0x2)))
+              false))
+          (cast 64
+            false
+            (bv 64 0x0))))
+      (set h_tmp625
+        (cast 32
+          false
+          (var ret_val)))
+      (branch
+        (||
+          (!
+            (ule
+              (var h_tmp625)
+              (cast 32
+                false
+                (bv 32 0x2))))
+          (==
+            (var h_tmp625)
+            (cast 32
+              false
+              (bv 32 0x2))))
+        empty
+        (seq
+          (set ret_val
+            (ite
+              (!
+                (is_zero
+                  (bv 32 0x2)))
+              (&
+                (>>
+                  (cast 64
+                    false
+                    (var C8))
+                  (cast 32
+                    false
+                    (bv 32 0x8))
+                  false)
+                (>>
+                  (bv 64 0xffffffffffffffff)
+                  (-
+                    (bv 32 0x40)
+                    (cast 32
+                      false
+                      (bv 32 0x2)))
+                  false))
+              (cast 64
+                false
+                (bv 64 0x0))))
+          (set h_tmp626
+            (cast 32
+              false
+              (var ret_val)))
+          (branch
+            (==
+              (var h_tmp626)
+              (cast 32
+                false
+                (bv 32 0x1)))
+            (set P3_tmp
+              (cast 8
+                false
+                (cast 8
+                  (msb
+                    (bv 32 0xff))
+                  (bv 32 0xff))))
+            empty)))
+      (set C8_tmp
+        (cast 32
+          false
+          (|
+            (&
+              (var C8_tmp)
+              (bv 32 0xc13000c0))
+            (&
+              (cast 32
+                false
+                (cast 32
+                  false
+                  (ite
+                    (!
+                      (is_zero
+                        (bv 32 0x2)))
+                    (|
+                      (&
+                        (cast 64
+                          false
+                          (var C8_tmp))
+                        (~
+                          (<<
+                            (>>
+                              (bv 64 0xffffffffffffffff)
+                              (-
+                                (bv 32 0x40)
+                                (cast 32
+                                  false
+                                  (bv 32 0x2)))
+                              false)
+                            (cast 32
+                              false
+                              (bv 32 0x8))
+                            false)))
+                      (&
+                        (<<
+                          (cast 64
+                            false
+                            (-
+                              (var h_tmp627)
+                              (cast 32
+                                false
+                                (bv 32 0x1))))
+                          (cast 32
+                            false
+                            (bv 32 0x8))
+                          false)
+                        (<<
+                          (>>
+                            (bv 64 0xffffffffffffffff)
+                            (-
+                              (bv 32 0x40)
+                              (cast 32
+                                false
+                                (bv 32 0x2)))
+                            false)
+                          (cast 32
+                            false
+                            (bv 32 0x8))
+                          false)))
+                    (cast 64
+                      false
+                      (var C8_tmp)))))
+              (~
+                (bv 32 0xc13000c0)))))))
+    empty)
+  (branch
+    (!
+      (ule
+        (var C1_tmp)
+        (cast 32
+          false
+          (bv 32 0x1))))
+    (seq
+      (set jump_flag_0
+        true)
+      (set C1_tmp
+        (cast 32
+          false
+          (cast 32
+            false
+            (-
+              (var C1_tmp)
+              (cast 32
+                false
+                (bv 32 0x1)))))))
+    empty)
+  (set jump_target_0
+    (var C0))
+  empty
+  (set C1
+    (var C1_tmp))
+  (set C8
+    (var C8_tmp))
+  (set R1
+    (var R1_tmp))
+  (set P3
+    (var P3_tmp))
+  (branch
+    (var jump_flag_0)
+    (jmp
+      (var jump_target_0))
+    (jmp
+      (bv 32 0x34))))
+---------
+            0x00000034      /       R1 = R2
+            0x00000038      |       nop
+            0x0000003c      \       nop     < endloop1
+0x34
+(seq
+  empty
+  (set jump_flag_0
+    false)
+  (set jump_flag_1
+    false)
+  (set R1_tmp
+    (cast 32
+      false
+      (cast 32
+        false
+        (var R2))))
+  empty
+  empty
+  (branch
+    (!
+      (ule
+        (var C3_tmp)
+        (cast 32
+          false
+          (bv 32 0x1))))
+    (seq
+      (set jump_flag_0
+        true)
+      (set C3_tmp
+        (cast 32
+          false
+          (cast 32
+            false
+            (-
+              (var C3_tmp)
+              (cast 32
+                false
+                (bv 32 0x1)))))))
+    empty)
+  (set jump_target_0
+    (var C2))
+  empty
+  (set C3
+    (var C3_tmp))
+  (set R1
+    (var R1_tmp))
+  (branch
+    (var jump_flag_0)
+    (jmp
+      (var jump_target_0))
+    (jmp
+      (bv 32 0x40))))
+---------
+            0x00000040      /       R1 = R2
+            0x00000044      |       nop
+            0x00000048      \       nop     < endloop01
+0x40
+(seq
+  empty
+  (set jump_flag_0
+    false)
+  (set jump_flag_1
+    false)
+  (set R1_tmp
+    (cast 32
+      false
+      (cast 32
+        false
+        (var R2))))
+  empty
+  empty
+  (set ret_val
+    (ite
+      (!
+        (is_zero
+          (bv 32 0x2)))
+      (&
+        (>>
+          (cast 64
+            false
+            (var C8))
+          (cast 32
+            false
+            (bv 32 0x8))
+          false)
+        (>>
+          (bv 64 0xffffffffffffffff)
+          (-
+            (bv 32 0x40)
+            (cast 32
+              false
+              (bv 32 0x2)))
+          false))
+      (cast 64
+        false
+        (bv 64 0x0))))
+  (set h_tmp620
+    (cast 32
+      false
+      (var ret_val)))
+  (branch
+    (!
+      (is_zero
+        (var h_tmp620)))
+    (seq
+      (set ret_val
+        (ite
+          (!
+            (is_zero
+              (bv 32 0x2)))
+          (&
+            (>>
+              (cast 64
+                false
+                (var C8))
+              (cast 32
+                false
+                (bv 32 0x8))
+              false)
+            (>>
+              (bv 64 0xffffffffffffffff)
+              (-
+                (bv 32 0x40)
+                (cast 32
+                  false
+                  (bv 32 0x2)))
+              false))
+          (cast 64
+            false
+            (bv 64 0x0))))
+      (set h_tmp623
+        (cast 32
+          false
+          (var ret_val)))
+      (set ret_val
+        (ite
+          (!
+            (is_zero
+              (bv 32 0x2)))
+          (&
+            (>>
+              (cast 64
+                false
+                (var C8))
+              (cast 32
+                false
+                (bv 32 0x8))
+              false)
+            (>>
+              (bv 64 0xffffffffffffffff)
+              (-
+                (bv 32 0x40)
+                (cast 32
+                  false
+                  (bv 32 0x2)))
+              false))
+          (cast 64
+            false
+            (bv 64 0x0))))
+      (set h_tmp621
+        (cast 32
+          false
+          (var ret_val)))
+      (branch
+        (||
+          (!
+            (ule
+              (var h_tmp621)
+              (cast 32
+                false
+                (bv 32 0x2))))
+          (==
+            (var h_tmp621)
+            (cast 32
+              false
+              (bv 32 0x2))))
+        empty
+        (seq
+          (set ret_val
+            (ite
+              (!
+                (is_zero
+                  (bv 32 0x2)))
+              (&
+                (>>
+                  (cast 64
+                    false
+                    (var C8))
+                  (cast 32
+                    false
+                    (bv 32 0x8))
+                  false)
+                (>>
+                  (bv 64 0xffffffffffffffff)
+                  (-
+                    (bv 32 0x40)
+                    (cast 32
+                      false
+                      (bv 32 0x2)))
+                  false))
+              (cast 64
+                false
+                (bv 64 0x0))))
+          (set h_tmp622
+            (cast 32
+              false
+              (var ret_val)))
+          (branch
+            (==
+              (var h_tmp622)
+              (cast 32
+                false
+                (bv 32 0x1)))
+            (set P3_tmp
+              (cast 8
+                false
+                (cast 8
+                  (msb
+                    (bv 32 0xff))
+                  (bv 32 0xff))))
+            empty)))
+      (set C8_tmp
+        (cast 32
+          false
+          (|
+            (&
+              (var C8_tmp)
+              (bv 32 0xc13000c0))
+            (&
+              (cast 32
+                false
+                (cast 32
+                  false
+                  (ite
+                    (!
+                      (is_zero
+                        (bv 32 0x2)))
+                    (|
+                      (&
+                        (cast 64
+                          false
+                          (var C8_tmp))
+                        (~
+                          (<<
+                            (>>
+                              (bv 64 0xffffffffffffffff)
+                              (-
+                                (bv 32 0x40)
+                                (cast 32
+                                  false
+                                  (bv 32 0x2)))
+                              false)
+                            (cast 32
+                              false
+                              (bv 32 0x8))
+                            false)))
+                      (&
+                        (<<
+                          (cast 64
+                            false
+                            (-
+                              (var h_tmp623)
+                              (cast 32
+                                false
+                                (bv 32 0x1))))
+                          (cast 32
+                            false
+                            (bv 32 0x8))
+                          false)
+                        (<<
+                          (>>
+                            (bv 64 0xffffffffffffffff)
+                            (-
+                              (bv 32 0x40)
+                              (cast 32
+                                false
+                                (bv 32 0x2)))
+                            false)
+                          (cast 32
+                            false
+                            (bv 32 0x8))
+                          false)))
+                    (cast 64
+                      false
+                      (var C8_tmp)))))
+              (~
+                (bv 32 0xc13000c0)))))))
+    empty)
+  (branch
+    (!
+      (ule
+        (var C1_tmp)
+        (cast 32
+          false
+          (bv 32 0x1))))
+    (seq
+      (set jump_flag_0
+        true)
+      (set C1_tmp
+        (cast 32
+          false
+          (cast 32
+            false
+            (-
+              (var C1_tmp)
+              (cast 32
+                false
+                (bv 32 0x1)))))))
+    (branch
+      (!
+        (ule
+          (var C3_tmp)
+          (cast 32
+            false
+            (bv 32 0x1))))
+      (seq
+        (set jump_flag_1
+          true)
+        (set C3_tmp
+          (cast 32
+            false
+            (cast 32
+              false
+              (-
+                (var C3_tmp)
+                (cast 32
+                  false
+                  (bv 32 0x1)))))))
+      empty))
+  (set jump_target_0
+    (var C0))
+  (set jump_target_1
+    (var C2))
+  empty
+  (set C1
+    (var C1_tmp))
+  (set C3
+    (var C3_tmp))
+  (set C8
+    (var C8_tmp))
+  (set R1
+    (var R1_tmp))
+  (set P3
+    (var P3_tmp))
+  (branch
+    (var jump_flag_0)
+    (jmp
+      (var jump_target_0))
+    (branch
+      (var jump_flag_1)
+      (jmp
+        (var jump_target_1))
+      (jmp
+        (bv 32 0x4c)))))
+EOF
+EXPECT_ERR=
+RUN

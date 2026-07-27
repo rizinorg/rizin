@@ -11,11 +11,7 @@
 
 #include <alpha/alpha.inc>
 
-#ifdef RZ_CAPSTONE_ALPHA_INSNS_UPPERCASE
 #define RZ_ALPHA_INS(name) ALPHA_INS_##name
-#else
-#define RZ_ALPHA_INS(name) Alpha_INS_##name
-#endif
 
 static char *get_reg_profile(RzAnalysis *_) {
 	const char *p =
