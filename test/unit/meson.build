@@ -136,6 +136,7 @@ if get_option('enable_tests')
     'threads',
     'tokens',
     'tree',
+    'trie',
     'type',
     'uleb128',
     'unum',
