@@ -13,6 +13,8 @@ void print_float(RzFloat *f) {
 	free(str);
 }
 
+/* TinyCC builds leave SoftFloat's THREAD_LOCAL empty, so floating-point state
+ * is process-global and the thread-isolation test does not apply. */
 #if !defined(__TINYC__)
 typedef struct float_precision_thread_ctx_t {
 	RzFloatRPrecision precision;
@@ -2133,6 +2135,8 @@ bool f80_ieee_cast_test(void) {
 }
 
 bool all_tests() {
+	/* TinyCC builds use process-global SoftFloat state because THREAD_LOCAL is
+	 * empty, so the thread-isolation test is intentionally excluded. */
 #if !defined(__TINYC__)
 	mu_run_test(ext80_rounding_precision_thread_local_test);
 #endif

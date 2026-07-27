@@ -501,10 +501,12 @@ void *rz_il_handler_fmod(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 
 static bool runtime_rmode_from_value(const RzBitVector *value, RzFloatRMode *out) {
 	if (rz_bv_len(value) != 32) {
+		rz_warn_if_reached();
 		return false;
 	}
 	ut64 v = rz_bv_to_ut64(value);
 	if (v >= RZ_FLOAT_RMODE_UNK) {
+		rz_warn_if_reached();
 		return false;
 	}
 	*out = (RzFloatRMode)v;
