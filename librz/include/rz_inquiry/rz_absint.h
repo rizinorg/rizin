@@ -248,11 +248,20 @@ typedef enum rz_absint_result_code_t {
 
 RZ_API RzAbsIntResultCode rz_absint_run(RzAbsIntInstance *inst, ut64 entry_point, RzAbsIntResultDimen dimen, RZ_NONNULL RZ_OUT RzAbsIntResult **res_out);
 RZ_API void rz_absint_result_free(RzAbsIntInstance *inst, RzAbsIntResult *res);
-RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, RZ_NONNULL RzAnalysis *analysis);
+RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *fcn_name);
 
 extern RZ_API RzAbsIntValueDomain rz_absint_value_domain_const;
 
-RZ_API bool rz_absint_driver_run(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzIO *io, RZ_NONNULL RZ_BORROW RzSetU *entry_points,
-	RzAbsIntResultDimen dimens, RzAbsIntTraceOptions trace_opts);
+typedef struct rz_absint_driver_config_t {
+	RZ_NONNULL RzAnalysis *analysis;
+	RZ_NONNULL RzIO *io;
+	RZ_NONNULL RzSetU *entry_points;
+	RzAbsIntResultDimen dimens;
+	RzAbsIntTraceOptions trace_opts;
+	void *cb_user;
+	char *(*choose_fcn_name)(ut64 addr, void *user);
+} RzAbsIntDriverConfig;
+
+RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *config);
 
 #endif // RZ_ABSINT

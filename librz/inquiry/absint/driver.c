@@ -238,25 +238,24 @@ static RzAbsIntIOReadResult handle_io_request(const RzAnalysisILContext *il_ctx,
 	return ok ? RZ_ABSINT_IO_READ_RESULT_TOP : RZ_ABSINT_IO_READ_RESULT_TOP;
 }
 
-RZ_API bool rz_absint_driver_run(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzIO *io, RZ_NONNULL RZ_BORROW RzSetU *entry_points,
-	RzAbsIntResultDimen dimens, RzAbsIntTraceOptions trace_opts) {
-	rz_return_val_if_fail(analysis && io && entry_points, false);
+RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *config) {
+	rz_return_val_if_fail(config && config->analysis && config->io && config->entry_points, false);
 	bool return_code = false;
 
 	bool user_sent_signal = false;
 
 	RzILCacheConfig il_cache_config = RZ_IL_CACHE_CONFIG_NOP_UNLIFTED;
-	if (trace_opts & RZ_ABSINT_TRACE_IL_BLOCK) {
+	if (config->trace_opts & RZ_ABSINT_TRACE_IL_BLOCK) {
 		il_cache_config |= RZ_IL_CACHE_CONFIG_TRACE;
 	}
-	RzILCache *il_cache = rz_il_cache_new(analysis, io, il_cache_config);
+	RzILCache *il_cache = rz_il_cache_new(config->analysis, config->io, il_cache_config);
 	if (!il_cache) {
 		goto err_none;
 	}
 
 	InterpDriver driver = {
-		.dimens = dimens,
-		.trace_opts = trace_opts
+		.dimens = config->dimens,
+		.trace_opts = config->trace_opts
 	};
 	driver.entry_points_ch = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, free);
 	if (!driver.entry_points_ch) {
@@ -269,7 +268,7 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzI
 
 	// Push all root entries
 	size_t entries_pushed = 0;
-	RzIterator *it = rz_set_u_as_iter(entry_points);
+	RzIterator *it = rz_set_u_as_iter(config->entry_points);
 	ut64 *entry;
 	rz_iterator_foreach (it, entry) {
 		ut64 *tmp = RZ_NEW(ut64);
@@ -294,7 +293,7 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzI
 
 	// Initialize and spawn the interpreters.
 	for (size_t i = 0; i < n_threads; ++i) {
-		threads[i] = interp_thread_new(analysis, &driver);
+		threads[i] = interp_thread_new(config->analysis, &driver);
 		if (!threads[i]) {
 			goto err_threads;
 		}
@@ -345,9 +344,11 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzI
 		case DRIVER_MESSAGE_INTERP_RESULT: {
 			RzAbsIntResult *res = msg.payload.interp_result.res;
 			if (res) {
-				if (!rz_absint_result_apply_to_analysis(res, analysis)) {
+				char *name = config->choose_fcn_name ? config->choose_fcn_name(res->entry, config->cb_user) : NULL;
+				if (!rz_absint_result_apply_to_analysis(res, config->analysis, name)) {
 					RZ_LOG_WARN("Failed to apply to analysis\n");
 				}
+				free(name);
 				rz_absint_result_free(msg.sender->inst, res);
 			} else {
 				RZ_LOG_WARN("Failed to analyze entry point 0x%" PFMT64x "\n", msg.payload.interp_result.entry);

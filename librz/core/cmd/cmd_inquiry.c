@@ -11,46 +11,14 @@
 #include <rz_inquiry/rz_absint.h>
 #include <rz_util/rz_assert.h>
 
-static RzAbsIntTraceOptions absint_trace_opts(RzCore *core) {
-	RzSetS *trace_opts_s = rz_config_get_set(core->config, "inquiry.trace");
-	RzAbsIntTraceOptions r = RZ_ABSINT_TRACE_NONE;
-	if (!trace_opts_s) {
-		return r;
-	}
-	if (rz_set_s_contains(trace_opts_s, "ilblock")) {
-		r |= RZ_ABSINT_TRACE_IL_BLOCK;
-	}
-	if (rz_set_s_contains(trace_opts_s, "evalblock")) {
-		r |= RZ_ABSINT_TRACE_EVAL_BLOCK;
-	}
-	if (rz_set_s_contains(trace_opts_s, "bounds")) {
-		r |= RZ_ABSINT_TRACE_BOUNDS;
-	}
-	rz_set_s_free(trace_opts_s);
-	return r;
-}
-
-static bool core_absint_run(RzCore *core) {
-	RzAbsIntResultDimen dimens = RZ_ABSINT_RESULT_DIMEN_XREFS;
-	if (rz_config_get_bool(core->config, "inquiry.comment")) {
-		dimens |= RZ_ABSINT_RESULT_DIMEN_COMMENTS;
-	}
-	RzSetU *entry_points = rz_set_u_new();
-	if (!entry_points) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	rz_set_u_add(entry_points, core->offset);
-	bool success = rz_absint_driver_run(core->analysis, core->io, entry_points, dimens, absint_trace_opts(core));
-	rz_set_u_free(entry_points);
-	if (!success) {
-		RZ_LOG_ERROR("Analysis failed.\n");
-	}
-	return success;
-}
-
 RZ_IPI RzCmdStatus rz_inquiry_analyze_function_handler(RzCore *core, int argc, const char **argv) {
 	rz_return_val_if_fail(core->analysis && core->io && core->bin->cur && core->bin->cur->o, RZ_CMD_STATUS_ERROR);
-	return core_absint_run(core) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	return rz_core_inquiry_analyze_at(core, core->offset) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+RZ_IPI RzCmdStatus rz_inquiry_analyze_all_handler(RzCore *core, int argc, const char **argv) {
+	rz_return_val_if_fail(core->analysis && core->io && core->bin->cur && core->bin->cur->o, RZ_CMD_STATUS_ERROR);
+	return rz_core_inquiry_analyze_all(core) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 static RzVector /*<RzInterval>*/ *get_ignored_code_regions(
@@ -106,7 +74,14 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 			rz_set_u_add(entry_points, entry_point);
 		}
 	}
-	bool success = rz_absint_driver_run(core->analysis, core->io, entry_points, RZ_ABSINT_RESULT_DIMEN_XREFS, RZ_ABSINT_TRACE_NONE);
+	RzAbsIntDriverConfig config = {
+		.analysis = core->analysis,
+		.io = core->io,
+		.entry_points = entry_points,
+		.dimens = RZ_ABSINT_RESULT_DIMEN_XREFS,
+		.trace_opts = RZ_ABSINT_TRACE_NONE
+	};
+	bool success = rz_absint_driver_run(&config);
 	rz_set_u_free(entry_points);
 	eprintf("Finished reference recovery: %s\n", success ? "OK" : "FAIL");
 	if (!success) {

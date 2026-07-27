@@ -8462,6 +8462,14 @@ static const RzCmdDescHelp inquiry_analyze_function_help = {
 	.args = inquiry_analyze_function_args,
 };
 
+static const RzCmdDescArg inquiry_analyze_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp inquiry_analyze_all_help = {
+	.summary = "analyze all functions",
+	.args = inquiry_analyze_all_args,
+};
+
 static const RzCmdDescDetailEntry inquiry_interpreter_prototype_Examples_detail_entries[] = {
 	{ .text = "aIp", .arg_str = "", .comment = "Run prototype RzIL analysis detecting cross references." },
 	{ .text = "aIp", .arg_str = " 0x1000", .comment = "Run prototype RzIL analysis starting at address 0x1000." },
@@ -23957,6 +23965,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(aI_cd);
 	RzCmdDesc *inquiry_analyze_function_cd = rz_cmd_desc_argv_new(core->rcmd, aI_cd, "aIf", rz_inquiry_analyze_function_handler, &inquiry_analyze_function_help);
 	rz_warn_if_fail(inquiry_analyze_function_cd);
+
+	RzCmdDesc *inquiry_analyze_all_cd = rz_cmd_desc_argv_new(core->rcmd, aI_cd, "aIa", rz_inquiry_analyze_all_handler, &inquiry_analyze_all_help);
+	rz_warn_if_fail(inquiry_analyze_all_cd);
 
 	RzCmdDesc *inquiry_interpreter_prototype_cd = rz_cmd_desc_argv_new(core->rcmd, aI_cd, "aIp", rz_inquiry_interpreter_prototype_handler, &inquiry_interpreter_prototype_help);
 	rz_warn_if_fail(inquiry_interpreter_prototype_cd);

@@ -967,6 +967,8 @@ RZ_IPI RzCmdStatus rz_analyze_esil_int_remove_handler(RzCore *core, int argc, co
 RZ_IPI RzCmdStatus rz_analyze_esil_insn_access_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "aIf"
 RZ_IPI RzCmdStatus rz_inquiry_analyze_function_handler(RzCore *core, int argc, const char **argv);
+// "aIa"
+RZ_IPI RzCmdStatus rz_inquiry_analyze_all_handler(RzCore *core, int argc, const char **argv);
 // "aIp"
 RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int argc, const char **argv);
 // "b"

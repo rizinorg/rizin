@@ -2626,6 +2626,10 @@ commands:
             summary: analyze function at current seek
             cname: inquiry_analyze_function
             args: []
+          - name: aIa
+            summary: analyze all functions
+            cname: inquiry_analyze_all
+            args: []
           - name: aIp
             summary: Abstract Interpreter Prototype
             cname: inquiry_interpreter_prototype

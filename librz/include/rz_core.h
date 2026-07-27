@@ -854,6 +854,10 @@ RZ_API bool rz_core_analysis_hint_set_offset(RZ_NONNULL RzCore *core, RZ_NONNULL
 RZ_API bool rz_core_analysis_continue_until_syscall(RZ_NONNULL RzCore *core);
 RZ_API bool rz_core_analysis_continue_until_call(RZ_NONNULL RzCore *core);
 
+// Experimental Inquiry Analysis
+RZ_API bool rz_core_inquiry_analyze_at(RZ_NONNULL RzCore *core, ut64 addr);
+RZ_API bool rz_core_inquiry_analyze_all(RZ_NONNULL RzCore *core);
+
 RZ_API bool rz_core_is_debugging(RZ_NONNULL RzCore *core);
 RZ_API void rz_core_perform_auto_analysis(RZ_NONNULL RzCore *core, RzCoreAnalysisType type);
 

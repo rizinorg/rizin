@@ -1529,11 +1529,10 @@ static void bb_add_target(RzAnalysisBlock *abb, ut64 target) {
 	}
 }
 
-RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, RZ_NONNULL RzAnalysis *analysis) {
+RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *fcn_name) {
 	rz_return_val_if_fail(res && analysis, false);
-	// partially copied from rz_inquiry_convert_and_add_to_analysis()
-	char name[128];
-	RzAnalysisFunction *func = rz_analysis_create_function(analysis, rz_strf(name, "inquiry.0x%" PFMT64x, res->entry), res->entry, RZ_ANALYSIS_FCN_TYPE_FCN);
+	char name_alt[128];
+	RzAnalysisFunction *func = rz_analysis_create_function(analysis, fcn_name ? fcn_name : rz_strf(name_alt, "inquiry.0x%" PFMT64x, res->entry), res->entry, RZ_ANALYSIS_FCN_TYPE_FCN);
 	if (!func) {
 		// TODO: handle better than skipping everything
 		return false;
@@ -1579,7 +1578,7 @@ RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, R
 
 		// TODO: add_bb should eventually not be used here since it does its own analysis.
 		// Instead, we should create the block by hand and apply our analysis info to it.
-		// Keep in mind we might have to add info from multiple merged blocks here if (see merging above)
+		// Keep in mind we might have to add info from multiple merged blocks here (see merging above)
 		rz_analysis_add_bb(analysis, start, end_excl - start);
 		RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, start);
 		rz_analysis_function_add_block(func, abb);

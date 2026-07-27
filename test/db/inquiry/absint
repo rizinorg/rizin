@@ -10,7 +10,7 @@ axl
 ablt
 EOF
 EXPECT=<<EOF
-0x08000040    4 86           inquiry.0x8000040
+0x08000040    4 86           sym.main
                         section..text+33 0x8000061 ->      CODE -> 0x800008d reloc..data+32
                           reloc..data+30 0x800008b ->      CODE -> 0x800005d section..text+29
      addr size traced ninstr jump       fail       fcns        calls xrefs       
@@ -35,7 +35,7 @@ axl
 ablt
 EOF
 EXPECT=<<EOF
-0x08000040    4 116          inquiry.0x8000040
+0x08000040    4 116          sym.main
                         section..text+40 0x8000068 ->      CODE -> 0x80000ac reloc..data.8000078+52
                   reloc..data.8000078+48 0x80000a8 ->      CODE -> 0x8000060 section..text+32
      addr size traced ninstr jump       fail       fcns        calls xrefs       
@@ -57,7 +57,7 @@ axl
 ablt
 EOF
 EXPECT=<<EOF
-0x080000ac    4 128          inquiry.0x80000ac
+0x080000ac    4 128          sym.main
                              sym.main+12 0x80000b8 ->      CODE -> 0x8000108 reloc..data.80000c4+68
                   reloc..data.80000c4+76 0x8000110 ->      CODE -> 0x80000c0 reloc..data
      addr size traced ninstr jump       fail       fcns        calls xrefs       
@@ -79,7 +79,7 @@ axl
 ablt
 EOF
 EXPECT=<<EOF
-0x080000b4    4 124          inquiry.0x80000b4
+0x080000b4    4 124          sym.main
                              sym.main+28 0x80000d0 ->      CODE -> 0x8000110 sym.main+92
                              sym.main+32 0x80000d4 ->      DATA -> 0x8000130 reloc..data
                             sym.main+100 0x8000118 ->      CODE -> 0x80000d4 sym.main+32
@@ -102,7 +102,7 @@ axl
 ablt
 EOF
 EXPECT=<<EOF
-0x08000164    4 168          inquiry.0x8000164
+0x08000164    4 168          sym.main
                    reloc.main.8000180+12 0x800018c ->      CODE -> 0x80001dc reloc..data.rel.local.80001a0+60
         reloc..data.rel.local.80001a0+68 0x80001e4 ->      CODE -> 0x8000194 reloc..data.rel.local
      addr size traced ninstr jump       fail       fcns        calls xrefs       
