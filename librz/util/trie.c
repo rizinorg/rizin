@@ -214,7 +214,7 @@ RZ_API void rz_trie_clear(RZ_NULLABLE RZ_BORROW RzTrie *t) {
  * \note If you manipulated root and set is_end=true for root,
  * still it will return NULL for empty key (len=0) as root is not a valid key.
  */
-RZ_API RZ_BORROW RzTrieNode *rz_trie_find_prefix(RZ_NONNULL RZ_BORROW const RzTrie *t,
+RZ_API RZ_BORROW RzTrieNode *rz_trie_find_prefix(RZ_NONNULL const RzTrie *t,
 	RZ_NONNULL const void *key, size_t len, bool partial_key) {
 	rz_return_val_if_fail(t && t->root && key && len > 0, NULL);
 
@@ -288,7 +288,7 @@ RZ_API bool rz_trie_delete(RZ_NONNULL RZ_BORROW RzTrie *t, RZ_NONNULL const void
  * \param[in] len Number of elements in the key.
  * \return `true` if the key exists, `false` otherwise.
  */
-RZ_API bool rz_trie_contains(RZ_NONNULL RZ_BORROW const RzTrie *t, RZ_NONNULL const void *key, size_t len) {
+RZ_API bool rz_trie_contains(RZ_NONNULL const RzTrie *t, RZ_NONNULL const void *key, size_t len) {
 	return rz_trie_find_prefix(t, key, len, false) != NULL;
 }
 
@@ -304,7 +304,7 @@ static void count_keys(RzTrieNode *n, void *user) {
  * \param[in] t The trie to count keys in.
  * \return Number of complete keys (nodes with `is_end == true`).
  */
-RZ_API size_t rz_trie_size(RZ_NONNULL RZ_BORROW const RzTrie *t) {
+RZ_API size_t rz_trie_size(RZ_NONNULL const RzTrie *t) {
 	rz_return_val_if_fail(t && t->root, 0);
 	size_t count = 0;
 	rz_trie_dfs(t->root, count_keys, NULL, NULL, &count);
@@ -320,7 +320,7 @@ RZ_API size_t rz_trie_size(RZ_NONNULL RZ_BORROW const RzTrie *t) {
  * \param[out] match_len Set to the length of the longest matching prefix, or 0 if none found.
  * \return Node at the end of the longest matching prefix, or `NULL` if no prefix matches.
  */
-RZ_API RZ_BORROW RzTrieNode *rz_trie_longest_prefix_match(RZ_NONNULL RZ_BORROW const RzTrie *t,
+RZ_API RZ_BORROW RzTrieNode *rz_trie_longest_prefix_match(RZ_NONNULL const RzTrie *t,
 	RZ_NONNULL const void *key, size_t len, RZ_NONNULL size_t *match_len) {
 	rz_return_val_if_fail(t && t->root && key && len > 0 && match_len, NULL);
 

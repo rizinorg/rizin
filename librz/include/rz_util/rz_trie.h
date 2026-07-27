@@ -98,11 +98,11 @@ RZ_API void rz_trie_free(RZ_NULLABLE RZ_OWN RzTrie *t);
 
 RZ_API RZ_BORROW RzTrieNode *rz_trie_insert(RZ_NONNULL RZ_BORROW RzTrie *t, RZ_NONNULL const void *key, size_t len, RZ_NULLABLE RzTrieNodeOnHitCb on_hit, RZ_NULLABLE void *user);
 
-RZ_API RZ_BORROW RzTrieNode *rz_trie_find_prefix(RZ_NONNULL RZ_BORROW const RzTrie *t, RZ_NONNULL const void *key, size_t len, bool partial_key);
-RZ_API RZ_BORROW RzTrieNode *rz_trie_longest_prefix_match(RZ_NONNULL RZ_BORROW const RzTrie *t, RZ_NONNULL const void *key, size_t len, RZ_NONNULL size_t *match_len);
-RZ_API bool rz_trie_contains(RZ_NONNULL RZ_BORROW const RzTrie *t, RZ_NONNULL const void *key, size_t len);
+RZ_API RZ_BORROW RzTrieNode *rz_trie_find_prefix(RZ_NONNULL const RzTrie *t, RZ_NONNULL const void *key, size_t len, bool partial_key);
+RZ_API RZ_BORROW RzTrieNode *rz_trie_longest_prefix_match(RZ_NONNULL const RzTrie *t, RZ_NONNULL const void *key, size_t len, RZ_NONNULL size_t *match_len);
+RZ_API bool rz_trie_contains(RZ_NONNULL const RzTrie *t, RZ_NONNULL const void *key, size_t len);
 
-RZ_API size_t rz_trie_size(RZ_NONNULL RZ_BORROW const RzTrie *t);
+RZ_API size_t rz_trie_size(RZ_NONNULL const RzTrie *t);
 
 RZ_API bool rz_trie_delete(RZ_NONNULL RZ_BORROW RzTrie *t, RZ_NONNULL const void *key, size_t len);
 
