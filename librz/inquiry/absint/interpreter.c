@@ -523,6 +523,9 @@ RZ_API void rz_absint_run_push(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx, RZ_
 		rz_warn_if_reached();
 		return;
 	}
+	if (ctx->inst->config.trace_opts & RZ_ABSINT_TRACE_EVAL_BLOCK) {
+		RZ_LOG_INFO("  push successor state @ 0x%" PFMT64x "\n", as->pc);
+	}
 	RzAbsIntBlock *block = rz_absint_block_at(ctx, as->pc);
 	if (block) {
 		if (join_state(ctx->inst, block->entry_state, as)) {
@@ -1452,7 +1455,28 @@ RZ_API RzAbsIntResultCode rz_absint_run(RzAbsIntInstance *inst, ut64 entry_point
 	}
 	res->entry = entry_point;
 
+	if (inst->config.trace_opts & RZ_ABSINT_TRACE_EVAL_BLOCK) {
+		RZ_LOG_INFO("============ final absint blocks ============\n\n");
+		RzIntervalTreeIter it;
+		RzAbsIntBlock *interp_block;
+		rz_interval_tree_foreach (&ctx.blocks, it, interp_block) {
+			RZ_LOG_INFO("0x%" PFMT64x "%s\n", interp_block->entry_state->pc, interp_block->non_fallthrough_in ? " <-" : "");
+			if (interp_block->fallthrough) {
+				RZ_LOG_INFO("  -> 0x%" PFMT64x " (fallthrough)\n", rz_absint_block_get_end(interp_block) + 1);
+			}
+			ut64 *it;
+			rz_vector_foreach (&interp_block->jump_targets, it) {
+				RZ_LOG_INFO("  -> 0x%" PFMT64x "\n", *it);
+			}
+			RZ_LOG_INFO("\n");
+		}
+	}
+
 	if (dimen != RZ_ABSINT_RESULT_DIMEN_BASE) {
+		if (inst->config.trace_opts & RZ_ABSINT_TRACE_EVAL_BLOCK) {
+			RZ_LOG_INFO("=============== analysis pass ===============\n\n");
+		}
+
 		// Evaluate all blocks again once to collect analysis information.
 		// We do this in an additional pass because until now, the collected abstract states
 		// did not fully represent all reachable concrete states.
@@ -1547,33 +1571,31 @@ RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, R
 		ut64 start = rz_absint_block_get_start(block);
 		ut64 end_excl = rz_absint_block_get_end(block) + 1;
 
-		if (block->fallthrough && rz_vector_empty(&block->jump_targets)) {
-			// Merge consecutive blocks if there is no in-edge between them.
-			// Splits like this happen in the first place because interp blocks only reach until the
-			// first jump. This may be a call however, which just falls through.
-			RzIntervalTreeIter next_it = it;
-			while (true) {
-				rz_rbtree_iter_next(&next_it);
-				RzIntervalNode *next_node = NULL;
-				while (rz_rbtree_iter_has(&next_it)) {
-					RzIntervalNode *n = rz_interval_tree_iter_get(&next_it);
-					if (n->start >= end_excl) {
-						if (n->start == end_excl) {
-							next_node = n;
-						}
-						break;
+		// Merge consecutive blocks if there is no in-edge between them.
+		// Splits like this happen in the first place because interp blocks only reach until the
+		// first jump. This may be a call however, which just falls through.
+		RzIntervalTreeIter next_it = it;
+		while (block->fallthrough && rz_vector_empty(&block->jump_targets)) {
+			rz_rbtree_iter_next(&next_it);
+			RzIntervalNode *next_node = NULL;
+			while (rz_rbtree_iter_has(&next_it)) {
+				RzIntervalNode *n = rz_interval_tree_iter_get(&next_it);
+				if (n->start >= end_excl) {
+					if (n->start == end_excl) {
+						next_node = n;
 					}
-					rz_rbtree_iter_next(&next_it);
-				}
-				RzAbsIntBlock *next_block;
-				if (!next_node || (next_block = next_node->data)->non_fallthrough_in) {
-					// no consecutive block or there is a consecutive block, but is has an in-edge from somewhere else
 					break;
 				}
-				next_block->added_to_analysis = true;
-				end_excl = next_node->end + 1;
-				block = next_block;
+				rz_rbtree_iter_next(&next_it);
 			}
+			RzAbsIntBlock *next_block;
+			if (!next_node || (next_block = next_node->data)->non_fallthrough_in) {
+				// no consecutive block or there is a consecutive block, but is has an in-edge from somewhere else
+				break;
+			}
+			next_block->added_to_analysis = true;
+			end_excl = next_node->end + 1;
+			block = next_block;
 		}
 
 		// TODO: add_bb should eventually not be used here since it does its own analysis.

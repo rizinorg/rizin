@@ -657,26 +657,30 @@ bool test_absint_cfg_call_ret_in_memory(void) {
 
 bool test_absint_cfg_merge_multiple_consecutive(void) {
 	// multiple consecutive interp blocks should be merged, but only until the next in-edge
+	// or until there is another non-fallthrough out-edge.
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://"
-		"c1000054"  // 0x00  b.ne  0x8      ---
-		"200080d2"  // 0x04  mov   x0, 0x1     |
-		"fe030094"  // 0x08  bl    0x11000     |
-		"400080d2"  // 0x0c  mov   x0, 0x2     |
-		"fc070094"  // 0x10  bl    0x11000     |
-		"600080d2"  // 0x14  mov   x0, 0x3     |
-		"c0035fd6"  // 0x18  ret            <--
+		"01010054"  // 0x00  b.ne  0x20     -----
+		"200080d2"  // 0x04  mov   x0, 0x1       |
+		"fe030094"  // 0x08  bl    0x11000       |
+		"400080d2"  // 0x0c  mov   x0, 0x2       |
+		"fc070094"  // 0x10  bl    0x11000       |
+		"600080d2"  // 0x14  mov   x0, 0x3       |
+		"40000054"  // 0x18  b.eq  0x20     ---  |
+		"800080d2"  // 0x1c  mov   x0, 4       | |
+		"c0035fd6"  // 0x20  ret            <-- -
 	);
 	mu_assert_notnull(interp, "init");
 	RzAbsIntResult *res;
 	RzAbsIntResultCode code = rz_absint_run(interp->inst, 0x10000, RZ_ABSINT_RESULT_DIMEN_BASE, &res);
 
-	EXTRACT_RESULT(code, res, 5);
+	EXTRACT_RESULT(code, res, 6);
 	mu_assert_eq(res->entry, 0x10000, "result entry");
-	ASSERT_BLOCK(0, 0x10000, 0x10004, true, 0x10018);
+	ASSERT_BLOCK(0, 0x10000, 0x10004, true, 0x10020);
 	ASSERT_BLOCK(1, 0x10004, 0x1000c, true, UT64_MAX);
 	ASSERT_BLOCK(2, 0x1000c, 0x10014, true, UT64_MAX);
-	ASSERT_BLOCK(3, 0x10014, 0x10018, true, UT64_MAX);
-	ASSERT_BLOCK(4, 0x10018, 0x1001c, false, UT64_MAX);
+	ASSERT_BLOCK(3, 0x10014, 0x1001c, true, 0x10020);
+	ASSERT_BLOCK(4, 0x1001c, 0x10020, true, UT64_MAX);
+	ASSERT_BLOCK(5, 0x10020, 0x10024, false, UT64_MAX);
 
 	// Insert an unaligned block that should not be merged with when applying to analysis
 	RzAbsIntState *as = rz_absint_state_new(interp->inst);
@@ -692,11 +696,12 @@ bool test_absint_cfg_merge_multiple_consecutive(void) {
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
-	mu_assert_eq(rz_pvector_len(fcn->bbs), 4, "analysis block count");
-	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 0), 0x10000, 0x10004, 0x10018, 0x10004);
-	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 1), 0x10004, 0x10018, 0x10018, UT64_MAX);
+	mu_assert_eq(rz_pvector_len(fcn->bbs), 5, "analysis block count");
+	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 0), 0x10000, 0x10004, 0x10020, 0x10004);
+	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 1), 0x10004, 0x1001c, 0x10020, 0x1001c);
 	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 2), 0x10006, 0x1000a, UT64_MAX, UT64_MAX);
-	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 3), 0x10018, 0x1001c, UT64_MAX, UT64_MAX);
+	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 3), 0x1001c, 0x10020, 0x10020, UT64_MAX);
+	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 4), 0x10020, 0x10024, UT64_MAX, UT64_MAX);
 
 	interp_free(interp);
 	mu_end;
