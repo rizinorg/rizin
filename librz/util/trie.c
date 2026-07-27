@@ -37,7 +37,6 @@ static RzTrieNode *trie_find_child(const RzTrie *t, const RzTrieNode *parent,
  */
 RZ_API RZ_BORROW RzTrieNode *rz_trie_insert(RZ_NONNULL RZ_BORROW RzTrie *t, RZ_NONNULL const void *key,
 	size_t len, RZ_NULLABLE RzTrieNodeOnHitCb on_hit, RZ_NULLABLE void *user) {
-
 	rz_return_val_if_fail(t && t->root && key && len > 0, NULL);
 
 	RzTrieNode *curr_node = t->root;
@@ -81,7 +80,6 @@ RZ_API RZ_BORROW RzTrieNode *rz_trie_insert(RZ_NONNULL RZ_BORROW RzTrie *t, RZ_N
  */
 RZ_API RZ_OWN RzTrie *rz_trie_new(RZ_NONNULL RzTrieNodeMatchCb match,
 	RZ_NONNULL RzTrieNodeInitCb init, RZ_NULLABLE RzTrieNodeFreeCb free) {
-
 	if (!match || !init) {
 		RZ_LOG_ERROR("match and init callbacks must not be NULL\n");
 		return NULL;
@@ -218,7 +216,6 @@ RZ_API void rz_trie_clear(RZ_NULLABLE RZ_BORROW RzTrie *t) {
  */
 RZ_API RZ_BORROW RzTrieNode *rz_trie_find_prefix(RZ_NONNULL RZ_BORROW const RzTrie *t,
 	RZ_NONNULL const void *key, size_t len, bool partial_key) {
-
 	rz_return_val_if_fail(t && t->root && key && len > 0, NULL);
 
 	RzTrieNode *curr = t->root;
@@ -245,7 +242,6 @@ RZ_API RZ_BORROW RzTrieNode *rz_trie_find_prefix(RZ_NONNULL RZ_BORROW const RzTr
  * \note Root node is never deleted.
  */
 RZ_API bool rz_trie_delete(RZ_NONNULL RZ_BORROW RzTrie *t, RZ_NONNULL const void *key, size_t len) {
-
 	rz_return_val_if_fail(t && t->root && key && len > 0, false);
 
 	RzTrieNode **path = RZ_NEWS0(RzTrieNode *, len + 1);
@@ -326,7 +322,6 @@ RZ_API size_t rz_trie_size(RZ_NONNULL RZ_BORROW const RzTrie *t) {
  */
 RZ_API RZ_BORROW RzTrieNode *rz_trie_longest_prefix_match(RZ_NONNULL RZ_BORROW const RzTrie *t,
 	RZ_NONNULL const void *key, size_t len, RZ_NONNULL size_t *match_len) {
-
 	rz_return_val_if_fail(t && t->root && key && len > 0 && match_len, NULL);
 
 	*match_len = 0;
