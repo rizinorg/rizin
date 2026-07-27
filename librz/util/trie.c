@@ -123,8 +123,6 @@ static void trie_node_free(RzTrieNode *n, void *user) {
  * At each node, \p cb_pre is called before descending into children,
  * and \p cb_post is called after all children have been visited.
  *
- * \note relies on system call stack not stack on heap.
- *
  * \param[in] n       Root of the subtree to traverse.
  * \param[in] cb_pre  Pre-order callback, `NULL` to skip.
  * \param[in] cb_edge Edge visit callback, `NULL` to skip.
