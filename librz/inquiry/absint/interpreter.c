@@ -1598,11 +1598,20 @@ RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, R
 			block = next_block;
 		}
 
-		// TODO: add_bb should eventually not be used here since it does its own analysis.
-		// Instead, we should create the block by hand and apply our analysis info to it.
+		RzAnalysisBlock *abb = rz_analysis_create_block(analysis, start, end_excl - start);
+		if (!abb) {
+			// TODO: Handle the case of existing blocks better, e.g. just use the existing block
+			// and optionally update its contents with some new information we have gained.
+			RZ_LOG_ERROR("Failed to create block @ 0x%" PFMT64x "\n", start);
+			continue;
+		}
+
+		// TODO: analyze_ops should eventually not be used here since it does its own analysis.
+		// Instead, we should manually apply our analysis info to it.
 		// Keep in mind we might have to add info from multiple merged blocks here (see merging above)
-		rz_analysis_add_bb(analysis, start, end_excl - start);
-		RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, start);
+		// and that our interp block works on instruction packets, not instructions
+		rz_analysis_block_analyze_ops(abb);
+
 		rz_analysis_function_add_block(func, abb);
 		abb->jump = UT64_MAX;
 		abb->fail = UT64_MAX;
