@@ -646,24 +646,6 @@ cleanup:
 	rz_bv_fini(&to_bv);
 }
 
-/**
- * \brief Report the store of the next PC and report it as possible return point.
- */
-static bool report_yield_call_candiate(
-	RzAbsIntRunContext *ctx) {
-
-	// TODO
-#if 0
-	RzAnalysisCallCandidate cc = { 0 };
-	// TODO? put the bb addr into the call candidate? Currently we do not know it.
-	memcpy(&cc, &ctx->call_cand, sizeof(ctx->call_cand));
-	if (rz_th_ring_buf_put(cc_rbuf->rbuf, &cc) != RZ_THREAD_RING_BUF_OK) {
-		return false;
-	}
-#endif
-	return true;
-}
-
 void write_var_to_state(RzAbsIntInstance *inst,
 	RzAbsIntState *astate,
 	RzILVarKind kind,
@@ -1138,9 +1120,7 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 			//
 			// Making C reachable even with the in-edge at B could work by for example by marking A as ret-addr-storing
 			// and using that information when evaluating B.
-			ctx->call_cand.store_addr = pc;
-			ctx->call_cand.npc = ctx->il_block_end;
-			ctx->call_cand.in_mem = false;
+			ctx->block_stores_ret_addr = true;
 			if (ctx->inst->config.trace_opts & RZ_ABSINT_TRACE_EVAL_BLOCK) {
 				RZ_LOG_INFO("  set: value indicates ret addr write\n");
 			}
@@ -1155,27 +1135,16 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 		if (!is_const) {
 			RZ_LOG_DEBUG("PC is going to be set to an abstract value! Current PC = 0x%" PFMT64x "\n", pc);
 		}
-		bool is_call = !!ctx->call_cand.store_addr;
+		bool is_call = ctx->block_stores_ret_addr;
 
 		if (is_const) {
 			ut64 target = rz_bv_to_ut64(&eval_out_bv);
 			RZ_LOG_DEBUG("prototype: JMP - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", pc, target);
 			RzAnalysisXRefType xref_type = RZ_ANALYSIS_XREF_TYPE_CODE;
-
 			if (is_call) {
-				// An instruction in this basic block stored the next PC.
-				// Report a call candidate and assume this jump is a call.
-				ctx->call_cand.candidate_addr = pc;
-				ctx->call_cand.target = target;
-				report_yield_call_candiate(ctx);
-
 				xref_type = RZ_ANALYSIS_XREF_TYPE_CALL;
 			}
-
 			report_yield_xref(ctx, insn_pkt_size, ctx->insn_addr, eval_out, xref_type);
-
-			// Clear the call candidate tracking variable.
-			memset(&ctx->call_cand, 0, sizeof(ctx->call_cand));
 		}
 
 		if (is_call) {
@@ -1249,9 +1218,7 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 			val_domain(ctx->inst)->val_free(st_addr);
 		});
 		if (value_indicates_ret_addr_write(ctx, eval_out)) {
-			ctx->call_cand.store_addr = pc;
-			ctx->call_cand.npc = ctx->il_block_end;
-			ctx->call_cand.in_mem = true;
+			ctx->block_stores_ret_addr = true;
 			if (ctx->inst->config.trace_opts & RZ_ABSINT_TRACE_EVAL_BLOCK) {
 				RZ_LOG_INFO("  store/storew: value indicates ret addr write\n");
 			}
@@ -1280,8 +1247,7 @@ cleanup:
 static EvalResult eval_block(RZ_NONNULL RzAbsIntRunContext *ctx, RZ_NONNULL RzAbsIntBlock *interp_block, RZ_NONNULL const RzILCacheBlock *il_block) {
 	ctx->block = interp_block;
 	ctx->il_block_end = il_block->addr + il_block->size;
-	// Reset call candidate tracking for each basic block.
-	memset(&ctx->call_cand, 0, sizeof(ctx->call_cand));
+	ctx->block_stores_ret_addr = false;
 
 	ut64 interp_block_end = rz_absint_block_get_end(ctx->block);
 
@@ -1398,7 +1364,6 @@ RZ_API RzAbsIntResultCode rz_absint_run(RzAbsIntInstance *inst, ut64 entry_point
 	// Prepare the initial state from the given entry point
 	// Hint: nothing speaks against supporting multiple entry points in a single run
 	RzAbsIntState *estate = rz_absint_state_new(inst);
-	memset(&ctx.call_cand, 0, sizeof(ctx.call_cand));
 	if (!reset_state(inst, estate, entry_point)) {
 		rz_absint_state_free(inst, estate);
 		goto cleanup;

@@ -227,7 +227,7 @@ struct rz_absint_run_context_t {
 	ut64 il_block_end; ///< The address directly after the last instruction of the currently interpreted IL block, may be further than the last instruction of the interp block!
 	RzAbsIntState *astate; ///< The abstract state of the interpreter.
 	ut64 insn_addr; ///< The address of the currently evaluated instruction. This is not equal to astate->pc since that is already advanced by the instruction size.
-	RzAnalysisCallCandidate call_cand; ///< Data of a call candidate.
+	bool block_stores_ret_addr; ///< It was detected that the block stores an address that may be a return address. Used for detecting calls.
 };
 
 struct rz_absint_result_t {
