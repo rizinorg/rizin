@@ -963,9 +963,9 @@ typedef enum {
 	RZ_ANALYSIS_XREF_TYPE_STRING = 's', ///< String reference
 	/**
 	 * \brief Memory read reference.
-	 * Probably not the same as RZ_ANALYSIS_XREF_TYPE_DATA, but the data
-	 * reference is used everywhere and changes the output of the disassembly.
-	 * So keep it for now like that to have better test output.
+	 * Currently only an alias for data as that is commonly in use for generic
+	 * memory references. Code where it is known that the access is a read can
+	 * use this to explicitly state the intent and ease future changes.
 	 */
 	RZ_ANALYSIS_XREF_TYPE_MEM_READ = RZ_ANALYSIS_XREF_TYPE_DATA,
 	RZ_ANALYSIS_XREF_TYPE_MEM_WRITE = 'w', ///< Memory write reference
