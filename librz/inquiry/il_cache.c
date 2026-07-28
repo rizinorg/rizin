@@ -19,6 +19,7 @@ RZ_API RZ_OWN char *rz_il_cache_block_str(RZ_NONNULL const RzILCacheBlock *block
 	void **it;
 	rz_pvector_foreach (block->il_ops, it) {
 		RzILCacheInsnPkt *insn = *it;
+		rz_strbuf_appendf(&sb, "(sz = 0x%" PFMT64x ") ", (ut64)insn->insn_pkt_size);
 		rz_il_op_effect_stringify(insn->effect, &sb, false);
 		rz_strbuf_append(&sb, "\n");
 	}
@@ -48,6 +49,26 @@ static void rz_il_cache_block_free(RZ_NULLABLE RZ_OWN RzILCacheBlock *il_bb) {
 	}
 	rz_pvector_free(il_bb->il_ops);
 	free(il_bb);
+}
+
+static bool il_op_is_not_only_fallthrough(RzILOpEffect *op, ut64 fallthrough_addr) {
+	switch (op->code) {
+	case RZ_IL_OP_JMP: {
+		RzILOpPure *dst = op->op.jmp.dst;
+		return dst->code != RZ_IL_OP_BITV || rz_bv_to_ut64(dst->op.bitv.value) != fallthrough_addr;
+	}
+	case RZ_IL_OP_GOTO:
+		return true;
+	case RZ_IL_OP_SEQ:
+		// ctrl effect in seq.x is not allowed by the type checker
+		return il_op_is_not_only_fallthrough(op->op.seq.y, fallthrough_addr);
+	case RZ_IL_OP_BLK:
+		return il_op_is_not_only_fallthrough(op->op.blk.ctrl_eff, fallthrough_addr);
+	case RZ_IL_OP_BRANCH:
+		return il_op_is_not_only_fallthrough(op->op.branch.true_eff, fallthrough_addr) || il_op_is_not_only_fallthrough(op->op.branch.false_eff, fallthrough_addr);
+	default:
+		return false;
+	}
 }
 
 RZ_OWN RzILCacheBlock *lift_il_block(const RzILCache *cache, ut64 addr) {
@@ -101,7 +122,7 @@ RZ_OWN RzILCacheBlock *lift_il_block(const RzILCache *cache, ut64 addr) {
 			op.il_op = rz_il_op_new_nop();
 		}
 		il_block->size += op.size;
-		if (lifted && rz_analysis_op_changes_control_flow(&op)) {
+		if (lifted && il_op_is_not_only_fallthrough(op.il_op, addr + op.size)) {
 			have_cf = true;
 		}
 

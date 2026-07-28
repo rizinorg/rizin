@@ -58,13 +58,13 @@ ablt
 EOF
 EXPECT=<<EOF
 0x080000ac    4 128          sym.main
-                             sym.main+12 0x80000b8 ->      CODE -> 0x8000108 reloc..data.80000c4+68
-                  reloc..data.80000c4+76 0x8000110 ->      CODE -> 0x80000c0 reloc..data
+                             sym.main+16 0x80000bc ->      CODE -> 0x8000108 reloc..data.80000c4+68
+                  reloc..data.80000c4+80 0x8000114 ->      CODE -> 0x80000c0 reloc..data
      addr size traced ninstr jump       fail       fcns        calls xrefs       
 ---------------------------------------------------------------------------------
 0x80000ac   20      0      5 0x08000108             0x080000ac       
-0x80000c0   72      0     18 0x08000108             0x080000ac        0x08000110
-0x8000108   16      0      4 0x080000c0 0x08000118  0x080000ac        0x080000b8
+0x80000c0   72      0     18 0x08000108             0x080000ac        0x08000114
+0x8000108   16      0      4 0x080000c0 0x08000118  0x080000ac        0x080000bc
 0x8000118   20      0      5                        0x080000ac       
 EOF
 RUN
