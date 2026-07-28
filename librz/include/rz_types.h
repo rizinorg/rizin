@@ -52,8 +52,6 @@ extern "C" {
 #define RZ_DEPRECATE /* should not be used in new code and should/will be removed in the future */
 #endif
 
-#define RZ_LIFETIME(X) /* The lifetime of the object is as long as the given X. What X is depends on the context. */
-
 #define RZ_IFNULL(x) /* default value for the pointer when null */
 #ifdef __GNUC__
 #define RZ_UNUSED __attribute__((__unused__))

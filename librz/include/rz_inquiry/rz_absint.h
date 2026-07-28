@@ -182,7 +182,6 @@ typedef struct rz_absint_config_t {
 /**
  * \brief Root local data of a single interpreter thread
  */
-RZ_LIFETIME(RzInquiry)
 struct rz_absint_instance_t {
 	RzAbsIntConfig config;
 
