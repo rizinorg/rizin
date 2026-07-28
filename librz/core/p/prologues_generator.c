@@ -138,8 +138,8 @@ static bool config_trie_prologue_len_setter(void *user, const void *value) {
 static bool isValidSymbol(RzBinSymbol *symbol) {
 	if (symbol && symbol->type) {
 		const char *type = symbol->type;
-		return (symbol->paddr != UT64_MAX) &&
-			(!strcmp(type, RZ_BIN_TYPE_FUNC_STR) || !strcmp(type, RZ_BIN_TYPE_METH_STR));
+		return (symbol->paddr != UT64_MAX) && (!symbol->is_imported) &&
+			(RZ_STR_EQ(type, RZ_BIN_TYPE_FUNC_STR) || RZ_STR_EQ(type, RZ_BIN_TYPE_METH_STR));
 	}
 	return false;
 }
@@ -158,7 +158,7 @@ static bool pg_check_file_arch(CorePGContext *ctx, const RzBinInfo *info, const 
 		return true;
 	}
 
-	return strcmp(ctx->arch, file_arch) == 0 &&
+	return RZ_STR_EQ(ctx->arch, file_arch) &&
 		ctx->bits == info->bits &&
 		ctx->big_endian == info->big_endian;
 }
@@ -201,7 +201,7 @@ static bool build_prefix_tree_from_file(RzBinFile *binfile, RzTrie *t, ut64 prol
 		if (isValidSymbol(sym)) {
 			ut64 paddr = sym->paddr;
 			if (rz_set_u_contains(seen_addrs, paddr)) {
-				RZ_LOG_WARN("Skipping symbol '%s' at address 0x%" PFMT64x ": duplicate address\n", sym->name, paddr);
+				RZ_LOG_INFO("pg: Skipping symbol '%s' at address 0x%" PFMT64x ": duplicate address\n", sym->name, paddr);
 				continue;
 			}
 			rz_set_u_add(seen_addrs, paddr);
@@ -345,13 +345,10 @@ RZ_IPI RzCmdStatus rz_cmd_raw_prologues_gen_dir_handler(RzCore *core, int argc, 
 	char *file;
 	size_t fcnt = 0;
 	bool res = true;
+	// nested dir not supported
 	rz_list_foreach (files, it, file) {
-		if (!strcmp(file, ".") || !strcmp(file, "..")) {
-			continue;
-		}
 		char *file_path = rz_file_path_join(dir_path, file);
-		if (!rz_file_exists(file_path)) {
-			RZ_LOG_WARN("Skipping '%s': file not found or is a directory (nested directories not supported)\n", file);
+		if (!rz_file_is_regular(file_path)) {
 			RZ_FREE(file_path);
 			continue;
 		}
@@ -447,14 +444,14 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_load_handler(RzCore *core, int argc, const c
 
 	const char *file_arch = arch_js->str_value;
 	int file_bits = (int)bits_js->num.u_value;
-	bool file_big_endian = !strcmp(endian_js->str_value, "big");
+	bool file_big_endian = RZ_STR_EQ(endian_js->str_value, "big");
 
 	if (!ctx->arch) {
 		// first operation in session, adopt arch from file
 		ctx->arch = rz_str_dup(file_arch);
 		ctx->bits = file_bits;
 		ctx->big_endian = file_big_endian;
-	} else if (strcmp(ctx->arch, file_arch) != 0 ||
+	} else if (!RZ_STR_EQ(ctx->arch, file_arch) ||
 		ctx->bits != file_bits ||
 		ctx->big_endian != file_big_endian) {
 		RZ_LOG_ERROR("Cannot load file '%s': arch mismatch.\n"
