@@ -256,11 +256,11 @@ RZ_IPI RzCmdStatus rz_cmd_raw_prologues_gen_handler(RzCore *core, int argc, cons
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	if (!binfile->o || !binfile->o->info) {
+	const RzBinInfo *info = rz_bin_object_get_info(binfile->o);
+	if (!info) {
 		RZ_LOG_ERROR("No binary info available for file: %s\n", binfile->file);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzBinInfo *info = binfile->o->info;
 
 	if (!pg_check_file_arch(ctx, info, rz_config_get(core->config, "asm.arch"))) {
 		const char *file_arch = info->arch ? info->arch : "unknown";
@@ -295,7 +295,12 @@ RZ_IPI RzCmdStatus rz_cmd_raw_prologues_gen_all_handler(RzCore *core, int argc, 
 	bool res = true;
 	size_t fcnt = 0;
 	rz_list_foreach (binfiles, it, curr_file) {
-		if (!curr_file || !curr_file->o || !curr_file->o->info) {
+		if (!curr_file) {
+			RZ_LOG_WARN("Skipping, null file found in list\n");
+			continue;
+		}
+		const RzBinInfo *info = rz_bin_object_get_info(curr_file->o);
+		if (!info) {
 			RZ_LOG_WARN("Skipping file '%s': missing binobject/bininfo\n",
 				curr_file ? curr_file->file : "unknown");
 			continue;
@@ -305,8 +310,6 @@ RZ_IPI RzCmdStatus rz_cmd_raw_prologues_gen_all_handler(RzCore *core, int argc, 
 			RZ_LOG_WARN("Skipping file '%s', already processed.\n", curr_file->file);
 			continue;
 		}
-
-		const RzBinInfo *info = curr_file->o->info;
 		if (!pg_check_file_arch(ctx, info, rz_config_get(core->config, "asm.arch"))) {
 			const char *file_arch = info->arch ? info->arch : "unknown";
 			RZ_LOG_WARN("Skipping file '%s': arch mismatch.\n"
@@ -361,7 +364,8 @@ RZ_IPI RzCmdStatus rz_cmd_raw_prologues_gen_dir_handler(RzCore *core, int argc, 
 			continue;
 		}
 
-		if (!bf->o || !bf->o->info) {
+		const RzBinInfo *info = rz_bin_object_get_info(bf->o);
+		if (!info) {
 			RZ_LOG_WARN("Skipping file '%s': missing binobject/bininfo\n",
 				bf ? bf->file : "unknown");
 			rz_bin_file_delete(core->bin, bf);
@@ -375,8 +379,6 @@ RZ_IPI RzCmdStatus rz_cmd_raw_prologues_gen_dir_handler(RzCore *core, int argc, 
 			RZ_FREE(file_path);
 			continue;
 		}
-
-		const RzBinInfo *info = bf->o->info;
 		if (!pg_check_file_arch(ctx, info, rz_config_get(core->config, "asm.arch"))) {
 			const char *file_arch = info->arch ? info->arch : "unknown";
 			RZ_LOG_WARN("Skipping file '%s': arch mismatch.\n"
@@ -642,20 +644,25 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_search_handler(RzCore *core, int argc, const
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzBinFile *bf = rz_bin_file_find_by_fd(bin, fd);
-	if (!bf || !bf->o || !bf->o->info) {
-		RZ_LOG_ERROR("Failed to find bin file or no bin object or info for current fd: %" PFMT32u "\n", fd);
+	if (!bf) {
+		RZ_LOG_ERROR("Failed to find bin file for fd: %" PFMT32u "\n", fd);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	const RzBinInfo *info = rz_bin_object_get_info(bf->o);
+	if (!info) {
+		RZ_LOG_ERROR("Failed to get bin info for file: %s\n", bf->file);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	if (!pg_check_file_arch(ctx, bf->o->info, rz_config_get(core->config, "asm.arch"))) {
-		const char *file_arch = bf->o->info->arch ? bf->o->info->arch : "unknown";
+	if (!pg_check_file_arch(ctx, info, rz_config_get(core->config, "asm.arch"))) {
+		const char *file_arch = info->arch ? info->arch : "unknown";
 		RZ_LOG_ERROR("Cannot search file '%s': arch mismatch.\n"
 			     "  Session: (%s, %d-bit, %cE)\n"
 			     "  Current File: (%s, %d-bit, %cE)\n"
 			     "Please reset the session using pg- or load/generate prologues for current architecture.\n",
 			bf->file,
 			ctx->arch, ctx->bits, ctx->big_endian ? 'B' : 'L',
-			file_arch, bf->o->info->bits, bf->o->info->big_endian ? 'B' : 'L');
+			file_arch, info->bits, info->big_endian ? 'B' : 'L');
 		return RZ_CMD_STATUS_ERROR;
 	}
 
