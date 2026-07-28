@@ -10,7 +10,6 @@
 #include <rz_util/rz_log.h>
 
 #include "../core_private.h"
-#include "rz_analysis.h"
 
 #define MAX_SCAN_SIZE 0x7ffffff
 

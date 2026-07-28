@@ -5,8 +5,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "analysis_private.h"
-#include "rz_analysis.h"
-#include "rz_util/rz_assert.h"
 #include <rz_cons.h>
 
 /*

@@ -12,8 +12,6 @@
 #include <rz_inquiry/rz_il_cache.h>
 #include <rz_arch.h>
 #include <rz_io.h>
-#include <rz_types.h>
-#include <rz_util.h>
 
 typedef enum rz_inquiry_trace_options_t {
 	RZ_ABSINT_TRACE_NONE = 0,

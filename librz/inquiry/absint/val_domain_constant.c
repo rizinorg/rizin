@@ -1,15 +1,7 @@
 // SPDX-FileCopyrightText: 2025 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_util/rz_assert.h"
-#include <rz_util/rz_bitvector.h>
-
 #include <rz_inquiry.h>
-#include <rz_inquiry/rz_absint.h>
-#include <rz_th.h>
-#include <rz_util.h>
-
-#include "rz_util/rz_bitvector.h"
 
 typedef struct {
 	/**

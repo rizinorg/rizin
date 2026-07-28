@@ -4,8 +4,6 @@
 #ifndef RZ_INQUIRY_IL_CACHE_H
 #define RZ_INQUIRY_IL_CACHE_H
 
-#include "rz_types.h"
-#include <rz_type.h>
 #include <rz_analysis.h>
 
 typedef struct rz_il_cache_t RzILCache;

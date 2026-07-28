@@ -1,14 +1,6 @@
 // SPDX-FileCopyrightText: 2026 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_analysis.h"
-#include "rz_il/rz_il_opcodes.h"
-#include "rz_types.h"
-#include "rz_util/ht_up.h"
-#include "rz_util/rz_assert.h"
-#include "rz_util/rz_log.h"
-#include "rz_util/rz_str.h"
-#include "rz_vector.h"
 #include <rz_inquiry/rz_il_cache.h>
 
 RZ_API RZ_OWN char *rz_il_cache_block_str(RZ_NONNULL const RzILCacheBlock *block) {

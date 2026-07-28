@@ -10,15 +10,7 @@
  * if the callbacks behave accordingly.
  */
 
-#include "rz_analysis.h"
-#include "rz_util/rz_assert.h"
-#include "rz_util/rz_log.h"
-#include <rz_il/rz_il_opcodes.h>
 #include "absint_priv.h"
-#include <rz_th.h>
-#include <rz_types.h>
-#include <rz_vector.h>
-#include <rz_util.h>
 
 typedef enum {
 	EVAL_RESULT_OK,

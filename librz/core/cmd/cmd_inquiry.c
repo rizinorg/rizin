@@ -1,15 +1,7 @@
 // SPDX-FileCopyrightText: 2025 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_util/rz_set.h"
-#include <rz_io.h>
-#include <rz_vector.h>
-#include <rz_th.h>
-#include <rz_cmd.h>
 #include <rz_core.h>
-#include <rz_il/rz_il_opcodes.h>
-#include <rz_inquiry/rz_absint.h>
-#include <rz_util/rz_assert.h>
 
 RZ_IPI RzCmdStatus rz_inquiry_analyze_function_handler(RzCore *core, int argc, const char **argv) {
 	rz_return_val_if_fail(core->analysis && core->io && core->bin->cur && core->bin->cur->o, RZ_CMD_STATUS_ERROR);

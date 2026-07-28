@@ -13,7 +13,6 @@
 #include "buf_io_fd.c"
 #include "buf_io.c"
 #include "buf_ref.c"
-#include "rz_util/rz_assert.h"
 
 #define GET_STRING_BUFFER_SIZE 32
 
