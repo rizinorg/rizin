@@ -675,7 +675,6 @@ VALIDATOR_PURE(float_binop_with_round) {
 
 	// flatten validator assert
 	if (sx.props.f.format != sy.props.f.format) {
-		rz_warn_if_reached();
 		char *sx_s = rz_il_sort_pure_stringify(sx);
 		char *sy_s = rz_il_sort_pure_stringify(sy);
 		rz_strbuf_appendf(report_builder, "Op %s formats of left operand (%s) and right operand (%s) do not agree.\n",
@@ -751,7 +750,6 @@ VALIDATOR_PURE(float_terop_with_round) {
 	VALIDATOR_ASSERT(sz.type == RZ_IL_TYPE_PURE_FLOAT, "3rd operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
 
 	if ((sx.props.f.format != sy.props.f.format) || (sx.props.f.format != sz.props.f.format)) {
-		rz_warn_if_reached();
 		char *sx_s = rz_il_sort_pure_stringify(sx);
 		char *sy_s = rz_il_sort_pure_stringify(sy);
 		char *sz_s = rz_il_sort_pure_stringify(sz);
