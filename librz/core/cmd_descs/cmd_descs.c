@@ -8450,6 +8450,25 @@ static const RzCmdDescHelp analyze_esil_insn_access_help = {
 	.args = analyze_esil_insn_access_args,
 };
 
+static const RzCmdDescHelp aI_help = {
+	.summary = "New experimental RzInquiry analysis",
+};
+static const RzCmdDescArg inquiry_analyze_function_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp inquiry_analyze_function_help = {
+	.summary = "analyze function at current seek",
+	.args = inquiry_analyze_function_args,
+};
+
+static const RzCmdDescArg inquiry_analyze_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp inquiry_analyze_all_help = {
+	.summary = "analyze all functions",
+	.args = inquiry_analyze_all_args,
+};
+
 static const RzCmdDescHelp b_help = {
 	.summary = "Display or change the block size",
 };
@@ -23909,6 +23928,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *aea_cd = rz_cmd_desc_group_modes_new(core->rcmd, ae_cd, "aea", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analyze_esil_insn_access_handler, &analyze_esil_insn_access_help, &aea_help);
 	rz_warn_if_fail(aea_cd);
+
+	RzCmdDesc *aI_cd = rz_cmd_desc_group_new(core->rcmd, ae_cd, "aI", NULL, NULL, &aI_help);
+	rz_warn_if_fail(aI_cd);
+	RzCmdDesc *inquiry_analyze_function_cd = rz_cmd_desc_argv_new(core->rcmd, aI_cd, "aIf", rz_inquiry_analyze_function_handler, &inquiry_analyze_function_help);
+	rz_warn_if_fail(inquiry_analyze_function_cd);
+
+	RzCmdDesc *inquiry_analyze_all_cd = rz_cmd_desc_argv_new(core->rcmd, aI_cd, "aIa", rz_inquiry_analyze_all_handler, &inquiry_analyze_all_help);
+	rz_warn_if_fail(inquiry_analyze_all_cd);
 
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);

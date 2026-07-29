@@ -2,8 +2,7 @@
 // SPDX-FileCopyrightText: 2009-2020 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <string.h>
-
+#include <rz_inquiry/rz_absint.h>
 #include <rz_types.h>
 #include <rz_list.h>
 #include <rz_flag.h>
@@ -6417,3 +6416,152 @@ RZ_API RZ_BORROW const RzBinSourceLineSample *rz_analysis_var_global_sourceline_
 	rz_return_val_if_fail(core && glb, NULL);
 	return get_source_line_info(core, glb->addr);
 }
+
+/////////////////////////////////////////////////////////
+/**
+ * \name Inquiry
+ * @{
+ */
+
+static char *cinquiry_choose_function_name(RzCore *core, ut64 addr) {
+	RzBinFile *bf = rz_bin_cur(core->bin);
+
+	// see getFunctionName for reference
+	// It is duplicated here because the logic for selection a function name in the legacy analysis
+	// is more complex and is distributed across multiple functions. This should be the starting
+	// point for reimplementing it centrally.
+
+	RzBinSymbol *sym = bf && bf->o ? rz_bin_object_find_method_by_vaddr(bf->o, addr) : NULL;
+	if (sym && sym->classname && sym->name) {
+		return rz_str_newf("method.%s.%s", sym->classname, sym->name);
+	}
+
+	RzFlagItem *flag = rz_core_flag_get_by_spaces(core->flags, addr);
+	if (flag && flag->name) {
+		return rz_str_dup(flag->name);
+	}
+
+	return rz_str_newf("inq.0x%" PFMT64x "\n", addr);
+}
+
+static void cinquiry_collect_entrypoints_all(RzCore *core, RzSetU *res) {
+	RzPVector *vector;
+	const RzBinAddr *binmain;
+	RzBinAddr *entry;
+	RzBinSymbol *symbol;
+
+	RzBinFile *bf = core->bin->cur;
+	RzBinObject *o = bf ? bf->o : NULL;
+
+	// see rz_core_analysis_all for reference
+
+	// Symbols
+	void **it;
+	if (o && (vector = o->symbols) != NULL) {
+		rz_pvector_foreach (vector, it) {
+			symbol = *it;
+			// Stop analyzing PE imports further
+			if (isSkippable(symbol)) {
+				continue;
+			}
+			if (isValidSymbol(symbol)) {
+				ut64 addr = rz_bin_object_get_vaddr(o, symbol->paddr, symbol->vaddr);
+				rz_set_u_add(res, addr);
+			}
+		}
+	}
+
+	// Main
+	if (o && (binmain = rz_bin_object_get_special_symbol(o, RZ_BIN_SPECIAL_SYMBOL_MAIN))) {
+		if (binmain->paddr != UT64_MAX) {
+			ut64 addr = rz_bin_object_get_vaddr(o, binmain->paddr, binmain->vaddr);
+			rz_set_u_add(res, addr);
+		}
+	}
+
+	// Entrypoints
+	RzBinObject *bin = rz_bin_cur_object(core->bin);
+	vector = bin ? (RzPVector *)rz_bin_object_get_entries(bin) : NULL;
+	rz_pvector_foreach (vector, it) {
+		entry = *it;
+		if (entry->paddr == UT64_MAX) {
+			continue;
+		}
+		ut64 addr = rz_bin_object_get_vaddr(o, entry->paddr, entry->vaddr);
+		rz_set_u_add(res, addr);
+	}
+}
+
+static RzAbsIntTraceOptions absint_trace_opts(RzCore *core) {
+	RzSetS *trace_opts_s = rz_config_get_set(core->config, "inquiry.trace");
+	RzAbsIntTraceOptions r = RZ_ABSINT_TRACE_NONE;
+	if (!trace_opts_s) {
+		return r;
+	}
+	if (rz_set_s_contains(trace_opts_s, "ilblock")) {
+		r |= RZ_ABSINT_TRACE_IL_BLOCK;
+	}
+	if (rz_set_s_contains(trace_opts_s, "evalblock")) {
+		r |= RZ_ABSINT_TRACE_EVAL_BLOCK;
+	}
+	if (rz_set_s_contains(trace_opts_s, "bounds")) {
+		r |= RZ_ABSINT_TRACE_BOUNDS;
+	}
+	rz_set_s_free(trace_opts_s);
+	return r;
+}
+
+static char *choose_function_name_cb(ut64 addr, void *user) {
+	return cinquiry_choose_function_name(user, addr);
+}
+
+static bool cinquiry_absint_run(RzCore *core, RzSetU *entry_points) {
+	RzAbsIntDriverConfig config = {
+		.analysis = core->analysis,
+		.io = core->io,
+		.entry_points = entry_points,
+		.dimens = RZ_ABSINT_RESULT_DIMEN_XREFS,
+		.trace_opts = absint_trace_opts(core),
+		.n_threads = rz_config_get_integer(core->config, "inquiry.threads"),
+		.cb_user = core,
+		.choose_fcn_name = choose_function_name_cb
+	};
+	if (rz_config_get_bool(core->config, "inquiry.comment")) {
+		config.dimens |= RZ_ABSINT_RESULT_DIMEN_COMMENTS;
+	}
+	bool success = rz_absint_driver_run(&config);
+	if (!success) {
+		RZ_LOG_ERROR("Analysis failed.\n");
+	}
+	return success;
+}
+
+/**
+ * \brief Analyze a single function starting at the given entrypoint
+ */
+RZ_API bool rz_core_inquiry_analyze_at(RZ_NONNULL RzCore *core, ut64 addr) {
+	RzSetU *entry_points = rz_set_u_new();
+	if (!entry_points) {
+		return false;
+	}
+	rz_set_u_add(entry_points, core->offset);
+	bool ret = cinquiry_absint_run(core, entry_points);
+	rz_set_u_free(entry_points);
+	return ret;
+}
+
+/**
+ * \brief Analyze functions at all known entrypoints
+ */
+RZ_API bool rz_core_inquiry_analyze_all(RZ_NONNULL RzCore *core) {
+	RzSetU *entry_points = rz_set_u_new();
+	if (!entry_points) {
+		return false;
+	}
+	cinquiry_collect_entrypoints_all(core, entry_points);
+	bool ret = cinquiry_absint_run(core, entry_points);
+	rz_set_u_free(entry_points);
+	return ret;
+}
+
+/// @}

@@ -13,6 +13,9 @@ extern "C" {
 
 typedef ut32 RzILMemIndex;
 
+RZ_API bool rz_il_loadw_into(RZ_NONNULL RzBuffer *mem_buf, RZ_NONNULL RZ_OUT RzBitVector *out_bv, RZ_NONNULL const RzBitVector *key, ut32 n_bits, bool big_endian);
+RZ_API bool rz_il_storew(RZ_NONNULL RzBuffer *buf, RZ_NONNULL const RzBitVector *key, RZ_NONNULL const RzBitVector *value, bool big_endian);
+
 /**
  * \brief A single memory as part of the RzIL VM.
  *
@@ -36,7 +39,12 @@ RZ_API ut32 rz_il_mem_value_len(RzILMem *mem);
 RZ_API RzBitVector *rz_il_mem_load(RzILMem *mem, RzBitVector *key);
 RZ_API bool rz_il_mem_store(RzILMem *mem, RzBitVector *key, RzBitVector *value);
 RZ_API RzBitVector *rz_il_mem_loadw(RzILMem *mem, RzBitVector *key, ut32 n_bits, bool big_endian);
-RZ_API bool rz_il_mem_storew(RzILMem *mem, RzBitVector *key, RzBitVector *value, bool big_endian);
+RZ_API bool rz_il_mem_loadw_into(RZ_NONNULL RzILMem *mem,
+	RZ_OUT RZ_NONNULL RzBitVector *out_bv,
+	RZ_NONNULL const RzBitVector *key,
+	ut32 n_bits,
+	bool big_endian);
+RZ_API bool rz_il_mem_storew(RzILMem *mem, const RzBitVector *key, const RzBitVector *value, bool big_endian);
 
 #ifdef __cplusplus
 }

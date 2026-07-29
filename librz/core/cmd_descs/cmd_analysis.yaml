@@ -2619,3 +2619,14 @@ commands:
                     comment: "memwrites"
                   - text: "NOTE:"
                     comment: "mem{reads,writes} with PIC only fetch the offset"
+      - name: aI
+        summary: New experimental RzInquiry analysis
+        subcommands:
+          - name: aIf
+            summary: analyze function at current seek
+            cname: inquiry_analyze_function
+            args: []
+          - name: aIa
+            summary: analyze all functions
+            cname: inquiry_analyze_all
+            args: []
