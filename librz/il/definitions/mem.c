@@ -154,6 +154,9 @@ static RzBitVector *read_n_bits(RzBuffer *buf, ut32 n_bits, RzBitVector *key, bo
 	return value;
 }
 
+/**
+ * \brief Low-level reading function used in rz_il_mem_loadw_into
+ */
 RZ_API bool rz_il_loadw_into(RZ_NONNULL RzBuffer *mem_buf, RZ_NONNULL RZ_OUT RzBitVector *out_bv, RZ_NONNULL const RzBitVector *key, ut32 n_bits, bool big_endian) {
 	rz_return_val_if_fail(mem_buf && out_bv && key, false);
 	ut64 address = rz_bv_to_ut64(key);
@@ -173,6 +176,9 @@ RZ_API bool rz_il_loadw_into(RZ_NONNULL RzBuffer *mem_buf, RZ_NONNULL RZ_OUT RzB
 	return true;
 }
 
+/**
+ * \brief Low-level writing function used in rz_il_mem_storew
+ */
 RZ_API bool rz_il_storew(RZ_NONNULL RzBuffer *buf, RZ_NONNULL const RzBitVector *key, RZ_NONNULL const RzBitVector *value, bool big_endian) {
 	rz_return_val_if_fail(buf && key && value, false);
 	ut64 address = rz_bv_to_ut64(key);

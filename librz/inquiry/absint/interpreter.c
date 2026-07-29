@@ -299,7 +299,7 @@ static void interp_blocks_init(RzAbsIntRunContext *ctx) {
 static void interp_blocks_fini(RzAbsIntInstance *inst, RzIntervalTree *blocks) {
 	RzIntervalTreeIter it;
 	RzAbsIntBlock *block;
-	rz_interval_tree_foreach(blocks, it, block) {
+	rz_interval_tree_foreach (blocks, it, block) {
 		interp_block_free(inst, block);
 	}
 	rz_interval_tree_fini(blocks);
@@ -430,7 +430,7 @@ RZ_API void rz_absint_block_resolve_bounds(RzAbsIntRunContext *ctx, RzAbsIntBloc
 			ut16 off = (ut16)addr;
 			rz_vector_push(&interp_block->insn_offsets, &off);
 		}
-		rz_vector_remove_range(&preceding->insn_offsets, hit_op_idx - 1, rz_vector_len(&preceding->insn_offsets) - (hit_op_idx -1), NULL);
+		rz_vector_remove_range(&preceding->insn_offsets, hit_op_idx - 1, rz_vector_len(&preceding->insn_offsets) - (hit_op_idx - 1), NULL);
 		rz_vector_shrink(&preceding->insn_offsets);
 		interp_block_resize(ctx, interp_block, rz_absint_block_get_end(preceding));
 		interp_block_resize(ctx, preceding, block_start - 1);
@@ -794,19 +794,18 @@ static bool value_indicates_ret_addr_write(RzAbsIntRunContext *ctx, RzAbsIntVal 
 }
 
 static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_OUT RzAbsIntVal *out) {
-#define EVAL_SUB_OR_RETURN_CLEANUP(op, out, cleanup) do { \
-	EvalResult res = eval_pure(ctx, (op), (out)); \
-	if (RZ_UNLIKELY(res == EVAL_RESULT_BREAK)) { \
-		cleanup \
-		return EVAL_RESULT_BREAK; \
-	} \
-	if (RZ_UNLIKELY(res != EVAL_RESULT_OK)) { \
-		RZ_LOG_ERROR("eval_pure failed to evaluate " #op "\n"); \
-		cleanup \
-		goto map_to_top; \
-	} \
-} while (0)
-#define EVAL_SUB_OR_RETURN(op, out) EVAL_SUB_OR_RETURN_CLEANUP(op, out,)
+#define EVAL_SUB_OR_RETURN_CLEANUP(op, out, cleanup) \
+	do { \
+		EvalResult res = eval_pure(ctx, (op), (out)); \
+		if (RZ_UNLIKELY(res == EVAL_RESULT_BREAK)) { \
+			cleanup return EVAL_RESULT_BREAK; \
+		} \
+		if (RZ_UNLIKELY(res != EVAL_RESULT_OK)) { \
+			RZ_LOG_ERROR("eval_pure failed to evaluate " #op "\n"); \
+			cleanup goto map_to_top; \
+		} \
+	} while (0)
+#define EVAL_SUB_OR_RETURN(op, out) EVAL_SUB_OR_RETURN_CLEANUP(op, out, )
 	switch (pure->code) {
 	default:
 	case RZ_IL_OP_VAR: {
@@ -1050,32 +1049,32 @@ static void eval_call(RzAbsIntRunContext *ctx) {
 
 static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effect, size_t insn_pkt_size) {
 	rz_return_val_if_fail(ctx->astate->pc_state == RZ_ABSINT_PC_CONST, false);
-#define EVAL_SUB_OR_RETURN_CLEANUP(op, cleanup_local) do { \
-	res = eval_effect(ctx, (op), insn_pkt_size); \
-	if (RZ_UNLIKELY(res != EVAL_RESULT_OK)) { \
-		if (res != EVAL_RESULT_BREAK) { \
-			RZ_LOG_ERROR("eval_effect failed to evaluate " #op "\n"); \
+#define EVAL_SUB_OR_RETURN_CLEANUP(op, cleanup_local) \
+	do { \
+		res = eval_effect(ctx, (op), insn_pkt_size); \
+		if (RZ_UNLIKELY(res != EVAL_RESULT_OK)) { \
+			if (res != EVAL_RESULT_BREAK) { \
+				RZ_LOG_ERROR("eval_effect failed to evaluate " #op "\n"); \
+			} \
+			cleanup_local goto cleanup; \
 		} \
-		cleanup_local \
-		goto cleanup; \
-	} \
-} while (0)
-#define EVAL_SUB_OR_RETURN(op) EVAL_SUB_OR_RETURN_CLEANUP(op,)
-#define EVAL_PURE_OR_RETURN_CLEANUP(op, dst, cleanup_local) do { \
-	dst = val_domain(ctx->inst)->val_new_top(); \
-	if (RZ_UNLIKELY(!(dst))) { \
-		res = EVAL_RESULT_ERROR; \
-	} \
-	res = eval_pure(ctx, (op), (dst)); \
-	if (RZ_UNLIKELY(res != EVAL_RESULT_OK)) { \
-		if (res != EVAL_RESULT_BREAK) { \
-			RZ_LOG_ERROR("eval_effect failed to evaluate " #op "\n"); \
+	} while (0)
+#define EVAL_SUB_OR_RETURN(op) EVAL_SUB_OR_RETURN_CLEANUP(op, )
+#define EVAL_PURE_OR_RETURN_CLEANUP(op, dst, cleanup_local) \
+	do { \
+		dst = val_domain(ctx->inst)->val_new_top(); \
+		if (RZ_UNLIKELY(!(dst))) { \
+			res = EVAL_RESULT_ERROR; \
 		} \
-		cleanup_local \
-		goto cleanup; \
-	} \
-} while (0);
-#define EVAL_PURE_OR_RETURN(op) EVAL_PURE_OR_RETURN_CLEANUP(op, eval_out,)
+		res = eval_pure(ctx, (op), (dst)); \
+		if (RZ_UNLIKELY(res != EVAL_RESULT_OK)) { \
+			if (res != EVAL_RESULT_BREAK) { \
+				RZ_LOG_ERROR("eval_effect failed to evaluate " #op "\n"); \
+			} \
+			cleanup_local goto cleanup; \
+		} \
+	} while (0);
+#define EVAL_PURE_OR_RETURN(op) EVAL_PURE_OR_RETURN_CLEANUP(op, eval_out, )
 	ut64 pc = ctx->astate->pc;
 	RzAbsIntVal *eval_out = NULL;
 	EvalResult res = EVAL_RESULT_OK;
@@ -1313,7 +1312,6 @@ static EvalResult eval_block(RZ_NONNULL RzAbsIntRunContext *ctx, RZ_NONNULL RzAb
 		}
 		rz_absint_run_push(ctx, ctx->astate, fallthrough);
 	}
-
 
 	if (ctx->inst->config.trace_opts & RZ_ABSINT_TRACE_EVAL_BLOCK) {
 		RZ_LOG_INFO("Finished evaluating absint block @ 0x%" PFMT64x "\n\n", interp_block->entry_state->pc);
@@ -1573,7 +1571,7 @@ RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, R
 		abb->jump = UT64_MAX;
 		abb->fail = UT64_MAX;
 		ut64 *target;
-		rz_vector_foreach(&block->jump_targets, target) {
+		rz_vector_foreach (&block->jump_targets, target) {
 			bb_add_target(abb, *target);
 		}
 		if (block->fallthrough) {

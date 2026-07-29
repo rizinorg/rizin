@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2026 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2026 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -21,7 +22,7 @@ RZ_API RZ_OWN char *rz_il_cache_block_str(RZ_NONNULL const RzILCacheBlock *block
 struct rz_il_cache_t {
 	RZ_BORROW RzAnalysis *analysis;
 	RZ_BORROW RzIO *io;
-	RzILCacheConfig config; ///< The cache configuration.
+	RzILCacheConfig config;
 	HtUP /*<block_addr, RzILCacheBlock *>*/ *cache;
 };
 
@@ -166,6 +167,9 @@ fail:
 	return NULL;
 }
 
+/**
+ * \brief Lift block starting at the given addr or take it from the cache if already lifted
+ */
 RZ_API const RzILCacheBlock *rz_il_cache_lift_il_block(RzILCache *cache, ut64 addr) {
 	rz_return_val_if_fail(cache && rz_analysis_plugin_current(cache->analysis) && cache->io, NULL);
 	RzILCacheBlock *block = ht_up_find(cache->cache, addr, NULL);
@@ -191,10 +195,7 @@ RZ_API void rz_il_cache_free(RZ_OWN RZ_NULLABLE RzILCache *cache) {
 	free(cache);
 }
 
-RZ_API RZ_OWN RzILCache *rz_il_cache_new(
-	RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_BORROW RZ_NONNULL RzIO *io,
-	RzILCacheConfig config) {
+RZ_API RZ_OWN RzILCache *rz_il_cache_new(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, RZ_BORROW RZ_NONNULL RzIO *io, RzILCacheConfig config) {
 	rz_return_val_if_fail(analysis && io, NULL);
 	RzILCache *cache = RZ_NEW0(RzILCache);
 	if (!cache) {

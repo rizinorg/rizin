@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2026 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2026 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -31,10 +32,7 @@ typedef enum {
 
 RZ_API RZ_OWN char *rz_il_cache_block_str(RZ_NONNULL const RzILCacheBlock *block);
 
-RZ_API RZ_OWN RzILCache *rz_il_cache_new(
-	RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_BORROW RZ_NONNULL RzIO *io,
-	RzILCacheConfig config);
+RZ_API RZ_OWN RzILCache *rz_il_cache_new(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, RZ_BORROW RZ_NONNULL RzIO *io, RzILCacheConfig config);
 RZ_API void rz_il_cache_free(RZ_OWN RZ_NULLABLE RzILCache *cache);
 
 RZ_API RZ_OWN const RzILCacheBlock *rz_il_cache_lift_il_block(RzILCache *cache, ut64 addr);

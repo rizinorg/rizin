@@ -63,7 +63,7 @@ static size_t do_extract_blocks(RzAbsIntResult *res, RzAbsIntBlock *blocks[], si
 	size_t r = 0;
 	RzIntervalTreeIter it;
 	RzAbsIntBlock *block;
-	rz_interval_tree_foreach(&res->blocks, it, block) {
+	rz_interval_tree_foreach (&res->blocks, it, block) {
 		if (r < count) {
 			blocks[r] = block;
 		}
@@ -81,7 +81,7 @@ static ut64 block_end(RzAbsIntBlock *block) {
 }
 
 #define STR_HELPER(x) #x
-#define STR(x) STR_HELPER(x)
+#define STR(x)        STR_HELPER(x)
 
 /** Extract single result from interp as well as its blocks into local vars for easy assertion */
 #define EXTRACT_RESULT(code, res, blocks_count) \
@@ -90,7 +90,8 @@ static ut64 block_end(RzAbsIntBlock *block) {
 	RzAbsIntBlock *blocks[blocks_count]; \
 	mu_assert_eq(do_extract_blocks(res, blocks, blocks_count), blocks_count, "blocks count")
 
-#define ASSERT_BLOCK(i, start, end, is_fallthrough, jump) do { \
+#define ASSERT_BLOCK(i, start, end, is_fallthrough, jump) \
+	do { \
 		mu_assert_eq(block_start(blocks[i]), start, "block " STR(i) " start"); \
 		mu_assert_eq(block_end(blocks[i]), end, "block " STR(i) " end"); \
 		mu_assert_eq(blocks[i]->fallthrough, (is_fallthrough), "fallthrough"); \
@@ -102,14 +103,16 @@ static ut64 block_end(RzAbsIntBlock *block) {
 		} \
 	} while (0)
 
-#define ASSERT_XREF(i, from_v, to_v, type_v) do { \
+#define ASSERT_XREF(i, from_v, to_v, type_v) \
+	do { \
 		RzAnalysisXRef *xref = rz_vector_index_ptr(&res->xrefs, i); \
 		mu_assert_eq(xref->from, from_v, "xref " STR(i) " from"); \
 		mu_assert_eq(xref->to, to_v, "xref " STR(i) " to"); \
 		mu_assert_eq(xref->type, type_v, "xref " STR(i) " type"); \
 	} while (0)
 
-#define ASSERT_ANALYSIS_BLOCK(block, start, end, jumpv, failv) do { \
+#define ASSERT_ANALYSIS_BLOCK(block, start, end, jumpv, failv) \
+	do { \
 		mu_assert_eq(((RzAnalysisBlock *)block)->addr, (start), "analysis block start"); \
 		mu_assert_eq(((RzAnalysisBlock *)block)->size, (end) - (start), "analysis block size"); \
 		mu_assert_eq(((RzAnalysisBlock *)block)->jump, jumpv, "analysis block jump"); \
@@ -120,14 +123,14 @@ static size_t blocks_count(RzAbsIntRunContext *ctx) {
 	size_t r = 0;
 	RzIntervalTreeIter it;
 	RzAbsIntBlock *block;
-	rz_interval_tree_foreach(&ctx->blocks, it, block) {
+	rz_interval_tree_foreach (&ctx->blocks, it, block) {
 		r++;
 	}
 	return r;
 }
 
 bool test_absint_block_resolve_bounds_single(void) {
-	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://"
+	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"000080d2"  // 0x00  mov   x0, 0
 					// ---
 		"200080d2"  // 0x04  mov   x0, 1 <- entry
@@ -137,6 +140,7 @@ bool test_absint_block_resolve_bounds_single(void) {
 		"a00080d2"  // 0x14  mov   x0, 5
 		"c0035fd6"  // 0x18  ret
 					// ---
+		// clang-format on
 	);
 
 	RzAbsIntRunContext ctx;
@@ -170,7 +174,7 @@ bool test_absint_block_resolve_bounds_single(void) {
 bool test_absint_block_resolve_bounds_prepend(bool single_op_existing_block, bool single_op_prepend) {
 	// single_op_existing_block and single_op_prepend are for testing for potential bugs in insn offset handling
 
-	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://"
+	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		            // --- blocks for single_op_existing_block == false
 		"000080d2"  // 0x00  mov   x0, 0 <- prepended block
 		"200080d2"  // 0x04  mov   x0, 1 <- alternative entry if single_op_prepend
@@ -188,6 +192,7 @@ bool test_absint_block_resolve_bounds_prepend(bool single_op_existing_block, boo
 		//             ---
 		//             0x18  ret         <- existing block
 		//             ---
+		// clang-format on
 	);
 
 	RzAbsIntRunContext ctx;
@@ -229,7 +234,7 @@ bool test_absint_block_resolve_bounds_prepend(bool single_op_existing_block, boo
 bool test_absint_block_resolve_bounds_split(bool single_op_existing_block, bool single_op_split) {
 	// single_op_existing_block and single_op_prepend are for testing for potential bugs in insn offset handling
 
-	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://"
+	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		            // --- blocks for single_op_split == false
 		"000080d2"  // 0x00  mov   x0, 0 <- existing block
 		"200080d2"  // 0x04  mov   x0, 1 <- alternative entry if single_op_existing_block
@@ -245,6 +250,7 @@ bool test_absint_block_resolve_bounds_split(bool single_op_existing_block, bool 
 		//             ---
 		//             0x0c  ret         <- splitting block
 		//             ---
+		// clang-format on
 	);
 
 	RzAbsIntRunContext ctx;
@@ -311,9 +317,10 @@ bool test_absint_block_resolve_bounds_split(bool single_op_existing_block, bool 
 }
 
 bool test_absint_cfg_single_block(void) {
-	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://"
+	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600880d2"  // 0x00  mov   x0, 0x43
 		"c0035fd6"  // 0x04  ret
+		// clang-format on
 	);
 	mu_assert_notnull(interp, "init");
 	RzAbsIntResult *res;
@@ -335,13 +342,14 @@ bool test_absint_cfg_single_block(void) {
 }
 
 bool test_absint_cfg_direct_jmp(void) {
-	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://"
+	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600880d2"  // 0x00  mov   x0, 0x43
 		"03000014"  // 0x04  b     0x10      ---
 		"1f2003d5"  // 0x08  nop                |
 		"1f2003d5"  // 0x0c  nop                |
 		"400880d2"  // 0x10  mov   x0, 0x42  <--
 		"c0035fd6"  // 0x14  ret
+		// clang-format on
 	);
 	mu_assert_notnull(interp, "init");
 	RzAbsIntResult *res;
@@ -365,13 +373,14 @@ bool test_absint_cfg_direct_jmp(void) {
 }
 
 bool test_absint_cfg_branch(void) {
-	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://"
+	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600880d2"  // 0x00  mov   x0, 0x43
 		"69000054"  // 0x04  b.ls  0x10      ---
 		"1f2003d5"  // 0x08  nop                |
 		"c0035fd6"  // 0x0c  ret                |
 		"400880d2"  // 0x10  mov   x0, 0x42  <--
 		"c0035fd6"  // 0x14  ret
+		// clang-format on
 	);
 	mu_assert_notnull(interp, "init");
 	RzAbsIntResult *res;
@@ -397,7 +406,7 @@ bool test_absint_cfg_branch(void) {
 }
 
 bool test_absint_cfg_branch_join(void) {
-	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://"
+	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"1f8c04f1"  // 0x00  cmp   x0, 0x123
 		"69000054"  // 0x04  b.ls  0x10      ---
 					//                          |
@@ -407,6 +416,7 @@ bool test_absint_cfg_branch_join(void) {
 		"400880d2"  // 0x10  mov   x0, 0x42  <--    |
 					//                              |
 		"c0035fd6"  // 0x14  ret             <------
+		// clang-format on
 	);
 	mu_assert_notnull(interp, "init");
 	RzAbsIntResult *res;
@@ -438,7 +448,7 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp(bool swap) {
 	// but has two entrypoints into it, where one entrypoint falls through into the other.
 	// The swapping of the branches is there because potential bugs in the interpreter may
 	// depend on the order of block addresses added.
-	TestInterp *interp = interp_new("arm", 64, 0x10000,
+	TestInterp *interp = interp_new("arm", 64, 0x10000, // clang-format off
 		!swap ? "hex://"
 			"a9000054"  // 0x00  b.ls  0x14      ------
 			"02000014"  // 0x04  b     0xc       ---   |
@@ -455,6 +465,7 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp(bool swap) {
 			"1f2003d5"  // 0x10  nop                    |
 			"610880d2"  // 0x14  mov   x1, 0x43  <------
 			"c0035fd6"  // 0x18  ret
+		// clang-format on
 	);
 	mu_assert_notnull(interp, "init");
 	RzAbsIntResult *res;
@@ -482,11 +493,12 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp(bool swap) {
 }
 
 bool test_absint_cfg_multi_entry_fallthrough_jmp_before() {
-	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://"
+	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"400880d2"  // 0x00  mov   x0, 0x42   <--
 		"1f8c04f1"  // 0x04  cmp   x0, 0x123     |
 		"c9ffff54"  // 0x08  b.ls  0          ---
 		"c0035fd6"  // 0x0c  ret
+		// clang-format on
 	);
 	mu_assert_notnull(interp, "init");
 	RzAbsIntResult *res;
@@ -512,11 +524,12 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp_before() {
 }
 
 bool test_absint_cfg_multi_entry_fallthrough_jmp_inside_self() {
-	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://"
+	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600080d2"  // 0x00  mov   x0, 3
 		"000400d1"  // 0x04  sub   x0, x0, 1 <--
 		"e1ffff54"  // 0x08  b.ne  4         ---
 		"c0035fd6"  // 0x0c  ret
+		// clang-format on
 	);
 	mu_assert_notnull(interp, "init");
 	RzAbsIntResult *res;
@@ -542,13 +555,14 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp_inside_self() {
 }
 
 bool test_absint_cfg_multi_entry_fallthrough_jmp_inside_other() {
-	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://"
+	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600080d2"  // 0x00  mov   x0, 3
 		"000400d1"  // 0x04  sub   x0, x0, 1 <--------
 		"02000014"  // 0x08  b     0x10      ---      |
 		"1f2003d5"  // 0x0c  nop                |     |
 		"a1ffff54"  // 0x10  b.ne  4         <--   ---
 		"c0035fd6"  // 0x14  ret
+		// clang-format on
 	);
 	mu_assert_notnull(interp, "init");
 	RzAbsIntResult *res;
@@ -576,10 +590,11 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp_inside_other() {
 }
 
 bool test_absint_cfg_call_link_register(void) {
-	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://"
+	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600880d2"  // 0x00  mov   x0, 0x43
 		"ff430094"  // 0x04  bl    0x11000
 		"c0035fd6"  // 0x08  ret
+		// clang-format on
 	);
 	mu_assert_notnull(interp, "init");
 	RzAbsIntResult *res;
@@ -602,12 +617,13 @@ bool test_absint_cfg_call_link_register(void) {
 }
 
 bool test_absint_cfg_call_multi_insn(void) {
-	TestInterp *interp = interp_new("arm", 32, 0x10000, "hex://"
+	TestInterp *interp = interp_new("arm", 32, 0x10000, "hex://" // clang-format off
 		// this pattern is common on ARMv4 to perform an indirect call
 		"110aa0e3"  // 0x00  mov   r0, 0xff000
 		"0fe0a0e1"  // 0x04  mov   lr, pc
 		"00f0a0e1"  // 0x08  mov   pc, r0
 		"1eff2fe1"  // 0x0c  bx    lr
+		// clang-format on
 	);
 	mu_assert_notnull(interp, "init");
 	RzAbsIntResult *res;
@@ -630,10 +646,11 @@ bool test_absint_cfg_call_multi_insn(void) {
 }
 
 bool test_absint_cfg_call_ret_in_memory(void) {
-	TestInterp *interp = interp_new("x86", 64, 0x10000, "hex://"
+	TestInterp *interp = interp_new("x86", 64, 0x10000, "hex://" // clang-format off
 		"89c1"            // 0x00  mov   ecx, eax
 		"ff14cde0000008"  // 0x02  call  qword [rcx*8+0x80000e0]
 		"c3"              // 0x09  ret
+		// clang-format on
 	);
 	mu_assert_notnull(interp, "init");
 	RzAbsIntResult *res;
@@ -658,7 +675,7 @@ bool test_absint_cfg_call_ret_in_memory(void) {
 bool test_absint_cfg_merge_multiple_consecutive(void) {
 	// multiple consecutive interp blocks should be merged, but only until the next in-edge
 	// or until there is another non-fallthrough out-edge.
-	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://"
+	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"01010054"  // 0x00  b.ne  0x20     -----
 		"200080d2"  // 0x04  mov   x0, 0x1       |
 		"fe030094"  // 0x08  bl    0x11000       |
@@ -668,6 +685,7 @@ bool test_absint_cfg_merge_multiple_consecutive(void) {
 		"40000054"  // 0x18  b.eq  0x20     ---  |
 		"800080d2"  // 0x1c  mov   x0, 4       | |
 		"c0035fd6"  // 0x20  ret            <-- -
+		// clang-format on
 	);
 	mu_assert_notnull(interp, "init");
 	RzAbsIntResult *res;
@@ -714,7 +732,7 @@ static int xref_cmp(const void *a, const void *b, void *user) {
 }
 
 bool test_absint_xrefs(void) {
-	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://"
+	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600880d2"  // 0x00  mov   x0, 0x43
 		"a9000054"  // 0x04  b.ls  0x18      ------
 		"81000090"  // 0x08  adrp  x1, 0x20000     |
@@ -723,6 +741,7 @@ bool test_absint_xrefs(void) {
 		"fb030094"  // 0x14  bl    0x1000          |
 		"400880d2"  // 0x18  mov   x0, 0x42  <-----
 		"c0035fd6"  // 0x1c  ret
+		// clang-format on
 	);
 	mu_assert_notnull(interp, "init");
 	RzIODesc *data_desc = rz_io_open_at(interp->io, "malloc://0x100", RZ_PERM_RW, 0644, 0x20000, NULL);
@@ -758,7 +777,7 @@ bool test_absint_xrefs(void) {
 }
 
 bool test_absint_comments(void) {
-	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://"
+	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600880d2"  // 0x00  mov   x0, 0x43
 		"a9000054"  // 0x04  b.ls  0x18      ------
 		"81000090"  // 0x08  adrp  x1, 0x20000     |
@@ -767,6 +786,7 @@ bool test_absint_comments(void) {
 		"fb030094"  // 0x14  bl    0x1000          |
 		"400880d2"  // 0x18  mov   x0, 0x42  <-----
 		"c0035fd6"  // 0x1c  ret
+		// clang-format on
 	);
 	mu_assert_notnull(interp, "init");
 	RzIODesc *data_desc = rz_io_open_at(interp->io, "malloc://0x100", RZ_PERM_RW, 0644, 0x20000, NULL);
@@ -810,7 +830,7 @@ bool test_absint_driver(void) {
 	rz_analysis_set_bits(analysis, 64);
 	RzIO *io = rz_io_new();
 	io->va = 1;
-	RzIODesc *desc = rz_io_open_at(io, "hex://"
+	RzIODesc *desc = rz_io_open_at(io, "hex://" // clang-format off
 		"1f8c04f1"  // 0x00  cmp   x0, 0x123
 		"69000054"  // 0x04  b.ls  0x10      ---
 					//                          |
@@ -820,6 +840,7 @@ bool test_absint_driver(void) {
 		"400880d2"  // 0x10  mov   x0, 0x42  <--    |
 					//                              |
 		"c0035fd6",  // 0x14  ret
+		// clang-format on
 		RZ_PERM_RX, 0644, 0x10000, NULL);
 	mu_assert_notnull(desc, "load code");
 

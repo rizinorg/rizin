@@ -16,7 +16,7 @@ rz_inquiry_inc = [platform_inc]
 rz_inquiry = library('rz_inquiry', rz_inquiry_sources,
   include_directories: rz_inquiry_inc,
   dependencies: [
-    rz_arch_dep, # Legacy analysis module
+    rz_arch_dep,
     rz_bin_dep,
     rz_config_dep,
     rz_cons_dep,

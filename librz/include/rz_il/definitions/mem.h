@@ -13,14 +13,7 @@ extern "C" {
 
 typedef ut32 RzILMemIndex;
 
-/**
- * \brief Low-level reading function used in rz_il_mem_loadw_into
- */
 RZ_API bool rz_il_loadw_into(RZ_NONNULL RzBuffer *mem_buf, RZ_NONNULL RZ_OUT RzBitVector *out_bv, RZ_NONNULL const RzBitVector *key, ut32 n_bits, bool big_endian);
-
-/**
- * \brief Low-level writing function used in rz_il_mem_storew
- */
 RZ_API bool rz_il_storew(RZ_NONNULL RzBuffer *buf, RZ_NONNULL const RzBitVector *key, RZ_NONNULL const RzBitVector *value, bool big_endian);
 
 /**

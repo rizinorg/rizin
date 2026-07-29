@@ -109,9 +109,7 @@ static void *interp_th(void *user) {
 			.payload = {
 				.interp_result = {
 					.entry = entry_point_val,
-					.res = res
-				}
-			}
+					.res = res } }
 		};
 		rz_th_ring_buf_put(ctx->driver->main_ch, &msg);
 	}
@@ -125,9 +123,7 @@ static RzAbsIntIOReadResult send_io_read(RZ_NONNULL RzAbsIntIOReadRequest *req, 
 		.sender = th,
 		.payload = {
 			.io_read = {
-				.request = req
-			}
-		}
+				.request = req } }
 	};
 	if (rz_th_ring_buf_put(th->driver->main_ch, &msg) != RZ_THREAD_RING_BUF_OK) {
 		return RZ_ABSINT_IO_READ_RESULT_BREAK;
@@ -147,9 +143,7 @@ static RzAbsIntLiftBlockResult send_lift_il_block(ut64 addr, const RzILCacheBloc
 		.sender = th,
 		.payload = {
 			.lift_block = {
-				.addr = addr
-			}
-		}
+				.addr = addr } }
 	};
 	if (rz_th_ring_buf_put(th->driver->main_ch, &msg) != RZ_THREAD_RING_BUF_OK) {
 		return RZ_ABSINT_LIFT_BLOCK_RESULT_BREAK;
@@ -223,7 +217,7 @@ static RzAbsIntIOReadResult handle_io_request(const RzAnalysisILContext *il_ctx,
 		return RZ_ABSINT_IO_READ_RESULT_TOP;
 	}
 	if (rz_bv_len(io_req->addr) == 64 && rz_bv_msb(io_req->addr)) {
-		// TODO: remove this
+		// TODO: remove this when not needed anymore
 		RZ_LOG_ERROR("Due to the Unix seek() implementation, addresses with the "
 			     "63 bit set can't be addresses.\n");
 		return RZ_ABSINT_IO_READ_RESULT_TOP;
@@ -241,8 +235,7 @@ static RzAbsIntIOReadResult handle_io_request(const RzAnalysisILContext *il_ctx,
 RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *config) {
 	rz_return_val_if_fail(config && config->analysis && config->io && config->entry_points, false);
 	bool return_code = false;
-
-	bool user_sent_signal = false;
+	bool breaked = false;
 
 	RzILCacheConfig il_cache_config = RZ_IL_CACHE_CONFIG_NOP_UNLIFTED;
 	if (config->trace_opts & RZ_ABSINT_TRACE_IL_BLOCK) {
@@ -270,7 +263,7 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 	size_t entries_pushed = 0;
 	RzIterator *it = rz_set_u_as_iter(config->entry_points);
 	ut64 *entry;
-	rz_iterator_foreach (it, entry) {
+	rz_iterator_foreach(it, entry) {
 		ut64 *tmp = RZ_NEW(ut64);
 		if (!tmp) {
 			rz_iterator_free(it);
@@ -303,13 +296,18 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 
 	// Serve the interpreters
 	size_t entries_finished = 0;
-	while (entries_finished < entries_pushed && !rz_cons_is_breaked()) {
+	while (entries_finished < entries_pushed) {
+		if (rz_cons_is_breaked()) {
+			breaked = true;
+			break;
+		}
 		InterpDriverMessage msg;
 		if (rz_th_ring_buf_take_blocking(driver.main_ch, &msg) != RZ_THREAD_RING_BUF_OK) {
 			// closed
 			break;
 		}
 		if (rz_cons_is_breaked()) {
+			breaked = true;
 			break;
 		}
 		switch (msg.type) {
@@ -318,8 +316,7 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 			InterpThreadMessage res_msg = {
 				.type = INTERP_MESSAGE_IO_READ_RESULT,
 				.payload = {
-					.io_read_result = res
-				}
+					.io_read_result = res }
 			};
 			if (rz_th_ring_buf_put(msg.sender->ch, &res_msg) != RZ_THREAD_RING_BUF_OK) {
 				// should not be closed
@@ -332,8 +329,7 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 			InterpThreadMessage res_msg = {
 				.type = INTERP_MESSAGE_LIFT_BLOCK_RESULT,
 				.payload = {
-					.lift_block_result = block
-				}
+					.lift_block_result = block }
 			};
 			if (rz_th_ring_buf_put(msg.sender->ch, &res_msg) != RZ_THREAD_RING_BUF_OK) {
 				// should not be closed
@@ -381,5 +377,5 @@ err_entry_points_ch:
 err_il_cache:
 	rz_il_cache_free(il_cache);
 err_none:
-	return return_code && !user_sent_signal;
+	return return_code && !breaked;
 }

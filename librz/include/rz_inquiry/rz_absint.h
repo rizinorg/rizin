@@ -13,7 +13,7 @@
 #include <rz_arch.h>
 #include <rz_io.h>
 
-typedef enum rz_inquiry_trace_options_t {
+typedef enum rz_absint_trace_options_t {
 	RZ_ABSINT_TRACE_NONE = 0,
 	RZ_ABSINT_TRACE_IL_BLOCK = (1 << 0), ///< e inquiry.trace=ilblock; log il blocks as they are lifted
 	RZ_ABSINT_TRACE_EVAL_BLOCK = (1 << 1), ///< e inquiry.trace=evallock; log coarse information about absint blocks as they are evaluated
@@ -46,13 +46,13 @@ static inline void *rz_absint_val_unpack(const RzAbsIntVal *val) {
 	return (void *)val;
 }
 
-typedef enum {
+typedef enum rz_absint_pc_state_t {
 	RZ_ABSINT_PC_CONST, ///< Single known value
 	RZ_ABSINT_PC_UNREACHABLE, ///< Bottom/unreachable state, if this is set, pc field is unused and undefined
 	RZ_ABSINT_PC_ANY ///< Top state, if this is set, pc field is unused and undefined
 } RzAbsIntPCState;
 
-typedef struct {
+typedef struct rz_absint_state_t {
 	ut64 pc; ///< Interpreter location in the code. This is not necessarily identical to the ISA's program counter register, but simply points to the instruction to execute next.
 	RzAbsIntPCState pc_state;
 
@@ -68,7 +68,7 @@ typedef struct {
  * the case when the instruction directly following this block has an in-edge.
  * And unlike in RzAnalysisBlock, a call instruction also terminates an interpreter block.
  */
-typedef struct {
+typedef struct rz_absint_block_t {
 	RzIntervalNode *node; ///< Backref to the node containing this block. end value is inclusive. TODO: remove this if RBTree is used directly
 	/**
 	 * Least upper bound of all states discovered at the entry of the block.
@@ -147,7 +147,6 @@ typedef struct rz_absint_value_domain_t {
 	 * \param val Output, as well as operand
 	 */
 	void (*eval_unop)(RzILOpPureCode code, RZ_NONNULL RZ_INOUT RzAbsIntVal *val);
-
 } RzAbsIntValueDomain;
 
 typedef struct rz_absint_io_read_request_t {

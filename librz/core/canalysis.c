@@ -6420,6 +6420,9 @@ static char *cinquiry_choose_function_name(RzCore *core, ut64 addr) {
 	RzBinFile *bf = rz_bin_cur(core->bin);
 
 	// see getFunctionName for reference
+	// It is duplicated here because the logic for selection a function name in the legacy analysis
+	// is more complex and is distributed across multiple functions. This should be the starting
+	// point for reimplementing it centrally.
 
 	RzBinSymbol *sym = bf && bf->o ? rz_bin_object_find_method_by_vaddr(bf->o, addr) : NULL;
 	if (sym && sym->classname && sym->name) {
