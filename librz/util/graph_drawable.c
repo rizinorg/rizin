@@ -336,7 +336,7 @@ RZ_API void rz_graph_drawable_to_json(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *, N
 			pj_kb(pj, "is_malloc", print_node->type & RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC);
 		} else if (print_node->type == RZ_GRAPH_NODE_TYPE_CFG) {
 			pj_kn(pj, "address", print_node->cfg.address);
-			pj_kb(pj, "is_call", print_node->type & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL);
+			pj_kb(pj, "is_call", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL);
 			if (print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL && print_node->cfg.call_address != UT64_MAX) {
 				pj_kn(pj, "call_address", print_node->cfg.call_address);
 			}
