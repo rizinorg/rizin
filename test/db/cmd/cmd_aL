@@ -124,6 +124,7 @@ noptr64         Special MIPS configuration to disable support for 64-bit pointer
 nofloat         Special MIPS configuration to disable support for floating-points
 esp32           Xtensa microcontroller with Wi-Fi and Bluetooth capabilities
 esp32s2         Xtensa microcontroller with Wi-Fi and USB OTG support
+esp32s3         Xtensa microcontroller with Wi-Fi, USB OTG support, and HIFI3
 esp8266         Xtensa microcontroller with Wi-Fi support
 v8              ARMv8 version
 cortexm         ARM Cortex-M family

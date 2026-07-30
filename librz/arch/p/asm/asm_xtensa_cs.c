@@ -34,6 +34,7 @@ static char **xtensa_cpu_descriptions() {
 	static char *cpu_desc[] = {
 		"esp32", "Xtensa microcontroller with Wi-Fi and Bluetooth capabilities",
 		"esp32s2", "Xtensa microcontroller with Wi-Fi and USB OTG support",
+		"esp32s3", "Xtensa microcontroller with Wi-Fi, USB OTG support, and HIFI3",
 		"esp8266", "Xtensa microcontroller with Wi-Fi support",
 		NULL
 	};
@@ -46,7 +47,7 @@ RzAsmPlugin rz_asm_plugin_xtensa_cs = {
 	.desc = "Tensilica Xtensa Capstone-based disassembler",
 	.author = "billow",
 	.arch = "xtensa",
-	.cpus = "esp32,esp32s2,esp8266",
+	.cpus = "esp32,esp32s2,esp32s3,esp8266",
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.disassemble = asm_xtensa_disassemble,
