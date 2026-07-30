@@ -155,7 +155,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 	                                  fn(RZ_FLOAT_RMODE_RNA, __VA_ARGS__)))))
 
 #define DEFINE_FD_LIFTER(name, decoder, fl_result) \
-	static RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
+	RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
 		RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
 		decoder(analysis, insn); \
 		return SEQ3( \
@@ -165,14 +165,14 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 	}
 
 #define DEFINE_FD_LIFTER_BV_TO_FREG(name, decoder, bv_result) \
-	static RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
+	RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
 		RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
 		decoder(analysis, insn); \
 		return RISCV_FD_REG_SETTER_BV(frd, bv_result); \
 	}
 
 #define DEFINE_FD_LIFTER_UNARY(name, decoder, fn) \
-	static RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
+	RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
 		RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
 		decoder(analysis, insn); \
 		if (insn->detail->riscv.rounding_mode == RISCV_RM_DYN) { \
@@ -191,7 +191,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 
 // Binary float op (fadd.s, fsub.s, fmul.s, fdiv.s) with DYN support.
 #define DEFINE_FD_LIFTER_BINARY(name, decoder, fn) \
-	static RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
+	RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
 		RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
 		decoder(analysis, insn); \
 		if (insn->detail->riscv.rounding_mode == RISCV_RM_DYN) { \
@@ -214,7 +214,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 // negate_result: pass true for fnmadd (result = -(a*b+c)).
 // Exception flags are always checked on the un-negated FMAD result.
 #define DEFINE_FD_LIFTER_MAD(name, decoder, a, b, c, negate_result) \
-	static RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
+	RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
 		RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
 		decoder(analysis, insn); \
 		if (insn->detail->riscv.rounding_mode == RISCV_RM_DYN) { \
@@ -366,7 +366,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 //   - otherwise              → normal min / max
 // -----------------------------------------------------------------------
 #define DEFINE_LIFTER_MINMAX(name, cond, zero_select_a, sz) \
-	static RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
+	RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
 		RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
 		REQUIRE_OP(0, RISCV_OP_REG); \
 		REQUIRE_OP(1, RISCV_OP_REG); \
@@ -425,7 +425,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 // Float32 NaN: exponent[30:23] == 0xFF AND mantissa[22:0] != 0.
 // -----------------------------------------------------------------------
 #define DEFINE_FCMP_LIFTER(name, cmp_fn, sz) \
-	static RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
+	RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
 		RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
 		REQUIRE_OP(0, RISCV_OP_REG); \
 		REQUIRE_OP(1, RISCV_OP_REG); \
@@ -449,7 +449,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 
 // feq*: quiet NaN gives 0 result with no exception; signaling NaN gives 0 and raises NV.
 #define DEF_FEQ(name, sz) \
-	static RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
+	RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
 	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
 	REQUIRE_OP(0, RISCV_OP_REG); \
 	REQUIRE_OP(1, RISCV_OP_REG); \
@@ -487,7 +487,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 // -----------------------------------------------------------------------
 #define CLASSIFICATION_BIT(n, cond) SHIFTL0(BOOL_TO_BV(cond, xlen), UN(xlen, (n)))
 
-#define DEF_FCLASS(name) static RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
+#define DEF_FCLASS(name) RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
 	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
 	DECODE_FD_RD_FS_BV(analysis, insn); \
 	uint32_t xlen = analysis->bits; \
@@ -532,7 +532,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 // Saturation (RISC-V spec §11.4):
 //   NaN (any) or positive overflow → INT32_MAX (0x7FFFFFFF)
 //   -Inf or negative overflow      → INT32_MIN (0x80000000)
-#define DEF_FCVT_W(name, sz) static RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
+#define DEF_FCVT_W(name, sz) RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
 	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
 	DECODE_FD_RD_FS_BV(analysis, insn); \
 	return SEQN(8, \
@@ -562,7 +562,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 // Saturation (RISC-V spec §11.4):
 //   NaN (any) or positive overflow → UINT32_MAX (0xFFFFFFFF)
 //   negative non-zero (incl. −Inf) → 0x00000000
-#define DEF_FCVT_WU(name, sz) static RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
+#define DEF_FCVT_WU(name, sz) RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
 	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
 	DECODE_FD_RD_FS_BV(analysis, insn); \
 	return SEQN(8, \
@@ -594,7 +594,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 // Saturation (RISC-V spec §11.4):
 //   NaN (any) or positive overflow → INT64_MAX (0x7FFFFFFFFFFFFFFF)
 //   -Inf or negative overflow      → INT64_MIN (0x8000000000000000)
-#define DEF_FCVT_L(name, sz) static RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
+#define DEF_FCVT_L(name, sz) RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
 	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
 	REQUIRE_64_BIT(analysis); \
 	REQUIRE_OP(0, RISCV_OP_REG); \
@@ -628,7 +628,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 // Saturation (RISC-V spec §11.4):
 //   NaN (any) or positive overflow → UINT64_MAX (0xFFFFFFFFFFFFFFFF)
 //   negative non-zero (incl. −Inf) → 0x0000000000000000
-#define DEF_FCVT_LU(name, sz) static RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
+#define DEF_FCVT_LU(name, sz) RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
 	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
 	REQUIRE_64_BIT(analysis); \
 	REQUIRE_OP(0, RISCV_OP_REG); \
