@@ -178,10 +178,12 @@ static RzStructuredData *riscv_opex(csh handle, cs_insn *insn) {
 		cs_riscv_op *op = x->operands + i;
 		RzStructuredData *operand = rz_structured_data_array_add_map(operands);
 		switch (op->type) {
-		case RISCV_OP_REG:
+		case RISCV_OP_REG: {
 			rz_structured_data_map_add_string(operand, "type", "reg");
-			rz_structured_data_map_add_string(operand, "value", cs_reg_name(handle, op->reg));
+			const char *reg_name = cs_reg_name(handle, op->reg);
+			rz_structured_data_map_add_string(operand, "value", reg_name ? reg_name : "<unknown>");
 			break;
+		}
 		case RISCV_OP_IMM:
 			rz_structured_data_map_add_string(operand, "type", "imm");
 			rz_structured_data_map_add_signed(operand, "value", op->imm);
@@ -2112,6 +2114,8 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"gpr	ft10	.64	368	0\n" // =f30
 			"gpr	ft11	.64	376	0\n" // =f31
 			"gpr	fcsr	.32	384	0\n"
+			"gpr	vl	.32	388	0\n"
+			"gpr	vtype	.32	392	0\n"
 			"flg	nx	.1	3072	0\n"
 			"flg	uf	.1	3073	0\n"
 			"flg	of	.1	3074	0\n"
@@ -2238,6 +2242,8 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"gpr	ft10	.64	496	0\n" // =f30
 			"gpr	ft11	.64	504	0\n" // =f31
 			"gpr	fcsr	.64	512	0\n"
+			"gpr	vl	.64	520	0\n"
+			"gpr	vtype	.64	528	0\n"
 			// vector registers
 			// assume each register is 512 bits (64 bytes) for maximum compatibility
 			// TODO: make the width accurately reflect the exact width defined in the binary

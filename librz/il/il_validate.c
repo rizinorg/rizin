@@ -831,6 +831,7 @@ static ValidatePureFn validate_pure_table[RZ_IL_OP_PURE_MAX] = {
 	[RZ_IL_OP_FPRED] = VALIDATOR_PURE_NAME(float_uop),
 	[RZ_IL_OP_FORDER] = VALIDATOR_PURE_NAME(forder),
 	[RZ_IL_OP_FROUND] = VALIDATOR_PURE_NAME(float_uop_with_round),
+	[RZ_IL_OP_FROUND_EXC] = VALIDATOR_PURE_NAME(float_uop_with_round),
 	[RZ_IL_OP_FSQRT] = VALIDATOR_PURE_NAME(float_uop_with_round),
 	[RZ_IL_OP_FRSQRT] = VALIDATOR_PURE_NAME(float_uop_with_round),
 	[RZ_IL_OP_FEXCEPT] = VALIDATOR_PURE_NAME(float_uop_except),

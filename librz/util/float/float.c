@@ -1114,6 +1114,10 @@ RZ_API bool rz_float_is_equal(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y) {
 		y_f80_inf = is_f80_infinity(y);
 		f80_integer_bit = rz_float_get_format_info(RZ_FLOAT_IEEE754_BIN_80, RZ_FLOAT_INFO_MAN_LEN) - 1;
 	}
+	if (rz_float_is_zero(x) && rz_float_is_zero(y)) {
+		return true;
+	}
+
 	for (ut32 i = 1; i < xb->len; ++i) {
 		bool x_bit = x_f80_inf && i == f80_integer_bit ? true : rz_bv_get(xb, i);
 		bool y_bit = y_f80_inf && i == f80_integer_bit ? true : rz_bv_get(yb, i);
@@ -1719,6 +1723,27 @@ RZ_API RZ_OWN RzFloat *rz_float_round_to_integral(RZ_NONNULL RzFloat *f, RzFloat
 	}
 }
 
+RZ_API RZ_OWN RzFloat *rz_float_round_to_integral_exact(RZ_NONNULL RzFloat *f, RzFloatRMode mode) {
+	rz_return_val_if_fail(f, NULL);
+
+	RzFloatFormat format = f->r;
+	set_float_rounding_mode(mode);
+
+	switch (format) {
+	case RZ_FLOAT_IEEE754_BIN_32:
+		return of_float32(f32_roundToInt(to_float32(f), softfloat_roundingMode, true));
+	case RZ_FLOAT_IEEE754_BIN_64:
+		return of_float64(f64_roundToInt(to_float64(f), softfloat_roundingMode, true));
+	case RZ_FLOAT_IEEE754_BIN_80:
+		return of_float80(extF80_roundToInt(to_float80(f), softfloat_roundingMode, true));
+	case RZ_FLOAT_IEEE754_BIN_128:
+		return of_float128(f128_roundToInt(to_float128(f), softfloat_roundingMode, true));
+	default:
+		RZ_LOG_ERROR("float: ROUND operation unimplemented for format %d\n", format);
+		return NULL;
+	}
+}
+
 /**
  * cast_float s m x is the closest to x floating number of sort s.
  * The bitvector x is interpreted as an unsigned integer in the two-complement form.
@@ -2189,6 +2214,10 @@ RZ_API RZ_OWN RzFloat *rz_float_pred(RZ_NONNULL RzFloat *f) {
  */
 RZ_API RZ_OWN st32 rz_float_cmp(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y) {
 	rz_return_val_if_fail(x && y, -2);
+
+	if (rz_float_is_zero(x) && rz_float_is_zero(y)) {
+		return 0;
+	}
 
 	RZ_BORROW RzBitVector *x_bv = rz_bv_dup(x->s);
 	RZ_BORROW RzBitVector *y_bv = rz_bv_dup(y->s);
