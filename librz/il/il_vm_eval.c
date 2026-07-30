@@ -75,7 +75,6 @@ void *rz_il_handler_fcast_sint(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fcast_float(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fcast_sfloat(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fconvert(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
-void *rz_il_handler_fwith_rprec(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_frequal(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fsucc(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fpred(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
@@ -95,7 +94,6 @@ void *rz_il_handler_fmad(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_frootn(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fpown(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fcompound(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
-void *rz_il_handler_float_with_rmode(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 
 // TODO: remove me when all the handlers are implemented
 void *rz_il_handler_pure_unimplemented(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
@@ -168,15 +166,6 @@ RZ_IPI RzILOpPureHandler rz_il_op_handler_pure_table_default[RZ_IL_OP_PURE_MAX] 
 	[RZ_IL_OP_FCAST_FLOAT] = rz_il_handler_fcast_float,
 	[RZ_IL_OP_FCAST_SFLOAT] = rz_il_handler_fcast_sfloat,
 	[RZ_IL_OP_FCONVERT] = rz_il_handler_fconvert,
-	[RZ_IL_OP_FWITH_RPREC] = rz_il_handler_fwith_rprec,
-	[RZ_IL_OP_FCONVERT_WITH_RMODE] = rz_il_handler_float_with_rmode,
-	[RZ_IL_OP_FROUND_WITH_RMODE] = rz_il_handler_float_with_rmode,
-	[RZ_IL_OP_FSQRT_WITH_RMODE] = rz_il_handler_float_with_rmode,
-	[RZ_IL_OP_FADD_WITH_RMODE] = rz_il_handler_float_with_rmode,
-	[RZ_IL_OP_FSUB_WITH_RMODE] = rz_il_handler_float_with_rmode,
-	[RZ_IL_OP_FMUL_WITH_RMODE] = rz_il_handler_float_with_rmode,
-	[RZ_IL_OP_FDIV_WITH_RMODE] = rz_il_handler_float_with_rmode,
-	[RZ_IL_OP_FMOD_WITH_RMODE] = rz_il_handler_float_with_rmode,
 
 	// Float Theory
 	// TODO : Implement other Float Theory operations

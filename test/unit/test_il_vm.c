@@ -3,16 +3,10 @@
 
 #include <rz_il.h>
 #include <rz_util.h>
+#include <rz_util/rz_graph_drawable.h>
 #include "minunit.h"
 #include "rz_il/rz_il_events.h"
 #include "rz_il/rz_il_opcodes.h"
-
-static RzFloat *new_f80_from_bytes(const char *bytes) {
-	RzBitVector *bv = rz_bv_new_from_bytes_be((const ut8 *)bytes, 0, 80);
-	RzFloat *ret = rz_float_new_from_bv(bv);
-	rz_bv_free(bv);
-	return ret;
-}
 
 static bool test_rzil_vm_init() {
 	RzILVM *vm = rz_il_vm_new(0, 8, true, RZ_IL_EVENT_EXC_NONE);
@@ -1192,120 +1186,63 @@ static bool test_rzil_vm_op_fexcept() {
 	mu_end;
 }
 
-static bool test_rzil_vm_op_fwith_rprec() {
+static bool test_rzil_vm_binary80_full_precision() {
 	RzILVM *vm = rz_il_vm_new(0, 32, false, RZ_IL_EVENT_EXC_NONE);
-	const long double input = 1.0L + 0x1.8p-23L;
+	RzFloatRPrecision original_precision = rz_float_ext80_get_rounding_precision();
+	mu_assert_true(original_precision != RZ_FLOAT_RPREC_UNK, "initial binary80 precision is valid");
 
-	mu_assert_true(rz_float_ext80_set_rounding_precision(RZ_FLOAT_RPREC_64), "set initial precision");
-	RzILOpFloat *op = rz_il_op_new_fwith_rprec(RZ_FLOAT_RPREC_32,
-		rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE,
-			rz_il_op_new_float_from_f80(input),
-			rz_il_op_new_float_from_f80(1.0L)));
-	RzFloat *actual = rz_il_evaluate_float(vm, op);
-	RzFloat *expected = rz_float_new_from_f80(1.0L + 0x1p-22L);
-	mu_assert_notnull(actual, "precision-scoped multiply");
-	mu_assert_false(rz_float_cmp(actual, expected), "binary80 exponent with single significand precision");
-	mu_assert_eq(rz_float_ext80_get_rounding_precision(), RZ_FLOAT_RPREC_64, "precision restored after success");
-	rz_float_free(actual);
-	rz_float_free(expected);
-	rz_il_op_pure_free(op);
-
-	op = rz_il_op_new_fwith_rprec(RZ_FLOAT_RPREC_32,
-		rz_il_op_new_fmad(RZ_FLOAT_RMODE_RNE,
-			rz_il_op_new_float_from_f80(1.0L),
-			rz_il_op_new_float_from_f80(1.0L),
-			rz_il_op_new_float_from_f80(0x1p-30L)));
-	actual = rz_il_evaluate_float(vm, op);
-	expected = rz_float_new_from_f80(1.0L);
-	mu_assert_notnull(actual, "precision-scoped fused multiply-add");
-	mu_assert_false(rz_float_cmp(actual, expected), "binary80 FMA honors single significand precision");
-	mu_assert_true(actual->exception & RZ_FLOAT_E_INEXACT, "precision-scoped FMA reports inexact");
-	mu_assert_eq(rz_float_ext80_get_rounding_precision(), RZ_FLOAT_RPREC_64, "precision restored after FMA");
-	rz_float_free(actual);
-	rz_float_free(expected);
-	rz_il_op_pure_free(op);
-
-	const RzFloatRPrecision reduced_precisions[] = {
-		RZ_FLOAT_RPREC_32,
-		RZ_FLOAT_RPREC_64,
+	const struct {
+		RzFloatRPrecision ambient_precision;
+		long double input;
+	} mul_cases[] = {
+		{ RZ_FLOAT_RPREC_32, 1.0L + 0x1.8p-23L },
+		{ RZ_FLOAT_RPREC_64, 1.0L + 0x1.8p-52L },
 	};
-	for (size_t i = 0; i < RZ_ARRAY_SIZE(reduced_precisions); i++) {
-		op = rz_il_op_new_fwith_rprec(reduced_precisions[i],
-			rz_il_op_new_fmad(RZ_FLOAT_RMODE_RTN,
-				rz_il_op_new_float_from_f80(1.0L),
-				rz_il_op_new_float_from_f80(1.0L),
-				rz_il_op_new_float_from_f80(-1.0L)));
-		actual = rz_il_evaluate_float(vm, op);
-		mu_assert_notnull(actual, "precision-scoped cancelling FMA");
-		mu_assert_true(rz_float_is_zero(actual), "cancelling FMA returns zero");
-		mu_assert_true(rz_float_is_negative(actual), "round-toward-negative cancellation returns negative zero");
-		mu_assert_eq(actual->exception, 0, "exact cancellation has no exception");
-		mu_assert_eq(rz_float_ext80_get_rounding_precision(), RZ_FLOAT_RPREC_64, "precision restored after cancelling FMA");
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(mul_cases); i++) {
+		mu_assert_true(rz_float_ext80_set_rounding_precision(mul_cases[i].ambient_precision), "set reduced ambient precision");
+		RzILOpFloat *op = rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE,
+			rz_il_op_new_float_from_f80(mul_cases[i].input),
+			rz_il_op_new_float_from_f80(1.0L));
+		RzFloat *actual = rz_il_evaluate_float(vm, op);
+		RzFloat *expected = rz_float_new_from_f80(mul_cases[i].input);
+		mu_assert_notnull(actual, "binary80 multiply");
+		mu_assert_false(rz_float_cmp(actual, expected), "RzIL binary80 multiply uses full precision");
+		mu_assert_eq(rz_float_ext80_get_rounding_precision(), mul_cases[i].ambient_precision, "multiply restores ambient precision");
 		rz_float_free(actual);
+		rz_float_free(expected);
 		rz_il_op_pure_free(op);
 	}
 
-	/* The exact result is 1 + 2^-24 + 2^-114. Rounding first to binary128
-	 * would turn it into a tie at single precision and incorrectly round down. */
-	op = rz_il_op_new_fwith_rprec(RZ_FLOAT_RPREC_32,
-		rz_il_op_new_fmad(RZ_FLOAT_RMODE_RNE,
-			rz_il_op_new_float_from_rz_float(new_f80_from_bytes("\x3f\xff\x80\x00\x00\x00\x00\x00\x00\x01")),
-			rz_il_op_new_float_from_rz_float(new_f80_from_bytes("\x3f\xcc\x80\x00\x00\x00\x00\x00\x00\x00")),
-			rz_il_op_new_float_from_rz_float(new_f80_from_bytes("\x3f\xff\x80\x00\x00\x7f\xff\xff\xf0\x00"))));
-	actual = rz_il_evaluate_float(vm, op);
-	expected = new_f80_from_bytes("\x3f\xff\x80\x00\x01\x00\x00\x00\x00\x00");
-	mu_assert_notnull(actual, "precision-scoped FMA double-rounding boundary");
-	mu_assert_false(rz_float_cmp(actual, expected), "binary80 FMA preserves the side of a single-precision tie");
-	mu_assert_true(actual->exception & RZ_FLOAT_E_INEXACT, "double-rounding boundary reports inexact");
-	mu_assert_eq(rz_float_ext80_get_rounding_precision(), RZ_FLOAT_RPREC_64, "precision restored after FMA boundary");
+	mu_assert_true(rz_float_ext80_set_rounding_precision(RZ_FLOAT_RPREC_80), "set full precision for reference sqrt");
+	RzFloat *sqrt_input = rz_float_new_from_f80(2.0L);
+	RzFloat *expected = rz_float_sqrt(sqrt_input, RZ_FLOAT_RMODE_RNE);
+	rz_float_free(sqrt_input);
+	mu_assert_notnull(expected, "full-precision sqrt reference");
+	mu_assert_true(rz_float_ext80_set_rounding_precision(RZ_FLOAT_RPREC_32), "set reduced precision before RzIL sqrt");
+	RzILOpFloat *op = rz_il_op_new_fsqrt(RZ_FLOAT_RMODE_RNE, rz_il_op_new_float_from_f80(2.0L));
+	RzFloat *actual = rz_il_evaluate_float(vm, op);
+	mu_assert_notnull(actual, "binary80 sqrt");
+	mu_assert_false(rz_float_cmp(actual, expected), "RzIL binary80 sqrt uses full precision");
+	mu_assert_eq(rz_float_ext80_get_rounding_precision(), RZ_FLOAT_RPREC_32, "sqrt restores ambient precision");
 	rz_float_free(actual);
 	rz_float_free(expected);
 	rz_il_op_pure_free(op);
 
-	op = rz_il_op_new_fwith_rprec(RZ_FLOAT_RPREC_32,
-		rz_il_op_new_fwith_rprec(RZ_FLOAT_RPREC_64,
-			rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE,
-				rz_il_op_new_float_from_f80(input),
-				rz_il_op_new_float_from_f80(1.0L))));
+	mu_assert_true(rz_float_ext80_set_rounding_precision(RZ_FLOAT_RPREC_32), "set reduced precision before RzIL FMA");
+	op = rz_il_op_new_fmad(RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f80(1.0L),
+		rz_il_op_new_float_from_f80(1.0L),
+		rz_il_op_new_float_from_f80(0x1p-30L));
 	actual = rz_il_evaluate_float(vm, op);
-	expected = rz_float_new_from_f80(input);
-	mu_assert_notnull(actual, "nested precision scope");
-	mu_assert_false(rz_float_cmp(actual, expected), "inner precision overrides outer precision");
-	mu_assert_eq(rz_float_ext80_get_rounding_precision(), RZ_FLOAT_RPREC_64, "precision restored after nesting");
+	expected = rz_float_new_from_f80(1.0L + 0x1p-30L);
+	mu_assert_notnull(actual, "binary80 fused multiply-add");
+	mu_assert_false(rz_float_cmp(actual, expected), "RzIL binary80 FMA uses full precision");
+	mu_assert_eq(rz_float_ext80_get_rounding_precision(), RZ_FLOAT_RPREC_32, "FMA restores ambient precision");
 	rz_float_free(actual);
 	rz_float_free(expected);
 	rz_il_op_pure_free(op);
 
-	op = rz_il_op_new_fwith_rprec(RZ_FLOAT_RPREC_32,
-		rz_il_op_new_frsqrt(RZ_FLOAT_RMODE_RNE, rz_il_op_new_float_from_f80(1.0L)));
-	actual = rz_il_evaluate_float(vm, op);
-	mu_assert_null(actual, "child evaluation failure propagates");
-	mu_assert_eq(rz_float_ext80_get_rounding_precision(), RZ_FLOAT_RPREC_64, "precision restored after failure");
-	rz_il_op_pure_free(op);
-
-	op = rz_il_op_new_fwith_rprec(RZ_FLOAT_RPREC_32, rz_il_op_new_float_from_f64(1.0));
-	actual = rz_il_evaluate_float(vm, op);
-	mu_assert_null(actual, "non-binary80 child rejected by evaluator");
-	mu_assert_eq(rz_float_ext80_get_rounding_precision(), RZ_FLOAT_RPREC_64, "precision restored after invalid child");
-	rz_il_op_pure_free(op);
-
-	op = rz_il_op_new_fwith_rprec(RZ_FLOAT_RPREC_80, rz_il_op_new_float_from_f80(1.0L));
-	RzStrBuf sb;
-	rz_strbuf_init(&sb);
-	rz_il_op_pure_stringify(op, &sb, false);
-	mu_assert_notnull(strstr(rz_strbuf_get(&sb), "fwith_rprec 80"), "string export includes precision");
-	rz_strbuf_fini(&sb);
-	PJ *pj = pj_new();
-	rz_il_op_pure_json(op, pj);
-	char *json = pj_drain(pj);
-	mu_assert_notnull(strstr(json, "\"opcode\":\"fwith_rprec\""), "JSON export includes opcode");
-	mu_assert_notnull(strstr(json, "\"precision\":80"), "JSON export includes precision");
-	free(json);
-	rz_il_op_pure_free(op);
-
-	mu_assert_false(rz_float_ext80_set_rounding_precision(RZ_FLOAT_RPREC_UNK), "invalid precision rejected by accessor");
-	mu_assert_eq(rz_float_ext80_get_rounding_precision(), RZ_FLOAT_RPREC_64, "invalid precision leaves state unchanged");
-	rz_float_ext80_set_rounding_precision(RZ_FLOAT_RPREC_80);
+	mu_assert_true(rz_float_ext80_set_rounding_precision(original_precision), "restore initial binary80 precision");
 	rz_il_vm_free(vm);
 	mu_end;
 }
@@ -1323,6 +1260,136 @@ static bool runtime_rmode_result_is(RzILVM *vm, RzILOpFloat *op, const char *exp
 	return matches;
 }
 
+static bool test_rzil_vm_float_rmode_arguments() {
+	RzILOpFloat *op = rz_il_op_new_fadd(
+		RZ_FLOAT_RMODE_RTZ,
+		rz_il_op_new_float_from_f32(1.0f),
+		rz_il_op_new_float_from_f32(2.0f));
+	mu_assert_notnull(op, "static-rmode op");
+	mu_assert_eq(op->code, RZ_IL_OP_FADD, "static constructor uses base opcode");
+	mu_assert_eq(op->op.fadd.rmode.kind, RZ_IL_OP_ARG_FLOAT_RMODE_STATIC, "static rmode tag");
+	mu_assert_eq(op->op.fadd.rmode.value.static_mode, RZ_FLOAT_RMODE_RTZ, "static rmode value");
+
+	RzILOpPure *copy = rz_il_op_pure_dup(op);
+	mu_assert_notnull(copy, "static-rmode op copy");
+	mu_assert_eq(copy->code, RZ_IL_OP_FADD, "copied static op keeps base opcode");
+	mu_assert_eq(copy->op.fadd.rmode.kind, RZ_IL_OP_ARG_FLOAT_RMODE_STATIC, "copied static rmode tag");
+	mu_assert_eq(copy->op.fadd.rmode.value.static_mode, RZ_FLOAT_RMODE_RTZ, "copied static rmode value");
+
+	RzStrBuf text;
+	rz_strbuf_init(&text);
+	rz_il_op_pure_stringify(copy, &text, false);
+	mu_assert_strcontains(rz_strbuf_get(&text), "(+. rtz ", "static rmode keeps the canonical compact form");
+	rz_strbuf_fini(&text);
+
+	PJ *pj = pj_new();
+	rz_il_op_pure_json(copy, pj);
+	char *json = pj_drain(pj);
+	mu_assert_strcontains(json, "\"opcode\":\"+.\"", "static rmode keeps the canonical JSON opcode");
+	mu_assert_strcontains(json, "\"rmode\":\"rtz\"", "static rmode stays a JSON string");
+	free(json);
+	rz_il_op_pure_free(copy);
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fmod_dyn_rmode(
+		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE),
+		rz_il_op_new_float_from_f32(5.0f),
+		rz_il_op_new_float_from_f32(2.0f));
+	rz_strbuf_init(&text);
+	rz_il_op_pure_stringify(op, &text, false);
+	mu_assert_strcontains(rz_strbuf_get(&text), "(%. (bv 32", "dynamic fmod keeps the canonical compact opcode");
+	rz_strbuf_fini(&text);
+	rz_strbuf_init(&text);
+	rz_il_op_pure_stringify(op, &text, true);
+	mu_assert_strcontains(rz_strbuf_get(&text), "(%.\n", "dynamic fmod keeps the canonical pretty opcode");
+	rz_strbuf_fini(&text);
+	rz_il_op_pure_free(op);
+	mu_end;
+}
+
+static bool test_rzil_vm_all_float_rmode_payloads() {
+	RzILValidateGlobalContext *validate_ctx = rz_il_validate_global_context_new_empty(32);
+	RzILSortPure sort;
+
+#define CHECK_DYNAMIC_RMODE_OP(op_expr, expected_code, member) \
+	do { \
+		RzILOpPure *dyn_op = (RzILOpPure *)(op_expr); \
+		mu_assert_notnull(dyn_op, "dynamic-rmode constructor"); \
+		mu_assert_eq(dyn_op->code, expected_code, "dynamic constructor uses the base opcode"); \
+		mu_assert_eq(dyn_op->op.member.rmode.kind, RZ_IL_OP_ARG_FLOAT_RMODE_DYNAMIC, "dynamic rmode tag"); \
+		mu_assert_eq(dyn_op->op.member.rmode.value.dynamic_mode->code, RZ_IL_OP_BITV, "dynamic rmode child"); \
+		RzILValidateReport report = NULL; \
+		mu_assert_true(rz_il_validate_pure(dyn_op, validate_ctx, &sort, &report), "dynamic-rmode payload validates"); \
+		mu_assert_null(report, "no dynamic-rmode validation report"); \
+		RzILOpPure *dyn_copy = rz_il_op_pure_dup(dyn_op); \
+		mu_assert_notnull(dyn_copy, "dynamic-rmode payload copy"); \
+		mu_assert_eq(dyn_copy->op.member.rmode.kind, RZ_IL_OP_ARG_FLOAT_RMODE_DYNAMIC, "copied dynamic rmode tag"); \
+		mu_assert_ptrneq(dyn_copy->op.member.rmode.value.dynamic_mode, dyn_op->op.member.rmode.value.dynamic_mode, "dynamic rmode child is deep-copied"); \
+		RzStrBuf compact; \
+		rz_strbuf_init(&compact); \
+		rz_il_op_pure_stringify(dyn_op, &compact, false); \
+		mu_assert_strcontains(rz_strbuf_get(&compact), "(bv 32", "compact export includes the dynamic rmode child"); \
+		rz_strbuf_fini(&compact); \
+		PJ *pj = pj_new(); \
+		rz_il_op_pure_json(dyn_op, pj); \
+		char *json = pj_drain(pj); \
+		mu_assert_strcontains(json, "\"rmode\":{\"opcode\":\"bitv\"", "JSON export represents the dynamic rmode as an IL child"); \
+		free(json); \
+		RzILStringifyCtx stringify_ctx = { .indent = 0, .indent_inc = 2 }; \
+		RzStrBuf unicode; \
+		rz_strbuf_init(&unicode); \
+		mu_assert_true(rz_il_op_pure_stringify_unicode(&stringify_ctx, dyn_op, &unicode), "Unicode dynamic-rmode export"); \
+		rz_strbuf_fini(&unicode); \
+		RzGraph *graph = rz_il_op_pure_graph(dyn_op, "dynamic-rmode"); \
+		mu_assert_notnull(graph, "graph dynamic-rmode export"); \
+		rz_graph_free(graph); \
+		rz_il_op_pure_free(dyn_copy); \
+		rz_il_op_pure_free(dyn_op); \
+	} while (0)
+
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fcast_int_dyn_rmode(32, rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(1.0f)),
+		RZ_IL_OP_FCAST_INT, fcast_int);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fcast_sint_dyn_rmode(32, rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(-1.0f)),
+		RZ_IL_OP_FCAST_SINT, fcast_sint);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fcast_float_dyn_rmode(RZ_FLOAT_IEEE754_BIN_32, rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_bitv_from_ut64(32, 1)),
+		RZ_IL_OP_FCAST_FLOAT, fcast_float);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fcast_sfloat_dyn_rmode(RZ_FLOAT_IEEE754_BIN_32, rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_bitv_from_st64(32, -1)),
+		RZ_IL_OP_FCAST_SFLOAT, fcast_sfloat);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fconvert_dyn_rmode(RZ_FLOAT_IEEE754_BIN_64, rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(1.0f)),
+		RZ_IL_OP_FCONVERT, fconvert);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_frsqrt_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(1.0f)),
+		RZ_IL_OP_FRSQRT, frsqrt);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fhypot_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(3.0f), rz_il_op_new_float_from_f32(4.0f)),
+		RZ_IL_OP_FHYPOT, fhypot);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fpow_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(2.0f), rz_il_op_new_float_from_f32(3.0f)),
+		RZ_IL_OP_FPOW, fpow);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fmad_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(1.0f), rz_il_op_new_float_from_f32(2.0f), rz_il_op_new_float_from_f32(3.0f)),
+		RZ_IL_OP_FMAD, fmad);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_frootn_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(4.0f), rz_il_op_new_bitv_from_ut64(32, 2)),
+		RZ_IL_OP_FROOTN, frootn);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fpown_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(2.0f), rz_il_op_new_bitv_from_ut64(32, 3)),
+		RZ_IL_OP_FPOWN, fpown);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fcompound_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f), rz_il_op_new_bitv_from_ut64(32, 2)),
+		RZ_IL_OP_FCOMPOUND, fcompound);
+
+#undef CHECK_DYNAMIC_RMODE_OP
+
+	rz_il_validate_global_context_free(validate_ctx);
+	mu_end;
+}
+
 static bool test_rzil_vm_runtime_rmode_helpers() {
 	RzILVM *vm = rz_il_vm_new(0, 32, false, RZ_IL_EVENT_EXC_NONE);
 	const struct {
@@ -1336,82 +1403,161 @@ static bool test_rzil_vm_runtime_rmode_helpers() {
 		{ RZ_FLOAT_RMODE_RTZ, "0x3f800000" },
 	};
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(add_cases); i++) {
-		RzILOpFloat *op = rz_il_op_new_fadd_with_rmode(
+		RzILOpFloat *op = rz_il_op_new_fadd_dyn_rmode(
 			rz_il_op_new_bitv_from_ut64(32, add_cases[i].mode),
 			rz_il_op_new_float_from_f32(1.0f),
 			rz_il_op_new_float_from_f32(0x1p-24f));
 		mu_assert_true(runtime_rmode_result_is(vm, op, add_cases[i].expected), "runtime fadd rounding-mode selection");
 	}
 
-	/* An out-of-range rounding-mode value must fail evaluation instead of
-	 * silently rounding to nearest. */
-	RzILOpFloat *bad_op = rz_il_op_new_fadd_with_rmode(
+	RzILOpFloat *op = rz_il_op_new_fadd_dyn_rmode(
 		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_UNK + 1),
 		rz_il_op_new_float_from_f32(1.0f),
 		rz_il_op_new_float_from_f32(0x1p-24f));
-	RzFloat *bad_result = rz_il_evaluate_float(vm, bad_op);
-	mu_assert_null(bad_result, "invalid runtime rounding mode fails evaluation");
-	rz_float_free(bad_result);
-	rz_il_op_pure_free(bad_op);
+	mu_assert_true(runtime_rmode_result_is(vm, op, "0x3f800000"), "invalid runtime rounding mode falls back to RNE");
 
-	bad_op = rz_il_op_new_fadd_with_rmode(
+	op = rz_il_op_new_fadd(
+		(RzFloatRMode)(RZ_FLOAT_RMODE_UNK + 1),
+		rz_il_op_new_float_from_f32(1.0f),
+		rz_il_op_new_float_from_f32(0x1p-24f));
+	mu_assert_true(runtime_rmode_result_is(vm, op, "0x3f800000"), "invalid static rounding mode falls back to RNE");
+
+	op = rz_il_op_new_fadd_dyn_rmode(
+		rz_il_op_new_add(
+			rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RTP),
+			rz_il_op_new_bitv_from_ut64(32, 0)),
+		rz_il_op_new_float_from_f32(1.0f),
+		rz_il_op_new_float_from_f32(0x1p-24f));
+	mu_assert_true(runtime_rmode_result_is(vm, op, "0x3f800001"), "runtime rounding-mode expressions are evaluated");
+
+	RzILOpFloat *bad_op = rz_il_op_new_fadd_dyn_rmode(
 		rz_il_op_new_bitv_from_ut64(8, RZ_FLOAT_RMODE_RNE),
 		rz_il_op_new_float_from_f32(1.0f),
 		rz_il_op_new_float_from_f32(0.0f));
-	bad_result = rz_il_evaluate_float(vm, bad_op);
+	RzFloat *bad_result = rz_il_evaluate_float(vm, bad_op);
 	mu_assert_null(bad_result, "non-32-bit runtime rounding mode fails direct evaluation");
 	rz_il_op_pure_free(bad_op);
 
-	RzILOpFloat *op = rz_il_op_new_fconvert_with_rmode(
+	op = rz_il_op_new_fconvert_dyn_rmode(
 		RZ_FLOAT_IEEE754_BIN_32,
 		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RTP),
 		rz_il_op_new_float_from_f64(1.0 + 0x1p-24));
 	mu_assert_true(runtime_rmode_result_is(vm, op, "0x3f800001"), "runtime fconvert rounding mode");
 
-	op = rz_il_op_new_fround_with_rmode(
+	op = rz_il_op_new_fround_dyn_rmode(
 		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNA),
 		rz_il_op_new_float_from_f64(0.5));
 	mu_assert_true(runtime_rmode_result_is(vm, op, "0x3ff0000000000000"), "runtime fround rounding mode");
 
-	op = rz_il_op_new_fsqrt_with_rmode(
+	op = rz_il_op_new_fsqrt_dyn_rmode(
 		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RTZ),
 		rz_il_op_new_float_from_f64(4.0));
 	mu_assert_true(runtime_rmode_result_is(vm, op, "0x4000000000000000"), "runtime fsqrt rounding mode");
 
-	op = rz_il_op_new_fsub_with_rmode(
+	op = rz_il_op_new_fsub_dyn_rmode(
 		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE),
 		rz_il_op_new_float_from_f32(3.0f),
 		rz_il_op_new_float_from_f32(2.0f));
 	mu_assert_true(runtime_rmode_result_is(vm, op, "0x3f800000"), "runtime fsub rounding mode");
 
-	op = rz_il_op_new_fmul_with_rmode(
+	op = rz_il_op_new_fmul_dyn_rmode(
 		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE),
 		rz_il_op_new_float_from_f32(3.0f),
 		rz_il_op_new_float_from_f32(2.0f));
 	mu_assert_true(runtime_rmode_result_is(vm, op, "0x40c00000"), "runtime fmul rounding mode");
 
-	op = rz_il_op_new_fdiv_with_rmode(
+	op = rz_il_op_new_fdiv_dyn_rmode(
 		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE),
 		rz_il_op_new_float_from_f32(6.0f),
 		rz_il_op_new_float_from_f32(2.0f));
 	mu_assert_true(runtime_rmode_result_is(vm, op, "0x40400000"), "runtime fdiv rounding mode");
 
-	op = rz_il_op_new_fmod_with_rmode(
+	op = rz_il_op_new_fmod_dyn_rmode(
 		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE),
 		rz_il_op_new_float_from_f32(5.0f),
 		rz_il_op_new_float_from_f32(2.0f));
 	mu_assert_true(runtime_rmode_result_is(vm, op, "0x3f800000"), "runtime fmod rounding mode");
 
+	RzILOpBitVector *cast_int_op = rz_il_op_new_fcast_int_dyn_rmode(
+		32,
+		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RTP),
+		rz_il_op_new_float_from_f32(1.125f));
+	RzBitVector *cast_int = rz_il_evaluate_bitv(vm, cast_int_op);
+	mu_assert_notnull(cast_int, "runtime unsigned float-to-integer cast");
+	mu_assert_eq(rz_bv_to_ut64(cast_int), 2, "runtime unsigned float-to-integer rounding mode");
+	rz_bv_free(cast_int);
+	rz_il_op_pure_free(cast_int_op);
+
+	RzILOpBitVector *cast_sint_op = rz_il_op_new_fcast_sint_dyn_rmode(
+		32,
+		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RTN),
+		rz_il_op_new_float_from_f32(-0.125f));
+	RzBitVector *cast_sint = rz_il_evaluate_bitv(vm, cast_sint_op);
+	mu_assert_notnull(cast_sint, "runtime signed float-to-integer cast");
+	mu_assert_eq(rz_bv_to_ut32(cast_sint), UT32_MAX, "runtime signed float-to-integer rounding mode");
+	rz_bv_free(cast_sint);
+	rz_il_op_pure_free(cast_sint_op);
+
+	op = rz_il_op_new_fcast_float_dyn_rmode(
+		RZ_FLOAT_IEEE754_BIN_32,
+		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RTP),
+		rz_il_op_new_bitv_from_ut64(32, 134217730));
+	mu_assert_true(runtime_rmode_result_is(vm, op, "0x4d000001"), "runtime unsigned integer-to-float rounding mode");
+
+	op = rz_il_op_new_fcast_sfloat_dyn_rmode(
+		RZ_FLOAT_IEEE754_BIN_32,
+		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RTP),
+		rz_il_op_new_bitv_from_ut64(32, 134217730));
+	mu_assert_true(runtime_rmode_result_is(vm, op, "0x4d000001"), "runtime signed integer-to-float rounding mode");
+
+	op = rz_il_op_new_fmad_dyn_rmode(
+		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RTP),
+		rz_il_op_new_float_from_f32(1.0f),
+		rz_il_op_new_float_from_f32(1.0f),
+		rz_il_op_new_float_from_f32(0x1p-24f));
+	mu_assert_true(runtime_rmode_result_is(vm, op, "0x3f800001"), "runtime fused multiply-add rounding mode");
+
 	rz_il_vm_free(vm);
 	mu_end;
 }
+
+#include <rz_il/rz_il_opbuilder_begin.h>
+
+static bool test_rzil_opbuilder_float_rmode_aliases() {
+	RzILOpFloat *op = FMOD(
+		RZ_FLOAT_RMODE_RNE,
+		F32(5.0f),
+		F32(2.0f));
+	mu_assert_notnull(op, "static fmod opbuilder alias");
+	mu_assert_eq(op->code, RZ_IL_OP_FMOD, "static fmod alias maps to fmod");
+	rz_il_op_pure_free(op);
+
+	op = FRSQRT_DYN_RMODE(
+		U32(RZ_FLOAT_RMODE_RNE),
+		F32(1.0f));
+	mu_assert_notnull(op, "dynamic frsqrt opbuilder alias");
+	mu_assert_eq(op->code, RZ_IL_OP_FRSQRT, "dynamic frsqrt alias maps to frsqrt");
+	rz_il_op_pure_free(op);
+
+	op = FMAD_DYN_RMODE(
+		U32(RZ_FLOAT_RMODE_RNE),
+		F32(1.0f),
+		F32(2.0f),
+		F32(3.0f));
+	mu_assert_notnull(op, "dynamic fmad opbuilder alias");
+	mu_assert_eq(op->code, RZ_IL_OP_FMAD, "dynamic fmad alias maps to fmad");
+	rz_il_op_pure_free(op);
+	mu_end;
+}
+
+#include <rz_il/rz_il_opbuilder_end.h>
 
 static bool test_rzil_vm_runtime_rmode_avoids_let_capture() {
 	const char *name = "_rz_il_runtime_rmode";
 	RzILOpFloat *op = rz_il_op_new_let(
 		name,
 		rz_il_op_new_bitv_from_ut64(32, 0x3f800000),
-		rz_il_op_new_fadd_with_rmode(
+		rz_il_op_new_fadd_dyn_rmode(
 			rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RTZ),
 			rz_il_op_new_float(
 				RZ_FLOAT_IEEE754_BIN_32,
@@ -1440,16 +1586,26 @@ static bool test_rzil_vm_runtime_rmode_avoids_let_capture() {
 static bool test_rzil_vm_runtime_rmode_compact_composition() {
 	RzILOpFloat *op = rz_il_op_new_float_from_f32(1.0f);
 	for (size_t i = 0; i < 8; i++) {
-		op = rz_il_op_new_fadd_with_rmode(
-			rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE),
+		RzILOpBitVector *rmode = i == 7
+			? rz_il_op_new_add(
+				  rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE),
+				  rz_il_op_new_bitv_from_ut64(32, 0))
+			: rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE);
+		op = rz_il_op_new_fadd_dyn_rmode(
+			rmode,
 			op,
 			rz_il_op_new_float_from_f32(0.0f));
 	}
 	mu_assert_notnull(op, "nested runtime-rmode expression");
-	mu_assert_streq(rz_il_op_pure_code_stringify(op->code), "fadd_with_rmode", "runtime-rmode opcode string");
+	mu_assert_eq(op->code, RZ_IL_OP_FADD, "runtime-rmode constructor uses base opcode");
+	mu_assert_streq(rz_il_op_pure_code_stringify(op->code), "fadd", "runtime-rmode opcode string");
+	mu_assert_eq(op->op.fadd.rmode.kind, RZ_IL_OP_ARG_FLOAT_RMODE_DYNAMIC, "dynamic rmode tag");
+	mu_assert_eq(op->op.fadd.rmode.value.dynamic_mode->code, RZ_IL_OP_ADD, "dynamic rmode expression");
 
 	RzILOpPure *copy = rz_il_op_pure_dup(op);
 	mu_assert_notnull(copy, "runtime-rmode expression copy");
+	mu_assert_eq(copy->op.fadd.rmode.kind, RZ_IL_OP_ARG_FLOAT_RMODE_DYNAMIC, "copied dynamic rmode tag");
+	mu_assert_ptrneq(copy->op.fadd.rmode.value.dynamic_mode, op->op.fadd.rmode.value.dynamic_mode, "dynamic rmode expression is deep-copied");
 
 	RzStrBuf original;
 	RzStrBuf copied;
@@ -1459,15 +1615,15 @@ static bool test_rzil_vm_runtime_rmode_compact_composition() {
 	rz_il_op_pure_stringify(copy, &copied, false);
 	mu_assert("nested runtime-rmode stringify stays below 64 KiB", rz_strbuf_length(&original) < 64 * 1024);
 	mu_assert_streq(rz_strbuf_get(&copied), rz_strbuf_get(&original), "copied runtime-rmode expression output");
-	mu_assert_strcontains(rz_strbuf_get(&original), "(fadd_with_rmode (bv 32", "compact runtime-rmode string form");
+	mu_assert_strcontains(rz_strbuf_get(&original), "(+. (+ (bv 32", "dynamic rmode uses the canonical compact opcode");
 	rz_strbuf_fini(&original);
 	rz_strbuf_fini(&copied);
 
 	PJ *pj = pj_new();
 	rz_il_op_pure_json(copy, pj);
 	char *json = pj_drain(pj);
-	mu_assert_strcontains(json, "\"opcode\":\"fadd_with_rmode\"", "runtime-rmode JSON opcode");
-	mu_assert_strcontains(json, "\"rmode\":{\"opcode\":\"bitv\"", "runtime rmode is a JSON child node");
+	mu_assert_strcontains(json, "\"opcode\":\"+.\"", "dynamic rmode uses the canonical JSON opcode");
+	mu_assert_strcontains(json, "\"rmode\":{\"opcode\":\"+\"", "dynamic rmode is a JSON child node");
 	free(json);
 
 	RzILStringifyCtx stringify_ctx = { .indent = 0, .indent_inc = 2 };
@@ -1475,10 +1631,16 @@ static bool test_rzil_vm_runtime_rmode_compact_composition() {
 	rz_strbuf_init(&unicode);
 	mu_assert_true(rz_il_op_pure_stringify_unicode(&stringify_ctx, copy, &unicode), "runtime-rmode Unicode export");
 	mu_assert("runtime-rmode Unicode output stays compact", rz_strbuf_length(&unicode) < 64 * 1024);
+	mu_assert_strcontains(rz_strbuf_get(&unicode), "((0x0", "Unicode export includes the dynamic rmode expression");
 	rz_strbuf_fini(&unicode);
 
 	RzGraph *graph = rz_il_op_pure_graph(copy, "runtime-rmode");
 	mu_assert_notnull(graph, "runtime-rmode graph export");
+	char *dot = rz_graph_drawable_to_dot(graph, NULL, NULL);
+	mu_assert_notnull(dot, "runtime-rmode graph rendering");
+	mu_assert_strcontains(dot, "label=\"fadd\"", "graph keeps the canonical opcode node");
+	mu_assert_strcontains(dot, "label=\"add\"", "graph includes the dynamic rmode expression");
+	free(dot);
 	rz_graph_free(graph);
 	rz_il_op_pure_free(copy);
 	rz_il_op_pure_free(op);
@@ -1514,8 +1676,11 @@ bool all_tests() {
 	mu_run_test(test_rzil_vm_op_float);
 	mu_run_test(test_rzil_vm_op_fcast);
 	mu_run_test(test_rzil_vm_op_fexcept);
-	mu_run_test(test_rzil_vm_op_fwith_rprec);
+	mu_run_test(test_rzil_vm_binary80_full_precision);
+	mu_run_test(test_rzil_vm_float_rmode_arguments);
+	mu_run_test(test_rzil_vm_all_float_rmode_payloads);
 	mu_run_test(test_rzil_vm_runtime_rmode_helpers);
+	mu_run_test(test_rzil_opbuilder_float_rmode_aliases);
 	mu_run_test(test_rzil_vm_runtime_rmode_avoids_let_capture);
 	mu_run_test(test_rzil_vm_runtime_rmode_compact_composition);
 	mu_run_test(test_rzil_vm_halt_on_exc);

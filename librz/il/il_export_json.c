@@ -48,6 +48,21 @@
 static void il_op_pure_json_resolve(RzILOpPure *op, PJ *pj);
 static void il_op_effect_json_resolve(RzILOpEffect *op, PJ *pj);
 
+static void il_op_float_rmode_json_resolve(const RzILOpArgFloatRMode *rmode, PJ *pj) {
+	switch (rmode->kind) {
+	case RZ_IL_OP_ARG_FLOAT_RMODE_STATIC:
+		pj_s(pj, rz_il_float_stringify_rmode(rmode->value.static_mode));
+		break;
+	case RZ_IL_OP_ARG_FLOAT_RMODE_DYNAMIC:
+		il_op_pure_json_resolve(rmode->value.dynamic_mode, pj);
+		break;
+	default:
+		rz_warn_if_reached();
+		pj_s(pj, "invalid_rmode");
+		break;
+	}
+}
+
 #define il_op_param_0(name) \
 	do { \
 		pj_o(pj); \
@@ -88,42 +103,42 @@ static void il_op_effect_json_resolve(RzILOpEffect *op, PJ *pj);
 		pj_end(pj); \
 	} while (0)
 
-#define il_op_param_1_with_rmode(name, opx, v0, vr) \
+#define il_op_param_1_with_rmode_arg(name, opx, v0, vr) \
 	do { \
-		const char *rmode_str = rz_il_float_stringify_rmode(opx.vr); \
 		pj_o(pj); \
 		pj_ks(pj, "opcode", name); \
-		pj_ks(pj, "rmode", rmode_str); \
+		pj_k(pj, "rmode"); \
+		il_op_float_rmode_json_resolve(&(opx).vr, pj); \
 		pj_k(pj, #v0); \
-		il_op_pure_json_resolve(opx.v0, pj); \
+		il_op_pure_json_resolve((opx).v0, pj); \
 		pj_end(pj); \
 	} while (0)
 
-#define il_op_param_2_with_rmode(name, opx, sort0, v0, sort1, v1, vr) \
+#define il_op_param_2_with_rmode_arg(name, opx, sort0, v0, sort1, v1, vr) \
 	do { \
-		const char *rmode_str = rz_il_float_stringify_rmode(opx.vr); \
 		pj_o(pj); \
 		pj_ks(pj, "opcode", name); \
-		pj_ks(pj, "rmode", rmode_str); \
+		pj_k(pj, "rmode"); \
+		il_op_float_rmode_json_resolve(&(opx).vr, pj); \
 		pj_k(pj, #v0); \
-		il_op_##sort0##_json_resolve(opx.v0, pj); \
+		il_op_##sort0##_json_resolve((opx).v0, pj); \
 		pj_k(pj, #v1); \
-		il_op_##sort1##_json_resolve(opx.v1, pj); \
+		il_op_##sort1##_json_resolve((opx).v1, pj); \
 		pj_end(pj); \
 	} while (0)
 
-#define il_op_param_3_with_rmode(name, opx, sort0, v0, sort1, v1, sort2, v2, vr) \
+#define il_op_param_3_with_rmode_arg(name, opx, sort0, v0, sort1, v1, sort2, v2, vr) \
 	do { \
-		const char *rmode_str = rz_il_float_stringify_rmode(opx.vr); \
 		pj_o(pj); \
 		pj_ks(pj, "opcode", name); \
-		pj_ks(pj, "rmode", rmode_str); \
+		pj_k(pj, "rmode"); \
+		il_op_float_rmode_json_resolve(&(opx).vr, pj); \
 		pj_k(pj, #v0); \
-		il_op_##sort0##_json_resolve(opx.v0, pj); \
+		il_op_##sort0##_json_resolve((opx).v0, pj); \
 		pj_k(pj, #v1); \
-		il_op_##sort1##_json_resolve(opx.v1, pj); \
+		il_op_##sort1##_json_resolve((opx).v1, pj); \
 		pj_k(pj, #v2); \
-		il_op_##sort2##_json_resolve(opx.v2, pj); \
+		il_op_##sort2##_json_resolve((opx).v2, pj); \
 		pj_end(pj); \
 	} while (0)
 
@@ -339,7 +354,8 @@ static void il_opdmp_fcast_int(RzILOpPure *op, PJ *pj) {
 	pj_o(pj);
 	pj_ks(pj, "opcode", "fcast_int");
 	pj_kn(pj, "length", opx->length);
-	pj_ks(pj, "rmode", rz_il_float_stringify_rmode(opx->mode));
+	pj_k(pj, "rmode");
+	il_op_float_rmode_json_resolve(&opx->rmode, pj);
 	pj_k(pj, "value");
 	il_op_pure_json_resolve(opx->f, pj);
 	pj_end(pj);
@@ -350,7 +366,8 @@ static void il_opdmp_fcast_sint(RzILOpPure *op, PJ *pj) {
 	pj_o(pj);
 	pj_ks(pj, "opcode", "fcast_sint");
 	pj_kn(pj, "length", opx->length);
-	pj_ks(pj, "rmode", rz_il_float_stringify_rmode(opx->mode));
+	pj_k(pj, "rmode");
+	il_op_float_rmode_json_resolve(&opx->rmode, pj);
 	pj_k(pj, "value");
 	il_op_pure_json_resolve(opx->f, pj);
 	pj_end(pj);
@@ -361,7 +378,8 @@ static void il_opdmp_fcast_float(RzILOpPure *op, PJ *pj) {
 	pj_o(pj);
 	pj_ks(pj, "opcode", "fcast_float");
 	pj_ks(pj, "format", rz_il_float_stringify_format(opx->format));
-	pj_ks(pj, "rmode", rz_il_float_stringify_rmode(opx->mode));
+	pj_k(pj, "rmode");
+	il_op_float_rmode_json_resolve(&opx->rmode, pj);
 	pj_k(pj, "value");
 	il_op_pure_json_resolve(opx->bv, pj);
 	pj_end(pj);
@@ -372,7 +390,8 @@ static void il_opdmp_fcast_sfloat(RzILOpPure *op, PJ *pj) {
 	pj_o(pj);
 	pj_ks(pj, "opcode", "fcast_sfloat");
 	pj_ks(pj, "format", rz_il_float_stringify_format(opx->format));
-	pj_ks(pj, "rmode", rz_il_float_stringify_rmode(opx->mode));
+	pj_k(pj, "rmode");
+	il_op_float_rmode_json_resolve(&opx->rmode, pj);
 	pj_k(pj, "value");
 	il_op_pure_json_resolve(opx->bv, pj);
 	pj_end(pj);
@@ -383,29 +402,8 @@ static void il_opdmp_fconvert(RzILOpPure *op, PJ *pj) {
 	pj_o(pj);
 	pj_ks(pj, "opcode", "fconvert");
 	pj_ks(pj, "format", rz_il_float_stringify_format(opx->format));
-	pj_ks(pj, "rmode", rz_il_float_stringify_rmode(opx->mode));
-	pj_k(pj, "value");
-	il_op_pure_json_resolve(opx->f, pj);
-	pj_end(pj);
-}
-
-static void il_opdmp_fconvert_with_rmode(RzILOpPure *op, PJ *pj) {
-	RzILOpArgsFconvertWithRmode *opx = &op->op.fconvert_with_rmode;
-	pj_o(pj);
-	pj_ks(pj, "opcode", "fconvert_with_rmode");
-	pj_ks(pj, "format", rz_il_float_stringify_format(opx->format));
 	pj_k(pj, "rmode");
-	il_op_pure_json_resolve(opx->rmode, pj);
-	pj_k(pj, "value");
-	il_op_pure_json_resolve(opx->f, pj);
-	pj_end(pj);
-}
-
-static void il_opdmp_fwith_rprec(RzILOpPure *op, PJ *pj) {
-	RzILOpArgsFwithRprec *opx = &op->op.fwith_rprec;
-	pj_o(pj);
-	pj_ks(pj, "opcode", "fwith_rprec");
-	pj_ki(pj, "precision", opx->precision);
+	il_op_float_rmode_json_resolve(&opx->rmode, pj);
 	pj_k(pj, "value");
 	il_op_pure_json_resolve(opx->f, pj);
 	pj_end(pj);
@@ -415,18 +413,11 @@ static void il_opdmp_fround(RzILOpPure *op, PJ *pj) {
 	RzILOpArgsFround *opx = &op->op.fround;
 	pj_o(pj);
 	pj_ks(pj, "opcode", "fround");
-	pj_ks(pj, "rmode", rz_il_float_stringify_rmode(opx->rmode));
+	pj_k(pj, "rmode");
+	il_op_float_rmode_json_resolve(&opx->rmode, pj);
 	pj_k(pj, "value");
 	il_op_pure_json_resolve(opx->f, pj);
 	pj_end(pj);
-}
-
-static void il_opdmp_fround_with_rmode(RzILOpPure *op, PJ *pj) {
-	il_op_param_2("fround_with_rmode", op->op.fround_with_rmode, pure, rmode, pure, f);
-}
-
-static void il_opdmp_fsqrt_with_rmode(RzILOpPure *op, PJ *pj) {
-	il_op_param_2("fsqrt_with_rmode", op->op.fsqrt_with_rmode, pure, rmode, pure, f);
 }
 
 static void il_opdmp_frequal(RzILOpPure *op, PJ *pj) {
@@ -450,75 +441,55 @@ static void il_opdmp_forder(RzILOpPure *op, PJ *pj) {
 }
 
 static void il_opdmp_fsqrt(RzILOpPure *op, PJ *pj) {
-	il_op_param_1_with_rmode("fsqrt", op->op.fsqrt, f, rmode);
+	il_op_param_1_with_rmode_arg("fsqrt", op->op.fsqrt, f, rmode);
 }
 
 static void il_opdmp_frsqrt(RzILOpPure *op, PJ *pj) {
-	il_op_param_1_with_rmode("frsqrt", op->op.frsqrt, f, rmode);
+	il_op_param_1_with_rmode_arg("frsqrt", op->op.frsqrt, f, rmode);
 }
 
 static void il_opdmp_fadd(RzILOpPure *op, PJ *pj) {
-	il_op_param_2_with_rmode("+.", op->op.fadd, pure, x, pure, y, rmode);
+	il_op_param_2_with_rmode_arg("+.", op->op.fadd, pure, x, pure, y, rmode);
 }
 
 static void il_opdmp_fsub(RzILOpPure *op, PJ *pj) {
-	il_op_param_2_with_rmode("-.", op->op.fsub, pure, x, pure, y, rmode);
+	il_op_param_2_with_rmode_arg("-.", op->op.fsub, pure, x, pure, y, rmode);
 }
 
 static void il_opdmp_fmul(RzILOpPure *op, PJ *pj) {
-	il_op_param_2_with_rmode("*.", op->op.fmul, pure, x, pure, y, rmode);
+	il_op_param_2_with_rmode_arg("*.", op->op.fmul, pure, x, pure, y, rmode);
 }
 
 static void il_opdmp_fdiv(RzILOpPure *op, PJ *pj) {
-	il_op_param_2_with_rmode("/.", op->op.fdiv, pure, x, pure, y, rmode);
+	il_op_param_2_with_rmode_arg("/.", op->op.fdiv, pure, x, pure, y, rmode);
 }
 
 static void il_opdmp_fmod(RzILOpPure *op, PJ *pj) {
-	il_op_param_2_with_rmode("%.", op->op.fmod, pure, x, pure, y, rmode);
-}
-
-static void il_opdmp_fadd_with_rmode(RzILOpPure *op, PJ *pj) {
-	il_op_param_3("fadd_with_rmode", op->op.fadd_with_rmode, pure, rmode, pure, x, pure, y);
-}
-
-static void il_opdmp_fsub_with_rmode(RzILOpPure *op, PJ *pj) {
-	il_op_param_3("fsub_with_rmode", op->op.fsub_with_rmode, pure, rmode, pure, x, pure, y);
-}
-
-static void il_opdmp_fmul_with_rmode(RzILOpPure *op, PJ *pj) {
-	il_op_param_3("fmul_with_rmode", op->op.fmul_with_rmode, pure, rmode, pure, x, pure, y);
-}
-
-static void il_opdmp_fdiv_with_rmode(RzILOpPure *op, PJ *pj) {
-	il_op_param_3("fdiv_with_rmode", op->op.fdiv_with_rmode, pure, rmode, pure, x, pure, y);
-}
-
-static void il_opdmp_fmod_with_rmode(RzILOpPure *op, PJ *pj) {
-	il_op_param_3("fmod_with_rmode", op->op.fmod_with_rmode, pure, rmode, pure, x, pure, y);
+	il_op_param_2_with_rmode_arg("%.", op->op.fmod, pure, x, pure, y, rmode);
 }
 
 static void il_opdmp_fhypot(RzILOpPure *op, PJ *pj) {
-	il_op_param_2_with_rmode("hypot", op->op.fhypot, pure, x, pure, y, rmode);
+	il_op_param_2_with_rmode_arg("hypot", op->op.fhypot, pure, x, pure, y, rmode);
 }
 
 static void il_opdmp_fpow(RzILOpPure *op, PJ *pj) {
-	il_op_param_2_with_rmode("pow", op->op.fpow, pure, x, pure, y, rmode);
+	il_op_param_2_with_rmode_arg("pow", op->op.fpow, pure, x, pure, y, rmode);
 }
 
 static void il_opdmp_fmad(RzILOpPure *op, PJ *pj) {
-	il_op_param_3_with_rmode("fmad", op->op.fmad, pure, x, pure, y, pure, z, rmode);
+	il_op_param_3_with_rmode_arg("fmad", op->op.fmad, pure, x, pure, y, pure, z, rmode);
 }
 
 static void il_opdmp_fpown(RzILOpPure *op, PJ *pj) {
-	il_op_param_2_with_rmode("fpown", op->op.fpown, pure, f, pure, n, rmode);
+	il_op_param_2_with_rmode_arg("fpown", op->op.fpown, pure, f, pure, n, rmode);
 }
 
 static void il_opdmp_frootn(RzILOpPure *op, PJ *pj) {
-	il_op_param_2_with_rmode("frootn", op->op.frootn, pure, f, pure, n, rmode);
+	il_op_param_2_with_rmode_arg("frootn", op->op.frootn, pure, f, pure, n, rmode);
 }
 
 static void il_opdmp_fcompound(RzILOpPure *op, PJ *pj) {
-	il_op_param_2_with_rmode("fcompound", op->op.fcompound, pure, f, pure, n, rmode);
+	il_op_param_2_with_rmode_arg("fcompound", op->op.fcompound, pure, f, pure, n, rmode);
 }
 
 static void il_opdmp_load(RzILOpPure *op, PJ *pj) {
@@ -776,12 +747,6 @@ static void il_op_pure_json_resolve(RzILOpPure *op, PJ *pj) {
 	case RZ_IL_OP_FCONVERT:
 		il_opdmp_fconvert(op, pj);
 		return;
-	case RZ_IL_OP_FCONVERT_WITH_RMODE:
-		il_opdmp_fconvert_with_rmode(op, pj);
-		return;
-	case RZ_IL_OP_FWITH_RPREC:
-		il_opdmp_fwith_rprec(op, pj);
-		return;
 	case RZ_IL_OP_FREQUAL:
 		il_opdmp_frequal(op, pj);
 		return;
@@ -803,12 +768,6 @@ static void il_op_pure_json_resolve(RzILOpPure *op, PJ *pj) {
 	case RZ_IL_OP_FRSQRT:
 		il_opdmp_frsqrt(op, pj);
 		return;
-	case RZ_IL_OP_FROUND_WITH_RMODE:
-		il_opdmp_fround_with_rmode(op, pj);
-		return;
-	case RZ_IL_OP_FSQRT_WITH_RMODE:
-		il_opdmp_fsqrt_with_rmode(op, pj);
-		return;
 	case RZ_IL_OP_FADD:
 		il_opdmp_fadd(op, pj);
 		return;
@@ -823,21 +782,6 @@ static void il_op_pure_json_resolve(RzILOpPure *op, PJ *pj) {
 		return;
 	case RZ_IL_OP_FMOD:
 		il_opdmp_fmod(op, pj);
-		return;
-	case RZ_IL_OP_FADD_WITH_RMODE:
-		il_opdmp_fadd_with_rmode(op, pj);
-		return;
-	case RZ_IL_OP_FSUB_WITH_RMODE:
-		il_opdmp_fsub_with_rmode(op, pj);
-		return;
-	case RZ_IL_OP_FMUL_WITH_RMODE:
-		il_opdmp_fmul_with_rmode(op, pj);
-		return;
-	case RZ_IL_OP_FDIV_WITH_RMODE:
-		il_opdmp_fdiv_with_rmode(op, pj);
-		return;
-	case RZ_IL_OP_FMOD_WITH_RMODE:
-		il_opdmp_fmod_with_rmode(op, pj);
 		return;
 	case RZ_IL_OP_FHYPOT:
 		il_opdmp_fhypot(op, pj);
