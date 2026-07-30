@@ -80,6 +80,7 @@ void *rz_il_handler_fsucc(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fpred(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_forder(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fround(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fround_exc(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fsqrt(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_frsqrt(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fexcept(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
@@ -151,6 +152,7 @@ RZ_IPI RzILOpPureHandler rz_il_op_handler_pure_table_default[RZ_IL_OP_PURE_MAX] 
 	[RZ_IL_OP_FPRED] = rz_il_handler_fpred,
 	[RZ_IL_OP_FORDER] = rz_il_handler_forder,
 	[RZ_IL_OP_FROUND] = rz_il_handler_fround,
+	[RZ_IL_OP_FROUND_EXC] = rz_il_handler_fround_exc,
 	[RZ_IL_OP_FSQRT] = rz_il_handler_fsqrt,
 	[RZ_IL_OP_FRSQRT] = rz_il_handler_pure_unimplemented,
 	[RZ_IL_OP_FEXCEPT] = rz_il_handler_fexcept,

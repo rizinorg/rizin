@@ -132,6 +132,11 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 		LOGOR(RISCV_FD_EXC(0x08, RZ_FLOAT_E_DIV_ZERO), \
 		      RISCV_FD_EXC(0x10, RZ_FLOAT_E_INVALID_OP)))))))
 
+#define RISCV_FD_IS_ZERO(bv) AND(IS_ZERO(RISCV_FD_GET_EXPONENT(bv)), IS_ZERO(RISCV_FD_GET_MANTISSA(bv)))
+#define RISCV_FD_IS_NEGATIVE(bv) NON_ZERO(RISCV_FD_GET_SIGN(bv))
+#define RISCV_FD_FMIN_ZERO_SELECT_A(bv) RISCV_FD_IS_NEGATIVE(bv)
+#define RISCV_FD_FMAX_ZERO_SELECT_A(bv) INV(RISCV_FD_IS_NEGATIVE(bv))
+
 #define RISCV_SET_FRM() \
 	SETL("_frm", EXTRACT64(VARG("fcsr"), UN(64, 5), UN(32, 3)))
 
@@ -360,7 +365,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 //   - both quiet NaN         → return canonical qNaN
 //   - otherwise              → normal min / max
 // -----------------------------------------------------------------------
-#define DEFINE_LIFTER_MINMAX(name, cond, sz) \
+#define DEFINE_LIFTER_MINMAX(name, cond, zero_select_a, sz) \
 	static RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
 		RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
 		REQUIRE_OP(0, RISCV_OP_REG); \
@@ -369,7 +374,7 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 		uint32_t frd = insn->detail->riscv.operands[0].reg; \
 		uint32_t frs1_reg = insn->detail->riscv.operands[1].reg; \
 		uint32_t frs2_reg = insn->detail->riscv.operands[2].reg; \
-		return SEQN(10, \
+		return SEQN(12, \
 			/* raw 32-bit bitvector of frs1, needed for bit-level sNaN inspection */ \
 			SETL("_bva", RISCV_FD_REG_GETTER_BV(frs1_reg)), \
 			/* raw 32-bit bitvector of frs2, needed for bit-level sNaN inspection */ \
@@ -382,6 +387,8 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 			SETL("_a_is_nan", RISCV_FD_IS_NAN(VARL("_bva"))), \
 			/* true if operand 2 is any NaN */ \
 			SETL("_b_is_nan", RISCV_FD_IS_NAN(VARL("_bvb"))), \
+			SETL("_a_is_zero", RISCV_FD_IS_ZERO(VARL("_bva"))), \
+			SETL("_b_is_zero", RISCV_FD_IS_ZERO(VARL("_bvb"))), \
 			/* true if operand 1 is a signaling NaN (NaN with quiet bit[22]==0) */ \
 			SETL("_a_is_snan", RISCV_FD_IS_S_NAN(VARL("_bva"))), \
 			/* true if operand 2 is a signaling NaN */ \
@@ -389,25 +396,27 @@ static inline RzFloatRMode riscv_rm_to_rz(riscv_rounding_mode rm) {
 			/* raise NV (invalid operation, bit 4) in fcsr when either operand is sNaN */ \
 			SETG("fcsr", LOGOR(VARG("fcsr"), ITE(OR(VARL("_a_is_snan"), VARL("_b_is_snan")), UN(64, 0x10), UN(64, 0)))), \
 			RISCV_FD_REG_SETTER(frd, \
-				/* are both non-NAN and a op b? (op is >= or <=) */ \
-				ITE(cond(VARL("_a"), VARL("_b")), \
-					VARL("_a"), /* return a */ \
-					/* otherwise, check for NAN */ \
-					ITE(VARL("_a_is_nan"), \
-						ITE(VARL("_b_is_nan"), \
-							FLOATV##sz(RISCV_FD_CANONICAL_QNAN()), \
-							/* a is NaN, b is not */ \
-							VARL("_b")), \
-						/* a is not NaN, what about b ? */ \
-						ITE(VARL("_b_is_nan"), \
-							/* a is not NaN, b is NaN */ \
-							VARL("_a"), \
-							/* both non-NAN and b op a */ \
-							VARL("_b")))))); \
+				ITE(AND(VARL("_a_is_zero"), VARL("_b_is_zero")), \
+					ITE(zero_select_a(VARL("_bva")), VARL("_a"), VARL("_b")), \
+					/* are both non-NAN and a op b? (op is >= or <=) */ \
+					ITE(cond(VARL("_a"), VARL("_b")), \
+						VARL("_a"), /* return a */ \
+						/* otherwise, check for NAN */ \
+						ITE(VARL("_a_is_nan"), \
+							ITE(VARL("_b_is_nan"), \
+								FLOATV##sz(RISCV_FD_CANONICAL_QNAN()), \
+								/* a is NaN, b is not */ \
+								VARL("_b")), \
+							/* a is not NaN, what about b ? */ \
+							ITE(VARL("_b_is_nan"), \
+								/* a is not NaN, b is NaN */ \
+								VARL("_a"), \
+								/* both non-NAN and b op a */ \
+								VARL("_b"))))))); \
 	}
 
-#define DEF_FMIN(name, size) DEFINE_LIFTER_MINMAX(name, FLE, size)
-#define DEF_FMAX(name, size) DEFINE_LIFTER_MINMAX(name, FGE, size)
+#define DEF_FMIN(name, size) DEFINE_LIFTER_MINMAX(name, FLE, RISCV_FD_FMIN_ZERO_SELECT_A, size)
+#define DEF_FMAX(name, size) DEFINE_LIFTER_MINMAX(name, FGE, RISCV_FD_FMAX_ZERO_SELECT_A, size)
 
 // -----------------------------------------------------------------------
 // Comparison  (result in integer register)
