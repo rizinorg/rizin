@@ -17,7 +17,7 @@ static void il_op_effect_graph_resolve(RzILOpEffect *op, RzGraph /*<RzGraphNodeI
 	rz_graph_add_node_info(g, d, NULL, UT64_MAX)
 
 static RzGraphNode *il_op_graph_add_node_with_rmode(const char *name, const RzILOpArgFloatRMode *rmode,
-	RzGraph *g, RzGraphNode *from) {
+	RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	char *value;
 	switch (rmode->kind) {
 	case RZ_IL_OP_ARG_FLOAT_RMODE_STATIC:
