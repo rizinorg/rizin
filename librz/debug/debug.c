@@ -1211,6 +1211,15 @@ RZ_API int rz_debug_continue_kill(RzDebug *dbg, int sig) {
 
 	// Main execution loop: Keep running until we hit an event meant for the user
 	while (true) {
+	// 	static int iter = 0;
+    // FILE *lf = fopen("/tmp/rz_loop.log", "a");
+    // if (lf) {
+    //     fprintf(lf, "[iter %d] reason=%d signum=%d src=%d pc=0x%llx\n",
+    //             iter++, reason, dbg->reason.signum, dbg->reason.sig_source,
+    //             (unsigned long long)(dbg->cur ? rz_debug_reg_get(dbg, "PC") : 0));
+    //     fflush(lf);
+    //     fclose(lf);
+    // }
 		if (rz_debug_is_dead(dbg)) {
 			return 0;
 		}
@@ -1338,16 +1347,19 @@ RZ_API int rz_debug_continue_kill(RzDebug *dbg, int sig) {
 				eprintf("Continue into the signal %d handler\n", sig);
 				continue;
 			} else if (what & RZ_DBG_SIGNAL_SKIP) {
-				const char *signame = rz_signal_to_string(dbg->reason.signum);
+				 char *signame = rz_signal_to_string(dbg->reason.signum);
 
 				if (dbg->reason.sig_source == RZ_DEBUG_SIGNAL_SOURCE_EXTERNAL) {
 					eprintf("Skipped signal handler for %d (%s)\n", dbg->reason.signum, signame);
-					dbg->reason.signum = -1;
-					continue;
+					// free(signame);
+					// sig = dbg->reason.signum;
+					// dbg->reason.signum = -1;
+					break;
 				}
 
 				if (skip_current_instruction(dbg)) {
 					eprintf("Skipped signal handler for %d (%s)\n", dbg->reason.signum, signame);
+					// free(signame);
 					continue;
 				}
 
