@@ -1066,8 +1066,14 @@ static RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *match_all_internal_8(
 	while (matches && rz_pvector_len(matches) > 0) {
 		rz_pvector_push(all_matches, matches);
 		RzRegexMatch *m = rz_pvector_head(matches);
-		// Search again after the last match.
-		text_offset = allow_overlap ? m->start + 1 : m->start + m->len;
+		RzRegexSize new_offset = allow_overlap ? m->start + 1 : m->start + m->len;
+		if (new_offset <= text_offset) {
+			new_offset = text_offset + 1;
+		}
+		text_offset = new_offset;
+		if (text_offset >= text_size) {
+			break;
+		}
 		matches = match_first_8(regex, text, text_size, text_offset, mflags, jit_stack);
 	}
 
