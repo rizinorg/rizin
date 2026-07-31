@@ -171,6 +171,7 @@ xmm0 = 0x00000000000000004010000000000000
 rax = 0x0000000000000003
 xmm0 = 0x0000000000000000401800003fc00000
 EOF
+RUN
 
 NAME=Missing casting of arguments and register write issue test
 FILE==
