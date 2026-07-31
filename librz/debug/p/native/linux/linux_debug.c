@@ -103,14 +103,6 @@ int linux_handle_signals(RzDebug *dbg, int tid) {
 		dbg->stopaddr = (ut64)(size_t)siginfo.si_addr;
 		// dbg->errno = siginfo.si_errno;
 		dbg->reason.sig_source = find_signal_source(siginfo.si_code);
-		if(dbg->reason.signum == 15){
-			dbg->reason.sig_source = RZ_DEBUG_SIGNAL_SOURCE_INTERNAL;
-		}
-		// FILE *f = fopen("/tmp/rz_debug_trap.log", "a");
-		// fprintf(f, "sig=%d si_code=%d si_pid=%d pid=%d\n", siginfo.si_signo, siginfo.si_code, siginfo.si_pid, dbg->pid);
-		// fflush(f);
-		// fclose(f);
-		// eprintf("sig=%d si_code=%d si_pid=%d pid=%d\n", siginfo.si_signo, siginfo.si_code, siginfo.si_pid, dbg->pid);
 		//  siginfo.si_code -> HWBKPT, USER, KERNEL or WHAT
 		//  TODO: DO MORE RDEBUGREASON HERE
 		switch (dbg->reason.signum) {

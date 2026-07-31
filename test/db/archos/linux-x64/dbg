@@ -87,7 +87,7 @@ Hello world
 [+] SIGNAL 15 errno=0 
 [+] signal 15 aka SIGTERM received 2
 EOF
-REGEXP_FILTER_OUT=(?m)^(?:(?!\b(?:addr|si_pid)=\S+\s*).)*
+REGEXP_FILTER_OUT=(?m)^(?:(?!\b(?:addr|si_pid)=\S+\s*).)+
 RUN
 
 NAME=Ignore instruction skip for external signals
@@ -107,7 +107,7 @@ SUM IS 50
 [+] SIGNAL 10 errno=0 
 [+] signal 10 aka SIGUSR1 received 2
 EOF
-REGEXP_FILTER_OUT=(?m)^(?:(?!\b(?:addr|si_pid)=\S+\s*).)*
+REGEXP_FILTER_OUT=(?m)^(?:(?!\b(?:addr|si_pid)=\S+\s*).)+
 RUN
 
 NAME=rizin -d no error from env
