@@ -2091,6 +2091,7 @@ RZ_API void rz_analysis_rtti_msvc_print_class_hierarchy_descriptor(RVTableContex
 RZ_API void rz_analysis_rtti_msvc_print_base_class_descriptor(RVTableContext *context, ut64 addr, int mode);
 RZ_API bool rz_analysis_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, RzOutputMode mode, bool strict);
 RZ_API void rz_analysis_rtti_msvc_recover_all(RVTableContext *vt_context, RzList /*<RVTableInfo *>*/ *vtables);
+RZ_API void rz_analysis_rtti_dlang(RZ_NONNULL RzAnalysis *analysis);
 RZ_API void rz_analysis_rtti_swift(RzAnalysis *analysis);
 RZ_API void rz_analysis_rtti_objc(RZ_NONNULL RzAnalysis *analysis);
 
