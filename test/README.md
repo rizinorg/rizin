@@ -98,6 +98,20 @@ a "nop" 90 # Assembly is correct
 dB "nopppp" 90 # Disassembly test is broken
 ```
 
+#### Select bits and cpu
+
+Some instructions are only valid for a certain ISA version.
+For that `rz-test` is setup with the correct architecture, bits, and cpu model from the file name.
+
+The possible formats are:
+
+1. `<arch>`
+	 Example: `arm`
+2. <arch>_<bits>
+	 Example: `arm_32`
+3. <arch>_<cpu>_<bits>
+	 Example: `arm_cortex_32`
+
 #### Multiple instructions in a single test
 
 Some instructions change if they appear together with another instructions.
