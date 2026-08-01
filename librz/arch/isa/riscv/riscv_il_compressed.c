@@ -3,7 +3,6 @@
 
 #include "riscv_il_compressed.h"
 
-#include "analysis_private.h"
 #include "riscv/riscv_il_base.h"
 #include "riscv_il_integer.h"
 #include "rz_util/rz_buf.h"
@@ -13,17 +12,17 @@
 #define DECODE_C_MV(analysis, insn) \
 	REQUIRE_2OPS(RISCV_OP_REG, RISCV_OP_REG); \
 	uint32_t rd = insn->detail->riscv.operands[0].reg; \
-	RzILOpBitVector *rs = riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[1].reg);
+	RzILOpBitVector *rs = riscv_il_get_reg(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[1].reg);
 
 #define DECODE_C_LI(analysis, insn) \
 	REQUIRE_3OPS(RISCV_OP_REG, RISCV_OP_REG, RISCV_OP_IMM); \
 	uint32_t rd = insn->detail->riscv.operands[0].reg; \
-	RzILOpBitVector *imm = SN(analysis->bits, insn->detail->riscv.operands[2].imm);
+	RzILOpBitVector *imm = SN(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[2].imm);
 
 #define DECODE_C_BRANCH_ZERO(analysis, insn) \
 	REQUIRE_3OPS(RISCV_OP_REG, RISCV_OP_REG, RISCV_OP_IMM); \
-	RzILOpBitVector *rs1 = riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[0].reg); \
-	RzILOpBitVector *imm = SN(analysis->bits, insn->detail->riscv.operands[2].imm);
+	RzILOpBitVector *rs1 = riscv_il_get_reg(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[0].reg); \
+	RzILOpBitVector *imm = SN(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[2].imm);
 
 DEFINE_LIFTER_WITH_EFFECT(c_nop, DECODE_NONE, NOP())
 DEFINE_ALIAS_LIFTER(c_addi, addi)
@@ -80,7 +79,7 @@ DEFINE_ALIAS_LIFTER(c_lw, lw)
 DEFINE_ALIAS_LIFTER(c_ld, ld)
 DEFINE_ALIAS_LIFTER(c_ldsp, ld)
 
-DEFINE_LIFTER_FOR_ONEWAY_JUMP(c_beqz, DECODE_C_BRANCH_ZERO, BRANCH(EQ(rs1, UN(analysis->bits, 0)), JMP(imm), JMP(UN(analysis->bits, current_addr + size))))
-DEFINE_LIFTER_FOR_ONEWAY_JUMP(c_bnez, DECODE_C_BRANCH_ZERO, BRANCH(NE(rs1, UN(analysis->bits, 0)), JMP(imm), JMP(UN(analysis->bits, current_addr + size))))
+DEFINE_LIFTER_FOR_ONEWAY_JUMP(c_beqz, DECODE_C_BRANCH_ZERO, BRANCH(EQ(rs1, UN(rz_analysis_get_bits(analysis), 0)), JMP(imm), JMP(UN(rz_analysis_get_bits(analysis), current_addr + size))))
+DEFINE_LIFTER_FOR_ONEWAY_JUMP(c_bnez, DECODE_C_BRANCH_ZERO, BRANCH(NE(rs1, UN(rz_analysis_get_bits(analysis), 0)), JMP(imm), JMP(UN(rz_analysis_get_bits(analysis), current_addr + size))))
 
 #include <rz_il/rz_il_opbuilder_end.h>
