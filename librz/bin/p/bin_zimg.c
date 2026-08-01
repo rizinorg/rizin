@@ -104,7 +104,9 @@ typedef struct zimage_marker_s {
 
 #define RISCV_ZIMAGE_MAGIC1_VALUE "RISCV\0\0\0"
 #define RISCV_ZIMAGE_MAGIC2_VALUE "RSC\x05"
+#define RISCV_ZIMAGE_CODE_SIZE    0x08
 #define RISCV_ZIMAGE_INFO_OFFSET  0x08
+#define RISCV_ZIMAGE_HEADER_SIZE  0x40
 #define RISCV_ZIMAGE_MAGIC_OFFSET 0x30
 
 // clang-format off
@@ -517,6 +519,61 @@ static RzPVector /*<RzBinAddr *>*/ *zimage_entries(RzBinFile *bf) {
 	return ret;
 }
 
+static bool zimage_add_section(RzPVector /*<RzBinSection *>*/ *ret, const char *name, ut64 paddr, ut64 size, ut32 perm, bool is_data, int bits) {
+	RzBinSection *section = RZ_NEW0(RzBinSection);
+	if (!section) {
+		return false;
+	}
+	section->name = rz_str_dup(name);
+	if (!section->name) {
+		rz_bin_section_free(section);
+		return false;
+	}
+	section->paddr = paddr;
+	section->vaddr = paddr;
+	section->size = size;
+	section->vsize = size;
+	section->perm = perm;
+	section->is_data = is_data;
+	section->bits = bits;
+	rz_pvector_push(ret, section);
+	return true;
+}
+
+static RzPVector /*<RzBinSection *>*/ *zimage_sections(RzBinFile *bf) {
+	zImage *zo = bf->o->bin_obj;
+	RzPVector /*<RzBinSection *>*/ *ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
+	if (!ret) {
+		return NULL;
+	}
+
+	if (zo->arch != ZIMAGE_ARCH_RISCV) {
+		return ret;
+	}
+
+	ut64 size = rz_buf_size(bf->buf);
+	int bits = zimage_bits(zo);
+	ut64 boot_size = RZ_MIN(size, RISCV_ZIMAGE_CODE_SIZE);
+	ut64 header_end = RZ_MIN(size, RISCV_ZIMAGE_HEADER_SIZE);
+
+	if (boot_size && !zimage_add_section(ret, "riscv.boot", 0, boot_size, RZ_PERM_RX, false, bits)) {
+		rz_pvector_free(ret);
+		return NULL;
+	}
+
+	if (header_end > RISCV_ZIMAGE_INFO_OFFSET && !zimage_add_section(ret, "riscv.header", RISCV_ZIMAGE_INFO_OFFSET, header_end - RISCV_ZIMAGE_INFO_OFFSET, RZ_PERM_R, true, bits)) {
+		rz_pvector_free(ret);
+		return NULL;
+	}
+
+	if (size > RISCV_ZIMAGE_HEADER_SIZE && !zimage_add_section(ret, "kernel", RISCV_ZIMAGE_HEADER_SIZE, size - RISCV_ZIMAGE_HEADER_SIZE, RZ_PERM_RX, false, bits)) {
+		rz_pvector_free(ret);
+		return NULL;
+	}
+
+	return ret;
+}
+
 static void zimage_structure_arm32(zImage *image, RzStructuredData *root) {
 	zimage_arm32_t *zo = &image->info.arm32;
 
@@ -604,6 +661,8 @@ RzBinPlugin rz_bin_plugin_zimg = {
 	.check_buffer = &zimage_check_buffer,
 	.baddr = &zimage_baddr,
 	.info = &zimage_info,
+	.maps = &rz_bin_maps_of_file_sections,
+	.sections = &zimage_sections,
 	.entries = &zimage_entries,
 	.bin_structure = &zimage_structure
 };
