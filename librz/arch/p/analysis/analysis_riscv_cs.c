@@ -863,7 +863,7 @@ int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	cs_mode mode = (analysis->bits == 64) ? CS_MODE_RISCV64 : CS_MODE_RISCV32;
 	mode |= mode_from_arch_string(rz_analysis_get_cpu(analysis));
 
-	if (mode != ctx->omode || analysis->bits != ctx->obits || cs_option(ctx->hndl, CS_OPT_DETAIL, CS_OPT_ON | CS_OPT_DETAIL_REAL) != CS_ERR_OK) {
+	if (mode != ctx->omode || analysis->bits != ctx->obits || cs_option(ctx->hndl, CS_OPT_DETAIL, CS_OPT_ON | CS_OPT_DETAIL_UNCOMPRESSED_REAL) != CS_ERR_OK) {
 		cs_close(&ctx->hndl);
 		ctx->hndl = 0;
 		ctx->omode = mode;
@@ -879,7 +879,7 @@ int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		if (ret != CS_ERR_OK) {
 			goto fin;
 		}
-		cs_option(ctx->hndl, CS_OPT_DETAIL, CS_OPT_ON | CS_OPT_DETAIL_REAL);
+		cs_option(ctx->hndl, CS_OPT_DETAIL, CS_OPT_ON | CS_OPT_DETAIL_UNCOMPRESSED_REAL);
 	}
 	n = cs_disasm(ctx->hndl, (ut8 *)buf, len, addr, 1, &insn);
 

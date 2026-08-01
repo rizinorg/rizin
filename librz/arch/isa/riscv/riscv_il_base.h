@@ -8,7 +8,6 @@
 #include "rz_types.h"
 #include <rz_analysis.h>
 
-#include "riscv_il.h"
 #include "riscv_il_integer_reg_names.h"
 
 #include <rz_il/rz_il_opbuilder_begin.h>
@@ -65,41 +64,18 @@ static inline RzILOpEffect *riscv_il_set_reg(uint32_t reg, RZ_OWN RZ_NONNULL RzI
 	}
 
 #if RZ_CHECKS_LEVEL > 0
-static inline void riscv_il_dump_operands(RZ_NONNULL cs_insn *insn) {
-	RZ_LOG_ERROR("op_str: %s\n", insn->op_str);
-	RZ_LOG_ERROR("need_effective_addr: %d\n", insn->detail->riscv.need_effective_addr);
-	RZ_LOG_ERROR("op_count: %u\n", insn->detail->riscv.op_count);
-	for (int i = 0; i < insn->detail->riscv.op_count; i++) {
-		RZ_LOG_ERROR("operands[%d].type: %d\n", i, insn->detail->riscv.operands[i].type);
-		if (insn->detail->riscv.operands[i].type == RISCV_OP_REG) {
-			RZ_LOG_ERROR("  REG = %d\n", insn->detail->riscv.operands[i].reg);
-		} else if (insn->detail->riscv.operands[i].type == RISCV_OP_IMM) {
-			RZ_LOG_ERROR("  IMM = 0x%" PFMT64x "\n", (ut64)insn->detail->riscv.operands[i].imm);
-		} else if (insn->detail->riscv.operands[i].type == RISCV_OP_MEM) {
-			RZ_LOG_ERROR("  MEM base = %d, disp = 0x%" PFMT64x "\n", insn->detail->riscv.operands[i].mem.base, (ut64)insn->detail->riscv.operands[i].mem.disp);
-		}
-	}
-}
-
-static inline void riscv_il_log_operand_mismatch(RZ_NONNULL cs_insn *insn, ut64 current_addr, int idx, int type, const char *type_name) {
-	RZ_LOG_ERROR("[%s (%d) @ 0x%08" PFMT64x "] Expected type %d (%s) at index %d, found type %d instead\n",
-		insn->mnemonic, insn->id, current_addr, type, type_name, idx, insn->detail->riscv.operands[idx].type);
-	riscv_il_dump_operands(insn);
-}
-
 static inline bool riscv_il_require_op(RZ_NONNULL cs_insn *insn, ut64 current_addr, int idx, int type, const char *type_name) {
 	if (insn->detail->riscv.operands[idx].type == type && insn->detail->riscv.operands[idx].type != RISCV_OP_INVALID) {
 		return true;
 	}
-	riscv_il_log_operand_mismatch(insn, current_addr, idx, type, type_name);
 	return false;
 }
 
 static inline bool riscv_il_require_64_bit(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL cs_insn *insn) {
-	if (analysis->bits == 64) {
+	if (rz_analysis_get_bits(analysis) == 64) {
 		return true;
 	}
-	RZ_LOG_ERROR("[%s (%d)] Expected 64-bit analysis, found %d bits\n", insn->mnemonic, insn->id, analysis->bits);
+	// RZ_LOG_ERROR("[%s (%d)] Expected 64-bit analysis, found %d bits\n", insn->mnemonic, insn->id, rz_analysis_get_bits(analysis));
 	return false;
 }
 
@@ -141,65 +117,65 @@ static inline bool riscv_il_require_64_bit(RZ_NONNULL RzAnalysis *analysis, RZ_N
 #define DECODE_RD_RS_IMM(analysis, insn) \
 	REQUIRE_3OPS(RISCV_OP_REG, RISCV_OP_REG, RISCV_OP_IMM); \
 	uint32_t rd = insn->detail->riscv.operands[0].reg; \
-	RzILOpBitVector *rs = riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[1].reg); \
-	RzILOpBitVector *imm = SN(analysis->bits, insn->detail->riscv.operands[2].imm);
+	RzILOpBitVector *rs = riscv_il_get_reg(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[1].reg); \
+	RzILOpBitVector *imm = SN(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[2].imm);
 
 #define DECODE_RD_RS_RS(analysis, insn) \
 	REQUIRE_3OPS(RISCV_OP_REG, RISCV_OP_REG, RISCV_OP_REG); \
 	uint32_t rd = insn->detail->riscv.operands[0].reg; \
-	RzILOpBitVector *rs1 = riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[1].reg); \
-	RzILOpBitVector *rs2 = riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[2].reg);
+	RzILOpBitVector *rs1 = riscv_il_get_reg(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[1].reg); \
+	RzILOpBitVector *rs2 = riscv_il_get_reg(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[2].reg);
 
 #define DECODE_RS_IMM(analysis, insn) \
 	REQUIRE_2OPS(RISCV_OP_REG, RISCV_OP_IMM); \
-	RzILOpBitVector *rs = riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[0].reg); \
-	RzILOpBitVector *imm = SN(analysis->bits, insn->detail->riscv.operands[1].imm);
+	RzILOpBitVector *rs = riscv_il_get_reg(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[0].reg); \
+	RzILOpBitVector *imm = SN(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[1].imm);
 
 #define DECODE_RS_RS_IMM(analysis, insn) \
 	REQUIRE_3OPS(RISCV_OP_REG, RISCV_OP_REG, RISCV_OP_IMM); \
-	RzILOpBitVector *rs1 = riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[0].reg); \
-	RzILOpBitVector *rs2 = riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[1].reg); \
-	RzILOpBitVector *imm = SN(analysis->bits, insn->detail->riscv.operands[2].imm);
+	RzILOpBitVector *rs1 = riscv_il_get_reg(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[0].reg); \
+	RzILOpBitVector *rs2 = riscv_il_get_reg(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[1].reg); \
+	RzILOpBitVector *imm = SN(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[2].imm);
 
 #define DECODE_RD_RS(analysis, insn) \
 	REQUIRE_2OPS(RISCV_OP_REG, RISCV_OP_REG); \
 	uint32_t rd = insn->detail->riscv.operands[0].reg; \
-	RzILOpBitVector *rs = riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[1].reg);
+	RzILOpBitVector *rs = riscv_il_get_reg(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[1].reg);
 
 #define DECODE_IMM(analysis, insn) \
 	REQUIRE_OP(0, RISCV_OP_IMM); \
-	RzILOpBitVector *imm = SN(analysis->bits, insn->detail->riscv.operands[0].imm);
+	RzILOpBitVector *imm = SN(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[0].imm);
 
 #define DECODE_RD_IMM(analysis, insn) \
 	REQUIRE_2OPS(RISCV_OP_REG, RISCV_OP_IMM); \
 	uint32_t rd = insn->detail->riscv.operands[0].reg; \
-	RzILOpBitVector *imm = SN(analysis->bits, insn->detail->riscv.operands[1].imm);
+	RzILOpBitVector *imm = SN(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[1].imm);
 
 #define DECODE_RS_RS_IMM_MEM(analysis, insn) \
 	REQUIRE_2OPS(RISCV_OP_REG, RISCV_OP_MEM); \
-	RzILOpBitVector *rs1 = riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[0].reg); \
-	RzILOpBitVector *rs2 = riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[1].mem.base); \
-	RzILOpBitVector *imm = SN(analysis->bits, insn->detail->riscv.operands[1].mem.disp);
+	RzILOpBitVector *rs1 = riscv_il_get_reg(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[0].reg); \
+	RzILOpBitVector *rs2 = riscv_il_get_reg(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[1].mem.base); \
+	RzILOpBitVector *imm = SN(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[1].mem.disp);
 
 #define DECODE_RD_RS_IMM_MEM(analysis, insn) \
 	REQUIRE_2OPS(RISCV_OP_REG, RISCV_OP_MEM); \
 	uint32_t rd = insn->detail->riscv.operands[0].reg; \
-	RzILOpBitVector *rs = riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[1].mem.base); \
-	RzILOpBitVector *imm = SN(analysis->bits, insn->detail->riscv.operands[1].mem.disp);
+	RzILOpBitVector *rs = riscv_il_get_reg(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[1].mem.base); \
+	RzILOpBitVector *imm = SN(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[1].mem.disp);
 
 // used for *w instructions in RV64 that truncate the operands to 32 bits then does the operation
 #define DECODE_RD_RS_RS_TRUNCATE32(analysis, insn) \
 	REQUIRE_64_BIT(analysis); \
 	REQUIRE_3OPS(RISCV_OP_REG, RISCV_OP_REG, RISCV_OP_REG); \
 	uint32_t rd = insn->detail->riscv.operands[0].reg; \
-	RzILOpBitVector *rs1 = CAST(32, IL_FALSE, riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[1].reg)); \
-	RzILOpBitVector *rs2 = CAST(32, IL_FALSE, riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[2].reg));
+	RzILOpBitVector *rs1 = CAST(32, IL_FALSE, riscv_il_get_reg(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[1].reg)); \
+	RzILOpBitVector *rs2 = CAST(32, IL_FALSE, riscv_il_get_reg(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[2].reg));
 
 #define DECODE_RD_RS_IMM_TRUNCATE32(analysis, insn) \
 	REQUIRE_64_BIT(analysis); \
 	REQUIRE_3OPS(RISCV_OP_REG, RISCV_OP_REG, RISCV_OP_IMM); \
 	uint32_t rd = insn->detail->riscv.operands[0].reg; \
-	RzILOpBitVector *rs = CAST(32, IL_FALSE, riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[1].reg)); \
+	RzILOpBitVector *rs = CAST(32, IL_FALSE, riscv_il_get_reg(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[1].reg)); \
 	RzILOpBitVector *imm = SN(32, insn->detail->riscv.operands[2].imm);
 
 #define DECODE_RD_IMM_TRUNCATE32(analysis, insn) \
