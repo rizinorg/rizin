@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include "riscv_il.h"
-#include "analysis_private.h"
 #include "riscv_il_base.h"
 #include "riscv_il_integer.h"
 #include "riscv_il_m.h"
@@ -155,7 +154,7 @@ rz_riscv_lift_instr(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnal
 RZ_IPI RzAnalysisILConfig *rz_riscv_il_config(RZ_NONNULL RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 
-	RzAnalysisILConfig *conf = rz_analysis_il_config_new(analysis->bits, analysis->big_endian, analysis->bits);
+	RzAnalysisILConfig *conf = rz_analysis_il_config_new(rz_analysis_get_bits(analysis), rz_analysis_is_big_endian_set(analysis), rz_analysis_get_bits(analysis));
 
 	RzILEffectLabel *ecall_label = rz_il_effect_label_new("ecall", EFFECT_LABEL_SYSCALL);
 	ecall_label->hook = label_ecall;
