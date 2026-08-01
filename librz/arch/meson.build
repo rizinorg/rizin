@@ -488,6 +488,7 @@ arch_common_sources = [
   'platform_target_index.c',
   'reflines.c',
   'rtti.c',
+  'rtti_dlang.c',
   'rtti_itanium.c',
   'rtti_msvc.c',
   'serialize_analysis.c',
