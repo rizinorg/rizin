@@ -835,7 +835,7 @@ nth      paddr      vaddr bind   type   size lib name
   8 0x00000570 0x00010570 GLOBAL FUNC      0     imp.__libc_start_main
 --- vector reductions
         :   ; CALL XREF from main @ 0x10938
-/ sym.test_reductions(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg8, int64_t arg_7fffffffffffffcfh, int64_t arg_7fffffffffffffd7h, int64_t arg_7fffffffffffffe7h, int64_t arg_7fffffffffffffefh, int64_t arg_7ffffffffffffff7h);
+/ sym.test_reductions(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg8);
 |       :   ; arg int64_t arg1 @ a0
 |       :   ; arg int64_t arg2 @ a1
 |       :   ; arg int64_t arg3 @ a2
@@ -843,11 +843,11 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   ; arg int64_t arg5 @ a4
 |       :   ; arg int64_t arg8 @ a7
 |       :   ; var int64_t var_c0h @ stack - 0xc0
-|       :   ; arg int64_t arg_7fffffffffffffcfh @ stack + 0x7fffffffffffffcf
-|       :   ; arg int64_t arg_7fffffffffffffd7h @ stack + 0x7fffffffffffffd7
-|       :   ; arg int64_t arg_7fffffffffffffe7h @ stack + 0x7fffffffffffffe7
-|       :   ; arg int64_t arg_7fffffffffffffefh @ stack + 0x7fffffffffffffef
-|       :   ; arg int64_t arg_7ffffffffffffff7h @ stack + 0x7ffffffffffffff7
+|       :   ; var int64_t var_30h @ stack - 0x30
+|       :   ; var int64_t var_28h @ stack - 0x28
+|       :   ; var int64_t var_18h @ stack - 0x18
+|       :   ; var int64_t var_10h @ stack - 0x10
+|       :   ; var int64_t var_8h @ stack - 0x8
 |       :   0x00010c56      577002cd       vsetivli zero, 4, e0x20, m1, ta, ma
 |       :   0x00010c5a      d731005e       vmv.v.i v3, 0
 |       :   0x00010c5e      032e0500       lw    t3, 0(a0)             ; arg1
