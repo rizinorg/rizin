@@ -114,9 +114,11 @@ static void update_asmbits_options(RzCore *core, RzConfigNode *node) {
 
 	int bits = rz_asm_get_plugin_bits(core->rasm);
 	rz_set_s_clear(node->options);
+	char b[32] = { 0 };
 	for (int i = 1; i <= bits; i <<= 1) {
 		if (i & bits) {
-			SETOPTIONS(node, rz_str_newf("%d", i), NULL);
+			rz_strf(b, "%d", i);
+			SETOPTIONS(node, b, NULL);
 		}
 	}
 }
