@@ -736,11 +736,12 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 		rz_analysis_set_big_endian(as->analysis, canbebig);
 	}
 	if (whatsop) {
-		const char *s = rz_asm_describe(as->a, opt.argv[opt.ind]);
+		char *s = rz_asm_describe(as->a, opt.argv[opt.ind]);
 		ret = 1;
 		if (s) {
 			printf("%s\n", s);
 			ret = 0;
+			free(s);
 		}
 		goto beach;
 	}

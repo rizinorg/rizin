@@ -13,6 +13,31 @@
 
 #define RZ_ALPHA_INS(name) ALPHA_INS_##name
 
+// Stupid me forgot to request that all enums must be upper case
+// in the initial Capstone Alpha PR - Yes, I know.
+// This can be removed once Capstone v5 support is dropped.
+#if (CS_API_MAJOR >= 6) && (CS_VERSION_PRE_RELEASE >= CS_VERSION_ALPHA10)
+#define ALPHA_INS_CMPTEQsSU ALPHA_INS_CMPTEQSSU
+#define ALPHA_INS_CMPTLEsSU ALPHA_INS_CMPTLESSU
+#define ALPHA_INS_CMPTLTsSU ALPHA_INS_CMPTLTSSU
+#define ALPHA_INS_CMPTUNsSU ALPHA_INS_CMPTUNSSU
+#define ALPHA_INS_CVTQSsSUI ALPHA_INS_CVTQSSSUI
+#define ALPHA_INS_CVTQTsSUI ALPHA_INS_CVTQTSSUI
+#define ALPHA_INS_CVTSTsS   ALPHA_INS_CVTSTSS
+#define ALPHA_INS_CVTTQsSVC ALPHA_INS_CVTTQSSVC
+#define ALPHA_INS_CVTTSsSUI ALPHA_INS_CVTTSSSUI
+#define ALPHA_INS_DIVSsSU   ALPHA_INS_DIVSSSU
+#define ALPHA_INS_DIVTsSU   ALPHA_INS_DIVTSSU
+#define ALPHA_INS_MULSsSU   ALPHA_INS_MULSSSU
+#define ALPHA_INS_MULTsSU   ALPHA_INS_MULTSSU
+#define ALPHA_INS_SQRTSsSU  ALPHA_INS_SQRTSSSU
+#define ALPHA_INS_SQRTTsSU  ALPHA_INS_SQRTTSSU
+#define ALPHA_INS_SUBSsSU   ALPHA_INS_SUBSSSU
+#define ALPHA_INS_SUBTsSU   ALPHA_INS_SUBTSSU
+#define ALPHA_INS_ADDSsSU   ALPHA_INS_ADDSSSU
+#define ALPHA_INS_ADDTsSU   ALPHA_INS_ADDTSSU
+#endif
+
 static char *get_reg_profile(RzAnalysis *_) {
 	const char *p =
 		"=PC	r31\n"
@@ -276,8 +301,6 @@ static void alpha_op_set_type(RzAsmAlphaContext *ctx, RzAnalysisOp *op) {
 
 	case RZ_ALPHA_INS(ADDL):
 	case RZ_ALPHA_INS(ADDQ):
-	case RZ_ALPHA_INS(ADDSsSU):
-	case RZ_ALPHA_INS(ADDTsSU):
 	case RZ_ALPHA_INS(AND):
 	case RZ_ALPHA_INS(BIC):
 	case RZ_ALPHA_INS(BIS):
@@ -293,10 +316,6 @@ static void alpha_op_set_type(RzAsmAlphaContext *ctx, RzAnalysisOp *op) {
 	case RZ_ALPHA_INS(CMPEQ):
 	case RZ_ALPHA_INS(CMPLE):
 	case RZ_ALPHA_INS(CMPLT):
-	case RZ_ALPHA_INS(CMPTEQsSU):
-	case RZ_ALPHA_INS(CMPTLEsSU):
-	case RZ_ALPHA_INS(CMPTLTsSU):
-	case RZ_ALPHA_INS(CMPTUNsSU):
 	case RZ_ALPHA_INS(CMPULE):
 	case RZ_ALPHA_INS(CMPULT):
 	case RZ_ALPHA_INS(COND_BRANCH):
@@ -306,13 +325,6 @@ static void alpha_op_set_type(RzAsmAlphaContext *ctx, RzAnalysisOp *op) {
 	case RZ_ALPHA_INS(CTLZ):
 	case RZ_ALPHA_INS(CTPOP):
 	case RZ_ALPHA_INS(CTTZ):
-	case RZ_ALPHA_INS(CVTQSsSUI):
-	case RZ_ALPHA_INS(CVTQTsSUI):
-	case RZ_ALPHA_INS(CVTSTsS):
-	case RZ_ALPHA_INS(CVTTQsSVC):
-	case RZ_ALPHA_INS(CVTTSsSUI):
-	case RZ_ALPHA_INS(DIVSsSU):
-	case RZ_ALPHA_INS(DIVTsSU):
 	case RZ_ALPHA_INS(ECB):
 	case RZ_ALPHA_INS(EQV):
 	case RZ_ALPHA_INS(EXCB):
@@ -358,8 +370,6 @@ static void alpha_op_set_type(RzAsmAlphaContext *ctx, RzAnalysisOp *op) {
 	case RZ_ALPHA_INS(MSKWL):
 	case RZ_ALPHA_INS(MULL):
 	case RZ_ALPHA_INS(MULQ):
-	case RZ_ALPHA_INS(MULSsSU):
-	case RZ_ALPHA_INS(MULTsSU):
 	case RZ_ALPHA_INS(ORNOT):
 	case RZ_ALPHA_INS(RC):
 	case RZ_ALPHA_INS(RPCC):
@@ -375,22 +385,37 @@ static void alpha_op_set_type(RzAsmAlphaContext *ctx, RzAnalysisOp *op) {
 	case RZ_ALPHA_INS(SEXTB):
 	case RZ_ALPHA_INS(SEXTW):
 	case RZ_ALPHA_INS(SLL):
-	case RZ_ALPHA_INS(SQRTSsSU):
-	case RZ_ALPHA_INS(SQRTTsSU):
 	case RZ_ALPHA_INS(SRA):
 	case RZ_ALPHA_INS(SRL):
 	case RZ_ALPHA_INS(STS):
 	case RZ_ALPHA_INS(STT):
 	case RZ_ALPHA_INS(SUBL):
 	case RZ_ALPHA_INS(SUBQ):
-	case RZ_ALPHA_INS(SUBSsSU):
-	case RZ_ALPHA_INS(SUBTsSU):
 	case RZ_ALPHA_INS(TRAPB):
 	case RZ_ALPHA_INS(UMULH):
 	case RZ_ALPHA_INS(WH64):
 	case RZ_ALPHA_INS(WH64EN):
 	case RZ_ALPHA_INS(WMB):
 	case RZ_ALPHA_INS(ZAPNOT):
+	case RZ_ALPHA_INS(CMPTEQsSU):
+	case RZ_ALPHA_INS(CMPTLEsSU):
+	case RZ_ALPHA_INS(CMPTLTsSU):
+	case RZ_ALPHA_INS(CMPTUNsSU):
+	case RZ_ALPHA_INS(CVTQSsSUI):
+	case RZ_ALPHA_INS(CVTQTsSUI):
+	case RZ_ALPHA_INS(CVTSTsS):
+	case RZ_ALPHA_INS(CVTTQsSVC):
+	case RZ_ALPHA_INS(CVTTSsSUI):
+	case RZ_ALPHA_INS(DIVSsSU):
+	case RZ_ALPHA_INS(DIVTsSU):
+	case RZ_ALPHA_INS(MULSsSU):
+	case RZ_ALPHA_INS(MULTsSU):
+	case RZ_ALPHA_INS(SQRTSsSU):
+	case RZ_ALPHA_INS(SQRTTsSU):
+	case RZ_ALPHA_INS(SUBSsSU):
+	case RZ_ALPHA_INS(SUBTsSU):
+	case RZ_ALPHA_INS(ADDSsSU):
+	case RZ_ALPHA_INS(ADDTsSU):
 		break;
 	}
 }
