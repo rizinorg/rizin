@@ -372,16 +372,16 @@ typedef RzILOpArgsUnopFloat RzILOpArgsFpred;
  * \brief Selects how a floating-point rounding-mode argument is represented.
  */
 typedef enum rz_il_op_arg_float_rmode_kind_t {
-	RZ_IL_OP_ARG_FLOAT_RMODE_STATIC,
-	RZ_IL_OP_ARG_FLOAT_RMODE_DYNAMIC,
+	RZ_IL_OP_ARG_FLOAT_RMODE_STATIC, ///< Stored directly as an RzFloatRMode.
+	RZ_IL_OP_ARG_FLOAT_RMODE_DYNAMIC, ///< Evaluated at run time from a 32-bit bitvector IL expression.
 } RzILOpArgFloatRModeKind;
 
 /**
  * \brief A floating-point rounding-mode argument.
  *
- * Static rounding modes are stored directly. Dynamic rounding modes are
- * represented by a 32-bit bitvector IL expression whose value is a
- * RzFloatRMode.
+ * Static rounding modes are stored directly as an RzFloatRMode. Dynamic
+ * rounding modes are represented by a 32-bit bitvector IL expression that is
+ * evaluated at run time to obtain an RzFloatRMode.
  */
 typedef struct rz_il_op_arg_float_rmode_t {
 	RzILOpArgFloatRModeKind kind;
