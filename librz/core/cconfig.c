@@ -3767,6 +3767,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* gadget */
 	SETI("gadget.len", 5, "Maximum number of instructions per gadget");
+	SETI("gadget.maxbytes", 16, "Maximum number of bytes printed per gadget in table mode, longer ones are truncated with '...' (0: no limit)");
 	SETBPREF("gadget.cache", "true", "Cache gadget search results");
 	SETBPREF("gadget.subchains", "false", "Display every length gadget from gadget.len=X to 2");
 	SETBPREF("gadget.conditional", "false", "Include conditional jump, calls and returns in gadget search");

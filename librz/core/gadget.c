@@ -1193,6 +1193,27 @@ static void print_gadget_info(const RzCore *core, const RzGadgetInfo *gadget_inf
 	}
 }
 
+/**
+ * \brief Shorten \p hex_str to at most \p max_bytes bytes, appending an ellipsis when bytes are dropped.
+ *
+ * \param hex_str Hex string of the gadget bytes, two characters per byte. Ownership is taken.
+ * \param max_bytes Maximum number of bytes to keep. 0 means no limit.
+ *
+ * \return \p hex_str when it already fits, otherwise a newly allocated truncated string.
+ */
+static RZ_OWN char *truncate_gadget_bytes(RZ_OWN RZ_NULLABLE char *hex_str, ut64 max_bytes) {
+	if (!hex_str || max_bytes == 0) {
+		return hex_str;
+	}
+	const size_t len = strlen(hex_str);
+	if (len / 2 <= max_bytes) {
+		return hex_str;
+	}
+	char *truncated = rz_str_newf("%.*s...", (int)(max_bytes * 2), hex_str);
+	free(hex_str);
+	return truncated;
+}
+
 static bool print_gadget_hitlist(const RzCore *core, RzPVector /*<RzCoreAsmHit *>*/ *hitlist, size_t start_idx, RzGadgetSearchContext *context, bool is_conditional) {
 	rz_return_val_if_fail(core && hitlist && context, false);
 	RzCmdStateOutput *state = context->state;
@@ -1313,6 +1334,7 @@ static bool print_gadget_hitlist(const RzCore *core, RzPVector /*<RzCoreAsmHit *
 			asmop_str = new_str;
 		}
 		if (!context->ret_val) {
+			asmop_hex_str = truncate_gadget_bytes(asmop_hex_str, rz_config_get_i(core->config, "gadget.maxbytes"));
 			rz_table_add_rowf(state->d.t, "Xss", addr, asmop_hex_str, asmop_str);
 		}
 		free(asmop_str);
