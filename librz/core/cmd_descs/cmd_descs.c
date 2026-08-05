@@ -2901,7 +2901,7 @@ static const RzCmdDescDetailEntry slash_z_Examples_detail_entries[] = {
 	{ .text = "/z", .arg_str = " (ABC*)D li", .comment = "Search the exact string \"(ABC*)D\" but case insensitive." },
 	{ .text = "/z", .arg_str = " \\\\d\\\\sC*\\\\w ri", .comment = "Search the regular expression \"\\d\\sC*\\w\" but case insensitive." },
 	{ .text = "/z", .arg_str = " \"и.{3}м\" ei", .comment = "Search the extended regular expression \"и.{3}м\" but case insensitive." },
-	{ .text = "/z", .arg_str = " \"(*LF).+\" r ascii", .comment = "Search any ascii string with line feed is a newline." },
+	{ .text = "/z", .arg_str = " \"(*LF).+\" r ascii", .comment = "Search any ASCII string where line feed is a newline." },
 	{ 0 },
 };
 static const RzCmdDescDetail slash_z_details[] = {

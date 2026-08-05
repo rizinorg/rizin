@@ -1134,7 +1134,7 @@ commands:
           comment: "Search the extended regular expression \"и.{3}м\" but case insensitive."
         - text: "/z"
           arg_str: " \"(*LF).+\" r ascii"
-          comment: "Search any ascii string with line feed is a newline."
+          comment: "Search any ASCII string where line feed is a newline."
     subcommands:
     - name: "/z"
       summary: String search.

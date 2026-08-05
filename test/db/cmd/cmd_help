@@ -303,7 +303,7 @@ EXPECT=<<EOF
                          case insensitive.
 | /z "и.{3}м" ei       # Search the extended regular expression
                          "и.{3}м" but case insensitive.
-| /z "(*LF).+" r ascii # Search any ascii string with line feed is a
+| /z "(*LF).+" r ascii # Search any ASCII string where line feed is a
                          newline.
 EOF
 RUN

@@ -256,6 +256,10 @@ RZ_API RZ_OWN RzRegexMulti *rz_regex_new_multi(RZ_NONNULL const char *pattern, R
 		return NULL;
 	case RZ_REGEX_UTF8: {
 		RzRegexCompContext *ccontext = pcre2_compile_context_create_8(NULL);
+		if (!ccontext) {
+			free(re);
+			return NULL;
+		}
 		pcre2_set_newline_8(ccontext, PCRE2_NEWLINE_NUL);
 		re->re8 = rz_regex_new(pattern, cflags, jflags, ccontext);
 		re->ccontext = ccontext;
@@ -263,6 +267,10 @@ RZ_API RZ_OWN RzRegexMulti *rz_regex_new_multi(RZ_NONNULL const char *pattern, R
 	}
 	case RZ_REGEX_UTF16: {
 		RzRegexCompContext *ccontext = pcre2_compile_context_create_16(NULL);
+		if (!ccontext) {
+			free(re);
+			return NULL;
+		}
 		pcre2_set_newline_16(ccontext, PCRE2_NEWLINE_NUL);
 		re->re16 = rz_regex_new_16(pattern, cflags, jflags, ccontext);
 		re->ccontext = ccontext;
@@ -270,6 +278,10 @@ RZ_API RZ_OWN RzRegexMulti *rz_regex_new_multi(RZ_NONNULL const char *pattern, R
 	}
 	case RZ_REGEX_UTF32: {
 		RzRegexCompContext *ccontext = pcre2_compile_context_create_32(NULL);
+		if (!ccontext) {
+			free(re);
+			return NULL;
+		}
 		pcre2_set_newline_32(ccontext, PCRE2_NEWLINE_NUL);
 		re->re32 = rz_regex_new_32(pattern, cflags, jflags, ccontext);
 		re->ccontext = ccontext;

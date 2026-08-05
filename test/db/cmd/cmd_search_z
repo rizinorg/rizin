@@ -1575,3 +1575,19 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=String Search - regex flags dotall and match new line.
+FILE==
+CMDS=<<EOF
+e str.encoding=utf8
+wx 0afefefefe @ 0x10
+/z ".+" rm
+/z ".+" rd
+EOF
+EXPECT=<<EOF
+0x00000010 1 hit.string.utf8.0 1
+0x00000000 17 hit.string.utf8.0 17
+0x00000015 491 hit.string.utf8.1 1eb
+EOF
+EXPECT_ERR=
+RUN
