@@ -31,7 +31,7 @@ static inline cs_mode m680x_mode(const char *str) {
 	} else if (rz_str_casestr(str, "hcs08")) {
 		return CS_MODE_M680X_HCS08;
 	}
-#ifdef RZ_CAPSTONE_HAS_M680X_HCS12X
+#if CS_API_MAJOR >= 6 && CS_VERSION_PRE_RELEASE >= CS_VERSION_ALPHA9
 	else if (rz_str_casestr(str, "rs08")) {
 		return CS_MODE_M680X_RS08;
 	} else if (rz_str_casestr(str, "hcs12x")) {

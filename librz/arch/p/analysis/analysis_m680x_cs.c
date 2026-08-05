@@ -174,7 +174,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_SWI2:
 	case M680X_INS_SWI3:
 	case M680X_INS_BGND:
-#ifdef RZ_CAPSTONE_HAS_M680X_HCS12X
+#if CS_API_MAJOR >= 6 && CS_VERSION_PRE_RELEASE >= CS_VERSION_ALPHA9
 	case M680X_INS_TRAP:
 	case M680X_INS_SYS:
 #endif
@@ -209,7 +209,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_INS:
 	case M680X_INS_INX:
 	case M680X_INS_INY:
-#ifdef RZ_CAPSTONE_HAS_M680X_HCS12X
+#if CS_API_MAJOR >= 6 && CS_VERSION_PRE_RELEASE >= CS_VERSION_ALPHA9
 	case M680X_INS_ADDX:
 	case M680X_INS_ADDY:
 	case M680X_INS_ADED:
@@ -244,7 +244,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_DES:
 	case M680X_INS_DEX:
 	case M680X_INS_DEY:
-#ifdef RZ_CAPSTONE_HAS_M680X_HCS12X
+#if CS_API_MAJOR >= 6 && CS_VERSION_PRE_RELEASE >= CS_VERSION_ALPHA9
 	case M680X_INS_SBED:
 	case M680X_INS_SBEX:
 	case M680X_INS_SBEY:
@@ -281,7 +281,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_BAND:
 	case M680X_INS_BCLR:
 	case M680X_INS_BIAND:
-#ifdef RZ_CAPSTONE_HAS_M680X_HCS12X
+#if CS_API_MAJOR >= 6 && CS_VERSION_PRE_RELEASE >= CS_VERSION_ALPHA9
 	case M680X_INS_ANDX:
 	case M680X_INS_ANDY:
 #endif
@@ -298,7 +298,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_ORR:
 	case M680X_INS_OIM:
 	case M680X_INS_BSET:
-#ifdef RZ_CAPSTONE_HAS_M680X_HCS12X
+#if CS_API_MAJOR >= 6 && CS_VERSION_PRE_RELEASE >= CS_VERSION_ALPHA9
 	case M680X_INS_ORX:
 	case M680X_INS_ORY:
 	case M680X_INS_BTAS:
@@ -313,7 +313,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_EORB:
 	case M680X_INS_EORD:
 	case M680X_INS_EORR:
-#ifdef RZ_CAPSTONE_HAS_M680X_HCS12X
+#if CS_API_MAJOR >= 6 && CS_VERSION_PRE_RELEASE >= CS_VERSION_ALPHA9
 	case M680X_INS_EORX:
 	case M680X_INS_EORY:
 #endif
@@ -332,7 +332,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_NEGB:
 	case M680X_INS_NEGD:
 	case M680X_INS_NEGX:
-#ifdef RZ_CAPSTONE_HAS_M680X_HCS12X
+#if CS_API_MAJOR >= 6 && CS_VERSION_PRE_RELEASE >= CS_VERSION_ALPHA9
 	case M680X_INS_COMY:
 	case M680X_INS_NEGW:
 	case M680X_INS_NEGY:
@@ -348,7 +348,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_LSLB:
 	case M680X_INS_LSLD:
 	case M680X_INS_LSLX:
-#ifdef RZ_CAPSTONE_HAS_M680X_HCS12X
+#if CS_API_MAJOR >= 6 && CS_VERSION_PRE_RELEASE >= CS_VERSION_ALPHA9
 	case M680X_INS_ASLW:
 	case M680X_INS_ASLX:
 	case M680X_INS_ASLY:
@@ -361,7 +361,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_ASRB:
 	case M680X_INS_ASRD:
 	case M680X_INS_ASRX:
-#ifdef RZ_CAPSTONE_HAS_M680X_HCS12X
+#if CS_API_MAJOR >= 6 && CS_VERSION_PRE_RELEASE >= CS_VERSION_ALPHA9
 	case M680X_INS_ASRW:
 	case M680X_INS_ASRY:
 #endif
@@ -373,7 +373,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_LSRD:
 	case M680X_INS_LSRW:
 	case M680X_INS_LSRX:
-#ifdef RZ_CAPSTONE_HAS_M680X_HCS12X
+#if CS_API_MAJOR >= 6 && CS_VERSION_PRE_RELEASE >= CS_VERSION_ALPHA9
 	case M680X_INS_LSRY:
 	case M680X_INS_SHA:
 #endif
@@ -385,7 +385,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_ROLD:
 	case M680X_INS_ROLW:
 	case M680X_INS_ROLX:
-#ifdef RZ_CAPSTONE_HAS_M680X_HCS12X
+#if CS_API_MAJOR >= 6 && CS_VERSION_PRE_RELEASE >= CS_VERSION_ALPHA9
 	case M680X_INS_ROLY:
 #endif
 		op->type = RZ_ANALYSIS_OP_TYPE_ROL;
@@ -396,7 +396,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_RORD:
 	case M680X_INS_RORW:
 	case M680X_INS_RORX:
-#ifdef RZ_CAPSTONE_HAS_M680X_HCS12X
+#if CS_API_MAJOR >= 6 && CS_VERSION_PRE_RELEASE >= CS_VERSION_ALPHA9
 	case M680X_INS_RORY:
 #endif
 		op->type = RZ_ANALYSIS_OP_TYPE_ROR;
@@ -442,7 +442,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_BITD:
 	case M680X_INS_BITMD:
 	case M680X_INS_TIM:
-#ifdef RZ_CAPSTONE_HAS_M680X_HCS12X
+#if CS_API_MAJOR >= 6 && CS_VERSION_PRE_RELEASE >= CS_VERSION_ALPHA9
 	case M680X_INS_CPED:
 	case M680X_INS_CPES:
 	case M680X_INS_CPEX:
@@ -464,7 +464,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_PSHUW:
 	case M680X_INS_PSHX:
 	case M680X_INS_PSHY:
-#ifdef RZ_CAPSTONE_HAS_M680X_HCS12X
+#if CS_API_MAJOR >= 6 && CS_VERSION_PRE_RELEASE >= CS_VERSION_ALPHA9
 	case M680X_INS_PSHCW:
 #endif
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
@@ -480,7 +480,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_PULUW:
 	case M680X_INS_PULX:
 	case M680X_INS_PULY:
-#ifdef RZ_CAPSTONE_HAS_M680X_HCS12X
+#if CS_API_MAJOR >= 6 && CS_VERSION_PRE_RELEASE >= CS_VERSION_ALPHA9
 	case M680X_INS_PULCW:
 #endif
 		op->type = RZ_ANALYSIS_OP_TYPE_POP;
@@ -507,7 +507,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_LEAY:
 	case M680X_INS_ETBL:
 	case M680X_INS_TBL:
-#ifdef RZ_CAPSTONE_HAS_M680X_HCS12X
+#if CS_API_MAJOR >= 6 && CS_VERSION_PRE_RELEASE >= CS_VERSION_ALPHA9
 	case M680X_INS_GLDAA:
 	case M680X_INS_GLDAB:
 	case M680X_INS_GLDD:
@@ -532,7 +532,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_STW:
 	case M680X_INS_STX:
 	case M680X_INS_STY:
-#ifdef RZ_CAPSTONE_HAS_M680X_HCS12X
+#if CS_API_MAJOR >= 6 && CS_VERSION_PRE_RELEASE >= CS_VERSION_ALPHA9
 	case M680X_INS_GSTAA:
 	case M680X_INS_GSTAB:
 	case M680X_INS_GSTD:
@@ -567,7 +567,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case M680X_INS_CLRH:
 	case M680X_INS_CLRW:
 	case M680X_INS_CLRX:
-#ifdef RZ_CAPSTONE_HAS_M680X_HCS12X
+#if CS_API_MAJOR >= 6 && CS_VERSION_PRE_RELEASE >= CS_VERSION_ALPHA9
 	case M680X_INS_CLRY:
 #endif
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
