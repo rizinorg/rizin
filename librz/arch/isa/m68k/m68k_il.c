@@ -2018,7 +2018,7 @@ static RzILOpEffect *lift_rem(M68KILCtx *ctx, bool sign) {
 	}
 	RzILOpEffect *normal = SEQ4(
 		SETL("quot", sign ? SDIV(dividend, divisor) : DIV(dividend, divisor)),
-		SETL("rem", sign ? SMOD(cast_signed(64, VARL("dst")), cast_signed(64, VARL("src"))) : MOD(cast_unsigned(64, VARL("dst")), cast_unsigned(64, VARL("src")))),
+		SETL("rem", SUB(sign ? cast_signed(64, VARL("dst")) : cast_unsigned(64, VARL("dst")), MUL(VARL("quot"), sign ? cast_signed(64, VARL("src")) : cast_unsigned(64, VARL("src"))))),
 		write_remainder,
 		set_flags_rem(VARL("quot"), IL_FALSE));
 	RzILOpBool *overflow = sign
@@ -2209,9 +2209,11 @@ static RzILOpPure *div_quotient_expr(bool sign, const char *dividend_local, cons
 }
 
 static RzILOpPure *div_remainder_expr(bool sign, const char *dividend_local, const char *divisor_local) {
+	/* 680x0 remainder keeps the dividend sign (truncating toward zero).
+	 * RzIL SMOD follows the divisor sign, so derive rem from quot. */
 	RzILOpPure *dividend = sign ? cast_signed(64, VARL(dividend_local)) : cast_unsigned(64, VARL(dividend_local));
 	RzILOpPure *divisor = sign ? cast_signed(64, VARL(divisor_local)) : cast_unsigned(64, VARL(divisor_local));
-	return sign ? SMOD(dividend, divisor) : MOD(dividend, divisor);
+	return SUB(dividend, MUL(VARL("quot"), divisor));
 }
 
 static RzILOpBool *div_quotient_overflows(bool sign, ut32 bits, RzILOpPure *quotient) {
@@ -3395,6 +3397,13 @@ static RzILOpEffect *lift_unlk(M68KILCtx *ctx) {
 		return m68k_invalid();
 	}
 	m68k_reg areg = ctx->m68k->operands[0].reg;
+	/* Sequential op: (An) -> An; An+4 -> SP. When An is A7, the final SP
+	 * write must keep the +4 rather than being overwritten by An = old. */
+	if (areg == M68K_REG_A7) {
+		return SEQ2(
+			SETL("old", read_mem_sized(32, reg_value(ctx, M68K_REG_A7))),
+			write_reg_sized(ctx, M68K_REG_A7, 32, ADD(VARL("old"), U32(4))));
+	}
 	return SEQ4(
 		write_reg_sized(ctx, M68K_REG_A7, 32, read_reg_sized(ctx, areg, 32)),
 		SETL("old", read_mem_sized(32, reg_value(ctx, M68K_REG_A7))),
@@ -4427,30 +4436,22 @@ static RzILOpFloat *fpu_result_to_fp80(RzILOpFloat *value, RzFloatFormat result_
 }
 
 static RzILOpPure *fpu_fpcr_round_mode(void) {
-	return LOGAND(SHIFTR0(cast_unsigned(32, VARG("fpcr")), U8(4)), U32(3));
+	/* Map 680x0 FPCR rounding bits to RzFloatRMode.
+	 * FPCR[5:4]: 0=RNE, 1=RTZ, 2=RTN, 3=RTP.
+	 * Enum order is RNE, RNA, RTP, RTN, RTZ — not the 680x0 encoding. */
+	return LET("fpcr_round_mode", LOGAND(SHIFTR0(cast_unsigned(32, VARG("fpcr")), U8(4)), U32(3)),
+		ITE(EQ(VARLP("fpcr_round_mode"), U32(0)), U32(RZ_FLOAT_RMODE_RNE),
+			ITE(EQ(VARLP("fpcr_round_mode"), U32(1)), U32(RZ_FLOAT_RMODE_RTZ),
+				ITE(EQ(VARLP("fpcr_round_mode"), U32(2)), U32(RZ_FLOAT_RMODE_RTN),
+					U32(RZ_FLOAT_RMODE_RTP)))));
 }
 
 static RzILOpPure *fpu_fpcr_precision(void) {
 	return LOGAND(SHIFTR0(cast_unsigned(32, VARG("fpcr")), U8(6)), U32(3));
 }
 
-#define FPU_EXEC_WITH_RMODE(f, ...) \
-	ITE(EQ(VARL("round_mode"), U32(0)), f(RZ_FLOAT_RMODE_RNE, __VA_ARGS__), \
-		ITE(EQ(VARL("round_mode"), U32(1)), f(RZ_FLOAT_RMODE_RTZ, __VA_ARGS__), \
-			ITE(EQ(VARL("round_mode"), U32(2)), f(RZ_FLOAT_RMODE_RTN, __VA_ARGS__), \
-				f(RZ_FLOAT_RMODE_RTP, __VA_ARGS__))))
-
-static RzILOpFloat *fpu_convert_with_rmode(RzFloatRMode mode, RzFloatFormat format, RzILOpFloat *value) {
-	return FCONVERT(format, mode, value);
-}
-
-static RzILOpPure *fpu_to_sint_with_rmode(RzFloatRMode mode, ut32 bits, RzILOpFloat *value) {
-	return F2SINT(bits, mode, value);
-}
-
 static RzILOpFloat *fpu_to_format_with_fpcr_rmode(RzILOpFloat *value, RzFloatFormat format) {
-	return LET("fpcr_value", value,
-		FPU_EXEC_WITH_RMODE(fpu_convert_with_rmode, format, VARLP("fpcr_value")));
+	return FCONVERT_DYN_RMODE(format, VARL("round_mode"), value);
 }
 
 static RzILOpFloat *fpu_result_to_fp80_with_fpcr_rmode(RzILOpFloat *value, RzFloatFormat result_format) {
@@ -4562,9 +4563,9 @@ static RzILOpEffect *set_fpsr_quotient_byte(ut32 insn_id) {
 }
 
 static RzILOpFloat *fpu_nearest_remainder_result(void) {
-	RzILOpFloat *truncated = FPU_EXEC_WITH_RMODE(rz_il_op_new_fmod,
+	RzILOpFloat *truncated = FMOD_DYN_RMODE(VARL("round_mode"),
 		VARLP("dst_ext"), VARLP("src_ext"));
-	RzILOpFloat *twice_remainder = FPU_EXEC_WITH_RMODE(FADD,
+	RzILOpFloat *twice_remainder = FADD_DYN_RMODE(VARL("round_mode"),
 		FABS(VARLP("trunc_rem")), FABS(VARLP("trunc_rem")));
 	RzILOpBool *adjust = OR(
 		FLT(VARLP("abs_src"), VARLP("twice_rem")),
@@ -4574,7 +4575,7 @@ static RzILOpFloat *fpu_nearest_remainder_result(void) {
 		IS_FNEG(VARLP("dst_ext")),
 		FNEG(VARLP("abs_src")),
 		VARLP("abs_src"));
-	RzILOpFloat *adjusted = FPU_EXEC_WITH_RMODE(FSUB,
+	RzILOpFloat *adjusted = FSUB_DYN_RMODE(VARL("round_mode"),
 		VARLP("trunc_rem"), VARLP("signed_src_magnitude"));
 	return LET("trunc_rem", truncated,
 		LET("abs_src", FABS(VARLP("src_ext")),
@@ -4591,27 +4592,27 @@ static RzILOpFloat *fpu_binary_unrounded_result(ut32 insn_id) {
 	case M68K_INS_FADD:
 	case M68K_INS_FSADD:
 	case M68K_INS_FDADD:
-		result = FPU_EXEC_WITH_RMODE(FADD, VARLP("dst_ext"), VARLP("src_ext"));
+		result = FADD_DYN_RMODE(VARL("round_mode"), VARLP("dst_ext"), VARLP("src_ext"));
 		break;
 	case M68K_INS_FSUB:
 	case M68K_INS_FSSUB:
 	case M68K_INS_FDSUB:
-		result = FPU_EXEC_WITH_RMODE(FSUB, VARLP("dst_ext"), VARLP("src_ext"));
+		result = FSUB_DYN_RMODE(VARL("round_mode"), VARLP("dst_ext"), VARLP("src_ext"));
 		break;
 	case M68K_INS_FMUL:
 	case M68K_INS_FSMUL:
 	case M68K_INS_FDMUL:
 	case M68K_INS_FSGLMUL:
-		result = FPU_EXEC_WITH_RMODE(FMUL, VARLP("dst_ext"), VARLP("src_ext"));
+		result = FMUL_DYN_RMODE(VARL("round_mode"), VARLP("dst_ext"), VARLP("src_ext"));
 		break;
 	case M68K_INS_FDIV:
 	case M68K_INS_FSDIV:
 	case M68K_INS_FDDIV:
 	case M68K_INS_FSGLDIV:
-		result = FPU_EXEC_WITH_RMODE(FDIV, VARLP("dst_ext"), VARLP("src_ext"));
+		result = FDIV_DYN_RMODE(VARL("round_mode"), VARLP("dst_ext"), VARLP("src_ext"));
 		break;
 	case M68K_INS_FMOD:
-		result = FPU_EXEC_WITH_RMODE(rz_il_op_new_fmod, VARLP("dst_ext"), VARLP("src_ext"));
+		result = FMOD_DYN_RMODE(VARL("round_mode"), VARLP("dst_ext"), VARLP("src_ext"));
 		break;
 	case M68K_INS_FREM:
 		result = fpu_nearest_remainder_result();
@@ -4782,7 +4783,7 @@ static RzILOpEffect *fpu_write_float_local(M68KILCtx *ctx, const cs_m68k_op *dst
 			value = F2BV(fpu_to_format_with_fpcr_rmode(VARL(name), format));
 		}
 	} else if (bits == 8 || bits == 16 || bits == 32) {
-		value = FPU_EXEC_WITH_RMODE(fpu_to_sint_with_rmode, bits, VARL(name));
+		value = F2SINT_DYN_RMODE(bits, VARL("round_mode"), VARL(name));
 	} else {
 		return m68k_null_free(seq);
 	}
@@ -5139,10 +5140,13 @@ static RzILOpEffect *lift_fpu_unary_data(M68KILCtx *ctx, ut32 insn_id) {
 	case M68K_INS_FSQRT:
 	case M68K_INS_FSSQRT:
 	case M68K_INS_FDSQRT:
-		result = FPU_EXEC_WITH_RMODE(FSQRT, VARL("src_fp"));
+		/* Promote narrow memory/imm sources to FP80 before sqrt so FPCR /
+		 * FS/FD destination precision is applied to a full-width root. */
+		result = FSQRT_DYN_RMODE(VARL("round_mode"),
+			fpu_to_format_with_fpcr_rmode(VARL("src_fp"), RZ_FLOAT_IEEE754_BIN_80));
 		break;
 	case M68K_INS_FINT:
-		result = FPU_EXEC_WITH_RMODE(FROUND, VARL("src_fp"));
+		result = FROUND_DYN_RMODE(VARL("round_mode"), VARL("src_fp"));
 		break;
 	case M68K_INS_FINTRZ:
 		result = FROUND(RZ_FLOAT_RMODE_RTZ, VARL("src_fp"));
@@ -5293,6 +5297,8 @@ static RzILOpEffect *lift_fpu_compare_data(M68KILCtx *ctx, bool test_zero) {
 	if (!fpu_operand_to_float_local(ctx, "src_fp", NULL, &ctx->m68k->operands[0], bits, &seq)) {
 		return m68k_effect_free(seq, fpu_read_failure_label(ctx, &ctx->m68k->operands[0]));
 	}
+	/* forder requires matching formats; promote narrow EA sources to FP80. */
+	seq = seq_append(seq, SETL("src_fp", fpu_to_format(VARL("src_fp"), RZ_FLOAT_IEEE754_BIN_80)));
 	if (test_zero) {
 		seq = seq_append(seq, SETL("zero_fp", F80(0.0L)));
 		return seq_append(seq, set_fpsr_cc_from_float_cmp("src_fp", "zero_fp"));
