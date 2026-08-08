@@ -8,13 +8,14 @@
 extern "C" {
 #endif
 
+// 256, all long options values are >= RZ_GETOPT_LONG_BASE so that they can be distinguished from single-char short options
 #define RZ_GETOPT_LONG_BASE 0x100
 
 typedef struct rz_getopt_long_t {
-	const char *name;
-	int val;
-	const RzPVector /*<const char *>*/ *values;
-	const char *default_value;
+	const char *name; ///< Name of the long option. e.g. --name
+	int val; ///< enum value > RZ_GETOPT_LONG_BASE returned by rz_getopt_next when the long option is consumed
+	const RzPVector /*<const char *>*/ *values; ///< All possible valid cmdline values for the long option. If NULL, long option is a yes/no flag only.
+	const char *default_value; ///< Default of the long option when it's given no cmdline value, nullable
 } RzGetoptLong;
 
 typedef struct rz_getopt_t {
@@ -27,7 +28,7 @@ typedef struct rz_getopt_t {
 	int argc;
 	const char **argv;
 	const char *ostr;
-	const RzVector /*<RzGetoptLong>*/ *longopts;
+	const RzVector /*<RzGetoptLong>*/ *longopts; ///< vector of decsriptors of long options
 } RzGetopt;
 
 RZ_API void rz_getopt_init(RzGetopt *go, int argc, const char **argv, const char *ostr);

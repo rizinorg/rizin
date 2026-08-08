@@ -70,7 +70,7 @@ static int rz_getopt_long_next(RzGetopt *opt, const char *arg) {
 
 	if (!longopt_value_allowed(desc, value)) {
 		opt->opt = '-';
-		opt->ind += consume_value ? 2 : 1;
+		opt->ind += consume_value && !rz_str_startswith(value, "--") ? 2 : 1;
 		if (opt->err && *opt->ostr != ':') {
 			RZ_LOG_ERROR("%s: invalid argument '%s' for option -- %s\n", opt->argv[0], value ? value : "", desc->name);
 		}

@@ -119,6 +119,15 @@ bool test_getopt_long_option(void) {
 	mu_assert_eq(c, '?', "unknown separated long option value should be rejected");
 	mu_assert_eq(opt.ind, RZ_ARRAY_SIZE(argv_bad_separated_arg), "long option with bad separated value should consume option and value");
 
+	const char *argv_next_option[] = { "test", "--cmd-catalog", "--cmd-catalog" };
+	rz_getopt_init_long(&opt, RZ_ARRAY_SIZE(argv_next_option), argv_next_option, "", &longopts);
+	opt.err = 0;
+	c = rz_getopt_next(&opt);
+	mu_assert_eq(c, '?', "long option should reject another long option as its value");
+	mu_assert_eq(opt.ind, 2, "invalid long-option value should not consume the next long option");
+	c = rz_getopt_next(&opt);
+	mu_assert_eq(c, TEST_LONG_CMD_CATALOG, "unconsumed long option should be parsed next");
+
 	const char *argv_end[] = { "test", "--", "--cmd-catalog" };
 	rz_getopt_init_long(&opt, RZ_ARRAY_SIZE(argv_end), argv_end, "", &longopts);
 	c = rz_getopt_next(&opt);
