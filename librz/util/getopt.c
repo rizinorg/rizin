@@ -8,6 +8,7 @@
  * $Id: getopt.c,v 1.2 1998/01/21 22:27:05 billm Exp $ *
  */
 
+#include "rz_util/rz_log.h"
 #include <rz_util.h>
 
 #define BADCH  (int)'?'
@@ -15,15 +16,16 @@
 #define EMSG   ""
 
 static bool longopt_has_values(const RzGetoptLong *desc) {
-	return desc->values && desc->values[0];
+	return !rz_pvector_empty(desc->values);
 }
 
 static bool longopt_value_allowed(const RzGetoptLong *desc, const char *value) {
 	if (!value || !*value) {
 		return false;
 	}
-	for (size_t i = 0; desc->values[i]; i++) {
-		if (!strcmp(desc->values[i], value)) {
+	void **it;
+	rz_pvector_foreach (desc->values, it) {
+		if (RZ_STR_EQ(*it, value)) {
 			return true;
 		}
 	}
@@ -34,8 +36,9 @@ static int rz_getopt_long_next(RzGetopt *opt, const char *arg) {
 	const char *name = arg + 2;
 	const RzGetoptLong *desc = NULL;
 
-	for (const RzGetoptLong *it = opt->longopts; it && it->name; it++) {
-		if (!strcmp(name, it->name)) {
+	RzGetoptLong *it;
+	rz_vector_foreach (opt->longopts, it) {
+		if (RZ_STR_EQ(name, it->name)) {
 			desc = it;
 			break;
 		}
@@ -44,7 +47,7 @@ static int rz_getopt_long_next(RzGetopt *opt, const char *arg) {
 		opt->opt = '-';
 		opt->ind++;
 		if (opt->err && *opt->ostr != ':') {
-			eprintf("%s: illegal option -- %s\n", opt->argv[0], name);
+			RZ_LOG_ERROR("%s: illegal option -- %s\n", opt->argv[0], name);
 		}
 		return BADCH;
 	}
@@ -69,7 +72,7 @@ static int rz_getopt_long_next(RzGetopt *opt, const char *arg) {
 		opt->opt = '-';
 		opt->ind += consume_value ? 2 : 1;
 		if (opt->err && *opt->ostr != ':') {
-			eprintf("%s: invalid argument '%s' for option -- %s\n", opt->argv[0], value ? value : "", desc->name);
+			RZ_LOG_ERROR("%s: invalid argument '%s' for option -- %s\n", opt->argv[0], value ? value : "", desc->name);
 		}
 		return BADCH;
 	}
@@ -79,7 +82,7 @@ static int rz_getopt_long_next(RzGetopt *opt, const char *arg) {
 	return desc->val;
 }
 
-RZ_API void rz_getopt_init_long(RzGetopt *opt, int argc, const char **argv, const char *ostr, const RzGetoptLong *longopts) {
+RZ_API void rz_getopt_init_long(RzGetopt *opt, int argc, const char **argv, const char *ostr, const RzVector *longopts) {
 	memset(opt, 0, sizeof(RzGetopt));
 	opt->err = 1;
 	opt->ind = 1;
@@ -102,21 +105,29 @@ RZ_API int rz_getopt_next(RzGetopt *opt) {
 
 	if (opt->reset || !*place) { // update scanning pointer
 		opt->reset = 0;
-		if (opt->ind >= opt->argc || *(place = opt->argv[opt->ind]) != '-') {
+		if (opt->ind >= opt->argc) {
 			place = EMSG;
 			return -1;
 		}
-		if (place[1] && place[1] == '-') {
-			if (opt->longopts && place[2]) {
-				int ret = rz_getopt_long_next(opt, place);
-				place = EMSG;
-				return ret;
-			}
-			opt->ind++;
+		place = opt->argv[opt->ind];
+		if (place[0] != '-') {
 			place = EMSG;
 			return -1;
 		}
 		if (place[1]) {
+			// found "--", either a long option or an error
+			if (place[1] == '-') {
+				// are long options enabled and more text exists after the "--" ?
+				if (opt->longopts && place[2]) {
+					int ret = rz_getopt_long_next(opt, place);
+					place = EMSG;
+					return ret;
+				}
+				// otherwise an error
+				opt->ind++;
+				place = EMSG;
+				return -1;
+			}
 			place++;
 		}
 	}
@@ -139,7 +150,7 @@ RZ_API int rz_getopt_next(RzGetopt *opt) {
 			opt->ind++;
 		}
 		if (opt->err && *opt->ostr != ':') {
-			(void)eprintf("%s: illegal option -- %c\n", opt->argv[0], opt->opt);
+			RZ_LOG_ERROR("%s: illegal option -- %c\n", opt->argv[0], opt->opt);
 		}
 		return BADCH;
 	}
@@ -152,7 +163,7 @@ RZ_API int rz_getopt_next(RzGetopt *opt) {
 				return BADARG;
 			}
 			if (opt->err) {
-				(void)eprintf("%s: option requires an argument -- %c\n", opt->argv[0], opt->opt);
+				RZ_LOG_ERROR("%s: option requires an argument -- %c\n", opt->argv[0], opt->opt);
 			}
 			return BADCH;
 		} else { /* white space */

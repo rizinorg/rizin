@@ -10,15 +10,8 @@
 #include <rz_socket.h>
 #include <locale.h>
 
-static const char *cmd_catalog_values[] = { "json", NULL };
-
 enum {
 	RZ_MAIN_LONG_CMD_CATALOG = RZ_GETOPT_LONG_BASE,
-};
-
-static const RzGetoptLong rizin_longopts[] = {
-	{ "cmd-catalog", RZ_MAIN_LONG_CMD_CATALOG, cmd_catalog_values, "json" },
-	{ NULL, 0, NULL, NULL },
 };
 
 static bool is_valid_gdb_file(RzCoreFile *fh) {
@@ -544,8 +537,18 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	bool load_l = true;
 	char *debugbackend = rz_str_dup("native");
 
+	RzPVector cmd_catalog_values;
+	rz_pvector_init(&cmd_catalog_values, NULL);
+	rz_pvector_push(&cmd_catalog_values, "json");
+	RzGetoptLong cmd_catalog = {
+		"cmd-catalog", RZ_MAIN_LONG_CMD_CATALOG, &cmd_catalog_values, "json"
+	};
+	RzVector rizin_longopts;
+	rz_vector_init(&rizin_longopts, sizeof(RzGetoptLong), NULL, NULL);
+	rz_vector_push(&rizin_longopts, &cmd_catalog);
+
 	RzGetopt opt;
-	rz_getopt_init_long(&opt, argc, argv, "=012AMCwxfF:H:hm:E:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt", rizin_longopts);
+	rz_getopt_init_long(&opt, argc, argv, "=012AMCwxfF:H:hm:E:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt", &rizin_longopts);
 	while (argc >= 2 && (c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '-':
@@ -1667,6 +1670,8 @@ beach:
 	rz_cons_free();
 	LISTS_FREE();
 	free(debugbackend);
+	rz_vector_fini(&rizin_longopts);
+	rz_pvector_fini(&cmd_catalog_values);
 	RZ_FREE(pfile);
 	return ret;
 }
