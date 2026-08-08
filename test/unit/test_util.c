@@ -78,55 +78,59 @@ bool test_path_prefix(void) {
 bool test_getopt_long_option(void) {
 	RzGetopt opt;
 	int c;
-	const char *cmd_catalog_values[] = { "json", NULL };
+	RzPVector cmd_catalog_values;
+	rz_pvector_init(&cmd_catalog_values, NULL);
+	rz_pvector_push(&cmd_catalog_values, "json");
 	enum {
 		TEST_LONG_CMD_CATALOG = RZ_GETOPT_LONG_BASE,
 	};
-	const RzGetoptLong longopts[] = {
-		{ "cmd-catalog", TEST_LONG_CMD_CATALOG, cmd_catalog_values, "json" },
-		{ NULL, 0, NULL, NULL },
+	RzGetoptLong cmd_catalog = {
+		"cmd-catalog", TEST_LONG_CMD_CATALOG, &cmd_catalog_values, "json"
 	};
+	RzVector longopts;
+	rz_vector_init(&longopts, sizeof(RzGetoptLong), NULL, NULL);
+	rz_vector_push(&longopts, &cmd_catalog);
 
 	const char *argv_default[] = { "test", "--cmd-catalog" };
-	rz_getopt_init_long(&opt, RZ_ARRAY_SIZE(argv_default), argv_default, "", longopts);
+	rz_getopt_init_long(&opt, RZ_ARRAY_SIZE(argv_default), argv_default, "", &longopts);
 	c = rz_getopt_next(&opt);
 	mu_assert_eq(c, TEST_LONG_CMD_CATALOG, "long option should return descriptor value");
 	mu_assert_streq(opt.arg, "json", "long option should use default value");
 	mu_assert_eq(opt.ind, RZ_ARRAY_SIZE(argv_default), "long option should be consumed");
 
 	const char *argv_arg[] = { "test", "--cmd-catalog", "json" };
-	rz_getopt_init_long(&opt, RZ_ARRAY_SIZE(argv_arg), argv_arg, "", longopts);
+	rz_getopt_init_long(&opt, RZ_ARRAY_SIZE(argv_arg), argv_arg, "", &longopts);
 	c = rz_getopt_next(&opt);
 	mu_assert_eq(c, TEST_LONG_CMD_CATALOG, "long option with separated argument should return descriptor value");
 	mu_assert_streq(opt.arg, "json", "separated long option value should be available in opt.arg");
 	mu_assert_eq(opt.ind, RZ_ARRAY_SIZE(argv_arg), "long option with separated argument should consume option and value");
 
 	const char *argv_eq_arg[] = { "test", "--cmd-catalog=json" };
-	rz_getopt_init_long(&opt, RZ_ARRAY_SIZE(argv_eq_arg), argv_eq_arg, "", longopts);
+	rz_getopt_init_long(&opt, RZ_ARRAY_SIZE(argv_eq_arg), argv_eq_arg, "", &longopts);
 	opt.err = 0;
 	c = rz_getopt_next(&opt);
 	mu_assert_eq(c, '?', "long option with inline argument should not be supported");
 	mu_assert_eq(opt.ind, RZ_ARRAY_SIZE(argv_eq_arg), "unsupported inline long option argument should be consumed");
 
 	const char *argv_bad_separated_arg[] = { "test", "--cmd-catalog", "yaml" };
-	rz_getopt_init_long(&opt, RZ_ARRAY_SIZE(argv_bad_separated_arg), argv_bad_separated_arg, "", longopts);
+	rz_getopt_init_long(&opt, RZ_ARRAY_SIZE(argv_bad_separated_arg), argv_bad_separated_arg, "", &longopts);
 	opt.err = 0;
 	c = rz_getopt_next(&opt);
 	mu_assert_eq(c, '?', "unknown separated long option value should be rejected");
 	mu_assert_eq(opt.ind, RZ_ARRAY_SIZE(argv_bad_separated_arg), "long option with bad separated value should consume option and value");
 
 	const char *argv_end[] = { "test", "--", "--cmd-catalog" };
-	rz_getopt_init_long(&opt, RZ_ARRAY_SIZE(argv_end), argv_end, "", longopts);
+	rz_getopt_init_long(&opt, RZ_ARRAY_SIZE(argv_end), argv_end, "", &longopts);
 	c = rz_getopt_next(&opt);
 	mu_assert_eq(c, -1, "exact -- should end option parsing");
 	mu_assert_eq(opt.ind, 2, "exact -- should be consumed");
 
-	const RzGetoptLong flag_longopts[] = {
-		{ "flag", TEST_LONG_CMD_CATALOG, NULL, NULL },
-		{ NULL, 0, NULL, NULL },
-	};
+	RzGetoptLong flag = { "flag", TEST_LONG_CMD_CATALOG, NULL, NULL };
+	RzVector flag_longopts;
+	rz_vector_init(&flag_longopts, sizeof(RzGetoptLong), NULL, NULL);
+	rz_vector_push(&flag_longopts, &flag);
 	const char *argv_flag[] = { "test", "--flag", "positional" };
-	rz_getopt_init_long(&opt, RZ_ARRAY_SIZE(argv_flag), argv_flag, "", flag_longopts);
+	rz_getopt_init_long(&opt, RZ_ARRAY_SIZE(argv_flag), argv_flag, "", &flag_longopts);
 	c = rz_getopt_next(&opt);
 	mu_assert_eq(c, TEST_LONG_CMD_CATALOG, "flag long option should return descriptor value");
 	mu_assert_null(opt.arg, "flag long option should not have an argument");
@@ -137,6 +141,9 @@ bool test_getopt_long_option(void) {
 	c = rz_getopt_next(&opt);
 	mu_assert_eq(c, -1, "long-option parsing should be opt-in");
 	mu_assert_eq(opt.ind, RZ_ARRAY_SIZE(argv_compat), "legacy -- handling should be preserved without longopts");
+	rz_vector_fini(&flag_longopts);
+	rz_vector_fini(&longopts);
+	rz_pvector_fini(&cmd_catalog_values);
 	mu_end;
 }
 
