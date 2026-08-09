@@ -129,6 +129,7 @@ if get_option('enable_tests')
     'str',
     'strbuf',
     'str_search',
+    'str_uri',
     'subprocess',
     'syscall',
     'table',
