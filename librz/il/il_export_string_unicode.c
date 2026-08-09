@@ -6,6 +6,18 @@
 static bool il_op_pure_string_resolve(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb);
 static bool il_op_effect_string_resolve(RzILStringifyCtx *ctx, const RzILOpEffect *op, RzStrBuf *sb);
 
+static bool il_op_float_rmode_string_resolve(RzILStringifyCtx *ctx, const RzILOpArgFloatRMode *rmode, RzStrBuf *sb) {
+	switch (rmode->kind) {
+	case RZ_IL_OP_ARG_FLOAT_RMODE_STATIC:
+		return rz_strbuf_append(sb, rz_il_float_stringify_rmode(rmode->value.static_mode));
+	case RZ_IL_OP_ARG_FLOAT_RMODE_DYNAMIC:
+		return il_op_pure_string_resolve(ctx, rmode->value.dynamic_mode, sb);
+	default:
+		rz_warn_if_reached();
+		return rz_strbuf_append(sb, "invalid_rmode");
+	}
+}
+
 #define UCD_ITE          "↠"
 #define UCD_LET          "="
 #define UCD_BOOL_FALSE   "⊥"
@@ -131,15 +143,6 @@ static bool il_op_effect_string_resolve(RzILStringifyCtx *ctx, const RzILOpEffec
 		return rz_strbuf_append(sb, ")"); \
 	} while (0)
 
-#define il_op_param_1_with_rmode(sym, opx, v0, sort0, vr) \
-	do { \
-		const char *rmode_str = rz_il_float_stringify_rmode(opx.vr); \
-		return_false_if_fail(rmode_str); \
-		return_false_if_fail(rz_strbuf_appendf(sb, "(%s " sym " ", rmode_str)); \
-		return_false_if_fail(il_op_##sort0##_string_resolve(ctx, opx.v0, sb)); \
-		return rz_strbuf_append(sb, ")"); \
-	} while (0)
-
 #define il_op_param_1_with_fexcept(sym, opx, v0, sort0, ve) \
 	do { \
 		const char *str = rz_il_float_stringify_exception(opx.ve); \
@@ -149,34 +152,36 @@ static bool il_op_effect_string_resolve(RzILStringifyCtx *ctx, const RzILOpEffec
 		return rz_strbuf_append(sb, ")"); \
 	} while (0)
 
-#define il_op_param_1_with_mode_length(sym, opx, v0, sort0, m, l) \
+#define il_op_param_1_with_rmode_arg_length(sym, opx, v0, sort0, vr, l) \
 	do { \
 		return_false_if_fail(rz_strbuf_appendf(sb, "(")); \
-		return_false_if_fail(il_op_##sort0##_string_resolve(ctx, opx.v0, sb)); \
+		return_false_if_fail(il_op_##sort0##_string_resolve(ctx, (opx).v0, sb)); \
 		return_false_if_fail(rz_strbuf_append(sb, " " sym)); \
-		return_false_if_fail(append_subscript(sb, opx.l)); \
+		return_false_if_fail(append_subscript(sb, (opx).l)); \
 		return_false_if_fail(rz_strbuf_append(sb, " ")); \
-		return_false_if_fail(rz_strbuf_append(sb, rz_il_float_stringify_rmode(opx.m))); \
+		return_false_if_fail(il_op_float_rmode_string_resolve(ctx, &(opx).vr, sb)); \
 		return rz_strbuf_append(sb, ")"); \
 	} while (0)
 
-#define il_op_param_1_with_mode_format(sym, opx, v0, sort0, m, f) \
+#define il_op_param_1_with_rmode_arg(sym, opx, v0, sort0, vr) \
 	do { \
-		return_false_if_fail(rz_strbuf_appendf(sb, "(")); \
-		return_false_if_fail(il_op_##sort0##_string_resolve(ctx, opx->v0, sb)); \
-		return_false_if_fail(rz_strbuf_appendf(sb, " %s ", sym)); \
-		return_false_if_fail(rz_strbuf_append(sb, rz_il_float_stringify_rmode(opx->m))); \
+		return_false_if_fail(rz_strbuf_append(sb, "(")); \
+		return_false_if_fail(il_op_float_rmode_string_resolve(ctx, &(opx).vr, sb)); \
+		return_false_if_fail(rz_strbuf_append(sb, " " sym " ")); \
+		return_false_if_fail(il_op_##sort0##_string_resolve(ctx, (opx).v0, sb)); \
 		return rz_strbuf_append(sb, ")"); \
 	} while (0)
 
-#define il_op_param_2_with_rmode(sym, opx, v0, sort0, v1, sort1, vr) \
+#define il_op_param_2_with_rmode_arg(sym, opx, v0, sort0, v1, sort1, vr) \
 	do { \
-		return_false_if_fail(rz_strbuf_appendf(sb, "(%s ", rz_il_float_stringify_rmode(opx.vr))); \
+		return_false_if_fail(rz_strbuf_append(sb, "(")); \
+		return_false_if_fail(il_op_float_rmode_string_resolve(ctx, &(opx).vr, sb)); \
+		return_false_if_fail(rz_strbuf_append(sb, " ")); \
 		return_false_if_fail(il_op_##sort0##_string_resolve(ctx, opx.v0, sb)); \
 		return_false_if_fail(rz_strbuf_append(sb, " " sym " ")); \
 		return_false_if_fail(il_op_##sort1##_string_resolve(ctx, opx.v1, sb)); \
 		return rz_strbuf_append(sb, ")"); \
-	} while (0);
+	} while (0)
 
 // Combine a prefix with the float format's Unicode width subscript,
 // via the shared RzUtil renderer (rz_float_format_subscript) so the
@@ -419,11 +424,11 @@ static bool il_opdmp_fabs(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf 
 }
 
 static bool il_opdmp_fcast_int(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1_with_mode_length(UCD_FCAST_INT, op->op.fcast_int, f, pure, mode, length);
+	il_op_param_1_with_rmode_arg_length(UCD_FCAST_INT, op->op.fcast_int, f, pure, rmode, length);
 }
 
 static bool il_opdmp_fcast_sint(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1_with_mode_length(UCD_FCAST_SINT, op->op.fcast_sint, f, pure, mode, length);
+	il_op_param_1_with_rmode_arg_length(UCD_FCAST_SINT, op->op.fcast_sint, f, pure, rmode, length);
 }
 
 static bool il_opdmp_fcast_float(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
@@ -433,7 +438,7 @@ static bool il_opdmp_fcast_float(RzILStringifyCtx *ctx, const RzILOpPure *op, Rz
 	bool ok = rz_strbuf_append(sb, "(") &&
 		il_op_pure_string_resolve(ctx, opx->bv, sb) &&
 		rz_strbuf_appendf(sb, " %s ", sym) &&
-		rz_strbuf_append(sb, rz_il_float_stringify_rmode(opx->mode)) &&
+		il_op_float_rmode_string_resolve(ctx, &opx->rmode, sb) &&
 		rz_strbuf_append(sb, ")");
 	free(sym);
 	return ok;
@@ -446,7 +451,7 @@ static bool il_opdmp_fcast_sfloat(RzILStringifyCtx *ctx, const RzILOpPure *op, R
 	bool ok = rz_strbuf_append(sb, "(") &&
 		il_op_pure_string_resolve(ctx, opx->bv, sb) &&
 		rz_strbuf_appendf(sb, " %s ", sym) &&
-		rz_strbuf_append(sb, rz_il_float_stringify_rmode(opx->mode)) &&
+		il_op_float_rmode_string_resolve(ctx, &opx->rmode, sb) &&
 		rz_strbuf_append(sb, ")");
 	free(sym);
 	return ok;
@@ -454,20 +459,27 @@ static bool il_opdmp_fcast_sfloat(RzILStringifyCtx *ctx, const RzILOpPure *op, R
 
 static bool il_opdmp_fconvert(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
 	const RzILOpArgsFconvert *opx = &op->op.fconvert;
-	const char *sym = sym_with_float_format(opx->format, UCD_FCONVERT);
-	il_op_param_1_with_mode_format(sym, opx, f, pure, mode, format);
+	char *sym = sym_with_float_format(opx->format, UCD_FCONVERT);
+	return_false_if_fail(sym);
+	bool ok = rz_strbuf_append(sb, "(") &&
+		il_op_pure_string_resolve(ctx, opx->f, sb) &&
+		rz_strbuf_appendf(sb, " %s ", sym) &&
+		il_op_float_rmode_string_resolve(ctx, &opx->rmode, sb) &&
+		rz_strbuf_append(sb, ")");
+	free(sym);
+	return ok;
 }
 
 static bool il_opdmp_fsqrt(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1_with_rmode(UCD_FSQRT, op->op.fsqrt, f, pure, rmode);
+	il_op_param_1_with_rmode_arg(UCD_FSQRT, op->op.fsqrt, f, pure, rmode);
 }
 
 static bool il_opdmp_frsqrt(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1_with_rmode(UCD_FRSQRT, op->op.frsqrt, f, pure, rmode);
+	il_op_param_1_with_rmode_arg(UCD_FRSQRT, op->op.frsqrt, f, pure, rmode);
 }
 
 static bool il_opdmp_fround(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1_with_rmode(UCD_FROUND, op->op.fround, f, pure, rmode);
+	il_op_param_1_with_rmode_arg(UCD_FROUND, op->op.fround, f, pure, rmode);
 }
 
 static bool il_opdmp_frequal(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
@@ -499,38 +511,38 @@ static bool il_opdmp_fexcept(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrB
 }
 
 static bool il_opdmp_fadd(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2_with_rmode(UCD_FADD, op->op.fadd, x, pure, y, pure, rmode);
+	il_op_param_2_with_rmode_arg(UCD_FADD, op->op.fadd, x, pure, y, pure, rmode);
 }
 
 static bool il_opdmp_fsub(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2_with_rmode(UCD_FSUB, op->op.fsub, x, pure, y, pure, rmode);
+	il_op_param_2_with_rmode_arg(UCD_FSUB, op->op.fsub, x, pure, y, pure, rmode);
 }
 
 static bool il_opdmp_fmul(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2_with_rmode(UCD_FMUL, op->op.fmul, x, pure, y, pure, rmode);
+	il_op_param_2_with_rmode_arg(UCD_FMUL, op->op.fmul, x, pure, y, pure, rmode);
 }
 
 static bool il_opdmp_fdiv(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2_with_rmode(UCD_FDIV, op->op.fdiv, x, pure, y, pure, rmode);
+	il_op_param_2_with_rmode_arg(UCD_FDIV, op->op.fdiv, x, pure, y, pure, rmode);
 }
 
 static bool il_opdmp_fmod(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2_with_rmode(UCD_FMOD, op->op.fmod, x, pure, y, pure, rmode);
+	il_op_param_2_with_rmode_arg(UCD_FMOD, op->op.fmod, x, pure, y, pure, rmode);
 }
 
 static bool il_opdmp_fhypot(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2_with_rmode(UCD_FHYPOT, op->op.fhypot, x, pure, y, pure, rmode);
+	il_op_param_2_with_rmode_arg(UCD_FHYPOT, op->op.fhypot, x, pure, y, pure, rmode);
 }
 
 static bool il_opdmp_fpow(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2_with_rmode(UCD_FPOW, op->op.fpow, x, pure, y, pure, rmode);
+	il_op_param_2_with_rmode_arg(UCD_FPOW, op->op.fpow, x, pure, y, pure, rmode);
 }
 
 static bool il_opdmp_fmad(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
 	const RzILOpArgsFmad *opx = &op->op.fmad;
-	const char *rmode_str = rz_il_float_stringify_rmode(opx->rmode);
-	return_false_if_fail(rmode_str);
-	return_false_if_fail(rz_strbuf_appendf(sb, "(%s ", rmode_str));
+	return_false_if_fail(rz_strbuf_append(sb, "("));
+	return_false_if_fail(il_op_float_rmode_string_resolve(ctx, &opx->rmode, sb));
+	return_false_if_fail(rz_strbuf_append(sb, " "));
 	return_false_if_fail(il_op_pure_string_resolve(ctx, opx->x, sb));
 	return_false_if_fail(rz_strbuf_append(sb, " " UCD_FMUL " "));
 	return_false_if_fail(il_op_pure_string_resolve(ctx, opx->y, sb));
@@ -540,15 +552,15 @@ static bool il_opdmp_fmad(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf 
 }
 
 static bool il_opdmp_fpown(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2_with_rmode(UCD_FPOWN, op->op.fpown, f, pure, n, pure, rmode);
+	il_op_param_2_with_rmode_arg(UCD_FPOWN, op->op.fpown, f, pure, n, pure, rmode);
 }
 
 static bool il_opdmp_frootn(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2_with_rmode(UCD_FROOTN, op->op.frootn, n, pure, f, pure, rmode);
+	il_op_param_2_with_rmode_arg(UCD_FROOTN, op->op.frootn, n, pure, f, pure, rmode);
 }
 
 static bool il_opdmp_fcompound(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2_with_rmode(UCD_FCOMPOUND, op->op.fcompound, f, pure, n, pure, rmode);
+	il_op_param_2_with_rmode_arg(UCD_FCOMPOUND, op->op.fcompound, f, pure, n, pure, rmode);
 }
 
 static bool il_opdmp_load(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {

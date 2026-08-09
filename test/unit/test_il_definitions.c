@@ -317,11 +317,18 @@ static bool test_il_value_eq() {
 	RzILVal *bv16_42_dup = rz_il_value_new_bitv(rz_bv_new_from_ut64(16, 42));
 	RzILVal *bv16_43 = rz_il_value_new_bitv(rz_bv_new_from_ut64(16, 43));
 	RzILVal *bv8_42 = rz_il_value_new_bitv(rz_bv_new_from_ut64(8, 42));
+	RzFloat *canonical_inf = rz_float_new_inf(RZ_FLOAT_IEEE754_BIN_80, false);
+	RzFloat *largest_finite = rz_float_pred(canonical_inf);
+	RzFloat *pseudo_inf = rz_float_succ(largest_finite);
+	RzILVal *canonical_inf_val = rz_il_value_new_float(canonical_inf);
+	RzILVal *pseudo_inf_val = rz_il_value_new_float(pseudo_inf);
 
 	mu_assert_true(rz_il_value_eq(b0, b0), "eq");
 	mu_assert_true(rz_il_value_eq(b0, b0_dup), "eq");
 	mu_assert_true(rz_il_value_eq(bv16_42, bv16_42), "eq");
 	mu_assert_true(rz_il_value_eq(bv16_42, bv16_42_dup), "eq");
+	mu_assert_true(rz_il_value_eq(canonical_inf_val, pseudo_inf_val), "canonical and pseudo float infinity eq");
+	mu_assert_true(rz_il_value_eq(pseudo_inf_val, canonical_inf_val), "float infinity eq is symmetric");
 
 	mu_assert_false(rz_il_value_eq(b0, b1), "not eq");
 	mu_assert_false(rz_il_value_eq(b0, bv16_42), "not eq");
@@ -335,6 +342,9 @@ static bool test_il_value_eq() {
 	rz_il_value_free(bv16_42_dup);
 	rz_il_value_free(bv16_43);
 	rz_il_value_free(bv8_42);
+	rz_il_value_free(canonical_inf_val);
+	rz_il_value_free(pseudo_inf_val);
+	rz_float_free(largest_finite);
 
 	mu_end;
 }
