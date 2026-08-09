@@ -1130,8 +1130,9 @@ commands:
           arg_str: " \\\\d\\\\sC*\\\\w ri"
           comment: "Search the regular expression \"\\d\\sC*\\w\" but case insensitive."
         - text: "/z"
-          arg_str: " \"и.{3}м\" ei"
-          comment: "Search the extended regular expression \"и.{3}м\" but case insensitive."
+          arg_str: " \"и.{3}м\" ei @e:search.prefix=cyrillic"
+          comment: "Search the extended regular expression \"и.{3}м\" but case insensitive. 
+            Search hit flags will be prefixed with 'cyrillic'."
         - text: "/z"
           arg_str: " \"(*LF).+\" r ascii"
           comment: "Search any ASCII string where line feed is a newline."
