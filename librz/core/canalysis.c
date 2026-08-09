@@ -1908,8 +1908,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 
 static bool core_search_for_xrefs_in_boundaries(RzCore *core, ut64 from, ut64 to) {
 	if ((from == UT64_MAX && to == UT64_MAX) ||
-		(!from && !to) ||
-		(to - from > rz_io_size(core->io))) {
+		(!from && !to)) {
 		return false;
 	}
 	return rz_core_analysis_search_xrefs(core, from, to) > 0;
@@ -2114,7 +2113,10 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 		if (!rz_io_is_valid_offset(core->io, at, RZ_PERM_X)) {
 			break;
 		}
-		(void)rz_io_read_at_mapped(core->io, at, buf, bsz);
+		size_t bytes_read = rz_io_nread_at(core->io, at, buf, bsz);
+		if (!bytes_read) {
+			return -1;
+		}
 		memset(block, -1, bsz);
 		if (!memcmp(buf, block, bsz)) {
 			at += ret;
@@ -2125,13 +2127,13 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 			at += ret;
 			continue;
 		}
-		while (i < bsz && !rz_cons_is_breaked()) {
+		while (i < bytes_read && !rz_cons_is_breaked()) {
 			int count_before = count;
 			rz_analysis_op_init(&op);
-			ret = rz_analysis_op(core->analysis, &op, at + i, buf + i, bsz - i, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
+			ret = rz_analysis_op(core->analysis, &op, at + i, buf + i, bytes_read - i, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
 			ret = ret > 0 ? ret : 1;
 			i += ret;
-			if (ret <= 0 || i > bsz) {
+			if (ret <= 0 || i > bytes_read) {
 				break;
 			}
 			// find references
@@ -2216,7 +2218,7 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 			}
 			rz_analysis_op_fini(&op);
 		}
-		at += bsz;
+		at += bytes_read;
 		rz_analysis_op_fini(&op);
 	}
 	rz_cons_break_pop();
