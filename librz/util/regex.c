@@ -1064,16 +1064,22 @@ static RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *match_all_internal_8(
 	RzPVector *matches = NULL;
 	matches = match_first_8(regex, text, text_size, text_offset, mflags, jit_stack);
 	while (matches && rz_pvector_len(matches) > 0) {
-		rz_pvector_push(all_matches, matches);
 		RzRegexMatch *m = rz_pvector_head(matches);
-		RzRegexSize new_offset = allow_overlap ? m->start + 1 : m->start + m->len;
-		if (new_offset <= text_offset) {
-			new_offset = text_offset + 1;
+		if (m->len == 0) {
+			RzPVector *rechecked_matches = match_first_8(regex, text, text_size, text_offset, mflags | PCRE2_NOTEMPTY_ATSTART | PCRE2_ANCHORED, jit_stack);
+			if (rechecked_matches && rz_pvector_len(rechecked_matches) > 0) {
+				matches = rechecked_matches;
+				RzRegexMatch *m = rz_pvector_head(matches);
+				rz_pvector_push(all_matches, matches);
+				text_offset = allow_overlap ? m->start + 1 : m->start + m->len;
+			} else {
+				text_offset = m->start + 1;
+				matches = match_first_8(regex, text, text_size, text_offset, mflags, jit_stack);
+			}
+			continue;
 		}
-		text_offset = new_offset;
-		if (text_offset >= text_size) {
-			break;
-		}
+		rz_pvector_push(all_matches, matches);
+		text_offset = allow_overlap ? m->start + 1 : m->start + m->len;
 		matches = match_first_8(regex, text, text_size, text_offset, mflags, jit_stack);
 	}
 
@@ -1096,14 +1102,25 @@ static RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *match_all_internal_16(
 	RzPVector *matches = NULL;
 	matches = match_first_16(regex, text, text_size_code_units, text_offset_code_units, mflags, jit_stack);
 	while (matches && rz_pvector_len(matches) > 0) {
-		rz_pvector_push(all_matches, matches);
 		RzRegexMatch *m = rz_pvector_head(matches);
-		// Search again after the last match.
+		if (m->len == 0) {
+			RzPVector *rechecked_matches = match_first_16(regex, text, text_size_code_units, text_offset_code_units, mflags | PCRE2_NOTEMPTY_ATSTART | PCRE2_ANCHORED, jit_stack);
+			if (rechecked_matches && rz_pvector_len(rechecked_matches) > 0) {
+				matches = rechecked_matches;
+				m = rz_pvector_head(matches);
+				rz_pvector_push(all_matches, matches);
+				text_offset_code_units = allow_overlap ? m->start + 1 : m->start + m->len;
+			} else {
+				text_offset_code_units = m->start + 1;
+				matches = match_first_16(regex, text, text_size_code_units, text_offset_code_units, mflags, jit_stack);
+			}
+			continue;
+		}
+		rz_pvector_push(all_matches, matches);
 		text_offset_code_units = allow_overlap ? m->start + 1 : m->start + m->len;
 		matches = match_first_16(regex, text, text_size_code_units, text_offset_code_units, mflags, jit_stack);
 	}
 
-	// Free last vector without matches.
 	rz_pvector_free(matches);
 	return all_matches;
 }
@@ -1122,18 +1139,28 @@ static RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *match_all_internal_32(
 	RzPVector *matches = NULL;
 	matches = match_first_32(regex, text, text_size_code_units, text_offset_code_units, mflags, jit_stack);
 	while (matches && rz_pvector_len(matches) > 0) {
-		rz_pvector_push(all_matches, matches);
 		RzRegexMatch *m = rz_pvector_head(matches);
-		// Search again after the last match.
+		if (m->len == 0) {
+			RzPVector *rechecked_matches = match_first_32(regex, text, text_size_code_units, text_offset_code_units, mflags | PCRE2_NOTEMPTY_ATSTART | PCRE2_ANCHORED, jit_stack);
+			if (rechecked_matches && rz_pvector_len(rechecked_matches) > 0) {
+				matches = rechecked_matches;
+				m = rz_pvector_head(matches);
+				rz_pvector_push(all_matches, matches);
+				text_offset_code_units = allow_overlap ? m->start + 1 : m->start + m->len;
+			} else {
+				text_offset_code_units = m->start + 1;
+				matches = match_first_32(regex, text, text_size_code_units, text_offset_code_units, mflags, jit_stack);
+			}
+			continue;
+		}
+		rz_pvector_push(all_matches, matches);
 		text_offset_code_units = allow_overlap ? m->start + 1 : m->start + m->len;
 		matches = match_first_32(regex, text, text_size_code_units, text_offset_code_units, mflags, jit_stack);
 	}
 
-	// Free last vector without matches.
 	rz_pvector_free(matches);
 	return all_matches;
 }
-
 /**
  * \brief Finds all matches in a text and returns them as vector of vector matches.
  *
