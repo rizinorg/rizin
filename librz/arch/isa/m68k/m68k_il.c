@@ -4,8 +4,6 @@
 #include "m68k/m68k_il.h"
 #include "m68k/m68k_cs.h"
 
-#ifdef CAPSTONE_M68K_H
-
 #include <string.h>
 
 #include <rz_il/rz_il_opbuilder_begin.h>
@@ -507,9 +505,8 @@ static RzILOpPure *index_value(M68KILCtx *ctx, const cs_m68k_op *op) {
 // encoded extension word address so operands after other extension words lift
 // to the expected address.
 static bool insn_word_at(const M68KILCtx *ctx, ut32 offset, ut16 *word) {
-	if (!ctx || !ctx->insn || !word ||
-		offset + 1 >= ctx->insn->size ||
-		offset + 1 >= sizeof(ctx->insn->bytes)) {
+	rz_return_val_if_fail(ctx && ctx->insn && word, false);
+	if (offset + 1 >= ctx->insn->size || offset + 1 >= sizeof(ctx->insn->bytes)) {
 		return false;
 	}
 	*word = ((ut16)ctx->insn->bytes[offset] << 8) | ctx->insn->bytes[offset + 1];
@@ -676,7 +673,8 @@ static ut64 pc_relative_base(M68KILCtx *ctx, const cs_m68k_op *op) {
 }
 
 static RzILOpPure *branch_disp_target(const M68KILCtx *ctx, const cs_m68k_op *op) {
-	if (!op || op->type != M68K_OP_BR_DISP) {
+	rz_return_val_if_fail(ctx && op, NULL);
+	if (op->type != M68K_OP_BR_DISP) {
 		return NULL;
 	}
 	return u32(branch_disp_base(ctx) + op->br_disp.disp);
@@ -862,7 +860,8 @@ static RzILOpEffect *m68k_invalid_free(RzILOpEffect *seq) {
 }
 
 static bool rz_m68k_op_is_status_reg(const cs_m68k_op *op) {
-	if (!op || op->type != M68K_OP_REG) {
+	rz_return_val_if_fail(op, false);
+	if (op->type != M68K_OP_REG) {
 		return false;
 	}
 	return op->reg == M68K_REG_CCR || op->reg == M68K_REG_SR;
@@ -937,7 +936,7 @@ static RzILOpEffect *operand_to_local(M68KILCtx *ctx, const char *name, const cs
 }
 
 static bool rw_operand_to_local(M68KILCtx *ctx, M68KRWOperand *rw, const char *value_local, const char *addr_local, const cs_m68k_op *op, ut32 bits, RzILOpEffect **seq) {
-	rz_return_val_if_fail(rw && seq && op, false);
+	rz_return_val_if_fail(ctx && rw && value_local && addr_local && op && seq, false);
 	*rw = (M68KRWOperand){
 		.op = op,
 		.addr_local = addr_local,
@@ -970,7 +969,7 @@ static bool rw_operand_to_local(M68KILCtx *ctx, M68KRWOperand *rw, const char *v
 }
 
 static RzILOpEffect *write_rw_operand(M68KILCtx *ctx, const M68KRWOperand *rw, ut32 bits, RzILOpPure *value) {
-	rz_return_val_if_fail(rw && rw->op, NULL);
+	rz_return_val_if_fail(ctx && rw && rw->op, NULL);
 	if (rz_m68k_op_is_mem_addr(rw->op)) {
 		return write_mem_sized(bits, VARL(rw->addr_local), value);
 	}
@@ -2056,7 +2055,7 @@ static RzILOpPure *mac_read_reg_part(M68KILCtx *ctx, const cs_m68k_op *op, ut32 
 }
 
 static RzILOpEffect *mac_memory_update(M68KILCtx *ctx, ut32 bits, RzILOpEffect *seq, const cs_m68k_op *mem, const cs_m68k_op *reg) {
-	if (!mem || !rz_m68k_op_is_gpr(reg)) {
+	if (!mem || !reg || !rz_m68k_op_is_gpr(reg)) {
 		return seq;
 	}
 	M68KEA ea = effective_addr(ctx, mem, bits);
@@ -4046,7 +4045,7 @@ static RzILOpEffect *set_flags_bitfield(RzILOpPure *field) {
 }
 
 static bool bitfield_target_to_local(M68KILCtx *ctx, const cs_m68k_op *op, M68KBitfieldTarget *target, RzILOpEffect **seq) {
-	rz_return_val_if_fail(op && target && seq, false);
+	rz_return_val_if_fail(ctx && op && target && seq, false);
 	*target = (M68KBitfieldTarget){
 		.op = op,
 		.memory = rz_m68k_op_is_mem_addr(op),
@@ -4850,7 +4849,7 @@ static RzILOpEffect *lift_fmovecr(M68KILCtx *ctx) {
 	if (src->type != M68K_OP_IMM) {
 		return fpu_read_failure_label(ctx, src);
 	}
-	if (!rz_m68k_op_is_fpu_reg(dst)) {
+	if (!dst || !rz_m68k_op_is_fpu_reg(dst)) {
 		return fpu_write_failure_label(ctx, dst);
 	}
 
@@ -5115,7 +5114,7 @@ static RzILOpEffect *lift_fpu_unary_data(M68KILCtx *ctx, ut32 insn_id) {
 	const cs_m68k_op *src = &ctx->m68k->operands[0];
 	cs_m68k_op hidden_dst;
 	const cs_m68k_op *dst = rz_m68k_fpu_insn_unary_dst_op(ctx->insn, src, &hidden_dst);
-	if (!rz_m68k_op_is_fpu_reg(dst)) {
+	if (!dst || !rz_m68k_op_is_fpu_reg(dst)) {
 		return fpu_write_failure_label(ctx, dst);
 	}
 
@@ -5187,7 +5186,7 @@ static RzILOpEffect *lift_fpu_extract_data(M68KILCtx *ctx, ut32 insn_id) {
 	}
 	cs_m68k_op hidden_dst;
 	const cs_m68k_op *dst = rz_m68k_fpu_insn_second_op_or_hidden_dst(ctx->insn, &hidden_dst);
-	if (!rz_m68k_op_is_fpu_reg(dst)) {
+	if (!dst || !rz_m68k_op_is_fpu_reg(dst)) {
 		return fpu_write_failure_label(ctx, dst);
 	}
 
@@ -5246,7 +5245,7 @@ static RzILOpEffect *lift_fpu_binary_data(M68KILCtx *ctx, ut32 insn_id) {
 	}
 	cs_m68k_op hidden_dst;
 	const cs_m68k_op *dst = rz_m68k_fpu_insn_second_op_or_hidden_dst(ctx->insn, &hidden_dst);
-	if (!rz_m68k_op_is_fpu_reg(dst)) {
+	if (!dst || !rz_m68k_op_is_fpu_reg(dst)) {
 		return fpu_write_failure_label(ctx, dst);
 	}
 	const cs_m68k_op *src = &ctx->m68k->operands[0];
@@ -5305,7 +5304,7 @@ static RzILOpEffect *lift_fpu_compare_data(M68KILCtx *ctx, bool test_zero) {
 	}
 	cs_m68k_op hidden_dst;
 	const cs_m68k_op *dst = rz_m68k_fpu_insn_second_op_or_hidden_dst(ctx->insn, &hidden_dst);
-	if (!rz_m68k_op_is_fpu_reg(dst)) {
+	if (!dst || !rz_m68k_op_is_fpu_reg(dst)) {
 		return m68k_effect_free(seq, fpu_write_failure_label(ctx, dst));
 	}
 	if (!fpu_operand_to_float_local(ctx, "dst_fp", NULL, dst, 80, &seq)) {
@@ -5880,5 +5879,3 @@ RZ_IPI RzAnalysisILConfig *rz_m68k_cs_il_config(RZ_NONNULL RzAnalysis *analysis)
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
-
-#endif // CAPSTONE_M68K_H

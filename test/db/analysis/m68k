@@ -145,7 +145,6 @@ fpiar = 0x00000000
 sr = 0x0000
 sfc = 0x00000000
 dfc = 0x00000000
-usp = 0x00000000
 vbr = 0x00000000
 cacr = 0x00000000
 caar = 0x00000000
@@ -171,6 +170,7 @@ accext01 = 0x00000000
 accext23 = 0x00000000
 macsr = 0x00000000
 mask = 0x00000000
+usp = 0x00000000
 cp_external_data = 0x00000000
 EOF
 RUN
@@ -1078,6 +1078,21 @@ EXPECT=<<EOF
 ]
 -- fpu operand opex --
 [{"bytes":"f2004000","size":4,"opcode":"fmove.l d0, fp0","type":"mov","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"d0"},{"type":"reg","value":"fp0"}]}},{"bytes":"f23c44803f800000","size":8,"opcode":"fmove.s 1.000000, fp1","type":"mov","family":"fpu","refptr":0,"opex":{"operands":[{"type":"fp_single","value":1.000000},{"type":"reg","value":"fp1"}]}},{"bytes":"f200053a","size":4,"opcode":"ftst fp1, fp2","type":"cmp","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp1"},{"type":"reg","value":"fp2"}]}},{"bytes":"f2000522","size":4,"opcode":"fadd fp1, fp2","type":"add","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp1"},{"type":"reg","value":"fp2"}]}},{"bytes":"f2000520","size":4,"opcode":"fdiv fp1, fp2","type":"div","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp1"},{"type":"reg","value":"fp2"}]}},{"bytes":"f2000521","size":4,"opcode":"fmod fp1, fp2","type":"mod","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp1"},{"type":"reg","value":"fp2"}]}},{"bytes":"f2000525","size":4,"opcode":"frem fp1, fp2","type":"mod","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp1"},{"type":"reg","value":"fp2"}]}},{"bytes":"f2000538","size":4,"opcode":"fcmp fp1, fp2","type":"cmp","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp1"},{"type":"reg","value":"fp2"}]}},{"bytes":"f2000518","size":4,"opcode":"fabs fp1, fp2","type":"undefined","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp1"},{"type":"reg","value":"fp2"}]}},{"bytes":"f200051a","size":4,"opcode":"fneg fp1, fp2","type":"sub","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp1"},{"type":"reg","value":"fp2"}]}},{"bytes":"f310","size":2,"opcode":"fsave (a0)","type":"store","family":"fpu","refptr":0,"opex":{"operands":[{"type":"mem","address_mode":3,"base_reg":"a0","in_disp":0,"out_disp":0,"disp":0,"scale":0,"bitfield":0,"width":0,"offset":0,"index_size":0,"in_disp_size":0,"out_disp_size":0,"disp_size":0}]}},{"bytes":"f350","size":2,"opcode":"frestore (a0)","type":"load","family":"fpu","refptr":0,"opex":{"operands":[{"type":"mem","address_mode":3,"base_reg":"a0","in_disp":0,"out_disp":0,"disp":0,"scale":0,"bitfield":0,"width":0,"offset":0,"index_size":0,"in_disp_size":0,"out_disp_size":0,"disp_size":0}]}},{"bytes":"f200051d","size":4,"opcode":"fcos fp1, fp2","type":"mov","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp1"},{"type":"reg","value":"fp2"}]}}]
+EOF
+RUN
+
+NAME=M68k collapsed and invalid FPU operand opex
+FILE==
+CMDS=<<EOF
+e asm.arch=m68k
+e asm.bits=32
+e asm.cpu=68020
+e asm.lines=false
+wx f2000025f2007fff
+aoj 2~{.[]\|{bytes,size,opcode,type,family,refptr,opex}}
+EOF
+EXPECT=<<EOF
+[{"bytes":"f2000025","size":4,"opcode":"frem fp0","type":"mod","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp0"},{"type":"reg","value":"fp0"}]}},{"bytes":"f2007fff","size":4,"opcode":"add.x invalid, fp7","type":"add","family":"cpu","refptr":0,"opex":{"operands":[{"type":"invalid"},{"type":"reg","value":"fp7"}]}}]
 EOF
 RUN
 

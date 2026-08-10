@@ -12,21 +12,20 @@
 CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(m68k_asm);
 
 static int m68k_set_invalid(RzAsmOp *op, int size) {
-	if (op) {
-		op->size = size;
-		rz_asm_op_set_asm(op, "invalid");
-	}
+	op->size = size;
+	rz_asm_op_set_asm(op, "invalid");
 	return size;
 }
 
 static int m68k_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	if (!buf) {
+	if (!buf || !op) {
 		return -1;
 	}
 	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 	char *buf_asm = NULL;
 	cs_insn *insn = NULL;
-	int op_size = -1, cs_ret = CS_ERR_OK;
+	size_t count = 0;
+	int op_size = -1;
 	cs_mode mode = rz_m68k_cs_mode(a->cpu);
 
 	if (mode != ctx->omode) {
@@ -39,8 +38,7 @@ static int m68k_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len
 	}
 
 	if (!ctx->handle) {
-		cs_ret = cs_open(CS_ARCH_M68K, mode, &ctx->handle);
-		if (cs_ret != CS_ERR_OK) {
+		if (cs_open(CS_ARCH_M68K, mode, &ctx->handle) != CS_ERR_OK) {
 			goto beach;
 		}
 		ctx->omode = mode;
@@ -51,8 +49,8 @@ static int m68k_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len
 		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
 
-	cs_ret = cs_disasm(ctx->handle, buf, len, a->pc, 1, &insn);
-	if (cs_ret < 1 || !insn) {
+	count = cs_disasm(ctx->handle, buf, len, a->pc, 1, &insn);
+	if (count < 1 || !insn) {
 		op_size = m68k_set_invalid(op, M68K_MIN_OP_SIZE);
 		goto beach;
 	}
@@ -61,23 +59,18 @@ static int m68k_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len
 		goto beach;
 	}
 	op_size = insn->size;
-	if (op) {
-		op->size = insn->size;
-		buf_asm = rz_str_newf("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
-		if (!buf_asm) {
-			goto beach;
-		}
-		buf_asm = rz_str_replace(buf_asm, "$", "0x", true);
-		rz_str_replace_char(buf_asm, '#', 0);
-		rz_asm_op_set_asm(op, buf_asm);
-		free(buf_asm);
+	buf_asm = rz_str_newf("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
+	if (!buf_asm) {
+		goto beach;
 	}
+	buf_asm = rz_str_replace(buf_asm, "$", "0x", true);
+	rz_str_replace_char(buf_asm, '#', '\0');
+	rz_asm_op_set_asm(op, buf_asm);
+	free(buf_asm);
 beach:
-	if (op) {
-		op->size = op_size;
-	}
+	op->size = op_size;
 	if (insn) {
-		cs_free(insn, cs_ret);
+		cs_free(insn, count);
 	}
 	return op_size;
 }

@@ -3,9 +3,9 @@
 
 #include "m68k/m68k_cs.h"
 
-#ifdef CAPSTONE_M68K_H
-
 #include <string.h>
+
+#include <rz_util/rz_assert.h>
 
 #define M68K_FPU_EXT_DST(ext) (((ext) >> 7) & 7)
 
@@ -45,14 +45,15 @@ RZ_IPI bool rz_m68k_reg_is_control(m68k_reg reg) {
 	}
 }
 
-RZ_IPI bool rz_m68k_op_is_control_reg(const cs_m68k_op *op) {
-	if (!op || op->type != M68K_OP_REG) {
+RZ_IPI bool rz_m68k_op_is_control_reg(RZ_NONNULL const cs_m68k_op *op) {
+	rz_return_val_if_fail(op, false);
+	if (op->type != M68K_OP_REG) {
 		return false;
 	}
 	return rz_m68k_reg_is_control(op->reg);
 }
 
-RZ_IPI bool rz_m68k_reg_name_is_mmu_root_pointer(const char *name) {
+RZ_IPI bool rz_m68k_reg_name_is_mmu_root_pointer(RZ_NULLABLE const char *name) {
 	return name && (!strcmp(name, "srp") || !strcmp(name, "crp"));
 }
 
@@ -60,8 +61,9 @@ RZ_IPI bool rz_m68k_reg_is_fpu(m68k_reg reg) {
 	return reg >= M68K_REG_FP0 && reg <= M68K_REG_FP7;
 }
 
-RZ_IPI bool rz_m68k_op_is_fpu_reg(const cs_m68k_op *op) {
-	if (!op || (op->type != M68K_OP_REG && op->type != M68K_OP_INVALID)) {
+RZ_IPI bool rz_m68k_op_is_fpu_reg(RZ_NONNULL const cs_m68k_op *op) {
+	rz_return_val_if_fail(op, false);
+	if (op->type != M68K_OP_REG) {
 		return false;
 	}
 	return rz_m68k_reg_is_fpu(op->reg);
@@ -79,52 +81,56 @@ RZ_IPI bool rz_m68k_reg_is_acc(m68k_reg reg) {
 #endif
 }
 
-RZ_IPI bool rz_m68k_op_is_predec_areg(const cs_m68k_op *op) {
-	if (!op || op->address_mode != M68K_AM_REGI_ADDR_PRE_DEC) {
+RZ_IPI bool rz_m68k_op_is_predec_areg(RZ_NONNULL const cs_m68k_op *op) {
+	rz_return_val_if_fail(op, false);
+	if (op->address_mode != M68K_AM_REGI_ADDR_PRE_DEC) {
 		return false;
 	}
 	return rz_m68k_reg_is_areg(op->reg);
 }
 
-RZ_IPI bool rz_m68k_op_is_data_reg(const cs_m68k_op *op) {
-	if (!op || op->type != M68K_OP_REG) {
+RZ_IPI bool rz_m68k_op_is_data_reg(RZ_NONNULL const cs_m68k_op *op) {
+	rz_return_val_if_fail(op, false);
+	if (op->type != M68K_OP_REG) {
 		return false;
 	}
 	return rz_m68k_reg_is_dreg(op->reg);
 }
 
-RZ_IPI bool rz_m68k_op_is_addr_reg(const cs_m68k_op *op) {
-	if (!op || op->type != M68K_OP_REG) {
+RZ_IPI bool rz_m68k_op_is_addr_reg(RZ_NONNULL const cs_m68k_op *op) {
+	rz_return_val_if_fail(op, false);
+	if (op->type != M68K_OP_REG) {
 		return false;
 	}
 	return rz_m68k_reg_is_areg(op->reg);
 }
 
-RZ_IPI bool rz_m68k_op_is_gpr(const cs_m68k_op *op) {
-	if (!op || op->type != M68K_OP_REG) {
+RZ_IPI bool rz_m68k_op_is_gpr(RZ_NONNULL const cs_m68k_op *op) {
+	rz_return_val_if_fail(op, false);
+	if (op->type != M68K_OP_REG) {
 		return false;
 	}
 	return rz_m68k_reg_is_gpr(op->reg);
 }
 
-RZ_IPI bool rz_m68k_op_is_acc_reg(const cs_m68k_op *op) {
-	if (!op || op->type != M68K_OP_REG) {
+RZ_IPI bool rz_m68k_op_is_acc_reg(RZ_NONNULL const cs_m68k_op *op) {
+	rz_return_val_if_fail(op, false);
+	if (op->type != M68K_OP_REG) {
 		return false;
 	}
 	return rz_m68k_reg_is_acc(op->reg);
 }
 
-RZ_IPI bool rz_m68k_op_is_fpu_control_reg(const cs_m68k_op *op) {
-	if (!op || op->type != M68K_OP_REG) {
+RZ_IPI bool rz_m68k_op_is_fpu_control_reg(RZ_NONNULL const cs_m68k_op *op) {
+	rz_return_val_if_fail(op, false);
+	if (op->type != M68K_OP_REG) {
 		return false;
 	}
 	return rz_m68k_reg_is_fpu_control(op->reg);
 }
 
-RZ_IPI bool rz_m68k_insn_uses_fpu_operand(const cs_m68k *m68k) {
-	if (!m68k) {
-		return false;
-	}
+RZ_IPI bool rz_m68k_insn_uses_fpu_operand(RZ_NONNULL const cs_m68k *m68k) {
+	rz_return_val_if_fail(m68k, false);
 	for (ut8 i = 0; i < m68k->op_count; i++) {
 		const cs_m68k_op *op = &m68k->operands[i];
 		if (op->type == M68K_OP_FP_SINGLE || op->type == M68K_OP_FP_DOUBLE) {
@@ -137,7 +143,8 @@ RZ_IPI bool rz_m68k_insn_uses_fpu_operand(const cs_m68k *m68k) {
 	return false;
 }
 
-RZ_IPI ut32 rz_m68k_detail_op_bits(const cs_m68k *m68k, ut32 fallback_bits) {
+RZ_IPI ut32 rz_m68k_detail_op_bits(RZ_NONNULL const cs_m68k *m68k, ut32 fallback_bits) {
+	rz_return_val_if_fail(m68k, fallback_bits);
 	if (m68k->op_size.type == M68K_SIZE_TYPE_CPU) {
 		switch (m68k->op_size.cpu_size) {
 		case M68K_CPU_SIZE_BYTE:
@@ -171,17 +178,22 @@ RZ_IPI ut32 rz_m68k_bits_access_bytes(ut32 bits) {
 
 RZ_IPI ut32 rz_m68k_reg_stack_access_bytes(m68k_reg reg, ut32 bits) {
 	ut32 bytes = rz_m68k_bits_access_bytes(bits);
+	// A7 is 32 bits; this is the address-register delta, not its width. A
+	// byte-sized predecrement/postincrement adjusts A7 by 2 bytes to preserve
+	// stack word alignment (M68000 PRM).
 	return reg == M68K_REG_A7 && bytes == 1 ? 2 : bytes;
 }
 
-RZ_IPI m68k_reg rz_m68k_op_base_reg(const cs_m68k_op *op) {
+RZ_IPI m68k_reg rz_m68k_op_base_reg(RZ_NONNULL const cs_m68k_op *op) {
+	rz_return_val_if_fail(op, M68K_REG_INVALID);
 	if (op->mem.base_reg != M68K_REG_INVALID) {
 		return op->mem.base_reg;
 	}
 	return rz_m68k_reg_is_areg(op->reg) ? op->reg : M68K_REG_INVALID;
 }
 
-RZ_IPI ut32 rz_m68k_op_absolute_address(const cs_m68k_op *op, bool short_addr) {
+RZ_IPI ut32 rz_m68k_op_absolute_address(RZ_NONNULL const cs_m68k_op *op, bool short_addr) {
+	rz_return_val_if_fail(op, 0);
 #ifdef RZ_CAPSTONE_HAS_M68K_COLDFIRE
 	st64 address = op->mem.address;
 #else
@@ -190,7 +202,8 @@ RZ_IPI ut32 rz_m68k_op_absolute_address(const cs_m68k_op *op, bool short_addr) {
 	return short_addr ? (ut32)(st32)(st16)address : (ut32)address;
 }
 
-RZ_IPI bool rz_m68k_op_is_mem_addr(const cs_m68k_op *op) {
+RZ_IPI bool rz_m68k_op_is_mem_addr(RZ_NONNULL const cs_m68k_op *op) {
+	rz_return_val_if_fail(op, false);
 	switch (op->address_mode) {
 	case M68K_AM_REGI_ADDR:
 	case M68K_AM_REGI_ADDR_POST_INC:
@@ -213,8 +226,9 @@ RZ_IPI bool rz_m68k_op_is_mem_addr(const cs_m68k_op *op) {
 	}
 }
 
-RZ_IPI ut64 rz_m68k_op_absolute_mem_address(const cs_m68k_op *operand) {
-	if (!operand || operand->type != M68K_OP_MEM) {
+RZ_IPI ut64 rz_m68k_op_absolute_mem_address(RZ_NONNULL const cs_m68k_op *operand) {
+	rz_return_val_if_fail(operand, 0);
+	if (operand->type != M68K_OP_MEM) {
 		return 0;
 	}
 #ifdef RZ_CAPSTONE_HAS_M68K_COLDFIRE
@@ -227,8 +241,9 @@ RZ_IPI ut64 rz_m68k_op_absolute_mem_address(const cs_m68k_op *operand) {
 #endif
 }
 
-RZ_IPI bool rz_m68k_op_is_absolute_mem(const cs_m68k_op *operand) {
-	if (!operand || operand->type != M68K_OP_MEM) {
+RZ_IPI bool rz_m68k_op_is_absolute_mem(RZ_NONNULL const cs_m68k_op *operand) {
+	rz_return_val_if_fail(operand, false);
+	if (operand->type != M68K_OP_MEM) {
 		return false;
 	}
 	switch (operand->address_mode) {
@@ -258,15 +273,17 @@ RZ_IPI bool rz_m68k_insn_cache_requires_address(ut32 insn_id) {
 	}
 }
 
-RZ_IPI bool rz_m68k_op_is_data_reg_pair(const cs_m68k_op *op) {
-	if (!op || op->type != M68K_OP_REG_PAIR) {
+RZ_IPI bool rz_m68k_op_is_data_reg_pair(RZ_NONNULL const cs_m68k_op *op) {
+	rz_return_val_if_fail(op, false);
+	if (op->type != M68K_OP_REG_PAIR) {
 		return false;
 	}
 	return rz_m68k_reg_is_dreg(op->reg_pair.reg_0) && rz_m68k_reg_is_dreg(op->reg_pair.reg_1);
 }
 
-RZ_IPI bool rz_m68k_op_is_gpr_reg_pair(const cs_m68k_op *op) {
-	if (!op || op->type != M68K_OP_REG_PAIR) {
+RZ_IPI bool rz_m68k_op_is_gpr_reg_pair(RZ_NONNULL const cs_m68k_op *op) {
+	rz_return_val_if_fail(op, false);
+	if (op->type != M68K_OP_REG_PAIR) {
 		return false;
 	}
 	m68k_reg r0 = op->reg_pair.reg_0;
@@ -284,15 +301,17 @@ RZ_IPI bool rz_m68k_tbl_insn_is_unrounded(m68k_insn insn) {
 }
 #endif
 
-RZ_IPI bool rz_m68k_fpu_insn_extension_word(const cs_insn *insn, ut16 *extension) {
-	if (!insn || insn->size < 4 || !extension) {
+RZ_IPI bool rz_m68k_fpu_insn_extension_word(RZ_NONNULL const cs_insn *insn, RZ_NONNULL ut16 *extension) {
+	rz_return_val_if_fail(insn && extension, false);
+	if (insn->size < 4) {
 		return false;
 	}
 	*extension = ((ut16)insn->bytes[2] << 8) | insn->bytes[3];
 	return true;
 }
 
-RZ_IPI m68k_reg rz_m68k_fpu_insn_extension_dst_reg(const cs_insn *insn) {
+RZ_IPI m68k_reg rz_m68k_fpu_insn_extension_dst_reg(RZ_NONNULL const cs_insn *insn) {
+	rz_return_val_if_fail(insn, M68K_REG_INVALID);
 	ut16 extension = 0;
 	if (!rz_m68k_fpu_insn_extension_word(insn, &extension)) {
 		return M68K_REG_INVALID;
@@ -300,9 +319,17 @@ RZ_IPI m68k_reg rz_m68k_fpu_insn_extension_dst_reg(const cs_insn *insn) {
 	return M68K_REG_FP0 + M68K_FPU_EXT_DST(extension);
 }
 
-RZ_IPI bool rz_m68k_fpu_insn_hidden_dst_op(const cs_insn *insn, cs_m68k_op *dst) {
+// Capstone collapses some FPU read-modify-write instructions to one operand
+// when source and destination are the same
+// (for example "frem fp0"). The
+// destination remains encoded in the FPU extension word; materialize it as a
+// synthetic second operand so analysis and IL can use a uniform two-operand
+// form.
+
+RZ_IPI bool rz_m68k_fpu_insn_hidden_dst_op(RZ_NONNULL const cs_insn *insn, RZ_NONNULL cs_m68k_op *dst) {
+	rz_return_val_if_fail(insn && dst, false);
 	m68k_reg reg = rz_m68k_fpu_insn_extension_dst_reg(insn);
-	if (!dst || !rz_m68k_reg_is_fpu(reg)) {
+	if (!rz_m68k_reg_is_fpu(reg)) {
 		return false;
 	}
 	memset(dst, 0, sizeof(*dst));
@@ -311,8 +338,9 @@ RZ_IPI bool rz_m68k_fpu_insn_hidden_dst_op(const cs_insn *insn, cs_m68k_op *dst)
 	return true;
 }
 
-RZ_IPI bool rz_m68k_fpu_op_from_reg(cs_m68k_op *op, m68k_reg reg) {
-	if (!op || !rz_m68k_reg_is_fpu(reg)) {
+RZ_IPI bool rz_m68k_fpu_op_from_reg(RZ_NONNULL cs_m68k_op *op, m68k_reg reg) {
+	rz_return_val_if_fail(op, false);
+	if (!rz_m68k_reg_is_fpu(reg)) {
 		return false;
 	}
 	memset(op, 0, sizeof(*op));
@@ -321,10 +349,8 @@ RZ_IPI bool rz_m68k_fpu_op_from_reg(cs_m68k_op *op, m68k_reg reg) {
 	return true;
 }
 
-RZ_IPI const cs_m68k_op *rz_m68k_fpu_insn_second_op_or_hidden_dst(const cs_insn *insn, cs_m68k_op *hidden_dst) {
-	if (!insn || !insn->detail) {
-		return NULL;
-	}
+RZ_IPI RZ_NULLABLE const cs_m68k_op *rz_m68k_fpu_insn_second_op_or_hidden_dst(RZ_NONNULL const cs_insn *insn, RZ_NONNULL cs_m68k_op *hidden_dst) {
+	rz_return_val_if_fail(insn && insn->detail && hidden_dst, NULL);
 	const cs_m68k *m68k = &insn->detail->m68k;
 	if (m68k->op_count > 1) {
 		return &m68k->operands[1];
@@ -332,10 +358,8 @@ RZ_IPI const cs_m68k_op *rz_m68k_fpu_insn_second_op_or_hidden_dst(const cs_insn 
 	return rz_m68k_fpu_insn_hidden_dst_op(insn, hidden_dst) ? hidden_dst : NULL;
 }
 
-RZ_IPI const cs_m68k_op *rz_m68k_fpu_insn_unary_dst_op(const cs_insn *insn, const cs_m68k_op *src, cs_m68k_op *hidden_dst) {
-	if (!insn || !insn->detail) {
-		return NULL;
-	}
+RZ_IPI RZ_NULLABLE const cs_m68k_op *rz_m68k_fpu_insn_unary_dst_op(RZ_NONNULL const cs_insn *insn, RZ_NONNULL const cs_m68k_op *src, RZ_NONNULL cs_m68k_op *hidden_dst) {
+	rz_return_val_if_fail(insn && insn->detail && src && hidden_dst, NULL);
 	const cs_m68k *m68k = &insn->detail->m68k;
 	if (m68k->op_count > 1) {
 		return &m68k->operands[1];
@@ -408,8 +432,9 @@ RZ_IPI bool rz_m68k_fpu_insn_has_data_dst(unsigned int insn_id) {
 	}
 }
 
-RZ_IPI bool rz_m68k_fpu_insn_single_op_is_complete(const cs_insn *insn) {
-	if (!insn || !insn->detail || insn->detail->m68k.op_count != 1) {
+RZ_IPI bool rz_m68k_fpu_insn_single_op_is_complete(RZ_NONNULL const cs_insn *insn) {
+	rz_return_val_if_fail(insn && insn->detail, false);
+	if (insn->detail->m68k.op_count != 1) {
 		return false;
 	}
 	const cs_m68k_op *operand = &insn->detail->m68k.operands[0];
@@ -455,8 +480,9 @@ RZ_IPI bool rz_m68k_fpu_insn_single_op_is_complete(const cs_insn *insn) {
 	}
 }
 
-RZ_IPI bool rz_m68k_fpu_insn_needs_hidden_dst(const cs_insn *insn) {
-	if (!insn || !insn->detail || insn->detail->m68k.op_count != 1 || !rz_m68k_fpu_insn_has_data_dst(insn->id)) {
+RZ_IPI bool rz_m68k_fpu_insn_needs_hidden_dst(RZ_NONNULL const cs_insn *insn) {
+	rz_return_val_if_fail(insn && insn->detail, false);
+	if (insn->detail->m68k.op_count != 1 || !rz_m68k_fpu_insn_has_data_dst(insn->id)) {
 		return false;
 	}
 	if (rz_m68k_fpu_insn_single_op_is_complete(insn)) {
@@ -465,37 +491,45 @@ RZ_IPI bool rz_m68k_fpu_insn_needs_hidden_dst(const cs_insn *insn) {
 	return rz_m68k_reg_is_fpu(rz_m68k_fpu_insn_extension_dst_reg(insn));
 }
 
-RZ_IPI bool rz_m68k_fpu_size_is_extended(const cs_m68k *m68k) {
+RZ_IPI bool rz_m68k_fpu_size_is_extended(RZ_NONNULL const cs_m68k *m68k) {
+	rz_return_val_if_fail(m68k, false);
 	return m68k->op_size.type == M68K_SIZE_TYPE_FPU && m68k->op_size.fpu_size == M68K_FPU_SIZE_EXTENDED;
 }
 
-RZ_IPI bool rz_m68k_fpu_op_detail_is_invalid(const cs_m68k_op *op) {
+RZ_IPI bool rz_m68k_fpu_op_detail_is_invalid(RZ_NULLABLE const cs_m68k_op *op) {
 	return !op ||
 		op->type == M68K_OP_INVALID ||
 		(op->type == M68K_OP_REG && op->reg == M68K_REG_INVALID) ||
 		(op->type == M68K_OP_MEM && op->address_mode == M68K_AM_NONE);
 }
 
-RZ_IPI bool rz_m68k_fpu_op_is_illegal_read(const cs_m68k *m68k, const cs_m68k_op *op) {
+RZ_IPI bool rz_m68k_fpu_op_is_illegal_read(RZ_NONNULL const cs_m68k *m68k, RZ_NONNULL const cs_m68k_op *op) {
+	rz_return_val_if_fail(m68k && op, false);
 	if (rz_m68k_op_is_fpu_reg(op)) {
 		return false;
 	}
+	// Capstone produced no usable operand data; there is nothing to read.
 	if (rz_m68k_fpu_op_detail_is_invalid(op)) {
 		return true;
 	}
+	// A GPR cannot supply an FPU-sized operand (e.g. fmove.x d0, fp0 is illegal).
 	if (m68k->op_size.type == M68K_SIZE_TYPE_FPU && rz_m68k_op_is_gpr(op)) {
 		return true;
 	}
+	// FP immediates use M68K_OP_FP_SINGLE/DOUBLE; an integer immediate cannot
+	// encode an FPU-sized value.
 	if (m68k->op_size.type == M68K_SIZE_TYPE_FPU && op->type == M68K_OP_IMM) {
 		return true;
 	}
+	// An immediate cannot encode an 80-bit extended precision value.
 	if (op->type == M68K_OP_IMM && rz_m68k_detail_op_bits(m68k, 80) == 80) {
 		return true;
 	}
 	return false;
 }
 
-RZ_IPI bool rz_m68k_fpu_op_is_illegal_write(const cs_m68k *m68k, const cs_m68k_op *op) {
+RZ_IPI bool rz_m68k_fpu_op_is_illegal_write(RZ_NONNULL const cs_m68k *m68k, RZ_NONNULL const cs_m68k_op *op) {
+	rz_return_val_if_fail(m68k && op, false);
 	if (rz_m68k_op_is_fpu_reg(op)) {
 		return false;
 	}
@@ -508,13 +542,12 @@ RZ_IPI bool rz_m68k_fpu_op_is_illegal_write(const cs_m68k *m68k, const cs_m68k_o
 	return op->type != M68K_OP_REG && !rz_m68k_op_is_mem_addr(op);
 }
 
-RZ_IPI bool rz_m68k_fpu_insn_data_alias_has_dst(const cs_insn *insn) {
-	if (!insn || !insn->detail || insn->detail->m68k.op_count < 1) {
+RZ_IPI bool rz_m68k_fpu_insn_data_alias_has_dst(RZ_NONNULL const cs_insn *insn) {
+	rz_return_val_if_fail(insn && insn->detail, false);
+	if (insn->detail->m68k.op_count < 1) {
 		return false;
 	}
 	cs_m68k_op hidden_dst;
 	const cs_m68k_op *dst = rz_m68k_fpu_insn_second_op_or_hidden_dst(insn, &hidden_dst);
-	return rz_m68k_op_is_fpu_reg(dst);
+	return dst && rz_m68k_op_is_fpu_reg(dst);
 }
-
-#endif // CAPSTONE_M68K_H

@@ -8,12 +8,7 @@
 #include <rz_il.h>
 #include <capstone/capstone.h>
 
-#ifdef CAPSTONE_M68K_H
-#include <capstone/m68k.h>
-
 RZ_IPI RzAnalysisILConfig *rz_m68k_cs_il_config(RZ_NONNULL RzAnalysis *analysis);
 RZ_IPI RzILOpEffect *rz_m68k_cs_get_il_op(csh handle, cs_mode mode, RZ_NONNULL const cs_insn *insn, ut64 addr);
-
-#endif // CAPSTONE_M68K_H
 
 #endif // RZ_M68K_IL_H

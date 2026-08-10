@@ -99,13 +99,14 @@ static RzStructuredData *mk68_opex(csh handle, cs_insn *insn) {
 #endif
 		switch (op->type) {
 		case M68K_OP_INVALID:
-			if (!rz_m68k_reg_is_fpu(op->reg)) {
-				rz_structured_data_map_add_string(operand, "type", "invalid");
-				break;
-			}
-			// fallthrough
+			rz_structured_data_map_add_string(operand, "type", "invalid");
+			break;
 		case M68K_OP_REG:
-			m68k_opex_add_reg(handle, operand, op->reg);
+			if (op->reg == M68K_REG_INVALID) {
+				rz_structured_data_map_add_string(operand, "type", "invalid");
+			} else {
+				m68k_opex_add_reg(handle, operand, op->reg);
+			}
 			break;
 		case M68K_OP_REG_PAIR:
 			rz_structured_data_map_add_string(operand, "type", "reg_pair");
@@ -243,17 +244,8 @@ static RzAnalysisValue *m68k_value_from_operand(RzAnalysis *a, csh handle, const
 		}
 		break;
 	case M68K_OP_INVALID:
-		if (!rz_m68k_op_is_fpu_reg(operand)) {
-			rz_analysis_value_free(value);
-			return NULL;
-		}
-		value->type = RZ_ANALYSIS_VAL_REG;
-		value->reg = m68k_reg_get(a, handle, operand->reg);
-		if (!value->reg) {
-			rz_analysis_value_free(value);
-			return NULL;
-		}
-		break;
+		rz_analysis_value_free(value);
+		return NULL;
 	case M68K_OP_IMM:
 		value->type = RZ_ANALYSIS_VAL_IMM;
 		value->imm = (st64)operand->imm;
@@ -362,7 +354,8 @@ static void m68k_set_dst_operand(RzAnalysis *a, RzAnalysisOp *op, csh handle, co
 }
 
 static void m68k_fill_fpu_hidden_dst(RzAnalysis *a, RzAnalysisOp *op, csh handle, const cs_insn *insn) {
-	if (!insn || !insn->detail || !rz_m68k_fpu_insn_needs_hidden_dst(insn)) {
+	rz_return_if_fail(a && op && insn && insn->detail);
+	if (!rz_m68k_fpu_insn_needs_hidden_dst(insn)) {
 		return;
 	}
 
@@ -393,9 +386,7 @@ static void m68k_fill_fpu_hidden_dst(RzAnalysis *a, RzAnalysisOp *op, csh handle
 }
 
 static void m68k_fill_fpu_sincos(RzAnalysis *a, RzAnalysisOp *op, csh handle, const cs_insn *insn) {
-	if (!insn || !insn->detail) {
-		return;
-	}
+	rz_return_if_fail(a && op && insn && insn->detail);
 	const cs_m68k *m68k = &insn->detail->m68k;
 	if (m68k->op_count > 0) {
 		m68k_add_src_operand(a, op, handle, m68k, 0);
@@ -473,7 +464,8 @@ static void m68k_fill_indirect_target(RzAnalysis *a, RzAnalysisOp *op, csh handl
 }
 
 static void m68k_fill_callm(RzAnalysis *a, RzAnalysisOp *op, csh handle, const cs_m68k *m68k) {
-	if (!m68k || m68k->op_count < 2) {
+	rz_return_if_fail(a && op && m68k);
+	if (m68k->op_count < 2) {
 		return;
 	}
 	m68k_add_src_operand(a, op, handle, m68k, 0);
@@ -482,7 +474,8 @@ static void m68k_fill_callm(RzAnalysis *a, RzAnalysisOp *op, csh handle, const c
 
 #ifdef RZ_CAPSTONE_HAS_M68K_COLDFIRE
 static void m68k_fill_strldsr(RzAnalysis *a, RzAnalysisOp *op, csh handle, const cs_m68k *m68k) {
-	if (!m68k || m68k->op_count < 1) {
+	rz_return_if_fail(a && op && m68k);
+	if (m68k->op_count < 1) {
 		return;
 	}
 	m68k_add_src_operand(a, op, handle, m68k, 0);
@@ -491,7 +484,8 @@ static void m68k_fill_strldsr(RzAnalysis *a, RzAnalysisOp *op, csh handle, const
 }
 
 static void m68k_fill_coprocessor_transfer(RzAnalysis *a, RzAnalysisOp *op, csh handle, const cs_m68k *m68k, bool store) {
-	if (!m68k || m68k->op_count < (store ? 2 : 1)) {
+	rz_return_if_fail(a && op && m68k);
+	if (m68k->op_count < (store ? 2 : 1)) {
 		return;
 	}
 	if (store) {
@@ -503,7 +497,8 @@ static void m68k_fill_coprocessor_transfer(RzAnalysis *a, RzAnalysisOp *op, csh 
 #endif
 
 static void m68k_fill_fpu_state_transfer(RzAnalysis *a, RzAnalysisOp *op, csh handle, const cs_m68k *m68k, bool restore) {
-	if (!m68k || m68k->op_count < 1) {
+	rz_return_if_fail(a && op && m68k);
+	if (m68k->op_count < 1) {
 		return;
 	}
 	if (restore) {
@@ -514,7 +509,8 @@ static void m68k_fill_fpu_state_transfer(RzAnalysis *a, RzAnalysisOp *op, csh ha
 }
 
 static void m68k_fill_scc(RzAnalysis *a, RzAnalysisOp *op, csh handle, const cs_m68k *m68k) {
-	if (!m68k || m68k->op_count < 1) {
+	rz_return_if_fail(a && op && m68k);
+	if (m68k->op_count < 1) {
 		return;
 	}
 	m68k_add_src_value(op, m68k_value_from_reg(a, handle, M68K_REG_SR, RZ_ANALYSIS_ACC_R));
@@ -975,7 +971,8 @@ static inline void m68k_invalid_il_nop(RzAnalysisOp *op, RzAnalysisOpMask mask) 
 
 static int m68k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	M68KContext *ctx = (M68KContext *)a->plugin_data;
-	int n, ret, opsize = -1;
+	int opsize = -1;
+	size_t n = 0;
 	cs_insn *insn = NULL;
 	cs_m68k *m68k;
 	cs_detail *detail;
@@ -992,15 +989,14 @@ static int m68k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 		return -1;
 	}
 	if (ctx->handle == 0) {
-		ret = cs_open(CS_ARCH_M68K, mode, &ctx->handle);
-		if (ret != CS_ERR_OK) {
+		if (cs_open(CS_ARCH_M68K, mode, &ctx->handle) != CS_ERR_OK) {
 			goto fin;
 		}
 		ctx->omode = mode;
 		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
 	n = cs_disasm(ctx->handle, (ut8 *)buf, len, addr, 1, &insn);
-	if (n < 1 || insn->size < 1) {
+	if (n < 1 || !insn || insn->size < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		opsize = op->size = M68K_MIN_OP_SIZE;
 		m68k_invalid_il_nop(op, mask);
@@ -1634,7 +1630,6 @@ static char *m68k_get_reg_profile(RzAnalysis *analysis) {
 		"gpr	sr 		.16	70	0\n" // only available for read and write access during supervisor mode
 		"gpr	sfc 	.32	124	0\n" // source function code register
 		"gpr	dfc		.32	128	0\n" // destination function code register
-		"gpr	usp		.32	240	0\n" // user stack point this is an shadow register of A7 user mode, SR bit 0xD is 0
 		"gpr	vbr		.32	132	0\n" // vector base register, this is a Address pointer
 		"gpr	cacr	.32	136	0\n" // cache control register, implementation specific
 		"gpr	caar	.32	140	0\n" // cache address register, 68020, 68EC020, 68030 and 68EC030 only.
@@ -1660,6 +1655,7 @@ static char *m68k_get_reg_profile(RzAnalysis *analysis) {
 		"gpr	accext23	.32	228	0\n"
 		"gpr	macsr	.32	232	0\n"
 		"gpr	mask	.32	236	0\n"
+		"gpr	usp		.32	240	0\n" // user stack point this is an shadow register of A7 user mode, SR bit 0xD is 0
 		"fpu	fp0		.80	244	0\n" // FPU data register 0, 80-bit extended precision
 		"fpu	fp1		.80	254	0\n" // FPU data register 1, 80-bit extended precision
 		"fpu	fp2		.80	264	0\n" // FPU data register 2, 80-bit extended precision
