@@ -1185,7 +1185,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					file = pfile; // rz_str_append (file, escaped_path);
 				}
 #endif
-				RZ_FREE(f_copy);	
+				RZ_FREE(f_copy);
 				opt.ind++;
 				while (opt.ind < argc) {
 					char *escaped_arg = rz_str_arg_escape(argv[opt.ind]);
