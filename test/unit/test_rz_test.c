@@ -11,6 +11,59 @@
 
 #define FILENAME "unit/rz_test_cmd_test"
 
+typedef struct retry_runner_context_t {
+	ut64 calls;
+	ut64 succeed_on;
+	const char *success_out;
+} RetryRunnerContext;
+
+static RzSubprocessOutput *retry_runner(RZ_UNUSED const char *file, RZ_UNUSED const char *args[], RZ_UNUSED size_t args_size,
+	RZ_UNUSED const char *envvars[], RZ_UNUSED const char *envvals[], RZ_UNUSED size_t env_size, RZ_UNUSED ut64 timeout_ms, void *user) {
+	RetryRunnerContext *ctx = user;
+	RzSubprocessOutput *out = RZ_NEW0(RzSubprocessOutput);
+	if (!out) {
+		return NULL;
+	}
+	ctx->calls++;
+	const char *output = ctx->calls >= ctx->succeed_on ? ctx->success_out : "unexpected\n";
+	out->out = (ut8 *)strdup(output);
+	out->out_len = strlen(output);
+	out->err = (ut8 *)strdup("");
+	out->err_len = 0;
+	out->ret = 0;
+	out->timeout = false;
+	return out;
+}
+
+bool test_rz_test_cmd_retries(void) {
+	RzTestDatabase *db = rz_test_test_database_new();
+	database_load(db, FILENAME, 1);
+	RzTestRunConfig config = { .timeout_ms = 1000 };
+	RzCmdTest *retry_test = ((RzTest *)rz_pvector_at(&db->tests, 0))->cmd_test;
+	RzCmdTest *single_shot_test = ((RzTest *)rz_pvector_at(&db->tests, 2))->cmd_test;
+
+	RetryRunnerContext ctx = { .succeed_on = 2, .success_out = retry_test->expect.value };
+	RzSubprocessOutput *out = run_cmd_test_with_retries(&config, retry_test, retry_runner, &ctx);
+	mu_assert_true(rz_test_check_cmd_test(out, retry_test), "retry succeeds");
+	mu_assert_eq(ctx.calls, 2, "retry stops after success");
+	rz_subprocess_output_free(out);
+
+	ctx = (RetryRunnerContext){ .succeed_on = 5, .success_out = retry_test->expect.value };
+	out = run_cmd_test_with_retries(&config, retry_test, retry_runner, &ctx);
+	mu_assert_false(rz_test_check_cmd_test(out, retry_test), "retry remains failed");
+	mu_assert_eq(ctx.calls, 4, "retry budget is bounded");
+	rz_subprocess_output_free(out);
+
+	ctx = (RetryRunnerContext){ .succeed_on = 2, .success_out = single_shot_test->expect.value };
+	out = run_cmd_test_with_retries(&config, single_shot_test, retry_runner, &ctx);
+	mu_assert_false(rz_test_check_cmd_test(out, single_shot_test), "default remains failed");
+	mu_assert_eq(ctx.calls, 1, "default is single shot");
+	rz_subprocess_output_free(out);
+
+	rz_test_test_database_free(db);
+	mu_end;
+}
+
 bool test_rz_test_database_load_cmd(void) {
 	RzTestDatabase *db = rz_test_test_database_new();
 	database_load(db, FILENAME, 1);
@@ -24,32 +77,36 @@ bool test_rz_test_database_load_cmd(void) {
 	mu_assert_streq(cmd_test->file.value, "=", "file");
 	mu_assert_streq(cmd_test->cmds.value, "rm -rf /\n", "cmds");
 	mu_assert_streq(cmd_test->expect.value, "expected\noutput\n", "expect");
-	mu_assert_eq(cmd_test->expect.line_begin, 6, "line begin");
-	mu_assert_eq(cmd_test->expect.line_end, 10, "line begin");
+	mu_assert_eq(cmd_test->retries.set, true, "retries set");
+	mu_assert_eq(cmd_test->retries.value, 3, "retries value");
+	mu_assert_eq(cmd_test->expect.line_begin, 7, "line begin");
+	mu_assert_eq(cmd_test->expect.line_end, 11, "line begin");
 
 	test = rz_pvector_at(&db->tests, 1);
 	mu_assert_eq(test->type, RZ_TEST_TYPE_CMD, "test type");
 	cmd_test = test->cmd_test;
 	mu_assert_streq(cmd_test->name.value, "singleline0", "name");
 	mu_assert_streq(cmd_test->expect.value, "", "expect");
-	mu_assert_eq(cmd_test->expect.line_begin, 17, "line begin");
-	mu_assert_eq(cmd_test->expect.line_end, 18, "line begin");
+	mu_assert_eq(cmd_test->expect.line_begin, 18, "line begin");
+	mu_assert_eq(cmd_test->expect.line_end, 19, "line begin");
 
 	test = rz_pvector_at(&db->tests, 2);
 	mu_assert_eq(test->type, RZ_TEST_TYPE_CMD, "test type");
 	cmd_test = test->cmd_test;
 	mu_assert_streq(cmd_test->name.value, "multiline1", "name");
 	mu_assert_streq(cmd_test->expect.value, "more\nexpected\noutput\n", "expect");
-	mu_assert_eq(cmd_test->expect.line_begin, 25, "line begin");
-	mu_assert_eq(cmd_test->expect.line_end, 30, "line begin");
+	mu_assert_eq(cmd_test->expect.line_begin, 26, "line begin");
+	mu_assert_eq(cmd_test->expect.line_end, 31, "line begin");
+	mu_assert_eq(cmd_test->retries.set, false, "retries unset");
+	mu_assert_eq(cmd_test->retries.value, 0, "retries value");
 
 	test = rz_pvector_at(&db->tests, 3);
 	mu_assert_eq(test->type, RZ_TEST_TYPE_CMD, "test type");
 	cmd_test = test->cmd_test;
 	mu_assert_streq(cmd_test->name.value, "singleline1", "name");
 	mu_assert_streq(cmd_test->expect.value, "", "expect");
-	mu_assert_eq(cmd_test->expect.line_begin, 37, "line begin");
-	mu_assert_eq(cmd_test->expect.line_end, 38, "line begin");
+	mu_assert_eq(cmd_test->expect.line_begin, 38, "line begin");
+	mu_assert_eq(cmd_test->expect.line_end, 39, "line begin");
 
 	rz_test_test_database_free(db);
 	mu_end;
@@ -131,6 +188,7 @@ bool test_rz_test_fix(void) {
 	mu_assert_streq(content,
 		"NAME=multiline0\n"
 		"FILE==\n"
+		"RETRIES=3\n"
 		"CMDS=<<EOF\n"
 		"rm -rf /\n"
 		"EOF\n"
@@ -189,6 +247,7 @@ bool test_rz_test_fix(void) {
 }
 
 int all_tests() {
+	mu_run_test(test_rz_test_cmd_retries);
 	mu_run_test(test_rz_test_database_load_cmd);
 	mu_run_test(test_rz_test_fix);
 	return tests_passed != tests_run;
