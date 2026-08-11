@@ -13,7 +13,8 @@
 #include <rz_util.h>
 #include "prologues_generator.inc"
 
-#define DEFAULT_PROLOGUE_LEN 16
+#define DEFAULT_PROLOGUE_LEN      16
+#define DEFAULT_ENTROPY_THRESHOLD 0.8
 
 #define rz_cmd_desc_argv_new_warn(rcmd, parent, cmd, cb, help) \
 	rz_warn_if_fail(rz_cmd_desc_argv_new(rcmd, parent, cmd, cb, help))
@@ -37,6 +38,7 @@ typedef struct core_prologues_generator_context_t {
 	RzTrie *pg_trie;
 	RzSetS *fpaths; // names of files already processed to build the curr trie
 	ut64 trie_prologue_len; // cfg: prologue length used for generation, may differ from the length of prologues in the store
+	double entropy_threshold; // cfg: threshold for node split entropy used for generalization
 
 	// prologues store (reset by pgp-)
 	RzVector /*<PGPrologue>*/ *prologues; // has independent lifecycle then pg_trie
@@ -50,7 +52,7 @@ typedef struct core_prologues_generator_context_t {
 
 typedef struct {
 	ut64 hit_cnt;
-	ut8 byte_val;
+	bool bit_val;
 } PGTrieNodeData;
 
 typedef struct {
@@ -61,7 +63,8 @@ typedef struct {
 
 typedef struct {
 	RzVector /*<PGPrologue>*/ *prologues;
-	ut8 *buf;
+	ut8 *byte_buf;
+	ut8 *mask_buf;
 	size_t depth;
 } ProloguesDFSContext;
 
@@ -80,10 +83,8 @@ static bool pg_match(const RzTrieNode *n, const void *key, size_t idx) {
 	}
 	PGTrieNodeData *nd = n->data;
 	const ut8 *seq = key;
-	if (nd->byte_val == *(seq + idx)) {
-		return true;
-	}
-	return false;
+	bool bit = (seq[idx / 8] & (1u << (7 - (idx % 8)))) != 0;
+	return nd->bit_val == bit;
 }
 
 static void pg_node_init(RzTrieNode *n, const void *key, size_t idx) {
@@ -96,7 +97,7 @@ static void pg_node_init(RzTrieNode *n, const void *key, size_t idx) {
 		return;
 	}
 	const ut8 *seq = key;
-	nd->byte_val = *(seq + idx);
+	nd->bit_val = (seq[idx / 8] & (1u << (7 - (idx % 8)))) != 0;
 	nd->hit_cnt = 1;
 	n->data = nd;
 }
@@ -132,6 +133,34 @@ static bool config_trie_prologue_len_setter(void *user, const void *value) {
 		return false;
 	}
 	ctx->trie_prologue_len = val;
+	return true;
+}
+
+static bool config_entropy_threshold_getter(void *user, void *value) {
+	CorePGContext *ctx = user;
+	rz_return_val_if_fail(ctx && value, false);
+	*(char **)value = rz_str_newf("%g", ctx->entropy_threshold);
+	return true;
+}
+
+static bool config_entropy_threshold_setter(void *user, const void *value) {
+	CorePGContext *ctx = user;
+	rz_return_val_if_fail(ctx && value, false);
+	const char *val_str = value;
+	if (RZ_STR_ISEMPTY(val_str)) {
+		return false;
+	}
+	char *end = NULL;
+	double val = strtod(val_str, &end);
+	if (!end || *end != '\0') {
+		RZ_LOG_ERROR("Entropy threshold must be a valid double value\n");
+		return false;
+	}
+	if (val < 0.0 || val > 1.0) {
+		RZ_LOG_ERROR("Entropy threshold must be between 0.0 and 1.0\n");
+		return false;
+	}
+	ctx->entropy_threshold = val;
 	return true;
 }
 
@@ -214,7 +243,7 @@ static bool build_prefix_tree_from_file(RzBinFile *binfile, RzTrie *t, ut64 prol
 
 			PGTrieNodeData *nd = t->root->data;
 			nd->hit_cnt++; // track total prologues inserted
-			if (!rz_trie_insert(t, buf, prologue_len, pg_node_on_hit, NULL)) {
+			if (!rz_trie_insert(t, buf, prologue_len * 8, pg_node_on_hit, NULL)) {
 				RZ_LOG_ERROR("Failed to insert prologue for symbol at address 0x%" PFMT64x " into prefix tree\n", paddr);
 				RZ_FREE(buf);
 				rz_set_u_free(seen_addrs);
@@ -559,6 +588,54 @@ cleanup_data:
 	return status;
 }
 
+static double shanon_entropy_of_split(const RzTrieNode *p) {
+	rz_return_val_if_fail(p && !rz_pvector_empty(&p->children) && p->data, 0.0);
+	double H = 0.0;
+	PGTrieNodeData *pd = p->data;
+	void **it;
+	rz_pvector_foreach (&p->children, it) {
+		RzTrieNode *n = *it;
+		PGTrieNodeData *nd = n->data;
+		double p_i = (double)nd->hit_cnt / (double)pd->hit_cnt; // probability of child node
+		H += -(p_i * log2(p_i));
+	}
+	return H;
+}
+
+// merge source tree to destination tree, and free source tree
+static void merge_subtrees(RzTrieNode *src, RzTrieNode *dst) {
+	rz_return_if_fail(src && dst && src->data && dst->data);
+	PGTrieNodeData *src_nd = src->data;
+	PGTrieNodeData *dst_nd = dst->data;
+	dst_nd->hit_cnt += src_nd->hit_cnt;
+
+	void **src_it;
+	rz_pvector_foreach (&src->children, src_it) {
+		RzTrieNode *src_child = *src_it;
+		PGTrieNodeData *src_child_nd = src_child->data;
+
+		// merge if matching child in dst else append child
+		bool found = false;
+		void **dst_it;
+		rz_pvector_foreach (&dst->children, dst_it) {
+			RzTrieNode *dst_child = *dst_it;
+			PGTrieNodeData *dst_child_nd = dst_child->data;
+			if (dst_child_nd->bit_val == src_child_nd->bit_val) {
+				merge_subtrees(src_child, dst_child);
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
+			rz_pvector_push(&dst->children, src_child);
+		}
+	}
+	rz_pvector_fini(&src->children);
+	RZ_FREE(src->data);
+	RZ_FREE(src);
+}
+
 static void pre_visit_prologues(RzTrieNode *n, void *user) {
 	rz_return_if_fail(n && n->data && user);
 
@@ -566,20 +643,40 @@ static void pre_visit_prologues(RzTrieNode *n, void *user) {
 	PGTrieNodeData *nd = n->data;
 	// skip root, hence 1 based idx
 	if (pgctx->depth > 0) {
-		pgctx->buf[pgctx->depth - 1] = nd->byte_val;
+		size_t bit_idx = pgctx->depth - 1;
+		size_t byte_idx = bit_idx / 8;
+		size_t bit_pos = 7 - (bit_idx % 8);
+		if (nd->bit_val) {
+			pgctx->byte_buf[byte_idx] |= (1u << bit_pos);
+		} else {
+			pgctx->byte_buf[byte_idx] &= ~(1u << bit_pos);
+		}
 	}
+
+	// check split entropy and merge subtrees based on it
+	if (rz_pvector_len(&n->children) == 2) {
+		double entropy = shanon_entropy_of_split(n);
+		if (entropy > DEFAULT_ENTROPY_THRESHOLD) {
+			// set next depth bit to 0 in mask
+			size_t child_byte_idx = pgctx->depth / 8;
+			size_t child_bit_pos = 7 - (pgctx->depth % 8);
+			pgctx->mask_buf[child_byte_idx] &= ~(1u << child_bit_pos);
+			merge_subtrees(rz_pvector_at(&n->children, 1), rz_pvector_at(&n->children, 0));
+			rz_pvector_pop(&n->children);
+		}
+	}
+
 	if (n->is_end) {
-		ut8 *buf = rz_mem_dup(pgctx->buf, pgctx->depth);
-		if (!buf) {
-			RZ_LOG_ERROR("Failed to allocate memory for prologue buffer\n");
+		size_t byte_len = pgctx->depth / 8;
+		ut8 *byte_buf = rz_mem_dup(pgctx->byte_buf, byte_len);
+		ut8 *mask_buf = rz_mem_dup(pgctx->mask_buf, byte_len);
+		if (!byte_buf || !mask_buf) {
+			RZ_FREE(byte_buf);
+			RZ_FREE(mask_buf);
 			return;
 		}
 
-		// TEMP: until generalization algo implemented
-		ut8 *mask = RZ_NEWS0(ut8, pgctx->depth);
-		memset(mask, 0xFF, pgctx->depth);
-
-		PGPrologue p = { .bytes = buf, .mask = mask };
+		PGPrologue p = { .bytes = byte_buf, .mask = mask_buf };
 		rz_vector_push(pgctx->prologues, &p);
 	}
 	pgctx->depth++;
@@ -588,6 +685,10 @@ static void pre_visit_prologues(RzTrieNode *n, void *user) {
 static void post_visit_prologues(RzTrieNode *n, void *user) {
 	rz_return_if_fail(n && n->data && user);
 	ProloguesDFSContext *pgctx = user;
+	// reset child's mask bit to 1
+	size_t child_byte_idx = (pgctx->depth - 1) / 8;
+	size_t child_bit_pos = 7 - ((pgctx->depth - 1) % 8);
+	pgctx->mask_buf[child_byte_idx] |= (1u << child_bit_pos);
 	pgctx->depth--;
 }
 
@@ -601,27 +702,30 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_generalize_handler(RzCore *core, int argc, c
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	// TODO: Core Generalization algo
-	// for now: just extracting raw prologues from trie
-
 	rz_vector_clear(ctx->prologues);
 	ctx->store_prologue_len = ctx->trie_prologue_len;
 
-	ut8 *buf = RZ_NEWS0(ut8, ctx->trie_prologue_len);
-	if (!buf) {
+	ut8 *byte_buf = RZ_NEWS0(ut8, ctx->trie_prologue_len);
+	ut8 *mask_buf = RZ_NEWS0(ut8, ctx->trie_prologue_len);
+	if (!byte_buf || !mask_buf) {
+		RZ_FREE(byte_buf);
+		RZ_FREE(mask_buf);
 		return RZ_CMD_STATUS_ERROR;
 	}
+	memset(mask_buf, 0xFF, ctx->trie_prologue_len);
 
 	ProloguesDFSContext pgctx = {
 		.prologues = ctx->prologues,
-		.buf = buf,
+		.byte_buf = byte_buf,
+		.mask_buf = mask_buf,
 		.depth = 0
 	};
 
 	rz_trie_dfs(ctx->pg_trie->root, pre_visit_prologues, NULL, post_visit_prologues, &pgctx);
 
 	RZ_LOG_INFO("pgg: Generated %" PFMTSZu " prologues from trie\n", rz_vector_len(ctx->prologues));
-	RZ_FREE(buf);
+	RZ_FREE(byte_buf);
+	RZ_FREE(mask_buf);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -765,7 +869,7 @@ static void edge_visit_sd(RzTrieNode *parent, RzTrieNode *child, void *user) {
 	}
 	rz_structured_data_map_add_unsigned(entry, "node_id", sdctx->curr_id, false);
 	rz_structured_data_map_add_unsigned(entry, "parent_id", p_id, false);
-	rz_structured_data_map_add_unsigned(entry, "byte_val", nd->byte_val, false);
+	rz_structured_data_map_add_boolean(entry, "bit_val", nd->bit_val);
 	rz_structured_data_map_add_unsigned(entry, "hit_cnt", nd->hit_cnt, false);
 }
 
@@ -902,6 +1006,7 @@ static bool rz_cmd_prologues_gen_init(RzCore *core, RZ_OUT void **user) {
 
 	ctx->trie_prologue_len = DEFAULT_PROLOGUE_LEN;
 	ctx->store_prologue_len = 0;
+	ctx->entropy_threshold = DEFAULT_ENTROPY_THRESHOLD;
 
 	ctx->fpaths = rz_set_s_new(HT_STR_DUP);
 	if (!ctx->fpaths) {
@@ -969,9 +1074,13 @@ static bool rz_cmd_prologues_gen_init(RzCore *core, RZ_OUT void **user) {
 	if (!cfg) {
 		goto error;
 	}
-	rz_config_add_integer_bind(cfg, "plugins.prologues_generator.trie_prologue_len", // TODO: too long name? but have to use plugin.<plugin_name> as this is how plugin configs are deleted and eval.
+	rz_config_add_integer_bind(cfg, "plugins.prologues_generator.trie_prologue_len",
 		"Number of bytes (>0) to extract from start of function for prologue generation",
 		config_trie_prologue_len_getter, config_trie_prologue_len_setter, NULL, ctx);
+
+	rz_config_add_string_bind(cfg, "plugins.prologues_generator.entropy_threshold",
+		"Threshold for shanon entropy of node split to consider 0.0 to 1.0",
+		config_entropy_threshold_getter, config_entropy_threshold_setter, NULL, ctx);
 
 	ht_sp_insert(core->plugin_configs, "prologues_generator", cfg);
 
