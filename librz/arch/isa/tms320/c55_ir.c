@@ -500,7 +500,10 @@ static ut64 c55_branch_target(const C55Insn *insn, ut64 pc) {
 			if (o->abs_target) {
 				// Absolute target: the operand is the destination address
 				// itself (24-bit program space), not a pc-relative offset.
-				return v & 0xffffff;
+				// The C54x counts program words here, so scale the target
+				// into the byte address space the analysis works in.
+				ut64 target = v & 0xffffff;
+				return insn->arch == C55_ARCH_C54X ? target * 2 : target;
 			}
 			st64 soff = o->reltarget_unsigned
 				? (st64)v

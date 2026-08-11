@@ -347,29 +347,26 @@ ar4 = 0x30
 EOF
 RUN
 
-NAME=C54x RzIL VM: emulateme _decrypt writes hex digits to the UART buffer
+# Key at word 0x280 (byte 0x500) in A, encrypted seckrit at _seckrit; the stack
+# is kept clear of .text, which the linker places at byte 0x100.
+NAME=C54x RzIL VM: emulateme _decrypt decrypts seckrit to "Hello from RzIL!"
 FILE=bins/tms320/emulateme_nostd.ccsv5.c54x.ticoff2.dbg.coff
 CMDS=<<EOF
 e io.cache=true
-wx 30003100320033003400350036003700380039006100620063006400650066 @ 0x900
-wx 0006 @ 0x9a4
-wx 00000000 @ 0x9a8
-s 0xec
+wx 510053004d0077005800140051005f0045006c0017007f006e0078007f001c000000 @ 0x9ac
+wx 41006e00790043006f006c006f007500720059006f0075004c0069006b006500 @ 0x500
+s 0x1d8
 aezi
-aezv a 0x5a
-aezv b 0x5
-aezv sp 0x100
-aezsu 0x136
-p8 4 @ 0xc00
-p8 2 @ 0x9aa
+aezv sp 0x800
+aezv a 0x280
+aezsu 0x270
+p8 32 @ 0x9ac
 ar a
 EOF
 EXPECT=<<EOF
-a = 0x5a
-b = 0x5
-sp = 0x100
-35006100
-0200
-a = 0x0000000002
+sp = 0x800
+a = 0x280
+480065006c006c006f002000660072006f006d00200052007a0049004c002100
+a = 0x0000000001
 EOF
 RUN
