@@ -11,6 +11,7 @@
 #include <rz_core.h>
 #include <rz_cons.h>
 #include <rz_util.h>
+#include "prologues_generator.h"
 #include "prologues_generator.inc"
 
 #define DEFAULT_PROLOGUE_LEN      16
@@ -261,7 +262,7 @@ static bool build_prefix_tree_from_file(RzBinFile *binfile, RzTrie *t, ut64 prol
 	return true;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_raw_prologues_gen_handler(RzCore *core, int argc, const char **argv) {
+RZ_API RzCmdStatus rz_cmd_raw_prologues_gen_handler(RzCore *core, int argc, const char **argv) {
 	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
 	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
 
@@ -310,7 +311,7 @@ RZ_IPI RzCmdStatus rz_cmd_raw_prologues_gen_handler(RzCore *core, int argc, cons
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_raw_prologues_gen_all_handler(RzCore *core, int argc, const char **argv) {
+RZ_API RzCmdStatus rz_cmd_raw_prologues_gen_all_handler(RzCore *core, int argc, const char **argv) {
 	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
 	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
 	RzBin *bin = rz_core_get_bin(core);
@@ -363,7 +364,7 @@ RZ_IPI RzCmdStatus rz_cmd_raw_prologues_gen_all_handler(RzCore *core, int argc, 
 	return res ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_raw_prologues_gen_dir_handler(RzCore *core, int argc, const char **argv) {
+RZ_API RzCmdStatus rz_cmd_raw_prologues_gen_dir_handler(RzCore *core, int argc, const char **argv) {
 	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
 	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
 
@@ -439,7 +440,7 @@ RZ_IPI RzCmdStatus rz_cmd_raw_prologues_gen_dir_handler(RzCore *core, int argc, 
 	return res ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_prologues_load_handler(RzCore *core, int argc, const char **argv) {
+RZ_API RzCmdStatus rz_cmd_prologues_load_handler(RzCore *core, int argc, const char **argv) {
 	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
 	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
 
@@ -692,7 +693,7 @@ static void post_visit_prologues(RzTrieNode *n, void *user) {
 	pgctx->depth--;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_prologues_generalize_handler(RzCore *core, int argc, const char **argv) {
+RZ_API RzCmdStatus rz_cmd_prologues_generalize_handler(RzCore *core, int argc, const char **argv) {
 	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
 	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
 
@@ -729,7 +730,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_generalize_handler(RzCore *core, int argc, c
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_prologues_search_handler(RzCore *core, int argc, const char **argv) {
+RZ_API RzCmdStatus rz_cmd_prologues_search_handler(RzCore *core, int argc, const char **argv) {
 	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
 	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
 
@@ -793,7 +794,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_search_handler(RzCore *core, int argc, const
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_prologues_store_clear_handler(RzCore *core, int argc, const char **argv) {
+RZ_API RzCmdStatus rz_cmd_prologues_store_clear_handler(RzCore *core, int argc, const char **argv) {
 	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
 	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
 	rz_vector_clear(ctx->prologues);
@@ -816,7 +817,7 @@ static bool prologue_trie_clear(CorePGContext *ctx) {
 	return true;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_prologues_trie_clear_handler(RzCore *core, int argc, const char **argv) {
+RZ_API RzCmdStatus rz_cmd_prologues_trie_clear_handler(RzCore *core, int argc, const char **argv) {
 	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
 	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
 	if (!prologue_trie_clear(ctx)) {
@@ -825,7 +826,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_trie_clear_handler(RzCore *core, int argc, c
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_reset_session_handler(RzCore *core, int argc, const char **argv) {
+RZ_API RzCmdStatus rz_cmd_reset_session_handler(RzCore *core, int argc, const char **argv) {
 	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
 	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
 
@@ -904,7 +905,7 @@ static bool print_sd(RzStructuredData *sd, RzOutputMode mode) {
 	return true;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_prefix_tree_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_API RzCmdStatus rz_cmd_prefix_tree_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
 	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
 
@@ -961,7 +962,7 @@ RZ_IPI RzCmdStatus rz_cmd_prefix_tree_print_handler(RzCore *core, int argc, cons
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_prologues_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_API RzCmdStatus rz_cmd_prologues_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
 	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
 
