@@ -124,6 +124,30 @@ RZ_API bool rz_coff_supported_arch(RzBuffer *b) {
 	return coff_guess_endianness(b, &big_endian);
 }
 
+/**
+ * \brief Bytes per target address unit of \p obj.
+ * \param obj COFF object
+ * \return 1 for byte-addressed targets, 2 for the 16-bit word-addressed TI DSPs
+ *
+ * The C54x and C28x address 16-bit words, so their loadable section
+ * sizes and every address in the file count words, not bytes. Rizin's address
+ * space is byte-based, so those have to be scaled to line up with the section
+ * data. Debug sections are byte streams even on these targets and are excluded
+ * by the caller.
+ */
+RZ_API ut32 rz_coff_addr_scale(RZ_NONNULL struct rz_bin_coff_obj *obj) {
+	rz_return_val_if_fail(obj, 1);
+	switch (obj->target_id) {
+	case COFF_FILE_TARGET_TI_TMS320C5400:
+	case COFF_FILE_TARGET_TI_TMS320C2800:
+		return 2;
+	default:
+		// The C55x addresses program memory by byte, so its objects need no
+		// scaling despite being a fixed-point DSP.
+		return 1;
+	}
+}
+
 RZ_API ut64 rz_coff_perms_from_section_flags(ut32 flags) {
 	ut32 r = 0;
 	if (flags & COFF_SCN_MEM_READ) {
@@ -375,11 +399,15 @@ static bool bin_coff_init_scn_va(struct rz_bin_coff_obj *obj) {
 	CoffScnHdr *scn_hdr;
 	rz_vector_enumerate (obj->scn_hdrs, scn_hdr, i) {
 		if (is_exec) {
-			obj->scn_va[i] = scn_hdr->s_vaddr;
+			obj->scn_va[i] = (ut64)scn_hdr->s_vaddr * rz_coff_addr_scale(obj);
 			continue;
 		}
 		obj->scn_va[i] = va;
-		va += scn_hdr->s_size ? scn_hdr->s_size : 16;
+		// Advance by the mapped byte length so the synthetic bases cannot
+		// overlap once a word-counted section is scaled.
+		const ut32 loadable = COFF_SCN_CNT_CODE | COFF_SCN_CNT_INIT_DATA | COFF_SCN_CNT_UNIN_DATA;
+		const ut32 scale = (scn_hdr->s_flags & loadable) ? rz_coff_addr_scale(obj) : 1;
+		va += scn_hdr->s_size ? (ut64)scn_hdr->s_size * scale : 16;
 		va = RZ_ROUND(va, 16ULL);
 	}
 	return true;
