@@ -251,6 +251,8 @@ echo
 pdf @ 0x00c013b0
 echo
 pdf @ 0x00c0168a
+echo
+pd @ 0x00c01a26
 EOF
 EXPECT=<<EOF
     offset   size arch bits machine                                      big_endian 
@@ -287,81 +289,63 @@ EXPECT=<<EOF
 0x00000000    0x2 0x00c00004    0x2   0x0 -r-- C_INITSEC_UNKNOWN         
 0x00000000   0x18 0x00c0002c   0x18   0x0 -r-- C_CLRMEMSEC_UNKNOWN       
 
-            ;-- int.RESET:
+            ;-- isr.RESET:
 / entry0();
 \       ,=< 0x00c00000      fac08400       jmps  ?C_RESET              ; sym.a166_FAR._C_STARTUP
 \       |                                                              ; 0xc00084
         |   ;-- section.C_INITSEC_UNKNOWN:
-        |   0x00c00004      0000           add   r0, r0                ; [25] -r-- section size 2 named C_INITSEC_UNKNOWN
+        |   0x00c00004      .word 0x0000                               ; [25] -r-- section size 2 named C_INITSEC_UNKNOWN
         |   0x00c00006      ffff           bset  r15.15
-/ sym.isr_vec_0x8();
+/ sym.isr.NMI_trap();
 \       |   0x00c00008      fac07400       jmps  NMI_trap              ; 0xc00074 ; "\r\xff\r\xff\r\xff\r\xff\xff\xff\xff\xff\xfa\xc0\x80\U00000012\xa5Z\xa5\xa5р\xe6\xea"
         |   0x00c0000c      ffff           bset  r15.15
         |   0x00c0000e      ffff           bset  r15.15
-/ sym.isr_vec_0x10();
+/ sym.isr.STKOF_trap();
 \       |   0x00c00010      fac07600       jmps  STKOF_trap            ; 0xc00076 ; "\r\xff\r\xff\r\xff\xff\xff\xff\xff\xfa\xc0\x80\U00000012\xa5Z\xa5\xa5р\xe6\xea"
         |   0x00c00014      ffff           bset  r15.15
         |   0x00c00016      ffff           bset  r15.15
-/ sym.isr_vec_0x18();
+/ sym.isr.STKUF_trap();
 \       |   0x00c00018      fac07800       jmps  STKUF_trap            ; 0xc00078 ; "\r\xff\r\xff\xff\xff\xff\xff\xfa\xc0\x80\U00000012\xa5Z\xa5\xa5р\xe6\xea"
-       @|   ; CALL XREFS from main @ 0xc01550, 0xc01614
-       @|   ; CALL XREF from getline @ 0xc018ea
-       @|   ; CALL XREF from sym.getchar @ 0xc019d2
-       @|   ;-- getkey:
-       @|   ;-- section.PR_GETKEY_FCODE:
-       @|   ;-- _getkey:
+        |   ; CALL XREFS from main @ 0xc01550, 0xc01614
+        |   ; CALL XREF from getline @ 0xc018ea
+        |   ; CALL XREF from sym.getchar @ 0xc019d2
+        |   ;-- getkey:
+        |   ;-- section.PR_GETKEY_FCODE:
+        |   ;-- _getkey:
 / _getkey();
-|      @=-> 0x00c0001c      9ab7fe70       jnb   S0RIC.7, _getkey      ; Getkey.c:22 ; 0xc0001c ; [09] -rw- section size 12 named PR_GETKEY_FCODE
+|       |   0x00c0001c      9ab7fe70       jnb   S0RIC.7, _getkey      ; Getkey.c:22 ; 0xc0001c ; [09] -rw- section size 12 named PR_GETKEY_FCODE
 |       |   0x00c00020      f2f4b2fe       mov   r4, 0xfe06:0x3eb2     ; Getkey.c:26
 |       |   0x00c00024      7eb7           bclr  S0RIC.7               ; Getkey.c:27
 \       |   0x00c00026      db00           rets                        ; Getkey.c:28
-/ sym.isr_vec_0x28();
+/ sym.isr.Class_B_trap();
 \      ,==< 0x00c00028      fac07a00       jmps  Class_B_trap          ; 0xc0007a ; "\r\xff\xff\xff\xff\xff\xfa\xc0\x80\U00000012\xa5Z\xa5\xa5р\xe6\xea"
        ||   ;-- section.C_CLRMEMSEC_UNKNOWN:
-       ||   0x00c0002c      1a800400       bfldh P0L, #0x00, #0x04     ; [26] -r-- section size 24 named C_CLRMEMSEC_UNKNOWN
-       ||   0x00c00030      40c2           cmp   r12, r2
-       ||   0x00c00032      0fa0           bset  T2CON.0
-       ||   0x00c00034      04005cc2       add   0xfe06:0x025c, DPP0
-       ||   0x00c00038      03000000       addb  DPP0, 0xfe00:0x0000
-       ||   0x00c0003c      0080           add   r8, r0
-       ||   0x00c0003e      04005bc2       add   0xfe06:0x025b, DPP0
-       ||   0x00c00042      0000           add   r0, r0
+       ||   0x00c0002c hex length=24 delta=0
+0x00c0002c  1a80 0400 40c2 0fa0 0400 5cc2 0300 0000  ....@.....\.....
+0x00c0003c  0080 0400 5bc2 0000                      ....[...
+ ; [26] -r-- section size 24 named C_CLRMEMSEC_UNKNOWN
        ||   ;-- section.C_LIB_NCONST_NCONST:
-       ||   0x00c00044      0000           add   r0, r0                ; [19] -r-- section size 48 named C_LIB_NCONST_NCONST
-       ||   0x00c00046      803f           cmpi1 r15, #0x03
-       ||   0x00c00048      0000           add   r0, r0
-       ||   0x00c0004a      2041           sub   r4, r1
-       ||   0x00c0004c      0000           add   r0, r0
-       ||   0x00c0004e      c842           mov   [r4], [r2]
-       ||   0x00c00050      0000           add   r0, r0
-       ||   0x00c00052      7a440040       bxor  0xfd88.4, section.BI0_MEASURE_BIT0
-       ||   0x00c00056      1c46           rol   r6, #0x04
-       ||   0x00c00058      0050           add   r5, r0
-       ||   0x00c0005a      c3470024       CoSTORE r4, 0xffde
-       ||   0x00c0005e      74498096       or    0xfe04:0x1680, CC9
-       ||   0x00c00062      184b           addc  r4, [r3]
-       ||   0x00c00064      20bc           sub   r11, r12
-       ||   0x00c00066      be4c           bclr  0xfd98.11
-       ||   0x00c00068      ca1b0e5a       calla- cc_NUSR1, 0xc05a0e   ; 0x5a0e
-       ||   0x00c0006c      1cc2           rol   r2, #0x0c
-       ||   0x00c0006e      5367aec5       xorb  PECC7, 0xfe06:0x05ae
-       ||   0x00c00072      9d74           jmpr  cc_NC/UGE, 0xc0015c   ; sym.a166_NEAR.RepeatInit+0x2
-      @||   ; CODE XREF from sym.isr_vec_0x8 @ 0xc00008
-      @||   ;-- section.PR_TRAPS_FCODE:
+       ||   0x00c00044 hex length=48 delta=0
+0x00c00044  0000 803f 0000 2041 0000 c842 0000 7a44  ...?.. A...B..zD
+0x00c00054  0040 1c46 0050 c347 0024 7449 8096 184b  .@.F.P.G.$tI...K
+0x00c00064  20bc be4c ca1b 0e5a 1cc2 5367 aec5 9d74   ..L...Z..Sg...t
+ ; [19] -r-- section size 48 named C_LIB_NCONST_NCONST
+       ||   ; CODE XREF from sym.isr.NMI_trap @ 0xc00008
+       ||   ;-- section.PR_TRAPS_FCODE:
 / NMI_trap();
-\     @==-> 0x00c00074      0dff           jmpr  cc_UC, NMI_trap       ; Traps.c:24 ; [10] -rw- section size 8 named PR_TRAPS_FCODE
-      @||   ; CODE XREF from sym.isr_vec_0x10 @ 0xc00010
+\      ||   0x00c00074      0dff           jmpr  cc_UC, NMI_trap       ; Traps.c:24 ; [10] -rw- section size 8 named PR_TRAPS_FCODE
+       ||   ; CODE XREF from sym.isr.STKOF_trap @ 0xc00010
 / STKOF_trap();
-\     @==-> 0x00c00076      0dff           jmpr  cc_UC, STKOF_trap     ; Traps.c:33
-      @||   ; CODE XREF from sym.isr_vec_0x18 @ 0xc00018
+\      ||   0x00c00076      0dff           jmpr  cc_UC, STKOF_trap     ; Traps.c:33
+      @||   ; CODE XREF from sym.isr.STKUF_trap @ 0xc00018
 / STKUF_trap();
 \     @==-> 0x00c00078      0dff           jmpr  cc_UC, STKUF_trap     ; Traps.c:42
-      @||   ; CODE XREF from sym.isr_vec_0x28 @ 0xc00028
+      @||   ; CODE XREF from sym.isr.Class_B_trap @ 0xc00028
 / Class_B_trap();
 \     @`--> 0x00c0007a      0dff           jmpr  cc_UC, Class_B_trap   ; Traps.c:56
         |   0x00c0007c      ffff           bset  r15.15
         |   0x00c0007e      ffff           bset  r15.15
-/ sym.isr_vec_0x80();
+/ sym.isr.T0INT();
 \       |   0x00c00080      fac08012       jmps  timer0                ; 0xc01280
         |   ; CODE XREF from entry0 @ 0xc00000
         |   ;-- C_RESET:
@@ -484,6 +468,38 @@ EXPECT=<<EOF
 |           0x00c00196      dc09           exts  r9, #1                ; START_V2.A66:1905
 |           0x00c00198      a9a8           movb  rl5, [r8]             ; START_V2.A66:1906
 |           0x00c0019a      0881           add   r8, #1                ; START_V2.A66:1907
+|           0x00c0019c      1890           addc  r9, #0                ; START_V2.A66:1908
+|           0x00c0019e      b9a3           movb  [r3], rl5             ; START_V2.A66:1909
+|           0x00c001a0      0831           add   r3, #1                ; START_V2.A66:1910
+|           0x00c001a2      8af406e0       jb    r4.14, sym.a166_NEAR.NoDPP3Adj ; START_V2.A66:1911 ; 0xc001b2 ; "(!=\xf0\x9a\xf8\xd0"
+|           0x00c001a6      8af304e0       jb    r3.14, sym.a166_NEAR.NoDPP3Adj ; START_V2.A66:1912 ; 0xc001b2 ; "(!=\xf0\x9a\xf8\xd0"
+|           0x00c001aa      06030100       add   DPP3, #0x0001         ; START_V2.A66:1913
+\           0x00c001ae      76f300c0       or    r3, #0xc000           ; START_V2.A66:1914
+            ; DATA XREFS from sym.a166_NEAR.CopyInitVal @ 0xc001a2, 0xc001a6
+/ sym.a166_NEAR.NoDPP3Adj();
+|           0x00c001b2      2821           sub   r2, #1                ; START_V2.A66:1919
+|           0x00c001b4      3df0           jmpr  cc_NZ/NE, sym.a166_NEAR.CopyInitVal ; START_V2.A66:1920
+|           0x00c001b6      9af8d000       jnb   r8.0, sym.a166_NEAR.RepeatInit ; START_V2.A66:1921 ; 0xc0015a
+|           0x00c001ba      0881           add   r8, #1                ; START_V2.A66:1922
+|           0x00c001bc      1890           addc  r9, #0                ; START_V2.A66:1923
+\           0x00c001be      0dcd           jmpr  cc_UC, sym.a166_NEAR.RepeatInit ; START_V2.A66:1924
+            ; DATA XREF from sym.a166_NEAR.RepeatInit @ 0xc00168
+/ sym.a166_NEAR.InitBit();
+|           0x00c001c0      c043           movbz r3, rl2               ; START_V2.A66:1926
+|           0x00c001c2      5c13           shl   r3, #0x01             ; START_V2.A66:1927
+|           0x00c001c4      76f300fd       or    r3, #section.BI0_MEASURE_BIT0 ; START_V2.A66:1928
+|           0x00c001c8      e014           mov   r4, #0x01             ; START_V2.A66:1929
+|           0x00c001ca      f1a5           movb  rl5, rh2              ; START_V2.A66:1930
+|           0x00c001cc      4c45           shl   r4, r5                ; START_V2.A66:1931
+|           0x00c001ce      8af20370       jb    r2.7, sym.a166_NEAR.SetBit ; START_V2.A66:1932 ; 0xc001d8 ; "xK\xb8C\r\xbe\xfa\xc0n\U00000014:\xf7\xf7\xff\xca"
+|           0x00c001d2      9140           cpl   r4                    ; START_V2.A66:1933
+|           0x00c001d4      684b           and   r4, [r3]              ; START_V2.A66:1934
+\           0x00c001d6      0d01           jmpr  cc_UC, sym.a166_NEAR.StoreBit ; START_V2.A66:1935
+            ; DATA XREF from sym.a166_NEAR.InitBit @ 0xc001ce
+/ sym.a166_NEAR.SetBit();
+\           0x00c001d8      784b           or    r4, [r3]              ; START_V2.A66:1936
+/ sym.a166_NEAR.StoreBit();
+|           0x00c001da      b843           mov   [r3], r4              ; START_V2.A66:1937
 
             ; CALL XREF from sym.a166_FAR._C_FPATOF @ 0xc00660
 / sym.a166_FAR._C_FPADD();
@@ -658,6 +674,53 @@ EXPECT=<<EOF
 |      `==< 0x00c01700      3ddd           jmpr  cc_NZ/NE, 0xc016bc
 |           0x00c01702      fcfd           pop   r13                   ; Mcommand.c:29
 \           0x00c01704      db00           rets
+
+            ;-- section.HC_MEASURE_HCONST:
+            0x00c01a26 hex length=92 delta=0
+0x00c01a26  0a2a 2a2a 2045 5252 4f52 3a20 2573 0a00  .*** ERROR: %s..
+0x00c01a36  554e 4b4e 4f57 4e20 434f 4d4d 414e 4400  UNKNOWN COMMAND.
+0x00c01a46  0a43 6c65 6172 204d 6561 7375 7265 6d65  .Clear Measureme
+0x00c01a56  6e74 2052 6563 6f72 6473 0a00 0a53 7461  nt Records...Sta
+0x00c01a66  7274 204d 6561 7375 7265 6d65 6e74 2052  rt Measurement R
+0x00c01a76  6563 6f72 6469 6e67 0a00 0a00            ecording....
+ ; [03] -r-- section size 1062 named HC_MEASURE_HCONST
+            ;-- str.INVALID_INTERVAL_FORMAT:
+            ;-- section.HC_MCOMMAND_HCONST:
+            0x00c01e4c     .string "INVALID INTERVAL FORMAT" ; len=23  ; [01] -r-- section size 111 named HC_MCOMMAND_HCONST
+            ;-- str.INVALID_TIME_FORMAT:
+            0x00c01e64     .string "INVALID TIME FORMAT" ; len=19
+            0x00c01e77  ~   0025           add   r2, r5
+            ;-- str.bd:_bd:_bd:
+            0x00c01e78     .string "%bd:%bd:%bd" ; len=11
+            0x00c01e83  ~   0025           add   r2, r5
+            ;-- str.bd:_f:
+            0x00c01e84     .string "%bd:%f" ; len=6
+            0x00c01e8a  ~   0020           add   r2, r0
+            ;-- str.AN_d:_4.2fV:
+            0x00c01e8b     .string " AN%d:%4.2fV" ; len=12
+            0x00c01e97  ~   000d           add   r0, r13
+            ;-- str.Time:__2d:_02d:_02d._03d__P2:_04X:
+            0x00c01e98     .string "\rTime: %2d:%02d:%02d.%03d  P2:%04X" ; len=34
+            0x00c01eba      00ff           add   r15, r15
+            ;-- section.HC__PRNFMT_HCONST:
+            0x00c01ebc hex length=90 delta=0
+0x00c01ebc  2d04 2b20 2080 4c01 4202 4800 2310 2e40  -.+  .L.B.H.#..@
+0x00c01ecc  0000 d007 5300 2c08 5800 3208 4f00 3a08  ....S.,.X.2.O.:.
+0x00c01edc  4400 3a08 4900 c007 4300 5a08 5500 2a08  D.:.I...C.Z.U.*.
+0x00c01eec  5000 9409 2a00 ba09 4e00 d40a 4600 460a  P...*...N...F.F.
+0x00c01efc  4500 080a 4700 0000 2830 2900 4e61 4e00  E...G...(0).NaN.
+0x00c01f0c  2b49 4e46 002d 494e 4600                 +INF.-INF.
+ ; [18] -r-- section size 90 named HC__PRNFMT_HCONST
+            0x00c01f16      ffff           bset  r15.15
+            0x00c01f18      ffff           bset  r15.15
+            0x00c01f1a      ffff           bset  r15.15
+            0x00c01f1c      ffff           bset  r15.15
+            0x00c01f1e      ffff           bset  r15.15
+            0x00c01f20      ffff           bset  r15.15
+            0x00c01f22      ffff           bset  r15.15
+            0x00c01f24      ffff           bset  r15.15
+            0x00c01f26      ffff           bset  r15.15
+            0x00c01f28      ffff           bset  r15.15
 EOF
 RUN
 
