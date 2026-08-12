@@ -100,6 +100,8 @@ static bool check_buffer(RzBuffer *b) {
 static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzPVector *ret;
 	RzBinAddr *addr;
+	rz_bin_omf166_obj *obj = (rz_bin_omf166_obj *)bf->o->bin_obj;
+
 	if (!((ret = rz_pvector_new(free)))) {
 		return NULL;
 	}
@@ -108,7 +110,7 @@ static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 		return NULL;
 	}
 	addr->type = RZ_BIN_SPECIAL_SYMBOL_ENTRY;
-	addr->vaddr = 0xC00000;
+	addr->vaddr = obj->base_addr;
 	rz_pvector_push(ret, addr);
 	return ret;
 }
@@ -180,8 +182,8 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		new->name = rz_str_newf("%s_%s", name, class_name);
 		new->size = new->vsize = section->Seclen;
 		new->vaddr = (section->SegmentNumber8 << 16) + section->offset;
-		new->has_strings = (section->Type == 1) ? true : false;
-		new->is_data = (section->Type == 1) ? true : false;
+		new->has_strings = section->Type != OMF_SEC_TYPE_CODE;
+		new->is_data = section->Type != OMF_SEC_TYPE_CODE;
 		new->is_segment = 0;
 		new->perm = c166_get_perms_from_class(section->class_index);
 		rz_pvector_push(ret, new);
@@ -217,6 +219,9 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	}
 
 	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
+	if (!ret) {
+		return NULL;
+	}
 	rz_pvector_sort(obj->symbols_vec, offset_cmp, NULL);
 	void **it;
 	rz_pvector_foreach (obj->symbols_vec, it) {
@@ -371,6 +376,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->rclass = rz_str_dup("OMF166");
 	ret->compiler = rz_str_dup("keil");
 	ret->os = rz_str_dup("c166");
+	ret->cpu = rz_str_dup("c166-generic");
 	ret->machine = rz_str_dup("Siemens/Infineon C166 family microcontroller");
 	ret->arch = rz_str_dup("c166");
 	ret->big_endian = false;
@@ -395,6 +401,7 @@ static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 
 static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	RzBinAddr *ptr = NULL;
+	rz_bin_omf166_obj *obj = (rz_bin_omf166_obj *)bf->o->bin_obj;
 
 	switch (type) {
 	case RZ_BIN_SPECIAL_SYMBOL_ENTRY:
@@ -404,7 +411,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 			return NULL;
 		}
 		ptr->type = RZ_BIN_SPECIAL_SYMBOL_ENTRY;
-		ptr->vaddr = 0xC00000;
+		ptr->vaddr = obj->base_addr;
 		return ptr;
 	case RZ_BIN_SPECIAL_SYMBOL_MAIN:
 		if (!((ptr = RZ_NEW0(RzBinAddr)))) {
@@ -419,6 +426,11 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	default:
 		return NULL;
 	}
+}
+
+static ut64 baddr(RzBinFile *bf) {
+	const rz_bin_omf166_obj *obj = (rz_bin_omf166_obj *)bf->o->bin_obj;
+	return obj->base_addr;
 }
 
 RzBinPlugin rz_bin_plugin_omf166 = {
@@ -438,6 +450,7 @@ RzBinPlugin rz_bin_plugin_omf166 = {
 	.info = &info,
 	.strings = &strings,
 	.get_vaddr = &get_vaddr,
+	.baddr = baddr
 };
 
 #ifndef RZ_PLUGIN_INCORE

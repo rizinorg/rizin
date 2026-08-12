@@ -11,6 +11,8 @@
 #include <rz_bin.h>
 #include "omf_specs.h"
 
+#define MAX_NAME_LEN UT8_MAX
+
 #define FINAL_TYPE 0x00
 /**
  * <b>COMPONENT-LIST Descriptor</b><br>
@@ -224,12 +226,22 @@ typedef enum omf_ityp_t {
 	/**
 	 * Used to specify an object file as input for L166.
 	 */
-	ITYP_COMMANDLINE = 0x05, ///< Commandline descriptor.
+	ITYP_INVOCATION_LINE = 0xFF, ///< Invocation Line descriptor.
 	/**
 	 * Contains the invocation line to the translator
 	 * including all invocation controls.
 	 */
 } OMF_ITYP;
+
+/**
+ * \brief OMF_SEC_TYPE in SECDEF record, specifies the type of the section
+ */
+typedef enum omf_sec_t {
+	OMF_SEC_TYPE_BIT = 0x00, ///< BIT.
+	OMF_SEC_TYPE_DATA = 0x01, ///< DATA.
+	OMF_SEC_TYPE_CODE = 0x02, ///< CODE.
+	OMF_SEC_TYPE_CONST = 0x03, ///< CONST.
+} OMF_SEC_TYPE;
 
 typedef enum {
 	C166_CLASS_ICODE,
@@ -300,7 +312,7 @@ typedef struct {
 	ut32 base; ///< specifies the local address base for the following symbolic formation using the base address format.
 	ut8 n; ///< n max 255, so name array len is 255
 	char *name;
-	char name2[255]; ///< represents the symbol name
+	char name2[MAX_NAME_LEN]; ///< represents the symbol name
 	ut64 size;
 	ut16 seg_idx;
 	ut32 offset; ///< is a 16 Bit offset of the symbol with respect to the referent value pecified by ’LocBase’.
@@ -360,7 +372,7 @@ typedef struct {
 	ut8 SectionIndex;
 	ut16 FrameNumber; // (optional) if GroupIndex and SectionIndex equals 0
 	ut8 n; ///< Pathname length, n max 255, so name array len is 255
-	char name[255]; ///< is the block name. If the record describes an unnamed block, then a null name is used.
+	char name[MAX_NAME_LEN]; ///< is the block name. If the record describes an unnamed block, then a null name is used.
 	ut16 BlockOffset16; ///< is a 16 Bit value which is the offset of the first byte of the block with respect to the referent value specified by ’BlockBase’.
 	ut16 BlockLength16; ///< this field gives the length of the block in bytes.
 
@@ -451,7 +463,7 @@ typedef struct {
 
 typedef struct {
 	ut16 index;
-	char name[255];
+	char name[MAX_NAME_LEN];
 } OMF_lnames;
 
 /**
@@ -483,7 +495,7 @@ typedef struct {
 	ut8 mark; ///< Byte, required to be zero.
 	ut32 timestamp; ///< File creation date in Microsoft’s ’fstat()’ format.
 	ut8 n; ///< Pathname length, n max 255, so name array len is 255
-	char pathname[255]; ///< specifies the Pathname of one file. In case of iTyp 4, more than one pathname may be specified.
+	char pathname[MAX_NAME_LEN]; ///< specifies the Pathname of one file. In case of iTyp 4, more than one pathname may be specified.
 } OMF_deplsts;
 
 /**
@@ -509,7 +521,7 @@ typedef struct {
 	ut16 LineNumber; ///< gives the line number in range 0 to 32767. The most significant bit is reserved for future use and is always zero.
 	ut64 address; ///< Specifies the address of the following line numbers using the base address + offset format.
 	ut8 n;
-	char filename[255];
+	char filename[MAX_NAME_LEN];
 } OMF_linnums;
 
 typedef struct {
@@ -559,7 +571,7 @@ typedef struct {
 	bool nopurge; ///< NOPURGE bit; 1 = comment may not be purged from the file
 	bool is_filename;
 	ut8 n;
-	char text[255]; ///< this field provides the commentary text.
+	char text[MAX_NAME_LEN]; ///< this field provides the commentary text.
 } OMF_coments;
 
 typedef struct {
@@ -577,7 +589,7 @@ typedef struct {
 typedef struct {
 	ut16 index;
 	ut8 n; ///< n max 255, so name array len is 255
-	char name[255];
+	char name[MAX_NAME_LEN];
 } OMF_debug_includes;
 
 typedef struct {
@@ -593,7 +605,7 @@ typedef struct {
 	ut8 REP8;
 	ut8 POS8;
 	ut8 n; ///< n max 255, so name array len is 255
-	char name[255];
+	char name[MAX_NAME_LEN];
 } OMF_component;
 
 typedef struct {
@@ -678,7 +690,7 @@ typedef struct {
 		struct {
 			bool is_struct; ///< 1 = struct, 2 = union
 			ut8 n; ///< struct/union-tag name length
-			char tagname[255]; ///< struct/union-tag name in OMF166 name format
+			char tagname[MAX_NAME_LEN]; ///< struct/union-tag name in OMF166 name format
 			ut32 size; ///< sizeof struct or union
 			ut16 member_ti; ///< reference to component list or <void>
 		} struct_union;
@@ -709,16 +721,17 @@ typedef struct {
 	ut8 REP8;
 	ut8 POS8; ///< contains a bit position if REP8 contains method 1 (RegBit)
 	ut8 n; ///< member name length
-	char name[255]; ///< member name in OMF166 name format
+	char name[MAX_NAME_LEN]; ///< member name in OMF166 name format
 } OMF_type_components;
 
 typedef struct {
 	ut16 NrOfComp16; ///< Specifies the number of components
-	OMF_type_components components[255];
+	OMF_type_components components[MAX_NAME_LEN];
 } OMF_type_component_list;
 
 typedef struct {
 	ut8 bits;
+	ut64 base_addr;
 	ut8 modinfo;
 	int TI_INDEX;
 	int SEC_INDEX;
