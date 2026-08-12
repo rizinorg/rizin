@@ -410,7 +410,7 @@ typedef struct {
  */
 typedef struct {
 	ut16 index;
-	ut16 class_index;
+	ut8 class_index;
 	ut8 Type; ///< The ’Type’ field is two bits and specifies the type of the section as follows: 0:=BIT, 1:=DATA, 2:=CODE, 3:=CONST
 	bool X; ///< The ’X’ bit is set if the section is of type ’xhuge’ (length 0 ... 16M).
 	bool H; ///< The ’H’ bit is set if the section is of type ’huge’ (length 0 ... 64K).
@@ -753,4 +753,5 @@ RZ_API char *get_memory_model(ut8 modinfo);
 ut32 get_perm_by_type(ut8 data_type);
 ut32 c166_get_perms_from_class(const ut8 class_id);
 const char *get_data_type(ut8 data_type);
+
 #endif

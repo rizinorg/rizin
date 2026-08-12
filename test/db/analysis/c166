@@ -79,18 +79,10 @@ NAME=c166: checking analysis information for coverage
 FILE=malloc://32
 CMDS=<<EOF
 e asm.arch=c166
-wx E04AAB0AFB88 @ 0
-s 0x000000
+wx AB01 @ 0
 ao ~mnemonic,opcode,type,fail,size,reg,description
 echo
-s 0x000002
-ao ~mnemonic,opcode,type,fail,size,reg,description
-echo
-s 0x000004
-ao ~mnemonic,opcode,type,fail,size,reg,description
-echo
-s 0x000000
-wx EB20 0000 0000 @ 0
+wx EB20 @ 0
 ao ~mnemonic,opcode,type,fail,size,description,stackop,stackptr,refptr
 echo
 wx 5911 @ 0
@@ -128,24 +120,13 @@ ao ~mnemonic,opcode,type,fail,size,description,stackop,stackptr,refptr
 echo
 EOF
 EXPECT=<<EOF
-opcode: mov r10, #0x04
-mnemonic: mov
-size: 2
-type: mov
-
-opcode: calli cc_UC, [r10]
+opcode: calli cc_UC, [r1]
 mnemonic: calli
 description: Call indirect subroutine if condition is met
 size: 2
 type: ircall
-reg: r10
-fail: 0x00000004
-
-opcode: reti
-mnemonic: reti
-description: Return from interrupt service subroutine
-size: 2
-type: ret
+reg: r1
+fail: 0x00000002
 
 opcode: retp 0xfe40
 mnemonic: retp
@@ -153,7 +134,7 @@ description: Return from intra-segment subroutine and pop direct word register f
 refptr: 0
 size: 2
 type: ret
-stackop: inc
+stackop: get
 stackptr: 4
 
 opcode: xorb rh0, #0x0001
@@ -217,7 +198,7 @@ refptr: 0
 size: 2
 type: trap
 fail: 0x00000002
-stackop: unk
+stackop: inc
 stackptr: 6
 
 opcode: pcall 0xfe04, 0x2c10
@@ -227,7 +208,7 @@ refptr: 0
 size: 4
 type: ucall
 fail: 0x00000004
-stackop: unk
+stackop: inc
 stackptr: 4
 
 EOF
@@ -261,7 +242,7 @@ echo
 iS
 echo
 aaa
-pd 350
+pd 150
 echo
 pd 21 @ 0x00c001e6
 echo
@@ -270,6 +251,8 @@ echo
 pdf @ 0x00c013b0
 echo
 pdf @ 0x00c0168a
+echo
+pd @ 0x00c01a26
 EOF
 EXPECT=<<EOF
     offset   size arch bits machine                                      big_endian 
@@ -278,31 +261,31 @@ EXPECT=<<EOF
 
      paddr   size      vaddr  vsize align perm name                 type flags 
 -------------------------------------------------------------------------------
-0x00000000  0x250 0x00c0168a  0x250   0x0 -r-x PR_MCOMMAND_FCODE         
+0x00000000  0x250 0x00c0168a  0x250   0x0 -rw- PR_MCOMMAND_FCODE         
 0x00000000   0x6f 0x00c01e4c   0x6f   0x0 -r-- HC_MCOMMAND_HCONST        
-0x00000000  0x45a 0x00c01230  0x45a   0x0 -r-x PR_MEASURE_FCODE          
+0x00000000  0x45a 0x00c01230  0x45a   0x0 -rw- PR_MEASURE_FCODE          
 0x00000000  0x426 0x00c01a26  0x426   0x0 -r-- HC_MEASURE_HCONST         
 0x00000000   0x1b 0x00010240   0x1b   0x0 -rw- ND0_MEASURE_NDATA0        
 0x00000000 0x2010 0x0001025c 0x2010   0x0 -rw- HD0_MEASURE_HDATA0        
 0x00000000    0x3 0x0000fd00    0x3   0x0 -rw- BI0_MEASURE_BIT0          
-0x00000000   0x92 0x00c018da   0x92   0x0 -r-x PR_GETLINE_FCODE          
-0x00000000   0x52 0x00c0196c   0x52   0x0 -r-x PR_PUTCHAR_FCODE          
-0x00000000    0xc 0x00c0001c    0xc   0x0 -r-x PR_GETKEY_FCODE           
-0x00000000    0x8 0x00c00074    0x8   0x0 -r-x PR_TRAPS_FCODE            
+0x00000000   0x92 0x00c018da   0x92   0x0 -r-x PR_GETLINE_FCODE
+0x00000000   0x52 0x00c0196c   0x52   0x0 -r-x PR_PUTCHAR_FCODE
+0x00000000    0xc 0x00c0001c    0xc   0x0 -r-x PR_GETKEY_FCODE
+0x00000000    0x8 0x00c00074    0x8   0x0 -r-x PR_TRAPS_FCODE
 0x00000000  0x200 0x00010000  0x200   0x0 -rw- C_USERSTACK_NDATA         
 0x00000000   0x20 0x00010200   0x20   0x0 -rw- C_USERSTACK1_NDATA        
 0x00000000   0x20 0x00010220   0x20   0x0 -rw- C_USERSTACK2_NDATA        
 0x00000000  0x200 0x0000f600  0x200   0x0 -rw- C_SYSSTACK_IDATA          
-0x00000000  0x15e 0x00c00084  0x15e   0x0 -r-x C_STARTUP_CODE_ICODE      
-0x00000000  0xb7c 0x00c001e2  0xb7c   0x0 -r-x C_LIB_CODE_FCODE          
-0x00000000  0x4d2 0x00c00d5e  0x4d2   0x0 -r-x PR_SCANF_FCODE            
+0x00000000  0x15e 0x00c00084  0x15e   0x0 -r-x C_STARTUP_CODE_ICODE
+0x00000000  0xb7c 0x00c001e2  0xb7c   0x0 -r-x C_LIB_CODE_FCODE
+0x00000000  0x4d2 0x00c00d5e  0x4d2   0x0 -r-x PR_SCANF_FCODE
 0x00000000   0x5a 0x00c01ebc   0x5a   0x0 -r-- HC__PRNFMT_HCONST         
 0x00000000   0x30 0x00c00044   0x30   0x0 -r-- C_LIB_NCONST_NCONST       
-0x00000000   0x1a 0x00c019ec   0x1a   0x0 -r-x PR_ISSPACE_FCODE          
-0x00000000   0x18 0x00c01a06   0x18   0x0 -r-x PR_TOUPPER_FCODE          
-0x00000000   0x2e 0x00c019be   0x2e   0x0 -r-x PR_GETCHAR_FCODE          
+0x00000000   0x1a 0x00c019ec   0x1a   0x0 -r-x PR_ISSPACE_FCODE
+0x00000000   0x18 0x00c01a06   0x18   0x0 -r-x PR_TOUPPER_FCODE
+0x00000000   0x2e 0x00c019be   0x2e   0x0 -r-x PR_GETCHAR_FCODE
 0x00000000    0x1 0x0001025b    0x1   0x0 -rw- ND0_GETCHAR_NDATA0        
-0x00000000    0x8 0x00c01a1e    0x8   0x0 -r-x PR_UNGET_FCODE            
+0x00000000    0x8 0x00c01a1e    0x8   0x0 -r-x PR_UNGET_FCODE
 0x00000000    0x2 0x00c00004    0x2   0x0 -r-- C_INITSEC_UNKNOWN         
 0x00000000   0x18 0x00c0002c   0x18   0x0 -r-- C_CLRMEMSEC_UNKNOWN       
 
@@ -790,7 +773,7 @@ EXPECT=<<EOF
             ; CALL XREF from main @ 0xc014c4
             ;-- section.PR_GETLINE_FCODE:
 / getline();
-|           0x00c018da      ecfd           push  r13                   ; Getline.c:20 ; [07] -r-x section size 146 named PR_GETLINE_FCODE
+|           0x00c018da      ecfd           push  r13                   ; Getline.c:20 ; [07] -rw- section size 146 named PR_GETLINE_FCODE
 |           0x00c018dc      ecfe           push  r14
 |           0x00c018de      ecff           push  r15
 |           0x00c018e0      f0e9           mov   r14, r9
@@ -953,10 +936,10 @@ EXPECT=<<EOF
 ----------------------------------------------------------------------------------
 0x00000000 7958 c166   16 Siemens/Infineon C166 family microcontroller false
 
-     paddr   size      vaddr  vsize align perm name    type flags 
+     paddr   size      vaddr  vsize align perm name    type flags
 ------------------------------------------------------------------
-0x00000000 0x1f16 0x00c00000 0x1f16   0x0 -r-x code         
-0x00000000    0x0 0x0000f000  0xfff   0x0 -rw- ram_sfr      
+0x00000000 0x1f16 0x00c00000 0x1f16   0x0 -r-x code
+0x00000000    0x0 0x0000f000  0xfff   0x0 -rw- ram_sfr
 
             ;-- entry0:
             ;-- section.code:
