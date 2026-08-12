@@ -3562,28 +3562,15 @@ static void relocation_noreturn_process(RzCore *core, RzList /*<char *>*/ *noret
 
 #define CALL_BUF_SIZE 32
 
-struct core_noretl {
-	RzCore *core;
-	RzList /*<char *>*/ *noretl;
-	RzSetU *todo;
-};
-
-static bool process_reference_noreturn_cb(void *u, const ut64 addr, const void *v) {
-	RzCore *core = ((struct core_noretl *)u)->core;
-	RzList *noretl = ((struct core_noretl *)u)->noretl;
-	RzSetU *todo = ((struct core_noretl *)u)->todo;
-	RzAnalysisXRef *xref = (RzAnalysisXRef *)v;
-	if (xref->type != RZ_ANALYSIS_XREF_TYPE_CALL && xref->type != RZ_ANALYSIS_XREF_TYPE_CODE) {
-		return true;
-	}
-
+static void process_reference_noreturn(RzCore *core, RzList /*<char *>*/ *noretl, RzSetU *todo, const RzAnalysisXRef *xref) {
+	const ut64 addr = xref->from;
 	// At first we check if there are any relocations that override the call address
 	// Note, that the relocation overrides only the part of the instruction
 	ut8 buf[CALL_BUF_SIZE] = { 0 };
 	RzAnalysisOp op = { 0 };
 	if (!rz_io_read_at_mapped(core->io, addr, buf, sizeof(buf))) {
 		RZ_LOG_INFO("analysis: Fail to load %d bytes of data at 0x%08" PFMT64x "\n", CALL_BUF_SIZE, addr);
-		return true;
+		return;
 	}
 
 	rz_analysis_op_init(&op);
@@ -3594,19 +3581,12 @@ static bool process_reference_noreturn_cb(void *u, const ut64 addr, const void *
 			RzAnalysisBlock *block = find_block_at_xref_addr(core, addr);
 			if (!block) {
 				rz_analysis_op_fini(&op);
-				return true;
+				return;
 			}
 			relocation_noreturn_process(core, noretl, todo, block, rel, op.size, addr);
 		}
 	}
 	rz_analysis_op_fini(&op);
-	return true;
-}
-
-static bool process_refs_cb(void *u, const ut64 k, const void *v) {
-	HtUP *ht = (HtUP *)v;
-	ht_up_foreach(ht, process_reference_noreturn_cb, u);
-	return true;
 }
 
 static bool reanalyze_fcns_cb(void *u, const ut64 k, const void *v) {
@@ -3628,9 +3608,20 @@ RZ_API void rz_core_analysis_propagate_noreturn_relocs(RzCore *core, ut64 addr) 
 	RzList *noretl = rz_analysis_noreturn_functions(core->analysis);
 	// List of the potentially noreturn functions
 	RzSetU *todo = rz_set_u_new();
-	struct core_noretl u = { core, noretl, todo };
-	HtUP *ht_xrefs_to = rz_analysis_get_xrefs_to(core->analysis);
-	ht_up_foreach(ht_xrefs_to, process_refs_cb, &u);
+	// Only CALL and CODE xrefs are relevant here, so iterate over the
+	// type-indexed xref storage instead of scanning all xrefs.
+	const RzAnalysisXRefType reloc_xref_types[] = { RZ_ANALYSIS_XREF_TYPE_CALL, RZ_ANALYSIS_XREF_TYPE_CODE };
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(reloc_xref_types); i++) {
+		RzIterator *it = rz_analysis_xrefs_get_all_of_type(core->analysis, reloc_xref_types[i]);
+		if (!it) {
+			continue;
+		}
+		RzAnalysisXRef **pxref;
+		rz_iterator_foreach(it, pxref) {
+			process_reference_noreturn(core, noretl, todo, *pxref);
+		}
+		rz_iterator_free(it);
+	}
 	rz_list_free(noretl);
 	rz_asm_set_bits(core->rasm, bits);
 	rz_analysis_set_bits(core->analysis, bits);

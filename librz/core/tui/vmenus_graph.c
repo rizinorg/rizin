@@ -69,15 +69,25 @@ static char *print_item(void *_core, void *_item, bool selected) {
 	return rz_str_newf("%c 0x%08" PFMT64x "\n", selected ? '>' : ' ', item->addr);
 }
 
+static int __graph_item_addr_cmp(const void *a, const void *b, void *user) {
+	const RzCoreVisualViewGraphItem *item_a = a;
+	const RzCoreVisualViewGraphItem *item_b = b;
+	if (item_a->addr != item_b->addr) {
+		return item_a->addr < item_b->addr ? -1 : 1;
+	}
+	return 0;
+}
+
 static RzList /*<RzCoreVisualViewGraphItem *>*/ *__xrefs(RzCore *core, ut64 addr) {
 	RzList *r = rz_list_newf(free);
-	RzListIter *iter;
-	RzAnalysisXRef *xref;
-	RzList *xrefs = rz_analysis_xrefs_get_to(core->analysis, addr);
-	rz_list_foreach (xrefs, iter, xref) {
-		if (xref->type != RZ_ANALYSIS_XREF_TYPE_CALL) {
-			continue;
-		}
+	// Only CALL xrefs are displayed, so use the type-indexed xref lookup.
+	RzIterator *it = rz_analysis_xrefs_get_to_type(core->analysis, addr, RZ_ANALYSIS_XREF_TYPE_CALL);
+	if (!it) {
+		return r;
+	}
+	RzAnalysisXRef **pxref;
+	rz_iterator_foreach(it, pxref) {
+		RzAnalysisXRef *xref = *pxref;
 		RzCoreVisualViewGraphItem *item = RZ_NEW0(RzCoreVisualViewGraphItem);
 		RzFlagItem *f = rz_flag_get_at(core->flags, xref->from, 0);
 		item->addr = xref->from;
@@ -89,7 +99,9 @@ static RzList /*<RzCoreVisualViewGraphItem *>*/ *__xrefs(RzCore *core, ut64 addr
 		}
 		rz_list_append(r, item);
 	}
-	rz_list_free(xrefs);
+	rz_iterator_free(it);
+	// Keep the items sorted by address like rz_analysis_xrefs_get_to() did.
+	rz_list_sort(r, __graph_item_addr_cmp, NULL);
 	return r;
 }
 

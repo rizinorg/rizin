@@ -60,6 +60,8 @@ struct rz_analysis_t {
 	Sdb *sdb_fmts;
 	HtUP *ht_xrefs_from;
 	HtUP *ht_xrefs_to;
+	HtUP *ht_xrefs_from_by_type; ///< type -> from -> to -> xref* (non-owning)
+	HtUP *ht_xrefs_to_by_type; ///< type -> to -> from -> xref* (non-owning)
 	bool recursive_noreturn; // analysis.rnr
 	// moved from RzAnalysisFcn
 	Sdb *sdb; // root

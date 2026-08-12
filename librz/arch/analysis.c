@@ -222,6 +222,8 @@ RZ_API void rz_analysis_free(RZ_NULLABLE RzAnalysis *a) {
 	rz_reg_free(a->reg);
 	ht_up_free(a->ht_xrefs_from);
 	ht_up_free(a->ht_xrefs_to);
+	ht_up_free(a->ht_xrefs_from_by_type);
+	ht_up_free(a->ht_xrefs_to_by_type);
 	rz_list_free(a->leaddrs);
 	rz_type_db_free(a->typedb);
 	sdb_free(a->sdb);
