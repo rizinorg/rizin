@@ -133,11 +133,21 @@ RZ_IPI bool rz_m68k_insn_uses_fpu_operand(RZ_NONNULL const cs_m68k *m68k) {
 	rz_return_val_if_fail(m68k, false);
 	for (ut8 i = 0; i < m68k->op_count; i++) {
 		const cs_m68k_op *op = &m68k->operands[i];
-		if (op->type == M68K_OP_FP_SINGLE || op->type == M68K_OP_FP_DOUBLE) {
+		switch (op->type) {
+		case M68K_OP_INVALID:
+			// Capstone can retain an invalid operand for malformed or
+			// unsupported FPU encodings while decoding later operands.
+			continue;
+		case M68K_OP_FP_SINGLE:
+		case M68K_OP_FP_DOUBLE:
 			return true;
-		}
-		if (rz_m68k_op_is_fpu_reg(op)) {
-			return true;
+		case M68K_OP_REG:
+			if (rz_m68k_reg_is_fpu(op->reg)) {
+				return true;
+			}
+			break;
+		default:
+			break;
 		}
 	}
 	return false;

@@ -250,6 +250,7 @@ arch_isa_sources = [
   'isa/mcore/mcore.c',
   'isa/m68k/m68k_cs.c',
   'isa/m68k/m68k_il.c',
+  'isa/m68k/m68k_il_helpers.c',
   'isa/milstd1750/milstd1750_disas.c',
   'isa/mips/mips_assembler.c',
   'isa/mips/mips_esil.c',

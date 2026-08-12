@@ -244,6 +244,8 @@ static RzAnalysisValue *m68k_value_from_operand(RzAnalysis *a, csh handle, const
 		}
 		break;
 	case M68K_OP_INVALID:
+		// Invalid operand details are a decoder/data failure, not an
+		// unreachable analysis state.
 		rz_analysis_value_free(value);
 		return NULL;
 	case M68K_OP_IMM:
@@ -963,12 +965,6 @@ static void op_fillval(RzAnalysis *a, RzAnalysisOp *op, csh handle, cs_insn *ins
 	}
 }
 
-static inline void m68k_invalid_il_nop(RzAnalysisOp *op, RzAnalysisOpMask mask) {
-	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-		op->il_op = rz_il_op_new_nop();
-	}
-}
-
 static int m68k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	M68KContext *ctx = (M68KContext *)a->plugin_data;
 	int opsize = -1;
@@ -999,7 +995,6 @@ static int m68k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 	if (n < 1 || !insn || insn->size < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		opsize = op->size = M68K_MIN_OP_SIZE;
-		m68k_invalid_il_nop(op, mask);
 		goto beach;
 	}
 	detail = insn->detail;
@@ -1017,7 +1012,7 @@ static int m68k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
 			rz_il_op_effect_free(op->il_op);
-			op->il_op = rz_il_op_new_nop();
+			op->il_op = NULL;
 		}
 		break;
 	case M68K_INS_ADD:
