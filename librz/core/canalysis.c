@@ -2109,12 +2109,12 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 	at = from;
 	st64 asm_sub_varmin = rz_config_get_i(core->config, "asm.sub.varmin");
 	while (at < to && !rz_cons_is_breaked()) {
-		int i = 0, ret = bsz;
+		int ret = bsz;
 		if (!rz_io_is_valid_offset(core->io, at, RZ_PERM_X)) {
 			break;
 		}
-		size_t bytes_read = rz_io_nread_at(core->io, at, buf, bsz);
-		if (!bytes_read) {
+		int bytes_read = rz_io_nread_at(core->io, at, buf, bsz);
+		if (bytes_read <= 0) {
 			return -1;
 		}
 		memset(block, -1, bsz);
@@ -2127,6 +2127,7 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 			at += ret;
 			continue;
 		}
+		size_t i = 0;
 		while (i < bytes_read && !rz_cons_is_breaked()) {
 			int count_before = count;
 			rz_analysis_op_init(&op);
