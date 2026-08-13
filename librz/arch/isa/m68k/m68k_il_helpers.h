@@ -179,6 +179,8 @@ RZ_IPI RzILOpEffect *m68k_guard_supervisor(RzILOpEffect *effect);
 RZ_IPI RzILOpEffect *m68k_write_status_reg_unchecked(M68KILCtx *ctx, m68k_reg reg, RzILOpPure *value);
 RZ_IPI RzILOpEffect *m68k_write_status_reg(M68KILCtx *ctx, m68k_reg reg, RzILOpPure *value);
 RZ_IPI void m68k_ea_fini(M68KEA *ea);
+RZ_IPI RZ_OWN RzILOpEffect *m68k_effect_pre_post(RZ_NULLABLE RZ_OWN RzILOpEffect *pre,
+	RZ_NONNULL RZ_OWN RzILOpEffect *eff, RZ_NULLABLE RZ_OWN RzILOpEffect *post);
 RZ_IPI void m68k_rw_operand_fini(M68KRWOperand *rw);
 RZ_IPI void m68k_bitfield_target_fini(M68KBitfieldTarget *target);
 RZ_IPI RzILOpEffect *m68k_exception(M68KTrapOp trap_op, M68KExceptionVector vector, const char *label);

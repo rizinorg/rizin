@@ -385,6 +385,8 @@ static ut32 operand_extension_bytes(const M68KILCtx *ctx, const cs_m68k_op *op) 
 		default:
 			return 0;
 		}
+	case M68K_OP_MEM:
+		return mem_extension_bytes(op);
 	case M68K_OP_INVALID:
 	case M68K_OP_REG:
 	case M68K_OP_REG_BITS:
@@ -392,9 +394,6 @@ static ut32 operand_extension_bytes(const M68KILCtx *ctx, const cs_m68k_op *op) 
 #ifdef RZ_CAPSTONE_HAS_M68K_COLDFIRE
 	case M68K_OP_SHIFT:
 #endif
-		return 0;
-	case M68K_OP_MEM:
-		return mem_extension_bytes(op);
 	default:
 		return 0;
 	}
@@ -507,6 +506,7 @@ static ut64 branch_disp_base(const M68KILCtx *ctx) {
 
 static ut64 pc_relative_base(M68KILCtx *ctx, const cs_m68k_op *op) {
 #if defined(RZ_CAPSTONE_HAS_M68K_CPU32) || defined(RZ_CAPSTONE_HAS_M68K_COLDFIRE)
+	(void)op;
 	return branch_disp_base(ctx);
 #else
 	return ctx->addr + pc_relative_extension_offset(ctx, op);
@@ -643,7 +643,6 @@ RZ_IPI RzILOpPure *m68k_read_operand(M68KILCtx *ctx, const cs_m68k_op *op, ut32 
 	case M68K_OP_FP_DOUBLE:
 		return F2BV(F64(op->dimm));
 	case M68K_OP_INVALID:
-		return NULL;
 	default:
 		return NULL;
 	}
@@ -732,6 +731,31 @@ RZ_IPI void m68k_ea_fini(M68KEA *ea) {
 	*ea = (M68KEA){ 0 };
 }
 
+/**
+ * \brief Sequence optional bookends around a required effect: pre, then \p eff, then post.
+ *
+ * \param pre Side effects before \p eff, or NULL
+ * \param eff Required effect
+ * \param post Side effects after \p eff, or NULL
+ * \return `pre ; eff ; post`. `pre` and `post` are skipped when NULL.
+ */
+RZ_IPI RZ_OWN RzILOpEffect *m68k_effect_pre_post(RZ_NULLABLE RZ_OWN RzILOpEffect *pre,
+	RZ_NONNULL RZ_OWN RzILOpEffect *eff, RZ_NULLABLE RZ_OWN RzILOpEffect *post) {
+	if (!eff) {
+		rz_il_op_effect_free(pre);
+		rz_il_op_effect_free(post);
+		rz_return_val_if_fail(eff, NULL);
+		return NULL;
+	}
+	if (post) {
+		eff = SEQ2(eff, post);
+	}
+	if (pre) {
+		eff = SEQ2(pre, eff);
+	}
+	return eff;
+}
+
 RZ_IPI void m68k_rw_operand_fini(M68KRWOperand *rw) {
 	if (!rw) {
 		return;
@@ -763,13 +787,8 @@ RZ_IPI bool m68k_operand_to_local(M68KILCtx *ctx, const char *name, const cs_m68
 	if (!value) {
 		return false;
 	}
-	if (pre) {
-		*seq = *seq ? SEQ2(*seq, pre) : pre;
-	}
-	*seq = *seq ? SEQ2(*seq, SETL(name, value)) : SETL(name, value);
-	if (post) {
-		*seq = SEQ2(*seq, post);
-	}
+	RzILOpEffect *set = m68k_effect_pre_post(pre, SETL(name, value), post);
+	*seq = *seq ? SEQ2(*seq, set) : set;
 	return true;
 }
 
@@ -790,11 +809,11 @@ RZ_IPI bool m68k_rw_operand_to_local(M68KILCtx *ctx, M68KRWOperand *rw, const ch
 		ea.pre = NULL;
 		RzILOpPure *addr = ea.addr;
 		ea.addr = NULL;
-		if (pre) {
-			*seq = *seq ? SEQ2(*seq, pre) : pre;
-		}
-		*seq = *seq ? SEQ2(*seq, SETL(addr_local, UNSIGNED(32, addr))) : SETL(addr_local, UNSIGNED(32, addr));
-		*seq = SEQ2(*seq, SETL(value_local, LOADW(bits, VARL(addr_local))));
+		RzILOpEffect *load = m68k_effect_pre_post(pre,
+			SEQ2(SETL(addr_local, UNSIGNED(32, addr)),
+				SETL(value_local, LOADW(bits, VARL(addr_local)))),
+			NULL);
+		*seq = *seq ? SEQ2(*seq, load) : load;
 		rw->post = ea.post;
 		ea.post = NULL;
 		m68k_ea_fini(&ea);
