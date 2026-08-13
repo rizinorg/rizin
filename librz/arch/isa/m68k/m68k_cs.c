@@ -54,7 +54,7 @@ RZ_IPI bool rz_m68k_op_is_control_reg(RZ_NONNULL const cs_m68k_op *op) {
 }
 
 RZ_IPI bool rz_m68k_reg_name_is_mmu_root_pointer(RZ_NULLABLE const char *name) {
-	return name && (!strcmp(name, "srp") || !strcmp(name, "crp"));
+	return RZ_STR_EQ(name, "srp") || RZ_STR_EQ(name, "crp");
 }
 
 RZ_IPI bool rz_m68k_reg_is_fpu(m68k_reg reg) {
@@ -113,6 +113,14 @@ RZ_IPI bool rz_m68k_op_is_gpr(RZ_NONNULL const cs_m68k_op *op) {
 	return rz_m68k_reg_is_gpr(op->reg);
 }
 
+RZ_IPI bool rz_m68k_op_is_status_reg(RZ_NONNULL const cs_m68k_op *op) {
+	rz_return_val_if_fail(op, false);
+	if (op->type != M68K_OP_REG) {
+		return false;
+	}
+	return op->reg == M68K_REG_CCR || op->reg == M68K_REG_SR;
+}
+
 RZ_IPI bool rz_m68k_op_is_acc_reg(RZ_NONNULL const cs_m68k_op *op) {
 	rz_return_val_if_fail(op, false);
 	if (op->type != M68K_OP_REG) {
@@ -135,8 +143,7 @@ RZ_IPI bool rz_m68k_insn_uses_fpu_operand(RZ_NONNULL const cs_m68k *m68k) {
 		const cs_m68k_op *op = &m68k->operands[i];
 		switch (op->type) {
 		case M68K_OP_INVALID:
-			// Capstone can retain an invalid operand for malformed or
-			// unsupported FPU encodings while decoding later operands.
+			// Capstone can leave M68K_OP_INVALID on malformed FPU encodings.
 			continue;
 		case M68K_OP_FP_SINGLE:
 		case M68K_OP_FP_DOUBLE:
@@ -330,8 +337,7 @@ RZ_IPI m68k_reg rz_m68k_fpu_insn_extension_dst_reg(RZ_NONNULL const cs_insn *ins
 }
 
 // Capstone collapses some FPU read-modify-write instructions to one operand
-// when source and destination are the same
-// (for example "frem fp0"). The
+// when source and destination are the same (for example "frem fp0"). The
 // destination remains encoded in the FPU extension word; materialize it as a
 // synthetic second operand so analysis and IL can use a uniform two-operand
 // form.
@@ -384,7 +390,7 @@ RZ_IPI RZ_NULLABLE const cs_m68k_op *rz_m68k_fpu_insn_unary_dst_op(RZ_NONNULL co
 	return rz_m68k_fpu_insn_hidden_dst_op(insn, hidden_dst) ? hidden_dst : NULL;
 }
 
-RZ_IPI bool rz_m68k_fpu_insn_has_data_dst(unsigned int insn_id) {
+RZ_IPI bool rz_m68k_fpu_insn_has_data_dst(ut32 insn_id) {
 	switch (insn_id) {
 	case M68K_INS_FMOVECR:
 	case M68K_INS_FABS:

@@ -78,6 +78,7 @@ RZ_IPI bool rz_m68k_op_is_predec_areg(RZ_NONNULL const cs_m68k_op *op);
 RZ_IPI bool rz_m68k_op_is_data_reg(RZ_NONNULL const cs_m68k_op *op);
 RZ_IPI bool rz_m68k_op_is_addr_reg(RZ_NONNULL const cs_m68k_op *op);
 RZ_IPI bool rz_m68k_op_is_gpr(RZ_NONNULL const cs_m68k_op *op);
+RZ_IPI bool rz_m68k_op_is_status_reg(RZ_NONNULL const cs_m68k_op *op);
 RZ_IPI bool rz_m68k_op_is_acc_reg(RZ_NONNULL const cs_m68k_op *op);
 RZ_IPI bool rz_m68k_op_is_fpu_control_reg(RZ_NONNULL const cs_m68k_op *op);
 RZ_IPI bool rz_m68k_insn_uses_fpu_operand(RZ_NONNULL const cs_m68k *m68k);
@@ -105,7 +106,7 @@ RZ_IPI bool rz_m68k_fpu_insn_hidden_dst_op(RZ_NONNULL const cs_insn *insn, RZ_NO
 RZ_IPI bool rz_m68k_fpu_op_from_reg(RZ_NONNULL cs_m68k_op *op, m68k_reg reg);
 RZ_IPI RZ_NULLABLE const cs_m68k_op *rz_m68k_fpu_insn_second_op_or_hidden_dst(RZ_NONNULL const cs_insn *insn, RZ_NONNULL cs_m68k_op *hidden_dst);
 RZ_IPI RZ_NULLABLE const cs_m68k_op *rz_m68k_fpu_insn_unary_dst_op(RZ_NONNULL const cs_insn *insn, RZ_NONNULL const cs_m68k_op *src, RZ_NONNULL cs_m68k_op *hidden_dst);
-RZ_IPI bool rz_m68k_fpu_insn_has_data_dst(unsigned int insn_id);
+RZ_IPI bool rz_m68k_fpu_insn_has_data_dst(ut32 insn_id);
 RZ_IPI bool rz_m68k_fpu_insn_single_op_is_complete(RZ_NONNULL const cs_insn *insn);
 RZ_IPI bool rz_m68k_fpu_insn_needs_hidden_dst(RZ_NONNULL const cs_insn *insn);
 RZ_IPI bool rz_m68k_fpu_size_is_extended(RZ_NONNULL const cs_m68k *m68k);

@@ -334,14 +334,6 @@ RZ_IPI RzILOpPure *rte_frame_size(cs_mode mode) {
 	return size;
 }
 
-RZ_IPI RzILOpPure *read_mem_sized(ut32 bits, RzILOpPure *addr) {
-	return LOADW(bits, addr);
-}
-
-RZ_IPI RzILOpEffect *write_mem_sized(ut32 bits, RzILOpPure *addr, RzILOpPure *value) {
-	return STOREW(addr, cast_unsigned(bits, value));
-}
-
 static RzILOpPure *index_value(M68KILCtx *ctx, const cs_m68k_op *op) {
 	if (op->mem.index_reg == M68K_REG_INVALID) {
 		return U32(0);
@@ -560,6 +552,7 @@ RZ_IPI RzILOpEffect *set_addr_reg_delta(M68KILCtx *ctx, m68k_reg reg, st32 delta
 
 RZ_IPI M68KEA effective_addr(M68KILCtx *ctx, const cs_m68k_op *op, ut32 bits) {
 	M68KEA ea = { 0 };
+	rz_return_val_if_fail(ctx && op, ea);
 	RzILOpPure *base = NULL;
 	RzILOpPure *idx = NULL;
 	m68k_reg base_reg = rz_m68k_op_base_reg(op);
@@ -589,12 +582,12 @@ RZ_IPI M68KEA effective_addr(M68KILCtx *ctx, const cs_m68k_op *op, ut32 bits) {
 	case M68K_AM_MEMI_PRE_INDEX:
 		base = base_reg != M68K_REG_INVALID ? reg_value(ctx, base_reg) : U32(0);
 		idx = index_value(ctx, op);
-		ea.addr = ADD(read_mem_sized(32, ADD(ADD(base, idx), S32((st32)op->mem.in_disp))), S32((st32)op->mem.out_disp));
+		ea.addr = ADD(LOADW(32, ADD(ADD(base, idx), S32((st32)op->mem.in_disp))), S32((st32)op->mem.out_disp));
 		break;
 	case M68K_AM_MEMI_POST_INDEX:
 		base = base_reg != M68K_REG_INVALID ? reg_value(ctx, base_reg) : U32(0);
 		idx = index_value(ctx, op);
-		ea.addr = ADD(ADD(read_mem_sized(32, ADD(base, S32((st32)op->mem.in_disp))), idx), S32((st32)op->mem.out_disp));
+		ea.addr = ADD(ADD(LOADW(32, ADD(base, S32((st32)op->mem.in_disp))), idx), S32((st32)op->mem.out_disp));
 		break;
 	case M68K_AM_PCI_DISP:
 		ea.addr = U32(pc_relative_base(ctx, op) + op->mem.disp);
@@ -608,11 +601,11 @@ RZ_IPI M68KEA effective_addr(M68KILCtx *ctx, const cs_m68k_op *op, ut32 bits) {
 	}
 	case M68K_AM_PC_MEMI_PRE_INDEX:
 		idx = index_value(ctx, op);
-		ea.addr = ADD(read_mem_sized(32, ADD(ADD(U32(pc_relative_base(ctx, op)), idx), S32((st32)op->mem.in_disp))), S32((st32)op->mem.out_disp));
+		ea.addr = ADD(LOADW(32, ADD(ADD(U32(pc_relative_base(ctx, op)), idx), S32((st32)op->mem.in_disp))), S32((st32)op->mem.out_disp));
 		break;
 	case M68K_AM_PC_MEMI_POST_INDEX:
 		idx = index_value(ctx, op);
-		ea.addr = ADD(ADD(read_mem_sized(32, ADD(U32(pc_relative_base(ctx, op)), S32((st32)op->mem.in_disp))), idx), S32((st32)op->mem.out_disp));
+		ea.addr = ADD(ADD(LOADW(32, ADD(U32(pc_relative_base(ctx, op)), S32((st32)op->mem.in_disp))), idx), S32((st32)op->mem.out_disp));
 		break;
 	case M68K_AM_ABSOLUTE_DATA_SHORT:
 		ea.addr = U32(rz_m68k_op_absolute_address(op, true));
@@ -638,6 +631,7 @@ RZ_IPI RzILOpPure *read_operand(M68KILCtx *ctx, const cs_m68k_op *op, ut32 bits,
 	if (post) {
 		*post = NULL;
 	}
+	rz_return_val_if_fail(ctx && op, NULL);
 	if (rz_m68k_op_is_mem_addr(op)) {
 		M68KEA ea = effective_addr(ctx, op, bits);
 		if (!ea.addr) {
@@ -655,7 +649,7 @@ RZ_IPI RzILOpPure *read_operand(M68KILCtx *ctx, const cs_m68k_op *op, ut32 bits,
 			ea.post = NULL;
 		}
 		m68k_ea_fini(&ea);
-		return read_mem_sized(bits, addr);
+		return LOADW(bits, addr);
 	}
 	switch (op->type) {
 	case M68K_OP_REG:
@@ -682,6 +676,10 @@ RZ_IPI RzILOpEffect *write_operand(M68KILCtx *ctx, const cs_m68k_op *op, ut32 bi
 	if (post) {
 		*post = NULL;
 	}
+	if (!ctx || !op) {
+		rz_il_op_pure_free(value);
+	}
+	rz_return_val_if_fail(ctx && op, NULL);
 	if (rz_m68k_op_is_mem_addr(op)) {
 		M68KEA ea = effective_addr(ctx, op, bits);
 		if (!ea.addr) {
@@ -700,7 +698,7 @@ RZ_IPI RzILOpEffect *write_operand(M68KILCtx *ctx, const cs_m68k_op *op, ut32 bi
 			ea.post = NULL;
 		}
 		m68k_ea_fini(&ea);
-		return write_mem_sized(bits, addr, value);
+		return STOREW(addr, cast_unsigned(bits, value));
 	}
 	switch (op->type) {
 	case M68K_OP_REG:
@@ -729,23 +727,6 @@ RZ_IPI RzILOpEffect *guard_supervisor(RzILOpEffect *effect) {
 	return effect ? BRANCH(supervisor_mode(), effect, m68k_label("m68k_privilege")) : NULL;
 }
 
-RZ_IPI RzILOpEffect *m68k_invalid(void) {
-	return NULL;
-}
-
-RZ_IPI RzILOpEffect *m68k_invalid_free(RzILOpEffect *seq) {
-	rz_il_op_effect_free(seq);
-	return NULL;
-}
-
-RZ_IPI bool rz_m68k_op_is_status_reg(const cs_m68k_op *op) {
-	rz_return_val_if_fail(op, false);
-	if (op->type != M68K_OP_REG) {
-		return false;
-	}
-	return op->reg == M68K_REG_CCR || op->reg == M68K_REG_SR;
-}
-
 RZ_IPI RzILOpEffect *write_status_reg_unchecked(M68KILCtx *ctx, m68k_reg reg, RzILOpPure *value) {
 	ut32 bits = reg == M68K_REG_CCR ? 8 : 16;
 	return write_reg_sized(ctx, reg, bits, value);
@@ -757,16 +738,6 @@ RZ_IPI RzILOpEffect *write_status_reg(M68KILCtx *ctx, m68k_reg reg, RzILOpPure *
 		return NULL;
 	}
 	return reg == M68K_REG_SR ? BRANCH(supervisor_mode(), write, m68k_label("m68k_privilege")) : write;
-}
-
-RZ_IPI RzILOpEffect *m68k_null_free(RzILOpEffect *seq) {
-	rz_il_op_effect_free(seq);
-	return NULL;
-}
-
-RZ_IPI RzILOpEffect *m68k_effect_free(RzILOpEffect *seq, RzILOpEffect *effect) {
-	rz_il_op_effect_free(seq);
-	return effect;
 }
 
 RZ_IPI void m68k_ea_fini(M68KEA *ea) {
@@ -801,17 +772,18 @@ RZ_IPI RzILOpEffect *m68k_exception(M68KTrapOp trap_op, M68KExceptionVector vect
 	return seq_append(seq, m68k_label(label));
 }
 
-RZ_IPI RzILOpEffect *operand_to_local(M68KILCtx *ctx, const char *name, const cs_m68k_op *op, ut32 bits, RzILOpEffect **seq) {
+RZ_IPI bool operand_to_local(M68KILCtx *ctx, const char *name, const cs_m68k_op *op, ut32 bits, RzILOpEffect **seq) {
+	rz_return_val_if_fail(ctx && name && op && seq, false);
 	RzILOpEffect *pre = NULL;
 	RzILOpEffect *post = NULL;
 	RzILOpPure *value = read_operand(ctx, op, bits, &pre, &post);
 	if (!value) {
-		return NULL;
+		return false;
 	}
 	*seq = seq_append(*seq, pre);
 	*seq = seq_append(*seq, SETL(name, value));
 	*seq = seq_append(*seq, post);
-	return *seq;
+	return true;
 }
 
 RZ_IPI bool rw_operand_to_local(M68KILCtx *ctx, M68KRWOperand *rw, const char *value_local, const char *addr_local, const cs_m68k_op *op, ut32 bits, RzILOpEffect **seq) {
@@ -833,7 +805,7 @@ RZ_IPI bool rw_operand_to_local(M68KILCtx *ctx, M68KRWOperand *rw, const char *v
 		ea.addr = NULL;
 		*seq = seq_append(*seq, pre);
 		*seq = seq_append(*seq, SETL(addr_local, cast_unsigned(32, addr)));
-		*seq = seq_append(*seq, SETL(value_local, read_mem_sized(bits, VARL(addr_local))));
+		*seq = seq_append(*seq, SETL(value_local, LOADW(bits, VARL(addr_local))));
 		rw->post = ea.post;
 		ea.post = NULL;
 		m68k_ea_fini(&ea);
@@ -856,7 +828,7 @@ RZ_IPI bool rw_operand_to_local(M68KILCtx *ctx, M68KRWOperand *rw, const char *v
 RZ_IPI RzILOpEffect *write_rw_operand(M68KILCtx *ctx, const M68KRWOperand *rw, ut32 bits, RzILOpPure *value) {
 	rz_return_val_if_fail(ctx && rw && rw->op, NULL);
 	if (rz_m68k_op_is_mem_addr(rw->op)) {
-		return write_mem_sized(bits, VARL(rw->addr_local), value);
+		return STOREW(VARL(rw->addr_local), cast_unsigned(bits, value));
 	}
 	switch (rw->op->type) {
 	case M68K_OP_REG:

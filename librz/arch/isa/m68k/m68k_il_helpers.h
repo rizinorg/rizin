@@ -182,8 +182,6 @@ RZ_IPI bool m68k_mode_uses_later_movem_base_value(cs_mode mode);
 RZ_IPI bool m68k_mode_has_format_word(cs_mode mode);
 RZ_IPI RzILOpBool *rte_format_valid(cs_mode mode);
 RZ_IPI RzILOpPure *rte_frame_size(cs_mode mode);
-RZ_IPI RzILOpPure *read_mem_sized(ut32 bits, RzILOpPure *addr);
-RZ_IPI RzILOpEffect *write_mem_sized(ut32 bits, RzILOpPure *addr, RzILOpPure *value);
 RZ_IPI RzILOpPure *branch_disp_target(const M68KILCtx *ctx, const cs_m68k_op *op);
 RZ_IPI RzILOpEffect *set_addr_reg_delta(M68KILCtx *ctx, m68k_reg reg, st32 delta);
 RZ_IPI M68KEA effective_addr(M68KILCtx *ctx, const cs_m68k_op *op, ut32 bits);
@@ -191,18 +189,13 @@ RZ_IPI RzILOpPure *read_operand(M68KILCtx *ctx, const cs_m68k_op *op, ut32 bits,
 RZ_IPI RzILOpEffect *write_operand(M68KILCtx *ctx, const cs_m68k_op *op, ut32 bits, RzILOpPure *value, RzILOpEffect **pre, RzILOpEffect **post);
 RZ_IPI RzILOpEffect *m68k_label(const char *label);
 RZ_IPI RzILOpEffect *guard_supervisor(RzILOpEffect *effect);
-RZ_IPI RzILOpEffect *m68k_invalid(void);
-RZ_IPI RzILOpEffect *m68k_invalid_free(RzILOpEffect *seq);
-RZ_IPI bool rz_m68k_op_is_status_reg(const cs_m68k_op *op);
 RZ_IPI RzILOpEffect *write_status_reg_unchecked(M68KILCtx *ctx, m68k_reg reg, RzILOpPure *value);
 RZ_IPI RzILOpEffect *write_status_reg(M68KILCtx *ctx, m68k_reg reg, RzILOpPure *value);
-RZ_IPI RzILOpEffect *m68k_null_free(RzILOpEffect *seq);
-RZ_IPI RzILOpEffect *m68k_effect_free(RzILOpEffect *seq, RzILOpEffect *effect);
 RZ_IPI void m68k_ea_fini(M68KEA *ea);
 RZ_IPI void m68k_rw_operand_fini(M68KRWOperand *rw);
 RZ_IPI void m68k_bitfield_target_fini(M68KBitfieldTarget *target);
 RZ_IPI RzILOpEffect *m68k_exception(M68KTrapOp trap_op, M68KExceptionVector vector, const char *label);
-RZ_IPI RzILOpEffect *operand_to_local(M68KILCtx *ctx, const char *name, const cs_m68k_op *op, ut32 bits, RzILOpEffect **seq);
+RZ_IPI bool operand_to_local(M68KILCtx *ctx, const char *name, const cs_m68k_op *op, ut32 bits, RzILOpEffect **seq);
 RZ_IPI bool rw_operand_to_local(M68KILCtx *ctx, M68KRWOperand *rw, const char *value_local, const char *addr_local, const cs_m68k_op *op, ut32 bits, RzILOpEffect **seq);
 RZ_IPI RzILOpEffect *write_rw_operand(M68KILCtx *ctx, const M68KRWOperand *rw, ut32 bits, RzILOpPure *value);
 

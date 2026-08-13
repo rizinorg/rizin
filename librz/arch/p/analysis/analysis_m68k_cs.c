@@ -244,8 +244,6 @@ static RzAnalysisValue *m68k_value_from_operand(RzAnalysis *a, csh handle, const
 		}
 		break;
 	case M68K_OP_INVALID:
-		// Invalid operand details are a decoder/data failure, not an
-		// unreachable analysis state.
 		rz_analysis_value_free(value);
 		return NULL;
 	case M68K_OP_IMM:
@@ -585,7 +583,7 @@ static void m68k_set_opdir(RzAnalysisOp *op) {
 	}
 }
 
-static void m68k_handle_fpu_instruction(RzAnalysisOp *op, ut64 addr, cs_m68k *m68k, unsigned int insn_id) {
+static void m68k_handle_fpu_instruction(RzAnalysisOp *op, ut64 addr, cs_m68k *m68k, ut32 insn_id) {
 	op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 	switch (insn_id) {
 	case M68K_INS_FMOVE:
