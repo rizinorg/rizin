@@ -121,7 +121,7 @@ static RzILOpEffect *lift_moves(M68KILCtx *ctx) {
 			return NULL;
 		}
 		seq = seq_append(seq, ea.pre);
-		seq = seq_append(seq, SETL("moves_addr", cast_unsigned(M68K_ADDR_BITS, ea.addr)));
+		seq = seq_append(seq, SETL("moves_addr", UNSIGNED(M68K_ADDR_BITS, ea.addr)));
 		seq = seq_append(seq, SETL("moves_fc", read_reg_sized(ctx, M68K_REG_SFC, 32)));
 		seq = seq_append(seq, SETL("moves_store", U32(0)));
 		seq = seq_append(seq, SETL("moves_bits", U32(bits)));
@@ -138,11 +138,11 @@ static RzILOpEffect *lift_moves(M68KILCtx *ctx) {
 		}
 		seq = seq_append(seq, SETL("src", value));
 		seq = seq_append(seq, ea.pre);
-		seq = seq_append(seq, SETL("moves_addr", cast_unsigned(M68K_ADDR_BITS, ea.addr)));
+		seq = seq_append(seq, SETL("moves_addr", UNSIGNED(M68K_ADDR_BITS, ea.addr)));
 		seq = seq_append(seq, SETL("moves_fc", read_reg_sized(ctx, M68K_REG_DFC, 32)));
 		seq = seq_append(seq, SETL("moves_store", U32(1)));
 		seq = seq_append(seq, SETL("moves_bits", U32(bits)));
-		seq = seq_append(seq, STOREW(VARL("moves_addr"), cast_unsigned(bits, VARL("src"))));
+		seq = seq_append(seq, STOREW(VARL("moves_addr"), UNSIGNED(bits, VARL("src"))));
 		seq = seq_append(seq, ea.post);
 	}
 	return BRANCH(supervisor_mode(), seq, m68k_label("m68k_privilege"));
@@ -184,25 +184,25 @@ static RzILOpPure *ff1_result32(const char *local) {
 }
 
 static RzILOpEffect *set_flags_ff1(RzILOpPure *source) {
-	RzILOpPure *src = cast_unsigned(32, source);
-	RzILOpPure *ccr = LOGAND(cast_unsigned(8, VARG("sr")), U8(0xe0));
+	RzILOpPure *src = UNSIGNED(32, source);
+	RzILOpPure *ccr = LOGAND(UNSIGNED(8, VARG("sr")), U8(0xe0));
 	ccr = ccr_with_flag(ccr, M68K_CCR_N, MSB(DUP(src)));
 	ccr = ccr_with_flag(ccr, M68K_CCR_Z, IS_ZERO(src));
 	ccr = ccr_with_flag(ccr, M68K_CCR_V, IL_FALSE);
 	ccr = ccr_with_flag(ccr, M68K_CCR_C, IL_FALSE);
-	ccr = LOGOR(ccr, LOGAND(cast_unsigned(8, VARG("sr")), U8(1u << M68K_CCR_X)));
+	ccr = LOGOR(ccr, LOGAND(UNSIGNED(8, VARG("sr")), U8(1u << M68K_CCR_X)));
 	return set_ccr_from_value(ccr);
 }
 
 static RzILOpEffect *set_flags_rem(RzILOpPure *quotient, RzILOpBool *overflow) {
-	RzILOpPure *quotient32 = cast_unsigned(32, quotient);
-	RzILOpPure *ccr = LOGAND(cast_unsigned(8, VARG("sr")), U8(0xe0));
+	RzILOpPure *quotient32 = UNSIGNED(32, quotient);
+	RzILOpPure *ccr = LOGAND(UNSIGNED(8, VARG("sr")), U8(0xe0));
 	RzILOpBool *no_overflow = INV((RzILOpBool *)DUP(overflow));
 	ccr = ccr_with_flag(ccr, M68K_CCR_N, AND(no_overflow, MSB(DUP(quotient32))));
 	ccr = ccr_with_flag(ccr, M68K_CCR_Z, AND(INV((RzILOpBool *)DUP(overflow)), IS_ZERO(quotient32)));
 	ccr = ccr_with_flag(ccr, M68K_CCR_V, overflow);
 	ccr = ccr_with_flag(ccr, M68K_CCR_C, IL_FALSE);
-	ccr = LOGOR(ccr, LOGAND(cast_unsigned(8, VARG("sr")), U8(1u << M68K_CCR_X)));
+	ccr = LOGOR(ccr, LOGAND(UNSIGNED(8, VARG("sr")), U8(1u << M68K_CCR_X)));
 	return set_ccr_from_value(ccr);
 }
 
@@ -216,7 +216,7 @@ static RzILOpEffect *lift_mov3q(M68KILCtx *ctx) {
 	RzILOpPure *value = U32((ut32)ctx->m68k->operands[0].imm);
 	RzILOpEffect *write = write_operand(ctx, dst, 32, VARL("res"), &pre, &post);
 	if (!write && dst->type == M68K_OP_IMM) {
-		write = STOREW(U32((ut32)dst->imm), cast_unsigned(32, VARL("res")));
+		write = STOREW(U32((ut32)dst->imm), UNSIGNED(32, VARL("res")));
 	}
 	if (!write) {
 		return NULL;
@@ -253,7 +253,7 @@ static RzILOpEffect *lift_mvs_mvz(M68KILCtx *ctx, bool sign_extend) {
 	if (!operand_to_local(ctx, "src", &ctx->m68k->operands[0], bits, &seq)) {
 		return NULL;
 	}
-	seq = seq_append(seq, SETL("res", extend_to_32(VARL("src"), sign_extend)));
+	seq = seq_append(seq, SETL("res", sign_extend ? SIGNED(32, VARL("src")) : UNSIGNED(32, VARL("src"))));
 	seq = seq_append(seq, write_reg_sized(ctx, ctx->m68k->operands[1].reg, 32, VARL("res")));
 	return seq_append(seq, set_flags_nzvcx(VARL("res"), 32, IL_FALSE, IL_FALSE, NULL));
 }
@@ -272,7 +272,7 @@ static RzILOpEffect *lift_coldfire_debug_transfer(M68KILCtx *ctx, ut32 bits) {
 	}
 	RzILOpEffect *seq = NULL;
 	seq = seq_append(seq, ea.pre);
-	seq = seq_append(seq, SETL("debug_addr", cast_unsigned(M68K_ADDR_BITS, ea.addr)));
+	seq = seq_append(seq, SETL("debug_addr", UNSIGNED(M68K_ADDR_BITS, ea.addr)));
 	seq = seq_append(seq, SETL("debug_data", LOADW(bits, VARL("debug_addr"))));
 	seq = seq_append(seq, ea.post);
 	seq = seq_append(seq, SETL("debug_op", U32(ctx->insn->id == M68K_INS_WDEBUG ? M68K_DEBUG_OP_DEBUG : M68K_DEBUG_OP_DATA)));
@@ -375,7 +375,7 @@ static RzILOpEffect *lift_coprocessor_load_transfer(M68KILCtx *ctx, ut32 bits) {
 			return NULL;
 		}
 		seq = seq_append(seq, ea.pre);
-		seq = seq_append(seq, SETL("cp_addr", cast_unsigned(M68K_ADDR_BITS, ea.addr)));
+		seq = seq_append(seq, SETL("cp_addr", UNSIGNED(M68K_ADDR_BITS, ea.addr)));
 		seq = seq_append(seq, SETL("cp_data", LOADW(bits, VARL("cp_addr"))));
 		seq = seq_append(seq, ea.post);
 	} else {
@@ -396,7 +396,7 @@ static RzILOpEffect *coprocessor_metadata_only_transfer(M68KILCtx *ctx, ut32 bit
 }
 
 static RzILOpPure *coprocessor_external_data(ut32 bits) {
-	return bits == 32 ? VARG("cp_external_data") : cast_unsigned(bits, VARG("cp_external_data"));
+	return bits == 32 ? VARG("cp_external_data") : UNSIGNED(bits, VARG("cp_external_data"));
 }
 
 static RzILOpEffect *lift_coprocessor_store_transfer(M68KILCtx *ctx, ut32 bits) {
@@ -416,8 +416,8 @@ static RzILOpEffect *lift_coprocessor_store_transfer(M68KILCtx *ctx, ut32 bits) 
 			return NULL;
 		}
 		seq = seq_append(seq, ea.pre);
-		seq = seq_append(seq, SETL("cp_addr", cast_unsigned(M68K_ADDR_BITS, ea.addr)));
-		seq = seq_append(seq, STOREW(VARL("cp_addr"), cast_unsigned(bits, VARL("cp_data"))));
+		seq = seq_append(seq, SETL("cp_addr", UNSIGNED(M68K_ADDR_BITS, ea.addr)));
+		seq = seq_append(seq, STOREW(VARL("cp_addr"), UNSIGNED(bits, VARL("cp_data"))));
 		seq = seq_append(seq, ea.post);
 	} else if (dst->type == M68K_OP_REG) {
 		RzILOpEffect *write = write_reg_sized(ctx, dst->reg, bits, VARL("cp_data"));
@@ -482,7 +482,7 @@ static RzILOpEffect *lift_fpu_state_address_effects(M68KILCtx *ctx) {
 			return NULL;
 		}
 		RzILOpEffect *seq = NULL;
-		seq = seq_append(seq, SETL("fpu_state_base", cast_unsigned(M68K_ADDR_BITS, reg_value(ctx, base_reg))));
+		seq = seq_append(seq, SETL("fpu_state_base", UNSIGNED(M68K_ADDR_BITS, reg_value(ctx, base_reg))));
 		seq = seq_append(seq, SETL("fpu_state_predec", U32(1)));
 		seq = append_fpu_state_metadata(ctx, seq);
 		return guard_supervisor(seq_append(seq, m68k_label("m68k_fpu")));
@@ -497,8 +497,8 @@ static RzILOpEffect *lift_fpu_state_address_effects(M68KILCtx *ctx) {
 			return NULL;
 		}
 		RzILOpEffect *seq = NULL;
-		seq = seq_append(seq, SETL("fpu_state_addr", cast_unsigned(M68K_ADDR_BITS, reg_value(ctx, base_reg))));
-		seq = seq_append(seq, SETL("fpu_state_base", cast_unsigned(M68K_ADDR_BITS, reg_value(ctx, base_reg))));
+		seq = seq_append(seq, SETL("fpu_state_addr", UNSIGNED(M68K_ADDR_BITS, reg_value(ctx, base_reg))));
+		seq = seq_append(seq, SETL("fpu_state_base", UNSIGNED(M68K_ADDR_BITS, reg_value(ctx, base_reg))));
 		seq = seq_append(seq, SETL("fpu_state_postinc", U32(1)));
 		seq = append_fpu_state_metadata(ctx, seq);
 		return guard_supervisor(seq_append(seq, m68k_label("m68k_fpu")));
@@ -512,7 +512,7 @@ static RzILOpEffect *lift_fpu_state_address_effects(M68KILCtx *ctx) {
 
 	RzILOpEffect *seq = NULL;
 	seq = seq_append(seq, ea.pre);
-	seq = seq_append(seq, SETL("fpu_state_addr", cast_unsigned(M68K_ADDR_BITS, ea.addr)));
+	seq = seq_append(seq, SETL("fpu_state_addr", UNSIGNED(M68K_ADDR_BITS, ea.addr)));
 	seq = seq_append(seq, ea.post);
 	seq = append_fpu_state_metadata(ctx, seq);
 	return guard_supervisor(seq_append(seq, m68k_label("m68k_fpu")));
@@ -553,7 +553,7 @@ static RzILOpEffect *callm_store_selected_reg(M68KILCtx *ctx) {
 	for (st32 code = 15; code >= 0; code--) {
 		m68k_reg reg = callm_reg_from_code((ut32)code);
 		RzILOpPure *value = read_reg_sized(ctx, reg, 32);
-		RzILOpEffect *store = value ? STOREW(callm_frame_addr(0x10), cast_unsigned(32, value)) : NULL;
+		RzILOpEffect *store = value ? STOREW(callm_frame_addr(0x10), UNSIGNED(32, value)) : NULL;
 		if (!store) {
 			return NULL;
 		}
@@ -578,13 +578,13 @@ static RzILOpEffect *callm_load_selected_reg(M68KILCtx *ctx) {
 static RzILOpEffect *lift_callm_type0(M68KILCtx *ctx) {
 	RzILOpEffect *seq = NULL;
 	seq = seq_append(seq, callm_store_selected_reg(ctx));
-	seq = seq_append(seq, STOREW(callm_frame_addr(0), cast_unsigned(16, VARL("callm_frame_info"))));
-	seq = seq_append(seq, SETL("callm_ccr_arg", LOGOR(SHIFTL0(cast_unsigned(16, cast_unsigned(8, VARG("sr"))), U8(8)), cast_unsigned(16, VARL("callm_count")))));
-	seq = seq_append(seq, STOREW(callm_frame_addr(2), cast_unsigned(16, VARL("callm_ccr_arg"))));
-	seq = seq_append(seq, STOREW(callm_frame_addr(4), cast_unsigned(32, VARL("callm_addr"))));
-	seq = seq_append(seq, STOREW(callm_frame_addr(8), cast_unsigned(32, reg_value(ctx, M68K_REG_A7))));
-	seq = seq_append(seq, STOREW(callm_frame_addr(0x0c), cast_unsigned(32, U32(ctx->next_addr))));
-	seq = seq_append(seq, STOREW(callm_frame_addr(0x14), cast_unsigned(32, U32(0))));
+	seq = seq_append(seq, STOREW(callm_frame_addr(0), UNSIGNED(16, VARL("callm_frame_info"))));
+	seq = seq_append(seq, SETL("callm_ccr_arg", LOGOR(SHIFTL0(UNSIGNED(16, UNSIGNED(8, VARG("sr"))), U8(8)), UNSIGNED(16, VARL("callm_count")))));
+	seq = seq_append(seq, STOREW(callm_frame_addr(2), UNSIGNED(16, VARL("callm_ccr_arg"))));
+	seq = seq_append(seq, STOREW(callm_frame_addr(4), UNSIGNED(32, VARL("callm_addr"))));
+	seq = seq_append(seq, STOREW(callm_frame_addr(8), UNSIGNED(32, reg_value(ctx, M68K_REG_A7))));
+	seq = seq_append(seq, STOREW(callm_frame_addr(0x0c), U32(ctx->next_addr)));
+	seq = seq_append(seq, STOREW(callm_frame_addr(0x14), U32(0)));
 	seq = seq_append(seq, write_reg_sized(ctx, M68K_REG_A7, 32, VARL("callm_frame")));
 	seq = seq_append(seq, callm_load_selected_reg(ctx));
 	return seq_append(seq, JMP(ADD(VARL("callm_entry"), U32(2))));
@@ -609,12 +609,12 @@ static RzILOpEffect *lift_callm_address_effects(M68KILCtx *ctx) {
 	RzILOpEffect *seq = NULL;
 	seq = seq_append(seq, ea.pre);
 	seq = seq_append(seq, SETL("callm_count", U32((ut32)(ctx->m68k->operands[0].imm & 0xff))));
-	seq = seq_append(seq, SETL("callm_addr", cast_unsigned(M68K_ADDR_BITS, ea.addr)));
+	seq = seq_append(seq, SETL("callm_addr", UNSIGNED(M68K_ADDR_BITS, ea.addr)));
 	seq = seq_append(seq, SETL("callm_frame_info", LOADW(16, VARL("callm_addr"))));
 	seq = seq_append(seq, SETL("callm_entry", LOADW(32, ADD(VARL("callm_addr"), U32(4)))));
 	seq = seq_append(seq, SETL("callm_data", LOADW(32, ADD(VARL("callm_addr"), U32(8)))));
 	seq = seq_append(seq, SETL("callm_entry_word", LOADW(16, VARL("callm_entry"))));
-	seq = seq_append(seq, SETL("callm_reg_code", cast_unsigned(32, SHIFTR0(VARL("callm_entry_word"), U8(12)))));
+	seq = seq_append(seq, SETL("callm_reg_code", UNSIGNED(32, SHIFTR0(VARL("callm_entry_word"), U8(12)))));
 	seq = seq_append(seq, SETL("callm_frame", SUB(reg_value(ctx, M68K_REG_A7), U32(0x18))));
 	seq = seq_append(seq, ea.post);
 	return seq_append(seq, BRANCH(IS_ZERO(LOGAND(VARL("callm_frame_info"), U16(0xff00))), lift_callm_type0(ctx), m68k_label("m68k_callm")));
@@ -734,7 +734,7 @@ static RzILOpPure *mmu_function_code_value(M68KILCtx *ctx, const cs_m68k_op *op)
 	}
 	if (op->type == M68K_OP_REG) {
 		RzILOpPure *value = read_reg_sized(ctx, op->reg, 32);
-		return value ? cast_unsigned(32, value) : NULL;
+		return value ? UNSIGNED(32, value) : NULL;
 	}
 	return NULL;
 }
@@ -808,7 +808,7 @@ static RzILOpEffect *lift_mmu_address_effects(M68KILCtx *ctx, ut32 bits, bool ap
 			if (!addr) {
 				return NULL;
 			}
-			seq = seq_append(seq, SETL("mmu_addr", cast_unsigned(M68K_ADDR_BITS, addr)));
+			seq = seq_append(seq, SETL("mmu_addr", UNSIGNED(M68K_ADDR_BITS, addr)));
 		} else if (op->type == M68K_OP_IMM) {
 			seq = seq_append(seq, SETL("mmu_addr", U32((ut32)op->imm)));
 		} else if (!rz_m68k_op_is_mem_addr(op)) {
@@ -823,7 +823,7 @@ static RzILOpEffect *lift_mmu_address_effects(M68KILCtx *ctx, ut32 bits, bool ap
 				return NULL;
 			}
 			seq = seq_append(seq, ea.pre);
-			seq = seq_append(seq, SETL("mmu_addr", cast_unsigned(M68K_ADDR_BITS, ea.addr)));
+			seq = seq_append(seq, SETL("mmu_addr", UNSIGNED(M68K_ADDR_BITS, ea.addr)));
 			seq = seq_append(seq, ea.post);
 		}
 	}
@@ -907,7 +907,7 @@ static RzILOpEffect *lift_cache_address_effects(M68KILCtx *ctx) {
 		if (!addr) {
 			return NULL;
 		}
-		seq = seq_append(seq, SETL("cache_addr", cast_unsigned(M68K_ADDR_BITS, addr)));
+		seq = seq_append(seq, SETL("cache_addr", UNSIGNED(M68K_ADDR_BITS, addr)));
 		seq = append_cache_metadata(ctx, seq, false);
 		return seq_append(seq, m68k_label("m68k_cache"));
 	}
@@ -921,7 +921,7 @@ static RzILOpEffect *lift_cache_address_effects(M68KILCtx *ctx) {
 		return NULL;
 	}
 	seq = seq_append(seq, ea.pre);
-	seq = seq_append(seq, SETL("cache_addr", cast_unsigned(M68K_ADDR_BITS, ea.addr)));
+	seq = seq_append(seq, SETL("cache_addr", UNSIGNED(M68K_ADDR_BITS, ea.addr)));
 	seq = seq_append(seq, ea.post);
 	seq = append_cache_metadata(ctx, seq, false);
 	return seq_append(seq, m68k_label("m68k_cache"));
@@ -983,7 +983,7 @@ static RzILOpEffect *lift_pmove(M68KILCtx *ctx) {
 
 	RzILOpEffect *seq = NULL;
 	seq = seq_append(seq, ea.pre);
-	seq = seq_append(seq, SETL("mmu_addr", cast_unsigned(M68K_ADDR_BITS, ea.addr)));
+	seq = seq_append(seq, SETL("mmu_addr", UNSIGNED(M68K_ADDR_BITS, ea.addr)));
 	if (mem_to_reg) {
 		seq = seq_append(seq, SETL("src", LOADW(bits, VARL("mmu_addr"))));
 		seq = seq_append(seq, ea.post);
@@ -1001,7 +1001,7 @@ static RzILOpEffect *lift_pmove(M68KILCtx *ctx) {
 		return NULL;
 	}
 	seq = seq_append(seq, SETL("src", value));
-	seq = seq_append(seq, STOREW(VARL("mmu_addr"), cast_unsigned(bits, VARL("src"))));
+	seq = seq_append(seq, STOREW(VARL("mmu_addr"), UNSIGNED(bits, VARL("src"))));
 	return seq_append(seq, ea.post);
 }
 
@@ -1043,9 +1043,9 @@ static RzILOpEffect *lift_rem(M68KILCtx *ctx, bool sign) {
 	}
 	seq = seq_append(seq, SETL("dst", dst));
 
-	RzILOpPure *dividend = sign ? cast_signed(64, VARL("dst")) : cast_unsigned(64, VARL("dst"));
-	RzILOpPure *divisor = sign ? cast_signed(64, VARL("src")) : cast_unsigned(64, VARL("src"));
-	RzILOpEffect *write_remainder = write_reg_sized(ctx, dw, 32, cast_unsigned(32, VARL("rem")));
+	RzILOpPure *dividend = sign ? SIGNED(64, VARL("dst")) : UNSIGNED(64, VARL("dst"));
+	RzILOpPure *divisor = sign ? SIGNED(64, VARL("src")) : UNSIGNED(64, VARL("src"));
+	RzILOpEffect *write_remainder = write_reg_sized(ctx, dw, 32, UNSIGNED(32, VARL("rem")));
 	if (!write_remainder) {
 		rz_il_op_pure_free(dividend);
 		rz_il_op_pure_free(divisor);
@@ -1054,12 +1054,12 @@ static RzILOpEffect *lift_rem(M68KILCtx *ctx, bool sign) {
 	}
 	RzILOpEffect *normal = SEQ4(
 		SETL("quot", sign ? SDIV(dividend, divisor) : DIV(dividend, divisor)),
-		SETL("rem", SUB(sign ? cast_signed(64, VARL("dst")) : cast_unsigned(64, VARL("dst")), MUL(VARL("quot"), sign ? cast_signed(64, VARL("src")) : cast_unsigned(64, VARL("src"))))),
+		SETL("rem", SUB(sign ? SIGNED(64, VARL("dst")) : UNSIGNED(64, VARL("dst")), MUL(VARL("quot"), sign ? SIGNED(64, VARL("src")) : UNSIGNED(64, VARL("src"))))),
 		write_remainder,
 		set_flags_rem(VARL("quot"), IL_FALSE));
 	RzILOpBool *overflow = sign
 		? AND(EQ(VARL("dst"), U32(0x80000000)), EQ(VARL("src"), U32(0xffffffff)))
-		: UGT(DIV(cast_unsigned(64, VARL("dst")), cast_unsigned(64, VARL("src"))), U64(0x7fffffff));
+		: UGT(DIV(UNSIGNED(64, VARL("dst")), UNSIGNED(64, VARL("src"))), U64(0x7fffffff));
 	RzILOpEffect *do_divide = BRANCH(overflow, set_flags_rem(U32(0), IL_TRUE), normal);
 	return seq_append(seq, BRANCH(IS_ZERO(VARL("src")), m68k_exception(M68K_TRAP_OP_DIV_ZERO, M68K_VECTOR_ZERO_DIVIDE, "m68k_trap"), do_divide));
 }
@@ -1086,7 +1086,7 @@ static RzILOpPure *mac_read_reg_part(M68KILCtx *ctx, const cs_m68k_op *op, ut32 
 	}
 	if (bits == 16) {
 		value = (op->flags & M68K_OP_FLAG_REG_UPPER) ? SHIFTR0(value, U8(16)) : value;
-		return cast_signed(32, cast_unsigned(16, value));
+		return SIGNED(32, UNSIGNED(16, value));
 	}
 	return value;
 }
@@ -1102,7 +1102,7 @@ static RzILOpEffect *mac_memory_update(M68KILCtx *ctx, ut32 bits, RzILOpEffect *
 		return NULL;
 	}
 	seq = seq_append(seq, ea.pre);
-	seq = seq_append(seq, SETL("mem_addr", cast_unsigned(32, ea.addr)));
+	seq = seq_append(seq, SETL("mem_addr", UNSIGNED(32, ea.addr)));
 	seq = seq_append(seq, SETL("mem_load", LOADW(bits, VARL("mem_addr"))));
 	RzILOpEffect *write = write_reg_sized(ctx, reg->reg, bits, VARL("mem_load"));
 	if (!write) {
@@ -1156,13 +1156,13 @@ static RzILOpEffect *lift_mac_msac(M68KILCtx *ctx, bool subtract) {
 	RzILOpEffect *seq = SEQ4(
 		SETL("src0", src0_value),
 		SETL("src1", src1_value),
-		SETL("acc", cast_signed(64, acc_value)),
-		SETL("prod", MUL(cast_signed(64, VARL("src0")), cast_signed(64, VARL("src1")))));
+		SETL("acc", SIGNED(64, acc_value)),
+		SETL("prod", MUL(SIGNED(64, VARL("src0")), SIGNED(64, VARL("src1")))));
 	if (shift) {
 		seq = seq_append(seq, SETL("prod", (shift->flags & M68K_OP_FLAG_SHIFT_LEFT) ? SHIFTL0(VARL("prod"), U8(1)) : SHIFTRA(VARL("prod"), U8(1))));
 	}
 	seq = seq_append(seq, SETL("res64", subtract ? SUB(VARL("acc"), VARL("prod")) : ADD(VARL("acc"), VARL("prod"))));
-	seq = seq_append(seq, SETL("res", cast_unsigned(32, VARL("res64"))));
+	seq = seq_append(seq, SETL("res", UNSIGNED(32, VARL("res64"))));
 	RzILOpEffect *write_acc = write_reg_sized(ctx, acc_op->reg, 32, VARL("res"));
 	if (!write_acc) {
 		rz_il_op_effect_free(seq);
@@ -1182,9 +1182,9 @@ static RzILOpEffect *mac_dual_acc_update(M68KILCtx *ctx, RzILOpEffect *seq, cons
 		rz_il_op_effect_free(seq);
 		return NULL;
 	}
-	seq = seq_append(seq, SETL("acc", cast_signed(64, acc_value)));
+	seq = seq_append(seq, SETL("acc", SIGNED(64, acc_value)));
 	seq = seq_append(seq, SETL("res64", subtract ? SUB(VARL("acc"), VARL("prod")) : ADD(VARL("acc"), VARL("prod"))));
-	seq = seq_append(seq, SETL("res", cast_unsigned(32, VARL("res64"))));
+	seq = seq_append(seq, SETL("res", UNSIGNED(32, VARL("res64"))));
 	RzILOpEffect *write_acc = write_reg_sized(ctx, acc_op->reg, 32, VARL("res"));
 	if (!write_acc) {
 		rz_il_op_effect_free(seq);
@@ -1231,7 +1231,7 @@ static RzILOpEffect *lift_mac_dual_acc(M68KILCtx *ctx, bool subtract_first, bool
 	RzILOpEffect *seq = SEQ3(
 		SETL("src0", src0_value),
 		SETL("src1", src1_value),
-		SETL("prod", MUL(cast_signed(64, VARL("src0")), cast_signed(64, VARL("src1")))));
+		SETL("prod", MUL(SIGNED(64, VARL("src0")), SIGNED(64, VARL("src1")))));
 	if (shift) {
 		seq = seq_append(seq, SETL("prod", (shift->flags & M68K_OP_FLAG_SHIFT_LEFT) ? SHIFTL0(VARL("prod"), U8(1)) : SHIFTRA(VARL("prod"), U8(1))));
 	}
@@ -1244,16 +1244,16 @@ static RzILOpEffect *lift_mac_dual_acc(M68KILCtx *ctx, bool subtract_first, bool
 #endif
 
 static RzILOpPure *div_quotient_expr(bool sign, const char *dividend_local, const char *divisor_local) {
-	RzILOpPure *dividend = sign ? cast_signed(64, VARL(dividend_local)) : cast_unsigned(64, VARL(dividend_local));
-	RzILOpPure *divisor = sign ? cast_signed(64, VARL(divisor_local)) : cast_unsigned(64, VARL(divisor_local));
+	RzILOpPure *dividend = sign ? SIGNED(64, VARL(dividend_local)) : UNSIGNED(64, VARL(dividend_local));
+	RzILOpPure *divisor = sign ? SIGNED(64, VARL(divisor_local)) : UNSIGNED(64, VARL(divisor_local));
 	return sign ? SDIV(dividend, divisor) : DIV(dividend, divisor);
 }
 
 static RzILOpPure *div_remainder_expr(bool sign, const char *dividend_local, const char *divisor_local) {
 	/* 680x0 remainder keeps the dividend sign (truncating toward zero).
 	 * RzIL SMOD follows the divisor sign, so derive rem from quot. */
-	RzILOpPure *dividend = sign ? cast_signed(64, VARL(dividend_local)) : cast_unsigned(64, VARL(dividend_local));
-	RzILOpPure *divisor = sign ? cast_signed(64, VARL(divisor_local)) : cast_unsigned(64, VARL(divisor_local));
+	RzILOpPure *dividend = sign ? SIGNED(64, VARL(dividend_local)) : UNSIGNED(64, VARL(dividend_local));
+	RzILOpPure *divisor = sign ? SIGNED(64, VARL(divisor_local)) : UNSIGNED(64, VARL(divisor_local));
 	return SUB(dividend, MUL(VARL("quot"), divisor));
 }
 
@@ -1277,11 +1277,11 @@ static RzILOpEffect *lift_div_reg(M68KILCtx *ctx, bool sign, m68k_reg reg, ut32 
 	RzILOpEffect *write_result = NULL;
 	if (bits == 16) {
 		RzILOpPure *result = LOGOR(
-			SHIFTL0(cast_unsigned(32, VARL("rem")), U8(16)),
-			cast_unsigned(32, VARL("quot")));
+			SHIFTL0(UNSIGNED(32, VARL("rem")), U8(16)),
+			UNSIGNED(32, VARL("quot")));
 		write_result = write_reg_sized(ctx, reg, 32, result);
 	} else {
-		write_result = write_reg_sized(ctx, reg, 32, cast_unsigned(32, VARL("quot")));
+		write_result = write_reg_sized(ctx, reg, 32, UNSIGNED(32, VARL("quot")));
 	}
 	if (!write_result) {
 		rz_il_op_effect_free(seq);
@@ -1306,8 +1306,8 @@ static RzILOpEffect *lift_div_pair(M68KILCtx *ctx, bool sign, m68k_reg high_reg,
 	if (!rz_m68k_reg_is_dreg(high_reg) || !rz_m68k_reg_is_dreg(low_reg) || high_reg == low_reg) {
 		return NULL;
 	}
-	RzILOpEffect *write_high = write_reg_sized(ctx, high_reg, 32, cast_unsigned(32, VARL("rem")));
-	RzILOpEffect *write_low = write_reg_sized(ctx, low_reg, 32, cast_unsigned(32, VARL("quot")));
+	RzILOpEffect *write_high = write_reg_sized(ctx, high_reg, 32, UNSIGNED(32, VARL("rem")));
+	RzILOpEffect *write_low = write_reg_sized(ctx, low_reg, 32, UNSIGNED(32, VARL("quot")));
 	if (!write_high || !write_low) {
 		return NULL;
 	}
@@ -1350,13 +1350,13 @@ static RzILOpPure *movep_addr(ut32 offset) {
 }
 
 static RzILOpPure *movep_read_byte(ut32 offset, ut32 bits, ut32 shift) {
-	RzILOpPure *byte = cast_unsigned(bits, LOADW(8, movep_addr(offset)));
+	RzILOpPure *byte = UNSIGNED(bits, LOADW(8, movep_addr(offset)));
 	return shift ? SHIFTL0(byte, U8(shift)) : byte;
 }
 
 static RzILOpEffect *movep_store_byte(ut32 offset, ut32 shift) {
 	RzILOpPure *byte = shift ? SHIFTR0(VARL("src"), U8(shift)) : VARL("src");
-	return STOREW(movep_addr(offset), cast_unsigned(8, byte));
+	return STOREW(movep_addr(offset), UNSIGNED(8, byte));
 }
 
 static RzILOpEffect *lift_movep(M68KILCtx *ctx) {
@@ -1382,7 +1382,7 @@ static RzILOpEffect *lift_movep(M68KILCtx *ctx) {
 
 	RzILOpEffect *seq = NULL;
 	seq = seq_append(seq, ea.pre);
-	seq = seq_append(seq, SETL("addr", cast_unsigned(32, ea.addr)));
+	seq = seq_append(seq, SETL("addr", UNSIGNED(32, ea.addr)));
 	if (mem_to_reg) {
 		RzILOpPure *res = bits == 16
 			? LOGOR(movep_read_byte(0, 16, 8), movep_read_byte(2, 16, 0))
@@ -1423,7 +1423,7 @@ static RzILOpPure *movem_addr_at(ut32 offset) {
 
 static RzILOpEffect *write_movem_reg(M68KILCtx *ctx, m68k_reg reg, ut32 bits, RzILOpPure *value) {
 	if (bits == 16) {
-		return write_reg_sized(ctx, reg, 32, cast_signed(32, value));
+		return write_reg_sized(ctx, reg, 32, SIGNED(32, value));
 	}
 	return write_reg_sized(ctx, reg, 32, value);
 }
@@ -1463,7 +1463,7 @@ static RzILOpEffect *lift_movem(M68KILCtx *ctx) {
 		if (!rz_m68k_reg_is_areg(base_reg)) {
 			return NULL;
 		}
-		seq = seq_append(seq, SETL("addr", cast_unsigned(32, reg_value(ctx, base_reg))));
+		seq = seq_append(seq, SETL("addr", UNSIGNED(32, reg_value(ctx, base_reg))));
 	} else {
 		M68KEA ea = effective_addr(ctx, mem, bits);
 		if (!ea.addr) {
@@ -1471,7 +1471,7 @@ static RzILOpEffect *lift_movem(M68KILCtx *ctx) {
 			return NULL;
 		}
 		seq = seq_append(seq, ea.pre);
-		seq = seq_append(seq, SETL("addr", cast_unsigned(32, ea.addr)));
+		seq = seq_append(seq, SETL("addr", UNSIGNED(32, ea.addr)));
 		seq = seq_append(seq, ea.post);
 	}
 
@@ -1482,14 +1482,14 @@ static RzILOpEffect *lift_movem(M68KILCtx *ctx) {
 			}
 			m68k_reg reg = movem_reg_for_bit((ut32)i);
 			RzILOpPure *value = reg == base_reg && m68k_mode_uses_later_movem_base_value(ctx->mode)
-				? cast_unsigned(bits, SUB(reg_value(ctx, base_reg), U32(bytes)))
+				? UNSIGNED(bits, SUB(reg_value(ctx, base_reg), U32(bytes)))
 				: read_reg_sized(ctx, reg, bits);
 			if (!value) {
 				rz_il_op_effect_free(seq);
 				return NULL;
 			}
 			seq = seq_append(seq, SETL("addr", SUB(VARL("addr"), U32(bytes))));
-			RzILOpEffect *write = STOREW(VARL("addr"), cast_unsigned(bits, value));
+			RzILOpEffect *write = STOREW(VARL("addr"), UNSIGNED(bits, value));
 			if (!write) {
 				rz_il_op_pure_free(value);
 				rz_il_op_effect_free(seq);
@@ -1514,7 +1514,7 @@ static RzILOpEffect *lift_movem(M68KILCtx *ctx) {
 				rz_il_op_effect_free(seq);
 				return NULL;
 			}
-			op = STOREW(movem_addr_at(offset), cast_unsigned(bits, value));
+			op = STOREW(movem_addr_at(offset), UNSIGNED(bits, value));
 		} else {
 			value = LOADW(bits, movem_addr_at(offset));
 			op = write_movem_reg(ctx, reg, bits, value);
@@ -1550,7 +1550,7 @@ static bool move16_operand_addr(M68KILCtx *ctx, const cs_m68k_op *op, const char
 		if (!rz_m68k_reg_is_areg(base_reg)) {
 			return false;
 		}
-		*seq = seq_append(*seq, SETL(addr_local, cast_unsigned(32, reg_value(ctx, base_reg))));
+		*seq = seq_append(*seq, SETL(addr_local, UNSIGNED(32, reg_value(ctx, base_reg))));
 		*postinc_reg = base_reg;
 		return true;
 	}
@@ -1559,7 +1559,7 @@ static bool move16_operand_addr(M68KILCtx *ctx, const cs_m68k_op *op, const char
 		return false;
 	}
 	*seq = seq_append(*seq, ea.pre);
-	*seq = seq_append(*seq, SETL(addr_local, cast_unsigned(32, ea.addr)));
+	*seq = seq_append(*seq, SETL(addr_local, UNSIGNED(32, ea.addr)));
 	*seq = seq_append(*seq, ea.post);
 	return true;
 }
@@ -1584,10 +1584,10 @@ static RzILOpEffect *lift_move16(M68KILCtx *ctx) {
 	seq = seq_append(seq, SETL("word1", LOADW(32, move16_addr_at("src_line", 4))));
 	seq = seq_append(seq, SETL("word2", LOADW(32, move16_addr_at("src_line", 8))));
 	seq = seq_append(seq, SETL("word3", LOADW(32, move16_addr_at("src_line", 12))));
-	seq = seq_append(seq, STOREW(move16_addr_at("dst_line", 0), cast_unsigned(32, VARL("word0"))));
-	seq = seq_append(seq, STOREW(move16_addr_at("dst_line", 4), cast_unsigned(32, VARL("word1"))));
-	seq = seq_append(seq, STOREW(move16_addr_at("dst_line", 8), cast_unsigned(32, VARL("word2"))));
-	seq = seq_append(seq, STOREW(move16_addr_at("dst_line", 12), cast_unsigned(32, VARL("word3"))));
+	seq = seq_append(seq, STOREW(move16_addr_at("dst_line", 0), UNSIGNED(32, VARL("word0"))));
+	seq = seq_append(seq, STOREW(move16_addr_at("dst_line", 4), UNSIGNED(32, VARL("word1"))));
+	seq = seq_append(seq, STOREW(move16_addr_at("dst_line", 8), UNSIGNED(32, VARL("word2"))));
+	seq = seq_append(seq, STOREW(move16_addr_at("dst_line", 12), UNSIGNED(32, VARL("word3"))));
 	if (src_postinc != M68K_REG_INVALID) {
 		seq = seq_append(seq, write_reg_sized(ctx, src_postinc, 32, ADD(VARL("src_addr"), U32(16))));
 	}
@@ -1616,7 +1616,7 @@ static RzILOpEffect *push32(M68KILCtx *ctx, RzILOpPure *value) {
 	return SEQ3(
 		SETL("push_value", value),
 		set_addr_reg_delta(ctx, M68K_REG_A7, -4),
-		STOREW(reg_value(ctx, M68K_REG_A7), cast_unsigned(32, VARL("push_value"))));
+		STOREW(reg_value(ctx, M68K_REG_A7), UNSIGNED(32, VARL("push_value"))));
 }
 
 static RzILOpEffect *lift_pea(M68KILCtx *ctx) {
@@ -1662,7 +1662,7 @@ static RzILOpEffect *lift_binop(M68KILCtx *ctx, M68KBinOp binop, bool address_ds
 			rz_il_op_effect_free(seq);
 			return NULL;
 		}
-		seq = seq_append(seq, SETL("src", extend_to_32(VARL("src_raw"), true)));
+		seq = seq_append(seq, SETL("src", SIGNED(32, VARL("src_raw"))));
 	} else if (!operand_to_local(ctx, "src", src, op_bits, &seq)) {
 		rz_il_op_effect_free(seq);
 		return NULL;
@@ -1770,9 +1770,9 @@ static RzILOpEffect *lift_addx_subx(M68KILCtx *ctx, bool subtract) {
 	seq = seq_append(seq, write);
 	seq = seq_append(seq, dst_rw.post);
 
-	RzILOpPure *wide_dst = cast_unsigned(64, VARL("dst"));
-	RzILOpPure *wide_src = cast_unsigned(64, VARL("src"));
-	RzILOpPure *wide_x = cast_unsigned(64, VARL("x"));
+	RzILOpPure *wide_dst = UNSIGNED(64, VARL("dst"));
+	RzILOpPure *wide_src = UNSIGNED(64, VARL("src"));
+	RzILOpPure *wide_x = UNSIGNED(64, VARL("x"));
 	RzILOpBool *c = subtract
 		? ULT(wide_dst, ADD(wide_src, wide_x))
 		: UGT(ADD(ADD(wide_dst, wide_src), wide_x), U64(bits == 32 ? UT32_MAX : ((1ULL << bits) - 1)));
@@ -1781,20 +1781,20 @@ static RzILOpEffect *lift_addx_subx(M68KILCtx *ctx, bool subtract) {
 }
 
 static RzILOpPure *bcd_byte_to_decimal(const char *local) {
-	RzILOpPure *high = cast_unsigned(32, SHIFTR0(LOGAND(VARL(local), U8(0xf0)), U8(4)));
-	RzILOpPure *low = cast_unsigned(32, LOGAND(VARL(local), U8(0x0f)));
+	RzILOpPure *high = UNSIGNED(32, SHIFTR0(LOGAND(VARL(local), U8(0xf0)), U8(4)));
+	RzILOpPure *low = UNSIGNED(32, LOGAND(VARL(local), U8(0x0f)));
 	return ADD(MUL(high, U32(10)), low);
 }
 
 static RzILOpPure *bcd_decimal_to_byte(const char *local) {
-	RzILOpPure *high = SHIFTL0(DIV(cast_unsigned(32, VARL(local)), U32(10)), U8(4));
-	RzILOpPure *low = MOD(cast_unsigned(32, VARL(local)), U32(10));
-	return cast_unsigned(8, LOGOR(high, low));
+	RzILOpPure *high = SHIFTL0(DIV(UNSIGNED(32, VARL(local)), U32(10)), U8(4));
+	RzILOpPure *low = MOD(UNSIGNED(32, VARL(local)), U32(10));
+	return UNSIGNED(8, LOGOR(high, low));
 }
 
 static RzILOpEffect *set_flags_bcd(RzILOpPure *result, RzILOpBool *carry) {
-	RzILOpPure *ccr = LOGAND(cast_unsigned(8, VARG("sr")), U8(0xea));
-	ccr = ccr_with_flag(ccr, M68K_CCR_Z, AND(ccr_bit(M68K_CCR_Z), IS_ZERO(cast_unsigned(8, result))));
+	RzILOpPure *ccr = LOGAND(UNSIGNED(8, VARG("sr")), U8(0xea));
+	ccr = ccr_with_flag(ccr, M68K_CCR_Z, AND(ccr_bit(M68K_CCR_Z), IS_ZERO(UNSIGNED(8, result))));
 	ccr = ccr_with_flag(ccr, M68K_CCR_C, (RzILOpBool *)DUP(carry));
 	ccr = ccr_with_flag(ccr, M68K_CCR_X, carry);
 	return set_ccr_from_value(ccr);
@@ -1818,7 +1818,7 @@ static RzILOpEffect *lift_abcd_sbcd(M68KILCtx *ctx, bool subtract) {
 	seq = seq_append(seq, SETL("dst_dec", bcd_byte_to_decimal("dst")));
 	seq = seq_append(seq, SETL("x", BOOL_TO_BV(ccr_bit(M68K_CCR_X), 32)));
 	if (subtract) {
-		seq = seq_append(seq, SETL("diff", SUB(SUB(cast_signed(32, VARL("dst_dec")), cast_signed(32, VARL("src_dec"))), cast_signed(32, VARL("x")))));
+		seq = seq_append(seq, SETL("diff", SUB(SUB(SIGNED(32, VARL("dst_dec")), SIGNED(32, VARL("src_dec"))), SIGNED(32, VARL("x")))));
 		seq = seq_append(seq, SETL("res_dec", ITE(SLT(VARL("diff"), S32(0)), ADD(VARL("diff"), S32(100)), VARL("diff"))));
 	} else {
 		seq = seq_append(seq, SETL("sum", ADD(ADD(VARL("dst_dec"), VARL("src_dec")), VARL("x"))));
@@ -1849,7 +1849,7 @@ static RzILOpEffect *lift_nbcd(M68KILCtx *ctx) {
 	}
 	seq = seq_append(seq, SETL("dst_dec", bcd_byte_to_decimal("dst")));
 	seq = seq_append(seq, SETL("x", BOOL_TO_BV(ccr_bit(M68K_CCR_X), 32)));
-	seq = seq_append(seq, SETL("diff", SUB(S32(0), ADD(cast_signed(32, VARL("dst_dec")), cast_signed(32, VARL("x"))))));
+	seq = seq_append(seq, SETL("diff", SUB(S32(0), ADD(SIGNED(32, VARL("dst_dec")), SIGNED(32, VARL("x"))))));
 	seq = seq_append(seq, SETL("borrow", BOOL_TO_BV(SLT(VARL("diff"), S32(0)), 32)));
 	seq = seq_append(seq, SETL("res_dec", ITE(NON_ZERO(VARL("borrow")), ADD(VARL("diff"), S32(100)), VARL("diff"))));
 	seq = seq_append(seq, SETL("res", bcd_decimal_to_byte("res_dec")));
@@ -1895,15 +1895,15 @@ static RzILOpEffect *lift_pack_unpk(M68KILCtx *ctx, bool unpack) {
 	seq = seq_append(seq, post);
 	seq = seq_append(seq, SETL("adjustment", pack_adjustment(ctx)));
 	if (unpack) {
-		RzILOpPure *high = SHIFTL0(cast_unsigned(16, LOGAND(VARL("src"), U8(0xf0))), U8(4));
-		RzILOpPure *low = cast_unsigned(16, LOGAND(VARL("src"), U8(0x0f)));
+		RzILOpPure *high = SHIFTL0(UNSIGNED(16, LOGAND(VARL("src"), U8(0xf0))), U8(4));
+		RzILOpPure *low = UNSIGNED(16, LOGAND(VARL("src"), U8(0x0f)));
 		seq = seq_append(seq, SETL("expanded", LOGOR(high, low)));
 		seq = seq_append(seq, SETL("res", ADD(VARL("expanded"), VARL("adjustment"))));
 	} else {
-		seq = seq_append(seq, SETL("adjusted", ADD(cast_unsigned(16, VARL("src")), VARL("adjustment"))));
+		seq = seq_append(seq, SETL("adjusted", ADD(UNSIGNED(16, VARL("src")), VARL("adjustment"))));
 		RzILOpPure *high = SHIFTR0(LOGAND(VARL("adjusted"), U16(0x0f00)), U8(4));
 		RzILOpPure *low = LOGAND(VARL("adjusted"), U16(0x000f));
-		seq = seq_append(seq, SETL("res", cast_unsigned(8, LOGOR(high, low))));
+		seq = seq_append(seq, SETL("res", UNSIGNED(8, LOGOR(high, low))));
 	}
 
 	RzILOpEffect *write = write_operand(ctx, dst, unpack ? 16 : 8, VARL("res"), &pre, &post);
@@ -1996,7 +1996,7 @@ static RzILOpEffect *lift_swap(M68KILCtx *ctx) {
 	}
 	m68k_reg reg = ctx->m68k->operands[0].reg;
 	RzILOpPure *v = reg_value(ctx, reg);
-	RzILOpPure *res = LOGOR(SHIFTL0(cast_unsigned(32, v), U8(16)), SHIFTR0(cast_unsigned(32, DUP(v)), U8(16)));
+	RzILOpPure *res = LOGOR(SHIFTL0(UNSIGNED(32, v), U8(16)), SHIFTR0(UNSIGNED(32, DUP(v)), U8(16)));
 	return SEQ3(
 		SETL("res", DUP(res)),
 		write_reg_sized(ctx, reg, 32, res),
@@ -2353,7 +2353,7 @@ static RzILOpEffect *lift_rtr(M68KILCtx *ctx) {
 
 static RzILOpEffect *lift_rte(M68KILCtx *ctx) {
 	RzILOpEffect *effect = NULL;
-	effect = seq_append(effect, SETL("frame", cast_unsigned(32, reg_value(ctx, M68K_REG_A7))));
+	effect = seq_append(effect, SETL("frame", UNSIGNED(32, reg_value(ctx, M68K_REG_A7))));
 	effect = seq_append(effect, SETL("new_sr", LOADW(16, VARL("frame"))));
 	effect = seq_append(effect, SETL("target", LOADW(32, ADD(VARL("frame"), U32(2)))));
 	RzILOpEffect *restore = NULL;
@@ -2387,10 +2387,10 @@ static RzILOpEffect *lift_rtm(M68KILCtx *ctx) {
 		JMP(VARL("target")));
 
 	RzILOpEffect *seq = NULL;
-	seq = seq_append(seq, SETL("frame", cast_unsigned(32, reg_value(ctx, M68K_REG_A7))));
+	seq = seq_append(seq, SETL("frame", UNSIGNED(32, reg_value(ctx, M68K_REG_A7))));
 	seq = seq_append(seq, SETL("frame_info", LOADW(16, VARL("frame"))));
 	seq = seq_append(seq, SETL("ccr_arg", LOADW(16, ADD(VARL("frame"), U32(2)))));
-	seq = seq_append(seq, SETL("arg_count", cast_unsigned(32, cast_unsigned(8, VARL("ccr_arg")))));
+	seq = seq_append(seq, SETL("arg_count", UNSIGNED(32, UNSIGNED(8, VARL("ccr_arg")))));
 	seq = seq_append(seq, SETL("target", LOADW(32, ADD(VARL("frame"), U32(0x0c)))));
 	seq = seq_append(seq, SETL("module_data", LOADW(32, ADD(VARL("frame"), U32(0x10)))));
 	return seq_append(seq, BRANCH(IS_ZERO(LOGAND(VARL("frame_info"), U16(0xff00))), restore, m68k_label("m68k_rtm")));
@@ -2425,7 +2425,7 @@ static RzILOpEffect *lift_strldsr(M68KILCtx *ctx) {
 	}
 
 	RzILOpEffect *effect = SEQ2(
-		push32(ctx, cast_unsigned(32, VARG("sr"))),
+		push32(ctx, UNSIGNED(32, VARG("sr"))),
 		write_reg_sized(ctx, M68K_REG_SR, 16, U16(new_sr)));
 	return BRANCH(supervisor_mode(), effect, m68k_label("m68k_privilege"));
 }
@@ -2515,7 +2515,7 @@ static RzILOpEffect *lift_dbcc_cond(M68KILCtx *ctx, RzILOpBool *cond) {
 		rz_il_op_pure_free(reg_value);
 		return NULL;
 	}
-	RzILOpEffect *seq = SETL("dec", SUB(cast_unsigned(16, reg_value), U16(1)));
+	RzILOpEffect *seq = SETL("dec", SUB(UNSIGNED(16, reg_value), U16(1)));
 	seq = seq_append(seq, write_reg_sized(ctx, reg, 16, VARL("dec")));
 	seq = seq_append(seq, BRANCH(NE(VARL("dec"), U16(0xffff)), JMP(target), EMPTY()));
 	return BRANCH(cond,
@@ -2554,16 +2554,16 @@ static RzILOpEffect *lift_chk(M68KILCtx *ctx) {
 	seq = seq_append(seq, SETL("dst", dst));
 
 	RzILOpEffect *neg_trap = SEQ2(
-		set_ccr_from_value(ccr_with_flag(cast_unsigned(8, VARG("sr")), M68K_CCR_N, IL_TRUE)),
+		set_ccr_from_value(ccr_with_flag(UNSIGNED(8, VARG("sr")), M68K_CCR_N, IL_TRUE)),
 		m68k_exception(M68K_TRAP_OP_CHK, M68K_VECTOR_CHK, "m68k_chk"));
 	RzILOpEffect *high_trap = SEQ2(
-		set_ccr_from_value(ccr_with_flag(cast_unsigned(8, VARG("sr")), M68K_CCR_N, IL_FALSE)),
+		set_ccr_from_value(ccr_with_flag(UNSIGNED(8, VARG("sr")), M68K_CCR_N, IL_FALSE)),
 		m68k_exception(M68K_TRAP_OP_CHK, M68K_VECTOR_CHK, "m68k_chk"));
 	return seq_append(seq, BRANCH(SLT(VARL("dst"), signed_zero_for_bits(bits)), neg_trap, BRANCH(SGT(VARL("dst"), VARL("bound")), high_trap, EMPTY())));
 }
 
 static RzILOpPure *cmp2_extend_value(RzILOpPure *value, ut32 bits) {
-	return bits == 32 ? value : cast_signed(32, value);
+	return bits == 32 ? value : SIGNED(32, value);
 }
 
 static RzILOpBool *cmp2_outside_bounds(void) {
@@ -2574,7 +2574,7 @@ static RzILOpBool *cmp2_outside_bounds(void) {
 }
 
 static RzILOpEffect *set_flags_cmp2(void) {
-	RzILOpPure *ccr = LOGAND(cast_unsigned(8, VARG("sr")), U8(0xfa));
+	RzILOpPure *ccr = LOGAND(UNSIGNED(8, VARG("sr")), U8(0xfa));
 	ccr = ccr_with_flag(ccr, M68K_CCR_Z, NON_ZERO(VARL("equal")));
 	ccr = ccr_with_flag(ccr, M68K_CCR_C, NON_ZERO(VARL("outside")));
 	return set_ccr_from_value(ccr);
@@ -2601,7 +2601,7 @@ static RzILOpEffect *lift_cmp2_chk2(M68KILCtx *ctx, bool trap) {
 	if (rz_m68k_reg_is_dreg(reg->reg)) {
 		rn = cmp2_extend_value(rn, bits);
 	}
-	RzILOpPure *addr = cast_unsigned(32, ea.addr);
+	RzILOpPure *addr = UNSIGNED(32, ea.addr);
 	RzILOpPure *upper_addr = ADD(VARL("bounds_addr"), U32(rz_m68k_bits_access_bytes(bits)));
 	RzILOpEffect *seq = NULL;
 	seq = seq_append(seq, ea.pre);
@@ -2653,7 +2653,7 @@ static RzILOpEffect *lift_cas(M68KILCtx *ctx) {
 		rz_il_op_effect_free(seq);
 		return NULL;
 	}
-	seq = seq_append(seq, BRANCH(EQ(cast_unsigned(bits, VARL("cmp")), cast_unsigned(bits, VARL("dst"))), success, failure));
+	seq = seq_append(seq, BRANCH(EQ(UNSIGNED(bits, VARL("cmp")), UNSIGNED(bits, VARL("dst"))), success, failure));
 	seq = seq_append(seq, dst_rw.post);
 	return seq_append(seq, set_flags_nzvcx(VARL("res"), bits, m68k_sub_overflow(VARL("dst"), VARL("cmp"), VARL("res")), ULT(VARL("dst"), VARL("cmp")), NULL));
 }
@@ -2684,8 +2684,8 @@ static RzILOpEffect *lift_cas2(M68KILCtx *ctx) {
 	}
 
 	RzILOpEffect *success = SEQ2(
-		STOREW(VARL("addr0"), cast_unsigned(bits, VARL("upd0"))),
-		STOREW(VARL("addr1"), cast_unsigned(bits, VARL("upd1"))));
+		STOREW(VARL("addr0"), UNSIGNED(bits, VARL("upd0"))),
+		STOREW(VARL("addr1"), UNSIGNED(bits, VARL("upd1"))));
 	RzILOpEffect *fail_second = write_reg_sized(ctx, cmp->reg_pair.reg_1, bits, VARL("dst1"));
 	RzILOpEffect *fail_first = write_reg_sized(ctx, cmp->reg_pair.reg_0, bits, VARL("dst0"));
 	if (!success || !fail_second || !fail_first) {
@@ -2718,7 +2718,7 @@ static RzILOpEffect *lift_cas2(M68KILCtx *ctx) {
 
 #ifdef RZ_CAPSTONE_HAS_M68K_CPU32
 static RzILOpPure *tbl_extend_entry(RzILOpPure *value, ut32 bits, bool sign) {
-	return sign ? cast_signed(64, value) : cast_unsigned(64, value);
+	return sign ? SIGNED(64, value) : UNSIGNED(64, value);
 }
 
 static RzILOpPure *tbl_rounded_delta(void) {
@@ -2731,8 +2731,8 @@ static RzILOpPure *tbl_rounded_delta(void) {
 
 static RzILOpPure *tbl_unrounded_result(ut32 bits, bool sign) {
 	ut32 result_bits = bits == 32 ? 32 : bits + 8;
-	RzILOpPure *sized = cast_unsigned(result_bits, VARL("fixed"));
-	return sign ? cast_signed(32, sized) : cast_unsigned(32, sized);
+	RzILOpPure *sized = UNSIGNED(result_bits, VARL("fixed"));
+	return sign ? SIGNED(32, sized) : UNSIGNED(32, sized);
 }
 
 static RzILOpPure *tbl_immediate_base(M68KILCtx *ctx, ut32 bits) {
@@ -2754,7 +2754,7 @@ static RzILOpEffect *lift_tbl(M68KILCtx *ctx) {
 	bool unrounded = rz_m68k_tbl_insn_is_unrounded(ctx->insn->id);
 	RzILOpEffect *seq = NULL;
 	seq = seq_append(seq, SETL("x", read_reg_sized(ctx, dst_reg, 16)));
-	seq = seq_append(seq, SETL("frac", cast_unsigned(64, LOGAND(VARL("x"), U16(0xff)))));
+	seq = seq_append(seq, SETL("frac", UNSIGNED(64, LOGAND(VARL("x"), U16(0xff)))));
 
 	if (rz_m68k_op_is_data_reg_pair(src)) {
 		seq = seq_append(seq, SETL("entry0", tbl_extend_entry(read_reg_sized(ctx, src->reg_pair.reg_0, bits), bits, sign)));
@@ -2766,8 +2766,8 @@ static RzILOpEffect *lift_tbl(M68KILCtx *ctx) {
 		}
 		ut32 bytes = rz_m68k_bits_access_bytes(bits);
 		seq = seq_append(seq, ea.pre);
-		seq = seq_append(seq, SETL("base", cast_unsigned(32, ea.addr)));
-		seq = seq_append(seq, SETL("index", cast_unsigned(32, SHIFTR0(LOGAND(VARL("x"), U16(0xff00)), U8(8)))));
+		seq = seq_append(seq, SETL("base", UNSIGNED(32, ea.addr)));
+		seq = seq_append(seq, SETL("index", UNSIGNED(32, SHIFTR0(LOGAND(VARL("x"), U16(0xff00)), U8(8)))));
 		seq = seq_append(seq, SETL("entry_addr", ADD(VARL("base"), MUL(VARL("index"), U32(bytes)))));
 		seq = seq_append(seq, SETL("entry0", tbl_extend_entry(LOADW(bits, VARL("entry_addr")), bits, sign)));
 		seq = seq_append(seq, SETL("entry1", tbl_extend_entry(LOADW(bits, ADD(VARL("entry_addr"), U32(bytes))), bits, sign)));
@@ -2775,7 +2775,7 @@ static RzILOpEffect *lift_tbl(M68KILCtx *ctx) {
 	} else if (src->type == M68K_OP_IMM) {
 		ut32 bytes = rz_m68k_bits_access_bytes(bits);
 		seq = seq_append(seq, SETL("base", tbl_immediate_base(ctx, bits)));
-		seq = seq_append(seq, SETL("index", cast_unsigned(32, SHIFTR0(LOGAND(VARL("x"), U16(0xff00)), U8(8)))));
+		seq = seq_append(seq, SETL("index", UNSIGNED(32, SHIFTR0(LOGAND(VARL("x"), U16(0xff00)), U8(8)))));
 		seq = seq_append(seq, SETL("entry_addr", ADD(VARL("base"), MUL(VARL("index"), U32(bytes)))));
 		seq = seq_append(seq, SETL("entry0", tbl_extend_entry(LOADW(bits, VARL("entry_addr")), bits, sign)));
 		seq = seq_append(seq, SETL("entry1", tbl_extend_entry(LOADW(bits, ADD(VARL("entry_addr"), U32(bytes))), bits, sign)));
@@ -2793,7 +2793,7 @@ static RzILOpEffect *lift_tbl(M68KILCtx *ctx) {
 		return seq_append(seq, set_flags_nzvcx(VARL("res"), 32, IL_FALSE, IL_FALSE, NULL));
 	}
 
-	seq = seq_append(seq, SETL("res", cast_unsigned(bits, ADD(VARL("entry0"), tbl_rounded_delta()))));
+	seq = seq_append(seq, SETL("res", UNSIGNED(bits, ADD(VARL("entry0"), tbl_rounded_delta()))));
 	seq = seq_append(seq, write_reg_sized(ctx, dst_reg, bits, VARL("res")));
 	return seq_append(seq, set_flags_nzvcx(VARL("res"), bits, IL_FALSE, IL_FALSE, NULL));
 }
@@ -2806,8 +2806,8 @@ static RzILOpEffect *lift_ext(M68KILCtx *ctx) {
 	ut32 bits = rz_m68k_detail_op_bits(ctx->m68k, 32);
 	ut32 src_bits = ctx->insn->id == M68K_INS_EXTB ? 8 : (bits == 32 ? 16 : 8);
 	m68k_reg reg = ctx->m68k->operands[0].reg;
-	RzILOpPure *src = cast_unsigned(src_bits, read_reg_sized(ctx, reg, 32));
-	RzILOpPure *res = cast_signed(bits, src);
+	RzILOpPure *src = UNSIGNED(src_bits, read_reg_sized(ctx, reg, 32));
+	RzILOpPure *res = SIGNED(bits, src);
 	return SEQ3(
 		SETL("res", DUP(res)),
 		write_reg_sized(ctx, reg, bits, res),
@@ -2858,7 +2858,7 @@ static RzILOpEffect *lift_shift(M68KILCtx *ctx, bool left, bool arithmetic) {
 		rz_il_op_effect_free(seq);
 		return NULL;
 	}
-	RzILOpPure *count = cast_unsigned(8, VARL("count"));
+	RzILOpPure *count = UNSIGNED(8, VARL("count"));
 	seq = seq_append(seq, SETL("count8", LOGAND(count, U8(0x3f))));
 	RzILOpPure *res = left ? SHIFTL0(VARL("dst"), VARL("count8")) : (arithmetic ? SHIFTRA(VARL("dst"), VARL("count8")) : SHIFTR0(VARL("dst"), VARL("count8")));
 	seq = seq_append(seq, SETL("res", res));
@@ -2929,14 +2929,14 @@ static RzILOpEffect *lift_rotate(M68KILCtx *ctx, bool left, bool extend) {
 		rz_il_op_effect_free(seq);
 		return NULL;
 	}
-	seq = seq_append(seq, SETL("count_raw", LOGAND(cast_unsigned(8, VARL("count")), U8(0x3f))));
+	seq = seq_append(seq, SETL("count_raw", LOGAND(UNSIGNED(8, VARL("count")), U8(0x3f))));
 	seq = seq_append(seq, SETL("rot_count", MOD(VARL("count_raw"), U8(extend ? bits + 1 : bits))));
 	if (extend) {
 		ut32 wide_bits = bits + 1;
-		RzILOpPure *wide = APPEND(BOOL_TO_BV(ccr_bit(M68K_CCR_X), 1), cast_unsigned(bits, VARL("dst")));
+		RzILOpPure *wide = APPEND(BOOL_TO_BV(ccr_bit(M68K_CCR_X), 1), UNSIGNED(bits, VARL("dst")));
 		seq = seq_append(seq, SETL("wide", wide));
 		seq = seq_append(seq, SETL("wide_res", rotate_expr("wide", "rot_count", wide_bits, left)));
-		seq = seq_append(seq, SETL("res", cast_unsigned(bits, VARL("wide_res"))));
+		seq = seq_append(seq, SETL("res", UNSIGNED(bits, VARL("wide_res"))));
 	} else {
 		seq = seq_append(seq, SETL("res", rotate_expr("dst", "rot_count", bits, left)));
 	}
@@ -2986,8 +2986,8 @@ static RzILOpEffect *lift_bitop(M68KILCtx *ctx, ut32 insn_id) {
 	} else if (!operand_to_local(ctx, "dst", dst, bits, &seq)) {
 		return NULL;
 	}
-	RzILOpPure *idx = MOD(cast_unsigned(bits, VARL("bit")), UN(bits, bits));
-	RzILOpPure *mask = SHIFTL0(UN(bits, 1), cast_unsigned(8, idx));
+	RzILOpPure *idx = MOD(UNSIGNED(bits, VARL("bit")), UN(bits, bits));
+	RzILOpPure *mask = SHIFTL0(UN(bits, 1), UNSIGNED(8, idx));
 	RzILOpBool *was_set = NON_ZERO(LOGAND(VARL("dst"), writes_dst ? DUP(mask) : mask));
 	RzILOpPure *res = NULL;
 	switch (insn_id) {
@@ -3005,7 +3005,7 @@ static RzILOpEffect *lift_bitop(M68KILCtx *ctx, ut32 insn_id) {
 	default:
 		return NULL;
 	}
-	seq = seq_append(seq, set_ccr_from_value(ccr_with_flag(LOGAND(cast_unsigned(8, VARG("sr")), U8(0xfb)), M68K_CCR_Z, INV(was_set))));
+	seq = seq_append(seq, set_ccr_from_value(ccr_with_flag(LOGAND(UNSIGNED(8, VARG("sr")), U8(0xfb)), M68K_CCR_Z, INV(was_set))));
 	if (res) {
 		RzILOpEffect *write = write_rw_operand(ctx, &dst_rw, bits, res);
 		seq = seq_append(seq, write);
@@ -3034,43 +3034,43 @@ static RzILOpPure *bitfield_encoded_value(M68KILCtx *ctx, ut8 encoded, bool widt
 }
 
 static RzILOpPure *bitfield_mask64(void) {
-	return SUB(SHIFTL0(U64(1), cast_unsigned(8, VARL("width"))), U64(1));
+	return SUB(SHIFTL0(U64(1), UNSIGNED(8, VARL("width"))), U64(1));
 }
 
 static RzILOpPure *bitfield_mask32(void) {
-	return cast_unsigned(32, bitfield_mask64());
+	return UNSIGNED(32, bitfield_mask64());
 }
 
 static RzILOpPure *bitfield_shift(void) {
-	return SUB(U8(64), cast_unsigned(8, ADD(VARL("bit_offset"), VARL("width"))));
+	return SUB(U8(64), UNSIGNED(8, ADD(VARL("bit_offset"), VARL("width"))));
 }
 
 static RzILOpPure *bitfield_field_from_container(void) {
-	return LOGAND(cast_unsigned(32, SHIFTR0(VARL("container"), bitfield_shift())), bitfield_mask32());
+	return LOGAND(UNSIGNED(32, SHIFTR0(VARL("container"), bitfield_shift())), bitfield_mask32());
 }
 
 static RzILOpPure *bitfield_container_with_field(RzILOpPure *field) {
 	RzILOpPure *shift = bitfield_shift();
 	RzILOpPure *mask = SHIFTL0(bitfield_mask64(), (RzILOpPure *)DUP(shift));
-	RzILOpPure *value = SHIFTL0(LOGAND(cast_unsigned(64, field), bitfield_mask64()), shift);
+	RzILOpPure *value = SHIFTL0(LOGAND(UNSIGNED(64, field), bitfield_mask64()), shift);
 	return LOGOR(LOGAND(VARL("container"), LOGNOT(mask)), value);
 }
 
 static RzILOpPure *bitfield_data_reg_writeback(RzILOpPure *updated) {
-	RzILOpPure *wrapped_mask = cast_unsigned(32, SHIFTL0(bitfield_mask64(), bitfield_shift()));
-	RzILOpPure *upper = cast_unsigned(32, SHIFTR0((RzILOpPure *)DUP(updated), U8(32)));
-	RzILOpPure *lower = cast_unsigned(32, updated);
+	RzILOpPure *wrapped_mask = UNSIGNED(32, SHIFTL0(bitfield_mask64(), bitfield_shift()));
+	RzILOpPure *upper = UNSIGNED(32, SHIFTR0((RzILOpPure *)DUP(updated), U8(32)));
+	RzILOpPure *lower = UNSIGNED(32, updated);
 	return LOGOR(LOGAND(upper, LOGNOT((RzILOpPure *)DUP(wrapped_mask))), LOGAND(lower, wrapped_mask));
 }
 
 static RzILOpPure *bitfield_sign_extend(void) {
-	RzILOpPure *sign_mask = SHIFTL0(U32(1), cast_unsigned(8, SUB(VARL("width"), U32(1))));
+	RzILOpPure *sign_mask = SHIFTL0(U32(1), UNSIGNED(8, SUB(VARL("width"), U32(1))));
 	RzILOpBool *sign = NON_ZERO(LOGAND(VARL("field"), sign_mask));
 	return ITE(sign, LOGOR(VARL("field"), LOGNOT(bitfield_mask32())), VARL("field"));
 }
 
 static RzILOpPure *bitfield_left_aligned(void) {
-	return SHIFTL0(VARL("field"), SUB(U8(32), cast_unsigned(8, VARL("width"))));
+	return SHIFTL0(VARL("field"), SUB(U8(32), UNSIGNED(8, VARL("width"))));
 }
 
 static RzILOpPure *bitfield_memory_byte_addr(const char *addr_local, ut32 offset) {
@@ -3084,7 +3084,7 @@ enum {
 static RzILOpEffect *read_bitfield_memory(const char *addr_local) {
 	RzILOpEffect *seq = SETL("container", U64(0));
 	for (ut32 i = 0; i < M68K_BITFIELD_MAX_MEMORY_BYTES; i++) {
-		RzILOpPure *byte = cast_unsigned(64, LOADW(8, bitfield_memory_byte_addr(addr_local, i)));
+		RzILOpPure *byte = UNSIGNED(64, LOADW(8, bitfield_memory_byte_addr(addr_local, i)));
 		byte = SHIFTL0(byte, U8(56 - (i * 8)));
 		RzILOpEffect *load = SETL("container", LOGOR(VARL("container"), byte));
 		if (i > 0) {
@@ -3098,8 +3098,8 @@ static RzILOpEffect *read_bitfield_memory(const char *addr_local) {
 static RzILOpEffect *write_bitfield_memory(const char *addr_local, RzILOpPure *updated) {
 	RzILOpEffect *seq = SETL("updated_container", updated);
 	for (ut32 i = 0; i < M68K_BITFIELD_MAX_MEMORY_BYTES; i++) {
-		RzILOpPure *byte = cast_unsigned(8, SHIFTR0(VARL("updated_container"), U8(56 - (i * 8))));
-		RzILOpEffect *store = STOREW(bitfield_memory_byte_addr(addr_local, i), cast_unsigned(8, byte));
+		RzILOpPure *byte = UNSIGNED(8, SHIFTR0(VARL("updated_container"), U8(56 - (i * 8))));
+		RzILOpEffect *store = STOREW(bitfield_memory_byte_addr(addr_local, i), UNSIGNED(8, byte));
 		if (i > 0) {
 			store = BRANCH(UGT(VARL("byte_count"), U32(i)), store, EMPTY());
 		}
@@ -3109,14 +3109,14 @@ static RzILOpEffect *write_bitfield_memory(const char *addr_local, RzILOpPure *u
 }
 
 static RzILOpEffect *set_flags_bitfield(RzILOpPure *field) {
-	RzILOpPure *value = LOGAND(cast_unsigned(32, field), bitfield_mask32());
-	RzILOpPure *sign_mask = SHIFTL0(U32(1), cast_unsigned(8, SUB(VARL("width"), U32(1))));
-	RzILOpPure *ccr = LOGAND(cast_unsigned(8, VARG("sr")), U8(0xe0));
+	RzILOpPure *value = LOGAND(UNSIGNED(32, field), bitfield_mask32());
+	RzILOpPure *sign_mask = SHIFTL0(U32(1), UNSIGNED(8, SUB(VARL("width"), U32(1))));
+	RzILOpPure *ccr = LOGAND(UNSIGNED(8, VARG("sr")), U8(0xe0));
 	ccr = ccr_with_flag(ccr, M68K_CCR_N, NON_ZERO(LOGAND(DUP(value), sign_mask)));
 	ccr = ccr_with_flag(ccr, M68K_CCR_Z, IS_ZERO(value));
 	ccr = ccr_with_flag(ccr, M68K_CCR_V, IL_FALSE);
 	ccr = ccr_with_flag(ccr, M68K_CCR_C, IL_FALSE);
-	ccr = LOGOR(ccr, LOGAND(cast_unsigned(8, VARG("sr")), U8(1u << M68K_CCR_X)));
+	ccr = LOGOR(ccr, LOGAND(UNSIGNED(8, VARG("sr")), U8(1u << M68K_CCR_X)));
 	return set_ccr_from_value(ccr);
 }
 
@@ -3144,10 +3144,10 @@ static bool bitfield_target_to_local(M68KILCtx *ctx, const cs_m68k_op *op, M68KB
 			return false;
 		}
 		*seq = seq_append(*seq, ea.pre);
-		*seq = seq_append(*seq, SETL("base", cast_unsigned(32, ea.addr)));
+		*seq = seq_append(*seq, SETL("base", UNSIGNED(32, ea.addr)));
 		if (M68K_BF_IS_REG(op->mem.offset)) {
 			*seq = seq_append(*seq, SETL("bit_offset", LOGAND(VARL("offset"), U32(7))));
-			*seq = seq_append(*seq, SETL("byte_offset", SDIV(cast_signed(32, SUB(VARL("offset"), VARL("bit_offset"))), S32(8))));
+			*seq = seq_append(*seq, SETL("byte_offset", SDIV(SIGNED(32, SUB(VARL("offset"), VARL("bit_offset"))), S32(8))));
 		} else {
 			*seq = seq_append(*seq, SETL("byte_offset", DIV(VARL("offset"), U32(8))));
 			*seq = seq_append(*seq, SETL("bit_offset", MOD(VARL("offset"), U32(8))));
@@ -3320,8 +3320,8 @@ static RzILOpEffect *lift_mul(M68KILCtx *ctx, bool sign) {
 			rz_il_op_effect_free(seq);
 			return NULL;
 		}
-		RzILOpPure *lhs = sign ? cast_signed(64, VARL("dst")) : cast_unsigned(64, VARL("dst"));
-		RzILOpPure *rhs = sign ? cast_signed(64, VARL("src")) : cast_unsigned(64, VARL("src"));
+		RzILOpPure *lhs = sign ? SIGNED(64, VARL("dst")) : UNSIGNED(64, VARL("dst"));
+		RzILOpPure *rhs = sign ? SIGNED(64, VARL("src")) : UNSIGNED(64, VARL("src"));
 		return seq_append(seq, SEQ5(SETL("dst", dst), SETL("res", MUL(lhs, rhs)), write_low, write_high, set_flags_nzvcx(VARL("res"), 64, IL_FALSE, IL_FALSE, NULL)));
 	}
 
@@ -3344,13 +3344,13 @@ static RzILOpEffect *lift_mul(M68KILCtx *ctx, bool sign) {
 		return NULL;
 	}
 	ut32 product_bits = bits == 32 ? 64 : 32;
-	RzILOpPure *lhs = sign ? cast_signed(product_bits, dst) : cast_unsigned(product_bits, dst);
-	RzILOpPure *rhs = sign ? cast_signed(product_bits, VARL("src")) : cast_unsigned(product_bits, VARL("src"));
+	RzILOpPure *lhs = sign ? SIGNED(product_bits, dst) : UNSIGNED(product_bits, dst);
+	RzILOpPure *rhs = sign ? SIGNED(product_bits, VARL("src")) : UNSIGNED(product_bits, VARL("src"));
 	if (bits == 32) {
 		RzILOpBool *overflow = sign
 			? signed_out_of_range(VARL("res_wide"), 32)
 			: UGT(VARL("res_wide"), U64(UT32_MAX));
-		return seq_append(seq, SEQ4(SETL("res_wide", MUL(lhs, rhs)), SETL("res", cast_unsigned(32, VARL("res_wide"))), write_reg_sized(ctx, reg, 32, VARL("res")), set_flags_nzvcx(VARL("res"), 32, overflow, IL_FALSE, NULL)));
+		return seq_append(seq, SEQ4(SETL("res_wide", MUL(lhs, rhs)), SETL("res", UNSIGNED(32, VARL("res_wide"))), write_reg_sized(ctx, reg, 32, VARL("res")), set_flags_nzvcx(VARL("res"), 32, overflow, IL_FALSE, NULL)));
 	}
 
 	RzILOpPure *res = MUL(lhs, rhs);
@@ -3530,7 +3530,7 @@ static RzILOpPure *fpu_fpcr_round_mode(void) {
 	/* Map 680x0 FPCR rounding bits to RzFloatRMode.
 	 * FPCR[5:4]: 0=RNE, 1=RTZ, 2=RTN, 3=RTP.
 	 * Enum order is RNE, RNA, RTP, RTN, RTZ — not the 680x0 encoding. */
-	return LET("fpcr_round_mode", LOGAND(SHIFTR0(cast_unsigned(32, VARG("fpcr")), U8(4)), U32(3)),
+	return LET("fpcr_round_mode", LOGAND(SHIFTR0(UNSIGNED(32, VARG("fpcr")), U8(4)), U32(3)),
 		ITE(EQ(VARLP("fpcr_round_mode"), U32(0)), U32(RZ_FLOAT_RMODE_RNE),
 			ITE(EQ(VARLP("fpcr_round_mode"), U32(1)), U32(RZ_FLOAT_RMODE_RTZ),
 				ITE(EQ(VARLP("fpcr_round_mode"), U32(2)), U32(RZ_FLOAT_RMODE_RTN),
@@ -3538,7 +3538,7 @@ static RzILOpPure *fpu_fpcr_round_mode(void) {
 }
 
 static RzILOpPure *fpu_fpcr_precision(void) {
-	return LOGAND(SHIFTR0(cast_unsigned(32, VARG("fpcr")), U8(6)), U32(3));
+	return LOGAND(SHIFTR0(UNSIGNED(32, VARG("fpcr")), U8(6)), U32(3));
 }
 
 static RzILOpFloat *fpu_to_format_with_fpcr_rmode(RzILOpFloat *value, RzFloatFormat format) {
@@ -3562,9 +3562,9 @@ static RzILOpFloat *fpu_result_with_fpcr_precision(RzILOpFloat *value) {
 static RzILOpEffect *normalize_fpu_quotient_operand(const char *float_name, const char *bits_name,
 	const char *exp_field_name, const char *exp_name, const char *mant_name) {
 	RzILOpEffect *seq = SETL(bits_name, F2BV(fpu_to_format(VARL(float_name), RZ_FLOAT_IEEE754_BIN_80)));
-	seq = seq_append(seq, SETL(exp_field_name, cast_unsigned(32, LOGAND(cast_unsigned(16, SHIFTR0(VARL(bits_name), U8(64))), U16(0x7fff)))));
+	seq = seq_append(seq, SETL(exp_field_name, UNSIGNED(32, LOGAND(UNSIGNED(16, SHIFTR0(VARL(bits_name), U8(64))), U16(0x7fff)))));
 	seq = seq_append(seq, SETL(exp_name, ITE(IS_ZERO(VARL(exp_field_name)), U32(1), VARL(exp_field_name))));
-	seq = seq_append(seq, SETL(mant_name, cast_unsigned(64, VARL(bits_name))));
+	seq = seq_append(seq, SETL(mant_name, UNSIGNED(64, VARL(bits_name))));
 	return seq_append(seq, REPEAT(AND(NON_ZERO(VARL(mant_name)), INV(MSB(VARL(mant_name)))), SEQ2(SETL(mant_name, SHIFTL0(VARL(mant_name), U8(1))), SETL(exp_name, SUB(VARL(exp_name), U32(1))))));
 }
 
@@ -3576,7 +3576,7 @@ static RzILOpPure *fpu_quotient_add_mod(RzILOpPure *left, RzILOpPure *right) {
 }
 
 static RzILOpEffect *multiply_fpu_quotient_mod(const char *left_name, const char *right_name, const char *result_name) {
-	RzILOpEffect *seq = SETL("quot_mul_result", cast_unsigned(128, U32(0)));
+	RzILOpEffect *seq = SETL("quot_mul_result", UNSIGNED(128, U32(0)));
 	seq = seq_append(seq, SETL("quot_mul_addend", VARL(left_name)));
 	seq = seq_append(seq, SETL("quot_mul_factor", VARL(right_name)));
 	RzILOpEffect *add = BRANCH(
@@ -3596,9 +3596,9 @@ static RzILOpEffect *multiply_fpu_quotient_mod(const char *left_name, const char
  * when the full quotient exceeds FP80 precision. */
 static RzILOpEffect *set_fpu_nonnegative_quotient_low7(ut32 insn_id) {
 	RzILOpEffect *seq = SETL("quot_modulus",
-		SHIFTL0(cast_unsigned(128, VARL("quot_src_mant")), U8(7)));
-	seq = seq_append(seq, SETL("quot_mod_value", cast_unsigned(128, VARL("quot_dst_mant"))));
-	seq = seq_append(seq, SETL("quot_mod_factor", cast_unsigned(128, U32(2))));
+		SHIFTL0(UNSIGNED(128, VARL("quot_src_mant")), U8(7)));
+	seq = seq_append(seq, SETL("quot_mod_value", UNSIGNED(128, VARL("quot_dst_mant"))));
+	seq = seq_append(seq, SETL("quot_mod_factor", UNSIGNED(128, U32(2))));
 	seq = seq_append(seq, SETL("quot_mod_exp", VARL("quot_exp_delta")));
 	RzILOpEffect *multiply_factor = BRANCH(
 		LSB(VARL("quot_mod_exp")),
@@ -3607,7 +3607,7 @@ static RzILOpEffect *set_fpu_nonnegative_quotient_low7(ut32 insn_id) {
 	RzILOpEffect *square_factor = multiply_fpu_quotient_mod("quot_mod_factor", "quot_mod_factor", "quot_mod_factor");
 	RzILOpEffect *shift_exp = SETL("quot_mod_exp", SHIFTR0(VARL("quot_mod_exp"), U8(1)));
 	seq = seq_append(seq, REPEAT(NON_ZERO(VARL("quot_mod_exp")), SEQ3(multiply_factor, square_factor, shift_exp)));
-	seq = seq_append(seq, SETL("quot_den", cast_unsigned(128, VARL("quot_src_mant"))));
+	seq = seq_append(seq, SETL("quot_den", UNSIGNED(128, VARL("quot_src_mant"))));
 	seq = seq_append(seq, SETL("quot_floor", U32(0)));
 	seq = seq_append(seq, SETL("quot_remainder", VARL("quot_mod_value")));
 	seq = seq_append(seq, REPEAT(UGE(VARL("quot_remainder"), VARL("quot_den")), SEQ2(SETL("quot_remainder", SUB(VARL("quot_remainder"), VARL("quot_den"))), SETL("quot_floor", ADD(VARL("quot_floor"), U32(1))))));
@@ -3650,7 +3650,7 @@ static RzILOpEffect *set_fpsr_quotient_byte(ut32 insn_id) {
 	RzILOpPure *quotient_byte = LOGOR(
 		SHIFTL0(BOOL_TO_BV(XOR(IS_FNEG(VARL("dst_fp")), IS_FNEG(VARL("src_fp"))), 32), U8(7)),
 		VARL("quot_low7"));
-	return seq_append(seq, SETG("fpsr", LOGOR(LOGAND(cast_unsigned(32, VARG("fpsr")), U32(~M68K_FPSR_QUOTIENT_MASK)), SHIFTL0(quotient_byte, U8(M68K_FPSR_QUOTIENT_SHIFT)))));
+	return seq_append(seq, SETG("fpsr", LOGOR(LOGAND(UNSIGNED(32, VARG("fpsr")), U32(~M68K_FPSR_QUOTIENT_MASK)), SHIFTL0(quotient_byte, U8(M68K_FPSR_QUOTIENT_SHIFT)))));
 }
 
 static RzILOpFloat *fpu_nearest_remainder_result(void) {
@@ -3992,14 +3992,14 @@ static RzILOpBool *fmovem_dynamic_mask_has(ut32 fp_index, bool predec) {
 }
 
 static RzILOpPure *fpu_fp80_to_ext96(RzILOpPure *fp80) {
-	RzILOpPure *sign_exp = cast_unsigned(16, SHIFTR0(DUP(fp80), U8(64)));
-	RzILOpPure *mantissa = cast_unsigned(64, fp80);
+	RzILOpPure *sign_exp = UNSIGNED(16, SHIFTR0(DUP(fp80), U8(64)));
+	RzILOpPure *mantissa = UNSIGNED(64, fp80);
 	return APPEND(sign_exp, APPEND(U16(0), mantissa));
 }
 
 static RzILOpPure *fpu_ext96_to_fp80(RzILOpPure *ext96) {
-	RzILOpPure *sign_exp = cast_unsigned(16, SHIFTR0(DUP(ext96), U8(80)));
-	RzILOpPure *mantissa = cast_unsigned(64, ext96);
+	RzILOpPure *sign_exp = UNSIGNED(16, SHIFTR0(DUP(ext96), U8(80)));
+	RzILOpPure *mantissa = UNSIGNED(64, ext96);
 	return APPEND(sign_exp, mantissa);
 }
 
@@ -4051,7 +4051,7 @@ static RzILOpEffect *lift_fmovem_data(M68KILCtx *ctx) {
 		if (!rz_m68k_reg_is_areg(base_reg)) {
 			return NULL;
 		}
-		seq = seq_append(seq, SETL("addr", cast_unsigned(32, reg_value(ctx, base_reg))));
+		seq = seq_append(seq, SETL("addr", UNSIGNED(32, reg_value(ctx, base_reg))));
 	} else {
 		M68KEA ea = effective_addr(ctx, mem, M68K_FMOVEM_EXTENDED_BITS);
 		if (!ea.addr) {
@@ -4059,12 +4059,12 @@ static RzILOpEffect *lift_fmovem_data(M68KILCtx *ctx) {
 			return NULL;
 		}
 		seq = seq_append(seq, ea.pre);
-		seq = seq_append(seq, SETL("addr", cast_unsigned(32, ea.addr)));
+		seq = seq_append(seq, SETL("addr", UNSIGNED(32, ea.addr)));
 		seq = seq_append(seq, ea.post);
 	}
 
 	if (dynamic) {
-		seq = seq_append(seq, SETL("reg_mask", cast_unsigned(32, read_reg_sized(ctx, regs_op->reg, 32))));
+		seq = seq_append(seq, SETL("reg_mask", UNSIGNED(32, read_reg_sized(ctx, regs_op->reg, 32))));
 		if (reg_to_mem && predec) {
 			for (int i = (int)RZ_ARRAY_SIZE(fmovem_fp_regs) - 1; i >= 0; i--) {
 				m68k_reg reg = fmovem_fp_regs[i];
@@ -4075,7 +4075,7 @@ static RzILOpEffect *lift_fmovem_data(M68KILCtx *ctx) {
 				}
 				RzILOpEffect *store = SEQ2(
 					SETL("addr", SUB(VARL("addr"), U32(M68K_FMOVEM_EXTENDED_BYTES))),
-					STOREW(VARL("addr"), cast_unsigned(M68K_FMOVEM_EXTENDED_BITS, fpu_fp80_to_ext96(value))));
+					STOREW(VARL("addr"), UNSIGNED(M68K_FMOVEM_EXTENDED_BITS, fpu_fp80_to_ext96(value))));
 				seq = seq_append(seq, BRANCH(fmovem_dynamic_mask_has((ut32)i, true), store, EMPTY()));
 			}
 			return seq_append(seq, write_reg_sized(ctx, base_reg, 32, VARL("addr")));
@@ -4091,7 +4091,7 @@ static RzILOpEffect *lift_fmovem_data(M68KILCtx *ctx) {
 					return NULL;
 				}
 				op = SEQ2(
-					STOREW(VARL("addr"), cast_unsigned(M68K_FMOVEM_EXTENDED_BITS, fpu_fp80_to_ext96(value))),
+					STOREW(VARL("addr"), UNSIGNED(M68K_FMOVEM_EXTENDED_BITS, fpu_fp80_to_ext96(value))),
 					SETL("addr", ADD(VARL("addr"), U32(M68K_FMOVEM_EXTENDED_BYTES))));
 			} else {
 				op = SEQ3(
@@ -4120,7 +4120,7 @@ static RzILOpEffect *lift_fmovem_data(M68KILCtx *ctx) {
 				return NULL;
 			}
 			seq = seq_append(seq, SETL("addr", SUB(VARL("addr"), U32(M68K_FMOVEM_EXTENDED_BYTES))));
-			seq = seq_append(seq, STOREW(VARL("addr"), cast_unsigned(M68K_FMOVEM_EXTENDED_BITS, fpu_fp80_to_ext96(value))));
+			seq = seq_append(seq, STOREW(VARL("addr"), UNSIGNED(M68K_FMOVEM_EXTENDED_BITS, fpu_fp80_to_ext96(value))));
 		}
 		return seq_append(seq, write_reg_sized(ctx, base_reg, 32, VARL("addr")));
 	}
@@ -4141,7 +4141,7 @@ static RzILOpEffect *lift_fmovem_data(M68KILCtx *ctx) {
 				rz_il_op_effect_free(seq);
 				return NULL;
 			}
-			op = STOREW(addr, cast_unsigned(M68K_FMOVEM_EXTENDED_BITS, fpu_fp80_to_ext96(value)));
+			op = STOREW(addr, UNSIGNED(M68K_FMOVEM_EXTENDED_BITS, fpu_fp80_to_ext96(value)));
 		} else {
 			seq = seq_append(seq, SETL("mem_ext", LOADW(M68K_FMOVEM_EXTENDED_BITS, addr)));
 			op = write_reg_sized(ctx, reg, 80, fpu_ext96_to_fp80(VARL("mem_ext")));
@@ -4303,10 +4303,10 @@ static RzILOpEffect *lift_fpu_extract_data(M68KILCtx *ctx, ut32 insn_id) {
 		return fpu_read_failure_label(ctx, src);
 	}
 
-	seq = seq_append(seq, SETL("src_sign", LOGAND(cast_unsigned(16, SHIFTR0(VARL("src_bits"), U8(64))), U16(0x8000))));
+	seq = seq_append(seq, SETL("src_sign", LOGAND(UNSIGNED(16, SHIFTR0(VARL("src_bits"), U8(64))), U16(0x8000))));
 	seq = seq_append(seq, SETL("src_zero_bits", APPEND(VARL("src_sign"), U64(0))));
-	seq = seq_append(seq, SETL("src_exp_field", cast_unsigned(32, LOGAND(cast_unsigned(16, SHIFTR0(VARL("src_bits"), U8(64))), U16(0x7fff)))));
-	seq = seq_append(seq, SETL("src_norm_mant", cast_unsigned(64, VARL("src_bits"))));
+	seq = seq_append(seq, SETL("src_exp_field", UNSIGNED(32, LOGAND(UNSIGNED(16, SHIFTR0(VARL("src_bits"), U8(64))), U16(0x7fff)))));
+	seq = seq_append(seq, SETL("src_norm_mant", UNSIGNED(64, VARL("src_bits"))));
 	seq = seq_append(seq, SETL("src_shift", U32(0)));
 	seq = seq_append(seq, REPEAT(AND(IS_ZERO(VARL("src_exp_field")), AND(NON_ZERO(VARL("src_norm_mant")), INV(MSB(VARL("src_norm_mant"))))), SEQ2(SETL("src_norm_mant", SHIFTL0(VARL("src_norm_mant"), U8(1))), SETL("src_shift", ADD(VARL("src_shift"), U32(1))))));
 	if (insn_id == M68K_INS_FGETEXP) {
@@ -4515,7 +4515,7 @@ static RzILOpEffect *lift_fpu_unmodeled_address_effects(M68KILCtx *ctx) {
 			return NULL;
 		}
 		seq = seq_append(seq, ea.pre);
-		seq = seq_append(seq, SETL("fpu_addr", cast_unsigned(M68K_ADDR_BITS, ea.addr)));
+		seq = seq_append(seq, SETL("fpu_addr", UNSIGNED(M68K_ADDR_BITS, ea.addr)));
 		seq = seq_append(seq, ea.post);
 		has_mem = true;
 	}

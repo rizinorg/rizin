@@ -156,9 +156,6 @@ typedef struct {
 	ut64 mantissa;
 } M68KFMovecrConst;
 
-RZ_IPI RzILOpPure *cast_unsigned(ut32 bits, RzILOpPure *v);
-RZ_IPI RzILOpPure *cast_signed(ut32 bits, RzILOpPure *v);
-RZ_IPI RzILOpPure *extend_to_32(RzILOpPure *v, bool sign_extend);
 RZ_IPI RzILOpPure *reg_value(M68KILCtx *ctx, m68k_reg reg);
 RZ_IPI RzILOpPure *read_reg_sized(M68KILCtx *ctx, m68k_reg reg, ut32 bits);
 RZ_IPI RzILOpEffect *seq_append(RzILOpEffect *a, RzILOpEffect *b);

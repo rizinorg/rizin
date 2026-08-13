@@ -6,22 +6,6 @@
 #include <rz_il/rz_il_opbuilder_begin.h>
 #include <rz_util/rz_assert.h>
 
-RZ_IPI RzILOpPure *cast_unsigned(ut32 bits, RzILOpPure *v) {
-	return CAST(bits, IL_FALSE, v);
-}
-
-RZ_IPI RzILOpPure *cast_signed(ut32 bits, RzILOpPure *v) {
-	return CAST(bits, MSB(DUP(v)), v);
-}
-
-RZ_IPI RzILOpPure *extend_to_32(RzILOpPure *v, bool sign_extend) {
-	return sign_extend ? cast_signed(32, v) : cast_unsigned(32, v);
-}
-
-static RzILOpPure *addr_add(RzILOpPure *base, RzILOpPure *delta) {
-	return ADD(cast_unsigned(32, base), cast_unsigned(32, delta));
-}
-
 RZ_IPI RzILOpPure *reg_value(M68KILCtx *ctx, m68k_reg reg) {
 	const char *name = cs_reg_name(ctx->handle, reg);
 	if (!name) {
@@ -48,11 +32,11 @@ RZ_IPI RzILOpPure *read_reg_sized(M68KILCtx *ctx, m68k_reg reg, ut32 bits) {
 	case M68K_REG_USP:
 	case M68K_REG_MSP:
 	case M68K_REG_ISP:
-		return bits == 32 ? VARG(name) : cast_unsigned(bits, VARG(name));
+		return bits == 32 ? VARG(name) : UNSIGNED(bits, VARG(name));
 	case M68K_REG_CCR:
-		return cast_unsigned(bits, VARG("sr"));
+		return UNSIGNED(bits, VARG("sr"));
 	case M68K_REG_SR:
-		return bits == 16 ? VARG(name) : cast_unsigned(bits, VARG(name));
+		return bits == 16 ? VARG(name) : UNSIGNED(bits, VARG(name));
 	case M68K_REG_FP0:
 	case M68K_REG_FP1:
 	case M68K_REG_FP2:
@@ -61,14 +45,14 @@ RZ_IPI RzILOpPure *read_reg_sized(M68KILCtx *ctx, m68k_reg reg, ut32 bits) {
 	case M68K_REG_FP5:
 	case M68K_REG_FP6:
 	case M68K_REG_FP7:
-		return bits == 80 ? VARG(name) : cast_unsigned(bits, VARG(name));
+		return bits == 80 ? VARG(name) : UNSIGNED(bits, VARG(name));
 	default:
 		break;
 	}
 	if (rz_m68k_reg_name_is_mmu_root_pointer(name)) {
-		return bits == 64 ? VARG(name) : cast_unsigned(bits, VARG(name));
+		return bits == 64 ? VARG(name) : UNSIGNED(bits, VARG(name));
 	}
-	return bits == 32 ? VARG(name) : cast_unsigned(bits, VARG(name));
+	return bits == 32 ? VARG(name) : UNSIGNED(bits, VARG(name));
 }
 
 RZ_IPI RzILOpEffect *seq_append(RzILOpEffect *a, RzILOpEffect *b) {
@@ -87,18 +71,18 @@ RZ_IPI RzILOpEffect *seq_append(RzILOpEffect *a, RzILOpEffect *b) {
 }
 
 RZ_IPI RzILOpEffect *set_ccr_from_value(RzILOpPure *new_ccr) {
-	RzILOpPure *ccr8 = cast_unsigned(8, new_ccr);
-	return SETG("sr", LOGOR(LOGAND(VARG("sr"), U16(0xff00)), cast_unsigned(16, ccr8)));
+	RzILOpPure *ccr8 = UNSIGNED(8, new_ccr);
+	return SETG("sr", LOGOR(LOGAND(VARG("sr"), U16(0xff00)), UNSIGNED(16, ccr8)));
 }
 
 RZ_IPI RzILOpBool *ccr_bit(ut32 bit) {
 	rz_return_val_if_fail(bit < 8, NULL);
-	return NON_ZERO(LOGAND(cast_unsigned(8, VARG("sr")), U8(1u << bit)));
+	return NON_ZERO(LOGAND(UNSIGNED(8, VARG("sr")), U8(1u << bit)));
 }
 
 RZ_IPI RzILOpBool *fpsr_bit(ut32 bit) {
 	rz_return_val_if_fail(bit < 32, NULL);
-	return NON_ZERO(LOGAND(cast_unsigned(32, VARG("fpsr")), U32(1u << bit)));
+	return NON_ZERO(LOGAND(UNSIGNED(32, VARG("fpsr")), U32(1u << bit)));
 }
 
 RZ_IPI RzILOpEffect *set_fpsr_cc(RzILOpBool *n, RzILOpBool *z, RzILOpBool *i, RzILOpBool *nan) {
@@ -107,11 +91,11 @@ RZ_IPI RzILOpEffect *set_fpsr_cc(RzILOpBool *n, RzILOpBool *z, RzILOpBool *i, Rz
 	cc = LOGOR(cc, SHIFTL0(BOOL_TO_BV(z, 32), U8(M68K_FPSR_CC_Z)));
 	cc = LOGOR(cc, SHIFTL0(BOOL_TO_BV(i, 32), U8(M68K_FPSR_CC_I)));
 	cc = LOGOR(cc, SHIFTL0(BOOL_TO_BV(nan, 32), U8(M68K_FPSR_CC_NAN)));
-	return SETG("fpsr", LOGOR(LOGAND(cast_unsigned(32, VARG("fpsr")), U32(~M68K_FPSR_CC_MASK)), cc));
+	return SETG("fpsr", LOGOR(LOGAND(UNSIGNED(32, VARG("fpsr")), U32(~M68K_FPSR_CC_MASK)), cc));
 }
 
 static RzILOpBool *sr_bit(ut32 bit) {
-	return NON_ZERO(LOGAND(cast_unsigned(16, VARG("sr")), U16((ut16)(1u << bit))));
+	return NON_ZERO(LOGAND(UNSIGNED(16, VARG("sr")), U16((ut16)(1u << bit))));
 }
 
 RZ_IPI RzILOpBool *supervisor_mode(void) {
@@ -125,8 +109,8 @@ RZ_IPI RzILOpPure *ccr_with_flag(RzILOpPure *ccr, ut32 bit, RzILOpBool *value) {
 }
 
 RZ_IPI RzILOpEffect *set_flags_nzvcx(RzILOpPure *value, ut32 bits, RzILOpBool *v, RzILOpBool *c, RzILOpBool *x) {
-	RzILOpPure *val = cast_unsigned(bits, value);
-	RzILOpPure *ccr = LOGAND(cast_unsigned(8, VARG("sr")), U8(0xe0));
+	RzILOpPure *val = UNSIGNED(bits, value);
+	RzILOpPure *ccr = LOGAND(UNSIGNED(8, VARG("sr")), U8(0xe0));
 	ccr = ccr_with_flag(ccr, M68K_CCR_N, MSB(DUP(val)));
 	ccr = ccr_with_flag(ccr, M68K_CCR_Z, IS_ZERO(val));
 	ccr = ccr_with_flag(ccr, M68K_CCR_V, v ? v : IL_FALSE);
@@ -134,14 +118,14 @@ RZ_IPI RzILOpEffect *set_flags_nzvcx(RzILOpPure *value, ut32 bits, RzILOpBool *v
 	if (x) {
 		ccr = ccr_with_flag(ccr, M68K_CCR_X, x);
 	} else {
-		ccr = LOGOR(ccr, LOGAND(cast_unsigned(8, VARG("sr")), U8(1u << M68K_CCR_X)));
+		ccr = LOGOR(ccr, LOGAND(UNSIGNED(8, VARG("sr")), U8(1u << M68K_CCR_X)));
 	}
 	return set_ccr_from_value(ccr);
 }
 
 RZ_IPI RzILOpEffect *set_flags_nzvcx_extend(RzILOpPure *value, ut32 bits, RzILOpBool *v, RzILOpBool *c) {
-	RzILOpPure *val = cast_unsigned(bits, value);
-	RzILOpPure *ccr = LOGAND(cast_unsigned(8, VARG("sr")), U8(0xe0));
+	RzILOpPure *val = UNSIGNED(bits, value);
+	RzILOpPure *ccr = LOGAND(UNSIGNED(8, VARG("sr")), U8(0xe0));
 	ccr = ccr_with_flag(ccr, M68K_CCR_N, MSB(DUP(val)));
 	ccr = ccr_with_flag(ccr, M68K_CCR_Z, AND(ccr_bit(M68K_CCR_Z), IS_ZERO(val)));
 	ccr = ccr_with_flag(ccr, M68K_CCR_V, v);
@@ -151,14 +135,14 @@ RZ_IPI RzILOpEffect *set_flags_nzvcx_extend(RzILOpPure *value, ut32 bits, RzILOp
 }
 
 RZ_IPI RzILOpEffect *set_flags_div(RzILOpPure *quotient, ut32 bits, RzILOpBool *overflow) {
-	RzILOpPure *quotient_sized = cast_unsigned(bits, quotient);
-	RzILOpPure *ccr = LOGAND(cast_unsigned(8, VARG("sr")), U8(0xe0));
+	RzILOpPure *quotient_sized = UNSIGNED(bits, quotient);
+	RzILOpPure *ccr = LOGAND(UNSIGNED(8, VARG("sr")), U8(0xe0));
 	RzILOpBool *no_overflow = INV((RzILOpBool *)DUP(overflow));
 	ccr = ccr_with_flag(ccr, M68K_CCR_N, AND(no_overflow, MSB(DUP(quotient_sized))));
 	ccr = ccr_with_flag(ccr, M68K_CCR_Z, AND(INV((RzILOpBool *)DUP(overflow)), IS_ZERO(quotient_sized)));
 	ccr = ccr_with_flag(ccr, M68K_CCR_V, overflow);
 	ccr = ccr_with_flag(ccr, M68K_CCR_C, IL_FALSE);
-	ccr = LOGOR(ccr, LOGAND(cast_unsigned(8, VARG("sr")), U8(1u << M68K_CCR_X)));
+	ccr = LOGOR(ccr, LOGAND(UNSIGNED(8, VARG("sr")), U8(1u << M68K_CCR_X)));
 	return set_ccr_from_value(ccr);
 }
 
@@ -181,45 +165,45 @@ RZ_IPI RzILOpBool *signed_out_of_range(RzILOpPure *value, ut32 bits) {
 }
 
 RZ_IPI RzILOpBool *addx_overflow(ut32 bits) {
-	RzILOpPure *sum = ADD(ADD(cast_signed(64, VARL("dst")), cast_signed(64, VARL("src"))), cast_unsigned(64, VARL("x")));
+	RzILOpPure *sum = ADD(ADD(SIGNED(64, VARL("dst")), SIGNED(64, VARL("src"))), UNSIGNED(64, VARL("x")));
 	return signed_out_of_range(sum, bits);
 }
 
 RZ_IPI RzILOpBool *subx_overflow(ut32 bits) {
-	RzILOpPure *diff = SUB(SUB(cast_signed(64, VARL("dst")), cast_signed(64, VARL("src"))), cast_unsigned(64, VARL("x")));
+	RzILOpPure *diff = SUB(SUB(SIGNED(64, VARL("dst")), SIGNED(64, VARL("src"))), UNSIGNED(64, VARL("x")));
 	return signed_out_of_range(diff, bits);
 }
 
 RZ_IPI RzILOpBool *negx_overflow(ut32 bits) {
-	RzILOpPure *diff = SUB(SUB(S64(0), cast_signed(64, VARL("dst"))), cast_unsigned(64, VARL("borrow")));
+	RzILOpPure *diff = SUB(SUB(S64(0), SIGNED(64, VARL("dst"))), UNSIGNED(64, VARL("borrow")));
 	return signed_out_of_range(diff, bits);
 }
 
 static RzILOpPure *reg_write_value(M68KILCtx *ctx, m68k_reg reg, ut32 bits, RzILOpPure *value) {
 	if (rz_m68k_reg_is_dreg(reg) && bits < 32) {
 		ut32 mask = bits == 8 ? 0xffffff00u : 0xffff0000u;
-		return LOGOR(LOGAND(reg_value(ctx, reg), U32(mask)), cast_unsigned(32, value));
+		return LOGOR(LOGAND(reg_value(ctx, reg), U32(mask)), UNSIGNED(32, value));
 	}
 	if (rz_m68k_reg_is_areg(reg) && bits == 16) {
-		return extend_to_32(value, true);
+		return SIGNED(32, value);
 	}
 	if (reg == M68K_REG_CCR) {
-		return cast_unsigned(8, value);
+		return UNSIGNED(8, value);
 	}
 	if (reg == M68K_REG_SR) {
-		return cast_unsigned(16, value);
+		return UNSIGNED(16, value);
 	}
 	if (rz_m68k_reg_is_fpu(reg)) {
-		return cast_unsigned(80, value);
+		return UNSIGNED(80, value);
 	}
 	const char *name = cs_reg_name(ctx->handle, reg);
 	if (rz_m68k_reg_name_is_mmu_root_pointer(name)) {
 		if (bits == 64) {
-			return cast_unsigned(64, value);
+			return UNSIGNED(64, value);
 		}
-		return LOGOR(LOGAND(reg_value(ctx, reg), U64(0xffffffff00000000ULL)), cast_unsigned(64, value));
+		return LOGOR(LOGAND(reg_value(ctx, reg), U64(0xffffffff00000000ULL)), UNSIGNED(64, value));
 	}
-	return cast_unsigned(32, value);
+	return UNSIGNED(32, value);
 }
 
 static inline bool m68k_mode_has_master_stack(cs_mode mode) {
@@ -234,7 +218,7 @@ RZ_IPI RzILOpEffect *write_reg_sized(M68KILCtx *ctx, m68k_reg reg, ut32 bits, Rz
 		return NULL;
 	}
 	if (reg == M68K_REG_PC) {
-		return JMP(cast_unsigned(32, value));
+		return JMP(UNSIGNED(32, value));
 	}
 	if (reg == M68K_REG_CCR) {
 		return set_ccr_from_value(value);
@@ -243,29 +227,29 @@ RZ_IPI RzILOpEffect *write_reg_sized(M68KILCtx *ctx, m68k_reg reg, ut32 bits, Rz
 		bool has_master_stack = m68k_mode_has_master_stack(ctx->mode);
 		ut16 master_mask = has_master_stack ? 1u << M68K_SR_M : 0;
 		RzILOpEffect *save_old_sp = BRANCH(
-			IS_ZERO(LOGAND(cast_unsigned(16, VARG("sr")), U16(1u << M68K_SR_S))),
-			SETG("usp", cast_unsigned(32, VARG("a7"))),
+			IS_ZERO(LOGAND(UNSIGNED(16, VARG("sr")), U16(1u << M68K_SR_S))),
+			SETG("usp", UNSIGNED(32, VARG("a7"))),
 			BRANCH(
-				NON_ZERO(LOGAND(cast_unsigned(16, VARG("sr")), U16(master_mask))),
-				SETG("msp", cast_unsigned(32, VARG("a7"))),
-				SETG("isp", cast_unsigned(32, VARG("a7")))));
+				NON_ZERO(LOGAND(UNSIGNED(16, VARG("sr")), U16(master_mask))),
+				SETG("msp", UNSIGNED(32, VARG("a7"))),
+				SETG("isp", UNSIGNED(32, VARG("a7")))));
 		RzILOpEffect *load_new_sp = BRANCH(
 			IS_ZERO(LOGAND(VARL("sr_write_value"), U16(1u << M68K_SR_S))),
-			SETG("a7", cast_unsigned(32, VARG("usp"))),
+			SETG("a7", UNSIGNED(32, VARG("usp"))),
 			BRANCH(
 				NON_ZERO(LOGAND(VARL("sr_write_value"), U16(master_mask))),
-				SETG("a7", cast_unsigned(32, VARG("msp"))),
-				SETG("a7", cast_unsigned(32, VARG("isp")))));
+				SETG("a7", UNSIGNED(32, VARG("msp"))),
+				SETG("a7", UNSIGNED(32, VARG("isp")))));
 		RzILOpPure *old_bank = ITE(
-			IS_ZERO(LOGAND(cast_unsigned(16, VARG("sr")), U16(1u << M68K_SR_S))),
+			IS_ZERO(LOGAND(UNSIGNED(16, VARG("sr")), U16(1u << M68K_SR_S))),
 			U8(0),
-			ITE(NON_ZERO(LOGAND(cast_unsigned(16, VARG("sr")), U16(master_mask))), U8(2), U8(1)));
+			ITE(NON_ZERO(LOGAND(UNSIGNED(16, VARG("sr")), U16(master_mask))), U8(2), U8(1)));
 		RzILOpPure *new_bank = ITE(
 			IS_ZERO(LOGAND(VARL("sr_write_value"), U16(1u << M68K_SR_S))),
 			U8(0),
 			ITE(NON_ZERO(LOGAND(VARL("sr_write_value"), U16(master_mask))), U8(2), U8(1)));
 		return SEQ3(
-			SETL("sr_write_value", cast_unsigned(16, value)),
+			SETL("sr_write_value", UNSIGNED(16, value)),
 			BRANCH(NE(old_bank, new_bank), SEQ2(save_old_sp, load_new_sp), EMPTY()),
 			SETG("sr", VARL("sr_write_value")));
 	}
@@ -342,7 +326,7 @@ static RzILOpPure *index_value(M68KILCtx *ctx, const cs_m68k_op *op) {
 	if (!idx) {
 		return NULL;
 	}
-	idx = extend_to_32(idx, !op->mem.index_size);
+	idx = !op->mem.index_size ? SIGNED(32, idx) : UNSIGNED(32, idx);
 	ut8 scale = op->mem.scale ? op->mem.scale : 1;
 	if (scale > 1) {
 		idx = MUL(idx, U32(scale));
@@ -569,14 +553,14 @@ RZ_IPI M68KEA effective_addr(M68KILCtx *ctx, const cs_m68k_op *op, ut32 bits) {
 		ea.addr = reg_value(ctx, base_reg);
 		break;
 	case M68K_AM_REGI_ADDR_DISP:
-		ea.addr = addr_add(reg_value(ctx, base_reg), S32((st32)op->mem.disp));
+		ea.addr = ADD(UNSIGNED(32, reg_value(ctx, base_reg)), UNSIGNED(32, S32((st32)op->mem.disp)));
 		break;
 	case M68K_AM_AREGI_INDEX_8_BIT_DISP:
 	case M68K_AM_AREGI_INDEX_BASE_DISP: {
 		st64 disp = op->address_mode == M68K_AM_AREGI_INDEX_BASE_DISP ? op->mem.in_disp : op->mem.disp;
 		base = base_reg != M68K_REG_INVALID ? reg_value(ctx, base_reg) : U32(0);
 		idx = index_value(ctx, op);
-		ea.addr = ADD(addr_add(base, S32((st32)disp)), idx);
+		ea.addr = ADD(ADD(UNSIGNED(32, base), UNSIGNED(32, S32((st32)disp))), idx);
 		break;
 	}
 	case M68K_AM_MEMI_PRE_INDEX:
@@ -698,7 +682,7 @@ RZ_IPI RzILOpEffect *write_operand(M68KILCtx *ctx, const cs_m68k_op *op, ut32 bi
 			ea.post = NULL;
 		}
 		m68k_ea_fini(&ea);
-		return STOREW(addr, cast_unsigned(bits, value));
+		return STOREW(addr, UNSIGNED(bits, value));
 	}
 	switch (op->type) {
 	case M68K_OP_REG:
@@ -804,7 +788,7 @@ RZ_IPI bool rw_operand_to_local(M68KILCtx *ctx, M68KRWOperand *rw, const char *v
 		RzILOpPure *addr = ea.addr;
 		ea.addr = NULL;
 		*seq = seq_append(*seq, pre);
-		*seq = seq_append(*seq, SETL(addr_local, cast_unsigned(32, addr)));
+		*seq = seq_append(*seq, SETL(addr_local, UNSIGNED(32, addr)));
 		*seq = seq_append(*seq, SETL(value_local, LOADW(bits, VARL(addr_local))));
 		rw->post = ea.post;
 		ea.post = NULL;
@@ -828,7 +812,7 @@ RZ_IPI bool rw_operand_to_local(M68KILCtx *ctx, M68KRWOperand *rw, const char *v
 RZ_IPI RzILOpEffect *write_rw_operand(M68KILCtx *ctx, const M68KRWOperand *rw, ut32 bits, RzILOpPure *value) {
 	rz_return_val_if_fail(ctx && rw && rw->op, NULL);
 	if (rz_m68k_op_is_mem_addr(rw->op)) {
-		return STOREW(VARL(rw->addr_local), cast_unsigned(bits, value));
+		return STOREW(VARL(rw->addr_local), UNSIGNED(bits, value));
 	}
 	switch (rw->op->type) {
 	case M68K_OP_REG:
