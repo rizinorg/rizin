@@ -9,6 +9,7 @@
 RZ_IPI RzILOpPure *m68k_reg_value(M68KILCtx *ctx, m68k_reg reg) {
 	const char *name = cs_reg_name(ctx->handle, reg);
 	if (!name) {
+		rz_warn_if_reached();
 		return NULL;
 	}
 	return VARG(name);
@@ -17,6 +18,7 @@ RZ_IPI RzILOpPure *m68k_reg_value(M68KILCtx *ctx, m68k_reg reg) {
 RZ_IPI RzILOpPure *m68k_read_reg_sized(M68KILCtx *ctx, m68k_reg reg, ut32 bits) {
 	const char *name = cs_reg_name(ctx->handle, reg);
 	if (!name) {
+		rz_warn_if_reached();
 		return NULL;
 	}
 	switch (reg) {
@@ -53,21 +55,6 @@ RZ_IPI RzILOpPure *m68k_read_reg_sized(M68KILCtx *ctx, m68k_reg reg, ut32 bits) 
 		return bits == 64 ? VARG(name) : UNSIGNED(bits, VARG(name));
 	}
 	return bits == 32 ? VARG(name) : UNSIGNED(bits, VARG(name));
-}
-
-RZ_IPI RzILOpEffect *m68k_seq_append(RzILOpEffect *a, RzILOpEffect *b) {
-	if (!a) {
-		return b;
-	}
-	if (!b) {
-		return a;
-	}
-	RzILOpEffect *seq = SEQ2(a, b);
-	if (!seq) {
-		rz_il_op_effect_free(a);
-		rz_il_op_effect_free(b);
-	}
-	return seq;
 }
 
 RZ_IPI RzILOpEffect *m68k_set_ccr_from_value(RzILOpPure *new_ccr) {
@@ -214,6 +201,7 @@ static inline bool m68k_mode_has_master_stack(cs_mode mode) {
 RZ_IPI RzILOpEffect *m68k_write_reg_sized(M68KILCtx *ctx, m68k_reg reg, ut32 bits, RzILOpPure *value) {
 	const char *name = cs_reg_name(ctx->handle, reg);
 	if (!name) {
+		rz_warn_if_reached();
 		rz_il_op_pure_free(value);
 		return NULL;
 	}
@@ -338,12 +326,12 @@ static RzILOpPure *index_value(M68KILCtx *ctx, const cs_m68k_op *op) {
 // Older Capstone releases report raw PC-relative displacements. Recover the
 // encoded extension word address so operands after other extension words lift
 // to the expected address.
-static bool insn_word_at(const M68KILCtx *ctx, ut32 offset, ut16 *word) {
-	rz_return_val_if_fail(ctx && ctx->insn && word, false);
+static bool insn_word_at(const M68KILCtx *ctx, ut32 offset, ut16 *ext_word) {
+	rz_return_val_if_fail(ctx && ctx->insn && ext_word, false);
 	if (offset + 1 >= ctx->insn->size || offset + 1 >= sizeof(ctx->insn->bytes)) {
 		return false;
 	}
-	*word = ((ut16)ctx->insn->bytes[offset] << 8) | ctx->insn->bytes[offset + 1];
+	*ext_word = ((ut16)ctx->insn->bytes[offset] << 8) | ctx->insn->bytes[offset + 1];
 	return true;
 }
 
@@ -444,35 +432,43 @@ static ut32 expected_pc_relative_extension_offset(const M68KILCtx *ctx, const cs
 	return offset;
 }
 
-static bool index_extension_word_matches(const cs_m68k_op *op, ut16 word, bool full) {
-	if (((word & 0x0100) != 0) != full) {
+/* 680x0 brief/full index extension word (M68000PRM indexed addressing). */
+enum {
+	M68K_EXT_WORD_INDEX_ADDR_REG = 0x8000, /* D/A, bit 15 */
+	M68K_EXT_WORD_INDEX_LONG = 0x0800, /* W/L, bit 11 */
+	M68K_EXT_WORD_FULL_FORMAT = 0x0100, /* 0=brief, 1=full, bit 8 */
+	M68K_EXT_WORD_INDEX_SUPPRESS = 0x0040, /* full-format IS, bit 6 */
+};
+
+static bool index_extension_word_matches(const cs_m68k_op *op, ut16 ext_word, bool full) {
+	if (((ext_word & M68K_EXT_WORD_FULL_FORMAT) != 0) != full) {
 		return false;
 	}
 	if (op->mem.index_reg == M68K_REG_INVALID) {
-		return full && (word & 0x0040);
+		return full && (ext_word & M68K_EXT_WORD_INDEX_SUPPRESS);
 	}
-	m68k_reg index_reg = ((word & 0x8000) ? M68K_REG_A0 : M68K_REG_D0) +
-		((word >> 12) & 7);
+	m68k_reg index_reg = ((ext_word & M68K_EXT_WORD_INDEX_ADDR_REG) ? M68K_REG_A0 : M68K_REG_D0) +
+		((ext_word >> 12) & 7);
 	if (op->mem.index_reg != index_reg) {
 		return false;
 	}
-	if (op->mem.index_size != ((word & 0x0800) ? 1 : 0)) {
+	if (op->mem.index_size != ((ext_word & M68K_EXT_WORD_INDEX_LONG) ? 1 : 0)) {
 		return false;
 	}
-	ut8 scale = 1 << ((word >> 9) & 3);
+	ut8 scale = 1 << ((ext_word >> 9) & 3);
 	return (op->mem.scale ? op->mem.scale : 1) == scale;
 }
 
-static bool pc_relative_extension_word_matches(const cs_m68k_op *op, ut16 word) {
+static bool pc_relative_extension_word_matches(const cs_m68k_op *op, ut16 ext_word) {
 	switch (op->address_mode) {
 	case M68K_AM_PCI_DISP:
-		return (st16)word == op->mem.disp;
+		return (st16)ext_word == op->mem.disp;
 	case M68K_AM_PCI_INDEX_8_BIT_DISP:
-		return index_extension_word_matches(op, word, false) && (st8)(word & 0xff) == op->mem.disp;
+		return index_extension_word_matches(op, ext_word, false) && (st8)(ext_word & 0xff) == op->mem.disp;
 	case M68K_AM_PCI_INDEX_BASE_DISP:
 	case M68K_AM_PC_MEMI_PRE_INDEX:
 	case M68K_AM_PC_MEMI_POST_INDEX:
-		return index_extension_word_matches(op, word, true);
+		return index_extension_word_matches(op, ext_word, true);
 	default:
 		return false;
 	}
@@ -480,15 +476,15 @@ static bool pc_relative_extension_word_matches(const cs_m68k_op *op, ut16 word) 
 
 static ut32 pc_relative_extension_offset(const M68KILCtx *ctx, const cs_m68k_op *op) {
 	ut32 expected = expected_pc_relative_extension_offset(ctx, op);
-	ut16 word = 0;
-	if (insn_word_at(ctx, expected, &word) && pc_relative_extension_word_matches(op, word)) {
+	ut16 ext_word = 0;
+	if (insn_word_at(ctx, expected, &ext_word) && pc_relative_extension_word_matches(op, ext_word)) {
 		return expected;
 	}
 
 	ut32 fallback = expected;
 	bool found = false;
 	for (ut32 offset = 2; offset + 1 < ctx->insn->size; offset += 2) {
-		if (!insn_word_at(ctx, offset, &word) || !pc_relative_extension_word_matches(op, word)) {
+		if (!insn_word_at(ctx, offset, &ext_word) || !pc_relative_extension_word_matches(op, ext_word)) {
 			continue;
 		}
 		if (offset >= expected) {
@@ -695,14 +691,16 @@ RZ_IPI RzILOpEffect *m68k_write_operand(M68KILCtx *ctx, const cs_m68k_op *op, ut
 
 RZ_IPI RzILOpEffect *m68k_label(const char *label) {
 	if (RZ_STR_EQ(label, "m68k_illegal")) {
-		RzILOpEffect *seq = SETL("trap_op", U32((ut32)M68K_TRAP_OP_ILLEGAL));
-		seq = m68k_seq_append(seq, SETL("trap_vector", U32((ut32)M68K_VECTOR_ILLEGAL)));
-		return m68k_seq_append(seq, GOTO(label));
+		return SEQ3(
+			SETL("trap_op", U32((ut32)M68K_TRAP_OP_ILLEGAL)),
+			SETL("trap_vector", U32((ut32)M68K_VECTOR_ILLEGAL)),
+			GOTO(label));
 	}
 	if (RZ_STR_EQ(label, "m68k_privilege")) {
-		RzILOpEffect *seq = SETL("trap_op", U32((ut32)M68K_TRAP_OP_PRIVILEGE));
-		seq = m68k_seq_append(seq, SETL("trap_vector", U32((ut32)M68K_VECTOR_PRIVILEGE)));
-		return m68k_seq_append(seq, GOTO(label));
+		return SEQ3(
+			SETL("trap_op", U32((ut32)M68K_TRAP_OP_PRIVILEGE)),
+			SETL("trap_vector", U32((ut32)M68K_VECTOR_PRIVILEGE)),
+			GOTO(label));
 	}
 	return GOTO(label);
 }
@@ -751,9 +749,10 @@ RZ_IPI void m68k_bitfield_target_fini(M68KBitfieldTarget *target) {
 }
 
 RZ_IPI RzILOpEffect *m68k_exception(M68KTrapOp trap_op, M68KExceptionVector vector, const char *label) {
-	RzILOpEffect *seq = SETL("trap_op", U32((ut32)trap_op));
-	seq = m68k_seq_append(seq, SETL("trap_vector", U32((ut32)vector)));
-	return m68k_seq_append(seq, m68k_label(label));
+	return SEQ3(
+		SETL("trap_op", U32((ut32)trap_op)),
+		SETL("trap_vector", U32((ut32)vector)),
+		m68k_label(label));
 }
 
 RZ_IPI bool m68k_operand_to_local(M68KILCtx *ctx, const char *name, const cs_m68k_op *op, ut32 bits, RzILOpEffect **seq) {
@@ -764,9 +763,13 @@ RZ_IPI bool m68k_operand_to_local(M68KILCtx *ctx, const char *name, const cs_m68
 	if (!value) {
 		return false;
 	}
-	*seq = m68k_seq_append(*seq, pre);
-	*seq = m68k_seq_append(*seq, SETL(name, value));
-	*seq = m68k_seq_append(*seq, post);
+	if (pre) {
+		*seq = *seq ? SEQ2(*seq, pre) : pre;
+	}
+	*seq = *seq ? SEQ2(*seq, SETL(name, value)) : SETL(name, value);
+	if (post) {
+		*seq = SEQ2(*seq, post);
+	}
 	return true;
 }
 
@@ -787,9 +790,11 @@ RZ_IPI bool m68k_rw_operand_to_local(M68KILCtx *ctx, M68KRWOperand *rw, const ch
 		ea.pre = NULL;
 		RzILOpPure *addr = ea.addr;
 		ea.addr = NULL;
-		*seq = m68k_seq_append(*seq, pre);
-		*seq = m68k_seq_append(*seq, SETL(addr_local, UNSIGNED(32, addr)));
-		*seq = m68k_seq_append(*seq, SETL(value_local, LOADW(bits, VARL(addr_local))));
+		if (pre) {
+			*seq = *seq ? SEQ2(*seq, pre) : pre;
+		}
+		*seq = *seq ? SEQ2(*seq, SETL(addr_local, UNSIGNED(32, addr))) : SETL(addr_local, UNSIGNED(32, addr));
+		*seq = SEQ2(*seq, SETL(value_local, LOADW(bits, VARL(addr_local))));
 		rw->post = ea.post;
 		ea.post = NULL;
 		m68k_ea_fini(&ea);
@@ -801,7 +806,7 @@ RZ_IPI bool m68k_rw_operand_to_local(M68KILCtx *ctx, M68KRWOperand *rw, const ch
 		if (!value) {
 			return false;
 		}
-		*seq = m68k_seq_append(*seq, SETL(value_local, value));
+		*seq = *seq ? SEQ2(*seq, SETL(value_local, value)) : SETL(value_local, value);
 		return true;
 	}
 	default:

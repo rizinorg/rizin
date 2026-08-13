@@ -37,45 +37,36 @@
 #define M68K_BF_REG_NUM(v) ((v) & 7)
 #endif
 
-/** Borrowed Capstone state and instruction addresses for one lifted op. */
+/** Capstone decode context and addresses for one lifted instruction. */
 typedef struct {
-	csh handle;
-	cs_mode mode;
-	const cs_insn *insn;
-	const cs_m68k *m68k;
-	ut64 addr;
-	ut64 next_addr;
+	csh handle; ///< Capstone handle used for register names
+	cs_mode mode; ///< Capstone M68K CPU mode
+	const cs_insn *insn; ///< current instruction
+	const cs_m68k *m68k; ///< Capstone M68K detail for \p insn
+	ut64 addr; ///< instruction address
+	ut64 next_addr; ///< fallthrough address
 } M68KILCtx;
 
-/**
- * Effective-address result. All non-NULL IL nodes are owned by this value
- * until explicitly transferred to the caller or released with m68k_ea_fini().
- */
+/** Effective-address value and optional access side effects. */
 typedef struct {
-	RzILOpPure *addr;
-	RzILOpEffect *pre;
-	RzILOpEffect *post;
+	RzILOpPure *addr; ///< computed effective address, or NULL on failure
+	RzILOpEffect *pre; ///< side effects before the access, or NULL
+	RzILOpEffect *post; ///< side effects after the access, or NULL
 } M68KEA;
 
-/**
- * Read/write operand state. op and addr_local are borrowed; post is owned and
- * must be transferred or released with m68k_rw_operand_fini().
- */
+/** Read/write operand: the Capstone operand plus optional memory state. */
 typedef struct {
-	const cs_m68k_op *op;
-	const char *addr_local;
-	RzILOpEffect *post;
+	const cs_m68k_op *op; ///< Capstone operand
+	const char *addr_local; ///< IL local holding the memory address, or NULL
+	RzILOpEffect *post; ///< post-access side effects, or NULL
 } M68KRWOperand;
 
-/**
- * Bitfield destination state. op and addr_local are borrowed; post is owned
- * and must be transferred or released with m68k_bitfield_target_fini().
- */
+/** Bitfield destination: register or memory field plus optional side effects. */
 typedef struct {
-	const cs_m68k_op *op;
-	bool memory;
-	const char *addr_local;
-	RzILOpEffect *post;
+	const cs_m68k_op *op; ///< Capstone operand
+	bool memory; ///< true when the field is in memory
+	const char *addr_local; ///< IL local holding the memory address, or NULL
+	RzILOpEffect *post; ///< post-access side effects, or NULL
 } M68KBitfieldTarget;
 
 typedef enum {
@@ -158,7 +149,6 @@ typedef struct {
 
 RZ_IPI RzILOpPure *m68k_reg_value(M68KILCtx *ctx, m68k_reg reg);
 RZ_IPI RzILOpPure *m68k_read_reg_sized(M68KILCtx *ctx, m68k_reg reg, ut32 bits);
-RZ_IPI RzILOpEffect *m68k_seq_append(RzILOpEffect *a, RzILOpEffect *b);
 RZ_IPI RzILOpEffect *m68k_set_ccr_from_value(RzILOpPure *new_ccr);
 RZ_IPI RzILOpBool *m68k_ccr_bit(ut32 bit);
 RZ_IPI RzILOpBool *m68k_fpsr_bit(ut32 bit);
