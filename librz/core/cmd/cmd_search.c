@@ -267,23 +267,39 @@ static int __prelude_cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	return 1;
 }
 
-RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen) {
+/**
+ * \brief Search for a single function prologue pattern within an address range and analyze hits as functions.
+ *
+ * \param [in] core 	RzCore instance to perform the search on.
+ * \param [in] from 	Start address of the search range.
+ * \param [in] to 		End address of the search range (exclusive).
+ * \param [in] byte_buf Pointer to the byte array of the prologue pattern.
+ * \param [in] blen 	Length of the prologue byte array \p byte_buf
+ * \param [in] mask_buf Pointer to the bitmask array, or NULL if no mask is used.
+ * \param [in] mlen 	Length of the bitmask array \p mask_buf
+ * \return Number of prologue hits found and analyzed, or -1 on error.
+ */
+RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, RZ_NONNULL const ut8 *byte_buf,
+	int blen, RZ_NULLABLE const ut8 *mask_buf, int mlen) {
+	rz_return_val_if_fail(core && byte_buf && blen > 0, -1);
+
 	ut64 at;
 	ut8 *b = (ut8 *)malloc(core->blocksize);
 	if (!b) {
-		return 0;
+		return -1;
 	}
 	// TODO: handle sections ?
 	if (from >= to) {
 		RZ_LOG_ERROR("core: Invalid search range 0x%08" PFMT64x " - 0x%08" PFMT64x "\n", from, to);
 		free(b);
-		return 0;
+		return -1;
 	}
 	rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
-	rz_search_kw_add(core->search, rz_search_keyword_new(buf, blen, mask, mlen, NULL));
+	rz_search_kw_add(core->search, rz_search_keyword_new(byte_buf, blen, mask_buf, mlen, NULL));
 	rz_search_begin(core->search);
 	rz_search_set_callback(core->search, &__prelude_cb_hit, core);
 	core->search->preludecnt = 0;
+	bool io_error = false;
 	for (at = from; at < to; at += core->blocksize) {
 		if (rz_cons_is_breaked()) {
 			break;
@@ -294,6 +310,7 @@ RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *b
 		(void)rz_io_read_at_mapped(core->io, at, b, core->blocksize);
 		if (rz_search_update(core->search, at, b, core->blocksize) == -1) {
 			RZ_LOG_ERROR("core: update read error at 0x%08" PFMT64x "\n", at);
+			io_error = true;
 			break;
 		}
 	}
@@ -302,44 +319,48 @@ RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *b
 	// For now we will just use rz_search_kw_reset
 	rz_search_kw_reset(core->search);
 	free(b);
+	if (io_error) {
+		return -1;
+	}
 	return core->search->preludecnt;
 }
 
-RZ_API int rz_core_search_preludes(RzCore *core, bool log) {
-	int ret = -1;
-	ut64 from = UT64_MAX;
-	ut64 to = UT64_MAX;
-	int keyword_length = 0;
-	ut8 *keyword = NULL;
-	const char *prelude = rz_config_get(core->config, "analysis.prelude");
-	ut64 limit = rz_config_get_i(core->config, "analysis.prelude.limit");
+/**
+ * \brief Search for function prologues and analyze them as functions.
+ * \param [in] core 	 RzCore instance to perform the search on.
+ * \param [in] prologues List of RzSearchKeywords to search for. If NULL, the default prologues from the
+ * 						 static database of the current architecture will be used if it exists.
+ * \returns The number of prologues hit if successful, -1 otherwise.
+ */
+RZ_API int rz_core_search_preludes(RzCore *core, RZ_NULLABLE RzList /*<RzSearchKeyword *>*/ *prologues) {
+	rz_return_val_if_fail(core, -1);
+
+	bool free_prologues = false;
+	if (!prologues) {
+		// no prologues provided, use prologues from arch plugin
+		prologues = rz_analysis_preludes(core->analysis);
+		if (!prologues) {
+			RZ_LOG_ERROR("core: no prologues available for current architecture."
+				     " Please use 'aapf' or 'aapk'  to provide prologues.\n");
+			return -1;
+		}
+		free_prologues = true;
+	}
 
 	RzList *list = rz_core_get_boundaries_select(core, "search.from", "search.to", "search.in");
-	RzList *arch_preludes = NULL;
 	RzListIter *iter = NULL, *iter2 = NULL;
 	RzIOMap *p = NULL;
-	RzSearchKeyword *kw = NULL;
 
 	if (!list) {
 		return -1;
 	}
 
-	if (RZ_STR_ISNOTEMPTY(prelude)) {
-		keyword = malloc(strlen(prelude) + 1);
-		if (!keyword) {
-			RZ_LOG_ERROR("aap: cannot allocate 'analysis.prelude' buffer\n");
-			rz_list_free(list);
-			return -1;
-		}
-		keyword_length = rz_hex_str2bin(prelude, keyword);
-	} else {
-		arch_preludes = rz_analysis_preludes(core->analysis);
-		if (!arch_preludes) {
-			rz_list_free(list);
-			return -1;
-		}
-	}
+	ut64 from = UT64_MAX;
+	ut64 to = UT64_MAX;
+	ut64 limit = rz_config_get_i(core->config, "analysis.prelude.limit");
 
+	RzSearchKeyword *kw = NULL;
+	size_t total_hits = 0;
 	rz_list_foreach (list, iter, p) {
 		if (!(p->perm & RZ_PERM_X)) {
 			continue;
@@ -347,25 +368,28 @@ RZ_API int rz_core_search_preludes(RzCore *core, bool log) {
 		from = p->itv.addr;
 		to = rz_itv_end(p->itv);
 		if ((to - from) >= limit) {
-			RZ_LOG_WARN("aap: search interval (from 0x%" PFMT64x
+			RZ_LOG_WARN("core: search interval (from 0x%" PFMT64x
 				    " to 0x%" PFMT64x ") exceeds analysis.prelude.limit (0x%" PFMT64x "), skipping it.\n",
 				from, to, limit);
 			continue;
 		}
-		if (keyword && keyword_length > 0) {
-			ret = rz_core_search_prelude(core, from, to, keyword, keyword_length, NULL, 0);
-		} else {
-			rz_list_foreach (arch_preludes, iter2, kw) {
-				ret = rz_core_search_prelude(core, from, to,
-					kw->bin_keyword, kw->keyword_length,
-					kw->bin_binmask, kw->binmask_length);
+		rz_list_foreach (prologues, iter2, kw) {
+			int hits = rz_core_search_prelude(core, from, to,
+				kw->bin_keyword, kw->keyword_length,
+				kw->bin_binmask, kw->binmask_length);
+
+			if (hits > 0) {
+				total_hits += (size_t)hits;
+			} else if (hits < 0) {
+				RZ_LOG_WARN("core: search failed for a prologue.\n");
 			}
 		}
 	}
-	free(keyword);
 	rz_list_free(list);
-	rz_list_free(arch_preludes);
-	return ret;
+	if (free_prologues) {
+		rz_list_free(prologues);
+	}
+	return total_hits;
 }
 
 /* TODO: maybe move into util/str */

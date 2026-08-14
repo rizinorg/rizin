@@ -186,6 +186,8 @@ RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_new(RZ_OWN ut8 *byte
 RZ_API RZ_OWN RzSearchBytesPattern *rz_search_parse_byte_pattern(const char *byte_pattern, RZ_NULLABLE const char *pattern_desc);
 RZ_API size_t rz_search_bytes_pattern_len(RZ_NONNULL const RzSearchBytesPattern *hp);
 RZ_API const char *rz_search_bytes_pattern_desc(RZ_NONNULL const RzSearchBytesPattern *bp);
+RZ_API const ut8 *rz_search_bytes_pattern_get_bytes(RZ_NONNULL const RzSearchBytesPattern *bp);
+RZ_API const ut8 *rz_search_bytes_pattern_get_mask(RZ_NONNULL const RzSearchBytesPattern *bp);
 
 /**
  * \brief The cancel callback. It is invoked to check, if the search should be stopped.

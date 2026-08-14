@@ -74,6 +74,28 @@ RZ_API size_t rz_search_bytes_pattern_len(RZ_NONNULL const RzSearchBytesPattern 
 	return bp->length;
 }
 
+/**
+ * \brief Get the read-only pointer to bytes buffer of the pattern.
+ *
+ * \return The bytes of the pattern or NULL in case of failure.
+ */
+RZ_API const ut8 *rz_search_bytes_pattern_get_bytes(RZ_NONNULL const RzSearchBytesPattern *bp) {
+	rz_return_val_if_fail(bp, NULL);
+	const ut8 *bytes = bp->bytes; // TODO: direct return
+	return bytes;
+}
+
+/**
+ * \brief Get the read-only pointer to the mask buffer of the pattern.
+ *
+ * \return The mask of the pattern or NULL in case of failure.
+ */
+RZ_API const ut8 *rz_search_bytes_pattern_get_mask(RZ_NONNULL const RzSearchBytesPattern *bp) {
+	rz_return_val_if_fail(bp, NULL);
+	const ut8 *mask = bp->mask; // TODO: direct return
+	return mask;
+}
+
 RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_copy(RZ_NONNULL RZ_BORROW RzSearchBytesPattern *hp) {
 	rz_return_val_if_fail(hp, NULL);
 	return rz_search_bytes_pattern_new(rz_new_copy(hp->length, hp->bytes), rz_new_copy(hp->length, hp->mask), hp->length, hp->pattern_desc, hp->regex != NULL);

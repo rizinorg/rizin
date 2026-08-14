@@ -9,9 +9,7 @@
 RZ_API RzCmdStatus rz_cmd_raw_prologues_gen_handler(RzCore *core, int argc, const char **argv);
 RZ_API RzCmdStatus rz_cmd_raw_prologues_gen_all_handler(RzCore *core, int argc, const char **argv);
 RZ_API RzCmdStatus rz_cmd_raw_prologues_gen_dir_handler(RzCore *core, int argc, const char **argv);
-RZ_API RzCmdStatus rz_cmd_prologues_load_handler(RzCore *core, int argc, const char **argv);
 RZ_API RzCmdStatus rz_cmd_prologues_generalize_handler(RzCore *core, int argc, const char **argv);
-RZ_API RzCmdStatus rz_cmd_prologues_search_handler(RzCore *core, int argc, const char **argv);
 RZ_API RzCmdStatus rz_cmd_prologues_store_clear_handler(RzCore *core, int argc, const char **argv);
 RZ_API RzCmdStatus rz_cmd_prologues_trie_clear_handler(RzCore *core, int argc, const char **argv);
 RZ_API RzCmdStatus rz_cmd_reset_session_handler(RzCore *core, int argc, const char **argv);
