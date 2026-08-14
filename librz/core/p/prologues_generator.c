@@ -440,155 +440,6 @@ RZ_API RzCmdStatus rz_cmd_raw_prologues_gen_dir_handler(RzCore *core, int argc, 
 	return res ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
-RZ_API RzCmdStatus rz_cmd_prologues_load_handler(RzCore *core, int argc, const char **argv) {
-	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
-	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
-
-	const char *file_path = argv[1];
-	if (!rz_file_exists(file_path)) {
-		RZ_LOG_ERROR("File does not exist: %s\n", file_path);
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	RzCmdStatus status = RZ_CMD_STATUS_ERROR;
-	char *data = rz_file_slurp(file_path, NULL);
-	if (!data) {
-		RZ_LOG_ERROR("File is empty or cannot read file: %s\n", file_path);
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	RzJson *json = rz_json_parse(data);
-	if (!json) {
-		RZ_LOG_ERROR("Failed to parse JSON from file: %s\n", file_path);
-		goto cleanup_data;
-	}
-
-	// validate arch metadata from file against curr session
-	const RzJson *arch_js = rz_json_get(json, "arch");
-	const RzJson *bits_js = rz_json_get(json, "bits");
-	const RzJson *endian_js = rz_json_get(json, "endian");
-	if (!arch_js || arch_js->type != RZ_JSON_STRING ||
-		!bits_js || bits_js->type != RZ_JSON_INTEGER ||
-		!endian_js || endian_js->type != RZ_JSON_STRING) {
-		RZ_LOG_ERROR("Invalid or missing arch metadata (arch, bits, endian) in file: %s\n", file_path);
-		goto cleanup_json;
-	}
-
-	const char *file_arch = arch_js->str_value;
-	int file_bits = (int)bits_js->num.u_value;
-	bool file_big_endian = RZ_STR_EQ(endian_js->str_value, "big");
-
-	if (!ctx->arch) {
-		// first operation in session, adopt arch from file
-		ctx->arch = rz_str_dup(file_arch);
-		ctx->bits = file_bits;
-		ctx->big_endian = file_big_endian;
-	} else if (!RZ_STR_EQ(ctx->arch, file_arch) ||
-		ctx->bits != file_bits ||
-		ctx->big_endian != file_big_endian) {
-		RZ_LOG_ERROR("Cannot load file '%s': arch mismatch.\n"
-			     "  Session: (%s, %d-bit, %cE)\n"
-			     "  File:    (%s, %d-bit, %cE)\n"
-			     "Please reset the session first using pg-\n",
-			file_path,
-			ctx->arch, ctx->bits, ctx->big_endian ? 'B' : 'L',
-			file_arch, file_bits, file_big_endian ? 'B' : 'L');
-		goto cleanup_json;
-	}
-
-	const RzJson *prologues_js = rz_json_get(json, "prologues");
-	if (!prologues_js || prologues_js->type != RZ_JSON_ARRAY) {
-		RZ_LOG_ERROR("Invalid JSON format: 'prologues' key is not an array in file: %s\n", file_path);
-		goto cleanup_json;
-	}
-
-	const RzJson *prologue_len_js = rz_json_get(json, "prologue_length");
-	if (!prologue_len_js || prologue_len_js->type != RZ_JSON_INTEGER) {
-		RZ_LOG_ERROR("Invalid JSON format: 'prologue_length' key is not an integer in file: %s\n", file_path);
-		goto cleanup_json;
-	}
-	size_t expected_len = prologue_len_js->num.u_value;
-
-	rz_vector_clear(ctx->prologues); // replace existing prologues
-	ctx->store_prologue_len = expected_len;
-
-	const RzJson *ele;
-	for (ele = prologues_js->children.first; ele; ele = ele->next) {
-		if (ele->type != RZ_JSON_OBJECT) {
-			RZ_LOG_ERROR("Invalid JSON format: prologue entry is not an object in file: %s\n", file_path);
-			goto cleanup_store;
-		}
-
-		const RzJson *bytes_js = rz_json_get(ele, "bytes");
-		const RzJson *mask_js = rz_json_get(ele, "mask");
-		if (!bytes_js || bytes_js->type != RZ_JSON_STRING ||
-			!mask_js || mask_js->type != RZ_JSON_STRING) {
-			RZ_LOG_ERROR("Invalid JSON format: prologue entry missing 'bytes' or 'mask' string fields in file: %s\n", file_path);
-			goto cleanup_store;
-		}
-
-		size_t bytes_hex_len = strlen(bytes_js->str_value);
-		size_t mask_hex_len = strlen(mask_js->str_value);
-		if (bytes_hex_len != expected_len * 2) {
-			RZ_LOG_ERROR("Invalid prologue 'bytes' length in JSON: expected %" PFMTSZu " hex chars (%" PFMTSZu " bytes), got %" PFMTSZu " in file: %s\n",
-				expected_len * 2, expected_len, bytes_hex_len, file_path);
-			goto cleanup_store;
-		}
-		if (mask_hex_len != expected_len * 2) {
-			RZ_LOG_ERROR("Invalid prologue 'mask' length in JSON: expected %" PFMTSZu " hex chars (%" PFMTSZu " bytes), got %" PFMTSZu " in file: %s\n",
-				expected_len * 2, expected_len, mask_hex_len, file_path);
-			goto cleanup_store;
-		}
-
-		// use of expected_len bytes instead of expected_len+1 is safe as hex_str_len is guaranteed to be even (expected_len * 2)
-		// so rz_hex_str2bin will not write a partial extra byte for odd nibble.
-		ut8 *bytes_buf = RZ_NEWS0(ut8, expected_len);
-		if (!bytes_buf) {
-			RZ_LOG_ERROR("Failed to allocate memory for prologue bytes buffer\n");
-			goto cleanup_store;
-		}
-		ut8 *mask_buf = RZ_NEWS0(ut8, expected_len);
-		if (!mask_buf) {
-			RZ_LOG_ERROR("Failed to allocate memory for prologue mask buffer\n");
-			RZ_FREE(bytes_buf);
-			goto cleanup_store;
-		}
-
-		// TODO: when implementing masked, if res<0 use mask to allow everything at that last nibble
-		// TODO: for allowing any number of bits (non byte aligned), might need to use simply binary instead of hex
-		// OR just pad the incoming buffer with 0 in both prologue and mask buf
-		int res = rz_hex_str2bin(bytes_js->str_value, bytes_buf);
-		if (res <= 0 || (size_t)RZ_ABS(res) != expected_len) {
-			RZ_LOG_ERROR("Failed to convert hex string to binary for prologue bytes: %s\n", bytes_js->str_value);
-			RZ_FREE(bytes_buf);
-			RZ_FREE(mask_buf);
-			goto cleanup_store;
-		}
-		res = rz_hex_str2bin(mask_js->str_value, mask_buf);
-		if (res <= 0 || (size_t)RZ_ABS(res) != expected_len) {
-			RZ_LOG_ERROR("Failed to convert hex string to binary for prologue mask: %s\n", mask_js->str_value);
-			RZ_FREE(bytes_buf);
-			RZ_FREE(mask_buf);
-			goto cleanup_store;
-		}
-
-		PGPrologue p = { .bytes = bytes_buf, .mask = mask_buf };
-		rz_vector_push(ctx->prologues, &p);
-	}
-
-	status = RZ_CMD_STATUS_OK;
-	goto cleanup_json;
-
-cleanup_store:
-	rz_vector_clear(ctx->prologues);
-	ctx->store_prologue_len = 0;
-cleanup_json:
-	rz_json_free(json);
-cleanup_data:
-	RZ_FREE(data);
-	return status;
-}
-
 static double shanon_entropy_of_split(const RzTrieNode *p) {
 	rz_return_val_if_fail(p && !rz_pvector_empty(&p->children) && p->data, 0.0);
 	double H = 0.0;
@@ -693,11 +544,10 @@ static void post_visit_prologues(RzTrieNode *n, void *user) {
 	pgctx->depth--;
 }
 
-RZ_API RzCmdStatus rz_cmd_prologues_generalize_handler(RzCore *core, int argc, const char **argv) {
-	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
-	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
+RZ_API RzCmdStatus rz_cmd_prologues_generalize_handler(RzTrie *pg_trie) {
+	rz_return_val_if_fail(pg_trie, RZ_CMD_STATUS_ERROR);
 
-	PGTrieNodeData *rd = ctx->pg_trie->root->data;
+	PGTrieNodeData *rd = pg_trie->root->data;
 	if (rd->hit_cnt == 0) {
 		RZ_LOG_ERROR("Prologues trie is empty. Build it first with pg, pga, or pgd.\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -724,73 +574,9 @@ RZ_API RzCmdStatus rz_cmd_prologues_generalize_handler(RzCore *core, int argc, c
 
 	rz_trie_dfs(ctx->pg_trie->root, pre_visit_prologues, NULL, post_visit_prologues, &pgctx);
 
-	RZ_LOG_INFO("pgg: Generated %" PFMTSZu " prologues from trie\n", rz_vector_len(ctx->prologues));
+	RZ_LOG_INFO("Generated %" PFMTSZu " prologues from trie\n", rz_vector_len(ctx->prologues));
 	RZ_FREE(byte_buf);
 	RZ_FREE(mask_buf);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_API RzCmdStatus rz_cmd_prologues_search_handler(RzCore *core, int argc, const char **argv) {
-	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
-	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
-
-	if (ctx->store_prologue_len == 0 || rz_vector_len(ctx->prologues) == 0) {
-		RZ_LOG_ERROR("Prologues store is empty. Generate or load prologues first.\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	RzBin *bin = rz_core_get_bin(core);
-	if (!bin) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	ut32 fd = rz_core_file_cur_fd(core);
-	if (fd == UT32_MAX) {
-		RZ_LOG_ERROR("Failed to get current file descriptor\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-	RzBinFile *bf = rz_bin_file_find_by_fd(bin, fd);
-	if (!bf) {
-		RZ_LOG_ERROR("Failed to find bin file for fd: %" PFMT32u "\n", fd);
-		return RZ_CMD_STATUS_ERROR;
-	}
-	const RzBinInfo *info = rz_bin_object_get_info(bf->o);
-	if (!info) {
-		RZ_LOG_ERROR("Failed to get bin info for file: %s\n", bf->file);
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	if (!pg_check_file_arch(ctx, info, rz_config_get(core->config, "asm.arch"))) {
-		const char *file_arch = info->arch ? info->arch : "unknown";
-		RZ_LOG_ERROR("Cannot search file '%s': arch mismatch.\n"
-			     "  Session: (%s, %d-bit, %cE)\n"
-			     "  Current File: (%s, %d-bit, %cE)\n"
-			     "Please reset the session using pg- or load/generate prologues for current architecture.\n",
-			bf->file,
-			ctx->arch, ctx->bits, ctx->big_endian ? 'B' : 'L',
-			file_arch, info->bits, info->big_endian ? 'B' : 'L');
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	RzList *list = rz_core_get_boundaries_select(core, "search.from", "search.to", "search.in");
-	RzListIter *iter;
-	RzIOMap *map;
-	size_t total_hits = 0;
-	rz_list_foreach (list, iter, map) {
-		if (!(map->perm & RZ_PERM_X)) {
-			continue;
-		}
-		ut64 from = map->itv.addr;
-		ut64 to = rz_itv_end(map->itv);
-
-		PGPrologue *p;
-		rz_vector_foreach (ctx->prologues, p) {
-			total_hits += rz_core_search_prelude(core, from, to,
-				p->bytes, (int)ctx->store_prologue_len,
-				p->mask, (int)ctx->store_prologue_len);
-		}
-	}
-	RZ_LOG_INFO("pgs: Found %" PFMTSZu " prologue hits and analyzed functions.\n", total_hits);
-	rz_list_free(list);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1055,11 +841,6 @@ static bool rz_cmd_prologues_gen_init(RzCore *core, RZ_OUT void **user) {
 
 	rz_cmd_desc_argv_new_warn(rcmd, pg, "pga", rz_cmd_raw_prologues_gen_all_handler, &cmd_raw_prologues_gen_all_help);
 	rz_cmd_desc_argv_new_warn(rcmd, pg, "pgd", rz_cmd_raw_prologues_gen_dir_handler, &cmd_raw_prologues_gen_dir_help);
-	rz_cmd_desc_argv_new_warn(rcmd, pg, "pgL", rz_cmd_prologues_load_handler, &cmd_prologues_load_help);
-	// TODO: do we need to load from list -> list (pgL done), list->tree, tree->list, tree->tree? prolly YAGNI
-
-	rz_cmd_desc_argv_new_warn(rcmd, pg, "pgg", rz_cmd_prologues_generalize_handler, &cmd_prologues_generalize_help);
-	rz_cmd_desc_argv_new_warn(rcmd, pg, "pgs", rz_cmd_prologues_search_handler, &cmd_prologues_search_help);
 
 	rz_cmd_desc_argv_modes_new_warn(rcmd, pg, "pgtp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON,
 		rz_cmd_prefix_tree_print_handler, &cmd_prefix_tree_print_help);
@@ -1075,7 +856,7 @@ static bool rz_cmd_prologues_gen_init(RzCore *core, RZ_OUT void **user) {
 	if (!cfg) {
 		goto error;
 	}
-	rz_config_add_integer_bind(cfg, "plugins.prologues_generator.trie_prologue_len",
+	rz_config_add_integer_bind(cfg, "plugins.prologues_generator.prologue_len",
 		"Number of bytes (>0) to extract from start of function for prologue generation",
 		config_trie_prologue_len_getter, config_trie_prologue_len_setter, NULL, ctx);
 

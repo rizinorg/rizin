@@ -1214,8 +1214,8 @@ RZ_API bool rz_core_rtr_http(RzCore *core, bool open_browser);
 RZ_API bool rz_core_rtr_gdb(RzCore *core, ut32 port, const char *file_path, RZ_NULLABLE const char *gdb_args, bool debug_msg);
 
 /// Legacy search
-RZ_API int rz_core_search_preludes(RzCore *core, bool log);
-RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen);
+RZ_API int rz_core_search_preludes(RzCore *core, RZ_NULLABLE RzList /*<RzSearchKeyword *>*/ *prologues);
+RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, RZ_NONNULL const ut8 *byte_buf, int blen, RZ_NULLABLE const ut8 *mask_buf, int mlen);
 
 #define RZ_CORE_BOUNDARIES_PERMS_ANY 0
 #define RZ_CORE_BOUNDARIES_MASK_NONE 0
