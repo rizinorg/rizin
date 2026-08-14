@@ -70,14 +70,6 @@ typedef struct {
 } M68KBitfieldTarget;
 
 typedef enum {
-	M68K_BIN_ADD,
-	M68K_BIN_SUB,
-	M68K_BIN_AND,
-	M68K_BIN_OR,
-	M68K_BIN_XOR
-} M68KBinOp;
-
-typedef enum {
 	M68K_CACHE_OP_TOUCH,
 	M68K_CACHE_OP_INVALIDATE,
 	M68K_CACHE_OP_PUSH

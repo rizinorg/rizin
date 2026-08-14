@@ -1595,24 +1595,24 @@ static RzILOpEffect *lift_pea(M68KILCtx *ctx) {
 	return seq;
 }
 
-static RzILOpPure *apply_binop(M68KBinOp binop, RzILOpPure *dst, RzILOpPure *src) {
+static RzILOpPure *apply_binop(RzILOpPureCode binop, RzILOpPure *dst, RzILOpPure *src) {
 	switch (binop) {
-	case M68K_BIN_ADD:
+	case RZ_IL_OP_ADD:
 		return ADD(dst, src);
-	case M68K_BIN_SUB:
+	case RZ_IL_OP_SUB:
 		return SUB(dst, src);
-	case M68K_BIN_AND:
+	case RZ_IL_OP_LOGAND:
 		return LOGAND(dst, src);
-	case M68K_BIN_OR:
+	case RZ_IL_OP_LOGOR:
 		return LOGOR(dst, src);
-	case M68K_BIN_XOR:
+	case RZ_IL_OP_LOGXOR:
 		return LOGXOR(dst, src);
 	default:
 		return NULL;
 	}
 }
 
-static RzILOpEffect *lift_binop(M68KILCtx *ctx, M68KBinOp binop, bool address_dst, bool compare_only) {
+static RzILOpEffect *lift_binop(M68KILCtx *ctx, RzILOpPureCode binop, bool address_dst, bool compare_only) {
 	rz_return_val_if_fail(ctx->m68k->op_count >= 2, NULL);
 	const cs_m68k_op *src = &ctx->m68k->operands[0];
 	const cs_m68k_op *dst = &ctx->m68k->operands[1];
@@ -1656,11 +1656,11 @@ static RzILOpEffect *lift_binop(M68KILCtx *ctx, M68KBinOp binop, bool address_ds
 		RzILOpBool *v = NULL;
 		RzILOpBool *c = NULL;
 		RzILOpBool *x = NULL;
-		if (binop == M68K_BIN_ADD) {
+		if (binop == RZ_IL_OP_ADD) {
 			v = m68k_add_overflow(VARL("dst"), VARL("src"), VARL("res"));
 			c = ULT(VARL("res"), VARL("dst"));
 			x = (RzILOpBool *)DUP(c);
-		} else if (binop == M68K_BIN_SUB) {
+		} else if (binop == RZ_IL_OP_SUB) {
 			v = m68k_sub_overflow(VARL("dst"), VARL("src"), VARL("res"));
 			c = ULT(VARL("dst"), VARL("src"));
 			x = compare_only ? NULL : (RzILOpBool *)DUP(c);
@@ -1673,7 +1673,7 @@ static RzILOpEffect *lift_binop(M68KILCtx *ctx, M68KBinOp binop, bool address_ds
 	return seq;
 }
 
-static RzILOpEffect *lift_status_binop(M68KILCtx *ctx, M68KBinOp binop) {
+static RzILOpEffect *lift_status_binop(M68KILCtx *ctx, RzILOpPureCode binop) {
 	rz_return_val_if_fail(ctx->m68k->op_count >= 2, NULL);
 	const cs_m68k_op *src = &ctx->m68k->operands[0];
 	const cs_m68k_op *dst = &ctx->m68k->operands[1];
@@ -4641,11 +4641,11 @@ RZ_IPI RzILOpEffect *rz_m68k_cs_get_il_op(csh handle, cs_mode mode, RZ_NONNULL c
 		return lift_pea(&ctx);
 	case M68K_INS_ADD:
 	case M68K_INS_ADDI:
-		return lift_binop(&ctx, M68K_BIN_ADD, false, false);
+		return lift_binop(&ctx, RZ_IL_OP_ADD, false, false);
 	case M68K_INS_ADDQ:
 		return ctx.m68k->op_count >= 2 && rz_m68k_op_is_addr_reg(&ctx.m68k->operands[1])
-			? lift_binop(&ctx, M68K_BIN_ADD, true, false)
-			: lift_binop(&ctx, M68K_BIN_ADD, false, false);
+			? lift_binop(&ctx, RZ_IL_OP_ADD, true, false)
+			: lift_binop(&ctx, RZ_IL_OP_ADD, false, false);
 	case M68K_INS_ADDX:
 		return lift_addx_subx(&ctx, false);
 	case M68K_INS_ABCD:
@@ -4653,14 +4653,14 @@ RZ_IPI RzILOpEffect *rz_m68k_cs_get_il_op(csh handle, cs_mode mode, RZ_NONNULL c
 	case M68K_INS_PACK:
 		return lift_pack_unpk(&ctx, false);
 	case M68K_INS_ADDA:
-		return lift_binop(&ctx, M68K_BIN_ADD, true, false);
+		return lift_binop(&ctx, RZ_IL_OP_ADD, true, false);
 	case M68K_INS_SUB:
 	case M68K_INS_SUBI:
-		return lift_binop(&ctx, M68K_BIN_SUB, false, false);
+		return lift_binop(&ctx, RZ_IL_OP_SUB, false, false);
 	case M68K_INS_SUBQ:
 		return ctx.m68k->op_count >= 2 && rz_m68k_op_is_addr_reg(&ctx.m68k->operands[1])
-			? lift_binop(&ctx, M68K_BIN_SUB, true, false)
-			: lift_binop(&ctx, M68K_BIN_SUB, false, false);
+			? lift_binop(&ctx, RZ_IL_OP_SUB, true, false)
+			: lift_binop(&ctx, RZ_IL_OP_SUB, false, false);
 	case M68K_INS_SUBX:
 		return lift_addx_subx(&ctx, true);
 	case M68K_INS_SBCD:
@@ -4668,33 +4668,33 @@ RZ_IPI RzILOpEffect *rz_m68k_cs_get_il_op(csh handle, cs_mode mode, RZ_NONNULL c
 	case M68K_INS_UNPK:
 		return lift_pack_unpk(&ctx, true);
 	case M68K_INS_SUBA:
-		return lift_binop(&ctx, M68K_BIN_SUB, true, false);
+		return lift_binop(&ctx, RZ_IL_OP_SUB, true, false);
 	case M68K_INS_CMP:
 	case M68K_INS_CMPI:
 	case M68K_INS_CMPM:
-		return lift_binop(&ctx, M68K_BIN_SUB, false, true);
+		return lift_binop(&ctx, RZ_IL_OP_SUB, false, true);
 	case M68K_INS_CMPA:
-		return lift_binop(&ctx, M68K_BIN_SUB, true, true);
+		return lift_binop(&ctx, RZ_IL_OP_SUB, true, true);
 	case M68K_INS_CMP2:
 		return lift_cmp2_chk2(&ctx, false);
 	case M68K_INS_AND:
-		return lift_binop(&ctx, M68K_BIN_AND, false, false);
+		return lift_binop(&ctx, RZ_IL_OP_LOGAND, false, false);
 	case M68K_INS_ANDI:
 		return ctx.m68k->op_count >= 2 && rz_m68k_op_is_status_reg(&ctx.m68k->operands[1])
-			? lift_status_binop(&ctx, M68K_BIN_AND)
-			: lift_binop(&ctx, M68K_BIN_AND, false, false);
+			? lift_status_binop(&ctx, RZ_IL_OP_LOGAND)
+			: lift_binop(&ctx, RZ_IL_OP_LOGAND, false, false);
 	case M68K_INS_OR:
-		return lift_binop(&ctx, M68K_BIN_OR, false, false);
+		return lift_binop(&ctx, RZ_IL_OP_LOGOR, false, false);
 	case M68K_INS_ORI:
 		return ctx.m68k->op_count >= 2 && rz_m68k_op_is_status_reg(&ctx.m68k->operands[1])
-			? lift_status_binop(&ctx, M68K_BIN_OR)
-			: lift_binop(&ctx, M68K_BIN_OR, false, false);
+			? lift_status_binop(&ctx, RZ_IL_OP_LOGOR)
+			: lift_binop(&ctx, RZ_IL_OP_LOGOR, false, false);
 	case M68K_INS_EOR:
-		return lift_binop(&ctx, M68K_BIN_XOR, false, false);
+		return lift_binop(&ctx, RZ_IL_OP_LOGXOR, false, false);
 	case M68K_INS_EORI:
 		return ctx.m68k->op_count >= 2 && rz_m68k_op_is_status_reg(&ctx.m68k->operands[1])
-			? lift_status_binop(&ctx, M68K_BIN_XOR)
-			: lift_binop(&ctx, M68K_BIN_XOR, false, false);
+			? lift_status_binop(&ctx, RZ_IL_OP_LOGXOR)
+			: lift_binop(&ctx, RZ_IL_OP_LOGXOR, false, false);
 	case M68K_INS_CLR:
 		return lift_clr(&ctx);
 	case M68K_INS_TST:
