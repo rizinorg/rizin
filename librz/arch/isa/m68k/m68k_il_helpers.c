@@ -648,44 +648,80 @@ RZ_IPI RzILOpPure *m68k_read_operand(M68KILCtx *ctx, const cs_m68k_op *op, ut32 
 	}
 }
 
-RZ_IPI RzILOpEffect *m68k_write_operand(M68KILCtx *ctx, const cs_m68k_op *op, ut32 bits, RzILOpPure *value, RzILOpEffect **pre, RzILOpEffect **post) {
-	if (pre) {
-		*pre = NULL;
-	}
-	if (post) {
-		*post = NULL;
-	}
+static RzILOpEffect *write_operand_before_store(M68KILCtx *ctx, const cs_m68k_op *op, ut32 bits,
+	RzILOpEffect *before_store, RzILOpPure *value) {
 	if (!ctx || !op) {
+		rz_il_op_effect_free(before_store);
 		rz_il_op_pure_free(value);
 	}
 	rz_return_val_if_fail(ctx && op, NULL);
 	if (rz_m68k_op_is_mem_addr(op)) {
 		M68KEA ea = m68k_effective_addr(ctx, op, bits);
 		if (!ea.addr) {
+			rz_il_op_effect_free(before_store);
 			rz_il_op_pure_free(value);
 			m68k_ea_fini(&ea);
 			return NULL;
 		}
 		RzILOpPure *addr = ea.addr;
+		RzILOpEffect *pre = ea.pre;
+		RzILOpEffect *post = ea.post;
 		ea.addr = NULL;
-		if (pre) {
-			*pre = ea.pre;
-			ea.pre = NULL;
-		}
-		if (post) {
-			*post = ea.post;
-			ea.post = NULL;
-		}
+		ea.pre = NULL;
+		ea.post = NULL;
 		m68k_ea_fini(&ea);
-		return STOREW(addr, UNSIGNED(bits, value));
+		RzILOpEffect *store = STOREW(addr, UNSIGNED(bits, value));
+		if (before_store) {
+			store = SEQ2(before_store, store);
+		}
+		return m68k_effect_pre_post(pre, store, post);
 	}
 	switch (op->type) {
-	case M68K_OP_REG:
-		return m68k_write_reg_sized(ctx, op->reg, bits, value);
+	case M68K_OP_REG: {
+		RzILOpEffect *write = m68k_write_reg_sized(ctx, op->reg, bits, value);
+		if (!write) {
+			rz_il_op_effect_free(before_store);
+			return NULL;
+		}
+		return before_store ? SEQ2(before_store, write) : write;
+	}
 	default:
+		rz_il_op_effect_free(before_store);
 		rz_il_op_pure_free(value);
 		return NULL;
 	}
+}
+
+/**
+ * \brief Write \p value to \p op, including EA predecrement/postincrement.
+ *
+ * \param ctx Lift context
+ * \param op Destination operand
+ * \param bits Access width
+ * \param value Value to store; consumed on all paths
+ * \return `pre ; store ; post`. EA side effects are part of the returned effect.
+ *
+ * Do not sequence a SETL that the store reads *before* this effect: `pre` runs
+ * first and must not be assumed to commute with caller locals. Bind such a
+ * local with m68k_write_operand_local() so it is set after `pre`.
+ */
+RZ_IPI RZ_OWN RzILOpEffect *m68k_write_operand(M68KILCtx *ctx, const cs_m68k_op *op,
+	ut32 bits, RZ_OWN RzILOpPure *value) {
+	return write_operand_before_store(ctx, op, bits, NULL, value);
+}
+
+/**
+ * \brief Bind \p value to \p name after EA pre-effects, then store that local.
+ *
+ * \return `pre ; SETL(name, value) ; store(VARL(name)) ; post`
+ */
+RZ_IPI RZ_OWN RzILOpEffect *m68k_write_operand_local(M68KILCtx *ctx, const cs_m68k_op *op,
+	ut32 bits, const char *name, RZ_OWN RzILOpPure *value) {
+	if (!name) {
+		rz_il_op_pure_free(value);
+	}
+	rz_return_val_if_fail(name, NULL);
+	return write_operand_before_store(ctx, op, bits, SETL(name, value), VARL(name));
 }
 
 RZ_IPI RzILOpEffect *m68k_label(const char *label) {

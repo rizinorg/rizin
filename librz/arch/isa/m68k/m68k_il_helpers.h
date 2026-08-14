@@ -165,7 +165,10 @@ RZ_IPI RzILOpPure *m68k_branch_disp_target(const M68KILCtx *ctx, const cs_m68k_o
 RZ_IPI RzILOpEffect *m68k_set_addr_reg_delta(M68KILCtx *ctx, m68k_reg reg, st32 delta);
 RZ_IPI M68KEA m68k_effective_addr(M68KILCtx *ctx, const cs_m68k_op *op, ut32 bits);
 RZ_IPI RzILOpPure *m68k_read_operand(M68KILCtx *ctx, const cs_m68k_op *op, ut32 bits, RzILOpEffect **pre, RzILOpEffect **post);
-RZ_IPI RzILOpEffect *m68k_write_operand(M68KILCtx *ctx, const cs_m68k_op *op, ut32 bits, RzILOpPure *value, RzILOpEffect **pre, RzILOpEffect **post);
+RZ_IPI RZ_OWN RzILOpEffect *m68k_write_operand(M68KILCtx *ctx, const cs_m68k_op *op,
+	ut32 bits, RZ_OWN RzILOpPure *value);
+RZ_IPI RZ_OWN RzILOpEffect *m68k_write_operand_local(M68KILCtx *ctx, const cs_m68k_op *op,
+	ut32 bits, const char *name, RZ_OWN RzILOpPure *value);
 RZ_IPI RzILOpEffect *m68k_label(const char *label);
 RZ_IPI RzILOpEffect *m68k_guard_supervisor(RzILOpEffect *effect);
 RZ_IPI RzILOpEffect *m68k_write_status_reg_unchecked(M68KILCtx *ctx, m68k_reg reg, RzILOpPure *value);

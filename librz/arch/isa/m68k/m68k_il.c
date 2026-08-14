@@ -34,14 +34,12 @@ static RzILOpEffect *lift_move(M68KILCtx *ctx, bool address_dst) {
 		seq = SEQ2(seq, write);
 		return dst->reg == M68K_REG_SR ? BRANCH(m68k_supervisor_mode(), seq, m68k_label("m68k_privilege")) : seq;
 	}
-	RzILOpEffect *pre = NULL;
-	RzILOpEffect *post = NULL;
-	RzILOpEffect *write = m68k_write_operand(ctx, dst, bits, VARL("src"), &pre, &post);
+	RzILOpEffect *write = m68k_write_operand(ctx, dst, bits, VARL("src"));
 	if (!write) {
 		rz_il_op_effect_free(seq);
 		return NULL;
 	}
-	seq = SEQ2(seq, m68k_effect_pre_post(pre, write, post));
+	seq = SEQ2(seq, write);
 	if (!address_dst && !uses_usp && !reads_sr && !reads_ccr) {
 		seq = SEQ2(seq, m68k_set_flags_nzvcx(VARL("src"), bits, IL_FALSE, IL_FALSE, NULL));
 	}
@@ -207,18 +205,16 @@ static RzILOpEffect *lift_mov3q(M68KILCtx *ctx) {
 		return NULL;
 	}
 	const cs_m68k_op *dst = &ctx->m68k->operands[1];
-	RzILOpEffect *pre = NULL;
-	RzILOpEffect *post = NULL;
 	RzILOpPure *value = U32((ut32)ctx->m68k->operands[0].imm);
-	RzILOpEffect *write = m68k_write_operand(ctx, dst, 32, VARL("res"), &pre, &post);
+	RzILOpEffect *write = m68k_write_operand_local(ctx, dst, 32, "res", value);
 	if (!write && dst->type == M68K_OP_IMM) {
-		write = STOREW(U32((ut32)dst->imm), UNSIGNED(32, VARL("res")));
+		write = SEQ2(SETL("res", U32((ut32)ctx->m68k->operands[0].imm)),
+			STOREW(U32((ut32)dst->imm), UNSIGNED(32, VARL("res"))));
 	}
 	if (!write) {
 		return NULL;
 	}
-	RzILOpEffect *seq = m68k_effect_pre_post(pre, SEQ2(SETL("res", value), write), post);
-	return SEQ2(seq, m68k_set_flags_nzvcx(VARL("res"), 32, IL_FALSE, IL_FALSE, NULL));
+	return SEQ2(write, m68k_set_flags_nzvcx(VARL("res"), 32, IL_FALSE, IL_FALSE, NULL));
 }
 
 static RzILOpEffect *lift_movclr(M68KILCtx *ctx) {
@@ -1876,14 +1872,12 @@ static RzILOpEffect *lift_pack_unpk(M68KILCtx *ctx, bool unpack) {
 		seq = SEQ2(seq, SETL("res", UNSIGNED(8, LOGOR(high, low))));
 	}
 
-	RzILOpEffect *write = m68k_write_operand(ctx, dst, unpack ? 16 : 8, VARL("res"), &pre, &post);
+	RzILOpEffect *write = m68k_write_operand(ctx, dst, unpack ? 16 : 8, VARL("res"));
 	if (!write) {
-		rz_il_op_effect_free(pre);
-		rz_il_op_effect_free(post);
 		rz_il_op_effect_free(seq);
 		return NULL;
 	}
-	seq = SEQ2(seq, m68k_effect_pre_post(pre, write, post));
+	seq = SEQ2(seq, write);
 	return seq;
 }
 
@@ -1891,13 +1885,10 @@ static RzILOpEffect *lift_unary_write_result(M68KILCtx *ctx, RzILOpPure *result,
 	rz_return_val_if_fail(ctx->m68k->op_count >= 1, NULL);
 	const cs_m68k_op *dst = &ctx->m68k->operands[0];
 	ut32 bits = rz_m68k_detail_op_bits(ctx->m68k, 32);
-	RzILOpEffect *pre = NULL;
-	RzILOpEffect *post = NULL;
-	RzILOpEffect *write = m68k_write_operand(ctx, dst, bits, VARL("res"), &pre, &post);
-	if (!write) {
+	RzILOpEffect *seq = m68k_write_operand_local(ctx, dst, bits, "res", result);
+	if (!seq) {
 		return NULL;
 	}
-	RzILOpEffect *seq = m68k_effect_pre_post(pre, SEQ2(SETL("res", result), write), post);
 	if (set_flags) {
 		seq = SEQ2(seq, m68k_set_flags_nzvcx(VARL("res"), bits, IL_FALSE, IL_FALSE, NULL));
 	}
@@ -2454,13 +2445,7 @@ static RzILOpEffect *lift_unlk(M68KILCtx *ctx) {
 static RzILOpEffect *lift_scc_cond(M68KILCtx *ctx, RzILOpBool *cond) {
 	rz_return_val_if_fail(ctx->m68k->op_count >= 1, NULL);
 	RzILOpPure *value = ITE(cond, U8(0xff), U8(0));
-	RzILOpEffect *pre = NULL;
-	RzILOpEffect *post = NULL;
-	RzILOpEffect *write = m68k_write_operand(ctx, &ctx->m68k->operands[0], 8, value, &pre, &post);
-	if (!write) {
-		return NULL;
-	}
-	return m68k_effect_pre_post(pre, write, post);
+	return m68k_write_operand(ctx, &ctx->m68k->operands[0], 8, value);
 }
 
 static RzILOpEffect *lift_scc(M68KILCtx *ctx) {
@@ -3443,15 +3428,7 @@ static RzILOpEffect *lift_fmove_control(M68KILCtx *ctx) {
 		return SEQ2(seq, m68k_write_reg_sized(ctx, dst->reg, 32, VARL("src")));
 	}
 
-	RzILOpEffect *pre = NULL;
-	RzILOpEffect *post = NULL;
-	RzILOpEffect *write = m68k_write_operand(ctx, dst, 32, m68k_read_reg_sized(ctx, src->reg, 32), &pre, &post);
-	if (!write) {
-		rz_il_op_effect_free(pre);
-		rz_il_op_effect_free(post);
-		return NULL;
-	}
-	return m68k_effect_pre_post(pre, write, post);
+	return m68k_write_operand(ctx, dst, 32, m68k_read_reg_sized(ctx, src->reg, 32));
 }
 
 static RzFloatFormat fpu_format_for_bits(ut32 bits) {
@@ -3847,8 +3824,6 @@ static RzILOpEffect *fpu_write_failure_label(M68KILCtx *ctx, const cs_m68k_op *o
 }
 
 static RzILOpEffect *fpu_write_float_local(M68KILCtx *ctx, const cs_m68k_op *dst, ut32 bits, const char *name, RzILOpEffect *seq) {
-	RzILOpEffect *pre = NULL;
-	RzILOpEffect *post = NULL;
 	RzILOpPure *value = NULL;
 	if (dst->type == M68K_OP_MEM && dst->address_mode == M68K_AM_NONE) {
 		rz_il_op_effect_free(seq);
@@ -3882,15 +3857,12 @@ static RzILOpEffect *fpu_write_float_local(M68KILCtx *ctx, const cs_m68k_op *dst
 		return NULL;
 	}
 
-	RzILOpEffect *write = m68k_write_operand(ctx, dst, bits, value, &pre, &post);
+	RzILOpEffect *write = m68k_write_operand(ctx, dst, bits, value);
 	if (!write) {
-		rz_il_op_effect_free(pre);
-		rz_il_op_effect_free(post);
 		rz_il_op_effect_free(seq);
 		return NULL;
 	}
-	RzILOpEffect *wrapped = m68k_effect_pre_post(pre, write, post);
-	return seq ? SEQ2(seq, wrapped) : wrapped;
+	return seq ? SEQ2(seq, write) : write;
 }
 
 static bool fmovecr_const_parts(ut64 selector, ut16 *sign_exp, ut64 *mantissa) {
