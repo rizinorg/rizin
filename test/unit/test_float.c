@@ -176,6 +176,19 @@ bool rz_float_detect_spec_test(void) {
 	mu_end;
 }
 
+bool rz_float_set_from_inf_invalid_format_test(void) {
+	RzFloat *f = rz_float_new(RZ_FLOAT_IEEE754_BIN_32);
+	mu_assert_notnull(f, "create float for invalid infinity format test");
+	rz_bv_set(f->s, 0, true);
+	f->r = RZ_FLOAT_IEEE754_DEC_64;
+
+	mu_assert_false(rz_float_set_from_inf(f, false), "reject infinity for an unsupported float format");
+	mu_assert_true(rz_bv_get(f->s, 0), "failed infinity conversion leaves the bitvector unchanged");
+
+	rz_float_free(f);
+	mu_end;
+}
+
 bool f16_ieee_arithmetic_test(void) {
 	RzFloat *source = rz_float_new_from_f32(1.0f);
 	RzFloat *one = rz_float_convert(source, RZ_FLOAT_IEEE754_BIN_16, RZ_FLOAT_RMODE_RNE);
@@ -2143,6 +2156,7 @@ bool all_tests() {
 	mu_run_test(rz_float_new_from_hex_test);
 	mu_run_test(f32_ieee_format_test);
 	mu_run_test(rz_float_detect_spec_test);
+	mu_run_test(rz_float_set_from_inf_invalid_format_test);
 	mu_run_test(f16_ieee_arithmetic_test);
 	mu_run_test(f32_ieee_add_test);
 	mu_run_test(f32_ieee_sub_test);

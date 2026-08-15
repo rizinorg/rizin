@@ -1125,10 +1125,14 @@ RZ_API bool rz_float_is_equal(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y) {
 	return true;
 }
 
-static void set_inf(RzFloat *f, bool is_negative) {
+static bool set_inf(RzFloat *f, bool is_negative) {
+	rz_return_val_if_fail(f && f->s, false);
 	RzBitVector *bv = f->s;
 	ut32 exp_start = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
 	ut32 exp_end = exp_start + rz_float_get_format_info(f->r, RZ_FLOAT_INFO_EXP_LEN);
+	if (!exp_end) {
+		return false;
+	}
 
 	rz_bv_set_all(bv, false);
 	// set exponent part to all 1
@@ -1140,6 +1144,7 @@ static void set_inf(RzFloat *f, bool is_negative) {
 
 	// set sign bit (MSB), keep the fractional mantissa as zero-bv
 	rz_bv_set(bv, bv->len - 1, is_negative);
+	return true;
 }
 
 static void set_qnan(RzFloat *f) {
@@ -1190,8 +1195,7 @@ static void set_snan(RzFloat *f) {
  */
 RZ_API bool rz_float_set_from_inf(RZ_NONNULL RzFloat *f, bool is_negative) {
 	rz_return_val_if_fail(f, false);
-	set_inf(f, is_negative);
-	return true;
+	return set_inf(f, is_negative);
 }
 
 /**
@@ -1235,11 +1239,10 @@ RZ_API bool rz_float_set_from_snan(RZ_NONNULL RzFloat *f) {
 RZ_API RZ_OWN RzFloat *rz_float_new_inf(RzFloatFormat format, bool is_negative) {
 	// gen an Infinite num for return
 	RzFloat *ret = rz_float_new(format);
-	if (!ret || !ret->s) {
+	if (!ret || !set_inf(ret, is_negative)) {
 		rz_float_free(ret);
 		return NULL;
 	}
-	set_inf(ret, is_negative);
 	return ret;
 }
 
