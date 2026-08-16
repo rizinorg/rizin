@@ -156,6 +156,24 @@ bool test_getopt_long_option(void) {
 	mu_end;
 }
 
+bool test_getopt_reentrant(void) {
+	// Test grouped options because they retain meaningful state between calls.
+	const char *argv_first[] = { "test", "-ab" };
+	const char *argv_second[] = { "test", "-xy" };
+	RzGetopt first;
+	RzGetopt second;
+	rz_getopt_init(&first, RZ_ARRAY_SIZE(argv_first), argv_first, "ab");
+	rz_getopt_init(&second, RZ_ARRAY_SIZE(argv_second), argv_second, "xy");
+
+	mu_assert_eq(rz_getopt_next(&first), 'a', "first parser should consume its first grouped option");
+	mu_assert_eq(rz_getopt_next(&second), 'x', "second parser should consume its first grouped option");
+	mu_assert_eq(rz_getopt_next(&first), 'b', "first parser should retain its grouped-option state");
+	mu_assert_eq(rz_getopt_next(&second), 'y', "second parser should retain its grouped-option state");
+	mu_assert_eq(rz_getopt_next(&first), -1, "first parser should reach the end of its arguments");
+	mu_assert_eq(rz_getopt_next(&second), -1, "second parser should reach the end of its arguments");
+	mu_end;
+}
+
 bool test_path_normalize_expand(void) {
 	char *out;
 
@@ -210,6 +228,7 @@ int all_tests() {
 	mu_run_test(test_leading_zeros);
 	mu_run_test(test_path_prefix);
 	mu_run_test(test_getopt_long_option);
+	mu_run_test(test_getopt_reentrant);
 	mu_run_test(test_path_normalize_expand);
 	return tests_passed != tests_run;
 }

@@ -24,6 +24,7 @@ typedef struct rz_getopt_t {
 	int opt;
 	int reset;
 	const char *arg;
+	const char *place; ///< current position within the argv element being processed
 	// ...
 	int argc;
 	const char **argv;
