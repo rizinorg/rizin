@@ -1134,7 +1134,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				}
 			} else {
 				const char *f = (haveRarunProfile && pfile) ? pfile : argv[opt.ind];
-				char *f_copy = rz_str_dup(f); // Create a safe, independent copy
+				char *f_copy = rz_str_dup(f);
 
 				if (f_copy && *f_copy) {
 					char *uri = rz_str_dup(f_copy);
