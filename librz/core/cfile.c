@@ -813,12 +813,13 @@ static bool core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loada
 }
 
 /**
- * \brief Reload bin info from a malloc:// or hex:// buffer when an ELF header appears.
+ * \brief Reload bin info from a malloc:// or hex:// buffer when a real format is detected.
  *
  * Those URIs are probed at open time. An empty malloc:// lands on the dummy
  * "any" plugin. After later writes (typical rz-test FILE=malloc:// workflow)
- * re-run format autodetection from the live IO buffer. Physical files and
- * already-identified formats are left alone.
+ * re-run format autodetection from the live IO buffer and reload bin info
+ * when any bin plugin claims the data. Physical files and already-identified
+ * formats are left alone.
  *
  * \param core Current core
  */
@@ -851,21 +852,31 @@ RZ_IPI void rz_core_bin_autodetect_virtual_io(RzCore *core) {
 	}
 	RzBinPlugin *plugin = rz_bin_get_binplugin_by_buffer(core->bin, buf);
 	rz_buf_free(buf);
-	if (!plugin || strcmp(plugin->name, "elf")) {
+	if (!plugin) {
 		return;
 	}
 
+	// The reload below overrides the asm/analysis config with the detected
+	// bin info (arch/cpu/bits) and seeks to the detected entrypoint. That is
+	// wanted when the user runs the reload explicitly, but this re-probe
+	// happens implicitly after a write: scripts commonly set their own
+	// asm.arch/cpu before writing code, and a surprise clobber mid-script
+	// changes how the written code disassembles. So only make the detected
+	// plugin current (so "i" reflects it) and leave everything else alone.
+	ut64 cur_offset = core->offset;
 	if (bf) {
 		RzBinFile *nbf = rz_bin_reload(core->bin, bf, UT64_MAX);
-		if (nbf) {
-			rz_pvector_push(&cf->binfiles, nbf);
-			rz_core_bin_apply_all_info(core, nbf);
-		} else {
-			rz_core_bin_load(core, desc->name, UT64_MAX);
+		if (!nbf) {
+			// The claimed plugin could not load the data (weak magic
+			// match); keep the current bin state untouched.
+			return;
 		}
+		rz_pvector_push(&cf->binfiles, nbf);
+		rz_core_seek(core, cur_offset, true);
 		return;
 	}
 	rz_core_bin_load(core, desc->name, UT64_MAX);
+	rz_core_seek(core, cur_offset, true);
 }
 
 static bool try_loadlib(RzCore *core, const char *lib, ut64 addr) {

@@ -686,6 +686,67 @@ bool test_malloc_uri_shellcode_stays_any(void) {
 	mu_end;
 }
 
+bool test_malloc_uri_autodetect_any_format(void) {
+	RzCore *core = rz_core_new();
+	RzCoreFile *f = rz_core_file_open(core, "malloc://128", RZ_PERM_RW, 0);
+	mu_assert_notnull(f, "open malloc");
+	bool r = rz_core_bin_load(core, NULL, UT64_MAX);
+	mu_assert_true(r, "initial bin load");
+	// mach-o 32 magic followed by an otherwise empty buffer
+	const ut8 macho[] = { 0xce, 0xfa, 0xed, 0xfe, 0x07, 0x00, 0x00, 0x01,
+		0x03, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00 };
+	r = rz_core_write_at(core, 0, macho, sizeof(macho));
+	mu_assert_true(r, "write macho header");
+	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, f->fd);
+	mu_assert_notnull(bf, "binfile");
+	mu_assert_streq(rz_bin_file_cur_plugin(bf)->name, "mach0", "malloc autodetects mach0 after write");
+
+	rz_core_free(core);
+	mu_end;
+}
+
+bool test_malloc_uri_short_rjmp_chain_stays_any(void) {
+	RzCore *core = rz_core_new();
+	RzCoreFile *f = rz_core_file_open(core, "malloc://512", RZ_PERM_RW, 0);
+	mu_assert_notnull(f, "open malloc");
+	bool r = rz_core_bin_load(core, NULL, UT64_MAX);
+	mu_assert_true(r, "initial bin load");
+	// xtensa analysis test bytes: word0/word1 accidentally decode as avr
+	// rjmp/rcall, but the rest of the code is not a vector table
+	const ut8 shellcode[] = { 0x12, 0xc1, 0xf0, 0xd9, 0x11, 0x40, 0xd3, 0x82,
+		0xc9, 0x21, 0x3d, 0x0d, 0x09, 0x31, 0x01, 0xf5,
+		0xeb, 0xc0, 0x00, 0x00, 0xcd, 0x02, 0x8c, 0x82,
+		0x0c, 0x03, 0x4d, 0x0d, 0x01, 0x12, 0xe4, 0xc0 };
+	r = rz_core_write_at(core, 0, shellcode, sizeof(shellcode));
+	mu_assert_true(r, "write shellcode");
+	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, f->fd);
+	mu_assert_notnull(bf, "binfile");
+	mu_assert_streq(rz_bin_file_cur_plugin(bf)->name, "any", "short accidental rjmp chain must not become avr");
+
+	rz_core_free(core);
+	mu_end;
+}
+
+bool test_malloc_uri_coff_magic_bytes_stay_any(void) {
+	RzCore *core = rz_core_new();
+	RzCoreFile *f = rz_core_file_open(core, "malloc://0x200", RZ_PERM_RW, 0);
+	mu_assert_notnull(f, "open malloc");
+	bool r = rz_core_bin_load(core, NULL, UT64_MAX);
+	mu_assert_true(r, "initial bin load");
+	// mips "bnez s4" shellcode: the first two bytes look like an i386 coff
+	// machine id, but the rest of the buffer is not a coff object
+	const ut8 shellcode[] = { 0x02, 0x00, 0x80, 0x16 };
+	r = rz_core_write_at(core, 0, shellcode, sizeof(shellcode));
+	mu_assert_true(r, "write shellcode");
+	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, f->fd);
+	mu_assert_notnull(bf, "binfile");
+	const char *name = rz_bin_file_cur_plugin(bf) ? rz_bin_file_cur_plugin(bf)->name : NULL;
+	mu_assert_streq(name, "any", "coff magic bytes alone must not claim the buffer");
+
+	rz_core_free(core);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_map);
 	mu_run_test(test_cfile_close);
@@ -699,6 +760,9 @@ bool all_tests() {
 	mu_run_test(test_malloc_uri_autodetect_on_write);
 	mu_run_test(test_hex_uri_autodetect_at_open);
 	mu_run_test(test_malloc_uri_shellcode_stays_any);
+	mu_run_test(test_malloc_uri_autodetect_any_format);
+	mu_run_test(test_malloc_uri_short_rjmp_chain_stays_any);
+	mu_run_test(test_malloc_uri_coff_magic_bytes_stay_any);
 	return tests_passed != tests_run;
 }
 

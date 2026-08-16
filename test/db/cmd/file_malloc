@@ -46,3 +46,25 @@ EXPECT=<<EOF
 format  any
 EOF
 RUN
+
+NAME=malloc uri autodetect mach0 after write
+FILE=malloc://128
+CMDS=<<EOF
+wx cefaedfe070000010300000002000000
+i~format
+EOF
+EXPECT=<<EOF
+format   mach0
+EOF
+RUN
+
+NAME=malloc uri arm shellcode stays any
+FILE=malloc://32
+CMDS=<<EOF
+wx 20c09fe50cc09ae7
+i~format
+EOF
+EXPECT=<<EOF
+format  any
+EOF
+RUN
