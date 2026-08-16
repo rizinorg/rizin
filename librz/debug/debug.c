@@ -1262,15 +1262,15 @@ RZ_API int rz_debug_continue_kill(RzDebug *dbg, int sig) {
 		// New Process Forked
 		if (reason == RZ_DEBUG_REASON_NEW_PID && dbg->follow_child) {
 #if DEBUGGER
-		/// if the plugin is not compiled link fails, so better do runtime linking
-		/// until this code gets fixed
-		static bool (*linux_attach_new_process)(RzDebug *dbg, int pid) = NULL;
-		if (!linux_attach_new_process) {
-			linux_attach_new_process = rz_sys_dlsym(NULL, "linux_attach_new_process");
-		}
-		if (linux_attach_new_process) {
-			linux_attach_new_process(dbg, dbg->forked_pid);
-		}
+			/// if the plugin is not compiled link fails, so better do runtime linking
+			/// until this code gets fixed
+			static bool (*linux_attach_new_process)(RzDebug *dbg, int pid) = NULL;
+			if (!linux_attach_new_process) {
+				linux_attach_new_process = rz_sys_dlsym(NULL, "linux_attach_new_process");
+			}
+			if (linux_attach_new_process) {
+				linux_attach_new_process(dbg, dbg->forked_pid);
+			}
 #endif
 			continue;
 		}
