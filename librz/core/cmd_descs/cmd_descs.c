@@ -22865,8 +22865,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_help_search_interactive_everything_cd = rz_cmd_desc_argv_new(core->rcmd, question__star__cd, "?***", rz_cmd_help_search_interactive_everything_handler, &cmd_help_search_interactive_everything_help);
 	rz_warn_if_fail(cmd_help_search_interactive_everything_cd);
 
-	RzCmdDesc *cmd_catalog_json_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "?+j", rz_cmd_catalog_json_handler, &cmd_catalog_json_help);
+	RzCmdDesc *cmd_catalog_json_cd = rz_cmd_desc_argv_modes_new(core->rcmd, root_cd, "?+", RZ_OUTPUT_MODE_JSON, rz_cmd_catalog_json_handler, &cmd_catalog_json_help);
 	rz_warn_if_fail(cmd_catalog_json_cd);
+	rz_cmd_desc_set_default_mode(cmd_catalog_json_cd, RZ_OUTPUT_MODE_JSON);
 
 	RzCmdDesc *cmd_math_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "%", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_calculate_expr_handler, &calculate_expr_help, &cmd_math_help);
 	rz_warn_if_fail(cmd_math_cd);
