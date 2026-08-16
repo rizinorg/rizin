@@ -9,6 +9,7 @@
  */
 
 #include "rz_util/rz_log.h"
+#include "rz_util/rz_str.h"
 #include <rz_util.h>
 
 #define BADCH  (int)'?'
@@ -89,6 +90,7 @@ RZ_API void rz_getopt_init_long(RzGetopt *opt, int argc, const char **argv, cons
 	opt->opt = 0;
 	opt->reset = 0;
 	opt->arg = NULL;
+	opt->place = EMSG;
 	opt->argc = argc;
 	opt->argv = argv;
 	opt->ostr = ostr;
@@ -100,39 +102,38 @@ RZ_API void rz_getopt_init(RzGetopt *opt, int argc, const char **argv, const cha
 }
 
 RZ_API int rz_getopt_next(RzGetopt *opt) {
-	static const char *place = EMSG; // option letter processing
 	const char *oli; // option letter list index
 
-	if (opt->reset || !*place) { // update scanning pointer
+	if (opt->reset || !*opt->place) { // update scanning pointer
 		opt->reset = 0;
 		if (opt->ind >= opt->argc) {
-			place = EMSG;
+			opt->place = EMSG;
 			return -1;
 		}
-		place = opt->argv[opt->ind];
-		if (place[0] != '-') {
-			place = EMSG;
+		opt->place = opt->argv[opt->ind];
+		if (!rz_str_startswith(opt->place, "-")) {
+			opt->place = EMSG;
 			return -1;
 		}
-		if (place[1]) {
-			// found "--", either a long option or an error
-			if (place[1] == '-') {
-				// are long options enabled and more text exists after the "--" ?
-				if (opt->longopts && place[2]) {
-					int ret = rz_getopt_long_next(opt, place);
-					place = EMSG;
-					return ret;
-				}
-				// otherwise an error
-				opt->ind++;
-				place = EMSG;
-				return -1;
+		// found "--", either a long option or an error
+		if (rz_str_startswith(opt->place, "--")) {
+			// are long options enabled and more text exists after the "--" ?
+			if (opt->longopts && strlen(opt->place) > 2) {
+				int ret = rz_getopt_long_next(opt, opt->place);
+				opt->place = EMSG;
+				return ret;
 			}
-			place++;
+			// otherwise an error
+			opt->ind++;
+			opt->place = EMSG;
+			return -1;
+		}
+		if (opt->place[1]) {
+			opt->place++;
 		}
 	}
 	/* option letter okay? */
-	if ((opt->opt = (int)*place++) == (int)':' || !(oli = strchr(opt->ostr, opt->opt))) {
+	if ((opt->opt = (int)*opt->place++) == (int)':' || !(oli = strchr(opt->ostr, opt->opt))) {
 		/*
 		 * if the user didn't specify '-' as an option,
 		 * assume it means -1.
@@ -146,7 +147,7 @@ RZ_API int rz_getopt_next(RzGetopt *opt) {
 
 			return '-';
 		}
-		if (!*place) {
+		if (!*opt->place) {
 			opt->ind++;
 		}
 		if (opt->err && *opt->ostr != ':') {
@@ -155,10 +156,10 @@ RZ_API int rz_getopt_next(RzGetopt *opt) {
 		return BADCH;
 	}
 	if (*++oli == ':') { /* need argument */
-		if (*place) { /* no white space */
-			opt->arg = place;
+		if (*opt->place) { /* no white space */
+			opt->arg = opt->place;
 		} else if (opt->argc <= ++opt->ind) { /* no arg */
-			place = EMSG;
+			opt->place = EMSG;
 			if (*opt->ostr == ':') {
 				return BADARG;
 			}
@@ -169,11 +170,11 @@ RZ_API int rz_getopt_next(RzGetopt *opt) {
 		} else { /* white space */
 			opt->arg = opt->argv[opt->ind];
 		}
-		place = EMSG;
+		opt->place = EMSG;
 		opt->ind++;
 	} else {
 		opt->arg = NULL;
-		if (!*place) {
+		if (!*opt->place) {
 			opt->ind++;
 		}
 	}
