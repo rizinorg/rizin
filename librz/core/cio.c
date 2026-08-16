@@ -155,6 +155,11 @@ RZ_API bool rz_core_write_at(RzCore *core, ut64 addr, const ut8 *buf, int size) 
 		return false;
 	}
 	bool ret = rz_io_write_at(core->io, addr, buf, size);
+	if (ret && addr < 64) {
+		// Format magics live at the start of the buffer. Re-probe malloc://
+		// / hex:// only when those bytes may have changed.
+		rz_core_bin_autodetect_virtual_io(core);
+	}
 	// whether the written contents affect core->block
 	bool start_in_block = addr >= core->offset && addr <= core->offset + core->blocksize - 1;
 	bool end_in_block = addr + size > core->offset && addr + size <= core->offset + core->blocksize;

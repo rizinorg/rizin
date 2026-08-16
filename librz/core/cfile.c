@@ -812,6 +812,62 @@ static bool core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loada
 	return true;
 }
 
+/**
+ * \brief Reload bin info from a malloc:// or hex:// buffer when magic bytes appear.
+ *
+ * Those URIs are probed at open time. An empty malloc:// lands on the dummy
+ * "any" plugin. After later writes (typical rz-test FILE=malloc:// workflow)
+ * re-run format autodetection from the live IO buffer. Physical files and
+ * already-identified formats are left alone.
+ *
+ * \param core Current core
+ */
+RZ_IPI void rz_core_bin_autodetect_virtual_io(RzCore *core) {
+	rz_return_if_fail(core);
+	if (!rz_config_get_b(core->config, "file.info")) {
+		return;
+	}
+	RzCoreFile *cf = rz_core_file_cur(core);
+	if (!cf) {
+		return;
+	}
+	RzIODesc *desc = rz_io_desc_get(core->io, cf->fd);
+	if (!desc || !desc->plugin || !desc->plugin->name) {
+		return;
+	}
+	if (strcmp(desc->plugin->name, "malloc")) {
+		return;
+	}
+
+	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, cf->fd);
+	RzBinPlugin *cur = rz_bin_file_cur_plugin(bf);
+	if (cur && strcmp(cur->name, "any")) {
+		return;
+	}
+
+	RzBuffer *buf = rz_buf_new_with_io_fd(&core->bin->iob, cf->fd);
+	if (!buf) {
+		return;
+	}
+	RzBinPlugin *plugin = rz_bin_get_binplugin_by_buffer(core->bin, buf);
+	rz_buf_free(buf);
+	if (!plugin) {
+		return;
+	}
+
+	if (bf) {
+		RzBinFile *nbf = rz_bin_reload(core->bin, bf, UT64_MAX);
+		if (nbf) {
+			rz_pvector_push(&cf->binfiles, nbf);
+			rz_core_bin_apply_all_info(core, nbf);
+		} else {
+			rz_core_bin_load(core, desc->name, UT64_MAX);
+		}
+		return;
+	}
+	rz_core_bin_load(core, desc->name, UT64_MAX);
+}
+
 static bool try_loadlib(RzCore *core, const char *lib, ut64 addr) {
 	if (rz_core_file_open(core, lib, 0, addr) != NULL) {
 		rz_core_bin_load(core, lib, addr);
@@ -1343,14 +1399,14 @@ RZ_API bool rz_core_file_malloc_copy_chunk(RzCore *core, size_t len, ut64 offset
 		goto err;
 	}
 
+	RzIODesc *desc = rz_io_desc_get(core->io, cfile->fd);
+	rz_warn_if_fail(desc);
+	rz_io_desc_write_at(desc, 0, data, len);
+
 	if (!rz_core_bin_load(core, uri, 0)) {
 		RZ_LOG_ERROR("Cannot load binary info of '%s'.\n", uri);
 		goto err;
 	}
-
-	RzIODesc *desc = rz_io_desc_get(core->io, cfile->fd);
-	rz_warn_if_fail(desc);
-	rz_io_desc_write_at(desc, 0, data, len);
 	res = true;
 
 err:

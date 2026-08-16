@@ -12,3 +12,37 @@ EXPECT=<<EOF
 0x00000030  ffff ffff ffff ffff ffff ffff ffff ffff  ................
 EOF
 RUN
+
+NAME=malloc uri autodetect elf after write
+FILE=malloc://128
+CMDS=<<EOF
+i~format
+wx 7f454c46010101000000000000000000020003000100000000000000000000000000000000000000340020000000000000000000
+i~format
+EOF
+EXPECT=<<EOF
+format  any
+format   elf
+EOF
+RUN
+
+NAME=hex uri autodetect elf at open
+FILE=hex://7f454c46010101000000000000000000020003000100000000000000000000000000000000000000340020000000000000000000
+CMDS=<<EOF
+i~format
+EOF
+EXPECT=<<EOF
+format   elf
+EOF
+RUN
+
+NAME=malloc uri nops stay any
+FILE=malloc://128
+CMDS=<<EOF
+wx 90909090
+i~format
+EOF
+EXPECT=<<EOF
+format  any
+EOF
+RUN

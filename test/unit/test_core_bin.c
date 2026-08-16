@@ -631,6 +631,69 @@ bool test_bin_set_export_info(void) {
 	mu_end;
 }
 
+static const ut8 k_min_elf32[] = {
+	0x7f, 0x45, 0x4c, 0x46, 0x01, 0x01, 0x01, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x02, 0x00, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x34, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00,
+};
+
+bool test_malloc_uri_autodetect_on_write(void) {
+	RzCore *core = rz_core_new();
+	RzCoreFile *f = rz_core_file_open(core, "malloc://128", RZ_PERM_RW, 0);
+	mu_assert_notnull(f, "open malloc");
+	bool r = rz_core_bin_load(core, NULL, UT64_MAX);
+	mu_assert_true(r, "initial bin load");
+	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, f->fd);
+	mu_assert_notnull(bf, "binfile");
+	mu_assert_streq(rz_bin_file_cur_plugin(bf)->name, "any", "empty malloc is any");
+
+	r = rz_core_write_at(core, 0, k_min_elf32, sizeof(k_min_elf32));
+	mu_assert_true(r, "write elf header");
+	bf = rz_bin_file_find_by_fd(core->bin, f->fd);
+	mu_assert_notnull(bf, "binfile after write");
+	mu_assert_streq(rz_bin_file_cur_plugin(bf)->name, "elf", "malloc autodetects elf after write");
+
+	rz_core_free(core);
+	mu_end;
+}
+
+bool test_hex_uri_autodetect_at_open(void) {
+	RzCore *core = rz_core_new();
+	RzCoreFile *f = rz_core_file_open(core,
+		"hex://7f454c46010101000000000000000000020003000100000000000000000000000000000000000000340020000000000000000000",
+		RZ_PERM_R, 0);
+	mu_assert_notnull(f, "open hex uri");
+	bool r = rz_core_bin_load(core, NULL, UT64_MAX);
+	mu_assert_true(r, "bin load");
+	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, f->fd);
+	mu_assert_notnull(bf, "binfile");
+	mu_assert_streq(rz_bin_file_cur_plugin(bf)->name, "elf", "hex uri autodetects elf at open");
+
+	rz_core_free(core);
+	mu_end;
+}
+
+bool test_malloc_uri_nops_stay_any(void) {
+	RzCore *core = rz_core_new();
+	RzCoreFile *f = rz_core_file_open(core, "malloc://128", RZ_PERM_RW, 0);
+	mu_assert_notnull(f, "open malloc");
+	bool r = rz_core_bin_load(core, NULL, UT64_MAX);
+	mu_assert_true(r, "initial bin load");
+	const ut8 nops[] = { 0x90, 0x90, 0x90, 0x90 };
+	r = rz_core_write_at(core, 0, nops, sizeof(nops));
+	mu_assert_true(r, "write nops");
+	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, f->fd);
+	mu_assert_notnull(bf, "binfile");
+	mu_assert_streq(rz_bin_file_cur_plugin(bf)->name, "any", "nops must not become a format");
+
+	rz_core_free(core);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_map);
 	mu_run_test(test_cfile_close);
@@ -641,6 +704,9 @@ bool all_tests() {
 	mu_run_test(test_cfile_close_manual_vfile_map);
 	mu_run_test(test_cfile_close_manual_cfile_map_multiple);
 	mu_run_test(test_bin_set_export_info);
+	mu_run_test(test_malloc_uri_autodetect_on_write);
+	mu_run_test(test_hex_uri_autodetect_at_open);
+	mu_run_test(test_malloc_uri_nops_stay_any);
 	return tests_passed != tests_run;
 }
 
