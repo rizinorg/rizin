@@ -813,7 +813,7 @@ static bool core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loada
 }
 
 /**
- * \brief Reload bin info from a malloc:// or hex:// buffer when magic bytes appear.
+ * \brief Reload bin info from a malloc:// or hex:// buffer when an ELF header appears.
  *
  * Those URIs are probed at open time. An empty malloc:// lands on the dummy
  * "any" plugin. After later writes (typical rz-test FILE=malloc:// workflow)
@@ -851,7 +851,7 @@ RZ_IPI void rz_core_bin_autodetect_virtual_io(RzCore *core) {
 	}
 	RzBinPlugin *plugin = rz_bin_get_binplugin_by_buffer(core->bin, buf);
 	rz_buf_free(buf);
-	if (!plugin) {
+	if (!plugin || strcmp(plugin->name, "elf")) {
 		return;
 	}
 
