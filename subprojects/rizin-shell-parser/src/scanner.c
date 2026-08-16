@@ -102,8 +102,8 @@ static bool is_recursive_help_json(const int32_t trd_last_ch, const int32_t snd_
 	return trd_last_ch == '?' && snd_last_ch == '*' && last_ch == 'j';
 }
 
-static bool is_cmd_catalog_json(const int32_t trd_last_ch, const int32_t snd_last_ch, const int32_t last_ch) {
-	return trd_last_ch == '?' && snd_last_ch == '+' && last_ch == 'j';
+static bool is_cmd_catalog_json(const int32_t first_ch, const int32_t second_ch) {
+	return first_ch == '?' && second_ch == '+';
 }
 
 static bool scan_number(TSLexer *lexer, const bool *valid_symbols) {
@@ -176,7 +176,7 @@ bool tree_sitter_rzcmd_external_scanner_scan(void *payload, TSLexer *lexer, cons
 		if ((res[i_res - 1] == '?') ||
 			(i_res >= 2 && is_recursive_help(res[i_res - 2], res[i_res - 1])) ||
 			(i_res >= 3 && is_recursive_help_json(res[i_res - 3], res[i_res - 2], res[i_res - 1])) ||
-			(i_res >= 3 && is_cmd_catalog_json(res[i_res - 3], res[i_res - 2], res[i_res - 1]))) {
+			(i_res >= 2 && is_cmd_catalog_json(res[0], res[1]))) {
 			if (i_res == 1) {
 				return false;
 			}

@@ -117,8 +117,12 @@ error:
 	goto beach;
 }
 
-// "?+j"
-RZ_IPI RzCmdStatus rz_cmd_catalog_json_handler(RzCore *core, int argc, const char **argv) {
+// "?+"
+RZ_IPI RzCmdStatus rz_cmd_catalog_json_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	if (mode != RZ_OUTPUT_MODE_JSON) {
+		RZ_LOG_ERROR("Command ?+ does not support output mode %d. Only json is supported.\n", mode);
+		return RZ_CMD_STATUS_ERROR;
+	}
 	PJ *pj = pj_new();
 	if (!pj || !rz_cmd_get_tree_json(core->rcmd, pj)) {
 		pj_free(pj);
