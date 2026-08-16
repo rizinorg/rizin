@@ -8,6 +8,8 @@
 #include <tms320/c55x_plus/c55plus_arch.h>
 #include <tms320/c55x/c55x_analysis.h>
 #include <tms320/c54x/c54x.h>
+#include <tms320/c2x/c2x.h>
+#include <tms320/c5x/c5x.h>
 #include <tms320/c64x/c64x.h>
 
 typedef struct tms_cs_context_t {
@@ -28,13 +30,24 @@ static int tms320_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int l
 		desc = &c55x_arch_desc;
 	} else if (a->cpu && !rz_str_casecmp(a->cpu, "c54x")) {
 		desc = &c54x_arch_desc;
+	} else if (a->cpu && !rz_str_casecmp(a->cpu, "c2x")) {
+		desc = &c2x_arch_desc;
+	} else if (a->cpu && !rz_str_casecmp(a->cpu, "c5x")) {
+		desc = &c5x_arch_desc;
 	} else {
 		rz_asm_op_set_asm(op, "unknown asm.cpu");
 		return op->size = -1;
 	}
 	if (desc) {
 		C55Insn insn;
-		if (c55_decode(desc, buf, len, &insn)) {
+		bool ok;
+		if (desc == &c5x_arch_desc) {
+			// The C5x has its own decode front-end (real C5x encoding).
+			ok = c5x_decode(buf, len, &insn) > 0;
+		} else {
+			ok = c55_decode(desc, buf, len, &insn);
+		}
+		if (ok) {
 			char *s = c55_format(desc, &insn);
 			if (s) {
 				rz_asm_op_set_asm(op, s);
@@ -76,6 +89,8 @@ static char *tms320_mnemonics(const RzAsm *a, int id, bool json) {
 static char **tms320_cpu_descriptions() {
 	static char *cpu_desc[] = {
 		"c54x", "Texas Instruments TMS320C54x DSP family",
+		"c2x", "Texas Instruments TMS320C2x legacy fixed-point DSP family",
+		"c5x", "Texas Instruments TMS320C5x fixed-point DSP family (C2x-compatible superset)",
 		"c55x", "Texas Instruments TMS320C55x DSP family",
 		"c55x+", "Texas Instruments TMS320C55x+ DSP family",
 		"c64x", "Texas Instruments TMS320C64x DSP family",
@@ -87,10 +102,10 @@ static char **tms320_cpu_descriptions() {
 RzAsmPlugin rz_asm_plugin_tms320 = {
 	.name = "tms320",
 	.arch = "tms320",
-	.cpus = "c54x,c55x,c55x+,c64x",
-	.desc = "Texas Instruments TMS320 DSP family (c54x,c55x,c55x+,c64x) disassembler",
+	.cpus = "c54x,c55x,c55x+,c2x,c5x,c64x",
+	.desc = "Texas Instruments TMS320 DSP family (c54x,c55x,c55x+,c2x,c5x,c64x) disassembler",
 	.license = "LGPL3",
-	.bits = 32,
+	.bits = 16 | 32,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.init = tms320_init,
 	.fini = tms320_fini,

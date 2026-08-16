@@ -37,6 +37,7 @@ struct rz_bin_coff_obj {
 };
 
 RZ_API bool rz_coff_supported_arch(RzBuffer *b);
+RZ_API ut32 rz_coff_addr_scale(RZ_NONNULL struct rz_bin_coff_obj *obj);
 RZ_API ut64 rz_coff_perms_from_section_flags(ut32 flags);
 RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf);
 RZ_API void rz_bin_coff_free(struct rz_bin_coff_obj *obj);

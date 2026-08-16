@@ -347,29 +347,78 @@ ar4 = 0x30
 EOF
 RUN
 
-NAME=C54x RzIL VM: emulateme _decrypt writes hex digits to the UART buffer
+# Key at word 0x280 (byte 0x500) in A, encrypted seckrit at _seckrit; the stack
+# is kept clear of .text, which the linker places at byte 0x100.
+NAME=C54x RzIL VM: emulateme _decrypt decrypts seckrit to "Hello from RzIL!"
 FILE=bins/tms320/emulateme_nostd.ccsv5.c54x.ticoff2.dbg.coff
 CMDS=<<EOF
 e io.cache=true
-wx 30003100320033003400350036003700380039006100620063006400650066 @ 0x900
-wx 0006 @ 0x9a4
-wx 00000000 @ 0x9a8
-s 0xec
+wx 510053004d0077005800140051005f0045006c0017007f006e0078007f001c000000 @ 0x9ac
+wx 41006e00790043006f006c006f007500720059006f0075004c0069006b006500 @ 0x500
+s 0x1d8
 aezi
-aezv a 0x5a
-aezv b 0x5
-aezv sp 0x100
-aezsu 0x136
-p8 4 @ 0xc00
-p8 2 @ 0x9aa
+aezv sp 0x800
+aezv a 0x280
+aezsu 0x270
+p8 32 @ 0x9ac
 ar a
 EOF
 EXPECT=<<EOF
-a = 0x5a
-b = 0x5
-sp = 0x100
-35006100
-0200
-a = 0x0000000002
+sp = 0x800
+a = 0x280
+480065006c006c006f002000660072006f006d00200052007a0049004c002100
+a = 0x0000000001
+EOF
+RUN
+
+NAME=C2x RzIL VM: immediate, store/load, multiply, shift, indirect, logical, flags
+FILE=malloc://0x4000
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c2x
+e asm.bits=16
+wx c802ca05cc0360103c10a007ce14ce185589d1000040ca2a60a0ca116080d1000040ca0000a00080d00400ff1010
+aezi
+aezs 20
+ar acc
+ar t
+ar p
+ar ar1
+ar arp
+ar dp
+ar c
+ar ov
+EOF
+EXPECT=<<EOF
+acc = 0x00000033
+t = 0x0008
+p = 0x00000038
+ar1 = 0x0041
+arp = 0x0001
+dp = 0x0002
+c = 0x1
+ov = 0x0
+EOF
+RUN
+
+NAME=C5x RzIL VM: real C5x encoding execute (immediate + ACCB buffer ops)
+FILE=malloc://0x4000
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c5x
+e asm.bits=16
+wx b905be1eb930be1dbc02bf01
+aezi
+aezs 6
+ar acc
+ar accb
+ar dp
+ar pm
+EOF
+EXPECT=<<EOF
+acc = 0x00000005
+accb = 0x00000030
+dp = 0x0002
+pm = 0x1
 EOF
 RUN
