@@ -633,7 +633,7 @@ bool test_bin_set_export_info(void) {
 
 static const ut8 k_min_elf32[] = { 0x7f, 0x45, 0x4c, 0x46, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x34, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
-bool test_malloc_uri_autodetect_on_write(void) {
+bool test_malloc_uri_write_does_not_autodetect(void) {
 	RzCore *core = rz_core_new();
 	RzCoreFile *f = rz_core_file_open(core, "malloc://128", RZ_PERM_RW, 0);
 	mu_assert_notnull(f, "open malloc");
@@ -647,7 +647,34 @@ bool test_malloc_uri_autodetect_on_write(void) {
 	mu_assert_true(r, "write elf header");
 	bf = rz_bin_file_find_by_fd(core->bin, f->fd);
 	mu_assert_notnull(bf, "binfile after write");
-	mu_assert_streq(rz_bin_file_cur_plugin(bf)->name, "elf", "malloc autodetects elf after write");
+	mu_assert_streq(rz_bin_file_cur_plugin(bf)->name, "any", "write does not reload bin info");
+
+	rz_core_free(core);
+	mu_end;
+}
+
+bool test_malloc_uri_obr_reloads_elf_keeps_buffer(void) {
+	RzCore *core = rz_core_new();
+	RzCoreFile *f = rz_core_file_open(core, "malloc://128", RZ_PERM_RW, 0);
+	mu_assert_notnull(f, "open malloc");
+	bool r = rz_core_bin_load(core, NULL, UT64_MAX);
+	mu_assert_true(r, "initial bin load");
+	r = rz_core_write_at(core, 0, k_min_elf32, sizeof(k_min_elf32));
+	mu_assert_true(r, "write elf header");
+	mu_assert_eq(rz_core_cmd0(core, "obR"), 0, "obR");
+
+	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, f->fd);
+	mu_assert_notnull(bf, "binfile after obR");
+	mu_assert_streq(rz_bin_file_cur_plugin(bf)->name, "elf", "obR reloads elf from the live buffer");
+	mu_assert_eq(rz_pvector_len(&f->binfiles), 1, "core file owns the reloaded binfile");
+	mu_assert_ptreq(rz_pvector_at(&f->binfiles, 0), bf, "reloaded binfile is registered on the core file");
+
+	ut8 got[4];
+	RzIODesc *desc = rz_io_desc_get(core->io, f->fd);
+	mu_assert_notnull(desc, "io desc after obR");
+	int n = rz_io_desc_read_at(desc, 0, got, sizeof(got));
+	mu_assert_eq(n, 4, "read desc after obR");
+	mu_assert_memeq(got, k_min_elf32, 4, "obR does not discard the io buffer");
 
 	rz_core_free(core);
 	mu_end;
@@ -669,79 +696,23 @@ bool test_hex_uri_autodetect_at_open(void) {
 	mu_end;
 }
 
-bool test_malloc_uri_shellcode_stays_any(void) {
+bool test_malloc_uri_obr_reloads_mach0(void) {
 	RzCore *core = rz_core_new();
 	RzCoreFile *f = rz_core_file_open(core, "malloc://128", RZ_PERM_RW, 0);
 	mu_assert_notnull(f, "open malloc");
 	bool r = rz_core_bin_load(core, NULL, UT64_MAX);
 	mu_assert_true(r, "initial bin load");
-	const ut8 shellcode[] = { 0x20, 0xc0, 0x9f, 0xe5, 0x0c, 0xc0, 0x9a, 0xe7 };
-	r = rz_core_write_at(core, 0, shellcode, sizeof(shellcode));
-	mu_assert_true(r, "write arm shellcode");
-	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, f->fd);
-	mu_assert_notnull(bf, "binfile");
-	mu_assert_streq(rz_bin_file_cur_plugin(bf)->name, "any", "shellcode must not become a format");
-
-	rz_core_free(core);
-	mu_end;
-}
-
-bool test_malloc_uri_autodetect_any_format(void) {
-	RzCore *core = rz_core_new();
-	RzCoreFile *f = rz_core_file_open(core, "malloc://128", RZ_PERM_RW, 0);
-	mu_assert_notnull(f, "open malloc");
-	bool r = rz_core_bin_load(core, NULL, UT64_MAX);
-	mu_assert_true(r, "initial bin load");
-	// mach-o 32 magic followed by an otherwise empty buffer
 	const ut8 macho[] = { 0xce, 0xfa, 0xed, 0xfe, 0x07, 0x00, 0x00, 0x01,
 		0x03, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00 };
 	r = rz_core_write_at(core, 0, macho, sizeof(macho));
 	mu_assert_true(r, "write macho header");
 	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, f->fd);
-	mu_assert_notnull(bf, "binfile");
-	mu_assert_streq(rz_bin_file_cur_plugin(bf)->name, "mach0", "malloc autodetects mach0 after write");
-
-	rz_core_free(core);
-	mu_end;
-}
-
-bool test_malloc_uri_short_rjmp_chain_stays_any(void) {
-	RzCore *core = rz_core_new();
-	RzCoreFile *f = rz_core_file_open(core, "malloc://512", RZ_PERM_RW, 0);
-	mu_assert_notnull(f, "open malloc");
-	bool r = rz_core_bin_load(core, NULL, UT64_MAX);
-	mu_assert_true(r, "initial bin load");
-	// xtensa analysis test bytes: word0/word1 accidentally decode as avr
-	// rjmp/rcall, but the rest of the code is not a vector table
-	const ut8 shellcode[] = { 0x12, 0xc1, 0xf0, 0xd9, 0x11, 0x40, 0xd3, 0x82,
-		0xc9, 0x21, 0x3d, 0x0d, 0x09, 0x31, 0x01, 0xf5,
-		0xeb, 0xc0, 0x00, 0x00, 0xcd, 0x02, 0x8c, 0x82,
-		0x0c, 0x03, 0x4d, 0x0d, 0x01, 0x12, 0xe4, 0xc0 };
-	r = rz_core_write_at(core, 0, shellcode, sizeof(shellcode));
-	mu_assert_true(r, "write shellcode");
-	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, f->fd);
-	mu_assert_notnull(bf, "binfile");
-	mu_assert_streq(rz_bin_file_cur_plugin(bf)->name, "any", "short accidental rjmp chain must not become avr");
-
-	rz_core_free(core);
-	mu_end;
-}
-
-bool test_malloc_uri_coff_magic_bytes_stay_any(void) {
-	RzCore *core = rz_core_new();
-	RzCoreFile *f = rz_core_file_open(core, "malloc://0x200", RZ_PERM_RW, 0);
-	mu_assert_notnull(f, "open malloc");
-	bool r = rz_core_bin_load(core, NULL, UT64_MAX);
-	mu_assert_true(r, "initial bin load");
-	// mips "bnez s4" shellcode: the first two bytes look like an i386 coff
-	// machine id, but the rest of the buffer is not a coff object
-	const ut8 shellcode[] = { 0x02, 0x00, 0x80, 0x16 };
-	r = rz_core_write_at(core, 0, shellcode, sizeof(shellcode));
-	mu_assert_true(r, "write shellcode");
-	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, f->fd);
-	mu_assert_notnull(bf, "binfile");
-	const char *name = rz_bin_file_cur_plugin(bf) ? rz_bin_file_cur_plugin(bf)->name : NULL;
-	mu_assert_streq(name, "any", "coff magic bytes alone must not claim the buffer");
+	mu_assert_notnull(bf, "binfile after write");
+	mu_assert_streq(rz_bin_file_cur_plugin(bf)->name, "any", "write does not reload bin info");
+	mu_assert_eq(rz_core_cmd0(core, "obR"), 0, "obR");
+	bf = rz_bin_file_find_by_fd(core->bin, f->fd);
+	mu_assert_notnull(bf, "binfile after obR");
+	mu_assert_streq(rz_bin_file_cur_plugin(bf)->name, "mach0", "obR reloads mach0 from the live buffer");
 
 	rz_core_free(core);
 	mu_end;
@@ -757,12 +728,10 @@ bool all_tests() {
 	mu_run_test(test_cfile_close_manual_vfile_map);
 	mu_run_test(test_cfile_close_manual_cfile_map_multiple);
 	mu_run_test(test_bin_set_export_info);
-	mu_run_test(test_malloc_uri_autodetect_on_write);
+	mu_run_test(test_malloc_uri_write_does_not_autodetect);
+	mu_run_test(test_malloc_uri_obr_reloads_elf_keeps_buffer);
 	mu_run_test(test_hex_uri_autodetect_at_open);
-	mu_run_test(test_malloc_uri_shellcode_stays_any);
-	mu_run_test(test_malloc_uri_autodetect_any_format);
-	mu_run_test(test_malloc_uri_short_rjmp_chain_stays_any);
-	mu_run_test(test_malloc_uri_coff_magic_bytes_stay_any);
+	mu_run_test(test_malloc_uri_obr_reloads_mach0);
 	return tests_passed != tests_run;
 }
 

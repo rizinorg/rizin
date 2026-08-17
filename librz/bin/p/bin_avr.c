@@ -605,15 +605,15 @@ static bool parse_jmp(RzBuffer *b, ut64 addr, ut64 *value) {
 	return true;
 }
 
-/**
- * \brief Returns the size in bytes of each interrupt vector slot, or 0 when
- * the reset vector at offset zero is not a valid jmp/rjmp instruction.
- */
-static size_t avr_interrupt_vector_size(RzBuffer *buf) {
-	if (is_jmp(buf, 0) || is_rjmp32(buf, 0)) {
-		return 4;
+static bool avr_check_buffer(RzBuffer *buf) {
+	if (rz_buf_size(buf) < 32) {
+		return false;
 	}
-	return is_rjmp(buf, 0) ? 2 : 0;
+	ut8 c = 0;
+	if (!rz_buf_read8_at(buf, 0x0, &c) || c == 0xFA) {
+		return false; // This is a c166 jmp
+	}
+	return is_jmp(buf, 0) || is_rjmp(buf, 0);
 }
 
 static bool avr_check_if_bad_interrupt(bool bytes_4, ut64 offset, RzBuffer *buf) {
@@ -665,35 +665,6 @@ static void avr_parse_interrupt_vectors(RzBuffer *buf, RzVector /*<ut64>*/ *inte
 	rz_vector_shrink(interrupt_handlers);
 }
 
-static bool avr_check_buffer(RzBuffer *buf) {
-	if (rz_buf_size(buf) < 32) {
-		return false;
-	}
-	ut8 c = 0;
-	if (!rz_buf_read8_at(buf, 0x0, &c) || c == 0xFA) {
-		return false; // This is a c166 jmp
-	}
-	// The reset vector alone is a weak signal: any arm/mips/... opcode that
-	// decodes as avr rjmp would be enough (e.g. arm "ldr pc, ..." shellcode).
-	// A usermode rom starts with a complete interrupt vector table: the
-	// smallest known board carries 19 vectors, while accidental decodes in
-	// foreign code die off after a few entries. Require a table of that
-	// scale before claiming the buffer.
-	size_t n_bytes = avr_interrupt_vector_size(buf);
-	if (!n_bytes) {
-		return false;
-	}
-	RzVector /*<ut64>*/ *interrupt_handlers = rz_vector_new(sizeof(ut64), NULL, NULL);
-	if (!interrupt_handlers) {
-		return false;
-	}
-	ut64 bad_interrupt = UT64_MAX;
-	avr_parse_interrupt_vectors(buf, interrupt_handlers, n_bytes, &bad_interrupt);
-	size_t n_vectors = rz_vector_len(interrupt_handlers);
-	rz_vector_free(interrupt_handlers);
-	return n_vectors >= 16;
-}
-
 static bool avr_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	rz_return_val_if_fail(bf && obj && buf && sdb, false);
 
@@ -701,8 +672,10 @@ static bool avr_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb 
 		return false;
 	}
 
-	size_t n_bytes = avr_interrupt_vector_size(buf);
-	if (!n_bytes) {
+	size_t n_bytes = 2;
+	if (is_jmp(buf, 0) || is_rjmp32(buf, 0)) {
+		n_bytes = 4;
+	} else if (!is_rjmp(buf, 0)) {
 		return false;
 	}
 

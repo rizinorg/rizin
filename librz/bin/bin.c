@@ -253,9 +253,6 @@ RZ_API RzBinFile *rz_bin_reload(RzBin *bin, RzBinFile *bf, ut64 baseaddr) {
 	rz_buf_seek(bf->buf, 0, RZ_BUF_SET);
 	RzBinFile *nbf = rz_bin_open_buf(bin, bf->buf, &opt);
 	if (!nbf) {
-		// The new buffer was rejected (e.g. a plugin claimed the data by
-		// magic but failed to load it). Keep the current file selected
-		// instead of leaving the bin without one.
 		rz_bin_set_cur_binfile(bin, bf);
 		return NULL;
 	}
