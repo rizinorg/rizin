@@ -10,7 +10,7 @@ static const ut32 HP_NEG_INFINITY = 0xfc00;
 /// This represents all negative numbers with an absolute value that is too big to be represented accurately as a normalized number.
 static const ut32 HP_POS_INFINITY = 0x7c00;
 
-#define F2SINT32(x, m) F2SINT(32, m, x)
+#define F2SINT32(x, m) F2SINT(32, m, RZ_FLOAT_CAST_OOB_TRUNCATE, x)
 
 #define denorm_to_zere_(T, x) \
 	LET("tmp", x, \
@@ -83,7 +83,8 @@ static inline RzILOpEffect *q_real_set_v(const char *k, RzILOpPure *x) {
 
 #define FCAST32(f, _1, x, mode) FCAST_(f, _1, x, mode, F32(0))
 #define FCAST64(f, _1, x, mode) FCAST_(f, _1, x, mode, F64(0))
-#define round_to_integer(x, m)  FCAST_(F2SINT, 32, x, m, U32(UT32_MAX))
+#define F2SINT_TRUNC(_1, rmode, x) F2SINT(_1, rmode, RZ_FLOAT_CAST_OOB_TRUNCATE, x)
+#define round_to_integer(x, m)  FCAST_(F2SINT_TRUNC, 32, x, m, U32(UT32_MAX))
 
 static RzILOpPure *minmax(const char *k, st64 min, st64 max, RzILOpPure *x) {
 	return ITE(IS_FNAN(VARL(k)),

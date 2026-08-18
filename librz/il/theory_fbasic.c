@@ -176,7 +176,7 @@ void *rz_il_handler_fcast_int(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 		return NULL;
 	}
 	ut32 length = cast_int.length;
-	RzBitVector *ret = rz_float_cast_int(f, length, mode);
+	RzBitVector *ret = rz_float_cast_int(f, length, mode, cast_int.oob_behavior);
 
 	rz_float_free(f);
 
@@ -197,7 +197,7 @@ void *rz_il_handler_fcast_sint(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 		return NULL;
 	}
 	ut32 length = cast_sint.length;
-	RzBitVector *ret = rz_float_cast_sint(f, length, mode);
+	RzBitVector *ret = rz_float_cast_sint(f, length, mode, cast_sint.oob_behavior);
 
 	rz_float_free(f);
 

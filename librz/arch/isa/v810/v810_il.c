@@ -177,11 +177,11 @@ static RzILOpPure *bv2f32(RzILOpPure *x) {
 }
 
 static RzILOpPure *f32_2int(RzILOpPure *x) {
-	return F2SINT(32, 0, x);
+	return F2SINT(32, 0, RZ_FLOAT_CAST_OOB_TRUNCATE, x);
 }
 
 static RzILOpPure *f32_trunc2int(RzILOpPure *x) {
-	return F2SINT(32, 0, FROUND(0, x));
+	return F2SINT(32, 0, RZ_FLOAT_CAST_OOB_TRUNCATE, FROUND(0, x));
 }
 
 typedef struct {

@@ -673,7 +673,7 @@ static RzILOpEffect *convert_float_op(const csh handle, const cs_insn *insn, con
 	case SPARC_INS_FDTOX:
 	case SPARC_INS_FQTOX:
 	case SPARC_INS_FSTOX:
-		return rz_sparc_bv_to_consec_regs(handle, mode, dst, F2INT(dst_width, SPARC_RMODE(), src0), dst_width);
+		return rz_sparc_bv_to_consec_regs(handle, mode, dst, F2INT(dst_width, SPARC_RMODE(), RZ_FLOAT_CAST_OOB_TRUNCATE, src0), dst_width);
 	// BitVector to Float
 	case SPARC_INS_FITOS:
 	case SPARC_INS_FXTOS:

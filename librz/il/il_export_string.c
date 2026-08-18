@@ -436,19 +436,19 @@ static void il_opdmp_fabs(RzILOpPure *op, RzStrBuf *sb, int pad) {
 static void il_opdmp_fcast_int(RzILOpPure *op, RzStrBuf *sb, int pad) {
 	RzILOpArgsFCastint *opx = &op->op.fcast_int;
 	if (pad < 0) {
-		rz_strbuf_appendf(sb, "(fcast_int %u ", opx->length);
+		rz_strbuf_appendf(sb, "(fcast_int %u %d ", opx->length, opx->oob_behavior);
 		il_op_float_rmode_string_resolve(&opx->rmode, sb, pad);
 		rz_strbuf_append(sb, " ");
 		il_op_pure_string_resolve(opx->f, sb, pad);
 		rz_strbuf_append(sb, ")");
 	} else if (opx->rmode.kind == RZ_IL_OP_ARG_FLOAT_RMODE_STATIC) {
-		rz_strbuf_appendf(sb, "%*.s(fcast_int %u ", pad, "", opx->length);
+		rz_strbuf_appendf(sb, "%*.s(fcast_int %u %d ", pad, "", opx->length, opx->oob_behavior);
 		il_op_float_rmode_string_resolve(&opx->rmode, sb, pad);
 		rz_strbuf_append(sb, "\n");
 		il_op_pure_string_resolve(opx->f, sb, pad + PRETTY_PAD);
 		rz_strbuf_append(sb, ")");
 	} else {
-		rz_strbuf_appendf(sb, "%*.s(fcast_int %u\n", pad, "", opx->length);
+		rz_strbuf_appendf(sb, "%*.s(fcast_int %u %d\n", pad, "", opx->length, opx->oob_behavior);
 		il_op_float_rmode_string_resolve(&opx->rmode, sb, pad + PRETTY_PAD);
 		rz_strbuf_append(sb, "\n");
 		il_op_pure_string_resolve(opx->f, sb, pad + PRETTY_PAD);
@@ -459,19 +459,19 @@ static void il_opdmp_fcast_int(RzILOpPure *op, RzStrBuf *sb, int pad) {
 static void il_opdmp_fcast_sint(RzILOpPure *op, RzStrBuf *sb, int pad) {
 	RzILOpArgsFCastsint *opx = &op->op.fcast_sint;
 	if (pad < 0) {
-		rz_strbuf_appendf(sb, "(fcast_sint %u ", opx->length);
+		rz_strbuf_appendf(sb, "(fcast_sint %u %d ", opx->length, opx->oob_behavior);
 		il_op_float_rmode_string_resolve(&opx->rmode, sb, pad);
 		rz_strbuf_append(sb, " ");
 		il_op_pure_string_resolve(opx->f, sb, pad);
 		rz_strbuf_append(sb, ")");
 	} else if (opx->rmode.kind == RZ_IL_OP_ARG_FLOAT_RMODE_STATIC) {
-		rz_strbuf_appendf(sb, "%*.s(fcast_sint %u ", pad, "", opx->length);
+		rz_strbuf_appendf(sb, "%*.s(fcast_sint %u %d ", pad, "", opx->length, opx->oob_behavior);
 		il_op_float_rmode_string_resolve(&opx->rmode, sb, pad);
 		rz_strbuf_append(sb, "\n");
 		il_op_pure_string_resolve(opx->f, sb, pad + PRETTY_PAD);
 		rz_strbuf_append(sb, ")");
 	} else {
-		rz_strbuf_appendf(sb, "%*.s(fcast_sint %u\n", pad, "", opx->length);
+		rz_strbuf_appendf(sb, "%*.s(fcast_sint %u %d\n", pad, "", opx->length, opx->oob_behavior);
 		il_op_float_rmode_string_resolve(&opx->rmode, sb, pad + PRETTY_PAD);
 		rz_strbuf_append(sb, "\n");
 		il_op_pure_string_resolve(opx->f, sb, pad + PRETTY_PAD);

@@ -45,6 +45,19 @@
 		ret->op.s.v2 = v2; \
 	} while (0)
 
+#define rz_il_op_new_4(sort, id, t, s, v0, v1, v2, v3) \
+	do { \
+		ret = RZ_NEW0(RzILOp##sort); \
+		if (!ret) { \
+			return NULL; \
+		} \
+		ret->code = id; \
+		ret->op.s.v0 = v0; \
+		ret->op.s.v1 = v1; \
+		ret->op.s.v2 = v2; \
+		ret->op.s.v3 = v3; \
+	} while (0)
+
 static RzILOpArgFloatRMode float_rmode_static(RzFloatRMode mode) {
 	return (RzILOpArgFloatRMode){
 		.kind = RZ_IL_OP_ARG_FLOAT_RMODE_STATIC,
@@ -879,19 +892,19 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fabs(RZ_NONNULL RzILOpFloat *f) {
 	return ret;
 }
 
-RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_int(ut32 length, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_int(ut32 length, RzFloatRMode mode, RzFloatCastOobBehavior oob_behavior, RZ_NONNULL RzILOpFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
 	RzILOpBitVector *ret;
-	rz_il_op_new_3(BitVector, RZ_IL_OP_FCAST_INT, RzILOpArgsFCastint, fcast_int, length, rmode, f);
+	rz_il_op_new_4(BitVector, RZ_IL_OP_FCAST_INT, RzILOpArgsFCastint, fcast_int, length, rmode, oob_behavior, f);
 	return ret;
 }
 
-RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_sint(ut32 length, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_sint(ut32 length, RzFloatRMode mode, RzFloatCastOobBehavior oob_behavior, RZ_NONNULL RzILOpFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
 	RzILOpBitVector *ret;
-	rz_il_op_new_3(BitVector, RZ_IL_OP_FCAST_SINT, RzILOpArgsFCastsint, fcast_sint, length, rmode, f);
+	rz_il_op_new_4(BitVector, RZ_IL_OP_FCAST_SINT, RzILOpArgsFCastsint, fcast_sint, length, rmode, oob_behavior, f);
 	return ret;
 }
 
@@ -911,19 +924,19 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcast_sfloat(RzFloatFormat format, RzFlo
 	return ret;
 }
 
-RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_int_dyn_rmode(ut32 length, RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_int_dyn_rmode(ut32 length, RZ_NONNULL RzILOpBitVector *mode, RzFloatCastOobBehavior oob_behavior, RZ_NONNULL RzILOpFloat *f) {
 	rz_return_val_if_fail(mode && f, NULL);
 	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
 	RzILOpBitVector *ret;
-	rz_il_op_new_3(BitVector, RZ_IL_OP_FCAST_INT, RzILOpArgsFCastint, fcast_int, length, rmode, f);
+	rz_il_op_new_4(BitVector, RZ_IL_OP_FCAST_INT, RzILOpArgsFCastint, fcast_int, length, rmode, oob_behavior, f);
 	return ret;
 }
 
-RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_sint_dyn_rmode(ut32 length, RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_sint_dyn_rmode(ut32 length, RZ_NONNULL RzILOpBitVector *mode, RzFloatCastOobBehavior oob_behavior, RZ_NONNULL RzILOpFloat *f) {
 	rz_return_val_if_fail(mode && f, NULL);
 	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
 	RzILOpBitVector *ret;
-	rz_il_op_new_3(BitVector, RZ_IL_OP_FCAST_SINT, RzILOpArgsFCastsint, fcast_sint, length, rmode, f);
+	rz_il_op_new_4(BitVector, RZ_IL_OP_FCAST_SINT, RzILOpArgsFCastsint, fcast_sint, length, rmode, oob_behavior, f);
 	return ret;
 }
 

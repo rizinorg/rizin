@@ -72,6 +72,12 @@ typedef enum rz_float_round_enum {
 	RZ_FLOAT_RMODE_UNK ///< end
 } RzFloatRMode; ///< Rounding Mode
 
+typedef enum rz_float_cast_oob_behavior_enum {
+	RZ_FLOAT_CAST_OOB_TRUNCATE, ///< Truncate out of bounds value
+	RZ_FLOAT_CAST_OOB_SATURATE, ///< Saturate to integer min/max
+	RZ_FLOAT_CAST_OOB_INDEFINITE, ///< Return the indefinite value (e.g., 0x80..00)
+} RzFloatCastOobBehavior;
+
 /** Precision used by SoftFloat binary80 arithmetic. */
 typedef enum rz_float_rprecision_enum {
 	RZ_FLOAT_RPREC_32 = 32, ///< 24-bit significand precision
@@ -210,8 +216,8 @@ RZ_API RZ_OWN RzFloat *rz_float_new_snan(RzFloatFormat format);
 
 RZ_API RZ_OWN RzFloat *rz_float_cast_float(RZ_NONNULL RzBitVector *bv, RzFloatFormat format, RzFloatRMode mode);
 RZ_API RZ_OWN RzFloat *rz_float_cast_sfloat(RZ_NONNULL RzBitVector *bv, RzFloatFormat format, RzFloatRMode mode);
-RZ_API RZ_OWN RzBitVector *rz_float_cast_int(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode);
-RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode);
+RZ_API RZ_OWN RzBitVector *rz_float_cast_int(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode, RzFloatCastOobBehavior oob_behavior);
+RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode, RzFloatCastOobBehavior oob_behavior);
 RZ_API RZ_OWN RzFloat *rz_float_convert(RZ_NONNULL RzFloat *f, RzFloatFormat format, RzFloatRMode mode);
 RZ_API RzFloatRPrecision rz_float_ext80_get_rounding_precision(void);
 RZ_API bool rz_float_ext80_set_rounding_precision(RzFloatRPrecision precision);

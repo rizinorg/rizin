@@ -354,6 +354,7 @@ static void il_opdmp_fcast_int(RzILOpPure *op, PJ *pj) {
 	pj_o(pj);
 	pj_ks(pj, "opcode", "fcast_int");
 	pj_kn(pj, "length", opx->length);
+	pj_kn(pj, "oob_behavior", opx->oob_behavior);
 	pj_k(pj, "rmode");
 	il_op_float_rmode_json_resolve(&opx->rmode, pj);
 	pj_k(pj, "value");
@@ -366,6 +367,7 @@ static void il_opdmp_fcast_sint(RzILOpPure *op, PJ *pj) {
 	pj_o(pj);
 	pj_ks(pj, "opcode", "fcast_sint");
 	pj_kn(pj, "length", opx->length);
+	pj_kn(pj, "oob_behavior", opx->oob_behavior);
 	pj_k(pj, "rmode");
 	il_op_float_rmode_json_resolve(&opx->rmode, pj);
 	pj_k(pj, "value");
