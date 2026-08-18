@@ -1810,6 +1810,11 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 	bool is_inf = rz_float_is_inf(f);
 
 	bool is_oob = false;
+	bool should_inc = false;
+	bool inexact = false;
+	RzBitVector *sig = NULL;
+	bool is_zero = false;
+
 	if (is_nan || is_inf) {
 		is_oob = true;
 	} else if (exp_no_bias > (st32)(length - 1)) {
@@ -1824,10 +1829,8 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 	// we should try to reserve `exponent` bits of mantissa
 	// drop extra bits or append zeros
 	// 1.MM..M * 2^exp = 1MM..M * 2^0 (integer)
-	bool should_inc = false;
-	bool inexact = false;
-	RzBitVector *sig = rz_float_get_mantissa(f);
-	bool is_zero = rz_bv_is_zero_vector(sig) && exp == 0;
+	sig = rz_float_get_mantissa(f);
+	is_zero = rz_bv_is_zero_vector(sig) && exp == 0;
 
 	// binary80 stores the integer bit explicitly in the mantissa; all other
 	// normal formats use a hidden bit that must be injected here
