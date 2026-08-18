@@ -252,6 +252,10 @@ RZ_API RzBinFile *rz_bin_reload(RzBin *bin, RzBinFile *bf, ut64 baseaddr) {
 	opt.filename = bf->file;
 	rz_buf_seek(bf->buf, 0, RZ_BUF_SET);
 	RzBinFile *nbf = rz_bin_open_buf(bin, bf->buf, &opt);
+	if (!nbf) {
+		rz_bin_set_cur_binfile(bin, bf);
+		return NULL;
+	}
 	// On reload the new file reuses the same fd, so opening it overwrites the
 	// old file's "cur" and "fd.<fd>" entries in bin->sdb. That releases fewer
 	// references to the old sdb than the regular teardown path does, leaving
