@@ -1036,6 +1036,7 @@ static bool test_rzil_vm_op_fcast() {
 	RzILOpBitVector *op2 = rz_il_op_new_fcast_int(
 		64,
 		RZ_FLOAT_RMODE_RNE,
+		RZ_FLOAT_CAST_OOB_TRUNCATE,
 		rz_il_op_new_fcast_float(
 			RZ_FLOAT_IEEE754_BIN_64,
 			RZ_FLOAT_RMODE_RNE,
@@ -1348,10 +1349,10 @@ static bool test_rzil_vm_all_float_rmode_payloads() {
 	} while (0)
 
 	CHECK_DYNAMIC_RMODE_OP(
-		rz_il_op_new_fcast_int_dyn_rmode(32, rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(1.0f)),
+		rz_il_op_new_fcast_int_dyn_rmode(32, rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), RZ_FLOAT_CAST_OOB_TRUNCATE, rz_il_op_new_float_from_f32(1.0f)),
 		RZ_IL_OP_FCAST_INT, fcast_int);
 	CHECK_DYNAMIC_RMODE_OP(
-		rz_il_op_new_fcast_sint_dyn_rmode(32, rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(-1.0f)),
+		rz_il_op_new_fcast_sint_dyn_rmode(32, rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), RZ_FLOAT_CAST_OOB_TRUNCATE, rz_il_op_new_float_from_f32(-1.0f)),
 		RZ_IL_OP_FCAST_SINT, fcast_sint);
 	CHECK_DYNAMIC_RMODE_OP(
 		rz_il_op_new_fcast_float_dyn_rmode(RZ_FLOAT_IEEE754_BIN_32, rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_bitv_from_ut64(32, 1)),
@@ -1481,6 +1482,7 @@ static bool test_rzil_vm_runtime_rmode_helpers() {
 	RzILOpBitVector *cast_int_op = rz_il_op_new_fcast_int_dyn_rmode(
 		32,
 		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RTP),
+		RZ_FLOAT_CAST_OOB_TRUNCATE,
 		rz_il_op_new_float_from_f32(1.125f));
 	RzBitVector *cast_int = rz_il_evaluate_bitv(vm, cast_int_op);
 	mu_assert_notnull(cast_int, "runtime unsigned float-to-integer cast");
@@ -1491,6 +1493,7 @@ static bool test_rzil_vm_runtime_rmode_helpers() {
 	RzILOpBitVector *cast_sint_op = rz_il_op_new_fcast_sint_dyn_rmode(
 		32,
 		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RTN),
+		RZ_FLOAT_CAST_OOB_TRUNCATE,
 		rz_il_op_new_float_from_f32(-0.125f));
 	RzBitVector *cast_sint = rz_il_evaluate_bitv(vm, cast_sint_op);
 	mu_assert_notnull(cast_sint, "runtime signed float-to-integer cast");
