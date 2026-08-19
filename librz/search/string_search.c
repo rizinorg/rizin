@@ -422,19 +422,19 @@ static RzDetectedString *setup_str_regex(const char *re_pattern, RzRegexFlags cf
 			return NULL;
 		case RZ_STRING_ENC_UTF8:
 		case RZ_STRING_ENC_8BIT:
-			re = rz_regex_new_multi(re_pattern, cflags, RZ_REGEX_DEFAULT, NULL, RZ_REGEX_UTF8);
+			re = rz_regex_new_multi(re_pattern, cflags, RZ_REGEX_DEFAULT, RZ_REGEX_UTF8);
 			break;
 		case RZ_STRING_ENC_UTF16LE:
 		case RZ_STRING_ENC_UTF16BE:
-			re = rz_regex_new_multi(re_pattern, cflags, RZ_REGEX_DEFAULT, NULL, RZ_REGEX_UTF16);
+			re = rz_regex_new_multi(re_pattern, cflags, RZ_REGEX_DEFAULT, RZ_REGEX_UTF16);
 			break;
 		case RZ_STRING_ENC_UTF32LE:
 		case RZ_STRING_ENC_UTF32BE:
-			re = rz_regex_new_multi(re_pattern, cflags, RZ_REGEX_DEFAULT, NULL, RZ_REGEX_UTF32);
+			re = rz_regex_new_multi(re_pattern, cflags, RZ_REGEX_DEFAULT, RZ_REGEX_UTF32);
 			break;
 		}
 	} else {
-		re = rz_regex_new_multi(re_pattern, cflags, RZ_REGEX_DEFAULT, NULL, RZ_REGEX_UTF8);
+		re = rz_regex_new_multi(re_pattern, cflags, RZ_REGEX_DEFAULT, RZ_REGEX_UTF8);
 	}
 	if (!re) {
 		RZ_LOG_ERROR("Failed to compile regex pattern: '%s'\n", re_pattern);

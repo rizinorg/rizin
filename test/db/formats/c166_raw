@@ -1,0 +1,12 @@
+NAME=c166 base address check
+FILE=bins/c166/measure_raw.bin
+CMDS=<<EOF
+e bin.baddr
+echo
+iH
+EOF
+EXPECT=<<EOF
+0x00c00000
+
+EOF
+RUN

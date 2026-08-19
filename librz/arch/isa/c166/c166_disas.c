@@ -352,8 +352,7 @@ const char *c166_extx_names[] = {
 };
 
 RZ_API void c166_activate_ext(RZ_NONNULL C166State *state, ut32 addr, C166ExtState ext) {
-	// rz_return_if_fail(state->ext.i == 0); // realy need?
-	rz_return_if_fail(ext.i <= 3);
+	rz_return_if_fail(ext.i <= 4);
 	state->ext = ext;
 	state->last_addr = addr;
 }

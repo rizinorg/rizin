@@ -23,18 +23,25 @@ static bool is_valid_omf_type(ut8 type) {
 			return true;
 		}
 	}
-	// RZ_LOG_ERROR("Invalid record type\n");
 	return false;
 }
 
 bool rz_bin_checksum_omf_ok(const ut8 *buf, ut64 buf_size) {
 	ut8 checksum = 0;
+	if (!buf) {
+		RZ_LOG_ERROR("Invalid record (buf is null)\n");
+		return false;
+	}
 
 	if (buf_size < 3) {
 		RZ_LOG_ERROR("Invalid record (too short)\n");
 		return false;
 	}
 	ut16 size = rz_read_le16(buf + 1);
+	if (size == 0 || size == UINT16_MAX) {
+		RZ_LOG_ERROR("Invalid record (untrusted value)\n");
+		return false;
+	}
 	if (buf_size < size + 3) {
 		RZ_LOG_ERROR("Invalid record (too short)\n");
 		return false;

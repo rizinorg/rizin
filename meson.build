@@ -744,8 +744,48 @@ if r.returncode() == 1 and get_option('subprojects_check')
   error(subproject_clean_error_msg)
 endif
 
-softfloat_dep = dependency('softfloat', required: get_option('use_sys_softfloat'), static: is_static_build)
-if not softfloat_dep.found()
+use_sys_softfloat = get_option('use_sys_softfloat')
+# Keep the system probes method-specific so a rejected system dependency does
+# not occupy the generic name overridden by the bundled subproject.
+softfloat_probe_required = use_sys_softfloat.disabled() ? use_sys_softfloat : false
+softfloat_dep = dependency('softfloat', required: softfloat_probe_required, static: is_static_build, method: 'pkg-config')
+if not softfloat_dep.found() and not use_sys_softfloat.disabled() and host_machine.system() in ['darwin', 'ios', 'tvos', 'visionos', 'watchos']
+  softfloat_dep = dependency('softfloat', required: false, static: is_static_build, method: 'extraframework')
+endif
+if not softfloat_dep.found() and not use_sys_softfloat.disabled()
+  softfloat_dep = dependency('softfloat', required: use_sys_softfloat, static: is_static_build, method: 'cmake')
+endif
+use_bundled_softfloat = not softfloat_dep.found()
+if softfloat_dep.found()
+  softfloat_tls_probe = '''
+    #include <stdint.h>
+    #include <softfloat.h>
+    #if defined(_MSC_VER)
+    #define RZ_SOFTFLOAT_THREAD_LOCAL __declspec(thread)
+    #else
+    #define RZ_SOFTFLOAT_THREAD_LOCAL __thread
+    #endif
+    /* Fails to compile unless <softfloat.h> itself declares the mutable state
+     * as thread-local, and fails to link unless the library definitions agree
+     * with those declarations. */
+    extern RZ_SOFTFLOAT_THREAD_LOCAL uint_fast8_t softfloat_detectTininess;
+    extern RZ_SOFTFLOAT_THREAD_LOCAL uint_fast8_t softfloat_roundingMode;
+    extern RZ_SOFTFLOAT_THREAD_LOCAL uint_fast8_t softfloat_exceptionFlags;
+    extern RZ_SOFTFLOAT_THREAD_LOCAL uint_fast8_t extF80_roundingPrecision;
+    int main(void) {
+      return softfloat_detectTininess + softfloat_roundingMode +
+        softfloat_exceptionFlags + extF80_roundingPrecision;
+    }
+  '''
+  if not cc.links(softfloat_tls_probe, dependencies: softfloat_dep, name: 'system SoftFloat has thread-local state')
+    if use_sys_softfloat.enabled()
+      error('System SoftFloat must define its mutable state as thread-local')
+    endif
+    warning('System SoftFloat does not provide thread-local state; using the bundled dependency')
+    use_bundled_softfloat = true
+  endif
+endif
+if use_bundled_softfloat
   softfloat_proj = subproject('softfloat', default_options: ['default_library=static'])
   softfloat_dep = softfloat_proj.get_variable('softfloat_dep')
 endif

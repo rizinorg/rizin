@@ -311,20 +311,20 @@ EXPECT=<<EOF
        @|   ;-- section.PR_GETKEY_FCODE:
        @|   ;-- _getkey:
 / _getkey();
-|      @=-> 0x00c0001c      9ab7fe70       jnb   0xff6e, _getkey       ; Getkey.c:22 ; 0xc0001c ; [09] -rw- section size 12 named PR_GETKEY_FCODE
+|      @=-> 0x00c0001c      9ab7fe70       jnb   S0RIC.7, _getkey      ; Getkey.c:22 ; 0xc0001c ; [09] -rw- section size 12 named PR_GETKEY_FCODE
 |       |   0x00c00020      f2f4b2fe       mov   r4, 0xfe06:0x3eb2     ; Getkey.c:26
-|       |   0x00c00024      7eb7           bclr  0xff6e                ; Getkey.c:27
+|       |   0x00c00024      7eb7           bclr  S0RIC.7               ; Getkey.c:27
 \       |   0x00c00026      db00           rets                        ; Getkey.c:28
 / sym.isr_vec_0x28();
 \      ,==< 0x00c00028      fac07a00       jmps  Class_B_trap          ; 0xc0007a ; "\r\xff\xff\xff\xff\xff\xfa\xc0\x80\U00000012\xa5Z\xa5\xa5р\xe6\xea"
        ||   ;-- section.C_CLRMEMSEC_UNKNOWN:
-       ||   0x00c0002c      1a800400       bfldh 0xff00, #0x00, #0x04  ; [26] -r-- section size 24 named C_CLRMEMSEC_UNKNOWN
+       ||   0x00c0002c      1a800400       bfldh P0L, #0x00, #0x04     ; [26] -r-- section size 24 named C_CLRMEMSEC_UNKNOWN
        ||   0x00c00030      40c2           cmp   r12, r2
-       ||   0x00c00032      0fa0           bset  0xff40.0
-       ||   0x00c00034      04005cc2       add   0xfe06:0x025c, 0xfe00
-       ||   0x00c00038      03000000       addb  0xfe00, 0xfe00:0x0000
+       ||   0x00c00032      0fa0           bset  T2CON.0
+       ||   0x00c00034      04005cc2       add   0xfe06:0x025c, DPP0
+       ||   0x00c00038      03000000       addb  DPP0, 0xfe00:0x0000
        ||   0x00c0003c      0080           add   r8, r0
-       ||   0x00c0003e      04005bc2       add   0xfe06:0x025b, 0xfe00
+       ||   0x00c0003e      04005bc2       add   0xfe06:0x025b, DPP0
        ||   0x00c00042      0000           add   r0, r0
        ||   ;-- section.C_LIB_NCONST_NCONST:
        ||   0x00c00044      0000           add   r0, r0                ; [19] -r-- section size 48 named C_LIB_NCONST_NCONST
@@ -338,13 +338,13 @@ EXPECT=<<EOF
        ||   0x00c00056      1c46           rol   r6, #0x04
        ||   0x00c00058      0050           add   r5, r0
        ||   0x00c0005a      c3470024       CoSTORE r4, 0xffde
-       ||   0x00c0005e      74498096       or    0xfe04:0x1680, 0xfe92
+       ||   0x00c0005e      74498096       or    0xfe04:0x1680, CC9
        ||   0x00c00062      184b           addc  r4, [r3]
        ||   0x00c00064      20bc           sub   r11, r12
        ||   0x00c00066      be4c           bclr  0xfd98.11
        ||   0x00c00068      ca1b0e5a       calla- cc_NUSR1, 0xc05a0e   ; 0x5a0e
        ||   0x00c0006c      1cc2           rol   r2, #0x0c
-       ||   0x00c0006e      5367aec5       xorb  0xfece, 0xfe06:0x05ae
+       ||   0x00c0006e      5367aec5       xorb  PECC7, 0xfe06:0x05ae
        ||   0x00c00072      9d74           jmpr  cc_NC/UGE, 0xc0015c   ; sym.a166_NEAR.RepeatInit+0x2
       @||   ; CODE XREF from sym.isr_vec_0x8 @ 0xc00008
       @||   ;-- section.PR_TRAPS_FCODE:
@@ -381,21 +381,21 @@ EXPECT=<<EOF
 |           0x00c000a8      f6f012ee       mov   0xfe06:0x2e12, r0     ; START_V2.A66:1519
 |           0x00c000ac      d180           extr  #1                    ; START_V2.A66:1651
 |           0x00c000ae      e6e88978       mov   0xf1d0, #0x7889       ; START_V2.A66:1652
-|           0x00c000b2      e6d50000       mov   0xffaa, #0x0000       ; START_V2.A66:1657
-|           0x00c000b6      e60b00f8       mov   0xfe16, #0xf800       ; START_V2.A66:1660
-|           0x00c000ba      e60a0cf6       mov   0xfe14, #0xf60c       ; START_V2.A66:1661
-|           0x00c000be      e60900f8       mov   0xfe12, #0xf800       ; START_V2.A66:1662
-|           0x00c000c2      e6860000       mov   0xff0c, #0x0000       ; START_V2.A66:1663
-|           0x00c000c6      e6000400       mov   0xfe00, #0x0004       ; START_V2.A66:1672
-|           0x00c000ca      e6010500       mov   0xfe02, #0x0005       ; START_V2.A66:1674
-|           0x00c000ce      e6020003       mov   0xfe04, #0x0300       ; START_V2.A66:1675
-|           0x00c000d2      e60820fc       mov   0xfe10, #0xfc20       ; START_V2.A66:1679
+|           0x00c000b2      e6d50000       mov   FOCON, #0x0000        ; START_V2.A66:1657
+|           0x00c000b6      e60b00f8       mov   STKUN, #0xf800        ; START_V2.A66:1660
+|           0x00c000ba      e60a0cf6       mov   STKOV, #0xf60c        ; START_V2.A66:1661
+|           0x00c000be      e60900f8       mov   SP, #0xf800           ; START_V2.A66:1662
+|           0x00c000c2      e6860000       mov   BUSCON0, #0x0000      ; START_V2.A66:1663
+|           0x00c000c6      e6000400       mov   DPP0, #0x0004         ; START_V2.A66:1672
+|           0x00c000ca      e6010500       mov   DPP1, #0x0005         ; START_V2.A66:1674
+|           0x00c000ce      e6020003       mov   DPP2, #0x0300         ; START_V2.A66:1675
+|           0x00c000d2      e60820fc       mov   CP, #0xfc20           ; START_V2.A66:1679
 |           0x00c000d6      b54ab5b5       einit                       ; START_V2.A66:1686
-|           0x00c000da      1a880203       bfldh 0xff10, #0x03, #0x02  ; START_V2.A66:1690
+|           0x00c000da      1a880203       bfldh PSW, #0x03, #0x02     ; START_V2.A66:1690
 |           0x00c000de      e6f02002       mov   r0, #0x0220           ; START_V2.A66:1691
-|           0x00c000e2      1a880303       bfldh 0xff10, #0x03, #0x03  ; START_V2.A66:1695
+|           0x00c000e2      1a880303       bfldh PSW, #0x03, #0x03     ; START_V2.A66:1695
 |           0x00c000e6      e6f04002       mov   r0, #0x0240           ; START_V2.A66:1696
-|           0x00c000ea      1a880003       bfldh 0xff10, #0x03, #0x00  ; START_V2.A66:1700
+|           0x00c000ea      1a880003       bfldh PSW, #0x03, #0x00     ; START_V2.A66:1700
 \           0x00c000ee      e6f00002       mov   r0, #0x0200           ; START_V2.A66:1703
 / sym.a166_NEAR.Clr_Memory();
 |           0x00c000f2      e6f9c000       mov   r9, #0x00c0           ; START_V2.A66:1755
@@ -453,7 +453,7 @@ EXPECT=<<EOF
 \           0x00c00156      e6f80400       mov   r8, #0x0004           ; START_V2.A66:1874
             ; DATA XREF from sym.a166_NEAR.NoDPP3Adj @ 0xc001b6
 / sym.a166_NEAR.RepeatInit();
-|           0x00c0015a      e6030300       mov   0xfe06, #0x0003       ; START_V2.A66:1880
+|           0x00c0015a      e6030300       mov   DPP3, #0x0003         ; START_V2.A66:1880
 |           0x00c0015e      dc09           exts  r9, #1                ; START_V2.A66:1881
 |           0x00c00160      a828           mov   r2, [r8]              ; START_V2.A66:1882
 |           0x00c00162      2d3d           jmpr  cc_Z/EQ, sym.a166_NEAR.EndInit ; START_V2.A66:1883
@@ -474,7 +474,7 @@ EXPECT=<<EOF
 |           0x00c00182      0882           add   r8, #2                ; START_V2.A66:1897
 |           0x00c00184      1890           addc  r9, #0                ; START_V2.A66:1898
 |           0x00c00186      8af406e0       jb    r4.14, sym.a166_NEAR.CopyInitVal ; START_V2.A66:1899 ; 0xc00196
-|           0x00c0018a      f6f306fe       mov   0xfe06:0x3e06, r3     ; START_V2.A66:1900
+|           0x00c0018a      f6f306fe       mov   DPP3:0x3e06, r3       ; START_V2.A66:1900
 |           0x00c0018e      dc09           exts  r9, #1                ; START_V2.A66:1901
 |           0x00c00190      a838           mov   r3, [r8]              ; START_V2.A66:1902
 |           0x00c00192      0882           add   r8, #2                ; START_V2.A66:1903

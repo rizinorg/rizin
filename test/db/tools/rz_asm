@@ -663,6 +663,8 @@ TOOL=rz-asm
 ARGS=-m tms320
 EXPECT=<<EOF
 c54x            Texas Instruments TMS320C54x DSP family
+c2x             Texas Instruments TMS320C2x legacy fixed-point DSP family
+c5x             Texas Instruments TMS320C5x fixed-point DSP family (C2x-compatible superset)
 c55x            Texas Instruments TMS320C55x DSP family
 c55x+           Texas Instruments TMS320C55x+ DSP family
 c64x            Texas Instruments TMS320C64x DSP family
