@@ -6,14 +6,24 @@
 
 #include <rz_core.h>
 
-RZ_API RzCmdStatus rz_cmd_raw_prologues_gen_handler(RzCore *core, int argc, const char **argv);
-RZ_API RzCmdStatus rz_cmd_raw_prologues_gen_all_handler(RzCore *core, int argc, const char **argv);
-RZ_API RzCmdStatus rz_cmd_raw_prologues_gen_dir_handler(RzCore *core, int argc, const char **argv);
-RZ_API RzCmdStatus rz_cmd_prologues_generalize_handler(RzCore *core, int argc, const char **argv);
-RZ_API RzCmdStatus rz_cmd_prologues_store_clear_handler(RzCore *core, int argc, const char **argv);
-RZ_API RzCmdStatus rz_cmd_prologues_trie_clear_handler(RzCore *core, int argc, const char **argv);
-RZ_API RzCmdStatus rz_cmd_reset_session_handler(RzCore *core, int argc, const char **argv);
-RZ_API RzCmdStatus rz_cmd_prefix_tree_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
-RZ_API RzCmdStatus rz_cmd_prologues_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+typedef struct rz_prologue_t {
+	ut8 *bytes; ///< prologue's bytes buffer
+	ut8 *mask; ///< prologue's mask buffer, 0 = dont care bit
+} RzPrologue;
+
+RZ_API RZ_OWN RzTrie *rz_prologues_trie_new(void);
+
+RZ_API bool rz_prologues_trie_feed_binfile(RZ_NONNULL RzTrie *pg_trie, RZ_NONNULL RzBinFile *binfile, ut64 prologue_len);
+RZ_API st64 rz_prologues_trie_feed_all_binfiles(RZ_NONNULL RzTrie *pg_trie, RZ_NONNULL RzBin *bin, ut64 prologue_len,
+	RZ_NULLABLE const char *arch, int bits, bool big_endian, RZ_NULLABLE RzSetS *processed_files);
+RZ_API st64 rz_prologues_trie_feed_directory(RZ_NONNULL RzTrie *pg_trie, RZ_NONNULL RzBin *bin, RZ_NONNULL const char *dir_path,
+	ut64 prologue_len, RZ_NULLABLE const char *arch, int bits, bool big_endian, RZ_NULLABLE RzSetS *processed_files);
+
+RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_generalize(RzTrie *pg_trie, ut64 prologue_len, double entropy_threshold);
+
+RZ_API RZ_OWN RzStructuredData *rz_prologues_trie_to_structured_data(RZ_NONNULL const RzTrie *pg_trie,
+	ut64 prologue_len, RZ_NULLABLE const char *arch, int bits, bool big_endian, RZ_NULLABLE const RzSetS *files);
+RZ_API RZ_OWN RzStructuredData *rz_prologues_to_structured_data(RZ_NONNULL const RzVector /*<RzPrologue>*/ *prologues,
+	ut64 prologue_len, RZ_NULLABLE const char *arch, int bits, bool big_endian);
 
 #endif // RZ_PROLOGUES_GENERATOR_H
