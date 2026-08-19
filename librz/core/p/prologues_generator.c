@@ -11,7 +11,7 @@
 #include <rz_core.h>
 #include <rz_cons.h>
 #include <rz_util.h>
-#include "prologues_generator.h"
+#include <rz_prologues.h>
 #include "prologues_generator.inc"
 
 #define DEFAULT_PROLOGUE_LEN      16
