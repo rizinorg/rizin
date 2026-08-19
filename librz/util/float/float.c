@@ -1901,7 +1901,7 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 
 handle_oob:
 	if (is_oob && oob_behavior != RZ_FLOAT_CAST_OOB_TRUNCATE) {
-		rz_bv_clear(ret);
+		rz_bv_set_all(ret, false);
 		if (oob_behavior == RZ_FLOAT_CAST_OOB_INDEFINITE) {
 			rz_bv_set(ret, length - 1, true);
 		} else if (oob_behavior == RZ_FLOAT_CAST_OOB_SATURATE) {
