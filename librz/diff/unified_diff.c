@@ -489,12 +489,10 @@ RZ_API RZ_OWN char *rz_diff_op_stringify(RZ_NONNULL RzDiff *diff, RZ_NONNULL RzD
  */
 RZ_API RZ_OWN RzList /*<RzList<RzDiffOp *> *>*/ *rz_diff_unified_text_grouped(RZ_NONNULL RzDiff *diff) {
 	rz_return_val_if_fail(diff && diff->methods.elem_at && diff->methods.stringify, NULL);
-	RzList *groups = NULL;
 
 	bool is_bytes = DIFF_IS_BYTES_METHOD(diff->methods);
 
-	groups = rz_diff_opcodes_grouped_new(diff, is_bytes ? RZ_DIFF_DEFAULT_N_GROUPS_BYTES : RZ_DIFF_DEFAULT_N_GROUPS);
-	return groups;
+	return rz_diff_opcodes_grouped_new(diff, is_bytes ? RZ_DIFF_DEFAULT_N_GROUPS_BYTES : RZ_DIFF_DEFAULT_N_GROUPS);
 }
 
 /**
