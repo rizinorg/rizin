@@ -45,6 +45,60 @@ struct search_parameters {
 	bool regex_search;
 };
 
+static void do_asm_regex_search(RzCore *core, const char *regex_pattern) {
+    if (!regex_pattern || !*regex_pattern) {
+        RZ_LOG_ERROR("Usage: /ao <extended-regex>\n");
+        return;
+    }
+
+    RzRegexMulti *re = rz_regex_new_multi(regex_pattern, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT, RZ_REGEX_UTF8);
+    if (!re) {
+        RZ_LOG_ERROR("Failed to compile regex: %s\n", regex_pattern);
+        return;
+    }
+
+    ut64 from = core->offset;
+    ut64 to = from + core->blocksize;
+    ut64 buf_size = to - from;
+
+    if (buf_size == 0) {
+        rz_regex_free_multi(re);
+        return;
+    }
+
+    ut64 current_offset = 0;
+    while (current_offset < buf_size) {
+        if (rz_cons_is_breaked()) {
+            break;
+        }
+
+        RzAsmOp op;
+        rz_asm_op_init(&op);
+        rz_asm_set_pc(core->rasm, from + current_offset);
+
+        int instr_len = rz_asm_disassemble(core->rasm, &op, core->block + current_offset, (int)(buf_size - current_offset));
+
+        if (instr_len < 1) {
+            rz_asm_op_fini(&op);
+            current_offset += 1;
+            continue;
+        }
+
+        RzPVector *matches = rz_regex_match_all(re->re8, rz_strbuf_get(&op.buf_asm), RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+        
+        if (matches && !rz_pvector_empty(matches)) {
+            rz_cons_printf("0x%08" PFMT64x "   %s\n", from + current_offset, rz_strbuf_get(&op.buf_asm));
+        }
+        
+        rz_pvector_free(matches);
+        rz_asm_op_fini(&op);
+        
+        current_offset += instr_len;
+    }
+
+    rz_regex_free_multi(re);
+}
+
 static RzCmdStatus gadget_info(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state, RzGadgetType gadget_type) {
 	const char *input = argc > 1 ? argv[1] : "";
 	if (!input) {
@@ -1498,7 +1552,7 @@ reread:
 			do_asm_search(core, &param, input + 2, 'c', search_itv);
 		} else if (input[1] == 'o') { // "/ao"
 			dosearch = 0;
-			do_asm_search(core, &param, input + 2, 'o', search_itv);
+            do_asm_regex_search(core, input + 2);
 		} else if (input[1] == 'a') { // "/aa"
 			dosearch = 0;
 			do_asm_search(core, &param, input + 2, 'a', search_itv);
