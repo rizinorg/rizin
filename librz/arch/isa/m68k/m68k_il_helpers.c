@@ -499,8 +499,12 @@ static ut32 pc_relative_extension_offset(const M68KILCtx *ctx, const cs_m68k_op 
 #endif
 
 static ut64 branch_disp_base(const M68KILCtx *ctx) {
-	// M68K branch displacements are relative to the opcode-word successor,
-	// not to the full instruction fallthrough address.
+	/* Capstone br_disp is relative to the opcode-word successor (addr+2).
+	 * FDBcc's encoding displacement is relative to the 16-bit displacement
+	 * word (addr+4 / MC68020 UM 7.2.2.3.2). Capstone already adds that extra
+	 * two bytes into br_disp.disp, so using addr+2 here is correct for both
+	 * DBcc/FBcc and FDBcc. Do not switch FDBcc to addr+4 or the offset is
+	 * applied twice. */
 	return ctx->addr + 2;
 }
 

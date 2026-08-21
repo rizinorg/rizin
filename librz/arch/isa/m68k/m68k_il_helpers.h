@@ -22,12 +22,55 @@
 #define M68K_FPSR_CC_I    25
 #define M68K_FPSR_CC_NAN  24
 #define M68K_FPSR_CC_MASK ((1u << M68K_FPSR_CC_N) | (1u << M68K_FPSR_CC_Z) | (1u << M68K_FPSR_CC_I) | (1u << M68K_FPSR_CC_NAN))
+#define M68K_FPSR_EXC_BSUN  15
+#define M68K_FPSR_EXC_SNAN  14
+#define M68K_FPSR_EXC_OPERR 13
+#define M68K_FPSR_EXC_OVFL  12
+#define M68K_FPSR_EXC_UNFL  11
+#define M68K_FPSR_EXC_DZ    10
+#define M68K_FPSR_EXC_INEX2 9
+#define M68K_FPSR_EXC_INEX1 8
+#define M68K_FPSR_EXC_MASK  0xff00u
+#define M68K_FPSR_AEXC_IOP  7
+#define M68K_FPSR_AEXC_OVFL 6
+#define M68K_FPSR_AEXC_UNFL 5
+#define M68K_FPSR_AEXC_DZ   4
+#define M68K_FPSR_AEXC_INEX 3
+#define M68K_FPCR_IMPLEMENTED_MASK 0x0000fff0u
+#define M68K_FPSR_IMPLEMENTED_MASK 0x0ffffff8u
 
 #define M68K_FPSR_QUOTIENT_SHIFT     16
 #define M68K_FPSR_QUOTIENT_MASK      (0xffu << M68K_FPSR_QUOTIENT_SHIFT)
 #define M68K_FMOVEM_FP_REG_BITS_MASK 0x00ff0000u
 #define M68K_FMOVEM_EXTENDED_BITS    96
 #define M68K_FMOVEM_EXTENDED_BYTES   12
+
+/* ColdFire MACSR. Integer S/U=0 is signed, S/U=1 is unsigned (CFPRM).
+ * EMAC EV is bit 0. Bit 4 is R/T (mode), not a result flag. */
+#define M68K_MACSR_EV  0
+#define M68K_MACSR_V   1
+#define M68K_MACSR_Z   2
+#define M68K_MACSR_N   3
+#define M68K_MACSR_RT  4
+#define M68K_MACSR_FI  5
+#define M68K_MACSR_SU  6
+#define M68K_MACSR_OMC 7
+#define M68K_MACSR_PAV0 8
+#define M68K_MACSR_NZVE_MASK ((1u << M68K_MACSR_N) | (1u << M68K_MACSR_Z) | (1u << M68K_MACSR_V) | (1u << M68K_MACSR_EV))
+#define M68K_MAC_MASK_RESET 0xffffffffu
+
+#define M68K_FSAVE_IDLE_040   0x41000000u
+#define M68K_FSAVE_IDLE_060   0x00006000u
+#define M68K_FSAVE_IDLE_68881 0x1f180000u
+#define M68K_FSAVE_IDLE_68882 0x1f380000u
+#define M68K_FSAVE_SIZE_040   4u
+#define M68K_FSAVE_SIZE_060   12u
+#define M68K_FSAVE_SIZE_68881 28u
+#define M68K_FSAVE_SIZE_68882 60u
+#define M68K_FRESTORE_UNIMP_040  0x4130u
+#define M68K_FRESTORE_BUSY_040   0x4160u
+#define M68K_FRESTORE_BUSY_68881 0x1fb4u
+#define M68K_FRESTORE_BUSY_68882 0x1fd4u
 
 // Capstone 4 and 5 do not expose the bitfield register encoding helpers that
 // newer releases provide. Keep the encoding local to the M68K lifter.

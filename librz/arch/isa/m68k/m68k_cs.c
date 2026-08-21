@@ -53,6 +53,75 @@ RZ_IPI bool rz_m68k_op_is_control_reg(RZ_NONNULL const cs_m68k_op *op) {
 	return rz_m68k_reg_is_control(op->reg);
 }
 
+RZ_IPI bool rz_m68k_mode_is_coldfire(cs_mode mode) {
+#ifdef RZ_CAPSTONE_HAS_M68K_COLDFIRE
+	return mode == CS_MODE_M68K_CFV1 ||
+		mode == CS_MODE_M68K_CFV2 ||
+		mode == CS_MODE_M68K_CFV3 ||
+		mode == CS_MODE_M68K_CFV4 ||
+		mode == CS_MODE_M68K_CFV4E ||
+		mode == CS_MODE_M68K_CFV5 ||
+		mode == CS_MODE_M68K_COLDFIRE;
+#else
+	(void)mode;
+	return false;
+#endif
+}
+
+RZ_IPI bool rz_m68k_mode_has_fsave(cs_mode mode) {
+	return mode == CS_MODE_M68K_020 || mode == CS_MODE_M68K_030 ||
+		mode == CS_MODE_M68K_040 || mode == CS_MODE_M68K_060;
+}
+
+RZ_IPI bool rz_m68k_mode_has_emac(cs_mode mode) {
+#ifdef RZ_CAPSTONE_HAS_M68K_COLDFIRE
+	return mode == CS_MODE_M68K_CFV4E || mode == CS_MODE_M68K_CFV5;
+#else
+	(void)mode;
+	return false;
+#endif
+}
+
+RZ_IPI bool rz_m68k_control_reg_implemented(cs_mode mode, m68k_reg reg) {
+	if (rz_m68k_mode_is_coldfire(mode)) {
+		return reg == M68K_REG_CACR || reg == M68K_REG_VBR;
+	}
+	switch (reg) {
+	case M68K_REG_SFC:
+	case M68K_REG_DFC:
+	case M68K_REG_USP:
+	case M68K_REG_VBR:
+		return mode == CS_MODE_M68K_010 || mode == CS_MODE_M68K_020 ||
+			mode == CS_MODE_M68K_030 || mode == CS_MODE_M68K_040 ||
+			mode == CS_MODE_M68K_060
+#ifdef RZ_CAPSTONE_HAS_M68K_CPU32
+			|| mode == CS_MODE_M68K_CPU32
+#endif
+			;
+	case M68K_REG_CACR:
+		return mode == CS_MODE_M68K_020 || mode == CS_MODE_M68K_030 ||
+			mode == CS_MODE_M68K_040 || mode == CS_MODE_M68K_060;
+	case M68K_REG_CAAR:
+		return mode == CS_MODE_M68K_020 || mode == CS_MODE_M68K_030;
+	case M68K_REG_MSP:
+	case M68K_REG_ISP:
+		return mode == CS_MODE_M68K_020 || mode == CS_MODE_M68K_030 ||
+			mode == CS_MODE_M68K_040;
+	case M68K_REG_TC:
+	case M68K_REG_ITT0:
+	case M68K_REG_ITT1:
+	case M68K_REG_DTT0:
+	case M68K_REG_DTT1:
+	case M68K_REG_URP:
+	case M68K_REG_SRP:
+		return mode == CS_MODE_M68K_040 || mode == CS_MODE_M68K_060;
+	case M68K_REG_MMUSR:
+		return mode == CS_MODE_M68K_040;
+	default:
+		return false;
+	}
+}
+
 RZ_IPI bool rz_m68k_reg_name_is_mmu_root_pointer(RZ_NULLABLE const char *name) {
 	return RZ_STR_EQ(name, "srp") || RZ_STR_EQ(name, "crp");
 }

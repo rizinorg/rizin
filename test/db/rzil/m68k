@@ -383,13 +383,324 @@ fp2 = 0x3fff8000000000000000
 EOF
 RUN
 
+NAME=m68k aez FMOVECR rounds the ROM constant to FPCR precision
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f2005c00 @ 0
+s 0
+aezi
+aezv fpcr 0
+aezs
+ar fp0
+aezi
+aezv fpcr 0x40
+aezs
+ar fp0
+wx f2005f0f @ 0
+s 0
+aezi
+aezv fpcr 0x40
+aezs
+ar fp6
+EOF
+EXPECT=<<EOF
+fpcr = 0x0
+fp0 = 0x4000c90fdaa22168c235
+fpcr = 0x40
+fp0 = 0x4000c90fdb0000000000
+fpcr = 0x40
+fp6 = 0x00000000000000000000
+EOF
+RUN
+
+NAME=m68k aez FMOVECR sets INEX2 when FPCR rounding is inexact
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f2005c00 @ 0
+s 0
+aezi
+aezv fpcr 0
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+aezi
+aezv fpcr 0x40
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+aezi
+aezv fpcr 0x80
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f2005f0f @ 0
+s 0
+aezi
+aezv fpcr 0x40
+aezv fpsr 0
+aezs
+ar fp6
+ar fpsr
+wx f2005c32 @ 0
+s 0
+aezi
+aezv fpcr 0x40
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f2005c00 @ 0
+s 0
+aezi
+aezv fpcr 0
+aezv fpsr 0x2080
+aezs
+ar fpsr
+aezi
+aezv fpcr 0
+aezv fpsr 0x200
+aezs
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x0
+fpsr = 0x0
+fp0 = 0x4000c90fdaa22168c235
+fpsr = 0x00000000
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x4000c90fdb0000000000
+fpsr = 0x00000208
+fpcr = 0x80
+fpsr = 0x0
+fp0 = 0x4000c90fdaa22168c000
+fpsr = 0x00000208
+fpcr = 0x40
+fpsr = 0x0
+fp6 = 0x00000000000000000000
+fpsr = 0x04000000
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x3fff8000000000000000
+fpsr = 0x00000000
+fpcr = 0x0
+fpsr = 0x2080
+fpsr = 0x00000080
+fpcr = 0x0
+fpsr = 0x200
+fpsr = 0x00000000
+EOF
+RUN
+
+NAME=m68k aez FMOVE control registers mask unimplemented bits
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f2009000 @ 0
+s 0
+aezi
+aezv d0 0xffffffff
+aezv fpsr 0xa5000000
+aezs
+ar fpcr
+ar fpsr
+aezi
+aezv fpcr 0x12345678
+wx f200b000 @ 0
+s 0
+aezs
+ar d0
+ar fpcr
+wx f2008800 @ 0
+s 0
+aezi
+aezv d0 0xffffffff
+aezv fpcr 0x40
+aezs
+ar fpsr
+ar fpcr
+aezi
+aezv fpsr 0xffffffff
+wx f200a800 @ 0
+s 0
+aezs
+ar d0
+ar fpsr
+wx f200a400 @ 0
+s 0
+aezi
+aezv fpiar 0x89abcdef
+aezs
+ar d0
+EOF
+EXPECT=<<EOF
+d0 = 0xffffffff
+fpsr = 0xa5000000
+fpcr = 0x0000fff0
+fpsr = 0xa5000000
+fpcr = 0x12345678
+d0 = 0x00005670
+fpcr = 0x12345678
+d0 = 0xffffffff
+fpcr = 0x40
+fpsr = 0x0ffffff8
+fpcr = 0x00000040
+fpsr = 0xffffffff
+d0 = 0x0ffffff8
+fpsr = 0xffffffff
+fpiar = 0x89abcdef
+d0 = 0x89abcdef
+EOF
+RUN
+
+NAME=m68k aez FMOVEM control registers move FPCR then FPSR then FPIAR
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f2109c00 @ 0
+wx ffffffff @ 0x20
+wx ffffffff @ 0x24
+wx 89abcdef @ 0x28
+s 0
+aezi
+aezv a0 0x20
+aezs
+ar fpcr
+ar fpsr
+ar fpiar
+ar a0
+wx f2189c00 @ 0
+s 0
+aezi
+aezv a0 0x20
+aezs
+ar a0
+wx f220b800 @ 0
+s 0
+aezi
+aezv a0 0x28
+aezv fpcr 0x12345678
+aezv fpsr 0xffffffff
+aezs
+ar a0
+EOF
+EXPECT=<<EOF
+a0 = 0x20
+fpcr = 0x0000fff0
+fpsr = 0x0ffffff8
+fpiar = 0x89abcdef
+a0 = 0x00000020
+a0 = 0x20
+a0 = 0x0000002c
+a0 = 0x28
+fpcr = 0x12345678
+fpsr = 0xffffffff
+a0 = 0x00000020
+EOF
+RUN
+
+NAME=m68k aez FPIAR tracks exception-capable FPU instructions
+FILE=malloc://256
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c44233f800000 @ 0x20
+s 0x20
+aezi
+aezv fpcr 0xff00
+aezv fpiar 0xdeadbeef
+aezs
+ar fpiar
+s 0x20
+aezi
+aezv fpcr 0
+aezv fpiar 0xdeadbeef
+aezs
+ar fpiar
+wx 000000000000000000000000 @ 0x80
+wx f210d080 @ 0x40
+s 0x40
+aezi
+aezv a0 0x80
+aezv fpcr 0xff00
+aezv fpiar 0xdeadbeef
+aezs
+ar fpiar
+wx f200a400 @ 0x50
+s 0x50
+aezi
+aezv fpcr 0xff00
+aezv fpiar 0xdeadbeef
+aezs
+ar fpiar
+wx f2920000 @ 0x60
+s 0x60
+aezi
+aezv fpcr 0xff00
+aezv fpiar 0xdeadbeef
+aezv fpsr 0
+aezs
+ar fpiar
+wx f2820000 @ 0x60
+s 0x60
+aezi
+aezv fpcr 0xff00
+aezv fpiar 0xdeadbeef
+aezv fpsr 0
+aezs
+ar fpiar
+EOF
+EXPECT=<<EOF
+fpcr = 0xff00
+fpiar = 0xdeadbeef
+fpiar = 0x00000020
+fpcr = 0x0
+fpiar = 0xdeadbeef
+fpiar = 0xdeadbeef
+a0 = 0x80
+fpcr = 0xff00
+fpiar = 0xdeadbeef
+fpiar = 0xdeadbeef
+fpcr = 0xff00
+fpiar = 0xdeadbeef
+fpiar = 0xdeadbeef
+fpcr = 0xff00
+fpiar = 0xdeadbeef
+fpsr = 0x0
+fpiar = 0x00000060
+fpcr = 0xff00
+fpiar = 0xdeadbeef
+fpsr = 0x0
+fpiar = 0xdeadbeef
+EOF
+RUN
+
 NAME=m68k aez FMOVE integer destination respects FPCR and preserves FPCC
 FILE=malloc://128
 ARGS=-a m68k -b 32 -E big
 CMDS=<<EOF
 e asm.cpu=68020
+wx f23c54003ff0000000000000 @ 0
+wx f2006000 @ 0xc
+aezi
+aezs
+aezv fpcr 0x10
+aezv fpsr 0xa5000000
+aezs
+ar d0
+ar fpsr
 wx f23c54003ff8000000000000 @ 0
 wx f2006000 @ 0xc
+s 0
 aezi
 aezs
 aezv fpcr 0x10
@@ -403,6 +714,264 @@ fpcr = 0x10
 fpsr = 0xa5000000
 d0 = 0x00000001
 fpsr = 0xa5000000
+fpcr = 0x10
+fpsr = 0xa5000000
+d0 = 0x00000001
+fpsr = 0xa5000208
+EOF
+RUN
+
+NAME=m68k aez FMOVE to integer sets INEX2 and OPERR
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f2005c00 @ 0
+wx f2006000 @ 4
+s 0
+aezi
+aezv fpsr 0
+aezs 2
+ar d0
+ar fpsr
+wx f23c44007f800000 @ 0
+wx f2006000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar d0
+ar fpsr
+wx f23c4400ff800000 @ 0
+wx f2006000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar d0
+ar fpsr
+wx f23c44004f000000 @ 0
+wx f2006000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar d0
+ar fpsr
+wx f23c44007fc00000 @ 0
+wx f2006000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar d0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+d0 = 0x00000003
+fpsr = 0x00000208
+fpsr = 0x0
+d0 = 0x7fffffff
+fpsr = 0x00002080
+fpsr = 0x0
+d0 = 0x80000000
+fpsr = 0x00002080
+fpsr = 0x0
+d0 = 0x7fffffff
+fpsr = 0x00002080
+fpsr = 0x0
+d0 = 0xc0000000
+fpsr = 0x00002080
+EOF
+RUN
+
+NAME=m68k aez FMOVE to single sets OVFL UNFL and INEX2
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c54003ff0000000000000 @ 0
+wx f2006400 @ 0xc
+aezi
+aezs
+aezv fpsr 0xa5000000
+aezs
+ar d0
+ar fpsr
+wx f2005c00 @ 0
+wx f2006400 @ 4
+s 0
+aezi
+aezv fpsr 0
+aezs 2
+ar d0
+ar fpsr
+wx f23c540047f0000000000000 @ 0
+wx f2006400 @ 0xc
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar d0
+ar fpsr
+wx f23c540047f0000000000000 @ 0
+wx f2006400 @ 0xc
+s 0
+aezi
+aezs
+aezv fpcr 0x10
+aezv fpsr 0
+aezs
+ar d0
+ar fpsr
+wx f23c44007f800000 @ 0
+wx f2006400 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar d0
+ar fpsr
+wx f23c54003690000000000000 @ 0
+wx f2006400 @ 0xc
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar d0
+ar fpsr
+wx 3f800000ffffffffffffffff @ 0x50
+wx f210d080 @ 0
+wx f2006400 @ 4
+s 0
+aezi
+aezv a0 0x50
+aezs
+ar fp0
+aezv fpcr 0
+aezv fpsr 0
+aezs
+ar d0
+ar fpsr
+wx 3c000000ffffffffffffffff @ 0x50
+wx f210d080 @ 0
+wx f2117400 @ 4
+s 0
+aezi
+aezv a0 0x50
+aezv a1 0x60
+aezv fpcr 0
+aezs
+aezv fpsr 0
+aezs
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0xa5000000
+d0 = 0x3f800000
+fpsr = 0xa5000000
+fpsr = 0x0
+d0 = 0x40490fdb
+fpsr = 0x00000208
+fpsr = 0x0
+d0 = 0x7f800000
+fpsr = 0x00001248
+fpcr = 0x10
+fpsr = 0x0
+d0 = 0x7f7fffff
+fpsr = 0x00001248
+fpsr = 0x0
+d0 = 0x7f800000
+fpsr = 0x00000000
+fpsr = 0x0
+d0 = 0x00000000
+fpsr = 0x00000a28
+a0 = 0x50
+fp0 = 0x3f80ffffffffffffffff
+fpcr = 0x0
+fpsr = 0x0
+d0 = 0x00800000
+fpsr = 0x00000a28
+a0 = 0x50
+a1 = 0x60
+fpcr = 0x0
+fpsr = 0x0
+fpsr = 0x00000a28
+EOF
+RUN
+
+NAME=m68k aez FINT and FINTRZ set INEX2
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c54003ff0000000000000 @ 0
+wx f2000001 @ 0xc
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c54003ff8000000000000 @ 0
+wx f2000001 @ 0xc
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c54003ff8000000000000 @ 0
+wx f2000003 @ 0xc
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44007f800000 @ 0
+wx f2000001 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c54003ff0000000000000 @ 0
+wx f2000001 @ 0xc
+s 0
+aezi
+aezs
+aezv fpsr 0x00ab0000
+aezs
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fp0 = 0x3fff8000000000000000
+fpsr = 0x00000000
+fpsr = 0x0
+fp0 = 0x40008000000000000000
+fpsr = 0x00000208
+fpsr = 0x0
+fp0 = 0x3fff8000000000000000
+fpsr = 0x00000208
+fpsr = 0x0
+fp0 = 0x7fff8000000000000000
+fpsr = 0x02000000
+fpsr = 0xab0000
+fpsr = 0x00ab0000
 EOF
 RUN
 
@@ -609,6 +1178,1771 @@ fp2 = 0x3fff8000000000000000
 EOF
 RUN
 
+NAME=m68k aez FGETEXP and FGETMAN set OPERR on infinity
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c54003ff0000000000000 @ 0
+wx f200001e @ 0xc
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c54003ff0000000000000 @ 0
+wx f200001f @ 0xc
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44007f800000 @ 0
+wx f200001e @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44007f800000 @ 0
+wx f200001f @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c54003ff0000000000000 @ 0
+wx f200001e @ 0xc
+s 0
+aezi
+aezs
+aezv fpsr 0x00ab0000
+aezs
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fp0 = 0x00000000000000000000
+fpsr = 0x04000000
+fpsr = 0x0
+fp0 = 0x3fff8000000000000000
+fpsr = 0x00000000
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01002080
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01002080
+fpsr = 0xab0000
+fpsr = 0x04ab0000
+EOF
+RUN
+
+NAME=m68k aez FSQRT sets OPERR on negative
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c54004010000000000000 @ 0
+wx f2000004 @ 0xc
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c5400bff0000000000000 @ 0
+wx f2000004 @ 0xc
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c440080000000 @ 0
+wx f2000004 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44007f800000 @ 0
+wx f2000004 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c54004010000000000000 @ 0
+wx f2000004 @ 0xc
+s 0
+aezi
+aezs
+aezv fpsr 0x00ab0000
+aezs
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fp0 = 0x40008000000000000000
+fpsr = 0x00000000
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01002080
+fpsr = 0x0
+fp0 = 0x80000000000000000000
+fpsr = 0x0c000000
+fpsr = 0x0
+fp0 = 0x7fff8000000000000000
+fpsr = 0x02000000
+fpsr = 0xab0000
+fpsr = 0x00ab0000
+EOF
+RUN
+
+NAME=m68k aez FSQRT sets INEX2 when the root is not exact
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c54004000000000000000 @ 0
+wx f2000004 @ 0xc
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c54004022000000000000 @ 0
+wx f2000004 @ 0xc
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c54004010000000000000 @ 0
+wx f2000004 @ 0xc
+s 0
+aezi
+aezs
+aezv fpsr 0x00ab0000
+aezs
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fp0 = 0x3fffb504f333f9de6484
+fpsr = 0x00000208
+fpsr = 0x0
+fp0 = 0x4000c000000000000000
+fpsr = 0x00000000
+fpsr = 0xab0000
+fpsr = 0x00ab0000
+EOF
+RUN
+
+NAME=m68k aez FDIV sets DZ and OPERR
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c44003f800000 @ 0
+wx f23c44203f800000 @ 8
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c442000000000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c4400bf800000 @ 0
+wx f23c442000000000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c440000000000 @ 0
+wx f23c442000000000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44007f800000 @ 0
+wx f23c44207f800000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c44203f800000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0x00ab0000
+aezs
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fp0 = 0x3fff8000000000000000
+fpsr = 0x00000000
+fpsr = 0x0
+fp0 = 0x7fff8000000000000000
+fpsr = 0x02000410
+fpsr = 0x0
+fp0 = 0xffff8000000000000000
+fpsr = 0x0a000410
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01002080
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01002080
+fpsr = 0xab0000
+fpsr = 0x00ab0000
+EOF
+RUN
+
+NAME=m68k aez FDIV sets INEX2 OVFL and UNFL
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c44003f800000 @ 0
+wx f23c442040400000 @ 8
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fpsr
+wx f23c440040000000 @ 0
+wx f23c442040000000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c442040400000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0x00ab0000
+aezs
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fpsr = 0x00000208
+fpsr = 0x0
+fp0 = 0x3fff8000000000000000
+fpsr = 0x00000000
+fpsr = 0xab0000
+fpsr = 0x00ab0208
+EOF
+RUN
+
+NAME=m68k aez FDIV OVFL uses the unrounded exponent
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c44007f000000 @ 0
+wx f23c44203f000000 @ 8
+aezi
+aezv fpcr 0x40
+aezv fpsr 0
+aezs 2
+ar fp0
+ar fpsr
+wx f23c44007f000000 @ 0
+wx f23c44203f000000 @ 8
+s 0
+aezi
+aezv fpcr 0x50
+aezv fpsr 0
+aezs 2
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x7fff8000000000000000
+fpsr = 0x02001248
+fpcr = 0x50
+fpsr = 0x0
+fp0 = 0x407effffff0000000000
+fpsr = 0x00001248
+EOF
+RUN
+
+NAME=m68k aez FDIV UNFL uses the unrounded exponent
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c44001f800000 @ 0
+wx f23c44205f800000 @ 8
+aezi
+aezv fpcr 0x40
+aezv fpsr 0
+aezs 2
+ar fp0
+ar fpsr
+wx f23c440020000000 @ 0
+wx f23c44205f000000 @ 8
+s 0
+aezi
+aezv fpcr 0x40
+aezv fpsr 0
+aezs 2
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x3f7f8000000000000000
+fpsr = 0x00000800
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x3f818000000000000000
+fpsr = 0x00000000
+EOF
+RUN
+
+NAME=m68k aez FADD sets OPERR on opposite infinities
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c44003f800000 @ 0
+wx f23c44223f800000 @ 8
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44007f800000 @ 0
+wx f23c44227f800000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44007f800000 @ 0
+wx f23c4422ff800000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c44223f800000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0x00ab0000
+aezs
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fp0 = 0x40008000000000000000
+fpsr = 0x00000000
+fpsr = 0x0
+fp0 = 0x7fff8000000000000000
+fpsr = 0x02000000
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01002080
+fpsr = 0xab0000
+fpsr = 0x00ab0000
+EOF
+RUN
+
+NAME=m68k aez FADD sets INEX2 OVFL and UNFL
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c44003f800000 @ 0
+wx f23c44221f800000 @ 8
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fpsr
+wx f23c440040000000 @ 0
+wx f23c442240000000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c4400bf800000 @ 0
+wx f23c44223f800000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c44221f800000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0x00ab0000
+aezs
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fpsr = 0x00000208
+fpsr = 0x0
+fp0 = 0x40018000000000000000
+fpsr = 0x00000000
+fpsr = 0x0
+fp0 = 0x00000000000000000000
+fpsr = 0x04000000
+fpsr = 0xab0000
+fpsr = 0x00ab0208
+EOF
+RUN
+
+NAME=m68k aez FADD OVFL uses the unrounded exponent
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c44007f000000 @ 0
+wx f23c44227f000000 @ 8
+aezi
+aezv fpcr 0x40
+aezv fpsr 0
+aezs 2
+ar fp0
+ar fpsr
+wx f23c44007f000000 @ 0
+wx f23c44227f000000 @ 8
+s 0
+aezi
+aezv fpcr 0x50
+aezv fpsr 0
+aezs 2
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x7fff8000000000000000
+fpsr = 0x02001248
+fpcr = 0x50
+fpsr = 0x0
+fp0 = 0x407effffff0000000000
+fpsr = 0x00001248
+EOF
+RUN
+
+NAME=m68k aez FADD UNFL uses the unrounded exponent
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 3f8000008000000000000000 @ 0x50
+wx f210d080 @ 0
+wx f23c442200000000 @ 4
+aezi
+aezv a0 0x50
+aezv fpcr 0
+aezs
+aezv fpcr 0x40
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx 3f8100008000000000000000 @ 0x50
+wx f210d080 @ 0
+wx f23c442200000000 @ 4
+s 0
+aezi
+aezv a0 0x50
+aezv fpcr 0
+aezs
+aezv fpcr 0x40
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+a0 = 0x50
+fpcr = 0x0
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x3f808000000000000000
+fpsr = 0x00000800
+a0 = 0x50
+fpcr = 0x0
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x3f818000000000000000
+fpsr = 0x00000000
+EOF
+RUN
+
+NAME=m68k aez FSUB sets OPERR on like-signed infinities
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c440040000000 @ 0
+wx f23c44283f800000 @ 8
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44007f800000 @ 0
+wx f23c44287f800000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44007f800000 @ 0
+wx f23c4428ff800000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c440040000000 @ 0
+wx f23c44283f800000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0x00ab0000
+aezs
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fp0 = 0x3fff8000000000000000
+fpsr = 0x00000000
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01002080
+fpsr = 0x0
+fp0 = 0x7fff8000000000000000
+fpsr = 0x02000000
+fpsr = 0xab0000
+fpsr = 0x00ab0000
+EOF
+RUN
+
+NAME=m68k aez FSUB sets INEX2 OVFL and UNFL
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c44003f800000 @ 0
+wx f23c44281f000000 @ 8
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fpsr
+wx f23c440040800000 @ 0
+wx f23c442840000000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c44283f800000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c44281f000000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0x00ab0000
+aezs
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fpsr = 0x00000208
+fpsr = 0x0
+fp0 = 0x40008000000000000000
+fpsr = 0x00000000
+fpsr = 0x0
+fp0 = 0x00000000000000000000
+fpsr = 0x04000000
+fpsr = 0xab0000
+fpsr = 0x00ab0208
+EOF
+RUN
+
+NAME=m68k aez FSUB OVFL uses the unrounded exponent
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c44007f000000 @ 0
+wx f23c4428ff000000 @ 8
+aezi
+aezv fpcr 0x40
+aezv fpsr 0
+aezs 2
+ar fp0
+ar fpsr
+wx f23c44007f000000 @ 0
+wx f23c4428ff000000 @ 8
+s 0
+aezi
+aezv fpcr 0x50
+aezv fpsr 0
+aezs 2
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x7fff8000000000000000
+fpsr = 0x02001248
+fpcr = 0x50
+fpsr = 0x0
+fp0 = 0x407effffff0000000000
+fpsr = 0x00001248
+EOF
+RUN
+
+NAME=m68k aez FSUB UNFL uses the unrounded exponent
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 3f8000008000000000000000 @ 0x50
+wx f210d080 @ 0
+wx f23c442800000000 @ 4
+aezi
+aezv a0 0x50
+aezv fpcr 0
+aezs
+aezv fpcr 0x40
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx 3f8100008000000000000000 @ 0x50
+wx f210d080 @ 0
+wx f23c442800000000 @ 4
+s 0
+aezi
+aezv a0 0x50
+aezv fpcr 0
+aezs
+aezv fpcr 0x40
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+a0 = 0x50
+fpcr = 0x0
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x3f808000000000000000
+fpsr = 0x00000800
+a0 = 0x50
+fpcr = 0x0
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x3f818000000000000000
+fpsr = 0x00000000
+EOF
+RUN
+
+NAME=m68k aez FMUL OVFL uses the unrounded exponent
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c44005f800000 @ 0
+wx f23c44235f800000 @ 8
+aezi
+aezv fpcr 0x40
+aezv fpsr 0
+aezs 2
+ar fp0
+ar fpsr
+wx f23c44005f800000 @ 0
+wx f23c44235f800000 @ 8
+s 0
+aezi
+aezv fpcr 0x50
+aezv fpsr 0
+aezs 2
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x7fff8000000000000000
+fpsr = 0x02001248
+fpcr = 0x50
+fpsr = 0x0
+fp0 = 0x407effffff0000000000
+fpsr = 0x00001248
+EOF
+RUN
+
+NAME=m68k aez FMUL UNFL uses the unrounded exponent
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c44001f800000 @ 0
+wx f23c44231f800000 @ 8
+aezi
+aezv fpcr 0x40
+aezv fpsr 0
+aezs 2
+ar fp0
+ar fpsr
+wx f23c440020000000 @ 0
+wx f23c442320000000 @ 8
+s 0
+aezi
+aezv fpcr 0x40
+aezv fpsr 0
+aezs 2
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x3f7f8000000000000000
+fpsr = 0x00000800
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x3f818000000000000000
+fpsr = 0x00000000
+EOF
+RUN
+
+NAME=m68k aez FMUL sets OPERR on zero times infinity
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c440040000000 @ 0
+wx f23c442340000000 @ 8
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c440000000000 @ 0
+wx f23c44237f800000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44007f800000 @ 0
+wx f23c44237f800000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c440040000000 @ 0
+wx f23c442340000000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0x00ab0000
+aezs
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fp0 = 0x40018000000000000000
+fpsr = 0x00000000
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01002080
+fpsr = 0x0
+fp0 = 0x7fff8000000000000000
+fpsr = 0x02000000
+fpsr = 0xab0000
+fpsr = 0x00ab0000
+EOF
+RUN
+
+NAME=m68k aez FMOD and FREM set OPERR on zero modulus or dest inf
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c440040000000 @ 0
+wx f23c44213f800000 @ 8
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c442100000000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44007f800000 @ 0
+wx f23c44213f800000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c44217f800000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c442100000000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0x00ab0000
+aezs
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fp0 = 0x00000000000000000000
+fpsr = 0x04020000
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01002080
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01002080
+fpsr = 0x0
+fp0 = 0x3fff8000000000000000
+fpsr = 0x00000000
+fpsr = 0xab0000
+fpsr = 0x01002080
+EOF
+RUN
+
+NAME=m68k aez FMOD sets INEX2 and FREM does not
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c44003f800000 @ 0
+wx f23c442040400000 @ 8
+wx f23c44213f800000 @ 0x10
+aezi
+aezs 2
+aezv fpcr 0x40
+aezv fpsr 0
+aezs
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c442040400000 @ 8
+wx f23c44253f800000 @ 0x10
+s 0
+aezi
+aezs 2
+aezv fpcr 0x40
+aezv fpsr 0
+aezs
+ar fpsr
+wx f23c440040000000 @ 0
+wx f23c44213f800000 @ 8
+s 0
+aezi
+aezs
+aezv fpcr 0
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x40
+fpsr = 0x0
+fpsr = 0x00000208
+fpcr = 0x40
+fpsr = 0x0
+fpsr = 0x00000000
+fpcr = 0x0
+fpsr = 0x0
+fp0 = 0x00000000000000000000
+fpsr = 0x04020000
+EOF
+RUN
+
+NAME=m68k aez FMOD rounds dest when source is inf
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c44003f800000 @ 0
+wx f23c442040400000 @ 8
+wx f23c44217f800000 @ 0x10
+aezi
+aezv fpcr 0
+aezs 2
+aezv fpcr 0x40
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c442040400000 @ 8
+wx f23c44257f800000 @ 0x10
+s 0
+aezi
+aezv fpcr 0
+aezs 2
+aezv fpcr 0x40
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44005f800000 @ 0
+wx f23c44235f800000 @ 8
+wx f23c44217f800000 @ 0x10
+s 0
+aezi
+aezv fpcr 0
+aezs 2
+aezv fpcr 0x40
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44005f800000 @ 0
+wx f23c44235f800000 @ 8
+wx f23c44217f800000 @ 0x10
+s 0
+aezi
+aezv fpcr 0
+aezs 2
+aezv fpcr 0x50
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x0
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x3ffdaaaaab0000000000
+fpsr = 0x00000208
+fpcr = 0x0
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x3ffdaaaaab0000000000
+fpsr = 0x00000000
+fpcr = 0x0
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x7fff8000000000000000
+fpsr = 0x02001248
+fpcr = 0x0
+fpcr = 0x50
+fpsr = 0x0
+fp0 = 0x407effffff0000000000
+fpsr = 0x00001248
+EOF
+RUN
+
+NAME=m68k aez FMOD and FREM set UNFL when dest underflows PREC
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c44003f800000 @ 0
+wx f23c4026ffffff81 @ 8
+wx f23c44217f800000 @ 0x10
+aezi
+aezv fpcr 0
+aezs 2
+aezv fpcr 0x40
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c4026ffffff81 @ 8
+wx f23c44257f800000 @ 0x10
+s 0
+aezi
+aezv fpcr 0
+aezs 2
+aezv fpcr 0x40
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c4026ffffff82 @ 8
+wx f23c44217f800000 @ 0x10
+s 0
+aezi
+aezv fpcr 0
+aezs 2
+aezv fpcr 0x40
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x0
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x3f808000000000000000
+fpsr = 0x00000800
+fpcr = 0x0
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x3f808000000000000000
+fpsr = 0x00000800
+fpcr = 0x0
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x3f818000000000000000
+fpsr = 0x00000000
+EOF
+RUN
+
+NAME=m68k aez FREM remainder UNFL uses the unrounded exponent
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 3f800000ffffffffffffffff @ 0x50
+wx f210d080 @ 0
+wx f23c44213f800000 @ 4
+aezi
+aezv a0 0x50
+aezv fpcr 0
+aezs
+aezv fpcr 0x40
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f210d080 @ 0
+wx f23c44253f800000 @ 4
+s 0
+aezi
+aezv a0 0x50
+aezv fpcr 0
+aezs
+aezv fpcr 0x40
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f210d080 @ 0
+wx f23c44257f800000 @ 4
+s 0
+aezi
+aezv a0 0x50
+aezv fpcr 0
+aezs
+aezv fpcr 0x40
+aezv fpsr 0
+aezs
+ar fpsr
+EOF
+EXPECT=<<EOF
+a0 = 0x50
+fpcr = 0x0
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x3f818000000000000000
+fpsr = 0x00000a28
+a0 = 0x50
+fpcr = 0x0
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x3f818000000000000000
+fpsr = 0x00000800
+a0 = 0x50
+fpcr = 0x0
+fpcr = 0x40
+fpsr = 0x0
+fpsr = 0x00000800
+EOF
+RUN
+
+NAME=m68k aez FADD sets SNAN and quiets a signaling NAN
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 7f800001 @ 0x40
+wx 7fc00000 @ 0x44
+ar a0=0x40
+wx f23c44003f800000 @ 0
+wx f2104422 @ 8
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+ar a0=0x44
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+ar a0=0x40
+s 0
+aezi
+aezs
+aezv fpsr 0x00ab0000
+aezs
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01004080
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01000000
+fpsr = 0xab0000
+fpsr = 0x01ab4080
+EOF
+RUN
+
+NAME=m68k aez FSQRT and FINT set SNAN on a signaling NAN
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 7f800001 @ 0x40
+wx 7fc00000 @ 0x44
+ar a0=0x40
+wx f2104404 @ 0
+aezi
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+ar a0=0x44
+s 0
+aezi
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+ar a0=0x40
+wx f2104401 @ 0
+s 0
+aezi
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01004080
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01000000
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01004080
+EOF
+RUN
+
+NAME=m68k aez FMOVE to FPn sets SNAN on a signaling NAN
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 7f800001 @ 0x40
+wx 7fc00000 @ 0x44
+ar a0=0x40
+wx f2104400 @ 0
+aezi
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+ar a0=0x44
+s 0
+aezi
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01004080
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01000000
+EOF
+RUN
+
+NAME=m68k aez FMOVE to FPn sets UNFL on an extended denormal
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 000000000000000000000001 @ 0x50
+wx f210d080 @ 0
+wx f2000000 @ 4
+aezi
+aezv a0 0x50
+aezv fpcr 0
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+a0 = 0x50
+fpcr = 0x0
+fpsr = 0x0
+fp0 = 0x00000000000000000001
+fpsr = 0x00000800
+EOF
+RUN
+
+NAME=m68k aez FMOVE to FPn sets INEX2 after PREC rounding
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f2005c00 @ 0
+wx f2000000 @ 4
+aezi
+aezv fpcr 0
+aezs
+aezv fpcr 0x40
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x0
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x4000c90fdb0000000000
+fpsr = 0x00000208
+EOF
+RUN
+
+NAME=m68k aez FMOVE.X to memory sets UNFL on an extended denormal
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 000000000000000000000001 @ 0x50
+wx f210d080 @ 0
+wx f2116c00 @ 4
+aezi
+aezv a0 0x50
+aezv a1 0x60
+aezv fpcr 0
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+a0 = 0x50
+a1 = 0x60
+fpcr = 0x0
+fpsr = 0x0
+fp0 = 0x00000000000000000001
+fpsr = 0x00000800
+EOF
+RUN
+
+NAME=m68k aez FMUL sets INEX2 OVFL and UNFL
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c44003f800000 @ 0
+wx f23c442040400000 @ 8
+wx f2000023 @ 0x10
+aezi
+aezs 2
+aezv fpsr 0
+aezs
+ar fpsr
+wx f23c440040000000 @ 0
+wx f23c442340000000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c440000000000 @ 0
+wx f23c44237f800000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c442040400000 @ 8
+wx f2000023 @ 0x10
+s 0
+aezi
+aezs 2
+aezv fpsr 0x00ab0000
+aezs
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fpsr = 0x00000208
+fpsr = 0x0
+fp0 = 0x40018000000000000000
+fpsr = 0x00000000
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01002080
+fpsr = 0xab0000
+fpsr = 0x00ab0208
+EOF
+RUN
+
+NAME=m68k aez FSGL keeps extended exponent range and rounds only the mantissa
+FILE=malloc://256
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 407e00008000000000000000407e00008000000000000000 @ 0x40
+wx 3f81000080000000000000003f8100008000000000000000 @ 0x60
+wx 3fff000080000100000000003fff00008000010000000000 @ 0x80
+wx 3fff000080000080000000003fff00008000000000000000 @ 0xa0
+wx 407e000080000000000000003f8100008000000000000000 @ 0xc0
+wx f210d0c0 @ 0
+wx f2000427 @ 4
+aezi
+ar a0=0x40
+aezs
+aezv fpcr 0
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f2000424 @ 4
+s 0
+aezi
+ar a0=0xc0
+aezs
+aezv fpcr 0
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f2000427 @ 4
+s 0
+aezi
+ar a0=0x60
+aezs
+aezv fpcr 0
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+s 0
+aezi
+ar a0=0x80
+aezs
+aezv fpcr 0
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+s 0
+aezi
+ar a0=0x80
+aezs
+aezv fpcr 0x30
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+s 0
+aezi
+ar a0=0xa0
+aezs
+aezv fpcr 0
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x0
+fpsr = 0x0
+fp0 = 0x40fd8000000000000000
+fpsr = 0x00000000
+fpcr = 0x0
+fpsr = 0x0
+fp0 = 0x40fc8000000000000000
+fpsr = 0x00000000
+fpcr = 0x0
+fpsr = 0x0
+fp0 = 0x3f038000000000000000
+fpsr = 0x00000000
+fpcr = 0x0
+fpsr = 0x0
+fp0 = 0x3fff8000020000000000
+fpsr = 0x00000208
+fpcr = 0x30
+fpsr = 0x0
+fp0 = 0x3fff8000030000000000
+fpsr = 0x00000208
+fpcr = 0x0
+fpsr = 0x0
+fp0 = 0x3fff8000000000000000
+fpsr = 0x00000000
+EOF
+RUN
+
+NAME=m68k aez FABS and FNEG set SNAN and UNFL
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 7f800001 @ 0x40
+wx 7fc00000 @ 0x44
+wx ff800001 @ 0x48
+ar a0=0x40
+wx f2104418 @ 0
+aezi
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+ar a0=0x44
+s 0
+aezi
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+ar a0=0x48
+s 0
+aezi
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+ar a0=0x40
+wx f210441a @ 0
+s 0
+aezi
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c4400bf800000 @ 0
+wx f2000018 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f2000018 @ 0
+s 0
+aezi
+aezv fp0 1
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f2000018 @ 0
+s 0
+aezi
+aezv fp0 1
+aezv fpcr 0x70
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f2104418 @ 0
+ar a0=0x40
+s 0
+aezi
+aezv fpsr 0x00ab0000
+aezs
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01004080
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01000000
+fpsr = 0x0
+fp0 = 0xffffc000000000000001
+fpsr = 0x09004080
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01004080
+fpsr = 0x0
+fp0 = 0x3fff8000000000000000
+fpsr = 0x00000000
+fp0 = 0x1
+fpsr = 0x0
+fp0 = 0x00000000000000000001
+fpsr = 0x00000800
+fp0 = 0x1
+fpcr = 0x70
+fpsr = 0x0
+fp0 = 0x3f6a8000000000000000
+fpsr = 0x00000800
+fpsr = 0xab0000
+fpsr = 0x01ab4080
+EOF
+RUN
+
+NAME=m68k aez FCMP and FTST set SNAN and N
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 7f800001 @ 0x40
+wx 7fc00000 @ 0x44
+ar a0=0x40
+wx f210443a @ 0
+aezi
+aezv fpsr 0
+aezs
+ar fpsr
+ar a0=0x44
+s 0
+aezi
+aezv fpsr 0
+aezs
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f2104438 @ 8
+ar a0=0x40
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fpsr
+ar a0=0x44
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c44383f800000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fpsr
+wx f23c44007f800000 @ 0
+wx f23c44387f800000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fpsr
+wx f23c4400bf800000 @ 0
+wx f23c4438bf800000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fpsr
+wx f23c4400c0000000 @ 0
+wx f23c4438c0000000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fpsr
+wx 80000000 @ 0x40
+wx f210443a @ 0
+ar a0=0x40
+s 0
+aezi
+aezv fpsr 0
+aezs
+ar fpsr
+wx f23c440080000000 @ 0
+wx f23c443800000000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fpsr
+wx f23c4400ff800000 @ 0
+wx f23c4438ff800000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fpsr
+wx 7f800001 @ 0x40
+wx f210443a @ 0
+ar a0=0x40
+s 0
+aezi
+aezv fpsr 0x00ab0000
+aezs
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fpsr = 0x01004080
+fpsr = 0x0
+fpsr = 0x01000000
+fpsr = 0x0
+fpsr = 0x01004080
+fpsr = 0x0
+fpsr = 0x01000000
+fpsr = 0x0
+fpsr = 0x04000000
+fpsr = 0x0
+fpsr = 0x04000000
+fpsr = 0x0
+fpsr = 0x04000000
+fpsr = 0x0
+fpsr = 0x04000000
+fpsr = 0x0
+fpsr = 0x0c000000
+fpsr = 0x0
+fpsr = 0x0c000000
+fpsr = 0x0
+fpsr = 0x0c000000
+fpsr = 0xab0000
+fpsr = 0x01ab4080
+EOF
+RUN
+
 NAME=m68k aez dbra taken
 FILE=malloc://128
 ARGS=-a m68k -b 32 -E big
@@ -758,6 +3092,2422 @@ EOF
 EXPECT=<<EOF
 a0 = 0x40
 [{"type":"pc_write","old":"0x0","new":"0x4"},{"type":"mem_write","address":"0x40","old":"0x0","new":"0x1"},{"type":"mem_write","address":"0x41","old":"0x11","new":"0xff"},{"type":"mem_write","address":"0x42","old":"0x22","new":"0xff"},{"type":"mem_write","address":"0x43","old":"0x33","new":"0xff"},{"type":"mem_write","address":"0x44","old":"0x44","new":"0xfe"},{"type":"var_write","name":"sr","old":"0x0","new":"0x0"}]
+EOF
+RUN
+
+NAME=m68k aez CMP2 follows M68000PRM Z and C
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 00d00000 @ 0
+wx 0114 @ 0x40
+s 0
+aezi
+aezv a0 0x40
+aezv d0 5
+aezs
+ar sr
+aezi
+aezv a0 0x40
+aezv d0 1
+aezs
+ar sr
+aezi
+aezv a0 0x40
+aezv d0 0
+aezs
+ar sr
+EOF
+EXPECT=<<EOF
+a0 = 0x40
+d0 = 0x5
+sr = 0x0000
+a0 = 0x40
+d0 = 0x1
+sr = 0x0004
+a0 = 0x40
+d0 = 0x0
+sr = 0x0001
+EOF
+RUN
+
+NAME=m68k aez CHK2 sets C when out of bounds
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 00d00800 @ 0
+wx 0114 @ 0x40
+s 0
+aezi
+aezv a0 0x40
+aezv d0 5
+aezs
+ar pc
+ar sr
+aezi
+aezv a0 0x40
+aezv d0 0
+aezs
+ar sr
+EOF
+EXPECT=<<EOF
+a0 = 0x40
+d0 = 0x5
+pc = 0x00000004
+sr = 0x0000
+a0 = 0x40
+d0 = 0x0
+sr = 0x0001
+EOF
+RUN
+
+NAME=m68k aez FBGT sets BSUN when NAN is set
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f2920000 @ 0
+aezi
+aezv fpsr 0x01000000
+aezs
+ar fpsr
+ar pc
+wx f2920000 @ 0
+s 0
+aezi
+aezv fpsr 0
+aezs
+ar fpsr
+ar pc
+wx f0820000 @ 0
+s 0
+aezi
+aezv fpsr 0x01000000
+aezs
+ar fpsr
+wx f2810000 @ 0
+s 0
+aezi
+aezv fpsr 0x01000000
+aezs
+ar fpsr
+wx f2910000 @ 0
+s 0
+aezi
+aezv fpsr 0x01000000
+aezs
+ar fpsr
+wx f2400012 @ 0
+s 0
+aezi
+aezv fpsr 0x01000000
+aezv d0 0x5
+aezs
+ar fpsr
+ar d0
+EOF
+EXPECT=<<EOF
+fpsr = 0x1000000
+fpsr = 0x01008080
+pc = 0x00000004
+fpsr = 0x0
+fpsr = 0x00000000
+pc = 0x00000002
+fpsr = 0x1000000
+fpsr = 0x01000000
+fpsr = 0x1000000
+fpsr = 0x01000000
+fpsr = 0x1000000
+fpsr = 0x01008080
+fpsr = 0x1000000
+d0 = 0x5
+fpsr = 0x01008080
+d0 = 0x00000000
+EOF
+RUN
+
+NAME=m68k aez FDBF decrements and branches
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f24800000010 @ 0
+s 0
+aezi
+aezv d0 2
+aezs
+ar d0
+ar pc
+aezi
+aezv d0 0
+aezs
+ar d0
+ar pc
+EOF
+EXPECT=<<EOF
+d0 = 0x2
+d0 = 0x00000001
+pc = 0x00000014
+d0 = 0x0
+d0 = 0x0000ffff
+pc = 0x00000006
+EOF
+RUN
+
+NAME=m68k aez FDBF encoding displacement is relative to the displacement word
+FILE=malloc://256
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f2480000007c @ 0
+s 0
+aezi
+aezv d0 2
+aezs
+ar d0
+ar pc
+EOF
+EXPECT=<<EOF
+d0 = 0x2
+d0 = 0x00000001
+pc = 0x00000080
+EOF
+RUN
+
+NAME=m68k aez FDBEQ falls through when Z is set
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f24800010010 @ 0
+s 0
+aezi
+aezv d0 2
+aezv fpsr 0x4000000
+aezs
+ar d0
+ar pc
+aezi
+aezv d0 2
+aezv fpsr 0
+aezs
+ar d0
+ar pc
+EOF
+EXPECT=<<EOF
+d0 = 0x2
+fpsr = 0x4000000
+d0 = 0x00000002
+pc = 0x00000006
+d0 = 0x2
+fpsr = 0x0
+d0 = 0x00000001
+pc = 0x00000014
+EOF
+RUN
+
+NAME=m68k aez CMP2.W uses word bounds
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 02d00000 @ 0
+wx 00010014 @ 0x40
+s 0
+aezi
+aezv a0 0x40
+aezv d0 5
+aezs
+ar sr
+aezi
+aezv a0 0x40
+aezv d0 1
+aezs
+ar sr
+aezi
+aezv a0 0x40
+aezv d0 0
+aezs
+ar sr
+EOF
+EXPECT=<<EOF
+a0 = 0x40
+d0 = 0x5
+sr = 0x0000
+a0 = 0x40
+d0 = 0x1
+sr = 0x0004
+a0 = 0x40
+d0 = 0x0
+sr = 0x0001
+EOF
+RUN
+
+NAME=m68k aez CMP2.B displacement EA
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 00e800000020 @ 0
+wx 0114 @ 0x40
+s 0
+aezi
+aezv a0 0x20
+aezv d0 5
+aezs
+ar sr
+aezi
+aezv a0 0x20
+aezv d0 0
+aezs
+ar sr
+EOF
+EXPECT=<<EOF
+a0 = 0x20
+d0 = 0x5
+sr = 0x0000
+a0 = 0x20
+d0 = 0x0
+sr = 0x0001
+EOF
+RUN
+
+NAME=m68k aez MOVES.B transfers in supervisor mode
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68010
+wx 0e100000 @ 0
+wx 5a @ 0x40
+s 0
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezv d0 0xffffff00
+aezs
+ar d0
+ar pc
+EOF
+EXPECT=<<EOF
+sr = 0x2000
+a0 = 0x40
+d0 = 0xffffff00
+d0 = 0xffffff5a
+pc = 0x00000004
+EOF
+RUN
+
+NAME=m68k aez MOVES.B is privileged
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68010
+wx 0e100000 @ 0
+wx 5a @ 0x40
+s 0
+aezi
+aezv sr 0
+aezv a0 0x40
+aezv d0 0
+aezs
+ar d0
+ar pc
+EOF
+EXPECT=<<EOF
+sr = 0x0
+a0 = 0x40
+d0 = 0x0
+d0 = 0x00000000
+pc = 0x00000004
+EOF
+RUN
+
+NAME=m68k aez MOVES.B to An sign-extends
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68010
+wx 0e109000 @ 0
+wx 9a @ 0x40
+s 0
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezv a1 0
+aezs
+ar a1
+EOF
+EXPECT=<<EOF
+sr = 0x2000
+a0 = 0x40
+a1 = 0x0
+a1 = 0xffffff9a
+EOF
+RUN
+
+NAME=m68k aez MOVEC SFC to D0
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68010
+wx 4e7a0000 @ 0
+s 0
+aezi
+aezv sr 0x2000
+aezv sfc 5
+aezv d0 0
+aezs
+ar d0
+EOF
+EXPECT=<<EOF
+sr = 0x2000
+sfc = 0x5
+d0 = 0x0
+d0 = 0x00000005
+EOF
+RUN
+
+NAME=m68k aez MOVEC D0 to SFC keeps 3 bits
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68010
+wx 4e7b0000 @ 0
+s 0
+aezi
+aezv sr 0x2000
+aezv d0 0xffffffff
+aezv sfc 0
+aezs
+ar sfc
+EOF
+EXPECT=<<EOF
+sr = 0x2000
+d0 = 0xffffffff
+sfc = 0x0
+sfc = 0x00000007
+EOF
+RUN
+
+NAME=m68k aez MOVEC CACR is illegal on 68010
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68010
+wx 4e7a1002 @ 0
+s 0
+aezi
+aezv sr 0x2000
+aezv d1 0x11111111
+aezs
+ar d1
+ar pc
+EOF
+EXPECT=<<EOF
+sr = 0x2000
+d1 = 0x11111111
+d1 = 0x11111111
+pc = 0x00000004
+EOF
+RUN
+
+NAME=m68k aez FSAVE idle frame on 68040
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68040
+wx f320 @ 0
+wx 00000000 @ 0x3c
+s 0
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezs
+ar a0
+pxwj 4 @ 0x3c
+EOF
+EXPECT=<<EOF
+sr = 0x2000
+a0 = 0x40
+a0 = 0x0000003c
+[1090519040]
+EOF
+RUN
+
+NAME=m68k aez FSAVE is privileged
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68040
+wx f320 @ 0
+wx 00000000 @ 0x3c
+s 0
+aezi
+aezv sr 0
+aezv a0 0x40
+aezs
+ar a0
+pxwj 4 @ 0x3c
+EOF
+EXPECT=<<EOF
+sr = 0x0
+a0 = 0x40
+a0 = 0x00000040
+[0]
+EOF
+RUN
+
+NAME=m68k aez FSAVE idle frame on 68020
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f320 @ 0
+wx 00000000 @ 0x24
+s 0
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezs
+ar a0
+pxwj 4 @ 0x24
+EOF
+EXPECT=<<EOF
+sr = 0x2000
+a0 = 0x40
+a0 = 0x00000024
+[521666560]
+EOF
+RUN
+
+NAME=m68k aez FRESTORE idle postincrement on 68040
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68040
+wx f358 @ 0
+wx 41000000 @ 0x40
+s 0
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezs
+ar a0
+EOF
+EXPECT=<<EOF
+sr = 0x2000
+a0 = 0x40
+a0 = 0x00000044
+EOF
+RUN
+
+NAME=m68k aez FRESTORE null resets the programmer model
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68040
+wx f358 @ 0
+wx 00000000 @ 0x40
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezv fp0 1
+aezv fp7 2
+aezv fpcr 0xff00
+aezv fpsr 0x12345678
+aezv fpiar 0xdeadbeef
+aezs
+ar a0
+ar fp0
+ar fp7
+ar fpcr
+ar fpsr
+ar fpiar
+wx 41000000 @ 0x40
+s 0
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezv fp0 1
+aezv fp7 2
+aezv fpcr 0xff00
+aezv fpsr 0x12345678
+aezv fpiar 0xdeadbeef
+aezs
+ar a0
+ar fp0
+ar fp7
+ar fpcr
+ar fpsr
+ar fpiar
+wx 00000001 @ 0x40
+s 0
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezv fp0 1
+aezv fpcr 0xff00
+aezv fpiar 0xdeadbeef
+aezs
+ar a0
+ar fp0
+ar fpcr
+ar fpiar
+wx 00ff0000 @ 0x40
+s 0
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezv fp0 1
+aezv fpcr 0xff00
+aezv fpiar 0xdeadbeef
+aezs
+ar a0
+ar fp0
+ar fpcr
+ar fpiar
+wx 01000000 @ 0x40
+s 0
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezv fp0 1
+aezv fpcr 0xff00
+aezv fpiar 0xdeadbeef
+aezs
+ar a0
+ar fp0
+ar fpcr
+ar fpiar
+EOF
+EXPECT=<<EOF
+sr = 0x2000
+a0 = 0x40
+fp0 = 0x1
+fp7 = 0x2
+fpcr = 0xff00
+fpsr = 0x12345678
+fpiar = 0xdeadbeef
+a0 = 0x00000044
+fp0 = 0x7fffffffffffffffffff
+fp7 = 0x7fffffffffffffffffff
+fpcr = 0x00000000
+fpsr = 0x00000000
+fpiar = 0x00000000
+sr = 0x2000
+a0 = 0x40
+fp0 = 0x1
+fp7 = 0x2
+fpcr = 0xff00
+fpsr = 0x12345678
+fpiar = 0xdeadbeef
+a0 = 0x00000044
+fp0 = 0x00000000000000000001
+fp7 = 0x00000000000000000002
+fpcr = 0x0000ff00
+fpsr = 0x12345678
+fpiar = 0xdeadbeef
+sr = 0x2000
+a0 = 0x40
+fp0 = 0x1
+fpcr = 0xff00
+fpiar = 0xdeadbeef
+a0 = 0x00000044
+fp0 = 0x7fffffffffffffffffff
+fpcr = 0x00000000
+fpiar = 0x00000000
+sr = 0x2000
+a0 = 0x40
+fp0 = 0x1
+fpcr = 0xff00
+fpiar = 0xdeadbeef
+a0 = 0x00000044
+fp0 = 0x7fffffffffffffffffff
+fpcr = 0x00000000
+fpiar = 0x00000000
+sr = 0x2000
+a0 = 0x40
+fp0 = 0x1
+fpcr = 0xff00
+fpiar = 0xdeadbeef
+a0 = 0x00000040
+fp0 = 0x00000000000000000001
+fpcr = 0x0000ff00
+fpiar = 0xdeadbeef
+EOF
+RUN
+
+NAME=m68k aez FRESTORE validates CPU-specific state frame sizes
+FILE=malloc://512
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+wx f358 @ 0
+e asm.cpu=68040
+wx 41600000 @ 0x40
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezs
+ar a0
+wx 41300000 @ 0x40
+s 0
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezs
+ar a0
+wx 42600000 @ 0x40
+s 0
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezs
+ar a0
+e asm.cpu=68020
+wx 1fb40000 @ 0x40
+s 0
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezs
+ar a0
+wx 1f180000 @ 0x40
+s 0
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezs
+ar a0
+wx 1fd40000 @ 0x40
+s 0
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezs
+ar a0
+e asm.cpu=68030
+wx 1fd40000 @ 0x40
+s 0
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezs
+ar a0
+wx 1f380000 @ 0x40
+s 0
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezs
+ar a0
+wx 1fb40000 @ 0x40
+s 0
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezs
+ar a0
+EOF
+EXPECT=<<EOF
+sr = 0x2000
+a0 = 0x40
+a0 = 0x000000a4
+sr = 0x2000
+a0 = 0x40
+a0 = 0x00000074
+sr = 0x2000
+a0 = 0x40
+a0 = 0x00000040
+sr = 0x2000
+a0 = 0x40
+a0 = 0x000000f8
+sr = 0x2000
+a0 = 0x40
+a0 = 0x0000005c
+sr = 0x2000
+a0 = 0x40
+a0 = 0x00000040
+sr = 0x2000
+a0 = 0x40
+a0 = 0x00000118
+sr = 0x2000
+a0 = 0x40
+a0 = 0x0000007c
+sr = 0x2000
+a0 = 0x40
+a0 = 0x00000040
+EOF
+RUN
+
+NAME=m68k aez 68060 FSAVE and FRESTORE use three-longword frames
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68060
+wx f320 @ 0
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezs
+ar a0
+pxwj 12 @ 0x34
+wx f358 @ 0
+wx 000060000000000000000000 @ 0x40
+s 0
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezv fp0 1
+aezv fpcr 0xff00
+aezs
+ar a0
+ar fp0
+ar fpcr
+wx 000000000000000000000000 @ 0x40
+s 0
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezv fp0 1
+aezv fp7 2
+aezv fpcr 0xff00
+aezv fpsr 0xdeadbeef
+aezv fpiar 0xcafebabe
+aezs
+ar a0
+ar fp0
+ar fp7
+ar fpcr
+ar fpsr
+ar fpiar
+wx 0000e0050000000000000000 @ 0x40
+s 0
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezv fp0 1
+aezv fpcr 0xff00
+aezs
+ar a0
+ar fp0
+ar fpcr
+wx 0000e5000000000000000000 @ 0x40
+s 0
+aezi
+aezv sr 0x2000
+aezv a0 0x40
+aezv fp0 1
+aezv fpcr 0xff00
+aezs
+ar a0
+ar fp0
+ar fpcr
+EOF
+EXPECT=<<EOF
+sr = 0x2000
+a0 = 0x40
+a0 = 0x00000034
+[24576,0,0]
+sr = 0x2000
+a0 = 0x40
+fp0 = 0x1
+fpcr = 0xff00
+a0 = 0x0000004c
+fp0 = 0x00000000000000000001
+fpcr = 0x0000ff00
+sr = 0x2000
+a0 = 0x40
+fp0 = 0x1
+fp7 = 0x2
+fpcr = 0xff00
+fpsr = 0xdeadbeef
+fpiar = 0xcafebabe
+a0 = 0x0000004c
+fp0 = 0x7fffffffffffffffffff
+fp7 = 0x7fffffffffffffffffff
+fpcr = 0x00000000
+fpsr = 0x00000000
+fpiar = 0x00000000
+sr = 0x2000
+a0 = 0x40
+fp0 = 0x1
+fpcr = 0xff00
+a0 = 0x0000004c
+fp0 = 0x00000000000000000001
+fpcr = 0x0000ff00
+sr = 0x2000
+a0 = 0x40
+fp0 = 0x1
+fpcr = 0xff00
+a0 = 0x00000040
+fp0 = 0x00000000000000000001
+fpcr = 0x0000ff00
+EOF
+RUN
+
+NAME=m68k aez MAC.W default S/U is signed integer
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cfv4e
+wx a0010000 @ 0
+s 0
+aezi
+aezv d0 2
+aezv d1 3
+aezv acc0 0
+aezv macsr 0
+aezs
+ar acc0
+ar macsr
+EOF
+EXPECT=<<EOF
+d0 = 0x2
+d1 = 0x3
+acc0 = 0x0
+macsr = 0x0
+acc0 = 0x00000006
+macsr = 0x00000000
+EOF
+RUN
+
+NAME=m68k aez MAC.W respects MACSR signed vs unsigned
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cfv4e
+wx a0010000 @ 0
+s 0
+aezi
+aezv d0 2
+aezv d1 0x8000
+aezv acc0 0
+aezv macsr 0
+aezs
+ar acc0
+ar macsr
+aezi
+aezv d0 2
+aezv d1 0x8000
+aezv acc0 0
+aezv macsr 0x40
+aezs
+ar acc0
+ar macsr
+EOF
+EXPECT=<<EOF
+d0 = 0x2
+d1 = 0x8000
+acc0 = 0x0
+macsr = 0x0
+acc0 = 0xffff0000
+macsr = 0x00000008
+d0 = 0x2
+d1 = 0x8000
+acc0 = 0x0
+macsr = 0x40
+acc0 = 0x00010000
+macsr = 0x00000040
+EOF
+RUN
+
+NAME=m68k aez PACK packs two BCD digits
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 81400000 @ 0
+s 0
+aezi
+aezv d0 0x0705
+aezs
+ar d0
+aezi
+wx 81400001 @ 0
+aezv d0 0x0705
+aezs
+ar d0
+EOF
+EXPECT=<<EOF
+d0 = 0x705
+d0 = 0x00000775
+d0 = 0x705
+d0 = 0x00000776
+EOF
+RUN
+
+NAME=m68k aez UNPK expands one BCD byte
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 81800000 @ 0
+s 0
+aezi
+aezv d0 0x75
+aezs
+ar d0
+EOF
+EXPECT=<<EOF
+d0 = 0x75
+d0 = 0x00000705
+EOF
+RUN
+
+NAME=m68k aez MAC load uses MASK and a longword
+FILE=malloc://512
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cfv4e
+wx a0100800 @ 0
+wx 11223344 @ 0x100
+s 0
+aezi
+aezv d0 1
+aezv a0 0x140
+aezv acc1 0
+aezv macsr 0
+aezv mask 0xffffff00
+aezs
+ar d0
+ar acc1
+EOF
+EXPECT=<<EOF
+d0 = 0x1
+a0 = 0x140
+acc1 = 0x0
+macsr = 0x0
+mask = 0xffffff00
+d0 = 0x11223344
+acc1 = 0x00000001
+EOF
+RUN
+
+NAME=m68k aez FSCALE.L adds the source integer to the destination exponent
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c44003f800000 @ 0
+wx f23c402600000003 @ 8
+s 0
+aezi
+aezs 2
+ar fp0
+wx f23c440041000000 @ 0
+wx f23c4026ffffffff @ 8
+aezi
+aezs 2
+ar fp0
+EOF
+EXPECT=<<EOF
+fp0 = 0x40028000000000000000
+fp0 = 0x40018000000000000000
+EOF
+RUN
+
+NAME=m68k aez FSCALE source infinity yields NAN and OPERR
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c44003f800000 @ 0
+wx f23c44267f800000 @ 8
+s 0
+aezi
+aezs 2
+ar fp0
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c4426ff800000 @ 8
+aezi
+aezs 2
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01002080
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01002080
+EOF
+RUN
+
+NAME=m68k aez FSCALE sets SNAN
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx 7f800001 @ 0x40
+wx 7fc00000 @ 0x44
+ar a0=0x40
+wx f23c44003f800000 @ 0
+wx f2104426 @ 8
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+ar a0=0x44
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+ar a0=0x40
+s 0
+aezi
+aezs
+aezv fpsr 0x00ab0000
+aezs
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01004080
+fpsr = 0x0
+fp0 = 0x7fffc000000000000001
+fpsr = 0x01000000
+fpsr = 0xab0000
+fpsr = 0x01ab4080
+EOF
+RUN
+
+NAME=m68k aez FSCALE both NAN returns dest
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx ffc00000 @ 0x50
+wx 7fc00000 @ 0x40
+ar a0=0x40
+wx f23844000050 @ 0
+wx f2104426 @ 6
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fp0 = 0xffffc000000000000001
+fpsr = 0x09000000
+EOF
+RUN
+
+NAME=m68k aez FSCALE dest NAN and src SNAN
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx ffc00000 @ 0x50
+wx 7f800001 @ 0x40
+ar a0=0x40
+wx f23844000050 @ 0
+wx f2104426 @ 6
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fp0 = 0xffffc000000000000001
+fpsr = 0x09004080
+EOF
+RUN
+
+NAME=m68k aez FSCALE sets OVFL and UNFL
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c44003f800000 @ 0
+wx f23c402600004000 @ 8
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c4026ffffc001 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c402600000001 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c402600004000 @ 8
+s 0
+aezi
+aezs
+aezv fpsr 0x00ab0000
+aezs
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c442040400000 @ 8
+wx f23c402600000000 @ 0x10
+s 0
+aezi
+aezv fpcr 0
+aezs 2
+aezv fpcr 0x40
+aezv fpsr 0
+aezs
+ar fp0
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c402600000080 @ 8
+s 0
+aezi
+aezv fpcr 0x40
+aezv fpsr 0
+aezs 2
+ar fp0
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c402600000080 @ 8
+s 0
+aezi
+aezv fpcr 0x50
+aezv fpsr 0
+aezs 2
+ar fp0
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c4026ffffff81 @ 8
+s 0
+aezi
+aezv fpcr 0x40
+aezv fpsr 0
+aezs 2
+ar fp0
+ar fpsr
+wx f23c44003f800000 @ 0
+wx f23c4026ffffff82 @ 8
+s 0
+aezi
+aezv fpcr 0x40
+aezv fpsr 0
+aezs 2
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpsr = 0x0
+fp0 = 0x7fff8000000000000000
+fpsr = 0x02001048
+fpsr = 0x0
+fp0 = 0x00000000000000000000
+fpsr = 0x04000800
+fpsr = 0x0
+fp0 = 0x40008000000000000000
+fpsr = 0x00000000
+fpsr = 0xab0000
+fpsr = 0x02ab1048
+fpcr = 0x0
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x3ffdaaaaab0000000000
+fpsr = 0x00000000
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x7fff8000000000000000
+fpsr = 0x02001048
+fpcr = 0x50
+fpsr = 0x0
+fp0 = 0x407effffff0000000000
+fpsr = 0x00001048
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x3f808000000000000000
+fpsr = 0x00000800
+fpcr = 0x40
+fpsr = 0x0
+fp0 = 0x3f818000000000000000
+fpsr = 0x00000000
+EOF
+RUN
+
+NAME=m68k aez TBLU.W interpolates two table entries
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cpu32
+wx f8013042 @ 0
+s 0
+aezi
+aezv d1 0x64
+aezv d2 0xc8
+aezv d3 0x80
+aezs
+ar d3
+EOF
+EXPECT=<<EOF
+d1 = 0x64
+d2 = 0xc8
+d3 = 0x80
+d3 = 0x00000096
+EOF
+RUN
+
+NAME=m68k aez TBLUN.W returns the unrounded interpolated value
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cpu32
+wx f8013442 @ 0
+s 0
+aezi
+aezv d1 0x64
+aezv d2 0xc8
+aezv d3 0x80
+aezs
+ar d3
+EOF
+EXPECT=<<EOF
+d1 = 0x64
+d2 = 0xc8
+d3 = 0x80
+d3 = 0x00009600
+EOF
+RUN
+
+NAME=m68k aez non-EMAC MAC overflow sets only V
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=coldfire
+wx a0010000 @ 0
+s 0
+aezi
+aezv d0 1
+aezv d1 1
+aezv acc0 0x7fffffff
+aezv macsr 0
+aezs
+ar acc0
+ar macsr
+EOF
+EXPECT=<<EOF
+d0 = 0x1
+d1 = 0x1
+acc0 = 0x7fffffff
+macsr = 0x0
+acc0 = 0x80000000
+macsr = 0x0000000a
+EOF
+RUN
+
+NAME=m68k aez EMAC overflow sets V and EV
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cfv4e
+wx a0010000 @ 0
+s 0
+aezi
+aezv d0 1
+aezv d1 1
+aezv acc0 0x7fffffff
+aezv macsr 0
+aezs
+ar acc0
+ar macsr
+EOF
+EXPECT=<<EOF
+d0 = 0x1
+d1 = 0x1
+acc0 = 0x7fffffff
+macsr = 0x0
+acc0 = 0x80000000
+macsr = 0x0000000b
+EOF
+RUN
+
+NAME=m68k aez MOVCLR copies the accumulator and clears it
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cfv4e
+wx a1c0 @ 0
+s 0
+aezi
+aezv acc0 0x11223344
+aezv d0 0
+aezs
+ar d0
+ar acc0
+wx a1c8 @ 0
+aezi
+aezv acc0 0x55667788
+aezv a0 0
+aezs
+ar a0
+ar acc0
+EOF
+EXPECT=<<EOF
+acc0 = 0x11223344
+d0 = 0x0
+d0 = 0x11223344
+acc0 = 0x00000000
+acc0 = 0x55667788
+a0 = 0x0
+a0 = 0x55667788
+acc0 = 0x00000000
+EOF
+RUN
+
+NAME=m68k aez MOVCLR clears PAVx and ACCext
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cfv4e
+wx a1c0 @ 0
+s 0
+aezi
+aezv acc0 0x11
+aezv d0 0
+aezv macsr 0x100
+aezv accext01 0xaabbccdd
+aezs
+ar d0
+ar acc0
+ar macsr
+ar accext01
+EOF
+EXPECT=<<EOF
+acc0 = 0x11
+d0 = 0x0
+macsr = 0x100
+accext01 = 0xaabbccdd
+d0 = 0x00000011
+acc0 = 0x00000000
+macsr = 0x00000000
+accext01 = 0xaabb0000
+EOF
+RUN
+
+NAME=m68k aez MOVCLR OMC uses 48-bit ACC including ACCext
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cfv4e
+wx a1c0 @ 0
+s 0
+aezi
+aezv acc0 0x12345678
+aezv d0 0
+aezv macsr 0x82
+aezv accext01 0
+aezs
+ar d0
+aezi
+aezv acc0 0x12345678
+aezv d0 0
+aezv macsr 0x82
+aezv accext01 1
+aezs
+ar d0
+aezi
+aezv acc0 0x12345678
+aezv d0 0
+aezv macsr 0x82
+aezv accext01 0x8000
+aezs
+ar d0
+aezi
+aezv acc0 0x80000000
+aezv d0 0
+aezv macsr 0x82
+aezv accext01 0xffff
+aezs
+ar d0
+aezi
+aezv acc0 0x12345678
+aezv d0 0
+aezv macsr 0xc2
+aezv accext01 0
+aezs
+ar d0
+aezi
+aezv acc0 0x12345678
+aezv d0 0
+aezv macsr 0xc2
+aezv accext01 1
+aezs
+ar d0
+EOF
+EXPECT=<<EOF
+acc0 = 0x12345678
+d0 = 0x0
+macsr = 0x82
+accext01 = 0x0
+d0 = 0x12345678
+acc0 = 0x12345678
+d0 = 0x0
+macsr = 0x82
+accext01 = 0x1
+d0 = 0x7fffffff
+acc0 = 0x12345678
+d0 = 0x0
+macsr = 0x82
+accext01 = 0x8000
+d0 = 0x80000000
+acc0 = 0x80000000
+d0 = 0x0
+macsr = 0x82
+accext01 = 0xffff
+d0 = 0x80000000
+acc0 = 0x12345678
+d0 = 0x0
+macsr = 0xc2
+accext01 = 0x0
+d0 = 0x12345678
+acc0 = 0x12345678
+d0 = 0x0
+macsr = 0xc2
+accext01 = 0x1
+d0 = 0xffffffff
+EOF
+RUN
+
+NAME=m68k aez MOVCLR fractional store truncates ACC[39:8]
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cfv4e
+wx a1c0 @ 0
+s 0
+aezi
+aezv acc0 0x12345678
+aezv d0 0
+aezv macsr 0x20
+aezv accext01 0xab
+aezs
+ar d0
+ar acc0
+ar accext01
+ar macsr
+EOF
+EXPECT=<<EOF
+acc0 = 0x12345678
+d0 = 0x0
+macsr = 0x20
+accext01 = 0xab
+d0 = 0x12345678
+acc0 = 0x00000000
+accext01 = 0x00000000
+macsr = 0x00000020
+EOF
+RUN
+
+NAME=m68k aez MOVCLR fractional 32-bit round-to-nearest-even
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cfv4e
+wx a1c0 @ 0
+s 0
+aezi
+aezv acc0 0x12345678
+aezv d0 0
+aezv macsr 0x30
+aezv accext01 0x80
+aezs
+ar d0
+aezi
+aezv acc0 0x12345679
+aezv d0 0
+aezv macsr 0x30
+aezv accext01 0x80
+aezs
+ar d0
+aezi
+aezv acc0 0x12345678
+aezv d0 0
+aezv macsr 0x30
+aezv accext01 0x81
+aezs
+ar d0
+aezi
+aezv acc0 0x12345678
+aezv d0 0
+aezv macsr 0x30
+aezv accext01 0x7f
+aezs
+ar d0
+EOF
+EXPECT=<<EOF
+acc0 = 0x12345678
+d0 = 0x0
+macsr = 0x30
+accext01 = 0x80
+d0 = 0x12345678
+acc0 = 0x12345679
+d0 = 0x0
+macsr = 0x30
+accext01 = 0x80
+d0 = 0x1234567a
+acc0 = 0x12345678
+d0 = 0x0
+macsr = 0x30
+accext01 = 0x81
+d0 = 0x12345679
+acc0 = 0x12345678
+d0 = 0x0
+macsr = 0x30
+accext01 = 0x7f
+d0 = 0x12345678
+EOF
+RUN
+
+NAME=m68k aez MOVCLR fractional 16-bit round
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cfv4e
+wx a1c0 @ 0
+s 0
+aezi
+aezv acc0 0x12345678
+aezv d0 0
+aezv macsr 0x60
+aezv accext01 0
+aezs
+ar d0
+aezi
+aezv acc0 0x1234c000
+aezv d0 0
+aezv macsr 0x60
+aezv accext01 0
+aezs
+ar d0
+aezi
+aezv acc0 0x12348000
+aezv d0 0
+aezv macsr 0x60
+aezv accext01 0
+aezs
+ar d0
+aezi
+aezv acc0 0x12358000
+aezv d0 0
+aezv macsr 0x60
+aezv accext01 0
+aezs
+ar d0
+EOF
+EXPECT=<<EOF
+acc0 = 0x12345678
+d0 = 0x0
+macsr = 0x60
+accext01 = 0x0
+d0 = 0x00001234
+acc0 = 0x1234c000
+d0 = 0x0
+macsr = 0x60
+accext01 = 0x0
+d0 = 0x00001235
+acc0 = 0x12348000
+d0 = 0x0
+macsr = 0x60
+accext01 = 0x0
+d0 = 0x00001234
+acc0 = 0x12358000
+d0 = 0x0
+macsr = 0x60
+accext01 = 0x0
+d0 = 0x00001236
+EOF
+RUN
+
+NAME=m68k aez MOVCLR fractional OMC saturates 32-bit and 16-bit results
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cfv4e
+wx a1c0 @ 0
+s 0
+aezi
+aezv acc0 0x12345678
+aezv d0 0
+aezv macsr 0xa0
+aezv accext01 0
+aezs
+ar d0
+aezi
+aezv acc0 0x12345678
+aezv d0 0
+aezv macsr 0xa0
+aezv accext01 0x8000
+aezs
+ar d0
+aezi
+aezv acc0 0x80000000
+aezv d0 0
+aezv macsr 0xa0
+aezv accext01 0xff00
+aezs
+ar d0
+aezi
+aezv acc0 0
+aezv d0 0
+aezv macsr 0xe0
+aezv accext01 0x8000
+aezs
+ar d0
+EOF
+EXPECT=<<EOF
+acc0 = 0x12345678
+d0 = 0x0
+macsr = 0xa0
+accext01 = 0x0
+d0 = 0x12345678
+acc0 = 0x12345678
+d0 = 0x0
+macsr = 0xa0
+accext01 = 0x8000
+d0 = 0x80000000
+acc0 = 0x80000000
+d0 = 0x0
+macsr = 0xa0
+accext01 = 0xff00
+d0 = 0x80000000
+acc0 = 0x0
+d0 = 0x0
+macsr = 0xe0
+accext01 = 0x8000
+d0 = 0x00008000
+EOF
+RUN
+
+NAME=m68k aez MOVE from ACC uses the store path and does not clear
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cfv4e
+wx a180 @ 0
+s 0
+aezi
+aezv acc0 0x12345678
+aezv d0 0
+aezv macsr 0
+aezv accext01 0
+aezs
+ar d0
+ar acc0
+ar accext01
+ar macsr
+aezi
+aezv acc0 0x12345678
+aezv d0 0
+aezv macsr 0x82
+aezv accext01 1
+aezs
+ar d0
+ar acc0
+ar accext01
+ar macsr
+aezi
+aezv acc0 0x12345678
+aezv d0 0
+aezv macsr 0x20
+aezv accext01 0xab
+aezs
+ar d0
+ar acc0
+EOF
+EXPECT=<<EOF
+acc0 = 0x12345678
+d0 = 0x0
+macsr = 0x0
+accext01 = 0x0
+d0 = 0x12345678
+acc0 = 0x12345678
+accext01 = 0x00000000
+macsr = 0x00000000
+acc0 = 0x12345678
+d0 = 0x0
+macsr = 0x82
+accext01 = 0x1
+d0 = 0x7fffffff
+acc0 = 0x12345678
+accext01 = 0x00000001
+macsr = 0x00000082
+acc0 = 0x12345678
+d0 = 0x0
+macsr = 0x20
+accext01 = 0xab
+d0 = 0x12345678
+acc0 = 0x12345678
+EOF
+RUN
+
+NAME=m68k aez MOVE ACC to ACC copies 48-bit ACC and PAV
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cfv4e
+wx a310 @ 0
+s 0
+aezi
+aezv acc0 0x12345678
+aezv acc1 0
+aezv accext01 0xabcd
+aezv macsr 0
+aezs
+ar acc0
+ar acc1
+ar accext01
+ar macsr
+aezi
+aezv acc0 1
+aezv acc1 0
+aezv accext01 0
+aezv macsr 0x100
+aezs
+ar acc1
+ar macsr
+aezi
+aezv acc0 0
+aezv acc1 0xffffffff
+aezv accext01 0
+aezv macsr 0
+aezs
+ar acc1
+ar macsr
+EOF
+EXPECT=<<EOF
+acc0 = 0x12345678
+acc1 = 0x0
+accext01 = 0xabcd
+macsr = 0x0
+acc0 = 0x12345678
+acc1 = 0x12345678
+accext01 = 0xabcdabcd
+macsr = 0x00000009
+acc0 = 0x1
+acc1 = 0x0
+accext01 = 0x0
+macsr = 0x100
+acc1 = 0x00000001
+macsr = 0x00000302
+acc0 = 0x0
+acc1 = 0xffffffff
+accext01 = 0x0
+macsr = 0x0
+acc1 = 0x00000000
+macsr = 0x00000004
+EOF
+RUN
+
+NAME=m68k aez MOVE to ACC loads extension and clears PAV
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cfv4e
+wx a100 @ 0
+s 0
+aezi
+aezv d0 0x80000000
+aezv acc0 0
+aezv accext01 0
+aezv macsr 0
+aezs
+ar acc0
+ar accext01
+ar macsr
+aezi
+aezv d0 0x12345678
+aezv acc0 0
+aezv accext01 0xffffffff
+aezv macsr 0x40
+aezs
+ar acc0
+ar accext01
+ar macsr
+aezi
+aezv d0 0x80000000
+aezv acc0 0
+aezv accext01 0
+aezv macsr 0x40
+aezs
+ar acc0
+ar accext01
+ar macsr
+aezi
+aezv d0 0x80000000
+aezv acc0 0
+aezv accext01 0
+aezv macsr 0x20
+aezs
+ar acc0
+ar accext01
+ar macsr
+aezi
+aezv d0 0
+aezv acc0 0xffffffff
+aezv accext01 0
+aezv macsr 0x100
+aezs
+ar acc0
+ar accext01
+ar macsr
+wx a13c80000000 @ 0
+s 0
+aezi
+aezv acc0 0
+aezv accext01 0
+aezv macsr 0x40
+aezs
+ar acc0
+ar accext01
+ar macsr
+EOF
+EXPECT=<<EOF
+d0 = 0x80000000
+acc0 = 0x0
+accext01 = 0x0
+macsr = 0x0
+acc0 = 0x80000000
+accext01 = 0x0000ffff
+macsr = 0x00000008
+d0 = 0x12345678
+acc0 = 0x0
+accext01 = 0xffffffff
+macsr = 0x40
+acc0 = 0x12345678
+accext01 = 0xffff0000
+macsr = 0x00000040
+d0 = 0x80000000
+acc0 = 0x0
+accext01 = 0x0
+macsr = 0x40
+acc0 = 0x80000000
+accext01 = 0x00000000
+macsr = 0x00000040
+d0 = 0x80000000
+acc0 = 0x0
+accext01 = 0x0
+macsr = 0x20
+acc0 = 0x80000000
+accext01 = 0x0000ff00
+macsr = 0x00000028
+d0 = 0x0
+acc0 = 0xffffffff
+accext01 = 0x0
+macsr = 0x100
+acc0 = 0x00000000
+accext01 = 0x00000000
+macsr = 0x00000004
+acc0 = 0x0
+accext01 = 0x0
+macsr = 0x40
+acc0 = 0x80000000
+accext01 = 0x00000000
+macsr = 0x00000040
+EOF
+RUN
+
+NAME=m68k aez MOVE ACCext copies 32 bits without MACSR or CCR
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cfv4e
+wx ab00 @ 0
+s 0
+aezi
+aezv d0 0x80000000
+aezv accext01 0
+aezv macsr 0x40
+aezv sr 0x2004
+aezs
+ar accext01
+ar macsr
+ar sr
+aezi
+aezv d0 0xaabbccdd
+aezv accext01 0
+aezv macsr 0x8
+aezv sr 0x2000
+aezs
+ar accext01
+ar macsr
+ar sr
+wx ab80 @ 0
+s 0
+aezi
+aezv accext01 0x80000000
+aezv d0 0
+aezv macsr 0x40
+aezv sr 0x2004
+aezs
+ar d0
+ar macsr
+ar sr
+wx ab3c00000007 @ 0
+s 0
+aezi
+aezv accext01 0xffffffff
+aezv macsr 0x8
+aezv sr 0x2008
+aezs
+ar accext01
+ar macsr
+ar sr
+wx af00 @ 0
+s 0
+aezi
+aezv d0 0xaabbccdd
+aezv accext23 0
+aezv macsr 0
+aezv sr 0x2000
+aezs
+ar accext23
+ar macsr
+ar sr
+wx af80 @ 0
+s 0
+aezi
+aezv accext23 0x11223344
+aezv d0 0
+aezv macsr 0x20
+aezv sr 0x2000
+aezs
+ar d0
+ar macsr
+ar sr
+EOF
+EXPECT=<<EOF
+d0 = 0x80000000
+accext01 = 0x0
+macsr = 0x40
+sr = 0x2004
+accext01 = 0x80000000
+macsr = 0x00000040
+sr = 0x2004
+d0 = 0xaabbccdd
+accext01 = 0x0
+macsr = 0x8
+sr = 0x2000
+accext01 = 0xaabbccdd
+macsr = 0x00000008
+sr = 0x2000
+accext01 = 0x80000000
+d0 = 0x0
+macsr = 0x40
+sr = 0x2004
+d0 = 0x80000000
+macsr = 0x00000040
+sr = 0x2004
+accext01 = 0xffffffff
+macsr = 0x8
+sr = 0x2008
+accext01 = 0x00000007
+macsr = 0x00000008
+sr = 0x2008
+d0 = 0xaabbccdd
+accext23 = 0x0
+macsr = 0x0
+sr = 0x2000
+accext23 = 0xaabbccdd
+macsr = 0x00000000
+sr = 0x2000
+accext23 = 0x11223344
+d0 = 0x0
+macsr = 0x20
+sr = 0x2000
+d0 = 0x11223344
+macsr = 0x00000020
+sr = 0x2000
+EOF
+RUN
+
+NAME=m68k aez MOVE MASK loads the low word and forces high FFFF
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cfv4e
+wx ad00 @ 0
+s 0
+aezi
+aezv d0 0x12345678
+aezv mask 0
+aezv macsr 0x40
+aezv sr 0x2004
+aezs
+ar mask
+ar macsr
+ar sr
+aezi
+aezv d0 0x80000000
+aezv mask 0
+aezv macsr 0x40
+aezv sr 0x2004
+aezs
+ar mask
+ar macsr
+ar sr
+wx ad3c00000007 @ 0
+s 0
+aezi
+aezv mask 0
+aezv macsr 0x8
+aezv sr 0x2008
+aezs
+ar mask
+ar macsr
+ar sr
+wx ad80 @ 0
+s 0
+aezi
+aezv mask 0x1234
+aezv d0 0
+aezv macsr 0x40
+aezv sr 0x2004
+aezs
+ar d0
+ar macsr
+ar sr
+EOF
+EXPECT=<<EOF
+d0 = 0x12345678
+mask = 0x0
+macsr = 0x40
+sr = 0x2004
+mask = 0xffff5678
+macsr = 0x00000040
+sr = 0x2004
+d0 = 0x80000000
+mask = 0x0
+macsr = 0x40
+sr = 0x2004
+mask = 0xffff0000
+macsr = 0x00000040
+sr = 0x2004
+mask = 0x0
+macsr = 0x8
+sr = 0x2008
+mask = 0xffff0007
+macsr = 0x00000008
+sr = 0x2008
+mask = 0x1234
+d0 = 0x0
+macsr = 0x40
+sr = 0x2004
+d0 = 0xffff1234
+macsr = 0x00000040
+sr = 0x2004
+EOF
+RUN
+
+NAME=m68k aez MOVE MACSR keeps implemented bits and does not change CCR
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cfv4e
+wx a980 @ 0
+s 0
+aezi
+aezv macsr 0x12345678
+aezv d0 0
+aezv sr 0x2004
+aezs
+ar d0
+ar macsr
+ar sr
+wx a900 @ 0
+s 0
+aezi
+aezv d0 0xffffffff
+aezv macsr 0
+aezv sr 0x2004
+aezs
+ar macsr
+ar sr
+wx a93c00000007 @ 0
+s 0
+aezi
+aezv macsr 0xfff
+aezv sr 0x2008
+aezs
+ar macsr
+ar sr
+EOF
+EXPECT=<<EOF
+macsr = 0x12345678
+d0 = 0x0
+sr = 0x2004
+d0 = 0x00000678
+macsr = 0x12345678
+sr = 0x2004
+d0 = 0xffffffff
+macsr = 0x0
+sr = 0x2004
+macsr = 0x00000fff
+sr = 0x2004
+macsr = 0xfff
+sr = 0x2008
+macsr = 0x00000007
+sr = 0x2008
+EOF
+RUN
+
+NAME=m68k aez MOVE MACSR on original MAC clears Rx[31:8]
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=coldfire
+wx a980 @ 0
+s 0
+aezi
+aezv macsr 0x12345678
+aezv d0 0
+aezv sr 0x2004
+aezs
+ar d0
+ar macsr
+ar sr
+wx a900 @ 0
+s 0
+aezi
+aezv d0 0xffffffff
+aezv macsr 0
+aezv sr 0x2004
+aezs
+ar macsr
+ar sr
+EOF
+EXPECT=<<EOF
+macsr = 0x12345678
+d0 = 0x0
+sr = 0x2004
+d0 = 0x00000078
+macsr = 0x12345678
+sr = 0x2004
+d0 = 0xffffffff
+macsr = 0x0
+sr = 0x2004
+macsr = 0x000000ff
+sr = 0x2004
+EOF
+RUN
+
+NAME=m68k aez MOVE MACSR to CCR maps N Z V and EMAC EV
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cfv4e
+wx a9c0 @ 0
+s 0
+aezi
+aezv macsr 0x8
+aezv sr 0x2000
+aezs
+ar sr
+ar macsr
+aezi
+aezv macsr 0x1
+aezv sr 0x2000
+aezs
+ar sr
+aezi
+aezv macsr 0x10
+aezv sr 0x2010
+aezs
+ar sr
+e asm.cpu=coldfire
+wx a9c0 @ 0
+s 0
+aezi
+aezv macsr 0x1
+aezv sr 0x2000
+aezs
+ar sr
+aezi
+aezv macsr 0x8
+aezv sr 0x2000
+aezs
+ar sr
+EOF
+EXPECT=<<EOF
+macsr = 0x8
+sr = 0x2000
+sr = 0x2008
+macsr = 0x00000008
+macsr = 0x1
+sr = 0x2000
+sr = 0x2001
+macsr = 0x10
+sr = 0x2010
+sr = 0x2000
+macsr = 0x1
+sr = 0x2000
+sr = 0x2000
+macsr = 0x8
+sr = 0x2000
+sr = 0x2008
+EOF
+RUN
+
+NAME=m68k aez MAAAC adds the product to both accumulators
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cfv5
+wx a0010005 @ 0
+s 0
+aezi
+aezv d0 2
+aezv d1 3
+aezv acc0 10
+aezv acc1 20
+aezv macsr 0
+aezs
+ar acc0
+ar acc1
+ar macsr
+EOF
+EXPECT=<<EOF
+d0 = 0x2
+d1 = 0x3
+acc0 = 0xa
+acc1 = 0x14
+macsr = 0x0
+acc0 = 0x00000010
+acc1 = 0x0000001a
+macsr = 0x00000000
+EOF
+RUN
+
+NAME=m68k aez MASAC adds to ACCx and subtracts from ACCw
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cfv5
+wx a0020007 @ 0
+s 0
+aezi
+aezv d0 2
+aezv d2 3
+aezv acc0 10
+aezv acc1 20
+aezv macsr 0
+aezs
+ar acc0
+ar acc1
+ar macsr
+EOF
+EXPECT=<<EOF
+d0 = 0x2
+d2 = 0x3
+acc0 = 0xa
+acc1 = 0x14
+macsr = 0x0
+acc0 = 0x00000010
+acc1 = 0x0000000e
+macsr = 0x00000000
+EOF
+RUN
+
+NAME=m68k aez MSAAC subtracts from ACCx and adds to ACCw
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cfv5
+wx a6020905 @ 0
+s 0
+aezi
+aezv d2 2
+aezv d3 3
+aezv acc0 10
+aezv acc1 20
+aezv macsr 0
+aezs
+ar acc0
+ar acc1
+ar macsr
+EOF
+EXPECT=<<EOF
+d2 = 0x2
+d3 = 0x3
+acc0 = 0xa
+acc1 = 0x14
+macsr = 0x0
+acc0 = 0x00000004
+acc1 = 0x0000001a
+macsr = 0x00000000
+EOF
+RUN
+
+NAME=m68k aez dual-acc flags follow the secondary accumulator
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=cfv5
+wx a0010005 @ 0
+s 0
+aezi
+aezv d0 1
+aezv d1 1
+aezv acc0 0x7fffffff
+aezv acc1 0
+aezv macsr 0
+aezs
+ar acc0
+ar acc1
+ar macsr
+aezi
+aezv d0 1
+aezv d1 1
+aezv acc0 0
+aezv acc1 0x7fffffff
+aezv macsr 0
+aezs
+ar acc0
+ar acc1
+ar macsr
+EOF
+EXPECT=<<EOF
+d0 = 0x1
+d1 = 0x1
+acc0 = 0x7fffffff
+acc1 = 0x0
+macsr = 0x0
+acc0 = 0x80000000
+acc1 = 0x00000001
+macsr = 0x00000100
+d0 = 0x1
+d1 = 0x1
+acc0 = 0x0
+acc1 = 0x7fffffff
+macsr = 0x0
+acc0 = 0x00000001
+acc1 = 0x80000000
+macsr = 0x0000020b
 EOF
 RUN
 
