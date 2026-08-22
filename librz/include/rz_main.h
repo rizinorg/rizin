@@ -41,6 +41,8 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv);
 RZ_API int rz_main_rz_gg(int argc, const char **argv);
 RZ_API int rz_main_rz_sign(int argc, const char **argv);
 RZ_API int rz_main_rz_ar(int argc, const char **argv);
+RZ_API int rz_main_rz_prologues(int argc, const char **argv);
+
 
 #ifdef __cplusplus
 }

@@ -14,9 +14,6 @@
 #include <rz_prologues.h>
 #include "prologues_generator.inc"
 
-#define DEFAULT_PROLOGUE_LEN      16
-#define DEFAULT_ENTROPY_THRESHOLD 0.8
-
 #define rz_cmd_desc_argv_new_warn(rcmd, parent, cmd, cb, help) \
 	rz_warn_if_fail(rz_cmd_desc_argv_new(rcmd, parent, cmd, cb, help))
 
@@ -66,6 +63,7 @@ typedef struct {
 	ut8 *mask_buf;
 	size_t depth;
 	double entropy_threshold;
+	bool generalize;
 } ProloguesDFSContext;
 
 static void pg_prologue_free(void *e, RZ_UNUSED void *user) {
@@ -190,7 +188,7 @@ static bool isValidSymbol(RzBinSymbol *symbol) {
 	return false;
 }
 
-static bool build_prefix_tree_from_file(RzBinFile *binfile, RzTrie *t, ut64 prologue_len) {
+static bool build_prefix_tree_from_binfile(RzBinFile *binfile, RzTrie *t, ut64 prologue_len) {
 	rz_return_val_if_fail(binfile && t, false);
 
 	RzBinObject *o = binfile->o;
@@ -306,7 +304,7 @@ static bool pg_check_file_arch(const RzBinInfo *info,
  */
 RZ_API bool rz_prologues_trie_feed_binfile(RZ_NONNULL RzTrie *pg_trie, RZ_NONNULL RzBinFile *binfile, ut64 prologue_len) {
 	rz_return_val_if_fail(pg_trie && binfile && prologue_len > 0, false);
-	return build_prefix_tree_from_file(binfile, pg_trie, prologue_len);
+	return build_prefix_tree_from_binfile(binfile, pg_trie, prologue_len);
 }
 
 RZ_IPI RzCmdStatus rz_cmd_prologues_gen_handler(RzCore *core, int argc, const char **argv) {
@@ -357,7 +355,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_handler(RzCore *core, int argc, const ch
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	if (!build_prefix_tree_from_file(binfile, ctx->pg_trie, ctx->trie_prologue_len)) {
+	if (!build_prefix_tree_from_binfile(binfile, ctx->pg_trie, ctx->trie_prologue_len)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_set_s_add(ctx->fpaths, binfile->file);
@@ -367,7 +365,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_handler(RzCore *core, int argc, const ch
 		RZ_LOG_WARN("Clearing existing %" PFMTSZu " prologues in store\n", rz_vector_len(ctx->prologues));
 		rz_vector_clear(ctx->prologues);
 	}
-	RzVector *prologues = rz_prologues_generalize(ctx->pg_trie, ctx->trie_prologue_len, ctx->entropy_threshold);
+	RzVector *prologues = rz_prologues_generalize_and_extract(ctx->pg_trie, ctx->trie_prologue_len, ctx->entropy_threshold);
 	if (!prologues) {
 		RZ_LOG_ERROR("Failed to generalize prologues from trie\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -421,7 +419,7 @@ RZ_API st64 rz_prologues_trie_feed_all_binfiles(RZ_NONNULL RzTrie *pg_trie, RZ_N
 			continue;
 		}
 
-		if (!build_prefix_tree_from_file(curr_file, pg_trie, prologue_len)) {
+		if (!build_prefix_tree_from_binfile(curr_file, pg_trie, prologue_len)) {
 			RZ_LOG_WARN("Failed to build prefix tree for file: %s\n", curr_file->file);
 			continue;
 		}
@@ -450,7 +448,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_all_handler(RzCore *core, int argc, cons
 		RZ_LOG_WARN("Found %" PFMTSZu " existing prologues in store. Clearing...\n", rz_vector_len(ctx->prologues));
 		rz_vector_clear(ctx->prologues);
 	}
-	RzVector *prologues = rz_prologues_generalize(ctx->pg_trie, ctx->trie_prologue_len, ctx->entropy_threshold);
+	RzVector *prologues = rz_prologues_generalize_and_extract(ctx->pg_trie, ctx->trie_prologue_len, ctx->entropy_threshold);
 	if (!prologues) {
 		RZ_LOG_ERROR("Failed to generalize prologues from trie\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -520,7 +518,7 @@ RZ_API st64 rz_prologues_trie_feed_directory(RZ_NONNULL RzTrie *pg_trie, RZ_NONN
 			continue;
 		}
 
-		if (!build_prefix_tree_from_file(bf, pg_trie, prologue_len)) {
+		if (!build_prefix_tree_from_binfile(bf, pg_trie, prologue_len)) {
 			RZ_LOG_WARN("Failed to build prefix tree for file: %s\n", file);
 			rz_bin_file_delete(bin, bf);
 			RZ_FREE(file_path);
@@ -555,7 +553,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_dir_handler(RzCore *core, int argc, cons
 		RZ_LOG_WARN("Clearing existing %" PFMTSZu " prologues in store\n", rz_vector_len(ctx->prologues));
 		rz_vector_clear(ctx->prologues);
 	}
-	RzVector *prologues = rz_prologues_generalize(ctx->pg_trie, ctx->trie_prologue_len, ctx->entropy_threshold);
+	RzVector *prologues = rz_prologues_generalize_and_extract(ctx->pg_trie, ctx->trie_prologue_len, ctx->entropy_threshold);
 	if (!prologues) {
 		RZ_LOG_ERROR("Failed to generalize prologues from trie\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -632,8 +630,8 @@ static void pre_visit_prologues(RzTrieNode *n, void *user) {
 		}
 	}
 
-	// check split entropy and merge subtrees based on it
-	if (rz_pvector_len(&n->children) == 2) {
+	// check split entropy and merge subtrees based on it (skip if not generalizing)
+	if (pgctx->generalize && rz_pvector_len(&n->children) == 2) {
 		double entropy = shanon_entropy_of_split(n);
 		if (entropy > pgctx->entropy_threshold) {
 			// set next depth bit to 0 in mask
@@ -671,7 +669,7 @@ static void post_visit_prologues(RzTrieNode *n, void *user) {
 	pgctx->depth--;
 }
 
-RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_generalize(RzTrie *pg_trie, ut64 prologue_len, double entropy_threshold) {
+RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_generalize_and_extract(RzTrie *pg_trie, ut64 prologue_len, double entropy_threshold) {
 	rz_return_val_if_fail(pg_trie && prologue_len > 0, NULL);
 	rz_return_val_if_fail(entropy_threshold >= 0.0 && entropy_threshold <= 1.0, NULL);
 
@@ -690,13 +688,50 @@ RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_generalize(RzTrie *pg_trie
 	}
 	memset(mask_buf, 0xFF, prologue_len);
 
-	RzVector /*<RzPrologue>*/ *prologues = rz_vector_new(sizeof(RzPrologue), pg_prologue_free, NULL);
+	RzVector *prologues = rz_vector_new(sizeof(RzPrologue), pg_prologue_free, NULL);
 	ProloguesDFSContext pgctx = {
 		.prologues = prologues,
 		.byte_buf = byte_buf,
 		.mask_buf = mask_buf,
 		.depth = 0,
-		.entropy_threshold = entropy_threshold
+		.entropy_threshold = entropy_threshold,
+		.generalize = true
+	};
+
+	rz_trie_dfs(pg_trie->root, pre_visit_prologues, NULL, post_visit_prologues, &pgctx);
+
+	RZ_LOG_INFO("Generated %" PFMTSZu " prologues from trie\n", rz_vector_len(prologues));
+	RZ_FREE(byte_buf);
+	RZ_FREE(mask_buf);
+	return prologues;
+}
+
+RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_extract_raw_from_trie(RzTrie *pg_trie, ut64 prologue_len) {
+	rz_return_val_if_fail(pg_trie && prologue_len > 0, NULL);
+
+	PGTrieNodeData *rd = pg_trie->root->data;
+	if (rd->hit_cnt == 0) {
+		RZ_LOG_ERROR("Prologues trie is empty. Build it first with pg, pga, or pgd.\n");
+		return NULL;
+	}
+
+	ut8 *byte_buf = RZ_NEWS0(ut8, prologue_len);
+	ut8 *mask_buf = RZ_NEWS0(ut8, prologue_len);
+	if (!byte_buf || !mask_buf) {
+		RZ_FREE(byte_buf);
+		RZ_FREE(mask_buf);
+		return NULL;
+	}
+	memset(mask_buf, 0xFF, prologue_len);
+
+	RzVector *prologues = rz_vector_new(sizeof(RzPrologue), pg_prologue_free, NULL);
+	ProloguesDFSContext pgctx = {
+		.prologues = prologues,
+		.byte_buf = byte_buf,
+		.mask_buf = mask_buf,
+		.depth = 0,
+		.entropy_threshold = 0.0,
+		.generalize = false
 	};
 
 	rz_trie_dfs(pg_trie->root, pre_visit_prologues, NULL, post_visit_prologues, &pgctx);
@@ -790,7 +825,7 @@ static void edge_visit_sd(RzTrieNode *parent, RzTrieNode *child, void *user) {
 static void add_session_metadata_to_sd(RzStructuredData *root, const char *arch, int bits, bool big_endian) {
 	rz_return_if_fail(root);
 	rz_structured_data_map_add_string(root, "arch", arch ? arch : "unknown");
-	rz_structured_data_map_add_unsigned(root, "bits", bits, false);
+	rz_structured_data_map_add_signed(root, "bits", bits);
 	rz_structured_data_map_add_string(root, "endian", big_endian ? "big" : "little");
 }
 
@@ -939,9 +974,9 @@ static bool rz_cmd_prologues_gen_init(RzCore *core, RZ_OUT void **user) {
 	}
 	RzConfig *cfg = NULL;
 
-	ctx->trie_prologue_len = DEFAULT_PROLOGUE_LEN;
+	ctx->trie_prologue_len = RZ_PROLOGUE_DEFAULT_LEN;
 	ctx->store_prologue_len = 0;
-	ctx->entropy_threshold = DEFAULT_ENTROPY_THRESHOLD;
+	ctx->entropy_threshold = RZ_PROLOGUE_DEFAULT_ENTROPY_THRESHOLD;
 
 	ctx->fpaths = rz_set_s_new(HT_STR_DUP);
 	if (!ctx->fpaths) {
