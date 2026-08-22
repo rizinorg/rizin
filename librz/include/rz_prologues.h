@@ -6,6 +6,9 @@
 
 #include <rz_core.h>
 
+#define RZ_PROLOGUE_DEFAULT_LEN               16
+#define RZ_PROLOGUE_DEFAULT_ENTROPY_THRESHOLD 0.8
+
 typedef struct rz_prologue_t {
 	ut8 *bytes; ///< prologue's bytes buffer
 	ut8 *mask; ///< prologue's mask buffer, 0 = dont care bit
@@ -19,7 +22,8 @@ RZ_API st64 rz_prologues_trie_feed_all_binfiles(RZ_NONNULL RzTrie *pg_trie, RZ_N
 RZ_API st64 rz_prologues_trie_feed_directory(RZ_NONNULL RzTrie *pg_trie, RZ_NONNULL RzBin *bin, RZ_NONNULL const char *dir_path,
 	ut64 prologue_len, RZ_NULLABLE const char *arch, int bits, bool big_endian, RZ_NULLABLE RzSetS *processed_files);
 
-RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_generalize(RzTrie *pg_trie, ut64 prologue_len, double entropy_threshold);
+RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_generalize_and_extract(RzTrie *pg_trie, ut64 prologue_len, double entropy_threshold);
+RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_extract_raw_from_trie(RzTrie *pg_trie, ut64 prologue_len);
 
 RZ_API RZ_OWN RzStructuredData *rz_prologues_trie_to_structured_data(RZ_NONNULL const RzTrie *pg_trie,
 	ut64 prologue_len, RZ_NULLABLE const char *arch, int bits, bool big_endian, RZ_NULLABLE const RzSetS *files);

@@ -6142,8 +6142,8 @@ RZ_IPI RzCmdStatus rz_load_and_analyze_all_preludes_handler(RzCore *core, int ar
 		info->bits != file_bits ||
 		info->big_endian != file_big_endian) {
 		RZ_LOG_ERROR("Cannot load file '%s': arch mismatch.\n"
-			     "  Session: (%s, %d-bit, %cE)\n"
-			     "  File:    (%s, %d-bit, %cE)\n",
+			     "  Current Bin: (%s, %d-bit, %cE)\n"
+			     "  Loaded File:    (%s, %d-bit, %cE)\n",
 			file_path,
 			info->arch, info->bits, info->big_endian ? 'B' : 'L',
 			file_arch, file_bits, file_big_endian ? 'B' : 'L');
@@ -6233,7 +6233,7 @@ RZ_IPI RzCmdStatus rz_load_and_analyze_all_preludes_handler(RzCore *core, int ar
 		}
 		rz_list_append(prologues, kw);
 	}
-	RZ_LOG_INFO("number of prologues loaded from file: %" PFMTSZu "\n", rz_list_length(prologues));
+	RZ_LOG_INFO("number of prologues loaded from file: %" PFMT32d "\n", rz_list_length(prologues));
 
 	int hits = rz_core_search_preludes(core, prologues);
 	if (hits < 0) {

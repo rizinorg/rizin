@@ -10,7 +10,8 @@ rz_main_sources = [
   'rz-run.c',
   'rz-sign.c',
   'rz-asm.c',
-  'rz-ax.c'
+  'rz-ax.c',
+  'rz-prologues.c'
 ]
 
 rz_main_deps = [
