@@ -49,7 +49,7 @@ RZ_API RZ_OWN RzStrUriParams *rz_str_uri_params_parse(
 	RZ_NONNULL const char *param_str,
 	RZ_NONNULL const RzStrUriParamSpec *grammar,
 	size_t grammar_count,
-	RZ_NULLABLE RZ_OUT char **error) {
+	RZ_NULLABLE RZ_OUT RZ_OWN char **error) {
 	rz_return_val_if_fail(param_str && grammar, NULL);
 
 	RzStrUriParams *params = RZ_NEW0(RzStrUriParams);

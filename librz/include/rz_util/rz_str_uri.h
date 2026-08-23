@@ -42,7 +42,7 @@ RZ_API RZ_OWN RzStrUriParams *rz_str_uri_params_parse(
 	RZ_NONNULL const char *param_str,
 	RZ_NONNULL const RzStrUriParamSpec *grammar,
 	size_t grammar_count,
-	RZ_NULLABLE RZ_OUT char **error);
+	RZ_NULLABLE RZ_OUT RZ_OWN char **error);
 RZ_API void rz_str_uri_params_free(RZ_NULLABLE RzStrUriParams *params);
 
 RZ_API bool rz_str_uri_params_has(RZ_NONNULL const RzStrUriParams *params, RZ_NONNULL const char *name);
