@@ -37,10 +37,7 @@ typedef struct core_prologues_generator_context_t {
 	RzVector /*<RzPrologue>*/ *prologues; // has independent lifecycle then pg_trie
 	ut64 store_prologue_len; // length of prologues in store
 
-	// session metadata (set by first pg[a|d]/pgL and reset only by pg-)
-	char *arch;
-	int bits;
-	bool big_endian;
+	RzProloguesArchInfo arch_info; // session metadata (set by first pg[a|d]/pgL and reset only by pg-)
 } CorePGContext;
 
 /**
@@ -257,35 +254,71 @@ static bool build_prefix_tree_from_binfile(RzBinFile *binfile, RzTrie *t, ut64 p
 	return true;
 }
 
-static bool pg_check_file_arch(const RzBinInfo *info,
-	const char *fallback_arch, int fallback_bits, bool fallback_big_endian,
-	const char *target_arch, int target_bits, bool target_big_endian) {
+/**
+ * \brief Free internal fields of an RzProloguesArchInfo struct and reset its values.
+ *
+ * \param arch_info Pointer to the RzProloguesArchInfo struct to finalize.
+ */
+RZ_API void rz_prologues_arch_info_fini(RZ_NULLABLE RzProloguesArchInfo *arch_info) {
+	if (!arch_info) {
+		return;
+	}
+	RZ_FREE(arch_info->arch);
+	arch_info->bits = 0;
+	arch_info->big_endian = false;
+}
+
+/**
+ * \brief Check if a binary's arch matches the target arch, or adopt it if uninitialized.
+ * If \p target_arch is NULL = accept any arch
+ * If \p target_arch->arch is NULL = adopts and sets the arch and endianness from \p info
+ * (or fallback arguments if not specified in \p info).
+ * If \p target_arch->bits <= 0, it adopts and sets the bitness from \p info.
+ * If \p target_arch fields are already set, it checks that \p info matches them.
+ *
+ * \param[in]		info                Binary info to check or adopt.
+ * \param[in,out] 	target_arch         Arch container to match against or populate.
+ * \param[in] 		fallback_arch       Optional fallback arch if info->arch is empty.
+ * \param[in] 		fallback_bits       Optional fallback bitness if info->bits <= 0.
+ * \param[in] 		fallback_big_endian Optional fallback endianness if info->arch is empty.
+ *
+ * \return true if the binary matches or was successfully adopted, false on arch/bitness/endianness mismatch.
+ */
+RZ_API bool rz_prologues_arch_check(RZ_NONNULL const RzBinInfo *info,
+	RZ_NULLABLE RzProloguesArchInfo *target_arch,
+	RZ_NULLABLE const char *fallback_arch, int fallback_bits, bool fallback_big_endian) {
 	rz_return_val_if_fail(info, false);
 
-	// no target specified, accept any arch
-	if (!target_arch && target_bits <= 0) {
+	if (!target_arch) {
 		return true;
 	}
 
-	// arch
 	const char *file_arch = RZ_STR_ISNOTEMPTY(info->arch) ? info->arch : fallback_arch;
-	if (target_arch) {
-		if (!file_arch || !RZ_STR_EQ(file_arch, target_arch)) {
+	int file_bits = info->bits > 0 ? info->bits : fallback_bits;
+	bool file_be = RZ_STR_ISNOTEMPTY(info->arch) ? info->big_endian : fallback_big_endian;
+
+	if (target_arch->arch) {
+		if (!file_arch || !RZ_STR_EQ(file_arch, target_arch->arch)) {
+			return false;
+		}
+		if (file_be != target_arch->big_endian) {
 			return false;
 		}
 	}
 
-	// bits
-	int file_bits = info->bits > 0 ? info->bits : fallback_bits;
-	if (target_bits > 0 && file_bits != target_bits) {
+	if (target_arch->bits > 0 && file_bits != target_arch->bits) {
 		return false;
 	}
 
-	// endian
-	bool file_be = RZ_STR_ISNOTEMPTY(info->arch) ? info->big_endian : fallback_big_endian;
-	if (target_arch && file_be != target_big_endian) {
-		return false;
+	// if arch/bits not specified set it from the bin (skip if unknown)
+	if (!target_arch->arch && RZ_STR_ISNOTEMPTY(file_arch)) {
+		target_arch->arch = rz_str_dup(file_arch);
+		target_arch->big_endian = file_be;
 	}
+	if (target_arch->bits <= 0 && file_bits > 0) {
+		target_arch->bits = file_bits;
+	}
+
 	return true;
 }
 
@@ -341,16 +374,20 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_handler(RzCore *core, int argc, const ch
 	int fb_bits = rz_config_get_i(core->config, "asm.bits");
 	bool fb_be = rz_config_get_b(core->config, "cfg.bigendian");
 
-	if (!pg_check_file_arch(info, fb_arch, fb_bits, fb_be, ctx->arch, ctx->bits, ctx->big_endian)) {
+	if (!rz_prologues_arch_check(info, &ctx->arch_info, fb_arch, fb_bits, fb_be)) {
 		const char *file_arch = RZ_STR_ISNOTEMPTY(info->arch) ? info->arch : fb_arch;
 		int file_bits = info->bits > 0 ? info->bits : fb_bits;
 		bool file_be = RZ_STR_ISNOTEMPTY(info->arch) ? info->big_endian : fb_be;
+		const char *prev_arch = ctx->arch_info.arch;
+		int prev_bits = ctx->arch_info.bits;
+		bool prev_be = ctx->arch_info.big_endian;
+
 		RZ_LOG_ERROR("Cannot use the file '%s': arch mismatch.\n"
 			     "  Session: (%s, %d-bit, %cE)\n"
 			     "  File:    (%s, %d-bit, %cE)\n"
 			     "Please reset the session first using pg-\n",
 			binfile->file,
-			ctx->arch, ctx->bits, ctx->big_endian ? 'B' : 'L',
+			prev_arch, prev_bits, prev_be ? 'B' : 'L',
 			file_arch, file_bits, file_be ? 'B' : 'L');
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -379,7 +416,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_handler(RzCore *core, int argc, const ch
 }
 
 RZ_API st64 rz_prologues_trie_feed_all_binfiles(RZ_NONNULL RzTrie *pg_trie, RZ_NONNULL RzBin *bin, ut64 prologue_len,
-	RZ_NULLABLE const char *arch, int bits, bool big_endian, RZ_NULLABLE RzSetS *processed_files) {
+	RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_NULLABLE RzSetS *processed_files) {
 	rz_return_val_if_fail(pg_trie && bin && prologue_len > 0, -1);
 
 	RzList *binfiles = bin ? bin->binfiles : NULL;
@@ -408,13 +445,15 @@ RZ_API st64 rz_prologues_trie_feed_all_binfiles(RZ_NONNULL RzTrie *pg_trie, RZ_N
 			continue;
 		}
 
-		if (!pg_check_file_arch(info, NULL, 0, false, arch, bits, big_endian)) {
+		if (!rz_prologues_arch_check(info, arch_info, NULL, 0, false)) {
 			const char *file_arch = RZ_STR_ISNOTEMPTY(info->arch) ? info->arch : "unknown";
 			RZ_LOG_WARN("Skipping file '%s': arch mismatch.\n"
 				    "  Trie: (%s, %d-bit, %cE)\n"
 				    "  File: (%s, %d-bit, %cE)\n",
 				curr_file->file,
-				arch, bits, big_endian ? 'B' : 'L',
+				arch_info ? arch_info->arch : "unknown",
+				arch_info ? arch_info->bits : 0,
+				(arch_info && arch_info->big_endian) ? 'B' : 'L',
 				file_arch, info->bits, info->big_endian ? 'B' : 'L');
 			continue;
 		}
@@ -437,7 +476,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_all_handler(RzCore *core, int argc, cons
 	RzBin *bin = rz_core_get_bin(core);
 
 	st64 fcnt = rz_prologues_trie_feed_all_binfiles(ctx->pg_trie, bin, ctx->trie_prologue_len,
-		ctx->arch, ctx->bits, ctx->big_endian, ctx->fpaths);
+		&ctx->arch_info, ctx->fpaths);
 	if (fcnt == -1) {
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -461,7 +500,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_all_handler(RzCore *core, int argc, cons
 }
 
 RZ_API st64 rz_prologues_trie_feed_directory(RZ_NONNULL RzTrie *pg_trie, RZ_NONNULL RzBin *bin, RZ_NONNULL const char *dir_path,
-	ut64 prologue_len, RZ_NULLABLE const char *arch, int bits, bool big_endian, RZ_NULLABLE RzSetS *processed_files) {
+	ut64 prologue_len, RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_NULLABLE RzSetS *processed_files) {
 	rz_return_val_if_fail(pg_trie && bin && dir_path && prologue_len > 0, -1);
 
 	if (!rz_file_is_directory(dir_path)) {
@@ -518,13 +557,15 @@ RZ_API st64 rz_prologues_trie_feed_directory(RZ_NONNULL RzTrie *pg_trie, RZ_NONN
 			continue;
 		}
 
-		if (!pg_check_file_arch(info, NULL, 0, false, arch, bits, big_endian)) {
+		if (!rz_prologues_arch_check(info, arch_info, NULL, 0, false)) {
 			const char *file_arch = RZ_STR_ISNOTEMPTY(info->arch) ? info->arch : "unknown";
 			RZ_LOG_WARN("Skipping file '%s': arch mismatch.\n"
 				    "  Trie: (%s, %d-bit, %cE)\n"
 				    "  File: (%s, %d-bit, %cE)\n",
 				file,
-				arch, bits, big_endian ? 'B' : 'L',
+				arch_info ? arch_info->arch : "unknown",
+				arch_info ? arch_info->bits : 0,
+				(arch_info && arch_info->big_endian) ? 'B' : 'L',
 				file_arch, info->bits, info->big_endian ? 'B' : 'L');
 
 			rz_bin_file_delete(bin, bf);
@@ -559,7 +600,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_dir_handler(RzCore *core, int argc, cons
 	const char *dir_path = argv[1];
 	RzBin *bin = rz_core_get_bin(core);
 	st64 fcnt = rz_prologues_trie_feed_directory(ctx->pg_trie, bin, dir_path, ctx->trie_prologue_len,
-		ctx->arch, ctx->bits, ctx->big_endian, ctx->fpaths);
+		&ctx->arch_info, ctx->fpaths);
 	if (fcnt == -1) {
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -795,9 +836,7 @@ RZ_IPI RzCmdStatus rz_cmd_reset_session_handler(RzCore *core, int argc, const ch
 	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
 
 	// metadata
-	RZ_FREE(ctx->arch);
-	ctx->bits = 0;
-	ctx->big_endian = false;
+	rz_prologues_arch_info_fini(&ctx->arch_info);
 
 	// trie
 	if (!prologue_trie_clear(ctx)) {
@@ -838,9 +877,12 @@ static void edge_visit_sd(RzTrieNode *parent, RzTrieNode *child, void *user) {
 	rz_structured_data_map_add_unsigned(entry, "hit_cnt", nd->hit_cnt, false);
 }
 
-static void add_session_metadata_to_sd(RzStructuredData *root, const char *arch, int bits, bool big_endian) {
+static void add_session_metadata_to_sd(RzStructuredData *root, const RzProloguesArchInfo *arch_info) {
 	rz_return_if_fail(root);
-	rz_structured_data_map_add_string(root, "arch", arch ? arch : "unknown");
+	const char *arch = arch_info && arch_info->arch ? arch_info->arch : "unknown";
+	int bits = arch_info ? arch_info->bits : 0;
+	bool big_endian = arch_info ? arch_info->big_endian : false;
+	rz_structured_data_map_add_string(root, "arch", arch);
 	rz_structured_data_map_add_signed(root, "bits", bits);
 	rz_structured_data_map_add_string(root, "endian", big_endian ? "big" : "little");
 }
@@ -870,7 +912,7 @@ static bool print_sd(RzStructuredData *sd, RzOutputMode mode) {
 }
 
 RZ_API RZ_OWN RzStructuredData *rz_prologues_trie_to_structured_data(RZ_NONNULL const RzTrie *pg_trie,
-	ut64 prologue_len, RZ_NULLABLE const char *arch, int bits, bool big_endian, RZ_NULLABLE const RzSetS *files) {
+	ut64 prologue_len, RZ_NULLABLE const RzProloguesArchInfo *arch_info, RZ_NULLABLE const RzSetS *files) {
 	rz_return_val_if_fail(pg_trie && prologue_len > 0, NULL);
 
 	HtPUOptions opt = { 0 };
@@ -885,7 +927,7 @@ RZ_API RZ_OWN RzStructuredData *rz_prologues_trie_to_structured_data(RZ_NONNULL 
 		return NULL;
 	}
 
-	add_session_metadata_to_sd(root, arch, bits, big_endian);
+	add_session_metadata_to_sd(root, arch_info);
 	rz_structured_data_map_add_unsigned(root, "prologue_length", prologue_len, false);
 
 	PGTrieNodeData *rd = pg_trie->root->data;
@@ -924,7 +966,7 @@ RZ_IPI RzCmdStatus rz_cmd_prefix_tree_print_handler(RzCore *core, int argc, cons
 	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
 
 	RzStructuredData *root = rz_prologues_trie_to_structured_data(ctx->pg_trie, ctx->trie_prologue_len,
-		ctx->arch, ctx->bits, ctx->big_endian, ctx->fpaths);
+		&ctx->arch_info, ctx->fpaths);
 
 	if (!root) {
 		return RZ_CMD_STATUS_ERROR;
@@ -938,7 +980,7 @@ RZ_IPI RzCmdStatus rz_cmd_prefix_tree_print_handler(RzCore *core, int argc, cons
 }
 
 RZ_API RZ_OWN RzStructuredData *rz_prologues_to_structured_data(RZ_NONNULL const RzVector /*<RzPrologue>*/ *prologues,
-	ut64 prologue_len, RZ_NULLABLE const char *arch, int bits, bool big_endian) {
+	ut64 prologue_len, RZ_NULLABLE const RzProloguesArchInfo *arch_info) {
 	rz_return_val_if_fail(prologues && prologue_len > 0, NULL);
 
 	RzStructuredData *root = rz_structured_data_new_map();
@@ -946,7 +988,7 @@ RZ_API RZ_OWN RzStructuredData *rz_prologues_to_structured_data(RZ_NONNULL const
 		return NULL;
 	}
 
-	add_session_metadata_to_sd(root, arch, bits, big_endian);
+	add_session_metadata_to_sd(root, arch_info);
 	rz_structured_data_map_add_unsigned(root, "prologue_length", prologue_len, false);
 	rz_structured_data_map_add_unsigned(root, "count", rz_vector_len(prologues), false);
 
@@ -970,7 +1012,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_print_handler(RzCore *core, int argc, const 
 	}
 
 	RzStructuredData *root = rz_prologues_to_structured_data(ctx->prologues, ctx->store_prologue_len,
-		ctx->arch, ctx->bits, ctx->big_endian);
+		&ctx->arch_info);
 
 	if (!root) {
 		return RZ_CMD_STATUS_ERROR;
@@ -1074,7 +1116,7 @@ static bool rz_cmd_prologues_gen_fini(RzCore *core, RZ_NULLABLE void *user) {
 	CorePGContext *ctx = user;
 	rz_return_val_if_fail(ctx, false);
 	rz_set_s_free(ctx->fpaths);
-	RZ_FREE(ctx->arch);
+	rz_prologues_arch_info_fini(&ctx->arch_info);
 	rz_trie_free(ctx->pg_trie);
 	rz_vector_free(ctx->prologues);
 	if (!rz_core_plugin_cmd_desc_remove(core, ctx->cmd_desc)) {
