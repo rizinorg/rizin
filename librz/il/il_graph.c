@@ -380,12 +380,10 @@ static void il_op_graph_fround(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NUL
 
 static void il_op_graph_fround_exc(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsFroundExc *opx = &op->op.fround_exc;
-	const char *rmode_str = rz_il_float_stringify_rmode(opx->rmode);
-	char *value = rz_str_newf("fround_exc: %s", rmode_str);
-	RzGraphNode *to = graph_add_node_il(g, value);
-	free(value);
-	rz_graph_add_edge(g, from, to, NULL);
-	il_op_pure_graph_resolve(opx->f, g, to);
+	RzGraphNode *to = il_op_graph_add_node_with_rmode("fround_exc:", &opx->rmode, g, from);
+	if (to) {
+		il_op_pure_graph_resolve(opx->f, g, to);
+	}
 }
 
 static void il_op_graph_frequal(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {

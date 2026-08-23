@@ -390,6 +390,7 @@ if capstone_dep.version() == 'next'
     'isa/riscv/riscv_il_integer.c',
     'isa/riscv/riscv_il_m.c',
     'isa/riscv/riscv_il_a.c',
+    'isa/riscv/riscv_il_fd_common.c',
     'isa/riscv/riscv_il_f.c',
     'isa/riscv/riscv_il_d.c',
     'isa/riscv/riscv_il_compressed.c',

@@ -568,13 +568,13 @@ static void il_opdmp_fround_exc(RzILOpPure *op, RzStrBuf *sb, int pad) {
 	RzILOpArgsFroundExc *opx = &op->op.fround_exc;
 	if (pad < 0) {
 		rz_strbuf_append(sb, "(fround_exc ");
-		rz_strbuf_append(sb, rz_il_float_stringify_rmode(opx->rmode));
+		il_op_float_rmode_string_resolve(&opx->rmode, sb, pad);
 		rz_strbuf_append(sb, " ");
 		il_op_pure_string_resolve(opx->f, sb, pad);
 		rz_strbuf_append(sb, ")");
 	} else {
 		rz_strbuf_appendf(sb, "%*.s(fround_exc ", pad, "");
-		rz_strbuf_append(sb, rz_il_float_stringify_rmode(opx->rmode));
+		il_op_float_rmode_string_resolve(&opx->rmode, sb, pad);
 		rz_strbuf_append(sb, "\n");
 		il_op_pure_string_resolve(opx->f, sb, pad + PRETTY_PAD);
 		rz_strbuf_append(sb, ")");

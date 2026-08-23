@@ -1,203 +1,188 @@
 // SPDX-FileCopyrightText: 2026 Mostafa Mahmoud <ubermenchun@gmail.com>
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "analysis_private.h"
-
-#define RISCV_FREG_F_NAME(reg) riscv_freg_name(reg)
-
-// The register is 64-bit (NaN-boxed); hence extracting the lower 32 bits.
-#define RISCV_GET_FREG_RAW(reg) CAST(32, IL_FALSE, VARG(RISCV_FREG_F_NAME(reg)))
-// Write a raw 32-bit bitvector into a float register, NaN-boxing to 64 bits.
-#define RISCV_SET_FREG_RAW(reg, val) SETG(RISCV_FREG_F_NAME(reg), APPEND(UN(32, 0xFFFFFFFF), val))
-
-// Read a float register as a float32 IL value
-#define RISCV_FD_REG_GETTER(reg) FLOATV32(RISCV_GET_FREG_RAW(reg))
-// Read a float register as a raw 32-bit bitvector
-#define RISCV_FD_REG_GETTER_BV(reg) RISCV_GET_FREG_RAW(reg)
-// Write a float32 IL value into a float register
-#define RISCV_FD_REG_SETTER(reg, fl) RISCV_SET_FREG_RAW(reg, F2BV(fl))
-// Write a raw 32-bit bitvector into a float register
-#define RISCV_FD_REG_SETTER_BV(reg, bv) RISCV_SET_FREG_RAW(reg, bv)
-// destructure a float into its 3 IEEE 754 fields
-#define RISCV_FD_GET_EXPONENT(bv) EXTRACT32(bv, UN(32, 23), UN(32, 8))
-#define RISCV_FD_GET_MANTISSA(bv) EXTRACT32(bv, UN(32, 0), UN(32, 23))
-#define RISCV_FD_GET_SIGN(bv) EXTRACT32(bv, UN(32, 31), UN(32, 1))
-// NAN API
-#define RISCV_FD_IS_NAN(bv) AND(EQ(RISCV_FD_GET_EXPONENT(bv), UN(32, 0xFF)), NON_ZERO(RISCV_FD_GET_MANTISSA(bv)))
-#define RISCV_FD_IS_S_NAN(bv) AND(RISCV_FD_IS_NAN(bv), EQ(EXTRACT32(bv, UN(32, 22), UN(32, 1)), UN(32, 0)))
-#define RISCV_FD_CANONICAL_QNAN() UN(32, 0x7FC00000)
-// Exponent API
-#define RISCV_FD_IS_MAX_EXP(bv) EQ(bv, UN(32, 0xFF))
-#define RISCV_FD_IS_EXP_OVERFLOW_INT(bv) UGE(bv, UN(32, 158))
-#define RISCV_FD_IS_EXP_OVERFLOW_UINT(bv) UGE(bv, UN(32, 159))
-#define RISCV_FD_IS_EXP_OVERFLOW_LONG(bv) UGE(bv, UN(32, 190))
-#define RISCV_FD_IS_EXP_OVERFLOW_ULONG(bv) UGE(bv, UN(32, 191))
-
-// -----------------------------------------------------------------------
-// F Extension: rounding mode, decoders, and lifter templates
-// -----------------------------------------------------------------------
-#define F_RM riscv_rm_to_rz(insn->detail->riscv.rounding_mode)
-
-// frd=FReg[0], rs1=IntReg[1]  (fcvt.s.w, fcvt.s.wu, fcvt.s.l, fcvt.s.lu, fmv.w.x)
-#define DECODE_F_FD_RS(analysis, insn) \
-	REQUIRE_OP(0, RISCV_OP_REG); \
-	REQUIRE_OP(1, RISCV_OP_REG); \
-	uint32_t frd = insn->detail->riscv.operands[0].reg; \
-	RzILOpBitVector *rs1 = riscv_il_get_reg(analysis->bits, insn->detail->riscv.operands[1].reg);
-
-// rd=IntReg[0], bvrs1=raw32(FReg[1])  (fmv.x.w)
-#define DECODE_F_RD_FS_BV(analysis, insn) DECODE_FD_RD_FS_BV(analysis, insn)
-
-// integer→float32 lifter: compute expr, store to freg, update fflags
-#define DEFINE_F_LIFTER(name, decoder, expr) \
-	RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
-		RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
-		decoder(analysis, insn); \
-		return SEQ3( \
-			SETL("_r", expr), \
-			RISCV_FD_REG_SETTER(frd, VARL("_r")), \
-			RISCV_FD_UPDATE_FFLAGS()); \
-	}
-
-// bitvector→float register lifter (no rounding, no fflags update)
-#define DEFINE_F_LIFTER_BV_TO_FREG(name, decoder, bv_expr) \
-	RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
-		RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
-		decoder(analysis, insn); \
-		return RISCV_FD_REG_SETTER_BV(frd, bv_expr); \
-	}
-
-// ---------------------------- Instantiate FP definition generators ----------------------------
 #include "riscv_il_fd_common.h"
 
-#include <rz_il/rz_il_opbuilder_begin.h>
+static const RzFloatFormat rz_riscv_il_fd_f32 = RZ_FLOAT_IEEE754_BIN_32;
 
-// -----------------------------------------------------------------------
-// Memory
-// -----------------------------------------------------------------------
+// F-extension entry points specialize the common core with the binary32 format.
 
-// flw fd, offset(rs1) — load 32-bit float from memory
-DEF_LOAD(flw, 32)
-// fsw fs2, offset(rs1) — store 32-bit float to memory
-DEF_STORE(fsw)
+RzILOpEffect *rz_riscv_lift_flw(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_load(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
 
-// -----------------------------------------------------------------------
-// Arithmetic
-// -----------------------------------------------------------------------
-DEF_ADD(fadd_s)
-DEF_SUB(fsub_s)
-DEF_MUL(fmul_s)
-DEF_DIV(fdiv_s)
-DEF_SQRT(fsqrt_s)
+RzILOpEffect *rz_riscv_lift_fsw(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_store(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
 
-// -----------------------------------------------------------------------
-// Fused Multiply-Add
-// -----------------------------------------------------------------------
-DEF_FMADD(fmadd_s)
-DEF_FMSUB(fmsub_s)
-DEF_FNMADD(fnmadd_s)
-DEF_FNMSUB(fnmsub_s)
+RzILOpEffect *rz_riscv_lift_fadd_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_add(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
 
-// -----------------------------------------------------------------------
-// Sign Injection (bit-level, no rounding)
-// -----------------------------------------------------------------------
-DEF_FSGNJ(fsgnj_s, 32)
-DEF_FSGNJN(fsgnjn_s, 32)
-DEF_FSGNJX(fsgnjx_s, 32)
+RzILOpEffect *rz_riscv_lift_fsub_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_sub(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
 
-// -----------------------------------------------------------------------
-// Min/Max
-// -----------------------------------------------------------------------
-DEF_FMIN(fmin_s, 32)
-DEF_FMAX(fmax_s, 32)
-// -----------------------------------------------------------------------
-// Comparison and equality
-// -----------------------------------------------------------------------
-DEF_FEQ(feq_s, 32)
-DEF_FLT(flt_s, 32)
-DEF_FLE(fle_s, 32)
+RzILOpEffect *rz_riscv_lift_fmul_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_mul(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
 
-DEF_FCLASS(fclass_s)
+RzILOpEffect *rz_riscv_lift_fdiv_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_div(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
 
-// -----------------------------------------------------------------------
-// Conversions  float32 → integer
-// -----------------------------------------------------------------------
-// 
-DEF_FCVT_W(fcvt_w_s, 32)
-DEF_FCVT_WU(fcvt_wu_s, 32)
-DEF_FCVT_L(fcvt_l_s, 32)
-DEF_FCVT_LU(fcvt_lu_s, 32)
+RzILOpEffect *rz_riscv_lift_fsqrt_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_sqrt(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
 
-// -----------------------------------------------------------------------
-// F Extension: Conversions  integer → float32
-// -----------------------------------------------------------------------
+RzILOpEffect *rz_riscv_lift_fmadd_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_fmadd(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
 
-// fcvt.s.w fd, rs1  — signed int32 to float32
-// CAST(32, IL_FALSE, rs1) truncates XLEN-bit rs1 to 32 bits for the conversion.
-DEFINE_F_LIFTER(fcvt_s_w, DECODE_F_FD_RS,
-	SINT2F(RZ_FLOAT_IEEE754_BIN_32, F_RM, CAST(32, IL_FALSE, rs1)))
+RzILOpEffect *rz_riscv_lift_fmsub_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_fmsub(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
 
-// fcvt.s.wu fd, rs1  — unsigned int32 to float32
-DEFINE_F_LIFTER(fcvt_s_wu, DECODE_F_FD_RS,
-	INT2F(RZ_FLOAT_IEEE754_BIN_32, F_RM, CAST(32, IL_FALSE, rs1)))
+RzILOpEffect *rz_riscv_lift_fnmadd_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_fnmadd(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
 
-// fcvt.s.l fd, rs1  — signed int64 to float32 (RV64F only)
-// NX is raised when the integer cannot be represented exactly in float32 (more than
-// 24 significant bits).  Saving to _r lets RISCV_FD_UPDATE_FFLAGS query the result.
+RzILOpEffect *rz_riscv_lift_fnmsub_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_fnmsub(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
+
+RzILOpEffect *rz_riscv_lift_fsgnj_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_fsgnj(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
+
+RzILOpEffect *rz_riscv_lift_fsgnjn_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_fsgnjn(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
+
+RzILOpEffect *rz_riscv_lift_fsgnjx_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_fsgnjx(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
+
+RzILOpEffect *rz_riscv_lift_fmin_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_fmin(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
+
+RzILOpEffect *rz_riscv_lift_fmax_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_fmax(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
+
+RzILOpEffect *rz_riscv_lift_feq_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_feq(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
+
+RzILOpEffect *rz_riscv_lift_flt_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_flt(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
+
+RzILOpEffect *rz_riscv_lift_fle_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_fle(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
+
+RzILOpEffect *rz_riscv_lift_fclass_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_fclass(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
+
+RzILOpEffect *rz_riscv_lift_fcvt_w_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_fcvt_w(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
+
+RzILOpEffect *rz_riscv_lift_fcvt_wu_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_fcvt_wu(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
+
+RzILOpEffect *rz_riscv_lift_fcvt_l_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_fcvt_l(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
+
+RzILOpEffect *rz_riscv_lift_fcvt_lu_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_fcvt_lu(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
+
+RzILOpEffect *rz_riscv_lift_fcvt_s_w(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_fcvt_from_w(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
+
+RzILOpEffect *rz_riscv_lift_fcvt_s_wu(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_fcvt_from_wu(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
+
 RzILOpEffect *rz_riscv_lift_fcvt_s_l(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
 	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	REQUIRE_64_BIT(analysis);
-	DECODE_F_FD_RS(analysis, insn);
-	return SEQ3(
-		SETL("_r", SINT2F(RZ_FLOAT_IEEE754_BIN_32, F_RM, rs1)),
-		RISCV_FD_REG_SETTER(frd, VARL("_r")),
-		RISCV_FD_UPDATE_FFLAGS());
+	return riscv_il_fd_lift_fcvt_from_l(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
 }
 
-// fcvt.s.lu fd, rs1  — unsigned int64 to float32 (RV64F only)
 RzILOpEffect *rz_riscv_lift_fcvt_s_lu(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
 	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	REQUIRE_64_BIT(analysis);
-	DECODE_F_FD_RS(analysis, insn);
-	return SEQ3(
-		SETL("_r", INT2F(RZ_FLOAT_IEEE754_BIN_32, F_RM, rs1)),
-		RISCV_FD_REG_SETTER(frd, VARL("_r")),
-		RISCV_FD_UPDATE_FFLAGS());
+	return riscv_il_fd_lift_fcvt_from_lu(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
 }
 
-// -----------------------------------------------------------------------
-// F Extension: Bit-level Move (no float conversion, no rounding)
-// -----------------------------------------------------------------------
+RzILOpEffect *rz_riscv_lift_fmv_x_w(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_fmv_to_x(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
 
-// fmv.x.w rd, fs1  — copy float32 bits to integer register, sign-extended to XLEN
-DEFINE_LIFTER(fmv_x_w, DECODE_F_RD_FS_BV,
-	SIGNED(analysis->bits, bvrs1))
-
-// fmv.w.x fd, rs1  — copy integer register bits (lower 32) to float register
-DEFINE_F_LIFTER_BV_TO_FREG(fmv_w_x, DECODE_F_FD_RS,
-	CAST(32, IL_FALSE, rs1))
-
-#include <rz_il/rz_il_opbuilder_end.h>
-
-#undef RISCV_FD_REG_GETTER
-#undef RISCV_FD_REG_SETTER
-#undef RISCV_FD_REG_GETTER_BV
-#undef RISCV_FD_REG_SETTER_BV
-#undef RISCV_FD_GET_MANTISSA
-#undef RISCV_FD_GET_EXPONENT
-#undef RISCV_FD_GET_SIGN
-#undef RISCV_FD_IS_NAN
-#undef RISCV_FD_IS_S_NAN
-#undef RISCV_FD_CANONICAL_QNAN
-#undef RISCV_FD_IS_MAX_EXP
-#undef RISCV_FD_IS_EXP_OVERFLOW_INT
-#undef RISCV_FD_IS_EXP_OVERFLOW_UINT
-#undef RISCV_FD_IS_EXP_OVERFLOW_LONG
-#undef RISCV_FD_IS_EXP_OVERFLOW_ULONG
-#undef F_RM
-#undef RISCV_FD_REG_SETTER
-#undef DECODE_F_FD_RS
-#undef DECODE_F_RD_FS_BV
-#undef DEFINE_F_LIFTER
-#undef DEFINE_F_LIFTER_BV_TO_FREG
-
+RzILOpEffect *rz_riscv_lift_fmv_w_x(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+	return riscv_il_fd_lift_fmv_from_x(rz_riscv_il_fd_f32,
+		analysis, op, insn, current_addr, size);
+}
