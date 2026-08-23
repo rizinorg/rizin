@@ -125,11 +125,20 @@ static bool generate_prologues(const char *input_path, bool is_dir, const char *
 			RZ_LOG_ERROR("File does not exist, invalid path: %s", input_path);
 			goto err;
 		}
+
+		RzBuffer *buf = rz_buf_new_file(input_path, O_RDONLY, 0);
+		if (!buf) {
+			RZ_LOG_WARN("Failed to open buffer for file: %s\n", input_path);
+			goto err;
+		}
+
 		RzBinOptions opt;
 		rz_bin_options_init(&opt, -1, 0, 0, false);
-		RzBinFile *bf = rz_bin_open(bin, input_path, &opt);
+		opt.filename = input_path;
+		RzBinFile *bf = rz_bin_open_buf(bin, buf, &opt);
+		rz_buf_free(buf);
 		if (!bf) {
-			RZ_LOG_WARN("Failed to open file: %s\n", input_path);
+			RZ_LOG_WARN("Failed to parse binary for file: %s\n", input_path);
 			goto err;
 		}
 		bool res = rz_prologues_trie_feed_binfile(pg_trie, bf, prologue_len);
