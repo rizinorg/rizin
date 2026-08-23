@@ -86,9 +86,16 @@ static bool generate_prologues(const char *input_path, bool is_dir, const char *
 	bool raw, bool trie_mode, bool json_mode,
 	ut64 prologue_len, double entropy_threshold, const char *arch, int bits, bool big_endian) {
 
+	RzProloguesArchInfo arch_info = {
+		.arch = arch ? rz_str_dup(arch) : NULL,
+		.bits = bits > 0 ? bits : 0,
+		.big_endian = big_endian
+	};
+
 	RzTrie *pg_trie = rz_prologues_trie_new();
 	if (!pg_trie) {
 		RZ_LOG_ERROR("Failed to create prologues trie\n");
+		rz_prologues_arch_info_fini(&arch_info);
 		return false;
 	}
 
@@ -96,6 +103,7 @@ static bool generate_prologues(const char *input_path, bool is_dir, const char *
 	if (!bin) {
 		RZ_LOG_ERROR("Failed to create RzBin instance\n");
 		rz_trie_free(pg_trie);
+		rz_prologues_arch_info_fini(&arch_info);
 		return false;
 	}
 	RzIO *io = rz_io_new();
@@ -103,6 +111,7 @@ static bool generate_prologues(const char *input_path, bool is_dir, const char *
 		RZ_LOG_ERROR("Failed to create RzIO instance\n");
 		rz_bin_free(bin);
 		rz_trie_free(pg_trie);
+		rz_prologues_arch_info_fini(&arch_info);
 		return false;
 	}
 	io->ff = true;
@@ -113,7 +122,7 @@ static bool generate_prologues(const char *input_path, bool is_dir, const char *
 	if (is_dir) {
 		// dir
 		int res = rz_prologues_trie_feed_directory(pg_trie, bin, input_path, prologue_len,
-			arch, bits, big_endian, files);
+			&arch_info, files);
 
 		if (res < 0) {
 			RZ_LOG_ERROR("Failed to feed directory '%s' into prologues trie\n", input_path);
@@ -141,6 +150,20 @@ static bool generate_prologues(const char *input_path, bool is_dir, const char *
 			RZ_LOG_WARN("Failed to parse binary for file: %s\n", input_path);
 			goto err;
 		}
+
+		const RzBinInfo *info = rz_bin_object_get_info(bf->o);
+		if (!info) {
+			RZ_LOG_WARN("Skipping file '%s': missing bininfo\n", input_path);
+			rz_bin_file_delete(bin, bf);
+			goto err;
+		}
+
+		if (!rz_prologues_arch_check(info, &arch_info, NULL, 0, false)) {
+			RZ_LOG_ERROR("Architecture mismatch for file '%s'\n", input_path);
+			rz_bin_file_delete(bin, bf);
+			goto err;
+		}
+
 		bool res = rz_prologues_trie_feed_binfile(pg_trie, bf, prologue_len);
 		rz_bin_file_delete(bin, bf);
 		if (!res) {
@@ -163,9 +186,9 @@ static bool generate_prologues(const char *input_path, bool is_dir, const char *
 	}
 	RzStructuredData *sd = NULL;
 	if (trie_mode) {
-		sd = rz_prologues_trie_to_structured_data(pg_trie, prologue_len, arch, bits, big_endian, files);
+		sd = rz_prologues_trie_to_structured_data(pg_trie, prologue_len, &arch_info, files);
 	} else {
-		sd = rz_prologues_to_structured_data(prologues, prologue_len, arch, bits, big_endian);
+		sd = rz_prologues_to_structured_data(prologues, prologue_len, &arch_info);
 	}
 	rz_vector_free(prologues);
 	if (!sd) {
@@ -179,6 +202,7 @@ static bool generate_prologues(const char *input_path, bool is_dir, const char *
 	}
 	ret = true;
 err:
+	rz_prologues_arch_info_fini(&arch_info);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	rz_trie_free(pg_trie);
