@@ -79,6 +79,8 @@ static struct {
 	{ "diff.new", rz_offsetof(RzConsPrintablePalette, diff_new), rz_offsetof(RzConsPalette, diff_new) },
 	{ "diff.match", rz_offsetof(RzConsPrintablePalette, diff_match), rz_offsetof(RzConsPalette, diff_match) },
 	{ "diff.unmatch", rz_offsetof(RzConsPrintablePalette, diff_unmatch), rz_offsetof(RzConsPalette, diff_unmatch) },
+	{ "gui.match.perfect", rz_offsetof(RzConsPrintablePalette, gui_match_perfect), rz_offsetof(RzConsPalette, gui_match_perfect) },
+	{ "gui.match.partial", rz_offsetof(RzConsPrintablePalette, gui_match_partial), rz_offsetof(RzConsPalette, gui_match_partial) },
 
 	{ "gui.cflow", rz_offsetof(RzConsPrintablePalette, gui_cflow), rz_offsetof(RzConsPalette, gui_cflow) },
 	{ "gui.dataoffset", rz_offsetof(RzConsPrintablePalette, gui_dataoffset), rz_offsetof(RzConsPalette, gui_dataoffset) },
@@ -242,6 +244,8 @@ RZ_API void rz_cons_pal_init(RzConsContext *ctx) {
 	ctx->cpal.diff_new = (RzColor)RzColor_RED;
 	ctx->cpal.diff_match = (RzColor)RzColor_GRAY;
 	ctx->cpal.diff_unmatch = (RzColor)RzColor_YELLOW;
+	ctx->cpal.gui_match_partial = (RzColor)RzColor_RED;
+	ctx->cpal.gui_match_perfect = (RzColor)RzColor_GREEN;
 
 	rz_cons_pal_free(ctx);
 	ctx->pal.reset = Color_RESET; // reset is not user accessible, const char* is ok

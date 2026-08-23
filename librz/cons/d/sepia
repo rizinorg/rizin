@@ -79,3 +79,6 @@ ec diff.unknown rgb:881798
 ec diff.new rgb:c50f1f
 ec diff.match rgb:767676
 ec diff.unmatch rgb:c19c00
+
+ec gui.match.perfect rgb:00ff00
+ec gui.match.partial rgb:ff0000
