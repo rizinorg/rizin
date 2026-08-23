@@ -469,6 +469,10 @@ RZ_API st64 rz_prologues_trie_feed_directory(RZ_NONNULL RzTrie *pg_trie, RZ_NONN
 		return -1;
 	}
 	RzList *files = rz_sys_dir(dir_path);
+	if (!files) {
+		return -1;
+	}
+
 	RzListIter *it;
 	char *file;
 	st64 fcnt = 0;
@@ -479,19 +483,29 @@ RZ_API st64 rz_prologues_trie_feed_directory(RZ_NONNULL RzTrie *pg_trie, RZ_NONN
 			RZ_FREE(file_path);
 			continue;
 		}
+		// using rz_buf... + rz_bin_open_buf instead of rz_bin_open to avoid RzIO
+		// bcz for RzIO we need to close fd seperately after rz_bin_file_delete
+		RzBuffer *buf = rz_buf_new_file(file_path, O_RDONLY, 0);
+		if (!buf) {
+			RZ_LOG_WARN("Failed to open buffer for file: %s\n", file_path);
+			RZ_FREE(file_path);
+			continue;
+		}
+
 		RzBinOptions opt;
 		rz_bin_options_init(&opt, -1, 0, 0, false);
-		RzBinFile *bf = rz_bin_open(bin, file_path, &opt);
+		opt.filename = file_path;
+		RzBinFile *bf = rz_bin_open_buf(bin, buf, &opt);
+		rz_buf_free(buf);
 		if (!bf) {
-			RZ_LOG_WARN("Failed to open file: %s\n", file_path);
+			RZ_LOG_WARN("Failed to parse binary for file: %s\n", file_path);
 			RZ_FREE(file_path);
 			continue;
 		}
 
 		const RzBinInfo *info = rz_bin_object_get_info(bf->o);
 		if (!info) {
-			RZ_LOG_WARN("Skipping file '%s': missing binobject/bininfo\n",
-				bf ? bf->file : "unknown");
+			RZ_LOG_WARN("Skipping file '%s': missing binobject/bininfo\n", file);
 			rz_bin_file_delete(bin, bf);
 			RZ_FREE(file_path);
 			continue;
@@ -524,6 +538,7 @@ RZ_API st64 rz_prologues_trie_feed_directory(RZ_NONNULL RzTrie *pg_trie, RZ_NONN
 			RZ_FREE(file_path);
 			continue;
 		}
+
 		if (processed_files) {
 			rz_set_s_add(processed_files, file);
 		}
@@ -531,6 +546,7 @@ RZ_API st64 rz_prologues_trie_feed_directory(RZ_NONNULL RzTrie *pg_trie, RZ_NONN
 		rz_bin_file_delete(bin, bf);
 		RZ_FREE(file_path);
 	}
+
 	RZ_LOG_INFO("Processed %" PFMTSZu " files out of %" PFMT32u "\n", fcnt, rz_list_length(files));
 	rz_list_free(files);
 	return fcnt;
