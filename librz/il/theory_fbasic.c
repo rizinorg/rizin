@@ -454,11 +454,14 @@ void *rz_il_handler_fround_exc(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
 	RzILOpArgsFroundExc fround_exc = op->op.fround_exc;
+	RzFloatRMode mode;
+	if (!resolve_rmode(vm, op->code, &fround_exc.rmode, &mode)) {
+		return NULL;
+	}
 	RzFloat *f = rz_il_evaluate_float(vm, fround_exc.f);
 	if (!f) {
 		return NULL;
 	}
-	RzFloatRMode mode = fround_exc.rmode;
 	RzFloat *ret = rz_float_round_to_integral_exact(f, mode);
 
 	rz_float_free(f);

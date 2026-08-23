@@ -994,14 +994,15 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fround(RzFloatRMode mode, RZ_NONNULL RzI
 	return ret;
 }
 
-RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fround_exc(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f) {
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fround_exc(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
 	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
 	RzILOpFloat *ret;
 	rz_il_op_new_2(Float, RZ_IL_OP_FROUND_EXC, RzILOpArgsFroundExc, fround_exc, rmode, f);
 	return ret;
 }
 
-RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsqrt(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f) {
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsqrt(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
 	RzILOpFloat *ret;

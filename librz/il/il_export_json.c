@@ -424,7 +424,8 @@ static void il_opdmp_fround_exc(RzILOpPure *op, PJ *pj) {
 	RzILOpArgsFroundExc *opx = &op->op.fround_exc;
 	pj_o(pj);
 	pj_ks(pj, "opcode", "fround_exc");
-	pj_ks(pj, "rmode", rz_il_float_stringify_rmode(opx->rmode));
+	pj_k(pj, "rmode");
+	il_op_float_rmode_json_resolve(&opx->rmode, pj);
 	pj_k(pj, "value");
 	il_op_pure_json_resolve(opx->f, pj);
 	pj_end(pj);
