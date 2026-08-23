@@ -20,9 +20,7 @@
 #define rz_cmd_desc_argv_modes_new_warn(rcmd, root, cmd, flags, cb, help) \
 	rz_warn_if_fail(rz_cmd_desc_argv_modes_new(rcmd, root, cmd, flags, cb, help))
 
-// TODO: fine hack for now, but there should be a better way for cmd cb to have context available.
-// may be passing *user in argument of RzCmdArgvCb?
-extern RzCorePlugin rz_core_plugin_prologues_generator;
+RzCorePlugin rz_core_plugin_prologues_generator;
 
 typedef struct core_prologues_generator_context_t {
 	RzCmdDesc *cmd_desc;
@@ -340,7 +338,31 @@ RZ_API bool rz_prologues_trie_feed_binfile(RZ_NONNULL RzTrie *pg_trie, RZ_NONNUL
 	return build_prefix_tree_from_binfile(binfile, pg_trie, prologue_len);
 }
 
-RZ_IPI RzCmdStatus rz_cmd_prologues_gen_handler(RzCore *core, int argc, const char **argv) {
+static bool print_sd(RzStructuredData *sd, RzOutputMode mode) {
+	rz_return_val_if_fail(sd, false);
+
+	char *output = NULL;
+	switch (mode) {
+	case RZ_OUTPUT_MODE_JSON:
+		output = rz_structured_data_to_json(sd);
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+		output = rz_structured_data_to_yaml(sd);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+
+	if (!output) {
+		return false;
+	}
+	rz_cons_printf("%s\n", output);
+	RZ_FREE(output);
+	return true;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_prologues_gen_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
 	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
 
@@ -410,7 +432,17 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_handler(RzCore *core, int argc, const ch
 	ctx->store_prologue_len = ctx->trie_prologue_len;
 	ctx->prologues = prologues;
 
-	// TODO: print
+	RzStructuredData *root = rz_prologues_to_structured_data(ctx->prologues, ctx->store_prologue_len,
+		&ctx->arch_info);
+
+	if (!root) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!print_sd(root, mode)) {
+		rz_structured_data_free(root);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_structured_data_free(root);
 
 	return RZ_CMD_STATUS_OK;
 }
@@ -470,7 +502,7 @@ RZ_API st64 rz_prologues_trie_feed_all_binfiles(RZ_NONNULL RzTrie *pg_trie, RZ_N
 	return fcnt;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_prologues_gen_all_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_cmd_prologues_gen_all_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
 	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
 	RzBin *bin = rz_core_get_bin(core);
@@ -494,7 +526,18 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_all_handler(RzCore *core, int argc, cons
 	}
 	ctx->store_prologue_len = ctx->trie_prologue_len;
 	ctx->prologues = prologues;
-	// TODO: Print and free?
+
+	RzStructuredData *root = rz_prologues_to_structured_data(ctx->prologues, ctx->store_prologue_len,
+		&ctx->arch_info);
+
+	if (!root) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!print_sd(root, mode)) {
+		rz_structured_data_free(root);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_structured_data_free(root);
 
 	return RZ_CMD_STATUS_OK;
 }
@@ -593,7 +636,7 @@ RZ_API st64 rz_prologues_trie_feed_directory(RZ_NONNULL RzTrie *pg_trie, RZ_NONN
 	return fcnt;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_prologues_gen_dir_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_cmd_prologues_gen_dir_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
 	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
 
@@ -617,7 +660,17 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_dir_handler(RzCore *core, int argc, cons
 	}
 	ctx->store_prologue_len = ctx->trie_prologue_len;
 	ctx->prologues = prologues;
-	// TODO: print and free?
+
+	RzStructuredData *root = rz_prologues_to_structured_data(ctx->prologues, ctx->store_prologue_len, &ctx->arch_info);
+
+	if (!root) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!print_sd(root, mode)) {
+		rz_structured_data_free(root);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_structured_data_free(root);
 
 	return RZ_CMD_STATUS_OK;
 }
@@ -887,30 +940,6 @@ static void add_session_metadata_to_sd(RzStructuredData *root, const RzPrologues
 	rz_structured_data_map_add_string(root, "endian", big_endian ? "big" : "little");
 }
 
-static bool print_sd(RzStructuredData *sd, RzOutputMode mode) {
-	rz_return_val_if_fail(sd, false);
-
-	char *output = NULL;
-	switch (mode) {
-	case RZ_OUTPUT_MODE_JSON:
-		output = rz_structured_data_to_json(sd);
-		break;
-	case RZ_OUTPUT_MODE_STANDARD:
-		output = rz_structured_data_to_yaml(sd);
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
-	}
-
-	if (!output) {
-		return false;
-	}
-	rz_cons_printf("%s\n", output);
-	RZ_FREE(output);
-	return true;
-}
-
 RZ_API RZ_OWN RzStructuredData *rz_prologues_trie_to_structured_data(RZ_NONNULL const RzTrie *pg_trie,
 	ut64 prologue_len, RZ_NULLABLE const RzProloguesArchInfo *arch_info, RZ_NULLABLE const RzSetS *files) {
 	rz_return_val_if_fail(pg_trie && prologue_len > 0, NULL);
@@ -1063,7 +1092,7 @@ static bool rz_cmd_prologues_gen_init(RzCore *core, RZ_OUT void **user) {
 		goto error;
 	}
 
-	RzCmdDesc *pg = rz_cmd_desc_group_new(rcmd, root_cd, "pg",
+	RzCmdDesc *pg = rz_cmd_desc_group_modes_new(rcmd, root_cd, "pg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON,
 		rz_cmd_prologues_gen_handler, &cmd_raw_prologues_gen_help, &prologues_gen_help);
 
 	if (!pg) {
@@ -1071,8 +1100,10 @@ static bool rz_cmd_prologues_gen_init(RzCore *core, RZ_OUT void **user) {
 	}
 	ctx->cmd_desc = pg;
 
-	rz_cmd_desc_argv_new_warn(rcmd, pg, "pga", rz_cmd_prologues_gen_all_handler, &cmd_raw_prologues_gen_all_help);
-	rz_cmd_desc_argv_new_warn(rcmd, pg, "pgd", rz_cmd_prologues_gen_dir_handler, &cmd_raw_prologues_gen_dir_help);
+	rz_cmd_desc_argv_modes_new_warn(rcmd, pg, "pga", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON,
+		rz_cmd_prologues_gen_all_handler, &cmd_raw_prologues_gen_all_help);
+	rz_cmd_desc_argv_modes_new_warn(rcmd, pg, "pgd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON,
+		rz_cmd_prologues_gen_dir_handler, &cmd_raw_prologues_gen_dir_help);
 
 	rz_cmd_desc_argv_modes_new_warn(rcmd, pg, "pgtp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON,
 		rz_cmd_prefix_tree_print_handler, &cmd_prefix_tree_print_help);
