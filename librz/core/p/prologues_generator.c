@@ -24,18 +24,8 @@ RzCorePlugin rz_core_plugin_prologues_generator;
 
 typedef struct core_prologues_generator_context_t {
 	RzCmdDesc *cmd_desc;
-
-	// generation workspace (reset by pgt-)
-	RzTrie *pg_trie;
-	RzSetS *fpaths; // names of files already processed to build the curr trie
-	ut64 trie_prologue_len; // cfg: prologue length used for generation, may differ from the length of prologues in the store
+	ut64 prologue_len; // cfg: prologue length used for generation
 	double entropy_threshold; // cfg: threshold for node split entropy used for generalization
-
-	// prologues store (reset by pgp-)
-	RzVector /*<RzPrologue>*/ *prologues; // has independent lifecycle then pg_trie
-	ut64 store_prologue_len; // length of prologues in store
-
-	RzProloguesArchInfo arch_info; // session metadata (set by first pg[a|d]/pgL and reset only by pg-)
 } CorePGContext;
 
 /**
@@ -110,14 +100,14 @@ static void pg_node_on_hit(RzTrieNode *n, RZ_UNUSED void *user) {
 	nd->hit_cnt++;
 }
 
-static bool config_trie_prologue_len_getter(void *user, void *value) {
+static bool config_prologue_len_getter(void *user, void *value) {
 	CorePGContext *ctx = user;
 	rz_return_val_if_fail(ctx && value, false);
-	*(ut64 *)value = ctx->trie_prologue_len;
+	*(ut64 *)value = ctx->prologue_len;
 	return true;
 }
 
-static bool config_trie_prologue_len_setter(void *user, const void *value) {
+static bool config_prologue_len_setter(void *user, const void *value) {
 	CorePGContext *ctx = user;
 	rz_return_val_if_fail(ctx && value, false);
 	const ut64 val = *(const ut64 *)value;
@@ -125,7 +115,7 @@ static bool config_trie_prologue_len_setter(void *user, const void *value) {
 		RZ_LOG_ERROR("Prologue length must be a positive integer.\n");
 		return false;
 	}
-	ctx->trie_prologue_len = val;
+	ctx->prologue_len = val;
 	return true;
 }
 
@@ -381,68 +371,53 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_handler(RzCore *core, int argc, const ch
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	if (rz_set_s_contains(ctx->fpaths, binfile->file)) {
-		RZ_LOG_ERROR("This file is already processed: %s\n", binfile->file);
-		return RZ_CMD_STATUS_ERROR;
-	}
-
 	const RzBinInfo *info = rz_bin_object_get_info(binfile->o);
 	if (!info) {
 		RZ_LOG_ERROR("No binary info available for file: %s\n", binfile->file);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	const char *fb_arch = rz_config_get(core->config, "asm.arch");
-	int fb_bits = rz_config_get_i(core->config, "asm.bits");
-	bool fb_be = rz_config_get_b(core->config, "cfg.bigendian");
-
-	if (!rz_prologues_arch_check(info, &ctx->arch_info, fb_arch, fb_bits, fb_be)) {
-		const char *file_arch = RZ_STR_ISNOTEMPTY(info->arch) ? info->arch : fb_arch;
-		int file_bits = info->bits > 0 ? info->bits : fb_bits;
-		bool file_be = RZ_STR_ISNOTEMPTY(info->arch) ? info->big_endian : fb_be;
-		const char *prev_arch = ctx->arch_info.arch;
-		int prev_bits = ctx->arch_info.bits;
-		bool prev_be = ctx->arch_info.big_endian;
-
-		RZ_LOG_ERROR("Cannot use the file '%s': arch mismatch.\n"
-			     "  Session: (%s, %d-bit, %cE)\n"
-			     "  File:    (%s, %d-bit, %cE)\n"
-			     "Please reset the session first using pg-\n",
-			binfile->file,
-			prev_arch, prev_bits, prev_be ? 'B' : 'L',
-			file_arch, file_bits, file_be ? 'B' : 'L');
+	RzTrie *pg_trie = rz_prologues_trie_new();
+	if (!pg_trie) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	if (!build_prefix_tree_from_binfile(binfile, ctx->pg_trie, ctx->trie_prologue_len)) {
+	if (!build_prefix_tree_from_binfile(binfile, pg_trie, ctx->prologue_len)) {
+		rz_trie_free(pg_trie);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_set_s_add(ctx->fpaths, binfile->file);
 
-	// generalize prologues
-	if (rz_vector_len(ctx->prologues) > 0) {
-		RZ_LOG_WARN("Clearing existing %" PFMTSZu " prologues in store\n", rz_vector_len(ctx->prologues));
-		rz_vector_clear(ctx->prologues);
-	}
-	RzVector *prologues = rz_prologues_generalize_and_extract(ctx->pg_trie, ctx->trie_prologue_len, ctx->entropy_threshold);
+	RzProloguesArchInfo arch_info = { 0 };
+	rz_prologues_arch_check(info, &arch_info, NULL, 0, false);
+
+	RzVector *prologues = rz_prologues_generalize_and_extract(pg_trie, ctx->prologue_len, ctx->entropy_threshold);
 	if (!prologues) {
 		RZ_LOG_ERROR("Failed to generalize prologues from trie\n");
+		rz_prologues_arch_info_fini(&arch_info);
+		rz_trie_free(pg_trie);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	ctx->store_prologue_len = ctx->trie_prologue_len;
-	ctx->prologues = prologues;
 
-	RzStructuredData *root = rz_prologues_to_structured_data(ctx->prologues, ctx->store_prologue_len,
-		&ctx->arch_info);
-
+	RzStructuredData *root = rz_prologues_to_structured_data(prologues, ctx->prologue_len, &arch_info);
 	if (!root) {
+		rz_vector_free(prologues);
+		rz_prologues_arch_info_fini(&arch_info);
+		rz_trie_free(pg_trie);
 		return RZ_CMD_STATUS_ERROR;
 	}
+
 	if (!print_sd(root, mode)) {
 		rz_structured_data_free(root);
+		rz_vector_free(prologues);
+		rz_prologues_arch_info_fini(&arch_info);
+		rz_trie_free(pg_trie);
 		return RZ_CMD_STATUS_ERROR;
 	}
+
 	rz_structured_data_free(root);
+	rz_vector_free(prologues);
+	rz_prologues_arch_info_fini(&arch_info);
+	rz_trie_free(pg_trie);
 
 	return RZ_CMD_STATUS_OK;
 }
@@ -507,37 +482,55 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_all_handler(RzCore *core, int argc, cons
 	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
 	RzBin *bin = rz_core_get_bin(core);
 
-	st64 fcnt = rz_prologues_trie_feed_all_binfiles(ctx->pg_trie, bin, ctx->trie_prologue_len,
-		&ctx->arch_info, ctx->fpaths);
+	RzTrie *pg_trie = rz_prologues_trie_new();
+	if (!pg_trie) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	RzSetS *processed_files = rz_set_s_new(HT_STR_DUP);
+	RzProloguesArchInfo arch_info = { 0 };
+
+	st64 fcnt = rz_prologues_trie_feed_all_binfiles(pg_trie, bin, ctx->prologue_len, &arch_info, processed_files);
 	if (fcnt == -1) {
+		rz_set_s_free(processed_files);
+		rz_prologues_arch_info_fini(&arch_info);
+		rz_trie_free(pg_trie);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RZ_LOG_INFO("Processed %" PFMTSZu " files out of %" PFMT32u "\n", fcnt, rz_list_length(bin->binfiles));
 
-	// generalize prologues
-	if (rz_vector_len(ctx->prologues) > 0) {
-		RZ_LOG_WARN("Found %" PFMTSZu " existing prologues in store. Clearing...\n", rz_vector_len(ctx->prologues));
-		rz_vector_clear(ctx->prologues);
-	}
-	RzVector *prologues = rz_prologues_generalize_and_extract(ctx->pg_trie, ctx->trie_prologue_len, ctx->entropy_threshold);
+	RzVector *prologues = rz_prologues_generalize_and_extract(pg_trie, ctx->prologue_len, ctx->entropy_threshold);
 	if (!prologues) {
 		RZ_LOG_ERROR("Failed to generalize prologues from trie\n");
+		rz_set_s_free(processed_files);
+		rz_prologues_arch_info_fini(&arch_info);
+		rz_trie_free(pg_trie);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	ctx->store_prologue_len = ctx->trie_prologue_len;
-	ctx->prologues = prologues;
 
-	RzStructuredData *root = rz_prologues_to_structured_data(ctx->prologues, ctx->store_prologue_len,
-		&ctx->arch_info);
-
+	RzStructuredData *root = rz_prologues_to_structured_data(prologues, ctx->prologue_len, &arch_info);
 	if (!root) {
+		rz_vector_free(prologues);
+		rz_set_s_free(processed_files);
+		rz_prologues_arch_info_fini(&arch_info);
+		rz_trie_free(pg_trie);
 		return RZ_CMD_STATUS_ERROR;
 	}
+
 	if (!print_sd(root, mode)) {
 		rz_structured_data_free(root);
+		rz_vector_free(prologues);
+		rz_set_s_free(processed_files);
+		rz_prologues_arch_info_fini(&arch_info);
+		rz_trie_free(pg_trie);
 		return RZ_CMD_STATUS_ERROR;
 	}
+
 	rz_structured_data_free(root);
+	rz_vector_free(prologues);
+	rz_set_s_free(processed_files);
+	rz_prologues_arch_info_fini(&arch_info);
+	rz_trie_free(pg_trie);
 
 	return RZ_CMD_STATUS_OK;
 }
@@ -642,35 +635,55 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_dir_handler(RzCore *core, int argc, cons
 
 	const char *dir_path = argv[1];
 	RzBin *bin = rz_core_get_bin(core);
-	st64 fcnt = rz_prologues_trie_feed_directory(ctx->pg_trie, bin, dir_path, ctx->trie_prologue_len,
-		&ctx->arch_info, ctx->fpaths);
-	if (fcnt == -1) {
+
+	RzTrie *pg_trie = rz_prologues_trie_new();
+	if (!pg_trie) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	// generalize prologues
-	if (rz_vector_len(ctx->prologues) > 0) {
-		RZ_LOG_WARN("Clearing existing %" PFMTSZu " prologues in store\n", rz_vector_len(ctx->prologues));
-		rz_vector_clear(ctx->prologues);
+	RzSetS *processed_files = rz_set_s_new(HT_STR_DUP);
+	RzProloguesArchInfo arch_info = { 0 };
+
+	st64 fcnt = rz_prologues_trie_feed_directory(pg_trie, bin, dir_path, ctx->prologue_len, &arch_info, processed_files);
+	if (fcnt == -1) {
+		rz_set_s_free(processed_files);
+		rz_prologues_arch_info_fini(&arch_info);
+		rz_trie_free(pg_trie);
+		return RZ_CMD_STATUS_ERROR;
 	}
-	RzVector *prologues = rz_prologues_generalize_and_extract(ctx->pg_trie, ctx->trie_prologue_len, ctx->entropy_threshold);
+
+	RzVector *prologues = rz_prologues_generalize_and_extract(pg_trie, ctx->prologue_len, ctx->entropy_threshold);
 	if (!prologues) {
 		RZ_LOG_ERROR("Failed to generalize prologues from trie\n");
+		rz_set_s_free(processed_files);
+		rz_prologues_arch_info_fini(&arch_info);
+		rz_trie_free(pg_trie);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	ctx->store_prologue_len = ctx->trie_prologue_len;
-	ctx->prologues = prologues;
 
-	RzStructuredData *root = rz_prologues_to_structured_data(ctx->prologues, ctx->store_prologue_len, &ctx->arch_info);
-
+	RzStructuredData *root = rz_prologues_to_structured_data(prologues, ctx->prologue_len, &arch_info);
 	if (!root) {
+		rz_vector_free(prologues);
+		rz_set_s_free(processed_files);
+		rz_prologues_arch_info_fini(&arch_info);
+		rz_trie_free(pg_trie);
 		return RZ_CMD_STATUS_ERROR;
 	}
+
 	if (!print_sd(root, mode)) {
 		rz_structured_data_free(root);
+		rz_vector_free(prologues);
+		rz_set_s_free(processed_files);
+		rz_prologues_arch_info_fini(&arch_info);
+		rz_trie_free(pg_trie);
 		return RZ_CMD_STATUS_ERROR;
 	}
+
 	rz_structured_data_free(root);
+	rz_vector_free(prologues);
+	rz_set_s_free(processed_files);
+	rz_prologues_arch_info_fini(&arch_info);
+	rz_trie_free(pg_trie);
 
 	return RZ_CMD_STATUS_OK;
 }
@@ -852,57 +865,6 @@ RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_extract_raw_from_trie(RzTr
 	return prologues;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_prologues_store_clear_handler(RzCore *core, int argc, const char **argv) {
-	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
-	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
-	rz_vector_clear(ctx->prologues);
-	ctx->store_prologue_len = 0;
-	return RZ_CMD_STATUS_OK;
-}
-
-static bool prologue_trie_clear(CorePGContext *ctx) {
-	rz_return_val_if_fail(ctx, false);
-	rz_set_s_clear(ctx->fpaths);
-	RzTrie *t = ctx->pg_trie;
-	rz_trie_clear(ctx->pg_trie);
-	PGTrieNodeData *rd = RZ_NEW0(PGTrieNodeData);
-	if (!rd) {
-		RZ_LOG_ERROR("calloc failed for root trie node data\n");
-		return false;
-	}
-	rd->hit_cnt = 0;
-	t->root->data = rd;
-	return true;
-}
-
-RZ_IPI RzCmdStatus rz_cmd_prologues_trie_clear_handler(RzCore *core, int argc, const char **argv) {
-	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
-	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
-	if (!prologue_trie_clear(ctx)) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_cmd_reset_session_handler(RzCore *core, int argc, const char **argv) {
-	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
-	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
-
-	// metadata
-	rz_prologues_arch_info_fini(&ctx->arch_info);
-
-	// trie
-	if (!prologue_trie_clear(ctx)) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	// prologues store
-	rz_vector_clear(ctx->prologues);
-	ctx->store_prologue_len = 0;
-
-	return RZ_CMD_STATUS_OK;
-}
-
 static void edge_visit_sd(RzTrieNode *parent, RzTrieNode *child, void *user) {
 	rz_return_if_fail(parent && parent->data && child && child->data && user);
 
@@ -962,13 +924,15 @@ RZ_API RZ_OWN RzStructuredData *rz_prologues_trie_to_structured_data(RZ_NONNULL 
 	PGTrieNodeData *rd = pg_trie->root->data;
 	rz_structured_data_map_add_unsigned(root, "total_prologues_analyzed", rd->hit_cnt, false);
 
-	RzStructuredData *files_arr = rz_structured_data_map_add_array(root, "files");
-	RzIterator *it = rz_set_s_as_iter(files);
-	const char **file;
-	rz_iterator_foreach(it, file) {
-		rz_structured_data_array_add_string(files_arr, *file);
+	if (files) {
+		RzStructuredData *files_arr = rz_structured_data_map_add_array(root, "files");
+		RzIterator *it = rz_set_s_as_iter(files);
+		const char **file;
+		rz_iterator_foreach(it, file) {
+			rz_structured_data_array_add_string(files_arr, *file);
+		}
+		rz_iterator_free(it);
 	}
-	rz_iterator_free(it);
 
 	RzStructuredData *arr = rz_structured_data_map_add_array(root, "prefix_tree");
 
@@ -988,24 +952,6 @@ RZ_API RZ_OWN RzStructuredData *rz_prologues_trie_to_structured_data(RZ_NONNULL 
 	rz_trie_dfs(pg_trie->root, NULL, edge_visit_sd, NULL, &sdctx);
 	ht_pu_free(node_ids);
 	return root;
-}
-
-RZ_IPI RzCmdStatus rz_cmd_prefix_tree_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
-	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
-
-	RzStructuredData *root = rz_prologues_trie_to_structured_data(ctx->pg_trie, ctx->trie_prologue_len,
-		&ctx->arch_info, ctx->fpaths);
-
-	if (!root) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	if (!print_sd(root, mode)) {
-		rz_structured_data_free(root);
-		return RZ_CMD_STATUS_ERROR;
-	}
-	rz_structured_data_free(root);
-	return RZ_CMD_STATUS_OK;
 }
 
 RZ_API RZ_OWN RzStructuredData *rz_prologues_to_structured_data(RZ_NONNULL const RzVector /*<RzPrologue>*/ *prologues,
@@ -1031,29 +977,6 @@ RZ_API RZ_OWN RzStructuredData *rz_prologues_to_structured_data(RZ_NONNULL const
 	return root;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_prologues_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
-	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
-
-	if (!ctx->prologues || rz_vector_len(ctx->prologues) == 0) {
-		RZ_LOG_ERROR("No prologues in the store, please load (pgL) or generate prologues first (pg[a|d] -> pgg).\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	RzStructuredData *root = rz_prologues_to_structured_data(ctx->prologues, ctx->store_prologue_len,
-		&ctx->arch_info);
-
-	if (!root) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	if (!print_sd(root, mode)) {
-		rz_structured_data_free(root);
-		return RZ_CMD_STATUS_ERROR;
-	}
-	rz_structured_data_free(root);
-	return RZ_CMD_STATUS_OK;
-}
-
 static bool rz_cmd_prologues_gen_init(RzCore *core, RZ_OUT void **user) {
 	CorePGContext *ctx = RZ_NEW0(CorePGContext);
 	if (!ctx) {
@@ -1061,26 +984,8 @@ static bool rz_cmd_prologues_gen_init(RzCore *core, RZ_OUT void **user) {
 	}
 	RzConfig *cfg = NULL;
 
-	ctx->trie_prologue_len = RZ_PROLOGUE_DEFAULT_LEN;
-	ctx->store_prologue_len = 0;
+	ctx->prologue_len = RZ_PROLOGUE_DEFAULT_LEN;
 	ctx->entropy_threshold = RZ_PROLOGUE_DEFAULT_ENTROPY_THRESHOLD;
-
-	ctx->fpaths = rz_set_s_new(HT_STR_DUP);
-	if (!ctx->fpaths) {
-		goto error;
-	}
-
-	// trie
-	ctx->pg_trie = rz_prologues_trie_new();
-	if (!ctx->pg_trie) {
-		goto error;
-	}
-
-	// prologues store
-	ctx->prologues = rz_vector_new(sizeof(RzPrologue), pg_prologue_free, NULL);
-	if (!ctx->prologues) {
-		goto error;
-	}
 
 	// cmds
 	RzCmd *rcmd = core->rcmd;
@@ -1105,15 +1010,6 @@ static bool rz_cmd_prologues_gen_init(RzCore *core, RZ_OUT void **user) {
 	rz_cmd_desc_argv_modes_new_warn(rcmd, pg, "pgd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON,
 		rz_cmd_prologues_gen_dir_handler, &cmd_raw_prologues_gen_dir_help);
 
-	rz_cmd_desc_argv_modes_new_warn(rcmd, pg, "pgtp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON,
-		rz_cmd_prefix_tree_print_handler, &cmd_prefix_tree_print_help);
-	rz_cmd_desc_argv_modes_new_warn(rcmd, pg, "pgp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON,
-		rz_cmd_prologues_print_handler, &cmd_prologues_print_help);
-
-	rz_cmd_desc_argv_new_warn(rcmd, pg, "pgt-", rz_cmd_prologues_trie_clear_handler, &cmd_prologues_trie_clear_help);
-	rz_cmd_desc_argv_new_warn(rcmd, pg, "pgp-", rz_cmd_prologues_store_clear_handler, &cmd_prologues_store_clear_help);
-	rz_cmd_desc_argv_new_warn(rcmd, pg, "pg-", rz_cmd_reset_session_handler, &cmd_reset_session_help);
-
 	// configs
 	cfg = rz_config_new(NULL);
 	if (!cfg) {
@@ -1121,7 +1017,7 @@ static bool rz_cmd_prologues_gen_init(RzCore *core, RZ_OUT void **user) {
 	}
 	rz_config_add_integer_bind(cfg, "plugins.prologues_generator.prologue_len",
 		"Number of bytes (>0) to extract from start of function for prologue generation",
-		config_trie_prologue_len_getter, config_trie_prologue_len_setter, NULL, ctx);
+		config_prologue_len_getter, config_prologue_len_setter, NULL, ctx);
 
 	rz_config_add_string_bind(cfg, "plugins.prologues_generator.entropy_threshold",
 		"Threshold for shanon entropy of node split to consider 0.0 to 1.0",
@@ -1134,9 +1030,6 @@ static bool rz_cmd_prologues_gen_init(RzCore *core, RZ_OUT void **user) {
 
 error:
 	rz_warn_if_reached();
-	rz_set_s_free(ctx->fpaths);
-	rz_trie_free(ctx->pg_trie);
-	rz_vector_free(ctx->prologues);
 	rz_core_plugin_cmd_desc_remove(core, ctx->cmd_desc);
 	rz_config_free(cfg);
 	RZ_FREE(ctx);
@@ -1146,10 +1039,6 @@ error:
 static bool rz_cmd_prologues_gen_fini(RzCore *core, RZ_NULLABLE void *user) {
 	CorePGContext *ctx = user;
 	rz_return_val_if_fail(ctx, false);
-	rz_set_s_free(ctx->fpaths);
-	rz_prologues_arch_info_fini(&ctx->arch_info);
-	rz_trie_free(ctx->pg_trie);
-	rz_vector_free(ctx->prologues);
 	if (!rz_core_plugin_cmd_desc_remove(core, ctx->cmd_desc)) {
 		return false;
 	}
