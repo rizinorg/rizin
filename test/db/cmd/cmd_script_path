@@ -1,7 +1,7 @@
 NAME=load script when input filename contains spaces
-FILE=fixtures/Foo Bar
+FILE=bins/other/Foo Bar
 ARGS=-e scr.interactive=true
 CMDS=q
-REGEXP_FILTER_ERR=Do you want to run the 'fixtures/Foo Bar[.]rz' script[?] [(]y/N[)]
-EXPECT_ERR=Do you want to run the 'fixtures/Foo Bar.rz' script? (y/N)
+REGEXP_FILTER_ERR=Do you want to run the 'bins/other/Foo Bar[.]rz' script[?] [(]y/N[)]
+EXPECT_ERR=Do you want to run the 'bins/other/Foo Bar.rz' script? (y/N)
 RUN
