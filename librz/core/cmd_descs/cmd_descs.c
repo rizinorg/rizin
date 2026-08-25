@@ -12281,6 +12281,8 @@ static const RzCmdDescDetailEntry cmd_eval_color_list_help_Color_space_Palette_s
 	{ .text = "diff.new", .arg_str = NULL, .comment = "Color for new diff" },
 	{ .text = "diff.match", .arg_str = NULL, .comment = "Color for matched diff" },
 	{ .text = "diff.unmatch", .arg_str = NULL, .comment = "Color for unmatched diff" },
+	{ .text = "gui.match.perfect", .arg_str = NULL, .comment = "Color for perfectly matched GUI diff" },
+	{ .text = "gui.match.partial", .arg_str = NULL, .comment = "Color for partially matched GUI diff" },
 	{ .text = "gui.cflow", .arg_str = NULL, .comment = "Color for GUI control flow" },
 	{ .text = "gui.dataoffset", .arg_str = NULL, .comment = "Color for GUI data offset" },
 	{ .text = "gui.background", .arg_str = NULL, .comment = "Color for GUI background" },

@@ -1163,6 +1163,194 @@ bool test_rz_diff_long_common_prefix(void) {
 	mu_end;
 }
 
+bool test_rz_diff_op_stringify(void) {
+
+	// clang-format off
+	const char *a = ""
+		"This part of the\n"
+		"document has stayed the\n"
+		"same from version to\n"
+		"version.  It shouldn't\n"
+		"be shown if it doesn't\n"
+		"change.  Otherwise, that\n"
+		"would not be helping to\n"
+		"compress the size of the\n"
+		"changes.\n"
+		"\n"
+		"This paragraph contains\n"
+		"text that is outdated.\n"
+		"It will be deleted in the\n"
+		"near future.\n"
+		"\n"
+		"It is important to spell\n"
+		"check this dokument. On\n"
+		"the other hand, a\n"
+		"misspelled word isn't\n"
+		"the end of the world.\n"
+		"Nothing in the rest of\n"
+		"this paragraph needs to\n"
+		"be changed. Things can\n"
+		"be added after it.";
+
+	const char *b = ""
+		"This is an important\n"
+		"notice! It should\n"
+		"therefore be located at\n"
+		"the beginning of this\n"
+		"document!\n"
+		"\n"
+		"This part of the\n"
+		"document has stayed the\n"
+		"same from version to\n"
+		"version.  It shouldn't\n"
+		"be shown if it doesn't\n"
+		"change.  Otherwise, that\n"
+		"would not be helping to\n"
+		"compress the size of the\n"
+		"changes.\n"
+		"\n"
+		"It is important to spell\n"
+		"check this document. On\n"
+		"the other hand, a\n"
+		"misspelled word isn't\n"
+		"the end of the world.\n"
+		"Nothing in the rest of\n"
+		"this paragraph needs to\n"
+		"be changed. Things can\n"
+		"be added after it.\n"
+		"\n"
+		"This paragraph contains\n"
+		"important new additions\n"
+		"to this document.";
+
+	const char *expected =
+		"--INSERTED--\n"
+		"This is an important\n"
+		"notice! It should\n"
+		"therefore be located at\n"
+		"the beginning of this\n"
+		"document!\n"
+		"\n"
+		"\n"
+		"-----\n"
+		"--EQUAL--\n"
+		"This part of the\n"
+		"document has stayed the\n"
+		"same from version to\n"
+		"\n"
+		"-----\n"
+		"--EQUAL--\n"
+		"compress the size of the\n"
+		"changes.\n"
+		"\n"
+		"\n"
+		"-----\n"
+		"--REMOVED--\n"
+		"This paragraph contains\n"
+		"text that is outdated.\n"
+		"It will be deleted in the\n"
+		"near future.\n"
+		"\n"
+		"\n"
+		"-----\n"
+		"--EQUAL--\n"
+		"It is important to spell\n"
+		"\n"
+		"-----\n"
+		"--REPLACED--\n"
+		"actual check this dokument. On\n"
+		"\n"
+		"replaced check this document. On\n"
+		"\n"
+		"-----\n"
+		"--EQUAL--\n"
+		"the other hand, a\n"
+		"misspelled word isn't\n"
+		"the end of the world.\n"
+		"Nothing in the rest of\n"
+		"this paragraph needs to\n"
+		"be changed. Things can\n"
+		"\n"
+		"-----\n"
+		"--REPLACED--\n"
+		"actual be added after it.\n"
+		"\n"
+		"replaced be added after it.\n"
+		"\n"
+		"This paragraph contains\n"
+		"important new additions\n"
+		"to this document.\n"
+		"\n"
+		"-----\n";
+
+	// clang-format on
+
+	RzDiff *diff = rz_diff_lines_new(a, b, NULL);
+	mu_assert_notnull(diff, "rz_diff_lines_new returned NULL");
+
+	RzList *groups = rz_diff_unified_text_grouped(diff);
+	mu_assert_notnull(groups, "rz_diff_unified_text_grouped returned NULL");
+
+	RzList *ops = NULL;
+	RzDiffOp *op = NULL;
+	RzListIter *itg = NULL;
+	RzListIter *ito = NULL;
+
+	RzStrBuf result;
+	rz_strbuf_init(&result);
+
+	rz_list_foreach (groups, itg, ops) {
+		rz_list_foreach (ops, ito, op) {
+			char *stringified = NULL;
+
+			switch (op->type) {
+			case RZ_DIFF_OP_DELETE: {
+				stringified = rz_diff_op_stringify(diff, op, true);
+				rz_strbuf_appendf(&result, "--REMOVED--\n%s\n-----\n", stringified);
+				break;
+			}
+
+			case RZ_DIFF_OP_EQUAL: {
+				stringified = rz_diff_op_stringify(diff, op, true);
+				rz_strbuf_appendf(&result, "--EQUAL--\n%s\n-----\n", stringified);
+				break;
+			}
+
+			case RZ_DIFF_OP_INSERT:
+				stringified = rz_diff_op_stringify(diff, op, false);
+				rz_strbuf_appendf(&result, "--INSERTED--\n%s\n-----\n", stringified);
+				break;
+
+			case RZ_DIFF_OP_REPLACE:
+				stringified = rz_diff_op_stringify(diff, op, true);
+				rz_strbuf_appendf(&result, "--REPLACED--\nactual %s\n", stringified);
+				free(stringified);
+
+				stringified = rz_diff_op_stringify(diff, op, false);
+				rz_strbuf_appendf(&result, "replaced %s\n-----\n", stringified);
+				break;
+
+			default:
+				break;
+			}
+
+			free(stringified);
+		}
+	}
+
+	char *res = rz_strbuf_drain_nofree(&result);
+
+	mu_assert_notnull(res, "rz result null");
+	mu_assert_streq(res, expected, "rz result not equal");
+
+	free(res);
+	rz_strbuf_fini(&result);
+	rz_list_free(groups);
+	rz_diff_free(diff);
+
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_diff_distances);
 	mu_run_test(test_rz_diff_unified_lines);
@@ -1192,6 +1380,7 @@ int all_tests() {
 	mu_run_test(test_rz_diff_block_shift);
 	mu_run_test(test_rz_diff_growing_buffer);
 	mu_run_test(test_rz_diff_long_common_prefix);
+	mu_run_test(test_rz_diff_op_stringify);
 	return tests_passed != tests_run;
 }
 

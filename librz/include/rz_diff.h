@@ -88,6 +88,8 @@ RZ_API bool rz_diff_ratio(RZ_NONNULL RzDiff *diff, RZ_NONNULL double *result);
 RZ_API bool rz_diff_sizes_ratio(RZ_NONNULL RzDiff *diff, RZ_NONNULL double *result);
 
 RZ_API RZ_OWN char *rz_diff_unified_text(RZ_NONNULL RzDiff *diff, RZ_NULLABLE const char *from, RZ_NULLABLE const char *to, bool show_time, bool color);
+RZ_API RZ_OWN RzList /*<RzList<RzDiffOp *> *>*/ *rz_diff_unified_text_grouped(RZ_NONNULL RzDiff *diff);
+RZ_API RZ_OWN char *rz_diff_op_stringify(RZ_NONNULL RzDiff *diff, RZ_NONNULL RzDiffOp *op, bool is_a);
 RZ_API RZ_OWN PJ *rz_diff_unified_json(RZ_NONNULL RzDiff *diff, RZ_NULLABLE const char *from, RZ_NULLABLE const char *to, bool show_time);
 
 /* Distances algorithms */
