@@ -34,6 +34,7 @@ typedef struct {
 	int align;
 	ut8 *buf;
 	ut64 bsize;
+	ut64 buflen; /* length of valid data in buf */
 	ut64 from;
 	ut64 to;
 	ut64 cur;
@@ -49,6 +50,7 @@ typedef struct {
 static void rzfind_options_fini(RzfindOptions *ro) {
 	free(ro->buf);
 	ro->cur = 0;
+	ro->buflen = 0;
 }
 
 static void rzfind_options_init(RzfindOptions *ro) {
@@ -67,78 +69,79 @@ typedef struct {
 	RzfindOptions *opt;
 	const char *filename;
 	RzCore *core;
+	RzIO *io;
 } RzfindContext;
 
-static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
-	RzfindContext *ctx = (RzfindContext *)user;
-	RzfindOptions *ro = ctx->opt;
-	int delta = addr - ro->cur;
-	if (ro->cur > addr && (ro->cur - addr == kw->keyword_length - 1)) {
-		// This case occurs when there is hit in search left over
-		delta = ro->cur - addr;
-	}
-	if (delta < 0 || delta >= ro->bsize) {
-		eprintf("Invalid delta\n");
-		return 0;
-	}
-	if (!ro->quiet && !ro->json) {
-		printf("File: %s\n", ctx->filename);
-	}
-	char _str[128];
-	char *str = _str;
-	*_str = 0;
-	if (ro->showstr) {
-		if (ro->widestr) {
-			str = _str;
-			int i, j = 0;
-			for (i = delta; ro->buf[i] && i < sizeof(_str); i++) {
-				char ch = ro->buf[i];
-				if (ch == '"' || ch == '\\') {
-					ch = '\'';
-				}
-				if (!IS_PRINTABLE(ch)) {
-					break;
-				}
-				str[j++] = ch;
-				i++;
-				if (j > 80) {
-					strcpy(str + j, "...");
-					j += 3;
-					break;
-				}
-				if (ro->buf[i]) {
-					break;
-				}
+static void str_iterate(bool widestr, RzStrBuf *sb, char *buf, uint64_t len, uint64_t start) {
+	if (widestr) {
+		uint64_t i, j = 0;
+		for (i = start; i < len && buf[i]; i++) {
+			char ch = buf[i];
+			if (ch == '"' || ch == '\\') {
+				ch = '\'';
 			}
-			str[j] = 0;
-		} else {
-			size_t i;
-			for (i = 0; i < sizeof(_str) - 1; i++) {
-				char ch = ro->buf[delta + i];
-				if (ch == '"' || ch == '\\') {
-					ch = '\'';
-				}
-				if (!ch || !IS_PRINTABLE(ch)) {
-					break;
-				}
-				str[i] = ch;
+			if (!IS_PRINTABLE(ch)) {
+				break;
 			}
-			str[i] = 0;
+			rz_strbuf_append_n(sb, &ch, 1);
+			j++;
+			i++;
+			if (j > 80) {
+				rz_strbuf_append(sb, "...");
+				break;
+			}
+			if (i >= len || !buf[i]) {
+				break;
+			}
 		}
+		return;
 	} else {
-		size_t i;
-		for (i = 0; i < sizeof(_str) - 1; i++) {
-			char ch = ro->buf[delta + i];
+		for (uint64_t i = start; i < len; i++) {
+			char ch = buf[i];
 			if (ch == '"' || ch == '\\') {
 				ch = '\'';
 			}
 			if (!ch || !IS_PRINTABLE(ch)) {
 				break;
 			}
-			str[i] = ch;
+			rz_strbuf_append_n(sb, &ch, 1);
 		}
-		str[i] = 0;
 	}
+}
+
+static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
+	RzfindContext *ctx = (RzfindContext *)user;
+	RzfindOptions *ro = ctx->opt;
+	int delta = addr - ro->cur;
+	bool search_leftover = false;
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	RzStrBuf leftover;
+	if (ro->cur > addr) {
+		// This case occurs when there is hit in search left over
+		delta = ro->widestr ? (ro->cur - addr) : 0;
+		search_leftover = true;
+		rz_strbuf_init(&leftover);
+	}
+	if (delta < 0 || delta >= ro->buflen) {
+		RZ_LOG_ERROR("Invalid delta\n");
+		return 0;
+	}
+	if (!ro->quiet && !ro->json) {
+		printf("File: %s\n", ctx->filename);
+	}
+
+	bool is_widestr = ro->widestr;
+	if (!is_widestr && ro->showstr && search_leftover && rz_strbuf_reserve(&leftover, ro->cur - addr)) {
+		int ret = rz_io_pread_at(ctx->io, addr, (uint8_t *)rz_strbuf_get(&leftover), ro->cur - addr);
+		if (ret > 0) {
+			str_iterate(is_widestr, &sb, rz_strbuf_get(&leftover), ret, 0);
+		}
+		rz_strbuf_fini(&leftover);
+	}
+	str_iterate(is_widestr, &sb, (char *)ro->buf, ro->buflen, delta);
+
+	char *str = rz_strbuf_get(&sb);
 	if (ro->json) {
 		const char *type = "string";
 		printf("%s{\"offset\":%" PFMT64d ",\"type\":\"%s\",\"data\":\"%s\"}",
@@ -167,6 +170,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			RZ_LOG_ERROR("Failed to execute command: %s\n", command);
 		}
 		free(command);
+		rz_strbuf_fini(&sb);
 		return 1;
 	}
 	if (ro->rizin_command && ctx->core) {
@@ -176,8 +180,10 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			printf("%s", output);
 			free(output);
 		}
+		rz_strbuf_fini(&sb);
 		return 1;
 	}
+	rz_strbuf_fini(&sb);
 	return 1;
 }
 
@@ -521,7 +527,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		}
 		rz_core_bin_load(core, NULL, UT64_MAX);
 	}
-	RzfindContext ctx = { .opt = ro, .filename = file, .core = core };
+	RzfindContext ctx = { .opt = ro, .filename = file, .core = core, .io = io };
 	rz_search_set_callback(rs, &hit, &ctx);
 	ut64 to = ro->to;
 	if (to == -1) {
@@ -710,8 +716,9 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 			result = 1;
 			break;
 		}
-		if (ret != bsize && ret > 0) {
+		if (ret > 0) {
 			bsize = ret;
+			ro->buflen = ret;
 		}
 
 		if (rz_search_update(rs, ro->cur, ro->buf, ret) == -1) {
