@@ -1,0 +1,1355 @@
+NAME=16 bits omf
+FILE=bins/omf/hello_world
+CMDS=<<EOF
+iI~bits
+echo ---
+iH
+echo ---
+ie:quiet
+echo ---
+is
+echo ---
+iS
+echo ---
+oml
+echo ---
+px 16 @ section.text_1
+px 16 @ section.data_1
+e asm.bytes=true
+pdq 1~mov[1]
+EOF
+EXPECT=<<EOF
+bits     16
+---
+omf:
+  bits: 16
+  num_names: 3
+  num_sections: 2
+  num_symbols: 1
+  names:
+    - "text"
+    - "data"
+  sections:
+    - name: ""
+      name_idx: 1
+      vaddr: 0x10010
+      size: 19
+      bits: 16
+    - name: "text"
+      name_idx: 2
+      vaddr: 0x10030
+      size: 14
+      bits: 16
+  symbols:
+    - name: "_start"
+      base: 0
+      seg_idx: 1
+      offset: 0x0
+      segment: "text"
+      paddr: 0x0
+      vaddr: 0x10010
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF - Public Names Definition Record 16 bits"
+
+---
+0x00000010 0x00000000 ---------- ---------- program
+---
+nth      paddr      vaddr bind   type size lib name   
+------------------------------------------------------
+  0 0x00000000 0x00010010 GLOBAL NONE    0     _start
+---
+paddr size vaddr vsize align perm name type flags 
+--------------------------------------------------
+---
+ 1 fd: 3 +0x00000073 0x00010010 - 0x00010022 r-x fmap.text_UNKNOWN
+ 2 fd: 3 +0x00000095 0x00010030 - 0x0001003d r-- fmap.data_UNKNOWN
+---
+EOF
+RUN
+
+NAME=32 bits omf
+FILE=bins/omf/hello_world32
+CMDS=<<EOF
+iI~bits
+iH
+ie:quiet
+is
+iS
+oml
+e asm.bytes=true
+pdq 1~mov[1]
+EOF
+EXPECT=<<EOF
+bits     32
+omf:
+  bits: 32
+  num_names: 7
+  num_sections: 2
+  num_symbols: 1
+  names:
+    - "FLAT"
+    - "CODE"
+    - "DATA"
+    - "BSS"
+    - "CONST"
+    - ".text"
+    - ".data"
+  sections:
+    - name: "CONST"
+      name_idx: 5
+      vaddr: 0x10010
+      size: 29
+      bits: 32
+    - name: ".text"
+      name_idx: 6
+      vaddr: 0x10030
+      size: 14
+      bits: 32
+  symbols:
+    - name: "_start"
+      base: 1
+      seg_idx: 1
+      offset: 0x0
+      segment: ".text"
+      paddr: 0x0
+      vaddr: 0x10010
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+
+0x00000050 0x00000000 ---------- ---------- program
+nth      paddr      vaddr bind   type size lib name   
+------------------------------------------------------
+  0 0x00000000 0x00010010 GLOBAL NONE    0     _start
+paddr size vaddr vsize align perm name type flags 
+--------------------------------------------------
+ 1 fd: 3 +0x00000074 0x00010010 - 0x0001002c r-x fmap..text_CODE
+ 2 fd: 3 +0x000000a3 0x00010030 - 0x0001003d r-- fmap..data_CONST
+EOF
+RUN
+
+NAME=multiple symbols omf
+FILE=bins/omf/multi_pubdef
+CMDS=is
+EXPECT=<<EOF
+nth      paddr      vaddr bind   type size lib name          
+-------------------------------------------------------------
+  0 0x00000000 0x00010010 GLOBAL NONE    0     _start
+  1 0x00000013 0x00010023 GLOBAL NONE    0     second_symbol
+EOF
+RUN
+
+NAME=null checksum omf
+FILE=bins/omf/null_checks
+CMDS=is
+EXPECT=<<EOF
+nth      paddr      vaddr bind   type size lib name   
+------------------------------------------------------
+  0 0x00000000 0x00010010 GLOBAL NONE    0     _start
+EOF
+RUN
+
+NAME=invalide index segment omf
+FILE=bins/omf/invalid_idx
+CMDS=q!
+EXPECT=
+REGEXP_FILTER_ERR=<<EOF
+ERROR:.+
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid segment index for symbol _start
+ERROR: Invalid segment index for symbol (null)
+ERROR: Invalid segment index for symbol _start
+ERROR: Invalid segment index for symbol (null)
+EOF
+RUN
+
+NAME=invalide string size pubdef record omf
+FILE=bins/omf/invalid_str_pubdef
+CMDS=q!
+EXPECT=
+RUN
+
+NAME=invalide string size lnames record omf
+FILE=bins/omf/invalid_str_lname
+CMDS=q!
+EXPECT=
+RUN
+
+NAME=invalide record size omf
+FILE=bins/omf/invalid_size
+CMDS=q!
+EXPECT=
+RUN
+NAME=omf 16 bit emulateme stdlib no debug
+FILE=bins/omf/emulateme_stdlib_omf_16_no_debug.obj
+CMDS=<<EOF
+iH
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+omf:
+  bits: 16
+  num_names: 10
+  num_sections: 4
+  num_symbols: 4
+  names:
+    - "CODE"
+    - "DATA"
+    - "BSS"
+    - "TLS"
+    - "DGROUP"
+    - "_TEXT"
+    - "CONST"
+    - "CONST2"
+    - "_DATA"
+  sections:
+    - name: "DGROUP"
+      name_idx: 6
+      vaddr: 0x10010
+      size: 156
+      bits: 16
+    - name: "_TEXT"
+      name_idx: 7
+      vaddr: 0x100b0
+      size: 59
+      bits: 16
+    - name: "CONST"
+      name_idx: 8
+      vaddr: 0x100f0
+      size: 1
+      bits: 16
+    - name: "CONST2"
+      name_idx: 9
+      vaddr: 0x10100
+      size: 18
+      bits: 16
+  symbols:
+    - name: "decrypt_"
+      base: 0
+      seg_idx: 1
+      offset: 0x0
+      segment: "_TEXT"
+      paddr: 0x0
+      vaddr: 0x10010
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF - Public Names Definition Record 16 bits"
+      extrn: true
+    - name: "main_"
+      base: 0
+      seg_idx: 1
+      offset: 0x42
+      segment: "_TEXT"
+      paddr: 0x42
+      vaddr: 0x10052
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF - Public Names Definition Record 16 bits"
+    - name: "_parity_ref"
+      base: 1
+      seg_idx: 4
+      offset: 0x0
+      segment: ""
+      paddr: 0x0
+      vaddr: 0x10100
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF - Public Names Definition Record 16 bits"
+      extrn: true
+    - name: "_seckrit"
+      base: 1
+      seg_idx: 4
+      offset: 0x1
+      segment: ""
+      paddr: 0x1
+      vaddr: 0x10101
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF - Public Names Definition Record 16 bits"
+      extrn: true
+
+arch     x86
+bits     16
+EOF
+RUN
+
+NAME=omf 16 bit emulateme stdlib debug enabled
+FILE=bins/omf/emulateme_stdlib_omf_16_debug.obj
+CMDS=<<EOF
+iH
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+omf:
+  bits: 16
+  num_names: 20
+  num_sections: 13
+  num_symbols: 4
+  names:
+    - "CODE"
+    - "DATA"
+    - "BSS"
+    - "TLS"
+    - "DGROUP"
+    - "_TEXT"
+    - "CONST"
+    - "CONST2"
+    - "_DATA"
+    - "DWARF"
+    - ".debug_info"
+    - ".debug_pubnames"
+    - ".debug_aranges"
+    - ".debug_line"
+    - ".debug_loc"
+    - ".debug_abbrev"
+    - ".debug_macinfo"
+    - ".debug_str"
+    - ".WATCOM_references"
+  sections:
+    - name: "DGROUP"
+      name_idx: 6
+      vaddr: 0x10010
+      size: 314
+      bits: 16
+    - name: "_TEXT"
+      name_idx: 7
+      vaddr: 0x10150
+      size: 59
+      bits: 16
+    - name: "CONST"
+      name_idx: 8
+      vaddr: 0x10190
+      size: 1
+      bits: 16
+    - name: "CONST2"
+      name_idx: 9
+      vaddr: 0x101a0
+      size: 18
+      bits: 16
+    - name: "DWARF"
+      name_idx: 11
+      vaddr: 0x101c0
+      size: 653
+      bits: 32
+    - name: ".debug_info"
+      name_idx: 12
+      vaddr: 0x10450
+      size: 66
+      bits: 32
+    - name: ".debug_pubnames"
+      name_idx: 13
+      vaddr: 0x104a0
+      size: 36
+      bits: 32
+    - name: ".debug_aranges"
+      name_idx: 14
+      vaddr: 0x104d0
+      size: 137
+      bits: 32
+    - name: ".debug_line"
+      name_idx: 15
+      vaddr: 0x10560
+      size: 1
+      bits: 32
+    - name: ".debug_loc"
+      name_idx: 16
+      vaddr: 0x10570
+      size: 174
+      bits: 32
+    - name: ".debug_abbrev"
+      name_idx: 17
+      vaddr: 0x10620
+      size: 1
+      bits: 32
+    - name: ".debug_macinfo"
+      name_idx: 18
+      vaddr: 0x10630
+      size: 1
+      bits: 32
+    - name: ".debug_str"
+      name_idx: 19
+      vaddr: 0x10640
+      size: 4
+      bits: 32
+  symbols:
+    - name: "decrypt_"
+      base: 0
+      seg_idx: 1
+      offset: 0x0
+      segment: "_TEXT"
+      paddr: 0x0
+      vaddr: 0x10010
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF - Public Names Definition Record 16 bits"
+      extrn: true
+    - name: "main_"
+      base: 0
+      seg_idx: 1
+      offset: 0x92
+      segment: "_TEXT"
+      paddr: 0x92
+      vaddr: 0x100a2
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF - Public Names Definition Record 16 bits"
+      extrn: true
+    - name: "_parity_ref"
+      base: 1
+      seg_idx: 4
+      offset: 0x0
+      segment: "DWARF"
+      paddr: 0x0
+      vaddr: 0x101a0
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF - Public Names Definition Record 16 bits"
+      extrn: true
+    - name: "_seckrit"
+      base: 1
+      seg_idx: 4
+      offset: 0x1
+      segment: "DWARF"
+      paddr: 0x1
+      vaddr: 0x101a1
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF - Public Names Definition Record 16 bits"
+      extrn: true
+
+arch     x86
+bits     16
+EOF
+RUN
+
+NAME=omf 32 bit emulateme stdlib no debug
+FILE=bins/omf/emulateme_stdlib_omf_32_no_debug_gcc.obj
+CMDS=<<EOF
+iH
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+omf:
+  bits: 32
+  num_names: 9
+  num_sections: 4
+  num_symbols: 4
+  names:
+    - "FLAT"
+    - "CODE"
+    - "DATA"
+    - "BSS"
+    - "CONST"
+    - ".text"
+    - ".data"
+    - ".bss"
+    - ".rodata"
+  sections:
+    - name: "CONST"
+      name_idx: 5
+      vaddr: 0x10010
+      size: 344
+      bits: 32
+    - name: ".text"
+      name_idx: 6
+      vaddr: 0x10170
+      size: 21
+      bits: 32
+    - name: ".data"
+      name_idx: 7
+      vaddr: 0x10190
+      size: 1
+      bits: 32
+    - name: ".bss"
+      name_idx: 8
+      vaddr: 0x101a0
+      size: 57
+      bits: 32
+  symbols:
+    - name: "parity_ref"
+      base: 1
+      seg_idx: 2
+      offset: 0x0
+      segment: ".data"
+      paddr: 0x0
+      vaddr: 0x10170
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+    - name: "seckrit"
+      base: 1
+      seg_idx: 2
+      offset: 0x4
+      segment: ".data"
+      paddr: 0x4
+      vaddr: 0x10174
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+    - name: "decrypt"
+      base: 1
+      seg_idx: 1
+      offset: 0x0
+      segment: ".text"
+      paddr: 0x0
+      vaddr: 0x10010
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+    - name: "main"
+      base: 1
+      seg_idx: 1
+      offset: 0xa1
+      segment: ".text"
+      paddr: 0xa1
+      vaddr: 0x100b1
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+
+arch     x86
+bits     32
+EOF
+RUN
+
+NAME=omf 32 bit emulateme stdlib no debug
+FILE=bins/omf/emulateme_stdlib_omf_32_no_debug_ow.obj
+CMDS=<<EOF
+iH
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+omf:
+  bits: 32
+  num_names: 10
+  num_sections: 4
+  num_symbols: 6
+  names:
+    - "CODE"
+    - "DATA"
+    - "BSS"
+    - "TLS"
+    - "DGROUP"
+    - "_TEXT"
+    - "CONST"
+    - "CONST2"
+    - "_DATA"
+  sections:
+    - name: "DGROUP"
+      name_idx: 6
+      vaddr: 0x10010
+      size: 196
+      bits: 32
+    - name: "_TEXT"
+      name_idx: 7
+      vaddr: 0x100e0
+      size: 59
+      bits: 32
+    - name: "CONST"
+      name_idx: 8
+      vaddr: 0x10120
+      size: 1
+      bits: 32
+    - name: "CONST2"
+      name_idx: 9
+      vaddr: 0x10130
+      size: 18
+      bits: 32
+  symbols:
+    - name: "decrypt_"
+      base: 0
+      seg_idx: 1
+      offset: 0x0
+      segment: "_TEXT"
+      paddr: 0x0
+      vaddr: 0x10010
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+      extrn: true
+    - name: ""
+      base: 0
+      seg_idx: 1
+      offset: 0x500
+      segment: "_TEXT"
+      paddr: 0x500
+      vaddr: 0x10510
+      type_index: 109
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+    - name: "in_S"
+      base: 0
+      seg_idx: 1
+      offset: 0x6e7f
+      segment: "_TEXT"
+      paddr: 0x6e7f
+      vaddr: 0x16e8f
+      type_index: 120
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+    - name: "_parity_ref"
+      base: 1
+      seg_idx: 4
+      offset: 0x0
+      segment: ""
+      paddr: 0x0
+      vaddr: 0x10130
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+      extrn: true
+    - name: ""
+      base: 1
+      seg_idx: 4
+      offset: 0x800
+      segment: ""
+      paddr: 0x800
+      vaddr: 0x10930
+      type_index: 95
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+    - name: ""
+      base: 1
+      seg_idx: 4
+      offset: 0x0
+      segment: ""
+      paddr: 0x0
+      vaddr: 0x10130
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+
+arch     x86
+bits     32
+EOF
+RUN
+
+NAME=omf 32 bit emulateme stdlib debug enabled
+FILE=bins/omf/emulateme_stdlib_omf_32_debug.obj
+CMDS=<<EOF
+iH
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+omf:
+  bits: 32
+  num_names: 20
+  num_sections: 13
+  num_symbols: 6
+  names:
+    - "CODE"
+    - "DATA"
+    - "BSS"
+    - "TLS"
+    - "DGROUP"
+    - "_TEXT"
+    - "CONST"
+    - "CONST2"
+    - "_DATA"
+    - "DWARF"
+    - ".debug_info"
+    - ".debug_pubnames"
+    - ".debug_aranges"
+    - ".debug_line"
+    - ".debug_loc"
+    - ".debug_abbrev"
+    - ".debug_macinfo"
+    - ".debug_str"
+    - ".WATCOM_references"
+  sections:
+    - name: "DGROUP"
+      name_idx: 6
+      vaddr: 0x10010
+      size: 390
+      bits: 32
+    - name: "_TEXT"
+      name_idx: 7
+      vaddr: 0x101a0
+      size: 59
+      bits: 32
+    - name: "CONST"
+      name_idx: 8
+      vaddr: 0x101e0
+      size: 1
+      bits: 32
+    - name: "CONST2"
+      name_idx: 9
+      vaddr: 0x101f0
+      size: 18
+      bits: 32
+    - name: "DWARF"
+      name_idx: 11
+      vaddr: 0x10210
+      size: 703
+      bits: 32
+    - name: ".debug_info"
+      name_idx: 12
+      vaddr: 0x104d0
+      size: 66
+      bits: 32
+    - name: ".debug_pubnames"
+      name_idx: 13
+      vaddr: 0x10520
+      size: 52
+      bits: 32
+    - name: ".debug_aranges"
+      name_idx: 14
+      vaddr: 0x10560
+      size: 139
+      bits: 32
+    - name: ".debug_line"
+      name_idx: 15
+      vaddr: 0x105f0
+      size: 1
+      bits: 32
+    - name: ".debug_loc"
+      name_idx: 16
+      vaddr: 0x10600
+      size: 174
+      bits: 32
+    - name: ".debug_abbrev"
+      name_idx: 17
+      vaddr: 0x106b0
+      size: 1
+      bits: 32
+    - name: ".debug_macinfo"
+      name_idx: 18
+      vaddr: 0x106c0
+      size: 1
+      bits: 32
+    - name: ".debug_str"
+      name_idx: 19
+      vaddr: 0x106d0
+      size: 4
+      bits: 32
+  symbols:
+    - name: "decrypt_"
+      base: 0
+      seg_idx: 1
+      offset: 0x0
+      segment: "_TEXT"
+      paddr: 0x0
+      vaddr: 0x10010
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+      extrn: true
+    - name: ""
+      base: 0
+      seg_idx: 1
+      offset: 0x500
+      segment: "_TEXT"
+      paddr: 0x500
+      vaddr: 0x10510
+      type_index: 109
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+    - name: "in_"
+      base: 0
+      seg_idx: 1
+      offset: 0x6170
+      segment: "_TEXT"
+      paddr: 0x6170
+      vaddr: 0x16180
+      type_index: 114
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+    - name: "_parity_ref"
+      base: 1
+      seg_idx: 4
+      offset: 0x0
+      segment: "DWARF"
+      paddr: 0x0
+      vaddr: 0x101f0
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+      extrn: true
+    - name: ""
+      base: 1
+      seg_idx: 4
+      offset: 0x800
+      segment: "DWARF"
+      paddr: 0x800
+      vaddr: 0x109f0
+      type_index: 95
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+    - name: "eckrit\u0001"
+      base: 1
+      seg_idx: 4
+      offset: 0x3000
+      segment: "DWARF"
+      paddr: 0x3000
+      vaddr: 0x131f0
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+
+arch     x86
+bits     32
+EOF
+RUN
+
+NAME=omf 16 bit emulateme no stdlib no debug
+FILE=bins/omf/emulateme_nostd_omf_16_no_debug.obj
+CMDS=<<EOF
+iH
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+omf:
+  bits: 16
+  num_names: 10
+  num_sections: 4
+  num_symbols: 4
+  names:
+    - "CODE"
+    - "DATA"
+    - "BSS"
+    - "TLS"
+    - "DGROUP"
+    - "_TEXT"
+    - "CONST"
+    - "CONST2"
+    - "_DATA"
+  sections:
+    - name: "DGROUP"
+      name_idx: 6
+      vaddr: 0x10010
+      size: 92
+      bits: 16
+    - name: "_TEXT"
+      name_idx: 7
+      vaddr: 0x10070
+      size: 17
+      bits: 16
+    - name: "CONST"
+      name_idx: 8
+      vaddr: 0x10090
+      size: 1
+      bits: 16
+    - name: "CONST2"
+      name_idx: 9
+      vaddr: 0x100a0
+      size: 17
+      bits: 16
+  symbols:
+    - name: "decrypt_"
+      base: 0
+      seg_idx: 1
+      offset: 0x0
+      segment: "_TEXT"
+      paddr: 0x0
+      vaddr: 0x10010
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF - Public Names Definition Record 16 bits"
+      extrn: true
+    - name: "main_"
+      base: 0
+      seg_idx: 1
+      offset: 0x4b
+      segment: "_TEXT"
+      paddr: 0x4b
+      vaddr: 0x1005b
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF - Public Names Definition Record 16 bits"
+    - name: "_parity_ref"
+      base: 1
+      seg_idx: 3
+      offset: 0x0
+      segment: "CONST2"
+      paddr: 0x0
+      vaddr: 0x10090
+      type_index: 0
+      visibility: "static"
+      type: "OMF_LPUBDEF - Local Public Names Definition Record 16 bits"
+    - name: "_seckrit"
+      base: 1
+      seg_idx: 4
+      offset: 0x0
+      segment: ""
+      paddr: 0x0
+      vaddr: 0x100a0
+      type_index: 0
+      visibility: "static"
+      type: "OMF_LPUBDEF - Local Public Names Definition Record 16 bits"
+
+arch     x86
+bits     16
+EOF
+RUN
+
+NAME=omf 16 bit emulateme no stdlib debug enabled
+FILE=bins/omf/emulateme_nostd_omf_16_debug.obj
+CMDS=<<EOF
+iH
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+omf:
+  bits: 16
+  num_names: 20
+  num_sections: 13
+  num_symbols: 4
+  names:
+    - "CODE"
+    - "DATA"
+    - "BSS"
+    - "TLS"
+    - "DGROUP"
+    - "_TEXT"
+    - "CONST"
+    - "CONST2"
+    - "_DATA"
+    - "DWARF"
+    - ".debug_info"
+    - ".debug_pubnames"
+    - ".debug_aranges"
+    - ".debug_line"
+    - ".debug_loc"
+    - ".debug_abbrev"
+    - ".debug_macinfo"
+    - ".debug_str"
+    - ".WATCOM_references"
+  sections:
+    - name: "DGROUP"
+      name_idx: 6
+      vaddr: 0x10010
+      size: 204
+      bits: 16
+    - name: "_TEXT"
+      name_idx: 7
+      vaddr: 0x100e0
+      size: 17
+      bits: 16
+    - name: "CONST"
+      name_idx: 8
+      vaddr: 0x10100
+      size: 1
+      bits: 16
+    - name: "CONST2"
+      name_idx: 9
+      vaddr: 0x10110
+      size: 17
+      bits: 16
+    - name: "DWARF"
+      name_idx: 11
+      vaddr: 0x10130
+      size: 622
+      bits: 32
+    - name: ".debug_info"
+      name_idx: 12
+      vaddr: 0x103a0
+      size: 39
+      bits: 32
+    - name: ".debug_pubnames"
+      name_idx: 13
+      vaddr: 0x103d0
+      size: 42
+      bits: 32
+    - name: ".debug_aranges"
+      name_idx: 14
+      vaddr: 0x10400
+      size: 120
+      bits: 32
+    - name: ".debug_line"
+      name_idx: 15
+      vaddr: 0x10480
+      size: 1
+      bits: 32
+    - name: ".debug_loc"
+      name_idx: 16
+      vaddr: 0x10490
+      size: 174
+      bits: 32
+    - name: ".debug_abbrev"
+      name_idx: 17
+      vaddr: 0x10540
+      size: 1
+      bits: 32
+    - name: ".debug_macinfo"
+      name_idx: 18
+      vaddr: 0x10550
+      size: 1
+      bits: 32
+    - name: ".debug_str"
+      name_idx: 19
+      vaddr: 0x10560
+      size: 4
+      bits: 32
+  symbols:
+    - name: "decrypt_"
+      base: 0
+      seg_idx: 1
+      offset: 0x0
+      segment: "_TEXT"
+      paddr: 0x0
+      vaddr: 0x10010
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF - Public Names Definition Record 16 bits"
+      extrn: true
+    - name: "main_"
+      base: 0
+      seg_idx: 1
+      offset: 0x98
+      segment: "_TEXT"
+      paddr: 0x98
+      vaddr: 0x100a8
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF - Public Names Definition Record 16 bits"
+      extrn: true
+    - name: "_parity_ref"
+      base: 1
+      seg_idx: 3
+      offset: 0x0
+      segment: "CONST2"
+      paddr: 0x0
+      vaddr: 0x10100
+      type_index: 0
+      visibility: "static"
+      type: "OMF_LPUBDEF - Local Public Names Definition Record 16 bits"
+    - name: "_seckrit"
+      base: 1
+      seg_idx: 4
+      offset: 0x0
+      segment: "DWARF"
+      paddr: 0x0
+      vaddr: 0x10110
+      type_index: 0
+      visibility: "static"
+      type: "OMF_LPUBDEF - Local Public Names Definition Record 16 bits"
+
+arch     x86
+bits     16
+EOF
+RUN
+
+NAME=omf 32 bit emulateme no stdlib no debug
+FILE=bins/omf/emulateme_nostd_omf_32_no_debug_gcc.obj
+CMDS=<<EOF
+iH
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+omf:
+  bits: 32
+  num_names: 9
+  num_sections: 4
+  num_symbols: 2
+  names:
+    - "FLAT"
+    - "CODE"
+    - "DATA"
+    - "BSS"
+    - "CONST"
+    - ".text"
+    - ".data"
+    - ".bss"
+    - ".rodata"
+  sections:
+    - name: "CONST"
+      name_idx: 5
+      vaddr: 0x10010
+      size: 199
+      bits: 32
+    - name: ".text"
+      name_idx: 6
+      vaddr: 0x100e0
+      size: 17
+      bits: 32
+    - name: ".data"
+      name_idx: 7
+      vaddr: 0x10100
+      size: 1
+      bits: 32
+    - name: ".bss"
+      name_idx: 8
+      vaddr: 0x10110
+      size: 18
+      bits: 32
+  symbols:
+    - name: "decrypt"
+      base: 1
+      seg_idx: 1
+      offset: 0x0
+      segment: ".text"
+      paddr: 0x0
+      vaddr: 0x10010
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+    - name: "main"
+      base: 1
+      seg_idx: 1
+      offset: 0xa4
+      segment: ".text"
+      paddr: 0xa4
+      vaddr: 0x100b4
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+
+arch     x86
+bits     32
+EOF
+RUN
+
+NAME=omf 32 bit emulateme no stdlib no debug
+FILE=bins/omf/emulateme_nostd_omf_32_no_debug_ow.obj
+CMDS=<<EOF
+iH
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+omf:
+  bits: 32
+  num_names: 10
+  num_sections: 4
+  num_symbols: 5
+  names:
+    - "CODE"
+    - "DATA"
+    - "BSS"
+    - "TLS"
+    - "DGROUP"
+    - "_TEXT"
+    - "CONST"
+    - "CONST2"
+    - "_DATA"
+  sections:
+    - name: "DGROUP"
+      name_idx: 6
+      vaddr: 0x10010
+      size: 111
+      bits: 32
+    - name: "_TEXT"
+      name_idx: 7
+      vaddr: 0x10080
+      size: 17
+      bits: 32
+    - name: "CONST"
+      name_idx: 8
+      vaddr: 0x100a0
+      size: 1
+      bits: 32
+    - name: "CONST2"
+      name_idx: 9
+      vaddr: 0x100b0
+      size: 17
+      bits: 32
+  symbols:
+    - name: "decrypt_"
+      base: 0
+      seg_idx: 1
+      offset: 0x0
+      segment: "_TEXT"
+      paddr: 0x0
+      vaddr: 0x10010
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+      extrn: true
+    - name: ""
+      base: 0
+      seg_idx: 1
+      offset: 0x500
+      segment: "_TEXT"
+      paddr: 0x500
+      vaddr: 0x10510
+      type_index: 109
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+    - name: "in_X"
+      base: 0
+      seg_idx: 1
+      offset: 0x401
+      segment: "_TEXT"
+      paddr: 0x401
+      vaddr: 0x10411
+      type_index: 8
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+    - name: "_parity_ref"
+      base: 1
+      seg_idx: 3
+      offset: 0x0
+      segment: "CONST2"
+      paddr: 0x0
+      vaddr: 0x100a0
+      type_index: 0
+      type: "OMF_LPUBDEF32 - Local Public Names Definition Record 32 bits"
+    - name: "_seckrit"
+      base: 1
+      seg_idx: 4
+      offset: 0x0
+      segment: ""
+      paddr: 0x0
+      vaddr: 0x100b0
+      type_index: 0
+      type: "OMF_LPUBDEF32 - Local Public Names Definition Record 32 bits"
+
+arch     x86
+bits     32
+EOF
+RUN
+
+NAME=omf 32 bit emulateme no stdlib debug enabled
+FILE=bins/omf/emulateme_nostd_omf_32_debug.obj
+CMDS=<<EOF
+iH
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+omf:
+  bits: 32
+  num_names: 20
+  num_sections: 13
+  num_symbols: 5
+  names:
+    - "CODE"
+    - "DATA"
+    - "BSS"
+    - "TLS"
+    - "DGROUP"
+    - "_TEXT"
+    - "CONST"
+    - "CONST2"
+    - "_DATA"
+    - "DWARF"
+    - ".debug_info"
+    - ".debug_pubnames"
+    - ".debug_aranges"
+    - ".debug_line"
+    - ".debug_loc"
+    - ".debug_abbrev"
+    - ".debug_macinfo"
+    - ".debug_str"
+    - ".WATCOM_references"
+  sections:
+    - name: "DGROUP"
+      name_idx: 6
+      vaddr: 0x10010
+      size: 227
+      bits: 32
+    - name: "_TEXT"
+      name_idx: 7
+      vaddr: 0x10100
+      size: 17
+      bits: 32
+    - name: "CONST"
+      name_idx: 8
+      vaddr: 0x10120
+      size: 1
+      bits: 32
+    - name: "CONST2"
+      name_idx: 9
+      vaddr: 0x10130
+      size: 17
+      bits: 32
+    - name: "DWARF"
+      name_idx: 11
+      vaddr: 0x10150
+      size: 660
+      bits: 32
+    - name: ".debug_info"
+      name_idx: 12
+      vaddr: 0x103f0
+      size: 39
+      bits: 32
+    - name: ".debug_pubnames"
+      name_idx: 13
+      vaddr: 0x10420
+      size: 62
+      bits: 32
+    - name: ".debug_aranges"
+      name_idx: 14
+      vaddr: 0x10460
+      size: 122
+      bits: 32
+    - name: ".debug_line"
+      name_idx: 15
+      vaddr: 0x104e0
+      size: 1
+      bits: 32
+    - name: ".debug_loc"
+      name_idx: 16
+      vaddr: 0x104f0
+      size: 174
+      bits: 32
+    - name: ".debug_abbrev"
+      name_idx: 17
+      vaddr: 0x105a0
+      size: 1
+      bits: 32
+    - name: ".debug_macinfo"
+      name_idx: 18
+      vaddr: 0x105b0
+      size: 1
+      bits: 32
+    - name: ".debug_str"
+      name_idx: 19
+      vaddr: 0x105c0
+      size: 4
+      bits: 32
+  symbols:
+    - name: "decrypt_"
+      base: 0
+      seg_idx: 1
+      offset: 0x0
+      segment: "_TEXT"
+      paddr: 0x0
+      vaddr: 0x10010
+      type_index: 0
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+      extrn: true
+    - name: ""
+      base: 0
+      seg_idx: 1
+      offset: 0x500
+      segment: "_TEXT"
+      paddr: 0x500
+      vaddr: 0x10510
+      type_index: 109
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+    - name: "in_"
+      base: 0
+      seg_idx: 1
+      offset: 0x74
+      segment: "_TEXT"
+      paddr: 0x74
+      vaddr: 0x10084
+      type_index: 17
+      visibility: "public"
+      type: "OMF_PUBDEF32 - Public Names Definition Record 32 bits"
+    - name: "_parity_ref"
+      base: 1
+      seg_idx: 3
+      offset: 0x0
+      segment: "CONST2"
+      paddr: 0x0
+      vaddr: 0x10120
+      type_index: 0
+      type: "OMF_LPUBDEF32 - Local Public Names Definition Record 32 bits"
+    - name: "_seckrit"
+      base: 1
+      seg_idx: 4
+      offset: 0x0
+      segment: "DWARF"
+      paddr: 0x0
+      vaddr: 0x10130
+      type_index: 0
+      type: "OMF_LPUBDEF32 - Local Public Names Definition Record 32 bits"
+
+arch     x86
+bits     32
+EOF
+RUN

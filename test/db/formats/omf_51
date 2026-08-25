@@ -1,0 +1,231 @@
+NAME=omf51
+FILE=bins/omf/omf51/nxp_80c51mx_huge_loadapp
+CMDS=<<EOF
+iH;
+echo;
+is;
+echo;
+s 0x800000; pd 100;
+s 0x870000; pd 51;
+iI~arch,bits;
+EOF
+EXPECT=<<EOF
+
+nth      paddr      vaddr bind    type size lib name                           
+-------------------------------------------------------------------------------
+  0 0x00000000 0x00000000 UNKNOWN UNK     0     t2_ind
+  0 0x00000001 0x00000001 UNKNOWN UNK     0     stsys
+  0 0x00800000 0x00800000 UNKNOWN UNK     0     ?C_STARTUP
+  0 0x00800000 0x00800000 UNKNOWN UNK     0     __?CO?START_MX?3_AP0004_000000
+  0 0x0080000c 0x0080000c UNKNOWN UNK     0     t2_ini_load
+  0 0x0080000c 0x0080000c UNKNOWN UNK     0     t2_ini_load
+  0 0x00800025 0x00800025 UNKNOWN UNK     0     int_on
+  0 0x00800025 0x00800025 UNKNOWN UNK     0     int_on
+  0 0x00800030 0x00800030 UNKNOWN UNK     0     main
+  0 0x00800030 0x00800030 UNKNOWN UNK     0     main
+  0 0x00800071 0x00800071 UNKNOWN UNK     0     int_off
+  0 0x00800071 0x00800071 UNKNOWN UNK     0     int_off
+  0 0x0080007b 0x0080007b UNKNOWN UNK     0     __?CO?START_MX?4_AP0005_00007B
+  0 0x00800082 0x00800082 UNKNOWN UNK     0     timer2
+  0 0x00800082 0x00800082 UNKNOWN UNK     0     timer2
+  0 0x008000ae 0x008000ae UNKNOWN UNK     0     t2_isr_load
+  0 0x008000ae 0x008000ae UNKNOWN UNK     0     t2_isr_load
+  0 0x00800800 0x00800800 UNKNOWN UNK     0     __?C_C51STARTUP_AP0002_000000
+  0 0x00800837 0x00800837 UNKNOWN UNK     0     ?C_START
+  0 0x00870000 0x00870000 UNKNOWN UNK     0     main_app
+  0 0x00870000 0x00870000 UNKNOWN UNK     0     main_app
+  0 0x00870035 0x00870035 UNKNOWN UNK     0     t2_ini_app
+  0 0x00870035 0x00870035 UNKNOWN UNK     0     t2_ini_app
+  0 0x0087004e 0x0087004e UNKNOWN UNK     0     t2_isr_app
+  0 0x0087004e 0x0087004e UNKNOWN UNK     0     t2_isr_app
+
+            ;-- section.CO_START_MX_3:
+            ;-- ?C_STARTUP:
+            ;-- __?CO?START_MX?3_AP0004_000000:
+            0x00800000      hex length=3 delta=0
+0x00800000  0200 7b                                  ..{
+ ; _mx.a51:154 ; [14] -r-x section size 3 named CO_START_MX_3
+            ;-- section.C_INITSEG:
+            0x00800003 hex length=9 delta=0
+0x00800003  4100 0100 4100 0000 00                   A...A....
+ ; [05] -r-x section size 9 named C_INITSEG
+            ;-- section.PR_T2_INI_LOAD_MAIN_B:
+            ;-- t2_ini_load:
+            0x0080000c      clr   ie.5                                 ; main_b.c:44 ; [0x100001a8:1]=0 ; [01] -r-x section size 25 named PR_T2_INI_LOAD_MAIN_B
+            0x0080000e      clr   a                                    ; main_b.c:47
+            0x0080000f      mov   0xc9, a                              ; [0x100001c9:1]=0
+            0x00800011      mov   0xc8, a                              ; main_b.c:48 ; [0x100001c8:1]=0
+            0x00800013      mov   0xca, #0xff                          ; main_b.c:49 ; [0x100001ca:1]=0
+            0x00800016      mov   0xcb, #0x6f                          ; main_b.c:50 ; 'o'
+                                                                       ; [0x100001cb:1]=0
+            0x00800019      mov   0xcc, 0xca                           ; main_b.c:51 ; [0x100001ca:1]=0
+            0x0080001c      mov   0xcd, 0xcb                           ; main_b.c:52 ; [0x100001cb:1]=0
+            0x0080001f      setb  ie.5                                 ; main_b.c:53 ; [0x100001a8:1]=0
+            0x00800021      setb  0xc8.2                               ; main_b.c:54 ; [0x100001c8:1]=0
+            0x00800023      invalid                                    ; main_b.c:55
+            0x00800024      ret
+            ;-- section.PR_INT_ON_MAIN_B:
+            ;-- int_on:
+            0x00800025      setb  ie.7                                 ; main_b.c:63 ; [0x100001a8:1]=0 ; [03] -r-x section size 4 named PR_INT_ON_MAIN_B
+            0x00800027      invalid                                    ; main_b.c:65
+            0x00800028      ret
+            0x00800029      mov   r7, a
+            0x0080002a      mov   r7, a
+            ;-- section.INT_0002B:
+            0x0080002b hex length=5 delta=0
+0x0080002b  a502 8000 82                             .....
+ ; [11] -r-x section size 5 named INT_0002B
+            ;-- main:
+            ;-- entry0:
+            ;-- section.PR_MAIN_MAIN_B:
+            0x00800030      invalid                                    ; main_b.c:16 ; [00] -r-x section size 65 named PR_MAIN_MAIN_B
+            0x00800031      lcall 0x808000
+            0x00800034      acall 0x8003a5
+            0x00800036      lcall 0x808000
+            0x00800039      inc   r4
+            0x0080003a      clr   a                                    ; main_b.c:20
+            0x0080003b      mov   dptr, #0x0000                        ; [0x20000000:1]=0
+            0x0080003e      movx  @dptr, a
+            0x0080003f      invalid                                    ; main_b.c:21
+            0x00800040      lcall 0x808000
+            0x00800043      add   a, 0x75                              ; [0x10000075:1]=0
+            0x00800045      orl   c, /0xf8.7                           ; [0x100001f8:1]=0
+            0x00800047      mov   a, p2                                ; main_b.c:23 ; [0x100001a0:1]=0
+            0x00800049      cpl   a
+            0x0080004a      jz    0x800057
+            0x0080004c      mov   dptr, #0x0001                        ; main_b.c:26 ; [0x20000001:1]=0
+            0x0080004f      mov   a, #0x01
+            0x00800051      movx  @dptr, a
+            0x00800052      invalid                                    ; main_b.c:28
+            0x00800053      lcall 0x808700
+            0x00800056      nop
+            0x00800057      mov   dptr, #0x0000                        ; main_b.c:29 ; [0x20000000:1]=0
+            0x0080005a      movx  a, @dptr
+            0x0080005b      cjne  a, #0x01, 0x800047
+            0x0080005e      clr   a                                    ; main_b.c:31
+            0x0080005f      movx  @dptr, a
+            0x00800060      mov   p3, a                                ; main_b.c:33 ; [0x100001b0:1]=0
+            0x00800062      mov   p3, #0xff                            ; main_b.c:34 ; [0x100001b0:1]=0
+            0x00800065      mov   p3, a                                ; main_b.c:35 ; [0x100001b0:1]=0
+            0x00800067      mov   p3, #0xff                            ; main_b.c:36 ; [0x100001b0:1]=0
+            0x0080006a      mov   p3, a                                ; main_b.c:37 ; [0x100001b0:1]=0
+            0x0080006c      mov   p3, #0xff                            ; main_b.c:38 ; [0x100001b0:1]=0
+            0x0080006f      sjmp  0x800047                             ; main_b.c:39
+            ;-- section.PR_INT_OFF_MAIN_B:
+            ;-- int_off:
+            0x00800071      clr   ie.7                                 ; main_b.c:67 ; [0x100001a8:1]=0 ; [04] -r-x section size 4 named PR_INT_OFF_MAIN_B
+            0x00800073      invalid                                    ; main_b.c:69
+            0x00800074      ret
+            0x00800075      mov   r7, a
+            0x00800076      mov   r7, a
+            0x00800077      mov   r7, a
+            0x00800078      mov   r7, a
+            0x00800079      mov   r7, a
+            0x0080007a      mov   r7, a
+            ;-- section.CO_START_MX_4:
+            ;-- __?CO?START_MX?4_AP0005_00007B:
+            0x0080007b hex length=7 delta=0
+0x0080007b  a575 ff05 0208 00                        .u.....
+ ; _mx.a51:162 ; [15] -r-x section size 7 named CO_START_MX_4
+            ;-- section.PR_TIMER2_INT:
+            ;-- timer2:
+            0x00800082      push  acc                                  ; .c:8 ; [0x100001e0:1]=0 ; [10] -r-x section size 44 named PR_TIMER2_INT
+            0x00800084      push  b                                    ; [0x100001f0:1]=0
+            0x00800086      push  dph                                  ; [0x10000183:1]=0
+            0x00800088      push  dpl                                  ; [0x10000182:1]=0
+            0x0080008a      push  psw                                  ; [0x100001d0:1]=0
+            0x0080008c      mov   psw, #0x08                           ; [0x100001d0:1]=0
+            0x0080008f      clr   0xc8.7                               ; .c:10 ; [0x100001c8:1]=0
+            0x00800091      mov   dptr, #0x0001                        ; .c:11 ; [0x20000001:1]=0
+            0x00800094      movx  a, @dptr
+            0x00800095      jnz   0x80009e
+            0x00800097      invalid                                    ; .c:12
+            0x00800098      lcall 0x808000
+            0x0080009b      mov   r6, p0                               ; [0x10000180:1]=0
+            0x0080009d      inc   0xa5                                 ; [0x100001a5:1]=0
+            0x0080009f      lcall 0x808700
+            0x008000a2      orl   a, r6
+            0x008000a3      pop   psw                                  ; .c:15 ; [0x100001d0:1]=0
+            0x008000a5      pop   dpl                                  ; [0x10000182:1]=0
+            0x008000a7      pop   dph                                  ; [0x10000183:1]=0
+            0x008000a9      pop   b                                    ; [0x100001f0:1]=0
+            0x008000ab      pop   acc                                  ; [0x100001e0:1]=0
+            0x008000ad      reti
+            ;-- section.PR_T2_ISR_LOAD_MAIN_B:
+            ;-- t2_isr_load:
+            0x008000ae      clr   a                                    ; main_b.c:57 ; [02] -r-x section size 13 named PR_T2_ISR_LOAD_MAIN_B
+            0x008000af      mov   p1, a                                ; [0x10000190:1]=0
+            0x008000b1      mov   p1, #0xff                            ; main_b.c:59 ; [0x10000190:1]=0
+            0x008000b4      mov   dptr, #0x0000                        ; main_b.c:60 ; [0x20000000:1]=0
+            0x008000b7      inc   a
+            0x008000b8      movx  @dptr, a
+            0x008000b9      invalid                                    ; main_b.c:61
+            0x008000ba      ret
+            0x008000bb      mov   r7, a
+            0x008000bc      mov   r7, a
+            0x008000bd      mov   r7, a
+            0x008000be      mov   r7, a
+            0x008000bf      mov   r7, a
+            0x008000c0      mov   r7, a
+            0x008000c1      mov   r7, a
+            ;-- section.PR_MAIN_APP_MAIN_A:
+            ;-- main_app:
+            0x00870000      invalid                                    ; ain_a.c:16 ; [07] -r-x section size 53 named PR_MAIN_APP_MAIN_A
+            0x00870001      lcall 0x878000
+            0x00870004      acall 0x8703a5
+            0x00870006      lcall 0x878700
+            0x00870009      addc  a, 0xa5                              ; [0x100001a5:1]=0
+            0x0087000b      lcall 0x878000
+            0x0087000e      add   a, p1                                ; [0x10000190:1]=0
+            0x00870010      nop
+            0x00870011      nop
+            0x00870012      movx  a, @dptr
+            0x00870013      cjne  a, #0x01, 0x87000f
+            0x00870016      clr   a                                    ; ain_a.c:24
+            0x00870017      movx  @dptr, a
+            0x00870018      invalid                                    ; ain_a.c:26
+            0x00870019      lcall 0x878700
+            0x0087001c      add   a, r1
+            0x0087001d      invalid                                    ; ain_a.c:30
+            0x0087001e      lcall 0x878700
+            0x00870021      add   a, r1
+            0x00870022      mov   p3, a                                ; ain_a.c:34 ; [0x100001b0:1]=0
+            0x00870024      mov   p3, #0xff                            ; ain_a.c:35 ; [0x100001b0:1]=0
+            0x00870027      sjmp  0x87000f                             ; ain_a.c:36
+            0x00870029      mov   p3, a                                ; ain_a.c:38 ; [0x100001b0:1]=0
+            0x0087002b      mov   p3, #0xff                            ; [0x100001b0:1]=0
+            0x0087002e      mov   p3, a                                ; [0x100001b0:1]=0
+            0x00870030      mov   p3, #0xff                            ; [0x100001b0:1]=0
+            0x00870033      invalid
+            0x00870034      ret
+            ;-- section.PR_T2_INI_APP_MAIN_A:
+            ;-- t2_ini_app:
+            0x00870035      clr   ie.5                                 ; ain_a.c:41 ; [0x100001a8:1]=0 ; [08] -r-x section size 25 named PR_T2_INI_APP_MAIN_A
+            0x00870037      clr   a                                    ; ain_a.c:44
+            0x00870038      mov   0xc9, a                              ; [0x100001c9:1]=0
+            0x0087003a      mov   0xc8, a                              ; ain_a.c:45 ; [0x100001c8:1]=0
+            0x0087003c      mov   0xca, #0x98                          ; ain_a.c:46 ; [0x100001ca:1]=0
+            0x0087003f      mov   0xcb, #0x19                          ; ain_a.c:47 ; [0x100001cb:1]=0
+            0x00870042      mov   0xcc, 0xca                           ; ain_a.c:48 ; [0x100001ca:1]=0
+            0x00870045      mov   0xcd, 0xcb                           ; ain_a.c:49 ; [0x100001cb:1]=0
+            0x00870048      setb  ie.5                                 ; ain_a.c:50 ; [0x100001a8:1]=0
+            0x0087004a      setb  0xc8.2                               ; ain_a.c:51 ; [0x100001c8:1]=0
+            0x0087004c      invalid                                    ; ain_a.c:52
+            0x0087004d      ret
+            ;-- section.PR_T2_ISR_APP_MAIN_A:
+            ;-- t2_isr_app:
+            0x0087004e      clr   a                                    ; ain_a.c:54 ; [09] -r-x section size 13 named PR_T2_ISR_APP_MAIN_A
+            0x0087004f      mov   p1, a                                ; [0x10000190:1]=0
+            0x00870051      mov   p1, #0xff                            ; ain_a.c:57 ; [0x10000190:1]=0
+            0x00870054      mov   dptr, #0x0000                        ; ain_a.c:58 ; [0x20000000:1]=0
+            0x00870057      inc   a
+            0x00870058      movx  @dptr, a
+            0x00870059      invalid                                    ; ain_a.c:59
+            0x0087005a      ret
+            0x0087005b      mov   r7, a
+            0x0087005c      mov   r7, a
+            0x0087005d      mov   r7, a
+arch     8051
+bits     8
+EOF
+RUN
