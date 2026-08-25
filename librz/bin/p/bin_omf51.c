@@ -83,8 +83,7 @@ static bool check_buffer(RzBuffer *b) {
 	}
 
 	ut8 in[5];
-	if (!rz_buf_read_at(b, 5, in, sizeof(in))
-		|| !is_any_n((const char *)in, sizeof(in), "CX51 ", "AX51 ")) { //"" ""
+	if (!rz_buf_read_at(b, 5, in, sizeof(in)) || !is_any_n((const char *)in, sizeof(in), "CX51 ", "AX51 ")) { //"" ""
 		return false;
 	}
 	ut64 size;
@@ -161,27 +160,27 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	rz_pvector_foreach (obj->sections_vec, it) {
 		const OMF_sections *section = (OMF_sections *)*it;
 
-		RzBinSection *new = NULL;
-		if (!((new = RZ_NEW0(RzBinSection)))) {
+		RzBinSection *new = RZ_NEW0(RzBinSection);
+		if (!new) {
 			rz_pvector_free(ret);
 			return NULL;
 		}
 
-		OMF_lnames *lname = (OMF_lnames *)rz_pvector_at(obj->lnames_vec, section->index);
-		if (!lname) {
-			rz_warn_if_reached();
-			RZ_FREE(new);
-			continue;
-		}
-		OMF_lnames *c_lname = (OMF_lnames *)rz_pvector_at(obj->lnames_vec, section->class_index);
-		if (!c_lname) {
-			rz_warn_if_reached();
-			RZ_FREE(new);
-			continue;
-		}
-		const char *name = RZ_STR_ISNOTEMPTY(lname->name) ? lname->name : "UNKNOWN";
-		const char *class_name = RZ_STR_ISNOTEMPTY(c_lname->name) ? c_lname->name : "UNKNOWN";
-		new->name = rz_str_newf("%s_%s", name, class_name);
+		// OMF_lnames *lname = (OMF_lnames *)rz_pvector_at(obj->lnames_vec, section->index);
+		// if (!lname) {
+		// 	rz_warn_if_reached();
+		// 	RZ_FREE(new);
+		// 	continue;
+		// }
+		// OMF_lnames *c_lname = (OMF_lnames *)rz_pvector_at(obj->lnames_vec, section->class_index);
+		// if (!c_lname) {
+		// 	rz_warn_if_reached();
+		// 	RZ_FREE(new);
+		// 	continue;
+		// }
+		// const char *name = RZ_STR_ISNOTEMPTY(lname->name) ? lname->name : "UNKNOWN";
+		// const char *class_name = RZ_STR_ISNOTEMPTY(c_lname->name) ? c_lname->name : "UNKNOWN";
+		new->name = rz_str_newf("%s_%s", section->name51, "");
 		new->size = section->Seclen;
 		new->vsize = section->Seclen;
 		new->vaddr = (section->SegmentNumber8 << 16) + section->offset;

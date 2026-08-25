@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "omf51.h"
-
+#define RZ_DEBUG
 /**
  * \file omf51.c
  * \brief Conventions
@@ -54,228 +54,14 @@
  *
  */
 
-// RZ_API ut8 memory_model_type(ut8 modinfo) {
-// 	return (modinfo & 0x1C) >> 2;
-// }
-
-// RZ_API char *get_memory_model(ut8 modinfo) {
-// 	const ut8 MEMORY_MODEL = memory_model_type(modinfo); ///< The three bit model specifier gives the memory model choosen on translation:
-// 	switch (MEMORY_MODEL) {
-// 	case OMF_MEMORY_MODEL_TINY: {
-// 		return rz_str_dup("Tiny: program 64K or less");
-// 	}
-// 	case OMF_MEMORY_MODEL_SMALL: {
-// 		return rz_str_dup("Small: 'near' functions and data");
-// 	}
-// 	case OMF_MEMORY_MODEL_COMPACT: {
-// 		return rz_str_dup("Compact: 'far' data, 'near' funcs");
-// 	}
-// 	case OMF_MEMORY_MODEL_MEDIUM: {
-// 		return rz_str_dup("Medium: 'near' data, 'far' funcs");
-// 	}
-// 	case OMF_MEMORY_MODEL_LARGE: {
-// 		return rz_str_dup("Large: 'far' functions and data");
-// 	}
-// 	case OMF_MEMORY_MODEL_HCOMPACT: {
-// 		return rz_str_dup("HCompact: 'huge' data, 'near' funcs");
-// 	}
-// 	case OMF_MEMORY_MODEL_HLARGE: {
-// 		return rz_str_dup("HLarge: 'huge' data, 'far' funcs");
-// 	}
-// 	case OMF_MEMORY_MODEL_XLARGE: {
-// 		return rz_str_dup("XLarge: 'xhuge' data, 'far' funcs");
-// 	}
-// 	default:
-// 		RZ_LOG_ERROR("Unknown MEMORY_MODEL: 0x%02x.\n", MEMORY_MODEL);
-// 		return rz_str_dup("Unknown MEMORY_MODEL");
-// 	}
-// }
-
-static bool is_data_ti(const rz_bin_omf51_obj *obj, const ut16 ti_index) {
-	bool found = false;
-	const OMF_type *type = ht_up_find(obj->ht_types, ti_index, &found);
-#ifdef RZ_BUILD_DEBUG
-	rz_warn_if_fail(found);
-#endif
-	return found ? type->is_data : false;
-}
-
-// RZ_API const char *name_of_ti(const rz_bin_omf51_obj *obj, const ut16 ti_index) {
-// 	if (ti_index == 0x00)
-// 		return "void";
-// 	bool found = false;
-// 	const OMF_type *type = ht_up_find(obj->ht_types, ti_index, &found);
-// 	if (!found)
-// 		return NULL;
-//
-// 	switch (type->descr_type) {
-// 	case FINAL_TYPE: {
-// 		return type->label;
-// 	}
-// 	case COMPONENT_LIST_DESCRIPTOR: {
-// 		return type->label ? type->label : "COMPONENT_LIST";
-// 	}
-// 	case POINTER_DESCRIPTOR: {
-// 		const char *x = name_of_ti(obj, type->descriptor.pointer.ti);
-// 		static char x2[255] = { 0 };
-// 		if (type->descriptor.pointer.attrib == 1)
-// 			rz_snprintf(x2, sizeof(buffer), "%s *", x); ///< "POINTER: 1 = Data pointer (PAGE:OFFSET)"
-// 		if (type->descriptor.pointer.attrib == 2)
-// 			rz_snprintf(x2, sizeof(buffer), "%s *", x); ///< "POINTER: 2 = Function pointer (SEG:OFFSET)"
-// 		if (type->descriptor.pointer.attrib == 4)
-// 			rz_snprintf(x2, sizeof(buffer), "%s *", x); ///< "POINTER: 4 = Huge pointer (linear 32-Bit)"
-// 		if (type->descriptor.pointer.attrib == 8)
-// 			rz_snprintf(x2, sizeof(buffer), "%s *", x); ///< "POINTER: 8 = Xhuge pointer (linear 32-Bit)"
-// 		return x2;
-// 	}
-// 	case ARRAY_DESCRIPTOR: {
-// 		return type->label ? type->label : "ARRAY";
-// 	}
-// 	case FUNCTION_DESCRIPTOR: {
-// 		return type->descriptor.function.attrib ? "Near-Function" : "Far-Function";
-// 	}
-// 	case STRUCT_UNION_DESCRIPTOR: {
-// 		return type->descriptor.struct_union.tagname;
-// 	}
-// 	case BITFIELD_DESCRIPTOR: {
-// 		return "BITFIELD";
-// 	}
-// 	default: {
-// 		rz_warn_if_reached();
-// 		return NULL;
-// 	}
-// 	}
-// 	rz_warn_if_reached();
-// 	return NULL;
-// }
-
-// const char *name_of_iTyp(ut8 iTyp) {
-// 	switch (iTyp) {
-// 	case ITYP_OUTPUTFILE: {
-// 		return "Outputfile";
-// 	}
-// 	case ITYP_INPUTFILE: {
-// 		return "Inputfile";
-// 	}
-// 	case ITYP_INCLUDEFILE: {
-// 		return "Includefile";
-// 	}
-// 	case ITYP_COMMANDFILE: {
-// 		return "Commandfile";
-// 	}
-// 	case ITYP_OBJECT_INPUTFILE: {
-// 		return "Object-Inputfile";
-// 	}
-// 	case ITYP_COMMANDLINE: {
-// 		return "Commandline";
-// 	}
-// 	default: {
-// 		rz_warn_if_reached();
-// 		return "UNKNOWN";
-// 	}
-// 	}
-// }
-
-// const char *get_data_type(ut8 data_type) {
-// 	switch (data_type) {
-// 	case 0: {
-// 		return "BIT";
-// 	}
-// 	case 1: {
-// 		return "DATA";
-// 	}
-// 	case 2: {
-// 		return "CODE";
-// 	}
-// 	case 3: {
-// 		return "CONST";
-// 	}
-// 	default: {
-// 		rz_warn_if_reached();
-// 		return NULL;
-// 	}
-// 	}
-// }
-
-// ut32 get_perm_by_type(ut8 data_type) {
-// 	switch (data_type) {
-// 	case 0: ///< BIT
-// 	case 1: { ///< DATA
-// 		return RZ_PERM_RW;
-// 	}
-// 	case 2: {
-// 		return RZ_PERM_RX; ///< CODE
-// 	}
-// 	case 3: {
-// 		return RZ_PERM_R; ///< CONST
-// 	}
-// 	default: {
-// 		rz_warn_if_reached();
-// 		return RZ_PERM_R;
-// 	}
-// 	}
-// }
-
-// ut32 c166_get_perms_from_class(const ut8 class_id) {
-// 	switch (class_id) {
-// 	case C166_CLASS_ICODE:
-// 	case C166_CLASS_FCODE:
-// 	case C166_CLASS_NCODE:
-// 		return RZ_PERM_RW;
-// 	case C166_CLASS_FCONST:
-// 	case C166_CLASS_HCONST:
-// 	case C166_CLASS_XCONST:
-// 	case C166_CLASS_NCONST:
-// 		return RZ_PERM_R;
-// 	case C166_CLASS_SDATA:
-// 	case C166_CLASS_SDATA0:
-// 	case C166_CLASS_IDATA:
-// 	case C166_CLASS_IDATA0:
-// 	case C166_CLASS_FDATA:
-// 	case C166_CLASS_FDATA0:
-// 	case C166_CLASS_HDATA:
-// 	case C166_CLASS_HDATA0:
-// 	case C166_CLASS_XDATA:
-// 	case C166_CLASS_XDATA0:
-// 	case C166_CLASS_NDATA:
-// 	case C166_CLASS_NDATA0:
-// 	case C166_CLASS_BIT:
-// 	case C166_CLASS_BIT0:
-// 	case C166_CLASS_BDATA:
-// 	case C166_CLASS_BDATA0:
-// 	case C166_CLASS_EBDATA:
-// 	case C166_CLASS_EBDATA0:
-// 		return RZ_PERM_RW;
-// 	default:
-// 		return RZ_PERM_R;
-// 	}
-// }
-
-// ut64 rz_bin_omf166_get_abs_addr(ut8 SegmentNumber8, ut16 Offset) {
-// 	ut64 offset = 0;
-// 	offset = (SegmentNumber8 << 16) | Offset;
-// 	return offset;
-// }
-
-static bool is_valid_omf51_type(ut8 type) {
+static bool is_valid_omf51_type(const ut8 type) {
 	const ut8 types[] = {
 		OMF166_DEPLST, OMF_LINSYM,
-		OMF_NBKPAT, OMF_THEADR, OMF_LLNAMES, OMF_SEGDEF,
+		OMF_THEADR, OMF51_ENTRYPOINT,
 		OMF_GRPDEF, OMF_COMENT, OMF_LINNUM, OMF_PUBDEF,
 		OMF_EXTDEF, OMF_ALIAS,
 		OMF166_UNKNOWN0, OMF166_INCLUDES, OMF166_UNKNOWN2, OMF166_UNKNOWN3, OMF166_UNKNOWN4,
-		0x84, 0xc0, 0xd0, 0x8e, 0x92,
-		// OMF166_RTXDEF, OMF166_DEPLST, OMF166_REGMSK, OMF166_TYPNEW,
-		// OMF166_BLKEND, OMF166_THEADR, OMF166_LHEADR, OMF166_COMMENT,
-		// OMF166_MODEND, OMF166_LINNUM, OMF166_LNAMES, OMF166_LIBLOC,
-		// OMF166_LIBNAMES, OMF166_LIBDICT, OMF166_LIBHDR, OMF166_PHEADR,
-		// OMF166_PECDEF, OMF166_SSKDEF, OMF166_MODINF, OMF166_TSKDEF,
-		// OMF166_REGDEF, OMF166_SECDEF, OMF166_TYPDEF, OMF166_GRPDEF,
-		// OMF166_PUBDEF, OMF166_GLBDEF, OMF166_EXTDEF, OMF166_LOCSYM,
-		// OMF166_BLKDEF, OMF166_DEBSYM, OMF166_LEDATA, OMF166_PEDATA,
-		// OMF166_VECTAB, OMF166_FIXUPP, OMF166_TSKEND, OMF166_XSECDEF,
-		// OMF166_UNKNOWN0, OMF166_INCLUDES, OMF166_UNKNOWN2, OMF166_UNKNOWN3,
-		// OMF166_UNKNOWN4, OMF166_UNKNOWN5,
+		0x84, 0xc0, 0xd0, 0x8e, 0x92, 0x98, 0xc8,
 		0
 	};
 	for (int ct = 0; types[ct]; ct++) {
@@ -286,35 +72,6 @@ static bool is_valid_omf51_type(ut8 type) {
 	RZ_LOG_ERROR("Invalid record type: 0x%02x\n", type);
 	return false;
 }
-
-// bool rz_bin_checksum_omf166_ok(const ut8 *buf, size_t buf_size) {
-// 	ut8 checksum = 0;
-//
-// 	if (buf_size < 3) {
-// 		RZ_LOG_ERROR("Invalid record (too short)\n");
-// 		return false;
-// 	}
-// 	ut16 size = rz_read_le16(buf + 1);
-// 	if (buf_size < size + 3) {
-// 		RZ_LOG_ERROR("Invalid record (too short)\n");
-// 		return false;
-// 	}
-// 	// Some compiler set checksum to 0
-// 	if (!buf[size + 2]) {
-// 		return true;
-// 	}
-// 	size += 3;
-// 	for (; size; size--) {
-// 		if (buf_size < size) {
-// 			RZ_LOG_ERROR("Invalid record (too short)\n");
-// 			return false;
-// 		}
-// 		checksum += buf[size - 1];
-// 	}
-// 	if (checksum)
-// 		RZ_LOG_ERROR("Invalid record checksum\n");
-// 	return !checksum ? true : false;
-// }
 
 static ut16 omf166_get_idx(const ut8 *buf, const size_t buf_size) {
 	if (buf_size < 2) {
@@ -362,86 +119,6 @@ static bool load_omf166_lnames(const rz_bin_omf51_obj *obj, const OMF_record *re
 		rz_pvector_push(obj->lnames_vec, lname);
 		ct_name++;
 		tmp_size += cb + 1;
-	}
-	return true;
-}
-
-// static int load_omf51_global_sym_record(const rz_bin_omf51_obj *obj, const OMF_record *record, const ut8 *buf, const size_t buf_size) {
-// 	OMF_symbol *sym = NULL;
-// 	size_t ct = 3;
-// 	ut32 base = 0;
-//
-// 	if (record->size <= 3) {
-// 		return false;
-// 	}
-//
-//
-// 	return true;
-// }
-
-static int load_omf166_global_sym_record(const rz_bin_omf51_obj *obj, const OMF_record *record, const ut8 *buf, const size_t buf_size) {
-	OMF_symbol *sym = NULL;
-	size_t ct = 3;
-	ut32 base = 0;
-
-	if (record->size <= 3) {
-		return false;
-	}
-	if (record->type == OMF166_DEBSYM) {
-		if ((buf[ct] == 0x02)) {
-			ct++;
-			base = rz_read_le8_offset(buf, &ct);
-		} else {
-			///< A DEBSYM record whose FRAMEINFO field is 0 is functionally
-			///< equivalent to a LOCSYM record.
-			ct++;
-			base = rz_read_le32_offset(buf, &ct);
-		}
-	} else
-		base = rz_read_le32_offset(buf, &ct);
-
-	if (record->size <= ct) {
-		RZ_LOG_ERROR("Invalid sym record (bad size)\n");
-		return false;
-	}
-
-	while (record->size > ct) {
-		sym = RZ_NEW0(OMF_symbol);
-		if (!sym) {
-			return false;
-		}
-		sym->rec_type = record->type;
-		sym->base = base;
-		sym->n = rz_read_le8_offset(buf, &ct);
-		rz_str_ncpy(sym->name2, (const char *)&buf[ct], sym->n + 1);
-
-		ct += sym->n;
-		sym->offset = rz_read_le16_offset(buf, &ct);
-		sym->REP8 = rz_read_le8_offset(buf, &ct);
-		sym->V = sym->REP8 >> 7;
-		sym->REP = (sym->REP8 & 0x70) >> 4;
-		sym->bpos = sym->REP8 & 0x0F;
-		sym->ti = omf166_get_idx(buf + ct, buf_size - ct);
-		ct += (buf[ct] & 0x80) ? 2 : 1;
-
-		sym->is_data = is_data_ti(obj, sym->ti);
-		const ut8 rep = (sym->REP8 & 0x70) >> 4;
-
-		switch (rep) {
-		case REP_BIT:
-		case REP_VAR:
-		case REP_REGBANK:
-		case REP_INTNO:
-		case REP_CONST:
-		case REP_REGVAR:
-		case REP_AUTO:
-			sym->is_data = true;
-			break;
-		default:
-			sym->is_data = false;
-			break;
-		}
-		rz_pvector_push(obj->symbols_vec, sym);
 	}
 	return true;
 }
@@ -505,117 +182,347 @@ static int load_omf_blkdef(const rz_bin_omf51_obj *obj, const ut8 *buf, const si
 	return true;
 }
 
-static int load_comment_data(const rz_bin_omf51_obj *obj, const ut8 *buf, const OMF_record *record, ut64 global_ct) {
+static int load_88_data(const rz_bin_omf51_obj *obj, const ut8 *buf, const OMF_record *record, ut64 global_ct, const size_t buf_size) {
+#ifdef RZ_DEBUG
+	RZ_LOG_DEBUG("load_omf: 0x88        [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
+		record->size, global_ct, global_ct, record->type, buf_size);
+#endif
+
 	if (!(obj && obj->coments_vec)) {
 		return false;
 	}
 
-	// OMF_coments *comment = RZ_NEW0(OMF_coments);
-	// if (!comment) {
-	// 	return false;
-	// }
-
 	size_t ct = 3;
-	// const ut8 ComTyp_b2 = rz_read_le8_offset(buf, &ct);
-	// const ut8 ComTyp_b1 = rz_read_le8_offset(buf, &ct);
-	// comment->nopurge = (ComTyp_b1 & 0x80) >> 7;
-	// comment->is_filename = (ComTyp_b2 == 0x4b);
-	// comment->n = record->size + 3 - ct;
-	// rz_str_ncpy(comment->text,
-	// 	(const char *)&buf[ct], comment->n);
-	// rz_pvector_push(obj->coments_vec, comment);
-
 	while (ct < record->size) {
+		OMF_symbol *sym = RZ_NEW0(OMF_symbol);
+		if (!sym) {
+			return false;
+		}
+		sym->rec_type = record->type;
+		// sym->base = base;
+
 		const ut8 unk1 = rz_read_le8_offset(buf, &ct);
 		const ut16 unk2 = rz_read_le16_offset(buf, &ct);
 		const ut32 addr = rz_read_le32_offset(buf, &ct);
-		const ut32 unk3 = rz_read_le32_offset(buf, &ct);
+		const ut16 unk3 = rz_read_le16_offset(buf, &ct);
+		const ut16 unk4 = rz_read_le16_offset(buf, &ct);
+		(void)unk1;
+		(void)unk2;
+		(void)unk3;
+		(void)unk4;
 
 		const ut8 n = rz_read_le8_offset(buf, &ct);
-		char name[MAX_NAME_LEN] = {0};
-		rz_str_ncpy(name, (const char *)&buf[ct], n+1);
-		printf("unk1: %d, unk2: %d, unk3: 0x%06x, addr: 0x%06x, n: %d, `%s`\n",
-			unk1, unk2, unk3, addr, n, name);
-		ct += n;
-		// linnum = RZ_NEW0(OMF_linnums);
-		// if (!linnum) {
-		// 	return false;
-		// }
-		// linnum->LineNumber = rz_read_le16_offset(buf, &ct); // start with ct = 5
-		// const ut16 offset = rz_read_le16_offset(buf, &ct);
-		// linnum->address = ((ut64)FrameNumber << 16) | offset;
-		// OMF_coments *comment = rz_pvector_tail(obj->coments_vec);
-		// if (!comment) {
-		// 	RZ_FREE(linnum);
-		// 	return false;
-		// }
-		// linnum->n = comment->n;
-		// rz_str_ncpy(linnum->filename, comment->text, comment->n);
-		//
-		// printf("GroupIndex: %d, SectionIndex: %d, FrameNumber: %d, LN: %d, addr: 0x%lx, n: %d, `%s`\n",
-		// 	GroupIndex, SectionIndex, FrameNumber,
-		// 	linnum->LineNumber, linnum->address, linnum->n, linnum->filename);
-		//
-		// rz_pvector_push(obj->linnums_vec, linnum);
+		sym->n = n;
+		if (ct + sym->n + 1 > buf_size) {
+			RZ_LOG_ERROR("Invalid sym record (overflow)\n");
+			RZ_FREE(sym);
+			continue;
+		}
+		rz_mem_copy(sym->name2, MAX_NAME_LEN, buf + ct, sym->n);
+#ifdef RZ_DEBUG
+		RZ_LOG_DEBUG("unk1: %d, unk2: %d, unk3: 0x%04x, unk4: 0x%04x, addr: 0x%06x, n: %d, `%s`\n",
+			unk1, unk2, unk3, unk4, addr, n, sym->name2);
+#endif
+		ct += sym->n;
+		sym->offset = addr;
+		rz_pvector_push(obj->symbols_vec, sym);
 	}
 	return true;
 }
 
-static int load_84_data(const rz_bin_omf51_obj *obj, const ut8 *buf, const OMF_record *record, ut64 global_ct) {
+char *reg_type_name(const ut8 type) {
+	switch (type) {
+	case 0x00:
+		return "sfr";
+	case 0x01:
+		return "sbit";
+	case 0x80:
+		return "0x80";
+	case 0x81:
+		return "0x81";
+	case 0x0a:
+		return "0x0a";
+	default:
+		printf("reg_type_name: 0x%02x\n", type);
+		rz_warn_if_reached();
+		return "unknown";
+	}
+}
+
+bool reg_exist(RzPVector *v, const ut16 addr) {
+	void **it;
+	rz_pvector_foreach (v, it) {
+		const OMF_regs *reg = (OMF_regs *)*it;
+		if (reg->addr == addr) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static int load_d0_data(const rz_bin_omf51_obj *obj, const ut8 *buf, const OMF_record *record, ut64 global_ct, const size_t buf_size) {
+#ifdef RZ_DEBUG
+	printf("load_omf: 0xd0          [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
+		record->size, global_ct, global_ct, record->type, buf_size);
+#endif
+
+	if (!(obj && obj->regs_vec)) {
+		return false;
+	}
+
+	size_t ct = 3;
+	while (ct < record->size) {
+		OMF_regs *reg = RZ_NEW0(OMF_regs);
+		if (!reg) {
+			return false;
+		}
+		reg->unk1 = rz_read_le16_offset(buf, &ct);
+		reg->type = rz_read_le8_offset(buf, &ct);
+		reg->addr = rz_read_le16_offset(buf, &ct);
+		reg->unk4 = rz_read_le16_offset(buf, &ct);
+		reg->unk5 = rz_read_le16_offset(buf, &ct);
+		reg->unk6 = rz_read_le16_offset(buf, &ct);
+		reg->n = rz_read_le8_offset(buf, &ct);
+		if (ct + reg->n + 1 > buf_size) {
+			RZ_LOG_ERROR("Invalid sym record (overflow)\n");
+			RZ_FREE(reg);
+			continue;
+		}
+		rz_mem_copy(reg->name, MAX_NAME_LEN, buf + ct, reg->n);
+		reg->name[reg->n] = '\0';
+#ifdef RZ_DEBUG
+		printf("\t\tunk1: 0x%04x, type: %5s (0x%02x), addr: 0x%04x, unk4: 0x%04x, unk5: 0x%04x, unk6: 0x%04x, n: %d, `%s`\n",
+			reg->unk1, reg_type_name(reg->type), reg->type, reg->addr, reg->unk4, reg->unk5, reg->unk6, reg->n, reg->name);
+#endif
+		ct += reg->n;
+		if (!reg_exist(obj->regs_vec, reg->addr)) {
+			rz_pvector_push(obj->regs_vec, reg);
+		} else {
+			RZ_FREE(reg);
+		}
+	}
+	return true;
+}
+
+static int load_8e_data(const rz_bin_omf51_obj *obj, const ut8 *buf, const OMF_record *record, ut64 global_ct, const size_t buf_size) {
+#ifdef RZ_DEBUG
+#endif
+	printf("load_omf: 0x8e          [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")",
+		record->size, global_ct, global_ct, record->type, buf_size);
+
+	if (!(obj && obj->symbols_vec)) {
+		return false;
+	}
+
+	size_t ct = 3;
+	while (ct < record->size) {
+		OMF_symbol *sym = RZ_NEW0(OMF_symbol);
+		if (!sym) {
+			return false;
+		}
+		sym->rec_type = record->type;
+#ifdef RZ_DEBUG
+		// RZ_LOG_DEBUG("unk1: %d, unk2: %d, unk3: 0x%04x, unk4: 0x%04x, addr: 0x%06x, n: %d, `%s`\n",
+		// 	unk1, unk2, unk3, unk4, addr, n, sym->name2);
+#endif
+		const ut8 unk1 = rz_read_le16_offset(buf, &ct);
+		sym->type51 = rz_read_le8_offset(buf, &ct);
+		const ut16 unk2 = rz_read_le16_offset(buf, &ct);
+		const ut16 unk3 = rz_read_le16_offset(buf, &ct);
+		sym->offset = rz_read_le32_offset(buf, &ct);
+		sym->n = rz_read_le8_offset(buf, &ct);
+		(void)unk1;
+		(void)unk2;
+		(void)unk3;
+
+		if (ct + sym->n + 1 > buf_size) {
+			RZ_LOG_ERROR("Invalid sym record (overflow)\n");
+			RZ_FREE(sym);
+			continue;
+		}
+		rz_mem_copy(sym->name2, MAX_NAME_LEN, buf + ct, sym->n);
+		sym->name2[sym->n] = '\0';
+#ifdef RZ_DEBUG
+#endif
+		printf("\t\tunk1: 0x%04x, type: %5s (0x%02x), unk2: 0x%04x, unk3: 0x%04x, addr: 0x%06x, n: %d, `%s`\n",
+			unk1, reg_type_name(sym->type51), sym->type51, unk2, unk3,
+			sym->offset, sym->n, sym->name2);
+		ct += sym->n;
+		// if (!reg_exist(obj->regs_vec, reg->addr)) {
+		// 	rz_pvector_push(obj->regs_vec, reg);
+		// } else {
+		// 	RZ_FREE(reg);
+		// }
+		rz_pvector_push(obj->symbols_vec, sym);
+	}
+	return true;
+}
+
+static int load_linsym_data(const rz_bin_omf51_obj *obj, const ut8 *buf, const OMF_record *record, ut64 global_ct, const size_t buf_size) {
+	size_t ct = 3;
+	if (record->type == 0xc0) {
+		printf("load_omf: 0xc0          [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")",
+			record->size, global_ct, global_ct, record->type, buf_size);
+	} else if (record->type == 0xc4) {
+		printf("load_omf: 0xc4          [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")",
+			record->size, global_ct, global_ct, record->type, buf_size);
+	}
+
+	while (ct < record->size) {
+		const ut8 n = rz_read_le8_offset(buf, &ct);
+		char name[MAX_NAME_LEN] = { 0 };
+		rz_str_ncpy(name, (const char *)&buf[ct], n + 1);
+		printf("\t\tn: %d, `%s`\n", n, name);
+		ct += n;
+	}
+	return true;
+}
+
+static int load_c8_data(const rz_bin_omf51_obj *obj, const ut8 *buf, const OMF_record *record, ut64 global_ct, const size_t buf_size) {
+	size_t ct = 3;
+
+	printf("load_omf: 0xc8          [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ") ",
+		record->size, global_ct, global_ct, record->type, buf_size);
+#ifdef RZ_DEBUG1
+	rz_print_bytes(NULL, buf + 3, record->size - 1, "0x%02x ");
+	// printf("\n");
+#endif
+
+	const ut16 unk1 = rz_read_le16_offset(buf, &ct);
+	const ut16 unk2 = rz_read_le16_offset(buf, &ct);
+	const ut16 unk3 = rz_read_le16_offset(buf, &ct);
+	const ut8 unk4 = rz_read_le8_offset(buf, &ct);
+	printf("\t\tunk1: 0x%04x, unk2: 0x%04x, unk3: 0x%04x, unk4: 0x%02x\n", unk1, unk2, unk3, unk4);
+	return true;
+}
+
+static int load_98_data(const rz_bin_omf51_obj *obj, const ut8 *buf, const OMF_record *record, ut64 global_ct, const size_t buf_size) {
+	size_t ct = 3;
+
+	printf("load_omf: 0x98          [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")",
+		record->size, global_ct, global_ct, record->type, buf_size);
+#ifdef RZ_DEBUG1
+	rz_print_bytes(NULL, buf + 3, record->size - 1, "0x%02x ");
+	printf("\n");
+#endif
+
+	const ut16 unk1 = rz_read_le16_offset(buf, &ct);
+	const ut16 unk2 = rz_read_le16_offset(buf, &ct);
+
+	const ut32 null1 = rz_read_le32_offset(buf, &ct);
+	const ut32 null2 = rz_read_le32_offset(buf, &ct);
+	const ut32 null3 = rz_read_le32_offset(buf, &ct);
+	const ut32 null4 = rz_read_le32_offset(buf, &ct);
+	// ct += 16;
+	const ut16 unk3 = rz_read_le16_offset(buf, &ct);
+	const ut16 unk4 = rz_read_le16_offset(buf, &ct);
+	printf("\t\tunk1: 0x%04x, unk2: 0x%04x, [ 0x%04x 0x%04x 0x%04x 0x%04x ] unk3: 0x%04x, unk4: 0x%04x\n",
+		unk1, unk2,
+		null1, null2, null3, null4,
+		unk3, unk4);
+	return true;
+}
+
+static int load_theadr_data(const rz_bin_omf51_obj *obj, const ut8 *buf, const OMF_record *record, ut64 global_ct, const size_t buf_size) {
+	if (!(obj && obj->coments_vec)) {
+		return false;
+	}
+#ifdef RZ_DEBUG
+	RZ_LOG_DEBUG("load_omf: %s        [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
+		OMF166_THEADR ? "THEADR" : "LHEADR", record->size, global_ct, global_ct, record->type, buf_size);
+#endif
+	size_t ct = 3;
+	ct += 1;
+	while (ct < record->size) {
+		const ut8 n = rz_read_le8_offset(buf, &ct);
+		char name[MAX_NAME_LEN] = { 0 };
+		rz_str_ncpy(name, (const char *)&buf[ct], n + 1);
+#ifdef RZ_DEBUG
+		RZ_LOG_DEBUG("\t\tOMF_THEADR -  n: %d, `%s`\n", n, name);
+#endif
+		ct += n;
+	}
+	return true;
+}
+
+static int load_84_data(const rz_bin_omf51_obj *obj, const ut8 *buf, const OMF_record *record, ut64 global_ct, const size_t buf_size) {
 	if (!(obj && obj->coments_vec)) {
 		return false;
 	}
 
-	// OMF_coments *comment = RZ_NEW0(OMF_coments);
-	// if (!comment) {
-	// 	return false;
-	// }
-
 	size_t ct = 3;
-	// const ut8 ComTyp_b2 = rz_read_le8_offset(buf, &ct);
-	// const ut8 ComTyp_b1 = rz_read_le8_offset(buf, &ct);
-	// comment->nopurge = (ComTyp_b1 & 0x80) >> 7;
-	// comment->is_filename = (ComTyp_b2 == 0x4b);
-	// comment->n = record->size + 3 - ct;
-	// rz_str_ncpy(comment->text,
-	// 	(const char *)&buf[ct], comment->n);
-	// rz_pvector_push(obj->coments_vec, comment);
+	OMF_sections *section = RZ_NEW0(OMF_sections);
+	if (!section) {
+		return false;
+	}
 
 	while (ct < record->size) {
 		const ut8 unk1 = rz_read_le8_offset(buf, &ct);
 		const ut16 size = rz_read_le16_offset(buf, &ct);
 		const ut32 addr = rz_read_le32_offset(buf, &ct);
-		const ut16 size2 = rz_read_le16_offset(buf, &ct);
 		ct += 1;
-		const ut32 unk3 = rz_read_le32_offset(buf, &ct);
+		const ut16 size2 = rz_read_le16_offset(buf, &ct);
+		const ut16 unk3 = rz_read_le16_offset(buf, &ct);
+		section->Type = rz_read_le8_offset(buf, &ct);
+		const ut8 unk4 = rz_read_le8_offset(buf, &ct);
 
 		const ut8 n = rz_read_le8_offset(buf, &ct);
-		char name[255] = {0};
-		rz_str_ncpy(name, (const char *)&buf[ct], n+1);
-		printf("unk1: %d, size: %d, seg?: 0x%06x, addr: 0x%06x, size2: %d (0x%04x), n: %d, `%s`\n",
-			unk1, size, unk3, addr, size2, size2, n, name);
+		section->offset = addr;
+		section->Seclen = size2;
+		section->n51 = n;
+		rz_mem_copy(section->name51, MAX_NAME_LEN,
+			(const char *)&buf[ct], n);
+#ifdef RZ_DEBUG
+		RZ_LOG_DEBUG("load_omf: 0x84          [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
+			record->size, global_ct, global_ct, record->type, buf_size);
+		// return load_omf51_global_sym_record(obj, record, buf, buf_size);
+		RZ_LOG_DEBUG("\t\tunk1: %d, size: %d, type: 0x%02x, unk3: 0x%04x, unk4: 0x%02x, addr: 0x%06x, size2: %d (0x%04x), n: %d, `%s`\n",
+			unk1, size, section->Type, unk3, unk4, addr, size2, size2, n, section->name51);
+#endif
+		(void)unk1;
+		(void)unk3;
+		(void)size;
+		(void)unk4;
 		ct += n;
-		// linnum = RZ_NEW0(OMF_linnums);
-		// if (!linnum) {
-		// 	return false;
-		// }
-		// linnum->LineNumber = rz_read_le16_offset(buf, &ct); // start with ct = 5
-		// const ut16 offset = rz_read_le16_offset(buf, &ct);
-		// linnum->address = ((ut64)FrameNumber << 16) | offset;
-		// OMF_coments *comment = rz_pvector_tail(obj->coments_vec);
-		// if (!comment) {
-		// 	RZ_FREE(linnum);
-		// 	return false;
-		// }
-		// linnum->n = comment->n;
-		// rz_str_ncpy(linnum->filename, comment->text, comment->n);
-		//
-		// printf("GroupIndex: %d, SectionIndex: %d, FrameNumber: %d, LN: %d, addr: 0x%lx, n: %d, `%s`\n",
-		// 	GroupIndex, SectionIndex, FrameNumber,
-		// 	linnum->LineNumber, linnum->address, linnum->n, linnum->filename);
-		//
-		// rz_pvector_push(obj->linnums_vec, linnum);
 	}
+
+	rz_pvector_push(obj->sections_vec, section);
+	return true;
+}
+
+static int load_9a_data(const rz_bin_omf51_obj *obj, const ut8 *buf, const OMF_record *record, ut64 global_ct, const size_t buf_size) {
+	// if (!(obj && obj->coments_vec)) {
+	// 	return false;
+	// }
+
+	printf("load_omf: OMF_GRPDEF    [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")",
+		record->size, global_ct, global_ct, record->type, buf_size);
+	size_t ct = 3;
+	const ut8 group_index = rz_read_le8_offset(buf, &ct);
+	const ut8 unk2 = rz_read_le8_offset(buf, &ct);
+	const ut8 unk3 = rz_read_le8_offset(buf, &ct);
+	printf("\t\tgroup_index: 0x%02x, unk2: 0x%02x, unk3: 0x%02x",
+		group_index, unk2, unk3);
+	OMF_groupdef *grp = RZ_NEW0(OMF_groupdef);
+	if (!grp) {
+		return false;
+	}
+	while (ct < record->size - 3) {
+		const ut8 n = rz_read_le8_offset(buf, &ct);
+		if (grp->name_n == 0) {
+			grp->name_n = n;
+			rz_mem_copy(grp->name, MAX_NAME_LEN,
+				(const char *)&buf[ct], n);
+		} else {
+			grp->path_n = n;
+			rz_mem_copy(grp->path, MAX_NAME_LEN,
+				(const char *)&buf[ct], n);
+		}
+		ct += n;
+	}
+	printf("\t\tct: %lu (%d), n: %d, `%s%s`\n",
+		ct, record->size, grp->name_n + grp->path_n, grp->path, grp->name);
+	rz_pvector_push(obj->group_vec, grp);
 	return true;
 }
 
@@ -632,86 +539,16 @@ static int load_grpdef_data(const rz_bin_omf51_obj *obj, const ut8 *buf, const O
 	 * B1  | 05 00   | 40  |   06      | FF 0F                                  | F6
 	 * B1  | 05 00   | C0  |   12      | FF 14                                  | 65
 	 */
-	RZ_LOG_DEBUG("load_omf = GRPDEF  =  [%05d] (%" PFMT64u ") [0x%08" PFMT64x "] 0x%02x\n",
+	printf("load_omf = GRPDEF  =  [%05d] (%" PFMT64u ") [0x%08" PFMT64x "] 0x%02x\n",
 		record->size, global_ct, global_ct, record->type);
 	return true;
 }
 
-// static int load_deplst_data(const ut8 *buf, const OMF_record *record) {
-// #if RZ_BUILD_DEBUG
-// // 	size_t ct = 3;
-// // 	const ut8 some_byte = rz_read_le8_offset(buf, &ct);
-// // 	(void)some_byte;
-// // 	const ut8 info_n = rz_read_le8_offset(buf, &ct);
-// // 	char info[255] = RZ_EMPTY;
-// // 	rz_str_ncpy(info, (const char *)&buf[ct], info_n + 1);
-// // 	ct += info_n;
-// // 	while (ct < record->size) {
-// // 		/**
-// // 		 * iTyp | Mark8 | Time32 | Name(s)
-// // 		 *
-// // 		 * `iTyp` - Specifies the type of the dependency descriptor
-// // 		 * `Mark8` - Byte, required to be zero.
-// // 		 * `Time32` - File creation date in Microsoft’s ’fstat()’ format.
-// // 		 * `n` - size of Pathname.
-// // 		 * `Name` - Specifies the Pathname of one file.
-// //
-// // 		In case of iTyp 4, more than one pathname may be specified.
-// // 		*/
-// // 		const ut8 iTyp = rz_read_le8_offset(buf, &ct);
-// // 		const ut8 Mark8 = rz_read_le8_offset(buf, &ct);
-// // 		const ut32 Time32 = rz_read_le32_offset(buf, &ct);
-// // 		const ut8 n = rz_read_le8_offset(buf, &ct);
-// // 		char pathname[255] = RZ_EMPTY;
-// // 		rz_str_ncpy(pathname,
-// // 			(const char *)&buf[ct], n + 1);
-// // 		RZ_LOG_DEBUG("iTyp: [0x%02x] `%16s`, Mark8: 0x%02x, Time32: %d, n: %3d `%s`\n",
-// // 			iTyp, name_of_iTyp(iTyp), Mark8, Time32, n, pathname);
-// // 		ct += n;
-// // 	}
-// #endif
-// 	return true;
-// }
-
-// static int load_linnum_data(const rz_bin_omf51_obj *obj, const ut8 *buf, const size_t buf_size, const OMF_record *record) {
-// 	OMF_linnums *linnum = NULL;
-// 	size_t ct = 3;
-//
-// 	const ut8 GroupIndex = omf166_get_idx(buf + ct, buf_size - ct); // ct = 3
-// 	ct++;
-// 	const ut8 SectionIndex = omf166_get_idx(buf + ct, buf_size - ct); // ct = 4
-// 	ct++;
-// 	ut16 FrameNumber = 0x00;
-// 	if (!GroupIndex && !SectionIndex) {
-// 		FrameNumber = rz_read_le16_offset(buf, &ct);
-// 	}
-//
-// 	while (ct < record->size) {
-// 		linnum = RZ_NEW0(OMF_linnums);
-// 		if (!linnum) {
-// 			return false;
-// 		}
-// 		linnum->LineNumber = rz_read_le16_offset(buf, &ct); // start with ct = 5
-// 		const ut16 offset = rz_read_le16_offset(buf, &ct);
-// 		linnum->address = ((ut64)FrameNumber << 16) | offset;
-// 		OMF_coments *comment = rz_pvector_tail(obj->coments_vec);
-// 		if (!comment) {
-// 			RZ_FREE(linnum);
-// 			return false;
-// 		}
-// 		linnum->n = comment->n;
-// 		rz_str_ncpy(linnum->filename, comment->text, comment->n);
-//
-// 		printf("GroupIndex: %d, SectionIndex: %d, FrameNumber: %d, LN: %d, addr: 0x%lx, n: %d, `%s`\n",
-// 			GroupIndex, SectionIndex, FrameNumber,
-// 			linnum->LineNumber, linnum->address, linnum->n, linnum->filename);
-//
-// 		rz_pvector_push(obj->linnums_vec, linnum);
-// 	}
-// 	return true;
-// }
-
-static int load_omf51_pedata(const rz_bin_omf51_obj *obj, const ut8 *buf, const OMF_record *record, const ut64 global_ct) {
+static int load_omf51_pedata(const rz_bin_omf51_obj *obj, const ut8 *buf, const OMF_record *record, const ut64 global_ct, const size_t buf_size) {
+#ifdef RZ_DEBUG
+	printf("load_omf: OMF51_PEDATA  [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")",
+		record->size, global_ct, global_ct, record->type, buf_size);
+#endif
 	if (!(obj && obj->pe_vec)) {
 		return false;
 	}
@@ -722,26 +559,22 @@ static int load_omf51_pedata(const rz_bin_omf51_obj *obj, const ut8 *buf, const 
 	}
 
 	size_t ct = 3;
+#ifdef RZ_DEBUG1
+	printf("PEDATA: ");
+	rz_print_bytes(NULL, buf + ct, 10, "0x%02x ");
+#endif
 	pe->SegmentNumber8 = rz_read_le8_offset(buf, &ct);
-	ct += 5;
-	// ct += 2;
+	ct += 5; ///< Unknown bytes
 	pe->offset = rz_read_le32_offset(buf, &ct);
-	// ct += 3;
-	// pe->data_type = rz_read_le8_offset(buf, &ct);
-	// pe->isVector = (record->type == OMF166_VECTAB);
-
-	/**
-	 * 0xB9  | RecLen     |         ABS-Address         | DatTyp |        Data        | Chks
-	 *       |            | SegmentNumber8 |  Offset16  |
-	 * 0xc0  | 0x4c 0x1e  |     0x01       |  0x49 0x4e |  0x56  |  0x41 0x4c .. 0x00 | 0x36
-	 *
-	 *    DatTyp	0: BIT  1: DATA  2: CODE  3: CONST
-	 */
 	pe->size = pe->psize = record->size - 1 - (ct - 3);
 	pe->paddr = global_ct + ct;
+#ifdef RZ_DEBUG1
 	rz_print_bytes(NULL, buf + ct, pe->size, "0x%02x ");
-	printf("Segment: %d, offset: 0x%x, size: %d, addr: 0x%x\n",
+#endif
+#ifdef RZ_DEBUG
+	printf("\t\tSegment: %d, offset: 0x%x, size: %d, addr: 0x%x\n",
 		pe->SegmentNumber8, pe->offset, pe->size, pe->paddr);
+#endif
 	rz_pvector_push(obj->pe_vec, pe);
 	return true;
 }
@@ -754,15 +587,26 @@ static int load_omf_unk1(const rz_bin_omf51_obj *obj, const ut8 *buf, const size
 	 * CA
 	 */
 #if RZ_BUILD_DEBUG
+	printf("load_omf: INCLUDES 0x61 [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\t\t",
+		record->size, global_ct, global_ct, record->type, buf_size);
+
 	OMF_debug_includes *dip = RZ_NEW0(OMF_debug_includes);
 	if (!dip) {
 		return false;
 	}
-	size_t offset = 9;
+	size_t offset = 3;
+	dip->timestamp = rz_read_le32_offset(buf, &offset);
+	dip->index = rz_read_le16_offset(buf, &offset);
 	dip->n = rz_read_le8_offset(buf, &offset);
 	rz_str_ncpy(dip->name, (const char *)&buf[offset], dip->n + 1);
-	RZ_LOG_DEBUG("load_omf = INCLUDES  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10" PFMTSZu ")\t `%s`\n",
-		record->size, global_ct, record->type, buf_size, dip->name);
+
+	char buffer[80];
+	const time_t raw_time = (time_t)dip->timestamp;
+	const struct tm *time_info = localtime(&raw_time); // Convert to local time structure
+	strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", time_info);
+
+	printf("[%u] [ %s ] %u `%s`\n",
+		dip->index, buffer, dip->timestamp, dip->name);
 	rz_pvector_push(obj->includes_vec, dip);
 
 #endif
@@ -771,28 +615,30 @@ static int load_omf_unk1(const rz_bin_omf51_obj *obj, const ut8 *buf, const size
 
 static int load_omf_unk2(const ut8 *buf, const size_t buf_size, const OMF_record *record, const ut64 global_ct) {
 #if RZ_BUILD_DEBUG
+	printf("load_omf: UNKNOWN2 0x62 [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\t\t",
+		record->size, global_ct, global_ct, record->type, buf_size);
 	char name[255] = RZ_EMPTY;
-	size_t offset = 7;
+	size_t offset = 3; // 7
+	const ut16 index = rz_read_le16_offset(buf, &offset); // Scope ID / Parent Scope Index
+	const ut16 flags = rz_read_le16_offset(buf, &offset); // Type/Flags / Level depth
 	const ut8 n = rz_read_le8_offset(buf, &offset);
 	rz_str_ncpy(name, (const char *)&buf[offset], n + 1);
-	RZ_LOG_DEBUG("load_omf = UNKNOWN2  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10" PFMTSZu ")\t 0x%02x 0x%02x 0x%02x 0x%02x  `%s`\n",
-		record->size, global_ct,
-		record->type, buf_size,
-		buf[3], buf[4], buf[5], buf[6],
-		name);
+	printf("index: %d flags: 0x%04x  `%s`\n", index, flags, name);
 #endif
 	return true;
 }
 
 static int load_omf_unk3(const ut8 *buf, const size_t buf_size, const OMF_record *record, const ut64 global_ct) {
+	printf("load_omf: UNKNOWN3 0x63 [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\t\t",
+		record->size, global_ct, global_ct, record->type, buf_size);
 #if RZ_BUILD_DEBUG
-	char name[255] = RZ_EMPTY;
-	size_t offset = 7;
-	const ut8 n = rz_read_le8_offset(buf, &offset);
-	rz_str_ncpy(name, (const char *)&buf[offset], n + 1); // cct = 12
-	RZ_LOG_DEBUG("load_omf = UNKNOWN3  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10" PFMTSZu ")\t `%s`\n",
-		record->size, global_ct, record->type, buf_size, name);
-	RZ_LOG_DEBUG("%02x %02x %02x \n%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+	// char name[255] = RZ_EMPTY;
+	// size_t offset = 7;
+	// const ut8 n = rz_read_le8_offset(buf, &offset);
+	// rz_str_ncpy(name, (const char *)&buf[offset], n + 1); // cct = 12
+	// printf("load_omf = UNKNOWN3  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10" PFMTSZu ")\t `%s`\n",
+	// 	record->size, global_ct, record->type, buf_size, name);
+	printf("%02x \t%02x %02x \t%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
 		buf[0], buf[1], buf[2],
 		buf[3], buf[4], buf[5], buf[6], buf[7],
 		buf[8], buf[9], buf[10], buf[11], buf[12],
@@ -801,16 +647,32 @@ static int load_omf_unk3(const ut8 *buf, const size_t buf_size, const OMF_record
 	return true;
 }
 
+char *sym_operation_name(const ut8 type) {
+	switch (type) {
+	case 0x00:
+		return "definition";
+	case 0x01:
+		return "condition";
+	case 0x02:
+		return "assignment";
+	default:
+		printf("sym_operation_name: 0x%02x\n", type);
+		rz_warn_if_reached();
+		return "references";
+	}
+}
+
 static int load_omf_unk4(const ut8 *buf, const size_t buf_size, const OMF_record *record, const ut64 global_ct) {
 #if RZ_BUILD_DEBUG
-	RZ_LOG_DEBUG("load_omf = UNKNOWN4  =  [%05d] [0x%08" PFMT64x "] 0x%02x (%10" PFMTSZu ")\n", record->size, global_ct, record->type, buf_size);
+	printf("load_omf: UNKNOWN4 0x64 [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\t\t",
+		record->size, global_ct, global_ct, record->type, buf_size);
 	size_t ct = 3;
 	const ut16 count = rz_read_le16_offset(buf, &ct);
 	if (count == 0 || count > UINT16_MAX) {
 		return false;
 	}
 
-	RZ_LOG_DEBUG("count: %2d [%02x %02x]\n%02x %02x\n",
+	printf("count: %2d [%02x %02x]\t%02x %02x\n",
 		count, buf[ct], buf[ct + 1], buf[ct + 2], buf[ct + 3]);
 	ct += 2;
 
@@ -821,14 +683,15 @@ static int load_omf_unk4(const ut8 *buf, const size_t buf_size, const OMF_record
 		const ut8 b4 = rz_read_le8_offset(buf, &ct);
 		const ut16 line = rz_read_le16_offset(buf, &ct);
 
-		RZ_LOG_DEBUG("%02x %02x %02x %02x  [line: %5d]   %02x %02x %s (0x%02x) %02x %02x %02x %02x %02x %02x %02x\n",
+		printf("\t\t%02x %02x %02x %02x  [line: %5d]   %02x %02x %10s (0x%02x) %02x %02x %02x %02x %02x %02x %02x\n",
 			b1, b2, b3, b4, line,
 			buf[ct], buf[ct + 1],
-			buf[ct + 2] ? "references" : "definition", buf[ct + 2],
+			sym_operation_name(buf[ct + 2]), buf[ct + 2],
 			buf[ct + 3], buf[ct + 4], buf[ct + 5],
 			buf[ct + 6], buf[ct + 7], buf[ct + 8], buf[ct + 9]);
 		ct += 10;
 	}
+	printf("\n");
 #endif
 	return true;
 }
@@ -908,8 +771,8 @@ static int load_omf_secdef(rz_bin_omf51_obj *obj, const ut8 *buf, const OMF_reco
  * \return True is success, false is something wrong
  */
 static int load_omf_modinf(rz_bin_omf51_obj *obj, const ut8 *buf, const OMF_record *record) {
+	printf("0x%02x 0x%02x 0x%02x 0x%02x 0x%02x\n", buf[0], buf[1], buf[2], buf[3], buf[4]);
 #if RZ_BUILD_DEBUG
-	RZ_LOG_DEBUG("0x%02x 0x%02x 0x%02x 0x%02x 0x%02x\n", buf[0], buf[1], buf[2], buf[3], buf[4]);
 #endif
 	const ut16 ct = 3;
 	if (!(record->type & 1) && record->size != 2) {
@@ -1055,6 +918,49 @@ static int load_omf_modinf(rz_bin_omf51_obj *obj, const ut8 *buf, const OMF_reco
 // 	return true;
 // }
 
+static int load_linnum92_data(const rz_bin_omf51_obj *obj, const ut8 *buf, const size_t buf_size, const OMF_record *record, ut64 global_ct) {
+	OMF_linnums *linnum = NULL;
+	size_t ct = 3;
+#ifdef RZ_DEBUG
+	RZ_LOG_DEBUG("load_omf: 0x92          [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
+		record->size, global_ct, global_ct, record->type, buf_size);
+#endif
+	const ut8 GroupIndex = omf166_get_idx(buf + ct, buf_size - ct); // ct = 3
+	ct++;
+	const ut16 unk16 = rz_read_le16_offset(buf, &ct); // ct = 4
+
+	while (ct < record->size) {
+		linnum = RZ_NEW0(OMF_linnums);
+		if (!linnum) {
+			return false;
+		}
+		const ut8 unk8 = rz_read_le8_offset(buf, &ct);
+		linnum->LineNumber = rz_read_le16_offset(buf, &ct);
+		const ut8 unk8_2 = rz_read_le8_offset(buf, &ct);
+		(void)unk8_2;
+		const ut16 offset = rz_read_le16_offset(buf, &ct);
+		const ut8 seg = rz_read_le8_offset(buf, &ct);
+		linnum->address = ((ut64)seg << 16) | offset;
+		const OMF_groupdef *group = rz_pvector_at(obj->group_vec, GroupIndex - 1);
+		if (!group) {
+			RZ_FREE(linnum);
+			return false;
+		}
+		linnum->n = group->path_n + group->name_n + 1;
+		char k[512];
+		rz_strf(k, "%s%s", group->path, group->name);
+		rz_mem_copy(linnum->filename, MAX_NAME_LEN,
+			k, linnum->n);
+		if (unk16 != 0 || unk8 != 0) {
+			printf("\t\tGroupIndex: 0x%02x, unk16: 0x%04x, unk8: 0x%02x, LineNumber: %d, address: 0x%06" PFMT64x ", `%s`\n",
+				GroupIndex, unk16, unk8, linnum->LineNumber, linnum->address, k);
+		}
+
+		rz_pvector_push(obj->linnums_vec, linnum);
+	}
+	return true;
+}
+
 static int rz_bin_format_omf51_load_content(rz_bin_omf51_obj *obj, OMF_record *record, const ut8 *buf, const ut64 global_ct, const size_t buf_size) {
 	// generic loader just copy data from buf to content
 	if (!record->size) {
@@ -1063,34 +969,35 @@ static int rz_bin_format_omf51_load_content(rz_bin_omf51_obj *obj, OMF_record *r
 	}
 
 	switch (record->type) {
-	case OMF_LINSYM:
-		printf("load_omf: OMF_LINSYM    [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
-			record->size, global_ct, global_ct, record->type, buf_size);
-		return true;
-	case OMF_NBKPAT:
-		printf("load_omf: OMF_NBKPAT    [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
-			record->size, global_ct, global_ct, record->type, buf_size);
-		return true;
-	case OMF_SEGDEF:
-		printf("load_omf: OMF_SEGDEF    [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
-			record->size, global_ct, global_ct, record->type, buf_size);
-		return true;
+	case 0xc0:
+		return load_linsym_data(obj, buf, record, global_ct, buf_size);
+	case 0xc4:
+		return load_linsym_data(obj, buf, record, global_ct, buf_size);
+	case 0xc8:
+		return load_c8_data(obj, buf, record, global_ct, buf_size);
+	case 0x98:
+		return load_98_data(obj, buf, record, global_ct, buf_size);
 	case 0x84:
-		printf("load_omf: 0x84          [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
+		return load_84_data(obj, buf, record, global_ct, buf_size);
+	case OMF51_ENTRYPOINT: // DONE
+		obj->base_addr = rz_read_at_le32(buf, 3);
+#ifdef RZ_DEBUG
+		RZ_LOG_DEBUG("load_omf: OMF51_ENTRYPOINT   [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n\t\t",
 			record->size, global_ct, global_ct, record->type, buf_size);
-		// return load_omf51_global_sym_record(obj, record, buf, buf_size);
-		return load_84_data(obj, buf, record, global_ct);
-		// return true;
-	case OMF_LLNAMES:
-		printf("load_omf: OMF_LLNAMES   [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
-			record->size, global_ct, global_ct, record->type, buf_size);
+		RZ_LOG_DEBUG("base_addr?: 0x%06" PFMT64x "\n\t\t", obj->base_addr);
+#endif
+#ifdef RZ_DEBUG1
+		rz_print_bytes(NULL, buf + 3, record->size - 1, "0x%02x ");
+		printf("\n");
+#endif
 		return true;
 	case OMF166_LNAMES: {
 		return load_omf166_lnames(obj, record, buf, buf_size, global_ct);
 	}
-	case OMF_PUBDEF:
-		printf("load_omf: OMF_PUBDEF    [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
+	case 0x90:
+		printf("load_omf: 0x90 (PUBDEF?)[%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\t\t",
 			record->size, global_ct, global_ct, record->type, buf_size);
+		rz_print_bytes(NULL, buf, record->size + 3, "0x%02x ");
 		return true;
 	case OMF_EXTDEF:
 		printf("load_omf: OMF_EXTDEF    [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
@@ -1120,29 +1027,18 @@ static int rz_bin_format_omf51_load_content(rz_bin_omf51_obj *obj, OMF_record *r
 	// 	printf("load_omf: OMF166_UNKNOWN4    [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
 	// 		record->size, global_ct, record->type, buf_size);
 	// 	return true;
-	case 0xc0:
-		printf("load_omf: 0xc0          [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
-			record->size, global_ct, global_ct, record->type, buf_size);
-		return true;
-	case 0xd0:
-		printf("load_omf: 0xd0          [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
-			record->size, global_ct, global_ct, record->type, buf_size);
-		return true;
+	case 0xd0: // DONE
+		return load_d0_data(obj, buf, record, global_ct, buf_size);
 	case 0x8e:
-		printf("load_omf: 0x8e          [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
-			record->size, global_ct, global_ct, record->type, buf_size);
-		return true;
+		return load_8e_data(obj, buf, record, global_ct, buf_size);
 	case 0x92:
-		printf("load_omf: 0x92          [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
-			record->size, global_ct, global_ct, record->type, buf_size);
-		return true;
-
-	case OMF166_GLBDEF:
-	case OMF166_LOCSYM:
-	case OMF166_PUBDEF:
-	case OMF166_DEBSYM: {
-		return load_omf166_global_sym_record(obj, record, buf, buf_size);
-	}
+		return load_linnum92_data(obj, buf, buf_size, record, global_ct);
+	// case OMF166_GLBDEF:
+	// case OMF166_LOCSYM:
+	// case OMF166_PUBDEF:
+	// case OMF166_DEBSYM: {
+	// 	return load_omf166_global_sym_record(obj, record, buf, buf_size);
+	// }
 	case OMF166_BLKDEF: {
 		return load_omf_blkdef(obj, buf, buf_size, global_ct);
 	}
@@ -1150,37 +1046,37 @@ static int rz_bin_format_omf51_load_content(rz_bin_omf51_obj *obj, OMF_record *r
 	// case OMF166_PEDATA: {
 	// 	return load_omf_pedata(obj, buf, record, global_ct);
 	// }
-	case OMF166_LHEADR:
-	case OMF166_THEADR: {
-		char name[255] = RZ_EMPTY;
-		size_t offset = 3;
-		ut8 n = rz_read_le8_offset(buf, &offset);
-		rz_str_ncpy(name, (const char *)&buf[offset], n + 1);
-		RZ_LOG_DEBUG("load_omf = %s  =  [0x%08" PFMT64x "] (%05d) `%s`\n",
-			record->type == OMF166_THEADR ? "THEADR" : "LHEADR",
-			global_ct,
-			record->size,
-			name);
-		return true;
-	}
+	case OMF_LHEADR:
+	case OMF_THEADR:
+		return load_theadr_data(obj, buf, record, global_ct, buf_size);
+	// case OMF166_LHEADR:
+	// case OMF166_THEADR: {
+	// 	char name[255] = RZ_EMPTY;
+	// 	size_t offset = 3;
+	// 	ut8 n = rz_read_le8_offset(buf, &offset);
+	// 	rz_str_ncpy(name, (const char *)&buf[offset], n + 1);
+	// 	printf("load_omf = %s  =  [0x%08" PFMT64x "] (%05d) `%s`\n",
+	// 		record->type == OMF166_THEADR ? "THEADR" : "LHEADR",
+	// 		global_ct,
+	// 		record->size,
+	// 		name);
+	// 	return true;
+	// }
 	case OMF166_MODINF: {
 		return load_omf_modinf(obj, buf, record);
 	}
 	case OMF166_MODEND: {
-		RZ_LOG_DEBUG("load_omf = MODEND  =  [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
+		printf("load_omf = MODEND  =  [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
 			record->size, global_ct, global_ct, record->type, buf_size);
 		return true;
 	}
 	case OMF166_BLKEND: {
-		RZ_LOG_DEBUG("load_omf = BLKEND  =  [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
+		printf("load_omf = BLKEND  =  [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
 			record->size, global_ct, global_ct, record->type, buf_size);
 		return true;
 	}
-	case OMF51_PEDATA: {
-		printf("load_omf: OMF51_PEDATA  [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
-			record->size, global_ct, global_ct, record->type, buf_size);
-		// return load_linnum_data(obj, buf, buf_size, record);
-		return load_omf51_pedata(obj, buf, record, global_ct);
+	case OMF51_PEDATA: { // DONE
+		return load_omf51_pedata(obj, buf, record, global_ct, buf_size);
 	}
 	case OMF166_REGDEF: {
 		/**
@@ -1188,35 +1084,39 @@ static int rz_bin_format_omf51_load_content(rz_bin_omf51_obj *obj, OMF_record *r
 		 *      E3    0F 00    00 00     FC    07   INTREGS            FF FF      00         F1
 		 *      E3    18 00    00 20     FC    10   ?C_MAINREGISTERS   FF FF      00         1D
 		 */
-		RZ_LOG_DEBUG("load_omf = REGDEF  =  [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
+		printf("load_omf = REGDEF  =  [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
 			record->size, global_ct, global_ct, record->type, buf_size);
 		return true;
 	}
-	case OMF166_COMMENT: {
-		printf("load_omf: OMF_COMENT    [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
-			record->size, global_ct, global_ct, record->type, buf_size);
-		return load_comment_data(obj, buf, record, global_ct);
+	case 0x88: { // DONE
+		return load_88_data(obj, buf, record, global_ct, buf_size);
 	}
 	case OMF_GRPDEF:
+		return load_9a_data(obj, buf, record, global_ct, buf_size);
 	case OMF166_GRPDEF: {
-		printf("load_omf: OMF_GRPDEF    [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
+		printf("load_omf: OMF166_GRPDEF [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n\t\t",
 			record->size, global_ct, global_ct, record->type, buf_size);
 		return load_grpdef_data(obj, buf, record, global_ct);
 	}
 	// case OMF166_DEPLST: {
 	// 	return load_deplst_data(buf, record);
 	// }
-	case OMF166_DEPLST:
-		printf("load_omf: OMF166_DEPLST [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
+	case OMF166_DEPLST: // DONE
+#ifdef RZ_DEBUG
+		RZ_LOG_DEBUG("load_omf: OMF166_DEPLST [%05d] (%5" PFMT64u ") [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
 			record->size, global_ct, global_ct, record->type, buf_size);
+		char *tmp = rz_str_newlen((const char *)&buf[6], record->size - 5);
+		RZ_LOG_DEBUG("\t\t[%d] OMF166_DEPLST `%s`\n", record->size - 5, tmp);
+		free(tmp);
+#endif
 		return true;
 	case OMF166_LEDATA: {
 		return load_omf_data(obj, buf, buf_size, record);
 	}
 
-	// case OMF166_TYPNEW: {
-	// 	return load_omf_typnew(obj, buf);
-	// }
+		// case OMF166_TYPNEW: {
+		// 	return load_omf_typnew(obj, buf);
+		// }
 
 	case OMF166_SECDEF:
 	case OMF166_XSECDEF: {
@@ -1417,6 +1317,8 @@ static int rz_bin_format_omf51_init_internal_storage(rz_bin_omf51_obj *obj) {
 	new_pv_and_check(obj->linnums_vec, omf166_linnums_free);
 	new_pv_and_check(obj->coments_vec, free);
 	new_pv_and_check(obj->includes_vec, free);
+	new_pv_and_check(obj->group_vec, free);
+	new_pv_and_check(obj->regs_vec, free);
 	new_pv_and_check(obj->ledatas_vec, free);
 	return true;
 }
@@ -1518,6 +1420,8 @@ void rz_bin_format_omf51_free_all_records(rz_bin_omf51_obj *obj) {
 	PVEC_FREE(obj->linnums_vec);
 	PVEC_FREE(obj->coments_vec);
 	PVEC_FREE(obj->includes_vec);
+	PVEC_FREE(obj->group_vec);
+	PVEC_FREE(obj->regs_vec);
 	PVEC_FREE(obj->ledatas_vec);
 }
 
@@ -1526,7 +1430,6 @@ rz_bin_omf51_obj *rz_bin_format_omf51_load(const ut8 *buf, ut64 size) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->base_addr = 0x800000;
 
 	if (!rz_bin_format_omf166_load_all_records(ret, buf, size)) {
 		rz_bin_format_omf51_free_all_records(ret);

@@ -242,7 +242,7 @@ echo
 iS
 echo
 aaa
-pd 150
+pd 350
 echo
 pd 21 @ 0x00c001e6
 echo
@@ -261,9 +261,9 @@ EXPECT=<<EOF
 
      paddr   size      vaddr  vsize align perm name                 type flags 
 -------------------------------------------------------------------------------
-0x00000000  0x250 0x00c0168a  0x250   0x0 -rw- PR_MCOMMAND_FCODE         
+0x00000000  0x250 0x00c0168a  0x250   0x0 -r-x PR_MCOMMAND_FCODE
 0x00000000   0x6f 0x00c01e4c   0x6f   0x0 -r-- HC_MCOMMAND_HCONST        
-0x00000000  0x45a 0x00c01230  0x45a   0x0 -rw- PR_MEASURE_FCODE          
+0x00000000  0x45a 0x00c01230  0x45a   0x0 -r-x PR_MEASURE_FCODE
 0x00000000  0x426 0x00c01a26  0x426   0x0 -r-- HC_MEASURE_HCONST         
 0x00000000   0x1b 0x00010240   0x1b   0x0 -rw- ND0_MEASURE_NDATA0        
 0x00000000 0x2010 0x0001025c 0x2010   0x0 -rw- HD0_MEASURE_HDATA0        
@@ -729,13 +729,13 @@ EXPECT=<<EOF
 |           0x00c003ce      7b11           divlu r1
 |           0x00c003d0      f2f40cfe       mov   r4, DPP3:0x3e0c
 |           0x00c003d4      f2f50efe       mov   r5, DPP3:0x3e0e
-|           0x00c003d8      f2071cff       mov   MDL, DPP3:0x3f1c
+|           0x00c003d8      f2071cff       mov   0xfe0e, DPP3:0x3f1c
 |           0x00c003dc      f6f40cfe       mov   DPP3:0x3e0c, r4
 |           0x00c003e0      7b11           divlu r1
 |           0x00c003e2      f2f40efe       mov   r4, DPP3:0x3e0e
 |           0x00c003e6      5c86           shl   r6, #0x08
 |           0x00c003e8      7c16           shr   r6, #0x01
-|           0x00c003ea      f2071cff       mov   MDL, DPP3:0x3f1c
+|           0x00c003ea      f2071cff       mov   0xfe0e, DPP3:0x3f1c
 |           0x00c003ee      f6f60cfe       mov   DPP3:0x3e0c, r6
 |           0x00c003f2      7b11           divlu r1
 |           0x00c003f4      f2f10efe       mov   r1, DPP3:0x3e0e
@@ -773,7 +773,7 @@ EXPECT=<<EOF
             ; CALL XREF from main @ 0xc014c4
             ;-- section.PR_GETLINE_FCODE:
 / getline();
-|           0x00c018da      ecfd           push  r13                   ; Getline.c:20 ; [07] -rw- section size 146 named PR_GETLINE_FCODE
+|           0x00c018da      ecfd           push  r13                   ; Getline.c:20 ; [07] -r-x section size 146 named PR_GETLINE_FCODE
 |           0x00c018dc      ecfe           push  r14
 |           0x00c018de      ecff           push  r15
 |           0x00c018e0      f0e9           mov   r14, r9
@@ -915,6 +915,53 @@ EXPECT=<<EOF
 |      `==< 0x00c01700      3ddd           jmpr  cc_NZ/NE, 0xc016bc
 |           0x00c01702      fcfd           pop   r13                   ; Mcommand.c:29
 \           0x00c01704      db00           rets
+
+            ;-- section.HC_MEASURE_HCONST:
+            0x00c01a26 hex length=92 delta=0
+0x00c01a26  0a2a 2a2a 2045 5252 4f52 3a20 2573 0a00  .*** ERROR: %s..
+0x00c01a36  554e 4b4e 4f57 4e20 434f 4d4d 414e 4400  UNKNOWN COMMAND.
+0x00c01a46  0a43 6c65 6172 204d 6561 7375 7265 6d65  .Clear Measureme
+0x00c01a56  6e74 2052 6563 6f72 6473 0a00 0a53 7461  nt Records...Sta
+0x00c01a66  7274 204d 6561 7375 7265 6d65 6e74 2052  rt Measurement R
+0x00c01a76  6563 6f72 6469 6e67 0a00 0a00            ecording....
+ ; [03] -r-- section size 1062 named HC_MEASURE_HCONST
+            ;-- str.INVALID_INTERVAL_FORMAT:
+            ;-- section.HC_MCOMMAND_HCONST:
+            0x00c01e4c     .string "INVALID INTERVAL FORMAT" ; len=23  ; [01] -r-- section size 111 named HC_MCOMMAND_HCONST
+            ;-- str.INVALID_TIME_FORMAT:
+            0x00c01e64     .string "INVALID TIME FORMAT" ; len=19
+            0x00c01e77  ~   0025           add   r2, r5
+            ;-- str.bd:_bd:_bd:
+            0x00c01e78     .string "%bd:%bd:%bd" ; len=11
+            0x00c01e83  ~   0025           add   r2, r5
+            ;-- str.bd:_f:
+            0x00c01e84     .string "%bd:%f" ; len=6
+            0x00c01e8a  ~   0020           add   r2, r0
+            ;-- str.AN_d:_4.2fV:
+            0x00c01e8b     .string " AN%d:%4.2fV" ; len=12
+            0x00c01e97  ~   000d           add   r0, r13
+            ;-- str.Time:__2d:_02d:_02d._03d__P2:_04X:
+            0x00c01e98     .string "\rTime: %2d:%02d:%02d.%03d  P2:%04X" ; len=34
+            0x00c01eba      00ff           add   r15, r15
+            ;-- section.HC__PRNFMT_HCONST:
+            0x00c01ebc hex length=90 delta=0
+0x00c01ebc  2d04 2b20 2080 4c01 4202 4800 2310 2e40  -.+  .L.B.H.#..@
+0x00c01ecc  0000 d007 5300 2c08 5800 3208 4f00 3a08  ....S.,.X.2.O.:.
+0x00c01edc  4400 3a08 4900 c007 4300 5a08 5500 2a08  D.:.I...C.Z.U.*.
+0x00c01eec  5000 9409 2a00 ba09 4e00 d40a 4600 460a  P...*...N...F.F.
+0x00c01efc  4500 080a 4700 0000 2830 2900 4e61 4e00  E...G...(0).NaN.
+0x00c01f0c  2b49 4e46 002d 494e 4600                 +INF.-INF.
+ ; [18] -r-- section size 90 named HC__PRNFMT_HCONST
+            0x00c01f16      ffff           bset  r15.15
+            0x00c01f18      ffff           bset  r15.15
+            0x00c01f1a      ffff           bset  r15.15
+            0x00c01f1c      ffff           bset  r15.15
+            0x00c01f1e      ffff           bset  r15.15
+            0x00c01f20      ffff           bset  r15.15
+            0x00c01f22      ffff           bset  r15.15
+            0x00c01f24      ffff           bset  r15.15
+            0x00c01f26      ffff           bset  r15.15
+            0x00c01f28      ffff           bset  r15.15
 EOF
 RUN
 
