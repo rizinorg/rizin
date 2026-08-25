@@ -632,7 +632,7 @@ static ut8 c166_instr_rb_x(C166_Inst *instr) {
 
 static ut8 c166_instr_rw_rb(C166_Inst *instr) {
 	const ut8 reg = get_operand(instr, 1);
-	///< NOTE: It is D0 mn , NOT nm, but displayed as Rwn, Rbm
+	///< NOTE: It is D0 mn, NOT nm, but displayed as Rwn, Rbm
 	OPERANDS(FMT9, c166_rw[L_NIB(reg)], c166_rb[H_NIB(reg)]);
 	return C166_BYTESIZE_2;
 }
@@ -794,8 +794,8 @@ static ut8 c166_instr_bitaddr_bitaddr(C166_Inst *instr) {
 	const ut8 q = H_NIB(qz);
 	const ut8 z = L_NIB(qz);
 	OPERANDS("%s.%i, %s.%i",
-		c166_fmt_bitoff(&instr->ext, SBUF_16, qq), q,
-		c166_fmt_bitoff(&instr->ext, SBUF_16, zz), z);
+		c166_fmt_bitoff(&instr->ext, SBUF_16, zz), z,
+		c166_fmt_bitoff(&instr->ext, SBUF_16, qq), q);
 	return C166_BYTESIZE_4;
 }
 
@@ -1173,35 +1173,35 @@ static const char *c166_instr_extended_name(C166_Inst *instr) {
 	return "invalid";
 }
 
-static const char *CoREG(ut8 bits) {
+static ut16 CoREG(ut8 bits) {
 	switch (bits) {
 	case 0b00000: {
 		///< MAC-Unit Status Word
-		return "0xffde";
+		return 0xffde;
 	}
 	case 0b00001: {
 		///< MAC-Unit Accumulator High Word
-		return "0xfe5e";
+		return 0xfe5e;
 	}
 	case 0b00010: {
-		///< Limited MAC-Unit Accumulator High Word
-		return "MAS";
+		///< MAS - Limited MAC-Unit Accumulator High Word
+		return -1; ///< Not documented value
 	}
 	case 0b00100: {
 		///< MAC-Unit Accumulator Low Word
-		return "0xfe5c";
+		return 0xfe5c;
 	}
 	case 0b00101: {
 		///< MAC-Unit Control Word
-		return "0xffdc";
+		return 0xffdc;
 	}
 	case 0b00110: {
 		///< MAC-Unit Repeat Word
-		return "0xffda";
+		return 0xffda;
 	}
 	default:
 		RZ_LOG_INFO("Unknown bits: 0x%02x.\n", bits);
-		return NULL;
+		return -1;
 	}
 }
 
@@ -1214,27 +1214,27 @@ static const char *idx_formatter(char *buf, ut8 nm) {
 
 	switch (idx_op) {
 	case 0b010: { ///< IDX +2
-		format = "[0x%04x +2]";
+		format = "[0x%04x+]";
 		break;
 	}
 	case 0b011: { ///< IDX -2
-		format = "[0x%04x -2]";
+		format = "[0x%04x-]";
 		break;
 	}
 	case 0b100: { ///< IDX + QX0
-		format = "[0x%04x + QX0]";
+		format = "[0x%04x+QX0]";
 		break;
 	}
 	case 0b101: { ///< IDX - QX0
-		format = "[0x%04x - QX0]";
+		format = "[0x%04x-QX0]";
 		break;
 	}
 	case 0b110: { ///< IDX + QX1
-		format = "[0x%04x + QX1]";
+		format = "[0x%04x+QX1]";
 		break;
 	}
 	case 0b111: { ///< IDX - QX1
-		format = "[0x%04x - QX1]";
+		format = "[0x%04x-QX1]";
 		break;
 	}
 	case 0b000: ///< RESERVED
@@ -1252,27 +1252,27 @@ static const char *qqq_formatter(char *buf, ut8 op, ut8 n) {
 	const char *format = NULL;
 	switch (q) {
 	case 0b010: { ///< Rw +2
-		format = "[r%i +2]";
+		format = "[r%i+]";
 		break;
 	}
 	case 0b011: { ///< Rw -2
-		format = "[r%i -2]";
+		format = "[r%i-]";
 		break;
 	}
 	case 0b100: { ///< Rw + QR0
-		format = "[r%i + QR0]";
+		format = "[r%i+QR0]";
 		break;
 	}
 	case 0b101: { ///< Rw - QR0
-		format = "[r%i - QR0]";
+		format = "[r%i-QR0]";
 		break;
 	}
 	case 0b110: { ///< Rw + QR1
-		format = "[r%i + QR1]";
+		format = "[r%i+QR1]";
 		break;
 	}
 	case 0b111: { ///< Rw - QR1
-		format = "[r%i - QR1]";
+		format = "[r%i-QR1]";
 		break;
 	}
 	case 0b000: ///< RESERVED
@@ -1312,7 +1312,7 @@ static ut8 c166_instr_extended(C166_Inst *instr) {
 
 	///< qqq : 3-bit addressing mode specifier for CoXXX instructions
 	///< ut8 rrr = opt2 >> 5;
-	const char *rrr = repeat_control(opt2);
+	const char *rpctl = repeat_control(opt2);
 	const ut8 opcode = instr->id;
 
 	const char *instruction_name = c166_instr_extended_name(instr);
@@ -1320,7 +1320,7 @@ static ut8 c166_instr_extended(C166_Inst *instr) {
 		goto err;
 	}
 
-	INSTR("%s%s", rrr ? rrr : "", instruction_name); ///< `- USRx` repeat control label
+	INSTR("%s%s", rpctl ? rpctl : "", instruction_name); ///< `- USRx` repeat control label
 
 	if (opcode == 0xD3) {
 		///< CoMOV [IDXi*], [Rwm*]
@@ -1335,7 +1335,7 @@ static ut8 c166_instr_extended(C166_Inst *instr) {
 		///< CoSTORE [Rwn*], CoReg
 		///< B3 nn wwww:w000 rrr0:0qqq
 		const ut8 wwwww = (extID >> 3);
-		OPERANDS("[r%i], %s", n, CoREG(wwwww));
+		OPERANDS("%s, 0x%04x", qqq_formatter(SBUF_16, opt2, n), CoREG(wwwww));
 		goto end;
 	}
 
@@ -1343,17 +1343,17 @@ static ut8 c166_instr_extended(C166_Inst *instr) {
 		///< CoSTORE Rwn, CoReg
 		///< C3 nn wwww:w000 rrr0:0000
 		const ut8 wwwww = (extID >> 3);
-		OPERANDS("r%i, %s", n, CoREG(wwwww)); // CoSTORE RWn, CoReg
+		OPERANDS("r%i, 0x%04x", n, CoREG(wwwww)); // CoSTORE RWn, CoReg
 		goto end;
 	}
 
 	if ((opcode == 0x83) && (extID == 0xAA)) {
-		OPERANDS("[r%i]", m); // CoASHR [RWm*]
+		OPERANDS("%s", qqq_formatter(SBUF_16, opt2, m)); // CoASHR [RWm*]
 		goto end;
 	} else if ((opcode == 0x83) && (extID == 0xBA)) {
 		///< CoASHR [Rwm*], rnd
 		///< 83 mm BA rrr0:0qqq
-		OPERANDS("[r%i], rnd", m); // CoASHR [RWm*], rnd
+		OPERANDS("%s, rnd", qqq_formatter(SBUF_16, opt2, m)); // CoASHR [RWm*], rnd
 		goto end;
 	} else if ((opcode == 0xA3) && (extID == 0xAA)) {
 		OPERANDS("r%i", n); // CoASHR RWn
@@ -1388,62 +1388,70 @@ static ut8 c166_instr_extended(C166_Inst *instr) {
 	} else if ((opcode == 0xA3) && (extID == 0x32)) {
 		goto end;
 	} else if ((opcode == 0x83) && (extID == 0x8A)) {
-		OPERANDS("[r%i]", m); // ????? CoSHL [RWm*]
+		OPERANDS("%s", qqq_formatter(SBUF_16, opt2, m)); // ????? CoSHL [RWm*]
 		goto end;
 	} else if ((opcode == 0xA3) && (extID == 0x8A)) {
 		OPERANDS("r%i", n);
 		goto end;
 	} else if ((opcode == 0x83) && (extID == 0x9A)) {
-		OPERANDS("[r%i]", m); // ????? CoSHR [RWm*]
+		OPERANDS("%s", qqq_formatter(SBUF_16, opt2, m)); // ????? CoSHR [RWm*]
 		goto end;
 	} else if ((opcode == 0xA3) && (extID == 0x9A)) {
 		OPERANDS("r%i", n); // CoSHR RWn
 		goto end;
 	} else if ((opcode == 0x93) && (L_NIB(extID) == 0x00)) {
 		// CoXXX_oIDXi_oRWm();
-		OPERANDS("%s, [r%i]",
-			idx_formatter(SBUF_16, nm), m); // CoXXX [IDXi*], [RWm*]
+		OPERANDS("%s, %s",
+			idx_formatter(SBUF_16, nm),
+			qqq_formatter(SBUF_16, opt2, m)); // CoXXX [IDXi*], [RWm*]
 		goto end;
 	} else if ((opcode == 0x93) && (L_NIB(extID) == 0x02)) {
 		// CoXXX_RWn_oRWm();
-		OPERANDS("%s, [r%i]",
-			idx_formatter(SBUF_16, nm), m); // CoXXX [IDXi*], [RWm*]
+		OPERANDS("%s, %s",
+			idx_formatter(SBUF_16, nm),
+			qqq_formatter(SBUF_16, opt2, m)); // CoXXX [IDXi*], [RWm*]
 		goto end;
 	} else if ((opcode == 0x93) && (L_NIB(extID) == 0x0A)) {
 		// CoXXX_RWn_oRWm();
-		OPERANDS("%s, [r%i]",
-			idx_formatter(SBUF_16, nm), m); // CoXXX [IDXi*], [RWm*]
+		OPERANDS("%s, %s",
+			idx_formatter(SBUF_16, nm),
+			qqq_formatter(SBUF_16, opt2, m)); // CoXXX [IDXi*], [RWm*]
 		goto end;
 	} else if ((opcode == 0x93) && (L_NIB(extID) == 0x08)) {
 		// CoXXX_RWn_oRWm();
-		OPERANDS("%s, [r%i]",
-			idx_formatter(SBUF_16, nm), m); // CoXXX [IDXi*], [RWm*]
+		OPERANDS("%s, %s",
+			// idx_formatter(SBUF_16, nm), m); // CoXXX [IDXi*], [RWm*]
+			idx_formatter(SBUF_16, nm),
+			qqq_formatter(SBUF_16, opt2, m)); // CoXXX [IDXi*], [RWm*]
 		goto end;
 	} else if ((opcode == 0x93) && (L_NIB(extID) == 0x09)) {
 		// CoXXX_RWn_oRWm();
-		OPERANDS("%s, [r%i], rnd",
-			idx_formatter(SBUF_16, nm), m); // CoXXX [IDXi*], [RWm*], rnd
+		OPERANDS("%s, %s, rnd",
+			idx_formatter(SBUF_16, nm),
+			qqq_formatter(SBUF_16, opt2, m)); // CoXXX [IDXi*], [RWm*], rnd
 		goto end;
 	} else if ((opcode == 0x93) && (L_NIB(extID) == 0x01)) {
 		// CoXXX_RWn_oRWm();
-		OPERANDS("%s, [r%i], rnd",
-			idx_formatter(SBUF_16, nm), m); // CoXXX [IDXi*], [RWm*], rnd
+		OPERANDS("%s, %s, rnd",
+			idx_formatter(SBUF_16, nm),
+			qqq_formatter(SBUF_16, opt2, m)); // CoXXX [IDXi*], [RWm*], rnd
 		goto end;
 	} else if ((opcode == 0x83) && (L_NIB(extID) == 0x00)) {
 		// CoXXX_RWn_oRWm();
-		OPERANDS("r%i, [r%i]", n, m); // CoXXX RWn, [RWm*]
+		OPERANDS("r%i, %s", n, qqq_formatter(SBUF_16, opt2, m)); // CoXXX RWn, [RWm*]
 		goto end;
 	} else if ((opcode == 0x83) && (L_NIB(extID) == 0x02)) {
 		// CoXXX_RWn_oRWm();
-		OPERANDS("r%i, [r%i]", n, m); // CoXXX RWn, [RWm*]
+		OPERANDS("r%i, %s]", n, qqq_formatter(SBUF_16, opt2, m)); // CoXXX RWn, [RWm*]
 		goto end;
 	} else if ((opcode == 0x83) && (L_NIB(extID) == 0x0A)) {
 		// CoXXX_RWn_oRWm();
-		OPERANDS("r%i, [r%i]", n, m); // CoXXX RWn, [RWm*]
+		OPERANDS("r%i, %s", n, qqq_formatter(SBUF_16, opt2, m)); // CoXXX RWn, [RWm*]
 		goto end;
 	} else if ((opcode == 0x83) && (L_NIB(extID) == 0x01)) {
 		// CoMULu_RWn_oRWm_rnd();
-		OPERANDS("r%i, [r%i], rnd", n, m); // CoXXX RWn, [RWm*], rnd
+		OPERANDS("r%i, %s, rnd", n,
+			qqq_formatter(SBUF_16, opt2, m)); // CoXXX RWn, [RWm*], rnd
 		goto end;
 	} else if (opcode == 0x83) {
 		// CoMULu_RWn_oRWm();
@@ -1451,12 +1459,14 @@ static ut8 c166_instr_extended(C166_Inst *instr) {
 			(extID == 0x48) ||
 			(extID == 0x88) ||
 			(extID == 0xC8)) {
-			OPERANDS("r%i, [r%i]", n, m); // CoXXX RWn, [RWm*]
+			OPERANDS("r%i, %s", n,
+				qqq_formatter(SBUF_16, opt2, m)); // CoXXX RWn, [RWm*]
 			goto end;
 		}
 	} else if ((opcode == 0xA3) && (L_NIB(extID) == 0x01)) {
 		// CoXXX_RWn_RWm_rnd();
-		OPERANDS("r%i, r%i, rnd", n, m); // CoXXX RWn, [RWm*], rnd
+		OPERANDS("r%i, %s, rnd", n,
+			qqq_formatter(SBUF_16, opt2, m)); // CoXXX RWn, [RWm*], rnd
 		goto end;
 	} else if ((opcode == 0xA3) && (L_NIB(extID) == 0x00)) {
 		// CoXXX_RWn_RWm();

@@ -347,6 +347,7 @@ typedef struct {
 	 *             Automatics are relative to R0 with an offset given by Offset16 [R0+Offset16]).
 	 */
 	ut8 bpos;
+	ut8 type51;
 } OMF_symbol;
 
 /**
@@ -420,6 +421,8 @@ typedef struct {
 	ut32 offset;
 	ut32 Seclen;
 	bool isXSec; ///< XSECDEF and SECDEF is same records
+	ut8 n51; ///< name length, n max 255, so name array len is 255
+	char name51[MAX_NAME_LEN];
 } OMF_sections;
 
 /**
@@ -587,9 +590,10 @@ typedef struct {
 } rz_bin_omf_obj;
 
 typedef struct {
-	ut16 index;
+	ut16 index; // 51
 	ut8 n; ///< n max 255, so name array len is 255
 	char name[MAX_NAME_LEN];
+	ut32 timestamp;
 } OMF_debug_includes;
 
 typedef struct {

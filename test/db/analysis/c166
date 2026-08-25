@@ -242,7 +242,7 @@ echo
 iS
 echo
 aaa
-pd 150
+pd 350
 echo
 pd 21 @ 0x00c001e6
 echo
@@ -261,31 +261,31 @@ EXPECT=<<EOF
 
      paddr   size      vaddr  vsize align perm name                 type flags 
 -------------------------------------------------------------------------------
-0x00000000  0x250 0x00c0168a  0x250   0x0 -rw- PR_MCOMMAND_FCODE         
+0x00000000  0x250 0x00c0168a  0x250   0x0 -r-x PR_MCOMMAND_FCODE         
 0x00000000   0x6f 0x00c01e4c   0x6f   0x0 -r-- HC_MCOMMAND_HCONST        
-0x00000000  0x45a 0x00c01230  0x45a   0x0 -rw- PR_MEASURE_FCODE          
+0x00000000  0x45a 0x00c01230  0x45a   0x0 -r-x PR_MEASURE_FCODE          
 0x00000000  0x426 0x00c01a26  0x426   0x0 -r-- HC_MEASURE_HCONST         
 0x00000000   0x1b 0x00010240   0x1b   0x0 -rw- ND0_MEASURE_NDATA0        
 0x00000000 0x2010 0x0001025c 0x2010   0x0 -rw- HD0_MEASURE_HDATA0        
 0x00000000    0x3 0x0000fd00    0x3   0x0 -rw- BI0_MEASURE_BIT0          
-0x00000000   0x92 0x00c018da   0x92   0x0 -rw- PR_GETLINE_FCODE          
-0x00000000   0x52 0x00c0196c   0x52   0x0 -rw- PR_PUTCHAR_FCODE          
-0x00000000    0xc 0x00c0001c    0xc   0x0 -rw- PR_GETKEY_FCODE           
-0x00000000    0x8 0x00c00074    0x8   0x0 -rw- PR_TRAPS_FCODE            
+0x00000000   0x92 0x00c018da   0x92   0x0 -r-x PR_GETLINE_FCODE          
+0x00000000   0x52 0x00c0196c   0x52   0x0 -r-x PR_PUTCHAR_FCODE          
+0x00000000    0xc 0x00c0001c    0xc   0x0 -r-x PR_GETKEY_FCODE           
+0x00000000    0x8 0x00c00074    0x8   0x0 -r-x PR_TRAPS_FCODE            
 0x00000000  0x200 0x00010000  0x200   0x0 -rw- C_USERSTACK_NDATA         
 0x00000000   0x20 0x00010200   0x20   0x0 -rw- C_USERSTACK1_NDATA        
 0x00000000   0x20 0x00010220   0x20   0x0 -rw- C_USERSTACK2_NDATA        
 0x00000000  0x200 0x0000f600  0x200   0x0 -rw- C_SYSSTACK_IDATA          
-0x00000000  0x15e 0x00c00084  0x15e   0x0 -rw- C_STARTUP_CODE_ICODE      
-0x00000000  0xb7c 0x00c001e2  0xb7c   0x0 -rw- C_LIB_CODE_FCODE          
-0x00000000  0x4d2 0x00c00d5e  0x4d2   0x0 -rw- PR_SCANF_FCODE            
+0x00000000  0x15e 0x00c00084  0x15e   0x0 -r-x C_STARTUP_CODE_ICODE      
+0x00000000  0xb7c 0x00c001e2  0xb7c   0x0 -r-x C_LIB_CODE_FCODE          
+0x00000000  0x4d2 0x00c00d5e  0x4d2   0x0 -r-x PR_SCANF_FCODE            
 0x00000000   0x5a 0x00c01ebc   0x5a   0x0 -r-- HC__PRNFMT_HCONST         
 0x00000000   0x30 0x00c00044   0x30   0x0 -r-- C_LIB_NCONST_NCONST       
-0x00000000   0x1a 0x00c019ec   0x1a   0x0 -rw- PR_ISSPACE_FCODE          
-0x00000000   0x18 0x00c01a06   0x18   0x0 -rw- PR_TOUPPER_FCODE          
-0x00000000   0x2e 0x00c019be   0x2e   0x0 -rw- PR_GETCHAR_FCODE          
+0x00000000   0x1a 0x00c019ec   0x1a   0x0 -r-x PR_ISSPACE_FCODE          
+0x00000000   0x18 0x00c01a06   0x18   0x0 -r-x PR_TOUPPER_FCODE          
+0x00000000   0x2e 0x00c019be   0x2e   0x0 -r-x PR_GETCHAR_FCODE          
 0x00000000    0x1 0x0001025b    0x1   0x0 -rw- ND0_GETCHAR_NDATA0        
-0x00000000    0x8 0x00c01a1e    0x8   0x0 -rw- PR_UNGET_FCODE            
+0x00000000    0x8 0x00c01a1e    0x8   0x0 -r-x PR_UNGET_FCODE            
 0x00000000    0x2 0x00c00004    0x2   0x0 -r-- C_INITSEC_UNKNOWN         
 0x00000000   0x18 0x00c0002c   0x18   0x0 -r-- C_CLRMEMSEC_UNKNOWN       
 
@@ -313,8 +313,8 @@ EXPECT=<<EOF
         |   ;-- section.PR_GETKEY_FCODE:
         |   ;-- _getkey:
 / _getkey();
-|       |   0x00c0001c      9ab7fe70       jnb   S0RIC.7, _getkey      ; Getkey.c:22 ; 0xc0001c ; [09] -rw- section size 12 named PR_GETKEY_FCODE
-|       |   0x00c00020      f2f4b2fe       mov   r4, 0xfe06:0x3eb2     ; Getkey.c:26
+|       |   0x00c0001c      9ab7fe70       jnb   S0RIC.7, _getkey      ; Getkey.c:22 ; 0xc0001c ; [09] -r-x section size 12 named PR_GETKEY_FCODE
+|       |   0x00c00020      f2f4b2fe       mov   r4, DPP3:0x3eb2       ; Getkey.c:26
 |       |   0x00c00024      7eb7           bclr  S0RIC.7               ; Getkey.c:27
 \       |   0x00c00026      db00           rets                        ; Getkey.c:28
 / sym.isr.Class_B_trap();
@@ -333,7 +333,7 @@ EXPECT=<<EOF
        ||   ; CODE XREF from sym.isr.NMI_trap @ 0xc00008
        ||   ;-- section.PR_TRAPS_FCODE:
 / NMI_trap();
-\      ||   0x00c00074      0dff           jmpr  cc_UC, NMI_trap       ; Traps.c:24 ; [10] -rw- section size 8 named PR_TRAPS_FCODE
+\      ||   0x00c00074      0dff           jmpr  cc_UC, NMI_trap       ; Traps.c:24 ; [10] -r-x section size 8 named PR_TRAPS_FCODE
        ||   ; CODE XREF from sym.isr.STKOF_trap @ 0xc00010
 / STKOF_trap();
 \      ||   0x00c00076      0dff           jmpr  cc_UC, STKOF_trap     ; Traps.c:33
@@ -352,19 +352,19 @@ EXPECT=<<EOF
         |   ;-- section.C_STARTUP_CODE_ICODE:
         |   ;-- a166_FAR.?C_STARTUP:
 / ?C_RESET();
-|       `-> 0x00c00084      a55aa5a5       diswdt                      ; START_V2.A66:1453 ; [15] -rw- section size 350 named C_STARTUP_CODE_ICODE
+|       `-> 0x00c00084      a55aa5a5       diswdt                      ; START_V2.A66:1453 ; [15] -r-x section size 350 named C_STARTUP_CODE_ICODE
 |           0x00c00088      d180           extr  #1                    ; START_V2.A66:1492
-|           0x00c0008a      e6ea0000       mov   0xf1d4, #0x0000       ; START_V2.A66:1493
+|           0x00c0008a      e6ea0000       mov   SYSCON3, #0x0000      ; START_V2.A66:1493
 |           0x00c0008e      e6f08400       mov   r0, #0x0084           ; START_V2.A66:1500
-|           0x00c00092      f6f000ee       mov   0xfe06:0x2e00, r0     ; START_V2.A66:1501
+|           0x00c00092      f6f000ee       mov   DPP3:0x2e00, r0       ; START_V2.A66:1501
 |           0x00c00096      e000           mov   r0, #0x00             ; START_V2.A66:1506
-|           0x00c00098      f6f002ee       mov   0xfe06:0x2e02, r0     ; START_V2.A66:1507
+|           0x00c00098      f6f002ee       mov   DPP3:0x2e02, r0       ; START_V2.A66:1507
 |           0x00c0009c      e6f06450       mov   r0, #0x5064           ; START_V2.A66:1514
-|           0x00c000a0      f6f010ee       mov   0xfe06:0x2e10, r0     ; START_V2.A66:1515
+|           0x00c000a0      f6f010ee       mov   DPP3:0x2e10, r0       ; START_V2.A66:1515
 |           0x00c000a4      e6f02100       mov   r0, #0x0021           ; START_V2.A66:1518
-|           0x00c000a8      f6f012ee       mov   0xfe06:0x2e12, r0     ; START_V2.A66:1519
+|           0x00c000a8      f6f012ee       mov   DPP3:0x2e12, r0       ; START_V2.A66:1519
 |           0x00c000ac      d180           extr  #1                    ; START_V2.A66:1651
-|           0x00c000ae      e6e88978       mov   0xf1d0, #0x7889       ; START_V2.A66:1652
+|           0x00c000ae      e6e88978       mov   PLLCON, #0x7889       ; START_V2.A66:1652
 |           0x00c000b2      e6d50000       mov   FOCON, #0x0000        ; START_V2.A66:1657
 |           0x00c000b6      e60b00f8       mov   STKUN, #0xf800        ; START_V2.A66:1660
 |           0x00c000ba      e60a0cf6       mov   STKOV, #0xf60c        ; START_V2.A66:1661
@@ -500,6 +500,247 @@ EXPECT=<<EOF
 \           0x00c001d8      784b           or    r4, [r3]              ; START_V2.A66:1936
 / sym.a166_NEAR.StoreBit();
 |           0x00c001da      b843           mov   [r3], r4              ; START_V2.A66:1937
+\           0x00c001dc      0dbe           jmpr  cc_UC, sym.a166_NEAR.RepeatInit ; START_V2.A66:1938
+/ sym.a166_NEAR.EndInit();
+\           0x00c001de      fac06e14       jmps  main                  ; START_V2.A66:2027 ; 0xc0146e ; "v\xe2"
+            ; CALL XREF from set_interval @ 0xc01858
+            ;-- C_FPSUB:
+            ;-- section.C_LIB_CODE_FCODE:
+            ;-- a166_FAR.?C_FPSUB:
+/ ?C_FPSUB();
+\           0x00c001e2      3af7f7ff       bmovn r7.15, r7.15          ; [16] -r-x section size 2940 named C_LIB_CODE_FCODE
+            ; CALL XREF from sym.a166_FAR._C_FPATOF @ 0xc00660
+/ sym.a166_FAR._C_FPADD();
+|           0x00c001e6      ca008c05       calla+ cc_UC, ?C_FPGETOPN   ; 0x58c ; 1420
+|           0x00c001ea      46faff00       cmp   r10, #0x00ff
+|           0x00c001ee      3d10           jmpr  cc_NZ/NE, 0xc00210
+|           0x00c001f0      46f78000       cmp   r7, #0x0080
+|           0x00c001f4      3d13           jmpr  cc_NZ/NE, 0xc0021c
+|           0x00c001f6      46f9ff00       cmp   r9, #0x00ff
+|           0x00c001fa      3d07           jmpr  cc_NZ/NE, 0xc0020a
+|           0x00c001fc      46f58000       cmp   r5, #0x0080
+|           0x00c00200      3d0d           jmpr  cc_NZ/NE, 0xc0021c
+|           0x00c00202      2af2f280       bcmp  r2.0, r2.8
+|           0x00c00206      6d0a           jmpr  cc_N, 0xc0021c
+|           0x00c00208      0d0b           jmpr  cc_UC, 0xc00220
+|           0x00c0020a      4af2f280       bmov  r2.0, r2.8
+|           0x00c0020e      0d08           jmpr  cc_UC, 0xc00220
+|           0x00c00210      46f9ff00       cmp   r9, #0x00ff
+|           0x00c00214      3d07           jmpr  cc_NZ/NE, sym.a166_FAR._C_FPXSUB
+|           0x00c00216      46f58000       cmp   r5, #0x0080
+|           0x00c0021a      2d02           jmpr  cc_Z/EQ, 0xc00220
+|           0x00c0021c      ea00b205       jmpa+ cc_UC, ?C_FPNANRSL    ; sym.a166_NEAR._C_FPNANRSL
+|                                                                      ; 0xc005b2
+\           0x00c00220      ea00ba05       jmpa+ cc_UC, ?C_FPINFRSL    ; sym.a166_NEAR._C_FPINFRSL
+\                                                                      ; 0xc005ba
+            ; CALL XREF from ?C_FPCMP @ 0xc00530
+/ sym.a166_FAR._C_FPXSUB();
+|           0x00c00224      48a0           cmp   r10, #0
+|           0x00c00226      2d06           jmpr  cc_Z/EQ, 0xc00234
+|           0x00c00228      4890           cmp   r9, #0
+|           0x00c0022a      3d06           jmpr  cc_NZ/NE, 0xc00238
+|           0x00c0022c      f057           mov   r5, r7
+|           0x00c0022e      f046           mov   r4, r6
+|           0x00c00230      f09a           mov   r9, r10
+|           0x00c00232      f145           movb  rl2, rh2
+|           0x00c00234      ea00dc05       jmpa+ cc_UC, sym.a166_NEAR._C_FPNOERR ; 0xc005dc ; "f\xf5\U0000007f"
+|           0x00c00238      409a           cmp   r9, r10
+|           0x00c0023a      9d0c           jmpr  cc_NC/UGE, 0xc00254
+|           0x00c0023c      f015           mov   r1, r5
+|           0x00c0023e      f057           mov   r5, r7
+|           0x00c00240      f071           mov   r7, r1
+|           0x00c00242      f014           mov   r1, r4
+|           0x00c00244      f046           mov   r4, r6
+|           0x00c00246      f061           mov   r6, r1
+|           0x00c00248      f019           mov   r1, r9
+|           0x00c0024a      f09a           mov   r9, r10
+|           0x00c0024c      f0a1           mov   r10, r1
+|           0x00c0024e      f124           movb  rl1, rl2
+|           0x00c00250      f145           movb  rl2, rh2
+|           0x00c00252      f152           movb  rh2, rl1
+|           0x00c00254      f019           mov   r1, r9
+|           0x00c00256      201a           sub   r1, r10
+|           0x00c00258      2d0b           jmpr  cc_Z/EQ, 0xc00270
+|           0x00c0025a      46f11900       cmp   r1, #0x0019
+|           0x00c0025e      9dea           jmpr  cc_NC/UGE, 0xc00234
+|           0x00c00260      5af6f80f       bor   r8.15, r6.0
+|           0x00c00264      7c16           shr   r6, #0x01
+|           0x00c00266      4af7f60f       bmov  r6.15, r7.0
+|           0x00c0026a      7c17           shr   r7, #0x01
+|           0x00c0026c      2811           sub   r1, #1
+|           0x00c0026e      3df8           jmpr  cc_NZ/NE, 0xc00260
+|           0x00c00270      2af2f280       bcmp  r2.0, r2.8
+|           0x00c00274      6d0e           jmpr  cc_N, 0xc00292
+|           0x00c00276      0038           add   r3, r8
+|           0x00c00278      1046           addc  r4, r6
+|           0x00c0027a      1057           addc  r5, r7
+|           0x00c0027c      9af50780       jnb   r5.8, data.00c0028e   ; 0xc0028e
+|           0x00c00280      0891           add   r9, #1
+|           0x00c00282      5af4f30f       bor   r3.15, r4.0
+|           0x00c00286      7c14           shr   r4, #0x01
+|           0x00c00288      4af5f40f       bmov  r4.15, r5.0
+|           0x00c0028c      7c15           shr   r5, #0x01
+|           ; DATA XREFS from sym.a166_FAR._C_FPXSUB @ 0xc0027c, 0xc002ac
+|           ;-- data.00c0028e:
+|           0x00c0028e      ea00c605       jmpa+ cc_UC, ?C_FPOPRSL     ; sym.a166_NEAR._C_FPOPRSL
+|                                                                      ; 0xc005c6
+|           0x00c00292      2038           sub   r3, r8
+|           0x00c00294      3046           subc  r4, r6
+|           0x00c00296      3057           subc  r5, r7
+|           0x00c00298      ea20ea05       jmpa+ cc_Z/EQ, ?C_FPZERRSL  ; sym.a166_NEAR._C_FPZERRSL
+|                                                                      ; 0xc005ea
+|           0x00c0029c      9d07           jmpr  cc_NC/UGE, 0xc002ac
+|           0x00c0029e      b140           cplb  rl2
+|           0x00c002a0      9130           cpl   r3
+|           0x00c002a2      9140           cpl   r4
+|           0x00c002a4      9150           cpl   r5
+|           0x00c002a6      0831           add   r3, #1
+|           0x00c002a8      1840           addc  r4, #0
+|           0x00c002aa      1850           addc  r5, #0
+|           0x00c002ac      8af5ef70       jb    r5.7, data.00c0028e   ; 0xc0028e
+|           0x00c002b0      0033           add   r3, r3
+|           0x00c002b2      1044           addc  r4, r4
+|           0x00c002b4      1055           addc  r5, r5
+|           0x00c002b6      2891           sub   r9, #1
+|           0x00c002b8      8af50570       jb    r5.7, data.00c002c6   ; 0xc002c6
+|           ; DATA XREF from sym.a166_FAR._C_FPXSUB @ 0xc002c2
+|           ;-- data.00c002bc:
+|           0x00c002bc      0044           add   r4, r4
+|           0x00c002be      1055           addc  r5, r5
+|           0x00c002c0      2891           sub   r9, #1
+|           0x00c002c2      9af5fb70       jnb   r5.7, data.00c002bc   ; 0xc002bc
+|           ; DATA XREF from sym.a166_FAR._C_FPXSUB @ 0xc002b8
+|           ;-- data.00c002c6:
+\           0x00c002c6      ea00d205       jmpa+ cc_UC, sym.a166_NEAR._C_FPRSLNR ; 0xc005d2 ; "H\x90\xbd\nF\xf9\xff"
+            ; XREFS: CALL 0x00c0064c  CALL 0x00c006dc  CALL 0x00c00bf8
+            ; XREFS: CALL 0x00c00ccc  CALL 0x00c016d8  CALL 0x00c01862
+            ;-- C_FPMUL:
+            ;-- a166_FAR.?C_FPMUL:
+/ ?C_FPMUL();
+|           0x00c002ca      ca008c05       calla+ cc_UC, ?C_FPGETOPN   ; 0x58c ; 1420
+|           0x00c002ce      5145           xorb  rl2, rh2
+|           0x00c002d0      46faff00       cmp   r10, #0x00ff
+|           0x00c002d4      2d06           jmpr  cc_Z/EQ, 0xc002e2
+|           0x00c002d6      48a0           cmp   r10, #0
+|           0x00c002d8      3d12           jmpr  cc_NZ/NE, 0xc002fe
+|           0x00c002da      46f9ff00       cmp   r9, #0x00ff
+|           0x00c002de      2d0d           jmpr  cc_Z/EQ, 0xc002fa
+|           0x00c002e0      0d13           jmpr  cc_UC, 0xc00308
+|           0x00c002e2      46f78000       cmp   r7, #0x0080
+|           0x00c002e6      3d09           jmpr  cc_NZ/NE, 0xc002fa
+|           0x00c002e8      46f9ff00       cmp   r9, #0x00ff
+|           0x00c002ec      2d03           jmpr  cc_Z/EQ, 0xc002f4
+|           0x00c002ee      4890           cmp   r9, #0
+|           0x00c002f0      2d04           jmpr  cc_Z/EQ, 0xc002fa
+|           0x00c002f2      0d0f           jmpr  cc_UC, 0xc00312
+|           0x00c002f4      46f58000       cmp   r5, #0x0080
+|           0x00c002f8      2d0c           jmpr  cc_Z/EQ, 0xc00312
+|           0x00c002fa      ea00b205       jmpa+ cc_UC, ?C_FPNANRSL    ; sym.a166_NEAR._C_FPNANRSL
+|                                                                      ; 0xc005b2
+|           0x00c002fe      46f9           .word 0x46f9 .word 0x0000
+|           0x00c00302      2d04           jmpr  cc_Z/EQ, 0xc0030c
+|           0x00c00304      4890           cmp   r9, #0
+|           0x00c00306      3d07           jmpr  cc_NZ/NE, 0xc00316
+|           0x00c00308      ea00ea05       jmpa+ cc_UC, ?C_FPZERRSL    ; sym.a166_NEAR._C_FPZERRSL
+|                                                                      ; 0xc005ea
+|           0x00c0030c      46f58000       cmp   r5, #0x0080
+|           0x00c00310      3df4           jmpr  cc_NZ/NE, 0xc002fa
+|           0x00c00312      ea00ba05       jmpa+ cc_UC, ?C_FPINFRSL    ; sym.a166_NEAR._C_FPINFRSL
+|                                                                      ; 0xc005ba
+|           0x00c00316      009a           add   r9, r10
+|           0x00c00318      26f97e00       sub   r9, #0x007e
+|           0x00c0031c      1b57           mulu  r5, r7
+|           0x00c0031e      f2f80efe       mov   r8, DPP3:0x3e0e
+|           0x00c00322      1b46           mulu  r4, r6
+|           0x00c00324      f2f10cfe       mov   r1, DPP3:0x3e0c
+|           0x00c00328      f2f30efe       mov   r3, DPP3:0x3e0e
+|           0x00c0032c      1b47           mulu  r4, r7
+|           0x00c0032e      f2f30cfe       mov   r3, DPP3:0x3e0c
+|           0x00c00332      f2f40efe       mov   r4, DPP3:0x3e0e
+|           0x00c00336      1b56           mulu  r5, r6
+|           0x00c00338      f2f50cfe       mov   r5, DPP3:0x3e0c
+|           0x00c0033c      02f40efe       add   r4, DPP3:0x3e0e
+|           0x00c00340      1053           addc  r5, r3
+|           0x00c00342      0041           add   r4, r1
+|           0x00c00344      1058           addc  r5, r8
+|           0x00c00346      f178           movb  rh3, rl4
+|           0x00c00348      f189           movb  rl4, rh4
+|           0x00c0034a      f19a           movb  rh4, rl5
+|           0x00c0034c      f1ab           movb  rl5, rh5
+|           0x00c0034e      aaf50470       jbc   r5.7, data.00c0035a   ; 0xc0035a
+|           0x00c00352      2891           sub   r9, #1
+|           0x00c00354      0033           add   r3, r3
+|           0x00c00356      1044           addc  r4, r4
+|           0x00c00358      1055           addc  r5, r5
+|           ; DATA XREF from ?C_FPMUL @ 0xc0034e
+|           ;-- data.00c0035a:
+\           0x00c0035a      ea00c605       jmpa+ cc_UC, ?C_FPOPRSL     ; sym.a166_NEAR._C_FPOPRSL
+\                                                                      ; 0xc005c6
+            ; CALL XREF from sym.a166_FAR._C_FPATOF @ 0xc006e2
+            ; CALL XREF from ?C_FPCONVERT @ 0xc00be8
+            ; CALL XREF from measure_display @ 0xc016e2
+            ;-- C_FPDIV:
+            ;-- a166_FAR.?C_FPDIV:
+/ ?C_FPDIV();
+|           0x00c0035e      ca008c05       calla+ cc_UC, ?C_FPGETOPN   ; 0x58c ; 1420
+|           0x00c00362      5145           xorb  rl2, rh2
+|           0x00c00364      46faff00       cmp   r10, #0x00ff
+|           0x00c00368      2d0d           jmpr  cc_Z/EQ, 0xc00384
+|           0x00c0036a      48a0           cmp   r10, #0
+|           0x00c0036c      3d15           jmpr  cc_NZ/NE, 0xc00398
+|           0x00c0036e      46f9ff00       cmp   r9, #0x00ff
+|           0x00c00372      3d04           jmpr  cc_NZ/NE, 0xc0037c
+|           0x00c00374      46f58000       cmp   r5, #0x0080
+|           0x00c00378      3d03           jmpr  cc_NZ/NE, 0xc00380
+|           0x00c0037a      0d18           jmpr  cc_UC, 0xc003ac
+|           0x00c0037c      4890           cmp   r9, #0
+|           0x00c0037e      3d16           jmpr  cc_NZ/NE, 0xc003ac
+|           0x00c00380      ea00b205       jmpa+ cc_UC, ?C_FPNANRSL    ; sym.a166_NEAR._C_FPNANRSL
+|                                                                      ; 0xc005b2
+|           0x00c00384      46f78000       cmp   r7, #0x0080
+|           0x00c00388      3dfb           jmpr  cc_NZ/NE, 0xc00380
+|           0x00c0038a      46f9ff00       cmp   r9, #0x00ff
+|           0x00c0038e      2df8           jmpr  cc_Z/EQ, 0xc00380
+|           0x00c00390      4890           cmp   r9, #0
+|           0x00c00392      2d07           jmpr  cc_Z/EQ, 0xc003a2
+|           0x00c00394      ea00ea05       jmpa+ cc_UC, ?C_FPZERRSL    ; sym.a166_NEAR._C_FPZERRSL
+|                                                                      ; 0xc005ea
+|           0x00c00398      46f9ff00       cmp   r9, #0x00ff
+|           0x00c0039c      2d04           jmpr  cc_Z/EQ, 0xc003a6
+|           0x00c0039e      4890           cmp   r9, #0
+|           0x00c003a0      3d07           jmpr  cc_NZ/NE, 0xc003b0
+|           0x00c003a2      ea00ea05       jmpa+ cc_UC, ?C_FPZERRSL    ; sym.a166_NEAR._C_FPZERRSL
+|                                                                      ; 0xc005ea
+|           0x00c003a6      46f58000       cmp   r5, #0x0080
+|           0x00c003aa      3dea           jmpr  cc_NZ/NE, 0xc00380
+|           0x00c003ac      ea00ba05       jmpa+ cc_UC, ?C_FPINFRSL    ; sym.a166_NEAR._C_FPINFRSL
+|                                                                      ; 0xc005ba
+|           0x00c003b0      209a           sub   r9, r10
+|           0x00c003b2      06f97f00       add   r9, #0x007f
+|           0x00c003b6      f1ba           movb  rh5, rl5
+|           0x00c003b8      f1a9           movb  rl5, rh4
+|           0x00c003ba      5c74           shl   r4, #0x07
+|           0x00c003bc      4af5f40f       bmov  r4.15, r5.0
+|           0x00c003c0      7c15           shr   r5, #0x01
+|           0x00c003c2      f13e           movb  rh1, rl7
+|           0x00c003c4      f12d           movb  rl1, rh6
+|           0x00c003c6      f6f40efe       mov   DPP3:0x3e0e, r4
+|           0x00c003ca      f6f50cfe       mov   DPP3:0x3e0c, r5
+|           0x00c003ce      7b11           divlu r1
+|           0x00c003d0      f2f40cfe       mov   r4, DPP3:0x3e0c
+|           0x00c003d4      f2f50efe       mov   r5, DPP3:0x3e0e
+|           0x00c003d8      f2071cff       mov   0xfe0e, DPP3:0x3f1c
+|           0x00c003dc      f6f40cfe       mov   DPP3:0x3e0c, r4
+|           0x00c003e0      7b11           divlu r1
+|           0x00c003e2      f2f40efe       mov   r4, DPP3:0x3e0e
+|           0x00c003e6      5c86           shl   r6, #0x08
+|           0x00c003e8      7c16           shr   r6, #0x01
+|           0x00c003ea      f2071cff       mov   0xfe0e, DPP3:0x3f1c
+|           0x00c003ee      f6f60cfe       mov   DPP3:0x3e0c, r6
+|           0x00c003f2      7b11           divlu r1
+|           0x00c003f4      f2f10efe       mov   r1, DPP3:0x3e0e
+|           0x00c003f8      1b51           mulu  r5, r1
+|           0x00c003fa      f2f60cfe       mov   r6, DPP3:0x3e0c
 
             ; CALL XREF from sym.a166_FAR._C_FPATOF @ 0xc00660
 / sym.a166_FAR._C_FPADD();
@@ -512,10 +753,10 @@ EXPECT=<<EOF
 |     ,===< 0x00c001fa      3d07           jmpr  cc_NZ/NE, 0xc0020a
 |     |||   0x00c001fc      46f58000       cmp   r5, #0x0080
 |    ,====< 0x00c00200      3d0d           jmpr  cc_NZ/NE, 0xc0021c
-|    ||||   0x00c00202      2af2f280       bcmp  r2.8, r2.0
+|    ||||   0x00c00202      2af2f280       bcmp  r2.0, r2.8
 |   ,=====< 0x00c00206      6d0a           jmpr  cc_N, 0xc0021c
 |  ,======< 0x00c00208      0d0b           jmpr  cc_UC, 0xc00220
-|  |||`---> 0x00c0020a      4af2f280       bmov  r2.8, r2.0
+|  |||`---> 0x00c0020a      4af2f280       bmov  r2.0, r2.8
 |  |||,===< 0x00c0020e      0d08           jmpr  cc_UC, 0xc00220
 |  |||||`-> 0x00c00210      46f9ff00       cmp   r9, #0x00ff
 |  |||||,=< 0x00c00214      3d07           jmpr  cc_NZ/NE, sym.a166_FAR._C_FPXSUB
@@ -532,7 +773,7 @@ EXPECT=<<EOF
             ; CALL XREF from main @ 0xc014c4
             ;-- section.PR_GETLINE_FCODE:
 / getline();
-|           0x00c018da      ecfd           push  r13                   ; Getline.c:20 ; [07] -rw- section size 146 named PR_GETLINE_FCODE
+|           0x00c018da      ecfd           push  r13                   ; Getline.c:20 ; [07] -r-x section size 146 named PR_GETLINE_FCODE
 |           0x00c018dc      ecfe           push  r14
 |           0x00c018de      ecff           push  r15
 |           0x00c018e0      f0e9           mov   r14, r9
@@ -565,11 +806,11 @@ EXPECT=<<EOF
 |           0x00c013b8      2802           sub   r0, #2
 |           0x00c013ba      e004           mov   r4, #0x00             ; Measure.c:130
 |           0x00c013bc      b840           mov   [r0], r4
-|           0x00c013be      f3f84602       movb  rl4, 0xfe00:0x0246    ; Measure.c:133
+|           0x00c013be      f3f84602       movb  rl4, DPP0:0x0246      ; Measure.c:133
 |       ,=< 0x00c013c2      3d17           jmpr  cc_NZ/NE, data.00c013f2
-|       |   0x00c013c4      f3f84702       movb  rl4, 0xfe00:0x0247
+|       |   0x00c013c4      f3f84702       movb  rl4, DPP0:0x0247
 |      ,==< 0x00c013c8      3d14           jmpr  cc_NZ/NE, data.00c013f2
-|      ||   0x00c013ca      f2f44802       mov   r4, 0xfe00:0x0248
+|      ||   0x00c013ca      f2f44802       mov   r4, DPP0:0x0248
 |      ||   0x00c013ce      46f4e703       cmp   r4, #0x03e7
 |     ,===< 0x00c013d2      9d0f           jmpr  cc_NC/UGE, data.00c013f2
 |    ,====< 0x00c013d4      9a000d20       jnb   section.BI0_MEASURE_BIT0, data.00c013f2 ; 0xc013f2
@@ -606,7 +847,7 @@ EXPECT=<<EOF
 |   | |``-> 0x00c01424      e6f4ff01       mov   r4, #0x01ff
 |   | |     0x00c01428      b840           mov   [r0], r4
 |   | `---> 0x00c0142a      a850           mov   r5, [r0]              ; Measure.c:142
-|   |       0x00c0142c      f2f44a02       mov   r4, 0xfe00:0x024a
+|   |       0x00c0142c      f2f44a02       mov   r4, DPP0:0x024a
 |   |       0x00c01430      2045           sub   r4, r5
 |   |       0x00c01432      b840           mov   [r0], r4
 |   |       0x00c01434      4840           cmp   r4, #0                ; Measure.c:143
@@ -623,7 +864,7 @@ EXPECT=<<EOF
             ; CALL XREFS from main @ 0xc01586, 0xc01608
             ;-- section.PR_MCOMMAND_FCODE:
 / measure_display();
-|           0x00c0168a      ecfd           push  r13                   ; Mcommand.c:16 ; [00] -rw- section size 592 named PR_MCOMMAND_FCODE
+|           0x00c0168a      ecfd           push  r13                   ; Mcommand.c:16 ; [00] -r-x section size 592 named PR_MCOMMAND_FCODE
 |           0x00c0168c      d4400600       mov   r4, [r0+#0x0006]      ; Mcommand.c:24
 |           0x00c01690      8840           mov   [-r0], r4
 |           0x00c01692      d4400600       mov   r4, [r0+#0x0006]
@@ -756,18 +997,18 @@ paddr size vaddr vsize align perm name type flags
       |||   0x00c00014      ffff           bset  r15.15
       |||   0x00c00016      ffff           bset  r15.15
      ,====< 0x00c00018      fac07800       jmps  0xc00078
-    @====-> 0x00c0001c      9ab7fe70       jnb   0xff6e.7, 0xc0001c
-     ||||   0x00c00020      f2f4b2fe       mov   r4, 0xfe06:0x3eb2
-     ||||   0x00c00024      7eb7           bclr  0xff6e.7
+    @====-> 0x00c0001c      9ab7fe70       jnb   S0RIC.7, 0xc0001c
+     ||||   0x00c00020      f2f4b2fe       mov   r4, DPP3:0x3eb2
+     ||||   0x00c00024      7eb7           bclr  S0RIC.7
      ||||   0x00c00026      db00           rets
     ,=====< 0x00c00028      fac07a00       jmps  0xc0007a
-    |||||   0x00c0002c      1a800400       bfldh 0xff00, #0x00, #0x04
+    |||||   0x00c0002c      1a800400       bfldh P0L, #0x00, #0x04
     |||||   0x00c00030      40c2           cmp   r12, r2
-    |||||   0x00c00032      0fa0           bset  0xff40.0
-    |||||   0x00c00034      04005cc2       add   0xfe06:0x025c, 0xfe00
-    |||||   0x00c00038      03000000       addb  0xfe00, 0xfe00:0x0000
+    |||||   0x00c00032      0fa0           bset  T2CON.0
+    |||||   0x00c00034      04005cc2       add   DPP3:0x025c, DPP0
+    |||||   0x00c00038      03000000       addb  DPP0, DPP0:0x0000
     |||||   0x00c0003c      0080           add   r8, r0
-    |||||   0x00c0003e      04005bc2       add   0xfe06:0x025b, 0xfe00
+    |||||   0x00c0003e      04005bc2       add   DPP3:0x025b, DPP0
     |||||   0x00c00042      0000           add   r0, r0
     |||||   0x00c00044      0000           add   r0, r0
     |||||   0x00c00046      803f           cmpi1 r15, #0x03
