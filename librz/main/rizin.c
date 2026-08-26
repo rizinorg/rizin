@@ -1424,8 +1424,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		/* load <file>.rz */
 		{
 			char *f = rz_str_newf("%s.rz", pfile);
-			const char *uri_splitter = strstr(f, "://");
-			const char *path = uri_splitter ? uri_splitter + 3 : f;
+			char *uri_splitter = strstr(f, "://");
+			char *path = uri_splitter ? uri_splitter + 3 : f;
+			(void)rz_str_path_unescape(path);
 			if (rz_file_exists(path)) {
 				// TODO: should 'q' unset the interactive bit?
 				bool isInteractive = rz_cons_is_interactive();
