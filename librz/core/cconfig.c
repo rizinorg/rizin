@@ -795,13 +795,14 @@ static bool cb_timezone(void *user, void *data) {
 static bool cb_cfgdebug(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (!core) {
+	if (!core || !node) {
 		return false;
 	}
+	bool is_debug = node->i_value;
 	if (core->io) {
-		rz_config_set_b(core->config, "io.va", !node->i_value);
+		rz_config_set_b(core->config, "io.va", !is_debug);
 	}
-	if (core->dbg && node->i_value) {
+	if (core->dbg && is_debug) {
 		const char *dbgbackend = rz_config_get(core->config, "dbg.backend");
 		core->bin->is_debugger = true;
 		rz_debug_use(core->dbg, dbgbackend);
