@@ -1,5 +1,6 @@
 bin_plugins_list = [
   'any',
+  'ar',
   'art',
   'avr',
   'bf',
@@ -107,6 +108,7 @@ rz_bin_sources = [
   'relocs_patch.c',
   'stabs.c',
   'p/bin_any.c',
+  'p/bin_ar.c',
   'p/bin_art.c',
   'p/bin_avr.c',
   'p/bin_bf.c',
