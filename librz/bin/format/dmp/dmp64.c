@@ -340,6 +340,10 @@ static int rz_bin_dmp64_init_bmp_header(struct rz_bin_dmp64_obj_t *obj) {
 
 	ut64 bitmapsize = obj->bmp_header->Pages / 8;
 	obj->bitmap = calloc(1, bitmapsize);
+	if (!obj->bitmap) {
+		RZ_LOG_ERROR("Cannot allocate bitmap\n");
+		return false;
+	}
 	if (rz_buf_read_at(obj->b, sizeof(dmp64_header) + rz_offsetof(dmp_bmp_header, Bitmap), obj->bitmap, bitmapsize) < 0) {
 		RZ_LOG_ERROR("Cannot read bitmap\n");
 		return false;
