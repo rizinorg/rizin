@@ -128,6 +128,7 @@ if get_option('enable_tests')
     'stack',
     'str',
     'strbuf',
+    'structured_data',
     'str_search',
     'subprocess',
     'syscall',
