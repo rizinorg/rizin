@@ -2115,6 +2115,8 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 		}
 		int bytes_read = rz_io_nread_at(core->io, at, buf, bsz);
 		if (bytes_read <= 0) {
+			free(buf);
+			free(block);
 			return -1;
 		}
 		memset(block, -1, bsz);
