@@ -12,3 +12,71 @@ EXPECT=<<EOF
 0x00000030  ffff ffff ffff ffff ffff ffff ffff ffff  ................
 EOF
 RUN
+
+NAME=malloc uri write does not autodetect
+FILE=malloc://128
+CMDS=<<EOF
+i~format
+wx 7f454c46010101000000000000000000020003000100000000000000000000000000000000000000340020000000000000000000
+i~format
+EOF
+EXPECT=<<EOF
+format  any
+format  any
+EOF
+RUN
+
+NAME=malloc uri obR reloads elf from buffer
+FILE=malloc://128
+CMDS=<<EOF
+wx 7f454c46010101000000000000000000020003000100000000000000000000000000000000000000340020000000000000000000
+obR
+i~format
+e io.va=0
+p8 4 @ 0
+EOF
+EXPECT=<<EOF
+format   elf
+7f454c46
+EOF
+RUN
+
+NAME=hex uri autodetect elf at open
+FILE=hex://7f454c46010101000000000000000000020003000100000000000000000000000000000000000000340020000000000000000000
+CMDS=<<EOF
+i~format
+EOF
+EXPECT=<<EOF
+format   elf
+EOF
+RUN
+
+NAME=malloc uri nops stay any after obR
+FILE=malloc://128
+CMDS=<<EOF
+wx 90909090
+obR
+i~format
+e io.va=0
+p8 4 @ 0
+EOF
+EXPECT=<<EOF
+format  any
+90909090
+EOF
+RUN
+
+NAME=malloc uri obR reloads mach0 from buffer
+FILE=malloc://128
+CMDS=<<EOF
+wx cefaedfe070000010300000002000000
+obR
+i~format
+e io.va=0
+p8 4 @ 0
+EOF
+EXPECT=<<EOF
+format   mach0
+cefaedfe
+EOF
+RUN

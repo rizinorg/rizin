@@ -26,6 +26,9 @@ static bool core_bin_reload(RzCore *r, const char *file, ut64 baseaddr) {
 	if (!nbf) {
 		return false;
 	}
+	// rz_bin_reload deletes obf, which drops it from cf->binfiles via the
+	// BIN_FILE_DEL event. Keep the replacement owned by the core file.
+	rz_pvector_push(&cf->binfiles, nbf);
 	rz_core_bin_apply_all_info(r, nbf);
 	return true;
 }
