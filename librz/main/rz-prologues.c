@@ -60,6 +60,7 @@ static bool output_handler(RzStructuredData *sd, const char *output_file, bool j
 	rz_structured_data_free(sd);
 	if (!output) {
 		RZ_LOG_ERROR("Failed to convert structured data to %s\n", json_mode ? "JSON" : "YAML");
+		return false;
 	}
 
 	if (output_file) {
@@ -286,20 +287,20 @@ RZ_API int rz_main_rz_prologues(int argc, const char **argv) {
 			prologue_len = strtoull(opt.arg, NULL, 0);
 			if (prologue_len == 0) {
 				RZ_LOG_ERROR("Prologue length must be a positive integer.\n");
-				return false;
+				return 1;
 			}
 			break;
 		}
 		case 'e': {
 			char *end = NULL;
-			double entropy_threshold = strtod(opt.arg, &end);
+			entropy_threshold = strtod(opt.arg, &end);
 			if (!end || *end != '\0') {
 				RZ_LOG_ERROR("Entropy threshold must be a valid double value\n");
-				return false;
+				return 1;
 			}
 			if (entropy_threshold < 0.0 || entropy_threshold > 1.0) {
 				RZ_LOG_ERROR("Entropy threshold must be between 0.0 and 1.0\n");
-				return false;
+				return 1;
 			}
 			break;
 		}

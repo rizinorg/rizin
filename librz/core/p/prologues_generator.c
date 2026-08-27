@@ -47,6 +47,7 @@ typedef struct {
 	ut8 *byte_buf;
 	ut8 *mask_buf;
 	size_t depth;
+	ut64 prologue_len;
 	double entropy_threshold;
 	bool generalize;
 } ProloguesDFSContext;
@@ -760,6 +761,7 @@ static void pre_visit_prologues(RzTrieNode *n, void *user) {
 			// set next depth bit to 0 in mask
 			size_t child_byte_idx = pgctx->depth / 8;
 			size_t child_bit_pos = 7 - (pgctx->depth % 8);
+			// len(pvec)==2 check already prevents oob for leaf ndoe below
 			pgctx->mask_buf[child_byte_idx] &= ~(1u << child_bit_pos);
 			merge_subtrees(rz_pvector_at(&n->children, 1), rz_pvector_at(&n->children, 0));
 			rz_pvector_pop(&n->children);
@@ -788,7 +790,9 @@ static void post_visit_prologues(RzTrieNode *n, void *user) {
 	// reset child's mask bit to 1
 	size_t child_byte_idx = (pgctx->depth - 1) / 8;
 	size_t child_bit_pos = 7 - ((pgctx->depth - 1) % 8);
-	pgctx->mask_buf[child_byte_idx] |= (1u << child_bit_pos);
+	if (child_byte_idx < pgctx->prologue_len) { // bcz its oob for leaf node
+		pgctx->mask_buf[child_byte_idx] |= (1u << child_bit_pos);
+	}
 	pgctx->depth--;
 }
 
@@ -817,6 +821,7 @@ RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_generalize_and_extract(RzT
 		.byte_buf = byte_buf,
 		.mask_buf = mask_buf,
 		.depth = 0,
+		.prologue_len = prologue_len,
 		.entropy_threshold = entropy_threshold,
 		.generalize = true
 	};
