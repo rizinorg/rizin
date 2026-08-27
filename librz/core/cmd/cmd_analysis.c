@@ -6090,10 +6090,15 @@ RZ_IPI RzCmdStatus rz_load_and_analyze_all_preludes_handler(RzCore *core, int ar
 
 	RzCmdStatus status = RZ_CMD_STATUS_ERROR;
 	RzList /* <RzSearchKeyword *> */ *prologues = rz_list_newf((RzListFree)rz_search_keyword_free);
+	if (!prologues) {
+		RZ_LOG_ERROR("Failed to allocate prologues list\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 
 	char *data = rz_file_slurp(file_path, NULL);
 	if (!data) {
 		RZ_LOG_ERROR("File is empty or cannot read file: %s\n", file_path);
+		rz_list_free(prologues);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -6120,22 +6125,23 @@ RZ_IPI RzCmdStatus rz_load_and_analyze_all_preludes_handler(RzCore *core, int ar
 
 	RzBin *bin = rz_core_get_bin(core);
 	if (!bin) {
-		return RZ_CMD_STATUS_ERROR;
+		RZ_LOG_ERROR("Failed to get RzBin instance\n");
+		goto cleanup;
 	}
 	ut32 fd = rz_core_file_cur_fd(core);
 	if (fd == UT32_MAX) {
 		RZ_LOG_ERROR("Failed to get current file descriptor\n");
-		return RZ_CMD_STATUS_ERROR;
+		goto cleanup;
 	}
 	RzBinFile *bf = rz_bin_file_find_by_fd(bin, fd);
 	if (!bf) {
 		RZ_LOG_ERROR("Failed to find bin file for fd: %" PFMT32u "\n", fd);
-		return RZ_CMD_STATUS_ERROR;
+		goto cleanup;
 	}
 	const RzBinInfo *info = rz_bin_object_get_info(bf->o);
 	if (!info) {
 		RZ_LOG_ERROR("Failed to get bin info for file: %s\n", bf->file);
-		return RZ_CMD_STATUS_ERROR;
+		goto cleanup;
 	}
 
 	if (!RZ_STR_EQ(info->arch, file_arch) ||
@@ -6264,13 +6270,26 @@ RZ_IPI RzCmdStatus rz_analyze_all_preludes_keyword_handler(RzCore *core, int arg
 	const ut8 *bytes = rz_search_bytes_pattern_get_bytes(pattern);
 	const ut8 *mask = rz_search_bytes_pattern_get_mask(pattern);
 
-	RzList *prologue = rz_list_new();
+	RzList *prologue = rz_list_newf((RzListFree)rz_search_keyword_free);
+	if (!prologue) {
+		rz_search_bytes_pattern_free(pattern);
+		return RZ_CMD_STATUS_ERROR;
+	}
 	RzSearchKeyword *kw = rz_search_keyword_new(bytes, len, mask, len, NULL);
-	rz_list_push(prologue, kw);
-	rz_core_search_preludes(core, prologue);
+	if (!kw) {
+		rz_list_free(prologue);
+		rz_search_bytes_pattern_free(pattern);
+		return RZ_CMD_STATUS_ERROR;
+	}
 
+	rz_list_push(prologue, kw);
+	int hits = rz_core_search_preludes(core, prologue);
+	if (hits < 0) {
+		RZ_LOG_ERROR("aapk: Failed to search for prologue\n");
+	}
+	rz_list_free(prologue);
 	rz_search_bytes_pattern_free(pattern);
-	return RZ_CMD_STATUS_OK;
+	return hits < 0 ? RZ_CMD_STATUS_ERROR : RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_analyze_xrefs_section_bytes_handler(RzCore *core, int argc, const char **argv) {
