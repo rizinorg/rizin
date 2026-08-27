@@ -42,6 +42,10 @@ static void builder_json_val_string(RZ_NULLABLE void *user, RZ_NONNULL const cha
 	pj_s((PJ *)user, v);
 }
 
+static void builder_json_val_null(RZ_NULLABLE void *user) {
+	pj_null((PJ *)user);
+}
+
 static const RzStructuredDataIterator builder_json_iterator = {
 	.new_struct = builder_json_new_struct,
 	.end_struct = builder_json_end_struct,
@@ -51,4 +55,5 @@ static const RzStructuredDataIterator builder_json_iterator = {
 	.val_double = builder_json_val_double,
 	.val_bool = builder_json_val_bool,
 	.val_string = builder_json_val_string,
+	.val_null = builder_json_val_null
 };
