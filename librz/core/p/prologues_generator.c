@@ -1003,7 +1003,7 @@ static bool rz_cmd_prologues_gen_init(RzCore *core, RZ_OUT void **user) {
 	}
 
 	RzCmdDesc *pg = rz_cmd_desc_group_modes_new(rcmd, root_cd, "pg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON,
-		rz_cmd_prologues_gen_handler, &cmd_raw_prologues_gen_help, &prologues_gen_help);
+		rz_cmd_prologues_gen_handler, &cmd_prologues_gen_help, &prologues_gen_help);
 
 	if (!pg) {
 		goto error;
@@ -1011,9 +1011,9 @@ static bool rz_cmd_prologues_gen_init(RzCore *core, RZ_OUT void **user) {
 	ctx->cmd_desc = pg;
 
 	rz_cmd_desc_argv_modes_new_warn(rcmd, pg, "pga", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON,
-		rz_cmd_prologues_gen_all_handler, &cmd_raw_prologues_gen_all_help);
+		rz_cmd_prologues_gen_all_handler, &cmd_prologues_gen_all_help);
 	rz_cmd_desc_argv_modes_new_warn(rcmd, pg, "pgd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON,
-		rz_cmd_prologues_gen_dir_handler, &cmd_raw_prologues_gen_dir_help);
+		rz_cmd_prologues_gen_dir_handler, &cmd_prologues_gen_dir_help);
 
 	// configs
 	cfg = rz_config_new(NULL);
