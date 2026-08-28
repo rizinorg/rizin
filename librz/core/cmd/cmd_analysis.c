@@ -6241,12 +6241,12 @@ RZ_IPI RzCmdStatus rz_load_and_analyze_all_preludes_handler(RzCore *core, int ar
 	}
 	RZ_LOG_INFO("number of prologues loaded from file: %" PFMT32d "\n", rz_list_length(prologues));
 
-	int hits = rz_core_search_preludes(core, prologues);
+	st64 hits = rz_core_search_preludes(core, prologues);
 	if (hits < 0) {
 		RZ_LOG_ERROR("Failed to search for prologues in binary\n");
 		goto cleanup;
 	}
-	RZ_LOG_INFO("aapf: Found %" PFMT32d " prologue hits and analyzed functions.\n", hits);
+	RZ_LOG_INFO("aapf: Found %" PFMT64d " prologue hits and analyzed functions.\n", hits);
 	status = RZ_CMD_STATUS_OK;
 
 cleanup:
@@ -6283,7 +6283,7 @@ RZ_IPI RzCmdStatus rz_analyze_all_preludes_keyword_handler(RzCore *core, int arg
 	}
 
 	rz_list_push(prologue, kw);
-	int hits = rz_core_search_preludes(core, prologue);
+	st64 hits = rz_core_search_preludes(core, prologue);
 	if (hits < 0) {
 		RZ_LOG_ERROR("aapk: Failed to search for prologue\n");
 	}

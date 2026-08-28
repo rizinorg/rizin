@@ -1053,7 +1053,7 @@ static bool rz_cmd_prologues_gen_fini(RzCore *core, RZ_NULLABLE void *user) {
 
 RzCorePlugin rz_core_plugin_prologues_generator = {
 	.name = "prologues_generator",
-	.desc = "TODO",
+	.desc = "Suite of commands for prologue generation from binary's symbol table, type `pg` for more info",
 	.license = "LGPL-3.0-only",
 	.author = "MrQuantum1915",
 	.version = "1.0",
