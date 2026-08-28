@@ -1502,6 +1502,7 @@ RZ_API bool rz_analysis_op_is_eob(const RzAnalysisOp *op);
 RZ_API bool rz_analysis_op_is_call(RZ_NONNULL const RzAnalysisOp *op);
 RZ_API RzList /*<RzAnalysisOp *>*/ *rz_analysis_op_list_new(void);
 RZ_API int rz_analysis_op(RZ_NONNULL RzAnalysis *analysis, RZ_OUT RzAnalysisOp *op, ut64 addr, const ut8 *data, ut64 len, RzAnalysisOpMask mask);
+RZ_API int rz_analysis_java_opcode_byname(RZ_NULLABLE const char *name);
 RZ_API RzAnalysisOp *rz_analysis_op_hexstr(RzAnalysis *analysis, ut64 addr, const char *hexstr);
 RZ_API char *rz_analysis_op_to_string(RzAnalysis *analysis, RzAnalysisOp *op);
 
@@ -2093,6 +2094,7 @@ RZ_API bool rz_analysis_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 
 RZ_API void rz_analysis_rtti_msvc_recover_all(RVTableContext *vt_context, RzList /*<RVTableInfo *>*/ *vtables);
 RZ_API void rz_analysis_rtti_swift(RzAnalysis *analysis);
 RZ_API void rz_analysis_rtti_objc(RZ_NONNULL RzAnalysis *analysis);
+RZ_API void rz_analysis_rtti_java(RZ_NONNULL RzAnalysis *analysis);
 
 RZ_API char *rz_analysis_rtti_itanium_demangle_class_name(RVTableContext *context, const char *name);
 RZ_API bool rz_analysis_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 addr, RzOutputMode mode);

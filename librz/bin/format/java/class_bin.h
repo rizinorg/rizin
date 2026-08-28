@@ -38,6 +38,29 @@ typedef enum {
 #define ACCESS_FLAG_MASK_ALL          (0xFFFF)
 #define ACCESS_FLAG_MASK_ALL_NO_SUPER ((~ACCESS_FLAG_SUPER) & ACCESS_FLAG_MASK_ALL)
 
+typedef enum rz_bin_java_member_kind_t {
+	RZ_BIN_JAVA_MEMBER_FIELD,
+	RZ_BIN_JAVA_MEMBER_METHOD,
+	RZ_BIN_JAVA_MEMBER_INTERFACE_METHOD,
+} RzBinJavaMemberKind;
+
+typedef struct rz_bin_java_method_info_t {
+	char *name;
+	char *descriptor;
+	ut16 access_flags;
+	ut64 code_addr;
+	ut32 code_size;
+	ut16 max_stack;
+	ut16 max_locals;
+} RzBinJavaMethodInfo;
+
+typedef struct rz_bin_java_member_info_t {
+	RzBinJavaMemberKind kind;
+	char *owner;
+	char *name;
+	char *descriptor;
+} RzBinJavaMemberInfo;
+
 typedef struct java_class_t {
 	ut32 magic;
 	ut16 minor_version;
@@ -75,6 +98,13 @@ RZ_API RZ_OWN char *rz_bin_java_class_name(RZ_NONNULL RzBinJavaClass *bin);
 RZ_API RZ_OWN char *rz_bin_java_class_super(RZ_NONNULL RzBinJavaClass *bin);
 RZ_API ut32 rz_bin_java_class_access_flags(RZ_NONNULL RzBinJavaClass *bin);
 RZ_API RZ_OWN char *rz_bin_java_class_access_flags_readable(RZ_NONNULL RzBinJavaClass *bin, ut16 mask);
+RZ_API ut32 rz_bin_java_class_interface_count(RZ_NONNULL RzBinJavaClass *bin);
+RZ_API RZ_OWN char *rz_bin_java_class_interface_name(RZ_NONNULL RzBinJavaClass *bin, ut32 index);
+RZ_API ut32 rz_bin_java_class_method_count(RZ_NONNULL RzBinJavaClass *bin);
+RZ_API bool rz_bin_java_class_method(RZ_NONNULL RzBinJavaClass *bin, ut32 index, RZ_OUT RzBinJavaMethodInfo *info);
+RZ_API void rz_bin_java_method_info_fini(RZ_NULLABLE RzBinJavaMethodInfo *info);
+RZ_API bool rz_bin_java_class_member(RZ_NONNULL RzBinJavaClass *bin, ut32 index, RZ_OUT RzBinJavaMemberInfo *info);
+RZ_API void rz_bin_java_member_info_fini(RZ_NULLABLE RzBinJavaMemberInfo *info);
 RZ_API void rz_bin_java_class_as_json(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL PJ *j);
 RZ_API void rz_bin_java_class_as_text(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL RzStrBuf *sb);
 RZ_API RZ_OWN char *rz_bin_java_class_const_pool_resolve_index(RZ_NONNULL RzBinJavaClass *bin, st32 index);
