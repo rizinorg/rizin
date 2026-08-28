@@ -62,7 +62,10 @@ RZ_IPI void rz_bin_set_and_process_file(RzBinFile *bf, RzBinObject *o) {
 	}
 
 	sdb_free(o->kv);
-	if (!plugin->get_sdb || !(o->kv = plugin->get_sdb(bf))) {
+	o->kv = plugin->get_sdb ? plugin->get_sdb(bf) : NULL;
+	if (o->kv) {
+		o->kv->refs++;
+	} else {
 		o->kv = sdb_new0();
 	}
 
