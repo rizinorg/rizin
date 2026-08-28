@@ -332,7 +332,7 @@ RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, RZ_NONNULL c
  * 						 static database of the current architecture will be used if it exists.
  * \returns The number of prologues hit if successful, -1 otherwise.
  */
-RZ_API int rz_core_search_preludes(RzCore *core, RZ_NULLABLE RzList /*<RzSearchKeyword *>*/ *prologues) {
+RZ_API st64 rz_core_search_preludes(RzCore *core, RZ_NULLABLE RzList /*<RzSearchKeyword *>*/ *prologues) {
 	rz_return_val_if_fail(core, -1);
 
 	bool free_prologues = false;
@@ -360,7 +360,7 @@ RZ_API int rz_core_search_preludes(RzCore *core, RZ_NULLABLE RzList /*<RzSearchK
 	ut64 limit = rz_config_get_i(core->config, "analysis.prelude.limit");
 
 	RzSearchKeyword *kw = NULL;
-	size_t total_hits = 0;
+	st64 total_hits = 0;
 	rz_list_foreach (list, iter, p) {
 		if (!(p->perm & RZ_PERM_X)) {
 			continue;
@@ -379,7 +379,7 @@ RZ_API int rz_core_search_preludes(RzCore *core, RZ_NULLABLE RzList /*<RzSearchK
 				kw->bin_binmask, kw->binmask_length);
 
 			if (hits > 0) {
-				total_hits += (size_t)hits;
+				total_hits += (st64)hits;
 			} else if (hits < 0) {
 				RZ_LOG_WARN("core: search failed for a prologue.\n");
 			}
