@@ -24,11 +24,11 @@ static const RzCmdDescHelp cmd_prologues_gen_help = {
 };
 
 static const RzCmdDescHelp cmd_prologues_gen_all_help = {
-	.summary = "Generate prologues for all open files",
+	.summary = "Generate prologues for all open files (arch will be adopted from first open binary)",
 	.args = no_args,
 };
 
 static const RzCmdDescHelp cmd_prologues_gen_dir_help = {
-	.summary = "Generate prologues for all files in a directory",
+	.summary = "Generate prologues for all files in a directory (arch will be adopted from first valid binary)",
 	.args = cmd_prologues_gen_dir_args,
 };
