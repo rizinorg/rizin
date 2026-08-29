@@ -1,0 +1,157 @@
+NAME=help
+FILE=
+CMDS=pg?
+EXPECT=<<EOF
+Usage: pg[jad]   # Core plugin to generate prologues from given set of binaries having symbol info.
+| pg[j]        # Generate prologues only from current open file
+| pga[j]       # Generate prologues for all open files (arch will be adopted from first open binary)
+| pgd[j] <dir> # Generate prologues for all files in a directory (arch will be adopted from first valid binary)
+EOF
+RUN
+
+NAME=generate prologues from current open file
+FILE=bins/elf/riscv_crypto_64
+CMDS=pg
+EXPECT=<<EOF
+arch: "riscv"
+bits: 64
+endian: "little"
+prologue_length: 16
+count: 5
+prologues:
+  - bytes: "4d65cd6713050502938707026386a700"
+    mask: "f38b347cce1afaf5a91deb7811c08308"
+  - bytes: "75bf797106f422f00018233ca4fc2338"
+    mask: "ffffffffffffffffffffffffffffffff"
+  - bytes: "797106f422f00018233ca4fc2338b4fc"
+    mask: "ffffffffffffffffffffffff5ff0cffe"
+  - bytes: "011106ec22e80010b7e7096a93877766"
+    mask: "c79fffefffef7fef8d7f75226bb8abad"
+  - bytes: "cd6703c7870201ef411106e4eff07ffb"
+    mask: "9018b018901ae915baec6a1c150c0200"
+
+EOF
+RUN
+
+NAME=generate prologues from current open file (json)
+FILE=bins/elf/riscv_crypto_64
+CMDS=pgj
+EXPECT=<<EOF
+{"arch":"riscv","bits":64,"endian":"little","prologue_length":16,"count":5,"prologues":[{"bytes":"4d65cd6713050502938707026386a700","mask":"f38b347cce1afaf5a91deb7811c08308"},{"bytes":"75bf797106f422f00018233ca4fc2338","mask":"ffffffffffffffffffffffffffffffff"},{"bytes":"797106f422f00018233ca4fc2338b4fc","mask":"ffffffffffffffffffffffff5ff0cffe"},{"bytes":"011106ec22e80010b7e7096a93877766","mask":"c79fffefffef7fef8d7f75226bb8abad"},{"bytes":"cd6703c7870201ef411106e4eff07ffb","mask":"9018b018901ae915baec6a1c150c0200"}]}
+EOF
+RUN
+
+NAME=generate prologues from all open files
+FILE=<<EOF
+bins/elf/openbsd-arm64-nobtcfi
+bins/elf/r2pay-arm64.so
+EOF
+CMDS=pga
+EXPECT=<<EOF
+arch: "arm"
+bits: 64
+endian: "little"
+prologue_length: 16
+count: 12
+prologues:
+  - bytes: "5f2403d5ff4300d1fe0300f96dffff97"
+    mask: "ffffffff8fbcffbeee09baff100000a0"
+  - bytes: "080900b0087547f9e00308aac0035fd6"
+    mask: "ffffffffffffffffffffffffffffffff"
+  - bytes: "c0035fd6c0035fd6fd7bbfa9fd030091"
+    mask: "fffffffffffffffffc034287e283fe87"
+  - bytes: "c0035fd6c0035fd6c0035fd6c0035fd6"
+    mask: "ffffffffffffffffffffffffffffffff"
+  - bytes: "c0035fd6c0035fd6c0035fd6ff8302d1"
+    mask: "fffffffffffffffffffffffffc034287"
+  - bytes: "c0035fd6c0035fd6c0035fd6080100b0"
+    mask: "ffffffffffffffffffffffffffffffff"
+  - bytes: "c0035fd6c0035fd6080100b008413c91"
+    mask: "ffffffffffffffffffffffffffffffff"
+  - bytes: "c0035fd6fc4fbea9fd7b01a9fd430091"
+    mask: "fffffffffdffffffffffffffffffffff"
+  - bytes: "c0035fd6fd7bbfa9fd030091ff0303d1"
+    mask: "fffffffffd074287e283ff97a09a7c14"
+  - bytes: "c0035fd6080900b0087547f9e00308aa"
+    mask: "fffffffff7f6ff4f280884825e19d3ca"
+  - bytes: "fc6fbaa9fa6701a9f85f02a9f65703a9"
+    mask: "fc934186e883e1640aa07d0402a9f886"
+  - bytes: "880000f008c547f9e00308aac0035fd6"
+    mask: "ffffffffffffffffffffffffffffffff"
+
+EOF
+RUN
+
+NAME=generate prologues from all open files (json)
+FILE=<<EOF
+bins/elf/openbsd-arm64-nobtcfi
+bins/elf/r2pay-arm64.so
+EOF
+CMDS=pgaj
+EXPECT=<<EOF
+{"arch":"arm","bits":64,"endian":"little","prologue_length":16,"count":12,"prologues":[{"bytes":"5f2403d5ff4300d1fe0300f96dffff97","mask":"ffffffff8fbcffbeee09baff100000a0"},{"bytes":"080900b0087547f9e00308aac0035fd6","mask":"ffffffffffffffffffffffffffffffff"},{"bytes":"c0035fd6c0035fd6fd7bbfa9fd030091","mask":"fffffffffffffffffc034287e283fe87"},{"bytes":"c0035fd6c0035fd6c0035fd6c0035fd6","mask":"ffffffffffffffffffffffffffffffff"},{"bytes":"c0035fd6c0035fd6c0035fd6ff8302d1","mask":"fffffffffffffffffffffffffc034287"},{"bytes":"c0035fd6c0035fd6c0035fd6080100b0","mask":"ffffffffffffffffffffffffffffffff"},{"bytes":"c0035fd6c0035fd6080100b008413c91","mask":"ffffffffffffffffffffffffffffffff"},{"bytes":"c0035fd6fc4fbea9fd7b01a9fd430091","mask":"fffffffffdffffffffffffffffffffff"},{"bytes":"c0035fd6fd7bbfa9fd030091ff0303d1","mask":"fffffffffd074287e283ff97a09a7c14"},{"bytes":"c0035fd6080900b0087547f9e00308aa","mask":"fffffffff7f6ff4f280884825e19d3ca"},{"bytes":"fc6fbaa9fa6701a9f85f02a9f65703a9","mask":"fc934186e883e1640aa07d0402a9f886"},{"bytes":"880000f008c547f9e00308aac0035fd6","mask":"ffffffffffffffffffffffffffffffff"}]}
+EOF
+RUN
+
+
+NAME=generate prologues from dir (no arg)
+FILE=
+CMDS=pgd
+EXPECT_ERR=<<EOF
+ERROR: Wrong number of arguments passed to `pgd`, see its help with `pgd?`
+
+ERROR: Usage: pgd[j] <dir>   # Generate prologues for all files in a directory (arch will be adopted from first valid binary)
+| pgd <dir>     # Generate prologues for all files in a directory (arch will be adopted from first valid binary)
+| pgdj <dir>    # Generate prologues for all files in a directory (arch will be adopted from first valid binary) (JSON mode)
+EOF
+RUN
+
+NAME=generate prologues from dir (nonexistent dir)
+FILE=
+CMDS=pgd /nonexistent/dir
+EXPECT_ERR=<<EOF
+ERROR: /nonexistent/dir is not a directory or does not exist.
+EOF
+RUN
+
+NAME=generate prologues from dir
+FILE=
+CMDS=pgd bins/elf/sparc
+EXPECT=<<EOF
+arch: "sparc"
+bits: 64
+endian: "big"
+prologue_length: 16
+count: 4
+prologues:
+  - bytes: "9de3bf40f077a87fc02fa7fec02fa7fd"
+    mask: "ffffffef7077a800be30580100002002"
+  - bytes: "9de3bf4082100018f277a887c227a87f"
+    mask: "ffffffef7fffffffffffffffffffffff"
+  - bytes: "a4042001a404a0032f000407ae15e390"
+    mask: "ffffffffffffffffffffffffffffffff"
+  - bytes: "2f000400ae15e230e005e000e205e010"
+    mask: "ffffffffffffffffffffffffffffffff"
+
+EOF
+RUN
+
+NAME=generate prologues from dir (json)
+FILE=
+CMDS=pgdj bins/elf/sparc
+EXPECT=<<EOF
+{"arch":"sparc","bits":64,"endian":"big","prologue_length":16,"count":4,"prologues":[{"bytes":"9de3bf40f077a87fc02fa7fec02fa7fd","mask":"ffffffef7077a800be30580100002002"},{"bytes":"9de3bf4082100018f277a887c227a87f","mask":"ffffffef7fffffffffffffffffffffff"},{"bytes":"a4042001a404a0032f000407ae15e390","mask":"ffffffffffffffffffffffffffffffff"},{"bytes":"2f000400ae15e230e005e000e205e010","mask":"ffffffffffffffffffffffffffffffff"}]}
+EOF
+RUN
+
+NAME=generate prologues from dir (custom entropy threshold and prologue length)
+FILE=
+CMDS=<<EOF
+e plugins.prologues_generator.entropy_threshold=0.7
+e plugins.prologues_generator.prologue_len=4
+pgdj bins/arm/elf
+EOF
+EXPECT=<<EOF
+{"arch":"arm","bits":64,"endian":"little","prologue_length":4,"count":40,"prologues":[{"bytes":"600400f0","mask":"0087bd9f"},{"bytes":"600400f1","mask":"0087bd9f"},{"bytes":"600400f2","mask":"0087bd9f"},{"bytes":"600400f3","mask":"0087bd9f"},{"bytes":"600400f5","mask":"0087bd9f"},{"bytes":"600400f9","mask":"0087bd9f"},{"bytes":"60040051","mask":"0087bd9c"},{"bytes":"600401f9","mask":"0087bdff"},{"bytes":"600401d5","mask":"0087bdff"},{"bytes":"60040e29","mask":"0087bfff"},{"bytes":"60043dd3","mask":"0087bfff"},{"bytes":"600500b4","mask":"0087ff5f"},{"bytes":"600700b4","mask":"00867d99"},{"bytes":"600200b0","mask":"008440fb"},{"bytes":"600200b1","mask":"008440fb"},{"bytes":"600200b9","mask":"008440ff"},{"bytes":"600200aa","mask":"008440ff"},{"bytes":"600200a9","mask":"008440ff"},{"bytes":"60020090","mask":"008440fd"},{"bytes":"60020091","mask":"008440fd"},{"bytes":"6002009e","mask":"008440ff"},{"bytes":"600200f0","mask":"008440fe"},{"bytes":"600200f9","mask":"008440ff"},{"bytes":"600200d0","mask":"008440f8"},{"bytes":"60020036","mask":"00844084"},{"bytes":"60020031","mask":"00844087"},{"bytes":"60020032","mask":"00844087"},{"bytes":"600240f9","mask":"00847fbf"},{"bytes":"600240f2","mask":"00847fbf"},{"bytes":"60024039","mask":"00847fff"},{"bytes":"600242f9","mask":"00847fff"},{"bytes":"60024679","mask":"00847fff"},{"bytes":"60025fd6","mask":"00847fff"},{"bytes":"6002669e","mask":"00846156"},{"bytes":"60d03bd5","mask":"008080d7"},{"bytes":"60d03bd1","mask":"008080d5"},{"bytes":"60d03b92","mask":"008080cf"},{"bytes":"60d03b99","mask":"008080cd"},{"bytes":"60d03b71","mask":"0080808a"},{"bytes":"60d0df88","mask":"0080df60"}]}
+EOF
+RUN

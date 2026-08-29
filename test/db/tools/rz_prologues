@@ -70,7 +70,6 @@ NAME=rz-prologues invalid file
 TOOL=rz-prologues
 ARGS=-f /nonexistent/file.bin
 EXIT_STATUS=1
-EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: File does not exist, invalid path: /nonexistent/file.bin
 ERROR: Failed to generate prologues from input '/nonexistent/file.bin'
@@ -81,7 +80,6 @@ NAME=rz-prologues invalid dir
 TOOL=rz-prologues
 ARGS=-d /nonexistent/dir
 EXIT_STATUS=1
-EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: /nonexistent/dir is not a directory or does not exist.
 ERROR: Failed to feed directory '/nonexistent/dir' into prologues trie
@@ -93,7 +91,6 @@ NAME=rz-prologues invalid prologue length
 TOOL=rz-prologues
 ARGS=-f bins/elf/analysis/hello-linux-x86_64 -l 0
 EXIT_STATUS=1
-EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Prologue length must be a positive integer.
 EOF
@@ -103,7 +100,6 @@ NAME=rz-prologues invalid entropy threshold
 TOOL=rz-prologues
 ARGS=-f bins/elf/analysis/hello-linux-x86_64 -e 1.6
 EXIT_STATUS=1
-EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Entropy threshold must be between 0.0 and 1.0
 EOF
@@ -114,7 +110,6 @@ NAME=rz-prologues arch mismatch on file
 TOOL=rz-prologues
 ARGS=-f bins/elf/riscv_crypto_64 -a arm
 EXIT_STATUS=1
-EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Architecture mismatch for file 'bins/elf/riscv_crypto_64'
 ERROR: Failed to generate prologues from input 'bins/elf/riscv_crypto_64'
@@ -263,7 +258,7 @@ EOF
 RUN
 
 NAME=generate prologues from file and save to output file
-FILE==
+FILE=
 CMDS=<<EOF
 mkdir -p .tmp
 rm .tmp/riscv64_prologues.json
