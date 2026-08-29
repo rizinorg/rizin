@@ -1,0 +1,318 @@
+NAME=rz-prologues help
+TOOL=rz-prologues
+ARGS=-h
+EXPECT=<<EOF
+[36mUsage: [0mrz-prologues (-f <file> | -d <dir>) [options]
+ [32m-f[0m[33m file [0m     [0mInput binary file to process
+ [32m-d[0m[33m dir [0m      [0mInput directory containing binaries to process (non-recursive)
+ [32m-o[0m[33m file [0m     [0mWrite output to file instead of stdout
+ [32m-j[0m           [0mOutput in JSON format (default is YAML)
+ [32m-l[0m[33m len [0m      [0mPrologue length in bytes (default: 16)
+ [32m-e[0m[33m threshold [0m[0mEntropy threshold for wildcard generalization [0.0-1.0] (default: 0.8)
+ [32m-r[0m           [0mOutput raw prologues without entropy-based generalization
+ [32m-t[0m           [0mOutput prefix tree (trie) structure instead of prologue list
+ [32m-a[0m[33m arch [0m     [0mFilter / target architecture (e.g. x86, arm)
+ [32m-b[0m[33m bits [0m     [0mFilter / target bitness of arch (e.g. 16, 32, 64)
+ [32m-B[0m           [0mTarget big-endian architecture (default: little-endian)
+ [32m-q[0m           [0mQuiet mode (suppress log messages)
+ [32m-v[0m           [0mShow version information
+ [32m-h[0m           [0mShow this help message
+
+[36mNotes:[0m
+  When processing a directory (-d), if architecture (-a) or bits (-b) are not
+  specified, the tool adopts the architecture of the first valid binary to
+  prevent mixing cross-architecture prologues.
+
+  Generated JSON prologues (-j) can be loaded into Rizin for function analysis
+  using the 'aapf <file>' command.
+
+[36mExamples:[0m
+  # Extract generalized JSON prologues from a binary
+  rz-prologues -f input.bin -j -o output.json
+
+  # Extract 64-bit x86 prologues from a directory in quiet mode
+  rz-prologues -d /path/to/bins -a x86 -b 64 -jq -o x86_64.json
+
+  # Extract raw prologues without entropy-based generalization
+  rz-prologues -f input.bin -rj -o raw_prologues.json
+
+  # Dump the prefix tree (trie) structure without generalization to YAML
+  rz-prologues -f input.bin -tr -o trie.yaml
+EOF
+RUN
+
+NAME=rz-prologues no args
+TOOL=rz-prologues
+ARGS=
+EXIT_STATUS=1
+EXPECT=<<EOF
+[36mUsage: [0mrz-prologues (-f <file> | -d <dir>) [options]
+EOF
+EXPECT_ERR=<<EOF
+ERROR: No input specified, please provide an input path to a file or directory
+EOF
+RUN
+
+NAME=rz-prologues invalid args
+TOOL=rz-prologues
+ARGS=-z
+EXIT_STATUS=1
+EXPECT=<<EOF
+[36mUsage: [0mrz-prologues (-f <file> | -d <dir>) [options]
+EOF
+EXPECT_ERR=<<EOF
+/usr/local/bin/rz-prologues: illegal option -- z
+ERROR: No input specified, please provide an input path to a file or directory
+EOF
+RUN
+
+NAME=rz-prologues invalid file
+TOOL=rz-prologues
+ARGS=-f /nonexistent/file.bin
+EXIT_STATUS=1
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: File does not exist, invalid path: /nonexistent/file.bin
+ERROR: Failed to generate prologues from input '/nonexistent/file.bin'
+EOF
+RUN
+
+NAME=rz-prologues invalid dir
+TOOL=rz-prologues
+ARGS=-d /nonexistent/dir
+EXIT_STATUS=1
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: /nonexistent/dir is not a directory or does not exist.
+ERROR: Failed to feed directory '/nonexistent/dir' into prologues trie
+ERROR: Failed to generate prologues from input '/nonexistent/dir'
+EOF
+RUN
+
+NAME=rz-prologues invalid prologue length
+TOOL=rz-prologues
+ARGS=-f bins/elf/analysis/hello-linux-x86_64 -l 0
+EXIT_STATUS=1
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Prologue length must be a positive integer.
+EOF
+RUN
+
+NAME=rz-prologues invalid entropy threshold
+TOOL=rz-prologues
+ARGS=-f bins/elf/analysis/hello-linux-x86_64 -e 1.6
+EXIT_STATUS=1
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Entropy threshold must be between 0.0 and 1.0
+EOF
+RUN
+
+
+NAME=rz-prologues arch mismatch on file
+TOOL=rz-prologues
+ARGS=-f bins/elf/riscv_crypto_64 -a arm
+EXIT_STATUS=1
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Architecture mismatch for file 'bins/elf/riscv_crypto_64'
+ERROR: Failed to generate prologues from input 'bins/elf/riscv_crypto_64'
+EOF
+RUN
+
+NAME=generate prologues from file
+TOOL=rz-prologues
+ARGS=-f bins/elf/analysis/hello-linux-x86_64
+EXPECT=<<EOF
+arch: "x86"
+bits: 64
+endian: "little"
+prologue_length: 16
+count: 7
+prologues:
+  - bytes: "b81709600055482d100960004883f80e"
+    mask: "076fffffffffffffffffffffffffffff"
+  - bytes: "b81009600055482d1009600048c1f803"
+    mask: "076c0a87b50032c208c407b7323e01b0"
+  - bytes: "b8196c24d84c896424e0488d2db70120"
+    mask: "076fffffffffffffffffffffffffffff"
+  - bytes: "b83d59042000007511554889e5e87eff"
+    mask: "077fffffffffffffffffffffffffffff"
+  - bytes: "b9ed4989d15e4889e24883e4f0505449"
+    mask: "07ffffffffffffffffffffffffffffff"
+  - bytes: "bbc366904883ec084883c408c3000000"
+    mask: "07ffffffffffffffffffffffffffffff"
+  - bytes: "bd4889e5bfc4054000e8d6feffffb800"
+    mask: "07ffffffffffffffffffffffffffffff"
+
+EOF
+RUN
+
+NAME=generate prologues from file json
+TOOL=rz-prologues
+ARGS=-f bins/elf/analysis/hello-linux-x86_64 -j
+EXPECT=<<EOF
+{"arch":"x86","bits":64,"endian":"little","prologue_length":16,"count":7,"prologues":[{"bytes":"b81709600055482d100960004883f80e","mask":"076fffffffffffffffffffffffffffff"},{"bytes":"b81009600055482d1009600048c1f803","mask":"076c0a87b50032c208c407b7323e01b0"},{"bytes":"b8196c24d84c896424e0488d2db70120","mask":"076fffffffffffffffffffffffffffff"},{"bytes":"b83d59042000007511554889e5e87eff","mask":"077fffffffffffffffffffffffffffff"},{"bytes":"b9ed4989d15e4889e24883e4f0505449","mask":"07ffffffffffffffffffffffffffffff"},{"bytes":"bbc366904883ec084883c408c3000000","mask":"07ffffffffffffffffffffffffffffff"},{"bytes":"bd4889e5bfc4054000e8d6feffffb800","mask":"07ffffffffffffffffffffffffffffff"}]}
+EOF
+RUN
+
+NAME=generate prologues from file with low entrpoy threshold (high generalization) and suppress warnings
+TOOL=rz-prologues
+ARGS=-f bins/elf/libc-2.32.so -e 0.5 -q
+EXPECT=<<EOF
+arch: "x86"
+bits: 64
+endian: "little"
+prologue_length: 16
+count: 29
+prologues:
+  - bytes: "f30f1efa0fbe0739c6b8000000007510"
+    mask: "ffffffff000000000000000000000000"
+  - bytes: "f30f6f060f290425000000000f0b31c0"
+    mask: "ffffffffffffffffffffffffffffffff"
+  - bytes: "f74500008000007529488bbd88000000"
+    mask: "ffb9ff7f7fff8aa39e3ccfca77ffff74"
+  - bytes: "f7c600f8ffff7458f7c60000ffff7468"
+    mask: "ffffffffffffffffffffffffffffffff"
+  - bytes: "e800000000f30f1efa5364488b1c2510"
+    mask: "ff003fffffffffffffffffffffffffff"
+  - bytes: "e8002c0d004c89c7e8e80b0000f74500"
+    mask: "ff0020ffffffffffff00f8ffff403210"
+  - bytes: "e8002cffffe803f0ffffe8feefffffb8"
+    mask: "ff0020ffffe700e2ffffff00ffffffff"
+  - bytes: "e8002cffffe803f0ffffe8fefdffffe8"
+    mask: "ff0020ffffe700e2ffffff00f2ffffff"
+  - bytes: "e8002cffffe803f0ffffe8fefdfffff7"
+    mask: "ff0020ffffe700e2ffffff00f2ffffff"
+  - bytes: "e8002cffffe803f0fffff74500008000"
+    mask: "ff0020ffffe700e2fffffbb5e1052f17"
+  - bytes: "e8002cffffe803f3ffff0fb604250000"
+    mask: "ff0020ffffe700e3ffff4841fbdaff16"
+  - bytes: "e8002cffffeb0f6f060f290425000000"
+    mask: "ff0020ffffe7ff8e03a03e1b370000f0"
+  - bytes: "e8002cffffef4500008000007529488b"
+    mask: "ff0020ffffe7b9ff7f7fff8aa39e3ccf"
+  - bytes: "e8002cffffb808000000e9897d090048"
+    mask: "ff0020ffffffffffffffffffffffffff"
+  - bytes: "e8002cffff0fb60425000000000f0b48"
+    mask: "ff0020ffffffffffffffffffffffffff"
+  - bytes: "8b050ee6130085c07506c30f1f440000"
+    mask: "f1040000002000200000000000000000"
+  - bytes: "8b02fc415483e0fb554889fd5389f374"
+    mask: "f107ffffffffffffffffffffffffffff"
+  - bytes: "8a3d61f00a0000554889f94889f57440"
+    mask: "f1ffffffffffffffffffffffffffffff"
+  - bytes: "b808000000e9897d09004889dfe8f017"
+    mask: "ffffffffffffffffffffffffffffffff"
+  - bytes: "415431c04189f4be010000005589fd53"
+    mask: "e2200200002000000000000000000000"
+  - bytes: "415431c041a422050041564989fe4155"
+    mask: "e2200200002000000000000000000000"
+  - bytes: "4154334889fb4883ec088b0785c0740a"
+    mask: "e2200200000000200000000020200000"
+  - bytes: "4154334889fb4883ec088b0785eb2090"
+    mask: "e22002000000002000000000203bc73c"
+  - bytes: "4154334889fb4883ec088b07b1c931d2"
+    mask: "e22002000000002000000000221eaa65"
+  - bytes: "4154334889fb48bf743e415541545553"
+    mask: "e22002000000002c83893d97e975a6ac"
+  - bytes: "4163c2488b57084989c00fb60c020fb6"
+    mask: "e2222882440800000004300000000000"
+  - bytes: "434889fb488b7f204885ff7405e8eeff"
+    mask: "e30c3000160000500200008ada130000"
+  - bytes: "648b04251800000085c0750c832dddc2"
+    mask: "ffffffffffffffffffffffffffffffff"
+  - bytes: "31c0415455488b2d2cf61800534889fb"
+    mask: "c180a000000000000000800000000000"
+
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=generate prologues from file raw (without generalization) and custom prologue length
+TOOL=rz-prologues
+ARGS=-f bins/elf/riscv_crypto_64 -r -l 8
+EXPECT=<<EOF
+arch: "riscv"
+bits: 64
+endian: "little"
+prologue_length: 8
+count: 9
+prologues:
+  - bytes: "4d65cd6713050502"
+    mask: "ffffffffffffffff"
+  - bytes: "411106e422e00008"
+    mask: "ffffffffffffffff"
+  - bytes: "75bf797106f422f0"
+    mask: "ffffffffffffffff"
+  - bytes: "797106f422f00018"
+    mask: "ffffffffffffffff"
+  - bytes: "011106ec22e80010"
+    mask: "ffffffffffffffff"
+  - bytes: "397106fc22f88000"
+    mask: "ffffffffffffffff"
+  - bytes: "cd6703c7870201ef"
+    mask: "ffffffffffffffff"
+  - bytes: "ef004002aa871705"
+    mask: "ffffffffffffffff"
+  - bytes: "82804d65cd671305"
+    mask: "ffffffffffffffff"
+
+EOF
+RUN
+
+NAME=generate prologues from file and save to output file
+FILE==
+CMDS=<<EOF
+mkdir -p .tmp
+rm .tmp/riscv64_prologues.json
+!rz-prologues -f bins/elf/riscv_crypto_64 -jq -o .tmp/riscv64_prologues.json
+cat .tmp/riscv64_prologues.json
+EOF
+EXPECT={"arch":"riscv","bits":64,"endian":"little","prologue_length":16,"count":5,"prologues":[{"bytes":"4d65cd6713050502938707026386a700","mask":"f38b347cce1afaf5a91deb7811c08308"},{"bytes":"75bf797106f422f00018233ca4fc2338","mask":"ffffffffffffffffffffffffffffffff"},{"bytes":"797106f422f00018233ca4fc2338b4fc","mask":"ffffffffffffffffffffffff5ff0cffe"},{"bytes":"011106ec22e80010b7e7096a93877766","mask":"c79fffefffef7fef8d7f75226bb8abad"},{"bytes":"cd6703c7870201ef411106e4eff07ffb","mask":"9018b018901ae915baec6a1c150c0200"}]}
+RUN
+
+NAME=generate prologues trie from file
+TOOL=rz-prologues
+ARGS=-f bins/elf/riscv_crypto_64 -jt -l 4
+EXPECT=<<EOF
+{"arch":"riscv","bits":64,"endian":"little","prologue_length":4,"total_prologues_analyzed":25,"files":["bins/elf/riscv_crypto_64"],"prefix_tree":[{"node_id":1,"parent_id":0,"bit_val":0,"hit_cnt":22},{"node_id":2,"parent_id":1,"bit_val":1,"hit_cnt":19},{"node_id":3,"parent_id":2,"bit_val":0,"hit_cnt":4},{"node_id":4,"parent_id":3,"bit_val":0,"hit_cnt":4},{"node_id":5,"parent_id":4,"bit_val":1,"hit_cnt":4},{"node_id":6,"parent_id":5,"bit_val":1,"hit_cnt":4},{"node_id":7,"parent_id":6,"bit_val":0,"hit_cnt":4},{"node_id":8,"parent_id":7,"bit_val":1,"hit_cnt":4},{"node_id":9,"parent_id":8,"bit_val":0,"hit_cnt":4},{"node_id":10,"parent_id":9,"bit_val":1,"hit_cnt":4},{"node_id":11,"parent_id":10,"bit_val":1,"hit_cnt":4},{"node_id":12,"parent_id":11,"bit_val":0,"hit_cnt":4},{"node_id":13,"parent_id":12,"bit_val":0,"hit_cnt":4},{"node_id":14,"parent_id":13,"bit_val":1,"hit_cnt":4},{"node_id":15,"parent_id":14,"bit_val":0,"hit_cnt":4},{"node_id":16,"parent_id":15,"bit_val":1,"hit_cnt":4},{"node_id":17,"parent_id":16,"bit_val":1,"hit_cnt":4},{"node_id":18,"parent_id":17,"bit_val":1,"hit_cnt":4},{"node_id":19,"parent_id":18,"bit_val":0,"hit_cnt":4},{"node_id":20,"parent_id":19,"bit_val":0,"hit_cnt":4},{"node_id":21,"parent_id":20,"bit_val":1,"hit_cnt":4},{"node_id":22,"parent_id":21,"bit_val":1,"hit_cnt":4},{"node_id":23,"parent_id":22,"bit_val":0,"hit_cnt":4},{"node_id":24,"parent_id":23,"bit_val":1,"hit_cnt":4},{"node_id":25,"parent_id":24,"bit_val":0,"hit_cnt":4},{"node_id":26,"parent_id":25,"bit_val":1,"hit_cnt":4},{"node_id":27,"parent_id":26,"bit_val":1,"hit_cnt":4},{"node_id":28,"parent_id":27,"bit_val":0,"hit_cnt":4},{"node_id":29,"parent_id":28,"bit_val":0,"hit_cnt":4},{"node_id":30,"parent_id":29,"bit_val":1,"hit_cnt":4},{"node_id":31,"parent_id":30,"bit_val":1,"hit_cnt":4},{"node_id":32,"parent_id":31,"bit_val":1,"hit_cnt":4},{"node_id":33,"parent_id":2,"bit_val":1,"hit_cnt":15},{"node_id":34,"parent_id":33,"bit_val":1,"hit_cnt":15},{"node_id":35,"parent_id":34,"bit_val":0,"hit_cnt":1},{"node_id":36,"parent_id":35,"bit_val":1,"hit_cnt":1},{"node_id":37,"parent_id":36,"bit_val":0,"hit_cnt":1},{"node_id":38,"parent_id":37,"bit_val":1,"hit_cnt":1},{"node_id":39,"parent_id":38,"bit_val":1,"hit_cnt":1},{"node_id":40,"parent_id":39,"bit_val":0,"hit_cnt":1},{"node_id":41,"parent_id":40,"bit_val":1,"hit_cnt":1},{"node_id":42,"parent_id":41,"bit_val":1,"hit_cnt":1},{"node_id":43,"parent_id":42,"bit_val":1,"hit_cnt":1},{"node_id":44,"parent_id":43,"bit_val":1,"hit_cnt":1},{"node_id":45,"parent_id":44,"bit_val":1,"hit_cnt":1},{"node_id":46,"parent_id":45,"bit_val":1,"hit_cnt":1},{"node_id":47,"parent_id":46,"bit_val":0,"hit_cnt":1},{"node_id":48,"parent_id":47,"bit_val":1,"hit_cnt":1},{"node_id":49,"parent_id":48,"bit_val":1,"hit_cnt":1},{"node_id":50,"parent_id":49,"bit_val":1,"hit_cnt":1},{"node_id":51,"parent_id":50,"bit_val":1,"hit_cnt":1},{"node_id":52,"parent_id":51,"bit_val":0,"hit_cnt":1},{"node_id":53,"parent_id":52,"bit_val":0,"hit_cnt":1},{"node_id":54,"parent_id":53,"bit_val":1,"hit_cnt":1},{"node_id":55,"parent_id":54,"bit_val":0,"hit_cnt":1},{"node_id":56,"parent_id":55,"bit_val":1,"hit_cnt":1},{"node_id":57,"parent_id":56,"bit_val":1,"hit_cnt":1},{"node_id":58,"parent_id":57,"bit_val":1,"hit_cnt":1},{"node_id":59,"parent_id":58,"bit_val":0,"hit_cnt":1},{"node_id":60,"parent_id":59,"bit_val":0,"hit_cnt":1},{"node_id":61,"parent_id":60,"bit_val":0,"hit_cnt":1},{"node_id":62,"parent_id":61,"bit_val":1,"hit_cnt":1},{"node_id":63,"parent_id":34,"bit_val":1,"hit_cnt":14},{"node_id":64,"parent_id":63,"bit_val":0,"hit_cnt":14},{"node_id":65,"parent_id":64,"bit_val":0,"hit_cnt":14},{"node_id":66,"parent_id":65,"bit_val":1,"hit_cnt":14},{"node_id":67,"parent_id":66,"bit_val":0,"hit_cnt":14},{"node_id":68,"parent_id":67,"bit_val":1,"hit_cnt":14},{"node_id":69,"parent_id":68,"bit_val":1,"hit_cnt":14},{"node_id":70,"parent_id":69,"bit_val":1,"hit_cnt":14},{"node_id":71,"parent_id":70,"bit_val":0,"hit_cnt":14},{"node_id":72,"parent_id":71,"bit_val":0,"hit_cnt":14},{"node_id":73,"parent_id":72,"bit_val":0,"hit_cnt":14},{"node_id":74,"parent_id":73,"bit_val":1,"hit_cnt":14},{"node_id":75,"parent_id":74,"bit_val":0,"hit_cnt":14},{"node_id":76,"parent_id":75,"bit_val":0,"hit_cnt":14},{"node_id":77,"parent_id":76,"bit_val":0,"hit_cnt":14},{"node_id":78,"parent_id":77,"bit_val":0,"hit_cnt":14},{"node_id":79,"parent_id":78,"bit_val":0,"hit_cnt":14},{"node_id":80,"parent_id":79,"bit_val":1,"hit_cnt":14},{"node_id":81,"parent_id":80,"bit_val":1,"hit_cnt":14},{"node_id":82,"parent_id":81,"bit_val":0,"hit_cnt":14},{"node_id":83,"parent_id":82,"bit_val":1,"hit_cnt":14},{"node_id":84,"parent_id":83,"bit_val":1,"hit_cnt":14},{"node_id":85,"parent_id":84,"bit_val":1,"hit_cnt":14},{"node_id":86,"parent_id":85,"bit_val":1,"hit_cnt":14},{"node_id":87,"parent_id":86,"bit_val":0,"hit_cnt":14},{"node_id":88,"parent_id":87,"bit_val":1,"hit_cnt":14},{"node_id":89,"parent_id":88,"bit_val":0,"hit_cnt":14},{"node_id":90,"parent_id":89,"bit_val":0,"hit_cnt":14},{"node_id":91,"parent_id":1,"bit_val":0,"hit_cnt":3},{"node_id":92,"parent_id":91,"bit_val":0,"hit_cnt":3},{"node_id":93,"parent_id":92,"bit_val":0,"hit_cnt":3},{"node_id":94,"parent_id":93,"bit_val":0,"hit_cnt":3},{"node_id":95,"parent_id":94,"bit_val":0,"hit_cnt":3},{"node_id":96,"parent_id":95,"bit_val":0,"hit_cnt":3},{"node_id":97,"parent_id":96,"bit_val":1,"hit_cnt":3},{"node_id":98,"parent_id":97,"bit_val":0,"hit_cnt":3},{"node_id":99,"parent_id":98,"bit_val":0,"hit_cnt":3},{"node_id":100,"parent_id":99,"bit_val":0,"hit_cnt":3},{"node_id":101,"parent_id":100,"bit_val":1,"hit_cnt":3},{"node_id":102,"parent_id":101,"bit_val":0,"hit_cnt":3},{"node_id":103,"parent_id":102,"bit_val":0,"hit_cnt":3},{"node_id":104,"parent_id":103,"bit_val":0,"hit_cnt":3},{"node_id":105,"parent_id":104,"bit_val":1,"hit_cnt":3},{"node_id":106,"parent_id":105,"bit_val":0,"hit_cnt":3},{"node_id":107,"parent_id":106,"bit_val":0,"hit_cnt":3},{"node_id":108,"parent_id":107,"bit_val":0,"hit_cnt":3},{"node_id":109,"parent_id":108,"bit_val":0,"hit_cnt":3},{"node_id":110,"parent_id":109,"bit_val":0,"hit_cnt":3},{"node_id":111,"parent_id":110,"bit_val":1,"hit_cnt":3},{"node_id":112,"parent_id":111,"bit_val":1,"hit_cnt":3},{"node_id":113,"parent_id":112,"bit_val":0,"hit_cnt":3},{"node_id":114,"parent_id":113,"bit_val":1,"hit_cnt":3},{"node_id":115,"parent_id":114,"bit_val":1,"hit_cnt":3},{"node_id":116,"parent_id":115,"bit_val":1,"hit_cnt":3},{"node_id":117,"parent_id":116,"bit_val":0,"hit_cnt":3},{"node_id":118,"parent_id":117,"bit_val":1,"hit_cnt":3},{"node_id":119,"parent_id":118,"bit_val":1,"hit_cnt":3},{"node_id":120,"parent_id":119,"bit_val":0,"hit_cnt":3},{"node_id":121,"parent_id":120,"bit_val":0,"hit_cnt":3},{"node_id":122,"parent_id":0,"bit_val":1,"hit_cnt":3},{"node_id":123,"parent_id":122,"bit_val":1,"hit_cnt":3},{"node_id":124,"parent_id":123,"bit_val":0,"hit_cnt":3},{"node_id":125,"parent_id":124,"bit_val":0,"hit_cnt":3},{"node_id":126,"parent_id":125,"bit_val":1,"hit_cnt":3},{"node_id":127,"parent_id":126,"bit_val":1,"hit_cnt":3},{"node_id":128,"parent_id":127,"bit_val":0,"hit_cnt":3},{"node_id":129,"parent_id":128,"bit_val":1,"hit_cnt":3},{"node_id":130,"parent_id":129,"bit_val":0,"hit_cnt":3},{"node_id":131,"parent_id":130,"bit_val":1,"hit_cnt":3},{"node_id":132,"parent_id":131,"bit_val":1,"hit_cnt":3},{"node_id":133,"parent_id":132,"bit_val":0,"hit_cnt":3},{"node_id":134,"parent_id":133,"bit_val":0,"hit_cnt":3},{"node_id":135,"parent_id":134,"bit_val":1,"hit_cnt":3},{"node_id":136,"parent_id":135,"bit_val":1,"hit_cnt":3},{"node_id":137,"parent_id":136,"bit_val":1,"hit_cnt":3},{"node_id":138,"parent_id":137,"bit_val":0,"hit_cnt":3},{"node_id":139,"parent_id":138,"bit_val":0,"hit_cnt":3},{"node_id":140,"parent_id":139,"bit_val":0,"hit_cnt":3},{"node_id":141,"parent_id":140,"bit_val":0,"hit_cnt":3},{"node_id":142,"parent_id":141,"bit_val":0,"hit_cnt":3},{"node_id":143,"parent_id":142,"bit_val":0,"hit_cnt":3},{"node_id":144,"parent_id":143,"bit_val":1,"hit_cnt":3},{"node_id":145,"parent_id":144,"bit_val":1,"hit_cnt":3},{"node_id":146,"parent_id":145,"bit_val":1,"hit_cnt":3},{"node_id":147,"parent_id":146,"bit_val":1,"hit_cnt":3},{"node_id":148,"parent_id":147,"bit_val":0,"hit_cnt":3},{"node_id":149,"parent_id":148,"bit_val":0,"hit_cnt":3},{"node_id":150,"parent_id":149,"bit_val":0,"hit_cnt":3},{"node_id":151,"parent_id":150,"bit_val":1,"hit_cnt":3},{"node_id":152,"parent_id":151,"bit_val":1,"hit_cnt":3},{"node_id":153,"parent_id":152,"bit_val":1,"hit_cnt":3}]}
+EOF
+RUN
+
+NAME=generate prologues from dir (ARM64)
+TOOL=rz-prologues
+ARGS=-d bins/elf -jq -l 8 -e 0.7 -a arm -b 64
+EXPECT=<<EOF
+{"arch":"arm","bits":64,"endian":"little","prologue_length":8,"count":132,"prologues":[{"bytes":"00000090000040f9","mask":"58fe7f1d00000087"},{"bytes":"00000090000040fa","mask":"58fe7f1d00000087"},{"bytes":"00000090000040fe","mask":"58fe7f1d00000087"},{"bytes":"0000009000004014","mask":"58fe7f1d000000ff"},{"bytes":"0000009000004017","mask":"58fe7f1d000000ff"},{"bytes":"0000009000004052","mask":"58fe7f1d000000ff"},{"bytes":"00000094c0035fd6","mask":"58fe7f1d20f8a000"},{"bytes":"00000099020400f9","mask":"58fe7f1fd9fbfd8d"},{"bytes":"0000008b28003bd5","mask":"58fe7f1e20248098"},{"bytes":"000001cb5f8001f1","mask":"58fe7ffe4abcfebc"},{"bytes":"00000491c0035fd6","mask":"58fe7fffffffffff"},{"bytes":"0000669e0198bf52","mask":"58fe7fffe1674014"},{"bytes":"000044b92203f837","mask":"58fe7fffffffffff"},{"bytes":"000040b903008012","mask":"58fe7f7f1ef87f41"},{"bytes":"000040b901030034","mask":"58fe7f7f1fffffff"},{"bytes":"000040b9060300aa","mask":"58fe7f7f1fffffff"},{"bytes":"000040b90f100072","mask":"58fe7f7f1fffffff"},{"bytes":"000040f9630400b4","mask":"58fe7f7fffffffff"},{"bytes":"0002009000f045b9","mask":"58feffbb3f0ce590"},{"bytes":"000400b4fd7bbea9","mask":"58fcff9f02040000"},{"bytes":"0004005146600091","mask":"58fcffffffffffff"},{"bytes":"000c014e0400028b","mask":"58fabe0000804004"},{"bytes":"000c805203fdff17","mask":"58faffffffffffff"},{"bytes":"000f0034fd7bbba9","mask":"58fbffffffffffff"},{"bytes":"001c0012fd7bbda9","mask":"58f7bf5426804244"},{"bytes":"002c4092e8c300b2","mask":"58e37f141030ff59"},{"bytes":"00443bd50000669e","mask":"58c2440000800100"},{"bytes":"00f8af520000271e","mask":"5880907ffbfd3013"},{"bytes":"080900b0087547f9","mask":"5b00001800009004"},{"bytes":"1d0080d21e0080d2","mask":"5fffffffffffffff"},{"bytes":"1ffc0f7149000054","mask":"5fffffff1effffff"},{"bytes":"1f2003d5e0031f2a","mask":"5fffffffffffffff"},{"bytes":"1f0000f91f0800b9","mask":"5ffbff3fffffffff"},{"bytes":"1f0000f1a20000b0","mask":"5ffbff3f1fffffff"},{"bytes":"1f0000f1a0040054","mask":"5ffbff3f1ef0ffff"},{"bytes":"1f0840f2e30300aa","mask":"5fffffffffffffff"},{"bytes":"1f1c0071a9000054","mask":"5fffffffffffffff"},{"bytes":"1f4000f1c90a0054","mask":"5fffffffffffffff"},{"bytes":"680000d008010091","mask":"4286ff9ff75edfff"},{"bytes":"680000d008010791","mask":"4286ff9ff75eddff"},{"bytes":"680000d008010e91","mask":"4286ff9ff75edfff"},{"bytes":"680000d008010a91","mask":"4286ff9ff75edfff"},{"bytes":"680000d008011291","mask":"4286ff9ff75edfff"},{"bytes":"680000d0080145f9","mask":"4286ff9ff75effff"},{"bytes":"680000d0080445f9","mask":"4286ff9ff75fd03f"},{"bytes":"680000d0081841f9","mask":"4286ff9ff753ffff"},{"bytes":"680000d0081845f9","mask":"4286ff9ff753ffff"},{"bytes":"680000d008402791","mask":"4286ff9ff77780d7"},{"bytes":"680000d0087040f9","mask":"4286ff9ff77fffff"},{"bytes":"680000d010020091","mask":"4286ff9fffffffff"},{"bytes":"680000d0216440f9","mask":"4286ff9ffc3b8097"},{"bytes":"680000d0240845f9","mask":"4286ff9fffffffff"},{"bytes":"680000d029810e91","mask":"4286ff9fffffffff"},{"bytes":"680000d0fd7bbea9","mask":"4286ff9f800404af"},{"bytes":"680000d4c0035fd6","mask":"4286ff9f1cf42090"},{"bytes":"680040b9867c4093","mask":"4286ffffffffffff"},{"bytes":"6800805257f9ff17","mask":"4286ffffffffffff"},{"bytes":"68031d32c0035fd6","mask":"42871cffffffffff"},{"bytes":"68031da9fd030091","mask":"42871c80c2ffa0b8"},{"bytes":"68031da9fd0300aa","mask":"42871c80c2ffa0bf"},{"bytes":"68031da9fd03002a","mask":"42871c80c2ffa0ff"},{"bytes":"68031da9fd0100b0","mask":"42871c80c2ffff9f"},{"bytes":"68031da9fd7bbfa9","mask":"42871c80c2cbfeff"},{"bytes":"68031da9ff8302d1","mask":"42871c80c30f4087"},{"bytes":"68031da9ff8302d2","mask":"42871c80c30f4087"},{"bytes":"68031da9ff83022a","mask":"42871c80c30f40ff"},{"bytes":"68031da9ff8100b0","mask":"42871c80c30fffff"},{"bytes":"68031da99f0000f1","mask":"42871c80c0fe7f9c"},{"bytes":"68031da900008012","mask":"42871c80dc7f7f2d"},{"bytes":"68031da90000e79e","mask":"42871c80dc7f7fff"},{"bytes":"68031da9000480d2","mask":"42871c80dc7fffff"},{"bytes":"68031da900500191","mask":"42871c80dc7fffff"},{"bytes":"68031da907600091","mask":"42871c80dfffffff"},{"bytes":"68031da9080900b0","mask":"42871c80dff7ffff"},{"bytes":"68031da91f040031","mask":"42871c80dfffffff"},{"bytes":"68031da941008052","mask":"42871c80c1833f1c"},{"bytes":"68031ba9fd030091","mask":"42871cffffffffff"},{"bytes":"68031ba9e50302aa","mask":"42871cffffffffff"},{"bytes":"68031ba9c00100f0","mask":"42871cffffffffff"},{"bytes":"68031ba9bf0000f1","mask":"42871cffffffffff"},{"bytes":"68031ba95f0000f1","mask":"42871cff81386e5c"},{"bytes":"680316a9fd030091","mask":"42871cffffffffff"},{"bytes":"680316a9a60000b0","mask":"42871cffffffffff"},{"bytes":"680316a93ffc0071","mask":"42871cffffffffff"},{"bytes":"680310a9e4000090","mask":"42871fffffffffff"},{"bytes":"680301aa9cddff17","mask":"42871cff00ffffff"},{"bytes":"680301aa9c035fd6","mask":"42871cff00efffff"},{"bytes":"680301aa9c0b8052","mask":"42871cff00e87fdf"},{"bytes":"680301aa9c7bbda9","mask":"42871cff00ffffff"},{"bytes":"680301a9fd030091","mask":"42871cff0afc4ffc"},{"bytes":"680301b4fd7bbea9","mask":"42871cffffffffff"},{"bytes":"680301d4c0035fd6","mask":"42871cffffffffff"},{"bytes":"6803012a4bfdff17","mask":"42871cffb40280ba"},{"bytes":"680304aae40303aa","mask":"42871cfce6fffcc4"},{"bytes":"680309a9fd030091","mask":"428718ffffffffff"},{"bytes":"680200d4c0035fd6","mask":"42877f79f4025f3e"},{"bytes":"680205d202308ad2","mask":"42877fffffffffff"},{"bytes":"68050034fd7bbea9","mask":"42867e1000010000"},{"bytes":"6807bba9f85f01a9","mask":"42875aae249fffff"},{"bytes":"6807bba9f84300d4","mask":"42875aae2498fe82"},{"bytes":"6807bba9fd7b01a9","mask":"42875aae27ffffff"},{"bytes":"6807bba9c10000d4","mask":"42875aae3ffcffff"},{"bytes":"6807b9a9f44f01a9","mask":"42875aaefde7ffff"},{"bytes":"68f6ff1700000000","mask":"42d03b3dffffffff"},{"bytes":"68f6ff1700fc40f9","mask":"42d03b3dffffffff"},{"bytes":"68f6ff1702e041b9","mask":"42d03b3dffffffff"},{"bytes":"68f6ff17ffc300d1","mask":"42d03b3dffffffff"},{"bytes":"68f6ff34ecc300b2","mask":"42d03b3fffffffff"},{"bytes":"6b0340396c0000d0","mask":"433fffffdfffffbf"},{"bytes":"6b0300aafd7bbea9","mask":"433ffcffe38040e2"},{"bytes":"6b0300aa030040f9","mask":"433ffcffffffffff"},{"bytes":"6b0300d1e00700f9","mask":"433ffcfff7ebe034"},{"bytes":"6b0300d1fd7b02a9","mask":"433ffcfffafff0ff"},{"bytes":"6b0300d1fd6f04a9","mask":"433ffcfffafff0ff"},{"bytes":"6b0300d1fd5f05a9","mask":"433ffcfffafff8ff"},{"bytes":"6b0300d1fd2300f9","mask":"433ffcfffad7ffff"},{"bytes":"6b0300d1ff1b00f9","mask":"433ffcfffbd7ffff"},{"bytes":"6b0300d1f44f01a9","mask":"433ffcfff8a3feaf"},{"bytes":"6b0300d13f0000f1","mask":"433ffcffffffffff"},{"bytes":"6b03002a3f080071","mask":"433ffcff24844124"},{"bytes":"6b0306d1eb2b106d","mask":"433ffcffe8b3fe3b"},{"bytes":"6b0306d1eb2b0da9","mask":"433ffcffe8b3ffff"},{"bytes":"6b0306d1ebc300f9","mask":"433ffcffe8ffffff"},{"bytes":"6b030dd1fd7b00a9","mask":"433fffffffffffff"},{"bytes":"6b0314d1fd7b00a9","mask":"433ff8ffffffffff"},{"bytes":"6b0322d1fd7b00a9","mask":"433ffcffffffffff"},{"bytes":"6b018052f7fcff17","mask":"433e7f1d60000040"},{"bytes":"6b0f1af8fa6701a9","mask":"433ff9fff0c3ffff"},{"bytes":"6b2403d5ff4300d1","mask":"433fffff8fbcffbe"},{"bytes":"6a67bba9f85f01a9","mask":"4398440400000000"},{"bytes":"6a67bbacfd7bb9a9","mask":"43984407ffffffff"},{"bytes":"6ad03bd543e441b9","mask":"43ffffffffffffff"}]}
+EOF
+RUN
+
+NAME=generate prologues from dir (sparc)
+TOOL=rz-prologues
+ARGS=-d bins/elf -jq -l 8 -e 0.7 -a sparc -b 32 -B
+EXPECT=<<EOF
+{"arch":"sparc","bits":32,"endian":"big","prologue_length":8,"count":197,"prologues":[{"bytes":"9de3bf98030003ce","mask":"ffffffcf0c49dc22"},{"bytes":"9de3bf98030003cd","mask":"ffffffcf0c49dc22"},{"bytes":"9de3bf98030003fe","mask":"ffffffcf0c49dc30"},{"bytes":"9de3bf980300187f","mask":"ffffffcf0c49dfff"},{"bytes":"9de3bf980300443f","mask":"ffffffcf0c49ffff"},{"bytes":"9de3bf9803006000","mask":"ffffffcf0c49fffd"},{"bytes":"9de3bf980300fc02","mask":"ffffffcf0c498388"},{"bytes":"9de3bf980301e014","mask":"ffffffcf0c49a003"},{"bytes":"9de3bf980301cb11","mask":"ffffffcf0c49bfff"},{"bytes":"9de3bf9803015a22","mask":"ffffffcf0c49e204"},{"bytes":"9de3bf98030e60ff","mask":"ffffffcf0c4e20e8"},{"bytes":"9de3bf980377bff8","mask":"ffffffcf0c7fffff"},{"bytes":"9de3bf98041e602c","mask":"ffffffcf0ec01c08"},{"bytes":"9de3bf980b0003b3","mask":"ffffffcf0b000003"},{"bytes":"9de3bf980b0003b0","mask":"ffffffcf0b000003"},{"bytes":"9de3bf980a062010","mask":"ffffffcf0bffffff"},{"bytes":"9de3bf980900031e","mask":"ffffffcf0bfffde0"},{"bytes":"9de3bf90070003c3","mask":"ffffffcf0cf9fd20"},{"bytes":"9de3bf90070003ea","mask":"ffffffcf0cf9fd26"},{"bytes":"9de3bf9007000204","mask":"ffffffcf0cf9fdfb"},{"bytes":"9de3bf9007002040","mask":"ffffffcf0cf9ffab"},{"bytes":"9de3bf9007006040","mask":"ffffffcf0cf9ffb3"},{"bytes":"9de3bf900700bfff","mask":"ffffffcf0cf9ffff"},{"bytes":"9de3bf90070e0000","mask":"ffffffcf0cffffff"},{"bytes":"9de3bf9007102000","mask":"ffffffcf0cf1dfa4"},{"bytes":"9de3bf9007268019","mask":"ffffffcf0cffffff"},{"bytes":"9de3bf9007962000","mask":"ffffffcf0cffffff"},{"bytes":"9de3bf90030003d2","mask":"ffffffcf0c49dc20"},{"bytes":"9de3bf90030003f7","mask":"ffffffcf0c49dc20"},{"bytes":"9de3bf900300048f","mask":"ffffffcf0c49dfff"},{"bytes":"9de3bf900300085f","mask":"ffffffcf0c49dc87"},{"bytes":"9de3bf9003001df6","mask":"ffffffcf0c49dd01"},{"bytes":"9de3bf9003001b18","mask":"ffffffcf0c49dfff"},{"bytes":"9de3bf900300698b","mask":"ffffffcf0c49ddff"},{"bytes":"9de3bf90030068cb","mask":"ffffffcf0c49dd03"},{"bytes":"9de3bf9003006743","mask":"ffffffcf0c49dc01"},{"bytes":"9de3bf9003006020","mask":"ffffffcf0c49dff0"},{"bytes":"9de3bf9003006000","mask":"ffffffcf0c49dfff"},{"bytes":"9de3bf9003006019","mask":"ffffffcf0c49dfff"},{"bytes":"9de3bf900300604e","mask":"ffffffcf0c49dfff"},{"bytes":"9de3bf9003007ac1","mask":"ffffffcf0c49dd24"},{"bytes":"9de3bf9003009050","mask":"ffffffcf0c498000"},{"bytes":"9de3bf900301e014","mask":"ffffffcf0c497fff"},{"bytes":"9de3bf900301c0af","mask":"ffffffcf0c497fff"},{"bytes":"9de3bf900301bff4","mask":"ffffffcf0c494d07"},{"bytes":"9de3bf900301bff7","mask":"ffffffcf0c494d07"},{"bytes":"9de3bf900301bff0","mask":"ffffffcf0c494d07"},{"bytes":"9de3bf900301be0f","mask":"ffffffcf0c494d07"},{"bytes":"9de3bf900301b852","mask":"ffffffcf0c494c02"},{"bytes":"9de3bf900301b7f2","mask":"ffffffcf0c494805"},{"bytes":"9de3bf90030e60ff","mask":"ffffffcf0c4f9f3f"},{"bytes":"9de3bf90030e60c1","mask":"ffffffcf0c4f9f3c"},{"bytes":"9de3bf90030e60c8","mask":"ffffffcf0c4f9f3f"},{"bytes":"9de3bf90030e60df","mask":"ffffffcf0c4f9f3f"},{"bytes":"9de3bf90030ea0ff","mask":"ffffffcf0c4fff14"},{"bytes":"9de3bf90030aaaaa","mask":"ffffffcf0c4fffff"},{"bytes":"9de3bf90034e0000","mask":"ffffffcf0c761ff7"},{"bytes":"9de3bf90034e0004","mask":"ffffffcf0c761ff7"},{"bytes":"9de3bf9008066004","mask":"ffffffcf0cf9ffff"},{"bytes":"9de3bf900806200c","mask":"ffffffcf0cf9dc22"},{"bytes":"9de3bf9008062033","mask":"ffffffcf0cf9dc3f"},{"bytes":"9de3bf900807a05c","mask":"ffffffcf0cf9ffff"},{"bytes":"9de3bf90081e2008","mask":"ffffffcf0cf1fff7"},{"bytes":"9de3bf900827a054","mask":"ffffffcf0cffffff"},{"bytes":"9de3bf900f000051","mask":"ffffffcf0ffffc0a"},{"bytes":"9de3bf900ffffe59","mask":"ffffffcf0ffff805"},{"bytes":"9de3bf900ffffe58","mask":"ffffffcf0ffff805"},{"bytes":"9de3bf900ffffe5c","mask":"ffffffcf0ffff807"},{"bytes":"9de3bf900ffffe5f","mask":"ffffffcf0ffff807"},{"bytes":"9de3bf900ffffe5e","mask":"ffffffcf0ffff807"},{"bytes":"9de3bf900ffff007","mask":"ffffffcf0ffff807"},{"bytes":"9de3bf900fffe49f","mask":"ffffffcf0ffff407"},{"bytes":"9de3bf900fffd68f","mask":"ffffffcf0fffe5b7"},{"bytes":"9de3bf900fffa68f","mask":"ffffffcf0fffc002"},{"bytes":"9de3bf900fff067f","mask":"ffffffcf0fff8007"},{"bytes":"9de3bf900ffeae2f","mask":"ffffffcf0fffffff"},{"bytes":"9de3bf900ffd9f57","mask":"ffffffcf0fffffff"},{"bytes":"9de3bf900e062004","mask":"ffffffcf0fffffff"},{"bytes":"9de3bf900d0003cc","mask":"ffffffcf0fffffff"},{"bytes":"9de3bf78c24e0000","mask":"ffffff8700ffbfff"},{"bytes":"9de3bf78c201e014","mask":"ffffff8700e07fff"},{"bytes":"9de3bf78c201e003","mask":"ffffff8700e07fff"},{"bytes":"9de3bf78c201c47a","mask":"ffffff8700e07fff"},{"bytes":"9de3bf78c201bfcc","mask":"ffffff8700e05fc3"},{"bytes":"9de3bf78c201a003","mask":"ffffff8700e05c20"},{"bytes":"9de3bf78c201a020","mask":"ffffff8700e05c3f"},{"bytes":"9de3bf78c2a6a000","mask":"ffffff8700cf7fff"},{"bytes":"9de3bf78c2fffdc4","mask":"ffffff8700fffc00"},{"bytes":"9de3bea0a207bf80","mask":"ffffffc75cf84333"},{"bytes":"9de3bea0a207bf81","mask":"ffffffc75cf84333"},{"bytes":"9de3bea0a207bf82","mask":"ffffffc75cf84333"},{"bytes":"9de3bea0a207bf9b","mask":"ffffffc75cf8433f"},{"bytes":"9de3bea0a207bfb3","mask":"ffffffc75cf84330"},{"bytes":"9de3bea0a207bd00","mask":"ffffffc75cf843ff"},{"bytes":"9de3bea0a236e005","mask":"ffffffc75cffffff"},{"bytes":"9de3bea0a2a66000","mask":"ffffffc75cffa000"},{"bytes":"9de3bea0a407bf80","mask":"ffffffc75de84067"},{"bytes":"9de3bea0ab0003cd","mask":"ffffffc75fffffff"},{"bytes":"9de3bea0b007bf78","mask":"ffffffc75fe8409f"},{"bytes":"9de3bea0c20e0000","mask":"ffffffc77fffffff"},{"bytes":"9de3bef0c201e014","mask":"ffffffc7bd58bfeb"},{"bytes":"9de3be50c201e014","mask":"ffffffffffffffff"},{"bytes":"9de3bda0290003b3","mask":"ffffff8f04f04080"},{"bytes":"9de3bbd8a007bfd8","mask":"fffffe0704d84006"},{"bytes":"9de3b000233ffffb","mask":"fffff8074ec00004"},{"bytes":"9a10000c9810000b","mask":"fdfffff8fdffdff4"},{"bytes":"90023fd080a22009","mask":"f9f7a0d0e9573fe0"},{"bytes":"901020019210200a","mask":"f9ffdff6edfc1ffd"},{"bytes":"9010200192102000","mask":"f9ffdff6edfc1fff"},{"bytes":"9010200192102001","mask":"f9ffdff6edfc1fff"},{"bytes":"9010200192102006","mask":"f9ffdff6edfc1fff"},{"bytes":"9010200192102043","mask":"f9ffdff6edfc1ffc"},{"bytes":"9010200192a2603f","mask":"f9ffdff6edffffff"},{"bytes":"9010200194102000","mask":"f9ffdff6efffe000"},{"bytes":"9010200111000315","mask":"f9ffdff6ffffff58"},{"bytes":"9010200294102000","mask":"f9ffdff7fec59ff4"},{"bytes":"901020028213c000","mask":"f9ffdff7ffffffff"},{"bytes":"901020038213c000","mask":"f9ffdff7ffffffff"},{"bytes":"901020068213c000","mask":"f9ffdff7ffffffff"},{"bytes":"9010201f8213c000","mask":"f9ffdffeffffffff"},{"bytes":"9010203a8213c000","mask":"f9ffdfe1ffffffff"},{"bytes":"901020408213c000","mask":"f9ffdfffffffffff"},{"bytes":"901020a18213c000","mask":"f9ffdfffffffffff"},{"bytes":"90103fff80a2602f","mask":"f9ffdfffeb4dbfd0"},{"bytes":"902000088213c000","mask":"f9fd7ffefd4ebff3"},{"bytes":"912a2002030003cc","mask":"f9ffbfff7eec3c33"},{"bytes":"912a2018953aa018","mask":"f9ffbfffffffffff"},{"bytes":"80a220000240000b","mask":"fc0c1ff76d000010"},{"bytes":"80a2200002400016","mask":"fc0c1ff76d000012"},{"bytes":"80a2200002400014","mask":"fc0c1ff76d000013"},{"bytes":"80a2200003000000","mask":"fc0c1ff76dffffff"},{"bytes":"80a220000640000f","mask":"fc0c1ff76dafdff0"},{"bytes":"80a2200006400013","mask":"fc0c1ff76dafdfff"},{"bytes":"80a2200032400004","mask":"fc0c1ff76b3ffffc"},{"bytes":"80a220004000b0a0","mask":"fc0c1ff76fffffff"},{"bytes":"80a2200040022010","mask":"fc0c1ff76fff9fe3"},{"bytes":"80a2200044084000","mask":"fc0c1ff76fffffff"},{"bytes":"80a2200184603fff","mask":"fc0c1ff7ed8fc00a"},{"bytes":"80a2200117000369","mask":"fc0c1ff7ffffffff"},{"bytes":"80a220020680000b","mask":"fc0c1ff7ffffffff"},{"bytes":"80a2200712800003","mask":"fc0c1ff7ffffffff"},{"bytes":"80a2203002400006","mask":"fc0c1fffffffffff"},{"bytes":"80a220431840000a","mask":"fc0c1fffffffffff"},{"bytes":"80a23fffc0222018","mask":"fc0c1fffffffffff"},{"bytes":"80aa2002050003cd","mask":"fc0fff00f837fc34"},{"bytes":"86023fff821a200d","mask":"ffffffffffffffff"},{"bytes":"bc1000009c23a018","mask":"ffffdfff83dfffa7"},{"bytes":"c40a00008528a018","mask":"e1ffdff3f8c72000"},{"bytes":"c4022008c202200c","mask":"e1ff9ff3a9ed9ffa"},{"bytes":"c4022008c2022004","mask":"e1ff9ff3a9ed9fff"},{"bytes":"c4022008c2022000","mask":"e1ff9ff3a9ed9fff"},{"bytes":"c4022008c2022002","mask":"e1ff9ff3a9ed9fff"},{"bytes":"c4022008c202a004","mask":"e1ff9ff3a9edffff"},{"bytes":"c4022008c208bf97","mask":"e1ff9ff3a9efff95"},{"bytes":"c4022008c24b4000","mask":"e1ff9ff3a9ffffff"},{"bytes":"c4022008c2a06000","mask":"e1ff9ff3a9fcffff"},{"bytes":"c402200811000313","mask":"e1ff9ff3e5ef3a1b"},{"bytes":"c4022010c2022014","mask":"e1ff9ff326ec1f41"},{"bytes":"c4022024c2226004","mask":"e1ff9fffffffffff"},{"bytes":"c40220a09a186003","mask":"e1ff9fffffffffff"},{"bytes":"c402a004c8026004","mask":"e1ffffffffffffff"},{"bytes":"c44a000080a06000","mask":"e1fffffffb45ffd0"},{"bytes":"030003b717000201","mask":"ffffff80f9fffef2"},{"bytes":"030003b7050003b8","mask":"ffffff80fdffff80"},{"bytes":"030003b705000100","mask":"ffffff80fdffffff"},{"bytes":"030003b7c4006018","mask":"ffffff80a9efbc03"},{"bytes":"030003b7c4006019","mask":"ffffff80a9efbc03"},{"bytes":"030003b7c400601a","mask":"ffffff80a9efbc02"},{"bytes":"030003b7c4007fff","mask":"ffffff80a9efbfff"},{"bytes":"030003b7c4004008","mask":"ffffff80a9efbffe"},{"bytes":"030003b7c400400b","mask":"ffffff80a9efbfff"},{"bytes":"030003b7c4206104","mask":"ffffff80a9fffc07"},{"bytes":"030003b7c4206100","mask":"ffffff80a9fffc07"},{"bytes":"030003b7c4380008","mask":"ffffff80a9ffffff"},{"bytes":"030003b7c4a26000","mask":"ffffff80a9ffbffd"},{"bytes":"030003b7c5c3e008","mask":"ffffff80a9ffffff"},{"bytes":"030003b7c80063cc","mask":"ffffff80afffffff"},{"bytes":"0300031880a22061","mask":"ffffff8cbb5dbe12"},{"bytes":"0300003c980a0001","mask":"fffffec3a0341ca2"},{"bytes":"033ffff782106388","mask":"ffffffe7fffffe07"},{"bytes":"050003d5030003d5","mask":"ffffff8038ff5fe0"},{"bytes":"050003d5030003b8","mask":"ffffff8038ff5fff"},{"bytes":"050003d503000170","mask":"ffffff8038ff5fff"},{"bytes":"050003d503102001","mask":"ffffff8038ffffff"},{"bytes":"050003d503a00008","mask":"ffffff8038ffffff"},{"bytes":"050003d5112a2002","mask":"ffffff803fffffff"},{"bytes":"0500031c030003d2","mask":"ffffffffffffffff"},{"bytes":"11000118901223a0","mask":"f9fffd54fffffc93"},{"bytes":"11000118901223b4","mask":"f9fffd54fffffc9f"},{"bytes":"110001189012234c","mask":"f9fffd54fffffc93"},{"bytes":"1100011890102002","mask":"f9fffd54ffffffff"},{"bytes":"1100011817000319","mask":"f9fffd54ffffffff"},{"bytes":"1100011f921262c0","mask":"f9fffd56fdffbeff"},{"bytes":"110001019612e030","mask":"f9fffd5efdffbccf"},{"bytes":"1100015090102014","mask":"f9fffd76fdfdbf9b"},{"bytes":"110000ff15000101","mask":"f9fffdffffffffff"},{"bytes":"1b0000b1821362e0","mask":"fffffe4ebfeffe0b"}]}
+EOF
+RUN
+
+NAME=generate prologues from dir (adopt first file arch)
+TOOL=rz-prologues
+ARGS=-d bins/elf/core -q -l 8
+EXPECT=<<EOF
+arch: "alpha"
+bits: 64
+endian: "little"
+prologue_length: 8
+count: 3
+prologues:
+  - bytes: "0180fa6b0000fe2f"
+    mask: "fdffffffffffffff"
+  - bytes: "0000a0c30200bd27"
+    mask: "fdffffffffffffff"
+  - bytes: "0000bb27c095bd23"
+    mask: "fdffffff07f0ffff"
+
+EOF
+RUN

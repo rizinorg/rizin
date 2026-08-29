@@ -38,7 +38,6 @@ static void show_help(bool usage_only) {
 	       "  Generated JSON prologues (-j) can be loaded into Rizin for function analysis\n"
 	       "  using the 'aapf <file>' command.\n");
 
-	printf("\n%s%s%s\n", Color_CYAN, "Examples:", Color_RESET);
 	printf("\n" Color_CYAN "Examples:" Color_RESET "\n"
 	       "  # Extract generalized JSON prologues from a binary\n"
 	       "  rz-prologues -f input.bin -j -o output.json\n\n"
@@ -132,7 +131,7 @@ static bool generate_prologues(const char *input_path, bool is_dir, const char *
 	} else {
 		// file
 		if (!rz_file_is_regular(input_path)) {
-			RZ_LOG_ERROR("File does not exist, invalid path: %s", input_path);
+			RZ_LOG_ERROR("File does not exist, invalid path: %s\n", input_path);
 			goto err;
 		}
 
