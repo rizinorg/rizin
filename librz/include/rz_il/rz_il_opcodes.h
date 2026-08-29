@@ -870,6 +870,10 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_deposit64(RZ_BORROW RzILOpBitVector *value,
 RZ_API RZ_OWN RzILOpBitVector *rz_il_deposit32(RZ_BORROW RzILOpBitVector *value, RZ_BORROW RzILOpBitVector *start, RZ_BORROW RzILOpBitVector *length, RZ_BORROW RzILOpBitVector *fieldval);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_bswap16(RZ_BORROW RzILOpBitVector *t);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_bswap32(RZ_BORROW RzILOpBitVector *t);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_bitrev32(RZ_OWN RzILOpBitVector *x);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_popcount_bytes32(RZ_OWN RzILOpBitVector *x);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_deinterleave32(RZ_OWN RzILOpBitVector *x);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_interleave32(RZ_OWN RzILOpBitVector *x);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_bswap64(RZ_BORROW RzILOpBitVector *t);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_ne(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_fneq(RZ_NONNULL RZ_OWN RzILOpFloat *x, RZ_NONNULL RZ_OWN RzILOpFloat *y);

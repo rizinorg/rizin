@@ -812,6 +812,138 @@ bool test_float_print_format(void) {
 	mu_end;
 }
 
+static bool test_il_bitrev32() {
+	RzILSortPure sort;
+	RzILValidateReport report;
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+	bool valid = false;
+	RzILVM *vm = rz_il_vm_new(0, 32, false, RZ_IL_EVENT_EXC_NONE);
+	RzILVal *vm_result = NULL;
+	RzILOpBitVector *val = NULL;
+	RzILOpBitVector *result = NULL;
+
+	val = rz_il_op_new_bitv_from_ut64(32, 0x01234567);
+	result = rz_il_bitrev32(val);
+	valid = rz_il_validate_pure(result, ctx, &sort, &report);
+	mu_assert_true(valid, "invalid pure");
+	vm_result = rz_il_evaluate_val(vm, result);
+	mu_assert_eq(vm_result->data.bv->bits.small_u, 0xe6a2c480, "bitrev32(0x01234567) mismatch");
+	rz_il_value_free(vm_result);
+	rz_il_op_pure_free(result);
+	val = rz_il_op_new_bitv_from_ut64(32, 0x80000000);
+	result = rz_il_bitrev32(val);
+	valid = rz_il_validate_pure(result, ctx, &sort, &report);
+	mu_assert_true(valid, "invalid pure");
+	vm_result = rz_il_evaluate_val(vm, result);
+	mu_assert_eq(vm_result->data.bv->bits.small_u, 0x00000001, "bitrev32(0x80000000) mismatch");
+	rz_il_value_free(vm_result);
+	rz_il_op_pure_free(result);
+	val = rz_il_op_new_bitv_from_ut64(32, 0xffffffff);
+	result = rz_il_bitrev32(val);
+	valid = rz_il_validate_pure(result, ctx, &sort, &report);
+	mu_assert_true(valid, "invalid pure");
+	vm_result = rz_il_evaluate_val(vm, result);
+	mu_assert_eq(vm_result->data.bv->bits.small_u, 0xffffffff, "bitrev32(0xffffffff) mismatch");
+	rz_il_value_free(vm_result);
+	rz_il_op_pure_free(result);
+	rz_il_vm_free(vm);
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
+static bool test_il_popcount_bytes32() {
+	RzILSortPure sort;
+	RzILValidateReport report;
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+	bool valid = false;
+	RzILVM *vm = rz_il_vm_new(0, 32, false, RZ_IL_EVENT_EXC_NONE);
+	RzILVal *vm_result = NULL;
+	RzILOpBitVector *val = NULL;
+	RzILOpBitVector *result = NULL;
+
+	val = rz_il_op_new_bitv_from_ut64(32, 0xff0f0301);
+	result = rz_il_popcount_bytes32(val);
+	valid = rz_il_validate_pure(result, ctx, &sort, &report);
+	mu_assert_true(valid, "invalid pure");
+	vm_result = rz_il_evaluate_val(vm, result);
+	mu_assert_eq(vm_result->data.bv->bits.small_u, 0x08040201, "popcount_bytes32(0xff0f0301) mismatch");
+	rz_il_value_free(vm_result);
+	rz_il_op_pure_free(result);
+	val = rz_il_op_new_bitv_from_ut64(32, 0x00000000);
+	result = rz_il_popcount_bytes32(val);
+	valid = rz_il_validate_pure(result, ctx, &sort, &report);
+	mu_assert_true(valid, "invalid pure");
+	vm_result = rz_il_evaluate_val(vm, result);
+	mu_assert_eq(vm_result->data.bv->bits.small_u, 0x00000000, "popcount_bytes32(0x00000000) mismatch");
+	rz_il_value_free(vm_result);
+	rz_il_op_pure_free(result);
+	rz_il_vm_free(vm);
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
+static bool test_il_deinterleave32() {
+	RzILSortPure sort;
+	RzILValidateReport report;
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+	bool valid = false;
+	RzILVM *vm = rz_il_vm_new(0, 32, false, RZ_IL_EVENT_EXC_NONE);
+	RzILVal *vm_result = NULL;
+	RzILOpBitVector *val = NULL;
+	RzILOpBitVector *result = NULL;
+
+	val = rz_il_op_new_bitv_from_ut64(32, 0xffff0000);
+	result = rz_il_deinterleave32(val);
+	valid = rz_il_validate_pure(result, ctx, &sort, &report);
+	mu_assert_true(valid, "invalid pure");
+	vm_result = rz_il_evaluate_val(vm, result);
+	mu_assert_eq(vm_result->data.bv->bits.small_u, 0xff00ff00, "deinterleave32(0xffff0000) mismatch");
+	rz_il_value_free(vm_result);
+	rz_il_op_pure_free(result);
+	val = rz_il_op_new_bitv_from_ut64(32, 0x00000000);
+	result = rz_il_deinterleave32(val);
+	valid = rz_il_validate_pure(result, ctx, &sort, &report);
+	mu_assert_true(valid, "invalid pure");
+	vm_result = rz_il_evaluate_val(vm, result);
+	mu_assert_eq(vm_result->data.bv->bits.small_u, 0x00000000, "deinterleave32(0x00000000) mismatch");
+	rz_il_value_free(vm_result);
+	rz_il_op_pure_free(result);
+	rz_il_vm_free(vm);
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
+static bool test_il_interleave32() {
+	RzILSortPure sort;
+	RzILValidateReport report;
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+	bool valid = false;
+	RzILVM *vm = rz_il_vm_new(0, 32, false, RZ_IL_EVENT_EXC_NONE);
+	RzILVal *vm_result = NULL;
+	RzILOpBitVector *val = NULL;
+	RzILOpBitVector *result = NULL;
+
+	val = rz_il_op_new_bitv_from_ut64(32, 0xff00ff00);
+	result = rz_il_interleave32(val);
+	valid = rz_il_validate_pure(result, ctx, &sort, &report);
+	mu_assert_true(valid, "invalid pure");
+	vm_result = rz_il_evaluate_val(vm, result);
+	mu_assert_eq(vm_result->data.bv->bits.small_u, 0xffff0000, "interleave32(0xff00ff00) mismatch");
+	rz_il_value_free(vm_result);
+	rz_il_op_pure_free(result);
+	val = rz_il_op_new_bitv_from_ut64(32, 0x00000000);
+	result = rz_il_interleave32(val);
+	valid = rz_il_validate_pure(result, ctx, &sort, &report);
+	mu_assert_true(valid, "invalid pure");
+	vm_result = rz_il_evaluate_val(vm, result);
+	mu_assert_eq(vm_result->data.bv->bits.small_u, 0x00000000, "interleave32(0x00000000) mismatch");
+	rz_il_value_free(vm_result);
+	rz_il_op_pure_free(result);
+	rz_il_vm_free(vm);
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_il_extract32);
 	mu_run_test(test_il_extract64);
@@ -828,6 +960,10 @@ bool all_tests() {
 	mu_run_test(test_il_fgt);
 	mu_run_test(test_il_fge);
 	mu_run_test(test_float_print_format);
+	mu_run_test(test_il_bitrev32);
+	mu_run_test(test_il_popcount_bytes32);
+	mu_run_test(test_il_deinterleave32);
+	mu_run_test(test_il_interleave32);
 
 	return tests_passed != tests_run;
 }
