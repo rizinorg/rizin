@@ -252,15 +252,6 @@ RZ_API RzBinFile *rz_bin_reload(RzBin *bin, RzBinFile *bf, ut64 baseaddr) {
 	opt.filename = bf->file;
 	rz_buf_seek(bf->buf, 0, RZ_BUF_SET);
 	RzBinFile *nbf = rz_bin_open_buf(bin, bf->buf, &opt);
-	// On reload the new file reuses the same fd, so opening it overwrites the
-	// old file's "cur" and "fd.<fd>" entries in bin->sdb. That releases fewer
-	// references to the old sdb than the regular teardown path does, leaving
-	// the extra reference rz_bin_object_new took on bf->sdb dangling, so the
-	// old sdb would leak once the old file is deleted below. Drop it here:
-	// sdb_free is reference-counted, so this only decrements the counter and
-	// the sdb is actually released when rz_bin_file_delete() drops the last
-	// reference.
-	sdb_free(bf->sdb);
 	rz_bin_file_delete(bin, bf);
 	return nbf;
 }

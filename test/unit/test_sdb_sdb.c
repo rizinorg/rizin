@@ -189,6 +189,23 @@ bool test_sdb_namespace(void) {
 	mu_end;
 }
 
+bool test_sdb_namespace_multiref(void) {
+	Sdb *root = sdb_new0();
+
+	Sdb *sub = sdb_new0(); // sub->refs = 1
+
+	Sdb *sub2 = sdb_new0(); // sub2->refs = 1
+	sdb_ns_set(sub, "sub2", sub2); // sub2->refs++
+	sdb_free(sub2); // sub2->refs--
+
+	sdb_ns_set(root, "ref0", sub); // sub->refs++
+	sdb_ns_set(root, "ref1", sub); // sub->refs++
+	sdb_free(sub); // sub->refs--
+
+	sdb_free(root); // only this should actually free anything, and it should free everything
+	mu_end;
+}
+
 static bool foreach_filter_user_cb(void *user, const SdbKv *kv) {
 	Sdb *db = (Sdb *)user;
 	const char *key = sdbkv_key(kv);
@@ -610,6 +627,7 @@ int all_tests() {
 	// XXX two bugs found with crash
 	mu_run_test(test_sdb_kv_list);
 	mu_run_test(test_sdb_namespace);
+	mu_run_test(test_sdb_namespace_multiref);
 	mu_run_test(test_sdb_foreach_delete);
 	mu_run_test(test_sdb_list_delete);
 	mu_run_test(test_sdb_delete_none);
