@@ -802,7 +802,7 @@ RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_generalize_and_extract(RzT
 
 	PGTrieNodeData *rd = pg_trie->root->data;
 	if (rd->hit_cnt == 0) {
-		RZ_LOG_ERROR("Prologues trie is empty. Build it first with pg, pga, or pgd.\n");
+		RZ_LOG_ERROR("Prologues trie is empty. Cannot generalize and extract prologues.\n");
 		return NULL;
 	}
 
@@ -893,7 +893,7 @@ static void edge_visit_sd(RzTrieNode *parent, RzTrieNode *child, void *user) {
 	}
 	rz_structured_data_map_add_unsigned(entry, "node_id", sdctx->curr_id, false);
 	rz_structured_data_map_add_unsigned(entry, "parent_id", p_id, false);
-	rz_structured_data_map_add_boolean(entry, "bit_val", nd->bit_val);
+	rz_structured_data_map_add_unsigned(entry, "bit_val", nd->bit_val ? 1 : 0, false);
 	rz_structured_data_map_add_unsigned(entry, "hit_cnt", nd->hit_cnt, false);
 }
 
