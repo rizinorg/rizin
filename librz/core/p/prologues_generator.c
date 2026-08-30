@@ -318,15 +318,53 @@ RZ_API bool rz_prologues_arch_check(RZ_NONNULL const RzBinInfo *info,
  * and inserts them into \p pg_trie. Skips imported symbols and deduplicates
  * by address (handles ICF / weak symbol aliasing).
  *
- * \param pg_trie     	proglogues trie to feed into.
- * \param binfile     	already open/loaded RzBinFile with symbols available.
- * \param prologue_len 	number of bytes to read per function entry point (must be > 0).
+ * \param pg_trie          prologues trie to feed into.
+ * \param binfile          already open/loaded RzBinFile with symbols available.
+ * \param prologue_len     number of bytes to read per function entry point (must be > 0).
+ * \param arch_info        optional target arch to check/adopt.
+ * \param processed_files  optional set of processed file paths to check and update.
  *
- * \return true on success, false on error.
+ * \return true on success, false on error or if skipped.
  */
-RZ_API bool rz_prologues_trie_feed_binfile(RZ_NONNULL RzTrie *pg_trie, RZ_NONNULL RzBinFile *binfile, ut64 prologue_len) {
+RZ_API bool rz_prologues_trie_feed_binfile(RZ_NONNULL RzTrie *pg_trie, RZ_NONNULL RzBinFile *binfile, ut64 prologue_len,
+	RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_NULLABLE RzSetS *processed_files) {
 	rz_return_val_if_fail(pg_trie && binfile && prologue_len > 0, false);
-	return build_prefix_tree_from_binfile(binfile, pg_trie, prologue_len);
+
+	if (processed_files && binfile->file && rz_set_s_contains(processed_files, binfile->file)) {
+		RZ_LOG_WARN("Skipping file '%s', already processed.\n", binfile->file);
+		return false;
+	}
+
+	const RzBinInfo *info = rz_bin_object_get_info(binfile->o);
+	if (!info) {
+		RZ_LOG_WARN("Skipping file '%s': missing binobject/bininfo\n",
+			binfile->file ? binfile->file : "unknown");
+		return false;
+	}
+
+	if (arch_info && !rz_prologues_arch_check(info, arch_info, NULL, 0, false)) {
+		const char *file_arch = RZ_STR_ISNOTEMPTY(info->arch) ? info->arch : "unknown";
+		RZ_LOG_WARN("Skipping file '%s': arch mismatch.\n"
+			    "  Trie: (%s, %d-bit, %cE)\n"
+			    "  File: (%s, %d-bit, %cE)\n",
+			binfile->file ? binfile->file : "unknown",
+			arch_info->arch ? arch_info->arch : "unknown",
+			arch_info->bits,
+			arch_info->big_endian ? 'B' : 'L',
+			file_arch, info->bits, info->big_endian ? 'B' : 'L');
+		return false;
+	}
+
+	if (!build_prefix_tree_from_binfile(binfile, pg_trie, prologue_len)) {
+		RZ_LOG_WARN("Failed to build prefix tree for file: %s\n", binfile->file ? binfile->file : "unknown");
+		return false;
+	}
+
+	if (processed_files && binfile->file) {
+		rz_set_s_add(processed_files, binfile->file);
+	}
+
+	return true;
 }
 
 static bool print_sd(RzStructuredData *sd, RzOutputMode mode) {
@@ -372,24 +410,17 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_handler(RzCore *core, int argc, const ch
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	const RzBinInfo *info = rz_bin_object_get_info(binfile->o);
-	if (!info) {
-		RZ_LOG_ERROR("No binary info available for file: %s\n", binfile->file);
-		return RZ_CMD_STATUS_ERROR;
-	}
-
 	RzTrie *pg_trie = rz_prologues_trie_new();
 	if (!pg_trie) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	if (!build_prefix_tree_from_binfile(binfile, pg_trie, ctx->prologue_len)) {
+	RzProloguesArchInfo arch_info = { 0 };
+	if (!rz_prologues_trie_feed_binfile(pg_trie, binfile, ctx->prologue_len, &arch_info, NULL)) {
+		rz_prologues_arch_info_fini(&arch_info);
 		rz_trie_free(pg_trie);
 		return RZ_CMD_STATUS_ERROR;
 	}
-
-	RzProloguesArchInfo arch_info = { 0 };
-	rz_prologues_arch_check(info, &arch_info, NULL, 0, false);
 
 	RzVector *prologues = rz_prologues_generalize_and_extract(pg_trie, ctx->prologue_len, ctx->entropy_threshold);
 	if (!prologues) {
@@ -441,39 +472,9 @@ RZ_API st64 rz_prologues_trie_feed_all_binfiles(RZ_NONNULL RzTrie *pg_trie, RZ_N
 			RZ_LOG_WARN("Skipping, null file found in list\n");
 			continue;
 		}
-		const RzBinInfo *info = rz_bin_object_get_info(curr_file->o);
-		if (!info) {
-			RZ_LOG_WARN("Skipping file '%s': missing binobject/bininfo\n",
-				curr_file ? curr_file->file : "unknown");
-			continue;
+		if (rz_prologues_trie_feed_binfile(pg_trie, curr_file, prologue_len, arch_info, processed_files)) {
+			fcnt++;
 		}
-
-		if (processed_files && rz_set_s_contains(processed_files, curr_file->file)) {
-			RZ_LOG_WARN("Skipping file '%s', already processed.\n", curr_file->file);
-			continue;
-		}
-
-		if (!rz_prologues_arch_check(info, arch_info, NULL, 0, false)) {
-			const char *file_arch = RZ_STR_ISNOTEMPTY(info->arch) ? info->arch : "unknown";
-			RZ_LOG_WARN("Skipping file '%s': arch mismatch.\n"
-				    "  Trie: (%s, %d-bit, %cE)\n"
-				    "  File: (%s, %d-bit, %cE)\n",
-				curr_file->file,
-				arch_info ? arch_info->arch : "unknown",
-				arch_info ? arch_info->bits : 0,
-				(arch_info && arch_info->big_endian) ? 'B' : 'L',
-				file_arch, info->bits, info->big_endian ? 'B' : 'L');
-			continue;
-		}
-
-		if (!build_prefix_tree_from_binfile(curr_file, pg_trie, prologue_len)) {
-			RZ_LOG_WARN("Failed to build prefix tree for file: %s\n", curr_file->file);
-			continue;
-		}
-		if (processed_files) {
-			rz_set_s_add(processed_files, curr_file->file);
-		}
-		fcnt++;
 	}
 	return fcnt;
 }
@@ -579,48 +580,9 @@ RZ_API st64 rz_prologues_trie_feed_directory(RZ_NONNULL RzTrie *pg_trie, RZ_NONN
 			continue;
 		}
 
-		const RzBinInfo *info = rz_bin_object_get_info(bf->o);
-		if (!info) {
-			RZ_LOG_WARN("Skipping file '%s': missing binobject/bininfo\n", file);
-			rz_bin_file_delete(bin, bf);
-			RZ_FREE(file_path);
-			continue;
+		if (rz_prologues_trie_feed_binfile(pg_trie, bf, prologue_len, arch_info, processed_files)) {
+			fcnt++;
 		}
-
-		if (processed_files && rz_set_s_contains(processed_files, file)) {
-			RZ_LOG_WARN("Skipping file '%s', already processed.\n", file);
-			rz_bin_file_delete(bin, bf);
-			RZ_FREE(file_path);
-			continue;
-		}
-
-		if (!rz_prologues_arch_check(info, arch_info, NULL, 0, false)) {
-			const char *file_arch = RZ_STR_ISNOTEMPTY(info->arch) ? info->arch : "unknown";
-			RZ_LOG_WARN("Skipping file '%s': arch mismatch.\n"
-				    "  Trie: (%s, %d-bit, %cE)\n"
-				    "  File: (%s, %d-bit, %cE)\n",
-				file,
-				arch_info ? arch_info->arch : "unknown",
-				arch_info ? arch_info->bits : 0,
-				(arch_info && arch_info->big_endian) ? 'B' : 'L',
-				file_arch, info->bits, info->big_endian ? 'B' : 'L');
-
-			rz_bin_file_delete(bin, bf);
-			RZ_FREE(file_path);
-			continue;
-		}
-
-		if (!build_prefix_tree_from_binfile(bf, pg_trie, prologue_len)) {
-			RZ_LOG_WARN("Failed to build prefix tree for file: %s\n", file);
-			rz_bin_file_delete(bin, bf);
-			RZ_FREE(file_path);
-			continue;
-		}
-
-		if (processed_files) {
-			rz_set_s_add(processed_files, file);
-		}
-		fcnt++;
 		rz_bin_file_delete(bin, bf);
 		RZ_FREE(file_path);
 	}

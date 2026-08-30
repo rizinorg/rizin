@@ -108,10 +108,13 @@ RUN
 
 NAME=rz-prologues arch mismatch on file
 TOOL=rz-prologues
-ARGS=-f bins/elf/riscv_crypto_64 -a arm
+ARGS=-f bins/elf/riscv_crypto_64 -a arm -b 64
 EXIT_STATUS=1
 EXPECT_ERR=<<EOF
-ERROR: Architecture mismatch for file 'bins/elf/riscv_crypto_64'
+WARNING: Skipping file 'bins/elf/riscv_crypto_64': arch mismatch.
+  Trie: (arm, 64-bit, LE)
+  File: (riscv, 64-bit, LE)
+ERROR: Failed to feed binfile 'bins/elf/riscv_crypto_64' into prologues trie
 ERROR: Failed to generate prologues from input 'bins/elf/riscv_crypto_64'
 EOF
 RUN

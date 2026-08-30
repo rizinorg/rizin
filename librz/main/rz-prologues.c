@@ -151,26 +151,12 @@ static bool generate_prologues(const char *input_path, bool is_dir, const char *
 			goto err;
 		}
 
-		const RzBinInfo *info = rz_bin_object_get_info(bf->o);
-		if (!info) {
-			RZ_LOG_WARN("Skipping file '%s': missing bininfo\n", input_path);
-			rz_bin_file_delete(bin, bf);
-			goto err;
-		}
-
-		if (!rz_prologues_arch_check(info, &arch_info, NULL, 0, false)) {
-			RZ_LOG_ERROR("Architecture mismatch for file '%s'\n", input_path);
-			rz_bin_file_delete(bin, bf);
-			goto err;
-		}
-
-		bool res = rz_prologues_trie_feed_binfile(pg_trie, bf, prologue_len);
+		bool res = rz_prologues_trie_feed_binfile(pg_trie, bf, prologue_len, &arch_info, files);
 		rz_bin_file_delete(bin, bf);
 		if (!res) {
 			RZ_LOG_ERROR("Failed to feed binfile '%s' into prologues trie\n", input_path);
 			goto err;
 		}
-		rz_set_s_add(files, input_path);
 	}
 
 	// generalize
