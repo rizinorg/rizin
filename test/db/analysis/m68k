@@ -115,6 +115,21 @@ goto 0x312
 EOF
 RUN
 
+NAME=M68k extended and packed FPU operand analysis
+FILE==
+CMDS=<<EOF
+e asm.arch=m68k
+e asm.bits=32
+e asm.cpu=68040
+e asm.lines=false
+wx f23c48003fff00008000000000000000f23c4c00002500012345678901234567f2104c00f2116c7bf2127d30
+aoj 5~{.[]\|{bytes,size,opcode,type,family,refptr,opex}}
+EOF
+EXPECT=<<EOF
+[{"bytes":"f23c48003fff00008000000000000000","size":16,"opcode":"fmove.x 0e1, fp0","type":"mov","family":"fpu","refptr":0,"opex":{"operands":[{"type":"fp_extended","sign_exp":16383,"reserved":0,"significand":-9223372036854775808},{"type":"reg","value":"fp0"}]}},{"bytes":"f23c4c00002500012345678901234567","size":16,"opcode":"fmove.p 0e1.2345678901234567e+025, fp0","type":"mov","family":"fpu","refptr":0,"opex":{"operands":[{"type":"fp_packed","header":2424833,"fraction":2541551402847782247},{"type":"reg","value":"fp0"}]}},{"bytes":"f2104c00","size":4,"opcode":"fmove.p (a0), fp0","type":"load","family":"fpu","refptr":0,"opex":{"operands":[{"type":"mem","address_mode":3,"base_reg":"a0","in_disp":0,"out_disp":0,"disp":0,"scale":0,"bitfield":0,"width":0,"offset":0,"index_size":0,"in_disp_size":0,"out_disp_size":0,"disp_size":0},{"type":"reg","value":"fp0"}]}},{"bytes":"f2116c7b","size":4,"opcode":"fmove.p fp0, (a1){-5}","type":"store","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp0"},{"type":"mem","address_mode":3,"base_reg":"a1","in_disp":0,"out_disp":0,"disp":0,"scale":0,"bitfield":0,"width":0,"offset":0,"index_size":0,"in_disp_size":0,"out_disp_size":0,"disp_size":0},{"type":"imm","value":-5}]}},{"bytes":"f2127d30","size":4,"opcode":"fmove.p fp2, (a2){d3}","type":"store","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp2"},{"type":"mem","address_mode":3,"base_reg":"a2","in_disp":0,"out_disp":0,"disp":0,"scale":0,"bitfield":0,"width":0,"offset":0,"index_size":0,"in_disp_size":0,"out_disp_size":0,"disp_size":0},{"type":"reg","value":"d3"}]}}]
+EOF
+RUN
+
 NAME=m68k regs
 FILE=
 CMDS=<<EOF
@@ -172,6 +187,7 @@ macsr = 0x00000000
 mask = 0x00000000
 usp = 0x00000000
 cp_external_data = 0x00000000
+fpu_state = 0x00000000
 EOF
 RUN
 
@@ -1081,7 +1097,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=M68k collapsed and invalid FPU operand opex
+NAME=M68k collapsed and packed FPU operand opex
 FILE==
 CMDS=<<EOF
 e asm.arch=m68k
@@ -1092,7 +1108,7 @@ wx f2000025f2007fff
 aoj 2~{.[]\|{bytes,size,opcode,type,family,refptr,opex}}
 EOF
 EXPECT=<<EOF
-[{"bytes":"f2000025","size":4,"opcode":"frem fp0","type":"mod","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp0"},{"type":"reg","value":"fp0"}]}},{"bytes":"f2007fff","size":4,"opcode":"add.x invalid, fp7","type":"add","family":"cpu","refptr":0,"opex":{"operands":[{"type":"invalid"},{"type":"reg","value":"fp7"}]}}]
+[{"bytes":"f2000025","size":4,"opcode":"frem fp0","type":"mod","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp0"},{"type":"reg","value":"fp0"}]}},{"bytes":"f2007fff","size":4,"opcode":"fmove.p fp7, d0{d7}","type":"mov","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp7"},{"type":"reg","value":"d0"},{"type":"reg","value":"d7"}]}}]
 EOF
 RUN
 

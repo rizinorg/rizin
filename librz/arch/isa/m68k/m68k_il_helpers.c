@@ -374,6 +374,11 @@ static ut32 operand_extension_bytes(const M68KILCtx *ctx, const cs_m68k_op *op) 
 		return 4;
 	case M68K_OP_FP_DOUBLE:
 		return 8;
+#ifdef RZ_CAPSTONE_HAS_M68K_FP_FORMATS
+	case M68K_OP_FP_EXTENDED:
+	case M68K_OP_FP_PACKED:
+		return 12;
+#endif
 	case M68K_OP_BR_DISP:
 		switch (op->br_disp.disp_size) {
 		case M68K_OP_BR_DISP_SIZE_BYTE:

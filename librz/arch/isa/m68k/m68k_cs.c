@@ -216,6 +216,10 @@ RZ_IPI bool rz_m68k_insn_uses_fpu_operand(RZ_NONNULL const cs_m68k *m68k) {
 			continue;
 		case M68K_OP_FP_SINGLE:
 		case M68K_OP_FP_DOUBLE:
+#ifdef RZ_CAPSTONE_HAS_M68K_FP_FORMATS
+		case M68K_OP_FP_EXTENDED:
+		case M68K_OP_FP_PACKED:
+#endif
 			return true;
 		case M68K_OP_REG:
 			if (rz_m68k_reg_is_fpu(op->reg)) {
@@ -251,6 +255,10 @@ RZ_IPI ut32 rz_m68k_detail_op_bits(RZ_NONNULL const cs_m68k *m68k, ut32 fallback
 			return 64;
 		case M68K_FPU_SIZE_EXTENDED:
 			return 80;
+#ifdef RZ_CAPSTONE_HAS_M68K_FP_FORMATS
+		case M68K_FPU_SIZE_PACKED:
+			return 80;
+#endif
 		default:
 			break;
 		}
@@ -581,6 +589,13 @@ RZ_IPI bool rz_m68k_fpu_size_is_extended(RZ_NONNULL const cs_m68k *m68k) {
 	return m68k->op_size.type == M68K_SIZE_TYPE_FPU && m68k->op_size.fpu_size == M68K_FPU_SIZE_EXTENDED;
 }
 
+#ifdef RZ_CAPSTONE_HAS_M68K_FP_FORMATS
+RZ_IPI bool rz_m68k_fpu_size_is_packed(RZ_NONNULL const cs_m68k *m68k) {
+	rz_return_val_if_fail(m68k, false);
+	return m68k->op_size.type == M68K_SIZE_TYPE_FPU && m68k->op_size.fpu_size == M68K_FPU_SIZE_PACKED;
+}
+#endif
+
 RZ_IPI bool rz_m68k_fpu_op_detail_is_invalid(RZ_NULLABLE const cs_m68k_op *op) {
 	return !op ||
 		op->type == M68K_OP_INVALID ||
@@ -601,8 +616,8 @@ RZ_IPI bool rz_m68k_fpu_op_is_illegal_read(RZ_NONNULL const cs_m68k *m68k, RZ_NO
 	if (m68k->op_size.type == M68K_SIZE_TYPE_FPU && rz_m68k_op_is_gpr(op)) {
 		return true;
 	}
-	// FP immediates use M68K_OP_FP_SINGLE/DOUBLE; an integer immediate cannot
-	// encode an FPU-sized value.
+	// FP immediates use dedicated M68K_OP_FP_* types; an integer immediate
+	// cannot encode an FPU-sized value.
 	if (m68k->op_size.type == M68K_SIZE_TYPE_FPU && op->type == M68K_OP_IMM) {
 		return true;
 	}
@@ -613,12 +628,29 @@ RZ_IPI bool rz_m68k_fpu_op_is_illegal_read(RZ_NONNULL const cs_m68k *m68k, RZ_NO
 	return false;
 }
 
+static bool m68k_address_mode_is_pc_relative(m68k_address_mode mode) {
+	switch (mode) {
+	case M68K_AM_PCI_DISP:
+	case M68K_AM_PCI_INDEX_8_BIT_DISP:
+	case M68K_AM_PCI_INDEX_BASE_DISP:
+	case M68K_AM_PC_MEMI_PRE_INDEX:
+	case M68K_AM_PC_MEMI_POST_INDEX:
+		return true;
+	default:
+		return false;
+	}
+}
+
 RZ_IPI bool rz_m68k_fpu_op_is_illegal_write(RZ_NONNULL const cs_m68k *m68k, RZ_NONNULL const cs_m68k_op *op) {
 	rz_return_val_if_fail(m68k && op, false);
 	if (rz_m68k_op_is_fpu_reg(op)) {
 		return false;
 	}
 	if (rz_m68k_fpu_op_detail_is_invalid(op)) {
+		return true;
+	}
+	// PC-relative addressing is never alterable and cannot be a destination.
+	if (m68k_address_mode_is_pc_relative(op->address_mode)) {
 		return true;
 	}
 	if (m68k->op_size.type == M68K_SIZE_TYPE_FPU) {

@@ -125,6 +125,19 @@ static RzStructuredData *mk68_opex(csh handle, cs_insn *insn) {
 			rz_structured_data_map_add_string(operand, "type", "fp_double");
 			rz_structured_data_map_add_double(operand, "value", op->dimm);
 			break;
+#ifdef RZ_CAPSTONE_HAS_M68K_FP_FORMATS
+		case M68K_OP_FP_EXTENDED:
+			rz_structured_data_map_add_string(operand, "type", "fp_extended");
+			rz_structured_data_map_add_unsigned(operand, "sign_exp", op->fp_extended.sign_exp, true);
+			rz_structured_data_map_add_unsigned(operand, "reserved", op->fp_extended.reserved, true);
+			rz_structured_data_map_add_unsigned(operand, "significand", op->fp_extended.significand, true);
+			break;
+		case M68K_OP_FP_PACKED:
+			rz_structured_data_map_add_string(operand, "type", "fp_packed");
+			rz_structured_data_map_add_unsigned(operand, "header", op->fp_packed.header, true);
+			rz_structured_data_map_add_unsigned(operand, "fraction", op->fp_packed.fraction, true);
+			break;
+#endif
 		case M68K_OP_REG_BITS:
 			rz_structured_data_map_add_string(operand, "type", "reg_bits");
 			rz_structured_data_map_add_unsigned(operand, "value", op->register_bits, true);
@@ -207,6 +220,10 @@ static inline int m68k_op_memref(const cs_m68k *m68k) {
 			return 8;
 		case M68K_FPU_SIZE_EXTENDED:
 			return 12;
+#ifdef RZ_CAPSTONE_HAS_M68K_FP_FORMATS
+		case M68K_FPU_SIZE_PACKED:
+			return 12;
+#endif
 		default:
 			return 0;
 		}
@@ -413,6 +430,16 @@ static void m68k_fill_srcs_before_dst(RzAnalysis *a, RzAnalysisOp *op, csh handl
 	}
 
 	int dst_index = m68k->op_count - 1;
+#ifdef RZ_CAPSTONE_HAS_M68K_FP_FORMATS
+	if (m68k->op_count == 3 && m68k->op_size.type == M68K_SIZE_TYPE_FPU &&
+		m68k->op_size.fpu_size == M68K_FPU_SIZE_PACKED && m68k->operands[1].type == M68K_OP_MEM) {
+		dst_index = 1;
+		m68k_add_src_operand(a, op, handle, m68k, 0);
+		m68k_add_src_operand(a, op, handle, m68k, 2);
+		m68k_set_dst_operand(a, op, handle, m68k, dst_index, RZ_ANALYSIS_ACC_W);
+		return;
+	}
+#endif
 	for (int i = 0; i < dst_index; i++) {
 		m68k_add_src_operand(a, op, handle, m68k, i);
 	}
@@ -534,7 +561,14 @@ static void m68k_set_move_type(RzAnalysisOp *op, const cs_m68k *m68k) {
 		return;
 	}
 	const cs_m68k_op *src = &m68k->operands[0];
-	const cs_m68k_op *dst = &m68k->operands[m68k->op_count - 1];
+	int dst_index = m68k->op_count - 1;
+#ifdef RZ_CAPSTONE_HAS_M68K_FP_FORMATS
+	if (m68k->op_count == 3 && m68k->op_size.type == M68K_SIZE_TYPE_FPU &&
+		m68k->op_size.fpu_size == M68K_FPU_SIZE_PACKED) {
+		dst_index = 1;
+	}
+#endif
+	const cs_m68k_op *dst = &m68k->operands[dst_index];
 	if (dst->type == M68K_OP_MEM) {
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 	} else if (src->type == M68K_OP_MEM) {
@@ -1657,7 +1691,8 @@ static char *m68k_get_reg_profile(RzAnalysis *analysis) {
 		"fpu	fp5		.80	294	0\n" // FPU data register 5, 80-bit extended precision
 		"fpu	fp6		.80	304	0\n" // FPU data register 6, 80-bit extended precision
 		"fpu	fp7		.80	314	0\n" // FPU data register 7, 80-bit extended precision
-		"gpr	cp_external_data	.32	324	0\n";
+		"gpr	cp_external_data	.32	324	0\n"
+		"gpr	fpu_state	.32	328	0\n";
 	return rz_str_dup(p);
 }
 
