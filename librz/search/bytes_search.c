@@ -81,8 +81,7 @@ RZ_API size_t rz_search_bytes_pattern_len(RZ_NONNULL const RzSearchBytesPattern 
  */
 RZ_API const ut8 *rz_search_bytes_pattern_get_bytes(RZ_NONNULL const RzSearchBytesPattern *bp) {
 	rz_return_val_if_fail(bp, NULL);
-	const ut8 *bytes = bp->bytes; // TODO: direct return
-	return bytes;
+	return bp->bytes;
 }
 
 /**
@@ -92,8 +91,7 @@ RZ_API const ut8 *rz_search_bytes_pattern_get_bytes(RZ_NONNULL const RzSearchByt
  */
 RZ_API const ut8 *rz_search_bytes_pattern_get_mask(RZ_NONNULL const RzSearchBytesPattern *bp) {
 	rz_return_val_if_fail(bp, NULL);
-	const ut8 *mask = bp->mask; // TODO: direct return
-	return mask;
+	return bp->mask;
 }
 
 RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_copy(RZ_NONNULL RZ_BORROW RzSearchBytesPattern *hp) {
