@@ -9,6 +9,18 @@ Usage: pg[jad]   # Core plugin to generate prologues from given set of binaries 
 EOF
 RUN
 
+NAME=configs
+FILE=
+CMDS=<<EOF
+e plugins.prologues_generator.entropy_threshold
+e plugins.prologues_generator.prologue_len
+EOF
+EXPECT=<<EOF
+0.8
+16
+EOF
+RUN
+
 NAME=generate prologues from current open file
 FILE=bins/elf/riscv_crypto_64
 CMDS=pg
