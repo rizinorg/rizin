@@ -8,7 +8,7 @@
  * This is the abstract domain of either a single constant value or the universal set.
  */
 
-#include <rz_inquiry/rz_absint.h>
+#include <rz_inquiry.h>
 
 typedef struct {
 	/**
@@ -251,3 +251,19 @@ RZ_IPI RzAbsIntValueDomain rz_absint_value_domain_const = {
 	.eval_binop = eval_binop,
 	.eval_unop = eval_unop
 };
+
+RZ_API RzInquiryPlugin rz_inquiry_plugin_interpreter_prototype = {
+	.name = "abstr_int_prototype",
+	.author = "Rot127",
+	.version = "0.1p",
+	.desc = "A prototype interpreter for constant/top abstractions.",
+	.license = "LGPL-3.0-only",
+	.value_domain = &rz_absint_value_domain_const,
+};
+
+#ifndef RZ_PLUGIN_INCORE
+RZ_API RzLibStruct rizin_plugin = {
+	.type = RZ_LIB_TYPE_INTERPRETER,
+	.data = &interpreter_prototype
+};
+#endif

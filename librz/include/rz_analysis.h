@@ -358,7 +358,7 @@ typedef enum {
 	RZ_ANALYSIS_OP_MASK_DISASM = (1 << 4), // It fills RzAnalysisop->mnemonic // should be RzAnalysisOp->disasm // only from rz_core_analysis_op()
 	RZ_ANALYSIS_OP_MASK_IL = (1 << 5), // It fills RzAnalysisop->il_op
 	RZ_ANALYSIS_OP_MASK_INSN_PKT = (1 << 6), // Set op.size to the size of the instruction packet, not the single instruction.
-	RZ_ANALYSIS_OP_MASK_ALL = RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_DISASM | RZ_ANALYSIS_OP_MASK_IL
+	RZ_ANALYSIS_OP_MASK_ALL = RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_DISASM | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_INSN_PKT
 } RzAnalysisOpMask;
 
 typedef enum {
@@ -889,6 +889,7 @@ typedef struct rz_analysis_op_t {
 	RzAnalysisSwitchOp *switch_op;
 	RzAnalysisHint hint;
 	RzAnalysisDataType datatype;
+	ut64 hexagon_pkt_addr;
 } RzAnalysisOp;
 
 #define RZ_TYPE_COND_SINGLE(x) (!x->arg[1] || x->arg[0] == x->arg[1])
@@ -968,13 +969,33 @@ typedef enum {
 	 */
 	RZ_ANALYSIS_XREF_TYPE_MEM_READ = RZ_ANALYSIS_XREF_TYPE_DATA,
 	RZ_ANALYSIS_XREF_TYPE_MEM_WRITE = 'w', ///< Memory write reference
+
+	RZ_ANALYSIS_XREF_TYPE_CALL_RET = 'r', // Call return point (next pc after a call).
+	RZ_ANALYSIS_XREF_TYPE_RETURN = 'R', // A returning jump
 } RzAnalysisXRefType;
 
 typedef struct rz_analysis_ref_t {
+	ut64 bb_addr; ///< Temporary member to make prototype function detection work.
 	ut64 from;
 	ut64 to;
 	RzAnalysisXRefType type;
 } RzAnalysisXRef;
+
+/**
+ * \brief A struct combining information about an instruction storing the
+ * next instruction pointer of a basic block.
+ * This indicates that the ending branch instruction in a basic block is
+ * a call instruction.
+ */
+typedef struct {
+	ut64 bb_addr; ///< The address of the basic block which stores the NPC, WARNING: may not actually be filled yet!
+	ut64 store_addr; ///< The address of the instruction packet storing the NPC. Might be 0, if it was not added by the interpreter.
+	ut64 candidate_addr; ///< Address of the call candidate instruction packet. Might be 0, if it was not added by the interpreter.
+	ut64 npc; ///< The NPC stored. Should point after a basic block.
+	ut64 target; ///< The address the call candidate jumps to.
+	bool in_mem; ///< True if the NPC is written to memory. False if it is written to a register.
+} RzAnalysisCallCandidate;
+
 RZ_API const char *rz_analysis_ref_type_tostring(RzAnalysisXRefType t);
 
 /* represents a reference line from one address (from) to another (to) */
@@ -1509,6 +1530,10 @@ RZ_API bool rz_analysis_op_fini(RzAnalysisOp *op);
 RZ_API int rz_analysis_op_reg_delta(RzAnalysis *analysis, ut64 addr, const char *name);
 RZ_API bool rz_analysis_op_is_eob(const RzAnalysisOp *op);
 RZ_API bool rz_analysis_op_is_call(RZ_NONNULL const RzAnalysisOp *op);
+RZ_API bool rz_analysis_op_changes_control_flow(RZ_NONNULL const RzAnalysisOp *op);
+RZ_API bool rz_analysis_op_is_direct_call(RZ_NONNULL const RzAnalysisOp *op);
+RZ_API bool rz_analysis_op_is_call(RZ_NONNULL const RzAnalysisOp *op);
+RZ_API bool rz_analysis_op_is_direct_jump(RZ_NONNULL const RzAnalysisOp *op);
 RZ_API RzList /*<RzAnalysisOp *>*/ *rz_analysis_op_list_new(void);
 RZ_API int rz_analysis_op(RZ_NONNULL RzAnalysis *analysis, RZ_OUT RzAnalysisOp *op, ut64 addr, const ut8 *data, ut64 len, RzAnalysisOpMask mask);
 RZ_API RzAnalysisOp *rz_analysis_op_hexstr(RzAnalysis *analysis, ut64 addr, const char *hexstr);
@@ -1576,6 +1601,7 @@ RZ_API int rz_analysis_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 a
 RZ_API int rz_analysis_fcn_del(RzAnalysis *analysis, ut64 addr);
 RZ_API int rz_analysis_fcn_del_locs(RzAnalysis *analysis, ut64 addr);
 RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail);
+RZ_API bool rz_analysis_add_bb(RzAnalysis *a, ut64 addr, ut64 size);
 RZ_API bool rz_analysis_check_fcn(RzAnalysis *analysis, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high);
 
 RZ_API void rz_analysis_function_check_bp_use(RzAnalysisFunction *fcn);
@@ -1614,6 +1640,11 @@ RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_analysis_function_get_xrefs_to(c
 RZ_API bool rz_analysis_xrefs_set(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
 RZ_API bool rz_analysis_xrefs_deln(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
 RZ_API bool rz_analysis_xref_del(RzAnalysis *analysis, ut64 from, ut64 to);
+
+RZ_API bool rz_analysis_get_all_cf_targets(RzAnalysis *analysis,
+	const RzPVector /*<RzBinSection *>*/ *sections,
+	bool include_call_return_pts,
+	RZ_NONNULL RZ_OUT RzSetU *branch_targets);
 
 /* var.c */
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(

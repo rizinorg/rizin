@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: LGPL-3.0-only
 
 rz_inquiry_sources = [
+  'algorithms/revng_fcn_detection.c',
+  'bcfg.c',
+  'inquiry.c',
   'il_cache.c',
   'absint/interpreter.c',
   'absint/driver.c',

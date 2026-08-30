@@ -1,0 +1,685 @@
+NAME=Indirect call x86
+FILE=bins/inquiry/interpreter/prototype/x86_icall_malloc
+CMDS=<<EOF
+aIp -f sym.main
+pd 48 @ sym.main
+axl
+ablt
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- .text:
+/ int sym.main(int argc, char **argv, char **envp);
+|           0x08000040      push  rbp                                  ; RELOC TARGET 32 .text @ 0x08000040 - 0x8000138 ; [02] -r-x section size 155 named .text
+|           0x08000041      mov   rbp, rsp
+|           0x08000044      sub   rsp, 0x20
+|           0x08000048      mov   dword [rbp-0x04], 0x00
+|           0x0800004f      mov   dword [rbp-0x08], 0x00
+|           0x08000056      mov   dword [rbp-0x0c], 0x00
+|           ; CODE XREF from sym.main @ 0x800008b
+|       .-> 0x0800005d      cmp   dword [rbp-0x0c], 0x03
+|      ,==< 0x08000061      jnb   0x800008d
+|      |:   0x08000063      mov   eax, dword [rbp-0x0c]
+|      |:   0x08000066      mov   ecx, eax
+|      |:   0x08000068      mov   al, 0x00
+|      |:   0x0800006a      call  qword [rcx*8+obj.fcn_arr]            ; sym..data
+|      |:                                                              ; 0x80000e0; RELOC 32 .data @ 0x080000e0
+|      |:   ; RETURN XREF from sym.function_0 @ 0x80000aa
+|      |:   0x08000071      mov   qword [rbp-0x18], rax
+|      |:   0x08000075      mov   rax, qword [rbp-0x18]
+|      |:   0x08000079      movzx eax, byte [rax]
+|      |:   0x0800007c      add   eax, dword [rbp-0x08]
+|      |:   0x0800007f      mov   dword [rbp-0x08], eax
+|      |:   0x08000082      mov   eax, dword [rbp-0x0c]
+|      |:   0x08000085      add   eax, 0x01
+|      |:   0x08000088      mov   dword [rbp-0x0c], eax
+|      |`=< 0x0800008b      jmp   0x800005d
+|      `--> 0x0800008d      mov   eax, dword [rbp-0x08]
+|           0x08000090      add   rsp, 0x20
+|           0x08000094      pop   rbp
+\           0x08000095      ret
+            0x08000096      nop   word [rax+rax*1], ax
+            ; CALL XREF from sym.main @ 0x800006a
+/ sym.function_0();
+|           0x080000a0      push  rbp
+|           0x080000a1      mov   rbp, rsp
+|           0x080000a4      call  sym.some_ptr
+|           ; RETURN XREF from sym.some_ptr @ 0x80000bf
+|           0x080000a9      pop   rbp
+\           0x080000aa      ret
+            0x080000ab      nop   dword [rax+rax*1], eax
+            ; CALL XREF from sym.function_0 @ 0x80000a4
+            ; CALL XREF from sym.function_1 @ 0x80000c4
+            ; CALL XREF from sym.function_2 @ 0x80000d4
+/ sym.some_ptr();
+|           0x080000b0      push  rbp
+|           0x080000b1      mov   rbp, rsp
+|           0x080000b4      mov   rax, obj.z                           ; sym..bss
+|                                                                      ; 0x80000f8; RELOC 64 .bss @ 0x080000f8
+|           0x080000be      pop   rbp
+\           0x080000bf      ret
+/ sym.function_1();
+|           0x080000c0      push  rbp
+|           0x080000c1      mov   rbp, rsp
+|           0x080000c4      call  sym.some_ptr
+|           ; RETURN XREF from sym.some_ptr @ 0x80000bf
+|           0x080000c9      pop   rbp
+\           0x080000ca      ret
+            0x080000cb      nop   dword [rax+rax*1], eax
+/ sym.function_2();
+|           0x080000d0      push  rbp
+|           0x080000d1      mov   rbp, rsp
+|           0x080000d4      call  sym.some_ptr
+|           ; RETURN XREF from sym.some_ptr @ 0x80000bf
+|           0x080000d9      pop   rbp
+\           0x080000da      ret
+                        section..text+42 0x800006a ->      CALL -> 0x80000a0 sym.function_0
+                        section..text+42 0x800006a ->      DATA -> 0x80000e0 section..data
+                          reloc..data+30 0x800008b ->      CODE -> 0x800005d section..text+29
+                        sym.function_0+4 0x80000a4 ->      CALL -> 0x80000b0 sym.some_ptr
+                       sym.function_0+10 0x80000aa ->    RETURN -> 0x8000071 reloc..data+4
+                            reloc..bss+9 0x80000bf ->    RETURN -> 0x80000a9 sym.function_0+9
+                            reloc..bss+9 0x80000bf ->    RETURN -> 0x80000c9 sym.function_1+9
+                            reloc..bss+9 0x80000bf ->    RETURN -> 0x80000d9 sym.function_2+9
+                        sym.function_1+4 0x80000c4 ->      CALL -> 0x80000b0 sym.some_ptr
+                        sym.function_2+4 0x80000d4 ->      CALL -> 0x80000b0 sym.some_ptr
+     addr size traced ninstr jump       fail       fcns        calls       xrefs                             
+-------------------------------------------------------------------------------------------------------------
+0x8000040   29      0      6 0x0800005d             0x08000040             
+0x800005d    6      0      2 0x0800008d 0x08000063  0x08000040              0x0800008b
+0x8000063   14      0      4 0x08000071             0x08000040  0x080000a0 
+0x8000071   28      0      9 0x0800005d             0x08000040              0x080000aa
+0x800008d    9      0      4                        0x08000040             
+0x8000096   10      0      1 0x080000a0                                    
+0x80000a0    9      0      3 0x080000a9             0x080000a0  0x080000b0  0x0800006a
+0x80000a9    2      0      2                        0x080000a0              0x080000bf
+0x80000ab    5      0      1                                               
+0x80000b0   16      0      5                        0x080000b0              0x080000a4 0x080000d4 0x080000c4
+0x80000c0    9      0      3 0x080000c9             0x080000c0  0x080000b0 
+0x80000c9    2      0      2                        0x080000c0              0x080000bf
+0x80000cb    5      0      1 0x080000d0                                    
+0x80000d0    9      0      3 0x080000d9             0x080000d0  0x080000b0 
+0x80000d9    2      0      2                        0x080000d0              0x080000bf
+EOF
+RUN
+
+NAME=Indirect call hexagon
+FILE=bins/inquiry/interpreter/prototype/hexagon_icall_malloc
+CMDS=<<EOF
+aIp -f
+pd 47
+axl
+ablt
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- .text:
+/ int sym.main(int argc, char **argv, char **envp);
+|           0x08000040      [   allocframe(SP,#0x10):raw               ; RELOC TARGET 32 .text @ 0x08000040 + 0x9c ; [02] -r-x section size 168 named .text
+|           0x08000044      [   R2 = add(FP,##-0x4)
+|           0x08000048      [   memw(R2+#0x0) = ##0x0
+|           0x0800004c      [   R2 = add(FP,##-0x8)
+|           0x08000050      [   memw(R2+#0x0) = ##0x0
+|           0x08000054      [   R2 = add(FP,##-0xc)
+|           0x08000058      [   memw(R2+#0x0) = ##0x0
+|       ,=< 0x0800005c      [   jump 0x8000060
+|       |   ; CODE XREF from sym.main @ 0x80000a8
+|      .`-> 0x08000060      [   R2 = memw(FP+##-0xc)
+|      :    0x08000064      [   P0 = cmp.gtu(R2,##0x2)
+|      :,=< 0x08000068      [   if (P0) jump:nt 0x80000ac
+|     ,===< 0x0800006c      [   jump 0x8000070
+|     `---> 0x08000070      [   R2 = memw(FP+##-0xc)
+|      :|   ;-- .data:
+|      :|   0x08000074      /       immext(##sym.some_ptr)             ; 0x80000e8
+|      :|                                                              ; sym..data; RELOC 32 .data @ 0x080000e8
+|      :|   ;-- .data:
+|      :|   0x08000078      \       R2 = memw(R2<<#0x2)                ; RELOC 32 .data @ 0x080000e8
+|      :|   0x0800007c      [   callr R2
+|      :|   ; RETURN XREF from sym.function_0 @ 0x80000bc
+|      :|   ; RETURN XREF from sym.function_1 @ 0x80000d8
+|      :|   ; RETURN XREF from sym.function_2 @ 0x80000e4
+|      :|   0x08000080      [   memw(FP+##-0x10) = R0
+|      :|   0x08000084      [   R2 = memw(FP+##-0x10)
+|      :|   0x08000088      [   R3 = memub(R2+##0x0)
+|      :|   0x0800008c      [   R2 = memw(FP+##-0x8)
+|      :|   0x08000090      [   R2 = add(R2,R3)
+|      :|   0x08000094      [   memw(FP+##-0x8) = R2
+|     ,===< 0x08000098      [   jump 0x800009c
+|     `---> 0x0800009c      [   R2 = memw(FP+##-0xc)
+|      :|   0x080000a0      [   R2 = add(R2,##0x1)
+|      :|   0x080000a4      [   memw(FP+##-0xc) = R2
+|      `==< 0x080000a8      [   jump 0x8000060
+|       |   ; CODE XREF from sym.main @ 0x8000068
+|       `-> 0x080000ac      [   R0 = memw(FP+##-0x8)
+\           0x080000b0      [   LR:FP = dealloc_return(FP):raw
+            ; CALL XREF from sym.main @ 0x800007c
+/ sym.function_0();
+|           0x080000b4      [   allocframe(SP,#0x0):raw
+|           0x080000b8      [   call sym.some_ptr
+|           ; RETURN XREF from sym.some_ptr @ 0x80000cc
+\           0x080000bc      [   LR:FP = dealloc_return(FP):raw
+            ; CALL XREF from sym.function_0 @ 0x80000b8
+            ; CALL XREF from sym.function_1 @ 0x80000d4
+            ; CALL XREF from sym.function_2 @ 0x80000e0
+/ sym.some_ptr();
+|           0x080000c0      [   allocframe(SP,#0x0):raw
+|           ;-- .bss:
+|           0x080000c4      /       immext(##sym.some_ptr)             ; RELOC 32 .bss @ 0x080000f8
+|           ;-- .bss:
+|           0x080000c8      \       R0 = ##obj.z                       ; RELOC 32 .bss @ 0x080000f8
+\           0x080000cc      [   LR:FP = dealloc_return(FP):raw
+            ; CALL XREF from sym.main @ 0x800007c
+/ sym.function_1();
+|           0x080000d0      [   allocframe(SP,#0x0):raw
+|           0x080000d4      [   call sym.some_ptr
+|           ; RETURN XREF from sym.some_ptr @ 0x80000cc
+\           0x080000d8      [   LR:FP = dealloc_return(FP):raw
+            ; CALL XREF from sym.main @ 0x800007c
+/ sym.function_2();
+|           0x080000dc      [   allocframe(SP,#0x0):raw
+|           0x080000e0      [   call sym.some_ptr
+|           ; RETURN XREF from sym.some_ptr @ 0x80000cc
+\           0x080000e4      [   LR:FP = dealloc_return(FP):raw
+            ; DATA XREF from sym.main @ 0x8000074
+            ;-- section..data:
+            ;-- .data:
+            ;-- .text:
+            ;-- fcn_arr:
+            0x080000e8      .dword 0x080000b4 ; sym.function_0         ; RELOC 32 .text @ 0x08000040 + 0x74 ; [04] -rw- section size 12 named .data
+            ; DATA XREF from sym.main @ 0x8000074
+            ;-- .text:
+            0x080000ec      .dword 0x080000d0 ; sym.function_1         ; RELOC 32 .text @ 0x08000040 + 0x90
+            ; DATA XREF from sym.main @ 0x8000074
+            ;-- .text:
+            0x080000f0      .dword 0x080000dc ; sym.function_2         ; RELOC 32 .text @ 0x08000040 + 0x9c
+            0x080000f4      
+            ;-- section..bss:
+            ;-- section..comment:
+            ;-- .bss:
+            ;-- z:
+            0x080000f8      .dword 0xffffffff                          ; RELOC TARGET 32 .bss @ 0x080000f8 ; [07] ---- section size 41 named .comment
+                        section..text+40 0x8000068 ->      CODE -> 0x80000ac reloc..data.8000078+52
+                             reloc..data 0x8000074 ->      DATA -> 0x80000e8 section..data
+                             reloc..data 0x8000074 ->      DATA -> 0x80000ec reloc..text.80000ec
+                             reloc..data 0x8000074 ->      DATA -> 0x80000f0 reloc..text.80000f0
+                   reloc..data.8000078+4 0x800007c ->      CALL -> 0x80000b4 sym.function_0
+                   reloc..data.8000078+4 0x800007c ->      CALL -> 0x80000d0 sym.function_1
+                   reloc..data.8000078+4 0x800007c ->      CALL -> 0x80000dc sym.function_2
+                  reloc..data.8000078+48 0x80000a8 ->      CODE -> 0x8000060 section..text+32
+                        sym.function_0+4 0x80000b8 ->      CALL -> 0x80000c0 sym.some_ptr
+                        sym.function_0+8 0x80000bc ->    RETURN -> 0x8000080 reloc..data.8000078+8
+                    reloc..bss.80000c8+4 0x80000cc ->    RETURN -> 0x80000bc sym.function_0+8
+                    reloc..bss.80000c8+4 0x80000cc ->    RETURN -> 0x80000d8 sym.function_1+8
+                    reloc..bss.80000c8+4 0x80000cc ->    RETURN -> 0x80000e4 sym.function_2+8
+                        sym.function_1+4 0x80000d4 ->      CALL -> 0x80000c0 sym.some_ptr
+                        sym.function_1+8 0x80000d8 ->    RETURN -> 0x8000080 reloc..data.8000078+8
+                        sym.function_2+4 0x80000e0 ->      CALL -> 0x80000c0 sym.some_ptr
+                        sym.function_2+8 0x80000e4 ->    RETURN -> 0x8000080 reloc..data.8000078+8
+     addr size traced ninstr jump       fail       fcns        calls                             xrefs                             
+-----------------------------------------------------------------------------------------------------------------------------------
+0x8000040   32      0      8 0x08000060             0x08000040                                   
+0x8000060   12      0      3 0x0800006c 0x080000ac  0x08000040                                    0x080000a8
+0x800006c    4      0      1 0x08000070             0x08000040                                   
+0x8000070   16      0      4 0x08000080             0x08000040  0x080000b4 0x080000d0 0x080000dc 
+0x8000080   28      0      7 0x0800009c             0x08000040                                    0x080000e4 0x080000d8 0x080000bc
+0x800009c   16      0      4 0x08000060             0x08000040                                   
+0x80000ac    8      0      2                        0x08000040                                    0x08000068
+0x80000b4    8      0      2 0x080000bc             0x080000b4  0x080000c0                        0x0800007c
+0x80000bc    4      0      1                        0x080000b4                                    0x080000cc
+0x80000c0   16      0      4                        0x080000c0                                    0x080000b8 0x080000e0 0x080000d4
+0x80000d0    8      0      2 0x080000d8             0x080000d0  0x080000c0                        0x0800007c
+0x80000d8    4      0      1                        0x080000d0                                    0x080000cc
+0x80000dc    8      0      2 0x080000e4             0x080000dc  0x080000c0                        0x0800007c
+0x80000e4    4      0      1                        0x080000dc                                    0x080000cc
+EOF
+EXPECT_ERR=<<EOF
+Finished reference recovery: OK
+Perform function deduction: OK
+WARNING: Failed to read chunk of size 0x101 at 0x8000040 from io.
+EOF
+RUN
+
+NAME=Indirect call sparc
+FILE=bins/inquiry/interpreter/prototype/sparc_icall_malloc
+CMDS=<<EOF
+aIp -f sym.main
+pd 60 @ sym.some_ptr
+axl
+ablt
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from sym.function_0 @ 0x8000060
+            ; CALL XREF from sym.function_1 @ 0x800007c
+            ; CALL XREF from sym.function_2 @ 0x8000098
+            ;-- section..text:
+            ;-- .text:
+/ sym.some_ptr();
+|           0x08000040      save  sp, -0xb0, sp                        ; RELOC TARGET 64 .text @ 0x08000040 + 0x50 ; [01] -r-x section size 236 named .text
+|           ;-- .bss:
+|           0x08000044      sethi 0x20000, g1                          ; RELOC 0 .bss @ 0x08000148
+|           ;-- .bss:
+|           0x08000048      or    g1, 0x148, g1                        ; RELOC 0 .bss @ 0x08000148
+|           0x0800004c      mov   g1, i0
+|           0x08000050      rett  i7+8
+\           0x08000054      nop
+            ; CALL XREF from sym.main @ 0x80000dc
+/ sym.function_0();
+|           0x08000058      save  sp, -0xb0, sp
+|           0x0800005c      call  sym.some_ptr
+|           0x08000060      nop
+|           ; RETURN XREF from sym.some_ptr @ 0x8000054
+|           0x08000064      mov   o0, g1
+|           0x08000068      mov   g1, i0
+|           0x0800006c      rett  i7+8
+\           0x08000070      nop
+            ; CALL XREF from sym.main @ 0x80000dc
+/ sym.function_1();
+|           0x08000074      save  sp, -0xb0, sp
+|           0x08000078      call  sym.some_ptr
+|           0x0800007c      nop
+|           ; RETURN XREF from sym.some_ptr @ 0x8000054
+|           0x08000080      mov   o0, g1
+|           0x08000084      mov   g1, i0
+|           0x08000088      rett  i7+8
+\           0x0800008c      nop
+            ; CALL XREF from sym.main @ 0x80000dc
+/ sym.function_2();
+|           0x08000090      save  sp, -0xb0, sp
+|           0x08000094      call  sym.some_ptr
+|           0x08000098      nop
+|           ; RETURN XREF from sym.some_ptr @ 0x8000054
+|           0x0800009c      mov   o0, g1
+|           0x080000a0      mov   g1, i0
+|           0x080000a4      rett  i7+8
+\           0x080000a8      nop
+/ int sym.main(int argc, char **argv, char **envp);
+|           0x080000ac      save  sp, -0xc0, sp
+|           0x080000b0      st    g0, [fp+0x7fb]
+|           0x080000b4      st    g0, [fp+0x7f7]
+|       ,=< 0x080000b8      ba    xcc, 0x8000108
+|       |   0x080000bc      nop
+|       |   ; CODE XREF from sym.main @ 0x8000114
+|       |   ;-- .data:
+|      .--> 0x080000c0      sethi 0x20000, g1                          ; RELOC 0 .data @ 0x08000130
+|      :|   ;-- .data:
+|      :|   0x080000c4      or    g1, 0x130, g2                        ; RELOC 0 .data @ 0x08000130
+|      :|   0x080000c8      ld    [fp+0x7f7], g1
+|      :|   0x080000cc      srl   g1, 0, g1
+|      :|   0x080000d0      sllx  g1, 3, g1
+|      :|   0x080000d4      ldx   [g2+g1], g1                          ; 0x8000130
+|      :|                                                              ; obj.fcn_arr
+|      :|   0x080000d8      call  g1
+|      :|   0x080000dc      nop
+|      :|   ; RETURN XREF from sym.function_0 @ 0x8000070
+|      :|   ; RETURN XREF from sym.function_1 @ 0x800008c
+|      :|   ; RETURN XREF from sym.function_2 @ 0x80000a8
+|      :|   0x080000e0      stx   o0, [fp+0x7ef]
+|      :|   0x080000e4      ldx   [fp+0x7ef], g1
+|      :|   0x080000e8      ldub  [g1], g1
+|      :|   0x080000ec      and   g1, 0xff, g1
+|      :|   0x080000f0      ld    [fp+0x7fb], g2
+|      :|   0x080000f4      add   g2, g1, g1
+|      :|   0x080000f8      st    g1, [fp+0x7fb]
+|      :|   0x080000fc      ld    [fp+0x7f7], g1
+|      :|   0x08000100      add   g1, 1, g1
+|      :|   0x08000104      st    g1, [fp+0x7f7]
+|      :|   ; CODE XREF from sym.main @ 0x80000bc
+|      :`-> 0x08000108      ld    [fp+0x7f7], g1
+|      :    0x0800010c      cmp   g1, 2
+|      `==< 0x08000110      bleu  icc, reloc..data
+|           ; CODE XREF from sym.main @ 0x80000e0
+|           0x08000114      nop
+|           0x08000118      ld    [fp+0x7fb], g1
+|           0x0800011c      sra   g1, 0, g1
+|           0x08000120      mov   g1, i0
+|           0x08000124      rett  i7+8
+\           0x08000128      nop
+            0x0800012c      invalid
+                   reloc..bss.8000048+12 0x8000054 ->    RETURN -> 0x8000064 sym.function_0+12
+                   reloc..bss.8000048+12 0x8000054 ->    RETURN -> 0x8000080 sym.function_1+12
+                   reloc..bss.8000048+12 0x8000054 ->    RETURN -> 0x800009c sym.function_2+12
+                        sym.function_0+8 0x8000060 ->      CALL -> 0x8000040 section..text
+                       sym.function_0+24 0x8000070 ->    RETURN -> 0x80000e0 reloc..data.80000c4+28
+                        sym.function_1+8 0x800007c ->      CALL -> 0x8000040 section..text
+                       sym.function_1+24 0x800008c ->    RETURN -> 0x80000e0 reloc..data.80000c4+28
+                        sym.function_2+8 0x8000098 ->      CALL -> 0x8000040 section..text
+                       sym.function_2+24 0x80000a8 ->    RETURN -> 0x80000e0 reloc..data.80000c4+28
+                             sym.main+16 0x80000bc ->      CODE -> 0x8000108 reloc..data.80000c4+68
+                  reloc..data.80000c4+16 0x80000d4 ->      DATA -> 0x8000130 section..data
+                  reloc..data.80000c4+16 0x80000d4 ->      DATA -> 0x8000138 reloc..text.8000138
+                  reloc..data.80000c4+16 0x80000d4 ->      DATA -> 0x8000140 reloc..text.8000140
+                  reloc..data.80000c4+24 0x80000dc ->      CALL -> 0x8000058 sym.function_0
+                  reloc..data.80000c4+24 0x80000dc ->      CALL -> 0x8000074 sym.function_1
+                  reloc..data.80000c4+24 0x80000dc ->      CALL -> 0x8000090 sym.function_2
+                  reloc..data.80000c4+28 0x80000e0 ->      CODE -> 0x8000114 reloc..data.80000c4+80
+                  reloc..data.80000c4+80 0x8000114 ->      CODE -> 0x80000c0 reloc..data
+     addr size traced ninstr jump       fail       fcns        calls       xrefs                             
+-------------------------------------------------------------------------------------------------------------
+0x8000040   24      0      6                        0x08000040              0x08000098 0x08000060 0x0800007c
+0x8000058   12      0      3 0x08000064             0x08000058  0x08000040  0x080000dc
+0x8000060    4      0      1                                               
+0x8000064   16      0      4                        0x08000058              0x08000054
+0x8000074   12      0      3 0x08000080             0x08000074  0x08000040  0x080000dc
+0x800007c    4      0      1                                               
+0x8000080   16      0      4                        0x08000074              0x08000054
+0x8000090   12      0      3 0x0800009c             0x08000090  0x08000040  0x080000dc
+0x8000098    4      0      1                                               
+0x800009c   16      0      4                        0x08000090              0x08000054
+0x80000ac   20      0      5 0x08000108             0x080000ac             
+0x80000c0   32      0      8 0x080000e0             0x080000ac              0x08000114
+0x80000dc    4      0      1 0x080000e0                                    
+0x80000e0   40      0     10 0x08000108             0x080000ac              0x0800008c 0x080000a8 0x08000070
+0x8000108   16      0      4 0x080000c0 0x08000118  0x080000ac              0x080000e0 0x080000bc
+0x8000114    4      0      1                                                0x080000e0
+0x8000118   20      0      5                        0x080000ac             
+EOF
+EXPECT_ERR=<<EOF
+WARNING: Unhandled conversion of ELF reloc 9 (R_SPARC_HI22)
+WARNING: Unhandled conversion of ELF reloc 12 (R_SPARC_LO10)
+WARNING: Unhandled conversion of ELF reloc 9 (R_SPARC_HI22)
+WARNING: Unhandled conversion of ELF reloc 12 (R_SPARC_LO10)
+Finished reference recovery: OK
+Perform function deduction: OK
+EOF
+RUN
+
+NAME=Indirect call arm
+FILE=bins/inquiry/interpreter/prototype/arm_icall_malloc
+CMDS=<<EOF
+aIp -f sym.main
+pd 69
+axl
+ablt
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from sym.function_0 @ 0x800005c
+            ; CALL XREF from sym.function_1 @ 0x800007c
+            ; CALL XREF from sym.function_2 @ 0x800009c
+            ;-- section..text:
+            ;-- .text:
+/ sym.some_ptr();
+|           0x08000034      str   fp, [sp, -4]!                        ; [01] -r-x section size 256 named .text
+|           0x08000038      add   fp, sp, 0
+|           0x0800003c      ldr   r3, loc.z                            ; [reloc..bss:4]=0x8000140 sym..comment ; "@\U00000001"
+|           0x08000040      mov   r0, r3
+|           0x08000044      add   sp, fp, 0
+|           0x08000048      pop   {fp}
+\           0x0800004c      bx    lr                                   ; RELOC 0 
+            ; DATA XREF from sym.some_ptr @ 0x800003c
+            ;-- .bss:
+            0x08000050      stmdaeq r0, {r6, r8}                       ; RELOC 32 .bss @ 0x08000140
+            ; CALL XREF from sym.main @ 0x80000e4
+            ;-- function_0:
+/ sym.function_0();
+|           0x08000054      push  {fp, lr}                             ; RELOC TARGET 32 function_0 @ 0x08000054
+|           0x08000058      add   fp, sp, 4
+|           0x0800005c      bl    sym.some_ptr
+|           ; RETURN XREF from sym.some_ptr @ 0x800004c
+|           0x08000060      mov   r3, r0
+|           0x08000064      mov   r0, r3
+|           0x08000068      sub   sp, fp, 4
+|           0x0800006c      pop   {fp, lr}
+\           0x08000070      bx    lr                                   ; RELOC 0 
+            ; CALL XREF from sym.main @ 0x80000e4
+            ;-- function_1:
+/ sym.function_1();
+|           0x08000074      push  {fp, lr}                             ; RELOC TARGET 32 function_1 @ 0x08000074
+|           0x08000078      add   fp, sp, 4
+|           0x0800007c      bl    sym.some_ptr
+|           ; RETURN XREF from sym.some_ptr @ 0x800004c
+|           0x08000080      mov   r3, r0
+|           0x08000084      mov   r0, r3
+|           0x08000088      sub   sp, fp, 4
+|           0x0800008c      pop   {fp, lr}
+\           0x08000090      bx    lr                                   ; RELOC 0 
+            ;-- function_2:
+/ sym.function_2();
+|           0x08000094      push  {fp, lr}                             ; RELOC TARGET 32 function_2 @ 0x08000094
+|           0x08000098      add   fp, sp, 4
+|           0x0800009c      bl    sym.some_ptr
+|           ; RETURN XREF from sym.some_ptr @ 0x800004c
+|           0x080000a0      mov   r3, r0
+|           0x080000a4      mov   r0, r3
+|           0x080000a8      sub   sp, fp, 4
+|           0x080000ac      pop   {fp, lr}
+\           0x080000b0      bx    lr                                   ; RELOC 0 
+/ int sym.main(int argc, char **argv, char **envp);
+|           0x080000b4      push  {fp, lr}
+|           0x080000b8      add   fp, sp, 4
+|           0x080000bc      sub   sp, sp, 0x10
+|           0x080000c0      mov   r3, 0
+|           0x080000c4      str   r3, [fp, -8]                         ; 8
+|           0x080000c8      mov   r3, 0
+|           0x080000cc      str   r3, [fp, -0xc]                       ; 12
+|       ,=< 0x080000d0      b     0x8000110
+|       |   ; CODE XREF from sym.main @ 0x8000118
+|      .--> 0x080000d4      ldr   r2, obj.fcn_arr                      ; [reloc..data:4]=0x8000134 obj.fcn_arr ; "4\U00000001"
+|      :|   0x080000d8      ldr   r3, [fp, -0xc]                       ; 12
+|      :|   0x080000dc      ldr   r3, [r2, r3, lsl 2]                  ; 0x8000130 ; "4\U00000001"
+|      :|   0x080000e0      mov   lr, pc
+|      :|   0x080000e4      bx    r3                                   ; RELOC 0 
+|      :|   ; RETURN XREF from sym.function_0 @ 0x8000070
+|      :|   ; RETURN XREF from sym.function_1 @ 0x8000090
+|      :|   0x080000e8      str   r0, [fp, -0x10]                      ; 16
+|      :|   0x080000ec      ldr   r3, [fp, -0x10]                      ; 16
+|      :|   0x080000f0      ldrb  r3, [r3]
+|      :|   0x080000f4      mov   r2, r3
+|      :|   0x080000f8      ldr   r3, [fp, -8]                         ; 8
+|      :|   0x080000fc      add   r3, r3, r2
+|      :|   0x08000100      str   r3, [fp, -8]                         ; 8
+|      :|   0x08000104      ldr   r3, [fp, -0xc]                       ; 12
+|      :|   0x08000108      add   r3, r3, 1
+|      :|   0x0800010c      str   r3, [fp, -0xc]                       ; 12
+|      :|   ; CODE XREF from sym.main @ 0x80000d0
+|      :`-> 0x08000110      ldr   r3, [fp, -0xc]                       ; 12
+|      :    0x08000114      cmp   r3, 2                                ; 2
+|      `==< 0x08000118      bls   0x80000d4
+|           0x0800011c      ldr   r3, [fp, -8]                         ; 8
+|           0x08000120      mov   r0, r3
+|           0x08000124      sub   sp, fp, 4
+|           0x08000128      pop   {fp, lr}
+\           0x0800012c      bx    lr                                   ; RELOC 0 
+            ; DATA XREFS from sym.main @ 0x80000d4, 0x80000dc
+            ;-- .data:
+            0x08000130      stmdaeq r0, {r2, r4, r5, r8}               ; RELOC 32 .data @ 0x08000134
+            ; DATA XREF from sym.main @ 0x80000dc
+            ;-- section..data:
+            ;-- .data:
+            ;-- function_0:
+            ;-- fcn_arr:
+            0x08000134      .dword 0x08000054 ; reloc.target.function_0 ; sym.function_0; RELOC 32 function_0 @ 0x08000054 ; [03] -rw- section size 12 named .data
+            ; DATA XREF from sym.main @ 0x80000dc
+            ;-- function_1:
+            0x08000138      .dword 0x08000074 ; reloc.target.function_1 ; sym.function_1; RELOC 32 function_1 @ 0x08000074
+            ;-- function_2:
+            0x0800013c      .dword 0x08000094 ; reloc.target.function_2 ; sym.function_2; RELOC 32 function_2 @ 0x08000094
+            ;-- section..bss:
+            ;-- section..comment:
+            ;-- .bss:
+            ;-- z:
+            ;-- .comment:
+            0x08000140      .dword 0xffffffff                          ; RELOC TARGET 32 .bss @ 0x08000140 ; [06] ---- section size 36 named .comment
+            0x08000144      invalid
+                         section..text+8 0x800003c ->      DATA -> 0x8000050 reloc..bss
+                        section..text+24 0x800004c ->    RETURN -> 0x8000060 reloc.target.function_0+12
+                        section..text+24 0x800004c ->    RETURN -> 0x8000080 reloc.target.function_1+12
+                        section..text+24 0x800004c ->    RETURN -> 0x80000a0 reloc.target.function_2+12
+               reloc.target.function_0+8 0x800005c ->      CALL -> 0x8000034 section..text
+              reloc.target.function_0+28 0x8000070 ->    RETURN -> 0x80000e8 sym.main+52
+               reloc.target.function_1+8 0x800007c ->      CALL -> 0x8000034 section..text
+              reloc.target.function_1+28 0x8000090 ->    RETURN -> 0x80000e8 sym.main+52
+               reloc.target.function_2+8 0x800009c ->      CALL -> 0x8000034 section..text
+                             sym.main+28 0x80000d0 ->      CODE -> 0x8000110 sym.main+92
+                             sym.main+32 0x80000d4 ->      DATA -> 0x8000130 reloc..data
+                             sym.main+40 0x80000dc ->      DATA -> 0x8000130 reloc..data
+                             sym.main+40 0x80000dc ->      DATA -> 0x8000134 section..data
+                             sym.main+40 0x80000dc ->      DATA -> 0x8000138 reloc.function_1
+                             sym.main+48 0x80000e4 ->      CALL -> 0x8000054 reloc.target.function_0
+                             sym.main+48 0x80000e4 ->      CALL -> 0x8000074 reloc.target.function_1
+                            sym.main+100 0x8000118 ->      CODE -> 0x80000d4 sym.main+32
+     addr size traced ninstr jump       fail       fcns        calls       xrefs                             
+-------------------------------------------------------------------------------------------------------------
+0x8000034   28      0      7                        0x08000034              0x0800005c 0x0800009c 0x0800007c
+0x8000050    4      0      1 0x08000054                                     0x0800003c
+0x8000054   12      0      3 0x08000060             0x08000054  0x08000034  0x080000e4
+0x8000060   20      0      5                        0x08000054              0x0800004c
+0x8000074   12      0      3 0x08000080             0x08000074  0x08000034  0x080000e4
+0x8000080   20      0      5                        0x08000074              0x0800004c
+0x8000094   12      0      3 0x080000a0             0x08000094  0x08000034 
+0x80000a0   20      0      5                        0x08000094              0x0800004c
+0x80000b4   32      0      8 0x08000110             0x080000b4             
+0x80000d4   20      0      5 0x080000e8             0x080000b4              0x08000118
+0x80000e8   40      0     10 0x08000110             0x080000b4              0x08000090 0x08000070
+0x8000110   12      0      3 0x080000d4 0x0800011c  0x080000b4              0x080000d0
+0x800011c   20      0      5                        0x080000b4             
+0x8000134    1      0      1                                                0x080000dc
+EOF
+EXPECT_ERR=<<EOF
+WARNING: Unhandled conversion of ELF reloc 40 (R_ARM_V4BX)
+WARNING: Unhandled conversion of ELF reloc 40 (R_ARM_V4BX)
+WARNING: Unhandled conversion of ELF reloc 40 (R_ARM_V4BX)
+WARNING: Unhandled conversion of ELF reloc 40 (R_ARM_V4BX)
+WARNING: Unhandled conversion of ELF reloc 40 (R_ARM_V4BX)
+WARNING: Unhandled conversion of ELF reloc 40 (R_ARM_V4BX)
+Finished reference recovery: OK
+Perform function deduction: OK
+EOF
+RUN
+
+NAME=Indirect call mips64
+FILE=bins/inquiry/interpreter/prototype/mips64_icall_malloc
+CMDS=<<EOF
+# Mips misses many relocations.
+# So the interpreter doesn't come far before a jump to 0x0 happens.
+aIp -f 0x08000164
+pd 41 @ 0x08000164
+axl
+ablt
+EOF
+EXPECT=<<EOF
+            ;-- main:
+/ int sym.main(int argc, char **argv, char **envp);
+|           0x08000164      daddiu sp, sp, -0x30                       ; RELOC TARGET 32 main @ 0x08000164
+|           0x08000168      sd    ra, 0x28(sp)
+|           0x0800016c      sd    fp, 0x20(sp)
+|           0x08000170      sd    gp, 0x18(sp)
+|           0x08000174      move  fp, sp
+|           ;-- main:
+|           0x08000178      lui   gp, 0                                ; RELOC 0 main @ 0x08000164
+|           0x0800017c      daddu gp, gp, t9
+|           ;-- main:
+|           0x08000180      daddiu gp, gp, 0                           ; RELOC 0 main @ 0x08000164
+|           0x08000184      sw    zero, 0(fp)
+|           0x08000188      sw    zero, 4(fp)
+|       ,=< 0x0800018c      b     0x80001dc
+        |   0x08000190      nop
+|       |   ; CODE XREF from sym.main @ 0x80001e4
+|       |   ;-- .data.rel.local:
+|      .--> 0x08000194      ld    v0, 0(gp)                            ; RELOC 0 .data.rel.local @ 0x080002f0
+|      :|   0x08000198      lwu   v1, 4(fp)
+|      :|   0x0800019c      dsll  v1, v1, 3
+|      :|   ;-- .data.rel.local:
+|      :|   0x080001a0      daddiu v0, v0, 0                           ; RELOC 0 .data.rel.local @ 0x080002f0
+|      :|   0x080001a4      daddu v0, v1, v0
+|      :|   0x080001a8      ld    v0, 0(v0)
+|      :|   0x080001ac      move  t9, v0
+|      :|   0x080001b0      jalr  t9
+       :|   0x080001b4      nop
+       :|   0x080001b8      sd    v0, 8(fp)
+       :|   0x080001bc      ld    v0, 8(fp)
+       :|   0x080001c0      lbu   v0, 0(v0)
+       :|   0x080001c4      lw    v1, 0(fp)
+       :|   0x080001c8      addu  v0, v1, v0
+       :|   0x080001cc      sw    v0, 0(fp)
+       :|   0x080001d0      lw    v0, 4(fp)
+       :|   0x080001d4      addiu v0, v0, 1
+       :|   0x080001d8      sw    v0, 4(fp)
+|      :|   ; CODE XREF from sym.main @ 0x800018c
+|      :`-> 0x080001dc      lw    v0, 4(fp)
+|      :    0x080001e0      sltiu v0, v0, 3
+|      `==< 0x080001e4      bnez  v0, reloc..data.rel.local
+|           0x080001e8      nop
+|           0x080001ec      lw    v0, 0(fp)
+|           0x080001f0      move  sp, fp
+|           0x080001f4      ld    ra, 0x28(sp)
+|           0x080001f8      ld    fp, 0x20(sp)
+|           0x080001fc      ld    gp, 0x18(sp)
+|           0x08000200      daddiu sp, sp, 0x30
+\           0x08000204      jr    ra
+                   reloc.main.8000180+12 0x800018c ->      CODE -> 0x80001dc reloc..data.rel.local.80001a0+60
+        reloc..data.rel.local.80001a0+68 0x80001e4 ->      CODE -> 0x8000194 reloc..data.rel.local
+     addr size traced ninstr jump       fail       fcns        calls xrefs       
+---------------------------------------------------------------------------------
+0x8000040   48      0     12                        0x08000040       
+0x8000070    4      0      1                                         
+0x8000074   48      0     12                        0x08000074       
+0x80000a4   28      0      7                                         
+0x80000c0    4      0      1                                         
+0x80000c4   48      0     12                        0x080000c4       
+0x80000f4   28      0      7                                         
+0x8000110    4      0      1                                         
+0x8000114   48      0     12                        0x08000114       
+0x8000144   28      0      7                                         
+0x8000160    4      0      1 0x08000164                              
+0x8000164   44      0     11 0x080001dc             0x08000164       
+0x8000190    4      0      1                                         
+0x8000194   32      0      8                        0x08000164        0x080001e4
+0x80001b4   40      0     10 0x080001dc                              
+0x80001dc   12      0      3 0x08000194 0x080001e8  0x08000164        0x0800018c
+0x80001e8   32      0      8                        0x08000164       
+EOF
+EXPECT_ERR=<<EOF
+WARNING: MIPS: Unhandled patching case for relocation 333831.
+WARNING: MIPS: Unhandled patching case for relocation 399367.
+WARNING: Unhandled R_MIPS_GOT_PAGE reloc
+WARNING: Unhandled R_MIPS_GOT_OFST reloc
+WARNING: MIPS: Unhandled patching case for relocation 333831.
+WARNING: MIPS: Unhandled patching case for relocation 399367.
+WARNING: Unhandled R_MIPS_GOT_PAGE reloc
+WARNING: Unhandled R_MIPS_GOT_OFST reloc
+WARNING: Unhandled R_MIPS_JALR reloc
+WARNING: MIPS: Unhandled patching case for relocation 333831.
+WARNING: MIPS: Unhandled patching case for relocation 399367.
+WARNING: Unhandled R_MIPS_GOT_PAGE reloc
+WARNING: Unhandled R_MIPS_GOT_OFST reloc
+WARNING: Unhandled R_MIPS_JALR reloc
+WARNING: MIPS: Unhandled patching case for relocation 333831.
+WARNING: MIPS: Unhandled patching case for relocation 399367.
+WARNING: Unhandled R_MIPS_GOT_PAGE reloc
+WARNING: Unhandled R_MIPS_GOT_OFST reloc
+WARNING: Unhandled R_MIPS_JALR reloc
+WARNING: MIPS: Unhandled patching case for relocation 333831.
+WARNING: MIPS: Unhandled patching case for relocation 399367.
+WARNING: Unhandled R_MIPS_GOT_PAGE reloc
+WARNING: Unhandled R_MIPS_GOT_OFST reloc
+WARNING: Unhandled R_MIPS_64 reloc
+WARNING: Unhandled R_MIPS_64 reloc
+WARNING: Unhandled R_MIPS_64 reloc
+WARNING: Unhandled conversion of ELF reloc 333831 (R_MIPS_GPREL16)
+WARNING: Unhandled conversion of ELF reloc 399367 (R_MIPS_GPREL16)
+WARNING: Unhandled conversion of ELF reloc 20 (R_MIPS_GOT_PAGE)
+WARNING: Unhandled conversion of ELF reloc 21 (R_MIPS_GOT_OFST)
+WARNING: Unhandled conversion of ELF reloc 333831 (R_MIPS_GPREL16)
+WARNING: Unhandled conversion of ELF reloc 399367 (R_MIPS_GPREL16)
+WARNING: Unhandled conversion of ELF reloc 20 (R_MIPS_GOT_PAGE)
+WARNING: Unhandled conversion of ELF reloc 21 (R_MIPS_GOT_OFST)
+WARNING: Unhandled conversion of ELF reloc 37 (R_MIPS_JALR)
+WARNING: Unhandled conversion of ELF reloc 333831 (R_MIPS_GPREL16)
+WARNING: Unhandled conversion of ELF reloc 399367 (R_MIPS_GPREL16)
+WARNING: Unhandled conversion of ELF reloc 20 (R_MIPS_GOT_PAGE)
+WARNING: Unhandled conversion of ELF reloc 21 (R_MIPS_GOT_OFST)
+WARNING: Unhandled conversion of ELF reloc 37 (R_MIPS_JALR)
+WARNING: Unhandled conversion of ELF reloc 333831 (R_MIPS_GPREL16)
+WARNING: Unhandled conversion of ELF reloc 399367 (R_MIPS_GPREL16)
+WARNING: Unhandled conversion of ELF reloc 20 (R_MIPS_GOT_PAGE)
+WARNING: Unhandled conversion of ELF reloc 21 (R_MIPS_GOT_OFST)
+WARNING: Unhandled conversion of ELF reloc 37 (R_MIPS_JALR)
+WARNING: Unhandled conversion of ELF reloc 333831 (R_MIPS_GPREL16)
+WARNING: Unhandled conversion of ELF reloc 399367 (R_MIPS_GPREL16)
+WARNING: Unhandled conversion of ELF reloc 20 (R_MIPS_GOT_PAGE)
+WARNING: Unhandled conversion of ELF reloc 21 (R_MIPS_GOT_OFST)
+Finished reference recovery: OK
+Perform function deduction: OK
+WARNING: Failed to read chunk of size 0x101 at 0x8000164 from io.
+EOF
+RUN

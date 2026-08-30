@@ -1,0 +1,261 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1366" height="768" viewBox="0 0 1366 768">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#222"/>
+    </marker>
+    <style>
+      .line { stroke:#222; stroke-width:2.2; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+      .thin { stroke:#222; stroke-width:1.4; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+      .text { font-family: Arial, Helvetica, sans-serif; fill:#111; font-size:18px; }
+      .small { font-size:16px; }
+      .title { font-size:22px; font-weight:600; }
+      .center { text-anchor:middle; dominant-baseline:middle; }
+      .left { text-anchor:start; dominant-baseline:middle; }
+
+      .dashFill { fill:#f4d03f; stroke:#222; stroke-width:2; }
+      .circleFill { fill:#5dade2; stroke:#222; stroke-width:2; }
+      .triFill { fill:#58d68d; stroke:#222; stroke-width:2; }
+      .tFill { fill:#ec7063; }
+      .whiteTri { fill:#fff; stroke:#222; stroke-width:2.2; stroke-linejoin:round; }
+      .tBox { fill:#e53935; stroke:#222; stroke-width:2.5; rx:5; ry:5; }
+
+      .stateStroke { stroke:#222; stroke-width:2.2; fill:none; }
+      .stateText { font-family: Arial, Helvetica, sans-serif; font-size:20px; fill:#111; text-anchor:middle; dominant-baseline:middle; }
+    </style>
+  </defs>
+
+  <!-- ===================== LEFT TABLE ===================== -->
+  <g transform="translate(80,65)">
+    <!-- verticals -->
+    <line x1="0" y1="0" x2="0" y2="460" class="line"/>
+    <line x1="36" y1="0" x2="36" y2="460" class="line"/>
+    <line x1="84" y1="0" x2="84" y2="460" class="line"/>
+    <line x1="90" y1="0" x2="90" y2="460" class="line"/>
+    <line x1="150" y1="0" x2="150" y2="460" class="line"/>
+    <line x1="220" y1="0" x2="220" y2="460" class="line"/>
+    <line x1="300" y1="0" x2="300" y2="460" class="line"/>
+    <line x1="410" y1="0" x2="410" y2="460" class="line"/>
+
+    <!-- horizontals -->
+    <line x1="0" y1="32" x2="410" y2="32" class="line"/>
+    <line x1="0" y1="78" x2="410" y2="78" class="line"/>
+    <line x1="0" y1="125" x2="410" y2="125" class="line"/>
+    <line x1="0" y1="172" x2="410" y2="172" class="line"/>
+    <line x1="0" y1="219" x2="410" y2="219" class="line"/>
+    <line x1="0" y1="266" x2="410" y2="266" class="line"/>
+    <line x1="0" y1="313" x2="410" y2="313" class="line"/>
+    <line x1="0" y1="406" x2="410" y2="406" class="line"/>
+
+    <!-- headers -->
+    <text x="18" y="16" class="text center">ls</text>
+    <text x="60" y="16" class="text center">exp</text>
+    <text x="365" y="16" class="text center title">Error</text>
+
+    <!-- row centers: 55, 101, 148, 195, 242, 289, 359, 437 -->
+
+    <!-- helper symbols in first two columns -->
+    <!-- Row 1: 1,1 -->
+    <g transform="translate(18,55)">
+      <rect x="-9" y="-15" width="18" height="30" rx="5" class="dashFill"/>
+      <line x1="-5" y1="0" x2="5" y2="0" class="thin"/>
+    </g>
+    <g transform="translate(60,55)">
+      <rect x="-9" y="-15" width="18" height="30" rx="5" class="dashFill"/>
+      <line x1="-5" y1="0" x2="5" y2="0" class="thin"/>
+    </g>
+    <text x="120" y="55" class="text center">B I</text>
+    <text x="169" y="55" class="text center">→</text>
+    <g transform="translate(193,55)">
+      <circle r="12" class="circleFill"/>
+    </g>
+    <text x="340" y="55" class="text center">→</text>
+    <g transform="translate(365,55)">
+      <rect x="-12" y="-14" width="24" height="28" class="tBox"/>
+      <text class="stateText tFill" x="0" y="1">T</text>
+    </g>
+
+    <!-- Row 2: 1,0 -->
+    <g transform="translate(18,101)">
+      <rect x="-9" y="-15" width="18" height="30" rx="5" class="dashFill"/>
+      <line x1="-5" y1="0" x2="5" y2="0" class="thin"/>
+    </g>
+    <g transform="translate(60,101)">
+      <circle r="12" class="circleFill"/>
+    </g>
+    <text x="120" y="101" class="text center">wait</text>
+    <text x="365" y="101" class="text center">-</text>
+
+    <!-- Row 3: 1,T -->
+    <g transform="translate(18,148)">
+      <rect x="-9" y="-15" width="18" height="30" rx="5" class="dashFill"/>
+      <line x1="-5" y1="0" x2="5" y2="0" class="thin"/>
+    </g>
+    <g transform="translate(60,148)">
+      <rect x="-12" y="-14" width="24" height="28" class="tBox"/>
+      <text class="stateText tFill" x="0" y="1">T</text>
+    </g>
+    <text x="120" y="148" class="text center">wait</text>
+    <text x="365" y="148" class="text center">-</text>
+
+    <!-- Row 4: 0,0 -->
+    <g transform="translate(18,195)">
+      <circle r="12" class="circleFill"/>
+    </g>
+    <g transform="translate(60,195)">
+      <circle r="12" class="circleFill"/>
+    </g>
+    <text x="120" y="195" class="text center">B II</text>
+    <text x="185" y="195" class="text center">B III</text>
+    <text x="250" y="195" class="text center">→</text>
+    <g transform="translate(272,195)">
+      <circle r="12" class="circleFill"/>
+    </g>
+    <text x="345" y="195" class="text center">→</text>
+    <g transform="translate(370,195)">
+      <polygon points="0,-14 -12,10 12,10" class="triFill"/>
+    </g>
+
+    <!-- Row 5: 0,triangle -->
+    <g transform="translate(18,242)">
+      <circle r="12" class="circleFill"/>
+    </g>
+    <g transform="translate(60,242)">
+      <polygon points="0,-14 -12,10 12,10" class="triFill"/>
+    </g>
+    <text x="120" y="242" class="text center">wait</text>
+    <text x="365" y="242" class="text center">-</text>
+
+    <!-- Row 6: triangle,triangle -->
+    <g transform="translate(18,289)">
+      <polygon points="0,-14 -12,10 12,10" class="triFill"/>
+    </g>
+    <g transform="translate(60,289)">
+      <polygon points="0,-14 -12,10 12,10" class="triFill"/>
+    </g>
+    <text x="120" y="289" class="text center">clear</text>
+    <text x="185" y="289" class="text center">open</text>
+    <text x="260" y="289" class="text center">B IV</text>
+    <text x="344" y="289" class="text center">→</text>
+    <g transform="translate(373,289)">
+      <rect x="-12" y="-14" width="24" height="28" class="tBox"/>
+      <text class="stateText tFill" x="0" y="1">T</text>
+    </g>
+
+    <!-- Row 7: triangle,1 -->
+    <g transform="translate(18,359)">
+      <polygon points="0,-14 -12,10 12,10" class="triFill"/>
+    </g>
+    <g transform="translate(60,359)">
+      <rect x="-9" y="-15" width="18" height="30" rx="5" class="dashFill"/>
+      <line x1="-5" y1="0" x2="5" y2="0" class="thin"/>
+    </g>
+    <text x="120" y="359" class="text center">wait</text>
+    <text x="365" y="359" class="text center">-</text>
+
+    <!-- Row 8: triangle,0 -->
+    <g transform="translate(18,437)">
+      <polygon points="0,-14 -12,10 12,10" class="triFill"/>
+    </g>
+    <g transform="translate(60,437)">
+      <circle r="12" class="circleFill"/>
+    </g>
+    <text x="120" y="437" class="text center">clear</text>
+    <text x="185" y="437" class="text center">B IV</text>
+    <text x="344" y="437" class="text center">→</text>
+    <g transform="translate(373,437)">
+      <rect x="-12" y="-14" width="24" height="28" class="tBox"/>
+      <text class="stateText tFill" x="0" y="1">T</text>
+    </g>
+
+
+    <!-- side note -->
+    <g transform="translate(-40,12)">
+      <text x="455" y="416" class="text small left">emulation</text>
+      <text x="455" y="438" class="text small left">error</text>
+    </g>
+
+  </g>
+
+  <!-- ===================== CENTER LEGEND ===================== -->
+  <g transform="translate(640,80)">
+    <!-- Dash -->
+    <g>
+      <g transform="translate(18,55)">
+        <rect x="-9" y="-15" width="18" height="30" rx="5" class="dashFill"/>
+        <line x1="-5" y1="0" x2="5" y2="0" class="thin"/>
+      </g>
+      <path d="M48,10 L48,165 M48,10 q0,0 8,0 M48,165 q0,0 8,0" class="line"/>
+      <text x="60" y="40" class="text small left" transform="rotate(90 60 40)">init</text>
+      <text x="170" y="70" class="text left">B I - Get entry point</text>
+    </g>
+
+    <!-- Circle -->
+    <g transform="translate(0,190)">
+      <circle cx="20" cy="100" r="16" class="circleFill"/>
+      <path d="M48,0 L48,195 M48,0 q0,0 8,0 M48,195 q0,0 8,0" class="line"/>
+      <text x="60" y="55" class="text small left" transform="rotate(90 60 55)">emulation</text>
+      <text x="170" y="45" class="text left">B II</text>
+      <text x="225" y="45" class="text left">memory</text>
+      <text x="170" y="100" class="text left">B III</text>
+      <text x="230" y="100" class="text left">basic block</text>
+    </g>
+
+    <!-- Triangle -->
+    <g transform="translate(0,470)">
+      <g transform="translate(0,-35)">
+        <polygon points="20,80 8,102 32,102" class="triFill"/>
+      </g>
+      <path d="M48,0 L48,118 M48,0 q0,0 8,0 M48,118 q0,0 8,0" class="line"/>
+      <text x="60" y="30" class="text small left" transform="rotate(90 60 30)">clean</text>
+      <text x="170" y="55" class="text left">B IV</text>
+      <text x="265" y="57" class="text small left">sync</text>
+    </g>
+
+    <!-- T -->
+    <g transform="translate(0,635)">
+      <g transform="translate(20,20)">
+        <rect x="-12" y="-14" width="24" height="28" class="tBox"/>
+        <text class="stateText tFill" x="0" y="1">T</text>
+      </g>
+      <path d="M48,0 L48,78 M48,0 q0,0 8,0 M48,78 q0,0 8,0" class="line"/>
+      <text x="60" y="18" class="text small left" transform="rotate(90 60 18)">term</text>
+    </g>
+  </g>
+
+  <!-- ===================== RIGHT STATE GRAPH ===================== -->
+  <g transform="translate(1060,170)">
+    <!-- blue state -->
+    <g transform="translate(165,95)">
+      <circle r="16" class="circleFill"/>
+    </g>
+
+    <!-- self loop on blue state -->
+    <path d="M150,72 C138,40 192,34 191,73" class="line" marker-end="url(#arrow)"/>
+
+    <!-- triangle state -->
+    <g transform="translate(230,155)">
+      <polygon points="0,-18 -16,12 16,12" class="triFill"/>
+    </g>
+
+    <!-- yellow dash state -->
+    <g transform="translate(70,165)">
+      <rect x="-10" y="-18" width="20" height="36" rx="6" class="dashFill"/>
+      <line x1="-6" y1="0" x2="6" y2="0" class="thin"/>
+    </g>
+
+    <!-- Start state pointer -->
+    <polygon points="46,165 28,154.608 28,175.392" class="whiteTri"/>
+
+    <!-- T state -->
+    <g transform="translate(125,260)">
+      <rect x="-12" y="-14" width="24" height="28" class="tBox"/>
+      <text class="stateText tFill" x="0" y="1">T</text>
+    </g>
+
+    <!-- arrows -->
+    <path d="M88,151 L150,108" class="line" marker-end="url(#arrow)"/>
+    <path d="M180,111 L217,143" class="line" marker-end="url(#arrow)"/>
+    <path d="M212,170 L92,175" class="line" marker-end="url(#arrow)"/>
+    <path d="M76,184 L118,244" class="line" marker-end="url(#arrow)"/>
+  </g>
+</svg>

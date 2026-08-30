@@ -2,7 +2,6 @@
 // SPDX-FileCopyrightText: 2009-2020 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_inquiry/rz_absint.h>
 #include <rz_types.h>
 #include <rz_list.h>
 #include <rz_flag.h>

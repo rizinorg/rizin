@@ -639,6 +639,7 @@ static void report_yield_xref(
 	if (!xref) {
 		goto cleanup;
 	}
+	xref->bb_addr = 0; // TODO? ctx->astate->bb_addr;
 	xref->from = from;
 	xref->to = to_addr;
 	xref->type = type;

@@ -216,6 +216,8 @@ RZ_API const char *rz_analysis_xrefs_type_tostring(RzAnalysisXRefType type) {
 		return "STRING";
 	case RZ_ANALYSIS_XREF_TYPE_MEM_WRITE:
 		return "MEM_WRITE";
+	case RZ_ANALYSIS_XREF_TYPE_RETURN:
+		return "RETURN";
 	case RZ_ANALYSIS_XREF_TYPE_NULL:
 	default:
 		return "UNKNOWN";
@@ -310,6 +312,87 @@ RZ_API const char *rz_analysis_ref_type_tostring(RzAnalysisXRefType t) {
 		return "string";
 	case RZ_ANALYSIS_XREF_TYPE_MEM_WRITE:
 		return "write";
+	case RZ_ANALYSIS_XREF_TYPE_CALL_RET:
+		return "call_ret_pt";
+	case RZ_ANALYSIS_XREF_TYPE_RETURN:
+		return "return";
 	}
 	return "unknown";
+}
+
+static bool read_up_to(RzAnalysis *analysis, ut64 addr, ut8 *buf, size_t buf_size) {
+	rz_mem_set_num(buf, buf_size, 0);
+	do {
+		if (analysis->iob.read_at(analysis->iob.io, addr, buf, buf_size) > 0) {
+			return true;
+		}
+		buf_size--;
+	} while (buf_size > 0);
+	return false;
+}
+
+/**
+ * \brief Returns all control flow targets of call/jmp instructions within the \p sections.
+ * NOTE: This function disassembles all instructions within the boundaries and checks for calls/jmps.
+ * It DOES NOT use the existing xrefs.
+ *
+ * \param analysis The analysis plugin.
+ * \param sections The RzBinSections to disassemble to find call/jmp instructions.
+ * \param include_call_return_pts If true, it will add addresses after a call instruction as well.
+ * \param cf_targets The found call targets of all disassemble calls.
+ *
+ * \return True in case of success, false otherwise.
+ */
+RZ_API bool rz_analysis_get_all_cf_targets(RzAnalysis *analysis,
+	const RzPVector /*<RzBinSection *>*/ *sections,
+	bool include_call_return_pts,
+	RZ_NONNULL RZ_OUT RzSetU *cf_targets) {
+	rz_return_val_if_fail(analysis && analysis->cur && sections && cf_targets, false);
+	size_t buf_size = (analysis->cur->bits / 8) * 16;
+	ut8 *buf = RZ_NEWS0(ut8, buf_size);
+	if (!buf_size || !buf) {
+		return false;
+	}
+
+	RzAnalysisOp op = { 0 };
+	void **it;
+	rz_pvector_foreach (sections, it) {
+		RzBinSection *sec = *it;
+		if (!(sec->perm & RZ_PERM_X)) {
+			continue;
+		}
+		ut64 addr = sec->vaddr;
+		while (addr < sec->vaddr + sec->size) {
+			if (!read_up_to(analysis, addr, buf, buf_size)) {
+				RZ_LOG_WARN("Failed to read memory at 0x%" PFMT64x " size: %" PFMTSZu ".\n", addr, buf_size);
+				rz_analysis_op_fini(&op);
+				break;
+			}
+			if (rz_analysis_op(analysis, &op, addr, buf, buf_size, RZ_ANALYSIS_OP_MASK_BASIC) <= 0) {
+				rz_analysis_op_fini(&op);
+				addr += op.size;
+				continue;
+			}
+			// Only add jump targets going to executable regions.
+			bool op_is_call = rz_analysis_op_is_direct_call(&op);
+			bool op_is_jump = rz_analysis_op_is_direct_jump(&op);
+			if ((op_is_call || op_is_jump) && op.jump != UT64_MAX) {
+				rz_set_u_add(cf_targets, op.jump);
+				if (op.fail != UT64_MAX) {
+					if (op_is_jump) {
+						rz_set_u_add(cf_targets, op.fail);
+					}
+				}
+			}
+			if (include_call_return_pts && op_is_call) {
+				// If it is a call, also add the following instruction as reference.
+				// Because it is likely a return point.
+				rz_set_u_add(cf_targets, op.addr + op.size);
+			}
+			addr += op.size;
+			rz_analysis_op_fini(&op);
+		}
+	}
+	free(buf);
+	return true;
 }

@@ -2630,3 +2630,27 @@ commands:
             summary: analyze all functions
             cname: inquiry_analyze_all
             args: []
+          - name: aIp
+            summary: Abstract Interpreter Prototype
+            cname: inquiry_interpreter_prototype
+            args:
+            - name: f
+              type: RZ_CMD_ARG_TYPE_OPTION
+              flags: RZ_CMD_ARG_FLAG_OPTION
+              default_value: 0
+            - name: entry_points
+              type: RZ_CMD_ARG_TYPE_RZNUM
+              flags: RZ_CMD_ARG_FLAG_ARRAY
+              optional: true
+            details:
+              - name: Examples
+                entries:
+                  - text: "aIp"
+                    arg_str: ""
+                    comment: "Run prototype RzIL analysis detecting cross references."
+                  - text: "aIp"
+                    arg_str: " 0x1000"
+                    comment: "Run prototype RzIL analysis starting at address 0x1000."
+                  - text: "aIp"
+                    arg_str: " -f"
+                    comment: "Run prototype RzIL analysis with function detection."

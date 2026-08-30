@@ -1854,6 +1854,30 @@ RZ_API RzAnalysisFunction *rz_analysis_get_function_byname(RzAnalysis *a, const 
 	return NULL;
 }
 
+/**
+ * \brief Adds a basic block to the RzAnalysis.
+ * It disassembles it to determine the instructions and their offset.
+ */
+RZ_API bool rz_analysis_add_bb(RzAnalysis *a, ut64 addr, ut64 size) {
+	rz_return_val_if_fail(a && size > 0, false);
+	if (size > a->opt.bb_max_size) {
+		RZ_LOG_ERROR("Cannot allocate such big bb of %" PFMT64d " bytes at 0x%08" PFMT64x "\n", (st64)size, addr);
+		rz_warn_if_reached();
+		return false;
+	}
+	RzAnalysisBlock *block = rz_analysis_get_block_at(a, addr);
+	if (block) {
+		rz_analysis_delete_block(block);
+	}
+
+	block = rz_analysis_create_block(a, addr, size);
+	if (!block) {
+		return false;
+	}
+	rz_analysis_block_analyze_ops(block);
+	return true;
+}
+
 /* rename RzAnalysisFunctionBB.add() */
 RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail) {
 	if (size == 0) {
