@@ -420,17 +420,6 @@ static void il_opdmp_fround(RzILOpPure *op, PJ *pj) {
 	pj_end(pj);
 }
 
-static void il_opdmp_fround_exc(RzILOpPure *op, PJ *pj) {
-	RzILOpArgsFroundExc *opx = &op->op.fround_exc;
-	pj_o(pj);
-	pj_ks(pj, "opcode", "fround_exc");
-	pj_k(pj, "rmode");
-	il_op_float_rmode_json_resolve(&opx->rmode, pj);
-	pj_k(pj, "value");
-	il_op_pure_json_resolve(opx->f, pj);
-	pj_end(pj);
-}
-
 static void il_opdmp_frequal(RzILOpPure *op, PJ *pj) {
 	RzILOpArgsFrequal *opx = &op->op.frequal;
 	pj_o(pj);
@@ -772,9 +761,6 @@ static void il_op_pure_json_resolve(RzILOpPure *op, PJ *pj) {
 		return;
 	case RZ_IL_OP_FROUND:
 		il_opdmp_fround(op, pj);
-		return;
-	case RZ_IL_OP_FROUND_EXC:
-		il_opdmp_fround_exc(op, pj);
 		return;
 	case RZ_IL_OP_FSQRT:
 		il_opdmp_fsqrt(op, pj);

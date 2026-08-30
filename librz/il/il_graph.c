@@ -378,14 +378,6 @@ static void il_op_graph_fround(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NUL
 	il_op_param_1_with_rmode_arg("fround:", op->op.fround, f, rmode);
 }
 
-static void il_op_graph_fround_exc(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
-	RzILOpArgsFroundExc *opx = &op->op.fround_exc;
-	RzGraphNode *to = il_op_graph_add_node_with_rmode("fround_exc:", &opx->rmode, g, from);
-	if (to) {
-		il_op_pure_graph_resolve(opx->f, g, to);
-	}
-}
-
 static void il_op_graph_frequal(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsFrequal *opx = &op->op.frequal;
 	const char *rmode_x = rz_il_float_stringify_rmode(opx->x);
@@ -724,9 +716,6 @@ static void il_op_pure_graph_resolve(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo 
 		return;
 	case RZ_IL_OP_FROUND:
 		il_op_graph_fround(op, g, from);
-		return;
-	case RZ_IL_OP_FROUND_EXC:
-		il_op_graph_fround_exc(op, g, from);
 		return;
 	case RZ_IL_OP_FSQRT:
 		il_op_graph_fsqrt(op, g, from);

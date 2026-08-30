@@ -564,23 +564,6 @@ static void il_opdmp_fround(RzILOpPure *op, RzStrBuf *sb, int pad) {
 	il_op_param_1_with_rmode_arg("fround", op->op.fround, f, rmode);
 }
 
-static void il_opdmp_fround_exc(RzILOpPure *op, RzStrBuf *sb, int pad) {
-	RzILOpArgsFroundExc *opx = &op->op.fround_exc;
-	if (pad < 0) {
-		rz_strbuf_append(sb, "(fround_exc ");
-		il_op_float_rmode_string_resolve(&opx->rmode, sb, pad);
-		rz_strbuf_append(sb, " ");
-		il_op_pure_string_resolve(opx->f, sb, pad);
-		rz_strbuf_append(sb, ")");
-	} else {
-		rz_strbuf_appendf(sb, "%*.s(fround_exc ", pad, "");
-		il_op_float_rmode_string_resolve(&opx->rmode, sb, pad);
-		rz_strbuf_append(sb, "\n");
-		il_op_pure_string_resolve(opx->f, sb, pad + PRETTY_PAD);
-		rz_strbuf_append(sb, ")");
-	}
-}
-
 static void il_opdmp_frequal(RzILOpPure *op, RzStrBuf *sb, int pad) {
 	RzILOpArgsFrequal *opx = &op->op.frequal;
 	if (pad < 0) {
@@ -989,9 +972,6 @@ static void il_op_pure_string_resolve(RzILOpPure *op, RzStrBuf *sb, int pad) {
 	case RZ_IL_OP_FROUND:
 		il_opdmp_fround(op, sb, pad);
 		return;
-	case RZ_IL_OP_FROUND_EXC:
-		il_opdmp_fround_exc(op, sb, pad);
-		return;
 	case RZ_IL_OP_FSQRT:
 		il_opdmp_fsqrt(op, sb, pad);
 		return;
@@ -1343,8 +1323,6 @@ RZ_API RZ_NONNULL const char *rz_il_op_pure_code_stringify(RzILOpPureCode code) 
 		return "forder";
 	case RZ_IL_OP_FROUND:
 		return "fround";
-	case RZ_IL_OP_FROUND_EXC:
-		return "fround_exc";
 	case RZ_IL_OP_FSQRT:
 		return "fsqrt";
 	case RZ_IL_OP_FRSQRT:

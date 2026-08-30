@@ -994,14 +994,6 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fround(RzFloatRMode mode, RZ_NONNULL RzI
 	return ret;
 }
 
-RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fround_exc(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
-	rz_return_val_if_fail(f, NULL);
-	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
-	RzILOpFloat *ret;
-	rz_il_op_new_2(Float, RZ_IL_OP_FROUND_EXC, RzILOpArgsFroundExc, fround_exc, rmode, f);
-	return ret;
-}
-
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsqrt(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
@@ -1503,10 +1495,6 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 		CONST_CP1(fround, rmode);
 		DUP_OP1(fround, f);
 		break;
-	case RZ_IL_OP_FROUND_EXC:
-		CONST_CP1(fround_exc, rmode);
-		DUP_OP1(fround_exc, f);
-		break;
 	case RZ_IL_OP_FSQRT:
 	case RZ_IL_OP_FRSQRT:
 		DUP_OP1(fround, f);
@@ -1716,7 +1704,6 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op) {
 		rz_il_op_free_2(pure, forder, x, y);
 		break;
 	case RZ_IL_OP_FROUND:
-	case RZ_IL_OP_FROUND_EXC:
 	case RZ_IL_OP_FSQRT:
 	case RZ_IL_OP_FRSQRT:
 		float_rmode_fini(&op->op.fround.rmode);

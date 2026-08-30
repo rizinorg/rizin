@@ -1723,27 +1723,6 @@ RZ_API RZ_OWN RzFloat *rz_float_round_to_integral(RZ_NONNULL RzFloat *f, RzFloat
 	}
 }
 
-RZ_API RZ_OWN RzFloat *rz_float_round_to_integral_exact(RZ_NONNULL RzFloat *f, RzFloatRMode mode) {
-	rz_return_val_if_fail(f, NULL);
-
-	RzFloatFormat format = f->r;
-	set_float_rounding_mode(mode);
-
-	switch (format) {
-	case RZ_FLOAT_IEEE754_BIN_32:
-		return of_float32(f32_roundToInt(to_float32(f), softfloat_roundingMode, true));
-	case RZ_FLOAT_IEEE754_BIN_64:
-		return of_float64(f64_roundToInt(to_float64(f), softfloat_roundingMode, true));
-	case RZ_FLOAT_IEEE754_BIN_80:
-		return of_float80(extF80_roundToInt(to_float80(f), softfloat_roundingMode, true));
-	case RZ_FLOAT_IEEE754_BIN_128:
-		return of_float128(f128_roundToInt(to_float128(f), softfloat_roundingMode, true));
-	default:
-		RZ_LOG_ERROR("float: ROUND operation unimplemented for format %d\n", format);
-		return NULL;
-	}
-}
-
 /**
  * cast_float s m x is the closest to x floating number of sort s.
  * The bitvector x is interpreted as an unsigned integer in the two-complement form.

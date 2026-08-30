@@ -276,45 +276,26 @@ static RZ_INLINE RzILOpBool *fd_is_max_exp(RzFloatFormat format,
 	return EQ(exponent, fd_constant(format, fd_max_exponent(format)));
 }
 
-static RZ_INLINE RzILOpBool *fd_exp_at_least(RzFloatFormat format,
-	RzILOpBitVector *exponent, ut64 threshold) {
-	return UGE(exponent, fd_constant(format, threshold));
+static RZ_INLINE RzILOpFloat *fd_power_of_two(RzFloatFormat format, ut32 exponent) {
+	ut64 bits = (ut64)(fd_exponent_bias(format) + exponent) << fd_exponent_offset(format);
+	return BV2F(format, fd_constant(format, bits));
 }
 
 /**
- * Replaces RISCV_FD_IS_EXP_OVERFLOW_INT.
- * F had threshold 158; D had 1054. They are respectively bias 127/1023 + 31.
+ * A floating-point-to-integer conversion is invalid exactly when the rounded
+ * integral value is outside the destination range, or when the source is NaN.
+ * The exclusive upper bounds are powers of two and are therefore represented
+ * exactly in both binary32 and binary64.
  */
-static RZ_INLINE RzILOpBool *fd_is_exp_overflow_int(RzFloatFormat format,
-	RzILOpBitVector *exponent) {
-	return fd_exp_at_least(format, exponent, fd_exponent_bias(format) + 31);
-}
-
-/**
- * Replaces RISCV_FD_IS_EXP_OVERFLOW_UINT.
- * F had threshold 159; D had 1055. They are respectively bias 127/1023 + 32.
- */
-static RZ_INLINE RzILOpBool *fd_is_exp_overflow_uint(RzFloatFormat format,
-	RzILOpBitVector *exponent) {
-	return fd_exp_at_least(format, exponent, fd_exponent_bias(format) + 32);
-}
-
-/**
- * Replaces RISCV_FD_IS_EXP_OVERFLOW_LONG.
- * F had threshold 190; D had 1086. They are respectively bias 127/1023 + 63.
- */
-static RZ_INLINE RzILOpBool *fd_is_exp_overflow_long(RzFloatFormat format,
-	RzILOpBitVector *exponent) {
-	return fd_exp_at_least(format, exponent, fd_exponent_bias(format) + 63);
-}
-
-/**
- * Replaces RISCV_FD_IS_EXP_OVERFLOW_ULONG.
- * F had threshold 191; D had 1087. They are respectively bias 127/1023 + 64.
- */
-static RZ_INLINE RzILOpBool *fd_is_exp_overflow_ulong(RzFloatFormat format,
-	RzILOpBitVector *exponent) {
-	return fd_exp_at_least(format, exponent, fd_exponent_bias(format) + 64);
+static RZ_INLINE RzILOpBool *fd_fcvt_is_invalid(RzFloatFormat format,
+	bool unsigned_result, ut32 width) {
+	RzILOpFloat *lower = unsigned_result
+		? BV2F(format, fd_constant(format, 0))
+		: FNEG(fd_power_of_two(format, width - 1));
+	RzILOpFloat *upper = fd_power_of_two(format,
+		unsigned_result ? width : width - 1);
+	return OR(fd_is_nan(format, VARL("_bv")),
+		OR(FLT(VARL("_rounded"), lower), FGE(VARL("_rounded"), upper)));
 }
 
 static RZ_INLINE RzFloatRMode fd_rounding_mode(riscv_rounding_mode mode) {
@@ -567,30 +548,27 @@ static RZ_INLINE RzILOpEffect *fd_lift_fcvt_w(RzFloatFormat format,
 	bool unsigned_result, RzAnalysis *analysis, cs_insn *insn, ut64 current_addr) {
 	DECODE_FD_RD_FS_BV(format, insn);
 	RzFloatRMode mode = fd_rounding_mode(insn->detail->riscv.rounding_mode);
-	RzILOpBool *overflow = unsigned_result
-		? OR(fd_is_exp_overflow_uint(format, VARL("_ex")),
-			  AND(VARL("_sg"), OR(NON_ZERO(VARL("_ex")), NON_ZERO(VARL("_mn")))))
-		: fd_is_exp_overflow_int(format, VARL("_ex"));
 	RzILOpBitVector *saturated;
 	RzILOpBitVector *converted;
 	if (unsigned_result) {
 		saturated = ITE(OR(AND(fd_is_max_exp(format, VARL("_ex")), NON_ZERO(VARL("_mn"))), INV(VARL("_sg"))),
 			UN(32, 0xffffffff), UN(32, 0));
-		converted = F2INT(32, mode, VARL("_f"));
+		converted = F2INT(32, mode, VARL("_rounded"));
 	} else {
 		saturated = ITE(AND(VARL("_sg"), INV(AND(fd_is_max_exp(format, VARL("_ex")), NON_ZERO(VARL("_mn"))))),
 			UN(32, 0x80000000), UN(32, 0x7fffffff));
-		converted = F2SINT(32, mode, VARL("_f"));
+		converted = F2SINT(32, mode, VARL("_rounded"));
 	}
-	return SEQN(8,
+	return SEQN(9,
 		SETL("_bv", value),
 		SETL("_ex", fd_get_exponent(format, VARL("_bv"))),
 		SETL("_mn", fd_get_mantissa(format, VARL("_bv"))),
 		SETL("_sg", NON_ZERO(fd_get_sign(format, VARL("_bv")))),
 		SETL("_f", BV2F(format, VARL("_bv"))),
-		SETL("_nv", overflow),
+		SETL("_rounded", FROUND(mode, VARL("_f"))),
+		SETL("_nv", fd_fcvt_is_invalid(format, unsigned_result, 32)),
 		riscv_il_set_reg(rd, SIGNED(analysis->bits, ITE(VARL("_nv"), saturated, converted))),
-		SETG("fcsr", LOGOR(VARG("fcsr"), LOGOR(ITE(VARL("_nv"), UN(64, 0x10), UN(64, 0)), ITE(AND(INV(VARL("_nv")), FEXCEPT(RZ_FLOAT_E_INEXACT, rz_il_op_new_fround_exc(mode, VARL("_f")))), UN(64, 0x01), UN(64, 0))))));
+		SETG("fcsr", LOGOR(VARG("fcsr"), ITE(VARL("_nv"), UN(64, 0x10), ITE(FNE(VARL("_rounded"), VARL("_f")), UN(64, 0x01), UN(64, 0))))));
 }
 
 static RZ_INLINE RzILOpEffect *fd_lift_fcvt_l(RzFloatFormat format,
@@ -598,30 +576,27 @@ static RZ_INLINE RzILOpEffect *fd_lift_fcvt_l(RzFloatFormat format,
 	REQUIRE_64_BIT(analysis);
 	DECODE_FD_RD_FS_BV(format, insn);
 	RzFloatRMode mode = fd_rounding_mode(insn->detail->riscv.rounding_mode);
-	RzILOpBool *overflow = unsigned_result
-		? OR(fd_is_exp_overflow_ulong(format, VARL("_ex")),
-			  AND(VARL("_sg"), OR(NON_ZERO(VARL("_ex")), NON_ZERO(VARL("_mn")))))
-		: fd_is_exp_overflow_long(format, VARL("_ex"));
 	RzILOpBitVector *saturated;
 	RzILOpBitVector *converted;
 	if (unsigned_result) {
 		saturated = ITE(OR(AND(fd_is_max_exp(format, VARL("_ex")), NON_ZERO(VARL("_mn"))), INV(VARL("_sg"))),
 			UN(64, UT64_MAX), UN(64, 0));
-		converted = F2INT(64, mode, VARL("_f"));
+		converted = F2INT(64, mode, VARL("_rounded"));
 	} else {
 		saturated = ITE(AND(VARL("_sg"), INV(AND(fd_is_max_exp(format, VARL("_ex")), NON_ZERO(VARL("_mn"))))),
 			UN(64, 0x8000000000000000ULL), UN(64, 0x7fffffffffffffffULL));
-		converted = F2SINT(64, mode, VARL("_f"));
+		converted = F2SINT(64, mode, VARL("_rounded"));
 	}
-	return SEQN(8,
+	return SEQN(9,
 		SETL("_bv", value),
 		SETL("_ex", fd_get_exponent(format, VARL("_bv"))),
 		SETL("_mn", fd_get_mantissa(format, VARL("_bv"))),
 		SETL("_sg", NON_ZERO(fd_get_sign(format, VARL("_bv")))),
 		SETL("_f", BV2F(format, VARL("_bv"))),
-		SETL("_nv", overflow),
+		SETL("_rounded", FROUND(mode, VARL("_f"))),
+		SETL("_nv", fd_fcvt_is_invalid(format, unsigned_result, 64)),
 		riscv_il_set_reg(rd, ITE(VARL("_nv"), saturated, converted)),
-		SETG("fcsr", LOGOR(VARG("fcsr"), LOGOR(ITE(VARL("_nv"), UN(64, 0x10), UN(64, 0)), ITE(AND(INV(VARL("_nv")), FEXCEPT(RZ_FLOAT_E_INEXACT, rz_il_op_new_fround_exc(mode, VARL("_f")))), UN(64, 0x01), UN(64, 0))))));
+		SETG("fcsr", LOGOR(VARG("fcsr"), ITE(VARL("_nv"), UN(64, 0x10), ITE(FNE(VARL("_rounded"), VARL("_f")), UN(64, 0x01), UN(64, 0))))));
 }
 
 static RZ_INLINE RzILOpEffect *fd_lift_fcvt_from_int(RzFloatFormat format,
