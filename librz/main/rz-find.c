@@ -72,40 +72,44 @@ typedef struct {
 	RzIO *io;
 } RzfindContext;
 
+static void str_iterate_wide(RzStrBuf *sb, char *buf, uint64_t len, uint64_t start) {
+	uint64_t i, j = 0;
+	for (i = start; i < len && buf[i]; i++) {
+		char ch = buf[i];
+		if (ch == '"' || ch == '\\') {
+			ch = '\'';
+		}
+		if (!IS_PRINTABLE(ch)) {
+			break;
+		}
+		rz_strbuf_append_n(sb, &ch, 1);
+		j++;
+		i++;
+		if (j > 80) {
+			rz_strbuf_append(sb, "...");
+			break;
+		}
+		if (i >= len || !buf[i]) {
+			break;
+		}
+	}
+}
+
 static void str_iterate(bool widestr, RzStrBuf *sb, char *buf, uint64_t len, uint64_t start) {
 	if (widestr) {
-		uint64_t i, j = 0;
-		for (i = start; i < len && buf[i]; i++) {
-			char ch = buf[i];
-			if (ch == '"' || ch == '\\') {
-				ch = '\'';
-			}
-			if (!IS_PRINTABLE(ch)) {
-				break;
-			}
-			rz_strbuf_append_n(sb, &ch, 1);
-			j++;
-			i++;
-			if (j > 80) {
-				rz_strbuf_append(sb, "...");
-				break;
-			}
-			if (i >= len || !buf[i]) {
-				break;
-			}
-		}
+		str_iterate_wide(sb, buf, len, start);
 		return;
-	} else {
-		for (uint64_t i = start; i < len; i++) {
-			char ch = buf[i];
-			if (ch == '"' || ch == '\\') {
-				ch = '\'';
-			}
-			if (!ch || !IS_PRINTABLE(ch)) {
-				break;
-			}
-			rz_strbuf_append_n(sb, &ch, 1);
+	}
+
+	for (uint64_t i = start; i < len; i++) {
+		char ch = buf[i];
+		if (ch == '"' || ch == '\\') {
+			ch = '\'';
 		}
+		if (!ch || !IS_PRINTABLE(ch)) {
+			break;
+		}
+		rz_strbuf_append_n(sb, &ch, 1);
 	}
 }
 
