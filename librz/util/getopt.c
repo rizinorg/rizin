@@ -8,8 +8,8 @@
  * $Id: getopt.c,v 1.2 1998/01/21 22:27:05 billm Exp $ *
  */
 
-#include "rz_util/rz_log.h"
-#include "rz_util/rz_str.h"
+#include <rz_util/rz_log.h>
+#include <rz_util/rz_str.h>
 #include <rz_util.h>
 
 #define BADCH  (int)'?'
@@ -82,8 +82,15 @@ static int rz_getopt_long_next(RzGetopt *opt, const char *arg) {
 	opt->ind += consume_value ? 2 : 1;
 	return desc->val;
 }
-
-RZ_API void rz_getopt_init_long(RzGetopt *opt, int argc, const char **argv, const char *ostr, const RzVector *longopts) {
+/**
+ * Initializes the parse state \p opt with the command line arguments and the configuration
+ * \param opt RzGetopt parse state, contains constant data like argc and argv, configuration, as well as mutable parse state
+ * \param argc the cmdline count passed to the program
+ * \param argv the cmdline string passed to the program
+ * \param ostr the short option configuration string describing all valid short options
+ * \param longopts the long option configuration describing all valid long options
+ */
+RZ_API void rz_getopt_init_long(RzGetopt *opt, int argc, const char **argv, const char *ostr, const RzVector /*<RzGetoptLong>*/ *longopts) {
 	memset(opt, 0, sizeof(RzGetopt));
 	opt->err = 1;
 	opt->ind = 1;
@@ -97,6 +104,14 @@ RZ_API void rz_getopt_init_long(RzGetopt *opt, int argc, const char **argv, cons
 	opt->longopts = longopts;
 }
 
+/**
+ * A variant of rz_getopt_init_long that hardcodes long options to nothing
+ * \param opt RzGetopt parse state, contains constant data like argc and argv, configuration, as well as mutable parse state
+ * \param argc the cmdline count passed to the program
+ * \param argv the cmdline string passed to the program
+ * \param ostr the short option configuration string describing all valid short options
+ * \param longopts the long option configuration describing all valid long option
+ */
 RZ_API void rz_getopt_init(RzGetopt *opt, int argc, const char **argv, const char *ostr) {
 	rz_getopt_init_long(opt, argc, argv, ostr, NULL);
 }
