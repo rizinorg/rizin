@@ -243,6 +243,14 @@ static bool build_prefix_tree_from_binfile(RzBinFile *binfile, RzTrie *t, ut64 p
 	return true;
 }
 
+RZ_API void rz_prologues_arch_info_init(RZ_NONNULL RzProloguesArchInfo *arch_info,
+	RZ_NULLABLE const char *arch, int bits, bool big_endian) {
+	rz_return_if_fail(arch_info);
+	arch_info->arch = arch ? rz_str_dup(arch) : NULL;
+	arch_info->bits = bits > 0 ? bits : 0;
+	arch_info->big_endian = big_endian;
+}
+
 /**
  * \brief Free internal fields of an RzProloguesArchInfo struct and reset its values.
  *
@@ -259,7 +267,7 @@ RZ_API void rz_prologues_arch_info_fini(RZ_NULLABLE RzProloguesArchInfo *arch_in
 
 /**
  * \brief Check if a binary's arch matches the target arch, or adopt it if uninitialized.
- * 
+ *
  * If \p target_arch is NULL = accept any arch.
  * If \p target_arch->arch is NULL = adopts and sets the arch and endianness from \p info.
  * If \p target_arch->bits <= 0, it adopts and sets the bitness from \p info.
