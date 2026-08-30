@@ -22,8 +22,7 @@ typedef struct rz_prologues_arch_info_t {
 
 RZ_API void rz_prologues_arch_info_fini(RZ_NULLABLE RzProloguesArchInfo *arch_info);
 
-RZ_API bool rz_prologues_arch_check(RZ_NONNULL const RzBinInfo *info, RZ_NULLABLE RzProloguesArchInfo *target_arch,
-	RZ_NULLABLE const char *fallback_arch, int fallback_bits, bool fallback_big_endian);
+RZ_API bool rz_prologues_arch_check(RZ_NONNULL const RzBinInfo *info, RZ_NULLABLE RzProloguesArchInfo *target_arch);
 
 RZ_API RZ_OWN RzTrie *rz_prologues_trie_new(void);
 

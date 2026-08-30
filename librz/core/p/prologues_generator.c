@@ -259,32 +259,27 @@ RZ_API void rz_prologues_arch_info_fini(RZ_NULLABLE RzProloguesArchInfo *arch_in
 
 /**
  * \brief Check if a binary's arch matches the target arch, or adopt it if uninitialized.
- * If \p target_arch is NULL = accept any arch
- * If \p target_arch->arch is NULL = adopts and sets the arch and endianness from \p info
- * (or fallback arguments if not specified in \p info).
+ * 
+ * If \p target_arch is NULL = accept any arch.
+ * If \p target_arch->arch is NULL = adopts and sets the arch and endianness from \p info.
  * If \p target_arch->bits <= 0, it adopts and sets the bitness from \p info.
  * If \p target_arch fields are already set, it checks that \p info matches them.
  *
  * \param[in]		info                Binary info to check or adopt.
  * \param[in,out] 	target_arch         Arch container to match against or populate.
- * \param[in] 		fallback_arch       Optional fallback arch if info->arch is empty.
- * \param[in] 		fallback_bits       Optional fallback bitness if info->bits <= 0.
- * \param[in] 		fallback_big_endian Optional fallback endianness if info->arch is empty.
  *
  * \return true if the binary matches or was successfully adopted, false on arch/bitness/endianness mismatch.
  */
-RZ_API bool rz_prologues_arch_check(RZ_NONNULL const RzBinInfo *info,
-	RZ_NULLABLE RzProloguesArchInfo *target_arch,
-	RZ_NULLABLE const char *fallback_arch, int fallback_bits, bool fallback_big_endian) {
+RZ_API bool rz_prologues_arch_check(RZ_NONNULL const RzBinInfo *info, RZ_NULLABLE RzProloguesArchInfo *target_arch) {
 	rz_return_val_if_fail(info, false);
 
 	if (!target_arch) {
 		return true;
 	}
 
-	const char *file_arch = RZ_STR_ISNOTEMPTY(info->arch) ? info->arch : fallback_arch;
-	int file_bits = info->bits > 0 ? info->bits : fallback_bits;
-	bool file_be = RZ_STR_ISNOTEMPTY(info->arch) ? info->big_endian : fallback_big_endian;
+	const char *file_arch = info->arch;
+	int file_bits = info->bits;
+	bool file_be = info->big_endian;
 
 	if (target_arch->arch) {
 		if (!file_arch || !RZ_STR_EQ(file_arch, target_arch->arch)) {
@@ -342,7 +337,7 @@ RZ_API bool rz_prologues_trie_feed_binfile(RZ_NONNULL RzTrie *pg_trie, RZ_NONNUL
 		return false;
 	}
 
-	if (arch_info && !rz_prologues_arch_check(info, arch_info, NULL, 0, false)) {
+	if (arch_info && !rz_prologues_arch_check(info, arch_info)) {
 		const char *file_arch = RZ_STR_ISNOTEMPTY(info->arch) ? info->arch : "unknown";
 		RZ_LOG_WARN("Skipping file '%s': arch mismatch.\n"
 			    "  Trie: (%s, %d-bit, %cE)\n"
