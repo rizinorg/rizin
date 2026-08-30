@@ -20,6 +20,8 @@ typedef struct rz_prologues_arch_info_t {
 	bool big_endian; ///< target endianness
 } RzProloguesArchInfo;
 
+RZ_API void rz_prologues_arch_info_init(RZ_NONNULL RzProloguesArchInfo *arch_info,
+	RZ_NULLABLE const char *arch, int bits, bool big_endian);
 RZ_API void rz_prologues_arch_info_fini(RZ_NULLABLE RzProloguesArchInfo *arch_info);
 
 RZ_API bool rz_prologues_arch_check(RZ_NONNULL const RzBinInfo *info, RZ_NULLABLE RzProloguesArchInfo *target_arch);
