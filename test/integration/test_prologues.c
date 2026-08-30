@@ -18,6 +18,59 @@ static RzBinFile *open_bin_file(RzBin *bin, const char *path) {
 	return bf;
 }
 
+bool test_prologues_arch_check() {
+	RzBinInfo info = { 0 };
+	info.arch = "arm";
+	info.bits = 64;
+	info.big_endian = false;
+	mu_assert_true(rz_prologues_arch_check(&info, NULL), "NULL target_arch should return true");
+
+	// empty target_arch , should adopt from bininfo
+	RzProloguesArchInfo arch_info = { 0 };
+	mu_assert_true(rz_prologues_arch_check(&info, &arch_info), "should adopt from bininfo");
+	mu_assert_streq(arch_info.arch, "arm", "arch should be adopted as 'arm'");
+	mu_assert_eq(arch_info.bits, 64, "bits should be adopted as 64");
+	mu_assert_false(arch_info.big_endian, "endian should be adopted as little");
+	mu_assert_true(rz_prologues_arch_check(&info, &arch_info), "matching arch should return true");
+	rz_prologues_arch_info_fini(&arch_info);
+	mu_assert_null(arch_info.arch, "arch should be NULL after fini");
+	mu_assert_eq(arch_info.bits, 0, "bits should be 0 after fini");
+	// null arch init should be safe
+	rz_prologues_arch_info_init(&arch_info, NULL, 0, false);
+	mu_assert_null(arch_info.arch, "NULL arch should remain NULL after init");
+	mu_assert_eq(arch_info.bits, 0, "bits should be 0 for 0 input");
+	mu_assert_false(arch_info.big_endian, "endian should be false");
+
+	RzProloguesArchInfo mips_info = { 0 };
+	rz_prologues_arch_info_init(&mips_info, "mips", 32, false);
+	mu_assert_streq(mips_info.arch, "mips", "arch should be 'mips'");
+	mu_assert_eq(mips_info.bits, 32, "bits should be 32");
+	mu_assert_false(mips_info.big_endian, "endian should be little");
+	mu_assert_false(rz_prologues_arch_check(&info, &mips_info), "arch mismatch should return false");
+	rz_prologues_arch_info_fini(&mips_info);
+
+	RzProloguesArchInfo arm32_info = { 0 };
+	rz_prologues_arch_info_init(&arm32_info, "arm", 32, false);
+	mu_assert_false(rz_prologues_arch_check(&info, &arm32_info), "bits mismatch should return false");
+	rz_prologues_arch_info_fini(&arm32_info);
+
+	RzProloguesArchInfo armbe_info = { 0 };
+	rz_prologues_arch_info_init(&armbe_info, "arm", 64, true);
+	mu_assert_false(rz_prologues_arch_check(&info, &armbe_info), "endian mismatch should return false");
+	rz_prologues_arch_info_fini(&armbe_info);
+
+	// partial adopt (bits adopt, arch already set)
+	RzProloguesArchInfo partial = { 0 };
+	rz_prologues_arch_info_init(&partial, "arm", 0, false);
+	mu_assert_true(rz_prologues_arch_check(&info, &partial), "partial arch match, adopt bits");
+	mu_assert_eq(partial.bits, 64, "bits should be adopted as 64 from bininfo");
+	rz_prologues_arch_info_fini(&partial);
+
+	rz_prologues_arch_info_fini(NULL); // should be safe
+
+	mu_end;
+}
+
 bool test_prologues_generate() {
 
 	RzProloguesArchInfo arch_info = { 0 };
@@ -40,7 +93,8 @@ bool test_prologues_generate() {
 
 	// single bin
 	// - raw extract
-	mu_assert_true(rz_prologues_trie_feed_binfile(pg_trie, bf1, 8, &arch_info, NULL), "Failed to feed binfile into prologues trie");
+	mu_assert_true(rz_prologues_trie_feed_binfile(pg_trie, bf1, 8, &arch_info, NULL),
+		"Failed to feed binfile into prologues trie");
 	RzVector *prologues = rz_prologues_extract_raw_from_trie(pg_trie, 8);
 	mu_assert_notnull(prologues, "Failed to extract raw prologues from trie");
 	mu_assert_eq(rz_vector_len(prologues), 8, "no. of raw prologues extracted differs");
@@ -67,9 +121,6 @@ bool test_prologues_generate() {
 	rz_vector_free(prologues);
 
 	rz_prologues_arch_info_fini(&arch_info);
-	mu_assert_null(arch_info.arch, "arch should be NULL after fini");
-	mu_assert_eq(arch_info.bits, 0, "bits should be 0 after fini");
-
 	rz_trie_free(pg_trie);
 
 	// all bins
@@ -106,13 +157,13 @@ bool test_prologues_generate() {
 	// dir
 	rz_prologues_arch_info_fini(&arch_info);
 	rz_prologues_arch_info_init(&arch_info, "mips", 32, false);
-	mu_assert_streq(arch_info.arch, "mips", "arch should be 'mips'");
-	mu_assert_eq(arch_info.bits, 32, "bits should be 32");
-	mu_assert_false(arch_info.big_endian, "endian should be false");
 
 	rz_set_s_free(processed_files);
 	processed_files = rz_set_s_new(HT_STR_DUP);
 	pg_trie = rz_prologues_trie_new();
+	// nonexistent
+	fcnt = rz_prologues_trie_feed_directory(pg_trie, bin, "nonexistent/dir", 8, NULL, NULL);
+	mu_assert_eq(fcnt, -1, "non-existent directory should return -1");
 	fcnt = rz_prologues_trie_feed_directory(pg_trie, bin, "bins/elf", 8, &arch_info, processed_files);
 	mu_assert_eq(fcnt, 4, "valid processed file count mismatch");
 	mu_assert_eq(rz_set_s_size(processed_files), 4, "processed file set size mismatch");
@@ -139,16 +190,30 @@ bool test_prologues_generate() {
 
 	RzBinFile *bf4 = open_bin_file(bin, "bins/elf/graphascii.c-clang-arm64-O0.o");
 	mu_assert_notnull(bf4, "couldn't open file");
-	mu_assert_true(rz_prologues_trie_feed_binfile(pg_trie, bf4, 3, &arch_info, NULL), "Failed to feed binfile into prologues trie");
-	prologues = rz_prologues_generalize_and_extract(pg_trie, 3, 0.8);
 	processed_files = rz_set_s_new(HT_STR_DUP);
 	mu_assert_notnull(processed_files, "couldn't create processed files set");
-	rz_set_s_add(processed_files, "bins/elf/graphascii.c-clang-arm64-O0.o");
+	mu_assert_true(rz_prologues_trie_feed_binfile(pg_trie, bf4, 3, &arch_info, processed_files),
+		"Failed to feed binfile into prologues trie");
+
+	prologues = rz_prologues_generalize_and_extract(pg_trie, 3, 0.8);
 	sd = rz_prologues_trie_to_structured_data(pg_trie, 3, &arch_info, processed_files);
 	mu_assert_notnull(sd, "Failed to convert prologues trie to structured data");
 	output = rz_structured_data_to_yaml(sd);
 	mu_assert_notnull(output, "Failed to convert structured data to YAML");
 	mu_assert_streq(output, trie_output, "YAML output mismatch");
+
+	// skip duplicate feed
+	mu_assert_false(rz_prologues_trie_feed_binfile(pg_trie, bf4, 3, &arch_info, processed_files),
+		"Duplicate feed should be skipped");
+	mu_assert_eq(rz_set_s_size(processed_files), 1, "processed file set size should still be 1");
+
+	// arch mismatch
+	RzProloguesArchInfo mips_arch = { 0 };
+	rz_prologues_arch_info_init(&mips_arch, "mips", 32, false);
+	// bf4 = arm64 , targeting mips should fail
+	mu_assert_false(rz_prologues_trie_feed_binfile(pg_trie, bf4, 8, &mips_arch, NULL),
+		"arch-mismatch feed should return false");
+	rz_prologues_arch_info_fini(&mips_arch);
 
 	rz_vector_free(prologues);
 	rz_set_s_free(processed_files);
@@ -164,6 +229,7 @@ bool test_prologues_generate() {
 }
 
 bool all_tests() {
+	mu_run_test(test_prologues_arch_check);
 	mu_run_test(test_prologues_generate);
 	return tests_passed != tests_run;
 }
