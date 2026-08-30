@@ -62,22 +62,24 @@ static bool output_handler(RzStructuredData *sd, const char *output_file, bool j
 		return false;
 	}
 
-	if (output_file) {
-		if (rz_file_exists(output_file)) {
-			if (!rz_cons_yesno('n', "Output file '%s' already exists. Overwrite? (y/N) ", output_file)) {
-				RZ_LOG_WARN("Output cancelled.\n");
-				RZ_FREE(output);
-				return false;
-			}
-		}
-		if (!rz_file_dump(output_file, (const ut8 *)output, strlen(output), false)) {
-			RZ_LOG_ERROR("Failed to write output to file '%s'\n", output_file);
+	if (!output_file) {
+		printf("%s\n", output);
+		return true;
+	}
+
+	if (rz_file_exists(output_file)) {
+		if (!rz_cons_yesno('n', "Output file '%s' already exists. Overwrite? (y/N) ", output_file)) {
+			RZ_LOG_WARN("Output cancelled.\n");
 			RZ_FREE(output);
 			return false;
 		}
-	} else {
-		printf("%s\n", output);
 	}
+	if (!rz_file_dump(output_file, (const ut8 *)output, strlen(output), false)) {
+		RZ_LOG_ERROR("Failed to write output to file '%s'\n", output_file);
+		RZ_FREE(output);
+		return false;
+	}
+
 	RZ_FREE(output);
 	return true;
 }

@@ -26,6 +26,7 @@ typedef struct core_prologues_generator_context_t {
 	RzCmdDesc *cmd_desc;
 	ut64 prologue_len; // cfg: prologue length used for generation
 	double entropy_threshold; // cfg: threshold for node split entropy used for generalization
+	char *entropy_threshold_str;
 } CorePGContext;
 
 /**
@@ -123,7 +124,7 @@ static bool config_prologue_len_setter(void *user, const void *value) {
 static bool config_entropy_threshold_getter(void *user, void *value) {
 	CorePGContext *ctx = user;
 	rz_return_val_if_fail(ctx && value, false);
-	*(char **)value = rz_str_newf("%g", ctx->entropy_threshold);
+	*(char **)value = ctx->entropy_threshold_str;
 	return true;
 }
 
@@ -144,6 +145,8 @@ static bool config_entropy_threshold_setter(void *user, const void *value) {
 		RZ_LOG_ERROR("Entropy threshold must be between 0.0 and 1.0\n");
 		return false;
 	}
+	RZ_FREE(ctx->entropy_threshold_str);
+	ctx->entropy_threshold_str = rz_str_dup(val_str);
 	ctx->entropy_threshold = val;
 	return true;
 }
@@ -956,6 +959,7 @@ static bool rz_cmd_prologues_gen_init(RzCore *core, RZ_OUT void **user) {
 
 	ctx->prologue_len = RZ_PROLOGUE_DEFAULT_LEN;
 	ctx->entropy_threshold = RZ_PROLOGUE_DEFAULT_ENTROPY_THRESHOLD;
+	ctx->entropy_threshold_str = rz_str_newf("%g", ctx->entropy_threshold);
 
 	// cmds
 	RzCmd *rcmd = core->rcmd;
@@ -1012,6 +1016,7 @@ static bool rz_cmd_prologues_gen_fini(RzCore *core, RZ_NULLABLE void *user) {
 	if (!rz_core_plugin_cmd_desc_remove(core, ctx->cmd_desc)) {
 		return false;
 	}
+	RZ_FREE(ctx->entropy_threshold_str);
 	RZ_FREE(ctx);
 	return true;
 }
