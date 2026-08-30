@@ -8,8 +8,8 @@
  * $Id: getopt.c,v 1.2 1998/01/21 22:27:05 billm Exp $ *
  */
 
-#include "rz_util/rz_log.h"
-#include "rz_util/rz_str.h"
+#include <rz_util/rz_log.h>
+#include <rz_util/rz_str.h>
 #include <rz_util.h>
 
 #define BADCH  (int)'?'
@@ -83,7 +83,15 @@ static int rz_getopt_long_next(RzGetopt *opt, const char *arg) {
 	return desc->val;
 }
 
-RZ_API void rz_getopt_init_long(RzGetopt *opt, int argc, const char **argv, const char *ostr, const RzVector *longopts) {
+/**
+ * Initializes the parse state \p opt with the command line arguments and the configuration
+ * \param opt RzGetopt parse state, contains constant data like argc and argv, configuration, as well as mutable parse state
+ * \param argc the cmdline count passed to the program
+ * \param argv the cmdline string passed to the program
+ * \param ostr the short option configuration string describing all valid short options
+ * \param longopts the long option configuration describing all valid long options
+ */
+RZ_API void rz_getopt_init_long(RzGetopt *opt, int argc, const char **argv, const char *ostr, const RzVector /*<RzGetoptLong>*/ *longopts) {
 	memset(opt, 0, sizeof(RzGetopt));
 	opt->err = 1;
 	opt->ind = 1;
@@ -97,10 +105,37 @@ RZ_API void rz_getopt_init_long(RzGetopt *opt, int argc, const char **argv, cons
 	opt->longopts = longopts;
 }
 
+/**
+ * A variant of rz_getopt_init_long that hardcodes long options to nothing
+ * \param opt RzGetopt parse state, contains constant data like argc and argv, configuration, as well as mutable parse state
+ * \param argc the cmdline count passed to the program
+ * \param argv the cmdline string passed to the program
+ * \param ostr the short option configuration string describing all valid short options
+ * \param longopts the long option configuration describing all valid long option
+ */
 RZ_API void rz_getopt_init(RzGetopt *opt, int argc, const char **argv, const char *ostr) {
 	rz_getopt_init_long(opt, argc, argv, ostr, NULL);
 }
 
+/**
+ * Consumes the next option and its value (if applicable) from the argv
+ *  1- If it successfully recognizes a short option, it always returns that option's character
+ *  2- If the short option has a value, it's placed into opt->arg
+ *  3- If it recognizes a long option, it returns an enum value >= 256 and
+ *     places its value (if applicable) into opt->arg, the value may be a default instead of an argv word
+ *  4- Unknown options, long or short, return '?' (BADCH)
+ *  5- When a valid short option requiring an argument isn't given an argument,
+ *     returns '?' (BADCH) if ostr doesn't begin with ':', or ':' (BADARG) otherwise
+ *  6- When a valid long option requiring an argument isn't given an argument,
+ *     and doesn't have a default, it always returns '?' (BADCH)
+ *  7- When the end of argv is reached or a -- not indicating a long option is reached, returns -1
+ *  8- When a positional argument is reached, it returns -1 and no options after that argument can be parsed
+ *
+ *  \param opt the state struct containing both the argv and argc command line data,
+ *             the long options descriptor array, and the mutable cursors needed to maintain
+ *             the state of the current parse position, and the arg field pointing
+ *             to the argument value
+ */
 RZ_API int rz_getopt_next(RzGetopt *opt) {
 	const char *oli; // option letter list index
 

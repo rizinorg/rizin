@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_util/rz_pj.h>
 #include <rz_types.h>
 #include <rz_cmd.h>
 #include <rz_util.h>
@@ -1521,15 +1522,16 @@ static const char *cmd_desc_type_name(RzCmdDescType type) {
 		return "unknown";
 	}
 }
+
 /**
-* \brief Generates a JSON tree describing the command tree
-* \param cmd Reference to RzCmd
-* \param cd Reference to RzCmdDesc
-* \param j Reference to the PJ builder helper object
-* 
-* \return returns false if any argument is null, otherwise it builds in PJ and returns true.
-*/
-RZ_API bool rz_cmd_get_help_json(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const RzCmdDesc *cd, RZ_NONNULL PJ *j) {
+ * \brief Generates a JSON tree describing the command tree
+ * \param cmd RzCmd instance containing the command tree
+ * \param cd the current command descriptor to be printed
+ * \param j the PJ builder object to write the output json into
+ *
+ * \return returns false if any argument is null, otherwise it builds in PJ and returns true.
+ */
+RZ_API bool rz_cmd_get_help_json(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const RzCmdDesc *cd, RZ_NONNULL RZ_OUT PJ *j) {
 	rz_return_val_if_fail(cmd && cd && j, false);
 	pj_ko(j, cd->name);
 	pj_ks(j, "cmd", cd->name);
@@ -1551,7 +1553,16 @@ RZ_API bool rz_cmd_get_help_json(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const RzCmdDe
 	return true;
 }
 
-static void cmd_desc_foreach_tree(RZ_NONNULL RzCmd *cmd, RZ_NONNULL RzCmdDesc *cd, RzCmdDescVisitCb pre, RzCmdDescVisitCb post, void *user) {
+/**
+ * \brief Runs a callback for each node in the tree, the pre callback runs before instance
+ * \param cmd RzCmd instance containing the command tree
+ * \param cd the current command descriptor to be processed
+ * \param pre If given, a callback that will run before processing any children of the descriptor
+ * \param post If given, a callback that will run after processing all children of the descriptor
+ * \param user Custom callback-specific data to be passed to the two callbacks along with the descriptor
+ *
+ */
+static void cmd_desc_foreach_tree(RZ_NONNULL RzCmd *cmd, RZ_NONNULL RzCmdDesc *cd, RZ_NULLABLE RzCmdDescVisitCb pre, RZ_NULLABLE RzCmdDescVisitCb post, RZ_NULLABLE void *user) {
 	if (!cd || !cmd) {
 		return;
 	}
@@ -1575,8 +1586,13 @@ static void cmd_desc_foreach_tree(RZ_NONNULL RzCmd *cmd, RZ_NONNULL RzCmdDesc *c
  *
  * The pre callback is called before visiting children. The post callback is
  * called after all children have been visited. Traversal starts at the root descriptor.
+ *
+ * \param cmd RzCmd instance containing the command descriptor tree
+ * \param pre Callback to run before visting any of the children of each descriptor in the tree
+ * \param post Callback to run after visting all the children of each descriptor in the tree
+ * \param user Custom arbitrary data passed to both callbacks on every invocation
  */
-RZ_API void rz_cmd_desc_foreach_tree(RZ_NONNULL RzCmd *cmd, RzCmdDescVisitCb pre, RzCmdDescVisitCb post, void *user) {
+RZ_API void rz_cmd_desc_foreach_tree(RZ_NONNULL RzCmd *cmd, RZ_NULLABLE RzCmdDescVisitCb pre, RZ_NULLABLE RzCmdDescVisitCb post, RZ_NULLABLE void *user) {
 	rz_return_if_fail(cmd);
 	cmd_desc_foreach_tree(cmd, rz_cmd_get_root(cmd), pre, post, user);
 }
@@ -1586,33 +1602,43 @@ RZ_API void rz_cmd_desc_foreach_tree(RZ_NONNULL RzCmd *cmd, RzCmdDescVisitCb pre
  *
  * The pre callback is called before visiting children. The post callback is
  * called after all children have been visited. Traversal starts at \p begin.
+ * \param cmd RzCmd instance containing the descriptor tree
+ * \param begin the descriptor to start processing
+ * \param pre Callback to run before visting any children
+ * \param post Callback to run after vising all children
+ * \param user custom data to pass to the callbacks on every call
  */
-RZ_API void rz_cmd_desc_foreach_tree_from(RZ_NONNULL RzCmd *cmd, RZ_NONNULL RzCmdDesc *begin, RzCmdDescVisitCb pre, RzCmdDescVisitCb post, void *user) {
+RZ_API void rz_cmd_desc_foreach_tree_from(RZ_NONNULL RzCmd *cmd, RZ_NONNULL RzCmdDesc *begin, RZ_NULLABLE RzCmdDescVisitCb pre, RZ_NULLABLE RzCmdDescVisitCb post, RZ_NULLABLE void *user) {
 	rz_return_if_fail(cmd && begin);
 	cmd_desc_foreach_tree(cmd, begin, pre, post, user);
 }
 
-static void cmd_tree_json_modes(PJ *j, const RzCmdDesc *cd) {
+static void cmd_tree_json_modes(const RzCmdDesc *cd, RZ_NONNULL RZ_OUT PJ *j) {
 	RzCmdDesc *exec_cd = rz_cmd_desc_get_exec((RzCmdDesc *)cd);
 	pj_ka(j, "modes");
-	if (exec_cd) {
-		int modes = 0;
-		switch (exec_cd->type) {
-		case RZ_CMD_DESC_TYPE_ARGV_MODES:
-			modes = exec_cd->d.argv_modes_data.modes;
-			break;
-		case RZ_CMD_DESC_TYPE_ARGV_STATE:
-			modes = exec_cd->d.argv_state_data.modes;
-			break;
-		default:
-			break;
-		}
-		for (size_t i = 0; i < RZ_ARRAY_SIZE(argv_modes); i++) {
-			if (modes & argv_modes[i].mode) {
-				pj_s(j, argv_modes[i].name);
-			}
+
+	if (!exec_cd) {
+		pj_end(j);
+		return;
+	}
+
+	int modes = 0;
+	switch (exec_cd->type) {
+	case RZ_CMD_DESC_TYPE_ARGV_MODES:
+		modes = exec_cd->d.argv_modes_data.modes;
+		break;
+	case RZ_CMD_DESC_TYPE_ARGV_STATE:
+		modes = exec_cd->d.argv_state_data.modes;
+		break;
+	default:
+		break;
+	}
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(argv_modes); i++) {
+		if (modes & argv_modes[i].mode) {
+			pj_s(j, argv_modes[i].name);
 		}
 	}
+
 	pj_end(j);
 }
 
@@ -1640,7 +1666,7 @@ static void cmd_tree_json_pre(RzCmd *cmd, const RzCmdDesc *cd, void *user) {
 	fill_details_json(cd->help->details, j);
 	pj_kb(j, "executable", rz_cmd_desc_has_handler(cd));
 	pj_ki(j, "n_children", cd->n_children);
-	cmd_tree_json_modes(j, cd);
+	cmd_tree_json_modes(cd, j);
 	pj_ka(j, "children");
 }
 
@@ -1652,9 +1678,11 @@ static void cmd_tree_json_post(RZ_UNUSED RzCmd *cmd, RZ_UNUSED const RzCmdDesc *
 }
 
 /**
- * \brief Generates a recursive JSON representation of the real command descriptor tree.
+ * \brief Generates a recursive JSON representation of the command descriptor tree.
+ * \param cmd The command tree to be printed as json
+ * \parma j The json builder object used to build the json output
  */
-RZ_API bool rz_cmd_get_tree_json(RZ_NONNULL RzCmd *cmd, RZ_NONNULL PJ *j) {
+RZ_API bool rz_cmd_get_tree_json(RZ_NONNULL RzCmd *cmd, RZ_NONNULL RZ_OUT PJ *j) {
 	rz_return_val_if_fail(cmd && j, false);
 	RzStrBuf args;
 	rz_strbuf_init(&args);
@@ -1664,7 +1692,6 @@ RZ_API bool rz_cmd_get_tree_json(RZ_NONNULL RzCmd *cmd, RZ_NONNULL PJ *j) {
 	};
 	pj_o(j);
 	pj_ki(j, "version", CMD_EXPORT_VERSION);
-	pj_ks(j, "generated_from", "runtime");
 	pj_k(j, "root");
 	rz_cmd_desc_foreach_tree(cmd, cmd_tree_json_pre, cmd_tree_json_post, &ctx);
 	pj_end(j);
