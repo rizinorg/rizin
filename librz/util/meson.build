@@ -57,6 +57,7 @@ rz_util_common_sources = [
   'str_constpool.c',
   'str_search.c',
   'str_trim.c',
+  'str_uri.c',
   'strbuf.c',
   'strpool.c',
   'structured_data.c',
