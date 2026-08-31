@@ -5,6 +5,7 @@
 #include "riscv_il_base.h"
 #include "riscv_il_fd_common.h"
 #include "riscv_il_float_reg_names.h"
+#include "rz_il/rz_il_opcodes.h"
 
 #include <rz_il/rz_il_opbuilder_begin.h>
 
@@ -94,10 +95,17 @@ static RZ_INLINE RzILOpBitVector *fd_extract(RzFloatFormat format,
 }
 
 /**
- * RzFloat metadata gives value_width as 32 or 64. Floating-register storage is
- * fixed at 64 bits, so only a narrower format needs the low-bit cast.
+ * The canonical value is the derived all-ones exponent plus the derived quiet
+ * bit, with sign and all remaining mantissa bits clear.
  */
-static RZ_INLINE RzILOpBitVector *fd_get_reg_bv_format(RzFloatFormat format, uint32_t reg) {
+static RZ_INLINE RzILOpBitVector *fd_canonical_qnan(RzFloatFormat format) {
+	ut64 exponent = fd_max_exponent(format) << fd_exponent_offset(format);
+	ut64 quiet = 1ULL << fd_quiet_nan_offset(format);
+	return fd_constant(format, exponent | quiet);
+}
+
+/** Transfer operations ignore the upper bits of a narrower value. */
+static RZ_INLINE RzILOpBitVector *fd_get_reg_bv_transfer(RzFloatFormat format, uint32_t reg) {
 	RzILOpBitVector *value = VARG(riscv_freg_name(reg));
 	ut32 value_width = fd_value_width(format);
 	if (value_width < FD_REGISTER_STORAGE_WIDTH) {
@@ -106,14 +114,29 @@ static RZ_INLINE RzILOpBitVector *fd_get_reg_bv_format(RzFloatFormat format, uin
 	return value;
 }
 
+/**
+ * Non-transfer operations on a narrower value must consume canonical qNaN
+ * when the register's upper FLEN-value_width bits are not all ones.
+ */
+static RZ_INLINE RzILOpBitVector *fd_get_reg_bv_format(RzFloatFormat format, uint32_t reg) {
+	RzILOpBitVector *value = VARG(riscv_freg_name(reg));
+	ut32 value_width = fd_value_width(format);
+	if (value_width < FD_REGISTER_STORAGE_WIDTH) {
+		ut32 upper_width = FD_REGISTER_STORAGE_WIDTH - value_width;
+		ut64 upper_mask = (1ULL << upper_width) - 1;
+		RzILOpBool *properly_boxed = EQ(
+			EXTRACT64(DUP(value), UN(64, value_width), UN(32, upper_width)),
+			UN(64, upper_mask));
+		return ITE(properly_boxed,
+			CAST(value_width, IL_FALSE, value), fd_canonical_qnan(format));
+	}
+	return value;
+}
+
 static RZ_INLINE RzILOpBitVector *fd_get_reg_bv(RzFloatFormat format, uint32_t reg) {
 	return fd_get_reg_bv_format(format, reg);
 }
 
-/**
- * FLOATV32/FLOATV64 are the same constructor specialized by RzFloatFormat, so
- * the format itself selects both the float interpretation and raw value width.
- */
 static RZ_INLINE RzILOpFloat *fd_get_reg_format(RzFloatFormat format, uint32_t reg) {
 	return BV2F(format, fd_get_reg_bv_format(format, reg));
 }
@@ -188,16 +211,6 @@ static RZ_INLINE RzILOpBool *fd_is_s_nan(RzFloatFormat format, RzILOpBitVector *
 		IS_ZERO(fd_extract(format, value, fd_quiet_nan_offset(format), 1)));
 }
 
-/**
- * The canonical value is the derived all-ones exponent plus the derived quiet
- * bit, with sign and all remaining mantissa bits clear.
- */
-static RZ_INLINE RzILOpBitVector *fd_canonical_qnan(RzFloatFormat format) {
-	ut64 exponent = fd_max_exponent(format) << fd_exponent_offset(format);
-	ut64 quiet = 1ULL << fd_quiet_nan_offset(format);
-	return fd_constant(format, exponent | quiet);
-}
-
 static RZ_INLINE RzILOpBool *fd_is_max_exp(RzFloatFormat format, RzILOpBitVector *exponent) {
 	return EQ(exponent, fd_constant(format, fd_max_exponent(format)));
 }
@@ -214,14 +227,14 @@ static RZ_INLINE RzILOpFloat *fd_power_of_two(RzFloatFormat format, ut32 exponen
  * exactly in both binary32 and binary64.
  */
 static RZ_INLINE RzILOpBool *fd_fcvt_is_invalid(RzFloatFormat format,
-	bool unsigned_result, ut32 width) {
+	bool unsigned_result, ut32 width, const char *bv_name, const char *rounded_name) {
 	RzILOpFloat *lower = unsigned_result
 		? BV2F(format, fd_constant(format, 0))
 		: FNEG(fd_power_of_two(format, width - 1));
 	RzILOpFloat *upper = fd_power_of_two(format,
 		unsigned_result ? width : width - 1);
-	return OR(fd_is_nan(format, VARL("_bv")),
-		OR(FLT(VARL("_rounded"), lower), FGE(VARL("_rounded"), upper)));
+	return OR(fd_is_nan(format, VARL(bv_name)),
+		OR(FLT(VARL(rounded_name), lower), FGE(VARL(rounded_name), upper)));
 }
 
 /** Maps a statically encoded Capstone rounding mode at lift time. */
@@ -240,12 +253,19 @@ static RZ_INLINE RzFloatRMode fd_rounding_mode(riscv_rounding_mode mode) {
 	return modes[mode - RISCV_RM_RNE];
 }
 
-static RZ_INLINE RzILOpBitVector *fd_exception(ut64 riscv_bit, RzFloatException exception) {
-	return ITE(FEXCEPT(exception, VARL("_r")), UN(64, riscv_bit), UN(64, 0));
+static RZ_INLINE RzILOpBitVector *fd_fflags_mask_from_exception(ut64 riscv_bit,
+	RzFloatException exception, const char *result_name) {
+	return ITE(FEXCEPT(exception, VARL(result_name)), UN(64, riscv_bit), UN(64, 0));
 }
 
-static RZ_INLINE RzILOpEffect *fd_update_fflags(void) {
-	return SETG("fcsr", LOGOR(VARG("fcsr"), LOGOR(fd_exception(0x01, RZ_FLOAT_E_INEXACT), LOGOR(fd_exception(0x02, RZ_FLOAT_E_UNDERFLOW), LOGOR(fd_exception(0x04, RZ_FLOAT_E_OVERFLOW), LOGOR(fd_exception(0x08, RZ_FLOAT_E_DIV_ZERO), fd_exception(0x10, RZ_FLOAT_E_INVALID_OP)))))));
+static RZ_INLINE RzILOpEffect *fd_update_fflags(const char *fcsr_name, const char *result_name) {
+	RzILOpBitVector *fflags = VARG(fcsr_name);
+	fflags = LOGOR(fflags, fd_fflags_mask_from_exception(0x01, RZ_FLOAT_E_INEXACT, result_name));
+	fflags = LOGOR(fflags, fd_fflags_mask_from_exception(0x02, RZ_FLOAT_E_UNDERFLOW, result_name));
+	fflags = LOGOR(fflags, fd_fflags_mask_from_exception(0x04, RZ_FLOAT_E_OVERFLOW, result_name));
+	fflags = LOGOR(fflags, fd_fflags_mask_from_exception(0x08, RZ_FLOAT_E_DIV_ZERO, result_name));
+	fflags = LOGOR(fflags, fd_fflags_mask_from_exception(0x10, RZ_FLOAT_E_INVALID_OP, result_name));
+	return SETG(fcsr_name, fflags);
 }
 
 /**
@@ -253,8 +273,8 @@ static RZ_INLINE RzILOpEffect *fd_update_fflags(void) {
  * Dynamic RzIL rounding modes are represented by 32-bit bitvectors. Reserved
  * RISC-V frm values fall back to RNE.
  */
-static RZ_INLINE RzILOpBitVector *fd_dynamic_rounding_mode(void) {
-	return LET("_frm", EXTRACT64(VARG("fcsr"), UN(64, 5), UN(32, 3)),
+static RZ_INLINE RzILOpBitVector *fd_dynamic_rounding_mode(const char *fcsr_name) {
+	return LET("_frm", EXTRACT64(VARG(fcsr_name), UN(64, 5), UN(32, 3)),
 		ITE(EQ(VARLP("_frm"), UN(64, 0)), UN(32, RZ_FLOAT_RMODE_RNE),
 			ITE(EQ(VARLP("_frm"), UN(64, 1)), UN(32, RZ_FLOAT_RMODE_RTZ),
 				ITE(EQ(VARLP("_frm"), UN(64, 2)), UN(32, RZ_FLOAT_RMODE_RTN),
@@ -263,8 +283,9 @@ static RZ_INLINE RzILOpBitVector *fd_dynamic_rounding_mode(void) {
 							UN(32, RZ_FLOAT_RMODE_RNE)))))));
 }
 
-static RZ_INLINE RzILOpEffect *fd_set_dynamic_rounding_mode(void) {
-	return SETL("_rmode", fd_dynamic_rounding_mode());
+static RZ_INLINE RzILOpEffect *fd_set_dynamic_rounding_mode(const char *rounding_mode_name,
+	const char *fcsr_name) {
+	return SETL(rounding_mode_name, fd_dynamic_rounding_mode(fcsr_name));
 }
 
 static RZ_INLINE RzILOpFloat *fd_binary_result(FDBinaryOperation operation,
@@ -282,24 +303,17 @@ static RZ_INLINE RzILOpFloat *fd_binary_result(FDBinaryOperation operation,
 	}
 }
 
-static RZ_INLINE RzILOpFloat *fd_dynamic_binary_result(FDBinaryOperation operation) {
+static RZ_INLINE RzILOpFloat *fd_dynamic_binary_result(FDBinaryOperation operation,
+	const char *rounding_mode_name, RzILOpFloat *left, RzILOpFloat *right) {
 	switch (operation) {
-	case FD_BINARY_ADD: return FADD_DYN_RMODE(VARL("_rmode"), VARL("_x"), VARL("_y"));
-	case FD_BINARY_SUB: return FSUB_DYN_RMODE(VARL("_rmode"), VARL("_x"), VARL("_y"));
-	case FD_BINARY_MUL: return FMUL_DYN_RMODE(VARL("_rmode"), VARL("_x"), VARL("_y"));
-	case FD_BINARY_DIV: return FDIV_DYN_RMODE(VARL("_rmode"), VARL("_x"), VARL("_y"));
+	case FD_BINARY_ADD: return FADD_DYN_RMODE(VARL(rounding_mode_name), left, right);
+	case FD_BINARY_SUB: return FSUB_DYN_RMODE(VARL(rounding_mode_name), left, right);
+	case FD_BINARY_MUL: return FMUL_DYN_RMODE(VARL(rounding_mode_name), left, right);
+	case FD_BINARY_DIV: return FDIV_DYN_RMODE(VARL(rounding_mode_name), left, right);
 	default:
 		rz_warn_if_reached();
 		return NULL;
 	}
-}
-
-static RZ_INLINE RzILOpFloat *fd_dynamic_sqrt_result(void) {
-	return FSQRT_DYN_RMODE(VARL("_rmode"), VARL("_x"));
-}
-
-static RZ_INLINE RzILOpFloat *fd_dynamic_mad_result(void) {
-	return FMAD_DYN_RMODE(VARL("_rmode"), VARL("_x"), VARL("_y"), VARL("_z"));
 }
 
 static RZ_INLINE RzILOpEffect *fd_lift_load(RzFloatFormat format,
@@ -318,35 +332,32 @@ static RZ_INLINE RzILOpEffect *fd_lift_binary(RzFloatFormat format,
 	FDBinaryOperation operation, RzAnalysis *analysis, cs_insn *insn, ut64 current_addr) {
 	DECODE_FD_FD_FS_FS(format, insn);
 	if (insn->detail->riscv.rounding_mode == RISCV_RM_DYN) {
-		return SEQN(6,
-			fd_set_dynamic_rounding_mode(),
-			SETL("_x", left),
-			SETL("_y", right),
-			SETL("_r", fd_dynamic_binary_result(operation)),
+		return SEQ4(
+			fd_set_dynamic_rounding_mode("_rmode", "fcsr"),
+			SETL("_r", fd_dynamic_binary_result(operation, "_rmode", left, right)),
 			fd_set_reg(format, frd, VARL("_r")),
-			fd_update_fflags());
+			fd_update_fflags("fcsr", "_r"));
 	}
 	return SEQ3(
 		SETL("_r", fd_binary_result(operation, fd_rounding_mode(insn->detail->riscv.rounding_mode), left, right)),
 		fd_set_reg(format, frd, VARL("_r")),
-		fd_update_fflags());
+		fd_update_fflags("fcsr", "_r"));
 }
 
 static RZ_INLINE RzILOpEffect *fd_lift_sqrt(RzFloatFormat format,
 	RzAnalysis *analysis, cs_insn *insn, ut64 current_addr) {
 	DECODE_FD_FD_FS(format, insn);
 	if (insn->detail->riscv.rounding_mode == RISCV_RM_DYN) {
-		return SEQN(5,
-			fd_set_dynamic_rounding_mode(),
-			SETL("_x", source),
-			SETL("_r", fd_dynamic_sqrt_result()),
+		return SEQ4(
+			fd_set_dynamic_rounding_mode("_rmode", "fcsr"),
+			SETL("_r", FSQRT_DYN_RMODE(VARL("_rmode"), source)),
 			fd_set_reg(format, frd, VARL("_r")),
-			fd_update_fflags());
+			fd_update_fflags("fcsr", "_r"));
 	}
 	return SEQ3(
 		SETL("_r", FSQRT(fd_rounding_mode(insn->detail->riscv.rounding_mode), source)),
 		fd_set_reg(format, frd, VARL("_r")),
-		fd_update_fflags());
+		fd_update_fflags("fcsr", "_r"));
 }
 
 static RZ_INLINE RzILOpEffect *fd_lift_mad(RzFloatFormat format,
@@ -359,19 +370,16 @@ static RZ_INLINE RzILOpEffect *fd_lift_mad(RzFloatFormat format,
 		left = FNEG(left);
 	}
 	if (insn->detail->riscv.rounding_mode == RISCV_RM_DYN) {
-		return SEQN(7,
-			fd_set_dynamic_rounding_mode(),
-			SETL("_x", left),
-			SETL("_y", right),
-			SETL("_z", addend),
-			SETL("_r", fd_dynamic_mad_result()),
+		return SEQ4(
+			fd_set_dynamic_rounding_mode("_rmode", "fcsr"),
+			SETL("_r", FMAD_DYN_RMODE(VARL("_rmode"), left, right, addend)),
 			fd_set_reg(format, frd, negate_result ? FNEG(VARL("_r")) : VARL("_r")),
-			fd_update_fflags());
+			fd_update_fflags("fcsr", "_r"));
 	}
 	return SEQ3(
 		SETL("_r", FMAD(fd_rounding_mode(insn->detail->riscv.rounding_mode), left, right, addend)),
 		fd_set_reg(format, frd, negate_result ? FNEG(VARL("_r")) : VARL("_r")),
-		fd_update_fflags());
+		fd_update_fflags("fcsr", "_r"));
 }
 
 static RZ_INLINE RzILOpEffect *fd_lift_sign_injection(RzFloatFormat format,
@@ -397,6 +405,14 @@ static RZ_INLINE RzILOpBool *fd_is_zero(RzFloatFormat format, RzILOpBitVector *v
 		IS_ZERO(fd_get_mantissa(format, value)));
 }
 
+/**
+ * Floating-point minimum-number and maximum-number instructions FMIN.S and FMAX.S write, respectively,
+ * the smaller or larger of rs1 and rs2 to rd.
+ * For the purposes of these instructions only, the value  −0.0 is considered to be less than the value +0.0.
+ * If both inputs are NaNs, the result is the canonical NaN.
+ * If only one operand is a NaN, the result is the non-NaN operand.
+ * Signaling NaN inputs set the invalid operation exception flag, even when the result is not NaN.
+ * */
 static RZ_INLINE RzILOpEffect *fd_lift_minmax(RzFloatFormat format,
 	bool maximum, cs_insn *insn, ut64 current_addr) {
 	DECODE_FD_FD_FREGS(insn);
@@ -430,22 +446,27 @@ static RZ_INLINE RzILOpEffect *fd_lift_minmax(RzFloatFormat format,
 static RZ_INLINE RzILOpEffect *fd_lift_compare(RzFloatFormat format,
 	FDCompareOperation operation, RzAnalysis *analysis, cs_insn *insn, ut64 current_addr) {
 	DECODE_FD_RD_FREGS(insn);
+	RzILOpBool *comparison =
+		// ==
+		(operation == FD_COMPARE_EQ) ? FEQ(VARL("_a"), VARL("_b"))
+		// <
+		: (operation == FD_COMPARE_LT) ? FLT(VARL("_a"), VARL("_b"))
+					       // <=
+					       : FLE(VARL("_a"), VARL("_b"));
 	bool quiet = operation == FD_COMPARE_EQ;
-	RzILOpBool *comparison;
-	if (operation == FD_COMPARE_EQ) {
-		comparison = FEQ(VARL("_a"), VARL("_b"));
-	} else if (operation == FD_COMPARE_LT) {
-		comparison = FLT(VARL("_a"), VARL("_b"));
-	} else {
-		comparison = FLE(VARL("_a"), VARL("_b"));
-	}
 	return SEQN(8,
 		SETL("_bva", fd_get_reg_bv(format, frs1)),
 		SETL("_bvb", fd_get_reg_bv(format, frs2)),
 		SETL("_a", BV2F(format, VARL("_bva"))),
 		SETL("_b", BV2F(format, VARL("_bvb"))),
+		/**
+		 * FLT.S and FLE.S perform what the IEEE 754-2008 standard refers to as signaling comparisons:
+		 * that is, they set the invalid operation exception flag if either input is NaN.
+		 * FEQ.S performs a quiet comparison: it only sets the invalid operation exception flag if either input is a signaling NaN.
+		 **/
 		SETL("_na", quiet ? fd_is_s_nan(format, VARL("_bva")) : fd_is_nan(format, VARL("_bva"))),
 		SETL("_nb", quiet ? fd_is_s_nan(format, VARL("_bvb")) : fd_is_nan(format, VARL("_bvb"))),
+
 		SETG("fcsr", LOGOR(VARG("fcsr"), ITE(OR(VARL("_na"), VARL("_nb")), UN(64, 0x10), UN(64, 0)))),
 		riscv_il_set_reg(rd, BOOL_TO_BV(comparison, analysis->bits)));
 }
@@ -517,10 +538,10 @@ static RZ_INLINE RzILOpEffect *fd_lift_fcvt_w(RzFloatFormat format,
 		SETL("_sg", NON_ZERO(fd_get_sign(format, VARL("_bv")))),
 		SETL("_f", BV2F(format, VARL("_bv"))),
 		SETL("_rounded", rounded),
-		SETL("_nv", fd_fcvt_is_invalid(format, unsigned_result, 32)),
+		SETL("_nv", fd_fcvt_is_invalid(format, unsigned_result, 32, "_bv", "_rounded")),
 		riscv_il_set_reg(rd, SIGNED(analysis->bits, ITE(VARL("_nv"), saturated, converted))),
 		SETG("fcsr", LOGOR(VARG("fcsr"), ITE(VARL("_nv"), UN(64, 0x10), ITE(FNE(VARL("_rounded"), VARL("_f")), UN(64, 0x01), UN(64, 0))))));
-	return dynamic ? SEQ2(fd_set_dynamic_rounding_mode(), effect) : effect;
+	return dynamic ? SEQ2(fd_set_dynamic_rounding_mode("_rmode", "fcsr"), effect) : effect;
 }
 
 static RZ_INLINE RzILOpEffect *fd_lift_fcvt_l(RzFloatFormat format,
@@ -556,10 +577,10 @@ static RZ_INLINE RzILOpEffect *fd_lift_fcvt_l(RzFloatFormat format,
 		SETL("_sg", NON_ZERO(fd_get_sign(format, VARL("_bv")))),
 		SETL("_f", BV2F(format, VARL("_bv"))),
 		SETL("_rounded", rounded),
-		SETL("_nv", fd_fcvt_is_invalid(format, unsigned_result, 64)),
+		SETL("_nv", fd_fcvt_is_invalid(format, unsigned_result, 64, "_bv", "_rounded")),
 		riscv_il_set_reg(rd, ITE(VARL("_nv"), saturated, converted)),
 		SETG("fcsr", LOGOR(VARG("fcsr"), ITE(VARL("_nv"), UN(64, 0x10), ITE(FNE(VARL("_rounded"), VARL("_f")), UN(64, 0x01), UN(64, 0))))));
-	return dynamic ? SEQ2(fd_set_dynamic_rounding_mode(), effect) : effect;
+	return dynamic ? SEQ2(fd_set_dynamic_rounding_mode("_rmode", "fcsr"), effect) : effect;
 }
 
 static RZ_INLINE RzILOpEffect *fd_lift_fcvt_from_int(RzFloatFormat format,
@@ -593,8 +614,8 @@ static RZ_INLINE RzILOpEffect *fd_lift_fcvt_from_int(RzFloatFormat format,
 	RzILOpEffect *effect = SEQ3(
 		SETL("_r", result),
 		fd_set_reg(format, frd, VARL("_r")),
-		fd_update_fflags());
-	return dynamic ? SEQ2(fd_set_dynamic_rounding_mode(), effect) : effect;
+		fd_update_fflags("fcsr", "_r"));
+	return dynamic ? SEQ2(fd_set_dynamic_rounding_mode("_rmode", "fcsr"), effect) : effect;
 }
 
 static RZ_INLINE RzILOpEffect *fd_lift_fcvt_format(RzFloatFormat destination_format,
@@ -607,8 +628,8 @@ static RZ_INLINE RzILOpEffect *fd_lift_fcvt_format(RzFloatFormat destination_for
 	RzILOpEffect *effect = SEQ3(
 		SETL("_r", result),
 		fd_set_reg_format(destination_format, frd, VARL("_r")),
-		fd_update_fflags());
-	return dynamic ? SEQ2(fd_set_dynamic_rounding_mode(), effect) : effect;
+		fd_update_fflags("fcsr", "_r"));
+	return dynamic ? SEQ2(fd_set_dynamic_rounding_mode("_rmode", "fcsr"), effect) : effect;
 }
 
 static RZ_INLINE RzILOpEffect *fd_lift_fmv_to_x(RzFloatFormat format,
@@ -616,7 +637,7 @@ static RZ_INLINE RzILOpEffect *fd_lift_fmv_to_x(RzFloatFormat format,
 	if (fd_value_width(format) == 64) {
 		REQUIRE_64_BIT(analysis);
 	}
-	DECODE_FD_RD_FS_BV(format, insn);
+	DECODE_FD_RD_FS_BV_TRANSFER(format, insn);
 	if (fd_value_width(format) == 32) {
 		value = SIGNED(analysis->bits, value);
 	}
@@ -638,225 +659,157 @@ static RZ_INLINE RzILOpEffect *fd_lift_fmv_from_x(RzFloatFormat format,
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_load(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_load(format, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_store(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_store(format, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_add(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_binary(format, FD_BINARY_ADD, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_sub(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_binary(format, FD_BINARY_SUB, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_mul(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_binary(format, FD_BINARY_MUL, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_div(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_binary(format, FD_BINARY_DIV, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_sqrt(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_sqrt(format, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_fmadd(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_mad(format, FD_MAD_ADD, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_fmsub(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_mad(format, FD_MAD_SUB, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_fnmadd(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_mad(format, FD_MAD_NEGATED_ADD, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_fnmsub(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_mad(format, FD_MAD_NEGATED_SUB, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_fsgnj(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)analysis;
-	(void)op;
-	(void)size;
 	return fd_lift_sign_injection(format, FD_SIGN_COPY, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_fsgnjn(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)analysis;
-	(void)op;
-	(void)size;
 	return fd_lift_sign_injection(format, FD_SIGN_NEGATE, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_fsgnjx(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)analysis;
-	(void)op;
-	(void)size;
 	return fd_lift_sign_injection(format, FD_SIGN_XOR, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_fmin(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)analysis;
-	(void)op;
-	(void)size;
 	return fd_lift_minmax(format, false, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_fmax(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)analysis;
-	(void)op;
-	(void)size;
 	return fd_lift_minmax(format, true, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_feq(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_compare(format, FD_COMPARE_EQ, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_flt(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_compare(format, FD_COMPARE_LT, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_fle(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_compare(format, FD_COMPARE_LE, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_fclass(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_class(format, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_fcvt_w(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_fcvt_w(format, false, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_fcvt_wu(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_fcvt_w(format, true, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_fcvt_l(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_fcvt_l(format, false, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_fcvt_lu(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_fcvt_l(format, true, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_fcvt_from_w(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_fcvt_from_int(format, FD_INT32_SIGNED, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_fcvt_from_wu(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_fcvt_from_int(format, FD_INT32_UNSIGNED, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_fcvt_from_l(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_fcvt_from_int(format, FD_INT64_SIGNED, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_fcvt_from_lu(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_fcvt_from_int(format, FD_INT64_UNSIGNED, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_fcvt_format(RzFloatFormat destination_format,
 	RzFloatFormat source_format, RzAnalysis *analysis, RzAnalysisOp *op,
 	cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)analysis;
-	(void)op;
-	(void)size;
 	return fd_lift_fcvt_format(destination_format, source_format, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_fmv_to_x(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_fmv_to_x(format, analysis, insn, current_addr);
 }
 
 RZ_IPI RzILOpEffect *riscv_il_fd_lift_fmv_from_x(RzFloatFormat format,
 	RzAnalysis *analysis, RzAnalysisOp *op, cs_insn *insn, ut64 current_addr, size_t size) {
-	(void)op;
-	(void)size;
 	return fd_lift_fmv_from_x(format, analysis, insn, current_addr);
 }
 

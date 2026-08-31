@@ -14,8 +14,6 @@
  * derived from its metadata and the fixed 64-bit floating-register storage.
  */
 
-// Decoder macros follow the RISC-V IL convention: validate Capstone operands,
-// then bind the instruction's register IDs and IL operands in the lifter scope.
 #define DECODE_FD_FD_MEM(analysis, insn) \
 	REQUIRE_2OPS(RISCV_OP_REG, RISCV_OP_MEM); \
 	uint32_t frd = (insn)->detail->riscv.operands[0].reg; \
@@ -24,7 +22,7 @@
 
 #define DECODE_FD_FS_MEM(format, analysis, insn) \
 	REQUIRE_2OPS(RISCV_OP_REG, RISCV_OP_MEM); \
-	RzILOpBitVector *value = fd_get_reg_bv((format), (insn)->detail->riscv.operands[0].reg); \
+	RzILOpBitVector *value = fd_get_reg_bv_transfer((format), (insn)->detail->riscv.operands[0].reg); \
 	RzILOpBitVector *base = riscv_il_get_reg((analysis)->bits, (insn)->detail->riscv.operands[1].mem.base); \
 	RzILOpBitVector *offset = SN((analysis)->bits, (insn)->detail->riscv.operands[1].mem.disp)
 
@@ -72,6 +70,11 @@
 	uint32_t rd = (insn)->detail->riscv.operands[0].reg; \
 	RzILOpBitVector *value = fd_get_reg_bv((format), (insn)->detail->riscv.operands[1].reg)
 
+#define DECODE_FD_RD_FS_BV_TRANSFER(format, insn) \
+	REQUIRE_2OPS(RISCV_OP_REG, RISCV_OP_REG); \
+	uint32_t rd = (insn)->detail->riscv.operands[0].reg; \
+	RzILOpBitVector *value = fd_get_reg_bv_transfer((format), (insn)->detail->riscv.operands[1].reg)
+
 #define DECODE_FD_FD_RS(analysis, insn) \
 	REQUIRE_2OPS(RISCV_OP_REG, RISCV_OP_REG); \
 	uint32_t frd = (insn)->detail->riscv.operands[0].reg; \
@@ -83,7 +86,7 @@
 	RzILOpFloat *source = fd_get_reg_format((source_format), (insn)->detail->riscv.operands[1].reg)
 
 #define DECL_FD_LIFTER(suffix) \
-	RZ_OWN RZ_IPI RzILOpEffect *riscv_il_fd_lift_ ## suffix(RzFloatFormat format, \
+	RZ_OWN RZ_IPI RzILOpEffect *riscv_il_fd_lift_##suffix(RzFloatFormat format, \
 		RZ_BORROW RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *op, \
 		RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size)
 

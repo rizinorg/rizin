@@ -7,182 +7,41 @@ static const RzFloatFormat rz_riscv_il_fd_f32 = RZ_FLOAT_IEEE754_BIN_32;
 
 // F-extension entry points specialize the common core with the binary32 format.
 
-RzILOpEffect *rz_riscv_lift_flw(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_load(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
+#define DEFINE_FD_PASSTHROUGH(wrapper, called) \
+	RzILOpEffect *wrapper(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
+		RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
+		return called(rz_riscv_il_fd_f32, analysis, op, insn, current_addr, size); \
+	}
 
-RzILOpEffect *rz_riscv_lift_fsw(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_store(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_flw, riscv_il_fd_lift_load)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fsw, riscv_il_fd_lift_store)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fadd_s, riscv_il_fd_lift_add)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fsub_s, riscv_il_fd_lift_sub)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fmul_s, riscv_il_fd_lift_mul)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fdiv_s, riscv_il_fd_lift_div)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fsqrt_s, riscv_il_fd_lift_sqrt)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fmadd_s, riscv_il_fd_lift_fmadd)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fmsub_s, riscv_il_fd_lift_fmsub)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fnmadd_s, riscv_il_fd_lift_fnmadd)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fnmsub_s, riscv_il_fd_lift_fnmsub)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fsgnj_s, riscv_il_fd_lift_fsgnj)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fsgnjn_s, riscv_il_fd_lift_fsgnjn)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fsgnjx_s, riscv_il_fd_lift_fsgnjx)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fmin_s, riscv_il_fd_lift_fmin)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fmax_s, riscv_il_fd_lift_fmax)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_feq_s, riscv_il_fd_lift_feq)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_flt_s, riscv_il_fd_lift_flt)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fle_s, riscv_il_fd_lift_fle)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fclass_s, riscv_il_fd_lift_fclass)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fcvt_w_s, riscv_il_fd_lift_fcvt_w)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fcvt_wu_s, riscv_il_fd_lift_fcvt_wu)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fcvt_l_s, riscv_il_fd_lift_fcvt_l)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fcvt_lu_s, riscv_il_fd_lift_fcvt_lu)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fcvt_s_w, riscv_il_fd_lift_fcvt_from_w)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fcvt_s_wu, riscv_il_fd_lift_fcvt_from_wu)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fcvt_s_l, riscv_il_fd_lift_fcvt_from_l)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fcvt_s_lu, riscv_il_fd_lift_fcvt_from_lu)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fmv_x_w, riscv_il_fd_lift_fmv_to_x)
+DEFINE_FD_PASSTHROUGH(rz_riscv_lift_fmv_w_x, riscv_il_fd_lift_fmv_from_x)
 
-RzILOpEffect *rz_riscv_lift_fadd_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_add(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fsub_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_sub(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fmul_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_mul(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fdiv_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_div(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fsqrt_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_sqrt(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fmadd_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_fmadd(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fmsub_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_fmsub(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fnmadd_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_fnmadd(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fnmsub_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_fnmsub(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fsgnj_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_fsgnj(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fsgnjn_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_fsgnjn(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fsgnjx_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_fsgnjx(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fmin_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_fmin(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fmax_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_fmax(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_feq_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_feq(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_flt_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_flt(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fle_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_fle(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fclass_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_fclass(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fcvt_w_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_fcvt_w(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fcvt_wu_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_fcvt_wu(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fcvt_l_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_fcvt_l(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fcvt_lu_s(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_fcvt_lu(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fcvt_s_w(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_fcvt_from_w(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fcvt_s_wu(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_fcvt_from_wu(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fcvt_s_l(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_fcvt_from_l(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fcvt_s_lu(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_fcvt_from_lu(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fmv_x_w(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_fmv_to_x(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
-
-RzILOpEffect *rz_riscv_lift_fmv_w_x(RZ_BORROW RZ_NONNULL RzAnalysis *analysis,
-	RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	return riscv_il_fd_lift_fmv_from_x(rz_riscv_il_fd_f32,
-		analysis, op, insn, current_addr, size);
-}
+#undef DEFINE_FD_PASSTHROUGH
