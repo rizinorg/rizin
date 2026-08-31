@@ -34,6 +34,7 @@ typedef void (*RzStructuredDataIteratorValueSigned)(RZ_NULLABLE void *user, st64
 typedef void (*RzStructuredDataIteratorValueDouble)(RZ_NULLABLE void *user, double d);
 typedef void (*RzStructuredDataIteratorValueBool)(RZ_NULLABLE void *user, bool b);
 typedef void (*RzStructuredDataIteratorValueString)(RZ_NULLABLE void *user, RZ_NONNULL const char *v);
+typedef void (*RzStructuredDataIteratorValueNull)(RZ_NULLABLE void *user);
 
 typedef struct rz_structured_data_iterator_t {
 	RzStructuredDataIteratorNew new_struct; ///< Creates a new structure
@@ -44,6 +45,7 @@ typedef struct rz_structured_data_iterator_t {
 	RzStructuredDataIteratorValueDouble val_double; ///< Inserts a value of numeric double type
 	RzStructuredDataIteratorValueBool val_bool; ///< Inserts a value of boolean type
 	RzStructuredDataIteratorValueString val_string; ///< Inserts a value of string type
+	RzStructuredDataIteratorValueNull val_null; ///< Inserts a NULL value
 } RzStructuredDataIterator;
 
 RZ_API RZ_OWN RzStructuredData *rz_structured_data_new_map();
@@ -61,6 +63,7 @@ RZ_API bool rz_structured_data_map_add_boolean(RZ_NONNULL RzStructuredData *pare
 RZ_API bool rz_structured_data_map_add_string(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL const char *key, RZ_NONNULL const char *v);
 RZ_API bool rz_structured_data_map_add_string_n(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL const char *key, RZ_NONNULL const char *v, size_t v_size);
 RZ_API bool rz_structured_data_map_add_bytes(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL const char *key, RZ_NONNULL const ut8 *v, size_t v_size, RzStructuredDataFormat fmt);
+RZ_API bool rz_structured_data_map_add_null(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL const char *key);
 
 /* primitive types for arrays */
 RZ_API RZ_BORROW RzStructuredData *rz_structured_data_array_add_map(RZ_NONNULL RzStructuredData *parent);
@@ -73,6 +76,7 @@ RZ_API bool rz_structured_data_array_add_boolean(RZ_NONNULL RzStructuredData *pa
 RZ_API bool rz_structured_data_array_add_string(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL const char *v);
 RZ_API bool rz_structured_data_array_add_string_n(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL const char *v, size_t v_size);
 RZ_API bool rz_structured_data_array_add_bytes(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL const ut8 *v, size_t v_size, RzStructuredDataFormat fmt);
+RZ_API bool rz_structured_data_array_add_null(RZ_NONNULL RzStructuredData *parent);
 
 RZ_API void rz_structured_data_iterate(RZ_NONNULL const RzStructuredData *sd, RZ_NONNULL const RzStructuredDataIterator *iterator, RZ_NULLABLE void *user);
 RZ_API void rz_structured_data_to_pj(RZ_NONNULL const RzStructuredData *sd, RZ_NONNULL PJ *pj);
