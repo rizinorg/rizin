@@ -144,6 +144,19 @@ RZ_API void rz_th_queue_close_when_empty(RZ_NONNULL RzThreadQueue *queue) {
 }
 
 /**
+ * \brief  Opens a RzThreadQueue (allows to read/write data).
+ *
+ * \param  queue The RzThreadQueue to close
+ */
+RZ_API void rz_th_queue_open(RZ_NONNULL RzThreadQueue *queue) {
+	rz_return_if_fail(queue);
+
+	rz_th_lock_enter(queue->data_lock);
+	queue->closed = false;
+	rz_th_lock_leave(queue->data_lock);
+}
+
+/**
  * \brief  Closes a RzThreadQueue (once closed you cannot read/write data).
  *
  * \param  queue The RzThreadQueue to close

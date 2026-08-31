@@ -66,6 +66,7 @@ static const RzCmdDescDetail analysis_hint_set_optype_details[2];
 static const RzCmdDescDetail analysis_hint_set_immbase_details[3];
 static const RzCmdDescDetail analysis_hint_set_offset_details[2];
 static const RzCmdDescDetail analyze_esil_insn_access_details[4];
+static const RzCmdDescDetail inquiry_interpreter_prototype_details[2];
 static const RzCmdDescDetail basefind_compute_details[2];
 static const RzCmdDescDetail cmd_cmp_unified_details[2];
 static const RzCmdDescDetail cw_details[2];
@@ -428,6 +429,7 @@ static const RzCmdDescArg analyze_esil_emu_fcn_find_args_args[2];
 static const RzCmdDescArg analyze_esil_int_list_load_args[2];
 static const RzCmdDescArg analyze_esil_int_remove_args[2];
 static const RzCmdDescArg analyze_esil_insn_access_args[4];
+static const RzCmdDescArg inquiry_interpreter_prototype_args[3];
 static const RzCmdDescArg block_args[2];
 static const RzCmdDescArg block_decrease_args[2];
 static const RzCmdDescArg block_increase_args[2];
@@ -8448,6 +8450,58 @@ static const RzCmdDescHelp analyze_esil_insn_access_help = {
 	.summary = "Show register and memory access of the next [len] instructions or bytes.",
 	.details = analyze_esil_insn_access_details,
 	.args = analyze_esil_insn_access_args,
+};
+
+static const RzCmdDescHelp aI_help = {
+	.summary = "New experimental RzInquiry analysis",
+};
+static const RzCmdDescArg inquiry_analyze_function_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp inquiry_analyze_function_help = {
+	.summary = "analyze function at current seek",
+	.args = inquiry_analyze_function_args,
+};
+
+static const RzCmdDescArg inquiry_analyze_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp inquiry_analyze_all_help = {
+	.summary = "analyze all functions",
+	.args = inquiry_analyze_all_args,
+};
+
+static const RzCmdDescDetailEntry inquiry_interpreter_prototype_Examples_detail_entries[] = {
+	{ .text = "aIp", .arg_str = "", .comment = "Run prototype RzIL analysis detecting cross references." },
+	{ .text = "aIp", .arg_str = " 0x1000", .comment = "Run prototype RzIL analysis starting at address 0x1000." },
+	{ .text = "aIp", .arg_str = " -f", .comment = "Run prototype RzIL analysis with function detection." },
+	{ 0 },
+};
+static const RzCmdDescDetail inquiry_interpreter_prototype_details[] = {
+	{ .name = "Examples", .entries = inquiry_interpreter_prototype_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg inquiry_interpreter_prototype_args[] = {
+	{
+		.name = "f",
+		.type = RZ_CMD_ARG_TYPE_OPTION,
+		.flags = RZ_CMD_ARG_FLAG_OPTION,
+		.default_value = "0",
+
+	},
+	{
+		.name = "entry_points",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp inquiry_interpreter_prototype_help = {
+	.summary = "Abstract Interpreter Prototype",
+	.details = inquiry_interpreter_prototype_details,
+	.args = inquiry_interpreter_prototype_args,
 };
 
 static const RzCmdDescHelp b_help = {
@@ -23909,6 +23963,17 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *aea_cd = rz_cmd_desc_group_modes_new(core->rcmd, ae_cd, "aea", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analyze_esil_insn_access_handler, &analyze_esil_insn_access_help, &aea_help);
 	rz_warn_if_fail(aea_cd);
+
+	RzCmdDesc *aI_cd = rz_cmd_desc_group_new(core->rcmd, ae_cd, "aI", NULL, NULL, &aI_help);
+	rz_warn_if_fail(aI_cd);
+	RzCmdDesc *inquiry_analyze_function_cd = rz_cmd_desc_argv_new(core->rcmd, aI_cd, "aIf", rz_inquiry_analyze_function_handler, &inquiry_analyze_function_help);
+	rz_warn_if_fail(inquiry_analyze_function_cd);
+
+	RzCmdDesc *inquiry_analyze_all_cd = rz_cmd_desc_argv_new(core->rcmd, aI_cd, "aIa", rz_inquiry_analyze_all_handler, &inquiry_analyze_all_help);
+	rz_warn_if_fail(inquiry_analyze_all_cd);
+
+	RzCmdDesc *inquiry_interpreter_prototype_cd = rz_cmd_desc_argv_new(core->rcmd, aI_cd, "aIp", rz_inquiry_interpreter_prototype_handler, &inquiry_interpreter_prototype_help);
+	rz_warn_if_fail(inquiry_interpreter_prototype_cd);
 
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);

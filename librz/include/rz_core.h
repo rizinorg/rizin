@@ -4,6 +4,7 @@
 #ifndef RZ_CORE_H
 #define RZ_CORE_H
 
+#include <rz_inquiry.h>
 #include <rz_main.h>
 #include <rz_arch.h>
 #include <rz_types.h>
@@ -294,6 +295,7 @@ struct rz_core_t {
 	ut8 ptr_alignment_III;
 	// NOTE: Do not change the order of fields above!
 	// They are used in pointer passing hacks in rz_types.h.
+	RzInquiry *inquiry;
 	RzIO *io;
 	HtSP /*<RzCorePlugin *>*/ *plugins; ///< List of registered core plugins
 	HtSP /*<void *>*/ *plugin_contexts; ///< Per-core plugin state
@@ -851,6 +853,10 @@ RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to);
 RZ_API bool rz_core_analysis_hint_set_offset(RZ_NONNULL RzCore *core, RZ_NONNULL const char *struct_member);
 RZ_API bool rz_core_analysis_continue_until_syscall(RZ_NONNULL RzCore *core);
 RZ_API bool rz_core_analysis_continue_until_call(RZ_NONNULL RzCore *core);
+
+// Experimental Inquiry Analysis
+RZ_API bool rz_core_inquiry_analyze_at(RZ_NONNULL RzCore *core, ut64 addr);
+RZ_API bool rz_core_inquiry_analyze_all(RZ_NONNULL RzCore *core);
 
 RZ_API bool rz_core_is_debugging(RZ_NONNULL RzCore *core);
 RZ_API void rz_core_perform_auto_analysis(RZ_NONNULL RzCore *core, RzCoreAnalysisType type);

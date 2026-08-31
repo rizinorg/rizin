@@ -1,0 +1,155 @@
+NAME=Indirect call x86
+FILE=bins/inquiry/interpreter/prototype/x86_unmapped_fcn_in_loop
+CMDS=<<EOF
+aIp -f sym.run
+agf @ sym.run
+agf @ sym.recurse
+agf @ sym.function_0
+axl
+ablt
+EOF
+EXPECT=<<EOF
+                  .--------------------------------------------.
+                  |  0x8000050                                 |
+                  |   ; CALL XREF from sym.recurse @ 0x8000044 |
+                  |   ;-- run:                                 |
+                  | sym.run();                                 |
+                  | push rbp                                   |
+                  | mov rbp, rsp                               |
+                  | sub rsp, 0x10                              |
+                  | mov dword [rbp-0x04], 0x00                 |
+                  | mov dword [rbp-0x08], 0x00                 |
+                  `--------------------------------------------'
+                      v
+                      |
+                      '----.
+                           | .--------------------------------------------------------.
+                           | |                                                        |
+                     .--------------------------------------.                         |
+                     |  0x8000066                           |                         |
+                     | ; CODE XREF from sym.run @ 0x800009d |                         |
+                     | cmp dword [rbp-0x08], 0x02           |                         |
+                     | jnl 0x800009f                        |                         |
+                     `--------------------------------------'                         |
+                           t f                                                        |
+                           | |                                                        |
+     .---------------------' |                                                        |
+     |                       '-------------------.                                    |
+     |                                           |                                    |
+ .--------------------------------------.    .--------------------------------.       |
+ |  0x800009f                           |    |  0x800006c                     |       |
+ | ; CODE XREF from sym.run @ 0x800006a |    | movsxd rcx, dword [rbp-0x08]   |       |
+ | mov eax, dword [rbp-0x04]            |    | mov al, 0x00                   |       |
+ | add rsp, 0x10                        |    | ; 0x80000d0                    |       |
+ | pop rbp                              |    | call qword [rcx*8+obj.fcn_arr] |       |
+ | ret                                  |    `--------------------------------'       |
+ `--------------------------------------'        v                                    |
+                                                 |                                    |
+                                                 |                                    |
+                                                 '-.                                  |
+                                                   |                                  |
+                                               .----------------------------.         |
+                                               |  0x8000079                 |         |
+                                               | mov qword [rbp-0x10], rax  |         |
+                                               | cmp dword [rbp-0x08], 0x03 |         |
+                                               | jnz 0x8000088              |         |
+                                               `----------------------------'         |
+                                                       f t                            |
+                                                       | |                            |
+                                                       | '---------------------.      |
+                                                       '.                      |      |
+                                                        |                      |      |
+                                                    .------------------.       |      |
+                                                    |  0x8000083       |       |      |
+                                                    | call sym.recurse |       |      |
+                                                    `------------------'       |      |
+                                                        v                      |      |
+                                                        |                      |      |
+                                                        '-----.                |      |
+                                                              | .--------------'      |
+                                                              | |                     |
+                                                        .---------------------------. |
+                                                        |  0x8000088                | |
+                                                        | mov rax, qword [rbp-0x10] | |
+                                                        | mov eax, dword [rax]      | |
+                                                        | add eax, dword [rbp-0x04] | |
+                                                        | mov dword [rbp-0x04], eax | |
+                                                        | mov eax, dword [rbp-0x08] | |
+                                                        | add eax, 0x01             | |
+                                                        | mov dword [rbp-0x08], eax | |
+                                                        | jmp 0x8000066             | |
+                                                        `---------------------------' |
+                                                            v                         |
+                                                            |                         |
+                                                            `-------------------------'
+.------------------------------------------.
+|  0x8000040                               |
+| ; [02] -r-x section size 144 named .text |
+|   ; CALL XREF from sym.run @ 0x8000083   |
+|   ;-- section..text:                     |
+|   ;-- recurse:                           |
+|   ;-- .text:                             |
+| sym.recurse();                           |
+| push rbp                                 |
+| mov rbp, rsp                             |
+| call sym.run                             |
+`------------------------------------------'
+    v
+    |
+    '--------------.
+                   |
+               .-------------.
+               |  0x8000049  |
+               | pop rbp     |
+               | ret         |
+               `-------------'
+.----------------------------------------.
+|  0x80000b0                             |
+|   ; CALL XREF from sym.run @ 0x8000072 |
+| sym.function_0();                      |
+| push rbp                               |
+| mov rbp, rsp                           |
+| ; 0xc                                  |
+| ; 12                                   |
+| mov edi, 0x0c                          |
+| call fcn_0x8000440                     |
+`----------------------------------------'
+    v
+    |
+    '-------------.
+                  |
+              .-------------.
+              |  0x80000be  |
+              | pop rbp     |
+              | ret         |
+              `-------------'
+                         section..text+4 0x8000044 ->      CALL -> 0x8000050 reloc.target.run
+                     reloc.target.run+26 0x800006a ->      CODE -> 0x800009f reloc.recurse+27
+                     reloc.target.run+34 0x8000072 ->      CALL -> 0x80000b0 sym.function_0
+                     reloc.target.run+34 0x8000072 ->      DATA -> 0x80000d0 section..data
+                        reloc.fcn_arr+14 0x8000083 ->      CALL -> 0x8000040 section..text
+                        reloc.recurse+25 0x800009d ->      CODE -> 0x8000066 reloc.target.run+22
+     addr size traced ninstr jump       fail       fcns        calls       xrefs       
+---------------------------------------------------------------------------------------
+0x8000040    9      0      3 0x08000049             0x08000040  0x08000050  0x08000083
+0x8000049    2      0      2                        0x08000040             
+0x800004b    5      0      1 0x08000050                                    
+0x8000050   22      0      5 0x08000066             0x08000050              0x08000044
+0x8000066    6      0      2 0x0800009f 0x0800006c  0x08000050              0x0800009d
+0x800006c   13      0      3 0x08000079             0x08000050  0x080000b0 
+0x8000079   10      0      3 0x08000088 0x08000083  0x08000050             
+0x8000083    5      0      1 0x08000088             0x08000050  0x08000040 
+0x8000088   23      0      8 0x08000066             0x08000050             
+0x800009f    9      0      4                        0x08000050              0x0800006a
+0x80000a8    8      0      1 0x080000b0                                    
+0x80000b0   14      0      4 0x080000be             0x080000b0  0x08000440  0x08000072
+0x80000be    2      0      2                        0x080000b0             
+0x80000c0   14      0      4 0x080000ce             0x080000c0  0x08000440 
+0x80000ce    2      0      2                        0x080000c0             
+0x8000440    1      0      0                        0x08000440             
+EOF
+EXPECT_ERR=<<EOF
+Finished reference recovery: OK
+Perform function deduction: OK
+EOF
+RUN

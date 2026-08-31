@@ -37,6 +37,7 @@ CB(bin, bin)
 CB(demangler, bin->demangler)
 CB(egg, egg)
 CB(hash, hash)
+CB(inquiry, inquiry)
 
 static bool lib_arch_cb(RzLibPlugin *pl, void *user, void *data) {
 	RzArchPlugin *hand = (RzArchPlugin *)data;
@@ -122,6 +123,7 @@ RZ_API void rz_core_loadlibs_init(RzCore *core) {
 	DF(EGG, "egg plugins", egg);
 	DF(HASH, "hash plugins", hash);
 	DF(ARCH, "(dis)assembler & analysis plugins", arch);
+	DF(INTERPRETER, "inquiry interpreter plugins", inquiry);
 	core->times->loadlibs_init_time = rz_time_now_mono() - prev;
 }
 
