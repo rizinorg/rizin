@@ -58,7 +58,6 @@ static RZ_INLINE ut32 fd_exponent_width(RzFloatFormat format) {
 }
 
 static RZ_INLINE ut32 fd_mantissa_offset(RzFloatFormat format) {
-	(void)format;
 	return 0;
 }
 
@@ -95,11 +94,6 @@ static RZ_INLINE RzILOpBitVector *fd_extract(RzFloatFormat format,
 }
 
 /**
- * Replaces RISCV_FD_REG_GETTER_BV.
- *
- * F had: CAST(32, IL_FALSE, VARG(riscv_freg_name(reg)))
- * D had: VARG(riscv_freg_name(reg))
- *
  * RzFloat metadata gives value_width as 32 or 64. Floating-register storage is
  * fixed at 64 bits, so only a narrower format needs the low-bit cast.
  */
@@ -117,11 +111,6 @@ static RZ_INLINE RzILOpBitVector *fd_get_reg_bv(RzFloatFormat format, uint32_t r
 }
 
 /**
- * Replaces RISCV_FD_REG_GETTER.
- *
- * F had: FLOATV32(RISCV_FD_REG_GETTER_BV(reg))
- * D had: FLOATV64(RISCV_FD_REG_GETTER_BV(reg))
- *
  * FLOATV32/FLOATV64 are the same constructor specialized by RzFloatFormat, so
  * the format itself selects both the float interpretation and raw value width.
  */
@@ -134,16 +123,10 @@ static RZ_INLINE RzILOpFloat *fd_get_reg(RzFloatFormat format, uint32_t reg) {
 }
 
 /**
- * Replaces RISCV_FD_REG_SETTER_BV.
- *
- * F had: SETG(name, APPEND(UN(32, 0xffffffff), bv))
- * D had: SETG(name, bv)
- *
  * With fixed 64-bit register storage, value_width < 64 is exactly the RISC-V
  * NaN-boxing condition. The derived difference is the all-ones prefix width.
  */
-static RZ_INLINE RzILOpEffect *fd_set_reg_bv_format(RzFloatFormat format,
-	uint32_t reg, RzILOpBitVector *value) {
+static RZ_INLINE RzILOpEffect *fd_set_reg_bv_format(RzFloatFormat format, uint32_t reg, RzILOpBitVector *value) {
 	ut32 value_width = fd_value_width(format);
 	if (value_width < FD_REGISTER_STORAGE_WIDTH) {
 		ut32 upper_width = FD_REGISTER_STORAGE_WIDTH - value_width;
@@ -158,16 +141,10 @@ static RZ_INLINE RzILOpEffect *fd_set_reg_bv(RzFloatFormat format,
 }
 
 /**
- * Replaces RISCV_FD_REG_SETTER.
- *
- * F had: RISCV_FD_REG_SETTER_BV(reg, F2BV(fl)), which NaN-boxed the result.
- * D had: SETG(name, F2BV(fl)), which stored all 64 bits directly.
- *
  * Float-to-bits is common; fd_set_reg_bv_format derives whether the resulting
  * format is narrower than the fixed register storage and boxes only then.
  */
-static RZ_INLINE RzILOpEffect *fd_set_reg_format(RzFloatFormat format,
-	uint32_t reg, RzILOpFloat *value) {
+static RZ_INLINE RzILOpEffect *fd_set_reg_format(RzFloatFormat format, uint32_t reg, RzILOpFloat *value) {
 	return fd_set_reg_bv_format(format, reg, F2BV(value));
 }
 
@@ -176,84 +153,42 @@ static RZ_INLINE RzILOpEffect *fd_set_reg(RzFloatFormat format,
 	return fd_set_reg_format(format, reg, value);
 }
 
-/**
- * Replaces RISCV_FD_GET_MANTISSA.
- *
- * F had: EXTRACT32(bv, 0, 23)
- * D had: EXTRACT64(bv, 0, 52)
- *
- * RzFloat places the mantissa at bit zero and reports its width as MAN_LEN.
- */
-static RZ_INLINE RzILOpBitVector *fd_get_mantissa(RzFloatFormat format,
-	RzILOpBitVector *value) {
+static RZ_INLINE RzILOpBitVector *fd_get_mantissa(RzFloatFormat format, RzILOpBitVector *value) {
 	return fd_extract(format, value, fd_mantissa_offset(format), fd_mantissa_width(format));
 }
 
 /**
- * Replaces RISCV_FD_GET_EXPONENT.
- *
- * F had: EXTRACT32(bv, 23, 8)
- * D had: EXTRACT64(bv, 52, 11)
- *
  * RzFloat places the exponent immediately after its MAN_LEN-bit mantissa and
  * reports the exponent width as EXP_LEN.
  */
-static RZ_INLINE RzILOpBitVector *fd_get_exponent(RzFloatFormat format,
-	RzILOpBitVector *value) {
+static RZ_INLINE RzILOpBitVector *fd_get_exponent(RzFloatFormat format, RzILOpBitVector *value) {
 	return fd_extract(format, value, fd_exponent_offset(format), fd_exponent_width(format));
 }
 
 /**
- * Replaces RISCV_FD_GET_SIGN.
- *
- * F had: EXTRACT32(bv, 31, 1)
- * D had: EXTRACT64(bv, 63, 1)
- *
  * RzFloat stores the sign in TOTAL_LEN - 1, yielding bit 31 or bit 63.
  */
-static RZ_INLINE RzILOpBitVector *fd_get_sign(RzFloatFormat format,
-	RzILOpBitVector *value) {
+static RZ_INLINE RzILOpBitVector *fd_get_sign(RzFloatFormat format, RzILOpBitVector *value) {
 	return fd_extract(format, value, fd_sign_offset(format), 1);
 }
 
 /**
- * Replaces RISCV_FD_IS_NAN.
- *
- * F had: exponent == 0xff && mantissa != 0
- * D had: exponent == 0x7ff && mantissa != 0
- *
  * EXP_LEN derives an all-ones maximum exponent of (1 << EXP_LEN) - 1; field
  * extraction is derived from the same format metadata.
  */
-static RZ_INLINE RzILOpBool *fd_is_nan(RzFloatFormat format,
-	RzILOpBitVector *value) {
+static RZ_INLINE RzILOpBool *fd_is_nan(RzFloatFormat format, RzILOpBitVector *value) {
 	return AND(
 		EQ(fd_get_exponent(format, DUP(value)), fd_constant(format, fd_max_exponent(format))),
 		NON_ZERO(fd_get_mantissa(format, value)));
 }
 
-/**
- * Replaces RISCV_FD_IS_S_NAN.
- *
- * F had: IS_NAN(bv) && bit 22 == 0
- * D had: IS_NAN(bv) && bit 51 == 0
- *
- * For RISC-V binary32/binary64, the quiet bit is the highest mantissa bit,
- * immediately below the derived exponent offset.
- */
-static RZ_INLINE RzILOpBool *fd_is_s_nan(RzFloatFormat format,
-	RzILOpBitVector *value) {
+static RZ_INLINE RzILOpBool *fd_is_s_nan(RzFloatFormat format, RzILOpBitVector *value) {
 	return AND(
 		fd_is_nan(format, DUP(value)),
 		IS_ZERO(fd_extract(format, value, fd_quiet_nan_offset(format), 1)));
 }
 
 /**
- * Replaces RISCV_FD_CANONICAL_QNAN.
- *
- * F had: UN(32, 0x7fc00000)
- * D had: UN(64, 0x7ff8000000000000)
- *
  * The canonical value is the derived all-ones exponent plus the derived quiet
  * bit, with sign and all remaining mantissa bits clear.
  */
@@ -263,16 +198,7 @@ static RZ_INLINE RzILOpBitVector *fd_canonical_qnan(RzFloatFormat format) {
 	return fd_constant(format, exponent | quiet);
 }
 
-/**
- * Replaces RISCV_FD_IS_MAX_EXP.
- *
- * F had: EQ(exponent, UN(32, 0xff))
- * D had: EQ(exponent, UN(64, 0x7ff))
- *
- * EXP_LEN derives 0xff or 0x7ff, and TOTAL_LEN derives the IL constant width.
- */
-static RZ_INLINE RzILOpBool *fd_is_max_exp(RzFloatFormat format,
-	RzILOpBitVector *exponent) {
+static RZ_INLINE RzILOpBool *fd_is_max_exp(RzFloatFormat format, RzILOpBitVector *exponent) {
 	return EQ(exponent, fd_constant(format, fd_max_exponent(format)));
 }
 
@@ -298,15 +224,20 @@ static RZ_INLINE RzILOpBool *fd_fcvt_is_invalid(RzFloatFormat format,
 		OR(FLT(VARL("_rounded"), lower), FGE(VARL("_rounded"), upper)));
 }
 
+/** Maps a statically encoded Capstone rounding mode at lift time. */
 static RZ_INLINE RzFloatRMode fd_rounding_mode(riscv_rounding_mode mode) {
-	switch (mode) {
-	case RISCV_RM_RNE: return RZ_FLOAT_RMODE_RNE;
-	case RISCV_RM_RTZ: return RZ_FLOAT_RMODE_RTZ;
-	case RISCV_RM_RDN: return RZ_FLOAT_RMODE_RTN;
-	case RISCV_RM_RUP: return RZ_FLOAT_RMODE_RTP;
-	case RISCV_RM_RMM: return RZ_FLOAT_RMODE_RNA;
-	default: return RZ_FLOAT_RMODE_RNE;
+	static const RzFloatRMode modes[] = {
+		RZ_FLOAT_RMODE_RNE,
+		RZ_FLOAT_RMODE_RTZ,
+		RZ_FLOAT_RMODE_RTN,
+		RZ_FLOAT_RMODE_RTP,
+		RZ_FLOAT_RMODE_RNA,
+	};
+	if (mode < RISCV_RM_RNE || mode > RISCV_RM_RMM) {
+		rz_warn_if_reached();
+		return RZ_FLOAT_RMODE_RNE;
 	}
+	return modes[mode - RISCV_RM_RNE];
 }
 
 static RZ_INLINE RzILOpBitVector *fd_exception(ut64 riscv_bit, RzFloatException exception) {
@@ -317,8 +248,23 @@ static RZ_INLINE RzILOpEffect *fd_update_fflags(void) {
 	return SETG("fcsr", LOGOR(VARG("fcsr"), LOGOR(fd_exception(0x01, RZ_FLOAT_E_INEXACT), LOGOR(fd_exception(0x02, RZ_FLOAT_E_UNDERFLOW), LOGOR(fd_exception(0x04, RZ_FLOAT_E_OVERFLOW), LOGOR(fd_exception(0x08, RZ_FLOAT_E_DIV_ZERO), fd_exception(0x10, RZ_FLOAT_E_INVALID_OP)))))));
 }
 
-static RZ_INLINE RzILOpEffect *fd_set_frm(void) {
-	return SETL("_frm", EXTRACT64(VARG("fcsr"), UN(64, 5), UN(32, 3)));
+/**
+ * Maps the architectural fcsr.frm encoding to RzFloatRMode at IL run time.
+ * Dynamic RzIL rounding modes are represented by 32-bit bitvectors. Reserved
+ * RISC-V frm values fall back to RNE.
+ */
+static RZ_INLINE RzILOpBitVector *fd_dynamic_rounding_mode(void) {
+	return LET("_frm", EXTRACT64(VARG("fcsr"), UN(64, 5), UN(32, 3)),
+		ITE(EQ(VARLP("_frm"), UN(64, 0)), UN(32, RZ_FLOAT_RMODE_RNE),
+			ITE(EQ(VARLP("_frm"), UN(64, 1)), UN(32, RZ_FLOAT_RMODE_RTZ),
+				ITE(EQ(VARLP("_frm"), UN(64, 2)), UN(32, RZ_FLOAT_RMODE_RTN),
+					ITE(EQ(VARLP("_frm"), UN(64, 3)), UN(32, RZ_FLOAT_RMODE_RTP),
+						ITE(EQ(VARLP("_frm"), UN(64, 4)), UN(32, RZ_FLOAT_RMODE_RNA),
+							UN(32, RZ_FLOAT_RMODE_RNE)))))));
+}
+
+static RZ_INLINE RzILOpEffect *fd_set_dynamic_rounding_mode(void) {
+	return SETL("_rmode", fd_dynamic_rounding_mode());
 }
 
 static RZ_INLINE RzILOpFloat *fd_binary_result(FDBinaryOperation operation,
@@ -337,27 +283,23 @@ static RZ_INLINE RzILOpFloat *fd_binary_result(FDBinaryOperation operation,
 }
 
 static RZ_INLINE RzILOpFloat *fd_dynamic_binary_result(FDBinaryOperation operation) {
-	return ITE(EQ(VARL("_frm"), UN(64, 0)), fd_binary_result(operation, RZ_FLOAT_RMODE_RNE, VARL("_x"), VARL("_y")),
-		ITE(EQ(VARL("_frm"), UN(64, 1)), fd_binary_result(operation, RZ_FLOAT_RMODE_RTZ, VARL("_x"), VARL("_y")),
-			ITE(EQ(VARL("_frm"), UN(64, 2)), fd_binary_result(operation, RZ_FLOAT_RMODE_RTN, VARL("_x"), VARL("_y")),
-				ITE(EQ(VARL("_frm"), UN(64, 3)), fd_binary_result(operation, RZ_FLOAT_RMODE_RTP, VARL("_x"), VARL("_y")),
-					fd_binary_result(operation, RZ_FLOAT_RMODE_RNA, VARL("_x"), VARL("_y"))))));
+	switch (operation) {
+	case FD_BINARY_ADD: return FADD_DYN_RMODE(VARL("_rmode"), VARL("_x"), VARL("_y"));
+	case FD_BINARY_SUB: return FSUB_DYN_RMODE(VARL("_rmode"), VARL("_x"), VARL("_y"));
+	case FD_BINARY_MUL: return FMUL_DYN_RMODE(VARL("_rmode"), VARL("_x"), VARL("_y"));
+	case FD_BINARY_DIV: return FDIV_DYN_RMODE(VARL("_rmode"), VARL("_x"), VARL("_y"));
+	default:
+		rz_warn_if_reached();
+		return NULL;
+	}
 }
 
 static RZ_INLINE RzILOpFloat *fd_dynamic_sqrt_result(void) {
-	return ITE(EQ(VARL("_frm"), UN(64, 0)), FSQRT(RZ_FLOAT_RMODE_RNE, VARL("_x")),
-		ITE(EQ(VARL("_frm"), UN(64, 1)), FSQRT(RZ_FLOAT_RMODE_RTZ, VARL("_x")),
-			ITE(EQ(VARL("_frm"), UN(64, 2)), FSQRT(RZ_FLOAT_RMODE_RTN, VARL("_x")),
-				ITE(EQ(VARL("_frm"), UN(64, 3)), FSQRT(RZ_FLOAT_RMODE_RTP, VARL("_x")),
-					FSQRT(RZ_FLOAT_RMODE_RNA, VARL("_x"))))));
+	return FSQRT_DYN_RMODE(VARL("_rmode"), VARL("_x"));
 }
 
 static RZ_INLINE RzILOpFloat *fd_dynamic_mad_result(void) {
-	return ITE(EQ(VARL("_frm"), UN(64, 0)), FMAD(RZ_FLOAT_RMODE_RNE, VARL("_x"), VARL("_y"), VARL("_z")),
-		ITE(EQ(VARL("_frm"), UN(64, 1)), FMAD(RZ_FLOAT_RMODE_RTZ, VARL("_x"), VARL("_y"), VARL("_z")),
-			ITE(EQ(VARL("_frm"), UN(64, 2)), FMAD(RZ_FLOAT_RMODE_RTN, VARL("_x"), VARL("_y"), VARL("_z")),
-				ITE(EQ(VARL("_frm"), UN(64, 3)), FMAD(RZ_FLOAT_RMODE_RTP, VARL("_x"), VARL("_y"), VARL("_z")),
-					FMAD(RZ_FLOAT_RMODE_RNA, VARL("_x"), VARL("_y"), VARL("_z"))))));
+	return FMAD_DYN_RMODE(VARL("_rmode"), VARL("_x"), VARL("_y"), VARL("_z"));
 }
 
 static RZ_INLINE RzILOpEffect *fd_lift_load(RzFloatFormat format,
@@ -377,7 +319,7 @@ static RZ_INLINE RzILOpEffect *fd_lift_binary(RzFloatFormat format,
 	DECODE_FD_FD_FS_FS(format, insn);
 	if (insn->detail->riscv.rounding_mode == RISCV_RM_DYN) {
 		return SEQN(6,
-			fd_set_frm(),
+			fd_set_dynamic_rounding_mode(),
 			SETL("_x", left),
 			SETL("_y", right),
 			SETL("_r", fd_dynamic_binary_result(operation)),
@@ -395,7 +337,7 @@ static RZ_INLINE RzILOpEffect *fd_lift_sqrt(RzFloatFormat format,
 	DECODE_FD_FD_FS(format, insn);
 	if (insn->detail->riscv.rounding_mode == RISCV_RM_DYN) {
 		return SEQN(5,
-			fd_set_frm(),
+			fd_set_dynamic_rounding_mode(),
 			SETL("_x", source),
 			SETL("_r", fd_dynamic_sqrt_result()),
 			fd_set_reg(format, frd, VARL("_r")),
@@ -418,7 +360,7 @@ static RZ_INLINE RzILOpEffect *fd_lift_mad(RzFloatFormat format,
 	}
 	if (insn->detail->riscv.rounding_mode == RISCV_RM_DYN) {
 		return SEQN(7,
-			fd_set_frm(),
+			fd_set_dynamic_rounding_mode(),
 			SETL("_x", left),
 			SETL("_y", right),
 			SETL("_z", addend),
@@ -450,8 +392,7 @@ static RZ_INLINE RzILOpEffect *fd_lift_sign_injection(RzFloatFormat format,
 		LOGOR(LOGAND(magnitude, fd_constant(format, ~sign_mask)), sign));
 }
 
-static RZ_INLINE RzILOpBool *fd_is_zero(RzFloatFormat format,
-	RzILOpBitVector *value) {
+static RZ_INLINE RzILOpBool *fd_is_zero(RzFloatFormat format, RzILOpBitVector *value) {
 	return AND(IS_ZERO(fd_get_exponent(format, DUP(value))),
 		IS_ZERO(fd_get_mantissa(format, value)));
 }
@@ -547,56 +488,78 @@ static RZ_INLINE RzILOpEffect *fd_lift_class(RzFloatFormat format,
 static RZ_INLINE RzILOpEffect *fd_lift_fcvt_w(RzFloatFormat format,
 	bool unsigned_result, RzAnalysis *analysis, cs_insn *insn, ut64 current_addr) {
 	DECODE_FD_RD_FS_BV(format, insn);
-	RzFloatRMode mode = fd_rounding_mode(insn->detail->riscv.rounding_mode);
+	bool dynamic = insn->detail->riscv.rounding_mode == RISCV_RM_DYN;
+	RzFloatRMode mode = dynamic
+		? RZ_FLOAT_RMODE_RNE
+		: fd_rounding_mode(insn->detail->riscv.rounding_mode);
 	RzILOpBitVector *saturated;
 	RzILOpBitVector *converted;
 	if (unsigned_result) {
 		saturated = ITE(OR(AND(fd_is_max_exp(format, VARL("_ex")), NON_ZERO(VARL("_mn"))), INV(VARL("_sg"))),
 			UN(32, 0xffffffff), UN(32, 0));
-		converted = F2INT(32, mode, VARL("_rounded"));
+		converted = dynamic
+			? F2INT_DYN_RMODE(32, VARL("_rmode"), VARL("_rounded"))
+			: F2INT(32, mode, VARL("_rounded"));
 	} else {
 		saturated = ITE(AND(VARL("_sg"), INV(AND(fd_is_max_exp(format, VARL("_ex")), NON_ZERO(VARL("_mn"))))),
 			UN(32, 0x80000000), UN(32, 0x7fffffff));
-		converted = F2SINT(32, mode, VARL("_rounded"));
+		converted = dynamic
+			? F2SINT_DYN_RMODE(32, VARL("_rmode"), VARL("_rounded"))
+			: F2SINT(32, mode, VARL("_rounded"));
 	}
-	return SEQN(9,
+	RzILOpFloat *rounded = dynamic
+		? FROUND_DYN_RMODE(VARL("_rmode"), VARL("_f"))
+		: FROUND(mode, VARL("_f"));
+	RzILOpEffect *effect = SEQN(9,
 		SETL("_bv", value),
 		SETL("_ex", fd_get_exponent(format, VARL("_bv"))),
 		SETL("_mn", fd_get_mantissa(format, VARL("_bv"))),
 		SETL("_sg", NON_ZERO(fd_get_sign(format, VARL("_bv")))),
 		SETL("_f", BV2F(format, VARL("_bv"))),
-		SETL("_rounded", FROUND(mode, VARL("_f"))),
+		SETL("_rounded", rounded),
 		SETL("_nv", fd_fcvt_is_invalid(format, unsigned_result, 32)),
 		riscv_il_set_reg(rd, SIGNED(analysis->bits, ITE(VARL("_nv"), saturated, converted))),
 		SETG("fcsr", LOGOR(VARG("fcsr"), ITE(VARL("_nv"), UN(64, 0x10), ITE(FNE(VARL("_rounded"), VARL("_f")), UN(64, 0x01), UN(64, 0))))));
+	return dynamic ? SEQ2(fd_set_dynamic_rounding_mode(), effect) : effect;
 }
 
 static RZ_INLINE RzILOpEffect *fd_lift_fcvt_l(RzFloatFormat format,
 	bool unsigned_result, RzAnalysis *analysis, cs_insn *insn, ut64 current_addr) {
 	REQUIRE_64_BIT(analysis);
 	DECODE_FD_RD_FS_BV(format, insn);
-	RzFloatRMode mode = fd_rounding_mode(insn->detail->riscv.rounding_mode);
+	bool dynamic = insn->detail->riscv.rounding_mode == RISCV_RM_DYN;
+	RzFloatRMode mode = dynamic
+		? RZ_FLOAT_RMODE_RNE
+		: fd_rounding_mode(insn->detail->riscv.rounding_mode);
 	RzILOpBitVector *saturated;
 	RzILOpBitVector *converted;
 	if (unsigned_result) {
 		saturated = ITE(OR(AND(fd_is_max_exp(format, VARL("_ex")), NON_ZERO(VARL("_mn"))), INV(VARL("_sg"))),
 			UN(64, UT64_MAX), UN(64, 0));
-		converted = F2INT(64, mode, VARL("_rounded"));
+		converted = dynamic
+			? F2INT_DYN_RMODE(64, VARL("_rmode"), VARL("_rounded"))
+			: F2INT(64, mode, VARL("_rounded"));
 	} else {
 		saturated = ITE(AND(VARL("_sg"), INV(AND(fd_is_max_exp(format, VARL("_ex")), NON_ZERO(VARL("_mn"))))),
 			UN(64, 0x8000000000000000ULL), UN(64, 0x7fffffffffffffffULL));
-		converted = F2SINT(64, mode, VARL("_rounded"));
+		converted = dynamic
+			? F2SINT_DYN_RMODE(64, VARL("_rmode"), VARL("_rounded"))
+			: F2SINT(64, mode, VARL("_rounded"));
 	}
-	return SEQN(9,
+	RzILOpFloat *rounded = dynamic
+		? FROUND_DYN_RMODE(VARL("_rmode"), VARL("_f"))
+		: FROUND(mode, VARL("_f"));
+	RzILOpEffect *effect = SEQN(9,
 		SETL("_bv", value),
 		SETL("_ex", fd_get_exponent(format, VARL("_bv"))),
 		SETL("_mn", fd_get_mantissa(format, VARL("_bv"))),
 		SETL("_sg", NON_ZERO(fd_get_sign(format, VARL("_bv")))),
 		SETL("_f", BV2F(format, VARL("_bv"))),
-		SETL("_rounded", FROUND(mode, VARL("_f"))),
+		SETL("_rounded", rounded),
 		SETL("_nv", fd_fcvt_is_invalid(format, unsigned_result, 64)),
 		riscv_il_set_reg(rd, ITE(VARL("_nv"), saturated, converted)),
 		SETG("fcsr", LOGOR(VARG("fcsr"), ITE(VARL("_nv"), UN(64, 0x10), ITE(FNE(VARL("_rounded"), VARL("_f")), UN(64, 0x01), UN(64, 0))))));
+	return dynamic ? SEQ2(fd_set_dynamic_rounding_mode(), effect) : effect;
 }
 
 static RZ_INLINE RzILOpEffect *fd_lift_fcvt_from_int(RzFloatFormat format,
@@ -613,23 +576,39 @@ static RZ_INLINE RzILOpEffect *fd_lift_fcvt_from_int(RzFloatFormat format,
 			source = unsigned_source ? CAST(64, IL_FALSE, source) : SIGNED(64, source);
 		}
 	}
-	RzFloatRMode mode = fd_rounding_mode(insn->detail->riscv.rounding_mode);
-	RzILOpFloat *result = unsigned_source
-		? INT2F(format, mode, source)
-		: SINT2F(format, mode, source);
-	return SEQ3(
+	bool dynamic = insn->detail->riscv.rounding_mode == RISCV_RM_DYN;
+	RzFloatRMode mode = dynamic
+		? RZ_FLOAT_RMODE_RNE
+		: fd_rounding_mode(insn->detail->riscv.rounding_mode);
+	RzILOpFloat *result;
+	if (unsigned_source) {
+		result = dynamic
+			? INT2F_DYN_RMODE(format, VARL("_rmode"), source)
+			: INT2F(format, mode, source);
+	} else {
+		result = dynamic
+			? SINT2F_DYN_RMODE(format, VARL("_rmode"), source)
+			: SINT2F(format, mode, source);
+	}
+	RzILOpEffect *effect = SEQ3(
 		SETL("_r", result),
 		fd_set_reg(format, frd, VARL("_r")),
 		fd_update_fflags());
+	return dynamic ? SEQ2(fd_set_dynamic_rounding_mode(), effect) : effect;
 }
 
 static RZ_INLINE RzILOpEffect *fd_lift_fcvt_format(RzFloatFormat destination_format,
 	RzFloatFormat source_format, cs_insn *insn, ut64 current_addr) {
 	DECODE_FD_FD_FS_FORMAT(source_format, insn);
-	return SEQ3(
-		SETL("_r", FCONVERT(destination_format, fd_rounding_mode(insn->detail->riscv.rounding_mode), source)),
+	bool dynamic = insn->detail->riscv.rounding_mode == RISCV_RM_DYN;
+	RzILOpFloat *result = dynamic
+		? FCONVERT_DYN_RMODE(destination_format, VARL("_rmode"), source)
+		: FCONVERT(destination_format, fd_rounding_mode(insn->detail->riscv.rounding_mode), source);
+	RzILOpEffect *effect = SEQ3(
+		SETL("_r", result),
 		fd_set_reg_format(destination_format, frd, VARL("_r")),
 		fd_update_fflags());
+	return dynamic ? SEQ2(fd_set_dynamic_rounding_mode(), effect) : effect;
 }
 
 static RZ_INLINE RzILOpEffect *fd_lift_fmv_to_x(RzFloatFormat format,
