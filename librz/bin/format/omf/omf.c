@@ -332,14 +332,25 @@ static int load_omf_data(const ut8 *buf, ut64 buf_size, OMF_record *record, ut64
 	ut32 offset;
 	ut16 ct = 4;
 
-	if ((!(record->type & 1) && record->size < 4) || (record->size < 6)) {
-		RZ_LOG_ERROR("Invalid Ledata record (bad size)\n");
+	if (record->type == OMF_LEDATA && record->size < 4) {
+		RZ_LOG_ERROR("Invalid Ledata16 record (bad size)\n");
 		return false;
 	}
+
+	if (record->type == OMF_LEDATA32 && record->size < 6) {
+		RZ_LOG_ERROR("Invalid Ledata32 record (bad size)\n");
+		return false;
+	}
+
 	const ut16 seg_idx = omf_get_idx(buf + 3, buf_size - 3);
 	if (seg_idx & 0xff00) {
-		if ((!(record->type & 1) && record->size < 5) || (record->size < 7)) {
-			RZ_LOG_ERROR("Invalid Ledata record (bad size)\n");
+		if (record->type == OMF_LEDATA && record->size < 5) {
+			RZ_LOG_ERROR("Invalid Ledata16 record (bad size)\n");
+			return false;
+		}
+
+		if (record->type == OMF_LEDATA32 && record->size < 7) {
+			RZ_LOG_ERROR("Invalid Ledata32 record (bad size)\n");
 			return false;
 		}
 		ct++;
@@ -642,11 +653,9 @@ static void free_all_omf_records(rz_bin_omf_obj *obj) {
 
 static void free_all_omf_sections(rz_bin_omf_obj *obj) {
 	ut32 ct = 0;
-	OMF_data *data;
-
 	while (ct < obj->nb_section) {
 		while (obj->sections[ct]->data) {
-			data = obj->sections[ct]->data->next;
+			OMF_data *data = obj->sections[ct]->data->next;
 			RZ_FREE(obj->sections[ct]->data);
 			obj->sections[ct]->data = data;
 		}
@@ -669,7 +678,6 @@ static void free_all_omf_symbols(rz_bin_omf_obj *obj) {
 
 static void free_all_omf_names(rz_bin_omf_obj *obj) {
 	ut32 ct = 0;
-
 	while (ct < obj->nb_name) {
 		RZ_FREE(obj->names[ct]);
 		ct++;
@@ -678,21 +686,20 @@ static void free_all_omf_names(rz_bin_omf_obj *obj) {
 }
 
 void rz_bin_free_all_omf_obj(rz_bin_omf_obj *obj) {
-	if (obj) {
-		if (obj->records) {
-			free_all_omf_records(obj);
-		}
-		if (obj->sections) {
-			free_all_omf_sections(obj);
-		}
-		if (obj->symbols) {
-			free_all_omf_symbols(obj);
-		}
-		if (obj->names) {
-			free_all_omf_names(obj);
-		}
-		free(obj);
+	if (!obj) return;
+	if (obj->records) {
+		free_all_omf_records(obj);
 	}
+	if (obj->sections) {
+		free_all_omf_sections(obj);
+	}
+	if (obj->symbols) {
+		free_all_omf_symbols(obj);
+	}
+	if (obj->names) {
+		free_all_omf_names(obj);
+	}
+	free(obj);
 }
 
 rz_bin_omf_obj *rz_bin_internal_omf_load(const ut8 *buf, ut64 size) {

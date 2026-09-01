@@ -1204,3 +1204,1343 @@ load_omf: OMF51_PEDATA  [00012] (17016) [0x00004278] 0x94 (20)		Segment: 0, offs
 load_omf: OMF_ALIAS    [00002] (17031) [0x00004287] 0xc6 (5)
 EOF
 RUN
+
+NAME=omf 16 bit emulateme stdlib no debug
+FILE=bins/omf/emulateme_stdlib_omf_16_no_debug.obj
+CMDS=<<EOF
+iH
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+omf:
+  bits: 16
+  num_names: 10
+  num_sections: 4
+  num_symbols: 4
+  names:
+    - "CODE"
+    - "DATA"
+    - "BSS"
+    - "TLS"
+    - "DGROUP"
+    - "_TEXT"
+    - "CONST"
+    - "CONST2"
+    - "_DATA"
+  sections:
+    - name: "_TEXT"
+      name_idx: 7
+      vaddr: 0x0
+      size: 156
+      bits: 16
+      data_blocks:
+        - paddr: 0x15d
+          size: 156
+          offset: 0x0
+    - name: "CONST"
+      name_idx: 8
+      vaddr: 0x9c
+      size: 59
+      bits: 16
+      data_blocks:
+        - paddr: 0x263
+          size: 59
+          offset: 0x0
+    - name: "CONST2"
+      name_idx: 9
+      vaddr: 0xd7
+      size: 0
+      bits: 16
+    - name: "_DATA"
+      name_idx: 10
+      vaddr: 0xd7
+      size: 18
+      bits: 16
+      data_blocks:
+        - paddr: 0x2a5
+          size: 18
+          offset: 0x0
+  symbols:
+    - name: "decrypt_"
+      seg_idx: 1
+      offset: 0x0
+      segment: "_TEXT"
+      paddr: 0x15d
+      vaddr: 0x1000
+    - name: "main_"
+      seg_idx: 1
+      offset: 0x42
+      segment: "_TEXT"
+      paddr: 0x19f
+      vaddr: 0x1042
+    - name: "_parity_ref"
+      seg_idx: 4
+      offset: 0x0
+      segment: "_DATA"
+      paddr: 0x2a5
+      vaddr: 0x0
+    - name: "_seckrit"
+      seg_idx: 4
+      offset: 0x1
+      segment: "_DATA"
+      paddr: 0x2a6
+      vaddr: 0x0
+
+arch     x86
+bits     16
+EOF
+RUN
+
+NAME=omf 16 bit emulateme stdlib debug enabled
+FILE=bins/omf/emulateme_stdlib_omf_16_debug.obj
+CMDS=<<EOF
+iH
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+omf:
+  bits: 32
+  num_names: 20
+  num_sections: 13
+  num_symbols: 4
+  names:
+    - "CODE"
+    - "DATA"
+    - "BSS"
+    - "TLS"
+    - "DGROUP"
+    - "_TEXT"
+    - "CONST"
+    - "CONST2"
+    - "_DATA"
+    - "DWARF"
+    - ".debug_info"
+    - ".debug_pubnames"
+    - ".debug_aranges"
+    - ".debug_line"
+    - ".debug_loc"
+    - ".debug_abbrev"
+    - ".debug_macinfo"
+    - ".debug_str"
+    - ".WATCOM_references"
+  sections:
+    - name: "_TEXT"
+      name_idx: 7
+      vaddr: 0x0
+      size: 314
+      bits: 16
+      data_blocks:
+        - paddr: 0x4ff
+          size: 183
+          offset: 0x0
+        - paddr: 0x5ef
+          size: 131
+          offset: 0xb7
+    - name: "CONST"
+      name_idx: 8
+      vaddr: 0x13a
+      size: 59
+      bits: 16
+      data_blocks:
+        - paddr: 0x71b
+          size: 59
+          offset: 0x0
+    - name: "CONST2"
+      name_idx: 9
+      vaddr: 0x175
+      size: 0
+      bits: 16
+    - name: "_DATA"
+      name_idx: 10
+      vaddr: 0x175
+      size: 18
+      bits: 16
+      data_blocks:
+        - paddr: 0x75d
+          size: 18
+          offset: 0x0
+    - name: ".debug_info"
+      name_idx: 12
+      vaddr: 0x187
+      size: 653
+      bits: 32
+      data_blocks:
+        - paddr: 0x234
+          size: 180
+          offset: 0x0
+        - paddr: 0x331
+          size: 180
+          offset: 0xb4
+        - paddr: 0x406
+          size: 158
+          offset: 0x168
+        - paddr: 0x4e9
+          size: 4
+          offset: 0x151
+        - paddr: 0x778
+          size: 134
+          offset: 0x206
+        - paddr: 0x837
+          size: 4
+          offset: 0xc
+        - paddr: 0x844
+          size: 1
+          offset: 0x28c
+        - paddr: 0x88a
+          size: 4
+          offset: 0x0
+    - name: ".debug_pubnames"
+      name_idx: 13
+      vaddr: 0x414
+      size: 66
+      bits: 32
+      data_blocks:
+        - paddr: 0x897
+          size: 66
+          offset: 0x0
+    - name: ".debug_aranges"
+      name_idx: 14
+      vaddr: 0x456
+      size: 36
+      bits: 32
+      data_blocks:
+        - paddr: 0x8ea
+          size: 36
+          offset: 0x0
+    - name: ".debug_line"
+      name_idx: 15
+      vaddr: 0x47a
+      size: 137
+      bits: 32
+      data_blocks:
+        - paddr: 0x93b
+          size: 137
+          offset: 0x0
+    - name: ".debug_loc"
+      name_idx: 16
+      vaddr: 0x503
+      size: 0
+      bits: 32
+    - name: ".debug_abbrev"
+      name_idx: 17
+      vaddr: 0x503
+      size: 174
+      bits: 32
+      data_blocks:
+        - paddr: 0x9d9
+          size: 174
+          offset: 0x0
+    - name: ".debug_macinfo"
+      name_idx: 18
+      vaddr: 0x5b1
+      size: 1
+      bits: 32
+      data_blocks:
+        - paddr: 0xa90
+          size: 1
+          offset: 0x0
+    - name: ".debug_str"
+      name_idx: 19
+      vaddr: 0x5b2
+      size: 0
+      bits: 32
+    - name: ".WATCOM_references"
+      name_idx: 20
+      vaddr: 0x5b2
+      size: 4
+      bits: 32
+      data_blocks:
+        - paddr: 0xa9a
+          size: 4
+          offset: 0x0
+  symbols:
+    - name: "decrypt_"
+      seg_idx: 1
+      offset: 0x0
+      segment: "_TEXT"
+      paddr: 0x4ff
+      vaddr: 0x1000
+    - name: "main_"
+      seg_idx: 1
+      offset: 0x92
+      segment: "_TEXT"
+      paddr: 0x591
+      vaddr: 0x1092
+    - name: "_parity_ref"
+      seg_idx: 4
+      offset: 0x0
+      segment: "_DATA"
+      paddr: 0x75d
+      vaddr: 0x1175
+    - name: "_seckrit"
+      seg_idx: 4
+      offset: 0x1
+      segment: "_DATA"
+      paddr: 0x75e
+      vaddr: 0x1176
+
+arch     x86
+bits     32
+EOF
+RUN
+
+NAME=omf 32 bit emulateme stdlib no debug
+FILE=bins/omf/emulateme_stdlib_omf_32_no_debug_gcc.obj
+CMDS=<<EOF
+iH
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+omf:
+  bits: 32
+  num_names: 9
+  num_sections: 4
+  num_symbols: 4
+  names:
+    - "FLAT"
+    - "CODE"
+    - "DATA"
+    - "BSS"
+    - "CONST"
+    - ".text"
+    - ".data"
+    - ".bss"
+    - ".rodata"
+  sections:
+    - name: ".text"
+      name_idx: 6
+      vaddr: 0x0
+      size: 344
+      bits: 32
+      data_blocks:
+        - paddr: 0xed
+          size: 344
+          offset: 0x0
+    - name: ".data"
+      name_idx: 7
+      vaddr: 0x158
+      size: 21
+      bits: 32
+      data_blocks:
+        - paddr: 0x2ba
+          size: 21
+          offset: 0x0
+    - name: ".bss"
+      name_idx: 8
+      vaddr: 0x16d
+      size: 0
+      bits: 32
+    - name: ".rodata"
+      name_idx: 9
+      vaddr: 0x16d
+      size: 57
+      bits: 32
+      data_blocks:
+        - paddr: 0x2d8
+          size: 57
+          offset: 0x0
+  symbols:
+    - name: "parity_ref"
+      seg_idx: 2
+      offset: 0x0
+      segment: ".data"
+      paddr: 0x2ba
+      vaddr: 0x1158
+    - name: "seckrit"
+      seg_idx: 2
+      offset: 0x4
+      segment: ".data"
+      paddr: 0x2be
+      vaddr: 0x115c
+    - name: "decrypt"
+      seg_idx: 1
+      offset: 0x0
+      segment: ".text"
+      paddr: 0xed
+      vaddr: 0x1000
+    - name: "main"
+      seg_idx: 1
+      offset: 0xa1
+      segment: ".text"
+      paddr: 0x18e
+      vaddr: 0x10a1
+
+arch     x86
+bits     32
+EOF
+RUN
+
+NAME=omf 32 bit emulateme stdlib no debug
+FILE=bins/omf/emulateme_stdlib_omf_32_no_debug_ow.obj
+CMDS=<<EOF
+iH
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+omf:
+  bits: 32
+  num_names: 10
+  num_sections: 4
+  num_symbols: 4
+  names:
+    - "CODE"
+    - "DATA"
+    - "BSS"
+    - "TLS"
+    - "DGROUP"
+    - "_TEXT"
+    - "CONST"
+    - "CONST2"
+    - "_DATA"
+  sections:
+    - name: "_TEXT"
+      name_idx: 7
+      vaddr: 0x0
+      size: 196
+      bits: 32
+      data_blocks:
+        - paddr: 0x161
+          size: 172
+          offset: 0x0
+        - paddr: 0x251
+          size: 24
+          offset: 0xac
+    - name: "CONST"
+      name_idx: 8
+      vaddr: 0xc4
+      size: 59
+      bits: 32
+      data_blocks:
+        - paddr: 0x2a2
+          size: 59
+          offset: 0x0
+    - name: "CONST2"
+      name_idx: 9
+      vaddr: 0xff
+      size: 0
+      bits: 32
+    - name: "_DATA"
+      name_idx: 10
+      vaddr: 0xff
+      size: 18
+      bits: 32
+      data_blocks:
+        - paddr: 0x2e6
+          size: 18
+          offset: 0x0
+  symbols:
+    - name: "decrypt_"
+      seg_idx: 1
+      offset: 0x0
+      segment: "_TEXT"
+      paddr: 0x161
+      vaddr: 0x1000
+    - name: "main_"
+      seg_idx: 1
+      offset: 0x53
+      segment: "_TEXT"
+      paddr: 0x1b4
+      vaddr: 0x1053
+    - name: "_parity_ref"
+      seg_idx: 4
+      offset: 0x0
+      segment: "_DATA"
+      paddr: 0x2e6
+      vaddr: 0x0
+    - name: "_seckrit"
+      seg_idx: 4
+      offset: 0x1
+      segment: "_DATA"
+      paddr: 0x2e7
+      vaddr: 0x0
+
+arch     x86
+bits     32
+EOF
+RUN
+
+NAME=omf 32 bit emulateme stdlib debug enabled
+FILE=bins/omf/emulateme_stdlib_omf_32_debug.obj
+CMDS=<<EOF
+iH
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+omf:
+  bits: 32
+  num_names: 20
+  num_sections: 13
+  num_symbols: 4
+  names:
+    - "CODE"
+    - "DATA"
+    - "BSS"
+    - "TLS"
+    - "DGROUP"
+    - "_TEXT"
+    - "CONST"
+    - "CONST2"
+    - "_DATA"
+    - "DWARF"
+    - ".debug_info"
+    - ".debug_pubnames"
+    - ".debug_aranges"
+    - ".debug_line"
+    - ".debug_loc"
+    - ".debug_abbrev"
+    - ".debug_macinfo"
+    - ".debug_str"
+    - ".WATCOM_references"
+  sections:
+    - name: "_TEXT"
+      name_idx: 7
+      vaddr: 0x0
+      size: 390
+      bits: 32
+      data_blocks:
+        - paddr: 0x522
+          size: 172
+          offset: 0x0
+        - paddr: 0x63a
+          size: 175
+          offset: 0xac
+        - paddr: 0x71d
+          size: 43
+          offset: 0x15b
+    - name: "CONST"
+      name_idx: 8
+      vaddr: 0x186
+      size: 59
+      bits: 32
+      data_blocks:
+        - paddr: 0x804
+          size: 59
+          offset: 0x0
+    - name: "CONST2"
+      name_idx: 9
+      vaddr: 0x1c1
+      size: 0
+      bits: 32
+    - name: "_DATA"
+      name_idx: 10
+      vaddr: 0x1c1
+      size: 18
+      bits: 32
+      data_blocks:
+        - paddr: 0x848
+          size: 18
+          offset: 0x0
+    - name: ".debug_info"
+      name_idx: 12
+      vaddr: 0x1d3
+      size: 703
+      bits: 32
+      data_blocks:
+        - paddr: 0x236
+          size: 172
+          offset: 0x0
+        - paddr: 0x321
+          size: 169
+          offset: 0xac
+        - paddr: 0x3f5
+          size: 173
+          offset: 0x159
+        - paddr: 0x4e3
+          size: 29
+          offset: 0x206
+        - paddr: 0x515
+          size: 4
+          offset: 0x1fa
+        - paddr: 0x5ef
+          size: 1
+          offset: 0x223
+        - paddr: 0x5f9
+          size: 4
+          offset: 0x195
+        - paddr: 0x606
+          size: 1
+          offset: 0x224
+        - paddr: 0x610
+          size: 4
+          offset: 0x155
+        - paddr: 0x863
+          size: 153
+          offset: 0x225
+        - paddr: 0x935
+          size: 4
+          offset: 0xc
+        - paddr: 0x942
+          size: 1
+          offset: 0x2be
+        - paddr: 0xa46
+          size: 4
+          offset: 0x0
+    - name: ".debug_pubnames"
+      name_idx: 13
+      vaddr: 0x492
+      size: 66
+      bits: 32
+      data_blocks:
+        - paddr: 0xa53
+          size: 66
+          offset: 0x0
+    - name: ".debug_aranges"
+      name_idx: 14
+      vaddr: 0x4d4
+      size: 52
+      bits: 32
+      data_blocks:
+        - paddr: 0xaa6
+          size: 52
+          offset: 0x0
+    - name: ".debug_line"
+      name_idx: 15
+      vaddr: 0x508
+      size: 139
+      bits: 32
+      data_blocks:
+        - paddr: 0xb07
+          size: 139
+          offset: 0x0
+    - name: ".debug_loc"
+      name_idx: 16
+      vaddr: 0x593
+      size: 0
+      bits: 32
+    - name: ".debug_abbrev"
+      name_idx: 17
+      vaddr: 0x593
+      size: 174
+      bits: 32
+      data_blocks:
+        - paddr: 0x94c
+          size: 173
+          offset: 0x0
+        - paddr: 0xba7
+          size: 1
+          offset: 0xad
+    - name: ".debug_macinfo"
+      name_idx: 18
+      vaddr: 0x641
+      size: 1
+      bits: 32
+      data_blocks:
+        - paddr: 0xbb1
+          size: 1
+          offset: 0x0
+    - name: ".debug_str"
+      name_idx: 19
+      vaddr: 0x642
+      size: 0
+      bits: 32
+    - name: ".WATCOM_references"
+      name_idx: 20
+      vaddr: 0x642
+      size: 4
+      bits: 32
+      data_blocks:
+        - paddr: 0xbbb
+          size: 4
+          offset: 0x0
+  symbols:
+    - name: "decrypt_"
+      seg_idx: 1
+      offset: 0x0
+      segment: "_TEXT"
+      paddr: 0x522
+      vaddr: 0x1000
+    - name: "main_"
+      seg_idx: 1
+      offset: 0xad
+      segment: "_TEXT"
+      paddr: 0x63b
+      vaddr: 0x10ad
+    - name: "_parity_ref"
+      seg_idx: 4
+      offset: 0x0
+      segment: "_DATA"
+      paddr: 0x848
+      vaddr: 0x11c1
+    - name: "_seckrit"
+      seg_idx: 4
+      offset: 0x1
+      segment: "_DATA"
+      paddr: 0x849
+      vaddr: 0x11c2
+
+arch     x86
+bits     32
+EOF
+RUN
+
+NAME=omf 16 bit emulateme no stdlib no debug
+FILE=bins/omf/emulateme_nostd_omf_16_no_debug.obj
+CMDS=<<EOF
+iH
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+omf:
+  bits: 16
+  num_names: 10
+  num_sections: 4
+  num_symbols: 4
+  names:
+    - "CODE"
+    - "DATA"
+    - "BSS"
+    - "TLS"
+    - "DGROUP"
+    - "_TEXT"
+    - "CONST"
+    - "CONST2"
+    - "_DATA"
+  sections:
+    - name: "_TEXT"
+      name_idx: 7
+      vaddr: 0x0
+      size: 92
+      bits: 16
+      data_blocks:
+        - paddr: 0x145
+          size: 92
+          offset: 0x0
+    - name: "CONST"
+      name_idx: 8
+      vaddr: 0x5c
+      size: 17
+      bits: 16
+      data_blocks:
+        - paddr: 0x1e8
+          size: 17
+          offset: 0x0
+    - name: "CONST2"
+      name_idx: 9
+      vaddr: 0x6d
+      size: 1
+      bits: 16
+      data_blocks:
+        - paddr: 0x200
+          size: 1
+          offset: 0x0
+    - name: "_DATA"
+      name_idx: 10
+      vaddr: 0x6e
+      size: 17
+      bits: 16
+      data_blocks:
+        - paddr: 0x21d
+          size: 17
+          offset: 0x0
+  symbols:
+    - name: "decrypt_"
+      seg_idx: 1
+      offset: 0x0
+      segment: "_TEXT"
+      paddr: 0x145
+      vaddr: 0x1000
+    - name: "main_"
+      seg_idx: 1
+      offset: 0x4b
+      segment: "_TEXT"
+      paddr: 0x190
+      vaddr: 0x104b
+    - name: "_parity_ref"
+      seg_idx: 3
+      offset: 0x0
+      segment: "CONST2"
+      paddr: 0x200
+      vaddr: 0x106d
+    - name: "_seckrit"
+      seg_idx: 4
+      offset: 0x0
+      segment: "_DATA"
+      paddr: 0x21d
+      vaddr: 0x0
+
+arch     x86
+bits     16
+EOF
+RUN
+
+NAME=omf 16 bit emulateme no stdlib debug enabled
+FILE=bins/omf/emulateme_nostd_omf_16_debug.obj
+CMDS=<<EOF
+iH
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+omf:
+  bits: 32
+  num_names: 20
+  num_sections: 13
+  num_symbols: 4
+  names:
+    - "CODE"
+    - "DATA"
+    - "BSS"
+    - "TLS"
+    - "DGROUP"
+    - "_TEXT"
+    - "CONST"
+    - "CONST2"
+    - "_DATA"
+    - "DWARF"
+    - ".debug_info"
+    - ".debug_pubnames"
+    - ".debug_aranges"
+    - ".debug_line"
+    - ".debug_loc"
+    - ".debug_abbrev"
+    - ".debug_macinfo"
+    - ".debug_str"
+    - ".WATCOM_references"
+  sections:
+    - name: "_TEXT"
+      name_idx: 7
+      vaddr: 0x0
+      size: 204
+      bits: 16
+      data_blocks:
+        - paddr: 0x4e1
+          size: 182
+          offset: 0x0
+        - paddr: 0x5bf
+          size: 22
+          offset: 0xb6
+    - name: "CONST"
+      name_idx: 8
+      vaddr: 0xcc
+      size: 17
+      bits: 16
+      data_blocks:
+        - paddr: 0x632
+          size: 17
+          offset: 0x0
+    - name: "CONST2"
+      name_idx: 9
+      vaddr: 0xdd
+      size: 1
+      bits: 16
+      data_blocks:
+        - paddr: 0x64a
+          size: 1
+          offset: 0x0
+    - name: "_DATA"
+      name_idx: 10
+      vaddr: 0xde
+      size: 17
+      bits: 16
+      data_blocks:
+        - paddr: 0x652
+          size: 17
+          offset: 0x0
+    - name: ".debug_info"
+      name_idx: 12
+      vaddr: 0xef
+      size: 622
+      bits: 32
+      data_blocks:
+        - paddr: 0x226
+          size: 187
+          offset: 0x0
+        - paddr: 0x32e
+          size: 180
+          offset: 0xbb
+        - paddr: 0x40b
+          size: 131
+          offset: 0x16f
+        - paddr: 0x4cb
+          size: 4
+          offset: 0x14a
+        - paddr: 0x66c
+          size: 123
+          offset: 0x1f2
+        - paddr: 0x708
+          size: 4
+          offset: 0xc
+        - paddr: 0x715
+          size: 1
+          offset: 0x26d
+        - paddr: 0x761
+          size: 4
+          offset: 0x0
+    - name: ".debug_pubnames"
+      name_idx: 13
+      vaddr: 0x35d
+      size: 39
+      bits: 32
+      data_blocks:
+        - paddr: 0x76e
+          size: 39
+          offset: 0x0
+    - name: ".debug_aranges"
+      name_idx: 14
+      vaddr: 0x384
+      size: 42
+      bits: 32
+      data_blocks:
+        - paddr: 0x7a6
+          size: 42
+          offset: 0x0
+    - name: ".debug_line"
+      name_idx: 15
+      vaddr: 0x3ae
+      size: 120
+      bits: 32
+      data_blocks:
+        - paddr: 0x807
+          size: 120
+          offset: 0x0
+    - name: ".debug_loc"
+      name_idx: 16
+      vaddr: 0x426
+      size: 0
+      bits: 32
+    - name: ".debug_abbrev"
+      name_idx: 17
+      vaddr: 0x426
+      size: 174
+      bits: 32
+      data_blocks:
+        - paddr: 0x894
+          size: 174
+          offset: 0x0
+    - name: ".debug_macinfo"
+      name_idx: 18
+      vaddr: 0x4d4
+      size: 1
+      bits: 32
+      data_blocks:
+        - paddr: 0x94b
+          size: 1
+          offset: 0x0
+    - name: ".debug_str"
+      name_idx: 19
+      vaddr: 0x4d5
+      size: 0
+      bits: 32
+    - name: ".WATCOM_references"
+      name_idx: 20
+      vaddr: 0x4d5
+      size: 4
+      bits: 32
+      data_blocks:
+        - paddr: 0x955
+          size: 4
+          offset: 0x0
+  symbols:
+    - name: "decrypt_"
+      seg_idx: 1
+      offset: 0x0
+      segment: "_TEXT"
+      paddr: 0x4e1
+      vaddr: 0x1000
+    - name: "main_"
+      seg_idx: 1
+      offset: 0x98
+      segment: "_TEXT"
+      paddr: 0x579
+      vaddr: 0x1098
+    - name: "_parity_ref"
+      seg_idx: 3
+      offset: 0x0
+      segment: "CONST2"
+      paddr: 0x64a
+      vaddr: 0x10dd
+    - name: "_seckrit"
+      seg_idx: 4
+      offset: 0x0
+      segment: "_DATA"
+      paddr: 0x652
+      vaddr: 0x10de
+
+arch     x86
+bits     32
+EOF
+RUN
+
+NAME=omf 32 bit emulateme no stdlib no debug
+FILE=bins/omf/emulateme_nostd_omf_32_no_debug_gcc.obj
+CMDS=<<EOF
+iH
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+omf:
+  bits: 32
+  num_names: 9
+  num_sections: 4
+  num_symbols: 2
+  names:
+    - "FLAT"
+    - "CODE"
+    - "DATA"
+    - "BSS"
+    - "CONST"
+    - ".text"
+    - ".data"
+    - ".bss"
+    - ".rodata"
+  sections:
+    - name: ".text"
+      name_idx: 6
+      vaddr: 0x0
+      size: 199
+      bits: 32
+      data_blocks:
+        - paddr: 0xa7
+          size: 199
+          offset: 0x0
+    - name: ".data"
+      name_idx: 7
+      vaddr: 0xc7
+      size: 17
+      bits: 32
+      data_blocks:
+        - paddr: 0x19e
+          size: 17
+          offset: 0x0
+    - name: ".bss"
+      name_idx: 8
+      vaddr: 0xd8
+      size: 0
+      bits: 32
+    - name: ".rodata"
+      name_idx: 9
+      vaddr: 0xd8
+      size: 18
+      bits: 32
+      data_blocks:
+        - paddr: 0x1b8
+          size: 18
+          offset: 0x0
+  symbols:
+    - name: "decrypt"
+      seg_idx: 1
+      offset: 0x0
+      segment: ".text"
+      paddr: 0xa7
+      vaddr: 0x1000
+    - name: "main"
+      seg_idx: 1
+      offset: 0xa4
+      segment: ".text"
+      paddr: 0x14b
+      vaddr: 0x10a4
+
+arch     x86
+bits     32
+EOF
+RUN
+
+NAME=omf 32 bit emulateme no stdlib no debug
+FILE=bins/omf/emulateme_nostd_omf_32_no_debug_ow.obj
+CMDS=<<EOF
+iH
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+omf:
+  bits: 32
+  num_names: 10
+  num_sections: 4
+  num_symbols: 4
+  names:
+    - "CODE"
+    - "DATA"
+    - "BSS"
+    - "TLS"
+    - "DGROUP"
+    - "_TEXT"
+    - "CONST"
+    - "CONST2"
+    - "_DATA"
+  sections:
+    - name: "_TEXT"
+      name_idx: 7
+      vaddr: 0x0
+      size: 111
+      bits: 32
+      data_blocks:
+        - paddr: 0x149
+          size: 111
+          offset: 0x0
+    - name: "CONST"
+      name_idx: 8
+      vaddr: 0x6f
+      size: 17
+      bits: 32
+      data_blocks:
+        - paddr: 0x205
+          size: 17
+          offset: 0x0
+    - name: "CONST2"
+      name_idx: 9
+      vaddr: 0x80
+      size: 1
+      bits: 32
+      data_blocks:
+        - paddr: 0x21f
+          size: 1
+          offset: 0x0
+    - name: "_DATA"
+      name_idx: 10
+      vaddr: 0x81
+      size: 17
+      bits: 32
+      data_blocks:
+        - paddr: 0x240
+          size: 17
+          offset: 0x0
+  symbols:
+    - name: "decrypt_"
+      seg_idx: 1
+      offset: 0x0
+      segment: "_TEXT"
+      paddr: 0x149
+      vaddr: 0x1000
+    - name: "main_"
+      seg_idx: 1
+      offset: 0x58
+      segment: "_TEXT"
+      paddr: 0x1a1
+      vaddr: 0x1058
+    - name: "_parity_ref"
+      seg_idx: 3
+      offset: 0x0
+      segment: "CONST2"
+      paddr: 0x21f
+      vaddr: 0x1080
+    - name: "_seckrit"
+      seg_idx: 4
+      offset: 0x0
+      segment: "_DATA"
+      paddr: 0x240
+      vaddr: 0x0
+
+arch     x86
+bits     32
+EOF
+RUN
+
+NAME=omf 32 bit emulateme no stdlib debug enabled
+FILE=bins/omf/emulateme_nostd_omf_32_debug.obj
+CMDS=<<EOF
+iH
+iI~arch,bits
+EOF
+EXPECT=<<EOF
+omf:
+  bits: 32
+  num_names: 20
+  num_sections: 13
+  num_symbols: 4
+  names:
+    - "CODE"
+    - "DATA"
+    - "BSS"
+    - "TLS"
+    - "DGROUP"
+    - "_TEXT"
+    - "CONST"
+    - "CONST2"
+    - "_DATA"
+    - "DWARF"
+    - ".debug_info"
+    - ".debug_pubnames"
+    - ".debug_aranges"
+    - ".debug_line"
+    - ".debug_loc"
+    - ".debug_abbrev"
+    - ".debug_macinfo"
+    - ".debug_str"
+    - ".WATCOM_references"
+  sections:
+    - name: "_TEXT"
+      name_idx: 7
+      vaddr: 0x0
+      size: 227
+      bits: 32
+      data_blocks:
+        - paddr: 0x531
+          size: 175
+          offset: 0x0
+        - paddr: 0x627
+          size: 52
+          offset: 0xaf
+    - name: "CONST"
+      name_idx: 8
+      vaddr: 0xe3
+      size: 17
+      bits: 32
+      data_blocks:
+        - paddr: 0x6e3
+          size: 17
+          offset: 0x0
+    - name: "CONST2"
+      name_idx: 9
+      vaddr: 0xf4
+      size: 1
+      bits: 32
+      data_blocks:
+        - paddr: 0x6fd
+          size: 1
+          offset: 0x0
+    - name: "_DATA"
+      name_idx: 10
+      vaddr: 0xf5
+      size: 17
+      bits: 32
+      data_blocks:
+        - paddr: 0x707
+          size: 17
+          offset: 0x0
+    - name: ".debug_info"
+      name_idx: 12
+      vaddr: 0x106
+      size: 660
+      bits: 32
+      data_blocks:
+        - paddr: 0x228
+          size: 172
+          offset: 0x0
+        - paddr: 0x317
+          size: 172
+          offset: 0xac
+        - paddr: 0x3ee
+          size: 169
+          offset: 0x158
+        - paddr: 0x4d8
+          size: 9
+          offset: 0x205
+        - paddr: 0x4f6
+          size: 4
+          offset: 0x201
+        - paddr: 0x503
+          size: 1
+          offset: 0x20e
+        - paddr: 0x50d
+          size: 4
+          offset: 0x1e6
+        - paddr: 0x51a
+          size: 1
+          offset: 0x20f
+        - paddr: 0x524
+          size: 4
+          offset: 0x18e
+        - paddr: 0x605
+          size: 1
+          offset: 0x210
+        - paddr: 0x60f
+          size: 4
+          offset: 0x14e
+        - paddr: 0x721
+          size: 130
+          offset: 0x211
+        - paddr: 0x7c4
+          size: 4
+          offset: 0xc
+        - paddr: 0x7d1
+          size: 1
+          offset: 0x293
+        - paddr: 0x8db
+          size: 4
+          offset: 0x0
+    - name: ".debug_pubnames"
+      name_idx: 13
+      vaddr: 0x39a
+      size: 39
+      bits: 32
+      data_blocks:
+        - paddr: 0x8e8
+          size: 39
+          offset: 0x0
+    - name: ".debug_aranges"
+      name_idx: 14
+      vaddr: 0x3c1
+      size: 62
+      bits: 32
+      data_blocks:
+        - paddr: 0x920
+          size: 62
+          offset: 0x0
+    - name: ".debug_line"
+      name_idx: 15
+      vaddr: 0x3ff
+      size: 122
+      bits: 32
+      data_blocks:
+        - paddr: 0x995
+          size: 122
+          offset: 0x0
+    - name: ".debug_loc"
+      name_idx: 16
+      vaddr: 0x479
+      size: 0
+      bits: 32
+    - name: ".debug_abbrev"
+      name_idx: 17
+      vaddr: 0x479
+      size: 174
+      bits: 32
+      data_blocks:
+        - paddr: 0x7db
+          size: 173
+          offset: 0x0
+        - paddr: 0xa24
+          size: 1
+          offset: 0xad
+    - name: ".debug_macinfo"
+      name_idx: 18
+      vaddr: 0x527
+      size: 1
+      bits: 32
+      data_blocks:
+        - paddr: 0xa2e
+          size: 1
+          offset: 0x0
+    - name: ".debug_str"
+      name_idx: 19
+      vaddr: 0x528
+      size: 0
+      bits: 32
+    - name: ".WATCOM_references"
+      name_idx: 20
+      vaddr: 0x528
+      size: 4
+      bits: 32
+      data_blocks:
+        - paddr: 0xa38
+          size: 4
+          offset: 0x0
+  symbols:
+    - name: "decrypt_"
+      seg_idx: 1
+      offset: 0x0
+      segment: "_TEXT"
+      paddr: 0x531
+      vaddr: 0x1000
+    - name: "main_"
+      seg_idx: 1
+      offset: 0xa5
+      segment: "_TEXT"
+      paddr: 0x5d6
+      vaddr: 0x10a5
+    - name: "_parity_ref"
+      seg_idx: 3
+      offset: 0x0
+      segment: "CONST2"
+      paddr: 0x6fd
+      vaddr: 0x10f4
+    - name: "_seckrit"
+      seg_idx: 4
+      offset: 0x0
+      segment: "_DATA"
+      paddr: 0x707
+      vaddr: 0x10f5
+
+arch     x86
+bits     32
+EOF
+RUN

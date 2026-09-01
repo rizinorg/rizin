@@ -580,6 +580,7 @@ typedef struct {
 
 typedef struct {
 	ut8 bits;
+	ut64 base_addr;
 	ut8 modinfo;
 	char **names;
 	ut32 nb_name;

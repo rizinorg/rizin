@@ -440,6 +440,11 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	}
 }
 
+static ut64 baddr(RzBinFile *bf) {
+	const rz_bin_omf51_obj *obj = (rz_bin_omf51_obj *)bf->o->bin_obj;
+	return obj->base_addr;
+}
+
 RzBinPlugin rz_bin_plugin_omf51 = {
 	.name = "omf51",
 	.desc = "OMF51 (Object Module Format by Siemens)",
@@ -457,6 +462,7 @@ RzBinPlugin rz_bin_plugin_omf51 = {
 	.info = &info,
 	.strings = &strings,
 	.get_vaddr = &get_vaddr,
+	.baddr = &baddr
 };
 
 #ifndef RZ_PLUGIN_INCORE

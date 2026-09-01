@@ -268,7 +268,47 @@ static bool rz_c166_process(RzAnalysis *analysis, const RzBinFile *binfile) {
 	}
 	return true;
 }
+
 static bool rz_c51_process(RzAnalysis *analysis, const RzBinFile *binfile) {
+	rz_bin_omf51_obj *omf_obj = (rz_bin_omf51_obj *)binfile->o->bin_obj;
+	void **it;
+	rz_pvector_foreach (omf_obj->sections_vec, it) {
+		const OMF_sections *section = (OMF_sections *)*it;
+		if (section->Type == 5) {
+			rz_meta_set(analysis, RZ_META_TYPE_DATA, section->offset, section->Seclen, "CONST");
+		}
+	}
+	omf_obj->typedb = analysis->typedb;
+
+	void **bvit;
+	rz_pvector_foreach (omf_obj->blocks_vec, bvit) {
+		OMF_blocks *block = (OMF_blocks *)*bvit;
+		if (!block->PInfoProcedure) {
+			continue;
+		}
+		const ut32 addr = block->FrameNumber << 16 | block->BlockOffset16;
+
+		RzAnalysisFunction *fcn_blk = rz_analysis_get_function_at(analysis, addr);
+		if (!fcn_blk) {
+			fcn_blk = rz_analysis_create_function(
+				analysis,
+				block->name,
+				addr,
+				RZ_ANALYSIS_FCN_TYPE_FCN);
+			if (!fcn_blk) {
+				RZ_LOG_WARN("Can`t create function %s on 0x%08x\n", block->name, addr);
+				continue;
+			}
+			RzAnalysisBlock *bb = rz_analysis_create_block(analysis, addr, block->BlockLength16);
+			// bb->jump = UT64_MAX;
+			bb->fail = UT64_MAX;
+			rz_analysis_function_add_block(fcn_blk, bb);
+		}
+	}
+	return true;
+}
+
+static bool rz_x86_process(RzAnalysis *analysis, const RzBinFile *binfile) {
 	rz_bin_omf51_obj *omf_obj = (rz_bin_omf51_obj *)binfile->o->bin_obj;
 	void **it;
 	rz_pvector_foreach (omf_obj->sections_vec, it) {
@@ -318,7 +358,7 @@ bool rz_core_bin_apply_omf_lines(const RzBinFile *binfile, RzPVector *ls) {
 		binfile->o->lines->samples = RZ_NEWS0(RzBinSourceLineSample, lc);
 
 		rz_pvector_foreach (ls, lit) {
-			OMF_linnums *linnum = (OMF_linnums *)*lit;
+			const OMF_linnums *linnum = (OMF_linnums *)*lit;
 			RzBinSourceLineSample *sample = &binfile->o->lines->samples[index];
 			sample->address = linnum->address;
 			sample->line = linnum->LineNumber;
@@ -343,7 +383,7 @@ RZ_API bool rz_core_bin_apply_omf_debug(const RzCore *core, const RzBinFile *bin
 	}
 
 	const RzBinObject *binobj = rz_bin_cur_object(core->bin);
-	RzBinInfo *info = binobj ? binobj->info : NULL;
+	const RzBinInfo *info = binobj ? binobj->info : NULL;
 	if (!info) {
 		return false;
 	}
@@ -351,7 +391,8 @@ RZ_API bool rz_core_bin_apply_omf_debug(const RzCore *core, const RzBinFile *bin
 		return false;
 	}
 	if (RZ_STR_NE(info->rclass, "OMF166") &&
-		RZ_STR_NE(info->rclass, "OMF51")) {
+		RZ_STR_NE(info->rclass, "OMF51") &&
+		RZ_STR_NE(info->rclass, "omf")) {
 		return false;
 	}
 	// RzPVector *ls = NULL;
@@ -376,6 +417,7 @@ RZ_API bool rz_core_bin_apply_omf_debug(const RzCore *core, const RzBinFile *bin
 		rz_core_bin_apply_omf_lines(binfile, ls);
 		return rz_c166_process(core->analysis, binfile);
 	}
+
 	if (RZ_STR_EQ(info->rclass, "OMF51")) {
 		const rz_bin_omf51_obj *omf_obj = (rz_bin_omf51_obj *)binfile->o->bin_obj;
 		RzPVector *ls = omf_obj->linnums_vec;

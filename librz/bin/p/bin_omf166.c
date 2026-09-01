@@ -523,7 +523,7 @@ RzBinPlugin rz_bin_plugin_omf166 = {
 	.info = &info,
 	.strings = &strings,
 	.get_vaddr = &get_vaddr,
-	.baddr = baddr
+	.baddr = &baddr
 };
 
 #ifndef RZ_PLUGIN_INCORE

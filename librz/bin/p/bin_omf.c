@@ -37,7 +37,7 @@ static bool check_buffer(RzBuffer *b) {
 
 	ut8 str_size;
 	(void)rz_buf_read_at(b, 3, &str_size, 1);
-	ut64 length = rz_buf_size(b);
+	const ut64 length = rz_buf_size(b);
 	if (str_size + 2 != rec_size || length < rec_size + 3) {
 		return false;
 	}
@@ -63,7 +63,8 @@ static bool check_buffer(RzBuffer *b) {
 }
 
 static ut64 baddr(RzBinFile *bf) {
-	return OMF_BASE_ADDR;
+	const rz_bin_omf_obj *obj = (rz_bin_omf_obj *)bf->o->bin_obj;
+	return obj->base_addr;
 }
 
 static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
