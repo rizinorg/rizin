@@ -3114,13 +3114,12 @@ RZ_IPI RzCmdStatus rz_print_function_rzil_handler(RzCore *core, int argc, const 
 		goto exit;
 	}
 
-	RzIterator *ops = rz_core_analysis_op_function_iter(core, f, RZ_ANALYSIS_OP_MASK_IL);
-	if (!ops) {
+	RzIterator ops = rz_core_analysis_op_function_iter(core, f, RZ_ANALYSIS_OP_MASK_IL);
+	if (!ops.next) {
 		goto exit;
 	}
 
-	rz_core_il_cons_print(core, ops, false);
-	rz_iterator_free(ops);
+	rz_core_il_cons_print(core, &ops, false);
 	return RZ_CMD_STATUS_OK;
 exit:
 	return RZ_CMD_STATUS_ERROR;

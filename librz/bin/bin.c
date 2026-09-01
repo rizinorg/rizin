@@ -258,7 +258,7 @@ RZ_API RzBinFile *rz_bin_reload(RzBin *bin, RzBinFile *bf, ut64 baseaddr) {
 RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) {
 	rz_return_val_if_fail(bin && opt, NULL);
 
-	RzIterator *it = ht_sp_as_iter(bin->binxtrs);
+	RzIterator it = ht_sp_as_iter(bin->binxtrs);
 	RzBinXtrPlugin **val;
 
 	bin->file = opt->filename;
@@ -271,7 +271,7 @@ RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) 
 		// XXX - for the time being this is fine, but we may want to
 		// change the name to something like
 		// <xtr_name>:<bin_type_name>
-		rz_iterator_foreach(it, val) {
+		rz_iterator_foreach(&it, val) {
 			RzBinXtrPlugin *xtr = *val;
 			if (!xtr->check_buffer) {
 				RZ_LOG_ERROR("Missing check_buffer callback for '%s'\n", xtr->name);
@@ -287,7 +287,6 @@ RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) 
 			}
 		}
 	}
-	rz_iterator_free(it);
 	if (!bf) {
 		// Uncomment for this speedup: 20s vs 22s
 		// RzBuffer *buf = rz_buf_new_slurp (bin->file);
@@ -395,14 +394,14 @@ RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 	if (!compatible_plugins) {
 		return NULL;
 	}
-	RzIterator *it = ht_sp_as_iter_keys(bin->plugins);
-	if (!it) {
+	RzIterator it = ht_sp_as_iter_keys(bin->plugins);
+	if (!it.next) {
 		rz_pvector_free(compatible_plugins);
 		return NULL;
 	}
 	// Iterate all plugins and save compatible plugins to `compatible_plugins`
 	char **key;
-	rz_iterator_foreach(it, key) {
+	rz_iterator_foreach(&it, key) {
 		bool found = false;
 		RzBinPlugin *plugin = (RzBinPlugin *)ht_sp_find(bin->plugins, *key, &found);
 		if (!found) {
@@ -413,7 +412,6 @@ RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 			rz_pvector_push(compatible_plugins, rz_str_dup(*key));
 		}
 	}
-	rz_iterator_free(it);
 
 	if (rz_pvector_empty(compatible_plugins)) {
 		rz_pvector_free(compatible_plugins);
@@ -432,23 +430,21 @@ RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 }
 
 RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_filename(RzBin *bin) {
-	RzIterator *it = ht_sp_as_iter(bin->plugins);
+	RzIterator it = ht_sp_as_iter(bin->plugins);
 	RzBinPlugin **val;
 
 	rz_return_val_if_fail(bin, NULL);
 
 	const char *filename = strrchr(bin->file, RZ_SYS_DIR[0]);
 	filename = filename ? filename + 1 : bin->file;
-	rz_iterator_foreach(it, val) {
+	rz_iterator_foreach(&it, val) {
 		RzBinPlugin *plugin = *val;
 		if (plugin->check_filename) {
 			if (plugin->check_filename(filename)) {
-				rz_iterator_free(it);
 				return plugin;
 			}
 		}
 	}
-	rz_iterator_free(it);
 	return NULL;
 }
 
@@ -528,13 +524,12 @@ RZ_API void rz_bin_free(RZ_NULLABLE RzBin *bin) {
 	// rz_bin_free_bin_files (bin);
 	rz_list_free(bin->binfiles);
 
-	RzIterator *it = ht_sp_as_iter(bin->binxtrs);
+	RzIterator it = ht_sp_as_iter(bin->binxtrs);
 	RzBinXtrPlugin **val;
-	rz_iterator_foreach(it, val) {
+	rz_iterator_foreach(&it, val) {
 		RzBinXtrPlugin *p = *val;
 		plugin_fini(bin, p);
 	}
-	rz_iterator_free(it);
 	ht_sp_free(bin->binxtrs);
 	ht_sp_free(bin->plugins);
 	rz_list_free(bin->default_hashes);

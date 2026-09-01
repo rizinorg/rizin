@@ -435,11 +435,10 @@ static void print_all_plugin_configs(const RzCore *core) {
 	RzConfig **cfg;
 	RzCmdStateOutput state = { 0 };
 	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET, core);
-	RzIterator *it = ht_sp_as_iter(core->plugin_configs);
-	rz_iterator_foreach(it, cfg) {
+	RzIterator it = ht_sp_as_iter(core->plugin_configs);
+	rz_iterator_foreach(&it, cfg) {
 		rz_core_config_print_all(*cfg, "", &state);
 	}
-	rz_iterator_free(it);
 	rz_cmd_state_output_print(&state);
 	rz_cmd_state_output_fini(&state);
 }

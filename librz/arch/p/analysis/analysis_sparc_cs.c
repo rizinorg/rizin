@@ -753,16 +753,15 @@ static bool sparc_fini(void *user) {
 	if (!sparc) {
 		return true;
 	}
-	RzIterator *iter = ht_up_as_iter(sparc->delayed_branch);
+	RzIterator iter = ht_up_as_iter(sparc->delayed_branch);
 	RzSparcDelatedBranchOp **eff;
-	rz_iterator_foreach(iter, eff) {
+	rz_iterator_foreach(&iter, eff) {
 		rz_il_op_effect_free((*eff)->perform_fail_jmp);
 		rz_il_op_effect_free((*eff)->perform_jmp);
 		rz_il_op_effect_free((*eff)->set_ea);
 		free(*eff);
 	}
 	ht_up_free(sparc->delayed_branch);
-	rz_iterator_free(iter);
 	if (sparc->handle != 0) {
 		cs_close(&sparc->handle);
 	}

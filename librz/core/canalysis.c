@@ -3873,15 +3873,14 @@ static bool is_apple_target(RzCore *core) {
 }
 
 static void core_analysis_using_plugins(RzCore *core) {
-	RzIterator *it = ht_sp_as_iter(core->plugins);
+	RzIterator it = ht_sp_as_iter(core->plugins);
 	RzCorePlugin **val;
-	rz_iterator_foreach(it, val) {
+	rz_iterator_foreach(&it, val) {
 		RzCorePlugin *plugin = *val;
 		if (plugin->analysis) {
 			plugin->analysis(core);
 		}
 	}
-	rz_iterator_free(it);
 }
 
 /**
@@ -5215,9 +5214,9 @@ static void RzAnalysisBytes_free_mod(void *x) {
  * \param nops analysis n ops
  * \return RzIterator of RzAnalysisBytes
  */
-RZ_API RZ_OWN RzIterator *rz_core_analysis_bytes(
+RZ_API RZ_OWN RzIterator rz_core_analysis_bytes(
 	RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, ut64 len, ut64 nops) {
-	rz_return_val_if_fail(core && buf, NULL);
+	rz_return_val_if_fail(core && buf, (RzIterator){ 0 });
 
 	static const int mask = RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT;
 	int min_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
@@ -5272,16 +5271,16 @@ static void *analysis_op_next(RzIterator *it) {
  * \param mask The which analysis details should be disassembled.
  * \return RzIterator of RzAnalysisOp
  */
-RZ_API RZ_OWN RzIterator *rz_core_analysis_op_chunk_iter(
+RZ_API RZ_OWN RzIterator rz_core_analysis_op_chunk_iter(
 	RZ_NONNULL RzCore *core, ut64 offset, ut64 len, ut64 nops, RzAnalysisOpMask mask) {
-	rz_return_val_if_fail(core, NULL);
+	rz_return_val_if_fail(core, (RzIterator){ 0 });
 
 	int max_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
 	max_op_size = max_op_size > 0 ? max_op_size : 32;
 	len = len > 0 ? len : nops * max_op_size;
 
 	if (len == 0 && nops == 0) {
-		return NULL;
+		return (RzIterator){ 0 };
 	}
 
 	AnalysisOpContext *ctx = NULL;
@@ -5309,7 +5308,7 @@ RZ_API RZ_OWN RzIterator *rz_core_analysis_op_chunk_iter(
 cleanup:
 	free(buf);
 	free(ctx);
-	return NULL;
+	return (RzIterator){ 0 };
 }
 
 /**
@@ -5320,10 +5319,10 @@ cleanup:
  * \param mask The which analysis details should be disassembled.
  * \return RzIterator of RzAnalysisOp
  */
-RZ_API RZ_OWN RzIterator *rz_core_analysis_op_function_iter(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzAnalysisFunction *fcn, RzAnalysisOpMask mask) {
-	rz_return_val_if_fail(core && fcn, NULL);
+RZ_API RZ_OWN RzIterator rz_core_analysis_op_function_iter(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzAnalysisFunction *fcn, RzAnalysisOpMask mask) {
+	rz_return_val_if_fail(core && fcn, (RzIterator){ 0 });
 
-	RzIterator *ops = NULL;
+	RzIterator ops = { 0 };
 	ut64 start = fcn->addr;
 	ut64 end = rz_analysis_function_max_addr(fcn);
 	if (end <= start) {

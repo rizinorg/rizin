@@ -18,7 +18,7 @@
  *
  * \return RzIterator* A pointer to the newly created `RzIterator` or NULL if the operation failed.
  */
-RZ_API RZ_OWN RzIterator *rz_iterator_new(
+RZ_API RZ_OWN RzIterator rz_iterator_new(
 	RZ_NONNULL rz_iterator_next_cb next,
 	RZ_NULLABLE rz_iterator_free_cb free,
 	RZ_NULLABLE rz_iterator_free_cb free_u,
@@ -27,21 +27,18 @@ RZ_API RZ_OWN RzIterator *rz_iterator_new(
 		rz_warn_if_reached();
 		goto cleanup;
 	}
-	RzIterator *it = RZ_NEW0(RzIterator);
-	if (!it) {
-		goto cleanup;
-	}
+	RzIterator it = (RzIterator){ 0 };
 
-	it->next = next;
-	it->u = u;
-	it->free = free;
-	it->free_u = free_u;
+	it.next = next;
+	it.u = u;
+	it.free = free;
+	it.free_u = free_u;
 	return it;
 cleanup:
 	if (free_u) {
 		free_u(u);
 	}
-	return NULL;
+	return (RzIterator){ 0 };
 }
 
 /**

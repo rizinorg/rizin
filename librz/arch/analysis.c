@@ -243,9 +243,9 @@ RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 		return true;
 	}
 
-	RzIterator *it = ht_sp_as_iter(analysis->plugins);
+	RzIterator it = ht_sp_as_iter(analysis->plugins);
 	RzAnalysisPlugin **val;
-	rz_iterator_foreach(it, val) {
+	rz_iterator_foreach(&it, val) {
 		RzAnalysisPlugin *h = *val;
 		if (!h || !h->name || strcmp(h->name, name)) {
 			continue;
@@ -257,17 +257,14 @@ RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 		rz_analysis_set_cpu(analysis, name);
 		if (h->init && !h->init(&analysis->plugin_data)) {
 			RZ_LOG_ERROR("analysis plugin '%s' failed to initialize.\n", h->name);
-			rz_iterator_free(it);
 			return false;
 		}
 		rz_analysis_set_reg_profile(analysis);
 		if (analysis->il_vm) {
 			rz_analysis_il_vm_setup(analysis);
 		}
-		rz_iterator_free(it);
 		return true;
 	}
-	rz_iterator_free(it);
 	return false;
 }
 

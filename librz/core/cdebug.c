@@ -375,10 +375,9 @@ RZ_API RzCmdStatus rz_core_debug_plugins_print(RZ_NONNULL RZ_BORROW RzCore *core
 	}
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "nsssss", "idx", "selected", "name", "license", "bits", "arch");
-	RzIterator *iter = ht_sp_as_iter(dbg->plugins);
-	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	RzIterator iter = ht_sp_as_iter(dbg->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(&iter);
 	if (!plugin_list) {
-		rz_iterator_free(iter);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_list_sort(plugin_list, (RzListComparator)rz_debug_plugin_cmp, NULL);
@@ -389,14 +388,12 @@ RZ_API RzCmdStatus rz_core_debug_plugins_print(RZ_NONNULL RZ_BORROW RzCore *core
 		spaces[sp] = 0;
 		status = core_debug_plugin_print(dbg, plugin, state, count, spaces);
 		if (status != RZ_CMD_STATUS_OK) {
-			rz_iterator_free(iter);
 			rz_list_free(plugin_list);
 			return status;
 		}
 		spaces[sp] = ' ';
 		count++;
 	}
-	rz_iterator_free(iter);
 	rz_list_free(plugin_list);
 	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;

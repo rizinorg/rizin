@@ -1060,16 +1060,16 @@ RZ_API void Ht_(free_iter_state)(RZ_NULLABLE HT_(IterState) *state) {
  *
  * \return The iterator over the hash table values or NULL in case of failure.
  */
-RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ *Ht_(as_iter_mut)(RZ_NONNULL HtName_(Ht) *ht) {
-	rz_return_val_if_fail(ht, NULL);
+RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ Ht_(as_iter_mut)(RZ_NONNULL HtName_(Ht) *ht) {
+	rz_return_val_if_fail(ht, (RzIterator){ 0 });
 	HT_(IterMutState) *state = Ht_(new_iter_mut_state)(ht);
 	if (!state) {
 		RZ_LOG_ERROR("Could not allocate a new ht_iter state.\n");
-		return NULL;
+		return (RzIterator){ 0 };
 	}
 
-	RzIterator *iter = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_mut), NULL, (rz_iterator_free_cb)Ht_(free_iter_mut_state), state);
-	if (!iter) {
+	RzIterator iter = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_mut), NULL, (rz_iterator_free_cb)Ht_(free_iter_mut_state), state);
+	if (!iter.next) {
 		Ht_(free_iter_mut_state)(state);
 	}
 	return iter;
@@ -1082,13 +1082,13 @@ RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ *Ht_(as_iter_mut)(RZ_NONNULL HtName
  *
  * \return The iterator over the hash table values or NULL in case of failure.
  */
-RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ *Ht_(as_iter)(const RZ_NONNULL HtName_(Ht) *ht) {
-	rz_return_val_if_fail(ht, NULL);
+RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ Ht_(as_iter)(const RZ_NONNULL HtName_(Ht) *ht) {
+	rz_return_val_if_fail(ht, (RzIterator){ 0 });
 	HT_(IterState) *state = Ht_(new_iter_state)(ht);
-	rz_return_val_if_fail(state, NULL);
+	rz_return_val_if_fail(state, (RzIterator){ 0 });
 
-	RzIterator *iter = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state);
-	if (!iter) {
+	RzIterator iter = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state);
+	if (!iter.next) {
 		Ht_(free_iter_state)(state);
 	}
 	return iter;
@@ -1101,13 +1101,13 @@ RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ *Ht_(as_iter)(const RZ_NONNULL HtNa
  *
  * \return The iterator over the hash table keys or NULL in case of failure.
  */
-RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ *Ht_(as_iter_keys)(const RZ_NONNULL HtName_(Ht) *ht) {
-	rz_return_val_if_fail(ht, NULL);
+RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ Ht_(as_iter_keys)(const RZ_NONNULL HtName_(Ht) *ht) {
+	rz_return_val_if_fail(ht, (RzIterator){ 0 });
 	HT_(IterState) *state = Ht_(new_iter_state)(ht);
-	rz_return_val_if_fail(state, NULL);
+	rz_return_val_if_fail(state, (RzIterator){ 0 });
 
-	RzIterator *iter = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_key), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state);
-	if (!iter) {
+	RzIterator iter = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_key), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state);
+	if (!iter.next) {
 		Ht_(free_iter_state)(state);
 	}
 	return iter;

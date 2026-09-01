@@ -487,10 +487,10 @@ RZ_API RzCmdStatus rz_core_io_plugins_print(RZ_NONNULL RZ_BORROW RzIO *io, RzCmd
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "sssss", "perm", "license", "name", "uri", "description");
 
-	RzIterator *iter = ht_sp_as_iter(io->plugins);
-	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	RzIterator iter = ht_sp_as_iter(io->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(&iter);
 	if (!plugin_list) {
-		rz_iterator_free(iter);
+		rz_iterator_free(&iter);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_list_sort(plugin_list, (RzListComparator)rz_io_plugin_cmp, NULL);
@@ -499,7 +499,6 @@ RZ_API RzCmdStatus rz_core_io_plugins_print(RZ_NONNULL RZ_BORROW RzIO *io, RzCmd
 	rz_list_foreach (plugin_list, it, plugin) {
 		rz_core_io_plugin_print(plugin, state);
 	}
-	rz_iterator_free(iter);
 	rz_list_free(plugin_list);
 	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;

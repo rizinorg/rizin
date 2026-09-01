@@ -328,32 +328,28 @@ RZ_API bool rz_hash_cfg_configure(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const cha
 	}
 
 	HashCfgConfig *mdc = NULL;
-	RzIterator *it = ht_sp_as_iter(md->hash->plugins);
+	RzIterator it = ht_sp_as_iter(md->hash->plugins);
 	const RzHashPlugin **val;
 
-	rz_iterator_foreach(it, val) {
+	rz_iterator_foreach(&it, val) {
 		const RzHashPlugin *plugin = *val;
 		if (is_all || !strcmp(plugin->name, name)) {
 			mdc = hash_cfg_config_new(plugin);
 			if (!mdc) {
-				rz_iterator_free(it);
 				return false;
 			}
 
 			if (!rz_list_append(md->configurations, mdc)) {
 				RZ_LOG_ERROR("msg digest: cannot allocate memory for list entry.\n");
 				hash_cfg_config_free(mdc);
-				rz_iterator_free(it);
 				return false;
 			}
 
 			if (!is_all) {
-				rz_iterator_free(it);
 				return true;
 			}
 		}
 	}
-	rz_iterator_free(it);
 
 	if (is_all) {
 		return true;

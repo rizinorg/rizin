@@ -192,7 +192,7 @@ static void autocmplt_arch(RzCore *core, RzLineNSCompletionResult *res, const ch
 	rz_return_if_fail(core->rasm);
 
 	HtSP *asm_plugins = rz_asm_get_plugins(core->rasm);
-	RzIterator *it = ht_sp_as_iter(asm_plugins);
+	RzIterator it = ht_sp_as_iter(asm_plugins);
 	RzAsmPlugin **val;
 
 	// @a: can either be used with @a:arch or @a:arch:bits
@@ -200,7 +200,7 @@ static void autocmplt_arch(RzCore *core, RzLineNSCompletionResult *res, const ch
 	const char *delim = rz_sub_str_rchr(s, 0, len, ':');
 	if (!delim) {
 		// We autocomplete just the architecture part
-		rz_iterator_foreach(it, val) {
+		rz_iterator_foreach(&it, val) {
 			RzAsmPlugin *plugin = *val;
 			if (!strncmp(plugin->name, s, len)) {
 				rz_line_ns_completion_result_add(res, plugin->name);
@@ -210,7 +210,7 @@ static void autocmplt_arch(RzCore *core, RzLineNSCompletionResult *res, const ch
 	} else {
 		// We autocomplete the bits part
 		res->start += delim + 1 - s;
-		rz_iterator_foreach(it, val) {
+		rz_iterator_foreach(&it, val) {
 			RzAsmPlugin *plugin = *val;
 			if (!strncmp(plugin->name, s, delim - s)) {
 				autocmplt_bits_plugin(plugin, res, delim + 1, len - (delim + 1 - s));
@@ -218,7 +218,6 @@ static void autocmplt_arch(RzCore *core, RzLineNSCompletionResult *res, const ch
 			}
 		}
 	}
-	rz_iterator_free(it);
 }
 
 static void autocmplt_bits(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
@@ -553,15 +552,14 @@ static void autocmplt_cmd_arg_eval_key(RzCore *core, RzLineNSCompletionResult *r
 		}
 	}
 	RzConfig **plugin_cfg;
-	RzIterator *it = ht_sp_as_iter(core->plugin_configs);
-	rz_iterator_foreach(it, plugin_cfg) {
+	RzIterator it = ht_sp_as_iter(core->plugin_configs);
+	rz_iterator_foreach(&it, plugin_cfg) {
 		rz_list_foreach ((*plugin_cfg)->nodes, iter, bt) {
 			if (!strncmp(bt->name, s, len)) {
 				rz_line_ns_completion_result_add(res, bt->name);
 			}
 		}
 	}
-	rz_iterator_free(it);
 }
 
 static void autocmplt_cmd_arg_eval_full(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {

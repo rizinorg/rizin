@@ -389,16 +389,14 @@ RZ_API bool rz_asm_is_valid(RzAsm *a, const char *name) {
 		return false;
 	}
 
-	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzIterator iter = ht_sp_as_iter(a->plugins);
 	RzAsmPlugin **val;
-	rz_iterator_foreach(iter, val) {
+	rz_iterator_foreach(&iter, val) {
 		RzAsmPlugin *h = *val;
 		if (!strcmp(h->name, name)) {
-			rz_iterator_free(iter);
 			return true;
 		}
 	}
-	rz_iterator_free(iter);
 	return false;
 }
 
@@ -409,17 +407,15 @@ RZ_API bool rz_asm_use_assembler(RzAsm *a, const char *name) {
 	if (!(name && *name)) {
 		a->acur = NULL;
 	}
-	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzIterator iter = ht_sp_as_iter(a->plugins);
 	RzAsmPlugin **val;
-	rz_iterator_foreach(iter, val) {
+	rz_iterator_foreach(&iter, val) {
 		RzAsmPlugin *h = *val;
 		if (h->assemble && RZ_STR_EQ(h->name, name)) {
 			a->acur = h;
-			rz_iterator_free(iter);
 			return true;
 		}
 	}
-	rz_iterator_free(iter);
 	a->acur = NULL;
 	return false;
 }
@@ -484,17 +480,16 @@ RZ_API bool rz_asm_use(RzAsm *a, RZ_NULLABLE const char *name) {
 	if (a->cur && !strcmp(a->cur->arch, name)) {
 		return true;
 	}
-	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzIterator iter = ht_sp_as_iter(a->plugins);
 	RzAsmPlugin **val;
 	RzCore *core = a->core;
-	rz_iterator_foreach(iter, val) {
+	rz_iterator_foreach(&iter, val) {
 		RzAsmPlugin *h = *val;
 		if (h->arch && h->name && !strcmp(h->name, name)) {
 			if (!a->cur || (a->cur && strcmp(a->cur->arch, h->arch))) {
 				plugin_fini(a);
 				char *opcodes_dir = rz_path_system(a->sdb_opcodes_path, RZ_SDB_OPCODES);
 				if (!opcodes_dir) {
-					rz_iterator_free(iter);
 					return false;
 				}
 				char *file = rz_str_newf("%s/%s.sdb", opcodes_dir, h->arch);
@@ -510,7 +505,6 @@ RZ_API bool rz_asm_use(RzAsm *a, RZ_NULLABLE const char *name) {
 			rz_asm_set_cpu(a, NULL);
 			if (h->init && !h->init(&a->plugin_data)) {
 				RZ_LOG_ERROR("asm plugin '%s' failed to initialize.\n", h->name);
-				rz_iterator_free(iter);
 				return false;
 			}
 
@@ -521,14 +515,12 @@ RZ_API bool rz_asm_use(RzAsm *a, RZ_NULLABLE const char *name) {
 				set_plugin_configs(core, h->name, h->get_config(a->plugin_data));
 			}
 			a->cur = h;
-			rz_iterator_free(iter);
 			RZ_FREE(a->features);
 			RZ_FREE(a->platforms);
 			a->bits = asm_get_first_default_bits(h);
 			return true;
 		}
 	}
-	rz_iterator_free(iter);
 	sdb_free(a->pair);
 	a->pair = NULL;
 	return false;
@@ -696,17 +688,16 @@ static bool assemblerMatches(RzAsm *a, RzAsmPlugin *h) {
 
 static Ase findAssembler(RzAsm *a, const char *kw) {
 	Ase ase = NULL;
-	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzIterator iter = ht_sp_as_iter(a->plugins);
 	RzAsmPlugin **val;
 	if (a->acur && a->acur->assemble) {
 		return a->acur->assemble;
 	}
-	rz_iterator_foreach(iter, val) {
+	rz_iterator_foreach(&iter, val) {
 		RzAsmPlugin *h = *val;
 		if (assemblerMatches(a, h)) {
 			if (kw) {
 				if (strstr(h->name, kw)) {
-					rz_iterator_free(iter);
 					return h->assemble;
 				}
 			} else {
@@ -714,7 +705,6 @@ static Ase findAssembler(RzAsm *a, const char *kw) {
 			}
 		}
 	}
-	rz_iterator_free(iter);
 	return ase;
 }
 

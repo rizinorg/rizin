@@ -227,8 +227,8 @@ bool test_rz_list_from_iter(void) {
 	for (size_t i = 0; i < 26; i++) {
 		ht_up_insert(alpha_ht, i, (void *)unordered_alphabeth[i]);
 	}
-	RzIterator *iter = ht_up_as_iter(alpha_ht);
-	RzList *list = rz_list_new_from_iterator(iter);
+	RzIterator iter = ht_up_as_iter(alpha_ht);
+	RzList *list = rz_list_new_from_iterator(&iter);
 	mu_assert_notnull(list, "List init failed.");
 	rz_list_sort(list, (RzListComparator)strcmp, NULL);
 	mu_assert_eq(rz_list_length(list), 26, "Number of elements are off");
@@ -239,7 +239,6 @@ bool test_rz_list_from_iter(void) {
 		mu_assert_streq(elem, lower[i], "Value mismatched.");
 	}
 	ht_up_free(alpha_ht);
-	rz_iterator_free(iter);
 	rz_list_free(list);
 	mu_end;
 }
