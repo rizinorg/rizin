@@ -48,6 +48,7 @@ rz_util_common_sources = [
   'regex.c',
   'serialize_spaces.c',
   'set.c',
+  'shm.c',
   'signal.c',
   'skiplist.c',
   'skyline.c',
