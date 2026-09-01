@@ -551,49 +551,43 @@ RZ_API char *rz_egg_option_get(RzEgg *egg, const char *key) {
 
 RZ_API int rz_egg_shellcode(RZ_NONNULL RZ_BORROW RzEgg *egg, const char *name) {
 	rz_return_val_if_fail(egg && name, false);
-	RzIterator *iter = ht_sp_as_iter(egg->plugins);
+	RzIterator iter = ht_sp_as_iter(egg->plugins);
 	RzEggPlugin **val;
 	RzBuffer *b;
-	rz_iterator_foreach(iter, val) {
+	rz_iterator_foreach(&iter, val) {
 		RzEggPlugin *p = *val;
 		if (p->type == RZ_EGG_PLUGIN_SHELLCODE && !strcmp(name, p->name)) {
 			b = p->build(egg);
 			if (!b) {
 				RZ_LOG_ERROR("egg: %s Shellcode has failed\n", p->name);
-				rz_iterator_free(iter);
 				return false;
 			}
 			ut64 tmpsz;
 			const ut8 *tmp = rz_buf_data(b, &tmpsz);
 			rz_egg_raw(egg, tmp, tmpsz);
-			rz_iterator_free(iter);
 			return true;
 		}
 	}
-	rz_iterator_free(iter);
 	return false;
 }
 
 RZ_API int rz_egg_encode(RZ_NONNULL RZ_BORROW RzEgg *egg, const char *name) {
 	rz_return_val_if_fail(egg && name, false);
-	RzIterator *iter = ht_sp_as_iter(egg->plugins);
+	RzIterator iter = ht_sp_as_iter(egg->plugins);
 	RzEggPlugin **val;
 	RzBuffer *b;
-	rz_iterator_foreach(iter, val) {
+	rz_iterator_foreach(&iter, val) {
 		RzEggPlugin *p = *val;
 		if (p->type == RZ_EGG_PLUGIN_ENCODER && !strcmp(name, p->name)) {
 			b = p->build(egg);
 			if (!b) {
-				rz_iterator_free(iter);
 				return false;
 			}
 			rz_buf_free(egg->bin);
 			egg->bin = b;
-			rz_iterator_free(iter);
 			return true;
 		}
 	}
-	rz_iterator_free(iter);
 	return false;
 }
 

@@ -42,10 +42,9 @@ RZ_API RzCmdStatus rz_core_crypto_plugins_print(RzCrypto *cry, RzCmdStateOutput 
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "ssss", "algorithm", "license", "author", "description");
 
-	RzIterator *iter = ht_sp_as_iter(cry->plugins);
-	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	RzIterator iter = ht_sp_as_iter(cry->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(&iter);
 	if (!plugin_list) {
-		rz_iterator_free(iter);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_list_sort(plugin_list, (RzListComparator)rz_crypto_plugin_cmp, NULL);
@@ -60,7 +59,6 @@ RZ_API RzCmdStatus rz_core_crypto_plugins_print(RzCrypto *cry, RzCmdStateOutput 
 		}
 	}
 	rz_list_free(plugin_list);
-	rz_iterator_free(iter);
 	rz_cmd_state_output_array_end(state);
 	return status;
 }

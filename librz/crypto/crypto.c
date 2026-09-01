@@ -70,19 +70,17 @@ RZ_API RZ_BORROW const char *rz_crypto_codec_name(const RzCryptoSelector bit) {
 RZ_API RZ_BORROW const RzCryptoPlugin *rz_crypto_plugin_by_index(RZ_NONNULL RzCrypto *cry, size_t index) {
 	rz_return_val_if_fail(cry, NULL);
 
-	RzIterator *it = ht_sp_as_iter(cry->plugins);
+	RzIterator it = ht_sp_as_iter(cry->plugins);
 	RzCryptoPlugin **val;
 	size_t i = 0;
 
-	rz_iterator_foreach(it, val) {
+	rz_iterator_foreach(&it, val) {
 		const RzCryptoPlugin *plugin = *val;
 		if (i == index) {
-			rz_iterator_free(it);
 			return plugin;
 		}
 		i++;
 	}
-	rz_iterator_free(it);
 	return NULL;
 }
 
@@ -169,27 +167,24 @@ RZ_API void rz_crypto_reset(RZ_NONNULL RzCrypto *cry) {
 
 RZ_API bool rz_crypto_use(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const char *algo) {
 	rz_return_val_if_fail(cry && algo, false);
-	RzIterator *it = ht_sp_as_iter(cry->plugins);
+	RzIterator it = ht_sp_as_iter(cry->plugins);
 	RzCryptoPlugin **val;
 	if (cry->h && cry->h->fini && !cry->h->fini(cry)) {
 		RZ_LOG_ERROR("[!] crypto: error terminating '%s' plugin\n", cry->h->name);
 	}
-	rz_iterator_foreach(it, val) {
+	rz_iterator_foreach(&it, val) {
 		RzCryptoPlugin *h = *val;
 		rz_warn_if_fail(h && h->use);
 		if (h && h->use(algo)) {
 			if (h->init && !h->init(cry)) {
 				RZ_LOG_ERROR("[!] crypto: error initializing '%s' plugin\n", cry->h->name);
-				rz_iterator_free(it);
 				return false;
 			}
 
 			cry->h = h;
-			rz_iterator_free(it);
 			return true;
 		}
 	}
-	rz_iterator_free(it);
 	return false;
 }
 

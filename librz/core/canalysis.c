@@ -3912,15 +3912,14 @@ static bool is_apple_target(RzCore *core) {
 }
 
 static void core_analysis_using_plugins(RzCore *core) {
-	RzIterator *it = ht_sp_as_iter(core->plugins);
+	RzIterator it = ht_sp_as_iter(core->plugins);
 	RzCorePlugin **val;
-	rz_iterator_foreach(it, val) {
+	rz_iterator_foreach(&it, val) {
 		RzCorePlugin *plugin = *val;
 		if (plugin->analysis) {
 			plugin->analysis(core, rz_core_plugin_context_get(core, plugin));
 		}
 	}
-	rz_iterator_free(it);
 }
 
 static void core_analysis_analyze_local_var_and_arg(RzCore *core) {
@@ -5679,9 +5678,9 @@ static bool core_decoded_bytes_init(CoreDecodedBytes *ctx, RzCore *core, ut64 st
  * \param max_ops  analysis n ops
  * \return RzIterator of RzCoreDecodedBytes
  */
-RZ_API RZ_OWN RzIterator *rz_core_analysis_bytes(
-	RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, ut64 n_bytes, ut64 max_ops) {
-	rz_return_val_if_fail(core && buf, NULL);
+RZ_API RZ_OWN RzIterator rz_core_analysis_bytes(
+	RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, ut64 len, ut64 nops) {
+	rz_return_val_if_fail(core && buf, (RzIterator){ 0 });
 
 	// TODO: this should be removed once rz_config is refactored.
 	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
@@ -5693,7 +5692,70 @@ RZ_API RZ_OWN RzIterator *rz_core_analysis_bytes(
 		return NULL;
 	}
 
-	return rz_iterator_new((rz_iterator_next_cb)core_decoded_bytes_next, (rz_iterator_free_cb)analysis_bytes_iter_fini, free, ctx);
+	ut64 addr = ctx->begin + ctx->offset;
+	ut8 *ptr = ctx->buf + ctx->offset;
+	ut64 remain = ctx->len - ctx->offset;
+
+	rz_analysis_op_fini(&ctx->op);
+	rz_analysis_op_init(&ctx->op);
+	if (rz_analysis_op(ctx->core->analysis, &ctx->op, addr, ptr, remain, ctx->mask) < 1) {
+		RZ_LOG_ERROR("Invalid instruction at 0x%08" PFMT64x "...\n", addr);
+		return NULL;
+	}
+
+	ctx->offset += ctx->op.size;
+	++ctx->iops;
+	return &ctx->op;
+}
+
+/**
+ * \brief Parse \p len bytes and \p nops RzAnalysisOps,
+ *        restricted by \p len and \p nops at the same time
+ *
+ * \param core RzCore
+ * \param len Maximum length read from \p buf in bytes. set to 0 to disable it (only use \p nops).
+ * \param nops Maximum number of instruction, set to 0 to disable it (only use \p len).
+ * \param mask The which analysis details should be disassembled.
+ * \return RzIterator of RzAnalysisOp
+ */
+RZ_API RZ_OWN RzIterator rz_core_analysis_op_chunk_iter(
+	RZ_NONNULL RzCore *core, ut64 offset, ut64 len, ut64 nops, RzAnalysisOpMask mask) {
+	rz_return_val_if_fail(core, (RzIterator){ 0 });
+
+	int max_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
+	max_op_size = max_op_size > 0 ? max_op_size : 32;
+	len = len > 0 ? len : nops * max_op_size;
+
+	if (len == 0 && nops == 0) {
+		return (RzIterator){ 0 };
+	}
+
+	AnalysisOpContext *ctx = NULL;
+	ut8 *buf = RZ_NEWS0(ut8, len);
+	if (!buf) {
+		goto cleanup;
+	}
+	ctx = RZ_NEW0(AnalysisOpContext);
+	if (!ctx) {
+		goto cleanup;
+	}
+	if (!rz_io_read_at_mapped(core->io, offset, buf, len)) {
+		goto cleanup;
+	}
+
+	ctx->core = core;
+	ctx->nops = nops;
+	ctx->max_op_size = max_op_size;
+	ctx->mask = mask;
+	ctx->buf = buf;
+	ctx->len = len;
+	ctx->begin = offset;
+
+	return rz_iterator_new(analysis_op_next, NULL, AnalysisOpContext_free, ctx);
+cleanup:
+	free(buf);
+	free(ctx);
+	return (RzIterator){ 0 };
 }
 
 /**
@@ -5704,10 +5766,10 @@ RZ_API RZ_OWN RzIterator *rz_core_analysis_bytes(
  * \param mask The which analysis details should be disassembled.
  * \return RzIterator of RzAnalysisOp
  */
-RZ_API RZ_OWN RzIterator *rz_core_analysis_op_function_iter(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzAnalysisFunction *fcn, RzAnalysisOpMask mask) {
-	rz_return_val_if_fail(core && fcn, NULL);
+RZ_API RZ_OWN RzIterator rz_core_analysis_op_function_iter(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzAnalysisFunction *fcn, RzAnalysisOpMask mask) {
+	rz_return_val_if_fail(core && fcn, (RzIterator){ 0 });
 
-	RzIterator *ops = NULL;
+	RzIterator ops = { 0 };
 	ut64 start = fcn->addr;
 	ut64 end = rz_analysis_function_max_addr(fcn);
 	if (end <= start) {

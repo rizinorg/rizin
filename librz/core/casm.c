@@ -66,31 +66,26 @@ RZ_API char *rz_core_asm_search(RzCore *core, const char *input) {
 
 static const char *has_esil(RzCore *core, const char *name) {
 	rz_return_val_if_fail(core && core->analysis && name, NULL);
-	RzIterator *iter = rz_analysis_plugin_iterator(core->analysis);
+	RzIterator iter = ht_sp_as_iter(core->analysis->plugins);
 	RzAnalysisPlugin **val;
-	rz_iterator_foreach(iter, val) {
+	rz_iterator_foreach(&iter, val) {
 		RzAnalysisPlugin *h = *val;
 		if (!h->name || strcmp(name, h->name)) {
 			continue;
 		}
 		if (h->il_config && h->esil) {
 			// Analysis with RzIL and ESIL
-			rz_iterator_free(iter);
 			return "AeI";
 		} else if (h->il_config) {
 			// Analysis with RzIL
-			rz_iterator_free(iter);
 			return "A_I";
 		} else if (h->esil) {
 			// Analysis with ESIL
-			rz_iterator_free(iter);
 			return "Ae_";
 		}
 		// Only the analysis plugin.
-		rz_iterator_free(iter);
 		return "A__";
 	}
-	rz_iterator_free(iter);
 	return "___";
 }
 
@@ -244,10 +239,9 @@ RZ_API RzCmdStatus rz_core_asm_plugins_print(RZ_NONNULL RZ_BORROW RzCore *core, 
 	rz_return_val_if_fail(core && state, RZ_CMD_STATUS_ERROR);
 	RzAsm *a = core->rasm;
 
-	RzIterator *iter = rz_asm_plugin_iterator(a);
-	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	RzIterator iter = ht_sp_as_iter(a->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(&iter);
 	if (!plugin_list) {
-		rz_iterator_free(iter);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_list_sort(plugin_list, (RzListComparator)rz_asm_plugin_cmp, NULL);
@@ -260,7 +254,6 @@ RZ_API RzCmdStatus rz_core_asm_plugins_print(RZ_NONNULL RZ_BORROW RzCore *core, 
 	rz_list_foreach (plugin_list, it, ap) {
 		status = core_asm_plugin_print(core, ap, state, flags);
 		if (status != RZ_CMD_STATUS_OK) {
-			rz_iterator_free(iter);
 			rz_list_free(plugin_list);
 			return status;
 		}
@@ -268,17 +261,15 @@ RZ_API RzCmdStatus rz_core_asm_plugins_print(RZ_NONNULL RZ_BORROW RzCore *core, 
 	rz_cmd_state_output_array_end(state);
 
 	rz_list_free(plugin_list);
-	rz_iterator_free(iter);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_API RzCmdStatus rz_core_cpu_descs_print(RZ_NONNULL RzCore *core, RZ_NONNULL const char *plugin) {
 	rz_return_val_if_fail(core && plugin && core->rasm, RZ_CMD_STATUS_ERROR);
 	RzAsm *a = core->rasm;
-	RzIterator *iter = rz_asm_plugin_iterator(a);
-	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	RzIterator iter = ht_sp_as_iter(a->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(&iter);
 	if (!plugin_list) {
-		rz_iterator_free(iter);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_list_sort(plugin_list, (RzListComparator)rz_asm_plugin_cmp, NULL);
@@ -293,7 +284,6 @@ RZ_API RzCmdStatus rz_core_cpu_descs_print(RZ_NONNULL RzCore *core, RZ_NONNULL c
 		if (ap->cpus && ap->get_cpu_desc) {
 			char **desc = ap->get_cpu_desc();
 			if (!desc) {
-				rz_iterator_free(iter);
 				rz_list_free(plugin_list);
 				return RZ_CMD_STATUS_ERROR;
 			}
@@ -304,7 +294,6 @@ RZ_API RzCmdStatus rz_core_cpu_descs_print(RZ_NONNULL RzCore *core, RZ_NONNULL c
 		}
 		break;
 	}
-	rz_iterator_free(iter);
 	rz_list_free(plugin_list);
 	if (!found) {
 		RZ_LOG_ERROR("Unknown asm plugin '%s'\n", plugin);

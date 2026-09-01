@@ -2359,10 +2359,11 @@ RZ_IPI RzCmdStatus rz_cmd_debug_toggle_bp_trace_index_handler(RzCore *core, int 
 // dbh
 RZ_IPI RzCmdStatus rz_cmd_debug_bp_plugin_handler(RzCore *core, int argc, const char **argv) {
 	rz_return_val_if_fail(core, RZ_CMD_STATUS_ERROR);
-	RzIterator *iter = rz_asm_plugin_iterator(core->rasm);
-	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	RzAsm *a = core->rasm;
+
+	RzIterator iter = ht_sp_as_iter(a->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(&iter);
 	if (!plugin_list) {
-		rz_iterator_free(iter);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -2378,7 +2379,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_bp_plugin_handler(RzCore *core, int argc, const 
 	}
 
 	rz_list_free(plugin_list);
-	rz_iterator_free(iter);
 	return RZ_CMD_STATUS_OK;
 }
 

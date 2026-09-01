@@ -58,10 +58,9 @@ static int usage(int v) {
 
 static void list(RzEgg *egg) {
 	printf("shellcodes:\n");
-	RzIterator *iter = ht_sp_as_iter(egg->plugins);
-	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	RzIterator iter = ht_sp_as_iter(egg->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(&iter);
 	if (!plugin_list) {
-		rz_iterator_free(iter);
 		return;
 	}
 	rz_list_sort(plugin_list, (RzListComparator)rz_egg_plugin_cmp, NULL);
@@ -80,7 +79,6 @@ static void list(RzEgg *egg) {
 		}
 	}
 	rz_list_free(plugin_list);
-	rz_iterator_free(iter);
 }
 
 static bool create(const char *format, const char *arch, int bits, const ut8 *code, int codelen) {

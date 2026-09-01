@@ -206,14 +206,13 @@ RZ_IPI RzCmdStatus rz_egg_list_plugins_handler(RzCore *core, int argc, const cha
 	if (!egg) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzIterator *iter = ht_sp_as_iter(egg->plugins);
+	RzIterator iter = ht_sp_as_iter(egg->plugins);
 	RzEggPlugin **val;
-	rz_iterator_foreach(iter, val) {
+	rz_iterator_foreach(&iter, val) {
 		RzEggPlugin *p = *val;
 		rz_cons_printf("%s  %6s : %s\n",
 			(p->type == RZ_EGG_PLUGIN_SHELLCODE) ? "shc" : "enc", p->name, p->desc);
 	}
-	rz_iterator_free(iter);
 	return RZ_CMD_STATUS_OK;
 }
 

@@ -111,21 +111,20 @@ bool test_rz_core_analysis_bytes() {
 
 	ut8 buf[128];
 	int len = rz_hex_str2bin("554889e5897dfc", buf);
-	RzIterator *iter = rz_core_analysis_bytes(core, core->offset, buf, len, 0);
-	mu_assert_notnull(iter, "rz_core_analysis_bytes");
+	RzIterator iter = rz_core_analysis_bytes(core, core->offset, buf, len, 0);
+	mu_assert_notnull(&iter, "rz_core_analysis_bytes");
 
-	RzCoreDecodedBytes *ab = rz_iterator_next(iter);
+	RzAnalysisBytes *ab = rz_iterator_next(&iter);
 	mu_assert_streq(ab->opcode, "push rbp", "rz_core_analysis_bytes opcode");
 
-	ab = rz_iterator_next(iter);
+	ab = rz_iterator_next(&iter);
 	mu_assert_streq(ab->opcode, "mov rbp, rsp", "rz_core_analysis_bytes opcode");
 	mu_assert_streq(ab->pseudo, "rbp = rsp", "rz_core_analysis_bytes pseudo");
 
-	ab = rz_iterator_next(iter);
+	ab = rz_iterator_next(&iter);
 	mu_assert_streq(ab->opcode, "mov dword [rbp-0x04], edi", "rz_core_analysis_bytes opcode");
 	mu_assert_streq(ab->pseudo, "dword [rbp-0x04] = edi", "rz_core_analysis_bytes pseudo");
 
-	rz_iterator_free(iter);
 	rz_core_free(core);
 	mu_end;
 }

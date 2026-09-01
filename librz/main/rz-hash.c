@@ -117,10 +117,9 @@ static void rz_hash_show_algorithms(RzHashContext *ctx) {
 
 	printf("flags  algorithm      license    author\n");
 
-	RzIterator *iter = ht_sp_as_iter(ctx->rh->plugins);
-	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	RzIterator iter = ht_sp_as_iter(ctx->rh->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(&iter);
 	if (!plugin_list) {
-		rz_iterator_free(iter);
 		return;
 	}
 	rz_list_sort(plugin_list, (RzListComparator)rz_hash_plugin_cmp, NULL);
@@ -131,7 +130,6 @@ static void rz_hash_show_algorithms(RzHashContext *ctx) {
 		printf("%6s %-14s %-10s %-30s %s\n", flags, rmdp->name, rmdp->license, rmdp->author, rmdp->description);
 	}
 	rz_list_free(plugin_list);
-	rz_iterator_free(iter);
 
 	const RzCryptoPlugin *rcp;
 	for (size_t i = 0; (rcp = rz_crypto_plugin_by_index(ctx->rc, i)); i++) {
@@ -810,10 +808,9 @@ static RzList /*<char *>*/ *parse_hash_algorithms(RzHashContext *ctx) {
 	if (!list) {
 		return NULL;
 	}
-	RzIterator *iter = ht_sp_as_iter(ctx->rh->plugins);
-	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	RzIterator iter = ht_sp_as_iter(ctx->rh->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(&iter);
 	if (!plugin_list) {
-		rz_iterator_free(iter);
 		return NULL;
 	}
 	rz_list_sort(plugin_list, (RzListComparator)rz_hash_plugin_cmp, NULL);
@@ -823,7 +820,6 @@ static RzList /*<char *>*/ *parse_hash_algorithms(RzHashContext *ctx) {
 		rz_list_append(list, (void *)rmdp->name);
 	}
 	rz_list_free(plugin_list);
-	rz_iterator_free(iter);
 	return list;
 }
 

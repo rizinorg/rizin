@@ -6052,19 +6052,22 @@ RZ_API int rz_core_print_disasm_instructions(RzCore *core, int nb_bytes, int nb_
 
 RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj) {
 	bool res = true;
-	RzIterator *iter = NULL;
+	RzIterator iter = (RzIterator){ 0 };
 	ut64 offset = rz_core_backward_offset(core, addr, &nb_opcodes, &nb_bytes);
 	iter = rz_core_analysis_bytes(core, offset, buf, nb_bytes, nb_opcodes);
-	if (!iter) {
+	if (!iter.next) {
 		res = false;
 		goto clean_return;
 	}
 
 	bool asm_pseudo = rz_config_get_i(core->config, "asm.pseudo");
 
-	RzCoreDecodedBytes *cdb;
-	rz_iterator_foreach(iter, cdb) {
-		RzAnalysisOp *op = &cdb->an_op;
+	RzAnalysisBytes *ab;
+	rz_iterator_foreach(&iter, ab) {
+		RzAnalysisOp *op = ab->op;
+		if (!op) {
+			continue;
+		}
 		pj_o(pj);
 		pj_kn(pj, "offset", op->addr);
 		if (op->type == RZ_ANALYSIS_OP_TYPE_ILL) {
@@ -6193,7 +6196,6 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		pj_end(pj);
 	}
 clean_return:
-	rz_iterator_free(iter);
 	return res;
 }
 

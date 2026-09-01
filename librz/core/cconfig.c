@@ -93,18 +93,15 @@ static int compareSize(const RzAnalysisFunction *a, const RzAnalysisFunction *b,
 }
 
 static void update_asmarch_options(RzCore *core, RzConfigNode *node) {
-	if (!core || !node) {
-		return;
-	}
-
+	RzIterator it = ht_sp_as_iter(core->rasm->plugins);
 	RzAsmPlugin **val;
-	RzIterator *it = rz_asm_plugin_iterator(core->rasm);
-	rz_set_s_clear(node->options);
-	rz_iterator_foreach(it, val) {
-		RzAsmPlugin *h = *val;
-		SETOPTIONS(node, h->name, NULL);
+	if (core && node && core->rasm) {
+		rz_list_purge(node->options);
+		rz_iterator_foreach(&it, val) {
+			RzAsmPlugin *h = *val;
+			SETOPTIONS(node, h->name, NULL);
+		}
 	}
-	rz_iterator_free(it);
 }
 
 static void update_asmbits_options(RzCore *core, RzConfigNode *node) {
@@ -167,14 +164,28 @@ static void update_asmparser_options(RzCore *core, RzConfigNode *node) {
 static void update_asmcpu_options(RzCore *core, RzConfigNode *node) {
 	rz_return_if_fail(core && core->rasm);
 
-	const char *cpus = rz_asm_get_plugin_cpus(core->rasm);
-	if (RZ_STR_ISEMPTY(cpus)) {
-		rz_set_s_clear(node->options);
+	RzIterator it = ht_sp_as_iter(core->rasm->plugins);
+	RzAsmPlugin **val;
+	const char *arch = rz_config_get(core->config, "asm.arch");
+	if (!arch || !*arch) {
 		return;
 	}
-
-	rz_set_s_free(node->options);
-	node->options = rz_str_split_dupset(cpus, ",", true);
+	rz_list_purge(node->options);
+	rz_iterator_foreach(&it, val) {
+		RzAsmPlugin *h = *val;
+		if (h->cpus && !strcmp(arch, h->name)) {
+			char *c = rz_str_dup(h->cpus);
+			int i, n = rz_str_split(c, ',');
+			for (i = 0; i < n; i++) {
+				const char *word = rz_str_word_get0(c, i);
+				if (word && *word) {
+					node->options->free = free;
+					SETOPTIONS(node, rz_str_dup(word), NULL);
+				}
+			}
+			free(c);
+		}
+	}
 }
 
 static bool cb_search_case_sensitive(void *_core, void *_node) {
@@ -458,16 +469,15 @@ static bool cb_analysis_hpskip(void *user, void *data) {
 }
 
 static void update_analysis_arch_options(RzCore *core, RzConfigNode *node) {
-	RzIterator *it = rz_analysis_plugin_iterator(core->analysis);
+	RzIterator it = ht_sp_as_iter(core->analysis->plugins);
 	RzAnalysisPlugin **val;
 	if (core && core->analysis && node) {
-		rz_set_s_clear(node->options);
-		rz_iterator_foreach(it, val) {
+		rz_list_purge(node->options);
+		rz_iterator_foreach(&it, val) {
 			RzAnalysisPlugin *h = *val;
 			SETOPTIONS(node, h->name, NULL);
 		}
 	}
-	rz_iterator_free(it);
 }
 
 static bool cb_analysis_recont(void *user, void *data) {

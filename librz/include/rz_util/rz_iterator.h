@@ -25,7 +25,7 @@ typedef struct rz_iterator_t {
 #define rz_iterator_foreach(iter, val) \
 	for ((val) = rz_iterator_next(iter); (val) != NULL; (val) = rz_iterator_next(iter))
 
-RZ_API RZ_OWN RzIterator *rz_iterator_new(
+RZ_API RZ_OWN RzIterator rz_iterator_new(
 	RZ_NONNULL rz_iterator_next_cb next,
 	RZ_NULLABLE rz_iterator_free_cb free,
 	RZ_NULLABLE rz_iterator_free_cb free_u,

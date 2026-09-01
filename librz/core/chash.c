@@ -38,10 +38,9 @@ static RzCmdStatus core_hash_plugin_print(RzCmdStateOutput *state, const RzHashP
 RZ_API RzCmdStatus rz_core_hash_plugins_print(RZ_NONNULL RZ_BORROW RzHash *hash, RZ_OUT RzCmdStateOutput *state) {
 	rz_return_val_if_fail(hash && state, RZ_CMD_STATUS_ERROR);
 
-	RzIterator *iter = ht_sp_as_iter(hash->plugins);
-	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	RzIterator iter = ht_sp_as_iter(hash->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(&iter);
 	if (!plugin_list) {
-		rz_iterator_free(iter);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_list_sort(plugin_list, (RzListComparator)rz_hash_plugin_cmp, NULL);
@@ -60,7 +59,6 @@ RZ_API RzCmdStatus rz_core_hash_plugins_print(RZ_NONNULL RZ_BORROW RzHash *hash,
 	}
 
 	rz_list_free(plugin_list);
-	rz_iterator_free(iter);
 	rz_cmd_state_output_array_end(state);
 	return status;
 }
