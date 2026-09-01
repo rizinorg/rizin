@@ -246,9 +246,9 @@ typedef struct Ht_(t) {
 	ut32 size; ///< Number of stored elements.
 	ut32 growth_left; ///< Number of empty slots.
 	RZ_BORROW ut8 *ctrl; ///< Control bytes (metadata) - point to the beginning of the `data` pointer.
-	RZ_BORROW HT_(Kv) *slots; ///< Main array (no buckets) - points to an offset after the `data` pointer.
+	RZ_BORROW HT_(Kv) *slots_; ///< Main array (no buckets) - points to an offset after the `data` pointer.
 	HT_(Options) opt; ///< Methods
-	ut8 *data; ///< Single allocation for `ctrl` and `slots` arrays.
+	ut8 *data; ///< Single allocation for `ctrl` and `slots_` arrays.
 } HtName_(Ht);
 
 typedef struct Ht_(iter_mut_t) {
@@ -304,6 +304,7 @@ RZ_API void Ht_(free_iter_state)(RZ_NULLABLE HT_(IterState) *state);
 RZ_API RZ_BORROW VALUE_TYPE *Ht_(iter_next_mut)(RzIterator *it);
 RZ_API const VALUE_TYPE *Ht_(iter_next)(RzIterator *it);
 RZ_API const KEY_TYPE *Ht_(iter_next_key)(RzIterator *it);
+RZ_API const HT_(Kv) *Ht_(iter_next_kv)(RzIterator *it);
 
 RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ Ht_(as_iter_mut)(RZ_NONNULL HtName_(Ht) *ht);
 RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ Ht_(as_iter)(const RZ_NONNULL HtName_(Ht) *ht);

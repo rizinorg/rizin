@@ -361,11 +361,15 @@ static void destroy(RzBinFile *bf) {
 }
 
 static int get_file_type(RzBinFile *bf) {
-	struct Elf_(rz_bin_elf_obj_t) *obj = bf->o->bin_obj;
-	char *type = Elf_(rz_bin_elf_get_file_type(obj));
-	int res = type ? ((!strncmp(type, "CORE", 4)) ? RZ_BIN_TYPE_CORE : RZ_BIN_TYPE_DEFAULT) : -1;
-	free(type);
-	return res;
+	ELFOBJ *bin = rz_bin_file_get_elf(bf);
+	switch (bin->ehdr.e_type) {
+	case ET_REL:
+		return RZ_BIN_TYPE_REL;
+	case ET_CORE:
+		return RZ_BIN_TYPE_CORE;
+	default:
+		return RZ_BIN_TYPE_DEFAULT;
+	}
 }
 
 static char *regstate(RzBinFile *bf) {
@@ -433,6 +437,22 @@ static bool is_wordable_section(const char *name) {
 		return true;
 	}
 	return false;
+}
+
+/**
+ * \brief True for sections that hold Procedure Linkage Table stubs.
+ *
+ * Covers the architecture-independent names (.plt, .plt.got, .plt.sec, .iplt)
+ * and the MIPS-specific .MIPS.stubs. The GOT-side helper section .got.plt is
+ * intentionally excluded as it holds data, not stubs; callers additionally
+ * gate on SHF_EXECINSTR so only the executable stub section is marked.
+ */
+static bool is_plt_section(const char *name) {
+	return !strcmp(name, ".plt") ||
+		!strcmp(name, ".plt.got") ||
+		!strcmp(name, ".plt.sec") ||
+		!strcmp(name, ".iplt") ||
+		!strcmp(name, ".MIPS.stubs");
 }
 
 static RzBinElfNoteFile *note_file_for_load_segment(ELFOBJ *obj, Elf_(Phdr) * phdr) {
@@ -627,25 +647,13 @@ static ut64 get_got_addr(ELFOBJ *bin) {
  * the symbol has no indirection in the GOT.
  */
 RZ_IPI ut64 Elf_(rz_bin_get_reloc_sym_offset_in_got)(RZ_NONNULL ELFOBJ *bin, ut64 sym_id) {
-	RzBinElfSection *got = Elf_(rz_bin_elf_get_section_with_name)(bin, ".got");
-	if (!got) {
-		got = Elf_(rz_bin_elf_get_section_with_name)(bin, ".got.plt");
-		if (!got) {
-			return UT64_MAX;
-		}
+	rz_return_val_if_fail(bin, UT64_MAX);
+	bool found = false;
+	ut64 offset = ht_uu_find(bin->got_sym_id_off, sym_id, &found);
+	if (!found) {
+		return UT64_MAX;
 	}
-	// Search all entries of the GOT for the matching symbol id.
-	RzBinElfReloc *reloc;
-	rz_bin_elf_foreach_relocs(bin, reloc) {
-		if (!RZ_BETWEEN(got->rva, reloc->vaddr, got->rva + got->size)) {
-			// Not a GOT entry.
-			continue;
-		}
-		if (sym_id == reloc->sym) {
-			return reloc->offset;
-		}
-	}
-	return UT64_MAX;
+	return offset;
 }
 
 static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
@@ -688,11 +696,17 @@ static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
 					sym_addr = symbol->vaddr;
 					if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(bin) && Elf_(rz_bin_elf_is_thumb_addr)(sym_addr)) {
 						Elf_(rz_bin_elf_fix_arm_thumb_addr)(&sym_addr);
+						reloc->thumb = 1;
 					}
 					sym_size = symbol->size;
 				} else {
 					sym_addr = rz_bin_reloc_target_builder_get_target(targets, reloc->sym);
 				}
+			}
+		}
+		if (reloc->mode == DT_REL) {
+			if (!Elf_(rz_bin_elf_reloc_get_addend)(bin, reloc)) {
+				RZ_LOG_INFO("Immediate value extraction not implemented for %x\n", reloc->type);
 			}
 		}
 		Elf_(rz_bin_elf_patch_relocation)(bin, reloc, sym_addr, sym_size, baddr, sym_addr, got_addr, &mips_AHL);
@@ -701,6 +715,37 @@ static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
 	rz_bin_reloc_target_builder_free(targets);
 	// from now on, all writes should propagate through to the actual file
 	rz_buf_sparse_set_write_mode(bin->buf_patched, RZ_BUF_SPARSE_WRITE_MODE_THROUGH);
+}
+
+static void fill_got_sym_id_off_map(ELFOBJ *obj) {
+	RzBinElfReloc *reloc;
+	if (ht_uu_size(obj->got_sym_id_off) > 0) {
+		// Already loaded by another ELF plugin callback.
+		return;
+	}
+	// Fill symbol id -> GOT offset map.
+	RzBinElfSection *got = Elf_(rz_bin_elf_get_section_with_name)(obj, ".got");
+	if (got) {
+		rz_bin_elf_foreach_relocs(obj, reloc) {
+			if (!RZ_BETWEEN(got->rva, reloc->vaddr, got->rva + got->size)) {
+				// Not a GOT entry.
+				continue;
+			}
+			ht_uu_insert(obj->got_sym_id_off, reloc->sym, reloc->offset);
+		}
+	}
+
+	got = Elf_(rz_bin_elf_get_section_with_name)(obj, ".got.plt");
+	if (!got) {
+		return;
+	}
+	rz_bin_elf_foreach_relocs(obj, reloc) {
+		if (!RZ_BETWEEN(got->rva, reloc->vaddr, got->rva + got->size)) {
+			// Not a GOT entry.
+			continue;
+		}
+		ht_uu_insert(obj->got_sym_id_off, reloc->sym, reloc->offset);
+	}
 }
 
 static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
@@ -722,6 +767,7 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	if (!obj) {
 		return r;
 	}
+	fill_got_sym_id_off_map(obj);
 	patch_relocs(bf, obj);
 	// virtual file for reloc targets (where the relocs will point into)
 	ut64 rtmsz = reloc_targets_vfile_size(bf, obj);
@@ -797,6 +843,15 @@ static RzPVector /*<RzBinSection *>*/ *sections_obj(ELFOBJ *obj, size_t psize) {
 		} else if (!strcmp(ptr->name, "C")) {
 			ptr->is_data = true;
 		}
+		// String tables (e.g. .dynstr) and sections explicitly flagged with
+		// SHF_STRINGS hold NUL-terminated strings, not code. When such a
+		// section is mapped into memory (SHF_ALLOC) mark it so the string
+		// search picks up its contents (iz) and the disassembler renders it
+		// as strings instead of trying to decode it as instructions.
+		if ((section->flags & SHF_ALLOC) &&
+			(section->type == SHT_STRTAB || (section->flags & SHF_STRINGS))) {
+			ptr->has_strings = true;
+		}
 		if (is_wordable_section(ptr->name)) {
 			ptr->layout.type = RZ_META_TYPE_DATA;
 			ptr->layout.element_size = sizeof(Elf_(Addr));
@@ -806,7 +861,15 @@ static RzPVector /*<RzBinSection *>*/ *sections_obj(ELFOBJ *obj, size_t psize) {
 		ptr->vsize = section->size;
 		ptr->paddr = section->offset;
 		ptr->vaddr = section->rva;
-		ptr->type = section->type;
+		// Mark executable PLT stub sections (.plt, .MIPS.stubs, ...) with a
+		// Rizin-internal pseudo type so `iS` reports them as PLT instead of the
+		// generic PROGBITS. The SHF_EXECINSTR check keeps data sections such as
+		// .got.plt from being misclassified.
+		if (is_plt_section(ptr->name) && (section->flags & SHF_EXECINSTR)) {
+			ptr->type = RZ_BIN_ELF_SECTION_TYPE_PLT;
+		} else {
+			ptr->type = section->type;
+		}
 		ptr->flags = section->flags;
 		ptr->perm = section_perms_from_flags(section->flags);
 		rz_pvector_push(ret, ptr);
@@ -1028,40 +1091,31 @@ static void lookup_symbols(RzBinFile *bf, RzBinInfo *ret) {
 	RzPVector *symbols_vec = symbols(bf);
 	void **iter;
 	RzBinSymbol *symbol;
-	bool is_rust = false;
-	if (symbols_vec) {
-		rz_pvector_foreach (symbols_vec, iter) {
-			symbol = *iter;
-			if (ret->has_canary && is_rust) {
-				break;
-			}
-			if (!strcmp(symbol->name, "_NSConcreteGlobalBlock")) {
-				ret->lang = (ret->lang && !strcmp(ret->lang, "c++")) ? "c++ blocks ext." : "c blocks ext.";
-			}
-			if (!ret->has_canary) {
-				if (strstr(symbol->name, "__stack_chk_fail") || strstr(symbol->name, "__stack_smash_handler")) {
-					ret->has_canary = true;
-				}
-			}
-			if (!is_rust && !strcmp(symbol->name, "__rust_oom")) {
-				is_rust = true;
-				ret->lang = "rust";
-			}
-		}
-		rz_pvector_free(symbols_vec);
+	if (!symbols_vec) {
+		return;
 	}
+
+	rz_pvector_foreach (symbols_vec, iter) {
+		symbol = *iter;
+		if (!strcmp(symbol->name, "_NSConcreteGlobalBlock")) {
+			ret->lang = (ret->lang && !strcmp(ret->lang, "c++")) ? "c++ blocks ext." : "c blocks ext.";
+		} else if (!strcmp(symbol->name, "__rust_oom")) {
+			ret->lang = "rust";
+			break;
+		}
+	}
+	rz_pvector_free(symbols_vec);
 }
 
 static void lookup_sections(RzBinFile *bf, RzBinInfo *ret) {
+	if (ret->has_retguard) {
+		return;
+	}
 	RzPVector *sections_vec = sections(bf);
 	void **iter;
 	RzBinSection *section;
-	ret->has_retguard = -1;
 	rz_pvector_foreach (sections_vec, iter) {
 		section = *iter;
-		if (ret->has_retguard != -1) {
-			break;
-		}
 #define RZ_BIN_RANDOMDATA_RETGUARD_SZ 48
 		if (!strcmp(section->name, ".openbsd.randomdata")) {
 			// The retguard cookie adds 8 per return function inst.
@@ -1070,26 +1124,6 @@ static void lookup_sections(RzBinFile *bf, RzBinInfo *ret) {
 		}
 	}
 	rz_pvector_free(sections_vec);
-}
-
-static bool has_sanitizers(RzBinFile *bf) {
-	bool ret = false;
-	RzPVector *imports_vec = imports(bf);
-	if (!imports_vec) {
-		return ret;
-	}
-	void **iter;
-	RzBinImport *import;
-	rz_pvector_foreach (imports_vec, iter) {
-		import = *iter;
-		if (strstr(import->name, "__sanitizer") ||
-			strstr(import->name, "__ubsan")) {
-			ret = true;
-			break;
-		}
-	}
-	rz_pvector_free(imports_vec);
-	return ret;
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
@@ -1112,8 +1146,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 		return NULL;
 	}
 	ret->type = str;
-	ret->has_pi = (strstr(str, "DYN")) ? 1 : 0;
-	ret->has_sanitizers = has_sanitizers(bf);
+	ret->has_pie = (strstr(str, "DYN")) ? 1 : 0;
 	if (!(str = Elf_(rz_bin_elf_get_elf_class)(obj))) {
 		free(ret);
 		return NULL;
@@ -1150,9 +1183,9 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 	if ((str = Elf_(rz_bin_elf_get_abi)(obj))) {
 		ret->features = str;
-		if (!ret->has_pi) {
+		if (!ret->has_pie) {
 			// Elf MIPS PIE flag is in features.
-			ret->has_pi = (strstr(str, "pic ")) ? 1 : 0;
+			ret->has_pie = (strstr(str, "pic ")) ? 1 : 0;
 		}
 	}
 

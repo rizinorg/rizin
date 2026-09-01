@@ -43,6 +43,7 @@ afl.
 EOF
 EXPECT=<<EOF
 0x00401e80 fcn.00401e80
+0x00401e80 fcn.00401e80
 EOF
 RUN
 
@@ -113,9 +114,9 @@ RUN
 
 NAME=lab1B
 FILE=bins/elf/lab1B
-BROKEN=1
 CMDS=<<EOF
 s 0x08048a8b
+e asm.bytes=true
 af
 afb
 echo
@@ -126,19 +127,18 @@ EXPECT=<<EOF
 0x08048a91 0x08048aa0 00:0000 15
 0x08048bd5 0x08048be4 00:0000 15
 
-/ (fcn) fcn.08048a8b 36
-|   fcn.08048a8b ();
-|           ; var int var_ch @ ebp-0xc
-|       ,=< 0x08048a8b      0f8744010000   ja 0x8048bd5
-|       |   0x08048a91      8b45f4         mov eax, dword [var_ch]
-|       |   0x08048a94      c1e002         shl eax, 2
-|       |   0x08048a97      05308d0408     add eax, 0x8048d30
-|       |   0x08048a9c      8b00           mov eax, dword [eax]
-|       |   0x08048a9e      ffe0           jmp eax
+/ fcn.08048a8b();
+|           ; var int32_t var_ch @ stack - 0xc
+|       ,=< 0x08048a8b      0f8744010000   jnbe  0x8048bd5
+|       |   0x08048a91      8b45f4         mov   eax, dword [var_ch]
+|       |   0x08048a94      c1e002         shl   eax, 0x02
+|       |   0x08048a97      05308d0408     add   eax, 0x8048d30
+|       |   0x08048a9c      8b00           mov   eax, dword [eax]
+|       |   0x08048a9e      ffe0           jmp   eax
 ..
-| ||||||`-> 0x08048bd5      e856fcffff     call sym.imp.rand           ; int rand(void)
-| ||||||    0x08048bda      890424         mov dword [esp], eax
-| ||||||    0x08048bdd      e8d5fdffff     call sym.decrypt
+| ||||||`-> 0x08048bd5      e856fcffff     call  sym.imp.rand          ; int rand(void)
+| ||||||    0x08048bda      890424         mov   dword [esp], eax
+| ||||||    0x08048bdd      e8d5fdffff     call  sym.decrypt
 | ``````--> 0x08048be2      c9             leave
 \           0x08048be3      c3             ret
 EOF
@@ -177,25 +177,25 @@ FILE=bins/elf/analysis/fast
 CMDS=aa ; s sym.fastcaslled ; e asm.bytes=true; afc fastcall ; afva ; pdf~arg,var
 EXPECT=<<EOF
 / sym.fastcaslled(int32_t arg1, int32_t arg2, int32_t arg_4h, int32_t arg_8h);
-|           ; arg int32_t arg1 @ ecx
-|           ; arg int32_t arg2 @ edx
-|           ; var int32_t var_24h @ stack - 0x24
-|           ; var int32_t var_20h @ stack - 0x20
-|           ; var int32_t var_14h @ stack - 0x14
-|           ; var int32_t var_10h @ stack - 0x10
-|           ; arg int32_t arg_4h @ stack + 0x4
-|           ; arg int32_t arg_8h @ stack + 0x8
-|           0x08048421      894de4         mov   dword [var_20h], ecx  ; arg1
-|           0x08048424      8955e0         mov   dword [var_24h], edx  ; arg2
-|           0x08048427      8b55e4         mov   edx, dword [var_20h]
-|           0x0804842a      8b45e0         mov   eax, dword [var_24h]
-|           0x0804842f      8945f4         mov   dword [var_10h], eax
-|           0x08048432      8b45e0         mov   eax, dword [var_24h]
-|           0x08048435      2b450c         sub   eax, dword [arg_8h]
-|           0x08048438      8945f0         mov   dword [var_14h], eax
-|           0x0804843b      ff7508         push  dword [arg_4h]
-|           0x0804843e      ff75f0         push  dword [var_14h]
-|           0x08048441      ff75f4         push  dword [var_10h]
+| ; arg int32_t arg1 @ ecx
+| ; arg int32_t arg2 @ edx
+| ; var int32_t var_24h @ stack - 0x24
+| ; var int32_t var_20h @ stack - 0x20
+| ; var int32_t var_14h @ stack - 0x14
+| ; var int32_t var_10h @ stack - 0x10
+| ; arg int32_t arg_4h @ stack + 0x4
+| ; arg int32_t arg_8h @ stack + 0x8
+| 0x08048421      894de4         mov   dword [var_20h], ecx            ; arg1
+| 0x08048424      8955e0         mov   dword [var_24h], edx            ; arg2
+| 0x08048427      8b55e4         mov   edx, dword [var_20h]
+| 0x0804842a      8b45e0         mov   eax, dword [var_24h]
+| 0x0804842f      8945f4         mov   dword [var_10h], eax
+| 0x08048432      8b45e0         mov   eax, dword [var_24h]
+| 0x08048435      2b450c         sub   eax, dword [arg_8h]
+| 0x08048438      8945f0         mov   dword [var_14h], eax
+| 0x0804843b      ff7508         push  dword [arg_4h]
+| 0x0804843e      ff75f0         push  dword [var_14h]
+| 0x08048441      ff75f4         push  dword [var_10h]
 EOF
 RUN
 
@@ -531,7 +531,7 @@ s 0x401880
 fd
 EOF
 EXPECT=<<EOF
-fcn.00401880
+fcn.00401820 + 96
 EOF
 RUN
 
@@ -2793,13 +2793,26 @@ RUN
 
 NAME=long basic blocks
 FILE=bins/elf/analysis/movfuscator
-BROKEN=1
 CMDS=<<EOF
 af
 afb
 EOF
 EXPECT=<<EOF
-0x0804827c 0x0804c2fc 00:0000 16512
+0x08048220 0x08048226 00:0000 6
+0x08048230 0x08048236 00:0000 6
+0x08048250 0x08048256 00:0000 6
+0x0804827c 0x080499a0 00:0000 5924 j 0x08048220 f 0x080499a0
+0x080499a0 0x08049b62 00:0000 450 j 0x08048220 f 0x08049b62
+0x08049b62 0x08049d24 00:0000 450 j 0x08048220 f 0x08049d24
+0x08049d24 0x08049ee6 00:0000 450 j 0x08048220 f 0x08049ee6
+0x08049ee6 0x0804a0a8 00:0000 450 j 0x08048220 f 0x0804a0a8
+0x0804a0a8 0x0804a26a 00:0000 450 j 0x08048220 f 0x0804a26a
+0x0804a26a 0x0804a42c 00:0000 450 j 0x08048220 f 0x0804a42c
+0x0804a42c 0x0804a9b6 00:0000 1418 j 0x08048250 f 0x0804a9b6
+0x0804a9b6 0x0804afcd 00:0000 1559 j 0x08048230 f 0x0804afcd
+0x0804afcd 0x0804b56f 00:0000 1442 j 0x08048220 f 0x0804b56f
+0x0804b56f 0x0804bd8f 00:0000 2080 j 0x08048220 f 0x0804bd8f
+0x0804bd8f 0x0804c2f9 00:0000 1386
 EOF
 RUN
 
@@ -4072,7 +4085,7 @@ e io.cache=true
 $orig_end=echo `omlt:va_end:quiet`
 omr 1 `omlt:size:quiet`+2
 s `$orig_end`
-wa "jmp entry0"
+wa "jmp 0x08048054"
 aF
 aae
 agf
@@ -4247,5 +4260,139 @@ EXPECT=<<EOF
 |      |    0x0040104d      mov   dword [0x41113b], eax
 |      |    0x00401052      push  0x00
 \      |,=< 0x00401054      jmp   fcn.0040dfd0
+EOF
+RUN
+
+NAME=x86 structured exception handling xframe
+FILE=bins/pe/microsoft_seh_tests/x86/xframe_eh_exe.exe
+CMDS=<<EOF
+aaa
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from entry0 @ 0x401d37
+/ int main(int argc, char **argv, char **envp);
+|           0x00401b10      call  fcn.00401880
+|           0x00401b15      call  fcn.00401000
+|           0x00401b1a      call  fcn.00401320
+|           0x00401b1f      push  str.Caught_Exceptions_Test_PASSED.   ; 0x4031b0 ; "Caught Exceptions Test PASSED." ; const char *s
+|           0x00401b24      call  dword [sym.imp.api_ms_win_crt_stdio_l1_1_0.dll_puts] ; 0x4030cc ; int puts(const char *s)
+|           0x00401b2a      call  fcn.004019a0
+|           0x00401b2f      push  str.Resumed_Exceptions_Test_PASSED.  ; 0x4031d0 ; "Resumed Exceptions Test PASSED." ; const char *s
+|           0x00401b34      call  dword [sym.imp.api_ms_win_crt_stdio_l1_1_0.dll_puts] ; 0x4030cc ; int puts(const char *s)
+|           0x00401b3a      add   esp, 0x08
+|           0x00401b3d      xor   eax, eax
+\           0x00401b3f      ret
+EOF
+RUN
+
+NAME=x86 structured exception handling nested_collided
+FILE=bins/pe/microsoft_seh_tests/x86/nested_collided.exe
+CMDS=<<EOF
+aaa
+pdr @ main
+EOF
+EXPECT=<<EOF
+  ; CALL XREF from entry0 @ 0x40160e
+/ int main(int argc, char **argv, char **envp);
+| ; var int32_t var_3ch @ stack - 0x3c
+| ; var int32_t var_30h @ stack - 0x30
+| ; var int32_t var_2ch @ stack - 0x2c
+| ; var int32_t var_1ch @ stack - 0x1c
+| ; var int32_t var_14h @ stack - 0x14
+| ; var int32_t var_ch @ stack - 0xc
+| 0x00401280      push  ebp
+| 0x00401281      mov   ebp, esp
+| 0x00401283      push  0xfffffffe                                     ; 0xfe ; 254 ; int32_t var_20h
+| 0x00401285      push  data.00403618                                  ; 0x403618 ; ub"\U0000feff\xff\xff" ; int32_t var_1ch
+| 0x0040128a      push  fcn.00401417                                   ; 0x401417 ; "U\x8b\xecV\x8bu\b\xff6\xe8\xf8\v" ; int32_t var_28h
+| 0x0040128f      mov   eax, dword fs:[0x0]
+| 0x00401295      push  eax
+| 0x00401296      sub   esp, 0x08
+| 0x00401299      push  ebx
+| 0x0040129a      push  esi
+| 0x0040129b      push  edi
+| 0x0040129c      mov   eax, dword [data.00404004]                     ; [0x404004:4]=0xbb40e64e ; "N\xe6@\xbb\xff\xff\xff\xff\U00000001"
+| 0x004012a1      xor   dword [var_ch], eax
+| 0x004012a4      xor   eax, ebp
+| 0x004012a6      push  eax                                            ; int32_t arg_4h
+| 0x004012a7      lea   eax, dword [var_14h]
+| 0x004012aa      mov   dword fs:[0x0], eax
+| 0x004012b0      mov   dword [var_1ch], esp
+| 0x004012b3      push  str.Collided_Unwind_test...                    ; 0x403108 ; "Collided Unwind test... " ; int32_t arg_8h
+| 0x004012b8      call  fcn.00401030
+| 0x004012bd      add   esp, 0x04
+| 0x004012c0      cmp   byte [data.00404374], 0x00                     ; [0x404374:1]=0
+| 0x004012c7      jz    0x4012ca
+| ----------- true: 0x004012ca  false: 0x004012c9
+| 0x004012c9      int3
+
+| 0x004012ca      mov   dword [data.00404388], 0x01                    ; [0x404388:4]=0
+| 0x004012d4      mov   dword [data.0040438c], 0x00                    ; [0x40438c:4]=0
+| 0x004012de      mov   dword [var_30h], 0x00
+| 0x004012e5      call  fcn.004011e0
+| 0x004012ea      jmp   0x401323
+| ----------- true: 0x00401323
+| ; CODE XREF from main @ 0x4012ea
+| 0x00401323      mov   dword [var_30h], 0xfffffffe                    ; 4294967294
+| 0x0040132a      cmp   byte [data.00404374], 0x00                     ; [0x404374:1]=0
+| 0x00401331      jz    0x401334
+| ----------- true: 0x00401334  false: 0x00401333
+| 0x00401333      int3
+
+| 0x00401334      cmp   dword [data.00404388], 0x40bf                  ; [0x404388:4]=0
+| 0x0040133e      jnz   0x401349
+| ----------- true: 0x00401349  false: 0x00401340
+| 0x00401340      cmp   dword [data.0040438c], 0x00                    ; [0x40438c:4]=0
+| 0x00401347      jz    0x40134a
+| ----------- true: 0x0040134a  false: 0x00401349
+| 0x00401349      int3
+
+| 0x0040134a      push  str.PASSED.                                    ; 0x403124 ; "PASSED." ; int32_t arg_4h
+| 0x0040134f      mov   esi, dword [sym.imp.api_ms_win_crt_stdio_l1_1_0.dll_puts] ; [0x4030b8:4]=0x3884
+| 0x00401355      call  esi
+| 0x00401357      push  str.Nested_Exception_test...                   ; 0x40312c ; "Nested Exception test... " ; int32_t arg_8h
+| 0x0040135c      call  fcn.00401030
+| 0x00401361      add   esp, 0x08
+| 0x00401364      cmp   byte [data.00404374], 0x00                     ; [0x404374:1]=0
+| 0x0040136b      jz    0x40136e
+| ----------- true: 0x0040136e  false: 0x0040136d
+| 0x0040136d      int3
+
+| 0x0040136e      mov   dword [data.00404388], 0x01                    ; [0x404388:4]=0
+| 0x00401378      mov   dword [data.0040438c], 0x00                    ; [0x40438c:4]=0
+| 0x00401382      mov   dword [var_30h], 0x01
+| 0x00401389      call  fcn.00401140
+| 0x0040138e      mov   dword [var_30h], 0xfffffffe                    ; 4294967294
+| 0x00401395      jmp   0x4013d9
+| ----------- true: 0x004013d9
+| ; CODE XREF from main @ 0x401395
+| 0x004013d9      cmp   byte [data.00404374], 0x00                     ; [0x404374:1]=0
+| 0x004013e0      jz    0x4013e3
+| ----------- true: 0x004013e3  false: 0x004013e2
+| 0x004013e2      int3
+
+| 0x004013e3      cmp   dword [data.00404388], 0x368d                  ; [0x404388:4]=0
+| 0x004013ed      jnz   0x4013f8
+| ----------- true: 0x004013f8  false: 0x004013ef
+| 0x004013ef      cmp   dword [data.0040438c], 0x00                    ; [0x40438c:4]=0
+| 0x004013f6      jz    0x4013f9
+| ----------- true: 0x004013f9  false: 0x004013f8
+| 0x004013f8      int3
+
+| 0x004013f9      push  str.PASSED.                                    ; 0x403124 ; "PASSED."
+| 0x004013fe      call  esi
+| 0x00401400      add   esp, 0x04
+| 0x00401403      xor   eax, eax
+| 0x00401405      mov   ecx, dword [var_3ch]
+| 0x00401408      mov   dword fs:[0x0], ecx
+| 0x0040140f      pop   ecx
+| 0x00401410      pop   edi
+| 0x00401411      pop   esi
+| 0x00401412      pop   ebx
+| 0x00401413      mov   esp, ebp
+| 0x00401415      pop   ebp
+\ 0x00401416      ret
+
 EOF
 RUN

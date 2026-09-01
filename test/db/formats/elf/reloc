@@ -200,40 +200,40 @@ EXPECT=<<EOF
             0x08000f00      .qword 0x0000000000000000                  ; RELOC TARGET 32 strcmp
 --
 0x08000040 4 .text
-0x08000073 4 .rodata.str1.1
-0x0800007a 4 strcmp
-0x0800009c 4 .rodata.str1.1
-0x080000a3 4 strcmp
-0x080000be 4 .rodata.str1.1
-0x080000c5 4 strcmp
-0x080000f8 8 .rodata.str1.1
-0x08000125 4 stat
-0x08000144 4 strlen
-0x08000199 4 memcpy
-0x080001be 8 .rodata.str1.1
-0x080001e0 4 strlen
-0x08000231 4 memcpy
-0x08000267 4 memcpy
-0x080002a2 4 perror
-0x080002c9 4 time
-0x080003a9 4 .rodata.str1.1
-0x080003b8 4 .L.str.5
-0x0800050f 8 .rodata.str1.1
-0x0800053e 8 .rodata.str1.1
-0x08000555 4 exit
-0x0800057f 4 write
-0x080005be 4 utilvserver_fmt_ulong_base
-0x080005f5 4 strlen
-0x0800061b 8 .rodata.str1.1
-0x08000632 4 exit
+0x08000073 4 reloc..rodata.str1.1
+0x0800007a 4 reloc.strcmp
+0x0800009c 4 reloc..rodata.str1.1.800009c
+0x080000a3 4 reloc.strcmp.80000a3
+0x080000be 4 reloc..rodata.str1.1.80000be
+0x080000c5 4 reloc.strcmp.80000c5
+0x080000f8 8 reloc..rodata.str1.1.80000f8
+0x08000125 4 reloc.stat
+0x08000144 4 reloc.strlen
+0x08000199 4 reloc.memcpy
+0x080001be 8 reloc..rodata.str1.1.80001be
+0x080001e0 4 reloc.strlen.80001e0
+0x08000231 4 reloc.memcpy.8000231
+0x08000267 4 reloc.memcpy.8000267
+0x080002a2 4 reloc.perror
+0x080002c9 4 reloc.time
+0x080003a9 4 reloc..rodata.str1.1.80003a9
+0x080003b8 4 reloc..L.str.5
+0x0800050f 8 reloc..rodata.str1.1.800050f
+0x0800053e 8 reloc..rodata.str1.1.800053e
+0x08000555 4 reloc.exit
+0x0800057f 4 reloc.write
+0x080005be 4 reloc.utilvserver_fmt_ulong_base
+0x080005f5 4 reloc.strlen.80005f5
+0x0800061b 8 reloc..rodata.str1.1.800061b
+0x08000632 4 reloc.exit.8000632
 0x08000636 4 .rodata.str1.1
 0x08000689 4 .L.str.5
-0x08000880 4 .text
-0x0800089c 4 .text
-0x080008b8 4 .text
-0x080008d4 4 .text
-0x080008f0 4 .text
-0x0800090c 4 .text
+0x08000880 4 reloc..text
+0x0800089c 4 reloc..text.800089c
+0x080008b8 4 reloc..text.80008b8
+0x080008d4 4 reloc..text.80008d4
+0x080008f0 4 reloc..text.80008f0
+0x0800090c 4 reloc..text.800090c
 0x08000f00 4 strcmp
 0x08000f08 4 stat
 0x08000f10 4 strlen
@@ -317,7 +317,7 @@ EXPECT=<<EOF
 |           0x08000040      movzx eax, byte [rdi]                      ; RELOC TARGET 32 .text @ 0x08000040 - 0x8004d08 ; arg1 ; [01] -r-x section size 6641 named .text
 |           0x08000043      and   eax, 0x7f                            ; 127
 |           0x08000046      sub   eax, 0x04
-|           0x08000049      cmp   al, 0x73                             ; 115
+|           0x08000049      cmp   al, 0x73                             ; 's' ; 115
 |       ,=< 0x0800004b      jnbe  case.0x800005e.5
 |       |   0x0800004d      lea   rdx, qword reloc.target..rodata      ; 0x8001a34 ; "4\xe6\xff\xff,\xe6\xff\xff4\xe6\xff\xff,\xe6\xff\xff4\xe6\xff\xffD\xe6\xff\xff4\xe6\xff\xffD\xe6\xff\xff4\xe6\xff\xff,\xe6\xff\x"; RELOC 32 .rodata @ 0x08001a34 - 0x8000054
 |       |   0x08000054      movzx eax, al
@@ -476,5 +476,47 @@ EXPECT=<<EOF
 0x001e0088 0x000e0088 R_PPC64_IRELATIVE  0x00123e40
 0x001e0090 0x000e0090 R_PPC64_IRELATIVE  0x00185350
 0x001e0098 0x000e0098 R_PPC64_IRELATIVE  0x001789c0
+EOF
+RUN
+
+NAME=asm.flag.real reloc flags (non-reloc file)
+FILE=bins/elf/_Exit_0x91
+CMDS=<<EOF
+e asm.flags.real=0
+fl~_Exit
+echo
+e asm.flags.real=1
+fl~_Exit
+EOF
+EXPECT=<<EOF
+0x00001020 16 sym.imp._Exit
+0x00003ff8 8 reloc._Exit
+0x00004008 8 reloc.target._Exit
+
+0x00001020 16 _Exit
+0x00003ff8 8 reloc._Exit
+0x00004008 8 reloc.target._Exit
+EOF
+RUN
+
+NAME=asm.flag.real reloc flags (reloc file)
+FILE=bins/elf/test.ko
+CMDS=<<EOF
+e asm.flags.real=0
+fl~printk
+echo
+e asm.flags.real=1
+fl~printk
+EOF
+EXPECT=<<EOF
+0x0800008d 4 reloc.printk
+0x080000a0 4 reloc.printk.80000a0
+0x080000b4 4 reloc.printk.80000b4
+0x08000b20 4 reloc.target.printk
+
+0x0800008d 4 reloc.printk
+0x080000a0 4 reloc.printk.80000a0
+0x080000b4 4 reloc.printk.80000b4
+0x08000b20 4 printk
 EOF
 RUN

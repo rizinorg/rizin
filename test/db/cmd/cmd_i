@@ -128,17 +128,15 @@ relro    no
 rpath    NONE
 subsys   linux
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   false
 linenum  true
 lsyms    true
 canary   false
-PIE      false
-RELROCS  true
-NX       true
+pie      false
+relrocs  true
+nx       true
 EOF
 RUN
 
@@ -213,7 +211,6 @@ baddr    0x00000000
 binsz    0x00000400
 bintype  class
 bits     32
-retguard false
 class    Java SE 1.6
 compiler N/A
 dbg_file N/A
@@ -232,17 +229,15 @@ pcalign  1
 rpath    N/A
 subsys   any
 stripped false
-crypto   false
 havecode true
 va       false
-sanitiz  false
 static   false
 linenum  true
 lsyms    true
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
   ;-- entry1:
   ;-- section.class.methods.TestMultipleVariable.attr.0.code:
   ;-- sym.TestVariableSwitchUp.void_TestMultipleVariable:
@@ -613,6 +608,30 @@ class std::type_info {
 0x000097e4    67 std::type_info                              __do_upcast(__cxxabiv1::__class_type_info const*, void**) const
 0x00009808    68 std::type_info                              operator==(std::type_info const&) const
 0x00009854    69 std::type_info                              __do_catch(std::type_info const*, void**, unsigned int) const
+EOF
+RUN
+
+NAME=ica
+FILE=bins/mach0/objc-employee
+CMDS=<<EOF
+ica Employee @ 0x100000000
+fl@F:classes~method
+EOF
+EXPECT=<<EOF
+0x100000000 0 method.Employee.helloWorld
+0x100000030 0 method.Employee.sayHello
+0x100000060 0 method.Employee.p0
+0x100000080 0 method.Employee.p1
+0x1000000a0 0 method.Employee.p2
+0x1000000c0 0 method.Employee.p3
+0x1000000e0 0 method.Employee.base
+0x100000100 0 method.class.Employee.sayHello
+0x100000130 0 method.Employee.username
+0x100000160 0 method.Employee.setUsername:
+0x1000001a0 0 method.Employee.firstName
+0x1000001d0 0 method.Employee.setFirstName:
+0x100000210 0 method.Employee.shortWord
+0x100000230 0 method.Employee.wideWord
 EOF
 RUN
 
@@ -1335,6 +1354,420 @@ pthread_mutex_unlock
 ----------   0x1c ---- .note.gnu.gold-version
 ----------   0x2b ---- .ARM.attributes
 ----------   0xf3 ---- .shstrtab
+0x1b1d 15 14 __cxa_finalize
+0x1b2c 13 12 __cxa_atexit
+0x1b39 26 25 _ZN7_JNIEnv9FindClassEPKc
+0x1b53 23 22 __aeabi_unwind_cpp_pr1
+0x1b6a 39 38 _ZN7_JNIEnv14DeleteLocalRefEP8_jobject
+0x1b91 46 45 _ZN7_JNIEnv9NewObjectEP7_jclassP10_jmethodIDz
+0x1bbf 39 38 _ZN7_JNIEnv14GetObjectClassEP8_jobject
+0x1be6 41 40 _ZN7_JNIEnv11GetMethodIDEP7_jclassPKcS3_
+0x1c0f 23 22 __aeabi_unwind_cpp_pr0
+0x1c26 55 54 _ZN7_JNIEnv16CallObjectMethodEP8_jobjectP10_jmethodIDz
+0x1c5d 53 52 _ZN7_JNIEnv14CallVoidMethodEP8_jobjectP10_jmethodIDz
+0x1c92 47 46 _ZN7_JNIEnv17GetStaticMethodIDEP7_jclassPKcS3_
+0x1cc1 60 59 _ZN7_JNIEnv22CallStaticObjectMethodEP7_jclassP10_jmethodIDz
+0x1cfd 38 37 _Z14getPackageNameP7_JNIEnvP8_jobject
+0x1d23 39 38 _Z15JstringToStringP7_JNIEnvP8_jstring
+0x1d4a 7 6 malloc
+0x1d51 7 6 memcpy
+0x1d58 30 29 _Z13CharTojstringP7_JNIEnvPKc
+0x1d76 7 6 strlen
+0x1d7d 47 46 _Z20invokeStaticMethodssP7_JNIEnvP8_jstringS2_
+0x1dac 59 58 _Z16getFieldOjbectExP7_JNIEnvP7_jclassP8_jobjectP8_jstring
+0x1de7 51 50 _Z14getFieldOjbectP7_JNIEnvP8_jstringP8_jobjectS2_
+0x1e1a 62 61 _Z16setFieldOjbectExP7_JNIEnvP7_jclassP8_jstringP8_jobjectS6_
+0x1e58 54 53 _Z14setFieldOjbectP7_JNIEnvP8_jstringS2_P8_jobjectS4_
+0x1e8e 28 27 _Z14checkExceptionP7_JNIEnv
+0x1eaa 30 29 _Z7forNameP7_JNIEnvP8_jstring
+0x1ec8 18 17 _Z11GetFileNamePc
+0x1eda 24 23 _Z10replaceAllPKcS0_S0_
+0x1ef2 7 6 strdup
+0x1ef9 7 6 strstr
+0x1f00 5 4 free
+0x1f05 32 31 _Z6decodeP7_JNIEnvP8_jstringS2_
+0x1f25 6 5 fopen
+0x1f2b 6 5 fread
+0x1f31 7 6 fwrite
+0x1f38 7 6 fflush
+0x1f3f 7 6 fclose
+0x1f46 46 45 _Z7sub_444P7_JNIEnvP8_jobjectS2_P8_jstringS4_
+0x1f74 46 45 _Z7sub_333P7_JNIEnvP8_jobjectS2_P8_jstringS4_
+0x1fa2 8 7 strrchr
+0x1faa 7 6 memset
+0x1fb1 7 6 strcat
+0x1fb8 8 7 strncpy
+0x1fc0 71 70 _ZN25SystemClassLoaderInjector6injectEP7_JNIEnvP8_jobjectP8_jstringS5_
+0x2007 7 6 remove
+0x200e 17 16 __stack_chk_fail
+0x201f 18 17 __stack_chk_guard
+0x2031 57 56 _Z21registerNativeMethodsP7_JNIEnvPKcP15JNINativeMethodi
+0x206a 31 30 _Z17register_ndk_loadP7_JNIEnv
+0x2089 11 10 JNI_OnLoad
+0x2094 16 15 _Z10decodeFilev
+0x20a4 57 56 _ZN7_JNIEnv19CallStaticIntMethodEP7_jclassP10_jmethodIDz
+0x20dd 58 57 _ZN7_JNIEnv20CallStaticVoidMethodEP7_jclassP10_jmethodIDz
+0x2117 75 74 _ZN25SystemClassLoaderInjector22findBaseDexClassloaderEP7_JNIEnvP8_jobject
+0x2162 73 72 _ZN25SystemClassLoaderInjector8getFieldEP7_JNIEnvP8_jobjectS3_P8_jstring
+0x21ab 64 63 _ZN25SystemClassLoaderInjector11getPathListEP7_JNIEnvP8_jobject
+0x21eb 67 66 _ZN25SystemClassLoaderInjector14getDexElementsEP7_JNIEnvP8_jobject
+0x222e 76 75 _ZN25SystemClassLoaderInjector8setFieldEP7_JNIEnvP8_jobjectS3_P8_jstringS3_
+0x227a 68 67 _ZN25SystemClassLoaderInjector12combineArrayEP7_JNIEnvP8_jobjectS3_
+0x22be 92 91 _ZN25SystemClassLoaderInjector26injectAboveEqualApiLevel14EP7_JNIEnvP8_jobjectP8_jstringS5_
+0x231a 21 20 __gxx_personality_v0
+0x232f 18 17 __cxa_end_cleanup
+0x2341 18 17 __cxa_begin_catch
+0x2353 16 15 __cxa_end_catch
+0x2363 7 6 _ZTIPc
+0x236a 67 66 _ZN25SystemClassLoaderInjector11appendArrayEP7_JNIEnvP8_jobjectS3_
+0x23ad 82 81 _ZN25SystemClassLoaderInjector16injectInAliyunOsEP7_JNIEnvP8_jobjectP8_jstringS5_
+0x23ff 87 86 _ZN25SystemClassLoaderInjector21injectBelowApiLevel14EP7_JNIEnvP8_jobjectP8_jstringS5_
+0x2456 23 22 __aeabi_unwind_cpp_pr2
+0x246d 24 23 __gnu_Unwind_Find_exidx
+0x2485 27 26 __gnu_Unwind_Restore_VFP_D
+0x24a0 25 24 __gnu_Unwind_Restore_VFP
+0x24b9 36 35 __gnu_Unwind_Restore_VFP_D_16_to_31
+0x24dd 27 26 __gnu_Unwind_Restore_WMMXD
+0x24f8 27 26 __gnu_Unwind_Restore_WMMXC
+0x2513 6 5 abort
+0x2519 18 17 restore_core_regs
+0x252b 15 14 _Unwind_GetCFA
+0x253a 28 27 __gnu_Unwind_RaiseException
+0x2556 26 25 __gnu_Unwind_ForcedUnwind
+0x2570 20 19 __gnu_Unwind_Resume
+0x2584 31 30 __gnu_Unwind_Resume_or_Rethrow
+0x25a3 17 16 _Unwind_Complete
+0x25b4 24 23 _Unwind_DeleteException
+0x25cc 16 15 _Unwind_VRS_Get
+0x25dc 22 21 __gnu_thumb1_case_uqi
+0x25f2 16 15 _Unwind_VRS_Set
+0x2602 23 22 __gnu_Unwind_Backtrace
+0x2619 20 19 __cxa_begin_cleanup
+0x262d 17 16 __cxa_type_match
+0x263e 21 20 __gnu_unwind_execute
+0x2653 22 21 __cxa_call_unexpected
+0x2669 16 15 _Unwind_VRS_Pop
+0x2679 24 23 __gnu_Unwind_Save_WMMXD
+0x2691 24 23 __gnu_Unwind_Save_WMMXC
+0x26a9 24 23 __gnu_Unwind_Save_VFP_D
+0x26c1 22 21 __gnu_Unwind_Save_VFP
+0x26d7 33 32 __gnu_Unwind_Save_VFP_D_16_to_31
+0x26f8 20 19 __restore_core_regs
+0x270c 25 24 ___Unwind_RaiseException
+0x2725 23 22 _Unwind_RaiseException
+0x273c 17 16 ___Unwind_Resume
+0x274d 15 14 _Unwind_Resume
+0x275c 28 27 ___Unwind_Resume_or_Rethrow
+0x2778 26 25 _Unwind_Resume_or_Rethrow
+0x2792 23 22 ___Unwind_ForcedUnwind
+0x27a9 21 20 _Unwind_ForcedUnwind
+0x27be 20 19 ___Unwind_Backtrace
+0x27d2 18 17 _Unwind_Backtrace
+0x27e4 19 18 __gnu_unwind_frame
+0x27f7 23 22 _Unwind_GetRegionStart
+0x280e 32 31 _Unwind_GetLanguageSpecificData
+0x282e 23 22 _Unwind_GetDataRelBase
+0x2845 23 22 _Unwind_GetTextRelBase
+0x285c 7 6 _edata
+0x2863 12 11 __bss_start
+0x286f 5 4 _end
+0x2874 7 6 _ZdlPv
+0x287b 19 18 __cxa_pure_virtual
+0x288e 18 17 __gnu_end_cleanup
+0x28a0 40 39 _ZTIN10__cxxabiv119__foreign_exceptionE
+0x28c8 36 35 _ZTIN10__cxxabiv115__forced_unwindE
+0x28ec 18 17 __cxa_get_globals
+0x28fe 16 15 _ZSt9terminatev
+0x290e 24 23 __cxa_get_exception_ptr
+0x2926 23 22 __cxa_get_globals_fast
+0x293d 26 25 _ZSt18uncaught_exceptionv
+0x2957 20 19 _ZNSt9exceptionD2Ev
+0x296b 17 16 _ZTVSt9exception
+0x297c 20 19 _ZNSt9exceptionD1Ev
+0x2990 25 24 _ZNSt13bad_exceptionD2Ev
+0x29a9 22 21 _ZTVSt13bad_exception
+0x29bf 25 24 _ZNSt13bad_exceptionD1Ev
+0x29d8 37 36 _ZN10__cxxabiv115__forced_unwindD2Ev
+0x29fd 36 35 _ZTVN10__cxxabiv115__forced_unwindE
+0x2a21 37 36 _ZN10__cxxabiv115__forced_unwindD1Ev
+0x2a46 41 40 _ZN10__cxxabiv119__foreign_exceptionD2Ev
+0x2a6f 40 39 _ZTVN10__cxxabiv119__foreign_exceptionE
+0x2a97 41 40 _ZN10__cxxabiv119__foreign_exceptionD1Ev
+0x2ac0 24 23 _ZNKSt9exception4whatEv
+0x2ad8 29 28 _ZNKSt13bad_exception4whatEv
+0x2af5 20 19 _ZNSt9exceptionD0Ev
+0x2b09 25 24 _ZNSt13bad_exceptionD0Ev
+0x2b22 37 36 _ZN10__cxxabiv115__forced_unwindD0Ev
+0x2b47 41 40 _ZN10__cxxabiv119__foreign_exceptionD0Ev
+0x2b70 17 16 _ZTSSt9exception
+0x2b81 17 16 _ZTISt9exception
+0x2b92 22 21 _ZTSSt13bad_exception
+0x2ba8 22 21 _ZTISt13bad_exception
+0x2bbe 36 35 _ZTSN10__cxxabiv115__forced_unwindE
+0x2be2 40 39 _ZTSN10__cxxabiv119__foreign_exceptionE
+0x2c0a 38 37 _ZTVN10__cxxabiv117__class_type_infoE
+0x2c30 41 40 _ZTVN10__cxxabiv120__si_class_type_infoE
+0x2c59 27 26 _ZN17__eh_globals_initD2Ev
+0x2c74 19 18 pthread_key_delete
+0x2c87 27 26 _ZN17__eh_globals_initD1Ev
+0x2ca2 20 19 pthread_getspecific
+0x2cb6 20 19 pthread_setspecific
+0x2cca 19 18 pthread_key_create
+0x2cdd 15 14 __aeabi_atexit
+0x2cec 21 20 __cxa_call_terminate
+0x2d01 18 17 _ZSt10unexpectedv
+0x2d13 35 34 _ZN10__cxxabiv111__terminateEPFvvE
+0x2d36 38 37 _ZN10__cxxabiv119__terminate_handlerE
+0x2d5c 36 35 _ZN10__cxxabiv112__unexpectedEPFvvE
+0x2d80 39 38 _ZN10__cxxabiv120__unexpected_handlerE
+0x2da7 25 24 _ZSt13set_terminatePFvvE
+0x2dc0 26 25 _ZSt14set_unexpectedPFvvE
+0x2dda 45 44 _ZN10__cxxabiv123__fundamental_type_infoD2Ev
+0x2e07 20 19 _ZNSt9type_infoD2Ev
+0x2e1b 44 43 _ZTVN10__cxxabiv123__fundamental_type_infoE
+0x2e47 45 44 _ZN10__cxxabiv123__fundamental_type_infoD1Ev
+0x2e74 45 44 _ZN10__cxxabiv123__fundamental_type_infoD0Ev
+0x2ea1 44 43 _ZTSN10__cxxabiv123__fundamental_type_infoE
+0x2ecd 44 43 _ZTIN10__cxxabiv123__fundamental_type_infoE
+0x2ef9 6 5 _ZTSv
+0x2eff 7 6 _ZTSPv
+0x2f06 8 7 _ZTSPKv
+0x2f0e 6 5 _ZTSb
+0x2f14 7 6 _ZTSPb
+0x2f1b 8 7 _ZTSPKb
+0x2f23 6 5 _ZTSw
+0x2f29 7 6 _ZTSPw
+0x2f30 8 7 _ZTSPKw
+0x2f38 7 6 _ZTSDs
+0x2f3f 8 7 _ZTSPDs
+0x2f47 9 8 _ZTSPKDs
+0x2f50 7 6 _ZTSDi
+0x2f57 8 7 _ZTSPDi
+0x2f5f 9 8 _ZTSPKDi
+0x2f68 6 5 _ZTSc
+0x2f6e 7 6 _ZTSPc
+0x2f75 8 7 _ZTSPKc
+0x2f7d 6 5 _ZTSa
+0x2f83 7 6 _ZTSPa
+0x2f8a 8 7 _ZTSPKa
+0x2f92 6 5 _ZTSh
+0x2f98 7 6 _ZTSPh
+0x2f9f 8 7 _ZTSPKh
+0x2fa7 6 5 _ZTSs
+0x2fad 7 6 _ZTSPs
+0x2fb4 8 7 _ZTSPKs
+0x2fbc 6 5 _ZTSt
+0x2fc2 7 6 _ZTSPt
+0x2fc9 8 7 _ZTSPKt
+0x2fd1 6 5 _ZTSi
+0x2fd7 7 6 _ZTSPi
+0x2fde 8 7 _ZTSPKi
+0x2fe6 6 5 _ZTSj
+0x2fec 7 6 _ZTSPj
+0x2ff3 8 7 _ZTSPKj
+0x2ffb 6 5 _ZTSl
+0x3001 7 6 _ZTSPl
+0x3008 8 7 _ZTSPKl
+0x3010 6 5 _ZTSm
+0x3016 7 6 _ZTSPm
+0x301d 8 7 _ZTSPKm
+0x3025 6 5 _ZTSx
+0x302b 7 6 _ZTSPx
+0x3032 8 7 _ZTSPKx
+0x303a 6 5 _ZTSy
+0x3040 7 6 _ZTSPy
+0x3047 8 7 _ZTSPKy
+0x304f 6 5 _ZTSf
+0x3055 7 6 _ZTSPf
+0x305c 8 7 _ZTSPKf
+0x3064 6 5 _ZTSd
+0x306a 7 6 _ZTSPd
+0x3071 8 7 _ZTSPKd
+0x3079 6 5 _ZTSe
+0x307f 7 6 _ZTSPe
+0x3086 8 7 _ZTSPKe
+0x308e 7 6 _ZTSDf
+0x3095 8 7 _ZTSPDf
+0x309d 9 8 _ZTSPKDf
+0x30a6 7 6 _ZTSDd
+0x30ad 8 7 _ZTSPDd
+0x30b5 9 8 _ZTSPKDd
+0x30be 7 6 _ZTSDe
+0x30c5 8 7 _ZTSPDe
+0x30cd 9 8 _ZTSPKDe
+0x30d6 7 6 _ZTSDn
+0x30dd 8 7 _ZTSPDn
+0x30e5 9 8 _ZTSPKDn
+0x30ee 9 8 _ZTIPKDn
+0x30f7 40 39 _ZTVN10__cxxabiv119__pointer_type_infoE
+0x311f 7 6 _ZTIDn
+0x3126 8 7 _ZTIPDn
+0x312e 9 8 _ZTIPKDe
+0x3137 7 6 _ZTIDe
+0x313e 8 7 _ZTIPDe
+0x3146 9 8 _ZTIPKDd
+0x314f 7 6 _ZTIDd
+0x3156 8 7 _ZTIPDd
+0x315e 9 8 _ZTIPKDf
+0x3167 7 6 _ZTIDf
+0x316e 8 7 _ZTIPDf
+0x3176 8 7 _ZTIPKe
+0x317e 6 5 _ZTIe
+0x3184 7 6 _ZTIPe
+0x318b 8 7 _ZTIPKd
+0x3193 6 5 _ZTId
+0x3199 7 6 _ZTIPd
+0x31a0 8 7 _ZTIPKf
+0x31a8 6 5 _ZTIf
+0x31ae 7 6 _ZTIPf
+0x31b5 8 7 _ZTIPKy
+0x31bd 6 5 _ZTIy
+0x31c3 7 6 _ZTIPy
+0x31ca 8 7 _ZTIPKx
+0x31d2 6 5 _ZTIx
+0x31d8 7 6 _ZTIPx
+0x31df 8 7 _ZTIPKm
+0x31e7 6 5 _ZTIm
+0x31ed 7 6 _ZTIPm
+0x31f4 8 7 _ZTIPKl
+0x31fc 6 5 _ZTIl
+0x3202 7 6 _ZTIPl
+0x3209 8 7 _ZTIPKj
+0x3211 6 5 _ZTIj
+0x3217 7 6 _ZTIPj
+0x321e 8 7 _ZTIPKi
+0x3226 6 5 _ZTIi
+0x322c 7 6 _ZTIPi
+0x3233 8 7 _ZTIPKt
+0x323b 6 5 _ZTIt
+0x3241 7 6 _ZTIPt
+0x3248 8 7 _ZTIPKs
+0x3250 6 5 _ZTIs
+0x3256 7 6 _ZTIPs
+0x325d 8 7 _ZTIPKh
+0x3265 6 5 _ZTIh
+0x326b 7 6 _ZTIPh
+0x3272 8 7 _ZTIPKa
+0x327a 6 5 _ZTIa
+0x3280 7 6 _ZTIPa
+0x3287 8 7 _ZTIPKc
+0x328f 6 5 _ZTIc
+0x3295 9 8 _ZTIPKDi
+0x329e 7 6 _ZTIDi
+0x32a5 8 7 _ZTIPDi
+0x32ad 9 8 _ZTIPKDs
+0x32b6 7 6 _ZTIDs
+0x32bd 8 7 _ZTIPDs
+0x32c5 8 7 _ZTIPKw
+0x32cd 6 5 _ZTIw
+0x32d3 7 6 _ZTIPw
+0x32da 8 7 _ZTIPKb
+0x32e2 6 5 _ZTIb
+0x32e8 7 6 _ZTIPb
+0x32ef 8 7 _ZTIPKv
+0x32f7 6 5 _ZTIv
+0x32fd 7 6 _ZTIPv
+0x3304 35 34 _ZNKSt9type_info14__is_pointer_pEv
+0x3327 36 35 _ZNKSt9type_info15__is_function_pEv
+0x334b 38 37 _ZNKSt9type_info10__do_catchEPKS_PPvj
+0x3371 69 68 _ZNKSt9type_info11__do_upcastEPKN10__cxxabiv117__class_type_infoEPPv
+0x33b6 17 16 _ZTISt9type_info
+0x33c7 56 55 _ZNK10__cxxabiv119__pointer_type_info14__is_pointer_pEv
+0x33ff 41 40 _ZN10__cxxabiv119__pointer_type_infoD2Ev
+0x3428 39 38 _ZN10__cxxabiv117__pbase_type_infoD2Ev
+0x344f 41 40 _ZN10__cxxabiv119__pointer_type_infoD1Ev
+0x3478 41 40 _ZN10__cxxabiv119__pointer_type_infoD0Ev
+0x34a1 85 84 _ZNK10__cxxabiv119__pointer_type_info15__pointer_catchEPKNS_17__pbase_type_infoEPPvj
+0x34f6 24 23 _ZNKSt9type_infoeqERKS_
+0x350e 40 39 _ZTSN10__cxxabiv119__pointer_type_infoE
+0x3536 40 39 _ZTIN10__cxxabiv119__pointer_type_infoE
+0x355e 38 37 _ZTIN10__cxxabiv117__pbase_type_infoE
+0x3584 67 66 _ZNK10__cxxabiv117__pbase_type_info10__do_catchEPKSt9type_infoPPvj
+0x35c7 42 41 _ZN10__cxxabiv120__si_class_type_infoD2Ev
+0x35f1 39 38 _ZN10__cxxabiv117__class_type_infoD2Ev
+0x3618 42 41 _ZN10__cxxabiv120__si_class_type_infoD1Ev
+0x3642 42 41 _ZN10__cxxabiv120__si_class_type_infoD0Ev
+0x366c 94 93 _ZNK10__cxxabiv120__si_class_type_info20__do_find_public_srcEiPKvPKNS_17__class_type_infoES2_
+0x36ca 128 127 _ZNK10__cxxabiv120__si_class_type_info12__do_dyncastEiNS_17__class_type_info10__sub_kindEPKS1_PKvS4_S6_RNS1_16__dyncast_resultE
+0x374a 104 103 _ZNK10__cxxabiv120__si_class_type_info11__do_upcastEPKNS_17__class_type_infoEPKvRNS1_15__upcast_resultE
+0x37b2 81 80 _ZNK10__cxxabiv117__class_type_info11__do_upcastEPKS0_PKvRNS0_15__upcast_resultE
+0x3803 41 40 _ZTSN10__cxxabiv120__si_class_type_infoE
+0x382c 41 40 _ZTIN10__cxxabiv120__si_class_type_infoE
+0x3855 67 66 _ZNK10__cxxabiv117__class_type_info10__do_catchEPKSt9type_infoPPvj
+0x3898 58 57 _ZNK10__cxxabiv117__class_type_info11__do_upcastEPKS0_PPv
+0x38d2 38 37 _ZTIN10__cxxabiv117__class_type_infoE
+0x38f8 17 16 _ZTVSt9type_info
+0x3909 20 19 _ZNSt9type_infoD1Ev
+0x391d 20 19 _ZNSt9type_infoD0Ev
+0x3931 7 6 strcmp
+0x3938 17 16 _ZTSSt9type_info
+0x3949 71 70 _ZNK10__cxxabiv117__class_type_info20__do_find_public_srcEiPKvPKS0_S2_
+0x3990 39 38 _ZN10__cxxabiv117__class_type_infoD1Ev
+0x39b7 39 38 _ZN10__cxxabiv117__class_type_infoD0Ev
+0x39de 107 106 _ZNK10__cxxabiv117__class_type_info12__do_dyncastEiNS0_10__sub_kindEPKS0_PKvS3_S5_RNS0_16__dyncast_resultE
+0x3a49 38 37 _ZTSN10__cxxabiv117__class_type_infoE
+0x3a6f 25 24 __cxa_allocate_exception
+0x3a88 12 11 __cxa_throw
+0x3a94 14 13 __cxa_rethrow
+0x3aa2 45 44 _ZN9__gnu_cxx27__verbose_terminate_handlerEv
+0x3acf 21 20 __cxa_free_exception
+0x3ae4 63 62 _ZNK10__cxxabiv117__pbase_type_info15__pointer_catchEPKS0_PPvj
+0x3b23 38 37 _ZTVN10__cxxabiv117__pbase_type_infoE
+0x3b49 39 38 _ZN10__cxxabiv117__pbase_type_infoD1Ev
+0x3b70 39 38 _ZN10__cxxabiv117__pbase_type_infoD0Ev
+0x3b97 17 16 __cxa_bad_typeid
+0x3ba8 38 37 _ZTSN10__cxxabiv117__pbase_type_infoE
+0x3bce 29 28 __cxa_current_exception_type
+0x3beb 15 14 __cxa_demangle
+0x3bfa 6 5 fputs
+0x3c00 6 5 fputc
+0x3c06 5 4 __sF
+0x3c0b 7 6 memcmp
+0x3c12 8 7 realloc
+0x3c1a 8 7 sprintf
+0x3c22 8 7 strncmp
+0x3c2a 30 29 __gcclibcxx_demangle_callback
+0x3c48 48 47 _ZNK9__gnu_cxx24__concurrence_lock_error4whatEv
+0x3c78 50 49 _ZNK9__gnu_cxx26__concurrence_unlock_error4whatEv
+0x3caa 46 45 _ZN9__gnu_cxx26__concurrence_unlock_errorD2Ev
+0x3cd8 45 44 _ZTVN9__gnu_cxx26__concurrence_unlock_errorE
+0x3d05 46 45 _ZN9__gnu_cxx26__concurrence_unlock_errorD1Ev
+0x3d33 44 43 _ZN9__gnu_cxx24__concurrence_lock_errorD2Ev
+0x3d5f 43 42 _ZTVN9__gnu_cxx24__concurrence_lock_errorE
+0x3d8a 44 43 _ZN9__gnu_cxx24__concurrence_lock_errorD1Ev
+0x3db6 46 45 _ZN9__gnu_cxx26__concurrence_unlock_errorD0Ev
+0x3de4 44 43 _ZN9__gnu_cxx24__concurrence_lock_errorD0Ev
+0x3e10 48 47 _ZN9__gnu_cxx30__throw_concurrence_lock_errorEv
+0x3e40 43 42 _ZTIN9__gnu_cxx24__concurrence_lock_errorE
+0x3e6b 50 49 _ZN9__gnu_cxx32__throw_concurrence_unlock_errorEv
+0x3e9d 45 44 _ZTIN9__gnu_cxx26__concurrence_unlock_errorE
+0x3eca 19 18 pthread_mutex_lock
+0x3edd 21 20 pthread_mutex_unlock
+0x3ef2 35 34 __cxa_allocate_dependent_exception
+0x3f15 31 30 __cxa_free_dependent_exception
+0x3f34 43 42 _ZTSN9__gnu_cxx24__concurrence_lock_errorE
+0x3f5f 45 44 _ZTSN9__gnu_cxx26__concurrence_unlock_errorE
+0x3f8c 15 14 __cxa_bad_cast
+0x3f9b 16 15 _ZTVSt8bad_cast
+0x3fab 16 15 _ZTISt8bad_cast
+0x3fbb 19 18 _ZNSt8bad_castD1Ev
+0x3fce 19 18 _ZTVSt10bad_typeid
+0x3fe1 19 18 _ZTISt10bad_typeid
+0x3ff4 22 21 _ZNSt10bad_typeidD1Ev
+0x400a 23 22 _ZNKSt8bad_cast4whatEv
+0x4021 19 18 _ZNSt8bad_castD2Ev
+0x4034 19 18 _ZNSt8bad_castD0Ev
+0x4047 16 15 _ZTSSt8bad_cast
+0x4057 26 25 _ZNKSt10bad_typeid4whatEv
+0x4071 22 21 _ZNSt10bad_typeidD2Ev
+0x4087 22 21 _ZNSt10bad_typeidD0Ev
+0x409d 19 18 _ZTSSt10bad_typeid
+0x40b0 10 9 liblog.so
+0x40ba 13 12 libstdc++.so
+0x40c7 8 7 libm.so
+0x40cf 8 7 libc.so
+0x40d7 9 8 libdl.so
+0x40e0 12 11 libmagic.so
 0x139ac 15 14 getPackageName
 0x139bb 21 20 ()Ljava/lang/String;
 0x139d0 17 16 java/lang/String
@@ -1613,17 +2046,15 @@ relro    no
 rpath    NONE
 subsys   linux
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   false
 linenum  true
 lsyms    true
 canary   false
-PIE      false
-RELROCS  true
-NX       true
+pie      false
+relrocs  true
+nx       true
 --------
 {
   "arch": "x86",
@@ -1646,17 +2077,15 @@ NX       true
   "rpath": "NONE",
   "subsys": "linux",
   "stripped": false,
-  "crypto": false,
   "havecode": true,
   "va": true,
-  "sanitiz": false,
   "static": false,
   "linenum": true,
   "lsyms": true,
   "canary": false,
-  "PIE": false,
-  "RELROCS": true,
-  "NX": true
+  "pie": false,
+  "relrocs": true,
+  "nx": true
 }
 --------
      vaddr      paddr     hvaddr      haddr type    
@@ -1681,7 +2110,7 @@ NX       true
 0x00000270   0x8 0x08048270   0x8   0x0 -r-- .rel.dyn           REL        alloc
 0x00000278  0x18 0x08048278  0x18   0x0 -r-- .rel.plt           REL        alloc
 0x00000290  0x23 0x08048290  0x23   0x0 -r-x .init              PROGBITS   alloc,execute
-0x000002c0  0x40 0x080482c0  0x40   0x0 -r-x .plt               PROGBITS   alloc,execute
+0x000002c0  0x40 0x080482c0  0x40   0x0 -r-x .plt               PLT        alloc,execute
 0x00000300 0x194 0x08048300 0x194   0x0 -r-x .text              PROGBITS   alloc,execute
 0x00000494  0x14 0x08048494  0x14   0x0 -r-x .fini              PROGBITS   alloc,execute
 0x000004a8  0x15 0x080484a8  0x15   0x0 -r-- .rodata            PROGBITS   alloc
@@ -1712,7 +2141,7 @@ NX       true
 0x00000000   0x0 0x00000000   0x0    0x4 -rw- GNU_STACK
 0x00000000  0x34 0x08048000  0x34    0x0 -rw- ehdr
 --------
-[{"name":"","size":0,"vsize":0,"perm":"----","type":"NULL","paddr":0,"vaddr":18446744073709551615},{"name":".interp","size":19,"vsize":19,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":308,"vaddr":134512948},{"name":".note.ABI-tag","size":32,"vsize":32,"perm":"-r--","type":"NOTE","flags":["alloc"],"paddr":328,"vaddr":134512968},{"name":".note.gnu.build-id","size":36,"vsize":36,"perm":"-r--","type":"NOTE","flags":["alloc"],"paddr":360,"vaddr":134513000},{"name":".gnu.hash","size":32,"vsize":32,"perm":"-r--","type":"GNU_HASH","flags":["alloc"],"paddr":396,"vaddr":134513036},{"name":".dynsym","size":80,"vsize":80,"perm":"-r--","type":"DYNSYM","flags":["alloc"],"paddr":428,"vaddr":134513068},{"name":".dynstr","size":74,"vsize":74,"perm":"-r--","type":"STRTAB","flags":["alloc"],"paddr":508,"vaddr":134513148},{"name":".gnu.version","size":10,"vsize":10,"perm":"-r--","type":"VERSYM","flags":["alloc"],"paddr":582,"vaddr":134513222},{"name":".gnu.version_r","size":32,"vsize":32,"perm":"-r--","type":"VERNEED","flags":["alloc"],"paddr":592,"vaddr":134513232},{"name":".rel.dyn","size":8,"vsize":8,"perm":"-r--","type":"REL","flags":["alloc"],"paddr":624,"vaddr":134513264},{"name":".rel.plt","size":24,"vsize":24,"perm":"-r--","type":"REL","flags":["alloc"],"paddr":632,"vaddr":134513272},{"name":".init","size":35,"vsize":35,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":656,"vaddr":134513296},{"name":".plt","size":64,"vsize":64,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":704,"vaddr":134513344},{"name":".text","size":404,"vsize":404,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":768,"vaddr":134513408},{"name":".fini","size":20,"vsize":20,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":1172,"vaddr":134513812},{"name":".rodata","size":21,"vsize":21,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1192,"vaddr":134513832},{"name":".eh_frame_hdr","size":44,"vsize":44,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1216,"vaddr":134513856},{"name":".eh_frame","size":176,"vsize":176,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1260,"vaddr":134513900},{"name":".init_array","size":4,"vsize":4,"perm":"-rw-","type":"INIT_ARRAY","flags":["write","alloc"],"paddr":1436,"vaddr":134518172},{"name":".fini_array","size":4,"vsize":4,"perm":"-rw-","type":"FINI_ARRAY","flags":["write","alloc"],"paddr":1440,"vaddr":134518176},{"name":".jcr","size":4,"vsize":4,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1444,"vaddr":134518180},{"name":".dynamic","size":232,"vsize":232,"perm":"-rw-","type":"DYNAMIC","flags":["write","alloc"],"paddr":1448,"vaddr":134518184},{"name":".got","size":4,"vsize":4,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1680,"vaddr":134518416},{"name":".got.plt","size":24,"vsize":24,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1684,"vaddr":134518420},{"name":".data","size":8,"vsize":8,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1708,"vaddr":134518444},{"name":".bss","size":0,"vsize":4,"perm":"-rw-","type":"NOBITS","flags":["write","alloc"],"paddr":1716,"vaddr":134518452},{"name":".comment","size":17,"vsize":17,"perm":"----","type":"PROGBITS","flags":["merge","strings"],"paddr":1716,"vaddr":18446744073709551615},{"name":".shstrtab","size":262,"vsize":262,"perm":"----","type":"STRTAB","paddr":1733,"vaddr":18446744073709551615},{"name":".symtab","size":1104,"vsize":1104,"perm":"----","type":"SYMTAB","paddr":3196,"vaddr":18446744073709551615},{"name":".strtab","size":599,"vsize":599,"perm":"----","type":"STRTAB","paddr":4300,"vaddr":18446744073709551615}]
+[{"name":"","size":0,"vsize":0,"perm":"----","type":"NULL","paddr":0,"vaddr":18446744073709551615},{"name":".interp","size":19,"vsize":19,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":308,"vaddr":134512948},{"name":".note.ABI-tag","size":32,"vsize":32,"perm":"-r--","type":"NOTE","flags":["alloc"],"paddr":328,"vaddr":134512968},{"name":".note.gnu.build-id","size":36,"vsize":36,"perm":"-r--","type":"NOTE","flags":["alloc"],"paddr":360,"vaddr":134513000},{"name":".gnu.hash","size":32,"vsize":32,"perm":"-r--","type":"GNU_HASH","flags":["alloc"],"paddr":396,"vaddr":134513036},{"name":".dynsym","size":80,"vsize":80,"perm":"-r--","type":"DYNSYM","flags":["alloc"],"paddr":428,"vaddr":134513068},{"name":".dynstr","size":74,"vsize":74,"perm":"-r--","type":"STRTAB","flags":["alloc"],"paddr":508,"vaddr":134513148},{"name":".gnu.version","size":10,"vsize":10,"perm":"-r--","type":"VERSYM","flags":["alloc"],"paddr":582,"vaddr":134513222},{"name":".gnu.version_r","size":32,"vsize":32,"perm":"-r--","type":"VERNEED","flags":["alloc"],"paddr":592,"vaddr":134513232},{"name":".rel.dyn","size":8,"vsize":8,"perm":"-r--","type":"REL","flags":["alloc"],"paddr":624,"vaddr":134513264},{"name":".rel.plt","size":24,"vsize":24,"perm":"-r--","type":"REL","flags":["alloc"],"paddr":632,"vaddr":134513272},{"name":".init","size":35,"vsize":35,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":656,"vaddr":134513296},{"name":".plt","size":64,"vsize":64,"perm":"-r-x","type":"PLT","flags":["alloc","execute"],"paddr":704,"vaddr":134513344},{"name":".text","size":404,"vsize":404,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":768,"vaddr":134513408},{"name":".fini","size":20,"vsize":20,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":1172,"vaddr":134513812},{"name":".rodata","size":21,"vsize":21,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1192,"vaddr":134513832},{"name":".eh_frame_hdr","size":44,"vsize":44,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1216,"vaddr":134513856},{"name":".eh_frame","size":176,"vsize":176,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1260,"vaddr":134513900},{"name":".init_array","size":4,"vsize":4,"perm":"-rw-","type":"INIT_ARRAY","flags":["write","alloc"],"paddr":1436,"vaddr":134518172},{"name":".fini_array","size":4,"vsize":4,"perm":"-rw-","type":"FINI_ARRAY","flags":["write","alloc"],"paddr":1440,"vaddr":134518176},{"name":".jcr","size":4,"vsize":4,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1444,"vaddr":134518180},{"name":".dynamic","size":232,"vsize":232,"perm":"-rw-","type":"DYNAMIC","flags":["write","alloc"],"paddr":1448,"vaddr":134518184},{"name":".got","size":4,"vsize":4,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1680,"vaddr":134518416},{"name":".got.plt","size":24,"vsize":24,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1684,"vaddr":134518420},{"name":".data","size":8,"vsize":8,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1708,"vaddr":134518444},{"name":".bss","size":0,"vsize":4,"perm":"-rw-","type":"NOBITS","flags":["write","alloc"],"paddr":1716,"vaddr":134518452},{"name":".comment","size":17,"vsize":17,"perm":"----","type":"PROGBITS","flags":["merge","strings"],"paddr":1716,"vaddr":18446744073709551615},{"name":".shstrtab","size":262,"vsize":262,"perm":"----","type":"STRTAB","paddr":1733,"vaddr":18446744073709551615},{"name":".symtab","size":1104,"vsize":1104,"perm":"----","type":"SYMTAB","paddr":3196,"vaddr":18446744073709551615},{"name":".strtab","size":599,"vsize":599,"perm":"----","type":"STRTAB","paddr":4300,"vaddr":18446744073709551615}]
 --------
 [{"name":"PHDR","size":256,"vsize":256,"perm":"-r-x","paddr":52,"vaddr":134512692,"align":4},{"name":"INTERP","size":19,"vsize":19,"perm":"-r--","paddr":308,"vaddr":134512948},{"name":"LOAD0","size":1436,"vsize":1436,"perm":"-r-x","paddr":0,"vaddr":134512640,"align":4096},{"name":"LOAD1","size":280,"vsize":284,"perm":"-rw-","paddr":1436,"vaddr":134518172,"align":4096},{"name":"DYNAMIC","size":232,"vsize":232,"perm":"-rw-","paddr":1448,"vaddr":134518184,"align":4},{"name":"NOTE","size":68,"vsize":68,"perm":"-r--","paddr":328,"vaddr":134512968,"align":4},{"name":"GNU_EH_FRAME","size":44,"vsize":44,"perm":"-r--","paddr":1216,"vaddr":134513856,"align":4},{"name":"GNU_STACK","size":0,"vsize":0,"perm":"-rw-","paddr":0,"vaddr":0,"align":4},{"name":"ehdr","size":52,"vsize":52,"perm":"-rw-","paddr":0,"vaddr":134512640}]
 --------
@@ -2960,23 +3389,47 @@ iz
 EOF
 EXPECT=<<EOF
 -- default --
-     paddr      vaddr len size section type  string       
-----------------------------------------------------------
+     paddr      vaddr len size section type  string            
+---------------------------------------------------------------
+0x000001fd 0x080481fd   9    9 .dynstr ascii libc.so.6
+0x00000207 0x08048207  14   14 .dynstr ascii _IO_stdin_used
+0x00000216 0x08048216   4    4 .dynstr ascii puts
+0x0000021b 0x0804821b  17   17 .dynstr ascii __libc_start_main
+0x0000022d 0x0804822d  14   14 .dynstr ascii __gmon_start__
+0x0000023c 0x0804823c   9    9 .dynstr ascii GLIBC_2.0
 0x000004b0 0x080484b0  12   12 .rodata ascii Hello world!
 -- geq 12 --
-     paddr      vaddr len size section type  string       
-----------------------------------------------------------
+     paddr      vaddr len size section type  string            
+---------------------------------------------------------------
+0x00000207 0x08048207  14   14 .dynstr ascii _IO_stdin_used
+0x0000021b 0x0804821b  17   17 .dynstr ascii __libc_start_main
+0x0000022d 0x0804822d  14   14 .dynstr ascii __gmon_start__
 0x000004b0 0x080484b0  12   12 .rodata ascii Hello world!
 -- geq 13 --
-paddr vaddr len size section type string 
------------------------------------------
+     paddr      vaddr len size section type  string            
+---------------------------------------------------------------
+0x00000207 0x08048207  14   14 .dynstr ascii _IO_stdin_used
+0x0000021b 0x0804821b  17   17 .dynstr ascii __libc_start_main
+0x0000022d 0x0804822d  14   14 .dynstr ascii __gmon_start__
 -- geq 0 --
-     paddr      vaddr len size section type  string       
-----------------------------------------------------------
+     paddr      vaddr len size section type  string            
+---------------------------------------------------------------
+0x000001fd 0x080481fd   9    9 .dynstr ascii libc.so.6
+0x00000207 0x08048207  14   14 .dynstr ascii _IO_stdin_used
+0x00000216 0x08048216   4    4 .dynstr ascii puts
+0x0000021b 0x0804821b  17   17 .dynstr ascii __libc_start_main
+0x0000022d 0x0804822d  14   14 .dynstr ascii __gmon_start__
+0x0000023c 0x0804823c   9    9 .dynstr ascii GLIBC_2.0
 0x000004b0 0x080484b0  12   12 .rodata ascii Hello world!
 -- small buffer 12 --
-     paddr      vaddr len size section type  string       
-----------------------------------------------------------
+     paddr      vaddr len size section type  string            
+---------------------------------------------------------------
+0x000001fd 0x080481fd   9    9 .dynstr ascii libc.so.6
+0x00000207 0x08048207  14   14 .dynstr ascii _IO_stdin_used
+0x00000216 0x08048216   4    4 .dynstr ascii puts
+0x0000021b 0x0804821b  17   17 .dynstr ascii __libc_start_main
+0x0000022d 0x0804822d  14   14 .dynstr ascii __gmon_start__
+0x0000023c 0x0804823c   9    9 .dynstr ascii GLIBC_2.0
 0x000004b0 0x080484b0  12   12 .rodata ascii Hello world!
 EOF
 RUN
@@ -3090,17 +3543,15 @@ relro    no
 rpath    NONE
 subsys   linux
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   false
 linenum  true
 lsyms    true
 canary   false
-PIE      false
-RELROCS  true
-NX       true
+pie      false
+relrocs  true
+nx       true
 ---
     offset size arch bits machine                 big_endian 
 -------------------------------------------------------------
@@ -3166,17 +3617,15 @@ relro    no
 rpath    NONE
 subsys   linux
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   false
 linenum  true
 lsyms    true
 canary   false
-PIE      false
-RELROCS  true
-NX       true
+pie      false
+relrocs  true
+nx       true
 ---
      paddr  size      vaddr vsize align perm name               type       flags         
 -----------------------------------------------------------------------------------------
@@ -3192,7 +3641,7 @@ NX       true
 0x00000348  0x18 0x00400348  0x18   0x0 -r-- .rela.dyn          RELA       alloc
 0x00000360  0x48 0x00400360  0x48   0x0 -r-- .rela.plt          RELA       alloc
 0x000003a8  0x1a 0x004003a8  0x1a   0x0 -r-x .init              PROGBITS   alloc,execute
-0x000003d0  0x40 0x004003d0  0x40   0x0 -r-x .plt               PROGBITS   alloc,execute
+0x000003d0  0x40 0x004003d0  0x40   0x0 -r-x .plt               PLT        alloc,execute
 0x00000410 0x1a4 0x00400410 0x1a4   0x0 -r-x .text              PROGBITS   alloc,execute
 0x000005b4   0x9 0x004005b4   0x9   0x0 -r-x .fini              PROGBITS   alloc,execute
 0x000005c0  0x10 0x004005c0  0x10   0x0 -r-- .rodata            PROGBITS   alloc
@@ -3300,12 +3749,27 @@ nth      paddr      vaddr bind   type   size lib name
   2 0x000003f0 0x004003f0 GLOBAL FUNC     16     imp.__libc_start_main
   3 0x00000400 0x00400400 WEAK   NOTYPE   16     imp.__gmon_start__
 ---
-     paddr      vaddr len size section type  string      
----------------------------------------------------------
+     paddr      vaddr len size section type  string            
+---------------------------------------------------------------
+0x000002e1 0x004002e1  14   15 .dynstr ascii __gmon_start__
+0x000002f0 0x004002f0   9   10 .dynstr ascii libc.so.6
+0x000002fa 0x004002fa   4    5 .dynstr ascii puts
+0x000002ff 0x004002ff  17   18 .dynstr ascii __libc_start_main
+0x00000311 0x00400311  11   12 .dynstr ascii GLIBC_2.2.5
 0x000005c4 0x004005c4  11   12 .rodata ascii Hello World
 ---
+0x4002e1 15 14 __gmon_start__
+0x4002f0 10 9 libc.so.6
+0x4002fa 5 4 puts
+0x4002ff 18 17 __libc_start_main
+0x400311 12 11 GLIBC_2.2.5
 0x4005c4 12 11 Hello World
 ---
+__gmon_start__
+libc.so.6
+puts
+__libc_start_main
+GLIBC_2.2.5
 Hello World
 ---
 0x4002fa 5 4 puts
@@ -3561,8 +4025,26 @@ o--
 rm .tmp/strenc-bin
 EOF
 EXPECT=<<EOF
+0x000001fd 0x080481fd   9   10 .dynstr ascii libc.so.6
+0x00000207 0x08048207  14   15 .dynstr ascii _IO_stdin_used
+0x00000216 0x08048216   4    5 .dynstr ascii puts
+0x0000021b 0x0804821b  17   18 .dynstr ascii __libc_start_main
+0x0000022d 0x0804822d  14   15 .dynstr ascii __gmon_start__
+0x0000023c 0x0804823c   9   10 .dynstr ascii GLIBC_2.0
 0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
+0x000001fd 0x080481fd   9   10 .dynstr ascii libc.so.6
+0x00000207 0x08048207  14   15 .dynstr ascii _IO_stdin_used
+0x00000216 0x08048216   4    5 .dynstr ascii puts
+0x0000021b 0x0804821b  17   18 .dynstr ascii __libc_start_main
+0x0000022d 0x0804822d  14   15 .dynstr ascii __gmon_start__
+0x0000023c 0x0804823c   9   10 .dynstr ascii GLIBC_2.0
 0x000004b4 0x080484b4   8    9 .rodata ascii abcdefgh
+0x000001fd 0x080481fd   9    9 .dynstr utf8 libc.so.6
+0x00000207 0x08048207  14   14 .dynstr utf8 _IO_stdin_used
+0x00000216 0x08048216   4    4 .dynstr utf8 puts
+0x0000021b 0x0804821b  17   17 .dynstr utf8 __libc_start_main
+0x0000022d 0x0804822d  14   14 .dynstr utf8 __gmon_start__
+0x0000023c 0x0804823c   9    9 .dynstr utf8 GLIBC_2.0
 0x000004b4 0x080484b4   8    8 .rodata utf8 abcdefgh
 EOF
 RUN
@@ -3580,7 +4062,7 @@ EOF
 EXPECT=<<EOF
 no
 ---
-elf_header.format=?[2]E[2]E[4]ExxxxN2N2N2N2N2N2 (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
+elf_header.format=?[2]E[2]E[4]En4n4n4n4n2n2n2n2n2n2 (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
 elf_header.intrp=/lib/ld-linux.so.2
 elf_header.intrp_addr=0x134
 elf_header.intrp_size=0x13
@@ -3830,7 +4312,7 @@ EXPECT=<<EOF
 0x00000304   0x8 0x08048304   0x8   0x0 -r-- .rel.dyn       REL      alloc         2.75000000
 0x0000030c  0x30 0x0804830c  0x30   0x0 -r-- .rel.plt       REL      alloc         2.94082791
 0x0000033c  0x17 0x0804833c  0x17   0x0 -r-x .init          PROGBITS alloc,execute 3.46241535
-0x00000354  0x70 0x08048354  0x70   0x0 -r-x .plt           PROGBITS alloc,execute 3.51876869
+0x00000354  0x70 0x08048354  0x70   0x0 -r-x .plt           PLT      alloc,execute 3.51876869
 0x000003d0 0x274 0x080483d0 0x274   0x0 -r-x .text          PROGBITS alloc,execute 5.76534324
 0x00000644  0x1a 0x08048644  0x1a   0x0 -r-x .fini          PROGBITS alloc,execute 3.79621760
 0x00000660  0x55 0x08048660  0x55   0x0 -r-- .rodata        PROGBITS alloc         4.59175306
@@ -3896,8 +4378,6 @@ nth      paddr      vaddr bind   type   size lib name
 0x00000034 288 segment.PHDR
 0x00000154 19 segment.INTERP
 0x00000168 68 segment.NOTE
-0x00000364 72 section..rel.dyn
-0x000003ac 16 section..rel.plt
 0x000003f0 16 sym.imp.puts
 0x00000400 16 sym.imp.__libc_start_main
 0x00000420 1 entry0
@@ -3915,7 +4395,6 @@ nth      paddr      vaddr bind   type   size lib name
 0x00001ff0 4 reloc.__gmon_start
 0x00001ff8 4 reloc._Jv_RegisterClasses
 0x00001ffc 4 reloc._ITM_registerTMCloneTable
-0x00002000 0 section..got.plt
 0x0000200c 4 reloc.puts
 0x00002010 4 reloc.__libc_start_main
 0x00002028 4 reloc.target.puts
@@ -4222,79 +4701,133 @@ imp.exit
 EOF
 RUN
 
-NAME=iRj
+NAME=iR
 FILE=bins/pe/standard.exe
-CMDS=iRj sha1 md5~{}
+CMDS=<<EOF
+iR sha1 md5
+iRj sha1 md5~{}
+iRt sha1 md5
+EOF
 EXPECT=<<EOF
+Resource 0
+  name: 1576
+  timestamp: Thu Jan  1 00:00:00 1970 UTC
+  vaddr: 0x00401180
+  paddr: 0x00000380
+  size: 5.5K
+  type: ICON
+  language: LANG_NEUTRAL
+  sha1: 0641e148e71cb823888894028e5ba9f203181814
+  md5: 87507b293740fb9e8faee28a69237940
+Resource 1
+  name: 10
+  timestamp: Thu Jan  1 00:00:00 1970 UTC
+  vaddr: 0x00402a10
+  paddr: 0x00001c10
+  size: 76
+  type: STRING
+  language: LANG_NEUTRAL
+  sha1: 86abc7b4e5b564362fb7fb3e1645aa3f2fd8b8da
+  md5: db3c483da9950c7bd46844f03cbd6887
+Resource 2
+  name: 788
+  timestamp: Thu Jan  1 00:00:00 1970 UTC
+  vaddr: 0x004027b0
+  paddr: 0x000019b0
+  size: 20
+  type: GROUP_ICON
+  language: LANG_NEUTRAL
+  sha1: 7c25f71d5507224c737aca686cbcf4d9a24a5aae
+  md5: e4211b2ef5cc41f9f1c9e676ef9a69be
+Resource 3
+  name: 1
+  timestamp: Thu Jan  1 00:00:00 1970 UTC
+  vaddr: 0x004027d0
+  paddr: 0x000019d0
+  size: 452
+  type: VERSION
+  language: LANG_NEUTRAL
+  sha1: 7a09fe300081b9cd92bc40261c95f65f23f95dde
+  md5: d8753c8132ba58cc148c14347def9ef4
+Resource 4
+  name: 1
+  timestamp: Thu Jan  1 00:00:00 1970 UTC
+  vaddr: 0x004029a0
+  paddr: 0x00001ba0
+  size: 74
+  type: MANIFEST
+  language: LANG_NEUTRAL
+  sha1: 3d743931c2fe134aee14483fac1625910289c29e
+  md5: a8ce572d4e2ecee820d55df5698c690f
 [
   {
     "name": "1576",
     "index": 0,
     "type": "ICON",
     "vaddr": 4198784,
+    "paddr": 896,
     "size": 5672,
     "lang": "LANG_NEUTRAL",
     "timestamp": "Thu Jan  1 00:00:00 1970 UTC",
-    "sha1": "ead6c27941988470ea241780d5f03bda35ffb023",
-    "md5": "4ca2df93b0862cc601fb4c5df46722aa"
+    "sha1": "0641e148e71cb823888894028e5ba9f203181814",
+    "md5": "87507b293740fb9e8faee28a69237940"
   },
   {
     "name": "10",
     "index": 1,
     "type": "STRING",
     "vaddr": 4205072,
+    "paddr": 7184,
     "size": 76,
     "lang": "LANG_NEUTRAL",
     "timestamp": "Thu Jan  1 00:00:00 1970 UTC",
-    "sha1": "ece05370137621ead05fcf468ba546e2dab83c7a",
-    "md5": "e6b62b76fb2eb2a0e0adde0c067da680"
+    "sha1": "86abc7b4e5b564362fb7fb3e1645aa3f2fd8b8da",
+    "md5": "db3c483da9950c7bd46844f03cbd6887"
   },
   {
     "name": "788",
     "index": 2,
     "type": "GROUP_ICON",
     "vaddr": 4204464,
+    "paddr": 6576,
     "size": 20,
     "lang": "LANG_NEUTRAL",
     "timestamp": "Thu Jan  1 00:00:00 1970 UTC",
-    "sha1": "6768033e216468247bd031a0a2d9876d79818f8f",
-    "md5": "441018525208457705bf09a8ee3c1093"
+    "sha1": "7c25f71d5507224c737aca686cbcf4d9a24a5aae",
+    "md5": "e4211b2ef5cc41f9f1c9e676ef9a69be"
   },
   {
     "name": "1",
     "index": 3,
     "type": "VERSION",
     "vaddr": 4204496,
+    "paddr": 6608,
     "size": 452,
     "lang": "LANG_NEUTRAL",
     "timestamp": "Thu Jan  1 00:00:00 1970 UTC",
-    "sha1": "af9d0faa532f99a1a7e5b8f6bbf5ceaef55e38b6",
-    "md5": "3ce9d74193d28338494362767873ba7b"
+    "sha1": "7a09fe300081b9cd92bc40261c95f65f23f95dde",
+    "md5": "d8753c8132ba58cc148c14347def9ef4"
   },
   {
     "name": "1",
     "index": 4,
     "type": "MANIFEST",
     "vaddr": 4204960,
+    "paddr": 7072,
     "size": 74,
     "lang": "LANG_NEUTRAL",
     "timestamp": "Thu Jan  1 00:00:00 1970 UTC",
-    "sha1": "1dcc0c704303ccc1729abd618f490073331e8b22",
-    "md5": "aa6672fe9e8426f8dd570c81095e1476"
+    "sha1": "3d743931c2fe134aee14483fac1625910289c29e",
+    "md5": "a8ce572d4e2ecee820d55df5698c690f"
   }
 ]
-EOF
-RUN
-
-NAME=iRt
-FILE=bins/pe/standard.exe
-CMDS=iRt:quiet sha1 md5
-EXPECT=<<EOF
-    0 1576 ICON       0x00401180 0x1628 LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC ead6c27941988470ea241780d5f03bda35ffb023 4ca2df93b0862cc601fb4c5df46722aa
-    1 10   STRING     0x00402a10   0x4c LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC ece05370137621ead05fcf468ba546e2dab83c7a e6b62b76fb2eb2a0e0adde0c067da680
-    2 788  GROUP_ICON 0x004027b0   0x14 LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC 6768033e216468247bd031a0a2d9876d79818f8f 441018525208457705bf09a8ee3c1093
-    3 1    VERSION    0x004027d0  0x1c4 LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC af9d0faa532f99a1a7e5b8f6bbf5ceaef55e38b6 3ce9d74193d28338494362767873ba7b
-    4 1    MANIFEST   0x004029a0   0x4a LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC 1dcc0c704303ccc1729abd618f490073331e8b22 aa6672fe9e8426f8dd570c81095e1476
+index name type            vaddr      paddr   size lang         timestamp                    sha1                                     md5                              
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    0 1576 ICON       0x00401180 0x00000380 0x1628 LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC 0641e148e71cb823888894028e5ba9f203181814 87507b293740fb9e8faee28a69237940
+    1 10   STRING     0x00402a10 0x00001c10   0x4c LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC 86abc7b4e5b564362fb7fb3e1645aa3f2fd8b8da db3c483da9950c7bd46844f03cbd6887
+    2 788  GROUP_ICON 0x004027b0 0x000019b0   0x14 LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC 7c25f71d5507224c737aca686cbcf4d9a24a5aae e4211b2ef5cc41f9f1c9e676ef9a69be
+    3 1    VERSION    0x004027d0 0x000019d0  0x1c4 LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC 7a09fe300081b9cd92bc40261c95f65f23f95dde d8753c8132ba58cc148c14347def9ef4
+    4 1    MANIFEST   0x004029a0 0x00001ba0   0x4a LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC 3d743931c2fe134aee14483fac1625910289c29e a8ce572d4e2ecee820d55df5698c690f
 EOF
 RUN
 
@@ -4577,7 +5110,7 @@ CMDS=<<EOF
 izj~{[0].section}
 EOF
 EXPECT=<<EOF
-.rodata
+.dynstr
 EOF
 RUN
 
@@ -4754,11 +5287,27 @@ iz
 iz @e:search.str.min_length=2
 EOF
 EXPECT=<<EOF
-     paddr      vaddr len size section type  string 
-----------------------------------------------------
+     paddr      vaddr len size section type  string                      
+-------------------------------------------------------------------------
+0x00000471 0x00000471  17   18 .dynstr ascii __libc_start_main
+0x00000483 0x00000483  14   15 .dynstr ascii __cxa_finalize
+0x00000492 0x00000492   9   10 .dynstr ascii libc.so.6
+0x0000049c 0x0000049c  11   12 .dynstr ascii GLIBC_2.2.5
+0x000004a8 0x000004a8  10   11 .dynstr ascii GLIBC_2.34
+0x000004b3 0x000004b3  27   28 .dynstr ascii _ITM_deregisterTMCloneTable
+0x000004cf 0x000004cf  14   15 .dynstr ascii __gmon_start__
+0x000004de 0x000004de  25   26 .dynstr ascii _ITM_registerTMCloneTable
 0x0000200d 0x0000200d   4    5 .rodata ascii 4444
-     paddr      vaddr len size section type  string 
-----------------------------------------------------
+     paddr      vaddr len size section type  string                      
+-------------------------------------------------------------------------
+0x00000471 0x00000471  17   18 .dynstr ascii __libc_start_main
+0x00000483 0x00000483  14   15 .dynstr ascii __cxa_finalize
+0x00000492 0x00000492   9   10 .dynstr ascii libc.so.6
+0x0000049c 0x0000049c  11   12 .dynstr ascii GLIBC_2.2.5
+0x000004a8 0x000004a8  10   11 .dynstr ascii GLIBC_2.34
+0x000004b3 0x000004b3  27   28 .dynstr ascii _ITM_deregisterTMCloneTable
+0x000004cf 0x000004cf  14   15 .dynstr ascii __gmon_start__
+0x000004de 0x000004de  25   26 .dynstr ascii _ITM_registerTMCloneTable
 0x00002006 0x00002006   2    3 .rodata ascii 22
 0x00002009 0x00002009   3    4 .rodata ascii 333
 0x0000200d 0x0000200d   4    5 .rodata ascii 4444

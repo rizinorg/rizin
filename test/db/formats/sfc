@@ -2,9 +2,13 @@ NAME=snes speed_test_v51
 FILE=bins/snes/speed_test_v51.sfc
 CMDS=<<EOF
 iI
+echo ---
 iH
+echo ---
 im
+echo ---
 iS
+echo ---
 is
 EOF
 EXPECT=<<EOF
@@ -15,7 +19,6 @@ baddr    ----------
 binsz    0x00010000
 bintype  N/A
 bits     16
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -26,23 +29,24 @@ intrp    N/A
 laddr    0x00000000
 lang     N/A
 machine  Super NES / Super Famicom
+maxopsz  4
 minopsz  1
 os       snes
 cc       N/A
+pcalign  1
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
+---
 snes_rom:
   game_title: "SA-1 Support Test    "
   speed: "slow"
@@ -73,6 +77,7 @@ snes_rom:
       reset: 0x8000
       irq: 0x8347
 
+---
 name         size    address flags mirror    
 ---------------------------------------------
 SRAM_70   0x10000 0x00700000 rwx   
@@ -599,12 +604,14 @@ ROM_fc     0x8000 0x00fc8000 rwx
 ROM_7c     0x8000 0x007c8000 rwx   ROM_fc
 ROM_fd     0x8000 0x00fd8000 rwx   
 ROM_7d     0x8000 0x007d8000 rwx   ROM_fd
+---
      paddr   size      vaddr  vsize align perm name      type flags 
 --------------------------------------------------------------------
 0x00000000 0x8000 0x00808000 0x8000   0x0 -r-x rom_80         
 0x00008000 0x8000 0x00818000 0x8000   0x0 -r-x rom_81         
 0x00000000 0x8000 0x00008000 0x8000   0x0 -r-x mirror_00      
 0x00008000 0x8000 0x00018000 0x8000   0x0 -r-x mirror_01      
+---
 nth              paddr      vaddr bind type size lib name                  
 ---------------------------------------------------------------------------
   0         0x00000347 0x00008347 NONE NONE    0     cop_vector_native
@@ -624,6 +631,7 @@ NAME=snes cx4test
 FILE=bins/snes/cx4test.sfc
 CMDS=<<EOF
 iI
+echo ---
 iH
 EOF
 EXPECT=<<EOF
@@ -634,7 +642,6 @@ baddr    ----------
 binsz    0x00008000
 bintype  N/A
 bits     16
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -645,23 +652,24 @@ intrp    N/A
 laddr    0x00000000
 lang     N/A
 machine  Super NES / Super Famicom
+maxopsz  4
 minopsz  1
 os       snes
 cc       N/A
+pcalign  1
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
+---
 snes_rom:
   game_title: "CX4 TEST PROGRAM"
   speed: "slow"

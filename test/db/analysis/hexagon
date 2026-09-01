@@ -1518,7 +1518,7 @@ EXPECT=<<EOF
 |   R4 = add(R4,##0x4)
 |   P0 = cmp.gtu(R5,##0x3f)
 \   if (P0.new) R16 = ##0xb
-0x53c8 (seq empty (set jump_flag false) (set jump_target (bv 32 0xffffffff)) (set s (bv 32 0x4)) (set R4_tmp (cast 32 false (cast 32 false (+ (var R4) (var s))))) (set u (bv 32 0x3f)) (set P0_tmp (cast 8 false (cast 8 (msb (ite (! (ule (cast 32 false (var R5)) (var u))) (bv 32 0xff) (bv 32 0x0))) (ite (! (ule (cast 32 false (var R5)) (var u))) (bv 32 0xff) (bv 32 0x0))))) (set s (bv 32 0xb)) (branch (! (is_zero (& (cast 32 (msb (var P0_tmp)) (var P0_tmp)) (bv 32 0x1)))) (set R16_tmp (cast 32 false (cast 32 false (var s)))) nop) (set r (bv 32 0xffffffec)) (branch (! (! (is_zero (& (cast 32 (msb (var P0_tmp)) (var P0_tmp)) (bv 32 0x1))))) (seq (set r (& (var r) (bv 32 0xfffffffc))) (set jump_flag true) (set jump_target (+ (bv 32 0x53c8) (cast 32 false (var r))))) empty) empty (set R4 (var R4_tmp)) (set R16 (var R16_tmp)) (set P0 (var P0_tmp)) (branch (var jump_flag) (jmp (var jump_target)) (jmp (bv 32 0x53d8))))
+0x53c8 (seq empty (set jump_flag_0 false) (set jump_flag_1 false) (set s (bv 32 0x4)) (set R4_tmp (cast 32 false (cast 32 false (+ (var R4) (var s))))) (set u (bv 32 0x3f)) (set P0_tmp (cast 8 false (cast 8 (msb (ite (! (ule (cast 32 false (var R5)) (var u))) (bv 32 0xff) (bv 32 0x0))) (ite (! (ule (cast 32 false (var R5)) (var u))) (bv 32 0xff) (bv 32 0x0))))) (set s (bv 32 0xb)) (branch (! (is_zero (& (cast 32 (msb (var P0_tmp)) (var P0_tmp)) (bv 32 0x1)))) (set R16_tmp (cast 32 false (cast 32 false (var s)))) nop) (set r (bv 32 0xffffffec)) (branch (! (! (is_zero (& (cast 32 (msb (var P0_tmp)) (var P0_tmp)) (bv 32 0x1))))) (seq (set r (& (var r) (bv 32 0xfffffffc))) (set jump_flag_0 true)) empty) (set jump_target_0 (+ (bv 32 0x53c8) (cast 32 false (var r)))) empty (set R4 (var R4_tmp)) (set R16 (var R16_tmp)) (set P0 (var P0_tmp)) (branch (var jump_flag_0) (jmp (var jump_target_0)) (jmp (bv 32 0x53d8))))
 EOF
 RUN
 
@@ -1540,7 +1540,7 @@ EXPECT=<<EOF
 |   R4 = add(R4,##0x4)
 |   P0 = cmp.gtu(R5,##0x3f)
 \   if (P0.new) R16 = ##0xb
-0x53c8 (seq empty (set jump_flag false) (set jump_target (bv 32 0xffffffff)) (set s (bv 32 0x4)) (set R4_tmp (cast 32 false (cast 32 false (+ (var R4) (var s))))) (set u (bv 32 0x3f)) (set P0_tmp (cast 8 false (cast 8 (msb (ite (! (ule (cast 32 false (var R5)) (var u))) (bv 32 0xff) (bv 32 0x0))) (ite (! (ule (cast 32 false (var R5)) (var u))) (bv 32 0xff) (bv 32 0x0))))) (set s (bv 32 0xb)) (branch (! (is_zero (& (cast 32 (msb (var P0_tmp)) (var P0_tmp)) (bv 32 0x1)))) (set R16_tmp (cast 32 false (cast 32 false (var s)))) nop) (set r (bv 32 0xffffffec)) (branch (! (! (is_zero (& (cast 32 (msb (var P0_tmp)) (var P0_tmp)) (bv 32 0x1))))) (seq (set r (& (var r) (bv 32 0xfffffffc))) (set jump_flag true) (set jump_target (+ (bv 32 0x53c8) (cast 32 false (var r))))) empty) empty (set R4 (var R4_tmp)) (set R16 (var R16_tmp)) (set P0 (var P0_tmp)) (branch (var jump_flag) (jmp (var jump_target)) (jmp (bv 32 0x53d8))))
+0x53c8 (seq empty (set jump_flag_0 false) (set jump_flag_1 false) (set s (bv 32 0x4)) (set R4_tmp (cast 32 false (cast 32 false (+ (var R4) (var s))))) (set u (bv 32 0x3f)) (set P0_tmp (cast 8 false (cast 8 (msb (ite (! (ule (cast 32 false (var R5)) (var u))) (bv 32 0xff) (bv 32 0x0))) (ite (! (ule (cast 32 false (var R5)) (var u))) (bv 32 0xff) (bv 32 0x0))))) (set s (bv 32 0xb)) (branch (! (is_zero (& (cast 32 (msb (var P0_tmp)) (var P0_tmp)) (bv 32 0x1)))) (set R16_tmp (cast 32 false (cast 32 false (var s)))) nop) (set r (bv 32 0xffffffec)) (branch (! (! (is_zero (& (cast 32 (msb (var P0_tmp)) (var P0_tmp)) (bv 32 0x1))))) (seq (set r (& (var r) (bv 32 0xfffffffc))) (set jump_flag_0 true)) empty) (set jump_target_0 (+ (bv 32 0x53c8) (cast 32 false (var r)))) empty (set R4 (var R4_tmp)) (set R16 (var R16_tmp)) (set P0 (var P0_tmp)) (branch (var jump_flag_0) (jmp (var jump_target_0)) (jmp (bv 32 0x53d8))))
 EOF
 RUN
 
@@ -1568,10 +1568,10 @@ EXPECT=<<EOF
 0x8000040
 (seq
   empty
-  (set jump_flag
+  (set jump_flag_0
     false)
-  (set jump_target
-    (bv 32 0xffffffff))
+  (set jump_flag_1
+    false)
   (set u
     (bv 32 0x8))
   (set EA
@@ -1622,13 +1622,38 @@ EXPECT=<<EOF
     (var R29_tmp))
   (set R30
     (var R30_tmp))
-  (branch
-    (var jump_flag)
-    (jmp
-      (var jump_target))
-    (jmp
-      (bv 32 0x8000044))))
+  (jmp
+    (bv 32 0x8000044)))
 [   allocframe(SP,#0x8):raw
 EOF
 EXPECT_ERR=
+RUN
+
+NAME=hexagon asm token patterns
+FILE==
+ARGS=-a hexagon
+CMDS=<<EOF
+wx 2040006400401d67104000672a4002673c40006d0a408c9e6ed0879a14c032630040000005ff3f8c0fe0ffa602ffe0a610dae0a6e7401f92e0ea0892
+pi 16
+EOF
+EXPECT=<<EOF
+?   CSwi(R0)
+?   SGP0 = SP
+?   EVB = R0
+?   ISDBEN = R2
+?   S61:60 = R1:0
+?   R11:10 = memb_fifo(R12++M0:brev)
+?   R15:14 = memb_fifo(R7=##0x3)
+[   C21:20 = R19:18
+/   immext(##0x0)
+\   R5 = add(clb(LR),#0x3f)
+[   mxmem(LR,R0):after:retain.uh = acc:2x1
+[   mxmem(R0,LR):before:sat.uh = acc:2x1
+[   cvt.hf = acc(R0)
+/   activation.f8 = mxmem(LR,R0):above
+\   weight.b = mxmem(R8,R10)
+[   invalid
+EOF
+EXPECT_ERR=<<EOF
+EOF
 RUN

@@ -341,7 +341,7 @@ EXPECT=<<EOF
         ,=< 0x00005b02      7d0a           jnl   0x5b0e                ; rip=0x5b0e -> 0x8d4890f4 ; likely
        ,==< 0x00005b04      7f08           jnle  0x5b0e                ; rip=0x5b0e -> 0x8d4890f4 ; likely
       ,===< 0x00005b06      eb00           jmp   0x5b08                ; rip=0x5b08 -> 0xc30a15ff
-      `---> 0x00005b08      ff150ac30100   call  qword [reloc.__libc_start_main] ; [reloc.__libc_start_main:8]=0x23708 reloc.target.__libc_start_main ; rsp=0xfffffffffffffff8 ; rip=0x23708 -> 0x464c457f reloc.target.__libc_start_main
+      `---> 0x00005b08      ff150ac30100   call  qword [reloc.__libc_start_main] ; [0x21e18:8]=0x23708 reloc.target.__libc_start_main ; rsp=0xfffffffffffffff8 ; rip=0x23708 -> 0x464c457f reloc.target.__libc_start_main
 EOF
 RUN
 
@@ -474,68 +474,68 @@ EXPECT=<<EOF
   {
     "offset": 16947,
     "arrow": 16952,
-    "text": "|       ,=< 0x00004233      jnle  0x4238"
+    "text": "| 0x00004233      jnle  0x4238"
   },
   {
     "offset": 16949,
-    "text": "|       |   |"
+    "text": "| |"
   },
   {
     "offset": 16949,
-    "text": "|       |   0x00004235      test  rax, rax"
+    "text": "| 0x00004235      test  rax, rax"
   },
   {
     "offset": 16952,
     "arrow": 16963,
-    "text": "|       |   |"
+    "text": "| |"
   },
   {
     "offset": 16952,
     "arrow": 16963,
-    "text": "|      ,`-> 0x00004238      jz    0x4243"
+    "text": "| 0x00004238      jz    0x4243"
   },
   {
     "offset": 16954,
-    "text": "|      |    |"
+    "text": "| |"
   },
   {
     "offset": 16954,
-    "text": "|      |    0x0000423a      cmp   byte [rax], 0x00"
+    "text": "| 0x0000423a      cmp   byte [rax], 0x00"
   },
   {
     "offset": 16957,
     "arrow": 19228,
-    "text": "|      |    |"
+    "text": "| |"
   },
   {
     "offset": 16957,
     "arrow": 19228,
-    "text": "|     ,=.-> 0x0000423d      jnz   0x4b1c"
+    "text": "| 0x0000423d      jnz   0x4b1c"
   },
   {
     "offset": 16963,
-    "text": "|     ||:   |"
+    "text": "| |"
   },
   {
     "offset": 16963,
-    "text": "|     |`--> 0x00004243      lea   r12, qword [var_58h]"
+    "text": "| 0x00004243      lea   r12, qword [var_58h]"
   },
   {
     "offset": 16968,
-    "text": "|     | :   0x00004248      xor   eax, eax"
+    "text": "| 0x00004248      xor   eax, eax"
   },
   {
     "offset": 16970,
     "arrow": 16957,
-    "text": "|     | `=< 0x0000424a      jb    0x423d"
+    "text": "| 0x0000424a      jb    0x423d"
   },
   {
     "offset": 16972,
-    "text": "|     |     |"
+    "text": "| |"
   },
   {
     "offset": 16972,
-    "text": "|     |     0x0000424c      nop"
+    "text": "| 0x0000424c      nop"
   }
 ]
 EOF
@@ -544,7 +544,7 @@ RUN
 NAME=flag-func_sig order
 FILE=bins/elf/abcde-qt32
 CMDS=<<EOF
-e asm.demangle=true
+e asm.flags.real=true
 e asm.bytes=false
 e asm.sub.names=false
 e asm.sub.jmp=false
@@ -946,5 +946,46 @@ EXPECT=<<EOF
 |           0x0000001b      f64.const 3.141590
 |           0x00000024      f64.add
 \           0x00000025      end
+EOF
+RUN
+
+NAME=asm.flags.real -- section flag at imported func; no dup cmt flag if color
+FILE=bins/elf/_Exit_0x91
+CMDS=<<EOF
+aa
+(pdcall real?; e asm.flags.real=${real?}; pd 1 @ $$+`aos 4`)
+e scr.color=0
+.(pdcall false)
+.(pdcall true)
+echo
+e scr.color=1
+.(pdcall false)
+.(pdcall true)
+EOF
+EXPECT=<<EOF
+\           0x0000103d      call  sym.imp._Exit                        ; void _Exit(int status)
+\           0x0000103d      call  _Exit                                ; void _Exit(int status)
+
+[36m\[0m           [32m0x0000103d[0m      [1;92mcall[0m[37m  [0m[37msym[0m[37m.[0m[37mimp[0m[37m.[0m[37m_[0m[37mExit[0m[0m[0m[31m                        ; void _Exit(int status)[0m
+[36m\[0m           [32m0x0000103d[0m      [1;92mcall[0m[37m  [0m[37m_[0m[37mExit[0m[0m[0m[31m                                ; void _Exit(int status)[0m
+EOF
+RUN
+
+NAME=seek to flag realname
+FILE=bins/elf/_Exit_0x91
+CMDS=<<EOF
+s _Exit
+fl.
+echo
+pd 2
+EOF
+EXPECT=<<EOF
+0x00001020 16 section..plt.sec
+0x00001020 16 sym.imp._Exit
+
+            ;-- section..plt.sec:
+            ;-- _Exit:
+            0x00001020      endbr64                                    ; [10] -r-x section size 16 named .plt.sec
+            0x00001024      jmp   qword [reloc._Exit]                  ; [0x3ff8:8]=0x4008 reloc.target._Exit
 EOF
 RUN

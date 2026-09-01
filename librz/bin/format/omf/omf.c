@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: 2015 ampotos <mercie_i@epitech.eu>
 // SPDX-FileCopyrightText: 2015-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2025-2026 Sergey Sharshunov <s.sharshunov@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "omf.h"
 
 static bool is_valid_omf_type(ut8 type) {
-	int ct = 0;
-	ut8 types[] = {
+	const ut8 types[] = {
 		OMF_THEADR, OMF_LHEADR, OMF_COMENT, OMF_MODEND, OMF_MODEND32,
 		OMF_EXTDEF, OMF_PUBDEF, OMF_PUBDEF32, OMF_LINNUM,
 		OMF_LINNUM32, OMF_LNAMES, OMF_LNAMES, OMF_SEGDEF,
@@ -18,24 +18,30 @@ static bool is_valid_omf_type(ut8 type) {
 		OMF_ALIAS, OMF_NBKPAT, OMF_NBKPAT32, OMF_LLNAMES, OMF_VERNUM,
 		OMF_VENDEXT, 0
 	};
-	for (; types[ct]; ct++) {
+	for (int ct = 0; types[ct]; ct++) {
 		if (type == types[ct]) {
 			return true;
 		}
 	}
-	// RZ_LOG_ERROR("Invalid record type\n");
 	return false;
 }
 
 bool rz_bin_checksum_omf_ok(const ut8 *buf, ut64 buf_size) {
-	ut16 size;
 	ut8 checksum = 0;
+	if (!buf) {
+		RZ_LOG_ERROR("Invalid record (buf is null)\n");
+		return false;
+	}
 
 	if (buf_size < 3) {
 		RZ_LOG_ERROR("Invalid record (too short)\n");
 		return false;
 	}
-	size = rz_read_le16(buf + 1);
+	ut16 size = rz_read_le16(buf + 1);
+	if (size == 0 || size == UINT16_MAX) {
+		RZ_LOG_ERROR("Invalid record (untrusted value)\n");
+		return false;
+	}
 	if (buf_size < size + 3) {
 		RZ_LOG_ERROR("Invalid record (too short)\n");
 		return false;
@@ -706,12 +712,13 @@ bool rz_bin_omf_get_entry(rz_bin_omf_obj *obj, RzBinAddr *addr) {
 	}
 	while (ct_sym < obj->nb_symbol) {
 		if (!strcmp(obj->symbols[ct_sym]->name, "_start")) {
-			if (obj->symbols[ct_sym]->seg_idx - 1 > obj->nb_section) {
+			size_t sec_arr_offset = obj->symbols[ct_sym]->seg_idx - 1;
+			if (sec_arr_offset >= obj->nb_section) {
 				RZ_LOG_ERROR("Invalid segment index for symbol _start\n");
 				return false;
 			}
-			addr->vaddr = obj->sections[obj->symbols[ct_sym]->seg_idx - 1]->vaddr + obj->symbols[ct_sym]->offset + OMF_BASE_ADDR;
-			data = obj->sections[obj->symbols[ct_sym]->seg_idx - 1]->data;
+			addr->vaddr = obj->sections[sec_arr_offset]->vaddr + obj->symbols[ct_sym]->offset + OMF_BASE_ADDR;
+			data = obj->sections[sec_arr_offset]->data;
 			while (data) {
 				offset += data->size;
 				if (obj->symbols[ct_sym]->offset < offset) {

@@ -22,3 +22,15 @@ cc.n32.argn=stack
 cc.n32.maxargs=8
 cc.n32.ret=v0
 
+n64=cc
+cc.n64.arg0=a0
+cc.n64.arg1=a1
+cc.n64.arg2=a2
+cc.n64.arg3=a3
+cc.n64.arg4=a4
+cc.n64.arg5=a5
+cc.n64.arg6=a6
+cc.n64.arg7=a7
+cc.n64.argn=stack
+cc.n64.maxargs=8
+cc.n64.ret=v0

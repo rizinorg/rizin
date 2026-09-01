@@ -339,3 +339,47 @@ EXPECT=<<EOF
 \       ,=< 0x00401aea      jmp   fcn.00402f40
 EOF
 RUN
+
+NAME=aarch64 cmn/cmp/tst show char comment for printable immediate
+FILE=malloc://1024
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e cfg.bigendian=false
+wx 3f0401b13f0401f13f1440f2
+pd 3
+EOF
+EXPECT=<<EOF
+            0x00000000      cmn   x1, 0x41                             ; 'A'
+            0x00000004      cmp   x1, 0x41                             ; 'A'
+            0x00000008      tst   x1, 0x3f                             ; '?'
+EOF
+RUN
+
+NAME=data xrefs outside functions marked as data
+FILE=bins/elf/libarm64.so
+CMDS=<<EOF
+aaa
+s 0xe080
+pd 1
+s 0xe09c
+pd 1
+e asm.xrefs=false
+e asm.comments=false
+pd 3 @ 0x810
+EOF
+EXPECT=<<EOF
+            ; DATA XREFS from fcn.00005b80 @ 0x5bb0, 0x5bec
+            0x0000e080 hex length=15 delta=0
+0x0000e080  787b ffff 587b ffff 887b ffff 4c7b ff    x{..X{...{..L{.
+
+            ; DATA XREFS from sym.Java_o__003dc_e @ 0xaa64, 0xaaa8
+            0x0000e09c hex length=36 delta=0
+0x0000e09c  18ca ffff f8c9 ffff 48ca ffff ecc9 ffff  ........H.......
+0x0000e0ac  64ca ffff 28ca ffff c8ca ffff 0000 0000  d...(...........
+0x0000e0bc  0000 0000                                ....
+
+            0x00000810      ret
+            0x00000814      ldr   x8, [x0]
+            0x00000818      add   x9, x8, 1
+EOF
+RUN

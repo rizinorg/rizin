@@ -763,6 +763,51 @@ bool test_ht_uu_iter(void) {
 	mu_end;
 }
 
+bool test_ht_uu_iter_kv(void) {
+	HtUU *ht = ht_uu_new();
+	ut32 icnt = 0;
+	const HtUUKv *kv;
+
+	RzIterator *it = ht_uu_as_iter_kv(ht);
+	rz_iterator_foreach(it, kv) {
+		icnt++;
+	}
+	rz_iterator_free(it);
+	mu_assert_eq(icnt, 0, "Wrong number of iterations");
+
+	ht_uu_insert(ht, 0x11, 0x1111);
+	ht_uu_insert(ht, 0x22, 0x2222);
+	ht_uu_insert(ht, 0x33, 0x3333);
+
+	bool found_1 = false;
+	bool found_2 = false;
+	bool found_3 = false;
+
+	icnt = 0;
+	it = ht_uu_as_iter_kv(ht);
+	rz_iterator_foreach(it, kv) {
+		icnt++;
+		if (kv->key == 0x11 && kv->value == 0x1111) {
+			found_1 = true;
+		}
+		if (kv->key == 0x22 && kv->value == 0x2222) {
+			found_2 = true;
+		}
+		if (kv->key == 0x33 && kv->value == 0x3333) {
+			found_3 = true;
+		}
+	}
+	rz_iterator_free(it);
+
+	mu_assert_eq(icnt, 3, "Wrong number of iterations");
+	mu_assert_true(found_1, "key not found");
+	mu_assert_true(found_2, "key not found");
+	mu_assert_true(found_3, "key not found");
+
+	ht_uu_free(ht);
+	mu_end;
+}
+
 bool test_ht_ss_iter(void) {
 	HtSS *ht = ht_ss_new(HT_STR_CONST, HT_STR_CONST);
 	ut32 icnt = 0;
@@ -887,6 +932,13 @@ bool test_set_u(void) {
 	}
 	mu_assert_eq(x, 5, "Foreach hasn't iterated the correct number of times.");
 
+	rz_set_u_clear(set_u);
+	mu_assert_eq(rz_set_u_take(set_u), UT64_MAX, "Invalid take should return UT64_MAX");
+	rz_set_u_add(set_u, 100000000);
+	mu_assert_eq(rz_set_u_size(set_u), 1, "Add failed");
+	mu_assert_eq(rz_set_u_take(set_u), 100000000, "Take failed");
+	mu_assert_eq(rz_set_u_size(set_u), 0, "Take did not remove element");
+
 	rz_set_u_free(set_u);
 	mu_end;
 }
@@ -972,6 +1024,7 @@ int all_tests() {
 	mu_run_test(test_insert_update_ex);
 	mu_run_test(test_ht_size);
 	mu_run_test(test_ht_uu_iter);
+	mu_run_test(test_ht_uu_iter_kv);
 	mu_run_test(test_ht_ss_iter);
 	mu_run_test(test_set_u);
 	mu_run_test(test_set_s);

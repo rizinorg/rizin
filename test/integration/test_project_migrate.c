@@ -5,6 +5,7 @@
 #include <rz_project.h>
 
 #include "../unit/minunit.h"
+#include "test_config.h"
 #include "rz_config.h"
 #include "sdb.h"
 
@@ -655,6 +656,138 @@ static bool test_migrate_v17_v18_rop_config() {
 	mu_end;
 }
 
+static bool test_migrate_v21_v22_gadget_config() {
+	RzProject *prj = rz_project_load_file_raw("prj/v20-debase64.rzdb");
+	mu_assert_notnull(prj, "load raw project");
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+
+	// get to v21 state
+	bool s_20_21 = rz_project_migrate_v20_v21(prj, res);
+	mu_assert_true(s_20_21, "v20->v21 migrate success");
+
+	// actual test
+	bool s_21_22 = rz_project_migrate_v21_v22(prj, res);
+	mu_assert_true(s_21_22, "v21->v22 migrate success");
+
+	Sdb *core_db = sdb_ns(prj, "core", false);
+	Sdb *config_db = sdb_ns(core_db, "config", false);
+
+	mu_assert_null(sdb_get(config_db, "rop.len"), "old rop.len deleted");
+	mu_assert_streq_free(sdb_get(config_db, "gadget.len"), "5", "new gadget.len added");
+
+	mu_assert_null(sdb_get(config_db, "rop.cache"), "old rop.cache deleted");
+	mu_assert_streq_free(sdb_get(config_db, "gadget.cache"), "false", "new gadget.cache added");
+
+	mu_assert_null(sdb_get(config_db, "rop.subchains"), "old rop.subchains deleted");
+	mu_assert_streq_free(sdb_get(config_db, "gadget.subchains"), "false", "new gadget.subchains added");
+
+	mu_assert_null(sdb_get(config_db, "rop.conditional"), "old rop.conditional deleted");
+	mu_assert_streq_free(sdb_get(config_db, "gadget.conditional"), "false", "new gadget.conditional added");
+
+	mu_assert_null(sdb_get(config_db, "rop.comments"), "old rop.comments deleted");
+	mu_assert_streq_free(sdb_get(config_db, "gadget.comments"), "false", "new gadget.comments added");
+
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
+
+static bool test_migrate_v22_v23_enum() {
+	RzProject *prj = rz_project_load_file_raw("prj/v22-enum.rzdb");
+	mu_assert_notnull(prj, "load raw project");
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	bool s = rz_project_migrate_v22_v23(prj, res);
+	mu_assert_true(s, "v22->v23 migrate success");
+
+	Sdb *core_db = sdb_ns(prj, "core", false);
+	mu_assert_notnull(core_db, "core ns");
+	Sdb *analysis_db = sdb_ns(core_db, "analysis", false);
+	mu_assert_notnull(analysis_db, "analysis ns");
+	Sdb *types_db = sdb_ns(analysis_db, "types", false);
+	mu_assert_notnull(types_db, "types ns");
+
+	// The migration is additive: a classic enum keeps its cases and gains no
+	// "enum.<name>.@type" key (that key is only written for a fixed underlying type).
+	mu_assert_streq_free(sdb_get(types_db, "Color"), "enum", "classic enum kind preserved");
+	mu_assert_null(sdb_get(types_db, "enum.Color.@type"), "classic enum has no underlying-type key");
+
+	// It must still deserialize into a classic enum (no underlying type).
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "type db new");
+	rz_type_db_init(typedb, TEST_BUILD_TYPES_DIR, "x86", 64, "linux");
+	mu_assert_true(rz_serialize_types_load(types_db, typedb, NULL), "types deserialize");
+	RzBaseType *color = rz_type_db_get_base_type(typedb, "Color");
+	mu_assert_notnull(color, "Color base type present");
+	mu_assert_eq(color->kind, RZ_BASE_TYPE_KIND_ENUM, "Color is an enum");
+	mu_assert_null(color->type, "classic enum has no underlying type");
+	mu_assert_eq(rz_vector_len(&color->enum_data.cases), 3, "three enum cases preserved");
+	rz_type_db_free(typedb);
+
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
+
+static bool test_migrate_v23_v24_bitfield() {
+	RzProject *prj = rz_project_load_file_raw("prj/v23-bitfield.rzdb");
+	mu_assert_notnull(prj, "load raw project");
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	bool s = rz_project_migrate_v23_v24(prj, res);
+	mu_assert_true(s, "v23->v24 migrate success");
+
+	Sdb *core_db = sdb_ns(prj, "core", false);
+	mu_assert_notnull(core_db, "core ns");
+	Sdb *analysis_db = sdb_ns(core_db, "analysis", false);
+	mu_assert_notnull(analysis_db, "analysis ns");
+	Sdb *types_db = sdb_ns(analysis_db, "types", false);
+	mu_assert_notnull(types_db, "types ns");
+
+	// The migration is additive: the bitfield width already lives in the 3rd
+	// comma-field of each struct member ("type,offset,bitsize"), so nothing in
+	// the sdb changes.
+	mu_assert_streq_free(sdb_get(types_db, "struct.qwe.a"), "int,0,4", "member a keeps its bitfield width");
+	mu_assert_streq_free(sdb_get(types_db, "struct.qwe.b"), "int,0,16", "member b keeps its bitfield width");
+	mu_assert_streq_free(sdb_get(types_db, "struct.qwe.c"), "int,0,3", "member c keeps its bitfield width");
+
+	// It must deserialize into a struct whose members carry the bitfield widths.
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "type db new");
+	rz_type_db_init(typedb, TEST_BUILD_TYPES_DIR, "x86", 64, "linux");
+	mu_assert_true(rz_serialize_types_load(types_db, typedb, NULL), "types deserialize");
+	RzBaseType *qwe = rz_type_db_get_base_type(typedb, "qwe");
+	mu_assert_notnull(qwe, "qwe base type present");
+	mu_assert_eq(qwe->kind, RZ_BASE_TYPE_KIND_STRUCT, "qwe is a struct");
+	mu_assert_eq(rz_vector_len(&qwe->struct_data.members), 3, "three members preserved");
+	RzTypeStructMember *m0 = rz_vector_index_ptr(&qwe->struct_data.members, 0);
+	RzTypeStructMember *m1 = rz_vector_index_ptr(&qwe->struct_data.members, 1);
+	RzTypeStructMember *m2 = rz_vector_index_ptr(&qwe->struct_data.members, 2);
+	mu_assert_eq(m0->size, 4, "member a bitfield width deserialized");
+	mu_assert_eq(m1->size, 16, "member b bitfield width deserialized");
+	mu_assert_eq(m2->size, 3, "member c bitfield width deserialized");
+	rz_type_db_free(typedb);
+
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
+
+static bool test_migrate_v24_v25_asm_demangle() {
+	RzProject *prj = rz_project_load_file_raw("prj/v24-asm-demangle.rzdb");
+	mu_assert_notnull(prj, "load raw project");
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	bool s = rz_project_migrate_v24_v25(prj, res);
+	mu_assert_true(s, "migrate success");
+
+	Sdb *core_db = sdb_ns(prj, "core", false);
+	mu_assert_notnull(core_db, "core ns");
+	Sdb *config_db = sdb_ns(core_db, "config", false);
+	mu_assert_notnull(config_db, "config ns");
+	mu_assert_null(sdb_get(config_db, "asm.demangle"), "asm.demangle doesn't exist");
+
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
 
 /// Load project of given version from file into core and check the log for migration success messages
 #define BEGIN_LOAD_TEST(core, version, file) \
@@ -707,8 +840,9 @@ static bool test_load_v1_unknown_type() {
 	RzCore *core = rz_core_new();
 	BEGIN_LOAD_TEST(core, 1, "prj/v1-noreturn.rzdb");
 
-	mu_assert_true(rz_type_exists(core->analysis->typedb, "unknown_t"), "has unknown_t");
-	RzBaseType *unknown = rz_type_db_get_base_type(core->analysis->typedb, "unknown_t");
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	mu_assert_true(rz_type_exists(typedb, "unknown_t"), "has unknown_t");
+	RzBaseType *unknown = rz_type_db_get_base_type(typedb, "unknown_t");
 	mu_assert_notnull(unknown, "has unknown_t");
 	mu_assert_eq(RZ_BASE_TYPE_KIND_ATOMIC, unknown->kind, "unknown_t is atomic");
 	mu_assert_eq(32, unknown->size, "unknown_t is 32-bit wide");
@@ -724,7 +858,8 @@ static bool test_load_v2_typelink() {
 	RzAnalysisVarGlobal *gv = rz_analysis_var_global_get_byaddr_at(core->analysis, 0x80484b0);
 	mu_assert_notnull(gv, "typelink converted to a global var");
 	mu_assert_eq(RZ_TYPE_KIND_POINTER, gv->type->kind, "typelink is a pointer");
-	mu_assert_true(rz_type_atomic_str_eq(core->analysis->typedb, gv->type->pointer.type, "char"), "typelink is char *");
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	mu_assert_true(rz_type_atomic_str_eq(typedb, gv->type->pointer.type, "char"), "typelink is char *");
 
 	rz_core_free(core);
 	mu_end;
@@ -739,7 +874,7 @@ static bool test_load_v2_callables() {
 	fcn = rz_analysis_get_function_byname(core->analysis, "main");
 	mu_assert_notnull(fcn, "find \"entry0\" function");
 
-	RzTypeDB *typedb = core->analysis->typedb;
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	RzCallable *chmod = rz_type_func_get(typedb, "chmod");
 	mu_assert_notnull(chmod, "func \"chmod\" callable type");
 	mu_assert_streq(chmod->name, "chmod", "is chmod() function");
@@ -778,7 +913,8 @@ static bool test_load_v3_typelink() {
 
 	RzAnalysisVarGlobal *gv = rz_analysis_var_global_get_byaddr_at(core->analysis, 0x08048660);
 	mu_assert_notnull(gv, "typelink converted to a global var");
-	mu_assert_streq_free(rz_type_as_string(core->analysis->typedb, gv->type), "uint32_t", "typelink");
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	mu_assert_streq_free(rz_type_as_string(typedb, gv->type), "uint32_t", "typelink");
 
 	rz_core_free(core);
 	mu_end;
@@ -788,7 +924,8 @@ static bool test_load_v4_types() {
 	RzCore *core = rz_core_new();
 	BEGIN_LOAD_TEST(core, 4, "prj/v4-types.rzdb");
 
-	RzBaseType *unk = rz_type_db_get_base_type(core->analysis->typedb, "unknown_t");
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzBaseType *unk = rz_type_db_get_base_type(typedb, "unknown_t");
 	mu_assert_notnull(unk, "unknown_t exists");
 	mu_assert_eq(unk->kind, RZ_BASE_TYPE_KIND_ATOMIC, "unknown_t kind");
 	mu_assert_eq(unk->size, 32, "unknown_t size");
@@ -1052,6 +1189,18 @@ static bool test_load_v17() {
 	mu_end;
 }
 
+static bool test_load_v22_gadget_config() {
+	RzCore *core = rz_core_new();
+	BEGIN_LOAD_TEST(core, 17, "prj/v17-rop-config.rzdb");
+	mu_assert_eq(rz_config_get_i(core->config, "gadget.len"), 5, "gadget.len");
+	mu_assert_eq(rz_config_get_b(core->config, "gadget.cache"), false, "gadget.cache");
+	mu_assert_eq(rz_config_get_b(core->config, "gadget.subchains"), false, "gadget.subchains");
+	mu_assert_eq(rz_config_get_b(core->config, "gadget.conditional"), false, "gadget.conditional");
+	mu_assert_eq(rz_config_get_b(core->config, "gadget.comments"), false, "gadget.comments");
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_migrate_v1_v2_noreturn);
 	mu_run_test(test_migrate_v1_v2_noreturn_empty);
@@ -1075,6 +1224,10 @@ int all_tests() {
 	mu_run_test(test_migrate_v17_v18_rop_config);
 	mu_run_test(test_migrate_v18_v19_str_config);
 	mu_run_test(test_migrate_v20_v21_debase64);
+	mu_run_test(test_migrate_v21_v22_gadget_config);
+	mu_run_test(test_migrate_v22_v23_enum);
+	mu_run_test(test_migrate_v23_v24_bitfield);
+	mu_run_test(test_migrate_v24_v25_asm_demangle);
 	mu_run_test(test_load_v1_noreturn);
 	mu_run_test(test_load_v1_noreturn_empty);
 	mu_run_test(test_load_v1_unknown_type);
@@ -1098,6 +1251,7 @@ int all_tests() {
 	mu_run_test(test_load_v15_19_str_config);
 	mu_run_test(test_load_v16);
 	mu_run_test(test_load_v17);
+	mu_run_test(test_load_v22_gadget_config);
 	return tests_passed != tests_run;
 }
 

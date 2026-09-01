@@ -6,6 +6,7 @@ Resource 0
   name: 29524
   timestamp: Thu Jan  1 00:00:00 1970 UTC
   vaddr: 0x00401168
+  paddr: 0x00000368
   size: 32
   type: UNKNOWN (789)
   language: LANG_NEUTRAL
@@ -20,6 +21,7 @@ Resource 0
   name: 7354
   timestamp: Thu Jan  1 00:00:00 1970 UTC
   vaddr: 0x00401178
+  paddr: 0x00000378
   size: 39
   type: UNKNOWN (315)
   language: LANG_NEUTRAL
@@ -34,6 +36,7 @@ Resource 0
   name: 1576
   timestamp: Thu Jan  1 00:00:00 1970 UTC
   vaddr: 0x00401200
+  paddr: 0x00000400
   size: 5.5K
   type: ICON
   language: LANG_NEUTRAL
@@ -41,6 +44,7 @@ Resource 1
   name: 788
   timestamp: Thu Jan  1 00:00:00 1970 UTC
   vaddr: 0x00402828
+  paddr: 0x00001a28
   size: 20
   type: GROUP_ICON
   language: LANG_NEUTRAL
@@ -55,6 +59,7 @@ Resource 0
   name: 10
   timestamp: Thu Jan  1 00:00:00 1970 UTC
   vaddr: 0x004010d6
+  paddr: 0x000002d6
   size: 94
   type: STRING
   language: LANG_NEUTRAL
@@ -69,6 +74,7 @@ Resource 0
   name: 29524
   timestamp: Thu Jan  1 00:00:00 1970 UTC
   vaddr: 0x004011a0
+  paddr: 0x000003a0
   size: 34
   type: UNKNOWN (789)
   language: LANG_NEUTRAL

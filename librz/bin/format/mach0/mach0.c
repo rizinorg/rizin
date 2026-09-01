@@ -117,85 +117,85 @@ static void init_sdb_formats(struct MACH0_(obj_t) * bin) {
 		"enum mach0_section_attrs"
 		"{S_ATTR_PURE_INSTRUCTIONS=0x800000ULL, S_ATTR_NO_TOC=0x400000ULL, S_ATTR_STRIP_STATIC_SYMS=0x200000ULL, S_ATTR_NO_DEAD_STRIP=0x100000ULL, S_ATTR_LIVE_SUPPORT=0x080000ULL, S_ATTR_SELF_MODIFYING_CODE=0x040000ULL, S_ATTR_DEBUG=0x020000ULL, S_ATTR_SOME_INSTRUCTIONS=0x000004ULL, S_ATTR_EXT_RELOC=0x000002ULL, S_ATTR_LOC_RELOC=0x000001ULL};");
 	sdb_set(bin->kv, "mach0_header.format",
-		"xxx[4]Edd[4]B "
+		"x4x4x4[4]Ed4d4[4]B "
 		"magic cputype cpusubtype (mach0_header_filetype)filetype ncmds sizeofcmds (mach0_header_flags)flags");
 	sdb_set(bin->kv, "mach0_segment.format",
-		"[4]Ed[16]zxxxxoodx "
+		"[4]Ed4[16]zx4x4x4x4o4o4d4x4 "
 		"(mach0_load_command_type)cmd cmdsize segname vmaddr vmsize fileoff filesize maxprot initprot nsects flags");
 	sdb_set(bin->kv, "mach0_segment64.format",
-		"[4]Ed[16]zqqqqoodx "
+		"[4]Ed4[16]zx8x8x8x8o4o4d4x4 "
 		"(mach0_load_command_type)cmd cmdsize segname vmaddr vmsize fileoff filesize maxprot initprot nsects flags");
 	sdb_set(bin->kv, "mach0_symtab_command.format",
-		"[4]Edxdxd "
+		"[4]Ed4x4d4x4d4 "
 		"(mach0_load_command_type)cmd cmdsize symoff nsyms stroff strsize");
 	sdb_set(bin->kv, "mach0_dysymtab_command.format",
-		"[4]Edddddddddddxdxdxxxd "
+		"[4]Ed4d4d4d4d4d4d4d4d4d4d4x4d4x4d4x4x4x4d4 "
 		"(mach0_load_command_type)cmd cmdsize ilocalsym nlocalsym iextdefsym nextdefsym iundefsym nundefsym tocoff ntoc moddtaboff nmodtab extrefsymoff nextrefsyms inddirectsymoff nindirectsyms extreloff nextrel locreloff nlocrel");
 	sdb_set(bin->kv, "mach0_section.format",
-		"[16]z[16]zxxxxxx[1]E[3]Bxx "
+		"[16]z[16]zx4x4x4x4x4x4[1]E[3]Bx4x4 "
 		"sectname segname addr size offset align reloff nreloc (mach0_section_types)flags_type (mach0_section_attrs)flags_attr reserved1 reserved2");
 	sdb_set(bin->kv, "mach0_section64.format",
-		"[16]z[16]zqqxxxx[1]E[3]Bxxx "
+		"[16]z[16]zx8x8x4x4x4x4[1]E[3]Bx4x4x4 "
 		"sectname segname addr size offset align reloff nreloc (mach0_section_types)flags_type (mach0_section_attrs)flags_attr reserved1 reserved2 reserved3");
 	sdb_set(bin->kv, "mach0_dylib.format",
-		"xxxxz "
+		"x4x4x4x4z "
 		"name_offset timestamp current_version compatibility_version name");
 	sdb_set(bin->kv, "mach0_dylib_command.format",
-		"[4]Ed? "
+		"[4]Ed4? "
 		"(mach0_load_command_type)cmd cmdsize (mach0_dylib)dylib");
 	sdb_set(bin->kv, "mach0_id_dylib_command.format",
-		"[4]Ed? "
+		"[4]Ed4? "
 		"(mach0_load_command_type)cmd cmdsize (mach0_dylib)dylib");
 	sdb_set(bin->kv, "mach0_uuid_command.format",
-		"[4]Ed[16]b "
+		"[4]Ed4[16]x1 "
 		"(mach0_load_command_type)cmd cmdsize uuid");
 	sdb_set(bin->kv, "mach0_rpath_command.format",
-		"[4]Edxz "
+		"[4]Ed4x4z "
 		"(mach0_load_command_type)cmd cmdsize path_offset path");
 	sdb_set(bin->kv, "mach0_entry_point_command.format",
-		"[4]Edqq "
+		"[4]Ed4x8x8 "
 		"(mach0_load_command_type)cmd cmdsize entryoff stacksize");
 	sdb_set(bin->kv, "mach0_encryption_info64_command.format",
-		"[4]Edxddx "
+		"[4]Ed4x4d4d4x4 "
 		"(mach0_load_command_type)cmd cmdsize offset size id padding");
 	sdb_set(bin->kv, "mach0_encryption_info_command.format",
-		"[4]Edxdd "
+		"[4]Ed4x4d4d4 "
 		"(mach0_load_command_type)cmd cmdsize offset size id");
 	sdb_set(bin->kv, "mach0_code_signature_command.format",
-		"[4]Edxd "
+		"[4]Ed4x4d4 "
 		"(mach0_load_command_type)cmd cmdsize offset size");
 	sdb_set(bin->kv, "mach0_dyld_info_only_command.format",
-		"[4]Edxdxdxdxdxd "
+		"[4]Ed4x4d4x4d4x4d4x4d4x4d4 "
 		"(mach0_load_command_type)cmd cmdsize rebase_off rebase_size bind_off bind_size weak_bind_off weak_bind_size lazy_bind_off lazy_bind_size export_off export_size");
 	sdb_set(bin->kv, "mach0_load_dylinker_command.format",
-		"[4]Edxz "
+		"[4]Ed4x4z "
 		"(mach0_load_command_type)cmd cmdsize name_offset name");
 	sdb_set(bin->kv, "mach0_id_dylinker_command.format",
-		"[4]Edxzi "
+		"[4]Ed4x4zd4 "
 		"(mach0_load_command_type)cmd cmdsize name_offset name");
 	sdb_set(bin->kv, "mach0_build_version_command.format",
-		"[4]Ed[4]Exxd "
+		"[4]Ed4[4]Ex4x4d4 "
 		"(mach0_load_command_type)cmd cmdsize (mach0_build_platform)platform minos sdk ntools");
 	sdb_set(bin->kv, "mach0_build_version_tool.format",
-		"[4]Ex "
+		"[4]Ex4 "
 		"(mach0_build_tool)tool version");
 	sdb_set(bin->kv, "mach0_source_version_command.format",
-		"[4]Edq "
+		"[4]Ed4x8 "
 		"(mach0_load_command_type)cmd cmdsize version");
 	sdb_set(bin->kv, "mach0_function_starts_command.format",
-		"[4]Edxd "
+		"[4]Ed4x4d4 "
 		"(mach0_load_command_type)cmd cmdsize offset size");
 	sdb_set(bin->kv, "mach0_data_in_code_command.format",
-		"[4]Edxd "
+		"[4]Ed4x4d4 "
 		"(mach0_load_command_type)cmd cmdsize offset size");
 	sdb_set(bin->kv, "mach0_version_min_command.format",
-		"[4]Edxx "
+		"[4]Ed4x4x4 "
 		"(mach0_load_command_type)cmd cmdsize version reserved");
 	sdb_set(bin->kv, "mach0_segment_split_info_command.format",
-		"[4]Edxd "
+		"[4]Ed4x4d4 "
 		"(mach0_load_command_type)cmd cmdsize offset size");
 	sdb_set(bin->kv, "mach0_unixthread_command.format",
-		"[4]Eddd "
+		"[4]Ed4d4d4 "
 		"(mach0_load_command_type)cmd cmdsize flavor count");
 }
 
@@ -240,6 +240,12 @@ static bool init_hdr(struct MACH0_(obj_t) * bin) {
 	init_sdb_formats(bin);
 	sdb_num_set(bin->kv, "mach0_header.offset", 0); // wat about fatmach0?
 	return true;
+}
+
+static bool is_pac_section(const char *name, size_t size) {
+	return !rz_str_cmp(name, "__auth_stubs", size) ||
+		!rz_str_cmp(name, "__auth_got", size) ||
+		!rz_str_cmp(name, "__auth_ptr", size);
 }
 
 static bool parse_segments(struct MACH0_(obj_t) * bin, ut64 off) {
@@ -364,6 +370,11 @@ static bool parse_segments(struct MACH0_(obj_t) * bin, ut64 off) {
 			i += 16;
 			memcpy(&bin->sects[k].segname, &sec[i], 16);
 			i += 16;
+
+			if (is_pac_section(bin->sects[k].sectname, 16) ||
+				is_pac_section(bin->sects[k].segname, 16)) {
+				bin->has_pac_sections = true;
+			}
 
 			sdb_num_set(bin->kv, rz_strf(tmpbuf, "mach0_section_%.16s_%.16s.offset", bin->sects[k].segname, bin->sects[k].sectname), offset);
 #if RZ_BIN_MACH064
@@ -1441,7 +1452,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 
 	bin->uuidn = 0;
 	bin->platform = UT32_MAX;
-	bin->has_crypto = 0;
+	bin->is_encrypted = 0;
 	if (bin->hdr.sizeofcmds > bin->size) {
 		bprintf("Warning: chopping hdr.sizeofcmds\n");
 		bin->hdr.sizeofcmds = bin->size - 128;
@@ -1460,7 +1471,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 		}
 
 		if (lc.cmdsize < 1 || off + lc.cmdsize > bin->size) {
-			bprintf("Warning: mach0_header %" PFMT64u " = cmdsize<1. (0x%llx vs 0x%llx)\n", i,
+			bprintf("Warning: mach0_header %" PFMT64u " = cmdsize<1. (0x%" PFMT64x " vs 0x%" PFMT64x ")\n", i,
 				(ut64)(off + lc.cmdsize), (ut64)(bin->size));
 			break;
 		}
@@ -1575,7 +1586,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 					eic.cryptsize = rz_read_ble32(&seic[12], bin->big_endian);
 					eic.cryptid = rz_read_ble32(&seic[16], bin->big_endian);
 
-					bin->has_crypto = eic.cryptid;
+					bin->is_encrypted = eic.cryptid;
 					sdb_set(bin->kv, "crypto", "true");
 					sdb_num_set(bin->kv, "cryptid", eic.cryptid);
 					sdb_num_set(bin->kv, "cryptoff", eic.cryptoff);
@@ -1704,7 +1715,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 		case LC_SOURCE_VERSION:
 			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "version");
 			/* uint64_t  version;  */
-			/* A.B.C.D.E packed as a24.b10.c10.d10.e10 */
+			/* A.B.C.D.E packed as a24.x10.c10.d10.e10 */
 			break;
 		case LC_SEGMENT_SPLIT_INFO:
 			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "split_info");
@@ -1735,7 +1746,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 		}
 
 		if (lc.cmdsize < 1 || off + lc.cmdsize > bin->size) {
-			bprintf("Warning: mach0_header %" PFMT64u " = cmdsize<1. (0x%llx vs 0x%llx)\n", i,
+			bprintf("Warning: mach0_header %" PFMT64u " = cmdsize<1. (0x%" PFMT64x " vs 0x%" PFMT64x ")\n", i,
 				(ut64)(off + lc.cmdsize), (ut64)(bin->size));
 			break;
 		}
@@ -1861,6 +1872,9 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * mo) {
 	rz_skiplist_free(mo->relocs);
 	rz_hash_free(mo->hash);
 	rz_buf_free(mo->b);
+	rz_buf_free(mo->buf_patched);
+	rz_pvector_free(mo->sections_cache);
+	sdb_free(mo->kv);
 	free(mo);
 	return NULL;
 }
@@ -2438,7 +2452,7 @@ static int walk_exports(struct MACH0_(obj_t) * bin, ExportsIterator iterator, vo
 			goto beach;
 		}
 		if (state->i == child_count) {
-			rz_list_pop(states);
+			free(rz_list_pop(states));
 			continue;
 		}
 		if (!state->next_child) {
@@ -2914,6 +2928,96 @@ bool MACH0_(is_pie)(struct MACH0_(obj_t) * bin) {
 bool MACH0_(has_nx)(struct MACH0_(obj_t) * bin) {
 	return (bin && bin->hdr.filetype == MH_EXECUTE &&
 		bin->hdr.flags & MH_NO_HEAP_EXECUTION);
+}
+
+bool MACH0_(has_ptr_auth)(struct MACH0_(obj_t) * bin) {
+	if (bin->has_pac_sections) {
+		return true;
+	}
+
+	// if we have arm64e then probably we have ARM PAC support
+	const ut32 subtype = (bin->hdr.cpusubtype & CPU_SUBTYPE_MASK);
+	return bin->hdr.cputype == CPU_TYPE_ARM64 && subtype == CPU_SUBTYPE_ARM64E;
+}
+
+static bool mach0_find_entitlement(const struct MACH0_(obj_t) * bin, const char *key, bool *boolean) {
+	const char *booltag = NULL;
+	char *keytag = rz_str_newf("<key>%s</key>", key);
+	const char *match = strstr((const char *)bin->signature, keytag);
+	if (!match) {
+		free(keytag);
+		return false;
+	}
+
+	match += strlen(keytag);
+	free(keytag);
+
+	booltag = rz_str_trim_head_ro(match);
+
+	*boolean = false;
+	if (!strncmp(booltag, "<true/>", strlen("<true/>"))) {
+		*boolean = true;
+		return true;
+	} else if (!strncmp(booltag, "<false/>", strlen("<false/>"))) {
+		*boolean = false;
+		return true;
+	}
+
+	RZ_LOG_ERROR("expected a boolean but was: %s", booltag);
+	return false;
+}
+
+static const char *mach0_security_features[] = {
+	// Opts into the hardened runtime framework
+	"com.apple.security.hardened-runtime",
+	// Opts into the hardened process framework
+	"com.apple.security.hardened-process",
+	// Enables type-aware memory allocations
+	"com.apple.security.hardened-process.hardened-heap",
+	// Marks memory used for internal platform state as read-only
+	"com.apple.security.hardened-process.dyld-ro",
+	// Enables hardware memory tagging
+	"com.apple.security.hardened-process.checked-allocations",
+	// Logs faults instead of crashing (debug)
+	"com.apple.security.hardened-process.checked-allocations.soft-mode",
+	// Tags memory containing only data
+	"com.apple.security.hardened-process.checked-allocations.enable-pure-data",
+	// Enables whether to prevent receiving tagged memory from other processes
+	"com.apple.security.hardened-process.checked-allocations.no-tagged-receive",
+	// Allows execution of JIT-compiled code
+	"com.apple.security.cs.allow-jit",
+	// Allows Unsigned Executable Memory Entitlement
+	"com.apple.security.cs.allow-unsigned-executable-memory",
+	// Allows DYLD environment variables to inject code in app
+	"com.apple.security.cs.allow-dyld-environment-variables",
+	// Disables Library Validation Entitlement
+	"com.apple.security.cs.disable-library-validation",
+	// Disables all code signing protections while launching an app, and during its execution.
+	"com.apple.security.cs.disable-executable-page-protection",
+	// Enables the app to attach to other processes or get task ports.
+	"com.apple.security.cs.debugger",
+};
+
+HtSS *MACH0_(get_security)(struct MACH0_(obj_t) * bin) {
+	if (RZ_STR_ISEMPTY(bin->signature)) {
+		return NULL;
+	}
+
+	HtSS *security = ht_ss_new(HT_STR_DUP, HT_STR_DUP);
+	if (!security) {
+		return NULL;
+	}
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(mach0_security_features); ++i) {
+		bool enabled = false;
+		const char *entitlement = mach0_security_features[i];
+		if (!mach0_find_entitlement(bin, entitlement, &enabled)) {
+			continue;
+		}
+		ht_ss_insert(security, entitlement, (char *)rz_str_bool(enabled));
+	}
+
+	return security;
 }
 
 char *MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) * hdr) {

@@ -12,6 +12,7 @@
 #include <rz_cons.h>
 #include <rz_util/rz_print.h>
 #include <rz_util/rz_str.h>
+#include "analysis_private.h"
 
 static RzPrint *setup_print() {
 	RzPrint *p = rz_print_new();
@@ -316,6 +317,7 @@ static bool test_rz_tokenize_generic_4(void) {
 static bool test_rz_tokenize_custom_hexagon_0(void) {
 	RzAsm *a = setup_hexagon_asm();
 	hexagon_set_next_pc(a);
+	const RzAsmPlugin *cur = rz_asm_plugin_current(a);
 
 	const ut8 buf[] = "\x0c\xc0\x00\x54"; // "[   trap0(#0x3)"
 	RzAsmToken tokens[7] = {
@@ -328,7 +330,7 @@ static bool test_rz_tokenize_custom_hexagon_0(void) {
 		{ .start = 14, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 } // )
 	};
 	RzAsmOp *op = RZ_NEW0(RzAsmOp);
-	a->cur->disassemble(a, op, buf, sizeof(buf));
+	cur->disassemble(a, op, buf, sizeof(buf));
 	if (!op->asm_toks) {
 		mu_fail("NULL check failed.\n");
 	}
@@ -354,11 +356,12 @@ static bool test_rz_tokenize_custom_hexagon_0(void) {
 static bool test_rz_tokenize_custom_hexagon_issues_tilde(void) {
 	RzAsm *a = setup_hexagon_asm();
 	hexagon_set_next_pc(a);
+	const RzAsmPlugin *cur = rz_asm_plugin_current(a);
 
 	// Check if ~ is an operator
 	const ut8 buf[] = "\x00\xc0\x81\xf1"; // [   R0 = and(R0,~R1)
 	RzAsmOp *op = RZ_NEW0(RzAsmOp);
-	a->cur->disassemble(a, op, buf, sizeof(buf));
+	cur->disassemble(a, op, buf, sizeof(buf));
 	if (!op->asm_toks) {
 		mu_fail("NULL check failed.\n");
 	}
@@ -378,11 +381,12 @@ static bool test_rz_tokenize_custom_hexagon_issues_tilde(void) {
 static bool test_rz_tokenize_custom_hexagon_issues_long_reg(void) {
 	RzAsm *a = setup_hexagon_asm();
 	hexagon_set_next_pc(a);
+	const RzAsmPlugin *cur = rz_asm_plugin_current(a);
 
 	// Check if BRKPTPC0 is a register
 	const ut8 buf[] = "\x24\xc0\x01\x67"; // [   BRKPTPC0 = R1
 	RzAsmOp *op = RZ_NEW0(RzAsmOp);
-	a->cur->disassemble(a, op, buf, sizeof(buf));
+	cur->disassemble(a, op, buf, sizeof(buf));
 	if (!op->asm_toks) {
 		mu_fail("NULL check failed.\n");
 	}
@@ -551,8 +555,8 @@ static bool test_rz_colorize_generic_3(void) {
 	RzPrint *p = setup_print();
 	RzAsmOp *asmop = rz_asm_op_new();
 	RzAnalysisOp *anaop = rz_analysis_op_new();
-	// "mov ac0.l, *ar2 || mov *(ar1+t0b) << t3, ac1" - 395102a0b411014033
-	ut8 buf[] = "\x39\x51\x02\xa0\xb4\x11\x01\x40\x33";
+	// "mov ac0.l, *ar2 || mov *(ar1+t0b) << t3, ac1" - 395102a0b411414033
+	ut8 buf[] = "\x39\x51\x02\xa0\xb4\x11\x41\x40\x33";
 	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
 	rz_analysis_op(a, anaop, 0x0, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 
@@ -585,8 +589,8 @@ static bool test_rz_colorize_generic_4(void) {
 	RzPrint *p = setup_print();
 	RzAsmOp *asmop = rz_asm_op_new();
 	RzAnalysisOp *anaop = rz_analysis_op_new();
-	// "mov ac0.l, *ar2 || mov *(ar1+t0b) << t3, ac1" - 395102a0b411014033
-	ut8 buf[] = "\x39\x51\x02\xa0\xb4\x11\x01\x40\x33";
+	// "mov ac0.l, *ar2 || mov *(ar1+t0b) << t3, ac1" - 395102a0b411414033
+	ut8 buf[] = "\x39\x51\x02\xa0\xb4\x11\x41\x40\x33";
 	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
 	rz_analysis_op(a, anaop, 0x0, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 
@@ -615,9 +619,6 @@ static bool test_rz_colorize_generic_4(void) {
 
 static bool test_rz_colorize_custom_hexagon_0(void) {
 	RzAsm *d = setup_hexagon_asm();
-	struct dummy_rz_core_t core = { 0 };
-	core.rasm = d;
-	d->core = &core;
 
 	RzPrint *p = setup_print();
 	RzAsmOp *asmop = rz_asm_op_new();
@@ -647,9 +648,6 @@ static bool test_rz_colorize_custom_hexagon_0(void) {
 
 static bool test_rz_colorize_custom_hexagon_1(void) {
 	RzAsm *d = setup_hexagon_asm();
-	struct dummy_rz_core_t core = { 0 };
-	core.rasm = d;
-	d->core = &core;
 
 	RzPrint *p = setup_print();
 	RzAsmOp *asmop = rz_asm_op_new();
@@ -677,10 +675,7 @@ static bool test_rz_colorize_custom_hexagon_1(void) {
 
 static bool test_rz_colorize_custom_hexagon_2(void) {
 	RzAsm *d = setup_hexagon_asm();
-	d->utf8 = true;
-	struct dummy_rz_core_t core = { 0 };
-	core.rasm = d;
-	d->core = &core;
+	rz_asm_set_utf8(d, true);
 
 	RzPrint *p = setup_print();
 	RzAsmOp asmop = { 0 };
@@ -721,10 +716,7 @@ static bool test_rz_colorize_custom_hexagon_2(void) {
 
 static bool test_rz_colorize_custom_hexagon_3(void) {
 	RzAsm *d = setup_hexagon_asm();
-	d->utf8 = true;
-	struct dummy_rz_core_t core = { 0 };
-	core.rasm = d;
-	d->core = &core;
+	rz_asm_set_utf8(d, true);
 
 	RzPrint *p = setup_print();
 	RzAsmOp asmop = { 0 };
@@ -817,6 +809,7 @@ static bool test_rz_tokenize_custom_bf_0(void) {
 
 static bool test_rz_tokenize_custom_mcs96_0(void) {
 	RzAsm *a = setup_mcs96_asm(NULL);
+	const RzAsmPlugin *cur = rz_asm_plugin_current(a);
 
 	// "add 0x03 0x02 0x01"
 	const ut8 buf[] = "\x44\x01\x02\x03";
@@ -831,7 +824,7 @@ static bool test_rz_tokenize_custom_mcs96_0(void) {
 	};
 
 	RzAsmOp *op = RZ_NEW0(RzAsmOp);
-	a->cur->disassemble(a, op, buf, sizeof(buf));
+	cur->disassemble(a, op, buf, sizeof(buf));
 	if (!op->asm_toks) {
 		mu_fail("NULL check failed.\n");
 	}
@@ -855,6 +848,7 @@ static bool test_rz_tokenize_custom_mcs96_0(void) {
 
 static bool test_rz_tokenize_custom_mcs96_1(void) {
 	RzAsm *a = setup_mcs96_asm(NULL);
+	const RzAsmPlugin *cur = rz_asm_plugin_current(a);
 
 	// "add 0x02 [0x00]" - indirect addressing with brackets
 	const ut8 buf[] = "\x66\x00\x02";
@@ -869,7 +863,7 @@ static bool test_rz_tokenize_custom_mcs96_1(void) {
 	};
 
 	RzAsmOp *op = RZ_NEW0(RzAsmOp);
-	a->cur->disassemble(a, op, buf, sizeof(buf));
+	cur->disassemble(a, op, buf, sizeof(buf));
 	if (!op->asm_toks) {
 		mu_fail("NULL check failed.\n");
 	}
@@ -893,6 +887,7 @@ static bool test_rz_tokenize_custom_mcs96_1(void) {
 
 static bool test_rz_tokenize_custom_mcs96_2(void) {
 	RzAsm *a = setup_mcs96_asm(NULL);
+	const RzAsmPlugin *cur = rz_asm_plugin_current(a);
 
 	// "add 0x02 [0x00]+" - indirect addressing with brackets
 	const ut8 buf[] = "\x66\x01\x02";
@@ -908,7 +903,7 @@ static bool test_rz_tokenize_custom_mcs96_2(void) {
 	};
 
 	RzAsmOp *op = RZ_NEW0(RzAsmOp);
-	a->cur->disassemble(a, op, buf, sizeof(buf));
+	cur->disassemble(a, op, buf, sizeof(buf));
 	if (!op->asm_toks) {
 		mu_fail("NULL check failed.\n");
 	}

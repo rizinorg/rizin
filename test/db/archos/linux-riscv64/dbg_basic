@@ -1,0 +1,253 @@
+NAME=Setting breakpoints on symbols works
+FILE=bins/elf/riscv_bitmanip
+ARGS=-d
+CMDS=<<EOF
+aaa
+db @ sym.imp.printf
+dbl
+dc
+dr PC; pdf @ sym.imp.printf
+EOF
+EXPECT=<<EOF
+     start        end size perm hwsw type  state   valid cmd cond name           module                        
+---------------------------------------------------------------------------------------------------------------
+0x00010440 0x00010444    4 --x  sw   break enabled valid          sym.imp.printf /test/bins/elf/riscv_bitmanip
+pc = 0x0000000000010440
+            ; XREFS(22)
+            ;-- pc:
+/ int sym.imp.printf(const char *format);
+|           0x00010440 b    auipc t3, 2
+|           0x00010444      ld    t3, -0x438(t3)
+\           0x00010448      jalr  t1, t3
+EOF
+RUN
+
+NAME=Disabling breakpoints works
+FILE=bins/elf/riscv_bitmanip
+ARGS=-d
+CMDS=<<EOF
+aaa
+db @ sym.imp.printf
+dbl
+dc
+dr PC; pdf @ sym.imp.printf
+ds
+dbd @ sym.imp.printf
+dbl
+dc
+EOF
+EXPECT=<<EOF
+     start        end size perm hwsw type  state   valid cmd cond name           module                        
+---------------------------------------------------------------------------------------------------------------
+0x00010440 0x00010444    4 --x  sw   break enabled valid          sym.imp.printf /test/bins/elf/riscv_bitmanip
+pc = 0x0000000000010440
+            ; XREFS(22)
+            ;-- pc:
+/ int sym.imp.printf(const char *format);
+|           0x00010440 b    auipc t3, 2
+|           0x00010444      ld    t3, -0x438(t3)
+\           0x00010448      jalr  t1, t3
+     start        end size perm hwsw type  state    valid cmd cond name           module                        
+----------------------------------------------------------------------------------------------------------------
+0x00010440 0x00010444    4 --x  sw   break disabled valid          sym.imp.printf /test/bins/elf/riscv_bitmanip
+32-bit rotate left 8:  0x34567812
+32-bit rotate right 12: 0x67812345
+32-bit rotate left var: 0x1A2B3C09
+32-bit rotate right var: 0xCF02468A
+64-bit rotate left:  0x8ACF13579BDE0246
+64-bit rotate right: 0xE6F78091A2B3C4D5
+Set bit 5:   0x12345678
+Set bit var: 0x12345678
+Clear bit 7: 0x12345678
+Clear bit var: 0x12344678
+Toggle bit 3: 0x12345670
+Toggle bit var: 0x1234D678
+Extract bit 9: 1
+Extract bit var: 1
+Swap endian 32: 0x78563412
+Swap endian 64: 0xF0DEBC9A78563412
+Network to host: 0xDDCCBBAA
+Hash rotate: 0x5462BCA9
+Device flags after enable: 0x00001020
+Is flag 5 set? 1
+Is flag 7 set? 0
+Device flags after disable: 0x00001000
+EOF
+RUN
+
+NAME=Stacktraces work
+FILE=bins/elf/riscv_bitmanip
+ARGS=-d
+CMDS=<<EOF
+aaa
+db @ sym.imp.printf
+dc
+dr PC; pdf @ sym.imp.printf
+dbt~[0,1,4,5,6]
+EOF
+EXPECT=<<EOF
+pc = 0x0000000000010440
+            ; XREFS(22)
+            ;-- pc:
+/ int sym.imp.printf(const char *format);
+|           0x00010440 b    auipc t3, 2
+|           0x00010444      ld    t3, -0x438(t3)
+\           0x00010448      jalr  t1, t3
+0 0x10440 0 [sym.imp.printf] sym.imp.printf
+1 0x105fa 0 [sym.demonstrate_all_operations] sym.demonstrate_all_operations+22
+2 0x10458 8 [main] main+8
+3 0x10480 416 [??] entry0+32
+EOF
+RUN
+
+NAME=Single-stepping into function calls
+FILE=bins/elf/riscv_bitmanip
+ARGS=-d
+CMDS=<<EOF
+aaa
+db @ 0x000105f6
+dc
+dr PC; pd 3 @ 0x000105f6
+ds
+dr PC; pdf
+dc
+EOF
+EXPECT=<<EOF
+pc = 0x00000000000105f6
+|           ;-- pc:
+|           0x000105f6 b    jal   sym.imp.printf                       ; int printf(const char *format)
+|           0x000105fa      lui   a0, 0x10
+|           0x000105fc      lui   a1, 0x67812
+pc = 0x0000000000010440
+            ; XREFS(22)
+            ;-- pc:
+/ int sym.imp.printf(const char *format);
+|           0x00010440      auipc t3, 2
+|           0x00010444      ld    t3, -0x438(t3)
+\           0x00010448      jalr  t1, t3
+32-bit rotate left 8:  0x34567812
+32-bit rotate right 12: 0x67812345
+32-bit rotate left var: 0x1A2B3C09
+32-bit rotate right var: 0xCF02468A
+64-bit rotate left:  0x8ACF13579BDE0246
+64-bit rotate right: 0xE6F78091A2B3C4D5
+Set bit 5:   0x12345678
+Set bit var: 0x12345678
+Clear bit 7: 0x12345678
+Clear bit var: 0x12344678
+Toggle bit 3: 0x12345670
+Toggle bit var: 0x1234D678
+Extract bit 9: 1
+Extract bit var: 1
+Swap endian 32: 0x78563412
+Swap endian 64: 0xF0DEBC9A78563412
+Network to host: 0xDDCCBBAA
+Hash rotate: 0x5462BCA9
+Device flags after enable: 0x00001020
+Is flag 5 set? 1
+Is flag 7 set? 0
+Device flags after disable: 0x00001000
+EOF
+RUN
+
+NAME=Stepping over function calls to the next instruction
+FILE=bins/elf/riscv_bitmanip
+ARGS=-d
+CMDS=<<EOF
+aaa
+db @ 0x00010454
+dc
+dr PC
+dso
+dr PC; pdf
+dc
+EOF
+EXPECT=<<EOF
+pc = 0x0000000000010454
+pc = 0x0000000000010458
+            ;-- section..text:
+            ;-- .text:
+            ;-- $xrv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0_zifencei2p0_zmmul1p0_zaamo1p0_zalrsc1p0_zca1p0_zcd1p0_zbb1p0_zbs1p0:
+/ int main(int argc, char **argv, char **envp);
+|           ; arg int argc @ a0
+|           ; arg char **argv @ a1
+|           ; var int64_t var_8h @ stack - 0x8
+|           0x00010450      addi  sp, sp, -0x10                        ; [09] -r-x section size 814 named .text
+|           0x00010452      sd    ra, 8(sp)
+|           0x00010454 b    jal   sym.demonstrate_all_operations
+|           ;-- pc:
+|           ;-- x1:
+|           0x00010458      ld    ra, 8(sp)
+|           0x0001045a      li    a0, 0
+|           0x0001045c      addi  sp, sp, 0x10
+\           0x0001045e      ret
+32-bit rotate left 8:  0x34567812
+32-bit rotate right 12: 0x67812345
+32-bit rotate left var: 0x1A2B3C09
+32-bit rotate right var: 0xCF02468A
+64-bit rotate left:  0x8ACF13579BDE0246
+64-bit rotate right: 0xE6F78091A2B3C4D5
+Set bit 5:   0x12345678
+Set bit var: 0x12345678
+Clear bit 7: 0x12345678
+Clear bit var: 0x12344678
+Toggle bit 3: 0x12345670
+Toggle bit var: 0x1234D678
+Extract bit 9: 1
+Extract bit var: 1
+Swap endian 32: 0x78563412
+Swap endian 64: 0xF0DEBC9A78563412
+Network to host: 0xDDCCBBAA
+Hash rotate: 0x5462BCA9
+Device flags after enable: 0x00001020
+Is flag 5 set? 1
+Is flag 7 set? 0
+Device flags after disable: 0x00001000
+EOF
+RUN
+
+NAME=Stepping into a function call through a 2-byte tailcall jump instruction
+FILE=bins/elf/riscv_bitmanip
+ARGS=-d
+CMDS=<<EOF
+aaa
+db @ 0x0001077c
+dc
+dr PC
+ds
+dr PC; pdf
+dc
+EOF
+EXPECT=<<EOF
+pc = 0x000000000001077c
+pc = 0x0000000000010440
+            ; XREFS(22)
+            ;-- pc:
+/ int sym.imp.printf(const char *format);
+|           0x00010440      auipc t3, 2
+|           0x00010444      ld    t3, -0x438(t3)
+\           0x00010448      jalr  t1, t3
+32-bit rotate left 8:  0x34567812
+32-bit rotate right 12: 0x67812345
+32-bit rotate left var: 0x1A2B3C09
+32-bit rotate right var: 0xCF02468A
+64-bit rotate left:  0x8ACF13579BDE0246
+64-bit rotate right: 0xE6F78091A2B3C4D5
+Set bit 5:   0x12345678
+Set bit var: 0x12345678
+Clear bit 7: 0x12345678
+Clear bit var: 0x12344678
+Toggle bit 3: 0x12345670
+Toggle bit var: 0x1234D678
+Extract bit 9: 1
+Extract bit var: 1
+Swap endian 32: 0x78563412
+Swap endian 64: 0xF0DEBC9A78563412
+Network to host: 0xDDCCBBAA
+Hash rotate: 0x5462BCA9
+Device flags after enable: 0x00001020
+Is flag 5 set? 1
+Is flag 7 set? 0
+Device flags after disable: 0x00001000
+EOF
+RUN

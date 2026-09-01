@@ -270,7 +270,7 @@ RZ_API ut64 rz_str_bits_from_string(const char *buf, const char *bitz) {
 	ut64 out = 0LL;
 	/* return the numeric value associated to a string (rflags) */
 	for (; *buf; buf++) {
-		char *ch = strchr(bitz, toupper((const unsigned char)*buf));
+		const char *ch = strchr(bitz, toupper((const unsigned char)*buf));
 		if (!ch) {
 			ch = strchr(bitz, tolower((const unsigned char)*buf));
 		}
@@ -469,130 +469,6 @@ RZ_API int rz_str_word_set0(char *str) {
 		} // s/ /\0/g
 	}
 	return i;
-}
-
-RZ_API int rz_str_word_set0_stack(char *str) {
-	int i;
-	char *p, *q;
-	RzStack *s;
-	void *pop;
-	if (!str || !*str) {
-		return 0;
-	}
-	for (i = 0; str[i] && str[i + 1]; i++) {
-		if (i > 0 && str[i - 1] == ' ' && str[i] == ' ') {
-			memmove(str + i, str + i + 1, strlen(str + i));
-			i--;
-		}
-		if (i == 0 && str[i] == ' ') {
-			memmove(str + i, str + i + 1, strlen(str + i));
-		}
-	}
-	if (str[i] == ' ') {
-		str[i] = 0;
-	}
-	s = rz_stack_new(5); // Some random number
-	for (i = 1, p = str; *p; p++) {
-		q = p - 1;
-		if (p > str && (*q == '\\')) {
-			memmove(q, p, strlen(p) + 1);
-			p--;
-			continue;
-		}
-		switch (*p) {
-		case '(':
-		case '{':
-		case '[':
-			rz_stack_push(s, (void *)p);
-			continue;
-		case '\'':
-		case '"':
-			pop = rz_stack_pop(s);
-			if (pop && *(char *)pop != *p) {
-				rz_stack_push(s, pop);
-				rz_stack_push(s, (void *)p);
-			} else if (!pop) {
-				rz_stack_push(s, (void *)p);
-			}
-			continue;
-		case ')':
-		case '}':
-		case ']':
-			pop = rz_stack_pop(s);
-			if (pop) {
-				if ((*(char *)pop == '(' && *p == ')') ||
-					(*(char *)pop == '{' && *p == '}') ||
-					(*(char *)pop == '[' && *p == ']')) {
-					continue;
-				}
-			}
-			break;
-		case ' ':
-			if (p > str && !*q) {
-				memmove(p, p + 1, strlen(p + 1) + 1);
-				if (*q == '\\') {
-					*q = ' ';
-					continue;
-				}
-				p--;
-			}
-			if (rz_stack_is_empty(s)) {
-				i++;
-				*p = '\0';
-			}
-		default:
-			break;
-		}
-	}
-	rz_stack_free(s);
-	return i;
-}
-
-RZ_API char *rz_str_word_get0set(char *stra, int stralen, int idx, const char *newstr, int *newlen) {
-	char *p = NULL;
-	char *out;
-	int alen, blen, nlen;
-	if (!stra && !newstr) {
-		return NULL;
-	}
-	if (stra) {
-		p = (char *)rz_str_word_get0(stra, idx);
-	}
-	if (!p) {
-		int nslen = strlen(newstr);
-		out = malloc(nslen + 1);
-		if (!out) {
-			return NULL;
-		}
-		strcpy(out, newstr);
-		out[nslen] = 0;
-		if (newlen) {
-			*newlen = nslen;
-		}
-		return out;
-	}
-	alen = (size_t)(p - stra);
-	blen = stralen - ((alen + strlen(p)) + 1);
-	if (blen < 0) {
-		blen = 0;
-	}
-	nlen = alen + blen + strlen(newstr);
-	out = malloc(nlen + 2);
-	if (!out) {
-		return NULL;
-	}
-	if (alen > 0) {
-		memcpy(out, stra, alen);
-	}
-	memcpy(out + alen, newstr, strlen(newstr) + 1);
-	if (blen > 0) {
-		memcpy(out + alen + strlen(newstr) + 1, p + strlen(p) + 1, blen + 1);
-	}
-	out[nlen + 1] = 0;
-	if (newlen) {
-		*newlen = nlen + ((blen == 0) ? 1 : 0);
-	}
-	return out;
 }
 
 // Get the idx'th entry of a tokenized string.
@@ -1070,7 +946,7 @@ RZ_API int rz_str_cmp(RZ_NULLABLE const char *a, RZ_NULLABLE const char *b, int 
 }
 
 // Copies all characters from src to dst up until the character 'ch'.
-RZ_API int rz_str_ccpy(char *dst, char *src, int ch) {
+RZ_API int rz_str_ccpy(char *dst, const char *src, int ch) {
 	int i;
 	for (i = 0; src[i] && src[i] != ch; i++) {
 		dst[i] = src[i];
@@ -1161,9 +1037,15 @@ RZ_API RZ_OWN char *rz_str_append(RZ_OWN RZ_NULLABLE char *ptr, const char *stri
 	if (RZ_STR_ISEMPTY(string)) {
 		return ptr;
 	}
-	int plen = strlen(ptr);
-	int slen = strlen(string);
-	char *newptr = realloc(ptr, slen + plen + 1);
+	size_t plen = strlen(ptr);
+	size_t slen = strlen(string);
+	size_t new_size = slen + plen + 1;
+	if (new_size < RZ_MAX(plen, slen)) {
+		rz_warn_if_reached();
+		free(ptr);
+		return NULL;
+	}
+	char *newptr = realloc(ptr, new_size);
 	if (!newptr) {
 		free(ptr);
 		return NULL;
@@ -1270,6 +1152,90 @@ RZ_API RZ_OWN char *rz_str_replace(RZ_OWN char *str, const char *key, const char
 		}
 	}
 	return str;
+}
+
+/**
+ *  Replace regex matches in a string.
+ *
+ * \param str Input string to transform.
+ * \param pattern Regular expression pattern to match.
+ * \param val Replacement string.
+ * \param global If true, replace all matches; otherwise replace only the first.
+ * \param icase If true, perform case-insensitive matching.
+ *
+ * \return New allocated string with replacements. And NULL in case of failure
+ */
+RZ_API RZ_OWN char *rz_str_replace_regex(const char *str, const char *pattern, const char *val, bool global, bool icase) {
+	rz_return_val_if_fail(str && pattern && val, NULL);
+
+	RzRegexFlags cflags = RZ_REGEX_DEFAULT;
+	if (icase) {
+		cflags |= RZ_REGEX_CASELESS;
+	}
+
+	RzRegex *regex = rz_regex_new(pattern, cflags, RZ_REGEX_DEFAULT, NULL);
+	if (!regex) {
+		return NULL;
+	}
+
+	const size_t str_len = strlen(str);
+	const size_t val_len = strlen(val);
+	const char *src = str;
+
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+
+	RzRegexSize search_off = 0;
+
+	while (search_off < str_len) {
+		RzPVector *matches = rz_regex_match_first(regex, src, str_len, search_off, RZ_REGEX_DEFAULT);
+
+		if (!matches || rz_pvector_empty(matches)) {
+			rz_pvector_free(matches);
+			break;
+		}
+
+		RzRegexMatch *m = rz_pvector_head(matches);
+		const RzRegexSize match_start = m->start;
+		const RzRegexSize match_len = m->len;
+
+		if (match_start > search_off) {
+			rz_strbuf_append_n(&sb, src + search_off, match_start - search_off);
+		}
+
+		if (val_len > 0) {
+			rz_strbuf_append_n(&sb, val, val_len);
+		}
+
+		rz_pvector_free(matches);
+
+		search_off = match_start + match_len;
+
+		if (!global) {
+			break;
+		}
+
+		if (match_len == 0) {
+			if (search_off < str_len) {
+				rz_strbuf_append_n(&sb, src + search_off, 1);
+				search_off++;
+			} else {
+				break;
+			}
+		}
+	}
+
+	if (search_off < str_len) {
+		rz_strbuf_append_n(&sb, src + search_off, str_len - search_off);
+	}
+
+	rz_regex_free(regex);
+
+	char *res = rz_strbuf_drain_nofree(&sb);
+	if (!res) {
+		return NULL;
+	}
+	return res;
 }
 
 RZ_API char *rz_str_replace_icase(char *str, const char *key, const char *val, int g, int keep_case) {
@@ -1947,13 +1913,14 @@ RZ_API char *rz_str_escape_mutf8_for_json(const char *buf, int buf_size) {
 RZ_API RZ_OWN char *rz_str_format_msvc_argv(size_t argc, const char **argv) {
 	RzStrBuf sb;
 	rz_strbuf_init(&sb);
-
-	size_t i;
-	for (i = 0; i < argc; i++) {
-		if (i > 0) {
+	for (size_t i = 0; i < argc; i++) {
+		const char *arg = argv[i];
+		if (!arg) {
+			arg = "";
+		}
+		if (!rz_strbuf_is_empty(&sb)) {
 			rz_strbuf_append(&sb, " ");
 		}
-		const char *arg = argv[i];
 		bool must_escape = strchr(arg, '\"') != NULL;
 		bool must_quote = strpbrk(arg, " \t") != NULL || !*arg;
 		if (!must_escape && must_quote && *arg && arg[strlen(arg) - 1] == '\\') {
@@ -2475,7 +2442,7 @@ RZ_API bool rz_str_glob(const char *str, const char *glob) {
 	if (!glob) {
 		return true;
 	}
-	char *begin = strchr(glob, '^');
+	const char *begin = strchr(glob, '^');
 	if (begin) {
 		glob = ++begin;
 	}
@@ -2542,7 +2509,9 @@ RZ_API char *rz_str_arg_escape(const char *arg) {
 		}
 	}
 	str[dest_i] = '\0';
-	return realloc(str, (strlen(str) + 1) * sizeof(char));
+	char *trimmed = realloc(str, (strlen(str) + 1) * sizeof(char));
+	// keep the valid oversized buffer if realloc fails.
+	return trimmed ? trimmed : str;
 }
 
 // Unescape the string arg to its original format
@@ -2593,7 +2562,9 @@ RZ_API char *rz_str_path_escape(const char *path) {
 	}
 
 	str[dest_i] = '\0';
-	return realloc(str, (strlen(str) + 1) * sizeof(char));
+	char *trimmed = realloc(str, (strlen(str) + 1) * sizeof(char));
+	// same as above, logic is similar to rz_str_uri_encode.
+	return trimmed ? trimmed : str;
 }
 
 RZ_API int rz_str_path_unescape(char *path) {
@@ -3249,14 +3220,14 @@ RZ_API char *rz_str_prefix_all(const char *s, const char *pfx) {
 #define HASCH(x) strchr(input_value, x)
 #define CAST     (void *)(size_t)
 RZ_API ut8 rz_str_contains_macro(const char *input_value) {
-	char *has_tilde = input_value ? HASCH('~') : NULL,
-	     *has_bang = input_value ? HASCH('!') : NULL,
-	     *has_brace = input_value ? CAST(HASCH('[') || HASCH(']')) : NULL,
-	     *has_paren = input_value ? CAST(HASCH('(') || HASCH(')')) : NULL,
-	     *has_cbrace = input_value ? CAST(HASCH('{') || HASCH('}')) : NULL,
-	     *has_qmark = input_value ? HASCH('?') : NULL,
-	     *has_colon = input_value ? HASCH(':') : NULL,
-	     *has_at = input_value ? strchr(input_value, '@') : NULL;
+	const char *has_tilde = input_value ? HASCH('~') : NULL,
+		   *has_bang = input_value ? HASCH('!') : NULL,
+		   *has_brace = input_value ? CAST(HASCH('[') || HASCH(']')) : NULL,
+		   *has_paren = input_value ? CAST(HASCH('(') || HASCH(')')) : NULL,
+		   *has_cbrace = input_value ? CAST(HASCH('{') || HASCH('}')) : NULL,
+		   *has_qmark = input_value ? HASCH('?') : NULL,
+		   *has_colon = input_value ? HASCH(':') : NULL,
+		   *has_at = input_value ? strchr(input_value, '@') : NULL;
 
 	return has_tilde || has_bang || has_brace || has_cbrace || has_qmark || has_paren || has_colon || has_at;
 }
@@ -3438,7 +3409,7 @@ RZ_API RZ_OWN char *rz_str_repeat(const char *str, ut16 times) {
 }
 
 RZ_API char *rz_str_between(const char *cmt, const char *prefix, const char *suffix) {
-	char *c0, *c1;
+	const char *c0, *c1;
 	if (!cmt || !prefix || !suffix || !*cmt) {
 		return NULL;
 	}
@@ -3741,7 +3712,7 @@ RZ_API bool rz_str_isnumber(const char *str) {
 
 /* TODO: optimize to start searching by the end of the string */
 RZ_API const char *rz_str_last(const char *str, const char *ch) {
-	char *ptr, *end = NULL;
+	const char *ptr, *end = NULL;
 	if (!str || !ch) {
 		return NULL;
 	}
@@ -4174,6 +4145,35 @@ RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, 
 	return enc == RZ_STRING_ENC_GUESS ? RZ_STRING_ENC_UTF8 : enc;
 }
 
+static inline bool is_user_defined_unprintable(const RzStrStringifyOpt *option, RzCodePoint cp) {
+	if (!option || !option->user_unprintable) {
+		return false;
+	}
+	RzCodePoint *it;
+	rz_vector_foreach (option->user_unprintable, it) {
+		if (*it == cp) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static inline bool stringification_has_incomplete_tail(const ut8 *buf, ut32 buflen, ut32 i, RzStrEnc enc) {
+	const size_t remaining = buflen - i;
+	switch (enc) {
+	case RZ_STRING_ENC_UTF8:
+		return rz_utf8_size(buf + i) > remaining;
+	case RZ_STRING_ENC_UTF16LE:
+	case RZ_STRING_ENC_UTF16BE:
+		return remaining < 2;
+	case RZ_STRING_ENC_UTF32LE:
+	case RZ_STRING_ENC_UTF32BE:
+		return remaining < 4;
+	default:
+		return false;
+	}
+}
+
 /**
  * \brief Converts a raw buffer to a printable string based on the selected options
  *
@@ -4236,6 +4236,9 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 		}
 
 		if (rsize == 0) {
+			if (stringification_has_incomplete_tail(buf, buflen, i, enc)) {
+				break;
+			}
 			if (option->stop_at_unprintable) {
 				break;
 			}
@@ -4322,17 +4325,20 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 		} else {
 			if (code_point == '\\') {
 				rz_strbuf_appendf(&sb, "\\\\");
-			} else if ((code_point == '\n' && !option->escape_nl) || (rz_unicode_code_point_is_printable(code_point))) {
-				char tmp[5] = { 0 };
-				rz_utf8_encode((ut8 *)tmp, code_point);
-				rz_strbuf_appendf(&sb, "%s", tmp);
-			} else if (option->stop_at_unprintable) {
-				break;
 			} else {
-				ut8 tmp[4];
-				int n_enc = rz_utf8_encode((ut8 *)tmp, code_point);
-				for (int j = 0; j < n_enc; ++j) {
-					rz_strbuf_appendf(&sb, "\\x%02x", tmp[j]);
+				const bool user_unprintable = is_user_defined_unprintable(option, code_point);
+				if (((code_point == '\n' && !option->escape_nl) || rz_unicode_code_point_is_printable(code_point)) && !user_unprintable) {
+					char tmp[5] = { 0 };
+					rz_utf8_encode((ut8 *)tmp, code_point);
+					rz_strbuf_appendf(&sb, "%s", tmp);
+				} else if (option->stop_at_unprintable) {
+					break;
+				} else {
+					ut8 tmp[4];
+					int n_enc = rz_utf8_encode((ut8 *)tmp, code_point);
+					for (int j = 0; j < n_enc; ++j) {
+						rz_strbuf_appendf(&sb, "\\x%02x", tmp[j]);
+					}
 				}
 			}
 		}
@@ -4485,4 +4491,83 @@ RZ_API bool rz_string_enc_requires_scanning(RzStrEnc enc) {
 	}
 	rz_warn_if_reached();
 	return true;
+}
+
+// Unicode subscript digits U+2080..U+2089 and superscript digits
+// (U+2070, U+00B9, U+00B2, U+00B3, U+2074..U+2079), indexed by the
+// digit value 0..9. These are the single source of truth for the
+// subscript/superscript number rendering shared by the bit-vector and
+// float formatters and the RzIL Unicode exporter.
+static const char *const rz_str_subscript_digits[10] = {
+	"\u2080", "\u2081", "\u2082", "\u2083", "\u2084",
+	"\u2085", "\u2086", "\u2087", "\u2088", "\u2089"
+};
+
+static const char *const rz_str_superscript_digits[10] = {
+	"\u2070", "\u00b9", "\u00b2", "\u00b3", "\u2074",
+	"\u2075", "\u2076", "\u2077", "\u2078", "\u2079"
+};
+
+static bool str_append_glyph_digits(RzStrBuf *sb, ut32 n,
+	const char *const digits[10]) {
+	char buf[16];
+	rz_strf(buf, "%u", n);
+	for (const char *d = buf; *d; d++) {
+		if (!rz_strbuf_append(sb, digits[*d - '0'])) {
+			return false;
+		}
+	}
+	return true;
+}
+
+/**
+ * \brief Append \p n rendered as Unicode subscript digits to \p sb.
+ *
+ * For example 32 becomes the subscript "32" (U+2083 U+2082). This is
+ * the shared renderer for the bit-width/format-width subscripts used
+ * by bit-vector and float value formatting and by the RzIL Unicode
+ * exporter, so all of those stay byte-for-byte identical.
+ *
+ * \param sb Destination string buffer.
+ * \param n  The number to render.
+ * \return true on success, false on allocation failure.
+ */
+RZ_API bool rz_str_append_num_subscript(RZ_NONNULL RzStrBuf *sb, ut32 n) {
+	rz_return_val_if_fail(sb, false);
+	return str_append_glyph_digits(sb, n, rz_str_subscript_digits);
+}
+
+/**
+ * \brief Append \p n rendered as Unicode superscript digits to \p sb.
+ *
+ * The superscript counterpart of rz_str_append_num_subscript(); shared so
+ * the RzIL Unicode exporter and any other consumer render run-length
+ * style annotations identically.
+ *
+ * \param sb Destination string buffer.
+ * \param n  The number to render.
+ * \return true on success, false on allocation failure.
+ */
+RZ_API bool rz_str_append_num_superscript(RZ_NONNULL RzStrBuf *sb, ut32 n) {
+	rz_return_val_if_fail(sb, false);
+	return str_append_glyph_digits(sb, n, rz_str_superscript_digits);
+}
+
+/**
+ * \brief Render \p n as a freshly-allocated Unicode subscript string.
+ *
+ * Convenience wrapper around rz_str_append_num_subscript() for callers
+ * that want an owned string rather than appending to a buffer.
+ *
+ * \param n The number to render.
+ * \return A caller-owned string, or NULL on allocation failure.
+ */
+RZ_API RZ_OWN char *rz_str_num_subscript(ut32 n) {
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	if (!rz_str_append_num_subscript(&sb, n)) {
+		rz_strbuf_fini(&sb);
+		return NULL;
+	}
+	return rz_strbuf_drain_nofree(&sb);
 }

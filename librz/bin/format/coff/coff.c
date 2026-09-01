@@ -90,6 +90,13 @@ static bool coff_is_magic(ut16 arch) {
 	case COFF_FILE_MACHINE_TI_1:
 		/* fall-thru */
 	case COFF_FILE_MACHINE_TI_2:
+		/* fall-thru */
+	case COFF_FILE_TARGET_TI_TMS320C1x2x5x:
+		/* first-generation TI fixed-point COFF (C1x/C2x/C5x): the target id
+		 * doubles as the file magic, unlike the later COFF1/COFF2 (0xc1/0xc2)
+		 * which carry a separate target id field. */
+		/* fall-thru */
+	case COFF_FILE_MACHINE_MIL1750:
 		return true;
 	default:
 		return false;
@@ -120,6 +127,31 @@ static bool coff_guess_endianness(RzBuffer *b, bool *big_endian) {
 RZ_API bool rz_coff_supported_arch(RzBuffer *b) {
 	bool big_endian = false;
 	return coff_guess_endianness(b, &big_endian);
+}
+
+/**
+ * \brief Bytes per target address unit of \p obj.
+ * \param obj COFF object
+ * \return 1 for byte-addressed targets, 2 for the 16-bit word-addressed TI DSPs
+ *
+ * The C54x and C28x address 16-bit words, so their loadable section
+ * sizes and every address in the file count words, not bytes. Rizin's address
+ * space is byte-based, so those have to be scaled to line up with the section
+ * data. Debug sections are byte streams even on these targets and are excluded
+ * by the caller.
+ */
+RZ_API ut32 rz_coff_addr_scale(RZ_NONNULL struct rz_bin_coff_obj *obj) {
+	rz_return_val_if_fail(obj, 1);
+	switch (obj->target_id) {
+	case COFF_FILE_TARGET_TI_TMS320C1x2x5x:
+	case COFF_FILE_TARGET_TI_TMS320C5400:
+	case COFF_FILE_TARGET_TI_TMS320C2800:
+		return 2;
+	default:
+		// The C55x addresses program memory by byte, so its objects need no
+		// scaling despite being a fixed-point DSP.
+		return 1;
+	}
 }
 
 RZ_API ut64 rz_coff_perms_from_section_flags(ut32 flags) {
@@ -232,6 +264,9 @@ static bool bin_coff_init_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj, ut64 *of
 		return false;
 	} else if (coff_is_ti_machine(obj)) {
 		return rz_buf_read_ble16_offset(b, offset, &obj->target_id, obj->big_endian);
+	} else if (obj->hdr.f_magic == COFF_FILE_TARGET_TI_TMS320C1x2x5x) {
+		// Original TI COFF has no separate field: the magic is the target id.
+		obj->target_id = obj->hdr.f_magic;
 	}
 	return true;
 }
@@ -265,15 +300,57 @@ static bool coff_init_scn_hdr(RzBuffer *b, ut64 *offset, struct coff_scn_hdr *sc
 		rz_buf_read_ble32_offset(b, offset, &scn->s_flags, big_endian);
 }
 
+/* TI COFF v2 section header is 48 bytes (vs 40 for the standard
+ * COFF1 form). The relocation and line-number counts are widened
+ * from 16 to 32 bits, and a 2-byte reserved field plus a 2-byte
+ * memory-page-number field are appended. The TI 'Common Object File
+ * Format Specification' (SPRAAO8) documents this; the asm55p /
+ * cl55 toolchain in the TI C55x+ SDK produces this layout. Mis-
+ * parsing as the 40-byte form leaves the section table walking
+ * off-by-8 per section, which in practice produces vaddr and size
+ * fields full of garbage (e.g. 0x7461642e, ASCII '.dat' from the
+ * adjacent section name). */
+static bool coff_init_scn_hdr_ti(RzBuffer *b, ut64 *offset, struct coff_scn_hdr *scn, bool big_endian) {
+	ut32 nreloc32 = 0;
+	ut32 nlnno32 = 0;
+	ut16 reserved = 0;
+	ut16 mempage = 0;
+	bool ok = rz_buf_read_offset(b, offset, (ut8 *)scn->s_name, sizeof(scn->s_name)) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_paddr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_vaddr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_size, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_scnptr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_relptr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_lnnoptr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &nreloc32, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &nlnno32, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_flags, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &reserved, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &mempage, big_endian);
+	if (ok) {
+		/* Clamp the wider TI counts to the 16-bit fields that the
+		 * rest of the COFF code uses; the section table is the only
+		 * place where TI widens these. Real-world section relocation
+		 * counts well above 64K are unheard of. */
+		scn->s_nreloc = (ut16)(nreloc32 > UT16_MAX ? UT16_MAX : nreloc32);
+		scn->s_nlnno = (ut16)(nlnno32 > UT16_MAX ? UT16_MAX : nlnno32);
+	}
+	return ok;
+}
+
 static bool bin_coff_init_scn_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj, ut64 *offset) {
 	obj->scn_hdrs = rz_vector_new(sizeof(struct coff_scn_hdr), NULL, NULL);
 	if (!obj->scn_hdrs) {
 		return false;
 	}
 
+	const bool ti_v2 = coff_is_ti_machine(obj);
 	for (size_t i = 0; i < obj->hdr.f_nscns; ++i) {
 		struct coff_scn_hdr scn = { 0 };
-		if (!coff_init_scn_hdr(b, offset, &scn, obj->big_endian)) {
+		const bool ok = ti_v2
+			? coff_init_scn_hdr_ti(b, offset, &scn, obj->big_endian)
+			: coff_init_scn_hdr(b, offset, &scn, obj->big_endian);
+		if (!ok) {
 			return false;
 		}
 		rz_vector_push(obj->scn_hdrs, &scn);
@@ -319,12 +396,27 @@ static bool bin_coff_init_scn_va(struct rz_bin_coff_obj *obj) {
 	if (!obj->scn_va) {
 		return false;
 	}
+	// A fully linked executable (F_EXEC) carries the real load addresses in
+	// each section's s_vaddr; honor them so section and symbol VAs match the
+	// binary (e.g. TI COFF executables place .text at 0x100, .bss high, and
+	// vectors at 0xffff00 -- not a packed sequential layout). For relocatable
+	// objects (s_vaddr typically all zero) keep the historical sequential,
+	// 16-aligned fallback so each section still gets a distinct base.
+	const bool is_exec = (obj->hdr.f_flags & COFF_FLAGS_TI_F_EXEC) != 0;
 	size_t i = 0;
 	ut64 va = 0;
 	CoffScnHdr *scn_hdr;
 	rz_vector_enumerate (obj->scn_hdrs, scn_hdr, i) {
+		if (is_exec) {
+			obj->scn_va[i] = (ut64)scn_hdr->s_vaddr * rz_coff_addr_scale(obj);
+			continue;
+		}
 		obj->scn_va[i] = va;
-		va += scn_hdr->s_size ? scn_hdr->s_size : 16;
+		// Advance by the mapped byte length so the synthetic bases cannot
+		// overlap once a word-counted section is scaled.
+		const ut32 loadable = COFF_SCN_CNT_CODE | COFF_SCN_CNT_INIT_DATA | COFF_SCN_CNT_UNIN_DATA;
+		const ut32 scale = (scn_hdr->s_flags & loadable) ? rz_coff_addr_scale(obj) : 1;
+		va += scn_hdr->s_size ? (ut64)scn_hdr->s_size * scale : 16;
 		va = RZ_ROUND(va, 16ULL);
 	}
 	return true;
@@ -344,6 +436,7 @@ RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf) {
 
 	if (!coff_guess_endianness(buf, &obj->big_endian)) {
 		RZ_LOG_ERROR("failed to guess magic & endianness\n");
+		rz_bin_coff_free(obj);
 		return NULL;
 	} else if (!bin_coff_init_hdr(buf, obj, &offset)) {
 		RZ_LOG_ERROR("failed to init hdr\n");

@@ -42,6 +42,7 @@ typedef struct rz_flag_item_t {
 	char *color; /* item color */
 	char *comment; /* item comment */
 	char *alias; /* used to define a flag based on a math expression (e.g. foo + 3) */
+	ut8 refcount; /* reference count */
 } RzFlagItem;
 
 typedef struct rz_flag_t {
@@ -101,6 +102,7 @@ RZ_API bool rz_flag_exist_at(RzFlag *f, const char *flag_prefix, ut16 fp_size, u
 RZ_API RzFlagItem *rz_flag_get(RzFlag *f, const char *name);
 RZ_API RzFlagItem *rz_flag_get_i(RzFlag *f, ut64 off);
 RZ_API RzFlagItem *rz_flag_get_by_spaces(RzFlag *f, ut64 off, ...);
+RZ_API RZ_BORROW RzFlagItem *rz_flag_get_preferred_item(RZ_NONNULL RzFlag *f, ut64 off);
 RZ_API RzFlagItem *rz_flag_get_at(RzFlag *f, ut64 off, bool closest);
 RZ_API RZ_BORROW RzFlagItem *rz_flag_get_at_by_spaces(RZ_NONNULL RzFlag *f, bool closest, ut64 off, ...);
 RZ_API RzList /*<RzFlagItem *>*/ *rz_flag_all_list(RzFlag *f, bool by_space);
@@ -118,9 +120,10 @@ RZ_API RzFlagItem *rz_flag_set_next(RzFlag *fo, const char *name, ut64 addr, ut3
 RZ_API void rz_flag_item_set_alias(RzFlagItem *item, const char *alias);
 RZ_API void rz_flag_item_free(RzFlagItem *item);
 RZ_API void rz_flag_item_set_comment(RzFlagItem *item, const char *comment);
-RZ_API void rz_flag_item_set_realname(RzFlagItem *item, const char *realname);
+RZ_API void rz_flag_item_set_realname(RzFlag *f, RzFlagItem *item, const char *realname);
 RZ_API const char *rz_flag_item_set_color(RzFlagItem *item, const char *color);
 RZ_API RzFlagItem *rz_flag_item_clone(RzFlagItem *item);
+RZ_API RzFlagItem *rz_flag_item_add_ref(RzFlagItem *item);
 RZ_API int rz_flag_unset_glob(RzFlag *f, const char *name);
 RZ_API int rz_flag_rename(RzFlag *f, RzFlagItem *item, const char *name);
 RZ_API int rz_flag_relocate(RzFlag *f, ut64 off, ut64 off_mask, ut64 to);

@@ -1,11 +1,23 @@
-NAME=analyze preludes
+NAME=analyze preludes & tail-call split
 FILE=bins/elf/fedora_32_bin_ls
 CMDS=<<EOF
 aap
 aflc
+afl~mpsort
+s sym.mpsort
+pd 2 @ sym.mpsort
+pdf~jmp
 EOF
 EXPECT=<<EOF
-458
+459
+0x000125e0   35 696  -> 679  sym.mpsort_with_tmp.part.0
+0x000128a0    6 83   -> 75   sym.mpsort
+            ; CALL XREF from fcn.00008cac @ 0x8d43
+/ sym.mpsort(int64_t arg_8h);
+|           ; arg int64_t arg_8h @ stack + 0x8
+|           0x000128a0      endbr64
+|           0x000128a4      push  r12
+\ 0x000128ee      jmp   sym.mpsort_with_tmp.part.0
 EOF
 RUN
 
@@ -540,12 +552,12 @@ afvW
   var_11ch  0x40f866
   var_100h
   var_111h
-var var_118h = 0x00177fc0 = (qword)0x1111111111111111
-var var_108h = 0x00177fd0 = (qword)0x0000000000000000
-var var_110h = 0x00177fc8 = (qword)0x0000000000000000
-var var_11ch = 0x00177fbc = (qword)0x1111111100000000
-var var_100h = 0x00177fd8 = (qword)0x0000000000000000
-var var_111h = 0x00177fc7 = (qword)0x0000000000000011
+var var_118h = 0x00177fc0 = 0x1111111111111111 [LE]
+var var_108h = 0x00177fd0 = 0x0000000000000000 [LE]
+var var_110h = 0x00177fc8 = 0x0000000000000000 [LE]
+var var_11ch = 0x00177fbc = 0x1111111100000000 [LE]
+var var_100h = 0x00177fd8 = 0x0000000000000000 [LE]
+var var_111h = 0x00177fc7 = 0x0000000000000011 [LE]
 EOF
 RUN
 
@@ -739,7 +751,7 @@ EXPECT=<<EOF
 0x00000188 0x24 0x08048188  0x24   0x0 -r-- .note.gnu.build-id NOTE alloc
 paddr size vaddr vsize align perm name type flags 
 --------------------------------------------------
-[{"name":".plt","size":240,"vsize":240,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":1888,"vaddr":134514528}]
+[{"name":".plt","size":240,"vsize":240,"perm":"-r-x","type":"PLT","flags":["alloc","execute"],"paddr":1888,"vaddr":134514528}]
 EOF
 RUN
 
@@ -900,15 +912,15 @@ e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 pd 1
-Cf 1 x
+Cf 1 x4
 pd 1
 Cf-
 pd 1
 EOF
 EXPECT=<<EOF
             0x00000000      57             push  rdi
-            0x00000000 pf x # size=1
-0x00000000 = 0x6c726f57
+            0x00000000 pf x4 # size=1
+0x00000000 = 0x6c726f57 [LE]
             0x00000000      57             push  rdi
 EOF
 RUN
@@ -1774,8 +1786,8 @@ afvd arg_8h
 afvd var_14h
 EOF
 EXPECT=<<EOF
-arg arg_8h = 0x0000000c = -1
-var var_14h = 0xfffffffffffffff0 = -1
+arg arg_8h = 0x0000000c = -1 [LE]
+var var_14h = 0xfffffffffffffff0 = -1 [LE]
 EOF
 RUN
 
@@ -2916,11 +2928,7 @@ args: 0
             `---------------------'
                 v
                 |
-                '------.
-                       |
-                       |
-                       |
-       .---------------'
+       .--------'
 .--------.
 |      | |
 |.-------------------------------------------.
@@ -3207,8 +3215,8 @@ args: 0
 |`-------------------------------------'       v
 |    v                                         |
 |    |                                         |
-|    '---------------------------------.       |
-|                                    .---------'
+|    '-------------------------------.         |
+|                                    | .-------'
 |                                    | |
 |                              .-----------.
 |                              |  0x5      |
@@ -3273,8 +3281,8 @@ EXPECT=<<EOF
 |`-------------------------------------'       v
 |    v                                         |
 |    |                                         |
-|    '---------------------------------.       |
-|                                    .---------'
+|    '-------------------------------.         |
+|                                    | .-------'
 |                                    | |
 |                              .-----------.
 |                              |  0x5      |
@@ -4367,5 +4375,212 @@ aoj~{[0].opex.operands[1].value}
 EOF
 EXPECT=<<EOF
 214
+EOF
+RUN
+
+NAME=aac creates function at syn_start_line
+FILE=bins/elf/vim
+CMDS=<<EOF
+aac
+s 0x001b8420
+afl.
+pdf @ sym.syn_start_line
+pd 2 @ sym.syntax_start
+EOF
+EXPECT=<<EOF
+0x001b8420 sym.syn_start_line
+            ; CALL XREFS from sym.syntax_start @ 0x1b9f10, 0x1b9fca, 0x1ba458
+/ sym.syn_start_line();
+|           0x001b8420      sub   rsp, 0x08
+|           0x001b8424      mov   eax, dword [0x004b3d90]              ; [0x4b3d90:4]=0
+|           0x001b842a      mov   dword [0x004b3da8], 0x00             ; [0x4b3da8:4]=0
+|           0x001b8434      mov   dword [0x004b3db0], 0x00             ; [0x4b3db0:4]=0
+|           0x001b843e      test  eax, eax
+|       ,=< 0x001b8440      jle   0x1b8451
+|       |   0x001b8442      mov   edi, 0x01
+|       |   0x001b8447      call  sym.syn_update_ends
+|       |   0x001b844c      call  sym.check_state_ends
+|       `-> 0x001b8451      mov   dword [0x004b3e18], 0xffffffff       ; [0x4b3e18:4]=0
+|           0x001b845b      add   dword [0x004b3d74], 0x01             ; [0x4b3d74:4]=0
+|           0x001b8462      add   rsp, 0x08
+\           0x001b8466      ret
+            ; CALL XREFS from sym.win_line @ 0x181983, 0x185a31
+            ; CALL XREF from sym.syn_get_foldlevel @ 0x1ba870
+            ; CALL XREF from sym.syn_get_id @ 0x1baad1
+/ sym.syntax_start(int64_t arg_fh);
+|           ; var int64_t var_70h @ stack - 0x70
+|           ; var int64_t var_64h @ stack - 0x64
+|           ; var int64_t var_60h @ stack - 0x60
+|           ; var int64_t var_58h @ stack - 0x58
+|           ; var int64_t var_50h @ stack - 0x50
+|           ; var int64_t var_48h @ stack - 0x48
+|           ; var int64_t var_40h @ stack - 0x40
+|           ; arg int64_t arg_fh @ stack + 0xf
+|           0x001b9b30      push  r15
+|           0x001b9b32      push  r14
+EOF
+RUN
+NAME=global variables populated from ELF OBJ symbols without DWARF
+FILE=bins/elf/dectest64
+CMDS=<<EOF
+aaa
+avgl~global_var
+avgl~global_array
+EOF
+EXPECT=<<EOF
+global uint8_t [4] global_var @ 0x404050
+global uint8_t [8] global_array @ 0x404058
+EOF
+RUN
+
+NAME=x64 structured exception handling xframe
+FILE=bins/pe/microsoft_seh_tests/x64/xframe_eh_exe.exe
+CMDS=<<EOF
+aaa
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from entry0 @ 0x1400019cb
+/ int main(int argc, char **argv, char **envp);
+|           0x140001770      sub   rsp, 0x28
+|           0x140001774      call  fcn.140001590
+|           0x140001779      call  fcn.140001000
+|           0x14000177e      call  fcn.140001220
+|           0x140001783      lea   rcx, qword str.Caught_Exceptions_Test_PASSED. ; 0x140003320 ; "Caught Exceptions Test PASSED." ; const char *s
+|           0x14000178a      call  qword [sym.imp.api_ms_win_crt_stdio_l1_1_0.dll_puts] ; [0x1400031a0:8]=0x3e22 ; "\">" ; int puts(const char *s)
+|           0x140001790      call  fcn.1400016a0
+|           0x140001795      lea   rcx, qword str.Resumed_Exceptions_Test_PASSED. ; 0x140003340 ; "Resumed Exceptions Test PASSED." ; const char *s
+|           0x14000179c      call  qword [sym.imp.api_ms_win_crt_stdio_l1_1_0.dll_puts] ; [0x1400031a0:8]=0x3e22 ; "\">" ; int puts(const char *s)
+|           0x1400017a2      xor   eax, eax
+|           0x1400017a4      add   rsp, 0x28
+\           0x1400017a8      ret
+EOF
+RUN
+
+NAME=x64 structured exception handling
+FILE=bins/pe/seh_x64.exe
+CMDS=<<EOF
+aaa
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from entry0 @ 0x140001433
+/ int main(int argc, char **argv, char **envp);
+|           ; arg int argc @ rcx
+|           ; arg char **argv @ rdx
+|           ; var int64_t var_18h @ stack - 0x18
+|           ; var int64_t var_8h @ stack + 0x8
+|           0x140001010      mov   qword [var_8h], rbx
+|           0x140001015      push  rdi
+|           0x140001016      sub   rsp, 0x30
+|           0x14000101a      mov   rbx, rdx                            ; argv
+|           0x14000101d      mov   edi, 0xbadbeef
+|           0x140001022      cmp   ecx, 0x01                           ; 1 ; argc
+|       ,=< 0x140001025      jle   0x140001048
+|       |   0x140001027      lea   rcx, qword str.Writing_to_invalid_pointer. ; 0x140002330 ; "Writing to invalid pointer." ; const char *s
+|       |   0x14000102e      call  qword [sym.imp.api_ms_win_crt_stdio_l1_1_0.dll_puts] ; [0x140002180:8]=0x2cbe ; int puts(const char *s)
+|       |   0x140001034      mov   rcx, qword [rbx+0x08]               ; const char *str
+|       |   0x140001038      call  qword [sym.imp.api_ms_win_crt_convert_l1_1_0.dll_atoi] ; [0x140002098:8]=0x2ca4 ; int atoi(const char *str)
+|       |   0x14000103e      mov   ebx, eax
+|       |   0x140001040      mov   dword [var_18h], eax
+|       |   0x140001044      mov   dword [rdi], eax
+|      ,==< 0x140001046      jmp   0x14000104c
+|      |`-> 0x140001048      mov   ebx, dword [var_18h]
+|      |    ; CODE XREF from main @ 0x140001046
+|      `--> 0x14000104c      lea   rcx, qword str.Try_dividing_by_zero. ; 0x140002350 ; "Try dividing by zero." ; const char *s
+|           0x140001053      call  qword [sym.imp.api_ms_win_crt_stdio_l1_1_0.dll_puts] ; [0x140002180:8]=0x2cbe ; int puts(const char *s)
+|           0x140001059      mov   eax, ebx
+|           0x14000105b      cdq
+|           0x14000105c      xor   ecx, ecx
+|           0x14000105e      idiv  ecx
+|           0x140001060      mov   dword [var_18h], eax
+|       ,=< 0x140001064      jmp   0x140001074
+|       |   ; CODE XREF from main @ 0x14000104c
+|       |   0x140001066      lea   rcx, qword str.Inside_nested_except_block ; 0x140002368 ; "Inside nested except block!" ; const char *s
+|       |   0x14000106d      call  qword [sym.imp.api_ms_win_crt_stdio_l1_1_0.dll_puts] ; [0x140002180:8]=0x2cbe ; int puts(const char *s)
+|       |   0x140001073      nop
+|       |   ; CODE XREF from main @ 0x140001064
+|      ,`-> 0x140001074      jmp   0x1400010a2
+|      |    ; CODE XREF from main @ 0x140001022
+|      |    0x140001076      lea   rcx, qword str.Inside_exception_handler ; 0x140002388 ; "Inside exception handler!\n" ; const char *s
+|      |    0x14000107d      call  qword [sym.imp.api_ms_win_crt_stdio_l1_1_0.dll_puts] ; [0x140002180:8]=0x2cbe ; int puts(const char *s)
+|      |    0x140001083      nop
+|      |    0x140001084      mov   edx, 0xbadbeef                      ; int64_t arg2
+|      |    0x140001089      mov   ecx, dword [var_18h]                ; int64_t arg1
+|      |    0x14000108d      call  fcn.140001170
+|      |,=< 0x140001092      jmp   0x1400010a2
+|      ||   ; CODE XREF from main @ 0x140001084
+|      ||   0x140001094      lea   rcx, qword str.Divide_by_zero_exception ; 0x1400023a8 ; "Divide by zero exception!" ; const char *s
+|      ||   0x14000109b      call  qword [sym.imp.api_ms_win_crt_stdio_l1_1_0.dll_puts] ; [0x140002180:8]=0x2cbe ; int puts(const char *s)
+|      ||   0x1400010a1      nop
+|      ||   ; CODE XREFS from main @ 0x140001074, 0x140001092
+|      ``-> 0x1400010a2      xor   eax, eax
+|           0x1400010a4      mov   rbx, qword [var_8h]
+|           0x1400010a9      add   rsp, 0x30
+|           0x1400010ad      pop   rdi
+\           0x1400010ae      ret
+EOF
+RUN
+
+NAME=do not mark coincidental imm in non-exec segment as data
+FILE=bins/elf/hello-freebsd-x64
+CMDS=<<EOF
+e io.cache=true
+s 0x002015ae
+wa "and dword [rbp-8], 0x0020001f"
+aaa
+Cdl~0x0020001f
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=data block should not bleed across section or map boundary
+FILE=bins/elf/hello-freebsd-x64
+CMDS=<<EOF
+aaa
+# map at 0x200000 ends at 0x0020059b = 1435 bytes
+oml~0x00200000
+# should not be 5536 bytes (upto next fxn at 0x002015a0), cap at next section
+Cdl~0x00200000
+echo "===not bleed across section==="
+e io.cache=true
+s 0x002015ae
+wa "add dword [0x00200546], 1"
+aaa
+# 0x00200546 is in section gap
+# should be caped at next section, 2 bytes ahead
+# should not be 4186 bytes (upto next fxn at 0x002015a0)
+Cdl~0x00200546
+echo "===handle section gap==="
+wa "add dword [0x00200544], 1"
+aaa
+# 0x00200544 is in .rodata
+s 0x00200544
+iS.
+# should be caped to curr section end, 2 bytes ahead
+# should not be 4188 bytes (upto next fxn at 0x002015a0)
+Cdl~0x00200544
+echo "===cap at map end==="
+s 0x002015ae
+wa "add dword [0x00200562], 1"
+aaa
+# 0x00200562 is last section before unmapped
+# so data block should cap at curr map end 0x0020059b = 57 bytes, 
+# should not be 4158 bytes (upto next fxn at 0x002015a0)
+Cdl~0x00200562
+EOF
+EXPECT=<<EOF
+ 2 fd: 3 +0x00000000 0x00200000 - 0x0020059b r-- fmap.LOAD0
+0x00200000 data Cd 680
+===not bleed across section===
+0x00200546 data Cd 2
+===handle section gap===
+     paddr size      vaddr vsize align perm name    type     flags               
+---------------------------------------------------------------------------------
+0x00000538  0xe 0x00200538   0xe   0x0 -r-- .rodata PROGBITS alloc,merge,strings
+0x00200544 data Cd 2
+===cap at map end===
+0x00200562 data Cd 58
 EOF
 RUN

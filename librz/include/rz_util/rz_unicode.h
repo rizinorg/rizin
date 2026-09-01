@@ -6,7 +6,7 @@
 
 #define RZ_UNICODE_NUL                    0
 #define RZ_UNICODE_MAX_BYTES_PER_CHAR     4
-#define RZ_UNICODE_VERSION_MAJOR          16
+#define RZ_UNICODE_VERSION_MAJOR          17
 #define RZ_UNICODE_VERSION_MINOR          0
 #define RZ_UNICODE_VERSION_PATCH          0
 #define RZ_UNICODE_LAST_ASCII             0x7F

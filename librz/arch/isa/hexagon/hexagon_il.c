@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2021 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2024-03-16 06:22:39-05:00
+// LLVM commit: bc5ac5f3ebb0bc4fc65cef7160c817ca3174a68e
+// LLVM commit date: 2026-03-15 10:22:07 -0700 (ISO 8601 format)
+// Date of code generation: 2026-03-23 17:45:56+01:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -25,9 +25,19 @@ static HexILOp hex_jump_flag_init_op = {
 	.get_il_op = (HexILOpGetter)hex_il_op_jump_flag_init,
 };
 
-static HexILOp hex_next_jump_to_next_pkt = {
+static HexILOp hex_jump_to_next_pkt = {
 	.attr = HEX_IL_INSN_ATTR_BRANCH | HEX_IL_INSN_ATTR_COND,
 	.get_il_op = (HexILOpGetter)hex_il_op_next_pkt_jmp,
+};
+
+static HexILOp hex_pkt_set_jmp_target_0 = {
+	.attr = HEX_IL_INSN_ATTR_NONE,
+	.get_il_op = (HexILOpGetter)hex_il_op_set_jmp_target_0,
+};
+
+static HexILOp hex_pkt_set_jmp_target_1 = {
+	.attr = HEX_IL_INSN_ATTR_NONE,
+	.get_il_op = (HexILOpGetter)hex_il_op_set_jmp_target_1,
 };
 
 static HexILOp hex_pkt_commit = {
@@ -207,12 +217,23 @@ RZ_IPI bool hex_shuffle_insns(RZ_INOUT HexPkt *p) {
 	return true;
 }
 
-static RzILOpEffect *hex_il_op_to_effect(const HexILOp *il_op, HexPkt *pkt) {
-	rz_return_val_if_fail(il_op && il_op->get_il_op, NULL);
-	HexInsnPktBundle bundle = { 0 };
-	bundle.insn = (HexInsn *)il_op->hi;
-	bundle.pkt = pkt;
-	return il_op->get_il_op(&bundle);
+static inline void bundle_init(HexInsnPktBundle *bundle) {
+	memset(bundle, 0, sizeof(HexInsnPktBundle));
+	bundle->jmp_targets[0] = "jump_target_0";
+	bundle->jmp_targets[1] = "jump_target_1";
+	bundle->jmp_flags[0] = "jump_flag_0";
+	bundle->jmp_flags[1] = "jump_flag_1";
+}
+
+static inline void bundle_update(HexInsnPktBundle *bundle, HexInsn *insn, HexPkt *pkt) {
+	bundle->insn = insn;
+	bundle->pkt = pkt;
+}
+
+static RzILOpEffect *hex_il_op_to_effect(const HexILOp *il_op, HexPkt *pkt, HexInsnPktBundle *bundle) {
+	rz_return_val_if_fail(bundle && il_op && il_op->get_il_op, NULL);
+	bundle_update(bundle, il_op->hi, pkt);
+	return il_op->get_il_op(bundle);
 }
 
 /**
@@ -231,9 +252,11 @@ static RZ_OWN RzILOpEffect *hex_pkt_to_il_seq(HexPkt *pkt) {
 		RZ_LOG_WARN("Invalid il ops sequence! There should be at least two il ops per packet.\n");
 		return NULL;
 	}
+	HexInsnPktBundle bundle;
+	bundle_init(&bundle);
 	RzILOpEffect *complete_seq = EMPTY();
 	for (ut32 i = 0; i < rz_pvector_len(pkt->il_ops); ++i) {
-		complete_seq = SEQ2(complete_seq, hex_il_op_to_effect((HexILOp *)rz_pvector_at(pkt->il_ops, i), pkt));
+		complete_seq = SEQ2(complete_seq, hex_il_op_to_effect((HexILOp *)rz_pvector_at(pkt->il_ops, i), pkt, &bundle));
 	}
 	return complete_seq;
 }
@@ -337,6 +360,41 @@ static inline bool pkt_at_addr_is_emu_ready(const HexPkt *pkt, const ut32 addr) 
 }
 
 /**
+ * \brief Inserts the `SETL(jmp_target_X, PURE)` effects after the respective
+ * jump effects.
+ */
+static bool insert_set_jmp_addr_effects(HexPkt *pkt) {
+	size_t idx[2] = { 0 };
+	size_t c = 0;
+	size_t i;
+	void **it;
+	rz_pvector_enumerate (pkt->il_ops, it, i) {
+		HexILOp *op = *it;
+		if (!(op->attr & HEX_IL_INSN_ATTR_BRANCH)) {
+			continue;
+		}
+		if (c >= 2) {
+			RZ_LOG_ERROR("Packet 0x%" PFMT32x " contains more than two branch instructions.\n", pkt->pkt_addr);
+			return false;
+		}
+		idx[c] = i + c + 1;
+		c++;
+	}
+	for (size_t k = 0; k < c; k++) {
+		rz_pvector_insert(pkt->il_ops, idx[k], k == 0 ? &hex_pkt_set_jmp_target_0 : &hex_pkt_set_jmp_target_1);
+		if (rz_pvector_at(pkt->il_ops, idx[k] - 1) == &hex_endloop01_op) {
+			// Edge case:
+			// The endloop01 effect has two jumps in it (one for each loop).
+			// but it is logged only once above.
+			// So we have to insert the second set_jmp_target_1 effect as well.
+			rz_pvector_insert(pkt->il_ops, idx[k] + 1, &hex_pkt_set_jmp_target_1);
+			break;
+		}
+	}
+	return true;
+}
+
+/**
  * \brief Returns the IL operation of the instruction at \p addr. This will always be EMPTY().
  * Except for last instructions in a packet. Those will always return the complete IL operation
  * of the packet or NULL if one instruction was not implemented or an error occurred.
@@ -406,9 +464,14 @@ RZ_IPI RZ_OWN RzILOpEffect *hex_get_il_op(const ut32 addr, bool get_pkt_op, RZ_N
 		rz_pvector_push(p->il_ops, &hex_endloop01_op);
 	}
 
+	if (!insert_set_jmp_addr_effects(p)) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
 	rz_pvector_push(p->il_ops, &hex_pkt_commit);
 	// Add a jump to the next packet.
-	rz_pvector_push(p->il_ops, &hex_next_jump_to_next_pkt);
+	rz_pvector_push(p->il_ops, &hex_jump_to_next_pkt);
 
 	check_for_jumps(p, &state->might_have_jumped);
 

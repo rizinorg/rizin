@@ -39,6 +39,68 @@ static bool test_rz_big_from_to_hexstr(void) {
 	mu_end;
 }
 
+static bool test_rz_big_to_decstr(void) {
+	RzNumBig *a = rz_big_new();
+	char *str;
+
+	// Trivial cases.
+	rz_big_from_int(a, 0);
+	str = rz_big_to_decstr(a);
+	mu_assert_streq_free(str, "0", "zero");
+
+	rz_big_from_int(a, 42);
+	str = rz_big_to_decstr(a);
+	mu_assert_streq_free(str, "42", "small positive");
+
+	rz_big_from_int(a, -42);
+	str = rz_big_to_decstr(a);
+	mu_assert_streq_free(str, "-42", "small negative");
+
+	// 2^64 = first value that does not fit in ut64.
+	rz_big_from_hexstr(a, "0x10000000000000000");
+	str = rz_big_to_decstr(a);
+	mu_assert_streq_free(str, "18446744073709551616", "2^64");
+
+	// Test interior zero chunks: 10^10 = 0x2540be400.
+	rz_big_from_hexstr(a, "0x2540be400");
+	str = rz_big_to_decstr(a);
+	mu_assert_streq_free(str, "10000000000", "10^10 interior chunk");
+
+	// 2^128 - 1, the largest 128-bit unsigned value.
+	rz_big_from_hexstr(a, "0xffffffffffffffffffffffffffffffff");
+	str = rz_big_to_decstr(a);
+	mu_assert_streq_free(str,
+		"340282366920938463463374607431768211455",
+		"2^128 - 1");
+
+	// Near the 4096-bit ceiling: 2^4095 is 1233 decimal digits. This
+	// is a regression test for the decstr chunk buffer, which was
+	// previously sized for a far smaller value and returned NULL for
+	// wide inputs.
+	{
+		RzNumBig *base = rz_big_new();
+		RzNumBig *exp = rz_big_new();
+		RzNumBig *res = rz_big_new();
+		rz_big_from_int(base, 2);
+		rz_big_from_int(exp, 4095);
+		rz_big_pow(res, base, exp);
+		str = rz_big_to_decstr(res);
+		mu_assert_notnull(str, "2^4095 decstr is not NULL");
+		mu_assert_eq((ut64)strlen(str), (ut64)1233,
+			"2^4095 has 1233 decimal digits");
+		// Spot-check the leading digits against the known value.
+		mu_assert_true(!strncmp(str, "52219444070657625334", 20),
+			"2^4095 leading digits");
+		free(str);
+		rz_big_free(base);
+		rz_big_free(exp);
+		rz_big_free(res);
+	}
+
+	rz_big_free(a);
+	mu_end;
+}
+
 static bool test_rz_big_assign(void) {
 	RzNumBig *a = rz_big_new();
 	RzNumBig *b = rz_big_new();
@@ -468,6 +530,54 @@ static bool test_rz_big_powm(void) {
 	mu_end;
 }
 
+static bool test_rz_big_pow(void) {
+	RzNumBig *a = rz_big_new();
+	RzNumBig *b = rz_big_new();
+	RzNumBig *c = rz_big_new();
+	char *str;
+
+	// 2^10 = 1024
+	rz_big_from_int(a, 2);
+	rz_big_from_int(b, 10);
+	rz_big_pow(c, a, b);
+	mu_assert_eq(1024, rz_big_to_int(c), "2^10");
+
+	// x^0 = 1
+	rz_big_from_int(b, 0);
+	rz_big_pow(c, a, b);
+	mu_assert_eq(1, rz_big_to_int(c), "2^0");
+
+	// x^1 = x
+	rz_big_from_int(b, 1);
+	rz_big_pow(c, a, b);
+	mu_assert_eq(2, rz_big_to_int(c), "2^1");
+
+	// 2^64 exceeds ut64; check the exact decimal form.
+	rz_big_from_int(a, 2);
+	rz_big_from_int(b, 64);
+	rz_big_pow(c, a, b);
+	str = rz_big_to_decstr(c);
+	mu_assert_streq_free(str, "18446744073709551616", "2^64");
+
+	// 10^20 exact.
+	rz_big_from_int(a, 10);
+	rz_big_from_int(b, 20);
+	rz_big_pow(c, a, b);
+	str = rz_big_to_decstr(c);
+	mu_assert_streq_free(str, "100000000000000000000", "10^20");
+
+	// Negative exponent yields zero by definition.
+	rz_big_from_int(a, 2);
+	rz_big_from_int(b, -3);
+	rz_big_pow(c, a, b);
+	mu_assert_eq(0, rz_big_to_int(c), "negative exponent -> 0");
+
+	rz_big_free(a);
+	rz_big_free(b);
+	rz_big_free(c);
+	mu_end;
+}
+
 static bool test_rz_big_isqrt(void) {
 	RzNumBig *a = rz_big_new();
 	RzNumBig *c = rz_big_new();
@@ -511,9 +621,132 @@ static bool test_rz_big_isqrt(void) {
 	mu_end;
 }
 
+static bool test_rz_big_decimal_str_roundtrip(void) {
+	const char *canonical[] = { "3.14", "0", "-2.5", "100", "0.001", "-0.5", NULL };
+	for (int i = 0; canonical[i]; i++) {
+		RzBigDecimal *d = rz_big_decimal_new_from_str(canonical[i]);
+		mu_assert_notnull(d, "new_from_str");
+		char *s = rz_big_decimal_to_str(d);
+		mu_assert_streq_free(s, canonical[i], "to_str round-trip");
+		rz_big_decimal_free(d);
+	}
+	mu_end;
+}
+
+static bool test_rz_big_decimal_from_int(void) {
+	RzBigDecimal *d = rz_big_decimal_new_from_int(42);
+	char *s = rz_big_decimal_to_str(d);
+	mu_assert_streq_free(s, "42", "from_int positive");
+	rz_big_decimal_free(d);
+	d = rz_big_decimal_new_from_int(-7);
+	s = rz_big_decimal_to_str(d);
+	mu_assert_streq_free(s, "-7", "from_int negative");
+	rz_big_decimal_free(d);
+	mu_end;
+}
+
+static bool test_rz_big_decimal_dup(void) {
+	RzBigDecimal *a = rz_big_decimal_new_from_str("12.34");
+	RzBigDecimal *b = rz_big_decimal_dup(a);
+	mu_assert_eq(rz_big_decimal_cmp(a, b), 0, "dup compares equal");
+	char *s = rz_big_decimal_to_str(b);
+	mu_assert_streq_free(s, "12.34", "dup keeps value");
+	rz_big_decimal_free(a);
+	rz_big_decimal_free(b);
+	mu_end;
+}
+
+static bool test_rz_big_decimal_add_sub_mul(void) {
+#define CHECK2(fn, sa, sb, want) \
+	do { \
+		RzBigDecimal *_a = rz_big_decimal_new_from_str(sa); \
+		RzBigDecimal *_b = rz_big_decimal_new_from_str(sb); \
+		RzBigDecimal *_r = fn(_a, _b); \
+		char *_s = rz_big_decimal_to_str(_r); \
+		mu_assert_streq_free(_s, want, sa " " #fn " " sb); \
+		rz_big_decimal_free(_a); \
+		rz_big_decimal_free(_b); \
+		rz_big_decimal_free(_r); \
+	} while (0)
+	CHECK2(rz_big_decimal_add, "0.1", "0.2", "0.3"); // exact, not 0.30000000000000004
+	CHECK2(rz_big_decimal_add, "1.5", "2.5", "4");
+	CHECK2(rz_big_decimal_sub, "10.0", "0.0001", "9.9999");
+	CHECK2(rz_big_decimal_sub, "1.5", "0.5", "1");
+	CHECK2(rz_big_decimal_mul, "0.1", "0.1", "0.01");
+	CHECK2(rz_big_decimal_mul, "-2", "2.5", "-5");
+#undef CHECK2
+	mu_end;
+}
+
+static bool test_rz_big_decimal_div(void) {
+	const char *a[] = { "1", "0.3", "1", NULL };
+	const char *b[] = { "4", "0.1", "2", NULL };
+	const char *want[] = { "0.25", "3", "0.5", NULL };
+	for (int i = 0; a[i]; i++) {
+		RzBigDecimal *x = rz_big_decimal_new_from_str(a[i]);
+		RzBigDecimal *y = rz_big_decimal_new_from_str(b[i]);
+		RzBigDecimal *r = rz_big_decimal_div(x, y, 10);
+		char *s = rz_big_decimal_to_str(r);
+		mu_assert_streq_free(s, want[i], a[i]);
+		rz_big_decimal_free(x);
+		rz_big_decimal_free(y);
+		rz_big_decimal_free(r);
+	}
+	mu_end;
+}
+
+static bool test_rz_big_decimal_neg(void) {
+	RzBigDecimal *a = rz_big_decimal_new_from_str("2.5");
+	RzBigDecimal *n = rz_big_decimal_neg(a);
+	char *s = rz_big_decimal_to_str(n);
+	mu_assert_streq_free(s, "-2.5", "neg of positive");
+	rz_big_decimal_free(n);
+	rz_big_decimal_free(a);
+	a = rz_big_decimal_new_from_str("-3");
+	n = rz_big_decimal_neg(a);
+	s = rz_big_decimal_to_str(n);
+	mu_assert_streq_free(s, "3", "neg of negative");
+	rz_big_decimal_free(n);
+	rz_big_decimal_free(a);
+	mu_end;
+}
+
+static bool test_rz_big_decimal_cmp_and_zero(void) {
+	RzBigDecimal *a = rz_big_decimal_new_from_str("0.1");
+	RzBigDecimal *b = rz_big_decimal_new_from_str("0.2");
+	mu_assert_true(rz_big_decimal_cmp(a, b) < 0, "0.1 < 0.2");
+	mu_assert_true(rz_big_decimal_cmp(b, a) > 0, "0.2 > 0.1");
+	mu_assert_eq(rz_big_decimal_cmp(a, a), 0, "0.1 == 0.1");
+	mu_assert_false(rz_big_decimal_is_zero(a), "0.1 is not zero");
+	rz_big_decimal_free(a);
+	rz_big_decimal_free(b);
+	// scale-only differences still count as zero
+	const char *zeros[] = { "0", "0.000", "-0", NULL };
+	for (int i = 0; zeros[i]; i++) {
+		RzBigDecimal *z = rz_big_decimal_new_from_str(zeros[i]);
+		mu_assert_true(rz_big_decimal_is_zero(z), zeros[i]);
+		rz_big_decimal_free(z);
+	}
+	mu_end;
+}
+
+static bool test_rz_big_decimal_to_ut64_double(void) {
+	RzBigDecimal *d = rz_big_decimal_new_from_str("42.9");
+	mu_assert_eq(rz_big_decimal_to_ut64(d), 42, "to_ut64 truncates toward zero");
+	double dd = rz_big_decimal_to_double(d);
+	mu_assert_true(dd > 42.89 && dd < 42.91, "to_double ~= 42.9");
+	rz_big_decimal_free(d);
+	d = rz_big_decimal_new_from_str("0.5");
+	dd = rz_big_decimal_to_double(d);
+	mu_assert_true(dd > 0.49 && dd < 0.51, "to_double ~= 0.5");
+	rz_big_decimal_free(d);
+	mu_end;
+}
+
 static int all_tests(void) {
 	mu_run_test(test_rz_big_from_to_int);
 	mu_run_test(test_rz_big_from_to_hexstr);
+	mu_run_test(test_rz_big_to_decstr);
 	mu_run_test(test_rz_big_assign);
 	mu_run_test(test_rz_big_cmp);
 	mu_run_test(test_rz_big_add);
@@ -531,7 +764,16 @@ static int all_tests(void) {
 	mu_run_test(test_rz_big_lshift);
 	mu_run_test(test_rz_big_rshift);
 	mu_run_test(test_rz_big_powm);
+	mu_run_test(test_rz_big_pow);
 	mu_run_test(test_rz_big_isqrt);
+	mu_run_test(test_rz_big_decimal_str_roundtrip);
+	mu_run_test(test_rz_big_decimal_from_int);
+	mu_run_test(test_rz_big_decimal_dup);
+	mu_run_test(test_rz_big_decimal_add_sub_mul);
+	mu_run_test(test_rz_big_decimal_div);
+	mu_run_test(test_rz_big_decimal_neg);
+	mu_run_test(test_rz_big_decimal_cmp_and_zero);
+	mu_run_test(test_rz_big_decimal_to_ut64_double);
 	return tests_passed != tests_run;
 }
 

@@ -125,6 +125,197 @@ static bool table_index_of_column(RzTable *t, const char *name, size_t *index) {
 	return false;
 }
 
+static bool table_column_is_numeric(const RzTableColumn *col) {
+	// query aliases like addr/length are meant for num cols only.
+	return col && (col->type == RZ_TABLE_COLUMN_TYPE_NUMBER || col->type == RZ_TABLE_COLUMN_TYPE_BOOL);
+}
+
+static bool table_query_index_of_numeric_column(RzTable *t, const char *name, size_t *index) {
+	size_t col = 0;
+	if (!table_index_of_column(t, name, &col)) {
+		return false;
+	}
+	RzTableColumn *column = rz_vector_index_ptr(t->cols, col);
+	if (!table_column_is_numeric(column)) {
+		return false;
+	}
+	if (index) {
+		*index = col;
+	}
+	return true;
+}
+
+static bool table_query_index_of_column(RzTable *t, const char *name, size_t *index) {
+	static const char *const addr_aliases[] = {
+		"vaddr",
+		"address",
+		"paddr",
+		NULL
+	};
+	static const char *const length_aliases[] = {
+		"len",
+		NULL
+	};
+	if (table_index_of_column(t, name, index)) {
+		return true;
+	}
+	// Keep stable query names working across tables with slightly different headers.
+	if (RZ_STR_EQ(name, "addr")) {
+		for (size_t i = 0; addr_aliases[i]; i++) {
+			if (table_query_index_of_numeric_column(t, addr_aliases[i], index)) {
+				return true;
+			}
+		}
+	}
+	if (RZ_STR_EQ(name, "length")) {
+		for (size_t i = 0; length_aliases[i]; i++) {
+			if (table_query_index_of_numeric_column(t, length_aliases[i], index)) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+static bool table_query_resolve_column(RzTable *t, const char *name, size_t *index) {
+	if (table_query_index_of_column(t, name, index)) {
+		return true;
+	}
+	if (name[0] == '[') {
+		int signed_col = atoi(name + 1);
+		// Bracketed indexes are query-time column selectors, not unchecked fallbacks.
+		if (signed_col >= 0 && (size_t)signed_col < rz_vector_len(t->cols)) {
+			*index = (size_t)signed_col;
+			return true;
+		}
+	}
+	if ((RZ_STR_ISEMPTY(name) || RZ_STR_EQ(name, "*")) && rz_vector_len(t->cols) > 0) {
+		*index = 0;
+		return true;
+	}
+	return false;
+}
+
+static bool table_query_resolve_column_or_log(RzTable *t, const char *name, size_t *index) {
+	if (table_query_resolve_column(t, name, index)) {
+		return true;
+	}
+	RZ_LOG_ERROR("table: Invalid column (%s)\n", name);
+	return false;
+}
+
+static void table_filter(RZ_NONNULL RzTable *t, size_t nth, int op, RZ_NONNULL const char *un);
+
+static bool table_query_select_column(RzTable *t, const char *column_name) {
+	size_t col = 0;
+	if (!table_query_resolve_column_or_log(t, column_name, &col)) {
+		return false;
+	}
+	RzTableColumn *column = rz_vector_index_ptr(t->cols, col);
+	if (!column) {
+		return false;
+	}
+	RzList *list = rz_list_newf(free);
+	char *name = rz_str_dup(column->name);
+	if (!list || !name) {
+		rz_list_free(list);
+		free(name);
+		return false;
+	}
+	rz_list_append(list, name);
+	// Select using the canonical table header, so aliases and [n] behave like real columns.
+	rz_table_columns_select(t, list);
+	rz_list_free(list);
+	return true;
+}
+
+static bool table_query_select_columns(RzTable *t, const char *column_name, const char *operand) {
+	char *op = rz_str_dup(operand ? operand : "");
+	if (!op) {
+		return false;
+	}
+	RzList *list = rz_str_split_list(op, "/", 0);
+	if (!list) {
+		free(op);
+		return false;
+	}
+	char *name = NULL;
+	size_t col = 0;
+	if (table_query_resolve_column(t, column_name, &col)) {
+		RzTableColumn *column = rz_vector_index_ptr(t->cols, col);
+		if (!column) {
+			rz_list_free(list);
+			free(op);
+			return false;
+		}
+		name = rz_str_dup(column->name);
+		if (!name) {
+			rz_list_free(list);
+			free(op);
+			return false;
+		}
+		// Normalize the first selected column before passing the list to the generic selector.
+		rz_list_prepend(list, name);
+	} else if (RZ_STR_ISNOTEMPTY(column_name)) {
+		name = rz_str_dup(column_name);
+		if (!name) {
+			rz_list_free(list);
+			free(op);
+			return false;
+		}
+		rz_list_prepend(list, name);
+	}
+	rz_table_columns_select(t, list);
+	rz_list_free(list);
+	free(op);
+	// the split list elements point into op; only the prepended name is owned here
+	free(name);
+	return true;
+}
+
+static bool table_query_filter(RzTable *t, const char *column_name, const char *operand, int op) {
+	if (!operand) {
+		return true;
+	}
+	size_t col = 0;
+	if (!table_query_resolve_column_or_log(t, column_name, &col)) {
+		return false;
+	}
+	table_filter(t, col, op, operand);
+	return true;
+}
+
+static bool table_query_sort(RzTable *t, const char *column_name, const char *operand, bool by_len) {
+	size_t col = 0;
+	if (!table_query_resolve_column_or_log(t, column_name, &col)) {
+		return false;
+	}
+	if (by_len) {
+		rz_table_sortlen(t, col, operand && RZ_STR_EQ(operand, "rev"));
+	} else {
+		rz_table_sort(t, col, operand && RZ_STR_EQ(operand, "rev"));
+	}
+	return true;
+}
+
+static bool table_query_group(RzTable *t, const char *column_name) {
+	size_t col = 0;
+	if (!table_query_resolve_column_or_log(t, column_name, &col)) {
+		return false;
+	}
+	rz_table_group(t, col, NULL);
+	return true;
+}
+
+static bool table_query_sum(RzTable *t, const char *column_name, const char *operand) {
+	if (!table_query_select_columns(t, column_name, operand)) {
+		return false;
+	}
+	// sum works on the reordered first col after selection, like the orig path expected
+	table_filter(t, 0, '+', operand ? operand : "");
+	return true;
+}
+
 static bool table_add_column(RzTable *t, const RzTableColumnType type, RzTableColumnTypeComparator cmp, const char *name) {
 	if (table_index_of_column(t, name, NULL)) {
 		return false;
@@ -807,11 +998,35 @@ static void table_filter(RZ_NONNULL RzTable *t, size_t nth, int op, RZ_NONNULL c
 		return;
 	}
 
+	RzTableColumn *col = rz_vector_index_ptr(t->cols, nth);
+	if (!col) {
+		return;
+	}
+
 	RzTableRow *row;
-	ut64 uv = rz_num_math(NULL, un);
+	ut64 uv = 0;
 	ut64 sum = 0;
 	size_t page = 0, page_items = 0;
 	size_t lrow = 0;
+	// only num operators should parse operands as math expr
+	switch (op) {
+	case 'h':
+	case 't':
+	case '>':
+	case ')':
+	case '<':
+	case '(':
+		uv = rz_num_math(NULL, un);
+		break;
+	case '=':
+	case '!':
+		if (col->type != RZ_TABLE_COLUMN_TYPE_STRING) {
+			uv = rz_num_math(NULL, un);
+		}
+		break;
+	default:
+		break;
+	}
 	if (op == 't') {
 		size_t ll = rz_vector_len(t->rows);
 		if (ll > uv) {
@@ -831,13 +1046,11 @@ static void table_filter(RZ_NONNULL RzTable *t, size_t nth, int op, RZ_NONNULL c
 	for (i = 0; i < rz_vector_len(t->rows); i++) {
 		row = rz_vector_index_ptr(t->rows, i);
 		const char *nn = rz_pvector_at(row->items, nth);
-		ut64 nv = rz_num_math(NULL, nn);
 		bool match = true;
-		RzTableRow *del_row = RZ_NEW(RzTableRow);
-		if (!del_row) {
-			RZ_LOG_ERROR("Failed to allocate memory.\n");
-			return;
-		}
+		bool use_nv = op == '+' || op == '>' || op == ')' || op == '<' || op == '(' ||
+			(col->type != RZ_TABLE_COLUMN_TYPE_STRING && (op == '=' || op == '!'));
+		// avoid feeding arbitrary str cells into rz_num_math() unless the opr is num
+		ut64 nv = use_nv ? rz_num_math(NULL, nn) : 0;
 		switch (op) {
 		case 'p':
 			nrow++;
@@ -880,15 +1093,16 @@ static void table_filter(RZ_NONNULL RzTable *t, size_t nth, int op, RZ_NONNULL c
 			match = (nv <= uv);
 			break;
 		case '=':
-			if (nv == 0 && nn != NULL) {
-				match = !strcmp(nn, un);
+			// str cols should keep str eq even for num looking txt
+			if (col->type == RZ_TABLE_COLUMN_TYPE_STRING) {
+				match = nn && !strcmp(nn, un);
 			} else {
 				match = (nv == uv);
 			}
 			break;
 		case '!':
-			if (nv == 0) {
-				match = strcmp(nn, un);
+			if (col->type == RZ_TABLE_COLUMN_TYPE_STRING) {
+				match = !nn || strcmp(nn, un);
 			} else {
 				match = (nv != uv);
 			}
@@ -917,10 +1131,11 @@ static void table_filter(RZ_NONNULL RzTable *t, size_t nth, int op, RZ_NONNULL c
 			break;
 		}
 		if (!match) {
-			rz_vector_remove_at(t->rows, i--, del_row);
-			table_row_fini(del_row);
+			RzTableRow del_row = { 0 };
+			// remove rows w/o heap allocating a temp. wrapper for each filtered row
+			rz_vector_remove_at(t->rows, i--, &del_row);
+			table_row_fini(&del_row);
 		}
-		RZ_FREE(del_row);
 	}
 	if (op == '+') {
 		rz_table_add_rowf(t, "u", sum);
@@ -1168,7 +1383,7 @@ RZ_API void rz_table_columns_select(RZ_NONNULL RzTable *t, RZ_NONNULL RzList /*<
 	size_t new_count = 0;
 	rz_list_foreach (col_names, it, col_name) {
 		size_t index = 0;
-		if (!table_index_of_column(t, col_name, &index)) {
+		if (!table_query_index_of_column(t, col_name, &index)) {
 			continue;
 		}
 		col_sources[new_count].prev_index = index;
@@ -1332,79 +1547,82 @@ RZ_API bool rz_table_query(RZ_NONNULL RzTable *t, RZ_NULLABLE const char *q) {
 		const char *operation = rz_list_get_n(q, 1);
 		const char *operand = rz_list_get_n(q, 2);
 
-		size_t col = 0;
-		if (!table_index_of_column(t, columnName, &col)) {
-			if (*columnName == '[') {
-				int signed_col = atoi(columnName + 1);
-				if (signed_col >= 0) {
-					col = signed_col;
-				}
-			}
-		}
 		if (!operation) {
-			RzList *list = rz_list_new();
-			if (list) {
-				rz_list_append(list, rz_str_dup(columnName));
-				rz_table_columns_select(t, list);
-				rz_list_free(list);
+			if (!table_query_select_column(t, columnName)) {
+				rz_list_free(q);
+				continue;
 			}
 		} else if (!strcmp(operation, "sort")) {
-			rz_table_sort(t, col, operand && RZ_STR_EQ(operand, "rev"));
+			if (!table_query_sort(t, columnName, operand, false)) {
+				rz_list_free(q);
+				continue;
+			}
 		} else if (!strcmp(operation, "uniq")) {
-			rz_table_group(t, col, NULL);
+			if (!table_query_group(t, columnName)) {
+				rz_list_free(q);
+				continue;
+			}
 		} else if (!strcmp(operation, "sortlen")) {
-			rz_table_sortlen(t, col, operand && RZ_STR_EQ(operand, "rev"));
+			if (!table_query_sort(t, columnName, operand, true)) {
+				rz_list_free(q);
+				continue;
+			}
 		} else if (!strcmp(operation, "join")) {
 			// TODO: implement join operation with other command's tables
 		} else if (!strcmp(operation, "sum")) {
-			char *op = rz_str_dup(operand ? operand : "");
-			RzList *list = rz_str_split_list(op, "/", 0);
-			rz_list_prepend(list, rz_str_dup(columnName));
-			rz_table_columns_select(t, list); // select/reorder columns
-			rz_list_free(list);
-			table_filter(t, 0, '+', op);
-			free(op);
+			if (!table_query_sum(t, columnName, operand)) {
+				rz_list_free(q);
+				continue;
+			}
 		} else if (!strcmp(operation, "strlen")) {
-			if (operand) {
-				table_filter(t, col, 's', operand);
+			if (!table_query_filter(t, columnName, operand, 's')) {
+				rz_list_free(q);
+				continue;
 			}
 		} else if (!strcmp(operation, "minlen")) {
-			if (operand) {
-				table_filter(t, col, 'l', operand);
+			if (!table_query_filter(t, columnName, operand, 'l')) {
+				rz_list_free(q);
+				continue;
 			}
 		} else if (!strcmp(operation, "maxlen")) {
-			if (operand) {
-				table_filter(t, col, 'L', operand);
+			if (!table_query_filter(t, columnName, operand, 'L')) {
+				rz_list_free(q);
+				continue;
 			}
 		} else if (!strcmp(operation, "page")) {
-			if (operand) {
-				table_filter(t, col, 'p', operand);
+			if (!table_query_filter(t, columnName, operand, 'p')) {
+				rz_list_free(q);
+				continue;
 			}
 		} else if (!strcmp(operation, "tail")) {
-			if (operand) {
-				table_filter(t, col, 't', operand);
+			if (!table_query_filter(t, columnName, operand, 't')) {
+				rz_list_free(q);
+				continue;
 			}
 		} else if (!strcmp(operation, "head")) {
-			if (operand) {
-				table_filter(t, col, 'h', operand);
+			if (!table_query_filter(t, columnName, operand, 'h')) {
+				rz_list_free(q);
+				continue;
 			}
 		} else if (!strcmp(operation, "str")) {
-			if (operand) {
-				table_filter(t, col, '~', operand);
+			if (!table_query_filter(t, columnName, operand, '~')) {
+				rz_list_free(q);
+				continue;
 			}
 		} else if (!strcmp(operation, "cols")) {
-			char *op = rz_str_dup(operand ? operand : "");
-			RzList *list = rz_str_split_list(op, "/", 0);
-			rz_list_prepend(list, rz_str_dup(columnName));
-			rz_table_columns_select(t, list); // select/reorder columns
-			rz_list_free(list);
-			free(op);
+			if (!table_query_select_columns(t, columnName, operand)) {
+				rz_list_free(q);
+				continue;
+			}
 		} else {
 			int op = table_resolve_operation(operation);
 			if (op == -1) {
 				RZ_LOG_ERROR("table: Invalid operation (%s)\n", operation);
 			} else {
-				table_filter(t, col, op, operand);
+				if (!table_query_filter(t, columnName, operand, op)) {
+					rz_list_free(q);
+					continue;
+				}
 			}
 		}
 		rz_list_free(q);

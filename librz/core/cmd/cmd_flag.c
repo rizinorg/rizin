@@ -270,7 +270,8 @@ RZ_IPI RzCmdStatus rz_flag_local_list_all_handler(RzCore *core, int argc, const 
 	RzAnalysisFunction *fcn;
 	RzListIter *it;
 	rz_cmd_state_output_array_start(state);
-	rz_list_foreach (core->analysis->fcns, it, fcn) {
+	RzList *fcns = rz_analysis_function_list(core->analysis);
+	rz_list_foreach (fcns, it, fcn) {
 		if (!ht_up_size(fcn->labels)) {
 			continue;
 		}
@@ -836,7 +837,7 @@ RZ_IPI RzCmdStatus rz_flag_realname_handler(RzCore *core, int argc, const char *
 	if (argc < 3) {
 		rz_cons_printf("%s\n", item->realname);
 	} else {
-		rz_flag_item_set_realname(item, argv[2]);
+		rz_flag_item_set_realname(core->flags, item, argv[2]);
 	}
 	return RZ_CMD_STATUS_OK;
 }

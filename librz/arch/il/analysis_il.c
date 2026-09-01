@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 
 /**
- * \name Config and Init State
+ * \name Config, Init State, and Context
  * @{
  */
 
@@ -121,63 +121,11 @@ RZ_API void rz_analysis_il_config_add_label(RZ_NONNULL RzAnalysisILConfig *cfg, 
 	rz_pvector_push(&cfg->labels, label);
 }
 
-/// @}
-
-/////////////////////////////////////////////////////////
-/**
- * \name Analysis IL VM
- * @{
- */
-
-static void setup_vm_from_config(RzAnalysis *analysis, RzAnalysisILVM *vm, RzAnalysisILConfig *cfg);
-static void setup_vm_init_state(RzAnalysisILVM *vm, RZ_NULLABLE RzAnalysisILInitState *is, RZ_NULLABLE RzReg *reg);
-
-/**
- * Create and initialize an RzAnalysisILVM with the current arch/cpu/bits configuration and plugin
- * \p init_state_reg optional RzReg to take variable values from, unless the plugin overrides them using RzAnalysisILInitState
- * \return RzAnalysisRzil* a pointer to RzAnalysisILVM instance
- */
-RZ_API RZ_OWN RzAnalysisILVM *rz_analysis_il_vm_new(RzAnalysis *a, RZ_NULLABLE RzReg *init_state_reg) {
-	rz_return_val_if_fail(a && a->cur && a->cur->il_config, NULL);
-	RzAnalysisILConfig *config = a->cur->il_config(a);
-	if (!config) {
-		return false;
-	}
-	RzAnalysisILVM *r = RZ_NEW0(RzAnalysisILVM);
-	if (!r) {
-		goto ruby_pool;
-	}
-	r->io_buf = rz_buf_new_with_io(&a->iob);
-	setup_vm_from_config(a, r, config);
-	if (!r->vm) {
-		rz_buf_free(r->io_buf);
-		free(r);
-		r = NULL;
-		goto ruby_pool;
-	}
-	setup_vm_init_state(r, config->init_state, init_state_reg);
-ruby_pool:
-	rz_analysis_il_config_free(config);
-	return r;
-}
-
-/**
- * Frees an RzAnalysisILVM instance
- */
-RZ_API void rz_analysis_il_vm_free(RZ_NULLABLE RzAnalysisILVM *vm) {
-	if (!vm) {
-		return;
-	}
-	rz_il_vm_free(vm->vm);
-	rz_il_reg_binding_free(vm->reg_binding);
-	rz_buf_free(vm->io_buf);
-	free(vm);
-}
-
-static bool setup_regs(RzAnalysis *a, RzAnalysisILVM *vm, RzAnalysisILConfig *cfg) {
+static RzILRegBinding *setup_reg_binding(RzAnalysis *a, RzAnalysisILConfig *cfg) {
 	if (!a->cur->get_reg_profile) {
 		return false;
 	}
+	RzILRegBinding *reg_binding = NULL;
 	// Explicitly use a new reg here!
 	// The a->reg might be changed by the user, but plugins expect exactly
 	// the register profile they supplied. Syncing will later adjust the register
@@ -189,7 +137,6 @@ static bool setup_regs(RzAnalysis *a, RzAnalysisILVM *vm, RzAnalysisILConfig *cf
 	char *profile = a->cur->get_reg_profile(a);
 	bool succ;
 	if (!profile) {
-		succ = false;
 		goto new_real;
 	}
 	succ = rz_reg_set_profile_string(reg, profile);
@@ -202,33 +149,145 @@ static bool setup_regs(RzAnalysis *a, RzAnalysisILVM *vm, RzAnalysisILConfig *cf
 		while (cfg->reg_bindings[count]) {
 			count++;
 		}
-		vm->reg_binding = rz_il_reg_binding_exactly(reg, count, cfg->reg_bindings);
+		reg_binding = rz_il_reg_binding_exactly(reg, count, cfg->reg_bindings);
 	} else {
-		vm->reg_binding = rz_il_reg_binding_derive(reg);
+		reg_binding = rz_il_reg_binding_derive(reg);
 	}
-	if (!vm->reg_binding) {
-		succ = false;
+	if (!reg_binding) {
 		goto new_real;
 	}
-	rz_il_vm_setup_reg_binding(vm->vm, vm->reg_binding);
 new_real:
 	rz_reg_free(reg);
-	return succ;
+	return reg_binding;
 }
 
-static void setup_vm_from_config(RzAnalysis *analysis, RzAnalysisILVM *vm, RzAnalysisILConfig *cfg) {
-	vm->vm = rz_il_vm_new(0, cfg->pc_size, cfg->big_endian, get_halt_exc_options(&analysis->coreb, analysis->core));
+static void analysis_il_mem_free(void *e, void *user) {
+	RzAnalysisILMem *mem = e;
+	rz_buf_free(mem->base_buf);
+}
+
+/**
+ * \brief Resolve a concrete IL context from the current plugin's IL config
+ */
+RZ_API RZ_OWN RzAnalysisILContext *rz_analysis_il_context_resolve(RzAnalysis *a) {
+	rz_return_val_if_fail(a && a->cur && a->cur->il_config, NULL);
+	RzAnalysisILContext *ctx = RZ_NEW0(RzAnalysisILContext);
+	if (!ctx) {
+		return NULL;
+	}
+	ctx->config = a->cur->il_config(a);
+	if (!ctx->config) {
+		goto err_ctx;
+	}
+	ctx->reg_binding = setup_reg_binding(a, ctx->config);
+	if (!ctx->reg_binding) {
+		goto err_config;
+	}
+
+	rz_vector_init(&ctx->memory, sizeof(RzAnalysisILMem), analysis_il_mem_free, NULL);
+
+	// Currently only a single memory bound to io is supported. More could be added here.
+	RzAnalysisILMem *io_mem = rz_vector_push(&ctx->memory, NULL);
+	if (!io_mem) {
+		goto err_reg_binding;
+	}
+	io_mem->type = RZ_ANALYSIS_IL_MEM_TYPE_IO;
+	io_mem->key_size = ctx->config->mem_key_size;
+	io_mem->base_buf = rz_buf_new_with_io(&a->iob);
+	if (!io_mem->base_buf) {
+		goto err_memory;
+	}
+	return ctx;
+err_memory:
+	rz_vector_fini(&ctx->memory);
+err_reg_binding:
+	rz_il_reg_binding_free(ctx->reg_binding);
+err_config:
+	rz_analysis_il_config_free(ctx->config);
+err_ctx:
+	free(ctx);
+	return NULL;
+}
+
+RZ_API void rz_analysis_il_context_free(RzAnalysisILContext *ctx) {
+	if (!ctx) {
+		return;
+	}
+	rz_analysis_il_config_free(ctx->config);
+	rz_il_reg_binding_free(ctx->reg_binding);
+	rz_vector_fini(&ctx->memory);
+	free(ctx);
+}
+
+/// @}
+
+/////////////////////////////////////////////////////////
+/**
+ * \name Analysis IL VM
+ * @{
+ */
+
+static void setup_vm_from_context(RzAnalysis *analysis, RzAnalysisILVM *vm, RZ_OWN RzAnalysisILContext *ctx);
+static void setup_vm_init_state(RzAnalysisILVM *vm, RZ_NULLABLE RzAnalysisILInitState *is, RZ_NULLABLE RzReg *reg);
+
+/**
+ * Create and initialize an RzAnalysisILVM with the current arch/cpu/bits configuration and plugin
+ * \p init_state_reg optional RzReg to take variable values from, unless the plugin overrides them using RzAnalysisILInitState
+ * \return RzAnalysisRzil* a pointer to RzAnalysisILVM instance
+ */
+RZ_API RZ_OWN RzAnalysisILVM *rz_analysis_il_vm_new(RzAnalysis *a, RZ_NULLABLE RzReg *init_state_reg) {
+	rz_return_val_if_fail(a && a->cur && a->cur->il_config, NULL);
+	RzAnalysisILContext *context = rz_analysis_il_context_resolve(a);
+	if (!context) {
+		return false;
+	}
+	RzAnalysisILVM *r = RZ_NEW0(RzAnalysisILVM);
+	if (!r) {
+		goto ruby_pool;
+	}
+	setup_vm_from_context(a, r, context);
+	if (!r->vm) {
+		free(r);
+		r = NULL;
+		goto ruby_pool;
+	}
+	setup_vm_init_state(r, context->config->init_state, init_state_reg);
+	return r;
+ruby_pool:
+	rz_analysis_il_context_free(context);
+	return NULL;
+}
+
+/**
+ * Frees an RzAnalysisILVM instance
+ */
+RZ_API void rz_analysis_il_vm_free(RZ_NULLABLE RzAnalysisILVM *vm) {
+	if (!vm) {
+		return;
+	}
+	rz_il_vm_free(vm->vm);
+	rz_analysis_il_context_free(vm->ctx);
+	free(vm);
+}
+
+static void setup_vm_from_context(RzAnalysis *analysis, RzAnalysisILVM *vm, RZ_OWN RzAnalysisILContext *ctx) {
+	vm->vm = rz_il_vm_new(0, ctx->config->pc_size, ctx->config->big_endian, get_halt_exc_options(&analysis->coreb, analysis->core));
 	if (!vm->vm) {
 		return;
 	}
-	if (!setup_regs(analysis, vm, cfg)) {
-		rz_il_vm_free(vm->vm);
-		vm->vm = NULL;
-		return;
+	vm->ctx = ctx;
+	rz_il_vm_setup_reg_binding(vm->vm, ctx->reg_binding);
+	for (RzILMemIndex i = 0; i < (RzILMemIndex)rz_vector_len(&ctx->memory); i++) {
+		RzAnalysisILMem *analysis_mem = rz_vector_index_ptr(&ctx->memory, i);
+		if (!analysis_mem->base_buf) {
+			// Memories without a backing buffer are supported by the API, but not yet the implementation
+			rz_warn_if_reached();
+			continue;
+		}
+		rz_il_vm_add_mem(vm->vm, 0, rz_il_mem_new_borrowed(analysis_mem->base_buf, analysis_mem->key_size));
 	}
-	rz_il_vm_add_mem(vm->vm, 0, rz_il_mem_new_borrowed(vm->io_buf, cfg->mem_key_size));
 	void **it;
-	rz_pvector_foreach (&cfg->labels, it) {
+	rz_pvector_foreach (&ctx->config->labels, it) {
 		RzILEffectLabel *lbl = *it;
 		rz_il_vm_add_label(vm->vm, rz_il_effect_label_dup(lbl));
 	}
@@ -236,7 +295,7 @@ static void setup_vm_from_config(RzAnalysis *analysis, RzAnalysisILVM *vm, RzAna
 
 static void setup_vm_init_state(RzAnalysisILVM *vm, RZ_NULLABLE RzAnalysisILInitState *is, RZ_NULLABLE RzReg *reg) {
 	if (reg) {
-		rz_il_vm_sync_from_reg(vm->vm, vm->reg_binding, reg);
+		rz_il_vm_sync_from_reg(vm->vm, vm->ctx->reg_binding, reg);
 	}
 	if (is) {
 		RzAnalysisILInitStateVar *v;
@@ -257,7 +316,7 @@ static void setup_vm_init_state(RzAnalysisILVM *vm, RZ_NULLABLE RzAnalysisILInit
  */
 RZ_API void rz_analysis_il_vm_sync_from_reg(RzAnalysisILVM *vm, RZ_NONNULL RzReg *reg) {
 	rz_return_if_fail(vm && reg);
-	rz_il_vm_sync_from_reg(vm->vm, vm->reg_binding, reg);
+	rz_il_vm_sync_from_reg(vm->vm, vm->ctx->reg_binding, reg);
 }
 
 /**
@@ -270,7 +329,7 @@ RZ_API void rz_analysis_il_vm_sync_from_reg(RzAnalysisILVM *vm, RZ_NONNULL RzReg
  */
 RZ_API bool rz_analysis_il_vm_sync_to_reg(RzAnalysisILVM *vm, RZ_NONNULL RzReg *reg) {
 	rz_return_val_if_fail(vm && reg, false);
-	return rz_il_vm_sync_to_reg(vm->vm, vm->reg_binding, reg);
+	return rz_il_vm_sync_to_reg(vm->vm, vm->ctx->reg_binding, reg);
 }
 
 static void il_events(RzILVM *vm, RzStrBuf *sb) {
@@ -288,7 +347,7 @@ static RzAnalysisILStepResult analysis_il_vm_step_while(
 
 	rz_return_val_if_fail(analysis && vm, false);
 	RzAnalysisPlugin *cur = analysis->cur;
-	if (!cur || !analysis->read_at) {
+	if (!cur || !analysis->cb.read_at) {
 		return RZ_ANALYSIS_IL_STEP_RESULT_NOT_SET_UP;
 	}
 
@@ -301,7 +360,7 @@ static RzAnalysisILStepResult analysis_il_vm_step_while(
 	while (cond(vm, user)) {
 		ut64 addr = rz_bv_to_ut64(vm->vm->pc);
 		ut8 code[32] = { 0 };
-		analysis->read_at(analysis, addr, code, sizeof(code));
+		analysis->cb.read_at(analysis, addr, code, sizeof(code));
 		int r = rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_DISASM);
 
 		if (r < 0) {
@@ -435,7 +494,7 @@ RZ_API bool rz_analysis_il_vm_setup(RzAnalysis *analysis) {
 	if (analysis->il_vm) {
 		// rz_analysis_il_vm_new merges the contents of analysis->reg with the plugin's optional RzAnalysisILInitState
 		// Now sync the merged state back:
-		rz_il_vm_sync_to_reg(analysis->il_vm->vm, analysis->il_vm->reg_binding, analysis->reg);
+		rz_il_vm_sync_to_reg(analysis->il_vm->vm, analysis->il_vm->ctx->reg_binding, analysis->reg);
 	}
 	return !!analysis->il_vm;
 }
@@ -447,6 +506,114 @@ RZ_API void rz_analysis_il_vm_cleanup(RzAnalysis *analysis) {
 	rz_return_if_fail(analysis);
 	rz_analysis_il_vm_free(analysis->il_vm);
 	analysis->il_vm = NULL;
+}
+
+static bool analysis_il_vm_set(RzAnalysis *analysis, const char *var_name, RzILVal *val) {
+	if (!val) {
+		return false;
+	}
+
+	rz_il_vm_set_global_var(analysis->il_vm->vm, var_name, val);
+	rz_analysis_il_vm_sync_to_reg(analysis->il_vm, analysis->reg);
+	return true;
+}
+
+/**
+ * \brief Set a vm variable to a given unsigned value
+ * \return whether the set succeeded
+ *
+ * Sets the given var, or "PC" to the given value.
+ * The type of the variable is handled dynamically.
+ * This is intended for setting from user input only.
+ */
+RZ_API bool rz_analysis_il_vm_set_unsigned(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *var_name, ut64 value) {
+	rz_return_val_if_fail(analysis, false);
+	if (!analysis->il_vm || RZ_STR_ISEMPTY(var_name)) {
+		return false;
+	}
+
+	if (RZ_STR_EQ(var_name, "PC")) {
+		RzILVM *vm = analysis->il_vm->vm;
+		rz_bv_set_from_ut64(vm->pc, value);
+		return true;
+	}
+
+	RzILVar *var = rz_il_vm_get_var(analysis->il_vm->vm, RZ_IL_VAR_KIND_GLOBAL, var_name);
+	if (!var || var->sort.type != RZ_IL_TYPE_PURE_BITVECTOR) {
+		RZ_LOG_ERROR("RzIL: cannot set non-bitvector var with a bitvector\n");
+		return false;
+	}
+
+	RzILVal *val = rz_il_value_new_bitv(rz_bv_new_from_ut64(var->sort.props.bv.length, value));
+	return analysis_il_vm_set(analysis, var_name, val);
+}
+
+/**
+ * \brief Set a vm variable to a given boolean value
+ * \return whether the set succeeded
+ */
+RZ_API bool rz_analysis_il_vm_set_bool(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *var_name, bool value) {
+	rz_return_val_if_fail(analysis && var_name, false);
+	if (!analysis->il_vm || RZ_STR_ISEMPTY(var_name)) {
+		return false;
+	}
+
+	RzILVar *var = rz_il_vm_get_var(analysis->il_vm->vm, RZ_IL_VAR_KIND_GLOBAL, var_name);
+	if (!var || var->sort.type != RZ_IL_TYPE_PURE_BOOL) {
+		RZ_LOG_ERROR("RzIL: cannot set non-bool var with a bool\n");
+		return false;
+	}
+
+	RzILVal *val = rz_il_value_new_bool(rz_il_bool_new(value));
+	return analysis_il_vm_set(analysis, var_name, val);
+}
+
+/**
+ * \brief Set a vm variable to a given float value
+ * \return whether the set succeeded
+ */
+RZ_API bool rz_analysis_il_vm_set_float(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *var_name, long double value) {
+	rz_return_val_if_fail(analysis && var_name, false);
+	if (!analysis->il_vm || RZ_STR_ISEMPTY(var_name)) {
+		return false;
+	}
+
+	RzILVar *var = rz_il_vm_get_var(analysis->il_vm->vm, RZ_IL_VAR_KIND_GLOBAL, var_name);
+	if (!var || var->sort.type != RZ_IL_TYPE_PURE_FLOAT) {
+		RZ_LOG_ERROR("RzIL: cannot set non-float var with a float\n");
+		return false;
+	}
+
+	RzFloat *vfloat = NULL;
+	switch (var->sort.props.f.format) {
+	case RZ_FLOAT_IEEE754_BIN_32:
+		vfloat = rz_float_new_from_f32(value);
+		break;
+	case RZ_FLOAT_IEEE754_BIN_64:
+		vfloat = rz_float_new_from_f64(value);
+		break;
+	case RZ_FLOAT_IEEE754_BIN_80:
+		vfloat = rz_float_new_from_f80(value);
+		break;
+	case RZ_FLOAT_IEEE754_BIN_128:
+		vfloat = rz_float_new_from_f128(value);
+		break;
+	case RZ_FLOAT_IEEE754_BIN_16:
+		RZ_LOG_ERROR("RzIL: Set float var from RZ_FLOAT_IEEE754_BIN_16 is not supported\n");
+		return false;
+	case RZ_FLOAT_IEEE754_DEC_64:
+		RZ_LOG_ERROR("RzIL: Set float var from RZ_FLOAT_IEEE754_DEC_64 is not supported\n");
+		return false;
+	case RZ_FLOAT_IEEE754_DEC_128:
+		RZ_LOG_ERROR("RzIL: Set float var from RZ_FLOAT_IEEE754_DEC_128 is not supported\n");
+		return false;
+	default:
+		RZ_LOG_ERROR("RzIL: Set float var from %u supported\n", (ut32)var->sort.props.f.format);
+		return false;
+	}
+
+	RzILVal *val = rz_il_value_new_float(vfloat);
+	return analysis_il_vm_set(analysis, var_name, val);
 }
 
 /// @}

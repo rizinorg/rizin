@@ -29,7 +29,7 @@ RZ_LIB_VERSION(rz_bin);
 static RzBinPlugin *bin_static_plugins[] = { RZ_BIN_STATIC_PLUGINS };
 static RzBinXtrPlugin *bin_xtr_static_plugins[] = { RZ_BIN_XTR_STATIC_PLUGINS };
 
-static ut64 __getoffset(RzBin *bin, int type, int idx) {
+static ut64 bin_bind_get_offset(RzBin *bin, int type, int idx) {
 	RzBinFile *a = rz_bin_cur(bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
 	if (plugin && plugin->get_offset) {
@@ -38,7 +38,7 @@ static ut64 __getoffset(RzBin *bin, int type, int idx) {
 	return UT64_MAX;
 }
 
-static char *__getname(RzBin *bin, int type, int idx) {
+static char *bin_bind_get_name(RzBin *bin, int type, int idx) {
 	RzBinFile *a = rz_bin_cur(bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
 	if (plugin && plugin->get_name) {
@@ -126,6 +126,7 @@ RZ_API void rz_bin_info_free(RZ_NULLABLE RzBinInfo *rb) {
 	free(rb->claimed_checksum);
 	free(rb->compiler);
 	free(rb->head_flag);
+	ht_ss_free(rb->extra_dict);
 	free(rb);
 }
 
@@ -420,7 +421,8 @@ RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 	const char *default_plugin = rz_pvector_at(compatible_plugins, 0);
 	if (rz_pvector_len(compatible_plugins) > 1) {
 		RzStrBuf *compatible_plugin_list = join_plugin_names(compatible_plugins);
-		RZ_LOG_WARN("The input file can be opened by multiple binary plugins (%s). The '%s' plugin will be used by default.\n",
+		RZ_LOG_WARN("The input file can be opened by multiple binary plugins (%s). The '%s' plugin will be used by default.\n"
+			    "You can also open the file with 'rizin -F <bin_plugin> <binary>' to force a specific one.\n\n",
 			compatible_plugin_list ? rz_strbuf_get(compatible_plugin_list) : "", default_plugin);
 		rz_strbuf_free(compatible_plugin_list);
 	}
@@ -521,6 +523,7 @@ RZ_API void rz_bin_free(RZ_NULLABLE RzBin *bin) {
 	bin->file = NULL;
 	free(bin->force);
 	free(bin->srcdir);
+	rz_vector_free(bin->str_search_cfg.user_unprintable);
 	// rz_bin_free_bin_files (bin);
 	rz_list_free(bin->binfiles);
 
@@ -947,7 +950,7 @@ RZ_API void rz_bin_set_user_ptr(RzBin *bin, void *user) {
 	bin->user = user;
 }
 
-static RzBinSection *__get_vsection_at(RzBin *bin, ut64 vaddr) {
+static RzBinSection *bin_bind_get_vsection_at(RzBin *bin, ut64 vaddr) {
 	rz_return_val_if_fail(bin, NULL);
 	if (!bin->cur || !bin->cur->o) {
 		return NULL;
@@ -955,15 +958,31 @@ static RzBinSection *__get_vsection_at(RzBin *bin, ut64 vaddr) {
 	return rz_bin_get_section_at(bin->cur->o, vaddr, true);
 }
 
+static RzBinObject *bin_bind_get_bin_object(RzBin *bin) {
+	rz_return_val_if_fail(bin, NULL);
+	RzBinFile *bf = rz_bin_cur(bin);
+	return bf ? bf->o : NULL;
+}
+
+static RzPVector /*<RzBinTrycatch *>*/ *bin_bind_get_trycatch(RzBin *bin) {
+	rz_return_val_if_fail(bin, NULL);
+	RzBinFile *bf = rz_bin_cur(bin);
+	return bf ? rz_bin_file_get_trycatch(bf) : NULL;
+}
+
 RZ_API void rz_bin_bind(RzBin *bin, RzBinBind *b) {
-	if (b) {
-		b->bin = bin;
-		b->get_offset = __getoffset;
-		b->get_name = __getname;
-		b->get_sections = rz_bin_object_get_sections_all;
-		b->get_vsect_at = __get_vsection_at;
-		b->demangle = rz_bin_demangle;
+	if (!b) {
+		return;
 	}
+
+	b->bin = bin;
+	b->get_offset = bin_bind_get_offset;
+	b->get_name = bin_bind_get_name;
+	b->get_sections = rz_bin_object_get_sections_all;
+	b->get_vsect_at = bin_bind_get_vsection_at;
+	b->demangle = rz_bin_demangle;
+	b->get_bin_object = bin_bind_get_bin_object;
+	b->get_trycatch = bin_bind_get_trycatch;
 }
 
 RZ_API RzBuffer *rz_bin_create(RzBin *bin, const char *p,
@@ -1396,7 +1415,7 @@ RZ_API bool rz_bin_map_is_data(RZ_NONNULL const RzBinMap *map) {
  * \param bin RzBin instance
  * \param type A type field of the RzBinSection (differs between formats)
  * */
-RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, int type) {
+RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, ut64 type) {
 	RzBinFile *a = rz_bin_cur(bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
 	if (plugin && plugin->section_type_to_string) {

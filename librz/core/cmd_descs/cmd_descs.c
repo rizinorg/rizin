@@ -18,10 +18,16 @@ static const RzCmdDescDetail cmd_search_hash_block_details[3];
 static const RzCmdDescDetail cmd_search_hash_entropy_details[2];
 static const RzCmdDescDetail cmd_search_hash_entropy_fractional_details[2];
 static const RzCmdDescDetail cmd_search_cryptographic_material_details[2];
+static const RzCmdDescDetail cmd_query_cop_gadget_details[5];
+static const RzCmdDescDetail cmd_cop_search_stack_details[2];
+static const RzCmdDescDetail cmd_cop_gadget_search_size_details[2];
 static const RzCmdDescDetail cmd_search_file_details[2];
-static const RzCmdDescDetail cmd_query_gadget_details[5];
+static const RzCmdDescDetail cmd_query_jop_gadget_details[5];
+static const RzCmdDescDetail cmd_jop_search_stack_details[2];
+static const RzCmdDescDetail cmd_jop_gadget_search_size_details[2];
+static const RzCmdDescDetail cmd_query_rop_gadget_details[5];
 static const RzCmdDescDetail cmd_rop_search_stack_details[2];
-static const RzCmdDescDetail cmd_rop_search_size_details[2];
+static const RzCmdDescDetail cmd_rop_gadget_search_size_details[2];
 static const RzCmdDescDetail cmd_search_value_details[3];
 static const RzCmdDescDetail cmd_search_hex_details[2];
 static const RzCmdDescDetail cmd_search_hex_regex_details[2];
@@ -83,10 +89,14 @@ static const RzCmdDescDetail query_sdb_get_set_details[2];
 static const RzCmdDescDetail plugins_asm_print_details[2];
 static const RzCmdDescDetail open_binary_select_details[2];
 static const RzCmdDescDetail cmd_print_byte_array_details[3];
-static const RzCmdDescDetail pf_details[3];
+static const RzCmdDescDetail pf_details[10];
+static const RzCmdDescDetail print_function_rzil_enriched_details[6];
 static const RzCmdDescDetail print_string_details[2];
 static const RzCmdDescDetail print_hexdump_format_details[4];
 static const RzCmdDescDetail print_rising_and_falling_entropy_details[2];
+static const RzCmdDescDetail type_define_from_format_details[2];
+static const RzCmdDescDetail type_rename_details[2];
+static const RzCmdDescDetail type_typeclass_set_details[2];
 static const RzCmdDescDetail interactive_visual_details[2];
 static const RzCmdDescDetail write_details[3];
 static const RzCmdDescDetail write_bits_details[2];
@@ -147,8 +157,20 @@ static const RzCmdDescArg cmd_search_hash_block_args[4];
 static const RzCmdDescArg cmd_search_hash_entropy_args[4];
 static const RzCmdDescArg cmd_search_hash_entropy_fractional_args[4];
 static const RzCmdDescArg cmd_search_cryptographic_material_args[2];
+static const RzCmdDescArg cmd_info_cop_gadget_args[2];
+static const RzCmdDescArg cmd_search_cop_gadget_args[2];
+static const RzCmdDescArg cmd_query_cop_gadget_args[2];
+static const RzCmdDescArg cmd_detail_cop_gadget_args[2];
+static const RzCmdDescArg cmd_cop_search_stack_args[2];
+static const RzCmdDescArg cmd_cop_gadget_search_size_args[2];
 static const RzCmdDescArg cmd_search_deltified_args[2];
 static const RzCmdDescArg cmd_search_file_args[4];
+static const RzCmdDescArg cmd_info_jop_gadget_args[2];
+static const RzCmdDescArg cmd_search_jop_gadget_args[2];
+static const RzCmdDescArg cmd_query_jop_gadget_args[2];
+static const RzCmdDescArg cmd_detail_jop_gadget_args[2];
+static const RzCmdDescArg cmd_jop_search_stack_args[2];
+static const RzCmdDescArg cmd_jop_gadget_search_size_args[2];
 static const RzCmdDescArg cmd_search_insn_offset_backwards_args[2];
 static const RzCmdDescArg cmd_search_insn_offset_backwards_fallback_args[2];
 static const RzCmdDescArg cmd_search_pattern_args[2];
@@ -157,12 +179,12 @@ static const RzCmdDescArg cmd_search_graph_path_args[3];
 static const RzCmdDescArg cmd_search_graph_path_follow_calls_args[3];
 static const RzCmdDescArg cmd_search_magic_const_args[2];
 static const RzCmdDescArg cmd_search_reference_args[2];
-static const RzCmdDescArg cmd_info_gadget_args[2];
-static const RzCmdDescArg cmd_search_gadget_args[2];
-static const RzCmdDescArg cmd_query_gadget_args[2];
-static const RzCmdDescArg cmd_detail_gadget_args[2];
+static const RzCmdDescArg cmd_info_rop_gadget_args[2];
+static const RzCmdDescArg cmd_search_rop_gadget_args[2];
+static const RzCmdDescArg cmd_query_rop_gadget_args[2];
+static const RzCmdDescArg cmd_detail_rop_gadget_args[2];
 static const RzCmdDescArg cmd_rop_search_stack_args[2];
-static const RzCmdDescArg cmd_rop_search_size_args[2];
+static const RzCmdDescArg cmd_rop_gadget_search_size_args[2];
 static const RzCmdDescArg cmd_search_value_args[3];
 static const RzCmdDescArg cmd_search_value_alias_v1_args[2];
 static const RzCmdDescArg cmd_search_value_alias_v2_args[2];
@@ -256,6 +278,9 @@ static const RzCmdDescArg analysis_function_vars_rename_args[3];
 static const RzCmdDescArg analysis_function_vars_reads_args[2];
 static const RzCmdDescArg analysis_function_vars_writes_args[2];
 static const RzCmdDescArg analysis_function_vars_type_args[3];
+static const RzCmdDescArg analysis_function_vars_constraints_args[2];
+static const RzCmdDescArg analysis_function_vars_constraints_set_args[3];
+static const RzCmdDescArg analysis_function_vars_constraints_del_args[2];
 static const RzCmdDescArg analysis_function_vars_xrefs_args[2];
 static const RzCmdDescArg analysis_function_vars_xrefs_args_args[2];
 static const RzCmdDescArg analysis_function_vars_xrefs_vars_args[2];
@@ -332,6 +357,9 @@ static const RzCmdDescArg analysis_global_variable_rename_args[3];
 static const RzCmdDescArg analysis_global_variable_print_args[2];
 static const RzCmdDescArg analysis_global_variable_retype_args[3];
 static const RzCmdDescArg analysis_global_variable_xrefs_args[2];
+static const RzCmdDescArg analysis_global_variable_constraints_args[2];
+static const RzCmdDescArg analysis_global_variable_constraints_set_args[3];
+static const RzCmdDescArg analysis_global_variable_constraints_del_args[2];
 static const RzCmdDescArg analysis_rtti_demangle_class_name_args[2];
 static const RzCmdDescArg analysis_virtual_xrefs_args[2];
 static const RzCmdDescArg analysis_xrefs_set_0_args[2];
@@ -356,6 +384,7 @@ static const RzCmdDescArg analysis_hint_set_ret_args[2];
 static const RzCmdDescArg analysis_hint_set_val_args[2];
 static const RzCmdDescArg analysis_hint_set_optype_args[2];
 static const RzCmdDescArg analysis_hint_set_immbase_args[3];
+static const RzCmdDescArg analysis_hint_set_enum_args[3];
 static const RzCmdDescArg analysis_hint_set_offset_args[2];
 static const RzCmdDescArg analysis_list_struct_offsets_args[2];
 static const RzCmdDescArg analysis_class_add_args[2];
@@ -509,18 +538,18 @@ static const RzCmdDescArg cmd_heap_fastbins_print_args[2];
 static const RzCmdDescArg cmd_heap_chunks_graph_args[2];
 static const RzCmdDescArg cmd_heap_info_print_args[2];
 static const RzCmdDescArg cmd_main_arena_print_args[2];
-static const RzCmdDescArg cmd_debug_dmi_args[3];
-static const RzCmdDescArg cmd_debug_dmi_all_args[2];
-static const RzCmdDescArg cmd_debug_dml_args[2];
-static const RzCmdDescArg debug_memory_permission_args[3];
-static const RzCmdDescArg cmd_debug_dmL_args[2];
-static const RzCmdDescArg cmd_debug_dmS_args[3];
 static const RzCmdDescArg cmd_debug_process_heap_block_args[2];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_a_args[2];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_b_args[3];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_c_args[2];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_e_args[2];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_ei_args[2];
+static const RzCmdDescArg cmd_debug_dmi_args[3];
+static const RzCmdDescArg cmd_debug_dmi_all_args[2];
+static const RzCmdDescArg cmd_debug_dml_args[2];
+static const RzCmdDescArg debug_memory_permission_args[3];
+static const RzCmdDescArg cmd_debug_dmL_args[2];
+static const RzCmdDescArg cmd_debug_dmS_args[3];
 static const RzCmdDescArg cmd_debug_pid_list_args[2];
 static const RzCmdDescArg cmd_debug_pid_attach_args[2];
 static const RzCmdDescArg cmd_debug_pid_detach_args[2];
@@ -613,6 +642,7 @@ static const RzCmdDescArg egg_type_args[2];
 static const RzCmdDescArg egg_padding_args[2];
 static const RzCmdDescArg egg_encoder_args[3];
 static const RzCmdDescArg history_list_or_exec_args[2];
+static const RzCmdDescArg cmd_info_class_apply_args[2];
 static const RzCmdDescArg cmd_info_class_as_source_args[2];
 static const RzCmdDescArg cmd_info_class_fields_args[2];
 static const RzCmdDescArg cmd_info_class_methods_args[2];
@@ -718,6 +748,7 @@ static const RzCmdDescArg cmd_disassemble_ropchain_args[2];
 static const RzCmdDescArg cmd_disassemble_summarize_n_bytes_args[2];
 static const RzCmdDescArg cmd_print_format_args[2];
 static const RzCmdDescArg cmd_print_format_delete_args[2];
+static const RzCmdDescArg cmd_print_format_apply_args[2];
 static const RzCmdDescArg cmd_print_format_c_args[2];
 static const RzCmdDescArg cmd_print_format_dot_args[2];
 static const RzCmdDescArg cmd_print_format_named_dot_args[2];
@@ -808,6 +839,10 @@ static const RzCmdDescArg print_equal_bbs_args[4];
 static const RzCmdDescArg print_equal_stats_args[4];
 static const RzCmdDescArg print_equal_call_args[4];
 static const RzCmdDescArg print_equal_entropy_args[4];
+static const RzCmdDescArg print_equal_chisquare_args[4];
+static const RzCmdDescArg print_equal_ioc_args[4];
+static const RzCmdDescArg print_equal_minentropy_args[4];
+static const RzCmdDescArg print_equal_serialcorr_args[4];
 static const RzCmdDescArg print_rising_and_falling_entropy_args[3];
 static const RzCmdDescArg print_equal_invalid_args[4];
 static const RzCmdDescArg print_equal_jump_args[4];
@@ -822,6 +857,10 @@ static const RzCmdDescArg print_equal_equal_bbs_args[4];
 static const RzCmdDescArg print_equal_equal_stats_args[4];
 static const RzCmdDescArg print_equal_equal_call_args[4];
 static const RzCmdDescArg print_equal_equal_entropy_args[4];
+static const RzCmdDescArg print_equal_equal_chisquare_args[4];
+static const RzCmdDescArg print_equal_equal_ioc_args[4];
+static const RzCmdDescArg print_equal_equal_minentropy_args[4];
+static const RzCmdDescArg print_equal_equal_serialcorr_args[4];
 static const RzCmdDescArg print_equal_equal_invalid_args[4];
 static const RzCmdDescArg print_equal_equal_jump_args[4];
 static const RzCmdDescArg print_equal_equal_m_args[4];
@@ -854,6 +893,7 @@ static const RzCmdDescArg type_list_c_nl_args[2];
 static const RzCmdDescArg type_cc_list_args[2];
 static const RzCmdDescArg type_cc_del_args[2];
 static const RzCmdDescArg type_define_args[2];
+static const RzCmdDescArg type_define_from_format_args[3];
 static const RzCmdDescArg type_list_enum_args[3];
 static const RzCmdDescArg type_enum_bitfield_args[3];
 static const RzCmdDescArg type_enum_c_args[2];
@@ -870,6 +910,7 @@ static const RzCmdDescArg type_open_sdb_args[2];
 static const RzCmdDescArg type_print_args[3];
 static const RzCmdDescArg type_print_value_args[3];
 static const RzCmdDescArg type_print_hexstring_args[3];
+static const RzCmdDescArg type_rename_args[3];
 static const RzCmdDescArg type_list_structure_args[2];
 static const RzCmdDescArg type_structure_c_args[2];
 static const RzCmdDescArg type_structure_c_nl_args[2];
@@ -880,6 +921,8 @@ static const RzCmdDescArg type_union_c_args[2];
 static const RzCmdDescArg type_union_c_nl_args[2];
 static const RzCmdDescArg type_xrefs_list_args[2];
 static const RzCmdDescArg type_xrefs_function_args[2];
+static const RzCmdDescArg type_typeclass_args[2];
+static const RzCmdDescArg type_typeclass_set_args[3];
 static const RzCmdDescArg interactive_visual_args[2];
 static const RzCmdDescArg interactive_panel_load_args[2];
 static const RzCmdDescArg interactive_panel_store_args[2];
@@ -1898,6 +1941,164 @@ static const RzCmdDescHelp cmd_search_cryptographic_material_help = {
 	.args = cmd_search_cryptographic_material_args,
 };
 
+static const RzCmdDescHelp slash_C_help = {
+	.summary = "Search, List, Query for COP Gadgets",
+};
+static const RzCmdDescArg cmd_info_cop_gadget_args[] = {
+	{
+		.name = "filter-by-string",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_cop_gadget_help = {
+	.summary = "List COP Gadgets",
+	.args = cmd_info_cop_gadget_args,
+};
+
+static const RzCmdDescArg cmd_clear_cop_gadget_cache_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_clear_cop_gadget_cache_help = {
+	.summary = "Clear COP gadget cache",
+	.args = cmd_clear_cop_gadget_cache_args,
+};
+
+static const RzCmdDescArg cmd_search_cop_gadget_args[] = {
+	{
+		.name = "filter-by-regex",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_cop_gadget_help = {
+	.summary = "List COP Gadgets [regular expression]",
+	.args = cmd_search_cop_gadget_args,
+};
+
+static const RzCmdDescDetailEntry cmd_query_cop_gadget_Constraint_space_types_detail_entries[] = {
+	{ .text = "reg=const", .arg_str = NULL, .comment = "Find gadgets that set a register to a constant value" },
+	{ .text = "reg=reg", .arg_str = NULL, .comment = "Find gadgets that copy one register to another" },
+	{ .text = "reg=reg OP const", .arg_str = NULL, .comment = "Find gadgets with register and constant arithmetic" },
+	{ .text = "reg=reg OP reg", .arg_str = NULL, .comment = "Find gadgets with register-register operations" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry cmd_query_cop_gadget_Supported_space_operations_detail_entries[] = {
+	{ .text = "+ - * / %", .arg_str = NULL, .comment = "Arithmetic operations (add, sub, mul, div, mod)" },
+	{ .text = "& | ^", .arg_str = NULL, .comment = "Bitwise operations (AND, OR, XOR)" },
+	{ .text = "<< >>", .arg_str = NULL, .comment = "Shift operations (left, right)" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry cmd_query_cop_gadget_Compound_space_operators_detail_entries[] = {
+	{ .text = "reg++ or reg--", .arg_str = NULL, .comment = "Increment or decrement register" },
+	{ .text = "reg+=val, reg-=val", .arg_str = NULL, .comment = "Compound assignment operators" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry cmd_query_cop_gadget_Usage_space_example_detail_entries[] = {
+	{ .text = "Find gadgets setting rax to 0", .arg_str = NULL, .comment = "/Ck rax=0" },
+	{ .text = "Find gadgets copying rbx to rax", .arg_str = NULL, .comment = "/Ck rax=rbx" },
+	{ .text = "Find gadgets with rax = rbx + 8", .arg_str = NULL, .comment = "/Ck rax=rbx+8" },
+	{ .text = "Find gadgets with multiple constraints", .arg_str = NULL, .comment = "/Ck rax=0,rbx=rcx" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_query_cop_gadget_details[] = {
+	{ .name = "Constraint types", .entries = cmd_query_cop_gadget_Constraint_space_types_detail_entries },
+	{ .name = "Supported operations", .entries = cmd_query_cop_gadget_Supported_space_operations_detail_entries },
+	{ .name = "Compound operators", .entries = cmd_query_cop_gadget_Compound_space_operators_detail_entries },
+	{ .name = "Usage example", .entries = cmd_query_cop_gadget_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_query_cop_gadget_args[] = {
+	{
+		.name = "key=value",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_query_cop_gadget_help = {
+	.summary = "Query COP Gadgets by providing constraints",
+	.args_str = " <key>[=<val>] [<key>[=<val>] ...]]",
+	.details = cmd_query_cop_gadget_details,
+	.args = cmd_query_cop_gadget_args,
+};
+
+static const RzCmdDescArg cmd_detail_cop_gadget_args[] = {
+	{
+		.name = "Gadget address",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_detail_cop_gadget_help = {
+	.summary = "Gadget detail info",
+	.args = cmd_detail_cop_gadget_args,
+};
+
+static const RzCmdDescDetailEntry cmd_cop_search_stack_Usage_space_example_detail_entries[] = {
+	{ .text = "Search COP gadgets with less than 0x200 stack changes", .arg_str = NULL, .comment = "/Cs \"<0x200\"" },
+	{ .text = "Search COP gadgets with 0x100 stack changes", .arg_str = NULL, .comment = "/Cs =0x100" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_cop_search_stack_details[] = {
+	{ .name = "Usage example", .entries = cmd_cop_search_stack_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_cop_search_stack_args[] = {
+	{
+		.name = "Stack changes",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cop_search_stack_help = {
+	.summary = "Search cop gadgets given stack changes",
+	.details = cmd_cop_search_stack_details,
+	.args = cmd_cop_search_stack_args,
+};
+
+static const RzCmdDescDetailEntry cmd_cop_gadget_search_size_Usage_space_example_detail_entries[] = {
+	{ .text = "Search COP gadgets with the size less than 0x20", .arg_str = NULL, .comment = "/Cl \"<0x20\"" },
+	{ .text = "Search COP gadgets with the size 0x10", .arg_str = NULL, .comment = "/Cl =0x10" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_cop_gadget_search_size_details[] = {
+	{ .name = "Usage example", .entries = cmd_cop_gadget_search_size_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_cop_gadget_search_size_args[] = {
+	{
+		.name = "Gadget size",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cop_gadget_search_size_help = {
+	.summary = "Search cop gadgets given gadget size",
+	.details = cmd_cop_gadget_search_size_details,
+	.args = cmd_cop_gadget_search_size_args,
+};
+
 static const RzCmdDescArg cmd_search_deltified_args[] = {
 	{
 		.name = "101112",
@@ -1947,6 +2148,164 @@ static const RzCmdDescHelp cmd_search_file_help = {
 	.summary = "Search the content of a file.",
 	.details = cmd_search_file_details,
 	.args = cmd_search_file_args,
+};
+
+static const RzCmdDescHelp slash_J_help = {
+	.summary = "Search, List, Query for JOP Gadgets",
+};
+static const RzCmdDescArg cmd_info_jop_gadget_args[] = {
+	{
+		.name = "filter-by-string",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_jop_gadget_help = {
+	.summary = "List JOP Gadgets",
+	.args = cmd_info_jop_gadget_args,
+};
+
+static const RzCmdDescArg cmd_clear_jop_gadget_cache_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_clear_jop_gadget_cache_help = {
+	.summary = "Clear JOP gadget cache",
+	.args = cmd_clear_jop_gadget_cache_args,
+};
+
+static const RzCmdDescArg cmd_search_jop_gadget_args[] = {
+	{
+		.name = "filter-by-regex",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_jop_gadget_help = {
+	.summary = "List JOP Gadgets [regular expression]",
+	.args = cmd_search_jop_gadget_args,
+};
+
+static const RzCmdDescDetailEntry cmd_query_jop_gadget_Constraint_space_types_detail_entries[] = {
+	{ .text = "reg=const", .arg_str = NULL, .comment = "Find gadgets that set a register to a constant value" },
+	{ .text = "reg=reg", .arg_str = NULL, .comment = "Find gadgets that copy one register to another" },
+	{ .text = "reg=reg OP const", .arg_str = NULL, .comment = "Find gadgets with register and constant arithmetic" },
+	{ .text = "reg=reg OP reg", .arg_str = NULL, .comment = "Find gadgets with register-register operations" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry cmd_query_jop_gadget_Supported_space_operations_detail_entries[] = {
+	{ .text = "+ - * / %", .arg_str = NULL, .comment = "Arithmetic operations (add, sub, mul, div, mod)" },
+	{ .text = "& | ^", .arg_str = NULL, .comment = "Bitwise operations (AND, OR, XOR)" },
+	{ .text = "<< >>", .arg_str = NULL, .comment = "Shift operations (left, right)" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry cmd_query_jop_gadget_Compound_space_operators_detail_entries[] = {
+	{ .text = "reg++ or reg--", .arg_str = NULL, .comment = "Increment or decrement register" },
+	{ .text = "reg+=val, reg-=val", .arg_str = NULL, .comment = "Compound assignment operators" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry cmd_query_jop_gadget_Usage_space_example_detail_entries[] = {
+	{ .text = "Find gadgets setting rax to 0", .arg_str = NULL, .comment = "/Jk rax=0" },
+	{ .text = "Find gadgets copying rbx to rax", .arg_str = NULL, .comment = "/Jk rax=rbx" },
+	{ .text = "Find gadgets with rax = rbx + 8", .arg_str = NULL, .comment = "/Jk rax=rbx+8" },
+	{ .text = "Find gadgets with multiple constraints", .arg_str = NULL, .comment = "/Jk rax=0,rbx=rcx" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_query_jop_gadget_details[] = {
+	{ .name = "Constraint types", .entries = cmd_query_jop_gadget_Constraint_space_types_detail_entries },
+	{ .name = "Supported operations", .entries = cmd_query_jop_gadget_Supported_space_operations_detail_entries },
+	{ .name = "Compound operators", .entries = cmd_query_jop_gadget_Compound_space_operators_detail_entries },
+	{ .name = "Usage example", .entries = cmd_query_jop_gadget_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_query_jop_gadget_args[] = {
+	{
+		.name = "key=value",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_query_jop_gadget_help = {
+	.summary = "Query JOP Gadgets by providing constraints",
+	.args_str = " <key>[=<val>] [<key>[=<val>] ...]]",
+	.details = cmd_query_jop_gadget_details,
+	.args = cmd_query_jop_gadget_args,
+};
+
+static const RzCmdDescArg cmd_detail_jop_gadget_args[] = {
+	{
+		.name = "Gadget address",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_detail_jop_gadget_help = {
+	.summary = "Gadget detail info",
+	.args = cmd_detail_jop_gadget_args,
+};
+
+static const RzCmdDescDetailEntry cmd_jop_search_stack_Usage_space_example_detail_entries[] = {
+	{ .text = "Search JOP gadgets with less than 0x200 stack changes", .arg_str = NULL, .comment = "/Js \"<0x200\"" },
+	{ .text = "Search JOP gadgets with 0x100 stack changes", .arg_str = NULL, .comment = "/Js =0x100" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_jop_search_stack_details[] = {
+	{ .name = "Usage example", .entries = cmd_jop_search_stack_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_jop_search_stack_args[] = {
+	{
+		.name = "Stack changes",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_jop_search_stack_help = {
+	.summary = "Search jop gadgets given stack changes",
+	.details = cmd_jop_search_stack_details,
+	.args = cmd_jop_search_stack_args,
+};
+
+static const RzCmdDescDetailEntry cmd_jop_gadget_search_size_Usage_space_example_detail_entries[] = {
+	{ .text = "Search JOP gadgets with the size less than 0x20", .arg_str = NULL, .comment = "/Jl \"<0x20\"" },
+	{ .text = "Search JOP gadgets with the size 0x10", .arg_str = NULL, .comment = "/Jl =0x10" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_jop_gadget_search_size_details[] = {
+	{ .name = "Usage example", .entries = cmd_jop_gadget_search_size_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_jop_gadget_search_size_args[] = {
+	{
+		.name = "Gadget size",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_jop_gadget_search_size_help = {
+	.summary = "Search JOP gadgets given gadget size",
+	.details = cmd_jop_gadget_search_size_details,
+	.args = cmd_jop_gadget_search_size_args,
 };
 
 static const RzCmdDescArg cmd_search_insn_offset_backwards_args[] = {
@@ -2133,7 +2492,7 @@ static const RzCmdDescHelp cmd_search_reference_execute_help = {
 static const RzCmdDescHelp slash_R_help = {
 	.summary = "Search, List, Query for ROP Gadgets",
 };
-static const RzCmdDescArg cmd_info_gadget_args[] = {
+static const RzCmdDescArg cmd_info_rop_gadget_args[] = {
 	{
 		.name = "filter-by-string",
 		.type = RZ_CMD_ARG_TYPE_STRING,
@@ -2143,12 +2502,20 @@ static const RzCmdDescArg cmd_info_gadget_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_info_gadget_help = {
+static const RzCmdDescHelp cmd_info_rop_gadget_help = {
 	.summary = "List ROP Gadgets",
-	.args = cmd_info_gadget_args,
+	.args = cmd_info_rop_gadget_args,
 };
 
-static const RzCmdDescArg cmd_search_gadget_args[] = {
+static const RzCmdDescArg cmd_clear_rop_gadget_cache_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_clear_rop_gadget_cache_help = {
+	.summary = "Clear ROP gadget cache",
+	.args = cmd_clear_rop_gadget_cache_args,
+};
+
+static const RzCmdDescArg cmd_search_rop_gadget_args[] = {
 	{
 		.name = "filter-by-regex",
 		.type = RZ_CMD_ARG_TYPE_STRING,
@@ -2158,12 +2525,12 @@ static const RzCmdDescArg cmd_search_gadget_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_search_gadget_help = {
+static const RzCmdDescHelp cmd_search_rop_gadget_help = {
 	.summary = "List ROP Gadgets [regular expression]",
-	.args = cmd_search_gadget_args,
+	.args = cmd_search_rop_gadget_args,
 };
 
-static const RzCmdDescDetailEntry cmd_query_gadget_Constraint_space_types_detail_entries[] = {
+static const RzCmdDescDetailEntry cmd_query_rop_gadget_Constraint_space_types_detail_entries[] = {
 	{ .text = "reg=const", .arg_str = NULL, .comment = "Find gadgets that set a register to a constant value" },
 	{ .text = "reg=reg", .arg_str = NULL, .comment = "Find gadgets that copy one register to another" },
 	{ .text = "reg=reg OP const", .arg_str = NULL, .comment = "Find gadgets with register and constant arithmetic" },
@@ -2171,34 +2538,34 @@ static const RzCmdDescDetailEntry cmd_query_gadget_Constraint_space_types_detail
 	{ 0 },
 };
 
-static const RzCmdDescDetailEntry cmd_query_gadget_Supported_space_operations_detail_entries[] = {
+static const RzCmdDescDetailEntry cmd_query_rop_gadget_Supported_space_operations_detail_entries[] = {
 	{ .text = "+ - * / %", .arg_str = NULL, .comment = "Arithmetic operations (add, sub, mul, div, mod)" },
 	{ .text = "& | ^", .arg_str = NULL, .comment = "Bitwise operations (AND, OR, XOR)" },
 	{ .text = "<< >>", .arg_str = NULL, .comment = "Shift operations (left, right)" },
 	{ 0 },
 };
 
-static const RzCmdDescDetailEntry cmd_query_gadget_Compound_space_operators_detail_entries[] = {
+static const RzCmdDescDetailEntry cmd_query_rop_gadget_Compound_space_operators_detail_entries[] = {
 	{ .text = "reg++ or reg--", .arg_str = NULL, .comment = "Increment or decrement register" },
 	{ .text = "reg+=val, reg-=val", .arg_str = NULL, .comment = "Compound assignment operators" },
 	{ 0 },
 };
 
-static const RzCmdDescDetailEntry cmd_query_gadget_Usage_space_example_detail_entries[] = {
+static const RzCmdDescDetailEntry cmd_query_rop_gadget_Usage_space_example_detail_entries[] = {
 	{ .text = "Find gadgets setting rax to 0", .arg_str = NULL, .comment = "/Rk rax=0" },
 	{ .text = "Find gadgets copying rbx to rax", .arg_str = NULL, .comment = "/Rk rax=rbx" },
 	{ .text = "Find gadgets with rax = rbx + 8", .arg_str = NULL, .comment = "/Rk rax=rbx+8" },
 	{ .text = "Find gadgets with multiple constraints", .arg_str = NULL, .comment = "/Rk rax=0,rbx=rcx" },
 	{ 0 },
 };
-static const RzCmdDescDetail cmd_query_gadget_details[] = {
-	{ .name = "Constraint types", .entries = cmd_query_gadget_Constraint_space_types_detail_entries },
-	{ .name = "Supported operations", .entries = cmd_query_gadget_Supported_space_operations_detail_entries },
-	{ .name = "Compound operators", .entries = cmd_query_gadget_Compound_space_operators_detail_entries },
-	{ .name = "Usage example", .entries = cmd_query_gadget_Usage_space_example_detail_entries },
+static const RzCmdDescDetail cmd_query_rop_gadget_details[] = {
+	{ .name = "Constraint types", .entries = cmd_query_rop_gadget_Constraint_space_types_detail_entries },
+	{ .name = "Supported operations", .entries = cmd_query_rop_gadget_Supported_space_operations_detail_entries },
+	{ .name = "Compound operators", .entries = cmd_query_rop_gadget_Compound_space_operators_detail_entries },
+	{ .name = "Usage example", .entries = cmd_query_rop_gadget_Usage_space_example_detail_entries },
 	{ 0 },
 };
-static const RzCmdDescArg cmd_query_gadget_args[] = {
+static const RzCmdDescArg cmd_query_rop_gadget_args[] = {
 	{
 		.name = "key=value",
 		.type = RZ_CMD_ARG_TYPE_STRING,
@@ -2208,14 +2575,14 @@ static const RzCmdDescArg cmd_query_gadget_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_query_gadget_help = {
+static const RzCmdDescHelp cmd_query_rop_gadget_help = {
 	.summary = "Query ROP Gadgets by providing constraints",
 	.args_str = " <key>[=<val>] [<key>[=<val>] ...]]",
-	.details = cmd_query_gadget_details,
-	.args = cmd_query_gadget_args,
+	.details = cmd_query_rop_gadget_details,
+	.args = cmd_query_rop_gadget_args,
 };
 
-static const RzCmdDescArg cmd_detail_gadget_args[] = {
+static const RzCmdDescArg cmd_detail_rop_gadget_args[] = {
 	{
 		.name = "Gadget address",
 		.type = RZ_CMD_ARG_TYPE_STRING,
@@ -2225,9 +2592,9 @@ static const RzCmdDescArg cmd_detail_gadget_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_detail_gadget_help = {
+static const RzCmdDescHelp cmd_detail_rop_gadget_help = {
 	.summary = "Gadget detail info",
-	.args = cmd_detail_gadget_args,
+	.args = cmd_detail_rop_gadget_args,
 };
 
 static const RzCmdDescDetailEntry cmd_rop_search_stack_Usage_space_example_detail_entries[] = {
@@ -2255,16 +2622,16 @@ static const RzCmdDescHelp cmd_rop_search_stack_help = {
 	.args = cmd_rop_search_stack_args,
 };
 
-static const RzCmdDescDetailEntry cmd_rop_search_size_Usage_space_example_detail_entries[] = {
+static const RzCmdDescDetailEntry cmd_rop_gadget_search_size_Usage_space_example_detail_entries[] = {
 	{ .text = "Search ROP gadgets with the size less than 0x20", .arg_str = NULL, .comment = "/Rl \"<0x20\"" },
 	{ .text = "Search ROP gadgets with the size 0x10", .arg_str = NULL, .comment = "/Rl =0x10" },
 	{ 0 },
 };
-static const RzCmdDescDetail cmd_rop_search_size_details[] = {
-	{ .name = "Usage example", .entries = cmd_rop_search_size_Usage_space_example_detail_entries },
+static const RzCmdDescDetail cmd_rop_gadget_search_size_details[] = {
+	{ .name = "Usage example", .entries = cmd_rop_gadget_search_size_Usage_space_example_detail_entries },
 	{ 0 },
 };
-static const RzCmdDescArg cmd_rop_search_size_args[] = {
+static const RzCmdDescArg cmd_rop_gadget_search_size_args[] = {
 	{
 		.name = "Gadget size",
 		.type = RZ_CMD_ARG_TYPE_STRING,
@@ -2274,10 +2641,10 @@ static const RzCmdDescArg cmd_rop_search_size_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_rop_search_size_help = {
+static const RzCmdDescHelp cmd_rop_gadget_search_size_help = {
 	.summary = "Search rop gadgets given gadget size",
-	.details = cmd_rop_search_size_details,
-	.args = cmd_rop_search_size_args,
+	.details = cmd_rop_gadget_search_size_details,
+	.args = cmd_rop_gadget_search_size_args,
 };
 
 static const RzCmdDescHelp slash_v_help = {
@@ -2533,7 +2900,8 @@ static const RzCmdDescDetailEntry slash_z_Examples_detail_entries[] = {
 	{ .text = "/z", .arg_str = " (ABC*)", .comment = "Search the exact string \"(ABC*)\"." },
 	{ .text = "/z", .arg_str = " (ABC*)D li", .comment = "Search the exact string \"(ABC*)D\" but case insensitive." },
 	{ .text = "/z", .arg_str = " \\\\d\\\\sC*\\\\w ri", .comment = "Search the regular expression \"\\d\\sC*\\w\" but case insensitive." },
-	{ .text = "/z", .arg_str = " \"и.{3}м\" ei", .comment = "Search the extended regular expression \"и.{3}м\" but case insensitive." },
+	{ .text = "/z", .arg_str = " \"и.{3}м\" ei @e:search.prefix=cyrillic", .comment = "Search the extended regular expression \"и.{3}м\" but case insensitive. Search hit flags will be prefixed with 'cyrillic'." },
+	{ .text = "/z", .arg_str = " \"(*LF).+\" r ascii", .comment = "Search any ASCII string where line feed is a newline." },
 	{ 0 },
 };
 static const RzCmdDescDetail slash_z_details[] = {
@@ -4506,6 +4874,55 @@ static const RzCmdDescHelp analysis_function_vars_type_help = {
 	.args = analysis_function_vars_type_args,
 };
 
+static const RzCmdDescHelp afvc_help = {
+	.summary = "Read/change value constraints of arguments/locals",
+};
+static const RzCmdDescArg analysis_function_vars_constraints_args[] = {
+	{
+		.name = "varname",
+		.type = RZ_CMD_ARG_TYPE_FCN_VAR,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_vars_constraints_help = {
+	.summary = "List value constraints of all variables / of the given one",
+	.args = analysis_function_vars_constraints_args,
+};
+
+static const RzCmdDescArg analysis_function_vars_constraints_set_args[] = {
+	{
+		.name = "varname",
+		.type = RZ_CMD_ARG_TYPE_FCN_VAR,
+
+	},
+	{
+		.name = "constraints",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_vars_constraints_set_help = {
+	.summary = "Set value constraints of a variable (e.g. afvcs var0 \">0,<=9\")",
+	.args = analysis_function_vars_constraints_set_args,
+};
+
+static const RzCmdDescArg analysis_function_vars_constraints_del_args[] = {
+	{
+		.name = "varname",
+		.type = RZ_CMD_ARG_TYPE_FCN_VAR,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_vars_constraints_del_help = {
+	.summary = "Remove all value constraints of a variable",
+	.args = analysis_function_vars_constraints_del_args,
+};
+
 static const RzCmdDescHelp afvx_help = {
 	.summary = "Show argument/variable xrefs in a function",
 };
@@ -6337,6 +6754,55 @@ static const RzCmdDescHelp analysis_global_variable_xrefs_help = {
 	.args = analysis_global_variable_xrefs_args,
 };
 
+static const RzCmdDescHelp avgc_help = {
+	.summary = "Read/change value constraints of global variables",
+};
+static const RzCmdDescArg analysis_global_variable_constraints_args[] = {
+	{
+		.name = "var_name",
+		.type = RZ_CMD_ARG_TYPE_GLOBAL_VAR,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_global_variable_constraints_help = {
+	.summary = "List value constraints of all globals / of the given one",
+	.args = analysis_global_variable_constraints_args,
+};
+
+static const RzCmdDescArg analysis_global_variable_constraints_set_args[] = {
+	{
+		.name = "var_name",
+		.type = RZ_CMD_ARG_TYPE_GLOBAL_VAR,
+
+	},
+	{
+		.name = "constraints",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_global_variable_constraints_set_help = {
+	.summary = "Set value constraints of a global variable (e.g. avgcs g \">0,<=9\")",
+	.args = analysis_global_variable_constraints_set_args,
+};
+
+static const RzCmdDescArg analysis_global_variable_constraints_del_args[] = {
+	{
+		.name = "var_name",
+		.type = RZ_CMD_ARG_TYPE_GLOBAL_VAR,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_global_variable_constraints_del_help = {
+	.summary = "Remove all value constraints of a global variable",
+	.args = analysis_global_variable_constraints_del_args,
+};
+
 static const RzCmdDescArg analysis_print_rtti_args[] = {
 	{ 0 },
 };
@@ -6994,6 +7460,9 @@ static const RzCmdDescHelp analysis_hint_del_optype_help = {
 	.args = analysis_hint_del_optype_args,
 };
 
+static const RzCmdDescHelp ahi_help = {
+	.summary = "Manage immediate operand hints",
+};
 static const RzCmdDescDetailEntry analysis_hint_set_immbase_empty_detail_entries[] = {
 	{ .text = "ahi ", .arg_str = "<base>", .comment = "Set numeric <base> (2, 8, 10, 16)" },
 	{ .text = "ahi 10|d", .arg_str = NULL, .comment = "Set base to signed decimal (10), sign bit should depend on receiver size" },
@@ -7045,6 +7514,33 @@ static const RzCmdDescArg analysis_hint_del_immbase_args[] = {
 static const RzCmdDescHelp analysis_hint_del_immbase_help = {
 	.summary = "Delete immediate base hint",
 	.args = analysis_hint_del_immbase_args,
+};
+
+static const RzCmdDescArg analysis_hint_set_enum_args[] = {
+	{
+		.name = "enum",
+		.type = RZ_CMD_ARG_TYPE_ENUM_TYPE,
+
+	},
+	{
+		.name = "nword",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_set_enum_help = {
+	.summary = "Set enum type hint for operand",
+	.args = analysis_hint_set_enum_args,
+};
+
+static const RzCmdDescArg analysis_hint_del_enum_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_del_enum_help = {
+	.summary = "Delete enum type hint",
+	.args = analysis_hint_del_enum_args,
 };
 
 static const RzCmdDescDetailEntry analysis_hint_set_offset_empty_detail_entries[] = {
@@ -10545,6 +11041,9 @@ static const RzCmdDescHelp cmd_debug_dump_maps_writable_help = {
 };
 
 static const RzCmdDescHelp dmh_help = {
+	.summary = "Heap commands",
+};
+static const RzCmdDescHelp dmhg_help = {
 	.summary = "Glibc heap commands",
 };
 static const RzCmdDescArg cmd_heap_chunks_print_args[] = {
@@ -10677,6 +11176,123 @@ static const RzCmdDescHelp cmd_heap_tcache_print_help = {
 	.args = cmd_heap_tcache_print_args,
 };
 
+static const RzCmdDescHelp dmhw_help = {
+	.summary = "Windows heap commands",
+};
+static const RzCmdDescArg cmd_debug_process_heaps_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_process_heaps_help = {
+	.summary = "List process heaps",
+	.args = cmd_debug_process_heaps_args,
+};
+
+static const RzCmdDescArg cmd_debug_process_heap_block_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_process_heap_block_help = {
+	.summary = "List allocated heap blocks",
+	.args = cmd_debug_process_heap_block_args,
+};
+
+static const RzCmdDescArg cmd_debug_heap_block_flag_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_block_flag_help = {
+	.summary = "Create flags for each allocated heap block",
+	.args = cmd_debug_heap_block_flag_args,
+};
+
+static const RzCmdDescHelp dmhj_help = {
+	.summary = "Jemalloc heap commands",
+};
+static const RzCmdDescArg cmd_debug_heap_jemalloc_a_args[] = {
+	{
+		.name = "arena_addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_jemalloc_a_help = {
+	.summary = "Show all arenas created, or print arena_type structure for given arena.",
+	.args = cmd_debug_heap_jemalloc_a_args,
+};
+
+static const RzCmdDescArg cmd_debug_heap_jemalloc_b_args[] = {
+	{
+		.name = "arena_addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "bin_info_addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_jemalloc_b_help = {
+	.summary = "Show bin info for allocations.",
+	.args = cmd_debug_heap_jemalloc_b_args,
+};
+
+static const RzCmdDescArg cmd_debug_heap_jemalloc_c_args[] = {
+	{
+		.name = "arena_addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_jemalloc_c_help = {
+	.summary = "Show all chunks created in all arenas, or show all chunks created for a given arena_t instance (jemalloc 4.5.0 only).",
+	.args = cmd_debug_heap_jemalloc_c_args,
+};
+
+static const RzCmdDescArg cmd_debug_heap_jemalloc_e_args[] = {
+	{
+		.name = "malloc_addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_jemalloc_e_help = {
+	.summary = "List all extents, or find extent for a specific malloc'd address (jemalloc 5.3.0 only)",
+	.args = cmd_debug_heap_jemalloc_e_args,
+};
+
+static const RzCmdDescArg cmd_debug_heap_jemalloc_ei_args[] = {
+	{
+		.name = "extent_addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_jemalloc_ei_help = {
+	.summary = "Display extent (edata_t) structure info for a given extent address (jemalloc 5.3.0 only)",
+	.args = cmd_debug_heap_jemalloc_ei_args,
+};
+
 static const RzCmdDescHelp dmi_help = {
 	.summary = "List/Load symbols",
 };
@@ -10790,123 +11406,6 @@ static const RzCmdDescArg cmd_debug_dmS_args[] = {
 static const RzCmdDescHelp cmd_debug_dmS_help = {
 	.summary = "List sections of target lib",
 	.args = cmd_debug_dmS_args,
-};
-
-static const RzCmdDescHelp dmw_help = {
-	.summary = "Windows heap commands",
-};
-static const RzCmdDescArg cmd_debug_process_heaps_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_process_heaps_help = {
-	.summary = "List process heaps",
-	.args = cmd_debug_process_heaps_args,
-};
-
-static const RzCmdDescArg cmd_debug_process_heap_block_args[] = {
-	{
-		.name = "addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_process_heap_block_help = {
-	.summary = "List allocated heap blocks",
-	.args = cmd_debug_process_heap_block_args,
-};
-
-static const RzCmdDescArg cmd_debug_heap_block_flag_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_heap_block_flag_help = {
-	.summary = "Create flags for each allocated heap block",
-	.args = cmd_debug_heap_block_flag_args,
-};
-
-static const RzCmdDescHelp dmx_help = {
-	.summary = "Jemalloc heap commands",
-};
-static const RzCmdDescArg cmd_debug_heap_jemalloc_a_args[] = {
-	{
-		.name = "arena_addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_heap_jemalloc_a_help = {
-	.summary = "Show all arenas created, or print arena_type structure for given arena.",
-	.args = cmd_debug_heap_jemalloc_a_args,
-};
-
-static const RzCmdDescArg cmd_debug_heap_jemalloc_b_args[] = {
-	{
-		.name = "arena_addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.optional = true,
-
-	},
-	{
-		.name = "bin_info_addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_heap_jemalloc_b_help = {
-	.summary = "Show bin info for allocations.",
-	.args = cmd_debug_heap_jemalloc_b_args,
-};
-
-static const RzCmdDescArg cmd_debug_heap_jemalloc_c_args[] = {
-	{
-		.name = "arena_addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_heap_jemalloc_c_help = {
-	.summary = "Show all chunks created in all arenas, or show all chunks created for a given arena_t instance (jemalloc 4.5.0 only).",
-	.args = cmd_debug_heap_jemalloc_c_args,
-};
-
-static const RzCmdDescArg cmd_debug_heap_jemalloc_e_args[] = {
-	{
-		.name = "malloc_addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_heap_jemalloc_e_help = {
-	.summary = "List all extents, or find extent for a specific malloc'd address (jemalloc 5.3.0 only)",
-	.args = cmd_debug_heap_jemalloc_e_args,
-};
-
-static const RzCmdDescArg cmd_debug_heap_jemalloc_ei_args[] = {
-	{
-		.name = "extent_addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_heap_jemalloc_ei_help = {
-	.summary = "Display extent (edata_t) structure info for a given extent address (jemalloc 5.3.0 only)",
-	.args = cmd_debug_heap_jemalloc_ei_args,
 };
 
 static const RzCmdDescHelp dp_help = {
@@ -11635,8 +12134,7 @@ static const RzCmdDescHelp e_help = {
 static const RzCmdDescDetailEntry eval_getset_Examples_detail_entries[] = {
 	{ .text = "e", .arg_str = " asm.bytes", .comment = "Show current value of config variable `asm.bytes`" },
 	{ .text = "e", .arg_str = " asm.bytes=true", .comment = "Set config variable `asm.bytes` to `true`" },
-	{ .text = "e", .arg_str = " search.in=?", .comment = "Show all possible values for config variable `search.in`" },
-	{ .text = "e", .arg_str = " search.in=??", .comment = "Show all possible values for config variable `search.in` together with description" },
+	{ .text = "e", .arg_str = " search.in=?", .comment = "Show all possible values for config variable `search.in` together with description" },
 	{ .text = "e", .arg_str = " asm.bytes=true asm.offset=false", .comment = "Set asm.bytes to true and asm.offset to false" },
 	{ 0 },
 };
@@ -11783,6 +12281,8 @@ static const RzCmdDescDetailEntry cmd_eval_color_list_help_Color_space_Palette_s
 	{ .text = "diff.new", .arg_str = NULL, .comment = "Color for new diff" },
 	{ .text = "diff.match", .arg_str = NULL, .comment = "Color for matched diff" },
 	{ .text = "diff.unmatch", .arg_str = NULL, .comment = "Color for unmatched diff" },
+	{ .text = "gui.match.perfect", .arg_str = NULL, .comment = "Color for perfectly matched GUI diff" },
+	{ .text = "gui.match.partial", .arg_str = NULL, .comment = "Color for partially matched GUI diff" },
 	{ .text = "gui.cflow", .arg_str = NULL, .comment = "Color for GUI control flow" },
 	{ .text = "gui.dataoffset", .arg_str = NULL, .comment = "Color for GUI data offset" },
 	{ .text = "gui.background", .arg_str = NULL, .comment = "Color for GUI background" },
@@ -13197,6 +13697,20 @@ static const RzCmdDescHelp cmd_info_classes_help = {
 	.args = cmd_info_classes_args,
 };
 
+static const RzCmdDescArg cmd_info_class_apply_args[] = {
+	{
+		.name = "class name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_class_apply_help = {
+	.summary = "Apply class flags at given address",
+	.args = cmd_info_class_apply_args,
+};
+
 static const RzCmdDescArg cmd_info_class_as_source_args[] = {
 	{
 		.name = "class name",
@@ -13240,6 +13754,14 @@ static const RzCmdDescArg cmd_info_class_methods_args[] = {
 static const RzCmdDescHelp cmd_info_class_methods_help = {
 	.summary = "List class methods",
 	.args = cmd_info_class_methods_args,
+};
+
+static const RzCmdDescArg cmd_info_classes_to_struct_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_classes_to_struct_help = {
+	.summary = "Generate type definitions from classes",
+	.args = cmd_info_classes_to_struct_args,
 };
 
 static const RzCmdDescArg cmd_info_signature_args[] = {
@@ -15574,71 +16096,106 @@ static const RzCmdDescHelp cmd_disassemble_summarize_block_help = {
 	.args = cmd_disassemble_summarize_block_args,
 };
 
-static const RzCmdDescDetailEntry pf_Formats_detail_entries[] = {
-	{ .text = "b", .arg_str = NULL, .comment = "byte (unsigned)" },
-	{ .text = "B", .arg_str = NULL, .comment = "resolve enum bitfield (see t?)" },
-	{ .text = "c", .arg_str = NULL, .comment = "char (signed byte)" },
-	{ .text = "C", .arg_str = NULL, .comment = "byte in decimal" },
-	{ .text = "d", .arg_str = NULL, .comment = "0xHEX value (4 bytes) (see 'i' and 'x' formats)" },
-	{ .text = "D", .arg_str = NULL, .comment = "disassemble one opcode" },
-	{ .text = "e", .arg_str = NULL, .comment = "temporarily swap endian" },
-	{ .text = "E", .arg_str = NULL, .comment = "resolve enum name (see t?)" },
-	{ .text = "f", .arg_str = NULL, .comment = "float value (4 bytes)" },
-	{ .text = "F", .arg_str = NULL, .comment = "double float value (8 bytes)" },
-	{ .text = "i", .arg_str = NULL, .comment = "signed integer value (4 bytes) (see 'd' and 'x' formats)" },
-	{ .text = "n", .arg_str = NULL, .comment = "next char specifies size of signed value (1, 2, 4, or 8 byte(s))" },
-	{ .text = "N", .arg_str = NULL, .comment = "next char specifies size of unsigned value (1, 2, 4, or 8 byte(s))" },
-	{ .text = "o", .arg_str = NULL, .comment = "octal value (4 bytes)" },
-	{ .text = "p", .arg_str = NULL, .comment = "pointer reference (2, 4, or 8 bytes)" },
-	{ .text = "q", .arg_str = NULL, .comment = "quadword (8 bytes)" },
-	{ .text = "Q", .arg_str = NULL, .comment = "octoword (uint128_t) (16 bytes)" },
-	{ .text = "r", .arg_str = NULL, .comment = "CPU register (`pf r (eax)plop`)" },
-	{ .text = "s", .arg_str = NULL, .comment = "32 bit pointer to string (4 bytes)" },
-	{ .text = "s", .arg_str = NULL, .comment = "32 bit pointer to string (4 bytes)" },
-	{ .text = "t", .arg_str = NULL, .comment = "32 bit UNIX timestamp (4 bytes)" },
-	{ .text = "T", .arg_str = NULL, .comment = "show ten first bytes of buffer" },
-	{ .text = "u", .arg_str = NULL, .comment = "uleb128 (variable length)" },
-	{ .text = "w", .arg_str = NULL, .comment = "word (2 bytes unsigned short in hex)" },
-	{ .text = "x", .arg_str = NULL, .comment = "0xHEX value and flag (fd @ addr) (see 'd' and 'i' formats)" },
-	{ .text = "X", .arg_str = NULL, .comment = "show formatted hexpairs" },
-	{ .text = "z", .arg_str = NULL, .comment = "null terminated string" },
-	{ .text = "Z", .arg_str = NULL, .comment = "null terminated wide string" },
-	{ .text = "?", .arg_str = NULL, .comment = "data structure `pf ? (struct_name)example_name`" },
-	{ .text = "*", .arg_str = NULL, .comment = "next char is pointer (honors 'asm.bits')" },
-	{ .text = "+", .arg_str = NULL, .comment = "toggle show flags for each offset" },
-	{ .text = ":", .arg_str = NULL, .comment = "skip 4 bytes" },
-	{ .text = ".", .arg_str = NULL, .comment = "skip 1 byte" },
-	{ .text = ";", .arg_str = NULL, .comment = "rewind 4 bytes" },
-	{ .text = ",", .arg_str = NULL, .comment = "rewind 1 byte" },
+static const RzCmdDescDetailEntry pf_Sized_space_integers_space__oparen_lowercase_equal_LE_space_UPPER_equal_BE_cparen__detail_entries[] = {
+	{ .text = "x1 / x2 / x4 / x8", .arg_str = NULL, .comment = "hex unsigned, N bytes" },
+	{ .text = "d1 / d2 / d4 / d8", .arg_str = NULL, .comment = "decimal signed, N bytes" },
+	{ .text = "u1 / u2 / u4 / u8", .arg_str = NULL, .comment = "decimal unsigned, N bytes" },
+	{ .text = "o1 / o2 / o4 / o8", .arg_str = NULL, .comment = "octal, N bytes" },
+	{ .text = "b1 / b2 / b4 / b8", .arg_str = NULL, .comment = "binary, N bytes" },
+	{ .text = "n1 / n2 / n4 / n8", .arg_str = NULL, .comment = "hex unsigned, N bytes; endian comes from the active pf parsing context (set by pf -e, by a parent V/B's e=..., or by the embedding caller), not from the spec's case; useful when the byte order isn't fixed in the format itself (file headers with an endian marker, embedded protocols, serialised records)" },
+	{ .text = "f2 / f4 / f8", .arg_str = NULL, .comment = "IEEE 754 float, 2/4/8 bytes (half/single/double)" },
 	{ 0 },
 };
 
-static const RzCmdDescDetailEntry pf_Example_space_of_space_usages_detail_entries[] = {
-	{ .text = "pf '3xi foo bar'", .arg_str = NULL, .comment = "3-array of structures, each with named fields: 'foo' as hex, 'bar' as int" },
-	{ .text = "pf 'B (BitFldType)arg_name'", .arg_str = NULL, .comment = "Resolve bitfield enum type for the arg_name" },
-	{ .text = "pf 'E (EnumType)arg_name'", .arg_str = NULL, .comment = "Resolve enum type for the arg_name" },
-	{ .text = "pf '*z*i*w nb name blob'", .arg_str = NULL, .comment = "Print pointers with the given labels" },
-	{ .text = "pf 'iwq foo bar troll'", .arg_str = NULL, .comment = "Print the iwq format with foo, bar, troll as respective fields" },
-	{ .text = "pf '0iwq foo bar troll'", .arg_str = NULL, .comment = "Same as above but considered as a union (all fields at offset 0)" },
-	{ .text = "pfn obj 'xxdz prev next size name'", .arg_str = NULL, .comment = "Define the obj format as xxdz" },
-	{ .text = "pf. 'plop ? (troll)mystruct'", .arg_str = NULL, .comment = "Use previously defined structure 'troll'" },
-	{ .text = "pf.j plop @ 0x14", .arg_str = NULL, .comment = "Apply format object at the given offset" },
-	{ .text = "pf '{N} (bifc)'", .arg_str = NULL, .comment = "Print N times the following format (bifc)" },
-	{ .text = "pf [4]w[7]i", .arg_str = NULL, .comment = "Print an array of 4 words and then an array of 7 integers" },
-	{ .text = "pf 'ic...?i foo bar \"(pf xw yo foo)troll\" yo'", .arg_str = NULL, .comment = "Print nested anonymous structures" },
-	{ .text = "pf ';..x'", .arg_str = NULL, .comment = "Print value located 6 bytes from the current offset" },
-	{ .text = "pf '[10]z[3]i[10]Zb'", .arg_str = NULL, .comment = "Print a fixed size string, widechar, and var" },
-	{ .text = "pfj +F @ 0x14", .arg_str = NULL, .comment = "Print the content at given offset with a flag" },
-	{ .text = "pf n2", .arg_str = NULL, .comment = "Print signed short (2 bytes) value. Use N instead of n for printing unsigned values" },
-	{ .text = "pf '[2]? (plop)structname @ 0x10'", .arg_str = NULL, .comment = "Print an array of structures at the given offset" },
-	{ .text = "pf 'eqew bigWord beef'", .arg_str = NULL, .comment = "Swap endianness and print with given labels" },
-	{ .text = "pfn foo 'rr (eax)reg1 (eip)reg2'", .arg_str = NULL, .comment = "Create obect foo referencing to register values" },
-	{ .text = "pf 'tt troll plop'", .arg_str = NULL, .comment = "Print time stamps with labels 'troll' and 'plop'" },
+static const RzCmdDescDetailEntry pf_Special_space_scalars_detail_entries[] = {
+	{ .text = "c", .arg_str = NULL, .comment = "single byte rendered as character" },
+	{ .text = "p / p2 / p4 / p8", .arg_str = NULL, .comment = "pointer: bare p uses ctx.bits (2/4/8 bytes); p2/p4/p8 force the width" },
+	{ .text = "Q", .arg_str = NULL, .comment = "uint128_t (16 bytes, byte-sequential)" },
+	{ .text = "r", .arg_str = NULL, .comment = "raw hex byte dump (count via [N])" },
+	{ .text = "U / L", .arg_str = NULL, .comment = "ULEB128 / SLEB128 (variable length)" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry pf_Strings_space__oparen_encoding_minus_aware_cparen__detail_entries[] = {
+	{ .text = "z", .arg_str = NULL, .comment = "inline NUL-terminated string" },
+	{ .text = "z(utf16le)", .arg_str = NULL, .comment = "encoding override (utf8, utf16le, utf16be, utf32le, utf32be, ibm037, ebcdic_us, ...)" },
+	{ .text = "z[N]", .arg_str = NULL, .comment = "length-prefixed string, N-byte prefix (1/2/4/8), length is in characters" },
+	{ .text = "z(utf16le)[2b]", .arg_str = NULL, .comment = "length prefix in BYTES (MS BSTR style); suffix 'b' switches the unit" },
+	{ .text = "s", .arg_str = NULL, .comment = "pointer to NUL-terminated string (dereferences via read_at)" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry pf_Timestamps_space__oparen_parameterised_cparen__detail_entries[] = {
+	{ .text = "t(unix32) / T(unix32)", .arg_str = NULL, .comment = "wire format inside the parens; case selects LE/BE" },
+	{ .text = "supported formats", .arg_str = NULL, .comment = "unix32, unix64, unixms, unixus, unixns, filetime (alias ntfs), dos, hfs, oletime, webkit, cocoa" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry pf_Typed_space_composites_detail_entries[] = {
+	{ .text = "E (enum_type)", .arg_str = NULL, .comment = "4-byte enum, name resolved via typedb" },
+	{ .text = "B (bitfield_type)", .arg_str = NULL, .comment = "4-byte bitfield, name resolved via typedb" },
+	{ .text = "B4(R=1,W=2,X=4)", .arg_str = NULL, .comment = "inline bitfield with named flags (size = 1/2/4/8 byte BN)" },
+	{ .text = "? (struct_type)", .arg_str = NULL, .comment = "nested struct, name resolved via typedb" },
+	{ .text = "0...", .arg_str = NULL, .comment = "leading '0' marks the format as a union (all fields share offset 0)" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry pf_DSL_space_extensions_detail_entries[] = {
+	{ .text = "@N", .arg_str = NULL, .comment = "align cursor up to next N-byte boundary (no value, no name)" },
+	{ .text = ":N", .arg_str = NULL, .comment = "read N bits (1..64) from packed bitstream; MSB-first by default" },
+	{ .text = ":N< / :N>", .arg_str = NULL, .comment = "explicit bit order: < = LSB-first, > = MSB-first" },
+	{ .text = "G", .arg_str = NULL, .comment = "16-byte GUID/UUID, mixed-endian (MS) layout by default" },
+	{ .text = "G(le) / G(be)", .arg_str = NULL, .comment = "GUID layout: G(le) is LE on D1/D2/D3 (D4 stays raw, effectively the MS layout); G(be) is RFC 4122 BE" },
+	{ .text = "V(t=u1,l=u2,d=table)", .arg_str = NULL, .comment = "TLV record; t=tag, l=length, e=le/be, h=v/l/a (len covers value / len+value / tag+len+value), d=dispatch table" },
+	{ .text = "v(N) / v(N,lsb) / v(N,msb)", .arg_str = NULL, .comment = "bitvector: N individual bits (1..4096) exposed as separate 0/1 scalars; consumes ceil(N/8) bytes; bytes are always shown low-address to high; within each byte the default (msb) prints bit 7 first through bit 0, while lsb flips that to bit 0 first through bit 7" },
+	{ .text = "[@field_name]T", .arg_str = NULL, .comment = "array whose length comes from an earlier scalar field" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry pf_Skip_space__slash__space_repeat_space__slash__space_pointers_detail_entries[] = {
+	{ .text = ".", .arg_str = NULL, .comment = "skip 1 byte; [N]. skips N bytes" },
+	{ .text = "3...", .arg_str = NULL, .comment = "leading integer repeats the whole format N times" },
+	{ .text = "{N}...", .arg_str = NULL, .comment = "alternate repeat syntax" },
+	{ .text = "*T", .arg_str = NULL, .comment = "field is a pointer to T (dereferenced via read_at)" },
+	{ .text = "[N]T", .arg_str = NULL, .comment = "fixed-size array of N elements of T" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry pf_Examples_detail_entries[] = {
+	{ .text = "pf 'x4 d2 u8 z magic ver size name'", .arg_str = NULL, .comment = "header with hex u32, signed s16, unsigned u64, NUL-terminated string" },
+	{ .text = "pf 'B4(R=1,W=2,X=4,KERN=0x100) perms'", .arg_str = NULL, .comment = "inline bitfield with named flags" },
+	{ .text = "pf 'u1 [@count] x4 count items'", .arg_str = NULL, .comment = "u8 count, then that many u32 hex values" },
+	{ .text = "pf 'z(utf16le)[2b] bstr'", .arg_str = NULL, .comment = "BSTR-style: 2-byte length prefix counting bytes, UTF-16 LE body" },
+	{ .text = "pf ':1 :7 x4 flag rest tail'", .arg_str = NULL, .comment = "bit-level: 1 bit then 7 bits, then 4 bytes" },
+	{ .text = "pf 'G(be) uuid'", .arg_str = NULL, .comment = "RFC 4122 big-endian UUID" },
+	{ .text = "pf 'V(t=u1,l=u2,d=usb_desc) record'", .arg_str = NULL, .comment = "TLV dispatched via the 'usb_desc' tag-to-format table" },
+	{ .text = "pf 't(filetime) created'", .arg_str = NULL, .comment = "8-byte Windows FILETIME timestamp" },
+	{ .text = "pf '3 0x4d4 a b'", .arg_str = NULL, .comment = "repeat 3 times, union with fields x4 and d4" },
+	{ .text = "pf '? (mytype) field'", .arg_str = NULL, .comment = "nested struct of typedb format 'mytype'" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry pf_Notes_detail_entries[] = {
+	{ .text = "bit order", .arg_str = NULL, .comment = ":N defaults to MSB-first (matches DWARF and most network protocols); use <N for LSB-first" },
+	{ .text = "endian via case", .arg_str = NULL, .comment = "lowercase specifier = little-endian, UPPERCASE = big-endian" },
+	{ .text = "context endian", .arg_str = NULL, .comment = "n1/n2/n4/n8 take the active pf parsing context's current endian setting, not the spec's case" },
+	{ .text = "skip vs alignment", .arg_str = NULL, .comment = "'.' / '[N].' skip an exact number of bytes; '@N' pads to the next N-byte boundary" },
+	{ .text = "deprecation", .arg_str = NULL, .comment = "bare-letter codes (b, C, d, f, F, i, o, q, t, T, w, x, X, Z) still parse with a one-time warning; use the sized or parenthesised forms in new code" },
+	{ .text = "pf 'X2D4u8 bigWord beef qword'", .arg_str = NULL, .comment = "BE u16, BE s32, LE u64 -- one of every endianness/sign combination" },
+	{ .text = "pfn foo 'rr (eax)reg1 (eip)reg2'", .arg_str = NULL, .comment = "Create object foo referencing two registers" },
+	{ .text = "pf 't(unix32)t(unix32) troll plop'", .arg_str = NULL, .comment = "Print two unix-epoch (32-bit) timestamps with labels 'troll' and 'plop'" },
 	{ 0 },
 };
 static const RzCmdDescDetail pf_details[] = {
-	{ .name = "Formats", .entries = pf_Formats_detail_entries },
-	{ .name = "Example of usages", .entries = pf_Example_space_of_space_usages_detail_entries },
+	{ .name = "Sized integers (lowercase=LE UPPER=BE)", .entries = pf_Sized_space_integers_space__oparen_lowercase_equal_LE_space_UPPER_equal_BE_cparen__detail_entries },
+	{ .name = "Special scalars", .entries = pf_Special_space_scalars_detail_entries },
+	{ .name = "Strings (encoding-aware)", .entries = pf_Strings_space__oparen_encoding_minus_aware_cparen__detail_entries },
+	{ .name = "Timestamps (parameterised)", .entries = pf_Timestamps_space__oparen_parameterised_cparen__detail_entries },
+	{ .name = "Typed composites", .entries = pf_Typed_space_composites_detail_entries },
+	{ .name = "DSL extensions", .entries = pf_DSL_space_extensions_detail_entries },
+	{ .name = "Skip / repeat / pointers", .entries = pf_Skip_space__slash__space_repeat_space__slash__space_pointers_detail_entries },
+	{ .name = "Examples", .entries = pf_Examples_detail_entries },
+	{ .name = "Notes", .entries = pf_Notes_detail_entries },
 	{ 0 },
 };
 static const RzCmdDescHelp pf_help = {
@@ -15662,7 +16219,7 @@ static const RzCmdDescHelp cmd_print_format_help = {
 static const RzCmdDescArg cmd_print_format_delete_args[] = {
 	{
 		.name = "formatname",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_PF_FORMAT_NAME,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
@@ -15681,10 +16238,24 @@ static const RzCmdDescHelp cmd_print_format_delete_all_help = {
 	.args = cmd_print_format_delete_all_args,
 };
 
+static const RzCmdDescArg cmd_print_format_apply_args[] = {
+	{
+		.name = "format",
+		.type = RZ_CMD_ARG_TYPE_PF_FORMAT_NAME,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_format_apply_help = {
+	.summary = "Apply format string at given address and define flags for each field",
+	.args = cmd_print_format_apply_args,
+};
+
 static const RzCmdDescArg cmd_print_format_c_args[] = {
 	{
 		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_PF_FORMAT_NAME,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
@@ -15698,7 +16269,7 @@ static const RzCmdDescHelp cmd_print_format_c_help = {
 static const RzCmdDescArg cmd_print_format_dot_args[] = {
 	{
 		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_PF_FORMAT_NAME,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
@@ -15712,7 +16283,7 @@ static const RzCmdDescHelp cmd_print_format_dot_help = {
 static const RzCmdDescArg cmd_print_format_named_dot_args[] = {
 	{
 		.name = "formatname",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_PF_FORMAT_PATH,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
@@ -15727,7 +16298,7 @@ static const RzCmdDescHelp cmd_print_format_named_dot_help = {
 static const RzCmdDescArg cmd_print_format_named_args[] = {
 	{
 		.name = "formatname",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_PF_FORMAT_NAME,
 		.optional = true,
 
 	},
@@ -15748,7 +16319,7 @@ static const RzCmdDescHelp cmd_print_format_named_help = {
 static const RzCmdDescArg cmd_print_format_file_args[] = {
 	{
 		.name = "file",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_PF_FDF_FILE,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
@@ -15763,7 +16334,7 @@ static const RzCmdDescHelp cmd_print_format_file_help = {
 static const RzCmdDescArg cmd_print_format_size_args[] = {
 	{
 		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_PF_FORMAT_NAME,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
@@ -15777,7 +16348,7 @@ static const RzCmdDescHelp cmd_print_format_size_help = {
 static const RzCmdDescArg cmd_print_format_value_args[] = {
 	{
 		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_PF_FORMAT_NAME,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
@@ -15791,7 +16362,7 @@ static const RzCmdDescHelp cmd_print_format_value_help = {
 static const RzCmdDescArg cmd_print_format_write_args[] = {
 	{
 		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_PF_FORMAT_PATH,
 
 	},
 	{
@@ -16058,12 +16629,128 @@ static const RzCmdDescHelp print_current_block_json_help = {
 	.args = print_current_block_json_args,
 };
 
+static const RzCmdDescHelp cmd_print_rzil_help = {
+	.summary = "Print RzIL",
+};
 static const RzCmdDescArg print_function_rzil_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_function_rzil_help = {
-	.summary = "Print the RzIL of the function",
+	.summary = "Print RzIL of the function",
 	.args = print_function_rzil_args,
+};
+
+static const RzCmdDescDetailEntry print_function_rzil_enriched_General_detail_entries[] = {
+	{ .text = "Set", .arg_str = " x ← y", .comment = "Set (assign) y to x." },
+	{ .text = "Let", .arg_str = " (x = exp body)", .comment = "Let binding (expression-scoped)." },
+	{ .text = "ITE", .arg_str = " (cond ↠ x y)", .comment = "If-Then-Else (ITE)." },
+	{ .text = "Jump", .arg_str = " ↷ dst", .comment = "Jump to dst." },
+	{ .text = "Goto", .arg_str = " @ l", .comment = "Goto label l." },
+	{ .text = "Branch", .arg_str = " (cond ⅄ true_eff false_eff)", .comment = "Branch (Conditional)." },
+	{ .text = "Repeat", .arg_str = " (cond ⟳ eff)", .comment = "Repeat eff until cond is true." },
+	{ .text = "Empty", .arg_str = " {}", .comment = "Empty RzIL op." },
+	{ .text = "NOP", .arg_str = " ɴᴏᴘ", .comment = "No operation." },
+	{ .text = "Blk", .arg_str = " (l: deff ceff)", .comment = "A sequence of deff (data effect) and ceff (control effect) with label l." },
+	{ .text = "Unk", .arg_str = " ?", .comment = "Unknown operation, usually represents an error." },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry print_function_rzil_enriched_Bitvector_detail_entries[] = {
+	{ .text = "Bitv", .arg_str = " xₙ", .comment = "Bitvector literal x with length n." },
+	{ .text = "Cast", .arg_str = " (x ≈ₙ b)", .comment = "Cast x to length n with fill bit b." },
+	{ .text = "Msb", .arg_str = " ↑x", .comment = "Most significant bit of x." },
+	{ .text = "Lsb", .arg_str = " ↓x", .comment = "Least significant bit of x." },
+	{ .text = "Append", .arg_str = " (hi ⊚ lo)", .comment = "Concatenate (append) hi with lo." },
+	{ .text = "Is_zero", .arg_str = " x ≡ 0", .comment = "Check if x is zero." },
+	{ .text = "Lognot", .arg_str = " ~x", .comment = "Logical NOT of x." },
+	{ .text = "Neg", .arg_str = " −x", .comment = "Arithmetic negation of x." },
+	{ .text = "Add", .arg_str = " (x + y)", .comment = "Arithmetic addition of x and y." },
+	{ .text = "Sub", .arg_str = " (x - y)", .comment = "Arithmetic subtraction of x and y." },
+	{ .text = "Mul", .arg_str = " (x * y)", .comment = "Arithmetic multiplication of x and y." },
+	{ .text = "Div", .arg_str = " (x / y)", .comment = "Arithmetic division of x and y." },
+	{ .text = "Sdiv", .arg_str = " (x /⁺ y)", .comment = "Signed division of x and y." },
+	{ .text = "Mod", .arg_str = " (x % y)", .comment = "Unsigned modulo of x and y." },
+	{ .text = "Smod", .arg_str = " (x %⁺ y)", .comment = "Signed modulo of x and y." },
+	{ .text = "Logand", .arg_str = " (x & y)", .comment = "Bitwise AND between x and y." },
+	{ .text = "Logor", .arg_str = " (x | y)", .comment = "Bitwise OR between x and y." },
+	{ .text = "Logxor", .arg_str = " (x ⊕ y)", .comment = "Bitwise XOR between x and y." },
+	{ .text = "Lshift", .arg_str = " (x ≪ y b)", .comment = "Left shift x by y bits with fill bit b." },
+	{ .text = "Rshift", .arg_str = " (x ≫ y b)", .comment = "Right shift x by y bits with fill bit b." },
+	{ .text = "Eq", .arg_str = " (x ≡ y)", .comment = "x equals y." },
+	{ .text = "Sle", .arg_str = " (x ≦ y)", .comment = "x is less than or equal to y (Unsigned)." },
+	{ .text = "Ule", .arg_str = " (x ≦⁺ y)", .comment = "x is less than or equal to y (Signed)." },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry print_function_rzil_enriched_Boolean_detail_entries[] = {
+	{ .text = "False", .arg_str = " ⊥", .comment = "Boolean literal false." },
+	{ .text = "True", .arg_str = " ⊤", .comment = "Boolean literal true." },
+	{ .text = "Boolnot", .arg_str = " ¬x", .comment = "Boolean NOT of x." },
+	{ .text = "Boolor", .arg_str = " (x ∨ y)", .comment = "Boolean OR between x and y." },
+	{ .text = "Booland", .arg_str = " (x ∧ y)", .comment = "Boolean AND between x and y." },
+	{ .text = "Boolxor", .arg_str = " (x ⊻ y)", .comment = "Boolean XOR between x and y." },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry print_function_rzil_enriched_Floating_space_Point_detail_entries[] = {
+	{ .text = "Float", .arg_str = " n.fᵈₙ", .comment = "Bitvector literal n interpreted as a float of size n with optional superscript d showing a decimal representation." },
+	{ .text = "Fbits", .arg_str = " ꜰʙ x", .comment = "Bitvector representation of float x." },
+	{ .text = "Fneg", .arg_str = " −x", .comment = "Floating-point negation of x." },
+	{ .text = "Fadd", .arg_str = " (r x + y)", .comment = "Floating-point addition of x and y with rounding mode r." },
+	{ .text = "Fsub", .arg_str = " (r x - y)", .comment = "Floating-point subtraction of x and y with rounding mode r." },
+	{ .text = "Fmul", .arg_str = " (r x * y)", .comment = "Floating-point multiplication of x and y with rounding mode r." },
+	{ .text = "Fdiv", .arg_str = " (r x / y)", .comment = "Floating-point division x and y with rounding mode r." },
+	{ .text = "Fmod", .arg_str = " (r x % y)", .comment = "Floating-point modulo of x and y with rounding mode r." },
+	{ .text = "Fmad", .arg_str = " (r x * y + z)", .comment = "Floating-point multiply-add of x, y and z with rounding mode r." },
+	{ .text = "Fabs", .arg_str = " |x|", .comment = "Absolute value of x." },
+	{ .text = "Fsucc", .arg_str = " ⌊x", .comment = "Floating-point successor of x." },
+	{ .text = "Fpred", .arg_str = " ⌋x", .comment = "Floating-point predecessor of x." },
+	{ .text = "Fexcept", .arg_str = " e ᴇ x", .comment = "Floating-point exception e on x." },
+	{ .text = "Fcast int", .arg_str = " (x ꜰ≈ɪᵈₙ r)", .comment = "Cast x to unsigned integer of size n with rounding mode r and optional subscript d." },
+	{ .text = "Fcast sint", .arg_str = " (x ꜰ≈ɪ⁺ᵈₙ r)", .comment = "Cast x to signed integer of size n with rounding mode r and optional subscript d." },
+	{ .text = "Fcast float", .arg_str = " (x ꜰ≈ꜰᵈₙ r)", .comment = "Cast x to unsigned float of size n with rounding mode r and optional subscript d." },
+	{ .text = "Fcast sfloat", .arg_str = " (x ꜰ≈ꜰ⁺ᵈₙ r)", .comment = "Cast x to signed float of size n with rounding mode r and optional subscript d." },
+	{ .text = "Fconvert", .arg_str = " (x ≅ᵈₙ r)", .comment = "Convert rounding mode of x to r and its size to n." },
+	{ .text = "Fround", .arg_str = " (r ⭂ x)", .comment = "Round x to integral value using rounding mode r and optional subscript d." },
+	{ .text = "Fsqrt", .arg_str = " (r ²√ x)", .comment = "Square root of x using rounding mode r." },
+	{ .text = "Frsqrt", .arg_str = " (r ¹/√ x)", .comment = "Inverse square root of x using rounding mode r." },
+	{ .text = "Frootn", .arg_str = " (r n ⁿ√ x)", .comment = "x to the power 1/n using rounding mode r, where n is integer." },
+	{ .text = "Fpow", .arg_str = " (r x ˰ y)", .comment = "x to the power y using rounding mode r." },
+	{ .text = "Fpown", .arg_str = " (r x ˰ⁿ n)", .comment = "x to the power n using rounding mode r, where n is integer." },
+	{ .text = "Forder", .arg_str = " (x ≷ y)", .comment = "Float ordering comparison between x and y." },
+	{ .text = "Frequal", .arg_str = " (r1 ≡ r2)", .comment = "Float rounding mode equality check between r1 and r2." },
+	{ .text = "Is_fzero", .arg_str = " x ≡ 0", .comment = "Check if x is zero." },
+	{ .text = "Is_nan", .arg_str = " x ≡ ɴаɴ", .comment = "Check if x is Not-a-Number." },
+	{ .text = "Is_inf", .arg_str = " x ≡ ∞", .comment = "Check if x is infine." },
+	{ .text = "Is_finite", .arg_str = " x ≢ ∞", .comment = "Check if x is finite." },
+	{ .text = "Is_fpos", .arg_str = " x > 0", .comment = "Check if x is positive." },
+	{ .text = "Is_fneg", .arg_str = " x < 0", .comment = "Check if x is negative." },
+	{ .text = "Fcompound", .arg_str = " (r x ∪ n)", .comment = "Float compound operator between x and n using rounding mode r, where n is integer." },
+	{ .text = "Fhypot", .arg_str = " (r x ∠ y)", .comment = "Float hypotenuse." },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry print_function_rzil_enriched_Memory_detail_entries[] = {
+	{ .text = "Load", .arg_str = " (ʟᴅₘ n a)", .comment = "Load n bits from address a of memory index m." },
+	{ .text = "Store", .arg_str = " (ꜱᴛₘ v a)", .comment = "Store v to address a of memory index m." },
+	{ 0 },
+};
+static const RzCmdDescDetail print_function_rzil_enriched_details[] = {
+	{ .name = "General", .entries = print_function_rzil_enriched_General_detail_entries },
+	{ .name = "Bitvector", .entries = print_function_rzil_enriched_Bitvector_detail_entries },
+	{ .name = "Boolean", .entries = print_function_rzil_enriched_Boolean_detail_entries },
+	{ .name = "Floating Point", .entries = print_function_rzil_enriched_Floating_space_Point_detail_entries },
+	{ .name = "Memory", .entries = print_function_rzil_enriched_Memory_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg print_function_rzil_enriched_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_function_rzil_enriched_help = {
+	.summary = "Print unicode RzIL of the function at current seek.",
+	.description = "Prints the RzIL of the function at current seek using unicode special characters. This command requires 'scr.utf8=true', use 'plf' for plain ASCII output.",
+	.details = print_function_rzil_enriched_details,
+	.args = print_function_rzil_enriched_args,
 };
 
 static const RzCmdDescHelp pp_help = {
@@ -17589,6 +18276,114 @@ static const RzCmdDescHelp print_equal_entropy_help = {
 	.args = print_equal_entropy_args,
 };
 
+static const RzCmdDescArg print_equal_chisquare_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_chisquare_help = {
+	.summary = "Show a vertical histogram of chi-square (vs uniform) per each block",
+	.args = print_equal_chisquare_args,
+};
+
+static const RzCmdDescArg print_equal_ioc_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_ioc_help = {
+	.summary = "Show a vertical histogram of index of coincidence per each block",
+	.args = print_equal_ioc_args,
+};
+
+static const RzCmdDescArg print_equal_minentropy_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_minentropy_help = {
+	.summary = "Show a vertical histogram of min-entropy per each block",
+	.args = print_equal_minentropy_args,
+};
+
+static const RzCmdDescArg print_equal_serialcorr_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_serialcorr_help = {
+	.summary = "Show a vertical histogram of serial correlation per each block",
+	.args = print_equal_serialcorr_args,
+};
+
 static const RzCmdDescDetailEntry print_rising_and_falling_entropy_Default_space_values_detail_entries[] = {
 	{ .text = "", .arg_str = NULL, .comment = "Default rising threshold is 0.95 and falling threshold is 0.85" },
 	{ 0 },
@@ -18033,6 +18828,158 @@ static const RzCmdDescArg print_equal_equal_entropy_visual_args[] = {
 static const RzCmdDescHelp print_equal_equal_entropy_visual_help = {
 	.summary = "Show a interactive horizontal histogram of entropy per each block",
 	.args = print_equal_equal_entropy_visual_args,
+};
+
+static const RzCmdDescHelp p_equal__equal_C_help = {
+	.summary = "Show a horizontal histogram of chi-square (vs uniform) per each block",
+};
+static const RzCmdDescArg print_equal_equal_chisquare_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_chisquare_help = {
+	.summary = "Show a horizontal histogram of chi-square (vs uniform) per each block",
+	.args = print_equal_equal_chisquare_args,
+};
+
+static const RzCmdDescArg print_equal_equal_chisquare_visual_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_chisquare_visual_help = {
+	.summary = "Show a interactive horizontal histogram of chi-square (vs uniform) per each block",
+	.args = print_equal_equal_chisquare_visual_args,
+};
+
+static const RzCmdDescHelp p_equal__equal_I_help = {
+	.summary = "Show a horizontal histogram of index of coincidence per each block",
+};
+static const RzCmdDescArg print_equal_equal_ioc_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_ioc_help = {
+	.summary = "Show a horizontal histogram of index of coincidence per each block",
+	.args = print_equal_equal_ioc_args,
+};
+
+static const RzCmdDescArg print_equal_equal_ioc_visual_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_ioc_visual_help = {
+	.summary = "Show a interactive horizontal histogram of index of coincidence per each block",
+	.args = print_equal_equal_ioc_visual_args,
+};
+
+static const RzCmdDescHelp p_equal__equal_M_help = {
+	.summary = "Show a horizontal histogram of min-entropy per each block",
+};
+static const RzCmdDescArg print_equal_equal_minentropy_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_minentropy_help = {
+	.summary = "Show a horizontal histogram of min-entropy per each block",
+	.args = print_equal_equal_minentropy_args,
+};
+
+static const RzCmdDescArg print_equal_equal_minentropy_visual_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_minentropy_visual_help = {
+	.summary = "Show a interactive horizontal histogram of min-entropy per each block",
+	.args = print_equal_equal_minentropy_visual_args,
+};
+
+static const RzCmdDescHelp p_equal__equal_S_help = {
+	.summary = "Show a horizontal histogram of serial correlation per each block",
+};
+static const RzCmdDescArg print_equal_equal_serialcorr_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_serialcorr_help = {
+	.summary = "Show a horizontal histogram of serial correlation per each block",
+	.args = print_equal_equal_serialcorr_args,
+};
+
+static const RzCmdDescArg print_equal_equal_serialcorr_visual_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_serialcorr_visual_help = {
+	.summary = "Show a interactive horizontal histogram of serial correlation per each block",
+	.args = print_equal_equal_serialcorr_visual_args,
 };
 
 static const RzCmdDescHelp p_equal__equal_i_help = {
@@ -18802,6 +19749,9 @@ static const RzCmdDescHelp type_cc_del_all_help = {
 	.args = type_cc_del_all_args,
 };
 
+static const RzCmdDescHelp td_help = {
+	.summary = "Define types from a C definition or a pf format string",
+};
 static const RzCmdDescArg type_define_args[] = {
 	{
 		.name = "type",
@@ -18814,6 +19764,35 @@ static const RzCmdDescArg type_define_args[] = {
 static const RzCmdDescHelp type_define_help = {
 	.summary = "Define type from C definition",
 	.args = type_define_args,
+};
+
+static const RzCmdDescDetailEntry type_define_from_format_Examples_detail_entries[] = {
+	{ .text = "tdf", .arg_str = " rgba \"x1x1x1x1 r g b a\"", .comment = "define struct rgba from an inline pf format" },
+	{ .text = "tdf", .arg_str = " elf_header elf_header", .comment = "define a type from the saved pf.elf_header format" },
+	{ 0 },
+};
+static const RzCmdDescDetail type_define_from_format_details[] = {
+	{ .name = "Examples", .entries = type_define_from_format_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg type_define_from_format_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "format",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_define_from_format_help = {
+	.summary = "Define a type from a pf format string or a saved pf.<name>",
+	.details = type_define_from_format_details,
+	.args = type_define_from_format_args,
 };
 
 static const RzCmdDescHelp te_help = {
@@ -19105,6 +20084,34 @@ static const RzCmdDescHelp type_print_hexstring_help = {
 	.args = type_print_hexstring_args,
 };
 
+static const RzCmdDescDetailEntry type_rename_Examples_detail_entries[] = {
+	{ .text = "tr", .arg_str = " struct_a struct_b", .comment = "rename the type struct_a to struct_b, updating all its users" },
+	{ 0 },
+};
+static const RzCmdDescDetail type_rename_details[] = {
+	{ .name = "Examples", .entries = type_rename_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg type_rename_args[] = {
+	{
+		.name = "old",
+		.type = RZ_CMD_ARG_TYPE_ANY_TYPE,
+
+	},
+	{
+		.name = "new",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_rename_help = {
+	.summary = "Rename a type and update every type and function type that references it",
+	.details = type_rename_details,
+	.args = type_rename_args,
+};
+
 static const RzCmdDescHelp ts_help = {
 	.summary = "List loaded structures",
 };
@@ -19272,6 +20279,60 @@ static const RzCmdDescArg type_xrefs_list_all_args[] = {
 static const RzCmdDescHelp type_xrefs_list_all_help = {
 	.summary = "List all types used by any function",
 	.args = type_xrefs_list_all_args,
+};
+
+static const RzCmdDescHelp tk_help = {
+	.summary = "Manage the typeclasses of types",
+	.description = "Typeclasses classify atomic types by the general kind of value they hold, independently of their concrete name or size, so the analysis can pick a suitable type generically (for example any signed integer). The available typeclasses are Num (any number), Integral (any integer), Floating (any floating point number), Address (integer types used to work with pointers), Signed Integral and Unsigned Integral (the signed and unsigned subclasses of Integral) and None (the most generic one, used when no specific typeclass applies).",
+};
+static const RzCmdDescArg type_typeclass_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_ANY_TYPE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_typeclass_help = {
+	.summary = "Show the typeclass of the given type",
+	.args = type_typeclass_args,
+};
+
+static const RzCmdDescArg type_typeclass_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp type_typeclass_list_help = {
+	.summary = "List all typeclasses, or the types belonging to each of them",
+	.args = type_typeclass_list_args,
+};
+
+static const RzCmdDescDetailEntry type_typeclass_set_Examples_detail_entries[] = {
+	{ .text = "tks", .arg_str = " int Floating", .comment = "treat the int type as the Floating typeclass" },
+	{ .text = "tks", .arg_str = " int \"Signed Integral\"", .comment = "set a typeclass whose name contains a space (quote it)" },
+	{ 0 },
+};
+static const RzCmdDescDetail type_typeclass_set_details[] = {
+	{ .name = "Examples", .entries = type_typeclass_set_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg type_typeclass_set_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_ANY_TYPE,
+
+	},
+	{
+		.name = "typeclass",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_typeclass_set_help = {
+	.summary = "Set the typeclass of a type",
+	.details = type_typeclass_set_details,
+	.args = type_typeclass_set_args,
 };
 
 static const RzCmdDescHelp V_help = {
@@ -21608,11 +22669,51 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_search_cryptographic_material_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_c_cd, "/cm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_cryptographic_material_handler, &cmd_search_cryptographic_material_help);
 	rz_warn_if_fail(cmd_search_cryptographic_material_cd);
 
+	RzCmdDesc *slash_C_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/C", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_info_cop_gadget_handler, &cmd_info_cop_gadget_help, &slash_C_help);
+	rz_warn_if_fail(slash_C_cd);
+	RzCmdDesc *cmd_clear_cop_gadget_cache_cd = rz_cmd_desc_argv_new(core->rcmd, slash_C_cd, "/C-", rz_cmd_clear_cop_gadget_cache_handler, &cmd_clear_cop_gadget_cache_help);
+	rz_warn_if_fail(cmd_clear_cop_gadget_cache_cd);
+
+	RzCmdDesc *cmd_search_cop_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_C_cd, "/C/", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_cop_gadget_handler, &cmd_search_cop_gadget_help);
+	rz_warn_if_fail(cmd_search_cop_gadget_cd);
+
+	RzCmdDesc *cmd_query_cop_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_C_cd, "/Ck", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_query_cop_gadget_handler, &cmd_query_cop_gadget_help);
+	rz_warn_if_fail(cmd_query_cop_gadget_cd);
+
+	RzCmdDesc *cmd_detail_cop_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_C_cd, "/Cg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_cmd_detail_cop_gadget_handler, &cmd_detail_cop_gadget_help);
+	rz_warn_if_fail(cmd_detail_cop_gadget_cd);
+
+	RzCmdDesc *cmd_cop_search_stack_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_C_cd, "/Cs", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cop_search_stack_handler, &cmd_cop_search_stack_help);
+	rz_warn_if_fail(cmd_cop_search_stack_cd);
+
+	RzCmdDesc *cmd_cop_gadget_search_size_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_C_cd, "/Cl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cop_gadget_search_size_handler, &cmd_cop_gadget_search_size_help);
+	rz_warn_if_fail(cmd_cop_gadget_search_size_cd);
+
 	RzCmdDesc *cmd_search_deltified_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash__cd, "/d", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_deltified_handler, &cmd_search_deltified_help);
 	rz_warn_if_fail(cmd_search_deltified_cd);
 
 	RzCmdDesc *cmd_search_file_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash__cd, "/F", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_file_handler, &cmd_search_file_help);
 	rz_warn_if_fail(cmd_search_file_cd);
+
+	RzCmdDesc *slash_J_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/J", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_info_jop_gadget_handler, &cmd_info_jop_gadget_help, &slash_J_help);
+	rz_warn_if_fail(slash_J_cd);
+	RzCmdDesc *cmd_clear_jop_gadget_cache_cd = rz_cmd_desc_argv_new(core->rcmd, slash_J_cd, "/J-", rz_cmd_clear_jop_gadget_cache_handler, &cmd_clear_jop_gadget_cache_help);
+	rz_warn_if_fail(cmd_clear_jop_gadget_cache_cd);
+
+	RzCmdDesc *cmd_search_jop_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_J_cd, "/J/", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_jop_gadget_handler, &cmd_search_jop_gadget_help);
+	rz_warn_if_fail(cmd_search_jop_gadget_cd);
+
+	RzCmdDesc *cmd_query_jop_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_J_cd, "/Jk", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_query_jop_gadget_handler, &cmd_query_jop_gadget_help);
+	rz_warn_if_fail(cmd_query_jop_gadget_cd);
+
+	RzCmdDesc *cmd_detail_jop_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_J_cd, "/Jg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_cmd_detail_jop_gadget_handler, &cmd_detail_jop_gadget_help);
+	rz_warn_if_fail(cmd_detail_jop_gadget_cd);
+
+	RzCmdDesc *cmd_jop_search_stack_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_J_cd, "/Js", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_jop_search_stack_handler, &cmd_jop_search_stack_help);
+	rz_warn_if_fail(cmd_jop_search_stack_cd);
+
+	RzCmdDesc *cmd_jop_gadget_search_size_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_J_cd, "/Jl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_jop_gadget_search_size_handler, &cmd_jop_gadget_search_size_help);
+	rz_warn_if_fail(cmd_jop_gadget_search_size_cd);
 
 	RzCmdDesc *cmd_search_insn_offset_backwards_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash__cd, "/o", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_insn_offset_backwards_handler, &cmd_search_insn_offset_backwards_help);
 	rz_warn_if_fail(cmd_search_insn_offset_backwards_cd);
@@ -21653,22 +22754,25 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_search_reference_execute_cd = rz_cmd_desc_argv_new(core->rcmd, slash_r_cd, "/rx", rz_cmd_search_reference_execute_handler, &cmd_search_reference_execute_help);
 	rz_warn_if_fail(cmd_search_reference_execute_cd);
 
-	RzCmdDesc *slash_R_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/R", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_info_gadget_handler, &cmd_info_gadget_help, &slash_R_help);
+	RzCmdDesc *slash_R_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/R", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_info_rop_gadget_handler, &cmd_info_rop_gadget_help, &slash_R_help);
 	rz_warn_if_fail(slash_R_cd);
-	RzCmdDesc *cmd_search_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/R/", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_gadget_handler, &cmd_search_gadget_help);
-	rz_warn_if_fail(cmd_search_gadget_cd);
+	RzCmdDesc *cmd_clear_rop_gadget_cache_cd = rz_cmd_desc_argv_new(core->rcmd, slash_R_cd, "/R-", rz_cmd_clear_rop_gadget_cache_handler, &cmd_clear_rop_gadget_cache_help);
+	rz_warn_if_fail(cmd_clear_rop_gadget_cache_cd);
 
-	RzCmdDesc *cmd_query_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rk", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_query_gadget_handler, &cmd_query_gadget_help);
-	rz_warn_if_fail(cmd_query_gadget_cd);
+	RzCmdDesc *cmd_search_rop_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/R/", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_rop_gadget_handler, &cmd_search_rop_gadget_help);
+	rz_warn_if_fail(cmd_search_rop_gadget_cd);
 
-	RzCmdDesc *cmd_detail_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_cmd_detail_gadget_handler, &cmd_detail_gadget_help);
-	rz_warn_if_fail(cmd_detail_gadget_cd);
+	RzCmdDesc *cmd_query_rop_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rk", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_query_rop_gadget_handler, &cmd_query_rop_gadget_help);
+	rz_warn_if_fail(cmd_query_rop_gadget_cd);
+
+	RzCmdDesc *cmd_detail_rop_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_cmd_detail_rop_gadget_handler, &cmd_detail_rop_gadget_help);
+	rz_warn_if_fail(cmd_detail_rop_gadget_cd);
 
 	RzCmdDesc *cmd_rop_search_stack_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rs", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_rop_search_stack_handler, &cmd_rop_search_stack_help);
 	rz_warn_if_fail(cmd_rop_search_stack_cd);
 
-	RzCmdDesc *cmd_rop_search_size_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_rop_search_size_handler, &cmd_rop_search_size_help);
-	rz_warn_if_fail(cmd_rop_search_size_cd);
+	RzCmdDesc *cmd_rop_gadget_search_size_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_rop_gadget_search_size_handler, &cmd_rop_gadget_search_size_help);
+	rz_warn_if_fail(cmd_rop_gadget_search_size_cd);
 
 	RzCmdDesc *slash_v_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/v", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_value_handler, &cmd_search_value_help, &slash_v_help);
 	rz_warn_if_fail(slash_v_cd);
@@ -22094,6 +23198,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_vars_type_cd = rz_cmd_desc_argv_new(core->rcmd, afv_cd, "afvt", rz_analysis_function_vars_type_handler, &analysis_function_vars_type_help);
 	rz_warn_if_fail(analysis_function_vars_type_cd);
 
+	RzCmdDesc *afvc_cd = rz_cmd_desc_group_state_new(core->rcmd, afv_cd, "afvc", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_constraints_handler, &analysis_function_vars_constraints_help, &afvc_help);
+	rz_warn_if_fail(afvc_cd);
+	RzCmdDesc *analysis_function_vars_constraints_set_cd = rz_cmd_desc_argv_new(core->rcmd, afvc_cd, "afvcs", rz_analysis_function_vars_constraints_set_handler, &analysis_function_vars_constraints_set_help);
+	rz_warn_if_fail(analysis_function_vars_constraints_set_cd);
+
+	RzCmdDesc *analysis_function_vars_constraints_del_cd = rz_cmd_desc_argv_new(core->rcmd, afvc_cd, "afvc-", rz_analysis_function_vars_constraints_del_handler, &analysis_function_vars_constraints_del_help);
+	rz_warn_if_fail(analysis_function_vars_constraints_del_cd);
+
 	RzCmdDesc *afvx_cd = rz_cmd_desc_group_modes_new(core->rcmd, afv_cd, "afvx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_xrefs_handler, &analysis_function_vars_xrefs_help, &afvx_help);
 	rz_warn_if_fail(afvx_cd);
 	RzCmdDesc *analysis_function_vars_xrefs_args_cd = rz_cmd_desc_argv_modes_new(core->rcmd, afvx_cd, "afvxa", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_xrefs_args_handler, &analysis_function_vars_xrefs_args_help);
@@ -22462,6 +23574,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_global_variable_xrefs_cd = rz_cmd_desc_argv_state_new(core->rcmd, avg_cd, "avgx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_analysis_global_variable_xrefs_handler, &analysis_global_variable_xrefs_help);
 	rz_warn_if_fail(analysis_global_variable_xrefs_cd);
 
+	RzCmdDesc *avgc_cd = rz_cmd_desc_group_state_new(core->rcmd, avg_cd, "avgc", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_global_variable_constraints_handler, &analysis_global_variable_constraints_help, &avgc_help);
+	rz_warn_if_fail(avgc_cd);
+	RzCmdDesc *analysis_global_variable_constraints_set_cd = rz_cmd_desc_argv_new(core->rcmd, avgc_cd, "avgcs", rz_analysis_global_variable_constraints_set_handler, &analysis_global_variable_constraints_set_help);
+	rz_warn_if_fail(analysis_global_variable_constraints_set_cd);
+
+	RzCmdDesc *analysis_global_variable_constraints_del_cd = rz_cmd_desc_argv_new(core->rcmd, avgc_cd, "avgc-", rz_analysis_global_variable_constraints_del_handler, &analysis_global_variable_constraints_del_help);
+	rz_warn_if_fail(analysis_global_variable_constraints_del_cd);
+
 	RzCmdDesc *analysis_print_rtti_cd = rz_cmd_desc_argv_modes_new(core->rcmd, av_cd, "avr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_print_rtti_handler, &analysis_print_rtti_help);
 	rz_warn_if_fail(analysis_print_rtti_cd);
 
@@ -22613,11 +23733,16 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_hint_del_optype_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "aho-", rz_analysis_hint_del_optype_handler, &analysis_hint_del_optype_help);
 	rz_warn_if_fail(analysis_hint_del_optype_cd);
 
-	RzCmdDesc *analysis_hint_set_immbase_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahi", rz_analysis_hint_set_immbase_handler, &analysis_hint_set_immbase_help);
-	rz_warn_if_fail(analysis_hint_set_immbase_cd);
-
-	RzCmdDesc *analysis_hint_del_immbase_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahi-", rz_analysis_hint_del_immbase_handler, &analysis_hint_del_immbase_help);
+	RzCmdDesc *ahi_cd = rz_cmd_desc_group_modes_new(core->rcmd, ah_cd, "ahi", RZ_OUTPUT_MODE_STANDARD, rz_analysis_hint_set_immbase_handler, &analysis_hint_set_immbase_help, &ahi_help);
+	rz_warn_if_fail(ahi_cd);
+	RzCmdDesc *analysis_hint_del_immbase_cd = rz_cmd_desc_argv_new(core->rcmd, ahi_cd, "ahi-", rz_analysis_hint_del_immbase_handler, &analysis_hint_del_immbase_help);
 	rz_warn_if_fail(analysis_hint_del_immbase_cd);
+
+	RzCmdDesc *analysis_hint_set_enum_cd = rz_cmd_desc_argv_new(core->rcmd, ahi_cd, "ahie", rz_analysis_hint_set_enum_handler, &analysis_hint_set_enum_help);
+	rz_warn_if_fail(analysis_hint_set_enum_cd);
+
+	RzCmdDesc *analysis_hint_del_enum_cd = rz_cmd_desc_argv_new(core->rcmd, ahi_cd, "ahie-", rz_analysis_hint_del_enum_handler, &analysis_hint_del_enum_help);
+	rz_warn_if_fail(analysis_hint_del_enum_cd);
 
 	RzCmdDesc *analysis_hint_set_offset_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "aht", rz_analysis_hint_set_offset_handler, &analysis_hint_set_offset_help);
 	rz_warn_if_fail(analysis_hint_set_offset_cd);
@@ -23352,12 +24477,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_list_maps_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm=", rz_cmd_debug_list_maps_ascii_handler, &cmd_debug_list_maps_ascii_help);
 	rz_warn_if_fail(cmd_debug_list_maps_ascii_cd);
 
-	RzCmdDesc *cmd_debug_map_current_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm.", rz_cmd_debug_map_current_handler, &cmd_debug_map_current_help);
+	RzCmdDesc *cmd_debug_map_current_cd = rz_cmd_desc_argv_state_new(core->rcmd, dm_cd, "dm.", RZ_OUTPUT_MODE_STANDARD, rz_cmd_debug_map_current_handler, &cmd_debug_map_current_help);
 	rz_warn_if_fail(cmd_debug_map_current_cd);
 
 	RzCmdDesc *dmm_cd = rz_cmd_desc_group_state_new(core->rcmd, dm_cd, "dmm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_modules_handler, &cmd_debug_modules_help, &dmm_help);
 	rz_warn_if_fail(dmm_cd);
-	RzCmdDesc *cmd_debug_current_modules_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmm_cd, "dmm.", RZ_OUTPUT_MODE_STANDARD, rz_cmd_debug_current_modules_handler, &cmd_debug_current_modules_help);
+	RzCmdDesc *cmd_debug_current_modules_cd = rz_cmd_desc_argv_state_new(core->rcmd, dmm_cd, "dmm.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_current_modules_handler, &cmd_debug_current_modules_help);
 	rz_warn_if_fail(cmd_debug_current_modules_cd);
 
 	RzCmdDesc *cmd_debug_deallocate_map_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm-", rz_cmd_debug_deallocate_map_handler, &cmd_debug_deallocate_map_help);
@@ -23371,34 +24496,63 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_dump_maps_writable_cd = rz_cmd_desc_argv_new(core->rcmd, dmd_cd, "dmdw", rz_cmd_debug_dump_maps_writable_handler, &cmd_debug_dump_maps_writable_help);
 	rz_warn_if_fail(cmd_debug_dump_maps_writable_cd);
 
-	RzCmdDesc *dmh_cd = rz_cmd_desc_group_state_new(core->rcmd, dm_cd, "dmh", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_cmd_heap_chunks_print_handler, &cmd_heap_chunks_print_help, &dmh_help);
+	RzCmdDesc *dmh_cd = rz_cmd_desc_group_new(core->rcmd, dm_cd, "dmh", NULL, NULL, &dmh_help);
 	rz_warn_if_fail(dmh_cd);
-	RzCmdDesc *cmd_arena_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmha", rz_cmd_arena_print_handler, &cmd_arena_print_help);
+	RzCmdDesc *dmhg_cd = rz_cmd_desc_group_state_new(core->rcmd, dmh_cd, "dmhg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_cmd_heap_chunks_print_handler, &cmd_heap_chunks_print_help, &dmhg_help);
+	rz_warn_if_fail(dmhg_cd);
+	RzCmdDesc *cmd_arena_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmhg_cd, "dmhga", rz_cmd_arena_print_handler, &cmd_arena_print_help);
 	rz_warn_if_fail(cmd_arena_print_cd);
 
-	RzCmdDesc *cmd_heap_bins_list_print_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmh_cd, "dmhb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_GRAPH, rz_cmd_heap_bins_list_print_handler, &cmd_heap_bins_list_print_help);
+	RzCmdDesc *cmd_heap_bins_list_print_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmhg_cd, "dmhgb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_GRAPH, rz_cmd_heap_bins_list_print_handler, &cmd_heap_bins_list_print_help);
 	rz_warn_if_fail(cmd_heap_bins_list_print_cd);
 
-	RzCmdDesc *cmd_heap_chunk_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmhc", rz_cmd_heap_chunk_print_handler, &cmd_heap_chunk_print_help);
+	RzCmdDesc *cmd_heap_chunk_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmhg_cd, "dmhgc", rz_cmd_heap_chunk_print_handler, &cmd_heap_chunk_print_help);
 	rz_warn_if_fail(cmd_heap_chunk_print_cd);
 
-	RzCmdDesc *cmd_heap_arena_bins_print_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmh_cd, "dmhd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_heap_arena_bins_print_handler, &cmd_heap_arena_bins_print_help);
+	RzCmdDesc *cmd_heap_arena_bins_print_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmhg_cd, "dmhgd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_heap_arena_bins_print_handler, &cmd_heap_arena_bins_print_help);
 	rz_warn_if_fail(cmd_heap_arena_bins_print_cd);
 
-	RzCmdDesc *cmd_heap_fastbins_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmhf", rz_cmd_heap_fastbins_print_handler, &cmd_heap_fastbins_print_help);
+	RzCmdDesc *cmd_heap_fastbins_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmhg_cd, "dmhgf", rz_cmd_heap_fastbins_print_handler, &cmd_heap_fastbins_print_help);
 	rz_warn_if_fail(cmd_heap_fastbins_print_cd);
 
-	RzCmdDesc *cmd_heap_chunks_graph_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmhg", rz_cmd_heap_chunks_graph_handler, &cmd_heap_chunks_graph_help);
+	RzCmdDesc *cmd_heap_chunks_graph_cd = rz_cmd_desc_argv_new(core->rcmd, dmhg_cd, "dmhgg", rz_cmd_heap_chunks_graph_handler, &cmd_heap_chunks_graph_help);
 	rz_warn_if_fail(cmd_heap_chunks_graph_cd);
 
-	RzCmdDesc *cmd_heap_info_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmhi", rz_cmd_heap_info_print_handler, &cmd_heap_info_print_help);
+	RzCmdDesc *cmd_heap_info_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmhg_cd, "dmhgi", rz_cmd_heap_info_print_handler, &cmd_heap_info_print_help);
 	rz_warn_if_fail(cmd_heap_info_print_cd);
 
-	RzCmdDesc *cmd_main_arena_print_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmh_cd, "dmhm", RZ_OUTPUT_MODE_STANDARD, rz_cmd_main_arena_print_handler, &cmd_main_arena_print_help);
+	RzCmdDesc *cmd_main_arena_print_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmhg_cd, "dmhgm", RZ_OUTPUT_MODE_STANDARD, rz_cmd_main_arena_print_handler, &cmd_main_arena_print_help);
 	rz_warn_if_fail(cmd_main_arena_print_cd);
 
-	RzCmdDesc *cmd_heap_tcache_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmht", rz_cmd_heap_tcache_print_handler, &cmd_heap_tcache_print_help);
+	RzCmdDesc *cmd_heap_tcache_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmhg_cd, "dmhgt", rz_cmd_heap_tcache_print_handler, &cmd_heap_tcache_print_help);
 	rz_warn_if_fail(cmd_heap_tcache_print_cd);
+
+	RzCmdDesc *dmhw_cd = rz_cmd_desc_group_state_new(core->rcmd, dmh_cd, "dmhw", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_process_heaps_handler, &cmd_debug_process_heaps_help, &dmhw_help);
+	rz_warn_if_fail(dmhw_cd);
+	rz_cmd_desc_set_default_mode(dmhw_cd, RZ_OUTPUT_MODE_TABLE);
+	RzCmdDesc *cmd_debug_process_heap_block_cd = rz_cmd_desc_argv_state_new(core->rcmd, dmhw_cd, "dmhwb", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_process_heap_block_handler, &cmd_debug_process_heap_block_help);
+	rz_warn_if_fail(cmd_debug_process_heap_block_cd);
+	rz_cmd_desc_set_default_mode(cmd_debug_process_heap_block_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_debug_heap_block_flag_cd = rz_cmd_desc_argv_new(core->rcmd, dmhw_cd, "dmhwbf", rz_cmd_debug_heap_block_flag_handler, &cmd_debug_heap_block_flag_help);
+	rz_warn_if_fail(cmd_debug_heap_block_flag_cd);
+
+	RzCmdDesc *dmhj_cd = rz_cmd_desc_group_new(core->rcmd, dmh_cd, "dmhj", NULL, NULL, &dmhj_help);
+	rz_warn_if_fail(dmhj_cd);
+	RzCmdDesc *cmd_debug_heap_jemalloc_a_cd = rz_cmd_desc_argv_new(core->rcmd, dmhj_cd, "dmhja", rz_cmd_debug_heap_jemalloc_a_handler, &cmd_debug_heap_jemalloc_a_help);
+	rz_warn_if_fail(cmd_debug_heap_jemalloc_a_cd);
+
+	RzCmdDesc *cmd_debug_heap_jemalloc_b_cd = rz_cmd_desc_argv_new(core->rcmd, dmhj_cd, "dmhjb", rz_cmd_debug_heap_jemalloc_b_handler, &cmd_debug_heap_jemalloc_b_help);
+	rz_warn_if_fail(cmd_debug_heap_jemalloc_b_cd);
+
+	RzCmdDesc *cmd_debug_heap_jemalloc_c_cd = rz_cmd_desc_argv_new(core->rcmd, dmhj_cd, "dmhjc", rz_cmd_debug_heap_jemalloc_c_handler, &cmd_debug_heap_jemalloc_c_help);
+	rz_warn_if_fail(cmd_debug_heap_jemalloc_c_cd);
+
+	RzCmdDesc *cmd_debug_heap_jemalloc_e_cd = rz_cmd_desc_argv_new(core->rcmd, dmhj_cd, "dmhje", rz_cmd_debug_heap_jemalloc_e_handler, &cmd_debug_heap_jemalloc_e_help);
+	rz_warn_if_fail(cmd_debug_heap_jemalloc_e_cd);
+
+	RzCmdDesc *cmd_debug_heap_jemalloc_ei_cd = rz_cmd_desc_argv_new(core->rcmd, dmhj_cd, "dmhjei", rz_cmd_debug_heap_jemalloc_ei_handler, &cmd_debug_heap_jemalloc_ei_help);
+	rz_warn_if_fail(cmd_debug_heap_jemalloc_ei_cd);
 
 	RzCmdDesc *dmi_cd = rz_cmd_desc_group_state_new(core->rcmd, dm_cd, "dmi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_debug_dmi_handler, &cmd_debug_dmi_help, &dmi_help);
 	rz_warn_if_fail(dmi_cd);
@@ -23417,33 +24571,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_dmL_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dmL", rz_cmd_debug_dmL_handler, &cmd_debug_dmL_help);
 	rz_warn_if_fail(cmd_debug_dmL_cd);
 
-	RzCmdDesc *cmd_debug_dmS_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dm_cd, "dmS", RZ_OUTPUT_MODE_STANDARD, rz_cmd_debug_dmS_handler, &cmd_debug_dmS_help);
+	RzCmdDesc *cmd_debug_dmS_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dm_cd, "dmS", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_dmS_handler, &cmd_debug_dmS_help);
 	rz_warn_if_fail(cmd_debug_dmS_cd);
-
-	RzCmdDesc *dmw_cd = rz_cmd_desc_group_modes_new(core->rcmd, dm_cd, "dmw", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_process_heaps_handler, &cmd_debug_process_heaps_help, &dmw_help);
-	rz_warn_if_fail(dmw_cd);
-	RzCmdDesc *cmd_debug_process_heap_block_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmw_cd, "dmwb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_process_heap_block_handler, &cmd_debug_process_heap_block_help);
-	rz_warn_if_fail(cmd_debug_process_heap_block_cd);
-
-	RzCmdDesc *cmd_debug_heap_block_flag_cd = rz_cmd_desc_argv_new(core->rcmd, dmw_cd, "dmwbf", rz_cmd_debug_heap_block_flag_handler, &cmd_debug_heap_block_flag_help);
-	rz_warn_if_fail(cmd_debug_heap_block_flag_cd);
-
-	RzCmdDesc *dmx_cd = rz_cmd_desc_group_new(core->rcmd, dm_cd, "dmx", NULL, NULL, &dmx_help);
-	rz_warn_if_fail(dmx_cd);
-	RzCmdDesc *cmd_debug_heap_jemalloc_a_cd = rz_cmd_desc_argv_new(core->rcmd, dmx_cd, "dmxa", rz_cmd_debug_heap_jemalloc_a_handler, &cmd_debug_heap_jemalloc_a_help);
-	rz_warn_if_fail(cmd_debug_heap_jemalloc_a_cd);
-
-	RzCmdDesc *cmd_debug_heap_jemalloc_b_cd = rz_cmd_desc_argv_new(core->rcmd, dmx_cd, "dmxb", rz_cmd_debug_heap_jemalloc_b_handler, &cmd_debug_heap_jemalloc_b_help);
-	rz_warn_if_fail(cmd_debug_heap_jemalloc_b_cd);
-
-	RzCmdDesc *cmd_debug_heap_jemalloc_c_cd = rz_cmd_desc_argv_new(core->rcmd, dmx_cd, "dmxc", rz_cmd_debug_heap_jemalloc_c_handler, &cmd_debug_heap_jemalloc_c_help);
-	rz_warn_if_fail(cmd_debug_heap_jemalloc_c_cd);
-
-	RzCmdDesc *cmd_debug_heap_jemalloc_e_cd = rz_cmd_desc_argv_new(core->rcmd, dmx_cd, "dmxe", rz_cmd_debug_heap_jemalloc_e_handler, &cmd_debug_heap_jemalloc_e_help);
-	rz_warn_if_fail(cmd_debug_heap_jemalloc_e_cd);
-
-	RzCmdDesc *cmd_debug_heap_jemalloc_ei_cd = rz_cmd_desc_argv_new(core->rcmd, dmx_cd, "dmxei", rz_cmd_debug_heap_jemalloc_ei_handler, &cmd_debug_heap_jemalloc_ei_help);
-	rz_warn_if_fail(cmd_debug_heap_jemalloc_ei_cd);
 
 	RzCmdDesc *dp_cd = rz_cmd_desc_group_state_new(core->rcmd, d_cd, "dp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_cmd_debug_pid_list_handler, &cmd_debug_pid_list_help, &dp_help);
 	rz_warn_if_fail(dp_cd);
@@ -23895,6 +25024,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *ic_cd = rz_cmd_desc_group_state_new(core->rcmd, i_cd, "ic", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_info_classes_handler, &cmd_info_classes_help, &ic_help);
 	rz_warn_if_fail(ic_cd);
 	rz_cmd_desc_set_default_mode(ic_cd, RZ_OUTPUT_MODE_TABLE);
+	RzCmdDesc *cmd_info_class_apply_cd = rz_cmd_desc_argv_new(core->rcmd, ic_cd, "ica", rz_cmd_info_class_apply_handler, &cmd_info_class_apply_help);
+	rz_warn_if_fail(cmd_info_class_apply_cd);
+
 	RzCmdDesc *cmd_info_class_as_source_cd = rz_cmd_desc_argv_new(core->rcmd, ic_cd, "icc", rz_cmd_info_class_as_source_handler, &cmd_info_class_as_source_help);
 	rz_warn_if_fail(cmd_info_class_as_source_cd);
 
@@ -23905,6 +25037,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_info_class_methods_cd = rz_cmd_desc_argv_state_new(core->rcmd, ic_cd, "icm", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST | RZ_OUTPUT_MODE_JSON, rz_cmd_info_class_methods_handler, &cmd_info_class_methods_help);
 	rz_warn_if_fail(cmd_info_class_methods_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_class_methods_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_classes_to_struct_cd = rz_cmd_desc_argv_new(core->rcmd, ic_cd, "ics", rz_cmd_info_classes_to_struct_handler, &cmd_info_classes_to_struct_help);
+	rz_warn_if_fail(cmd_info_classes_to_struct_cd);
 
 	RzCmdDesc *cmd_info_signature_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iC", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_info_signature_handler, &cmd_info_signature_help);
 	rz_warn_if_fail(cmd_info_signature_cd);
@@ -24440,6 +25575,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_print_format_delete_all_cd = rz_cmd_desc_argv_new(core->rcmd, pf_cd, "pf-*", rz_cmd_print_format_delete_all_handler, &cmd_print_format_delete_all_help);
 	rz_warn_if_fail(cmd_print_format_delete_all_cd);
 
+	RzCmdDesc *cmd_print_format_apply_cd = rz_cmd_desc_argv_new(core->rcmd, pf_cd, "pfa", rz_cmd_print_format_apply_handler, &cmd_print_format_apply_help);
+	rz_warn_if_fail(cmd_print_format_apply_cd);
+
 	RzCmdDesc *cmd_print_format_c_cd = rz_cmd_desc_argv_new(core->rcmd, pf_cd, "pfc", rz_cmd_print_format_c_handler, &cmd_print_format_c_help);
 	rz_warn_if_fail(cmd_print_format_c_cd);
 
@@ -24530,8 +25668,13 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *print_current_block_json_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_cd, "pj", rz_print_current_block_json_handler, &print_current_block_json_help);
 	rz_warn_if_fail(print_current_block_json_cd);
 
-	RzCmdDesc *print_function_rzil_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_cd, "plf", rz_print_function_rzil_handler, &print_function_rzil_help);
+	RzCmdDesc *cmd_print_rzil_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pl", NULL, NULL, &cmd_print_rzil_help);
+	rz_warn_if_fail(cmd_print_rzil_cd);
+	RzCmdDesc *print_function_rzil_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_rzil_cd, "plf", rz_print_function_rzil_handler, &print_function_rzil_help);
 	rz_warn_if_fail(print_function_rzil_cd);
+
+	RzCmdDesc *print_function_rzil_enriched_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_rzil_cd, "plF", rz_print_function_rzil_enriched_handler, &print_function_rzil_enriched_help);
+	rz_warn_if_fail(print_function_rzil_enriched_cd);
 
 	RzCmdDesc *pp_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pp", NULL, NULL, &pp_help);
 	rz_warn_if_fail(pp_cd);
@@ -24835,6 +25978,18 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *print_equal_entropy_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=e", rz_print_equal_entropy_handler, &print_equal_entropy_help);
 	rz_warn_if_fail(print_equal_entropy_cd);
 
+	RzCmdDesc *print_equal_chisquare_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=C", rz_print_equal_chisquare_handler, &print_equal_chisquare_help);
+	rz_warn_if_fail(print_equal_chisquare_cd);
+
+	RzCmdDesc *print_equal_ioc_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=I", rz_print_equal_ioc_handler, &print_equal_ioc_help);
+	rz_warn_if_fail(print_equal_ioc_cd);
+
+	RzCmdDesc *print_equal_minentropy_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=M", rz_print_equal_minentropy_handler, &print_equal_minentropy_help);
+	rz_warn_if_fail(print_equal_minentropy_cd);
+
+	RzCmdDesc *print_equal_serialcorr_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=S", rz_print_equal_serialcorr_handler, &print_equal_serialcorr_help);
+	rz_warn_if_fail(print_equal_serialcorr_cd);
+
 	RzCmdDesc *print_rising_and_falling_entropy_cd = rz_cmd_desc_argv_state_new(core->rcmd, p_equal__cd, "p=r", RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_TABLE, rz_print_rising_and_falling_entropy_handler, &print_rising_and_falling_entropy_help);
 	rz_warn_if_fail(print_rising_and_falling_entropy_cd);
 
@@ -24890,6 +26045,26 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(p_equal__equal_e_cd);
 	RzCmdDesc *print_equal_equal_entropy_visual_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal_e_cd, "p==ev", rz_print_equal_equal_entropy_visual_handler, &print_equal_equal_entropy_visual_help);
 	rz_warn_if_fail(print_equal_equal_entropy_visual_cd);
+
+	RzCmdDesc *p_equal__equal_C_cd = rz_cmd_desc_group_new(core->rcmd, p_equal__equal__cd, "p==C", rz_print_equal_equal_chisquare_handler, &print_equal_equal_chisquare_help, &p_equal__equal_C_help);
+	rz_warn_if_fail(p_equal__equal_C_cd);
+	RzCmdDesc *print_equal_equal_chisquare_visual_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal_C_cd, "p==Cv", rz_print_equal_equal_chisquare_visual_handler, &print_equal_equal_chisquare_visual_help);
+	rz_warn_if_fail(print_equal_equal_chisquare_visual_cd);
+
+	RzCmdDesc *p_equal__equal_I_cd = rz_cmd_desc_group_new(core->rcmd, p_equal__equal__cd, "p==I", rz_print_equal_equal_ioc_handler, &print_equal_equal_ioc_help, &p_equal__equal_I_help);
+	rz_warn_if_fail(p_equal__equal_I_cd);
+	RzCmdDesc *print_equal_equal_ioc_visual_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal_I_cd, "p==Iv", rz_print_equal_equal_ioc_visual_handler, &print_equal_equal_ioc_visual_help);
+	rz_warn_if_fail(print_equal_equal_ioc_visual_cd);
+
+	RzCmdDesc *p_equal__equal_M_cd = rz_cmd_desc_group_new(core->rcmd, p_equal__equal__cd, "p==M", rz_print_equal_equal_minentropy_handler, &print_equal_equal_minentropy_help, &p_equal__equal_M_help);
+	rz_warn_if_fail(p_equal__equal_M_cd);
+	RzCmdDesc *print_equal_equal_minentropy_visual_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal_M_cd, "p==Mv", rz_print_equal_equal_minentropy_visual_handler, &print_equal_equal_minentropy_visual_help);
+	rz_warn_if_fail(print_equal_equal_minentropy_visual_cd);
+
+	RzCmdDesc *p_equal__equal_S_cd = rz_cmd_desc_group_new(core->rcmd, p_equal__equal__cd, "p==S", rz_print_equal_equal_serialcorr_handler, &print_equal_equal_serialcorr_help, &p_equal__equal_S_help);
+	rz_warn_if_fail(p_equal__equal_S_cd);
+	RzCmdDesc *print_equal_equal_serialcorr_visual_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal_S_cd, "p==Sv", rz_print_equal_equal_serialcorr_visual_handler, &print_equal_equal_serialcorr_visual_help);
+	rz_warn_if_fail(print_equal_equal_serialcorr_visual_cd);
 
 	RzCmdDesc *p_equal__equal_i_cd = rz_cmd_desc_group_new(core->rcmd, p_equal__equal__cd, "p==i", rz_print_equal_equal_invalid_handler, &print_equal_equal_invalid_help, &p_equal__equal_i_help);
 	rz_warn_if_fail(p_equal__equal_i_cd);
@@ -25051,8 +26226,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *type_cc_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, tcc_cd, "tcc-*", rz_type_cc_del_all_handler, &type_cc_del_all_help);
 	rz_warn_if_fail(type_cc_del_all_cd);
 
-	RzCmdDesc *type_define_cd = rz_cmd_desc_argv_new(core->rcmd, t_cd, "td", rz_type_define_handler, &type_define_help);
-	rz_warn_if_fail(type_define_cd);
+	RzCmdDesc *td_cd = rz_cmd_desc_group_new(core->rcmd, t_cd, "td", rz_type_define_handler, &type_define_help, &td_help);
+	rz_warn_if_fail(td_cd);
+	RzCmdDesc *type_define_from_format_cd = rz_cmd_desc_argv_new(core->rcmd, td_cd, "tdf", rz_type_define_from_format_handler, &type_define_from_format_help);
+	rz_warn_if_fail(type_define_from_format_cd);
 
 	RzCmdDesc *te_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "te", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_list_enum_handler, &type_list_enum_help, &te_help);
 	rz_warn_if_fail(te_cd);
@@ -25103,6 +26280,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *type_print_hexstring_cd = rz_cmd_desc_argv_new(core->rcmd, tp_cd, "tpx", rz_type_print_hexstring_handler, &type_print_hexstring_help);
 	rz_warn_if_fail(type_print_hexstring_cd);
 
+	RzCmdDesc *type_rename_cd = rz_cmd_desc_argv_new(core->rcmd, t_cd, "tr", rz_type_rename_handler, &type_rename_help);
+	rz_warn_if_fail(type_rename_cd);
+
 	RzCmdDesc *ts_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "ts", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_type_list_structure_handler, &type_list_structure_help, &ts_help);
 	rz_warn_if_fail(ts_cd);
 	RzCmdDesc *type_structure_c_cd = rz_cmd_desc_argv_new(core->rcmd, ts_cd, "tsc", rz_type_structure_c_handler, &type_structure_c_help);
@@ -25134,6 +26314,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *type_xrefs_list_all_cd = rz_cmd_desc_argv_new(core->rcmd, tx_cd, "txl", rz_type_xrefs_list_all_handler, &type_xrefs_list_all_help);
 	rz_warn_if_fail(type_xrefs_list_all_cd);
+
+	RzCmdDesc *tk_cd = rz_cmd_desc_group_new(core->rcmd, t_cd, "tk", rz_type_typeclass_handler, &type_typeclass_help, &tk_help);
+	rz_warn_if_fail(tk_cd);
+	RzCmdDesc *type_typeclass_list_cd = rz_cmd_desc_argv_modes_new(core->rcmd, tk_cd, "tkl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_type_typeclass_list_handler, &type_typeclass_list_help);
+	rz_warn_if_fail(type_typeclass_list_cd);
+
+	RzCmdDesc *type_typeclass_set_cd = rz_cmd_desc_argv_new(core->rcmd, tk_cd, "tks", rz_type_typeclass_set_handler, &type_typeclass_set_help);
+	rz_warn_if_fail(type_typeclass_set_cd);
 
 	RzCmdDesc *V_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "V", rz_interactive_visual_handler, &interactive_visual_help, &V_help);
 	rz_warn_if_fail(V_cd);

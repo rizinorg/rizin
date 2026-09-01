@@ -39,8 +39,8 @@ f. foobar @ 0x100001216
 pd 20~foo
 EOF
 EXPECT=<<EOF
-|       ,=< 0x10000120f      7f05           jnle  .foobar              ; main.foobar
-|       |    .foobar:
+| 0x10000120f      7f05           jnle  .foobar                        ; main.foobar
+|  .foobar:
 EOF
 RUN
 
@@ -97,14 +97,13 @@ RUN
 
 NAME=af import
 FILE=bins/mach0/ls-osx-x86_64
-BROKEN=1
 CMDS=<<EOF
 s sym.imp.write
 af
 %v $FS
 EOF
 EXPECT=<<EOF
-before:
+0x6
 EOF
 RUN
 
@@ -401,10 +400,10 @@ data-xrefs:
 locals: 6
 args: 2
 var void (*anonymous_fcn_0x4d93)() fn @ r12
+arg void *d @ r23
+arg int code @ r24
+var struct _atexit *p @ r27
 var int n @ r28
-arg int code @ r6
-arg void *d @ r7
-var struct _atexit *p @ LOCLIST
 var struct _atexit **lastp @ ...
 var struct _on_exit_args *args @ LOCLIST
 var int i @ LOCLIST

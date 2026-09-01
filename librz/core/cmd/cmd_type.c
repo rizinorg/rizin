@@ -43,7 +43,8 @@ static void types_cc_print(RzCore *core, const char *cc, RzOutputMode mode) {
 static RzCmdStatus types_enum_member_find(RzCore *core, const char *enum_name, const char *enum_value) {
 	rz_return_val_if_fail(enum_name || enum_value, RZ_CMD_STATUS_ERROR);
 	ut64 value = rz_num_math(core->num, enum_value);
-	const char *enum_member = rz_type_db_enum_member_by_val(core->analysis->typedb, enum_name, value);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	const char *enum_member = rz_type_db_enum_member_by_val(typedb, enum_name, value);
 	if (!enum_member) {
 		RZ_LOG_ERROR("Cannot find matching enum member\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -55,7 +56,8 @@ static RzCmdStatus types_enum_member_find(RzCore *core, const char *enum_name, c
 static RzCmdStatus types_enum_member_find_all(RzCore *core, const char *enum_value) {
 	rz_return_val_if_fail(enum_value, RZ_CMD_STATUS_ERROR);
 	ut64 value = rz_num_math(core->num, enum_value);
-	RzList *matches = rz_type_db_find_enums_by_val(core->analysis->typedb, value);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzList *matches = rz_type_db_find_enums_by_val(typedb, value);
 	if (!matches || rz_list_empty(matches)) {
 		RZ_LOG_ERROR("Cannot find matching enum member\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -86,7 +88,8 @@ static void type_list_c_all_nl(RzCore *core) {
 }
 
 static RzCmdStatus type_format_print(RzCore *core, const char *type, ut64 address) {
-	char *fmt = rz_type_format(core->analysis->typedb, type);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	char *fmt = rz_type_format(typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
 		RZ_LOG_ERROR("Cannot find type %s\n", type);
 		free(fmt);
@@ -100,7 +103,8 @@ static RzCmdStatus type_format_print(RzCore *core, const char *type, ut64 addres
 }
 
 static RzCmdStatus type_format_print_variable(RzCore *core, const char *type, const char *varname) {
-	char *fmt = rz_type_format(core->analysis->typedb, type);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	char *fmt = rz_type_format(typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
 		RZ_LOG_ERROR("Cannot find type \"%s\"\n", type);
 		free(fmt);
@@ -127,7 +131,8 @@ static RzCmdStatus type_format_print_variable(RzCore *core, const char *type, co
 }
 
 static RzCmdStatus type_format_print_value(RzCore *core, const char *type, ut64 val) {
-	char *fmt = rz_type_format(core->analysis->typedb, type);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	char *fmt = rz_type_format(typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
 		RZ_LOG_ERROR("Cannot find type %s\n", type);
 		free(fmt);
@@ -140,7 +145,8 @@ static RzCmdStatus type_format_print_value(RzCore *core, const char *type, ut64 
 }
 
 static RzCmdStatus type_format_print_hexstring(RzCore *core, const char *type, const char *hexpairs) {
-	char *fmt = rz_type_format(core->analysis->typedb, type);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	char *fmt = rz_type_format(typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
 		RZ_LOG_ERROR("Cannot find type %s\n", type);
 		free(fmt);
@@ -153,8 +159,9 @@ static RzCmdStatus type_format_print_hexstring(RzCore *core, const char *type, c
 }
 
 static void types_xrefs(RzCore *core, const char *typestr) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	char *error_msg = NULL;
-	RzType *type = rz_type_parse_string_single(core->analysis->typedb->parser, typestr, &error_msg);
+	RzType *type = rz_type_parse_string_single(typedb->parser, typestr, &error_msg);
 	if (!type || error_msg) {
 		if (error_msg) {
 			RZ_LOG_ERROR("%s", error_msg);
@@ -165,7 +172,8 @@ static void types_xrefs(RzCore *core, const char *typestr) {
 	RzType *type2;
 	RzListIter *iter, *iter2;
 	RzAnalysisFunction *fcn;
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	RzList *fcns = rz_analysis_function_list(core->analysis);
+	rz_list_foreach (fcns, iter, fcn) {
 		RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
 		rz_list_foreach (uniq, iter2, type2) {
 			if (rz_types_equal(type2, type)) {
@@ -179,17 +187,18 @@ static void types_xrefs(RzCore *core, const char *typestr) {
 }
 
 static void types_xrefs_summary(RzCore *core) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	RzType *type;
 	RzListIter *iter, *iter2;
 	RzAnalysisFunction *fcn;
-	RzAnalysis *analysis = core->analysis;
-	rz_list_foreach (analysis->fcns, iter, fcn) {
-		RzList *uniq = rz_analysis_types_from_fcn(analysis, fcn);
+	RzList *fcns = rz_analysis_function_list(core->analysis);
+	rz_list_foreach (fcns, iter, fcn) {
+		RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
 		if (rz_list_length(uniq)) {
 			rz_cons_printf("%s: ", fcn->name);
 		}
 		rz_list_foreach (uniq, iter2, type) {
-			char *str = rz_type_as_string(analysis->typedb, type);
+			char *str = rz_type_as_string(typedb, type);
 			if (str) {
 				rz_cons_printf("%s%s", str, rz_list_has_next(iter2) ? "," : "\n");
 			}
@@ -200,6 +209,7 @@ static void types_xrefs_summary(RzCore *core) {
 }
 
 static RzCmdStatus types_xrefs_function(RzCore *core, ut64 addr) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	RzType *type;
 	RzListIter *iter;
 	RzAnalysis *analysis = core->analysis;
@@ -210,7 +220,7 @@ static RzCmdStatus types_xrefs_function(RzCore *core, ut64 addr) {
 	}
 	RzList *uniq = rz_analysis_types_from_fcn(analysis, fcn);
 	rz_list_foreach (uniq, iter, type) {
-		char *str = rz_type_as_string(analysis->typedb, type);
+		char *str = rz_type_as_string(typedb, type);
 		rz_cons_println(str);
 		free(str);
 	}
@@ -219,16 +229,18 @@ static RzCmdStatus types_xrefs_function(RzCore *core, ut64 addr) {
 }
 
 static void types_xrefs_graph(RzCore *core) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	RzType *type;
 	RzListIter *iter, *iter2;
 	RzAnalysisFunction *fcn;
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	RzList *fcns = rz_analysis_function_list(core->analysis);
+	rz_list_foreach (fcns, iter, fcn) {
 		RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
 		if (rz_list_length(uniq)) {
 			rz_cons_printf("agn %s\n", fcn->name);
 		}
 		rz_list_foreach (uniq, iter2, type) {
-			char *typestr = rz_type_as_string(core->analysis->typedb, type);
+			char *typestr = rz_type_as_string(typedb, type);
 			rz_str_replace_ch(typestr, ' ', '_', true);
 			rz_cons_printf("agn %s\n", typestr);
 			rz_cons_printf("age %s %s\n", typestr, fcn->name);
@@ -243,7 +255,8 @@ static void types_xrefs_all(RzCore *core) {
 	RzListIter *iter, *iter2;
 	RzAnalysisFunction *fcn;
 	RzList *types_list = rz_list_newf(free);
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	RzList *fcns = rz_analysis_function_list(core->analysis);
+	rz_list_foreach (fcns, iter, fcn) {
 		RzList *types = rz_analysis_types_from_fcn(core->analysis, fcn);
 		rz_list_foreach (types, iter2, type) {
 			const char *ident = rz_type_identifier(type);
@@ -274,13 +287,22 @@ RZ_IPI RzCmdStatus rz_type_handler(RzCore *core, int argc, const char **argv, Rz
 }
 
 RZ_IPI RzCmdStatus rz_type_del_handler(RzCore *core, int argc, const char **argv) {
-	rz_type_db_del(core->analysis->typedb, argv[1]);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	rz_type_db_del(typedb, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_type_del_all_handler(RzCore *core, int argc, const char **argv) {
-	rz_type_db_purge(core->analysis->typedb);
-	rz_type_parse_reset(core->analysis->typedb);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	rz_type_db_purge(typedb);
+	rz_type_parse_reset(typedb);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_rename_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_core_types_rename(core, argv[1], argv[2])) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -301,7 +323,8 @@ RZ_IPI RzCmdStatus rz_type_cc_del_handler(RzCore *core, int argc, const char **a
 }
 
 RZ_IPI RzCmdStatus rz_type_cc_del_all_handler(RzCore *core, int argc, const char **argv) {
-	sdb_reset(core->analysis->sdb_cc);
+	Sdb *sdb_cc = rz_analysis_get_sdb_cc(core->analysis);
+	sdb_reset(sdb_cc);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -341,6 +364,57 @@ RZ_IPI RzCmdStatus rz_type_define_handler(RzCore *core, int argc, const char **a
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_type_define_from_format_handler(RzCore *core, int argc, const char **argv) {
+	const char *name = argv[1];
+	const char *format_arg = argv[2];
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+
+	/* Resolve the second argument. It may be either the name of a
+	 * format saved with pfn / pf.<name> or a literal `pf` format string.
+	 * A saved name is looked up first (a pure read of the formats hash);
+	 * otherwise the argument is parsed as a literal format. This is the
+	 * "including from existing saved ones" half of the feature, and it
+	 * deliberately uses rz_type_db_format_get rather than
+	 * rz_pf_resolve_name so that nothing but `tdf` ever writes into the
+	 * type database -- and only with the final registered type. */
+	const char *fmt_str = rz_type_db_format_get(typedb, format_arg);
+	if (!fmt_str) {
+		fmt_str = format_arg;
+	}
+
+	char *error = NULL;
+	char *c_decl = rz_type_format_to_c_declaration(name, fmt_str, &error);
+	if (!c_decl) {
+		RZ_LOG_ERROR("Cannot build a type from format \"%s\": %s\n",
+			format_arg, error ? error : "unknown error");
+		free(error);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	/* Register the synthesised declaration through the regular C type
+	 * parser, exactly as `td` does, so the new type becomes a first-class
+	 * RzBaseType that participates in type analysis. */
+	char *parse_error = NULL;
+	int rc = rz_type_parse_string_stateless(typedb->parser, c_decl, &parse_error);
+	if (rc && parse_error) {
+		rz_str_trim_tail(parse_error);
+		RZ_LOG_ERROR("Failed to define type \"%s\": %s\n", name, parse_error);
+		free(parse_error);
+		free(c_decl);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	free(parse_error);
+
+	/* Confirm the type actually landed in the database. */
+	if (!rz_type_db_get_base_type(typedb, name)) {
+		RZ_LOG_ERROR("Type \"%s\" was not registered (check the format)\n", name);
+		free(c_decl);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	free(c_decl);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_type_list_enum_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (argc > 1) {
 		if (argc > 2) {
@@ -348,7 +422,8 @@ RZ_IPI RzCmdStatus rz_type_list_enum_handler(RzCore *core, int argc, const char 
 			return types_enum_member_find(core, argv[1], argv[2]);
 		} else {
 			PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
-			RzBaseType *btype = rz_type_db_get_enum(core->analysis->typedb, argv[1]);
+			RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+			RzBaseType *btype = rz_type_db_get_enum(typedb, argv[1]);
 			if (!btype) {
 				RZ_LOG_ERROR("Cannot find \"%s\" enum type\n", argv[1]);
 				pj_free(pj);
@@ -373,7 +448,8 @@ RZ_IPI RzCmdStatus rz_type_list_enum_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_type_enum_bitfield_handler(RzCore *core, int argc, const char **argv) {
 	const char *enum_name = argc > 1 ? argv[1] : NULL;
 	const char *enum_member = argc > 2 ? argv[2] : NULL;
-	int value = rz_type_db_enum_member_by_name(core->analysis->typedb, enum_name, enum_member);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	int value = rz_type_db_enum_member_by_name(typedb, enum_name, enum_member);
 	if (value == -1) {
 		RZ_LOG_ERROR("Cannot find anything matching the specified bitfield\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -383,13 +459,14 @@ RZ_IPI RzCmdStatus rz_type_enum_bitfield_handler(RzCore *core, int argc, const c
 }
 
 RZ_IPI RzCmdStatus rz_type_enum_c_handler(RzCore *core, int argc, const char **argv) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	if (argc > 1) {
-		RzBaseType *btype = rz_type_db_get_enum(core->analysis->typedb, argv[1]);
+		RzBaseType *btype = rz_type_db_get_enum(typedb, argv[1]);
 		if (!btype) {
 			RZ_LOG_ERROR("Cannot find \"%s\" enum type\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		char *str = rz_core_types_enum_as_c(core->analysis->typedb, btype, true);
+		char *str = rz_core_types_enum_as_c(typedb, btype, true);
 		if (!str) {
 			RZ_LOG_ERROR("Cannot get C representation of \"%s\" enum type\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
@@ -397,7 +474,7 @@ RZ_IPI RzCmdStatus rz_type_enum_c_handler(RzCore *core, int argc, const char **a
 		rz_cons_print(str);
 		free(str);
 	} else {
-		char *str = rz_core_types_enum_as_c_all(core->analysis->typedb, true);
+		char *str = rz_core_types_enum_as_c_all(typedb, true);
 		if (!str) {
 			return RZ_CMD_STATUS_ERROR;
 		}
@@ -408,13 +485,14 @@ RZ_IPI RzCmdStatus rz_type_enum_c_handler(RzCore *core, int argc, const char **a
 }
 
 RZ_IPI RzCmdStatus rz_type_enum_c_nl_handler(RzCore *core, int argc, const char **argv) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	if (argc > 1) {
-		RzBaseType *btype = rz_type_db_get_enum(core->analysis->typedb, argv[1]);
+		RzBaseType *btype = rz_type_db_get_enum(typedb, argv[1]);
 		if (!btype) {
 			RZ_LOG_ERROR("Cannot find \"%s\" enum type\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		char *str = rz_core_types_enum_as_c(core->analysis->typedb, btype, false);
+		char *str = rz_core_types_enum_as_c(typedb, btype, false);
 		if (!str) {
 			RZ_LOG_ERROR("Cannot get C representation of \"%s\" enum type\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
@@ -422,7 +500,7 @@ RZ_IPI RzCmdStatus rz_type_enum_c_nl_handler(RzCore *core, int argc, const char 
 		rz_cons_print(str);
 		free(str);
 	} else {
-		char *str = rz_core_types_enum_as_c_all(core->analysis->typedb, false);
+		char *str = rz_core_types_enum_as_c_all(typedb, false);
 		if (!str) {
 			return RZ_CMD_STATUS_ERROR;
 		}
@@ -441,7 +519,8 @@ RZ_IPI RzCmdStatus rz_type_list_function_handler(RzCore *core, int argc, const c
 	const char *function = argc > 1 ? argv[1] : NULL;
 	if (function) {
 		PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
-		rz_core_types_function_print(core->analysis->typedb, function, mode, pj);
+		RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+		rz_core_types_function_print(typedb, function, mode, pj);
 		if (mode == RZ_OUTPUT_MODE_JSON) {
 			rz_cons_println(pj_string(pj));
 			pj_free(pj);
@@ -453,23 +532,26 @@ RZ_IPI RzCmdStatus rz_type_list_function_handler(RzCore *core, int argc, const c
 }
 
 RZ_IPI RzCmdStatus rz_type_function_del_handler(RzCore *core, int argc, const char **argv) {
-	rz_type_func_delete(core->analysis->typedb, argv[1]);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	rz_type_func_delete(typedb, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_type_function_del_all_handler(RzCore *core, int argc, const char **argv) {
-	rz_type_func_delete_all(core->analysis->typedb);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	rz_type_func_delete_all(typedb);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_type_function_cc_handler(RzCore *core, int argc, const char **argv) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	if (argc > 2) {
-		if (!rz_type_func_cc_set(core->analysis->typedb, argv[1], argv[2])) {
+		if (!rz_type_func_cc_set(typedb, argv[1], argv[2])) {
 			RZ_LOG_ERROR("Cannot set function \"%s\" calling convention \"%s\"\n", argv[1], argv[2]);
 			return RZ_CMD_STATUS_ERROR;
 		}
 	} else {
-		const char *cc = rz_type_func_cc(core->analysis->typedb, argv[1]);
+		const char *cc = rz_type_func_cc(typedb, argv[1]);
 		if (!cc) {
 			RZ_LOG_ERROR("Cannot find function \"%s\" in types database\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
@@ -486,7 +568,8 @@ RZ_IPI RzCmdStatus rz_type_list_noreturn_handler(RzCore *core, int argc, const c
 		if (n) {
 			rz_analysis_noreturn_add(core->analysis, name, n);
 		} else {
-			rz_type_func_noreturn_add(core->analysis->typedb, name);
+			RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+			rz_type_func_noreturn_add(typedb, name);
 		}
 	} else {
 		rz_core_types_function_noreturn_print(core, mode);
@@ -495,19 +578,23 @@ RZ_IPI RzCmdStatus rz_type_list_noreturn_handler(RzCore *core, int argc, const c
 }
 
 RZ_IPI RzCmdStatus rz_type_noreturn_del_handler(RzCore *core, int argc, const char **argv) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	for (int i = 1; i < argc; i++) {
-		rz_type_func_noreturn_drop(core->analysis->typedb, argv[i]);
+		rz_type_func_noreturn_drop(typedb, argv[i]);
+		rz_analysis_noreturn_drop(core->analysis, argv[i]);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_type_noreturn_del_all_handler(RzCore *core, int argc, const char **argv) {
-	RzList *noretl = rz_type_noreturn_function_names(core->analysis->typedb);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzList *noretl = rz_type_noreturn_function_names(typedb);
 	RzListIter *iter;
 	char *name;
 	rz_list_foreach (noretl, iter, name) {
-		rz_type_func_noreturn_drop(core->analysis->typedb, name);
+		rz_type_func_noreturn_drop(typedb, name);
 	}
+	rz_list_free(noretl);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -526,7 +613,8 @@ RZ_IPI RzCmdStatus rz_type_open_editor_handler(RzCore *core, int argc, const cha
 }
 
 RZ_IPI RzCmdStatus rz_type_open_sdb_handler(RzCore *core, int argc, const char **argv) {
-	rz_type_db_load_sdb(core->analysis->typedb, argv[1]);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	rz_type_db_load_sdb(typedb, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -560,7 +648,8 @@ RZ_IPI RzCmdStatus rz_type_list_structure_handler(RzCore *core, int argc, const 
 			rz_core_types_show_format(core, argv[1], mode);
 		} else {
 			PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
-			RzBaseType *btype = rz_type_db_get_struct(core->analysis->typedb, argv[1]);
+			RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+			RzBaseType *btype = rz_type_db_get_struct(typedb, argv[1]);
 			if (!btype) {
 				RZ_LOG_ERROR("Cannot find \"%s\" struct type\n", argv[1]);
 				pj_free(pj);
@@ -579,13 +668,14 @@ RZ_IPI RzCmdStatus rz_type_list_structure_handler(RzCore *core, int argc, const 
 }
 
 RZ_IPI RzCmdStatus rz_type_structure_c_handler(RzCore *core, int argc, const char **argv) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	if (argc > 1) {
-		RzBaseType *btype = rz_type_db_get_struct(core->analysis->typedb, argv[1]);
+		RzBaseType *btype = rz_type_db_get_struct(typedb, argv[1]);
 		if (!btype) {
 			RZ_LOG_ERROR("Cannot find \"%s\" struct type\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		char *str = rz_core_types_struct_as_c(core->analysis->typedb, btype, true);
+		char *str = rz_core_types_struct_as_c(typedb, btype, true);
 		if (!str) {
 			RZ_LOG_ERROR("Cannot get C representation of \"%s\" struct type\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
@@ -593,7 +683,7 @@ RZ_IPI RzCmdStatus rz_type_structure_c_handler(RzCore *core, int argc, const cha
 		rz_cons_print(str);
 		free(str);
 	} else {
-		char *str = rz_core_types_struct_as_c_all(core->analysis->typedb, true);
+		char *str = rz_core_types_struct_as_c_all(typedb, true);
 		if (!str) {
 			return RZ_CMD_STATUS_ERROR;
 		}
@@ -604,13 +694,14 @@ RZ_IPI RzCmdStatus rz_type_structure_c_handler(RzCore *core, int argc, const cha
 }
 
 RZ_IPI RzCmdStatus rz_type_structure_c_nl_handler(RzCore *core, int argc, const char **argv) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	if (argc > 1) {
-		RzBaseType *btype = rz_type_db_get_struct(core->analysis->typedb, argv[1]);
+		RzBaseType *btype = rz_type_db_get_struct(typedb, argv[1]);
 		if (!btype) {
 			RZ_LOG_ERROR("Cannot find \"%s\" struct type\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		char *str = rz_core_types_struct_as_c(core->analysis->typedb, btype, false);
+		char *str = rz_core_types_struct_as_c(typedb, btype, false);
 		if (!str) {
 			RZ_LOG_ERROR("Cannot get C representation of \"%s\" struct type\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
@@ -618,7 +709,7 @@ RZ_IPI RzCmdStatus rz_type_structure_c_nl_handler(RzCore *core, int argc, const 
 		rz_cons_print(str);
 		free(str);
 	} else {
-		char *str = rz_core_types_struct_as_c_all(core->analysis->typedb, false);
+		char *str = rz_core_types_struct_as_c_all(typedb, false);
 		if (!str) {
 			return RZ_CMD_STATUS_ERROR;
 		}
@@ -631,7 +722,8 @@ RZ_IPI RzCmdStatus rz_type_structure_c_nl_handler(RzCore *core, int argc, const 
 RZ_IPI RzCmdStatus rz_type_list_typedef_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (argc > 1) {
 		PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
-		RzBaseType *btype = rz_type_db_get_typedef(core->analysis->typedb, argv[1]);
+		RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+		RzBaseType *btype = rz_type_db_get_typedef(typedb, argv[1]);
 		if (!btype) {
 			RZ_LOG_ERROR("Cannot find \"%s\" typedef type\n", argv[1]);
 			pj_free(pj);
@@ -649,9 +741,9 @@ RZ_IPI RzCmdStatus rz_type_list_typedef_handler(RzCore *core, int argc, const ch
 }
 
 RZ_IPI RzCmdStatus rz_type_typedef_c_handler(RzCore *core, int argc, const char **argv) {
-	RzTypeDB *typedb = core->analysis->typedb;
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	if (argc > 1) {
-		RzBaseType *btype = rz_type_db_get_typedef(core->analysis->typedb, argv[1]);
+		RzBaseType *btype = rz_type_db_get_typedef(typedb, argv[1]);
 		if (!btype) {
 			RZ_LOG_ERROR("Cannot find \"%s\" typedef type\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
@@ -680,7 +772,8 @@ RZ_IPI RzCmdStatus rz_type_list_union_handler(RzCore *core, int argc, const char
 			rz_core_types_show_format(core, argv[1], mode);
 		} else {
 			PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
-			RzBaseType *btype = rz_type_db_get_union(core->analysis->typedb, argv[1]);
+			RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+			RzBaseType *btype = rz_type_db_get_union(typedb, argv[1]);
 			if (!btype) {
 				RZ_LOG_ERROR("Cannot find \"%s\" union type\n", argv[1]);
 				pj_free(pj);
@@ -699,13 +792,14 @@ RZ_IPI RzCmdStatus rz_type_list_union_handler(RzCore *core, int argc, const char
 }
 
 RZ_IPI RzCmdStatus rz_type_union_c_handler(RzCore *core, int argc, const char **argv) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	if (argc > 1) {
-		RzBaseType *btype = rz_type_db_get_union(core->analysis->typedb, argv[1]);
+		RzBaseType *btype = rz_type_db_get_union(typedb, argv[1]);
 		if (!btype) {
 			RZ_LOG_ERROR("Cannot find \"%s\" union type\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		char *str = rz_core_types_union_as_c(core->analysis->typedb, btype, true);
+		char *str = rz_core_types_union_as_c(typedb, btype, true);
 		if (!str) {
 			RZ_LOG_ERROR("Cannot get C representation of \"%s\" union type\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
@@ -713,7 +807,7 @@ RZ_IPI RzCmdStatus rz_type_union_c_handler(RzCore *core, int argc, const char **
 		rz_cons_print(str);
 		free(str);
 	} else {
-		char *str = rz_core_types_union_as_c_all(core->analysis->typedb, true);
+		char *str = rz_core_types_union_as_c_all(typedb, true);
 		if (!str) {
 			return RZ_CMD_STATUS_ERROR;
 		}
@@ -724,13 +818,14 @@ RZ_IPI RzCmdStatus rz_type_union_c_handler(RzCore *core, int argc, const char **
 }
 
 RZ_IPI RzCmdStatus rz_type_union_c_nl_handler(RzCore *core, int argc, const char **argv) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	if (argc > 1) {
-		RzBaseType *btype = rz_type_db_get_union(core->analysis->typedb, argv[1]);
+		RzBaseType *btype = rz_type_db_get_union(typedb, argv[1]);
 		if (!btype) {
 			RZ_LOG_ERROR("Cannot find \"%s\" union type\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		char *str = rz_core_types_union_as_c(core->analysis->typedb, btype, false);
+		char *str = rz_core_types_union_as_c(typedb, btype, false);
 		if (!str) {
 			RZ_LOG_ERROR("Cannot get C representation of \"%s\" union type\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
@@ -738,7 +833,7 @@ RZ_IPI RzCmdStatus rz_type_union_c_nl_handler(RzCore *core, int argc, const char
 		rz_cons_print(str);
 		free(str);
 	} else {
-		char *str = rz_core_types_union_as_c_all(core->analysis->typedb, false);
+		char *str = rz_core_types_union_as_c_all(typedb, false);
 		if (!str) {
 			return RZ_CMD_STATUS_ERROR;
 		}
@@ -770,5 +865,43 @@ RZ_IPI RzCmdStatus rz_type_xrefs_graph_handler(RzCore *core, int argc, const cha
 
 RZ_IPI RzCmdStatus rz_type_xrefs_list_all_handler(RzCore *core, int argc, const char **argv) {
 	types_xrefs_all(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_typeclass_handler(RzCore *core, int argc, const char **argv) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, argv[1]);
+	if (!btype) {
+		RZ_LOG_ERROR("Type \"%s\" does not exist\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzTypeTypeclass typeclass = rz_base_type_typeclass(typedb, btype);
+	rz_cons_println(rz_type_typeclass_as_string(typeclass));
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_typeclass_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	rz_core_types_typeclass_print_all(core, mode);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_typeclass_set_handler(RzCore *core, int argc, const char **argv) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, argv[1]);
+	if (!btype) {
+		RZ_LOG_ERROR("Type \"%s\" does not exist\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzTypeTypeclass typeclass = rz_type_typeclass_from_string(argv[2]);
+	// rz_type_typeclass_from_string returns RZ_TYPE_TYPECLASS_NONE both for the
+	// "None" typeclass and for an unknown string, so reject unknown ones here.
+	if (typeclass == RZ_TYPE_TYPECLASS_NONE && strcmp(argv[2], "None")) {
+		RZ_LOG_ERROR("Unknown typeclass \"%s\"\n", argv[2]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!rz_base_type_set_typeclass(btype, typeclass)) {
+		RZ_LOG_ERROR("Cannot set typeclass \"%s\" on type \"%s\"\n", argv[2], argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
 	return RZ_CMD_STATUS_OK;
 }

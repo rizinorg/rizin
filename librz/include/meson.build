@@ -7,6 +7,7 @@ include_files = [
   'rz_bin.h',
   'rz_bin_dwarf.h',
   'rz_bin_source_line.h',
+  'rz_bin_stabs.h',
   'rz_bind.h',
   'rz_bp.h',
   'rz_cmd.h',
@@ -40,7 +41,7 @@ include_files = [
   'rz_platform.h',
   'rz_project.h',
   'rz_reg.h',
-  'rz_rop.h',
+  'rz_gadget.h',
   'rz_search.h',
   'rz_sign.h',
   'rz_skiplist.h',
@@ -91,9 +92,11 @@ rz_util_files = [
   'rz_util/rz_lang_byte_array.h',
   'rz_util/rz_log.h',
   'rz_util/rz_luhn.h',
+  'rz_util/rz_math.h',
   'rz_util/rz_mem.h',
   'rz_util/rz_name.h',
   'rz_util/rz_num.h',
+  'rz_util/rz_num_expression.h',
   'rz_util/rz_panels.h',
   'rz_util/rz_path.h',
   'rz_util/rz_pj.h',
@@ -102,7 +105,6 @@ rz_util_files = [
   'rz_util/rz_print.h',
   'rz_util/rz_protobuf.h',
   'rz_util/rz_punycode.h',
-  'rz_util/rz_range.h',
   'rz_util/rz_rbtree.h',
   'rz_util/rz_regex.h',
   'rz_util/rz_serialize.h',
@@ -123,6 +125,7 @@ rz_util_files = [
   'rz_util/rz_th_ht.h',
   'rz_util/rz_time.h',
   'rz_util/rz_tree.h',
+  'rz_util/rz_trie.h',
   'rz_util/rz_uleb128.h',
   'rz_util/rz_unicode.h',
   'rz_util/rz_utf16.h',
@@ -164,9 +167,15 @@ rz_il_files = [
 ]
 install_headers(rz_il_files, install_dir: join_paths(rizin_incdir, 'rz_il'))
 
+rz_esil_files = [
+  'rz_esil/rz_esil.h',
+]
+install_headers(rz_esil_files, install_dir: join_paths(rizin_incdir, 'rz_esil'))
+
 rz_crypto_files = [
   'rz_crypto/rz_des.h',
   'rz_crypto/rz_aes.h',
+  'rz_crypto/rz_rc4.h',
   'rz_crypto/rz_sm4.h',
 ]
 install_headers(rz_crypto_files, install_dir: join_paths(rizin_incdir, 'rz_crypto'))

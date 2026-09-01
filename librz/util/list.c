@@ -32,16 +32,6 @@ RZ_API RZ_BORROW void *rz_list_iter_get_next_data(RZ_NONNULL RzListIter *iter) {
 }
 
 /**
- * \brief Sets the value stored in the list iterator and returns true if succeeds
- *
- **/
-RZ_API bool rz_list_iter_set_data(RZ_NONNULL RzListIter *iter, RZ_NULLABLE void *data) {
-	rz_return_val_if_fail(iter, false);
-	iter->val = data;
-	return true;
-}
-
-/**
  * \brief swaps the data held by two iterators and returns true if succeeds
  *
  **/
@@ -113,6 +103,26 @@ RZ_API ut32 rz_list_length(RZ_NONNULL const RzList *list) {
 	return list->length;
 }
 
+static void _list_purge_with_free(RzList *list) {
+	RzListIter *it = list->head;
+	RzListFree fn = list->free;
+	while (it) {
+		RzListIter *next = it->next;
+		fn(it->val);
+		free(it);
+		it = next;
+	}
+}
+
+static void _list_purge_no_free(RzList *list) {
+	RzListIter *it = list->head;
+	while (it) {
+		RzListIter *next = it->next;
+		free(it);
+		it = next;
+	}
+}
+
 /**
  * \brief Empties the list without freeing the list pointer
  *
@@ -120,14 +130,14 @@ RZ_API ut32 rz_list_length(RZ_NONNULL const RzList *list) {
 RZ_API void rz_list_purge(RZ_NONNULL RzList *list) {
 	rz_return_if_fail(list);
 
-	RzListIter *it = list->head;
-	while (it) {
-		RzListIter *next = it->next;
-		rz_list_delete(list, it);
-		it = next;
+	if (list->free) {
+		_list_purge_with_free(list);
+	} else {
+		_list_purge_no_free(list);
 	}
+	list->head = NULL;
+	list->tail = NULL;
 	list->length = 0;
-	list->head = list->tail = NULL;
 }
 
 /**
@@ -518,7 +528,7 @@ RZ_API RZ_BORROW RzListIter *rz_list_add_sorted(RZ_NONNULL RzList *list, RZ_NONN
 		}
 		list->length++;
 	} else {
-		rz_list_append(list, data);
+		item = rz_list_append(list, data);
 	}
 	list->sorted = true;
 	return item;
@@ -779,20 +789,30 @@ RZ_API void rz_list_sorted_uniq(RZ_NONNULL RzList *list, RZ_NONNULL RzListCompar
 /**
  * \brief Casts a RzList containg strings into a concatenated string
  *
- * \param list The list of strings to concatenate.
- * \param ch char to separate the match strings.
+ * \param list         The list of strings to concatenate.
+ * \param ch           Char to separate the match strings.
+ * \param append_last  When true appends `ch` at the end.
  *
  * \return The concatenated string.
  **/
-RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList *list, char ch) {
+RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList /*<const char *>*/ *list, char ch, bool append_last) {
+	rz_return_val_if_fail(list && ch > 0, NULL);
+
 	RzListIter *iter;
 	RzStrBuf *buf = rz_strbuf_new("");
 	if (!buf) {
 		return NULL;
 	}
-	char *item;
+	const char *item;
 	rz_list_foreach (list, iter, item) {
-		rz_strbuf_appendf(buf, "%s%c", item, ch);
+		if (rz_strbuf_length(buf) > 0) {
+			rz_strbuf_appendf(buf, "%c%s", ch, item);
+		} else {
+			rz_strbuf_append(buf, item);
+		}
+	}
+	if (append_last) {
+		rz_strbuf_appendf(buf, "%c", ch);
 	}
 	return rz_strbuf_drain(buf);
 }

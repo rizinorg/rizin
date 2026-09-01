@@ -295,7 +295,7 @@ cyclomatic-cost: 0
 cyclomatic-complexity: 1
 loops: 0
 bits: 16
-type: fcn
+type: sym
 num-bbs: 1
 edges: 0
 end-bbs: 1

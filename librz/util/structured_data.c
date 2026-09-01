@@ -23,6 +23,7 @@ typedef enum {
 	STRUCTURED_DATA_TYPE_DOUBLE,
 	STRUCTURED_DATA_TYPE_BOOL,
 	STRUCTURED_DATA_TYPE_STRING,
+	STRUCTURED_DATA_TYPE_NULL,
 } StructuredDataType;
 
 struct rz_structured_data_t {
@@ -446,6 +447,24 @@ RZ_API bool rz_structured_data_map_add_bytes(RZ_NONNULL RzStructuredData *parent
 }
 
 /**
+ * \brief      Adds NULL type child to a parent and assigns it a map key
+ *
+ * \param      parent  Where to add the child RzStructuredData
+ * \param[in]  key     The key to assign the child RzStructuredData
+ * \return     On success returns true, otherwise false.
+ */
+RZ_API bool rz_structured_data_map_add_null(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL const char *key) {
+	rz_return_val_if_fail(parent && parent->type == STRUCTURED_DATA_TYPE_MAP && key, false);
+	RzStructuredData *child = RZ_NEW0(RzStructuredData);
+	if (!child) {
+		return false;
+	}
+	child->type = STRUCTURED_DATA_TYPE_NULL;
+
+	return structured_data_map_add(parent, key, child);
+}
+
+/**
  * \brief      Returns a child, map type, RzStructuredData that has been added to the given parent
  *
  * \param      parent  Where to add the child RzStructuredData
@@ -619,6 +638,25 @@ RZ_API bool rz_structured_data_array_add_bytes(RZ_NONNULL RzStructuredData *pare
 	return structured_data_array_add(parent, child);
 }
 
+/**
+ * \brief      Adds NULL type child to an array type parent
+ *
+ * \param      parent  Where to add the child RzStructuredData
+ *
+ * \return     On success returns true, otherwise false.
+ */
+RZ_API bool rz_structured_data_array_add_null(RZ_NONNULL RzStructuredData *parent) {
+	rz_return_val_if_fail(parent && parent->type == STRUCTURED_DATA_TYPE_ARRAY, false);
+
+	RzStructuredData *child = RZ_NEW0(RzStructuredData);
+	if (!child) {
+		return false;
+	}
+	child->type = STRUCTURED_DATA_TYPE_NULL;
+
+	return structured_data_array_add(parent, child);
+}
+
 static void structured_data_iterate_over(StructuredDataIterOver *sdio, const RzStructuredData *sd);
 
 static void structured_data_iterate_over_map(StructuredDataIterOver *sdio, const RzStructuredData *sd) {
@@ -674,6 +712,9 @@ static void structured_data_iterate_over(StructuredDataIterOver *sdio, const RzS
 		return;
 	case STRUCTURED_DATA_TYPE_STRING:
 		sdio->fit->val_string(sdio->user, sd->v_string);
+		return;
+	case STRUCTURED_DATA_TYPE_NULL:
+		sdio->fit->val_null(sdio->user);
 		return;
 	default:
 		rz_warn_if_reached();

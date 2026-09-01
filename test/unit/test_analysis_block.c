@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2020 Florian Märkl <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 #include <rz_core.h>
 #include <rz_windows.h>
 #include "minunit.h"
@@ -16,7 +16,8 @@ static size_t blocks_count(RzAnalysis *analysis) {
 	size_t count = 0;
 	RBIter iter;
 	RzAnalysisBlock *block;
-	rz_rbtree_foreach (analysis->bb_tree, iter, block, RzAnalysisBlock, _rb) {
+	RBTree *bb_tree = rz_analysis_get_bb_tree(analysis);
+	rz_rbtree_foreach ((*bb_tree), iter, block, RzAnalysisBlock, _rb) {
 		count++;
 	}
 	return count;
@@ -843,6 +844,38 @@ bool test_rz_analysis_block_chop_noreturn(void) {
 	mu_end;
 }
 
+bool test_rz_analysis_block_chop_noreturn_last_instr(void) {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+	assert_block_invariants(analysis);
+
+	// Block a ends with a call to a noreturn function as its *last* instruction,
+	// so the fall-through address (where execution would continue if the callee
+	// returned) lands exactly at the end of the block, a->addr + a->size, which
+	// here is also the start of the following block b. chop_noreturn must still
+	// drop a's bogus fall-through edge even though the block itself does not need
+	// to be resized in this case. See issue #2725.
+	RzAnalysisBlock *a = rz_analysis_create_block(analysis, 0x100, 0x10);
+	RzAnalysisBlock *b = rz_analysis_create_block(analysis, 0x110, 0x10);
+	a->jump = b->addr;
+
+	RzAnalysisFunction *fa = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
+	rz_analysis_function_add_block(fa, a);
+	rz_analysis_function_add_block(fa, b);
+
+	// Chop exactly at the end of block a (addr == a->addr + a->size). Use the
+	// returned block, since the automerge step may free the original pointer.
+	RzAnalysisBlock *chopped = rz_analysis_block_chop_noreturn(a, a->addr + a->size);
+	mu_assert_notnull(chopped, "block still exists after the chop");
+	mu_assert_eq(chopped->size, 0x10, "block size is unchanged when chopping at the block end");
+	mu_assert_eq(chopped->jump, UT64_MAX, "bogus fall-through jump is removed");
+	mu_assert_eq(chopped->fail, UT64_MAX, "no fail edge remains");
+
+	assert_block_invariants(analysis);
+	rz_analysis_free(analysis);
+
+	mu_end;
+}
+
 static const uint8_t example_code[0x18] = {
 	0x48, 0xc7, 0xc0, 0x2a, 0x00, 0x00, 0x00, // mov rax, 0x2a
 	0x48, 0x89, 0xc2, // mov rdx, rax
@@ -855,8 +888,9 @@ bool test_rz_analysis_block_analyze_ops(void) {
 	rz_analysis_use(a, "x86");
 	rz_analysis_set_bits(a, 64);
 	IOMock io;
+	RzIOBind *iob = rz_analysis_get_io_bind(a);
 	io_mock_init(&io, 0x1000, example_code, sizeof(example_code));
-	io_mock_bind(&io, &a->iob);
+	io_mock_bind(&io, iob);
 
 	// clean block with valid code
 	RzAnalysisBlock *block = rz_analysis_create_block(a, 0x1000, 0x18);
@@ -932,8 +966,9 @@ bool test_rz_analysis_block_analyze_ops_sp(void) {
 	rz_analysis_use(a, "x86");
 	rz_analysis_set_bits(a, 64);
 	IOMock io;
+	RzIOBind *iob = rz_analysis_get_io_bind(a);
 	io_mock_init(&io, 0x1000, example_code_sp, sizeof(example_code_sp));
-	io_mock_bind(&io, &a->iob);
+	io_mock_bind(&io, iob);
 
 	RzAnalysisBlock *block = rz_analysis_create_block(a, 0x1000, 0xa);
 	mu_assert_eq(block->ninstr, 0, "clean block");
@@ -978,6 +1013,7 @@ bool test_rz_analysis_block_analyze_ops_sp(void) {
 
 int all_tests() {
 	mu_run_test(test_rz_analysis_block_chop_noreturn);
+	mu_run_test(test_rz_analysis_block_chop_noreturn_last_instr);
 	mu_run_test(test_rz_analysis_block_create);
 	mu_run_test(test_rz_analysis_block_contains);
 	mu_run_test(test_rz_analysis_block_sp);

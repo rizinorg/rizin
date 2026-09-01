@@ -4,27 +4,15 @@
 #include <rz_reg.h>
 #include "minunit.h"
 
-bool test_rz_reg_set_name(void) {
-	RzReg *reg;
-
-	reg = rz_reg_new();
-	mu_assert_notnull(reg, "rz_reg_new () failed");
-
-	rz_reg_set_name(reg, RZ_REG_NAME_PC, "eip");
-	const char *name = rz_reg_get_name(reg, RZ_REG_NAME_PC);
-	mu_assert_streq(name, "eip", "PC register alias is eip");
-
-	rz_reg_free(reg);
-	mu_end;
-}
-
 bool test_rz_reg_set_profile_string(void) {
 	RzReg *reg;
 
 	reg = rz_reg_new();
 	mu_assert_notnull(reg, "rz_reg_new () failed");
 
-	rz_reg_set_profile_string(reg, "=PC eip");
+	rz_reg_set_profile_string(reg,
+		"=PC eip\n"
+		"gpr eip .32 0 0");
 	const char *name = rz_reg_get_name(reg, RZ_REG_NAME_PC);
 	mu_assert_streq(name, "eip", "PC register alias is eip");
 
@@ -165,6 +153,36 @@ bool test_rz_reg_get(void) {
 	r = rz_reg_get(reg, "xmm0", -1);
 	mu_assert_streq(r->name, "xmm0", "found xmm0");
 	mu_assert_eq(r->type, RZ_REG_TYPE_XMM, "xmm0 type is RZ_REG_TYPE_XMM");
+
+	rz_reg_free(reg);
+	mu_end;
+}
+
+bool test_rz_reg_get_by_role(void) {
+	RzReg *reg;
+	RzRegItem *r;
+
+	reg = rz_reg_new();
+	mu_assert_notnull(reg, "rz_reg_new () failed");
+
+	bool success = rz_reg_set_profile_string(reg,
+		"=PC eip\n"
+		"=SP esp\n"
+		"gpr	eip		.32	0	0\n"
+		"gpr	esp		.32	4	0\n"
+		"gpr	eax		.32	8	0");
+	mu_assert_eq(success, true, "load profile");
+
+	r = rz_reg_get_by_role(reg, RZ_REG_NAME_PC);
+	mu_assert_notnull(r, "rz_reg_get_by_role pc");
+	mu_assert_streq(r->name, "eip", "rz_reg_get_by_role pc");
+
+	r = rz_reg_get_by_role(reg, RZ_REG_NAME_SP);
+	mu_assert_notnull(r, "rz_reg_get_by_role sp");
+	mu_assert_streq(r->name, "esp", "rz_reg_get_by_role sp");
+
+	r = rz_reg_get_by_role(reg, RZ_REG_NAME_BP);
+	mu_assert_null(r, "rz_reg_get_by_role bp (nonexistent)");
 
 	rz_reg_free(reg);
 	mu_end;
@@ -368,15 +386,80 @@ bool test_rz_reg_set_bv(void) {
 	mu_end;
 }
 
+bool test_rz_reg_profile_to_cc(void) {
+	RzReg *reg = rz_reg_new();
+	mu_assert_notnull(reg, "rz_reg_new () failed");
+
+	// More than four argument registers must all appear in the derived cc.
+	rz_reg_set_profile_string(reg,
+		"=R0 r0\n"
+		"=A0 r0\n"
+		"=A1 r1\n"
+		"=A2 r2\n"
+		"=A3 r3\n"
+		"=A4 r4\n"
+		"=A5 r5\n"
+		"gpr r0 .32 0 0\n"
+		"gpr r1 .32 4 0\n"
+		"gpr r2 .32 8 0\n"
+		"gpr r3 .32 12 0\n"
+		"gpr r4 .32 16 0\n"
+		"gpr r5 .32 20 0\n");
+	char *cc = rz_reg_profile_to_cc(reg);
+	mu_assert_streq_free(cc, "r0 reg(r0, r1, r2, r3, r4, r5)", "six argument registers");
+
+	// Four argument registers, the classic case, is unchanged.
+	rz_reg_set_profile_string(reg,
+		"=R0 a\n"
+		"=A0 a\n"
+		"=A1 b\n"
+		"=A2 c\n"
+		"=A3 d\n"
+		"gpr a .32 0 0\n"
+		"gpr b .32 4 0\n"
+		"gpr c .32 8 0\n"
+		"gpr d .32 12 0\n");
+	cc = rz_reg_profile_to_cc(reg);
+	mu_assert_streq_free(cc, "a reg(a, b, c, d)", "four argument registers");
+
+	// The argument list stops at the first undefined role and the return
+	// register falls back to A0 when R0 is absent.
+	rz_reg_set_profile_string(reg,
+		"=A0 a\n"
+		"=A1 b\n"
+		"gpr a .32 0 0\n"
+		"gpr b .32 4 0\n");
+	cc = rz_reg_profile_to_cc(reg);
+	mu_assert_streq_free(cc, "a reg(a, b)", "two args, return falls back to A0");
+
+	// A0 alone is a valid single-argument convention.
+	rz_reg_set_profile_string(reg,
+		"=A0 a\n"
+		"gpr a .32 0 0\n");
+	cc = rz_reg_profile_to_cc(reg);
+	mu_assert_streq_free(cc, "a reg(a)", "single argument register");
+
+	// Without any argument register there is no convention to derive.
+	rz_reg_set_profile_string(reg,
+		"=PC pc\n"
+		"gpr pc .32 0 0\n");
+	cc = rz_reg_profile_to_cc(reg);
+	mu_assert_null(cc, "no argument register yields no cc");
+
+	rz_reg_free(reg);
+	mu_end;
+}
+
 int all_tests() {
-	mu_run_test(test_rz_reg_set_name);
 	mu_run_test(test_rz_reg_set_profile_string);
 	mu_run_test(test_rz_reg_get_value_gpr);
 	mu_run_test(test_rz_reg_get_value_flag);
 	mu_run_test(test_rz_reg_get);
+	mu_run_test(test_rz_reg_get_by_role);
 	mu_run_test(test_rz_reg_get_list);
 	mu_run_test(test_rz_reg_get_bv);
 	mu_run_test(test_rz_reg_set_bv);
+	mu_run_test(test_rz_reg_profile_to_cc);
 	return tests_passed != tests_run;
 }
 

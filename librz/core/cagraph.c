@@ -13,17 +13,16 @@ RZ_IPI void rz_core_agraph_add_node(RzCore *core, const char *title, const char 
 	char *b = rz_str_dup(body);
 	if (rz_str_startswith(b, "base64:")) {
 		char *newbody = rz_str_dup(b);
-		if (!newbody) {
-			free(b);
-			return;
-		}
-		b = rz_str_replace(newbody, "\\n", "", true);
-		newbody = (char *)rz_base64_decode_dyn(b + strlen("base64:"), -1);
 		free(b);
 		if (!newbody) {
 			return;
 		}
-		b = newbody;
+		char *newbody_no_nl = rz_str_replace(newbody, "\\n", "", true);
+		b = (char *)rz_base64_decode_dyn(newbody_no_nl + strlen("base64:"), -1);
+		free(newbody_no_nl);
+		if (!b) {
+			return;
+		}
 	}
 	if (!RZ_STR_ISEMPTY(b)) {
 		b = rz_str_append(b, "\n");
@@ -178,7 +177,7 @@ static void agraph_print_node_gml(RzANode *n, void *user) {
 		       "    id  %d\n"
 		       "    label  \"%s\"\n"
 		       "  ]\n",
-		n->gnode->idx, n->title);
+		(int)rz_graph_node_get_vec_id(n->gnode), n->title);
 }
 
 static void agraph_print_edge_gml(RzANode *from, RzANode *to, void *user) {
@@ -186,7 +185,7 @@ static void agraph_print_edge_gml(RzANode *from, RzANode *to, void *user) {
 		       "    source  %d\n"
 		       "    target  %d\n"
 		       "  ]\n",
-		from->gnode->idx, to->gnode->idx);
+		(int)rz_graph_node_get_vec_id(from->gnode), (int)rz_graph_node_get_vec_id(to->gnode));
 }
 
 RZ_IPI void rz_core_agraph_print_gml(RzCore *core) {
@@ -254,21 +253,24 @@ RZ_IPI bool rz_core_agraph_add_shortcut(RzCore *core, RzAGraph *g, RzANode *an, 
 
 RZ_IPI bool rz_core_add_shortcuts(RzCore *core, RzAGraph *ag) {
 	rz_return_val_if_fail(core && ag, false);
-	const RzList *nodes = rz_graph_get_nodes(ag->graph);
+	RzIterator *it = rz_graph_get_nodes(ag->graph);
+	if (!it) {
+		return false;
+	}
 	RzGraphNode *gn;
-	RzListIter *it;
-	rz_list_foreach (nodes, it, gn) {
-		RzANode *an = gn->data;
+	rz_iterator_foreach(it, gn) {
+		RzANode *an = rz_graph_node_get_data_mut(gn);
 		rz_core_agraph_add_shortcut(core, ag, an, an->offset, an->title);
 	}
+	rz_iterator_free(it);
 	return true;
 }
 
-RZ_IPI bool rz_core_agraph_apply(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph) {
+RZ_IPI bool rz_core_agraph_apply(RzCore *core, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *graph) {
 	if (!(core && core->graph && graph)) {
 		return false;
 	}
-	if (!create_agraph_from_graph_at(core->graph, graph, false, rz_config_get_b(core->config, "scr.utf8"))) {
+	if (!rz_core_create_agraph_from_graph_at(core->graph, graph, false, rz_config_get_b(core->config, "scr.utf8"))) {
 		return false;
 	}
 	if (rz_core_agraph_is_shortcuts(core, core->graph)) {

@@ -1,0 +1,94 @@
+NAME=tr rename updates all type references
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx c3 @ 0
+af myfunc 0
+td "struct s1_inner { int x; int y; };"
+td "struct s1_outer { struct s1_inner a; struct s1_inner *b; int z; };"
+tr s1_inner s1_renamed
+tc s1_outer
+tc s1_renamed
+td "struct s2_node { int val; struct s2_node *next; };"
+tr s2_node s2_listnode
+tc s2_listnode
+td "struct s3_point { int x; int y; };"
+td "typedef struct s3_point s3_point_t;"
+td "int s3_dist(struct s3_point *a, struct s3_point *b);"
+tr s3_point s3_coord
+tt s3_point_t
+tf s3_dist
+td "enum s4_color { RED=0, GREEN=1, BLUE=2 };"
+td "struct s4_pixel { enum s4_color c; int v; };"
+tr s4_color s4_palette
+tc s4_pixel
+td "struct s5_inner { int x; int y; };"
+td "struct s5_outer { struct s5_inner a; struct s5_inner *b; };"
+t s5_outer
+tr s5_inner s5_renamed
+t s5_outer
+td "struct s6_inner { int x; int y; };"
+pfn s6_inner "d4d4 x y"
+pfn s6_myfmt "?*? (s6_inner)a (s6_inner)b"
+tr s6_inner s6_renamed
+pfn s6_myfmt
+pfn s6_renamed
+s 0x100
+td "struct s7_point { int x; int y; };"
+avga s7_gp s7_point
+avgl
+tr s7_point s7_coord
+avgl
+s 0
+td "struct s9_point { int x; int y; };"
+afvs 8 localp "struct s9_point *"
+afvl
+tr s9_point s9_coord
+afvl
+td "struct s8_point { int x; int y; };"
+afs "int myfunc (struct s8_point *p)"
+afs
+tr s8_point s8_coord
+afs
+tr nonexistent whatever
+td "struct e1_a { int x; };"
+td "struct e1_b { int y; };"
+tr e1_a e1_b
+EOF
+EXPECT=<<EOF
+struct s1_outer {
+	struct s1_renamed a;
+	struct s1_renamed *b;
+	int z;
+};
+struct s1_renamed {
+	int x;
+	int y;
+};
+struct s2_listnode {
+	int val;
+	struct s2_listnode *next;
+};
+s3_point_t = struct s3_coord
+int s3_dist(struct s3_coord *a, struct s3_coord *b);
+struct s4_pixel {
+	enum s4_palette c;
+	int v;
+};
+pf "?*? (s5_inner)a (s5_inner)b"
+pf "?*? (s5_renamed)a (s5_renamed)b"
+?*? (s6_renamed)a (s6_renamed)b
+d4d4 x y
+global struct s7_point s7_gp @ 0x100
+global struct s7_coord s7_gp @ 0x100
+arg struct s9_point *localp @ stack + 0x8
+arg struct s9_coord *localp @ stack + 0x8
+int myfunc(struct s8_point *p);
+int myfunc(struct s8_coord *p);
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Type "nonexistent" does not exist
+ERROR: Type "e1_b" already exists
+EOF
+RUN

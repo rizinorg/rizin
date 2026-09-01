@@ -26,20 +26,20 @@
 #define rz_cmd_desc_argv_modes_new_warn(rcmd, root, cmd, flags) \
 	rz_warn_if_fail(rz_cmd_desc_argv_state_new(rcmd, root, #cmd, flags, name_handler(cmd), &name_help(cmd)))
 
+typedef struct core_dex_context_t {
+	RzCmdDesc *cmd_desc;
+} CoreDexContext;
+
 static RzBinDex *core_dex_get_class(RzCore *core) {
 	if (!core) {
 		return NULL;
 	}
-	RzAnalysis *analysis = core->analysis;
-	if (!analysis || !analysis->binb.bin) {
+	RzBin *bin = core->bin;
+	if (!bin || !bin->cur || !bin->cur->o) {
 		return NULL;
 	}
-	RzBin *b = analysis->binb.bin;
-	if (!b->cur || !b->cur->o) {
-		return NULL;
-	}
-	RzBinPlugin *plugin = b->cur->o->plugin;
-	return plugin && !strcmp(plugin->name, "dex") ? (RzBinDex *)b->cur->o->bin_obj : NULL;
+	RzBinPlugin *plugin = bin->cur->o->plugin;
+	return plugin && !strcmp(plugin->name, "dex") ? (RzBinDex *)bin->cur->o->bin_obj : NULL;
 }
 
 static char *decode_access_flags(ut32 access_flags) {
@@ -290,30 +290,34 @@ static const RzCmdDescHelp dex_usage = {
 static_description_without_args(dexs, "prints the dex structure");
 static_description_without_args(dexe, "prints the dex exported methods");
 
-static bool rz_cmd_dex_init_handler(RzCore *core) {
-	RzCmd *rcmd = core->rcmd;
-	RzCmdDesc *root_cd = rz_cmd_get_root(rcmd);
-	if (!root_cd) {
+static bool rz_cmd_dex_init_handler(RzCore *core, void **user) {
+	CoreDexContext *ctx = RZ_NEW0(CoreDexContext);
+	if (!ctx) {
 		return false;
 	}
 
-	RzCmdDesc *dex = rz_cmd_desc_group_new(rcmd, root_cd, "dex", NULL, NULL, &dex_usage);
+	RzCmd *rcmd = core->rcmd;
+	RzCmdDesc *dex = rz_core_plugin_cmd_desc_group_new(core, "dex", NULL, NULL, &dex_usage);
 	if (!dex) {
 		rz_warn_if_reached();
+		free(ctx);
 		return false;
 	}
+	ctx->cmd_desc = dex;
 
 	rz_cmd_desc_argv_modes_new_warn(rcmd, dex, dexs, RZ_OUTPUT_MODE_STANDARD);
 	rz_cmd_desc_argv_modes_new_warn(rcmd, dex, dexe, RZ_OUTPUT_MODE_STANDARD);
 
+	*user = ctx;
 	return true;
 }
 
-static bool rz_cmd_dex_fini_handler(RzCore *core) {
-	RzCmd *rcmd = core->rcmd;
-	RzCmdDesc *cd = rz_cmd_get_desc(rcmd, "dex");
-	rz_return_val_if_fail(cd, false);
-	return rz_cmd_desc_remove(rcmd, cd);
+static bool rz_cmd_dex_fini_handler(RzCore *core, void *user) {
+	CoreDexContext *ctx = user;
+	rz_return_val_if_fail(ctx && ctx->cmd_desc, false);
+	bool res = rz_core_plugin_cmd_desc_remove(core, ctx->cmd_desc);
+	free(ctx);
+	return res;
 }
 
 RzCorePlugin rz_core_plugin_dex = {

@@ -18,8 +18,8 @@
 static void function_rename(RzCore *core, ut64 addr, const char *name) {
 	RzListIter *iter;
 	RzAnalysisFunction *fcn;
-
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	RzList *fcns = rz_analysis_function_list(core->analysis);
+	rz_list_foreach (fcns, iter, fcn) {
 		if (fcn->addr == addr) {
 			rz_flag_unset_name(core->flags, fcn->name);
 			free(fcn->name);
@@ -45,7 +45,8 @@ static void variable_set_type(RzCore *core, ut64 addr, int vindex, const char *t
 		return;
 	}
 	RzAnalysisVar *var = rz_pvector_at(&fcn->vars, vindex);
-	RzType *ttype = rz_type_parse_string_single(core->analysis->typedb->parser, type, NULL);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, type, NULL);
 	if (!ttype) {
 		return;
 	}
@@ -98,8 +99,8 @@ static ut32 filter_function(RzCore *core, RzList /*<RzAnalysisFunction *>*/ *fil
 	RzListIter *iter;
 	RzAnalysisFunction *fcn;
 	size_t num = 0;
-
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	RzList *fcns = rz_analysis_function_list(core->analysis);
+	rz_list_foreach (fcns, iter, fcn) {
 		bool contain = true;
 		void **it;
 		rz_pvector_foreach (keywords, it) {
@@ -124,7 +125,8 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 	ut64 seek = core->offset;
 	ut64 addr = core->offset;
 	RzAnalysisFunction *fcn;
-	RzList *filter_fcn = core->analysis->fcns, *visual_filter = NULL;
+	RzList *filter_fcn = rz_analysis_function_list(core->analysis);
+	RzList *visual_filter = NULL;
 	int window, i = 0, print_full_func;
 	RzListIter *iter;
 	RzCoreVisual *visual = core->visual;
@@ -167,7 +169,7 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 			if (show) {
 				char *tmp;
 				if (color) {
-					var_functions = rz_str_newf("%c%c %s0x%08" PFMT64x "" Color_RESET " %4" PFMT64d " %s%s" Color_RESET "",
+					var_functions = rz_str_newf("%c%c %s0x%08" PFMT64x Color_RESET " %4" PFMT64d " %s%s" Color_RESET "",
 						(seek == fcn->addr) ? '>' : ' ',
 						(idx == i) ? '*' : ' ',
 						color_addr, fcn->addr, rz_analysis_function_realsize(fcn),
@@ -198,7 +200,7 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 		}
 		i++;
 	}
-	if (filter_fcn != core->analysis->fcns) {
+	if (filter_fcn != rz_analysis_function_list(core->analysis)) {
 		rz_list_free(filter_fcn);
 	}
 	return addr;
@@ -208,6 +210,7 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 static ut64 var_variables_show(RzCore *core, int idx, int *vindex, int show, int cols) {
 	int i = 0;
 	const ut64 addr = var_functions_show(core, idx, 0, cols);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
 	if (!fcn) {
 		return addr;
@@ -235,7 +238,7 @@ static ut64 var_variables_show(RzCore *core, int idx, int *vindex, int show, int
 				break;
 			}
 			if (show) {
-				char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
+				char *vartype = rz_type_as_string(typedb, var->type);
 				rz_cons_printf("%s%s %s %s @ ", i == *vindex ? "* " : "  ", rz_analysis_var_is_arg(var) ? "arg" : "var", vartype, var->name);
 				free(vartype);
 
@@ -421,7 +424,7 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 		if (color) {
 			rz_cons_strcat(core->cons->context->pal.prompt);
 		}
-		rz_cons_printf("-[ variables ]----- 0x%08" PFMT64x "", addr);
+		rz_cons_printf("-[ variables ]----- 0x%08" PFMT64x, addr);
 		if (color) {
 			rz_cons_strcat("\n" Color_RESET);
 		}
@@ -606,7 +609,8 @@ static void set_current_option_to_seek(RzCore *core) {
 	RzAnalysisFunction *fcn;
 	RzCoreVisualView *view = ((RzCoreVisual *)core->visual)->view;
 	int i = 0;
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	RzList *fcns = rz_analysis_function_list(core->analysis);
+	rz_list_foreach (fcns, iter, fcn) {
 		if (core->offset == fcn->addr) {
 			view->option = i;
 		}
@@ -638,7 +642,8 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 	int asmbytes = rz_config_get_i(core->config, "asm.bytes");
 	rz_config_set_i(core->config, "asm.bytes", 0);
 	for (;;) {
-		nfcns = rz_list_length(core->analysis->fcns);
+		RzList *fcns = rz_analysis_function_list(core->analysis);
+		nfcns = rz_list_length(fcns);
 		if (visual->view->inputing) {
 			RzPVector *keywords = capture_filter_keywords(visual->view->inputing);
 			if (keywords) {
@@ -864,7 +869,8 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			int n = 0;
 			RzListIter *iter;
 			RzAnalysisFunction *fcn;
-			rz_list_foreach (core->analysis->fcns, iter, fcn) {
+			RzList *fcns = rz_analysis_function_list(core->analysis);
+			rz_list_foreach (fcns, iter, fcn) {
 				if (fcn->addr == core->offset) {
 					view->option = n;
 					break;

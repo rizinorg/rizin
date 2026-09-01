@@ -382,13 +382,6 @@ RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg) {
 	rz_return_val_if_fail(reg->reg_profile.alias && reg->reg_profile.defs, false);
 
 	RzListIter *it;
-	RzRegProfileAlias *alias;
-	rz_list_foreach (reg->reg_profile.alias, it, alias) {
-		if (!rz_reg_set_name(reg, alias->role, alias->reg_name)) {
-			RZ_LOG_WARN("Invalid alias gviven.\n");
-			return false;
-		}
-	}
 	RzRegProfileDef *def;
 	rz_list_foreach (reg->reg_profile.defs, it, def) {
 		RzRegItem *item = RZ_NEW0(RzRegItem);
@@ -419,6 +412,14 @@ RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg) {
 		}
 
 		add_item_to_regset(reg, item);
+	}
+	RzRegProfileAlias *alias;
+	rz_list_foreach (reg->reg_profile.alias, it, alias) {
+		RzRegItem *item = rz_reg_get(reg, alias->reg_name, RZ_REG_TYPE_ANY);
+		if (!item) {
+			RZ_LOG_WARN("Invalid alias given in register profile: %s.\n", alias->reg_name);
+		}
+		reg->by_role[alias->role] = item;
 	}
 
 	return true;
@@ -514,6 +515,7 @@ static char *gdb_to_rz_profile(const char *gdb) {
 	if (!sb) {
 		return NULL;
 	}
+	char *copy = rz_str_dup(gdb);
 	char *ptr1, *gptr, *gptr1;
 	char name[GDB_NAME_SZ + 1], groups[GDB_GROUPS_SZ + 1], type[GDB_TYPE_SZ + 1];
 	const int all = 1, gpr = 2, save = 4, restore = 8, float_ = 16,
@@ -521,12 +523,13 @@ static char *gdb_to_rz_profile(const char *gdb) {
 	int number, rel, offset, size, type_bits, ret;
 	// Every line is -
 	// Name Number Rel Offset Size Type Groups
-	const char *ptr = rz_str_trim_head_ro(gdb);
+	char *ptr = (char *)rz_str_trim_head_ro(copy);
 
 	// It's possible someone includes the heading line too. Skip it
 	if (rz_str_startswith(ptr, "Name")) {
 		if (!(ptr = strchr(ptr, '\n'))) {
 			rz_strbuf_free(sb);
+			free(copy);
 			return NULL;
 		}
 		ptr++;
@@ -544,6 +547,7 @@ static char *gdb_to_rz_profile(const char *gdb) {
 		} else {
 			eprintf("Could not parse line: %s (missing \\n)\n", ptr);
 			rz_strbuf_free(sb);
+			free(copy);
 			return false;
 		}
 		ret = sscanf(ptr, " %" RZ_STR_DEF(GDB_NAME_SZ) "s %d %d %d %d %" RZ_STR_DEF(GDB_TYPE_SZ) "s %" RZ_STR_DEF(GDB_GROUPS_SZ) "s",
@@ -553,6 +557,7 @@ static char *gdb_to_rz_profile(const char *gdb) {
 			if (*ptr != '*') {
 				eprintf("Could not parse line: %s\n", ptr);
 				rz_strbuf_free(sb);
+				free(copy);
 				return NULL;
 			}
 			ptr = ptr1 + 1;
@@ -629,8 +634,8 @@ static char *gdb_to_rz_profile(const char *gdb) {
 			break;
 		}
 		ptr = ptr1 + 1;
-		continue;
 	}
+	free(copy);
 	return rz_strbuf_drain(sb);
 }
 
@@ -658,9 +663,6 @@ RZ_API char *rz_reg_parse_gdb_profile(const char *profile_file) {
 RZ_API char *rz_reg_profile_to_cc(RzReg *reg) {
 	const char *r0 = rz_reg_get_name_by_type(reg, "R0");
 	const char *a0 = rz_reg_get_name_by_type(reg, "A0");
-	const char *a1 = rz_reg_get_name_by_type(reg, "A1");
-	const char *a2 = rz_reg_get_name_by_type(reg, "A2");
-	const char *a3 = rz_reg_get_name_by_type(reg, "A3");
 
 	if (!a0) {
 		RZ_LOG_WARN("It is mandatory to have at least one argument register defined in the register profile.\n");
@@ -669,14 +671,21 @@ RZ_API char *rz_reg_profile_to_cc(RzReg *reg) {
 	if (!r0) {
 		r0 = a0;
 	}
-	if (a3 && a2 && a1) {
-		return rz_str_newf("%s reg(%s, %s, %s, %s)", r0, a0, a1, a2, a3);
+	// Gather every consecutive argument register the profile declares (A0..A9),
+	// stopping at the first undefined role, so an arch that passes more than four
+	// arguments in registers gets a complete convention rather than a truncated
+	// one.
+	static const char *arg_roles[] = { "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9" };
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	rz_strbuf_appendf(&sb, "%s reg(%s", r0, a0);
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(arg_roles); i++) {
+		const char *an = rz_reg_get_name_by_type(reg, arg_roles[i]);
+		if (!an) {
+			break;
+		}
+		rz_strbuf_appendf(&sb, ", %s", an);
 	}
-	if (a2 && a1) {
-		return rz_str_newf("%s reg(%s, %s, %s)", r0, a0, a1, a2);
-	}
-	if (a1) {
-		return rz_str_newf("%s reg(%s, %s)", r0, a0, a1);
-	}
-	return rz_str_newf("%s reg(%s)", r0, a0);
+	rz_strbuf_append(&sb, ")");
+	return rz_strbuf_drain_nofree(&sb);
 }

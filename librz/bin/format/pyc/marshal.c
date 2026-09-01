@@ -156,7 +156,7 @@ static pyc_object *get_int64_object(RzBuffer *buffer) {
 		return NULL;
 	}
 	ret->type = TYPE_INT64;
-	ret->data = rz_str_newf("%lld", i);
+	ret->data = rz_str_newf("%" PFMT64d, i);
 	if (!ret->data) {
 		RZ_FREE(ret);
 	}
@@ -1285,7 +1285,7 @@ static pyc_object *get_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 		void *p = rz_list_val(ref_idx);
 		free_object(p);
 		p = copy_object(ret);
-		rz_list_iter_set_data(ref_idx, p);
+		rz_list_set_val(ref_idx, p);
 	}
 	return ret;
 }

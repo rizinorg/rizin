@@ -126,7 +126,7 @@ static RzBinInfo *dyldcache_info(RzBinFile *bf) {
 	ret->type = rz_str_dup(rz_dyldcache_get_type_str(cache));
 	ret->has_va = true;
 	ret->big_endian = big_endian;
-	ret->dbg_info = 0;
+	ret->dbg_info = RZ_BIN_DBG_STRIPPED;
 	return ret;
 }
 
@@ -378,7 +378,7 @@ static RzPVector /*<RzBinClass *>*/ *dyldcache_classes(RzBinFile *bf) {
 		return NULL;
 	}
 
-	RzPVector *ret = rz_pvector_new(free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_class_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -451,8 +451,8 @@ static RzPVector /*<RzBinClass *>*/ *dyldcache_classes(RzBinFile *bf) {
 
 				RzBinClass *klass;
 				if (!(klass = RZ_NEW0(RzBinClass)) ||
-					!(klass->methods = rz_list_new()) ||
-					!(klass->fields = rz_list_new())) {
+					!(klass->methods = rz_list_newf((RzListFree)rz_bin_symbol_free)) ||
+					!(klass->fields = rz_list_newf((RzListFree)rz_bin_class_field_free))) {
 					RZ_FREE(klass);
 					RZ_FREE(pointers);
 					RZ_FREE(sections);
@@ -472,7 +472,7 @@ static RzPVector /*<RzBinClass *>*/ *dyldcache_classes(RzBinFile *bf) {
 				bf->o->bin_obj = cache;
 
 				if (!klass->name) {
-					RZ_LOG_ERROR("CLASS ERROR AT 0x%llx, is_classlist %d\n", pointer_to_class, is_classlist);
+					RZ_LOG_ERROR("CLASS ERROR AT 0x%" PFMT64x ", is_classlist %d\n", pointer_to_class, is_classlist);
 					klass->name = rz_str_newf("UnnamedClass%u", num_of_unnamed_class);
 					if (!klass->name) {
 						RZ_FREE(klass);

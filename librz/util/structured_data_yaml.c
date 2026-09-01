@@ -187,6 +187,18 @@ static void builder_yaml_val_string(RZ_NULLABLE void *user, RZ_NONNULL const cha
 	}
 }
 
+static void builder_yaml_val_null(RZ_NULLABLE void *user) {
+	StructYamlPrinter *yaml = (StructYamlPrinter *)user;
+
+	if (builder_yaml_is_array(yaml)) {
+		builder_yaml_add_padding(yaml);
+		rz_strbuf_append(&yaml->sb, "- null\n");
+	} else {
+		rz_strbuf_append(&yaml->sb, " null\n");
+	}
+	yaml->first = false;
+}
+
 static const RzStructuredDataIterator builder_yaml_iterator = {
 	.new_struct = builder_yaml_new_struct,
 	.end_struct = builder_yaml_end_struct,
@@ -196,4 +208,5 @@ static const RzStructuredDataIterator builder_yaml_iterator = {
 	.val_double = builder_yaml_val_double,
 	.val_bool = builder_yaml_val_bool,
 	.val_string = builder_yaml_val_string,
+	.val_null = builder_yaml_val_null,
 };

@@ -152,7 +152,7 @@ RZ_API bool rz_bin_file_set_xtr_data_as_current_obj(
 	o->info->type = rz_str_dup(data->metadata->type);
 	o->info->bits = data->metadata->bits;
 	o->info->big_endian = data->metadata->big_endian;
-	o->info->has_crypto = bf->o->info->has_crypto;
+	o->info->is_encrypted = bf->o->info->is_encrypted;
 	data->loaded = true;
 	return true;
 }
@@ -583,12 +583,26 @@ RZ_API void rz_bin_class_free(RZ_NULLABLE RzBinClass *k) {
 	free(k);
 }
 
-RZ_API RZ_OWN RzPVector /*<RzBinTrycatch *>*/ *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFile *bf) {
-	rz_return_val_if_fail(bf && bf->o && bf->o->plugin, NULL);
-	if (bf->o->plugin->trycatch) {
-		return bf->o->plugin->trycatch(bf);
+/**
+ * \brief Get the trycatch information from the given binary file.
+ *
+ * If the trycatch information has not been parsed yet, it will call the plugin's
+ * trycatch method to load it, if that fails then an empty vector will be returned.
+ *
+ * \param bf Binary file
+ * \return Borrowed vector of RzBinTrycatch pointers
+ */
+RZ_API RZ_BORROW RzPVector /*<RzBinTrycatch *>*/ *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o, NULL);
+	if (!bf->o->trycatch) {
+		if (bf->o->plugin && bf->o->plugin->trycatch) {
+			bf->o->trycatch = bf->o->plugin->trycatch(bf);
+		}
+		if (!bf->o->trycatch) {
+			bf->o->trycatch = rz_pvector_new((RzPVectorFree)rz_bin_trycatch_free);
+		}
 	}
-	return NULL;
+	return bf->o->trycatch;
 }
 
 RZ_API RzPVector /*<RzBinSymbol *>*/ *rz_bin_file_get_symbols(RzBinFile *bf) {

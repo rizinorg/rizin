@@ -82,7 +82,7 @@ EXPECT=<<EOF
       addr name         size xrefsTo xrefsFrom calls nbbs edges cc cost noreturn 
 ---------------------------------------------------------------------------------
 0x00008000 entry0        305       0        28    12   12    17  5    0 false
-0x00008131 fcn.00008131   30       1         0     0    5     6  3    0 false
+0x00008131 fcn.00008131   30       1         1     0    5     6  3    0 false
 0x0000814f fcn.0000814f   12       7         1     1    3     3  2    0 false
 0x0000815b fcn.0000815b   62       1         0     0   11    16  7    0 false
 0x00008199 fcn.00008199   24       1         0     0    6     9  5    0 false
@@ -94,7 +94,7 @@ EXPECT=<<EOF
 0x000082ba fcn.000082ba   48       1         0     0    2     2  2    0 false
 0x000082ea fcn.000082ea   28      14         2     0    5     6  3    0 false
 0x00008306 fcn.00008306   45       1         0     0    5     6  3    0 false
-0x00808131 fcn.00808131   30       1         0     0    5     6  3    0 false
+0x00808131 fcn.00808131   30       1         1     0    5     6  3    0 false
 0x0080814f fcn.0080814f   12       7         1     1    3     3  2    0 false
 0x0080815b fcn.0080815b   62       1         0     0   11    16  7    0 false
 0x00808199 fcn.00808199   24       1         0     0    6     9  5    0 false

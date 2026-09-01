@@ -4,6 +4,8 @@
 
 #include <rz_util/rz_set.h>
 #include <rz_util/rz_assert.h>
+#include <rz_util/rz_str.h>
+#include <rz_list.h>
 
 /**
  * \brief Create a new hash set with C-string as elements.
@@ -11,6 +13,37 @@
  */
 RZ_API RZ_OWN RzSetS *rz_set_s_new(HtStrOption opt) {
 	return ht_sp_new(opt, NULL, NULL);
+}
+
+/**
+ * \brief Split the string \p str according to the substring \p c and returns a \p RzSetS with the result.
+ *
+ * Split a string \p str according to the delimiter specified in \p c. It can
+ * optionally trim (aka remove spaces) the tokens. The result is a \p RzSetS with newly allocated strings for each
+ * token.
+ *
+ * \param _str Input string to split
+ * \param c Delimiter string used to split \p str
+ * \param trim If true each token is considered without trailing/leading whitespaces.
+ */
+RZ_API RZ_OWN RzSetS *rz_str_split_dupset(RZ_NONNULL const char *_str, RZ_NONNULL const char *c, bool trim) {
+	rz_return_val_if_fail(_str && c, NULL);
+	RzList *list = rz_str_split_duplist(_str, c, trim);
+	if (!list) {
+		return NULL;
+	}
+	RzSetS *set = rz_set_s_new(HT_STR_DUP);
+	if (!set) {
+		rz_list_free(list);
+		return NULL;
+	}
+	RzListIter *it;
+	const char *val;
+	rz_list_foreach (list, it, val) {
+		rz_set_s_add(set, val);
+	}
+	rz_list_free(list);
+	return set;
 }
 
 /**
@@ -104,6 +137,32 @@ RZ_API RZ_OWN RzSetU *rz_set_u_new(void) {
 RZ_API void rz_set_u_add(RZ_NONNULL RzSetU *set, ut64 u) {
 	rz_return_if_fail(set);
 	ht_up_insert(set, u, (void *)1);
+}
+
+static bool take_first(void *user, const ut64 k, const void *v) {
+	ut64 *out = user;
+	*out = k;
+	return false;
+}
+
+/**
+ * \brief Take an element from \p set.
+ * The element is removed from it.
+ * There is no indicator what element is taken, because a set is unordered.
+ *
+ * The set must have a size of 1+ elements.
+ * Otherwise a warning is printed and it returns UT64_MAX.
+ */
+RZ_API ut64 rz_set_u_take(RZ_NONNULL RzSetU *set) {
+	rz_return_val_if_fail(set, UT64_MAX);
+	if (rz_set_u_size(set) == 0) {
+		rz_warn_if_reached();
+		return UT64_MAX;
+	}
+	ut64 out = UT64_MAX;
+	ht_up_foreach(set, take_first, &out);
+	rz_set_u_delete(set, out);
+	return out;
 }
 
 /**

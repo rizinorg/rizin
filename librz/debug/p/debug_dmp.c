@@ -14,6 +14,7 @@
 
 static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 	RzCore *core = dbg->corebind.core;
+	RzTypeDB *typedb = rz_analysis_get_type_db(dbg->analysis);
 	RzIODesc *desc = core->io->desc;
 	if (!desc) {
 		return false;
@@ -115,6 +116,7 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 	// Find ntoskrnl.exe module
 	RzListIter *it;
 	WindModule mod = { 0 };
+	RzList *modules = NULL;
 	if (ctx->type == DMP_DUMPTYPE_TRIAGE) {
 		struct rz_bin_dmp64_obj_t *obj = core->bin->cur->o->bin_obj;
 		dmp_driver_desc *driver;
@@ -130,7 +132,7 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 	} else {
 		WindProc kernel = { .dir_base_table = ctx->kernelDirectoryTable, .uniqueid = 4 };
 		ctx->windctx.target = kernel;
-		RzList *modules = winkd_list_modules(&ctx->windctx);
+		modules = winkd_list_modules(&ctx->windctx);
 		WindModule *m;
 		rz_list_foreach (modules, it, m) {
 			if (rz_str_endswith(m->name, "\\ntoskrnl.exe")) {
@@ -153,7 +155,7 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 			kernel_pdb = rz_str_dup(rz_file_basename(pdbpath));
 			free(pdbpath);
 			if (!ctx->windctx.profile) {
-				winkd_build_profile(&ctx->windctx, dbg->analysis->typedb);
+				winkd_build_profile(&ctx->windctx, typedb);
 				if (ctx->windctx.profile) {
 					ctx->windctx.profile->build = MinorVersion;
 					ctx->windctx.profile->sp = ServicePackBuild;
@@ -163,6 +165,7 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 			RZ_LOG_WARN("Failed to download ntoskrnl.pdb, many things won't work.\n");
 		}
 	}
+	rz_list_free(modules);
 
 	if (!ctx->windctx.profile) {
 		RZ_LOG_ERROR("Could not find a profile for this Windows: %s %" PFMT32d "-bit %" PFMT32u " SP %" PFMT32u "\n",
@@ -170,11 +173,11 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 		return false;
 	}
 
-	ctx->kthread_process_offset = rz_type_db_struct_member_offset(dbg->analysis->typedb, "_KTHREAD", "Process");
-	ctx->kprcb_context_offset = rz_type_db_struct_member_offset(dbg->analysis->typedb, "_KPRCB", "Context");
+	ctx->kthread_process_offset = rz_type_db_struct_member_offset(typedb, "_KTHREAD", "Process");
+	ctx->kprcb_context_offset = rz_type_db_struct_member_offset(typedb, "_KPRCB", "Context");
 	if (ctx->windctx.is_arm) {
-		const ut64 switch_frame_offset = rz_type_db_struct_member_offset(dbg->analysis->typedb, "_KTHREAD", "SwitchFrame");
-		ctx->kthread_switch_frame_offset = switch_frame_offset + rz_type_db_struct_member_offset(dbg->analysis->typedb, "_KSWITCH_FRAME", "Fp");
+		const ut64 switch_frame_offset = rz_type_db_struct_member_offset(typedb, "_KTHREAD", "SwitchFrame");
+		ctx->kthread_switch_frame_offset = switch_frame_offset + rz_type_db_struct_member_offset(typedb, "_KSWITCH_FRAME", "Fp");
 	}
 	char *kpb_flag_name;
 	if (kernel_pdb) {

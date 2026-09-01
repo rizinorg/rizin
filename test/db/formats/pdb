@@ -173,33 +173,21 @@ global void * __guard_dispatch_icall_fptr @ 0x140015020
 global void * __guard_xfg_dispatch_icall_fptr @ 0x140015030
 global void * __guard_xfg_table_dispatch_icall_fptr @ 0x140015040
 ---
-(nofunc) 0x140007344 [DATA] lea rcx, qword pdb.exceptions_test.__guard_check_icall_fptr
-            0x140007344      lea   rcx, qword pdb.exceptions_test.__guard_check_icall_fptr ; 0x140015000
-            0x14000734b      call  fcn.1400011db
-            0x140007350      lea   rcx, qword [0x14000101e]
-fcn.140001366 0x140006a64 [DATA] mov dword [pdb.exceptions_test.__scrt_debugger_hook_flag], 0x00
-  ; CALL XREFS from fcn.140001398 @ 0x140006aab, 0x140006c04
+pdb.exceptions_test._guard_icall_checks_enforced 0x140007344 [DATA] lea rcx, qword pdb.exceptions_test.__guard_check_icall_fptr
+|           0x140007344      lea   rcx, qword pdb.exceptions_test.__guard_check_icall_fptr ; 0x140015000 ; int64_t arg1
+|           0x14000734b      call  fcn.1400011db
+|           0x140007350      lea   rcx, qword data.14000101e           ; 0x14000101e
+pdb.exceptions_test.__crt_debugger_hook 0x140006a64 [DATA] mov dword [pdb.exceptions_test.__scrt_debugger_hook_flag], 0x00
+  ; CALL XREFS from pdb.exceptions_test.__scrt_fastfail @ 0x140006aab, 0x140006c04
 / fcn.140001366(int64_t arg1);
 | ; arg int64_t arg1 @ rcx
-| ; var int64_t var_8h @ stack + 0x8
-| 0x140001366      jmp   pdb.exceptions_test.__crt_debugger_hook
+\ 0x140001366      jmp   pdb.exceptions_test.__crt_debugger_hook
 | ----------- true: 0x140006a60
-| ; CODE XREF from fcn.140001366 @ 0x140001366
-| ;-- __crt_debugger_hook:
-| 0x140006a60      mov   dword [var_8h], ecx                           ; arg1
-| 0x140006a64      mov   dword [pdb.exceptions_test.__scrt_debugger_hook_flag], 0x00 ; [0x140011ba4:4]=0
-\ 0x140006a6e      ret
-
-fcn.140001316 0x140006a40 [DATA] lea rax, qword pdb.exceptions_test.__dyn_tls_init_callback
+pdb.exceptions_test.__scrt_get_dyn_tls_init_callback 0x140006a40 [DATA] lea rax, qword pdb.exceptions_test.__dyn_tls_init_callback
   ; CALL XREF from fcn.1400049a0 @ 0x140004a44
 / fcn.140001316();
-| 0x140001316      jmp   pdb.exceptions_test.__scrt_get_dyn_tls_init_callback
+\ 0x140001316      jmp   pdb.exceptions_test.__scrt_get_dyn_tls_init_callback
 | ----------- true: 0x140006a40
-| ; CODE XREF from fcn.140001316 @ 0x140001316
-| ;-- __scrt_get_dyn_tls_init_callback:
-| 0x140006a40      lea   rax, qword pdb.exceptions_test.__dyn_tls_init_callback ; 0x140011be0
-\ 0x140006a47      ret
-
 EOF
 RUN
 
@@ -272,11 +260,53 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=find structure R2_TEST_STRUCT
+NAME=PDB Project1 structs unions and enums
 FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep -ao R2_TEST_STRUCT
+CMDS=<<EOF
+!rz-bin -P ${RZ_FILE} | grep -ao R2_TEST_STRUCT
+echo ---
+!rz-bin -P ${RZ_FILE} | grep -ao R2_TEST_UNION
+echo ---
+!rz-bin -P ${RZ_FILE} | grep -ao R2_TEST_ENUM
+echo ---
+!rz-bin -P ${RZ_FILE} | grep -ao r2_struct_var_1
+echo ---
+!rz-bin -P ${RZ_FILE} | grep -ao r2_struct_var_2
+echo ---
+!rz-bin -P ${RZ_FILE} | grep r2_struct_var_1 | grep -ao int32_t
+echo ---
+!rz-bin -P ${RZ_FILE} | grep r2_struct_var_2 | grep -ao int16_t
+echo ---
+!rz-bin -P ${RZ_FILE} | grep -ao r2_union_var_1
+echo ---
+!rz-bin -P ${RZ_FILE} | grep -ao r2_union_var_2
+echo ---
+!rz-bin -P ${RZ_FILE} | grep r2_union_var_1 | grep -ao int32_t
+echo ---
+!rz-bin -P ${RZ_FILE} | grep r2_union_var_2 | grep -ao double
+EOF
 EXPECT=<<EOF
 R2_TEST_STRUCT
+---
+R2_TEST_UNION
+---
+R2_TEST_ENUM
+---
+r2_struct_var_1
+---
+r2_struct_var_2
+---
+int32_t
+---
+int16_t
+---
+r2_union_var_1
+---
+r2_union_var_2
+---
+int32_t
+---
+double
 EOF
 RUN
 
@@ -297,22 +327,6 @@ _onexit_table_t
 EOF
 RUN
 
-NAME=find union R2_TEST_UNION
-FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep -ao R2_TEST_UNION
-EXPECT=<<EOF
-R2_TEST_UNION
-EOF
-RUN
-
-NAME=find enum R2_TEST_ENUM
-FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep -ao R2_TEST_ENUM
-EXPECT=<<EOF
-R2_TEST_ENUM
-EOF
-RUN
-
 NAME=find enum _RTC_ErrorNumber
 FILE=bins/pdb/vs2019_cpp_override.pdb
 CMDS=!rz-bin -P ${RZ_FILE} | grep -ao _RTC_ErrorNumber
@@ -329,75 +343,11 @@ _RTC_ILLEGAL
 EOF
 RUN
 
-NAME=member1 name of structure R2_TEST_STRUCT
-FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep -ao r2_struct_var_1
-EXPECT=<<EOF
-r2_struct_var_1
-EOF
-RUN
-
 NAME=member1 of structure _onexit_table_t # LF_STRUCTURE_19
 FILE=bins/pdb/vs2019_cpp_override.pdb
 CMDS=!rz-bin -P ${RZ_FILE} | grep -ao "void\ (\*\*_first)();"
 EXPECT=<<EOF
 void (**_first)();
-EOF
-RUN
-
-NAME=member2 name of structure R2_TEST_STRUCT
-FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep -ao r2_struct_var_2
-EXPECT=<<EOF
-r2_struct_var_2
-EOF
-RUN
-
-NAME=member1 type of structure R2_TEST_STRUCT
-FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep r2_struct_var_1 | grep -ao int32_t
-EXPECT=<<EOF
-int32_t
-EOF
-RUN
-
-NAME=member2 type of structure R2_TEST_STRUCT
-FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep r2_struct_var_2 | grep -ao int16_t
-EXPECT=<<EOF
-int16_t
-EOF
-RUN
-
-NAME=member1 name of union R2_TEST_UNION
-FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep -ao r2_union_var_1
-EXPECT=<<EOF
-r2_union_var_1
-EOF
-RUN
-
-NAME=member2 name of union R2_TEST_UNION
-FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep -ao r2_union_var_2
-EXPECT=<<EOF
-r2_union_var_2
-EOF
-RUN
-
-NAME=member1 type of union R2_TEST_UNION
-FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep r2_union_var_1 | grep -ao int32_t
-EXPECT=<<EOF
-int32_t
-EOF
-RUN
-
-NAME=member2 type of union R2_TEST_UNION
-FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep r2_union_var_2 | grep -ao double
-EXPECT=<<EOF
-double
 EOF
 RUN
 
@@ -420,50 +370,32 @@ __enc$textbss$end
 EOF
 RUN
 
-NAME=member1 type of struct _CONSOLE_READCONSOLE_CONTROL of arm PDB
+NAME=arm PDB structs enums and symbols
 FILE=bins/pe/hello_world_arm/hello_world_arm_ZiZoO2.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep -C2 _CONSOLE_READCONSOLE_CONTROL | grep nLength | grep -ao uint32_t
+CMDS=<<EOF
+!rz-bin -P ${RZ_FILE} | grep -C2 _CONSOLE_READCONSOLE_CONTROL | grep nLength | grep -ao uint32_t
+echo ---
+!rz-bin -P ${RZ_FILE} | grep -C2 _CONSOLE_READCONSOLE_CONTROL | grep -ao nLength
+echo ---
+!rz-bin -P ${RZ_FILE} | grep all_control_bits | grep -ao 0x3c09f00
+echo ---
+!rz-bin -P ${RZ_FILE} | grep "enum __acrt_fenv_abstract_status : uint32_t {"
+echo ---
+!rz-bin -P ${RZ_FILE} | grep "_towlower_internal"
+echo ---
+!rz-bin -P ${RZ_FILE} | grep "south africa"
+EOF
 EXPECT=<<EOF
 uint32_t
-EOF
-RUN
-
-NAME=member1 name of struct _CONSOLE_READCONSOLE_CONTROL of arm PDB
-FILE=bins/pe/hello_world_arm/hello_world_arm_ZiZoO2.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep -C2 _CONSOLE_READCONSOLE_CONTROL | grep -ao nLength
-EXPECT=<<EOF
+---
 nLength
-EOF
-RUN
-
-NAME=member value of enum __acrt_fenv_machine_arm_control of arm PDB
-FILE=bins/pe/hello_world_arm/hello_world_arm_ZiZoO2.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep all_control_bits | grep -ao 0x3c09f00
-EXPECT=<<EOF
+---
 0x3c09f00
-EOF
-RUN
-
-NAME=enum __acrt_fenv_abstract_status of arm PDB
-FILE=bins/pe/hello_world_arm/hello_world_arm_ZiZoO2.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep "__acrt_fenv_abstract_status {"
-EXPECT=<<EOF
-enum __acrt_fenv_abstract_status {
-EOF
-RUN
-
-NAME=symbol _towlower_internal of arm PDB
-FILE=bins/pe/hello_world_arm/hello_world_arm_ZiZoO2.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep "_towlower_internal"
-EXPECT=<<EOF
+---
+enum __acrt_fenv_abstract_status : uint32_t {
+---
 0x00066da4  4366  .text  _towlower_internal
-EOF
-RUN
-
-NAME=complex symbol of arm PDB
-FILE=bins/pe/hello_world_arm/hello_world_arm_ZiZoO2.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep "south africa"
-EXPECT=<<EOF
+---
 0x000820c4  4366  .rdata  `string'::1484532236::"south africa"
 EOF
 RUN

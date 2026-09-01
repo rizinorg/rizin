@@ -45,7 +45,9 @@ static const struct type_translation type_translation_table[] = {
 	{ SHT_SUNW_syminfo, "SYMINFO" },
 	{ SHT_GNU_verdef, "VERDEF" },
 	{ SHT_GNU_verneed, "VERNEED" },
-	{ SHT_GNU_versym, "VERSYM" }
+	{ SHT_GNU_versym, "VERSYM" },
+	// Rizin-internal pseudo type, see RZ_BIN_ELF_SECTION_TYPE_PLT.
+	{ RZ_BIN_ELF_SECTION_TYPE_PLT, "PLT" }
 };
 
 static const struct flag_translation flag_translation_table[] = {
@@ -367,11 +369,6 @@ RZ_OWN RzVector /*<RzBinElfSection>*/ *Elf_(rz_bin_elf_convert_sections)(RZ_NONN
 		return NULL;
 	}
 
-	if (!rz_vector_len(result)) {
-		rz_vector_free(result);
-		return NULL;
-	}
-
 	return result;
 }
 
@@ -379,10 +376,8 @@ RZ_OWN RzVector /*<Elf_(Shdr)>*/ *Elf_(rz_bin_elf_sections_new)(RZ_NONNULL ELFOB
 	rz_return_val_if_fail(bin, NULL);
 
 	if (!bin->ehdr.e_shnum) {
-		return NULL;
-	}
-
-	if (!Elf_(rz_bin_elf_check_array)(bin, bin->ehdr.e_shoff, bin->ehdr.e_shnum, sizeof(Elf_(Phdr)))) {
+		RZ_LOG_WARN("Number of sections is 0.\n");
+	} else if (!Elf_(rz_bin_elf_check_array)(bin, bin->ehdr.e_shoff, bin->ehdr.e_shnum, sizeof(Elf_(Phdr)))) {
 		RZ_LOG_WARN("Invalid section header (check array failed).\n");
 		return NULL;
 	}

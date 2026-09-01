@@ -12,8 +12,33 @@ EOF
 EXPECT=<<EOF
 Foo = struct anonymous struct 0
 Bar = struct anonymous struct 1
-pf "d a"
-pf "z[0]d hello world"
+pf "d4 a"
+pf "z[0]d4 hello world"
+EOF
+RUN
+
+NAME=td struct and union bitfields
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e cfg.bigendian=false
+td "struct qwe { int a:4; int b:16; int c:3; };"
+tcd qwe
+ts qwe
+td "union uu { int a:4; int b:16; };"
+tcd uu
+ts uu
+wx 45230100 @ 0
+tp qwe @ 0
+EOF
+EXPECT=<<EOF
+struct qwe { int a : 4; int b : 16; int c : 3; };
+pf ":4<:16<:3< a b c"
+union uu { int a : 4; int b : 16; };
+pf "0:4<:16< a b"
+0x00000000 : a = 5 (4-bit)
+0x00000000 : b = 4660 (16-bit)
+0x00000002 : c = 0 (3-bit)
 EOF
 RUN
 
@@ -35,11 +60,11 @@ EOF
 EXPECT=<<EOF
             0x00000000      4157           push  r15
 (short bla)
- short : 0x00000002 = 0x5641
+0x00000002 : short = 0x5641 [LE]
             0x00000004      4155           push  r13
             0x00000006      4154           push  r12
 (int foo)
- int : 0x00000008 = 1442089289
+0x00000008 : int = 1442089289 [LE]
             0x0000000c      53             push  rbx
             0x0000000d      89fd           mov   ebp, edi
             0x0000000f      4881eca80300.  sub   rsp, 0x3a8
@@ -60,10 +85,10 @@ pd 3
 EOF
 EXPECT=<<EOF
 (VbHeader vbb)
-     szVbMagic : 0x00000000 = [ 'H', 'e', 'l', 'l' ]
- wRuntimeBuild : 0x00000004 = 0x1234
-     szLangDll : 0x00000006 = [ 'H', 'e', 'l', 'l', 'o', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
-  szSecLangDll : 0x00000014 = [ 'H', 'e', 'l', 'l', 'o', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
+0x00000000 :     szVbMagic = [ 'H', 'e', 'l', 'l' ]
+0x00000004 : wRuntimeBuild = 0x1234 [LE]
+0x00000006 :     szLangDll = [ 'H', 'e', 'l', 'l', 'o', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
+0x00000014 :  szSecLangDll = [ 'H', 'e', 'l', 'l', 'o', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
             0x00000022      90             nop
             0x00000023      90             nop
 EOF
@@ -211,23 +236,23 @@ t void
 EOF
 EXPECT=<<EOF
 pf "c char"
-pf "F double"
-pf "F long double"
-pf "f float"
-pf "d int"
-pf "w short"
-pf "q long"
-pf "q long long"
-pf "q size_t"
-pf "q uid_t"
-pf "b int8_t"
-pf "b uint8_t"
-pf "w int16_t"
-pf "w uint16_t"
-pf "d int32_t"
-pf "d uint32_t"
-pf "q int64_t"
-pf "q uint64_t"
+pf "F8 double"
+pf "F8 long double"
+pf "f4 float"
+pf "d4 int"
+pf "x2 short"
+pf "x8 long"
+pf "x8 long long"
+pf "x8 size_t"
+pf "x8 uid_t"
+pf "x1 int8_t"
+pf "x1 uint8_t"
+pf "x2 int16_t"
+pf "x2 uint16_t"
+pf "d4 int32_t"
+pf "d4 uint32_t"
+pf "x8 int64_t"
+pf "x8 uint64_t"
 pf "c char16_t"
 EOF
 RUN
@@ -240,7 +265,7 @@ t-*
 t int
 EOF
 EXPECT=<<EOF
-pf "d int"
+pf "d4 int"
 EOF
 EXPECT_ERR=<<EOF
 ERROR: core: cannot find 'int' type's format
@@ -285,7 +310,7 @@ tu xoo
 tuc xoo
 EOF
 EXPECT=<<EOF
-pf "0ddd x y z"
+pf "0d4d4d4 x y z"
 union xoo {
 	int x;
 	int y;
@@ -313,11 +338,11 @@ te bar
 tec bar
 EOF
 EXPECT=<<EOF
-pf "0i b"
+pf "0d4 b"
 union bla {
 	uint b;
 };
-pf "i[5]*c b foo"
+pf "d4[5]*c b foo"
 struct foo {
 	uint b;
 	char *foo[5];
@@ -386,7 +411,7 @@ EOF
 EXPECT=<<EOF
 const_reference = struct const_reference_0
 typedef struct const_reference_0 const_reference;
-pf "d a"
+pf "d4 a"
 const_reference;
 struct const_reference_0 {
 	int a;
@@ -500,9 +525,9 @@ ts test_struct2
 tsd test_struct2
 EOF
 EXPECT=<<EOF
-pf "dd x y"
+pf "d4d4 x y"
 struct test_struct { int x; int y; };
-pf "w[5]ww[10]wd a (word)b c (word)d e"
+pf "x2[5]x2x2[10]x2d4 a (word)b c (word)d e"
 struct test_struct2 { word a; word b[5]; word c; word d[10]; dword e; };
 EOF
 RUN
@@ -515,7 +540,7 @@ ts test_struct
 tsd test_struct
 EOF
 EXPECT=<<EOF
-pf "dd x y"
+pf "d4d4 x y"
 struct test_struct { int x; int y; };
 EOF
 RUN
@@ -586,41 +611,55 @@ tec v
 te v
 te v 0x123
 te v 0x321
+EOF
+EXPECT=<<EOF
+enum v : int { t = 0x123, p = 0x321 };
+enum v : int {
+	t = 0x123,
+	p = 0x321
+};
+enum v : int {
+	t = 0x123,
+	p = 0x321
+};
+t = 0x123
+p = 0x321
+t
+p
+EOF
+RUN
+
+NAME=enhanced enum with long long underlying type
+BROKEN=1
+FILE==
+CMDS=<<EOF
 td "enum w : long long { t=0x123, p=0x321 };"
 tcd w
 tc w
-tec w
-te w
-te w 0x123
-te w 0x321
 EOF
 EXPECT=<<EOF
-enum v { t = 0x123, p = 0x321 };
-enum v {
+enum w : long long { t = 0x123, p = 0x321 };
+enum w : long long {
 	t = 0x123,
 	p = 0x321
 };
-enum v {
-	t = 0x123,
-	p = 0x321
+EOF
+RUN
+
+NAME=enhanced enum with unsigned int underlying type
+BROKEN=1
+FILE==
+CMDS=<<EOF
+td "enum ui : unsigned int { a=1, b=2 };"
+tcd ui
+tc ui
+EOF
+EXPECT=<<EOF
+enum ui : unsigned int { a = 0x1, b = 0x2 };
+enum ui : unsigned int {
+	a = 0x1,
+	b = 0x2
 };
-t = 0x123
-p = 0x321
-t
-p
-enum w { t = 0x123, p = 0x321 };
-enum w {
-	t = 0x123,
-	p = 0x321
-};
-enum w {
-	t = 0x123,
-	p = 0x321
-};
-t = 0x123
-p = 0x321
-t
-p
 EOF
 RUN
 
@@ -704,14 +743,14 @@ struct name {
 	char middle[40];
 	char last[40];
 };
-pf "bbw day month year"
+pf "x1x1x2 day month year"
 struct date { uint8_t day; uint8_t month; uint16_t year; };
 struct date {
 	uint8_t day;
 	uint8_t month;
 	uint16_t year;
 };
-pf "[127]c[40]cd street city zip"
+pf "[127]c[40]cd4 street city zip"
 struct addr { char street[127]; char city[40]; uint32_t zip; };
 struct addr {
 	char street[127];
@@ -743,7 +782,7 @@ tu x
 tuc x
 EOF
 EXPECT=<<EOF
-pf "0fd a b"
+pf "0f4d4 a b"
 union x {
 	float a;
 	int b;
@@ -772,12 +811,12 @@ ts foo
 .ts foo
 EOF
 EXPECT=<<EOF
-pf "d? x (bar)moo"
-   x : 0x00000000 = 0
- moo : 
-                struct<bar>
-   a : 0x00000004 = 0
-   b : 0x00000008 = 0
+pf "d4? x (bar)moo"
+0x00000000 :   x = 0 [LE]
+0x00000004 : moo = struct<bar> {
+   0x00000004 : a = 0 [LE]
+   0x00000008 : b = 0 [LE]
+}
 EOF
 RUN
 
@@ -790,18 +829,14 @@ ts foo
 .ts foo
 EOF
 EXPECT=<<EOF
-pf "d[2]? x (bar)moo"
-   x : 0x00000000 = 0
- moo : 
-[
-                struct<bar>
-   a : 0x00000004 = 0
-   b : 0x00000008 = 0
-
-                struct<bar>
-   a : 0x0000000c = 0
-   b : 0x00000010 = 0
-]
+pf "d4[2]? x (bar)moo"
+0x00000000 :   x = 0 [LE]
+0x00000004 : moo = struct<bar> {
+   0x00000004 : a = 0 [LE]
+   0x00000008 : b = 0 [LE]
+   0x0000000c : a = 0 [LE]
+   0x00000010 : b = 0 [LE]
+}
 EOF
 RUN
 
@@ -854,10 +889,10 @@ tp person @ 10
 tp person 10
 EOF
 EXPECT=<<EOF
-  age : 0x0000000a = 19
- name : 0x0000000e = [ 'C', 'a', 'r', 'l', 'o', 's', '.', '.', '.', '.' ]
-  age : 0x0000000a = 19
- name : 0x0000000e = [ 'C', 'a', 'r', 'l', 'o', 's', '.', '.', '.', '.' ]
+0x0000000a :  age = 19 [LE]
+0x0000000e : name = [ 'C', 'a', 'r', 'l', 'o', 's', '.', '.', '.', '.' ]
+0x0000000a :  age = 19 [LE]
+0x0000000e : name = [ 'C', 'a', 'r', 'l', 'o', 's', '.', '.', '.', '.' ]
 EOF
 RUN
 
@@ -885,33 +920,33 @@ t simple
 tp simple @ 0
 EOF
 EXPECT=<<EOF
-pf "0ddf a b c"
- a : 0x00000000 = 11206419
- b : 0x00000000 = 11206419
- c : 0x00000000 = 1.57035377e-38
+pf "0d4d4f4 a b c"
+0x00000000 : a = 11206419 [LE]
+0x00000000 : b = 11206419 [LE]
+0x00000000 : c = 1.57035377e-38 [LE]
 pf "?z (poo)q p"
- q : 
-                 union<poo>
-   a : 0x00000000 = 11206419
-   b : 0x00000000 = 11206419
-   c : 0x00000000 = (qword)0x0000000000aaff13
- p : 0x00000008 = "Carlossssssssssssssssssssssssssssss"
-pf "d?p a (moo)f goo"
-   a : 0x00000000 = 11206419
-   f : 
-                 union<moo>
-   t : 0x00000004 = 0
-   b : 0x00000004 = '.'
-   c : 0x00000004 = (qword)0x6c72614300000000
- goo : 0x0000000c = (qword)0x737373737373736f
+0x00000000 : q = struct<poo> {
+   0x00000000 : a = 11206419 [LE]
+   0x00000000 : b = 11206419 [LE]
+   0x00000000 : c = 0x0000000000aaff13 [LE]
+}
+0x00000008 : p = "Carlossssssssssssssssssssssssssssss"
+pf "d4?p a (moo)f goo"
+0x00000000 :   a = 11206419 [LE]
+0x00000004 :   f = struct<moo> {
+   0x00000004 : t = 0 [LE]
+   0x00000004 : b = '.'
+   0x00000004 : c = 0x6c72614300000000 [LE]
+}
+0x0000000c : goo = 0x737373737373736f
 pf "?ppp (y)g val_4 val_5 val_6"
-     g : 
-                 union<y>
-   a : 0x00000000 = 11206419
-   b : 0x00000000 = 11206419
- val_4 : 0x00000004 = (qword)0x6c72614300000000
- val_5 : 0x0000000c = (qword)0x737373737373736f
- val_6 : 0x00000014 = (qword)0x7373737373737373
+0x00000000 :     g = struct<y> {
+   0x00000000 : a = 11206419 [LE]
+   0x00000000 : b = 11206419 [LE]
+}
+0x00000004 : val_4 = 0x6c72614300000000
+0x0000000c : val_5 = 0x737373737373736f
+0x00000014 : val_6 = 0x7373737373737373
 EOF
 RUN
 
@@ -927,14 +962,14 @@ b 16
 tp foobar
 EOF
 EXPECT=<<EOF
- a : 0x00000000 = 175704697
- b : 0x00000004 = 175704697
- c : 0x00000008 = 175704697
- d : 0x0000000c = 175704697
- a : 0x00000000 = 175704697
- b : 0x00000004 = 175704697
- c : 0x00000008 = 175704697
- d : 0x0000000c = 175704697
+0x00000000 : a = 175704697 [LE]
+0x00000004 : b = 175704697 [LE]
+0x00000008 : c = 175704697 [LE]
+0x0000000c : d = 175704697 [LE]
+0x00000000 : a = 175704697 [LE]
+0x00000004 : b = 175704697 [LE]
+0x00000008 : c = 175704697 [LE]
+0x0000000c : d = 175704697 [LE]
 EOF
 RUN
 
@@ -992,78 +1027,78 @@ tpv s32ui 0xcafebabecafebabe
 tpv s32iu 0xcafebabecafebabe
 EOF
 EXPECT=<<EOF
- a_u : 0x00000000 = 0xbabe
- b_i : 0x00000002 = 0x0000
- c_u : 0x00000004 = 0x0000
- d_i : 0x00000006 = 0x0000
- a_i : 0x00000000 = 0xbabe
- b_u : 0x00000002 = 0x0000
- c_i : 0x00000004 = 0x0000
- d_u : 0x00000006 = 0x0000
- e_u : 0x00000000 = 3133014016
- f_i : 0x00000004 = 0x0000
- e_i : 0x00000000 = 3133014016
- f_u : 0x00000004 = 0x0000
- a_u : 0x00000000 = 0xbabe
- b_i : 0x00000002 = 0x0000
- c_u : 0x00000004 = 0x0000
- d_i : 0x00000006 = 0x0000
- a_i : 0x00000000 = 0xbabe
- b_u : 0x00000002 = 0x0000
- c_i : 0x00000004 = 0x0000
- d_u : 0x00000006 = 0x0000
- e_u : 0x00000000 = 47806
- f_i : 0x00000004 = 0x0000
- e_i : 0x00000000 = 47806
- f_u : 0x00000004 = 0x0000
- a_u : 0x00000000 = 0xcafe
- b_i : 0x00000002 = 0xbabe
- c_u : 0x00000004 = 0x0000
- d_i : 0x00000006 = 0x0000
- a_i : 0x00000000 = 0xcafe
- b_u : 0x00000002 = 0xbabe
- c_i : 0x00000004 = 0x0000
- d_u : 0x00000006 = 0x0000
- e_u : 0x00000000 = 3405691582
- f_i : 0x00000004 = 0x0000
- e_i : 0x00000000 = 3405691582
- f_u : 0x00000004 = 0x0000
- a_u : 0x00000000 = 0xbabe
- b_i : 0x00000002 = 0xcafe
- c_u : 0x00000004 = 0x0000
- d_i : 0x00000006 = 0x0000
- a_i : 0x00000000 = 0xbabe
- b_u : 0x00000002 = 0xcafe
- c_i : 0x00000004 = 0x0000
- d_u : 0x00000006 = 0x0000
- e_u : 0x00000000 = 3405691582
- f_i : 0x00000004 = 0x0000
- e_i : 0x00000000 = 3405691582
- f_u : 0x00000004 = 0x0000
- a_u : 0x00000000 = 0xcafe
- b_i : 0x00000002 = 0xbabe
- c_u : 0x00000004 = 0xcafe
- d_i : 0x00000006 = 0xbabe
- a_i : 0x00000000 = 0xcafe
- b_u : 0x00000002 = 0xbabe
- c_i : 0x00000004 = 0xcafe
- d_u : 0x00000006 = 0xbabe
- e_u : 0x00000000 = 3405691582
- f_i : 0x00000004 = 0xcafe
- e_i : 0x00000000 = 3405691582
- f_u : 0x00000004 = 0xcafe
- a_u : 0x00000000 = 0xbabe
- b_i : 0x00000002 = 0xcafe
- c_u : 0x00000004 = 0xbabe
- d_i : 0x00000006 = 0xcafe
- a_i : 0x00000000 = 0xbabe
- b_u : 0x00000002 = 0xcafe
- c_i : 0x00000004 = 0xbabe
- d_u : 0x00000006 = 0xcafe
- e_u : 0x00000000 = 3405691582
- f_i : 0x00000004 = 0xbabe
- e_i : 0x00000000 = 3405691582
- f_u : 0x00000004 = 0xbabe
+0x00000000 : a_u = 0xbeba [LE]
+0x00000002 : b_i = 0x0000 [LE]
+0x00000004 : c_u = 0x0000 [LE]
+0x00000006 : d_i = 0x0000 [LE]
+0x00000000 : a_i = 0xbeba [LE]
+0x00000002 : b_u = 0x0000 [LE]
+0x00000004 : c_i = 0x0000 [LE]
+0x00000006 : d_u = 0x0000 [LE]
+0x00000000 : e_u = 48826 [LE]
+0x00000004 : f_i = 0x0000 [LE]
+0x00000000 : e_i = 48826 [LE]
+0x00000004 : f_u = 0x0000 [LE]
+0x00000000 : a_u = 0xbabe [LE]
+0x00000002 : b_i = 0x0000 [LE]
+0x00000004 : c_u = 0x0000 [LE]
+0x00000006 : d_i = 0x0000 [LE]
+0x00000000 : a_i = 0xbabe [LE]
+0x00000002 : b_u = 0x0000 [LE]
+0x00000004 : c_i = 0x0000 [LE]
+0x00000006 : d_u = 0x0000 [LE]
+0x00000000 : e_u = 47806 [LE]
+0x00000004 : f_i = 0x0000 [LE]
+0x00000000 : e_i = 47806 [LE]
+0x00000004 : f_u = 0x0000 [LE]
+0x00000000 : a_u = 0xfeca [LE]
+0x00000002 : b_i = 0xbeba [LE]
+0x00000004 : c_u = 0x0000 [LE]
+0x00000006 : d_i = 0x0000 [LE]
+0x00000000 : a_i = 0xfeca [LE]
+0x00000002 : b_u = 0xbeba [LE]
+0x00000004 : c_i = 0x0000 [LE]
+0x00000006 : d_u = 0x0000 [LE]
+0x00000000 : e_u = -1095041334 [LE]
+0x00000004 : f_i = 0x0000 [LE]
+0x00000000 : e_i = -1095041334 [LE]
+0x00000004 : f_u = 0x0000 [LE]
+0x00000000 : a_u = 0xbabe [LE]
+0x00000002 : b_i = 0xcafe [LE]
+0x00000004 : c_u = 0x0000 [LE]
+0x00000006 : d_i = 0x0000 [LE]
+0x00000000 : a_i = 0xbabe [LE]
+0x00000002 : b_u = 0xcafe [LE]
+0x00000004 : c_i = 0x0000 [LE]
+0x00000006 : d_u = 0x0000 [LE]
+0x00000000 : e_u = -889275714 [LE]
+0x00000004 : f_i = 0x0000 [LE]
+0x00000000 : e_i = -889275714 [LE]
+0x00000004 : f_u = 0x0000 [LE]
+0x00000000 : a_u = 0xfeca [LE]
+0x00000002 : b_i = 0xbeba [LE]
+0x00000004 : c_u = 0xfeca [LE]
+0x00000006 : d_i = 0xbeba [LE]
+0x00000000 : a_i = 0xfeca [LE]
+0x00000002 : b_u = 0xbeba [LE]
+0x00000004 : c_i = 0xfeca [LE]
+0x00000006 : d_u = 0xbeba [LE]
+0x00000000 : e_u = -1095041334 [LE]
+0x00000004 : f_i = 0xfeca [LE]
+0x00000000 : e_i = -1095041334 [LE]
+0x00000004 : f_u = 0xfeca [LE]
+0x00000000 : a_u = 0xbabe [LE]
+0x00000002 : b_i = 0xcafe [LE]
+0x00000004 : c_u = 0xbabe [LE]
+0x00000006 : d_i = 0xcafe [LE]
+0x00000000 : a_i = 0xbabe [LE]
+0x00000002 : b_u = 0xcafe [LE]
+0x00000004 : c_i = 0xbabe [LE]
+0x00000006 : d_u = 0xcafe [LE]
+0x00000000 : e_u = -889275714 [LE]
+0x00000004 : f_i = 0xbabe [LE]
+0x00000000 : e_i = -889275714 [LE]
+0x00000004 : f_u = 0xbabe [LE]
 EOF
 RUN
 
@@ -1079,9 +1114,9 @@ aecu 0x000006d5
 tp Books var_e8h
 EOF
 EXPECT=<<EOF
-   title : 0x00177f18 = [ 'R', 'a', 'd', 'a', 'r', 'e', '2', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
-  author : 0x00177f4a = [ 'p', 'a', 'n', 'c', 'a', 'k', 'e', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
- subject : 0x00177f7c = [ 'R', 'e', 'v', 'e', 'r', 's', 'i', 'n', 'g', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
+0x00177f18 :   title = [ 'R', 'a', 'd', 'a', 'r', 'e', '2', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
+0x00177f4a :  author = [ 'p', 'a', 'n', 'c', 'a', 'k', 'e', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
+0x00177f7c : subject = [ 'R', 'e', 'v', 'e', 'r', 's', 'i', 'n', 'g', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
 EOF
 RUN
 
@@ -1093,8 +1128,8 @@ td "struct foo {char* a; int b;}"
 tpx foo 41414141441414141414420010000000
 EOF
 EXPECT=<<EOF
- a : 0x00000000 = "AAAAD\x14\x14\x14\x14\x14B"
- b : 0x0000000c = 16
+0x00000000 : a = "AAAAD\x14\x14\x14\x14\x14B"
+0x0000000c : b = 16 [LE]
 EOF
 RUN
 
@@ -1192,10 +1227,10 @@ aat
 pdf~bar.
 EOF
 EXPECT=<<EOF
-|           0x00000007      488b5004       mov   rdx, qword [rax+bar.b]
-|           0x0000000b      488b4808       mov   rcx, qword [rax+bar.c]
-|           0x0000000f      483b5004       cmp   rdx, qword [rax+bar.b]
-|           0x0000001d      48895808       mov   qword [rax+bar.c], rbx
+| 0x00000007      488b5004       mov   rdx, qword [rax+bar.b]
+| 0x0000000b      488b4808       mov   rcx, qword [rax+bar.c]
+| 0x0000000f      483b5004       cmp   rdx, qword [rax+bar.b]
+| 0x0000001d      48895808       mov   qword [rax+bar.c], rbx
 EOF
 RUN
 
@@ -1216,10 +1251,10 @@ pdf~bar.
 EOF
 EXPECT=<<EOF
 
-|           0x00000007      488b5004       mov   rdx, qword [rax+bar.b]
-|           0x0000000b      488b4808       mov   rcx, qword [rax+bar.c]
-|           0x0000000f      483b5004       cmp   rdx, qword [rax+bar.b]
-|           0x0000001d      48895808       mov   qword [rax+bar.c], rbx
+| 0x00000007      488b5004       mov   rdx, qword [rax+bar.b]
+| 0x0000000b      488b4808       mov   rcx, qword [rax+bar.c]
+| 0x0000000f      483b5004       cmp   rdx, qword [rax+bar.b]
+| 0x0000001d      48895808       mov   qword [rax+bar.c], rbx
 EOF
 RUN
 
@@ -1266,15 +1301,15 @@ aat main
 pdf~Books
 EOF
 EXPECT=<<EOF
-|           ; var struct Books Books @ stack - 0xe8
-|           0x00000684      488d8520ffff.  lea   rax, qword [Books.title]
-|           0x00000695      488910         mov   qword [rax], rdx      ; Books.title[0]
-|           0x00000698      488d8520ffff.  lea   rax, qword [Books.title]
-|           0x000006ad      488908         mov   qword [rax], rcx      ; Books.author[0]
-|           0x000006b0      488d8520ffff.  lea   rax, qword [Books.title]
-|           0x000006c5      488930         mov   qword [rax], rsi      ; Books.subject[0]
-|           0x000006c8      66c740086700   mov   word [rax+Books.subject[8]], 0x67 ; 'g'
-|           0x000006d5      b800000000     mov   eax, 0x00             ; Books.subject[0]
+| ; var struct Books Books @ stack - 0xe8
+| 0x00000684      488d8520ffff.  lea   rax, qword [Books.title]
+| 0x00000695      488910         mov   qword [rax], rdx                ; Books.title[0]
+| 0x00000698      488d8520ffff.  lea   rax, qword [Books.title]
+| 0x000006ad      488908         mov   qword [rax], rcx                ; Books.author[0]
+| 0x000006b0      488d8520ffff.  lea   rax, qword [Books.title]
+| 0x000006c5      488930         mov   qword [rax], rsi                ; Books.subject[0]
+| 0x000006c8      66c740086700   mov   word [rax+Books.subject[8]], 0x67 ; 'g'
+| 0x000006d5      b800000000     mov   eax, 0x00                       ; Books.subject[0]
 EOF
 RUN
 
@@ -1374,26 +1409,26 @@ tsc boo
 #tsc moo
 EOF
 EXPECT=<<EOF
-pf "dpz x (fp)fp b"
+pf "d4pz x (fp)fp b"
 struct foo { int x; int (*fp)(int a, int b); char *b; };
 struct foo {
 	int x;
 	int (*fp)(int a, int b);
 	char *b;
 };
-  x : 0x00000000 = 0
-(fp)fp : 0x00000004 = (qword)0x0000000000000000
-  b : 0x0000000c = "\x05hello"
-pf "dpz x (ffp)ffp b"
+0x00000000 :  x = 0 [LE]
+0x00000004 : fp = 0x0
+0x0000000c :  b = "\x05hello"
+pf "d4pz x (ffp)ffp b"
 struct boo { int x; int (***ffp)(int a, int b); char *b; };
 struct boo {
 	int x;
 	int (***ffp)(int a, int b);
 	char *b;
 };
-   x : 0x00000000 = 0
-(ffp)ffp : 0x00000004 = (qword)0x0000000000000000
-   b : 0x0000000c = "\x05hello"
+0x00000000 :   x = 0 [LE]
+0x00000004 : ffp = 0x0
+0x0000000c :   b = "\x05hello"
 EOF
 RUN
 
@@ -1406,7 +1441,7 @@ ts normal
 ts pointer
 EOF
 EXPECT=<<EOF
-pf "dc a b"
+pf "d4c a b"
 pf "z*? y (normal)obj"
 EOF
 RUN
@@ -1557,8 +1592,8 @@ tt B
 tt O
 EOF
 EXPECT=<<EOF
-pf "f num"
-pf "dF num num2"
+pf "f4 num"
+pf "d4F8 num num2"
 pf "c ch"
 ----
 struct A {
@@ -1594,9 +1629,9 @@ tsc "anonymous struct 0"
 tsc "anonymous struct 1"
 EOF
 EXPECT=<<EOF
-pf "f num"
+pf "f4 num"
 pf "c ch"
-pf "f num"
+pf "f4 num"
 pf "c ch"
 typedef struct anonymous struct 0 A;
 typedef struct anonymous struct 1 B;
@@ -1886,7 +1921,7 @@ afvl~var_30h
 EOF
 EXPECT=<<EOF
 var int var_3ch @ stack - 0x3c
-var int64_t var_38h @ stack - 0x38
+var int64_t var_38h  { > 0x0} @ stack - 0x38
 var unsigned long var_30h @ stack - 0x30
 EOF
 RUN
@@ -1900,7 +1935,8 @@ s main
 afvl
 EOF
 EXPECT=<<EOF
-var void *va_args @ stack - 0x3c
+var int var_3ch @ stack - 0x3c
+var unsigned long var_38h @ stack - 0x38
 var unsigned long var_34h @ stack - 0x34
 var FILE *stream @ stack - 0x30
 var const char *s @ stack - 0x28
@@ -1938,7 +1974,7 @@ var char **var_14e8h @ stack - 0x14e8
 var int var_14dch @ stack - 0x14dc
 var int *wstatus @ stack - 0x14d4
 var int64_t var_14cch @ stack - 0x14cc
-var int64_t var_14c8h @ stack - 0x14c8
+var int64_t var_14c8h  { <= 0x1} @ stack - 0x14c8
 var int64_t var_14c4h @ stack - 0x14c4
 var unsigned long pid @ stack - 0x14c0
 var unsigned long var_14bch @ stack - 0x14bc
@@ -1959,7 +1995,7 @@ arg int argc @ rdi
 arg char **argv @ rsi
 var char *str @ stack - 0xb8
 var int_fast64_t var_ach @ stack - 0xac
-var int64_t var_a8h @ stack - 0xa8
+var int64_t var_a8h  { <= 0x0} @ stack - 0xa8
 var unsigned long var_a4h @ stack - 0xa4
 var int var_a0h @ stack - 0xa0
 var int var_9ch @ stack - 0x9c
@@ -2035,7 +2071,7 @@ afvl
 EOF
 EXPECT=<<EOF
 var int64_t var_2dh @ stack - 0x2d
-var int64_t var_2ch @ stack - 0x2c
+var int64_t var_2ch  { > 0x9} @ stack - 0x2c
 var unsigned int var_28h @ stack - 0x28
 var int64_t var_24h @ stack - 0x24
 var const char *var_20h @ stack - 0x20
@@ -2079,10 +2115,10 @@ s sym.range_or
 pd 1~ch
 EOF
 EXPECT=<<EOF
-|           ; var int64_t var_ch  { > 0xa} @ stack - 0xc
-|           ; var int64_t var_1ch  { > 0x0 && <= 0x9} @ stack - 0x1c
-|           ; var int64_t var_ch  { > 0x64 && <= 0xc7} @ stack - 0xc
-|           ; var int64_t var_ch  { > 0xff && <= 0x12b || > 0x14 && <= 0x31 || > 0x6f && <= 0xdd} @ stack - 0xc
+| ; var int64_t var_ch  { > 0xa} @ stack - 0xc
+| ; var int64_t var_1ch  { > 0x0 && <= 0x9} @ stack - 0x1c
+| ; var int64_t var_ch  { > 0x64 && <= 0xc7} @ stack - 0xc
+| ; var int64_t var_ch  { > 0xff && <= 0x12b || > 0x14 && <= 0x31 || > 0x6f && <= 0xdd} @ stack - 0xc
 EOF
 RUN
 
@@ -2117,7 +2153,7 @@ td "struct s1 { int a; int size; int b; };"
 ts s1
 EOF
 EXPECT=<<EOF
-pf "ddd a size b"
+pf "d4d4d4 a size b"
 EOF
 RUN
 
@@ -2269,8 +2305,8 @@ tu foo
 t foo
 EOF
 EXPECT=<<EOF
-pf "0dc a b"
-pf "0dc a b"
+pf "0d4c a b"
+pf "0d4c a b"
 EOF
 RUN
 
@@ -2287,9 +2323,9 @@ pd 1
 EOF
 EXPECT=<<EOF
 (foo goo)
- a : 0x00000000 = 4000
- b : 0x00000004 = 8000
- c : 0x00000008 = (qword)0x8000000000000008
+0x00000000 : a = 4000 [LE]
+0x00000004 : b = 8000 [LE]
+0x00000008 : c = 0x8000000000000008 [LE]
 EOF
 RUN
 
@@ -2342,6 +2378,19 @@ fcn.0000c0f0
 =
 fcn.00011b90
 fcn.00014d50
+EOF
+RUN
+
+NAME=tx on enum type
+FILE=bins/elf/ioli/crackme0x00
+CMDS=<<EOF
+td "enum myenum { A=0, B=1 };"
+af @ main
+afs int main(enum myenum e) @ main
+tx myenum
+EOF
+EXPECT=<<EOF
+main
 EOF
 RUN
 
@@ -2427,8 +2476,8 @@ void AVIFileExit();
 HRESULT AVIFileInfoA(unknown_t pfile, unknown_t pfi, LONG lSize);
 HRESULT AVIFileInfoW(unknown_t pfile, unknown_t pfi, LONG lSize);
 void AVIFileInit();
-HRESULT AVIFileOpenA(unknown_t *ppfile, LPCSTR szFile, UINT mode, unknown_t pclsidHandler);
-HRESULT AVIFileOpenW(unknown_t *ppfile, LPCWSTR szFile, UINT mode, unknown_t pclsidHandler);
+HRESULT AVIFileOpenA(unknown_t *ppfile, LPCSTR szFile, UINT mode, CLSID pclsidHandler);
+HRESULT AVIFileOpenW(unknown_t *ppfile, LPCWSTR szFile, UINT mode, CLSID pclsidHandler);
 ULONG AVIFileRelease();
 int AbortDoc();
 BOOL AbortPath();
@@ -2530,7 +2579,7 @@ BOOL AreDpiAwarenessContextsEqual(DPI_AWARENESS_CONTEXT dpiContextA, DPI_AWARENE
 BOOL AreFileApisANSI();
 UINT ArrangeIconicWindows(HWND hWnd);
 BOOL AssignProcessToJobObject(HANDLE hJob, HANDLE hProcess);
-HRESULT AssocCreate(unknown_t clsid, REFIID riid, void **ppv);
+HRESULT AssocCreate(CLSID clsid, REFIID riid, void **ppv);
 HRESULT AssocCreateForClasses(unknown_t *rgClasses, ULONG cClasses, REFIID riid, void **ppv);
 HRESULT AssocGetPerceivedType(PCWSTR pszExt, unknown_t *ptype, unknown_t *pflag, PWSTR *ppszType);
 BOOL AssocIsDangerous(PCWSTR pszAssoc);
@@ -2616,7 +2665,7 @@ long BroadcastSystemMessageA(DWORD flags, LPDWORD lpInfo, UINT Msg, WPARAM wPara
 long BroadcastSystemMessageExA(DWORD flags, LPDWORD lpInfo, UINT Msg, WPARAM wParam, LPARAM lParam, PBSMINFO pbsmInfo);
 long BroadcastSystemMessageExW(DWORD flags, LPDWORD lpInfo, UINT Msg, WPARAM wParam, LPARAM lParam, PBSMINFO pbsmInfo);
 long BroadcastSystemMessageW(DWORD flags, LPDWORD lpInfo, UINT Msg, WPARAM wParam, LPARAM lParam);
-HRESULT BstrFromVector(unknown_t *psa, BSTR *pbstr);
+HRESULT BstrFromVector(SAFEARRAY *psa, BSTR *pbstr);
 BOOL BuildCommDCBA(LPCSTR lpDef, LPDCB lpDCB);
 BOOL BuildCommDCBAndTimeoutsA(LPCSTR lpDef, LPDCB lpDCB, LPCOMMTIMEOUTS lpCommTimeouts);
 BOOL BuildCommDCBAndTimeoutsW(LPCWSTR lpDef, LPDCB lpDCB, LPCOMMTIMEOUTS lpCommTimeouts);
@@ -3080,15 +3129,15 @@ BOOL CloseWindow(HWND hWnd);
 BOOL CloseWindowStation(HWINSTA hWinSta);
 ULONG CoAddRefServerProcess();
 HRESULT CoAllowSetForegroundWindow(IUnknown *pUnk, LPVOID lpvReserved);
-HRESULT CoAllowUnmarshalerCLSID(unknown_t clsid);
+HRESULT CoAllowUnmarshalerCLSID(REFCLSID clsid);
 DWORD CoBuildVersion();
 HRESULT CoCancelCall(DWORD dwThreadId, ULONG ulTimeout);
 HRESULT CoCopyProxy(IUnknown *pProxy, IUnknown **ppCopy);
 HRESULT CoCreateFreeThreadedMarshaler(LPUNKNOWN punkOuter, LPUNKNOWN *ppunkMarshal);
 HRESULT CoCreateGuid(GUID *pguid);
-HRESULT CoCreateInstance(unknown_t rclsid, LPUNKNOWN pUnkOuter, DWORD dwClsContext, REFIID riid, LPVOID *ppv);
-HRESULT CoCreateInstanceEx(unknown_t Clsid, IUnknown *punkOuter, DWORD dwClsCtx, unknown_t *pServerInfo, DWORD dwCount, unknown_t *pResults);
-HRESULT CoCreateInstanceFromApp(unknown_t Clsid, IUnknown *punkOuter, DWORD dwClsCtx, PVOID reserved, DWORD dwCount, unknown_t *pResults);
+HRESULT CoCreateInstance(REFCLSID rclsid, LPUNKNOWN pUnkOuter, DWORD dwClsContext, REFIID riid, LPVOID *ppv);
+HRESULT CoCreateInstanceEx(REFCLSID Clsid, IUnknown *punkOuter, DWORD dwClsCtx, unknown_t *pServerInfo, DWORD dwCount, unknown_t *pResults);
+HRESULT CoCreateInstanceFromApp(REFCLSID Clsid, IUnknown *punkOuter, DWORD dwClsCtx, PVOID reserved, DWORD dwCount, unknown_t *pResults);
 HRESULT CoCreateStandardMalloc(DWORD memctx, unknown_t **ppMalloc);
 HRESULT CoDecodeProxy(DWORD dwClientPid, UINT64 ui64ProxyAddress, PServerInformation pServerInformation);
 HRESULT CoDecrementMTAUsage(unknown_t Cookie);
@@ -3107,23 +3156,23 @@ HRESULT CoGetApartmentType(APTTYPE *pAptType, APTTYPEQUALIFIER *pAptQualifier);
 HRESULT CoGetCallContext(REFIID riid, void **ppInterface);
 HRESULT CoGetCallerTID(LPDWORD lpdwTID);
 HRESULT CoGetCancelObject(DWORD dwThreadId, REFIID iid, void **ppUnk);
-HRESULT CoGetClassObject(unknown_t rclsid, DWORD dwClsContext, LPVOID pvReserved, REFIID riid, LPVOID *ppv);
+HRESULT CoGetClassObject(REFCLSID rclsid, DWORD dwClsContext, LPVOID pvReserved, REFIID riid, LPVOID *ppv);
 HRESULT CoGetContextToken(ULONG_PTR *pToken);
 HRESULT CoGetCurrentLogicalThreadId(GUID *pguid);
 DWORD CoGetCurrentProcess();
 HRESULT CoGetDefaultContext(APTTYPE aptType, REFIID riid, void **ppv);
-HRESULT CoGetInstanceFromFile(unknown_t *pServerInfo, unknown_t *pClsid, IUnknown *punkOuter, DWORD dwClsCtx, DWORD grfMode, unknown_t *pwszName, DWORD dwCount, unknown_t *pResults);
-HRESULT CoGetInstanceFromIStorage(unknown_t *pServerInfo, unknown_t *pClsid, IUnknown *punkOuter, DWORD dwClsCtx, struct IStorage *pstg, DWORD dwCount, unknown_t *pResults);
+HRESULT CoGetInstanceFromFile(unknown_t *pServerInfo, CLSID *pClsid, IUnknown *punkOuter, DWORD dwClsCtx, DWORD grfMode, OLECHAR *pwszName, DWORD dwCount, unknown_t *pResults);
+HRESULT CoGetInstanceFromIStorage(unknown_t *pServerInfo, CLSID *pClsid, IUnknown *punkOuter, DWORD dwClsCtx, struct IStorage *pstg, DWORD dwCount, unknown_t *pResults);
 HRESULT CoGetInterfaceAndReleaseStream(LPSTREAM pStm, REFIID iid, LPVOID *ppv);
 HRESULT CoGetMalloc(DWORD dwMemContext, LPMALLOC *ppMalloc);
 HRESULT CoGetMarshalSizeMax(ULONG *pulSize, REFIID riid, LPUNKNOWN pUnk, DWORD dwDestContext, LPVOID pvDestContext, DWORD mshlflags);
 HRESULT CoGetObject(LPCWSTR pszName, unknown_t *pBindOptions, REFIID riid, void **ppv);
 HRESULT CoGetObjectContext(REFIID riid, LPVOID *ppv);
-HRESULT CoGetPSClsid(REFIID riid, unknown_t *pClsid);
+HRESULT CoGetPSClsid(REFIID riid, CLSID *pClsid);
 HRESULT CoGetStandardMarshal(REFIID riid, LPUNKNOWN pUnk, DWORD dwDestContext, LPVOID pvDestContext, DWORD mshlflags, LPMARSHAL *ppMarshal);
 HRESULT CoGetStdMarshalEx(LPUNKNOWN pUnkOuter, DWORD smexflags, LPUNKNOWN *ppUnkInner);
 HRESULT CoGetSystemSecurityPermissions(unknown_t comSDType, PSECURITY_DESCRIPTOR *ppSD);
-HRESULT CoGetTreatAsClass(unknown_t clsidOld, LPCLSID pClsidNew);
+HRESULT CoGetTreatAsClass(REFCLSID clsidOld, LPCLSID pClsidNew);
 HRESULT CoImpersonateClient();
 HRESULT CoIncrementMTAUsage(unknown_t *pCookie);
 HRESULT CoInitialize(LPVOID pvReserved);
@@ -3132,7 +3181,7 @@ HRESULT CoInitializeSecurity(PSECURITY_DESCRIPTOR pSecDesc, LONG cAuthSvc, unkno
 HRESULT CoInstall(unknown_t *pbc, DWORD dwFlags, unknown_t *pClassSpec, unknown_t *pQuery, LPWSTR pszCodeBase);
 HRESULT CoInvalidateRemoteMachineBindings(LPOLESTR pszMachineName);
 BOOL CoIsHandlerConnected(LPUNKNOWN pUnk);
-BOOL CoIsOle1Class(unknown_t rclsid);
+BOOL CoIsOle1Class(REFCLSID rclsid);
 HINSTANCE CoLoadLibrary(LPOLESTR lpszLibName, BOOL bAutoFree);
 HRESULT CoLockObjectExternal(LPUNKNOWN pUnk, BOOL fLock, BOOL fLastUnlockReleases);
 HRESULT CoMarshalHresult(LPSTREAM pstm, HRESULT hresult);
@@ -3143,11 +3192,11 @@ HRESULT CoQueryClientBlanket(DWORD *pAuthnSvc, DWORD *pAuthzSvc, LPOLESTR *pServ
 HRESULT CoQueryProxyBlanket(IUnknown *pProxy, DWORD *pwAuthnSvc, DWORD *pAuthzSvc, LPOLESTR *pServerPrincName, DWORD *pAuthnLevel, DWORD *pImpLevel, RPC_AUTH_IDENTITY_HANDLE *pAuthInfo, DWORD *pCapabilites);
 HRESULT CoRegisterActivationFilter(unknown_t *pActivationFilter);
 HRESULT CoRegisterChannelHook(REFGUID ExtensionUuid, unknown_t *pChannelHook);
-HRESULT CoRegisterClassObject(unknown_t rclsid, LPUNKNOWN pUnk, DWORD dwClsContext, DWORD flags, LPDWORD lpdwRegister);
+HRESULT CoRegisterClassObject(REFCLSID rclsid, LPUNKNOWN pUnk, DWORD dwClsContext, DWORD flags, LPDWORD lpdwRegister);
 HRESULT CoRegisterInitializeSpy(unknown_t *pSpy, ULARGE_INTEGER *puliCookie);
 HRESULT CoRegisterMallocSpy(unknown_t pMallocSpy);
 HRESULT CoRegisterMessageFilter(unknown_t lpMessageFilter, unknown_t *lplpMessageFilter);
-HRESULT CoRegisterPSClsid(REFIID riid, unknown_t rclsid);
+HRESULT CoRegisterPSClsid(REFIID riid, REFCLSID rclsid);
 HRESULT CoRegisterSurrogate(LPSURROGATE pSurrogate);
 HRESULT CoReleaseMarshalData(LPSTREAM pStm);
 ULONG CoReleaseServerProcess();
@@ -3157,14 +3206,14 @@ HRESULT CoRevokeClassObject(DWORD dwRegister);
 HRESULT CoRevokeInitializeSpy(ULARGE_INTEGER uliCookie);
 HRESULT CoRevokeMallocSpy();
 HRESULT CoSetCancelObject(IUnknown *pUnk);
-HRESULT CoSetProxyBlanket(IUnknown *pProxy, DWORD dwAuthnSvc, DWORD dwAuthzSvc, unknown_t *pServerPrincName, DWORD dwAuthnLevel, DWORD dwImpLevel, RPC_AUTH_IDENTITY_HANDLE pAuthInfo, DWORD dwCapabilities);
+HRESULT CoSetProxyBlanket(IUnknown *pProxy, DWORD dwAuthnSvc, DWORD dwAuthzSvc, OLECHAR *pServerPrincName, DWORD dwAuthnLevel, DWORD dwImpLevel, RPC_AUTH_IDENTITY_HANDLE pAuthInfo, DWORD dwCapabilities);
 HRESULT CoSuspendClassObjects();
 HRESULT CoSwitchCallContext(IUnknown *pNewObject, IUnknown **ppOldObject);
 LPVOID CoTaskMemAlloc(SIZE_T cb);
 void CoTaskMemFree(LPVOID pv);
 LPVOID CoTaskMemRealloc(LPVOID pv, SIZE_T cb);
 HRESULT CoTestCancel();
-HRESULT CoTreatAsClass(unknown_t clsidOld, unknown_t clsidNew);
+HRESULT CoTreatAsClass(REFCLSID clsidOld, REFCLSID clsidNew);
 void CoUninitialize();
 HRESULT CoUnmarshalHresult(LPSTREAM pstm, HRESULT *phresult);
 HRESULT CoUnmarshalInterface(LPSTREAM pStm, REFIID riid, LPVOID *ppv);
@@ -3239,14 +3288,14 @@ HANDLE CreateActCtxA(PCACTCTXA pActCtx);
 HANDLE CreateActCtxW(PCACTCTXW pActCtx);
 HRESULT CreateAntiMoniker(unknown_t *ppmk);
 HRESULT CreateAppContainerProfile(PCWSTR pszAppContainerName, PCWSTR pszDisplayName, PCWSTR pszDescription, PSID_AND_ATTRIBUTES pCapabilities, DWORD dwCapabilityCount, PSID *ppSidAppContainerSid);
-HRESULT CreateBindCtx(DWORD reserved, unknown_t *ppbc);
+HRESULT CreateBindCtx(DWORD reserved, LPBC *ppbc);
 HBITMAP CreateBitmap(int nWidth, int nHeight, UINT cPlanes, UINT cBitsPerPel, VOID *lpvBits);
 HBITMAP CreateBitmapIndirect();
 HANDLE CreateBoundaryDescriptorA(LPCSTR Name, ULONG Flags);
 HANDLE CreateBoundaryDescriptorW(LPCWSTR Name, ULONG Flags);
 HBRUSH CreateBrushIndirect();
 BOOL CreateCaret(HWND hWnd, HBITMAP hBitmap, int nWidth, int nHeight);
-HRESULT CreateClassMoniker(unknown_t rclsid, unknown_t *ppmk);
+HRESULT CreateClassMoniker(REFCLSID rclsid, unknown_t *ppmk);
 HCOLORSPACE CreateColorSpaceA();
 HCOLORSPACE CreateColorSpaceW();
 HBITMAP CreateCompatibleBitmap(HDC hdc, int nWidth, int nHeight);
@@ -3261,7 +3310,7 @@ HBRUSH CreateDIBPatternBrushPt(VOID *lpPackedDIB, unknown_t iUsage);
 HBITMAP CreateDIBSection(HDC hdc, BITMAPINFO *pbmi, UINT iUsage, VOID **ppvBits, HANDLE hSection, DWORD dwOffset);
 HBITMAP CreateDIBitmap(HDC hdc, unknown_t *lpbmih, unknown_t fdwInit, VOID *lpbInit, BITMAPINFO *lpbmi, unknown_t fuUsage);
 HRESULT CreateDataAdviseHolder(unknown_t *ppDAHolder);
-HRESULT CreateDataCache(LPUNKNOWN pUnkOuter, unknown_t rclsid, REFIID iid, LPVOID *ppv);
+HRESULT CreateDataCache(LPUNKNOWN pUnkOuter, REFCLSID rclsid, REFIID iid, LPVOID *ppv);
 BOOL CreateDecompressor(DWORD Algorithm, PCOMPRESS_ALLOCATION_ROUTINES AllocationRoutines, PDECOMPRESSOR_HANDLE DecompressorHandle);
 HDESK CreateDesktopA(LPCSTR lpszDesktop, LPCSTR lpszDevice, unknown_t *pDevmode, DWORD dwFlags, ACCESS_MASK dwDesiredAccess, LPSECURITY_ATTRIBUTES lpsa);
 HDESK CreateDesktopExA(LPCSTR lpszDesktop, LPCSTR lpszDevice, unknown_t *pDevmode, DWORD dwFlags, ACCESS_MASK dwDesiredAccess, LPSECURITY_ATTRIBUTES lpsa, ULONG ulHeapSize, PVOID pvoid);
@@ -3719,8 +3768,8 @@ HRESULT DispCallFunc(void *pvInstance, ULONG_PTR oVft, unknown_t cc, VARTYPE vtR
 HRESULT DispGetIDsOfNames(unknown_t *ptinfo, LPOLESTR *rgszNames, UINT cNames, unknown_t *rgdispid);
 HRESULT DispGetParam(unknown_t *pdispparams, UINT position, VARTYPE vtTarg, VARIANT *pvarResult, UINT *puArgErr);
 HRESULT DispInvoke(void *_this, unknown_t *ptinfo, unknown_t dispidMember, WORD wFlags, unknown_t *pparams, VARIANT *pvarResult, unknown_t *pexcepinfo, UINT *puArgErr);
-LRESULT DispatchMessageA(unknown_t *lpMsg);
-LRESULT DispatchMessageW(unknown_t *lpMsg);
+LRESULT DispatchMessageA(MSG *lpMsg);
+LRESULT DispatchMessageW(MSG *lpMsg);
 LONG DisplayConfigGetDeviceInfo(unknown_t *requestPacket);
 LONG DisplayConfigSetDeviceInfo(unknown_t *setPacket);
 int DlgDirListA(HWND hDlg, LPSTR lpPathSpec, int nIDListBox, int nIDStaticPath, UINT uFileType);
@@ -3732,7 +3781,7 @@ BOOL DlgDirSelectComboBoxExW(HWND hwndDlg, LPWSTR lpString, int cchOut, int idCo
 BOOL DlgDirSelectExA(HWND hwndDlg, LPSTR lpString, int chCount, int idListBox);
 BOOL DlgDirSelectExW(HWND hwndDlg, LPWSTR lpString, int chCount, int idListBox);
 HRESULT DllCanUnloadNow();
-HRESULT DllGetClassObject(unknown_t rclsid, REFIID riid, LPVOID *ppv);
+HRESULT DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv);
 HRESULT DllInstall(BOOL bInstall, PCWSTR pszCmdLine);
 HRESULT DllRegisterServer();
 HRESULT DllUnregisterServer();
@@ -4106,7 +4155,7 @@ HRESULT GetAcceptLanguagesA(LPSTR pszLanguages, DWORD *pcchLanguages);
 HRESULT GetAcceptLanguagesW(LPWSTR pszLanguages, DWORD *pcchLanguages);
 BOOL GetAce(PACL pAcl, DWORD dwAceIndex, LPVOID *pAce);
 BOOL GetAclInformation(PACL pAcl, LPVOID pAclInformation, DWORD nAclInformationLength, ACL_INFORMATION_CLASS dwAclInformationClass);
-HRESULT GetActiveObject(unknown_t rclsid, void *pvReserved, IUnknown **ppunk);
+HRESULT GetActiveObject(REFCLSID rclsid, void *pvReserved, IUnknown **ppunk);
 DWORD GetActiveProcessorCount(WORD GroupNumber);
 WORD GetActiveProcessorGroupCount();
 HWND GetActiveWindow();
@@ -4171,7 +4220,7 @@ BOOL GetCharWidthI(HDC hdc, UINT giFirst, UINT cgi, LPWORD pgi, LPINT lpBuffer);
 BOOL GetCharWidthW(HDC hdc, UINT iFirstChar, UINT iLastChar, LPINT lpBuffer);
 long GetCharacterPlacementA(HDC hdc, LPCSTR lpString, int nCount, int nMaxExtent, unknown_t lpResults, unknown_t dwFlags);
 long GetCharacterPlacementW(HDC hdc, LPCWSTR lpString, int nCount, int nMaxExtent, unknown_t lpResults, unknown_t dwFlags);
-HRESULT GetClassFile(LPCOLESTR szFilename, unknown_t *pclsid);
+HRESULT GetClassFile(LPCOLESTR szFilename, CLSID *pclsid);
 HRESULT GetClassID();
 BOOL GetClassInfoA(HINSTANCE hInstance, LPCSTR lpClassName, LPWNDCLASSA lpWndClass);
 BOOL GetClassInfoExA(HINSTANCE hInstance, LPCSTR lpszClass, LPWNDCLASSEXA lpwcx);
@@ -4794,7 +4843,7 @@ BOOL GetUserProfileDirectoryA(HANDLE hToken, LPSTR lpProfileDir, LPDWORD lpcchSi
 BOOL GetUserProfileDirectoryW(HANDLE hToken, LPWSTR lpProfileDir, LPDWORD lpcchSize);
 DWORD GetVersion();
 BOOL GetVersionExA(LPOSVERSIONINFOA lpVersionInformation);
-BOOL GetVersionExW(unknown_t lpVersionInformation);
+BOOL GetVersionExW(LPOSVERSIONINFOW lpVersionInformation);
 HRESULT GetViewStatus();
 BOOL GetViewportExtEx(HDC hdc, LPSIZE lpSize);
 BOOL GetViewportOrgEx(HDC hdc, LPPOINT lpPoint);
@@ -5107,7 +5156,7 @@ int LCIDToLocaleName(LCID Locale, LPWSTR lpName, int cchName, DWORD dwFlags);
 int LCMapStringA(LCID Locale, DWORD dwMapFlags, LPCSTR lpSrcStr, int cchSrc, LPSTR lpDestStr, int cchDest);
 int LCMapStringEx(LPCWSTR lpLocaleName, DWORD dwMapFlags, LPCWSTR lpSrcStr, int cchSrc, LPWSTR lpDestStr, int cchDest, LPNLSVERSIONINFO lpVersionInformation, LPVOID lpReserved, LPARAM sortHandle);
 int LCMapStringW(LCID Locale, DWORD dwMapFlags, LPCWSTR lpSrcStr, int cchSrc, LPWSTR lpDestStr, int cchDest);
-ULONG LHashValOfNameSys(unknown_t syskind, LCID lcid, unknown_t *szName);
+ULONG LHashValOfNameSys(unknown_t syskind, LCID lcid, OLECHAR *szName);
 ULONG LHashValOfNameSysA(unknown_t syskind, LCID lcid, LPCSTR szName);
 BOOL LPtoDP(HDC hdc, LPPOINT lpPoints, int nCount);
 ULONG LdapGetLastError();
@@ -5236,7 +5285,7 @@ int MessageBoxIndirectW(unknown_t *lpmbp);
 int MessageBoxW(HWND hWnd, LPCWSTR lpText, LPCWSTR lpCaption, UINT uType);
 BOOL MiniDumpReadDumpStream(PVOID BaseOfDump, ULONG StreamNumber, PMINIDUMP_DIRECTORY *Dir, PVOID *StreamPointer, ULONG *StreamSize);
 BOOL MiniDumpWriteDump(HANDLE hProcess, DWORD ProcessId, HANDLE hFile, MINIDUMP_TYPE DumpType, unknown_t ExceptionParam, PMINIDUMP_USER_STREAM_INFORMATION UserStreamParam, PMINIDUMP_CALLBACK_INFORMATION CallbackParam);
-HRESULT MkParseDisplayName(unknown_t pbc, LPCOLESTR szUserName, ULONG *pchEaten, unknown_t *ppmk);
+HRESULT MkParseDisplayName(LPBC pbc, LPCOLESTR szUserName, ULONG *pchEaten, unknown_t *ppmk);
 BOOL ModifyMenuA(HMENU hMnu, UINT uPosition, UINT uFlags, UINT_PTR uIDNewItem, LPCSTR lpNewItem);
 BOOL ModifyMenuW(HMENU hMnu, UINT uPosition, UINT uFlags, UINT_PTR uIDNewItem, LPCWSTR lpNewItem);
 BOOL ModifyWorldTransform(HDC hdc, unknown_t *lpXform, DWORD iMode);
@@ -5606,7 +5655,7 @@ DWORD ProcessGroupPolicyCompleted(unknown_t extensionId, unknown_t pAsyncHandle,
 DWORD ProcessGroupPolicyCompletedEx(unknown_t extensionId, unknown_t pAsyncHandle, DWORD dwStatus, HRESULT RsopStatus);
 BOOL ProcessIdToSessionId(DWORD dwProcessId, DWORD *pSessionId);
 ULONG ProcessTrace(PTRACEHANDLE HandleArray, ULONG HandleCount, LPFILETIME StartTime, LPFILETIME EndTime);
-HRESULT ProgIDFromCLSID(unknown_t clsid, LPOLESTR *lplpszProgID);
+HRESULT ProgIDFromCLSID(REFCLSID clsid, LPOLESTR *lplpszProgID);
 HRESULT PropVariantClear(unknown_t *pvar);
 HRESULT PropVariantCopy(unknown_t *pvarDest, unknown_t *pvarSrc);
 BOOL PtInRect(RECT *lprc, POINT pt);
@@ -5786,7 +5835,7 @@ LSTATUS RegSetValueExW(HKEY hKey, LPCWSTR lpValueName, DWORD Reserved, DWORD dwT
 LSTATUS RegSetValueW(HKEY hKey, LPCWSTR lpSubKey, DWORD dwType, LPCWSTR lpData, DWORD cbData);
 LSTATUS RegUnLoadKeyA(HKEY hKey, LPCSTR lpSubKey);
 LSTATUS RegUnLoadKeyW(HKEY hKey, LPCWSTR lpSubKey);
-HRESULT RegisterActiveObject(IUnknown *punk, unknown_t rclsid, DWORD dwFlags, DWORD *pdwRegister);
+HRESULT RegisterActiveObject(IUnknown *punk, REFCLSID rclsid, DWORD dwFlags, DWORD *pdwRegister);
 HRESULT RegisterApplicationRecoveryCallback(APPLICATION_RECOVERY_CALLBACK pRecoveyCallback, PVOID pvParameter, DWORD dwPingInterval, DWORD dwFlags);
 HRESULT RegisterApplicationRestart(PCWSTR pwzCommandline, DWORD dwFlags);
 PVOID RegisterBadMemoryNotification(PBAD_MEMORY_CALLBACK_ROUTINE Callback);
@@ -5820,7 +5869,7 @@ BOOL RegisterTouchWindow(HWND hwnd, ULONG ulFlags);
 ULONG RegisterTraceGuidsA(WMIDPREQUEST RequestAddress, PVOID RequestContext, LPCGUID ControlGuid, ULONG GuidCount, PTRACE_GUID_REGISTRATION TraceGuidReg, LPCSTR MofImagePath, LPCSTR MofResourceName, PTRACEHANDLE RegistrationHandle);
 ULONG RegisterTraceGuidsW(WMIDPREQUEST RequestAddress, PVOID RequestContext, LPCGUID ControlGuid, ULONG GuidCount, PTRACE_GUID_REGISTRATION TraceGuidReg, LPCWSTR MofImagePath, LPCWSTR MofResourceName, PTRACEHANDLE RegistrationHandle);
 HRESULT RegisterTypeLib(unknown_t *ptlib, LPCOLESTR szFullPath, LPCOLESTR szHelpDir);
-HRESULT RegisterTypeLibForUser(unknown_t *ptlib, unknown_t *szFullPath, unknown_t *szHelpDir);
+HRESULT RegisterTypeLibForUser(unknown_t *ptlib, OLECHAR *szFullPath, OLECHAR *szHelpDir);
 BOOL RegisterWaitForSingleObject(PHANDLE phNewWaitObject, HANDLE hObject, WAITORTIMERCALLBACK Callback, PVOID Context, ULONG dwMilliseconds, ULONG dwFlags);
 UINT RegisterWindowMessageA(LPCSTR lpString);
 UINT RegisterWindowMessageW(LPCWSTR lpString);
@@ -6078,7 +6127,7 @@ HRESULT SHSetThreadRef(IUnknown *punk);
 LSTATUS SHSetValueA(HKEY hkey, LPCSTR pszSubKey, LPCSTR pszValue, DWORD dwType, LPCVOID pvData, DWORD cbData);
 LSTATUS SHSetValueW(HKEY hkey, LPCWSTR pszSubKey, LPCWSTR pszValue, DWORD dwType, LPCVOID pvData, DWORD cbData);
 PIDLIST_ABSOLUTE SHSimpleIDListFromPath(PCWSTR pszPath);
-BOOL SHSkipJunction(unknown_t *pbc, unknown_t *pclsid);
+BOOL SHSkipJunction(unknown_t *pbc, CLSID *pclsid);
 HRESULT SHStrDupA(LPCSTR psz, LPWSTR *ppwsz);
 HRESULT SHStrDupW(LPCWSTR psz, LPWSTR *ppwsz);
 CHAR SHStripMneumonicA(LPSTR pszMenu);
@@ -6086,38 +6135,38 @@ WCHAR SHStripMneumonicW(LPWSTR pszMenu);
 int SHUnicodeToAnsi(PCWSTR pwszSrc, PSTR pszDst, int cchBuf);
 int SHUnicodeToUnicode(PCWSTR pwzSrc, PWSTR pwzDst, int cwchBuf);
 BOOL SHUnlockShared(void *pvData);
-HRESULT SafeArrayAccessData(unknown_t *psa, void **ppvData);
-HRESULT SafeArrayAddRef(unknown_t *psa, PVOID *ppDataToRelease);
-HRESULT SafeArrayAllocData(unknown_t *psa);
-HRESULT SafeArrayAllocDescriptor(UINT cDims, unknown_t **ppsaOut);
-HRESULT SafeArrayAllocDescriptorEx(VARTYPE vt, UINT cDims, unknown_t **ppsaOut);
-HRESULT SafeArrayCopy(unknown_t *psa, unknown_t **ppsaOut);
-HRESULT SafeArrayCopyData(unknown_t *psaSource, unknown_t *psaTarget);
-unknown_t * SafeArrayCreate(VARTYPE vt, UINT cDims, unknown_t *rgsabound);
-unknown_t * SafeArrayCreateEx(VARTYPE vt, UINT cDims, unknown_t *rgsabound, PVOID pvExtra);
-unknown_t * SafeArrayCreateVector(VARTYPE vt, LONG lLbound, ULONG cElements);
-unknown_t * SafeArrayCreateVectorEx(VARTYPE vt, LONG lLbound, ULONG cElements, PVOID pvExtra);
-HRESULT SafeArrayDestroy(unknown_t *psa);
-HRESULT SafeArrayDestroyData(unknown_t *psa);
-HRESULT SafeArrayDestroyDescriptor(unknown_t *psa);
-UINT SafeArrayGetDim(unknown_t *psa);
-HRESULT SafeArrayGetElement(unknown_t *psa, LONG *rgIndices, void *pv);
-UINT SafeArrayGetElemsize(unknown_t *psa);
-HRESULT SafeArrayGetIID(unknown_t *psa, GUID *pguid);
-HRESULT SafeArrayGetLBound(unknown_t *psa, UINT nDim, LONG *plLbound);
-HRESULT SafeArrayGetRecordInfo(unknown_t *psa, unknown_t **prinfo);
-HRESULT SafeArrayGetUBound(unknown_t *psa, UINT nDim, LONG *plUbound);
-HRESULT SafeArrayGetVartype(unknown_t *psa, VARTYPE *pvt);
-HRESULT SafeArrayLock(unknown_t *psa);
-HRESULT SafeArrayPtrOfIndex(unknown_t *psa, LONG *rgIndices, void **ppvData);
-HRESULT SafeArrayPutElement(unknown_t *psa, LONG *rgIndices, void *pv);
-HRESULT SafeArrayRedim(unknown_t *psa, unknown_t *psaboundNew);
+HRESULT SafeArrayAccessData(SAFEARRAY *psa, void **ppvData);
+HRESULT SafeArrayAddRef(SAFEARRAY *psa, PVOID *ppDataToRelease);
+HRESULT SafeArrayAllocData(SAFEARRAY *psa);
+HRESULT SafeArrayAllocDescriptor(UINT cDims, SAFEARRAY **ppsaOut);
+HRESULT SafeArrayAllocDescriptorEx(VARTYPE vt, UINT cDims, SAFEARRAY **ppsaOut);
+HRESULT SafeArrayCopy(SAFEARRAY *psa, SAFEARRAY **ppsaOut);
+HRESULT SafeArrayCopyData(SAFEARRAY *psaSource, SAFEARRAY *psaTarget);
+SAFEARRAY * SafeArrayCreate(VARTYPE vt, UINT cDims, SAFEARRAYBOUND *rgsabound);
+SAFEARRAY * SafeArrayCreateEx(VARTYPE vt, UINT cDims, SAFEARRAYBOUND *rgsabound, PVOID pvExtra);
+SAFEARRAY * SafeArrayCreateVector(VARTYPE vt, LONG lLbound, ULONG cElements);
+SAFEARRAY * SafeArrayCreateVectorEx(VARTYPE vt, LONG lLbound, ULONG cElements, PVOID pvExtra);
+HRESULT SafeArrayDestroy(SAFEARRAY *psa);
+HRESULT SafeArrayDestroyData(SAFEARRAY *psa);
+HRESULT SafeArrayDestroyDescriptor(SAFEARRAY *psa);
+UINT SafeArrayGetDim(SAFEARRAY *psa);
+HRESULT SafeArrayGetElement(SAFEARRAY *psa, LONG *rgIndices, void *pv);
+UINT SafeArrayGetElemsize(SAFEARRAY *psa);
+HRESULT SafeArrayGetIID(SAFEARRAY *psa, GUID *pguid);
+HRESULT SafeArrayGetLBound(SAFEARRAY *psa, UINT nDim, LONG *plLbound);
+HRESULT SafeArrayGetRecordInfo(SAFEARRAY *psa, unknown_t **prinfo);
+HRESULT SafeArrayGetUBound(SAFEARRAY *psa, UINT nDim, LONG *plUbound);
+HRESULT SafeArrayGetVartype(SAFEARRAY *psa, VARTYPE *pvt);
+HRESULT SafeArrayLock(SAFEARRAY *psa);
+HRESULT SafeArrayPtrOfIndex(SAFEARRAY *psa, LONG *rgIndices, void **ppvData);
+HRESULT SafeArrayPutElement(SAFEARRAY *psa, LONG *rgIndices, void *pv);
+HRESULT SafeArrayRedim(SAFEARRAY *psa, SAFEARRAYBOUND *psaboundNew);
 void SafeArrayReleaseData(PVOID pData);
-void SafeArrayReleaseDescriptor(unknown_t *psa);
-HRESULT SafeArraySetIID(unknown_t *psa, REFGUID guid);
-HRESULT SafeArraySetRecordInfo(unknown_t *psa, unknown_t *prinfo);
-HRESULT SafeArrayUnaccessData(unknown_t *psa);
-HRESULT SafeArrayUnlock(unknown_t *psa);
+void SafeArrayReleaseDescriptor(SAFEARRAY *psa);
+HRESULT SafeArraySetIID(SAFEARRAY *psa, REFGUID guid);
+HRESULT SafeArraySetRecordInfo(SAFEARRAY *psa, unknown_t *prinfo);
+HRESULT SafeArrayUnaccessData(SAFEARRAY *psa);
+HRESULT SafeArrayUnlock(SAFEARRAY *psa);
 HRESULT Save(LPCOLESTR pszFileName, BOOL fRemember);
 HRESULT SaveCompleted();
 long SaveDC();
@@ -6380,7 +6429,7 @@ int SetTextCharacterExtra(HDC hdc, int nCharExtra);
 COLORREF SetTextColor(HDC hdc, COLORREF crColor);
 BOOL SetTextJustification(HDC hdc, int nBreakExtra, int nBreakCount);
 DWORD_PTR SetThreadAffinityMask(HANDLE hThread, DWORD_PTR dwThreadAffinityMask);
-BOOL SetThreadContext(HANDLE hThread, unknown_t *lpContext);
+BOOL SetThreadContext(HANDLE hThread, CONTEXT *lpContext);
 HRESULT SetThreadDescription(HANDLE hThread, PCWSTR lpThreadDescription);
 BOOL SetThreadDesktop(HDESK hDesktop);
 DPI_AWARENESS_CONTEXT SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT dpiContext);
@@ -6494,10 +6543,10 @@ BOOL StartServiceW(SC_HANDLE hService, DWORD dwNumServiceArgs, LPCWSTR *lpServic
 VOID StartThreadpoolIo(PTP_IO pio);
 ULONG StartTraceA(PTRACEHANDLE TraceHandle, LPCSTR InstanceName, PEVENT_TRACE_PROPERTIES Properties);
 ULONG StartTraceW(PTRACEHANDLE TraceHandle, LPCWSTR InstanceName, PEVENT_TRACE_PROPERTIES Properties);
-HRESULT StgGetIFillLockBytesOnFile(unknown_t *pwcsName, unknown_t **ppflb);
+HRESULT StgGetIFillLockBytesOnFile(OLECHAR *pwcsName, unknown_t **ppflb);
 HRESULT StgGetIFillLockBytesOnILockBytes(unknown_t *pilb, unknown_t **ppflb);
 HRESULT StgOpenAsyncDocfileOnIFillLockBytes(unknown_t *pflb, DWORD grfMode, DWORD asyncFlags, struct IStorage **ppstgOpen);
-HRESULT StgOpenLayoutDocfile(unknown_t *pwcsDfName, DWORD grfMode, DWORD reserved, struct IStorage **ppstgOpen);
+HRESULT StgOpenLayoutDocfile(OLECHAR *pwcsDfName, DWORD grfMode, DWORD reserved, struct IStorage **ppstgOpen);
 ULONG StopTraceA(TRACEHANDLE TraceHandle, LPCSTR InstanceName, PEVENT_TRACE_PROPERTIES Properties);
 ULONG StopTraceW(TRACEHANDLE TraceHandle, LPCWSTR InstanceName, PEVENT_TRACE_PROPERTIES Properties);
 int StrCSpnA(PCSTR pszStr, PCSTR pszSet);
@@ -6576,7 +6625,7 @@ BOOL StrTrimA(PSTR psz, PCSTR pszTrimChars);
 BOOL StrTrimW(PWSTR psz, PCWSTR pszTrimChars);
 BOOL StretchBlt(HDC hdcDest, int nXOriginDest, int nYOriginDest, int nWidthDest, int nHeightDest, HDC hdcSrc, int nXOriginSrc, int nYOriginSrc, int nWidthSrc, int nHeightSrc, unknown_t dwRop);
 int StretchDIBits(HDC hdc, int XDest, int YDest, int nDestWidth, int nDestHeight, int XSrc, int YSrc, int nSrcWidth, int nSrcHeight, VOID *lpBits, BITMAPINFO *lpBitsInfo, unknown_t iUsage, unknown_t dwRop);
-HRESULT StringFromCLSID(unknown_t rclsid, LPOLESTR *lplpsz);
+HRESULT StringFromCLSID(REFCLSID rclsid, LPOLESTR *lplpsz);
 int StringFromGUID2(REFGUID rguid, LPOLESTR lpsz, int cchMax);
 HRESULT StringFromIID(REFIID rclsid, LPOLESTR *lplpsz);
 BOOL StrokeAndFillPath();
@@ -6752,12 +6801,12 @@ BOOL SymUnDName64(PIMAGEHLP_SYMBOL64 sym, PSTR UnDecName, DWORD UnDecNameLength)
 BOOL SymUnloadModule(HANDLE hProcess, DWORD BaseOfDll);
 BOOL SymUnloadModule64(HANDLE hProcess, DWORD64 BaseOfDll);
 HRESULT SysAddRefString(BSTR bstrString);
-BSTR SysAllocString(unknown_t *psz);
+BSTR SysAllocString(OLECHAR *psz);
 BSTR SysAllocStringByteLen(LPCSTR psz, UINT len);
-BSTR SysAllocStringLen(unknown_t *strIn, UINT ui);
+BSTR SysAllocStringLen(OLECHAR *strIn, UINT ui);
 void SysFreeString(BSTR bstrString);
-INT SysReAllocString(BSTR *pbstr, unknown_t *psz);
-INT SysReAllocStringLen(BSTR *pbstr, unknown_t *psz, unsigned int len);
+INT SysReAllocString(BSTR *pbstr, OLECHAR *psz);
+INT SysReAllocStringLen(BSTR *pbstr, OLECHAR *psz, unsigned int len);
 void SysReleaseString(BSTR bstrString);
 UINT SysStringByteLen(BSTR bstr);
 UINT SysStringLen(BSTR pbstr);
@@ -6802,7 +6851,7 @@ int TranslateAcceleratorA(HWND hWnd, HACCEL hAccTable, LPMSG lpMsg);
 int TranslateAcceleratorW(HWND hWnd, HACCEL hAccTable, LPMSG lpMsg);
 BOOL TranslateCharsetInfo(DWORD *lpSrc, unknown_t lpCs, unknown_t dwFlags);
 BOOL TranslateMDISysAccel(HWND hWndClient, LPMSG lpMsg);
-BOOL TranslateMessage(unknown_t *lpMsg);
+BOOL TranslateMessage(MSG *lpMsg);
 BOOLEAN TranslateNameA(LPCSTR lpAccountName, EXTENDED_NAME_FORMAT AccountNameFormat, EXTENDED_NAME_FORMAT DesiredNameFormat, LPSTR lpTranslatedName, PULONG nSize);
 BOOLEAN TranslateNameW(LPCWSTR lpAccountName, EXTENDED_NAME_FORMAT AccountNameFormat, EXTENDED_NAME_FORMAT DesiredNameFormat, LPWSTR lpTranslatedName, PULONG nSize);
 HRESULT TranslateURL(LPCSTR pcszURL, unknown_t dwInFlags, LPSTR *ppszTranslatedURL);
@@ -7190,7 +7239,7 @@ HRESULT VariantCopyInd(VARIANT *pvarDest, unknown_t *pvargSrc);
 void VariantInit(unknown_t *pvarg);
 INT VariantTimeToDosDateTime(DOUBLE vtime, USHORT *pwDosDate, USHORT *pwDosTime);
 INT VariantTimeToSystemTime(DOUBLE vtime, LPSYSTEMTIME lpSystemTime);
-HRESULT VectorFromBstr(BSTR bstr, unknown_t **ppsa);
+HRESULT VectorFromBstr(BSTR bstr, SAFEARRAY **ppsa);
 DWORD VerFindFileA(DWORD uFlags, LPCSTR szFileName, LPCSTR szWinDir, LPCSTR szAppDir, LPSTR szCurDir, PUINT puCurDirLen, LPSTR szDestDir, PUINT puDestDirLen);
 DWORD VerFindFileW(DWORD uFlags, LPCWSTR szFileName, LPCWSTR szWinDir, LPCWSTR szAppDir, LPWSTR szCurDir, PUINT puCurDirLen, LPWSTR szDestDir, PUINT puDestDirLen);
 DWORD VerInstallFileA(DWORD uFlags, LPCSTR szSrcFileName, LPCSTR szDestFileName, LPCSTR szSrcDir, LPCSTR szDestDir, LPCSTR szCurDir, LPSTR szTmpFile, PUINT puTmpFileLen);
@@ -7651,19 +7700,19 @@ int getc(FILE *stream);
 int getchar();
 char * getenv(const char *name);
 uid_t geteuid();
-unknown_t * gethostbyaddr(const char *addr, int len, int type);
-unknown_t * gethostbyname(const char *name);
+struct hostent * gethostbyaddr(const char *addr, int len, int type);
+struct hostent * gethostbyname(const char *name);
 int gethostname(char *name, int namelen);
 INT getnameinfo(SOCKADDR *pSockaddr, socklen_t SockaddrLength, PCHAR pNodeBuffer, DWORD NodeBufferSize, PCHAR pServiceBuffer, DWORD ServiceBufferSize, INT Flags);
 int getopt(int argc, const char **argv, const char *optstring);
 int getpeername(SOCKET s, struct sockaddr *name, int *namelen);
 int getpid();
 const char * getprogname();
-unknown_t * getprotobyname(const char *name);
-unknown_t * getprotobynumber(int number);
+struct protoent * getprotobyname(const char *name);
+struct protoent * getprotobynumber(int number);
 char * gets(char *s);
-unknown_t * getservbyname(const char *name, const char *proto);
-unknown_t * getservbyport(int port, const char *proto);
+struct servent * getservbyname(const char *name, const char *proto);
+struct servent * getservbyport(int port, const char *proto);
 int getsockname(SOCKET s, struct sockaddr *name, int *namelen);
 int getsockopt(SOCKET s, int level, int optname, char *optval, int *optlen);
 uid_t getuid();
@@ -8274,6 +8323,138 @@ void * xmalloc(size_t size);
 EOF
 RUN
 
+NAME=windows types from issue 3728
+FILE==
+ARGS=-a x86 -b 64 -k windows
+CMDS=<<EOF
+tt MSG
+tt PMSG
+tt NPMSG
+tt LPMSG
+tt WIN32_FIND_DATAW
+tt PWIN32_FIND_DATAW
+tt LPWIN32_FIND_DATAW
+tt SYSTEM_INFO
+tt LPSYSTEM_INFO
+tt OSVERSIONINFOW
+tt POSVERSIONINFOW
+tt LPOSVERSIONINFOW
+tt RTL_OSVERSIONINFOW
+tt PRTL_OSVERSIONINFOW
+tt OSVERSIONINFOEXW
+tt POSVERSIONINFOEXW
+tt LPOSVERSIONINFOEXW
+tt ACTCTXW
+tt PACTCTXW
+tt PCACTCTXW
+tt SID_AND_ATTRIBUTES
+tt PSID_AND_ATTRIBUTES
+tt LUID
+tt PLUID
+tt LUID_AND_ATTRIBUTES
+tt PLUID_AND_ATTRIBUTES
+tt CONTEXT
+tt PCONTEXT
+tt KNONVOLATILE_CONTEXT_POINTERS
+tt PKNONVOLATILE_CONTEXT_POINTERS
+tt CLSID
+tt REFCLSID
+tt LPCLSID
+tt LPBC
+tt PSID
+tt LPOLESTR
+tt LPCOLESTR
+tt OLECHAR
+tt EVENT_TRACE_HEADER
+tt PEVENT_TRACE_HEADER
+tt TRACE_GUID_REGISTRATION
+tt PTRACE_GUID_REGISTRATION
+tt TRACEHANDLE
+tt PTRACEHANDLE
+EOF
+EXPECT=<<EOF
+MSG = struct tagMSG
+PMSG = struct tagMSG *
+NPMSG = struct tagMSG *
+LPMSG = struct tagMSG *
+WIN32_FIND_DATAW = struct _WIN32_FIND_DATAW
+PWIN32_FIND_DATAW = struct _WIN32_FIND_DATAW *
+LPWIN32_FIND_DATAW = struct _WIN32_FIND_DATAW *
+SYSTEM_INFO = struct _SYSTEM_INFO
+LPSYSTEM_INFO = struct _SYSTEM_INFO *
+OSVERSIONINFOW = struct _OSVERSIONINFOW
+POSVERSIONINFOW = struct _OSVERSIONINFOW *
+LPOSVERSIONINFOW = struct _OSVERSIONINFOW *
+RTL_OSVERSIONINFOW = struct _OSVERSIONINFOW
+PRTL_OSVERSIONINFOW = struct _OSVERSIONINFOW *
+OSVERSIONINFOEXW = struct _OSVERSIONINFOEXW
+POSVERSIONINFOEXW = struct _OSVERSIONINFOEXW *
+LPOSVERSIONINFOEXW = struct _OSVERSIONINFOEXW *
+ACTCTXW = struct tagACTCTXW
+PACTCTXW = struct tagACTCTXW *
+PCACTCTXW = struct tagACTCTXW *
+SID_AND_ATTRIBUTES = struct _SID_AND_ATTRIBUTES
+PSID_AND_ATTRIBUTES = struct _SID_AND_ATTRIBUTES *
+LUID = struct _LUID
+PLUID = struct _LUID *
+LUID_AND_ATTRIBUTES = struct _LUID_AND_ATTRIBUTES
+PLUID_AND_ATTRIBUTES = struct _LUID_AND_ATTRIBUTES *
+CONTEXT = struct _CONTEXT
+PCONTEXT = struct _CONTEXT *
+KNONVOLATILE_CONTEXT_POINTERS = struct _KNONVOLATILE_CONTEXT_POINTERS
+PKNONVOLATILE_CONTEXT_POINTERS = struct _KNONVOLATILE_CONTEXT_POINTERS *
+CLSID = GUID
+REFCLSID = CLSID *
+LPCLSID = CLSID *
+LPBC = struct _IBindCtx *
+PSID = PVOID
+LPOLESTR = OLECHAR *
+LPCOLESTR = OLECHAR *
+OLECHAR = WCHAR
+EVENT_TRACE_HEADER = struct _EVENT_TRACE_HEADER
+PEVENT_TRACE_HEADER = struct _EVENT_TRACE_HEADER *
+TRACE_GUID_REGISTRATION = struct _TRACE_GUID_REGISTRATION
+PTRACE_GUID_REGISTRATION = struct _TRACE_GUID_REGISTRATION *
+TRACEHANDLE = ULONG64
+PTRACEHANDLE = TRACEHANDLE *
+EOF
+RUN
+
+NAME=missing windows struct types referenced from function signatures
+FILE==
+ARGS=-a x86 -b 64 -k windows
+CMDS=<<EOF
+tt SAFEARRAY
+tt LPSAFEARRAY
+tt SAFEARRAYBOUND
+tt LPSAFEARRAYBOUND
+tt HOSTENT
+tt PHOSTENT
+tt LPHOSTENT
+tt PROTOENT
+tt PPROTOENT
+tt LPPROTOENT
+tt SERVENT
+tt PSERVENT
+tt LPSERVENT
+EOF
+EXPECT=<<EOF
+SAFEARRAY = struct tagSAFEARRAY
+LPSAFEARRAY = struct tagSAFEARRAY *
+SAFEARRAYBOUND = struct tagSAFEARRAYBOUND
+LPSAFEARRAYBOUND = struct tagSAFEARRAYBOUND *
+HOSTENT = struct hostent
+PHOSTENT = struct hostent *
+LPHOSTENT = struct hostent *
+PROTOENT = struct protoent
+PPROTOENT = struct protoent *
+LPPROTOENT = struct protoent *
+SERVENT = struct servent
+PSERVENT = struct servent *
+LPSERVENT = struct servent *
+EOF
+RUN
+
 NAME=tn test
 FILE=--
 CMDS=<<EOF
@@ -8326,8 +8507,8 @@ tl goo_t;
 EOF
 EXPECT=<<EOF
 typedef bmg (0x2a0) "[2]??? (bla_t)bla (moo_t)moot (goo_t)goot"
-typedef bla_t (0xb0) "dc?*q a b (anonymous struct 1)q z"
-typedef moo_t (0x48) "c*q a z"
+typedef bla_t (0xb0) "d4c?*x8 a b (anonymous struct 1)q z"
+typedef moo_t (0x48) "c*x8 a z"
 typedef goo_t (0xf8) "p[10]c? a b (anonymous struct 4)q"
 EOF
 RUN
@@ -8341,6 +8522,126 @@ EOF
 EXPECT=<<EOF
 struct foo {
 	wchar_t (*((*bar)[]))(int arg0, const char *arg1);
+};
+EOF
+RUN
+
+NAME=tdf define struct from inline pf format
+FILE==
+CMDS=<<EOF
+tdf rgba "x1x1x1x1 r g b a"
+tsc rgba
+EOF
+EXPECT=<<EOF
+struct rgba {
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+	uint8_t a;
+};
+EOF
+RUN
+
+NAME=tdf maps pf specifiers to fixed-width C types
+FILE==
+CMDS=<<EOF
+tdf widths "x1d2u4x8 hx d16 u32 q64"
+tsc widths
+tdf scal "cf4psGx8 ch flt ptr str guid big"
+tsc scal
+EOF
+EXPECT=<<EOF
+struct widths {
+	uint8_t hx;
+	int16_t d16;
+	uint32_t u32;
+	uint64_t q64;
+};
+struct scal {
+	char ch;
+	float flt;
+	void *ptr;
+	char *str;
+	uint8_t guid[16];
+	uint64_t big;
+};
+EOF
+RUN
+
+NAME=tdf define fixed-size array field from pf format
+FILE==
+CMDS=<<EOF
+tdf arr3 "[4]d4 vals"
+tsc arr3
+EOF
+EXPECT=<<EOF
+struct arr3 {
+	int32_t vals[4];
+};
+EOF
+RUN
+
+NAME=tdf define union from pf union format
+FILE==
+CMDS=<<EOF
+tdf onion "0d4d4d4 a b c"
+tuc onion
+EOF
+EXPECT=<<EOF
+union onion {
+	int32_t a;
+	int32_t b;
+	int32_t c;
+};
+EOF
+RUN
+
+NAME=tdf define type from a saved pf format
+FILE==
+CMDS=<<EOF
+pfn rgbfmt x1x1x1x1 r g b a
+tdf rgbsaved rgbfmt
+tsc rgbsaved
+EOF
+EXPECT=<<EOF
+struct rgbsaved {
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+	uint8_t a;
+};
+EOF
+RUN
+
+NAME=tdf produces a first-class base type usable in further definitions
+FILE==
+CMDS=<<EOF
+tdf inner "d4d4 x y"
+td "struct outer { struct inner pt; int32_t flag; }"
+tsc outer
+EOF
+EXPECT=<<EOF
+struct outer {
+	struct inner pt;
+	int32_t flag;
+};
+EOF
+RUN
+
+NAME=pf and pfn do not register types, only tdf does
+FILE==
+CMDS=<<EOF
+pfn pixfmt x1x1x1x1 r g b a
+t~pixfmt
+tdf pixtype pixfmt
+tsc pixtype
+EOF
+EXPECT=<<EOF
+struct pixtype {
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+	uint8_t a;
 };
 EOF
 RUN

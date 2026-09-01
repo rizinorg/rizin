@@ -140,51 +140,41 @@ static void rz_run_help(int v) {
 	}
 }
 
+static RzRunProfile *rz_run_new_from_cmdline(int start, int argc, const char **argv) {
+	bool no_more_directives = false;
+	int directive_index = 0;
+	RzRunProfile *p = rz_run_new(NULL);
+	if (!p) {
+		RZ_LOG_ERROR("Failed to create new RzRunProfile\n");
+		return NULL;
+	}
+	for (int i = start; i < argc; i++) {
+		if (!strcmp(argv[i], "--")) {
+			no_more_directives = true;
+			continue;
+		}
+		if (no_more_directives) {
+			const char *word = argv[i];
+			char *line = directive_index
+				? rz_str_newf("arg%d=%s", directive_index, word)
+				: rz_str_newf("program=%s", word);
+			rz_run_parseline(p, line);
+			directive_index++;
+			free(line);
+		} else if (!rz_run_parseline(p, argv[i])) {
+			goto fail;
+		}
+	}
+	return p;
+
+fail:
+	rz_run_free(p);
+	return NULL;
+}
 
 RZ_API int rz_main_rz_run(int argc, const char **argv) {
-	RzRunProfile *p;
-	int i, ret;
-	const char *file = argv[1];
-	if (!strcmp(file, "-w")) {
-#if __UNIX__
-		rz_run_tty();
-		return 0;
-#else
-		RZ_LOG_ERROR("Not supported\n");
-		return 1;
-#endif
-	}
-	if (*file && !strchr(file, '=')) {
-		p = rz_run_new(file);
-	} else {
-		bool noMoreDirectives = false;
-		int directiveIndex = 0;
-		p = rz_run_new(NULL);
-		if (!p) {
-			RZ_LOG_ERROR("Failed to create new RzRunProfile\n");
-			return 1;
-		}
-		for (i = *file ? 1 : 2; i < argc; i++) {
-			if (!strcmp(argv[i], "--")) {
-				noMoreDirectives = true;
-				continue;
-			}
-			if (noMoreDirectives) {
-				const char *word = argv[i];
-				char *line = directiveIndex
-					? rz_str_newf("arg%d=%s", directiveIndex, word)
-					: rz_str_newf("program=%s", word);
-				rz_run_parseline(p, line);
-				directiveIndex++;
-				free(line);
-			} else {
-				rz_run_parseline(p, argv[i]);
-			}
-		}
-	}
-	if (!p) {
-		return 1;
-	}
+	int ret = 0;
+	RzRunProfile *p = NULL;
 	if (argc == 1 || !strcmp(argv[1], "-h")) {
 		rz_run_help(0);
 		ret = 1;
@@ -209,6 +199,24 @@ RZ_API int rz_main_rz_run(int argc, const char **argv) {
 		rz_run_help(2);
 		ret = 0;
 		goto finish;
+	}
+	const char *file = argc > 1 ? argv[1] : "";
+	if (RZ_STR_ISNOTEMPTY(file) && !strcmp(file, "-w")) {
+#if __UNIX__
+		rz_run_tty();
+		return 0;
+#else
+		RZ_LOG_ERROR("Not supported\n");
+		return 1;
+#endif
+	}
+	if (RZ_STR_ISNOTEMPTY(file) && !strchr(file, '=')) {
+		p = rz_run_new(file);
+	} else {
+		p = rz_run_new_from_cmdline(*file ? 1 : 2, argc, argv);
+	}
+	if (!p) {
+		return 1;
 	}
 	ret = rz_run_config_env(p);
 	if (ret) {

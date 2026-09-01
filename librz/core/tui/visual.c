@@ -105,7 +105,7 @@ RZ_IPI void rz_core_visual_toggle_decompiler_disasm(RzCore *core, bool for_graph
 		return;
 	}
 	hold = rz_config_hold_new(core->config);
-	rz_config_hold_s(hold, "asm.hint.pos", "asm.cmt.col", "asm.offset", "asm.lines",
+	rz_config_hold_var(hold, "asm.hint.pos", "asm.cmt.col", "asm.offset", "asm.lines",
 		"asm.indent", "asm.bytes", "asm.comments", "asm.debuginfo", "asm.usercomments", "asm.instr", NULL);
 	if (for_graph) {
 		rz_config_set(core->config, "asm.hint.pos", "-2");
@@ -355,14 +355,15 @@ RZ_IPI const char **rz_core_visual_get_fcn_help() {
 
 static void rotateAsmBits(RzCore *core) {
 	RzAnalysisHint *hint = rz_analysis_hint_get(core->analysis, core->offset);
-	int bits = hint ? hint->bits : rz_config_get_i(core->config, "asm.bits");
+	int bits = hint ? hint->bits : rz_asm_get_bits(core->rasm);
+	int plugin_bits = rz_asm_get_plugin_bits(core->rasm);
 	int retries = 4;
 	while (retries > 0) {
 		int nb = bits == 64 ? 8 : bits == 32 ? 64
 			: bits == 16                 ? 32
 			: bits == 8                  ? 16
 						     : bits;
-		if ((core->rasm->cur->bits & nb) == nb) {
+		if ((plugin_bits & nb) == nb) {
 			rz_analysis_hint_set_bits(core->analysis, core->offset, nb);
 			break;
 		}
@@ -1263,7 +1264,7 @@ repeat:
 					if (!hc) {
 						return RZ_CMD_STATUS_ERROR;
 					}
-					rz_config_hold_i(hc, "asm.flags.limit", NULL);
+					rz_config_hold_var(hc, "asm.flags.limit", NULL);
 					rz_config_set_i(core->config, "asm.flags.limit", 1);
 					char *res = rz_core_print_cons_disassembly(core, xaddr2, 4, 0);
 					rz_config_hold_restore(hc);
@@ -2235,13 +2236,12 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			rz_core_visual_showcursor(core, true);
 			rz_cons_flush();
 			rz_cons_set_raw(false);
-			strcpy(buf, "\"wa ");
+			strcpy(buf, "wa ");
 			rz_line_set_prompt(line, ":> ");
 			rz_cons_enable_mouse(false);
-			if (rz_cons_fgets(buf + 4, sizeof(buf) - 4, 0, NULL) < 0) {
+			if (rz_cons_fgets(buf + 3, sizeof(buf) - 3, 0, NULL) < 0) {
 				buf[0] = '\0';
 			}
-			strcat(buf, "\"");
 			bool wheel = rz_config_get_b(core->config, "scr.wheel");
 			if (wheel) {
 				rz_cons_enable_mouse(true);
@@ -2509,7 +2509,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				break;
 			}
 			if (core->print->col == 2) {
-				strcpy(buf, "\"w ");
+				strcpy(buf, "w \"");
 				rz_line_set_prompt(line, "insert string: ");
 				if (rz_cons_fgets(buf + 3, sizeof(buf) - 3, 0, NULL) < 0) {
 					buf[0] = '\0';

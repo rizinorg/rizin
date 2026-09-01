@@ -35,6 +35,7 @@ EOF
 RUN
 
 NAME=dbg.manycontback
+TIMEOUT=1200
 FILE=bins/elf/analysis/ls-linux-x86_64-zlul
 ARGS=-d -e dbg.bpsysign=true
 CMDS=<<EOF

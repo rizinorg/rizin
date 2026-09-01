@@ -126,6 +126,7 @@ int gdbr_remove_hwa(libgdbr_t *g, ut64 address, int sizebp);
  * File read from remote target (only one file open at a time for now)
  */
 int gdbr_open_file(libgdbr_t *g, const char *filename, int flags, int mode);
+int gdbr_pread_file(libgdbr_t *g, ut8 *buf, ut64 max_len, uint32_t start_offset);
 int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len);
 int gdbr_close_file(libgdbr_t *g);
 

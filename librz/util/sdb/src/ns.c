@@ -41,7 +41,6 @@ static void ns_free_exc_list(Sdb *s, RzList /*<void *>*/ *list) {
 			rz_list_append(list, ns);
 			rz_list_append(list, ns->sdb);
 			ns_free_exc_list(ns->sdb, list);
-			sdb_free(ns->sdb);
 		}
 		if (!deleted) {
 			sdb_free(ns->sdb);

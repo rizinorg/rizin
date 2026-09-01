@@ -1,10 +1,17 @@
 // SPDX-FileCopyrightText: 2021-2023 Anton Kochkov <anton.kochkov@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_util.h>
-#include <rz_type.h>
-#include <rz_analysis.h>
-#include <string.h>
+#include "analysis_private.h"
+
+static void type_path_tuple_free(void *e) {
+	RzTypePathTuple *tpl = (RzTypePathTuple *)e;
+	if (!tpl) {
+		return;
+	}
+	rz_type_path_free(tpl->path);
+	rz_type_free(tpl->root);
+	free(tpl);
+}
 
 static RZ_OWN RzList /*<RzTypePathTuple *>*/ *var_global_type_paths(RzAnalysis *analysis, RzAnalysisVarGlobal *gv, ut64 addr, unsigned int depth) {
 	rz_return_val_if_fail(gv, false);
@@ -23,10 +30,12 @@ static RZ_OWN RzList /*<RzTypePathTuple *>*/ *var_global_type_paths(RzAnalysis *
 	if (!tlist) {
 		return NULL;
 	}
-	RzListIter *iter;
 	RzTypePath *path;
-	RzList *matches = rz_list_new();
-	rz_list_foreach (tlist, iter, path) {
+	RzList *matches = rz_list_newf(type_path_tuple_free);
+	// Take ownership of each path out of `tlist` as it is processed: items are
+	// either freed here or moved into a tuple in `matches`. `tlist` is left
+	// empty, so it can be released normally without touching its elements.
+	while ((path = rz_list_pop_head(tlist))) {
 		if (!path->path) {
 			rz_type_path_free(path);
 			continue;
@@ -47,6 +56,7 @@ static RZ_OWN RzList /*<RzTypePathTuple *>*/ *var_global_type_paths(RzAnalysis *
 		tpl->root = rz_type_clone(gv->type);
 		rz_list_append(matches, tpl);
 	}
+	rz_list_free(tlist);
 	return matches;
 }
 

@@ -215,7 +215,6 @@ baddr    ----------
 binsz    0x00072130
 bintype  ecoff
 bits     32
-retguard false
 class    coff
 compiler N/A
 dbg_file N/A
@@ -234,17 +233,15 @@ pcalign  4
 rpath    N/A
 subsys   any
 stripped true
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 === entrypoints ===
      vaddr      paddr     hvaddr      haddr type 
 -------------------------------------------------
@@ -275,20 +272,18 @@ nth      paddr      vaddr bind  type   size lib name
 0x00000000     0x0 0x00000000     0x0   0x0 -r-- rsrc        STYP_RESOURCE
 === init0 ===
             ;-- section..text:
-/ entry.init0(int32_t arg_4h, int32_t arg2, int32_t arg3, int32_t arg1);
+/ entry.init0(int32_t arg_4h, int32_t arg1);
 |           ; arg int32_t arg1 @ a0
-|           ; arg int32_t arg2 @ a1
-|           ; arg int32_t arg3 @ a2
 |           ; var int32_t var_4h @ stack - 0x4
 |           ; arg int32_t arg_4h @ stack + 0x4
 |           0x00400210      lw    a0, (var_4h + 0x4)                   ; [00] -rw- section size 332176 named .text
 |           0x00400214      lui   gp, 0x1002
-|           0x00400218      addiu a1, sp, 4                            ; arg2
+|           0x00400218      addiu a1, sp, 4
 |           0x0040021c      addiu gp, gp, 0x3ea0
-|           0x00400220      addiu a2, a1, 4                            ; arg3
+|           0x00400220      addiu a2, a1, 4
 |           0x00400224      sll   v0, a0, 2                            ; arg1
 |           0x00400228      sw    a1, -0x5c5c(gp)
-|           0x0040022c      addu  a2, a2, v0                           ; arg3
+|           0x0040022c      addu  a2, a2, v0
 |           0x00400230      addiu sp, sp, -0x18
 |           0x00400234      sw    a2, -0x7c60(gp)
 |           0x00400238      sw    zero, (var_4h)
@@ -13449,7 +13444,6 @@ baddr    ----------
 binsz    0x00013890
 bintype  ecoff64
 bits     64
-retguard false
 class    coff
 compiler N/A
 dbg_file N/A
@@ -13464,20 +13458,19 @@ maxopsz  4
 minopsz  4
 os       any
 cc       N/A
+pcalign  4
 rpath    N/A
 subsys   any
 stripped true
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 === entrypoints ===
       vaddr      paddr     hvaddr      haddr type 
 --------------------------------------------------

@@ -152,6 +152,27 @@ end:
 	return ret;
 }
 
+/**
+ * \brief Query the remote stub for its name and version via qGDBServerVersion
+ *
+ * qGDBServerVersion is an LLDB protocol extension. The reply is a list of
+ * `key:value;` pairs, e.g. `name:debugserver;version:902.0.0;`. Stubs that do
+ * not implement it (such as gdbserver) reply with an empty packet, in which
+ * case this does nothing beyond emitting a debug log line.
+ */
+static void gdbr_query_gdb_server_version(libgdbr_t *g) {
+	if (send_msg(g, "qGDBServerVersion") < 0 || read_packet(g, false) < 0) {
+		return;
+	}
+	send_ack(g);
+	if (g->data_len == 0 || !*g->data) {
+		RZ_LOG_DEBUG("gdb: remote does not implement qGDBServerVersion\n");
+		return;
+	}
+	g->data[g->data_len] = '\0';
+	RZ_LOG_DEBUG("gdb: remote server version: %s\n", g->data);
+}
+
 int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	const char *message = "qSupported:multiprocess+;qRelocInsn+;xmlRegisters=i386";
 	int i;
@@ -234,6 +255,8 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 			g->no_ack = true;
 		}
 	}
+	// Query and log the remote server name/version (qGDBServerVersion)
+	gdbr_query_gdb_server_version(g);
 	if (g->remote_type == GDB_REMOTE_TYPE_LLDB) {
 		if ((ret = gdbr_connect_lldb(g)) < 0) {
 			goto end;
@@ -1484,7 +1507,7 @@ end:
 	return ret;
 }
 
-int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
+int gdbr_pread_file(libgdbr_t *g, ut8 *buf, ut64 max_len, uint32_t start_offset) {
 	int ret, ret1;
 	char command[64];
 	ut64 data_sz;
@@ -1511,7 +1534,7 @@ int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
 		if (snprintf(command, sizeof(command) - 1,
 			    "vFile:pread:%x,%" PFMT64x ",%" PFMT64x,
 			    (int)g->remote_file_fd, (ut64)RZ_MIN(data_sz, max_len - ret),
-			    (ut64)ret) < 0) {
+			    (ut64)start_offset + ret) < 0) {
 			ret = -1;
 			goto end;
 		}
@@ -1536,6 +1559,10 @@ int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
 end:
 	gdbr_lock_leave(g);
 	return ret;
+}
+
+int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
+	return gdbr_pread_file(g, buf, max_len, 0);
 }
 
 int gdbr_close_file(libgdbr_t *g) {
@@ -1783,7 +1810,7 @@ RzList /*<RzDebugPid *>*/ *gdbr_pids_list(libgdbr_t *g, int pid) {
 			// Avoid adding the same pid twice(could show more than once if it has threads)
 			rz_list_foreach (list, iter, dpid) {
 				if (tpid == dpid->pid) {
-					continue;
+					goto next;
 				}
 			}
 			if (!(dpid = RZ_NEW0(RzDebugPid)) || !(dpid->path = strdup(exec_file))) {
@@ -1808,6 +1835,9 @@ RzList /*<RzDebugPid *>*/ *gdbr_pids_list(libgdbr_t *g, int pid) {
 		if (g->data[0] == 'l') {
 			break;
 		}
+
+	next:
+		continue;
 	}
 
 	ret = 0;

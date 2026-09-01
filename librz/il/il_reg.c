@@ -139,7 +139,7 @@ RZ_API RzILRegBinding *rz_il_reg_binding_derive(RZ_NONNULL RzReg *reg) {
 	}
 	// from now on, the array should be treated immutable, so we deliberately don't use RzVector anymore.
 	rb->regs_count = rz_vector_len(&regs);
-	rb->regs = rz_vector_flush(&regs);
+	rb->regs = rz_vector_take_array(&regs);
 	rz_vector_fini(&regs);
 	return rb;
 err:
@@ -243,19 +243,14 @@ RZ_API void rz_il_vm_setup_reg_binding(RZ_NONNULL RzILVM *vm, RZ_NONNULL RZ_BORR
 RZ_API bool rz_il_vm_sync_to_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILRegBinding *rb, RZ_NONNULL RzReg *reg) {
 	rz_return_val_if_fail(vm && rb && reg, false);
 	bool perfect = true;
-	const char *pc = rz_reg_get_name(reg, RZ_REG_NAME_PC);
-	if (pc) {
-		RzRegItem *ri = rz_reg_get(reg, pc, RZ_REG_TYPE_ANY);
-		if (ri) {
-			RzBitVector *pcbv = rz_bv_new_zero(ri->size);
-			if (pcbv) {
-				perfect &= rz_bv_len(pcbv) == rz_bv_len(vm->pc);
-				rz_bv_copy_nbits(pcbv, 0, vm->pc, 0, RZ_MIN(rz_bv_len(pcbv), rz_bv_len(vm->pc)));
-				rz_reg_set_bv(reg, ri, pcbv);
-				rz_bv_free(pcbv);
-			} else {
-				perfect = false;
-			}
+	RzRegItem *ripc = rz_reg_get_by_role(reg, RZ_REG_NAME_PC);
+	if (ripc) {
+		RzBitVector *pcbv = rz_bv_new_zero(ripc->size);
+		if (pcbv) {
+			perfect &= rz_bv_len(pcbv) == rz_bv_len(vm->pc);
+			rz_bv_copy_nbits(pcbv, 0, vm->pc, 0, RZ_MIN(rz_bv_len(pcbv), rz_bv_len(vm->pc)));
+			rz_reg_set_bv(reg, ripc, pcbv);
+			rz_bv_free(pcbv);
 		} else {
 			perfect = false;
 		}
@@ -317,16 +312,13 @@ RZ_API bool rz_il_vm_sync_to_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILRegBindin
  */
 RZ_API void rz_il_vm_sync_from_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILRegBinding *rb, RZ_NONNULL RzReg *reg) {
 	rz_return_if_fail(vm && rb && reg);
-	const char *pc = rz_reg_get_name(reg, RZ_REG_NAME_PC);
-	if (pc) {
-		RzRegItem *ri = rz_reg_get(reg, pc, RZ_REG_TYPE_ANY);
-		if (ri) {
-			rz_bv_set_all(vm->pc, 0);
-			RzBitVector *pcbv = rz_reg_get_bv(reg, ri);
-			if (pcbv) {
-				rz_bv_copy_nbits(vm->pc, 0, pcbv, 0, RZ_MIN(rz_bv_len(pcbv), rz_bv_len(vm->pc)));
-				rz_bv_free(pcbv);
-			}
+	RzRegItem *ripc = rz_reg_get_by_role(reg, RZ_REG_NAME_PC);
+	if (ripc) {
+		rz_bv_set_all(vm->pc, 0);
+		RzBitVector *pcbv = rz_reg_get_bv(reg, ripc);
+		if (pcbv) {
+			rz_bv_copy_nbits(vm->pc, 0, pcbv, 0, RZ_MIN(rz_bv_len(pcbv), rz_bv_len(vm->pc)));
+			rz_bv_free(pcbv);
 		}
 	}
 	for (size_t i = 0; i < rb->regs_count; i++) {

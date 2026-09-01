@@ -28,7 +28,7 @@ static char *config_path(RzCore *core) {
 		free(path);
 		return NULL;
 	}
-	rz_config_serialize(core->config, sdb);
+	rz_serialize_config_save(sdb, core->config, NULL);
 	sdb_sync(sdb);
 	sdb_free(sdb);
 
@@ -55,16 +55,16 @@ static int system_exec(RzCore *core, int argc, const char **argv, char **output,
 	char file_size[32];
 	char core_offset[32];
 	char block_size[32];
-	const char *file_path = rz_config_get(core->config, "file.path");
-	const char *asm_arch = rz_config_get(core->config, "asm.arch");
-	const char *asm_bits = rz_config_get(core->config, "asm.bits");
-	const char *bin_demangle = rz_config_get(core->config, "bin.demangle");
-	const char *bin_lang = rz_config_get(core->config, "bin.lang");
-	const char *cfg_debug = rz_config_get(core->config, "cfg.debug");
-	const char *io_va = rz_config_get(core->config, "io.va");
-	const char *pdb_server = rz_config_get(core->config, "pdb.server");
-	const char *scr_color = rz_config_get(core->config, "scr.color");
-	const char *endian = rz_str_bool(core->rasm->big_endian);
+	char *file_path = rz_config_get_as_string(core->config, "file.path");
+	char *asm_arch = rz_config_get_as_string(core->config, "asm.arch");
+	char *asm_bits = rz_config_get_as_string(core->config, "asm.bits");
+	char *bin_demangle = rz_config_get_as_string(core->config, "bin.demangle");
+	char *bin_lang = rz_config_get_as_string(core->config, "bin.lang");
+	char *cfg_debug = rz_config_get_as_string(core->config, "cfg.debug");
+	char *io_va = rz_config_get_as_string(core->config, "io.va");
+	char *pdb_server = rz_config_get_as_string(core->config, "pdb.server");
+	char *scr_color = rz_config_get_as_string(core->config, "scr.color");
+	const char *endian = rz_str_bool(rz_asm_is_big_endian_set(core->rasm));
 	char *cfg_path = config_path(core);
 
 	rz_strf(file_size, "%" PFMT64u, core->file ? rz_io_fd_size(core->io, core->file->fd) : 0);
@@ -180,6 +180,15 @@ args_err:
 alloc_err:
 	rz_file_rm(cfg_path);
 	free(cfg_path);
+	free(file_path);
+	free(asm_arch);
+	free(asm_bits);
+	free(bin_demangle);
+	free(bin_lang);
+	free(cfg_debug);
+	free(io_va);
+	free(pdb_server);
+	free(scr_color);
 
 	return success;
 }

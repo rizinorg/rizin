@@ -4,13 +4,16 @@ CMDS=aL
 EXPECT=<<EOF
 _dAeI 8 16       6502        LGPL3   6502/NES/C64/Tamagotchi/T-1000 CPU
 adAeI 8          8051        PD      Intel 8051 disassembler
-_dA__ 64         alpha       LGPL3   DEC Alpha Capstone-based disassembler
+_dA__ 32 64      alpha       LGPL3   DEC Alpha Capstone-based disassembler
 _dA__ 32         amd29k      LGPL3   AMD 29k RISC disassembler (by deroad)
 _dA__ 16 32      arc         GPL3    Argonaut RISC Core
 adAeI 16 32 64   arm         BSD     ARM Capstone-based disassembler
 a____ 16 32 64   arm.as      LGPL3   as ARM Assembler (use RZ_ARM32_AS and RZ_ARM64_AS environment) (by pancake)
 adAeI 8 16       avr         LGPL3   Atmel AVR disassembler
 adA_I 16 32 64   bf          LGPL3   Brainfuck (by pancake, nibble) v4.0.0
+_dA__ 64         bpf         LGPL3   eBPF disassembler (by Jagath-P)
+_dA__ 16         c166        LGPL3   Siemens/Infineon C166 microcontroller disassembler
+_dA__ 32         cbpf        LGPL3   cBPF disassembler (by Jagath-P)
 _dA__ 32         chip8       LGPL3   Chip8 disassembler
 _dA__ 16 32 64   cil         LGPL3   .NET CIL/MSIL (Common Intermediate Language) bytecode disassembler
 _dA__ 16         cr16        LGPL3   CompactRISC CR16 disassembler
@@ -30,12 +33,13 @@ _d___ 32         lanai       GPL3    Google LANAI disassembler
 _d___ 8          lh5801      LGPL3   SHARP LH5801 disassembler
 _d___ 32         lm32        BSD     Lattice Micro 32 ISA disassembler (by Felix Held)
 _dA__ 32 64      loongarch   LGPL3   Loongson LoongArch disassembler
-adA__ 8          luac        LGPL3   Lua bytecode (LUAC) disassembler
+adA__ 32         luac        LGPL3   Lua bytecode (LUAC) disassembler
 _dA__ 8 32       m680x       BSD     Motorola 680X Capstone-based disassembler
 _dA__ 32         m68k        BSD     Motorola 68K Capstone-based disassembler
 _dA__ 32         malbolge    LGPL3   Malbolge Ternary VM bytecode disassembler (by condret)
 _dA__ 32         mcore       LGPL3   Motorola MCORE disassembler
 _dA__ 16         mcs96       LGPL3   Intel MCS-96 disassembler (by condret)
+_dA__ 8          milstd1750  MIT     MIL-STD 1750 ISA disassembler
 adAeI 16 32 64   mips        BSD     MIPS Capstone-based disassembler
 _dA_I 16         msp430      LGPL3   Texas Instruments MSP430 disassembler
 adA__ 16 32 64   null        MIT     NULL (empty) disassembler (by pancake) v1.0.0
@@ -49,16 +53,16 @@ _dA__ 32 64      riscv       BSD     RISC-V Capstone-based disassembler
 adA__ 32         rl78        LGPL3   Renesas RL78 disassembler (by Bastian Engel)
 _dA__ 32         rsp         LGPL3   Nintendo N64 Reality Signal Processor disassembler
 _dA__ 32         rx          LGPL3   Renesas RX Family disassembler (by Heersin)
-adAeI 32         sh          LGPL3   Hitachi/Renesas SuperH-4 disassembler (by DMaroo)
+adAeI 32         sh          LGPL3   Hitachi/Renesas SuperH-4/SuperH-3 disassembler (by DMaroo)
 _dA__ 8 16       snes        LGPL3   SuperNES CPU disassembler
 _dA_I 32 64      sparc       BSD     Sun SPARC Capstone-based disassembler
 _dA__ 16         spc700      LGPL3   Sony SPC700 (Nintendo SuperNES sound-chip) disassembler
 _dA__ 32 64      sysz        BSD     IBM SystemZ (S/390) Capstone-based disassembler
-_dA__ 32         tms320      LGPL3   Texas Instruments TMS320 DSP family (c54x,c55x,c55x+,c64x) disassembler
+_dA_I 16 32      tms320      LGPL3   Texas Instruments TMS320 DSP family (c54x,c55x,c55x+,c2x,c5x,c64x) disassembler
 _dA_I 32         tricore     BSD     Siemens TriCore Capstone-based disassembler (by billow)
 _dAeI 32         v810        LGPL3   NEC V810 disassembler (by pancake)
 _dAeI 32         v850        LGPL3   NEC/Renesas V850 disassembler
-_dA__ 8 32       vax         GPL3    DEC VAX disassembler
+_dA__ 32         vax         LGPL3   DEC VAX-11 disassembler (by xvilka)
 adA__ 32         wasm        MIT     WebAssembly disassembler (by cgvwzq) v0.1.0
 _dAeI 16 32 64   x86         MIT     X86/X86_64 Zydis-based disassembler
 a____ 16 32 64   x86.as      LGPL3   Intel X86 GNU Assembler (Use RZ_X86_AS env)
@@ -120,6 +124,7 @@ noptr64         Special MIPS configuration to disable support for 64-bit pointer
 nofloat         Special MIPS configuration to disable support for floating-points
 esp32           Xtensa microcontroller with Wi-Fi and Bluetooth capabilities
 esp32s2         Xtensa microcontroller with Wi-Fi and USB OTG support
+esp32s3         Xtensa microcontroller with Wi-Fi, USB OTG support, and HIFI3
 esp8266         Xtensa microcontroller with Wi-Fi support
 v8              ARMv8 version
 cortexm         ARM Cortex-M family
@@ -154,12 +159,22 @@ cpu12           Motorola 68HC12: 16-bit microcontroller (also abbreviated as 681
 6301            Hitachi 6301: 8-bit microcontroller, CMOS version of 6800
 6309            Hitachi 6309: CMOS version of 6809
 hcs08           Freescale HCS08: 8-bit microcontroller family
+RS08            Freescale RS08: Reduced-resource version of HCS08
+HCS12X          Freescale HCS12X: 16-bit microcontroller (upwards compatible with cpu12)
 68000           Motorola 68000: 16/32-bit CISC microprocessor
 68010           Motorola 68010: 16/32-bit microprocessors. Successor to Motoroloa 68000
 68020           Motorola 68020: 32-bit microprocessor with added instructions and additional addressing modes
 68030           Motorola 68030: Enhanced 32-bit microprocessor with integrated MMU
 68040           Motorola 68040: High-performance 32-bit microprocessor with integrated FPU
 68060           Motorola 68060: 32-bit microprocessor, highest performer in m68k series
+cpu32           Motorola CPU32: 32-bit embedded-controller CPU core based on the 68020
+coldfire        Motorola ColdFire: 32-bit embedded-controller family based on the 68000 ISA
+cfv1            Motorola ColdFire V1 core
+cfv2            Motorola ColdFire V2 core
+cfv3            Motorola ColdFire V3 core
+cfv4            Motorola ColdFire V4 core
+cfv4e           Motorola ColdFire V4e core with enhanced MAC and FPU features
+cfv5            Motorola ColdFire V5 core
 baseline        Baseline 12-bit instruction set microcontrollers: PIC10Fxxx, PIC12Fxxx, and PIC16Fxxx
 midrange        Mid-Range 14-bit instruction set microcontrollers: PIC10Fxxx, PIC12Fxxx, and PIC16Fxxx
 highend         High-End 16-bit instruction set microcontrollers: PIC18Fxxxx, PIC18FxxJxx, and PIC18FxxKxx
@@ -170,10 +185,11 @@ ps              PowerPC with Paired Single SIMD extension
 qpx             PowerPC with Quad Processing eXtensions
 v9              SPARC V9: 64-bit RISC architecture specification
 c54x            Texas Instruments TMS320C54x DSP family
+c2x             Texas Instruments TMS320C2x legacy fixed-point DSP family
+c5x             Texas Instruments TMS320C5x fixed-point DSP family (C2x-compatible superset)
 c55x            Texas Instruments TMS320C55x DSP family
 c55x+           Texas Instruments TMS320C55x+ DSP family
 c64x            Texas Instruments TMS320C64x DSP family
 tricore         Generic TriCore CPU family by Infineon
 EOF
 RUN
-

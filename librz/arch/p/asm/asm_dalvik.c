@@ -3,16 +3,14 @@
 // SPDX-FileCopyrightText: 2009-2019 h4ng3r
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <stdio.h>
-#include <string.h>
-
 #include <rz_types.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 
 #include <dalvik/opcode.h>
 
-static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int dalvik_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	rz_return_val_if_fail(a && op && buf && len > 0, -1);
 
 	int vA, vB, vC, vD, vE, vF, vG, vH, payload = 0, i = (int)buf[0];
@@ -20,7 +18,6 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	char str[1024], *strasm = NULL;
 	ut64 offset = 0;
 	char *flag_str = NULL;
-	a->dataalign = 2;
 
 	if (buf[0] == 0x00) { /* nop */
 		if (len < 2) {
@@ -526,22 +523,19 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 }
 
 // TODO
-static int dalvik_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
-	int i;
-	char *p = strchr(buf, ' ');
-	if (p) {
-		*p = 0;
-	}
-	// TODO: use a hashtable here
-	for (i = 0; i < 256; i++) {
-		if (!strcmp(dalvik_opcodes[i].name, buf)) {
-			ut8 buf[4];
-			rz_write_ble32(buf, i, a->big_endian);
-			rz_strbuf_setbin(&op->buf, buf, sizeof(buf));
-			op->size = dalvik_opcodes[i].len;
-			return op->size;
+static int dalvik_assemble(const RzAsm *a, RzAsmOp *op, const char *buf) {
+	ut8 temp[4];
+	for (ut32 i = 0; i < 256; i++) {
+		if (strcmp(dalvik_opcodes[i].name, buf)) {
+			continue;
 		}
+
+		rz_write_ble32(temp, i, a->big_endian);
+		rz_strbuf_setbin(&op->buf, temp, sizeof(temp));
+		op->size = dalvik_opcodes[i].len;
+		return op->size;
 	}
+
 	return 0;
 }
 

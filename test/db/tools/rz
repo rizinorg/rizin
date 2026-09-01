@@ -1,31 +1,35 @@
-NAME=rz =
+NAME=file.(last)path for rz =
 FILE==
-CMDS=e file.path
+CMDS=<<EOF
+e file.path
+echo ---
+e file.lastpath
+EOF
 EXPECT=<<EOF
+
+---
 
 EOF
 RUN
 
-NAME=rz =
-FILE==
-CMDS=e file.lastpath
-EXPECT=<<EOF
-
-EOF
-RUN
-
-NAME=rz --
+NAME=file.(last)path for rz --
 FILE=--
-CMDS=e file.path
+CMDS=<<EOF
+e file.path
+echo ---
+e file.lastpath
+EOF
 EXPECT=<<EOF
+
+---
 
 EOF
 RUN
 
 NAME=rz --
 FILE=bins/elf/bomb
-BROKEN=1
-CMDS=rizin -s main -qcs bins/elf/bomb
+TOOL=rizin
+ARGS=-s main -qcs bins/elf/bomb
 EXPECT=<<EOF
 0x400da0
 EOF
@@ -45,54 +49,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=seek undo/redo
-FILE==
-CMDS=wx 01; s 1; shu; shr; pb 8
-EXPECT=<<EOF
-00000000
-EOF
-RUN
-
-NAME=rizin -V
-FILE==
-CMDS=!!rizin -V~rz_arch?
-EXPECT=<<EOF
-1
-EOF
-RUN
-
-NAME=rizin -h
-FILE==
-CMDS=!!rizin -h~Usage?
-EXPECT=<<EOF
-1
-EOF
-RUN
-
-NAME=rizin -hh
-FILE==
-CMDS=!!rizin -hh~RZ_USER_PLUGINS?
-EXPECT=<<EOF
-1
-EOF
-RUN
-
-NAME=rizin -L
-FILE==
-CMDS=!!rizin -L~default?
-EXPECT=<<EOF
-1
-EOF
-RUN
-
-NAME=rizin shortcut
+NAME=rizin -V & shortcut
 FILE==
 CMDS=<<EOF
+!!rizin -V~rz_arch?
+!!rizin -h~Usage?
+!!rizin -hh~RZ_USER_PLUGINS?
+!!rizin -L~default?
+echo ---
 %= `!!rizin -h~Usage?`
 %+ %vi $?
 %! echo `!!rizin.bat -h~Usage?`
 EOF
 EXPECT=<<EOF
+1
+1
+1
+1
+---
 1
 EOF
 RUN
@@ -108,10 +82,8 @@ RUN
 
 NAME=rizin -i -Q with missing script
 FILE==
-CMDS=<<EOF
-# Should not hang
-!rizin -i script/missing.rz -Nq =
-EOF
+TOOL=rizin
+ARGS=-i script/missing.rz -Nq =
 EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Script 'script/missing.rz' not found.
@@ -136,7 +108,8 @@ RUN
 
 NAME=rizin empty -R
 FILE==
-CMDS=!rizin -R ""
+TOOL=rizin
+ARGS=-R ""
 EXPECT_ERR=
 RUN
 
@@ -194,8 +167,10 @@ EXPECT_ERR=
 RUN
 
 NAME=prompt settings
-FILE==
-CMDS=!rizin -e cfg.fortunes=0 -e scr.color=0 -c "< \ne scr.prompt.file=true\ne scr.prompt.flag=true\nsd 1\ne scr.prompt.flag.only=true\ne scr.prompt.sect=true\nq\n" ./bins/elf/hello_world
+TOOL=rizin
+FILE=bins/elf/hello_world
+CMDS=< \ne scr.prompt.file=true\ne scr.prompt.flag=true\nsd 1\ne scr.prompt.flag.only=true\ne scr.prompt.sect=true\nq\n
+ARGS=-e cfg.fortunes=0 -e scr.color=0
 EXPECT=<<EOF
 [2K[0x000006a0]> [0x000006a0]> [2K[0x000006a0]> 
 [2K[0x000006a0]> [0x000006a0]> [2K[2K[0x000006a0]> e[0x000006a0]> e[2K[2K[0x000006a0]> e [0x000006a0]> e [2K[2K[0x000006a0]> e s[0x000006a0]> e s[2K[2K[0x000006a0]> e sc[0x000006a0]> e sc[2K[2K[0x000006a0]> e scr[0x000006a0]> e scr[2K[2K[0x000006a0]> e scr.[0x000006a0]> e scr.[2K[2K[0x000006a0]> e scr.p[0x000006a0]> e scr.p[2K[2K[0x000006a0]> e scr.pr[0x000006a0]> e scr.pr[2K[2K[0x000006a0]> e scr.pro[0x000006a0]> e scr.pro[2K[2K[0x000006a0]> e scr.prom[0x000006a0]> e scr.prom[2K[2K[0x000006a0]> e scr.promp[0x000006a0]> e scr.promp[2K[2K[0x000006a0]> e scr.prompt[0x000006a0]> e scr.prompt[2K[2K[0x000006a0]> e scr.prompt.[0x000006a0]> e scr.prompt.[2K[2K[0x000006a0]> e scr.prompt.f[0x000006a0]> e scr.prompt.f[2K[2K[0x000006a0]> e scr.prompt.fi[0x000006a0]> e scr.prompt.fi[2K[2K[0x000006a0]> e scr.prompt.fil[0x000006a0]> e scr.prompt.fil[2K[2K[0x000006a0]> e scr.prompt.file[0x000006a0]> e scr.prompt.file[2K[2K[0x000006a0]> e scr.prompt.file=[0x000006a0]> e scr.prompt.file=[2K[2K[0x000006a0]> e scr.prompt.file=t[0x000006a0]> e scr.prompt.file=t[2K[2K[0x000006a0]> e scr.prompt.file=tr[0x000006a0]> e scr.prompt.file=tr[2K[2K[0x000006a0]> e scr.prompt.file=tru[0x000006a0]> e scr.prompt.file=tru[2K[2K[0x000006a0]> e scr.prompt.file=true[0x000006a0]> e scr.prompt.file=true[2K[0x000006a0]> e scr.prompt.file=true
@@ -240,15 +215,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=<program> -h
-FILE=--
-CMDS=<<EOF
-(help prog; !${prog} -h; echo)
-..(help rizin  rz-asm  rz-ax  rz-bin  rz-diff  rz-find  rz-gg  rz-hash  rz-run  rz-sign)
-e scr.color.grep=true
-!!rz-test -h~:..-1
-!!rz-test -h~:-1 | grep -o ".*:"
-EOF
+NAME=rizin -h
+TOOL=rizin
+ARGS=-h
 EXPECT=<<EOF
 [36mUsage: [0mrizin [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]
              [-s addr] [-B baddr] [-m maddr] [-c cmd] [-e k=v] file|pid|-|--|=
@@ -296,7 +265,13 @@ EXPECT=<<EOF
  [32m-x[0m         [0mOpen without exec-flag (asm.emu will not work), See io.exec
  [32m-X[0m         [0mSame as -e bin.usextr=false (useful for dyldcache)
  [32m-z, -zz[0m    [0mDo not load strings or load them even in raw
+EOF
+RUN
 
+NAME=rz-asm -h
+TOOL=rz-asm
+ARGS=-h
+EXPECT=<<EOF
 [36mUsage: [0mrz-asm [-ACdDehLBvw] [-a arch] [-b bits] [-m plugin] [-o addr] [-s syntax]
              [-f file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|-
  [32m-a[0m[33m arch [0m    [0mSet architecture to assemble/disassemble (see -L)
@@ -322,7 +297,6 @@ EXPECT=<<EOF
  [32m-O[0m[33m file [0m    [0mOutput file name (rz-asm -Bf a.asm -O a)
  [32m-p[0m          [0mRun SPP over input for assembly
  [32m-q[0m          [0mQuiet mode
- [32m-r[0m          [0mOutput in rizin commands
  [32m-s[0m[33m syntax [0m  [0mSelect syntax (intel, att)
  [32m-v[0m          [0mShow version information
  [32m-x[0m          [0mUse hex dwords instead of hex pairs when assembling.
@@ -336,58 +310,61 @@ Environment:
  RZ_BITS      e asm.bits # cpu register size (8, 16, 32, 64) (same as rz-asm -b)
  RZ_DEBUG                # if defined, show error messages and crash signal
  RZ_NOPLUGINS            # do not load shared plugins (speedup loading)
+EOF
+RUN
 
-[36mUsage:[0m rz-ax [options] [expr ...]
-If expr is not provided, reads from stdin
- [0mint     ->  hex               ;  rz-ax 10
- [0mhex     ->  int               ;  rz-ax 0xa
- [0m-int    ->  hex               ;  rz-ax -77
- [0m-hex    ->  int               ;  rz-ax 0xffffffb3
- [0mint     ->  bin               ;  rz-ax b30
- [0mint     ->  ternary           ;  rz-ax t42
- [0mbin     ->  int               ;  rz-ax 1010d
- [0mternary ->  int               ;  rz-ax 1010dt
- [0mfloat   ->  hex               ;  rz-ax 3.33f
- [0mhex     ->  float             ;  rz-ax Fx40551ed8
- [0moct     ->  hex               ;  rz-ax 35o
- [0mhex     ->  oct               ;  rz-ax Ox12 (O is a letter)
- [0mbin     ->  hex               ;  rz-ax 1100011b
- [0mhex     ->  bin               ;  rz-ax Bx63
- [0mternary ->  hex               ;  rz-ax 212t
- [0mhex     ->  ternary           ;  rz-ax Tx23
- [0mraw     ->  hex               ;  rz-ax [32m-S[0m < /binfile
- [0mhex     ->  raw               ;  rz-ax [32m-s[0m 414141
- [32m=[0m[33m base [0m  [0m                      ;  rz-ax [32m=[33m10[0m 0x46 -> output in base 10
- [32m-l[0m      [0m                      ;  append newline to output (for [32m-E[0m/[32m-D[0m/[32m-r[0m/..
- [32m-a[0m      [0mshow ascii table      ;  rz-ax [32m-a[0m
- [32m-b[0m      [0mbin -> str            ;  rz-ax [32m-b[0m 01000101 01110110
- [32m-B[0m      [0mstr -> bin            ;  rz-ax [32m-B[0m hello
- [32m-d[0m      [0mforce integer         ;  rz-ax [32m-d[0m 3 -> 3 instead of 0x3
- [32m-e[0m      [0mswap endianness       ;  rz-ax [32m-e[0m 0x33
- [32m-D[0m      [0mbase64 decode
- [32m-E[0m      [0mbase64 encode
- [32m-f[0m      [0mfloating point        ;  rz-ax [32m-f[0m 6.3+2.1
- [32m-F[0m      [0mstdin slurp code hex  ;  rz-ax [32m-F[0m < shellcode.[c/py/js]
- [32m-h[0m      [0mshow this help        ;  rz-ax [32m-h[0m
- [32m-i[0m      [0mdump as C byte array  ;  rz-ax [32m-i[0m < bytes
- [32m-I[0m      [0mIP address <-> LONG   ;  rz-ax [32m-I[0m 3530468537
- [32m-k[0m      [0mkeep base             ;  rz-ax [32m-k[0m 33+3 -> 36
- [32m-L[0m      [0mbin -> hex(bignum)    ;  rz-ax [32m-L[0m 111111111 # 0x1ff
- [32m-n[0m      [0mint value -> hexpairs ;  rz-ax [32m-n[0m 0x1234 # 34120000
- [32m-o[0m      [0moctalstr -> raw       ;  rz-ax [32m-o[0m \162 \172 # rz
- [32m-N[0m      [0mbinary number         ;  rz-ax [32m-N[0m 0x1234 # \x34\x12\x00\x00
- [32m-r[0m      [0mrz style output       ;  rz-ax [32m-r[0m 0x1234
- [32m-s[0m      [0mhexstr -> raw         ;  rz-ax [32m-s[0m 43 4a 50
- [32m-S[0m      [0mraw -> hexstr         ;  rz-ax [32m-S[0m < /bin/ls > ls.hex
- [32m-t[0m      [0mUnix tstamp -> str    ;  rz-ax [32m-t[0m 1234567890
- [32m-m[0m      [0mMS-DOS tstamp -> str  ;  rz-ax [32m-m[0m 1234567890
- [32m-W[0m      [0mWin32 tstamp -> str   ;  rz-ax [32m-W[0m 1234567890
- [32m-x[0m      [0mhash string           ;  rz-ax [32m-x[0m linux osx
- [32m-u[0m      [0munits                 ;  rz-ax [32m-u[0m 389289238 # 317.0M
- [32m-w[0m      [0msigned word           ;  rz-ax [32m-w[0m 16 0xffff
- [32m-v[0m      [0mversion               ;  rz-ax [32m-v[0m
- [32m-p[0m      [0mposition of set bits  ;  rz-ax [32m-p[0m 0xb3
+NAME=rz-ax -h
+TOOL=rz-ax
+ARGS=-h
+EXPECT=<<EOF
+[36mUsage:[0m rz-ax [options] [expression ...]
 
+Converts numbers between bases and evaluates RzNum expressions.
+Without an expression, reads one per line from stdin.
+
+[36mOptions[0m
+ [32m=N[0m  [0mprint the result in base N   ;  rz-ax [32m=[33m10[0m 0x46
+ [32m-a[0m  [0mshow the ascii table         ;  rz-ax [32m-a[0m
+ [32m-b[0m  [0mbin -> str                   ;  rz-ax [32m-b[0m 01000101 01110110
+ [32m-B[0m  [0mstr -> bin                   ;  rz-ax [32m-B[0m hello
+ [32m-d[0m  [0mprint integers in base 10    ;  rz-ax [32m-d[0m 3           # 3, not 0x3
+ [32m-D[0m  [0mbase64 decode                ;  rz-ax [32m-D[0m cml6aW4=
+ [32m-e[0m  [0mswap endianness              ;  rz-ax [32m-e[0m 0x33
+ [32m-E[0m  [0mbase64 encode                ;  rz-ax [32m-E[0m rizin
+ [32m-f[0m  [0mkeep the fractional part     ;  rz-ax [32m-f[0m 6.3+2.1
+ [32m-F[0m  [0mslurp code from stdin as hex ;  rz-ax [32m-F[0m < shellcode.[c/py/js]
+ [32m-h[0m  [0mshow this help
+ [32m-H[0m  [0mshow the long help           ;  conversions, syntax, operators
+ [32m-i[0m  [0mdump as a C byte array       ;  rz-ax [32m-i[0m < bytes
+ [32m-I[0m  [0mIP address <-> LONG          ;  rz-ax [32m-I[0m 3530468537
+ [32m-k[0m  [0mkeep the input base          ;  rz-ax [32m-k[0m 33+3       # 36
+ [32m-l[0m  [0mappend a newline to output   ;  for [32m-E[0m / [32m-D[0m / [32m-r[0m / ...
+ [32m-L[0m  [0mbin -> hex (big number)      ;  rz-ax [32m-L[0m 111111111  # 0x1ff
+ [32m-m[0m  [0mMS-DOS timestamp -> str      ;  rz-ax [32m-m[0m 1234567890
+ [32m-n[0m  [0mint -> hex pairs             ;  rz-ax [32m-n[0m 0x1234     # 34120000
+ [32m-N[0m  [0mint -> escaped raw bytes     ;  rz-ax [32m-N[0m 0x1234     # \x34\x12\x00\x00
+ [32m-o[0m  [0moctal str -> raw             ;  rz-ax [32m-o[0m \162 \172   # rz
+ [32m-p[0m  [0mpositions of the set bits    ;  rz-ax [32m-p[0m 0xb3
+ [32m-r[0m  [0mrizin command output         ;  rz-ax [32m-r[0m 0x1234
+ [32m-s[0m  [0mhex str -> raw               ;  rz-ax [32m-s[0m 43 4a 50
+ [32m-S[0m  [0mraw -> hex str               ;  rz-ax [32m-S[0m < /bin/ls > ls.hex
+ [32m-t[0m  [0mUnix timestamp -> str        ;  rz-ax [32m-t[0m 1234567890
+ [32m-u[0m  [0mhuman readable units         ;  rz-ax [32m-u[0m 389289238  # 371.3M
+ [32m-v[0m  [0mshow the version
+ [32m-w[0m  [0msign-extend a signed word    ;  rz-ax [32m-w[0m 16 0xffff
+ [32m-W[0m  [0mWin32 timestamp -> str       ;  rz-ax [32m-W[0m 1234567890
+ [32m-x[0m  [0mdjb2 hash of a string        ;  rz-ax [32m-x[0m linux osx
+
+Run [32mrz-ax -H[0m for the conversion table, the expression
+syntax and the operator list, or see the rz-ax(1) man page.
+EOF
+RUN
+
+NAME=rz-bin -h
+TOOL=rz-bin
+ARGS=-h
+EXIT_STATUS=1
+EXPECT=<<EOF
 [36mUsage: [0mrz-bin [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]
               [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P pdb]
               [-o str] [-O str] [-k query] [-D lang symname] file
@@ -456,64 +433,79 @@ Environment:
  RZ_BIN_MAXSTRBUF:        e search.str.max_length       # specify maximum buffer size
  RZ_BIN_PDBSERVER:        e pdb.server                  # use alternative PDB server
  RZ_BIN_PREFIX:           e bin.prefix                  # prefix symbols/sections/relocs with a specific string
- RZ_BIN_STRFILTER:        e bin.str.filter              # rizin -qc 'e bin.str.filter=??' -
+ RZ_BIN_STRFILTER:        e bin.str.filter              # rizin -qc 'e bin.str.filter=?' -
  RZ_BIN_STRPURGE:         e bin.str.purge               # try to purge false positives
  RZ_BIN_SYMSTORE:         e pdb.symstore                # path to downstream PDB symbol store
  RZ_CONFIG:                                             # config file
+ RZ_COLOR:                                              # enables/disables colors support
+ RZ_UTF8:                                               # enables/disables utf8 support
  RZ_NOPLUGINS:                                          # do not load plugins
+EOF
+RUN
 
+NAME=rz-diff -h
+TOOL=rz-diff
+ARGS=-h
+EXPECT=<<EOF
 [36mUsage: [0mrz-diff [options] <file0> <file1>
- [32m-a[0m[33m arch [0m [0mSpecify architecture plugin to use (x86, arm, ..)
- [32m-b[0m[33m bits [0m [0mSpecify register size for arch (16 (thumb), 32, 64, ..)
- [32m-d[0m[33m algo [0m [0mCompute edit distance based on the chosen algorithm:
- [32m[0m         [0m   myers  | Eugene W. Myers' O(ND) algorithm (no substitution)
- [32m[0m         [0m   leven  | Levenshtein O(N^2) algorithm (with substitution)
- [32m[0m         [0m   ssdeep | Context triggered piecewise hashing comparison
- [32m-i[0m       [0mUse command line arguments instead of files (only for -d)
- [32m-H[0m       [0mHexadecimal visual mode
- [32m-h[0m       [0mShow this help
- [32m-j[0m       [0mJSON output
- [32m-q[0m       [0mQuiet output
- [32m-V[0m       [0mShow version information
- [32m-v[0m       [0mBe more verbose (stderr output)
- [32m-K[0m[33m theme [0m[0mSet a give color theme (see rizin 'eco' command)
- [32m-e[0m[33m k=v [0m  [0mSet an evaluable config variable
- [32m-A[0m       [0mCompare virtual and physical addresses
- [32m-B[0m       [0mRun 'aaa' when loading the bin
- [32m-C[0m       [0mDisable colors
- [32m-T[0m       [0mShow timestamp information
- [32m-S[0m[33m WxH [0m  [0mSet the width and height of the terminal for visual mode
- [32m-0[0m[33m cmd [0m  [0mInput for file0 when option -t 'commands' is given.
- [32m[0m         [0mThe same value will be set for file1, if -1 is not set.
- [32m-1[0m[33m cmd [0m  [0mInput for file1 when option -t 'commands' is given.
- [32m-t[0m[33m type [0m [0mCompute the difference between two files based on its type:
- [32m[0m         [0m   bytes      | compare raw bytes in the files (only for small files)
- [32m[0m         [0m   lines      | compare text files
- [32m[0m         [0m   functions  | compare functions found in the files
- [32m[0m         [0m              | optional -0 <fcn name|offset> to compare only one function
- [32m[0m         [0m   classes    | compare classes found in the files
- [32m[0m         [0m   command    | compare command output returned when executed in both files
- [32m[0m         [0m              | require -0 <cmd> and -1 <cmd> is optional
- [32m[0m         [0m   entries    | compare entries found in the files
- [32m[0m         [0m   fields     | compare fields found in the files
- [32m[0m         [0m   graphs     | compare 2 functions and outputs in graphviz/dot format
- [32m[0m         [0m              | require -0 <fcn name|offset> and -1 <fcn name|offset> is optional
- [32m[0m         [0m   imports    | compare imports found in the files
- [32m[0m         [0m   libraries  | compare libraries found in the files
- [32m[0m         [0m   sections   | compare sections found in the files
- [32m[0m         [0m   strings    | compare strings found in the files
- [32m[0m         [0m   symbols    | compare symbols found in the files
-palette colors can be changed by adding the following lines
-inside the $HOME/.rizinrc file
-ec diff.unknown blue   | offset color
-ec diff.match   green  | match color
-ec diff.unmatch red    | mismatch color
+ [32m-a[0m[33m arch [0m     [0mSpecify architecture plugin to use (x86, arm, ..)
+ [32m-b[0m[33m bits [0m     [0mSpecify register size for arch (16 (thumb), 32, 64, ..)
+ [32m-d[0m[33m myers [0m    [0mCompute edit distance using Eugene W. Myers' O(ND) algorithm (no substitution)
+ [32m-d[0m[33m leven [0m    [0mCompute edit distance using Levenshtein O(N^2) algorithm (with substitution)
+ [32m-d[0m[33m lcs-roll [0m [0mCompute edit distance using Myers+FastCDC with chunk size 128 (-0 to change chunk size)
+ [32m-d[0m[33m ssdeep [0m   [0mCompute edit distance using Context triggered piecewise hashing comparison
+ [32m-i[0m           [0mUse command line arguments instead of files (only for -d)
+ [32m-H[0m           [0mHexadecimal visual mode
+ [32m-h[0m           [0mShow this help
+ [32m-j[0m           [0mJSON output
+ [32m-q[0m           [0mQuiet output
+ [32m-v[0m           [0mShow version information
+ [32m-V[0m           [0mBe more verbose (stderr output)
+ [32m-K[0m[33m theme [0m    [0mSet a give color theme (see rizin 'eco' command)
+ [32m-e[0m[33m k=v [0m      [0mSet an evaluable config variable
+ [32m-A[0m           [0mCompare virtual and physical addresses
+ [32m-B[0m           [0mRun 'aaa' when loading the bin
+ [32m-C[0m           [0mDisable colors
+ [32m-T[0m           [0mShow timestamp information
+ [32m-S[0m[33m WxH [0m      [0mSet the width and height of the terminal for visual mode
+ [32m-0[0m[33m cmd [0m      [0mInput for file0 when option -t 'commands' is given.
+ [32m[0m             [0mThe same value will be set for file1, if -1 is not set.
+ [32m-1[0m[33m cmd [0m      [0mInput for file1 when option -t 'commands' is given.
+ [32m-t[0m[33m bytes [0m    [0mCompare raw bytes in the files (only for small files)
+ [32m-t[0m[33m lines [0m    [0mCompare text files
+ [32m-t[0m[33m functions [0m[0mCompare functions found in the files
+ [32m[0m             [0moptional -0 <fcn name|offset> to compare only one function
+ [32m-t[0m[33m classes [0m  [0mCompare classes found in the files
+ [32m-t[0m[33m command [0m  [0mCompare command output returned when executed in both files
+ [32m[0m             [0mrequires -0 <cmd> and -1 <cmd> is optional
+ [32m-t[0m[33m entries [0m  [0mCompare entries found in the files
+ [32m-t[0m[33m fields [0m   [0mCompare fields found in the files
+ [32m-t[0m[33m graphs [0m   [0mCompare 2 functions and outputs in graphviz/dot format
+ [32m[0m             [0mrequires -0 <fcn name|offset> and -1 <fcn name|offset> is optional
+ [32m-t[0m[33m imports [0m  [0mCompare imports found in the files
+ [32m-t[0m[33m libraries [0m[0mCompare libraries found in the files
+ [32m-t[0m[33m sections [0m [0mCompare sections found in the files
+ [32m-t[0m[33m strings [0m  [0mCompare strings found in the files
+ [32m-t[0m[33m symbols [0m  [0mCompare symbols found in the files
+Palette colors can be changed by adding the following lines inside the $HOME/.rizinrc file
+  ec diff.unknown blue  | offset color
+  ec diff.match   green | match color
+  ec diff.unmatch red   | mismatch color
+Environment variables
+  RZ_COLOR              | enables/disables colors support
+EOF
+RUN
 
-[36mUsage: [0mrz-find [-mXnzZhqvV] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] -|file|dir ..
+NAME=rz-find -h
+TOOL=rz-find
+ARGS=-h
+EXPECT=<<EOF
+[36mUsage: [0mrz-find [-mXnzZhqvV] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] [-R cmd] -|file|dir ..
  [32m-a[0m[33m align [0m[0mOnly accept aligned hits
  [32m-b[0m[33m size [0m [0mSet block size
  [32m-e[0m[33m regex [0m[0mSearch for regex matches (can be used multiple times)
- [32m-E[0m[33m cmd [0m  [0mExecute command for each file found
+ [32m-E[0m[33m cmd [0m  [0mExecute shell command for each file found.
+ [32m-R[0m[33m cmd [0m  [0mExecute Rizin command for each search hit.
  [32m-f[0m[33m from [0m [0mStart searching from address 'from'
  [32m-F[0m[33m file [0m [0mRead the contents of the file and use it as keyword
  [32m-h[0m       [0mShow this help
@@ -535,7 +527,14 @@ ec diff.unmatch red    | mismatch color
  [32m-X[0m       [0mShow hexdump of search results
  [32m-z[0m       [0mSearch for zero-terminated strings
  [32m-Z[0m       [0mShow string found on each search hit
+EOF
+RUN
 
+NAME=rz-gg -h
+TOOL=rz-gg
+ARGS=-h
+EXIT_STATUS=1
+EXPECT=<<EOF
 [36mUsage: [0mrz-gg [-FOLsrxhvz] [-a arch] [-b bits] [-k os] [-o file] [-I path]
              [-i sc] [-e enc] [-B hex] [-c k=v] [-C file] [-p pad] [-q off]
              [-S string] [-f fmt] [-nN dword] [-dDw off:hex] file|f.asm|-
@@ -572,7 +571,13 @@ ec diff.unmatch red    | mismatch color
  [32m-x[0m           [0mExecute
  [32m-X[0m           [0mExecute rop chain, using the stack provided
  [32m-z[0m           [0mOutput in C string syntax
+EOF
+RUN
 
+NAME=rz-hash -h
+TOOL=rz-hash
+ARGS=-h
+EXPECT=<<EOF
 [36mUsage: [0mrz-hash [-vhBkjLq] [-b S] [-a A] [-c H] [-E A] [-D A] [-s S] [-x S] [-f O] [-t O] [files|-] ...
  [32m-v[0m        [0mShow version information
  [32m-h[0m        [0mShow this help
@@ -603,7 +608,14 @@ ec diff.unmatch red    | mismatch color
  [32m[0m          [0m
  [32m[0m          [0mAll the input (besides -s/-x/-c) can be hexadecimal or strings
  [32m[0m          [0mIf 's:' prefix is specified
+EOF
+RUN
 
+NAME=rz-run -h
+TOOL=rz-run
+ARGS=-h
+EXIT_STATUS=1
+EXPECT=<<EOF
 [36mUsage: [0mrz-run [directives | script.rz] [-- program [args]]
  [32m-h[0m                [0mShow this help
  [32m-l[0m                [0mShow profile directives
@@ -611,7 +623,13 @@ ec diff.unmatch red    | mismatch color
  [32m-v[0m                [0mShow version information
  [32m-w[0m                [0mWait for incoming terminal process
  [32m--[0m[33m program [args] [0m[0mRun program
+EOF
+RUN
 
+NAME=rz-sign -h
+TOOL=rz-sign
+ARGS=-h
+EXPECT=<<EOF
 [36mUsage: [0mrz-sign [-aqv] [-e k=v] (-c pat sig | -o sig bin | -d sig)
  [32m-h[0m                      [0mShow this help
  [32m-a, -aa[0m                 [0mAdd extra 'a' to analysis command (available only with -o option)
@@ -625,29 +643,5 @@ Examples:
   rz-sign -d signature.sig
   rz-sign -c new_signature.pat old_signature.sig
   rz-sign -o libc.sig libc.so.6
-
-[36mUsage: [0mrz-test [-qvVnL] [-j threads] [test file/dir | @test-type]
- [32m-h[0m         [0mShow this help
- [32m-v[0m         [0mShow version information
- [32m-q[0m         [0mQuiet mode
- [32m-V[0m         [0mBe verbose
- [32m-N[0m         [0mDisable diffing unless the test fails.
- [32m-i[0m         [0mInteractive mode
- [32m-y[0m         [0mAccept all interactive changes
- [32m-n[0m         [0mDo nothing (don't run any test, just load/parse them)
- [32m-L[0m         [0mLog mode (better printing for CI, logfiles, etc.)
- [32m-F[0m[33m dir [0m    [0mRun fuzz tests (open and default analysis) on all files in the given dir
- [32m-j[0m[33m threads [0m[0mHow many threads to use for running tests concurrently (default is 8)
- [32m-r[0m[33m rizin [0m  [0mPath to rizin executable (default is rizin)
- [32m-m[0m[33m rz-asm [0m [0mPath to rz-asm executable (default is rz-asm)
- [32m-f[0m[33m file [0m   [0mFile to use for JSON tests (default is bins/elf/crackme0x00b)
- [32m-C[0m[33m dir [0m    [0mChdir before running rz-test (default follows test pathname/cwd)
- [32m-t[0m[33m seconds [0m[0mTimeout per test (default is 960 seconds)
- [32m-o[0m[33m file [0m   [0mOutput test run information in JSON format to file
- [32m-e[0m[33m dir [0m    [0mExclude a particular directory while testing (this option can appear many times)
- [32m-s[0m[33m num [0m    [0mNumber of expected successful tests
- [32m-x[0m[33m num [0m    [0mNumber of expected failed tests
-Supported test types: @json @unit @fuzz @cmds
-OS/Arch for archos tests:
 EOF
 RUN

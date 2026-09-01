@@ -411,6 +411,9 @@ RZ_API void rz_sys_backtrace(void) {
  * \brief Sleep for \p secs seconds
  */
 RZ_API int rz_sys_sleep(int secs) {
+	if (secs < 1) {
+		return 0;
+	}
 #if HAVE_CLOCK_NANOSLEEP && defined(CLOCK_MONOTONIC)
 	struct timespec rqtp;
 	rqtp.tv_sec = secs;
@@ -428,6 +431,9 @@ RZ_API int rz_sys_sleep(int secs) {
  * \brief Sleep for \p usecs microseconds
  */
 RZ_API int rz_sys_usleep(int usecs) {
+	if (usecs < 1) {
+		return 0;
+	}
 #if HAVE_CLOCK_NANOSLEEP && defined(CLOCK_MONOTONIC)
 	struct timespec rqtp;
 	rqtp.tv_sec = usecs / 1000000;
@@ -949,26 +955,6 @@ RZ_API void rz_sys_perror_str(const char *fun) {
 		eprintf("%s\n", fun);
 	}
 #endif /* __WINDOWS__ */
-}
-
-RZ_API bool rz_sys_arch_match(const char *archstr, const char *arch) {
-	char *ptr;
-	if (!archstr || !arch || !*archstr || !*arch) {
-		return true;
-	}
-	if (!strcmp(archstr, "*") || !strcmp(archstr, "any")) {
-		return true;
-	}
-	if (!strcmp(archstr, arch)) {
-		return true;
-	}
-	if ((ptr = strstr(archstr, arch))) {
-		char p = ptr[strlen(arch)];
-		if (!p || p == ',') {
-			return true;
-		}
-	}
-	return false;
 }
 
 RZ_API int rz_sys_arch_id(const char *arch) {

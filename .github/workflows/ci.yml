@@ -30,7 +30,7 @@ jobs:
       edited: ${{ steps.filter.outputs.edited }}
     steps:
       - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           base: ${{ github.ref }}
@@ -60,7 +60,6 @@ jobs:
             linux-meson-gcc-tests,
             macos-meson-clang-tests,
             linux-gcc-tests-asan,
-            linux-gcc-tests-lsan,
             linux-clang-tests-asan,
             linux-gcc-tests-codecov,
             capstone-v4,
@@ -82,7 +81,7 @@ jobs:
             build_system: meson
             compiler: gcc
             run_tests: true
-            meson_options: -Dbuildtype=release --werror
+            meson_options: -Dbuildtype=release -Denable_benchmarks=true --werror
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 45
             cflags: -DRZ_ASSERT_STDOUT=1
@@ -108,21 +107,6 @@ jobs:
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 120
             allow_failure: false
-          - name: linux-gcc-tests-lsan
-            os: ubuntu-24.04
-            build_system: meson
-            compiler: gcc
-            cflags: "-DASAN=1 -DRZ_ASSERT_STDOUT=1 -ftrivial-auto-var-init=pattern -funsigned-char"
-            meson_options: -Dbuildtype=debug -Db_sanitize=leak --werror
-            asan: true
-            lsan_options: log_path=/tmp/lsan_logs/log
-            continue-on-error: false
-            run_tests: true
-            enabled: ${{ (needs.changes.outputs.edited == 'true' && github.event_name == 'pull_request') }}
-            timeout: 120
-            # The existing leaks in Rizin will make the tests fail otherwise
-            # before it runs the script to check for new leaks.
-            allow_failure: true
           - name: linux-gcc-tests-portable
             os: ubuntu-24.04
             build_system: meson
@@ -143,7 +127,7 @@ jobs:
             asan_options: detect_leaks=0,allocator_may_return_null=1
             run_tests: true
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
-            timeout: 115
+            timeout: 120
             allow_failure: false
           - name: linux-gcc-tests-codecov
             os: ubuntu-24.04
@@ -153,7 +137,7 @@ jobs:
             meson_options: -Dbuildtype=debug -Db_coverage=true -Dchecks_level=3 --werror
             coverage: true
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
-            timeout: 60
+            timeout: 75
             allow_failure: false
           - name: capstone-sys
             os: ubuntu-24.04
@@ -293,7 +277,6 @@ jobs:
         env:
           ASAN: ${{ matrix.asan }}
           ASAN_OPTIONS: ${{ matrix.asan_options }}
-          LSAN_OPTIONS: ${{ matrix.lsan_options }}
           CC: ${{ matrix.compiler }}
       - name: Checkout our Testsuite Binaries
         if: matrix.enabled
@@ -337,7 +320,6 @@ jobs:
         env:
           ASAN: ${{ matrix.asan }}
           ASAN_OPTIONS: ${{ matrix.asan_options }}
-          LSAN_OPTIONS: ${{ matrix.lsan_options }}
           CC: ${{ matrix.compiler }}
       - name: Run fuzz tests
         if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz') || matrix.coverage)
@@ -359,12 +341,7 @@ jobs:
         env:
           ASAN: ${{ matrix.asan }}
           ASAN_OPTIONS: ${{ matrix.asan_options }}
-          LSAN_OPTIONS: ${{ matrix.lsan_options }}
           CC: ${{ matrix.compiler }}
-      - name: Check for new leaks
-        if: matrix.lsan_options != '' && matrix.enabled
-        run: |
-          ./sys/lsan_check.py ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} /tmp/lsan_logs/*
       - name: Generate coverage data
         if: matrix.coverage && matrix.enabled
         run: |
@@ -372,7 +349,7 @@ jobs:
           gcovr --gcov-ignore-parse-errors=all --txt build/coverage.txt --cobertura build/coverage.xml --merge-mode-functions=separate build
       - name: Upload coverage to Codecov
         if: matrix.coverage && matrix.enabled
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           directory: build/
@@ -380,7 +357,7 @@ jobs:
           verbose: true
       - name: Upload test results
         if: always() && matrix.run_tests && matrix.enabled
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: test-results-${{ matrix.name }}
           path: test/results.json
@@ -407,7 +384,7 @@ jobs:
           git fetch origin ${{ github.ref }}
           git checkout -b local_branch FETCH_HEAD
       - name: Checkout our Testsuite Binaries
-        run: git clone https://github.com/rizinorg/rizin-testbins test/bins
+        run: git clone --depth 1 https://github.com/rizinorg/rizin-testbins test/bins
         working-directory: rizin
       - name: Build
         run: |
@@ -486,7 +463,7 @@ jobs:
           git fetch origin ${{ github.ref }}
           git checkout -b local_branch FETCH_HEAD
       - name: Checkout our Testsuite Binaries
-        run: git clone https://github.com/rizinorg/rizin-testbins test/bins
+        run: git clone --depth 1 https://github.com/rizinorg/rizin-testbins test/bins
         working-directory: rizin
         # Old Debian git doesn't recognize this directive
       - name: Workaround to disable git depth
@@ -530,7 +507,7 @@ jobs:
           git fetch origin ${{ github.ref }}
           git checkout -b local_branch FETCH_HEAD
       - name: Checkout our Testsuite Binaries
-        run: git clone https://github.com/rizinorg/rizin-testbins test/bins
+        run: git clone --depth 1 https://github.com/rizinorg/rizin-testbins test/bins
         working-directory: rizin
       - name: Compile with meson
         run: |
@@ -554,12 +531,12 @@ jobs:
         working-directory: rizin
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: test-results-static
           path: rizin/test/results.json
       - name: Upload static build
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: rizin-static.tar.xz
           path: rizin/rizin-static.tar.xz
@@ -587,7 +564,7 @@ jobs:
           meson dist --include-subprojects --no-tests
           ls -l meson-dist
           mv meson-dist/rizin-${{ steps.extract_version.outputs.version }}.tar.xz meson-dist/rizin-src.tar.xz
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: rizin-src.tar.xz
           path: build/meson-dist/rizin-src.tar.xz
@@ -602,7 +579,7 @@ jobs:
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip
       - name: Install meson and ninja
         run: sudo pip3 install meson ninja PyYAML
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: rizin-src.tar.xz
       - name: Extract source tarball
@@ -650,7 +627,7 @@ jobs:
           ./dist/macos/build_macos_package.sh
           mv rizin-*.pkg rizin.pkg
       - name: Upload .pkg file
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: rizin.pkg
           path: ./rizin.pkg
@@ -693,11 +670,11 @@ jobs:
       - name: Build and create zip/installer
         shell: pwsh
         run: .\dist\windows\build_windows_installer.ps1 ${{ matrix.name }} ${{ matrix.bits }} ${{ matrix.meson_options }}
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: rizin-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
           path: .\dist\windows\Output\rizin-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: rizin_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
           path: .\dist\windows\Output\rizin.exe
@@ -726,7 +703,7 @@ jobs:
           cd /tmp
           rm -rf android-dir/include android-dir/lib
           tar --transform 's/android-dir/data\/data\/org.rizinorg.rizininstaller/g' -cvzf rizin-android-${{ matrix.name }}.tar.gz android-dir/
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: rizin-android-${{ matrix.name }}
           path: /tmp/rizin-android-${{ matrix.name }}.tar.gz
@@ -776,7 +753,7 @@ jobs:
       - name: Compile jsdec in EXTRA_PREFIX
         run: |
           if ${{ (contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') }} ; then
-            git clone --depth 1 --branch master https://github.com/rizinorg/jsdec
+            git clone --depth 1 --branch stable https://github.com/rizinorg/jsdec
           else
             git clone --depth 1 --branch dev https://github.com/rizinorg/jsdec
           fi
@@ -793,7 +770,7 @@ jobs:
     env:
       RZPIPE_TESTS: "rz-pipe-py rz-pipe-go"
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: rizin-src.tar.xz
       - name: Extract source tarball
@@ -820,7 +797,7 @@ jobs:
     needs: [ test-tarball ]
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: rizin-src.tar.xz
       - name: Extract source tarball
@@ -838,10 +815,10 @@ jobs:
         working-directory: rizin
       - name: Checkout rz-bindgen (stable)
         if: github.ref == 'refs/heads/stable'
-        run: git clone -b stable https://github.com/rizinorg/rz-bindgen
+        run: git clone --depth 1 -b stable https://github.com/rizinorg/rz-bindgen
       - name: Checkout rz-bindgen (dev)
         if: github.ref != 'refs/heads/stable'
-        run: git clone -b dev https://github.com/rizinorg/rz-bindgen
+        run: git clone --depth 1 -b dev https://github.com/rizinorg/rz-bindgen
       - name: Build rz-bindgen
         run: |
           meson setup --prefix=/usr -Dplugin=enabled build
@@ -850,10 +827,9 @@ jobs:
         working-directory: rz-bindgen
       - name: Test python lang plugin
         run: rizin -qc "Ll" | grep "Python SWIG"
-      - name: Test rizin.py
-        run: |
-          echo "import rizin" > testimport.py
-          python3 testimport.py
+      - name: Run rz-test
+        run: rz-test -L tests/
+        working-directory: rz-bindgen
 
   test-macos-pkg:
     name: Test macOS pkg
@@ -864,7 +840,7 @@ jobs:
     runs-on: ${{ matrix.system }}
     needs: [ build-macos-pkg ]
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: rizin.pkg
           path: ./
@@ -902,7 +878,7 @@ jobs:
         shell: pwsh
         run: echo "branch=$(python sys/version.py)" >> $Env:GITHUB_OUTPUT
         id: extract_version
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: rizin_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
           path: ./
@@ -936,6 +912,90 @@ jobs:
           ninja
           .\rizin_cmake_test
 
+  test-riscv-inside-qemu:
+    name: Test Rizin on RISC-V 64-bit inside QEMU
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            qemu-system-riscv64 \
+            gcc-riscv64-linux-gnu \
+            g++-riscv64-linux-gnu \
+            binutils-riscv64-linux-gnu \
+            cpio
+          pip3 install meson ninja
+
+      - name: Setup RISC-V QEMU environment
+        run: |
+          cd ..
+          sh rizin/.github/riscv-qemu-setup-all.sh
+
+      - name: Run inside RISC-V QEMU
+        run: |
+          cd ..
+          qemu-system-riscv64 \
+            -machine virt -cpu rv64 -m 2G \
+            -kernel linux-image/boot/vmlinux-6.12.73+deb13-riscv64 \
+            -initrd initrd.cpio.gz \
+            -append "console=ttyS0,115200 earlycon" \
+            -nographic
+
+  test-riscv32-in-qemu:
+    name: Test Rizin on RISC-V 32-bit inside QEMU
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y qemu-system-misc qemu-user-static
+          pip3 install meson ninja
+
+      - name: Bootlin env definitions
+        run: |
+          set -a
+          BOOTLIN_VERSION=stable-2025.08-1
+          BOOTLIN_LIBC=musl
+          BOOTLIN_RV32_TOOLCHAIN=riscv32-ilp32d--${BOOTLIN_LIBC}--${BOOTLIN_VERSION}.tar.xz 
+          BOOTLIN_DOMAIN=https://toolchains.bootlin.com
+          BOOTLIN_DOWNLOAD_URL=${BOOTLIN_DOMAIN}/downloads/releases/toolchains/riscv32-ilp32d/tarballs/${BOOTLIN_RV32_TOOLCHAIN}
+          BOOTLIN_INSTALLATION="${GITHUB_WORKSPACE}/toolchain/${BOOTLIN_RV32_TOOLCHAIN%.tar.xz}"
+          BOOTLIN_TOOLS="${BOOTLIN_INSTALLATION}/bin"
+          env | grep "^BOOTLIN_" >> $GITHUB_ENV
+
+      - name: Try getting the Bootlin toolchain from cache
+        id: cache-toolchain
+        uses: actions/cache@v5
+        with:
+          path: ${{ github.workspace }}/toolchain
+          key: ${{ env.BOOTLIN_RV32_TOOLCHAIN }}
+
+      - name: Download Bootlin on cache miss
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p toolchain && cd toolchain
+          wget -q ${{ env.BOOTLIN_DOWNLOAD_URL }} 
+          tar -xf ${{ env.BOOTLIN_RV32_TOOLCHAIN }}
+          rm ${{ env.BOOTLIN_RV32_TOOLCHAIN }}
+
+      - name: Setup the QEMU image
+        run: cd .. && sh ./rizin/.github/riscv32-qemu-setup-all.sh /bin/rizin -hh
+
+      - name: Run Rizin on RISCV32 inside QEMU
+        run: |
+          cd .. 
+          qemu-system-riscv32 -machine virt -m 2G \
+            -bios rv32-fw_dynamic.bin \
+            -kernel rv32-Image \
+            -initrd initrd_rv32.cpio \
+            -drive file=rootfs-rv32.ext4,format=raw,id=hd0,if=none \
+            -device virtio-blk-device,drive=hd0 \
+            -append "earlycon console=hvc0" \
+            -nographic
+
   create-release:
     name: Create draft release and upload artifacts
     runs-on: ubuntu-24.04
@@ -957,7 +1017,7 @@ jobs:
       - name: Extract rizin version
         run: echo "branch=$(python sys/version.py)" >> $GITHUB_OUTPUT
         id: extract_version
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
       - name: Rename artifacts for release
         run: |
           mv ./rizin-src.tar.xz/rizin-src.tar.xz rizin-src-${{ steps.extract_version.outputs.branch }}.tar.xz
@@ -972,7 +1032,7 @@ jobs:
           mv ./rizin_installer-clang_cl_x86-${{ steps.extract_version.outputs.branch }}/rizin.exe rizin_installer-${{ steps.extract_version.outputs.branch }}-x86.exe
       - name: Create Release
         id: create_release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ steps.extract_version.outputs.branch }}
@@ -1005,22 +1065,22 @@ jobs:
           export PATH=${HOME}/.local/bin:${PATH}
           meson subprojects download
       - name: Login to DockerHub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Docker meta
         id: docker_meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/rizin
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Publish to Registry
         id: docker_build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile

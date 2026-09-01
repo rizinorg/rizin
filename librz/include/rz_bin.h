@@ -18,6 +18,7 @@ typedef struct rz_bin_file_t RzBinFile;
 typedef struct rz_bin_reloc_storage_t RzBinRelocStorage;
 
 #include <rz_bin_dwarf.h>
+#include <rz_bin_stabs.h>
 #include <rz_pdb.h>
 
 #ifdef __cplusplus
@@ -184,7 +185,8 @@ typedef enum {
 
 enum {
 	RZ_BIN_TYPE_DEFAULT = 0,
-	RZ_BIN_TYPE_CORE = 1
+	RZ_BIN_TYPE_CORE = 1,
+	RZ_BIN_TYPE_REL = 2
 };
 
 #define RZ_BIN_STRING_SEARCH_MIN_STRING         4
@@ -211,6 +213,7 @@ typedef struct rz_bin_string_search_opt_t {
 	 */
 	size_t raw_alignment;
 	bool check_ascii_freq; ///< If true, perform check on ASCII frequencies when looking for false positives
+	RzVector /*<RzCodePoint>*/ *user_unprintable; ///< User-defined non-printable code points
 	RzStrEnc string_encoding; ///< The default string encoding type (when set to guess, it is automatically guessed).
 	RzBinStringSearchMode mode; ///< String search mode (auto, ro sections or raw binary)
 } RzBinStringSearchOpt;
@@ -247,6 +250,15 @@ typedef struct rz_bin_file_hash_t {
 	const char *hex;
 } RzBinFileHash;
 
+typedef enum {
+	RZ_BIN_SANITIZER_NONE = 0,
+	RZ_BIN_SANITIZER_GENERIC = (1 << 0),
+	RZ_BIN_SANITIZER_UBSAN = (1 << 1),
+	RZ_BIN_SANITIZER_ASAN = (1 << 2),
+	RZ_BIN_SANITIZER_MSAN = (1 << 3),
+	RZ_BIN_SANITIZER_TSAN = (1 << 4),
+} RzBinSanitizer;
+
 typedef struct rz_bin_info_t {
 	char *file;
 	char *type;
@@ -266,24 +278,28 @@ typedef struct rz_bin_info_t {
 	char *default_cc;
 	RzPVector /*<RzBinFileHash *>*/ *file_hashes;
 	int bits;
-	int has_va;
-	int has_pi; // pic/pie
-	int has_canary;
-	int has_retguard;
-	int has_sanitizers;
-	int has_crypto;
-	int has_nx;
+	bool has_va; ///< Virtual Addressing
+	bool has_pie; ///< Position-independent executable/code
+	bool has_canary; ///< Binary has stack canaries
+	bool is_encrypted; ///< Binary is encrypted fully or partially (Apple FairPlay, encrypted region, etc..)
+	bool is_signed; ///< Binary is digitally signed
+	bool has_nx; ///< Non-Executable Memory/Bit
+	bool has_objc_arc; ///< Automatic Reference Counting (Objective-C's compile-time memory management)
+	bool has_ptr_auth; ///< ARM Pointer Authentication Code
+	bool has_fortify_source; ///< Fortify Source (FORTIFY_SOURCE)
+	bool has_retguard; ///< OpenBSD retguard stack protector
 	bool has_nobtcfi; ///< OpenBSD, linked with -Wl,-z,nobtcfi to opt-out of IBT/BTI
-	int big_endian;
+	ut32 sanitizers; ///< (RzBinSanitizer) Binary was compiled with ASan, TSan, etc..
+	bool big_endian;
 	char *actual_checksum;
 	char *claimed_checksum;
-	int pe_overlay;
-	bool signature;
+	bool pe_overlay;
 	ut64 dbg_info;
 	RzBinHash sum[3];
 	ut64 baddr;
 	char *intrp;
 	char *compiler;
+	HtSS *extra_dict;
 } RzBinInfo;
 
 typedef struct rz_bin_file_load_options_t {
@@ -323,6 +339,7 @@ typedef struct rz_bin_object_t {
 	RzPVector /*<RzBinSection *>*/ *sections;
 	RzPVector /*<RzBinImport *>*/ *imports;
 	RzPVector /*<RzBinSymbol *>*/ *symbols;
+	RzPVector /*<RzBinTrycatch *>*/ *trycatch;
 	RzPVector /*<RzBinResource *>*/ *resources;
 	/**
 	 * \brief Acceleration structure for fast access of the symbol for a given import.
@@ -347,7 +364,7 @@ typedef struct rz_bin_object_t {
 	RzBinAddr *binsym[RZ_BIN_SPECIAL_SYMBOL_LAST];
 	struct rz_bin_plugin_t *plugin;
 	RzBinLanguage lang;
-	RZ_DEPRECATE RZ_BORROW Sdb *kv; ///< deprecated, put info in C structures instead of this (holds a copy of another pointer.)
+	RZ_DEPRECATE RZ_OWN Sdb *kv; ///< deprecated, put info in C structures instead of this
 	void *bin_obj; // internal pointer used by formats
 } RzBinObject;
 
@@ -851,6 +868,7 @@ typedef struct rz_bin_resource_t {
 	char *name;
 	char *time;
 	ut64 vaddr;
+	ut64 paddr;
 	ut64 size;
 	char *type;
 	char *language;
@@ -864,6 +882,8 @@ typedef char *(*RzBinGetName)(RzBin *bin, int type, int idx);
 typedef const RzPVector *(*RzBinGetSections)(RzBinObject *obj);
 typedef RzBinSection *(*RzBinGetSectionAt)(RzBin *bin, ut64 addr);
 typedef char *(*RzBinDemangle)(RzBin *bin, const char *language, const char *mangled);
+typedef RzBinObject *(*RzBinGetObject)(RzBin *bin);
+typedef RzPVector /*<RzBinTrycatch *>*/ *(*RzBinGetTrycatch)(RzBin *bin);
 
 typedef struct rz_bin_bind_t {
 	RzBin *bin;
@@ -872,6 +892,8 @@ typedef struct rz_bin_bind_t {
 	RzBinGetSections get_sections;
 	RzBinGetSectionAt get_vsect_at;
 	RzBinDemangle demangle;
+	RzBinGetObject get_bin_object;
+	RzBinGetTrycatch get_trycatch;
 	ut32 visibility;
 } RzBinBind;
 
@@ -919,7 +941,7 @@ RZ_API RzPVector /*<RzBinSection *>*/ *rz_bin_sections_of_maps(RzPVector /*<RzBi
 RZ_API RzBinSection *rz_bin_section_new(const char *name);
 RZ_API void rz_bin_section_free(RZ_NULLABLE RzBinSection *bs);
 RZ_API bool rz_bin_section_is_data(RZ_NONNULL const RzBinSection *section);
-RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, int type);
+RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, ut64 type);
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_bin_section_flag_to_list(RzBin *bin, ut64 flag);
 RZ_API void rz_bin_info_free(RZ_NULLABLE RzBinInfo *rb);
 RZ_API void rz_bin_import_free(RZ_NULLABLE RzBinImport *imp);
@@ -1002,7 +1024,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 
 // use RzBinFile instead
 RZ_DEPRECATE RZ_API int rz_bin_is_static(RZ_NONNULL RzBin *bin);
-RZ_API RZ_OWN RzPVector /*<RzBinTrycatch *>*/ *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFile *bf);
+RZ_API RZ_BORROW RzPVector /*<RzBinTrycatch *>*/ *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFile *bf);
 
 RZ_API RZ_BORROW const RzPVector /*<RzBinAddr *>*/ *rz_bin_object_get_entries(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzPVector /*<RzBinField *>*/ *rz_bin_object_get_fields(RZ_NONNULL RzBinObject *obj);

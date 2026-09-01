@@ -27,7 +27,6 @@ rz_egg = library('rz_egg', rz_egg_sources,
     rz_util_dep,
     rz_syscall_dep,
     rz_arch_dep,
-    mpc_dep
   ],
   install: true,
   implicit_include_directories: false,

@@ -49,7 +49,8 @@ RZ_IPI bool rz_core_visual_esil(RzCore *core) {
 	}
 	memcpy(buf, core->block, sizeof(ut64));
 	RzAnalysisEsil *esil = rz_analysis_esil_new(20, 0, addrsize);
-	esil->analysis = core->analysis;
+	esil->pcore = core;
+	esil->panalysis = core->analysis;
 	rz_analysis_esil_set_pc(esil, core->offset);
 	for (;;) {
 		rz_cons_clear00();
@@ -69,7 +70,8 @@ RZ_IPI bool rz_core_visual_esil(RzCore *core) {
 		}
 		{
 			RzStrBuf *colored_asm;
-			RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
+			RzReg *rreg = rz_analysis_get_reg(core->analysis);
+			RzAsmParseParam *param = rz_asm_get_parse_param(rreg, aop.type);
 			colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, param, asmop.asm_toks);
 			rz_asm_parse_param_free(param);
 			rz_cons_printf(Color_RESET "asm: %s\n" Color_RESET, colored_asm ? rz_strbuf_get(colored_asm) : "");

@@ -34,11 +34,11 @@ rz_core_sources = [
   'cflag.c',
   'cgraph.c',
   'chash.c',
-  'cheap.c',
   'cil.c',
   'cio.c',
   'clang.c',
   'cmark.c',
+  'cmath.c',
   'cmeta.c',
   'cmp.c',
   'core.c',
@@ -60,10 +60,11 @@ rz_core_sources = [
   'hack.c',
   'heap_glibc.c',
   'heap_jemalloc.c',
+  'heap_windows.c',
   'libs.c',
   'project.c',
   'project_migrate.c',
-  'rop.c',
+  'gadget.c',
   'rtr.c',
   #'rtr_http.c',
   #'rtr_shell.c',
@@ -136,7 +137,7 @@ rz_core_sources = [
 
 rz_core_inc = ['.']
 if host_machine.system() == 'windows'
-  rz_core_sources += 'windows_heap.c'
+  rz_core_sources += 'windows_heap_live_debug.c'
 endif
 rz_core_inc = [platform_inc, 'cmd_descs']
 

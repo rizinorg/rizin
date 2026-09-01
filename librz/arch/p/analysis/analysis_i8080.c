@@ -13,8 +13,13 @@
 #include "i8080/i8080dis.h"
 
 static int i8080_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
-	char out[32];
-	int ilen = i8080_disasm(data, out, len);
+	if (len < 1) {
+		return -1;
+	}
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	int ilen = i8080_disasm(data, len, &sb);
+	rz_strbuf_fini(&sb);
 	op->addr = addr;
 	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 	switch (data[0]) {

@@ -167,7 +167,7 @@ static RzPVector /*<RzBinSection *>*/ *mz_sections(RzBinFile *bf) {
 }
 
 static RzBinInfo *mz_info(RzBinFile *bf) {
-	RzBinInfo *const ret = RZ_NEW0(RzBinInfo);
+	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -180,13 +180,7 @@ static RzBinInfo *mz_info(RzBinFile *bf) {
 	ret->type = rz_str_dup("EXEC (Executable file)");
 	ret->subsystem = rz_str_dup("DOS");
 	ret->bits = 16;
-	ret->dbg_info = 0;
-	ret->big_endian = false;
-	ret->has_crypto = false;
-	ret->has_canary = false;
 	ret->has_retguard = -1;
-	ret->has_nx = false;
-	ret->has_pi = false;
 	ret->has_va = true;
 	return ret;
 }

@@ -1,0 +1,17 @@
+NAME=dbg.di
+FILE=bins/mach0/hello-osx-x86_64
+ARGS=-d
+CMDS=<<EOF
+dcu main
+di~baddr
+ds
+di~baddr
+EOF
+EXPECT=<<EOF
+baddr=0x100000000
+baddr=0x100000000
+EOF
+EXPECT_ERR=<<EOF
+hit breakpoint at: 0x100000f0c
+EOF
+RUN

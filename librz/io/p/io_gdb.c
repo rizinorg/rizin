@@ -15,6 +15,9 @@
 
 #define RZ_GDB_MAGIC rz_str_djb2_hash("gdb")
 
+#define MIN_DOWNLOAD_CHUNK 64
+#define MAX_DOWNLOAD_CHUNK 65536
+
 static int __close(RzIODesc *fd);
 
 static bool __plugin_open(RzIO *io, const char *file, bool many) {
@@ -207,6 +210,56 @@ static int __gettid(RzIODesc *fd) {
 extern int send_msg(libgdbr_t *g, const char *command);
 extern int read_packet(libgdbr_t *instance, bool vcont);
 
+static bool gdbr_download_file(libgdbr_t *g, const char *remote, const char *local) {
+	rz_return_val_if_fail(g && remote && local, false);
+	// empty the destination file by writing nothing in non-append mode
+	if (!rz_file_dump(local, NULL, 0, false)) {
+		return false;
+	}
+	// open the remote file on the stub side
+	if (gdbr_open_file(g, remote, O_RDONLY, 0) < 0) {
+		return false;
+	}
+
+	uint32_t off = 0;
+	bool ok = true;
+	// clamp the download size between a reasonable MIN floor and MAX ceiling
+	ut32 chunk = RZ_MAX(MIN_DOWNLOAD_CHUNK, g->stub_features.pkt_sz / 2);
+	chunk = RZ_MIN(chunk, MAX_DOWNLOAD_CHUNK);
+	ut8 *buf = malloc(chunk);
+	if (!buf) {
+		gdbr_close_file(g);
+		return false;
+	}
+
+	int ret;
+	do {
+		ret = gdbr_pread_file(g, buf, chunk, off);
+		if (ret < 0) {
+			ok = false;
+			break;
+		}
+		if (ret == 0) {
+			break;
+		}
+		if (!rz_file_dump(local, buf, ret, true)) {
+			ok = false;
+			break;
+		}
+		off += ret;
+	} while ((ut32)ret == chunk);
+	free(buf);
+	gdbr_close_file(g);
+	return ok;
+}
+
+static bool io_gdb_download_file(RzIO *io, RzIODesc *fd, const char *remote, const char *local) {
+	if (!fd || !fd->data) {
+		return false;
+	}
+	return gdbr_download_file(fd->data, remote, local);
+}
+
 static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 	if (!fd || !fd->data) {
 		return NULL;
@@ -215,23 +268,35 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 	if (cmd[0] == '?' || !strcmp(cmd, "help")) {
-		eprintf("Usage: R!<cmd> [args]\n"
-			" R!pid             - show targeted pid\n"
-			" R!pkt s           - send packet 's'\n"
-			" R!rd              - show reverse debugging availability\n"
-			" R!dsb             - step backwards\n"
-			" R!dcb             - continue backwards\n"
-			" R!monitor cmd     - hex-encode monitor command and pass"
+		eprintf("Usage: R! <cmd> [args]\n"
+			" R! pid             - show targeted pid\n"
+			" R! pkt s           - send packet 's'\n"
+			" R! rd              - show reverse debugging availability\n"
+			" R! dsb             - step backwards\n"
+			" R! dcb             - continue backwards\n"
+			" R! monitor cmd     - hex-encode monitor command and pass"
 			" to target interpreter\n"
-			" R!detach [pid]    - detach from remote/detach specific pid\n"
-			" R!inv.reg         - invalidate reg cache\n"
-			" R!pktsz           - get max packet size used\n"
-			" R!pktsz bytes     - set max. packet size as 'bytes' bytes\n"
-			" R!exec_file [pid] - get file which was executed for"
-			" current/specified pid\n");
+			" R! detach [pid]    - detach from remote/detach specific pid\n"
+			" R! inv.reg         - invalidate reg cache\n"
+			" R! pktsz           - get max packet size used\n"
+			" R! pktsz bytes     - set max. packet size as 'bytes' bytes\n"
+			" R! exec_file [pid] - get file which was executed for"
+			" current/specified pid\n"
+			" R! download_file remote local - download remote file to local path\n");
 		return NULL;
 	}
 	libgdbr_t *desc = fd->data;
+	if (rz_str_startswith(cmd, "download_file")) {
+		int argc = 0;
+		char **argv = rz_str_argv(cmd, &argc);
+		if (!argv || argc != 3) {
+			rz_str_argv_free(argv);
+			return rz_str_dup("0");
+		}
+		bool ok = gdbr_download_file(desc, argv[1], argv[2]);
+		rz_str_argv_free(argv);
+		return rz_str_dup(ok ? "1" : "0");
+	}
 	if (rz_str_startswith(cmd, "pktsz")) {
 		const char *ptr = rz_str_trim_head_ro(cmd + 5);
 		if (!isdigit((ut8)*ptr)) {
@@ -407,7 +472,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		desc->get_baddr = true;
 		return NULL;
 	}
-	eprintf("Try: 'R!?'\n");
+	eprintf("Try: 'R! ?'\n");
 	return NULL;
 
 gdb_lock_leave:
@@ -430,6 +495,7 @@ RzIOPlugin rz_io_plugin_gdb = {
 	.system = __system,
 	.getpid = __getpid,
 	.gettid = __gettid,
+	.download_file = io_gdb_download_file,
 	.isdbg = true
 };
 

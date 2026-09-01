@@ -22,9 +22,6 @@ commands:
             comment: "Set config variable `asm.bytes` to `true`"
           - text: e
             arg_str: " search.in=?"
-            comment: "Show all possible values for config variable `search.in`"
-          - text: e
-            arg_str: " search.in=??"
             comment: "Show all possible values for config variable `search.in` together with description"
           - text: e
             arg_str: " asm.bytes=true asm.offset=false"
@@ -203,6 +200,10 @@ commands:
                 comment: "Color for matched diff"
               - text: "diff.unmatch"
                 comment: "Color for unmatched diff"
+              - text: "gui.match.perfect"
+                comment: "Color for perfectly matched GUI diff"
+              - text: "gui.match.partial"
+                comment: "Color for partially matched GUI diff"
               - text: "gui.cflow"
                 comment: "Color for GUI control flow"
               - text: "gui.dataoffset"

@@ -18,8 +18,8 @@ pfn~?
 ol~?
 EOF
 EXPECT=<<EOF
-79
-137
+91
+149
 1
 EOF
 RUN
@@ -284,7 +284,7 @@ EXPECT=<<EOF
 2 9
 
 fd       5
-fd       9
+fd             9
 fd       3
 EOF
 RUN
@@ -464,17 +464,15 @@ relro    partial
 rpath    NONE
 subsys   linux
 stripped true
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   false
 linenum  false
 lsyms    false
 canary   true
-PIE      false
-RELROCS  false
-NX       true
+pie      false
+relrocs  false
+nx       true
 --
 1
 fd      3

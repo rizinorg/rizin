@@ -44,6 +44,7 @@
 #define PANEL_CONFIG_SIDEPANEL_W 60
 #define PANEL_CONFIG_RESIZE_W    4
 #define PANEL_CONFIG_RESIZE_H    4
+#define PANEL_FILTER_LIMIT       1024
 
 #define COUNT(x) (sizeof((x)) / sizeof((*x)) - 1)
 
@@ -121,7 +122,7 @@ static const char *menus_Tools[] = {
 };
 
 static const char *menus_Search[] = {
-	"String (Whole Bin)", "String (Data Sections)", "ROP", "Code", "Hexpairs",
+	"String (Whole Bin)", "String (Data Sections)", "ROP", "COP", "JOP", "Code", "Hexpairs",
 	NULL
 };
 
@@ -276,6 +277,9 @@ static const char *help_msg_panels_zoom[] = {
 	"q/Q/Enter", "quit Zoom mode",
 	NULL
 };
+
+RZ_IPI void rz_save_panels_layout(RzCore *core, const char *_name);
+RZ_IPI bool rz_load_panels_layout(RzCore *core, const char *_name);
 
 /* init */
 static bool __init(RzCore *core, RzPanelsTab *tab, int w, int h);
@@ -485,6 +489,8 @@ static int __system_shell_cb(void *user);
 static int __string_whole_bin_cb(void *user);
 static int __string_data_sec_cb(void *user);
 static int __rop_cb(void *user);
+static int __cop_cb(void *user);
+static int __jop_cb(void *user);
 static int __code_cb(void *user);
 static int __hexpairs_cb(void *user);
 static int __continue_cb(void *user);
@@ -1134,27 +1140,34 @@ char *__find_cmd_str_cache(RzCore *core, RzPanel *panel) {
 }
 
 char *__apply_filter_cmd(RzCore *core, RzPanel *panel) {
-	char *out = malloc(strlen(panel->model->cmd) + 1024);
-	if (!out) {
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	if (!rz_strbuf_set(&sb, panel->model->cmd)) {
 		RZ_LOG_ERROR("Fail to allocate the memory\n");
-		return out;
+		return NULL;
 	}
-	strcpy(out, panel->model->cmd);
 	void **iter;
 	rz_pvector_foreach (&panel->model->filter, iter) {
 		char *filter = *iter;
-		if (strlen(filter) > 1024) {
+		if (strlen(filter) > PANEL_FILTER_LIMIT) {
 			(void)__show_status(core, "filter is too big.");
-			return out;
+			return rz_strbuf_drain_nofree(&sb);
 		}
-		strcat(out, "~");
-		strcat(out, filter);
+		// Stop if the filtered command cannot be extended.
+		if (!rz_strbuf_append(&sb, "~") || !rz_strbuf_append(&sb, filter)) {
+			rz_strbuf_fini(&sb);
+			return NULL;
+		}
 	}
-	return out;
+	return rz_strbuf_drain_nofree(&sb);
 }
 
 char *__handle_cmd_str_cache(RzCore *core, RzPanel *panel, bool force_cache) {
 	char *cmd = __apply_filter_cmd(core, panel);
+	// Avoid failed command build into rz_core_cmd_str.
+	if (!cmd) {
+		return NULL;
+	}
 	RzCoreVisual *visual = core->visual;
 	RzPanelsTab *tab = visual->panels_root->active_tab;
 	bool b = core->print->cur_enabled && __get_cur_panel(tab) != panel;
@@ -1623,7 +1636,7 @@ void __handleComment(RzCore *core) {
 	char buf[4095];
 	int i;
 	rz_line_set_prompt(core->cons->line, "[Comment]> ");
-	strcpy(buf, "\"CC ");
+	strcpy(buf, "CC \"");
 	i = strlen(buf);
 	if (rz_cons_fgets(buf + i, sizeof(buf) - i, 0, NULL) > 0) {
 		ut64 addr, orig;
@@ -1637,18 +1650,18 @@ void __handleComment(RzCore *core) {
 		} else {
 			switch (buf[i]) {
 			case '-':
-				memcpy(buf, "\"CC-", 5);
+				memcpy(buf, "CC-\"", 4);
 				break;
 			case '!':
-				memcpy(buf, "\"CC!", 5);
+				memcpy(buf, "CC!\"", 4);
 				break;
 			default:
-				memcpy(buf, "\"CC ", 4);
+				memcpy(buf, "CC \"", 4);
 				break;
 			}
 			strcat(buf, "\"");
 		}
-		if (buf[3] == ' ') {
+		if (buf[2] == ' ') {
 			int j, len = strlen(buf);
 			char *duped = rz_str_dup(buf);
 			for (i = 4, j = 4; i < len; i++, j++) {
@@ -3025,8 +3038,9 @@ void __init_panel_param(RzCore *core, RzPanel *p, const char *title, const char 
 		__set_dcb(core, p);
 		__set_rcb(visual->panels_root->active_tab, p);
 		if (__check_panel_type(p, PANEL_CMD_STACK)) {
-			const char *sp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
-			const ut64 stackbase = rz_reg_getv(core->analysis->reg, sp);
+			RzReg *rreg = rz_analysis_get_reg(core->analysis);
+			const char *sp = rz_reg_get_name(rreg, RZ_REG_NAME_SP);
+			const ut64 stackbase = rz_reg_getv(rreg, sp);
 			m->baseAddr = stackbase;
 			__set_panel_addr(core, p, stackbase - rz_config_get_i(core->config, "stack.delta"));
 		}
@@ -3226,7 +3240,7 @@ int __clear_layout_cb(void *user) {
 
 int __copy_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	__add_cmdf_panel(core, "How many bytes? ", "\"y %s\"");
+	__add_cmdf_panel(core, "How many bytes? ", "y %s");
 	return 0;
 }
 
@@ -3238,13 +3252,13 @@ int __paste_cb(void *user) {
 
 int __write_str_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	__add_cmdf_panel(core, "insert string: ", "\"w %s\"");
+	__add_cmdf_panel(core, "insert string: ", "w %s");
 	return 0;
 }
 
 int __write_hex_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	__add_cmdf_panel(core, "insert hexpairs: ", "\"wx %s\"");
+	__add_cmdf_panel(core, "insert hexpairs: ", "wx %s");
 	return 0;
 }
 
@@ -3374,19 +3388,31 @@ int __string_data_sec_cb(void *user) {
 
 int __rop_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	__add_cmdf_panel(core, "rop grep: ", "\"/R %s\"");
+	__add_cmdf_panel(core, "rop grep: ", "/R %s");
+	return 0;
+}
+
+int __cop_cb(void *user) {
+	RzCore *core = (RzCore *)user;
+	__add_cmdf_panel(core, "cop grep: ", "/C %s");
+	return 0;
+}
+
+int __jop_cb(void *user) {
+	RzCore *core = (RzCore *)user;
+	__add_cmdf_panel(core, "jop grep: ", "/J %s");
 	return 0;
 }
 
 int __code_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	__add_cmdf_panel(core, "search code: ", "\"/c %s\"");
+	__add_cmdf_panel(core, "search code: ", "/a %s");
 	return 0;
 }
 
 int __hexpairs_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	__add_cmdf_panel(core, "search hexpairs: ", "\"/x %s\"");
+	__add_cmdf_panel(core, "search hexpairs: ", "/x %s");
 	return 0;
 }
 
@@ -4269,6 +4295,15 @@ RZ_OWN RzPanelsMenuItem *rz_panels_menu_item_new(RZ_NULLABLE const char *name, R
 	return item;
 }
 
+static void rz_panel_free(RZ_NULLABLE RzPanel *panel) {
+	if (!panel) {
+		return;
+	}
+	rz_panel_model_free(panel->model);
+	free(panel->view);
+	free(panel);
+}
+
 void rz_panels_menu_item_free(RZ_NULLABLE RzPanelsMenuItem *item) {
 	if (!item) {
 		return;
@@ -4404,7 +4439,9 @@ void __init_menu_disasm_settings_layout(void *_core, const char *parent) {
 		} else {
 			rz_strbuf_set(rsb, pos);
 			rz_strbuf_append(rsb, ": ");
-			rz_strbuf_append(rsb, rz_config_get(core->config, pos));
+			char *val = rz_config_get_as_string(core->config, pos);
+			rz_strbuf_append(rsb, val);
+			free(val);
 			__add_menu(core, parent, rz_strbuf_get(rsb), __config_toggle_cb);
 		}
 	}
@@ -4421,7 +4458,9 @@ static void __init_menu_disasm_asm_settings_layout(void *_core, const char *pare
 		char *pos = *iter;
 		rz_strbuf_set(rsb, pos);
 		rz_strbuf_append(rsb, ": ");
-		rz_strbuf_append(rsb, rz_config_get(core->config, pos));
+		char *val = rz_config_get_as_string(core->config, pos);
+		rz_strbuf_append(rsb, val);
+		free(val);
 		if (!strcmp(pos, "asm.var.summary") ||
 			!strcmp(pos, "asm.arch") ||
 			!strcmp(pos, "asm.bits") ||
@@ -4443,7 +4482,9 @@ static void __init_menu_screen_settings_layout(void *_core, const char *parent) 
 		const char *menu = menus_settings_screen[i];
 		rz_strbuf_set(rsb, menu);
 		rz_strbuf_append(rsb, ": ");
-		rz_strbuf_append(rsb, rz_config_get(core->config, menu));
+		char *val = rz_config_get_as_string(core->config, menu);
+		rz_strbuf_append(rsb, val);
+		free(val);
 		if (!strcmp(menus_settings_screen[i], "scr.color")) {
 			__add_menu(core, parent, rz_strbuf_get(rsb), __config_value_cb);
 		} else {
@@ -4561,6 +4602,10 @@ bool __init_panels_menu(RzCore *core) {
 			__add_menu(core, parent, menus_Search[i], __string_data_sec_cb);
 		} else if (!strcmp(menus_Search[i], "ROP")) {
 			__add_menu(core, parent, menus_Search[i], __rop_cb);
+		} else if (!strcmp(menus_Search[i], "COP")) {
+			__add_menu(core, parent, menus_Search[i], __cop_cb);
+		} else if (!strcmp(menus_Search[i], "JOP")) {
+			__add_menu(core, parent, menus_Search[i], __jop_cb);
 		} else if (!strcmp(menus_Search[i], "Code")) {
 			__add_menu(core, parent, menus_Search[i], __code_cb);
 		} else if (!strcmp(menus_Search[i], "Hexpairs")) {
@@ -4925,11 +4970,12 @@ void __panels_check_stackbase(RzCore *core) {
 	if (!visual->panels_root->active_tab) {
 		return;
 	}
-	const char *sp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	const char *sp = rz_reg_get_name(rreg, RZ_REG_NAME_SP);
 	if (!sp) {
 		return;
 	}
-	const ut64 stackbase = rz_reg_getv(core->analysis->reg, sp);
+	const ut64 stackbase = rz_reg_getv(rreg, sp);
 	RzPanelsTab *tab = visual->panels_root->active_tab;
 	for (int i = 1; i < tab->n_panels; i++) {
 		RzPanel *panel = __get_panel(tab, i);
@@ -6110,15 +6156,6 @@ static void rz_panels_menu_free(RZ_NULLABLE RzPanelsMenu *menu) {
 	free(menu->history);
 	free(menu->refreshPanels);
 	free(menu);
-}
-
-RZ_IPI void rz_panel_free(RZ_NULLABLE RzPanel *panel) {
-	if (!panel) {
-		return;
-	}
-	rz_panel_model_free(panel->model);
-	free(panel->view);
-	free(panel);
 }
 
 void rz_panels_tab_free(RZ_NULLABLE RzPanelsTab *tab) {

@@ -3,11 +3,10 @@
 // SPDX-FileCopyrightText: 2010-2020 oddcoder <ahmedsoliman@oddcoder.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
-#include <rz_util.h>
-#include <rz_cons.h>
+#include "analysis_private.h"
 #include <rz_core.h>
-#include <rz_list.h>
+#include <rz_flag.h>
+#include <rz_cons.h>
 
 #define ACCESS_CMP(x, y) ((st64)((ut64)(x) - (ut64)((RzAnalysisVarAccess *)y)->offset))
 
@@ -575,6 +574,108 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_var_byname(RzAnalysisFu
 	return NULL;
 }
 
+static void piece_storage_fini(void *p, void *user) {
+	RzAnalysisVarStoragePiece *piece = (RzAnalysisVarStoragePiece *)p;
+	rz_return_if_fail(piece);
+	free(piece->storage);
+}
+
+static void build_stack_storage(RzAnalysisVarStorage *str, const char *ret_location) {
+	str->type = RZ_ANALYSIS_VAR_STORAGE_STACK;
+	st64 offset = 0;
+	if (rz_str_ansi_len(ret_location) > 5 && ret_location[5] == '+') {
+		offset = (st64)rz_num_math(NULL, ret_location + 5);
+	}
+	str->stack_off = offset;
+}
+
+static ut32 build_reg_storage(RzAnalysis *analysis, RzAnalysisVarStorage *str, const char *ret_location) {
+	str->type = RZ_ANALYSIS_VAR_STORAGE_REG;
+	RzRegItem *reg = rz_reg_get(analysis->reg, ret_location, -1);
+	if (reg) {
+		str->reg = reg->name;
+		return reg->size;
+	}
+	str->reg = rz_str_constpool_get(&analysis->constpool, ret_location);
+	return analysis->bits;
+}
+
+static RzAnalysisVarStoragePiece build_storage_piece(RzAnalysis *analysis, const char *token_var, ut32 offset_bits) {
+	RzAnalysisVarStoragePiece str_piece = RZ_EMPTY;
+	str_piece.storage = RZ_NEW0(RzAnalysisVarStorage);
+	rz_return_val_if_fail(str_piece.storage, str_piece);
+	str_piece.offset_in_bits = offset_bits;
+	ut32 piece_size_bits = 0;
+	if (rz_str_startswith(token_var, "stack")) {
+		build_stack_storage(str_piece.storage, token_var);
+		piece_size_bits = analysis->bits;
+	} else {
+		piece_size_bits = build_reg_storage(analysis, str_piece.storage, token_var);
+	}
+	str_piece.size_in_bits = piece_size_bits;
+	return str_piece;
+}
+
+static RzVector /*<RzAnalysisVarStoragePiece>*/ *parse_composite_storage(RzAnalysis *analysis, const char *ret_location) {
+	RzVector *composite = rz_vector_new(sizeof(RzAnalysisVarStoragePiece), piece_storage_fini, NULL);
+	char *local_ret_loc = rz_str_dup(ret_location);
+	RzList *tokens = rz_str_split_list(local_ret_loc, ",", 0);
+	RzListIter *it;
+	char *token_var;
+	ut32 current_offset_bits = 0;
+
+	rz_list_foreach (tokens, it, token_var) {
+		RzAnalysisVarStoragePiece str_piece = build_storage_piece(analysis, token_var, current_offset_bits);
+		if (!str_piece.storage) {
+			break;
+		}
+		current_offset_bits += str_piece.size_in_bits;
+		rz_vector_push(composite, &str_piece);
+	}
+	rz_list_free(tokens);
+	free(local_ret_loc);
+	return composite;
+}
+
+static RzAnalysisVarStorage build_ret_var_storage(RzAnalysis *analysis, const char *ret_location) {
+	RzAnalysisVarStorage str = RZ_EMPTY;
+
+	if (rz_str_strchr(ret_location, ",")) {
+		str.type = RZ_ANALYSIS_VAR_STORAGE_COMPOSITE;
+		str.composite = parse_composite_storage(analysis, ret_location);
+	} else if (rz_str_startswith(ret_location, "stack")) {
+		build_stack_storage(&str, ret_location);
+	} else {
+		build_reg_storage(analysis, &str, ret_location);
+	}
+	return str;
+}
+
+/**
+ * \brief Retrieves the storage info of a function's return value.
+ * \param fcn The analysis function to inspect
+ *
+ * \return type RzAnalysisVar with function return info in it or NULL on fail.
+ */
+RZ_API RZ_OWN RzAnalysisVar *rz_analysis_function_get_ret_var(RzAnalysisFunction *fcn) {
+	rz_return_val_if_fail(fcn && fcn->analysis, NULL);
+
+	if (!fcn->cc) {
+		return NULL;
+	}
+
+	const char *ret_location = rz_analysis_cc_ret(fcn->analysis, fcn->cc);
+	if (!ret_location) {
+		return NULL;
+	}
+	RzAnalysisVar *var = rz_analysis_var_new();
+	rz_return_val_if_fail(var, NULL);
+	var->kind = RZ_ANALYSIS_VAR_KIND_VARIABLE;
+	RzAnalysisVarStorage str = build_ret_var_storage(fcn->analysis, ret_location);
+	var->storage = str;
+	return var;
+}
+
 /**
  * \return the variable that is located exactly at \p stor, or NULL if no such variable exists
  */
@@ -902,7 +1003,7 @@ RZ_API void rz_analysis_var_remove_access_at(RzAnalysisVar *var, ut64 address) {
 RZ_API void rz_analysis_var_clear_accesses(RzAnalysisVar *var) {
 	rz_return_if_fail(var);
 	RzAnalysisFunction *fcn = var->fcn;
-	if (fcn->inst_vars) {
+	if (fcn && fcn->inst_vars) {
 		// remove all inverse references to the var's accesses
 		RzAnalysisVarAccess *acc;
 		rz_vector_foreach (&var->accesses, acc) {
@@ -939,52 +1040,35 @@ RZ_API void rz_analysis_var_add_constraint(RzAnalysisVar *var, RZ_BORROW RzTypeC
 }
 
 /**
+ * \brief Removes all type constraints from a \p var variable
+ */
+RZ_API void rz_analysis_var_clear_constraints(RZ_NONNULL RzAnalysisVar *var) {
+	rz_return_if_fail(var);
+	rz_vector_clear(&var->constraints);
+}
+
+/**
  * \brief Get all type constraints of a \p var variable in the text form
  */
-RZ_API char *rz_analysis_var_get_constraints_readable(RzAnalysisVar *var) {
-	size_t n = var->constraints.len;
-	if (!n) {
-		return NULL;
-	}
-	bool low = false, high = false;
-	RzStrBuf sb;
-	rz_strbuf_init(&sb);
-	size_t i;
-	for (i = 0; i < n; i += 1) {
-		RzTypeConstraint *constr = rz_vector_index_ptr(&var->constraints, i);
-		switch (constr->cond) {
-		case RZ_TYPE_COND_LE:
-			if (high) {
-				rz_strbuf_append(&sb, " && ");
-			}
-			rz_strbuf_appendf(&sb, "<= 0x%" PFMT64x "", constr->val);
-			low = true;
-			break;
-		case RZ_TYPE_COND_LT:
-			if (high) {
-				rz_strbuf_append(&sb, " && ");
-			}
-			rz_strbuf_appendf(&sb, "< 0x%" PFMT64x "", constr->val);
-			low = true;
-			break;
-		case RZ_TYPE_COND_GE:
-			rz_strbuf_appendf(&sb, ">= 0x%" PFMT64x "", constr->val);
-			high = true;
-			break;
-		case RZ_TYPE_COND_GT:
-			rz_strbuf_appendf(&sb, "> 0x%" PFMT64x "", constr->val);
-			high = true;
-			break;
-		default:
-			break;
-		}
-		if (low && high && i != n - 1) {
-			rz_strbuf_append(&sb, " || ");
-			low = false;
-			high = false;
+RZ_API char *rz_analysis_var_get_constraints_readable(RZ_NONNULL RzAnalysisVar *var) {
+	rz_return_val_if_fail(var, NULL);
+	// The inline variable listing (afvl) only shows the interval/range hint.
+	// Equality and inequality constraints, such as the "== 0" produced by the
+	// ubiquitous null/zero checks, would clutter the listing; they are still
+	// recorded and can be inspected through the dedicated `afvc` command.
+	// Render only the interval bounds here.
+	RzVector /*<RzTypeConstraint>*/ intervals;
+	rz_vector_init(&intervals, sizeof(RzTypeConstraint), NULL, NULL);
+	RzTypeConstraint *c;
+	rz_vector_foreach (&var->constraints, c) {
+		if (c->cond == RZ_TYPE_COND_LE || c->cond == RZ_TYPE_COND_LT ||
+			c->cond == RZ_TYPE_COND_GE || c->cond == RZ_TYPE_COND_GT) {
+			rz_vector_push(&intervals, c);
 		}
 	}
-	return rz_strbuf_drain_nofree(&sb);
+	char *readable = rz_type_interval_constraints_as_string(&intervals);
+	rz_vector_fini(&intervals);
+	return readable;
 }
 
 static bool stack_offset_is_arg(RzAnalysisFunction *fcn, st64 stack_off) {
@@ -1156,7 +1240,11 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 			if (*addr == ',') {
 				addr++;
 			}
-			if (!op->stackop && op->type != RZ_ANALYSIS_OP_TYPE_PUSH && op->type != RZ_ANALYSIS_OP_TYPE_POP && op->type != RZ_ANALYSIS_OP_TYPE_RET && rz_str_isnumber(addr)) {
+			if (!op->stackop &&
+				op->type != RZ_ANALYSIS_OP_TYPE_PUSH &&
+				op->type != RZ_ANALYSIS_OP_TYPE_POP &&
+				op->type != RZ_ANALYSIS_OP_TYPE_RET &&
+				rz_str_isnumber(addr)) {
 				addend = (st64)rz_num_get(NULL, addr);
 				if (addend && op->src[0] && addend == op->src[0]->imm) {
 					goto beach;
@@ -1307,7 +1395,13 @@ static inline bool op_affect_dst(RzAnalysisOp *op) {
 #define STR_EQUAL(s1, s2) (s1 && s2 && !strcmp(s1, s2))
 
 static inline bool arch_destroys_dst(const char *arch) {
-	return (STR_EQUAL(arch, "arm") || STR_EQUAL(arch, "riscv") || STR_EQUAL(arch, "ppc"));
+	if (!arch) {
+		return false;
+	}
+	return rz_str_startswith(arch, "arm") ||
+		rz_str_startswith(arch, "mips") ||
+		rz_str_startswith(arch, "ppc") ||
+		rz_str_startswith(arch, "riscv");
 }
 
 static bool is_used_like_arg(const char *regname, const char *opsreg, const char *opdreg, RzAnalysisOp *op, RzAnalysis *analysis) {
@@ -1371,6 +1465,11 @@ static size_t count_reg_arg_vars(RzAnalysisFunction *fcn) {
 	return count;
 }
 
+static inline bool is_op_call(const RzAnalysisOp *op) {
+	ut32 optype = op->type & RZ_ANALYSIS_OP_TYPE_MASK;
+	return optype == RZ_ANALYSIS_OP_TYPE_CALL || optype == RZ_ANALYSIS_OP_TYPE_UCALL;
+}
+
 RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzAnalysisFunction *fcn, int *reg_set, int *count) {
 	int i, argc = 0;
 	rz_return_if_fail(analysis && op && fcn);
@@ -1391,8 +1490,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 		argc = rz_type_func_args_count(analysis->typedb, fname);
 	}
 
-	bool is_call = (op->type & 0xf) == RZ_ANALYSIS_OP_TYPE_CALL || (op->type & 0xf) == RZ_ANALYSIS_OP_TYPE_UCALL;
-	if (is_call && *count < max_count) {
+	if (is_op_call(op) && *count < max_count) {
 		RzList *callee_rargs_l = NULL;
 		size_t callee_rargs = 0;
 		char *callee = NULL;

@@ -1,0 +1,27 @@
+NAME=CaRT: iI and extractor info
+FILE=bins/cart/sample.cart
+CMDS=<<EOF
+iI~binsz
+echo ---
+i~packet
+EOF
+EXPECT=<<EOF
+binsz    0x00000039
+---
+packet  xtr.cart
+EOF
+RUN
+
+NAME=CaRT: Extract payload with rz-bin -x
+FILE==
+CMDS=<<EOF
+!rm -rf sample.cart.fat
+!rz-bin -x bins/cart/sample.cart
+!cat sample.cart.fat/sample.cart.unknown.cart_payload_0.0
+!rm -rf sample.cart.fat
+EOF
+EXPECT=<<EOF
+sample.cart.fat/sample.cart.unknown.cart_payload_0.0 created (57)
+This is a test payload for CaRT container format testing
+EOF
+RUN

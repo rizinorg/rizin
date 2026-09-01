@@ -175,7 +175,7 @@ static RzCoreObjc *core_objc_new(RzCore *core) {
 	}
 	RzCoreObjc *o = RZ_NEW0(RzCoreObjc);
 	o->core = core;
-	o->word_size = (core->rasm->bits == 64) ? 8 : 4;
+	o->word_size = rz_asm_is_bits(core->rasm, 64) ? 8 : 4;
 	if (o->word_size != 8) {
 		RZ_LOG_WARN("aao is experimental on 32bit binaries\n");
 	}
@@ -511,7 +511,7 @@ static void apply_selector_stub_at(RzCore *core, ut64 addr, ut32 size, char *sel
 	if (!fi) {
 		return;
 	}
-	rz_flag_item_set_realname(fi, rz_strf(name, "objc_msgSend$%s", selector));
+	rz_flag_item_set_realname(core->flags, fi, rz_strf(name, "objc_msgSend$%s", selector));
 	// If there is already a function (e.g. from aa), rename it too
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
 	if (fcn) {

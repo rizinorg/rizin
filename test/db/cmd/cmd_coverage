@@ -6,9 +6,9 @@ aai
 EOF
 EXPECT=<<EOF
 functions:   76
-xrefs:       179
+xrefs:       161
 calls:       130
-strings:     1
+strings:     26
 symbols:     102
 imports:     10
 signatures:  0

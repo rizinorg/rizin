@@ -10,6 +10,12 @@ SPDX-FileCopyrightText = "2009 RadareOrg <pancake@nopcode.org>"
 SPDX-License-Identifier = "LGPL-3.0-only"
 
 [[annotations]]
+path = "test/fixtures/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
 path = "**/**.sdb.txt"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2009 RadareOrg <pancake@nopcode.org>"
@@ -172,6 +178,12 @@ SPDX-FileCopyrightText = "2020 RizinOrg <info@rizin.re>"
 SPDX-License-Identifier = "LGPL-3.0-only"
 
 [[annotations]]
+path = "test/www/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only OR CC-BY-SA-4.0"
+
+[[annotations]]
 path = "subprojects/rizin-shell-parser/**"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2020 ret2libc <sirmy15@gmail.com>"
@@ -304,12 +316,6 @@ SPDX-FileCopyrightText = ["2014-2017 The Lemon Man <thatlemon@gmail.com>", "2019
 SPDX-License-Identifier = "LGPL-3.0-only"
 
 [[annotations]]
-path = "subprojects/mpc/**"
-precedence = "aggregate"
-SPDX-FileCopyrightText = "2013-present Daniel Holden <contact@theorangeduck.com>"
-SPDX-License-Identifier = "BSD-2-Clause"
-
-[[annotations]]
 path = ["librz/include/**/**.h", "librz/include/**.h", "librz/include/**.h.in"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
@@ -331,4 +337,10 @@ SPDX-License-Identifier = "LGPL-3.0-only"
 path = ["test/prj/**.rzdb", "test/prj/**.rzdb.gz"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2020 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "patches/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 RizinOrg <info@rizin.re>"
 SPDX-License-Identifier = "LGPL-3.0-only"

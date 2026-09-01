@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_il/rz_il_opbuilder_begin.h>
-#include <rz_analysis.h>
+#include "analysis_private.h"
 #include "pic_midrange.h"
 #include "pic_il.inc"
 
@@ -133,10 +133,6 @@ static RzILOpEffect *set_register_WF(PicMidrangeILContext *ctx, RzILOpPure *x) {
 #define SET_WF(x) (set_register_WF(ctx, x))
 
 typedef RzILOpEffect *(*pic_midrange_il_handler)(PicMidrangeILContext *, ut16);
-
-RzILOpEffect *reset() {
-	return NOP();
-}
 
 RzILOpEffect *set_z(PicMidrangeILContext *ctx, RzILOpPure *x) {
 	return SETGb(STATUS, Z, IS_ZERO(x));

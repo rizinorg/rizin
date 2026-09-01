@@ -5,7 +5,9 @@
 #include "rz_assert.h"
 #include "rz_str_util.h"
 #include "rz_list.h"
+#include <rz_vector.h>
 #include "rz_types.h"
+#include "rz_strbuf.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -122,6 +124,7 @@ RZ_API RzList /*<char *>*/ *rz_str_split_duplist_n(const char *str, const char *
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_duplist_n_regex(RZ_NONNULL const char *_str, RZ_NONNULL const char *r, int n, bool trim);
 RZ_API size_t *rz_str_split_lines(char *str, size_t *count);
 RZ_API RZ_OWN char *rz_str_replace(RZ_OWN char *str, const char *key, const char *val, int g);
+RZ_API RZ_OWN char *rz_str_replace_regex(const char *str, const char *pattern, const char *val, bool global, bool icase);
 RZ_API char *rz_str_replace_icase(char *str, const char *key, const char *val, int g, int keep_case);
 RZ_API char *rz_str_replace_in(char *str, ut32 sz, const char *key, const char *val, int g);
 #define rz_str_cpy(x, y) memmove((x), (y), strlen(y) + 1);
@@ -165,9 +168,7 @@ RZ_API int rz_str_ansi_filter(char *str, char **out, int **cposs, int len);
 RZ_API char *rz_str_ansi_crop(const char *str, unsigned int x, unsigned int y, unsigned int x2, unsigned int y2);
 RZ_API int rz_str_word_count(const char *string);
 RZ_API int rz_str_char_count(const char *string, char ch);
-RZ_API char *rz_str_word_get0set(char *stra, int stralen, int idx, const char *newstr, int *newlen);
 RZ_API int rz_str_word_set0(char *str);
-RZ_API int rz_str_word_set0_stack(char *str);
 static inline const char *rz_str_word_get_next0(const char *str) {
 	return str + strlen(str) + 1;
 }
@@ -202,7 +203,7 @@ RZ_API bool rz_str_cmp_list(const char *list, const char *item, char sep);
 RZ_API int rz_str_cmp(RZ_NULLABLE const char *dst, RZ_NULLABLE const char *orig, int len);
 RZ_API int rz_str_casecmp(const char *dst, const char *orig);
 RZ_API int rz_str_ncasecmp(const char *dst, const char *orig, size_t n);
-RZ_API int rz_str_ccpy(char *dst, char *orig, int ch);
+RZ_API int rz_str_ccpy(char *dst, const char *orig, int ch);
 static inline const char *rz_str_get(const char *str) {
 	return str ? str : "";
 }
@@ -253,6 +254,9 @@ RZ_API RZ_OWN char *rz_str_append(RZ_OWN RZ_NULLABLE char *ptr, const char *stri
 RZ_API char *rz_str_append_owned(char *ptr, char *string);
 RZ_API RZ_OWN char *rz_str_appendf(RZ_OWN RZ_NULLABLE char *ptr, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API char *rz_str_appendch(char *x, char y);
+RZ_API bool rz_str_append_num_subscript(RZ_NONNULL RzStrBuf *sb, ut32 n);
+RZ_API bool rz_str_append_num_superscript(RZ_NONNULL RzStrBuf *sb, ut32 n);
+RZ_API RZ_OWN char *rz_str_num_subscript(ut32 n);
 RZ_API void rz_str_case(char *str, bool up);
 RZ_API void rz_str_trim_path(char *s);
 RZ_API ut8 rz_str_contains_macro(const char *input_value);
@@ -287,6 +291,7 @@ typedef struct rz_str_stringify_opt_t {
 	bool stop_at_nil; ///< When enabled stops printing when '\0' is found.
 	bool stop_at_unprintable; ///< When enabled stops printing at first non-printable character.
 	bool urlencode; ///< Encodes the output following RFC 3986.
+	const RzVector /*<RzCodePoint>*/ *user_unprintable; ///< Borrowed vector of user-defined non-printable code points.
 } RzStrStringifyOpt;
 
 RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, ut32 length);

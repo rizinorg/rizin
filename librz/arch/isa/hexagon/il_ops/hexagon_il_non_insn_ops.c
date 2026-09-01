@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2021 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// LLVM commit: c2b89fc9e45d325282b8eb6536f6145282dc3fdf
-// LLVM commit date: 2024-12-23 13:36:28 -0600 (ISO 8601 format)
-// Date of code generation: 2025-02-22 07:05:24-05:00
+// LLVM commit: bc5ac5f3ebb0bc4fc65cef7160c817ca3174a68e
+// LLVM commit date: 2026-03-15 10:22:07 -0700 (ISO 8601 format)
+// Date of code generation: 2026-07-24 15:06:07+02:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -105,14 +105,20 @@ RzILOpEffect *hex_il_op_j2_endloop01(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_42 = SEQN(2, seq_3, branch_41);
 
 	// jump(sa0);
-	RzILOpEffect *jump_sa0_48 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", sa0));
+	RzILOpEffect *jump_sa0_48 = SETL(bundle->jmp_flags[bundle->jmp_cnt], IL_TRUE);
+	rz_return_val_if_fail(bundle->jmp_cnt < 2, NULL);
+	bundle->jmp_set_addr[bundle->jmp_cnt] = SETL(bundle->jmp_targets[bundle->jmp_cnt], sa0);
+	bundle->jmp_cnt++;
 
 	// lc0 = lc0 - ((ut32) 0x1);
 	RzILOpPure *op_SUB_52 = SUB(READ_REG(pkt, &lc0_op, true), CAST(32, IL_FALSE, SN(32, 1)));
 	RzILOpEffect *op_ASSIGN_53 = WRITE_REG(bundle, &lc0_op, op_SUB_52);
 
 	// jump(sa1);
-	RzILOpEffect *jump_sa1_59 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", sa1));
+	RzILOpEffect *jump_sa1_59 = SETL(bundle->jmp_flags[bundle->jmp_cnt], IL_TRUE);
+	rz_return_val_if_fail(bundle->jmp_cnt < 2, NULL);
+	bundle->jmp_set_addr[bundle->jmp_cnt] = SETL(bundle->jmp_targets[bundle->jmp_cnt], sa1);
+	bundle->jmp_cnt++;
 
 	// lc1 = lc1 - ((ut32) 0x1);
 	RzILOpPure *op_SUB_63 = SUB(READ_REG(pkt, &lc1_op, true), CAST(32, IL_FALSE, SN(32, 1)));
@@ -148,7 +154,10 @@ RzILOpEffect *hex_il_op_j2_endloop1(HexInsnPktBundle *bundle) {
 	RzILOpPure *sa1 = READ_REG(pkt, &sa1_op, false);
 
 	// jump(sa1);
-	RzILOpEffect *jump_sa1_5 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", sa1));
+	RzILOpEffect *jump_sa1_5 = SETL(bundle->jmp_flags[bundle->jmp_cnt], IL_TRUE);
+	rz_return_val_if_fail(bundle->jmp_cnt < 2, NULL);
+	bundle->jmp_set_addr[bundle->jmp_cnt] = SETL(bundle->jmp_targets[bundle->jmp_cnt], sa1);
+	bundle->jmp_cnt++;
 
 	// lc1 = lc1 - ((ut32) 0x1);
 	RzILOpPure *op_SUB_9 = SUB(READ_REG(pkt, &lc1_op, true), CAST(32, IL_FALSE, SN(32, 1)));
@@ -253,7 +262,10 @@ RzILOpEffect *hex_il_op_j2_endloop0(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_42 = SEQN(2, seq_3, branch_41);
 
 	// jump(sa0);
-	RzILOpEffect *jump_sa0_48 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", sa0));
+	RzILOpEffect *jump_sa0_48 = SETL(bundle->jmp_flags[bundle->jmp_cnt], IL_TRUE);
+	rz_return_val_if_fail(bundle->jmp_cnt < 2, NULL);
+	bundle->jmp_set_addr[bundle->jmp_cnt] = SETL(bundle->jmp_targets[bundle->jmp_cnt], sa0);
+	bundle->jmp_cnt++;
 
 	// lc0 = lc0 - ((ut32) 0x1);
 	RzILOpPure *op_SUB_52 = SUB(READ_REG(pkt, &lc0_op, true), CAST(32, IL_FALSE, SN(32, 1)));
@@ -950,11 +962,49 @@ RZ_IPI RZ_OWN RzILOpEffect *hex_commit_packet(HexInsnPktBundle *bundle) {
 }
 
 RZ_IPI RZ_OWN RzILOpEffect *hex_il_op_jump_flag_init(HexInsnPktBundle *bundle) {
-	return SEQ2(SETL("jump_flag", IL_FALSE), SETL("jump_target", U32(0xffffffff)));
+	return SEQ2(SETL(bundle->jmp_flags[0], IL_FALSE),
+		SETL(bundle->jmp_flags[1], IL_FALSE));
+}
+
+RZ_IPI RZ_OWN RzILOpEffect *hex_il_op_set_jmp_target_0(HexInsnPktBundle *bundle) {
+	if (bundle->jmp_cnt < 1) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+	return bundle->jmp_set_addr[0];
+}
+
+RZ_IPI RZ_OWN RzILOpEffect *hex_il_op_set_jmp_target_1(HexInsnPktBundle *bundle) {
+	if (bundle->jmp_cnt != 2) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+	return bundle->jmp_set_addr[1];
 }
 
 RZ_IPI RZ_OWN RzILOpEffect *hex_il_op_next_pkt_jmp(HexInsnPktBundle *bundle) {
-	return BRANCH(VARL("jump_flag"), JMP(VARL("jump_target")), JMP(U32(bundle->pkt->pkt_addr + (HEX_INSN_SIZE * rz_list_length(bundle->pkt->bin)))));
+	RzILOpPure *next_pkt_addr = U32(bundle->pkt->pkt_addr + (HEX_INSN_SIZE * rz_list_length(bundle->pkt->bin)));
+	switch (bundle->jmp_cnt) {
+	case 0:
+		// No jump/call was lifted.
+		return JMP(next_pkt_addr);
+	case 1:
+		// One jump/call was lifted.
+		return BRANCH(VARL(bundle->jmp_flags[0]),
+			JMP(VARL(bundle->jmp_targets[0])),
+			JMP(next_pkt_addr));
+	case 2:
+		// Two jumps/calls were lifted.
+		return BRANCH(VARL(bundle->jmp_flags[0]),
+			JMP(VARL(bundle->jmp_targets[0])),
+			BRANCH(VARL(bundle->jmp_flags[1]),
+				JMP(VARL(bundle->jmp_targets[1])),
+				JMP(next_pkt_addr)));
+	default:
+		break;
+	}
+	rz_warn_if_reached();
+	return NULL;
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>

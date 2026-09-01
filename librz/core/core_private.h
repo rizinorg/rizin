@@ -19,6 +19,10 @@ RZ_DEPRECATE RZ_IPI const char *rz_core_get_parser(RzCore *core);
 RZ_IPI void rz_core_kuery_print(RzCore *core, const char *k);
 RZ_IPI int rz_output_mode_to_char(RzOutputMode mode);
 RZ_IPI void rz_core_print_warnings_after(RZ_NONNULL RzCore *core);
+RZ_IPI bool rz_core_is_core_dump(RzCore *core);
+RZ_IPI const char *rz_core_io_map_strip_prefix(const RzIOMap *map);
+RZ_IPI const char *rz_core_io_map_file_path(const RzIOMap *map);
+RZ_IPI const char *rz_core_io_map_file_path_or_relative(const RzIOMap *map);
 
 RZ_IPI int bb_cmpaddr(const void *_a, const void *_b, void *user);
 RZ_IPI int fcn_cmpaddr(const void *_a, const void *_b, void *user);
@@ -36,10 +40,15 @@ RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_default(RzCore *core);
 RZ_IPI void rz_core_debug_esil_watch_print(RzDebug *dbg, RzCmdStateOutput *state);
 
-RZ_IPI bool rz_core_analysis_il_vm_set(RzCore *core, const char *var_name, ut64 value);
 RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *varname, RzOutputMode mode);
 RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj);
-RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzIterator *iter, bool pretty);
+RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzIterator *iter, bool pretty, bool unicode);
+RZ_IPI void rz_core_il_colorize_body(RZ_NONNULL RzConsContext *ctx, RZ_NULLABLE const char *il_stmt);
+
+RZ_IPI void rz_core_analysis_devirtualize_cxx_methods(RZ_NULLABLE RzCore *core);
+RZ_IPI void rz_core_analysis_devirtualize_objc_methods(RZ_NULLABLE RzCore *core);
+RZ_IPI void rz_core_analysis_virtual_xrefs_print(RZ_NONNULL RzCore *core, RZ_NONNULL const char *vfunc);
+RZ_IPI void rz_core_analysis_virtual_xrefs_print_table(RZ_NONNULL RzCore *core, RZ_NONNULL const char *vfunc, RZ_NONNULL RzTable *table);
 
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
 RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name);
@@ -102,6 +111,7 @@ RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMo
 RZ_IPI void rz_core_types_struct_print_format_all(RzCore *core);
 RZ_IPI void rz_core_types_union_print_format_all(RzCore *core);
 RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode);
+RZ_IPI void rz_core_types_typeclass_print_all(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_types_define(RzCore *core, const char *type);
 RZ_IPI bool rz_types_open_file(RzCore *core, const char *path);
 RZ_IPI bool rz_types_open_editor(RzCore *core, RZ_NONNULL const char *typename);
@@ -123,10 +133,10 @@ RZ_IPI void rz_core_agraph_print_gml(RzCore *core);
 RZ_IPI bool rz_core_agraph_print(RzCore *core, RzCoreGraphFormat format);
 RZ_IPI bool rz_core_agraph_is_shortcuts(RzCore *core, RzAGraph *g);
 RZ_IPI bool rz_core_agraph_add_shortcut(RzCore *core, RzAGraph *g, RzANode *an, ut64 addr, char *title);
-RZ_IPI bool rz_core_agraph_apply(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph);
+RZ_IPI bool rz_core_agraph_apply(RzCore *core, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *graph);
 
 /* cgraph.c */
-RZ_IPI bool rz_core_graph_print_graph(RZ_NONNULL RzCore *core, RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph, RzCoreGraphFormat format, bool use_offset);
+RZ_IPI bool rz_core_graph_print_graph(RZ_NONNULL RzCore *core, RZ_NONNULL RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph, RzCoreGraphFormat format, bool use_offset);
 RZ_IPI bool rz_core_graph_print(RzCore *core, ut64 addr, RzCoreGraphType type, RzCoreGraphFormat format);
 
 RZ_IPI RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOutput *state);
@@ -236,14 +246,6 @@ RZ_IPI void rz_core_print_hexdiff(RZ_NONNULL RzCore *core, ut64 aa, RZ_NONNULL c
 
 // cmd_help.c
 RZ_IPI void rz_core_clippy_print(RzCore *core, const char *msg);
-
-#if __WINDOWS__
-/* windows_heap.c */
-RZ_IPI RzList *rz_heap_blocks_list(RzCore *core);
-RZ_IPI RzList *rz_heap_list(RzCore *core);
-RZ_IPI void rz_heap_debug_block_win(RzCore *core, const char *addr, RzOutputMode mode, bool flag);
-RZ_IPI void rz_heap_list_w32(RzCore *core, RzOutputMode mode);
-#endif
 
 RZ_IPI bool rz_core_cmd_lastcmd_repeat(RzCore *core, bool next);
 
@@ -521,5 +523,13 @@ static inline char *rz_address_str(ut64 addr) {
 }
 
 RZ_IPI void rz_core_prompt_highlight(RzCore *core);
+
+/* heap_jemalloc */
+
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_a(RzCore *core, bool has_specified_addr, ut64 addr);
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_b(RzCore *core, bool has_specified_addr, ut64 addr, bool has_bin_info, ut64 bin_info_addr);
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_c(RzCore *core, bool has_specified_addr, ut64 addr);
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_e(RzCore *core, bool has_specified_addr, ut64 addr);
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_ei(RzCore *core, bool has_specified_addr, ut64 addr);
 
 #endif

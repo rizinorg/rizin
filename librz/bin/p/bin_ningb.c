@@ -692,7 +692,7 @@ static RzBinInfo *gb_info(RzBinFile *bf) {
 	ret->has_va = true;
 	ret->bits = 16;
 	ret->big_endian = false;
-	ret->dbg_info = 0;
+	ret->dbg_info = RZ_BIN_DBG_STRIPPED;
 	return ret;
 }
 

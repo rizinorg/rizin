@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2019 thestr4ng3r <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 
 static bool get_functions_block_cb(RzAnalysisBlock *block, void *user) {
 	RzList *list = user;
@@ -156,8 +156,8 @@ RZ_API bool rz_analysis_add_function(RzAnalysis *analysis, RzAnalysisFunction *f
 	if (analysis->cb.on_fcn_new) {
 		analysis->cb.on_fcn_new(analysis, analysis->core, fcn);
 	}
-	if (analysis->flg_fcn_set) {
-		analysis->flg_fcn_set(analysis->flb.f, fcn->name, fcn->addr, rz_analysis_function_size_from_entry(fcn));
+	if (analysis->cb.flg_fcn_set) {
+		analysis->cb.flg_fcn_set(analysis->flb.f, fcn->name, fcn->addr, rz_analysis_function_size_from_entry(fcn));
 	}
 	fcn->is_noreturn = rz_analysis_noreturn_at_addr(analysis, fcn->addr);
 	rz_list_append(analysis->fcns, fcn);
@@ -213,7 +213,7 @@ RZ_API RzAnalysisFunction *rz_analysis_get_function_at(const RzAnalysis *analysi
 
 typedef struct {
 	HtUP *inst_vars_new;
-	st64 delta;
+	ut64 delta;
 } InstVarsRelocateCtx;
 
 static bool inst_vars_relocate_cb(void *user, const ut64 k, const void *v) {
@@ -231,14 +231,17 @@ RZ_API bool rz_analysis_function_relocate(RzAnalysisFunction *fcn, ut64 addr) {
 	}
 	ht_up_delete(fcn->analysis->ht_addr_fun, fcn->addr);
 
-	// relocate the var accesses (their addrs are relative to the function addr)
-	st64 delta = addr - fcn->addr;
+	// relocate the var accesses (their addrs are relative to the function addr).
+	// delta and the offset arithmetic are done in ut64: addresses and their
+	// differences wrap modulo 2^64 by design, and the offsets are only ever
+	// compared/looked up as exact values, so signed overflow must be avoided.
+	ut64 delta = addr - fcn->addr;
 	void **it;
 	rz_pvector_foreach (&fcn->vars, it) {
 		RzAnalysisVar *var = *it;
 		RzAnalysisVarAccess *acc;
 		rz_vector_foreach (&var->accesses, acc) {
-			acc->offset -= delta;
+			acc->offset = (st64)((ut64)acc->offset - delta);
 		}
 	}
 	InstVarsRelocateCtx ctx = {
@@ -440,9 +443,38 @@ RZ_API bool rz_analysis_function_was_modified(RZ_NONNULL RzAnalysisFunction *fcn
 	return false;
 }
 
-RZ_API RZ_BORROW RzList /*<RzAnalysisFunction *>*/ *rz_analysis_function_list(RzAnalysis *analysis) {
+RZ_API size_t rz_analysis_function_list_size(RZ_NONNULL const RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, 0);
+	return rz_list_length(analysis->fcns);
+}
+
+RZ_API RZ_BORROW RzList /*<RzAnalysisFunction *>*/ *rz_analysis_function_list(RZ_NONNULL RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 	return analysis->fcns;
+}
+
+RZ_API void rz_analysis_function_delete_all(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_if_fail(analysis);
+	rz_list_purge(analysis->fcns);
+}
+
+RZ_API void rz_analysis_function_delete_address(RZ_NONNULL RzAnalysis *analysis, ut64 addr) {
+	rz_return_if_fail(analysis);
+
+	RzAnalysisFunction *fcni;
+	RzListIter *iter, *iter_tmp;
+	rz_list_foreach_safe (analysis->fcns, iter, iter_tmp, fcni) {
+		if (rz_analysis_function_contains(fcni, addr)) {
+			rz_analysis_function_delete(fcni);
+		}
+	}
+}
+
+RZ_API bool rz_analysis_function_exists_with_name(RZ_NONNULL const RzAnalysis *analysis, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(analysis && RZ_STR_ISNOTEMPTY(name), NULL);
+	bool found = false;
+	const RzAnalysisFunction *f = ht_sp_find(analysis->ht_name_fun, name, &found);
+	return f && found;
 }
 
 #define MIN_MATCH_LEN 4
@@ -548,4 +580,31 @@ RZ_API RZ_OWN char *rz_analysis_function_name_guess(RzTypeDB *typedb, RZ_NONNULL
 
 	free(str);
 	return result;
+}
+
+/**
+ * \brief      tries to resolve & guess the function name
+ *
+ * \param      analysis   The RzAnalysis to use
+ * \param[in]  func_name  The function name to resolve
+ *
+ * \return     On success returns a valid pointer, otherwise NULL.
+ */
+RZ_API RZ_OWN char *rz_analysis_function_name_resolve(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const char *func_name) {
+	rz_return_val_if_fail(analysis && RZ_STR_ISNOTEMPTY(func_name), NULL);
+
+	const char *str = func_name;
+	const char *name = func_name;
+	RzTypeDB *typedb = rz_analysis_get_type_db(analysis);
+	if (rz_type_func_exist(typedb, func_name)) {
+		return rz_str_dup(func_name);
+	}
+	while ((str = strchr(str, '.'))) {
+		name = str + 1;
+		str++;
+	}
+	if (rz_type_func_exist(typedb, name)) {
+		return rz_str_dup(name);
+	}
+	return rz_analysis_function_name_guess(typedb, (char *)func_name);
 }

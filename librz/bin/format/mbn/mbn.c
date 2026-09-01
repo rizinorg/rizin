@@ -161,11 +161,9 @@ RzBinInfo *mbn_info(RzBinFile *bf) {
 	ret->type = rz_str_dup("sbl"); // secondary boot loader
 	ret->bits = bits;
 	ret->has_va = true;
-	ret->has_crypto = true; // must be false if there' no sign or cert sections
-	ret->has_pi = false;
-	ret->has_nx = false;
+	ret->is_encrypted = true; // must be false if there' no sign or cert sections
 	ret->big_endian = false;
-	ret->dbg_info = false;
+	ret->dbg_info = RZ_BIN_DBG_STRIPPED;
 	return ret;
 }
 

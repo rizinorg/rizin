@@ -1,23 +1,23 @@
 // SPDX-FileCopyrightText: 2021 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2024-03-16 06:22:39-05:00
+// LLVM commit: bc5ac5f3ebb0bc4fc65cef7160c817ca3174a68e
+// LLVM commit date: 2026-03-15 10:22:07 -0700 (ISO 8601 format)
+// Date of code generation: 2026-03-23 17:45:56+01:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
 // https://github.com/rizinorg/rz-hexagon
 
-#include "rz_types.h"
-#include <rz_util/rz_log.h>
-#include <rz_util/rz_buf.h>
+#include <rz_types.h>
+#include <rz_util.h>
 #include <rz_list.h>
-#include <rz_util/rz_assert.h>
-#include <rz_asm.h>
-#include <rz_analysis.h>
+#include "asm_private.h"
+#include "analysis_private.h"
 #include <rz_util.h>
 #include <rz_vector.h>
+#include "asm_private.h"
+
 #include <hexagon/hexagon.h>
 #include <hexagon/hexagon_insn.h>
 #include <hexagon/hexagon_arch.h>
@@ -27,7 +27,6 @@ RZ_IPI void hexagon_state_fini(RZ_NULLABLE HexState *state) {
 	if (!state) {
 		return;
 	}
-	rz_config_free(state->cfg);
 	rz_pvector_free(state->token_patterns);
 	rz_list_free(state->const_ext_l);
 	for (size_t i = 0; i < HEXAGON_STATE_PKTS; ++i) {
@@ -537,7 +536,7 @@ static void hex_set_pkt_info(RZ_INOUT HexInsnContainer *hic, const HexPkt *pkt, 
 	rz_return_if_fail(hic && pkt && state);
 	bool is_first = (k == 0);
 	HexPktInfo *hi_pi = &hic->pkt_info;
-	bool sdk_form = rz_config_get_b(state->cfg, "plugins.hexagon.sdk");
+	bool sdk_form = state->sdk;
 
 	strncpy(hi_pi->text_postfix, "", 16);
 	// Parse instr. position in pkt
@@ -854,7 +853,7 @@ static void print_state_pkt(const HexState *state, st32 index, HexBufferAction a
 		} else if (i == newest) {
 			time_ind = "new";
 		}
-		rz_strbuf_appendf(pkt_line, "│  %d  │ 0x%010x │ %s │ %016llu │ ", i, pkt->pkt_addr, time_ind, pkt->last_access);
+		rz_strbuf_appendf(pkt_line, "│  %d  │ 0x%010x │ %s │ %016" PFMT64u " │ ", i, pkt->pkt_addr, time_ind, pkt->last_access);
 		HexInsnContainer *hic = NULL;
 		for (int j = 0; j < 4; ++j) {
 			hic = rz_list_get_n(pkt->bin, j);
@@ -1209,7 +1208,7 @@ static ut64 get_pre_decoding_start(RZ_BORROW RzBuffer *buffer, ut64 addr) {
  */
 static void perform_hacks(RZ_NONNULL HexState **state,
 	RZ_NONNULL RzBuffer **buffer,
-	RZ_NONNULL RzAsm **rz_asm,
+	RZ_NONNULL const RzAsm **rz_asm,
 	RZ_NONNULL RzAnalysis **rz_analysis,
 	RZ_NONNULL HexReversedOpcode *rz_reverse) {
 	if (*rz_analysis) {
@@ -1257,7 +1256,7 @@ static inline bool do_decoding_loop(ut64 current_addr, ut64 requested_addr, cons
  * \param addr The address of the current opcode.
  * \param copy_result If set, it copies the result. Otherwise it only buffers it in the internal state.
  */
-RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 addr, RzAsm *rz_asm, RzAnalysis *rz_analysis) {
+RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 addr, const RzAsm *rz_asm, RzAnalysis *rz_analysis) {
 	rz_return_if_fail(rz_reverse);
 	HexState *state;
 	RzBuffer *buffer;

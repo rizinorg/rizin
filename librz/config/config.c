@@ -1,586 +1,1726 @@
-// SPDX-FileCopyrightText: 2006-2021 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2026 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_config.h"
+#include "config_internal.h"
 
-RZ_API RZ_OWN RzConfigNode *rz_config_node_new(RZ_NONNULL const char *name, RZ_NONNULL const char *value) {
-	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name) && value, NULL);
-	RzConfigNode *node = RZ_NEW0(RzConfigNode);
-	if (!node) {
-		return NULL;
-	}
-	node->name = rz_str_dup(name);
-	node->value = rz_str_dup(value);
-	node->flags = CN_RW | CN_STR;
-	node->i_value = rz_num_get(NULL, value);
-	node->options = rz_list_new();
-	return node;
-}
+#define config_var_assert_return(expr, name, val) \
+	do { \
+		if (RZ_UNLIKELY(!(expr))) { \
+			RZ_LOG_WARN("%s: assertion '%s' failed (line %d); variable %s\n", RZ_FUNCTION, #expr, __LINE__, name); \
+			return (val); \
+		} \
+	} while (0)
 
-RZ_API RZ_OWN RzConfigNode *rz_config_node_clone(RZ_BORROW RzConfigNode *n) {
-	rz_return_val_if_fail(n, NULL);
-	RzConfigNode *cn = RZ_NEW0(RzConfigNode);
-	if (!cn) {
-		return NULL;
-	}
-	cn->name = rz_str_dup(n->name);
-	cn->desc = n->desc ? rz_str_dup(n->desc) : NULL;
-	cn->value = rz_str_dup(n->value ? n->value : "");
-	cn->i_value = n->i_value;
-	cn->flags = n->flags;
-	cn->setter = n->setter;
-	cn->options = rz_list_clone(n->options);
-	return cn;
-}
-
-RZ_API void rz_config_node_free(RZ_NULLABLE void *n) {
-	RzConfigNode *node = (RzConfigNode *)n;
-	if (!node) {
+static void config_var_fini(RzConfigVar *var) {
+	if (!var) {
 		return;
 	}
-	free(node->name);
-	free(node->desc);
-	free(node->value);
-	rz_list_free(node->options);
-	free(node);
-}
 
-RZ_API RZ_BORROW RzConfigNode *rz_config_node_get(RZ_BORROW RzConfig *cfg, RZ_NONNULL const char *name) {
-	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
-	return ht_sp_find(cfg->ht, name, NULL);
-}
-
-RZ_API bool rz_config_set_getter(RzConfig *cfg, const char *key, RzConfigCallback cb) {
-	rz_return_val_if_fail(cfg && key, false);
-	RzConfigNode *node = rz_config_node_get(cfg, key);
-	if (node) {
-		node->getter = cb;
-		return true;
+	free(var->name);
+	free(var->desc);
+	rz_set_s_free(var->options);
+	if (RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND)) {
+		// if is bind, we do not own the value.
+		return;
 	}
-	return false;
+
+	if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_STR)) {
+		free(var->value.string);
+	} else if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_SET)) {
+		rz_set_s_free(var->value.set);
+	}
 }
 
-RZ_API bool rz_config_set_setter(RzConfig *cfg, const char *key, RzConfigCallback cb) {
-	RzConfigNode *node = rz_config_node_get(cfg, key);
-	if (node) {
-		node->setter = cb;
-		return true;
+static void config_entry_fini(RzConfigEntry *entry) {
+	if (!entry) {
+		return;
 	}
-	return false;
+	if (!entry->is_variable) {
+		rz_config_node_fini(&entry->node);
+	} else {
+		config_var_fini(&entry->var);
+	}
+}
+
+static inline bool config_var_is_bind_without_set(const RzConfigVar *var) {
+	return var->flags & RZ_CONFIG_VAR_FLAG_BIND && !var->bind.set_value;
+}
+
+static inline bool config_var_set_readonly(RzConfigVar *var, bool read_only) {
+	if (config_var_is_bind_without_set(var) && !read_only) {
+		// if set_value is not set is always considered RO
+		RZ_LOG_ERROR("config: cannot unset '%s' as is an hardcoded read-only variable\n", var->name);
+		return false;
+	} else if (read_only) {
+		ut32 flags = ~RZ_CONFIG_VAR_FLAG_WRITABLE;
+		var->flags &= flags;
+	} else {
+		var->flags |= RZ_CONFIG_VAR_FLAG_WRITABLE;
+	}
+
+	return true;
+}
+
+static bool config_var_args_to_set(va_list argp, RzSetS *set) {
+	const char *value = va_arg(argp, const char *);
+	while (value) {
+		rz_set_s_add(set, value);
+		value = va_arg(argp, const char *);
+	}
+	return true;
+}
+
+RZ_IPI RZ_OWN RzSetS *rz_config_dup_set(RZ_NULLABLE const RzSetS *set) {
+	RzSetS *safe_set = rz_set_s_new(HT_STR_DUP);
+	if (!safe_set) {
+		return NULL;
+	}
+	if (!set) {
+		return safe_set;
+	}
+
+	RzIterator *it = rz_set_s_as_iter(set);
+	const char **elem;
+	rz_iterator_foreach(it, elem) {
+		rz_set_s_add(safe_set, *elem);
+	}
+	rz_iterator_free(it);
+	return safe_set;
 }
 
 /**
- * Returns the value of the config variable of \p name as a string
+ * \brief      Allocates and initialize a new RzConfig
+ *
+ * \param      user  Pointer to the user data (not owned & deprecated)
+ *
+ * \return     On success returns a valid pointer, otherwise NULL
  */
-RZ_API RZ_BORROW const char *rz_config_get(RzConfig *cfg, RZ_NONNULL const char *name) {
-	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
-	RzConfigNode *node = rz_config_node_get(cfg, name);
-	if (node) {
-		if (node->getter) {
-			node->getter(cfg->user, node);
+RZ_API RZ_OWN RzConfig *rz_config_new(RZ_DEPRECATE RZ_BORROW void *user) {
+	RzConfig *cfg = RZ_NEW0(RzConfig);
+	if (!cfg) {
+		return NULL;
+	}
+	rz_vector_init(&cfg->sorted_vars, sizeof(RzConfigEntry), (RzVectorFree)config_entry_fini, NULL);
+	// DEPRECATED
+	cfg->user = user;
+	return cfg;
+}
+
+/**
+ * \brief      Frees RzConfig structure
+ *
+ * \param      cfg   The RzConfig to be freed
+ */
+RZ_API void rz_config_free(RZ_NULLABLE RzConfig *cfg) {
+	if (!cfg) {
+		return;
+	}
+
+	rz_vector_fini(&cfg->sorted_vars);
+	free(cfg);
+}
+
+/**
+ * \brief      Sets a given variable to readonly or writable mode.
+ *
+ * \param      cfg        The RzConfig to modify
+ * \param      name       The name of the variable to set as RO/RW
+ * \param[in]  read_only  When true sets the variable to readonly mode otherwise allows writing.
+ *
+ * \return     Returns true if the key is readonly, otherwise false.
+ */
+RZ_API bool rz_config_set_readonly(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, bool read_only) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
+
+	RzConfigEntry *entry = config_find_entry(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return false;
+	}
+
+	if (!entry->is_variable) {
+		return rz_config_node_set_readonly(&entry->node, read_only);
+	}
+
+	return config_var_set_readonly(&entry->var, read_only);
+}
+
+/**
+ * \brief      Returns boolean describing if a given variable is readonly or not.
+ *
+ * \param      cfg   The configuration
+ * \param[in]  name  The name
+ *
+ * \return     When true, the queried variable is readonly.
+ */
+RZ_API bool rz_config_is_readonly(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
+	RzConfigEntry *entry = config_find_entry(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return false;
+	}
+
+	if (!entry->is_variable) {
+		return rz_config_node_is_ro(&entry->node);
+	}
+
+	return rz_config_var_is_readonly(&entry->var);
+}
+
+/**
+ * \brief      Iterates over all the variables set in a give RzConfig struct
+ *
+ * \param[in]  cfg       The configuration to iterate over.
+ * \param[in]  iterator  The iterator to call.
+ * \param      user      The user pointer passed to the iterator
+ */
+RZ_API void rz_config_iterate_over(RZ_NONNULL const RzConfig *cfg, RZ_NONNULL RzConfigIterator iterator, RZ_NULLABLE void *user) {
+	rz_return_if_fail(cfg && iterator);
+
+	const RzConfigEntry *entry = NULL;
+	rz_vector_foreach (&cfg->sorted_vars, entry) {
+		if (!iterator(entry, user)) {
+			return;
 		}
-		if (rz_config_node_is_bool(node)) {
-			return rz_str_bool(rz_str_is_true(node->value));
+	}
+}
+
+static inline bool config_init_var_bool(RzConfigVar *var, const char *name, const char *desc, bool value) {
+	var->name = rz_str_dup(name);
+	if (!name) {
+		return false;
+	}
+	var->desc = rz_str_dup(desc);
+	var->flags = RZ_CONFIG_VAR_FLAG_WRITABLE | RZ_CONFIG_VAR_TYPE_BOOL;
+	var->value.boolean = value;
+	return true;
+}
+
+static inline bool config_init_var_integer(RzConfigVar *var, const char *name, const char *desc, ut64 value) {
+	var->name = rz_str_dup(name);
+	if (!name) {
+		return false;
+	}
+	var->desc = rz_str_dup(desc);
+	var->flags = RZ_CONFIG_VAR_FLAG_WRITABLE | RZ_CONFIG_VAR_TYPE_INT;
+	var->value.integer = value;
+	return true;
+}
+
+static inline bool config_init_var_string(RzConfigVar *var, const char *name, const char *desc, RZ_NULLABLE const char *value) {
+	var->name = rz_str_dup(name);
+	var->value.string = rz_str_dup(value);
+	if (!var->name) {
+		return false;
+	}
+	var->desc = rz_str_dup(desc);
+	var->flags = RZ_CONFIG_VAR_FLAG_WRITABLE | RZ_CONFIG_VAR_TYPE_STR;
+	if (!var->value.string && value) {
+		return false;
+	}
+	return true;
+}
+
+static inline bool config_init_var_set(RzConfigVar *var, const char *name, const char *desc, RZ_OWN RzSetS *value) {
+	var->name = rz_str_dup(name);
+	var->value.set = value;
+	if (!var->name || !var->value.set) {
+		return false;
+	}
+	var->desc = rz_str_dup(desc);
+	var->flags = RZ_CONFIG_VAR_FLAG_WRITABLE | RZ_CONFIG_VAR_TYPE_SET;
+	return true;
+}
+
+static inline bool config_init_var_itv(RzConfigVar *var, const char *name, const char *desc, ut64 from, ut64 to) {
+	if (from > to) {
+		RZ_LOG_ERROR("config: cannot add '%s' when from > to (0x%08" PFMT64x " > 0x%08" PFMT64x ").\n", name, from, to);
+		return false;
+	}
+	var->name = rz_str_dup(name);
+	if (!name) {
+		return false;
+	}
+	var->desc = rz_str_dup(desc);
+	var->flags = RZ_CONFIG_VAR_FLAG_WRITABLE | RZ_CONFIG_VAR_TYPE_ITV;
+	var->value.interval.addr = from;
+	var->value.interval.size = to - from;
+	return true;
+}
+
+static inline bool config_var_bind_set_options(RzConfigVar *var) {
+	if (!var->bind.get_options) {
+		return true;
+	}
+
+	RzSetS *options = NULL;
+	if (!var->bind.get_options(var->bind.user, &options)) {
+		return false;
+	}
+	rz_set_s_free(var->options);
+	var->options = options;
+	return true;
+}
+
+static inline bool config_init_var_bind(RzConfigVar *var, const char *name, const char *desc, ut32 flags, RzConfigBindGet get, RzConfigBindSet set, RzConfigBindOpts opts, void *user) {
+	var->name = rz_str_dup(name);
+	if (!var->name) {
+		return false;
+	}
+	var->desc = rz_str_dup(desc);
+	var->flags = RZ_CONFIG_VAR_FLAG_WRITABLE | RZ_CONFIG_VAR_FLAG_BIND | flags;
+	var->bind.user = user;
+	var->bind.get_value = get;
+	var->bind.set_value = set;
+	var->bind.get_options = opts;
+	return config_var_bind_set_options(var);
+}
+
+/**
+ * \brief      Adds a boolean variable if doesn't exists.
+ *
+ * \param      cfg    The configuration where to add the variable
+ * \param[in]  name   The name of the variable to add
+ * \param[in]  desc   The description of the variable (optional)
+ * \param[in]  value  The value to set this variable to
+ *
+ * \return     On success returns true, otherwise false
+ */
+RZ_API bool rz_config_add_bool(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, bool value) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
+	RzConfigEntry new_entry = { 0 };
+	if (config_find_entry(cfg, name)) {
+		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
+		return false;
+	} else if (!config_init_var_bool(&new_entry.var, name, desc, value)) {
+		RZ_LOG_ERROR("config: failed to initialize '%s'.\n", name);
+		config_var_fini(&new_entry.var);
+		return false;
+	}
+
+	config_add_entry(cfg, name, &new_entry, true);
+	return true;
+}
+
+/**
+ * \brief      Adds an unsigned integer variable if doesn't exists.
+ *
+ * \param      cfg    The configuration where to add the variable
+ * \param[in]  name   The name of the variable to add
+ * \param[in]  desc   The description of the variable (optional)
+ * \param[in]  value  The value to set this variable to
+ *
+ * \return     On success returns true, otherwise false
+ */
+RZ_API bool rz_config_add_integer(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ut64 value) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
+	RzConfigEntry new_entry = { 0 };
+	if (config_find_entry(cfg, name)) {
+		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
+		return false;
+	} else if (!config_init_var_integer(&new_entry.var, name, desc, value)) {
+		RZ_LOG_ERROR("config: failed to initialize '%s'.\n", name);
+		config_var_fini(&new_entry.var);
+		return false;
+	}
+
+	config_add_entry(cfg, name, &new_entry, true);
+	return true;
+}
+
+/**
+ * \brief      Adds a string variable if doesn't exists.
+ *
+ * \param      cfg    The configuration where to add the variable
+ * \param[in]  name   The name of the variable to add
+ * \param[in]  desc   The description of the variable (optional)
+ * \param[in]  value  The value to set this variable to
+ *
+ * \return     On success returns true, otherwise false
+ */
+RZ_API bool rz_config_add_string(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, RZ_NULLABLE const char *value) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
+	RzConfigEntry new_entry = { 0 };
+	if (config_find_entry(cfg, name)) {
+		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
+		return false;
+	} else if (!config_init_var_string(&new_entry.var, name, desc, value)) {
+		RZ_LOG_ERROR("config: failed to initialize '%s'.\n", name);
+		config_var_fini(&new_entry.var);
+		return false;
+	}
+
+	config_add_entry(cfg, name, &new_entry, true);
+	return true;
+}
+
+/**
+ * \brief      Adds a string variable which accepts only one of specified options
+ *
+ * \param      cfg    The configuration where to add the variable
+ * \param[in]  name   The name of the variable to add
+ * \param[in]  desc   The description of the variable (optional)
+ * \param[in]  ...    The options to set for this variable (the first option is the default value, terminated by NULL)
+ *
+ * \return     On success returns true, otherwise false
+ */
+RZ_API bool rz_config_add_options(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ...) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
+	RzConfigEntry new_entry = { 0 };
+	if (config_find_entry(cfg, name)) {
+		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
+		return false;
+	}
+
+	va_list argp;
+	RzSetS *set = rz_set_s_new(HT_STR_DUP);
+	if (!set) {
+		RZ_LOG_ERROR("config: failed to initialize options set for '%s'.\n", name);
+		config_var_fini(&new_entry.var);
+		return false;
+	}
+
+	va_start(argp, desc);
+	const char *first = va_arg(argp, const char *);
+	if (first) {
+		rz_set_s_add(set, first);
+	}
+	bool ok = config_var_args_to_set(argp, set);
+	va_end(argp);
+	if (!ok) {
+		RZ_LOG_ERROR("config: failed to initialize options set for '%s'.\n", name);
+		rz_set_s_free(set);
+		config_var_fini(&new_entry.var);
+		return false;
+	}
+	if (!config_init_var_string(&new_entry.var, name, desc, first)) {
+		RZ_LOG_ERROR("config: failed to initialize '%s'.\n", name);
+		config_var_fini(&new_entry.var);
+		return false;
+	}
+	new_entry.var.options = set;
+
+	config_add_entry(cfg, name, &new_entry, true);
+	return true;
+}
+
+/**
+ * \brief      Adds a set variable if doesn't exists.
+ *
+ * \param      cfg    The configuration where to add the variable
+ * \param[in]  name   The name of the variable to add
+ * \param[in]  desc   The description of the variable (optional)
+ * \param[in]  ...    The values to set this variable to (terminated by a NULL)
+ *
+ * \return     On success returns true, otherwise false
+ */
+RZ_API bool rz_config_add_set(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ...) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
+	RzConfigEntry new_entry = { 0 };
+	if (config_find_entry(cfg, name)) {
+		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
+		return false;
+	}
+
+	va_list argp;
+	RzSetS *set = rz_set_s_new(HT_STR_DUP);
+	if (!set) {
+		return false;
+	}
+
+	va_start(argp, desc);
+	bool ok = config_var_args_to_set(argp, set);
+	va_end(argp);
+	if (!ok) {
+		rz_set_s_free(set);
+		return false;
+	} else if (!config_init_var_set(&new_entry.var, name, desc, set)) {
+		RZ_LOG_ERROR("config: failed to initialize '%s'.\n", name);
+		config_var_fini(&new_entry.var);
+		return false;
+	}
+
+	config_add_entry(cfg, name, &new_entry, true);
+	return true;
+}
+
+/**
+ * \brief      Adds a interval variable if doesn't exists.
+ *
+ * \param      cfg    The configuration where to add the variable
+ * \param[in]  name   The name of the variable to add
+ * \param[in]  desc   The description of the variable (optional)
+ * \param[in]  from   The begin value to set (inclusive, and must be less or equal than "to")
+ * \param[in]  to     The end value to set (inclusive, and must be greater or equal than "from")
+ *
+ * \return     On success returns true, otherwise false
+ */
+RZ_API bool rz_config_add_interval(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ut64 from, ut64 to) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
+	RzConfigEntry new_entry = { 0 };
+	if (config_find_entry(cfg, name)) {
+		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
+		return false;
+	} else if (!config_init_var_itv(&new_entry.var, name, desc, from, to)) {
+		RZ_LOG_ERROR("config: failed to initialize '%s'.\n", name);
+		config_var_fini(&new_entry.var);
+		return false;
+	}
+
+	config_add_entry(cfg, name, &new_entry, true);
+	return true;
+}
+
+/**
+ * \brief      Adds a string variable (not owned by RzConfig) bound to an external struct, if doesn't exists.
+ *
+ * \param      cfg   The configuration where to add the variable
+ * \param[in]  name  The name of the variable to add
+ * \param[in]  desc  The description of the variable (optional)
+ * \param[in]  type  The type of the variable (see RzConfigVarFlags)
+ * \param[in]  get   The callback used to get the value
+ * \param[in]  set   The callback used to set the value
+ * \param[in]  opts  The callback used to get the options value (optional)
+ * \param[in]  user  The pointer to a user set variable (not owned by RzConfig)
+ *
+ * \return     On success returns true, otherwise false
+ */
+RZ_API bool rz_config_add_bind(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc, ut32 type, RZ_NONNULL RzConfigBindGet get, RZ_NULLABLE RzConfigBindSet set, RZ_NULLABLE RzConfigBindOpts opts, RZ_NULLABLE void *user) {
+	type &= RZ_CONFIG_VAR_TYPE_MASK;
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name) && get && type > 0, false);
+
+	RzConfigEntry new_entry = { 0 };
+	if (config_find_entry(cfg, name)) {
+		RZ_LOG_ERROR("config: variable '%s' already exists.\n", name);
+		return false;
+	} else if (!config_init_var_bind(&new_entry.var, name, desc, type, get, set, opts, user)) {
+		RZ_LOG_ERROR("config: failed to initialize '%s'.\n", name);
+		config_var_fini(&new_entry.var);
+		return false;
+	}
+
+	config_add_entry(cfg, name, &new_entry, true);
+	return true;
+}
+
+/**
+ * \brief      Converts a given RzConfigVar to json.
+ *
+ * \param[in]  var   The variable
+ * \param      pj    PJ structure to write to
+ * \param[in]  key   The key name to assign to the value
+ *
+ * \return     On success returns true, otherwise false.
+ */
+RZ_API bool rz_config_var_as_json(RZ_NONNULL const RzConfigVar *var, RZ_NONNULL PJ *pj, RZ_NONNULL const char *key) {
+	rz_return_val_if_fail(var && pj && key, false);
+
+	if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_BOOL)) {
+		pj_kb(pj, key, rz_config_var_get_bool(var));
+	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_INT)) {
+		pj_kn(pj, key, rz_config_var_get_integer(var));
+	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_STR)) {
+		pj_ks(pj, key, rz_config_var_get_string(var));
+	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_SET)) {
+		const char **value;
+		RzSetS *set = rz_config_var_get_set(var);
+		RzIterator *it = rz_set_s_as_iter(set);
+		pj_ka(pj, key);
+		rz_iterator_foreach(it, value) {
+			pj_s(pj, *value);
 		}
-		return node->value;
-	} else {
-		RZ_LOG_DEBUG("rz_config_get: variable '%s' not found\n", name);
+		rz_iterator_free(it);
+		pj_end(pj);
+		rz_set_s_free(set);
+	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_ITV)) {
+		RzInterval itv = rz_config_var_get_interval(var);
+		pj_ko(pj, key);
+		pj_kn(pj, "addr", rz_itv_begin(itv));
+		pj_kn(pj, "size", rz_itv_size(itv));
+		pj_end(pj);
+	}
+	return true;
+}
+
+/**
+ * \brief      Returns an owned string that describes the variable value
+ *
+ * \param[in]  var   The RzConfigVar to stringify
+ *
+ * \return     On success returns a valid pointer, otherwise NULL.
+ */
+RZ_API RZ_OWN char *rz_config_var_as_string(RZ_NONNULL const RzConfigVar *var) {
+	rz_return_val_if_fail(var, NULL);
+
+	if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_BOOL)) {
+		bool b = rz_config_var_get_bool(var);
+		return rz_str_dup(rz_str_bool(b));
+	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_INT)) {
+		ut64 i64 = rz_config_var_get_integer(var);
+		return rz_str_newf("%" PFMT64u, i64);
+	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_STR)) {
+		const char *str = rz_config_var_get_string(var);
+		return rz_str_dup(str);
+	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_SET)) {
+		RzSetS *set = rz_config_var_get_set(var);
+		RzStrBuf *sb = rz_strbuf_new("");
+		RzIterator *it = rz_set_s_as_iter(set);
+		const char **val;
+		rz_iterator_foreach(it, val) {
+			if (rz_strbuf_length(sb) > 0) {
+				rz_strbuf_append(sb, ",");
+			}
+			rz_strbuf_append(sb, *val);
+		}
+		rz_iterator_free(it);
+		char *value = rz_strbuf_drain(sb);
+		rz_set_s_free(set);
+		return value;
+	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_ITV)) {
+		RzInterval itv = rz_config_var_get_interval(var);
+		return rz_str_newf("0x%08" PFMT64x ",0x%08" PFMT64x, rz_itv_begin(itv), rz_itv_end(itv));
 	}
 	return NULL;
 }
 
 /**
- * Reads the value of the config variable of \p name only and only if
- * the variable is boolean, then tries to write back the inverted value.
- * Returns true in case of success.
+ * \brief      Returns boolean describing if a given variable is readonly or not.
+ *
+ * \param      var   The RzConfigVar to use
+ *
+ * \return     When true, the variable is readonly.
  */
-RZ_API bool rz_config_toggle(RZ_BORROW RzConfig *cfg, RZ_NONNULL const char *name) {
-	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
-	RzConfigNode *node = rz_config_node_get(cfg, name);
-	if (!node) {
-		return false;
+RZ_API bool rz_config_var_is_readonly(RZ_NONNULL const RzConfigVar *var) {
+	rz_return_val_if_fail(var, false);
+	if (config_var_is_bind_without_set(var)) {
+		// if set_value is not set is always considered RO
+		return true;
 	}
-	if (!rz_config_node_is_bool(node)) {
-		RZ_LOG_DEBUG("(error: '%s' is not a boolean variable)\n", name);
-		return false;
-	}
-	if (rz_config_node_is_ro(node)) {
-		RZ_LOG_DEBUG("(error: '%s' config key is read only)\n", name);
-		return false;
-	}
-	(void)rz_config_set_i(cfg, name, !node->i_value);
-	return true;
+	return !RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_WRITABLE);
+}
+
+static inline bool config_var_bind_get_value(const RzConfigVar *var, void *value) {
+	return var->bind.get_value(var->bind.user, value);
+}
+
+static inline bool config_var_bind_set_value(const RzConfigVar *var, const void *value) {
+	return var->bind.set_value(var->bind.user, value);
 }
 
 /**
- * Reads the value of the config variable of \p name only and only if
- * the variable is integer.
+ * \brief      Returns the boolean held by the RzConfigVar (must be a boolean type)
+ *
+ * \param[in]  var   The RzConfigVar to use
+ *
+ * \return     Returns the value held by the RzConfigVar
  */
-RZ_API ut64 rz_config_get_i(RzConfig *cfg, RZ_NONNULL const char *name) {
+RZ_API bool rz_config_var_get_bool(RZ_NONNULL const RzConfigVar *var) {
+	config_var_assert_return(var && RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_BOOL), var ? var->name : "(null)", false);
+
+	if (!(RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND))) {
+		return var->value.boolean;
+	}
+
+	bool value = false;
+	if (!config_var_bind_get_value(var, &value)) {
+		return false;
+	}
+	return value;
+}
+
+/**
+ * \brief      Returns the unsigned integer held by the RzConfigVar (must be an integer type)
+ *
+ * \param[in]  var   The RzConfigVar to use
+ *
+ * \return     Returns the value held by the RzConfigVar
+ */
+RZ_API ut64 rz_config_var_get_integer(RZ_NONNULL const RzConfigVar *var) {
+	config_var_assert_return(var && RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_INT), var ? var->name : "(null)", 0);
+
+	if (!(RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND))) {
+		return var->value.integer;
+	}
+
+	ut64 value = 0;
+	if (!config_var_bind_get_value(var, &value)) {
+		return 0;
+	}
+	return value;
+}
+
+/**
+ * \brief      Returns the string held by the RzConfigVar (must be a string type)
+ *
+ * \param[in]  var   The RzConfigVar to use
+ *
+ * \return     Returns the value held by the RzConfigVar
+ */
+RZ_API const char *rz_config_var_get_string(RZ_NONNULL const RzConfigVar *var) {
+	config_var_assert_return(var && RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_STR), var ? var->name : "(null)", NULL);
+
+	if (!(RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND))) {
+		return rz_str_get(var->value.string);
+	}
+
+	const char *value = NULL;
+	if (!config_var_bind_get_value(var, &value) || !value) {
+		return "";
+	}
+	return value;
+}
+
+/**
+ * \brief      Returns the set held by the RzConfigVar (must be a set type)
+ *
+ * \param[in]  var   The RzConfigVar to use
+ *
+ * \return     Returns the value held by the RzConfigVar
+ */
+RZ_API RZ_OWN RzSetS *rz_config_var_get_set(RZ_NONNULL const RzConfigVar *var) {
+	config_var_assert_return(var && RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_SET), var ? var->name : "(null)", false);
+
+	if (!(RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND))) {
+		return rz_config_dup_set(var->value.set);
+	}
+
+	RzSetS *value = NULL;
+	if (!config_var_bind_get_value(var, &value) || !value) {
+		return rz_set_s_new(HT_STR_DUP);
+	}
+	return value;
+}
+
+/**
+ * \brief      Returns the interval held by the RzConfigVar (must be a interval type)
+ *
+ * \param[in]  var   The RzConfigVar to use
+ *
+ * \return     Returns the value held by the RzConfigVar
+ */
+RZ_API RzInterval rz_config_var_get_interval(RZ_NONNULL const RzConfigVar *var) {
+	RzInterval value = { 0 };
+	config_var_assert_return(var && RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_ITV), var ? var->name : "(null)", value);
+
+	if (!(RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND))) {
+		return var->value.interval;
+	}
+
+	if (!config_var_bind_get_value(var, &value)) {
+		memset(&value, 0, sizeof(value));
+		return value;
+	}
+	return value;
+}
+
+/**
+ * \brief      Checks if the expected type matches the one set in the RzConfigVar struct
+ *
+ * \param[in]  var    The variable to check
+ * \param[in]  etype  The type to expect
+ *
+ * \return     Returns true if the expected type matches the one set in the RzConfigVar struct
+ */
+RZ_API bool rz_config_var_has_type(RZ_NONNULL const RzConfigVar *var, ut32 etype) {
+	rz_return_val_if_fail(var, false);
+	return RZ_CONFIG_VAR_IS_TYPE(var->flags, etype);
+}
+
+/**
+ * \brief      Checks if the expected flags are set in the RzConfigVar struct
+ *
+ * \param[in]  var     The variable to check
+ * \param[in]  eflags  The flags to expect
+ *
+ * \return     Returns true if the expected flags are set in the RzConfigVar struct
+ */
+RZ_API bool rz_config_var_has_flags(RZ_NONNULL const RzConfigVar *var, ut32 eflags) {
+	rz_return_val_if_fail(var, false);
+	return RZ_CONFIG_VAR_HAS_FLAG(var->flags, eflags) == eflags;
+}
+
+/**
+ * \brief      Returns the encoded flags and type set in RzConfigVar (see RzConfigVarFlags)
+ *
+ * \param[in]  RzConfigVar  The RzConfigVar to use
+ *
+ * \return     The variable encoded flags and type
+ */
+RZ_API ut32 rz_config_var_get_flags(RZ_NONNULL const RzConfigVar *var) {
+	rz_return_val_if_fail(var, 0);
+	return var->flags;
+}
+
+/**
+ * \brief      Returns the name set in RzConfigVar
+ *
+ * \param[in]  RzConfigVar  The RzConfigVar to use
+ *
+ * \return     The variable name (guaranteed to be always non NULL)
+ */
+RZ_API const char *rz_config_var_get_name(RZ_NONNULL const RzConfigVar *var) {
+	rz_return_val_if_fail(var, "");
+	return rz_str_get(var->name);
+}
+
+/**
+ * \brief      Returns the description set in RzConfigVar
+ *
+ * \param[in]  RzConfigVar  The RzConfigVar to use
+ *
+ * \return     The variable description (guaranteed to be always non NULL)
+ */
+RZ_API const char *rz_config_var_get_desc(RZ_NONNULL const RzConfigVar *var) {
+	rz_return_val_if_fail(var, "");
+	return rz_str_get(var->desc);
+}
+
+/**
+ * \brief      Returns the options if set in the RzConfigVar struct
+ *
+ * \param[in]  RzConfigVar  The RzConfigVar to use
+ *
+ * \return     The options (can be NULL)
+ */
+RZ_API const RzSetS *rz_config_var_get_options(RZ_NONNULL const RzConfigVar *var) {
+	rz_return_val_if_fail(var, NULL);
+	return var->options;
+}
+
+/**
+ * \brief      Converts a given encoded to string (see RzConfigVarFlags)
+ *
+ * \param[in]  flags  The flags to stringify
+ *
+ * \return     On success returns a valid pointer, otherwise NULL.
+ */
+RZ_API RZ_OWN char *rz_config_var_flags_as_string(ut32 flags) {
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+
+	ut32 types = flags & RZ_CONFIG_VAR_TYPE_MASK;
+	flags &= RZ_CONFIG_VAR_FLAGS_MASK;
+
+	switch (types) {
+	case RZ_CONFIG_VAR_TYPE_BOOL:
+		rz_strbuf_append(&sb, "bool");
+		break;
+	case RZ_CONFIG_VAR_TYPE_INT:
+		rz_strbuf_append(&sb, "integer");
+		break;
+	case RZ_CONFIG_VAR_TYPE_STR:
+		rz_strbuf_append(&sb, "string");
+		break;
+	case RZ_CONFIG_VAR_TYPE_SET:
+		rz_strbuf_append(&sb, "set");
+		break;
+	case RZ_CONFIG_VAR_TYPE_ITV:
+		rz_strbuf_append(&sb, "interval");
+		break;
+	default:
+		rz_strbuf_appendf(&sb, "type_%u", types);
+		break;
+	}
+
+	if (flags & RZ_CONFIG_VAR_FLAG_BIND) {
+		if (rz_strbuf_length(&sb) > 0) {
+			rz_strbuf_append(&sb, ",");
+		}
+		rz_strbuf_append(&sb, "bind");
+	}
+	if (!(flags & RZ_CONFIG_VAR_FLAG_WRITABLE)) {
+		if (rz_strbuf_length(&sb) > 0) {
+			rz_strbuf_append(&sb, ",");
+		}
+		rz_strbuf_append(&sb, "readonly");
+	}
+
+	return rz_strbuf_drain_nofree(&sb);
+}
+
+static bool config_var_is_valid_value(const RzConfigVar *var, const void *value) {
+	if (!var->value.validator) {
+		return true;
+	}
+	return var->value.validator(var->value.validator_user, value);
+}
+
+RZ_IPI bool rz_config_var_set_bool(RzConfigVar *var, bool value) {
+	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_BOOL), var->name, false);
+	if (rz_config_var_is_readonly(var)) {
+		RZ_LOG_ERROR("config: '%s' is a read only variable\n", var->name);
+		return false;
+	}
+
+	if (RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND)) {
+		return config_var_bind_set_value(var, &value);
+	} else if (!config_var_is_valid_value(var, &value)) {
+		return false;
+	}
+	var->value.boolean = value;
+	return true;
+}
+
+RZ_IPI bool rz_config_var_set_integer(RzConfigVar *var, ut64 value) {
+	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_INT), var->name, false);
+	if (rz_config_var_is_readonly(var)) {
+		RZ_LOG_ERROR("config: '%s' is a read only variable\n", var->name);
+		return false;
+	}
+
+	if (RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND)) {
+		return config_var_bind_set_value(var, &value);
+	} else if (!config_var_is_valid_value(var, &value)) {
+		return false;
+	}
+	var->value.integer = value;
+	return true;
+}
+
+static bool config_var_has_option(RzConfigVar *var, const char *value) {
+	if (!var->options || rz_set_s_size(var->options) < 1) {
+		// there are no options so the value is always valid.
+		return true;
+	}
+	// we consider NULL as "" (empty string)
+	value = rz_str_get(value);
+
+	const char **opt;
+	RzIterator *it = rz_set_s_as_iter(var->options);
+	rz_iterator_foreach(it, opt) {
+		if (RZ_STR_EQ(*opt, value)) {
+			rz_iterator_free(it);
+			return true;
+		}
+	}
+	rz_iterator_free(it);
+	return false;
+}
+
+RZ_IPI bool rz_config_var_set_string(RzConfigVar *var, const char *value) {
+	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_STR), var->name, false);
+	if (rz_config_var_is_readonly(var)) {
+		RZ_LOG_ERROR("config: '%s' is a read only variable\n", var->name);
+		return false;
+	} else if (!config_var_has_option(var, value)) {
+		value = rz_str_get(value);
+		RZ_LOG_ERROR("config: '%s' does not support option '%s'\n", var->name, value);
+		return false;
+	}
+
+	if (RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND)) {
+		return config_var_bind_set_value(var, value);
+	} else if (!config_var_is_valid_value(var, value)) {
+		return false;
+	}
+	free(var->value.string);
+	var->value.string = rz_str_dup(value);
+	return true;
+}
+
+RZ_IPI bool rz_config_var_set_set(RzConfigVar *var, const RzSetS *value) {
+	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_SET), var->name, false);
+	if (rz_config_var_is_readonly(var)) {
+		RZ_LOG_ERROR("config: '%s' is a read only variable\n", var->name);
+		return false;
+	}
+
+	if (RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND)) {
+		return config_var_bind_set_value(var, value);
+	} else if (!config_var_is_valid_value(var, value)) {
+		return false;
+	}
+
+	rz_set_s_free(var->value.set);
+	var->value.set = rz_config_dup_set(value);
+	return true;
+}
+
+RZ_IPI bool rz_config_var_set_set2(RzConfigVar *var, RZ_OWN RzSetS *value) {
+	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_SET), var->name, false);
+	if (rz_config_var_is_readonly(var)) {
+		RZ_LOG_ERROR("config: '%s' is a read only variable\n", var->name);
+		return false;
+	}
+
+	if (RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND)) {
+		bool ret = config_var_bind_set_value(var, value);
+		rz_set_s_free(value);
+		return ret;
+	} else if (!config_var_is_valid_value(var, value)) {
+		rz_set_s_free(value);
+		return false;
+	}
+
+	rz_set_s_free(var->value.set);
+	var->value.set = value;
+	return true;
+}
+
+RZ_IPI bool rz_config_var_set_interval(RzConfigVar *var, RzInterval value) {
+	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_ITV), var->name, false);
+	if (rz_config_var_is_readonly(var)) {
+		RZ_LOG_ERROR("config: '%s' is a read only variable\n", var->name);
+		return false;
+	}
+
+	if (RZ_CONFIG_VAR_HAS_FLAG(var->flags, RZ_CONFIG_VAR_FLAG_BIND)) {
+		return config_var_bind_set_value(var, &value);
+	} else if (!config_var_is_valid_value(var, &value)) {
+		return false;
+	}
+
+	var->value.interval = value;
+	return true;
+}
+
+static bool config_set_var_set_from_string(RzConfigVar *var, const char *value) {
+	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_SET), var->name, false);
+	RzSetS *set = NULL;
+	if (value) {
+		set = rz_str_split_dupset(value, ",", true);
+	} else {
+		set = rz_set_s_new(HT_STR_DUP);
+	}
+
+	return rz_config_var_set_set2(var, set);
+}
+
+static bool config_set_var_interval_from_string(RzConfigVar *var, const char *value) {
+	config_var_assert_return(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_ITV), var->name, false);
+
+	RzInterval itv = { 0 };
+	RzList *list = rz_str_split_duplist(value, ",", true);
+	if (rz_list_length(list) == 2) {
+		ut64 from = rz_num_get(NULL, rz_list_first_val(list));
+		ut64 to = rz_num_get(NULL, rz_list_last_val(list));
+		if (to < from) {
+			RZ_LOG_ERROR("config: cannot set '%s' when from > to (0x%08" PFMT64x " > 0x%08" PFMT64x ").\n", var->name, from, to);
+			rz_list_free(list);
+			return false;
+		}
+		itv.addr = from;
+		itv.size = to - from;
+	}
+	rz_list_free(list);
+	return rz_config_var_set_interval(var, itv);
+}
+
+RZ_IPI bool rz_config_var_set_any(RzConfigVar *var, const char *value) {
+	if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_BOOL)) {
+		bool bvalue = value ? rz_str_is_true(value) : false;
+		return rz_config_var_set_bool(var, bvalue);
+	} else if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_INT)) {
+		ut64 ivalue = value ? rz_num_get(NULL, value) : 0;
+		return rz_config_var_set_integer(var, ivalue);
+	} else if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_STR)) {
+		return rz_config_var_set_string(var, value);
+	} else if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_SET)) {
+		return config_set_var_set_from_string(var, value);
+	} else if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_ITV)) {
+		return config_set_var_interval_from_string(var, value);
+	}
+	return false;
+}
+
+RZ_IPI bool rz_config_toggle_var_bool(RzConfigVar *var) {
+	if (!(RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_BOOL))) {
+		RZ_LOG_ERROR("config: variable '%s' is not a boolean.\n", var->name);
+		return false;
+	}
+
+	bool bvalue = rz_config_var_get_bool(var);
+	return rz_config_var_set_bool(var, !bvalue);
+}
+
+/**
+ * \brief      Inverts the value of a held boolean variable (if was true, becomes false, or viceversa)
+ *
+ * \param      cfg   The configuration to use
+ * \param[in]  name  The name of the boolean variable to invert
+ *
+ * \return     On success return true, otherwise false
+ */
+RZ_API bool rz_config_toggle_bool(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name) {
+	RzConfigEntry *entry = config_find_entry(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return false;
+	}
+
+	return rz_config_toggle_var_bool(&entry->var);
+}
+
+/**
+ * \brief      Sets the value of a given string variable (must be string type)
+ *
+ * \param      cfg    The configuration to use
+ * \param[in]  name   The name of the variable to change
+ * \param[in]  value  The value to set
+ *
+ * \return     On success return true, otherwise false
+ */
+RZ_API bool rz_config_set_string(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *value) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
+
+	RzConfigEntry *entry = config_find_entry(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return false;
+	}
+	if (!entry->is_variable) {
+		rz_config_set(cfg, name, value);
+		return true;
+	}
+
+	return rz_config_var_set_string(&entry->var, value);
+}
+
+/**
+ * \brief      Sets the value of a given unsigned integer variable (must be integer type)
+ *
+ * \param      cfg    The configuration to use
+ * \param[in]  name   The name of the variable to change
+ * \param[in]  value  The value to set
+ *
+ * \return     On success return true, otherwise false
+ */
+RZ_API bool rz_config_set_integer(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, ut64 value) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
+
+	RzConfigEntry *entry = config_find_entry(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return false;
+	}
+	if (!entry->is_variable) {
+		rz_config_set_i(cfg, name, value);
+		return true;
+	}
+
+	return rz_config_var_set_integer(&entry->var, value);
+}
+
+/**
+ * \brief      Sets the value of a given boolean variable (must be boolean type)
+ *
+ * \param      cfg    The configuration to use
+ * \param[in]  name   The name of the variable to change
+ * \param[in]  value  The value to set
+ *
+ * \return     On success return true, otherwise false
+ */
+RZ_API bool rz_config_set_bool(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, bool value) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
+
+	RzConfigEntry *entry = config_find_entry(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return false;
+	}
+	if (!entry->is_variable) {
+		rz_config_set_b(cfg, name, value);
+		return true;
+	}
+
+	return rz_config_var_set_bool(&entry->var, value);
+}
+
+/**
+ * \brief      Sets the value of a given set variable (must be set type)
+ *
+ * \param      cfg    The configuration to use
+ * \param[in]  name   The name of the variable to change
+ * \param[in]  value  The value to set
+ *
+ * \return     On success return true, otherwise false
+ */
+RZ_API bool rz_config_set_set(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const RzSetS *value) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
+
+	RzConfigEntry *entry = config_find_entry(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return false;
+	}
+	if (!entry->is_variable) {
+		return false;
+	}
+
+	return rz_config_var_set_set(&entry->var, value);
+}
+
+/**
+ * \brief      Sets the value of a given set variable (must be set type)
+ *
+ * \param      cfg    The configuration to use
+ * \param[in]  name   The name of the variable to change
+ * \param[in]  ...    The set of values to set (terminated by a NULL)
+ *
+ * \return     On success return true, otherwise false
+ */
+RZ_API bool rz_config_set_set2(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, ...) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
+
+	RzConfigEntry *entry = config_find_entry(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return false;
+	}
+	if (!entry->is_variable) {
+		return false;
+	}
+
+	va_list argp;
+	RzSetS *set = rz_set_s_new(HT_STR_DUP);
+	if (!set) {
+		return false;
+	}
+
+	va_start(argp, name);
+	bool ok = config_var_args_to_set(argp, set);
+	va_end(argp);
+	if (!ok) {
+		RZ_LOG_ERROR("config: failed to initialize set for '%s'.\n", name);
+		rz_set_s_free(set);
+		return false;
+	}
+
+	return rz_config_var_set_set2(&entry->var, set);
+}
+
+/**
+ * \brief      Sets the value of a given set variable (must be set type)
+ *
+ * \param      cfg         The configuration to use
+ * \param[in]  name        The name of the variable to change
+ * \param[in]  comma_list  The value to set as comma separated (example: `a,b,c,d`)
+ *
+ * \return     On success return true, otherwise false
+ */
+RZ_API bool rz_config_set_set3(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *comma_list) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
+
+	RzConfigEntry *entry = config_find_entry(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return false;
+	}
+	if (!entry->is_variable) {
+		return false;
+	}
+
+	return config_set_var_set_from_string(&entry->var, comma_list);
+}
+
+/**
+ * \brief      Sets the value of a given interval variable (must be interval type)
+ *
+ * \param      cfg    The configuration to use
+ * \param[in]  name   The name of the variable to change
+ * \param[in]  value  The value to set
+ *
+ * \return     On success return true, otherwise false
+ */
+RZ_API bool rz_config_set_interval(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RzInterval value) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
+
+	RzConfigEntry *entry = config_find_entry(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return false;
+	}
+	if (!entry->is_variable) {
+		return false;
+	}
+
+	return rz_config_var_set_interval(&entry->var, value);
+}
+
+/**
+ * \brief      Sets the value of a given interval variable (must be interval type)
+ *
+ * \param      cfg    The configuration to use
+ * \param[in]  name   The name of the variable to change
+ * \param[in]  from   The begin value to set (inclusive, and must be less or equal than "to")
+ * \param[in]  to     The end value to set (inclusive, and must be greater or equal than "from")
+ *
+ * \return     On success return true, otherwise false
+ */
+RZ_API bool rz_config_set_interval2(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, ut64 from, ut64 to) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
+
+	RzConfigEntry *entry = config_find_entry(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return false;
+	}
+	if (!entry->is_variable) {
+		return false;
+	}
+	if (to < from) {
+		RZ_LOG_ERROR("config: cannot set '%s' when from > to (0x%08" PFMT64x " > 0x%08" PFMT64x ").\n", name, from, to);
+		return false;
+	}
+
+	RzInterval value = { .addr = from, .size = to - from };
+	return rz_config_var_set_interval(&entry->var, value);
+}
+
+/**
+ * \brief      Sets the value of a given interval variable (must be interval type)
+ *
+ * \param      cfg        The configuration to use
+ * \param[in]  name       The name of the variable to change
+ * \param[in]  comma_itv  The value to set as comma separated (example: `0x1000,0x5fff`, `<from>,<to>` are inclusive and from <= to)
+ *
+ * \return     On success return true, otherwise false
+ */
+RZ_API bool rz_config_set_interval3(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *comma_itv) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
+
+	RzConfigEntry *entry = config_find_entry(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return false;
+	}
+	if (!entry->is_variable) {
+		return false;
+	}
+
+	return config_set_var_interval_from_string(&entry->var, comma_itv);
+}
+
+/**
+ * \brief      Sets the value of a given variable (the string value is converted based on the variable type)
+ *
+ * 	When type is:
+ * 	- bool, the value `true` is set if `rz_str_is_true` returns true, otherwise is false (on NULL is set to false).
+ * 	- integer, the value is parsed via RzNum (on NULL is set to 0)
+ * 	- string, the value is kept as is (on NULL is set to "")
+ * 	- set, the expected value is a comma separated set like `a,b,c` (on NULL is set to empty set)
+ * 	- interval, the expected value is a comma separated range (inclusive) like `from,to` where from <= to (on NULL is set to [0,0])
+ *
+ * \param      cfg    The configuration to use
+ * \param[in]  name   The name of the variable to change
+ * \param[in]  value  The value to convert before being set in the variable (can be NULL)
+ *
+ * \return     On success return true, otherwise false
+ */
+RZ_API bool rz_config_set_any(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *value) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
+
+	RzConfigEntry *entry = config_find_entry(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return false;
+	}
+
+	if (!entry->is_variable) {
+		return rz_config_set(cfg, name, value) != NULL;
+	}
+
+	return rz_config_var_set_any(&entry->var, value);
+}
+
+/**
+ * \brief      Returns the boolean held by the RzConfig (must be a boolean type)
+ *
+ * \param[in]  cfg   The RzConfig to use
+ * \param[in]  name  The name of the boolean variable
+ *
+ * \return     Returns the value held by the RzConfig
+ */
+RZ_API bool rz_config_get_bool(RZ_NONNULL const RzConfig *cfg, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
+
+	const RzConfigEntry *entry = config_find_entry_ro(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return false;
+	}
+
+	if (!entry->is_variable) {
+		return rz_config_get_b((RzConfig *)cfg, name);
+	}
+
+	return rz_config_var_get_bool(&entry->var);
+}
+
+/**
+ * \brief      Returns the unsigned integer held by the RzConfig (must be a integer type)
+ *
+ * \param[in]  cfg   The RzConfig to use
+ * \param[in]  name  The name of the integer variable
+ *
+ * \return     Returns the value held by the RzConfig
+ */
+RZ_API ut64 rz_config_get_integer(RZ_NONNULL const RzConfig *cfg, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), 0);
-	RzConfigNode *node = rz_config_node_get(cfg, name);
-	if (node) {
-		if (node->getter) {
-			node->getter(cfg->user, node);
-		}
-		if (node->i_value || !strcmp(node->value, "false")) {
-			return node->i_value;
-		}
-		// TODO: Remove it once the switch to `rz_config_get_b()` is complete
-		if (!strcmp(node->value, "true")) {
-			return 1;
-		}
-		return (ut64)rz_num_math(cfg->num, node->value);
+
+	const RzConfigEntry *entry = config_find_entry_ro(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return 0;
 	}
-	return (ut64)0LL;
+
+	if (!entry->is_variable) {
+		return rz_config_get_i((RzConfig *)cfg, name);
+	}
+
+	return rz_config_var_get_integer(&entry->var);
 }
 
 /**
- * Reads the value of the config variable of \p name only and only if
- * the variable is boolean. Returns false in case of the failure.
+ * \brief      Returns the string held by the RzConfig (must be a string type)
+ *
+ * \param[in]  cfg   The RzConfig to use
+ * \param[in]  name  The name of the string variable
+ *
+ * \return     Returns the value held by the RzConfig
  */
-RZ_API bool rz_config_get_b(RzConfig *cfg, RZ_NONNULL const char *name) {
+RZ_API const char *rz_config_get_string(RZ_NONNULL const RzConfig *cfg, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
+
+	const RzConfigEntry *entry = config_find_entry_ro(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return NULL;
+	}
+
+	if (!entry->is_variable) {
+		return rz_config_get((RzConfig *)cfg, name);
+	}
+
+	return rz_config_var_get_string(&entry->var);
+}
+
+/**
+ * \brief      Returns the set held by the RzConfig (must be a set type)
+ *
+ * \param[in]  cfg   The RzConfig to use
+ * \param[in]  name  The name of the set variable
+ *
+ * \return     Returns the value held by the RzConfig
+ */
+RZ_API RZ_OWN RzSetS *rz_config_get_set(RZ_NONNULL const RzConfig *cfg, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
+
+	const RzConfigEntry *entry = config_find_entry_ro(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return NULL;
+	}
+
+	if (!entry->is_variable) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	return rz_config_var_get_set(&entry->var);
+}
+
+/**
+ * \brief      Returns the interval held by the RzConfig (must be a interval type)
+ *
+ * \param[in]  cfg   The RzConfig to use
+ * \param[in]  name  The name of the interval variable
+ *
+ * \return     Returns the value held by the RzConfig
+ */
+RZ_API RzInterval rz_config_get_interval(RZ_NONNULL const RzConfig *cfg, RZ_NONNULL const char *name) {
+	RzInterval zero = { 0 };
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), zero);
+
+	const RzConfigEntry *entry = config_find_entry_ro(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return zero;
+	}
+
+	if (!entry->is_variable) {
+		rz_warn_if_reached();
+		return zero;
+	}
+
+	return rz_config_var_get_interval(&entry->var);
+}
+
+/**
+ * \brief      Returns an owned string that describes the queried variable value
+ *
+ * \param[in]  cfg   The RzConfig to use
+ * \param[in]  name  The name of the variable to stringify
+ *
+ * \return     On success returns a valid pointer, otherwise NULL.
+ */
+RZ_API RZ_OWN char *rz_config_get_as_string(RZ_NONNULL const RzConfig *cfg, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
+	const RzConfigEntry *entry = config_find_entry_ro(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return NULL;
+	}
+
+	if (entry->is_variable) {
+		return rz_config_var_as_string(&entry->var);
+	}
+
+	const char *value = entry->node.value;
+	if (rz_config_node_is_bool(&entry->node)) {
+		bool b = rz_str_is_true(value);
+		value = rz_str_bool(b);
+	}
+	return rz_str_dup(value);
+}
+
+/**
+ * \brief      Returns the options held by the queried variable value
+ *
+ * \param[in]  cfg   The RzConfig to use
+ * \param[in]  name  The name of the variable to stringify
+ *
+ * \return     On success returns a pointer, can be NULL.
+ */
+RZ_API const RzSetS *rz_config_get_options(RZ_NONNULL const RzConfig *cfg, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
+	const RzConfigEntry *entry = config_find_entry_ro(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return NULL;
+	}
+
+	if (entry->is_variable) {
+		return rz_config_var_get_options(&entry->var);
+	}
+	return entry->node.options;
+}
+
+static ut32 config_entry_get_flags(const RzConfigEntry *entry) {
+	if (entry->is_variable) {
+		return rz_config_var_get_flags(&entry->var);
+	}
+	return rz_config_node_get_var_flags(&entry->node);
+}
+
+/**
+ * \brief      Returns the encoded flags and type of the queried variable value (see RzConfigVarFlags)
+ *
+ * \param[in]  cfg   The RzConfig to use
+ * \param[in]  name  The name of the variable to stringify
+ *
+ * \return     On success returns a valid pointer, otherwise NULL.
+ */
+RZ_API ut32 rz_config_get_flags(RZ_NONNULL const RzConfig *cfg, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), 0);
+	const RzConfigEntry *entry = config_find_entry_ro(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return 0;
+	}
+
+	if (entry->is_variable) {
+		return rz_config_var_get_flags(&entry->var);
+	}
+	return rz_config_node_get_var_flags(&entry->node);
+}
+
+static bool config_entry_set_options(RzConfigEntry *entry, RZ_NULLABLE RZ_OWN RzSetS *options) {
+	ut32 flags = config_entry_get_flags(entry);
+	if (!(RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_STR))) {
+		const char *name = rz_config_entry_get_name(entry);
+		RZ_LOG_ERROR("config: variable '%s' is not a string.\n", name);
+		rz_set_s_free(options);
+		return false;
+	}
+
+	if (entry->is_variable) {
+		rz_set_s_free(entry->var.options);
+		entry->var.options = options;
+	} else {
+		rz_set_s_free(entry->node.options);
+		entry->node.options = options;
+	}
+
+	return true;
+}
+
+/**
+ * \brief      Sets the options held by the string type variable
+ *
+ * \param[in]  cfg      The RzConfig to use
+ * \param[in]  name     The name of the string type variable to update
+ * \param[in]  options  The options to set
+ *
+ * \return     On success returns a true, otherwise false.
+ */
+RZ_API bool rz_config_set_options(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE RZ_OWN RzSetS *options) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
-	RzConfigNode *node = rz_config_node_get(cfg, name);
-	if (!node) {
+	RzConfigEntry *entry = config_find_entry(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		rz_set_s_free(options);
 		return false;
 	}
-	if (!rz_config_node_is_bool(node)) {
-		RZ_LOG_DEBUG("(error: '%s' is not a boolean variable)\n", name);
-		return false;
-	}
-	return rz_str_is_true(node->value);
-}
 
-RZ_API const char *rz_config_node_type(RzConfigNode *node) {
-	rz_return_val_if_fail(node, "");
-
-	if (rz_config_node_is_bool(node)) {
-		return "bool";
-	}
-	if (rz_config_node_is_str(node)) {
-		return "str";
-	}
-	if (rz_config_node_is_int(node)) {
-		return "int";
-	}
-	return "";
-}
-
-RZ_API RZ_BORROW RzConfigNode *rz_config_set_cb(RZ_BORROW RzConfig *cfg, const char *name, const char *value, RzConfigCallback cb) {
-	RzConfigNode *node = rz_config_set(cfg, name, value);
-	if (node && (node->setter = cb)) {
-		if (!node->setter(cfg->user, node)) {
-			return node;
-		}
-	}
-	return node;
-}
-
-RZ_API RZ_BORROW RzConfigNode *rz_config_set_i_cb(RZ_BORROW RzConfig *cfg, const char *name, st64 ivalue, RzConfigCallback cb) {
-	RzConfigNode *node = rz_config_set_i(cfg, name, ivalue);
-	if (node && (node->setter = cb)) {
-		if (!node->setter(cfg->user, node)) {
-			return node;
-		}
-	}
-	return node;
-}
-
-static bool __is_true_or_false(const char *s) {
-	return s && (!rz_str_casecmp(s, "true") || !rz_str_casecmp(s, "false"));
+	return config_entry_set_options(entry, options);
 }
 
 /**
- * Writes the boolean \p value in the config variable of \p name only and only if
- * the variable is boolean.
- */
-RZ_API RZ_BORROW RzConfigNode *rz_config_set_b(RZ_BORROW RzConfig *cfg, RZ_NONNULL const char *name, bool value) {
-	rz_return_val_if_fail(cfg && cfg->ht, NULL);
-	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name), NULL);
-
-	char *ov = NULL;
-	ut64 oi = 0;
-	RzConfigNode *node = rz_config_node_get(cfg, name);
-	if (node) {
-		if (rz_config_node_is_ro(node)) {
-			RZ_LOG_DEBUG("(error: '%s' config key is read only)\n", name);
-			return node;
-		}
-
-		oi = node->i_value;
-		if (node->value) {
-			ov = rz_str_dup(node->value);
-		}
-		if (rz_config_node_is_bool(node)) {
-			node->i_value = value ? 1 : 0;
-			char *svalue = rz_str_dup(rz_str_bool(value));
-			if (svalue) {
-				free(node->value);
-				node->value = svalue;
-			}
-		} else {
-			RZ_LOG_ERROR("(error: '%s' is not a boolean variable)\n", name);
-			free(ov);
-			return NULL;
-		}
-	} else {
-		if (!cfg->lock) {
-			node = rz_config_node_new(name, rz_str_bool(value));
-			if (!node) {
-				node = NULL;
-				goto beach;
-			}
-			node->flags = CN_RW | CN_BOOL;
-			node->i_value = value ? 1 : 0;
-			ht_sp_insert(cfg->ht, node->name, node);
-			if (cfg->nodes) {
-				rz_list_append(cfg->nodes, node);
-			}
-		} else {
-			RZ_LOG_ERROR("(locked: no new keys can be created (%s))\n", name);
-		}
-	}
-
-	if (node && node->setter) {
-		if (!node->setter(cfg->user, node)) {
-			if (oi != UT64_MAX) {
-				node->i_value = oi;
-			}
-			free(node->value);
-			node->value = rz_str_dup(ov ? ov : "");
-		}
-	}
-
-beach:
-	free(ov);
-	return node;
-}
-
-/* TODO: reduce number of strdups here */
-/**
- * Writes the string \p value in the config variable of \p name.
- */
-RZ_API RZ_BORROW RzConfigNode *rz_config_set(RZ_BORROW RzConfig *cfg, RZ_NONNULL const char *name, const char *value) {
-	rz_return_val_if_fail(cfg && cfg->ht, NULL);
-	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name), NULL);
-
-	char *ov = NULL;
-	ut64 oi;
-	RzConfigNode *node = rz_config_node_get(cfg, name);
-	if (node) {
-		if (rz_config_node_is_ro(node)) {
-			eprintf("(error: '%s' config key is read only)\n", name);
-			return node;
-		}
-		oi = node->i_value;
-		if (node->value) {
-			ov = rz_str_dup(node->value);
-			if (!ov) {
-				goto beach;
-			}
-		} else {
-			free(node->value);
-			node->value = rz_str_dup("");
-		}
-		if (rz_config_node_is_bool(node)) {
-			bool b = rz_str_is_true(value);
-			node->i_value = b ? 1 : 0;
-			char *value = rz_str_dup(rz_str_bool(b));
-			if (value) {
-				free(node->value);
-				node->value = value;
-			}
-		} else {
-			if (!value) {
-				free(node->value);
-				node->value = rz_str_dup("");
-				node->i_value = 0;
-			} else {
-				if (node->value == value) {
-					goto beach;
-				}
-				free(node->value);
-				node->value = rz_str_dup(value);
-				if (IS_DIGIT(*value) || (value[0] == '-' && IS_DIGIT(value[1]))) {
-					if (strchr(value, '/')) {
-						node->i_value = rz_num_get(cfg->num, value);
-					} else {
-						node->i_value = rz_num_math(cfg->num, value);
-					}
-				} else {
-					node->i_value = 0;
-				}
-				node->flags |= CN_INT;
-			}
-		}
-	} else { // Create a new RzConfigNode
-		oi = UT64_MAX;
-		if (!cfg->lock) {
-			node = rz_config_node_new(name, value);
-			if (node) {
-				if (__is_true_or_false(value)) {
-					node->flags |= CN_BOOL;
-					node->i_value = rz_str_is_true(value) ? 1 : 0;
-				}
-				ht_sp_insert(cfg->ht, node->name, node);
-				rz_list_append(cfg->nodes, node);
-			} else {
-				eprintf("rz_config_set: unable to create a new RzConfigNode\n");
-			}
-		} else {
-			eprintf("rz_config_set: variable '%s' not found\n", name);
-		}
-	}
-
-	if (node && node->setter) {
-		if (!node->setter(cfg->user, node)) {
-			if (oi != UT64_MAX) {
-				node->i_value = oi;
-			}
-			free(node->value);
-			node->value = rz_str_dup(ov ? ov : "");
-			free(ov);
-			return NULL;
-		}
-	}
-beach:
-	free(ov);
-	return node;
-}
-
-/**
- * \brief Appends the given node to the config \p cfg.
+ * \brief      Sets the options held by the string type variable
  *
- * \param cfg The configuration the node is appended.
- * \param node The node to append.
- * \return bool True if the node was successful added. False otherwise.
- */
-RZ_API bool rz_config_add_node(RZ_BORROW RzConfig *cfg, RZ_OWN RzConfigNode *node) {
-	rz_return_val_if_fail(cfg && node, false);
-	if (cfg->lock) {
-		RZ_LOG_WARN("Config locked. Plugin config node not copied.\n");
-		rz_config_node_free(node);
-		return false;
-	}
-	ht_sp_insert(cfg->ht, node->name, node);
-	rz_list_append(cfg->nodes, node);
-	return true;
-}
-
-/* rz_config_desc takes a RzConfig and a name,
- * rz_config_node_desc takes a RzConfigNode
- * Both set and return node->desc */
-RZ_API const char *rz_config_desc(RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc) {
-	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name), NULL);
-	RzConfigNode *node = rz_config_node_get(cfg, name);
-	return rz_config_node_desc(node, desc);
-}
-
-RZ_API const char *rz_config_node_desc(RzConfigNode *node, RZ_NULLABLE const char *desc) {
-	rz_return_val_if_fail(node, NULL);
-	if (desc) {
-		free(node->desc);
-		node->desc = rz_str_dup(desc);
-	}
-	return node->desc;
-}
-
-RZ_API bool rz_config_rm(RzConfig *cfg, RZ_NONNULL const char *name) {
-	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name) && cfg, false);
-	RzConfigNode *node = rz_config_node_get(cfg, name);
-	if (node) {
-		ht_sp_delete(cfg->ht, node->name);
-		rz_list_delete_val(cfg->nodes, node);
-		return true;
-	}
-	return false;
-}
-
-RZ_API void rz_config_node_value_format_i(RZ_OUT char *buf, size_t buf_size, const ut64 i, RZ_NULLABLE RzConfigNode *node) {
-	if (node && rz_config_node_is_bool(node)) {
-		rz_str_ncpy(buf, rz_str_bool((int)i), buf_size);
-		return;
-	}
-	if (i < 1024) {
-		snprintf(buf, buf_size, "%" PFMT64d "", i);
-	} else {
-		snprintf(buf, buf_size, "0x%08" PFMT64x "", i);
-	}
-}
-
-/**
- * Writes the integer \p value in the config variable of \p name only and only if
- * the variable is integer.
- */
-RZ_API RZ_BORROW RzConfigNode *rz_config_set_i(RZ_BORROW RzConfig *cfg, RZ_NONNULL const char *name, const ut64 i) {
-	char buf[128], *ov = NULL;
-	rz_return_val_if_fail(cfg && name, NULL);
-	RzConfigNode *node = rz_config_node_get(cfg, name);
-	if (node) {
-		if (rz_config_node_is_ro(node)) {
-			node = NULL;
-			goto beach;
-		}
-		if (node->value) {
-			ov = rz_str_dup(node->value);
-		}
-		rz_config_node_value_format_i(buf, sizeof(buf), i, NULL);
-		free(node->value);
-		node->value = rz_str_dup(buf);
-		if (!node->value) {
-			node = NULL;
-			goto beach;
-		}
-		node->i_value = i;
-	} else {
-		if (!cfg->lock) {
-			rz_config_node_value_format_i(buf, sizeof(buf), i, NULL);
-			node = rz_config_node_new(name, buf);
-			if (!node) {
-				node = NULL;
-				goto beach;
-			}
-			node->flags = CN_RW | CN_INT;
-			node->i_value = i;
-			ht_sp_insert(cfg->ht, node->name, node);
-			if (cfg->nodes) {
-				rz_list_append(cfg->nodes, node);
-			}
-		} else {
-			RZ_LOG_ERROR("(locked: no new keys can be created (%s))\n", name);
-		}
-	}
-
-	if (node && node->setter) {
-		ut64 oi = node->i_value;
-		int ret = node->setter(cfg->user, node);
-		if (!ret) {
-			node->i_value = oi;
-			free(node->value);
-			node->value = rz_str_dup(ov ? ov : "");
-		}
-	}
-beach:
-	free(ov);
-	return node;
-}
-
-static int cmp(RzConfigNode *a, RzConfigNode *b, void *user) {
-	return strcmp(a->name, b->name);
-}
-
-RZ_API void rz_config_lock(RZ_BORROW RzConfig *cfg, int l) {
-	rz_list_sort(cfg->nodes, (RzListComparator)cmp, NULL);
-	cfg->lock = l;
-}
-
-RZ_API bool rz_config_readonly(RZ_BORROW RzConfig *cfg, const char *key) {
-	RzConfigNode *n = rz_config_node_get(cfg, key);
-	if (n) {
-		n->flags |= CN_RO;
-		return true;
-	}
-	return false;
-}
-
-RZ_API RZ_OWN RzConfig *rz_config_new(RZ_BORROW void *user) {
-	RzConfig *cfg = RZ_NEW0(RzConfig);
-	if (!cfg) {
-		return NULL;
-	}
-	cfg->ht = ht_sp_new(HT_STR_DUP, NULL, NULL);
-	cfg->nodes = rz_list_newf((RzListFree)rz_config_node_free);
-	if (!cfg->nodes) {
-		RZ_FREE(cfg);
-		return NULL;
-	}
-	cfg->user = user;
-	cfg->num = NULL;
-	cfg->lock = 0;
-	return cfg;
-}
-
-RZ_API RZ_OWN RzConfig *rz_config_clone(RZ_BORROW RzConfig *cfg) {
-	rz_return_val_if_fail(cfg, NULL);
-	RzListIter *iter;
-	RzConfigNode *node;
-	RzConfig *c = rz_config_new(cfg->user);
-	if (!c) {
-		return NULL;
-	}
-	rz_list_foreach (cfg->nodes, iter, node) {
-		RzConfigNode *nn = rz_config_node_clone(node);
-		ht_sp_insert(c->ht, node->name, nn);
-		rz_list_append(c->nodes, nn);
-	}
-	c->lock = cfg->lock;
-	return c;
-}
-
-RZ_API void rz_config_free(RZ_OWN RzConfig *cfg) {
-	if (cfg) {
-		cfg->nodes->free = rz_config_node_free;
-		rz_list_free(cfg->nodes);
-		ht_sp_free(cfg->ht);
-		free(cfg);
-	}
-}
-
-RZ_API void rz_config_visual_hit_i(RzConfig *cfg, const char *name, int delta) {
-	RzConfigNode *node = rz_config_node_get(cfg, name);
-	if (node && rz_config_node_is_int(node)) {
-		(void)rz_config_set_i(cfg, name, rz_config_get_i(cfg, name) + delta);
-	}
-}
-
-RZ_API void rz_config_bump(RZ_BORROW RzConfig *cfg, const char *key) {
-	char *orig = rz_str_dup(rz_config_get(cfg, key));
-	if (orig) {
-		rz_config_set(cfg, key, orig);
-		free(orig);
-	}
-}
-
-RZ_API void rz_config_serialize(RZ_NONNULL RzConfig *config, RZ_NONNULL Sdb *db) {
-	RzListIter *iter;
-	RzConfigNode *node;
-	rz_list_foreach (config->nodes, iter, node) {
-		sdb_set(db, node->name, node->value);
-	}
-}
-
-static bool load_config_cb(void *user, const SdbKv *kv) {
-	RzConfig *config = user;
-	RzConfigNode *node = rz_config_node_get(config, sdbkv_key(kv));
-	if (node) {
-		rz_config_set(config, sdbkv_key(kv), sdbkv_value(kv));
-	}
-	return true;
-}
-
-RZ_API bool rz_config_unserialize(RZ_NONNULL RzConfig *config, RZ_NONNULL Sdb *db, RZ_NULLABLE char **err) {
-	sdb_foreach(db, load_config_cb, config);
-	return true;
-}
-
-/**
- * \brief Sets the configuration variable and its value passed as argument
+ * \param[in]  cfg   The RzConfig to use
+ * \param[in]  name  The name of the string type variable to update
+ * \param[in]  ...   The set of options to set (NULL terminated)
  *
- * \param cfg reference to RzConfig
- * \param str reference the configuration variable string (eg, 'asm.arch=x86')
+ * \return     On success returns a true, otherwise false.
  */
-RZ_API bool rz_config_eval(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *str) {
-	rz_return_val_if_fail(str, false);
-
-	char *name = rz_str_trim_dup(str);
-	char *value = strchr(name, '=');
-	if (!value) {
-		free(name);
+RZ_API bool rz_config_set_options2(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, ...) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
+	RzConfigEntry *entry = config_find_entry(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
 		return false;
 	}
-	*value++ = 0;
-	rz_config_set(cfg, name, value);
-	free(name);
+
+	va_list argp;
+	RzSetS *options = rz_set_s_new(HT_STR_DUP);
+	if (!options) {
+		return false;
+	}
+
+	va_start(argp, name);
+	bool ok = config_var_args_to_set(argp, options);
+	va_end(argp);
+	if (!ok) {
+		rz_set_s_free(options);
+		return false;
+	}
+
+	return config_entry_set_options(entry, options);
+}
+
+/**
+ * \brief      Sets the validator callback for a given RzConfigVar (owned types).
+ *
+ * \param[in]  cfg        The RzConfig to use
+ * \param[in]  name       The name of the string type variable to update
+ * \param[in]  validator  The validator callback to set (can be NULL)
+ *
+ * \return     On success returns a true, otherwise false.
+ */
+RZ_API bool rz_config_set_validator(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE RzConfigBindSet validator, RZ_NULLABLE void *user) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
+	RzConfigEntry *entry = config_find_entry(cfg, name);
+	if (!entry) {
+		RZ_LOG_ERROR("config: variable '%s' does not exists.\n", name);
+		return false;
+	} else if (!entry->is_variable) {
+		RZ_LOG_ERROR("config: variable '%s' is not an RzConfigVar.\n", name);
+		return false;
+	} else if (rz_config_var_has_flags(&entry->var, RZ_CONFIG_VAR_FLAG_BIND)) {
+		RZ_LOG_ERROR("config: cannot set validator when variable '%s' is a bind.\n", name);
+		return false;
+	} else if (rz_config_var_get_options(&entry->var)) {
+		RZ_LOG_ERROR("config: cannot set validator for '%s' when options are set.\n", name);
+		return false;
+	}
+
+	entry->var.value.validator = validator;
+	entry->var.value.validator_user = user;
 	return true;
+}
+
+/**
+ * \brief      DEPRECATED: returns the RzConfigEntry name
+ *
+ * \param[in]  entry  The RzConfigEntry to use
+ *
+ * \return     On success returns a valid pointer (guaranteed to not be NULL)
+ */
+RZ_API const char *rz_config_entry_get_name(RZ_NONNULL const RzConfigEntry *entry) {
+	rz_return_val_if_fail(entry, "");
+	if (entry->is_variable) {
+		return rz_str_get(entry->var.name);
+	}
+	return rz_str_get(entry->node.name);
+}
+
+/**
+ * \brief      DEPRECATED: returns the RzConfigEntry description
+ *
+ * \param[in]  entry  The RzConfigEntry to use
+ *
+ * \return     On success returns a valid pointer (guaranteed to not be NULL)
+ */
+RZ_API const char *rz_config_entry_get_desc(RZ_NONNULL const RzConfigEntry *entry) {
+	rz_return_val_if_fail(entry, "");
+	if (entry->is_variable) {
+		return rz_str_get(entry->var.desc);
+	}
+	return rz_str_get(entry->node.desc);
+}
+
+/**
+ * \brief      DEPRECATED: returns the RzConfigEntry variable held unsigned integer
+ *
+ * \param[in]  entry  The RzConfigEntry to use
+ *
+ * \return     Returns the value held by the RzConfigEntry struct
+ */
+RZ_API ut64 rz_config_entry_get_integer(RZ_NONNULL const RzConfigEntry *entry) {
+	rz_return_val_if_fail(entry, 0);
+	if (entry->is_variable) {
+		return rz_config_var_get_integer(&entry->var);
+	}
+	return entry->node.i_value;
+}
+
+/**
+ * \brief      DEPRECATED: returns the RzConfigEntry variable held boolean
+ *
+ * \param[in]  entry  The RzConfigEntry to use
+ *
+ * \return     Returns the value held by the RzConfigEntry struct
+ */
+RZ_API bool rz_config_entry_get_bool(RZ_NONNULL const RzConfigEntry *entry) {
+	rz_return_val_if_fail(entry, false);
+	if (entry->is_variable) {
+		return rz_config_var_get_bool(&entry->var);
+	}
+	return rz_str_is_true(rz_str_get(entry->node.value));
+}
+
+/**
+ * \brief      DEPRECATED: returns the RzConfigEntry variable held string
+ *
+ * \param[in]  entry  The RzConfigEntry to use
+ *
+ * \return     Returns the value held by the RzConfigEntry struct
+ */
+RZ_API const char *rz_config_entry_get_string(RZ_NONNULL const RzConfigEntry *entry) {
+	rz_return_val_if_fail(entry, NULL);
+	if (entry->is_variable) {
+		return rz_config_var_get_string(&entry->var);
+	}
+
+	return rz_str_get(entry->node.value);
+}
+
+/**
+ * \brief      DEPRECATED: returns the RzConfigEntry variable as owned string
+ *
+ * \param[in]  entry  The RzConfigEntry to stringify
+ *
+ * \return     On success returns a valid pointer, otherwise NULL.
+ */
+RZ_API RZ_OWN char *rz_config_entry_get_as_string(RZ_NONNULL const RzConfigEntry *entry) {
+	rz_return_val_if_fail(entry, NULL);
+	if (entry->is_variable) {
+		return rz_config_var_as_string(&entry->var);
+	}
+
+	const char *value = rz_str_get(entry->node.value);
+	return rz_str_dup(value);
 }

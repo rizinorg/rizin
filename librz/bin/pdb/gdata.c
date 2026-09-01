@@ -21,7 +21,9 @@ RZ_IPI bool gdata_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream) {
 
 	PDBSymbolIter iter = { 0 };
 	PDBSymbolTable_iter(syms, &iter);
-	if (!PDBSymbolIter_collect(&iter, &s->global_symbols)) {
+	bool collected = PDBSymbolIter_collect(&iter, &s->global_symbols);
+	rz_buf_free(iter.b);
+	if (!collected) {
 		goto err;
 	}
 	free(syms);

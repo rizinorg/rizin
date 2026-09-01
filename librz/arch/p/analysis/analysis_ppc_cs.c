@@ -72,7 +72,7 @@ static const char *cmask64(RzAnalysis *a, const char *mb_c, const char *me_c) {
 	if (me_c) {
 		me = strtol(me_c, NULL, 16);
 	}
-	snprintf(ctx->cmask1, sizeof(ctx->cmask1), "0x%" PFMT64x "", mask64(mb, me));
+	snprintf(ctx->cmask1, sizeof(ctx->cmask1), "0x%" PFMT64x, mask64(mb, me));
 	return ctx->cmask1;
 }
 
@@ -237,7 +237,7 @@ static RzStructuredData *ppc_opex(csh handle, cs_insn *insn) {
 #define ARG(n)     getarg2(a, &gop, n, "")
 #define ARG2(n, m) getarg2(a, &gop, n, m)
 
-static char *get_reg_profile(RzAnalysis *analysis) {
+static char *ppc_get_reg_profile(RzAnalysis *analysis) {
 	const char *p = NULL;
 	if (analysis->bits == 64) {
 		p =
@@ -946,7 +946,7 @@ static char *shrink(char *op) {
 	return op;
 }
 
-static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+static int ppc_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	PPCContext *ctx = (PPCContext *)a->plugin_data;
 	int n, ret;
 	cs_insn *insn;
@@ -955,7 +955,8 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 								  : 0;
 	mode |= a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 
-	if (a->cpu && strncmp(a->cpu, "vle", 3) == 0) {
+	const char *cpu = rz_analysis_get_cpu(a);
+	if (cpu && strncmp(cpu, "vle", 3) == 0) {
 		// vle is big-endian only
 		if (!a->big_endian) {
 			return -1;
@@ -964,7 +965,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		if (ret >= 0) {
 			return op->size;
 		}
-	} else if (a->cpu && RZ_STR_EQ(a->cpu, "qpx")) {
+	} else if (RZ_STR_EQ(cpu, "qpx")) {
 		mode |= CS_MODE_QPX;
 	}
 
@@ -1314,7 +1315,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 				op->val = IMM(2);
 				op->val <<= 16;
-				esilprintf(op, "0x%llx0000,%s,=", IMM(2), ARG(0));
+				esilprintf(op, "0x%" PFMT64x "0000,%s,=", IMM(2), ARG(0));
 				break;
 			}
 #else
@@ -1751,14 +1752,18 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	return op->size;
 }
 
-static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
-	bool is_vle = a && a->cpu && !strncmp(a->cpu, "vle", 3);
+static int ppc_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	bool is_vle = a && rz_analysis_get_cpu(a) && !strncmp(rz_analysis_get_cpu(a), "vle", 3);
 
 	switch (query) {
 	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
 		return is_vle ? 2 : 4;
 	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
 		return 4;
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		return is_vle ? 2 : 4;
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 1;
 	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
 		return true;
 	default:
@@ -1766,14 +1771,14 @@ static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	}
 }
 
-static RzList /*<RzSearchKeyword *>*/ *analysis_preludes(RzAnalysis *analysis) {
+static RzList /*<RzSearchKeyword *>*/ *ppc_analysis_preludes(RzAnalysis *analysis) {
 #define KW(d, ds, m, ms) rz_list_append(l, rz_search_keyword_new((const ut8 *)d, ds, (const ut8 *)m, ms, NULL))
 	RzList *l = rz_list_newf((RzListFree)rz_search_keyword_free);
 	KW("\x7c\x08\x02\xa6", 4, NULL, 0);
 	return l;
 }
 
-static RzAnalysisILConfig *il_config(RzAnalysis *analysis) {
+static RzAnalysisILConfig *ppc_il_config(RzAnalysis *analysis) {
 	if (analysis->bits == 64) {
 		return rz_ppc_cs_64_il_config(analysis->big_endian);
 	}
@@ -1796,13 +1801,13 @@ RzAnalysisPlugin rz_analysis_plugin_ppc_cs = {
 	.esil = true,
 	.arch = "ppc",
 	.bits = 32 | 64,
-	.archinfo = archinfo,
-	.preludes = analysis_preludes,
-	.op = &analyze_op,
+	.archinfo = ppc_archinfo,
+	.preludes = ppc_analysis_preludes,
+	.op = &ppc_analyze_op,
 	.init = ppc_init,
 	.fini = ppc_fini,
-	.get_reg_profile = &get_reg_profile,
-	.il_config = il_config,
+	.get_reg_profile = &ppc_get_reg_profile,
+	.il_config = ppc_il_config,
 };
 
 #ifndef RZ_PLUGIN_INCORE

@@ -11,6 +11,7 @@ arch_plugins_list = [
   'arm_cs',
   'avr',
   'bf',
+  'c166',
   'chip8',
   'cil',
   'cr16',
@@ -32,6 +33,7 @@ arch_plugins_list = [
   'malbolge',
   'mcore',
   'mcs96',
+  'milstd1750',
   'mips_cs',
   'msp430',
   'null',
@@ -52,13 +54,14 @@ arch_plugins_list = [
   'tms320',
   'v810',
   'v850',
+  'vax',
   'wasm',
   'x86_as',
   'x86_nasm',
   'x86_nz',
   'xap',
   'xcore_cs',
-  'x86_zydis'
+  'x86_zydis',
 ]
 
 arch_plugin_sources = [
@@ -69,6 +72,7 @@ arch_plugin_sources = [
   'p/arch_arm_cs.c',
   'p/arch_avr.c',
   'p/arch_bf.c',
+  'p/arch_c166.c',
   'p/arch_chip8.c',
   'p/arch_cil.c',
   'p/arch_cr16.c',
@@ -90,6 +94,7 @@ arch_plugin_sources = [
   'p/arch_malbolge.c',
   'p/arch_mcore.c',
   'p/arch_mcs96.c',
+  'p/arch_milstd1750.c',
   'p/arch_mips_cs.c',
   'p/arch_msp430.c',
   'p/arch_null.c',
@@ -110,13 +115,14 @@ arch_plugin_sources = [
   'p/arch_tms320.c',
   'p/arch_v810.c',
   'p/arch_v850.c',
+  'p/arch_vax.c',
   'p/arch_wasm.c',
   'p/arch_x86_as.c',
   'p/arch_x86_nasm.c',
   'p/arch_x86_nz.c',
   'p/arch_xap.c',
   'p/arch_xcore_cs.c',
-  'p/arch_x86_zydis.c'
+  'p/arch_x86_zydis.c',
 ]
 
 arch_esil_sources = [
@@ -213,6 +219,18 @@ arch_isa_sources = [
   'isa/java/jvm.c',
   'isa/lh5801/lh5801.c',
   'isa/luac/lua_arch.c',
+  'isa/luac/v50/analysis_50.c',
+  'isa/luac/v50/assembly_50.c',
+  'isa/luac/v50/disassembly_50.c',
+  'isa/luac/v50/opcode_50.c',
+  'isa/luac/v51/analysis_51.c',
+  'isa/luac/v51/assembly_51.c',
+  'isa/luac/v51/disassembly_51.c',
+  'isa/luac/v51/opcode_51.c',
+  'isa/luac/v52/analysis_52.c',
+  'isa/luac/v52/assembly_52.c',
+  'isa/luac/v52/disassembly_52.c',
+  'isa/luac/v52/opcode_52.c',
   'isa/luac/v53/analysis_53.c',
   'isa/luac/v53/assembly_53.c',
   'isa/luac/v53/disassembly_53.c',
@@ -221,7 +239,16 @@ arch_isa_sources = [
   'isa/luac/v54/assembly_54.c',
   'isa/luac/v54/disassembly_54.c',
   'isa/luac/v54/opcode_54.c',
+  'isa/luac/v55/analysis_55.c',
+  'isa/luac/v55/assembly_55.c',
+  'isa/luac/v55/disassembly_55.c',
+  'isa/luac/v55/opcode_55.c',
+  'isa/luac/luajit/analysis_2.1.c',
+  'isa/luac/luajit/arch_2.1.c',
+  'isa/luac/luajit/asm_2.1.c',
+  'isa/luac/luajit/opcode_2.1.c',
   'isa/mcore/mcore.c',
+  'isa/milstd1750/milstd1750_disas.c',
   'isa/mips/mips_assembler.c',
   'isa/mips/mips_esil.c',
   'isa/mips/mips_il.c',
@@ -291,20 +318,26 @@ arch_isa_sources = [
   'isa/sparc/sparc_il.c',
   'isa/sparc/sparc_il_ops.c',
   'isa/spc700/spc700dis.c',
-  'isa/tms320/c55x_plus/c55plus.c',
+  'isa/tms320/c55_ir.c',
+  'isa/tms320/c54x/c54x.c',
+  'isa/tms320/c54x/c54x_il.c',
+  'isa/tms320/c2x/c2x.c',
+  'isa/tms320/c2x/c2x_il.c',
+  'isa/tms320/c5x/c5x.c',
+  'isa/tms320/c5x/c5x_decode.c',
+  'isa/tms320/c5x/c5x_il.c',
+  'isa/tms320/c55x_plus/c55plus_arch.c',
+  'isa/tms320/c55x/c55x_analysis.c',
   'isa/tms320/c55x_plus/c55plus_analysis.c',
-  'isa/tms320/c55x_plus/c55plus_decode.c',
-  'isa/tms320/c55x_plus/decode_funcs.c',
-  'isa/tms320/c55x_plus/hashtable.c',
-  'isa/tms320/c55x_plus/hashvector.c',
+  'isa/tms320/c55x_plus/c55plus_il_config.c',
   'isa/tms320/c55x_plus/ins.c',
-  'isa/tms320/c55x_plus/utils.c',
   'isa/tms320/c64x/c64x.c',
-  'isa/tms320/tms320_dasm.c',
+  'isa/tms320/tms320c55x_insn.c',
   'isa/v810/v810_disas.c',
   'isa/v810/v810_il.c',
   'isa/v850/v850_disas.c',
   'isa/v850/v850_il.c',
+  'isa/vax/vax_dis.c',
   'isa/wasm/wasm.c',
   'isa/x86/common.c',
   'isa/x86/x86_il.c',
@@ -318,12 +351,26 @@ arch_isa_includes = [
 if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 6
   # plugins
   arch_plugins_list += [
+    'cbpf_cs',
     'riscv_cs',
   ]
 
   # plugins sources
   arch_plugin_sources += [
+    'p/arch_cbpf_cs.c',
     'p/arch_riscv_cs.c',
+  ]
+endif
+
+if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 5
+  # plugins
+  arch_plugins_list += [
+    'bpf_cs',
+  ]
+
+  # plugins sources
+  arch_plugin_sources += [
+    'p/arch_bpf_cs.c',
   ]
 endif
 
@@ -375,7 +422,6 @@ if get_option('use_gpl')
     'arc_gnu',
     'cris_gnu',
     'lanai_gnu',
-    'vax_gnu',
     'z80_gnu',
   ]
 
@@ -384,7 +430,6 @@ if get_option('use_gpl')
     'p_gnu/arch_arc.c',
     'p_gnu/arch_cris.c',
     'p_gnu/arch_lanai.c',
-    'p_gnu/arch_vax.c',
     'p_gnu/arch_z80.c',
   ]
 
@@ -398,7 +443,6 @@ if get_option('use_gpl')
     'isa_gnu/cris/cris-opc.c',
     'isa_gnu/lanai/lanai-dis.c',
     'isa_gnu/lanai/lanai-opc.c',
-    'isa_gnu/vax/vax-dis.c',
     # 'isa_gnu/z80/expressions.c',
     # 'isa_gnu/z80/z80.c',
     # 'isa_gnu/z80/z80asm.c',
@@ -424,6 +468,7 @@ arch_common_sources = [
   'cycles.c',
   'data.c',
   'dwarf_process.c',
+  'luac_process.c',
   'fcn.c',
   'filter.c',
   'function.c',
@@ -433,6 +478,8 @@ arch_common_sources = [
   'labels.c',
   'meta.c',
   'no_rtti.c',
+  'objc_rtti.c',
+  'omf_process.c',
   'op.c',
   'parse.c',
   'parse_helper.c',

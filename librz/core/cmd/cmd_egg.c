@@ -4,6 +4,7 @@
 
 #include <rz_core.h>
 #include <rz_egg.h>
+#include "../core_private.h"
 
 static const char *RzEggConfigOptions[] = {
 	"egg.shellcode",
@@ -290,8 +291,8 @@ RZ_IPI RzCmdStatus rz_egg_show_config_handler(RzCore *core, int argc, const char
 		}
 	}
 	rz_cons_printf("\nTarget options\n");
-	rz_cons_printf("arch : %s\n", core->analysis->cpu);
-	rz_cons_printf("os   : %s\n", core->analysis->os);
-	rz_cons_printf("bits : %d\n", core->analysis->bits);
+	rz_cons_printf("arch : %s\n", rz_core_get_cpu(core));
+	rz_cons_printf("os   : %s\n", rz_core_get_os(core));
+	rz_cons_printf("bits : %u\n", rz_core_get_bits(core));
 	return RZ_CMD_STATUS_OK;
 }

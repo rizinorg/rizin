@@ -24,13 +24,19 @@ EOF
 RUN
 
 NAME=ELF: rz-bin entrypoint with baddr
-FILE==
-CMDS=<<EOF
-!rz-bin -I -B 0x300000 bins/elf/analysis/pie | grep baddr
-!rz-bin -e -B 0x300000 bins/elf/analysis/pie | grep program
-EOF
+TOOL=rz-bin
+ARGS=-I -B 0x300000 bins/elf/analysis/pie
+REGEXP_FILTER_OUT=baddr.+
 EXPECT=<<EOF
 baddr    0x00300000
+EOF
+RUN
+
+NAME=ELF: rz-bin entrypoint with baddr
+TOOL=rz-bin
+ARGS=-e -B 0x300000 bins/elf/analysis/pie
+REGEXP_FILTER_OUT=.+program
+EXPECT=<<EOF
 0x00300450 0x00000450 0x00300018 0x00000018 program
 EOF
 RUN

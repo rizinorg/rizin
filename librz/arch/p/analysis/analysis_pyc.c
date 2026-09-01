@@ -11,7 +11,7 @@
 #define JMP_OFFSET(ops, v) ((ops)->jump_use_instruction_offset ? (v) * 2 : (v))
 
 static int archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
-	if (!strcmp(analysis->cpu, "x86")) {
+	if (rz_analysis_is_cpu(analysis, "x86")) {
 		return -1;
 	}
 
@@ -74,9 +74,10 @@ static int pyc_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, i
 	op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 	op->id = op_code;
 
-	if (!ctx->cache || RZ_STR_NE(ctx->version, a->cpu)) {
-		if (!pyc_context_set_opcode_by_version(a->cpu, ctx)) {
-			RZ_LOG_ERROR("analysis: pyc: unsupported pyc opcode cpu/version (analysis.cpu=%s).\n", a->cpu);
+	const char *cpu = rz_analysis_get_cpu(a);
+	if (!ctx->cache || RZ_STR_NE(ctx->version, cpu)) {
+		if (!pyc_context_set_opcode_by_version(cpu, ctx)) {
+			RZ_LOG_ERROR("analysis: pyc: unsupported pyc opcode cpu/version (analysis.cpu=%s).\n", cpu);
 			return -1;
 		}
 		ctx->cache->bits = a->bits;

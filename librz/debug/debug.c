@@ -442,6 +442,7 @@ RZ_API void rz_debug_free(RzDebug *dbg) {
 	rz_debug_trace_free(dbg->trace);
 	rz_debug_session_free(dbg->session);
 	rz_analysis_op_free(dbg->cur_op);
+	rz_debug_use(dbg, NULL);
 	dbg->trace = NULL;
 	rz_egg_free(dbg->egg);
 	rz_reg_free(dbg->reg);
@@ -530,8 +531,8 @@ RZ_API ut64 rz_debug_execute(RzDebug *dbg, const ut8 *buf, int len, int restore)
 	if (rz_debug_is_dead(dbg)) {
 		return false;
 	}
-	ripc = rz_reg_get(dbg->reg, dbg->reg->name[RZ_REG_NAME_PC], RZ_REG_TYPE_GPR);
-	risp = rz_reg_get(dbg->reg, dbg->reg->name[RZ_REG_NAME_SP], RZ_REG_TYPE_GPR);
+	ripc = rz_reg_get_by_role(dbg->reg, RZ_REG_NAME_PC);
+	risp = rz_reg_get_by_role(dbg->reg, RZ_REG_NAME_SP);
 	if (ripc) {
 		rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
 		orig = rz_reg_get_bytes(dbg->reg, RZ_REG_TYPE_ANY, &orig_sz);
@@ -566,7 +567,7 @@ RZ_API ut64 rz_debug_execute(RzDebug *dbg, const ut8 *buf, int len, int restore)
 		}
 
 		rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
-		ri = rz_reg_get(dbg->reg, dbg->reg->name[RZ_REG_NAME_A0], RZ_REG_TYPE_GPR);
+		ri = rz_reg_get_by_role(dbg->reg, RZ_REG_NAME_A0);
 		ra0 = rz_reg_get_value(dbg->reg, ri);
 		if (restore) {
 			rz_reg_read_regs(dbg->reg, orig, orig_sz);
@@ -624,7 +625,7 @@ RZ_API bool rz_debug_select(RzDebug *dbg, int pid, int tid) {
 		dbg->tid = tid;
 	}
 
-	rz_io_system(dbg->iob.io, rz_strf(tmpbuf, "pid %d", dbg->tid));
+	free(rz_io_system(dbg->iob.io, rz_strf(tmpbuf, "pid %d", dbg->tid)));
 
 	// Synchronize with the current thread's data
 	if (dbg->corebind.core) {
@@ -742,10 +743,9 @@ RZ_API RzDebugReasonType rz_debug_wait(RzDebug *dbg, RzBreakpointItem **bp) {
 			RzBreakpointItem *b = NULL;
 			ut64 pc;
 
-			/* get the program coounter */
-			pc_ri = rz_reg_get(dbg->reg, dbg->reg->name[RZ_REG_NAME_PC], -1);
-			if (!pc_ri) { /* couldn't find PC?! */
-				eprintf("Couldn't find PC!\n");
+			pc_ri = rz_reg_get_by_role(dbg->reg, RZ_REG_NAME_PC);
+			if (!pc_ri) {
+				RZ_LOG_ERROR("debug: no PC register known");
 				return RZ_DEBUG_REASON_ERROR;
 			}
 
@@ -789,7 +789,7 @@ RZ_API RzDebugReasonType rz_debug_wait(RzDebug *dbg, RzBreakpointItem **bp) {
 
 RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 	ut8 buf[32];
-	ut64 pc, sp, r;
+	ut64 r;
 	ut64 next[2];
 	RzAnalysisOp op = { 0 };
 	int br, i, ret;
@@ -810,11 +810,11 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		return false;
 	}
 
-	const bool has_lr_reg = rz_reg_get_name(dbg->reg, RZ_REG_NAME_LR);
+	RzRegItem *rilr = rz_reg_get_by_role(dbg->reg, RZ_REG_NAME_LR);
 	const bool arch_ret_is_pop = !strcmp(dbg->arch, "arm") && dbg->bits <= RZ_SYS_BITS_32;
 
-	pc = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_PC]);
-	sp = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_SP]);
+	ut64 pc = rz_debug_reg_get_by_role(dbg, RZ_REG_NAME_PC);
+	ut64 sp = rz_debug_reg_get_by_role(dbg, RZ_REG_NAME_SP);
 
 	if (!dbg->iob.read_at) {
 		return false;
@@ -836,8 +836,8 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		if (arch_ret_is_pop && op.stackop == RZ_ANALYSIS_STACK_INC) {
 			dbg->iob.read_at(dbg->iob.io, sp - op.stackptr - 4, (ut8 *)&sp_top, 4);
 			next[0] = sp_top.r32[0];
-		} else if (has_lr_reg) {
-			next[0] = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_LR]);
+		} else if (rilr && rilr->name) {
+			next[0] = rz_debug_reg_get(dbg, rilr->name);
 		} else {
 			dbg->iob.read_at(dbg->iob.io, sp, (ut8 *)&sp_top, 8);
 			next[0] = (dbg->bits <= RZ_SYS_BITS_32) ? sp_top.r32[0] : sp_top.r64;
@@ -1073,11 +1073,11 @@ RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
 	}
 
 	// Initial refill
-	buf_pc = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_PC]);
+	buf_pc = rz_debug_reg_get_by_role(dbg, RZ_REG_NAME_PC);
 	dbg->iob.read_at(dbg->iob.io, buf_pc, buf, sizeof(buf));
 
 	for (; steps_taken < steps; steps_taken++) {
-		pc = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_PC]);
+		pc = rz_debug_reg_get_by_role(dbg, RZ_REG_NAME_PC);
 		// Try to keep the buffer full
 		if (pc - buf_pc > sizeof(buf)) {
 			buf_pc = pc;
@@ -1163,7 +1163,10 @@ RZ_API int rz_debug_continue_kill(RzDebug *dbg, int sig) {
 	// Go to the end or the next breakpoint in the changes
 	if (dbg->session && dbg->session->cnum != dbg->session->maxcnum) {
 		bool has_bp = false;
-		RzRegItem *ripc = rz_reg_get(dbg->reg, dbg->reg->name[RZ_REG_NAME_PC], RZ_REG_TYPE_GPR);
+		RzRegItem *ripc = rz_reg_get_by_role(dbg->reg, RZ_REG_NAME_PC);
+		if (!ripc) {
+			return 0;
+		}
 		RzVector *vreg = ht_up_find(dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
 		RzDebugChangeReg *reg;
 		rz_vector_foreach_prev (vreg, reg) {
@@ -1376,7 +1379,7 @@ RZ_API int rz_debug_continue_until_optype(RzDebug *dbg, int type, int over) {
 	rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
 
 	// Initial refill
-	buf_pc = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_PC]);
+	buf_pc = rz_debug_reg_get_by_role(dbg, RZ_REG_NAME_PC);
 	dbg->iob.read_at(dbg->iob.io, buf_pc, buf, sizeof(buf));
 
 	// step first, we don't want to check current optype
@@ -1385,7 +1388,7 @@ RZ_API int rz_debug_continue_until_optype(RzDebug *dbg, int type, int over) {
 			break;
 		}
 
-		pc = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_PC]);
+		pc = rz_debug_reg_get_by_role(dbg, RZ_REG_NAME_PC);
 		// Try to keep the buffer full
 		if (pc - buf_pc > sizeof(buf)) {
 			buf_pc = pc;
@@ -1434,7 +1437,7 @@ static int rz_debug_continue_until_internal(RzDebug *dbg, ut64 addr, bool block)
 		if (rz_debug_is_dead(dbg) || dbg->reason.type) {
 			break;
 		}
-		ut64 pc = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_PC]);
+		ut64 pc = rz_debug_reg_get_by_role(dbg, RZ_REG_NAME_PC);
 		if (pc == addr) {
 			break;
 		}
@@ -1462,10 +1465,14 @@ RZ_API bool rz_debug_continue_back(RzDebug *dbg) {
 	int cnum;
 	bool has_bp = false;
 
-	RzRegItem *ripc = rz_reg_get(dbg->reg, dbg->reg->name[RZ_REG_NAME_PC], RZ_REG_TYPE_GPR);
+	RzRegItem *ripc = rz_reg_get_by_role(dbg->reg, RZ_REG_NAME_PC);
+	if (!ripc) {
+		RZ_LOG_ERROR("debug: no PC register known");
+		return false;
+	}
 	RzVector *vreg = ht_up_find(dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
 	if (!vreg) {
-		eprintf("Error: cannot find PC change vector");
+		RZ_LOG_ERROR("debug: cannot find PC change vector");
 		return false;
 	}
 	RzDebugChangeReg *reg;
@@ -1496,9 +1503,10 @@ static int show_syscall(RzDebug *dbg, const char *sysreg) {
 	const char *sysname;
 	char regname[32];
 	int reg, i, args;
+	RzSyscall *sysc = rz_analysis_get_syscall(dbg->analysis);
 	RzSyscallItem *si;
 	reg = (int)rz_debug_reg_get(dbg, sysreg);
-	si = rz_syscall_get(dbg->analysis->syscall, reg, -1);
+	si = rz_syscall_get(sysc, reg, -1);
 	if (si) {
 		sysname = si->name ? si->name : "unknown";
 		args = si->args;
@@ -1792,3 +1800,14 @@ RZ_API RzDebugPid *rz_debug_get_thread(RzList /*<RzList *>*/ *th_list, int tid) 
 	}
 	return (RzDebugPid *)rz_list_val(it);
 }
+
+#if !DEBUGGER
+// Empty stubs are needed for compilation on s390x platform when debugger is disabled
+RZ_API ut64 rz_debug_get_tls(RZ_NONNULL RzDebug *dbg, int tid) {
+	return 0;
+}
+
+RZ_API RZ_OWN RzList /*<RzDebugPid *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid) {
+	return rz_list_new();
+}
+#endif

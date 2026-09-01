@@ -1,0 +1,19 @@
+d "or r0, r0, r1" b8010000
+d "mv r0, r1" b8200000
+d "mvhi r1, 0x2" 78010002
+d "xnor r0, r0, r1" a4010000
+d "not r2, r0" a4001000
+d "mvi r1, 0x2" 34010002
+d "addi r0, r1, 0xffff8000" 34208000
+d "nop" 34000000
+d "ori r0, r1, 0x8000" 38208000
+d "be r0, r1, 0xfffe0000" 44208000
+d "b r1" c0200000
+d "sextb r0, r1" b0200000
+d "sru r16, r1, r0" 80208000
+d "rcsr r16, IM" 90208000
+d "wcsr IE, r1" d0010000
+d "bi 0x8" e0000002
+d "break" ac000002
+d "scall" ac000007
+d "ret" c3a00000

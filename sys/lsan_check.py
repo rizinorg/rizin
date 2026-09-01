@@ -3,59 +3,38 @@
 # SPDX-License-Identifier: LGPL-3.0-only
 
 import re
-import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 
-def get_changed_lines(
-    base_ref: str, head_ref: str
-) -> Dict[str, List[Tuple[int, int]]] | None:
+def get_changed_lines(diff: str) -> dict[str, list[range]]:
     """
-    Return dict:  file-path -> [(start_line, end_line), …]
+    Return dict:  filename -> [(start_line, end_line), …]
     representing *added/modified* line ranges in the current branch.
     """
-    changed: Dict[Path, List[Tuple[int, int]]] = {}
-
-    try:
-        subprocess.check_call(["git", "rev-parse", "--verify", f"{base_ref}"])
-        subprocess.check_call(["git", "rev-parse", "--verify", f"{head_ref}"])
-    except subprocess.CalledProcessError:
-        # References were malformed.
-        print(f"One or both references are invalid: {base_ref} and {head_ref}")
-        sys.exit(1)
-
-    # --unified=0  gives hunks like “@@ -L,C +L,C @@”  (we care about the + side)
-    cmd = ["git", "diff", "--unified=0", f"{base_ref}..{head_ref}"]
-    try:
-        out = subprocess.check_output(cmd, text=True)
-    except subprocess.CalledProcessError as e:
-        print(f"Random failure: stderr: {e.stderr}\nstdout: {e.stdout}\n")
-        sys.exit(1)
-    if not out:
-        return None
+    changed: dict[Path, list[tuple[int, int]]] = {}
 
     path = None
-    for line in out.splitlines():
+    for line in diff.splitlines():
         # New file header
-        if line.startswith("+++"):
+        if line.startswith("+++ b/"):
             path = Path(line.strip("+++ b/")).name
             changed[path] = []
             continue
-        # Hunk header
-        m = re.match(r"@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@", line)
-        if m and path is not None:
-            start = int(m.group(1))
-            count = int(m.group(2)) if m.group(2) else 1
-            changed[path].append((start, start + count - 1))
+        # Changed lines
+        m = re.match(r"@@ -\d+(,\d+)? \+(?P<line_b>\d+)(,(?P<n_b>\d+))? @@", line)
+        if m and path:
+            start = int(m.group("line_b"))
+            count = int(m.group("n_b")) if m.group("n_b") else 1
+            if count != 0:
+                changed[path].append(range(start, start + count))
     return changed
 
 
 def parse_asan_leaks(
-    asan_output: str, changed: Dict[str, List[Tuple[int, int]]]
-) -> Tuple[int, List[Tuple[Path, int, str]]]:
-    leaks: List[Tuple[Path, int]] = []
+    asan_output: str, changed: dict[str, list[range]]
+) -> tuple[int, list[tuple[Path, int, str]]]:
+    leaks: list[tuple[Path, int]] = []
     leak_traces = re.split(r"\n\n", asan_output)
     # Remove empty lines
     leak_traces = [t for t in leak_traces if t]
@@ -70,8 +49,7 @@ def parse_asan_leaks(
             name = Path(match.group(1)).name
             line = int(match.group(2))
             if name in changed and any(
-                line in range(start_end[0], start_end[1] + 1)
-                for start_end in changed[name]
+                line in start_end for start_end in changed[name]
             ):
                 leaks.append((name, line, trace))
                 break
@@ -79,21 +57,32 @@ def parse_asan_leaks(
 
 
 def main() -> None:
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 3:
         print("Supply ASAN output via stdin or file argument")
-        print(f"{sys.argv[0]} <base_git_ref> <head_git_ref> [<file.log> ...]")
+        print(f"{sys.argv[0]} <some.diff> <log_dir>")
         sys.exit(2)
-    base_ref = sys.argv[1]
-    head_ref = sys.argv[2]
 
-    changed = get_changed_lines(base_ref, head_ref)
+    log_dir = Path(sys.argv[2])
+    if not log_dir.is_dir():
+        print(f"'{sys.argv[2]}' should be a directory")
+        sys.exit(1)
+
+    diff_file = sys.argv[1]
+    with open(diff_file, "r", encoding="utf8") as f:
+        diff = f.read()
+
+    changed = get_changed_lines(diff)
     if not changed:
         print("No changed files")
         sys.exit(1)
+    print(changed)
 
     asan_text = ""
-    for i in range(3, len(sys.argv)):
-        asan_text += Path(sys.argv[i]).read_text(encoding="utf8")
+    for p in log_dir.rglob("*"):
+        if p.is_dir():
+            print(f"Skip dir: {p}")
+            continue
+        asan_text += p.read_text(encoding="utf8")
     total_leaks, leaks = parse_asan_leaks(asan_text.strip(), changed)
 
     print("\nLEAK REPORT\n")
@@ -108,7 +97,7 @@ def main() -> None:
         for f, l, trace in leaks:
             print("-" * 32)
             print(f"\n{indent}{f}:{l}\n")
-            print(f"{indent}{trace.replace("\n", "\n" + indent)}\n")
+            print(f"{indent}{trace.replace('\n', '\n' + indent)}\n")
         sys.exit(1)
 
     print("No new leaks in changed lines")

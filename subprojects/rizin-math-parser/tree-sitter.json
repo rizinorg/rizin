@@ -1,0 +1,31 @@
+{
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/config.schema.json",
+  "grammars": [
+    {
+      "name": "rznum",
+      "camelcase": "Rznum",
+      "scope": "source.rznum",
+      "path": ".",
+      "file-types": []
+    }
+  ],
+  "metadata": {
+    "version": "0.1.0",
+    "license": "LGPL-3.0-only",
+    "description": "Tree-sitter grammar for the Rizin RzNum mathematical expression language.",
+    "authors": [
+      {
+        "name": "Anton Kochkov",
+        "email": "anton.kochkov@gmail.com"
+      }
+    ]
+  },
+  "bindings": {
+    "c": true,
+    "go": false,
+    "node": false,
+    "python": false,
+    "rust": false,
+    "swift": false
+  }
+}

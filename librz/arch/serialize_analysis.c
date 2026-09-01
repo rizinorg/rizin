@@ -1,11 +1,7 @@
 // SPDX-FileCopyrightText: 2020-2021 thestr4ng3r <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_util/rz_serialize.h>
-#include <rz_util/rz_num.h>
-#include <rz_vector.h>
-#include <rz_type.h>
-#include <rz_analysis.h>
+#include "analysis_private.h"
 #include <rz_core.h>
 
 #include <errno.h>
@@ -1557,37 +1553,8 @@ RZ_API void rz_serialize_analysis_meta_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAna
 			pj_kn(j, "size", size);
 		}
 		char type_str[2] = { 0 };
-		switch (meta->type) {
-		case RZ_META_TYPE_DATA:
-			type_str[0] = 'd';
-			break;
-		case RZ_META_TYPE_CODE:
-			type_str[0] = 'c';
-			break;
-		case RZ_META_TYPE_STRING:
-			type_str[0] = 's';
-			break;
-		case RZ_META_TYPE_FORMAT:
-			type_str[0] = 'f';
-			break;
-		case RZ_META_TYPE_MAGIC:
-			type_str[0] = 'm';
-			break;
-		case RZ_META_TYPE_HIDE:
-			type_str[0] = 'h';
-			break;
-		case RZ_META_TYPE_COMMENT:
-			type_str[0] = 'C';
-			break;
-		case RZ_META_TYPE_HIGHLIGHT:
-			type_str[0] = 'H';
-			break;
-		case RZ_META_TYPE_VARTYPE:
-			type_str[0] = 't';
-			break;
-		default:
-			break;
-		}
+		type_str[0] = rz_meta_type_as_char(meta->type);
+
 		pj_ks(j, "type", type_str);
 		if (meta->subtype) {
 			pj_ki(j, "subtype", meta->subtype);
@@ -1877,6 +1844,11 @@ static bool hints_acc_store_cb(void *user, const ut64 addr, const void *v) {
 			case RZ_ANALYSIS_ADDR_HINT_TYPE_VAL:
 				pj_kn(j, "val", record->val);
 				break;
+			case RZ_ANALYSIS_ADDR_HINT_TYPE_ENUM:
+				if (!RZ_STR_ISEMPTY(record->enum_name)) {
+					pj_ks(j, "enum", record->enum_name);
+				}
+				break;
 			}
 		}
 	}
@@ -1913,7 +1885,8 @@ enum {
 	HINTS_FIELD_TYPE_OFFSET,
 	HINTS_FIELD_ESIL,
 	HINTS_FIELD_HIGH,
-	HINTS_FIELD_VAL
+	HINTS_FIELD_VAL,
+	HINTS_FIELD_ENUM
 };
 
 typedef struct {
@@ -2044,6 +2017,12 @@ static bool hints_load_cb(void *user, const SdbKv *kv) {
 			}
 			rz_analysis_hint_set_val(analysis, addr, child->num.u_value);
 			break;
+		case HINTS_FIELD_ENUM:
+			if (child->type != RZ_JSON_STRING) {
+				break;
+			}
+			rz_analysis_hint_set_enum(analysis, addr, child->str_value);
+			break;
 		default:
 			break;
 	})
@@ -2083,6 +2062,7 @@ RZ_API bool rz_serialize_analysis_hints_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAn
 	rz_key_parser_add(ctx.parser, "esil", HINTS_FIELD_ESIL);
 	rz_key_parser_add(ctx.parser, "high", HINTS_FIELD_HIGH);
 	rz_key_parser_add(ctx.parser, "val", HINTS_FIELD_VAL);
+	rz_key_parser_add(ctx.parser, "enum", HINTS_FIELD_ENUM);
 	ret = sdb_foreach(db, hints_load_cb, &ctx);
 	if (!ret) {
 		RZ_SERIALIZE_ERR(res, "hints parsing failed");

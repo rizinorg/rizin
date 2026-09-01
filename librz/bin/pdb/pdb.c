@@ -58,7 +58,7 @@ static bool parse_streams(RzPdb *pdb) {
 		return false;
 	}
 	if (pdb->s_dbi->modules) {
-		pdb->module_infos = rz_pvector_new(NULL);
+		pdb->module_infos = rz_pvector_new(PDBModuleInfo_free);
 		void **modit;
 		rz_pvector_foreach (pdb->s_dbi->modules, modit) {
 			const PDB_DBIModule *m = *modit;
@@ -67,7 +67,7 @@ static bool parse_streams(RzPdb *pdb) {
 				return false;
 			}
 			if (!PDBModuleInfo_parse(pdb, m, modi)) {
-				free(modi);
+				PDBModuleInfo_free(modi);
 				return false;
 			}
 			rz_pvector_push(pdb->module_infos, modi);

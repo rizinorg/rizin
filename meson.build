@@ -1,7 +1,7 @@
 project('rizin', 'c',
-  version: 'v0.9.0',
+  version: 'v0.10.0',
   license: 'LGPL-3.0-only',
-  meson_version: '>=0.57.0',
+  meson_version: '>=0.58.0',
   default_options: [
     'buildtype=debugoptimized',
     'b_vscrt=from_buildtype',
@@ -44,7 +44,7 @@ cc = meson.get_compiler('c')
 cc_native = meson.get_compiler('c', native: true)
 
 platform_deps = []
-platform_inc = ['.', 'librz', 'librz/include', 'subprojects/rzheap']
+platform_inc = ['.', 'librz', 'librz/include']
 if host_machine.system() == 'windows'
   add_project_arguments('-DPSAPI_VERSION=1', language: 'c')
   platform_deps = [
@@ -191,6 +191,8 @@ cmake_package_relative_path = run_command(py3_exe, cmake_package_prefix_dir_py, 
 subproject_clean_error_msg = 'Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.'
 
 # handle capstone dependency
+capstone_check_deps = []
+capstone_check_includes = []
 capstone_dep = dependency('capstone', version: '>=4.0.2', required: get_option('use_sys_capstone'), static: is_static_build)
 if not capstone_dep.found()
   capstone_version = get_option('use_capstone_version')
@@ -204,11 +206,58 @@ if not capstone_dep.found()
     error('Wrong capstone version selected. Please use one of the supported versions.')
   endif
   capstone_dep = capstone_proj.get_variable('capstone_dep')
+  capstone_check_includes = capstone_proj.get_variable('capstone_includes')
 else
+  capstone_check_deps = [capstone_dep]
   # Package managers CS version has no meta programming macros for AArch64 -> ARM64 renaming
   # (because it is outdated).
   # With this define we includeour copy of those macros.
   add_project_arguments(['-DUSE_SYS_CAPSTONE'], language: 'c')
+endif
+
+has_capstone_m68k_cpu32 = cc.compiles('''
+#include <capstone/capstone.h>
+int main(void) {
+	cs_mode mode = CS_MODE_M68K_CPU32;
+	return mode == 0;
+}
+''',
+  dependencies: capstone_check_deps,
+  include_directories: capstone_check_includes,
+  name: 'Capstone has M68K CPU32 mode'
+)
+if has_capstone_m68k_cpu32
+  add_project_arguments(['-DRZ_CAPSTONE_HAS_M68K_CPU32'], language: 'c')
+endif
+
+has_capstone_m68k_coldfire = cc.compiles('''
+#include <capstone/capstone.h>
+int main(void) {
+	cs_mode mode = CS_MODE_M68K_COLDFIRE | CS_MODE_M68K_CFV1 | CS_MODE_M68K_CFV2 | CS_MODE_M68K_CFV3 | CS_MODE_M68K_CFV4 | CS_MODE_M68K_CFV4E | CS_MODE_M68K_CFV5;
+	return mode == 0;
+}
+''',
+  dependencies: capstone_check_deps,
+  include_directories: capstone_check_includes,
+  name: 'Capstone has M68K ColdFire modes'
+)
+if has_capstone_m68k_coldfire
+  add_project_arguments(['-DRZ_CAPSTONE_HAS_M68K_COLDFIRE'], language: 'c')
+endif
+
+has_capstone_m680x_hcs12x = cc.compiles('''
+#include <capstone/capstone.h>
+int main(void) {
+        cs_mode mode = CS_MODE_M680X_HCS12X;
+        return mode == 0;
+}
+''',
+  dependencies: capstone_check_deps,
+  include_directories: capstone_check_includes,
+  name: 'Capstone has M680X HCS12X mode'
+)
+if has_capstone_m680x_hcs12x
+  add_project_arguments(['-DRZ_CAPSTONE_HAS_M680X_HCS12X'], language: 'c')
 endif
 
 # Handle PCRE2
@@ -260,7 +309,7 @@ zydis_dep = disabler()
 if sys_zydis_opt.enabled() or sys_zydis_opt.auto()
   zydis_dep = dependency('zydis', required: false, static: is_static_build)
   if not zydis_dep.found()
-    zydis_dep = cc.find_library('zydis', required: sys_zydis_opt, static: is_static_build)
+    zydis_dep = cc.find_library('Zydis', required: sys_zydis_opt, static: is_static_build)
   endif
 endif
 if (sys_zydis_opt.auto() and not zydis_dep.found()) or sys_zydis_opt.disabled()
@@ -434,7 +483,14 @@ foreach it : ccs
   it_userconf.set('HUD', rizin_hud)
   it_userconf.set('PLUGINS', rizin_plugins)
   it_userconf.set('BINDINGS', rizin_bindings)
-  it_userconf.set10('HAVE_OPENSSL', sys_openssl.found())
+  if sys_openssl.found()
+    it_userconf.set10('HAVE_OPENSSL', true)
+    ok = it_cc.has_function('EVP_sm3', prefix: '#include <openssl/evp.h>', dependencies: [sys_openssl])
+    it_userconf.set10('HAVE_OPENSSL_SM3', ok)
+  else
+    it_userconf.set10('HAVE_OPENSSL', false)
+    it_userconf.set10('HAVE_OPENSSL_SM3', false)
+  endif
   it_userconf.set10('WANT_DYLINK', true)
   it_userconf.set10('HAVE_PTRACE', have_ptrace)
   it_userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
@@ -455,6 +511,32 @@ foreach it : ccs
   if it_machine.system() == 'freebsd' or it_machine.system() == 'dragonfly'
     add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: 'c', native: it_native)
     add_project_link_arguments('-Wl,--allow-shlib-undefined', language: 'c', native: it_native)
+  endif
+
+  # Old GNU ld (binutils 2.22, shipped with Debian Wheezy) combined with the
+  # --as-needed flag that Meson passes by default drops shared libraries that
+  # are needed only indirectly -- through another shared library -- rather than
+  # directly by the linked object files. It then (defaulting to
+  # --no-copy-dt-needed-entries) also refuses to resolve the symbol through the
+  # dropped library's own DT_NEEDED entry. Linking the rizin tools against the
+  # rizin shared libraries therefore fails with:
+  #   librz_main.so.0.9.0: undefined reference to symbol 'rz_buf_size'
+  #   librz_util.so.0.9.0: could not read symbols: Invalid operation
+  # even though librz_util, which defines the symbol, is already on the link
+  # line. Disable --as-needed for these old linkers so the indirectly-needed
+  # libraries stay on the link line and resolve directly; newer linkers handle
+  # this correctly on their own and keep the optimisation.
+  if it_cc.get_linker_id() == 'ld.bfd'
+    ld_bin = find_program('ld', required: false, native: it_native)
+    if ld_bin.found()
+      ld_version_raw = run_command(ld_bin, '--version', check: false).stdout()
+      if ld_version_raw != ''
+        ld_version = ld_version_raw.split('\n')[0].split(' ')[-1].strip()
+        if ld_version.version_compare('<2.31')
+          add_project_link_arguments('-Wl,--no-as-needed', language: 'c', native: it_native)
+        endif
+      endif
+    endif
   endif
 
   if it_machine.system() == 'darwin'
@@ -513,6 +595,7 @@ foreach it : ccs
       ['__builtin_bswap64', '', []],
       ['__builtin_clzll', '', []],
       ['__builtin_ctzll', '', []],
+      ['__builtin_expect', '', []],
       ['posix_memalign', '#include <stdlib.h>', []],
       ['_aligned_malloc', '#include <malloc.h>', []],
     ]
@@ -661,8 +744,48 @@ if r.returncode() == 1 and get_option('subprojects_check')
   error(subproject_clean_error_msg)
 endif
 
-softfloat_dep = dependency('softfloat', required: get_option('use_sys_softfloat'), static: is_static_build)
-if not softfloat_dep.found()
+use_sys_softfloat = get_option('use_sys_softfloat')
+# Keep the system probes method-specific so a rejected system dependency does
+# not occupy the generic name overridden by the bundled subproject.
+softfloat_probe_required = use_sys_softfloat.disabled() ? use_sys_softfloat : false
+softfloat_dep = dependency('softfloat', required: softfloat_probe_required, static: is_static_build, method: 'pkg-config')
+if not softfloat_dep.found() and not use_sys_softfloat.disabled() and host_machine.system() in ['darwin', 'ios', 'tvos', 'visionos', 'watchos']
+  softfloat_dep = dependency('softfloat', required: false, static: is_static_build, method: 'extraframework')
+endif
+if not softfloat_dep.found() and not use_sys_softfloat.disabled()
+  softfloat_dep = dependency('softfloat', required: use_sys_softfloat, static: is_static_build, method: 'cmake')
+endif
+use_bundled_softfloat = not softfloat_dep.found()
+if softfloat_dep.found()
+  softfloat_tls_probe = '''
+    #include <stdint.h>
+    #include <softfloat.h>
+    #if defined(_MSC_VER)
+    #define RZ_SOFTFLOAT_THREAD_LOCAL __declspec(thread)
+    #else
+    #define RZ_SOFTFLOAT_THREAD_LOCAL __thread
+    #endif
+    /* Fails to compile unless <softfloat.h> itself declares the mutable state
+     * as thread-local, and fails to link unless the library definitions agree
+     * with those declarations. */
+    extern RZ_SOFTFLOAT_THREAD_LOCAL uint_fast8_t softfloat_detectTininess;
+    extern RZ_SOFTFLOAT_THREAD_LOCAL uint_fast8_t softfloat_roundingMode;
+    extern RZ_SOFTFLOAT_THREAD_LOCAL uint_fast8_t softfloat_exceptionFlags;
+    extern RZ_SOFTFLOAT_THREAD_LOCAL uint_fast8_t extF80_roundingPrecision;
+    int main(void) {
+      return softfloat_detectTininess + softfloat_roundingMode +
+        softfloat_exceptionFlags + extF80_roundingPrecision;
+    }
+  '''
+  if not cc.links(softfloat_tls_probe, dependencies: softfloat_dep, name: 'system SoftFloat has thread-local state')
+    if use_sys_softfloat.enabled()
+      error('System SoftFloat must define its mutable state as thread-local')
+    endif
+    warning('System SoftFloat does not provide thread-local state; using the bundled dependency')
+    use_bundled_softfloat = true
+  endif
+endif
+if use_bundled_softfloat
   softfloat_proj = subproject('softfloat', default_options: ['default_library=static'])
   softfloat_dep = softfloat_proj.get_variable('softfloat_dep')
 endif
@@ -711,15 +834,6 @@ if not libzstd_dep.found()
   libzstd_dep = zstd_proj.get_variable('libzstd_dep')
   meson.override_dependency('zstd', libzstd_dep)
 endif
-
-# handle mpc dependency
-r = run_command(py3_exe, check_meson_subproject_py, 'mpc', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
-  error(subproject_clean_error_msg)
-endif
-
-mpc_proj = subproject('mpc', default_options: ['default_library=static'])
-mpc_dep = mpc_proj.get_variable('mpc_dep')
 
 # handle yxml dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'yxml', check: false)
@@ -871,6 +985,7 @@ summary({
   'System xxhash library': xxhash_dep.found() and xxhash_dep.type_name() != 'internal',
   'System libmspack library': libmspack_dep.found() and libmspack_dep.type_name() != 'internal',
   'System openssl library': sys_openssl.found() and sys_openssl.type_name() != 'internal',
+  'System openssl has SM3': userconf.get('HAVE_OPENSSL_SM3', 0) != 0,
   'System capstone library': capstone_dep.found() and capstone_dep.type_name() != 'internal',
   'System zydis library': zydis_dep.found() and zydis_dep.type_name() != 'internal',
   'System tree-sitter library': tree_sitter_dep.found() and tree_sitter_dep.type_name() != 'internal',

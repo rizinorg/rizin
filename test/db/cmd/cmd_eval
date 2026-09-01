@@ -53,15 +53,15 @@ FILE==
 CMDS=e asm.os=?
 EXPECT=<<EOF
 ios
-dos
-darwin
 linux
-freebsd
-openbsd
-netbsd
-windows
 s110
 none
+darwin
+freebsd
+windows
+dos
+openbsd
+netbsd
 EOF
 RUN
 
@@ -174,17 +174,17 @@ elq zoom
 EOF
 EXPECT=<<EOF
 {"zoom.byte":"h","zoom.from":0,"zoom.in":"io.map","zoom.maxsz":512,"zoom.to":0}
-[{"name":"zoom.byte","value":"h","type":"str","desc":"Zoom callback to calculate each byte (See pz? for help)","ro":false},{"name":"zoom.from","value":0,"type":"int","desc":"Zoom start address","ro":false},{"name":"zoom.in","value":"io.map","type":"str","desc":"Specify  boundaries for zoom","ro":false,"options":["raw","block","bin.section","bin.sections","bin.sections.rwx","bin.sections.r","bin.sections.rw","bin.sections.rx","bin.sections.wx","bin.sections.x","io.map","io.maps","io.maps.rwx","io.maps.r","io.maps.rw","io.maps.rx","io.maps.wx","io.maps.x","dbg.stack","dbg.heap","dbg.map","dbg.maps","dbg.maps.rwx","dbg.maps.r","dbg.maps.rw","dbg.maps.rx","dbg.maps.wx","dbg.maps.x","analysis.fcn","analysis.bb"]},{"name":"zoom.maxsz","value":512,"type":"int","desc":"Zoom max size of block","ro":false},{"name":"zoom.to","value":0,"type":"int","desc":"Zoom end address","ro":false}]
+[{"name":"zoom.byte","desc":"Zoom callback to calculate each byte (See pz? for help)","flags":"string,bind","options":[],"value":"h"},{"name":"zoom.from","desc":"Zoom start address","flags":"integer","options":[],"value":0},{"name":"zoom.in","desc":"Specify  boundaries for zoom","flags":"string,bind","options":["io.maps.rw","block","bin.sections.rx","io.maps.rwx","dbg.heap","io.map","dbg.maps.rwx","io.maps.r","bin.sections.r","dbg.maps.r","io.maps.x","analysis.fcn","bin.sections.x","analysis.bb","dbg.maps.rw","dbg.maps.x","dbg.map","io.maps.wx","bin.sections.wx","raw","bin.section","bin.sections.rw","bin.sections.rwx","io.maps","dbg.maps.rx","dbg.maps.wx","bin.sections","dbg.stack","io.maps.rx","dbg.maps"],"value":"io.map"},{"name":"zoom.maxsz","desc":"Zoom max size of block","flags":"integer","options":[],"value":512},{"name":"zoom.to","desc":"Zoom end address","flags":"integer","options":[],"value":0}]
            zoom.byte: Zoom callback to calculate each byte (See pz? for help)
            zoom.from: Zoom start address
              zoom.in: Specify  boundaries for zoom
           zoom.maxsz: Zoom max size of block
              zoom.to: Zoom end address
-           zoom.byte = h ; Zoom callback to calculate each byte (See pz? for help)
-           zoom.from = 0 ; Zoom start address
-             zoom.in = io.map ; Specify  boundaries for zoom [raw, block, bin.section, bin.sections, bin.sections.rwx, bin.sections.r, bin.sections.rw, bin.sections.rx, bin.sections.wx, bin.sections.x, io.map, io.maps, io.maps.rwx, io.maps.r, io.maps.rw, io.maps.rx, io.maps.wx, io.maps.x, dbg.stack, dbg.heap, dbg.map, dbg.maps, dbg.maps.rwx, dbg.maps.r, dbg.maps.rw, dbg.maps.rx, dbg.maps.wx, dbg.maps.x, analysis.fcn, analysis.bb]
-          zoom.maxsz = 512 ; Zoom max size of block
-             zoom.to = 0 ; Zoom end address
+           zoom.byte = h (string,bind); Zoom callback to calculate each byte (See pz? for help) 
+           zoom.from = 0 (integer); Zoom start address 
+             zoom.in = io.map (string,bind); Specify  boundaries for zoom [io.maps.rw, block, bin.sections.rx, io.maps.rwx, dbg.heap, io.map, dbg.maps.rwx, io.maps.r, bin.sections.r, dbg.maps.r, io.maps.x, analysis.fcn, bin.sections.x, analysis.bb, dbg.maps.rw, dbg.maps.x, dbg.map, io.maps.wx, bin.sections.wx, raw, bin.section, bin.sections.rw, bin.sections.rwx, io.maps, dbg.maps.rx, dbg.maps.wx, bin.sections, dbg.stack, io.maps.rx, dbg.maps]
+          zoom.maxsz = 512 (integer); Zoom max size of block 
+             zoom.to = 0 (integer); Zoom end address 
 zoom.byte=h
 zoom.from=0
 zoom.in=io.map
@@ -193,15 +193,15 @@ zoom.to=0
 EOF
 RUN
 
-NAME=List and set plugin configurations
+NAME=List and set hexagon plugin configurations
 FILE==
 CMDS=<<EOF
-el plugins
+el plugins.hexagon
 # Should print nothing
-el plugins
+el plugins.hexagon
 e asm.arch=hexagon
 # Now it should print the hexagon options.
-el plugins.
+el plugins.hexagon
 # Check if it only prints a specific sub-category.
 el plugins.hexagon.imm
 # Check if a value change is performed properly.
@@ -215,16 +215,42 @@ pi 1
 # Disable plugin.
 e asm.arch=x86
 # Should print no hexagon options anymore
-el plugins.
+el plugins.hexagon
 EOF
 EXPECT=<<EOF
-plugins.hexagon.imm.hash=true
-plugins.hexagon.imm.sign=true
-plugins.hexagon.reg.alias=true
-plugins.hexagon.sdk=false
+plugins.hexagon.imm.hash: Display ## before 32bit immediates and # before immidiates with other width.
+plugins.hexagon.imm.sign: True: Print them with sign. False: Print signed immediates in unsigned representation.
+plugins.hexagon.reg.alias: Print the alias of registers (Alias from C0 = SA0).
+ plugins.hexagon.sdk: Print packet syntax in objdump style.
 plugins.hexagon.imm.hash: Display ## before 32bit immediates and # before immidiates with other width.
 plugins.hexagon.imm.sign: True: Print them with sign. False: Print signed immediates in unsigned representation.
 [   allocframe(SP,#0x8):raw
 [   allocframe(SP,0x8):raw
 EOF
 RUN
+
+NAME=Invalid plugin config key errors
+FILE==
+CMDS=<<EOF
+e plugins.missing
+e plugins.missing=true
+e plugins.missing.
+el plugins.missing
+e! plugins.missing
+ee plugins.missing
+er plugins.missing
+et plugins.missing
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: core: Invalid config key 'plugins.missing'
+ERROR: core: Invalid config key 'plugins.missing'
+ERROR: core: Invalid config key 'plugins.missing.'
+ERROR: core: Invalid config key 'plugins.missing'
+ERROR: core: Invalid config key 'plugins.missing'
+ERROR: core: Invalid config key 'plugins.missing'
+ERROR: core: Invalid config key 'plugins.missing'
+ERROR: core: Invalid config key 'plugins.missing'
+EOF
+RUN
+

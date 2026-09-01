@@ -203,7 +203,7 @@ static void linux_remove_fork_bps(RzDebug *dbg) {
  */
 RzDebugReasonType linux_ptrace_event(RzDebug *dbg, int ptid, int status, bool dowait) {
 	ut32 pt_evt;
-#if __powerpc64__ || __arm64__ || __aarch64__ || __x86_64__
+#if __powerpc64__ || __arm64__ || __aarch64__ || __x86_64__ || (__riscv && __riscv_xlen == 64)
 	ut64 data;
 #else
 	ut32 data;
@@ -757,7 +757,7 @@ RzDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
 	if (!pid_info) {
 		return NULL;
 	}
-	char *ptr = strstr(info, "State:");
+	const char *ptr = strstr(info, "State:");
 	if (ptr) {
 		switch (*(ptr + 7)) {
 		case 'R':
@@ -1462,7 +1462,8 @@ static int linux_map_thp(RzDebug *dbg, ut64 addr, int size) {
 	}
 
 	int num = 0;
-	if (!rz_syscall_get_num(dbg->analysis->syscall, "madvise", &num)) {
+	RzSyscall *rsys = rz_analysis_get_syscall(dbg->analysis);
+	if (!rz_syscall_get_num(rsys, "madvise", &num)) {
 		return false;
 	}
 
@@ -1517,7 +1518,9 @@ RzDebugMap *linux_map_alloc(RzDebug *dbg, ut64 addr, int size, bool thp) {
 	} else {
 		sc_name = "mmap";
 	}
-	if (!rz_syscall_get_num(dbg->analysis->syscall, sc_name, &num)) {
+
+	RzSyscall *rsys = rz_analysis_get_syscall(dbg->analysis);
+	if (!rz_syscall_get_num(rsys, sc_name, &num)) {
 		goto err_linux_map_alloc;
 	}
 #ifndef MAP_ANONYMOUS
@@ -1572,7 +1575,8 @@ int linux_map_dealloc(RzDebug *dbg, ut64 addr, int size) {
 		NULL
 	};
 	int num = 0;
-	if (!rz_syscall_get_num(dbg->analysis->syscall, "munmap", &num)) {
+	RzSyscall *rsys = rz_analysis_get_syscall(dbg->analysis);
+	if (!rz_syscall_get_num(rsys, "munmap", &num)) {
 		goto err_linux_map_dealloc;
 	}
 
@@ -1683,6 +1687,11 @@ RzList /*<RzDebugMap *>*/ *linux_map_get(RzDebug *dbg) {
 			continue;
 		}
 		strncpy(&region2[2], pos_c + 1, sizeof(region2) - 2 - 1);
+		// Terminate the start token at the '-'. rz_num_get() now parses
+		// its whole argument strictly, so an un-split "0x<start>-<end>"
+		// would evaluate as a subtraction - with the leading-zero <end>
+		// read as C-style octal - instead of yielding the start address.
+		*pos_c = 0;
 
 		if (!*name) {
 			snprintf(name, sizeof(name), "unk%d", unk++);
@@ -1737,7 +1746,8 @@ int linux_map_protect(RzDebug *dbg, ut64 addr, int size, int perms) {
 	char code[1024];
 	int num;
 
-	if (!rz_syscall_get_num(dbg->analysis->syscall, "mprotect", &num)) {
+	RzSyscall *rsys = rz_analysis_get_syscall(dbg->analysis);
+	if (!rz_syscall_get_num(rsys, "mprotect", &num)) {
 		return false;
 	}
 	snprintf(code, sizeof(code),

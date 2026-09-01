@@ -382,7 +382,9 @@ static SHParamHelper sh_il_get_param_pc_ctx(SHParam param, SHScaling scaling, ut
 		ret.pure = UN(sh_scaling_size[scaling] * BITS_PER_BYTE, param.param[0]);
 		break;
 	case SH_IMM_S:
-		ret.pure = SN(sh_scaling_size[scaling] * BITS_PER_BYTE, param.param[0]);
+		// the immediate is an 8 bit field which must be sign-extended to the
+		// operation width (e.g. `add #imm, Rn` and `mov #imm, Rn`)
+		ret.pure = SN(sh_scaling_size[scaling] * BITS_PER_BYTE, (st8)param.param[0]);
 		break;
 	default:
 		RZ_LOG_ERROR("RzIL: SuperH: Invalid addressing mode\n");
@@ -474,7 +476,7 @@ static RzILOpEffect *sh_il_set_param_pc_ctx(SHParam param, RZ_OWN RzILOpPure *va
 
 	if (!ret) {
 		SHParamHelper ret_h = sh_il_get_param(param, scaling);
-		RZ_FREE(ret_h.pure);
+		rz_il_op_pure_free(ret_h.pure);
 		RzILOpPure *eff_addr = sh_il_get_effective_addr(param, scaling);
 		ret = STOREW(eff_addr, val);
 		pre = ret_h.pre;
@@ -1353,7 +1355,8 @@ static RzILOpEffect *sh_il_shlr16(const SHOp *op, ut64 pc, RzAnalysis *analysis,
  */
 static RzILOpEffect *sh_il_bf(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHILContext *ctx) {
 	RzILOpPure *new_pc = sh_il_get_effective_addr_param(0);
-	return BRANCH(VARG(SH_SR_T), JMP(new_pc), NOP());
+	// BF branches when T = 0, so the jump is the false-branch of the condition
+	return BRANCH(VARG(SH_SR_T), NOP(), JMP(new_pc));
 }
 
 /**
@@ -1364,7 +1367,8 @@ static RzILOpEffect *sh_il_bf(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHI
  */
 static RzILOpEffect *sh_il_bfs(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHILContext *ctx) {
 	RzILOpPure *new_pc = sh_il_get_effective_addr_param(0);
-	return BRANCH(VARG(SH_SR_T), JMP(new_pc), NOP());
+	// BF/S branches when T = 0, so the jump is the false-branch of the condition
+	return BRANCH(VARG(SH_SR_T), NOP(), JMP(new_pc));
 }
 
 /**

@@ -122,14 +122,41 @@ static SHParam sh_op_get_param_movl(ut16 opcode, bool m) {
 }
 
 /**
+ * \brief Resolve the SuperH CPU model from its "asm.cpu" name
+ *
+ * \param name CPU name (e.g. "sh3", "sh4"), may be NULL or empty
+ * \return SHCpu the matching CPU model, defaulting to \ref SH_CPU_SH4
+ */
+RZ_IPI SHCpu sh_cpu_by_name(RZ_NULLABLE const char *name) {
+	if (RZ_STR_ISEMPTY(name)) {
+		return SH_CPU_SH4;
+	}
+	if (RZ_STR_EQ(name, "sh3")) {
+		return SH_CPU_SH3;
+	}
+	// SuperH-4 is the default and keeps backward compatibility
+	return SH_CPU_SH4;
+}
+
+/**
  * \brief Disassemble \p opcode and return a SHOp
  *
+ * Instructions which do not belong to \p cpu are not decoded (NULL is
+ * returned), so that e.g. SuperH-4 only instructions are treated as invalid
+ * when disassembling for SuperH-3.
+ *
  * \param opcode 16 bit wide opcode
+ * \param cpu SuperH CPU model to disassemble for
  * \return SHOp object corresponding to the opcode
  */
-RZ_IPI RZ_OWN SHOp *sh_disassembler(ut16 opcode) {
+RZ_IPI RZ_OWN SHOp *sh_disassembler(ut16 opcode, SHCpu cpu) {
+	SHArch want = (cpu == SH_CPU_SH3) ? SH_ARCH_SH3 : SH_ARCH_SH4;
 	for (ut16 i = 0; i < OPCODE_NUM; i++) {
 		if ((opcode | sh_op_lookup[i].mask) != sh_op_lookup[i].opcode) {
+			continue;
+		}
+		if (!(sh_op_lookup[i].arch & want)) {
+			// instruction is not available on the selected CPU
 			continue;
 		}
 
@@ -139,6 +166,7 @@ RZ_IPI RZ_OWN SHOp *sh_disassembler(ut16 opcode) {
 		op->mnemonic = raw.mnemonic;
 		op->scaling = raw.scaling;
 		op->str_mnem = raw.str_mnem;
+		op->arch = raw.arch;
 		// check for "weird" mov.l
 		if (raw.opcode == MOVL) {
 			op->param[0] = sh_op_get_param_movl(opcode, true);

@@ -11,6 +11,20 @@ size: 33
 EOF
 RUN
 
+NAME=tn- symbol
+FILE=bins/elf/analysis/hello-objc-linux
+CMDS=<<EOF
+tn-*
+tn sym.imp.__libc_start_main
+tn- sym.imp.__libc_start_main
+af
+afi~size
+EOF
+EXPECT=<<EOF
+size: 34
+EOF
+RUN
+
 NAME=tn 0x08048550
 FILE=bins/elf/analysis/hello-objc-linux
 CMDS=<<EOF
@@ -24,10 +38,13 @@ size: 33
 EOF
 RUN
 
-NAME=tn 0x00048550
+NAME=tn- 0x08048550
 FILE=bins/elf/analysis/hello-objc-linux
 CMDS=<<EOF
 tn-*
+tn
+tn 0x08048550
+tn- 0x08048550
 af
 afi~size
 EOF

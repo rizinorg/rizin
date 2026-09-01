@@ -16,6 +16,7 @@ extern "C" {
 typedef HtSP RzSetS;
 
 RZ_API RZ_OWN RzSetS *rz_set_s_new(HtStrOption opt);
+RZ_API RZ_OWN RzSetS *rz_str_split_dupset(RZ_NONNULL const char *_str, RZ_NONNULL const char *c, bool trim);
 RZ_API void rz_set_s_free(RZ_NULLABLE RzSetS *set);
 RZ_API void rz_set_s_add(RZ_NONNULL RzSetS *set, const char *str);
 RZ_API bool rz_set_s_contains(const RZ_NONNULL RzSetS *set, const char *str);
@@ -30,6 +31,7 @@ typedef HtUP RzSetU;
 RZ_API RZ_OWN RzSetU *rz_set_u_new(void);
 RZ_API void rz_set_u_free(RZ_NULLABLE RzSetU *set);
 RZ_API void rz_set_u_add(RZ_NONNULL RzSetU *set, ut64 u);
+RZ_API ut64 rz_set_u_take(RZ_NONNULL RzSetU *set);
 RZ_API bool rz_set_u_contains(const RZ_NONNULL RzSetU *set, ut64 u);
 RZ_API void rz_set_u_delete(RZ_NONNULL RzSetU *set, ut64 u);
 RZ_API void rz_set_u_clear(RZ_NONNULL RzSetU *set);

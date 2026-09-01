@@ -43,47 +43,47 @@ pd 21
 EOF
 EXPECT=<<EOF
             ;-- section..text:
-            ;-- foo:
+            ;-- reloc.foo:
             ;-- $x.0:
             ;-- _start:
             0x08000034      lui   a0, 0x8000                           ; RELOC 0 foo @ 0x08000088 ; [02] -r-x section size 84 named .text
-            ;-- foo:
+            ;-- reloc.foo.8000038:
             0x08000038      addi  a0, a0, 0x88                         ; RELOC 0 foo @ 0x08000088
-            ;-- foo:
+            ;-- reloc.foo.800003c:
             0x0800003c      lw    a0, 0x88(a0)                         ; RELOC 0 foo @ 0x08000088
-            ;-- foo:
+            ;-- reloc.foo.8000040:
             0x08000040      sw    a0, 0x88(a0)                         ; RELOC 0 foo @ 0x08000088
-            ;-- bar:
+            ;-- reloc.bar:
             0x08000044      lui   a0, 0x8001                           ; RELOC 0 bar @ 0x08001087
-            ;-- bar:
+            ;-- reloc.bar.8000048:
             0x08000048      addi  a0, a0, 0x87                         ; RELOC 0 bar @ 0x08001087
-            ;-- bar:
+            ;-- reloc.bar.800004c:
             0x0800004c      lb    a0, 0x87(a0)                         ; RELOC 0 bar @ 0x08001087
-            ;-- bar:
+            ;-- reloc.bar.8000050:
             0x08000050      sb    a0, 0x87(a0)                         ; RELOC 0 bar @ 0x08001087
-            ;-- norelax:
+            ;-- reloc.norelax:
             0x08000054      lui   a0, 0x8001                           ; RELOC 0 norelax @ 0x08001088
-            ;-- norelax:
+            ;-- reloc.norelax.8000058:
             0x08000058      addi  a0, a0, 0x88                         ; RELOC 0 norelax @ 0x08001088
-            ;-- norelax:
+            ;-- reloc.norelax.800005c:
             0x0800005c      lw    a0, 0x88(a0)                         ; RELOC 0 norelax @ 0x08001088
-            ;-- norelax:
+            ;-- reloc.norelax.8000060:
             0x08000060      sw    a0, 0x88(a0)                         ; RELOC 0 norelax @ 0x08001088
-            ;-- undefined_weak:
+            ;-- reloc.undefined_weak:
             0x08000064      lui   a0, 0x8001                           ; RELOC 0 undefined_weak
-            ;-- undefined_weak:
+            ;-- reloc.undefined_weak.8000068:
             0x08000068      addi  a0, a0, 0x27c                        ; RELOC 0 undefined_weak
-            ;-- undefined_weak:
+            ;-- reloc.undefined_weak.800006c:
             0x0800006c      lw    a0, 0x27c(a0)                        ; RELOC 0 undefined_weak
-            ;-- undefined_weak:
+            ;-- reloc.undefined_weak.8000070:
             0x08000070      sw    a0, 0x27c(a0)                        ; RELOC 0 undefined_weak
-            ;-- baz:
+            ;-- reloc.baz:
             0x08000074      lui   a0, 0x8001                           ; RELOC 0 baz
-            ;-- baz:
+            ;-- reloc.baz.8000078:
             0x08000078      addi  a0, a0, 0x280                        ; RELOC 0 baz
-            ;-- baz:
+            ;-- reloc.baz.800007c:
             0x0800007c      lw    a0, 0x280(a0)                        ; RELOC 0 baz
-            ;-- baz:
+            ;-- reloc.baz.8000080:
             0x08000080      sw    a0, 0x280(a0)                        ; RELOC 0 baz
             ;-- a:
             0x08000084      addi  a0, a0, 1
@@ -97,47 +97,47 @@ pd 21
 EOF
 EXPECT=<<EOF
             ;-- section..text:
-            ;-- foo:
+            ;-- reloc.foo:
             ;-- $x.0:
             ;-- _start:
             0x08000040      lui   a0, 0x8000                           ; RELOC 0 foo @ 0x08000094 ; [02] -r-x section size 84 named .text
-            ;-- foo:
+            ;-- reloc.foo.8000044:
             0x08000044      addi  a0, a0, 0x94                         ; RELOC 0 foo @ 0x08000094
-            ;-- foo:
+            ;-- reloc.foo.8000048:
             0x08000048      lw    a0, 0x94(a0)                         ; RELOC 0 foo @ 0x08000094
-            ;-- foo:
+            ;-- reloc.foo.800004c:
             0x0800004c      sw    a0, 0x94(a0)                         ; RELOC 0 foo @ 0x08000094
-            ;-- bar:
+            ;-- reloc.bar:
             0x08000050      lui   a0, 0x8001                           ; RELOC 0 bar @ 0x08001093
-            ;-- bar:
+            ;-- reloc.bar.8000054:
             0x08000054      addi  a0, a0, 0x93                         ; RELOC 0 bar @ 0x08001093
-            ;-- bar:
+            ;-- reloc.bar.8000058:
             0x08000058      lb    a0, 0x93(a0)                         ; RELOC 0 bar @ 0x08001093
-            ;-- bar:
+            ;-- reloc.bar.800005c:
             0x0800005c      sb    a0, 0x93(a0)                         ; RELOC 0 bar @ 0x08001093
-            ;-- norelax:
+            ;-- reloc.norelax:
             0x08000060      lui   a0, 0x8001                           ; RELOC 0 norelax @ 0x08001094
-            ;-- norelax:
+            ;-- reloc.norelax.8000064:
             0x08000064      addi  a0, a0, 0x94                         ; RELOC 0 norelax @ 0x08001094
-            ;-- norelax:
+            ;-- reloc.norelax.8000068:
             0x08000068      lw    a0, 0x94(a0)                         ; RELOC 0 norelax @ 0x08001094
-            ;-- norelax:
+            ;-- reloc.norelax.800006c:
             0x0800006c      sw    a0, 0x94(a0)                         ; RELOC 0 norelax @ 0x08001094
-            ;-- undefined_weak:
+            ;-- reloc.undefined_weak:
             0x08000070      lui   a0, 0x8001                           ; RELOC 0 undefined_weak
-            ;-- undefined_weak:
+            ;-- reloc.undefined_weak.8000074:
             0x08000074      addi  a0, a0, 0x3c8                        ; RELOC 0 undefined_weak
-            ;-- undefined_weak:
+            ;-- reloc.undefined_weak.8000078:
             0x08000078      lw    a0, 0x3c8(a0)                        ; RELOC 0 undefined_weak
-            ;-- undefined_weak:
+            ;-- reloc.undefined_weak.800007c:
             0x0800007c      sw    a0, 0x3c8(a0)                        ; RELOC 0 undefined_weak
-            ;-- baz:
+            ;-- reloc.baz:
             0x08000080      lui   a0, 0x8001                           ; RELOC 0 baz
-            ;-- baz:
+            ;-- reloc.baz.8000084:
             0x08000084      addi  a0, a0, 0x3d0                        ; RELOC 0 baz
-            ;-- baz:
+            ;-- reloc.baz.8000088:
             0x08000088      lw    a0, 0x3d0(a0)                        ; RELOC 0 baz
-            ;-- baz:
+            ;-- reloc.baz.800008c:
             0x0800008c      sw    a0, 0x3d0(a0)                        ; RELOC 0 baz
             ;-- a:
             0x08000090      addi  a0, a0, 1
@@ -154,13 +154,13 @@ ir
 EOF
 EXPECT=<<EOF
             ;-- section..text:
-            ;-- foo:
+            ;-- reloc.foo:
             ;-- bar:
             ;-- $x.0:
             ;-- _start:
         ,=< 0x08000034      j     loc.foo                              ; RELOC 0 foo @ 0x08000038 ; [02] -r-x section size 8 named .text
         |   ;-- foo:
-        |   ;-- bar:
+        |   ;-- reloc.bar:
         `-> 0x08000038      jal   loc._x.0                             ; RELOC 0 bar @ 0x08000034
 nth      paddr      vaddr bind   type   size lib name   
 --------------------------------------------------------
@@ -184,13 +184,13 @@ ir
 EOF
 EXPECT=<<EOF
             ;-- section..text:
-            ;-- foo:
+            ;-- reloc.foo:
             ;-- bar:
             ;-- $x.0:
             ;-- _start:
         ,=< 0x08000040      j     loc.foo                              ; RELOC 0 foo @ 0x08000044 ; [02] -r-x section size 8 named .text
         |   ;-- foo:
-        |   ;-- bar:
+        |   ;-- reloc.bar:
         `-> 0x08000044      jal   loc._x.0                             ; RELOC 0 bar @ 0x08000040
 nth      paddr      vaddr bind   type   size lib name   
 --------------------------------------------------------
@@ -214,11 +214,11 @@ is
 ir
 EOF
 EXPECT=<<EOF
-            ;-- foo:
+            ;-- reloc.foo:
             ;-- $x.0:
             ;-- _start:
         ,=< 0x08100034      j     loc.foo                              ; RELOC 0 foo @ 0x08200032
-        |   ;-- bar:
+        |   ;-- reloc.bar:
         |   0x08100038      jal   loc.bar                              ; RELOC 0 bar @ 0x08000038
 nth      paddr      vaddr bind   type   size lib name   
 --------------------------------------------------------
@@ -242,11 +242,11 @@ is
 ir
 EOF
 EXPECT=<<EOF
-            ;-- foo:
+            ;-- reloc.foo:
             ;-- $x.0:
             ;-- _start:
         ,=< 0x08100040      j     loc.foo                              ; RELOC 0 foo @ 0x0820003e
-        |   ;-- bar:
+        |   ;-- reloc.bar:
         |   0x08100044      jal   loc.bar                              ; RELOC 0 bar @ 0x08000044
 nth      paddr      vaddr bind   type   size lib name   
 --------------------------------------------------------
@@ -273,7 +273,7 @@ EXPECT=<<EOF
             ;-- $x.0:
             ;-- test:
             0x08000034      li    a1, 3                                ; [02] -r-x section size 14 named .text
-            ;-- .LBB0_2:
+            ;-- reloc..LBB0_2:
         ,=< 0x08000036      bltu  a0, a1, loc..LBB0_2                  ; RELOC 0 .LBB0_2 @ 0x0800003e
         |   0x0800003a      li    a0, 4
         |   0x0800003c      ret
@@ -306,7 +306,7 @@ EXPECT=<<EOF
             ;-- $x.0:
             ;-- test:
             0x08000040      li    a1, 3                                ; [02] -r-x section size 14 named .text
-            ;-- .LBB0_2:
+            ;-- reloc..LBB0_2:
         ,=< 0x08000042      bltu  a0, a1, loc..LBB0_2                  ; RELOC 0 .LBB0_2 @ 0x0800004a
         |   0x08000046      li    a0, 4
         |   0x08000048      ret
@@ -340,7 +340,7 @@ ir
 EOF
 EXPECT=<<EOF
             ;-- section..text:
-            ;-- .LBB0_2:
+            ;-- reloc..LBB0_2:
             ;-- test_forward_max:
 / loc._x.0();
 |       ,=< 0x08000034      beqz  a0, loc..LBB0_2                      ; RELOC 0 .LBB0_2 @ 0x08001032 ; [02] -r-x section size 16412 named .text
@@ -384,7 +384,7 @@ ir
 EOF
 EXPECT=<<EOF
             ;-- section..text:
-            ;-- .LBB0_2:
+            ;-- reloc..LBB0_2:
             ;-- test_forward_max:
 / loc._x.0();
 |       ,=< 0x08000040      beqz  a0, loc..LBB0_2                      ; RELOC 0 .LBB0_2 @ 0x0800103e ; [02] -r-x section size 16412 named .text
@@ -520,16 +520,16 @@ EXPECT=<<EOF
 |           0x0800003a      addi  s0, sp, 0x10
 |           0x0800003c      li    a0, 0
 |           0x0800003e      sw    a0, -0xc(s0)
-|           ;-- ptr:
+|           ;-- reloc.ptr:
 |           0x08000042      lui   a0, 0x8000                           ; 0x8000000
 |                                                                      ; segment.ehdr; RELOC 0 
-|           ;-- ptr:
+|           ;-- reloc.ptr.8000046:
 |           0x08000046      lw    a0, 0x68(a0)                         ; RELOC 0 
 |           0x0800004a      lw    a0, 0(a0)
-|           ;-- ptr32:
+|           ;-- reloc.ptr32:
 |           0x0800004c      lui   a1, 0x8000                           ; 0x8000000
 |                                                                      ; segment.ehdr; RELOC 0 
-|           ;-- ptr32:
+|           ;-- reloc.ptr32.8000050:
 |           0x08000050      lw    a1, 0x64(a1)                         ; RELOC 0 
 |           0x08000054      lw    a1, 0(a1)
 |           0x08000056      add   a0, a0, a1
@@ -584,17 +584,17 @@ EXPECT=<<EOF
 |           0x08000042      sd    ra, 8(sp)
 |           0x08000044      sd    s0, 0(sp)
 |           0x08000046      addi  s0, sp, 0x10
-|           ;-- ptr:
+|           ;-- reloc.ptr:
 |           ;-- .L0 :
 |           0x08000048      lui   a5, 0x8000                           ; 0x8000000
 |                                                                      ; segment.ehdr; RELOC 0 
-|           ;-- ptr:
+|           ;-- reloc.ptr.800004c:
 |           0x0800004c      ld    a5, 0x80(a5)                         ; RELOC 0  ; arg6
 |           0x08000050      lw    a4, 0(a5)                            ; arg6
-|           ;-- ptr32:
+|           ;-- reloc.ptr32:
 |           0x08000052      lui   a5, 0x8000                           ; 0x8000000
 |                                                                      ; segment.ehdr; RELOC 0 
-|           ;-- ptr32:
+|           ;-- reloc.ptr32.8000056:
 |           0x08000056      ld    a5, 0x78(a5)                         ; RELOC 0  ; arg6
 |           0x0800005a      lw    a5, 0(a5)                            ; arg6
 |           0x0800005c      addw  a5, a5, a4                           ; arg6
@@ -665,13 +665,13 @@ EXPECT=<<EOF
 |           0x08000038      sw    s0, 8(sp)
 |           0x0800003a      mv    s0, a0
 |           0x0800003c      li    a1, 0x2a
-|           ;-- __mulsi3:
+|           ;-- reloc.__mulsi3:
 |           0x08000040      auipc ra, 0                                ; RELOC 0 
 |           0x08000044      jalr  0x1d0(ra)
-|           ;-- .LBB0_2:
+|           ;-- reloc..LBB0_2:
 |       ,=< 0x08000048      bnez  s0, loc..LBB0_2                      ; RELOC 0 .LBB0_2 @ 0x0800004e
 |       |   0x0800004a      li    a0, 1
-|       |   ;-- .LBB0_3:
+|       |   ;-- reloc..LBB0_3:
 |      ,==< 0x0800004c      j     loc..LBB0_3                          ; RELOC 0 .LBB0_3 @ 0x08000050
 |      ||   ;-- .LBB0_2:
 |      |`-> 0x0800004e      addi  a0, a0, 0xf                          ; RELOC TARGET 0 .LBB0_2 @ 0x0800004e
@@ -720,13 +720,13 @@ EXPECT=<<EOF
 |           0x08000044      sd    s0, 0(sp)
 |           0x08000046      mv    s0, a0
 |           0x08000048      li    a1, 0x2a
-|           ;-- __muldi3:
+|           ;-- reloc.__muldi3:
 |           0x0800004c      auipc ra, 0                                ; RELOC 0 
 |           0x08000050      jalr  0x24c(ra)
-|           ;-- .LBB0_2:
+|           ;-- reloc..LBB0_2:
 |       ,=< 0x08000054      bnez  s0, loc..LBB0_2                      ; RELOC 0 .LBB0_2 @ 0x0800005a
 |       |   0x08000056      li    a0, 1
-|       |   ;-- .LBB0_3:
+|       |   ;-- reloc..LBB0_3:
 |      ,==< 0x08000058      j     loc..LBB0_3                          ; RELOC 0 .LBB0_3 @ 0x0800005c
 |      ||   ;-- .LBB0_2:
 |      |`-> 0x0800005a      addiw a0, a0, 0xf                          ; RELOC TARGET 0 .LBB0_2 @ 0x0800005a ; arg1
@@ -767,7 +767,7 @@ ir
 EOF
 EXPECT=<<EOF
             ;-- section..text:
-            ;-- .LBB0_2:
+            ;-- reloc..LBB0_2:
             ;-- test_forward_max:
 / loc._x.0();
 |       ,=< 0x08000034      beqz  a0, loc..LBB0_2                      ; RELOC 0 .LBB0_2 @ 0x08000132 ; [02] -r-x section size 1048 named .text
@@ -853,7 +853,7 @@ ir
 EOF
 EXPECT=<<EOF
             ;-- section..text:
-            ;-- .LBB0_2:
+            ;-- reloc..LBB0_2:
             ;-- test_forward_max:
 / loc._x.0();
 |       ,=< 0x08000040      beqz  a0, loc..LBB0_2                      ; RELOC 0 .LBB0_2 @ 0x0800013e ; [02] -r-x section size 1048 named .text

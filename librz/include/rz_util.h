@@ -48,6 +48,7 @@
 #include <rz_util/rz_lang_byte_array.h>
 #include <rz_util/rz_log.h>
 #include <rz_util/rz_luhn.h>
+#include <rz_util/rz_math.h>
 #include <rz_util/rz_mem.h>
 #include <rz_util/rz_name.h>
 #include <rz_util/rz_num.h>
@@ -58,7 +59,6 @@
 #include <rz_util/rz_pkcs8.h>
 #include <rz_util/rz_protobuf.h>
 #include <rz_util/rz_punycode.h>
-#include <rz_util/rz_range.h>
 #include <rz_util/rz_rbtree.h>
 #include <rz_util/rz_regex.h>
 #include <rz_util/rz_set.h>
@@ -76,6 +76,7 @@
 #include <rz_util/rz_table.h>
 #include <rz_util/rz_time.h>
 #include <rz_util/rz_tree.h>
+#include <rz_util/rz_trie.h>
 #include <rz_util/rz_uleb128.h>
 #include <rz_util/rz_unicode.h>
 #include <rz_util/rz_utf16.h>

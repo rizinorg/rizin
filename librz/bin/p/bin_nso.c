@@ -236,6 +236,7 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	sdb_num_set(kv, "nso_header.size", 0x40);
 	sdb_set(kv, "nso_header.format", "xxxxxxxxxxxx magic unk size unk2 text_offset text_size ro_offset ro_size data_offset data_size bss_size unk3");
 	sdb_ns_set(bf->sdb, "info", kv);
+	sdb_free(kv); // only decrefs, there is still a reference from bf->sdb above
 	return kv;
 }
 
@@ -382,7 +383,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->bits = 64;
 	ret->has_va = true;
 	ret->big_endian = false;
-	ret->dbg_info = 0;
+	ret->dbg_info = RZ_BIN_DBG_STRIPPED;
 	return ret;
 }
 

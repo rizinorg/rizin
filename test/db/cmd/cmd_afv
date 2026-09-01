@@ -52,11 +52,52 @@ pdf~:1..4
 EOF
 EXPECT=<<EOF
 / sym.varfunc(int64_t arg1);
-|           ; arg int64_t arg1 @ rdi
-|           ; var int64_t var_2ch @ stack - 0x2c
+| ; arg int64_t arg1 @ rdi
+| ; var int64_t var_2ch @ stack - 0x2c
 
 / sym.varfunc();
-|           0x0000115c      push  rbp
-|           0x0000115d      mov   rbp, rsp
+| 0x0000115c      push  rbp
+| 0x0000115d      mov   rbp, rsp
+EOF
+RUN
+
+NAME=afvc read constraints and JSON (#315)
+FILE=bins/elf/constr_type
+CMDS=<<EOF
+e analysis.types.constraint=true
+aaa
+s sym.range_small
+afvc
+afvc var_1ch
+afvcj var_1ch
+s sym.single_cond
+afvc var_ch
+EOF
+EXPECT=<<EOF
+var_1ch: > 0x0 && <= 0x9
+> 0x0 && <= 0x9
+[{"name":"var_1ch","constraints":"> 0x0 && <= 0x9","conditions":[{"cond":"gt","value":0},{"cond":"le","value":9}]}]
+> 0xa
+EOF
+RUN
+
+NAME=afvcs set and afvc- clear constraints (#315)
+FILE=bins/elf/constr_type
+CMDS=<<EOF
+e analysis.types.constraint=true
+aaa
+s sym.range_small
+afvcs var_1ch ">5,<=20"
+afvc var_1ch
+afvcs var_1ch "gt 1,le 10"
+afvc var_1ch
+afvc- var_1ch
+afvc var_1ch
+echo done
+EOF
+EXPECT=<<EOF
+> 0x5 && <= 0x14
+> 0x1 && <= 0xa
+done
 EOF
 RUN

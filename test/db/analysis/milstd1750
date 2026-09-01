@@ -1,0 +1,415 @@
+# cmd tests for MIL-STD-1750A via rizin: each instruction format
+# verified through pi, including sequential multi-instruction disassembly
+
+NAME=milstd1750: disasm all instruction formats
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=milstd1750
+e asm.bits=8
+wx FF00
+pi 1
+wx FFFF
+pi 1
+wx A112 8135 B112 A912
+pi 4
+wx 8222 820F A234
+pi 3
+wx 7410 7501 7620 7A30 7B60
+pi 5
+wx A0301234 80501234 90301234
+pi 3
+wx A0321234
+pi 1
+wx 0005 0105 0805
+pi 3
+wx 4005 4025 4035
+pi 3
+wx 4A51ABCD 4A321234 4A07ABCD
+pi 3
+wx 48302000
+pi 1
+wx 48320102
+pi 1
+wx 705F1234
+pi 1
+wx 6043 6121 6232 6522
+pi 4
+wx A8301234 B8205678 C810ABCD D8400100
+pi 4
+wx AA301234 AB12 EA34 EB12
+pi 4
+wx FF00 A112 A0301234 7410 FFFF
+pi 5
+s 0x100
+wx 7410
+ao~^type,size,jump
+s 0x100
+wx 74F8
+ao~^type,size,jump
+s 0x100
+wx 7505 7610 7820 7930 7A40 7B50
+ao 6~^type,size,jump,fail
+s 0x100
+wx 705F0800
+ao~^type,size,jump,fail
+s 0x100
+wx 72002000
+ao~^type,size,jump
+s 0x100
+wx 7E000800
+ao~^type,size,jump
+s 0x100
+wx 73001500
+ao~^type,size,jump,fail
+s 0x100
+wx 7F00
+ao~^type,size
+s 0x100
+wx FFFF FF00
+ao 2~^type,size
+s 0x100
+wx A112 B112 C512 D112
+ao 4~^type,size
+s 0x100
+wx E312 E134 E556 E712
+ao 4~^type,size
+s 0x100
+wx 6043 6121 6232
+ao 3~^type,size
+s 0x100
+wx 80501234 90301234 0005 0805
+ao 4~^type,size
+s 0x100
+wx 8F35 9F35
+ao 2~^type,size
+s 0x100
+wx 48302000 49101234
+ao 2~^type,size
+s 0x100
+wx 9312
+ao~^type,size
+s 0x100
+wx F0501234 F912
+ao 2~^type,size
+s 0x100
+wx 4A00
+ao~^type,size
+s 0x100
+wx 70000800 70700800 70500800
+ao 3~^type,size,jump,fail
+s 0x100
+wx 71000800 71F00800 71200800
+ao 3~^type,size,fail
+s 0x100
+wx 7D001234 7C001234
+ao 2~^type,size,family
+s 0x100
+wx 7705
+ao~^type,size
+s 0x100
+wx 72002000 7E002000
+ao 2~^type,size,jump,fail
+s 0x100
+wx 48302000 49101234
+ao 2~family
+s 0x100;wx A112;ao~reg
+s 0x100;wx A0231234;ao~reg
+s 0x100;wx A0201234;ao~datatype
+s 0x100;wx A6201234;ao~datatype
+s 0x100;wx A8201234;ao~datatype
+s 0x100;wx AA201234;ao~datatype
+s 0x100;wx A234;ao~val
+s 0x100;wx 6043;ao~val
+s 0x100;wx 4A011234;ao~val
+s 0x100;wx 80201234;ao~direction
+s 0x100;wx 90201234;ao~direction
+s 0x100;wx 9F36;ao~direction
+s 0x100;wx 8F36;ao~direction
+s 0x100;wx 72002000;ao~direction
+s 0x100;wx 80200010 7F00;af
+s 0x200;wx 90400018 7F00;af
+s 0x300;wx 72000028 7F00;af
+axt @ 0x20
+axt @ 0x30
+axt @ 0x50
+s 0x100;wx 48302000;ao~^type,family
+s 0x100;wx 49101234;ao~^type,family
+s 0x100;wx 7D001234;ao~^type,family
+s 0x100;wx 7C001234;ao~^type,family
+s 0x100;wx 9F36;ao~^type,stackop,stackptr
+s 0x100;wx 8F36;ao~^type,stackop,stackptr
+s 0x100;wx 7E002000;ao~^type,stackop,stackptr
+s 0x100;wx 7F00;ao~^type,stackop,stackptr
+s 0x100;wx 9F52;ao~^type,stackop,stackptr
+s 0x100;wx F0201234;ao~^type,sign
+s 0x100;wx FD201234;ao~^type,sign
+s 0x100;wx F8201234;ao~^type,sign
+s 0x100;wx 6230;ao~^type,sign
+s 0x100;wx 6130;ao~^type,sign
+s 0x100;wx 70100800;ao~^type,cond
+s 0x100;wx 70800800;ao~^type,cond
+s 0x100;wx 70900800;ao~^type,cond
+s 0x100;wx 70700800;ao~^type,cond
+s 0x100;wx 71200800;ao~^type,cond
+s 0x100;wx 7501;ao~^type,cond
+s 0x100;wx 7610;ao~^type,cond
+s 0x100;wx 7820;ao~^type,cond
+s 0x100;wx 7930;ao~^type,cond
+s 0x100;wx 7A40;ao~^type,cond
+s 0x100;wx 7B50;ao~^type,cond
+s 0x100;wx 73001500;ao~^type,cond
+EOF
+EXPECT=<<EOF
+NOP()
+BPT()
+AR(r1, r2)
+LR(r3, r5)
+SR(r1, r2)
+FAR(r1, r2)
+LISP(r2, 3)
+LISP(r0, 16)
+AISP(r3, 5)
+BR(0x0010)
+BEZ(0x0001)
+BLT(0x0020)
+BNZ(0x0030)
+BGE(0x0060)
+A(r3, 0x1234)
+L(r5, 0x1234)
+ST(r3, 0x1234)
+A(r3, 0x1234, r2)
+LB(r12, 5)
+LB(r13, 5)
+STB(r12, 5)
+LBX(r12, r5)
+STBX(r12, r5)
+DSTX(r12, r5)
+AIM(r5, 0xabcd)
+SIM(r3, 0x1234)
+ANDM(r0, 0xabcd)
+XIO(r3, SMK)
+XIO(r3, r2, PO { 1, 2 })
+JC(0x5, 0x1234, r15)
+SLL(r3, 5)
+SRL(r1, 3)
+SRA(r2, 4)
+DSLL(r2, 3)
+FA(r3, 0x1234)
+FS(r2, 0x5678)
+FM(r1, 0xabcd)
+FD(r4, 0x0100)
+EFA(r3, 0x1234)
+EFAR(r1, r2)
+EFIX(r3, r4)
+EFLT(r1, r2)
+NOP()
+AR(r1, r2)
+A(r3, 0x1234)
+BR(0x0010)
+BPT()
+size: 2
+type: jmp
+jump: 0x00000120
+size: 2
+type: jmp
+jump: 0x000000f0
+size: 2
+type: cjmp
+jump: 0x0000010a
+fail: 0x00000102
+size: 2
+type: cjmp
+jump: 0x00000122
+fail: 0x00000104
+size: 2
+type: cjmp
+jump: 0x00000144
+fail: 0x00000106
+size: 2
+type: cjmp
+jump: 0x00000166
+fail: 0x00000108
+size: 2
+type: cjmp
+jump: 0x00000188
+fail: 0x0000010a
+size: 2
+type: cjmp
+jump: 0x000001aa
+fail: 0x0000010c
+size: 4
+type: cjmp
+jump: 0x00001000
+fail: 0x00000104
+size: 4
+type: call
+jump: 0x00004000
+size: 4
+type: call
+jump: 0x00001000
+size: 4
+type: cjmp
+jump: 0x00002a00
+fail: 0x00000104
+size: 2
+type: ret
+size: 2
+type: trap
+size: 2
+type: nop
+size: 2
+type: add
+size: 2
+type: sub
+size: 2
+type: mul
+size: 2
+type: div
+size: 2
+type: and
+size: 2
+type: or
+size: 2
+type: xor
+size: 2
+type: not
+size: 2
+type: shl
+size: 2
+type: shr
+size: 2
+type: shr
+size: 4
+type: load
+size: 4
+type: store
+size: 2
+type: load
+size: 2
+type: store
+size: 2
+type: pop
+size: 2
+type: push
+size: 4
+type: io
+size: 4
+type: io
+size: 2
+type: mov
+size: 4
+type: cmp
+size: 2
+type: cmp
+size: 2
+type: ill
+size: 4
+type: nop
+size: 4
+type: jmp
+jump: 0x00001000
+size: 4
+type: cjmp
+jump: 0x00001000
+fail: 0x0000010c
+size: 4
+type: nop
+size: 4
+type: mjmp
+size: 4
+type: cjmp
+fail: 0x0000010c
+size: 4
+type: mjmp
+family: priv
+size: 4
+type: mjmp
+family: priv
+size: 2
+type: ucall
+size: 4
+type: call
+jump: 0x00004000
+fail: 0x00000104
+size: 4
+type: call
+jump: 0x00004000
+fail: 0x00000108
+family: io
+family: io
+reg: r1
+reg: r2
+ireg: r3
+datatype: int16
+datatype: int32
+datatype: float
+datatype: float
+val: 0x00000005
+val: 0x00000005
+val: 0x00001234
+direction: read
+direction: write
+direction: write
+direction: read
+direction: exec
+fcn.00000100 0x100 [DATA] L(r2, 0x0010)
+fcn.00000200 0x200 [DATA] ST(r4, 0x0018)
+fcn.00000300 0x300 [CALL] JS(r0, 0x0028)
+type: io
+family: io
+type: io
+family: io
+type: mjmp
+family: priv
+type: mjmp
+family: priv
+type: push
+stackop: inc
+stackptr: 8
+type: pop
+stackop: inc
+stackptr: -8
+type: call
+stackop: inc
+stackptr: 2
+type: ret
+stackop: inc
+stackptr: -2
+type: push
+stackop: inc
+stackptr: 28
+sign: true
+type: cmp
+sign: false
+type: cmp
+sign: false
+type: cmp
+sign: true
+type: shr
+sign: false
+type: shr
+type: cjmp
+cond: lt
+type: cjmp
+cond: hs
+type: cjmp
+cond: lt
+type: jmp
+type: cjmp
+cond: eq
+type: cjmp
+cond: eq
+type: cjmp
+cond: lt
+type: cjmp
+cond: le
+type: cjmp
+cond: gt
+type: cjmp
+cond: ne
+type: cjmp
+cond: ge
+type: cjmp
+cond: ne
+EOF
+RUN

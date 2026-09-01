@@ -21,6 +21,12 @@ static RzConsContext rz_cons_context_default = { { { { 0 } } } };
 static RzCons rz_cons_instance = { 0 };
 #define I rz_cons_instance
 
+#if __WINDOWS__
+// restore only the console flags rizin owns instead of replaying the whole host mode word
+#define RZ_CONS_OUTPUT_MODE_MASK (ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING)
+#define RZ_CONS_INPUT_MODE_MASK  (ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_MOUSE_INPUT | ENABLE_QUICK_EDIT_MODE | ENABLE_EXTENDED_FLAGS | ENABLE_VIRTUAL_TERMINAL_INPUT)
+#endif
+
 // this structure goes into cons_stack when rz_cons_push/pop
 typedef struct {
 	char *buf;
@@ -53,8 +59,14 @@ static void cons_stack_free(void *ptr) {
 	RzConsStack *s = (RzConsStack *)ptr;
 	free(s->buf);
 	if (s->grep) {
+		if (CTX(grep.str) == s->grep->str) {
+			CTX(grep.str) = NULL;
+		}
 		RZ_FREE(s->grep->str);
-		CTX(grep.str) = NULL;
+		if (CTX(grep.json_path) == s->grep->json_path) {
+			CTX(grep.json_path) = NULL;
+		}
+		RZ_FREE(s->grep->json_path);
 	}
 	free(s->grep);
 	free(s);
@@ -74,6 +86,9 @@ static RzConsStack *cons_stack_dump(bool recreate) {
 			memcpy(data->grep, &CTX(grep), sizeof(RzConsGrep));
 			if (CTX(grep).str) {
 				data->grep->str = rz_str_dup(CTX(grep).str);
+			}
+			if (CTX(grep).json_path) {
+				data->grep->json_path = rz_str_dup(CTX(grep).json_path);
 			}
 		}
 		if (recreate && CTX(buffer_sz) > 0) {
@@ -102,6 +117,7 @@ static void cons_stack_load(RzConsStack *data, bool free_current) {
 	CTX(buffer_sz) = data->buf_size;
 	if (data->grep) {
 		free(CTX(grep).str);
+		free(CTX(grep).json_path);
 		memcpy(&CTX(grep), data->grep, sizeof(RzConsGrep));
 	}
 	CTX(noflush) = data->noflush;
@@ -535,7 +551,9 @@ RZ_API bool rz_cons_enable_mouse(const bool enable) {
 	HANDLE h;
 	bool enabled = I.mouse;
 	h = GetStdHandle(STD_INPUT_HANDLE);
-	GetConsoleMode(h, &mode);
+	if (!GetConsoleMode(h, &mode)) {
+		return enabled;
+	}
 	mode |= ENABLE_EXTENDED_FLAGS;
 	mode = enable
 		? (mode | ENABLE_MOUSE_INPUT) & ~ENABLE_QUICK_EDIT_MODE
@@ -564,34 +582,46 @@ static void set_console_codepage_to_utf8(void) {
 }
 
 static void save_console_state(void) {
-	if (rz_cons_isatty()) {
+	// Snapshot the exact std handles and their current console modes before any probing mutates them.
+	I.saved_input_handle = GetStdHandle(STD_INPUT_HANDLE);
+	I.saved_output_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	I.saved_input_console = GetConsoleMode((HANDLE)I.saved_input_handle, &I.old_input_mode);
+	I.saved_output_console = GetConsoleMode((HANDLE)I.saved_output_handle, &I.old_output_mode);
+	if (I.saved_output_console) {
 		if (!(I.old_ocp = GetConsoleOutputCP())) {
 			rz_sys_perror("GetConsoleOutputCP");
 		}
+	}
+	if (I.saved_input_console) {
 		if (!(I.old_cp = GetConsoleCP())) {
-			rz_sys_perror("GetConsoleCP");
-		}
-		if (!GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &I.old_output_mode)) {
-			rz_sys_perror("GetConsoleMode");
-		}
-		if (!GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &I.old_input_mode)) {
 			rz_sys_perror("GetConsoleCP");
 		}
 	}
 }
 
+static inline DWORD restore_console_mode_bits(DWORD mode, DWORD saved_mode, DWORD mask) {
+	return (mode & ~mask) | (saved_mode & mask);
+}
+
 static void restore_console_state(void) {
-	if (rz_cons_isatty()) {
-		if (!SetConsoleCP(I.old_cp)) {
-			rz_sys_perror("SetConsoleCP");
-		}
+	DWORD mode;
+	if (I.saved_output_console && GetConsoleMode((HANDLE)I.saved_output_handle, &mode)) {
 		if (!SetConsoleOutputCP(I.old_ocp)) {
 			rz_sys_perror("SetConsoleOutputCP");
 		}
-		if (!SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), I.old_output_mode)) {
+		// Keep unrelated host-owned bits intact and restore only the output flags we changed.
+		mode = restore_console_mode_bits(mode, I.old_output_mode, RZ_CONS_OUTPUT_MODE_MASK);
+		if (!SetConsoleMode((HANDLE)I.saved_output_handle, mode)) {
 			rz_sys_perror("SetConsoleMode");
 		}
-		if (!SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), I.old_input_mode)) {
+	}
+	if (I.saved_input_console && GetConsoleMode((HANDLE)I.saved_input_handle, &mode)) {
+		if (!SetConsoleCP(I.old_cp)) {
+			rz_sys_perror("SetConsoleCP");
+		}
+		// Input teardown mirrors output teardown for the subset of flags Rizin manages.
+		mode = restore_console_mode_bits(mode, I.old_input_mode, RZ_CONS_INPUT_MODE_MASK);
+		if (!SetConsoleMode((HANDLE)I.saved_input_handle, mode)) {
 			rz_sys_perror("SetConsoleMode");
 		}
 	}
@@ -605,6 +635,10 @@ RZ_API RzCons *rz_cons_new(void) {
 	if (I.refcnt != 1) {
 		return &I;
 	}
+#if __WINDOWS__
+	// Save the console state before rz_line_new() runs VT detection on Windows.
+	save_console_state();
+#endif
 	I.rgbstr = rz_cons_rgb_str_off;
 	I.line = rz_line_new();
 	I.enable_highlight = true;
@@ -635,8 +669,9 @@ RZ_API RzCons *rz_cons_new(void) {
 	I.num = NULL;
 	I.null = 0;
 #if __WINDOWS__
-	save_console_state();
 	I.vtmode = rz_cons_detect_vt_mode();
+	// Keep line editing on the same VT mode that the main console instance selected.
+	I.line->vtmode = I.vtmode;
 	set_console_codepage_to_utf8();
 #else
 	I.vtmode = RZ_VIRT_TERM_MODE_COMPLETE;
@@ -653,8 +688,11 @@ RZ_API RzCons *rz_cons_new(void) {
 	I.term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
 	rz_sys_signal(SIGWINCH, resize);
 #elif __WINDOWS__
-	I.term_buf = I.old_input_mode | ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT;
-	I.term_raw = ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
+	if (I.saved_input_console) {
+		// Raw/buffered mode masks must be derived from the saved console input mode.
+		I.term_buf = I.old_input_mode | ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT;
+		I.term_raw = ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
+	}
 	if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)__w32_control, TRUE)) {
 		eprintf("rz_cons: Cannot set control console handler\n");
 	}
@@ -815,6 +853,7 @@ RZ_API void rz_cons_clear(void) {
 
 static void cons_grep_reset(RzConsGrep *grep) {
 	RZ_FREE(grep->str);
+	RZ_FREE(grep->json_path);
 	RZ_FREE(grep->sorted_lines);
 	RZ_FREE(grep->unsorted_lines);
 	ZERO_FILL(*grep);
@@ -1698,7 +1737,12 @@ RZ_API void rz_cons_set_raw(bool is_raw) {
 #elif __WINDOWS__
 	DWORD mode;
 	HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
-	GetConsoleMode(h, &mode);
+	if (!GetConsoleMode(h, &mode)) {
+		// non console stdin is valid in batch mode.. just track state and leave the handle untouched
+		fflush(stdout);
+		I.oldraw = is_raw;
+		return;
+	}
 	if (is_raw) {
 		if (I.term_pty) {
 			rz_sys_xsystem("stty raw -echo");

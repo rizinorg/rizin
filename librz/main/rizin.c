@@ -8,6 +8,7 @@
 #include <rz_project.h>
 #include <rz_flirt.h>
 #include <rz_socket.h>
+#include <locale.h>
 
 static bool is_valid_gdb_file(RzCoreFile *fh) {
 	RzIODesc *d = fh && fh->core ? rz_io_desc_get(fh->core->io, fh->fd) : NULL;
@@ -17,6 +18,24 @@ static bool is_valid_gdb_file(RzCoreFile *fh) {
 static bool is_valid_dmp_file(RzCoreFile *fh) {
 	RzIODesc *d = fh && fh->core ? rz_io_desc_get(fh->core->io, fh->fd) : NULL;
 	return d && strncmp(d->name, "dmp://", 6);
+}
+
+static char *download_gdb_remote_file(RzIODesc *iod, const char *remote_path) {
+	if (!iod || RZ_STR_ISEMPTY(remote_path)) {
+		return NULL;
+	}
+	char *local_path = NULL;
+	int fd = rz_file_mkstemp("gdbexe", &local_path);
+	if (fd == -1 || !local_path) {
+		free(local_path);
+		return NULL;
+	}
+	close(fd);
+	if (!rz_io_desc_download_file(iod, remote_path, local_path)) {
+		rz_file_rm(local_path);
+		RZ_FREE(local_path);
+	}
+	return local_path;
 }
 
 static char *get_file_in_cur_dir(const char *filepath) {
@@ -427,6 +446,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	bool do_list_io_plugins = false;
 	char *file = NULL;
 	char *pfile = NULL;
+	char *gdb_downloaded_exe = NULL;
 	const char *asmarch = NULL;
 	const char *asmos = NULL;
 	const char *forcebin = NULL;
@@ -444,12 +464,18 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	RzList *prefiles = rz_list_new();
 	RzCmdStateOutput state = { 0 };
 
+	setlocale(LC_CTYPE, "");
+
 #define LISTS_FREE() \
 	{ \
 		rz_list_free(cmds); \
+		cmds = NULL; \
 		rz_list_free(evals); \
+		evals = NULL; \
 		rz_list_free(files); \
+		files = NULL; \
 		rz_list_free(prefiles); \
+		prefiles = NULL; \
 	}
 
 	bool stderr2stdout = false;
@@ -496,6 +522,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	if (argc == 2 && !strcmp(argv[1], "-H")) {
 		main_print_var(r, NULL);
 		LISTS_FREE();
+		rz_core_task_sync_end(&r->tasks);
+		rz_core_free(r);
 		return 0;
 	}
 
@@ -562,7 +590,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 #else
 		case 'd':
 			RZ_LOG_ERROR("Sorry. No debugger backend available.\n");
-			return 1;
+			ret = 1;
+			goto beach;
 #endif
 		case 'D': {
 			debug = 2;
@@ -575,8 +604,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				rz_cmd_state_output_print(&state);
 				rz_cmd_state_output_fini(&state);
 				rz_cons_flush();
-				LISTS_FREE();
-				return 0;
+				ret = 0;
+				goto beach;
 			}
 			break;
 		}
@@ -626,8 +655,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			break;
 		case 'H':
 			main_print_var(r, opt.arg);
-			LISTS_FREE();
-			return 0;
+			ret = 0;
+			goto beach;
 		case 'i':
 			if (RZ_STR_ISEMPTY(opt.arg)) {
 				RZ_LOG_ERROR("Cannot open empty script path\n");
@@ -660,7 +689,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			break;
 		case 'M':
 			rz_config_set(r->config, "bin.demangle", "false");
-			rz_config_set(r->config, "asm.demangle", "false");
 			break;
 		case 'n':
 			if (load_bin == LOAD_BIN_ALL) { // "-n"
@@ -713,16 +741,19 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
 				free(customRarunProfile);
-				return 0;
+				ret = 0;
+				goto beach;
 			} else {
 				rz_main_version_verify(0);
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
 				free(customRarunProfile);
-				return rz_main_version_print(r->sys_path, "rizin");
+				ret = rz_main_version_print(r->sys_path, "rizin");
+				goto beach;
 			}
 		case 'V':
-			return rz_main_version_verify(1);
+			ret = rz_main_version_verify(1);
+			goto beach;
 		case 'w':
 			perms |= RZ_PERM_W;
 			break;
@@ -738,14 +769,16 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		RZ_LOG_ERROR("stderr2stdout: Failed to dup2 stderr\n");
 		LISTS_FREE();
 		RZ_FREE(debugbackend);
-		return 1;
+		ret = 1;
+		goto beach;
 	}
 	if (noStderr) {
 		if (-1 == close(2)) {
 			RZ_LOG_ERROR("Failed to close stderr\n");
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 		const char nul[] = RZ_SYS_DEVNULL;
 		int new_stderr = open(nul, O_RDWR);
@@ -753,20 +786,23 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			RZ_LOG_ERROR("Failed to open %s\n", nul);
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 		if (2 != new_stderr) {
 			if (-1 == dup2(new_stderr, 2)) {
 				RZ_LOG_ERROR("Failed to dup2 stderr\n");
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
-				return 1;
+				ret = 1;
+				goto beach;
 			}
 			if (-1 == close(new_stderr)) {
 				RZ_LOG_ERROR("Failed to close %s\n", nul);
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
-				return 1;
+				ret = 1;
+				goto beach;
 			}
 		}
 	}
@@ -816,16 +852,18 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_cmd_state_output_fini(&state);
 		rz_cons_flush();
 		LISTS_FREE();
-		free(pfile);
+		RZ_FREE(pfile);
 		RZ_FREE(debugbackend);
-		return 0;
+		ret = 0;
+		goto beach;
 	}
 
 	if (help > 0) {
 		LISTS_FREE();
-		free(pfile);
+		RZ_FREE(pfile);
 		RZ_FREE(debugbackend);
-		return main_help(r, help > 1 ? 2 : 0);
+		ret = main_help(r, help > 1 ? 2 : 0);
+		goto beach;
 	}
 	if (customRarunProfile) {
 		char *tfn = rz_file_temp(".rz-run");
@@ -842,7 +880,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			RZ_LOG_ERROR("Missing argument for -d\n");
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 		const char *src = haveRarunProfile ? pfile : argv[opt.ind];
 		if (src && *src) {
@@ -889,7 +928,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			RZ_LOG_ERROR("Missing URI for -C\n");
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 		if (strstr(uri, "://")) {
 			rz_core_rtr_add(r, uri);
@@ -923,16 +963,18 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (debug) {
 			RZ_LOG_ERROR("Error: Cannot debug directories, yet.\n");
 			LISTS_FREE();
-			free(pfile);
+			RZ_FREE(pfile);
 			RZ_FREE(debugbackend);
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 		if (rz_sys_chdir(argv[opt.ind])) {
 			RZ_LOG_ERROR("[d] Cannot open directory\n");
 			LISTS_FREE();
-			free(pfile);
+			RZ_FREE(pfile);
 			RZ_FREE(debugbackend);
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 	} else if (argv[opt.ind] && !strcmp(argv[opt.ind], "-")) {
 		int sz;
@@ -940,7 +982,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		int result = _setmode(_fileno(stdin), _O_BINARY);
 		if (result == -1) {
 			RZ_LOG_ERROR("Cannot set stdin to binary mode\n");
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 #endif
 		/* stdin/batch mode */
@@ -968,7 +1011,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				RZ_LOG_ERROR("[=] Cannot open '%s'\n", path);
 				LISTS_FREE();
 				free(path);
-				return 1;
+				ret = 1;
+				goto beach;
 			}
 			rz_io_map_new(r->io, fh->fd, 7, 0LL, mapaddr,
 				rz_io_fd_size(r->io, fh->fd));
@@ -992,22 +1036,23 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		} else {
 			RZ_LOG_ERROR("Cannot slurp from stdin\n");
 			free(buf);
-			LISTS_FREE();
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 	} else if (has_file_arg(argc, argv, &opt)) {
 		if (debug) {
 			if (asmbits) {
 				rz_config_set(r->config, "asm.bits", asmbits);
 			}
-			rz_config_set(r->config, "search.in", "dbg.map"); // implicit?
 			rz_config_set(r->config, "cfg.debug", "true");
+			rz_config_set(r->config, "search.in", "dbg.map");
 			perms = RZ_PERM_RWX;
 			if (opt.ind >= argc) {
 				RZ_LOG_ERROR("No program given to -d\n");
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
-				return 1;
+				ret = 1;
+				goto beach;
 			}
 			if (debug == 2) {
 				// autodetect backend with -D
@@ -1047,12 +1092,33 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 							}
 						} else if (is_valid_gdb_file(fh) || is_valid_dmp_file(fh)) {
 							filepath = iod->name;
-							if (RZ_STR_ISNOTEMPTY(filepath) && rz_file_exists(filepath) && !rz_file_is_directory(filepath)) {
+							bool is_gdb_remote = rz_str_startswith(pfile, "gdb://");
+							bool is_localhost_gdb_remote = rz_str_startswith(pfile, "gdb://localhost:");
+							bool local_file_exists = RZ_STR_ISNOTEMPTY(filepath) && rz_file_exists(filepath) && !rz_file_is_directory(filepath);
+							bool should_download = is_gdb_remote && RZ_STR_ISNOTEMPTY(filepath) && (!is_localhost_gdb_remote || !local_file_exists);
+							if (should_download) {
+								char *downloaded = NULL;
+								if (addr == UINT64_MAX) {
+									addr = rz_debug_get_baddr(r->dbg, filepath);
+								}
+								if (rz_cons_yesno('n', "Download remote executable '%s' to a temporary file? (y/N) ", filepath)) {
+									downloaded = download_gdb_remote_file(iod, filepath);
+									if (!downloaded) {
+										RZ_LOG_ERROR("Failed to download remote executable '%s'.\n", filepath);
+									}
+								}
+								if (downloaded) {
+									gdb_downloaded_exe = downloaded;
+									free(iod->name);
+									iod->name = rz_str_dup(downloaded);
+									rz_core_bin_load(r, NULL, addr);
+								}
+							} else if (local_file_exists) {
 								if (addr == UINT64_MAX) {
 									addr = rz_debug_get_baddr(r->dbg, filepath);
 								}
 								rz_core_bin_load(r, filepath, addr);
-							} else if ((filepath = get_file_in_cur_dir(filepath))) {
+							} else if (!is_gdb_remote && (filepath = get_file_in_cur_dir(filepath))) {
 								// Present in local directory
 								if (iod) {
 									free(iod->name);
@@ -1358,8 +1424,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		/* load <file>.rz */
 		{
 			char *f = rz_str_newf("%s.rz", pfile);
-			const char *uri_splitter = strstr(f, "://");
-			const char *path = uri_splitter ? uri_splitter + 3 : f;
+			char *uri_splitter = strstr(f, "://");
+			char *path = uri_splitter ? uri_splitter + 3 : f;
+			(void)rz_str_path_unescape(path);
 			if (rz_file_exists(path)) {
 				// TODO: should 'q' unset the interactive bit?
 				bool isInteractive = rz_cons_is_interactive();
@@ -1548,6 +1615,10 @@ beach:
 	// execution.
 	// rz_core_file_close (r, fh);
 	rz_core_free(r);
+	if (gdb_downloaded_exe) {
+		rz_file_rm(gdb_downloaded_exe);
+		free(gdb_downloaded_exe);
+	}
 	rz_cons_set_raw(0);
 	rz_cons_free();
 	LISTS_FREE();

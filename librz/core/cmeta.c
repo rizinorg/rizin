@@ -67,8 +67,8 @@ static char *meta_string_escape(RzCore *core, RzAnalysisMetaItem *mi) {
 }
 
 RZ_IPI void rz_core_meta_print(RzCore *core, RzAnalysisMetaItem *d, ut64 start, ut64 size, bool show_full, RzCmdStateOutput *state) {
-	if (rz_spaces_current(&core->analysis->meta_spaces) &&
-		rz_spaces_current(&core->analysis->meta_spaces) != d->space) {
+	RzSpaces *meta_spaces = rz_analysis_get_meta_spaces(core->analysis);
+	if (d->space && d->space != rz_spaces_current(meta_spaces)) {
 		return;
 	}
 	PJ *pj = state->d.pj;
@@ -258,13 +258,14 @@ static RzPVector /*<RzIntervalNode *>*/ *collect_nodes_at(RzAnalysis *analysis, 
 	if (!ctx.result) {
 		return NULL;
 	}
-	rz_interval_tree_all_at(&analysis->meta, addr, collect_nodes_cb, &ctx);
+	RzIntervalTree *meta = rz_analysis_get_meta(analysis);
+	rz_interval_tree_all_at(meta, addr, collect_nodes_cb, &ctx);
 	return ctx.result;
 }
 
 RZ_IPI void rz_core_meta_print_list_at(RzCore *core, ut64 addr, RzCmdStateOutput *state) {
-	RzPVector *nodes = collect_nodes_at(core->analysis, RZ_META_TYPE_ANY,
-		rz_spaces_current(&core->analysis->meta_spaces), addr);
+	RzSpaces *meta_spaces = rz_analysis_get_meta_spaces(core->analysis);
+	RzPVector *nodes = collect_nodes_at(core->analysis, RZ_META_TYPE_ANY, rz_spaces_current(meta_spaces), addr);
 	if (!nodes) {
 		return;
 	}
@@ -288,7 +289,8 @@ static void print_meta_list(RzCore *core, RzAnalysisMetaType type, ut64 addr, Rz
 	}
 	RzIntervalTreeIter it;
 	RzAnalysisMetaItem *item;
-	rz_interval_tree_foreach (&core->analysis->meta, it, item) {
+	RzIntervalTree *meta = rz_analysis_get_meta(core->analysis);
+	rz_interval_tree_foreach (meta, it, item) {
 		RzIntervalNode *node = rz_interval_tree_iter_get(&it);
 		if (type != RZ_META_TYPE_ANY && item->type != type) {
 			continue;
@@ -379,6 +381,7 @@ static bool meta_string_guess_add(RzCore *core, ut64 addr, size_t limit, char **
 		.min_str_length = bin->str_search_cfg.min_length,
 		.prefer_big_endian = big_endian,
 		.check_ascii_freq = bin->str_search_cfg.check_ascii_freq,
+		.user_unprintable = bin->str_search_cfg.user_unprintable,
 	};
 	RzList *str_list = rz_list_new();
 	if (!str_list) {
@@ -393,6 +396,13 @@ static bool meta_string_guess_add(RzCore *core, ut64 addr, size_t limit, char **
 		return false;
 	}
 	*ds = rz_list_first_val(str_list);
+	RzListIter *it;
+	RzDetectedString *s;
+	rz_list_foreach (str_list, it, s) {
+		if (s != *ds) {
+			rz_detected_string_free(s);
+		}
+	}
 	rz_list_free(str_list);
 	rz_str_ncpy(name, (*ds)->string, limit);
 	name[limit] = '\0';
@@ -431,6 +441,7 @@ RZ_API bool rz_core_meta_string_add(RzCore *core, ut64 addr, ut64 size, RzStrEnc
 		}
 		encoding = ds->encoding;
 		n = ds->size;
+		rz_detected_string_free(ds);
 	}
 	if (!name) {
 		result = rz_meta_set_with_subtype(core->analysis, RZ_META_TYPE_STRING, encoding, addr, n, guessname);

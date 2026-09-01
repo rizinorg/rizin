@@ -403,6 +403,7 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_file(const char *file, int perm, int mode) {
  * \param file The filename used to create the new buffer.
  * \param perm Same meaning than the symbolic constants defined in sys/stat.h.
  * \param mode Same meaning than the symbolic constants use with open (fcntl.h).
+ * \param io Optional RzIO for configuration variables.
  * \return Return the new allocated buffer.
  *
  * \see rz_file_mmap()
@@ -410,13 +411,14 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_file(const char *file, int perm, int mode) {
  * The function creates a new buffer synchronized with the file content, using
  * mmap to access the file.
  */
-RZ_API RZ_OWN RzBuffer *rz_buf_new_mmap(const char *filename, int perm, int mode) {
+RZ_API RZ_OWN RzBuffer *rz_buf_new_mmap(const char *filename, int perm, int mode, RZ_NULLABLE void /* RzIO */ *io) {
 	rz_return_val_if_fail(filename, NULL);
 
 	struct buf_mmap_user u = { 0 };
 	u.filename = filename;
 	u.perm = perm;
 	u.mode = mode;
+	u.io = io;
 
 	return new_buffer(RZ_BUFFER_MMAP, &u);
 }
@@ -1223,6 +1225,22 @@ RZ_API st64 rz_buf_insert_bytes(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL co
 	return result;
 }
 
+static RzIO *get_io_from_buffer(RZ_NONNULL RzBuffer *b) {
+	rz_return_val_if_fail(b, NULL);
+	switch (b->type) {
+	case RZ_BUFFER_IO:
+	case RZ_BUFFER_IO_FD: {
+		RzIOBind *iob = b->type == RZ_BUFFER_IO ? ((BufIOPriv *)b->priv)->iob : ((struct buf_io_fd_priv *)b->priv)->iob;
+		rz_return_val_if_fail(iob, NULL);
+		return iob->io;
+	}
+	case RZ_BUFFER_MMAP:
+		return ((struct buf_mmap_priv *)b->priv)->io;
+	default:
+		return NULL;
+	}
+}
+
 /**
  * \brief Reads \p len bytes from buffer \p b into \p buf.
  * \p buf should have enough space to contain the bytes.
@@ -1246,7 +1264,16 @@ RZ_API st64 rz_buf_read(RZ_NONNULL RzBuffer *b, RZ_NONNULL ut8 RZ_OUT *buf, ut64
 	}
 
 	if (len > result) {
-		memset(buf + result, b->Oxff_priv, len - result);
+		ut8 Oxff = b->Oxff_priv;
+		RzIO *io = get_io_from_buffer(b);
+		if (io) {
+			if (!io->ff) {
+				RZ_LOG_ERROR("Incomplete buffer read: expected 0x%" PFMT64x " bytes, got %" PFMT64d " bytes.\n", len, result);
+				return -1;
+			}
+			Oxff = io->Oxff;
+		}
+		memset(buf + result, Oxff, len - result);
 	}
 
 	return result;

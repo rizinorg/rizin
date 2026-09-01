@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 #include "ppc/libvle/vle.h"
 #include "ppc/libps/libps.h"
@@ -10,7 +11,7 @@
 
 CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(ppc_asm);
 
-static int decompile_vle(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int decompile_vle(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	vle_t *instr = 0;
 	vle_handle handle = { 0 };
 	if (len < 2) {
@@ -30,7 +31,7 @@ static int decompile_vle(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int decompile_ps(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int decompile_ps(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	ppcps_t instr = { 0 };
 	if (len < 4) {
 		return -1;
@@ -47,7 +48,7 @@ static int decompile_ps(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int ppc_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int ppc_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 	int n, ret;
 	ut64 off = a->pc;
@@ -127,11 +128,11 @@ static char **ppc_cpu_descriptions() {
 	return cpu_desc;
 }
 
-static bool ppc_sw_breakpoint(RzAsm *a, RzAsmOp *op) {
+static bool ppc_sw_breakpoint(const RzAsm *a, ut64 addr, const RzAsmOp *original, RzAsmOp *breakpoint) {
 	// ppc | tw 31, 0, 0 | trap
 	// { 0x7f, 0xe0, 0x00, 0x08 } | big endian
 	// { 0x08, 0x00, 0xe0, 0x7f } | little endian
-	rz_asm_op_set_buf(op, a->big_endian ? (const ut8 *)"\x7f\xe0\x00\x08" : (const ut8 *)"\x08\x00\xe0\x7f", 4);
+	rz_asm_op_set_buf(breakpoint, a->big_endian ? (const ut8 *)"\x7f\xe0\x00\x08" : (const ut8 *)"\x08\x00\xe0\x7f", 4);
 	return true;
 }
 

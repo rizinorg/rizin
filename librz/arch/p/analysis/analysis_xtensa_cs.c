@@ -483,7 +483,7 @@ static void xtensa_analyze_op(RzAnalysis *a, RzAnalysisOp *op, XtensaContext *ct
 
 static int xtensa_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	XtensaContext *ctx = analysis->plugin_data;
-	if (!xtensa_open(ctx, analysis->cpu, analysis->big_endian)) {
+	if (!xtensa_open(ctx, rz_analysis_get_cpu(analysis), analysis->big_endian)) {
 		goto beach;
 	}
 	if (!xtensa_disassemble(ctx, buf, len, addr)) {

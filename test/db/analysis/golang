@@ -45,7 +45,7 @@ TAIL
 0x6a6b9f 7 7 version
 0x6a7efb 2 2 HT
 0x6a7efb 12 12 HTTP version
-12715
+12759
 bufio
 bytes
 compress/flate
@@ -206,7 +206,7 @@ TAIL
 0x6f2e40 30 30 Reading server certificate: %s
 0x6eb88e 7 7 version
 0x6ecbc3 12 12 HTTP version
-12823
+12866
 bufio
 bytes
 compress/flate
@@ -353,7 +353,7 @@ TAIL
 0x6fe2c3 30 30 Reading server certificate: %s
 0x6f7521 7 7 version
 0x6f85b4 12 12 HTTP version
-12176
+12219
 bufio
 bytes
 compress/flate

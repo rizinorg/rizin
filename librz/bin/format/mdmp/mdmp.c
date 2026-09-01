@@ -303,23 +303,23 @@ static void mdmp_obj_sdb_init(MiniDmpObj *obj) {
 		"CONTEXT_EXTENDED_REGISTERS=0x10020 };");
 
 	sdb_set(obj->kv, "mdmp_location_descriptor.format",
-		"dd DataSize RVA");
+		"d4d4 DataSize RVA");
 	sdb_set(obj->kv, "mdmp_location_descriptor64.format",
-		"qq DataSize RVA");
-	sdb_set(obj->kv, "mdmp_memory_descriptor.format", "q? "
+		"x8x8 DataSize RVA");
+	sdb_set(obj->kv, "mdmp_memory_descriptor.format", "x8? "
 							  "StartOfMemoryRange "
 							  "(mdmp_location_descriptor)Memory");
-	sdb_set(obj->kv, "mdmp_memory_descriptor64.format", "qq "
+	sdb_set(obj->kv, "mdmp_memory_descriptor64.format", "x8x8 "
 							    "StartOfMemoryRange DataSize");
 
-	sdb_set(obj->kv, "mdmp_vs_fixedfileinfo.format", "ddddddddddddd "
+	sdb_set(obj->kv, "mdmp_vs_fixedfileinfo.format", "d4d4d4d4d4d4d4d4d4d4d4d4d4 "
 							 "dwSignature dwStrucVersion dwFileVersionMs "
 							 "dwFileVersionLs dwProductVersionMs "
 							 "dwProductVersionLs dwFileFlagsMask dwFileFlags "
 							 "dwFileOs dwFileType dwFileSubtype dwFileDateMs "
 							 "dwFileDateLs");
 
-	sdb_set(obj->kv, "mdmp_string.format", "dZ Length Buffer");
+	sdb_set(obj->kv, "mdmp_string.format", "d4Z Length Buffer");
 }
 
 static bool mdmp_read_header(RzBuffer *b, MiniDmpHeader *hdr) {
@@ -357,7 +357,7 @@ static bool rz_bin_mdmp_init_hdr(MiniDmpObj *obj) {
 	sdb_num_set(obj->kv, "mdmp.hdr.time_date_stamp", obj->hdr->time_date_stamp);
 	sdb_num_set(obj->kv, "mdmp.hdr.flags", obj->hdr->flags);
 	sdb_num_set(obj->kv, "mdmp_header.offset", 0);
-	sdb_set(obj->kv, "mdmp_header.format", "[4]zddddt[8]B Signature "
+	sdb_set(obj->kv, "mdmp_header.format", "[4]zd4d4d4d4t[8]B Signature "
 					       "Version NumberOfStreams StreamDirectoryRVA CheckSum "
 					       "TimeDateStamp (mdmp_type)Flags");
 
@@ -627,7 +627,7 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 			break;
 		}
 
-		sdb_set(obj->kv, "mdmp_thread.format", "ddddq?? "
+		sdb_set(obj->kv, "mdmp_thread.format", "d4d4d4d4x8?? "
 						       "ThreadId SuspendCount PriorityClass Priority "
 						       "Teb (mdmp_memory_descriptor)Stack "
 						       "(mdmp_location_descriptor)ThreadContext");
@@ -645,7 +645,7 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 			break;
 		}
 
-		sdb_set(obj->kv, "mdmp_module.format", "qddtd???qq "
+		sdb_set(obj->kv, "mdmp_module.format", "x8d4d4td4???x8x8 "
 						       "BaseOfImage SizeOfImage CheckSum "
 						       "TimeDateStamp ModuleNameRVA "
 						       "(mdmp_vs_fixedfileinfo)VersionInfo "
@@ -706,7 +706,7 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 			break;
 		}
 
-		sdb_set(obj->kv, "mdmp_exception.format", "[4]E[4]Eqqdd[15]q "
+		sdb_set(obj->kv, "mdmp_exception.format", "[4]E[4]Ex8x8d4d4[15]x8 "
 							  "(mdmp_exception_code)ExceptionCode "
 							  "(mdmp_exception_flags)ExceptionFlags "
 							  "ExceptionRecord ExceptionAddress "
@@ -714,7 +714,7 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 							  "ExceptionInformation");
 		sdb_num_set(obj->kv, "mdmp_exception_stream.offset",
 			entry->location.rva);
-		sdb_set(obj->kv, "mdmp_exception_stream.format", "dd?? "
+		sdb_set(obj->kv, "mdmp_exception_stream.format", "d4d4?? "
 								 "ThreadId __Alignment "
 								 "(mdmp_exception)ExceptionRecord "
 								 "(mdmp_location_descriptor)ThreadContext");
@@ -730,7 +730,7 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 		sdb_num_set(obj->kv, "mdmp_system_info.offset",
 			entry->location.rva);
 		/* TODO: We need E as a byte! */
-		sdb_set(obj->kv, "mdmp_system_info.format", "[2]EwwbBddd[4]Ed[2]Ew[2]q "
+		sdb_set(obj->kv, "mdmp_system_info.format", "[2]Ex2x2x1Bd4d4d4[4]Ed4[2]Ex2[2]x8 "
 							    "(mdmp_processor_architecture)ProcessorArchitecture "
 							    "ProcessorLevel ProcessorRevision NumberOfProcessors "
 							    "(mdmp_product_type)ProductType "
@@ -744,7 +744,7 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 			break;
 		}
 
-		sdb_set(obj->kv, "mdmp_thread_ex.format", "ddddq??? "
+		sdb_set(obj->kv, "mdmp_thread_ex.format", "d4d4d4d4x8??? "
 							  "ThreadId SuspendCount PriorityClass Priority "
 							  "Teb (mdmp_memory_descriptor)Stack "
 							  "(mdmp_location_descriptor)ThreadContext "
@@ -837,7 +837,7 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 
 		sdb_num_set(obj->kv, "mdmp_handle_data_stream.offset",
 			entry->location.rva);
-		sdb_set(obj->kv, "mdmp_handle_data_stream.format", "dddd "
+		sdb_set(obj->kv, "mdmp_handle_data_stream.format", "d4d4d4d4 "
 								   "SizeOfHeader SizeOfDescriptor "
 								   "NumberOfDescriptors Reserved");
 		break;
@@ -852,7 +852,7 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 
 		sdb_num_set(obj->kv, "mdmp_function_table_stream.offset",
 			entry->location.rva);
-		sdb_set(obj->kv, "mdmp_function_table_stream.format", "dddddd "
+		sdb_set(obj->kv, "mdmp_function_table_stream.format", "d4d4d4d4d4d4 "
 								      "SizeOfHeader SizeOfDescriptor SizeOfNativeDescriptor "
 								      "SizeOfFunctionEntry NumberOfDescriptors SizeOfAlignPad");
 		break;
@@ -863,12 +863,12 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 			break;
 		}
 
-		sdb_set(obj->kv, "mdmp_unloaded_module.format", "qddtd "
+		sdb_set(obj->kv, "mdmp_unloaded_module.format", "x8d4d4td4 "
 								"BaseOfImage SizeOfImage CheckSum TimeDateStamp "
 								"ModuleNameRva");
 		sdb_num_set(obj->kv, "mdmp_unloaded_module_list.offset",
 			entry->location.rva);
-		sdb_set(obj->kv, "mdmp_unloaded_module_list.format", "ddd "
+		sdb_set(obj->kv, "mdmp_unloaded_module_list.format", "d4d4d4 "
 								     "SizeOfHeader SizeOfEntry NumberOfEntries");
 
 		for (i = 0; i < unloaded_module_list.number_of_entries; i++) {
@@ -893,7 +893,7 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 		/* TODO: Handle different sizes */
 		sdb_num_set(obj->kv, "mdmp_misc_info.offset",
 			entry->location.rva);
-		sdb_set(obj->kv, "mdmp_misc_info.format", "d[4]Bdtttddddd "
+		sdb_set(obj->kv, "mdmp_misc_info.format", "d4[4]Bd4tttd4d4d4d4d4 "
 							  "SizeOfInfo (mdmp_misc1_flags)Flags1 ProcessId "
 							  "ProcessCreateTime ProcessUserTime ProcessKernelTime "
 							  "ProcessorMaxMhz ProcessorCurrentMhz "
@@ -908,7 +908,7 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 		}
 
 		sdb_set(obj->kv, "mdmp_memory_info.format",
-			"qq[4]Edq[4]E[4]E[4]Ed BaseAddress AllocationBase "
+			"x8x8[4]Ed4x8[4]E[4]E[4]Ed4 BaseAddress AllocationBase "
 			"(mdmp_page_protect)AllocationProtect __Alignment1 RegionSize "
 			"(mdmp_mem_state)State (mdmp_page_protect)Protect "
 			"(mdmp_mem_type)Type __Alignment2");
@@ -936,12 +936,12 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 			break;
 		}
 
-		sdb_set(obj->kv, "mdmp_thread_info.format", "ddddttttqq "
+		sdb_set(obj->kv, "mdmp_thread_info.format", "d4d4d4d4ttttx8x8 "
 							    "ThreadId DumpFlags DumpError ExitStatus CreateTime "
 							    "ExitTime KernelTime UserTime StartAddress Affinity");
 		sdb_num_set(obj->kv, "mdmp_thread_info_list.offset",
 			entry->location.rva);
-		sdb_set(obj->kv, "mdmp_thread_info_list.format", "ddd "
+		sdb_set(obj->kv, "mdmp_thread_info_list.format", "d4d4d4 "
 								 "SizeOfHeader SizeOfEntry NumberOfEntries");
 
 		for (i = 0; i < thread_info_list.number_of_entries; i++) {
@@ -963,7 +963,7 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 
 		sdb_num_set(obj->kv, "mdmp_handle_operation_list.offset",
 			entry->location.rva);
-		sdb_set(obj->kv, "mdmp_handle_operation_list.format", "dddd "
+		sdb_set(obj->kv, "mdmp_handle_operation_list.format", "d4d4d4d4 "
 								      "SizeOfHeader SizeOfEntry NumberOfEntries Reserved");
 
 		for (i = 0; i < handle_operation_list.number_of_entries; i++) {
@@ -984,12 +984,12 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 			break;
 		}
 
-		sdb_set(obj->kv, "mdmp_token_info.format", "ddq "
+		sdb_set(obj->kv, "mdmp_token_info.format", "d4d4x8 "
 							   "TokenSize TokenId TokenHandle");
 
 		sdb_num_set(obj->kv, "mdmp_token_info_list.offset",
 			entry->location.rva);
-		sdb_set(obj->kv, "mdmp_token_info_list.format", "dddd "
+		sdb_set(obj->kv, "mdmp_token_info_list.format", "d4d4d4d4 "
 								"TokenListSize TokenListEntries ListHeaderSize ElementHeaderSize");
 
 		for (i = 0; i < token_info_list.number_of_entries; i++) {

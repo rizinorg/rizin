@@ -11,7 +11,7 @@
 
 static inline bool check_rust(RzBinSymbol *sym) {
 	return strstr(sym->name, "_$LT$") ||
-		strstr(sym->name, "_rust_oom");
+		strstr(sym->name, "rust_oom");
 }
 
 static inline bool check_objc(RzBinSymbol *sym) {
@@ -19,10 +19,7 @@ static inline bool check_objc(RzBinSymbol *sym) {
 }
 
 static inline bool check_dlang(RzBinSymbol *sym) {
-	if (!strncmp(sym->name, "_D2", 3)) {
-		return true;
-	}
-	return !strncmp(sym->name, "_D4", 3);
+	return !strncmp(sym->name, "_D", 2) && IS_DIGIT(sym->name[2]);
 }
 
 static inline bool check_swift(RzBinSymbol *sym) {

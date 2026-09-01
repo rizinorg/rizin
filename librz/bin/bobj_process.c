@@ -155,6 +155,91 @@ RZ_IPI void rz_bin_process_swift(RzBinObject *o, RzBinSymbol *symbol) {
 	bin_process_swift_class_method(o, symbol);
 }
 
+static inline bool is_known_canary(const char *name) {
+	return strstr(name, "__stack_chk_fail") ||
+		strstr(name, "__stack_chk_guard") ||
+		strstr(name, "__intel_security_cookie") ||
+		strstr(name, "__stack_smash_handler") ||
+		strstr(name, "__security_init_cookie");
+}
+
+#define DEFINE_IS_SANITIZER(san_name) \
+	static inline bool is_##san_name(const char *var) { \
+		return strstr(var, "__" RZ_STR_DEF(san_name) "_") || \
+			strstr(var, "__" RZ_STR_DEF(san_name) "::"); \
+	}
+
+DEFINE_IS_SANITIZER(sanitizer)
+DEFINE_IS_SANITIZER(ubsan)
+DEFINE_IS_SANITIZER(asan)
+DEFINE_IS_SANITIZER(msan)
+DEFINE_IS_SANITIZER(tsan)
+
+static inline bool is_known_objc_arc(const char *name) {
+	return strstr(name, "objc_retain") ||
+		strstr(name, "objc_release") ||
+		strstr(name, "objc_storeStrong");
+}
+
+static inline bool is_known_fortify_source(const char *name) {
+	return strstr(name, "memcpy_chk") ||
+		strstr(name, "memmove_chk") ||
+		strstr(name, "memset_chk") ||
+		strstr(name, "stpcpy_chk") ||
+		strstr(name, "stpncpy_chk") ||
+		strstr(name, "strcat_chk") ||
+		strstr(name, "strcpy_chk") ||
+		strstr(name, "strncat_chk") ||
+		strstr(name, "strncpy_chk") ||
+		strstr(name, "snprintf_chk") ||
+		strstr(name, "sprintf_chk") ||
+		strstr(name, "vsnprintf_chk") ||
+		strstr(name, "vsprintf_chk");
+}
+
+static inline void bin_info_auto_detect(RzBinInfo *info, const char *name) {
+	if (RZ_STR_ISEMPTY(name)) {
+		return;
+	} else if (is_known_canary(name)) {
+		info->has_canary = true;
+	} else if (is_ubsan(name)) {
+		info->sanitizers |= RZ_BIN_SANITIZER_UBSAN;
+	} else if (is_asan(name)) {
+		info->sanitizers |= RZ_BIN_SANITIZER_ASAN;
+	} else if (is_tsan(name)) {
+		info->sanitizers |= RZ_BIN_SANITIZER_TSAN;
+	} else if (is_msan(name)) {
+		info->sanitizers |= RZ_BIN_SANITIZER_MSAN;
+	} else if (is_sanitizer(name)) {
+		info->sanitizers |= RZ_BIN_SANITIZER_GENERIC;
+	} else if (is_known_objc_arc(name)) {
+		info->has_objc_arc = true;
+	} else if (is_known_fortify_source(name)) {
+		info->has_fortify_source = true;
+	}
+}
+
+RZ_IPI void rz_bin_info_auto_resolve_fields(RzBinObject *o) {
+	void **iter;
+	RzBinImport *import;
+	RzBinSymbol *symbol;
+	RzBinInfo *info = o->info;
+	if (!info) {
+		return;
+	}
+
+	info->sanitizers = RZ_BIN_SANITIZER_NONE;
+	rz_pvector_foreach (o->imports, iter) {
+		import = *iter;
+		bin_info_auto_detect(info, import->name);
+	}
+
+	rz_pvector_foreach (o->symbols, iter) {
+		symbol = *iter;
+		bin_info_auto_detect(info, symbol->name);
+	}
+}
+
 /**
  * \brief      Initialize the data of the given RzBinObject using the defined RzBinPlugin
  *
@@ -211,6 +296,7 @@ RZ_IPI bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNU
 	rz_bin_process_symbols(bf, o, demangler, flags);
 	rz_bin_process_imports(bf, o, demangler, flags);
 	rz_bin_set_and_process_relocs(bf, o, demangler, flags);
+	rz_bin_info_auto_resolve_fields(o);
 
 	return true;
 }

@@ -42,13 +42,18 @@ RZ_API int rz_debug_trace_tag(RzDebug *dbg, int tag) {
 	return (dbg->trace->tag = (tag > 0) ? tag : UT32_MAX);
 }
 
+// Largest single memory write recorded into a debug session. Sized to hold
+// an x86 XSAVE area (576 bytes for the legacy region plus header, more with
+// AVX-512 state), which the glibc PLT/IFUNC resolvers write on every call.
+#define RZ_DEBUG_TRACE_MEMREF_MAX 4096
+
 RZ_API bool rz_debug_trace_ins_before(RzDebug *dbg) {
 	RzListIter *it, *it_tmp;
 	RzAnalysisValue *val;
 	ut8 buf_pc[32];
 
 	// Analyze current instruction
-	ut64 pc = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_PC]);
+	ut64 pc = rz_debug_reg_get_by_role(dbg, RZ_REG_NAME_PC);
 	if (!dbg->iob.read_at) {
 		RZ_LOG_ERROR("dbg->iob.read_at missing\n");
 		return false;
@@ -78,8 +83,10 @@ RZ_API bool rz_debug_trace_ins_before(RzDebug *dbg) {
 			}
 			break;
 		case RZ_ANALYSIS_VAL_MEM:
-			if (val->memref > 32) {
-				eprintf("Error: adding changes to %d bytes in memory.\n", val->memref);
+			if (val->memref < 1 || val->memref > RZ_DEBUG_TRACE_MEMREF_MAX) {
+				RZ_LOG_WARN("not recording a %d byte memory write at 0x%" PFMT64x
+					    "; stepping back over it will restore stale memory\n",
+					val->memref, dbg->cur_op->addr);
 				rz_list_delete(dbg->cur_op->access, it);
 				break;
 			}
@@ -135,7 +142,9 @@ RZ_API bool rz_debug_trace_ins_after(RZ_NONNULL RzDebug *dbg) {
 		switch (val->type) {
 		case RZ_ANALYSIS_VAL_REG: {
 			if (!val->reg) {
-				RZ_LOG_ERROR("invalid register, unable to trace register state\n");
+				RZ_LOG_DEBUG("no register profile entry for a write at 0x%" PFMT64x
+					     "; the change is not recorded\n",
+					dbg->cur_op->addr);
 				continue;
 			}
 			ut64 data = rz_reg_get_value(dbg->reg, val->reg);
@@ -145,17 +154,25 @@ RZ_API bool rz_debug_trace_ins_after(RZ_NONNULL RzDebug *dbg) {
 			break;
 		}
 		case RZ_ANALYSIS_VAL_MEM: {
-			ut8 buf[32] = { 0 };
+			if (val->memref < 1 || val->memref > RZ_DEBUG_TRACE_MEMREF_MAX) {
+				break;
+			}
+			ut8 *buf = RZ_NEWS0(ut8, val->memref);
+			if (!buf) {
+				break;
+			}
 			if (!dbg->iob.read_at(dbg->iob.io, val->base, buf, val->memref)) {
-				eprintf("Error reading memory at 0x%" PFMT64x "\n", val->base);
+				RZ_LOG_ERROR("cannot read %d byte(s) at 0x%" PFMT64x "\n",
+					val->memref, val->base);
+				free(buf);
 				break;
 			}
 
 			// add mem write
-			size_t i;
-			for (i = 0; i < val->memref; i++) {
+			for (int i = 0; i < val->memref; i++) {
 				rz_debug_session_add_mem_change(dbg->session, val->base + i, buf[i]);
 			}
+			free(buf);
 			break;
 		}
 		default:
@@ -174,12 +191,12 @@ RZ_API int rz_debug_trace_pc(RzDebug *dbg, ut64 pc) {
 	ut8 buf[32];
 	RzAnalysisOp op = { 0 };
 	if (!dbg->iob.is_valid_offset(dbg->iob.io, pc, 0)) {
-		eprintf("trace_pc: cannot read memory at 0x%" PFMT64x "\n", pc);
+		RZ_LOG_ERROR("trace_pc: cannot read memory at 0x%" PFMT64x "\n", pc);
 		return false;
 	}
 	(void)dbg->iob.read_at(dbg->iob.io, pc, buf, sizeof(buf));
 	if (rz_analysis_op(dbg->analysis, &op, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ESIL) < 1) {
-		eprintf("trace_pc: cannot get opcode size at 0x%" PFMT64x "\n", pc);
+		RZ_LOG_ERROR("trace_pc: cannot get opcode size at 0x%" PFMT64x "\n", pc);
 		return false;
 	}
 	rz_debug_trace_op(dbg, &op);
@@ -190,11 +207,13 @@ RZ_API int rz_debug_trace_pc(RzDebug *dbg, ut64 pc) {
 RZ_API void rz_debug_trace_op(RzDebug *dbg, RzAnalysisOp *op) {
 	static ut64 oldpc = UT64_MAX; // Must trace the previously traced instruction
 	if (dbg->trace->enabled) {
-		if (dbg->analysis->esil) {
-			rz_analysis_esil_trace_op(dbg->analysis->esil, op);
+		RzAnalysisEsil *esil = rz_analysis_get_esil(dbg->analysis);
+		if (esil) {
+			const char *eexpr = rz_strbuf_get(&op->esil);
+			rz_analysis_esil_trace_op(esil, op->addr, eexpr);
 		} else {
 			if (dbg->verbose) {
-				eprintf("Run aeim to get dbg->analysis->esil initialized\n");
+				RZ_LOG_WARN("debug: Run aeim to get esil initialized\n");
 			}
 		}
 	}

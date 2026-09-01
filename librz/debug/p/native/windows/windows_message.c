@@ -300,7 +300,7 @@ static RzTable *create_window_table(void) {
 
 static void add_window_to_table(RzTable *tbl, window *win) {
 	rz_return_if_fail(tbl && win);
-	char *handle = rz_str_newf("0x%08" PFMT64x "", (ut64)win->h);
+	char *handle = rz_str_newf("0x%08" PFMT64x, (ut64)win->h);
 	char *pid = rz_str_newf("%lu", win->pid);
 	char *tid = rz_str_newf("%lu", win->tid);
 	rz_table_add_row(tbl, handle, pid, tid, win->name, NULL);
@@ -422,7 +422,6 @@ static DWORD get_msg_type(char *name) {
 	if (!msg_types) {
 		init_msg_types(&msg_types);
 	}
-	ut32 found;
 	const char *type_str = sdb_const_get(msg_types, name);
 	if (type_str) {
 		int type = rz_num_get(NULL, type_str);
@@ -501,7 +500,6 @@ RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *msg_name, con
 		free(name);
 		return false;
 	}
-	char *cond;
 	if (window_id) {
 		char *reg;
 		if (!strcmp(dbg->arch, "arm")) {
@@ -513,7 +511,7 @@ RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *msg_name, con
 		} else {
 			reg = "edx";
 		}
-		b->cond = rz_str_newf("%= `ae %s,%d,-`", reg, type);
+		b->cond = rz_str_newf("%%= `ae %s,%" PFMT32u ",-`", reg, type);
 	} else {
 		char *reg;
 		if (!strcmp(dbg->arch, "arm")) {
@@ -529,7 +527,7 @@ RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *msg_name, con
 				reg = "ecx";
 			}
 		}
-		b->cond = rz_str_newf("%= `ae %lu,%s,%d,+,[4],-`", type, reg, dbg->bits);
+		b->cond = rz_str_newf("%%= `ae %lu,%s,%d,+,[4],-`", type, reg, dbg->bits);
 	}
 	free(name);
 	return true;

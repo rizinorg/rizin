@@ -114,6 +114,12 @@ int parse_primitive_type(CParserState *state, TSNode node, const char *text, Par
 		free(real_type);
 		return 0;
 	}
+	if ((*tpair = c_parser_get_typedef(state, real_type))) {
+		(*tpair)->type->identifier.is_const = is_const;
+		parser_debug(state, "Fetched type alias: \"%s\"\n", real_type);
+		free(real_type);
+		return 0;
+	}
 	// If not - we form both RzType and RzBaseType to store in the Types database
 	ParserTypePair *type_pair = c_parser_new_primitive_type(state, real_type, is_const);
 	if (!type_pair) {
@@ -147,6 +153,12 @@ int parse_sized_primitive_type(CParserState *state, TSNode node, const char *tex
 	// At first we search if the type is already presented in the state
 	if ((*tpair = c_parser_get_primitive_type(state, real_type, is_const))) {
 		parser_debug(state, "Fetched primitive type: \"%s\"\n", real_type);
+		free(real_type);
+		return 0;
+	}
+	if ((*tpair = c_parser_get_typedef(state, real_type))) {
+		(*tpair)->type->identifier.is_const = is_const;
+		parser_debug(state, "Fetched type alias: \"%s\"\n", real_type);
 		free(real_type);
 		return 0;
 	}
@@ -198,7 +210,7 @@ int parse_sole_type_name(CParserState *state, TSNode node, const char *text, Par
 		free(real_type);
 		return 0;
 	}
-	// Before resorting to create a new forward type, check if there is some union or struct with the same name already.
+	// Before resorting to create a new forward type, check if there is some union, struct or enum with the same name already.
 	// This will e.g. catch cases like referring to `struct MyStruct` by just `MyStruct`.
 	if ((*tpair = c_parser_get_structure_type(state, real_type))) {
 		parser_debug(state, "Fetched type as struct: \"%s\"\n", real_type);
@@ -207,6 +219,11 @@ int parse_sole_type_name(CParserState *state, TSNode node, const char *text, Par
 	}
 	if ((*tpair = c_parser_get_union_type(state, real_type))) {
 		parser_debug(state, "Fetched type as union: \"%s\"\n", real_type);
+		free(real_type);
+		return 0;
+	}
+	if ((*tpair = c_parser_get_enum_type(state, real_type))) {
+		parser_debug(state, "Fetched type as enum: \"%s\"\n", real_type);
 		free(real_type);
 		return 0;
 	}
@@ -527,8 +544,9 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 					result = -1;
 					goto srnexit;
 				}
-				const char *bits_str = ts_node_sub_string(field_bits, text);
+				char *bits_str = ts_node_sub_string(field_bits, text);
 				int bits = rz_num_get(NULL, bits_str);
+				free(bits_str);
 				parser_debug(state, "field type: %s field_identifier: %s bits: %d\n", real_type, real_identifier, bits);
 				// Then we augment resulting type field with the data from parsed declarator
 				char *membname = NULL;
@@ -544,7 +562,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 					.name = membname,
 					.type = rz_type_clone(membtpair->type),
 					.offset = 0, // FIXME
-					.size = 0, // FIXME
+					.size = bits,
 				};
 				void *element = rz_vector_push(members, &memb); // returns null if no space available
 				if (!element) {
@@ -581,10 +599,16 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 				}
 				parser_debug(state, "Appended member \"%s\" into struct \"%s\"\n", membname, name);
 			} else {
-				parser_debug(state, "Struct field wrong: \"%s\"\n", ts_node_sub_string(field_declarator, text));
+				char *wrong = ts_node_sub_string(field_declarator, text);
+				parser_debug(state, "Struct field wrong: \"%s\"\n", wrong);
+				free(wrong);
 			}
 			field_declarator = ts_node_next_named_sibling(field_declarator);
 		} while (!ts_node_is_null(field_declarator));
+		// The member type is cloned into each declarator above, so the
+		// type pair built for this field is no longer needed. Its btype
+		// is borrowed from the type database, only the type is owned.
+		rz_type_free(membtpair->type);
 		free(membtpair);
 	}
 	// If parsing successfull completed - we store the state
@@ -816,8 +840,9 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 					result = -1;
 					goto urnexit;
 				}
-				const char *bits_str = ts_node_sub_string(field_bits, text);
+				char *bits_str = ts_node_sub_string(field_bits, text);
 				int bits = rz_num_get(NULL, bits_str);
+				free(bits_str);
 				parser_debug(state, "field type: %s field_identifier: %s bits: %d\n", real_type, real_identifier, bits);
 				// Then we augment resulting type field with the data from parsed declarator
 				char *membname = NULL;
@@ -833,7 +858,7 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 					.name = membname,
 					.type = rz_type_clone(membtpair->type),
 					.offset = 0, // Always 0 for unions
-					.size = 0, // FIXME
+					.size = bits,
 				};
 				void *element = rz_vector_push(members, &memb); // returns null if no space available
 				if (!element) {
@@ -871,6 +896,10 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 			}
 			field_declarator = ts_node_next_named_sibling(field_declarator);
 		} while (!ts_node_is_null(field_declarator));
+		// The member type is cloned into each declarator above, so the
+		// type pair built for this field is no longer needed. Its btype
+		// is borrowed from the type database, only the type is owned.
+		rz_type_free(membtpair->type);
 		free(membtpair);
 	}
 	// If parsing successfull completed - we store the state
@@ -1070,6 +1099,18 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 			}
 		}
 	}
+	// C23 fixed underlying type, e.g. "enum E : unsigned int { ... }". The
+	// grammar exposes it as the "underlying_type" field; store it on the
+	// base type (RzBaseType::type), leaving it NULL for a classic enum.
+	TSNode enum_underlying = ts_node_child_by_field_name(node, "underlying_type", 15);
+	if (!ts_node_is_null(enum_underlying)) {
+		ParserTypePair *underlying = NULL;
+		if (!parse_type_node_single(state, enum_underlying, text, &underlying, false) && underlying) {
+			rz_type_free(enum_pair->btype->type);
+			enum_pair->btype->type = underlying->type;
+			free(underlying);
+		}
+	}
 	// If parsing successfull completed - we store the state
 	if (enum_pair) {
 		c_parser_base_type_store(state, name, enum_pair);
@@ -1171,6 +1212,9 @@ int parse_typedef_node(CParserState *state, TSNode node, const char *text, Parse
 		}
 		// If parsing successfull completed - we store the state
 		if (typedef_pair) {
+			// c_parser_new_typedef() may seed btype->type with a placeholder
+			// identifier; release it before overwriting with the resolved type.
+			rz_type_free(typedef_pair->btype->type);
 			typedef_pair->btype->type = rz_type_clone(type_pair->type);
 			parser_debug(state, "storing typedef \"%s\" -> \"%s\"\n", typedef_name, base_type_name);
 			c_parser_base_type_store(state, typedef_name, typedef_pair);
@@ -1181,9 +1225,16 @@ int parse_typedef_node(CParserState *state, TSNode node, const char *text, Parse
 		}
 		// FIXME: We should return multiple types at once
 		*tpair = typedef_pair;
+		// c_parser_new_typedef()/c_parser_base_type_store() copy the name, so the
+		// declarator string extracted above can be released each iteration.
+		free(typedef_name);
 		typedef_declarator = ts_node_next_named_sibling(typedef_declarator);
 	} while (!ts_node_is_null(typedef_declarator) && is_type_declarator(ts_node_type(typedef_declarator)));
 
+	// The underlying type pair was only needed to derive the typedef target; its
+	// RzBaseType is owned by the parser state, so drop the wrapper and its RzType.
+	rz_type_free(type_pair->type);
+	free(type_pair);
 	return 0;
 }
 

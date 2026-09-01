@@ -9,7 +9,7 @@ EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Cannot assemble 'add esp, 8' at line 3
 ERROR: Failed to assemble 'add esp, 8'
-ERROR: Consider using "/ar" instead.
+ERROR: Consider using "/ad" instead.
 EOF
 RUN
 

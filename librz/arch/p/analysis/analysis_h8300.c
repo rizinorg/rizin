@@ -99,7 +99,7 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	}
 
 	op->addr = addr;
-	ret = op->size = h8300_decode_command(buf, len, &cmd, addr, analysis->cpu);
+	ret = op->size = h8300_decode_command(buf, len, &cmd, addr, rz_analysis_get_cpu(analysis));
 
 	if (ret < 0) {
 		return ret;
@@ -377,7 +377,7 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 }
 
 static char *get_reg_profile(RzAnalysis *analysis) {
-	if (h8300_cpu_type(analysis->cpu) == CPU_H8300H) {
+	if (h8300_cpu_type(rz_analysis_get_cpu(analysis)) == CPU_H8300H) {
 		char *p =
 			"=PC	pc\n"
 			"=SP	er7\n"
@@ -493,6 +493,23 @@ static RzList /*<RzSearchKeyword *>*/ *h8300_preludes(RzAnalysis *analysis) {
 	return kws;
 }
 
+static int h8300_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		return 2;
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		return 4;
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		return 2;
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 1;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
+	}
+}
+
 RzAnalysisPlugin rz_analysis_plugin_h8300 = {
 	.name = "h8300",
 	.desc = "H8300 code analysis plugin",
@@ -504,4 +521,5 @@ RzAnalysisPlugin rz_analysis_plugin_h8300 = {
 	.get_reg_profile = get_reg_profile,
 	.il_config = h8300_il_config,
 	.preludes = h8300_preludes,
+	.archinfo = h8300_archinfo,
 };

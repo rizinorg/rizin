@@ -137,6 +137,7 @@ static void process_constructors(RzBinFile *bf, RzPVector /*<RzBinAddr *>*/ *ret
 			free(buf);
 		}
 	}
+	rz_pvector_free(secs);
 }
 
 static RzPVector /*<RzBinAddr *>*/ *mach0_entries(RzBinFile *bf) {
@@ -273,7 +274,7 @@ static RzPVector /*<RzBinSymbol *>*/ *mach0_symbols(RzBinFile *bf) {
 	return ret;
 }
 
-static RzBinImport *import_from_name(RzBin *rbin, const char *orig_name, HtPP *imports_by_name) {
+static RzBinImport *import_from_name(RzBin *rbin, const char *orig_name, HtPP /*<char *, RzBinImport *>*/ *imports_by_name) {
 	if (imports_by_name) {
 		bool found = false;
 		RzBinImport *ptr = ht_pp_find(imports_by_name, orig_name, &found);
@@ -334,13 +335,6 @@ static void imports_foreach_cb(char *name, int ord, void *user) {
 	if (ptr->ordinal < rz_pvector_len(&ctx->obj->imports_by_ord)) {
 		rz_pvector_set(&ctx->obj->imports_by_ord, ptr->ordinal, ptr);
 	}
-	if (!strcmp(name, "__stack_chk_fail")) {
-		ctx->obj->has_canary = true;
-	}
-	if (!strcmp(name, "__asan_init") ||
-		!strcmp(name, "__tsan_init")) {
-		ctx->obj->has_sanitizers = true;
-	}
 	if (!strcmp(name, "_NSConcreteGlobalBlock")) {
 		ctx->obj->has_blocks_ext = true;
 	}
@@ -354,9 +348,6 @@ static RzPVector /*<RzBinImport *>*/ *mach0_imports(RzBinFile *bf) {
 	if (!obj || !bin || !obj->bin_obj) {
 		return NULL;
 	}
-	bin->has_canary = false;
-	bin->has_retguard = -1;
-	bin->has_sanitizers = false;
 	bin->has_blocks_ext = false;
 	RzPVector *ret = rz_pvector_new((RzListFree)rz_bin_import_free);
 	if (!ret) {
@@ -455,36 +446,31 @@ static RzBinInfo *mach0_info(RzBinFile *bf) {
 	if (bf->file) {
 		ret->file = rz_str_dup(bf->file);
 	}
-	if ((str = MACH0_(get_class)(bf->o->bin_obj))) {
+	if ((str = MACH0_(get_class)(bin))) {
 		ret->bclass = str;
 	}
 	if (bin) {
-		ret->has_canary = bin->has_canary;
-		ret->has_retguard = -1;
-		ret->has_sanitizers = bin->has_sanitizers;
 		ret->dbg_info = bin->dbg_info;
 		ret->lang = bin->lang;
+		ret->is_encrypted = bin->is_encrypted;
+		ret->bits = MACH0_(get_bits)(bin);
 	}
-	ret->intrp = rz_str_dup(MACH0_(get_intrp)(bf->o->bin_obj));
+	ret->intrp = rz_str_dup(MACH0_(get_intrp)(bin));
 	ret->compiler = rz_str_dup("");
 	ret->rclass = rz_str_dup("mach0");
 	ret->os = rz_str_dup("darwin");
-	ret->subsystem = rz_str_dup(MACH0_(get_platform)(bf->o->bin_obj));
-	ret->arch = strdup(MACH0_(get_cputype)(bf->o->bin_obj));
-	ret->cpu = MACH0_(get_cpusubtype)(bf->o->bin_obj);
-	ret->machine = MACH0_(get_cpusubtype)(bf->o->bin_obj);
-	ret->type = MACH0_(get_filetype)(bf->o->bin_obj);
+	ret->subsystem = rz_str_dup(MACH0_(get_platform)(bin));
+	ret->arch = strdup(MACH0_(get_cputype)(bin));
+	ret->cpu = MACH0_(get_cpusubtype)(bin);
+	ret->machine = MACH0_(get_cpusubtype)(bin);
+	ret->type = MACH0_(get_filetype)(bin);
 	ret->big_endian = MACH0_(is_big_endian)(bf->buf);
-	ret->bits = MACH0_(get_bits)(bf->o->bin_obj);
-	if (bf && bf->o && bf->o->bin_obj) {
-		ret->has_crypto = ((struct MACH0_(obj_t) *)
-					   bf->o->bin_obj)
-					  ->has_crypto;
-		ret->bits = MACH0_(get_bits)(bf->o->bin_obj);
-	}
+	ret->bits = MACH0_(get_bits)(bin);
 	ret->has_va = true;
-	ret->has_pi = MACH0_(is_pie)(bf->o->bin_obj);
-	ret->has_nx = MACH0_(has_nx)(bf->o->bin_obj);
+	ret->has_pie = MACH0_(is_pie)(bin);
+	ret->has_nx = MACH0_(has_nx)(bin);
+	ret->has_ptr_auth = MACH0_(has_ptr_auth)(bin);
+	ret->extra_dict = MACH0_(get_security)(bin);
 
 	return ret;
 }

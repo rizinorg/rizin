@@ -869,14 +869,14 @@ EXPECT=<<EOF
 |      |:   0x100001a85      add   eax, 0x01
 |      |:   0x100001a88      mov   dword [var_34h], eax
 |      |`=< 0x100001a8b      jmp   0x100001a58
-|      `--> 0x100001a90      lea   rdi, qword data.100001e17           ; 0x100001e17 ; "\n" ; const char *format
+|      `--> 0x100001a90      lea   rdi, qword str.                     ; 0x100001e17 ; "\n" ; const char *format
 |           0x100001a97      mov   al, 0x00
 |           0x100001a99      call  sym.imp.printf                      ; int printf(const char *format)
 |           0x100001a9e      lea   rdi, qword reloc.__CFConstantStringClassReference.100002030 ; rsi
 |                                                                      ; 0x100002030
 |           0x100001aa5      mov   qword [var_40h], rdi
 |           0x100001aa9      mov   rsi, qword [var_40h]
-|           0x100001aad      lea   rdi, qword data.100001e28           ; 0x100001e28 ; "%p\n" ; const char *format
+|           0x100001aad      lea   rdi, qword str.p                    ; 0x100001e28 ; "%p\n" ; const char *format
 |           0x100001ab4      mov   dword [var_a8h], eax
 |           0x100001aba      mov   al, 0x00
 |           0x100001abc      call  sym.imp.printf                      ; int printf(const char *format)
@@ -1220,5 +1220,42 @@ EXPECT=<<EOF
 |           ;-- lr:
 |           ;-- pc:
 \           0x100007964      brk   1
+EOF
+RUN
+
+NAME=objc msgSendSuper dispatch
+FILE=bins/mach0/arm64-objc-bin
+CMDS=<<EOF
+aaaa
+avD @ method.Dog.speak
+pdf @ method.Dog.speak
+EOF
+EXPECT=<<EOF
+            ;-- public int Dog::speak():
+            ;-- func.100003e48:
+/ method.Dog.speak(int64_t arg1, int64_t arg2);
+|           ; arg int64_t arg1 @ x0
+|           ; arg int64_t arg2 @ x1
+|           ; var int64_t var_10h @ stack - 0x10
+|           0x100003e48      sub   sp, sp, 0x30                        ; public int Dog::speak()
+|           0x100003e4c      stp   fp, lr, [var_10h]
+|           0x100003e50      add   fp, sp, 0x20
+|           0x100003e54      stur  x0, [fp, -8]                        ; arg1
+|           0x100003e58      str   x1, [sp, 0x10]                      ; arg2
+|           0x100003e5c      adrp  x0, reloc.NSLog                     ; 0x100004000
+|           0x100003e60      add   x0, x0, 0x50                        ; 0x100004050 ; u"8\U00000001\U00000001"
+|           0x100003e64      bl    sym.imp.NSLog
+|           0x100003e68      ldur  x8, [fp, -8]
+|           0x100003e6c      mov   x0, sp                              ; void *instance
+|           0x100003e70      str   x8, [sp]
+|           0x100003e74      adrp  x8, reloc.NSLog                     ; 0x100004000
+|           0x100003e78      ldr   x8, [x8, 0x88]                      ; [0x100004088:4]=0x8178 ; "x\x81"
+|           0x100003e7c      str   x8, [sp, 8]
+|           0x100003e80      adrp  x8, sym.__OBJC_METACLASS_RO___Animal ; 0x100008000
+|           0x100003e84      ldr   x1, [x8, 0x120]                     ; [0x100003f96:4]=0x61657073 ; "speak" ; char *selector
+|           0x100003e88      bl    sym.imp.objc_msgSendSuper2          ; Super message dispatch to method_Animal_speak ; void *objc_msgSendSuper2(void *instance, char *selector)
+|           0x100003e8c      ldp   fp, lr, [var_10h]
+|           0x100003e90      add   sp, sp, 0x30
+\           0x100003e94      ret
 EOF
 RUN

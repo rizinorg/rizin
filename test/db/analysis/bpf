@@ -1,0 +1,1049 @@
+NAME=ebpf analysis
+FILE=bins/bpf/xdp_flowtable.bpf.o
+ARGS=-a bpf -E little
+CMDS=<<EOF
+aaa
+af
+pdf
+ao @ 0x08000338
+ao @ 0x080002e0
+ar
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- section.xdp.frags:
+            ;-- xdp.frags:
+/ int sym.xdp_flowtable_do_lookup(struct xdp_md *ctx);
+|           0x08000040      ldxw  r3, [r1+0x4]                         ; [03] -r-x section size 1192 named xdp.frags
+|           0x08000048      mov   r2, 0x0
+|           0x08000050      stxw  [r10-0x4], r2
+|           0x08000058      mov64 r4, 0x0
+|           0x08000060      stxdw [r10-0x10], r4
+|           0x08000068      stxdw [r10-0x18], r4
+|           0x08000070      stxdw [r10-0x20], r4
+|           0x08000078      stxdw [r10-0x28], r4
+|           0x08000080      stxdw [r10-0x30], r4
+|           0x08000088      stxdw [r10-0x38], r4
+|           0x08000090      stxdw [r10-0x40], r4
+|           0x08000098      stxdw [r10-0x48], r4
+|           0x080000a0      mov64 r4, r10
+|           0x080000a8      add64 r4, 0xffffffb8
+|           0x080000b0      ldxw  r5, [r1+0xc]
+|           0x080000b8      stxw  [r4+0x8], r5
+|           0x080000c0      ldxw  r6, [r1]
+|           0x080000c8      stxw  [r10-0x4c], r2
+|           0x080000d0      mov   r0, 0x1
+|           0x080000d8      mov64 r2, r6
+|           0x080000e0      add64 r2, 0xe
+|       ,=< 0x080000e8      jgt   r2, r3, +0x7e
+|       |   0x080000f0      mov   r0, 0x2
+|       |   0x080000f8      ldxh  r4, [r6+0xc]
+|      ,==< 0x08000100      jeq32 r4, 0xdd86, +0x2c
+|     ,===< 0x08000108      jne32 r4, 0x8, +0x7a
+|     |||   0x08000110      mov64 r4, r6
+|     |||   0x08000118      add64 r4, 0x26
+|    ,====< 0x08000120      jgt   r4, r3, +0x77
+|    ||||   0x08000128      ldxh  r4, [r2+0x6]
+|    ||||   0x08000130      and   r4, 0xff3f
+|   ,=====< 0x08000138      jne32 r4, 0x0, +0x74
+|   |||||   0x08000140      ldxb  r4, [r2]
+|   |||||   0x08000148      and   r4, 0xf
+|  ,======< 0x08000150      jne32 r4, 0x5, +0x71
+|  ||||||   0x08000158      ldxb  r4, [r2+0x8]
+| ,=======< 0x08000160      jlt32 r4, 0x2, +0x6f
+| |||||||   0x08000168      mov64 r4, r6
+| |||||||   0x08000170      add64 r4, 0x22
+| |||||||   0x08000178      ldxb  r5, [r2+0x9]
+| ========< 0x08000180      jne32 r5, 0x6, +0x8
+| |||||||   0x08000188      add64 r6, 0x36
+| ========< 0x08000190      jgt   r6, r3, +0x69
+| |||||||   0x08000198      ldxh  r3, [r4+0xc]
+| |||||||   0x080001a0      and   r3, 0x100
+| ========< 0x080001a8      jne32 r3, 0x0, +0x66
+| |||||||   0x080001b0      ldxh  r3, [r4+0xc]
+| |||||||   0x080001b8      and   r3, 0x400
+| ========< 0x080001c0      jne32 r3, 0x0, +0x63
+| |||||||   ;-- LBB0_11:
+| --------> 0x080001c8      mov64 r3, r10
+| |||||||   0x080001d0      add64 r3, 0xffffffb8
+| |||||||   0x080001d8      mov   r5, 0x2
+| |||||||   0x080001e0      stxb  [r3], r5
+| |||||||   0x080001e8      ldxb  r5, [r2+0x1]
+| |||||||   0x080001f0      stxb  [r3+0xc], r5
+| |||||||   0x080001f8      ldxb  r5, [r2+0x9]
+| |||||||   0x08000200      stxb  [r3+0x1], r5
+| |||||||   0x08000208      ldxh  r5, [r2+0x2]
+| |||||||   0x08000210      be16  r5
+| |||||||   0x08000218      stxh  [r3+0x6], r5
+| |||||||   0x08000220      ldxw  r5, [r2+0xc]
+| |||||||   0x08000228      stxw  [r3+0x10], r5
+| |||||||   0x08000230      ldxw  r2, [r2+0x10]
+| |||||||   0x08000238      stxw  [r3+0x20], r2
+| |||||||   0x08000240      ldxh  r2, [r4]
+| |||||||   0x08000248      stxh  [r3+0x2], r2
+| |||||||   0x08000250      ldxh  r2, [r4+0x2]
+| |||||||   0x08000258      stxh  [r3+0x4], r2
+| ========< 0x08000260      ja    +0x3c
+| |||||||   ;-- LBB0_12:
+| |||||`--> 0x08000268      mov64 r4, r10
+| ||||| |   0x08000270      add64 r4, 0xffffffb8
+| ||||| |   0x08000278      mov64 r5, r6
+| ||||| |   0x08000280      add64 r5, 0x3a
+| |||||,==< 0x08000288      jgt   r5, r3, +0x4a
+| |||||||   0x08000290      ldxb  r5, [r2+0x7]
+| ========< 0x08000298      jlt32 r5, 0x2, +0x48
+| |||||||   0x080002a0      mov64 r5, r6
+| |||||||   0x080002a8      add64 r5, 0x36
+| |||||||   0x080002b0      ldxb  r7, [r2+0x6]
+| ========< 0x080002b8      jne32 r7, 0x6, +0x8
+| |||||||   0x080002c0      add64 r6, 0x4a
+| ========< 0x080002c8      jgt   r6, r3, +0x42
+| |||||||   0x080002d0      ldxh  r3, [r5+0xc]
+| |||||||   0x080002d8      and   r3, 0x100
+| ========< 0x080002e0      jne32 r3, 0x0, +0x3f
+| |||||||   0x080002e8      ldxh  r3, [r5+0xc]
+| |||||||   0x080002f0      and   r3, 0x400
+| ========< 0x080002f8      jne32 r3, 0x0, +0x3c
+| |||||||   ;-- LBB0_18:
+| --------> 0x08000300      mov64 r0, 0x20
+| |||||||   0x08000308      mov64 r3, r4
+| |||||||   0x08000310      add64 r3, r0
+| |||||||   0x08000318      mov64 r0, 0x10
+| |||||||   0x08000320      mov64 r6, r4
+| |||||||   0x08000328      add64 r6, r0
+| |||||||   0x08000330      mov64 r0, r10
+| |||||||   0x08000338      add64 r0, 0xffffffb8
+| |||||||   0x08000340      mov   r7, 0xa
+| |||||||   0x08000348      stxb  [r0], r7
+| |||||||   0x08000350      ldxb  r7, [r2+0x6]
+| |||||||   0x08000358      stxb  [r0+0x1], r7
+| |||||||   0x08000360      ldxh  r7, [r2+0x4]
+| |||||||   0x08000368      be16  r7
+| |||||||   0x08000370      stxh  [r0+0x6], r7
+| |||||||   0x08000378      mov64 r7, 0x8
+| |||||||   0x08000380      mov64 r8, r2
+| |||||||   0x08000388      add64 r8, r7
+| |||||||   0x08000390      ldxw  r7, [r8+0xc]
+| |||||||   0x08000398      stxw  [r6+0xc], r7
+| |||||||   0x080003a0      ldxw  r7, [r8+0x8]
+| |||||||   0x080003a8      stxw  [r6+0x8], r7
+| |||||||   0x080003b0      ldxw  r7, [r8+0x4]
+| |||||||   0x080003b8      stxw  [r6+0x4], r7
+| |||||||   0x080003c0      ldxw  r6, [r2+0x8]
+| |||||||   0x080003c8      stxw  [r4+0x10], r6
+| |||||||   0x080003d0      mov64 r6, 0x18
+| |||||||   0x080003d8      mov64 r7, r2
+| |||||||   0x080003e0      add64 r7, r6
+| |||||||   0x080003e8      ldxw  r6, [r7+0x8]
+| |||||||   0x080003f0      stxw  [r3+0x8], r6
+| |||||||   0x080003f8      ldxw  r6, [r7+0xc]
+| |||||||   0x08000400      stxw  [r3+0xc], r6
+| |||||||   0x08000408      ldxw  r2, [r2+0x18]
+| |||||||   0x08000410      stxw  [r4+0x20], r2
+| |||||||   0x08000418      ldxw  r2, [r7+0x4]
+| |||||||   0x08000420      stxw  [r3+0x4], r2
+| |||||||   0x08000428      ldxh  r2, [r5]
+| |||||||   0x08000430      stxh  [r0+0x2], r2
+| |||||||   0x08000438      ldxh  r2, [r5+0x2]
+| |||||||   0x08000440      stxh  [r0+0x4], r2
+| |||||||   ; CODE XREF from sym.xdp_flowtable_do_lookup @ 0x8000260
+| |||||||   ;-- LBB0_19:
+| --------> 0x08000448      mov64 r2, r10
+| |||||||   0x08000450      add64 r2, 0xffffffb8
+| |||||||   0x08000458      mov64 r3, r10
+| |||||||   0x08000460      add64 r3, 0xfffffffc
+| |||||||   0x08000468      mov   r4, 0x4
+| |||||||   0x08000470      call  -0x1
+| |||||||   0x08000478      mov64 r1, r0
+| |||||||   0x08000480      mov   r0, 0x2
+| ========< 0x08000488      jeq   r1, 0x0, +0xa
+| |||||||   0x08000490      mov64 r2, r10
+| |||||||   0x08000498      add64 r2, 0xffffffb4
+| |||||||   0x080004a0      lddw  r1, 0x0
+| |||||||   0x080004b0      call  0x1
+| |||||||   0x080004b8      mov64 r1, r0
+| |||||||   0x080004c0      mov   r0, 0x2
+| ========< 0x080004c8      jeq   r1, 0x0, +0x2
+| |||||||   0x080004d0      mov   r2, 0x1
+| |||||||   0x080004d8      aadd  [r1], r2
+| |||||||   ;-- LBB0_22:
+\ ```````-> 0x080004e0      exit
+address: 0x8000338
+opcode: add64 r0, 0xffffffb8
+disasm: add64 r0, 0xffffffb8
+mnemonic: add64
+mask: ffffffffffffffff
+prefix: 0
+id: 18
+bytes: 07000000b8ffffff
+refptr: 0
+size: 8
+sign: false
+type: add
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r0"
+    - type: "imm"
+      value: 0xffffffb8
+family: cpu
+address: 0x80002e0
+opcode: jne32 r3, 0x0, +0x3f
+disasm: jne32 r3, 0x0, +0x3f
+mnemonic: jne32
+mask: ff00000000000000
+prefix: 0
+id: 89
+bytes: 56033f0000000000
+refptr: 0
+size: 8
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r3"
+    - type: "imm"
+      value: 0
+    - type: "off"
+      value: 63
+jump: 0x080004e0
+fail: 0x080002e8
+cond: al
+family: cpu
+pc = 0x0000000000000000
+R0 = 0x0000000000000000
+R1 = 0x0000000000000000
+R2 = 0x0000000000000000
+R3 = 0x0000000000000000
+R4 = 0x0000000000000000
+R5 = 0x0000000000000000
+R6 = 0x0000000000000000
+R7 = 0x0000000000000000
+R8 = 0x0000000000000000
+R9 = 0x0000000000000000
+R10 = 0x0000000000000000
+EOF
+RUN
+
+NAME=ebpf covering more instructions
+FILE=
+CMDS=<<EOF
+e asm.arch=bpf
+e cfg.bigendian=false
+wx 18a35c14def0a5ff9a7e10eed8a42b2f
+ao
+echo '----------'
+wx 6128b2edb8cfb5e4
+ao
+echo '----------'
+wx 20c70c70da411aca
+ao
+echo '----------'
+wx 4095c2396be7d7c4
+ao
+echo '----------'
+wx 63772fcf76b7d3fa
+ao
+echo '----------'
+wx 4c810a66fc3261c4
+ao
+echo '----------'
+wx 54400a6a4ae8abfb
+ao
+echo '----------'
+wx 6468c1f48892d2eb
+ao
+echo '----------'
+wx 74e023232f041535
+ao
+echo '----------'
+wx 77093aa73c6efa23
+ao
+echo '----------'
+wx bf860000b26d1403
+ao
+echo '----------'
+wx c4b6e2e07c68c52b
+ao
+echo '----------'
+wx 34460000e172d4cb
+ao
+echo '----------'
+wx bf860000b26d1403
+ao
+echo '----------'
+wx ae21050000000000
+ao
+echo '----------'
+wx 6d21050000000000
+ao
+echo '----------'
+wx 7521050000000000 
+ao
+echo '----------'
+wx 8d00000002000000
+ao
+echo '----------'
+wx 85d3a5e2833dbd5d
+ao
+echo '----------'
+wx 2589da5319738ac0
+ao
+echo '----------'
+wx 35a542b95b37a13d
+ao
+echo '----------'
+wx 4512a2f214e72d1e
+ao
+echo '----------'
+wx 55b9a38090bcc896
+ao
+echo '----------'
+wx a5d4ef79d3bbdefd
+ao
+echo '----------'
+wx bd1980e82985cf51
+ao
+echo '----------'
+wx d5e9f6b250fdb0e5
+ao
+echo '----------'
+wx dd95bfb1f25f7bc4
+ao
+echo '----------'
+wx 05c771b0431fb9f5
+ao
+echo '----------'
+wx 06c70fcc431fb9f5
+ao
+echo '----------'
+wx d6c70fcc431fb9f5
+ao
+echo '----------'
+wx 56c70fcc431fb9f5
+ao
+echo '----------'
+EOF
+EXPECT=<<EOF
+address: 0x0
+opcode: lddw r3, 0x2f2ba4d8ffa5f0de
+disasm: lddw r3, 0x2f2ba4d8ffa5f0de
+mnemonic: lddw
+mask: ffffffffffffffffffffffffffffffff
+prefix: 0
+id: 48
+bytes: 18a35c14def0a5ff9a7e10eed8a42b2f
+refptr: 8
+size: 16
+sign: false
+type: load
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r3"
+    - type: "imm"
+      value: 0x2f2ba4d8ffa5f0de
+direction: read
+family: cpu
+----------
+address: 0x0
+opcode: ldxw r8, [r2-0x124e]
+disasm: ldxw r8, [r2-0x124e]
+mnemonic: ldxw
+mask: ffffffffffffffff
+prefix: 0
+id: 49
+bytes: 6128b2edb8cfb5e4
+refptr: 4
+size: 8
+sign: false
+type: load
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r8"
+    - type: "mem"
+      base: "r2"
+      disp: -4686
+direction: read
+family: cpu
+----------
+address: 0x0
+opcode: ldabsw [skb-0x35e5be26]
+disasm: ldabsw [skb-0x35e5be26]
+mnemonic: ldabsw
+mask: ffffffffffffffff
+prefix: 0
+id: 53
+bytes: 20c70c70da411aca
+refptr: 0
+size: 8
+sign: false
+type: load
+cycles: 0
+opex:
+  operands:
+    - type: "mem"
+      base: "unknown"
+      is_packet: true
+      disp: -904248870
+direction: read
+family: cpu
+----------
+address: 0x0
+opcode: ldindw [skb+r9]
+disasm: ldindw [skb+r9]
+mnemonic: ldindw
+mask: ffffffffffffffff
+prefix: 0
+id: 56
+bytes: 4095c2396be7d7c4
+refptr: 0
+size: 8
+sign: false
+type: load
+cycles: 0
+opex:
+  operands:
+    - type: "mem"
+      base: "r9"
+      is_packet: true
+      disp: 0
+direction: read
+family: cpu
+----------
+address: 0x0
+opcode: stxw [r7-0x30d1], r7
+disasm: stxw [r7-0x30d1], r7
+mnemonic: stxw
+mask: ffffffffffffffff
+prefix: 0
+id: 63
+bytes: 63772fcf76b7d3fa
+refptr: 0
+size: 8
+sign: false
+type: store
+cycles: 0
+opex:
+  operands:
+    - type: "mem"
+      base: "r7"
+      disp: -12497
+    - type: "reg"
+      value: "r7"
+direction: write
+family: cpu
+----------
+address: 0x0
+opcode: or r1, r8
+disasm: or r1, r8
+mnemonic: or
+mask: ffffffffffffffff
+prefix: 0
+id: 6
+bytes: 4c810a66fc3261c4
+refptr: 0
+size: 8
+sign: false
+type: or
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r1"
+    - type: "reg"
+      value: "r8"
+family: cpu
+----------
+address: 0x0
+opcode: and r0, 0xfbabe84a
+disasm: and r0, 0xfbabe84a
+mnemonic: and
+mask: ffffffffffffffff
+prefix: 0
+id: 7
+bytes: 54400a6a4ae8abfb
+refptr: 0
+size: 8
+sign: false
+type: and
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r0"
+    - type: "imm"
+      value: 0xfbabe84a
+family: cpu
+----------
+address: 0x0
+opcode: lsh r8, 0xebd29288
+disasm: lsh r8, 0xebd29288
+mnemonic: lsh
+mask: ffffffffffffffff
+prefix: 0
+id: 8
+bytes: 6468c1f48892d2eb
+refptr: 0
+size: 8
+sign: false
+type: shl
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r8"
+    - type: "imm"
+      value: 0xebd29288
+family: cpu
+----------
+address: 0x0
+opcode: rsh r0, 0x3515042f
+disasm: rsh r0, 0x3515042f
+mnemonic: rsh
+mask: ffffffffffffffff
+prefix: 0
+id: 9
+bytes: 74e023232f041535
+refptr: 0
+size: 8
+sign: false
+type: shr
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r0"
+    - type: "imm"
+      value: 0x3515042f
+family: cpu
+----------
+address: 0x0
+opcode: rsh64 r9, 0x23fa6e3c
+disasm: rsh64 r9, 0x23fa6e3c
+mnemonic: rsh64
+mask: ffffffffffffffff
+prefix: 0
+id: 26
+bytes: 77093aa73c6efa23
+refptr: 0
+size: 8
+sign: false
+type: shr
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r9"
+    - type: "imm"
+      value: 0x23fa6e3c
+family: cpu
+----------
+address: 0x0
+opcode: mov64 r6, r8
+disasm: mov64 r6, r8
+mnemonic: mov64
+mask: ffffffffffffffff
+prefix: 0
+id: 31
+bytes: bf860000b26d1403
+refptr: 0
+size: 8
+sign: false
+type: mov
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r6"
+    - type: "reg"
+      value: "r8"
+family: cpu
+----------
+address: 0x0
+opcode: arsh r6, 0x2bc5687c
+disasm: arsh r6, 0x2bc5687c
+mnemonic: arsh
+mask: ffffffffffffffff
+prefix: 0
+id: 17
+bytes: c4b6e2e07c68c52b
+refptr: 0
+size: 8
+sign: false
+type: sar
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r6"
+    - type: "imm"
+      value: 0x2bc5687c
+family: cpu
+----------
+address: 0x0
+opcode: div r6, 0xcbd472e1
+disasm: div r6, 0xcbd472e1
+mnemonic: div
+mask: ffffffffffffffff
+prefix: 0
+id: 4
+bytes: 34460000e172d4cb
+refptr: 0
+size: 8
+sign: false
+type: div
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r6"
+    - type: "imm"
+      value: 0xcbd472e1
+family: cpu
+----------
+address: 0x0
+opcode: mov64 r6, r8
+disasm: mov64 r6, r8
+mnemonic: mov64
+mask: ffffffffffffffff
+prefix: 0
+id: 31
+bytes: bf860000b26d1403
+refptr: 0
+size: 8
+sign: false
+type: mov
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r6"
+    - type: "reg"
+      value: "r8"
+family: cpu
+----------
+address: 0x0
+opcode: jlt32 r1, r2, +0x5
+disasm: jlt32 r1, r2, +0x5
+mnemonic: jlt32
+mask: ff00000000000000
+prefix: 0
+id: 92
+bytes: ae21050000000000
+refptr: 0
+size: 8
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r1"
+    - type: "reg"
+      value: "r2"
+    - type: "off"
+      value: 5
+jump: 0x00000030
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: jsgt r1, r2, +0x5
+disasm: jsgt r1, r2, +0x5
+mnemonic: jsgt
+mask: ff00000000000000
+prefix: 0
+id: 75
+bytes: 6d21050000000000
+refptr: 0
+size: 8
+sign: true
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r1"
+    - type: "reg"
+      value: "r2"
+    - type: "off"
+      value: 5
+jump: 0x00000030
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: jsge r1, 0x0, +0x5
+disasm: jsge r1, 0x0, +0x5
+mnemonic: jsge
+mask: ff00000000000000
+prefix: 0
+id: 76
+bytes: 7521050000000000
+refptr: 0
+size: 8
+sign: true
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r1"
+    - type: "imm"
+      value: 0
+    - type: "off"
+      value: 5
+jump: 0x00000030
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: callx r2
+disasm: callx r2
+mnemonic: callx
+mask: ffffffffffffffff
+prefix: 0
+id: 78
+bytes: 8d00000002000000
+refptr: 0
+size: 8
+sign: false
+type: rcall
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r2"
+family: cpu
+----------
+address: 0x0
+opcode: call 0x5dbd3d83
+disasm: call 0x5dbd3d83
+mnemonic: call
+mask: ffffffffffffffff
+prefix: 0
+id: 77
+bytes: 85d3a5e2833dbd5d
+refptr: 0
+size: 8
+sign: false
+type: call
+cycles: 0
+opex:
+  operands:
+    - type: "imm"
+      value: 1572683139
+family: cpu
+----------
+address: 0x0
+opcode: jgt r9, -0x3f758ce7, +0x53da
+disasm: jgt r9, -0x3f758ce7, +0x53da
+mnemonic: jgt
+mask: ff00000000000000
+prefix: 0
+id: 71
+bytes: 2589da5319738ac0
+refptr: 0
+size: 8
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r9"
+    - type: "imm"
+      value: -1064668391
+    - type: "off"
+      value: 21466
+jump: 0x00029ed8
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: jge r5, 0x3da1375b, -0x46be
+disasm: jge r5, 0x3da1375b, -0x46be
+mnemonic: jge
+mask: ff00000000000000
+prefix: 0
+id: 72
+bytes: 35a542b95b37a13d
+refptr: 0
+size: 8
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r5"
+    - type: "imm"
+      value: 1033975643
+    - type: "off"
+      value: -18110
+jump: 0xfffffffffffdca18
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: jset r2, 0x1e2de714, -0xd5e
+disasm: jset r2, 0x1e2de714, -0xd5e
+mnemonic: jset
+mask: ff00000000000000
+prefix: 0
+id: 73
+bytes: 4512a2f214e72d1e
+refptr: 0
+size: 8
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r2"
+    - type: "imm"
+      value: 506324756
+    - type: "off"
+      value: -3422
+jump: 0xffffffffffff9518
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: jne r9, -0x69374370, -0x7f5d
+disasm: jne r9, -0x69374370, -0x7f5d
+mnemonic: jne
+mask: ff00000000000000
+prefix: 0
+id: 74
+bytes: 55b9a38090bcc896
+refptr: 0
+size: 8
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r9"
+    - type: "imm"
+      value: -1765229424
+    - type: "off"
+      value: -32605
+jump: 0xfffffffffffc0520
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: jlt r4, -0x221442d, +0x79ef
+disasm: jlt r4, -0x221442d, +0x79ef
+mnemonic: jlt
+mask: ff00000000000000
+prefix: 0
+id: 80
+bytes: a5d4ef79d3bbdefd
+refptr: 0
+size: 8
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r4"
+    - type: "imm"
+      value: -35734573
+    - type: "off"
+      value: 31215
+jump: 0x0003cf80
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: jle r9, r1, -0x1780
+disasm: jle r9, r1, -0x1780
+mnemonic: jle
+mask: ff00000000000000
+prefix: 0
+id: 81
+bytes: bd1980e82985cf51
+refptr: 0
+size: 8
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r9"
+    - type: "reg"
+      value: "r1"
+    - type: "off"
+      value: -6016
+jump: 0xffffffffffff4408
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: jsle r9, -0x1a4f02b0, -0x4d0a
+disasm: jsle r9, -0x1a4f02b0, -0x4d0a
+mnemonic: jsle
+mask: ff00000000000000
+prefix: 0
+id: 83
+bytes: d5e9f6b250fdb0e5
+refptr: 0
+size: 8
+sign: true
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r9"
+    - type: "imm"
+      value: -441385648
+    - type: "off"
+      value: -19722
+jump: 0xfffffffffffd97b8
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: jsle r5, r9, -0x4e41
+disasm: jsle r5, r9, -0x4e41
+mnemonic: jsle
+mask: ff00000000000000
+prefix: 0
+id: 83
+bytes: dd95bfb1f25f7bc4
+refptr: 0
+size: 8
+sign: true
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r5"
+    - type: "reg"
+      value: "r9"
+    - type: "off"
+      value: -20033
+jump: 0xfffffffffffd8e00
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: ja -0x4f8f
+disasm: ja -0x4f8f
+mnemonic: ja
+mask: ff00000000000000
+prefix: 0
+id: 69
+bytes: 05c771b0431fb9f5
+refptr: 0
+size: 8
+sign: false
+type: jmp
+cycles: 0
+opex:
+  operands:
+    - type: "off"
+      value: -20367
+jump: 0xfffffffffffd8390
+family: cpu
+----------
+address: 0x0
+opcode: jal -0xa46e0bd
+disasm: jal -0xa46e0bd
+mnemonic: jal
+mask: ff00000000000000
+prefix: 0
+id: 84
+bytes: 06c70fcc431fb9f5
+refptr: 0
+size: 8
+sign: false
+type: jmp
+cycles: 0
+opex:
+  operands:
+    - type: "imm"
+      value: -172417213
+jump: 0xffffffffadc8fa20
+family: cpu
+----------
+address: 0x0
+opcode: jsle32 r7, -0xa46e0bd, -0x33f1
+disasm: jsle32 r7, -0xa46e0bd, -0x33f1
+mnemonic: jsle32
+mask: ff00000000000000
+prefix: 0
+id: 95
+bytes: d6c70fcc431fb9f5
+refptr: 0
+size: 8
+sign: true
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r7"
+    - type: "imm"
+      value: -172417213
+    - type: "off"
+      value: -13297
+jump: 0xfffffffffffe6080
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+address: 0x0
+opcode: jne32 r7, -0xa46e0bd, -0x33f1
+disasm: jne32 r7, -0xa46e0bd, -0x33f1
+mnemonic: jne32
+mask: ff00000000000000
+prefix: 0
+id: 89
+bytes: 56c70fcc431fb9f5
+refptr: 0
+size: 8
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r7"
+    - type: "imm"
+      value: -172417213
+    - type: "off"
+      value: -13297
+jump: 0xfffffffffffe6080
+fail: 0x00000008
+cond: al
+family: cpu
+----------
+EOF
+RUN

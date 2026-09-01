@@ -1,4 +1,5 @@
-// SPDX-FileCopyrightText: 2021 deroad <wargiof@libero.it>
+// SPDX-FileCopyrightText: 2021-2026 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021-2026 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
@@ -7,6 +8,8 @@
 #include <rz_diff.h>
 #include <rz_util.h>
 #include <rz_main.h>
+
+#define RZ_DIFF_DISTANCE_MAX_SIZE (1024 * 1024) // 1 miB
 
 #define SAFE_STR_DEF(x, y) (x ? x : y)
 #define SAFE_STR(x)        (x ? x : "")
@@ -29,6 +32,7 @@ typedef enum {
 	DIFF_DISTANCE_UNKNOWN = 0,
 	DIFF_DISTANCE_MYERS,
 	DIFF_DISTANCE_LEVENSHTEIN,
+	DIFF_DISTANCE_LCS_ROLLING,
 	DIFF_DISTANCE_SSDEEP,
 } DiffDistance;
 
@@ -205,17 +209,17 @@ static void rz_diff_show_help(bool usage_only) {
 		// clang-format off
 		"-a",       "arch",         "Specify architecture plugin to use (x86, arm, ..)",
 		"-b",       "bits",         "Specify register size for arch (16 (thumb), 32, 64, ..)",
-		"-d",       "algo",         "Compute edit distance based on the chosen algorithm:",
-		"",         "",             "   myers  | Eugene W. Myers' O(ND) algorithm (no substitution)",
-		"",         "",             "   leven  | Levenshtein O(N^2) algorithm (with substitution)",
-		"",         "",             "   ssdeep | Context triggered piecewise hashing comparison",
+		"-d",       "myers",        "Compute edit distance using Eugene W. Myers' O(ND) algorithm (no substitution)",
+		"-d",       "leven",        "Compute edit distance using Levenshtein O(N^2) algorithm (with substitution)",
+		"-d",       "lcs-roll",     "Compute edit distance using Myers+FastCDC with chunk size " RZ_STR_DEF(RZ_DIFF_LCS_ROLL_DEFAULT_BLOCK_SIZE) " (-0 to change chunk size)",
+		"-d",       "ssdeep",       "Compute edit distance using Context triggered piecewise hashing comparison",
 		"-i",       "",             "Use command line arguments instead of files (only for -d)",
 		"-H",       "",             "Hexadecimal visual mode",
 		"-h",       "",             "Show this help",
 		"-j",       "",             "JSON output",
 		"-q",       "",             "Quiet output",
-		"-V",       "",             "Show version information",
-		"-v",       "",             "Be more verbose (stderr output)",
+		"-v",       "",             "Show version information",
+		"-V",       "",             "Be more verbose (stderr output)",
 		"-K",       "theme",        "Set a give color theme (see rizin 'eco' command)",
 		"-e",       "k=v",          "Set an evaluable config variable",
 		"-A",       "",             "Compare virtual and physical addresses",
@@ -226,32 +230,32 @@ static void rz_diff_show_help(bool usage_only) {
 		"-0",       "cmd",          "Input for file0 when option -t 'commands' is given.",
 		"",         "",             "The same value will be set for file1, if -1 is not set.",
 		"-1",       "cmd",          "Input for file1 when option -t 'commands' is given.",
-		"-t",       "type",         "Compute the difference between two files based on its type:",
-		"",         "",             "   bytes      | compare raw bytes in the files (only for small files)",
-		"",         "",             "   lines      | compare text files",
-		"",         "",             "   functions  | compare functions found in the files",
-		"",         "",             "              | optional -0 <fcn name|offset> to compare only one function",
-		"",         "",             "   classes    | compare classes found in the files",
-		"",         "",             "   command    | compare command output returned when executed in both files",
-		"",         "",             "              | require -0 <cmd> and -1 <cmd> is optional",
-		"",         "",             "   entries    | compare entries found in the files",
-		"",         "",             "   fields     | compare fields found in the files",
-		"",         "",             "   graphs     | compare 2 functions and outputs in graphviz/dot format",
-		"",         "",             "              | require -0 <fcn name|offset> and -1 <fcn name|offset> is optional",
-		"",         "",             "   imports    | compare imports found in the files",
-		"",         "",             "   libraries  | compare libraries found in the files",
-		"",         "",             "   sections   | compare sections found in the files",
-		"",         "",             "   strings    | compare strings found in the files",
-		"",         "",             "   symbols    | compare symbols found in the files",
+		"-t",       "bytes",        "Compare raw bytes in the files (only for small files)",
+		"-t",       "lines",        "Compare text files",
+		"-t",       "functions",    "Compare functions found in the files",
+		"",         "",             "optional -0 <fcn name|offset> to compare only one function",
+		"-t",       "classes",      "Compare classes found in the files",
+		"-t",       "command",      "Compare command output returned when executed in both files",
+		"",         "",             "requires -0 <cmd> and -1 <cmd> is optional",
+		"-t",       "entries",      "Compare entries found in the files",
+		"-t",       "fields",       "Compare fields found in the files",
+		"-t",       "graphs",       "Compare 2 functions and outputs in graphviz/dot format",
+		"",         "",             "requires -0 <fcn name|offset> and -1 <fcn name|offset> is optional",
+		"-t",       "imports",      "Compare imports found in the files",
+		"-t",       "libraries",    "Compare libraries found in the files",
+		"-t",       "sections",     "Compare sections found in the files",
+		"-t",       "strings",      "Compare strings found in the files",
+		"-t",       "symbols",      "Compare symbols found in the files",
 		// clang-format on
 	};
 	rz_print_colored_help(options, RZ_ARRAY_SIZE(options), false);
 	printf(
-		"palette colors can be changed by adding the following lines\n"
-		"inside the $HOME/.rizinrc file\n"
-		"ec diff.unknown blue   | offset color\n"
-		"ec diff.match   green  | match color\n"
-		"ec diff.unmatch red    | mismatch color\n");
+		"Palette colors can be changed by adding the following lines inside the $HOME/.rizinrc file\n"
+		"  ec diff.unknown blue  | offset color\n"
+		"  ec diff.match   green | match color\n"
+		"  ec diff.unmatch red   | mismatch color\n"
+		"Environment variables\n"
+		"  RZ_COLOR              | enables/disables colors support\n");
 }
 
 static bool rz_diff_is_file(const char *file) {
@@ -264,12 +268,22 @@ static bool rz_diff_is_file(const char *file) {
 	return true;
 }
 
+static bool diff_env_get_bool(const char *key, bool def_value) {
+	bool value = def_value;
+	char *tmp = rz_sys_getenv(key);
+	if (RZ_STR_ISNOTEMPTY(tmp)) {
+		value = rz_num_get(NULL, tmp) != 0;
+	}
+	free(tmp);
+	return value;
+}
+
 static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ctx) {
 	const char *type = NULL;
 	const char *algorithm = NULL;
 	const char *screen = NULL;
 	memset((void *)ctx, 0, sizeof(DiffContext));
-	ctx->colors = true;
+	ctx->colors = diff_env_get_bool("RZ_COLOR", true);
 	ctx->evars = rz_list_newf(free);
 
 	if (!ctx->evars) {
@@ -286,7 +300,7 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 		case '1': rz_diff_ctx_set_def(ctx, input_b, NULL, opt.arg); break;
 		case 'A': rz_diff_ctx_set_def(ctx, compare_addresses, false, true); break;
 		case 'B': rz_diff_ctx_set_def(ctx, analyze_all, false, true); break;
-		case 'C': rz_diff_ctx_set_def(ctx, colors, true, false); break;
+		case 'C': rz_diff_ctx_set_def(ctx, colors, ctx->colors, false); break;
 		case 'T': rz_diff_ctx_set_def(ctx, show_time, false, true); break;
 		case 'a': rz_diff_ctx_set_def(ctx, architecture, NULL, opt.arg); break;
 		case 'b': rz_diff_ctx_set_unsigned(ctx, arch_bits, opt.arg); break;
@@ -296,8 +310,8 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 		case 'j': rz_diff_ctx_set_mode(ctx, DIFF_MODE_JSON); break;
 		case 'q': rz_diff_ctx_set_mode(ctx, DIFF_MODE_QUIET); break;
 		case 't': rz_diff_set_def(type, NULL, opt.arg); break;
-		case 'V': rz_diff_ctx_set_opt(ctx, DIFF_OPT_VERSION); break;
-		case 'v': rz_diff_ctx_set_def(ctx, verbose, false, true); break;
+		case 'v': rz_diff_ctx_set_opt(ctx, DIFF_OPT_VERSION); break;
+		case 'V': rz_diff_ctx_set_def(ctx, verbose, false, true); break;
 		case 'S': rz_diff_set_def(screen, NULL, opt.arg); break;
 		case 'H': rz_diff_ctx_set_opt(ctx, DIFF_OPT_HEX_VISUAL); break;
 		case 'e': rz_diff_ctx_add_evar(ctx, opt.arg); break;
@@ -337,6 +351,8 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_MYERS);
 		} else if (!strcmp(algorithm, "leven")) {
 			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_LEVENSHTEIN);
+		} else if (!strcmp(algorithm, "lcs-roll")) {
+			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_LCS_ROLLING);
 		} else if (!strcmp(algorithm, "ssdeep")) {
 			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_SSDEEP);
 		} else {
@@ -498,12 +514,23 @@ rz_diff_slurp_file_end:
 	return buffer;
 }
 
+static ut32 check_distance_max_size(ut32 size, const char *algo, const char *name) {
+	const ut32 max_size = RZ_DIFF_DISTANCE_MAX_SIZE;
+	if (size <= max_size) {
+		return size;
+	}
+
+	RZ_LOG_WARN("diff: length of buffer %s exceeds the limit size for %s distance (size: %u > max: %u); buffer length has been changed.\n", name, algo, size, max_size);
+	return max_size;
+}
+
 static bool rz_diff_calculate_distance(DiffContext *ctx) {
 	size_t a_size = 0;
 	size_t b_size = 0;
 	ut8 *a_buffer = NULL;
 	ut8 *b_buffer = NULL;
 	ut32 distance = 0;
+	st32 chunk_size = 0;
 	double similarity = 0.0;
 
 	if (ctx->command_line) {
@@ -526,14 +553,32 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 
 	switch (ctx->distance) {
 	case DIFF_DISTANCE_MYERS:
+		a_size = check_distance_max_size(a_size, "myers", "file0");
+		b_size = check_distance_max_size(b_size, "myers", "file1");
 		if (!rz_diff_myers_distance(a_buffer, a_size, b_buffer, b_size, &distance, &similarity)) {
 			rz_diff_error("failed to calculate distance with myers algorithm\n");
 			goto rz_diff_calculate_distance_bad;
 		}
 		break;
 	case DIFF_DISTANCE_LEVENSHTEIN:
+		a_size = check_distance_max_size(a_size, "levenshtein", "file0");
+		b_size = check_distance_max_size(b_size, "levenshtein", "file1");
 		if (!rz_diff_levenshtein_distance(a_buffer, a_size, b_buffer, b_size, &distance, &similarity)) {
 			rz_diff_error("failed to calculate distance with levenshtein algorithm\n");
+			goto rz_diff_calculate_distance_bad;
+		}
+		break;
+	case DIFF_DISTANCE_LCS_ROLLING:
+		chunk_size = RZ_DIFF_LCS_ROLL_DEFAULT_BLOCK_SIZE;
+		if (ctx->input_a) {
+			chunk_size = atoi(ctx->input_a);
+			if (chunk_size < 1) {
+				rz_diff_error("invalid to chunk size (%d)\n", chunk_size);
+				goto rz_diff_calculate_distance_bad;
+			}
+		}
+		if (!rz_diff_lcs_rolling_distance(a_buffer, a_size, b_buffer, b_size, chunk_size, &distance, &similarity)) {
+			rz_diff_error("failed to calculate distance with lcs rolling algorithm with chunk size %d\n", chunk_size);
 			goto rz_diff_calculate_distance_bad;
 		}
 		break;
@@ -559,6 +604,9 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 		if (ctx->distance != DIFF_DISTANCE_SSDEEP) {
 			pj_kn(pj, "distance", distance);
 		}
+		if (ctx->distance == DIFF_DISTANCE_LCS_ROLLING) {
+			pj_kn(pj, "chunk_size", chunk_size);
+		}
 		pj_end(pj);
 		printf("%s\n", pj_string(pj));
 		pj_free(pj);
@@ -571,7 +619,10 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 		// DIFF_MODE_STANDARD
 		printf("similarity: %.3f\n", similarity);
 		if (ctx->distance != DIFF_DISTANCE_SSDEEP) {
-			printf("distance: %d\n", distance);
+			printf("distance: %u\n", distance);
+		}
+		if (ctx->distance == DIFF_DISTANCE_LCS_ROLLING) {
+			printf("chunksize: %d\n", chunk_size);
 		}
 	}
 	free(a_buffer);
@@ -1399,7 +1450,7 @@ static bool rz_diff_unified_files(DiffContext *ctx) {
 
 	switch (ctx->type) {
 	case DIFF_TYPE_BYTES:
-		diff = rz_diff_bytes_new(a_buffer, a_size, b_buffer, b_size, NULL);
+		diff = rz_diff_bytes_new(a_buffer, a_size, b_buffer, b_size);
 		break;
 	case DIFF_TYPE_CLASSES:
 		diff = rz_diff_classes_new(&dfile_a, &dfile_b, ctx->compare_addresses);
@@ -1504,10 +1555,10 @@ static char *basic_block_opcodes(RzCore *core, RzAnalysisBlock *bbi) {
 	RzConfigHold *hc = NULL;
 	ut8 *block = NULL;
 
-	if (!(hc = rz_config_hold_new(core->config))) {
+	hc = rz_config_hold_new2(core->config, "scr.color", "scr.utf8", "asm.offset", "asm.lines", "asm.cmt.right", "asm.lines.fcn", "asm.bytes", "asm.comments", NULL);
+	if (!hc) {
 		return NULL;
 	}
-	rz_config_hold_i(hc, "scr.color", "scr.utf8", "asm.offset", "asm.lines", "asm.cmt.right", "asm.lines.fcn", "asm.bytes", "asm.comments", NULL);
 	rz_config_set_i(core->config, "scr.utf8", 0);
 	rz_config_set_i(core->config, "asm.offset", 0);
 	rz_config_set_i(core->config, "asm.lines", 0);
@@ -1879,7 +1930,8 @@ static RzAnalysisFunction *find_best_matching_function(RzAnalysis *analysis_a, R
 	opts.analysis_a = analysis_a;
 	opts.analysis_b = analysis_b;
 
-	result = rz_analysis_match_functions(list_a, analysis_b->fcns, &opts);
+	RzList *fcns_b = rz_analysis_function_list(analysis_b);
+	result = rz_analysis_match_functions(list_a, fcns_b, &opts);
 	if (result && rz_list_length(result->matches) > 0) {
 		pair = (RzAnalysisMatchPair *)rz_list_first_val(result->matches);
 		match = (RzAnalysisFunction *)pair->pair_b;
@@ -2129,8 +2181,8 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, const char *addr_a, D
 	}
 
 	rz_list_sort(result->matches, (RzListComparator)comparePairFunctions, NULL);
-	rz_list_sort(result->unmatch_a, core_a->analysis->columnSort, NULL);
-	rz_list_sort(result->unmatch_b, core_b->analysis->columnSort, NULL);
+	rz_list_sort(result->unmatch_a, rz_analysis_get_column_sort(core_a->analysis), NULL);
+	rz_list_sort(result->unmatch_b, rz_analysis_get_column_sort(core_b->analysis), NULL);
 
 	if (mode == DIFF_MODE_JSON) {
 		pj = pj_new();
@@ -2859,18 +2911,41 @@ static void rz_diff_resize_buffer(DiffHexView *hview) {
 	st64 video_size = width;
 	video_size *= height;
 
-	hview->line = realloc(hview->line, video_size);
-	hview->buffer_a = realloc(hview->buffer_a, size_a);
-	hview->buffer_b = realloc(hview->buffer_b, size_b);
+	// build the replacement view state first so resize is like all-or-nothing.
+	char *new_line = malloc(video_size);
+	ut8 *new_buf_a = malloc(size_a);
+	ut8 *new_buf_b = malloc(size_b);
+	if (!new_line || !new_buf_a || !new_buf_b) {
+		free(new_line);
+		free(new_buf_a);
+		free(new_buf_b);
+		return;
+	}
+
+	RzConsCanvas *new_canvas = rz_cons_canvas_new(width, height);
+	if (!new_canvas) {
+		free(new_line);
+		free(new_buf_a);
+		free(new_buf_b);
+		return;
+	}
+
+	new_canvas->color = true;
+	new_canvas->linemode = 1;
+
+	// swap only after every replacement alloc succeeded.
+	free(hview->line);
+	free(hview->buffer_a);
+	free(hview->buffer_b);
+	rz_cons_canvas_free(hview->canvas);
+	hview->line = new_line;
+	hview->buffer_a = new_buf_a;
+	hview->buffer_b = new_buf_b;
 	hview->size_a = size_a;
 	hview->size_b = size_b;
 	hview->screen.width = width;
 	hview->screen.height = height;
-
-	rz_cons_canvas_free(hview->canvas);
-	hview->canvas = rz_cons_canvas_new(width, height);
-	hview->canvas->color = true;
-	hview->canvas->linemode = 1;
+	hview->canvas = new_canvas;
 
 	rz_diff_draw_tui(hview, false);
 }

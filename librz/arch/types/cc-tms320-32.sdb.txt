@@ -1,0 +1,12 @@
+default.cc=c55x
+
+c55x=cc
+cc.c55x.arg0=ar0
+cc.c55x.arg1=ar1
+cc.c55x.arg2=ar2
+cc.c55x.arg3=ar3
+cc.c55x.arg4=t0
+cc.c55x.arg5=t1
+cc.c55x.argn=stack
+cc.c55x.maxargs=6
+cc.c55x.ret=t0
