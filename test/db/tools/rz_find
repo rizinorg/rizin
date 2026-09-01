@@ -420,3 +420,96 @@ EXPECT_ERR=<<EOF
 Scanning: bins/elf/ioli/crackme0x00
 EOF
 RUN
+
+NAME=rz-find no colors when hexdump
+TOOL=rz-find
+ARGS=-B -C -X -s elf bins/other/ls.rzdb
+EXPECT=<<EOF
+0xb983
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000b983  656c 663d 7231 330a 6465 6661 756c 742e  elf=r13.default.
+0x0000b993  6363 3d61 6d64 3634 0a6d 733d 6363 0a72  cc=amd64.ms=cc.r
+0x0000b9a3  6567 3d63 630a 7377 6966 743d 6363 0a0a  eg=cc.swift=cc..
+0x0000b9b3  2f63 6f72 652f 616e 616c 7973 6973 2f63  /core/analysis/c
+0x0000b9c3  6c61 7373 6573 0a0a 2f63 6f72 652f       lasses../core/
+0x1264f
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0001264f  656c 665c 5c5c 5c6e 2020 2d6d 2020 2020  elf\\\\n  -m    
+0x0001265f  2020 2020 2020 2020 2020 2020 2020 2020                  
+0x0001266f  2020 2020 2066 696c 6c20 7769 6474 6820       fill width 
+0x0001267f  7769 7468 2061 2063 6f6d 6d61 2073 6570  with a comma sep
+0x0001268f  6172 6174 6564 206c 6973 7420 6f66       arated list of
+0x29291
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00029291  656c 662e 6368 6563 6b73 2e73 6563 7469  elf.checks.secti
+0x000292a1  6f6e 733d 7472 7565 0a65 6c66 2e63 6865  ons=true.elf.che
+0x000292b1  636b 732e 7365 676d 656e 7473 3d74 7275  cks.segments=tru
+0x000292c1  650a 656c 662e 6c6f 6164 2e73 6563 7469  e.elf.load.secti
+0x000292d1  6f6e 733d 7472 7565 0a65 6d75 2e6c       ons=true.emu.l
+0x292aa
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x000292aa  656c 662e 6368 6563 6b73 2e73 6567 6d65  elf.checks.segme
+0x000292ba  6e74 733d 7472 7565 0a65 6c66 2e6c 6f61  nts=true.elf.loa
+0x000292ca  642e 7365 6374 696f 6e73 3d74 7275 650a  d.sections=true.
+0x000292da  656d 752e 6c61 7a79 3d66 616c 7365 0a65  emu.lazy=false.e
+0x000292ea  6d75 2e70 7265 3d66 616c 7365 0a65       mu.pre=false.e
+0x292c3
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x000292c3  656c 662e 6c6f 6164 2e73 6563 7469 6f6e  elf.load.section
+0x000292d3  733d 7472 7565 0a65 6d75 2e6c 617a 793d  s=true.emu.lazy=
+0x000292e3  6661 6c73 650a 656d 752e 7072 653d 6661  false.emu.pre=fa
+0x000292f3  6c73 650a 656d 752e 736b 6970 3d64 730a  lse.emu.skip=ds.
+0x00029303  656d 752e 7373 613d 6661 6c73 650a       emu.ssa=false.
+0x29502
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00029502  656c 662f 6c73 0a66 696c 652e 6c6f 6164  elf/ls.file.load
+0x00029512  616c 6967 6e3d 3078 3030 3030 3034 3030  align=0x00000400
+0x00029522  0a66 696c 652e 6f70 656e 6d61 6e79 3d31  .file.openmany=1
+0x00029532  0a66 696c 652e 7061 7468 3d2f 686f 6d65  .file.path=/home
+0x00029542  2f72 7363 6869 726f 6e2f 7072 6f6a       /rschiron/proj
+0x2956e
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0002956e  656c 662f 6c73 0a66 696c 652e 7479 7065  elf/ls.file.type
+0x0002957e  3d65 6c66 0a67 7261 7068 2e61 6561 623d  =elf.graph.aeab=
+0x0002958e  6661 6c73 650a 6772 6170 682e 626f 6479  false.graph.body
+0x0002959e  3d74 7275 650a 6772 6170 682e 6275 6262  =true.graph.bubb
+0x000295ae  6c65 3d66 616c 7365 0a67 7261 7068       le=false.graph
+0x2957f
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0002957f  656c 660a 6772 6170 682e 6165 6162 3d66  elf.graph.aeab=f
+0x0002958f  616c 7365 0a67 7261 7068 2e62 6f64 793d  alse.graph.body=
+0x0002959f  7472 7565 0a67 7261 7068 2e62 7562 626c  true.graph.bubbl
+0x000295af  653d 6661 6c73 650a 6772 6170 682e 6279  e=false.graph.by
+0x000295bf  7465 733d 6661 6c73 650a 6772 6170       tes=false.grap
+0x2a39b
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0002a39b  656c 662f 6c73 0a72 6177 3d2e 2f74 6573  elf/ls.raw=./tes
+0x0002a3ab  742f 6269 6e73 2f65 6c66 2f6c 730a 7265  t/bins/elf/ls.re
+0x0002a3bb  6c61 7469 7665 3d2e 2e2f 656c 662f 6c73  lative=../elf/ls
+0x0002a3cb  0a0a 2f63 6f72 652f 666c 6167 730a 6261  ../core/flags.ba
+0x0002a3db  7365 3d30 0a72 6561 6c6e 616d 6573       se=0.realnames
+0x2a3b2
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0002a3b2  656c 662f 6c73 0a72 656c 6174 6976 653d  elf/ls.relative=
+0x0002a3c2  2e2e 2f65 6c66 2f6c 730a 0a2f 636f 7265  ../elf/ls../core
+0x0002a3d2  2f66 6c61 6773 0a62 6173 653d 300a 7265  /flags.base=0.re
+0x0002a3e2  616c 6e61 6d65 733d 300a 0a2f 636f 7265  alnames=0../core
+0x0002a3f2  2f66 6c61 6773 2f66 6c61 6773 0a63       /flags/flags.c
+0x2a3c5
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0002a3c5  656c 662f 6c73 0a0a 2f63 6f72 652f 666c  elf/ls../core/fl
+0x0002a3d5  6167 730a 6261 7365 3d30 0a72 6561 6c6e  ags.base=0.realn
+0x0002a3e5  616d 6573 3d30 0a0a 2f63 6f72 652f 666c  ames=0../core/fl
+0x0002a3f5  6167 732f 666c 6167 730a 6375 7374 6f6d  ags/flags.custom
+0x0002a405  5f6d 6169 6e3d 7b22 7265 616c 6e61       _main={"realna
+EOF
+REGEXP_FILTER_ERR=<<EOF
+ERROR.+
+EOF
+EXPECT_ERR=<<EOF
+ERROR: java bin: unknown class name at constant pool index 0
+ERROR: java bin: unknown super name at constant pool index 0
+ERROR: java bin: unknown class name at constant pool index 0
+ERROR: java bin: unknown super name at constant pool index 0
+EOF
+RUN
