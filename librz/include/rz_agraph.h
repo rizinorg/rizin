@@ -4,6 +4,7 @@
 #include <rz_types.h>
 #include <rz_cons.h>
 #include <rz_util/rz_graph.h>
+#include <rz_util/rz_graph_layout.h>
 #include <rz_util/rz_graph_drawable.h>
 
 typedef struct rz_ascii_node_t {
@@ -90,6 +91,9 @@ typedef struct rz_ascii_graph_t {
 	RzList /*<AEdge *>*/ *edges;
 	ut64 next_edge_creation_order;
 	RzAGraphHits ghits;
+	/* layout cancellation seam: lets the RzUtil-style layout pass check for
+	 * interruption without depending on RzCons directly (rizinorg/rizin#992). */
+	RzGraphLayoutConfig layout_config;
 } RzAGraph;
 
 #ifdef RZ_API
