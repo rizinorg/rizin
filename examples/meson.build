@@ -20,4 +20,9 @@ if get_option('enable_examples')
     dependencies: [rz_sign_dep, rz_util_dep],
     install: false
   )
+  executable('reg_example', 'api/reg/reg_example.c',
+    include_directories: [platform_inc],
+    dependencies: [rz_reg_dep, rz_util_dep],
+    install: false
+  )
 endif
