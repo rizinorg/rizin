@@ -114,7 +114,7 @@ static st64 sparse_write(SparsePriv *priv, ut64 addr, const ut8 *data, ut64 len)
 	return len;
 }
 
-static inline struct buf_sparse_priv *get_priv_sparse(RzBuffer *b) {
+static inline struct buf_sparse_priv *get_priv_sparse(const RzBuffer *b) {
 	struct buf_sparse_priv *priv = (struct buf_sparse_priv *)b->priv;
 	rz_warn_if_fail(priv);
 	return priv;
@@ -186,7 +186,7 @@ static bool buf_sparse_resize(RzBuffer *b, ut64 newsize) {
 	return true;
 }
 
-static ut64 buf_sparse_size(RzBuffer *b) {
+static ut64 buf_sparse_size(const RzBuffer *b) {
 	SparsePriv *priv = get_priv_sparse(b);
 	ut64 max;
 	ut64 r = sparse_limits(priv, &max) ? max : 0;
@@ -310,7 +310,7 @@ static const RzBufferMethods buffer_sparse_methods = {
 };
 
 /// Only for sparse RzBuffers, get all sparse data chunks currently populated.
-RZ_API const RzBufferSparseChunk *rz_buf_sparse_get_chunks(RzBuffer *b, RZ_NONNULL size_t *count) {
+RZ_API const RzBufferSparseChunk *rz_buf_sparse_get_chunks(const RzBuffer *b, RZ_NONNULL size_t *count) {
 	rz_return_val_if_fail(b && count, NULL);
 	if (b->methods != &buffer_sparse_methods) {
 		*count = 0;
@@ -322,7 +322,7 @@ RZ_API const RzBufferSparseChunk *rz_buf_sparse_get_chunks(RzBuffer *b, RZ_NONNU
 }
 
 /// Only for sparse RzBuffers
-RZ_API void rz_buf_sparse_set_write_mode(RzBuffer *b, RzBufferSparseWriteMode mode) {
+RZ_API void rz_buf_sparse_set_write_mode(const RzBuffer *b, RzBufferSparseWriteMode mode) {
 	rz_return_if_fail(b);
 	if (b->methods != &buffer_sparse_methods) {
 		return;
@@ -336,7 +336,7 @@ RZ_API void rz_buf_sparse_set_write_mode(RzBuffer *b, RzBufferSparseWriteMode mo
  * \param to inclusive
  * \return whether the given interval contains chunks populated in the sparse buffer
  */
-RZ_API bool rz_buf_sparse_populated_in(RzBuffer *b, ut64 from, ut64 to) {
+RZ_API bool rz_buf_sparse_populated_in(const RzBuffer *b, ut64 from, ut64 to) {
 	rz_return_val_if_fail(b, false);
 	if (b->methods != &buffer_sparse_methods) {
 		return false;
