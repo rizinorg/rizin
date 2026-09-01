@@ -557,6 +557,8 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		RzBinStringSearchOpt search_opt = bin->str_search_cfg;
 		// enforce raw binary search
 		search_opt.mode = RZ_BIN_STRING_SEARCH_MODE_RAW_BINARY;
+		// do not have a max region size.
+		search_opt.max_region_size = SZT_MAX;
 
 		ro->curfile = file;
 		RzPVector *vec = rz_bin_file_strings(bf, &search_opt);
