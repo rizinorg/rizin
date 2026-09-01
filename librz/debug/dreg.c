@@ -80,6 +80,8 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 			}
 		}
 	}
+	ut8 *read_buf = NULL;
+	size_t read_buf_sz;
 	do {
 		if (write) {
 			ut8 *buf = rz_reg_get_bytes(dbg->reg, i, &size);
@@ -96,23 +98,25 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 			}
 			free(buf);
 		} else {
-			// int bufsize = RZ_MAX (1024, dbg->reg->size*2); // i know. its hacky
-			int bufsize = dbg->reg->size;
-			// int bufsize = dbg->reg->regset[i].arena->size;
-			if (bufsize > 0) {
-				ut8 *buf = calloc(1 + 1, bufsize);
-				if (!buf) {
+			if (!read_buf) {
+				// reuse read_buf across multiple iterations
+				// read_buf_sz = RZ_MAX (1024, dbg->reg->size*2); // i know. its hacky
+				read_buf_sz = dbg->reg->size;
+				// read_buf_sz = dbg->reg->regset[i].arena->size;
+				read_buf = calloc(1 + 1, read_buf_sz);
+				if (!read_buf) {
 					return false;
 				}
+			}
+			if (read_buf) {
 				// we have already checked dbg->h and dbg->h->reg_read above
-				size = dbg->cur->reg_read(dbg, i, buf, bufsize);
+				size = dbg->cur->reg_read(dbg, i, read_buf, read_buf_sz);
 				// we need to check against zero because reg_read can return false
 				if (size > 0) {
-					rz_reg_set_bytes(dbg->reg, i, buf, size); // RZ_MIN (size, bufsize));
+					rz_reg_set_bytes(dbg->reg, i, read_buf, size); // RZ_MIN (size, bufsize));
 					//		free (buf);
 					//		return true;
 				}
-				free(buf);
 			}
 		}
 		// DO NOT BREAK RZ_REG_TYPE_ANY PLEASE
@@ -120,6 +124,7 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 		// Continue the synchronization or just stop if it was asked only for a single type of regs
 		i++;
 	} while ((type == RZ_REG_TYPE_ANY) && (i < RZ_REG_TYPE_LAST));
+	free(read_buf);
 	return true;
 }
 
