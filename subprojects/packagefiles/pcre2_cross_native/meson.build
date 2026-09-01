@@ -2,7 +2,7 @@
 # Because Meson currently doesn't support subprojects to be native and non-native:
 # https://github.com/mesonbuild/meson/issues/10947
 
-project('pcre2_cross_native', 'c', version: '10.47')
+project('pcre2_cross_native', 'c', version: '10.48')
 
 cc = meson.get_compiler('c')
 

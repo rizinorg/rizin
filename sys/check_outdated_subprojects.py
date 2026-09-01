@@ -525,7 +525,7 @@ def run_self_tests():
         parse_version("tree-sitter-0.25.3"),
         ((0, 25, 3), True, ()),
     )
-    eq("parse pcre2-10.47", parse_version("pcre2-10.47"), ((10, 47), True, ()))
+    eq("parse pcre2-10.48", parse_version("pcre2-10.48"), ((10, 48), True, ()))
     eq("parse v1.11", parse_version("v1.11"), ((1, 11), True, ()))
     eq(
         "parse capstone-6.0.0-Alpha9",
