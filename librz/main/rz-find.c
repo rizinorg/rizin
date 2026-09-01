@@ -30,6 +30,7 @@ typedef struct {
 	bool widestr;
 	bool nonstop;
 	bool json;
+	bool use_colors;
 	int mode;
 	int align;
 	ut8 *buf;
@@ -59,6 +60,7 @@ static void rzfind_options_init(RzfindOptions *ro) {
 	ro->keywords = rz_list_newf(NULL);
 	ro->exec_command = NULL;
 	ro->rizin_command = NULL;
+	ro->use_colors = true;
 }
 
 static int rzfind_open(RzfindOptions *ro, const char *file);
@@ -222,7 +224,7 @@ static void print_bin_string(RzBinFile *bf, RzBinString *string, RzfindOptions *
 	}
 }
 
-static int show_help(const char *argv0, int line) {
+static int show_help(const char *argv0, bool line) {
 	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
 	printf("rz-find [-mXnzZhqvV] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] [-R cmd] -|file|dir ..\n");
 	if (line) {
@@ -232,6 +234,7 @@ static int show_help(const char *argv0, int line) {
 		// clang-format off
 		"-a",    "align",   "Only accept aligned hits",
 		"-b",    "size",    "Set block size",
+		"-C",    "",        "disable colors",
 		"-e",    "regex",   "Search for regex matches (can be used multiple times)",
 		"-E",    "cmd",     "Execute shell command for each file found.",
 		"-R",    "cmd",     "Execute Rizin command for each search hit.",
@@ -791,7 +794,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	}
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:R:qnhvVZ");
+	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:R:qnChvVZ");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -807,6 +810,9 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			break;
 		case 'j':
 			ro.json = true;
+			break;
+		case 'C':
+			ro.use_colors = false;
 			break;
 		case 'n':
 			ro.nonstop = 1;
@@ -931,6 +937,11 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 		ro.comma = "";
 		printf("[");
 	}
+
+	if (!ro.use_colors && ro.pr) {
+		ro.pr->flags &= ~RZ_PRINT_FLAGS_COLOR;
+	}
+
 	int overall_result = 0;
 	for (; opt.ind < argc; opt.ind++) {
 		file = argv[opt.ind];
