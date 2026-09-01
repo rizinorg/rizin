@@ -500,9 +500,11 @@ NAME=rz-find -h
 TOOL=rz-find
 ARGS=-h
 EXPECT=<<EOF
-[36mUsage: [0mrz-find [-mXnzZhqvV] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] [-R cmd] -|file|dir ..
+[36mUsage: [0mrz-find [-mXnzZhqvCBV] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] [-R cmd] -|file|dir ..
  [32m-a[0m[33m align [0m[0mOnly accept aligned hits
  [32m-b[0m[33m size [0m [0mSet block size
+ [32m-B[0m       [0mForce to load the files as raw buffers
+ [32m-C[0m       [0mDisable colors
  [32m-e[0m[33m regex [0m[0mSearch for regex matches (can be used multiple times)
  [32m-E[0m[33m cmd [0m  [0mExecute shell command for each file found.
  [32m-R[0m[33m cmd [0m  [0mExecute Rizin command for each search hit.
