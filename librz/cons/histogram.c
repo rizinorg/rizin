@@ -718,14 +718,12 @@ static void render_visual_xaxis_ruler(RzStrBuf *buf, const RzHistogramInteractiv
 		int realj, max_room, wrote;
 		ut64 off;
 		char label[32] = { 0 };
-		if ((int)c < start_col) {
-			rz_strbuf_appendf(buf, "%*s", start_col - (int)c, "");
-			c = (ut32)start_col;
-		}
+
+		// Calculate label value early to know its length before padding
 		if (sizeofonebar > 1) {
-			realj = adder + (int)c / sizeofonebar;
+			realj = adder + start_col / sizeofonebar;
 		} else {
-			realj = adder + (int)((ut64)c * histogramwidth / ((ut64)zoom * width));
+			realj = adder + (int)((ut64)start_col * histogramwidth / ((ut64)zoom * width));
 		}
 		if (realj < 0) {
 			realj = 0;
@@ -735,11 +733,31 @@ static void render_visual_xaxis_ruler(RzStrBuf *buf, const RzHistogramInteractiv
 		off = opts->offpos + (ut64)realj * hist->blocksize;
 		rz_strf(label, "0x%" PFMT64x, off);
 		wrote = (int)strlen(label);
+
+		// If this is the last tick, shift start_col to the left so the whole label fits
+		if (t + 1 == ticks && wrote > 0) {
+			int new_start = (int)data_cols - wrote;
+			if (new_start < 0) {
+				new_start = 0;
+			}
+			if (t > 0 && new_start <= tick_cols[t - 1]) {
+				new_start = tick_cols[t - 1] + 1;
+			}
+			if (new_start < start_col && (int)c <= new_start) {
+				start_col = new_start;
+			}
+		}
+
+		if ((int)c < start_col) {
+			rz_strbuf_appendf(buf, "%*s", start_col - (int)c, "");
+			c = (ut32)start_col;
+		}
+
 		// Truncate if the label would overflow into the next tick.
 		if (t + 1 < ticks) {
 			max_room = tick_cols[t + 1] - start_col - 1;
 		} else {
-			max_room = (int)data_cols - start_col;
+			max_room = sizeof(label);
 		}
 		if (max_room < 1) {
 			max_room = 1;
