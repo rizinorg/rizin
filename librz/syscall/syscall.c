@@ -389,7 +389,7 @@ RZ_API RzSyscallItem *rz_syscall_get(RzSyscall *s, int num, int swi) {
 RZ_API bool rz_syscall_get_num(RZ_NONNULL RZ_BORROW RzSyscall *s, RZ_NONNULL const char *str, RZ_OUT RZ_NULLABLE int *num) {
 	rz_return_val_if_fail(s && str && num, false);
 	if (!s->db) {
-		return -1;
+		return false;
 	}
 	const char *v = sdb_const_get(s->db, "_");
 	int idx = (v && atoi(v) >= 0) ? 1 : 0;
