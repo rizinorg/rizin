@@ -31,6 +31,7 @@ typedef struct {
 	bool nonstop;
 	bool json;
 	bool use_colors;
+	bool force_raw;
 	int mode;
 	int align;
 	ut8 *buf;
@@ -226,7 +227,7 @@ static void print_bin_string(RzBinFile *bf, RzBinString *string, RzfindOptions *
 
 static int show_help(const char *argv0, bool line) {
 	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
-	printf("rz-find [-mXnzZhqvV] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] [-R cmd] -|file|dir ..\n");
+	printf("rz-find [-mXnzZhqvCBV] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] [-R cmd] -|file|dir ..\n");
 	if (line) {
 		return 0;
 	}
@@ -234,7 +235,8 @@ static int show_help(const char *argv0, bool line) {
 		// clang-format off
 		"-a",    "align",   "Only accept aligned hits",
 		"-b",    "size",    "Set block size",
-		"-C",    "",        "disable colors",
+		"-B",    "",        "Force to load the files as raw buffers",
+		"-C",    "",        "Disable colors",
 		"-e",    "regex",   "Search for regex matches (can be used multiple times)",
 		"-E",    "cmd",     "Execute shell command for each file found.",
 		"-R",    "cmd",     "Execute Rizin command for each search hit.",
@@ -417,6 +419,10 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		rz_io_bind(rio, &bin->iob);
 		rz_bin_options_init(&opt, 0, 0, 0, false);
 
+		if (ro->force_raw) {
+			rz_bin_force_plugin(bin, "any");
+		}
+
 		bf = rz_bin_open(bin, file, &opt);
 		if (!bf) {
 			result = 1;
@@ -541,6 +547,10 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 	RzBin *bin = rz_bin_new();
 	rz_io_bind(io, &bin->iob);
 	io->cb_printf = printf;
+
+	if (ro->force_raw) {
+		rz_bin_force_plugin(bin, "any");
+	}
 	RzBinFile *bf = rz_bin_open(bin, file, &opt);
 
 	if (ro->mode == RZ_SEARCH_STRING) {
@@ -794,7 +804,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	}
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:R:qnChvVZ");
+	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:R:qnChvVBZ");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -813,6 +823,9 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			break;
 		case 'C':
 			ro.use_colors = false;
+			break;
+		case 'B':
+			ro.force_raw = true;
 			break;
 		case 'n':
 			ro.nonstop = 1;

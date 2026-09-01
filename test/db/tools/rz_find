@@ -421,7 +421,7 @@ Scanning: bins/elf/ioli/crackme0x00
 EOF
 RUN
 
-NAME=rz-find no colors when hexdump
+NAME=rz-find no colors when hexdump on raw buffers
 TOOL=rz-find
 ARGS=-B -C -X -s elf bins/other/ls.rzdb
 EXPECT=<<EOF
@@ -506,10 +506,5 @@ EOF
 REGEXP_FILTER_ERR=<<EOF
 ERROR.+
 EOF
-EXPECT_ERR=<<EOF
-ERROR: java bin: unknown class name at constant pool index 0
-ERROR: java bin: unknown super name at constant pool index 0
-ERROR: java bin: unknown class name at constant pool index 0
-ERROR: java bin: unknown super name at constant pool index 0
-EOF
+EXPECT_ERR=
 RUN
