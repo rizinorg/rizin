@@ -5805,14 +5805,15 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				case TYPE_BRA:
 					if (getreg(ao->a[0]) == -1) {
 						// TODO: control if branch out of range
-						ret = (getnum(ao->a[0], &err) - (int)ao->off - 8) / 4;
-						if (ret >= 0x00800000 || ret < (int)0xff800000) {
+						st32 branch_offset = (st32)((ut32)getnum(ao->a[0], &err) - (ut32)ao->off - 8) / 4;
+						if (branch_offset >= 0x00800000 || branch_offset < -0x00800000) {
 							RZ_LOG_ERROR("assembler: arm: %s: invalid branch address (out of range).\n", ops[i].name);
 							return 0;
 						}
-						ao->o |= ((ret >> 16) & 0xff) << 8;
-						ao->o |= ((ret >> 8) & 0xff) << 16;
-						ao->o |= ((ret) & 0xff) << 24;
+						ut32 branch_bits = (ut32)branch_offset;
+						ao->o |= ((branch_bits >> 16) & 0xff) << 8;
+						ao->o |= ((branch_bits >> 8) & 0xff) << 16;
+						ao->o |= (branch_bits & 0xff) << 24;
 					} else {
 						RZ_LOG_ERROR("assembler: arm: %s: instruction does not accept a register as argument\n", ops[i].name);
 						return 0;
