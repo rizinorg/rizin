@@ -3941,7 +3941,17 @@ RZ_API const char *rz_str_bool(int b) {
 	return b ? "true" : "false";
 }
 
+/**
+ * \brief Returns true if string is case insensitive equal to:
+ * - yes
+ * - on
+ * - true
+ * - 1
+ */
 RZ_API bool rz_str_is_true(const char *s) {
+	if (!s) {
+		return false;
+	}
 	return !rz_str_casecmp("yes", s) || !rz_str_casecmp("on", s) || !rz_str_casecmp("true", s) || !rz_str_casecmp("1", s);
 }
 
