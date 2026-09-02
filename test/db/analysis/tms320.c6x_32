@@ -498,3 +498,30 @@ EXPECT=<<EOF
 rzil: (set a4 (| (& (var a4) (bv 32 0xffff)) (bv 32 0x0)))
 EOF
 RUN
+
+# The relocated fields read back as instructions. far_target is 0x08000570,
+# so the pair has to load 0x570 low and 0x800 high, and the branch has to
+# resolve to the symbol rather than to itself.
+NAME=c6x relocated ELF object disassembles with its fields filled in
+FILE=bins/tms320/elf/c6x_reloc.eabi.elf
+CMDS=<<EOF
+e scr.color=0
+e asm.lines=false
+e asm.comments=false
+s 0x08000040
+pd 5
+EOF
+EXPECT=<<EOF
+;-- section..text:
+;-- reloc.far_target:
+;-- .text:
+;-- _start:
+0x08000040      b     .s1 reloc.target.far_target
+0x08000044      nop   5
+;-- reloc.far_target.8000048:
+0x08000048      mvk   .s1 0x570,a0
+;-- reloc.far_target.800004c:
+0x0800004c      mvkh  .s1 0x800,a0
+0x08000050      nop
+EOF
+RUN

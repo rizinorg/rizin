@@ -407,6 +407,43 @@ RZ_IPI RZ_OWN RzStructuredData *c6x_opex(const C6xInsn *insn);
 
 RZ_IPI const char *c6x_pred_reg_name(ut8 creg);
 
+/** Most slots a fetch packet can hold: seven words of two compact opcodes, plus the header. */
+#define C6X_FP_SLOTS 15
+
+/** First address after execute packet \p p, i.e. where the next one starts. */
+#define C6X_PACKET_END(p) ((p).slots[(p).n - 1].addr + (p).slots[(p).n - 1].size)
+
+/** Registers one execute packet can stage; every slot writes at most a pair. */
+#define C6X_PK_REGS 16
+
+/** One instruction slot of a fetch packet, before decoding. */
+typedef struct {
+	ut64 addr; ///< where the slot starts
+	ut8 size; ///< C6X_WORD_SIZE or C6X_COMPACT_SIZE
+	ut32 opcode; ///< the raw opcode, 16 or 32 bits wide
+	bool parallel; ///< runs in the same cycle as the following slot
+	bool header; ///< the compact fetch-packet header, not an instruction
+} C6xSlotRef;
+
+/** One execute packet: the instructions that issue in the same cycle. */
+typedef struct {
+	ut64 addr; ///< address of the first slot
+	C6xSlotRef slots[C6X_FP_SLOTS];
+	size_t n;
+} C6xPacketRef;
+
+/**
+ * Reader for image bytes. Returns false unless the whole request was satisfied,
+ * so a caller can tell a short read from a mapped region of zeroes.
+ */
+typedef bool (*C6xReadFn)(void *user, ut64 addr, ut8 *buf, size_t len);
+
+RZ_IPI size_t c6x_fetch_packet_slots(const ut8 *fp, ut64 base, bool big_endian, RZ_OUT C6xSlotRef *out);
+
+RZ_IPI bool c6x_packet_at(C6xReadFn read, void *user, ut64 pc, bool big_endian, RZ_OUT C6xPacketRef *out);
+
+RZ_IPI bool c6x_continues_packet(C6xReadFn read, void *user, ut64 pc, bool big_endian, RZ_OUT bool *cont);
+
 RZ_IPI const char *c6x_ins_name(C6xInsnId id);
 
 RZ_IPI RZ_OWN char *c6x_reg_operand_str(const C6xOperand *o);
@@ -416,6 +453,23 @@ RZ_IPI const char *c6x_unit_name(ut8 bit);
 RZ_IPI RzAnalysisILConfig *tms320_c6x_il_config(RZ_NONNULL RzAnalysis *analysis);
 
 RZ_IPI RZ_OWN RzILOpEffect *c6x_lift(const C6xInsn *insn, ut64 pc);
+
+RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet(const C6xInsn *insns, size_t n, ut64 pc, ut32 skip);
+
+/** Local carrying a deferred branch's predicate from issue to transfer. */
+#define C6X_PRED_TAKEN "_br_taken"
+
+RZ_IPI bool c6x_same_reg(const C6xOperand *o, const C6xOperand *other);
+
+RZ_IPI RZ_OWN RzILOpEffect *c6x_jump_to(ut64 addr);
+
+RZ_IPI RZ_OWN RzILOpEffect *c6x_sample_predicate(const C6xInsn *insn);
+
+RZ_IPI RZ_OWN RzILOpEffect *c6x_deferred_transfer(const C6xInsn *insn, ut64 pc, bool sampled, ut64 fallthrough);
+
+RZ_IPI ut8 c6x_result_latency(const C6xInsn *insn);
+
+RZ_IPI ut8 c6x_branch_slots(const C6xInsn *insn);
 
 RZ_IPI RZ_OWN RzPVector /*<const char *>*/ *c6x_mnemonics(void);
 
