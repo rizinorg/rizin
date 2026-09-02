@@ -127,6 +127,7 @@ if get_option('enable_tests')
     'sparse',
     'stack',
     'str',
+    'c6x_packet',
     'strbuf',
     'structured_data',
     'str_search',

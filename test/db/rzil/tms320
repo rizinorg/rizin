@@ -701,3 +701,236 @@ a2 = 0x00000010
 a2 = 0x00000020
 EOF
 RUN
+
+NAME=c6x an execute packet swaps two registers without a temporary
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx d90f8000a0060400
+s 0
+pd 2
+aezi
+ar a0=0x11111111
+ar a1=0x22222222
+aezs 2
+ar a0
+ar a1
+EOF
+EXPECT=<<EOF
+            0x00000000      mv    .l1 a0,a1
+            0x00000004      ||    mv .s1 a1,a0
+a0 = 0x22222222
+a1 = 0x11111111
+EOF
+RUN
+
+NAME=c6x a parallel load and store to one address load the old value
+FILE=malloc://512
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 75029000e6029000
+s 0
+pd 2
+wv4 0xdeadbeef @ 0x100
+aezi
+ar a4=0x100
+ar b4=0x100
+ar a1=0xcafebabe
+aezs 2
+ar b1
+pxw 4 @ 0x100
+EOF
+EXPECT=<<EOF
+            0x00000000      stw   .d1 a1,*a4
+            0x00000004      ||    ldw .d2 *b4,b1
+b1 = 0xdeadbeef
+0x00000100  0xcafebabe                                   ....
+EOF
+RUN
+
+NAME=c6x a predicate reads the register file as the packet found it
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 59a30000a80880c2
+s 0
+pd 2
+aezi
+ar a0=1
+ar a5=0
+aezs 2
+ar a5
+ar a0
+EOF
+EXPECT=<<EOF
+            0x00000000      mvk   .l1 0,a0
+            0x00000004      ||    [a0] mvk .s1 0x11,a5
+a5 = 0x00000011
+a0 = 0x00000000
+EOF
+RUN
+
+NAME=c6x a branch transfers after its delay slots have run
+FILE=malloc://256
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 10080000582084005820840058208400582084005820840000000000
+s 0
+pd 7
+aezi
+ar a1=0
+aezs
+ar a1
+EOF
+EXPECT=<<EOF
+        ,=< 0x00000000      b     .s1 0x40
+        |   0x00000004      add   .l1 0x1,a1,a1
+        |   0x00000008      add   .l1 0x1,a1,a1
+        |   0x0000000c      add   .l1 0x1,a1,a1
+        |   0x00000010      add   .l1 0x1,a1,a1
+        |   0x00000014      add   .l1 0x1,a1,a1
+        |   0x00000018      nop
+a1 = 0x00000005
+EOF
+RUN
+
+NAME=c6x a load in a delay slot writes after the branch resolves
+FILE=malloc://512
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 100800000000000000000000000000006402900100000000
+s 0
+pd 6
+wv4 0xfeedface @ 0x100
+aezi
+ar a4=0x100
+ar a3=0
+aezs
+ar a3
+EOF
+EXPECT=<<EOF
+        ,=< 0x00000000      b     .s1 0x40
+        |   0x00000004      nop
+        |   0x00000008      nop
+        |   0x0000000c      nop
+        |   0x00000010      ldw   .d1 *a4,a3
+        |   0x00000014      nop
+a3 = 0xfeedface
+EOF
+RUN
+
+NAME=c6x a predicated branch tests the register as it was when it issued
+FILE=malloc://256
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 100800c058a300000000000000000000000000000000000000000000
+s 0
+pd 2
+aezi
+ar a0=1
+aezs
+ar a0
+aezv PC
+EOF
+EXPECT=<<EOF
+        ,=< 0x00000000      [a0]  b .s1 0x40
+        |   0x00000004      mvk   .l1 0,a0
+a0 = 0x00000000
+ PC: 0x00000040
+EOF
+RUN
+
+NAME=c6x an untaken branch leaves the pc past its delay slots
+FILE=malloc://256
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 100800c058a300000000000000000000000000000000000000000000
+s 0
+aezi
+ar a0=0
+aezs
+aezv PC
+EOF
+EXPECT=<<EOF
+ PC: 0x00000018
+EOF
+RUN
+
+# A compact branch window taken from a real C674x image: a 16-bit bnop with a
+# parallel load whose result the following branch must not see. Decoding a
+# compact slot as if it were 32 bits yields an unrelated instruction, so this
+# covers the path the hand-written 32-bit cases cannot reach.
+NAME=c6x a compact branch window from real firmware
+FILE=malloc://256
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx d9081020419e8c056bc6e0026ee82a8ce70214d258a37c05620310d0808000e16281810164022c00879606c66e2c3a6564e280c164222cc262130cc0808080e1
+wv4 0xfeedface @ 0x70
+s 0xe
+aezi
+ar a0=0
+ar b5=0x70
+ar b4=0x11223344
+aezs
+ar b4
+aezv PC
+EOF
+EXPECT=<<EOF
+b4 = 0xfeedface
+ PC: 0x00000018
+EOF
+RUN
+
+# A load takes four cycles to land, so an instruction reading its destination
+# sooner gets the old value. The packets in between have to run before the
+# write becomes visible.
+NAME=c6x a load result is not visible to the next packet
+FILE=malloc://256
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 6402900278a01803000000000000000000000000
+wv4 0xfeedface @ 0x80
+s 0
+pd 2
+aezi
+ar a4=0x80
+ar a5=0x11
+ar a6=0
+aezs
+ar a6
+ar a5
+EOF
+EXPECT=<<EOF
+            0x00000000      ldw   .d1 *a4,a5
+            0x00000004      add   .l1 a5,a6,a6
+a6 = 0x00000011
+a5 = 0xfeedface
+EOF
+RUN

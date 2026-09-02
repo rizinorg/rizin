@@ -2550,3 +2550,70 @@ RZ_IPI RZ_OWN RzPVector /*<const char *>*/ *c6x_mnemonics(void) {
 	}
 	return v;
 }
+
+/**
+ * \brief Delay slots \p insn leaves for the instructions that follow it.
+ *
+ * A C6000 branch resolves five execute packets after it issues. CALLP is
+ * protected -- the hardware fills its slots with an implied NOP 5 -- so it
+ * leaves none, and BNOP fills a given number of its own, leaving the rest.
+ *
+ * \return 0 when the instruction opens no visible delay slots.
+ */
+RZ_IPI ut8 c6x_branch_slots(const C6xInsn *insn) {
+	switch (insn->id) {
+	case C6X_INS_B:
+	case C6X_INS_BDEC:
+	case C6X_INS_BPOS:
+		return 5;
+	case C6X_INS_BNOP: {
+		// the NOP count is the last operand
+		ut8 filled = insn->nops ? (ut8)OP(insn->nops - 1).v.imm.value : 0;
+		return filled < 5 ? 5 - filled : 0;
+	}
+	default:
+		return 0;
+	}
+}
+
+/**
+ * \brief Execute packets between \p insn issuing and its result being readable.
+ *
+ * A load's destination is written four packets on, an extended multiply's three
+ * and an ordinary multiply's one; most instructions land in the same cycle. An
+ * instruction issued in a branch's delay slots can therefore write after the
+ * branch has transferred, which is why the value matters here rather than only
+ * inside a packet.
+ */
+RZ_IPI ut8 c6x_result_latency(const C6xInsn *insn) {
+	switch (insn->id) {
+	case C6X_INS_LDW:
+	case C6X_INS_LDB:
+	case C6X_INS_LDBU:
+	case C6X_INS_LDH:
+	case C6X_INS_LDHU:
+	case C6X_INS_LDDW:
+	case C6X_INS_LDNW:
+	case C6X_INS_LDNDW:
+		return 4;
+	case C6X_INS_MPY32:
+	case C6X_INS_MPY32U:
+	case C6X_INS_MPY32SU:
+	case C6X_INS_MPY32US:
+		return 3;
+	case C6X_INS_MPY:
+	case C6X_INS_MPYH:
+	case C6X_INS_MPYLH:
+	case C6X_INS_MPYHL:
+	case C6X_INS_MPYU:
+	case C6X_INS_MPYSU:
+	case C6X_INS_MPYUS:
+	case C6X_INS_SMPY:
+	case C6X_INS_SMPYH:
+	case C6X_INS_SMPYHL:
+	case C6X_INS_SMPYLH:
+		return 1;
+	default:
+		return 0;
+	}
+}
