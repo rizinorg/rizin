@@ -29,7 +29,7 @@ RZ_API char *rz_sys_get_src_dir_w32(void) {
 	}
 	char *path = rz_sys_conv_win_to_utf8(shortpath);
 	char *dir = rz_file_dirname(path);
-	if (!rz_sys_getenv_asbool("RZ_ALT_SRC_DIR")) {
+	if (!rz_sys_getenv_as_bool("RZ_ALT_SRC_DIR", false)) {
 		char *tmp = dir;
 		dir = rz_file_dirname(tmp);
 		free(tmp);

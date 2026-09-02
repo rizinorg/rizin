@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2023-2026 RizinOrg <info@rizin.re>
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -575,13 +576,29 @@ RZ_API char *rz_sys_getenv(const char *key) {
 }
 
 /**
- * \brief Return true if the environment variable has the value 1, false otherwise
+ * \brief Return true if the environment variable is a valid boolean value (1, true, on, yes), otherwise returns the default value
  */
-RZ_API bool rz_sys_getenv_asbool(const char *key) {
-	char *env = rz_sys_getenv(key);
-	const bool res = (env && *env == '1');
-	free(env);
-	return res;
+RZ_API bool rz_sys_getenv_as_bool(const char *key, bool def_value) {
+	bool value = def_value;
+	char *tmp = rz_sys_getenv(key);
+	if (rz_str_is_bool(tmp)) {
+		value = rz_str_is_true(tmp);
+	}
+	free(tmp);
+	return value;
+}
+
+/**
+ * \brief Return an unsigned number if the environment variable is a valid numeric value, otherwise returns the default value
+ */
+RZ_API ut64 rz_sys_getenv_as_unsigned(const char *key, ut64 def_value) {
+	ut64 value = def_value;
+	char *tmp = rz_sys_getenv(key);
+	if (rz_is_valid_input_num_value(NULL, tmp)) {
+		value = rz_num_math_ut64(NULL, tmp);
+	}
+	free(tmp);
+	return value;
 }
 
 /**

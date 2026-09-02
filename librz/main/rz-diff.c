@@ -268,22 +268,12 @@ static bool rz_diff_is_file(const char *file) {
 	return true;
 }
 
-static bool diff_env_get_bool(const char *key, bool def_value) {
-	bool value = def_value;
-	char *tmp = rz_sys_getenv(key);
-	if (RZ_STR_ISNOTEMPTY(tmp)) {
-		value = rz_num_get(NULL, tmp) != 0;
-	}
-	free(tmp);
-	return value;
-}
-
 static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ctx) {
 	const char *type = NULL;
 	const char *algorithm = NULL;
 	const char *screen = NULL;
 	memset((void *)ctx, 0, sizeof(DiffContext));
-	ctx->colors = diff_env_get_bool("RZ_COLOR", true);
+	ctx->colors = rz_sys_getenv_as_unsigned("RZ_COLOR", 1);
 	ctx->evars = rz_list_newf(free);
 
 	if (!ctx->evars) {

@@ -3942,13 +3942,9 @@ RZ_API const char *rz_str_bool(int b) {
 }
 
 /**
- * \brief Returns true if string is case insensitive equal to:
- * - yes
- * - on
- * - true
- * - 1
+ * \brief Returns true if string is case insensitive equal to: yes, on, true, 1
  */
-RZ_API bool rz_str_is_true(const char *s) {
+RZ_API bool rz_str_is_true(RZ_NULLABLE const char *s) {
 	if (!s) {
 		return false;
 	}
@@ -3956,11 +3952,7 @@ RZ_API bool rz_str_is_true(const char *s) {
 }
 
 /**
- * \brief Returns true if string is case insensitive equal to:
- * - no
- * - off
- * - false
- * - 0
+ * \brief Returns true if string is case insensitive equal to: no off false 0
  */
 RZ_API bool rz_str_is_false(RZ_NULLABLE const char *s) {
 	if (!s) {
@@ -3969,7 +3961,10 @@ RZ_API bool rz_str_is_false(RZ_NULLABLE const char *s) {
 	return !rz_str_casecmp("no", s) || !rz_str_casecmp("off", s) || !rz_str_casecmp("false", s) || !rz_str_casecmp("0", s) || !*s;
 }
 
-RZ_API bool rz_str_is_bool(const char *val) {
+/**
+ * \brief Returns true if the string is case insensitive is a valid boolean value
+ */
+RZ_API bool rz_str_is_bool(RZ_NULLABLE const char *val) {
 	return rz_str_is_true(val) || rz_str_is_false(val);
 }
 

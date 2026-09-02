@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2021-2026 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021-2026 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -53,16 +55,6 @@ static void rzfind_options_fini(RzfindOptions *ro) {
 	ro->cur = 0;
 }
 
-static bool find_env_get_bool(const char *key, bool def_value) {
-	bool value = def_value;
-	char *tmp = rz_sys_getenv(key);
-	if (rz_str_is_bool(tmp)) {
-		value = rz_str_is_true(tmp);
-	}
-	free(tmp);
-	return value;
-}
-
 static void rzfind_options_init(RzfindOptions *ro) {
 	memset(ro, 0, sizeof(RzfindOptions));
 	ro->mode = RZ_SEARCH_STRING;
@@ -71,7 +63,7 @@ static void rzfind_options_init(RzfindOptions *ro) {
 	ro->keywords = rz_list_newf(NULL);
 	ro->exec_command = NULL;
 	ro->rizin_command = NULL;
-	ro->use_colors = find_env_get_bool("RZ_COLOR", true);
+	ro->use_colors = rz_sys_getenv_as_unsigned("RZ_COLOR", 1);
 }
 
 static int rzfind_open(RzfindOptions *ro, const char *file);
@@ -799,21 +791,11 @@ static int rzfind_open(RzfindOptions *ro, const char *file) {
 }
 
 static void find_set_log_level(void) {
-	char *log_level = rz_sys_getenv("RZ_LOGLEVEL");
-
-	if (RZ_STR_ISEMPTY(log_level)) {
-		free(log_level);
-		return;
-	}
-
-	RzLogLevel level = (RzLogLevel)atoi(log_level);
-	free(log_level);
-
+	RzLogLevel level = rz_sys_getenv_as_unsigned("RZ_LOGLEVEL", RZ_DEFAULT_LOGLVL);
 	if (level < RZ_LOGLVL_DEBUG || level >= RZ_LOGLVL_SIZE) {
 		RZ_LOG_ERROR("Invalid log level %d.\n", (int)level);
-		return;
+		level = RZ_DEFAULT_LOGLVL;
 	}
-
 	rz_log_set_level(level);
 }
 
