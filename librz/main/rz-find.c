@@ -53,6 +53,16 @@ static void rzfind_options_fini(RzfindOptions *ro) {
 	ro->cur = 0;
 }
 
+static bool find_env_get_bool(const char *key, bool def_value) {
+	bool value = def_value;
+	char *tmp = rz_sys_getenv(key);
+	if (rz_str_is_bool(tmp)) {
+		value = rz_str_is_true(tmp);
+	}
+	free(tmp);
+	return value;
+}
+
 static void rzfind_options_init(RzfindOptions *ro) {
 	memset(ro, 0, sizeof(RzfindOptions));
 	ro->mode = RZ_SEARCH_STRING;
@@ -61,7 +71,7 @@ static void rzfind_options_init(RzfindOptions *ro) {
 	ro->keywords = rz_list_newf(NULL);
 	ro->exec_command = NULL;
 	ro->rizin_command = NULL;
-	ro->use_colors = true;
+	ro->use_colors = find_env_get_bool("RZ_COLOR", true);
 }
 
 static int rzfind_open(RzfindOptions *ro, const char *file);
@@ -788,24 +798,34 @@ static int rzfind_open(RzfindOptions *ro, const char *file) {
 		: rzfind_open_file(ro, file, NULL, -1);
 }
 
-RZ_API int rz_main_rz_find(int argc, const char **argv) {
-	RzfindOptions ro;
-	rzfind_options_init(&ro);
+static void find_set_log_level(void) {
+	char *log_level = rz_sys_getenv("RZ_LOGLEVEL");
 
+	if (RZ_STR_ISEMPTY(log_level)) {
+		free(log_level);
+		return;
+	}
+
+	RzLogLevel level = (RzLogLevel)atoi(log_level);
+	free(log_level);
+
+	if (level < RZ_LOGLVL_DEBUG || level >= RZ_LOGLVL_SIZE) {
+		RZ_LOG_ERROR("Invalid log level %d.\n", (int)level);
+		return;
+	}
+
+	rz_log_set_level(level);
+}
+
+RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	int c;
 	const char *file = NULL;
+	RzGetopt opt = { 0 };
+	RzfindOptions ro = { 0 };
 
-	int n = RZ_DEFAULT_LOGLVL;
-	char *log_level = rz_sys_getenv("RZ_LOGLEVEL");
-	if (RZ_STR_ISNOTEMPTY(log_level)) {
-		n = atoi(log_level);
-		free(log_level);
-	}
-	if (n >= 0 && n < RZ_LOGLVL_SIZE) {
-		rz_log_set_level((RzLogLevel)n);
-	}
+	rzfind_options_init(&ro);
+	find_set_log_level();
 
-	RzGetopt opt;
 	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:R:qnChvVBZ");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {

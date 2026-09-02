@@ -1,6 +1,7 @@
 NAME=rz-find -X -s
 TOOL=rz-find
 ARGS=-X -s 250382 bins/elf/ioli/crackme0x00
+COLOR=1
 EXPECT=<<EOF
 0x58f
 [35m- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
@@ -15,6 +16,7 @@ RUN
 NAME=rz-find -X -s
 TOOL=rz-find
 ARGS=-X -s 250382 bins/elf/ioli/crackme0x00
+COLOR=1
 EXPECT=<<EOF
 0x58f
 [35m- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
@@ -29,6 +31,7 @@ RUN
 NAME=rz-find -f 0x00000000 -t 0x00000590 -X -s
 TOOL=rz-find
 ARGS=-f 0x00000000 -t 0x00001000 -X -s 250382 bins/elf/ioli/crackme0x00
+COLOR=1
 EXPECT=<<EOF
 0x58f
 [35m- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
@@ -50,6 +53,7 @@ RUN
 NAME=rz-find -X -x
 TOOL=rz-find
 ARGS=-X -x 323530333832 bins/elf/ioli/crackme0x00
+COLOR=1
 EXPECT=<<EOF
 0x58f
 [35m- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
@@ -64,6 +68,7 @@ RUN
 NAME=rz-find -X -x with nibbles masked
 TOOL=rz-find
 ARGS=-X -x caf.bab. bins/java/Hello.class
+COLOR=1
 EXPECT=<<EOF
 0x0
 [35m- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
@@ -78,6 +83,7 @@ RUN
 NAME=rz-find -X -x with bin mask
 TOOL=rz-find
 ARGS=-X -x caf3bab3 -M fff0fff0 bins/java/Hello.class
+COLOR=1
 EXPECT=<<EOF
 0x0
 [35m- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
