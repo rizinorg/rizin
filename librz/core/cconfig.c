@@ -3874,7 +3874,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 }
 
 RZ_API void rz_core_parse_rizinrc(RzCore *r) {
-	bool has_debug = rz_sys_getenv_asbool("RZ_DEBUG");
+	bool has_debug = rz_sys_getenv_as_bool("RZ_DEBUG", false);
 	char *rcfile = rz_sys_getenv("RZ_RCFILE");
 	char *homerc = NULL;
 	if (!RZ_STR_ISEMPTY(rcfile)) {

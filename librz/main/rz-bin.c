@@ -703,7 +703,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 
 	rz_core_init(&core);
 	bin = core.bin;
-	if (!(tmp = rz_sys_getenv("RZ_NOPLUGINS"))) {
+	if (!rz_sys_getenv_as_bool("RZ_NOPLUGINS", false)) {
 		char *homeplugindir = rz_path_home_prefix(RZ_PLUGINS);
 		char *plugindir = rz_path_system(core.sys_path, RZ_PLUGINS);
 		char *extraplugindir = rz_path_extra(RZ_PLUGINS);
@@ -730,7 +730,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		free(path);
 		rz_lib_free(l);
 	}
-	free(tmp);
 
 	if ((tmp = rz_sys_getenv("RZ_CONFIG"))) {
 		Sdb *config_sdb = sdb_new(NULL, tmp, 0);

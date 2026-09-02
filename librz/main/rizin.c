@@ -905,7 +905,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	}
 
 	tmp = NULL;
-	if (!load_l || (tmp = rz_sys_getenv("RZ_NOPLUGINS"))) {
+	if (!load_l || rz_sys_getenv_as_bool("RZ_NOPLUGINS", false)) {
 		rz_config_set_i(r->config, "cfg.plugins", 0);
 		free(tmp);
 	}
