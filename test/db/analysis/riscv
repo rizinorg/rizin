@@ -835,19 +835,19 @@ nth      paddr      vaddr bind   type   size lib name
   8 0x00000570 0x00010570 GLOBAL FUNC      0     imp.__libc_start_main
 --- vector reductions
         :   ; CALL XREF from main @ 0x10938
-/ sym.test_reductions(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg_7fffffffffffffcfh, int64_t arg_7fffffffffffffd7h, int64_t arg_7fffffffffffffe7h, int64_t arg_7fffffffffffffefh, int64_t arg_7ffffffffffffff7h);
+/ sym.test_reductions(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg8);
 |       :   ; arg int64_t arg1 @ a0
 |       :   ; arg int64_t arg2 @ a1
 |       :   ; arg int64_t arg3 @ a2
 |       :   ; arg int64_t arg4 @ a3
 |       :   ; arg int64_t arg5 @ a4
-|       :   ; arg int64_t arg6 @ a5
+|       :   ; arg int64_t arg8 @ a7
 |       :   ; var int64_t var_c0h @ stack - 0xc0
-|       :   ; arg int64_t arg_7fffffffffffffcfh @ stack + 0x7fffffffffffffcf
-|       :   ; arg int64_t arg_7fffffffffffffd7h @ stack + 0x7fffffffffffffd7
-|       :   ; arg int64_t arg_7fffffffffffffe7h @ stack + 0x7fffffffffffffe7
-|       :   ; arg int64_t arg_7fffffffffffffefh @ stack + 0x7fffffffffffffef
-|       :   ; arg int64_t arg_7ffffffffffffff7h @ stack + 0x7ffffffffffffff7
+|       :   ; var int64_t var_30h @ stack - 0x30
+|       :   ; var int64_t var_28h @ stack - 0x28
+|       :   ; var int64_t var_18h @ stack - 0x18
+|       :   ; var int64_t var_10h @ stack - 0x10
+|       :   ; var int64_t var_8h @ stack - 0x8
 |       :   0x00010c56      577002cd       vsetivli zero, 4, e0x20, m1, ta, ma
 |       :   0x00010c5a      d731005e       vmv.v.i v3, 0
 |       :   0x00010c5e      032e0500       lw    t3, 0(a0)             ; arg1
@@ -861,12 +861,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00010c76      26f5           sd    s1, 0xa8(sp)
 |       :   0x00010c78      22ad           fsd   fs0, 0x98(sp)
 |       :   0x00010c7a      26a9           fsd   fs1, 0x90(sp)
-|       :   0x00010c7c      2a83           mv    t1, a0
+|       :   0x00010c7c      2a83           mv    t1, a0                ; arg1
 |       :   0x00010c7e      33015140       sub   sp, sp, t0
 |       :   0x00010c82      aa9e           add   t4, t4, a0            ; arg1
-|       :   0x00010c84      aa87           mv    a5, a0
-|      .--> 0x00010c86      07e10702       vle32.v v2, (a5)            ; arg6
-|      ::   0x00010c8a      c107           addi  a5, a5, 0x10          ; arg6
+|       :   0x00010c84      aa87           mv    a5, a0                ; arg1
+|      .--> 0x00010c86      07e10702       vle32.v v2, (a5)
+|      ::   0x00010c8a      c107           addi  a5, a5, 0x10
 |      ::   0x00010c8c      d7001102       vadd.vv v1, v1, v2
 |      `==< 0x00010c90      e39bd7ff       bne   a5, t4, 0x10c86
 |       :   0x00010c94      f32620c2       csrr  a3, vlenb
@@ -875,29 +875,29 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00010c9e      5774000d       vsetvli s0, zero, e0x20, m1, ta, ma
 |       :   0x00010ca2      d730005e       vmv.v.i v1, 0
 |       :   0x00010ca6      1147           li    a4, 4
-|      .--> 0x00010ca8      d7770709       vsetvli a5, a4, e0x20, m1, tu, ma ; arg6
+|      .--> 0x00010ca8      d7770709       vsetvli a5, a4, e0x20, m1, tu, ma ; arg5
 |      ::   0x00010cac      07e10602       vle32.v v2, (a3)            ; arg4
-|      ::   0x00010cb0      13982700       slli  a6, a5, 2             ; arg6
-|      ::   0x00010cb4      1d8f           sub   a4, a4, a5            ; arg6
+|      ::   0x00010cb0      13982700       slli  a6, a5, 2
+|      ::   0x00010cb4      1d8f           sub   a4, a4, a5            ; arg5
 |      ::   0x00010cb6      c296           add   a3, a3, a6            ; arg4
 |      ::   0x00010cb8      d7802002       vadd.vv v1, v2, v1
 |      `==< 0x00010cbc      75f7           bnez  a4, 0x10ca8
-|       :   0x00010cbe      d777000d       vsetvli a5, zero, e0x20, m1, ta, ma ; arg6
+|       :   0x00010cbe      d777000d       vsetvli a5, zero, e0x20, m1, ta, ma
 |       :   0x00010cc2      57610042       vmv.s.x v2, zero
 |       :   0x00010cc6      f32720c2       csrr  a5, vlenb
 |       :   0x00010cca      d7201102       vredsum.vs v1, v1, v2
-|       :   0x00010cce      c107           addi  a5, a5, 0x10          ; arg6
+|       :   0x00010cce      c107           addi  a5, a5, 0x10
 |       :   0x00010cd0      37070080       lui   a4, 0x80000
-|       :   0x00010cd4      3308f100       add   a6, sp, a5            ; arg6
+|       :   0x00010cd4      3308f100       add   a6, sp, a5
 |       :   0x00010cd8      5741075e       vmv.v.x v2, a4
 |       :   0x00010cdc      c286           mv    a3, a6
 |       :   0x00010cde      1147           li    a4, 4
 |       :   0x00010ce0      d7281042       vmv.x.s a7, v1
-|      .--> 0x00010ce4      d777670c       vsetvli a5, a4, e8, mf4, ta, ma ; arg6
-|      ::   0x00010ce8      27e10602       vse32.v v2, (a3)            ; arg4
-|      ::   0x00010cec      1d8f           sub   a4, a4, a5            ; arg6
+|      .--> 0x00010ce4      d777670c       vsetvli a5, a4, e8, mf4, ta, ma ; arg5
+|      ::   0x00010ce8      27e10602       vse32.v v2, (a3)
+|      ::   0x00010cec      1d8f           sub   a4, a4, a5            ; arg5
 |      ::   0x00010cee      8a07           slli  a5, a5, 2
-|      ::   0x00010cf0      be96           add   a3, a3, a5            ; arg6
+|      ::   0x00010cf0      be96           add   a3, a3, a5
 |      `==< 0x00010cf2      6dfb           bnez  a4, 0x10ce4
 |       :   0x00010cf4      577002cd       vsetivli zero, 4, e0x20, m1, ta, ma
 |       :   0x00010cf8      87600802       vle32.v v1, (a6)
@@ -906,35 +906,35 @@ nth      paddr      vaddr bind   type   size lib name
 |      ::   0x00010d02      d700111e       vmax.vv v1, v1, v2
 |      `==< 0x00010d06      e39baefe       bne   t4, a0, 0x10cfc
 |       :   0x00010d0a      a7600802       vse32.v v1, (a6)
-|       :   0x00010d0e      d777000d       vsetvli a5, zero, e0x20, m1, ta, ma ; arg6
+|       :   0x00010d0e      d777000d       vsetvli a5, zero, e0x20, m1, ta, ma
 |       :   0x00010d12      d7400e5e       vmv.v.x v1, t3
 |       :   0x00010d16      c286           mv    a3, a6
 |       :   0x00010d18      1147           li    a4, 4
 |       :   0x00010d1a      5731109e       vmv1r.v v2, v1
-|      .--> 0x00010d1e      d7770709       vsetvli a5, a4, e0x20, m1, tu, ma ; arg6
-|      ::   0x00010d22      07e20602       vle32.v v4, (a3)            ; arg4
-|      ::   0x00010d26      13952700       slli  a0, a5, 2             ; arg6
-|      ::   0x00010d2a      1d8f           sub   a4, a4, a5            ; arg6
-|      ::   0x00010d2c      aa96           add   a3, a3, a0            ; arg4
+|      .--> 0x00010d1e      d7770709       vsetvli a5, a4, e0x20, m1, tu, ma ; arg5
+|      ::   0x00010d22      07e20602       vle32.v v4, (a3)
+|      ::   0x00010d26      13952700       slli  a0, a5, 2
+|      ::   0x00010d2a      1d8f           sub   a4, a4, a5            ; arg5
+|      ::   0x00010d2c      aa96           add   a3, a3, a0
 |      ::   0x00010d2e      5701411e       vmax.vv v2, v4, v2
 |      `==< 0x00010d32      75f7           bnez  a4, 0x10d1e
 |       :   0x00010d34      5774000d       vsetvli s0, zero, e0x20, m1, ta, ma
 |       :   0x00010d38      b7070080       lui   a5, 0x80000
 |       :   0x00010d3c      57e20742       vmv.s.x v4, a5
-|       :   0x00010d40      fd37           addiw a5, a5, -1            ; arg6
+|       :   0x00010d40      fd37           addiw a5, a5, -1
 |       :   0x00010d42      5721221e       vredmax.vs v2, v2, v4
 |       :   0x00010d46      57c2075e       vmv.v.x v4, a5
 |       :   0x00010d4a      f32720c2       csrr  a5, vlenb
-|       :   0x00010d4e      93870702       addi  a5, a5, 0x20          ; arg6
-|       :   0x00010d52      3305f100       add   a0, sp, a5            ; arg6
+|       :   0x00010d4e      93870702       addi  a5, a5, 0x20
+|       :   0x00010d52      3305f100       add   a0, sp, a5
 |       :   0x00010d56      aa86           mv    a3, a0
 |       :   0x00010d58      1147           li    a4, 4
 |       :   0x00010d5a      572e2042       vmv.x.s t3, v2
-|      .--> 0x00010d5e      d777670c       vsetvli a5, a4, e8, mf4, ta, ma ; arg6
-|      ::   0x00010d62      27e20602       vse32.v v4, (a3)            ; arg4
-|      ::   0x00010d66      1d8f           sub   a4, a4, a5            ; arg6
+|      .--> 0x00010d5e      d777670c       vsetvli a5, a4, e8, mf4, ta, ma ; arg5
+|      ::   0x00010d62      27e20602       vse32.v v4, (a3)
+|      ::   0x00010d66      1d8f           sub   a4, a4, a5            ; arg5
 |      ::   0x00010d68      8a07           slli  a5, a5, 2
-|      ::   0x00010d6a      be96           add   a3, a3, a5            ; arg6
+|      ::   0x00010d6a      be96           add   a3, a3, a5
 |      `==< 0x00010d6c      6dfb           bnez  a4, 0x10d5e
 |       :   0x00010d6e      577002cd       vsetivli zero, 4, e0x20, m1, ta, ma
 |       :   0x00010d72      07610502       vle32.v v2, (a0)
@@ -945,41 +945,41 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00010d84      27610502       vse32.v v2, (a0)
 |       :   0x00010d88      aa86           mv    a3, a0
 |       :   0x00010d8a      1147           li    a4, 4
-|      .--> 0x00010d8c      d7770709       vsetvli a5, a4, e0x20, m1, tu, ma ; arg6
-|      ::   0x00010d90      07e10602       vle32.v v2, (a3)            ; arg4
-|      ::   0x00010d94      13952700       slli  a0, a5, 2             ; arg6
-|      ::   0x00010d98      1d8f           sub   a4, a4, a5            ; arg6
-|      ::   0x00010d9a      aa96           add   a3, a3, a0            ; arg4
+|      .--> 0x00010d8c      d7770709       vsetvli a5, a4, e0x20, m1, tu, ma ; arg5
+|      ::   0x00010d90      07e10602       vle32.v v2, (a3)
+|      ::   0x00010d94      13952700       slli  a0, a5, 2
+|      ::   0x00010d98      1d8f           sub   a4, a4, a5            ; arg5
+|      ::   0x00010d9a      aa96           add   a3, a3, a0
 |      ::   0x00010d9c      d7802016       vmin.vv v1, v2, v1
 |      `==< 0x00010da0      75f7           bnez  a4, 0x10d8c
 |       :   0x00010da2      b7070080       lui   a5, 0x80000
 |       :   0x00010da6      577002cd       vsetivli zero, 4, e0x20, m1, ta, ma
-|       :   0x00010daa      fd37           addiw a5, a5, -1            ; arg6
+|       :   0x00010daa      fd37           addiw a5, a5, -1
 |       :   0x00010dac      57e20742       vmv.s.x v4, a5
 |       :   0x00010db0      57b10f5e       vmv.v.i v2, -1
 |       :   0x00010db4      5774000d       vsetvli s0, zero, e0x20, m1, ta, ma
 |       :   0x00010db8      d7201216       vredmin.vs v1, v1, v4
 |       :   0x00010dbc      0563           lui   t1, 1
 |       :   0x00010dbe      2e93           add   t1, t1, a1            ; arg2
-|       :   0x00010dc0      2e85           mv    a0, a1
-|       :   0x00010dc2      ae87           mv    a5, a1
+|       :   0x00010dc0      2e85           mv    a0, a1                ; arg2
+|       :   0x00010dc2      ae87           mv    a5, a1                ; arg2
 |       :   0x00010dc4      d7261042       vmv.x.s a3, v1
 |       :   0x00010dc8      577002cd       vsetivli zero, 4, e0x20, m1, ta, ma
-|      .--> 0x00010dcc      87e00702       vle32.v v1, (a5)            ; arg6
-|      ::   0x00010dd0      c107           addi  a5, a5, 0x10          ; arg6
+|      .--> 0x00010dcc      87e00702       vle32.v v1, (a5)
+|      ::   0x00010dd0      c107           addi  a5, a5, 0x10
 |      ::   0x00010dd2      57812026       vand.vv v2, v2, v1
 |      `==< 0x00010dd6      e39b67fe       bne   a5, t1, 0x10dcc
 |       :   0x00010dda      f32720c2       csrr  a5, vlenb
-|       :   0x00010dde      93870703       addi  a5, a5, 0x30          ; arg6
-|       :   0x00010de2      3308f100       add   a6, sp, a5            ; arg6
+|       :   0x00010dde      93870703       addi  a5, a5, 0x30
+|       :   0x00010de2      3308f100       add   a6, sp, a5
 |       :   0x00010de6      27610802       vse32.v v2, (a6)
 |       :   0x00010dea      5774000d       vsetvli s0, zero, e0x20, m1, ta, ma
 |       :   0x00010dee      d7b00f5e       vmv.v.i v1, -1
 |       :   0x00010df2      1147           li    a4, 4
-|      .--> 0x00010df4      d7770709       vsetvli a5, a4, e0x20, m1, tu, ma ; arg6
+|      .--> 0x00010df4      d7770709       vsetvli a5, a4, e0x20, m1, tu, ma ; arg5
 |      ::   0x00010df8      07610802       vle32.v v2, (a6)
-|      ::   0x00010dfc      939e2700       slli  t4, a5, 2             ; arg6
-|      ::   0x00010e00      1d8f           sub   a4, a4, a5            ; arg6
+|      ::   0x00010dfc      939e2700       slli  t4, a5, 2
+|      ::   0x00010e00      1d8f           sub   a4, a4, a5            ; arg5
 |      ::   0x00010e02      7698           add   a6, a6, t4
 |      ::   0x00010e04      d7802026       vand.vv v1, v2, v1
 |      `==< 0x00010e08      75f7           bnez  a4, 0x10df4
@@ -995,16 +995,16 @@ nth      paddr      vaddr bind   type   size lib name
 |      ::   0x00010e2a      5781202a       vor.vv v2, v2, v1
 |      `==< 0x00010e2e      e39b65fe       bne   a1, t1, 0x10e24
 |       :   0x00010e32      f32720c2       csrr  a5, vlenb
-|       :   0x00010e36      93870704       addi  a5, a5, 0x40          ; arg6
-|       :   0x00010e3a      3308f100       add   a6, sp, a5            ; arg6
+|       :   0x00010e36      93870704       addi  a5, a5, 0x40
+|       :   0x00010e3a      3308f100       add   a6, sp, a5
 |       :   0x00010e3e      27610802       vse32.v v2, (a6)
 |       :   0x00010e42      5774000d       vsetvli s0, zero, e0x20, m1, ta, ma
 |       :   0x00010e46      d730005e       vmv.v.i v1, 0
 |       :   0x00010e4a      9145           li    a1, 4
-|      .--> 0x00010e4c      d7f70509       vsetvli a5, a1, e0x20, m1, tu, ma ; arg6
+|      .--> 0x00010e4c      d7f70509       vsetvli a5, a1, e0x20, m1, tu, ma ; arg2
 |      ::   0x00010e50      07610802       vle32.v v2, (a6)
-|      ::   0x00010e54      939e2700       slli  t4, a5, 2             ; arg6
-|      ::   0x00010e58      9d8d           sub   a1, a1, a5            ; arg6
+|      ::   0x00010e54      939e2700       slli  t4, a5, 2
+|      ::   0x00010e58      9d8d           sub   a1, a1, a5            ; arg2
 |      ::   0x00010e5a      7698           add   a6, a6, t4
 |      ::   0x00010e5c      d780202a       vor.vv v1, v2, v1
 |      `==< 0x00010e60      f5f5           bnez  a1, 0x10e4c
@@ -1039,49 +1039,49 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00010ec8      d7a0110e       vredxor.vs v1, v1, v3
 |       :   0x00010ecc      856f           lui   t6, 1
 |       :   0x00010ece      b29f           add   t6, t6, a2            ; arg3
-|       :   0x00010ed0      328f           mv    t5, a2
-|       :   0x00010ed2      b285           mv    a1, a2
+|       :   0x00010ed0      328f           mv    t5, a2                ; arg3
+|       :   0x00010ed2      b285           mv    a1, a2                ; arg3
 |       :   0x00010ed4      57281042       vmv.x.s a6, v1
 |       :   0x00010ed8      577002cd       vsetivli zero, 4, e0x20, m1, ta, ma
-|      .--> 0x00010edc      87e00502       vle32.v v1, (a1)            ; arg2
-|      ::   0x00010ee0      c105           addi  a1, a1, 0x10          ; arg2
+|      .--> 0x00010edc      87e00502       vle32.v v1, (a1)
+|      ::   0x00010ee0      c105           addi  a1, a1, 0x10
 |      ::   0x00010ee2      57912002       vfadd.vv v2, v2, v1
 |      `==< 0x00010ee6      e39bbffe       bne   t6, a1, 0x10edc
 |       :   0x00010eea      f32520c2       csrr  a1, vlenb
-|       :   0x00010eee      93850506       addi  a1, a1, 0x60          ; arg2
-|       :   0x00010ef2      3303b100       add   t1, sp, a1            ; arg2
+|       :   0x00010eee      93850506       addi  a1, a1, 0x60
+|       :   0x00010ef2      3303b100       add   t1, sp, a1
 |       :   0x00010ef6      27610302       vse32.v v2, (t1)
 |       :   0x00010efa      530400f0       fmv.w.x fs0, zero
 |       :   0x00010efe      9145           li    a1, 4
-|      .--> 0x00010f00      57f5650c       vsetvli a0, a1, e8, mf4, ta, ma ; arg2
+|      .--> 0x00010f00      57f5650c       vsetvli a0, a1, e8, mf4, ta, ma
 |      ::   0x00010f04      07610302       vle32.v v2, (t1)
 |      ::   0x00010f08      57f000cd       vsetivli zero, 1, e0x20, m1, ta, ma
 |      ::   0x00010f0c      d7500442       vfmv.s.f v1, fs0
 |      ::   0x00010f10      5770050d       vsetvli zero, a0, e0x20, m1, ta, ma
 |      ::   0x00010f14      931e2500       slli  t4, a0, 2
-|      ::   0x00010f18      898d           sub   a1, a1, a0            ; arg2
+|      ::   0x00010f18      898d           sub   a1, a1, a0
 |      ::   0x00010f1a      d790200e       vfredosum.vs v1, v2, v1
 |      ::   0x00010f1e      7693           add   t1, t1, t4
 |      ::   0x00010f20      57141042       vfmv.f.s fs0, v1
 |      `==< 0x00010f24      f1fd           bnez  a1, 0x10f00
 |       :   0x00010f26      cd62           lui   t0, 0x13              ; 0x13000 ; "P\U00000005\U00000001"
 |       :   0x00010f28      07a78202       flw   fa4, 0x28(t0)
-|       :   0x00010f2c      d775000d       vsetvli a1, zero, e0x20, m1, ta, ma ; arg2
+|       :   0x00010f2c      d775000d       vsetvli a1, zero, e0x20, m1, ta, ma
 |       :   0x00010f30      732520c2       csrr  a0, vlenb
 |       :   0x00010f34      13050507       addi  a0, a0, 0x70
 |       :   0x00010f38      d750075e       vfmv.v.f v1, fa4
 |       :   0x00010f3c      b30ea100       add   t4, sp, a0
 |       :   0x00010f40      7683           mv    t1, t4
 |       :   0x00010f42      9145           li    a1, 4
-|      .--> 0x00010f44      57f5650c       vsetvli a0, a1, e8, mf4, ta, ma ; arg2
+|      .--> 0x00010f44      57f5650c       vsetvli a0, a1, e8, mf4, ta, ma
 |      ::   0x00010f48      a7600302       vse32.v v1, (t1)
-|      ::   0x00010f4c      898d           sub   a1, a1, a0            ; arg2
+|      ::   0x00010f4c      898d           sub   a1, a1, a0
 |      ::   0x00010f4e      0a05           slli  a0, a0, 2
 |      ::   0x00010f50      2a93           add   t1, t1, a0
 |      `==< 0x00010f52      edf9           bnez  a1, 0x10f44
 |       :   0x00010f54      577002cd       vsetivli zero, 4, e0x20, m1, ta, ma
 |       :   0x00010f58      87e00e02       vle32.v v1, (t4)
-|       :   0x00010f5c      3285           mv    a0, a2
+|       :   0x00010f5c      3285           mv    a0, a2                ; arg3
 |      .--> 0x00010f5e      07610502       vle32.v v2, (a0)
 |      ::   0x00010f62      4105           addi  a0, a0, 0x10
 |      ::   0x00010f64      5710116e       vmflt.vv v0, v1, v2
@@ -1094,10 +1094,10 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00010f7e      1146           li    a2, 4
 |       :   0x00010f80      5731109e       vmv1r.v v2, v1
 |      .--> 0x00010f84      57750609       vsetvli a0, a2, e0x20, m1, tu, ma ; arg3
-|      ::   0x00010f88      87e10502       vle32.v v3, (a1)            ; arg2
+|      ::   0x00010f88      87e10502       vle32.v v3, (a1)
 |      ::   0x00010f8c      13132500       slli  t1, a0, 2
 |      ::   0x00010f90      098e           sub   a2, a2, a0            ; arg3
-|      ::   0x00010f92      9a95           add   a1, a1, t1            ; arg2
+|      ::   0x00010f92      9a95           add   a1, a1, t1
 |      ::   0x00010f94      5711311a       vfmax.vv v2, v3, v2
 |      `==< 0x00010f98      75f6           bnez  a2, 0x10f84
 |       :   0x00010f9a      07a78202       flw   fa4, 0x28(t0)
@@ -1110,12 +1110,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00010fb4      13060608       addi  a2, a2, 0x80          ; arg3
 |       :   0x00010fb8      d7d1075e       vfmv.v.f v3, fa5
 |       :   0x00010fbc      0a96           add   a2, a2, sp            ; arg3
-|       :   0x00010fbe      3283           mv    t1, a2
+|       :   0x00010fbe      3283           mv    t1, a2                ; arg3
 |       :   0x00010fc0      9145           li    a1, 4
 |       :   0x00010fc2      d7142042       vfmv.f.s fs1, v2
-|      .--> 0x00010fc6      57f5650c       vsetvli a0, a1, e8, mf4, ta, ma ; arg2
+|      .--> 0x00010fc6      57f5650c       vsetvli a0, a1, e8, mf4, ta, ma
 |      ::   0x00010fca      a7610302       vse32.v v3, (t1)
-|      ::   0x00010fce      898d           sub   a1, a1, a0            ; arg2
+|      ::   0x00010fce      898d           sub   a1, a1, a0
 |      ::   0x00010fd0      0a05           slli  a0, a0, 2
 |      ::   0x00010fd2      2a93           add   t1, t1, a0
 |      `==< 0x00010fd4      edf9           bnez  a1, 0x10fc6
@@ -1128,16 +1128,16 @@ nth      paddr      vaddr bind   type   size lib name
 |      `==< 0x00010fec      e319ffff       bne   t5, t6, 0x10fde
 |       :   0x00010ff0      27610602       vse32.v v2, (a2)            ; arg3
 |       :   0x00010ff4      9145           li    a1, 4
-|      .--> 0x00010ff6      57f50509       vsetvli a0, a1, e0x20, m1, tu, ma ; arg2
+|      .--> 0x00010ff6      57f50509       vsetvli a0, a1, e0x20, m1, tu, ma
 |      ::   0x00010ffa      07610602       vle32.v v2, (a2)            ; arg3
 |      ::   0x00010ffe      13132500       slli  t1, a0, 2
-|      ::   0x00011002      898d           sub   a1, a1, a0            ; arg2
+|      ::   0x00011002      898d           sub   a1, a1, a0
 |      ::   0x00011004      1a96           add   a2, a2, t1            ; arg3
 |      ::   0x00011006      d7101112       vfmin.vv v1, v1, v2
 |      `==< 0x0001100a      f5f5           bnez  a1, 0x10ff6
 |       :   0x0001100c      4965           lui   a0, 0x12
 |       :   0x0001100e      7286           mv    a2, t3
-|       :   0x00011010      c685           mv    a1, a7
+|       :   0x00011010      c685           mv    a1, a7                ; arg8
 |       :   0x00011012      1305859c       addi  a0, a0, -0x638
 |       :   0x00011016      a7008102       vs1r.v v1, (sp)
 |       :   0x0001101a      eff06fd8       jal   sym.imp.printf        ; int printf(const char *format)
@@ -1166,38 +1166,36 @@ nth      paddr      vaddr bind   type   size lib name
 \       `=< 0x00011066      6ff0afd3       j     sym.imp.printf
 --- vector sign injection
             ; CALL XREF from main @ 0x10a04
-/ sym.test_sign_injection(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg8);
+/ sym.test_sign_injection(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
 |           ; arg int64_t arg3 @ a2
-|           ; arg int64_t arg4 @ a3
 |           ; arg int64_t arg6 @ a5
-|           ; arg int64_t arg8 @ a7
-|           0x00011566      b286           mv    a3, a2
-|           0x00011568      aa88           mv    a7, a0
+|           0x00011566      b286           mv    a3, a2                ; arg3
+|           0x00011568      aa88           mv    a7, a0                ; arg1
 |           0x0001156a      13070040       li    a4, 0x400
 |       .-> 0x0001156e      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
-|       :   0x00011572      87e00802       vle32.v v1, (a7)            ; arg8
+|       :   0x00011572      87e00802       vle32.v v1, (a7)
 |       :   0x00011576      07e10502       vle32.v v2, (a1)            ; arg2
 |       :   0x0001157a      13982700       slli  a6, a5, 2             ; arg6
 |       :   0x0001157e      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x00011580      c298           add   a7, a7, a6            ; arg8
+|       :   0x00011580      c298           add   a7, a7, a6
 |       :   0x00011582      c295           add   a1, a1, a6            ; arg2
 |       :   0x00011584      d7101122       vfsgnj.vv v1, v1, v2
-|       :   0x00011588      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x0001158c      c296           add   a3, a3, a6            ; arg4
+|       :   0x00011588      a7e00602       vse32.v v1, (a3)
+|       :   0x0001158c      c296           add   a3, a3, a6
 |       `=< 0x0001158e      65f3           bnez  a4, 0x1156e
-|           0x00011590      b286           mv    a3, a2
-|           0x00011592      aa85           mv    a1, a0
+|           0x00011590      b286           mv    a3, a2                ; arg3
+|           0x00011592      aa85           mv    a1, a0                ; arg1
 |           0x00011594      13070040       li    a4, 0x400
 |       .-> 0x00011598      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
-|       :   0x0001159c      87e00502       vle32.v v1, (a1)            ; arg2
+|       :   0x0001159c      87e00502       vle32.v v1, (a1)
 |       :   0x000115a0      13982700       slli  a6, a5, 2             ; arg6
 |       :   0x000115a4      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000115a6      c295           add   a1, a1, a6            ; arg2
+|       :   0x000115a6      c295           add   a1, a1, a6
 |       :   0x000115a8      d790102a       vfabs.v v1, v1
-|       :   0x000115ac      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x000115b0      c296           add   a3, a3, a6            ; arg4
+|       :   0x000115ac      a7e00602       vse32.v v1, (a3)
+|       :   0x000115b0      c296           add   a3, a3, a6
 |       `=< 0x000115b2      7df3           bnez  a4, 0x11598
 |           0x000115b4      87a7c180       flw   fa5, -0x7f4(gp)
 |           0x000115b8      d777000d       vsetvli a5, zero, e0x20, m1, ta, ma ; arg6
@@ -1215,30 +1213,29 @@ nth      paddr      vaddr bind   type   size lib name
 \           0x000115e0      8280           ret
 --- vector saturating
             ; CALL XREF from main @ 0x10960
-/ sym.test_saturating(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg8);
+/ sym.test_saturating(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
 |           ; arg int64_t arg3 @ a2
 |           ; arg int64_t arg4 @ a3
 |           ; arg int64_t arg5 @ a4
 |           ; arg int64_t arg6 @ a5
-|           ; arg int64_t arg8 @ a7
 |           0x00011252      d776000d       vsetvli a3, zero, e0x20, m1, ta, ma ; arg4
 |           0x00011256      6178           lui   a6, 0xffff8
 |           0x00011258      2167           lui   a4, 8
 |           0x0001125a      d741085e       vmv.v.x v3, a6
 |           0x0001125e      7d37           addiw a4, a4, -1            ; arg5
 |           0x00011260      5741075e       vmv.v.x v2, a4
-|           0x00011264      b286           mv    a3, a2
-|           0x00011266      2e83           mv    t1, a1
-|           0x00011268      aa88           mv    a7, a0
+|           0x00011264      b286           mv    a3, a2                ; arg3
+|           0x00011266      2e83           mv    t1, a1                ; arg2
+|           0x00011268      aa88           mv    a7, a0                ; arg1
 |           0x0001126a      13070040       li    a4, 0x400
 |       .-> 0x0001126e      d777f70c       vsetvli a5, a4, e0x10, mf2, ta, ma ; arg6
 |       :   0x00011272      87520302       vle16.v v5, (t1)
-|       :   0x00011276      07d20802       vle16.v v4, (a7)            ; arg8
+|       :   0x00011276      07d20802       vle16.v v4, (a7)
 |       :   0x0001127a      13981700       slli  a6, a5, 1             ; arg6
 |       :   0x0001127e      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x00011280      c298           add   a7, a7, a6            ; arg8
+|       :   0x00011280      c298           add   a7, a7, a6
 |       :   0x00011282      4293           add   t1, t1, a6
 |       :   0x00011284      d72052c6       vwadd.vv v1, v5, v4
 |       :   0x00011288      5770000d       vsetvli zero, zero, e0x20, m1, ta, ma
@@ -1246,8 +1243,8 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00011290      d7001116       vmin.vv v1, v1, v2
 |       :   0x00011294      5770f00c       vsetvli zero, zero, e0x10, mf2, ta, ma
 |       :   0x00011298      d73010b2       vnsrl.wi v1, v1, 0
-|       :   0x0001129c      a7d00602       vse16.v v1, (a3)            ; arg4
-|       :   0x000112a0      c296           add   a3, a3, a6            ; arg4
+|       :   0x0001129c      a7d00602       vse16.v v1, (a3)
+|       :   0x000112a0      c296           add   a3, a3, a6
 |       `=< 0x000112a2      71f7           bnez  a4, 0x1126e
 |           0x000112a4      13070040       li    a4, 0x400
 |       .-> 0x000112a8      d777f70c       vsetvli a5, a4, e0x10, mf2, ta, ma ; arg6
@@ -1269,27 +1266,25 @@ nth      paddr      vaddr bind   type   size lib name
 \           0x000112de      8280           ret
 --- vector unsigned operations
             ; CALL XREF from main @ 0x10b02
-/ sym.test_unsigned_ops(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg8);
+/ sym.test_unsigned_ops(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
 |           ; arg int64_t arg3 @ a2
-|           ; arg int64_t arg4 @ a3
 |           ; arg int64_t arg6 @ a5
-|           ; arg int64_t arg8 @ a7
-|           0x00011900      b286           mv    a3, a2
-|           0x00011902      2a83           mv    t1, a0
-|           0x00011904      ae88           mv    a7, a1
+|           0x00011900      b286           mv    a3, a2                ; arg3
+|           0x00011902      2a83           mv    t1, a0                ; arg1
+|           0x00011904      ae88           mv    a7, a1                ; arg2
 |           0x00011906      13070040       li    a4, 0x400
 |       .-> 0x0001190a      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
-|       :   0x0001190e      07e10802       vle32.v v2, (a7)            ; arg8
+|       :   0x0001190e      07e10802       vle32.v v2, (a7)
 |       :   0x00011912      87600302       vle32.v v1, (t1)
 |       :   0x00011916      13982700       slli  a6, a5, 2             ; arg6
 |       :   0x0001191a      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x0001191c      c298           add   a7, a7, a6            ; arg8
+|       :   0x0001191c      c298           add   a7, a7, a6
 |       :   0x0001191e      4293           add   t1, t1, a6
 |       :   0x00011920      d700111a       vmaxu.vv v1, v1, v2
-|       :   0x00011924      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x00011928      c296           add   a3, a3, a6            ; arg4
+|       :   0x00011924      a7e00602       vse32.v v1, (a3)
+|       :   0x00011928      c296           add   a3, a3, a6
 |       `=< 0x0001192a      65f3           bnez  a4, 0x1190a
 |           0x0001192c      13070040       li    a4, 0x400
 |       .-> 0x00011930      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
@@ -1306,27 +1301,25 @@ nth      paddr      vaddr bind   type   size lib name
 \           0x00011952      8280           ret
 --- vector minmax
             ; CALL XREF from main @ 0x10af8
-/ sym.test_minmax(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg8);
+/ sym.test_minmax(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
 |           ; arg int64_t arg3 @ a2
-|           ; arg int64_t arg4 @ a3
 |           ; arg int64_t arg6 @ a5
-|           ; arg int64_t arg8 @ a7
-|           0x000118ac      b286           mv    a3, a2
-|           0x000118ae      2a83           mv    t1, a0
-|           0x000118b0      ae88           mv    a7, a1
+|           0x000118ac      b286           mv    a3, a2                ; arg3
+|           0x000118ae      2a83           mv    t1, a0                ; arg1
+|           0x000118b0      ae88           mv    a7, a1                ; arg2
 |           0x000118b2      13070040       li    a4, 0x400
 |       .-> 0x000118b6      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
-|       :   0x000118ba      07e10802       vle32.v v2, (a7)            ; arg8
+|       :   0x000118ba      07e10802       vle32.v v2, (a7)
 |       :   0x000118be      87600302       vle32.v v1, (t1)
 |       :   0x000118c2      13982700       slli  a6, a5, 2             ; arg6
 |       :   0x000118c6      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000118c8      c298           add   a7, a7, a6            ; arg8
+|       :   0x000118c8      c298           add   a7, a7, a6
 |       :   0x000118ca      4293           add   t1, t1, a6
 |       :   0x000118cc      d700111e       vmax.vv v1, v1, v2
-|       :   0x000118d0      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x000118d4      c296           add   a3, a3, a6            ; arg4
+|       :   0x000118d0      a7e00602       vse32.v v1, (a3)
+|       :   0x000118d4      c296           add   a3, a3, a6
 |       `=< 0x000118d6      65f3           bnez  a4, 0x118b6
 |           0x000118d8      13070040       li    a4, 0x400
 |       .-> 0x000118dc      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
@@ -1343,17 +1336,16 @@ nth      paddr      vaddr bind   type   size lib name
 \           0x000118fe      8280           ret
 --- vector fused multiply-add
             ; CALL XREF from main @ 0x109a8
-/ sym.test_fma(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg8);
+/ sym.test_fma(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
 |           ; arg int64_t arg3 @ a2
 |           ; arg int64_t arg4 @ a3
 |           ; arg int64_t arg6 @ a5
-|           ; arg int64_t arg8 @ a7
-|           0x00011416      b688           mv    a7, a3
-|           0x00011418      b28e           mv    t4, a2
-|           0x0001141a      2e8e           mv    t3, a1
-|           0x0001141c      2a83           mv    t1, a0
+|           0x00011416      b688           mv    a7, a3                ; arg4
+|           0x00011418      b28e           mv    t4, a2                ; arg3
+|           0x0001141a      2e8e           mv    t3, a1                ; arg2
+|           0x0001141c      2a83           mv    t1, a0                ; arg1
 |           0x0001141e      13080040       li    a6, 0x400
 |       .-> 0x00011422      d777080d       vsetvli a5, a6, e0x20, m1, ta, ma ; arg6
 |       :   0x00011426      87600302       vle32.v v1, (t1)
@@ -1365,13 +1357,13 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x0001143c      3a9e           add   t3, t3, a4
 |       :   0x0001143e      ba9e           add   t4, t4, a4
 |       :   0x00011440      d79021a2       vfmadd.vv v1, v3, v2
-|       :   0x00011444      a7e00802       vse32.v v1, (a7)            ; arg8
-|       :   0x00011448      ba98           add   a7, a7, a4            ; arg8
+|       :   0x00011444      a7e00802       vse32.v v1, (a7)
+|       :   0x00011448      ba98           add   a7, a7, a4
 |       `=< 0x0001144a      e31c08fc       bnez  a6, 0x11422
-|           0x0001144e      b688           mv    a7, a3
-|           0x00011450      b28e           mv    t4, a2
-|           0x00011452      2e8e           mv    t3, a1
-|           0x00011454      2a83           mv    t1, a0
+|           0x0001144e      b688           mv    a7, a3                ; arg4
+|           0x00011450      b28e           mv    t4, a2                ; arg3
+|           0x00011452      2e8e           mv    t3, a1                ; arg2
+|           0x00011454      2a83           mv    t1, a0                ; arg1
 |           0x00011456      13080040       li    a6, 0x400
 |       .-> 0x0001145a      d777080d       vsetvli a5, a6, e0x20, m1, ta, ma ; arg6
 |       :   0x0001145e      87610302       vle32.v v3, (t1)
@@ -1383,8 +1375,8 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00011474      3a9e           add   t3, t3, a4
 |       :   0x00011476      ba9e           add   t4, t4, a4
 |       :   0x00011478      d79021aa       vfmsub.vv v1, v3, v2
-|       :   0x0001147c      a7e00802       vse32.v v1, (a7)            ; arg8
-|       :   0x00011480      ba98           add   a7, a7, a4            ; arg8
+|       :   0x0001147c      a7e00802       vse32.v v1, (a7)
+|       :   0x00011480      ba98           add   a7, a7, a4
 |       `=< 0x00011482      e31c08fc       bnez  a6, 0x1145a
 |           0x00011486      13080040       li    a6, 0x400
 |       .-> 0x0001148a      d777080d       vsetvli a5, a6, e0x20, m1, ta, ma ; arg6
@@ -1403,56 +1395,54 @@ nth      paddr      vaddr bind   type   size lib name
 \           0x000114b6      8280           ret
 --- vector float operations
             ; CALL XREF from main @ 0x1099c
-/ sym.test_float_ops(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg8);
+/ sym.test_float_ops(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
 |           ; arg int64_t arg3 @ a2
-|           ; arg int64_t arg4 @ a3
 |           ; arg int64_t arg6 @ a5
-|           ; arg int64_t arg8 @ a7
-|           0x00011362      b286           mv    a3, a2
-|           0x00011364      2e83           mv    t1, a1
-|           0x00011366      aa88           mv    a7, a0
+|           0x00011362      b286           mv    a3, a2                ; arg3
+|           0x00011364      2e83           mv    t1, a1                ; arg2
+|           0x00011366      aa88           mv    a7, a0                ; arg1
 |           0x00011368      13070040       li    a4, 0x400
 |       .-> 0x0001136c      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
-|       :   0x00011370      87e00802       vle32.v v1, (a7)            ; arg8
+|       :   0x00011370      87e00802       vle32.v v1, (a7)
 |       :   0x00011374      07610302       vle32.v v2, (t1)
 |       :   0x00011378      13982700       slli  a6, a5, 2             ; arg6
 |       :   0x0001137c      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x0001137e      c298           add   a7, a7, a6            ; arg8
+|       :   0x0001137e      c298           add   a7, a7, a6
 |       :   0x00011380      4293           add   t1, t1, a6
 |       :   0x00011382      d7101102       vfadd.vv v1, v1, v2
-|       :   0x00011386      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x0001138a      c296           add   a3, a3, a6            ; arg4
+|       :   0x00011386      a7e00602       vse32.v v1, (a3)
+|       :   0x0001138a      c296           add   a3, a3, a6
 |       `=< 0x0001138c      65f3           bnez  a4, 0x1136c
-|           0x0001138e      b286           mv    a3, a2
-|           0x00011390      2e83           mv    t1, a1
-|           0x00011392      aa88           mv    a7, a0
+|           0x0001138e      b286           mv    a3, a2                ; arg3
+|           0x00011390      2e83           mv    t1, a1                ; arg2
+|           0x00011392      aa88           mv    a7, a0                ; arg1
 |           0x00011394      13070040       li    a4, 0x400
 |       .-> 0x00011398      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
-|       :   0x0001139c      87e00802       vle32.v v1, (a7)            ; arg8
+|       :   0x0001139c      87e00802       vle32.v v1, (a7)
 |       :   0x000113a0      07610302       vle32.v v2, (t1)
 |       :   0x000113a4      13982700       slli  a6, a5, 2             ; arg6
 |       :   0x000113a8      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000113aa      c298           add   a7, a7, a6            ; arg8
+|       :   0x000113aa      c298           add   a7, a7, a6
 |       :   0x000113ac      4293           add   t1, t1, a6
 |       :   0x000113ae      d710110a       vfsub.vv v1, v1, v2
-|       :   0x000113b2      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x000113b6      c296           add   a3, a3, a6            ; arg4
+|       :   0x000113b2      a7e00602       vse32.v v1, (a3)
+|       :   0x000113b6      c296           add   a3, a3, a6
 |       `=< 0x000113b8      65f3           bnez  a4, 0x11398
-|           0x000113ba      b286           mv    a3, a2
-|           0x000113bc      aa88           mv    a7, a0
+|           0x000113ba      b286           mv    a3, a2                ; arg3
+|           0x000113bc      aa88           mv    a7, a0                ; arg1
 |           0x000113be      13070040       li    a4, 0x400
 |       .-> 0x000113c2      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
-|       :   0x000113c6      87e00802       vle32.v v1, (a7)            ; arg8
+|       :   0x000113c6      87e00802       vle32.v v1, (a7)
 |       :   0x000113ca      07e10502       vle32.v v2, (a1)            ; arg2
 |       :   0x000113ce      13982700       slli  a6, a5, 2             ; arg6
 |       :   0x000113d2      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000113d4      c298           add   a7, a7, a6            ; arg8
+|       :   0x000113d4      c298           add   a7, a7, a6
 |       :   0x000113d6      c295           add   a1, a1, a6            ; arg2
 |       :   0x000113d8      d7101182       vfdiv.vv v1, v1, v2
-|       :   0x000113dc      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x000113e0      c296           add   a3, a3, a6            ; arg4
+|       :   0x000113dc      a7e00602       vse32.v v1, (a3)
+|       :   0x000113e0      c296           add   a3, a3, a6
 |       `=< 0x000113e2      65f3           bnez  a4, 0x113c2
 |           0x000113e4      d777000d       vsetvli a5, zero, e0x20, m1, ta, ma ; arg6
 |           0x000113e8      5731005e       vmv.v.i v2, 0
@@ -1471,56 +1461,54 @@ nth      paddr      vaddr bind   type   size lib name
 \           0x00011414      8280           ret
 --- floating point operations
             ; CALL XREF from main @ 0x1099c
-/ sym.test_float_ops(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg8);
+/ sym.test_float_ops(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
 |           ; arg int64_t arg3 @ a2
-|           ; arg int64_t arg4 @ a3
 |           ; arg int64_t arg6 @ a5
-|           ; arg int64_t arg8 @ a7
-|           0x00011362      b286           mv    a3, a2
-|           0x00011364      2e83           mv    t1, a1
-|           0x00011366      aa88           mv    a7, a0
+|           0x00011362      b286           mv    a3, a2                ; arg3
+|           0x00011364      2e83           mv    t1, a1                ; arg2
+|           0x00011366      aa88           mv    a7, a0                ; arg1
 |           0x00011368      13070040       li    a4, 0x400
 |       .-> 0x0001136c      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
-|       :   0x00011370      87e00802       vle32.v v1, (a7)            ; arg8
+|       :   0x00011370      87e00802       vle32.v v1, (a7)
 |       :   0x00011374      07610302       vle32.v v2, (t1)
 |       :   0x00011378      13982700       slli  a6, a5, 2             ; arg6
 |       :   0x0001137c      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x0001137e      c298           add   a7, a7, a6            ; arg8
+|       :   0x0001137e      c298           add   a7, a7, a6
 |       :   0x00011380      4293           add   t1, t1, a6
 |       :   0x00011382      d7101102       vfadd.vv v1, v1, v2
-|       :   0x00011386      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x0001138a      c296           add   a3, a3, a6            ; arg4
+|       :   0x00011386      a7e00602       vse32.v v1, (a3)
+|       :   0x0001138a      c296           add   a3, a3, a6
 |       `=< 0x0001138c      65f3           bnez  a4, 0x1136c
-|           0x0001138e      b286           mv    a3, a2
-|           0x00011390      2e83           mv    t1, a1
-|           0x00011392      aa88           mv    a7, a0
+|           0x0001138e      b286           mv    a3, a2                ; arg3
+|           0x00011390      2e83           mv    t1, a1                ; arg2
+|           0x00011392      aa88           mv    a7, a0                ; arg1
 |           0x00011394      13070040       li    a4, 0x400
 |       .-> 0x00011398      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
-|       :   0x0001139c      87e00802       vle32.v v1, (a7)            ; arg8
+|       :   0x0001139c      87e00802       vle32.v v1, (a7)
 |       :   0x000113a0      07610302       vle32.v v2, (t1)
 |       :   0x000113a4      13982700       slli  a6, a5, 2             ; arg6
 |       :   0x000113a8      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000113aa      c298           add   a7, a7, a6            ; arg8
+|       :   0x000113aa      c298           add   a7, a7, a6
 |       :   0x000113ac      4293           add   t1, t1, a6
 |       :   0x000113ae      d710110a       vfsub.vv v1, v1, v2
-|       :   0x000113b2      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x000113b6      c296           add   a3, a3, a6            ; arg4
+|       :   0x000113b2      a7e00602       vse32.v v1, (a3)
+|       :   0x000113b6      c296           add   a3, a3, a6
 |       `=< 0x000113b8      65f3           bnez  a4, 0x11398
-|           0x000113ba      b286           mv    a3, a2
-|           0x000113bc      aa88           mv    a7, a0
+|           0x000113ba      b286           mv    a3, a2                ; arg3
+|           0x000113bc      aa88           mv    a7, a0                ; arg1
 |           0x000113be      13070040       li    a4, 0x400
 |       .-> 0x000113c2      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
-|       :   0x000113c6      87e00802       vle32.v v1, (a7)            ; arg8
+|       :   0x000113c6      87e00802       vle32.v v1, (a7)
 |       :   0x000113ca      07e10502       vle32.v v2, (a1)            ; arg2
 |       :   0x000113ce      13982700       slli  a6, a5, 2             ; arg6
 |       :   0x000113d2      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000113d4      c298           add   a7, a7, a6            ; arg8
+|       :   0x000113d4      c298           add   a7, a7, a6
 |       :   0x000113d6      c295           add   a1, a1, a6            ; arg2
 |       :   0x000113d8      d7101182       vfdiv.vv v1, v1, v2
-|       :   0x000113dc      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x000113e0      c296           add   a3, a3, a6            ; arg4
+|       :   0x000113dc      a7e00602       vse32.v v1, (a3)
+|       :   0x000113e0      c296           add   a3, a3, a6
 |       `=< 0x000113e2      65f3           bnez  a4, 0x113c2
 |           0x000113e4      d777000d       vsetvli a5, zero, e0x20, m1, ta, ma ; arg6
 |           0x000113e8      5731005e       vmv.v.i v2, 0
@@ -1539,29 +1527,26 @@ nth      paddr      vaddr bind   type   size lib name
 \           0x00011414      8280           ret
 --- widening operations
             ; CALL XREF from main @ 0x1096a
-/ sym.test_widening(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg7, int64_t arg8);
+/ sym.test_widening(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
 |           ; arg int64_t arg3 @ a2
-|           ; arg int64_t arg4 @ a3
 |           ; arg int64_t arg6 @ a5
-|           ; arg int64_t arg7 @ a6
-|           ; arg int64_t arg8 @ a7
-|           0x000112e0      b286           mv    a3, a2
-|           0x000112e2      ae88           mv    a7, a1
-|           0x000112e4      2a88           mv    a6, a0
+|           0x000112e0      b286           mv    a3, a2                ; arg3
+|           0x000112e2      ae88           mv    a7, a1                ; arg2
+|           0x000112e4      2a88           mv    a6, a0                ; arg1
 |           0x000112e6      13070040       li    a4, 0x400
 |       .-> 0x000112ea      d777f70c       vsetvli a5, a4, e0x10, mf2, ta, ma ; arg6
-|       :   0x000112ee      87d10802       vle16.v v3, (a7)            ; arg8
-|       :   0x000112f2      07510802       vle16.v v2, (a6)            ; arg7
+|       :   0x000112ee      87d10802       vle16.v v3, (a7)
+|       :   0x000112f2      07510802       vle16.v v2, (a6)
 |       :   0x000112f6      13931700       slli  t1, a5, 1             ; arg6
 |       :   0x000112fa      139e2700       slli  t3, a5, 2             ; arg6
 |       :   0x000112fe      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x00011300      1a98           add   a6, a6, t1            ; arg7
-|       :   0x00011302      9a98           add   a7, a7, t1            ; arg8
+|       :   0x00011300      1a98           add   a6, a6, t1
+|       :   0x00011302      9a98           add   a7, a7, t1
 |       :   0x00011304      d72031c6       vwadd.vv v1, v3, v2
-|       :   0x00011308      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x0001130c      f296           add   a3, a3, t3            ; arg4
+|       :   0x00011308      a7e00602       vse32.v v1, (a3)
+|       :   0x0001130c      f296           add   a3, a3, t3
 |       `=< 0x0001130e      71ff           bnez  a4, 0x112ea
 |           0x00011310      13070040       li    a4, 0x400
 |       .-> 0x00011314      d777f70c       vsetvli a5, a4, e0x10, mf2, ta, ma ; arg6
@@ -1579,44 +1564,42 @@ nth      paddr      vaddr bind   type   size lib name
 \           0x0001133a      8280           ret
 --- comparisons
             ; CALL XREF from main @ 0x10942
-/ sym.test_comparisons(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg8);
+/ sym.test_comparisons(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
 |           ; arg int64_t arg3 @ a2
-|           ; arg int64_t arg4 @ a3
 |           ; arg int64_t arg6 @ a5
-|           ; arg int64_t arg8 @ a7
-|           0x0001106a      b286           mv    a3, a2
-|           0x0001106c      2a83           mv    t1, a0
-|           0x0001106e      ae88           mv    a7, a1
+|           0x0001106a      b286           mv    a3, a2                ; arg3
+|           0x0001106c      2a83           mv    t1, a0                ; arg1
+|           0x0001106e      ae88           mv    a7, a1                ; arg2
 |           0x00011070      13070040       li    a4, 0x400
 |       .-> 0x00011074      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
-|       :   0x00011078      07e10802       vle32.v v2, (a7)            ; arg8
+|       :   0x00011078      07e10802       vle32.v v2, (a7)
 |       :   0x0001107c      87600302       vle32.v v1, (t1)
 |       :   0x00011080      13982700       slli  a6, a5, 2             ; arg6
 |       :   0x00011084      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x00011086      c298           add   a7, a7, a6            ; arg8
+|       :   0x00011086      c298           add   a7, a7, a6
 |       :   0x00011088      4293           add   t1, t1, a6
 |       :   0x0001108a      d7001116       vmin.vv v1, v1, v2
-|       :   0x0001108e      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x00011092      c296           add   a3, a3, a6            ; arg4
+|       :   0x0001108e      a7e00602       vse32.v v1, (a3)
+|       :   0x00011092      c296           add   a3, a3, a6
 |       `=< 0x00011094      65f3           bnez  a4, 0x11074
 |           0x00011096      5773000d       vsetvli t1, zero, e0x20, m1, ta, ma
 |           0x0001109a      5731005e       vmv.v.i v2, 0
-|           0x0001109e      b286           mv    a3, a2
-|           0x000110a0      aa88           mv    a7, a0
+|           0x0001109e      b286           mv    a3, a2                ; arg3
+|           0x000110a0      aa88           mv    a7, a0                ; arg1
 |           0x000110a2      13070040       li    a4, 0x400
 |       .-> 0x000110a6      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
-|       :   0x000110aa      87e00802       vle32.v v1, (a7)            ; arg8
+|       :   0x000110aa      87e00802       vle32.v v1, (a7)
 |       :   0x000110ae      07e00502       vle32.v v0, (a1)            ; arg2
 |       :   0x000110b2      13982700       slli  a6, a5, 2             ; arg6
 |       :   0x000110b6      1d8f           sub   a4, a4, a5            ; arg6
 |       :   0x000110b8      c295           add   a1, a1, a6            ; arg2
-|       :   0x000110ba      c298           add   a7, a7, a6            ; arg8
+|       :   0x000110ba      c298           add   a7, a7, a6
 |       :   0x000110bc      57800062       vmseq.vv v0, v0, v1
 |       :   0x000110c0      d7b0205c       vmerge.vim v1, v2, 1, v0
-|       :   0x000110c4      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x000110c8      c296           add   a3, a3, a6            ; arg4
+|       :   0x000110c4      a7e00602       vse32.v v1, (a3)
+|       :   0x000110c8      c296           add   a3, a3, a6
 |       `=< 0x000110ca      71ff           bnez  a4, 0x110a6
 |           0x000110cc      d777000d       vsetvli a5, zero, e0x20, m1, ta, ma ; arg6
 |           0x000110d0      5731005e       vmv.v.i v2, 0
@@ -1745,28 +1728,26 @@ nth      paddr      vaddr bind   type   size lib name
 \           0x00011776      8280           ret
 --- floating point comparisons
             ; CALL XREF from main @ 0x109b2
-/ sym.test_float_comparisons(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg8);
+/ sym.test_float_comparisons(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
 |           ; arg int64_t arg3 @ a2
-|           ; arg int64_t arg4 @ a3
 |           ; arg int64_t arg6 @ a5
-|           ; arg int64_t arg8 @ a7
-|           0x000114b8      b286           mv    a3, a2
-|           0x000114ba      2e83           mv    t1, a1
-|           0x000114bc      aa88           mv    a7, a0
+|           0x000114b8      b286           mv    a3, a2                ; arg3
+|           0x000114ba      2e83           mv    t1, a1                ; arg2
+|           0x000114bc      aa88           mv    a7, a0                ; arg1
 |           0x000114be      13070040       li    a4, 0x400
 |       .-> 0x000114c2      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
-|       :   0x000114c6      07e10802       vle32.v v2, (a7)            ; arg8
+|       :   0x000114c6      07e10802       vle32.v v2, (a7)
 |       :   0x000114ca      87600302       vle32.v v1, (t1)
 |       :   0x000114ce      13982700       slli  a6, a5, 2             ; arg6
 |       :   0x000114d2      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000114d4      c298           add   a7, a7, a6            ; arg8
+|       :   0x000114d4      c298           add   a7, a7, a6
 |       :   0x000114d6      4293           add   t1, t1, a6
 |       :   0x000114d8      5790206e       vmflt.vv v0, v2, v1
 |       :   0x000114dc      d700115c       vmerge.vvm v1, v1, v2, v0
-|       :   0x000114e0      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x000114e4      c296           add   a3, a3, a6            ; arg4
+|       :   0x000114e0      a7e00602       vse32.v v1, (a3)
+|       :   0x000114e4      c296           add   a3, a3, a6
 |       `=< 0x000114e6      71ff           bnez  a4, 0x114c2
 |           0x000114e8      577e000d       vsetvli t3, zero, e0x20, m1, ta, ma
 |           0x000114ec      d731005e       vmv.v.i v3, 0
@@ -1807,38 +1788,36 @@ nth      paddr      vaddr bind   type   size lib name
 \           0x0001179e      8280           ret
 --- shifts
             ; CALL XREF from main @ 0x1094c
-/ sym.test_shifts(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg7);
+/ sym.test_shifts(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
 |           ; arg int64_t arg3 @ a2
-|           ; arg int64_t arg4 @ a3
 |           ; arg int64_t arg6 @ a5
-|           ; arg int64_t arg7 @ a6
-|           0x00011102      b286           mv    a3, a2
-|           0x00011104      2a88           mv    a6, a0
+|           0x00011102      b286           mv    a3, a2                ; arg3
+|           0x00011104      2a88           mv    a6, a0                ; arg1
 |           0x00011106      13070040       li    a4, 0x400
 |       .-> 0x0001110a      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
-|       :   0x0001110e      87600802       vle32.v v1, (a6)            ; arg7
+|       :   0x0001110e      87600802       vle32.v v1, (a6)
 |       :   0x00011112      93982700       slli  a7, a5, 2             ; arg6
 |       :   0x00011116      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x00011118      4698           add   a6, a6, a7            ; arg7
+|       :   0x00011118      4698           add   a6, a6, a7
 |       :   0x0001111a      d7b01196       vsll.vi v1, v1, 3
-|       :   0x0001111e      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x00011122      c696           add   a3, a3, a7            ; arg4
+|       :   0x0001111e      a7e00602       vse32.v v1, (a3)
+|       :   0x00011122      c696           add   a3, a3, a7
 |       `=< 0x00011124      7df3           bnez  a4, 0x1110a
-|           0x00011126      b286           mv    a3, a2
-|           0x00011128      2a88           mv    a6, a0
+|           0x00011126      b286           mv    a3, a2                ; arg3
+|           0x00011128      2a88           mv    a6, a0                ; arg1
 |           0x0001112a      13070040       li    a4, 0x400
 |       .-> 0x0001112e      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
-|       :   0x00011132      87600802       vle32.v v1, (a6)            ; arg7
+|       :   0x00011132      87600802       vle32.v v1, (a6)
 |       :   0x00011136      93982700       slli  a7, a5, 2             ; arg6
 |       :   0x0001113a      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x0001113c      4698           add   a6, a6, a7            ; arg7
+|       :   0x0001113c      4698           add   a6, a6, a7
 |       :   0x0001113e      d73011a2       vsrl.vi v1, v1, 2
-|       :   0x00011142      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x00011146      c696           add   a3, a3, a7            ; arg4
+|       :   0x00011142      a7e00602       vse32.v v1, (a3)
+|       :   0x00011146      c696           add   a3, a3, a7
 |       `=< 0x00011148      7df3           bnez  a4, 0x1112e
-|           0x0001114a      b286           mv    a3, a2
+|           0x0001114a      b286           mv    a3, a2                ; arg3
 |           0x0001114c      13070040       li    a4, 0x400
 |       .-> 0x00011150      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
 |       :   0x00011154      87e00502       vle32.v v1, (a1)            ; arg2
@@ -1846,8 +1825,8 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x0001115c      1d8f           sub   a4, a4, a5            ; arg6
 |       :   0x0001115e      c295           add   a1, a1, a6            ; arg2
 |       :   0x00011160      d73012a6       vsra.vi v1, v1, 4
-|       :   0x00011164      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x00011168      c296           add   a3, a3, a6            ; arg4
+|       :   0x00011164      a7e00602       vse32.v v1, (a3)
+|       :   0x00011168      c296           add   a3, a3, a6
 |       `=< 0x0001116a      7df3           bnez  a4, 0x11150
 |           0x0001116c      d777000d       vsetvli a5, zero, e0x20, m1, ta, ma ; arg6
 |           0x00011170      57a10852       vid.v v2
@@ -1870,29 +1849,27 @@ nth      paddr      vaddr bind   type   size lib name
 \           0x000111ac      8280           ret
 --- strided access
             ; CALL XREF from main @ 0x10a0c
-/ sym.test_strided_access(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6);
+/ sym.test_strided_access(int64_t arg1, int64_t arg2, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
-|           ; arg int64_t arg3 @ a2
-|           ; arg int64_t arg4 @ a3
 |           ; arg int64_t arg6 @ a5
-|           0x000115e2      ae86           mv    a3, a1
-|           0x000115e4      2a86           mv    a2, a0
+|           0x000115e2      ae86           mv    a3, a1                ; arg2
+|           0x000115e4      2a86           mv    a2, a0                ; arg1
 |           0x000115e6      1307f01f       li    a4, 0x1ff
 |       .-> 0x000115ea      d777670c       vsetvli a5, a4, e8, mf4, ta, ma ; arg6
-|       :   0x000115ee      07610622       vlseg2e32.v v2, (a2)        ; arg3
+|       :   0x000115ee      07610622       vlseg2e32.v v2, (a2)
 |       :   0x000115f2      93983700       slli  a7, a5, 3             ; arg6
 |       :   0x000115f6      13982700       slli  a6, a5, 2             ; arg6
 |       :   0x000115fa      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000115fc      4696           add   a2, a2, a7            ; arg3
-|       :   0x000115fe      27e10602       vse32.v v2, (a3)            ; arg4
-|       :   0x00011602      c296           add   a3, a3, a6            ; arg4
+|       :   0x000115fc      4696           add   a2, a2, a7
+|       :   0x000115fe      27e10602       vse32.v v2, (a3)
+|       :   0x00011602      c296           add   a3, a3, a6
 |       `=< 0x00011604      7df3           bnez  a4, 0x115ea
 |           0x00011606      0567           lui   a4, 1
 |           0x00011608      b307e500       add   a5, a0, a4            ; arg1
 |           0x0001160c      87a787ff       flw   fa5, -8(a5)
 |           0x00011610      732620c2       csrr  a2, vlenb
-|           0x00011614      93582600       srli  a7, a2, 2             ; arg3
+|           0x00011614      93582600       srli  a7, a2, 2
 |           0x00011618      9387f8ff       addi  a5, a7, -1
 |           0x0001161c      27aef57e       fsw   fa5, 0x7fc(a1)        ; arg2
 |           0x00011620      1b880700       sext.w a6, a5
@@ -1900,19 +1877,19 @@ nth      paddr      vaddr bind   type   size lib name
 |       ,=< 0x00011628      63e80611       bltu  a3, a6, 0x11738
 |       |   0x0001162c      5773000d       vsetvli t1, zero, e0x20, m1, ta, ma
 |       |   0x00011630      d7a10852       vid.v v3
-|       |   0x00011634      118f           sub   a4, a4, a2            ; arg3
+|       |   0x00011634      118f           sub   a4, a4, a2
 |       |   0x00011636      33081041       neg   a6, a7
 |       |   0x0001163a      d7c1370e       vrsub.vx v3, v3, a5
 |       |   0x0001163e      2e97           add   a4, a4, a1            ; arg2
 |       |   0x00011640      1b080840       addiw a6, a6, 0x400
-|       |   0x00011644      aa86           mv    a3, a0
+|       |   0x00011644      aa86           mv    a3, a0                ; arg1
 |       |   0x00011646      8147           li    a5, 0
 |      .--> 0x00011648      07e18602       vl1re32.v v2, (a3)
 |      :|   0x0001164c      bb871701       addw  a5, a5, a7
-|      :|   0x00011650      b296           add   a3, a3, a2            ; arg3
+|      :|   0x00011650      b296           add   a3, a3, a2
 |      :|   0x00011652      d7802132       vrgather.vv v1, v2, v3
 |      :|   0x00011656      a7008702       vs1r.v v1, (a4)
-|      :|   0x0001165a      118f           sub   a4, a4, a2            ; arg3
+|      :|   0x0001165a      118f           sub   a4, a4, a2
 |      `==< 0x0001165c      e376f8fe       bgeu  a6, a5, 0x11648
 |       |   0x00011660      93060040       li    a3, 0x400
 |      ,==< 0x00011664      6389d70c       beq   a5, a3, 0x11736
@@ -1981,24 +1958,22 @@ nth      paddr      vaddr bind   type   size lib name
 \     `===< 0x00011740      3db7           j     0x1166e
 --- absolute value and negation
             ; CALL XREF from main @ 0x10aee
-/ sym.test_abs_neg(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6);
+/ sym.test_abs_neg(int64_t arg1, int64_t arg2, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
-|           ; arg int64_t arg3 @ a2
-|           ; arg int64_t arg4 @ a3
 |           ; arg int64_t arg6 @ a5
-|           0x00011862      ae86           mv    a3, a1
-|           0x00011864      2a86           mv    a2, a0
+|           0x00011862      ae86           mv    a3, a1                ; arg2
+|           0x00011864      2a86           mv    a2, a0                ; arg1
 |           0x00011866      13070040       li    a4, 0x400
 |       .-> 0x0001186a      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
-|       :   0x0001186e      87600602       vle32.v v1, (a2)            ; arg3
+|       :   0x0001186e      87600602       vle32.v v1, (a2)
 |       :   0x00011872      13982700       slli  a6, a5, 2             ; arg6
 |       :   0x00011876      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x00011878      4296           add   a2, a2, a6            ; arg3
+|       :   0x00011878      4296           add   a2, a2, a6
 |       :   0x0001187a      5731100e       vrsub.vi v2, v1, 0
 |       :   0x0001187e      d700111e       vmax.vv v1, v1, v2
-|       :   0x00011882      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x00011886      c296           add   a3, a3, a6            ; arg4
+|       :   0x00011882      a7e00602       vse32.v v1, (a3)
+|       :   0x00011886      c296           add   a3, a3, a6
 |       `=< 0x00011888      6df3           bnez  a4, 0x1186a
 |           0x0001188a      13070040       li    a4, 0x400
 |       .-> 0x0001188e      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
@@ -2571,17 +2546,16 @@ nth      paddr      vaddr bind   type   size lib name
 \           0x00010ba6      8280           ret
 --- madd
             ; CALL XREF from main @ 0x10b0e
-/ sym.test_madd(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg8);
+/ sym.test_madd(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
 |           ; arg int64_t arg3 @ a2
 |           ; arg int64_t arg4 @ a3
 |           ; arg int64_t arg6 @ a5
-|           ; arg int64_t arg8 @ a7
-|           0x00011954      b688           mv    a7, a3
-|           0x00011956      b28e           mv    t4, a2
-|           0x00011958      2e8e           mv    t3, a1
-|           0x0001195a      2a83           mv    t1, a0
+|           0x00011954      b688           mv    a7, a3                ; arg4
+|           0x00011956      b28e           mv    t4, a2                ; arg3
+|           0x00011958      2e8e           mv    t3, a1                ; arg2
+|           0x0001195a      2a83           mv    t1, a0                ; arg1
 |           0x0001195c      13080040       li    a6, 0x400
 |       .-> 0x00011960      d777080d       vsetvli a5, a6, e0x20, m1, ta, ma ; arg6
 |       :   0x00011964      87610302       vle32.v v3, (t1)
@@ -2593,8 +2567,8 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x0001197a      3a9e           add   t3, t3, a4
 |       :   0x0001197c      ba9e           add   t4, t4, a4
 |       :   0x0001197e      d7a021a6       vmadd.vv v1, v3, v2
-|       :   0x00011982      a7e00802       vse32.v v1, (a7)            ; arg8
-|       :   0x00011986      ba98           add   a7, a7, a4            ; arg8
+|       :   0x00011982      a7e00802       vse32.v v1, (a7)
+|       :   0x00011986      ba98           add   a7, a7, a4
 |       `=< 0x00011988      e31c08fc       bnez  a6, 0x11960
 |           0x0001198c      13080040       li    a6, 0x400
 |       .-> 0x00011990      d777080d       vsetvli a5, a6, e0x20, m1, ta, ma ; arg6
@@ -2613,56 +2587,54 @@ nth      paddr      vaddr bind   type   size lib name
 \           0x000119bc      8280           ret
 --- bitwise
             ; CALL XREF from main @ 0x10956
-/ sym.test_bitwise(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg8);
+/ sym.test_bitwise(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
 |           ; arg int64_t arg3 @ a2
-|           ; arg int64_t arg4 @ a3
 |           ; arg int64_t arg6 @ a5
-|           ; arg int64_t arg8 @ a7
-|           0x000111ae      b286           mv    a3, a2
-|           0x000111b0      2e83           mv    t1, a1
-|           0x000111b2      aa88           mv    a7, a0
+|           0x000111ae      b286           mv    a3, a2                ; arg3
+|           0x000111b0      2e83           mv    t1, a1                ; arg2
+|           0x000111b2      aa88           mv    a7, a0                ; arg1
 |           0x000111b4      13070040       li    a4, 0x400
 |       .-> 0x000111b8      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
-|       :   0x000111bc      07e10802       vle32.v v2, (a7)            ; arg8
+|       :   0x000111bc      07e10802       vle32.v v2, (a7)
 |       :   0x000111c0      87600302       vle32.v v1, (t1)
 |       :   0x000111c4      13982700       slli  a6, a5, 2             ; arg6
 |       :   0x000111c8      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000111ca      c298           add   a7, a7, a6            ; arg8
+|       :   0x000111ca      c298           add   a7, a7, a6
 |       :   0x000111cc      4293           add   t1, t1, a6
 |       :   0x000111ce      d7001126       vand.vv v1, v1, v2
-|       :   0x000111d2      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x000111d6      c296           add   a3, a3, a6            ; arg4
+|       :   0x000111d2      a7e00602       vse32.v v1, (a3)
+|       :   0x000111d6      c296           add   a3, a3, a6
 |       `=< 0x000111d8      65f3           bnez  a4, 0x111b8
-|           0x000111da      b286           mv    a3, a2
-|           0x000111dc      2e83           mv    t1, a1
-|           0x000111de      aa88           mv    a7, a0
+|           0x000111da      b286           mv    a3, a2                ; arg3
+|           0x000111dc      2e83           mv    t1, a1                ; arg2
+|           0x000111de      aa88           mv    a7, a0                ; arg1
 |           0x000111e0      13070040       li    a4, 0x400
 |       .-> 0x000111e4      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
-|       :   0x000111e8      07e10802       vle32.v v2, (a7)            ; arg8
+|       :   0x000111e8      07e10802       vle32.v v2, (a7)
 |       :   0x000111ec      87600302       vle32.v v1, (t1)
 |       :   0x000111f0      13982700       slli  a6, a5, 2             ; arg6
 |       :   0x000111f4      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000111f6      c298           add   a7, a7, a6            ; arg8
+|       :   0x000111f6      c298           add   a7, a7, a6
 |       :   0x000111f8      4293           add   t1, t1, a6
 |       :   0x000111fa      d700112a       vor.vv v1, v1, v2
-|       :   0x000111fe      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x00011202      c296           add   a3, a3, a6            ; arg4
+|       :   0x000111fe      a7e00602       vse32.v v1, (a3)
+|       :   0x00011202      c296           add   a3, a3, a6
 |       `=< 0x00011204      65f3           bnez  a4, 0x111e4
-|           0x00011206      b286           mv    a3, a2
-|           0x00011208      aa88           mv    a7, a0
+|           0x00011206      b286           mv    a3, a2                ; arg3
+|           0x00011208      aa88           mv    a7, a0                ; arg1
 |           0x0001120a      13070040       li    a4, 0x400
 |       .-> 0x0001120e      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
-|       :   0x00011212      07e10802       vle32.v v2, (a7)            ; arg8
+|       :   0x00011212      07e10802       vle32.v v2, (a7)
 |       :   0x00011216      87e00502       vle32.v v1, (a1)            ; arg2
 |       :   0x0001121a      13982700       slli  a6, a5, 2             ; arg6
 |       :   0x0001121e      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x00011220      c298           add   a7, a7, a6            ; arg8
+|       :   0x00011220      c298           add   a7, a7, a6
 |       :   0x00011222      c295           add   a1, a1, a6            ; arg2
 |       :   0x00011224      d700112e       vxor.vv v1, v1, v2
-|       :   0x00011228      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x0001122c      c296           add   a3, a3, a6            ; arg4
+|       :   0x00011228      a7e00602       vse32.v v1, (a3)
+|       :   0x0001122c      c296           add   a3, a3, a6
 |       `=< 0x0001122e      65f3           bnez  a4, 0x1120e
 |           0x00011230      13070040       li    a4, 0x400
 |       .-> 0x00011234      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
@@ -3204,13 +3176,15 @@ EXPECT=<<EOF
             ;-- section..text:
             ;-- segment.LOAD1:
             ;-- explicit_cm_push_pop:
-/ loc._x.0();
+/ loc._x.0(int64_t arg1, int64_t arg2);
+|           ; arg int64_t arg1 @ a0
+|           ; arg int64_t arg2 @ a1
 |           0x00011190      62b8           cm.push {ra, s0-s1}, -0x20  ; [00] -r-x section size 390 named .text
 |           ;-- $d.1:
 |           0x00011192      a2b8           cm.push {ra, s0-s5}, -0x40
 |           ;-- $x.2:
-|           0x00011194      2a84           mv    s0, a0
-|           0x00011196      ae84           mv    s1, a1
+|           0x00011194      2a84           mv    s0, a0                ; arg1
+|           0x00011196      ae84           mv    s1, a1                ; arg2
 |           0x00011198      2694           add   s0, s0, s1
 |           0x0001119a      2285           mv    a0, s0
 |           ;-- $d.3:
@@ -3230,14 +3204,17 @@ s 0x000111a2
 pdf
 EOF
 EXPECT=<<EOF
-/ sym.cm_push_pop_many_regs();
+/ sym.cm_push_pop_many_regs(int64_t arg1, int64_t arg2, int64_t arg3);
+|           ; arg int64_t arg1 @ a0
+|           ; arg int64_t arg2 @ a1
+|           ; arg int64_t arg3 @ a2
 |           0x000111a2      a2b8           cm.push {ra, s0-s5}, -0x40
 |           ;-- $d.5:
 |           0x000111a4      b2b8           cm.push {ra, s0-s6}, -0x40
 |           ;-- $x.6:
-|           0x000111a6      2a84           mv    s0, a0
-|           0x000111a8      ae84           mv    s1, a1
-|           0x000111aa      3289           mv    s2, a2
+|           0x000111a6      2a84           mv    s0, a0                ; arg1
+|           0x000111a8      ae84           mv    s1, a1                ; arg2
+|           0x000111aa      3289           mv    s2, a2                ; arg3
 |           0x000111ac      b3099400       add   s3, s0, s1
 |           0x000111b0      338a2401       add   s4, s1, s2
 |           0x000111b4      b38a4901       add   s5, s3, s4
@@ -3259,12 +3236,13 @@ s 0x000111c0
 pdf
 EOF
 EXPECT=<<EOF
-/ sym.cm_push_pop_all_saved();
+/ sym.cm_push_pop_all_saved(int64_t arg1);
+|           ; arg int64_t arg1 @ a0
 |           0x000111c0      f2b8           cm.push {ra, s0-s11}, -0x70
 |           ;-- $d.9:
 |           0x000111c2      beb8           cm.push {ra, s0-s6}, -0x70
 |           ;-- $x.10:
-|           0x000111c4      2a84           mv    s0, a0
+|           0x000111c4      2a84           mv    s0, a0                ; arg1
 |           0x000111c6      93041400       addi  s1, s0, 1
 |           0x000111ca      13092400       addi  s2, s0, 2
 |           0x000111ce      93093400       addi  s3, s0, 3
@@ -3305,14 +3283,16 @@ s 0x00011210
 pdf
 EOF
 EXPECT=<<EOF
-/ sym.cm_popret_example();
+/ sym.cm_popret_example(int64_t arg1, int64_t arg2);
+|           ; arg int64_t arg1 @ a0
+|           ; arg int64_t arg2 @ a1
 |           0x00011210      62b8           cm.push {ra, s0-s1}, -0x20
-|           0x00011212      2a86           mv    a2, a0
+|           0x00011212      2a86           mv    a2, a0                ; arg1
 |           ;-- $d.13:
 |           0x00011214      a2b8           cm.push {ra, s0-s5}, -0x40
 |           ;-- $x.14:
 |           0x00011216      3284           mv    s0, a2
-|           0x00011218      ae84           mv    s1, a1
+|           0x00011218      ae84           mv    s1, a1                ; arg2
 |           0x0001121a      33049402       mul   s0, s0, s1
 |           0x0001121e      2285           mv    a0, s0
 |           ;-- $d.15:
@@ -3329,13 +3309,15 @@ s 0x00011228
 pdf
 EOF
 EXPECT=<<EOF
-/ sym.cm_popretz_example();
+/ sym.cm_popretz_example(int64_t arg1, int64_t arg2);
+|           ; arg int64_t arg1 @ a0
+|           ; arg int64_t arg2 @ a1
 |           0x00011228      62b8           cm.push {ra, s0-s1}, -0x20
 |           ;-- $d.17:
 |           0x0001122a      a2b8           cm.push {ra, s0-s5}, -0x40
 |           ;-- $x.18:
-|           0x0001122c      2a84           mv    s0, a0
-|           0x0001122e      ae84           mv    s1, a1
+|           0x0001122c      2a84           mv    s0, a0                ; arg1
+|           0x0001122e      ae84           mv    s1, a1                ; arg2
 |           0x00011230      04c0           sw    s1, 0(s0)
 |           ;-- $d.19:
 \           0x00011232      a2bc           cm.popretz {ra, s0-s5}, 0x40
@@ -3351,19 +3333,19 @@ s 0x00011236
 pdf
 EOF
 EXPECT=<<EOF
-/ sym.cm_push_ra_only(int64_t arg2);
-|           ; arg int64_t arg2 @ a1
-|           0x00011236      aa85           mv    a1, a0
+/ sym.cm_push_ra_only(int64_t arg1);
+|           ; arg int64_t arg1 @ a0
+|           0x00011236      aa85           mv    a1, a0                ; arg1
 |           ;-- $d.21:
 |           0x00011238      82b8           cm.push {ra, s0-s3}, -0x30
 |           ;-- $x.22:
-|           0x0001123a      13952500       slli  a0, a1, 2             ; arg2
+|           0x0001123a      13952500       slli  a0, a1, 2
 |           0x0001123e      2905           addi  a0, a0, 0xa
 |           0x00011240      aa85           mv    a1, a0
 |           ;-- $d.23:
 |           0x00011242      82ba           cm.pop {ra, s0-s3}, 0x30
 |           ;-- $x.24:
-|           0x00011244      1b850500       sext.w a0, a1               ; arg2
+|           0x00011244      1b850500       sext.w a0, a1
 \           0x00011248      8280           ret
 EOF
 RUN
@@ -3378,7 +3360,13 @@ pdf
 EOF
 EXPECT=<<EOF
             ;-- _start:
-/ entry0();
+/ entry0(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6);
+|           ; arg int64_t arg1 @ a0
+|           ; arg int64_t arg2 @ a1
+|           ; arg int64_t arg3 @ a2
+|           ; arg int64_t arg4 @ a3
+|           ; arg int64_t arg5 @ a4
+|           ; arg int64_t arg6 @ a5
 |           0x0001124a      f6b8           cm.push {ra, s0-s11}, -0x80
 |           0x0001124c      02c6           sw    zero, 0xc(sp)
 |           0x0001124e      2945           li    a0, 0xa
@@ -3386,8 +3374,8 @@ EXPECT=<<EOF
 |           ;-- $d.25:
 |           0x00011252      a2b8           cm.push {ra, s0-s5}, -0x40
 |           ;-- $x.26:
-|           0x00011254      2a84           mv    s0, a0
-|           0x00011256      ae84           mv    s1, a1
+|           0x00011254      2a84           mv    s0, a0                ; arg1
+|           0x00011256      ae84           mv    s1, a1                ; arg2
 |           0x00011258      2694           add   s0, s0, s1
 |           0x0001125a      a285           mv    a1, s0
 |           ;-- $d.27:
@@ -3398,9 +3386,9 @@ EXPECT=<<EOF
 |           ;-- $d.29:
 |           0x00011262      b2b8           cm.push {ra, s0-s6}, -0x40
 |           ;-- $x.30:
-|           0x00011264      3284           mv    s0, a2
-|           0x00011266      aa84           mv    s1, a0
-|           0x00011268      3689           mv    s2, a3
+|           0x00011264      3284           mv    s0, a2                ; arg3
+|           0x00011266      aa84           mv    s1, a0                ; arg1
+|           0x00011268      3689           mv    s2, a3                ; arg4
 |           0x0001126a      b3099400       add   s3, s0, s1
 |           0x0001126e      338a2401       add   s4, s1, s2
 |           0x00011272      b38a4901       add   s5, s3, s4
@@ -3444,8 +3432,8 @@ EXPECT=<<EOF
 |           ;-- $d.37:
 |           0x000112cc      a2b8           cm.push {ra, s0-s5}, -0x40
 |           ;-- $x.38:
-|           0x000112ce      3a84           mv    s0, a4
-|           0x000112d0      be84           mv    s1, a5
+|           0x000112ce      3a84           mv    s0, a4                ; arg5
+|           0x000112d0      be84           mv    s1, a5                ; arg6
 |           0x000112d2      33049402       mul   s0, s0, s1
 |           0x000112d6      2285           mv    a0, s0
 |           ;-- $d.39:
@@ -3463,7 +3451,13 @@ pdf
 EOF
 EXPECT=<<EOF
             ;-- _start:
-/ entry0();
+/ entry0(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6);
+|           ; arg int64_t arg1 @ a0
+|           ; arg int64_t arg2 @ a1
+|           ; arg int64_t arg3 @ a2
+|           ; arg int64_t arg4 @ a3
+|           ; arg int64_t arg5 @ a4
+|           ; arg int64_t arg6 @ a5
 |           0x0001124a      f6b8           cm.push {ra, s0-s11}, -0x80
 |           0x0001124c      02c6           sw    zero, 0xc(sp)
 |           0x0001124e      2945           li    a0, 0xa
@@ -3471,8 +3465,8 @@ EXPECT=<<EOF
 |           ;-- $d.25:
 |           0x00011252      a2b8           cm.push {ra, s0-s5}, -0x40
 |           ;-- $x.26:
-|           0x00011254      2a84           mv    s0, a0
-|           0x00011256      ae84           mv    s1, a1
+|           0x00011254      2a84           mv    s0, a0                ; arg1
+|           0x00011256      ae84           mv    s1, a1                ; arg2
 |           0x00011258      2694           add   s0, s0, s1
 |           0x0001125a      a285           mv    a1, s0
 |           ;-- $d.27:
@@ -3483,9 +3477,9 @@ EXPECT=<<EOF
 |           ;-- $d.29:
 |           0x00011262      b2b8           cm.push {ra, s0-s6}, -0x40
 |           ;-- $x.30:
-|           0x00011264      3284           mv    s0, a2
-|           0x00011266      aa84           mv    s1, a0
-|           0x00011268      3689           mv    s2, a3
+|           0x00011264      3284           mv    s0, a2                ; arg3
+|           0x00011266      aa84           mv    s1, a0                ; arg1
+|           0x00011268      3689           mv    s2, a3                ; arg4
 |           0x0001126a      b3099400       add   s3, s0, s1
 |           0x0001126e      338a2401       add   s4, s1, s2
 |           0x00011272      b38a4901       add   s5, s3, s4
@@ -3529,8 +3523,8 @@ EXPECT=<<EOF
 |           ;-- $d.37:
 |           0x000112cc      a2b8           cm.push {ra, s0-s5}, -0x40
 |           ;-- $x.38:
-|           0x000112ce      3a84           mv    s0, a4
-|           0x000112d0      be84           mv    s1, a5
+|           0x000112ce      3a84           mv    s0, a4                ; arg5
+|           0x000112d0      be84           mv    s1, a5                ; arg6
 |           0x000112d2      33049402       mul   s0, s0, s1
 |           0x000112d6      2285           mv    a0, s0
 |           ;-- $d.39:
