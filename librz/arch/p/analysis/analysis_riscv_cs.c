@@ -14,50 +14,9 @@
 #include "analysis_riscv_utils.h"
 #include <rz_util/rz_str.h>
 
-#define OPERAND(x)  insn->detail->riscv.operands[x]
-#define REGID(x)    insn->detail->riscv.operands[x].reg
-#define REG(x)      cs_reg_name(*handle, insn->detail->riscv.operands[x].reg)
-#define IMM(x)      insn->detail->riscv.operands[x].imm
-#define MEMBASE(x)  cs_reg_name(*handle, insn->detail->riscv.operands[x].mem.base)
-#define MEMINDEX(x) insn->detail->riscv.operands[x].mem.index
-#define MEMDISP(x)  insn->detail->riscv.operands[x].mem.disp
-#define OPCOUNT()   insn->detail->riscv.op_count
-// TODO scale and disp
+#include <librz/arch/isa/riscv/riscv_il.h>
 
 #define NEXT_ADDRESS(op) (op->addr + op->size)
-
-#define CREATE_SRC_DST_3(op) \
-	(op)->src[0] = rz_analysis_value_new(); \
-	(op)->src[1] = rz_analysis_value_new(); \
-	(op)->dst = rz_analysis_value_new();
-
-#define CREATE_SRC_DST_2(op) \
-	(op)->src[0] = rz_analysis_value_new(); \
-	(op)->dst = rz_analysis_value_new();
-
-#define SET_SRC_DST_3_REGS(op) \
-	CREATE_SRC_DST_3(op); \
-	(op)->dst->reg = riscv_reg_get(analysis->reg, REG(0), RZ_REG_TYPE_GPR); \
-	(op)->src[0]->reg = riscv_reg_get(analysis->reg, REG(1), RZ_REG_TYPE_GPR); \
-	(op)->src[1]->reg = riscv_reg_get(analysis->reg, REG(2), RZ_REG_TYPE_GPR);
-
-#define SET_SRC_DST_3_IMM(op) \
-	CREATE_SRC_DST_3(op); \
-	(op)->dst->reg = riscv_reg_get(analysis->reg, REG(0), RZ_REG_TYPE_GPR); \
-	(op)->src[0]->reg = riscv_reg_get(analysis->reg, REG(1), RZ_REG_TYPE_GPR); \
-	(op)->src[1]->imm = IMM(2);
-
-#define SET_SRC_DST_2_REGS(op) \
-	CREATE_SRC_DST_2(op); \
-	(op)->dst->reg = riscv_reg_get(analysis->reg, REG(0), RZ_REG_TYPE_GPR); \
-	(op)->src[0]->reg = riscv_reg_get(analysis->reg, REG(1), RZ_REG_TYPE_GPR);
-
-#define SET_SRC_DST_3_REG_OR_IMM(op) \
-	if (OPERAND(2).type == RISCV_OP_IMM) { \
-		SET_SRC_DST_3_IMM(op); \
-	} else if (OPERAND(2).type == RISCV_OP_REG) { \
-		SET_SRC_DST_3_REGS(op); \
-	}
 
 static void set_stack_effect(RzAnalysisOp *op, cs_insn *insn);
 
@@ -67,6 +26,134 @@ static RzRegItem *riscv_reg_get(const RzReg *reg, const char *name, int type) {
 		return NULL;
 	}
 	return rz_reg_get(reg, name, type);
+}
+
+static cs_riscv_op *riscv_operand(cs_insn *insn, ut8 n) {
+	rz_return_val_if_fail(insn && insn->detail && n < insn->detail->riscv.op_count, NULL);
+	return &insn->detail->riscv.operands[n];
+}
+
+static bool riscv_operand_is(cs_insn *insn, ut8 n, riscv_op_type type) {
+	return insn && insn->detail && n < insn->detail->riscv.op_count && insn->detail->riscv.operands[n].type == type;
+}
+
+static const char *riscv_reg_name(csh handle, cs_insn *insn, ut8 n) {
+	rz_return_val_if_fail(riscv_operand_is(insn, n, RISCV_OP_REG), NULL);
+	return cs_reg_name(handle, riscv_operand(insn, n)->reg);
+}
+
+static ut32 riscv_reg_id(cs_insn *insn, ut8 n) {
+	rz_return_val_if_fail(riscv_operand_is(insn, n, RISCV_OP_REG), RISCV_REG_INVALID);
+	return riscv_operand(insn, n)->reg;
+}
+
+static st64 riscv_imm(cs_insn *insn, ut8 n) {
+	rz_return_val_if_fail(riscv_operand_is(insn, n, RISCV_OP_IMM), INT64_MAX);
+	return riscv_operand(insn, n)->imm;
+}
+
+static cs_riscv_op *riscv_memory_operand(cs_insn *insn, ut8 n) {
+	rz_return_val_if_fail(riscv_operand_is(insn, n, RISCV_OP_MEM), NULL);
+	return riscv_operand(insn, n);
+}
+
+static bool riscv_memory_operand_is_based_on(cs_insn *insn, ut8 n, ut32 reg) {
+	return riscv_operand_is(insn, n, RISCV_OP_MEM) && riscv_memory_operand(insn, n)->mem.base == reg;
+}
+
+static cs_riscv_op *find_memory_reference(cs_insn *insn) {
+	for (int i = 0; i < insn->detail->riscv.op_count; i++) {
+		cs_riscv_op *op = riscv_operand(insn, i);
+		if (op && op->type == RISCV_OP_MEM) {
+			return op;
+		}
+	}
+	return NULL;
+}
+
+static bool riscv_destination_is_sp(cs_insn *insn) {
+	return riscv_operand_is(insn, 0, RISCV_OP_REG) && riscv_reg_id(insn, 0) == RISCV_REG_X2;
+}
+
+static ut64 find_jump_target(cs_insn *insn) {
+	switch (insn->id) {
+	case RISCV_INS_C_BEQZ:
+	case RISCV_INS_C_BNEZ:
+	case RISCV_INS_BEQ:
+	case RISCV_INS_BNE:
+	case RISCV_INS_BLT:
+	case RISCV_INS_BGE:
+	case RISCV_INS_BLTU:
+	case RISCV_INS_BGEU:
+		return riscv_imm(insn, 2);
+	case RISCV_INS_C_J:
+	case RISCV_INS_C_JAL:
+	case RISCV_INS_JAL:
+		return riscv_imm(insn, 1);
+	case RISCV_INS_JALR:
+		return riscv_imm(insn, 2);
+	default:
+		return INT64_MAX;
+	}
+}
+
+static bool jalr_base_is_zero(cs_insn *insn) {
+	return riscv_reg_id(insn, 1) == RISCV_REG_X0;
+}
+
+static st64 find_hint_immediate(cs_insn *insn) {
+	switch (insn->id) {
+	case RISCV_INS_LUI:
+	case RISCV_INS_C_LUI:
+	case RISCV_INS_LI:
+	case RISCV_INS_AUIPC:
+	case RISCV_INS_C_LI:
+		return riscv_operand_is(insn, 1, RISCV_OP_IMM) ? riscv_imm(insn, 1) : INT64_MAX;
+	default:
+		return riscv_operand_is(insn, 2, RISCV_OP_IMM) ? riscv_imm(insn, 2) : INT64_MAX;
+	}
+}
+
+static void create_src_dst_3(RzAnalysisOp *op) {
+	op->src[0] = rz_analysis_value_new();
+	op->src[1] = rz_analysis_value_new();
+	op->dst = rz_analysis_value_new();
+}
+
+static void create_src_dst_2(RzAnalysisOp *op) {
+	op->src[0] = rz_analysis_value_new();
+	op->dst = rz_analysis_value_new();
+}
+
+static void set_src_dst_3_regs(RzAnalysis *analysis, RzAnalysisOp *op, csh handle, cs_insn *insn) {
+	create_src_dst_3(op);
+	op->dst->reg = riscv_reg_get(analysis->reg, riscv_reg_name(handle, insn, 0), RZ_REG_TYPE_GPR);
+	op->src[0]->reg = riscv_reg_get(analysis->reg, riscv_reg_name(handle, insn, 1), RZ_REG_TYPE_GPR);
+	op->src[1]->reg = riscv_reg_get(analysis->reg, riscv_reg_name(handle, insn, 2), RZ_REG_TYPE_GPR);
+}
+
+static void set_src_dst_3_imm(RzAnalysis *analysis, RzAnalysisOp *op, csh handle, cs_insn *insn) {
+	create_src_dst_3(op);
+	op->dst->reg = riscv_reg_get(analysis->reg, riscv_reg_name(handle, insn, 0), RZ_REG_TYPE_GPR);
+	op->src[0]->reg = riscv_reg_get(analysis->reg, riscv_reg_name(handle, insn, 1), RZ_REG_TYPE_GPR);
+	op->src[1]->imm = riscv_imm(insn, 2);
+}
+
+static void set_src_dst_2_regs(RzAnalysis *analysis, RzAnalysisOp *op, csh handle, cs_insn *insn) {
+	create_src_dst_2(op);
+	op->dst->reg = riscv_reg_get(analysis->reg, riscv_reg_name(handle, insn, 0), RZ_REG_TYPE_GPR);
+	op->src[0]->reg = riscv_reg_get(analysis->reg, riscv_reg_name(handle, insn, 1), RZ_REG_TYPE_GPR);
+}
+
+static void set_src_dst_3_reg_or_imm(RzAnalysis *analysis, RzAnalysisOp *op, csh handle, cs_insn *insn) {
+	if (!riscv_operand_is(insn, 0, RISCV_OP_REG) || !riscv_operand_is(insn, 1, RISCV_OP_REG)) {
+		return;
+	}
+	if (riscv_operand_is(insn, 2, RISCV_OP_IMM)) {
+		set_src_dst_3_imm(analysis, op, handle, insn);
+	} else if (riscv_operand_is(insn, 2, RISCV_OP_REG)) {
+		set_src_dst_3_regs(analysis, op, handle, insn);
+	}
 }
 
 static RzStructuredData *riscv_opex(csh handle, cs_insn *insn) {
@@ -91,10 +178,12 @@ static RzStructuredData *riscv_opex(csh handle, cs_insn *insn) {
 		cs_riscv_op *op = x->operands + i;
 		RzStructuredData *operand = rz_structured_data_array_add_map(operands);
 		switch (op->type) {
-		case RISCV_OP_REG:
+		case RISCV_OP_REG: {
 			rz_structured_data_map_add_string(operand, "type", "reg");
-			rz_structured_data_map_add_string(operand, "value", cs_reg_name(handle, op->reg));
+			const char *reg_name = cs_reg_name(handle, op->reg);
+			rz_structured_data_map_add_string(operand, "value", reg_name ? reg_name : "<unknown>");
 			break;
+		}
 		case RISCV_OP_IMM:
 			rz_structured_data_map_add_string(operand, "type", "imm");
 			rz_structured_data_map_add_signed(operand, "value", op->imm);
@@ -119,13 +208,14 @@ static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num
 	if (!reg) {
 		return -1;
 	}
-	switch (OPERAND(reg_num).type) {
+	cs_riscv_op *op = riscv_operand(insn, reg_num);
+	switch (op->type) {
 	case RISCV_OP_REG:
-		reg->name = (char *)cs_reg_name(handle, OPERAND(reg_num).reg);
+		reg->name = (char *)cs_reg_name(handle, op->reg);
 		break;
 	case RISCV_OP_MEM:
-		if (OPERAND(reg_num).mem.base != RISCV_REG_INVALID) {
-			reg->name = (char *)cs_reg_name(handle, OPERAND(reg_num).mem.base);
+		if (op->mem.base != RISCV_REG_INVALID) {
+			reg->name = (char *)cs_reg_name(handle, op->mem.base);
 		}
 	default:
 		break;
@@ -154,31 +244,33 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh *handle, cs_i
 	RiscvContext *ctx = (RiscvContext *)analysis->plugin_data;
 	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
 	case RZ_ANALYSIS_OP_TYPE_LOAD:
-		if (OPERAND(1).type == RISCV_OP_MEM) {
+		if (riscv_operand_is(insn, 1, RISCV_OP_MEM)) {
+			cs_riscv_op *mem = riscv_memory_operand(insn, 1);
 			ZERO_FILL(ctx->reg);
 			op->dst = rz_analysis_value_new();
 			op->dst->type = RZ_ANALYSIS_VAL_REG;
-			op->dst->reg = riscv_reg_get(analysis->reg, cs_reg_name(*handle, FIRST_WRITTEN_REGID(insn)), RZ_REG_TYPE_GPR);
+			op->dst->reg = riscv_reg_get(analysis->reg, riscv_reg_name(*handle, insn, 0), RZ_REG_TYPE_GPR);
 			op->src[0] = rz_analysis_value_new();
 			op->src[0]->type = RZ_ANALYSIS_VAL_MEM;
 			op->src[0]->reg = &ctx->reg;
 			parse_reg_name(op->src[0]->reg, *handle, insn, 1);
-			op->src[0]->delta = OPERAND(1).mem.disp;
+			op->src[0]->delta = mem->mem.disp;
 			op->src[0]->memref = op->refptr;
 		}
 		break;
 	case RZ_ANALYSIS_OP_TYPE_STORE:
-		if (OPERAND(1).type == RISCV_OP_MEM) {
+		if (riscv_operand_is(insn, 1, RISCV_OP_MEM)) {
+			cs_riscv_op *mem = riscv_memory_operand(insn, 1);
 			ZERO_FILL(ctx->reg);
 			op->dst = rz_analysis_value_new();
 			op->dst->type = RZ_ANALYSIS_VAL_MEM;
 			op->dst->reg = &ctx->reg;
 			parse_reg_name(op->dst->reg, *handle, insn, 1);
-			op->dst->delta = OPERAND(1).mem.disp;
+			op->dst->delta = mem->mem.disp;
 			op->dst->memref = op->refptr;
 			op->src[0] = rz_analysis_value_new();
 			op->src[0]->type = RZ_ANALYSIS_VAL_REG;
-			op->src[0]->reg = riscv_reg_get(analysis->reg, cs_reg_name(*handle, FIRST_READ_REGID(insn)), RZ_REG_TYPE_GPR);
+			op->src[0]->reg = riscv_reg_get(analysis->reg, riscv_reg_name(*handle, insn, 0), RZ_REG_TYPE_GPR);
 		}
 		break;
 	case RZ_ANALYSIS_OP_TYPE_SHL:
@@ -189,23 +281,23 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh *handle, cs_i
 	case RZ_ANALYSIS_OP_TYPE_AND:
 	case RZ_ANALYSIS_OP_TYPE_ADD:
 	case RZ_ANALYSIS_OP_TYPE_OR:
-		SET_SRC_DST_3_REG_OR_IMM(op);
+		set_src_dst_3_reg_or_imm(analysis, op, *handle, insn);
 		break;
 	case RZ_ANALYSIS_OP_TYPE_MOV:
-		SET_SRC_DST_3_REG_OR_IMM(op);
+		set_src_dst_3_reg_or_imm(analysis, op, *handle, insn);
 		break;
 	case RZ_ANALYSIS_OP_TYPE_DIV: // UDIV
-		if (OPERAND(0).type == RISCV_OP_REG && OPERAND(1).type == RISCV_OP_REG && OPERAND(2).type == RISCV_OP_REG) {
-			SET_SRC_DST_3_REGS(op);
-		} else if (OPERAND(0).type == RISCV_OP_REG && OPERAND(1).type == RISCV_OP_REG) {
-			SET_SRC_DST_2_REGS(op);
+		if (riscv_operand_is(insn, 0, RISCV_OP_REG) && riscv_operand_is(insn, 1, RISCV_OP_REG) && riscv_operand_is(insn, 2, RISCV_OP_REG)) {
+			set_src_dst_3_regs(analysis, op, *handle, insn);
+		} else if (riscv_operand_is(insn, 0, RISCV_OP_REG) && riscv_operand_is(insn, 1, RISCV_OP_REG)) {
+			set_src_dst_2_regs(analysis, op, *handle, insn);
 		} else {
 			RZ_LOG_ERROR("riscv: unknown div opcode at 0x%08" PFMT64x "\n", op->addr);
 		}
 		break;
 	}
 	if (insn && (insn->id == RISCV_INS_SLTI || insn->id == RISCV_INS_SLTIU)) {
-		SET_SRC_DST_3_IMM(op);
+		set_src_dst_3_imm(analysis, op, *handle, insn);
 	}
 }
 
@@ -466,7 +558,7 @@ static void set_op_val(RzAnalysisOp *op, cs_insn *insn) {
 		return;
 	}
 
-	st64 imm = FIRST_IMM(insn);
+	st64 imm = find_hint_immediate(insn);
 	if (imm != INT64_MAX) {
 		switch (insn->id) {
 		case RISCV_INS_LUI:
@@ -742,17 +834,15 @@ static void set_op_extra_metadata(RzAnalysis *analysis, RzAnalysisOp *op, csh ha
 		return;
 	}
 	// Set destination register name
-	if (insn->detail->riscv.op_count > 0 && insn->detail->riscv.operands[0].type == RISCV_OP_REG && (insn->detail->riscv.operands[0].access & CS_AC_WRITE)) {
-		op->reg = cs_reg_name(handle, insn->detail->riscv.operands[0].reg);
+	if (riscv_operand_is(insn, 0, RISCV_OP_REG)) {
+		op->reg = riscv_reg_name(handle, insn, 0);
 	}
 
 	// Set indirect register name (base for loads/stores)
-	for (int i = 0; i < insn->detail->riscv.op_count; i++) {
-		if (insn->detail->riscv.operands[i].type == RISCV_OP_MEM) {
-			op->ireg = cs_reg_name(handle, insn->detail->riscv.operands[i].mem.base);
-			op->disp = insn->detail->riscv.operands[i].mem.disp;
-			break;
-		}
+	cs_riscv_op *mem = find_memory_reference(insn);
+	if (mem) {
+		op->ireg = cs_reg_name(handle, mem->mem.base);
+		op->disp = mem->mem.disp;
 	}
 
 	// Set datatype
@@ -775,7 +865,7 @@ int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	cs_mode mode = (analysis->bits == 64) ? CS_MODE_RISCV64 : CS_MODE_RISCV32;
 	mode |= mode_from_arch_string(rz_analysis_get_cpu(analysis));
 
-	if (mode != ctx->omode || analysis->bits != ctx->obits || cs_option(ctx->hndl, CS_OPT_DETAIL, CS_OPT_ON | CS_OPT_DETAIL_REAL) != CS_ERR_OK) {
+	if (mode != ctx->omode || analysis->bits != ctx->obits || cs_option(ctx->hndl, CS_OPT_DETAIL, CS_OPT_ON | CS_OPT_DETAIL_UNCOMPRESSED_REAL) != CS_ERR_OK) {
 		cs_close(&ctx->hndl);
 		ctx->hndl = 0;
 		ctx->omode = mode;
@@ -791,7 +881,7 @@ int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		if (ret != CS_ERR_OK) {
 			goto fin;
 		}
-		cs_option(ctx->hndl, CS_OPT_DETAIL, CS_OPT_ON | CS_OPT_DETAIL_REAL);
+		cs_option(ctx->hndl, CS_OPT_DETAIL, CS_OPT_ON | CS_OPT_DETAIL_UNCOMPRESSED_REAL);
 	}
 	n = cs_disasm(ctx->hndl, (ut8 *)buf, len, addr, 1, &insn);
 
@@ -842,7 +932,7 @@ int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case RISCV_INS_C_JAL: {
 		bool is_call = insn->id == RISCV_INS_C_JAL;
 		op->type = is_call ? RZ_ANALYSIS_OP_TYPE_CALL : RZ_ANALYSIS_OP_TYPE_JMP;
-		op->jump = SINGLE_IMM(insn);
+		op->jump = find_jump_target(insn);
 		op->fail = UINT64_MAX;
 		break;
 	}
@@ -855,7 +945,7 @@ int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		// no fallthrough
 		op->fail = UINT64_MAX;
 		// special case: known base register, namely the always-0 register
-		bool is_known_base = FIRST_READ_REGID(insn) == RISCV_REG_X0;
+		bool is_known_base = jalr_base_is_zero(insn);
 
 		if (group_exists_in(insn->detail->groups, insn->detail->groups_count, RISCV_GRP_CALL)) {
 			op->type = is_known_base ? RZ_ANALYSIS_OP_TYPE_CALL : RZ_ANALYSIS_OP_TYPE_RCALL;
@@ -863,7 +953,7 @@ int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			op->type = is_known_base ? RZ_ANALYSIS_OP_TYPE_JMP : RZ_ANALYSIS_OP_TYPE_RJMP;
 		}
 		if (is_known_base) {
-			op->jump = SINGLE_IMM(insn);
+			op->jump = find_jump_target(insn);
 		}
 		break;
 
@@ -871,7 +961,7 @@ int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		bool is_call = group_exists_in(insn->detail->groups, insn->detail->groups_count, RISCV_GRP_CALL);
 		op->type = is_call ? RZ_ANALYSIS_OP_TYPE_CALL : RZ_ANALYSIS_OP_TYPE_JMP;
 
-		op->jump = SINGLE_IMM(insn);
+		op->jump = find_jump_target(insn);
 		op->fail = UINT64_MAX;
 		break;
 	}
@@ -1286,11 +1376,7 @@ int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case RISCV_INS_C_BEQZ:
 	case RISCV_INS_C_BNEZ:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		if (insn->id == RISCV_INS_C_BEQZ || insn->id == RISCV_INS_C_BNEZ) {
-			op->jump = IMM(1);
-		} else {
-			op->jump = IMM(2);
-		}
+		op->jump = find_jump_target(insn);
 		op->fail = NEXT_ADDRESS(op);
 		break;
 
@@ -1922,6 +2008,11 @@ beach:
 		set_op_family(op, insn);
 		set_op_extra_metadata(analysis, op, ctx->hndl, insn);
 		set_stack_effect(op, insn);
+
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			RzILOpEffect *il_op = rz_riscv_lift_instr(analysis, op, insn, addr, op->size);
+			op->il_op = il_op;
+		}
 	}
 	set_opdir(op);
 	if (insn && mask & RZ_ANALYSIS_OP_MASK_OPEX) {
@@ -2023,6 +2114,8 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"gpr	ft10	.64	368	0\n" // =f30
 			"gpr	ft11	.64	376	0\n" // =f31
 			"gpr	fcsr	.32	384	0\n"
+			"gpr	vl	.32	388	0\n"
+			"gpr	vtype	.32	392	0\n"
 			"flg	nx	.1	3072	0\n"
 			"flg	uf	.1	3073	0\n"
 			"flg	of	.1	3074	0\n"
@@ -2148,7 +2241,9 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"gpr	ft9	.64	488	0\n" // =f29
 			"gpr	ft10	.64	496	0\n" // =f30
 			"gpr	ft11	.64	504	0\n" // =f31
-			"gpr	fcsr	.32	512	0\n"
+			"gpr	fcsr	.64	512	0\n"
+			"gpr	vl	.64	520	0\n"
+			"gpr	vtype	.64	528	0\n"
 			// vector registers
 			// assume each register is 512 bits (64 bytes) for maximum compatibility
 			// TODO: make the width accurately reflect the exact width defined in the binary
@@ -2217,7 +2312,7 @@ static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 
 static void set_stack_effect(RzAnalysisOp *op, cs_insn *insn) {
 	op->stackop = RZ_ANALYSIS_STACK_NOP;
-	if (!IS_REG_WRITTEN(insn, RISCV_REG_X2)) {
+	if (!riscv_destination_is_sp(insn)) {
 		return;
 	}
 
@@ -2226,24 +2321,28 @@ static void set_stack_effect(RzAnalysisOp *op, cs_insn *insn) {
 	// incremented or decremented ?
 	switch (op->type) {
 	case RZ_ANALYSIS_OP_TYPE_ADD:
-		op->stackop = RZ_ANALYSIS_STACK_INC;
-		op->stackptr = -MAYBE_IMM(insn);
+		if (riscv_operand_is(insn, 2, RISCV_OP_IMM)) {
+			op->stackop = RZ_ANALYSIS_STACK_INC;
+			op->stackptr = -riscv_imm(insn, 2);
+		}
 		return;
 
 	case RZ_ANALYSIS_OP_TYPE_SUB:
-		op->stackop = RZ_ANALYSIS_STACK_DEC;
-		op->stackptr = MAYBE_IMM(insn);
+		if (riscv_operand_is(insn, 2, RISCV_OP_IMM)) {
+			op->stackop = RZ_ANALYSIS_STACK_DEC;
+			op->stackptr = riscv_imm(insn, 2);
+		}
 		return;
 
 	case RZ_ANALYSIS_OP_TYPE_LOAD:
-		if (MEM_BASE(insn, RISCV_REG_X2)) {
+		if (riscv_memory_operand_is_based_on(insn, 1, RISCV_REG_X2)) {
 			op->stackop = RZ_ANALYSIS_STACK_GET;
 			op->stackptr = op->refptr;
 		}
 		return;
 
 	case RZ_ANALYSIS_OP_TYPE_STORE:
-		if (MEM_BASE(insn, RISCV_REG_X2)) {
+		if (riscv_memory_operand_is_based_on(insn, 1, RISCV_REG_X2)) {
 			op->stackop = RZ_ANALYSIS_STACK_SET;
 			op->stackptr = op->refptr;
 		}
@@ -2276,6 +2375,7 @@ RzAnalysisPlugin rz_analysis_plugin_riscv_cs = {
 	.archinfo = archinfo,
 	.bits = 32 | 64,
 	.op = &analyze_op,
+	.il_config = rz_riscv_il_config,
 	.init = riscv_init,
 	.fini = riscv_fini,
 };

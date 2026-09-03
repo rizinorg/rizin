@@ -1492,6 +1492,9 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 		DUP_OP2(forder, x, y);
 		break;
 	case RZ_IL_OP_FROUND:
+		CONST_CP1(fround, rmode);
+		DUP_OP1(fround, f);
+		break;
 	case RZ_IL_OP_FSQRT:
 	case RZ_IL_OP_FRSQRT:
 		DUP_OP1(fround, f);
