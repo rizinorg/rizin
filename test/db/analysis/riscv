@@ -863,14 +863,14 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00010c7a      26a9           fsd   fs1, 0x90(sp)
 |       :   0x00010c7c      2a83           mv    t1, a0
 |       :   0x00010c7e      33015140       sub   sp, sp, t0
-|       :   0x00010c82      aa9e           add   t4, t4, a0            ; arg1
+|       :   0x00010c82      aa9e           add   t4, t4, a0
 |       :   0x00010c84      aa87           mv    a5, a0
 |      .--> 0x00010c86      07e10702       vle32.v v2, (a5)            ; arg6
-|      ::   0x00010c8a      c107           addi  a5, a5, 0x10          ; arg6
+|      ::   0x00010c8a      c107           addi  a5, a5, 0x10
 |      ::   0x00010c8c      d7001102       vadd.vv v1, v1, v2
 |      `==< 0x00010c90      e39bd7ff       bne   a5, t4, 0x10c86
 |       :   0x00010c94      f32620c2       csrr  a3, vlenb
-|       :   0x00010c98      8a96           add   a3, a3, sp            ; arg4
+|       :   0x00010c98      8a96           add   a3, a3, sp
 |       :   0x00010c9a      a7e00602       vse32.v v1, (a3)            ; arg4
 |       :   0x00010c9e      5774000d       vsetvli s0, zero, e0x20, m1, ta, ma
 |       :   0x00010ca2      d730005e       vmv.v.i v1, 0
@@ -878,15 +878,15 @@ nth      paddr      vaddr bind   type   size lib name
 |      .--> 0x00010ca8      d7770709       vsetvli a5, a4, e0x20, m1, tu, ma ; arg6
 |      ::   0x00010cac      07e10602       vle32.v v2, (a3)            ; arg4
 |      ::   0x00010cb0      13982700       slli  a6, a5, 2             ; arg6
-|      ::   0x00010cb4      1d8f           sub   a4, a4, a5            ; arg6
-|      ::   0x00010cb6      c296           add   a3, a3, a6            ; arg4
+|      ::   0x00010cb4      1d8f           sub   a4, a4, a5
+|      ::   0x00010cb6      c296           add   a3, a3, a6
 |      ::   0x00010cb8      d7802002       vadd.vv v1, v2, v1
 |      `==< 0x00010cbc      75f7           bnez  a4, 0x10ca8
 |       :   0x00010cbe      d777000d       vsetvli a5, zero, e0x20, m1, ta, ma ; arg6
 |       :   0x00010cc2      57610042       vmv.s.x v2, zero
 |       :   0x00010cc6      f32720c2       csrr  a5, vlenb
 |       :   0x00010cca      d7201102       vredsum.vs v1, v1, v2
-|       :   0x00010cce      c107           addi  a5, a5, 0x10          ; arg6
+|       :   0x00010cce      c107           addi  a5, a5, 0x10
 |       :   0x00010cd0      37070080       lui   a4, 0x80000
 |       :   0x00010cd4      3308f100       add   a6, sp, a5            ; arg6
 |       :   0x00010cd8      5741075e       vmv.v.x v2, a4
@@ -895,14 +895,14 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00010ce0      d7281042       vmv.x.s a7, v1
 |      .--> 0x00010ce4      d777670c       vsetvli a5, a4, e8, mf4, ta, ma ; arg6
 |      ::   0x00010ce8      27e10602       vse32.v v2, (a3)            ; arg4
-|      ::   0x00010cec      1d8f           sub   a4, a4, a5            ; arg6
+|      ::   0x00010cec      1d8f           sub   a4, a4, a5
 |      ::   0x00010cee      8a07           slli  a5, a5, 2
-|      ::   0x00010cf0      be96           add   a3, a3, a5            ; arg6
+|      ::   0x00010cf0      be96           add   a3, a3, a5
 |      `==< 0x00010cf2      6dfb           bnez  a4, 0x10ce4
 |       :   0x00010cf4      577002cd       vsetivli zero, 4, e0x20, m1, ta, ma
 |       :   0x00010cf8      87600802       vle32.v v1, (a6)
 |      .--> 0x00010cfc      07610502       vle32.v v2, (a0)            ; arg1
-|      ::   0x00010d00      4105           addi  a0, a0, 0x10          ; arg1
+|      ::   0x00010d00      4105           addi  a0, a0, 0x10
 |      ::   0x00010d02      d700111e       vmax.vv v1, v1, v2
 |      `==< 0x00010d06      e39baefe       bne   t4, a0, 0x10cfc
 |       :   0x00010d0a      a7600802       vse32.v v1, (a6)
@@ -914,14 +914,14 @@ nth      paddr      vaddr bind   type   size lib name
 |      .--> 0x00010d1e      d7770709       vsetvli a5, a4, e0x20, m1, tu, ma ; arg6
 |      ::   0x00010d22      07e20602       vle32.v v4, (a3)            ; arg4
 |      ::   0x00010d26      13952700       slli  a0, a5, 2             ; arg6
-|      ::   0x00010d2a      1d8f           sub   a4, a4, a5            ; arg6
-|      ::   0x00010d2c      aa96           add   a3, a3, a0            ; arg4
+|      ::   0x00010d2a      1d8f           sub   a4, a4, a5
+|      ::   0x00010d2c      aa96           add   a3, a3, a0
 |      ::   0x00010d2e      5701411e       vmax.vv v2, v4, v2
 |      `==< 0x00010d32      75f7           bnez  a4, 0x10d1e
 |       :   0x00010d34      5774000d       vsetvli s0, zero, e0x20, m1, ta, ma
 |       :   0x00010d38      b7070080       lui   a5, 0x80000
 |       :   0x00010d3c      57e20742       vmv.s.x v4, a5
-|       :   0x00010d40      fd37           addiw a5, a5, -1            ; arg6
+|       :   0x00010d40      fd37           addiw a5, a5, -1
 |       :   0x00010d42      5721221e       vredmax.vs v2, v2, v4
 |       :   0x00010d46      57c2075e       vmv.v.x v4, a5
 |       :   0x00010d4a      f32720c2       csrr  a5, vlenb
@@ -932,9 +932,9 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00010d5a      572e2042       vmv.x.s t3, v2
 |      .--> 0x00010d5e      d777670c       vsetvli a5, a4, e8, mf4, ta, ma ; arg6
 |      ::   0x00010d62      27e20602       vse32.v v4, (a3)            ; arg4
-|      ::   0x00010d66      1d8f           sub   a4, a4, a5            ; arg6
+|      ::   0x00010d66      1d8f           sub   a4, a4, a5
 |      ::   0x00010d68      8a07           slli  a5, a5, 2
-|      ::   0x00010d6a      be96           add   a3, a3, a5            ; arg6
+|      ::   0x00010d6a      be96           add   a3, a3, a5
 |      `==< 0x00010d6c      6dfb           bnez  a4, 0x10d5e
 |       :   0x00010d6e      577002cd       vsetivli zero, 4, e0x20, m1, ta, ma
 |       :   0x00010d72      07610502       vle32.v v2, (a0)
@@ -948,25 +948,25 @@ nth      paddr      vaddr bind   type   size lib name
 |      .--> 0x00010d8c      d7770709       vsetvli a5, a4, e0x20, m1, tu, ma ; arg6
 |      ::   0x00010d90      07e10602       vle32.v v2, (a3)            ; arg4
 |      ::   0x00010d94      13952700       slli  a0, a5, 2             ; arg6
-|      ::   0x00010d98      1d8f           sub   a4, a4, a5            ; arg6
-|      ::   0x00010d9a      aa96           add   a3, a3, a0            ; arg4
+|      ::   0x00010d98      1d8f           sub   a4, a4, a5
+|      ::   0x00010d9a      aa96           add   a3, a3, a0
 |      ::   0x00010d9c      d7802016       vmin.vv v1, v2, v1
 |      `==< 0x00010da0      75f7           bnez  a4, 0x10d8c
 |       :   0x00010da2      b7070080       lui   a5, 0x80000
 |       :   0x00010da6      577002cd       vsetivli zero, 4, e0x20, m1, ta, ma
-|       :   0x00010daa      fd37           addiw a5, a5, -1            ; arg6
+|       :   0x00010daa      fd37           addiw a5, a5, -1
 |       :   0x00010dac      57e20742       vmv.s.x v4, a5
 |       :   0x00010db0      57b10f5e       vmv.v.i v2, -1
 |       :   0x00010db4      5774000d       vsetvli s0, zero, e0x20, m1, ta, ma
 |       :   0x00010db8      d7201216       vredmin.vs v1, v1, v4
 |       :   0x00010dbc      0563           lui   t1, 1
-|       :   0x00010dbe      2e93           add   t1, t1, a1            ; arg2
+|       :   0x00010dbe      2e93           add   t1, t1, a1
 |       :   0x00010dc0      2e85           mv    a0, a1
 |       :   0x00010dc2      ae87           mv    a5, a1
 |       :   0x00010dc4      d7261042       vmv.x.s a3, v1
 |       :   0x00010dc8      577002cd       vsetivli zero, 4, e0x20, m1, ta, ma
 |      .--> 0x00010dcc      87e00702       vle32.v v1, (a5)            ; arg6
-|      ::   0x00010dd0      c107           addi  a5, a5, 0x10          ; arg6
+|      ::   0x00010dd0      c107           addi  a5, a5, 0x10
 |      ::   0x00010dd2      57812026       vand.vv v2, v2, v1
 |      `==< 0x00010dd6      e39b67fe       bne   a5, t1, 0x10dcc
 |       :   0x00010dda      f32720c2       csrr  a5, vlenb
@@ -979,7 +979,7 @@ nth      paddr      vaddr bind   type   size lib name
 |      .--> 0x00010df4      d7770709       vsetvli a5, a4, e0x20, m1, tu, ma ; arg6
 |      ::   0x00010df8      07610802       vle32.v v2, (a6)
 |      ::   0x00010dfc      939e2700       slli  t4, a5, 2             ; arg6
-|      ::   0x00010e00      1d8f           sub   a4, a4, a5            ; arg6
+|      ::   0x00010e00      1d8f           sub   a4, a4, a5
 |      ::   0x00010e02      7698           add   a6, a6, t4
 |      ::   0x00010e04      d7802026       vand.vv v1, v2, v1
 |      `==< 0x00010e08      75f7           bnez  a4, 0x10df4
@@ -991,7 +991,7 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00010e1c      57271042       vmv.x.s a4, v1
 |       :   0x00010e20      577002cd       vsetivli zero, 4, e0x20, m1, ta, ma
 |      .--> 0x00010e24      87e00502       vle32.v v1, (a1)            ; arg2
-|      ::   0x00010e28      c105           addi  a1, a1, 0x10          ; arg2
+|      ::   0x00010e28      c105           addi  a1, a1, 0x10
 |      ::   0x00010e2a      5781202a       vor.vv v2, v2, v1
 |      `==< 0x00010e2e      e39b65fe       bne   a1, t1, 0x10e24
 |       :   0x00010e32      f32720c2       csrr  a5, vlenb
@@ -1004,7 +1004,7 @@ nth      paddr      vaddr bind   type   size lib name
 |      .--> 0x00010e4c      d7f70509       vsetvli a5, a1, e0x20, m1, tu, ma ; arg6
 |      ::   0x00010e50      07610802       vle32.v v2, (a6)
 |      ::   0x00010e54      939e2700       slli  t4, a5, 2             ; arg6
-|      ::   0x00010e58      9d8d           sub   a1, a1, a5            ; arg6
+|      ::   0x00010e58      9d8d           sub   a1, a1, a5
 |      ::   0x00010e5a      7698           add   a6, a6, t4
 |      ::   0x00010e5c      d780202a       vor.vv v1, v2, v1
 |      `==< 0x00010e60      f5f5           bnez  a1, 0x10e4c
@@ -1028,7 +1028,7 @@ nth      paddr      vaddr bind   type   size lib name
 |      .--> 0x00010ea2      57f50509       vsetvli a0, a1, e0x20, m1, tu, ma ; arg2
 |      ::   0x00010ea6      07610802       vle32.v v2, (a6)
 |      ::   0x00010eaa      13132500       slli  t1, a0, 2
-|      ::   0x00010eae      898d           sub   a1, a1, a0            ; arg2
+|      ::   0x00010eae      898d           sub   a1, a1, a0
 |      ::   0x00010eb0      1a98           add   a6, a6, t1
 |      ::   0x00010eb2      d780202e       vxor.vv v1, v2, v1
 |      `==< 0x00010eb6      f5f5           bnez  a1, 0x10ea2
@@ -1038,13 +1038,13 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00010ec4      5774000d       vsetvli s0, zero, e0x20, m1, ta, ma
 |       :   0x00010ec8      d7a0110e       vredxor.vs v1, v1, v3
 |       :   0x00010ecc      856f           lui   t6, 1
-|       :   0x00010ece      b29f           add   t6, t6, a2            ; arg3
+|       :   0x00010ece      b29f           add   t6, t6, a2
 |       :   0x00010ed0      328f           mv    t5, a2
 |       :   0x00010ed2      b285           mv    a1, a2
 |       :   0x00010ed4      57281042       vmv.x.s a6, v1
 |       :   0x00010ed8      577002cd       vsetivli zero, 4, e0x20, m1, ta, ma
 |      .--> 0x00010edc      87e00502       vle32.v v1, (a1)            ; arg2
-|      ::   0x00010ee0      c105           addi  a1, a1, 0x10          ; arg2
+|      ::   0x00010ee0      c105           addi  a1, a1, 0x10
 |      ::   0x00010ee2      57912002       vfadd.vv v2, v2, v1
 |      `==< 0x00010ee6      e39bbffe       bne   t6, a1, 0x10edc
 |       :   0x00010eea      f32520c2       csrr  a1, vlenb
@@ -1059,7 +1059,7 @@ nth      paddr      vaddr bind   type   size lib name
 |      ::   0x00010f0c      d7500442       vfmv.s.f v1, fs0
 |      ::   0x00010f10      5770050d       vsetvli zero, a0, e0x20, m1, ta, ma
 |      ::   0x00010f14      931e2500       slli  t4, a0, 2
-|      ::   0x00010f18      898d           sub   a1, a1, a0            ; arg2
+|      ::   0x00010f18      898d           sub   a1, a1, a0
 |      ::   0x00010f1a      d790200e       vfredosum.vs v1, v2, v1
 |      ::   0x00010f1e      7693           add   t1, t1, t4
 |      ::   0x00010f20      57141042       vfmv.f.s fs0, v1
@@ -1075,7 +1075,7 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00010f42      9145           li    a1, 4
 |      .--> 0x00010f44      57f5650c       vsetvli a0, a1, e8, mf4, ta, ma ; arg2
 |      ::   0x00010f48      a7600302       vse32.v v1, (t1)
-|      ::   0x00010f4c      898d           sub   a1, a1, a0            ; arg2
+|      ::   0x00010f4c      898d           sub   a1, a1, a0
 |      ::   0x00010f4e      0a05           slli  a0, a0, 2
 |      ::   0x00010f50      2a93           add   t1, t1, a0
 |      `==< 0x00010f52      edf9           bnez  a1, 0x10f44
@@ -1096,8 +1096,8 @@ nth      paddr      vaddr bind   type   size lib name
 |      .--> 0x00010f84      57750609       vsetvli a0, a2, e0x20, m1, tu, ma ; arg3
 |      ::   0x00010f88      87e10502       vle32.v v3, (a1)            ; arg2
 |      ::   0x00010f8c      13132500       slli  t1, a0, 2
-|      ::   0x00010f90      098e           sub   a2, a2, a0            ; arg3
-|      ::   0x00010f92      9a95           add   a1, a1, t1            ; arg2
+|      ::   0x00010f90      098e           sub   a2, a2, a0
+|      ::   0x00010f92      9a95           add   a1, a1, t1
 |      ::   0x00010f94      5711311a       vfmax.vv v2, v3, v2
 |      `==< 0x00010f98      75f6           bnez  a2, 0x10f84
 |       :   0x00010f9a      07a78202       flw   fa4, 0x28(t0)
@@ -1109,13 +1109,13 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00010fb0      732620c2       csrr  a2, vlenb
 |       :   0x00010fb4      13060608       addi  a2, a2, 0x80          ; arg3
 |       :   0x00010fb8      d7d1075e       vfmv.v.f v3, fa5
-|       :   0x00010fbc      0a96           add   a2, a2, sp            ; arg3
+|       :   0x00010fbc      0a96           add   a2, a2, sp
 |       :   0x00010fbe      3283           mv    t1, a2
 |       :   0x00010fc0      9145           li    a1, 4
 |       :   0x00010fc2      d7142042       vfmv.f.s fs1, v2
 |      .--> 0x00010fc6      57f5650c       vsetvli a0, a1, e8, mf4, ta, ma ; arg2
 |      ::   0x00010fca      a7610302       vse32.v v3, (t1)
-|      ::   0x00010fce      898d           sub   a1, a1, a0            ; arg2
+|      ::   0x00010fce      898d           sub   a1, a1, a0
 |      ::   0x00010fd0      0a05           slli  a0, a0, 2
 |      ::   0x00010fd2      2a93           add   t1, t1, a0
 |      `==< 0x00010fd4      edf9           bnez  a1, 0x10fc6
@@ -1131,8 +1131,8 @@ nth      paddr      vaddr bind   type   size lib name
 |      .--> 0x00010ff6      57f50509       vsetvli a0, a1, e0x20, m1, tu, ma ; arg2
 |      ::   0x00010ffa      07610602       vle32.v v2, (a2)            ; arg3
 |      ::   0x00010ffe      13132500       slli  t1, a0, 2
-|      ::   0x00011002      898d           sub   a1, a1, a0            ; arg2
-|      ::   0x00011004      1a96           add   a2, a2, t1            ; arg3
+|      ::   0x00011002      898d           sub   a1, a1, a0
+|      ::   0x00011004      1a96           add   a2, a2, t1
 |      ::   0x00011006      d7101112       vfmin.vv v1, v1, v2
 |      `==< 0x0001100a      f5f5           bnez  a1, 0x10ff6
 |       :   0x0001100c      4965           lui   a0, 0x12
@@ -1180,12 +1180,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00011572      87e00802       vle32.v v1, (a7)            ; arg8
 |       :   0x00011576      07e10502       vle32.v v2, (a1)            ; arg2
 |       :   0x0001157a      13982700       slli  a6, a5, 2             ; arg6
-|       :   0x0001157e      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x00011580      c298           add   a7, a7, a6            ; arg8
-|       :   0x00011582      c295           add   a1, a1, a6            ; arg2
+|       :   0x0001157e      1d8f           sub   a4, a4, a5
+|       :   0x00011580      c298           add   a7, a7, a6
+|       :   0x00011582      c295           add   a1, a1, a6
 |       :   0x00011584      d7101122       vfsgnj.vv v1, v1, v2
 |       :   0x00011588      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x0001158c      c296           add   a3, a3, a6            ; arg4
+|       :   0x0001158c      c296           add   a3, a3, a6
 |       `=< 0x0001158e      65f3           bnez  a4, 0x1156e
 |           0x00011590      b286           mv    a3, a2
 |           0x00011592      aa85           mv    a1, a0
@@ -1193,11 +1193,11 @@ nth      paddr      vaddr bind   type   size lib name
 |       .-> 0x00011598      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
 |       :   0x0001159c      87e00502       vle32.v v1, (a1)            ; arg2
 |       :   0x000115a0      13982700       slli  a6, a5, 2             ; arg6
-|       :   0x000115a4      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000115a6      c295           add   a1, a1, a6            ; arg2
+|       :   0x000115a4      1d8f           sub   a4, a4, a5
+|       :   0x000115a6      c295           add   a1, a1, a6
 |       :   0x000115a8      d790102a       vfabs.v v1, v1
 |       :   0x000115ac      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x000115b0      c296           add   a3, a3, a6            ; arg4
+|       :   0x000115b0      c296           add   a3, a3, a6
 |       `=< 0x000115b2      7df3           bnez  a4, 0x11598
 |           0x000115b4      87a7c180       flw   fa5, -0x7f4(gp)
 |           0x000115b8      d777000d       vsetvli a5, zero, e0x20, m1, ta, ma ; arg6
@@ -1206,28 +1206,27 @@ nth      paddr      vaddr bind   type   size lib name
 |       .-> 0x000115c4      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
 |       :   0x000115c8      87600502       vle32.v v1, (a0)            ; arg1
 |       :   0x000115cc      93962700       slli  a3, a5, 2             ; arg6
-|       :   0x000115d0      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000115d2      3695           add   a0, a0, a3            ; arg1
+|       :   0x000115d0      1d8f           sub   a4, a4, a5
+|       :   0x000115d2      3695           add   a0, a0, a3
 |       :   0x000115d4      d7101122       vfsgnj.vv v1, v1, v2
 |       :   0x000115d8      a7600602       vse32.v v1, (a2)            ; arg3
-|       :   0x000115dc      3696           add   a2, a2, a3            ; arg3
+|       :   0x000115dc      3696           add   a2, a2, a3
 |       `=< 0x000115de      7df3           bnez  a4, 0x115c4
 \           0x000115e0      8280           ret
 --- vector saturating
             ; CALL XREF from main @ 0x10960
-/ sym.test_saturating(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg8);
+/ sym.test_saturating(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg8);
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
 |           ; arg int64_t arg3 @ a2
 |           ; arg int64_t arg4 @ a3
-|           ; arg int64_t arg5 @ a4
 |           ; arg int64_t arg6 @ a5
 |           ; arg int64_t arg8 @ a7
 |           0x00011252      d776000d       vsetvli a3, zero, e0x20, m1, ta, ma ; arg4
 |           0x00011256      6178           lui   a6, 0xffff8
 |           0x00011258      2167           lui   a4, 8
 |           0x0001125a      d741085e       vmv.v.x v3, a6
-|           0x0001125e      7d37           addiw a4, a4, -1            ; arg5
+|           0x0001125e      7d37           addiw a4, a4, -1
 |           0x00011260      5741075e       vmv.v.x v2, a4
 |           0x00011264      b286           mv    a3, a2
 |           0x00011266      2e83           mv    t1, a1
@@ -1237,8 +1236,8 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00011272      87520302       vle16.v v5, (t1)
 |       :   0x00011276      07d20802       vle16.v v4, (a7)            ; arg8
 |       :   0x0001127a      13981700       slli  a6, a5, 1             ; arg6
-|       :   0x0001127e      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x00011280      c298           add   a7, a7, a6            ; arg8
+|       :   0x0001127e      1d8f           sub   a4, a4, a5
+|       :   0x00011280      c298           add   a7, a7, a6
 |       :   0x00011282      4293           add   t1, t1, a6
 |       :   0x00011284      d72052c6       vwadd.vv v1, v5, v4
 |       :   0x00011288      5770000d       vsetvli zero, zero, e0x20, m1, ta, ma
@@ -1247,16 +1246,16 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00011294      5770f00c       vsetvli zero, zero, e0x10, mf2, ta, ma
 |       :   0x00011298      d73010b2       vnsrl.wi v1, v1, 0
 |       :   0x0001129c      a7d00602       vse16.v v1, (a3)            ; arg4
-|       :   0x000112a0      c296           add   a3, a3, a6            ; arg4
+|       :   0x000112a0      c296           add   a3, a3, a6
 |       `=< 0x000112a2      71f7           bnez  a4, 0x1126e
 |           0x000112a4      13070040       li    a4, 0x400
 |       .-> 0x000112a8      d777f70c       vsetvli a5, a4, e0x10, mf2, ta, ma ; arg6
 |       :   0x000112ac      87520502       vle16.v v5, (a0)            ; arg1
 |       :   0x000112b0      07d20502       vle16.v v4, (a1)            ; arg2
 |       :   0x000112b4      93961700       slli  a3, a5, 1             ; arg6
-|       :   0x000112b8      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000112ba      3695           add   a0, a0, a3            ; arg1
-|       :   0x000112bc      b695           add   a1, a1, a3            ; arg2
+|       :   0x000112b8      1d8f           sub   a4, a4, a5
+|       :   0x000112ba      3695           add   a0, a0, a3
+|       :   0x000112bc      b695           add   a1, a1, a3
 |       :   0x000112be      d72052ce       vwsub.vv v1, v5, v4
 |       :   0x000112c2      5770000d       vsetvli zero, zero, e0x20, m1, ta, ma
 |       :   0x000112c6      d780111e       vmax.vv v1, v1, v3
@@ -1264,7 +1263,7 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x000112ce      5770f00c       vsetvli zero, zero, e0x10, mf2, ta, ma
 |       :   0x000112d2      d73010b2       vnsrl.wi v1, v1, 0
 |       :   0x000112d6      a7500602       vse16.v v1, (a2)            ; arg3
-|       :   0x000112da      3696           add   a2, a2, a3            ; arg3
+|       :   0x000112da      3696           add   a2, a2, a3
 |       `=< 0x000112dc      71f7           bnez  a4, 0x112a8
 \           0x000112de      8280           ret
 --- vector unsigned operations
@@ -1284,24 +1283,24 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x0001190e      07e10802       vle32.v v2, (a7)            ; arg8
 |       :   0x00011912      87600302       vle32.v v1, (t1)
 |       :   0x00011916      13982700       slli  a6, a5, 2             ; arg6
-|       :   0x0001191a      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x0001191c      c298           add   a7, a7, a6            ; arg8
+|       :   0x0001191a      1d8f           sub   a4, a4, a5
+|       :   0x0001191c      c298           add   a7, a7, a6
 |       :   0x0001191e      4293           add   t1, t1, a6
 |       :   0x00011920      d700111a       vmaxu.vv v1, v1, v2
 |       :   0x00011924      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x00011928      c296           add   a3, a3, a6            ; arg4
+|       :   0x00011928      c296           add   a3, a3, a6
 |       `=< 0x0001192a      65f3           bnez  a4, 0x1190a
 |           0x0001192c      13070040       li    a4, 0x400
 |       .-> 0x00011930      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
 |       :   0x00011934      07e10502       vle32.v v2, (a1)            ; arg2
 |       :   0x00011938      87600502       vle32.v v1, (a0)            ; arg1
 |       :   0x0001193c      93962700       slli  a3, a5, 2             ; arg6
-|       :   0x00011940      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x00011942      b695           add   a1, a1, a3            ; arg2
-|       :   0x00011944      3695           add   a0, a0, a3            ; arg1
+|       :   0x00011940      1d8f           sub   a4, a4, a5
+|       :   0x00011942      b695           add   a1, a1, a3
+|       :   0x00011944      3695           add   a0, a0, a3
 |       :   0x00011946      d7001112       vminu.vv v1, v1, v2
 |       :   0x0001194a      a7600602       vse32.v v1, (a2)            ; arg3
-|       :   0x0001194e      3696           add   a2, a2, a3            ; arg3
+|       :   0x0001194e      3696           add   a2, a2, a3
 |       `=< 0x00011950      65f3           bnez  a4, 0x11930
 \           0x00011952      8280           ret
 --- vector minmax
@@ -1321,24 +1320,24 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x000118ba      07e10802       vle32.v v2, (a7)            ; arg8
 |       :   0x000118be      87600302       vle32.v v1, (t1)
 |       :   0x000118c2      13982700       slli  a6, a5, 2             ; arg6
-|       :   0x000118c6      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000118c8      c298           add   a7, a7, a6            ; arg8
+|       :   0x000118c6      1d8f           sub   a4, a4, a5
+|       :   0x000118c8      c298           add   a7, a7, a6
 |       :   0x000118ca      4293           add   t1, t1, a6
 |       :   0x000118cc      d700111e       vmax.vv v1, v1, v2
 |       :   0x000118d0      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x000118d4      c296           add   a3, a3, a6            ; arg4
+|       :   0x000118d4      c296           add   a3, a3, a6
 |       `=< 0x000118d6      65f3           bnez  a4, 0x118b6
 |           0x000118d8      13070040       li    a4, 0x400
 |       .-> 0x000118dc      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
 |       :   0x000118e0      07e10502       vle32.v v2, (a1)            ; arg2
 |       :   0x000118e4      87600502       vle32.v v1, (a0)            ; arg1
 |       :   0x000118e8      93962700       slli  a3, a5, 2             ; arg6
-|       :   0x000118ec      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000118ee      b695           add   a1, a1, a3            ; arg2
-|       :   0x000118f0      3695           add   a0, a0, a3            ; arg1
+|       :   0x000118ec      1d8f           sub   a4, a4, a5
+|       :   0x000118ee      b695           add   a1, a1, a3
+|       :   0x000118f0      3695           add   a0, a0, a3
 |       :   0x000118f2      d7001116       vmin.vv v1, v1, v2
 |       :   0x000118f6      a7600602       vse32.v v1, (a2)            ; arg3
-|       :   0x000118fa      3696           add   a2, a2, a3            ; arg3
+|       :   0x000118fa      3696           add   a2, a2, a3
 |       `=< 0x000118fc      65f3           bnez  a4, 0x118dc
 \           0x000118fe      8280           ret
 --- vector fused multiply-add
@@ -1366,7 +1365,7 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x0001143e      ba9e           add   t4, t4, a4
 |       :   0x00011440      d79021a2       vfmadd.vv v1, v3, v2
 |       :   0x00011444      a7e00802       vse32.v v1, (a7)            ; arg8
-|       :   0x00011448      ba98           add   a7, a7, a4            ; arg8
+|       :   0x00011448      ba98           add   a7, a7, a4
 |       `=< 0x0001144a      e31c08fc       bnez  a6, 0x11422
 |           0x0001144e      b688           mv    a7, a3
 |           0x00011450      b28e           mv    t4, a2
@@ -1384,7 +1383,7 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00011476      ba9e           add   t4, t4, a4
 |       :   0x00011478      d79021aa       vfmsub.vv v1, v3, v2
 |       :   0x0001147c      a7e00802       vse32.v v1, (a7)            ; arg8
-|       :   0x00011480      ba98           add   a7, a7, a4            ; arg8
+|       :   0x00011480      ba98           add   a7, a7, a4
 |       `=< 0x00011482      e31c08fc       bnez  a6, 0x1145a
 |           0x00011486      13080040       li    a6, 0x400
 |       .-> 0x0001148a      d777080d       vsetvli a5, a6, e0x20, m1, ta, ma ; arg6
@@ -1393,12 +1392,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00011496      87e00502       vle32.v v1, (a1)            ; arg2
 |       :   0x0001149a      13972700       slli  a4, a5, 2             ; arg6
 |       :   0x0001149e      3308f840       sub   a6, a6, a5            ; arg6
-|       :   0x000114a2      3a96           add   a2, a2, a4            ; arg3
-|       :   0x000114a4      3a95           add   a0, a0, a4            ; arg1
-|       :   0x000114a6      ba95           add   a1, a1, a4            ; arg2
+|       :   0x000114a2      3a96           add   a2, a2, a4
+|       :   0x000114a4      3a95           add   a0, a0, a4
+|       :   0x000114a6      ba95           add   a1, a1, a4
 |       :   0x000114a8      d79021ae       vfnmsub.vv v1, v3, v2
 |       :   0x000114ac      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x000114b0      ba96           add   a3, a3, a4            ; arg4
+|       :   0x000114b0      ba96           add   a3, a3, a4
 |       `=< 0x000114b2      e31c08fc       bnez  a6, 0x1148a
 \           0x000114b6      8280           ret
 --- vector float operations
@@ -1418,12 +1417,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00011370      87e00802       vle32.v v1, (a7)            ; arg8
 |       :   0x00011374      07610302       vle32.v v2, (t1)
 |       :   0x00011378      13982700       slli  a6, a5, 2             ; arg6
-|       :   0x0001137c      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x0001137e      c298           add   a7, a7, a6            ; arg8
+|       :   0x0001137c      1d8f           sub   a4, a4, a5
+|       :   0x0001137e      c298           add   a7, a7, a6
 |       :   0x00011380      4293           add   t1, t1, a6
 |       :   0x00011382      d7101102       vfadd.vv v1, v1, v2
 |       :   0x00011386      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x0001138a      c296           add   a3, a3, a6            ; arg4
+|       :   0x0001138a      c296           add   a3, a3, a6
 |       `=< 0x0001138c      65f3           bnez  a4, 0x1136c
 |           0x0001138e      b286           mv    a3, a2
 |           0x00011390      2e83           mv    t1, a1
@@ -1433,12 +1432,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x0001139c      87e00802       vle32.v v1, (a7)            ; arg8
 |       :   0x000113a0      07610302       vle32.v v2, (t1)
 |       :   0x000113a4      13982700       slli  a6, a5, 2             ; arg6
-|       :   0x000113a8      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000113aa      c298           add   a7, a7, a6            ; arg8
+|       :   0x000113a8      1d8f           sub   a4, a4, a5
+|       :   0x000113aa      c298           add   a7, a7, a6
 |       :   0x000113ac      4293           add   t1, t1, a6
 |       :   0x000113ae      d710110a       vfsub.vv v1, v1, v2
 |       :   0x000113b2      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x000113b6      c296           add   a3, a3, a6            ; arg4
+|       :   0x000113b6      c296           add   a3, a3, a6
 |       `=< 0x000113b8      65f3           bnez  a4, 0x11398
 |           0x000113ba      b286           mv    a3, a2
 |           0x000113bc      aa88           mv    a7, a0
@@ -1447,12 +1446,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x000113c6      87e00802       vle32.v v1, (a7)            ; arg8
 |       :   0x000113ca      07e10502       vle32.v v2, (a1)            ; arg2
 |       :   0x000113ce      13982700       slli  a6, a5, 2             ; arg6
-|       :   0x000113d2      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000113d4      c298           add   a7, a7, a6            ; arg8
-|       :   0x000113d6      c295           add   a1, a1, a6            ; arg2
+|       :   0x000113d2      1d8f           sub   a4, a4, a5
+|       :   0x000113d4      c298           add   a7, a7, a6
+|       :   0x000113d6      c295           add   a1, a1, a6
 |       :   0x000113d8      d7101182       vfdiv.vv v1, v1, v2
 |       :   0x000113dc      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x000113e0      c296           add   a3, a3, a6            ; arg4
+|       :   0x000113e0      c296           add   a3, a3, a6
 |       `=< 0x000113e2      65f3           bnez  a4, 0x113c2
 |           0x000113e4      d777000d       vsetvli a5, zero, e0x20, m1, ta, ma ; arg6
 |           0x000113e8      5731005e       vmv.v.i v2, 0
@@ -1461,12 +1460,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x000113f4      87600502       vle32.v v1, (a0)            ; arg1
 |       :   0x000113f8      d731209e       vmv1r.v v3, v2
 |       :   0x000113fc      93962700       slli  a3, a5, 2             ; arg6
-|       :   0x00011400      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x00011402      3695           add   a0, a0, a3            ; arg1
+|       :   0x00011400      1d8f           sub   a4, a4, a5
+|       :   0x00011402      3695           add   a0, a0, a3
 |       :   0x00011404      5790206e       vmflt.vv v0, v2, v1
 |       :   0x00011408      d711104c       vfsqrt.v v3, v1, v0.t
 |       :   0x0001140c      a7610602       vse32.v v3, (a2)            ; arg3
-|       :   0x00011410      3696           add   a2, a2, a3            ; arg3
+|       :   0x00011410      3696           add   a2, a2, a3
 |       `=< 0x00011412      79ff           bnez  a4, 0x113f0
 \           0x00011414      8280           ret
 --- floating point operations
@@ -1486,12 +1485,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00011370      87e00802       vle32.v v1, (a7)            ; arg8
 |       :   0x00011374      07610302       vle32.v v2, (t1)
 |       :   0x00011378      13982700       slli  a6, a5, 2             ; arg6
-|       :   0x0001137c      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x0001137e      c298           add   a7, a7, a6            ; arg8
+|       :   0x0001137c      1d8f           sub   a4, a4, a5
+|       :   0x0001137e      c298           add   a7, a7, a6
 |       :   0x00011380      4293           add   t1, t1, a6
 |       :   0x00011382      d7101102       vfadd.vv v1, v1, v2
 |       :   0x00011386      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x0001138a      c296           add   a3, a3, a6            ; arg4
+|       :   0x0001138a      c296           add   a3, a3, a6
 |       `=< 0x0001138c      65f3           bnez  a4, 0x1136c
 |           0x0001138e      b286           mv    a3, a2
 |           0x00011390      2e83           mv    t1, a1
@@ -1501,12 +1500,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x0001139c      87e00802       vle32.v v1, (a7)            ; arg8
 |       :   0x000113a0      07610302       vle32.v v2, (t1)
 |       :   0x000113a4      13982700       slli  a6, a5, 2             ; arg6
-|       :   0x000113a8      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000113aa      c298           add   a7, a7, a6            ; arg8
+|       :   0x000113a8      1d8f           sub   a4, a4, a5
+|       :   0x000113aa      c298           add   a7, a7, a6
 |       :   0x000113ac      4293           add   t1, t1, a6
 |       :   0x000113ae      d710110a       vfsub.vv v1, v1, v2
 |       :   0x000113b2      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x000113b6      c296           add   a3, a3, a6            ; arg4
+|       :   0x000113b6      c296           add   a3, a3, a6
 |       `=< 0x000113b8      65f3           bnez  a4, 0x11398
 |           0x000113ba      b286           mv    a3, a2
 |           0x000113bc      aa88           mv    a7, a0
@@ -1515,12 +1514,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x000113c6      87e00802       vle32.v v1, (a7)            ; arg8
 |       :   0x000113ca      07e10502       vle32.v v2, (a1)            ; arg2
 |       :   0x000113ce      13982700       slli  a6, a5, 2             ; arg6
-|       :   0x000113d2      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000113d4      c298           add   a7, a7, a6            ; arg8
-|       :   0x000113d6      c295           add   a1, a1, a6            ; arg2
+|       :   0x000113d2      1d8f           sub   a4, a4, a5
+|       :   0x000113d4      c298           add   a7, a7, a6
+|       :   0x000113d6      c295           add   a1, a1, a6
 |       :   0x000113d8      d7101182       vfdiv.vv v1, v1, v2
 |       :   0x000113dc      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x000113e0      c296           add   a3, a3, a6            ; arg4
+|       :   0x000113e0      c296           add   a3, a3, a6
 |       `=< 0x000113e2      65f3           bnez  a4, 0x113c2
 |           0x000113e4      d777000d       vsetvli a5, zero, e0x20, m1, ta, ma ; arg6
 |           0x000113e8      5731005e       vmv.v.i v2, 0
@@ -1529,12 +1528,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x000113f4      87600502       vle32.v v1, (a0)            ; arg1
 |       :   0x000113f8      d731209e       vmv1r.v v3, v2
 |       :   0x000113fc      93962700       slli  a3, a5, 2             ; arg6
-|       :   0x00011400      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x00011402      3695           add   a0, a0, a3            ; arg1
+|       :   0x00011400      1d8f           sub   a4, a4, a5
+|       :   0x00011402      3695           add   a0, a0, a3
 |       :   0x00011404      5790206e       vmflt.vv v0, v2, v1
 |       :   0x00011408      d711104c       vfsqrt.v v3, v1, v0.t
 |       :   0x0001140c      a7610602       vse32.v v3, (a2)            ; arg3
-|       :   0x00011410      3696           add   a2, a2, a3            ; arg3
+|       :   0x00011410      3696           add   a2, a2, a3
 |       `=< 0x00011412      79ff           bnez  a4, 0x113f0
 \           0x00011414      8280           ret
 --- widening operations
@@ -1556,12 +1555,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x000112f2      07510802       vle16.v v2, (a6)            ; arg7
 |       :   0x000112f6      13931700       slli  t1, a5, 1             ; arg6
 |       :   0x000112fa      139e2700       slli  t3, a5, 2             ; arg6
-|       :   0x000112fe      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x00011300      1a98           add   a6, a6, t1            ; arg7
-|       :   0x00011302      9a98           add   a7, a7, t1            ; arg8
+|       :   0x000112fe      1d8f           sub   a4, a4, a5
+|       :   0x00011300      1a98           add   a6, a6, t1
+|       :   0x00011302      9a98           add   a7, a7, t1
 |       :   0x00011304      d72031c6       vwadd.vv v1, v3, v2
 |       :   0x00011308      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x0001130c      f296           add   a3, a3, t3            ; arg4
+|       :   0x0001130c      f296           add   a3, a3, t3
 |       `=< 0x0001130e      71ff           bnez  a4, 0x112ea
 |           0x00011310      13070040       li    a4, 0x400
 |       .-> 0x00011314      d777f70c       vsetvli a5, a4, e0x10, mf2, ta, ma ; arg6
@@ -1569,12 +1568,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x0001131c      07510502       vle16.v v2, (a0)            ; arg1
 |       :   0x00011320      93961700       slli  a3, a5, 1             ; arg6
 |       :   0x00011324      13982700       slli  a6, a5, 2             ; arg6
-|       :   0x00011328      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x0001132a      3695           add   a0, a0, a3            ; arg1
-|       :   0x0001132c      b695           add   a1, a1, a3            ; arg2
+|       :   0x00011328      1d8f           sub   a4, a4, a5
+|       :   0x0001132a      3695           add   a0, a0, a3
+|       :   0x0001132c      b695           add   a1, a1, a3
 |       :   0x0001132e      d72031ee       vwmul.vv v1, v3, v2
 |       :   0x00011332      a7600602       vse32.v v1, (a2)            ; arg3
-|       :   0x00011336      4296           add   a2, a2, a6            ; arg3
+|       :   0x00011336      4296           add   a2, a2, a6
 |       `=< 0x00011338      71ff           bnez  a4, 0x11314
 \           0x0001133a      8280           ret
 --- comparisons
@@ -1594,12 +1593,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00011078      07e10802       vle32.v v2, (a7)            ; arg8
 |       :   0x0001107c      87600302       vle32.v v1, (t1)
 |       :   0x00011080      13982700       slli  a6, a5, 2             ; arg6
-|       :   0x00011084      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x00011086      c298           add   a7, a7, a6            ; arg8
+|       :   0x00011084      1d8f           sub   a4, a4, a5
+|       :   0x00011086      c298           add   a7, a7, a6
 |       :   0x00011088      4293           add   t1, t1, a6
 |       :   0x0001108a      d7001116       vmin.vv v1, v1, v2
 |       :   0x0001108e      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x00011092      c296           add   a3, a3, a6            ; arg4
+|       :   0x00011092      c296           add   a3, a3, a6
 |       `=< 0x00011094      65f3           bnez  a4, 0x11074
 |           0x00011096      5773000d       vsetvli t1, zero, e0x20, m1, ta, ma
 |           0x0001109a      5731005e       vmv.v.i v2, 0
@@ -1610,13 +1609,13 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x000110aa      87e00802       vle32.v v1, (a7)            ; arg8
 |       :   0x000110ae      07e00502       vle32.v v0, (a1)            ; arg2
 |       :   0x000110b2      13982700       slli  a6, a5, 2             ; arg6
-|       :   0x000110b6      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000110b8      c295           add   a1, a1, a6            ; arg2
-|       :   0x000110ba      c298           add   a7, a7, a6            ; arg8
+|       :   0x000110b6      1d8f           sub   a4, a4, a5
+|       :   0x000110b8      c295           add   a1, a1, a6
+|       :   0x000110ba      c298           add   a7, a7, a6
 |       :   0x000110bc      57800062       vmseq.vv v0, v0, v1
 |       :   0x000110c0      d7b0205c       vmerge.vim v1, v2, 1, v0
 |       :   0x000110c4      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x000110c8      c296           add   a3, a3, a6            ; arg4
+|       :   0x000110c8      c296           add   a3, a3, a6
 |       `=< 0x000110ca      71ff           bnez  a4, 0x110a6
 |           0x000110cc      d777000d       vsetvli a5, zero, e0x20, m1, ta, ma ; arg6
 |           0x000110d0      5731005e       vmv.v.i v2, 0
@@ -1626,12 +1625,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       .-> 0x000110e0      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
 |       :   0x000110e4      87600502       vle32.v v1, (a0)            ; arg1
 |       :   0x000110e8      93962700       slli  a3, a5, 2             ; arg6
-|       :   0x000110ec      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000110ee      3695           add   a0, a0, a3            ; arg1
+|       :   0x000110ec      1d8f           sub   a4, a4, a5
+|       :   0x000110ee      3695           add   a0, a0, a3
 |       :   0x000110f0      5780306e       vmslt.vv v0, v3, v1
 |       :   0x000110f4      d780205c       vmerge.vvm v1, v2, v1, v0
 |       :   0x000110f8      a7600602       vse32.v v1, (a2)            ; arg3
-|       :   0x000110fc      3696           add   a2, a2, a3            ; arg3
+|       :   0x000110fc      3696           add   a2, a2, a3
 |       `=< 0x000110fe      6df3           bnez  a4, 0x110e0
 \           0x00011100      8280           ret
 --- clipping
@@ -1647,12 +1646,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       .-> 0x00011840      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
 |       :   0x00011844      87600502       vle32.v v1, (a0)            ; arg1
 |       :   0x00011848      93962700       slli  a3, a5, 2             ; arg6
-|       :   0x0001184c      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x0001184e      3695           add   a0, a0, a3            ; arg1
+|       :   0x0001184c      1d8f           sub   a4, a4, a5
+|       :   0x0001184e      3695           add   a0, a0, a3
 |       :   0x00011850      d780111e       vmax.vv v1, v1, v3
 |       :   0x00011854      d7001116       vmin.vv v1, v1, v2
 |       :   0x00011858      a7e00502       vse32.v v1, (a1)            ; arg2
-|       :   0x0001185c      b695           add   a1, a1, a3            ; arg2
+|       :   0x0001185c      b695           add   a1, a1, a3
 |       `=< 0x0001185e      6df3           bnez  a4, 0x11840
 \           0x00011860      8280           ret
 --- conversions
@@ -1666,21 +1665,21 @@ nth      paddr      vaddr bind   type   size lib name
 |       .-> 0x00011528      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
 |       :   0x0001152c      87600502       vle32.v v1, (a0)            ; arg1
 |       :   0x00011530      13982700       slli  a6, a5, 2             ; arg6
-|       :   0x00011534      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x00011536      4295           add   a0, a0, a6            ; arg1
+|       :   0x00011534      1d8f           sub   a4, a4, a5
+|       :   0x00011536      4295           add   a0, a0, a6
 |       :   0x00011538      d790114a       vfcvt.f.x.v v1, v1
 |       :   0x0001153c      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x00011540      c296           add   a3, a3, a6            ; arg4
+|       :   0x00011540      c296           add   a3, a3, a6
 |       `=< 0x00011542      7df3           bnez  a4, 0x11528
 |           0x00011544      13070040       li    a4, 0x400
 |       .-> 0x00011548      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
 |       :   0x0001154c      87e00502       vle32.v v1, (a1)            ; arg2
 |       :   0x00011550      93962700       slli  a3, a5, 2             ; arg6
-|       :   0x00011554      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x00011556      b695           add   a1, a1, a3            ; arg2
+|       :   0x00011554      1d8f           sub   a4, a4, a5
+|       :   0x00011556      b695           add   a1, a1, a3
 |       :   0x00011558      d790134a       vfcvt.rtz.x.f.v v1, v1
 |       :   0x0001155c      a7600602       vse32.v v1, (a2)            ; arg3
-|       :   0x00011560      3696           add   a2, a2, a3            ; arg3
+|       :   0x00011560      3696           add   a2, a2, a3
 |       `=< 0x00011562      7df3           bnez  a4, 0x11548
 \           0x00011564      8280           ret
 --- narrowing
@@ -1693,11 +1692,11 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00011344      87600502       vle32.v v1, (a0)            ; arg1
 |       :   0x00011348      13962700       slli  a2, a5, 2             ; arg6
 |       :   0x0001134c      93961700       slli  a3, a5, 1             ; arg6
-|       :   0x00011350      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x00011352      3295           add   a0, a0, a2            ; arg1
+|       :   0x00011350      1d8f           sub   a4, a4, a5
+|       :   0x00011352      3295           add   a0, a0, a2
 |       :   0x00011354      d73014b6       vnsra.wi v1, v1, 8
 |       :   0x00011358      a7d00502       vse16.v v1, (a1)            ; arg2
-|       :   0x0001135c      b695           add   a1, a1, a3            ; arg2
+|       :   0x0001135c      b695           add   a1, a1, a3
 |       `=< 0x0001135e      6df3           bnez  a4, 0x11340
 \           0x00011360      8280           ret
 --- average
@@ -1712,12 +1711,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00011810      07610502       vle32.v v2, (a0)            ; arg1
 |       :   0x00011814      87e00502       vle32.v v1, (a1)            ; arg2
 |       :   0x00011818      93962700       slli  a3, a5, 2             ; arg6
-|       :   0x0001181c      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x0001181e      3695           add   a0, a0, a3            ; arg1
-|       :   0x00011820      b695           add   a1, a1, a3            ; arg2
+|       :   0x0001181c      1d8f           sub   a4, a4, a5
+|       :   0x0001181e      3695           add   a0, a0, a3
+|       :   0x00011820      b695           add   a1, a1, a3
 |       :   0x00011822      d7201122       vaaddu.vv v1, v1, v2
 |       :   0x00011826      a7600602       vse32.v v1, (a2)            ; arg3
-|       :   0x0001182a      3696           add   a2, a2, a3            ; arg3
+|       :   0x0001182a      3696           add   a2, a2, a3
 |       `=< 0x0001182c      65f3           bnez  a4, 0x1180c
 \           0x0001182e      8280           ret
 --- segment access
@@ -1734,13 +1733,13 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00011752      87600602       vle32.v v1, (a2)            ; arg3
 |       :   0x00011756      13972700       slli  a4, a5, 2             ; arg6
 |       :   0x0001175a      3308f840       sub   a6, a6, a5            ; arg6
-|       :   0x0001175e      3a95           add   a0, a0, a4            ; arg1
-|       :   0x00011760      ba95           add   a1, a1, a4            ; arg2
+|       :   0x0001175e      3a95           add   a0, a0, a4
+|       :   0x00011760      ba95           add   a1, a1, a4
 |       :   0x00011762      57912102       vfadd.vv v2, v2, v3
-|       :   0x00011766      3a96           add   a2, a2, a4            ; arg3
+|       :   0x00011766      3a96           add   a2, a2, a4
 |       :   0x00011768      d7101102       vfadd.vv v1, v1, v2
 |       :   0x0001176c      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x00011770      ba96           add   a3, a3, a4            ; arg4
+|       :   0x00011770      ba96           add   a3, a3, a4
 |       `=< 0x00011772      e31a08fc       bnez  a6, 0x11746
 \           0x00011776      8280           ret
 --- floating point comparisons
@@ -1760,13 +1759,13 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x000114c6      07e10802       vle32.v v2, (a7)            ; arg8
 |       :   0x000114ca      87600302       vle32.v v1, (t1)
 |       :   0x000114ce      13982700       slli  a6, a5, 2             ; arg6
-|       :   0x000114d2      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000114d4      c298           add   a7, a7, a6            ; arg8
+|       :   0x000114d2      1d8f           sub   a4, a4, a5
+|       :   0x000114d4      c298           add   a7, a7, a6
 |       :   0x000114d6      4293           add   t1, t1, a6
 |       :   0x000114d8      5790206e       vmflt.vv v0, v2, v1
 |       :   0x000114dc      d700115c       vmerge.vvm v1, v1, v2, v0
 |       :   0x000114e0      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x000114e4      c296           add   a3, a3, a6            ; arg4
+|       :   0x000114e4      c296           add   a3, a3, a6
 |       `=< 0x000114e6      71ff           bnez  a4, 0x114c2
 |           0x000114e8      577e000d       vsetvli t3, zero, e0x20, m1, ta, ma
 |           0x000114ec      d731005e       vmv.v.i v3, 0
@@ -1775,15 +1774,15 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x000114f8      07610502       vle32.v v2, (a0)            ; arg1
 |       :   0x000114fc      07e00502       vle32.v v0, (a1)            ; arg2
 |       :   0x00011500      87a78180       flw   fa5, -0x7f8(gp)
-|       :   0x00011504      1d8f           sub   a4, a4, a5            ; arg6
+|       :   0x00011504      1d8f           sub   a4, a4, a5
 |       :   0x00011506      93962700       slli  a3, a5, 2             ; arg6
 |       :   0x0001150a      d7d0075e       vfmv.v.f v1, fa5
 |       :   0x0001150e      57100162       vmfeq.vv v0, v0, v2
-|       :   0x00011512      b695           add   a1, a1, a3            ; arg2
-|       :   0x00011514      3695           add   a0, a0, a3            ; arg1
+|       :   0x00011512      b695           add   a1, a1, a3
+|       :   0x00011514      3695           add   a0, a0, a3
 |       :   0x00011516      d780305c       vmerge.vvm v1, v3, v1, v0
 |       :   0x0001151a      a7600602       vse32.v v1, (a2)            ; arg3
-|       :   0x0001151e      3696           add   a2, a2, a3            ; arg3
+|       :   0x0001151e      3696           add   a2, a2, a3
 |       `=< 0x00011520      71fb           bnez  a4, 0x114f4
 \           0x00011522      8280           ret
 --- multi byte
@@ -1797,12 +1796,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00011780      07710502       vle64.v v2, (a0)            ; arg1
 |       :   0x00011784      87f00502       vle64.v v1, (a1)            ; arg2
 |       :   0x00011788      93963700       slli  a3, a5, 3             ; arg6
-|       :   0x0001178c      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x0001178e      3695           add   a0, a0, a3            ; arg1
-|       :   0x00011790      b695           add   a1, a1, a3            ; arg2
+|       :   0x0001178c      1d8f           sub   a4, a4, a5
+|       :   0x0001178e      3695           add   a0, a0, a3
+|       :   0x00011790      b695           add   a1, a1, a3
 |       :   0x00011792      d7001102       vadd.vv v1, v1, v2
 |       :   0x00011796      a7700602       vse64.v v1, (a2)            ; arg3
-|       :   0x0001179a      3696           add   a2, a2, a3            ; arg3
+|       :   0x0001179a      3696           add   a2, a2, a3
 |       `=< 0x0001179c      65f3           bnez  a4, 0x1177c
 \           0x0001179e      8280           ret
 --- shifts
@@ -1820,11 +1819,11 @@ nth      paddr      vaddr bind   type   size lib name
 |       .-> 0x0001110a      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
 |       :   0x0001110e      87600802       vle32.v v1, (a6)            ; arg7
 |       :   0x00011112      93982700       slli  a7, a5, 2             ; arg6
-|       :   0x00011116      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x00011118      4698           add   a6, a6, a7            ; arg7
+|       :   0x00011116      1d8f           sub   a4, a4, a5
+|       :   0x00011118      4698           add   a6, a6, a7
 |       :   0x0001111a      d7b01196       vsll.vi v1, v1, 3
 |       :   0x0001111e      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x00011122      c696           add   a3, a3, a7            ; arg4
+|       :   0x00011122      c696           add   a3, a3, a7
 |       `=< 0x00011124      7df3           bnez  a4, 0x1110a
 |           0x00011126      b286           mv    a3, a2
 |           0x00011128      2a88           mv    a6, a0
@@ -1832,22 +1831,22 @@ nth      paddr      vaddr bind   type   size lib name
 |       .-> 0x0001112e      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
 |       :   0x00011132      87600802       vle32.v v1, (a6)            ; arg7
 |       :   0x00011136      93982700       slli  a7, a5, 2             ; arg6
-|       :   0x0001113a      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x0001113c      4698           add   a6, a6, a7            ; arg7
+|       :   0x0001113a      1d8f           sub   a4, a4, a5
+|       :   0x0001113c      4698           add   a6, a6, a7
 |       :   0x0001113e      d73011a2       vsrl.vi v1, v1, 2
 |       :   0x00011142      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x00011146      c696           add   a3, a3, a7            ; arg4
+|       :   0x00011146      c696           add   a3, a3, a7
 |       `=< 0x00011148      7df3           bnez  a4, 0x1112e
 |           0x0001114a      b286           mv    a3, a2
 |           0x0001114c      13070040       li    a4, 0x400
 |       .-> 0x00011150      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
 |       :   0x00011154      87e00502       vle32.v v1, (a1)            ; arg2
 |       :   0x00011158      13982700       slli  a6, a5, 2             ; arg6
-|       :   0x0001115c      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x0001115e      c295           add   a1, a1, a6            ; arg2
+|       :   0x0001115c      1d8f           sub   a4, a4, a5
+|       :   0x0001115e      c295           add   a1, a1, a6
 |       :   0x00011160      d73012a6       vsra.vi v1, v1, 4
 |       :   0x00011164      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x00011168      c296           add   a3, a3, a6            ; arg4
+|       :   0x00011168      c296           add   a3, a3, a6
 |       `=< 0x0001116a      7df3           bnez  a4, 0x11150
 |           0x0001116c      d777000d       vsetvli a5, zero, e0x20, m1, ta, ma ; arg6
 |           0x00011170      57a10852       vid.v v2
@@ -1860,12 +1859,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x0001118c      57f0070d       vsetvli zero, a5, e0x20, m1, ta, ma ; arg6
 |       :   0x00011190      93952700       slli  a1, a5, 2             ; arg6
 |       :   0x00011194      d7001296       vsll.vv v1, v1, v4
-|       :   0x00011198      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x0001119a      2e95           add   a0, a0, a1            ; arg1
+|       :   0x00011198      1d8f           sub   a4, a4, a5
+|       :   0x0001119a      2e95           add   a0, a0, a1
 |       :   0x0001119c      a7600602       vse32.v v1, (a2)            ; arg3
 |       :   0x000111a0      d777000d       vsetvli a5, zero, e0x20, m1, ta, ma ; arg6
 |       :   0x000111a4      57812102       vadd.vv v2, v2, v3
-|       :   0x000111a8      2e96           add   a2, a2, a1            ; arg3
+|       :   0x000111a8      2e96           add   a2, a2, a1
 |       `=< 0x000111aa      79f7           bnez  a4, 0x11178
 \           0x000111ac      8280           ret
 --- strided access
@@ -1883,10 +1882,10 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x000115ee      07610622       vlseg2e32.v v2, (a2)        ; arg3
 |       :   0x000115f2      93983700       slli  a7, a5, 3             ; arg6
 |       :   0x000115f6      13982700       slli  a6, a5, 2             ; arg6
-|       :   0x000115fa      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000115fc      4696           add   a2, a2, a7            ; arg3
+|       :   0x000115fa      1d8f           sub   a4, a4, a5
+|       :   0x000115fc      4696           add   a2, a2, a7
 |       :   0x000115fe      27e10602       vse32.v v2, (a3)            ; arg4
-|       :   0x00011602      c296           add   a3, a3, a6            ; arg4
+|       :   0x00011602      c296           add   a3, a3, a6
 |       `=< 0x00011604      7df3           bnez  a4, 0x115ea
 |           0x00011606      0567           lui   a4, 1
 |           0x00011608      b307e500       add   a5, a0, a4            ; arg1
@@ -1900,19 +1899,19 @@ nth      paddr      vaddr bind   type   size lib name
 |       ,=< 0x00011628      63e80611       bltu  a3, a6, 0x11738
 |       |   0x0001162c      5773000d       vsetvli t1, zero, e0x20, m1, ta, ma
 |       |   0x00011630      d7a10852       vid.v v3
-|       |   0x00011634      118f           sub   a4, a4, a2            ; arg3
+|       |   0x00011634      118f           sub   a4, a4, a2
 |       |   0x00011636      33081041       neg   a6, a7
 |       |   0x0001163a      d7c1370e       vrsub.vx v3, v3, a5
-|       |   0x0001163e      2e97           add   a4, a4, a1            ; arg2
+|       |   0x0001163e      2e97           add   a4, a4, a1
 |       |   0x00011640      1b080840       addiw a6, a6, 0x400
 |       |   0x00011644      aa86           mv    a3, a0
 |       |   0x00011646      8147           li    a5, 0
 |      .--> 0x00011648      07e18602       vl1re32.v v2, (a3)
 |      :|   0x0001164c      bb871701       addw  a5, a5, a7
-|      :|   0x00011650      b296           add   a3, a3, a2            ; arg3
+|      :|   0x00011650      b296           add   a3, a3, a2
 |      :|   0x00011652      d7802132       vrgather.vv v1, v2, v3
 |      :|   0x00011656      a7008702       vs1r.v v1, (a4)
-|      :|   0x0001165a      118f           sub   a4, a4, a2            ; arg3
+|      :|   0x0001165a      118f           sub   a4, a4, a2
 |      `==< 0x0001165c      e376f8fe       bgeu  a6, a5, 0x11648
 |       |   0x00011660      93060040       li    a3, 0x400
 |      ,==< 0x00011664      6389d70c       beq   a5, a3, 0x11736
@@ -1938,7 +1937,7 @@ nth      paddr      vaddr bind   type   size lib name
 |    |:||   0x000116aa      3307f741       sub   a4, a4, t6
 |    |:||   0x000116ae      57813032       vrgather.vv v2, v3, v1
 |    |:||   0x000116b2      3307c741       sub   a4, a4, t3
-|    |:||   0x000116b6      2e97           add   a4, a4, a1            ; arg2
+|    |:||   0x000116b6      2e97           add   a4, a4, a1
 |    |:||   0x000116b8      27610702       vse32.v v2, (a4)
 |    |:||   0x000116bc      b308d040       neg   a7, a3
 |    |:||   0x000116c0      93880840       addi  a7, a7, 0x400
@@ -1966,12 +1965,12 @@ nth      paddr      vaddr bind   type   size lib name
 |  |  :||   0x00011712      9356e601       srli  a3, a2, 0x1e
 |  |  :||   0x00011716      33070741       sub   a4, a4, a6
 |  |  :||   0x0001171a      9387d77f       addi  a5, a5, 0x7fd
-|  |  :||   0x0001171e      4295           add   a0, a0, a6            ; arg1
+|  |  :||   0x0001171e      4295           add   a0, a0, a6
 |  |  :||   0x00011720      158f           sub   a4, a4, a3
 |  |  :||   0x00011722      b3870741       sub   a5, a5, a6
 |  | .----> 0x00011726      87270500       flw   fa5, 0(a0)            ; arg1
 |  | ::||   0x0001172a      f117           addi  a5, a5, -4
-|  | ::||   0x0001172c      1105           addi  a0, a0, 4             ; arg1
+|  | ::||   0x0001172c      1105           addi  a0, a0, 4
 |  | ::||   0x0001172e      27a2f700       fsw   fa5, 4(a5)
 |  | `====< 0x00011732      e31af7fe       bne   a4, a5, 0x11726
 |  `---`--> 0x00011736      8280           ret
@@ -1993,22 +1992,22 @@ nth      paddr      vaddr bind   type   size lib name
 |       .-> 0x0001186a      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
 |       :   0x0001186e      87600602       vle32.v v1, (a2)            ; arg3
 |       :   0x00011872      13982700       slli  a6, a5, 2             ; arg6
-|       :   0x00011876      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x00011878      4296           add   a2, a2, a6            ; arg3
+|       :   0x00011876      1d8f           sub   a4, a4, a5
+|       :   0x00011878      4296           add   a2, a2, a6
 |       :   0x0001187a      5731100e       vrsub.vi v2, v1, 0
 |       :   0x0001187e      d700111e       vmax.vv v1, v1, v2
 |       :   0x00011882      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x00011886      c296           add   a3, a3, a6            ; arg4
+|       :   0x00011886      c296           add   a3, a3, a6
 |       `=< 0x00011888      6df3           bnez  a4, 0x1186a
 |           0x0001188a      13070040       li    a4, 0x400
 |       .-> 0x0001188e      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
 |       :   0x00011892      87600502       vle32.v v1, (a0)            ; arg1
 |       :   0x00011896      93962700       slli  a3, a5, 2             ; arg6
-|       :   0x0001189a      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x0001189c      3695           add   a0, a0, a3            ; arg1
+|       :   0x0001189a      1d8f           sub   a4, a4, a5
+|       :   0x0001189c      3695           add   a0, a0, a3
 |       :   0x0001189e      d730100e       vrsub.vi v1, v1, 0
 |       :   0x000118a2      a7e00502       vse32.v v1, (a1)            ; arg2
-|       :   0x000118a6      b695           add   a1, a1, a3            ; arg2
+|       :   0x000118a6      b695           add   a1, a1, a3
 |       `=< 0x000118a8      7df3           bnez  a4, 0x1188e
 \           0x000118aa      8280           ret
 --- main function
@@ -2594,7 +2593,7 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x0001197c      ba9e           add   t4, t4, a4
 |       :   0x0001197e      d7a021a6       vmadd.vv v1, v3, v2
 |       :   0x00011982      a7e00802       vse32.v v1, (a7)            ; arg8
-|       :   0x00011986      ba98           add   a7, a7, a4            ; arg8
+|       :   0x00011986      ba98           add   a7, a7, a4
 |       `=< 0x00011988      e31c08fc       bnez  a6, 0x11960
 |           0x0001198c      13080040       li    a6, 0x400
 |       .-> 0x00011990      d777080d       vsetvli a5, a6, e0x20, m1, ta, ma ; arg6
@@ -2603,12 +2602,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x0001199c      87e00502       vle32.v v1, (a1)            ; arg2
 |       :   0x000119a0      13972700       slli  a4, a5, 2             ; arg6
 |       :   0x000119a4      3308f840       sub   a6, a6, a5            ; arg6
-|       :   0x000119a8      3a96           add   a2, a2, a4            ; arg3
-|       :   0x000119aa      3a95           add   a0, a0, a4            ; arg1
-|       :   0x000119ac      ba95           add   a1, a1, a4            ; arg2
+|       :   0x000119a8      3a96           add   a2, a2, a4
+|       :   0x000119aa      3a95           add   a0, a0, a4
+|       :   0x000119ac      ba95           add   a1, a1, a4
 |       :   0x000119ae      d72031ae       vnmsub.vv v1, v2, v3
 |       :   0x000119b2      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x000119b6      ba96           add   a3, a3, a4            ; arg4
+|       :   0x000119b6      ba96           add   a3, a3, a4
 |       `=< 0x000119b8      e31c08fc       bnez  a6, 0x11990
 \           0x000119bc      8280           ret
 --- bitwise
@@ -2628,12 +2627,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x000111bc      07e10802       vle32.v v2, (a7)            ; arg8
 |       :   0x000111c0      87600302       vle32.v v1, (t1)
 |       :   0x000111c4      13982700       slli  a6, a5, 2             ; arg6
-|       :   0x000111c8      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000111ca      c298           add   a7, a7, a6            ; arg8
+|       :   0x000111c8      1d8f           sub   a4, a4, a5
+|       :   0x000111ca      c298           add   a7, a7, a6
 |       :   0x000111cc      4293           add   t1, t1, a6
 |       :   0x000111ce      d7001126       vand.vv v1, v1, v2
 |       :   0x000111d2      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x000111d6      c296           add   a3, a3, a6            ; arg4
+|       :   0x000111d6      c296           add   a3, a3, a6
 |       `=< 0x000111d8      65f3           bnez  a4, 0x111b8
 |           0x000111da      b286           mv    a3, a2
 |           0x000111dc      2e83           mv    t1, a1
@@ -2643,12 +2642,12 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x000111e8      07e10802       vle32.v v2, (a7)            ; arg8
 |       :   0x000111ec      87600302       vle32.v v1, (t1)
 |       :   0x000111f0      13982700       slli  a6, a5, 2             ; arg6
-|       :   0x000111f4      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x000111f6      c298           add   a7, a7, a6            ; arg8
+|       :   0x000111f4      1d8f           sub   a4, a4, a5
+|       :   0x000111f6      c298           add   a7, a7, a6
 |       :   0x000111f8      4293           add   t1, t1, a6
 |       :   0x000111fa      d700112a       vor.vv v1, v1, v2
 |       :   0x000111fe      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x00011202      c296           add   a3, a3, a6            ; arg4
+|       :   0x00011202      c296           add   a3, a3, a6
 |       `=< 0x00011204      65f3           bnez  a4, 0x111e4
 |           0x00011206      b286           mv    a3, a2
 |           0x00011208      aa88           mv    a7, a0
@@ -2657,22 +2656,22 @@ nth      paddr      vaddr bind   type   size lib name
 |       :   0x00011212      07e10802       vle32.v v2, (a7)            ; arg8
 |       :   0x00011216      87e00502       vle32.v v1, (a1)            ; arg2
 |       :   0x0001121a      13982700       slli  a6, a5, 2             ; arg6
-|       :   0x0001121e      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x00011220      c298           add   a7, a7, a6            ; arg8
-|       :   0x00011222      c295           add   a1, a1, a6            ; arg2
+|       :   0x0001121e      1d8f           sub   a4, a4, a5
+|       :   0x00011220      c298           add   a7, a7, a6
+|       :   0x00011222      c295           add   a1, a1, a6
 |       :   0x00011224      d700112e       vxor.vv v1, v1, v2
 |       :   0x00011228      a7e00602       vse32.v v1, (a3)            ; arg4
-|       :   0x0001122c      c296           add   a3, a3, a6            ; arg4
+|       :   0x0001122c      c296           add   a3, a3, a6
 |       `=< 0x0001122e      65f3           bnez  a4, 0x1120e
 |           0x00011230      13070040       li    a4, 0x400
 |       .-> 0x00011234      d777070d       vsetvli a5, a4, e0x20, m1, ta, ma ; arg6
 |       :   0x00011238      87600502       vle32.v v1, (a0)            ; arg1
 |       :   0x0001123c      93962700       slli  a3, a5, 2             ; arg6
-|       :   0x00011240      1d8f           sub   a4, a4, a5            ; arg6
-|       :   0x00011242      3695           add   a0, a0, a3            ; arg1
+|       :   0x00011240      1d8f           sub   a4, a4, a5
+|       :   0x00011242      3695           add   a0, a0, a3
 |       :   0x00011244      d7b01f2e       vnot.v v1, v1
 |       :   0x00011248      a7600602       vse32.v v1, (a2)            ; arg3
-|       :   0x0001124c      3696           add   a2, a2, a3            ; arg3
+|       :   0x0001124c      3696           add   a2, a2, a3
 |       `=< 0x0001124e      7df3           bnez  a4, 0x11234
 \           0x00011250      8280           ret
 EOF
