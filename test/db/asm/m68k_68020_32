@@ -1,3 +1,653 @@
-d "bftst 0x9c.w{d0:32}" e8f80800009c
+d "cmp2.b (a0), d0" 00d00000
+d "chk2.b (a0), d0" 00d00800
+d "cmp2.b 0x1(a0), d0" 00e800000001
+d "chk2.b 0xfff(a0), d0" 00e808000fff
+d "cmp2.b 0x1(a0, d0.w), d0" 00f000000001
+d "chk2.b ([0x10001fff], 0x20002fff), d0" 00f008000fff10001fff20002fff
+d "cmp2.b ([0x20002fff], 0x30003fff), d1" 00f010001fff20002fff30003fff
+d "cmp2.b (a0, a0.w), a0" 00f080008100
+d "cmp2.b 0x1.w, d0" 00f800000001
+d "chk2.b 0xfff.w, d0" 00f808000fff
+d "cmp2.b 0x10010.l, d0" 00f9000000010010
+d "chk2.b 0xfff1000.l, d0" 00f908000fff1000
+d "cmp2.b 0x5(pc), d0" 00fa00000001
+d "chk2.b 0x1003(pc), d0" 00fa08000fff
+d "cmp2.b 0x5(pc, d0.w), d0" 00fb00000001
+d "chk2.b ([0x10002003], 0x20002fff), d0" 00fb08000fff10001fff20002fff
+d "cmp2.b ([0x20003003], 0x30003fff), d1" 00fb10001fff20002fff30003fff
+d "cmp2.b 0x4(pc, a0.w), a0" 00fb80008100
+d "cmp2.w (a0), d0" 02d00000
+d "chk2.w (a0), d0" 02d00800
+d "cmp2.w 0x1(a0), d0" 02e800000001
+d "chk2.w 0xfff(a0), d0" 02e808000fff
+d "cmp2.w 0x1(a0, d0.w), d0" 02f000000001
+d "chk2.w ([0x10001fff], 0x20002fff), d0" 02f008000fff10001fff20002fff
+d "cmp2.w ([0x20002fff], 0x30003fff), d1" 02f010001fff20002fff30003fff
+d "cmp2.w (a0, a0.w), a0" 02f080008100
+d "cmp2.w 0x1.w, d0" 02f800000001
+d "chk2.w 0xfff.w, d0" 02f808000fff
+d "cmp2.w 0x10010.l, d0" 02f9000000010010
+d "chk2.w 0xfff1000.l, d0" 02f908000fff1000
+d "cmp2.w 0x5(pc), d0" 02fa00000001
+d "chk2.w 0x1003(pc), d0" 02fa08000fff
+d "cmp2.w 0x5(pc, d0.w), d0" 02fb00000001
+d "chk2.w ([0x10002003], 0x20002fff), d0" 02fb08000fff10001fff20002fff
+d "cmp2.w ([0x20003003], 0x30003fff), d1" 02fb10001fff20002fff30003fff
+d "cmp2.w 0x4(pc, a0.w), a0" 02fb80008100
+d "cmp2.l (a0), d0" 04d00000
+d "chk2.l (a0), d0" 04d00800
+d "cmp2.l 0x1(a0), d0" 04e800000001
+d "chk2.l 0xfff(a0), d0" 04e808000fff
+d "cmp2.l 0x1(a0, d0.w), d0" 04f000000001
+d "chk2.l ([0x10001fff], 0x20002fff), d0" 04f008000fff10001fff20002fff
+d "cmp2.l ([0x20002fff], 0x30003fff), d1" 04f010001fff20002fff30003fff
+d "cmp2.l (a0, a0.w), a0" 04f080008100
+d "cmp2.l 0x1.w, d0" 04f800000001
+d "chk2.l 0xfff.w, d0" 04f808000fff
+d "cmp2.l 0x10010.l, d0" 04f9000000010010
+d "chk2.l 0xfff1000.l, d0" 04f908000fff1000
+d "cmp2.l 0x5(pc), d0" 04fa00000001
+d "chk2.l 0x1003(pc), d0" 04fa08000fff
+d "cmp2.l 0x5(pc, d0.w), d0" 04fb00000001
+d "chk2.l ([0x10002003], 0x20002fff), d0" 04fb08000fff10001fff20002fff
+d "cmp2.l ([0x20003003], 0x30003fff), d1" 04fb10001fff20002fff30003fff
+d "cmp2.l 0x4(pc, a0.w), a0" 04fb80008100
+d "rtm d0" 06c0
+d "callm 0x0, (a0)" 06d00000
+d "callm 0x0, 0x1(a0)" 06e800000001
+d "callm 0x0, 0x1(a0, d0.w)" 06f000000001
+d "callm 0xff, (a0, d0.w)" 06f000ff0100
+d "callm 0x0, 0x1.w" 06f800000001
+d "callm 0x0, 0x10010.l" 06f9000000010010
+d "callm 0x0, 0x5(pc)" 06fa00000001
+d "callm 0x0, 0x5(pc, d0.w)" 06fb00000001
+d "callm 0xff, 0x4(pc, d0.w)" 06fb00ff0100
+d "cas.b d0, d0, (a0)" 0ad00000
+d "cas.b d0, d0, (a0)+" 0ad80000
+d "cas.b d0, d0, -(a0)" 0ae00000
+d "cas.b d0, d0, 0x1(a0)" 0ae800000001
+d "cas.b d0, d0, 0x1(a0, d0.w)" 0af000000001
+d "cas.b d0, d4, ([0x18001ff, a0], 0x8000fff)" 0af00100017f018001ff08000fff
+d "cas.b d0, d0, 0x1.w" 0af800000001
+d "cas.b d0, d0, 0x10010.l" 0af9000000010010
+d "cas.w d0, d0, (a0)" 0cd00000
+d "cas.w d0, d0, (a0)+" 0cd80000
+d "cas.w d0, d0, -(a0)" 0ce00000
+d "cas.w d0, d0, 0x1(a0)" 0ce800000001
+d "cas.w d0, d0, 0x1(a0, d0.w)" 0cf000000001
+d "cas.w d0, d4, ([0x18001ff, a0], 0x8000fff)" 0cf00100017f018001ff08000fff
+d "cas.w d0, d0, 0x1.w" 0cf800000001
+d "cas.w d0, d0, 0x10010.l" 0cf9000000010010
+d "cas2.w d0:d1,d0:d0,(d0):(d0)" 0cfc00000001
+d "cas.l d0, d0, (a0)" 0ed00000
+d "cas.l d0, d0, (a0)+" 0ed80000
+d "cas.l d0, d0, -(a0)" 0ee00000
+d "cas.l d0, d0, 0x1(a0)" 0ee800000001
+d "cas.l d0, d0, 0x1(a0, d0.w)" 0ef000000001
+d "cas.l d0, d4, ([0x18001ff, a0], 0x8000fff)" 0ef00100017f018001ff08000fff
+d "cas.l d0, d0, 0x1.w" 0ef800000001
+d "cas.l d0, d0, 0x10010.l" 0ef9000000010010
+d "cas2.l d0:d1,d0:d0,(d0):(d0)" 0efc00000001
+d "chk.l d0, d0" 4100
+d "chk.l (a0), d0" 4110
+d "chk.l (a0)+, d0" 4118
+d "chk.l -(a0), d0" 4120
+d "chk.l 0x0(a0), d0" 41280000
+d "chk.l 0x0(a0, d0.w), d0" 41300000
+d "chk.l (a0, d0.w), d0" 41300100
+d "chk.l ([0x18001ff, a0], 0x8000fff), d0" 4130017f018001ff08000fff
+d "chk.l 0x0.w, d0" 41380000
+d "chk.l 0x1.l, d0" 413900000001
+d "chk.l 0x2(pc), d0" 413a0000
+d "chk.l 0x2(pc, d0.w), d0" 413b0000
+d "chk.l ([0x1800201, pc], 0x8000fff), d0" 413b017f018001ff08000fff
+d "chk.l 0x1, d0" 413c00000001
+d "link.l a0, 0x1" 480800000001
+d "extb.l d0" 49c0
+d "tst.b 0x2(pc)" 4a3a0000
+d "tst.b 0x2(pc, d0.w)" 4a3b0000
+d "tst.b ([0x1800201, pc], 0x8000fff)" 4a3b017f018001ff08000fff
+d "tst.b 0x0" 4a3c0000
+d "tst.w a0" 4a48
+d "tst.w 0x2(pc)" 4a7a0000
+d "tst.w 0x2(pc, d0.w)" 4a7b0000
+d "tst.w ([0x1800201, pc], 0x8000fff)" 4a7b017f018001ff08000fff
+d "tst.w 0x0" 4a7c0000
+d "tst.l a0" 4a88
+d "tst.l 0x2(pc)" 4aba0000
+d "tst.l 0x2(pc, d0.w)" 4abb0000
+d "tst.l ([0x1800201, pc], 0x8000fff)" 4abb017f018001ff08000fff
+d "tst.l 0x1" 4abc00000001
+d "mulu.l d0, d0" 4c000000
+d "muls.l d0, d0" 4c000800
+d "mulu.l (a0), d0" 4c100000
+d "muls.l (a0), d0" 4c100800
+d "mulu.l (a0)+, d0" 4c180000
+d "muls.l (a0)+, d0" 4c180800
+d "mulu.l -(a0), d0" 4c200000
+d "muls.l -(a0), d0" 4c200800
+d "mulu.l 0x1(a0), d0" 4c2800000001
+d "muls.l 0xfff(a0), d0" 4c2808000fff
+d "mulu.l 0x1(a0, d0.w), d0" 4c3000000001
+d "muls.l ([0x10001fff], 0x20002fff), d0" 4c3008000fff10001fff20002fff
+d "mulu.l ([0x20002fff], 0x30003fff), d1" 4c3010001fff20002fff30003fff
+d "mulu.l 0x1.w, d0" 4c3800000001
+d "muls.l 0xfff.w, d0" 4c3808000fff
+d "mulu.l 0x10010.l, d0" 4c39000000010010
+d "muls.l 0xfff1000.l, d0" 4c3908000fff1000
+d "mulu.l 0x5(pc), d0" 4c3a00000001
+d "muls.l 0x1003(pc), d0" 4c3a08000fff
+d "mulu.l 0x5(pc, d0.w), d0" 4c3b00000001
+d "muls.l ([0x10002003], 0x20002fff), d0" 4c3b08000fff10001fff20002fff
+d "mulu.l ([0x20003003], 0x30003fff), d1" 4c3b10001fff20002fff30003fff
+d "mulu.l 0x10010, d0" 4c3c000000010010
+d "muls.l 0xfff1000, d0" 4c3c08000fff1000
+d "divu.l d0, d0" 4c400000
+d "divs.l d0, d0" 4c400800
+d "divu.l d0, d1:d2" 4c402401
+d "divs.l d0, d1:d2" 4c402c01
+d "divu.l (a0), d0" 4c500000
+d "divs.l (a0), d0" 4c500800
+d "divu.l (a0)+, d0" 4c580000
+d "divs.l (a0)+, d0" 4c580800
+d "divu.l -(a0), d0" 4c600000
+d "divs.l -(a0), d0" 4c600800
+d "divu.l 0x1(a0), d0" 4c6800000001
+d "divs.l 0xfff(a0), d0" 4c6808000fff
+d "divu.l 0x1(a0, d0.w), d0" 4c7000000001
+d "divs.l ([0x10001fff], 0x20002fff), d0" 4c7008000fff10001fff20002fff
+d "divu.l ([0x20002fff], 0x30003fff), d1" 4c7010001fff20002fff30003fff
+d "divu.l 0x1.w, d0" 4c7800000001
+d "divs.l 0xfff.w, d0" 4c7808000fff
+d "divu.l 0x10010.l, d0" 4c79000000010010
+d "divs.l 0xfff1000.l, d0" 4c7908000fff1000
+d "divu.l 0x5(pc), d0" 4c7a00000001
+d "divs.l 0x1003(pc), d0" 4c7a08000fff
+d "divu.l 0x5(pc, d0.w), d0" 4c7b00000001
+d "divs.l ([0x10002003], 0x20002fff), d0" 4c7b08000fff10001fff20002fff
+d "divu.l ([0x20003003], 0x30003fff), d1" 4c7b10001fff20002fff30003fff
+d "divu.l 0x10010, d0" 4c7c000000010010
+d "divs.l 0xfff1000, d0" 4c7c08000fff1000
+d "rtd 0x4" 4e740004
+d "movec dfc, d0" 4e7a0001
+d "movec d0, dfc" 4e7b0001
+d "trapt.w 0x0" 50fa0000
+d "trapt.l 0x1" 50fb00000001
+d "trapt" 50fc
+d "trapf.w 0x0" 51fa0000
+d "trapf.l 0x1" 51fb00000001
+d "trapf" 51fc
+d "traphi.w 0x0" 52fa0000
+d "traphi.l 0x1" 52fb00000001
+d "traphi" 52fc
+d "trapls.w 0x0" 53fa0000
+d "trapls.l 0x1" 53fb00000001
+d "trapls" 53fc
+d "trapcc.w 0x0" 54fa0000
+d "trapcc.l 0x1" 54fb00000001
+d "trapcc" 54fc
+d "trapcs.w 0x0" 55fa0000
+d "trapcs.l 0x1" 55fb00000001
+d "trapcs" 55fc
+d "trapne.w 0x0" 56fa0000
+d "trapne.l 0x1" 56fb00000001
+d "trapne" 56fc
+d "trapeq.w 0x0" 57fa0000
+d "trapeq.l 0x1" 57fb00000001
+d "trapeq" 57fc
+d "trapvc.w 0x0" 58fa0000
+d "trapvc.l 0x1" 58fb00000001
+d "trapvc" 58fc
+d "trapvs.w 0x0" 59fa0000
+d "trapvs.l 0x1" 59fb00000001
+d "trapvs" 59fc
+d "trappl.w 0x0" 5afa0000
+d "trappl.l 0x1" 5afb00000001
+d "trappl" 5afc
+d "trapmi.w 0x0" 5bfa0000
+d "trapmi.l 0x1" 5bfb00000001
+d "trapmi" 5bfc
+d "trapge.w 0x0" 5cfa0000
+d "trapge.l 0x1" 5cfb00000001
+d "trapge" 5cfc
+d "traplt.w 0x0" 5dfa0000
+d "traplt.l 0x1" 5dfb00000001
+d "traplt" 5dfc
+d "trapgt.w 0x0" 5efa0000
+d "trapgt.l 0x1" 5efb00000001
+d "trapgt" 5efc
+d "traple.w 0x0" 5ffa0000
+d "traple.l 0x1" 5ffb00000001
+d "traple" 5ffc
+d "bra.l 0x3" 60ff00000001
+d "bsr.l 0x3" 61ff00000001
+d "bhi.l 0x3" 62ff00000001
+d "bls.l 0x3" 63ff00000001
+d "bcc.l 0x3" 64ff00000001
+d "bcs.l 0x3" 65ff00000001
+d "bne.l 0x3" 66ff00000001
+d "beq.l 0x3" 67ff00000001
+d "bvc.l 0x3" 68ff00000001
+d "bvs.l 0x3" 69ff00000001
+d "bpl.l 0x3" 6aff00000001
+d "bmi.l 0x3" 6bff00000001
+d "bge.l 0x3" 6cff00000001
+d "blt.l 0x3" 6dff00000001
+d "bgt.l 0x3" 6eff00000001
+d "ble.l 0x3" 6fff00000001
+d "pack d0, d0" 81400000
+d "pack d0, d0, 0x1" 81400001
+d "pack -(a0), -(a0)" 81480000
+d "pack -(a0), -(a0), 0x1" 81480001
+d "unpk d0, d0" 81800000
+d "unpk d0, d0, 0x1" 81800001
+d "unpk -(a0), -(a0)" 81880000
+d "unpk -(a0), -(a0), 0x1" 81880001
+d "bftst d0{0:32}" e8c00000
+d "bftst (a0){0:32}" e8d00000
+d "bftst 0x1(a0){0:32}" e8e800000001
+d "bftst 0x1(a0, d0.w){0:32}" e8f000000001
+d "bftst (a0, d0.w){3:d7}" e8f000ff0100
+d "bftst ([0x18001ff, a0], 0x8000fff){4:32}" e8f00100017f018001ff08000fff
 d "bftst 0x9c.w{20:5}" e8f80505009c
+d "bftst 0x9c.w{d0:32}" e8f80800009c
 d "bftst 0x9c.w{d1:d0}" e8f80860009c
+d "bftst 0x10010.l{0:32}" e8f9000000010010
+d "bftst 0x5(pc){0:32}" e8fa00000001
+d "bftst 0x5(pc, d0.w){0:32}" e8fb00000001
+d "bftst 0x4(pc, d0.w){3:d7}" e8fb00ff0100
+d "bftst ([0x1800203, pc], 0x8000fff){4:32}" e8fb0100017f018001ff08000fff
+d "bfextu d0{0:32}, d0" e9c00000
+d "bfextu (a0){0:32}, d0" e9d00000
+d "bfextu 0x1(a0){0:32}, d0" e9e800000001
+d "bfextu 0x1(a0, d0.w){0:32}, d0" e9f000000001
+d "bfextu (a0, d0.w){3:d7}, d0" e9f000ff0100
+d "bfextu ([0x18001ff, a0], 0x8000fff){4:32}, d0" e9f00100017f018001ff08000fff
+d "bfextu 0x1.w{0:32}, d0" e9f800000001
+d "bfextu 0x10010.l{0:32}, d0" e9f9000000010010
+d "bfextu 0x5(pc){0:32}, d0" e9fa00000001
+d "bfextu 0x5(pc, d0.w){0:32}, d0" e9fb00000001
+d "bfextu 0x4(pc, d0.w){3:d7}, d0" e9fb00ff0100
+d "bfextu ([0x1800203, pc], 0x8000fff){4:32}, d0" e9fb0100017f018001ff08000fff
+d "bfchg d0{0:32}" eac00000
+d "bfchg (a0){0:32}" ead00000
+d "bfchg 0x1(a0){0:32}" eae800000001
+d "bfchg 0x1(a0, d0.w){0:32}" eaf000000001
+d "bfchg (a0, d0.w){3:d7}" eaf000ff0100
+d "bfchg ([0x18001ff, a0], 0x8000fff){4:32}" eaf00100017f018001ff08000fff
+d "bfchg 0x1.w{0:32}" eaf800000001
+d "bfchg 0x10010.l{0:32}" eaf9000000010010
+d "bfexts d0{0:32}, d0" ebc00000
+d "bfexts (a0){0:32}, d0" ebd00000
+d "bfexts 0x1(a0){0:32}, d0" ebe800000001
+d "bfexts 0x1(a0, d0.w){0:32}, d0" ebf000000001
+d "bfexts (a0, d0.w){3:d7}, d0" ebf000ff0100
+d "bfexts ([0x18001ff, a0], 0x8000fff){4:32}, d0" ebf00100017f018001ff08000fff
+d "bfexts 0x1.w{0:32}, d0" ebf800000001
+d "bfexts 0x10010.l{0:32}, d0" ebf9000000010010
+d "bfexts 0x5(pc){0:32}, d0" ebfa00000001
+d "bfexts 0x5(pc, d0.w){0:32}, d0" ebfb00000001
+d "bfexts 0x4(pc, d0.w){3:d7}, d0" ebfb00ff0100
+d "bfexts ([0x1800203, pc], 0x8000fff){4:32}, d0" ebfb0100017f018001ff08000fff
+d "bfclr d0{0:32}" ecc00000
+d "bfclr (a0){0:32}" ecd00000
+d "bfclr 0x1(a0){0:32}" ece800000001
+d "bfclr 0x1(a0, d0.w){0:32}" ecf000000001
+d "bfclr (a0, d0.w){3:d7}" ecf000ff0100
+d "bfclr ([0x18001ff, a0], 0x8000fff){4:32}" ecf00100017f018001ff08000fff
+d "bfclr 0x1.w{0:32}" ecf800000001
+d "bfclr 0x10010.l{0:32}" ecf9000000010010
+d "bfffo d0{0:32}, d0" edc00000
+d "bfffo (a0){0:32}, d0" edd00000
+d "bfffo 0x1(a0){0:32}, d0" ede800000001
+d "bfffo 0x1(a0, d0.w){0:32}, d0" edf000000001
+d "bfffo (a0, d0.w){3:d7}, d0" edf000ff0100
+d "bfffo ([0x18001ff, a0], 0x8000fff){4:32}, d0" edf00100017f018001ff08000fff
+d "bfffo 0x1.w{0:32}, d0" edf800000001
+d "bfffo 0x10010.l{0:32}, d0" edf9000000010010
+d "bfffo 0x5(pc){0:32}, d0" edfa00000001
+d "bfffo 0x5(pc, d0.w){0:32}, d0" edfb00000001
+d "bfffo 0x4(pc, d0.w){3:d7}, d0" edfb00ff0100
+d "bfffo ([0x1800203, pc], 0x8000fff){4:32}, d0" edfb0100017f018001ff08000fff
+d "bfset d0{0:32}" eec00000
+d "bfset d0{28:8}" eec00708
+d "bfset (a0){0:32}" eed00000
+d "bfset (a0){0:1}" eed00001
+d "bfset 0x1(a0){0:32}" eee800000001
+d "bfset 0x1(a0, d0.w){0:32}" eef000000001
+d "bfset (a0, d0.w){3:d7}" eef000ff0100
+d "bfset ([0x18001ff, a0], 0x8000fff){4:32}" eef00100017f018001ff08000fff
+d "bfset 0x1.w{0:32}" eef800000001
+d "bfset 0x10010.l{0:32}" eef9000000010010
+d "bfins d0, d0{0:32}" efc00000
+d "bfins d0, (a0){0:32}" efd00000
+d "bfins d0, 0x1(a0){0:32}" efe800000001
+d "bfins d0, 0x1(a0, d0.w){0:32}" eff000000001
+d "bfins d0, (a0, d0.w){3:d7}" eff000ff0100
+d "bfins d0, ([0x18001ff, a0], 0x8000fff){4:32}" eff00100017f018001ff08000fff
+d "bfins d0, 0x1.w{0:32}" eff800000001
+d "bfins d0, 0x10010.l{0:32}" eff9000000010010
+d "fbf.w 0x2" f0800000
+d "fbeq.w 0x2" f0810000
+d "fbogt.w 0x2" f0820000
+d "fboge.w 0x2" f0830000
+d "fbolt.w 0x2" f0840000
+d "fbole.w 0x2" f0850000
+d "fbogl.w 0x2" f0860000
+d "fbor.w 0x2" f0870000
+d "fbun.w 0x2" f0880000
+d "fbueq.w 0x2" f0890000
+d "fbugt.w 0x2" f08a0000
+d "fbuge.w 0x2" f08b0000
+d "fbult.w 0x2" f08c0000
+d "fbule.w 0x2" f08d0000
+d "fbne.w 0x2" f08e0000
+d "fbt.w 0x2" f08f0000
+d "fbsf.w 0x2" f2900000
+d "fbseq.w 0x2" f2910000
+d "fbgt.w 0x2" f2920000
+d "fbge.w 0x2" f2930000
+d "fblt.w 0x2" f2940000
+d "fble.w 0x2" f2950000
+d "fbgl.w 0x2" f2960000
+d "fbgle.w 0x2" f2970000
+d "fbngle.w 0x2" f2980000
+d "fbngl.w 0x2" f2990000
+d "fbnle.w 0x2" f29a0000
+d "fbnlt.w 0x2" f29b0000
+d "fbnge.w 0x2" f29c0000
+d "fbngt.w 0x2" f29d0000
+d "fbsne.w 0x2" f29e0000
+d "fbst.w 0x2" f29f0000
+d "fbf.l 0x3" f0c000000001
+d "fbeq.l 0x3" f0c100000001
+d "fbogt.l 0x3" f0c200000001
+d "fboge.l 0x3" f0c300000001
+d "fbolt.l 0x3" f0c400000001
+d "fbole.l 0x3" f0c500000001
+d "fbogl.l 0x3" f0c600000001
+d "fbor.l 0x3" f0c700000001
+d "fbun.l 0x3" f0c800000001
+d "fbueq.l 0x3" f0c900000001
+d "fbugt.l 0x3" f0ca00000001
+d "fbuge.l 0x3" f0cb00000001
+d "fbult.l 0x3" f0cc00000001
+d "fbule.l 0x3" f0cd00000001
+d "fbne.l 0x3" f0ce00000001
+d "fbt.l 0x3" f0cf00000001
+d "fmove fp0, fp0" f2000000
+d "fint fp0" f2000001
+d "fint fp1, fp2" f2000501
+d "fintrz fp1, fp2" f2000503
+d "fsqrt fp1, fp2" f2000504
+d "flognp1 fp1, fp2" f2000506
+d "fatanh fp1, fp2" f2000509
+d "fatan fp1, fp2" f200050a
+d "fasin fp1, fp2" f200050c
+d "fsin fp1, fp2" f200050e
+d "ftan fp1, fp2" f200050f
+d "flogn fp1, fp2" f2000514
+d "flog10 fp1, fp2" f2000515
+d "flog2 fp1, fp2" f2000516
+d "fabs fp1, fp2" f2000518
+d "fneg fp1, fp2" f200051a
+d "facos fp1, fp2" f200051c
+d "fcos fp1, fp2" f200051d
+d "fetox fp0" f2000010
+d "fsinh fp1, fp2" f2000502
+d "fetoxm1 fp1, fp2" f2000508
+d "fetox fp1, fp2" f2000510
+d "ftwotox fp1, fp2" f2000511
+d "ftentox fp1, fp2" f2000512
+d "fcosh fp1, fp2" f2000519
+d "fgetexp fp1, fp2" f200051e
+d "fgetman fp1, fp2" f200051f
+d "fdiv fp1, fp2" f2000520
+d "fmod fp1, fp2" f2000521
+d "fadd fp1, fp2" f2000522
+d "fmul fp1, fp2" f2000523
+d "frem fp1, fp2" f2000525
+d "fscale fp1, fp2" f2000526
+d "fscale.l 0x3, fp0" f23c402600000003
+d "fsgldiv fp1, fp2" f2000524
+d "fsglmul fp1, fp2" f2000527
+d "fsub fp2, fp4" f2000a28
+d "fmove.l d0, fp0" f2004000
+d "add.x d0, fp7" f2004fff
+d "fmove.w d0, fp0" f2005000
+d "fcos.d d0, fp4" f2005678
+d "fmovecr 0x3f, fp7" f2005fff
+d "fmovecr 0xf, fp6" f2005f0f
+d "fcmp fp1, fp2" f2000538
+d "ftst fp1, fp2" f200053a
+d "fmove.s fp0, (a0)" f2106400
+d "fmovem (a0), fp6-fp7" f210d003
+d "fmovem fp6-fp7, (a0)" f210f003
+d "fmovem (a0)+, fp6-fp7" f218d003
+d "fmovem fp0-fp1, -(a0)" f220e003
+d "fmove.s 1.000000, fp1" f23c44803f800000
+d "fmove.d 3.141593, fp1" f23c5480400921fb54442d18
+d "fmove.l d0, fpsr" f2008800
+d "fmove.l d0, fpcr" f2009000
+d "fmove.l fpiar, d0" f200a400
+d "fmove.l fpcr, d0" f200b000
+d "fmove.l fp0, d0" f2006000
+d "fmove.w fp0, d0" f2007000
+d "fmove.p fp7, d0{d7}" f2007fff
+d "fmove.l a0, fp0" f2084000
+d "add.x a0, fp7" f2084fff
+d "fmove.w a0, fp0" f2085000
+d "fcos.d a0, fp4" f2085678
+d "fmove.l fp0, a0" f2086000
+d "fmove.w fp0, a0" f2087000
+d "fmove.l (a0), fp0" f2104000
+d "fmove.x (a0), fp0" f2104800
+d "fadd.x (a0), fp0" f2104c22
+d "add.x (a0), fp7" f2104fff
+d "fmove.w (a0), fp0" f2105000
+d "fcos.d (a0), fp4" f2105678
+d "fmove.l fp0, (a0)" f2106000
+d "fmove.x fp0, (a0)" f2106800
+d "fmove.w fp0, (a0)" f2107000
+d "fmove.l (a0)+, fp0" f2184000
+d "fmove.x (a0)+, fp0" f2184800
+d "add.x (a0)+, fp7" f2184fff
+d "fmove.w (a0)+, fp0" f2185000
+d "fcos.d (a0)+, fp4" f2185678
+d "fmove.l fp0, (a0)+" f2186000
+d "fmove.x fp0, (a0)+" f2186800
+d "fmove.w fp0, (a0)+" f2187000
+d "fmove.l -(a0), fp0" f2204000
+d "fmove.x -(a0), fp0" f2204800
+d "add.x -(a0), fp7" f2204fff
+d "fmove.w -(a0), fp0" f2205000
+d "fcos.d -(a0), fp4" f2205678
+d "fmove.l fp0, -(a0)" f2206000
+d "fmove.x fp0, -(a0)" f2206800
+d "fmove.w fp0, -(a0)" f2207000
+d "fmove.l 0x4fff(a0), fp0" f22840004fff
+d "add.x 0x5000(a0), fp7" f2284fff5000
+d "fmove.w 0x5fff(a0), fp0" f22850005fff
+d "fcos.d -0x6544(a0), fp4" f22856789abc
+d "fmove.l fp0, 0x6fff(a0)" f22860006fff
+d "fmove.w fp0, 0x7fff(a0)" f22870007fff
+d "fmove.l ([0x50005fff], 0x60006fff), fp0" f23040004fff50005fff60006fff
+d "add.x 0x0(a0, d5.w), fp7" f2304fff5000
+d "fmove.w ([0x60006fff], 0x70007fff), fp0" f23050005fff60006fff70007fff
+d "fcos.d -0x44(a0, a1.l * 2), fp4" f23056789abc
+d "fmove.l fp0, ([0x70007fff], -0x7fff7f00)" f23060006fff70007fff80008100
+d "fmove.w fp0, ([-0x7fff7f00], -0x7e8f6e01)" f23070007fff80008100817091ff
+d "fmove.l (a0, a0.w), invalid" f23080008100
+d "fmove.l 0x0(a0, d0.w), fpcr" f2309abc0000
+d "fmove.l fpcr, (a0, a4.w)" f230b1ffc100
+d "fmove.l 0x4fff.w, fp0" f23840004fff
+d "add.x 0x5000.w, fp7" f2384fff5000
+d "fmove.w 0x5fff.w, fp0" f23850005fff
+d "fcos.d 0x9abc.w, fp4" f23856789abc
+d "fmove.l fp0, 0x6fff.w" f23860006fff
+d "fmove.w fp0, 0x7fff.w" f23870007fff
+d "fmove.l 0x4fff5000.l, fp0" f23940004fff5000
+d "add.x 0x50005fff.l, fp7" f2394fff50005fff
+d "fmove.w 0x5fff6000.l, fp0" f23950005fff6000
+d "fcos.d 0x9abc0000.l, fp4" f23956789abc0000
+d "fmove.l fp0, 0x6fff7000.l" f23960006fff7000
+d "fmove.w fp0, 0x7fff8000.l" f23970007fff8000
+d "fmove.l 0x5003(pc), fp0" f23a40004fff
+d "add.x 0x5004(pc), fp7" f23a4fff5000
+d "fmove.w 0x6003(pc), fp0" f23a50005fff
+d "fcos.d 0xffff9ac0(pc), fp4" f23a56789abc
+d "fmove.l fp0, 0x7003(pc)" f23a60006fff
+d "fmove.w fp0, 0xffff8003(pc)" f23a70007fff
+d "fmove.l ([0x50006003], 0x60006fff), fp0" f23b40004fff50005fff60006fff
+d "add.x 0x4(pc, d5.w), fp7" f23b4fff5000
+d "fmove.w ([0x60007003], 0x70007fff), fp0" f23b50005fff60006fff70007fff
+d "fcos.d 0xffffffc0(pc, a1.l * 2), fp4" f23b56789abc
+d "fmove.l fp0, ([0x70008003], -0x7fff7f00)" f23b60006fff70007fff80008100
+d "fmove.w fp0, ([0x80008104], -0x7e8f6e01)" f23b70007fff80008100817091ff
+d "fmove.l 0x4(pc, a0.w), invalid" f23b80008100
+d "fmove.l 0x4(pc, d0.w), fpcr" f23b9abc0000
+d "fmove.l fpcr, 0x4(pc, a4.w)" f23bb1ffc100
+d "fmovem 0x4(pc, a6.w), fp0-fp7" f23bd0ffe100
+d "fmove.l 0x4fff5000, fp0" f23c40004fff5000
+d "add.x <unsupported>, fp7" f23c4fff50005fff60006fff
+d "fmove.w 0x5fff, fp0" f23c50005fff
+d "fcos.d -0.000000, fp4" f23c56789abc000000010010
+d "fmove.l fp0, 0x6fff7000" f23c60006fff7000
+d "fmove.w fp0, 0x7fff" f23c70007fff
+d "fsf.b d0" f2400000
+d "fseq.b d0" f2400001
+d "fsst.b d0" f240007f
+d "fslt.b d0" f2401234
+d "fsngle.b d0" f2405678
+d "fssf.b d0" f2408170
+d "fsnge.b d0" f2409abc
+d "fdbf d0, 0x5" f24800000001
+d "fdbf d0, 0x14" f24800000010
+d "fsf.b (a0)" f2500000
+d "fseq.b (a0)" f2500001
+d "fsst.b (a0)" f250007f
+d "fslt.b (a0)" f2501234
+d "fsngle.b (a0)" f2505678
+d "fssf.b (a0)" f2508170
+d "fsnge.b (a0)" f2509abc
+d "fsf.b (a0)+" f2580000
+d "fseq.b (a0)+" f2580001
+d "fsst.b (a0)+" f258007f
+d "fslt.b (a0)+" f2581234
+d "fsngle.b (a0)+" f2585678
+d "fssf.b (a0)+" f2588170
+d "fsnge.b (a0)+" f2589abc
+d "fsf.b -(a0)" f2600000
+d "fseq.b -(a0)" f2600001
+d "fsst.b -(a0)" f260007f
+d "fslt.b -(a0)" f2601234
+d "fsngle.b -(a0)" f2605678
+d "fssf.b -(a0)" f2608170
+d "fsnge.b -(a0)" f2609abc
+d "fsf.b 0x1(a0)" f26800000001
+d "fseq.b 0x10(a0)" f26800010010
+d "fsst.b 0x80(a0)" f268007f0080
+d "fslt.b 0x5678(a0)" f26812345678
+d "fsngle.b -0x6544(a0)" f26856789abc
+d "fssf.b -0x6e01(a0)" f268817091ff
+d "fsnge.b 0x0(a0)" f2689abc0000
+d "fsf.b 0x1(a0, d0.w)" f27000000001
+d "fseq.b 0x10(a0, d0.w)" f27000010010
+d "fsst.b -0x80(a0, d0.w)" f270007f0080
+d "fsst.b (a0, d0.w)" f27000ff0100
+d "fsf.b ([0x18001ff, a0], 0x8000fff)" f2700100017f018001ff08000fff
+d "fslt.b 0x78(a0, d5.w * 8)" f27012345678
+d "fsngle.b -0x44(a0, a1.l * 2)" f27056789abc
+d "fsf.b (a0, a0.w)" f27080008100
+d "fssf.b ([-0x5eff4e01], -0x3eff2e01)" f270817091ffa100b1ffc100d1ff
+d "fsnge.b 0x0(a0, d0.w)" f2709abc0000
+d "fsst.b ([0x12345678], -0x65440000)" f270f1ffffff123456789abc0000
+d "fsf.b 0x1.w" f27800000001
+d "fseq.b 0x10.w" f27800010010
+d "fsst.b 0x80.w" f278007f0080
+d "fslt.b 0x5678.w" f27812345678
+d "fsngle.b 0x9abc.w" f27856789abc
+d "fssf.b 0x91ff.w" f278817091ff
+d "fsnge.b 0x0.w" f2789abc0000
+d "fsf.b 0x10010.l" f279000000010010
+d "fseq.b 0x10007f.l" f27900010010007f
+d "fsst.b 0x8000ff.l" f279007f008000ff
+d "fslt.b 0x56789abc.l" f279123456789abc
+d "fsngle.b 0x9abc0000.l" f27956789abc0000
+d "fssf.b 0x91ffa100.l" f279817091ffa100
+d "fsnge.b 0x1.l" f2799abc00000001
+d "fbsf.w 0x2" f2b00000
+d "fbsf.l 0x3" f2f000000001
+d "fdbseq d0, 0x5" f24800310001
+d "ftrapge.l 0x12345678" f27b003312345678
+d "ftrapf.w 0x1" f27a00000001
+d "ftrapeq.w 0x10" f27a00010010
+d "ftrapf.w 0x1234" f27a00001234
+d "ftrapf.l 0x12345678" f27b000012345678
+d "ftrapst.w 0x80" f27a007f0080
+d "ftraplt.w 0x5678" f27a12345678
+d "ftrapngle.w 0x9abc" f27a56789abc
+d "ftrapsf.w 0x91ff" f27a817091ff
+d "ftrapnge.w 0x0" f27a9abc0000
+d "ftrapf" f27c0000
+d "ftrapeq" f27c0001
+d "ftrapst" f27c007f
+d "ftraplt" f27c1234
+d "ftrapngle" f27c5678
+d "ftrapsf" f27c8170
+d "ftrapnge" f27c9abc
+d "fnop" f2800000
+d "rte" 4e73
+d "movem.l a0, -(a0)" 48e00080
+d "fmovem 0x10(a0), fp6-fp7" f228d0030010
+d "fmovem 0x0(a0, d0.w), fp6-fp7" f230d0030000
+d "fmovem 0x1234.w, fp6-fp7" f238d0031234
+d "fmovem 0x12345678.l, fp6-fp7" f239d00312345678
+d "fmovem 0x4(pc), fp6-fp7" f23ad0030000
+d "fmovem fp6-fp7, 0x10(a0)" f228f0030010
+d "fmovem fp6-fp7, 0x0(a0, d0.w)" f230f0030000
+d "fmovem fp6-fp7, 0x1234.w" f238f0031234
+d "fmovem fp6-fp7, 0x12345678.l" f239f00312345678
+d "fmovem 0x10(a0), d1" f228d8100010
+d "fmovem 0x0(a0, d0.w), d1" f230d8100000
+d "fmovem 0x1234.w, d1" f238d8101234
+d "fmovem 0x12345678.l, d1" f239d81012345678
+d "fmovem 0x4(pc), d1" f23ad8100000
+d "fmovem 0x4(pc, d0.w), d1" f23bd8100000
+d "fmovem d1, 0x10(a0)" f228f8100010
+d "fmovem d1, 0x0(a0, d0.w)" f230f8100000
+d "fmovem d1, 0x1234.w" f238f8101234
+d "fmovem d1, 0x12345678.l" f239f81012345678
+d "fmovem (a0)+, d1" f218d810
+d "fmovem (a0), d1" f210d810
+d "fmovem d1, (a0)" f210f810
+d "fmove.s (a0), fp0" f2104400
+d "fmovem d1, -(a0)" f220e810
+d "fsave ([0x10, a0, d0.w], 0x20)" f33001330000001000000020
+d "frestore ([0x12, pc, d0.w], 0x20)" f37b01330000001000000020
+d "fsave (a0)" f310
+d "fsave -(a0)" f320
+d "fsave 0x0(a0)" f3280000
+d "fsave 0x0(a0, d0.w)" f3300000
+d "fsave (a0, d0.w)" f3300100
+d "fsave ([0x18001ff, a0], 0x8000fff)" f330017f018001ff08000fff
+d "fsave 0x0.w" f3380000
+d "fsave 0x1.l" f33900000001
+d "frestore (a0)" f350
+d "frestore (a0)+" f358
+d "frestore 0x0(a0)" f3680000
+d "frestore 0x0(a0, d0.w)" f3700000
+d "frestore (a0, d0.w)" f3700100
+d "frestore ([0x18001ff, a0], 0x8000fff)" f370017f018001ff08000fff
+d "frestore 0x0.w" f3780000
+d "frestore 0x1.l" f37900000001
+d "frestore 0x2(pc)" f37a0000
+d "frestore 0x2(pc, d0.w)" f37b0000
+d "frestore ([0x1800201, pc], 0x8000fff)" f37b017f018001ff08000fff
+d "frestore 0x0" f37c0000
+d "mulu.l d0, d4:d5" 4c005404
+d "muls.l d0, d4:d5" 4c005c04
+d "lea.l -0x2a(a1, d2.w), a3" 47f12120ffd6
+d "fmove.d (a0), fp0" f2105400
+d "fmove.b (a0), fp0" f2105800
+d "fbf.w 0x12" f2800010
