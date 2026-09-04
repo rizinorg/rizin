@@ -178,6 +178,80 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ptf writes memory region to file
+FILE==
+CMDS=<<EOF
+wx aabbccddeeff
+ptf 0 2 .rz-ptf.test
+ptf 3 2 .rz-ptf.test
+wff .rz-ptf.test @ 0
+p8 2
+rm .rz-ptf.test
+EOF
+EXPECT=<<EOF
+ddee
+EOF
+RUN
+
+NAME=ptfa appends memory region to end of file
+FILE==
+CMDS=<<EOF
+wx 010203040506
+ptf 0 2 .rz-ptfa.test
+ptfa 4 2 .rz-ptfa.test
+wff .rz-ptfa.test 4 @ 0
+p8 4
+rm .rz-ptfa.test
+EOF
+EXPECT=<<EOF
+01020506
+EOF
+RUN
+
+NAME=ptf creates and writes exact bytes
+FILE==
+CMDS=<<EOF
+wx 0102030405060708
+ptf 0 4 .rz-ptf-basic.test
+wff .rz-ptf-basic.test @ 0
+p8 4
+rm .rz-ptf-basic.test
+EOF
+EXPECT=<<EOF
+01020304
+EOF
+RUN
+
+NAME=ptfa appends to end of existing file
+FILE==
+CMDS=<<EOF
+wx 4142434445464748
+ptf 0 4 .rz-ptfa-gap.test
+ptfa 4 4 .rz-ptfa-gap.test
+wff .rz-ptfa-gap.test @ 0
+p8 8
+rm .rz-ptfa-gap.test
+EOF
+EXPECT=<<EOF
+4142434445464748
+EOF
+RUN
+
+NAME=ptf second write truncates
+FILE==
+CMDS=<<EOF
+wx 0102030405060708
+ptf 0 6 .rz-ptf-trunc.test
+ptf 0 2 .rz-ptf-trunc.test
+wff .rz-ptf-trunc.test @ 0
+p8 2
+rm .rz-ptf-trunc.test
+EOF
+EXPECT=<<EOF
+0102
+EOF
+RUN
+
 NAME=wf
 FILE==
 CMDS=<<EOF
