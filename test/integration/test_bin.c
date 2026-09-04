@@ -171,6 +171,10 @@ bool test_rz_bin_reloc_storage(void) {
 	mu_assert_null(r, "reloc to");
 
 	rz_bin_reloc_storage_free(relocs);
+	rz_bin_reloc_free(r0);
+	rz_bin_reloc_free(r1);
+	rz_bin_reloc_free(rz);
+	rz_bin_reloc_free(r3);
 	mu_end;
 }
 

@@ -331,7 +331,7 @@ bool test_rz_regex_match_all_native_utf16(void) {
 	mu_assert_eq(match->len, 4, "match.len wrong");
 
 	rz_pvector_free(matches);
-
+	rz_mem_free(utf16_he);
 	rz_regex_free(re);
 	mu_end;
 }
@@ -394,7 +394,7 @@ bool test_rz_regex_match_all_native_utf32(void) {
 	mu_assert_eq(match->len, 3, "match.len wrong");
 
 	rz_pvector_free(matches);
-
+	rz_mem_free(utf32_he);
 	rz_regex_free(re);
 	mu_end;
 }
