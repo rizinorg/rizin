@@ -4325,7 +4325,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	if (!rz_str_startswith(rz_config_get(core->config, "asm.arch"), "x86")) {
 		notify = "find and analyze function preludes";
 		rz_core_notify_begin(core, "%s", notify);
-		(void)rz_core_search_preludes(core, false); // "aap"
+		(void)rz_core_search_preludes(core, NULL); // "aap"
 		didAap = true;
 		rz_core_notify_done(core, "%s", notify);
 		rz_core_task_yield(&core->tasks);
@@ -4459,7 +4459,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		if (!didAap) {
 			notify = "Finding function preludes";
 			rz_core_notify_begin(core, "%s", notify);
-			(void)rz_core_search_preludes(core, false); // "aap"
+			(void)rz_core_search_preludes(core, NULL); // "aap"
 			rz_core_notify_done(core, "%s", notify);
 			rz_core_task_yield(&core->tasks);
 		}
@@ -6140,7 +6140,7 @@ static void _analysis_calls(RzCore *core, ut64 addr, ut64 addr_end, bool imports
 	free(block1);
 }
 
-/*
+/**
  * \brief Performs analysis on each call sight, creates new functions whenever necessary.
  * \param core RzCore instance
  * \param imports_only if true it analyses calls only of imported functions, otherwise - every flag

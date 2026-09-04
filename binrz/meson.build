@@ -12,6 +12,7 @@ else
   subdir('rz-find')
   subdir('rz-sign')
   subdir('rz-ax')
+  subdir('rz-prologues')
 endif
 if get_option('enable_rz_test')
   subdir('rz-test')
