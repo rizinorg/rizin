@@ -382,7 +382,7 @@ RZ_API void rz_sys_backtrace(void) {
 
 	for (ut16 i = 0; i < frame_count; i++) {
 		ut64 offset_from_sym = 0;
-		ut32 line_displacement = 0;
+		DWORD line_displacement = 0;
 		IMAGEHLP_LINE64 line = { .SizeOfStruct = sizeof(IMAGEHLP_LINE64) };
 
 		if (!SymFromAddr(process, (utptr)(stack[i]), &offset_from_sym, symbol)) {
