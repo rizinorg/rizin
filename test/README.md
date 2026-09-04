@@ -220,6 +220,7 @@ Without the regex that filtered out the non-deterministic file path and addresse
 * **EXPECT** is the expected output of the test from stdout. If `REGEXP_FILTER_OUT` is used, `EXPECT` matches only the filtered output.
 * **EXPECT_ERR** (optional) is the expected output of the test from stderr. Can be specified in addition or instead of `EXPECT`
 * **BROKEN** (optional) is 1 if the tests is expected to be fail, 0 or unspecified otherwise
+* **RETRIES** (optional) is the number of additional attempts after a failed command test; total attempts are `RETRIES + 1`; stop after the first success.
 * **TIMEOUT** (optional) is the number of seconds to wait before considering the test timeout
 * **REGEXP_FILTER_OUT** (optional) apply given regex on stdout before comparing the output to `EXPECT` (e.g. `REGEXP_FILTER_OUT=([a-zA-Z]+)`). This is similar to piping stdout to `grep -E "<regex>"` and then comparing the matched text with `EXPECT`.
 * **REGEXP_FILTER_ERR** (optional) apply given regex on stderr before comparing the ouput to `EXPECT_ERR`
