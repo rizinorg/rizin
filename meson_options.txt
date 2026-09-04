@@ -49,3 +49,4 @@ option('enable_benchmarks', type: 'boolean', value: false, description: 'Build m
 option('enable_rz_test', type: 'boolean', value: true, description: 'Build rz-test executable for regression testing')
 option('regenerate_cmds', type: 'feature', value: 'auto', description: 'Regenerate the cmd_descs.[ch] files (requires PyYAML)')
 option('enable_examples', type: 'boolean', value: false, description: 'Build examples')
+option('enable_doc', type: 'boolean', value: false, description: 'Enable the `doc` target building the Doxygen API documentation')

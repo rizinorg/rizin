@@ -1,0 +1,7 @@
+[wrap-file]
+directory = doxygen-awesome-css-2.4.2
+source_url = https://github.com/jothepro/doxygen-awesome-css/archive/refs/tags/v2.4.2.tar.gz
+source_fallback_url = https://github.com/rizinorg/fallback-repo/raw/main/doxygen-awesome-css-2.4.2.tar.gz
+source_filename = doxygen-awesome-css-2.4.2.tar.gz
+source_hash = 6f527e5733723bfd7243c28f24588dca4714cf977fea6147fdb4ae2050244409
+patch_directory = doxygen-awesome-css-2.4.2
