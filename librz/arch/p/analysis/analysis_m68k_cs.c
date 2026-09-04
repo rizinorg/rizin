@@ -19,6 +19,7 @@
 #if CAPSTONE_HAS_M68K
 #include <capstone/m68k.h>
 #include "m68k/m68k_cs.h"
+#include "m68k/m68k_il.h"
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/M68Kir.html
 
 #define OPERAND(x)  insn->detail->m68k.operands[x]
@@ -1035,9 +1036,16 @@ static int m68k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 	if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
 		op->opex = mk68_opex(ctx->handle, insn);
 	}
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		op->il_op = rz_m68k_cs_get_il_op(ctx->handle, mode, insn, addr);
+	}
 	switch (insn->id) {
 	case M68K_INS_INVALID:
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			rz_il_op_effect_free(op->il_op);
+			op->il_op = NULL;
+		}
 		break;
 	case M68K_INS_ADD:
 	case M68K_INS_ADDA:
@@ -1725,6 +1733,7 @@ RzAnalysisPlugin rz_analysis_plugin_m68k_cs = {
 	.init = m68k_init,
 	.fini = m68k_fini,
 	.archinfo = m68k_archinfo,
+	.il_config = rz_m68k_cs_il_config,
 };
 
 #else
