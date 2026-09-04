@@ -20,4 +20,19 @@ if get_option('enable_examples')
     dependencies: [rz_sign_dep, rz_util_dep],
     install: false
   )
+  executable('http_example', 'api/socket/http_example.c',
+    include_directories: [platform_inc],
+    dependencies: [rz_socket_dep, rz_util_dep, th],
+    install: false
+  )
+  executable('rzpipe_example', 'api/socket/rzpipe_example.c',
+    include_directories: [platform_inc],
+    dependencies: [rz_socket_dep, rz_util_dep],
+    install: false
+  )
+  executable('tcp_example', 'api/socket/tcp_example.c',
+    include_directories: [platform_inc],
+    dependencies: [rz_socket_dep, rz_util_dep, th],
+    install: false
+  )
 endif
