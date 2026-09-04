@@ -1,0 +1,86 @@
+NAME=last command status readback after success (_s and _sj)
+FILE==
+CMDS=<<EOF
+s 0
+_s
+s 0
+_sj
+EOF
+EXPECT=<<EOF
+OK
+{"status":"OK","code":0}
+EOF
+RUN
+
+NAME=last command status after unknown command (_s)
+FILE==
+ARGS=-c zzz
+CMDS=_s
+EXPECT=<<EOF
+NONEXISTINGCMD
+EOF
+RUN
+
+NAME=last command status after unknown command (_sj)
+FILE==
+ARGS=-c zzz
+CMDS=_sj
+EXPECT=<<EOF
+{"status":"NONEXISTINGCMD","code":-1}
+EOF
+RUN
+
+NAME=json status envelope disabled by default
+FILE==
+CMDS=aflj a b c
+EXPECT=
+RUN
+
+NAME=json status envelope reports success and error in json mode
+FILE==
+ARGS=-e cfg.json.status=true
+CMDS=<<EOF
+flj
+aflj a b c
+EOF
+EXPECT=<<EOF
+[]
+{"error":null}
+{"error":{"code":"WRONG_ARGS","message":"Wrong number or type of arguments","command":"afl"}}
+EOF
+RUN
+
+NAME=json status envelope only in json mode
+FILE==
+ARGS=-e cfg.json.status=true
+CMDS=afl a b c
+EXPECT=
+RUN
+
+NAME=batch exit code zero by default on failing command
+FILE==
+CMDS=zzz
+EXPECT=
+RUN
+
+NAME=batch exit code non-zero on unknown command
+FILE==
+ARGS=-e cfg.exit.errorcode=true
+CMDS=zzz
+EXIT_STATUS=1
+EXPECT=
+RUN
+
+NAME=batch exit code zero on successful command
+FILE==
+ARGS=-e cfg.exit.errorcode=true
+CMDS=s 0
+EXPECT=
+RUN
+
+NAME=batch exit code zero on quit
+FILE==
+ARGS=-e cfg.exit.errorcode=true
+CMDS=q
+EXPECT=
+RUN

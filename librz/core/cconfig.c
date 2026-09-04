@@ -3344,6 +3344,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("cfg.fortunes.clippy", "false", "Use 'clippy' instead of 'echo'");
 	SETPREF("cfg.prefixdump", "dump", "Filename prefix for automated dumps");
 	SETBPREF("cfg.wseek", "false", "Seek after write");
+	SETBPREF("cfg.exit.errorcode", "false", "In batch mode (-q/-c/-i) exit with a non-zero process code when the last command fails");
+	SETBPREF("cfg.json.status", "false", "Emit a structured JSON status envelope on stdout after each command in JSON output mode (null error on success, error object on failure)");
 	SETICB("cfg.seek.histsize", 63, NULL, "Maximum size of the seek history");
 	SETCB("cfg.seek.silent", "false", NULL, "When true, seek movements are not logged in seek history");
 	SETCB("cfg.bigendian", CFG_DEFAULT_ENDIANNESS, &cb_bigendian, "Use little (false) or big (true) endianness");
