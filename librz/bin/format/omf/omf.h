@@ -220,7 +220,7 @@ typedef enum omf_ityp_t {
 	 */
 	ITYP_COMMANDFILE = 0x03, ///< Commandfile descriptor.
 	/**
-	 * Used when @file was given in the invocation line.
+	 * Used when \@file was given in the invocation line.
 	 */
 	ITYP_OBJECT_INPUTFILE = 0x04, ///< Object-Inputfile descriptor.
 	/**
@@ -547,7 +547,8 @@ typedef struct {
  * +------+-------+-----+
  * | E8 | R16 | N |
  * +------+-------+-----+
- *  *
+ * ```
+ *
  * ```
  * **************************************************************
  * * 0x94 | RecLen | AddressBase | LinNum16 | Offset16 | ChkSum *
@@ -692,7 +693,7 @@ typedef struct {
 			ut8 n; ///< struct/union-tag name length
 			char tagname[MAX_NAME_LEN]; ///< struct/union-tag name in OMF166 name format
 			ut32 size; ///< sizeof struct or union
-			ut16 member_ti; ///< reference to component list or <void>
+			ut16 member_ti; ///< reference to component list or `<void>`
 		} struct_union;
 		struct {
 			ut16 ti; ///< base scalar type of the field [uchar, uint, long ]

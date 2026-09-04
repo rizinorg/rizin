@@ -15,9 +15,10 @@ extern RZ_IPI RzILOpEffectHandler rz_il_op_handler_effect_table_default[RZ_IL_OP
 
 /**
  * initiate an empty VM
- * \param vm RzILVM, pointer to an empty VM
- * \param start_addr ut64, initiation pc address
- * \param addr_size  ut32, size of the address in VM
+ * \param vm Pointer to an empty VM
+ * \param start_addr Initial pc address
+ * \param addr_size Size of the address in the VM
+ * \param big_endian True if the VM memory is big endian
  * \param halt_exc The exceptions the VM should halt for if encountered.
  */
 RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_endian, RzILEventException halt_exc) {
@@ -101,9 +102,9 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
 
 /**
  * Create a new empty VM
- * \param vm RzILVM, pointer to an empty VM
- * \param start_addr ut64, initiation pc address
- * \param addr_size  ut32, size of the address in VM
+ * \param start_addr Initial pc address
+ * \param addr_size Size of the address in the VM
+ * \param big_endian True if the VM memory is big endian
  * \param halt_exc The exceptions the VM should halt for if encountered.
  */
 RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, ut32 addr_size, bool big_endian, RzILEventException halt_exc) {
@@ -210,6 +211,8 @@ RZ_API RzILLocalPurePrev rz_il_vm_push_local_pure_var(RZ_NONNULL RzILVM *vm, RZ_
 
 /**
  * \brief Remove a local let binding and restore the state for the outer context.
+ * \param vm Pointer to the VM
+ * \param name Name of the local variable to unbind
  * \param prev pass here the return value of rz_il_vm_push_local_pure_var()
  */
 RZ_API void rz_il_vm_pop_local_pure_var(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, RzILLocalPurePrev prev) {
@@ -317,9 +320,10 @@ RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_create_label_lazy(RZ_NONNULL RzILVM *
 
 /**
  * Update the address info of a label
- * \param vm RzILVM, pointer to VM
- * \param name string, name of this label
- * \return lbl RzILEffectLabel, pointer to label instance
+ * \param vm Pointer to the VM
+ * \param name Name of this label
+ * \param addr New address of the label
+ * \return Pointer to the label instance
  */
 RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_update_label(RZ_NONNULL RzILVM *vm, RZ_NONNULL char *name, RZ_NONNULL RZ_BORROW RzBitVector *addr) {
 	rz_return_val_if_fail(vm && name && addr, NULL);

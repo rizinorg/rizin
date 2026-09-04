@@ -394,7 +394,8 @@ RZ_API bool rz_core_cmpwatch_del(RzCore *core, ut64 addr) {
  * \param core Current RzCore instance
  * \param addr Address of the memory watcher to be printed (if UT64_MAX, then all memory watchers will be printed)
  * \param mode Output mode
- * \return void Print nothing if no memory watcher found at \p addr
+ *
+ * Prints nothing if no memory watcher is found at \p addr.
  */
 RZ_API void rz_core_cmpwatch_show(RzCore *core, ut64 addr, RzOutputMode mode) {
 	rz_return_if_fail(core);

@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
- * \file Header for MediaTek md1img container format parser.
+ * \file
+ * Header for MediaTek md1img container format parser.
  *
  * The md1img format packages modem firmware components: md1rom (GFH image),
  * debug info (CATI format), DSP images, certificates, etc.

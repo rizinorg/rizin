@@ -95,7 +95,7 @@ RZ_API bool rz_analysis_il_trace_add_mem(RzILTraceInstruction *trace, RzILTraceM
 /**
  * add register change to an instruction trace
  * \param trace RzILTraceInstruction *, trace of instruction which triggers a register change
- * \param mem RzILTraceRegOp *, info of register change
+ * \param reg info of register change
  * \return true if succeed
  */
 RZ_API bool rz_analysis_il_trace_add_reg(RzILTraceInstruction *trace, RzILTraceRegOp *reg) {
@@ -128,7 +128,7 @@ RZ_API bool rz_analysis_il_trace_add_reg(RzILTraceInstruction *trace, RzILTraceR
  * Find the memory change in an instruction by given address
  * \param trace RzILTraceInstruction *, instruction trace
  * \param addr ut64, memory address
- * \param is_write bool, true if you want to find a write operation to address, else find a read operation
+ * \param op_type kind of memory operation to look for
  * \return RzILTraceMemOp *, info of memory change
  */
 RZ_API RzILTraceMemOp *rz_analysis_il_get_mem_op_trace(RzILTraceInstruction *trace, ut64 addr, RzILTraceOpType op_type) {
@@ -165,7 +165,7 @@ RZ_API RzILTraceMemOp *rz_analysis_il_get_mem_op_trace(RzILTraceInstruction *tra
  * Find the register change in an instruction by register name
  * \param trace RzILTraceInstruction *, instruction trace
  * \param regname const char *, name of register
- * \param is_write bool, true if you want to find a write operation to register, else find a read operation
+ * \param op_type kind of register operation to look for
  * \return RzILTraceRegOp *, info of register change
  */
 RZ_API RzILTraceRegOp *rz_analysis_il_get_reg_op_trace(RzILTraceInstruction *trace, const char *regname, RzILTraceOpType op_type) {
@@ -202,7 +202,7 @@ RZ_API RzILTraceRegOp *rz_analysis_il_get_reg_op_trace(RzILTraceInstruction *tra
  * Check if instruction contains a read/write to given address
  * \param trace RzILTraceInstruction *, instruction trace
  * \param addr ut64, Address of memory
- * \param is_write bool, set true to find if it contains a write to address, else read
+ * \param op_type kind of memory operation to look for
  * \return bool, true if contains, else return a false
  */
 RZ_API bool rz_analysis_il_mem_trace_contains(RzILTraceInstruction *trace, ut64 addr, RzILTraceOpType op_type) {
@@ -213,7 +213,7 @@ RZ_API bool rz_analysis_il_mem_trace_contains(RzILTraceInstruction *trace, ut64 
  * Check if instruction contains a read/write to given register
  * \param trace RzILTraceInstruction *, instruction trace
  * \param regname const char *, name of register
- * \param is_write bool, set true to find if it contains a write to the register, else read
+ * \param op_type kind of register operation to look for
  * \return bool, true if contains, else return a false
  */
 RZ_API bool rz_analysis_il_reg_trace_contains(RzILTraceInstruction *trace, const char *regname, RzILTraceOpType op_type) {

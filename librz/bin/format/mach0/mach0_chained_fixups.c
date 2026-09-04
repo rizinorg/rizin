@@ -101,7 +101,9 @@ RZ_API size_t MACH0_(chained_imports_count)(struct MACH0_(obj_t) * obj) {
 
 /**
  * Copy contents of a dyld_chained_import* of the binary into \p dst
+ * \param obj Mach-O object to read the import from
  * \param ordinal index of the import, given by chained pointers
+ * \param dst where the import is copied to
  * \return true if an import with the given ordinal was found and read successfully
  */
 RZ_API bool MACH0_(get_chained_import)(struct MACH0_(obj_t) * obj, ut32 ordinal, struct MACH0_(chained_import_t) * dst) {

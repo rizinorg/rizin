@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
- * \file Loader for the Qualcomm peripheral firmware images.
+ * \file
+ * Loader for the Qualcomm peripheral firmware images.
  *
  * Reference: https://github.com/torvalds/linux/blob/master/drivers/soc/qcom/mdt_loader.c
  */

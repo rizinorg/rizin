@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
- * \file Parser for MediaTek md1img container format.
+ * \file
+ * Parser for MediaTek md1img container format.
  *
  * The md1img format is a simple section-based container used by MediaTek
  * to package modem firmware components: md1rom (GFH firmware image),

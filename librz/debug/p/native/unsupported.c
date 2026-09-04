@@ -3,8 +3,9 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
- * \file This is a file with dummy debugger functions for when
- *       the native debugger is unsupported.
+ * \file
+ * This is a file with dummy debugger functions for when
+ * the native debugger is unsupported.
  */
 
 #include <rz_debug.h>

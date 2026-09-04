@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
- * \file Implementation of Apple C4000 baseband firmware (GNS1.bin) parser.
+ * \file
+ * Implementation of Apple C4000 baseband firmware (GNS1.bin) parser.
  *
  * Detection heuristic:
  * - Dword at offset 0xC (first chunk offset) must be >= 0x64

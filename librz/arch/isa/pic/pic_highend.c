@@ -7,7 +7,8 @@
 #include "pic_highend.h"
 
 /**
- * \file High-end (e.g. PIC18CXXX) instruction set
+ * \file
+ * High-end (e.g. PIC18CXXX) instruction set
  */
 
 // instruction classification according to the argument types

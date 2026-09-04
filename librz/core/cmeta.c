@@ -482,4 +482,4 @@ RZ_API bool rz_core_meta_pascal_string_add(RzCore *core, ut64 addr, RzStrEnc enc
 	return true;
 }
 
-/**@{*/
+/**@}*/

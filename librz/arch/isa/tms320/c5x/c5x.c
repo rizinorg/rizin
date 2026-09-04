@@ -22,7 +22,7 @@
  *
  * Only the C5x-only ids and the shared ids whose canonical C5x spelling
  * differs from the C2x one are handled here; the rest delegate to
- * \ref c2x_mnemonic.
+ * c2x_mnemonic().
  */
 RZ_IPI const char *c5x_mnemonic(ut16 id) {
 	switch (id) {
@@ -110,7 +110,7 @@ RZ_IPI const char *c5x_mnemonic(ut16 id) {
  * \param id C5X_INS_* id, or a shared C2X_INS_* id
  * \return RZ_ANALYSIS_OP_TYPE_* value for \p id
  *
- * Shared ids delegate to \ref c2x_op_type.
+ * Shared ids delegate to c2x_op_type().
  */
 RZ_IPI ut32 c5x_op_type(ut16 id) {
 	switch (id) {

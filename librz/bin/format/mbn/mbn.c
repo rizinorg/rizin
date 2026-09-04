@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
- * \file The MBN file format is not publicly documented currently.
+ * \file
+ * The MBN file format is not publicly documented currently.
  * It is used in Qualcomm firmware images to verify the firmware binaries against the root of trust.
  * There are more than one version of the MBN file format.
  * This implementation only handles the signature bundle for the Qualcomm secure boot mechanism.

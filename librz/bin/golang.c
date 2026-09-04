@@ -267,7 +267,7 @@ static void find_go_build_info(RzBinFile *bf, GoBuildInfo *go_info, RzBinSection
 /**
  * \brief   Returns the golang compiler info if buildinfo struct is found.
  *
- * \param   RzBinFile    The RzBinFile to use for the search
+ * \param   bf    The RzBinFile to use for the search
  *
  * \return  Returns a string on success, otherwise NULL
  */
