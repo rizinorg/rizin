@@ -402,6 +402,7 @@ compound:
 /**
  * \brief Create a new RzGadgetSearchContext object.
  * \param core RZ_NONNULL Pointer to the RzCore structure containing configuration settings.
+ * \param gadget_type Kind of gadget to search for.
  * \param greparg RZ_NULLABLE Pointer to a string containing the grep argument.
  * \param regexp Flag specifying whether regular expressions should be used.
  * \param mask Gadget request mask specifying the Gadget request parameters.

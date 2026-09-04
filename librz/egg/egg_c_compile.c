@@ -4,7 +4,7 @@
 #include <rz_egg.h>
 
 typedef struct egg_c_config {
-	const char *triplet; ///< <os>-<arch>-<bits>
+	const char *triplet; ///< `<os>-<arch>-<bits>`
 	const char *exe_compiler; ///< special compiler to override the normal one.
 	const char *add_cflags; ///< CFLAGS to append
 	const char *add_ldflags; ///< LDFLAGS to append

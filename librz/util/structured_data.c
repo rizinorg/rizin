@@ -549,7 +549,7 @@ RZ_API bool rz_structured_data_array_add_signed(RZ_NONNULL RzStructuredData *par
  * \brief      Adds double type child to an array type parent
  *
  * \param      parent  Where to add the child RzStructuredData
- * \param      n       The value to assign to the child
+ * \param      d       The value to assign to the child
  *
  * \return     On success returns true, otherwise false.
  */
@@ -561,10 +561,10 @@ RZ_API bool rz_structured_data_array_add_double(RZ_NONNULL RzStructuredData *par
 }
 
 /**
- * \brief      Adds signed type child to an array type parent
+ * \brief      Adds boolean type child to an array type parent
  *
  * \param      parent  Where to add the child RzStructuredData
- * \param      n       The value to assign to the child
+ * \param      b       The value to assign to the child
  *
  * \return     On success returns true, otherwise false.
  */

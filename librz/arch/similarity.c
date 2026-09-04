@@ -350,7 +350,7 @@ fail:
 /**
  * \brief      Frees a valid pointer to a RzAnalysisMatchResult struct
  *
- * \param[in]  RzAnalysisMatchResult  The analysis match result to be freed
+ * \param[in]  result  The analysis match result to be freed
  */
 RZ_API void rz_analysis_match_result_free(RZ_NULLABLE RzAnalysisMatchResult *result) {
 	if (!result) {

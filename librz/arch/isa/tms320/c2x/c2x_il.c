@@ -57,7 +57,7 @@ static RzILOpPure *c2x_addr(const C55Operand *m) {
  * \return Pure expression yielding the *word* address
  *
  * Word (not byte) addresses are the analysis/CFG convention for this arch;
- * \ref c2x_byte scales the result where a byte address is needed.
+ * c2x_byte() scales the result where a byte address is needed.
  */
 RZ_IPI RzILOpPure *c2x_ea(RZ_UNUSED const C55ArchDesc *a, const C55Operand *m) {
 	if (m->amode != C55_AM_DIRECT) {

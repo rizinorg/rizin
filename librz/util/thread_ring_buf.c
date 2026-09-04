@@ -7,7 +7,8 @@
 #include <rz_util/rz_sys.h>
 
 /**
- * \file A ring buffer implementation.
+ * \file
+ * A ring buffer implementation.
  *
  * Functionally it is equivalent to a fixed size queue, except that it
  * copies the data into the buffer.

@@ -98,19 +98,19 @@ typedef enum {
 	C55_AM_POSTDEC, ///< *arN-
 	C55_AM_PREINC, ///< *+arN
 	C55_AM_PREDEC, ///< *-arN
-	C55_AM_INDEXED, ///< *arN(short(#K)) / *sp(#K)
+	C55_AM_INDEXED, ///< `*arN(short(#K))` / `*sp(#K)`
 	C55_AM_IDXREG, ///< *arN(tM)
 	C55_AM_POSTADD, ///< *(arN+tM)
 	C55_AM_POSTSUB, ///< *(arN-tM)
 	C55_AM_IDXSCALE, ///< *arN(tM<<#1)
-	C55_AM_ABSOLUTE, ///< *(#k) absolute address
-	C55_AM_CONST_IDX, ///< *arN(#K16) long const-index (2-byte extension, ARn unmodified)
-	C55_AM_CONST_IDX_PRE, ///< *+arN(#K16) long const-index with pre-modify (2-byte extension, ARn += K16)
-	C55_AM_ABS16, ///< abs16(#k16) data-page absolute: DPH:k16 (2-byte extension, k16 unsigned)
+	C55_AM_ABSOLUTE, ///< `*(#k)` absolute address
+	C55_AM_CONST_IDX, ///< `*arN(#K16)` long const-index (2-byte extension, ARn unmodified)
+	C55_AM_CONST_IDX_PRE, ///< `*+arN(#K16)` long const-index with pre-modify (2-byte extension, ARn += K16)
+	C55_AM_ABS16, ///< `abs16(#k16)` data-page absolute: DPH:k16 (2-byte extension, k16 unsigned)
 	// arch-specific: C55ArchDesc::ea()
 	C55_AM_BITREV, ///< *(arN+t0b) reverse-carry (C54x *arN+0B)
 	C55_AM_XAR15, ///< *arN(xar15)
-	C55_AM_DIRECT, ///< C54x DP/SP-relative direct (@addr / addr)
+	C55_AM_DIRECT, ///< C54x DP/SP-relative direct (`@addr` / `addr`)
 	C55_AM_MMR, ///< C54x memory-mapped register
 	C55_AM_CIRCULAR, ///< explicit circular via BK/ARP
 	C55_AM_BITREV_SUB, ///< *(arN-t0b) reverse-carry (the decrement bit-reverse form)
@@ -130,7 +130,7 @@ typedef enum {
 	C55_OP_REG, ///< register (optional sub-field, optional shift wrapper)
 	C55_OP_IMM, ///< immediate (width + signedness, optional shift wrapper)
 	C55_OP_MEM, ///< data-memory operand (base + amode + index + disp + access)
-	C55_OP_COND, ///< condition: reg <relop> 0|imm|reg (bcc/xcc/cmp/btst)
+	C55_OP_COND, ///< condition: `reg <relop> 0|imm|reg` (bcc/xcc/cmp/btst)
 	C55_OP_INVALID, ///< operand the decoder cannot represent yet; forces legacy fallback
 } C55OpKind;
 
@@ -187,10 +187,10 @@ typedef struct {
 
 	C55Relop relop; ///< COND: relational operator
 	bool cmp_to_reg; ///< COND: compare to \ref index register rather than \ref imm
-	bool cond_is_flag; ///< COND: a status-bit flag expression rather than reg <relop> 0
+	bool cond_is_flag; ///< COND: a status-bit flag expression rather than `reg <relop> 0`
 	ut8 cond_flag; ///< COND: status-flag id (when \ref cond_is_flag)
 	bool cmp_imm; ///< COND: compare to an explicit immediate (#0x..) vs literal #0
-	bool cmp_mem; ///< COND: the left-hand side is a memory operand (cmp Smem <rel> #k)
+	bool cmp_mem; ///< COND: the left-hand side is a memory operand (`cmp Smem <rel> #k`)
 	bool elide_if_eq_prev; ///< REG: omit this operand (and its separator) when it equals the immediately preceding operand (mpyk/mack ACy defaulting to ACx)
 	bool circular; ///< MEM: C54x circular-addressing variant (the '%' suffix: *arN+%, *arN+0%, ...)
 	bool is_shift; ///< IMM: this operand is a standalone C54x shift count applied to the preceding value (\ref shamt / \ref sh_left carry the amount/direction)
@@ -229,27 +229,27 @@ typedef enum {
 	C55_LOP_ADDV, ///< dst = dst + |src(32-16)| (addition with absolute value)
 	C55_LOP_SFTL, ///< dst = sftl(src, Tx): logical shift, right by -Tx when Tx<0 else left by Tx
 	C55_LOP_SFTS, ///< dst = sfts(src, Tx): arithmetic right shift (sign-fill) / logical left
-	C55_LOP_ANDSHL, ///< dst = dst & (src << #SHIFTW)
-	C55_LOP_ORSHL, ///< dst = dst | (src << #SHIFTW)
-	C55_LOP_XORSHL, ///< dst = dst ^ (src << #SHIFTW)
-	C55_LOP_ADDSHL, ///< dst = dst + (src << #SHIFTW)
-	C55_LOP_SUBSHL, ///< dst = dst - (src << #SHIFTW)
-	C55_LOP_MOVSHL, ///< dst = (src << #SHIFTW): load a shifted immediate (mov #k16 << #sh)
+	C55_LOP_ANDSHL, ///< dst = dst & `(src << #SHIFTW)`
+	C55_LOP_ORSHL, ///< dst = dst | `(src << #SHIFTW)`
+	C55_LOP_XORSHL, ///< dst = dst ^ `(src << #SHIFTW)`
+	C55_LOP_ADDSHL, ///< dst = dst + `(src << #SHIFTW)`
+	C55_LOP_SUBSHL, ///< dst = dst - `(src << #SHIFTW)`
+	C55_LOP_MOVSHL, ///< dst = `(src << #SHIFTW)`: load a shifted immediate (`mov #k16 << #sh`)
 	C55_LOP_ANDMEM, ///< ACy = ACx & sx(Smem)
 	C55_LOP_ORMEM, ///< ACy = ACx | sx(Smem)
 	C55_LOP_XORMEM, ///< ACy = ACx ^ sx(Smem)
-	C55_LOP_BITCLR, ///< STx = STx & ~(1 << #k4): clear a status-register bit (bclr); also the register bit ops with an is_bit operand
-	C55_LOP_BITSET, ///< STx = STx | (1 << #k4): set a status-register bit (bset)
+	C55_LOP_BITCLR, ///< STx = STx & ~`(1 << #k4)`: clear a status-register bit (bclr); also the register bit ops with an is_bit operand
+	C55_LOP_BITSET, ///< STx = STx | `(1 << #k4)`: set a status-register bit (bset)
 	C55_LOP_BITNOT, ///< dst = dst ^ (1 << k): toggle a register bit (bnot)
 	C55_LOP_STBITCLR, ///< st0_55 = ite(0, st0_55 | (1<<bit), st0_55 & ~(1<<bit)): clear an st0_55 named bit
 	C55_LOP_STBITSET, ///< st0_55 = ite(1, st0_55 | (1<<bit), st0_55 & ~(1<<bit)): set an st0_55 named bit
-	C55_LOP_AMOV, ///< dst = zero-extend(#k16): load a 16-bit constant/address (amov)
-	C55_LOP_CMP, ///< TCz = (SRC <relop> DST): register compare writing a status TC bit
-	C55_LOP_CMPAND, ///< TCz = (SRC <relop> DST) && TCx
-	C55_LOP_CMPOR, ///< TCz = (SRC <relop> DST) || TCx
+	C55_LOP_AMOV, ///< dst = `zero-extend(#k16)`: load a 16-bit constant/address (amov)
+	C55_LOP_CMP, ///< TCz = `(SRC <relop> DST)`: register compare writing a status TC bit
+	C55_LOP_CMPAND, ///< TCz = `(SRC <relop> DST)` && TCx
+	C55_LOP_CMPOR, ///< TCz = `(SRC <relop> DST)` || TCx
 	C55_LOP_AREG_MOV, ///< dst = cast(dst, src): register move with width conversion (amov ACx,ACy)
 	C55_LOP_AREG_SUB, ///< dst = dst - cast(dst, src): register address subtract (asub ACx,ACy)
-	C55_LOP_AREG_ADD, ///< dst = dst + cast(dst, src): register/immediate address add (aadd #k,reg)
+	C55_LOP_AREG_ADD, ///< dst = dst + cast(dst, src): register/immediate address add (`aadd #k,reg`)
 	C55_LOP_AREG_AND, ///< dst = dst & cast(dst, src): A-unit register and (and src, dst)
 	C55_LOP_AREG_OR, ///< dst = dst | cast(dst, src): A-unit register or (or src, dst)
 	C55_LOP_AREG_XOR, ///< dst = dst ^ cast(dst, src): A-unit register xor (xor src, dst)
@@ -260,13 +260,13 @@ typedef enum {
 	C55_LOP_OPAQUE, ///< decode + analyse only; data effect not modelled (no IL)
 	C55_LOP_ROL, ///< ACy = rotate-left(ACx) by one through a status bit (carry/tc2)
 	C55_LOP_ROR, ///< ACy = rotate-right(ACx) by one through a status bit (carry/tc2)
-	C55_LOP_MPYK, ///< ACy = #k * ACx: multiply accumulator low word by a signed constant (mpyk/mpykr)
-	C55_LOP_MACK, ///< ACy = ACx + #k * Tx: multiply-accumulate a signed constant by a Tx coefficient (mack/mackr)
-	C55_LOP_ADDK, ///< dst = ACx + zero-extend(#k16): immediate add (opcode 0x7b)
-	C55_LOP_SUBK, ///< dst = ACx - zero-extend(#k16): immediate subtract (opcode 0x7c)
-	C55_LOP_ANDK, ///< dst = ACx & zero-extend(#k16): immediate and (opcode 0x7d)
-	C55_LOP_ORK, ///< dst = ACx | zero-extend(#k16): immediate or (opcode 0x7e)
-	C55_LOP_XORK, ///< dst = ACx ^ zero-extend(#k16): immediate xor (opcode 0x7f)
+	C55_LOP_MPYK, ///< `ACy = #k * ACx`: multiply accumulator low word by a signed constant (mpyk/mpykr)
+	C55_LOP_MACK, ///< `ACy = ACx + #k * Tx`: multiply-accumulate a signed constant by a Tx coefficient (mack/mackr)
+	C55_LOP_ADDK, ///< dst = ACx + `zero-extend(#k16)`: immediate add (opcode 0x7b)
+	C55_LOP_SUBK, ///< dst = ACx - `zero-extend(#k16)`: immediate subtract (opcode 0x7c)
+	C55_LOP_ANDK, ///< dst = ACx & `zero-extend(#k16)`: immediate and (opcode 0x7d)
+	C55_LOP_ORK, ///< dst = ACx | `zero-extend(#k16)`: immediate or (opcode 0x7e)
+	C55_LOP_XORK, ///< dst = ACx ^ `zero-extend(#k16)`: immediate xor (opcode 0x7f)
 	C55_LOP_RPTADD, ///< CSR = CSR + src: single-repeat-counter add (rptadd CSR, src). The repeat loop itself (the next instruction running CSR+1 times) is a control-flow effect that one-instruction RzIL cannot express; only the named CSR write is modelled.
 	C55_LOP_RPTSUB, ///< CSR = CSR - src: single-repeat-counter subtract (rptsub CSR, src). As with RPTADD, only the CSR write is modelled, not the repeat loop.
 } C55LiftOp;
@@ -327,7 +327,7 @@ struct c55_op_desc_t;
  */
 typedef void (*C55Extract)(const struct c55_arch_desc_t *a, ut64 bits, const struct c55_op_desc_t *d, C55Operand *out);
 
-/** One operand slot in a \ref C55InsnDef: which bits feed which extractor. */
+/** One operand slot in a \ref C55InsnDef, mapping bits to an extractor. */
 typedef struct c55_op_desc_t {
 	ut8 lo; ///< bitfield start (LSB index within the packed instruction word)
 	ut8 width; ///< bitfield width
@@ -370,7 +370,7 @@ typedef struct {
 /**
  * The arch extension point. Adding C54x = providing one of these; C55x/C55x+
  * each provide one but share id/register/mnemonic tables. The decode fields
- * (\ref table .. \ref insn_len) are optional: an arch may instead fill
+ * (`table` .. `insn_len`) are optional: an arch may instead fill
  * \ref C55Insn from its own front-end (e.g. capstone for a future C64x lifter)
  * and still use the consumers and primitives.
  */
@@ -379,7 +379,7 @@ typedef struct c55_arch_desc_t {
 	const char *cpu_name; ///< "c54x" / "c55x" / "c55x+"
 
 	const C55InsnDef *table; ///< instruction table (NULL if decoded externally)
-	size_t table_len; ///< number of rows in \ref table
+	size_t table_len; ///< number of rows in `table`
 	ut8 (*insn_len)(const ut8 *buf, int len); ///< variable-length decode helper
 
 	const C55RegInfo *(*reg_info)(C55RegClass cls, ut8 num, C55SubReg sub); ///< register resolver

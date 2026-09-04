@@ -18,8 +18,8 @@
  * \brief "SwissTable" hash table implementation.
  *
  * References:
- * 	- https://abseil.io/about/design/swisstables
- *  - https://en.wikipedia.org/wiki/Open_addressing
+ * - https://abseil.io/about/design/swisstables
+ * - https://en.wikipedia.org/wiki/Open_addressing
  */
 
 // Load factor thershold of 87.5% (after that the table grows)

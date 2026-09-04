@@ -172,6 +172,9 @@ static bool dos_to_tm(ut32 dosval, struct tm *out) {
  * formats, v_f64 for OLE/Cocoa. The reader (rz_pf_timestamp_read) takes
  * care of placing the bytes in the right slot.
  *
+ * \param fmt Timestamp format the raw scalar holds
+ * \param raw Raw scalar holding the timestamp value
+ * \param out_tm Broken-down UTC time to fill in
  * \param out_subsec_ns Optional out-param for sub-second precision; set
  *                      to 0 for second-resolution formats.
  * \return true on success, false on unknown format or out-of-range DOS

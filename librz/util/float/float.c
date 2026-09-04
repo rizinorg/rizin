@@ -50,8 +50,9 @@ RZ_API bool rz_float_ext80_set_rounding_precision(RzFloatRPrecision precision) {
 }
 
 /**
- * \defgroup Generate Nan and infinite for float/double/long double
- * @ {
+ * \defgroup rz_float_special_group Special values
+ * generates NaN and infinity for float/double/long double
+ * \{
  */
 #define define_types_gen_nan(fname, ftype) \
 	RZ_API ftype rz_types_gen_##fname##_nan() { \
@@ -80,10 +81,12 @@ define_types_gen_nan(f128, long double);
 define_types_gen_inf(f32, float);
 define_types_gen_inf(f64, double);
 define_types_gen_inf(f128, long double);
-/**@}*/
+/** \} */ // end rz_float_special_group
 
-/** \defgroup Helper utilities to inter-operate with SoftFloat.
- * @ {
+/**
+ * \defgroup rz_float_softfloat_group SoftFloat helpers
+ * utilities to inter-operate with SoftFloat
+ * \{
  */
 static inline float16_t to_float16(RzFloat *f16) {
 	rz_warn_if_fail(f16->r == RZ_FLOAT_IEEE754_BIN_16);
@@ -260,7 +263,7 @@ static inline bool f128_is_zero(float128_t value) {
 static inline bool ext_f80_is_special(extFloat80_t value) {
 	return (value.signExp & 0x7fff) == 0x7fff;
 }
-/**@}*/
+/** \} */ // end rz_float_softfloat_group
 
 /**
  * \brief return the bitvector string of a float
@@ -490,6 +493,7 @@ RZ_API void rz_float_free(RZ_NULLABLE RzFloat *f) {
 /**
  * Init the bitvector inside float
  * \param f float
+ * \param format format of the float
  * \return return true if init success else return false
  */
 RZ_API bool rz_float_init(RZ_NONNULL RzFloat *f, RzFloatFormat format) {
@@ -1300,6 +1304,8 @@ RZ_API RZ_OWN RzFloat *rz_float_new_snan(RzFloatFormat format) {
 
 /**
  * calculate \p left + \p right and round the result after, return the result
+ * \param left left operand
+ * \param right right operand
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
@@ -1330,6 +1336,8 @@ RZ_API RZ_OWN RzFloat *rz_float_add_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 
 /**
  * calculate \p left - \p right and round the result after, return the result
+ * \param left left operand
+ * \param right right operand
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
@@ -1360,6 +1368,8 @@ RZ_API RZ_OWN RzFloat *rz_float_sub_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 
 /**
  * calculate \p left * \p right and round the result after, return the result
+ * \param left left operand
+ * \param right right operand
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
@@ -1396,6 +1406,8 @@ RZ_API RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
  * Inf / Inf -> invalid
  * 0 / 0 -> invalid
  * 0 / not 0 -> 0
+ * \param left left operand
+ * \param right right operand
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
@@ -1431,6 +1443,8 @@ RZ_API RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
  * Inf % Any => NaN, invalid
  * Any % Inf -> Any
  * 0 % Any -> 0
+ * \param left left operand
+ * \param right right operand
  * \param mode rounding mode used for calculating the quotient
  * \return result of arithmetic operation
  *
@@ -1468,6 +1482,8 @@ RZ_API RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
  * Inf % Any => NaN, invalid
  * Any % Inf -> Any
  * 0 % Any -> 0
+ * \param left left operand
+ * \param right right operand
  * \param mode rounding mode used for calculating the quotient
  * \return result of arithmetic operation
  *
@@ -1508,6 +1524,9 @@ RZ_API RZ_OWN RzFloat *rz_float_mod_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 
 /**
  * calculate \p a * \p b + \p c, and round the result after, return the result
+ * \param a first factor
+ * \param b second factor
+ * \param c addend
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
@@ -1611,6 +1630,7 @@ RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL R
 
 /**
  * calculate the root of \p n, and round the result after, return the result
+ * \param n the operand to take the root of
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
@@ -1688,7 +1708,7 @@ RZ_API RZ_OWN RzFloat *rz_float_trunc(RZ_NONNULL RzFloat *f) {
 
 /**
  * \brief round float to an integral valued float with the same format
- * \detail [fround m x] is the floating-point number closest to [x]
+ * \details [fround m x] is the floating-point number closest to [x]
  * rounded to an integral, using the rounding mode [m].
  * \param f float
  * \param mode round mode
@@ -2009,6 +2029,8 @@ RZ_API RZ_OWN RzFloat *rz_float_convert(RZ_NONNULL RzFloat *f, RzFloatFormat for
 
 /**
  * calculate \p left + \p right and round the result after, return the result
+ * \param x left operand
+ * \param y right operand
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
@@ -2018,6 +2040,8 @@ RZ_API RZ_OWN RzFloat *rz_float_add(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y
 
 /**
  * calculate \p left - \p right and round the result after, return the result
+ * \param x left operand
+ * \param y right operand
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
@@ -2027,6 +2051,8 @@ RZ_API RZ_OWN RzFloat *rz_float_sub(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y
 
 /**
  * calculate \p left * \p right and round the result after, return the result
+ * \param x left operand
+ * \param y right operand
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
@@ -2042,6 +2068,8 @@ RZ_API RZ_OWN RzFloat *rz_float_mul(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y
  * Inf / Inf -> invalid
  * 0 / 0 -> invalid
  * 0 / not 0 -> 0
+ * \param x left operand
+ * \param y right operand
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
@@ -2056,6 +2084,8 @@ RZ_API RZ_OWN RzFloat *rz_float_div(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y
  * Inf % Any => NaN, invalid
  * Any % Inf -> Any
  * 0 % Any -> 0
+ * \param x left operand
+ * \param y right operand
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
@@ -2070,6 +2100,8 @@ RZ_API RZ_OWN RzFloat *rz_float_rem(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y
  * Inf % Any => NaN, invalid
  * Any % Inf -> Any
  * 0 % Any -> 0
+ * \param x left operand
+ * \param y right operand
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
@@ -2079,6 +2111,9 @@ RZ_API RZ_OWN RzFloat *rz_float_mod(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y
 
 /**
  * calculate \p a * \p b + \p c, and round the result after, return the result
+ * \param a first factor
+ * \param b second factor
+ * \param c addend
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
@@ -2088,6 +2123,7 @@ RZ_API RZ_OWN RzFloat *rz_float_fma(RZ_NONNULL RzFloat *a, RZ_NONNULL RzFloat *b
 
 /**
  * calculate the root of \p n, and round the result after, return the result
+ * \param n the operand to take the root of
  * \param mode rounding mode
  * \return result of arithmetic operation
  */

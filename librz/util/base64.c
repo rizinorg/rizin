@@ -360,7 +360,7 @@ RZ_API st64 rz_base64_decode(RZ_OUT RZ_NULLABLE ut8 *dest, RZ_NULLABLE const cha
 /**
  * \brief Decode a Base64-encoded message.
  * \param[in] src The encoded message to decode.
- * \param n The length of the encoded message.
+ * \param len The length of the encoded message.
  * \return The dynamically-allocated decoded binary-data.
  *
  * This function dynamically allocates a buffer in which to store the

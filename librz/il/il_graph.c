@@ -813,6 +813,7 @@ static void il_op_effect_graph_resolve(RzILOpEffect *op, RzGraph /*<RzGraphNodeI
 /**
  * \brief      Generates the graph representation of the IL pure statement
  * \param      op    IL pure statement
+ * \param      name  Name of the root node, "pure" when NULL
  * \return     On success returns a valid pointer, otherwise NULL.
  */
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *rz_il_op_pure_graph(RZ_NONNULL RzILOpPure *op, RZ_NULLABLE const char *name) {
@@ -830,6 +831,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *rz_il_op_pure_graph(RZ_NO
 /**
  * \brief      Generates the graph representation of the IL effect statement
  * \param      op    IL effect statement
+ * \param      name  Name of the root node, "effect" when NULL
  * \return     On success returns a valid pointer, otherwise NULL.
  */
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *rz_il_op_effect_graph(RZ_NONNULL RzILOpEffect *op, RZ_NULLABLE const char *name) {

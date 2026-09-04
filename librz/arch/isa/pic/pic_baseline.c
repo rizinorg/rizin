@@ -5,7 +5,8 @@
 #include "pic_midrange.h"
 
 /**
- * \file PIC Baseline (some but not all of 10Fxxx, 12Fxxx, and 16Fxxx) instruction set
+ * \file
+ * PIC Baseline (some but not all of 10Fxxx, 12Fxxx, and 16Fxxx) instruction set
  * Because baseline instructions are a subset of midrange, but the encoding is
  * different, only decoding is implemented specifically for baseline, but for analysis,
  * il, etc., the decoded instructions are lifted to midrange and its code is reused.

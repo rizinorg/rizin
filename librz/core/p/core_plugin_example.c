@@ -17,7 +17,7 @@
  * - rizin =
  *   This init was called!
  * - [0x00000000]> example?
- *   Usage: example <number>   # example summary that contains some description
+ *   Usage: example `<number>`   # example summary that contains some description
  * - [0x00000000]> example 1777
  *   WARNING: the parsed number is 1777
  * - [0x00000000]> example -777

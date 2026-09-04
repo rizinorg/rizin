@@ -31,7 +31,7 @@ RZ_API const char *rz_il_event_exception_msg(const RzILEventException id) {
 
 /**
  * Frees an RzILEvent struct
- * \param evt, RzILEvent, pointer to the RzILEvent to free
+ * \param evt Pointer to the RzILEvent to free
  */
 RZ_API void rz_il_event_free(RZ_NULLABLE RzILEvent *evt) {
 	if (!evt) {
@@ -72,7 +72,6 @@ RZ_API void rz_il_event_free(RZ_NULLABLE RzILEvent *evt) {
 /**
  * Creates an RzILEvent of type RZ_IL_EVENT_EXCEPTION
  * \param id The exception identifier.
- * \param msg Pointer to the exception message
  */
 RZ_API RZ_OWN RzILEvent *rz_il_event_exception_new(RzILEventException id) {
 	rz_return_val_if_fail(id != RZ_IL_EVENT_EXC_NONE, NULL);
@@ -90,8 +89,8 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_exception_new(RzILEventException id) {
 
 /**
  * Creates an RzILEvent of type RZ_IL_EVENT_PC_WRITE
- * \param old_pc, RzBitVector, old program counter value before the change
- * \param new_pc, RzBitVector, new program counter value after the change
+ * \param old_pc Old program counter value before the change
+ * \param new_pc New program counter value after the change
  */
 RZ_API RZ_OWN RzILEvent *rz_il_event_pc_write_new(RZ_NONNULL const RzBitVector *old_pc, RZ_NONNULL const RzBitVector *new_pc) {
 	rz_return_val_if_fail(old_pc && new_pc, NULL);
@@ -114,9 +113,9 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_pc_write_new(RZ_NONNULL const RzBitVector *
 
 /**
  * Creates an RzILEvent of type RZ_IL_EVENT_MEM_READ
- * \param index, RzILMemIndex, index of the memory to read
- * \param addr, RzBitVector, address of the memory where the read op has occurred
- * \param value, RzBitVector, value read from the variable
+ * \param index Index of the memory to read
+ * \param address Address of the memory where the read op has occurred
+ * \param value Value read from the variable
  */
 RZ_API RZ_OWN RzILEvent *rz_il_event_mem_read_new(RzILMemIndex index, RZ_NONNULL const RzBitVector *address, RZ_NULLABLE const RzBitVector *value) {
 	rz_return_val_if_fail(address && value, NULL);
@@ -140,10 +139,10 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_mem_read_new(RzILMemIndex index, RZ_NONNULL
 
 /**
  * Creates an RzILEvent of type RZ_IL_EVENT_MEM_WRITE
- * \param index, RzILMemIndex, index of the memory to store data
- * \param addr, RzBitVector, address of the memory that has changed
- * \param old_v, RzBitVector, old value before the change
- * \param new_v, RzBitVector, new value after the change
+ * \param index Index of the memory to store data
+ * \param addr Address of the memory that has changed
+ * \param old_v Old value before the change
+ * \param new_v New value after the change
  */
 RZ_API RZ_OWN RzILEvent *rz_il_event_mem_write_new(RzILMemIndex index, RZ_NONNULL const RzBitVector *addr, RZ_NONNULL const RzBitVector *old_v, RZ_NONNULL const RzBitVector *new_v) {
 	rz_return_val_if_fail(addr && old_v && new_v, NULL);

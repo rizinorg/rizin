@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
- * \file this file contains some float function used in rzil fbasic theory
+ * \file
+ * this file contains some float function used in rzil fbasic theory
  * To avoid conflict during developing, I put some float operation here at first
  * Some of them should be moved to rz_util/float in the future and resolve conflict to merge
  */

@@ -448,7 +448,6 @@ RZ_API RZ_BORROW RzGadgetRegInfo *rz_core_gadget_info_get_modified_register(cons
  * \brief Update a register info in the RzGadgetInfo object.
  * \param gadget_info Pointer to the RzGadgetInfo object.
  * \param new_reg_info Pointer to the new RzGadgetRegInfo object.
- * \return void
  *
  * Updates the register info in the RzGadgetInfo object with the values from the new register info.
  * If the register is not already in the modified registers list, it is added.
