@@ -1,0 +1,2 @@
+d "move.w 0x100, 0xa10000.l" 33fc010000a10000
+d "invalid" ff
