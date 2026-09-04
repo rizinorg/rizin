@@ -1,0 +1,53 @@
+name: "API documentation"
+
+on:
+  push:
+    branches:
+    - 'master'
+    - 'dev'
+    - 'stable'
+    paths: &doc_paths
+    - '**.c'
+    - '**.h'
+    - '**.inc'
+    - 'librz/**.md'
+    - 'Doxyfile'
+    - 'doc/meson.build'
+    - 'sys/doxygen.py'
+    - 'subprojects/doxygen-awesome-css.wrap'
+    - '.github/workflows/doxygen.yml'
+  pull_request:
+    paths: *doc_paths
+
+# Automatically cancel any previous workflow on new push.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  doxygen:
+    # Pinned on purpose: --warnings-as-errors is only meaningful against a known
+    # Doxygen version, since newer releases keep tightening their diagnostics.
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get --assume-yes install doxygen
+        sudo pip install meson ninja
+
+    - name: Build the documentation
+      run: |
+        doxygen --version
+        meson setup build -Denable_doc=true -Denable_tests=false -Denable_rz_test=false -Dwerror=true
+        ninja -C build doc
+
+    - name: Upload the documentation
+      uses: actions/upload-artifact@v7
+      with:
+        name: rizin-api-documentation
+        path: build/doc/html
+        retention-days: 7
