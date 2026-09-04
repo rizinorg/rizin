@@ -9,6 +9,20 @@ By running `doxygen` in the root of this repository, it will autodetect the
 Doxyfile and generate HTML documentation into
 [doc/doxygen/html/index.html](./doc/doxygen/html/index.html).
 
+To get the same output CI produces, including the
+[Doxygen Awesome](https://github.com/jothepro/doxygen-awesome-css) theme, build
+the `doc` target instead:
+
+```bash
+meson setup build -Denable_doc=true
+ninja -C build doc
+```
+
+The documentation ends up in `build/doc/html/index.html`. Configuring with
+`-Dwerror=true` additionally turns every Doxygen diagnostic into an error, which
+is what the CI job does; it needs the same Doxygen version as CI (the one
+shipped by Ubuntu 24.04), since newer releases report more broken references.
+
 If you're contributing code or willing to update existing code, you should use the
 doxygen C-style comments to improve documentation and comments in code.
 See the [Doxygen Manual](http://www.doxygen.nl/manual/index.html)
