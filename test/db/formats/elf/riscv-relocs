@@ -597,7 +597,7 @@ EXPECT=<<EOF
 |           ;-- reloc.ptr32.8000056:
 |           0x08000056      ld    a5, 0x78(a5)                         ; RELOC 0  ; arg6
 |           0x0800005a      lw    a5, 0(a5)                            ; arg6
-|           0x0800005c      addw  a5, a5, a4                           ; arg6
+|           0x0800005c      addw  a5, a5, a4
 |           0x0800005e      sext.w a5, a5
 |           0x08000060      mv    a0, a5
 |           0x08000062      ld    ra, 8(sp)
@@ -711,8 +711,7 @@ EOF
 EXPECT=<<EOF
             ;-- section..text:
             ;-- test:
-/ loc._x.0(int64_t arg1);
-|           ; arg int64_t arg1 @ a0
+/ loc._x.0();
 |           ; var int64_t var_10h @ stack - 0x10
 |           ; var int64_t var_8h @ stack - 0x8
 |           0x08000040      addi  sp, sp, -0x10                        ; [02] -r-x section size 36 named .text
@@ -729,7 +728,7 @@ EXPECT=<<EOF
 |       |   ;-- reloc..LBB0_3:
 |      ,==< 0x08000058      j     loc..LBB0_3                          ; RELOC 0 .LBB0_3 @ 0x0800005c
 |      ||   ;-- .LBB0_2:
-|      |`-> 0x0800005a      addiw a0, a0, 0xf                          ; RELOC TARGET 0 .LBB0_2 @ 0x0800005a ; arg1
+|      |`-> 0x0800005a      addiw a0, a0, 0xf                          ; RELOC TARGET 0 .LBB0_2 @ 0x0800005a
 |      |    ; CODE XREF from loc._x.0 @ 0x8000058
 |      |    ;-- .LBB0_3:
 |      `--> 0x0800005c      ld    ra, 8(sp)                            ; RELOC TARGET 0 .LBB0_3 @ 0x0800005c

@@ -797,7 +797,7 @@ true
             0x00003a00      stwm  r5, 0x80(sp)
             0x00003a04      stw   r4, -0x7c(sp)
             0x00003a08      stw   r3, -0x78(sp)
-            0x00003a0c      or    r26, flags, r4
+            0x00003a0c      or    r26, r0, r4
 Backed up flag space into 'flags.sparc_32_all.sdb'. You can restore the flags with the 'ko' command.
 sparc
 all
