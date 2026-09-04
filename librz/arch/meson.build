@@ -158,6 +158,8 @@ arch_isa_sources = [
   'isa/avr/disassembler.c',
   'isa/cil/cil_dis.c',
   'isa/cr16/cr16_disas.c',
+  'isa/c166/c166_common.c',
+  'isa/c166/c166_il.c',
   'isa/dcpu16/asm.c',
   'isa/dcpu16/dis.c',
   'isa/ebc/ebc_disas.c',

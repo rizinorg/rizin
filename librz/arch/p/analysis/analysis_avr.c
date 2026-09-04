@@ -151,7 +151,8 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case AVR_OP_IN:
 		op->type2 = 0;
-		op->val = op->mmio_address = aop.param[1]; // A
+		op->val = op->mmios[op->mmios_count] = aop.param[1]; // A
+		op->mmios_count++;
 		op->type = RZ_ANALYSIS_OP_TYPE_IO;
 		op->family = RZ_ANALYSIS_OP_FAMILY_IO;
 		break;
@@ -178,7 +179,8 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case AVR_OP_OUT:
 		op->type2 = 1;
-		op->val = op->mmio_address = aop.param[0]; // A
+		op->val = op->mmios[op->mmios_count] = aop.param[0]; // A
+		op->mmios_count++;
 		op->type = RZ_ANALYSIS_OP_TYPE_IO;
 		op->family = RZ_ANALYSIS_OP_FAMILY_IO;
 		break;
