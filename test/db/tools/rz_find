@@ -281,6 +281,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rz-find -Z keyword across block boundary
+TOOL=rz-find
+ARGS=-Z -b 0x592 -s 250382 bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+0x58f 250382
+EOF
+RUN
+
 NAME=rz-find -F
 TOOL=rz-find
 ARGS=-F scripts/keyword bins/mach0/FileDP
