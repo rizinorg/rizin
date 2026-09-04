@@ -123,6 +123,12 @@ typedef struct rz_debug_frame_t {
 	ut64 bp;
 } RzDebugFrame;
 
+typedef enum {
+	RZ_DEBUG_SIGNAL_SOURCE_UNKNOWN,
+	RZ_DEBUG_SIGNAL_SOURCE_EXTERNAL,
+	RZ_DEBUG_SIGNAL_SOURCE_INTERNAL,
+} RzDebugSignalSource;
+
 typedef struct rz_debug_reason_t {
 	int /*RzDebugReasonType*/ type;
 	int tid;
@@ -131,6 +137,7 @@ typedef struct rz_debug_reason_t {
 	ut64 timestamp;
 	ut64 addr;
 	ut64 ptr;
+	RzDebugSignalSource sig_source;
 } RzDebugReason;
 
 typedef struct rz_debug_map_t {
